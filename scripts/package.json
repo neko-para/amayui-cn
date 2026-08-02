@@ -1,0 +1,16 @@
+{
+  "name": "amayui-patch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "天結いキャッスルマイスター 汉化工程脚本",
+  "scripts": {
+    "setup": "node setup.js",
+    "verify": "node verify.js",
+    "manifest": "node manifest.js --update",
+    "manifest-raw": "node manifest.js --update-raw",
+    "manifest-all": "node manifest.js --update-all",
+    "check": "node manifest.js --check",
+    "compare": "node manifest.js --compare"
+  }
+}
