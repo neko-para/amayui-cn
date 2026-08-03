@@ -1,0 +1,276 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { d 1 1 3 1 2 }
+====
+
+eq (local-int 6) (global-int 0) 1
+eq (local-int 7) (global-int 0) 6
+or (local-int 8) (local-int 6) (local-int 7)
+and (local-int 9) (global-int f8df9) 10000
+eq (local-int a) (local-int 9) 0
+and (local-int b) (local-int 8) (local-int a)
+jcc (local-int b) ffffffff label_00000164
+u004213E0 0
+308 0
+comment "savems "
+comment (global-int f8078)
+comment " menu"
+dev_ukn
+call label_00000dac
+u0041B9F0 0
+call label_00000e0c
+
+label_00000164
+play-sound-effect 5248 3
+u0041D050 3
+mov (global-int f8075) 1
+mov (global-int f801a) 0
+eq (local-int 6) (global-int b226) 1
+lookup-array (local-ptr 0) (global-int 6202a) (global-int b225)
+and (local-int 7) (local-ptr 0) 1
+eq (local-int 9) (local-int 7) 1
+and (local-int a) (local-int 6) (local-int 9)
+jcc (local-int a) ffffffff label_00000290
+lookup-array (local-ptr 1) (global-int 61ff8) (global-int b225)
+mov (global-int 546e00) (local-ptr 1)
+jmp label_000002a4
+
+label_00000290
+mov (global-int 546e00) 1
+
+label_000002a4
+u00427C00
+u00427FD0 0 cd
+u00427FD0 1 d3
+u00427FD0 2 de
+u00427FD0 3 ee
+u00427FD0 4 fe
+u00427FD0 5 11c
+u00427FD0 6 219
+u00427FD0 7 29f
+u00427FD0 8 2aa
+u004244D0 (global-int f801a) 2b5
+call-script 5111
+jmp label_00000b10
+call-script 35
+mov (global-int f801a) 0
+jmp label_00000b10
+mov (global-int f7ff0) 0
+call-script 33
+mov (global-int f801a) 0
+jmp label_00000b10
+mov (global-int f7ff0) 1
+call-script 33
+mov (global-int f801a) 0
+jmp label_00000b10
+call-script 34
+mov (global-int f801a) 0
+eq (local-int 6) (global-int 0) 2
+jcc (local-int 6) ffffffff label_000004a0
+copy-to-global (global-int 14c8ff) 64
+
+label_000004a0
+jmp label_00000b10
+and (local-int 6) (global-int a9cc) 1
+jcc (local-int 6) ffffffff label_000006ac
+mov (global-int f8fa5) 7
+set-string (global-string f17) "タイトル画面に戻りますか？"
+sub (global-int f8fa4) 0 1
+lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
+set-string (local-string-ptr 0) "はい"
+lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
+mov (local-ptr 1) (global-int f8dfc)
+mov (global-int f8fa4) (global-int f8dfc)
+add (global-int f8dfc) (global-int f8dfc) 1
+lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
+set-string (local-string-ptr 0) "いいえ"
+lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
+mov (local-ptr 1) (global-int f8dfc)
+mov (global-int f8fa4) (global-int f8dfc)
+add (global-int f8dfc) (global-int f8dfc) 1
+call-script 36
+eq (local-int 6) (global-int f8dfe) 1
+jcc (local-int 6) ffffffff label_000006ac
+mov (global-int f801a) 0
+jmp label_00000b10
+
+label_000006ac
+u0042B990 (global-float 9) 0
+u0042B990 (global-float a) 500
+u0042B990 (global-float b) 0
+u0042B990 (global-float c) 500
+u0042B990 (global-float d) 0
+u0042B990 (global-float e) 0
+u0042B990 (global-float f) 2d0
+u0042B990 (global-float 10) 2d0
+u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+jcc 1 ffffffff label_00000818
+u0043AA40 30d40 0 0 0
+u0043AA50 30d40 0 1f4 ff 0
+jmp label_00000868
+
+label_00000818
+u0043AA40 30d40 0 ff 0
+u0043AA50 30d40 0 1f4 0 0
+
+label_00000868
+u00422EA0 10001
+u00416270
+u00420270 30d40 1
+u00415BF0
+exit-script
+jmp label_00000b10
+and (local-int 6) (global-int a9cc) 2
+jcc (local-int 6) ffffffff label_00000aa0
+mov (global-int f8fa5) 7
+set-string (global-string f17) "ゲームを終了しますか？"
+sub (global-int f8fa4) 0 1
+lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
+set-string (local-string-ptr 0) "はい"
+lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
+mov (local-ptr 1) (global-int f8dfc)
+mov (global-int f8fa4) (global-int f8dfc)
+add (global-int f8dfc) (global-int f8dfc) 1
+lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
+set-string (local-string-ptr 0) "いいえ"
+lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
+mov (local-ptr 1) (global-int f8dfc)
+mov (global-int f8fa4) (global-int f8dfc)
+add (global-int f8dfc) (global-int f8dfc) 1
+call-script 36
+eq (local-int 6) (global-int f8dfe) 1
+jcc (local-int 6) ffffffff label_00000aa0
+mov (global-int f801a) 0
+jmp label_00000b10
+
+label_00000aa0
+call-script 37
+jmp label_00000b10
+call-script 31
+mov (global-int f801a) 0
+jmp label_00000b10
+call-script 5249
+mov (global-int f801a) 0
+jmp label_00000b10
+
+label_00000b10
+gre (local-int 6) (global-int f801a) 0
+jcc (local-int 6) label_000002a4 label_00000b48
+
+label_00000b48
+play-sound-effect 524a 3
+u0041D080 2
+u0041D050 3
+u0041AC30 1e
+u0041AC60 (global-int f807b)
+u0041ACB0 (global-int f807c)
+ne (local-int 6) (global-int 3f36) 2
+jcc (local-int 6) ffffffff label_00000c70
+set-font (global-string bbb)
+u00423100 1
+2FE (global-string bbc)
+u0041B510 a
+u0041B3D0 10
+u0041AD00 (global-int f8079)
+u0041B580 (global-int f807a) (global-int f807a)
+u00423126 2 0 2 2
+u00423127 1
+mov (global-int 3f36) 2
+
+label_00000c70
+mov (global-int f8075) 0
+eq (local-int 6) (global-int 0) 1
+eq (local-int 7) (global-int 0) 6
+or (local-int 8) (local-int 6) (local-int 7)
+and (local-int 9) (global-int f8df9) 10000
+eq (local-int a) (local-int 9) 0
+and (local-int b) (local-int 8) (local-int a)
+jcc (local-int b) ffffffff label_00000da4
+call-script 46
+u00415BF0
+call label_000010b0
+comment "loadms "
+comment (global-int f8078)
+comment " menu"
+dev_ukn
+308 1
+u004213E0 1
+
+label_00000da4
+exit
+exit
+
+label_00000dac
+eq (local-int 6) (global-int f8078) 0
+jcc (local-int 6) ffffffff label_00000de8
+u00414E80
+
+label_00000de8
+add (global-int f8078) (global-int f8078) 1
+ret
+exit
+
+label_00000e0c
+u00420270 19640 2
+u00420270 19834 19
+jcc (global-int 1397) ffffffff label_000010a8
+call label_00001110
+eq (local-int 6) (global-int 0) 6
+jcc (local-int 6) ffffffff label_00000fb8
+u0042B990 (global-float 9) 0
+u0042B990 (global-float a) 500
+u0042B990 (global-float b) 0
+u0042B990 (global-float c) 500
+u0042B990 (global-float d) 0
+u0042B990 (global-float e) 0
+u0042B990 (global-float f) 2d0
+u0042B990 (global-float 10) 2d0
+u0043AA20 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+u0043AA40 19640 0 (global-int f807d) 0
+jmp label_00001080
+
+label_00000fb8
+draw-texture 19640 11 0 0 43e 95 5d 22c
+u00420950 19640 0 (global-int f807d) (global-int a9db)
+add (local-int 6) 19640 1
+draw-texture (local-int 6) 11 0 97 444 9a 5a 229
+
+label_00001080
+jcc (global-int 1399) ffffffff label_000010a8
+call-script 46
+
+label_000010a8
+ret
+exit
+
+label_000010b0
+sub (global-int f8078) (global-int f8078) 1
+eq (local-int 6) (global-int f8078) 0
+jcc (local-int 6) ffffffff label_00001108
+u00414EC0
+
+label_00001108
+ret
+exit
+
+label_00001110
+mov (global-int f807d) (global-int a9df)
+eq (local-int 6) (global-int 0) 1
+jcc (local-int 6) ffffffff label_000011f8
+u00421160 (global-int f801f) 18a9c
+gre (local-int 6) (global-int f801f) 0
+jcc (local-int 6) ffffffff label_000011ec
+u004211A0 (global-int a9ba) (global-int f801f)
+jcc (global-int a9ba) ffffffff label_000011ec
+mov (global-int f807d) (global-int a9e0)
+
+label_000011ec
+jmp label_00001244
+
+label_000011f8
+eq (local-int 6) (global-int 0) 6
+jcc (local-int 6) ffffffff label_00001244
+mov (global-int f807d) (global-int a9e1)
+
+label_00001244
+ret

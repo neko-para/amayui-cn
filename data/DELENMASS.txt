@@ -1,0 +1,63 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 698f 1 1 7 1 1 }
+====
+
+u004160D0
+mov (local-int 0) (global-int f8c39)
+mov (local-int 1) (global-int f8c3a)
+mov (local-int 2) (global-int f8c3b)
+mov (local-int 3) (global-int f8c3c)
+mov (local-int 4) (global-int 510cfa)
+mov (local-int b) 1
+jmp label_000000e0
+
+label_000000c4
+add (local-int b) (local-int b) 1
+
+label_000000e0
+lt (local-int 6985) (local-int b) 32
+jcc (local-int 6985) ffffffff label_0000044c
+lookup-array (local-ptr 0) (global-int 6202a) (local-int b)
+and (local-int 6985) (local-ptr 0) 300001
+eq (local-int 6986) (local-int 6985) 1
+jcc (local-int 6986) ffffffff label_00000440
+lookup-array (local-ptr 0) (global-int 6f158) (local-int b)
+eq (local-int 6985) (local-ptr 0) (local-int 4)
+lookup-array (local-ptr 1) (global-int 6f18a) (local-int b)
+gre (local-int 6986) (local-ptr 1) (local-int 0)
+and (local-int 6987) (local-int 6985) (local-int 6986)
+lookup-array (local-ptr 2) (global-int 6f18a) (local-int b)
+lte (local-int 6988) (local-ptr 2) (local-int 2)
+and (local-int 6989) (local-int 6987) (local-int 6988)
+lookup-array (local-ptr 3) (global-int 6f1bc) (local-int b)
+gre (local-int 698a) (local-ptr 3) (local-int 1)
+and (local-int 698b) (local-int 6989) (local-int 698a)
+lookup-array (local-ptr 4) (global-int 6f1bc) (local-int b)
+lte (local-int 698c) (local-ptr 4) (local-int 3)
+and (local-int 698d) (local-int 698b) (local-int 698c)
+jcc (local-int 698d) ffffffff label_00000440
+comment "DelEn2 敵番号="
+lookup-array (local-ptr 5) (global-int 61ff8) (local-int b)
+lookup-array (local-ptr 0) (global-int 61ff8) (local-int b)
+comment (local-ptr 0)
+comment " 枠番号="
+comment (local-int b)
+dev_ukn
+eq (local-int 6985) (global-int b22a) 0
+jcc (local-int 6985) ffffffff label_000003fc
+mov (global-int 519af9) (local-int b)
+call-script 50e7
+jmp label_00000440
+
+label_000003fc
+lookup-array (local-ptr 5) (global-int 6202a) (local-int b)
+bit-set (local-ptr 5) 15
+bit-set (global-int 56940) 1
+
+label_00000440
+jmp label_000000c4
+
+label_0000044c
+u00416120
+exit

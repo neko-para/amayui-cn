@@ -1,0 +1,47 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 70 1 1 6 1 1 }
+====
+
+u004160D0
+mov (local-int 5) 1
+jmp label_0000007c
+
+label_00000060
+add (local-int 5) (local-int 5) 1
+
+label_0000007c
+lt (local-int 6c) (local-int 5) 32
+jcc (local-int 6c) ffffffff label_000002b4
+lookup-array (local-ptr 2) (global-int 6202a) (local-int 5)
+and (local-int 6c) (local-ptr 2) 300001
+eq (local-int 6d) (local-int 6c) 1
+jcc (local-int 6d) ffffffff label_000002a8
+lookup-array (local-ptr 2) (global-int 6f158) (local-int 5)
+ne (local-int 6c) (local-ptr 2) 1
+lookup-array (local-ptr 3) (global-int 61ff8) (local-int 5)
+eq (local-int 6d) (local-ptr 3) (global-int 519afa)
+and (local-int 6e) (local-int 6c) (local-int 6d)
+jcc (local-int 6e) ffffffff label_000002a8
+comment "DelEn 敵番号="
+comment (global-int 519afa)
+comment " 枠番号="
+comment (local-int 5)
+dev_ukn
+eq (local-int 6c) (global-int b22a) 0
+jcc (local-int 6c) ffffffff label_00000264
+mov (global-int 519af9) (local-int 5)
+call-script 50e7
+jmp label_000002a8
+
+label_00000264
+lookup-array (local-ptr 4) (global-int 6202a) (local-int 5)
+bit-set (local-ptr 4) 15
+bit-set (global-int 56940) 1
+
+label_000002a8
+jmp label_00000060
+
+label_000002b4
+u00416120
+exit

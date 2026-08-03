@@ -4,7 +4,7 @@
 
 | 工具 | 来源 | 版本 | 状态 | 用途 |
 |------|------|------|------|------|
-| `alf\unpack_alf.exe` | foxofice/alf（源自 asmodean exs4alf） | 8a70066 (2025-09-26) | 已编译可用 | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI` |
+| `alf\unpack_alf.exe` | foxofice/alf（源自 asmodean exs4alf） | 8a70066 (2025-09-26) | 已编译可用（已移除 getchar 阻塞） | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI` |
 | `alf\packdata`（源码） | 同上（战Z中文项目） | 同上 | 源码，需按天結い适配 | 修改文件重打包进 ALF 并重建索引 |
 | `eushully-decompiler\Decompiler\Decompiler.exe` | Kelebek1/Eushully-Decompiler | 21da1e8 (2024-08-30) | 已编译可用 | AGE 脚本反汇编(`-d`)/重汇编(`-a`)/往返校验(`-x`) |
 | `SExtractor\` | satan53x/SExtractor | 克隆时 HEAD | Python 3.9+ GUI 工具，依赖已按 requirements 安装 | 按正则从脚本提取/导入文本；可导出 UIF 的 JIS 替换配置与 `sjis_ext.bin`（tunnel 编码） |
@@ -44,4 +44,7 @@ cd tools/alf && cl /O2 /EHsc unpack_alf/unpack_alf.cpp lzss/lzss.cpp /Fe:unpack_
 ## 注意
 
 - `unpack_alf.exe` 解包时会在当前目录写入 `lzssdata.bin`/`lzssdata2.bin` 调试文件（可删除）。
-- 对 ALF 做重打包前，先在 install 中把目标 ALF 从硬链接改为真拷贝，避免写入波及游戏本体。
+- `unpack_alf.exe` 已移除源码中全部 `getchar()` 阻塞（原版为双击运行保留的暂停），可直接作为流水线工具使用。
+- install 已是全量独立真拷贝（无硬链接），对 ALF 重打包直接在 install 内的 ALF 副本上进行即可，不会波及游戏本体。
+- 若需改 AGF 内嵌文字图片：Eushully AGF 分 `ACGF` 头与无头两种格式，社区已有现成工具
+  （ai2.moe「Eushully AGF图片处理工具」，作者以珊海王/天結い测试），不必自行逆向格式。

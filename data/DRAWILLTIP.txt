@@ -1,0 +1,133 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 32 1 1 2 1 2 }
+====
+
+mov (local-int 4) 1
+jmp label_00000078
+
+label_0000005c
+add (local-int 4) (local-int 4) 1
+
+label_00000078
+lt (local-int 2b) (local-int 4) 1e
+jcc (local-int 2b) ffffffff label_00000150
+lookup-array-2d (local-ptr 0) (global-int 6f1ee) (global-int 519af9) 1e (local-int 4)
+jcc (local-ptr 0) ffffffff label_00000144
+lookup-array (local-ptr 0) (local-int 6) (local-int 24)
+mov (local-ptr 0) (local-int 4)
+add (local-int 24) (local-int 24) 1
+
+label_00000144
+jmp label_0000005c
+
+label_00000150
+jcc (local-int 24) ffffffff label_00000a38
+sub (local-int 26) (global-int 707ffa) a4
+mov (local-int 27) (global-int 707ffb)
+draw-texture 1fbd0 c0 4f6 250 148 c5 (local-int 26) (local-int 27)
+gr (local-int 2b) (local-int 24) e
+jcc (local-int 2b) ffffffff label_00000238
+mov (local-int 25) e
+jmp label_0000024c
+
+label_00000238
+mov (local-int 25) (local-int 24)
+
+label_0000024c
+mul (local-int 2b) 18 (local-int 25)
+create-texture 384 80 (local-int 2b) 0
+mov (local-int 0) 0
+jmp label_000002c8
+
+label_000002ac
+add (local-int 0) (local-int 0) 1
+
+label_000002c8
+lt (local-int 2b) (local-int 0) (local-int 25)
+jcc (local-int 2b) ffffffff label_00000a38
+lookup-array (local-ptr 0) (local-int 6) (local-int 0)
+mov (local-int 4) (local-ptr 0)
+lookup-array-2d (local-ptr 0) (global-int 6f1ee) (global-int 519af9) 1e (local-int 4)
+sub (local-int 5) (local-ptr 0) 1
+add (local-int 2b) (local-int 26) c
+div (local-int 2c) (local-int 0) 7
+mul (local-int 2d) (local-int 2c) aa
+add (local-int 28) (local-int 2b) (local-int 2d)
+add (local-int 2b) (local-int 27) 1b
+mod (local-int 2c) (local-int 0) 7
+mul (local-int 2d) (local-int 2c) 18
+add (local-int 29) (local-int 2b) (local-int 2d)
+add (local-int 2b) 1fbd0 14
+add (local-int 2c) (local-int 2b) (local-int 0)
+mul (local-int 2d) (local-int 0) 18
+add (local-int 2e) (local-int 28) f
+sub (local-int 2f) (local-int 29) 4
+draw-texture (local-int 2c) 384 0 (local-int 2d) 80 18 (local-int 2e) (local-int 2f)
+mul (local-int 2b) (local-int 0) 18
+add (local-int 2a) 3 (local-int 2b)
+u0041AC30 12
+u0041AC60 ffffff
+u0041ACB0 ffffff
+ne (local-int 2b) (global-int 3f36) d
+jcc (local-int 2b) ffffffff label_00000614
+set-font (global-string bbd)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) d
+
+label_00000614
+eq (local-int 2b) (local-int 0) d
+gr (local-int 2c) (local-int 24) d
+and (local-int 2d) (local-int 2b) (local-int 2c)
+jcc (local-int 2d) ffffffff label_000006b4
+draw-string 384 3 (local-int 2a) "（以下略）"
+jmp label_00000a2c
+
+label_000006b4
+lookup-array-2d (local-string-ptr 0) (global-string 1e494) (local-int 4) 5 (local-int 5)
+draw-string 384 3 (local-int 2a) (local-string-ptr 0)
+u0041AC30 12
+u0041AC60 ffffff
+u0041ACB0 ffffff
+ne (local-int 2b) (global-int 3f36) 14
+jcc (local-int 2b) ffffffff label_000007b8
+set-font (global-string bbe)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) 14
+
+label_000007b8
+lookup-array-2d (local-ptr 0) (global-int 6f7ca) (global-int 519af9) 1e (local-int 4)
+lt (local-int 2c) (local-ptr 0) 0
+jcc (local-int 2c) ffffffff label_0000084c
+draw-string 384 6f (local-int 2a) "∞"
+jmp label_000008d0
+
+label_0000084c
+lookup-array-2d (local-ptr 0) (global-int 6f7ca) (global-int 519af9) 1e (local-int 4)
+u00420A60 384 66 (local-int 2a) (local-ptr 0) 2 10000
+draw-string 384 78 (local-int 2a) "T"
+
+label_000008d0
+lookup-array (local-ptr 0) (global-int 6da66c) (local-int 4)
+jcc (local-ptr 0) ffffffff label_00000a2c
+lookup-array (local-ptr 0) (global-int 6da66c) (local-int 4)
+sub (local-int 3) (local-ptr 0) 1
+add (local-int 2b) 1fbd0 28
+add (local-int 2c) (local-int 2b) (local-int 0)
+mod (local-int 2d) (local-int 3) a
+mul (local-int 2e) (local-int 2d) 11
+div (local-int 2f) (local-int 3) a
+mul (local-int 30) (local-int 2f) 11
+draw-texture (local-int 2c) c1 (local-int 2e) (local-int 30) f f (local-int 28) (local-int 29)
+
+label_00000a2c
+jmp label_000002ac
+
+label_00000a38
+exit

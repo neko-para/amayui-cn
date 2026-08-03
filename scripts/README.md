@@ -3,9 +3,10 @@
 ## 结构
 
 ```
-E:\Games\Eushully\天结\
+E:\Games\Eushully\天結\
 ├── raw\       软连接(junction) -> 游戏本体目录(只读参照)
-├── install\   可运行测试树（与本体完全独立的全量真拷贝）
+├── install\   可运行测试树（与本体完全独立的全量真拷贝，含 DATA1-8 解包目录）
+├── data\      文案语料（341 个反汇编 txt，松散版基线，由人工编辑）
 ├── scripts\   本脚本目录
 ├── install-manifest.json   install 文件 MD5
 └── raw-manifest.json       raw（游戏本体）文件 MD5

@@ -1,0 +1,106 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 12 1 1 4 1 1 }
+====
+
+copy-to-global (global-int 510051) 3e8
+copy-to-global (local-int 5) a
+mov (local-int 1) 1
+jmp label_000000a0
+
+label_00000084
+add (local-int 1) (local-int 1) 1
+
+label_000000a0
+lte (local-int f) (local-int 1) (global-int 58645)
+jcc (local-int f) ffffffff label_00000174
+lookup-array (local-ptr 0) (global-int 5945a) (local-int 1)
+gr (local-int f) (local-ptr 0) 0
+jcc (local-int f) ffffffff label_00000168
+lookup-array (local-ptr 1) (global-int 5945a) (local-int 1)
+mov (local-int 4) (local-ptr 1)
+call label_0000030c
+
+label_00000168
+jmp label_00000084
+
+label_00000174
+mov (local-int 3) 1
+jmp label_000001b0
+
+label_00000194
+add (local-int 3) (local-int 3) 1
+
+label_000001b0
+lte (local-int f) (local-int 3) (global-int 5cd86)
+jcc (local-int f) ffffffff label_00000308
+mov (local-int 2) 1
+jmp label_00000224
+
+label_00000208
+add (local-int 2) (local-int 2) 1
+
+label_00000224
+lte (local-int f) (local-int 2) (global-int 5cd85)
+jcc (local-int f) ffffffff label_000002fc
+lookup-array-2d (local-ptr 1) (global-int eabe2) (local-int 3) 20 (local-int 2)
+jcc (local-ptr 1) ffffffff label_000002f0
+lookup-array-2d (local-ptr 1) (global-int eabe2) (local-int 3) 20 (local-int 2)
+mov (local-int 4) (local-ptr 1)
+call label_0000030c
+
+label_000002f0
+jmp label_00000208
+
+label_000002fc
+jmp label_00000194
+
+label_00000308
+exit
+
+label_0000030c
+mov (local-int 0) 0
+jmp label_00000348
+
+label_0000032c
+add (local-int 0) (local-int 0) 1
+
+label_00000348
+lt (local-int f) (local-int 0) a
+jcc (local-int f) ffffffff label_000005b0
+lookup-array (local-ptr 0) (local-int 5) (local-int 0)
+eq (local-int f) (local-ptr 0) 0
+jcc (local-int f) ffffffff label_000004e8
+lookup-array (local-ptr 1) (global-int 510051) (local-int 4)
+add (local-ptr 1) 98 (local-int 0)
+lookup-array (local-ptr 1) (global-int 511c39) (local-int 4)
+lookup-array (local-ptr 0) (global-int 510051) (local-int 4)
+sub (local-int 10) 0 1
+set-texture (local-ptr 1) (local-ptr 0) (local-int 10)
+lookup-array (local-ptr 1) (local-int 5) (local-int 0)
+lookup-array (local-ptr 0) (global-int 511c39) (local-int 4)
+mov (local-ptr 1) (local-ptr 0)
+mov (local-int 0) a
+jmp label_000005a4
+
+label_000004e8
+lookup-array (local-ptr 0) (local-int 5) (local-int 0)
+lookup-array (local-ptr 2) (global-int 511c39) (local-int 4)
+eq (local-int f) (local-ptr 0) (local-ptr 2)
+jcc (local-int f) ffffffff label_000005a4
+lookup-array (local-ptr 1) (global-int 510051) (local-int 4)
+add (local-ptr 1) 98 (local-int 0)
+mov (local-int 0) a
+
+label_000005a4
+jmp label_0000032c
+
+label_000005b0
+lookup-array (local-ptr 0) (global-int 510051) (local-int 4)
+eq (local-int f) (local-ptr 0) 0
+jcc (local-int f) ffffffff label_00000614
+comment "テーマパーク上限オーバー"
+dev_ukn
+
+label_00000614
+ret

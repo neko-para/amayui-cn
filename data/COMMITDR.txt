@@ -1,0 +1,21 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 1 1 2 1 1 2 }
+====
+
+u004160D0
+call-script 50f3
+jcc (global-int 5465d4) ffffffff label_00000124
+concat (local-string 0) "フィアの女神ランクが" (global-int a40e1)
+concat (local-string 0) (local-string 0) "になりました"
+lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
+set-string (local-string-ptr 0) (local-string 0)
+add (global-int f8dfc) (global-int f8dfc) 1
+play-sound-effect 50f4 1
+u0041D050 1
+call-script 50e3
+call-script 50ea
+
+label_00000124
+u00416120
+exit

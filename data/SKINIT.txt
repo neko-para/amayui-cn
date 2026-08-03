@@ -1,0 +1,5435 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 1 1 1 1 1 1 }
+====
+
+set-string (global-string 1d4f5) "防御"
+mov (global-int 6c65a3) a
+mov (global-int 6c715b) 2
+mov (global-int 6c80fb) 3
+mov (global-int 6d2ce8) a
+mov (global-int 6d2cea) 3
+mov (global-int 6d2cec) 3
+set-string (global-string 1dcc6) "【行動：防御】"
+set-string (global-string 1dcc7) "　攻撃しない防御態勢 回避+10 物防と魔防+3"
+set-string (global-string 1d8dd) "回避+10 物防&魔防+3　攻撃不可"
+set-string (global-string 1d4f6) "鉄壁"
+mov (global-int 6c65a4) 14
+mov (global-int 6c715c) 2
+mov (global-int 6c792c) 1
+mov (global-int 6c80fc) 3
+mov (global-int 6d2cf5) a
+mov (global-int 6d2cf7) 6
+mov (global-int 6d2cf9) 6
+set-string (global-string 1dcc8) "【行動：鉄壁】"
+set-string (global-string 1dcc9) "　攻撃しない防御態勢 回避+10 物防と魔防+6"
+set-string (global-string 1d8de) "回避+10 物防&魔防+6　攻撃不可"
+set-string (global-string 1d4f7) "不動"
+mov (global-int 6c65a5) 1e
+mov (global-int 6c715d) 2
+set-string (global-string 1dcca) "【行動：不動】"
+set-string (global-string 1dccb) "　行動をなにもしない"
+set-string (global-string 1d8df) "行動をしない"
+set-string (global-string 1d4ff) "探索"
+mov (global-int 6c65ad) 78
+mov (global-int 6c7165) 1
+mov (global-int 6c7935) 1
+mov (global-int 6c8105) 2
+set-string (global-string 1dcda) "【移動：探索】"
+set-string (global-string 1dcdb) "　隠し通路や隠し部屋を見つけることが可能"
+set-string (global-string 1d8e7) "隠し通路や部屋を見つけることが可能"
+set-string (global-string 1d500) "危険察知"
+mov (global-int 6c65ae) 82
+mov (global-int 6c7166) 1
+mov (global-int 6c7936) 1
+mov (global-int 6c8106) 3
+set-string (global-string 1dcdc) "【移動：危険察知】"
+set-string (global-string 1dcdd) "　移動先に潜む危険を察知することが可能"
+set-string (global-string 1d8e8) "移動先に潜む危険を察知"
+set-string (global-string 1d504) "飛行"
+mov (global-int 6c65b2) 6e
+mov (global-int 6c716a) 1
+mov (global-int 6c793a) 1
+mov (global-int 6c810a) 3
+set-string (global-string 1dce4) "【移動：飛行】"
+set-string (global-string 1dce5) "　地上の地形マスの影響を受けずに移動が可能"
+set-string (global-string 1d8ec) "地上の地形マスの影響を受けずに移動"
+set-string (global-string 1d505) "転移"
+mov (global-int 6c65b3) 78
+mov (global-int 6c716b) 1
+mov (global-int 6c793b) 1
+mov (global-int 6c810b) f
+set-string (global-string 1dce6) "【移動：転移】"
+set-string (global-string 1dce7) "　隣接する薄い壁をすり抜けての移動が可能"
+set-string (global-string 1d8ed) "隣接する薄い壁をすり抜けて移動"
+set-string (global-string 1d506) "飛行転移"
+mov (global-int 6c65b4) 5a
+mov (global-int 6c716c) 1
+mov (global-int 6c793c) 1
+mov (global-int 6c810c) 12
+mov (global-int 6c853c) 10
+mov (global-int 6c853d) 11
+set-string (global-string 1dce8) "【移動：飛行転移】"
+set-string (global-string 1dce9) "　『飛行』能力と薄い壁をすり抜けする『転移』が可能"
+set-string (global-string 1d8ee) "飛行＋薄い壁をすり抜けて移動"
+set-string (global-string 1d507) "飛行潜水"
+mov (global-int 6c65b5) 64
+mov (global-int 6c716d) 1
+mov (global-int 6c793d) 1
+mov (global-int 6c810d) 8
+mov (global-int 6c8541) 10
+mov (global-int 6c8542) 16
+set-string (global-string 1dcea) "【移動：飛行潜水】"
+set-string (global-string 1dceb) "　『飛行』能力と『水上』『水中』マスが移動可能"
+set-string (global-string 1d8ef) "飛行＋水上や水中マスを移動"
+set-string (global-string 1d508) "飛行耐電"
+mov (global-int 6c65b6) 6e
+mov (global-int 6c716e) 1
+mov (global-int 6c793e) 1
+mov (global-int 6c810e) 8
+mov (global-int 6c8546) 10
+mov (global-int 6c8547) 18
+set-string (global-string 1dcec) "【移動：飛行耐電】"
+set-string (global-string 1dced) "　『飛行』能力と『電撃流』マスが移動可能"
+set-string (global-string 1d8f0) "飛行＋電撃流マスの移動"
+set-string (global-string 1d509) "土流"
+mov (global-int 6c65b7) 1e
+mov (global-int 6c716f) 1
+mov (global-int 6c793f) 1
+mov (global-int 6c810f) 3
+set-string (global-string 1dcee) "【移動：土流】"
+set-string (global-string 1dcef) "　迷宮内の『泥沼』マスが移動可能"
+set-string (global-string 1d8f1) "泥沼マスの移動"
+set-string (global-string 1d50a) "潜水"
+mov (global-int 6c65b8) 28
+mov (global-int 6c7170) 1
+mov (global-int 6c7940) 1
+mov (global-int 6c8110) 3
+set-string (global-string 1dcf0) "【移動：潜水】"
+set-string (global-string 1dcf1) "　迷宮内の『水上』『水中』マスが移動可能"
+set-string (global-string 1d8f2) "水上や水中マスの移動"
+set-string (global-string 1d50b) "耐熱"
+mov (global-int 6c65b9) 32
+mov (global-int 6c7171) 1
+mov (global-int 6c7941) 1
+mov (global-int 6c8111) 3
+set-string (global-string 1dcf2) "【移動：耐熱】"
+set-string (global-string 1dcf3) "　迷宮内の『溶岩』マスが移動可能"
+set-string (global-string 1d8f3) "溶岩マスの移動"
+set-string (global-string 1d50c) "耐電"
+mov (global-int 6c65ba) 3c
+mov (global-int 6c7172) 1
+mov (global-int 6c7942) 1
+mov (global-int 6c8112) 3
+set-string (global-string 1dcf4) "【移動：耐電】"
+set-string (global-string 1dcf5) "　迷宮内の『電撃流』マスが移動可能"
+set-string (global-string 1d8f4) "電撃流マスの移動"
+set-string (global-string 1d50d) "四属性耐性"
+mov (global-int 6c65bb) 46
+mov (global-int 6c7173) 1
+mov (global-int 6c7943) 1
+mov (global-int 6c8113) f
+mov (global-int 6c855f) 15
+mov (global-int 6c8560) 16
+mov (global-int 6c8561) 17
+mov (global-int 6c8562) 18
+set-string (global-string 1dcf6) "【移動：四属性耐性】"
+set-string (global-string 1dcf7) "　『土流』『潜水』『耐熱』『耐電』の効果を持つ"
+set-string (global-string 1d8f5) "土流＋潜水＋耐熱＋耐電マスの移動"
+set-string (global-string 1d50e) "薄氷"
+mov (global-int 6c65bc) 50
+mov (global-int 6c7174) 1
+mov (global-int 6c7944) 1
+mov (global-int 6c8114) 3
+set-string (global-string 1dcf8) "【移動：薄氷】"
+set-string (global-string 1dcf9) "　迷宮内の『水上』マスを移動可能　『水中』は不可"
+set-string (global-string 1d8f6) "水上マスの移動のみ可　水中マス不可"
+set-string (global-string 1d51c) "進行不可"
+mov (global-int 6c65ca) 270f
+mov (global-int 6c7182) 1
+set-string (global-string 1d51d) "吸収された力"
+mov (global-int 6c65cb) 19a
+mov (global-int 6c7183) d
+mov (global-int 6c7d3b) 1
+mov (global-int 6c7953) 1
+sub (global-int 6d2efb) 0 a
+set-string (global-string 1dd16) "【常時：吸収された力】"
+set-string (global-string 1dd17) "　フィアとの契約により最大ＦＳ（疲労強度）１０低下"
+set-string (global-string 1d905) "フィアとの契約で最大FSが10低下"
+set-string (global-string 1d51e) "未修練"
+mov (global-int 6c65cc) 1a4
+mov (global-int 6c7184) d
+mov (global-int 6c7d3c) 1
+mov (global-int 6c7954) 1
+sub (global-int 6d2f00) 0 2
+sub (global-int 6d2f02) 0 1
+set-string (global-string 1dd18) "【常時：未修練】"
+set-string (global-string 1dd19) "　魔術に慣れていない　魔法攻撃－２　敏捷－１"
+set-string (global-string 1d906) "魔術に不慣れ　魔攻-2　敏捷-1"
+set-string (global-string 1d51f) "気弱な姫"
+mov (global-int 6c65cd) 1ae
+mov (global-int 6c7185) d
+mov (global-int 6c7d3d) 1
+mov (global-int 6c7955) 1
+sub (global-int 6d2f15) 0 5
+set-string (global-string 1dd1a) "【常時：気弱な姫】"
+set-string (global-string 1dd1b) "　人見知りしてしまう　最大ＦＳ（疲労強度）５低下"
+set-string (global-string 1d907) "人見知り　最大FSが5低下"
+set-string (global-string 1d520) "統治の心得"
+mov (global-int 6c65ce) 1b8
+mov (global-int 6c7186) d
+mov (global-int 6c7956) 1
+mov (global-int 6d2f18) 2
+mov (global-int 6d2f19) 2
+mov (global-int 6d2f1a) 2
+mov (global-int 6d2f1b) 2
+mov (global-int 6d2f20) 5
+mov (global-int 6d2f21) 5
+mov (global-int 6d2f22) 5
+set-string (global-string 1dd1c) "【常時：統治の心得】"
+set-string (global-string 1dd1d) "戦闘能力やＨＰ（耐久力）などが上昇する"
+set-string (global-string 1d908) "戦闘能力やHP等が上昇"
+set-string (global-string 1d521) "飛行無双"
+mov (global-int 6c65cf) 398
+mov (global-int 6c7187) 3
+mov (global-int 6c7957) 1
+mov (global-int 6c8127) a
+mov (global-int 6c85c3) 10
+mov (global-int 6c85c4) 4d
+set-string (global-string 1dd1e) "【特殊：飛行無双】"
+set-string (global-string 1dd1f) "　『飛行』能力と敵の迎撃スキルの付いた攻撃を無効化"
+set-string (global-string 1d909) "飛行＋すべての迎撃系スキルを無効"
+set-string (global-string 1d522) "鍛梁師"
+mov (global-int 6c65d0) 276
+mov (global-int 6c7188) 3
+mov (global-int 6c7958) 1
+mov (global-int 6c8128) 6
+mov (global-int 6c85c8) b
+mov (global-int 6c85c9) 33
+mov (global-int 6c85ca) 34
+set-string (global-string 1dd20) "【特殊：鍛梁師】"
+set-string (global-string 1dd21) "　『祭祀マスの修復』『探索』『開錠』『発掘』が可能"
+set-string (global-string 1d90a) "祭祀マス修復＋探索＋開錠＋発掘"
+set-string (global-string 1d523) "操霊師"
+mov (global-int 6c65d1) 280
+mov (global-int 6c7189) 3
+mov (global-int 6c7959) 1
+mov (global-int 6c8129) e
+mov (global-int 6c85cd) 11
+mov (global-int 6c85ce) 6d
+mov (global-int 6c85cf) c6
+set-string (global-string 1dd22) "【特殊：操霊師】"
+set-string (global-string 1dd23) "　薄壁のすり抜けと『死霊破壊』『霊魂結界Ⅲ』が可能"
+set-string (global-string 1d90b) "薄壁すり抜け＋死霊破壊＋霊魂結界Ⅲ"
+set-string (global-string 1d524) "精霊師"
+mov (global-int 6c65d2) 28a
+mov (global-int 6c718a) 3
+mov (global-int 6c795a) 1
+mov (global-int 6c812a) 15
+mov (global-int 6c85d2) 11
+mov (global-int 6c85d3) 10a
+set-string (global-string 1dd24) "【特殊：精霊師】"
+set-string (global-string 1dd25) "　『転移』と『反撃封じの呪い』が可能"
+set-string (global-string 1d90c) "転移＋反撃封じの呪い"
+set-string (global-string 1d525) "忍びの心得"
+mov (global-int 6c65d3) 2a8
+mov (global-int 6c718b) 3
+mov (global-int 6c795b) 1
+mov (global-int 6c812b) 6
+mov (global-int 6c85d7) b
+mov (global-int 6c85d8) c
+mov (global-int 6c85d9) 34
+set-string (global-string 1dd26) "【特殊：忍びの心得】"
+set-string (global-string 1dd27) "　『探索』『開錠』『危険察知』が可能"
+set-string (global-string 1d90d) "探索＋開錠＋危険察知"
+set-string (global-string 1d526) "努力家"
+mov (global-int 6c65d4) 294
+mov (global-int 6c718c) 3
+mov (global-int 6c795c) 1
+mov (global-int 6c812c) 4
+set-string (global-string 1dd28) "【特殊：努力家】"
+set-string (global-string 1dd29) "　すべての獲得経験値が１．５倍になる"
+set-string (global-string 1d90e) "獲得経験値1.5倍"
+set-string (global-string 1d527) "発掘"
+mov (global-int 6c65d5) 258
+mov (global-int 6c718d) 3
+mov (global-int 6c795d) 1
+mov (global-int 6c812d) 3
+set-string (global-string 1dd2a) "【特殊：発掘】"
+set-string (global-string 1dd2b) "　迷宮内の隠れた発掘マスを発見　素材収拾が可能"
+set-string (global-string 1d90f) "隠れた発掘マスを発見"
+set-string (global-string 1d528) "開錠"
+mov (global-int 6c65d6) 262
+mov (global-int 6c718e) 3
+mov (global-int 6c795e) 1
+mov (global-int 6c812e) 3
+set-string (global-string 1dd2c) "【特殊：開錠】"
+set-string (global-string 1dd2d) "　宝箱や扉の開け閉めが可能"
+set-string (global-string 1d910) "宝箱や扉の開け閉めが可能"
+set-string (global-string 1d529) "盗賊"
+mov (global-int 6c65d7) 26c
+mov (global-int 6c718f) 3
+mov (global-int 6c795f) 1
+mov (global-int 6c812f) 5
+mov (global-int 6c85eb) b
+mov (global-int 6c85ec) 34
+set-string (global-string 1dd2e) "【特殊：盗賊】"
+set-string (global-string 1dd2f) "　『探索』『開錠』が可能"
+set-string (global-string 1d911) "探索＋開錠"
+set-string (global-string 1d52a) "結界術"
+mov (global-int 6c65d8) 29e
+mov (global-int 6c7190) 3
+mov (global-int 6c7960) 1
+mov (global-int 6c8130) 1e
+mov (global-int 6c85f0) a2
+mov (global-int 6c85f1) bc
+set-string (global-string 1dd30) "【特殊：結界術】"
+set-string (global-string 1dd31) "　敵魔法攻撃３０％低下、確率１６％でダメージを跳ね返す"
+set-string (global-string 1d912) "反射Ⅱ＋魔術結界Ⅲ"
+set-string (global-string 1d52c) "再行動"
+mov (global-int 6c69c2) 38
+mov (global-int 6c65da) 2b2
+mov (global-int 6c7192) 3
+mov (global-int 6c7962) 1
+mov (global-int 6c8132) f
+mov (global-int 6d7362) 14
+set-string (global-string 1dd34) "【特殊：再行動】"
+set-string (global-string 1dd35) "　行動終了後、２０％の確率で再行動が可能"
+set-string (global-string 1d914) "行動終了後に20％の確率で再行動"
+set-string (global-string 1d52d) "二回行動"
+mov (global-int 6c69c3) 38
+mov (global-int 6c65db) 2bc
+mov (global-int 6c7193) 3
+mov (global-int 6c7963) 1
+mov (global-int 6c8133) 1e
+mov (global-int 6d7363) 64
+set-string (global-string 1dd36) "【特殊：二回行動】"
+set-string (global-string 1dd37) "　行動終了後、必ず再行動が可能"
+set-string (global-string 1d915) "行動終了後も必ず再行動"
+set-string (global-string 1d531) "ＨＰ再生"
+mov (global-int 6c65df) 2c6
+mov (global-int 6c7197) 3
+mov (global-int 6c7967) 1
+mov (global-int 6c8137) 6
+set-string (global-string 1dd3e) "【特殊：ＨＰ再生】"
+set-string (global-string 1dd3f) "　ターン経過でＨＰ（耐久力）が１０％ずつ回復"
+set-string (global-string 1d919) "ターン毎にHP10％回復"
+set-string (global-string 1d532) "ＳＰ再生"
+mov (global-int 6c65e0) 2d0
+mov (global-int 6c7198) 3
+mov (global-int 6c7968) 1
+mov (global-int 6c8138) 6
+set-string (global-string 1dd40) "【特殊：ＳＰ再生】"
+set-string (global-string 1dd41) "　ターン経過でＳＰ（技力）が１０％ずつ回復"
+set-string (global-string 1d91a) "ターン毎にSP10％回復"
+set-string (global-string 1d533) "ＦＳ再生"
+mov (global-int 6c65e1) 2da
+mov (global-int 6c7199) 3
+mov (global-int 6c7969) 1
+mov (global-int 6c8139) 6
+set-string (global-string 1dd42) "【特殊：ＦＳ再生】"
+set-string (global-string 1dd43) "　ターン経過でＦＳ（疲労強度）が１０％ずつ回復"
+set-string (global-string 1d91b) "ターン毎にFS10％回復"
+set-string (global-string 1d534) "超再生"
+mov (global-int 6c65e2) 2df
+mov (global-int 6c719a) 3
+mov (global-int 6c796a) 1
+mov (global-int 6c813a) 12
+mov (global-int 6c8622) 3d
+mov (global-int 6c8623) 3e
+mov (global-int 6c8624) 3f
+set-string (global-string 1dd44) "【特殊：超再生】"
+set-string (global-string 1dd45) "　ターン経過でＨＰ、ＳＰ、ＦＳが１０％ずつ回復"
+set-string (global-string 1d91c) "ターン毎にHP、SP、FS10％回復"
+set-string (global-string 1d536) "地の守護者"
+mov (global-int 6c65e4) 2e4
+mov (global-int 6c719c) 3
+mov (global-int 6c796c) 1
+mov (global-int 6c813c) 2
+mov (global-int 6d3034) a
+mov (global-int 6d3035) a
+mov (global-int 6d5fe4) 5
+set-string (global-string 1dd48) "【特殊：地の守護者】"
+set-string (global-string 1dd49) "　『地脈』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d91e) "地脈マスで命中と回避+10 痛打+5"
+set-string (global-string 1d537) "水の守護者"
+mov (global-int 6c65e5) 2ee
+mov (global-int 6c719d) 3
+mov (global-int 6c796d) 1
+mov (global-int 6c813d) 2
+mov (global-int 6d3041) a
+mov (global-int 6d3042) a
+mov (global-int 6d5fe5) 5
+set-string (global-string 1dd4a) "【特殊：水の守護者】"
+set-string (global-string 1dd4b) "　『冷却』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d91f) "冷却マスで命中と回避+10 痛打+5"
+set-string (global-string 1d538) "火の守護者"
+mov (global-int 6c65e6) 2f8
+mov (global-int 6c719e) 3
+mov (global-int 6c796e) 1
+mov (global-int 6c813e) 2
+mov (global-int 6d304e) a
+mov (global-int 6d304f) a
+mov (global-int 6d5fe6) 5
+set-string (global-string 1dd4c) "【特殊：火の守護者】"
+set-string (global-string 1dd4d) "　『火炎』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d920) "火炎マスで命中と回避+10 痛打+5"
+set-string (global-string 1d539) "風の守護者"
+mov (global-int 6c65e7) 302
+mov (global-int 6c719f) 3
+mov (global-int 6c796f) 1
+mov (global-int 6c813f) 2
+mov (global-int 6d305b) a
+mov (global-int 6d305c) a
+mov (global-int 6d5fe7) 5
+set-string (global-string 1dd4e) "【特殊：風の守護者】"
+set-string (global-string 1dd4f) "　『電撃』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d921) "電撃マスで命中と回避+10 痛打+5"
+set-string (global-string 1d53a) "光の守護者"
+mov (global-int 6c65e8) 30c
+mov (global-int 6c71a0) 3
+mov (global-int 6c7970) 1
+mov (global-int 6c8140) 2
+mov (global-int 6d3068) a
+mov (global-int 6d3069) a
+mov (global-int 6d5fe8) 5
+set-string (global-string 1dd50) "【特殊：光の守護者】"
+set-string (global-string 1dd51) "　『神聖』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d922) "神聖マスで命中と回避+10 痛打+5"
+set-string (global-string 1d53b) "闇の守護者"
+mov (global-int 6c65e9) 316
+mov (global-int 6c71a1) 3
+mov (global-int 6c7971) 1
+mov (global-int 6c8141) 2
+mov (global-int 6d3075) a
+mov (global-int 6d3076) a
+mov (global-int 6d5fe9) 5
+set-string (global-string 1dd52) "【特殊：闇の守護者】"
+set-string (global-string 1dd53) "　『暗黒』属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d923) "暗黒マスで命中と回避+10 痛打+5"
+set-string (global-string 1d53c) "魔神特性"
+mov (global-int 6c65ea) 320
+mov (global-int 6c71a2) 3
+mov (global-int 6c7972) 1
+mov (global-int 6c8142) 8
+mov (global-int 6d3082) a
+mov (global-int 6d3083) a
+mov (global-int 6d5fea) 5
+set-string (global-string 1dd54) "【特殊：魔神特性】"
+set-string (global-string 1dd55) "　すべての属性マスで命中と回避＋１０、痛打＋５"
+set-string (global-string 1d924) "全属性マスで命中と回避+10 痛打+5"
+set-string (global-string 1d540) "毒無効"
+mov (global-int 6c65ee) 32a
+mov (global-int 6c71a6) 3
+mov (global-int 6c7976) 1
+mov (global-int 6c8146) 3
+set-string (global-string 1dd5c) "【特殊：毒無効】"
+set-string (global-string 1dd5d) "　敵や地形の状態異常『毒』を無効化（装備品を除く）"
+set-string (global-string 1d928) "敵や地形の毒を無効化（装備除く）"
+set-string (global-string 1d541) "迎撃無効"
+mov (global-int 6c65ef) 334
+mov (global-int 6c71a7) 3
+mov (global-int 6c7977) 1
+mov (global-int 6c8147) 6
+set-string (global-string 1dd5e) "【特殊：迎撃無効】"
+set-string (global-string 1dd5f) "　対空迎撃、対潜迎撃を無効化"
+set-string (global-string 1d929) "対空迎撃、対潜迎撃を無効化"
+set-string (global-string 1d542) "間接無効"
+mov (global-int 6c65f0) 33e
+mov (global-int 6c71a8) 3
+mov (global-int 6c7978) 1
+mov (global-int 6c8148) 1e
+set-string (global-string 1dd60) "【特殊：間接無効】"
+set-string (global-string 1dd61) "　直接攻撃以外はすべて無効化"
+set-string (global-string 1d92a) "直接攻撃以外はすべて無効化"
+set-string (global-string 1d543) "即死無効"
+mov (global-int 6c65f1) 348
+mov (global-int 6c71a9) 3
+mov (global-int 6c7979) 1
+mov (global-int 6c8149) 6
+set-string (global-string 1dd62) "【特殊：即死無効】"
+set-string (global-string 1dd63) "　状態異常『即死』を無効化"
+set-string (global-string 1d92b) "即死を無効化"
+set-string (global-string 1d544) "吸収無効"
+mov (global-int 6c65f2) 352
+mov (global-int 6c71aa) 3
+mov (global-int 6c797a) 1
+mov (global-int 6c814a) 6
+set-string (global-string 1dd64) "【特殊：吸収無効】"
+set-string (global-string 1dd65) "　状態異常及びスキル『吸収』を無効化（装備品を除く）"
+set-string (global-string 1d92c) "吸収を無効化（装備除く）"
+set-string (global-string 1d545) "魅了無効"
+mov (global-int 6c65f3) 35c
+mov (global-int 6c71ab) 3
+mov (global-int 6c797b) 1
+mov (global-int 6c814b) 3
+set-string (global-string 1dd66) "【特殊：魅了無効】"
+set-string (global-string 1dd67) "　状態異常『魅了』を無効化（装備品を除く）"
+set-string (global-string 1d92d) "魅了を無効化（装備除く）"
+set-string (global-string 1d546) "混乱無効"
+mov (global-int 6c65f4) 366
+mov (global-int 6c71ac) 3
+mov (global-int 6c797c) 1
+mov (global-int 6c814c) 3
+set-string (global-string 1dd68) "【特殊：混乱無効】"
+set-string (global-string 1dd69) "　状態異常『混乱』を無効化（装備品を除く）"
+set-string (global-string 1d92e) "混乱を無効化（装備除く）"
+set-string (global-string 1d547) "麻痺無効"
+mov (global-int 6c65f5) 370
+mov (global-int 6c71ad) 3
+mov (global-int 6c797d) 1
+mov (global-int 6c814d) 3
+set-string (global-string 1dd6a) "【特殊：麻痺無効】"
+set-string (global-string 1dd6b) "　状態異常『麻痺』を無効化（装備品を除く）"
+set-string (global-string 1d92f) "麻痺を無効化（装備除く）"
+set-string (global-string 1d548) "強酸無効"
+mov (global-int 6c65f6) 37a
+mov (global-int 6c71ae) 3
+mov (global-int 6c797e) 1
+mov (global-int 6c814e) 3
+set-string (global-string 1dd6c) "【特殊：強酸無効】"
+set-string (global-string 1dd6d) "　状態異常『強酸』を無効化（装備品を除く）"
+set-string (global-string 1d930) "強酸を無効化（装備除く）"
+set-string (global-string 1d549) "恐怖無効"
+mov (global-int 6c65f7) 384
+mov (global-int 6c71af) 3
+mov (global-int 6c797f) 1
+mov (global-int 6c814f) 3
+set-string (global-string 1dd6e) "【特殊：恐怖無効】"
+set-string (global-string 1dd6f) "　状態異常『恐怖』を無効化（装備品を除く）"
+set-string (global-string 1d931) "恐怖を無効化（装備除く）"
+set-string (global-string 1d54a) "発動スキル無効"
+mov (global-int 6c65f8) 38e
+mov (global-int 6c71b0) 3
+mov (global-int 6c7980) 1
+set-string (global-string 1dd70) "【特殊：発動スキル無効】"
+set-string (global-string 1dd71) "　敵の確率で発動するスキルを無効化"
+set-string (global-string 1d932) "確率で発動するスキルを無効化"
+set-string (global-string 1d54f) "戦闘指揮"
+mov (global-int 6c69e5) 5b
+mov (global-int 6c65fd) 3a2
+mov (global-int 6c71b5) 3
+mov (global-int 6c7985) 1
+mov (global-int 6c8155) 5
+mov (global-int 6d3179) a
+mov (global-int 6d317a) a
+mov (global-int 6d317b) 1
+mov (global-int 6d317c) 1
+mov (global-int 6d317d) 1
+mov (global-int 6d317e) 1
+set-string (global-string 1dd7a) "【特殊：戦闘指揮】"
+set-string (global-string 1dd7b) "　周囲マスの味方に命中と回避＋１０、攻撃と防御＋１"
+set-string (global-string 1d937) "周囲の味方に命中回避+10 攻撃防御+1"
+set-string (global-string 1d550) "封印"
+mov (global-int 6c65fe) 3ac
+mov (global-int 6c71b6) 3
+mov (global-int 6c7986) 1
+mov (global-int 6c8156) 1e
+set-string (global-string 1dd7c) "【特殊：封印】"
+set-string (global-string 1dd7d) "　敵の必殺や魔法を全て封じて使えなくさせる"
+set-string (global-string 1d938) "敵の必殺や魔法を封じる"
+set-string (global-string 1d551) "魅惑の神気"
+mov (global-int 6c65ff) 3b6
+mov (global-int 6c71b7) 3
+mov (global-int 6c7987) 1
+mov (global-int 6c8157) a
+set-string (global-string 1dd7e) "【特殊：魅惑の神気】"
+set-string (global-string 1dd7f) "　ターン開始時に隣接状態の全ユニットを魅了状態にする"
+set-string (global-string 1d939) "隣接ユニット魅了"
+set-string (global-string 1d552) "征炎"
+mov (global-int 6c6600) 3c0
+mov (global-int 6c71b8) 3
+mov (global-int 6c7988) 1
+mov (global-int 6c8158) 5
+set-string (global-string 1dd80) "【特殊：征炎】"
+set-string (global-string 1dd81) "　敵撃破時、部屋に敵がいなければ自軍部屋ZOCに染める"
+set-string (global-string 1d93a) "敵撃破で自軍部屋ZOC"
+set-string (global-string 1d554) "分裂"
+mov (global-int 6c6602) 3d4
+mov (global-int 6c71ba) 3
+mov (global-int 6c798a) 1
+mov (global-int 6c815a) 2
+mov (global-int 6d738a) a
+set-string (global-string 1dd84) "【特殊：分裂】"
+set-string (global-string 1dd85) "　行動開始時１０％の確率で２体に分裂 現ＨＰが半分になる"
+set-string (global-string 1d93c) "行動開始時10%の確率でユニット分裂"
+set-string (global-string 1d559) "人類殺し"
+mov (global-int 6c6607) 460
+mov (global-int 6c71bf) 4
+mov (global-int 6c798f) 1
+mov (global-int 6c815f) a
+mov (global-int 6d31fd) a
+mov (global-int 6d31ff) a
+set-string (global-string 1dd8e) "【戦闘：人類殺し】"
+set-string (global-string 1dd8f) "　『人間』『亜人間』に対して攻撃＋１０"
+set-string (global-string 1d941) "人間、亜人間に対して攻撃+10"
+set-string (global-string 1d55a) "魔物殺し"
+mov (global-int 6c6608) 46a
+mov (global-int 6c71c0) 4
+mov (global-int 6c7990) 1
+mov (global-int 6c8160) a
+mov (global-int 6d320a) a
+mov (global-int 6d320c) a
+set-string (global-string 1dd90) "【戦闘：魔物殺し】"
+set-string (global-string 1dd91) "　『一般』『鬼』『巨人』『魔獣』に対して攻撃＋１０"
+set-string (global-string 1d942) "一般、鬼、巨人、魔獣に攻撃+10"
+set-string (global-string 1d55b) "精霊殺し"
+mov (global-int 6c6609) 474
+mov (global-int 6c71c1) 4
+mov (global-int 6c7991) 1
+mov (global-int 6c8161) a
+mov (global-int 6d3217) a
+mov (global-int 6d3219) a
+set-string (global-string 1dd92) "【戦闘：精霊殺し】"
+set-string (global-string 1dd93) "　『妖精』『精霊』に対して攻撃＋１０"
+set-string (global-string 1d943) "妖精、精霊に対して攻撃+10"
+set-string (global-string 1d55c) "天使殺し"
+mov (global-int 6c660a) 47e
+mov (global-int 6c71c2) 4
+mov (global-int 6c7992) 1
+mov (global-int 6c8162) a
+mov (global-int 6d3224) a
+mov (global-int 6d3226) a
+set-string (global-string 1dd94) "【戦闘：天使殺し】"
+set-string (global-string 1dd95) "　『天使』に対して攻撃＋１０"
+set-string (global-string 1d944) "天使に対して攻撃+10"
+set-string (global-string 1d55d) "悪魔殺し"
+mov (global-int 6c660b) 488
+mov (global-int 6c71c3) 4
+mov (global-int 6c7993) 1
+mov (global-int 6c8163) a
+mov (global-int 6d3231) a
+mov (global-int 6d3233) a
+set-string (global-string 1dd96) "【戦闘：悪魔殺し】"
+set-string (global-string 1dd97) "　『悪魔』に対して攻撃＋１０"
+set-string (global-string 1d945) "悪魔に対して攻撃+10"
+set-string (global-string 1d55e) "幻獣殺し"
+mov (global-int 6c660c) 492
+mov (global-int 6c71c4) 4
+mov (global-int 6c7994) 1
+mov (global-int 6c8164) a
+mov (global-int 6d323e) a
+mov (global-int 6d3240) a
+set-string (global-string 1dd98) "【戦闘：幻獣殺し】"
+set-string (global-string 1dd99) "　『幻獣』に対して攻撃＋１０"
+set-string (global-string 1d946) "幻獣に対して攻撃+10"
+set-string (global-string 1d55f) "創造破壊"
+mov (global-int 6c660d) 49c
+mov (global-int 6c71c5) 4
+mov (global-int 6c7995) 1
+mov (global-int 6c8165) a
+mov (global-int 6d324b) a
+mov (global-int 6d324d) a
+set-string (global-string 1dd9a) "【戦闘：創造破壊】"
+set-string (global-string 1dd9b) "　ゴーレムなどの『創造』に対して攻撃＋１０"
+set-string (global-string 1d947) "創造に対して攻撃+10"
+set-string (global-string 1d560) "大物殺し"
+mov (global-int 6c660e) 4a6
+mov (global-int 6c71c6) 4
+mov (global-int 6c7996) 1
+mov (global-int 6c8166) f
+mov (global-int 6d3258) a
+mov (global-int 6d325a) a
+set-string (global-string 1dd9c) "【戦闘：大物殺し】"
+set-string (global-string 1dd9d) "　迷宮に潜む『ボス』に対して攻撃＋１０"
+set-string (global-string 1d948) "ボスに対して攻撃+10"
+set-string (global-string 1d561) "死霊破壊"
+mov (global-int 6c660f) 4b0
+mov (global-int 6c71c7) 4
+mov (global-int 6c7997) 1
+mov (global-int 6c8167) a
+mov (global-int 6d3265) a
+mov (global-int 6d3267) a
+set-string (global-string 1dd9e) "【戦闘：死霊破壊】"
+set-string (global-string 1dd9f) "　『霊体』『不死』に対して攻撃＋１０"
+set-string (global-string 1d949) "霊体、不死に対して攻撃+10"
+set-string (global-string 1d563) "対空迎撃Ⅰ"
+mov (global-int 6c69f9) 6f
+mov (global-int 6c6611) 4ba
+mov (global-int 6c71c9) 4
+mov (global-int 6c7999) 1
+mov (global-int 6c8169) 3
+mov (global-int 6d327d) 5
+mov (global-int 6d327f) 3
+mov (global-int 6d3281) 3
+mov (global-int 6d6011) 5
+set-string (global-string 1dda2) "【戦闘：対空迎撃Ⅰ】"
+set-string (global-string 1dda3) "　飛行の敵に有効　命中と痛打＋５　攻撃＋３"
+set-string (global-string 1d94b) "飛行に対して命中と痛打+5 攻撃+3"
+set-string (global-string 1d564) "対空迎撃Ⅱ"
+mov (global-int 6c69fa) 6f
+mov (global-int 6c6612) 4c4
+mov (global-int 6c71ca) 4
+mov (global-int 6c799a) 1
+mov (global-int 6c816a) 6
+mov (global-int 6d328a) a
+mov (global-int 6d328c) 6
+mov (global-int 6d328e) 6
+mov (global-int 6d6012) a
+set-string (global-string 1dda4) "【戦闘：対空迎撃Ⅱ】"
+set-string (global-string 1dda5) "　飛行の敵に有効　命中と痛打＋１０　攻撃＋６"
+set-string (global-string 1d94c) "飛行に対して命中と痛打+10 攻撃+6"
+set-string (global-string 1d565) "対空迎撃Ⅲ"
+mov (global-int 6c69fb) 6f
+mov (global-int 6c6613) 4ce
+mov (global-int 6c71cb) 4
+mov (global-int 6c799b) 1
+mov (global-int 6c816b) 9
+mov (global-int 6d3297) f
+mov (global-int 6d3299) 9
+mov (global-int 6d329b) 9
+mov (global-int 6d6013) f
+set-string (global-string 1dda6) "【戦闘：対空迎撃Ⅲ】"
+set-string (global-string 1dda7) "　飛行の敵に有効　命中と痛打＋１５　攻撃＋９"
+set-string (global-string 1d94d) "飛行に対して命中と痛打+15 攻撃+9"
+set-string (global-string 1d568) "対潜迎撃Ⅰ"
+mov (global-int 6c69fe) 74
+mov (global-int 6c6616) 4d8
+mov (global-int 6c71ce) 4
+mov (global-int 6c799e) 1
+mov (global-int 6c816e) 3
+mov (global-int 6d32be) 5
+mov (global-int 6d32c0) 3
+mov (global-int 6d32c2) 3
+mov (global-int 6d6016) 5
+set-string (global-string 1ddac) "【戦闘：対潜迎撃Ⅰ】"
+set-string (global-string 1ddad) "　潜水の敵に有効　命中と痛打＋５　攻撃＋３"
+set-string (global-string 1d950) "潜水に対して命中と痛打+5 攻撃+3"
+set-string (global-string 1d569) "対潜迎撃Ⅱ"
+mov (global-int 6c69ff) 74
+mov (global-int 6c6617) 4e2
+mov (global-int 6c71cf) 4
+mov (global-int 6c799f) 1
+mov (global-int 6c816f) 6
+mov (global-int 6d32cb) a
+mov (global-int 6d32cd) 6
+mov (global-int 6d32cf) 6
+mov (global-int 6d6017) a
+set-string (global-string 1ddae) "【戦闘：対潜迎撃Ⅱ】"
+set-string (global-string 1ddaf) "　潜水の敵に有効　命中と痛打＋１０　攻撃＋６"
+set-string (global-string 1d951) "潜水に対して命中と痛打+10 攻撃+6"
+set-string (global-string 1d56a) "対潜迎撃Ⅲ"
+mov (global-int 6c6a00) 74
+mov (global-int 6c6618) 4ec
+mov (global-int 6c71d0) 4
+mov (global-int 6c79a0) 1
+mov (global-int 6c8170) 9
+mov (global-int 6d32d8) f
+mov (global-int 6d32da) 9
+mov (global-int 6d32dc) 9
+mov (global-int 6d6018) f
+set-string (global-string 1ddb0) "【戦闘：対潜迎撃Ⅲ】"
+set-string (global-string 1ddb1) "　潜水の敵に有効　命中と痛打＋１５　攻撃＋９"
+set-string (global-string 1d952) "潜水に対して命中と痛打+15 攻撃+9"
+set-string (global-string 1d56d) "先制攻撃Ⅰ"
+mov (global-int 6c6a03) 79
+mov (global-int 6c661b) 4f6
+mov (global-int 6c71d3) 4
+mov (global-int 6c79a3) 1
+mov (global-int 6c8173) 3
+mov (global-int 6d73a3) a
+mov (global-int 6d778b) 22
+set-string (global-string 1ddb6) "【戦闘：先制攻撃Ⅰ】"
+set-string (global-string 1ddb7) "　戦闘時、確率１０％で最初に攻撃が行える"
+set-string (global-string 1d955) "確率10％で最初に攻撃が行える"
+set-string (global-string 1d56e) "先制攻撃Ⅱ"
+mov (global-int 6c6a04) 79
+mov (global-int 6c661c) 500
+mov (global-int 6c71d4) 4
+mov (global-int 6c79a4) 1
+mov (global-int 6c8174) 6
+mov (global-int 6d73a4) 14
+mov (global-int 6d778c) 22
+set-string (global-string 1ddb8) "【戦闘：先制攻撃Ⅱ】"
+set-string (global-string 1ddb9) "　戦闘時、確率２０％で最初に攻撃が行える"
+set-string (global-string 1d956) "確率20％で最初に攻撃が行える"
+set-string (global-string 1d56f) "先制攻撃Ⅲ"
+mov (global-int 6c6a05) 79
+mov (global-int 6c661d) 50a
+mov (global-int 6c71d5) 4
+mov (global-int 6c79a5) 1
+mov (global-int 6c8175) 9
+mov (global-int 6d73a5) 1e
+mov (global-int 6d778d) 22
+set-string (global-string 1ddba) "【戦闘：先制攻撃Ⅲ】"
+set-string (global-string 1ddbb) "　戦闘時、確率３０％で最初に攻撃が行える"
+set-string (global-string 1d957) "確率30％で最初に攻撃が行える"
+set-string (global-string 1d572) "見切りⅠ"
+mov (global-int 6c6a08) 7e
+mov (global-int 6c6620) 514
+mov (global-int 6c71d8) 4
+mov (global-int 6c79a8) 1
+mov (global-int 6c8178) 3
+mov (global-int 6d73a8) 5
+mov (global-int 6d7790) 19
+set-string (global-string 1ddc0) "【戦闘：見切りⅠ】"
+set-string (global-string 1ddc1) "　攻撃を受けたとき５％の確率で攻撃を回避"
+set-string (global-string 1d95a) "確率5％で敵の攻撃を回避"
+set-string (global-string 1d573) "見切りⅡ"
+mov (global-int 6c6a09) 7e
+mov (global-int 6c6621) 51e
+mov (global-int 6c71d9) 4
+mov (global-int 6c79a9) 1
+mov (global-int 6c8179) 7
+mov (global-int 6d73a9) a
+mov (global-int 6d7791) 19
+set-string (global-string 1ddc2) "【戦闘：見切りⅡ】"
+set-string (global-string 1ddc3) "　攻撃を受けたとき１０％の確率で攻撃を回避"
+set-string (global-string 1d95b) "確率10％で敵の攻撃を回避"
+set-string (global-string 1d574) "見切りⅢ"
+mov (global-int 6c6a0a) 7e
+mov (global-int 6c6622) 528
+mov (global-int 6c71da) 4
+mov (global-int 6c79aa) 1
+mov (global-int 6c817a) e
+mov (global-int 6d73aa) f
+mov (global-int 6d7792) 19
+set-string (global-string 1ddc4) "【戦闘：見切りⅢ】"
+set-string (global-string 1ddc5) "　攻撃を受けたとき１５％の確率で攻撃を回避"
+set-string (global-string 1d95c) "確率15％で敵の攻撃を回避"
+set-string (global-string 1d577) "白刃流しⅠ"
+mov (global-int 6c6a0d) 83
+mov (global-int 6c6625) 532
+mov (global-int 6c71dd) 4
+mov (global-int 6c79ad) 1
+mov (global-int 6c817d) a
+mov (global-int 6d73ad) f
+mov (global-int 6d7795) 19
+set-string (global-string 1ddca) "【戦闘：白刃流しⅠ】"
+set-string (global-string 1ddcb) "　攻撃を受けたとき１５％の確率で攻撃を回避"
+set-string (global-string 1d95f) "確率15％で敵の攻撃を回避"
+set-string (global-string 1d578) "白刃流しⅡ"
+mov (global-int 6c6a0e) 83
+mov (global-int 6c6626) 53c
+mov (global-int 6c71de) 4
+mov (global-int 6c79ae) 1
+mov (global-int 6c817e) 10
+mov (global-int 6d73ae) 14
+mov (global-int 6d7796) 19
+set-string (global-string 1ddcc) "【戦闘：白刃流しⅡ】"
+set-string (global-string 1ddcd) "　攻撃を受けたとき２０％の確率で攻撃を回避"
+set-string (global-string 1d960) "確率20％で敵の攻撃を回避"
+set-string (global-string 1d579) "白刃流しⅢ"
+mov (global-int 6c6a0f) 83
+mov (global-int 6c6627) 546
+mov (global-int 6c71df) 4
+mov (global-int 6c79af) 1
+mov (global-int 6c817f) 19
+mov (global-int 6d73af) 19
+mov (global-int 6d7797) 19
+set-string (global-string 1ddce) "【戦闘：白刃流しⅢ】"
+set-string (global-string 1ddcf) "　攻撃を受けたとき２５％の確率で攻撃を回避"
+set-string (global-string 1d961) "確率25％で敵の攻撃を回避"
+set-string (global-string 1d57c) "カウンターⅠ"
+mov (global-int 6c6a12) 88
+mov (global-int 6c662a) 550
+mov (global-int 6c71e2) 4
+mov (global-int 6c79b2) 1
+mov (global-int 6c8182) 6
+mov (global-int 6d73b2) a
+mov (global-int 6d779a) 1a
+set-string (global-string 1ddd4) "【戦闘：カウンターⅠ】"
+set-string (global-string 1ddd5) "　攻撃を受けたとき１０％の確率で攻撃を回避＋反撃"
+set-string (global-string 1d964) "確率10％で敵の攻撃を回避+反撃"
+set-string (global-string 1d57d) "カウンターⅡ"
+mov (global-int 6c6a13) 88
+mov (global-int 6c662b) 55a
+mov (global-int 6c71e3) 4
+mov (global-int 6c79b3) 1
+mov (global-int 6c8183) c
+mov (global-int 6d73b3) f
+mov (global-int 6d779b) 1a
+set-string (global-string 1ddd6) "【戦闘：カウンターⅡ】"
+set-string (global-string 1ddd7) "　攻撃を受けたとき１５％の確率で攻撃を回避＋反撃"
+set-string (global-string 1d965) "確率15％で敵の攻撃を回避+反撃"
+set-string (global-string 1d57e) "カウンターⅢ"
+mov (global-int 6c6a14) 88
+mov (global-int 6c662c) 564
+mov (global-int 6c71e4) 4
+mov (global-int 6c79b4) 1
+mov (global-int 6c8184) 12
+mov (global-int 6d73b4) 14
+mov (global-int 6d779c) 1a
+set-string (global-string 1ddd8) "【戦闘：カウンターⅢ】"
+set-string (global-string 1ddd9) "　攻撃を受けたとき２０％の確率で攻撃を回避＋反撃"
+set-string (global-string 1d966) "確率20％で敵の攻撃を回避+反撃"
+set-string (global-string 1d581) "即死反撃Ⅰ"
+mov (global-int 6c6a17) 8d
+mov (global-int 6c662f) 56e
+mov (global-int 6c71e7) 4
+mov (global-int 6c79b7) 1
+mov (global-int 6c8187) a
+mov (global-int 6d73b7) 5
+mov (global-int 6d779f) 1a
+set-string (global-string 1ddde) "【戦闘：即死反撃Ⅰ】"
+set-string (global-string 1dddf) "　確率５％で敵の攻撃を回避して反撃＋『即死』判定"
+set-string (global-string 1d969) "確率5％で回避して反撃+即死判定"
+set-string (global-string 1d582) "即死反撃Ⅱ"
+mov (global-int 6c6a18) 8d
+mov (global-int 6c6630) 578
+mov (global-int 6c71e8) 4
+mov (global-int 6c79b8) 1
+mov (global-int 6c8188) 14
+mov (global-int 6d73b8) a
+mov (global-int 6d77a0) 1a
+set-string (global-string 1dde0) "【戦闘：即死反撃Ⅱ】"
+set-string (global-string 1dde1) "　確率１０％で敵の攻撃を回避して反撃＋『即死』判定"
+set-string (global-string 1d96a) "確率10％で回避して反撃+即死判定"
+set-string (global-string 1d583) "即死反撃Ⅲ"
+mov (global-int 6c6a19) 8d
+mov (global-int 6c6631) 582
+mov (global-int 6c71e9) 4
+mov (global-int 6c79b9) 1
+mov (global-int 6c8189) 1e
+mov (global-int 6d73b9) f
+mov (global-int 6d77a1) 1a
+set-string (global-string 1dde2) "【戦闘：即死反撃Ⅲ】"
+set-string (global-string 1dde3) "　確率１５％で敵の攻撃を回避して反撃＋『即死』判定"
+set-string (global-string 1d96b) "確率15％で回避して反撃+即死判定"
+set-string (global-string 1d586) "決死Ⅰ"
+mov (global-int 6c6a1c) 92
+mov (global-int 6c6634) 58c
+mov (global-int 6c71ec) 4
+mov (global-int 6c79bc) 1
+mov (global-int 6c818c) a
+set-string (global-string 1dde8) "【戦闘：決死Ⅰ】"
+set-string (global-string 1dde9) "　ＨＰ５０％以下で能力１．２倍　２０％で１．５倍"
+set-string (global-string 1d96e) "HP50％以下で能力1.2倍　20％で1.5倍"
+set-string (global-string 1d587) "決死Ⅱ"
+mov (global-int 6c6a1d) 92
+mov (global-int 6c6635) 596
+mov (global-int 6c71ed) 4
+mov (global-int 6c79bd) 1
+mov (global-int 6c818d) f
+set-string (global-string 1ddea) "【戦闘：決死Ⅱ】"
+set-string (global-string 1ddeb) "　ＨＰ６５％以下で能力１．２倍　３５％で１．５倍"
+set-string (global-string 1d96f) "HP65％以下で能力1.2倍　35％で1.5倍"
+set-string (global-string 1d588) "決死Ⅲ"
+mov (global-int 6c6a1e) 92
+mov (global-int 6c6636) 5a0
+mov (global-int 6c71ee) 4
+mov (global-int 6c79be) 1
+mov (global-int 6c818e) 14
+set-string (global-string 1ddec) "【戦闘：決死Ⅲ】"
+set-string (global-string 1dded) "　ＨＰ８０％以下で能力１．２倍　５０％で１．５倍"
+set-string (global-string 1d970) "HP80％以下で能力1.2倍　50％で1.5倍"
+set-string (global-string 1d58b) "凶暴化Ⅰ"
+mov (global-int 6c6a21) 97
+mov (global-int 6c6639) 5aa
+mov (global-int 6c71f1) 4
+mov (global-int 6c79c1) 1
+mov (global-int 6c8191) 4
+mov (global-int 6d73c1) 14
+set-string (global-string 1ddf2) "【戦闘：凶暴化Ⅰ】"
+set-string (global-string 1ddf3) "　攻撃時に確率２０％で発動　攻撃力１．２倍に上昇"
+set-string (global-string 1d973) "攻撃時、確率20％で攻撃力が1.2倍"
+set-string (global-string 1d58c) "凶暴化Ⅱ"
+mov (global-int 6c6a22) 97
+mov (global-int 6c663a) 5b4
+mov (global-int 6c71f2) 4
+mov (global-int 6c79c2) 1
+mov (global-int 6c8192) a
+mov (global-int 6d73c2) 1e
+set-string (global-string 1ddf4) "【戦闘：凶暴化Ⅱ】"
+set-string (global-string 1ddf5) "　攻撃時に確率３０％で発動　攻撃力１．２倍に上昇"
+set-string (global-string 1d974) "攻撃時、確率30％で攻撃力が1.2倍"
+set-string (global-string 1d58d) "凶暴化Ⅲ"
+mov (global-int 6c6a23) 97
+mov (global-int 6c663b) 5be
+mov (global-int 6c71f3) 4
+mov (global-int 6c79c3) 1
+mov (global-int 6c8193) 11
+mov (global-int 6d73c3) 28
+set-string (global-string 1ddf6) "【戦闘：凶暴化Ⅲ】"
+set-string (global-string 1ddf7) "　攻撃時に確率４０％で発動　攻撃力１．２倍に上昇"
+set-string (global-string 1d975) "攻撃時、確率40％で攻撃力が1.2倍"
+set-string (global-string 1d590) "隠密Ⅰ"
+mov (global-int 6c6a26) 9c
+mov (global-int 6c663e) 1c2
+mov (global-int 6c71f6) d
+mov (global-int 6c79c6) 1
+mov (global-int 6c8196) 3
+mov (global-int 6d34c7) a
+set-string (global-string 1ddfc) "【常時：隠密Ⅰ】"
+set-string (global-string 1ddfd) "　常時、相手の命中率を１０％低下"
+set-string (global-string 1d978) "敵の命中を10％低下"
+set-string (global-string 1d591) "隠密Ⅱ"
+mov (global-int 6c6a27) 9c
+mov (global-int 6c663f) 1cc
+mov (global-int 6c71f7) d
+mov (global-int 6c79c7) 1
+mov (global-int 6c8197) 7
+mov (global-int 6d34d4) f
+set-string (global-string 1ddfe) "【常時：隠密Ⅱ】"
+set-string (global-string 1ddff) "　常時、相手の命中率を１５％低下"
+set-string (global-string 1d979) "敵の命中を15％低下"
+set-string (global-string 1d592) "隠密Ⅲ"
+mov (global-int 6c6a28) 9c
+mov (global-int 6c6640) 1d6
+mov (global-int 6c71f8) d
+mov (global-int 6c79c8) 1
+mov (global-int 6c8198) e
+mov (global-int 6d34e1) 14
+set-string (global-string 1de00) "【常時：隠密Ⅲ】"
+set-string (global-string 1de01) "　常時、相手の命中率を２０％低下"
+set-string (global-string 1d97a) "敵の命中を20％低下"
+set-string (global-string 1d595) "反射Ⅰ"
+mov (global-int 6c6a2b) a1
+mov (global-int 6c6643) 5c8
+mov (global-int 6c71fb) 4
+mov (global-int 6c79cb) 1
+mov (global-int 6c819b) 8
+mov (global-int 6d73cb) a
+mov (global-int 6d77b3) 1b
+set-string (global-string 1de06) "【戦闘：反射Ⅰ】"
+set-string (global-string 1de07) "　確率１０％で受けるはずのダメージを敵に跳ね返す"
+set-string (global-string 1d97d) "確率10％でダメージを反射"
+set-string (global-string 1d596) "反射Ⅱ"
+mov (global-int 6c6a2c) a1
+mov (global-int 6c6644) 5d2
+mov (global-int 6c71fc) 4
+mov (global-int 6c79cc) 1
+mov (global-int 6c819c) e
+mov (global-int 6d73cc) d
+mov (global-int 6d77b4) 1b
+set-string (global-string 1de08) "【戦闘：反射Ⅱ】"
+set-string (global-string 1de09) "　確率１３％で受けるはずのダメージを敵に跳ね返す"
+set-string (global-string 1d97e) "確率13％でダメージを反射"
+set-string (global-string 1d597) "反射Ⅲ"
+mov (global-int 6c6a2d) a1
+mov (global-int 6c6645) 5dc
+mov (global-int 6c71fd) 4
+mov (global-int 6c79cd) 1
+mov (global-int 6c819d) 1a
+mov (global-int 6d73cd) 10
+mov (global-int 6d77b5) 1b
+set-string (global-string 1de0a) "【戦闘：反射Ⅲ】"
+set-string (global-string 1de0b) "　確率１６％で受けるはずのダメージを敵に跳ね返す"
+set-string (global-string 1d97f) "確率16％でダメージを反射"
+set-string (global-string 1d59a) "吸収Ⅰ"
+mov (global-int 6c6a30) a6
+mov (global-int 6c6648) 5e6
+mov (global-int 6c7200) 4
+mov (global-int 6c79d0) 1
+mov (global-int 6c81a0) 5
+mov (global-int 6d73d0) 14
+set-string (global-string 1de10) "【戦闘：吸収Ⅰ】"
+set-string (global-string 1de11) "　確率２０％で敵に与えたダメージの半分をＨＰへ吸収"
+set-string (global-string 1d982) "確率20％でダメージの半分をHPへ吸収"
+set-string (global-string 1d59b) "吸収Ⅱ"
+mov (global-int 6c6a31) a6
+mov (global-int 6c6649) 5f0
+mov (global-int 6c7201) 4
+mov (global-int 6c79d1) 1
+mov (global-int 6c81a1) a
+mov (global-int 6d73d1) 28
+set-string (global-string 1de12) "【戦闘：吸収Ⅱ】"
+set-string (global-string 1de13) "　確率４０％で敵に与えたダメージの半分をＨＰへ吸収"
+set-string (global-string 1d983) "確率40％でダメージの半分をHPへ吸収"
+set-string (global-string 1d59c) "吸収Ⅲ"
+mov (global-int 6c6a32) a6
+mov (global-int 6c664a) 5fa
+mov (global-int 6c7202) 4
+mov (global-int 6c79d2) 1
+mov (global-int 6c81a2) 14
+mov (global-int 6d73d2) 64
+set-string (global-string 1de14) "【戦闘：吸収Ⅲ】"
+set-string (global-string 1de15) "　攻撃時に必ず敵に与えたダメージの半分をＨＰへ吸収"
+set-string (global-string 1d984) "必ずダメージの半分をHPへ吸収"
+set-string (global-string 1d59f) "威圧Ⅰ"
+mov (global-int 6c6a35) ab
+mov (global-int 6c664d) 604
+mov (global-int 6c7205) 4
+mov (global-int 6c79d5) 1
+mov (global-int 6c81a5) a
+mov (global-int 6d73d5) a
+mov (global-int 6d77bd) 1f
+set-string (global-string 1de1a) "【戦闘：威圧Ⅰ】"
+set-string (global-string 1de1b) "　戦闘開始時に確率１０％で敵の行動を完全に封じる"
+set-string (global-string 1d987) "確率10％で敵の攻撃を封じる"
+set-string (global-string 1d5a0) "威圧Ⅱ"
+mov (global-int 6c6a36) ab
+mov (global-int 6c664e) 60e
+mov (global-int 6c7206) 4
+mov (global-int 6c79d6) 1
+mov (global-int 6c81a6) 14
+mov (global-int 6d73d6) f
+mov (global-int 6d77be) 1f
+set-string (global-string 1de1c) "【戦闘：威圧Ⅱ】"
+set-string (global-string 1de1d) "　戦闘開始時に確率１５％で敵の行動を完全に封じる"
+set-string (global-string 1d988) "確率15％で敵の攻撃を封じる"
+set-string (global-string 1d5a1) "威圧Ⅲ"
+mov (global-int 6c6a37) ab
+mov (global-int 6c664f) 618
+mov (global-int 6c7207) 4
+mov (global-int 6c79d7) 1
+mov (global-int 6c81a7) 1e
+mov (global-int 6d73d7) 14
+mov (global-int 6d77bf) 1f
+set-string (global-string 1de1e) "【戦闘：威圧Ⅲ】"
+set-string (global-string 1de1f) "　戦闘開始時に確率２０％で敵の行動を完全に封じる"
+set-string (global-string 1d989) "確率20％で敵の攻撃を封じる"
+set-string (global-string 1d5a4) "貫通Ⅰ"
+mov (global-int 6c6a3a) b0
+mov (global-int 6c6652) 622
+mov (global-int 6c720a) 4
+mov (global-int 6c79da) 1
+mov (global-int 6c81aa) 6
+mov (global-int 6d73da) a
+mov (global-int 6d77c2) 1c
+set-string (global-string 1de24) "【戦闘：貫通Ⅰ】"
+set-string (global-string 1de25) "　確率１０％で敵の防御力を半分にした状態でダメージ"
+set-string (global-string 1d98c) "確率10％で敵の防御力を半減"
+set-string (global-string 1d5a5) "貫通Ⅱ"
+mov (global-int 6c6a3b) b0
+mov (global-int 6c6653) 62c
+mov (global-int 6c720b) 4
+mov (global-int 6c79db) 1
+mov (global-int 6c81ab) f
+mov (global-int 6d73db) f
+mov (global-int 6d77c3) 1c
+set-string (global-string 1de26) "【戦闘：貫通Ⅱ】"
+set-string (global-string 1de27) "　確率１５％で敵の防御力を半分にした状態でダメージ"
+set-string (global-string 1d98d) "確率15％で敵の防御力を半減"
+set-string (global-string 1d5a6) "貫通Ⅲ"
+mov (global-int 6c6a3c) b0
+mov (global-int 6c6654) 636
+mov (global-int 6c720c) 4
+mov (global-int 6c79dc) 1
+mov (global-int 6c81ac) 18
+mov (global-int 6d73dc) 14
+mov (global-int 6d77c4) 1c
+set-string (global-string 1de28) "【戦闘：貫通Ⅲ】"
+set-string (global-string 1de29) "　確率２０％で敵の防御力を半分にした状態でダメージ"
+set-string (global-string 1d98e) "確率20％で敵の防御力を半減"
+set-string (global-string 1d5a9) "連撃Ⅰ"
+mov (global-int 6c6a3f) b5
+mov (global-int 6c6657) 640
+mov (global-int 6c720f) 4
+mov (global-int 6c79df) 1
+mov (global-int 6c81af) 4
+mov (global-int 6d73df) a
+mov (global-int 6d77c7) 22
+set-string (global-string 1de2e) "【戦闘：連撃Ⅰ】"
+set-string (global-string 1de2f) "　攻撃後に確率１０％で同じ攻撃が発動"
+set-string (global-string 1d991) "攻撃時、確率10％で同じ攻撃を行う"
+set-string (global-string 1d5aa) "連撃Ⅱ"
+mov (global-int 6c6a40) b5
+mov (global-int 6c6658) 64a
+mov (global-int 6c7210) 4
+mov (global-int 6c79e0) 1
+mov (global-int 6c81b0) 8
+mov (global-int 6d73e0) f
+mov (global-int 6d77c8) 22
+set-string (global-string 1de30) "【戦闘：連撃Ⅱ】"
+set-string (global-string 1de31) "　攻撃後に確率１５％で同じ攻撃が発動"
+set-string (global-string 1d992) "攻撃時、確率15％で同じ攻撃を行う"
+set-string (global-string 1d5ab) "連撃Ⅲ"
+mov (global-int 6c6a41) b5
+mov (global-int 6c6659) 654
+mov (global-int 6c7211) 4
+mov (global-int 6c79e1) 1
+mov (global-int 6c81b1) c
+mov (global-int 6d73e1) 14
+mov (global-int 6d77c9) 22
+set-string (global-string 1de32) "【戦闘：連撃Ⅲ】"
+set-string (global-string 1de33) "　攻撃後に確率２０％で同じ攻撃が発動"
+set-string (global-string 1d993) "攻撃時、確率20％で同じ攻撃を行う"
+set-string (global-string 1d5ae) "魔術結界Ⅰ"
+mov (global-int 6c6a44) ba
+mov (global-int 6c665c) 65e
+mov (global-int 6c7214) 4
+mov (global-int 6c79e4) 1
+mov (global-int 6c81b4) 6
+set-string (global-string 1de38) "【戦闘：魔術結界Ⅰ】"
+set-string (global-string 1de39) "　常時、敵の魔法攻撃を１０％低下"
+set-string (global-string 1d996) "敵魔法攻撃を10％低下"
+set-string (global-string 1d5af) "魔術結界Ⅱ"
+mov (global-int 6c6a45) ba
+mov (global-int 6c665d) 668
+mov (global-int 6c7215) 4
+mov (global-int 6c79e5) 1
+mov (global-int 6c81b5) f
+set-string (global-string 1de3a) "【戦闘：魔術結界Ⅱ】"
+set-string (global-string 1de3b) "　常時、敵の魔法攻撃を２０％低下"
+set-string (global-string 1d997) "敵魔法攻撃を20％低下"
+set-string (global-string 1d5b0) "魔術結界Ⅲ"
+mov (global-int 6c6a46) ba
+mov (global-int 6c665e) 672
+mov (global-int 6c7216) 4
+mov (global-int 6c79e6) 1
+mov (global-int 6c81b6) 18
+set-string (global-string 1de3c) "【戦闘：魔術結界Ⅲ】"
+set-string (global-string 1de3d) "　常時、敵の魔法攻撃を３０％低下"
+set-string (global-string 1d998) "敵魔法攻撃を30％低下"
+set-string (global-string 1d5b3) "防護結界Ⅰ"
+mov (global-int 6c6a49) bf
+mov (global-int 6c6661) 67c
+mov (global-int 6c7219) 4
+mov (global-int 6c79e9) 1
+mov (global-int 6c81b9) 6
+set-string (global-string 1de42) "【戦闘：防護結界Ⅰ】"
+set-string (global-string 1de43) "　常時、敵の物理攻撃を１０％低下"
+set-string (global-string 1d99b) "敵物理攻撃を10％低下"
+set-string (global-string 1d5b4) "防護結界Ⅱ"
+mov (global-int 6c6a4a) bf
+mov (global-int 6c6662) 686
+mov (global-int 6c721a) 4
+mov (global-int 6c79ea) 1
+mov (global-int 6c81ba) f
+set-string (global-string 1de44) "【戦闘：防護結界Ⅱ】"
+set-string (global-string 1de45) "　常時、敵の物理攻撃を２０％低下"
+set-string (global-string 1d99c) "敵物理攻撃を20％低下"
+set-string (global-string 1d5b5) "防護結界Ⅲ"
+mov (global-int 6c6a4b) bf
+mov (global-int 6c6663) 690
+mov (global-int 6c721b) 4
+mov (global-int 6c79eb) 1
+mov (global-int 6c81bb) 18
+set-string (global-string 1de46) "【戦闘：防護結界Ⅲ】"
+set-string (global-string 1de47) "　常時、敵の物理攻撃を３０％低下"
+set-string (global-string 1d99d) "敵物理攻撃を30％低下"
+set-string (global-string 1d5b8) "霊魂結界Ⅰ"
+mov (global-int 6c6a4e) c4
+mov (global-int 6c6666) 69a
+mov (global-int 6c721e) 4
+mov (global-int 6c79ee) 1
+mov (global-int 6c81be) 3
+set-string (global-string 1de4c) "【戦闘：霊魂結界Ⅰ】"
+set-string (global-string 1de4d) "　常時、霊体の攻撃を１０％低下"
+set-string (global-string 1d9a0) "敵霊体攻撃を10％低下"
+set-string (global-string 1d5b9) "霊魂結界Ⅱ"
+mov (global-int 6c6a4f) c4
+mov (global-int 6c6667) 6a4
+mov (global-int 6c721f) 4
+mov (global-int 6c79ef) 1
+mov (global-int 6c81bf) 6
+set-string (global-string 1de4e) "【戦闘：霊魂結界Ⅱ】"
+set-string (global-string 1de4f) "　常時、霊体の攻撃を２０％低下"
+set-string (global-string 1d9a1) "敵霊体攻撃を20％低下"
+set-string (global-string 1d5ba) "霊魂結界Ⅲ"
+mov (global-int 6c6a50) c4
+mov (global-int 6c6668) 6ae
+mov (global-int 6c7220) 4
+mov (global-int 6c79f0) 1
+mov (global-int 6c81c0) 9
+set-string (global-string 1de50) "【戦闘：霊魂結界Ⅲ】"
+set-string (global-string 1de51) "　常時、霊体の攻撃を３０％低下"
+set-string (global-string 1d9a2) "敵霊体攻撃を30％低下"
+set-string (global-string 1d5bd) "盾Ⅰ"
+mov (global-int 6c6a53) c9
+mov (global-int 6c666b) 6b8
+mov (global-int 6c7223) 4
+mov (global-int 6c79f3) 1
+mov (global-int 6c81c3) 4
+mov (global-int 6d73f3) a
+mov (global-int 6d77db) 1d
+set-string (global-string 1de56) "【戦闘：盾Ⅰ】"
+set-string (global-string 1de57) "　確率１０％で敵の攻撃力を３０％低下"
+set-string (global-string 1d9a5) "確率10％で敵の攻撃力が30％低下"
+set-string (global-string 1d5be) "盾Ⅱ"
+mov (global-int 6c6a54) c9
+mov (global-int 6c666c) 6c2
+mov (global-int 6c7224) 4
+mov (global-int 6c79f4) 1
+mov (global-int 6c81c4) 6
+mov (global-int 6d73f4) f
+mov (global-int 6d77dc) 1d
+set-string (global-string 1de58) "【戦闘：盾Ⅱ】"
+set-string (global-string 1de59) "　確率１５％で敵の攻撃力を３０％低下"
+set-string (global-string 1d9a6) "確率15％で敵の攻撃力が30％低下"
+set-string (global-string 1d5bf) "盾Ⅲ"
+mov (global-int 6c6a55) c9
+mov (global-int 6c666d) 6cc
+mov (global-int 6c7225) 4
+mov (global-int 6c79f5) 1
+mov (global-int 6c81c5) a
+mov (global-int 6d73f5) 14
+mov (global-int 6d77dd) 1d
+set-string (global-string 1de5a) "【戦闘：盾Ⅲ】"
+set-string (global-string 1de5b) "　確率２０％で敵の攻撃力を３０％低下"
+set-string (global-string 1d9a7) "確率20％で敵の攻撃力が30％低下"
+set-string (global-string 1d5c2) "大盾Ⅰ"
+mov (global-int 6c6a58) ce
+mov (global-int 6c6670) 6d6
+mov (global-int 6c7228) 4
+mov (global-int 6c79f8) 1
+mov (global-int 6c81c8) 4
+mov (global-int 6d73f8) a
+mov (global-int 6d77e0) 1d
+set-string (global-string 1de60) "【戦闘：大盾Ⅰ】"
+set-string (global-string 1de61) "　確率１０％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9aa) "確率10％で敵の攻撃力が半減"
+set-string (global-string 1d5c3) "大盾Ⅱ"
+mov (global-int 6c6a59) ce
+mov (global-int 6c6671) 6e0
+mov (global-int 6c7229) 4
+mov (global-int 6c79f9) 1
+mov (global-int 6c81c9) 6
+mov (global-int 6d73f9) f
+mov (global-int 6d77e1) 1d
+set-string (global-string 1de62) "【戦闘：大盾Ⅱ】"
+set-string (global-string 1de63) "　確率１５％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9ab) "確率15％で敵の攻撃力が半減"
+set-string (global-string 1d5c4) "大盾Ⅲ"
+mov (global-int 6c6a5a) ce
+mov (global-int 6c6672) 6ea
+mov (global-int 6c722a) 4
+mov (global-int 6c79fa) 1
+mov (global-int 6c81ca) a
+mov (global-int 6d73fa) 14
+mov (global-int 6d77e2) 1d
+set-string (global-string 1de64) "【戦闘：大盾Ⅲ】"
+set-string (global-string 1de65) "　確率２０％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9ac) "確率20％で敵の攻撃力が半減"
+set-string (global-string 1d5c7) "氷盾Ⅰ"
+mov (global-int 6c6a5d) d3
+mov (global-int 6c6675) 6f4
+mov (global-int 6c722d) 4
+mov (global-int 6c79fd) 1
+mov (global-int 6c81cd) 4
+mov (global-int 6d73fd) a
+mov (global-int 6d77e5) 1d
+set-string (global-string 1de6a) "【戦闘：氷盾Ⅰ】"
+set-string (global-string 1de6b) "　確率１０％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9af) "確率10％で敵の攻撃力が半減"
+set-string (global-string 1d5c8) "氷盾Ⅱ"
+mov (global-int 6c6a5e) d3
+mov (global-int 6c6676) 6fe
+mov (global-int 6c722e) 4
+mov (global-int 6c79fe) 1
+mov (global-int 6c81ce) 6
+mov (global-int 6d73fe) f
+mov (global-int 6d77e6) 1d
+set-string (global-string 1de6c) "【戦闘：氷盾Ⅱ】"
+set-string (global-string 1de6d) "　確率１５％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9b0) "確率15％で敵の攻撃力が半減"
+set-string (global-string 1d5c9) "氷盾Ⅲ"
+mov (global-int 6c6a5f) d3
+mov (global-int 6c6677) 708
+mov (global-int 6c722f) 4
+mov (global-int 6c79ff) 1
+mov (global-int 6c81cf) a
+mov (global-int 6d73ff) 14
+mov (global-int 6d77e7) 1d
+set-string (global-string 1de6e) "【戦闘：氷盾Ⅲ】"
+set-string (global-string 1de6f) "　確率２０％で敵の攻撃力を５０％低下"
+set-string (global-string 1d9b1) "確率20％で敵の攻撃力が半減"
+set-string (global-string 1d5cc) "復活Ⅰ"
+mov (global-int 6c6a62) d8
+mov (global-int 6c667a) 712
+mov (global-int 6c7232) 4
+mov (global-int 6c7a02) 1
+mov (global-int 6c81d2) a
+mov (global-int 6d7402) 14
+mov (global-int 6d77ea) 20
+set-string (global-string 1de74) "【戦闘：復活Ⅰ】"
+set-string (global-string 1de75) "　ＨＰ０になると確率２０％で復活（ＨＰ１０％状態）"
+set-string (global-string 1d9b4) "確率20％で復活 HP10％状態まで回復"
+set-string (global-string 1d5cd) "復活Ⅱ"
+mov (global-int 6c6a63) d8
+mov (global-int 6c667b) 71c
+mov (global-int 6c7233) 4
+mov (global-int 6c7a03) 1
+mov (global-int 6c81d3) 14
+mov (global-int 6d7403) 1e
+mov (global-int 6d77eb) 20
+set-string (global-string 1de76) "【戦闘：復活Ⅱ】"
+set-string (global-string 1de77) "　ＨＰ０になると確率３０％で復活（ＨＰ１０％状態）"
+set-string (global-string 1d9b5) "確率30％で復活 HP10％状態まで回復"
+set-string (global-string 1d5ce) "復活Ⅲ"
+mov (global-int 6c6a64) d8
+mov (global-int 6c667c) 726
+mov (global-int 6c7234) 4
+mov (global-int 6c7a04) 1
+mov (global-int 6c81d4) 1e
+mov (global-int 6d7404) 28
+mov (global-int 6d77ec) 20
+set-string (global-string 1de78) "【戦闘：復活Ⅲ】"
+set-string (global-string 1de79) "　ＨＰ０になると確率４０％で復活（ＨＰ１０％状態）"
+set-string (global-string 1d9b6) "確率40％で復活 HP10％状態まで回復"
+set-string (global-string 1d5d1) "精神統一Ⅰ"
+mov (global-int 6c6a67) dd
+mov (global-int 6c667f) 1e0
+mov (global-int 6c7237) d
+mov (global-int 6c7a07) 1
+mov (global-int 6c81d7) 3
+mov (global-int 6d3813) a
+set-string (global-string 1de7e) "【戦闘：精神統一Ⅰ】"
+set-string (global-string 1de7f) "　常時、自分の命中が１０％上昇"
+set-string (global-string 1d9b9) "命中率10％上昇"
+set-string (global-string 1d5d2) "精神統一Ⅱ"
+mov (global-int 6c6a68) dd
+mov (global-int 6c6680) 1ea
+mov (global-int 6c7238) d
+mov (global-int 6c7a08) 1
+mov (global-int 6c81d8) 7
+mov (global-int 6d3820) 14
+set-string (global-string 1de80) "【戦闘：精神統一Ⅱ】"
+set-string (global-string 1de81) "　常時、自分の命中が２０％上昇"
+set-string (global-string 1d9ba) "命中率20％上昇"
+set-string (global-string 1d5d3) "精神統一Ⅲ"
+mov (global-int 6c6a69) dd
+mov (global-int 6c6681) 1f4
+mov (global-int 6c7239) d
+mov (global-int 6c7a09) 1
+mov (global-int 6c81d9) e
+mov (global-int 6d382d) 1e
+set-string (global-string 1de82) "【戦闘：精神統一Ⅲ】"
+set-string (global-string 1de83) "　常時、自分の命中が３０％上昇"
+set-string (global-string 1d9bb) "命中率30％上昇"
+set-string (global-string 1d5d6) "心眼Ⅰ"
+mov (global-int 6c6a6c) e2
+mov (global-int 6c6684) 1fe
+mov (global-int 6c723c) d
+mov (global-int 6c7a0c) 1
+mov (global-int 6c81dc) 5
+mov (global-int 6d3854) a
+mov (global-int 6d3855) a
+set-string (global-string 1de88) "【戦闘：心眼Ⅰ】"
+set-string (global-string 1de89) "　常時、自分の命中と回避が１０％上昇"
+set-string (global-string 1d9be) "命中と回避10％上昇"
+set-string (global-string 1d5d7) "心眼Ⅱ"
+mov (global-int 6c6a6d) e2
+mov (global-int 6c6685) 208
+mov (global-int 6c723d) d
+mov (global-int 6c7a0d) 1
+mov (global-int 6c81dd) a
+mov (global-int 6d3861) 14
+mov (global-int 6d3862) 14
+set-string (global-string 1de8a) "【戦闘：心眼Ⅱ】"
+set-string (global-string 1de8b) "　常時、自分の命中と回避が２０％上昇"
+set-string (global-string 1d9bf) "命中と回避20％上昇"
+set-string (global-string 1d5d8) "心眼Ⅲ"
+mov (global-int 6c6a6e) e2
+mov (global-int 6c6686) 212
+mov (global-int 6c723e) d
+mov (global-int 6c7a0e) 1
+mov (global-int 6c81de) 14
+mov (global-int 6d386e) 1e
+mov (global-int 6d386f) 1e
+set-string (global-string 1de8c) "【戦闘：心眼Ⅲ】"
+set-string (global-string 1de8d) "　常時、自分の命中と回避が３０％上昇"
+set-string (global-string 1d9c0) "命中と回避30％上昇"
+set-string (global-string 1d5db) "調理Ⅰ"
+mov (global-int 6c6a71) e7
+mov (global-int 6c6689) 730
+mov (global-int 6c7241) 4
+mov (global-int 6c7a11) 1
+mov (global-int 6c81e1) 3
+mov (global-int 6d7411) 32
+mov (global-int 6d77f9) 23
+set-string (global-string 1de92) "【戦闘：調理Ⅰ】"
+set-string (global-string 1de93) "　敵撃破時に確率５０％でＨＰが５％回復"
+set-string (global-string 1d9c3) "敵撃破時、確率50％でHPが5％回復"
+set-string (global-string 1d5dc) "調理Ⅱ"
+mov (global-int 6c6a72) e7
+mov (global-int 6c668a) 73a
+mov (global-int 6c7242) 4
+mov (global-int 6c7a12) 1
+mov (global-int 6c81e2) 6
+mov (global-int 6d7412) 4b
+mov (global-int 6d77fa) 23
+set-string (global-string 1de94) "【戦闘：調理Ⅱ】"
+set-string (global-string 1de95) "　敵撃破時に確率７５％でＨＰが５％回復"
+set-string (global-string 1d9c4) "敵撃破時、確率75％でHPが5％回復"
+set-string (global-string 1d5dd) "調理Ⅲ"
+mov (global-int 6c6a73) e7
+mov (global-int 6c668b) 744
+mov (global-int 6c7243) 4
+mov (global-int 6c7a13) 1
+mov (global-int 6c81e3) 9
+mov (global-int 6d7413) 64
+mov (global-int 6d77fb) 23
+set-string (global-string 1de96) "【戦闘：調理Ⅲ】"
+set-string (global-string 1de97) "　敵撃破時は常に発動し、ＨＰが５％回復"
+set-string (global-string 1d9c5) "敵撃破時、必ずHPが5％回復"
+set-string (global-string 1d5e5) "手加減"
+mov (global-int 6c6693) 456
+mov (global-int 6c724b) 4
+mov (global-int 6c7a1b) 1
+mov (global-int 6c81eb) 1
+set-string (global-string 1dea6) "【戦闘：手加減】"
+set-string (global-string 1dea7) "　どのような攻撃をしても相手のＨＰが必ず「１」残る"
+set-string (global-string 1d9cd) "必ず相手のHPを1残す"
+set-string (global-string 1d5e6) "間接軽減"
+mov (global-int 6c6694) 6b3
+mov (global-int 6c724c) 4
+mov (global-int 6c7a1c) 1
+mov (global-int 6c81ec) f
+set-string (global-string 1dea8) "【戦闘：間接軽減】"
+set-string (global-string 1dea9) "　距離が離れるほど間接攻撃のダメージを軽減"
+set-string (global-string 1d9ce) "間接攻撃ダメージ軽減"
+set-string (global-string 1d5ef) "援護防御Ⅰ"
+mov (global-int 6c6a85) fb
+mov (global-int 6c669d) 76c
+mov (global-int 6c7255) 4
+mov (global-int 6c7a25) 1
+mov (global-int 6c81f5) 4
+mov (global-int 6d7425) 14
+mov (global-int 6d780d) 1d
+sub (global-int 6d7ee6) 0 1
+set-string (global-string 1deba) "【戦闘：援護防御Ⅰ】"
+set-string (global-string 1debb) "　隣接する味方が攻撃を受けると確率２０％で完全防御"
+set-string (global-string 1d9d7) "隣接する味方に確率20％で防御効果"
+set-string (global-string 1d5f0) "援護防御Ⅱ"
+mov (global-int 6c6a86) fb
+mov (global-int 6c669e) 776
+mov (global-int 6c7256) 4
+mov (global-int 6c7a26) 1
+mov (global-int 6c81f6) 8
+mov (global-int 6d7426) 1e
+mov (global-int 6d780e) 1d
+sub (global-int 6d7eea) 0 1
+set-string (global-string 1debc) "【戦闘：援護防御Ⅱ】"
+set-string (global-string 1debd) "　隣接する味方が攻撃を受けると確率３０％で完全防御"
+set-string (global-string 1d9d8) "隣接する味方に確率30％で防御効果"
+set-string (global-string 1d5f1) "援護防御Ⅲ"
+mov (global-int 6c6a87) fb
+mov (global-int 6c669f) 780
+mov (global-int 6c7257) 4
+mov (global-int 6c7a27) 1
+mov (global-int 6c81f7) c
+mov (global-int 6d7427) 28
+mov (global-int 6d780f) 1d
+sub (global-int 6d7eee) 0 1
+set-string (global-string 1debe) "【戦闘：援護防御Ⅲ】"
+set-string (global-string 1debf) "　隣接する味方が攻撃を受けると確率４０％で完全防御"
+set-string (global-string 1d9d9) "隣接する味方に確率40％で防御効果"
+set-string (global-string 1d5f2) "身代わり"
+mov (global-int 6c6a88) fe
+mov (global-int 6c66a0) 3ca
+mov (global-int 6c7258) 3
+mov (global-int 6c7a28) 1
+mov (global-int 6c81f8) a
+set-string (global-string 1dec0) "【特殊：身代わり】"
+set-string (global-string 1dec1) "　隣接する味方が射撃されたときに身代わりで戦闘する"
+set-string (global-string 1d9da) "隣接する味方が射撃されると交代戦闘"
+set-string (global-string 1d5f3) "お助けメイド"
+mov (global-int 6c6a89) ff
+mov (global-int 6c66a1) 794
+mov (global-int 6c7259) 4
+mov (global-int 6c7a29) 1
+mov (global-int 6c81f9) a
+mov (global-int 6d7429) a
+mov (global-int 6d7811) 1d
+sub (global-int 6d7ef6) 0 1
+set-string (global-string 1dec2) "【戦闘：お助けメイド】"
+set-string (global-string 1dec3) "　味方がどこでも攻撃を受けると確率１０％で完全防御"
+set-string (global-string 1d9db) "どこでも味方に確率10％で防御効果"
+set-string (global-string 1d5f4) "女神援護"
+mov (global-int 6c66a2) 78a
+mov (global-int 6c725a) 4
+mov (global-int 6c7a2a) 1
+mov (global-int 6c81fa) 4
+mov (global-int 6d742a) 64
+mov (global-int 6d7812) 1d
+mov (global-int 6d7efa) 2
+set-string (global-string 1dec4) "【戦闘：女神援護】"
+set-string (global-string 1dec5) "　隣接したフィアが攻撃を受けると完全防御"
+set-string (global-string 1d9dc) "隣接するフィアに防御効果"
+set-string (global-string 1d5f9) "身代りだるまⅠ"
+mov (global-int 6c6a8f) 105
+mov (global-int 6c66a7) 74e
+mov (global-int 6c725f) 4
+mov (global-int 6c7a2f) 1
+mov (global-int 6c81ff) a
+set-string (global-string 1dece) "【戦闘：身代りだるまⅠ】"
+set-string (global-string 1decf) "　ＨＰ『０』になると一度のみＨＰ２５％の状態で復活"
+set-string (global-string 1d9e1) "一度だけHP0からHP25％状態で復活"
+set-string (global-string 1d5fa) "身代りだるまⅡ"
+mov (global-int 6c6a90) 105
+mov (global-int 6c66a8) 758
+mov (global-int 6c7260) 4
+mov (global-int 6c7a30) 1
+mov (global-int 6c8200) 14
+set-string (global-string 1ded0) "【戦闘：身代りだるまⅡ】"
+set-string (global-string 1ded1) "　ＨＰ『０』になると一度のみＨＰ５０％の状態で復活"
+set-string (global-string 1d9e2) "一度だけHP0からHP50％状態で復活"
+set-string (global-string 1d5fb) "身代りだるまⅢ"
+mov (global-int 6c6a91) 105
+mov (global-int 6c66a9) 762
+mov (global-int 6c7261) 4
+mov (global-int 6c7a31) 1
+mov (global-int 6c8201) 1e
+set-string (global-string 1ded2) "【戦闘：身代りだるまⅢ】"
+set-string (global-string 1ded3) "　ＨＰ『０』になると一度のみＨＰ全回復の状態で復活"
+set-string (global-string 1d9e3) "一度だけHP0からHP全回復で復活"
+set-string (global-string 1d5fe) "反撃封じの呪い"
+mov (global-int 6c66ac) 79e
+mov (global-int 6c7264) 4
+mov (global-int 6c7a34) 1
+mov (global-int 6c8204) 6
+mov (global-int 6d7434) 1e
+mov (global-int 6d781c) 24
+set-string (global-string 1ded8) "【戦闘：反撃封じの呪い】"
+set-string (global-string 1ded9) "　確率３０％でそれ以降の相手の反撃を封じる"
+set-string (global-string 1d9e6) "確率30％で相手の反撃を封じる"
+set-string (global-string 1d617) "極限集中"
+mov (global-int 6c66c5) 7a8
+mov (global-int 6c727d) 4
+mov (global-int 6c7a4d) 1
+mov (global-int 6d7835) 19
+set-string (global-string 1df0a) "【戦闘：極限集中】"
+set-string (global-string 1df0b) "　全ての攻撃を完全回避する"
+set-string (global-string 1d9ff) "全ての攻撃を完全回避"
+set-string (global-string 1d621) "刃剣舞"
+mov (global-int 6c66cf) c26
+mov (global-int 6c7287) 5
+mov (global-int 6c7a57) 1
+mov (global-int 6c8227) 4
+mov (global-int 6ca167) 200000
+mov (global-int 6c9997) 1
+mov (global-int 6c9d7f) 1
+sub (global-int 6d3c23) 0 5
+mov (global-int 6d3c24) 5
+mov (global-int 6d3c25) 3
+mov (global-int 6d3c29) 2
+sub (global-int 6d6712) 0 4
+mov (global-int 6d783f) 65
+set-string (global-string 1df1e) "【必殺：刃剣舞（じんけんぶ）】"
+set-string (global-string 1df1f) "　命中-5 回避+5 物攻+3 敏捷+2 SP4消費"
+set-string (global-string 1da09) "必殺 物攻+3 SP4"
+set-string (global-string 1d622) "剛刃剣舞"
+mov (global-int 6c66d0) c30
+mov (global-int 6c7288) 5
+mov (global-int 6c7a58) 1
+mov (global-int 6c8228) 8
+mov (global-int 6ca168) 200000
+mov (global-int 6c9998) 1
+mov (global-int 6c9d80) 1
+sub (global-int 6d3c30) 0 5
+mov (global-int 6d3c31) 5
+mov (global-int 6d3c32) 6
+mov (global-int 6d3c36) 4
+sub (global-int 6d6715) 0 8
+mov (global-int 6d7840) 65
+set-string (global-string 1df20) "【必殺：剛刃剣舞（ごうじんけんぶ）】"
+set-string (global-string 1df21) "　命中-5 回避+5 物攻+6 敏捷+4 SP8消費"
+set-string (global-string 1da0a) "必殺 物攻+6 SP8"
+set-string (global-string 1d623) "天破刃剣舞"
+mov (global-int 6c66d1) c3a
+mov (global-int 6c7289) 5
+mov (global-int 6c7a59) 1
+mov (global-int 6c8229) c
+mov (global-int 6ca169) 200000
+mov (global-int 6c9999) 1
+mov (global-int 6c9d81) 1
+sub (global-int 6d3c3d) 0 5
+mov (global-int 6d3c3e) 5
+mov (global-int 6d3c3f) 9
+mov (global-int 6d3c43) 5
+sub (global-int 6d6718) 0 c
+mov (global-int 6d7841) 65
+set-string (global-string 1df22) "【必殺：天破刃剣舞（てんはじんけんぶ）】"
+set-string (global-string 1df23) "　命中-5 回避+5 物攻+9 敏捷+5 SP12消費"
+set-string (global-string 1da0b) "必殺 物攻+9 SP12"
+set-string (global-string 1d624) "骨斬捌き"
+mov (global-int 6c66d2) c08
+mov (global-int 6c728a) 5
+mov (global-int 6c7a5a) 1
+mov (global-int 6c822a) 5
+mov (global-int 6ca16a) 80000
+mov (global-int 6c999a) 1
+mov (global-int 6c9d82) 1
+sub (global-int 6d3c4a) 0 a
+mov (global-int 6d3c4c) 5
+sub (global-int 6d3c50) 0 2
+mov (global-int 6d60d2) a
+sub (global-int 6d671b) 0 6
+mov (global-int 6d7842) 66
+set-string (global-string 1df24) "【必殺：骨斬捌き（こつざんさばき）】"
+set-string (global-string 1df25) "　命中-10 物攻+5 敏捷-2 痛打+10 SP6消費"
+set-string (global-string 1da0c) "必殺 物攻+5 SP7"
+set-string (global-string 1d625) "互流捌き"
+mov (global-int 6c66d3) c12
+mov (global-int 6c728b) 5
+mov (global-int 6c7a5b) 1
+mov (global-int 6c822b) 8
+mov (global-int 6ca16b) 80000
+mov (global-int 6c999b) 1
+mov (global-int 6c9d83) 1
+sub (global-int 6d3c57) 0 a
+mov (global-int 6d3c59) 8
+sub (global-int 6d3c5d) 0 3
+mov (global-int 6d60d3) f
+sub (global-int 6d671e) 0 a
+mov (global-int 6d7843) 66
+set-string (global-string 1df26) "【必殺：互流捌き（ごりゅうさばき）】"
+set-string (global-string 1df27) "　命中-10 物攻+8 敏捷-3 痛打+15 SP10消費"
+set-string (global-string 1da0d) "必殺 物攻+8 SP10"
+set-string (global-string 1d626) "剛閃互流斬"
+mov (global-int 6c66d4) c1c
+mov (global-int 6c728c) 5
+mov (global-int 6c7a5c) 1
+mov (global-int 6c822c) c
+mov (global-int 6ca16c) 80000
+mov (global-int 6c999c) 1
+mov (global-int 6c9d84) 1
+sub (global-int 6d3c64) 0 a
+mov (global-int 6d3c66) 10
+sub (global-int 6d3c6a) 0 5
+mov (global-int 6d60d4) 14
+sub (global-int 6d6721) 0 e
+mov (global-int 6d7844) 66
+set-string (global-string 1df28) "【必殺：剛閃互流斬（ごうせんごりゅうざん）】"
+set-string (global-string 1df29) "　命中-10 物攻+16 敏捷-5 痛打+20 SP14消費"
+set-string (global-string 1da0e) "必殺 物攻+16 SP14"
+set-string (global-string 1d627) "土巨兵の剛拳"
+mov (global-int 6c66d5) cd0
+mov (global-int 6c728d) 5
+mov (global-int 6c7a5d) 1
+mov (global-int 6c822d) 4
+mov (global-int 6c999d) 1
+mov (global-int 6c9d85) 1
+mov (global-int 6cb4f5) 3
+mov (global-int 6cdbab) 1
+sub (global-int 6d3c71) 0 5
+mov (global-int 6d3c73) 5
+sub (global-int 6d3c77) 0 3
+sub (global-int 6d6724) 0 5
+mov (global-int 6d7845) 67
+set-string (global-string 1df2a) "【必殺：土巨兵の剛拳】　地脈属性"
+set-string (global-string 1df2b) "　命中-5 物攻+5 敏捷-3 混乱1 SP5消費"
+set-string (global-string 1da0f) "必殺 地脈 物攻+5 混乱1 SP5"
+set-string (global-string 1d628) "土巨兵の岩石拳"
+mov (global-int 6c66d6) cda
+mov (global-int 6c728e) 5
+mov (global-int 6c7a5e) 1
+mov (global-int 6c822e) 7
+mov (global-int 6c999e) 1
+mov (global-int 6c9d86) 1
+mov (global-int 6cb4f6) 3
+mov (global-int 6cdbc9) 1
+sub (global-int 6d3c7e) 0 5
+mov (global-int 6d3c80) a
+sub (global-int 6d3c84) 0 5
+sub (global-int 6d6727) 0 8
+mov (global-int 6d7846) 67
+set-string (global-string 1df2c) "【必殺：土巨兵の岩石拳】　地脈属性"
+set-string (global-string 1df2d) "　命中-5 物攻+10 敏捷-5 混乱1 SP8消費"
+set-string (global-string 1da10) "必殺 地脈 物攻+10 混乱1 SP8"
+set-string (global-string 1d629) "土巨兵の進撃拳"
+mov (global-int 6c66d7) ce4
+mov (global-int 6c728f) 5
+mov (global-int 6c7a5f) 1
+mov (global-int 6c822f) a
+mov (global-int 6c999f) 1
+mov (global-int 6c9d87) 1
+mov (global-int 6cb4f7) 3
+mov (global-int 6cdbe7) 1
+sub (global-int 6d3c8b) 0 5
+mov (global-int 6d3c8d) 14
+sub (global-int 6d3c91) 0 8
+sub (global-int 6d672a) 0 c
+mov (global-int 6d7847) 67
+set-string (global-string 1df2e) "【必殺：土巨兵の進撃拳】　地脈属性"
+set-string (global-string 1df2f) "　命中-5 物攻+20 敏捷-8 混乱1 SP12消費"
+set-string (global-string 1da11) "必殺 地脈 物攻+20 混乱1 SP12"
+set-string (global-string 1d62a) "釣瓶打ち"
+mov (global-int 6c66d8) bea
+mov (global-int 6c7290) 5
+mov (global-int 6c7a60) 1
+mov (global-int 6c8230) 4
+mov (global-int 6ca170) 40000
+mov (global-int 6d3c9a) 3
+sub (global-int 6d3c9e) 0 1
+sub (global-int 6d672d) 0 4
+mov (global-int 6d7848) 68
+set-string (global-string 1df30) "【必殺：釣瓶打ち】"
+set-string (global-string 1df31) "　武器射程 物攻+3 敏捷-1 SP4消費"
+set-string (global-string 1da12) "必殺 武器射程 物攻+3 SP4"
+set-string (global-string 1d62b) "二連釣瓶打ち"
+mov (global-int 6c66d9) bf4
+mov (global-int 6c7291) 5
+mov (global-int 6c7a61) 1
+mov (global-int 6c8231) 6
+mov (global-int 6ca171) 40000
+mov (global-int 6d3ca7) 7
+sub (global-int 6d3cab) 0 3
+sub (global-int 6d6730) 0 7
+mov (global-int 6d7849) 69
+set-string (global-string 1df32) "【必殺：二連釣瓶打ち】"
+set-string (global-string 1df33) "　武器射程 物攻+7 敏捷-3 SP7消費"
+set-string (global-string 1da13) "必殺 武器射程 物攻+7 SP7"
+set-string (global-string 1d62c) "三連釣瓶打ち"
+mov (global-int 6c66da) bfe
+mov (global-int 6c7292) 5
+mov (global-int 6c7a62) 1
+mov (global-int 6c8232) a
+mov (global-int 6ca172) 40000
+mov (global-int 6d3cb4) c
+sub (global-int 6d3cb8) 0 5
+sub (global-int 6d6733) 0 a
+mov (global-int 6d784a) 6a
+set-string (global-string 1df34) "【必殺：三連釣瓶打ち】"
+set-string (global-string 1df35) "　武器射程 物攻+12 敏捷-5 SP10消費"
+set-string (global-string 1da14) "必殺 武器射程 物攻+12 SP10"
+set-string (global-string 1d62d) "長距離射撃"
+mov (global-int 6c66db) c44
+mov (global-int 6c7293) 5
+mov (global-int 6c7a63) 1
+mov (global-int 6c8233) 3
+mov (global-int 6ca173) 440000
+mov (global-int 6c99a3) 2
+mov (global-int 6c9d8b) 5
+sub (global-int 6d3cbf) 0 a
+sub (global-int 6d3cc5) 0 2
+sub (global-int 6d6736) 0 3
+mov (global-int 6d784b) 6b
+set-string (global-string 1df36) "【必殺：長距離射撃】"
+set-string (global-string 1df37) "　射程1-4 命中-10 敏捷-2 SP3消費"
+set-string (global-string 1da15) "必殺 射程4 速-2 SP3"
+set-string (global-string 1d62e) "長距離徹甲撃"
+mov (global-int 6c66dc) c4e
+mov (global-int 6c7294) 5
+mov (global-int 6c7a64) 1
+mov (global-int 6c8234) 8
+mov (global-int 6ca174) 400000
+mov (global-int 6c99a4) 2
+mov (global-int 6c9d8c) 5
+sub (global-int 6d3ccc) 0 a
+mov (global-int 6d3cce) 4
+sub (global-int 6d3cd2) 0 3
+sub (global-int 6d6739) 0 5
+mov (global-int 6d784c) 6b
+set-string (global-string 1df38) "【必殺：長距離徹甲撃（ちょうきょりてっこうげき）】"
+set-string (global-string 1df39) "　射程1-4 命中-10 物攻+4 敏捷-3 SP5消費"
+set-string (global-string 1da16) "必殺 射程4 物攻+4 SP5"
+set-string (global-string 1d62f) "長距離閃貫撃"
+mov (global-int 6c66dd) c58
+mov (global-int 6c7295) 5
+mov (global-int 6c7a65) 1
+mov (global-int 6c8235) d
+mov (global-int 6ca175) 400000
+mov (global-int 6c99a5) 2
+mov (global-int 6c9d8d) 5
+sub (global-int 6d3cd9) 0 5
+mov (global-int 6d3cdb) 8
+sub (global-int 6d3cdf) 0 4
+mov (global-int 6d60dd) a
+sub (global-int 6d673c) 0 7
+mov (global-int 6d784d) 6b
+set-string (global-string 1df3a) "【必殺：長距離閃貫撃（ちょうきょりせんかんげき）】"
+set-string (global-string 1df3b) "　射程1-4 命中-5 物攻+8 敏捷-4 痛打+10 SP7消費"
+set-string (global-string 1da17) "必殺 射程4 物攻+8 SP7"
+set-string (global-string 1d630) "旋盾破"
+mov (global-int 6c66de) c76
+mov (global-int 6c7296) 5
+mov (global-int 6c7a66) 1
+mov (global-int 6c8236) 6
+mov (global-int 6ca176) 1000000
+mov (global-int 6c99a6) 1
+mov (global-int 6c9d8e) 1
+mov (global-int 6d3ce6) 14
+mov (global-int 6d3ce8) 6
+mov (global-int 6d3cec) 8
+sub (global-int 6d673f) 0 5
+mov (global-int 6d784e) 6c
+set-string (global-string 1df3c) "【必殺：旋盾破（せんじゅんは）】"
+set-string (global-string 1df3d) "　命中+20 物攻+6 敏捷+8 SP5消費"
+set-string (global-string 1da18) "必殺 物攻+6 敏捷+8 SP5"
+set-string (global-string 1d631) "爆式旋盾破"
+mov (global-int 6c66df) c80
+mov (global-int 6c7297) 5
+mov (global-int 6c7a67) 1
+mov (global-int 6c8237) a
+mov (global-int 6ca177) 1000000
+mov (global-int 6c99a7) 1
+mov (global-int 6c9d8f) 1
+mov (global-int 6d3cf3) 14
+mov (global-int 6d3cf5) c
+mov (global-int 6d3cf9) a
+sub (global-int 6d6742) 0 8
+mov (global-int 6d784f) 6c
+set-string (global-string 1df3e) "【必殺：爆式旋盾破（ばくしきせんじゅんは）】"
+set-string (global-string 1df3f) "　命中+20 物攻+12 敏捷+10 SP8消費"
+set-string (global-string 1da19) "必殺 物攻+12 敏捷+10 SP8"
+set-string (global-string 1d632) "精域聘の旋盾破"
+mov (global-int 6c66e0) c8a
+mov (global-int 6c7298) 5
+mov (global-int 6c7a68) 1
+mov (global-int 6c8238) e
+mov (global-int 6ca178) 1000000
+mov (global-int 6c99a8) 1
+mov (global-int 6c9d90) 1
+mov (global-int 6d3d00) 14
+mov (global-int 6d3d02) 18
+mov (global-int 6d3d06) c
+sub (global-int 6d6745) 0 c
+mov (global-int 6d7850) 6c
+set-string (global-string 1df40) "【必殺：精域聘の旋盾破】"
+set-string (global-string 1df41) "　命中+20 物攻+24 敏捷+12 SP12消費"
+set-string (global-string 1da1a) "必殺 物攻+24 敏捷+12 SP12"
+set-string (global-string 1d633) "炎槍連撃"
+mov (global-int 6c66e1) cb2
+mov (global-int 6c7299) 5
+mov (global-int 6c7a69) 1
+mov (global-int 6c8239) 5
+mov (global-int 6ca179) 2000000
+mov (global-int 6c99a9) 1
+mov (global-int 6c9d91) 1
+mov (global-int 6cb501) 5
+mov (global-int 6cdd18) 1
+mov (global-int 6d3d0d) a
+mov (global-int 6d3d0f) 6
+sub (global-int 6d3d13) 0 2
+sub (global-int 6d6748) 0 5
+mov (global-int 6d7851) 6d
+set-string (global-string 1df42) "【必殺：炎槍連撃】　火炎属性"
+set-string (global-string 1df43) "　命中+10 物攻+6 敏捷-2 炎症1 SP5消費"
+set-string (global-string 1da1b) "必殺 火炎 物攻+6 炎症1 SP5"
+set-string (global-string 1d634) "炎槍貫通撃"
+mov (global-int 6c66e2) cbc
+mov (global-int 6c729a) 5
+mov (global-int 6c7a6a) 1
+mov (global-int 6c823a) a
+mov (global-int 6ca17a) 2000000
+mov (global-int 6c99aa) 1
+mov (global-int 6c9d92) 1
+mov (global-int 6cb502) 5
+mov (global-int 6cdd36) 1
+mov (global-int 6d3d1a) a
+mov (global-int 6d3d1c) a
+sub (global-int 6d3d20) 0 4
+sub (global-int 6d674b) 0 8
+mov (global-int 6d7852) 6d
+set-string (global-string 1df44) "【必殺：炎槍貫通撃】　火炎属性"
+set-string (global-string 1df45) "　命中+10 物攻+10 敏捷-4 炎症1 SP8消費"
+set-string (global-string 1da1c) "必殺 火炎 物攻+10 炎症1 SP8"
+set-string (global-string 1d635) "炎槍神天撃"
+mov (global-int 6c66e3) cc6
+mov (global-int 6c729b) 5
+mov (global-int 6c7a6b) 1
+mov (global-int 6c823b) f
+mov (global-int 6ca17b) 2000000
+mov (global-int 6c99ab) 1
+mov (global-int 6c9d93) 1
+mov (global-int 6cb503) 5
+mov (global-int 6cdd54) 1
+mov (global-int 6d3d27) a
+mov (global-int 6d3d29) 10
+sub (global-int 6d3d2d) 0 6
+sub (global-int 6d674e) 0 c
+mov (global-int 6d7853) 6d
+set-string (global-string 1df46) "【必殺：炎槍神天撃】　火炎属性"
+set-string (global-string 1df47) "　命中+10 物攻+16 敏捷-6 炎症1 SP12消費"
+set-string (global-string 1da1d) "必殺 火炎 物攻+16 炎症1 SP12"
+set-string (global-string 1d636) "電磁円斬"
+mov (global-int 6c66e4) c94
+mov (global-int 6c729c) 5
+mov (global-int 6c7a6c) 1
+mov (global-int 6c823c) 4
+mov (global-int 6ca17c) 4000000
+mov (global-int 6c99ac) 2
+mov (global-int 6c9d94) 4
+mov (global-int 6cb504) 6
+mov (global-int 6cdd6e) 1
+sub (global-int 6d3d34) 0 a
+mov (global-int 6d3d36) 6
+mov (global-int 6d3d3a) 2
+sub (global-int 6d6751) 0 4
+mov (global-int 6d7854) 6e
+set-string (global-string 1df48) "【必殺：電磁円斬（でんじえんざん）】　電撃属性"
+set-string (global-string 1df49) "　射程1-3 命中-10 物攻+6 敏捷+2 麻痺1 SP4消費"
+set-string (global-string 1da1e) "必殺 電撃 射程3 物攻+6 麻痺1 SP4"
+set-string (global-string 1d637) "電磁双円斬"
+mov (global-int 6c66e5) c9e
+mov (global-int 6c729d) 5
+mov (global-int 6c7a6d) 1
+mov (global-int 6c823d) 7
+mov (global-int 6ca17d) 4000000
+mov (global-int 6c99ad) 2
+mov (global-int 6c9d95) 4
+mov (global-int 6cb505) 6
+mov (global-int 6cdd8c) 1
+sub (global-int 6d3d41) 0 a
+mov (global-int 6d3d43) 9
+mov (global-int 6d3d47) 3
+sub (global-int 6d6754) 0 6
+mov (global-int 6d7855) 6e
+set-string (global-string 1df4a) "【必殺：電磁双円斬】　電撃属性"
+set-string (global-string 1df4b) "　射程1-3 命中-10 物攻+9 敏捷+3 麻痺1 SP6消費"
+set-string (global-string 1da1f) "必殺 電撃 物攻+9 麻痺1 SP6"
+set-string (global-string 1d638) "電磁神龍斬"
+mov (global-int 6c66e6) ca8
+mov (global-int 6c729e) 5
+mov (global-int 6c7a6e) 1
+mov (global-int 6c823e) a
+mov (global-int 6ca17e) 4000000
+mov (global-int 6c99ae) 2
+mov (global-int 6c9d96) 4
+mov (global-int 6cb506) 6
+mov (global-int 6cddaa) 1
+sub (global-int 6d3d4e) 0 a
+mov (global-int 6d3d50) c
+mov (global-int 6d3d54) 5
+sub (global-int 6d6757) 0 8
+mov (global-int 6d7856) 6e
+set-string (global-string 1df4c) "【必殺：電磁神龍斬】　電撃属性"
+set-string (global-string 1df4d) "　射程1-3 命中-10 物攻+12 敏捷+5 麻痺1 SP8消費"
+set-string (global-string 1da20) "必殺 電撃 物攻+12 麻痺1 SP8"
+set-string (global-string 1d639) "砲撃"
+mov (global-int 6c66e7) d48
+mov (global-int 6c729f) 5
+mov (global-int 6c7a6f) 1
+mov (global-int 6c823f) 5
+mov (global-int 6c99af) 2
+mov (global-int 6c9d97) 4
+mov (global-int 6d3d5d) 5
+sub (global-int 6d3d61) 0 a
+sub (global-int 6d675a) 0 8
+mov (global-int 6d7857) 6f
+set-string (global-string 1df4e) "【必殺：砲撃】"
+set-string (global-string 1df4f) "　射程1-3 物攻+5 敏捷-10 SP8消費"
+set-string (global-string 1da21) "必殺 射程3 物攻+5 SP8"
+set-string (global-string 1d63a) "重砲撃"
+mov (global-int 6c66e8) d52
+mov (global-int 6c72a0) 5
+mov (global-int 6c7a70) 1
+mov (global-int 6c8240) 8
+mov (global-int 6c99b0) 2
+mov (global-int 6c9d98) 2
+sub (global-int 6d3d68) 0 a
+mov (global-int 6d3d6a) e
+sub (global-int 6d3d6e) 0 8
+sub (global-int 6d675d) 0 e
+mov (global-int 6d7858) 6f
+set-string (global-string 1df50) "【必殺：重砲撃】"
+set-string (global-string 1df51) "　射程1 命中-10 物攻+14 敏捷-8 SP14消費"
+set-string (global-string 1da22) "必殺 射程1 物攻+14 SP14"
+set-string (global-string 1d63b) "超射程砲撃"
+mov (global-int 6c66e9) d5c
+mov (global-int 6c72a1) 5
+mov (global-int 6c7a71) 1
+mov (global-int 6c8241) 3
+mov (global-int 6c99b1) 2
+mov (global-int 6c9d99) a
+sub (global-int 6d3d75) 0 a
+sub (global-int 6d3d7b) 0 5
+sub (global-int 6d6760) 0 a
+mov (global-int 6d7859) 6f
+set-string (global-string 1df52) "【必殺：超射程砲撃】"
+set-string (global-string 1df53) "　射程1-9 命中-10 敏捷-5 SP10消費"
+set-string (global-string 1da23) "必殺 射程9 SP10"
+set-string (global-string 1d63c) "加速集中砲撃"
+mov (global-int 6c66ea) d66
+mov (global-int 6c72a2) 5
+mov (global-int 6c7a72) 1
+mov (global-int 6c8242) a
+mov (global-int 6c99b2) 2
+mov (global-int 6c9d9a) 4
+mov (global-int 6d3d82) 14
+mov (global-int 6d3d84) a
+mov (global-int 6d3d88) 3
+sub (global-int 6d6763) 0 c
+mov (global-int 6d785a) 6f
+set-string (global-string 1df54) "【必殺：加速集中砲撃】"
+set-string (global-string 1df55) "　射程1-3 命中+20 物攻+10 敏捷+3 SP12消費"
+set-string (global-string 1da24) "必殺 射程3 物攻+10 SP12"
+set-string (global-string 1d63d) "轟炎ストレート"
+mov (global-int 6c66eb) d0c
+mov (global-int 6c72a3) 5
+mov (global-int 6c7a73) 1
+mov (global-int 6c8243) 6
+mov (global-int 6c99b3) 1
+mov (global-int 6c9d9b) 1
+mov (global-int 6cb50b) 5
+mov (global-int 6cde44) 1
+mov (global-int 6d3d8f) f
+mov (global-int 6d3d91) 6
+sub (global-int 6d3d95) 0 4
+mov (global-int 6d60eb) a
+sub (global-int 6d6766) 0 8
+mov (global-int 6d785b) 70
+set-string (global-string 1df56) "【必殺：轟炎ストレート】　火炎属性"
+set-string (global-string 1df57) "　命中+15 物攻+6 炎症1 敏捷-4 痛打+10 SP8消費"
+set-string (global-string 1da25) "必殺 火炎 物攻+6 炎症1 SP8"
+set-string (global-string 1d63e) "轟炎アッパー"
+mov (global-int 6c66ec) d16
+mov (global-int 6c72a4) 5
+mov (global-int 6c7a74) 1
+mov (global-int 6c8244) 8
+mov (global-int 6c99b4) 1
+mov (global-int 6c9d9c) 1
+mov (global-int 6cb50c) 5
+mov (global-int 6cde62) 2
+mov (global-int 6d3d9c) f
+mov (global-int 6d3d9e) a
+sub (global-int 6d3da2) 0 5
+mov (global-int 6d60ec) a
+sub (global-int 6d6769) 0 c
+mov (global-int 6d785c) 78
+set-string (global-string 1df58) "【必殺：轟炎アッパー】　火炎属性"
+set-string (global-string 1df59) "　命中+15 物攻+10 炎症2 敏捷-5 痛打+10 SP12消費"
+set-string (global-string 1da26) "必殺 火炎 物攻+10 炎症2 SP12"
+set-string (global-string 1d63f) "轟炎爆連撃"
+mov (global-int 6c66ed) d20
+mov (global-int 6c72a5) 5
+mov (global-int 6c7a75) 1
+mov (global-int 6c8245) a
+mov (global-int 6c99b5) 1
+mov (global-int 6c9d9d) 1
+mov (global-int 6cb50d) 5
+mov (global-int 6cde80) 3
+mov (global-int 6d3da9) f
+mov (global-int 6d3dab) 12
+sub (global-int 6d3daf) 0 6
+mov (global-int 6d60ed) a
+sub (global-int 6d676c) 0 10
+mov (global-int 6d785d) 79
+set-string (global-string 1df5a) "【必殺：轟炎爆連撃】　火炎属性"
+set-string (global-string 1df5b) "　命中+15 物攻+18 炎症3 敏捷-6 痛打+10 SP16消費"
+set-string (global-string 1da27) "必殺 火炎 物攻+18 炎症2 SP16"
+set-string (global-string 1d640) "流遠槍"
+mov (global-int 6c66ee) cee
+mov (global-int 6c72a6) 5
+mov (global-int 6c7a76) 1
+mov (global-int 6c8246) 6
+mov (global-int 6c99b6) 2
+mov (global-int 6c9d9e) 5
+mov (global-int 6cb50e) 4
+mov (global-int 6cde9c) 1
+sub (global-int 6d3db6) 0 5
+mov (global-int 6d3db8) 2
+sub (global-int 6d3dbc) 0 2
+sub (global-int 6d676f) 0 4
+mov (global-int 6d785e) 71
+set-string (global-string 1df5c) "【必殺：流遠槍（るえんそう）】　冷却属性"
+set-string (global-string 1df5d) "　射程1-4 命中-5 物攻+2 水流1 敏捷-2 SP4消費"
+set-string (global-string 1da28) "必殺 冷却 射程4 物攻+2 水流1 SP4"
+set-string (global-string 1d641) "滅遠槍"
+mov (global-int 6c66ef) cf8
+mov (global-int 6c72a7) 5
+mov (global-int 6c7a77) 1
+mov (global-int 6c8247) 8
+mov (global-int 6c99b7) 2
+mov (global-int 6c9d9f) 5
+mov (global-int 6cb50f) 4
+mov (global-int 6cdeba) 1
+sub (global-int 6d3dc3) 0 5
+mov (global-int 6d3dc5) 4
+sub (global-int 6d3dc9) 0 3
+sub (global-int 6d6772) 0 6
+mov (global-int 6d785f) 71
+set-string (global-string 1df5e) "【必殺：滅遠槍（めつえんそう）】　冷却属性"
+set-string (global-string 1df5f) "　射程1-4 命中-5 物攻+4 水流1 敏捷-3 SP6消費"
+set-string (global-string 1da29) "必殺 冷却 射程4 物攻+4 水流1 SP6"
+set-string (global-string 1d642) "流刃槍破"
+mov (global-int 6c66f0) d02
+mov (global-int 6c72a8) 5
+mov (global-int 6c7a78) 1
+mov (global-int 6c8248) a
+mov (global-int 6c99b8) 2
+mov (global-int 6c9da0) 5
+mov (global-int 6cb510) 4
+mov (global-int 6cded8) 1
+sub (global-int 6d3dd0) 0 5
+mov (global-int 6d3dd2) 8
+sub (global-int 6d3dd6) 0 4
+sub (global-int 6d6775) 0 a
+mov (global-int 6d7860) 71
+set-string (global-string 1df60) "【必殺：流刃槍破（るじんそうは）】　冷却属性"
+set-string (global-string 1df61) "　射程1-4 命中-5 物攻+8 水流1 敏捷-4 SP10消費"
+set-string (global-string 1da2a) "必殺 冷却 射程4 物攻+8 水流1 SP10"
+set-string (global-string 1d646) "チャージ機軸撃"
+mov (global-int 6c66f4) bcc
+mov (global-int 6c72ac) 5
+mov (global-int 6c7a7c) 1
+mov (global-int 6c824c) 4
+mov (global-int 6ca18c) 20000
+mov (global-int 6c99bc) 1
+mov (global-int 6c9da4) 1
+mov (global-int 6cb12c) 2
+mov (global-int 6d3e04) 1e
+mov (global-int 6d3e06) 3
+mov (global-int 6d3e0a) 3
+mov (global-int 6d60f4) 5
+mov (global-int 6d7864) 72
+set-string (global-string 1df68) "【必殺：チャージ機軸撃】２回攻撃後に使える溜め技"
+set-string (global-string 1df69) "　命中+30 物攻+3 敏捷+3 痛打+5 チャージⅡ消費"
+set-string (global-string 1da2e) "必殺 物攻+3 チャージⅡ必要"
+set-string (global-string 1d647) "チャージ機軸真撃"
+mov (global-int 6c66f5) bd6
+mov (global-int 6c72ad) 5
+mov (global-int 6c7a7d) 1
+mov (global-int 6c824d) 8
+mov (global-int 6ca18d) 20000
+mov (global-int 6c99bd) 1
+mov (global-int 6c9da5) 1
+mov (global-int 6cb12d) 3
+mov (global-int 6d3e11) 1e
+mov (global-int 6d3e13) 5
+mov (global-int 6d3e17) 4
+mov (global-int 6d60f5) 5
+mov (global-int 6d7865) 72
+set-string (global-string 1df6a) "【必殺：チャージ機軸真撃】３回攻撃後に使える溜め技"
+set-string (global-string 1df6b) "　命中+30 物攻+5 敏捷+4 痛打+5 チャージⅢ消費"
+set-string (global-string 1da2f) "必殺 物攻+5 チャージⅢ必要"
+set-string (global-string 1d648) "チャージ機軸超撃"
+mov (global-int 6c66f6) be0
+mov (global-int 6c72ae) 5
+mov (global-int 6c7a7e) 1
+mov (global-int 6c824e) c
+mov (global-int 6ca18e) 20000
+mov (global-int 6c99be) 1
+mov (global-int 6c9da6) 1
+mov (global-int 6cb12e) 4
+mov (global-int 6d3e1e) 1e
+mov (global-int 6d3e20) a
+mov (global-int 6d3e24) 5
+mov (global-int 6d60f6) 5
+mov (global-int 6d7866) 72
+set-string (global-string 1df6c) "【必殺：チャージ機軸超撃】４回攻撃後に使える溜め技"
+set-string (global-string 1df6d) "　命中+30 物攻+10 敏捷+5 痛打+5 チャージⅣ消費"
+set-string (global-string 1da30) "必殺 物攻+10 チャージⅣ必要"
+set-string (global-string 1d649) "乱れ大鎌"
+mov (global-int 6c66f7) d70
+mov (global-int 6c72af) 5
+mov (global-int 6c7a7f) 1
+mov (global-int 6c824f) a
+mov (global-int 6ca18f) 20000
+mov (global-int 6c99bf) 1
+mov (global-int 6c9da7) 1
+mov (global-int 6cdfa1) 1
+sub (global-int 6d3e2b) 0 a
+mov (global-int 6d3e2d) 9
+sub (global-int 6d678a) 0 8
+mov (global-int 6d7867) 73
+set-string (global-string 1df6e) "【必殺：乱れ大鎌】"
+set-string (global-string 1df6f) "　命中-10 物攻+9 即死 SP8消費"
+set-string (global-string 1da31) "必殺 物攻+9 即死 SP8"
+set-string (global-string 1d64a) "乱れ流鎌撃"
+mov (global-int 6c66f8) d7a
+mov (global-int 6c72b0) 5
+mov (global-int 6c7a80) 1
+mov (global-int 6c8250) 18
+mov (global-int 6ca190) 20000
+mov (global-int 6c99c0) 1
+mov (global-int 6c9da8) 1
+mov (global-int 6cdfbf) 1
+sub (global-int 6d3e38) 0 a
+mov (global-int 6d3e3a) 10
+sub (global-int 6d3e3e) 0 2
+sub (global-int 6d678d) 0 c
+mov (global-int 6d7868) 73
+set-string (global-string 1df70) "【必殺：乱れ流鎌撃】"
+set-string (global-string 1df71) "　命中-10 物攻+16 敏捷-2 SP12消費"
+set-string (global-string 1da32) "必殺 物攻+16 即死 SP12"
+set-string (global-string 1d64c) "チャージ機軸射撃"
+mov (global-int 6c66fa) c62
+mov (global-int 6c72b2) 5
+mov (global-int 6c7a82) 1
+mov (global-int 6c8252) 4
+mov (global-int 6ca192) 400000
+mov (global-int 6c99c2) 2
+mov (global-int 6c9daa) 4
+mov (global-int 6cb132) 3
+mov (global-int 6d3e54) 9
+sub (global-int 6d3e58) 0 1
+mov (global-int 6d60fa) a
+mov (global-int 6d786a) 74
+set-string (global-string 1df74) "【必殺：チャージ機軸射撃】３回攻撃後に使える溜め技"
+set-string (global-string 1df75) "　射撃1-3 物攻+9 敏捷-1 痛打+10 チャージⅢ消費"
+set-string (global-string 1da34) "必殺 物攻+9 チャージⅢ必要"
+set-string (global-string 1d64d) "チャージ機軸翔撃"
+mov (global-int 6c66fb) c6c
+mov (global-int 6c72b3) 5
+mov (global-int 6c7a83) 1
+mov (global-int 6c8253) 8
+mov (global-int 6ca193) 400000
+mov (global-int 6c99c3) 2
+mov (global-int 6c9dab) 4
+mov (global-int 6cb133) 5
+mov (global-int 6d3e61) d
+sub (global-int 6d3e65) 0 3
+mov (global-int 6d60fb) a
+mov (global-int 6d786b) 74
+set-string (global-string 1df76) "【必殺：チャージ機軸翔撃】５回攻撃後に使える溜め技"
+set-string (global-string 1df77) "　射程1-3 物攻+13 敏捷-3 痛打+10 チャージⅤ消費"
+set-string (global-string 1da35) "必殺 物攻+13 チャージⅤ必要"
+set-string (global-string 1d64e) "霊星札斬り"
+mov (global-int 6c66fc) d2a
+mov (global-int 6c72b4) 5
+mov (global-int 6c7a84) 1
+mov (global-int 6c8254) 4
+mov (global-int 6c99c4) 1
+mov (global-int 6c9dac) 1
+mov (global-int 6ce043) 1
+mov (global-int 6d3e6c) f
+mov (global-int 6d3e6e) 6
+sub (global-int 6d3e72) 0 2
+sub (global-int 6d6799) 0 8
+mov (global-int 6d786c) 75
+set-string (global-string 1df78) "【必殺：霊星札斬り】"
+set-string (global-string 1df79) "　命中+15 物攻+6 敏捷-2 恐怖1 SP8消費"
+set-string (global-string 1da36) "必殺 物攻+6 恐怖1 SP8"
+set-string (global-string 1d64f) "霊星札投擲"
+mov (global-int 6c66fd) d34
+mov (global-int 6c72b5) 5
+mov (global-int 6c7a85) 1
+mov (global-int 6c8255) 3
+mov (global-int 6c99c5) 2
+mov (global-int 6c9dad) 3
+sub (global-int 6d3e79) 0 5
+mov (global-int 6d3e7b) 2
+sub (global-int 6d3e7f) 0 3
+sub (global-int 6d679c) 0 4
+mov (global-int 6d786d) 77
+set-string (global-string 1df7a) "【必殺：霊星札投擲】"
+set-string (global-string 1df7b) "　射程1-2 命中-5 物攻+2 敏捷-3 SP4消費"
+set-string (global-string 1da37) "必殺 射程2 物攻+6 SP4"
+set-string (global-string 1d650) "剛狗の霊星札斬り"
+mov (global-int 6c66fe) d3e
+mov (global-int 6c72b6) 5
+mov (global-int 6c7a86) 1
+mov (global-int 6c8256) a
+mov (global-int 6c99c6) 1
+mov (global-int 6c9dae) 1
+mov (global-int 6ce07f) 2
+mov (global-int 6d3e86) a
+mov (global-int 6d3e88) c
+sub (global-int 6d3e8c) 0 5
+sub (global-int 6d679f) 0 10
+mov (global-int 6d786e) 75
+set-string (global-string 1df7c) "【必殺：剛狗の霊星札斬り】"
+set-string (global-string 1df7d) "　命中+10 物攻+12 敏捷-5 恐怖2 SP16消費"
+set-string (global-string 1da38) "必殺 物攻+12 恐怖2 SP16"
+set-string (global-string 1d653) "捕獲攻撃"
+mov (global-int 6c6701) bc2
+mov (global-int 6c72b9) 5
+mov (global-int 6c7a89) 1
+sub (global-int 6d3ead) 0 a
+sub (global-int 6d3eb3) 0 5
+mov (global-int 6d7871) 76
+mov (global-int 6d93c9) 1
+set-string (global-string 1df82) "【必殺：捕獲攻撃】"
+set-string (global-string 1df83) "　ボス以外の撃破で捕獲可能　命中-10 敏捷-5"
+set-string (global-string 1da3b) "撃破で捕獲可能 ボス× 結騎×"
+set-string (global-string 1d65a) "結晶化した蔦"
+mov (global-int 6c6708) f00
+mov (global-int 6c72c0) 5
+mov (global-int 6c7a90) 1
+mov (global-int 6c99d0) 2
+mov (global-int 6c9db8) 5
+mov (global-int 6cb528) 1
+mov (global-int 6ce1a4) 1
+sub (global-int 6d3f08) 0 5
+sub (global-int 6d3f0e) 0 3
+sub (global-int 6d67bd) 0 3
+mov (global-int 6d7878) d3
+set-string (global-string 1df90) "【必殺：結晶化した蔦】　無属性"
+set-string (global-string 1df91) "　射程1-4 命中-5 敏捷-3 魅了1 SP3消費"
+set-string (global-string 1da42) "必殺 無属 射程4 魅了1 SP3"
+set-string (global-string 1d65b) "電磁毒針"
+mov (global-int 6c6709) f50
+mov (global-int 6c72c1) 5
+mov (global-int 6c7a91) 1
+mov (global-int 6c99d1) 1
+mov (global-int 6c9db9) 1
+mov (global-int 6cb529) 6
+mov (global-int 6ce1c4) 1
+mov (global-int 6d3f15) a
+mov (global-int 6d3f17) c
+sub (global-int 6d3f1b) 0 6
+sub (global-int 6d67c0) 0 8
+mov (global-int 6d7879) 71
+set-string (global-string 1df92) "【必殺：電磁毒針】　電撃属性"
+set-string (global-string 1df93) "　命中+10 物攻+12 敏捷-6 麻痺1 SP8消費"
+set-string (global-string 1da43) "必殺 物攻+12 麻痺1 SP8"
+set-string (global-string 1d65c) "殺戮の断頭台"
+mov (global-int 6c670a) f46
+mov (global-int 6c72c2) 5
+mov (global-int 6c7a92) 1
+mov (global-int 6c99d2) 1
+mov (global-int 6c9dba) 1
+mov (global-int 6cb52a) 1
+mov (global-int 6ce1db) 1
+mov (global-int 6d3f22) a
+mov (global-int 6d3f24) a
+sub (global-int 6d3f28) 0 5
+sub (global-int 6d67c3) 0 8
+mov (global-int 6d787a) c8
+set-string (global-string 1df94) "【必殺：殺戮の断頭台】　無属性"
+set-string (global-string 1df95) "　命中+10 物攻+10 敏捷-5 即死 SP8消費"
+set-string (global-string 1da44) "必殺 無属 物攻+10 即死 SP8"
+set-string (global-string 1d65d) "速射撃ち"
+mov (global-int 6c670b) e60
+mov (global-int 6c72c3) 5
+mov (global-int 6c7a93) 1
+sub (global-int 6d3f2f) 0 a
+mov (global-int 6d3f35) 5
+sub (global-int 6d67c6) 0 4
+mov (global-int 6d787b) 68
+set-string (global-string 1df96) "【必殺：速射撃ち】"
+set-string (global-string 1df97) "　武器射程 命中-10 敏捷+5 SP4消費"
+set-string (global-string 1da45) "必殺 武器射程 敏捷+5 SP4"
+set-string (global-string 1d65e) "急所射撃"
+mov (global-int 6c670c) e6a
+mov (global-int 6c72c4) 5
+mov (global-int 6c7a94) 1
+mov (global-int 6d3f3c) 1e
+sub (global-int 6d3f42) 0 5
+mov (global-int 6d610c) f
+sub (global-int 6d67c9) 0 8
+mov (global-int 6d787c) 68
+set-string (global-string 1df98) "【必殺：急所射撃】"
+set-string (global-string 1df99) "　武器射程 命中+30 敏捷-5 痛打+15 SP8消費"
+set-string (global-string 1da46) "必殺 武器射程 命中+30 SP8"
+set-string (global-string 1d65f) "薙ぎ払い"
+mov (global-int 6c670d) e2e
+mov (global-int 6c72c5) 5
+mov (global-int 6c7a95) 1
+mov (global-int 6c99d5) 1
+mov (global-int 6c9dbd) 1
+mov (global-int 6d3f49) 14
+mov (global-int 6d3f4b) 3
+sub (global-int 6d3f4f) 0 2
+sub (global-int 6d67cc) 0 4
+mov (global-int 6d787d) c9
+set-string (global-string 1df9a) "【必殺：薙ぎ払い】"
+set-string (global-string 1df9b) "　命中+20 物攻+3 敏捷-2 SP4消費"
+set-string (global-string 1da47) "必殺 物攻+3 SP4"
+set-string (global-string 1d660) "かまいたち"
+mov (global-int 6c670e) e38
+mov (global-int 6c72c6) 5
+mov (global-int 6c7a96) 1
+mov (global-int 6c99d6) 1
+mov (global-int 6c9dbe) 1
+sub (global-int 6d3f56) 0 a
+mov (global-int 6d3f58) 6
+sub (global-int 6d3f5c) 0 4
+sub (global-int 6d67cf) 0 6
+mov (global-int 6d787e) c9
+set-string (global-string 1df9c) "【必殺：かまいたち】"
+set-string (global-string 1df9d) "　命中-10 物攻+6 敏捷-4 SP6消費"
+set-string (global-string 1da48) "必殺 物攻+6 SP6"
+set-string (global-string 1d661) "岩石落とし"
+mov (global-int 6c670f) eba
+mov (global-int 6c72c7) 5
+mov (global-int 6c7a97) 1
+mov (global-int 6c99d7) 2
+mov (global-int 6c9dbf) 3
+mov (global-int 6cb52f) 3
+sub (global-int 6d3f63) 0 a
+sub (global-int 6d3f65) 0 3
+sub (global-int 6d3f69) 0 5
+sub (global-int 6d67d2) 0 4
+mov (global-int 6d787f) ca
+set-string (global-string 1df9e) "【必殺：岩石落とし】　地脈属性"
+set-string (global-string 1df9f) "　射程1-2 命中-10 攻撃-3 敏捷-5 SP4消費"
+set-string (global-string 1da49) "必殺 地脈 射程2 物攻-3 SP4"
+set-string (global-string 1d662) "突進"
+mov (global-int 6c6710) e92
+mov (global-int 6c72c8) 5
+mov (global-int 6c7a98) 1
+mov (global-int 6c99d8) 1
+mov (global-int 6c9dc0) 1
+mov (global-int 6d3f70) a
+mov (global-int 6d3f72) 3
+sub (global-int 6d3f76) 0 2
+sub (global-int 6d6110) 0 2
+sub (global-int 6d67d5) 0 3
+mov (global-int 6d7880) 39
+set-string (global-string 1dfa0) "【必殺：突進】"
+set-string (global-string 1dfa1) "　命中+10 物攻+3 敏捷-2 痛打-2 SP3消費"
+set-string (global-string 1da4a) "必殺 物攻+3 SP3"
+set-string (global-string 1d663) "六連鎌撃"
+mov (global-int 6c6711) f14
+mov (global-int 6c72c9) 5
+mov (global-int 6c7a99) 1
+mov (global-int 6c99d9) 1
+mov (global-int 6c9dc1) 1
+mov (global-int 6ce2b5) 3
+mov (global-int 6d3f7d) 1e
+mov (global-int 6d3f7f) 8
+sub (global-int 6d3f83) 0 8
+sub (global-int 6d67d8) 0 8
+mov (global-int 6d7881) cb
+set-string (global-string 1dfa2) "【必殺：六連鎌撃】"
+set-string (global-string 1dfa3) "　命中+30 物攻+8 敏捷-8 猛毒3 SP8消費"
+set-string (global-string 1da4b) "必殺 物攻+8 猛毒3 SP8"
+set-string (global-string 1d664) "ねこぱんち"
+mov (global-int 6c6712) e74
+mov (global-int 6c72ca) 5
+mov (global-int 6c7a9a) 1
+mov (global-int 6c99da) 1
+mov (global-int 6c9dc2) 1
+sub (global-int 6d3f8a) 0 5
+mov (global-int 6d3f8c) 4
+sub (global-int 6d3f90) 0 1
+sub (global-int 6d67db) 0 4
+mov (global-int 6d7882) cc
+set-string (global-string 1dfa4) "【必殺：ねこぱんち】"
+set-string (global-string 1dfa5) "　命中-5 物攻+4 敏捷-1 SP4消費"
+set-string (global-string 1da4c) "必殺 物攻+4 SP4"
+set-string (global-string 1d665) "ねこぱんち・改"
+mov (global-int 6c6713) e7e
+mov (global-int 6c72cb) 5
+mov (global-int 6c7a9b) 1
+mov (global-int 6c99db) 1
+mov (global-int 6c9dc3) 1
+sub (global-int 6d3f97) 0 5
+mov (global-int 6d3f99) 8
+sub (global-int 6d3f9d) 0 2
+sub (global-int 6d67de) 0 6
+mov (global-int 6d7883) cc
+set-string (global-string 1dfa6) "【必殺：ねこぱんち・改】"
+set-string (global-string 1dfa7) "　命中-5 物攻+8 敏捷-2 SP6消費"
+set-string (global-string 1da4d) "必殺 物攻+8 SP6"
+set-string (global-string 1d666) "二段攻撃"
+mov (global-int 6c6714) e1a
+mov (global-int 6c72cc) 5
+mov (global-int 6c7a9c) 1
+mov (global-int 6c99dc) 1
+mov (global-int 6c9dc4) 1
+mov (global-int 6d3fa6) 3
+sub (global-int 6d3faa) 0 2
+sub (global-int 6d6114) 0 2
+sub (global-int 6d67e1) 0 2
+mov (global-int 6d7884) cd
+set-string (global-string 1dfa8) "【必殺：二段攻撃】"
+set-string (global-string 1dfa9) "　物攻+3 敏捷-2 痛打-2 SP2消費"
+set-string (global-string 1da4e) "必殺 物攻+3 SP2"
+set-string (global-string 1d667) "三段攻撃"
+mov (global-int 6c6715) e24
+mov (global-int 6c72cd) 5
+mov (global-int 6c7a9d) 1
+mov (global-int 6c99dd) 1
+mov (global-int 6c9dc5) 1
+mov (global-int 6d3fb3) 6
+sub (global-int 6d3fb7) 0 4
+sub (global-int 6d6115) 0 2
+sub (global-int 6d67e4) 0 6
+mov (global-int 6d7885) ce
+set-string (global-string 1dfaa) "【必殺：三段攻撃】"
+set-string (global-string 1dfab) "　物攻+6 敏捷-4 痛打-2 SP6消費"
+set-string (global-string 1da4f) "必殺 物攻+6 SP6"
+set-string (global-string 1d668) "角突き上げ"
+mov (global-int 6c6716) ed8
+mov (global-int 6c72ce) 5
+mov (global-int 6c7a9e) 1
+mov (global-int 6c99de) 1
+mov (global-int 6c9dc6) 1
+mov (global-int 6d3fbe) 5
+mov (global-int 6d3fc0) 5
+sub (global-int 6d3fc4) 0 2
+sub (global-int 6d67e7) 0 4
+mov (global-int 6d7886) cf
+set-string (global-string 1dfac) "【必殺：角突き上げ】"
+set-string (global-string 1dfad) "　命中+5 物攻+5 敏捷-2 SP4消費"
+set-string (global-string 1da50) "必殺 物攻+5 SP4"
+set-string (global-string 1d669) "遠波鎌鼬"
+mov (global-int 6c6717) f0a
+mov (global-int 6c72cf) 5
+mov (global-int 6c7a9f) 1
+mov (global-int 6c99df) 2
+mov (global-int 6c9dc7) 6
+mov (global-int 6ce36d) 1
+sub (global-int 6d3fcb) 0 a
+sub (global-int 6d3fd1) 0 3
+sub (global-int 6d67ea) 0 2
+mov (global-int 6d7887) c9
+set-string (global-string 1dfae) "【必殺：遠波鎌鼬】"
+set-string (global-string 1dfaf) "　射程1-5 命中-10 敏捷-3 恐怖1 SP2消費"
+set-string (global-string 1da51) "必殺 射程5 恐怖1 SP2"
+set-string (global-string 1d66a) "溶解液"
+mov (global-int 6c6718) f1e
+mov (global-int 6c72d0) 5
+mov (global-int 6c7aa0) 1
+mov (global-int 6c99e0) 2
+mov (global-int 6c9dc8) 2
+mov (global-int 6ce387) 1
+sub (global-int 6d3fd8) 0 a
+sub (global-int 6d3fda) 0 2
+sub (global-int 6d67ed) 0 3
+mov (global-int 6d7888) d0
+set-string (global-string 1dfb0) "【必殺：溶解液】"
+set-string (global-string 1dfb1) "　射程1 命中-10 物攻-2 猛毒1 SP3消費"
+set-string (global-string 1da52) "必殺 射程1 物攻-2 猛毒1 SP3"
+set-string (global-string 1d66b) "巻き付き"
+mov (global-int 6c6719) ee2
+mov (global-int 6c72d1) 5
+mov (global-int 6c7aa1) 1
+mov (global-int 6c99e1) 1
+mov (global-int 6c9dc9) 1
+mov (global-int 6ce3a4) 1
+mov (global-int 6d3fe5) f
+mov (global-int 6d3fe7) 2
+sub (global-int 6d3feb) 0 3
+sub (global-int 6d6119) 0 5
+sub (global-int 6d67f0) 0 4
+mov (global-int 6d7889) d1
+set-string (global-string 1dfb2) "【必殺：巻き付き】"
+set-string (global-string 1dfb3) "　命中+15 物攻+2 敏捷-3 痛打-5 麻痺1 SP4消費"
+set-string (global-string 1da53) "必殺 物攻+2 麻痺1 SP4"
+set-string (global-string 1d66c) "誘惑の巻き付き"
+mov (global-int 6c671a) eec
+mov (global-int 6c72d2) 5
+mov (global-int 6c7aa2) 1
+mov (global-int 6c99e2) 1
+mov (global-int 6c9dca) 1
+mov (global-int 6ce3c0) 1
+mov (global-int 6d3ff2) f
+mov (global-int 6d3ff4) 2
+sub (global-int 6d3ff8) 0 3
+sub (global-int 6d611a) 0 5
+sub (global-int 6d67f3) 0 4
+mov (global-int 6d788a) d1
+set-string (global-string 1dfb4) "【必殺：誘惑の巻き付き】"
+set-string (global-string 1dfb5) "　命中+15 物攻+2 敏捷-3 痛打-5 魅了1 SP4消費"
+set-string (global-string 1da54) "必殺 物攻+2 魅了1 SP4"
+set-string (global-string 1d66d) "アームカッター"
+mov (global-int 6c671b) f32
+mov (global-int 6c72d3) 5
+mov (global-int 6c7aa3) 1
+mov (global-int 6c99e3) 1
+mov (global-int 6c9dcb) 1
+mov (global-int 6d3fff) 28
+mov (global-int 6d4005) 2
+mov (global-int 6d611b) 3
+sub (global-int 6d67f6) 0 6
+mov (global-int 6d788b) c9
+set-string (global-string 1dfb6) "【必殺：アームカッター】"
+set-string (global-string 1dfb7) "　命中+40 敏捷+2 痛打+3 SP6消費"
+set-string (global-string 1da55) "必殺 命中+40 痛打+3 SP6"
+set-string (global-string 1d66e) "アームスラッシュ"
+mov (global-int 6c671c) f3c
+mov (global-int 6c72d4) 5
+mov (global-int 6c7aa4) 1
+mov (global-int 6c99e4) 1
+mov (global-int 6c9dcc) 1
+sub (global-int 6d400c) 0 a
+mov (global-int 6d400e) a
+sub (global-int 6d4012) 0 3
+sub (global-int 6d67f9) 0 9
+mov (global-int 6d788c) c9
+set-string (global-string 1dfb8) "【必殺：アームスラッシュ】"
+set-string (global-string 1dfb9) "　命中-10 物攻+10 敏捷-3 SP9消費"
+set-string (global-string 1da56) "必殺 物攻+10 SP9"
+set-string (global-string 1d66f) "流星の光剣"
+mov (global-int 6c671d) e42
+mov (global-int 6c72d5) 5
+mov (global-int 6c7aa5) 1
+mov (global-int 6c99e5) 1
+mov (global-int 6c9dcd) 1
+mov (global-int 6cb53d) 7
+mov (global-int 6d4019) a
+mov (global-int 6d401b) 4
+sub (global-int 6d401f) 0 2
+sub (global-int 6d67fc) 0 5
+mov (global-int 6d788d) d2
+set-string (global-string 1dfba) "【必殺：流星の光剣】　神聖属性"
+set-string (global-string 1dfbb) "　命中+10 物攻+4 敏捷-2 SP5消費"
+set-string (global-string 1da57) "必殺 神聖 物攻+4 SP5"
+set-string (global-string 1d670) "連続触手"
+mov (global-int 6c671e) ef6
+mov (global-int 6c72d6) 5
+mov (global-int 6c7aa6) 1
+mov (global-int 6c99e6) 1
+mov (global-int 6c9dce) 1
+mov (global-int 6d4026) 14
+mov (global-int 6d4028) 3
+sub (global-int 6d402c) 0 2
+sub (global-int 6d67ff) 0 5
+mov (global-int 6d788e) d3
+set-string (global-string 1dfbc) "【必殺：連続触手】"
+set-string (global-string 1dfbd) "　命中+20 物攻+3 敏捷-2 SP5消費"
+set-string (global-string 1da58) "必殺 物攻+3 SP5"
+set-string (global-string 1d671) "噛み千切り"
+mov (global-int 6c671f) e9c
+mov (global-int 6c72d7) 5
+mov (global-int 6c7aa7) 1
+mov (global-int 6c99e7) 1
+mov (global-int 6c9dcf) 1
+mov (global-int 6ce451) 1
+sub (global-int 6d4033) 0 a
+mov (global-int 6d4035) 5
+sub (global-int 6d4039) 0 3
+sub (global-int 6d6802) 0 4
+mov (global-int 6d788f) d4
+set-string (global-string 1dfbe) "【必殺：噛み千切り】"
+set-string (global-string 1dfbf) "　命中-10 物攻+5 敏捷-3 即死 SP4消費"
+set-string (global-string 1da59) "必殺 物攻+5 即死 SP4"
+set-string (global-string 1d672) "地響き"
+mov (global-int 6c6720) f5a
+mov (global-int 6c72d8) 5
+mov (global-int 6c7aa8) 1
+mov (global-int 6c99e8) 2
+mov (global-int 6c9dd0) 3
+mov (global-int 6cb540) 3
+mov (global-int 6ce475) 1
+mov (global-int 6d4040) 32
+sub (global-int 6d4042) 0 2
+sub (global-int 6d4046) 0 1
+sub (global-int 6d6805) 0 3
+mov (global-int 6d7890) d5
+set-string (global-string 1dfc0) "【必殺：地響き】　地脈属性"
+set-string (global-string 1dfc1) "　射程1-2 命中+50 物攻-2 敏捷-1 混乱1 SP3消費"
+set-string (global-string 1da5a) "必殺 地脈 射程2 混乱1 SP3"
+set-string (global-string 1d673) "強酸液"
+mov (global-int 6c6721) f28
+mov (global-int 6c72d9) 5
+mov (global-int 6c7aa9) 1
+mov (global-int 6c99e9) 2
+mov (global-int 6c9dd1) 4
+mov (global-int 6ce497) 1
+sub (global-int 6d404d) 0 a
+sub (global-int 6d4053) 0 5
+sub (global-int 6d6808) 0 4
+mov (global-int 6d7891) d6
+set-string (global-string 1dfc2) "【必殺：強酸液】"
+set-string (global-string 1dfc3) "　射程1-3 命中-10 敏捷-5 強酸1 SP4消費"
+set-string (global-string 1da5b) "必殺 射程3 強酸1 SP4"
+set-string (global-string 1d674) "長射程岩投げ"
+mov (global-int 6c6722) ece
+mov (global-int 6c72da) 5
+mov (global-int 6c7aaa) 1
+mov (global-int 6c99ea) 2
+mov (global-int 6c9dd2) 5
+sub (global-int 6d405a) 0 a
+sub (global-int 6d4060) 0 3
+sub (global-int 6d680b) 0 2
+mov (global-int 6d7892) ca
+set-string (global-string 1dfc4) "【必殺：長射程岩投げ】"
+set-string (global-string 1dfc5) "　射程1-4 命中-10 敏捷-3 SP2消費"
+set-string (global-string 1da5c) "必殺 射程4 SP2"
+set-string (global-string 1d675) "胆石噴射"
+mov (global-int 6c6723) f64
+mov (global-int 6c72db) 5
+mov (global-int 6c7aab) 1
+mov (global-int 6c99eb) 2
+mov (global-int 6c9dd3) 5
+sub (global-int 6d4067) 0 5
+sub (global-int 6d406d) 0 3
+sub (global-int 6d680e) 0 2
+mov (global-int 6d7893) d7
+set-string (global-string 1dfc6) "【必殺：胆石噴射】"
+set-string (global-string 1dfc7) "　射程1-4 命中-5 敏捷-3 SP2消費"
+set-string (global-string 1da5d) "必殺 射程4 SP2"
+set-string (global-string 1d676) "七連噛付き"
+mov (global-int 6c6724) eb0
+mov (global-int 6c72dc) 5
+mov (global-int 6c7aac) 1
+mov (global-int 6c99ec) 1
+mov (global-int 6c9dd4) 1
+mov (global-int 6ce4ee) 1
+mov (global-int 6d4074) 1e
+mov (global-int 6d4076) 8
+sub (global-int 6d407a) 0 8
+sub (global-int 6d6811) 0 8
+mov (global-int 6d7894) d8
+set-string (global-string 1dfc8) "【必殺：七連噛付き】"
+set-string (global-string 1dfc9) "　命中+30 物攻+8 敏捷-8 麻痺1 SP8消費"
+set-string (global-string 1da5e) "必殺 物攻+8 麻痺1 SP8"
+set-string (global-string 1d677) "旋盾呪斬撃"
+mov (global-int 6c6725) e88
+mov (global-int 6c72dd) 5
+mov (global-int 6c7aad) 1
+mov (global-int 6c99ed) 1
+mov (global-int 6c9dd5) 1
+mov (global-int 6cb545) 1
+mov (global-int 6ce511) 3
+mov (global-int 6d4081) 14
+mov (global-int 6d4083) 8
+mov (global-int 6d4087) 9
+sub (global-int 6d6814) 0 5
+mov (global-int 6d7895) 6c
+set-string (global-string 1dfca) "【必殺：旋盾呪斬撃】　無属性"
+set-string (global-string 1dfcb) "　命中+20 物攻+8 敏捷+9 恐怖3 SP5消費"
+set-string (global-string 1da5f) "必殺 無属 物攻+8 敏捷+9 恐怖3 SP5"
+set-string (global-string 1d678) "巨大噛付き"
+mov (global-int 6c6726) ea6
+mov (global-int 6c72de) 5
+mov (global-int 6c7aae) 1
+mov (global-int 6c99ee) 1
+mov (global-int 6c9dd6) 1
+sub (global-int 6d408e) 0 a
+mov (global-int 6d4090) 5
+sub (global-int 6d4094) 0 3
+sub (global-int 6d6817) 0 4
+mov (global-int 6d7896) d4
+set-string (global-string 1dfcc) "【必殺：巨大噛付き】"
+set-string (global-string 1dfcd) "　命中-10 物攻+5 敏捷-3 SP4消費"
+set-string (global-string 1da60) "必殺 物攻+5 SP4"
+set-string (global-string 1d679) "紅蓮剣"
+mov (global-int 6c6727) e4c
+mov (global-int 6c72df) 5
+mov (global-int 6c7aaf) 1
+mov (global-int 6c99ef) 1
+mov (global-int 6c9dd7) 1
+mov (global-int 6d409b) a
+mov (global-int 6d409d) 7
+sub (global-int 6d40a1) 0 2
+sub (global-int 6d681a) 0 4
+mov (global-int 6d7897) 65
+set-string (global-string 1dfce) "【必殺：紅蓮剣】"
+set-string (global-string 1dfcf) "　命中+10 物攻+7 敏捷-2 SP4消費"
+set-string (global-string 1da61) "必殺 物攻+7 SP4"
+set-string (global-string 1d67a) "巨大岩石落とし"
+mov (global-int 6c6728) ec4
+mov (global-int 6c72e0) 5
+mov (global-int 6c7ab0) 1
+mov (global-int 6c99f0) 2
+mov (global-int 6c9dd8) 4
+mov (global-int 6cb548) 3
+sub (global-int 6d40a8) 0 a
+mov (global-int 6d40aa) 5
+sub (global-int 6d40ae) 0 5
+sub (global-int 6d681d) 0 7
+mov (global-int 6d7898) ca
+set-string (global-string 1dfd0) "【必殺：巨大岩石落とし】　地脈属性"
+set-string (global-string 1dfd1) "　射程1-3 命中-10 物攻+5 敏捷-5 SP7消費"
+set-string (global-string 1da62) "必殺 地脈 射程3 物攻+5 SP7"
+set-string (global-string 1d67b) "連接剣伸張"
+mov (global-int 6c6729) e56
+mov (global-int 6c72e1) 5
+mov (global-int 6c7ab1) 1
+mov (global-int 6c99f1) 2
+mov (global-int 6c9dd9) 4
+sub (global-int 6d40b5) 0 a
+sub (global-int 6d40bb) 0 3
+sub (global-int 6d6820) 0 3
+mov (global-int 6d7899) c
+set-string (global-string 1dfd2) "【必殺：連接剣伸張】　"
+set-string (global-string 1dfd3) "　射程1-3 命中-10 敏捷-3 SP3消費"
+set-string (global-string 1da63) "必殺 射程3 SP3"
+set-string (global-string 1d67e) "鋭刺輪撃"
+mov (global-int 6c672c) f6e
+mov (global-int 6c72e4) 5
+mov (global-int 6c7ab4) 1
+mov (global-int 6c99f4) 2
+mov (global-int 6c9ddc) 5
+mov (global-int 6cb54c) 1
+mov (global-int 6d40dc) 14
+mov (global-int 6d40de) a
+sub (global-int 6d40e2) 0 3
+sub (global-int 6d6829) 0 6
+mov (global-int 6d789c) c9
+set-string (global-string 1dfd8) "【必殺：鋭刺輪撃】　無属性"
+set-string (global-string 1dfd9) "　射程1-4　命中+20 物攻+10 敏捷-3 SP6消費"
+set-string (global-string 1da66) "必殺 無属 射程4 物攻+10 SP5"
+set-string (global-string 1d685) "闘精霊付与"
+mov (global-int 6c6733) faa
+mov (global-int 6c72eb) 8
+mov (global-int 6c7abb) 1
+mov (global-int 6c828b) 3
+mov (global-int 6c99fb) 2
+mov (global-int 6c9de3) 2
+mov (global-int 6ce6bc) 1
+mov (global-int 6ce6be) 1
+mov (global-int 6ce6ba) 1
+sub (global-int 6d683e) 0 4
+mov (global-int 6d70d3) 5
+mov (global-int 6d97e3) 4d91
+set-string (global-string 1dfe6) "【支援：闘精霊付与】味方を強化する精霊魔法"
+set-string (global-string 1dfe7) "　射程1 命中Ⅰ 物攻Ⅰ 魔攻Ⅰ SP4消費 5ターン 重複可"
+set-string (global-string 1da6d) "支援 命中&物攻&魔攻Ⅰ SP4 T5"
+set-string (global-string 1d686) "闘精霊の唄"
+mov (global-int 6c6734) fb4
+mov (global-int 6c72ec) 8
+mov (global-int 6c7abc) 1
+mov (global-int 6c828c) 5
+mov (global-int 6c99fc) 2
+mov (global-int 6c9de4) 2
+mov (global-int 6ce6da) 2
+mov (global-int 6ce6dc) 2
+mov (global-int 6ce6d8) 2
+sub (global-int 6d6841) 0 7
+mov (global-int 6d70d4) 5
+mov (global-int 6d97e4) 4d91
+set-string (global-string 1dfe8) "【支援：闘精霊の唄】味方を強化する精霊魔法"
+set-string (global-string 1dfe9) "　射程1 命中Ⅱ 物攻Ⅱ 魔攻Ⅱ SP7消費 5ターン 重複可"
+set-string (global-string 1da6e) "支援 命中&物攻&魔攻Ⅱ SP7 T5"
+set-string (global-string 1d687) "闘精霊の導き"
+mov (global-int 6c6735) fbe
+mov (global-int 6c72ed) 8
+mov (global-int 6c7abd) 1
+mov (global-int 6c828d) 7
+mov (global-int 6c99fd) 2
+mov (global-int 6c9de5) 2
+mov (global-int 6ce6f8) 3
+mov (global-int 6ce6fa) 3
+mov (global-int 6ce6f6) 3
+sub (global-int 6d6844) 0 a
+mov (global-int 6d70d5) 5
+mov (global-int 6d97e5) 4d91
+set-string (global-string 1dfea) "【支援：闘精霊の導き】味方を強化する精霊魔法"
+set-string (global-string 1dfeb) "　射程1 命中Ⅲ 物攻Ⅲ 魔攻Ⅲ SP10消費 5ターン 重複可"
+set-string (global-string 1da6f) "支援 命中&物攻&魔攻Ⅲ SP10 T5"
+set-string (global-string 1d688) "六皇精響奏"
+mov (global-int 6c6736) fc8
+mov (global-int 6c72ee) 8
+mov (global-int 6c7abe) 1
+mov (global-int 6c828e) a
+mov (global-int 6c99fe) 2
+mov (global-int 6c9de6) 2
+mov (global-int 6ce716) 5
+mov (global-int 6ce718) 5
+mov (global-int 6ce714) 5
+sub (global-int 6d6847) 0 f
+mov (global-int 6d70d6) 5
+mov (global-int 6d97e6) 4d91
+set-string (global-string 1dfec) "【支援：六皇精響奏】味方を強化する精霊魔法"
+set-string (global-string 1dfed) "　射程1 命中Ⅴ 物攻Ⅴ 魔攻Ⅴ SP15消費 5ターン 重複可"
+set-string (global-string 1da70) "支援 命中&物攻&魔攻Ⅴ SP15 T5"
+set-string (global-string 1d68f) "征炎結界・物理"
+mov (global-int 6c673d) fd2
+mov (global-int 6c72f5) 8
+mov (global-int 6c7ac5) 1
+mov (global-int 6c8295) 3
+mov (global-int 6c9a05) 2
+mov (global-int 6c9ded) 2
+mov (global-int 6ce7e9) 2
+sub (global-int 6d685c) 0 5
+mov (global-int 6d70dd) 5
+mov (global-int 6d97ed) 4d91
+set-string (global-string 1dffa) "【支援：征炎結界・物理】　物理防御UP"
+set-string (global-string 1dffb) "　射程1 物防Ⅱ SP5消費"
+set-string (global-string 1da77) "支援 射程1 物防Ⅱ SP5 強化"
+set-string (global-string 1d690) "征炎結界・魔術"
+mov (global-int 6c673e) fdc
+mov (global-int 6c72f6) 8
+mov (global-int 6c7ac6) 1
+mov (global-int 6c8296) 3
+mov (global-int 6c9a06) 2
+mov (global-int 6c9dee) 2
+mov (global-int 6ce809) 2
+sub (global-int 6d685f) 0 5
+mov (global-int 6d70de) 5
+mov (global-int 6d97ee) 4d91
+set-string (global-string 1dffc) "【支援：征炎結界・魔術】　魔法防御UP"
+set-string (global-string 1dffd) "　射程1 魔防Ⅱ SP5消費"
+set-string (global-string 1da78) "支援 射程1 魔防Ⅱ SP5 強化"
+set-string (global-string 1d691) "征炎結界・英雄"
+mov (global-int 6c673f) fe6
+mov (global-int 6c72f7) 8
+mov (global-int 6c7ac7) 1
+mov (global-int 6c8297) 6
+mov (global-int 6c9a07) 2
+mov (global-int 6c9def) 2
+mov (global-int 6ce825) 2
+mov (global-int 6ce827) 2
+sub (global-int 6d6862) 0 a
+mov (global-int 6d70df) 5
+mov (global-int 6d97ef) 4d91
+set-string (global-string 1dffe) "【支援：征炎結界・英雄】　物理＆魔法防御UP"
+set-string (global-string 1dfff) "　射程1 物防Ⅱ 魔防Ⅱ SP10消費"
+set-string (global-string 1da79) "支援 射程1 物防&魔防Ⅱ SP10 強化"
+set-string (global-string 1d694) "強制転送"
+mov (global-int 6c6742) 1004
+mov (global-int 6c72fa) 8
+mov (global-int 6c76e2) 2
+mov (global-int 6c7aca) 1
+mov (global-int 6c829a) a
+mov (global-int 6c9a0a) 2
+mov (global-int 6c9df2) 6
+sub (global-int 6d686b) 0 a
+mov (global-int 6d97f2) 3b1b
+set-string (global-string 1e004) "【支援：強制転送】　敵を転送させる"
+set-string (global-string 1e005) "　射程1-5 SP10消費"
+set-string (global-string 1da7c) "支援 射程1-5 SP10 転送"
+set-string (global-string 1d695) "転送"
+mov (global-int 6c6743) ff0
+mov (global-int 6c72fb) 8
+mov (global-int 6c76e3) 3
+mov (global-int 6c7acb) 1
+mov (global-int 6c829b) 10
+mov (global-int 6c9a0b) 2
+mov (global-int 6c9df3) 2
+sub (global-int 6d686e) 0 a
+mov (global-int 6d97f3) 3b1b
+set-string (global-string 1e006) "【支援：転送】　味方を瞬間移動させる秘印術"
+set-string (global-string 1e007) "　射程1 SP10消費　自軍の占有地内に限り転送可能"
+set-string (global-string 1da7d) "支援 SP10 味方を自軍占有地内に転送"
+set-string (global-string 1d696) "強制帰還"
+mov (global-int 6c6744) 100e
+mov (global-int 6c72fc) 8
+mov (global-int 6c76e4) 3
+mov (global-int 6c7acc) 1
+mov (global-int 6c829c) a
+mov (global-int 6c9a0c) 2
+mov (global-int 6c9df4) 2
+sub (global-int 6d6871) 0 5
+mov (global-int 6d97f4) 3b1b
+set-string (global-string 1e008) "【支援：強制帰還】　味方を強制的に帰還させる秘印術"
+set-string (global-string 1e009) "　射程1 SP5消費"
+set-string (global-string 1da7e) "支援 射程1 SP5 味方を強制帰還"
+set-string (global-string 1d697) "転送救助"
+mov (global-int 6c6745) ffa
+mov (global-int 6c72fd) 8
+mov (global-int 6c76e5) 3
+mov (global-int 6c7acd) 1
+mov (global-int 6c829d) c
+mov (global-int 6c9a0d) 3
+mov (global-int 6c9df5) 6
+sub (global-int 6d6874) 0 8
+mov (global-int 6d97f5) 3b1b
+set-string (global-string 1e00a) "【支援：転送救助】　範囲内の味方を転送する秘印術"
+set-string (global-string 1e00b) "　射程2-5 SP8消費"
+set-string (global-string 1da7f) "支援 射程2-5 SP8　転送"
+set-string (global-string 1d699) "憑依融合"
+mov (global-int 6c6747) 1018
+mov (global-int 6c72ff) 8
+mov (global-int 6c7acf) 1
+mov (global-int 6c829f) 5
+mov (global-int 6c9a0f) 2
+mov (global-int 6c9df7) 2
+mov (global-int 6d97f7) 3b12
+set-string (global-string 1e00e) "【支援：憑依融合】　"
+set-string (global-string 1e00f) "　射程1 残りＨＰで回復させる代わりに戦闘不能になる"
+set-string (global-string 1da81) "支援 射程1 残りHPを捧げて戦闘不能"
+set-string (global-string 1d6b7) "癒しの息吹"
+mov (global-int 6c6765) 119e
+mov (global-int 6c731d) 7
+mov (global-int 6c7aed) 1
+mov (global-int 6c82bd) 3
+mov (global-int 6c9a2d) 2
+mov (global-int 6c9e15) 3
+mov (global-int 6cb585) 7
+mov (global-int 6d43c1) 63
+mov (global-int 6d68d3) 1e
+sub (global-int 6d68d4) 0 4
+mov (global-int 6d68d5) 6
+mov (global-int 6d7105) 5
+mov (global-int 6d9815) 4e05
+set-string (global-string 1e04a) "【支援：癒しの息吹】　神聖回復魔法"
+set-string (global-string 1e04b) "　射程1-2 HP30・FS6回復 SP4消費"
+set-string (global-string 1da9f) "支援 射程2 HP30 FS6回復 SP4"
+set-string (global-string 1d6b8) "大いなる癒し手"
+mov (global-int 6c6766) 11a8
+mov (global-int 6c731e) 7
+mov (global-int 6c7aee) 1
+mov (global-int 6c82be) 8
+mov (global-int 6c9a2e) 2
+mov (global-int 6c9e16) 3
+mov (global-int 6cb586) 7
+mov (global-int 6d43ce) 63
+mov (global-int 6d68d6) 64
+sub (global-int 6d68d7) 0 6
+mov (global-int 6d68d8) 14
+mov (global-int 6d7106) 5
+mov (global-int 6d9816) 4e05
+set-string (global-string 1e04c) "【支援：大いなる癒し手】　神聖回復魔法"
+set-string (global-string 1e04d) "　射程1-2 HP100・FS20回復 SP6消費"
+set-string (global-string 1daa0) "支援 射程2 HP100 FS20回復 SP6"
+set-string (global-string 1d6b9) "麺の癒し手"
+mov (global-int 6c6767) 11bc
+mov (global-int 6c731f) 7
+mov (global-int 6c7aef) 1
+mov (global-int 6c82bf) 10
+mov (global-int 6c9a2f) 2
+mov (global-int 6c9e17) 5
+mov (global-int 6cb587) 7
+mov (global-int 6d43db) 63
+mov (global-int 6d68d9) c8
+sub (global-int 6d68da) 0 8
+mov (global-int 6d68db) 1e
+mov (global-int 6d7107) 5
+mov (global-int 6d9817) 4e05
+set-string (global-string 1e04e) "【支援：麺の癒し手】　神聖回復魔法"
+set-string (global-string 1e04f) "　射程1-4 HP200・FS30回復 SP8消費"
+set-string (global-string 1daa1) "支援 射程4 HP200 FS30回復 SP8"
+set-string (global-string 1d6ba) "闇の息吹"
+mov (global-int 6c6768) 11b2
+mov (global-int 6c7320) 7
+mov (global-int 6c7af0) 1
+mov (global-int 6c82c0) 3
+mov (global-int 6c9a30) 2
+mov (global-int 6c9e18) 5
+mov (global-int 6cb588) 8
+mov (global-int 6d43e8) 63
+mov (global-int 6d68dc) 1e
+sub (global-int 6d68dd) 0 5
+mov (global-int 6d68de) a
+mov (global-int 6d7108) 5
+mov (global-int 6d9818) 4e05
+set-string (global-string 1e050) "【支援：闇の息吹】　暗黒回復魔法"
+set-string (global-string 1e051) "　射程1-4 HP30・FS10回復 SP5消費"
+set-string (global-string 1daa2) "支援 射程4 HP30 FS10回復 SP5"
+set-string (global-string 1d6e9) "結騎捕獲"
+mov (global-int 6c6f67) 1f5
+mov (global-int 6c6797) 1392
+mov (global-int 6c734f) 6
+mov (global-int 6c7b1f) 1
+mov (global-int 6c82ef) 6
+mov (global-int 6c9a5f) 2
+mov (global-int 6c9e47) 3
+mov (global-int 6cb5b7) 1
+sub (global-int 6d464b) 0 a
+sub (global-int 6d4651) 0 5
+mov (global-int 6d7907) 76
+set-string (global-string 1e0ae) "【魔法：結騎捕獲】　無属性"
+set-string (global-string 1e0af) "　結騎の撃破で捕獲 射程1-2 命中-10 敏捷-5"
+set-string (global-string 1dad1) "撃破で捕獲可能 結騎のみ"
+set-string (global-string 1d6ea) "結騎捕獲・改"
+mov (global-int 6c6f68) 1f5
+mov (global-int 6c6798) 139c
+mov (global-int 6c7350) 6
+mov (global-int 6c7b20) 1
+mov (global-int 6c82f0) 8
+mov (global-int 6c9a60) 2
+mov (global-int 6c9e48) 3
+mov (global-int 6cb5b8) 1
+sub (global-int 6d4658) 0 a
+sub (global-int 6d465e) 0 5
+mov (global-int 6d7908) 76
+mov (global-int 6d9460) 1
+set-string (global-string 1e0b0) "【魔法：結騎捕獲・改】　無属性"
+set-string (global-string 1e0b1) "　ボス以外の撃破で捕獲 射程1-2 命中-10 敏捷-5"
+set-string (global-string 1dad2) "撃破で捕獲可能 ボス× 結騎○"
+set-string (global-string 1d6f3) "石弾"
+mov (global-int 6c67a1) 13a6
+mov (global-int 6c7359) 6
+mov (global-int 6c7b29) 1
+mov (global-int 6c82f9) 3
+mov (global-int 6c9a69) 2
+mov (global-int 6c9e51) 3
+mov (global-int 6cb5c1) 3
+mov (global-int 6d46cd) 5
+mov (global-int 6d46d1) 3
+sub (global-int 6d46d3) 0 2
+sub (global-int 6d6988) 0 4
+mov (global-int 6d7911) 12d
+set-string (global-string 1e0c2) "【魔法：石弾】　地脈属性"
+set-string (global-string 1e0c3) "　射程1-2 命中+5 魔攻+3 敏捷-2 SP4消費"
+set-string (global-string 1dadb) "魔法 地脈 射程2 魔攻+3 SP4"
+set-string (global-string 1d6f4) "地割れ破砕弾"
+mov (global-int 6c67a2) 13b0
+mov (global-int 6c735a) 6
+mov (global-int 6c7b2a) 1
+mov (global-int 6c82fa) 6
+mov (global-int 6c9a6a) 2
+mov (global-int 6c9e52) 4
+mov (global-int 6cb5c2) 3
+mov (global-int 6d46da) a
+mov (global-int 6d46de) 7
+sub (global-int 6d46e0) 0 3
+sub (global-int 6d698b) 0 5
+mov (global-int 6d7912) 141
+set-string (global-string 1e0c4) "【魔法：地割れ破砕弾】　地脈属性"
+set-string (global-string 1e0c5) "　射程1-3 命中+10 魔攻+7 敏捷-3 SP5消費"
+set-string (global-string 1dadc) "魔法 地脈 射程3 魔攻+7 SP8"
+set-string (global-string 1d6f5) "超地脈圧潰"
+mov (global-int 6c67a3) 13ba
+mov (global-int 6c735b) 6
+mov (global-int 6c7b2b) 1
+mov (global-int 6c82fb) c
+mov (global-int 6c9a6b) 2
+mov (global-int 6c9e53) 5
+mov (global-int 6cb5c3) 3
+mov (global-int 6d46e7) f
+mov (global-int 6d46eb) f
+sub (global-int 6d46ed) 0 5
+sub (global-int 6d698e) 0 7
+mov (global-int 6d7913) 141
+set-string (global-string 1e0c6) "【魔法：超地脈圧潰】　地脈属性"
+set-string (global-string 1e0c7) "　射程1-4 命中+15 魔攻+15 敏捷-5 SP7消費"
+set-string (global-string 1dadd) "魔法 地脈 射程4 魔攻+15 SP16"
+set-string (global-string 1d6f8) "水弾"
+mov (global-int 6c67a6) 13bf
+mov (global-int 6c735e) 6
+mov (global-int 6c7b2e) 1
+mov (global-int 6c82fe) 3
+mov (global-int 6c9a6e) 2
+mov (global-int 6c9e56) 3
+mov (global-int 6cb5c6) 4
+mov (global-int 6cf42c) 1
+mov (global-int 6d470e) 5
+mov (global-int 6d4712) 2
+sub (global-int 6d4714) 0 1
+sub (global-int 6d6997) 0 3
+mov (global-int 6d7916) 12e
+set-string (global-string 1e0cc) "【魔法：水弾】　冷却属性"
+set-string (global-string 1e0cd) "　射程1-2 命中+5 魔攻+2 敏捷-1 水流1 SP3消費"
+set-string (global-string 1dae0) "魔法 冷却 射程2 魔攻+2 水流1 SP3"
+set-string (global-string 1d6f9) "連続水弾"
+mov (global-int 6c67a7) 13c4
+mov (global-int 6c735f) 6
+mov (global-int 6c7b2f) 1
+mov (global-int 6c82ff) 6
+mov (global-int 6c9a6f) 2
+mov (global-int 6c9e57) 4
+mov (global-int 6cb5c7) 4
+mov (global-int 6cf44a) 1
+mov (global-int 6d471b) f
+mov (global-int 6d471f) 5
+sub (global-int 6d4721) 0 2
+sub (global-int 6d699a) 0 5
+mov (global-int 6d7917) 12e
+set-string (global-string 1e0ce) "【魔法：連続水弾】　冷却属性"
+set-string (global-string 1e0cf) "　射程1-3 命中+15 魔攻+5 敏捷-2 水流1 SP5消費"
+set-string (global-string 1dae1) "魔法 冷却 射程3 魔攻+5 水流1 SP5"
+set-string (global-string 1d6fa) "海嘯"
+mov (global-int 6c67a8) 13c9
+mov (global-int 6c7360) 6
+mov (global-int 6c7b30) 1
+mov (global-int 6c8300) e
+mov (global-int 6c9a70) 2
+mov (global-int 6c9e58) 3
+mov (global-int 6cb5c8) 4
+mov (global-int 6cf468) 2
+mov (global-int 6d4728) 14
+mov (global-int 6d472c) c
+sub (global-int 6d699d) 0 a
+mov (global-int 6d7918) 142
+set-string (global-string 1e0d0) "【魔法：海嘯（かいしょう）】　冷却属性"
+set-string (global-string 1e0d1) "　射程1-2 命中+20 魔攻+12 水流2 SP10消費"
+set-string (global-string 1dae2) "魔法 冷却 射程2 魔攻+12 水流2 SP10"
+set-string (global-string 1d6fb) "流燐の大激流"
+mov (global-int 6c67a9) 13ce
+mov (global-int 6c7361) 6
+mov (global-int 6c7b31) 1
+mov (global-int 6c8301) 14
+mov (global-int 6c9a71) 2
+mov (global-int 6c9e59) 6
+mov (global-int 6cb5c9) 4
+mov (global-int 6cf486) 2
+mov (global-int 6d4735) 5
+mov (global-int 6d4739) f
+sub (global-int 6d473b) 0 2
+sub (global-int 6d69a0) 0 e
+mov (global-int 6d7919) 142
+set-string (global-string 1e0d2) "【魔法：流燐の大激流】　冷却属性"
+set-string (global-string 1e0d3) "　射程1-5 命中+5 魔攻+15 敏捷-2 水流2 SP14消費"
+set-string (global-string 1dae3) "魔法 冷却 射程5 魔攻+15 水流2 SP14"
+set-string (global-string 1d6fd) "火弾"
+mov (global-int 6c67ab) 13ec
+mov (global-int 6c7363) 6
+mov (global-int 6c7b33) 1
+mov (global-int 6c8303) 3
+mov (global-int 6c9a73) 2
+mov (global-int 6c9e5b) 3
+mov (global-int 6cb5cb) 5
+mov (global-int 6cf4c4) 1
+mov (global-int 6d4753) 3
+sub (global-int 6d4755) 0 1
+sub (global-int 6d69a6) 0 4
+mov (global-int 6d791b) 12f
+set-string (global-string 1e0d6) "【魔法：火弾】　火炎属性"
+set-string (global-string 1e0d7) "　射程1-2 魔攻+3 敏捷-1 炎症1 SP4消費"
+set-string (global-string 1dae5) "魔法 火炎 射程2 魔攻+3 炎症1 SP4"
+set-string (global-string 1d6fe) "連続火弾"
+mov (global-int 6c67ac) 13f6
+mov (global-int 6c7364) 6
+mov (global-int 6c7b34) 1
+mov (global-int 6c8304) 6
+mov (global-int 6c9a74) 2
+mov (global-int 6c9e5c) 4
+mov (global-int 6cb5cc) 5
+mov (global-int 6cf4e2) 1
+mov (global-int 6d475c) 5
+mov (global-int 6d4760) 9
+sub (global-int 6d4762) 0 2
+sub (global-int 6d69a9) 0 6
+mov (global-int 6d791c) 12f
+set-string (global-string 1e0d8) "【魔法：連続火弾】　火炎属性"
+set-string (global-string 1e0d9) "　射程1-3 命中+5 魔攻+9 敏捷-2 炎症1 SP6消費"
+set-string (global-string 1dae6) "魔法 火炎 射程3 魔攻+9 炎症1 SP6"
+set-string (global-string 1d6ff) "大熱噴"
+mov (global-int 6c67ad) 1400
+mov (global-int 6c7365) 6
+mov (global-int 6c7b35) 1
+mov (global-int 6c8305) a
+mov (global-int 6c9a75) 2
+mov (global-int 6c9e5d) 4
+mov (global-int 6cb5cd) 5
+mov (global-int 6cf500) 2
+mov (global-int 6d476d) e
+sub (global-int 6d476f) 0 6
+sub (global-int 6d69ac) 0 a
+mov (global-int 6d791d) 143
+set-string (global-string 1e0da) "【魔法：大熱噴】　火炎属性"
+set-string (global-string 1e0db) "　射程1-3 魔攻+14 敏捷-6 炎症2 SP10消費"
+set-string (global-string 1dae7) "魔法 火炎 射程3 魔攻+14 炎症2 SP10"
+set-string (global-string 1d700) "溶燐の双轟炎"
+mov (global-int 6c67ae) 140a
+mov (global-int 6c7366) 6
+mov (global-int 6c7b36) 1
+mov (global-int 6c8306) 14
+mov (global-int 6c9a76) 2
+mov (global-int 6c9e5e) 3
+mov (global-int 6cb5ce) 5
+mov (global-int 6cf51e) 2
+mov (global-int 6d477a) 14
+sub (global-int 6d477c) 0 5
+sub (global-int 6d69af) 0 12
+mov (global-int 6d791e) 143
+set-string (global-string 1e0dc) "【魔法：溶燐の双轟炎】　火炎属性"
+set-string (global-string 1e0dd) "　射程1-2 魔攻+20 敏捷-5 炎症2 SP18消費"
+set-string (global-string 1dae8) "魔法 火炎 射程2 魔攻+20 炎症2 SP18"
+set-string (global-string 1d702) "電磁弾"
+mov (global-int 6c67b0) 1414
+mov (global-int 6c7368) 6
+mov (global-int 6c7b38) 1
+mov (global-int 6c8308) 3
+mov (global-int 6c9a78) 2
+mov (global-int 6c9e60) 3
+mov (global-int 6cb5d0) 6
+mov (global-int 6cf556) 1
+mov (global-int 6d4790) 5
+mov (global-int 6d4794) 3
+sub (global-int 6d4796) 0 1
+sub (global-int 6d69b5) 0 4
+mov (global-int 6d7920) 130
+set-string (global-string 1e0e0) "【魔法：電磁弾】　電撃属性"
+set-string (global-string 1e0e1) "　射程1-2 命中+5 魔攻+3 敏捷-1 麻痺1 SP4消費"
+set-string (global-string 1daea) "魔法 電撃 射程2 魔攻+3 麻痺1 SP4"
+set-string (global-string 1d703) "裁きの雷"
+mov (global-int 6c67b1) 141e
+mov (global-int 6c7369) 6
+mov (global-int 6c7b39) 1
+mov (global-int 6c8309) 5
+mov (global-int 6c9a79) 2
+mov (global-int 6c9e61) 4
+mov (global-int 6cb5d1) 6
+mov (global-int 6cf574) 2
+sub (global-int 6d479d) 0 5
+mov (global-int 6d47a1) 5
+sub (global-int 6d47a3) 0 2
+sub (global-int 6d69b8) 0 4
+mov (global-int 6d7921) 144
+set-string (global-string 1e0e2) "【魔法：裁きの雷】　電撃属性"
+set-string (global-string 1e0e3) "　射程1-3 命中-5 魔攻+5 敏捷-2 麻痺2 SP4消費"
+set-string (global-string 1daeb) "魔法 電撃 射程3 魔攻+5 麻痺2 SP4"
+set-string (global-string 1d704) "大放電"
+mov (global-int 6c67b2) 1428
+mov (global-int 6c736a) 6
+mov (global-int 6c7b3a) 1
+mov (global-int 6c830a) 7
+mov (global-int 6c9a7a) 2
+mov (global-int 6c9e62) 4
+mov (global-int 6cb5d2) 6
+mov (global-int 6cf592) 2
+mov (global-int 6d47aa) a
+mov (global-int 6d47ae) 7
+sub (global-int 6d47b0) 0 3
+sub (global-int 6d69bb) 0 5
+mov (global-int 6d7922) 144
+set-string (global-string 1e0e4) "【魔法：大放電】　電撃属性"
+set-string (global-string 1e0e5) "　射程1-3 命中+10 魔攻+7 敏捷-3 麻痺2 SP5消費"
+set-string (global-string 1daec) "魔法 電撃 射程3 魔攻+7 麻痺2 SP5"
+set-string (global-string 1d705) "破滅の轟雷"
+mov (global-int 6c67b3) 1432
+mov (global-int 6c736b) 6
+mov (global-int 6c7b3b) 1
+mov (global-int 6c830b) a
+mov (global-int 6c9a7b) 2
+mov (global-int 6c9e63) 4
+mov (global-int 6cb5d3) 6
+mov (global-int 6cf5b0) 2
+mov (global-int 6d47bb) c
+sub (global-int 6d47bd) 0 3
+sub (global-int 6d69be) 0 9
+mov (global-int 6d7923) 144
+set-string (global-string 1e0e6) "【魔法：破滅の轟雷】　電撃属性"
+set-string (global-string 1e0e7) "　射程1-3 魔攻+12 敏捷-3 麻痺2 SP9消費"
+set-string (global-string 1daed) "魔法 電撃 射程3 魔攻+12 麻痺2 SP9"
+set-string (global-string 1d707) "旋刃"
+mov (global-int 6c67b5) 143c
+mov (global-int 6c736d) 6
+mov (global-int 6c7b3d) 1
+mov (global-int 6c830d) 4
+mov (global-int 6c9a7d) 2
+mov (global-int 6c9e65) 3
+mov (global-int 6cb5d5) 6
+mov (global-int 6d47d1) a
+mov (global-int 6d47d5) 2
+mov (global-int 6d47d7) 2
+mov (global-int 6d61b5) a
+sub (global-int 6d69c4) 0 6
+mov (global-int 6d7925) 131
+set-string (global-string 1e0ea) "【魔法：旋刃】　電撃属性"
+set-string (global-string 1e0eb) "　射程1-2 命中+10 魔攻+2 敏捷+2 痛打+10 SP6消費"
+set-string (global-string 1daef) "魔法 電撃 射程2 魔攻+2 SP6"
+set-string (global-string 1d708) "竜巻"
+mov (global-int 6c67b6) 1446
+mov (global-int 6c736e) 6
+mov (global-int 6c7b3e) 1
+mov (global-int 6c830e) 8
+mov (global-int 6c9a7e) 2
+mov (global-int 6c9e66) 5
+mov (global-int 6cb5d6) 6
+sub (global-int 6d47de) 0 5
+mov (global-int 6d47e2) 4
+sub (global-int 6d47e4) 0 6
+sub (global-int 6d69c7) 0 9
+mov (global-int 6d7926) 131
+set-string (global-string 1e0ec) "【魔法：竜巻】　電撃属性"
+set-string (global-string 1e0ed) "　射程1-4 命中-5 魔攻+4 敏捷-6 SP9消費"
+set-string (global-string 1daf0) "魔法 電撃 射程4 魔攻+4 SP9"
+set-string (global-string 1d709) "旋刃烈波"
+mov (global-int 6c67b7) 1450
+mov (global-int 6c736f) 6
+mov (global-int 6c7b3f) 1
+mov (global-int 6c830f) c
+mov (global-int 6c9a7f) 2
+mov (global-int 6c9e67) 4
+mov (global-int 6cb5d7) 6
+mov (global-int 6d47eb) a
+mov (global-int 6d47ef) a
+mov (global-int 6d47f1) 3
+mov (global-int 6d61b7) a
+sub (global-int 6d69ca) 0 e
+mov (global-int 6d7927) 145
+set-string (global-string 1e0ee) "【魔法：旋刃烈波】電撃属性"
+set-string (global-string 1e0ef) "　射程1-3 命中+10 魔攻+10 敏捷+3 痛打+10 SP14消費"
+set-string (global-string 1daf1) "魔法 電撃 射程3 魔攻+10 SP14"
+set-string (global-string 1d70a) "嵐燐の大竜巻"
+mov (global-int 6c67b8) 145a
+mov (global-int 6c7370) 6
+mov (global-int 6c7b40) 1
+mov (global-int 6c8310) 14
+mov (global-int 6c9a80) 2
+mov (global-int 6c9e68) 4
+mov (global-int 6cb5d8) 6
+mov (global-int 6d47f8) 1e
+mov (global-int 6d47fc) 10
+sub (global-int 6d47fe) 0 3
+sub (global-int 6d69cd) 0 12
+mov (global-int 6d7928) 145
+set-string (global-string 1e0f0) "【魔法：嵐燐の大竜巻】　電撃属性"
+set-string (global-string 1e0f1) "　射程1-3 命中+30 魔攻+16 敏捷-3 SP18消費"
+set-string (global-string 1daf2) "魔法 電撃 射程3 魔攻+16 SP18"
+set-string (global-string 1d70c) "光弾"
+mov (global-int 6c67ba) 146e
+mov (global-int 6c7372) 6
+mov (global-int 6c7b42) 1
+mov (global-int 6c8312) 4
+mov (global-int 6c9a82) 2
+mov (global-int 6c9e6a) 3
+mov (global-int 6cb5da) 7
+mov (global-int 6d4812) a
+mov (global-int 6d4816) 2
+sub (global-int 6d4818) 0 1
+sub (global-int 6d69d3) 0 4
+mov (global-int 6d792a) 132
+set-string (global-string 1e0f4) "【魔法：光弾】　神聖属性"
+set-string (global-string 1e0f5) "　射程1-2 命中+10 魔攻+2 敏捷-1 SP4消費"
+set-string (global-string 1daf4) "魔法 神聖 射程2 魔攻+2 SP4"
+set-string (global-string 1d70d) "光燐衝撃"
+mov (global-int 6c67bb) 1478
+mov (global-int 6c7373) 6
+mov (global-int 6c7b43) 1
+mov (global-int 6c8313) 6
+mov (global-int 6c9a83) 2
+mov (global-int 6c9e6b) 4
+mov (global-int 6cb5db) 7
+mov (global-int 6d4823) 5
+sub (global-int 6d4825) 0 5
+mov (global-int 6d61bb) 5
+sub (global-int 6d69d6) 0 8
+mov (global-int 6d792b) 146
+set-string (global-string 1e0f6) "【魔法：光燐衝撃】　神聖属性"
+set-string (global-string 1e0f7) "　射程1-3 魔攻+5 敏捷-5 痛打+5 SP8消費"
+set-string (global-string 1daf5) "魔法 神聖 射程3 魔攻+5 SP8"
+set-string (global-string 1d70e) "天縁神の裁き"
+mov (global-int 6c67bc) 1482
+mov (global-int 6c7374) 6
+mov (global-int 6c7b44) 1
+mov (global-int 6c8314) 12
+mov (global-int 6c9a84) 2
+mov (global-int 6c9e6c) 3
+mov (global-int 6cb5dc) 7
+mov (global-int 6d482c) a
+mov (global-int 6d4830) 10
+sub (global-int 6d4832) 0 1
+mov (global-int 6d61bc) a
+sub (global-int 6d69d9) 0 c
+mov (global-int 6d792c) 146
+set-string (global-string 1e0f8) "【魔法：天縁神の裁き】　神聖属性"
+set-string (global-string 1e0f9) "　射程1-2 命中+10 魔攻+16 敏捷-1 痛打+10 SP12消費"
+set-string (global-string 1daf6) "魔法 神聖 射程2 魔攻+16 SP12"
+set-string (global-string 1d70f) "断罪の神槍"
+mov (global-int 6c67bd) 148c
+mov (global-int 6c7375) 6
+mov (global-int 6c7b45) 1
+mov (global-int 6c8315) 12
+mov (global-int 6c9a85) 2
+mov (global-int 6c9e6d) 5
+mov (global-int 6cb5dd) 7
+mov (global-int 6cf6d5) 1
+mov (global-int 6d483d) c
+sub (global-int 6d483f) 0 5
+sub (global-int 6d69dc) 0 e
+mov (global-int 6d792d) 146
+set-string (global-string 1e0fa) "【魔法：断罪の神槍】　神聖属性"
+set-string (global-string 1e0fb) "　射程1-4 魔攻+12 敏捷-5 即死 SP14消費"
+set-string (global-string 1daf7) "魔法 神聖 射程4 魔攻+12 即死 SP14"
+set-string (global-string 1d711) "闇弾"
+mov (global-int 6c67bf) 1496
+mov (global-int 6c7377) 6
+mov (global-int 6c7b47) 1
+mov (global-int 6c8317) 3
+mov (global-int 6c9a87) 2
+mov (global-int 6c9e6f) 3
+mov (global-int 6cb5df) 8
+mov (global-int 6d4857) 2
+sub (global-int 6d4859) 0 1
+mov (global-int 6d61bf) 5
+sub (global-int 6d69e2) 0 4
+mov (global-int 6d792f) 133
+set-string (global-string 1e0fe) "【魔法：闇弾】　暗黒属性"
+set-string (global-string 1e0ff) "　射程1-2 魔攻+2 敏捷-1 痛打+5 SP4消費"
+set-string (global-string 1daf9) "魔法 暗黒 射程2 魔攻+2 SP4"
+set-string (global-string 1d712) "闇界衝撃"
+mov (global-int 6c67c0) 14a0
+mov (global-int 6c7378) 6
+mov (global-int 6c7b48) 1
+mov (global-int 6c8318) 5
+mov (global-int 6c9a88) 2
+mov (global-int 6c9e70) 4
+mov (global-int 6cb5e0) 8
+mov (global-int 6d4860) f
+mov (global-int 6d4864) 6
+sub (global-int 6d4866) 0 3
+sub (global-int 6d69e5) 0 6
+mov (global-int 6d7930) 133
+set-string (global-string 1e100) "【魔法：闇界衝撃】　暗黒属性"
+set-string (global-string 1e101) "　射程1-3 命中+15 魔攻+6 敏捷-3 SP6消費"
+set-string (global-string 1dafa) "魔法 暗黒 射程3 魔攻+6 SP6"
+set-string (global-string 1d713) "暗黒槍"
+mov (global-int 6c67c1) 14aa
+mov (global-int 6c7379) 6
+mov (global-int 6c7b49) 1
+mov (global-int 6c8319) f
+mov (global-int 6c9a89) 2
+mov (global-int 6c9e71) 4
+mov (global-int 6cb5e1) 8
+mov (global-int 6d4871) c
+sub (global-int 6d4873) 0 4
+mov (global-int 6d61c1) a
+sub (global-int 6d69e8) 0 e
+mov (global-int 6d7931) 147
+set-string (global-string 1e102) "【魔法：暗黒槍】　暗黒属性"
+set-string (global-string 1e103) "　射程1-3 魔攻+12 敏捷-4 痛打+10 SP14消費"
+set-string (global-string 1dafb) "魔法 暗黒 射程3 魔攻+12 SP14"
+set-string (global-string 1d716) "呪殺球"
+mov (global-int 6c67c4) 14c8
+mov (global-int 6c737c) 6
+mov (global-int 6c7b4c) 1
+mov (global-int 6c831c) 9
+mov (global-int 6c9a8c) 2
+mov (global-int 6c9e74) 3
+mov (global-int 6cb5e4) 8
+mov (global-int 6cf7a7) 1
+mov (global-int 6d4894) f
+mov (global-int 6d4898) 5
+sub (global-int 6d489a) 0 2
+sub (global-int 6d69f1) 0 4
+mov (global-int 6d7934) 148
+set-string (global-string 1e108) "【魔法：呪殺球】　暗黒属性"
+set-string (global-string 1e109) "　射程1-2 命中+15 魔攻+5 敏捷-2 即死 SP4消費"
+set-string (global-string 1dafe) "魔法 暗黒 射程2 魔攻+5 即死 SP4"
+set-string (global-string 1d717) "闇界獄滅炎"
+mov (global-int 6c67c5) 14d2
+mov (global-int 6c737d) 6
+mov (global-int 6c7b4d) 1
+mov (global-int 6c831d) 9
+mov (global-int 6c9a8d) 2
+mov (global-int 6c9e75) 3
+mov (global-int 6cb5e5) 8
+mov (global-int 6d48a1) a
+mov (global-int 6d48a5) 12
+sub (global-int 6d48a7) 0 3
+sub (global-int 6d69f4) 0 7
+mov (global-int 6d7935) 147
+set-string (global-string 1e10a) "【魔法：闇界獄滅炎】　暗黒属性"
+set-string (global-string 1e10b) "　射程1-2 命中+10 魔攻+18 敏捷-3 SP7消費"
+set-string (global-string 1daff) "魔法 暗黒 射程2 魔攻+18 SP7"
+set-string (global-string 1d71b) "ブロッサ・ラヴェ"
+mov (global-int 6c67c9) 14f0
+mov (global-int 6c7381) 6
+mov (global-int 6c7b51) 1
+mov (global-int 6c8321) 3
+mov (global-int 6c9a91) 2
+mov (global-int 6c9e79) 3
+mov (global-int 6cb5e9) 1
+sub (global-int 6d48d5) 0 5
+mov (global-int 6d48d9) 4
+sub (global-int 6d48db) 0 1
+sub (global-int 6d6a00) 0 3
+mov (global-int 6d7939) 134
+set-string (global-string 1e112) "【魔法：ブロッサ・ラヴェ】　無属性"
+set-string (global-string 1e113) "　射程1-2 命中-5 魔攻+4 敏捷-1 SP3消費"
+set-string (global-string 1db03) "魔法 無属 射程2 魔攻+4 SP3"
+set-string (global-string 1d71c) "ブロッサ・シュヴ"
+mov (global-int 6c67ca) 14fa
+mov (global-int 6c7382) 6
+mov (global-int 6c7b52) 1
+mov (global-int 6c8322) 8
+mov (global-int 6c9a92) 2
+mov (global-int 6c9e7a) 4
+mov (global-int 6cb5ea) 1
+sub (global-int 6d48e2) 0 5
+mov (global-int 6d48e6) 8
+sub (global-int 6d48e8) 0 2
+sub (global-int 6d6a03) 0 5
+mov (global-int 6d793a) 13e
+set-string (global-string 1e114) "【魔法：ブロッサ・シュヴ】　無属性"
+set-string (global-string 1e115) "　射程1-3 命中-5 魔攻+8 敏捷-2 SP5消費"
+set-string (global-string 1db04) "魔法 無属 射程3 魔攻+8 SP5"
+set-string (global-string 1d71d) "ブイヨワール"
+mov (global-int 6c67cb) 1504
+mov (global-int 6c7383) 6
+mov (global-int 6c7b53) 1
+mov (global-int 6c8323) 3
+mov (global-int 6c9a93) 2
+mov (global-int 6c9e7b) 3
+mov (global-int 6cb5eb) 1
+mov (global-int 6cf87f) 1
+sub (global-int 6d48ef) 0 5
+mov (global-int 6d48f3) a
+sub (global-int 6d48f5) 0 2
+sub (global-int 6d6a06) 0 7
+mov (global-int 6d793b) 13f
+set-string (global-string 1e116) "【魔法：ブイヨワール】　無属性"
+set-string (global-string 1e117) "　射程1-2 命中-5 魔攻+10 敏捷-2 混乱1 SP7消費"
+set-string (global-string 1db05) "魔法 無属 射程2 魔攻+10 混乱1 SP7"
+set-string (global-string 1d71e) "スリップゲーヌ"
+mov (global-int 6c67cc) 150e
+mov (global-int 6c7384) 6
+mov (global-int 6c7b54) 1
+mov (global-int 6c8324) 8
+mov (global-int 6c9a94) 2
+mov (global-int 6c9e7c) 4
+mov (global-int 6cb5ec) 1
+mov (global-int 6cf89d) 2
+sub (global-int 6d48fc) 0 5
+mov (global-int 6d4900) 10
+sub (global-int 6d4902) 0 4
+sub (global-int 6d6a09) 0 a
+mov (global-int 6d793c) 140
+set-string (global-string 1e118) "【魔法：スリップゲーヌ】　無属性"
+set-string (global-string 1e119) "　射程1-3 命中-5 魔攻+16 敏捷-4 混乱2 SP10消費"
+set-string (global-string 1db06) "魔法 無属 射程3 魔攻+16 混乱2 SP10"
+set-string (global-string 1d720) "死への誘い"
+mov (global-int 6c67ce) 1518
+mov (global-int 6c7386) 6
+mov (global-int 6c7b56) 1
+mov (global-int 6c8326) 8
+mov (global-int 6c9a96) 2
+mov (global-int 6c9e7e) 3
+mov (global-int 6cb5ee) 8
+mov (global-int 6cf8d3) 1
+sub (global-int 6d4916) 0 a
+mov (global-int 6d491a) 5
+sub (global-int 6d491c) 0 5
+sub (global-int 6d6a0f) 0 7
+mov (global-int 6d793e) 135
+set-string (global-string 1e11c) "【魔法：死への誘い】　暗黒属性"
+set-string (global-string 1e11d) "　射程1-2 命中-10 魔攻+5 敏捷-5 即死 SP7消費"
+set-string (global-string 1db08) "魔法 暗黒 射程2 魔攻+5 即死 SP7"
+set-string (global-string 1d721) "恐怖の接触"
+mov (global-int 6c67cf) 1522
+mov (global-int 6c7387) 6
+mov (global-int 6c7b57) 1
+mov (global-int 6c8327) 8
+mov (global-int 6c9a97) 1
+mov (global-int 6c9e7f) 1
+mov (global-int 6cb5ef) 8
+mov (global-int 6cf8fd) 1
+mov (global-int 6d4923) 14
+sub (global-int 6d4929) 0 5
+sub (global-int 6d6a12) 0 4
+mov (global-int 6d793f) 135
+set-string (global-string 1e11e) "【魔法：恐怖の接触】　暗黒属性"
+set-string (global-string 1e11f) "　命中+20 敏捷-5 恐怖1 SP4消費"
+set-string (global-string 1db09) "魔法 暗黒 恐怖1 SP4"
+set-string (global-string 1d722) "魅了の接触"
+mov (global-int 6c67d0) 152c
+mov (global-int 6c7388) 6
+mov (global-int 6c7b58) 1
+mov (global-int 6c8328) 8
+mov (global-int 6c9a98) 1
+mov (global-int 6c9e80) 1
+mov (global-int 6cb5f0) 8
+mov (global-int 6cf914) 1
+mov (global-int 6d4930) 14
+sub (global-int 6d4936) 0 5
+sub (global-int 6d6a15) 0 4
+mov (global-int 6d7940) 135
+set-string (global-string 1e120) "【魔法：魅了の接触】　暗黒属性"
+set-string (global-string 1e121) "　命中+20 敏捷-5 魅了1 SP4消費"
+set-string (global-string 1db0a) "魔法 暗黒 魅了1 SP4"
+set-string (global-string 1d725) "だるま雪合戦"
+mov (global-int 6c67d3) 13d3
+mov (global-int 6c738b) 6
+mov (global-int 6c7b5b) 1
+mov (global-int 6c832b) 3
+mov (global-int 6c9a9b) 2
+mov (global-int 6c9e83) 3
+mov (global-int 6cb5f3) 4
+mov (global-int 6cf970) 1
+mov (global-int 6d4957) 14
+mov (global-int 6d495b) 2
+sub (global-int 6d495d) 0 1
+mov (global-int 6d61d3) 5
+sub (global-int 6d6a1e) 0 4
+mov (global-int 6d7943) 136
+set-string (global-string 1e126) "【魔法：だるま雪合戦】　冷却属性"
+set-string (global-string 1e127) "　射程1-2 命中+20 魔攻+2 敏捷-1 麻痺1 痛打+5 SP4"
+set-string (global-string 1db0d) "魔法 冷却 射程2 魔攻+2 麻痺1 SP4"
+set-string (global-string 1d726) "たっくる雪だるま"
+mov (global-int 6c67d4) 13d8
+mov (global-int 6c738c) 6
+mov (global-int 6c7b5c) 1
+mov (global-int 6c832c) 3
+mov (global-int 6c9a9c) 1
+mov (global-int 6c9e84) 1
+mov (global-int 6cb5f4) 4
+mov (global-int 6cf98e) 1
+mov (global-int 6d4964) 14
+mov (global-int 6d4968) 5
+sub (global-int 6d496a) 0 2
+mov (global-int 6d61d4) a
+sub (global-int 6d6a21) 0 6
+mov (global-int 6d7944) 13a
+set-string (global-string 1e128) "【魔法：たっくる雪だるま】　冷却属性"
+set-string (global-string 1e129) "　命中+20 魔攻+5 敏捷-2 痛打+10 麻痺1 SP6消費"
+set-string (global-string 1db0e) "魔法 冷却 魔攻+5 麻痺1 SP6"
+set-string (global-string 1d727) "ばーすと雪合戦"
+mov (global-int 6c67d5) 13dd
+mov (global-int 6c738d) 6
+mov (global-int 6c7b5d) 1
+mov (global-int 6c832d) 7
+mov (global-int 6c9a9d) 2
+mov (global-int 6c9e85) 4
+mov (global-int 6cb5f5) 4
+mov (global-int 6cf9ac) 2
+mov (global-int 6d4971) 14
+mov (global-int 6d4975) 8
+sub (global-int 6d4977) 0 3
+mov (global-int 6d61d5) c
+sub (global-int 6d6a24) 0 9
+mov (global-int 6d7945) 13b
+set-string (global-string 1e12a) "【魔法：ばーすと雪合戦】　冷却属性"
+set-string (global-string 1e12b) "　射程1-3 命中+20 魔攻+8 敏捷-3 痛打+12 麻痺2 SP9"
+set-string (global-string 1db0f) "魔法 冷却 射程3 魔攻+8 麻痺2 SP9"
+set-string (global-string 1d728) "すぺしゃる雪合戦"
+mov (global-int 6c67d6) 13e2
+mov (global-int 6c738e) 6
+mov (global-int 6c7b5e) 1
+mov (global-int 6c832e) c
+mov (global-int 6c9a9e) 2
+mov (global-int 6c9e86) 5
+mov (global-int 6cb5f6) 4
+mov (global-int 6cf9ca) 3
+mov (global-int 6d497e) 14
+mov (global-int 6d4982) e
+sub (global-int 6d4984) 0 4
+mov (global-int 6d61d6) 14
+sub (global-int 6d6a27) 0 c
+mov (global-int 6d7946) 13b
+set-string (global-string 1e12c) "【魔法：すぺしゃる雪合戦】　冷却属性"
+set-string (global-string 1e12d) "　射程1-4 命中+20 魔攻+14 敏捷-4 痛打+20 麻痺3 SP12"
+set-string (global-string 1db10) "魔法 冷却 射程4 魔攻+14 麻痺3 SP12"
+set-string (global-string 1d72a) "魔弾"
+mov (global-int 6c67d8) 14dc
+mov (global-int 6c7390) 6
+mov (global-int 6c7b60) 1
+mov (global-int 6c8330) 3
+mov (global-int 6c9aa0) 2
+mov (global-int 6c9e88) 3
+mov (global-int 6cb5f8) 1
+mov (global-int 6d499c) 2
+sub (global-int 6d499e) 0 1
+mov (global-int 6d61d8) 5
+sub (global-int 6d6a2d) 0 4
+mov (global-int 6d7948) 137
+set-string (global-string 1e130) "【魔法：魔弾】　無属性"
+set-string (global-string 1e131) "　射程1-2 魔攻+2 敏捷-1 痛打+5 SP4消費"
+set-string (global-string 1db12) "魔法 無属 射程2 魔攻+2 SP4"
+set-string (global-string 1d72b) "アウエラの裁き"
+mov (global-int 6c67d9) 14e6
+mov (global-int 6c7391) 6
+mov (global-int 6c7b61) 1
+mov (global-int 6c8331) f
+mov (global-int 6c9aa1) 2
+mov (global-int 6c9e89) 3
+mov (global-int 6cb5f9) 1
+mov (global-int 6d49a5) 14
+mov (global-int 6d49a9) f
+mov (global-int 6d61d9) 14
+sub (global-int 6d6a30) 0 c
+mov (global-int 6d7949) 13c
+set-string (global-string 1e132) "【魔法：アウエラの裁き】　無属性"
+set-string (global-string 1e133) "　射程1-2 命中+20 魔攻+15 痛打+20 SP12消費"
+set-string (global-string 1db13) "魔法 無属 射程2 魔攻+15 SP12"
+set-string (global-string 1d72f) "氷剣"
+mov (global-int 6c67dd) 13e4
+mov (global-int 6c7395) 6
+mov (global-int 6c7b65) 1
+mov (global-int 6c8335) 6
+mov (global-int 6c9aa5) 1
+mov (global-int 6c9e8d) 1
+mov (global-int 6cb5fd) 1
+sub (global-int 6d49d9) 0 5
+mov (global-int 6d49dd) 7
+mov (global-int 6d61dd) 5
+sub (global-int 6d6a3c) 0 6
+mov (global-int 6d794d) 138
+set-string (global-string 1e13a) "【魔法：氷剣】　無属性"
+set-string (global-string 1e13b) "　命中-5 魔攻+7 痛打+5 SP6消費"
+set-string (global-string 1db17) "魔法 無属 魔攻+7 SP6"
+set-string (global-string 1d730) "氷柱"
+mov (global-int 6c67de) 13e6
+mov (global-int 6c7396) 6
+mov (global-int 6c7b66) 1
+mov (global-int 6c8336) 6
+mov (global-int 6c9aa6) 2
+mov (global-int 6c9e8e) 3
+mov (global-int 6cb5fe) 1
+mov (global-int 6d49e6) 5
+mov (global-int 6d49ea) 3
+sub (global-int 6d61de) 0 1
+sub (global-int 6d6a3f) 0 3
+mov (global-int 6d794e) 138
+set-string (global-string 1e13c) "【魔法：氷柱】　無属性"
+set-string (global-string 1e13d) "　射程1-2 命中+5 魔攻+3 痛打-1 SP3消費"
+set-string (global-string 1db18) "魔法 無属 射程2 魔攻+3 SP3"
+set-string (global-string 1d734) "轟炎龍"
+mov (global-int 6c67e2) 140c
+mov (global-int 6c739a) 6
+mov (global-int 6c7b6a) 1
+mov (global-int 6c833a) 5
+mov (global-int 6c9aaa) 2
+mov (global-int 6c9e92) 6
+mov (global-int 6cb602) 5
+mov (global-int 6cfb36) 2
+mov (global-int 6d4a1a) f
+mov (global-int 6d4a1e) 8
+sub (global-int 6d4a20) 0 3
+sub (global-int 6d6a4b) 0 7
+mov (global-int 6d7952) 139
+set-string (global-string 1e144) "【魔法：轟炎龍】　火炎属性"
+set-string (global-string 1e145) "　射程1-5 命中+15 魔攻+8 敏捷-3 SP7消費"
+set-string (global-string 1db1c) "魔法 火炎 射程5 魔攻8 炎症2 SP7"
+set-string (global-string 1d735) "煉獄魏炎龍"
+mov (global-int 6c67e3) 140e
+mov (global-int 6c739b) 6
+mov (global-int 6c7b6b) 1
+mov (global-int 6c833b) 9
+mov (global-int 6c9aab) 2
+mov (global-int 6c9e93) 6
+mov (global-int 6cb603) 5
+mov (global-int 6cfb54) 5
+mov (global-int 6d4a27) 14
+mov (global-int 6d4a2b) 14
+sub (global-int 6d4a2d) 0 5
+sub (global-int 6d6a4e) 0 f
+mov (global-int 6d7953) 139
+set-string (global-string 1e146) "【魔法：煉獄魏炎龍】　火炎属性"
+set-string (global-string 1e147) "　射程1-5 命中+20 魔攻+20 敏捷-5 SP15消費"
+set-string (global-string 1db1d) "魔法 火炎 射程5 魔攻20 炎症5 SP15"
+set-string (global-string 1d739) "鮫水魔"
+mov (global-int 6c67e7) 13e8
+mov (global-int 6c739f) 6
+mov (global-int 6c7b6f) 1
+mov (global-int 6c833f) 5
+mov (global-int 6c9aaf) 2
+mov (global-int 6c9e97) 5
+mov (global-int 6cb607) 4
+mov (global-int 6cfbca) 2
+mov (global-int 6d4a5b) 5
+mov (global-int 6d4a5f) 6
+sub (global-int 6d4a61) 0 4
+sub (global-int 6d6a5a) 0 5
+mov (global-int 6d7957) 13d
+set-string (global-string 1e14e) "【魔法：鮫水魔】　冷却属性"
+set-string (global-string 1e14f) "　射程4 命中+5 魔攻+6 敏捷-4 SP5消費"
+set-string (global-string 1db21) "魔法 冷却 射程4 魔攻6 水流2 SP5"
+set-string (global-string 1d73a) "刃蓮鮫水魔"
+mov (global-int 6c67e8) 13ea
+mov (global-int 6c73a0) 6
+mov (global-int 6c7b70) 1
+mov (global-int 6c8340) 9
+mov (global-int 6c9ab0) 2
+mov (global-int 6c9e98) 5
+mov (global-int 6cb608) 4
+mov (global-int 6cfbe8) 3
+mov (global-int 6d4a68) 5
+mov (global-int 6d4a6c) c
+sub (global-int 6d4a6e) 0 6
+sub (global-int 6d6a5d) 0 c
+mov (global-int 6d7958) 13d
+set-string (global-string 1e150) "【魔法：刃蓮鮫水魔】　冷却属性"
+set-string (global-string 1e151) "　射程1-4 命中+5 魔攻+12 敏捷-6 SP12消費"
+set-string (global-string 1db22) "魔法 冷却 射程4 魔攻12 水流3 SP12"
+set-string (global-string 1d74d) "羽娘の歌声"
+mov (global-int 6c67fb) 1540
+mov (global-int 6c73b3) 6
+mov (global-int 6c7b83) 1
+mov (global-int 6c8353) 3
+mov (global-int 6c9ac3) 2
+mov (global-int 6c9eab) 3
+mov (global-int 6cb61b) 6
+mov (global-int 6cfe1e) 1
+mov (global-int 6d4b5f) 14
+mov (global-int 6d4b63) 2
+sub (global-int 6d4b65) 0 4
+sub (global-int 6d6a96) 0 5
+mov (global-int 6d796b) 191
+set-string (global-string 1e176) "【魔法：羽娘の歌声】　電撃属性"
+set-string (global-string 1e177) "　射程1-2 命中+20 魔攻+2 魅了1 敏捷-4 SP5消費"
+set-string (global-string 1db35) "魔法 電撃 射程2 魔攻+2 魅了1 SP5"
+set-string (global-string 1d74e) "羽娘の恐歌"
+mov (global-int 6c67fc) 154a
+mov (global-int 6c73b4) 6
+mov (global-int 6c7b84) 1
+mov (global-int 6c8354) 6
+mov (global-int 6c9ac4) 2
+mov (global-int 6c9eac) 4
+mov (global-int 6cb61c) 6
+mov (global-int 6cfe43) 3
+mov (global-int 6d4b6c) 14
+mov (global-int 6d4b70) 4
+sub (global-int 6d4b72) 0 4
+sub (global-int 6d6a99) 0 7
+mov (global-int 6d796c) 191
+set-string (global-string 1e178) "【魔法：羽娘の恐歌】　電撃属性"
+set-string (global-string 1e179) "　射程1-3 命中+20 魔攻+4 恐怖3 敏捷-4 SP7消費"
+set-string (global-string 1db36) "魔法 電撃 射程3 魔攻+4 恐怖3 SP7"
+set-string (global-string 1d74f) "羽娘の魅歌"
+mov (global-int 6c67fd) 1554
+mov (global-int 6c73b5) 6
+mov (global-int 6c7b85) 1
+mov (global-int 6c8355) 9
+mov (global-int 6c9ac5) 2
+mov (global-int 6c9ead) 4
+mov (global-int 6cb61d) 6
+mov (global-int 6cfe5a) 3
+mov (global-int 6d4b79) 14
+mov (global-int 6d4b7d) 6
+sub (global-int 6d4b7f) 0 4
+sub (global-int 6d6a9c) 0 7
+mov (global-int 6d796d) 191
+set-string (global-string 1e17a) "【魔法：羽娘の魅歌】　電撃属性"
+set-string (global-string 1e17b) "　射程1-3 命中+20 魔攻+6 魅了3 敏捷-4 SP7消費"
+set-string (global-string 1db37) "魔法 電撃 射程3 魔攻+6 魅了3 SP7"
+set-string (global-string 1d752) "堕精霊の言霊"
+mov (global-int 6c6800) 155e
+mov (global-int 6c73b8) 6
+mov (global-int 6c7b88) 1
+mov (global-int 6c8358) 6
+mov (global-int 6c9ac8) 2
+mov (global-int 6c9eb0) 4
+mov (global-int 6cb620) 1
+mov (global-int 6cfeb4) 1
+mov (global-int 6d4ba0) 1e
+mov (global-int 6d4ba4) c
+sub (global-int 6d4ba6) 0 5
+sub (global-int 6d6aa5) 0 8
+mov (global-int 6d7970) 13c
+set-string (global-string 1e180) "【魔法：堕精霊の言霊】　無属性"
+set-string (global-string 1e181) "　射程1-3 命中30 魔攻+12 敏捷-5 魅了1 SP8消費"
+set-string (global-string 1db3a) "魔法 無属 射程3 魔攻+12 魅了1 SP8"
+set-string (global-string 1d77f) "☆天縁の機軸撃"
+mov (global-int 6c682d) 196e
+mov (global-int 6c73e5) 5
+mov (global-int 6c7bb5) 1
+mov (global-int 6c8385) a
+mov (global-int 6c9af5) 1
+mov (global-int 6c9edd) 1
+mov (global-int 6cb64d) 3
+mov (global-int 6d4de9) 1e
+mov (global-int 6d4deb) 14
+sub (global-int 6d6b2c) 0 c
+mov (global-int 6d799d) 1f5
+mov (global-int 6d8fb0) 1
+mov (global-int 6d8fb1) 2
+set-string (global-string 1e1da) "【合体攻撃：☆天縁の機軸撃】　地脈属性"
+set-string (global-string 1e1db) "　命中+30 物攻+20 両者SP12消費 フィア隣接"
+set-string (global-string 1db67) "必殺 地脈 物攻+20 両者SP12"
+set-string (global-string 1d780) "☆天縁の精霊術"
+mov (global-int 6c682e) 1978
+mov (global-int 6c73e6) 6
+mov (global-int 6c7bb6) 1
+mov (global-int 6c8386) a
+mov (global-int 6c9af6) 2
+mov (global-int 6c9ede) 4
+mov (global-int 6cb64e) 7
+mov (global-int 6d4df6) 1e
+mov (global-int 6d4dfa) 14
+sub (global-int 6d6b2f) 0 c
+mov (global-int 6d799e) 1f6
+mov (global-int 6d8fb2) 1
+mov (global-int 6d8fb3) 2
+set-string (global-string 1e1dc) "【合体攻撃：☆天縁の精霊術】　神聖属性"
+set-string (global-string 1e1dd) "　射程1-3 命中+30 魔攻+20 両者SP12消費 アヴァロ隣接"
+set-string (global-string 1db68) "魔法 神聖 魔攻+20 両者SP12"
+set-string (global-string 1d781) "☆双猫の乱捌き"
+mov (global-int 6c682f) 1982
+mov (global-int 6c73e7) 5
+mov (global-int 6c7bb7) 1
+mov (global-int 6c8387) a
+mov (global-int 6c9af7) 1
+mov (global-int 6c9edf) 1
+mov (global-int 6cb64f) 6
+mov (global-int 6d4e03) a
+mov (global-int 6d4e05) a
+sub (global-int 6d6b32) 0 7
+mov (global-int 6d799f) 1f7
+mov (global-int 6d8fb4) 3
+mov (global-int 6d8fb5) 4
+set-string (global-string 1e1de) "【合体攻撃：☆双猫の乱捌き】　電撃属性"
+set-string (global-string 1e1df) "　命中+10 物攻+10 両者SP7消費 ミケユ隣接"
+set-string (global-string 1db69) "必殺 電撃 物攻+10 両者SP7"
+set-string (global-string 1d782) "☆双猫の乱雪"
+mov (global-int 6c6830) 198c
+mov (global-int 6c73e8) 6
+mov (global-int 6c7bb8) 1
+mov (global-int 6c8388) a
+mov (global-int 6c9af8) 2
+mov (global-int 6c9ee0) 4
+mov (global-int 6cb650) 4
+mov (global-int 6d4e10) a
+mov (global-int 6d4e14) a
+sub (global-int 6d6b35) 0 7
+mov (global-int 6d79a0) 1f8
+mov (global-int 6d8fb6) 3
+mov (global-int 6d8fb7) 4
+set-string (global-string 1e1e0) "【合体攻撃：☆双猫の乱雪】　冷却属性"
+set-string (global-string 1e1e1) "　射程1-3 命中+10 魔攻+10 両者SP7消費 イオル隣接"
+set-string (global-string 1db6a) "魔法 冷却 射程3 魔攻+10 両者SP7"
+set-string (global-string 1d783) "☆流結閃牙"
+mov (global-int 6c6831) 19aa
+mov (global-int 6c73e9) 6
+mov (global-int 6c7bb9) 1
+mov (global-int 6c8389) a
+mov (global-int 6c9af9) 2
+mov (global-int 6c9ee1) 4
+mov (global-int 6cb651) 4
+mov (global-int 6d0476) 3
+mov (global-int 6d4e1d) f
+mov (global-int 6d4e21) 12
+sub (global-int 6d6b38) 0 a
+mov (global-int 6d79a1) 1f9
+mov (global-int 6d8fb8) 2
+mov (global-int 6d8fb9) 32
+set-string (global-string 1e1e2) "【合体攻撃：☆流結閃牙】　冷却属性"
+set-string (global-string 1e1e3) "　射程1-3 命中15 魔攻18 水流3 両者SP10 フィア隣接"
+set-string (global-string 1db6b) "魔法 冷却 射3 魔攻18 水流3 SP10"
+set-string (global-string 1d784) "☆溶結乱舞"
+mov (global-int 6c6832) 19b4
+mov (global-int 6c73ea) 5
+mov (global-int 6c7bba) 1
+mov (global-int 6c838a) a
+mov (global-int 6c9afa) 1
+mov (global-int 6c9ee2) 1
+mov (global-int 6cb652) 5
+mov (global-int 6d0496) 3
+mov (global-int 6d4e2a) a
+mov (global-int 6d4e2c) 16
+sub (global-int 6d6b3b) 0 a
+mov (global-int 6d79a2) 1fa
+mov (global-int 6d8fba) 2
+mov (global-int 6d8fbb) 33
+set-string (global-string 1e1e4) "【合体攻撃：☆溶結乱舞】　火炎属性"
+set-string (global-string 1e1e5) "　命中+10 物攻+22 炎症3 両者SP10消費 フィア隣接"
+set-string (global-string 1db6c) "必殺 火炎 物攻22 炎症3 両者SP10"
+set-string (global-string 1d785) "☆嵐結旋風"
+mov (global-int 6c6833) 19a0
+mov (global-int 6c73eb) 6
+mov (global-int 6c7bbb) 1
+mov (global-int 6c838b) a
+mov (global-int 6c9afb) 2
+mov (global-int 6c9ee3) 6
+mov (global-int 6cb653) 6
+mov (global-int 6d04b0) 3
+mov (global-int 6d4e37) 1e
+mov (global-int 6d4e3b) 10
+sub (global-int 6d6b3e) 0 a
+mov (global-int 6d79a3) 1fb
+mov (global-int 6d8fbc) 2
+mov (global-int 6d8fbd) 34
+set-string (global-string 1e1e6) "【合体攻撃：☆嵐結旋風】　電撃属性"
+set-string (global-string 1e1e7) "　射程1-5 命中30 魔攻16 麻痺3 両者SP10 フィア隣接"
+set-string (global-string 1db6d) "魔法 電撃 射5 魔攻16 麻痺3 SP10"
+set-string (global-string 1d786) "☆華結地響"
+mov (global-int 6c6834) 1996
+mov (global-int 6c73ec) 5
+mov (global-int 6c7bbc) 1
+mov (global-int 6c838c) a
+mov (global-int 6c9afc) 1
+mov (global-int 6c9ee4) 1
+mov (global-int 6cb654) 3
+mov (global-int 6d4e46) 18
+sub (global-int 6d6b41) 0 a
+mov (global-int 6d79a4) 1fc
+mov (global-int 6d8fbe) 2
+mov (global-int 6d8fbf) 35
+set-string (global-string 1e1e8) "【合体攻撃：☆華結地響】　地脈属性"
+set-string (global-string 1e1e9) "　物攻+24 両者SP10消費 フィア隣接"
+set-string (global-string 1db6e) "必殺 地脈 物攻18 両者SP10"
+set-string (global-string 1d787) "☆虚無の紙時雨"
+mov (global-int 6c6835) 19be
+mov (global-int 6c73ed) 5
+mov (global-int 6c7bbd) 1
+mov (global-int 6c9afd) 2
+mov (global-int 6c9ee5) 4
+mov (global-int 6cb655) 8
+mov (global-int 6d4e53) a
+mov (global-int 6d6235) 1e
+sub (global-int 6d6b44) 0 7
+mov (global-int 6d79a5) 1fd
+mov (global-int 6d8fc0) 37
+mov (global-int 6d8fc1) 38
+set-string (global-string 1e1ea) "【合体攻撃：☆虚無の紙時雨】　暗黒属性"
+set-string (global-string 1e1eb) "　射程1-3 物攻+10 痛打+30 両者SP8消費 要隣接"
+set-string (global-string 1db6f) "必殺 射程3 暗黒 物攻10 両者SP8"
+set-string (global-string 1d788) "☆虚無の闇時雨"
+mov (global-int 6c6836) 19c8
+mov (global-int 6c73ee) 6
+mov (global-int 6c7bbe) 1
+mov (global-int 6c9afe) 2
+mov (global-int 6c9ee6) 4
+mov (global-int 6cb656) 8
+mov (global-int 6d4e5e) 1e
+mov (global-int 6d4e62) a
+sub (global-int 6d6b47) 0 7
+mov (global-int 6d79a6) 1fe
+mov (global-int 6d8fc2) 37
+mov (global-int 6d8fc3) 38
+set-string (global-string 1e1ec) "【合体攻撃：☆虚無の闇時雨】　暗黒属性"
+set-string (global-string 1e1ed) "　射程1-3 命中+30 魔攻+10 両者SP8消費 要隣接"
+set-string (global-string 1db70) "魔法 射程3 暗黒 魔攻10 両者SP8"
+set-string (global-string 1d789) "☆鍛梁の機軸撃"
+mov (global-int 6c6837) 19d2
+mov (global-int 6c73ef) 5
+mov (global-int 6c7bbf) 1
+mov (global-int 6c838f) a
+mov (global-int 6c9aff) 1
+mov (global-int 6c9ee7) 1
+mov (global-int 6cb657) 1
+mov (global-int 6d4e6b) 14
+mov (global-int 6d4e6d) f
+sub (global-int 6d6b4a) 0 9
+mov (global-int 6d79a7) 1ff
+mov (global-int 6d8fc4) 1
+mov (global-int 6d8fc5) 6
+set-string (global-string 1e1ee) "【合体攻撃：☆鍛梁の機軸撃】　無属性"
+set-string (global-string 1e1ef) "　命中+20 物攻+15 両者SP9消費 ディート隣接"
+set-string (global-string 1db71) "必殺 無属 物攻+15 両者SP9"
+set-string (global-string 1d78a) "☆鍛梁の機軸射撃"
+mov (global-int 6c6838) 19dc
+mov (global-int 6c73f0) 5
+mov (global-int 6c7bc0) 1
+mov (global-int 6c8390) a
+mov (global-int 6c9b00) 2
+mov (global-int 6c9ee8) 5
+mov (global-int 6cb658) 1
+mov (global-int 6d4e78) 14
+mov (global-int 6d4e7a) f
+sub (global-int 6d6b4d) 0 9
+mov (global-int 6d79a8) 200
+mov (global-int 6d8fc6) 1
+mov (global-int 6d8fc7) 6
+set-string (global-string 1e1f0) "【合体攻撃：☆鍛梁の機軸射撃】　無属性"
+set-string (global-string 1e1f1) "　射程1-4 命中+20 物攻+15 両者SP9 アヴァロ隣接"
+set-string (global-string 1db72) "必殺 無属 射程4 物攻+15 両者SP9"
+set-string (global-string 1d78b) "☆神速一番刀"
+mov (global-int 6c6839) 19e6
+mov (global-int 6c73f1) 5
+mov (global-int 6c7bc1) 1
+mov (global-int 6c8391) a
+mov (global-int 6c9b01) 1
+mov (global-int 6c9ee9) 1
+mov (global-int 6cb659) 5
+mov (global-int 6d4e85) a
+mov (global-int 6d4e87) 14
+mov (global-int 6d4e8b) a
+sub (global-int 6d6b50) 0 c
+mov (global-int 6d79a9) 201
+mov (global-int 6d8fc8) 5
+mov (global-int 6d8fc9) 9
+set-string (global-string 1e1f2) "【合体攻撃：☆神速一番刀】　火炎属性"
+set-string (global-string 1e1f3) "　命中+10 物攻+20 両者SP12消費 ミクシュアナ隣接"
+set-string (global-string 1db73) "必殺 火炎 物攻+20 両者SP12"
+set-string (global-string 1d78c) "☆神速一番槍"
+mov (global-int 6c683a) 19f0
+mov (global-int 6c73f2) 5
+mov (global-int 6c7bc2) 1
+mov (global-int 6c8392) a
+mov (global-int 6c9b02) 2
+mov (global-int 6c9eea) 5
+mov (global-int 6cb65a) 7
+mov (global-int 6d4e92) a
+mov (global-int 6d4e94) 14
+mov (global-int 6d4e98) a
+sub (global-int 6d6b53) 0 c
+mov (global-int 6d79aa) 202
+mov (global-int 6d8fca) 5
+mov (global-int 6d8fcb) 9
+set-string (global-string 1e1f4) "【合体攻撃：☆神速一番槍】　神聖属性"
+set-string (global-string 1e1f5) "　射程1-4 命中+10 物攻+20 両者SP12消費 キスニル隣接"
+set-string (global-string 1db74) "必殺 神聖 射程4 物攻+20 両者SP12"
+set-string (global-string 1d78d) "☆双龍氷炎"
+mov (global-int 6c683b) 19fa
+mov (global-int 6c73f3) 6
+mov (global-int 6c7bc3) 1
+mov (global-int 6c8393) a
+mov (global-int 6c9b03) 2
+mov (global-int 6c9eeb) 6
+mov (global-int 6cb65b) 5
+mov (global-int 6d4e9f) a
+mov (global-int 6d4ea3) 1e
+sub (global-int 6d6b56) 0 14
+mov (global-int 6d79ab) 203
+mov (global-int 6d8fcc) 17
+mov (global-int 6d8fcd) 18
+set-string (global-string 1e1f6) "【合体攻撃：☆双龍氷炎】　火炎属性"
+set-string (global-string 1e1f7) " 射程1-5 命中+10 魔攻30 両者SP20 フォルネウス隣接"
+set-string (global-string 1db75) "魔法 火炎 射程5 魔攻+30 両者SP20"
+set-string (global-string 1d78e) "☆蒼炎乱舞"
+mov (global-int 6c683c) 1a04
+mov (global-int 6c73f4) 5
+mov (global-int 6c7bc4) 1
+mov (global-int 6c8394) a
+mov (global-int 6c9b04) 1
+mov (global-int 6c9eec) 1
+mov (global-int 6cb65c) 4
+mov (global-int 6d4eac) a
+mov (global-int 6d4eae) 1e
+sub (global-int 6d6b59) 0 14
+mov (global-int 6d79ac) 204
+mov (global-int 6d8fce) 17
+mov (global-int 6d8fcf) 18
+set-string (global-string 1e1f8) "【合体攻撃：☆蒼炎乱舞】　冷却属性"
+set-string (global-string 1e1f9) "　命中+10 物攻+30 両者SP20消費 ベリアル隣接"
+set-string (global-string 1db76) "必殺 冷却 物攻+30 両者SP20"
+set-string (global-string 1d78f) "堕蒼閃牙"
+mov (global-int 6c683d) 1568
+mov (global-int 6c73f5) 6
+mov (global-int 6c7bc5) 1
+mov (global-int 6c8395) a
+mov (global-int 6c9b05) 2
+mov (global-int 6c9eed) 4
+mov (global-int 6cb65d) 4
+mov (global-int 6d05de) 3
+mov (global-int 6d4eb9) a
+mov (global-int 6d4ebd) 10
+sub (global-int 6d6b5c) 0 c
+mov (global-int 6d79ad) 205
+set-string (global-string 1e1fa) "【魔法：堕蒼閃牙】　冷却属性"
+set-string (global-string 1e1fb) "　射程1-3 命中+10 魔攻+16 水流3 SP12消費"
+set-string (global-string 1db77) "魔法 射程3 魔攻+16 水流3 SP12"
+set-string (global-string 1d790) "堕炎乱舞"
+mov (global-int 6c683e) f71
+mov (global-int 6c73f6) 5
+mov (global-int 6c7bc6) 1
+mov (global-int 6c8396) a
+mov (global-int 6c9b06) 2
+mov (global-int 6c9eee) 3
+mov (global-int 6cb65e) 5
+mov (global-int 6d05fe) 3
+mov (global-int 6d4ec6) 5
+mov (global-int 6d4ec8) 12
+sub (global-int 6d6b5f) 0 c
+mov (global-int 6d79ae) 206
+set-string (global-string 1e1fc) "【必殺：堕炎乱舞】　火炎属性"
+set-string (global-string 1e1fd) "　射程1-2 命中+5 物攻+18 炎症3 SP12消費"
+set-string (global-string 1db78) "必殺 射程2 物攻+18 炎症3 SP12"
+set-string (global-string 1d791) "堕嵐旋風"
+mov (global-int 6c683f) 156d
+mov (global-int 6c73f7) 6
+mov (global-int 6c7bc7) 1
+mov (global-int 6c8397) a
+mov (global-int 6c9b07) 2
+mov (global-int 6c9eef) 6
+mov (global-int 6cb65f) 6
+mov (global-int 6d0618) 3
+mov (global-int 6d4ed3) 19
+mov (global-int 6d4ed7) c
+sub (global-int 6d6b62) 0 c
+mov (global-int 6d79af) 207
+set-string (global-string 1e1fe) "【魔法：堕嵐旋風】　電撃属性"
+set-string (global-string 1e1ff) "　射程1-5 命中+25 魔攻+12 麻痺3 SP12消費"
+set-string (global-string 1db79) "魔法 射程5 魔攻+12 麻痺3 SP12"
+set-string (global-string 1d792) "堕華地響"
+mov (global-int 6c6840) f73
+mov (global-int 6c73f8) 5
+mov (global-int 6c7bc8) 1
+mov (global-int 6c8398) a
+mov (global-int 6c9b08) 2
+mov (global-int 6c9ef0) 3
+mov (global-int 6cb660) 3
+mov (global-int 6d063b) 3
+sub (global-int 6d4ee0) 0 5
+mov (global-int 6d4ee2) 14
+sub (global-int 6d6b65) 0 c
+mov (global-int 6d79b0) 208
+set-string (global-string 1e200) "【必殺：堕華地響】　地脈属性"
+set-string (global-string 1e201) "　射程1-2 命中-5 物攻+20 恐怖3 SP12消費"
+set-string (global-string 1db7a) "必殺 射程2 物攻+20 恐怖3 SP12"
+set-string (global-string 1d7b1) "雪だるま行進Ｍ"
+mov (global-int 6c685f) 1dc4
+mov (global-int 6c7417) a
+mov (global-int 6c7be7) 1
+mov (global-int 6c83b7) 8
+mov (global-int 6c9b27) 2
+mov (global-int 6c9f0f) 2
+mov (global-int 6ca6df) 1
+mov (global-int 6caac7) 4
+mov (global-int 6caeaf) 2
+mov (global-int 6cb67f) 4
+mov (global-int 6d09da) 1
+mov (global-int 6d5073) 5
+mov (global-int 6d5077) 7
+sub (global-int 6d6bc2) 0 8
+mov (global-int 6d9cf7) 4e06
+mov (global-int 6da0df) 4e07
+set-string (global-string 1e23e) "【範囲魔法：雪だるま行進Ｍ】　冷却属性 再充填2"
+set-string (global-string 1e23f) "　射程直線5 命中+5 魔攻+7 水流1 SP8消費"
+set-string (global-string 1db99) "魔法 冷却 直線5 魔攻+7 水流1 SP8"
+set-string (global-string 1d7b2) "雪だるま雪崩Ｍ"
+mov (global-int 6c6860) 1dce
+mov (global-int 6c7418) a
+mov (global-int 6c7be8) 1
+mov (global-int 6c83b8) c
+mov (global-int 6c9b28) 2
+mov (global-int 6c9f10) 2
+mov (global-int 6ca6e0) 1
+mov (global-int 6caac8) 5
+mov (global-int 6caeb0) 5
+mov (global-int 6cb680) 4
+mov (global-int 6d09f8) 3
+sub (global-int 6d5080) 0 a
+mov (global-int 6d5084) 14
+sub (global-int 6d6bc5) 0 c
+mov (global-int 6d9cf8) 4e06
+mov (global-int 6da0e0) 4e07
+set-string (global-string 1e240) "【範囲魔法：雪だるま雪崩Ｍ】　冷却属性 再充填5"
+set-string (global-string 1e241) "　射程極太5 命中-10 魔攻+20 水流3 SP12消費"
+set-string (global-string 1db9a) "魔法 冷却 極太5 魔攻+20 水流3 SP12"
+set-string (global-string 1d7b6) "光霞Ｍ"
+mov (global-int 6c6864) 1e1e
+mov (global-int 6c741c) a
+mov (global-int 6c7bec) 1
+mov (global-int 6c83bc) 10
+mov (global-int 6c9b2c) 1
+mov (global-int 6c9f14) 1
+mov (global-int 6ca6e4) 2
+mov (global-int 6caacc) 1
+mov (global-int 6caeb4) 3
+mov (global-int 6cb684) 7
+mov (global-int 6d50b4) a
+mov (global-int 6d50b8) 8
+sub (global-int 6d6264) 0 a
+sub (global-int 6d6bd1) 0 6
+mov (global-int 6d9cfc) 4e08
+mov (global-int 6da4cc) 1
+mov (global-int 6da0e4) 4e09
+set-string (global-string 1e248) "【範囲魔法：光霞Ｍ】　神聖属性 再充填3"
+set-string (global-string 1e249) "　射程自己2 命中+10 魔攻+8 痛打-10 SP6消費"
+set-string (global-string 1db9e) "魔法 神聖 自己2 魔攻+8 SP6"
+set-string (global-string 1d7b7) "贖罪の光霞Ｍ"
+mov (global-int 6c6865) 1e28
+mov (global-int 6c741d) a
+mov (global-int 6c7bed) 1
+mov (global-int 6c83bd) 1a
+mov (global-int 6c9b2d) 1
+mov (global-int 6c9f15) 1
+mov (global-int 6ca6e5) 2
+mov (global-int 6caacd) 1
+mov (global-int 6caeb5) 3
+mov (global-int 6cb685) 7
+mov (global-int 6d50c1) 14
+mov (global-int 6d50c5) f
+sub (global-int 6d6265) 0 a
+sub (global-int 6d6bd4) 0 8
+mov (global-int 6d9cfd) 4e08
+mov (global-int 6da4cd) 1
+mov (global-int 6da0e5) 4e09
+set-string (global-string 1e24a) "【範囲魔法：贖罪の光霞Ｍ】　神聖属性 再充填3"
+set-string (global-string 1e24b) "　射程自己2 命中+20 魔攻+15 痛打-10 SP8消費"
+set-string (global-string 1db9f) "魔法 神聖 自己2 魔攻+15 SP8"
+set-string (global-string 1d7bb) "ティルワン闇界Ｍ"
+mov (global-int 6c6869) 1e32
+mov (global-int 6c7421) a
+mov (global-int 6c7bf1) 1
+mov (global-int 6c83c1) 10
+mov (global-int 6c9b31) 4
+mov (global-int 6c9f19) 4
+mov (global-int 6ca6e9) 1
+mov (global-int 6caad1) 2
+mov (global-int 6caeb9) 3
+mov (global-int 6cb689) 8
+mov (global-int 6d50f9) c
+sub (global-int 6d6be0) 0 6
+mov (global-int 6d9d01) 4e0a
+mov (global-int 6da0e9) a6c
+set-string (global-string 1e252) "【範囲魔法：ティルワン闇界Ｍ】　暗黒属性 再充填3"
+set-string (global-string 1e253) "　射程3-3&円形2 魔攻+12 SP6消費"
+set-string (global-string 1dba3) "魔法 暗黒 射程3円形2 魔攻+12 SP6"
+set-string (global-string 1d7bc) "ティルワン絶界Ｍ"
+mov (global-int 6c686a) 1e3c
+mov (global-int 6c7422) a
+mov (global-int 6c7bf2) 1
+mov (global-int 6c83c2) 19
+mov (global-int 6c9b32) 4
+mov (global-int 6c9f1a) 4
+mov (global-int 6ca6ea) 1
+mov (global-int 6caad2) 2
+mov (global-int 6caeba) 5
+mov (global-int 6cb68a) 8
+mov (global-int 6d5106) 19
+sub (global-int 6d6be3) 0 a
+mov (global-int 6d9d02) 4e0a
+mov (global-int 6da0ea) a6c
+set-string (global-string 1e254) "【範囲魔法：ティルワン絶界Ｍ】　暗黒属性 再充填5"
+set-string (global-string 1e255) "　射程3-3&円形2 魔攻+25 SP10消費"
+set-string (global-string 1dba4) "魔法 暗黒 射程3円形2 魔攻+25 SP10"
+set-string (global-string 1d7bd) "悪族の怨念Ｍ"
+mov (global-int 6c686b) 1e46
+mov (global-int 6c7423) a
+mov (global-int 6c7bf3) 1
+mov (global-int 6c83c3) 10
+mov (global-int 6c9b33) 4
+mov (global-int 6c9f1b) 4
+mov (global-int 6ca6eb) 1
+mov (global-int 6caad3) 2
+mov (global-int 6caebb) 2
+mov (global-int 6cb68b) 8
+mov (global-int 6d5113) 1e
+sub (global-int 6d6be6) 0 8
+mov (global-int 6d9d03) 4e0a
+mov (global-int 6da0eb) a6c
+set-string (global-string 1e256) "【範囲魔法：悪族の怨念Ｍ】　暗黒属性 再充填2"
+set-string (global-string 1e257) "　射程3-3&円形2 魔攻+30 SP8消費"
+set-string (global-string 1dba5) "魔法 暗黒 射程3円形2 魔攻+30 SP8"
+set-string (global-string 1d7be) "強酸の暗礁壁Ｍ"
+mov (global-int 6c686c) 1e50
+mov (global-int 6c7424) a
+mov (global-int 6c7bf4) 1
+mov (global-int 6c83c4) 14
+mov (global-int 6c9b34) 6
+mov (global-int 6c9f1c) 6
+mov (global-int 6ca6ec) 1
+mov (global-int 6caad4) 2
+mov (global-int 6caebc) 5
+mov (global-int 6cb68c) 8
+mov (global-int 6d0b61) 2
+sub (global-int 6d511c) 0 a
+mov (global-int 6d5120) 28
+mov (global-int 6d626c) a
+sub (global-int 6d6be9) 0 c
+mov (global-int 6d9d04) 4e0b
+mov (global-int 6da0ec) a6c
+set-string (global-string 1e258) "【範囲魔法：強酸の暗礁壁Ｍ】　暗黒属性 再充填5"
+set-string (global-string 1e259) "　射程5-5&円形2 命中-10 魔攻+40 痛打+10 強酸2 SP12"
+set-string (global-string 1dba6) "魔法 暗黒 射5円2 魔攻40 強酸2 SP12"
+set-string (global-string 1d7bf) "歪の世界Ｍ"
+mov (global-int 6c686d) 1e55
+mov (global-int 6c7425) a
+mov (global-int 6c7bf5) 1
+mov (global-int 6c83c5) 14
+mov (global-int 6c9b35) 6
+mov (global-int 6c9f1d) 6
+mov (global-int 6ca6ed) 1
+mov (global-int 6caad5) 2
+mov (global-int 6caebd) 5
+mov (global-int 6cb68d) 1
+mov (global-int 6d5129) 1e
+mov (global-int 6d512d) 32
+sub (global-int 6d6bec) 0 c
+mov (global-int 6d9d05) 4e0b
+mov (global-int 6da0ed) a6c
+set-string (global-string 1e25a) "【範囲魔法：歪の世界Ｍ】　無属性 再充填3"
+set-string (global-string 1e25b) "　射程5-5&円形2 命中+30 魔攻+50 SP12"
+set-string (global-string 1dba7) "魔法 無属 射5円2 魔攻50 SP12"
+set-string (global-string 1d7c0) "大地の共振Ｍ"
+mov (global-int 6c686e) 1dba
+mov (global-int 6c7426) a
+mov (global-int 6c7bf6) 1
+mov (global-int 6c83c6) 10
+mov (global-int 6c9b36) 2
+mov (global-int 6c9f1e) 2
+mov (global-int 6ca6ee) 1
+mov (global-int 6caad6) 3
+mov (global-int 6caebe) 3
+mov (global-int 6cb68e) 3
+mov (global-int 6d0b99) 1
+mov (global-int 6d5136) 32
+mov (global-int 6d513a) 1e
+sub (global-int 6d6bef) 0 9
+mov (global-int 6d9d06) 4e0c
+mov (global-int 6da0ee) 4e0d
+set-string (global-string 1e25c) "【範囲魔法：大地の共振Ｍ】　地脈属性 再充填3"
+set-string (global-string 1e25d) "　射程拡散3 命中50 魔攻+30 混乱1 SP9消費"
+set-string (global-string 1dba8) "魔法 地脈 拡散3 魔攻+30 混乱1 SP9"
+set-string (global-string 1d7c2) "精霊収束波動Ｍ"
+mov (global-int 6c6870) 1e6e
+mov (global-int 6c7428) a
+mov (global-int 6c7bf8) 1
+mov (global-int 6c83c8) 14
+mov (global-int 6c9b38) 4
+mov (global-int 6c9f20) 4
+mov (global-int 6ca6f0) 1
+mov (global-int 6caad8) 2
+mov (global-int 6caec0) 3
+mov (global-int 6cb690) 1
+mov (global-int 6d5150) a
+mov (global-int 6d5154) 23
+sub (global-int 6d6bf5) 0 f
+mov (global-int 6d9d08) 4e0e
+mov (global-int 6da0f0) 4e0f
+set-string (global-string 1e260) "【範囲魔法：精霊収束波動Ｍ】　無属性 再充填3"
+set-string (global-string 1e261) "　射程3&円形2 命中10 魔攻+35 SP15消費"
+set-string (global-string 1dbaa) "魔法 無属 射程3円形2 魔攻+35 SP15"
+set-string (global-string 1d7c3) "堕精霊の絶叫Ｍ"
+mov (global-int 6c6871) 1e78
+mov (global-int 6c7429) a
+mov (global-int 6c7bf9) 1
+mov (global-int 6c83c9) 14
+mov (global-int 6c9b39) 1
+mov (global-int 6c9f21) 1
+mov (global-int 6ca6f1) 2
+mov (global-int 6caad9) 1
+mov (global-int 6caec1) 3
+mov (global-int 6cb691) 1
+mov (global-int 6d0bf9) 3
+sub (global-int 6d515d) 0 5
+mov (global-int 6d5161) 23
+sub (global-int 6d6bf8) 0 9
+mov (global-int 6d9d09) 4e0a
+mov (global-int 6da0f1) a6c
+set-string (global-string 1e262) "【範囲魔法：堕精霊の絶叫Ｍ】　無属性 再充填3"
+set-string (global-string 1e263) "　射程自己2 命中-5 魔攻+35 恐怖3 SP9消費"
+set-string (global-string 1dbab) "魔法 無属 自己2 魔攻+35 恐怖3 SP9"
+set-string (global-string 1d7c4) "天縁神の光柱Ｍ"
+mov (global-int 6c6872) 1e82
+mov (global-int 6c742a) a
+mov (global-int 6c7bfa) 1
+mov (global-int 6c83ca) 14
+mov (global-int 6c9b3a) 2
+mov (global-int 6c9f22) 2
+mov (global-int 6ca6f2) 1
+mov (global-int 6caada) 5
+mov (global-int 6caec2) 3
+mov (global-int 6cb692) 1
+mov (global-int 6d516a) 1e
+mov (global-int 6d516e) 28
+sub (global-int 6d6bfb) 0 c
+mov (global-int 6d9d0a) 4e08
+mov (global-int 6da4da) 1
+mov (global-int 6da0f2) 4e09
+set-string (global-string 1e264) "【範囲魔法：天縁神の光柱Ｍ】　無属性 再充填3"
+set-string (global-string 1e265) "　射程極太5 命中+30 魔攻+40 SP12消費"
+set-string (global-string 1dbac) "魔法 無属 極太5 魔攻+40 SP12"
+set-string (global-string 1d7c5) "爆裂光柱Ｍ"
+mov (global-int 6c6873) 1e0a
+mov (global-int 6c742b) a
+mov (global-int 6c7bfb) 1
+mov (global-int 6c83cb) c
+mov (global-int 6c9b3b) 1
+mov (global-int 6c9f23) 1
+mov (global-int 6ca6f3) 1
+mov (global-int 6caadb) 1
+mov (global-int 6caec3) 3
+mov (global-int 6cb693) 7
+mov (global-int 6d5177) a
+mov (global-int 6d517b) 14
+mov (global-int 6d6273) a
+sub (global-int 6d6bfe) 0 9
+mov (global-int 6d9d0b) 4e10
+mov (global-int 6da0f3) 4e09
+set-string (global-string 1e266) "【範囲魔法：爆裂光柱Ｍ】　神聖属性 再充填3"
+set-string (global-string 1e267) "　射程自己2 命中+10 魔攻+20 痛打+10 SP9消費"
+set-string (global-string 1dbad) "魔法 神聖 自己2 魔攻+20 SP9"
+set-string (global-string 1d7c6) "贖罪の爆裂神柱Ｍ"
+mov (global-int 6c6874) 1e14
+mov (global-int 6c742c) a
+mov (global-int 6c7bfc) 1
+mov (global-int 6c83cc) 14
+mov (global-int 6c9b3c) 1
+mov (global-int 6c9f24) 1
+mov (global-int 6ca6f4) 1
+mov (global-int 6caadc) 1
+mov (global-int 6caec4) 5
+mov (global-int 6cb694) 7
+mov (global-int 6d5184) a
+mov (global-int 6d5188) 23
+mov (global-int 6d6274) a
+sub (global-int 6d6c01) 0 12
+mov (global-int 6d9d0c) 4e10
+mov (global-int 6da0f4) 4e09
+set-string (global-string 1e268) "【範囲魔法：贖罪の爆裂神柱Ｍ】　神聖属性 再充填5"
+set-string (global-string 1e269) "　射程自己2 命中+10 魔攻+35 痛打+10 SP18消費"
+set-string (global-string 1dbae) "魔法 神聖 自己2 魔攻+35 SP18"
+set-string (global-string 1d7c8) "贖罪の雷Ｍ"
+mov (global-int 6c6876) 1e00
+mov (global-int 6c742e) a
+mov (global-int 6c7bfe) 1
+mov (global-int 6c83ce) f
+mov (global-int 6c9b3e) 1
+mov (global-int 6c9f26) 1
+mov (global-int 6ca6f6) 1
+mov (global-int 6caade) 1
+mov (global-int 6caec6) 3
+mov (global-int 6cb696) 6
+mov (global-int 6d0c8a) 2
+mov (global-int 6d519e) a
+mov (global-int 6d51a2) 19
+sub (global-int 6d6276) 0 a
+sub (global-int 6d6c07) 0 a
+mov (global-int 6d9d0e) 4e11
+mov (global-int 6da0f6) 4e12
+set-string (global-string 1e26c) "【範囲魔法：贖罪の雷Ｍ】　電撃属性 再充填3"
+set-string (global-string 1e26d) "　射程自己2 命中+10 魔攻+25 痛打-10 麻痺2 SP10消費"
+set-string (global-string 1dbb0) "魔法 電撃 自己2 魔攻+25 麻痺2 SP10"
+set-string (global-string 1d7c9) "氷垢螺の氷柱Ｍ"
+mov (global-int 6c6877) 1de2
+mov (global-int 6c742f) a
+mov (global-int 6c7bff) 1
+mov (global-int 6c83cf) 14
+mov (global-int 6c9b3f) 2
+mov (global-int 6c9f27) 2
+mov (global-int 6ca6f7) 1
+mov (global-int 6caadf) 4
+mov (global-int 6caec7) 3
+mov (global-int 6cb697) 1
+mov (global-int 6d51ab) f
+mov (global-int 6d51af) 23
+sub (global-int 6d6c0a) 0 f
+mov (global-int 6d9d0f) 4e13
+mov (global-int 6da0f7) 4e14
+set-string (global-string 1e26e) "【範囲魔法：氷垢螺の氷柱Ｍ】　無属性 再充填3"
+set-string (global-string 1e26f) "　射程直線5 命中+15 魔攻+35 SP15消費"
+set-string (global-string 1dbb1) "魔法 無属 直線5 魔攻+35 SP15"
+set-string (global-string 1d7ca) "凍結Ｍ"
+mov (global-int 6c6878) 1dd8
+mov (global-int 6c7430) a
+mov (global-int 6c7c00) 1
+mov (global-int 6c83d0) 8
+mov (global-int 6c9b40) 1
+mov (global-int 6c9f28) 1
+mov (global-int 6ca6f8) 2
+mov (global-int 6caae0) 1
+mov (global-int 6caec8) 5
+mov (global-int 6cb698) 1
+mov (global-int 6d51b8) a
+mov (global-int 6d51bc) 14
+mov (global-int 6d6278) a
+sub (global-int 6d6c0d) 0 6
+mov (global-int 6d9d10) 4e13
+mov (global-int 6da0f8) 4e14
+set-string (global-string 1e270) "【範囲魔法：凍結Ｍ】　無属性 再充填5"
+set-string (global-string 1e271) "　射程自己2 命中+10 魔攻+20 痛打+10 SP6消費"
+set-string (global-string 1dbb2) "魔法 無属 自己2 魔攻+20 SP6"
+set-string (global-string 1d7cb) "縁の導きＭ"
+mov (global-int 6c6879) 1e5a
+mov (global-int 6c7431) a
+mov (global-int 6c7c01) 1
+mov (global-int 6c83d1) 14
+mov (global-int 6c9b41) 1
+mov (global-int 6c9f29) 1
+mov (global-int 6ca6f9) 2
+mov (global-int 6caae1) 1
+mov (global-int 6caec9) 5
+mov (global-int 6cb699) 1
+mov (global-int 6d51c5) 14
+mov (global-int 6d51c9) 1e
+mov (global-int 6d6279) f
+sub (global-int 6d6c10) 0 14
+mov (global-int 6d9d11) 4e0e
+mov (global-int 6da0f9) 4e0f
+set-string (global-string 1e272) "【範囲魔法：縁の導きＭ】　無属性 再充填5"
+set-string (global-string 1e273) "　射程自己2 命中20 魔攻+30 痛打+15 SP20消費"
+set-string (global-string 1dbb3) "魔法 無属 自己2 魔攻+30 SP20"
+set-string (global-string 1d7cc) "火炎噴射Ｍ"
+mov (global-int 6c687a) 1dec
+mov (global-int 6c7432) a
+mov (global-int 6c7c02) 1
+mov (global-int 6c83d2) 8
+mov (global-int 6c9b42) 2
+mov (global-int 6c9f2a) 2
+mov (global-int 6ca6fa) 1
+mov (global-int 6caae2) 4
+mov (global-int 6caeca) 2
+mov (global-int 6cb69a) 5
+mov (global-int 6d0d06) 1
+sub (global-int 6d51d2) 0 a
+mov (global-int 6d51d6) 3
+sub (global-int 6d6c13) 0 7
+mov (global-int 6d9d12) 4e15
+mov (global-int 6da0fa) 4e16
+set-string (global-string 1e274) "【範囲魔法：火炎噴射Ｍ】　火炎属性 再充填2"
+set-string (global-string 1e275) "　射程直線5 命中-10 魔攻+3 炎症1 SP7消費"
+set-string (global-string 1dbb4) "魔法 火炎 直線5 魔攻+3 炎症1 SP7"
+set-string (global-string 1d7cd) "咲き乱れ炎龍Ｍ"
+mov (global-int 6c687b) 1df6
+mov (global-int 6c7433) a
+mov (global-int 6c7c03) 1
+mov (global-int 6c83d3) 14
+mov (global-int 6c9b43) 1
+mov (global-int 6c9f2b) 1
+mov (global-int 6ca6fb) 1
+mov (global-int 6caae3) 1
+mov (global-int 6caecb) 5
+mov (global-int 6cb69b) 5
+mov (global-int 6d0d24) 5
+mov (global-int 6d51e3) 2d
+sub (global-int 6d6c16) 0 19
+mov (global-int 6d9d13) 4e15
+mov (global-int 6da0fb) 4e16
+set-string (global-string 1e276) "【範囲魔法：咲き乱れ炎龍Ｍ】　火炎属性 再充填5"
+set-string (global-string 1e277) "　射程自己2 魔攻+45 炎症5 SP25消費"
+set-string (global-string 1dbb5) "魔法 火炎 魔攻+45 炎症5 SP25"
+set-string (global-string 1d7ce) "小隕石招聘Ｍ"
+mov (global-int 6c687c) 1e64
+mov (global-int 6c7434) a
+mov (global-int 6c7c04) 1
+mov (global-int 6c83d4) 14
+mov (global-int 6c9b44) 4
+mov (global-int 6c9f2c) 6
+mov (global-int 6ca6fc) 1
+mov (global-int 6caae4) 2
+mov (global-int 6caecc) 3
+mov (global-int 6cb69c) 1
+sub (global-int 6d51ec) 0 f
+mov (global-int 6d51f0) 23
+sub (global-int 6d6c19) 0 f
+mov (global-int 6d9d14) 4e17
+mov (global-int 6da0fc) 4e18
+set-string (global-string 1e278) "【範囲魔法：小隕石招聘Ｍ】　無属性 再充填3"
+set-string (global-string 1e279) "　射程3-5&円形2 命中-15 魔攻+35 SP15消費"
+set-string (global-string 1dbb6) "魔法 無属 射程5円形2 魔攻+35 SP15"
+set-string (global-string 1d7cf) "癒しの風Ｍ"
+mov (global-int 6c687d) 1d56
+mov (global-int 6c7435) b
+mov (global-int 6c7c05) 1
+mov (global-int 6c83d5) a
+mov (global-int 6c9b45) 1
+mov (global-int 6c9f2d) 1
+mov (global-int 6ca6fd) 3
+mov (global-int 6caae5) 1
+mov (global-int 6caecd) 3
+mov (global-int 6d51f9) 63
+mov (global-int 6d6c1b) 1e
+sub (global-int 6d6c1c) 0 14
+mov (global-int 6d721d) 5
+mov (global-int 6d9d15) 4e19
+mov (global-int 6da4e5) 1
+mov (global-int 6da0fd) 4e1a
+set-string (global-string 1e27a) "【範囲回復：癒しの風Ｍ】　神聖回復魔法 再充填3"
+set-string (global-string 1e27b) "　射程自己2 HP30回復 SP20消費"
+set-string (global-string 1dbb7) "支援 自己2 HP30  SP20"
+set-string (global-string 1d7d0) "大いなる癒し風Ｍ"
+mov (global-int 6c687e) 1d60
+mov (global-int 6c7436) b
+mov (global-int 6c7c06) 1
+mov (global-int 6c83d6) 14
+mov (global-int 6c9b46) 1
+mov (global-int 6c9f2e) 1
+mov (global-int 6ca6fe) 3
+mov (global-int 6caae6) 1
+mov (global-int 6caece) 3
+mov (global-int 6d5206) 63
+mov (global-int 6d6c1e) 64
+sub (global-int 6d6c1f) 0 32
+mov (global-int 6d721e) 5
+mov (global-int 6d9d16) 4e19
+mov (global-int 6da4e6) 1
+mov (global-int 6da0fe) 4e1a
+set-string (global-string 1e27c) "【範囲回復：大いなる癒し風Ｍ】　神聖回復 再充填3"
+set-string (global-string 1e27d) "　射程自己2 HP100回復 SP50消費"
+set-string (global-string 1dbb8) "支援 自己2 HP100  SP50"
+set-string (global-string 1d7d9) "雷府ストームＭ"
+mov (global-int 6c6887) 1bb2
+mov (global-int 6c743f) 9
+mov (global-int 6c7c0f) 1
+mov (global-int 6c83df) a
+mov (global-int 6c9b4f) 2
+mov (global-int 6c9f37) 2
+mov (global-int 6ca707) 1
+mov (global-int 6caaef) 3
+mov (global-int 6caed7) 3
+mov (global-int 6cb6a7) 6
+mov (global-int 6d0e88) 1
+sub (global-int 6d527b) 0 5
+mov (global-int 6d527d) 5
+sub (global-int 6d6c3a) 0 a
+mov (global-int 6d9d1f) 4e11
+mov (global-int 6da107) 4e12
+set-string (global-string 1e28e) "【範囲必殺：雷府ストームＭ】　電撃属性 再充填3"
+set-string (global-string 1e28f) "　射程拡散3 命中-5 物攻+5 麻痺1 SP10消費"
+set-string (global-string 1dbc1) "必殺 電撃 拡散3 物攻+5 麻痺1 SP10"
+set-string (global-string 1d7da) "雷府トルネードＭ"
+mov (global-int 6c6888) 1bbc
+mov (global-int 6c7440) 9
+mov (global-int 6c7c10) 1
+mov (global-int 6c83e0) 10
+mov (global-int 6c9b50) 6
+mov (global-int 6c9f38) 6
+mov (global-int 6ca708) 1
+mov (global-int 6caaf0) 2
+mov (global-int 6caed8) 4
+mov (global-int 6cb6a8) 6
+mov (global-int 6d0ea6) 2
+sub (global-int 6d5288) 0 5
+mov (global-int 6d528a) a
+sub (global-int 6d6c3d) 0 10
+mov (global-int 6d9d20) 4e11
+mov (global-int 6da108) 4e12
+set-string (global-string 1e290) "【範囲必殺：雷府トルネードＭ】 電撃属性 再充填4"
+set-string (global-string 1e291) "　射程5-5&円形2 命中-5 物攻+10 麻痺2 SP16消費"
+set-string (global-string 1dbc2) "必殺 電撃 射5円2 物+10 麻痺2 SP16"
+set-string (global-string 1d7db) "雷府バーストＭ"
+mov (global-int 6c6889) 1bc6
+mov (global-int 6c7441) 9
+mov (global-int 6c7c11) 1
+mov (global-int 6c83e1) 19
+mov (global-int 6c9b51) 1
+mov (global-int 6c9f39) 1
+mov (global-int 6ca709) 1
+mov (global-int 6caaf1) 1
+mov (global-int 6caed9) 5
+mov (global-int 6cb6a9) 6
+mov (global-int 6d0ec4) 3
+sub (global-int 6d5295) 0 a
+mov (global-int 6d5297) 1e
+sub (global-int 6d6c40) 0 14
+mov (global-int 6d9d21) 4e11
+mov (global-int 6da109) 4e12
+set-string (global-string 1e292) "【範囲必殺：雷府バーストＭ】　電撃属性 再充填5"
+set-string (global-string 1e293) "　射程自己2 命中-10 物攻+30 麻痺3 SP20消費"
+set-string (global-string 1dbc3) "必殺 電撃 自己2 物攻+30 麻痺3 SP20"
+set-string (global-string 1d7de) "全弾発射Ｍ"
+mov (global-int 6c688c) 1bf8
+mov (global-int 6c7444) 9
+mov (global-int 6c7c14) 1
+mov (global-int 6c83e4) 19
+mov (global-int 6c9b54) 6
+mov (global-int 6c9f3c) 6
+mov (global-int 6ca70c) 1
+mov (global-int 6caaf4) 2
+mov (global-int 6caedc) 5
+mov (global-int 6cb6ac) 1
+sub (global-int 6d52bc) 0 5
+mov (global-int 6d52be) 1e
+sub (global-int 6d6c49) 0 14
+mov (global-int 6d9d24) 4e1b
+mov (global-int 6da10c) 4e0f
+set-string (global-string 1e298) "【範囲必殺：全弾発射Ｍ】　無属性 再充填5"
+set-string (global-string 1e299) "　射程5-5&円形2 命中-5 物攻+30 SP20消費"
+set-string (global-string 1dbc6) "必殺 無属 射程5円形2 物攻+30 SP20"
+set-string (global-string 1d7e3) "毒霧Ｍ"
+mov (global-int 6c6891) 1bee
+mov (global-int 6c7449) 9
+mov (global-int 6c7c19) 1
+mov (global-int 6c83e9) 8
+mov (global-int 6c9b59) 2
+mov (global-int 6c9f41) 2
+mov (global-int 6ca711) 1
+mov (global-int 6caaf9) 3
+mov (global-int 6caee1) 5
+mov (global-int 6cb6b1) 8
+mov (global-int 6d0fb5) 1
+sub (global-int 6d52fd) 0 a
+mov (global-int 6d52ff) 8
+sub (global-int 6d6c58) 0 8
+mov (global-int 6d9d29) 4e0b
+mov (global-int 6da111) a6c
+set-string (global-string 1e2a2) "【範囲必殺：毒霧Ｍ】　暗黒属性 再充填5"
+set-string (global-string 1e2a3) "　射程拡散3 命中-10 物攻+8 猛毒1 SP8消費"
+set-string (global-string 1dbcb) "必殺 暗黒 拡散3 物攻+8 猛毒1 SP8"
+set-string (global-string 1d7e8) "触手乱舞Ｍ"
+mov (global-int 6c6896) 1bda
+mov (global-int 6c744e) 9
+mov (global-int 6c7c1e) 1
+mov (global-int 6c83ee) a
+mov (global-int 6c9b5e) 1
+mov (global-int 6c9f46) 1
+mov (global-int 6ca716) 1
+mov (global-int 6caafe) 1
+mov (global-int 6caee6) 3
+mov (global-int 6cb6b6) 2
+mov (global-int 6d533e) a
+mov (global-int 6d5340) c
+sub (global-int 6d6c67) 0 f
+mov (global-int 6d9d2e) 4e1c
+mov (global-int 6da116) 4e1d
+set-string (global-string 1e2ac) "【範囲必殺：触手乱舞Ｍ】　物理属性 再充填3"
+set-string (global-string 1e2ad) "　射程自己2 命中+10 物攻+12 SP15消費"
+set-string (global-string 1dbd0) "必殺 物理 自己2 物攻+12 SP15"
+set-string (global-string 1d7e9) "鎌撃乱舞Ｍ"
+mov (global-int 6c6897) 1be4
+mov (global-int 6c744f) 9
+mov (global-int 6c7c1f) 1
+mov (global-int 6c83ef) a
+mov (global-int 6c9b5f) 1
+mov (global-int 6c9f47) 1
+mov (global-int 6ca717) 2
+mov (global-int 6caaff) 1
+mov (global-int 6caee7) 3
+mov (global-int 6cb6b7) 2
+mov (global-int 6d534b) a
+mov (global-int 6d534d) a
+sub (global-int 6d6c6a) 0 a
+mov (global-int 6d9d2f) 4e1c
+mov (global-int 6da117) 4e1d
+set-string (global-string 1e2ae) "【範囲必殺：鎌撃乱舞Ｍ】　物理属性 再充填3"
+set-string (global-string 1e2af) "　射程自己2 命中+10 物攻+10 SP10消費"
+set-string (global-string 1dbd1) "必殺 物理 自己2 物攻+10 SP10"
+set-string (global-string 1d7ea) "雷府竜の轟雷Ｍ"
+mov (global-int 6c6898) 1ba8
+mov (global-int 6c7450) 9
+mov (global-int 6c7c20) 1
+mov (global-int 6c83f0) a
+mov (global-int 6c9b60) 2
+mov (global-int 6c9f48) 2
+mov (global-int 6ca718) 1
+mov (global-int 6cab00) 3
+mov (global-int 6caee8) 2
+mov (global-int 6cb6b8) 6
+mov (global-int 6d1086) 2
+mov (global-int 6d5358) a
+mov (global-int 6d535a) 22
+sub (global-int 6d6c6d) 0 c
+mov (global-int 6d9d30) 4e11
+mov (global-int 6da118) 4e12
+set-string (global-string 1e2b0) "【範囲必殺：雷府竜の轟雷Ｍ】　電撃属性 再充填2"
+set-string (global-string 1e2b1) "　射程拡散3 命中+10 物攻+34 麻痺2 SP12消費"
+set-string (global-string 1dbd2) "必殺 電撃 拡散3 物攻+34 麻痺2 SP12"
+set-string (global-string 1d7eb) "絶氷の銀世界Ｍ"
+mov (global-int 6c6899) 1b9e
+mov (global-int 6c7451) 9
+mov (global-int 6c7c21) 1
+mov (global-int 6c83f1) a
+mov (global-int 6c9b61) 2
+mov (global-int 6c9f49) 2
+mov (global-int 6ca719) 1
+mov (global-int 6cab01) 3
+mov (global-int 6caee9) 3
+mov (global-int 6cb6b9) 1
+mov (global-int 6d5365) a
+mov (global-int 6d5367) 1c
+sub (global-int 6d6c70) 0 c
+mov (global-int 6d9d31) 4e13
+mov (global-int 6da119) 4e14
+set-string (global-string 1e2b2) "【範囲必殺：絶氷の銀世界Ｍ】　無属性 再充填3"
+set-string (global-string 1e2b3) "　射程拡散3 命中+10 物攻+28 SP12消費"
+set-string (global-string 1dbd3) "必殺 無属 拡散3 物攻+28 SP12"
+set-string (global-string 1d7ec) "ポイズンブレスＭ"
+mov (global-int 6c689a) 1b94
+mov (global-int 6c7452) 9
+mov (global-int 6c7c22) 1
+mov (global-int 6c83f2) a
+mov (global-int 6c9b62) 2
+mov (global-int 6c9f4a) 2
+mov (global-int 6ca71a) 1
+mov (global-int 6cab02) 3
+mov (global-int 6caeea) 3
+mov (global-int 6cb6ba) 8
+mov (global-int 6d10c3) 1
+sub (global-int 6d5372) 0 f
+mov (global-int 6d5374) 1e
+sub (global-int 6d6c73) 0 f
+mov (global-int 6d9d32) 4e0b
+mov (global-int 6da11a) a6c
+set-string (global-string 1e2b4) "【範囲必殺：ポイズンブレスＭ】　暗黒属性 再充填3"
+set-string (global-string 1e2b5) "　射程拡散3 命中-15 物攻+30 猛毒1 SP15消費"
+set-string (global-string 1dbd4) "必殺 暗黒 拡散3 物攻+30 猛毒1 SP15"
+set-string (global-string 1d7ed) "ブレスＭ"
+mov (global-int 6c689b) 1b62
+mov (global-int 6c7453) 9
+mov (global-int 6c7c23) 1
+mov (global-int 6c83f3) a
+mov (global-int 6c9b63) 2
+mov (global-int 6c9f4b) 2
+mov (global-int 6ca71b) 1
+mov (global-int 6cab03) 3
+mov (global-int 6caeeb) 3
+mov (global-int 6cb6bb) 2
+sub (global-int 6d537f) 0 f
+mov (global-int 6d5381) c
+sub (global-int 6d6c76) 0 8
+mov (global-int 6d9d33) 4e1e
+mov (global-int 6da11b) 1a15
+set-string (global-string 1e2b6) "【範囲必殺：ブレスＭ】　物理属性 再充填3"
+set-string (global-string 1e2b7) "　射程拡散3 命中-15 物攻+12 SP8消費"
+set-string (global-string 1dbd5) "必殺 物理 拡散3 物攻+12 SP8"
+set-string (global-string 1d7ee) "ファイアブレスＭ"
+mov (global-int 6c689c) 1b80
+mov (global-int 6c7454) 9
+mov (global-int 6c7c24) 1
+mov (global-int 6c83f4) a
+mov (global-int 6c9b64) 2
+mov (global-int 6c9f4c) 2
+mov (global-int 6ca71c) 1
+mov (global-int 6cab04) 3
+mov (global-int 6caeec) 3
+mov (global-int 6cb6bc) 5
+mov (global-int 6d1102) 1
+sub (global-int 6d538c) 0 f
+mov (global-int 6d538e) e
+sub (global-int 6d6c79) 0 c
+mov (global-int 6d9d34) 4e15
+mov (global-int 6da11c) 4e16
+set-string (global-string 1e2b8) "【範囲必殺：ファイアブレスＭ】　火炎属性 再充填3"
+set-string (global-string 1e2b9) "　射程拡散3 命中-15 物攻+14 炎症1 SP12消費"
+set-string (global-string 1dbd6) "必殺 火炎 拡散3 物攻+14 炎症1 SP12"
+set-string (global-string 1d7ef) "サンダーブレスＭ"
+mov (global-int 6c689d) 1b8a
+mov (global-int 6c7455) 9
+mov (global-int 6c7c25) 1
+mov (global-int 6c83f5) a
+mov (global-int 6c9b65) 2
+mov (global-int 6c9f4d) 2
+mov (global-int 6ca71d) 1
+mov (global-int 6cab05) 3
+mov (global-int 6caeed) 2
+mov (global-int 6cb6bd) 6
+mov (global-int 6d111c) 1
+sub (global-int 6d5399) 0 f
+mov (global-int 6d539b) 10
+sub (global-int 6d6c7c) 0 c
+mov (global-int 6d9d35) 4e11
+mov (global-int 6da11d) 4e12
+set-string (global-string 1e2ba) "【範囲必殺：サンダーブレスＭ】　電撃属性 再充填2"
+set-string (global-string 1e2bb) "　射程拡散3 命中-15 物攻+16 麻痺1 SP12消費"
+set-string (global-string 1dbd7) "必殺 電撃 拡散3 物攻+16 麻痺1 SP12"
+set-string (global-string 1d7f0) "クェイクブレスＭ"
+mov (global-int 6c689e) 1b6c
+mov (global-int 6c7456) 9
+mov (global-int 6c7c26) 1
+mov (global-int 6c83f6) a
+mov (global-int 6c9b66) 2
+mov (global-int 6c9f4e) 2
+mov (global-int 6ca71e) 1
+mov (global-int 6cab06) 3
+mov (global-int 6caeee) 3
+mov (global-int 6cb6be) 3
+mov (global-int 6d1139) 1
+sub (global-int 6d53a6) 0 f
+mov (global-int 6d53a8) c
+sub (global-int 6d6c7f) 0 c
+mov (global-int 6d9d36) 4e0c
+mov (global-int 6da11e) 4e0d
+set-string (global-string 1e2bc) "【範囲必殺：クェイクブレスＭ】　地脈属性 再充填3"
+set-string (global-string 1e2bd) "　射程拡散3 命中-15 物攻+12 混乱1 SP12消費"
+set-string (global-string 1dbd8) "必殺 地脈 拡散3 物攻+12 混乱1 SP12"
+set-string (global-string 1d7f1) "アクアブレスＭ"
+mov (global-int 6c689f) 1b76
+mov (global-int 6c7457) 9
+mov (global-int 6c7c27) 1
+mov (global-int 6c83f7) a
+mov (global-int 6c9b67) 2
+mov (global-int 6c9f4f) 2
+mov (global-int 6ca71f) 1
+mov (global-int 6cab07) 3
+mov (global-int 6caeef) 3
+mov (global-int 6cb6bf) 4
+mov (global-int 6d115a) 1
+sub (global-int 6d53b3) 0 f
+mov (global-int 6d53b5) c
+sub (global-int 6d6c82) 0 c
+mov (global-int 6d9d37) 4e06
+mov (global-int 6da11f) 4e07
+set-string (global-string 1e2be) "【範囲必殺：アクアブレスＭ】　冷却属性 再充填3"
+set-string (global-string 1e2bf) "　射程拡散3 命中-15 物攻+12 水流1 SP12消費"
+set-string (global-string 1dbd9) "必殺 冷却 拡散3 物攻+12 水流1 SP12"
+set-string (global-string 1d7f2) "神速双剣術Ｍ"
+mov (global-int 6c68a0) 1c02
+mov (global-int 6c7458) 9
+mov (global-int 6c7c28) 1
+mov (global-int 6c83f8) a
+mov (global-int 6c9b68) 2
+mov (global-int 6c9f50) 2
+mov (global-int 6ca720) 2
+mov (global-int 6cab08) 4
+mov (global-int 6caef0) 3
+mov (global-int 6cb6c0) 2
+sub (global-int 6d53c0) 0 5
+mov (global-int 6d53c2) a
+sub (global-int 6d6c85) 0 8
+mov (global-int 6d9d38) 4e1c
+mov (global-int 6da120) 4e1d
+set-string (global-string 1e2c0) "【範囲必殺：神速双剣術Ｍ】　物理属性 再充填3"
+set-string (global-string 1e2c1) "　射程直線5 命中-5 物攻+10 SP8消費"
+set-string (global-string 1dbda) "必殺 物理 直線5 物攻+10 SP8"
+set-string (global-string 1d7f3) "回転双剣術Ｍ"
+mov (global-int 6c68a1) 1c0c
+mov (global-int 6c7459) 9
+mov (global-int 6c7c29) 1
+mov (global-int 6c83f9) a
+mov (global-int 6c9b69) 1
+mov (global-int 6c9f51) 1
+mov (global-int 6ca721) 1
+mov (global-int 6cab09) 1
+mov (global-int 6caef1) 3
+mov (global-int 6cb6c1) 2
+sub (global-int 6d53cd) 0 5
+mov (global-int 6d53cf) f
+sub (global-int 6d6c88) 0 c
+mov (global-int 6d9d39) 4e1c
+mov (global-int 6da121) 4e1d
+set-string (global-string 1e2c2) "【範囲必殺：回転双剣術Ｍ】　物理属性 再充填3"
+set-string (global-string 1e2c3) "　射程自己2 命中-5 物攻+15 SP12消費"
+set-string (global-string 1dbdb) "必殺 物理 自己2 物攻+15 SP12"
+set-string (global-string 1d7f4) "紅蓮双剣術Ｍ"
+mov (global-int 6c68a2) 1c16
+mov (global-int 6c745a) 9
+mov (global-int 6c7c2a) 1
+mov (global-int 6c83fa) a
+mov (global-int 6c9b6a) 1
+mov (global-int 6c9f52) 1
+mov (global-int 6ca722) 1
+mov (global-int 6cab0a) 1
+mov (global-int 6caef2) 2
+mov (global-int 6cb6c2) 1
+sub (global-int 6d53da) 0 5
+mov (global-int 6d53dc) 11
+sub (global-int 6d6c8b) 0 8
+mov (global-int 6d9d3a) 4e1c
+mov (global-int 6da122) 4e1d
+set-string (global-string 1e2c4) "【範囲必殺：紅蓮双剣術Ｍ】　無属性 再充填2"
+set-string (global-string 1e2c5) "　射程自己2 命中-5 物攻+17 SP8消費"
+set-string (global-string 1dbdc) "必殺 無属 自己2 物攻+17 SP8"
+set-string (global-string 1d7f7) "大暴れＭ"
+mov (global-int 6c68a5) 1bd0
+mov (global-int 6c745d) 9
+mov (global-int 6c7c2d) 1
+mov (global-int 6c83fd) a
+mov (global-int 6c9b6d) 1
+mov (global-int 6c9f55) 1
+mov (global-int 6ca725) 1
+mov (global-int 6cab0d) 1
+mov (global-int 6caef5) 3
+mov (global-int 6cb6c5) 2
+mov (global-int 6d5401) a
+mov (global-int 6d5403) 19
+sub (global-int 6d6c94) 0 a
+mov (global-int 6d9d3d) 4e1f
+mov (global-int 6da125) 1a15
+set-string (global-string 1e2ca) "【範囲必殺：大暴れＭ】　物理属性 再充填3"
+set-string (global-string 1e2cb) "　射程自己2 命中+10 物攻+25 SP10消費"
+set-string (global-string 1dbdf) "必殺 物理 自己2 物攻+25 SP10"
+set-string (global-string 1d7f8) "光分子砲Ｍ"
+mov (global-int 6c68a6) 1c20
+mov (global-int 6c745e) 9
+mov (global-int 6c7c2e) 1
+mov (global-int 6c83fe) 1e
+mov (global-int 6c9b6e) 2
+mov (global-int 6c9f56) 2
+mov (global-int 6ca726) 1
+mov (global-int 6cab0e) 4
+mov (global-int 6caef6) 5
+mov (global-int 6cb6c6) 1
+mov (global-int 6d540e) 14
+mov (global-int 6d5410) 1e
+sub (global-int 6d6c97) 0 f
+mov (global-int 6d9d3e) 4e20
+mov (global-int 6da50e) 1
+mov (global-int 6da126) 4e21
+set-string (global-string 1e2cc) "【範囲必殺：光分子砲Ｍ】　無属性 再充填5"
+set-string (global-string 1e2cd) "　射程直線5 命中+20 物攻+30 SP15消費"
+set-string (global-string 1dbe0) "必殺 無属 直線5 物攻+30 SP15"
+set-string (global-string 1d7f9) "改修型光分子砲Ｍ"
+mov (global-int 6c68a7) 1c2a
+mov (global-int 6c745f) 9
+mov (global-int 6c7c2f) 1
+mov (global-int 6c83ff) 1e
+mov (global-int 6c9b6f) 2
+mov (global-int 6c9f57) 2
+mov (global-int 6ca727) 1
+mov (global-int 6cab0f) 5
+mov (global-int 6caef7) 5
+mov (global-int 6cb6c7) 1
+mov (global-int 6d541b) 1e
+mov (global-int 6d541d) 28
+sub (global-int 6d6c9a) 0 14
+mov (global-int 6d9d3f) 4e20
+mov (global-int 6da50f) 1
+mov (global-int 6da127) 4e21
+set-string (global-string 1e2ce) "【範囲必殺：改修型光分子砲Ｍ】　無属性 再充填5"
+set-string (global-string 1e2cf) "　射程極太5 命中+30 物攻+40 SP20消費"
+set-string (global-string 1dbe1) "必殺 無属 極太5 物攻+40 SP20"
+set-string (global-string 1d7fc) "広範囲間欠泉Ｍ"
+mov (global-int 6c68aa) 1c34
+mov (global-int 6c7462) 9
+mov (global-int 6c7c32) 1
+mov (global-int 6c8402) a
+mov (global-int 6c9b72) 2
+mov (global-int 6c9f5a) 2
+mov (global-int 6ca72a) 1
+mov (global-int 6cab12) 4
+mov (global-int 6caefa) 2
+mov (global-int 6cb6ca) 4
+mov (global-int 6d12a4) 1
+mov (global-int 6d5442) a
+mov (global-int 6d5444) 5
+sub (global-int 6d6ca3) 0 f
+mov (global-int 6d9d42) 4e06
+mov (global-int 6da12a) 4e07
+set-string (global-string 1e2d4) "【範囲必殺：広範囲間欠泉Ｍ】　冷却属性 再充填2"
+set-string (global-string 1e2d5) "　射程直線5 命中+10 物攻+5 水流1 SP15消費"
+set-string (global-string 1dbe4) "必殺 冷却 直線5 物攻+5 水流1 SP15"
+set-string (global-string 1d800) "魔弾装置Ｍ"
+mov (global-int 6c68ae) 1f4a
+mov (global-int 6c7466) a
+mov (global-int 6c7c36) 1
+mov (global-int 6c8406) a
+mov (global-int 6c9b76) 2
+mov (global-int 6c9f5e) 2
+mov (global-int 6ca72e) 2
+mov (global-int 6cab16) 4
+mov (global-int 6cb6ce) 1
+sub (global-int 6d6caf) 0 5
+mov (global-int 6d9d46) 4e22
+mov (global-int 6da12e) 1a15
+set-string (global-string 1e2dc) "【範囲魔法：魔弾装置Ｍ】　無属性"
+set-string (global-string 1e2dd) "　射程直線5 SP5消費"
+set-string (global-string 1dbe8) "魔法 無属 直線5 SP5"
+set-string (global-string 1d801) "石弾装置Ｍ"
+mov (global-int 6c68af) 1f54
+mov (global-int 6c7467) a
+mov (global-int 6c7c37) 1
+mov (global-int 6c8407) a
+mov (global-int 6c9b77) 2
+mov (global-int 6c9f5f) 2
+mov (global-int 6ca72f) 2
+mov (global-int 6cab17) 3
+mov (global-int 6cb6cf) 3
+sub (global-int 6d6cb2) 0 5
+mov (global-int 6d9d47) 4e0c
+mov (global-int 6da12f) 4e0d
+set-string (global-string 1e2de) "【範囲魔法：石弾装置Ｍ】　地脈属性"
+set-string (global-string 1e2df) "　射程拡散3 SP5消費"
+set-string (global-string 1dbe9) "魔法 地脈 拡散3 SP5"
+set-string (global-string 1d802) "火柱装置Ｍ"
+mov (global-int 6c68b0) 1f68
+mov (global-int 6c7468) a
+mov (global-int 6c7c38) 1
+mov (global-int 6c8408) a
+mov (global-int 6c9b78) 2
+mov (global-int 6c9f60) 2
+mov (global-int 6ca730) 2
+mov (global-int 6cab18) 4
+mov (global-int 6cb6d0) 5
+mov (global-int 6d135a) 1
+sub (global-int 6d6cb5) 0 5
+mov (global-int 6d9d48) 4e15
+mov (global-int 6da130) 4e16
+set-string (global-string 1e2e0) "【範囲魔法：火柱装置Ｍ】　火炎属性"
+set-string (global-string 1e2e1) "　射程直線5 炎症1 SP5消費"
+set-string (global-string 1dbea) "魔法 火炎 直線5 炎症1 SP5"
+set-string (global-string 1d803) "水流装置Ｍ"
+mov (global-int 6c68b1) 1f5e
+mov (global-int 6c7469) a
+mov (global-int 6c7c39) 1
+mov (global-int 6c8409) a
+mov (global-int 6c9b79) 2
+mov (global-int 6c9f61) 2
+mov (global-int 6ca731) 2
+mov (global-int 6cab19) 5
+mov (global-int 6cb6d1) 4
+mov (global-int 6d1376) 1
+sub (global-int 6d6cb8) 0 5
+mov (global-int 6d9d49) 4e23
+mov (global-int 6da131) 4e07
+set-string (global-string 1e2e2) "【範囲魔法：水流装置Ｍ】　冷却属性"
+set-string (global-string 1e2e3) "　射程極太5 水流1 SP5消費"
+set-string (global-string 1dbeb) "魔法 冷却 極太5 水流1 SP5"
+set-string (global-string 1d804) "落雷装置Ｍ"
+mov (global-int 6c68b2) 1f72
+mov (global-int 6c746a) a
+mov (global-int 6c7c3a) 1
+mov (global-int 6c840a) a
+mov (global-int 6c9b7a) 1
+mov (global-int 6c9f62) 1
+mov (global-int 6ca732) 2
+mov (global-int 6cab1a) 1
+mov (global-int 6cb6d2) 6
+mov (global-int 6d1392) 1
+sub (global-int 6d6cbb) 0 5
+mov (global-int 6d9d4a) 4e11
+mov (global-int 6da132) 4e12
+set-string (global-string 1e2e4) "【範囲魔法：落雷装置Ｍ】　電撃属性"
+set-string (global-string 1e2e5) "　射程自己2 麻痺1 SP5消費"
+set-string (global-string 1dbec) "魔法 電撃 自己2 麻痺1 SP5"
+set-string (global-string 1d805) "小隕石装置Ｍ"
+mov (global-int 6c68b3) 1f7c
+mov (global-int 6c746b) a
+mov (global-int 6c7c3b) 1
+mov (global-int 6c840b) a
+mov (global-int 6c9b7b) 4
+mov (global-int 6c9f63) 4
+mov (global-int 6ca733) 2
+mov (global-int 6cab1b) 2
+mov (global-int 6cb6d3) 1
+sub (global-int 6d6cbe) 0 5
+mov (global-int 6d9d4b) 4e24
+mov (global-int 6da133) 4e0f
+set-string (global-string 1e2e6) "【範囲魔法：小隕石装置Ｍ】　無属性"
+set-string (global-string 1e2e7) "　射程3-3&円形2 SP5消費"
+set-string (global-string 1dbed) "魔法 無属 射程3円形2 SP5"
+set-string (global-string 1d806) "鉄球装置Ｍ"
+mov (global-int 6c68b4) 1f86
+mov (global-int 6c746c) 9
+mov (global-int 6c7c3c) 1
+mov (global-int 6c840c) a
+mov (global-int 6c9b7c) 2
+mov (global-int 6c9f64) 2
+mov (global-int 6ca734) 2
+mov (global-int 6cab1c) 4
+mov (global-int 6cb6d4) 2
+sub (global-int 6d6cc1) 0 5
+mov (global-int 6d9d4c) 4e25
+mov (global-int 6da134) 4e0d
+set-string (global-string 1e2e8) "【範囲必殺：鉄球装置Ｍ】　物理属性"
+set-string (global-string 1e2e9) "　射程直線5 SP5消費"
+set-string (global-string 1dbee) "必殺 物理 直線5 SP5"
+set-string (global-string 1d807) "機軸弩装置Ｍ"
+mov (global-int 6c68b5) 1f90
+mov (global-int 6c746d) 9
+mov (global-int 6c7c3d) 1
+mov (global-int 6c840d) a
+mov (global-int 6c9b7d) 2
+mov (global-int 6c9f65) 2
+mov (global-int 6ca735) 2
+mov (global-int 6cab1d) 4
+mov (global-int 6cb6d5) 2
+sub (global-int 6d6cc4) 0 5
+mov (global-int 6d9d4d) 4e26
+mov (global-int 6da135) 4e27
+set-string (global-string 1e2ea) "【範囲必殺：機軸弩装置Ｍ】　物理属性"
+set-string (global-string 1e2eb) "　射程直線5 SP5消費"
+set-string (global-string 1dbef) "必殺 物理 直線5 SP5"
+set-string (global-string 1d808) "回復陣Ｍ"
+mov (global-int 6c68b6) 1f9a
+mov (global-int 6c746e) b
+mov (global-int 6c7c3e) 1
+mov (global-int 6c840e) a
+mov (global-int 6c9b7e) 1
+mov (global-int 6c9f66) 1
+mov (global-int 6ca736) 3
+mov (global-int 6cab1e) 1
+mov (global-int 6d54de) 63
+mov (global-int 6d6cc6) 1e
+sub (global-int 6d6cc7) 0 5
+mov (global-int 6d9d4e) 4e19
+mov (global-int 6da51e) 1
+mov (global-int 6da136) 4e1a
+set-string (global-string 1e2ec) "【範囲必殺：回復陣Ｍ】"
+set-string (global-string 1e2ed) "　射程自己2 HP30回復 SP5消費"
+set-string (global-string 1dbf0) "支援 自己2 HP30  SP5"
+set-string (global-string 1d809) "鉄壁陣Ｍ"
+mov (global-int 6c68b7) 1fa4
+mov (global-int 6c746f) c
+mov (global-int 6c7c3f) 1
+mov (global-int 6c840f) a
+mov (global-int 6c9b7f) 1
+mov (global-int 6c9f67) 1
+mov (global-int 6ca737) 3
+mov (global-int 6cab1f) 1
+mov (global-int 6d1435) 1
+mov (global-int 6d1437) 1
+mov (global-int 6d54eb) 63
+sub (global-int 6d6cca) 0 5
+mov (global-int 6d9d4f) 4e28
+mov (global-int 6da51f) 1
+mov (global-int 6da137) 4e29
+set-string (global-string 1e2ee) "【範囲必殺：鉄壁陣Ｍ】"
+set-string (global-string 1e2ef) "　射程自己2 物防Ⅰ 魔防Ⅰ SP5消費"
+set-string (global-string 1dbf1) "支援 自己2 物防&魔防Ⅰ SP5"
+set-string (global-string 1d80a) "進撃陣Ｍ"
+mov (global-int 6c68b8) 1fae
+mov (global-int 6c7470) c
+mov (global-int 6c7c40) 1
+mov (global-int 6c8410) a
+mov (global-int 6c9b80) 1
+mov (global-int 6c9f68) 1
+mov (global-int 6ca738) 3
+mov (global-int 6cab20) 1
+mov (global-int 6d1452) 1
+mov (global-int 6d1454) 1
+mov (global-int 6d54f8) 63
+sub (global-int 6d6ccd) 0 5
+mov (global-int 6d9d50) 4e28
+mov (global-int 6da520) 1
+mov (global-int 6da138) 4e29
+set-string (global-string 1e2f0) "【範囲必殺：進撃陣Ｍ】"
+set-string (global-string 1e2f1) "　射程自己2 物攻Ⅰ 魔攻Ⅰ SP5消費"
+set-string (global-string 1dbf2) "支援 自己2 物攻&魔攻Ⅰ SP5"
+set-string (global-string 1d80b) "敏捷陣Ｍ"
+mov (global-int 6c68b9) 1fb8
+mov (global-int 6c7471) c
+mov (global-int 6c7c41) 1
+mov (global-int 6c8411) a
+mov (global-int 6c9b81) 1
+mov (global-int 6c9f69) 1
+mov (global-int 6ca739) 3
+mov (global-int 6cab21) 1
+mov (global-int 6d1474) 1
+mov (global-int 6d146f) 1
+mov (global-int 6d5505) 63
+sub (global-int 6d6cd0) 0 5
+mov (global-int 6d9d51) 4e28
+mov (global-int 6da521) 1
+mov (global-int 6da139) 4e29
+set-string (global-string 1e2f2) "【範囲必殺：敏捷陣Ｍ】"
+set-string (global-string 1e2f3) "　射程自己2 速度Ⅰ 回避Ⅰ SP5消費"
+set-string (global-string 1dbf3) "支援 自己2 速度&回避Ⅰ SP5"
+set-string (global-string 1d80c) "英雄陣Ｍ"
+mov (global-int 6c68ba) 1fc2
+mov (global-int 6c7472) c
+mov (global-int 6c7c42) 1
+mov (global-int 6c8412) a
+mov (global-int 6c9b82) 1
+mov (global-int 6c9f6a) 1
+mov (global-int 6ca73a) 3
+mov (global-int 6cab22) 1
+mov (global-int 6d148e) 1
+mov (global-int 6d1490) 1
+mov (global-int 6d148f) 1
+mov (global-int 6d1491) 1
+mov (global-int 6d1492) 1
+mov (global-int 6d5512) 63
+sub (global-int 6d6cd3) 0 5
+mov (global-int 6d9d52) 4e28
+mov (global-int 6da522) 1
+mov (global-int 6da13a) 4e29
+set-string (global-string 1e2f4) "【範囲必殺：英雄陣Ｍ】"
+set-string (global-string 1e2f5) "　射程自己2 物攻&魔攻&物防&魔防&速度Ⅰ SP5"
+set-string (global-string 1dbf4) "支援 射自2 攻撃&防御&速度Ⅰ SP5"
+set-string (global-string 1d815) "元に戻る"
+mov (global-int 6c68c3) 1cf2
+mov (global-int 6c747b) c
+mov (global-int 6c8033) 1
+mov (global-int 6c7c4b) 1
+mov (global-int 6c9b8b) 1
+mov (global-int 6c9f73) 1
+mov (global-int 6d9d5b) 4e2a
+mov (global-int 6da143) 4e2b
+set-string (global-string 1e306) "【変身：元に戻る】"
+set-string (global-string 1e307) "　カトリトが一時的に成長した姿から元に戻る"
+set-string (global-string 1dbfd) "元の姿に戻る"
+set-string (global-string 1d816) "成体解放"
+mov (global-int 6c68c4) 1cfc
+mov (global-int 6c747c) c
+mov (global-int 6c7c4c) 1
+mov (global-int 6c9b8c) 1
+mov (global-int 6c9f74) 1
+mov (global-int 6caf14) 5
+mov (global-int 6d7264) 5
+mov (global-int 6d9d5c) 4e2a
+mov (global-int 6da144) 4e2b
+set-string (global-string 1e308) "【変身：成体解放（せいたいかいほう）】"
+set-string (global-string 1e309) "　カトリトが一時的に成長した姿になり戦闘力を高める"
+set-string (global-string 1dbfe) "成長した身体に変身する"
+set-string (global-string 1d817) "雷府竜"
+mov (global-int 6c68c5) 1d06
+mov (global-int 6c747d) c
+mov (global-int 6c7c4d) 1
+mov (global-int 6c9b8d) 1
+mov (global-int 6c9f75) 1
+mov (global-int 6caf15) 5
+mov (global-int 6d7265) 5
+mov (global-int 6d9d5d) 4e2a
+mov (global-int 6da145) 4e2b
+set-string (global-string 1e30a) "【変身：雷府竜（らいふりゅう）】"
+set-string (global-string 1e30b) "　カトリトが一時的に雷府竜の姿になり戦闘力を高める"
+set-string (global-string 1dbff) "雷府竜の姿に変身する"
+exit
