@@ -47,11 +47,13 @@ export function mapToSjis(text) {
 }
 
 // 校验整段文本是否可 cp932 编码（apply 之后、汇编之前的兜底检查）
+// 注意：U+E000–U+E757 是游戏外字区（SJIS 0xF040–0xF9FC），Decompiler 可无损往返，放行。
 export function validateSjis(text) {
   const bad = [];
   for (const ch of text) {
     const o = ch.codePointAt(0);
     if (o < 0x80) continue;
+    if (0xE000 <= o && o <= 0xE757) continue;
     if (!canEncodeCp932(ch)) bad.push(`U+${o.toString(16).toUpperCase()} ${ch}`);
   }
   return bad;

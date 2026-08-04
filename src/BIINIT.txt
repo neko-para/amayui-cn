@@ -1,0 +1,966 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 1 1 1 1 1 1 }
+====
+
+mov (global-int 14956a) a
+set-string (global-string cb1b) "【基本】　女神力（めがりょく）"
+mov (global-int 149952) 39c7
+set-string (global-string cf0c) "縁結びの神であるフィアが得られる力です。"
+set-string (global-string cf0d) "イベント内での人々との交流や、工房での製作、迷宮で"
+set-string (global-string cf0e) "の植物活性化、壊れたものの修復などの行動によって獲"
+set-string (global-string cf0f) "得できます。"
+set-string (global-string cf11) "女神力のゲージが溜まると『女神ランク』がひとつ上昇"
+set-string (global-string cf12) "します。"
+mov (global-int 14956b) 14
+set-string (global-string cb1c) "【基本】　女神ランク"
+mov (global-int 149953) 39c8
+set-string (global-string cf16) "フィアの神としてのランクです。"
+set-string (global-string cf17) "女神力が一定値に達することで上昇し、フィアがクラス"
+set-string (global-string cf18) "チェンジします。"
+set-string (global-string cf1a) "女神ランクが上がると、新たなプランの追加や、指揮力"
+set-string (global-string cf1b) "の増加など、様々な恩恵があります。"
+mov (global-int 14956c) 1e
+set-string (global-string cb1d) "【基本】　通貨（ギフル）"
+mov (global-int 149954) 39c9
+set-string (global-string cf20) "お店での資材や消耗品、また装備品の購入に使用します。"
+set-string (global-string cf21) "迷宮探索や物品の売却、施設配置による収入を得ること"
+set-string (global-string cf22) "ができます。"
+set-string (global-string cf24) "また、アイテム獲得時に最大所持数を超えた場合は自動"
+set-string (global-string cf25) "換金されます。"
+mov (global-int 14956d) 28
+set-string (global-string cb1e) "【基本】　経過日数"
+mov (global-int 149955) 39ca
+set-string (global-string cf2a) "迷宮の探索や、各地への訪問を行うと日数が経過します。"
+set-string (global-string cf2b) "日数が経過すると、イベントが発生したり、城砦に配置"
+set-string (global-string cf2c) "した施設に応じてアイテムや通貨の収入が得られます。"
+set-string (global-string cf2d) "収入は自動的に加算されます。"
+mov (global-int 14956e) 32
+set-string (global-string cb1f) "【基本】　属性"
+mov (global-int 149956) 39cb
+set-string (global-string cf34) "攻撃属性は『物理』『火炎』『冷却』『電撃』『地脈』"
+set-string (global-string cf35) "『神聖』『暗黒』『無属』の８種あります。"
+set-string (global-string cf37) "ユニットごとに、それらに対する属性耐性があり、相性"
+set-string (global-string cf38) "が良いと攻撃力が最大２倍になります。"
+set-string (global-string cf39) "逆に相性が悪いと攻撃力が低下したり、吸収されて相手"
+set-string (global-string cf3a) "のＨＰを回復してしまうこともあります。"
+mov (global-int 14956f) 3c
+set-string (global-string cb20) "【基本】　種族"
+mov (global-int 149957) 39cc
+set-string (global-string cf3e) "種族は『人間』『亜人』『一般』『鬼』『巨人』"
+set-string (global-string cf3f) "『精霊』『天使』『悪魔』『魔獣』『幻獣』『霊体』"
+set-string (global-string cf40) "『不死』『創造』『魔神』『神格』の１５種です。"
+set-string (global-string cf42) "種族によって、効果パラメータへの耐性が変わります。"
+set-string (global-string cf43) "また、特定種族に対して発動するスキルが存在します。"
+mov (global-int 149571) 3f2
+set-string (global-string cb22) "【アイテム】　重要"
+mov (global-int 149959) 39cd
+set-string (global-string cf52) "ゲームの進行上で入手するアイテムになります。"
+set-string (global-string cf53) "基本的に持っているだけでその効果を発揮する物であり、"
+set-string (global-string cf54) "扉を開閉できる鍵もここに分類されます。"
+mov (global-int 149572) 3fc
+set-string (global-string cb23) "【アイテム】　資材"
+mov (global-int 14995a) 39ce
+set-string (global-string cf5c) "工房やお店で使用できるアイテムになります。"
+set-string (global-string cf5d) "資材は『素材』『売却専用』『防衛』の３種類です。"
+set-string (global-string cf5f) "『素材』は、迷宮内にある採取ポイントや発掘ポイント"
+set-string (global-string cf60) "で入手可能で、工房でのアイテム製作に必要です。"
+set-string (global-string cf62) "『売却専用』はお店で売却することで換金します。"
+set-string (global-string cf64) "『防衛』は防衛戦マップにて配置可能なアイテムで、"
+set-string (global-string cf65) "使用や破壊で消費されることはありません。"
+mov (global-int 149573) 406
+set-string (global-string cb24) "【アイテム】　消費"
+mov (global-int 14995b) 39cf
+set-string (global-string cf66) "迷宮などで使用することができるアイテムになります。"
+set-string (global-string cf67) "使用すると所持数が減ります。"
+set-string (global-string cf69) "ステータス回復や状態回復といったものから、能力値を"
+set-string (global-string cf6a) "上昇させるアイテムなど、様々な効果を発生させます。"
+mov (global-int 149574) 410
+set-string (global-string cb25) "【アイテム】　武器"
+mov (global-int 14995c) 39d0
+set-string (global-string cf70) "武器枠に装備可能なアイテムになります。"
+set-string (global-string cf71) "各ユニットに『機軸鎚』など装備カテゴリが存在します。"
+set-string (global-string cf72) "主に攻撃力上昇やスキルの付加などの効果があり、武器"
+set-string (global-string cf73) "によって攻撃属性も変わるので使い分けが必要です。"
+set-string (global-string cf74) "『拳』カテゴリは、多くのユニットが装備可能で、間接"
+set-string (global-string cf75) "武器を持つユニットでも移動攻撃が可能になります。"
+mov (global-int 149575) 41a
+set-string (global-string cb26) "【アイテム】　盾"
+mov (global-int 14995d) 39d1
+set-string (global-string cf7a) "盾枠に装備可能なアイテムになります。"
+set-string (global-string cf7b) "盾には『小盾』と『大盾』が存在し、ユニットによって"
+set-string (global-string cf7c) "は装備できない場合があります。"
+set-string (global-string cf7e) "『小盾』は主に回避上昇や盾スキルの付加。"
+set-string (global-string cf7f) "『大盾』は主に防御力上昇や盾スキルが付加されます。"
+mov (global-int 149576) 424
+set-string (global-string cb27) "【アイテム】　防具"
+mov (global-int 14995e) 39d2
+set-string (global-string cf84) "防具枠には『軽装』『中装』『重装』が存在します。"
+set-string (global-string cf86) "主に防御力の上昇や、スキルの付加などの効果があり、"
+set-string (global-string cf87) "属性耐性上昇効果もあるので使い分けが必要になります。"
+set-string (global-string cf88) "ユニットによっては装備できない場合があります。"
+mov (global-int 149577) 42e
+set-string (global-string cb28) "【アイテム】　靴"
+mov (global-int 14995f) 39d3
+set-string (global-string cf8e) "靴枠には『軽靴』と『重靴』が存在します。"
+set-string (global-string cf90) "『軽靴』は主に敏捷上昇やスキルの付加。"
+set-string (global-string cf91) "『重靴』は主に防御力上昇やスキルが付加されます。"
+mov (global-int 149578) 438
+set-string (global-string cb29) "【アイテム】　装飾"
+mov (global-int 149960) 39d4
+set-string (global-string cf98) "装飾枠に装備可能なアイテムになります。"
+set-string (global-string cf9a) "能力上昇やスキル付加の他にも、迷宮進行において有利"
+set-string (global-string cf9b) "に展開する物が多く存在します。"
+set-string (global-string cf9c) "一部を除いて、どのユニットでも装備可能になります。"
+mov (global-int 149579) 442
+set-string (global-string cb2a) "【アイテム】　スキル"
+mov (global-int 149961) 39d5
+set-string (global-string cfa2) "各ユニットが独自に所持している特殊能力になります。"
+set-string (global-string cfa4) "装備にはＣＰ（キャパシティポイント）が必要で、"
+set-string (global-string cfa5) "その上限値内であれば好きな組み合わせが可能です。"
+set-string (global-string cfa6) "また、一部アイテムを装備することによって付与される"
+set-string (global-string cfa7) "『装備スキル』もあり、これらはＣＰに関係ありません。"
+mov (global-int 14957a) 44c
+set-string (global-string cb2b) "【アイテム】　施設"
+mov (global-int 149962) 39d6
+set-string (global-string cfac) "城砦上に配置することで収入増加や資材収穫が可能です。"
+set-string (global-string cfad) "採集や発掘ＬＶの増加など、様々な恩恵も受けられます。"
+set-string (global-string cfaf) "また、結陣効果を持つ施設を上手く配置することで、"
+set-string (global-string cfb0) "ユニットの能力を上昇させることができます。"
+mov (global-int 14957b) 3d1
+set-string (global-string cb2c) "【戦闘】　基本攻撃"
+mov (global-int 149963) 39d7
+set-string (global-string cfb6) "武器を装備していない状態での『素手』攻撃になります。"
+set-string (global-string cfb7) "武器を装備すると、基本攻撃の代わりに装備した武器に"
+set-string (global-string cfb8) "よる攻撃方法に切り替わります。"
+mov (global-int 14957c) 3d3
+set-string (global-string cb2d) "【戦闘】　防御"
+mov (global-int 149964) 39d8
+set-string (global-string cfc0) "攻撃せず、防御に徹することでそれぞれの防御値を＋３、"
+set-string (global-string cfc1) "回避を＋１０して戦闘パートに移ることができます。"
+mov (global-int 14957d) 3d5
+set-string (global-string cb2e) "【戦闘】　必殺"
+mov (global-int 149965) 39d9
+set-string (global-string cfca) "物理攻撃系のステータスを参照した特殊攻撃になります。"
+set-string (global-string cfcc) "攻撃能力が上昇するほか、今の攻撃属性とは別の属性へ"
+set-string (global-string cfcd) "変更できるものもあるので、使い分けが重要になります。"
+set-string (global-string cfcf) "使用時には主にＳＰを消費して発動します。"
+mov (global-int 14957e) 3d7
+set-string (global-string cb2f) "【戦闘】　魔術"
+mov (global-int 149966) 39da
+set-string (global-string cfd4) "魔術攻撃系のステータスを参照した特殊攻撃になります。"
+set-string (global-string cfd6) "色々な属性の魔法や射程の長い魔法などが存在するので"
+set-string (global-string cfd7) "場合に応じた使い分けが可能になります。"
+set-string (global-string cfd9) "使用時には主にＳＰを消費して発動します。"
+mov (global-int 14957f) 3d9
+set-string (global-string cb30) "【戦闘】　攻撃順"
+mov (global-int 149967) 39db
+set-string (global-string cfde) "戦闘の基本として、攻撃する順番が決まっています。"
+set-string (global-string cfdf) "双方合わせて、最大で５回の攻撃が発生します。"
+set-string (global-string cfe0) "５回目の攻撃は速度差が３以上ある場合のみ発生します。"
+set-string (global-string cfe2) "①攻撃を仕掛けた側"
+set-string (global-string cfe3) "②攻撃を受けた側"
+set-string (global-string cfe4) "③速度の勝っている側"
+set-string (global-string cfe5) "④速度の劣っている側"
+set-string (global-string cfe6) "⑤速度の値が３以上勝っている側"
+mov (global-int 149580) 3db
+set-string (global-string cb31) "【戦闘】　攻撃回数"
+mov (global-int 149968) 39dc
+set-string (global-string cfe8) "戦闘の基本として双方が２回ずつ攻撃を行います。"
+set-string (global-string cfea) "速度が３以上離れている場合は、速度の勝っている方が"
+set-string (global-string cfeb) "攻撃回数＋１となります。"
+set-string (global-string cfed) "攻撃回数は、戦闘開始前に確認可能です。"
+mov (global-int 149583) 3df
+set-string (global-string cb34) "【戦闘】　召喚ユニット"
+mov (global-int 14996b) 39dd
+set-string (global-string d006) "召喚の条件として、召喚主の隣接マスが自勢力の占有地"
+set-string (global-string d007) "である場合のみ、出撃することができます。"
+set-string (global-string d009) "撤退は行動前であればどこからでも可能で、戦闘不能に"
+set-string (global-string d00a) "なるまで何度でも帰還と召喚ができます。"
+set-string (global-string d00b) "ただし、召喚主が戦闘不能になってしまった場合は、"
+set-string (global-string d00c) "召喚ユニットも同じタイミングで撤退してしまいます。"
+set-string (global-string d00e) "召喚ユニットは、一切の装備アイテムの変更ができない"
+set-string (global-string d00f) "代わりに、訓練所での強化が可能になります。"
+mov (global-int 149584) 3e1
+set-string (global-string cb35) "【戦闘】　変身ユニット"
+mov (global-int 14996c) 39de
+set-string (global-string d010) "この変身スキルを使用することで、違う形態に変身する"
+set-string (global-string d011) "ことができます。"
+set-string (global-string d013) "変身することで能力値が上昇し、別の攻撃やスキルを使"
+set-string (global-string d014) "うことができますが、形態ごとに装備やスキルを設定す"
+set-string (global-string d015) "る必要があります。"
+set-string (global-string d017) "変身前に戻りたいときは『元に戻る』を使用します。"
+mov (global-int 149585) 3e3
+set-string (global-string cb36) "【戦闘】　合体攻撃"
+mov (global-int 14996d) 39df
+set-string (global-string d01a) "信頼関係のあるユニットが攻撃選択時に隣接マスにいる"
+set-string (global-string d01b) "と選択できるようになります。"
+set-string (global-string d01d) "発動者と隣接ユニットの双方のＳＰを消費します。"
+mov (global-int 149586) 3e5
+set-string (global-string cb37) "【戦闘】　援護防御"
+mov (global-int 14996e) 39e0
+set-string (global-string d024) "攻撃を受けた際に、援護防御スキルを所持したユニット"
+set-string (global-string d025) "が隣接マスにいると、確率で発動します。"
+set-string (global-string d027) "発動すれば攻撃を回避することができます。"
+mov (global-int 149587) 3e7
+set-string (global-string cb38) "【戦闘】　装備リンク"
+mov (global-int 14996f) 39e1
+set-string (global-string d02e) "各装備品による特定の組み合わせによって発動します。"
+set-string (global-string d02f) "専用スキル付与や能力上昇などの様々な恩恵があります。"
+mov (global-int 149588) 4ba
+set-string (global-string cb39) "【効果パラメータ】　即死"
+mov (global-int 149970) 39e2
+set-string (global-string d038) "発動すると残りＨＰに関係なく一撃で死に至らしめます。"
+set-string (global-string d039) "種族によって耐性が異なり、発動率が変わります。"
+set-string (global-string d03b) "ボスには発動しません。"
+mov (global-int 149589) 4c4
+set-string (global-string cb3a) "【効果パラメータ】　ＨＰ吸"
+mov (global-int 149971) 39e3
+set-string (global-string d042) "攻撃を当てた際にＨＰを回復します。"
+set-string (global-string d043) "レベルは５段階あり、上昇するほど回復量が増えます。"
+set-string (global-string d045) "■ＨＰ吸Ⅰ…ＨＰを２回復"
+set-string (global-string d046) "■ＨＰ吸Ⅱ…ＨＰを４回復"
+set-string (global-string d047) "■ＨＰ吸Ⅲ…ＨＰを６回復"
+set-string (global-string d048) "■ＨＰ吸Ⅳ…ＨＰを８回復"
+set-string (global-string d049) "■ＨＰ吸Ⅴ…ＨＰを１０回復"
+mov (global-int 14958a) 4ce
+set-string (global-string cb3b) "【効果パラメータ】　ＳＰ吸"
+mov (global-int 149972) 39e4
+set-string (global-string d04c) "攻撃を当てた際にＳＰを回復します。"
+set-string (global-string d04d) "レベルは５段階あり、上昇するほど回復量が増えます。"
+set-string (global-string d04f) "■ＳＰ吸Ⅰ…ＳＰを１回復"
+set-string (global-string d050) "■ＳＰ吸Ⅱ…ＳＰを２回復"
+set-string (global-string d051) "■ＳＰ吸Ⅲ…ＳＰを３回復"
+set-string (global-string d052) "■ＳＰ吸Ⅳ…ＳＰを４回復"
+set-string (global-string d053) "■ＳＰ吸Ⅴ…ＳＰを５回復"
+mov (global-int 14958b) 4d8
+set-string (global-string cb3c) "【効果パラメータ】　ＦＳ吸"
+mov (global-int 149973) 39e5
+set-string (global-string d056) "攻撃を当てた際にＦＳを回復します。"
+set-string (global-string d057) "レベルは５段階あり、上昇するほど回復量が増えます。"
+set-string (global-string d059) "■ＦＳ吸Ⅰ…ＦＳを２回復"
+set-string (global-string d05a) "■ＦＳ吸Ⅱ…ＦＳを４回復"
+set-string (global-string d05b) "■ＦＳ吸Ⅲ…ＦＳを６回復"
+set-string (global-string d05c) "■ＦＳ吸Ⅳ…ＦＳを８回復"
+set-string (global-string d05d) "■ＦＳ吸Ⅴ…ＦＳを１０回復"
+mov (global-int 14958c) 4e2
+set-string (global-string cb3d) "【効果パラメータ】　魅了"
+mov (global-int 149974) 39e6
+set-string (global-string d060) "効果時間中はなにも行動できない状態になります。"
+set-string (global-string d061) "レベルは５段階あり、上昇すると持続ターンが増えます。"
+set-string (global-string d063) "■魅了Ⅰ…２ターン持続"
+set-string (global-string d064) "■魅了Ⅱ…３ターン持続"
+set-string (global-string d065) "■魅了Ⅲ…４ターン持続"
+set-string (global-string d066) "■魅了Ⅳ…５ターン持続"
+set-string (global-string d067) "■魅了Ⅴ…６ターン持続"
+mov (global-int 14958d) 4ec
+set-string (global-string cb3e) "【効果パラメータ】　混乱"
+mov (global-int 149975) 39e7
+set-string (global-string d06a) "命中と回避が低下し、攻撃スキルが選べなくなります。"
+set-string (global-string d06b) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d06c) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d06e) "■混乱Ⅰ…命中と回避が２低下"
+set-string (global-string d06f) "■混乱Ⅱ…命中と回避が４低下"
+set-string (global-string d070) "■混乱Ⅲ…命中と回避が６低下"
+set-string (global-string d071) "■混乱Ⅳ…命中と回避が８低下"
+set-string (global-string d072) "■混乱Ⅴ…命中と回避が１０低下"
+mov (global-int 14958e) 4f6
+set-string (global-string cb3f) "【効果パラメータ】　麻痺"
+mov (global-int 149976) 39e8
+set-string (global-string d074) "回避、敏捷、移動力が低下した状態になります。"
+set-string (global-string d075) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d076) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d078) "■麻痺Ⅰ…回避が１０、敏捷２、移動力１低下"
+set-string (global-string d079) "■麻痺Ⅱ…回避が２０、敏捷４、移動力２低下"
+set-string (global-string d07a) "■麻痺Ⅲ…回避が３０、敏捷６、移動力３低下"
+set-string (global-string d07b) "■麻痺Ⅳ…回避が４０、敏捷８、移動力４低下"
+set-string (global-string d07c) "■麻痺Ⅴ…回避が５０、敏捷１０、移動力５低下"
+mov (global-int 14958f) 500
+set-string (global-string cb40) "【効果パラメータ】　猛毒"
+mov (global-int 149977) 39e9
+set-string (global-string d07e) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d07f) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d080) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d081) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d083) "■猛毒Ⅰ…ＨＰに１ダメージ"
+set-string (global-string d084) "■猛毒Ⅱ…ＨＰに２ダメージ"
+set-string (global-string d085) "■猛毒Ⅲ…ＨＰに３ダメージ"
+set-string (global-string d086) "■猛毒Ⅳ…ＨＰに４ダメージ"
+set-string (global-string d087) "■猛毒Ⅴ…ＨＰに５ダメージ"
+mov (global-int 149590) 50a
+set-string (global-string cb41) "【効果パラメータ】　水流"
+mov (global-int 149978) 39ea
+set-string (global-string d088) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d089) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d08a) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d08b) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d08d) "■水流Ⅰ…ＨＰに１ダメージ"
+set-string (global-string d08e) "■水流Ⅱ…ＨＰに２ダメージ"
+set-string (global-string d08f) "■水流Ⅲ…ＨＰに３ダメージ"
+set-string (global-string d090) "■水流Ⅳ…ＨＰに４ダメージ"
+set-string (global-string d091) "■水流Ⅴ…ＨＰに５ダメージ"
+mov (global-int 149591) 514
+set-string (global-string cb42) "【効果パラメータ】　強酸"
+mov (global-int 149979) 39eb
+set-string (global-string d092) "ターン開始時に、ＨＰとＦＳにダメージを受けます。"
+set-string (global-string d093) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d094) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d095) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d097) "■強酸Ⅰ…ＨＰとＦＳに１ダメージ"
+set-string (global-string d098) "■強酸Ⅱ…ＨＰとＦＳに２ダメージ"
+set-string (global-string d099) "■強酸Ⅲ…ＨＰとＦＳに３ダメージ"
+set-string (global-string d09a) "■強酸Ⅳ…ＨＰとＦＳに４ダメージ"
+set-string (global-string d09b) "■強酸Ⅴ…ＨＰとＦＳに５ダメージ"
+mov (global-int 149592) 51e
+set-string (global-string cb43) "【効果パラメータ】　炎症"
+mov (global-int 14997a) 39ec
+set-string (global-string d09c) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d09d) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d09e) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d09f) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0a1) "■炎症Ⅰ…ＨＰに１ダメージ"
+set-string (global-string d0a2) "■炎症Ⅱ…ＨＰに２ダメージ"
+set-string (global-string d0a3) "■炎症Ⅲ…ＨＰに３ダメージ"
+set-string (global-string d0a4) "■炎症Ⅳ…ＨＰに４ダメージ"
+set-string (global-string d0a5) "■炎症Ⅴ…ＨＰに５ダメージ"
+mov (global-int 149593) 528
+set-string (global-string cb44) "【効果パラメータ】　恐怖"
+mov (global-int 14997b) 39ed
+set-string (global-string d0a6) "ターン開始時に、ＦＳにダメージを受けます。"
+set-string (global-string d0a7) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d0a8) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0aa) "■恐怖Ⅰ…ＦＳに１ダメージ"
+set-string (global-string d0ab) "■恐怖Ⅱ…ＦＳに２ダメージ"
+set-string (global-string d0ac) "■恐怖Ⅲ…ＦＳに３ダメージ"
+set-string (global-string d0ad) "■恐怖Ⅳ…ＦＳに４ダメージ"
+set-string (global-string d0ae) "■恐怖Ⅴ…ＦＳに５ダメージ"
+mov (global-int 149594) 532
+set-string (global-string cb45) "【効果パラメータ】　再生"
+mov (global-int 14997c) 39ee
+set-string (global-string d0b0) "ターン開始時にＨＰが回復します。"
+set-string (global-string d0b1) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0b2) "効果は全てのレベル固定で永続します。"
+set-string (global-string d0b4) "■再生Ⅰ…ＨＰが２回復"
+set-string (global-string d0b5) "■再生Ⅱ…ＨＰが４回復"
+set-string (global-string d0b6) "■再生Ⅲ…ＨＰが６回復"
+set-string (global-string d0b7) "■再生Ⅳ…ＨＰが８回復"
+set-string (global-string d0b8) "■再生Ⅴ…ＨＰが１０回復"
+mov (global-int 149595) 53c
+set-string (global-string cb46) "【効果パラメータ】　技再"
+mov (global-int 14997d) 39ef
+set-string (global-string d0ba) "ターン開始時にＳＰが回復します。"
+set-string (global-string d0bb) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0bc) "効果は全てのレベル固定で永続します。"
+set-string (global-string d0be) "■技再Ⅰ…ＳＰが２回復"
+set-string (global-string d0bf) "■技再Ⅱ…ＳＰが４回復"
+set-string (global-string d0c0) "■技再Ⅲ…ＳＰが６回復"
+set-string (global-string d0c1) "■技再Ⅳ…ＳＰが８回復"
+set-string (global-string d0c2) "■技再Ⅴ…ＳＰが１０回復"
+mov (global-int 149596) 546
+set-string (global-string cb47) "【効果パラメータ】　疲再"
+mov (global-int 14997e) 39f0
+set-string (global-string d0c4) "ターン開始時にＦＳが回復します。"
+set-string (global-string d0c5) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0c6) "効果は全てのレベル固定で永続します。"
+set-string (global-string d0c8) "■疲再Ⅰ…ＦＳが２回復"
+set-string (global-string d0c9) "■疲再Ⅱ…ＦＳが４回復"
+set-string (global-string d0ca) "■疲再Ⅲ…ＦＳが６回復"
+set-string (global-string d0cb) "■疲再Ⅳ…ＦＳが８回復"
+set-string (global-string d0cc) "■疲再Ⅴ…ＦＳが１０回復"
+mov (global-int 149597) 550
+set-string (global-string cb48) "【効果パラメータ】　高揚"
+mov (global-int 14997f) 39f1
+set-string (global-string d0ce) "攻撃力と痛打が上昇しますが、防御力が低下します。"
+set-string (global-string d0cf) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0d0) "効果は全てのレベル固定で１０ターン持続します。"
+set-string (global-string d0d2) "■高揚Ⅰ…攻撃が２、痛打２上昇、防御２低下"
+set-string (global-string d0d3) "■高揚Ⅱ…攻撃が４、痛打４上昇、防御４低下"
+set-string (global-string d0d4) "■高揚Ⅲ…攻撃が６、痛打６上昇、防御６低下"
+set-string (global-string d0d5) "■高揚Ⅳ…攻撃が８、痛打８上昇、防御８低下"
+set-string (global-string d0d6) "■高揚Ⅴ…攻撃が１０、痛打１０上昇、防御１０低下"
+mov (global-int 149598) 55a
+set-string (global-string cb49) "【効果パラメータ】　命中"
+mov (global-int 149980) 39f2
+set-string (global-string d0d8) "命中が上昇します。"
+set-string (global-string d0d9) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0da) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0dc) "■命中Ⅰ…命中が４上昇"
+set-string (global-string d0dd) "■命中Ⅱ…命中が８上昇"
+set-string (global-string d0de) "■命中Ⅲ…命中が１２上昇"
+set-string (global-string d0df) "■命中Ⅳ…命中が１６上昇"
+set-string (global-string d0e0) "■命中Ⅴ…命中が２０上昇"
+mov (global-int 149599) 564
+set-string (global-string cb4a) "【効果パラメータ】　回避"
+mov (global-int 149981) 39f3
+set-string (global-string d0e2) "回避が上昇します。"
+set-string (global-string d0e3) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0e4) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0e6) "■回避Ⅰ…回避が４上昇"
+set-string (global-string d0e7) "■回避Ⅱ…回避が８上昇"
+set-string (global-string d0e8) "■回避Ⅲ…回避が１２上昇"
+set-string (global-string d0e9) "■回避Ⅳ…回避が１６上昇"
+set-string (global-string d0ea) "■回避Ⅴ…回避が２０上昇"
+mov (global-int 14959a) 56e
+set-string (global-string cb4b) "【効果パラメータ】　物攻"
+mov (global-int 149982) 39f4
+set-string (global-string d0ec) "物理攻撃が上昇します。"
+set-string (global-string d0ed) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0ee) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0f0) "■物攻Ⅰ…物理攻撃が２上昇"
+set-string (global-string d0f1) "■物攻Ⅱ…物理攻撃が４上昇"
+set-string (global-string d0f2) "■物攻Ⅲ…物理攻撃が６上昇"
+set-string (global-string d0f3) "■物攻Ⅳ…物理攻撃が８上昇"
+set-string (global-string d0f4) "■物攻Ⅴ…物理攻撃が１０上昇"
+mov (global-int 14959b) 578
+set-string (global-string cb4c) "【効果パラメータ】　物防"
+mov (global-int 149983) 39f5
+set-string (global-string d0f6) "物理防御が上昇します。"
+set-string (global-string d0f7) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0f8) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d0fa) "■物防Ⅰ…物理防御が２上昇"
+set-string (global-string d0fb) "■物防Ⅱ…物理防御が４上昇"
+set-string (global-string d0fc) "■物防Ⅲ…物理防御が６上昇"
+set-string (global-string d0fd) "■物防Ⅳ…物理防御が８上昇"
+set-string (global-string d0fe) "■物防Ⅴ…物理防御が１０上昇"
+mov (global-int 14959c) 582
+set-string (global-string cb4d) "【効果パラメータ】　魔攻"
+mov (global-int 149984) 39f6
+set-string (global-string d100) "魔法攻撃が上昇します。"
+set-string (global-string d101) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d102) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d104) "■魔攻Ⅰ…魔法攻撃が２上昇"
+set-string (global-string d105) "■魔攻Ⅱ…魔法攻撃が４上昇"
+set-string (global-string d106) "■魔攻Ⅲ…魔法攻撃が６上昇"
+set-string (global-string d107) "■魔攻Ⅳ…魔法攻撃が８上昇"
+set-string (global-string d108) "■魔攻Ⅴ…魔法攻撃が１０上昇"
+mov (global-int 14959d) 58c
+set-string (global-string cb4e) "【効果パラメータ】　魔防"
+mov (global-int 149985) 39f7
+set-string (global-string d10a) "魔法防御が上昇します。"
+set-string (global-string d10b) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d10c) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d10e) "■魔防Ⅰ…魔法防御が２上昇"
+set-string (global-string d10f) "■魔防Ⅱ…魔法防御が４上昇"
+set-string (global-string d110) "■魔防Ⅲ…魔法防御が６上昇"
+set-string (global-string d111) "■魔防Ⅳ…魔法防御が８上昇"
+set-string (global-string d112) "■魔防Ⅴ…魔法防御が１０上昇"
+mov (global-int 14959e) 596
+set-string (global-string cb4f) "【効果パラメータ】　速度"
+mov (global-int 149986) 39f8
+set-string (global-string d114) "敏捷が上昇します。"
+set-string (global-string d115) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d116) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d118) "■速度Ⅰ…敏捷が２上昇"
+set-string (global-string d119) "■速度Ⅱ…敏捷が４上昇"
+set-string (global-string d11a) "■速度Ⅲ…敏捷が６上昇"
+set-string (global-string d11b) "■速度Ⅳ…敏捷が８上昇"
+set-string (global-string d11c) "■速度Ⅴ…敏捷が１０上昇"
+mov (global-int 14959f) 5a0
+set-string (global-string cb50) "【効果パラメータ】　痛打"
+mov (global-int 149987) 39f9
+set-string (global-string d11e) "痛打が上昇します。"
+set-string (global-string d11f) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d120) "効果は全てのレベル固定で５ターン持続します。"
+set-string (global-string d122) "■痛打Ⅰ…痛打が２上昇"
+set-string (global-string d123) "■痛打Ⅱ…痛打が４上昇"
+set-string (global-string d124) "■痛打Ⅲ…痛打が６上昇"
+set-string (global-string d125) "■痛打Ⅳ…痛打が８上昇"
+set-string (global-string d126) "■痛打Ⅴ…痛打が１０上昇"
+mov (global-int 1495a0) 5aa
+set-string (global-string cb51) "【効果パラメータ】　歩低"
+mov (global-int 149988) 39fa
+set-string (global-string d128) "移動力が低下します。"
+set-string (global-string d129) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d12a) "効果は全てのレベル固定で永続します。"
+set-string (global-string d12c) "■歩低Ⅰ…移動力が１低下"
+set-string (global-string d12d) "■歩低Ⅱ…移動力が２低下"
+set-string (global-string d12e) "■歩低Ⅲ…移動力が３低下"
+set-string (global-string d12f) "■歩低Ⅳ…移動力が４低下"
+set-string (global-string d130) "■歩低Ⅴ…移動力が５低下"
+mov (global-int 1495a1) 5b4
+set-string (global-string cb52) "【効果パラメータ】　溜め"
+mov (global-int 149989) 39fb
+set-string (global-string d132) "チャージスキルを持つ武器を装備することで発動します。"
+set-string (global-string d133) "攻撃することでチャージ段階が上昇します。"
+set-string (global-string d135) "チャージスキルには必要チャージレベルが存在し、"
+set-string (global-string d136) "チャージが溜まると使用可能になります。"
+set-string (global-string d138) "使用後はチャージレベルが０に戻ります。"
+mov (global-int 1495a2) 23a
+set-string (global-string cb53) "【城砦】　城砦効果"
+mov (global-int 14998a) 39fc
+set-string (global-string d13c) "グアラクーナ城砦に、施設を配置することで発生します。"
+set-string (global-string d13d) "配置する施設の種類によって様々な効果が発生します。"
+set-string (global-string d13f) "施設単体を配置すると『配置効果』の欄が、結陣を成立"
+set-string (global-string d140) "させると『結陣効果』の欄に数値が加算されていきます。"
+set-string (global-string d141) "小数点以下の数値は能力に反映されません。"
+mov (global-int 1495a3) 244
+set-string (global-string cb54) "【城砦】　城砦モード／訪問"
+mov (global-int 14998b) 39fd
+set-string (global-string d146) "各種施設の利用や、城砦内の探索ができます。"
+set-string (global-string d147) "仲間との親睦イベントなどが発生します。"
+mov (global-int 1495a4) 24e
+set-string (global-string cb55) "【城砦】　城砦モード／配置"
+mov (global-int 14998c) 39fe
+set-string (global-string d150) "製作した施設を城砦に配置することができます。"
+set-string (global-string d151) "重要な施設は固定配置になります。"
+set-string (global-string d153) "重要以外の施設は移動や保管も自由に変更可能です。"
+set-string (global-string d154) "『城砦拡張図面』を製作することで、配置できる区画が"
+set-string (global-string d155) "開拓されていきます。"
+set-string (global-string d157) "２ｘ２などの建物サイズが大きいものは"
+set-string (global-string d158) "配置先の一番下が建物の頂点になります。"
+mov (global-int 1495a5) 258
+set-string (global-string cb56) "【城砦】　結陣／双結陣"
+mov (global-int 14998d) 39ff
+set-string (global-string d15a) "双結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d15b) "味方ユニットの『命中』が『２』上昇します。"
+set-string (global-string d15d) "成立した結陣の数でその値は上昇し、別の双結陣と重な"
+set-string (global-string d15e) "ることで重複発動します。"
+mov (global-int 1495a6) 262
+set-string (global-string cb57) "【城砦】　結陣／列結陣"
+mov (global-int 14998e) 3a00
+set-string (global-string d164) "列結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d165) "味方ユニットの『回避』が『２』上昇します。"
+set-string (global-string d167) "成立した結陣の数でその値は上昇し、別の列結陣と重な"
+set-string (global-string d168) "ることで重複発動します。"
+mov (global-int 1495a7) 26c
+set-string (global-string cb58) "【城砦】　結陣／箱結陣"
+mov (global-int 14998f) 3a01
+set-string (global-string d16e) "箱結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d16f) "味方ユニットの『最大ＨＰ』が『３』、"
+set-string (global-string d170) "『最大ＳＰ』と『最大ＦＳ』が『１』上昇します。"
+set-string (global-string d172) "成立した結陣の数でその値は上昇し、別の箱結陣と重な"
+set-string (global-string d173) "ることで重複発動します。"
+mov (global-int 1495a8) 276
+set-string (global-string cb59) "【城砦】　結陣／突結陣"
+mov (global-int 149990) 3a02
+set-string (global-string d178) "突結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d179) "味方ユニットの『攻撃』が『１』上昇します。"
+set-string (global-string d17b) "成立した結陣の数でその値は上昇し、別の突結陣と重な"
+set-string (global-string d17c) "ることで重複発動します。"
+mov (global-int 1495a9) 280
+set-string (global-string cb5a) "【城砦】　結陣／鈎結陣"
+mov (global-int 149991) 3a03
+set-string (global-string d182) "鈎結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d183) "味方ユニットの『防御』が『１』上昇します。"
+set-string (global-string d185) "成立した結陣の数でその値は上昇し、別の鈎結陣と重な"
+set-string (global-string d186) "ることで重複発動します。"
+mov (global-int 1495aa) 28a
+set-string (global-string cb5b) "【城砦】　結陣／雷結陣"
+mov (global-int 149992) 3a04
+set-string (global-string d18c) "雷結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d18d) "味方ユニットの『敏捷』が『１』、"
+set-string (global-string d18e) "『運』と『痛打』が『０．５』上昇します。"
+set-string (global-string d190) "成立した結陣の数でその値は上昇し、別の雷結陣と重な"
+set-string (global-string d191) "ることで重複発動します。"
+mov (global-int 1495ab) 294
+set-string (global-string cb5c) "【城砦】　探索"
+mov (global-int 149993) 3a05
+set-string (global-string d196) "グアラクーナ城砦内の探索を行うことができます。"
+mov (global-int 1495ac) 29e
+set-string (global-string cb5d) "【城砦】　工房"
+mov (global-int 149994) 3a06
+set-string (global-string d1a0) "迷宮などで入手した素材を使って様々な施設やアイテム、"
+set-string (global-string d1a1) "装備品の『製作』ができます。"
+set-string (global-string d1a3) "余った装備品や壊れた装備品がある場合は『分解』する"
+set-string (global-string d1a4) "ことができ、分解で得た錬石を使用することで、装備品"
+set-string (global-string d1a5) "を『強化』することができます。"
+mov (global-int 1495ad) 2a8
+set-string (global-string cb5e) "【城砦】　錬成／製作"
+mov (global-int 149995) 3a07
+set-string (global-string d1aa) "工房で実行可能になります。"
+set-string (global-string d1ab) "製作プランに必要な素材を使い、施設や装備品など、"
+set-string (global-string d1ac) "物語の進行に必要なアイテムを製作することができます。"
+set-string (global-string d1ae) "各プランは、初回に限り女神力を獲得する事ができます。"
+mov (global-int 1495ae) 2b2
+set-string (global-string cb5f) "【城砦】　錬成／分解"
+mov (global-int 149996) 3a08
+set-string (global-string d1b4) "工房で実行可能になります。"
+set-string (global-string d1b5) "分解することで強化素材である『錬石』を獲得できます。"
+set-string (global-string d1b7) "複数の錬石に分解可能な武具がある為"
+set-string (global-string d1b8) "錬石が９９個を超えても分解は可能ですが、"
+set-string (global-string d1b9) "一度に所持できる錬石は最大数は９９個です。"
+mov (global-int 1495af) 2bc
+set-string (global-string cb60) "【城砦】　錬成／強化"
+mov (global-int 149997) 3a09
+set-string (global-string d1be) "工房で実行可能になります。"
+set-string (global-string d1bf) "迷宮で獲得するか、分解で得た『錬石』を使用して装備"
+set-string (global-string d1c0) "品の強化を行うことができます。"
+mov (global-int 1495b0) 2c6
+set-string (global-string cb61) "【城砦】　訓練"
+mov (global-int 149998) 3a0a
+set-string (global-string d1c8) "捕獲した魔物の協力を得て召喚ユニットを訓練します。"
+set-string (global-string d1c9) "召喚ユニットの能力が上昇する代わりに、訓練に協力し"
+set-string (global-string d1ca) "た魔物は解放されます。"
+mov (global-int 1495b2) 2da
+set-string (global-string cb63) "【迷宮】　占有率"
+mov (global-int 14999a) 3a0b
+set-string (global-string d1dc) "迷宮マップにおける各勢力別の占有度合を指します。"
+set-string (global-string d1de) "占有率は、ミッションのＣＯＭＰＬＥＴＥ条件の１つに"
+set-string (global-string d1df) "も含まれております。"
+mov (global-int 1495b3) 2e4
+set-string (global-string cb64) "【迷宮】　指揮力"
+mov (global-int 14999b) 3a0c
+set-string (global-string d1e6) "ユニットが出撃する為に必要なコストの最大値です。"
+set-string (global-string d1e7) "ユニットごとに固有の数値を所持しており、ゲーム内で"
+set-string (global-string d1e8) "は『使用値／最大値』と表示されます。"
+set-string (global-string d1ea) "使用値が最大値を上回ると、出撃中のユニット全てに"
+set-string (global-string d1eb) "移動ペナルティが発生します。"
+mov (global-int 1495b4) 2ee
+set-string (global-string cb65) "【迷宮】　ＣＯＳＴ（コスト）"
+mov (global-int 14999c) 3a0d
+set-string (global-string d1f0) "ユニットが出撃するために必要な値になります。"
+set-string (global-string d1f1) "その値はユニットにより異なります。"
+set-string (global-string d1f2) "値はユニットがクラスチェンジすると上昇します。"
+mov (global-int 1495b5) 2f8
+set-string (global-string cb66) "【迷宮】　ターン"
+mov (global-int 14999d) 3a0e
+set-string (global-string d1fa) "味方ユニット全員の行動が終了すると、他勢力が行動し、"
+set-string (global-string d1fb) "全ての勢力の行動が終了すると、１ターンが経過します。"
+set-string (global-string d1fd) "ゲーム内では『現在ターン／最大ターン』と表示され"
+set-string (global-string d1fe) "最大ターン到達でゲームオーバーとなる場合があります。"
+mov (global-int 1495b6) 302
+set-string (global-string cb67) "【迷宮】　ミニマップ"
+mov (global-int 14999e) 3a0f
+set-string (global-string d204) "画面左上に表示されている、迷宮の縮小地図になります。"
+set-string (global-string d206) "地図の上部に表示されている各ボタンに対応していて、"
+set-string (global-string d207) "表示の切り替えや、非表示の選択などが可能になります。"
+set-string (global-string d209) "拡縮ボタンを操作をすることで迷宮表示が拡縮可能です。"
+mov (global-int 1495b7) 30c
+set-string (global-string cb68) "【迷宮】　勢力"
+mov (global-int 14999f) 3a10
+set-string (global-string d20e) "迷宮内で、対立や同盟となる最大５つの勢力を指します。"
+set-string (global-string d20f) "対立勢力と接触した場合は戦闘パートに移行します。"
+set-string (global-string d211) "それぞれの勢力には色分けがされています。"
+set-string (global-string d212) "『青色』は自勢力。"
+set-string (global-string d213) "『緑色』は友軍勢力。"
+set-string (global-string d214) "『赤色』は敵勢力。"
+set-string (global-string d215) "『黄色』は第三勢力（敵勢力の同盟など）。"
+set-string (global-string d216) "『灰色』は無所属で、どの勢力とも敵対状態になります。"
+mov (global-int 1495b8) 316
+set-string (global-string cb69) "【迷宮】　出撃ユニット"
+mov (global-int 1499a0) 3a11
+set-string (global-string d218) "迷宮画面の下に表示されている出撃中ユニットです。"
+set-string (global-string d219) "出撃中のユニットを選択することで、操作対象を切り替"
+set-string (global-string d21a) "えたり、空欄の選択で新規出撃が可能となります。"
+set-string (global-string d21c) "マウスホイールでも操作ユニットを切り替えられます。"
+mov (global-int 1495b9) 320
+set-string (global-string cb6a) "【迷宮】　出撃する"
+mov (global-int 1499a1) 3a12
+set-string (global-string d222) "ユニットを出撃させるには指揮力が必要になります。"
+set-string (global-string d223) "指揮力の最大値を上回っても出撃は可能ですが、全ての"
+set-string (global-string d224) "ユニットの移動にペナルティが発生します。"
+set-string (global-string d226) "出撃しているユニットが帰還した場合、そのユニットが"
+set-string (global-string d227) "使用していた指揮力は使用前の値に戻ります。"
+mov (global-int 1495ba) 32a
+set-string (global-string cb6b) "【迷宮】　撤退する"
+mov (global-int 1499a2) 3a13
+set-string (global-string d22c) "一度クリアした迷宮や、ＦＲＥＥとなっている迷宮では"
+set-string (global-string d22d) "画面の上部に『戦場から撤退する』ボタンが登場し、こ"
+set-string (global-string d22e) "れを使用すると即座に迷宮から脱出することができます。"
+set-string (global-string d230) "撤退のペナルティはありませんが、日数は経過します。"
+mov (global-int 1495bb) 334
+set-string (global-string cb6c) "【迷宮】　移動"
+mov (global-int 1499a3) 3a14
+set-string (global-string d236) "迷宮を１マス移動する際にＦＳを１消費します。"
+set-string (global-string d237) "移動地形によってＦＳ消費量が増えることがあります。"
+set-string (global-string d239) "敵勢力が占有している部屋を移動する時は、部屋ＺＯＣ"
+set-string (global-string d23a) "の関係で、１歩ずつしか移動できません。"
+set-string (global-string d23c) "指揮力の最大値が上回っている場合、全てのユニットの"
+set-string (global-string d23d) "移動にＦＳ消費量×３のペナルティが発生します。"
+mov (global-int 1495bc) 33e
+set-string (global-string cb6d) "【迷宮】　行動前に戻る"
+mov (global-int 1499a4) 3a15
+set-string (global-string d240) "ユニットの行動終了後に、迷宮マップ画面の右下に出る"
+set-string (global-string d241) "『行動前に戻る』ボタンを押すことで、１つ前の行動ま"
+set-string (global-string d242) "で巻き戻すことができます。"
+set-string (global-string d244) "戻る先のユニット及びターン数はボタンに表示されます。"
+set-string (global-string d246) "ショートカットとして『ＳＨＩＦＴ』ボタンを押すこと"
+set-string (global-string d247) "でも行えます。"
+mov (global-int 1495bd) 348
+set-string (global-string cb6e) "【迷宮】　出撃設定"
+mov (global-int 1499a5) 3a16
+set-string (global-string d24a) "全体マップからの迷宮選択時に、ユニットの初期配置が"
+set-string (global-string d24b) "できます。"
+set-string (global-string d24c) "出撃設定時の最大指揮力には注意が必要です。"
+mov (global-int 1495be) 352
+set-string (global-string cb6f) "【迷宮】　ミッションと報酬"
+mov (global-int 1499a6) 3a17
+set-string (global-string d254) "各迷宮に設定されている報酬リストです。"
+set-string (global-string d255) "主に、敵関係・配置物関係・占有率関係・ターン制限など"
+set-string (global-string d256) "様々な特定条件を達成することで獲得できます。"
+mov (global-int 1495bf) 35c
+set-string (global-string cb70) "【迷宮】　地形属性"
+mov (global-int 1499a7) 3a18
+set-string (global-string d25e) "迷宮の地形の中には、属性を持つ場所が存在します。"
+set-string (global-string d25f) "水中や泥沼などがあり、地形に適したスキルを装備して"
+set-string (global-string d260) "いれば、能力アップなどの恩恵が得られます。"
+mov (global-int 1495c0) 366
+set-string (global-string cb71) "【迷宮/配置物】　拠点"
+mov (global-int 1499a8) 3a19
+set-string (global-string d268) "迷宮画面における最初の出撃地点です。"
+set-string (global-string d269) "基本的に敵勢力に制圧されると、ゲームオーバーになる"
+set-string (global-string d26a) "重要な場所です。"
+set-string (global-string d26c) "ユニットがそのマスに乗ることで、ターン開始時に多少"
+set-string (global-string d26d) "の回復や防御効果が得られます。"
+mov (global-int 1495c1) 370
+set-string (global-string cb72) "【迷宮/配置物】　精域の芽"
+mov (global-int 1499a9) 3a1a
+set-string (global-string d272) "特定の迷宮に存在する植物の芽になります。"
+set-string (global-string d273) "誰でも活性化させることが可能です。"
+set-string (global-string d275) "初回時に活性化することで女神力を獲得し、探索中の迷"
+set-string (global-string d276) "宮に限り指揮力が増加します。"
+mov (global-int 1495c2) 37a
+set-string (global-string cb73) "【迷宮/配置物】　祭祀"
+mov (global-int 1499aa) 3a1b
+set-string (global-string d27c) "迷宮内に存在する祭祀の『石碑』や『祠』を指します。"
+set-string (global-string d27d) "鍛梁師スキルを持っていると修復が可能になります。"
+set-string (global-string d27f) "初回時に修復することで女神力を獲得し、探索中の迷宮"
+set-string (global-string d280) "に限り指揮力が増加します。"
+mov (global-int 1495c3) 384
+set-string (global-string cb74) "【迷宮/配置物】　出撃門"
+mov (global-int 1499ab) 3a1c
+set-string (global-string d286) "制圧することで、拠点と同じく出撃させることが可能に"
+set-string (global-string d287) "なります。"
+set-string (global-string d289) "ユニットがそのマスに乗ることで、ターン開始時に多少"
+set-string (global-string d28a) "の回復や防御効果が得られます。"
+set-string (global-string d28c) "敵勢力に制圧されると使用できなくなります。"
+mov (global-int 1495c4) 38e
+set-string (global-string cb75) "【迷宮/配置物】　魔物の渦"
+mov (global-int 1499ac) 3a1d
+set-string (global-string d290) "魔物系ユニットが増援として出現する地点になります。"
+set-string (global-string d291) "ここを制圧することで、それ以上の出現を抑えることが"
+set-string (global-string d292) "できます。"
+set-string (global-string d294) "魔物の渦ごとに、魔物の種類や出現タイミングが異なる"
+set-string (global-string d295) "ので注意が必要です。"
+mov (global-int 1495c5) 398
+set-string (global-string cb76) "【迷宮/配置物】　回復の羽"
+mov (global-int 1499ad) 3a1e
+set-string (global-string d29a) "この場所で待機すると全てのステータスを回復します。"
+set-string (global-string d29c) "回復の羽は使用回数別で２種類存在します。"
+set-string (global-string d29d) "■回復の羽（白）…何度でも使用可能"
+set-string (global-string d29e) "■回復の羽（赤）…一度のみ使用可能"
+set-string (global-string d2a0) "敵味方関係なく使用可能なので注意が必要です。"
+mov (global-int 1495c6) 3a2
+set-string (global-string cb77) "【迷宮/配置物】　転移門"
+mov (global-int 1499ae) 3a1f
+set-string (global-string d2a4) "転移門の上で待機して『転移』を選択すると、指定され"
+set-string (global-string d2a5) "た別の場所へ瞬時に移動できます。"
+set-string (global-string d2a7) "基本的には２つの転移門が繋がっていますが、一方通行"
+set-string (global-string d2a8) "の場合もあります。"
+mov (global-int 1495c7) 3ac
+set-string (global-string cb78) "【迷宮/配置物】　扉"
+mov (global-int 1499af) 3a20
+set-string (global-string d2ae) "迷宮内にある扉は『開錠』スキルを所持していることで"
+set-string (global-string d2af) "開閉することが可能になります。"
+set-string (global-string d2b1) "また、特定の『鍵』が必要な扉も存在し、対応した鍵を"
+set-string (global-string d2b2) "用いて開くことができます。"
+set-string (global-string d2b3) "■青銅の扉…青銅の導鍵と『開錠』所持で開閉可能"
+set-string (global-string d2b4) "■白銀の扉…白銀の導鍵と『開錠』所持で開閉可能"
+mov (global-int 1495c8) 3b6
+set-string (global-string cb79) "【迷宮/配置物】　採取ポイント"
+mov (global-int 1499b0) 3a21
+set-string (global-string d2b8) "プランの製作に必要な素材を入手できる場所になります。"
+set-string (global-string d2b9) "必要なスキルはなく、誰でも採取が可能です。"
+set-string (global-string d2bb) "採取したアイテムは、迷宮クリア時に確定され、再訪問"
+set-string (global-string d2bc) "で同じ採取が可能になります。"
+mov (global-int 1495c9) 3c0
+set-string (global-string cb7a) "【迷宮/配置物】　発掘ポイント"
+mov (global-int 1499b1) 3a22
+set-string (global-string d2c2) "プランの製作に必要な素材を入手できる場所になります。"
+set-string (global-string d2c3) "『発掘』スキルを所持していないと実行できません。"
+set-string (global-string d2c5) "発掘したアイテムは、迷宮クリア時に確定され、再訪問"
+set-string (global-string d2c6) "で同じ発掘が可能になります。"
+mov (global-int 1495ca) 3c5
+set-string (global-string cb7b) "【迷宮/配置物】　罠"
+mov (global-int 1499b2) 3a23
+set-string (global-string d2cc) "迷宮内に配置されている罠で、様々な効果があります。"
+set-string (global-string d2cd) "■針…停止時にＨＰに２ダメージ"
+set-string (global-string d2ce) "■炎…停止時にＨＰに３ダメージ"
+set-string (global-string d2cf) "■電流…停止時にＨＰに１ダメージ、『麻痺』＋１"
+set-string (global-string d2d0) "■毒沼…停止時にＨＰに１ダメージ、『猛毒』＋１"
+set-string (global-string d2d1) "■水沼…停止時にＨＰに１ダメージ、『水流』＋１"
+set-string (global-string d2d2) "■泥沼…停止時にＦＳに１ダメージ"
+set-string (global-string d2d3) "■活力拡散結界…停止時にＨＰに３ダメージ"
+set-string (global-string d2d4) "■技力拡散結界…停止時にＳＰに３ダメージ"
+set-string (global-string d2d5) "■意気消沈結界…停止時にＦＳに５ダメージ"
+mov (global-int 1495cb) 3ca
+set-string (global-string cb7c) "【迷宮/配置物】　女神カード"
+mov (global-int 1499b3) 3a24
+set-string (global-string d2d6) "迷宮に落ちているカードで、様々な効果が発生します。"
+set-string (global-string d2d7) "ステータスを回復するものや、アイテムを入手するもの、"
+set-string (global-string d2d8) "ダメージを受けたり、状態異常を受ける効果など"
+set-string (global-string d2d9) "拾った時によって発生するイベントは様々になります。"
+mov (global-int 1495cc) 3cf
+set-string (global-string cb7d) "【迷宮/配置物】　イベント"
+mov (global-int 1499b4) 3a25
+set-string (global-string d2e0) "画面上に『！』と表示されたイベント発生地点です。"
+set-string (global-string d2e1) "このマスにユニットを待機させると、イベントが発生し"
+set-string (global-string d2e2) "ます。"
+set-string (global-string d2e4) "どのユニットでも発生するものと、特定ユニットでのみ"
+set-string (global-string d2e5) "発生するものがありますので、地形情報にて確認してく"
+set-string (global-string d2e6) "ださい。"
+mov (global-int 1495cd) 35d
+set-string (global-string cb7e) "【迷宮】　戦闘（近接攻撃）"
+mov (global-int 1499b5) 3a26
+set-string (global-string d2ea) "射程０の攻撃を持っていると、移動範囲内の敵ユニット"
+set-string (global-string d2eb) "がいるマスに『戦闘』マークが表示されます。"
+set-string (global-string d2ec) "このマスをクリックすると、ユニットがそのマスに"
+set-string (global-string d2ed) "移動して近接攻撃による戦闘が行われます。"
+set-string (global-string d2ef) "防御側を撃破した場合、攻撃側ユニットはそのマスに"
+set-string (global-string d2f0) "留まり、占有処理や配置物処理が行われます。"
+set-string (global-string d2f1) "撃破できなかった場合は、移動ルートに沿って誰もいな"
+set-string (global-string d2f2) "いマスまで戻ります。"
+mov (global-int 1495ce) 35e
+set-string (global-string cb7f) "【迷宮】　射撃（間接攻撃）"
+mov (global-int 1499b6) 3a27
+set-string (global-string d2f4) "射程１以上の攻撃を持っていると、射程内の敵ユニット"
+set-string (global-string d2f5) "がいるマスに『射撃』マークが表示されます。"
+set-string (global-string d2f6) "このマスをクリックすると、ユニットがその場に留まっ"
+set-string (global-string d2f7) "たまま、間接攻撃による戦闘が行われます。"
+set-string (global-string d2f9) "近接攻撃とは異なり、敵を倒しても占有処理や配置物処"
+set-string (global-string d2fa) "理は行われず、ユニットも移動しません。"
+mov (global-int 1495cf) 360
+set-string (global-string cb80) "【迷宮】　支援"
+mov (global-int 1499b7) 3a28
+set-string (global-string d2fe) "支援には、ユニットの回復や強化、転送などがあります。"
+set-string (global-string d2ff) "使用するにはＳＰを消費します。"
+mov (global-int 1495d0) 35f
+set-string (global-string cb81) "【迷宮】　範囲（範囲攻撃）"
+mov (global-int 1499b8) 3a29
+set-string (global-string d308) "一度に複数の敵を攻撃できる特殊技です。"
+set-string (global-string d309) "移動前にユニット自身を選択すると選択できます。"
+set-string (global-string d30b) "効果範囲は種類によって異なり、射程内であっても壁の"
+set-string (global-string d30c) "回り込みや、未開拓の場所の攻撃はできません。"
+set-string (global-string d30e) "攻撃回数は１回のみで、経験値は敵１体に対して通常の"
+set-string (global-string d30f) "半分の獲得量になります。"
+set-string (global-string d311) "一度使用したあとは、一定の充填時間が必要となります。"
+mov (global-int 1495d1) 2db
+set-string (global-string cb82) "【迷宮】　部屋ＺＯＣ"
+mov (global-int 1499b9) 3a2a
+set-string (global-string d312) "部屋に単一勢力のユニットや拠点しかない場合、部屋全"
+set-string (global-string d313) "部がその勢力の占有下となり、マスの色が変わります。"
+set-string (global-string d315) "敵対する勢力色になったマスは、１歩ずつしか進めない"
+set-string (global-string d316) "ため、これを活用することで敵の進軍を抑えることがで"
+set-string (global-string d317) "きます。"
+mov (global-int 1495d2) 30d
+set-string (global-string cb83) "【迷宮】　同盟"
+mov (global-int 1499ba) 3a2b
+set-string (global-string d31c) "ステージの中には、異なる勢力同士が同盟として協力し"
+set-string (global-string d31d) "合うものがあります。"
+set-string (global-string d31e) "同盟同士は、互いに戦闘することはなく、部屋ＺＯＣに"
+set-string (global-string d31f) "に移動制限もありません。"
+set-string (global-string d321) "マスの占有処理は、通常と同様に行われます。"
+mov (global-int 1495d3) 363
+set-string (global-string cb84) "【迷宮】　視界"
+mov (global-int 1499bb) 3a2c
+set-string (global-string d326) "迷宮の中には、天井に覆われて中の様子を確認できない"
+set-string (global-string d327) "場所があります。"
+set-string (global-string d328) "これらの場所は、実際にユニットが踏み入ることで部屋"
+set-string (global-string d329) "単位の視界が開けるようになります。"
+set-string (global-string d32b) "視界が開けていないマスに入って、そこに敵が居た場合、"
+set-string (global-string d32c) "近接攻撃を持たないユニットは一方的に攻撃される恐れ"
+set-string (global-string d32d) "があるので注意が必要です。"
+set-string (global-string d32e) "両者とも近接攻撃を持っていない場合は、戦闘不成立で"
+set-string (global-string d32f) "攻撃を行わずに戦闘終了します。"
+mov (global-int 1495d4) 364
+set-string (global-string cb85) "【迷宮】　ステータス表示"
+mov (global-int 1499bc) 3a2d
+set-string (global-string d330) "迷宮のマス選択中に右クリックするか、タッチ右押しで"
+set-string (global-string d331) "地形・配置物・ユニットの情報を確認できます。"
+set-string (global-string d333) "視界の開けていないマスや、マス以外の場所はメニュー"
+set-string (global-string d334) "画面が表示されます。"
+mov (global-int 1495d5) 365
+set-string (global-string cb86) "【迷宮】　ショートカット"
+mov (global-int 1499bd) 3a2e
+set-string (global-string d33a) "迷宮では一部の機能がショートカット対応しています。"
+set-string (global-string d33c) "■ＣＴＲＬ…ユニットの移動アニメスキップ"
+set-string (global-string d33d) "■ＳＨＩＦＴ…行動やり直し"
+set-string (global-string d33e) "■ＳＰＡＣＥ…床勢力カラー表示ＯＮ／ＯＦＦ"
+mov (global-int 1495d6) 3e9
+set-string (global-string cb87) "【戦闘】　再行動"
+mov (global-int 1499be) 3a2f
+set-string (global-string d344) "スキルの中には、行動終了後に再び行動できるものが存"
+set-string (global-string d345) "在します。"
+set-string (global-string d347) "確率で発動する『再行動』と、必ず発動する『二回行動』"
+set-string (global-string d348) "の２種類で、同じユニットが３回目の行動を行うことは"
+set-string (global-string d349) "ありません。"
+mov (global-int 1495d8) 3eb
+set-string (global-string cb89) "【戦闘】　捕獲"
+mov (global-int 1499c0) 3a30
+set-string (global-string d358) "施設『訓練場』を作ると、敵を捕獲できるようになりま"
+set-string (global-string d359) "す。"
+set-string (global-string d35b) "敵を捕獲するためには、『捕獲攻撃』などの捕獲効果の"
+set-string (global-string d35c) "あるスキルを使用して敵を倒す必要があります。"
+set-string (global-string d35e) "一部の敵やボスなどは捕獲できません。"
+mov (global-int 1495d9) 3ed
+set-string (global-string cb8a) "【戦闘】　捕獲一覧"
+mov (global-int 1499c1) 3a31
+set-string (global-string d362) "捕獲したユニットは、メニュー画面や訓練場画面にある"
+set-string (global-string d363) "『捕獲一覧』ボタンを押すことで確認できます。"
+set-string (global-string d365) "閲覧するだけではなく、不要なユニットを解放したり、"
+set-string (global-string d366) "解放や訓練で消したくないユニットをロックすることも"
+set-string (global-string d367) "できます。"
+mov (global-int 1495da) 2d1
+set-string (global-string cb8b) "【全体マップ】　迷宮"
+mov (global-int 1499c2) 3a32
+set-string (global-string d36c) "全体マップにて表示される『迷宮』タイプの拠点は、迷"
+set-string (global-string d36d) "宮選択できるものです。"
+set-string (global-string d36f) "戦闘がなく、イベントのみは『ＥＶＥＮＴ』表示され、"
+set-string (global-string d370) "進行に関係ない場合は『ＦＲＥＥ』表示されます。"
+set-string (global-string d372) "選択時に迷宮の詳細を参照することも可能です。"
+mov (global-int 1495db) 2d2
+set-string (global-string cb8c) "【全体マップ】　街"
+mov (global-int 1499c3) 3a33
+set-string (global-string d376) "全体マップ内にある『街』タイプの拠点は、イベント発"
+set-string (global-string d377) "生時のみ訪問することができるものです。"
+set-string (global-string d378) "ただし、訪問イベントの中には、戦闘が発生する特殊な"
+set-string (global-string d379) "ものが存在します。"
+mov (global-int 1495dc) 2d3
+set-string (global-string cb8d) "【全体マップ】　城砦"
+mov (global-int 1499c4) 3a34
+set-string (global-string d380) "全体マップで城砦を選ぶと、城砦マップ画面に入ります。"
+set-string (global-string d381) "画面右下の『城砦へ』ボタンを押すことでも入れます。"
+mov (global-int 1495dd) 2d4
+set-string (global-string cb8e) "【全体マップ】　お店"
+mov (global-int 1499c5) 3a35
+set-string (global-string d38a) "全体マップで『お店』タイプの拠点を選ぶと、アイテム"
+set-string (global-string d38b) "の売買を行えます。"
+set-string (global-string d38c) "取引終了後は、全体マップに戻ります。"
+mov (global-int 1495de) 23b
+set-string (global-string cb8f) "【城砦】　マイセット"
+mov (global-int 1499c6) 3a36
+set-string (global-string d394) "城砦マップ上の施設配置を『マイセット』に保存したり、"
+set-string (global-string d395) "保存した『マイセット』を読み込み、施設配置を変える"
+set-string (global-string d396) "こともできます。"
+set-string (global-string d397) "状況に合わせて城砦効果を使い分けたいときに便利です。"
+mov (global-int 1495df) 250
+set-string (global-string cb90) "【城砦】　配置"
+mov (global-int 1499c7) 3a37
+set-string (global-string d39e) "すでに製作した施設を、城砦に配置することができます。"
+set-string (global-string d3a0) "『配置』モードに変えたあと、置きたい場所を選択して"
+set-string (global-string d3a1) "置きたい施設を選択します。"
+set-string (global-string d3a3) "一度置いたあとも、移動や保管することが可能です。"
+mov (global-int 1495e0) 251
+set-string (global-string cb91) "【城砦】　移動"
+mov (global-int 1499c8) 3a38
+set-string (global-string d3a8) "すでに城砦に配置した施設を移動することができます。"
+set-string (global-string d3a9) "『配置』モードの時に、配置済み施設を選んで『移動』"
+set-string (global-string d3aa) "を選択、そのあと移動させたい場所を選びます。"
+set-string (global-string d3ac) "移動したあとも保管は可能ですが、仲間の家などの一部"
+set-string (global-string d3ad) "施設は移動ができません。"
+mov (global-int 1495e1) 252
+set-string (global-string cb92) "【城砦】　保管"
+mov (global-int 1499c9) 3a39
+set-string (global-string d3b2) "すでに城砦に配置した施設を保管することができます。"
+set-string (global-string d3b3) "『配置』モードの時に、配置済み施設を選んで『保管』"
+set-string (global-string d3b4) "を選択すると、施設が城砦マップから撤去されます。"
+set-string (global-string d3b6) "撤去した施設は消滅せず、所持状態に戻ります。"
+set-string (global-string d3b7) "仲間の家などの一部施設は保管ができません。"
+mov (global-int 1495e8) 41
+set-string (global-string cb99) "【基本】　ルートマップ"
+mov (global-int 1499d0) 3a3a
+set-string (global-string d3f8) "メニューから『ルートマップ』を選択すると確認するこ"
+set-string (global-string d3f9) "とができます。"
+set-string (global-string d3fa) "ルートマップには次に何をするか目的が記されています"
+set-string (global-string d3fb) "ので、攻略に詰まったら、ここを確認してみましょう。"
+exit

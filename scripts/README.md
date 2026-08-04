@@ -6,7 +6,9 @@
 E:\Games\Eushully\天結\
 ├── raw\       软连接(junction) -> 游戏本体目录(只读参照)
 ├── install\   可运行测试树（与本体完全独立的全量真拷贝，含 DATA1-8 解包目录）
-├── data\      文案语料（341 个反汇编 txt，松散版基线，由人工编辑）
+├── data\      只读比较基线（341 个反汇编 txt，原始日文，不再修改）
+├── src\       可编辑开发源（341 个 txt，含翻译语法）
+├── locale\    校对/机翻视图（extract 生成；当前仅 OPINIT1.json）
 ├── scripts\   本脚本目录
 ├── install-manifest.json   install 文件 MD5
 └── raw-manifest.json       raw（游戏本体）文件 MD5
@@ -26,10 +28,10 @@ npm run manifest-all       # 同时更新两份 manifest
 npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
-npm run extract-all        # 为 data 下尚无基线的脚本生成 locale/<脚本>.json（不依赖 git）
-npm run extract -- <脚本>  # 为单个脚本生成基线（已存在则跳过，--force 从 data txt 重建）
-npm run apply -- <脚本>    # 编码译文写回 data/<脚本>.txt（校验字典缺失字符）
-npm run assemble -- <脚本> # SJIS 校验 → Decompiler 汇编 → install → 回读验证
+npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
+npm run extract -- <脚本>  # src → locale/<脚本>.json（校对/机翻视图，--force 重建）
+npm run extract-all        # 为 src 下尚无 locale 视图的脚本生成视图
+npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法）
 ```
 
 ## 文件策略（config.js）
@@ -104,31 +106,33 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 注意：SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
 （`python font_CN_JP.py MSGothic_WenQuanYi.ttf`，依赖 fonttools）。
 
-## 标准翻译流程（locale）
+## 标准翻译流程（src 源文件 + 翻译语法）
 
-**原则：翻译只改 `locale/` 里的可读简体中文，编码（简体→SJIS 码位映射）由脚本自动完成**；
-`data\*.txt` 是生成产物，不手改。编码机制与 SExtractor 的 JIS 替换导入一致
-（同一份 `subs_cn_jp.json` 字典：可 cp932 编码的字符原样保留，否则查字典映射为日文写法占位，
-渲染时由 Amayui CN 字体还原为简体）。
+**分层**：
+
+- `data\*.txt`：只读比较基线（原始日文），`assemble` 的骨架校验以此为准；
+- `src\*.txt`：可编辑开发源，支持三种翻译语法（组合使用）：
+  - `"原文|译文"` —— 对语法：set-string 等单行简单替换（#1，语法糖）；
+  - `@"译文"` —— 中文标记：重写/新增的文本行（#3）；
+  - `// 原句` —— 注释存档：ADV 等段落重写时把原句注释掉再写新行（#2，汇编器原生跳过 `//`）；
+- `locale\<脚本>.json`：校对/机翻视图（extract 从 src 生成，merge 可写回 src）。
 
 ```bash
 cd scripts
-# 基线已全部生成（341 个 locale/<脚本>.json，orig 为原始日文）；新脚本用 extract/extract-all
-# 编辑 locale/OPINIT1.json 的 trans 字段（可读简体中文）
-npm run apply -- OPINIT1        # 编码译文写回 data/OPINIT1.txt（存在字典缺失字符时报错）
-npm run assemble -- OPINIT1     # SJIS 兜底校验 → Decompiler 汇编 → 安装到 install → 回读验证
+npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码位）→ 骨架校验 → 汇编 → 安装 → 回读
+npm run extract -- OPINIT1    # src → locale 视图（校对/机翻）
+npm run merge -- OPINIT1      # locale 译文 → src（写为对语法）
 ```
 
-文件结构：
+要点：
 
-- `locale/<脚本>.json`：单文件单大对象 `{id: {orig: 原文, trans: 译文}}`，基线已全部入库
-  （extract-all 一次性生成，不依赖 git）；人工直接编辑 `trans` 字段（可读简体中文）；
-- `data/<脚本>.txt`：生成产物（编码后文本），不要手改；
-- 校验失败（字典缺失字符）时 `apply` 拒绝写回，需调整措辞或扩字典（扩字典需同步重建字体）。
-
-注意：`--force` 重建基线会读取**当前** data txt，已 apply 过的脚本 txt 是编码后文本，
-不应重建（基线以入库版本为准）；剧本脚本（SC*.txt）当前只提取 `set-string` 行，
-`show-text` 等行类型待提取器扩展后再刷新。
-
-与 SExtractor 的关系：SExtractor GUI 可做同样的事（其导入即 `generateSubsJis` 做此映射），
-本流程用同一字典脚本化，便于批量与验证；设置界面（OPINIT1，172 条）已按此流程完成并安装。
+- **骨架校验**：除文本行（set-string / show-text / display-furigana / concat）外，所有控制行
+  （label / u 字节码 / jcc / end-text-line 等）必须与 data 基线逐字节一致；误删控制行编译期报错；
+- **外字**（U+E000–E010）：原文中保留（Decompiler 可无损往返），译文不写外字；
+- **编码映射**：与 SExtractor 的 JIS 替换同一字典（`subs_cn_jp.json`），可编码原样、否则日文写法占位、
+  渲染时由 Amayui CN 字体还原简体；字典缺失字符在 assemble 时报错；
+- **注音策略（当前）**：释义/称号类注音保留在 display-furigana 位置（中文释义作注音，
+  避免正文行过长）；纯读音（假名）类注音移除；
+- concat 镜像行 = **紧随其前的 show-text 段**的译文（保持段边界，勿整句镜像；
+  如 SN0000 原式 `show-text "』の"` 后 `concat "』の"`）；当前人工维护，后续可加自动一致性检查；
+- 反汇编结果只用于校验，**永远不要用它重建已翻译脚本的 src**（BIN 只有编码后的文本）。

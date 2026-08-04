@@ -1,0 +1,123 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 5 1 1 1 1 1 }
+====
+
+u00414C60 (local-int 0)
+u0041B5F0 0
+eq (local-int 1) (global-int 132dc8) 1
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000110
+show-text 0 "標準の難易度でプレイします"
+end-text-line 0
+show-text 0 "ストーリーに変更はありません"
+end-text-line 0
+jmp label_00000804
+
+label_00000110
+eq (local-int 1) (global-int 132dc8) 1
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000001cc
+show-text 0 "敵能力や罠配置設定などが厳しい状態でプレイします"
+end-text-line 0
+show-text 0 "ストーリーに変更はありません"
+end-text-line 0
+jmp label_00000804
+
+label_000001cc
+eq (local-int 1) (global-int 132dc8) b
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000268
+show-text 0 "ユニット能力や城砦配置などをクリア時の状態にします"
+end-text-line 0
+jmp label_00000804
+
+label_00000268
+eq (local-int 1) (global-int 132dc8) b
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000304
+show-text 0 "ユニット能力や城砦配置などを初期状態にします"
+end-text-line 0
+jmp label_00000804
+
+label_00000304
+eq (local-int 1) (global-int 132dc8) c
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000003a0
+show-text 0 "アイテムと所持金をクリア時の状態にします"
+end-text-line 0
+jmp label_00000804
+
+label_000003a0
+eq (local-int 1) (global-int 132dc8) c
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_0000043c
+show-text 0 "アイテムと所持金を初期状態にします"
+end-text-line 0
+jmp label_00000804
+
+label_0000043c
+eq (local-int 1) (global-int 132dc8) 15
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000004d8
+show-text 0 "仲間にしたユニットが最初から加入した状態でプレイします"
+end-text-line 0
+jmp label_00000804
+
+label_000004d8
+eq (local-int 1) (global-int 132dc8) 15
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000574
+show-text 0 "ストーリー進行に合わせてユニットが加入する状態でプレイします"
+end-text-line 0
+jmp label_00000804
+
+label_00000574
+eq (local-int 1) (global-int 132dc8) 16
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000610
+show-text 0 "２周目以降専用のイベントを発生させます"
+end-text-line 0
+jmp label_00000804
+
+label_00000610
+eq (local-int 1) (global-int 132dc8) 16
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000006ac
+show-text 0 "１周目と同じ条件でイベントを発生させます"
+end-text-line 0
+jmp label_00000804
+
+label_000006ac
+eq (local-int 1) (global-int 132dc8) 17
+eq (local-int 2) (global-int 132dc9) 0
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000768
+show-text 0 "ステージごとの敵レベル上限設定を解除します"
+end-text-line 0
+show-text 0 "敵が手強くなりますが、経験値が取得しやすくなります"
+end-text-line 0
+jmp label_00000804
+
+label_00000768
+eq (local-int 1) (global-int 132dc8) 17
+eq (local-int 2) (global-int 132dc9) 1
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000804
+show-text 0 "ステージごとの敵レベル上限設定を有効にします"
+end-text-line 0
+jmp label_00000804
+
+label_00000804
+u0041B5F0 (local-int 0)
+exit

@@ -12,6 +12,9 @@ export const RAW_DIR = path.join(ROOT_DIR, 'raw');
 // install 可运行测试树（全量真拷贝）
 export const INSTALL_DIR = path.join(ROOT_DIR, 'install');
 
+// data：只读比较基线（原始日文，不再修改）；src：可编辑开发源（含翻译语法）
+export const SRC_DIR = path.join(ROOT_DIR, 'src');
+
 // 脚本目录
 export const SCRIPTS_DIR = path.join(ROOT_DIR, 'scripts');
 

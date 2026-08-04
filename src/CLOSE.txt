@@ -1,0 +1,31 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 2 1 1 1 1 1 }
+====
+
+comment "▼CLOSE通過"
+dev_ukn
+mov (global-int 2f35) 0
+eq (local-int 0) (global-int 14ef) 1
+jcc (local-int 0) ffffffff label_000001c8
+eq (local-int 0) (global-int ba5c) 0
+jcc (local-int 0) ffffffff label_000000e4
+mov (global-int 341d) 1
+
+label_000000e4
+eq (local-int 0) (global-int baa9) 0
+jcc (local-int 0) ffffffff label_00000130
+mov (global-int 341e) 1
+
+label_00000130
+eq (local-int 0) (global-int baaa) 0
+jcc (local-int 0) ffffffff label_0000017c
+mov (global-int 341f) 1
+
+label_0000017c
+eq (local-int 0) (global-int bad4) 0
+jcc (local-int 0) ffffffff label_000001c8
+mov (global-int 3420) 1
+
+label_000001c8
+exit
