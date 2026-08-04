@@ -26,6 +26,10 @@ npm run manifest-all       # 同时更新两份 manifest
 npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
+npm run extract-all        # 为 data 下尚无基线的脚本生成 locale/<脚本>.json（不依赖 git）
+npm run extract -- <脚本>  # 为单个脚本生成基线（已存在则跳过，--force 从 data txt 重建）
+npm run apply -- <脚本>    # 编码译文写回 data/<脚本>.txt（校验字典缺失字符）
+npm run assemble -- <脚本> # SJIS 校验 → Decompiler 汇编 → install → 回读验证
 ```
 
 ## 文件策略（config.js）
@@ -99,3 +103,32 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 
 注意：SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
 （`python font_CN_JP.py MSGothic_WenQuanYi.ttf`，依赖 fonttools）。
+
+## 标准翻译流程（locale）
+
+**原则：翻译只改 `locale/` 里的可读简体中文，编码（简体→SJIS 码位映射）由脚本自动完成**；
+`data\*.txt` 是生成产物，不手改。编码机制与 SExtractor 的 JIS 替换导入一致
+（同一份 `subs_cn_jp.json` 字典：可 cp932 编码的字符原样保留，否则查字典映射为日文写法占位，
+渲染时由 Amayui CN 字体还原为简体）。
+
+```bash
+cd scripts
+# 基线已全部生成（341 个 locale/<脚本>.json，orig 为原始日文）；新脚本用 extract/extract-all
+# 编辑 locale/OPINIT1.json 的 trans 字段（可读简体中文）
+npm run apply -- OPINIT1        # 编码译文写回 data/OPINIT1.txt（存在字典缺失字符时报错）
+npm run assemble -- OPINIT1     # SJIS 兜底校验 → Decompiler 汇编 → 安装到 install → 回读验证
+```
+
+文件结构：
+
+- `locale/<脚本>.json`：单文件单大对象 `{id: {orig: 原文, trans: 译文}}`，基线已全部入库
+  （extract-all 一次性生成，不依赖 git）；人工直接编辑 `trans` 字段（可读简体中文）；
+- `data/<脚本>.txt`：生成产物（编码后文本），不要手改；
+- 校验失败（字典缺失字符）时 `apply` 拒绝写回，需调整措辞或扩字典（扩字典需同步重建字体）。
+
+注意：`--force` 重建基线会读取**当前** data txt，已 apply 过的脚本 txt 是编码后文本，
+不应重建（基线以入库版本为准）；剧本脚本（SC*.txt）当前只提取 `set-string` 行，
+`show-text` 等行类型待提取器扩展后再刷新。
+
+与 SExtractor 的关系：SExtractor GUI 可做同样的事（其导入即 `generateSubsJis` 做此映射），
+本流程用同一字典脚本化，便于批量与验证；设置界面（OPINIT1，172 条）已按此流程完成并安装。

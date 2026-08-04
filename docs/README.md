@@ -162,7 +162,10 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
 ## 9. 后续流程（方案 B 实施步骤）
 
 1. **全量提取与语料基线** ✅：`data\` 341 个反汇编 txt（松散版 1.07 基线 + ALF-only），已入 git 跟踪（基线提交由人工执行）
-2. **翻译与校对**：直接改 txt（小规模）或 SExtractor 批量（语料提取→翻译→回填→`-a` 重汇编）；
+2. **翻译与校对**：标准流程 = `locale/` 可读译文 + `scripts/translate.js`
+   （extract/apply/assemble，编码映射同 SExtractor 的 JIS 替换字典 `subs_cn_jp.json`）；
+   341 个脚本的 locale 基线已全部生成入库（不依赖 git）；`data\*.txt` 为生成产物，不手改；
+   设置界面（OPINIT1，172 条）已完成全量翻译并安装。
    注意保留 gaiji 占位符与文本长度限制
 3. **编码策略实测**（最小闭环）：挑 1 个剧情脚本 + 1 个 UI 脚本，各翻译数句，对比
    - tunnel 编码（UIF 解码，引擎始终见合法 SJIS；永焔の戦姫方案）

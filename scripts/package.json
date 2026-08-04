@@ -12,6 +12,13 @@
     "manifest-all": "node manifest.js --update-all",
     "check": "node manifest.js --check",
     "compare": "node manifest.js --compare",
-    "register-font": "node register-font.js"
+    "register-font": "node register-font.js",
+    "extract": "node translate.js extract",
+    "extract-all": "node translate.js extract-all",
+    "apply": "node translate.js apply",
+    "assemble": "node translate.js assemble"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.3"
   }
 }
