@@ -30,8 +30,7 @@ export const RAW_MANIFEST = path.join(ROOT_DIR, 'raw-manifest.json');
 // install 中排除的废弃文件（不进入测试树，也不会被复制）：
 // - 天结.exe：心愿屋汉化壳（方案 B 用原版引擎 + 修改数据 + UIF，不需要它）
 // - *.dmp：崩溃转储垃圾文件
-export const EXCLUDED_NAMES = new Set(['天结.exe']);
+// - AGE-EXTEND.TTF：引擎内置字体文件。实测移除后引擎回退到系统字体设置
+//   （ＡＤＶメッセージ 等设置项才真正生效），字体渲染统一走 Amayui CN，无需外挂该文件。
+export const EXCLUDED_NAMES = new Set(['天结.exe', 'AGE-EXTEND.TTF']);
 export const EXCLUDED_RE = /\.dmp$/i;
-
-// raw manifest 跳过的工作目录（不属于游戏数据，避免快照随开发活动频繁变动）
-export const RAW_SKIP_DIRS = new Set(['_analysis', '.claude']);

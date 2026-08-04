@@ -176,6 +176,13 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
 
 - [x] `data\` 文案语料基线（松散版）——已完成，纳入 git 跟踪
 - [ ] 中文字符编码路线（tunnel vs GBK 直写）——最小闭环实测
+- [x] **中文渲染路线**——OPINIT1 顶部 6 条已翻译并汇编（`data\OPINIT1.txt` → BIN）。
+      UIF hook 已确认不可行（AGE.EXE 加壳，IAT hook 全部失败），install 中 UIF 文件已移除。
+      最终方案（已实测确认）：**cnjp 系统字体 Amayui CN + 游戏内字体分类设置**，
+      移除 `AGE-EXTEND.TTF` 外挂文件后 ＡＤＶメッセージ 等设置项真正生效；
+      外字字形（U+E000/E001/E002/E003/E010）已并入字体。设置持久化在 SAVE.DAT
+      （加密/索引形式）。待办：全部文本区域设为 Amayui CN 的完整覆盖验证、
+      可选 FontSubstitutes 兜底（见 `scripts/README.md`）
 - [ ] ALF 内脚本覆盖方式（packdata 重打包 vs 松散覆盖）
 - [ ] UIF 编译（本机工具集 v180，需重定向）
 - [ ] AGERC.DLL 是否需要处理（少量系统文本）
