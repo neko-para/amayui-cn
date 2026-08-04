@@ -1,6 +1,6 @@
 # 天結いキャッスルマイスター 汉化工程文档
 
-> 更新日期：2026-08-04
+> 更新日期：2026-08-05
 > 工程根目录：`E:\Games\Eushully\天結`（git 仓库，`.gitignore` 已排除 `/install`、`/raw`）
 > 游戏本体：`E:\Games\Eushully\天結いキャッスルマイスター`（Eushully，2017-05-26，v1.07 + AP01-05）
 
@@ -10,7 +10,7 @@
 
 - 不沿用心愿屋汉化壳（`天结.exe`）与译文（错漏多，仅作参考对照）
 - 从日文原文重新翻译/校对，写入游戏数据文件（脚本 `.BIN`），以原版引擎 + 修改后数据运行
-- 中文显示层方案待定：UIF 运行时注入（tunnel 编码）或 GBK 直写（需小样本实测）
+- 中文显示层：SJIS 码位映射 + cnjp 系统字体 Amayui CN（游戏内字体设置指向它），不改游戏文件
 - 工程目录名从 `天结`（中文）改为 `天結`（日文），以适配日文区域环境运行
 
 ## 2. 目录结构
@@ -19,9 +19,11 @@
 E:\Games\Eushully\天結\
 ├── raw\                  junction 软连接 -> 游戏本体（只读参照，勿写入）
 ├── install\              可运行测试树（与本体完全独立的全量真拷贝；含 DATA1-8 解包目录）
-├── data\                 文案语料：341 个反汇编 txt（69MB，松散版 1.07 基线 + ALF-only 脚本）
-├── scripts\              Node.js 工程脚本（setup/verify/manifest）
-├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF）
+├── data\                 只读比较基线：341 个反汇编 txt（原始日文，不再修改）
+├── src\                  可编辑开发源：341 个 txt（含翻译语法）
+├── locale\               校对/机翻视图（extract 生成；当前仅 OPINIT1.json）
+├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
+├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
 ├── docs\                 本文档
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -46,6 +48,9 @@ E:\Games\Eushully\天結\
 - [x] **松散 vs ALF 差异排查**：89 个同名 BIN 中 87 个不一致；ITINIT 差异 343 行且含真实文本修正
   （如「ふくへき/おおへき」「封錬/封練」「８マス/４マス」）→ 语料必须基于松散版
 - [x] **gaiji 外字发现**（见 §7.4）：脚本内含私有区字符 U+E000（SJIS 0xF040），须原样保留
+- [x] **翻译流水线与渲染路线**：`data`（只读基线）/ `src`（开发源，翻译语法）/ `locale`（校对视图）；
+      `translate.js`（assemble 含骨架校验与 SJIS 编码映射）；cnjp 系统字体 Amayui CN + 游戏内字体设置；
+      UIF hook 因 AGE.EXE 加壳放弃；OPINIT1（172 条）全量翻译、SN0000 开场 ADV 段落重排示例已完成并安装
 
 ## 4. 本地工具（tools/）
 
@@ -54,8 +59,8 @@ E:\Games\Eushully\天結\
 | `alf\unpack_alf.exe` | foxofice/alf `8a70066` (2025-09-26) | 已编译可用（已去 getchar 阻塞） | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI`（LZSS 解 TOC） |
 | `alf\packdata`（源码） | 同上（战Z中文项目遗留） | 需适配 | 修改文件重打包进 ALF 并重建 SYS4INI.BIN 索引 |
 | `eushully-decompiler\Decompiler\Decompiler.exe` | Kelebek1 `21da1e8` (2024-08-30) | 已编译可用 | AGE 脚本反汇编 `-d` / 重汇编 `-a` / 往返校验 `-x` |
-| `SExtractor\` | satan53x（HEAD） | 依赖已装（Python 3.11） | 按正则提取/导入文本；可导出 UIF tunnel 配置与 `sjis_ext.bin` |
-| `UniversalInjectorFramework\` | AtomCrafty（HEAD） | 源码（无 release，需编译） | 运行时注入：字体/编码/转区/tunnel 解码（中文显示方案） |
+| `SExtractor\` | satan53x（HEAD） | 依赖已装（Python 3.11） | 正则提取/导入参考；`subs_cn_jp.json` 为 SJIS 码位映射字典来源 |
+| `UniversalInjectorFramework\` | AtomCrafty（HEAD） | **已放弃** | AGE.EXE 加壳，UIF 全走 IAT hook 实测全部失败（`Unable to enumerate import address table`） |
 
 常用命令：
 
@@ -74,7 +79,6 @@ tools/eushully-decompiler/Decompiler/Decompiler.exe -x SC0000.BIN
 - Decompiler 为 VS 工程（v143 工具集）；本机为 VS18/v180，手动编译方式：
   `cl /std:c++20 /O2 /EHsc age-asm.cpp age-shared.cpp disassembler.cpp reassembler.cpp /Fe:Decompiler.exe`
 - unpack_alf 手动编译：`cl /O2 /EHsc unpack_alf.cpp lzss.cpp /Fe:unpack_alf.exe /link Shlwapi.lib`
-- UIF 同样锁定 v143，需要重定向工程或手动编译后再用
 - `unpack_alf` 运行时会生成 `lzssdata.bin/lzssdata2.bin` 调试文件（可删）
 
 ## 5. 工程脚本（scripts/）
@@ -90,13 +94,19 @@ npm run manifest-raw       # 生成/更新 raw-manifest.json
 npm run manifest-all       # 同时更新两份 manifest
 npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
+npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
+npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
+npm run extract -- <脚本>  # src → locale/<脚本>.json（校对/机翻视图，--force 重建）
+npm run extract-all        # 为 src 下尚无 locale 视图的脚本生成视图
+npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法）
 ```
 
 `config.js` 关键配置：
 
 - `GAME_DIR`：游戏本体目录（迁移时只需改这里；工程目录改名不影响，ROOT_DIR 相对脚本推导）
-- 排除（不进入 install）：`天结.exe`（心愿屋汉化壳）、`*.dmp`（崩溃转储）
-- `RAW_SKIP_DIRS`：raw manifest 跳过 `_analysis`、`.claude`（开发工作区，非游戏数据）
+- `SRC_DIR`：开发源目录（src/）；`data/` 为只读比较基线
+- 排除（不进入 install）：`天结.exe`（心愿屋汉化壳）、`*.dmp`（崩溃转储）、
+  `AGE-EXTEND.TTF`（引擎内置字体，已确认移除后回退系统字体设置，无需外挂）
 - `IMMUTABLE_EXTS`：当前为空（全量真拷贝）；将来可对确定永不变的文件恢复硬链接
 
 ## 6. manifest 与数据完整性
@@ -143,8 +153,8 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
 - 天結い脚本大量使用：U+E000 共 17,210 处（156 个文件），常成对出现在台词开头/停顿/句尾，
   语义为**停顿/无声标记**（与语音节奏相关）；游戏字体与系统字体均有字形（三角旗+斜线符号）
 - 编辑器显示为"□"是因为字体缺少 PUA 字形，不是解码错误
-- **处理要求**：提取语料时用占位符（如 `〔E000〕`）保留，翻译/校对不得删除，写回前还原；
-  反汇编/重汇编对该字符无损往返（已验证）
+- **处理要求**：外字只出现在**未翻译的原文行**（保留原样，Decompiler 无损往返）；译文不写外字；
+  Amayui CN 字体已并入 U+E000/E001/E002/E003/E010 字形（停顿标记），中文侧无需占位符
 
 ## 8. 关键决策：方案 B（改数据文件）及依据
 
@@ -169,18 +179,17 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
    已完成：OPINIT1（172 条设置文案）、SN0000 开场 ADV 段落（重排示例，待游戏内验证）。
    注音策略（当前）：释义/称号类注音保留在 display-furigana 位置（中文释义作注音），
    纯读音（假名）类注音移除。
-3. **编码策略实测**（最小闭环）：挑 1 个剧情脚本 + 1 个 UI 脚本，各翻译数句，对比
-   - tunnel 编码（UIF 解码，引擎始终见合法 SJIS；永焔の戦姫方案）
-   - GBK 直写（中文系统区域，封緘疑似路线，需验证引擎是否接受）
+3. **编码策略（已定）**：SJIS 码位映射（`subs_cn_jp.json` 字典：可编码原样、否则日文写法占位），
+   渲染时由 cnjp 字体 Amayui CN 还原简体；不再考虑 tunnel/GBK 直写
 4. **写回**：`-a` 重汇编 → 覆盖 install 根目录松散 BIN → 游戏内验证（字体/截断/分行）
 5. **ALF 内脚本**：packdata 适配重打包，或实测松散同名文件覆盖 ALF 副本
-6. **运行时方案**：编译 UIF（v143→v180 重定向），配置字体/编码/转区
-7. **发布**：`patch/` 目录（修改文件 + UIF + install/restore 脚本）
+6. **字体分发**：Amayui CN 注册（`npm run register-font` 会话级，或安装 TTF）；游戏内把字体分类设为
+   Amayui CN；可选 FontSubstitutes（ＭＳ 明朝 → Amayui CN）兜底
+7. **发布**：`patch/` 目录（修改的 src 产物 + 字体 + install/restore 脚本）
 
 ## 10. 待验证 / 待决策
 
 - [x] `data\` 文案语料基线（松散版）——已完成，纳入 git 跟踪
-- [ ] 中文字符编码路线（tunnel vs GBK 直写）——最小闭环实测
 - [x] **中文渲染路线**——OPINIT1 顶部 6 条已翻译并汇编（`data\OPINIT1.txt` → BIN）。
       UIF hook 已确认不可行（AGE.EXE 加壳，IAT hook 全部失败），install 中 UIF 文件已移除。
       最终方案（已实测确认）：**cnjp 系统字体 Amayui CN + 游戏内字体分类设置**，
@@ -189,7 +198,10 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
       （加密/索引形式）。待办：全部文本区域设为 Amayui CN 的完整覆盖验证、
       可选 FontSubstitutes 兜底（见 `scripts/README.md`）
 - [ ] ALF 内脚本覆盖方式（packdata 重打包 vs 松散覆盖）
-- [ ] UIF 编译（本机工具集 v180，需重定向）
+- [ ] SN0000 ADV 段落重排/注音显示 游戏内验证；bba（concat 镜像）消费方确认
+- [ ] 字典精修：上下文相关映射（如 发→髪 在“爆发/发展”中按字形还原正常，但“头发”语义冲突）
+      需按词条/语境处理
+- [ ] 剧本脚本提取器扩展（show-text/display-furigana/concat 段落级视图，用于批量机翻）
 - [ ] AGERC.DLL 是否需要处理（少量系统文本）
 - [ ] 引擎文本长度/换行限制（ZAP 有 UI 截断先例）
 - [ ] `Uninst*.exe` 是否移出 install（误运行可能卸载本体）；`project.json` 是否删除（引用已移除的 天结.exe）
@@ -203,4 +215,4 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
 - 修改 install 中的文件后先 `npm run check` 确认改动范围，再 `npm run manifest` 更新基线
 - ALF 若重打包，务必在 install 的副本上进行（install 已是独立拷贝，无硬链接风险）
 - `data\` 语料以松散版为准；ALF 内副本为旧版，切勿混用（ITINIT 等已证实有真实文本差异）
-- 日文语料中的 gaiji（U+E000 等）须用占位符保留，写回前还原
+- 日文语料中的 gaiji（U+E000–E010）保留在未翻译原文行（Decompiler 无损往返）；译文不写外字
