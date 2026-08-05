@@ -9,3 +9,4 @@
 * STINIT2 战斗地名
 * STINIT 战斗目标
 * AMINIT2 地点/阵营标签
+* SELSTAGE 关卡逻辑

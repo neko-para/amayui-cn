@@ -1103,7 +1103,7 @@ jcc (local-int 7e12) ffffffff label_00004728
 play-sound-effect 2e 1
 u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "必須ユニットが同行していません"
+set-string (local-string-ptr 0) "必須ユニットが同行していません|必需单位未同行"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 call label_00000990
@@ -1700,7 +1700,7 @@ add (local-int 7e0c) 1d4c0 708
 add (local-int 7e0d) (local-int 7e0c) (local-int 404)
 sub (local-int 7e0e) (local-int 40f) 1
 draw-texture (local-int 7e0d) (local-int 7e0a) 480 19e 2c 2c 35e (local-int 7e0e)
-set-string (local-string 0) "取引"
+set-string (local-string 0) "取引|交易"
 jmp label_00007b3c
 
 label_00007968
@@ -1720,7 +1720,7 @@ add (local-int 7e0c) 1d4c0 708
 add (local-int 7e0d) (local-int 7e0c) (local-int 404)
 sub (local-int 7e0e) (local-int 40f) 1
 draw-texture (local-int 7e0d) (local-int 7e0a) 14d 3c0 2c 2c 35e (local-int 7e0e)
-set-string (local-string 0) "訓練"
+set-string (local-string 0) "訓練|训练"
 
 label_00007b3c
 jmp label_00007be0
@@ -1885,7 +1885,7 @@ label_000089d8
 jmp label_000089f8
 
 label_000089e4
-set-string (local-string 0) "（以下略）"
+set-string (local-string 0) "（以下略）|（以下省略）"
 
 label_000089f8
 mul (local-int 7e0c) (local-int 411) 1e
@@ -1979,7 +1979,7 @@ label_00008f90
 jmp label_00008fb0
 
 label_00008f9c
-set-string (local-string 0) "（以下略）"
+set-string (local-string 0) "（以下略）|（以下省略）"
 
 label_00008fb0
 mul (local-int 7e0c) (local-int 411) 1e
@@ -2077,7 +2077,7 @@ jmp label_00009900
 label_0000965c
 lookup-array-2d (local-ptr 2) (global-int 15e2c8) (global-int b222) a (local-int 37ac)
 jcc (local-ptr 2) ffffffff label_00009704
-set-string (local-string 0) "お金"
+set-string (local-string 0) "お金|金钱"
 lookup-array-2d (local-ptr 2) (global-int 15e2c8) (global-int b222) a (local-int 37ac)
 mov (local-int 407) (local-ptr 2)
 jmp label_00009900
