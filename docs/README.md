@@ -24,7 +24,7 @@ E:\Games\Eushully\天結\
 ├── locale\               校对/机翻视图（extract 生成；当前仅 OPINIT1.json）
 ├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
 ├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
-├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备连携.md）
+├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
