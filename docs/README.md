@@ -25,7 +25,8 @@ E:\Games\Eushully\天結\
 ├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
 ├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
 ├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md /
-│                          keywords-SKINIT.md / prob-SKINIT.md）
+│                          keywords-SKINIT.md / prob-SKINIT.md / keywords-战斗地名.md /
+│                          prob-STINIT2.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -55,6 +56,8 @@ E:\Games\Eushully\天結\
 - [x] **名词共识草稿**：`docs/glossary-draft.md`（萌娘百科世界观页 + 游戏本体页提取，含角色/地理/诸神/种族，待人工审校）
 - [x] **SKINIT 技能全量翻译**：1549 条 set-string（1533 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 1532/1532）；
       技能关键字表 `docs/keywords-SKINIT.md`、待定清单 `docs/prob-SKINIT.md` 已建立
+- [x] **STINIT2 战斗地名全量翻译**：130 条 set-string（95 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 118/118）；
+      关键字表 `docs/keywords-战斗地名.md`、待定清单 `docs/prob-STINIT2.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
 
 ## 4. 本地工具（tools/）

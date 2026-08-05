@@ -4,3 +4,4 @@
 * ITINIT 物品
 * SC4000 第一章 - 战斗
 * SKINIT 技能
+* STINIT2 战斗地名
