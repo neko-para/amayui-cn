@@ -32,6 +32,7 @@ npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 
 npm run extract -- <脚本>  # src → locale/<脚本>.json（校对/机翻视图，--force 重建）
 npm run extract-all        # 为 src 下尚无 locale 视图的脚本生成视图
 npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法）
+npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 标注）→ 标准脚本行
 ```
 
 ## 文件策略（config.js）
@@ -114,7 +115,11 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 - `src\*.txt`：可编辑开发源，支持三种翻译语法（组合使用）：
   - `"原文|译文"` —— 对语法：set-string 等单行简单替换（#1，语法糖）；
   - `@"译文"` —— 中文标记：重写/新增的文本行（#3）；
-  - `// 原句` —— 注释存档：ADV 等段落重写时把原句注释掉再写新行（#2，汇编器原生跳过 `//`）；
+  - `/* ... */` —— 块注释存档（#2）：ADV 段落重写时把原句包进块注释（标记行独立，
+    原文行保持与 data 基线**逐字一致**，git diff 中显示为上下文，便于准确识别实际修改；
+    预处理时整块丢弃；`//` 行注释仍兼容支持）；
+  - `end-text-line 0` —— **视觉行结束标记**：属可调文本行，可按排版自由插入/移除
+    （show-text/display-furigana 直到遇到它才结束当前视觉行）；
 - `locale\<脚本>.json`：校对/机翻视图（extract 从 src 生成，merge 可写回 src）。
 
 ```bash
@@ -126,8 +131,8 @@ npm run merge -- OPINIT1      # locale 译文 → src（写为对语法）
 
 要点：
 
-- **骨架校验**：除文本行（set-string / show-text / display-furigana / concat）外，所有控制行
-  （label / u 字节码 / jcc / end-text-line 等）必须与 data 基线逐字节一致；误删控制行编译期报错；
+- **骨架校验**：除文本行（set-string / show-text / display-furigana / concat / **end-text-line**）外，
+  所有控制行（label / u 字节码 / jcc 等）必须与 data 基线逐字节一致；误删控制行编译期报错；
 - **外字**（U+E000–E010）：原文中保留（Decompiler 可无损往返），译文不写外字；
 - **编码映射**：与 SExtractor 的 JIS 替换同一字典（`subs_cn_jp.json`），可编码原样、否则日文写法占位、
   渲染时由 Amayui CN 字体还原简体；字典缺失字符在 assemble 时报错；
@@ -135,4 +140,15 @@ npm run merge -- OPINIT1      # locale 译文 → src（写为对语法）
   避免正文行过长）；纯读音（假名）类注音移除；
 - concat 镜像行 = **紧随其前的 show-text 段**的译文（保持段边界，勿整句镜像；
   如 SN0000 原式 `show-text "』の"` 后 `concat "』の"`）；当前人工维护，后续可加自动一致性检查；
+- **ADV 折行**：引擎中 show-text/display-furigana 直到 `end-text-line` 前始终是同一视觉行，
+  拆分 show-text 无法换行；正确做法是用 `end-text-line` 结束一行。排版规则：
+  每视觉行 ≤ 30 中文字（ASCII 按半字计）、有注音/标注内容不拆、连续词语尽量不拆、
+  放不下提前折行。用 `npm run reflow -- <文案文件>` 自动生成标准脚本行：
+  - 文案支持 `<ruby>主词<rt>注音</rt></ruby>`（→ display-furigana）与 `<nb>不折行内容</nb>`；
+  - `--max N` 改行宽（默认 30 中文字）、`--glossary rules/glossary.json` 注入术语原子、
+    `--no-concat` 去掉 concat 镜像行；
+  - 多个段落用空行分隔，每段输出一个页面块（每行含 show-text/display-furigana + concat；
+    非末行追加 end-text-line，**页面最后一行不加**——对应原文结构，行由 wait-for-input
+    后的 end-text-line 收尾）；
+  - 孤行优化：若最后一行 ≤5 字，自动递减行宽重新排版（最多重试 3 次）。
 - 反汇编结果只用于校验，**永远不要用它重建已翻译脚本的 src**（BIN 只有编码后的文本）。

@@ -627,16 +627,16 @@ call label_0000c440
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000c440
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1206,27 +1206,29 @@ play-voice (global-int f8007)
 label_00004558
 u00416120
 304
-// show-text 0 "二つの世界が"
-// display-furigana 0 "融合" "ゆうごう"
-// show-text 0 "して生まれた『"
-// display-furigana 0 "ディル＝リフィーナ" "二つの回廊の終わり"
-// show-text 0 "』の"
-// concat (global-string bba) (global-string bba) "』の"
-show-text 0 @"在两个世界融合而生的『"
-display-furigana 0 @"迪尔＝利菲娜" @"两个回廊的尽头"
+/* 原文存档（对照用，不参与汇编）
+show-text 0 "二つの世界が"
+display-furigana 0 "融合" "ゆうごう"
+show-text 0 "して生まれた『"
+display-furigana 0 "ディル＝リフィーナ" "二つの回廊の終わり"
+show-text 0 "』の"
+concat (global-string bba) (global-string bba) "』の"
+end-text-line 0
+show-text 0 "世界にてかつて、世界の命運を分ける『"
+display-furigana 0 "三神戦争" "さんじんせんそう"
+show-text 0 "』と"
+concat (global-string bba) (global-string bba) "』と"
+end-text-line 0
+show-text 0 "呼ばれる神々の戦いがあった。"
+*/
+show-text 0 @"由两个世界融合而生的『"
+display-furigana 0 @"迪尔-利菲娜" @"二重回廊的终焉"
 show-text 0 @"』"
-concat (global-string bba) (global-string bba) @"』"
-end-text-line 0
-// show-text 0 "世界にてかつて、世界の命運を分ける『"
-// display-furigana 0 "三神戦争" "さんじんせんそう"
-// show-text 0 "』と"
-// concat (global-string bba) (global-string bba) "』と"
 show-text 0 @"的世界上，曾经发生过一场"
-show-text 0 @"决定世界命运的神明之战，"
-concat (global-string bba) (global-string bba) @"决定世界命运的神明之战，"
+concat (global-string bba) (global-string bba) @"的世界上，曾经发生过一场"
 end-text-line 0
-// show-text 0 "呼ばれる神々の戦いがあった。"
-show-text 0 @"那就是『三神战争』。"
+show-text 0 @"决定世界命运的诸神之战，那就是『三神战争』。"
+concat (global-string bba) (global-string bba) @"决定世界命运的诸神之战，那就是『三神战争』。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1362,6 +1364,7 @@ play-voice (global-int f8007)
 label_00004f28
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "人間族を支配していた世界の"
 display-furigana 0 "古神" "いにしえがみ"
 show-text 0 "と、エルフや獣人等を護"
@@ -1379,6 +1382,12 @@ display-furigana 0 "三" "み"
 show-text 0 "つ"
 display-furigana 0 "巴" "どもえ"
 show-text 0 "の戦争である。"
+*/
+show-text 0 @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等世界的现"
+concat (global-string bba) (global-string bba) @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等世界的现"
+end-text-line 0
+show-text 0 @"神，以及由人类族所创造的新神——机工女神们三方展开的战争。"
+concat (global-string bba) (global-string bba) @"神，以及由人类族所创造的新神——机工女神们三方展开的战争。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1514,6 +1523,7 @@ play-voice (global-int f8007)
 label_00005958
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "激しい争いの末、"
 display-furigana 0 "機工女神" "きこうめがみ"
 show-text 0 "はその姿を消し、戦争の勝者と"
@@ -1528,6 +1538,15 @@ display-furigana 0 "庇護下" "ひごか"
 concat (global-string bba) (global-string bba) ""
 end-text-line 0
 show-text 0 "に置き自らの信仰を集めた。"
+*/
+show-text 0 @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的现神，"
+concat (global-string bba) (global-string bba) @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的现神，"
+end-text-line 0
+show-text 0 @"成为了世界的主宰，将人类族和亚人族置于庇护之下，聚集起了"
+concat (global-string bba) (global-string bba) @"成为了世界的主宰，将人类族和亚人族置于庇护之下，聚集起了"
+end-text-line 0
+show-text 0 @"自己的信仰。"
+concat (global-string bba) (global-string bba) @"自己的信仰。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1663,6 +1682,7 @@ play-voice (global-int f8007)
 label_00006344
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そして人間族は独自に築き上げた文明の"
 display-furigana 0 "根幹" "こんかん"
 show-text 0 "に関わる技術"
@@ -1676,6 +1696,12 @@ show-text 0 "として扱われ"
 concat (global-string bba) (global-string bba) "として扱われ"
 end-text-line 0
 show-text 0 "ることになる。"
+*/
+show-text 0 @"而人类族独自筑起的文明，其根基相关的技术与概念遭到封禁，为防"
+concat (global-string bba) (global-string bba) @"而人类族独自筑起的文明，其根基相关的技术与概念遭到封禁，为防"
+end-text-line 0
+show-text 0 @"再次被发明，被作为禁忌来对待。"
+concat (global-string bba) (global-string bba) @"再次被发明，被作为禁忌来对待。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1811,6 +1837,7 @@ play-voice (global-int f8007)
 label_00006d14
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "同時に"
 display-furigana 0 "改宗" "かいしゅう"
 show-text 0 "の見返りにと、魔力とそれを操る術を与え様々"
@@ -1818,6 +1845,12 @@ concat (global-string bba) (global-string bba) "の見返りにと、魔力と�
 end-text-line 0
 show-text 0 "な奇跡を起こす力を得た。"
 concat (global-string bba) (global-string bba) "な奇跡を起こす力を得た。"
+*/
+show-text 0 @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔力之术，获"
+concat (global-string bba) (global-string bba) @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔力之术，获"
+end-text-line 0
+show-text 0 @"得了能引发种种奇迹的力量。"
+concat (global-string bba) (global-string bba) @"得了能引发种种奇迹的力量。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1953,11 +1986,18 @@ play-voice (global-int f8007)
 label_00007664
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "やがて時代は流れ、神々を頂点とした信仰力を奪い合う国"
 concat (global-string bba) (global-string bba) "やがて時代は流れ、神々を頂点とした信仰力を奪い合う国"
 end-text-line 0
 show-text 0 "家間での戦いへと発展していった。"
 concat (global-string bba) (global-string bba) "家間での戦いへと発展していった。"
+*/
+show-text 0 @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争斗最终演"
+concat (global-string bba) (global-string bba) @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争斗最终演"
+end-text-line 0
+show-text 0 @"变成了战争。"
+concat (global-string bba) (global-string bba) @"变成了战争。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2152,6 +2192,7 @@ play-voice (global-int f8007)
 label_000082d8
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "これは他者との"
 display-furigana 0 "絆" "きずな"
 show-text 0 "を重んじた女神の軌跡を"
@@ -2163,6 +2204,12 @@ show-text 0 "神話の舞台となるのは『ラウルバーシュ大陸』西�
 concat (global-string bba) (global-string bba) "神話の舞台となるのは『ラウルバーシュ大陸』西方北東部"
 end-text-line 0
 show-text 0 "『フィアスピア』。"
+*/
+show-text 0 @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞台，是"
+concat (global-string bba) (global-string bba) @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞台，是"
+end-text-line 0
+show-text 0 @"『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
+concat (global-string bba) (global-string bba) @"『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2298,11 +2345,18 @@ play-voice (global-int f8007)
 label_00008c78
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "元来、霊地として妖精や精霊が棲まう土地であり、エルフ"
 concat (global-string bba) (global-string bba) "元来、霊地として妖精や精霊が棲まう土地であり、エルフ"
 end-text-line 0
 show-text 0 "の神のひとつである『フィユシア神』が治め見守っていた。"
 concat (global-string bba) (global-string bba) "の神のひとつである『フィユシア神』が治め見守っていた。"
+*/
+show-text 0 @"这里原本是妖精与精灵栖居的灵地，仙灵诸神之一的"
+concat (global-string bba) (global-string bba) @"这里原本是妖精与精灵栖居的灵地，仙灵诸神之一的"
+end-text-line 0
+show-text 0 @"『菲优希亚神』，治理守护着这片土地。"
+concat (global-string bba) (global-string bba) @"『菲优希亚神』，治理守护着这片土地。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2438,11 +2492,18 @@ play-voice (global-int f8007)
 label_00009598
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "エルフの神でありながらも、徐々に人間族の信仰が集まり、"
 concat (global-string bba) (global-string bba) "エルフの神でありながらも、徐々に人間族の信仰が集まり、"
 end-text-line 0
 show-text 0 "栄え、そしてひとつの国家が建国される。"
 concat (global-string bba) (global-string bba) "栄え、そしてひとつの国家が建国される。"
+*/
+show-text 0 @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴旺，最终建立"
+concat (global-string bba) (global-string bba) @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴旺，最终建立"
+end-text-line 0
+show-text 0 @"了一个国家。"
+concat (global-string bba) (global-string bba) @"了一个国家。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2578,6 +2639,7 @@ play-voice (global-int f8007)
 label_00009eb8
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "幾度" "いくど"
 show-text 0 "となく分裂と統合を繰り返し、ときとしてエルフ族が"
 concat (global-string bba) (global-string bba) "となく分裂と統合を繰り返し、ときとしてエルフ族が"
@@ -2586,6 +2648,12 @@ show-text 0 "統治する時代も到来したが、時の流れと共に人間�
 concat (global-string bba) (global-string bba) "統治する時代も到来したが、時の流れと共に人間族の国家"
 end-text-line 0
 show-text 0 "『インフルース王国』が制定された。"
+*/
+show-text 0 @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代也会到来。"
+concat (global-string bba) (global-string bba) @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代也会到来。"
+end-text-line 0
+show-text 0 @"而随着时光流逝，人类族的国家『因夫鲁斯王国』得以建立。"
+concat (global-string bba) (global-string bba) @"而随着时光流逝，人类族的国家『因夫鲁斯王国』得以建立。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2721,6 +2789,7 @@ play-voice (global-int f8007)
 label_0000a814
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "現在においても『フィユシア神』への信仰が高いこの国に"
 concat (global-string bba) (global-string bba) "現在においても『フィユシア神』への信仰が高いこの国に"
 end-text-line 0
@@ -2728,6 +2797,15 @@ show-text 0 "古き時代の遺跡が発見され、国は調査の為に技術�
 concat (global-string bba) (global-string bba) "古き時代の遺跡が発見され、国は調査の為に技術者を集結"
 end-text-line 0
 show-text 0 "させ、その任へと当たらせることとなった。"
+*/
+show-text 0 @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，发现了"
+concat (global-string bba) (global-string bba) @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，发现了"
+end-text-line 0
+show-text 0 @"古老时代的遗迹。国家为展开调查，集结了技术人员，让他们着"
+concat (global-string bba) (global-string bba) @"古老时代的遗迹。国家为展开调查，集结了技术人员，让他们着"
+end-text-line 0
+show-text 0 @"手此项任务。"
+concat (global-string bba) (global-string bba) @"手此项任务。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2863,11 +2941,15 @@ play-voice (global-int f8007)
 label_0000b154
 u00416120
 304
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "この物語は、その調査へと１人の技術者が渡来するところ"
 concat (global-string bba) (global-string bba) "この物語は、その調査へと１人の技術者が渡来するところ"
 end-text-line 0
 show-text 0 "から始まる。"
 concat (global-string bba) (global-string bba) "から始まる。"
+*/
+show-text 0 @"这个故事，始于一位技术人员为参与调查而来到此地的那一刻。"
+concat (global-string bba) (global-string bba) @"这个故事，始于一位技术人员为参与调查而来到此地的那一刻。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38

@@ -14,9 +14,11 @@ const LOCALE_DIR = path.join(ROOT_DIR, 'locale');
 // 翻译语法（src 源文件内）：
 //   "原文|译文"   —— #1 对语法：简单单行替换（set-string 等）
 //   @"译文"      —— #3 中文标记：新写/重写的文本行
-//   // ...        —— #2 注释：原句存档，预处理时整行丢弃（汇编器原生也跳过 //）
+//   /* ... */    —— #2 块注释：原句存档（标记行独立，原文行保持与基线逐字一致），
+//                   预处理时整块丢弃（// 行注释仍兼容支持）
 const PAIR_SEP = '|';
-const TEXT_INSTR = /^(set-string|show-text|display-furigana|concat)\b/; // 允许增删改的文本内容行
+// 允许增删改的文本内容行；end-text-line 为视觉行结束标记，可按排版需要自由插入/移除
+const TEXT_INSTR = /^(set-string|show-text|display-furigana|concat|end-text-line)\b/;
 const LITERAL_RE = /(@?)"([^"]*)"/g;
 const SET_STRING_RE = /^set-string \(global-string ([0-9a-f]+)\) (@?)"(.+)"$/;
 
@@ -36,13 +38,22 @@ function parseLiteral(at, content) {
   return { orig: content, trans: null };
 }
 
-// 预处理：丢弃 // 注释；展开 | 对与 @"..." 标记为可 SJIS 编码文本
+// 预处理：丢弃 // 行注释与 /* */ 块注释；展开 | 对与 @"..." 标记为可 SJIS 编码文本
 function preprocess(srcText) {
   const eol = srcText.includes('\r\n') ? '\r\n' : '\n';
   const problems = [];
   const lines = [];
+  let inBlock = false;
   for (const line of srcText.split(/\r\n|\r|\n/)) {
-    if (line.trim().startsWith('//')) continue;
+    const t = line.trim();
+    if (inBlock) {
+      if (t.includes('*/')) inBlock = false;
+      continue;
+    }
+    if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*/')) {
+      if (t.startsWith('/*') && !t.includes('*/')) inBlock = true;
+      continue;
+    }
     const out = line.replace(LITERAL_RE, (m, at, content) => {
       const { trans } = parseLiteral(at, content);
       if (trans === null) return m;
