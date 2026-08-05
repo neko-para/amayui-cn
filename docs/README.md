@@ -242,8 +242,10 @@ npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 
       UIF hook 已确认不可行（AGE.EXE 加壳，IAT hook 全部失败），install 中 UIF 文件已移除。
       最终方案（已实测确认）：**cnjp 系统字体 Amayui CN + 游戏内字体分类设置**，
       移除 `AGE-EXTEND.TTF` 外挂文件后 ＡＤＶメッセージ 等设置项真正生效；
-      外字字形（U+E000/E001/E002/E003/E010）已并入字体。设置持久化在 SAVE.DAT
-      （加密/索引形式）。待办：全部文本区域设为 Amayui CN 的完整覆盖验证、
+      外字字形（U+E000/E001/E002/E003/E010）已并入字体。ＡＤＶメッセージ字体
+      明文落在 `SYS4REG.INI`（`[message] Font=`，可脚本化）；其余字体分类
+      （含设置界面自身的 パラメータ文字/数字）按索引形式持久化在 SAVE.DAT，
+      仍需用户进游戏设置一次。待办：全部文本区域设为 Amayui CN 的完整覆盖验证、
       可选 FontSubstitutes 兜底（见 `scripts/README.md`）
 - [ ] ALF 内脚本覆盖方式（packdata 重打包 vs 松散覆盖）
 - [ ] SN0000 ADV 段落重排/注音显示 游戏内验证；bba（concat 镜像）消费方确认
