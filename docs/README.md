@@ -51,6 +51,7 @@ E:\Games\Eushully\天結\
 - [x] **翻译流水线与渲染路线**：`data`（只读基线）/ `src`（开发源，翻译语法）/ `locale`（校对视图）；
       `translate.js`（assemble 含骨架校验与 SJIS 编码映射）；cnjp 系统字体 Amayui CN + 游戏内字体设置；
       UIF hook 因 AGE.EXE 加壳放弃；OPINIT1（172 条）全量翻译、SN0000 开场 ADV 段落重排示例已完成并安装
+- [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
 
 ## 4. 本地工具（tools/）
 
@@ -60,6 +61,7 @@ E:\Games\Eushully\天結\
 | `alf\packdata`（源码） | 同上（战Z中文项目遗留） | 需适配 | 修改文件重打包进 ALF 并重建 SYS4INI.BIN 索引 |
 | `eushully-decompiler\Decompiler\Decompiler.exe` | Kelebek1 `21da1e8` (2024-08-30) | 已编译可用 | AGE 脚本反汇编 `-d` / 重汇编 `-a` / 往返校验 `-x` |
 | `SExtractor\` | satan53x（HEAD） | 依赖已装（Python 3.11） | 正则提取/导入参考；`subs_cn_jp.json` 为 SJIS 码位映射字典来源 |
+| `Eushully_AGF_TooL\Eushully_AGF_TooL.exe` | Koreanshy（ai2.moe「Eushully会社 AGF图片处理工具」） | 2026-02-20（PyInstaller GUI） | 可用（已实测；可无界面调用） | AGF→PNG 批量导出 / PNG→AGF 有头注入与无头打包（UI/背景图片） |
 | `UniversalInjectorFramework\` | AtomCrafty（HEAD） | **已放弃** | AGE.EXE 加壳，UIF 全走 IAT hook 实测全部失败（`Unable to enumerate import address table`） |
 
 常用命令：
@@ -156,6 +158,29 @@ npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法�
 - **处理要求**：外字只出现在**未翻译的原文行**（保留原样，Decompiler 无损往返）；译文不写外字；
   Amayui CN 字体已并入 U+E000/E001/E002/E003/E010 字形（停顿标记），中文侧无需占位符
 
+### 7.5 AGF 图片格式（UI / 背景图）
+
+- AGF 为 Eushully 自研图片容器，分两种格式：带 `ACGF` 固定头 / 无头（`00 00 00 00` 开头）。
+  install 全量扫描：**5608** 个 AGF = **3136** 个 ACGF 有头 + **2472** 个无头
+- 分布：DATA1 2556、DATA7 889、DATA8 1477、根目录 8 个（MI040 等）。命名前缀示例：
+  `BG*`（背景，如 BG000AA = 1280×720@24bpp）、`AE*`（事件图，如 AE000AB = 768×768@8bpp）、
+  根目录 `MI040`（横幅，1280×202@8bpp）
+- 工具：`tools/Eushully_AGF_TooL`（Koreanshy，2026-02-20，作者实测含天結い）。GUI 能力：
+  - 导出 PNG：自动/强制有头/强制无头三种识别模式，支持多选批量
+  - 有头注入（原 AGF + PNG → AGF）：保留原结构与 ACIF/Alpha 块；要求 PNG 与原始尺寸一致
+  - 无头导入（PNG → AGF）：固定输出 24bpp 无压缩；丢弃 Alpha
+- 实测（无界面调用验证）：
+  - 导出 MI040（1280×202@8）、AE000AB（768×768@8）、BG000AA（无头，1280×720@24）全部成功
+  - 有头注入回环：AE000AB 注入 → 重新导出 PNG 与原图 **md5 完全一致**（无损）；文件 273KB→1.18MB
+  - 无头重打包回环：BG000AA 尺寸/颜色模式一致；1.97MB→2.76MB
+- 注意：
+  - 注入产物为**无压缩写入**，体积明显增大，DATA1 回 ALF 打包会膨胀（引擎读取尚未实测）
+  - 脚本 txt 中**不直接引用 `.AGF` 文件名** → “界面 → AGF”映射需另行建立（资源表/内存层面）
+  - **优先级：低**：固定 UI 图面文字汉化暂缓，文案/剧情脚本优先
+- 无界面调用（临时手段）：exe 为 PyInstaller（Python 3.13）打包，已解包至 `.tmp\agf_runtime`
+  （约 1GB，gitignore 覆盖），可用 `.tmp\py313\python.exe` import
+  `extract_agf_to_png / inject_acgf_fixed / build_nohead_agf_from_png` 做批量处理；未纳入正式流水线
+
 ## 8. 关键决策：方案 B（改数据文件）及依据
 
 **为什么不做方案 A（逆向更新 `天结.exe`）**：overlay 为高熵加密数据（MSVC rand 种子 18467/6334/26500 特征），hook 架构为心愿屋自研，PlayDRM（2017 起）无公开脱壳方案，零现成工具、不可维护。
@@ -203,6 +228,7 @@ npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法�
       需按词条/语境处理
 - [ ] 剧本脚本提取器扩展（show-text/display-furigana/concat 段落级视图，用于批量机翻）
 - [ ] AGERC.DLL 是否需要处理（少量系统文本）
+- [ ] UI 图片汉化（AGF→PNG→改图→有头注入→回 ALF）：工具已验证可用；界面→AGF 映射未建；**优先级低**
 - [ ] 引擎文本长度/换行限制（ZAP 有 UI 截断先例）
 - [ ] `Uninst*.exe` 是否移出 install（误运行可能卸载本体）；`project.json` 是否删除（引用已移除的 天结.exe）
 - [ ] `tools/` 嵌套 git 仓库处理：加入 .gitignore 或删除嵌套 `.git` 后提交源码
