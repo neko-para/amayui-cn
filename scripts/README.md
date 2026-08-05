@@ -142,11 +142,13 @@ npm run merge -- OPINIT1      # locale 译文 → src（写为对语法）
   如 SN0000 原式 `show-text "』の"` 后 `concat "』の"`）；当前人工维护，后续可加自动一致性检查；
 - **ADV 折行**：引擎中 show-text/display-furigana 直到 `end-text-line` 前始终是同一视觉行，
   拆分 show-text 无法换行；正确做法是用 `end-text-line` 结束一行。排版规则：
-  每视觉行 ≤ 30 中文字（ASCII 按半字计）、有注音/标注内容不拆、连续词语尽量不拆、
+  每视觉行 ≤ 25 中文字（ASCII 按半字计）、有注音/标注内容不拆、连续词语尽量不拆、
   放不下提前折行。用 `npm run reflow -- <文案文件>` 自动生成标准脚本行：
   - 文案支持 `<ruby>主词<rt>注音</rt></ruby>`（→ display-furigana）与 `<nb>不折行内容</nb>`；
-  - `--max N` 改行宽（默认 30 中文字）、`--glossary rules/glossary.json` 注入术语原子、
+  - `--max N` 改行宽（默认 25 中文字）、`--glossary rules/glossary.json` 注入术语原子、
     `--no-concat` 去掉 concat 镜像行；
+  - 每个页面块首行为 `// 输入原文：…` 单行注释（含 ruby 标记），位于原文存档与正文之间，
+    便于后续把正文还原为排版前原文再重新排版；
   - 多个段落用空行分隔，每段输出一个页面块（每行含 show-text/display-furigana + concat；
     非末行追加 end-text-line，**页面最后一行不加**——对应原文结构，行由 wait-for-input
     后的 end-text-line 收尾）；

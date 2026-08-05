@@ -1221,14 +1221,18 @@ concat (global-string bba) (global-string bba) "』と"
 end-text-line 0
 show-text 0 "呼ばれる神々の戦いがあった。"
 */
+// 输入原文：由两个世界融合而生的『<ruby>迪尔-利菲娜<rt>二重回廊的终焉</rt></ruby>』的世界上，曾经发生过一场决定世界命运的诸神之战，那就是『三神战争』。
 show-text 0 @"由两个世界融合而生的『"
 display-furigana 0 @"迪尔-利菲娜" @"二重回廊的终焉"
 show-text 0 @"』"
-show-text 0 @"的世界上，曾经发生过一场"
-concat (global-string bba) (global-string bba) @"的世界上，曾经发生过一场"
+show-text 0 @"的世界上，曾经"
+concat (global-string bba) (global-string bba) @"的世界上，曾经"
 end-text-line 0
-show-text 0 @"决定世界命运的诸神之战，那就是『三神战争』。"
-concat (global-string bba) (global-string bba) @"决定世界命运的诸神之战，那就是『三神战争』。"
+show-text 0 @"发生过一场决定世界命运的诸神之战，那就是"
+concat (global-string bba) (global-string bba) @"发生过一场决定世界命运的诸神之战，那就是"
+end-text-line 0
+show-text 0 @"『三神战争』。"
+concat (global-string bba) (global-string bba) @"『三神战争』。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1383,11 +1387,15 @@ show-text 0 "つ"
 display-furigana 0 "巴" "どもえ"
 show-text 0 "の戦争である。"
 */
-show-text 0 @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等世界的现"
-concat (global-string bba) (global-string bba) @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等世界的现"
+// 输入原文：曾统治人类族的世界的古神，与一直守护仙灵、兽人族等世界的现神，以及由人类族所创造的新神——机工女神们三方展开的战争。
+show-text 0 @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等"
+concat (global-string bba) (global-string bba) @"曾统治人类族的世界的古神，与一直守护仙灵、兽人族等"
 end-text-line 0
-show-text 0 @"神，以及由人类族所创造的新神——机工女神们三方展开的战争。"
-concat (global-string bba) (global-string bba) @"神，以及由人类族所创造的新神——机工女神们三方展开的战争。"
+show-text 0 @"世界的现神，以及由人类族所创造的新神——机工女神们"
+concat (global-string bba) (global-string bba) @"世界的现神，以及由人类族所创造的新神——机工女神们"
+end-text-line 0
+show-text 0 @"三方展开的战争。"
+concat (global-string bba) (global-string bba) @"三方展开的战争。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1539,14 +1547,15 @@ concat (global-string bba) (global-string bba) ""
 end-text-line 0
 show-text 0 "に置き自らの信仰を集めた。"
 */
-show-text 0 @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的现神，"
-concat (global-string bba) (global-string bba) @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的现神，"
+// 输入原文：激烈的争斗过后，机工女神消失了踪影，成为战争胜者的现神，成为了世界的主宰，将人类族和亚人族置于庇护之下，聚集起了自己的信仰。
+show-text 0 @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的"
+concat (global-string bba) (global-string bba) @"激烈的争斗过后，机工女神消失了踪影，成为战争胜者的"
 end-text-line 0
-show-text 0 @"成为了世界的主宰，将人类族和亚人族置于庇护之下，聚集起了"
-concat (global-string bba) (global-string bba) @"成为了世界的主宰，将人类族和亚人族置于庇护之下，聚集起了"
+show-text 0 @"现神，成为了世界的主宰，将人类族和亚人族置于庇护之"
+concat (global-string bba) (global-string bba) @"现神，成为了世界的主宰，将人类族和亚人族置于庇护之"
 end-text-line 0
-show-text 0 @"自己的信仰。"
-concat (global-string bba) (global-string bba) @"自己的信仰。"
+show-text 0 @"下，聚集起了自己的信仰。"
+concat (global-string bba) (global-string bba) @"下，聚集起了自己的信仰。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1697,11 +1706,12 @@ concat (global-string bba) (global-string bba) "として扱われ"
 end-text-line 0
 show-text 0 "ることになる。"
 */
-show-text 0 @"而人类族独自筑起的文明，其根基相关的技术与概念遭到封禁，为防"
-concat (global-string bba) (global-string bba) @"而人类族独自筑起的文明，其根基相关的技术与概念遭到封禁，为防"
+// 输入原文：而人类族独自筑起的文明，其根基相关的技术与概念遭到封禁，为防再次被发明，被作为禁忌来对待。
+show-text 0 @"而人类族独自筑起的文明，其根基相关的技术与概念遭到"
+concat (global-string bba) (global-string bba) @"而人类族独自筑起的文明，其根基相关的技术与概念遭到"
 end-text-line 0
-show-text 0 @"再次被发明，被作为禁忌来对待。"
-concat (global-string bba) (global-string bba) @"再次被发明，被作为禁忌来对待。"
+show-text 0 @"封禁，为防再次被发明，被作为禁忌来对待。"
+concat (global-string bba) (global-string bba) @"封禁，为防再次被发明，被作为禁忌来对待。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1846,11 +1856,12 @@ end-text-line 0
 show-text 0 "な奇跡を起こす力を得た。"
 concat (global-string bba) (global-string bba) "な奇跡を起こす力を得た。"
 */
-show-text 0 @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔力之术，获"
-concat (global-string bba) (global-string bba) @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔力之术，获"
+// 输入原文：与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔力之术，获得了能引发种种奇迹的力量。
+show-text 0 @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔"
+concat (global-string bba) (global-string bba) @"与此同时，作为改宗的回报，他们被赐予了魔力与操纵魔"
 end-text-line 0
-show-text 0 @"得了能引发种种奇迹的力量。"
-concat (global-string bba) (global-string bba) @"得了能引发种种奇迹的力量。"
+show-text 0 @"力之术，获得了能引发种种奇迹的力量。"
+concat (global-string bba) (global-string bba) @"力之术，获得了能引发种种奇迹的力量。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1993,11 +2004,12 @@ end-text-line 0
 show-text 0 "家間での戦いへと発展していった。"
 concat (global-string bba) (global-string bba) "家間での戦いへと発展していった。"
 */
-show-text 0 @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争斗最终演"
-concat (global-string bba) (global-string bba) @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争斗最终演"
+// 输入原文：时光流转，争夺以诸神为顶点的信仰之力的国家之间，争斗最终演变成了战争。
+show-text 0 @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争"
+concat (global-string bba) (global-string bba) @"时光流转，争夺以诸神为顶点的信仰之力的国家之间，争"
 end-text-line 0
-show-text 0 @"变成了战争。"
-concat (global-string bba) (global-string bba) @"变成了战争。"
+show-text 0 @"斗最终演变成了战争。"
+concat (global-string bba) (global-string bba) @"斗最终演变成了战争。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2205,11 +2217,12 @@ concat (global-string bba) (global-string bba) "神話の舞台となるのは�
 end-text-line 0
 show-text 0 "『フィアスピア』。"
 */
-show-text 0 @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞台，是"
-concat (global-string bba) (global-string bba) @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞台，是"
+// 输入原文：这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞台，是『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。
+show-text 0 @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞"
+concat (global-string bba) (global-string bba) @"这是一段追寻珍视羁绊的女神足迹的故事。这段神话的舞"
 end-text-line 0
-show-text 0 @"『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
-concat (global-string bba) (global-string bba) @"『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
+show-text 0 @"台，是『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
+concat (global-string bba) (global-string bba) @"台，是『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2352,6 +2365,7 @@ end-text-line 0
 show-text 0 "の神のひとつである『フィユシア神』が治め見守っていた。"
 concat (global-string bba) (global-string bba) "の神のひとつである『フィユシア神』が治め見守っていた。"
 */
+// 输入原文：这里原本是妖精与精灵栖居的灵地，仙灵诸神之一的『菲优希亚神』，治理守护着这片土地。
 show-text 0 @"这里原本是妖精与精灵栖居的灵地，仙灵诸神之一的"
 concat (global-string bba) (global-string bba) @"这里原本是妖精与精灵栖居的灵地，仙灵诸神之一的"
 end-text-line 0
@@ -2499,11 +2513,12 @@ end-text-line 0
 show-text 0 "栄え、そしてひとつの国家が建国される。"
 concat (global-string bba) (global-string bba) "栄え、そしてひとつの国家が建国される。"
 */
-show-text 0 @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴旺，最终建立"
-concat (global-string bba) (global-string bba) @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴旺，最终建立"
+// 输入原文：尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴旺，最终建立了一个国家。
+show-text 0 @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴"
+concat (global-string bba) (global-string bba) @"尽管身为仙灵之神，人类族的信仰却逐渐汇聚，逐渐兴"
 end-text-line 0
-show-text 0 @"了一个国家。"
-concat (global-string bba) (global-string bba) @"了一个国家。"
+show-text 0 @"旺，最终建立了一个国家。"
+concat (global-string bba) (global-string bba) @"旺，最终建立了一个国家。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2649,11 +2664,15 @@ concat (global-string bba) (global-string bba) "統治する時代も到来し�
 end-text-line 0
 show-text 0 "『インフルース王国』が制定された。"
 */
-show-text 0 @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代也会到来。"
-concat (global-string bba) (global-string bba) @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代也会到来。"
+// 输入原文：在无数次的分裂与统一中反复，有时仙灵一族统治的时代也会到来。而随着时光流逝，人类族的国家『因夫鲁斯王国』得以建立。
+show-text 0 @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代"
+concat (global-string bba) (global-string bba) @"在无数次的分裂与统一中反复，有时仙灵一族统治的时代"
 end-text-line 0
-show-text 0 @"而随着时光流逝，人类族的国家『因夫鲁斯王国』得以建立。"
-concat (global-string bba) (global-string bba) @"而随着时光流逝，人类族的国家『因夫鲁斯王国』得以建立。"
+show-text 0 @"也会到来。而随着时光流逝，人类族的国家"
+concat (global-string bba) (global-string bba) @"也会到来。而随着时光流逝，人类族的国家"
+end-text-line 0
+show-text 0 @"『因夫鲁斯王国』得以建立。"
+concat (global-string bba) (global-string bba) @"『因夫鲁斯王国』得以建立。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2798,14 +2817,15 @@ concat (global-string bba) (global-string bba) "古き時代の遺跡が発見�
 end-text-line 0
 show-text 0 "させ、その任へと当たらせることとなった。"
 */
-show-text 0 @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，发现了"
-concat (global-string bba) (global-string bba) @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，发现了"
+// 输入原文：直到如今，在这片对『菲优希亚神』信仰深厚的国土上，发现了古老时代的遗迹。国家为展开调查，集结了技术人员，让他们着手此项任务。
+show-text 0 @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，"
+concat (global-string bba) (global-string bba) @"直到如今，在这片对『菲优希亚神』信仰深厚的国土上，"
 end-text-line 0
-show-text 0 @"古老时代的遗迹。国家为展开调查，集结了技术人员，让他们着"
-concat (global-string bba) (global-string bba) @"古老时代的遗迹。国家为展开调查，集结了技术人员，让他们着"
+show-text 0 @"发现了古老时代的遗迹。国家为展开调查，集结了技术人"
+concat (global-string bba) (global-string bba) @"发现了古老时代的遗迹。国家为展开调查，集结了技术人"
 end-text-line 0
-show-text 0 @"手此项任务。"
-concat (global-string bba) (global-string bba) @"手此项任务。"
+show-text 0 @"员，让他们着手此项任务。"
+concat (global-string bba) (global-string bba) @"员，让他们着手此项任务。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2948,8 +2968,12 @@ end-text-line 0
 show-text 0 "から始まる。"
 concat (global-string bba) (global-string bba) "から始まる。"
 */
-show-text 0 @"这个故事，始于一位技术人员为参与调查而来到此地的那一刻。"
-concat (global-string bba) (global-string bba) @"这个故事，始于一位技术人员为参与调查而来到此地的那一刻。"
+// 输入原文：这个故事，始于一位技术人员为参与调查而来到此地的那一刻。
+show-text 0 @"这个故事，始于一位技术人员为参与调查而来到此"
+concat (global-string bba) (global-string bba) @"这个故事，始于一位技术人员为参与调查而来到此"
+end-text-line 0
+show-text 0 @"地的那一刻。"
+concat (global-string bba) (global-string bba) @"地的那一刻。"
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38

@@ -1,9 +1,9 @@
 // 折行核心：把一段文案（可含 <ruby> 注音标注与 <nb> 不折行标注）按
-// “每行最多 maxLen 个中文字（默认 30，ASCII 按半个中文宽度计）”排版，
+// “每行最多 maxLen 个中文字（默认 25，ASCII 按半个中文宽度计）”排版，
 // 输出标准游戏脚本指令行。
 //
 // 规则：
-//   1. 单行总长度 ≤ maxLen 个中文字（默认 30；内部按 1 中文字 = 2 显示单位计）；
+//   1. 单行总长度 ≤ maxLen 个中文字（默认 25；内部按 1 中文字 = 2 显示单位计）；
 //   2. 有标注（<ruby>）的内容整体不折行；
 //   3. 连续词语尽量不折行：<nb> 区域、术语表词条、引号实体、拉丁/数字串均视为原子；
 //   4. 贪心排版：当前行放不下下一个词时提前折行；
@@ -11,6 +11,8 @@
 //   6. 页面最后一行不加 end-text-line（保留 concat 镜像；对应原文结构，行由
 //      wait-for-input 后的 end-text-line 收尾）；
 //   7. 若最后一行 ≤5 个字符（孤行），递减单行最大长度重新排版，最多重试 3 次。
+//   8. 输出首行为单行注释 `// 输入原文：<输入文案>`（含 ruby 标记），
+//      便于后续把正文还原为排版前原文再重新排版。
 //
 // 输出约定（与 src 翻译语法一致）：
 //   - 普通文本  → show-text 0 @"…"
@@ -18,7 +20,7 @@
 //   - 每个视觉行末尾：concat (global-string bba) (global-string bba) @"最后一段"；
 //     非末行追加 end-text-line 0，页面最后一行不加
 
-export const DEFAULT_MAX = 30;
+export const DEFAULT_MAX = 25;
 
 export function charWidth(ch) {
   const c = ch.codePointAt(0);
@@ -231,6 +233,10 @@ export function reflow(text, opts = {}) {
     lines = breakLines(tokens, maxLen);
   }
   const flat = [];
+  if (opts.sourceComment !== false) {
+    const src = String(text).replace(/\r?\n/g, '').trim();
+    if (src) flat.push(`// 输入原文：${src}`);
+  }
   for (let k = 0; k < lines.length; k++) {
     flat.push(...emitLine(lines[k], { concat: opts.concat !== false, endTextLine: k < lines.length - 1 }));
   }

@@ -2,10 +2,11 @@
 // 标准脚本行（show-text / display-furigana / concat / end-text-line）。
 //
 // 用法:
-//   node reflow.js <文案文件|-> [--max 30] [--glossary rules/glossary.json] [--no-concat]
+//   node reflow.js <文案文件|-> [--max 25] [--glossary rules/glossary.json] [--no-concat]
 //   - 文案文件内多个段落用空行分隔，每段作为一个独立页面输出；
-//   - --max 为每行最多中文字数（默认 30）；
+//   - --max 为每行最多中文字数（默认 25）；
 //   - 页面最后一行不加 end-text-line（保留 concat）；末行 ≤5 字时自动递减行宽重排（≤3 次）；
+//   - 每个页面块首行为 `// 输入原文：…` 单行注释（含 ruby 标记），便于后续重排/提取；
 //   - 传 `-` 从 stdin 读取。
 //
 // 示例:
@@ -16,7 +17,7 @@ import { reflow, DEFAULT_MAX } from './lib/reflow.js';
 
 function usage() {
   console.log('用法: node reflow.js <文案文件|-> [--max N] [--glossary 术语json] [--no-concat]');
-  console.log('  --max N      每行最多 N 个中文字（默认 30，ASCII 按半个中文计）');
+  console.log('  --max N      每行最多 N 个中文字（默认 25，ASCII 按半个中文计）');
   console.log('  文案支持标注：<ruby>主词<rt>注音</rt></ruby>、<nb>不折行内容</nb>');
   console.log('  多个段落用空行分隔，每段输出为一个页面块');
   console.log('  页面最后一行不加 end-text-line（保留 concat）；末行 ≤5 字自动重排（≤3 次）');

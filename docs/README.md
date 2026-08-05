@@ -205,8 +205,9 @@ npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 
    `scripts/translate.js` 提供 assemble（语法展开+骨架校验+编码映射）/ extract / merge，
    编码映射同 SExtractor 的 JIS 替换字典 `subs_cn_jp.json`。
    **ADV 折行**：show-text/display-furigana 到 `end-text-line` 前始终为同一视觉行，
-   `end-text-line` 已释放为可调文本行；每视觉行 ≤30 中文字，由 `scripts/lib/reflow.js`
-   （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行）自动排版。
+   `end-text-line` 已释放为可调文本行；每视觉行 ≤25 中文字，由 `scripts/lib/reflow.js`
+   （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行、输出 `// 输入原文` 单行
+   注释便于后续重排）自动排版。
    已完成：OPINIT1（172 条设置文案）、SN0000 开场 ADV 段落（重排示例，待游戏内验证）。
    注音策略（当前）：释义/称号类注音保留在 display-furigana 位置（中文释义作注音），
    纯读音（假名）类注音移除。
@@ -235,7 +236,7 @@ npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 
 - [ ] 剧本脚本提取器扩展（show-text/display-furigana/concat 段落级视图，用于批量机翻）
 - [ ] AGERC.DLL 是否需要处理（少量系统文本）
 - [ ] UI 图片汉化（AGF→PNG→改图→有头注入→回 ALF）：工具已验证可用；界面→AGF 映射未建；**优先级低**
-- [x] 引擎文本长度/换行限制：ADV 视觉行按 ≤30 中文字排版（`scripts/lib/reflow.js`，
+- [x] 引擎文本长度/换行限制：ADV 视觉行按 ≤25 中文字排版（`scripts/lib/reflow.js`，
       `end-text-line` 可调；UI 固定控件截断风险仍需随测试观察）
 - [ ] `Uninst*.exe` 是否移出 install（误运行可能卸载本体）；`project.json` 是否删除（引用已移除的 天结.exe）
 - [ ] `tools/` 嵌套 git 仓库处理：加入 .gitignore 或删除嵌套 `.git` 后提交源码
