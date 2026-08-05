@@ -7,3 +7,4 @@
 * OFINIT 装备连携效果
 * SKINIT 技能
 * STINIT2 战斗地名
+* STINIT 战斗目标
