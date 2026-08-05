@@ -27,7 +27,7 @@ E:\Games\Eushully\天結\
 ├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md /
 │                          keywords-SKINIT.md / prob-SKINIT.md / keywords-战斗地名.md /
 │                          prob-STINIT2.md / keywords-单位名称.md / prob-EBINIT.md /
-│                          keywords-战斗目标.md / prob-STINIT.md）
+│                          keywords-战斗目标.md / prob-STINIT.md / prob-AMINIT2.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -61,6 +61,8 @@ E:\Games\Eushully\天結\
       关键字表 `docs/keywords-战斗地名.md`、待定清单 `docs/prob-STINIT2.md` 已建立
 - [x] **STINIT 战斗目标全量翻译**：1632 条 set-string（449 条非空、83 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 83/83）；
       关键字表 `docs/keywords-战斗目标.md`、待定清单 `docs/prob-STINIT.md` 已建立
+- [x] **AMINIT2 地点/阵营标签全量翻译**：39 条 set-string（27 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 27/27）；
+      已并入 `docs/keywords-战斗地名.md`（§7），待定清单 `docs/prob-AMINIT2.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
