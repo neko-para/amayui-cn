@@ -33,6 +33,7 @@ npm run extract -- <脚本>  # src → locale/<脚本>.json（校对/机翻视�
 npm run extract-all        # 为 src 下尚无 locale 视图的脚本生成视图
 npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法）
 npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 标注）→ 标准脚本行
+npm run sync-patch         # 按 patch/patch.config.json 同步补丁包（src 相对工程根，dst 相对 patch/）
 ```
 
 ## 文件策略（config.js）
