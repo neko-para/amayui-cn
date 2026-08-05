@@ -24,7 +24,8 @@ E:\Games\Eushully\天結\
 ├── locale\               校对/机翻视图（extract 生成；当前仅 OPINIT1.json）
 ├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
 ├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
-├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md）
+├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md /
+│                          keywords-SKINIT.md / prob-SKINIT.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -52,6 +53,8 @@ E:\Games\Eushully\天結\
       `translate.js`（assemble 含骨架校验与 SJIS 编码映射）；cnjp 系统字体 Amayui CN + 游戏内字体设置；
       UIF hook 因 AGE.EXE 加壳放弃；OPINIT1（172 条）全量翻译、SN0000 开场 ADV 段落重排示例已完成并安装
 - [x] **名词共识草稿**：`docs/glossary-draft.md`（萌娘百科世界观页 + 游戏本体页提取，含角色/地理/诸神/种族，待人工审校）
+- [x] **SKINIT 技能全量翻译**：1549 条 set-string（1533 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 1532/1532）；
+      技能关键字表 `docs/keywords-SKINIT.md`、待定清单 `docs/prob-SKINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
 
 ## 4. 本地工具（tools/）
