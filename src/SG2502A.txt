@@ -627,16 +627,16 @@ call label_00004970
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004970
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,11 +1045,20 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006a88
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "アヴァロのスキル『吸収された力』が解除されました。"
 end-text-line 0
 show-text 0 "今までの低下していた"
 display-furigana 0 "ＦＳ" "疲労強度"
 show-text 0 "値が１０増加。"
+end-text-line 0
+*/
+// 输入原文：阿瓦罗的技能『被吸收的力量』已解除。至今下降的<ruby>ＦＳ<rt>疲劳强度</rt></ruby>值增加１０。已可使用强化系魔法『斗精灵赋予』。使用时需预先装备技能。
+show-text 0 @"阿瓦罗的技能『被吸收的力量』已解除。"
+end-text-line 0
+show-text 0 @"至今下降的"
+display-furigana 0 @"ＦＳ" @"疲劳强度"
+show-text 0 @"值增加１０。"
 end-text-line 0
 call label_00006ab0
 eq (local-int 0) (global-int 0) 6
@@ -1092,11 +1101,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003d10
 u0041BB40 1 2
 call label_00006a88
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "強化系の魔法『"
 display-furigana 0 "闘精霊付与" "とうせいれいふよ"
 show-text 0 "』が使えるようになりました。"
 end-text-line 0
 show-text 0 "使用するためには、事前にスキル装備が必要となります。"
+end-text-line 0
+*/
+show-text 0 @"已可使用强化系魔法『斗精灵赋予』。"
+end-text-line 0
+show-text 0 @"使用时需预先装备技能。"
 end-text-line 0
 call label_00006ab0
 exit
