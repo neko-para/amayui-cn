@@ -17,8 +17,9 @@ const LOCALE_DIR = path.join(ROOT_DIR, 'locale');
 //   /* ... */    —— #2 块注释：原句存档（标记行独立，原文行保持与基线逐字一致），
 //                   预处理时整块丢弃（// 行注释仍兼容支持）
 const PAIR_SEP = '|';
-// 允许增删改的文本内容行；end-text-line 为视觉行结束标记，可按排版需要自由插入/移除
-const TEXT_INSTR = /^(set-string|show-text|display-furigana|concat|end-text-line)\b/;
+// 允许增删改的文本内容行；end-text-line 为视觉行结束标记，可按排版需要自由插入/移除；
+// draw-string 为参数化控件文本（draw-string <纹理> <x> <y> <文本>），尾参字面量可译
+const TEXT_INSTR = /^(set-string|show-text|display-furigana|concat|end-text-line|draw-string)\b/;
 const LITERAL_RE = /(@?)"([^"]*)"/g;
 const SET_STRING_RE = /^set-string \(global-string ([0-9a-f]+)\) (@?)"(.+)"$/;
 
