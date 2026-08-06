@@ -37,7 +37,8 @@ E:\Games\Eushully\天結\
 │                          keywords-角色图鉴.md / prob-CIINIT.md /
 │                          keywords-设施.md / prob-PLINIT.md /
 │                          keywords-场域消息.md / prob-FIELD.md /
-│                          keywords-情报首页.md / prob-INFO.md）
+│                          keywords-情报首页.md / prob-INFO.md /
+│                          keywords-第一章剧情.md / prob-SC0010.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -96,6 +97,9 @@ E:\Games\Eushully\天結\
       待定清单 `docs/prob-FIELD.md` 已建立
 - [x] **INFO 情报首页翻译**：19 处 draw-string（17 处字面量译出 + 2 处符号保持）译完并通过
       assemble（骨架/SJIS/回读 17/17）；关键字表 `docs/keywords-情报首页.md`、待定清单 `docs/prob-INFO.md` 已建立
+- [x] **SC0010 第一章剧情翻译**：369 页 ADV（454 条 show-text、86 条纯读音注音只存档、8 个唯一 set-string）
+      译完并通过 assemble（骨架/SJIS/回读 510/510）；关键字表 `docs/keywords-第一章剧情.md`、
+      待定清单 `docs/prob-SC0010.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
