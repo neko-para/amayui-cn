@@ -39,6 +39,7 @@ E:\Games\Eushully\天結\
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
+│                          prob-SC0500.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -109,6 +110,9 @@ E:\Games\Eushully\天結\
       并入 `docs/keywords-第一章剧情.md` §6、待定清单 `docs/prob-SC2500.md` 已建立
 - [x] **SG2502A/B 第一章 - 女神之力提升（配套 SC2500）翻译**：系统提示页译完并通过
       assemble（SG2502A 回读 13/13、SG2502B 回读 8/8）；并入 `docs/keywords-第一章剧情.md` §6
+- [x] **SC0500 第一章 - 关卡剧情（堆积的城砦行道树）翻译**：261 页 ADV（286 条 show-text、26 条
+      纯读音注音只存档、8 个唯一 set-string）译完并通过 assemble（骨架/SJIS/回读 330/330）；
+      并入 `docs/keywords-第一章剧情.md` §7、待定清单 `docs/prob-SC0500.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
