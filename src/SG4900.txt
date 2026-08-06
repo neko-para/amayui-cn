@@ -627,16 +627,16 @@ call label_00004910
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004910
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,9 +1045,16 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006a28
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "マウス操作の場合、右クリックでアヴァロを選択すると"
 end-text-line 0
 show-text 0 "アイテムや装備のボタンも表示されます。"
+end-text-line 0
+*/
+// 输入原文：鼠标操作时，右键选择阿瓦罗，会显示道具与装备的按钮。另外，使用道具会消耗，但无论使用多少个都不会结束行动，请记住。
+show-text 0 @"鼠标操作时，右键选择阿瓦罗"
+end-text-line 0
+show-text 0 @"会显示道具与装备的按钮。"
 end-text-line 0
 call label_00006a50
 eq (local-int 0) (global-int 0) 6
@@ -1090,9 +1097,15 @@ u0041AD70 1 24 (local-int 1)
 label_00003ce0
 u0041BB40 1 2
 call label_00006a28
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "またアイテムは消費されますが、何個使用しても"
 end-text-line 0
 show-text 0 "行動終了にはなりませんので覚えておきましょう。"
+end-text-line 0
+*/
+show-text 0 @"另外，使用道具会消耗，但无论使用多少个"
+end-text-line 0
+show-text 0 @"都不会结束行动，请记住。"
 end-text-line 0
 call label_00006a50
 exit
