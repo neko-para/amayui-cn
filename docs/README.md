@@ -33,7 +33,8 @@ E:\Games\Eushully\天結\
 │                          keywords-序章战斗剧情.md / prob-SC4900.md /
 │                          keywords-战斗地点.md / prob-OBINIT.md /
 │                          keywords-卡片.md / prob-CDINIT2.md /
-│                          keywords-角色名称.md / prob-CNINIT.md）
+│                          keywords-角色名称.md / prob-CNINIT.md /
+│                          keywords-角色图鉴.md / prob-CIINIT.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -82,6 +83,9 @@ E:\Games\Eushully\天結\
 - [x] **CNINIT 角色名称全量翻译**：203 条 set-string（106 个唯一原文、30 处「？？？？」占位保持原样）
       译完并通过 assemble（骨架/SJIS/回读 105/105）；关键字表 `docs/keywords-角色名称.md`、
       待定清单 `docs/prob-CNINIT.md` 已建立
+- [x] **CIINIT 角色图鉴全量翻译**：252 条 set-string（211 个唯一原文、10 处「？？？」占位保持原样）
+      译完并通过 assemble（骨架/SJIS/回读 210/210）；关键字表 `docs/keywords-角色图鉴.md`、
+      待定清单 `docs/prob-CIINIT.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）

@@ -15,3 +15,4 @@
 * OBINIT 战斗地点
 * CDINIT2 卡片
 * CNINIT 角色名称
+* CIINIT 角色图鉴
