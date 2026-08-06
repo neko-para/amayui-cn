@@ -16,3 +16,4 @@
 * CDINIT2 卡片
 * CNINIT 角色名称
 * CIINIT 角色图鉴
+* PLINIT 设施
