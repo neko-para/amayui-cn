@@ -2803,16 +2803,16 @@ jcc (global-int 61ba8) ffffffff label_0000b668
 and (local-int 819f) (global-int a9cc) 4
 jcc (local-int 819f) ffffffff label_0000b648
 mov (global-int f8fa5) 7
-set-string (global-string f17) "試合を放棄しますか？"
+set-string (global-string f17) "試合を放棄しますか？|要放弃比赛吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "はい"
+set-string (local-string-ptr 2) "はい|是"
 lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "いいえ"
+set-string (local-string-ptr 2) "いいえ|否"
 lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -2831,16 +2831,16 @@ label_0000b668
 and (local-int 819f) (global-int a9cc) 4
 jcc (local-int 819f) ffffffff label_0000b858
 mov (global-int f8fa5) 7
-set-string (global-string f17) "探索を終了しますか？"
+set-string (global-string f17) "探索を終了しますか？|要结束探索吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "はい"
+set-string (local-string-ptr 2) "はい|是"
 lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "いいえ"
+set-string (local-string-ptr 2) "いいえ|否"
 lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -5811,7 +5811,7 @@ lookup-array-2d (local-ptr 3) (global-int 62d72) (global-int 61c72) 3e8 39
 eq (local-int 81a2) (local-ptr 3) 0
 jcc (local-int 81a2) ffffffff label_000191ac
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "再行動スキル発動！"
+set-string (local-string-ptr 2) "再行動スキル発動！|再行动技能发动！"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 call label_00006850
@@ -8412,7 +8412,7 @@ mov (global-int 546e02) (global-int 519afb)
 
 label_000251dc
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠した！"
+concat (local-string 0) (local-string-ptr 2) @"已占领！"
 jmp label_000252ec
 
 label_00025220
@@ -8426,7 +8426,7 @@ u00415BF0
 u00416270
 call label_00041a64
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠された！"
+concat (local-string 0) (local-string-ptr 2) @"被占领了！"
 
 label_000252ec
 call label_00032c28
@@ -8460,7 +8460,7 @@ call-script 3994
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00025548
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠した！"
+concat (local-string 0) (local-string-ptr 2) @"已占领！"
 jmp label_00025614
 
 label_00025548
@@ -8474,7 +8474,7 @@ u00415BF0
 u00416270
 call label_00041a64
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠された！"
+concat (local-string 0) (local-string-ptr 2) @"被占领了！"
 
 label_00025614
 call label_00032c28
@@ -8504,7 +8504,7 @@ call label_00032c28
 mov (local-int 80f2) 2
 call label_00032e20
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を封鎖した！"
+concat (local-string 0) (local-string-ptr 2) @"已封锁！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -8573,7 +8573,7 @@ eq (local-int 81a4) (local-ptr 7) 0
 or (local-int 81a5) (local-int 81a1) (local-int 81a4)
 jcc (local-int 81a5) ffffffff label_00025ce8
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "何も見つからなかった…"
+set-string (local-string-ptr 2) "何も見つからなかった…|什么都没找到…"
 add (global-int f8dfc) (global-int f8dfc) 1
 jmp label_00025fa8
 
@@ -8585,11 +8585,11 @@ concat (local-string 0) "【" (local-string-ptr 2)
 concat (local-string 0) (local-string 0) "】"
 lookup-array (local-ptr 4) (global-int 14d804) (global-int 56d63)
 lookup-array (local-string-ptr 2) (global-string 18e40) (local-ptr 4)
+concat (local-string 0) (local-string 0) @"获得"
 concat (local-string 0) (local-string 0) (local-string-ptr 2)
-concat (local-string 0) (local-string 0) "を"
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 concat (local-string 0) (local-string 0) (local-ptr 3)
-concat (local-string 0) (local-string 0) "個手に入れた！"
+concat (local-string 0) (local-string 0) @"个！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -8623,7 +8623,7 @@ u00415BF0
 u00416270
 call label_00041a64
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "宝箱の中身を奪われた！"
+set-string (local-string-ptr 2) "宝箱の中身を奪われた！|宝箱里的东西被抢走了！"
 add (global-int f8dfc) (global-int f8dfc) 1
 mov (local-int 2fcf) 0
 jmp label_000260d0
@@ -8686,7 +8686,7 @@ eq (local-int 81a0) (local-ptr 5) 0
 or (local-int 81a1) (local-int 819f) (local-int 81a0)
 jcc (local-int 81a1) ffffffff label_000265cc
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "何も見つからなかった…"
+set-string (local-string-ptr 2) "何も見つからなかった…|什么都没找到…"
 add (global-int f8dfc) (global-int f8dfc) 1
 jmp label_0002688c
 
@@ -8698,11 +8698,11 @@ concat (local-string 0) "【" (local-string-ptr 2)
 concat (local-string 0) (local-string 0) "】"
 lookup-array (local-ptr 4) (global-int 14d804) (global-int 56d63)
 lookup-array (local-string-ptr 2) (global-string 18e40) (local-ptr 4)
+concat (local-string 0) (local-string 0) @"获得"
 concat (local-string 0) (local-string 0) (local-string-ptr 2)
-concat (local-string 0) (local-string 0) "を"
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 concat (local-string 0) (local-string 0) (local-ptr 3)
-concat (local-string 0) (local-string 0) "個手に入れた！"
+concat (local-string 0) (local-string 0) @"个！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -8736,7 +8736,7 @@ u00415BF0
 u00416270
 call label_00041a64
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "財宝を奪われた！"
+set-string (local-string-ptr 2) "財宝を奪われた！|财宝被抢走了！"
 add (global-int f8dfc) (global-int f8dfc) 1
 mov (local-int 2fcf) 0
 jmp label_000269b4
@@ -8827,22 +8827,22 @@ lookup-array (local-ptr 3) (global-int 511468) (local-int 3001)
 jcc (local-ptr 3) ffffffff label_00027140
 lookup-array (local-ptr 4) (global-int 511468) (local-int 3001)
 lookup-array (local-string-ptr 2) (global-string 1d4f4) (local-ptr 4)
-concat (local-string 0) (local-string-ptr 2) "」スキルが無いと開かないようだ……"
+concat (local-string 0) (local-string-ptr 2) @"』技能，似乎打不开……"
 lookup-array (local-ptr 4) (global-int 511274) (local-int 3001)
 gr (local-int 819f) (local-ptr 4) 2329
 jcc (local-int 819f) ffffffff label_00027118
-concat (local-string 0) "」と「" (local-string 0)
+concat (local-string 0) @"』和『" (local-string 0)
 lookup-array (local-ptr 6) (global-int 511274) (local-int 3001)
 sub (local-int 81a2) (local-ptr 6) 2329
 lookup-array (local-string-ptr 2) (global-string 18e40) (local-int 81a2)
 concat (local-string 0) (local-string-ptr 2) (local-string 0)
 
 label_00027118
-concat (local-string 0) "「" (local-string 0)
+concat (local-string 0) @"没有『" (local-string 0)
 jmp label_00027154
 
 label_00027140
-set-string (local-string 0) "何か仕掛けを解除しないと開かないようだ……"
+set-string (local-string 0) "何か仕掛けを解除しないと開かないようだ……|似乎不解除什么机关就打不开……"
 
 label_00027154
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
@@ -8902,7 +8902,7 @@ lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-in
 mov (local-ptr 3) 1
 call label_000392bc
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 2) "扉が開放された！"
+set-string (local-string-ptr 2) "扉が開放された！|门打开了！"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 call label_00006850
@@ -9346,12 +9346,12 @@ lookup-array (local-ptr 4) (global-int 14d836) (global-int 56d63)
 lookup-array (local-ptr 6) (global-int a3528) (local-int 819f)
 add (local-int 80ec) (local-ptr 4) (local-ptr 6)
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を発見！"
+concat (local-string 0) (local-string-ptr 2) @"被发现！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-concat (local-string 0) "素材" (local-int 80ec)
-concat (local-string 0) (local-string 0) "個を採取袋に入れた！"
+concat (local-string 0) @"素材" (local-int 80ec)
+concat (local-string 0) (local-string 0) @"个已放入采集袋！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -9387,12 +9387,12 @@ call label_00032e20
 eq (local-int 819f) (local-int 3001) 29
 jcc (local-int 819f) ffffffff label_0002977c
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "に活力を与えた！"
+concat (local-string 0) (local-string-ptr 2) @"被注入了活力！"
 jmp label_000297b4
 
 label_0002977c
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を修理した！"
+concat (local-string 0) (local-string-ptr 2) @"已修复！"
 
 label_000297b4
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
@@ -9401,8 +9401,8 @@ add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 jcc (local-ptr 3) ffffffff label_000298d8
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
-concat (local-string 0) "女神力を" (local-ptr 3)
-concat (local-string 0) (local-string 0) "手に入れた！"
+concat (local-string 0) @"获得女神力" (local-ptr 3)
+concat (local-string 0) (local-string 0) @"！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -9445,7 +9445,7 @@ call-script 3994
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00029c04
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠した！"
+concat (local-string 0) (local-string-ptr 2) @"已占领！"
 jmp label_00029cd0
 
 label_00029c04
@@ -9459,7 +9459,7 @@ u00415BF0
 u00416270
 call label_00041a64
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
-concat (local-string 0) (local-string-ptr 2) "を占拠された！"
+concat (local-string 0) (local-string-ptr 2) @"被占领了！"
 
 label_00029cd0
 call label_00032c28
@@ -10240,7 +10240,7 @@ call-script 5120
 div (local-int 819f) (global-int deb90) a
 gre (local-int 81a2) (global-int 6c477e) (local-int 819f)
 jcc (local-int 81a2) ffffffff label_0002cfa0
-set-string (local-string 0) "収容上限に達しているため捕獲に失敗しました。"
+set-string (local-string 0) "収容上限に達しているため捕獲に失敗しました。|收容上限已满，捕获失败。"
 jmp label_0002d05c
 
 label_0002cfa0
@@ -10250,7 +10250,7 @@ lookup-array (local-ptr 5) (global-int 61fc6) (local-int 300a)
 lookup-array (local-ptr 6) (global-int 8caca) (local-ptr 5)
 add (local-ptr 3) (local-ptr 6) 1
 add (global-int 6c477e) (global-int 6c477e) 1
-set-string (local-string 0) "敵を捕獲しました。"
+set-string (local-string 0) "敵を捕獲しました。|捕获了敌人。"
 
 label_0002d05c
 concat (local-string 0) (local-string 0) "（"

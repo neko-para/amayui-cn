@@ -17,3 +17,4 @@
 * CNINIT 角色名称
 * CIINIT 角色图鉴
 * PLINIT 设施
+* FIELD 场域消息
