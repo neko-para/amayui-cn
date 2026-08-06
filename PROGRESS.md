@@ -14,3 +14,4 @@
 * MIINIT 任务/关卡内目标
 * OBINIT 战斗地点
 * CDINIT2 卡片
+* CNINIT 角色名称
