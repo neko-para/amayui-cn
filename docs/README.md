@@ -38,6 +38,7 @@ E:\Games\Eushully\天結\
 │                          keywords-设施.md / prob-PLINIT.md /
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
+│                          keywords-称号.md / prob-CCINIT.md / prob-DGINIT.md / prob-COMMITDR.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md /
@@ -121,6 +122,12 @@ E:\Games\Eushully\天結\
       配套 SG4015/SG4018（8/8、8/8）；并入 `docs/keywords-第一章剧情.md` §8、待定清单 `docs/prob-SC4010.md`
 - [x] **SG4900 序章 - 财宝获得（配套 SC4900）翻译**：4 行系统提示（鼠标/道具使用教程）译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第一章剧情.md` §8
+- [x] **CCINIT 角色称号全量翻译**：99 条 set-string（87 个唯一原文）译完并通过
+      assemble（骨架/SJIS/回读 87/87）；关键字表 `docs/keywords-称号.md`、待定清单 `docs/prob-CCINIT.md` 已建立
+- [x] **DGINIT 女神称号全量翻译**：16 条 set-string（16 个唯一原文）译完并通过
+      assemble（骨架/SJIS/回读 16/16）；并入 `docs/keywords-称号.md`、待定清单 `docs/prob-DGINIT.md` 已建立
+- [x] **COMMITDR 女神力提升翻译**：2 个 concat 片段（1 句系统提示）译完并通过
+      assemble（骨架/SJIS/回读 2/2）；并入 `docs/keywords-称号.md`、待定清单 `docs/prob-COMMITDR.md` 已建立
 - [x] **SC5400 第一章 - 关卡剧情（教程）翻译**：10 页 ADV（战斗基础/效果参数教程，19 条 show-text、
       ＨＰ 释义类注音 2 处保留）译完并通过 assemble（骨架/SJIS/回读 27/27）；并入
       `docs/keywords-第一章剧情.md` §8、待定清单 `docs/prob-SC5400.md`

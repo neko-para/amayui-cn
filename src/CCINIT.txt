@@ -21,7 +21,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000258
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "鉱床達人"
+set-string (global-string 18e3e) "鉱床達人|矿床达人"
 
 label_00000258
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -66,7 +66,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000006ac
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "局地戦術家"
+set-string (global-string 18e3e) "局地戦術家|局部战术家"
 
 label_000006ac
 add (global-int 5465e8) (global-int 5465e8) a
@@ -111,7 +111,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000b00
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "紅閃の鍛梁師"
+set-string (global-string 18e3e) "紅閃の鍛梁師|红闪的锻梁师"
 
 label_00000b00
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -156,7 +156,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000f64
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の鍛梁師"
+set-string (global-string 18e3e) "天駆の鍛梁師|天驱的锻梁师"
 
 label_00000f64
 add (global-int 5465e8) (global-int 5465e8) 5
@@ -198,7 +198,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00001354
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "絶錬王"
+set-string (global-string 18e3e) "絶錬王|绝炼王"
 
 label_00001354
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -237,7 +237,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00001710
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし英雄"
+set-string (global-string 18e3e) "愛されし英雄|被爱戴的英雄"
 
 label_00001710
 add (global-int 5465e8) (global-int 5465e8) a
@@ -272,7 +272,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00001a5c
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "鍛梁を極めし神傑"
+set-string (global-string 18e3e) "鍛梁を極めし神傑|穷极锻梁的神杰"
 
 label_00001a5c
 add (global-int 5465e8) (global-int 5465e8) 14
@@ -313,7 +313,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00001e78
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "精霊力を得た娘"
+set-string (global-string 18e3e) "精霊力を得た娘|获得精灵之力的少女"
 
 label_00001e78
 add (global-int 5465e8) (global-int 5465e8) 2
@@ -349,7 +349,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00002218
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "城砦と同期した娘"
+set-string (global-string 18e3e) "城砦と同期した娘|与城砦同步的少女"
 
 label_00002218
 add (global-int 5465e9) (global-int 5465e9) 1
@@ -386,7 +386,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_000025c4
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "架け橋を探す娘"
+set-string (global-string 18e3e) "架け橋を探す娘|寻找桥梁的少女"
 
 label_000025c4
 add (global-int 5465e9) (global-int 5465e9) 2
@@ -425,7 +425,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_000029a8
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "民衆を想う娘"
+set-string (global-string 18e3e) "民衆を想う娘|心系民众的少女"
 
 label_000029a8
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -460,7 +460,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00002d1c
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "使徒祝福を得た娘"
+set-string (global-string 18e3e) "使徒祝福を得た娘|获得使徒祝福的少女"
 
 label_00002d1c
 add (global-int 5465e9) (global-int 5465e9) 1
@@ -501,7 +501,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00003138
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "種族信仰を得た娘"
+set-string (global-string 18e3e) "種族信仰を得た娘|获得种族信仰的少女"
 
 label_00003138
 add (global-int 5465e9) (global-int 5465e9) 1
@@ -539,7 +539,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00003500
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "決意を秘めた娘"
+set-string (global-string 18e3e) "決意を秘めた娘|暗藏决心的少女"
 
 label_00003500
 add (global-int 5465e8) (global-int 5465e8) 2
@@ -581,7 +581,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00003938
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "愛に戦う女神"
+set-string (global-string 18e3e) "愛に戦う女神|为爱而战的女神"
 
 label_00003938
 add (global-int 5465e0) (global-int 5465e0) 1
@@ -618,7 +618,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00003ce4
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "慈愛を想う女神"
+set-string (global-string 18e3e) "慈愛を想う女神|心怀慈爱的女神"
 
 label_00003ce4
 add (global-int 5465e2) (global-int 5465e2) 1
@@ -654,7 +654,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00004074
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "鎮魂女神"
+set-string (global-string 18e3e) "鎮魂女神|镇魂女神"
 
 label_00004074
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -694,7 +694,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00004474
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "真実の女神"
+set-string (global-string 18e3e) "真実の女神|真实的女神"
 
 label_00004474
 add (global-int 5465e0) (global-int 5465e0) 1
@@ -735,7 +735,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00004880
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "天駆の女神"
+set-string (global-string 18e3e) "天駆の女神|天驱的女神"
 
 label_00004880
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -787,7 +787,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00004db0
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "憤怒の女神"
+set-string (global-string 18e3e) "憤怒の女神|愤怒的女神"
 
 label_00004db0
 add (global-int 5465e8) (global-int 5465e8) 5
@@ -822,7 +822,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_00005114
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "愛されし女神"
+set-string (global-string 18e3e) "愛されし女神|被爱戴的女神"
 
 label_00005114
 add (global-int 5465e8) (global-int 5465e8) 5
@@ -862,7 +862,7 @@ lt (local-int 4) (local-int 3) 0
 or (local-int 7) (local-int 2) (local-int 4)
 jcc (local-int 7) ffffffff label_000054f4
 sub (global-int 5465d4) 0 1
-set-string (global-string 18e3e) "天縁を極めし神"
+set-string (global-string 18e3e) "天縁を極めし神|穷极天缘之神"
 
 label_000054f4
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -895,7 +895,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00005828
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "狩猟達人"
+set-string (global-string 18e3e) "狩猟達人|狩猎达人"
 
 label_00005828
 add (global-int 5465db) (global-int 5465db) 1
@@ -937,7 +937,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00005c38
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "闘忍"
+set-string (global-string 18e3e) "闘忍|斗忍"
 
 label_00005c38
 add (global-int 5465db) (global-int 5465db) 1
@@ -984,7 +984,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000060d4
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "活締めの料理長"
+set-string (global-string 18e3e) "活締めの料理長|活杀料理长"
 
 label_000060d4
 add (global-int 5465db) (global-int 5465db) 1
@@ -1028,7 +1028,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000651c
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の狩猟屋"
+set-string (global-string 18e3e) "天駆の狩猟屋|天驱的猎人"
 
 label_0000651c
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -1071,7 +1071,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00006938
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "忍姫"
+set-string (global-string 18e3e) "忍姫|忍姬"
 
 label_00006938
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -1111,7 +1111,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00006d10
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし狩猟屋"
+set-string (global-string 18e3e) "愛されし狩猟屋|被爱戴的猎人"
 
 label_00006d10
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -1144,7 +1144,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00007034
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "狩猟を極めし神傑"
+set-string (global-string 18e3e) "狩猟を極めし神傑|穷极狩猎的神杰"
 
 label_00007034
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -1185,7 +1185,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00007428
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "雪達磨達人"
+set-string (global-string 18e3e) "雪達磨達人|雪人达人"
 
 label_00007428
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -1229,7 +1229,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00007860
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "反射娘"
+set-string (global-string 18e3e) "反射娘|反射少女"
 
 label_00007860
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -1271,7 +1271,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00007c80
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "氷滸の大魔術師"
+set-string (global-string 18e3e) "氷滸の大魔術師|冰畔的大魔术师"
 
 label_00007c80
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -1316,7 +1316,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000080d4
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の大魔術師"
+set-string (global-string 18e3e) "天駆の大魔術師|天驱的大魔术师"
 
 label_000080d4
 add (global-int 5465d5) (global-int 5465d5) 2
@@ -1358,7 +1358,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000084c4
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "氷雪女王"
+set-string (global-string 18e3e) "氷雪女王|冰雪女王"
 
 label_000084c4
 add (global-int 5465d5) (global-int 5465d5) 2
@@ -1392,7 +1392,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000087e4
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし大魔術師"
+set-string (global-string 18e3e) "愛されし大魔術師|被爱戴的大魔术师"
 
 label_000087e4
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -1424,7 +1424,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00008adc
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "魔術を極めし神傑"
+set-string (global-string 18e3e) "魔術を極めし神傑|穷极魔术的神杰"
 
 label_00008adc
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -1463,7 +1463,7 @@ lt (local-int 2) 14 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00008ea8
 mov (global-int 5465d4) 14
-set-string (global-string 18e3e) "剣流師範"
+set-string (global-string 18e3e) "剣流師範|剑流师范"
 
 label_00008ea8
 add (global-int 5465da) (global-int 5465da) 1
@@ -1501,7 +1501,7 @@ lt (local-int 2) 23 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00009258
 mov (global-int 5465d4) 23
-set-string (global-string 18e3e) "双撃の女騎士"
+set-string (global-string 18e3e) "双撃の女騎士|双击的女骑士"
 
 label_00009258
 add (global-int 5465da) (global-int 5465da) 1
@@ -1548,7 +1548,7 @@ lt (local-int 2) 32 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000096e4
 mov (global-int 5465d4) 32
-set-string (global-string 18e3e) "天駆砦将軍"
+set-string (global-string 18e3e) "天駆砦将軍|天驱砦将军"
 
 label_000096e4
 add (global-int 5465da) (global-int 5465da) 1
@@ -1593,7 +1593,7 @@ lt (local-int 2) 41 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00009b38
 mov (global-int 5465d4) 41
-set-string (global-string 18e3e) "天駆の女騎士"
+set-string (global-string 18e3e) "天駆の女騎士|天驱的女骑士"
 
 label_00009b38
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -1637,7 +1637,7 @@ lt (local-int 2) 50 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00009f60
 mov (global-int 5465d4) 50
-set-string (global-string 18e3e) "韋駄天の戦娘"
+set-string (global-string 18e3e) "韋駄天の戦娘|韦驮天的战女"
 
 label_00009f60
 add (global-int 5465db) (global-int 5465db) 1
@@ -1677,7 +1677,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000a338
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし女騎士"
+set-string (global-string 18e3e) "愛されし女騎士|被爱戴的女骑士"
 
 label_0000a338
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -1708,7 +1708,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000a634
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "剣流を極めし神傑"
+set-string (global-string 18e3e) "剣流を極めし神傑|穷极剑流的神杰"
 
 label_0000a634
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -1748,7 +1748,7 @@ lt (local-int 2) 19 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000aa1c
 mov (global-int 5465d4) 19
-set-string (global-string 18e3e) "弩巧名人"
+set-string (global-string 18e3e) "弩巧名人|弩巧名人"
 
 label_0000aa1c
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -1790,7 +1790,7 @@ lt (local-int 2) 28 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000ae2c
 mov (global-int 5465d4) 28
-set-string (global-string 18e3e) "弩巧狙撃士"
+set-string (global-string 18e3e) "弩巧狙撃士|弩巧狙击士"
 
 label_0000ae2c
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -1838,7 +1838,7 @@ lt (local-int 2) 37 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000b2c4
 mov (global-int 5465d4) 37
-set-string (global-string 18e3e) "狙撃水軍"
+set-string (global-string 18e3e) "狙撃水軍|狙击水军"
 
 label_0000b2c4
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -1883,7 +1883,7 @@ lt (local-int 2) 46 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000b718
 mov (global-int 5465d4) 46
-set-string (global-string 18e3e) "天駆の狙撃士"
+set-string (global-string 18e3e) "天駆の狙撃士|天驱的狙击士"
 
 label_0000b718
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -1924,7 +1924,7 @@ lt (local-int 2) 50 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000bafc
 mov (global-int 5465d4) 50
-set-string (global-string 18e3e) "冷撃王"
+set-string (global-string 18e3e) "冷撃王|冷击王"
 
 label_0000bafc
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -1956,7 +1956,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000be04
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし狙撃士"
+set-string (global-string 18e3e) "愛されし狙撃士|被爱戴的狙击士"
 
 label_0000be04
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -1986,7 +1986,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000c0d4
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "弩巧を極めし神傑"
+set-string (global-string 18e3e) "弩巧を極めし神傑|穷极弩巧的神杰"
 
 label_0000c0d4
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -2020,7 +2020,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000c424
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "闇界使い手"
+set-string (global-string 18e3e) "闇界使い手|暗界好手"
 
 label_0000c424
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -2064,7 +2064,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000c85c
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "闇の大操霊師"
+set-string (global-string 18e3e) "闇の大操霊師|暗之大操灵师"
 
 label_0000c85c
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -2109,7 +2109,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000ccb0
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の操霊師"
+set-string (global-string 18e3e) "天駆の操霊師|天驱的操灵师"
 
 label_0000ccb0
 add (global-int 5465dd) (global-int 5465dd) 1
@@ -2156,7 +2156,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000d12c
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "霊脈の魔術姫"
+set-string (global-string 18e3e) "霊脈の魔術姫|灵脉的魔术姬"
 
 label_0000d12c
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -2195,7 +2195,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000d4c8
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし操霊師"
+set-string (global-string 18e3e) "愛されし操霊師|被爱戴的操灵师"
 
 label_0000d4c8
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -2229,7 +2229,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000d7f8
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "操霊を極めし神傑"
+set-string (global-string 18e3e) "操霊を極めし神傑|穷极操灵的神杰"
 
 label_0000d7f8
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -2268,7 +2268,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000dbc4
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "鉄壁の双盾姫"
+set-string (global-string 18e3e) "鉄壁の双盾姫|铁壁的双盾姬"
 
 label_0000dbc4
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -2310,7 +2310,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000dfd4
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "贖罪の聖騎士"
+set-string (global-string 18e3e) "贖罪の聖騎士|赎罪的圣骑士"
 
 label_0000dfd4
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -2359,7 +2359,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000e488
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の双盾姫"
+set-string (global-string 18e3e) "天駆の双盾姫|天驱的双盾姬"
 
 label_0000e488
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -2399,7 +2399,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000e850
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "要塞姫"
+set-string (global-string 18e3e) "要塞姫|要塞姬"
 
 label_0000e850
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -2439,7 +2439,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000ec18
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし双盾姫"
+set-string (global-string 18e3e) "愛されし双盾姫|被爱戴的双盾姬"
 
 label_0000ec18
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -2472,7 +2472,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000ef2c
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "双盾を極めし神傑"
+set-string (global-string 18e3e) "双盾を極めし神傑|穷极双盾的神杰"
 
 label_0000ef2c
 add (global-int 5465d5) (global-int 5465d5) 6
@@ -2510,7 +2510,7 @@ lt (local-int 2) 23 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000f2dc
 mov (global-int 5465d4) 23
-set-string (global-string 18e3e) "征炎の守り手"
+set-string (global-string 18e3e) "征炎の守り手|征炎的守护者"
 
 label_0000f2dc
 add (global-int 5465da) (global-int 5465da) 1
@@ -2557,7 +2557,7 @@ lt (local-int 2) 32 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000f758
 mov (global-int 5465d4) 32
-set-string (global-string 18e3e) "真を貫く能天使"
+set-string (global-string 18e3e) "真を貫く能天使|贯彻真理的能天使"
 
 label_0000f758
 add (global-int 5465dc) (global-int 5465dc) 1
@@ -2606,7 +2606,7 @@ lt (local-int 2) 41 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000fc1c
 mov (global-int 5465d4) 41
-set-string (global-string 18e3e) "天駆の軍神天使"
+set-string (global-string 18e3e) "天駆の軍神天使|天驱的军神天使"
 
 label_0000fc1c
 add (global-int 5465da) (global-int 5465da) 1
@@ -2647,7 +2647,7 @@ lt (local-int 2) 50 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00010010
 mov (global-int 5465d4) 50
-set-string (global-string 18e3e) "天の調停者"
+set-string (global-string 18e3e) "天の調停者|天的调停者"
 
 label_00010010
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -2686,7 +2686,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000103bc
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし征炎"
+set-string (global-string 18e3e) "愛されし征炎|被爱戴的征炎"
 
 label_000103bc
 add (global-int 5465d5) (global-int 5465d5) 6
@@ -2717,7 +2717,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000106a8
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "征炎を極めし神傑"
+set-string (global-string 18e3e) "征炎を極めし神傑|穷极征炎的神杰"
 
 label_000106a8
 add (global-int 5465d5) (global-int 5465d5) 7
@@ -2758,7 +2758,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00010a9c
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "雷府の巫童"
+set-string (global-string 18e3e) "雷府の巫童|雷府的巫童"
 
 label_00010a9c
 add (global-int 5465db) (global-int 5465db) 1
@@ -2801,7 +2801,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00010ec8
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "竜脈を感じる巫童"
+set-string (global-string 18e3e) "竜脈を感じる巫童|感受龙脉的巫童"
 
 label_00010ec8
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -2845,7 +2845,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00011320
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "竜脈正姫"
+set-string (global-string 18e3e) "竜脈正姫|龙脉正姬"
 
 label_00011320
 add (global-int 5465db) (global-int 5465db) 1
@@ -2887,7 +2887,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00011730
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の雷府竜"
+set-string (global-string 18e3e) "天駆の雷府竜|天驱的雷府龙"
 
 label_00011730
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -2930,7 +2930,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00011b5c
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "征府竜"
+set-string (global-string 18e3e) "征府竜|征府龙"
 
 label_00011b5c
 add (global-int 5465d5) (global-int 5465d5) 2
@@ -2965,7 +2965,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00011ea8
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし巫童"
+set-string (global-string 18e3e) "愛されし巫童|被爱戴的巫童"
 
 label_00011ea8
 add (global-int 5465d5) (global-int 5465d5) 3
@@ -2998,7 +2998,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000121bc
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "竜脈を極めし神傑"
+set-string (global-string 18e3e) "竜脈を極めし神傑|穷极龙脉的神杰"
 
 label_000121bc
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -3036,7 +3036,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0001256c
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_0001256c
 add (global-int 5465db) (global-int 5465db) 1
@@ -3067,7 +3067,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00012838
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_00012838
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -3099,7 +3099,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00012b20
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_00012b20
 add (global-int 5465db) (global-int 5465db) 1
@@ -3130,7 +3130,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00012dec
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_00012dec
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -3159,7 +3159,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00013090
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_00013090
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -3187,7 +3187,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00013318
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_00013318
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -3215,7 +3215,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000135a0
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "成長した美しい巫童"
+set-string (global-string 18e3e) "成長した美しい巫童|成长后的美丽巫童"
 
 label_000135a0
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -3243,7 +3243,7 @@ lt (local-int 2) f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00013828
 mov (global-int 5465d4) f
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00013828
 add (global-int 5465db) (global-int 5465db) 1
@@ -3272,7 +3272,7 @@ lt (local-int 2) 1e 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00013acc
 mov (global-int 5465d4) 1e
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00013acc
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -3302,7 +3302,7 @@ lt (local-int 2) 2d 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00013d8c
 mov (global-int 5465d4) 2d
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00013d8c
 add (global-int 5465db) (global-int 5465db) 1
@@ -3331,7 +3331,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00014030
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00014030
 add (global-int 5465d9) (global-int 5465d9) 1
@@ -3360,7 +3360,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000142d4
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_000142d4
 add (global-int 5465d5) (global-int 5465d5) 5
@@ -3386,7 +3386,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00014534
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00014534
 add (global-int 5465d5) (global-int 5465d5) 6
@@ -3412,7 +3412,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00014794
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "真の力を持つ雷府竜"
+set-string (global-string 18e3e) "真の力を持つ雷府竜|拥有真正力量的雷府龙"
 
 label_00014794
 add (global-int 5465d5) (global-int 5465d5) 7
@@ -3438,7 +3438,7 @@ lt (local-int 2) 3c 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000149f4
 mov (global-int 5465d4) 3c
-set-string (global-string 18e3e) "天駆の奉仕天使"
+set-string (global-string 18e3e) "天駆の奉仕天使|天驱的侍奉天使"
 
 label_000149f4
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -3481,7 +3481,7 @@ lt (local-int 2) 4b 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00014df0
 mov (global-int 5465d4) 4b
-set-string (global-string 18e3e) "爆掃天使"
+set-string (global-string 18e3e) "爆掃天使|爆扫天使"
 
 label_00014df0
 add (global-int 5465d8) (global-int 5465d8) 1
@@ -3531,7 +3531,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000152a0
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし奉仕天使"
+set-string (global-string 18e3e) "愛されし奉仕天使|被爱戴的侍奉天使"
 
 label_000152a0
 add (global-int 5465d5) (global-int 5465d5) 4
@@ -3571,7 +3571,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00015658
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "掃除を極めし神傑"
+set-string (global-string 18e3e) "掃除を極めし神傑|穷极打扫的神杰"
 
 label_00015658
 add (global-int 5465d5) (global-int 5465d5) 8
@@ -3607,7 +3607,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000159d0
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "炎獄魔神"
+set-string (global-string 18e3e) "炎獄魔神|炎狱魔神"
 
 label_000159d0
 add (global-int 5465d5) (global-int 5465d5) 7
@@ -3648,7 +3648,7 @@ lt (local-int 2) 5f 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00015db4
 mov (global-int 5465d4) 5f
-set-string (global-string 18e3e) "愛されし地獄王"
+set-string (global-string 18e3e) "愛されし地獄王|被爱戴的地狱王"
 
 label_00015db4
 add (global-int 5465d5) (global-int 5465d5) 7
@@ -3688,7 +3688,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0001618c
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "鼓炎を極めし神傑"
+set-string (global-string 18e3e) "鼓炎を極めし神傑|穷极鼓炎的神杰"
 
 label_0001618c
 add (global-int 5465d5) (global-int 5465d5) 7
@@ -3730,7 +3730,7 @@ lt (local-int 2) 50 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0001659c
 mov (global-int 5465d4) 50
-set-string (global-string 18e3e) "罪負の処刑人"
+set-string (global-string 18e3e) "罪負の処刑人|负罪的处刑人"
 
 label_0001659c
 add (global-int 5465d5) (global-int 5465d5) 6
@@ -3768,7 +3768,7 @@ lt (local-int 2) 5a 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0001692c
 mov (global-int 5465d4) 5a
-set-string (global-string 18e3e) "愛されし侯爵"
+set-string (global-string 18e3e) "愛されし侯爵|被爱戴的侯爵"
 
 label_0001692c
 add (global-int 5465d5) (global-int 5465d5) 6
@@ -3805,7 +3805,7 @@ lt (local-int 2) 63 0
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00016ca0
 mov (global-int 5465d4) 63
-set-string (global-string 18e3e) "水域を極めし神傑"
+set-string (global-string 18e3e) "水域を極めし神傑|穷极水域的神杰"
 
 label_00016ca0
 add (global-int 5465d5) (global-int 5465d5) 6
