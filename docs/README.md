@@ -29,7 +29,8 @@ E:\Games\Eushully\天結\
 │                          prob-STINIT2.md / keywords-单位名称.md / prob-EBINIT.md /
 │                          keywords-战斗目标.md / prob-STINIT.md / prob-AMINIT2.md /
 │                          keywords-关卡逻辑.md / prob-SELSTAGE.md /
-│                          keywords-任务目标.md / prob-MIINIT.md）
+│                          keywords-任务目标.md / prob-MIINIT.md /
+│                          keywords-序章战斗剧情.md / prob-SC4900.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -69,6 +70,8 @@ E:\Games\Eushully\天結\
       关键字表 `docs/keywords-关卡逻辑.md`、待定清单 `docs/prob-SELSTAGE.md` 已建立
 - [x] **MIINIT 任务/关卡内目标全量翻译**：228 条 set-string（41 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 41/41）；
       关键字表 `docs/keywords-任务目标.md`、待定清单 `docs/prob-MIINIT.md` 已建立
+- [x] **SC4900 序章战斗剧情翻译**：15 页 ADV（28 条 show-text、13 条纯读音注音只存档）+ 6 个唯一 set-string 译文，
+      通过 assemble（骨架/SJIS/回读 26/26）；关键字表 `docs/keywords-序章战斗剧情.md`、待定清单 `docs/prob-SC4900.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）

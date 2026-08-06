@@ -627,16 +627,16 @@ call label_00006fcc
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00006fcc
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1302,7 +1302,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おっ、回復アイテムを発見！　これは国から自由に使用が認められているものだな」"
+*/
+// 输入原文：「哦，发现恢复道具！这是国家允许自由使用的东西呢」
+show-text 0 @"「哦，发现恢复道具！这是国家允许自由使用的东西呢」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1324,7 +1328,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これがあれば、ちょっと強い魔物が出ても安心して戦える」"
+*/
+// 输入原文：「有这个的话，就算遇到稍微强点的魔物也能安心战斗」
+show-text 0 @"「有这个的话，就算遇到稍微强点的魔物也能安心战斗」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1346,6 +1354,7 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「使うときは、左上にある『メニュー』の『"
 display-furigana 0 "消費" "しょうひ"
 show-text 0 "』カテゴリの中に置かれた『"
@@ -1355,6 +1364,11 @@ display-furigana 0 "木" "き"
 show-text 0 "の"
 display-furigana 0 "実" "み"
 show-text 0 "』を選ぼう」"
+*/
+// 输入原文：「用的时候，就选左上角『菜单』里『消耗』分类中的『水色果实』吧」
+show-text 0 @"「用的时候，就选左上角『菜单』里『消耗』分类中的『"
+end-text-line 0
+show-text 0 @"水色果实』吧」"
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -1389,7 +1403,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし。このままどんどんいくぜ」"
+*/
+// 输入原文：「好。就这么一路推进下去吧」
+show-text 0 @"「好。就这么一路推进下去吧」"
 wait-for-input 0
 end-text-line 0
 call label_000097dc
@@ -1419,9 +1437,13 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「行けるところには行ったはずだけど、まだ"
 display-furigana 0 "微" "かす"
 show-text 0 "かに魔力を感じるな」"
+*/
+// 输入原文：「能去的地方应该都去过了，不过还能隐约感觉到魔力」
+show-text 0 @"「能去的地方应该都去过了，不过还能隐约感觉到魔力」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 2f2f) 1
@@ -1489,7 +1511,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「たぶん、この辺りだと思うんだけど。隠し通路がないか調べてみるか」"
+*/
+// 输入原文：「大概就是这一带……。要不要找找有没有隐藏通道？」
+show-text 0 @"「大概就是这一带……。要不要找找有没有隐藏通道？」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1511,11 +1537,17 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「『"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "』なら『"
 display-furigana 0 "探索" "たんさく"
 show-text 0 "』だって不可能じゃない。隠し通路があれば『！』が表示されるから、近付いてみよう」"
+*/
+// 输入原文：「身为『锻梁师』，『探索』也不是不可能。有隐藏通道的话会显示『！』，靠近看看吧」
+show-text 0 @"「身为『锻梁师』，『探索』也不是不可能。有隐藏通道"
+end-text-line 0
+show-text 0 @"的话会显示『！』，靠近看看吧」"
 wait-for-input 0
 end-text-line 0
 call label_00007160
@@ -1572,7 +1604,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「手は抜けないし、もう少し探索してみるか」"
+*/
+// 输入原文：「不能马虎，再稍微探索一下吧」
+show-text 0 @"「不能马虎，再稍微探索一下吧」"
 wait-for-input 0
 end-text-line 0
 call label_000097dc
@@ -1602,7 +1638,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おっ、お宝発見！　どうやらこれも、遺跡由来のものじゃない装飾品みたいだな」"
+*/
+// 输入原文：「哦，发现宝贝了！看来这也不是遗迹出产的装饰品呢」
+show-text 0 @"「哦，发现宝贝了！看来这也不是遗迹出产的装饰品呢」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1624,11 +1664,17 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「宝箱だったら『"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "』スキルを持つ俺にとっては朝飯前だぜ。『"
 display-furigana 0 "開錠" "かいじょう"
 show-text 0 "』スキルを持っていてもできるけどな」"
+*/
+// 输入原文：「说到宝箱，对拥有『锻梁师』技能的我来说就是小菜一碟。有『开锁』技能的话也能开就是了」
+show-text 0 @"「说到宝箱，对拥有『锻梁师』技能的我来说就是小菜一"
+end-text-line 0
+show-text 0 @"碟。有『开锁』技能的话也能开就是了」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1650,7 +1696,13 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「装備アイテムは装備しないと意味がない。せっかく手に入れたんだから、今のうちに装備しておこう」"
+*/
+// 输入原文：「装备道具不装备上就没有意义。好不容易到手了，趁现在装备上吧」
+show-text 0 @"「装备道具不装备上就没有意义。好不容易到手了，趁现"
+end-text-line 0
+show-text 0 @"在装备上吧」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1672,6 +1724,7 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「メニューを開く。『"
 display-furigana 0 "装飾" "そうしょく"
 show-text 0 "』カテゴリにある『"
@@ -1679,6 +1732,11 @@ display-furigana 0 "歴戦" "れきせん"
 show-text 0 "の"
 display-furigana 0 "指輪" "ゆびわ"
 show-text 0 "』を選択する消費アイテムを使うときと一緒だな」"
+*/
+// 输入原文：「打开菜单。选择『装饰』分类里的『历战之戒』……和用消耗道具的时候一样呢」
+show-text 0 @"「打开菜单。选择『装饰』分类里的『历战之戒』……和"
+end-text-line 0
+show-text 0 @"用消耗道具的时候一样呢」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1700,7 +1758,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、もうひと頑張りだ」"
+*/
+// 输入原文：「好，再加把劲」
+show-text 0 @"「好，再加把劲」"
 wait-for-input 0
 end-text-line 0
 call label_000097dc
@@ -1730,9 +1792,13 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、この辺りに"
 display-furigana 0 "淀" "よど"
 show-text 0 "んだ魔力はもうなさそうだな」"
+*/
+// 输入原文：「好，这一带淤积的魔力看来已经没有了」
+show-text 0 @"「好，这一带淤积的魔力看来已经没有了」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1754,7 +1820,11 @@ call label_0000935c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「他の場所も気になるし、一度ほかの人たちと合流しよう」"
+*/
+// 输入原文：「其他地方也在意，先和大家会合吧」
+show-text 0 @"「其他地方也在意，先和大家会合吧」"
 wait-for-input 0
 end-text-line 0
 call label_000097dc
