@@ -10,3 +10,4 @@
 * STINIT 战斗目标
 * AMINIT2 地点/阵营标签
 * SELSTAGE 关卡逻辑
+* MIINIT 任务/关卡内目标
