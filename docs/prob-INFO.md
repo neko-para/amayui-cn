@@ -1,0 +1,31 @@
+# INFO 待定内容清单（prob-INFO.md）
+
+> 更新日期：2026-08-07
+> 来源：`src/INFO.txt`（情报首页，17 处 draw-string 字面量翻译）
+> 用途：记录 INFO 翻译中**待统一**的译名与工具限制。
+
+## 1. 译名待统一
+
+| 日文原名 | 本次译文 | 候选 / 备注 |
+|---|---|---|
+| アイテム | 道具 | 情报首页页签；与 PROGRESS「ITINIT 物品」及 INFOIT 子页统一（候选：物品/道具） |
+| チュートリアル | 教程 | 候选：教学 / 新手引导 |
+| 生息地 | 栖息地 | 候选：栖生地 |
+
+## 2. 已确认
+
+| 词条 | 本次译文 | 依据 |
+|---|---|---|
+| 装備リンク / 施設 / スキル | 装备连携 / 设施 / 技能 | keywords-装备与物品 §7 / PLINIT / SKINIT |
+
+## 3. 工具限制
+
+| 事项 | 现状 | 处理 |
+|---|---|---|
+| locale/INFO.json | 0 条（空 `{}`） | extract 仅收集 `set-string (global-string …)`；draw-string 字面量以 src + assemble 回读 17/17 为准 |
+
+## 4. 工程说明
+
+1. `draw-string` 已加入 `scripts/translate.js` 的 TEXT_INSTR（骨架放行 + 对语法展开），
+   本脚本为首次端到端验证（assemble 骨架通过、回读 17/17）；
+2. INFO* 子页（INFOCH/INFOEN/…）共用本表页签/标签，译名变更时全局同步。

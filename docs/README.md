@@ -36,7 +36,8 @@ E:\Games\Eushully\天結\
 │                          keywords-角色名称.md / prob-CNINIT.md /
 │                          keywords-角色图鉴.md / prob-CIINIT.md /
 │                          keywords-设施.md / prob-PLINIT.md /
-│                          keywords-场域消息.md / prob-FIELD.md）
+│                          keywords-场域消息.md / prob-FIELD.md /
+│                          keywords-情报首页.md / prob-INFO.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -93,6 +94,8 @@ E:\Games\Eushully\天結\
 - [x] **FIELD 场域消息翻译**：12 个唯一 set-string + 15 个唯一 concat 片段（F 组重排 2 条 concat 为
       「获得…个！」格式）译完并通过 assemble（骨架/SJIS/回读 27/27）；关键字表 `docs/keywords-场域消息.md`、
       待定清单 `docs/prob-FIELD.md` 已建立
+- [x] **INFO 情报首页翻译**：19 处 draw-string（17 处字面量译出 + 2 处符号保持）译完并通过
+      assemble（骨架/SJIS/回读 17/17）；关键字表 `docs/keywords-情报首页.md`、待定清单 `docs/prob-INFO.md` 已建立
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
