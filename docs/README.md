@@ -39,7 +39,7 @@ E:\Games\Eushully\天結\
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
-│                          prob-SC4010.md /
+│                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
@@ -119,6 +119,12 @@ E:\Games\Eushully\天結\
       配套 SG4015/SG4018（8/8、8/8）；并入 `docs/keywords-第一章剧情.md` §8、待定清单 `docs/prob-SC4010.md`
 - [x] **SG4900 序章 - 财宝获得（配套 SC4900）翻译**：4 行系统提示（鼠标/道具使用教程）译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第一章剧情.md` §8
+- [x] **SC5400 第一章 - 关卡剧情（教程）翻译**：10 页 ADV（战斗基础/效果参数教程，19 条 show-text、
+      ＨＰ 释义类注音 2 处保留）译完并通过 assemble（骨架/SJIS/回读 27/27）；并入
+      `docs/keywords-第一章剧情.md` §8、待定清单 `docs/prob-SC5400.md`
+- [x] **SC5410 第一章 - 关卡剧情 城砦行道树翻译**：17 页 ADV（20 条 show-text、纯读音注音只存档）
+      译完并通过 assemble（骨架/SJIS/回读 25/25）；并入 `docs/keywords-第一章剧情.md` §7.2、
+      待定清单 `docs/prob-SC5410.md`
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
