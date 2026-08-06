@@ -38,7 +38,8 @@ E:\Games\Eushully\天結\
 │                          keywords-设施.md / prob-PLINIT.md /
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
-│                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md）
+│                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md /
+│                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
