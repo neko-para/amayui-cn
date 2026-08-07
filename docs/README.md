@@ -44,6 +44,7 @@ E:\Games\Eushully\天結\
 │                          keywords-地形.md / prob-LAINIT.md /
 │                          keywords-战斗奖励.md / prob-REWARD.md /
 │                          keywords-存档.md / prob-SAVE.md /
+│                          prob-SC6510.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -172,6 +173,10 @@ E:\Games\Eushully\天結\
 - [x] **SAVE 存档翻译**：确认对话框/存档位限制/游玩时间等 13 个唯一译文译完并通过
       assemble（骨架/SJIS/回读 13/13）；关键字表 `docs/keywords-存档.md`、待定清单
       `docs/prob-SAVE.md` 已建立（保存/读取/自动保存 与 OPINIT1 一致）
+- [x] **SC6510 第一章·关卡剧情翻译**：60 页 ADV（库米尔村水井/流燐结骑/忘神之墓/华燐结骑/
+      因夫鲁斯军包围城砦）译完并通过 assemble（骨架/SJIS/回读 107/107）；并入
+      `docs/keywords-第一章剧情.md` §7.3、待定清单 `docs/prob-SC6510.md` 已建立
+      （无配套 SG；章节归属待核）
 
 ## 4. 本地工具（tools/）
 
@@ -326,6 +331,9 @@ npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 
    `end-text-line` 已释放为可调文本行；每视觉行 ≤25 中文字，由 `scripts/lib/reflow.js`
    （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行、行尾不得悬空左引号『、
    输出 `// 输入原文` 单行注释 + 正文 + `// 页面结束` 结束注释的三段式页面块）自动排版。
+   **页面翻译工作流（推荐）**：页块只写 `/* 原文存档 */` + `// 输入原文：<整句译文>` +
+   `// 页面结束`（正文留空），再运行 `npm run reflow-apply -- <脚本>` 从注释刷新正文，
+   不要手工排版正文后反向检查宽度（SC6510 起采用，`--check` 可幂等验证）。
    已完成：OPINIT1（172 条设置文案）、SN0000 开场 ADV 段落（重排示例，待游戏内验证）。
    注音策略（当前）：释义/称号类注音保留在 display-furigana 位置（中文释义作注音），
    纯读音（假名）类注音移除。
