@@ -34,5 +34,4 @@
 ## 4. 处理说明
 
 1. 385 条 show-text 0 + 69 条 display-furigana（纯读音全部只存档，ＦＳ 释义注音保留）；
-2. locale/SC2500.json 仅 3 条（global-string 按地址去重）；SG2502A/B 各 1 条；
-3. PROGRESS 索引：SC2500 第一章 - 城砦内部；SG2502A/B 第一章 - 女神之力提升。
+2. PROGRESS 索引：SC2500 第一章 - 城砦内部；SG2502A/B 第一章 - 女神之力提升。

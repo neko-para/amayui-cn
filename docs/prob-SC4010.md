@@ -27,5 +27,4 @@
 
 1. 80 条 show-text 0 + 1 条 show-text 2 + 20 条 display-furigana；
    其中 ＨＰ/耐久力、ＳＰ/技力（3 处）为释义类注音，已保留 display-furigana；
-2. locale/SC4010.json 仅 3 条（global-string 按地址去重）；
-3. 本脚本曾漏掉释义类注音（按纯读音处理），已复核修正；后续脚本翻译时对照 data 审计。
+2. 本脚本曾漏掉释义类注音（按纯读音处理），已复核修正；后续脚本翻译时对照 data 审计。

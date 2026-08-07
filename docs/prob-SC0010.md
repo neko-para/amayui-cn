@@ -24,7 +24,6 @@
 
 1. 86 条 display-furigana 全为纯读音 → 只进原文存档，译文不写注音；
 2. 外字 U+E000（停顿标记）存档保留，译文省略；
-3. locale/SC0010.json 仅 4 条（global-string 按地址去重），ADV 文本以 src + assemble 回读 510/510 为准。
 
 ## 4. 结论与后续动作
 

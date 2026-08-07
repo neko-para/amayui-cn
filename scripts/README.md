@@ -8,7 +8,6 @@ E:\Games\Eushully\天結\
 ├── install\   可运行测试树（与本体完全独立的全量真拷贝，含 DATA1-8 解包目录）
 ├── data\      只读比较基线（341 个反汇编 txt，原始日文，不再修改）
 ├── src\       可编辑开发源（341 个 txt，含翻译语法）
-├── locale\    校对/机翻视图（extract 生成；当前仅 OPINIT1.json）
 ├── scripts\   本脚本目录
 ├── install-manifest.json   install 文件 MD5
 └── raw-manifest.json       raw（游戏本体）文件 MD5
@@ -29,9 +28,6 @@ npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
 npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
-npm run extract -- <脚本>  # src → locale/<脚本>.json（校对/机翻视图，--force 重建）
-npm run extract-all        # 为 src 下尚无 locale 视图的脚本生成视图
-npm run merge -- <脚本>    # locale 译文写回 src/<脚本>.txt（对语法）
 npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 标注）→ 标准脚本行
 npm run sync-patch         # 按 patch/patch.config.json 同步补丁包（src 相对工程根，dst 相对 patch/）
 ```
@@ -122,14 +118,11 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
     原文行保持与 data 基线**逐字一致**，git diff 中显示为上下文，便于准确识别实际修改；
     预处理时整块丢弃；`//` 行注释仍兼容支持）；
   - `end-text-line 0` —— **视觉行结束标记**：属可调文本行，可按排版自由插入/移除
-    （show-text/display-furigana 直到遇到它才结束当前视觉行）；
-- `locale\<脚本>.json`：校对/机翻视图（extract 从 src 生成，merge 可写回 src）。
+    （show-text/display-furigana 直到遇到它才结束当前视觉行）。
 
 ```bash
 cd scripts
 npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码位）→ 骨架校验 → 汇编 → 安装 → 回读
-npm run extract -- OPINIT1    # src → locale 视图（校对/机翻）
-npm run merge -- OPINIT1      # locale 译文 → src（写为对语法）
 ```
 
 要点：

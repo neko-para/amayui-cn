@@ -23,7 +23,6 @@
 ## 3. 处理说明
 
 1. 286 条 show-text 0 + 1 条 show-text 2 + 26 条 display-furigana（纯读音全部只存档）；
-2. locale/SC0500.json 仅 2 条（global-string 按地址去重）；
-3. 原文生僻字「蹚」经流程处理：在 `subs_cn_jp.json` 添加映射 `"蹚": "妣"`（载体字需 cp932 可编码、
+2. 原文生僻字「蹚」经流程处理：在 `subs_cn_jp.json` 添加映射 `"蹚": "妣"`（载体字需 cp932 可编码、
    data 零出现、字典未占用、字体可持久化），重生成 `WenQuanYi_cnjp.ttf` 与 `Amayui-CN_cnjp.ttf`
    后恢复原译「不想蹚这趟浑水吗」；该流程已记入 conventions.md。

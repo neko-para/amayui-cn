@@ -9,7 +9,6 @@ const ASCII_JUNCTION = 'E:\\Games\\Eushully\\wk';
 const DECOMPILER = path.join(ASCII_JUNCTION, 'tools', 'eushully-decompiler', 'Decompiler', 'Decompiler.exe');
 
 const DATA_DIR = path.join(ROOT_DIR, 'data');   // 只读比较基线（原始日文）
-const LOCALE_DIR = path.join(ROOT_DIR, 'locale');
 
 // 翻译语法（src 源文件内）：
 //   "原文|译文"   —— #1 对语法：简单单行替换（set-string 等）
@@ -24,11 +23,8 @@ const LITERAL_RE = /(@?)"([^"]*)"/g;
 const SET_STRING_RE = /^set-string \(global-string ([0-9a-f]+)\) (@?)"(.+)"$/;
 
 function usage() {
-  console.log('用法: node translate.js <assemble|extract|extract-all|merge> [脚本名，如 OPINIT1]');
+  console.log('用法: node translate.js <assemble> [脚本名，如 OPINIT1]');
   console.log('  assemble   src/<脚本>.txt（含翻译语法）→ 预处理展开 → 骨架校验 → 汇编 → 安装 → 回读验证');
-  console.log('  extract    从 src 提取 set-string 文案 → locale/<脚本>.json（校对/机翻视图）');
-  console.log('  extract-all 为 src 下所有尚无 locale 的脚本生成视图');
-  console.log('  merge      locale/<脚本>.json 的译文写回 src/<脚本>.txt（对语法）');
 }
 
 // ---------- 语法解析 ----------
@@ -158,76 +154,10 @@ function assemble(script) {
   }
 }
 
-function extract(script, force = false) {
-  const out = path.join(LOCALE_DIR, `${script}.json`);
-  if (fs.existsSync(out) && !force) {
-    console.log(`[skip ] ${out} 已存在（--force 重建）`);
-    return;
-  }
-  const srcPath = path.join(SRC_DIR, `${script}.txt`);
-  const obj = {};
-  for (const line of fs.readFileSync(srcPath, 'utf8').split(/\r?\n/)) {
-    const m = line.match(SET_STRING_RE);
-    if (!m) continue;
-    const { orig, trans } = parseLiteral(m[2], m[3]);
-    obj[m[1]] = { orig, trans: trans ?? '' };
-  }
-  fs.mkdirSync(LOCALE_DIR, { recursive: true });
-  fs.writeFileSync(out, JSON.stringify(obj, null, 2) + '\n', 'utf8');
-  console.log(`[extract] ${Object.keys(obj).length} 条 → ${out}`);
-}
-
-function extractAll() {
-  fs.mkdirSync(LOCALE_DIR, { recursive: true });
-  let created = 0;
-  let skipped = 0;
-  for (const f of fs.readdirSync(SRC_DIR).filter((x) => x.endsWith('.txt'))) {
-    const script = f.slice(0, -4);
-    if (fs.existsSync(path.join(LOCALE_DIR, `${script}.json`))) {
-      skipped++;
-      continue;
-    }
-    extract(script, true);
-    created++;
-  }
-  console.log(`[extract-all] 新建 ${created} 个，跳过 ${skipped} 个`);
-}
-
-function merge(script) {
-  const localePath = path.join(LOCALE_DIR, `${script}.json`);
-  if (!fs.existsSync(localePath)) {
-    console.error('[FAIL] 先运行 extract:', localePath);
-    process.exit(1);
-  }
-  const loc = JSON.parse(fs.readFileSync(localePath, 'utf8'));
-  const srcPath = path.join(SRC_DIR, `${script}.txt`);
-  const raw = fs.readFileSync(srcPath, 'utf8');
-  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
-  const lines = raw.split(/\r\n|\r|\n/);
-  let updated = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(SET_STRING_RE);
-    if (!m) continue;
-    const e = loc[m[1]];
-    if (e && e.trans) {
-      const pair = `${e.orig}${PAIR_SEP}${e.trans}`;
-      if (m[3] !== pair) {
-        lines[i] = `set-string (global-string ${m[1]}) "${pair}"`;
-        updated++;
-      }
-    }
-  }
-  fs.writeFileSync(srcPath, lines.join(eol), 'utf8');
-  console.log(`[merge ] ${script}.txt 应用 ${updated} 条译文（locale → src 对语法）`);
-}
-
 const cmd = process.argv[2];
 if (!cmd) {
   usage();
   process.exit(1);
 }
 if (cmd === 'assemble') assemble(process.argv[3]);
-else if (cmd === 'extract') extract(process.argv[3], process.argv.includes('--force'));
-else if (cmd === 'extract-all') extractAll();
-else if (cmd === 'merge') merge(process.argv[3]);
 else usage();

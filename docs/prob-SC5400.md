@@ -21,4 +21,3 @@
 ## 3. 处理说明
 
 1. 19 条 show-text 0 + 1 条 show-text 2 + 9 条 display-furigana（纯读音只存档，ＨＰ 释义类保留）；
-2. locale/SC5400.json 仅 2 条（global-string 按地址去重）。

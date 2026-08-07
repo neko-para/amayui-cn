@@ -20,14 +20,7 @@
 | 工房 / 女神力 | 保持原样 | 汉字可直接阅读，且「工房」与装备表一致 |
 | ？？？？？？？？？ / ？？？？？？？？？？？？？ | 保持原样 | 隐藏/未解锁关卡名称占位，语言中立 |
 
-## 3. 工具限制
-
-| 事项 | 现状 | 处理 |
-|---|---|---|
-| locale/SELSTAGE.json | extract 输出空 `{}`（0 条） | set-string 目标为 `(local-string 0)` / `(local-string-ptr 0)`，extract 仅收集 `(global-string …)`；校对以 src + assemble 回读 5/5 为准 |
-
-## 4. 结论与后续动作
+## 3. 结论与后续动作
 
 1. §1 三项译法与商店/剧情文本统一后定稿；
 2. 其余 7 条 set-string 为 `(local-string-ptr 0)` 纯拷贝行，无需翻译；
-3. 若后续 extract 需覆盖 local-string 目标，可作为 translate.js 扩展点。

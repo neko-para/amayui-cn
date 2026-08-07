@@ -19,4 +19,3 @@
 ## 3. 处理说明
 
 1. 20 条 show-text 0 + 1 条 show-text 2 + 3 条 display-furigana（纯读音只存档）；
-2. locale/SC5410.json 仅 2 条（global-string 按地址去重）。

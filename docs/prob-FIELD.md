@@ -23,13 +23,7 @@
 | 捕获计数 | `（当前/上限）` 全角括号 + 半角数字 | toString 生成，保持半角 |
 | 什么都没找到… | 省略号保留 | 与原文一致 |
 
-## 3. 工具限制
-
-| 事项 | 现状 | 处理 |
-|---|---|---|
-| locale/FIELD.json | 仅 1 条（f17 按地址去重） | extract 只收集 `(global-string …)`；local-string/ptr 与 concat 片段以 src + assemble 回读 27/27 为准 |
-
-## 4. 工程说明
+## 3. 工程说明
 
 1. **lookup-array 重排暂缓**：本次仅重排 concat 行（本就自由），未改 `translate.js`；
    若后续需要移动 lookup-array，再实现 REORDERABLE 子集检查（基线 ⊆ 当前）；

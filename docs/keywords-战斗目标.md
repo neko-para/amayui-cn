@@ -5,8 +5,8 @@
 > 83 个唯一原文；`src/STINIT.txt` 已全量翻译并通过 assemble，回读验证 83/83）
 > 用途：战斗目标/条件文本翻译产物沉淀；供 SC* 剧情脚本与 `keywords-战斗地名.md` 联合引用。
 > 状态：`确认` = 已有项目内依据；`建议` = 本次采用、待复核；`待定` = 见 `prob-STINIT.md`。
-> 注意：STINIT 的 set-string 全局地址跨关卡复用（如 121d2），extract 的 locale 视图按地址
-> 去重仅保留末次出现（8 条）；完整译文以 `src/STINIT.txt` 的 449 行为准。
+> 注意：STINIT 的 set-string 全局地址跨关卡复用（如 121d2），同一地址在不同关卡对应不同文本；
+> 完整译文以 `src/STINIT.txt` 的 449 行为准。
 
 ## 1. 已确认（与 glossary-draft / keywords-SKINIT / keywords-战斗地名 一致）
 
