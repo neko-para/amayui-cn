@@ -3064,10 +3064,10 @@ show-text 0 "き"
 display-furigana 0 "抜" "ぬ"
 show-text 0 "け』が続いていて通ることができなさそうだ」"
 */
-// 输入原文：「里面好像有能前进的地方，但『吹抜』连绵不断，似乎过不去」
-show-text 0 @"「里面好像有能前进的地方，但『吹抜』连绵不断，似乎过" 
+// 输入原文：「里面好像有能前进的地方，但『风口』连绵不断，似乎过不去」
+show-text 0 @"「里面好像有能前进的地方，但『风口』连绵不断，似乎" 
 end-text-line 0
-show-text 0 @"不去」"
+show-text 0 @"过不去」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
