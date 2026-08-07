@@ -38,6 +38,7 @@ E:\Games\Eushully\天結\
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
 │                          keywords-称号.md / prob-CCINIT.md / prob-DGINIT.md / prob-COMMITDR.md /
+│                          keywords-AIM.md / prob-AIM.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -147,6 +148,9 @@ E:\Games\Eushully\天結\
 - [x] **EBINIT 单位名称全量翻译**：528 条 set-string（335 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 335/335）；
       关键字表 `docs/keywords-单位名称.md`、待定清单 `docs/prob-EBINIT.md` 已建立
 - [x] **AGF 图片工具验证**：`Eushully_AGF_TooL` 导出/有头注入/无头打包回环全部通过（见 §7.5；优先级低）
+- [x] **AIM 目标/采集统计界面翻译**：2 处 set-string 字面量（お金→金钱 1 处译出、女神力保持原样）
+      译完并通过 assemble（骨架/SJIS/回读 1/1）；关键字表 `docs/keywords-AIM.md`、
+      待定清单 `docs/prob-AIM.md` 已建立（其余显示文本为全局字符串引用，源表已译）
 
 ## 4. 本地工具（tools/）
 
