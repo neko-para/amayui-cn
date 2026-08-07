@@ -33,6 +33,14 @@ npm run reflow-apply [-- --check] [--sample N] [脚本...] # 从 // 输入原文
 npm run sync-patch         # 按 patch/patch.config.json 同步补丁包（src 相对工程根，dst 相对 patch/）
 ```
 
+`manifest` / `manifest-raw` / `manifest-all` / `check` 支持追加文件参数，只处理指定文件
+（相对各目录顶层的路径，绝对路径也可，可多个；省略时处理全部文件）：
+
+```bash
+npm run manifest -- AIM.BIN SC0010.BIN   # 仅重算这两个文件的 MD5 并写回 install-manifest
+npm run check -- AIM.BIN                  # 仅核对 AIM.BIN 是否与清单一致
+```
+
 ## 文件策略（config.js）
 
 - install 为**全量真拷贝**：游戏资源聚合在 ALF 内（含后续要改写的脚本），硬链接可省空间有限，

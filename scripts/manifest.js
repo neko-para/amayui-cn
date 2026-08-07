@@ -33,17 +33,35 @@ function md5File(filePath) {
   });
 }
 
-async function writeManifest(root, manifestPath, label) {
+async function writeManifest(root, manifestPath, label, targets = null) {
   if (!fs.existsSync(root)) {
     console.error(`[FAIL] ${label} 目录不存在: ${root}`);
     process.exit(1);
   }
-  const files = topLevelFiles(root);
-  const out = {};
-  for (const file of files) {
-    const rel = relativePosix(root, file);
-    out[rel] = await md5File(file);
-    console.log('[md5]', rel);
+  let out;
+  if (targets) {
+    if (!fs.existsSync(manifestPath)) {
+      console.error(`[FAIL] ${manifestPath} 不存在，先运行全量更新: npm run manifest`);
+      process.exit(1);
+    }
+    const existing = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    out = { ...existing.files };
+    for (const rel of targets) {
+      const file = path.join(root, ...rel.split('/'));
+      if (!fs.existsSync(file)) {
+        console.error(`[FAIL] ${label} 中不存在: ${rel}`);
+        process.exit(1);
+      }
+      out[rel] = await md5File(file);
+      console.log('[md5]', rel);
+    }
+  } else {
+    out = {};
+    for (const file of topLevelFiles(root)) {
+      const rel = relativePosix(root, file);
+      out[rel] = await md5File(file);
+      console.log('[md5]', rel);
+    }
   }
   const manifest = {
     generated: new Date().toISOString(),
@@ -55,41 +73,60 @@ async function writeManifest(root, manifestPath, label) {
   console.log(`\n已写入 ${manifestPath} (${manifest.count} 个文件)`);
 }
 
-async function updateInstall() {
-  await writeManifest(INSTALL_DIR, INSTALL_MANIFEST, 'install');
+async function updateInstall(targets = null) {
+  await writeManifest(INSTALL_DIR, INSTALL_MANIFEST, 'install', targets);
 }
 
-async function updateRaw() {
-  await writeManifest(RAW_DIR, RAW_MANIFEST, 'raw');
+async function updateRaw(targets = null) {
+  await writeManifest(RAW_DIR, RAW_MANIFEST, 'raw', targets);
 }
 
-async function checkInstall() {
+async function checkInstall(targets = null) {
   if (!fs.existsSync(INSTALL_MANIFEST)) {
     console.error('install-manifest.json 不存在，先运行: npm run manifest');
     process.exit(1);
   }
   const manifest = JSON.parse(fs.readFileSync(INSTALL_MANIFEST, 'utf8'));
-  console.log(`检查 ${manifest.count} 个文件的 MD5（对照 ${INSTALL_MANIFEST}）...`);
-
-  const files = topLevelFiles(INSTALL_DIR);
-  const current = {};
-  for (const file of files) {
-    const rel = relativePosix(INSTALL_DIR, file);
-    current[rel] = await md5File(file);
-  }
-
   const problems = [];
-  for (const [rel, hash] of Object.entries(manifest.files)) {
-    if (!(rel in current)) {
-      problems.push(`缺失: ${rel}`);
-    } else if (current[rel] !== hash) {
-      problems.push(`已修改: ${rel}`);
-      problems.push(`        ${hash} -> ${current[rel]}`);
+  if (targets) {
+    console.log(`检查 ${targets.length} 个指定文件（对照 ${INSTALL_MANIFEST}）...`);
+    for (const rel of targets) {
+      const file = path.join(INSTALL_DIR, ...rel.split('/'));
+      if (!(rel in manifest.files)) {
+        problems.push(fs.existsSync(file) ? `新增（未收录）: ${rel}` : `未收录且不存在: ${rel}`);
+        continue;
+      }
+      if (!fs.existsSync(file)) {
+        problems.push(`缺失: ${rel}`);
+        continue;
+      }
+      const hash = await md5File(file);
+      if (hash !== manifest.files[rel]) {
+        problems.push(`已修改: ${rel}`);
+        problems.push(`        ${manifest.files[rel]} -> ${hash}`);
+      }
     }
-  }
-  for (const rel of Object.keys(current)) {
-    if (!(rel in manifest.files)) {
-      problems.push(`新增: ${rel}`);
+  } else {
+    console.log(`检查 ${manifest.count} 个文件的 MD5（对照 ${INSTALL_MANIFEST}）...`);
+    const files = topLevelFiles(INSTALL_DIR);
+    const current = {};
+    for (const file of files) {
+      const rel = relativePosix(INSTALL_DIR, file);
+      current[rel] = await md5File(file);
+    }
+
+    for (const [rel, hash] of Object.entries(manifest.files)) {
+      if (!(rel in current)) {
+        problems.push(`缺失: ${rel}`);
+      } else if (current[rel] !== hash) {
+        problems.push(`已修改: ${rel}`);
+        problems.push(`        ${hash} -> ${current[rel]}`);
+      }
+    }
+    for (const rel of Object.keys(current)) {
+      if (!(rel in manifest.files)) {
+        problems.push(`新增: ${rel}`);
+      }
     }
   }
 
@@ -144,24 +181,41 @@ function compareInstallRaw() {
 }
 
 const mode = process.argv[2] ?? '--update';
+const rawTargets = process.argv.slice(3).filter(Boolean);
 const fail = (err) => {
   console.error(err);
   process.exit(1);
 };
 
+// 把文件参数统一解析为相对根目录的正斜杠路径（绝对/相对路径均可，越界即报错）
+function resolveTargets(root, args) {
+  if (!args.length) return null;
+  return args.map((arg) => {
+    const abs = path.resolve(root, arg);
+    const rel = path.relative(root, abs);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      console.error(`[FAIL] 文件路径不在 ${root} 内: ${arg}`);
+      process.exit(1);
+    }
+    return rel.split(path.sep).join('/');
+  });
+}
+
 if (mode === '--update' || mode === '--update-install') {
-  updateInstall().catch(fail);
+  updateInstall(resolveTargets(INSTALL_DIR, rawTargets)).catch(fail);
 } else if (mode === '--update-raw') {
-  updateRaw().catch(fail);
+  updateRaw(resolveTargets(RAW_DIR, rawTargets)).catch(fail);
 } else if (mode === '--update-all') {
-  updateRaw()
-    .then(updateInstall)
+  updateRaw(resolveTargets(RAW_DIR, rawTargets))
+    .then(() => updateInstall(resolveTargets(INSTALL_DIR, rawTargets)))
     .catch(fail);
 } else if (mode === '--check') {
-  checkInstall().catch(fail);
+  checkInstall(resolveTargets(INSTALL_DIR, rawTargets)).catch(fail);
 } else if (mode === '--compare') {
   compareInstallRaw();
 } else {
-  console.error('用法: node manifest.js [--update|--update-raw|--update-all|--check|--compare]');
+  console.error('用法: node manifest.js [--update|--update-raw|--update-all|--check|--compare] [文件...]');
+  console.error('  文件... 为相对目录顶层的路径（如 AIM.BIN，绝对路径也可），可多个；');
+  console.error('  仅 --update* / --check 支持指定文件；省略文件时处理全部（原行为）。');
   process.exit(1);
 }
