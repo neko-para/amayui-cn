@@ -1038,8 +1038,8 @@ lookup-array (local-string-ptr 0) (global-string 18e40) (local-ptr 3)
 set-string (local-string 0) (local-string-ptr 0)
 
 label_000041a8
-concat (local-string 0) "『" (local-string 0)
-concat (local-string 0) (local-string 0) "』の制作で突然変異発生！"
+concat (local-string 0) @"制作『" (local-string 0)
+concat (local-string 0) (local-string 0) @"』时发生突变！"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -1057,11 +1057,11 @@ lookup-array (local-string-ptr 0) (global-string 18e40) (local-ptr 3)
 set-string (local-string 0) (local-string-ptr 0)
 
 label_00004324
-concat (local-string 0) "『" (local-string 0)
-concat (local-string 0) (local-string 0) "』を"
+concat (local-string 0) @"获得了『" (local-string 0)
+concat (local-string 0) (local-string 0) @"』"
 lookup-array (local-ptr 2) (local-int e6d7) (local-int b7ec)
 concat (local-string 0) (local-string 0) (local-ptr 2)
-concat (local-string 0) (local-string 0) "個手に入れた！"
+concat (local-string 0) (local-string 0) @"个！"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -1112,15 +1112,15 @@ label_000046fc
 play-sound-effect 5153 1
 u0041D050 1
 lookup-array (local-string-ptr 0) (global-string 18e40) (global-int 546e03)
-concat (local-string 0) "『" (local-string-ptr 0)
-concat (local-string 0) (local-string 0) "』の錬成で突然変異発生！"
+concat (local-string 0) @"炼成『" (local-string-ptr 0)
+concat (local-string 0) (local-string 0) @"』时发生突变！"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-ptr 3) (global-int 6b8045) (global-int 546e03)
 lookup-array (local-string-ptr 0) (global-string 18e40) (local-ptr 3)
-concat (local-string 0) "『" (local-string-ptr 0)
-concat (local-string 0) (local-string 0) "』を１個手に入れた"
+concat (local-string 0) @"获得了『" (local-string-ptr 0)
+concat (local-string 0) (local-string 0) @"』1个"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -2722,7 +2722,7 @@ mov (global-int 3f36) d
 
 label_0000c554
 jcc (local-int b7ef) ffffffff label_0000c590
-set-string (local-string 0) "施設"
+set-string (local-string 0) "施設|设施"
 jmp label_0000c5dc
 
 label_0000c590
@@ -3387,7 +3387,7 @@ label_0000fc20
 play-sound-effect 5153 1
 u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "新たなプランが追加されました"
+set-string (local-string-ptr 0) "新たなプランが追加されました|已追加新的配方"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 mov (local-int b7df) 0

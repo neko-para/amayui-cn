@@ -42,7 +42,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
-│                          prob-SC0500.md /
+│                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5

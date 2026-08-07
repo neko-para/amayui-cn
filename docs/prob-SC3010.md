@@ -1,7 +1,7 @@
 # SC3010 待定内容清单（prob-SC3010.md）
 
 > 更新日期：2026-08-07
-> 来源：`src/SC3010.txt`（计划/训练场、捕获绳索、花田：32 条 show-text、10 条 display-furigana、
+> 来源：`src/SC3010.txt`（配方/训练场、捕获绳索、花田：32 条 show-text、10 条 display-furigana、
 > 17 条 set-string；assemble 回读 38/38）
 > 用途：记录 SC3010 翻译中**已采用但未定稿**的措辞，供人工审校与
 > PLINIT / SKINIT 联合检查。
