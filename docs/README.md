@@ -39,6 +39,7 @@ E:\Games\Eushully\天結\
 │                          keywords-情报首页.md / prob-INFO.md /
 │                          keywords-称号.md / prob-CCINIT.md / prob-DGINIT.md / prob-COMMITDR.md /
 │                          keywords-AIM.md / prob-AIM.md /
+│                          keywords-城砦配置.md / prob-SELFORT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -151,6 +152,9 @@ E:\Games\Eushully\天結\
 - [x] **AIM 目标/采集统计界面翻译**：2 处 set-string 字面量（お金→金钱 1 处译出、女神力保持原样）
       译完并通过 assemble（骨架/SJIS/回读 1/1）；关键字表 `docs/keywords-AIM.md`、
       待定清单 `docs/prob-AIM.md` 已建立（其余显示文本为全局字符串引用，源表已译）
+- [x] **SELFORT 城砦配置翻译**：9 条 set-string（当前城砦配置 + 城砦方案０１〜０８）译完并通过
+      assemble（骨架/SJIS/回读 9/9）；关键字表 `docs/keywords-城砦配置.md`、
+      待定清单 `docs/prob-SELFORT.md` 已建立（マイセット 待 BIINIT 统一）
 
 ## 4. 本地工具（tools/）
 
