@@ -1054,9 +1054,8 @@ show-text 0 "れた調査区域』の訪問ができるようになった。"
 end-text-line 0
 */
 // 输入原文：古亚拉库娜城砦的迷宫『崩塌的調査区域』可以访问了。
-show-text 0 @"古亚拉库娜城砦的迷宫『崩塌的調査区域』"
-end-text-line 0
-show-text 0 @"可以访问了。"
+show-text 0 @"古亚拉库娜城砦的迷宫『崩塌的調査区域』可以访问了。"
+// 页面结束
 end-text-line 0
 call label_00006d4c
 eq (local-int 0) (global-int 0) 6
@@ -1108,7 +1107,10 @@ show-text 0 "ランク３への上昇が必要です。"
 end-text-line 0
 */
 // 输入原文：要让城砦能移动到下一个地点，需要将女神等级提升到３。
-show-text 0 @"要让城砦能移动到下一个地点，需要将女神等级提升到３。"
+show-text 0 @"要让城砦能移动到下一个地点，需要将女神等级提"
+end-text-line 0
+show-text 0 @"升到３。"
+// 页面结束
 end-text-line 0
 call label_00006d4c
 eq (local-int 0) (global-int 0) 6
@@ -1158,9 +1160,10 @@ show-text 0 "工房のアイテムでも初回の発明に限り、上昇しま�
 end-text-line 0
 */
 // 输入原文：女神等级除通过探索迷宫提升外，工房的道具也仅在首次发明时提升。
-show-text 0 @"女神等级除通过探索迷宫提升外，工房的道具也仅"
+show-text 0 @"女神等级除通过探索迷宫提升外，工房的道具也仅在首次"
 end-text-line 0
-show-text 0 @"在首次发明时提升。"
+show-text 0 @"发明时提升。"
+// 页面结束
 end-text-line 0
 call label_00006d4c
 exit

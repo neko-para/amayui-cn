@@ -1485,6 +1485,7 @@ show-text 0 "のこととか、説明必要だよね？」"
 show-text 0 @"「呐，阿瓦罗。关于我和迷宫『活性化』的事，需要说"
 end-text-line 0
 show-text 0 @"明一下吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001a378
@@ -1545,6 +1546,7 @@ show-text 0 "「そうだな、知らないことも多そうだし説明して�
 */
 // 输入原文：「是啊，不知道的事还很多，能说明一下帮大忙了」
 show-text 0 @"「是啊，不知道的事还很多，能说明一下帮大忙了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -1684,6 +1686,7 @@ show-text 0 "「まかせて。もう、手取り足取りおしえちゃうよ�
 */
 // 输入原文：「交给我吧。我会手把手教你的」
 show-text 0 @"「交给我吧。我会手把手教你的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -1825,6 +1828,7 @@ show-text 0 "「これから仲間になる子も含めてだけど、みんな�
 show-text 0 @"「包括今后要成为伙伴的人在内，对大家的指示就交给阿"
 end-text-line 0
 show-text 0 @"瓦罗了。我会照指示努力的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -1986,6 +1990,7 @@ show-text 0 "「行動する順番は自由だから、状況に応じて下の�
 show-text 0 @"「行动顺序可以自由决定，根据情况从下面的出击名单里"
 end-text-line 0
 show-text 0 @"选择想行动的角色吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2131,6 +2136,7 @@ show-text 0 "』なの。アヴァロみたいに移動してそのまま攻撃�
 show-text 0 @"「我的武器是专用于『间接攻击』的『弓』。不能像阿瓦"
 end-text-line 0
 show-text 0 @"罗那样移动后直接攻击，要注意哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2273,9 +2279,11 @@ show-text 0 "が減ったら教えてね。弓と同じく、その場から届�
 // 输入原文：「还有，你应该已经知道了，我会用『回复魔法』，<ruby>ＨＰ<rt>耐久力</rt></ruby>减少的话要告诉我哦。和弓一样，只要在当场能到达的范围内就能用」
 show-text 0 @"「还有，你应该已经知道了，我会用『回复魔法』，"
 display-furigana 0 @"ＨＰ" @"耐久力"
-show-text 0 @"减少的话要告诉我哦。和弓一样，只要在当场能到达"
 end-text-line 0
-show-text 0 @"的范围内就能用」"
+show-text 0 @"减少的话要告诉我哦。和弓一样，只要在当场能到达的范"
+end-text-line 0
+show-text 0 @"围内就能用」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2416,13 +2424,15 @@ display-furigana 0 "ＳＰ" "技力"
 show-text 0 "を消費するから注意してね。いざというときの為にＳＰを温存するのも必要だよ」"
 */
 // 输入原文：「不过，魔法和必杀技都会消耗『<ruby>ＳＰ<rt>技力</rt></ruby>』，要注意哦。为了以防万一，留些<ruby>ＳＰ<rt>技力</rt></ruby>也是必要的」
-show-text 0 @"「不过，魔法和必杀技都会消耗『"
+show-text 0 @"「不过，魔法和必杀技都会消耗"
 display-furigana 0 @"ＳＰ" @"技力"
-show-text 0 @"』，要注意哦。"
+show-text 0 @"』，"
+show-text 0 @"要注意哦。为"
 end-text-line 0
-show-text 0 @"为了以防万一，留些"
+show-text 0 @"了以防万一，留些"
 display-furigana 0 @"ＳＰ" @"技力"
 show-text 0 @"也是必要的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2481,6 +2491,7 @@ show-text 0 "か。よし、実践していきながら着実に覚えていく�
 */
 // 输入原文：「间接攻击、魔法、ＳＰ啊。好，边实践边扎实掌握吧」
 show-text 0 @"「间接攻击、魔法、ＳＰ啊。好，边实践边扎实掌握吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -2512,6 +2523,7 @@ show-text 0 "「いや、大丈夫だ。そこまで手間をかけさせられ�
 */
 // 输入原文：「不，没关系。不能让你费那么多工夫」
 show-text 0 @"「不，没关系。不能让你费那么多工夫」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2653,6 +2665,7 @@ show-text 0 "「さすがは私の使徒。説明しなくても全部知って�
 show-text 0 @"「真不愧是我的使徒。不用说明就全知道，那就全"
 end-text-line 0
 show-text 0 @"交给你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2679,6 +2692,7 @@ show-text 0 "「いや、そこまで言ったつもりはないんだけど�
 */
 // 输入原文：「不，我可没那么说……」
 show-text 0 @"「不，我可没那么说……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -2717,6 +2731,7 @@ show-text 0 "』だったり『フリーマップ』に通うことになる」"
 show-text 0 @"「那么，接下来要收集素材了。基本就是去迷宫的『再访"
 end-text-line 0
 show-text 0 @"问』或『自由地图』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -2917,6 +2932,7 @@ show-text 0 "「再訪問とフリーマップ？」"
 */
 // 输入原文：「再访问和自由地图？」
 show-text 0 @"「再访问和自由地图？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001a378
@@ -3010,6 +3026,7 @@ show-text 0 "』、特に目的がない迷宮は『フリーマップ』とい�
 show-text 0 @"「对。通关过一次的迷宫叫『再访问』，没有特定目标的"
 end-text-line 0
 show-text 0 @"迷宫则叫『自由地图』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3040,6 +3057,7 @@ show-text 0 "』する必要がある」"
 show-text 0 @"「在探索迷宫这点上没有区别，不过因为没有严格的通关"
 end-text-line 0
 show-text 0 @"形式，所以需要『撤退』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -3082,6 +3100,7 @@ show-text 0 "』ボタンを押してくれ」"
 show-text 0 @"「想结束迷宫探索时，请按画面顶部的『从战场撤"
 end-text-line 0
 show-text 0 @"退』按钮」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3114,6 +3133,7 @@ show-text 0 "から敵を待つ場合は『撤退』ボタンの隣にある『�
 show-text 0 @"「还有，想从『魔物漩涡』等待敌人时，『撤退』按钮旁"
 end-text-line 0
 show-text 0 @"边的『回合结束』按钮很方便」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3140,6 +3160,7 @@ show-text 0 "「これを押すと、個別に待機しなくても敵のター�
 */
 // 输入原文：「按下它，不用一个个待机就能切换到敌方回合」
 show-text 0 @"「按下它，不用一个个待机就能切换到敌方回合」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -3307,6 +3328,7 @@ show-text 0 "「終了するときは撤退だね。わかったよ」"
 */
 // 输入原文：「结束时就撤退啊。明白了」
 show-text 0 @"「结束时就撤退啊。明白了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3333,6 +3355,7 @@ show-text 0 "「それじゃ、改めて迷宮探索といきますか」"
 */
 // 输入原文：「那么，重新开始迷宫探索吧」
 show-text 0 @"「那么，重新开始迷宫探索吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 jmp label_0000c97c
@@ -3475,6 +3498,7 @@ show-text 0 "「うん。アヴァロに付いて行くから問題なし！」"
 */
 // 输入原文：「嗯。跟着阿瓦罗走，没问题！」
 show-text 0 @"「嗯。跟着阿瓦罗走，没问题！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3501,6 +3525,7 @@ show-text 0 "「少しは学習してくれても良いんだぞ」"
 */
 // 输入原文：「你也稍微学点东西行不行啊……」
 show-text 0 @"「你也稍微学点东西行不行啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -3550,6 +3575,7 @@ show-text 0 "「ここは前に探索したところだが、城砦が動いた�
 show-text 0 @"「这里之前探索过，不过城砦一动，地形似乎也变"
 end-text-line 0
 show-text 0 @"了一些」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3576,6 +3602,7 @@ show-text 0 "「ところどころ崩れている箇所があるし、なにか�
 */
 // 输入原文：「有些地方塌了，说不定还有不同的魔物。小心探索吧」
 show-text 0 @"「有些地方塌了，说不定还有不同的魔物。小心探索吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -3786,6 +3813,7 @@ show-text 0 "「ありゃー、ここまで穴が通っちゃってるねぇ」"
 */
 // 输入原文：「哎呀，这里都通成这样了」
 show-text 0 @"「哎呀，这里都通成这样了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3817,6 +3845,7 @@ show-text 0 "上を見上げると、穴を通して城砦地上部分がかす�
 */
 // 输入原文：抬头望去，透过洞穴能隐约看到城砦的地上部分。
 show-text 0 @"抬头望去，透过洞穴能隐约看到城砦的地上部分。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3850,6 +3879,7 @@ show-text 0 "地上部の穴を修復しようとしたところ、穴が案外�
 show-text 0 @"本想修复地上的洞穴，却发现洞穴连通得比想象中深得"
 end-text-line 0
 show-text 0 @"多，于是就这样来修复了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3876,6 +3906,7 @@ show-text 0 "「この階層からちゃんと修理しないといけないな�
 */
 // 输入原文：「不从这个阶层好好修不行啊」
 show-text 0 @"「不从这个阶层好好修不行啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3904,6 +3935,7 @@ show-text 0 "「でも、ここ辺りには手つかずの部品がまだまだ�
 show-text 0 @"「不过，这一带似乎还散落着不少没动过的零件，探索起"
 end-text-line 0
 show-text 0 @"来也很有意思」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -4043,6 +4075,7 @@ show-text 0 "「お宝探しってことだね！」"
 */
 // 输入原文：「就是寻宝吧！」
 show-text 0 @"「就是寻宝吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4069,6 +4102,7 @@ show-text 0 "「そういうこと。さあ、さっそく始めるぞ」"
 */
 // 输入原文：「正是如此。好，马上开始吧」
 show-text 0 @"「正是如此。好，马上开始吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -4279,6 +4313,7 @@ show-text 0 "「すごい森だねぇ、おどろおどろしいって言うの�
 show-text 0 @"「好阴森的森林啊，该说是毛骨悚然吗？总感觉会有"
 end-text-line 0
 show-text 0 @"什么冒出来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4305,6 +4340,7 @@ show-text 0 "「人の手がほとんど入ってないようだな」"
 */
 // 输入原文：「看来几乎没被人动过啊……」
 show-text 0 @"「看来几乎没被人动过啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4336,6 +4372,7 @@ show-text 0 "この森なら荒らされてないし、素材がたくさん手�
 */
 // 输入原文：这片森林没被糟蹋过，应该能弄到不少素材。
 show-text 0 @"这片森林没被糟蹋过，应该能弄到不少素材。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -4370,6 +4407,7 @@ show-text 0 "「真面目にやり合う必要はねぇ」"
 */
 // 输入原文：「没必要认真跟他纠缠」
 show-text 0 @"「没必要认真跟他纠缠」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4398,6 +4436,7 @@ show-text 0 "「人目につく場所まで逃げ込めば、奴も堂々とは�
 show-text 0 @"「只要逃到人多眼杂的地方，那家伙也不敢明目张胆"
 end-text-line 0
 show-text 0 @"挥剑了吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 51004d) 14
@@ -4430,6 +4469,7 @@ show-text 0 "「よし、急いであの場所に行こう」"
 */
 // 输入原文：「好，赶紧去那里」
 show-text 0 @"「好，赶紧去那里」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int f8c39) 320
@@ -4633,6 +4673,7 @@ show-text 0 "「逃がさない」"
 */
 // 输入原文：「……别想逃」
 show-text 0 @"「……别想逃」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4762,6 +4803,7 @@ show-text 0 "「それは必要なものだから、イオに渡してもらう�
 */
 // 输入原文：「那是必要的东西，交给伊欧」
 show-text 0 @"「那是必要的东西，交给伊欧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4788,6 +4830,7 @@ show-text 0 "「へっ、やれるものならやってみやがれ！」"
 */
 // 输入原文：「哼，有本事就来抢啊！」
 show-text 0 @"「哼，有本事就来抢啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -4826,6 +4869,7 @@ show-text 0 "を守るんだ」"
 show-text 0 @"「被侵入城砦就不知道会被做什么了。守住阵地，"
 end-text-line 0
 show-text 0 @"别被占去！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4854,6 +4898,7 @@ show-text 0 "「それに制圧までの時間が長引けば、キスニルな�
 show-text 0 @"「而且压制拖得越久，姬斯尼尔或许就会撤退。在那之前"
 end-text-line 0
 show-text 0 @"撑住啊，菲亚」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -5054,6 +5099,7 @@ show-text 0 "「うん。この城砦は絶対に渡さない！」"
 */
 // 输入原文：「嗯。这座城砦绝对不让出去！」
 show-text 0 @"「嗯。这座城砦绝对不让出去！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -5280,6 +5326,7 @@ show-text 0 "に済ませられたものを」"
 show-text 0 @"「抵抗比预想的激烈吗。要是乖乖就范，本可和平"
 end-text-line 0
 show-text 0 @"了结的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5409,6 +5456,7 @@ show-text 0 "「私も前に出る、全軍突撃せよ」"
 */
 // 输入原文：「……我也上前，全军突击！」
 show-text 0 @"「……我也上前，全军突击！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -5443,6 +5491,7 @@ show-text 0 "「フィア、まだいけるか？」"
 */
 // 输入原文：「菲亚，还行吗？」
 show-text 0 @"「菲亚，还行吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -5643,6 +5692,7 @@ show-text 0 "「さすがに疲れてきたけど、私たちの家を守るた�
 */
 // 输入原文：「确实有点累了，但为了守住我们的家。还能继续加油」
 show-text 0 @"「确实有点累了，但为了守住我们的家。还能继续加油」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5669,6 +5719,7 @@ show-text 0 "「あまり無理はしすぎるなよ。キスニルはまだや�
 */
 // 输入原文：「别太勉强。姬斯尼尔看样子还干劲十足呢」
 show-text 0 @"「别太勉强。姬斯尼尔看样子还干劲十足呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001abac
@@ -5711,6 +5762,7 @@ show-text 0 "か。フィア気を付けろよ」"
 */
 // 输入原文：「哦，再往前就是敌人的占领地了。菲亚小心」
 show-text 0 @"「哦，再往前就是敌人的占领地了。菲亚小心」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000177b8
@@ -5911,6 +5963,7 @@ show-text 0 "「なになに？」"
 */
 // 输入原文：「怎么了怎么了？」
 show-text 0 @"「怎么了怎么了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5941,6 +5994,7 @@ show-text 0 "毎に占有地が存在していて、勢力の色で表示され�
 show-text 0 @"「迷宫里每个势力都有自己的占领地，用势力的颜"
 end-text-line 0
 show-text 0 @"色显示」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5969,6 +6023,7 @@ show-text 0 "「俺たちの勢力は青色だから、今まで歩いてきた�
 show-text 0 @"「我们势力是蓝色，所以一路走来的地方都是蓝色。敌方"
 end-text-line 0
 show-text 0 @"势力则是红色」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5997,6 +6052,7 @@ show-text 0 "「移動の際には、自分の色は移動歩数ぶん歩ける�
 show-text 0 @"「移动时，自己的颜色能按移动步数走，但敌势力区域每"
 end-text-line 0
 show-text 0 @"步只能走一格」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6029,6 +6085,7 @@ show-text 0 "することができるから一気に広げて歩きやすくな�
 show-text 0 @"「那间屋子的敌势力全灭后，剩余势力就能占领，可以一"
 end-text-line 0
 show-text 0 @"口气扩大、更好走」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6057,6 +6114,7 @@ show-text 0 "「他にも緑色や黄色の勢力もあるけど、基本は自�
 show-text 0 @"「还有绿色、黄色等势力，不过基本想着把地盘变成自"
 end-text-line 0
 show-text 0 @"己的就对了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6186,6 +6244,7 @@ show-text 0 "「へぇ～。みんな仲良しだったらそんなこと起き�
 */
 // 输入原文：「哦～。要是大家和睦相处，就不会有这种事了吧」
 show-text 0 @"「哦～。要是大家和睦相处，就不会有这种事了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -6235,6 +6294,7 @@ show-text 0 "「ここは前に一度来たことがあるな。キスニルと�
 show-text 0 @"「这里以前来过一次。是和姬斯尼尔协力与魔物战"
 end-text-line 0
 show-text 0 @"斗的地方」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6263,6 +6323,7 @@ show-text 0 "「だけど城砦が動いたことで、探索できる場所が�
 show-text 0 @"「不过城砦一动，能探索的地方好像也变了。说不定"
 end-text-line 0
 show-text 0 @"会有新发现」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6289,6 +6350,7 @@ show-text 0 "「現れる魔物にも変化があるかもしれない。油断�
 */
 // 输入原文：「出现的魔物也可能有变化。别大意，继续探索吧」
 show-text 0 @"「出现的魔物也可能有变化。别大意，继续探索吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001a378

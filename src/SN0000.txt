@@ -1222,17 +1222,18 @@ end-text-line 0
 show-text 0 "呼ばれる神々の戦いがあった。"
 */
 // 输入原文：由两个世界融合而生的『<ruby>迪尔-利菲娜<rt>二重回廊的终焉</rt></ruby>』的世界上，曾经发生过一场决定世界命运的诸神之战，那就是『三神战争』。
-show-text 0 @"由两个世界融合而生的『"
+show-text 0 @"由两个世界融合而生的"
+concat (global-string bba) (global-string bba) @"由两个世界融合而生的"
+end-text-line 0
+show-text 0 @"『"
 display-furigana 0 @"迪尔-利菲娜" @"二重回廊的终焉"
 show-text 0 @"』"
-show-text 0 @"的世界上，曾经"
-concat (global-string bba) (global-string bba) @"的世界上，曾经"
+show-text 0 @"的世界上，曾经发生过一场决定世界命"
+concat (global-string bba) (global-string bba) @"的世界上，曾经发生过一场决定世界命"
 end-text-line 0
-show-text 0 @"发生过一场决定世界命运的诸神之战，那就是"
-concat (global-string bba) (global-string bba) @"发生过一场决定世界命运的诸神之战，那就是"
-end-text-line 0
-show-text 0 @"『三神战争』。"
-concat (global-string bba) (global-string bba) @"『三神战争』。"
+show-text 0 @"运的诸神之战，那就是『三神战争』。"
+concat (global-string bba) (global-string bba) @"运的诸神之战，那就是『三神战争』。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1396,6 +1397,7 @@ concat (global-string bba) (global-string bba) @"世界的现神，以及由人�
 end-text-line 0
 show-text 0 @"三方展开的战争。"
 concat (global-string bba) (global-string bba) @"三方展开的战争。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1556,6 +1558,7 @@ concat (global-string bba) (global-string bba) @"现神，成为了世界的主�
 end-text-line 0
 show-text 0 @"下，聚集起了自己的信仰。"
 concat (global-string bba) (global-string bba) @"下，聚集起了自己的信仰。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1712,6 +1715,7 @@ concat (global-string bba) (global-string bba) @"而人类族独自筑起的文�
 end-text-line 0
 show-text 0 @"封禁，为防再次被发明，被作为禁忌来对待。"
 concat (global-string bba) (global-string bba) @"封禁，为防再次被发明，被作为禁忌来对待。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -1862,6 +1866,7 @@ concat (global-string bba) (global-string bba) @"与此同时，作为改宗的�
 end-text-line 0
 show-text 0 @"力之术，获得了能引发种种奇迹的力量。"
 concat (global-string bba) (global-string bba) @"力之术，获得了能引发种种奇迹的力量。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2010,6 +2015,7 @@ concat (global-string bba) (global-string bba) @"时光流转，争夺以诸神�
 end-text-line 0
 show-text 0 @"斗最终演变成了战争。"
 concat (global-string bba) (global-string bba) @"斗最终演变成了战争。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2223,6 +2229,7 @@ concat (global-string bba) (global-string bba) @"这是一段追寻珍视羁绊�
 end-text-line 0
 show-text 0 @"台，是『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
 concat (global-string bba) (global-string bba) @"台，是『劳鲁巴修大陆』西侧东北部的『菲亚斯比亚』。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2371,6 +2378,7 @@ concat (global-string bba) (global-string bba) @"这里原本是妖精与精灵�
 end-text-line 0
 show-text 0 @"『菲优希亚神』，治理守护着这片土地。"
 concat (global-string bba) (global-string bba) @"『菲优希亚神』，治理守护着这片土地。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2519,6 +2527,7 @@ concat (global-string bba) (global-string bba) @"尽管身为仙灵之神，人�
 end-text-line 0
 show-text 0 @"旺，最终建立了一个国家。"
 concat (global-string bba) (global-string bba) @"旺，最终建立了一个国家。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2673,6 +2682,7 @@ concat (global-string bba) (global-string bba) @"也会到来。而随着时光�
 end-text-line 0
 show-text 0 @"『因夫鲁斯王国』得以建立。"
 concat (global-string bba) (global-string bba) @"『因夫鲁斯王国』得以建立。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2826,6 +2836,7 @@ concat (global-string bba) (global-string bba) @"发现了古老时代的遗迹�
 end-text-line 0
 show-text 0 @"员，让他们着手此项任务。"
 concat (global-string bba) (global-string bba) @"员，让他们着手此项任务。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38
@@ -2974,6 +2985,7 @@ concat (global-string bba) (global-string bba) @"这个故事，始于一位技�
 end-text-line 0
 show-text 0 @"地的那一刻。"
 concat (global-string bba) (global-string bba) @"地的那一刻。"
+// 页面结束
 305
 sub (local-int 0) 0 5
 mul (local-int 1) 1 38

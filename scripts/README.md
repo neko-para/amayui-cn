@@ -28,7 +28,8 @@ npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
 npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
-npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 标注）→ 标准脚本行
+npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 标注）→ 三段式页面块
+npm run reflow-apply [-- --check] [--sample N] [脚本...] # 从 // 输入原文 注释重排并替换 ADV 页正文（--check 只检查不写回；--sample N 随机抽查 N 个内容变更页）
 npm run sync-patch         # 按 patch/patch.config.json 同步补丁包（src 相对工程根，dst 相对 patch/）
 ```
 
@@ -139,12 +140,14 @@ npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码�
 - **ADV 折行**：引擎中 show-text/display-furigana 直到 `end-text-line` 前始终是同一视觉行，
   拆分 show-text 无法换行；正确做法是用 `end-text-line` 结束一行。排版规则：
   每视觉行 ≤ 25 中文字（ASCII 按半字计）、有注音/标注内容不拆、连续词语尽量不拆、
-  放不下提前折行。用 `npm run reflow -- <文案文件>` 自动生成标准脚本行：
+  放不下提前折行、**行尾不得是『**（发现则提前折行，把『移到下一行行首）。
+  用 `npm run reflow -- <文案文件>` 自动生成标准脚本行：
   - 文案支持 `<ruby>主词<rt>注音</rt></ruby>`（→ display-furigana）与 `<nb>不折行内容</nb>`；
   - `--max N` 改行宽（默认 25 中文字）、`--glossary rules/glossary.json` 注入术语原子、
     `--no-concat` 去掉 concat 镜像行；
-  - 每个页面块首行为 `// 输入原文：…` 单行注释（含 ruby 标记），位于原文存档与正文之间，
-    便于后续把正文还原为排版前原文再重新排版；
+  - 每个页面块为三段式：首行 `// 输入原文：…` 单行注释（含 ruby 标记，排版前原文）、
+    正文（show-text/display-furigana/concat/end-text-line）、末行 `// 页面结束`
+    特殊结束注释（页块显式边界，reflow-apply 据此定位）；
   - 多个段落用空行分隔，每段输出一个页面块（每行含 show-text/display-furigana + concat；
     非末行追加 end-text-line，**页面最后一行不加**——对应原文结构，行由 wait-for-input
     后的 end-text-line 收尾）；

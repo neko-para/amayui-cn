@@ -193,7 +193,7 @@ npm run check              # 对照 install-manifest 检查 install 改动
 npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否一致
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
 npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
-npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 标注）→ 标准脚本行
+npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 标注）→ 三段式页面块
 ```
 
 `config.js` 关键配置：
@@ -297,8 +297,8 @@ npm run reflow -- <文案>   # 按每行 ≤30 中文字排版（支持 ruby/nb 
    编码映射同 SExtractor 的 JIS 替换字典 `subs_cn_jp.json`。
    **ADV 折行**：show-text/display-furigana 到 `end-text-line` 前始终为同一视觉行，
    `end-text-line` 已释放为可调文本行；每视觉行 ≤25 中文字，由 `scripts/lib/reflow.js`
-   （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行、输出 `// 输入原文` 单行
-   注释便于后续重排）自动排版。
+   （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行、行尾不得悬空左引号『、
+   输出 `// 输入原文` 单行注释 + 正文 + `// 页面结束` 结束注释的三段式页面块）自动排版。
    已完成：OPINIT1（172 条设置文案）、SN0000 开场 ADV 段落（重排示例，待游戏内验证）。
    注音策略（当前）：释义/称号类注音保留在 display-furigana 位置（中文释义作注音），
    纯读音（假名）类注音移除。

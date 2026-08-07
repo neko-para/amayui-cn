@@ -1054,7 +1054,10 @@ show-text 0 "新規スキルを覚えることがあります。"
 end-text-line 0
 */
 // 输入原文：随女神等级或单位等级提升获得称号时，有时会习得新技能。
-show-text 0 @"随女神等级或单位等级提升获得称号时，有时会习得新技能。"
+show-text 0 @"随女神等级或单位等级提升获得称号时，有时会习"
+end-text-line 0
+show-text 0 @"得新技能。"
+// 页面结束
 end-text-line 0
 call label_00006a80
 eq (local-int 0) (global-int 0) 6
@@ -1104,7 +1107,10 @@ show-text 0 "『スキル』カテゴリを選択すると付け替えできま�
 end-text-line 0
 */
 // 输入原文：技能可在『菜单』选择对应角色与『技能』分类后进行更换。
-show-text 0 @"技能可在『菜单』选择对应角色与『技能』分类后进行更换。"
+show-text 0 @"技能可在『菜单』选择对应角色与『技能』分类后"
+end-text-line 0
+show-text 0 @"进行更换。"
+// 页面结束
 end-text-line 0
 call label_00006a80
 exit

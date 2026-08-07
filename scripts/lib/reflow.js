@@ -8,11 +8,13 @@
 //   3. 连续词语尽量不折行：<nb> 区域、术语表词条、引号实体、拉丁/数字串均视为原子；
 //   4. 贪心排版：当前行放不下下一个词时提前折行；
 //   5. 输入允许携带 <nb>…</nb> 声明特定区域不得折行。
-//   6. 页面最后一行不加 end-text-line（保留 concat 镜像；对应原文结构，行由
+//   6. 行尾不得是左引号『：若当前行会以『结尾，提前折行把『移到下一行行首；
+//   7. 页面最后一行不加 end-text-line（保留 concat 镜像；对应原文结构，行由
 //      wait-for-input 后的 end-text-line 收尾）；
-//   7. 若最后一行 ≤5 个字符（孤行），递减单行最大长度重新排版，最多重试 3 次。
-//   8. 输出首行为单行注释 `// 输入原文：<输入文案>`（含 ruby 标记），
-//      便于后续把正文还原为排版前原文再重新排版。
+//   8. 若最后一行 ≤5 个字符（孤行），递减单行最大长度重新排版，最多重试 3 次。
+//   9. 输出为三段：首行单行注释 `// 输入原文：<输入文案>`（含 ruby 标记，排版前原文）、
+//      正文（show-text / display-furigana / concat / end-text-line）、
+//      末行特殊结束注释 `// 页面结束`（页块显式结束标记，供 reflow-apply 定位页边界）。
 //
 // 输出约定（与 src 翻译语法一致）：
 //   - 普通文本  → show-text 0 @"…"
@@ -21,6 +23,7 @@
 //     非末行追加 end-text-line 0，页面最后一行不加
 
 export const DEFAULT_MAX = 25;
+export const PAGE_END_COMMENT = '// 页面结束';
 
 export function charWidth(ch) {
   const c = ch.codePointAt(0);
@@ -150,15 +153,68 @@ export function breakLines(tokens, maxLen = DEFAULT_MAX) {
   const lines = [];
   let cur = [];
   let curW = 0;
-  const flush = () => {
+  let pendingQuote = false;
+
+  const lineEndsWithOpenQuote = (line) => {
+    const last = line[line.length - 1];
+    if (!last) return false;
+    return (last.tail || '').endsWith('『') || (last.text || '') === '『';
+  };
+
+  // 规则 6：行尾不得是『。提前折行时若当前行以『结尾，把『剥出放到下一行行首。
+  const flush = (hasNext) => {
     if (cur.length) {
+      if (hasNext && lineEndsWithOpenQuote(cur)) {
+        const last = cur[cur.length - 1];
+        const tail = last.tail || '';
+        if (tail.endsWith('『')) {
+          last.tail = tail.slice(0, -1);
+          if (!last.tail) last.tail = undefined;
+          last.w -= 2;
+          curW -= 2;
+        } else {
+          cur.pop();
+          curW -= last.w;
+        }
+        pendingQuote = true;
+      }
+      if (cur.length) {
+        lines.push(cur);
+        cur = [];
+        curW = 0;
+      }
+    }
+  };
+
+  // 上一轮剥出的『 放到本行行首（若本行首个词自带『，则剥出的『 冗余丢弃）
+  const openLineFor = (t) => {
+    if (!pendingQuote) return;
+    if ((t.text || '').startsWith('『')) {
+      pendingQuote = false;
+      return;
+    }
+    if (2 + t.w > maxUnits) {
+      cur.push({ type: 'plain', text: '『', w: 2 });
       lines.push(cur);
       cur = [];
       curW = 0;
+      pendingQuote = false;
+      return;
     }
+    cur.push({ type: 'plain', text: '『', w: 2 });
+    curW = 2;
+    pendingQuote = false;
   };
+
   for (const t of tokens) {
-    if (cur.length && curW + t.w > maxUnits) flush();
+    // 『 后紧跟注音标注会形成以『结尾的 show-text 段：提前折行，『 移到下一行
+    if (t.type === 'ruby' && cur.length && lineEndsWithOpenQuote(cur)) {
+      flush(true);
+      openLineFor(t);
+    } else if (cur.length && curW + t.w > maxUnits) {
+      flush(true);
+      openLineFor(t);
+    }
     if (!cur.length && t.w > maxUnits) {
       if (t.type === 'ruby' || t.type === 'nb') {
         // 标注/不折行内容不允许拆分：独立成行（可能超限，调用方自行处理）
@@ -173,7 +229,46 @@ export function breakLines(tokens, maxLen = DEFAULT_MAX) {
     cur.push(t);
     curW += t.w;
   }
-  flush();
+  flush(false);
+  return lines;
+}
+
+// 兜底：splitByWidth 拆分超宽原子（如长引号串）时，碎片可能以『结尾，把『移到下一行行首。
+function fixOpenQuoteLineEnd(lines, maxUnits) {
+  for (let i = 0; i < lines.length - 1; i++) {
+    const line = lines[i];
+    const last = line[line.length - 1];
+    if (!last) continue;
+    let peeled = false;
+    const tail = last.tail || '';
+    if (tail.endsWith('『')) {
+      last.tail = tail.slice(0, -1);
+      if (!last.tail) last.tail = undefined;
+      last.w -= 2;
+      peeled = true;
+    } else if ((last.text || '').endsWith('『')) {
+      if (last.text.length > 1) {
+        last.text = last.text.slice(0, -1);
+        last.w -= 2;
+      } else {
+        line.pop();
+      }
+      peeled = true;
+    }
+    if (!peeled) continue;
+    if (!line.length) {
+      lines.splice(i, 1);
+      i--;
+      continue;
+    }
+    const next = lines[i + 1];
+    if (!next.length) continue;
+    const first = next[0];
+    const firstText = (first.text || '') + (first.tail || '');
+    if (!firstText.startsWith('『')) {
+      next.unshift({ type: 'plain', text: '『', w: 2 });
+    }
+  }
   return lines;
 }
 
@@ -232,6 +327,7 @@ export function reflow(text, opts = {}) {
     maxLen -= 1;
     lines = breakLines(tokens, maxLen);
   }
+  lines = fixOpenQuoteLineEnd(lines, maxLen * 2);
   const flat = [];
   if (opts.sourceComment !== false) {
     const src = String(text).replace(/\r?\n/g, '').trim();
@@ -240,5 +336,6 @@ export function reflow(text, opts = {}) {
   for (let k = 0; k < lines.length; k++) {
     flat.push(...emitLine(lines[k], { concat: opts.concat !== false, endTextLine: k < lines.length - 1 }));
   }
+  flat.push(PAGE_END_COMMENT);
   return flat;
 }

@@ -1054,11 +1054,13 @@ show-text 0 "値が１０増加。"
 end-text-line 0
 */
 // 输入原文：阿瓦罗的技能『被吸收的力量』已解除。至今下降的<ruby>ＦＳ<rt>疲劳强度</rt></ruby>值增加１０。已可使用强化系魔法『斗精灵赋予』。使用时需预先装备技能。
-show-text 0 @"阿瓦罗的技能『被吸收的力量』已解除。"
-end-text-line 0
-show-text 0 @"至今下降的"
+show-text 0 @"阿瓦罗的技能『被吸收的力量』已解除。至今下降的"
 display-furigana 0 @"ＦＳ" @"疲劳强度"
-show-text 0 @"值增加１０。"
+end-text-line 0
+show-text 0 @"值增加１０。已可使用强化系魔法『斗精灵赋予』。使用"
+end-text-line 0
+show-text 0 @"时需预先装备技能。"
+// 页面结束
 end-text-line 0
 call label_00006ab0
 eq (local-int 0) (global-int 0) 6

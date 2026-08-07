@@ -1532,6 +1532,7 @@ show-text 0 "「アヴァロのことが知りたい！」"
 */
 // 输入原文：「我想了解阿瓦罗！」
 show-text 0 @"「我想了解阿瓦罗！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1563,6 +1564,7 @@ show-text 0 "城砦内の探索中、フィアは声を大きくしてそんな�
 */
 // 输入原文：在城砦内探索时，菲亚提高嗓门说出了这样的话。
 show-text 0 @"在城砦内探索时，菲亚提高嗓门说出了这样的话。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1589,6 +1591,7 @@ show-text 0 "「どうしたいきなり」"
 */
 // 输入原文：「怎么突然这么说」
 show-text 0 @"「怎么突然这么说」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -1729,9 +1732,10 @@ display-furigana 0 "使徒" "しと"
 show-text 0 "になってもらったけど、私ってアヴァロのことまだ全然知らないなぁって思って」"
 */
 // 输入原文：「虽然你成了我的使徒，但我觉得自己对阿瓦罗还完全不了解呢」
-show-text 0 @"「虽然你成了我的使徒，但我觉得自己对阿瓦罗还完全不" 
+show-text 0 @"「虽然你成了我的使徒，但我觉得自己对阿瓦罗还完"
 end-text-line 0
-show-text 0 @"了解呢」"
+show-text 0 @"全不了解呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1758,6 +1762,7 @@ show-text 0 "「そうだなぁ。まだ知り合ったばっかりだし仕方�
 */
 // 输入原文：「是啊。毕竟才刚认识不久，也没办法吧？」
 show-text 0 @"「是啊。毕竟才刚认识不久，也没办法吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1887,6 +1892,7 @@ show-text 0 "「だから自己紹介も兼ねて、お互いのことを話し�
 */
 // 输入原文：「所以，就当作自我介绍，聊聊彼此的事情吧」
 show-text 0 @"「所以，就当作自我介绍，聊聊彼此的事情吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1913,6 +1919,7 @@ show-text 0 "「分かった。いいぜ、それじゃあまずなにから話�
 */
 // 输入原文：「明白了。好啊，那先聊些什么呢」
 show-text 0 @"「明白了。好啊，那先聊些什么呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -2052,6 +2059,7 @@ show-text 0 "「あ、私気になってたことある！」"
 */
 // 输入原文：「啊，我有件一直很在意的事！」
 show-text 0 @"「啊，我有件一直很在意的事！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2181,6 +2189,7 @@ show-text 0 "「アヴァロの髪の色って珍しいよね。２つの色が�
 */
 // 输入原文：「阿瓦罗的发色很特别呢。混着两种颜色」
 show-text 0 @"「阿瓦罗的发色很特别呢。混着两种颜色」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000279a0
@@ -2251,6 +2260,7 @@ show-text 0 "いだんだろう」"
 */
 // 输入原文：「我是半仙灵。大概是继承了两边的特征吧」
 show-text 0 @"「我是半仙灵。大概是继承了两边的特征吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2379,7 +2389,10 @@ u00416120
 show-text 0 "「はーふえるふ？　人間とエルフが結ばれて、アヴァロが生まれたってこと？」"
 */
 // 输入原文：「半仙灵？也就是说，人类和仙灵结合，生下了阿瓦罗？」
-show-text 0 @"「半仙灵？也就是说，人类和仙灵结合，生下了阿瓦罗？」"
+show-text 0 @"「半仙灵？也就是说，人类和仙灵结合，生下了阿"
+end-text-line 0
+show-text 0 @"瓦罗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2406,6 +2419,7 @@ show-text 0 "「そうなるんだろうな」"
 */
 // 输入原文：「大概就是这样吧」
 show-text 0 @"「大概就是这样吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -2586,6 +2600,7 @@ show-text 0 "「そっかぁ。お父さんとお母さんは、いまどうし�
 */
 // 输入原文：「这样啊。你的爸爸妈妈，现在在做什么呢？」
 show-text 0 @"「这样啊。你的爸爸妈妈，现在在做什么呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2614,6 +2629,7 @@ show-text 0 "なんだ。親は生きているかどうかも分からない」"
 */
 // 输入原文：「我是孤儿。连父母是否在世都不知道」
 show-text 0 @"「我是孤儿。连父母是否在世都不知道」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -2753,6 +2769,7 @@ show-text 0 "「もしかして、辛いこと聞いちゃったかな」"
 */
 // 输入原文：「……我是不是问到了难过的事」
 show-text 0 @"「……我是不是问到了难过的事」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2779,6 +2796,7 @@ show-text 0 "「いや、いいよ。会ったこともないし、特に思い�
 */
 // 输入原文：「不，没事。反正没见过面，也没什么特别的感情」
 show-text 0 @"「不，没事。反正没见过面，也没什么特别的感情」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2812,6 +2830,7 @@ show-text 0 "んだことはあるけどな。"
 */
 // 输入原文：小时候，倒是怨恨过。
 show-text 0 @"小时候，倒是怨恨过。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2837,7 +2856,10 @@ u00416120
 show-text 0 "「だけどエルフの血が入っているおかけで、仕事では有利に働くから助かってる」"
 */
 // 输入原文：「不过多亏了体内流着仙灵的血，工作上很有利，帮了大忙」
-show-text 0 @"「不过多亏了体内流着仙灵的血，工作上很有利，帮了大忙」"
+show-text 0 @"「不过多亏了体内流着仙灵的血，工作上很有利，"
+end-text-line 0
+show-text 0 @"帮了大忙」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -2977,6 +2999,7 @@ show-text 0 "「ゆうりに？」"
 */
 // 输入原文：「有利？」
 show-text 0 @"「有利？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3002,9 +3025,10 @@ u00416120
 show-text 0 "「精霊の声が少し聞こえるんだ。はっきり話せるわけじゃなくて、感情が分かる程度だけどさ」"
 */
 // 输入原文：「我能隐约听到精灵的声音。虽然不能清楚地对话，但能明白它们的感情」
-show-text 0 @"「我能隐约听到精灵的声音。虽然不能清楚地对话，但能明白它们" 
+show-text 0 @"「我能隐约听到精灵的声音。虽然不能清楚地对话，但能"
 end-text-line 0
-show-text 0 @"的感情」"
+show-text 0 @"明白它们的感情」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3032,9 +3056,10 @@ display-furigana 0 "省" "はぶ"
 show-text 0 "けることは多い」"
 */
 // 输入原文：「凭借感知魔力的流动与精灵的存在，常能省去寻找适合建造房屋和井的地基的工夫」
-show-text 0 @"「凭借感知魔力的流动与精灵的存在，常能省去寻找适合建造房屋和井" 
+show-text 0 @"「凭借感知魔力的流动与精灵的存在，常能省去寻找适合"
 end-text-line 0
-show-text 0 @"的地基的工夫」"
+show-text 0 @"建造房屋和井的地基的工夫」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3067,6 +3092,7 @@ show-text 0 "の仕事には役立つ能力だ。"
 */
 // 输入原文：是对锻梁师的工作很有用的能力。
 show-text 0 @"是对锻梁师的工作很有用的能力。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -3206,6 +3232,7 @@ show-text 0 "「良いことがいっぱいあるんだね」"
 */
 // 输入原文：「好处好多呢」
 show-text 0 @"「好处好多呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3232,6 +3259,7 @@ show-text 0 "「まぁでも、苦労することの方が多いけどな�
 */
 // 输入原文：「嘛……不过，吃苦的时候更多就是了」
 show-text 0 @"「嘛……不过，吃苦的时候更多就是了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -3371,6 +3399,7 @@ show-text 0 "「そうなの？」"
 */
 // 输入原文：「是吗？」
 show-text 0 @"「是吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3396,7 +3425,10 @@ u00416120
 show-text 0 "「頼るべきはずの親もいない状況で、違う種族の血が半分ずつ入ってるんだ」"
 */
 // 输入原文：「在理应依靠的父母都不在的情况下，还混着两个种族各一半的血」
-show-text 0 @"「在理应依靠的父母都不在的情况下，还混着两个种族各一半的血」"
+show-text 0 @"「在理应依靠的父母都不在的情况下，还混着两个种族"
+end-text-line 0
+show-text 0 @"各一半的血」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3423,6 +3455,7 @@ show-text 0 "「どんな生活を送れるのか、簡単に想像つくだろ�
 */
 // 输入原文：「会过上怎样的生活，很容易想象吧」
 show-text 0 @"「会过上怎样的生活，很容易想象吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3456,6 +3489,7 @@ show-text 0 "めないんだ。どちらからも、血の半分だけしか見�
 */
 // 输入原文：两边都融不进去。无论哪一方，都只把我看作一半的血。
 show-text 0 @"两边都融不进去。无论哪一方，都只把我看作一半的血。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3487,6 +3521,7 @@ show-text 0 "これが、辛くない奴なんかいるのだろうか。"
 */
 // 输入原文：这样的处境，会有人不觉得难受吗。
 show-text 0 @"这样的处境，会有人不觉得难受吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -3692,6 +3727,7 @@ show-text 0 "「素敵だね」"
 */
 // 输入原文：「真棒呢」
 show-text 0 @"「真棒呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3718,6 +3754,7 @@ show-text 0 "「え？」"
 */
 // 输入原文：「……诶？」
 show-text 0 @"「……诶？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3846,7 +3883,10 @@ u00416120
 show-text 0 "「アヴァロは人間の良いところも、エルフの良いところも、どっちも持ってるってことでしょ？」"
 */
 // 输入原文：「阿瓦罗把人类的好处和仙灵的好处，两者都拥有了，对吧？」
-show-text 0 @"「阿瓦罗把人类的好处和仙灵的好处，两者都拥有了，对吧？」"
+show-text 0 @"「阿瓦罗把人类的好处和仙灵的好处，两者都拥有"
+end-text-line 0
+show-text 0 @"了，对吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -3986,9 +4026,10 @@ u00416120
 show-text 0 "「それにどっちの気持ちも分かるから、きっと人間とエルフの両方と仲良くなれるね」"
 */
 // 输入原文：「而且两边的心情都懂，所以肯定能和人类、仙灵两边都交上朋友」
-show-text 0 @"「而且两边的心情都懂，所以肯定能和人类、仙灵两边都交上朋" 
+show-text 0 @"「而且两边的心情都懂，所以肯定能和人类、仙灵两边"
 end-text-line 0
-show-text 0 @"友」"
+show-text 0 @"都交上朋友」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4015,6 +4056,7 @@ show-text 0 "「できねぇよ、そんなの」"
 */
 // 输入原文：「……做不到的，那种事」
 show-text 0 @"「……做不到的，那种事」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4045,9 +4087,10 @@ u00416120
 show-text 0 "人間の方は、まだ一部に気の良い奴らがいる。職人と呼ばれる世界は実力主義だし、腕があれば認められることも多い。"
 */
 // 输入原文：人类那边，好歹还有些心地不错的人。被称作工匠的世界讲究实力，有本事的话常常能得到认可。
-show-text 0 @"人类那边，好歹还有些心地不错的人。被称作工匠的世界讲究实力，有" 
+show-text 0 @"人类那边，好歹还有些心地不错的人。被称作工匠的世界"
 end-text-line 0
-show-text 0 @"本事的话常常能得到认可。"
+show-text 0 @"讲究实力，有本事的话常常能得到认可。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4078,7 +4121,10 @@ u00416120
 show-text 0 "だけどエルフは無理だろう。そもそも種族全体が、人間と仲が良くないことが多い。"
 */
 // 输入原文：但仙灵就难了。本来这个种族整体就大多与人类关系不佳。
-show-text 0 @"但仙灵就难了。本来这个种族整体就大多与人类关系不佳。"
+show-text 0 @"但仙灵就难了。本来这个种族整体就大多与人类关"
+end-text-line 0
+show-text 0 @"系不佳。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4109,9 +4155,10 @@ u00416120
 show-text 0 "誇り高い彼らのことだ。自分たちと同じ血が半分も入っているハーフエルフなんて、きっと完全な人間以上に嫌っているだろう。"
 */
 // 输入原文：他们自尊心极强。流着他们一半血的半仙灵，恐怕会比纯正的人类更让他们厌恶吧。
-show-text 0 @"他们自尊心极强。流着他们一半血的半仙灵，恐怕会比纯正的人类更让" 
+show-text 0 @"他们自尊心极强。流着他们一半血的半仙灵，恐怕会比纯"
 end-text-line 0
-show-text 0 @"他们厌恶吧。"
+show-text 0 @"正的人类更让他们厌恶吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -4252,6 +4299,7 @@ show-text 0 "「できるよ」"
 */
 // 输入原文：「做得到的」
 show-text 0 @"「做得到的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4278,6 +4326,7 @@ show-text 0 "「」"
 */
 // 输入原文：「…………」
 show-text 0 @"「…………」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4407,6 +4456,7 @@ show-text 0 "「だってアヴァロはお父さんとお母さんが出会っ�
 */
 // 输入原文：「因为阿瓦罗是爸爸妈妈相遇、相爱后才生下来的呀」
 show-text 0 @"「因为阿瓦罗是爸爸妈妈相遇、相爱后才生下来的呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -4547,6 +4597,7 @@ show-text 0 "「だから、アヴァロならきっと大丈夫だよ」"
 */
 // 输入原文：「所以，阿瓦罗的话一定没问题的」
 show-text 0 @"「所以，阿瓦罗的话一定没问题的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4580,6 +4631,7 @@ show-text 0 "しすぎて、目を合わせるのが少し辛くなった。"
 */
 // 输入原文：菲亚的笑容太过耀眼，让我有些难以直视。
 show-text 0 @"菲亚的笑容太过耀眼，让我有些难以直视。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4708,7 +4760,10 @@ u00416120
 show-text 0 "「それにアヴァロが困ってたら、これからは私も力になるしね！　だから、だいじょーぶっ」"
 */
 // 输入原文：「而且以后阿瓦罗遇到困难，我也会出力的！所以，没——问题！」
-show-text 0 @"「而且以后阿瓦罗遇到困难，我也会出力的！所以，没——问题！」"
+show-text 0 @"「而且以后阿瓦罗遇到困难，我也会出力的！所以，没"
+end-text-line 0
+show-text 0 @"——问题！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4735,6 +4790,7 @@ show-text 0 "「すごいな、フィアは」"
 */
 // 输入原文：「……菲亚，真厉害啊」
 show-text 0 @"「……菲亚，真厉害啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4864,6 +4920,7 @@ show-text 0 "「えへへっ、すごいんだよ。だって神様だからね�
 */
 // 输入原文：「嘿嘿，当然厉害啦。因为我是神明嘛！」
 show-text 0 @"「嘿嘿，当然厉害啦。因为我是神明嘛！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4895,6 +4952,7 @@ show-text 0 "愛し合ったから、か。そんな風に考えたことは一�
 */
 // 输入原文：因为相爱，是吗。我从未这样想过。
 show-text 0 @"因为相爱，是吗。我从未这样想过。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4925,9 +4983,10 @@ u00416120
 show-text 0 "人間とエルフという違う種族同士でも、それでもちゃんと恋をして結ばれたから、俺は生まれて来ているんだな。"
 */
 // 输入原文：即使是人类与仙灵这样不同的种族，也认真相恋并结为连理，才有了我的诞生啊。
-show-text 0 @"即使是人类与仙灵这样不同的种族，也认真相恋并结为连理，才有了我" 
+show-text 0 @"即使是人类与仙灵这样不同的种族，也认真相恋并结为连"
 end-text-line 0
-show-text 0 @"的诞生啊。"
+show-text 0 @"理，才有了我的诞生啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4954,6 +5013,7 @@ show-text 0 "「フィア」"
 */
 // 输入原文：「菲亚」
 show-text 0 @"「菲亚」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -5094,6 +5154,7 @@ show-text 0 "「ん？　なーにアヴァロ」"
 */
 // 输入原文：「嗯？什么事呀，阿瓦罗」
 show-text 0 @"「嗯？什么事呀，阿瓦罗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5120,6 +5181,7 @@ show-text 0 "「ありがとな」"
 */
 // 输入原文：「谢谢你」
 show-text 0 @"「谢谢你」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5151,6 +5213,7 @@ show-text 0 "少し、救われたよ。"
 */
 // 输入原文：我稍微，得到救赎了。
 show-text 0 @"我稍微，得到救赎了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5280,6 +5343,7 @@ show-text 0 "「え、なにがなにが！？　でもどういたしまして�
 */
 // 输入原文：「诶，什么什么！？不过不客气！」
 show-text 0 @"「诶，什么什么！？不过不客气！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -5361,7 +5425,10 @@ u00416120
 show-text 0 "「探索に戻ろうぜ。城砦内のどこが使えて、どこが使えないのか知っておきたいし」"
 */
 // 输入原文：「回到探索吧。我想知道城砦里哪些地方能用、哪些不能用」
-show-text 0 @"「回到探索吧。我想知道城砦里哪些地方能用、哪些不能用」"
+show-text 0 @"「回到探索吧。我想知道城砦里哪些地方能用、哪"
+end-text-line 0
+show-text 0 @"些不能用」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5491,6 +5558,7 @@ show-text 0 "「えぇ～、もっと聞きたいこといっぱいあるのに�
 */
 // 输入原文：「诶～，我还有好多好多想问的呢～」
 show-text 0 @"「诶～，我还有好多好多想问的呢～」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5517,6 +5585,7 @@ show-text 0 "「俺たちが話す機会は、これからたくさんあるだ�
 */
 // 输入原文：「我们聊天的机会，以后多的是吧」
 show-text 0 @"「我们聊天的机会，以后多的是吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5646,6 +5715,7 @@ show-text 0 "「そうだね！」"
 */
 // 输入原文：「……也是呢！」
 show-text 0 @"「……也是呢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00028e74
@@ -5739,6 +5809,7 @@ show-text 0 "フィアと城砦内の探索中、使える廃材がないかと�
 */
 // 输入原文：正和菲亚在城砦内探索、查看有没有可用的废材时。
 show-text 0 @"正和菲亚在城砦内探索、查看有没有可用的废材时。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -5939,6 +6010,7 @@ show-text 0 "「ねぇねぇ、アヴァロって修理師さんなの？」"
 */
 // 输入原文：「呐呐，阿瓦罗是修理师吗？」
 show-text 0 @"「呐呐，阿瓦罗是修理师吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5965,6 +6037,7 @@ show-text 0 "「ん？　どうしてそう思ったんだ？」"
 */
 // 输入原文：「嗯？怎么会这么想？」
 show-text 0 @"「嗯？怎么会这么想？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -6103,9 +6176,10 @@ u00416120
 show-text 0 "「アヴァロは修理の仕事で城砦に入ったって言ってたよね。だから、修理のお仕事が専門なのかなって」"
 */
 // 输入原文：「阿瓦罗说过，是靠修理的工作进入城砦的吧。所以我猜，你的专职工作是修理」
-show-text 0 @"「阿瓦罗说过，是靠修理的工作进入城砦的吧。所以我猜，你的专职" 
+show-text 0 @"「阿瓦罗说过，是靠修理的工作进入城砦的吧。所以我猜"
 end-text-line 0
-show-text 0 @"工作是修理」"
+show-text 0 @"，你的专职工作是修理」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6135,7 +6209,10 @@ display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "って仕事だよ」"
 */
 // 输入原文：「有点不同哦。修理我也会接，但本行是锻梁师这份工作」
-show-text 0 @"「有点不同哦。修理我也会接，但本行是锻梁师这份工作」"
+show-text 0 @"「有点不同哦。修理我也会接，但本行是锻梁师这"
+end-text-line 0
+show-text 0 @"份工作」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -6275,6 +6352,7 @@ show-text 0 "「たんりょうし？　それって、なにをする人なの�
 */
 // 输入原文：「锻梁师？那是做什么的人呢」
 show-text 0 @"「锻梁师？那是做什么的人呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6302,7 +6380,10 @@ display-furigana 0 "修繕" "しゅうぜん"
 show-text 0 "が主だけど、魔法具や武器の合成と作成もやっているな」"
 */
 // 输入原文：「主要是解析和修缮遗迹、迷宫，也做魔法道具和武器的合成与制作」
-show-text 0 @"「主要是解析和修缮遗迹、迷宫，也做魔法道具和武器的合成与制作」"
+show-text 0 @"「主要是解析和修缮遗迹、迷宫，也做魔法道具和武器的"
+end-text-line 0
+show-text 0 @"合成与制作」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6334,9 +6415,10 @@ display-furigana 0 "多岐" "たき"
 show-text 0 "に渡るよ」"
 */
 // 输入原文：「而且也会寻找和选定适合筑城、取水设施之类的场所。嘛，涉及方方面面」
-show-text 0 @"「而且也会寻找和选定适合筑城、取水设施之类的场所。嘛，涉及方" 
+show-text 0 @"「而且也会寻找和选定适合筑城、取水设施之类的场所。"
 end-text-line 0
-show-text 0 @"方面面」"
+show-text 0 @"嘛，涉及方方面面」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6364,9 +6446,10 @@ display-furigana 0 "検知" "けんち"
 show-text 0 "ができた方がいいし、魔法語学も必要になってくる。追求し甲斐のある面白い職業さ」"
 */
 // 输入原文：「为此最好会魔法侦测，魔法语言学也必不可少。是个值得钻研的有趣职业」
-show-text 0 @"「为此最好会魔法侦测，魔法语言学也必不可少。是个值得钻研的有趣" 
+show-text 0 @"「为此最好会魔法侦测，魔法语言学也必不可少。是个值"
 end-text-line 0
-show-text 0 @"职业」"
+show-text 0 @"得钻研的有趣职业」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6496,6 +6579,7 @@ show-text 0 "「ふうん？」"
 */
 // 输入原文：「……嗯哼？」
 show-text 0 @"「……嗯哼？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6527,6 +6611,7 @@ show-text 0 "しまった、説明が分かりにくかったかな。フィア�
 */
 // 输入原文：糟了，是不是讲得太难懂了。菲亚脸上浮现出问号。
 show-text 0 @"糟了，是不是讲得太难懂了。菲亚脸上浮现出问号。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6552,7 +6637,10 @@ u00416120
 show-text 0 "「まぁ要は魔法を現場作業に使って、色々と役立てているって感じかな」"
 */
 // 输入原文：「嘛，简单说就是把魔法用在现场作业上，让它在各方面发挥作用」
-show-text 0 @"「嘛，简单说就是把魔法用在现场作业上，让它在各方面发挥作用」"
+show-text 0 @"「嘛，简单说就是把魔法用在现场作业上，让它在各方"
+end-text-line 0
+show-text 0 @"面发挥作用」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -6692,6 +6780,7 @@ show-text 0 "「なるほどぉ。それじゃあ、アヴァロは魔術師さ�
 */
 // 输入原文：「原来如此。那么，阿瓦罗是魔术师吗？」
 show-text 0 @"「原来如此。那么，阿瓦罗是魔术师吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6719,9 +6808,10 @@ display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "を名乗れるやつ」"
 */
 // 输入原文：「是啊。算是拥有土木知识和建筑技术的魔术师。还要有基础体力和筋力，能自称锻梁师的人可不多哦」
-show-text 0 @"「是啊。算是拥有土木知识和建筑技术的魔术师。还要有基础体力和筋" 
+show-text 0 @"「是啊。算是拥有土木知识和建筑技术的魔术师。还要有"
 end-text-line 0
-show-text 0 @"力，能自称锻梁师的人可不多哦」"
+show-text 0 @"基础体力和筋力，能自称锻梁师的人可不多哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -6861,6 +6951,7 @@ show-text 0 "「なるの、難しそうだもんね」"
 */
 // 输入原文：「要成为锻梁师，看起来很难呢」
 show-text 0 @"「要成为锻梁师，看起来很难呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6886,9 +6977,10 @@ u00416120
 show-text 0 "「ちなみに街道の整備や、橋を造ったりもできるぜ。だからこの城砦の管理は任せておけよ。完璧に修復してやるさ」"
 */
 // 输入原文：「顺带一提，整备街道、架桥也都能做。所以这座城砦的管理就交给我吧。我会把它完美修复的」
-show-text 0 @"「顺带一提，整备街道、架桥也都能做。所以这座城砦的管理就交给我" 
+show-text 0 @"「顺带一提，整备街道、架桥也都能做。所以这座城砦的"
 end-text-line 0
-show-text 0 @"吧。我会把它完美修复的」"
+show-text 0 @"管理就交给我吧。我会把它完美修复的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6920,6 +7012,7 @@ show-text 0 "ここは宝の山だ。手を付けたい箇所がたくさんあ�
 */
 // 输入原文：这里简直是宝山。想动手的地方多得很。
 show-text 0 @"这里简直是宝山。想动手的地方多得很。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6950,7 +7043,10 @@ u00416120
 show-text 0 "俺の手でどんどん修復しながら施設を造り、盛り上げていってやろうじゃないか。"
 */
 // 输入原文：就用我这双手，一边不断修复一边建造设施，让这里热闹起来吧。
-show-text 0 @"就用我这双手，一边不断修复一边建造设施，让这里热闹起来吧。"
+show-text 0 @"就用我这双手，一边不断修复一边建造设施，让这里"
+end-text-line 0
+show-text 0 @"热闹起来吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -7089,7 +7185,10 @@ u00416120
 show-text 0 "「道や、橋そっか、アヴァロは人を繋ぐお仕事をしてるんだね」"
 */
 // 输入原文：「道路和桥梁……原来如此，阿瓦罗做的是连接人们的工作呢」
-show-text 0 @"「道路和桥梁……原来如此，阿瓦罗做的是连接人们的工作呢」"
+show-text 0 @"「道路和桥梁……原来如此，阿瓦罗做的是连接人"
+end-text-line 0
+show-text 0 @"们的工作呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7123,6 +7222,7 @@ show-text 0 "って、なにかを思い出すように微笑んでいる。"
 */
 // 输入原文：菲亚闭上眼睛，像是在回忆着什么似的微笑着。
 show-text 0 @"菲亚闭上眼睛，像是在回忆着什么似的微笑着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7149,6 +7249,7 @@ show-text 0 "「なんだよ？」"
 */
 // 输入原文：「……怎么了？」
 show-text 0 @"「……怎么了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -7320,6 +7421,7 @@ show-text 0 "「えへへっ、なんか嬉しくなったの！」"
 */
 // 输入原文：「嘿嘿，不知怎么的就很开心！」
 show-text 0 @"「嘿嘿，不知怎么的就很开心！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7346,6 +7448,7 @@ show-text 0 "「えーい、抱き付いてくるな引っ付くなっ」"
 */
 // 输入原文：「哎哎，别抱过来，别贴上来啊」
 show-text 0 @"「哎哎，别抱过来，别贴上来啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7377,6 +7480,7 @@ show-text 0 "意外と大きい胸の感触が気持ちいいから、悪い気�
 */
 // 输入原文：意外地柔软的胸部触感很舒服，倒也不觉得讨厌就是了！
 show-text 0 @"意外地柔软的胸部触感很舒服，倒也不觉得讨厌就是了！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -7533,6 +7637,7 @@ show-text 0 "を目指してたの？」"
 */
 // 输入原文：「阿瓦罗从一开始就以锻梁师为目标吗？」
 show-text 0 @"「阿瓦罗从一开始就以锻梁师为目标吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7558,9 +7663,10 @@ u00416120
 show-text 0 "「いや、自分にやれることを必死に探して、色んなことを学んでったら自然と行き着いた」"
 */
 // 输入原文：「不，是拼命寻找自己能做的事，学这学那，自然而然地就走到这一步了」
-show-text 0 @"「不，是拼命寻找自己能做的事，学这学那，自然而然地就走到这一步" 
+show-text 0 @"「不，是拼命寻找自己能做的事，学这学那，自然而然地"
 end-text-line 0
-show-text 0 @"了」"
+show-text 0 @"就走到这一步了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7588,7 +7694,10 @@ display-furigana 0 "虜" "とりこ"
 show-text 0 "だよ。奥深い世界だし、まだまだ学びたいことがたくさんある」"
 */
 // 输入原文：「现在完全迷上这份工作了。这行深奥得很，想学的东西还多着呢」
-show-text 0 @"「现在完全迷上这份工作了。这行深奥得很，想学的东西还多着呢」"
+show-text 0 @"「现在完全迷上这份工作了。这行深奥得很，想学的东"
+end-text-line 0
+show-text 0 @"西还多着呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7622,6 +7731,7 @@ show-text 0 "いて研究する工房が欲しかった。"
 */
 // 输入原文：为此，我一直想要一间能钻研心爱技术的工房。
 show-text 0 @"为此，我一直想要一间能钻研心爱技术的工房。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7654,7 +7764,10 @@ display-furigana 0 "叶" "かな"
 show-text 0 "ったな。照れくさいから礼は言わないけど。"
 */
 // 输入原文：多亏了菲亚，梦想实现了。虽然因为难为情，我不会道谢。
-show-text 0 @"多亏了菲亚，梦想实现了。虽然因为难为情，我不会道谢。"
+show-text 0 @"多亏了菲亚，梦想实现了。虽然因为难为情，我不"
+end-text-line 0
+show-text 0 @"会道谢。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -7794,6 +7907,7 @@ show-text 0 "「ふふ、勉強熱心なんだね」"
 */
 // 输入原文：「呵呵，你很用功呢」
 show-text 0 @"「呵呵，你很用功呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -7932,7 +8046,10 @@ u00416120
 show-text 0 "「でもすごいね。なるの難しい職業なんでしょ、アヴァロは若いのに優秀だっ」"
 */
 // 输入原文：「不过好厉害。这是很难入行的职业吧，阿瓦罗年纪轻轻就很优秀」
-show-text 0 @"「不过好厉害。这是很难入行的职业吧，阿瓦罗年纪轻轻就很优秀」"
+show-text 0 @"「不过好厉害。这是很难入行的职业吧，阿瓦罗年纪轻"
+end-text-line 0
+show-text 0 @"轻就很优秀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7959,6 +8076,7 @@ show-text 0 "「俺が優秀に見えるのは血が大きく関係してるけ�
 */
 // 输入原文：「我能显得优秀，血统占了很大关系。但也不全是那样」
 show-text 0 @"「我能显得优秀，血统占了很大关系。但也不全是那样」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -8098,6 +8216,7 @@ show-text 0 "「アヴァロが頑張ったってことでしょ？」"
 */
 // 输入原文：「是因为阿瓦罗努力了吧？」
 show-text 0 @"「是因为阿瓦罗努力了吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8125,7 +8244,10 @@ display-furigana 0 "鍛梁技術" "たんりょうぎじゅつ"
 show-text 0 "を教えてくれた人がいるんだよ。さすがに独学では難しい世界だったしな」"
 */
 // 输入原文：「不，是师父——啊——，有人教过我锻梁技术。这行自学到底太难了」
-show-text 0 @"「不，是师父——啊——，有人教过我锻梁技术。这行自学到底太难了」"
+show-text 0 @"「不，是师父——啊——，有人教过我锻梁技术。这行自"
+end-text-line 0
+show-text 0 @"学到底太难了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8153,9 +8275,10 @@ display-furigana 0 "勘" "かん"
 show-text 0 "で補ってたけどな。技術も確かだしすごい人だったぜ」"
 */
 // 输入原文：「那个人能用的魔力量很少，大部分作业都靠多年的经验和直觉来弥补。技术也很扎实，是个了不起的人」
-show-text 0 @"「那个人能用的魔力量很少，大部分作业都靠多年的经验和直觉来弥补。" 
+show-text 0 @"「那个人能用的魔力量很少，大部分作业都靠多年的经验"
 end-text-line 0
-show-text 0 @"技术也很扎实，是个了不起的人」"
+show-text 0 @"和直觉来弥补。技术也很扎实，是个了不起的人」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -8295,6 +8418,7 @@ show-text 0 "「ふふ、アヴァロ嬉しそう。その人を尊敬してる�
 */
 // 输入原文：「呵呵，阿瓦罗看起来很开心。你很尊敬那个人吧」
 show-text 0 @"「呵呵，阿瓦罗看起来很开心。你很尊敬那个人吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8326,6 +8450,7 @@ show-text 0 "真っ直ぐ言うなぁ。"
 */
 // 输入原文：真是直言不讳啊。
 show-text 0 @"真是直言不讳啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8357,6 +8482,7 @@ show-text 0 "まったく、フィアに恥ずかしいという感情はある�
 */
 // 输入原文：真是的，菲亚到底有没有害羞这种感情啊。
 show-text 0 @"真是的，菲亚到底有没有害羞这种感情啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8383,6 +8509,7 @@ show-text 0 "「ただの気の良いおっさんだよ。いつか機会があ�
 */
 // 输入原文：「只是个好心的大叔啦。有机会的话介绍给菲亚认识」
 show-text 0 @"「只是个好心的大叔啦。有机会的话介绍给菲亚认识」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -8522,6 +8649,7 @@ show-text 0 "「うんっ、楽しみにしてるね！」"
 */
 // 输入原文：「嗯！我很期待哦！」
 show-text 0 @"「嗯！我很期待哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8553,6 +8681,7 @@ show-text 0 "その後も世間話をしながら、俺とフィアは城砦内�
 */
 // 输入原文：之后，我和菲亚一边闲聊，一边继续探索城砦内部。
 show-text 0 @"之后，我和菲亚一边闲聊，一边继续探索城砦内部。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00028e74
@@ -8643,6 +8772,7 @@ show-text 0 "工房で次の作業に取り掛かっている時のことだっ�
 */
 // 输入原文：那是在工房里着手下一项工作的时候。
 show-text 0 @"那是在工房里着手下一项工作的时候。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -8843,6 +8973,7 @@ show-text 0 "「ねぇ、アヴァロ。さっき、こんな物を見つけた�
 */
 // 输入原文：「呐，阿瓦罗。刚才我发现了这种东西，我也能用吗？」
 show-text 0 @"「呐，阿瓦罗。刚才我发现了这种东西，我也能用吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000292c0
@@ -8883,6 +9014,7 @@ show-text 0 "「このままでも使えなくはないんだけど、圧倒的�
 */
 // 输入原文：「这样也不是不能用，但用起来会非常不便哦」
 show-text 0 @"「这样也不是不能用，但用起来会非常不便哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8912,9 +9044,10 @@ display-furigana 0 "強化" "きょうか"
 show-text 0 "』しよう」"
 */
 // 输入原文：「难得如此，就用刚才整备好的设备把它『分解』，再『强化』武具吧」
-show-text 0 @"「难得如此，就用刚才整备好的设备把它『分解』，再『强化』武具" 
+show-text 0 @"「难得如此，就用刚才整备好的设备把它『分解』，再"
 end-text-line 0
-show-text 0 @"吧」"
+show-text 0 @"『强化』武具吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000292c0
@@ -9005,7 +9138,10 @@ display-furigana 0 "分解" "ぶんかい"
 show-text 0 "』するんだ」"
 */
 // 输入原文：「这是工房新具备的功能。首先把不再需要的武具『分解』掉」
-show-text 0 @"「这是工房新具备的功能。首先把不再需要的武具『分解』掉」"
+show-text 0 @"「这是工房新具备的功能。首先把不再需要的武具"
+end-text-line 0
+show-text 0 @"『分解』掉」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9031,9 +9167,10 @@ u00416120
 show-text 0 "「必要ない武具ってのは、使い道のない壊れた物から、今使っている物より弱い物までなんでも構わない」"
 */
 // 输入原文：「所谓不需要的武具，从没用的破损品到比现在用的更弱的，什么都行」
-show-text 0 @"「所谓不需要的武具，从没用的破损品到比现在用的更弱的，什么都" 
+show-text 0 @"「所谓不需要的武具，从没用的破损品到比现在用的更弱"
 end-text-line 0
-show-text 0 @"行」"
+show-text 0 @"的，什么都行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9061,9 +9198,10 @@ display-furigana 0 "錬石" "れんせき"
 show-text 0 "』を作る。ただし、使った武具は無くなるから絶対に使わないと思った物にとどめてくれ」"
 */
 // 输入原文：「用它们制作『强化』所需的『炼石』。不过，用掉的武具会消失，所以只限于你确定不会用的东西」
-show-text 0 @"「用它们制作『强化』所需的『炼石』。不过，用掉的武具会消失，所" 
+show-text 0 @"「用它们制作『强化』所需的『炼石』。不过，用掉的武"
 end-text-line 0
-show-text 0 @"以只限于你确定不会用的东西」"
+show-text 0 @"具会消失，所以只限于你确定不会用的东西」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -9102,6 +9240,7 @@ show-text 0 "』する」"
 */
 // 输入原文：「然后，用刚做好的『炼石』来『强化』武具」
 show-text 0 @"「然后，用刚做好的『炼石』来『强化』武具」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9127,9 +9266,10 @@ u00416120
 show-text 0 "「武具にはそれぞれ決まった強化段階と必要な錬石がある。今必要な物が何か考えながら使ってくれ」"
 */
 // 输入原文：「每种武具都有固定的强化阶段和所需炼石。边想现在需要什么边使用吧」
-show-text 0 @"「每种武具都有固定的强化阶段和所需炼石。边想现在需要什么边使用" 
+show-text 0 @"「每种武具都有固定的强化阶段和所需炼石。边想现在需"
 end-text-line 0
-show-text 0 @"吧」"
+show-text 0 @"要什么边使用吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9155,9 +9295,10 @@ u00416120
 show-text 0 "「それと『強化』に関しては、武器に限ったものじゃない。防具や装飾にも可能だから、守りに不安があるならそっちからだな」"
 */
 // 输入原文：「而且『强化』不限于武器，防具和装饰品也能强化。对防守不安的话，就从那边入手吧」
-show-text 0 @"「而且『强化』不限于武器，防具和装饰品也能强化。对防守不安的话，" 
+show-text 0 @"「而且『强化』不限于武器，防具和装饰品也能强化。对"
 end-text-line 0
-show-text 0 @"就从那边入手吧」"
+show-text 0 @"防守不安的话，就从那边入手吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -9215,9 +9356,10 @@ display-furigana 0 "筈" "はず"
 show-text 0 "だからな」"
 */
 // 输入原文：「入手新东西，或觉得敌人很强时，就『分解』和『强化』。光是这样应该就能轻松不少」
-show-text 0 @"「入手新东西，或觉得敌人很强时，就『分解』和『强化』。光是这样" 
+show-text 0 @"「入手新东西，或觉得敌人很强时，就『分解』和『强化"
 end-text-line 0
-show-text 0 @"应该就能轻松不少」"
+show-text 0 @"』。光是这样应该就能轻松不少」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -9357,6 +9499,7 @@ show-text 0 "「うん。いっぱい強化して強くなろう」"
 */
 // 输入原文：「嗯。好好强化，变强吧」
 show-text 0 @"「嗯。好好强化，变强吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -9581,6 +9724,7 @@ show-text 0 "「えいやっ」"
 */
 // 输入原文：「嘿呀」
 show-text 0 @"「嘿呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -9694,6 +9838,7 @@ show-text 0 "していた。"
 */
 // 输入原文：路过广场时，看到菲亚正在召唤答应协助我们的结骑。
 show-text 0 @"路过广场时，看到菲亚正在召唤答应协助我们的结骑。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9823,6 +9968,7 @@ show-text 0 "「それっ」"
 */
 // 输入原文：「去！」
 show-text 0 @"「去！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -9926,6 +10072,7 @@ show-text 0 "でも、なんだろう。あの意味不明な行動は。"
 */
 // 输入原文：不过，怎么说呢。那令人费解的举动是……
 show-text 0 @"不过，怎么说呢。那令人费解的举动是……"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10055,6 +10202,7 @@ show-text 0 "「えいやっ」"
 */
 // 输入原文：「嘿呀」
 show-text 0 @"「嘿呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000259b4
@@ -10272,6 +10420,7 @@ show-text 0 "「むむむむむむむ」"
 */
 // 输入原文：「唔唔唔唔唔唔唔……」
 show-text 0 @"「唔唔唔唔唔唔唔……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10303,6 +10452,7 @@ show-text 0 "よくわからないが、召喚って言うのは使用者の隣�
 */
 // 输入原文：虽然不太明白，但召唤似乎只能在使用者身边进行。
 show-text 0 @"虽然不太明白，但召唤似乎只能在使用者身边进行。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -10512,9 +10662,10 @@ display-furigana 0 "攻撃魔法" "こうげきまほう"
 show-text 0 "』が使えるようになったよ。これで戦いが楽になること間違いなし！」"
 */
 // 输入原文：「随着女神力提升，我也能用『攻击魔法』了。这下战斗一定会轻松很多！」
-show-text 0 @"「随着女神力提升，我也能用『攻击魔法』了。这下战斗一定会轻松很" 
+show-text 0 @"「随着女神力提升，我也能用『攻击魔法』了。这下战斗"
 end-text-line 0
-show-text 0 @"多！」"
+show-text 0 @"一定会轻松很多！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10545,9 +10696,10 @@ u00416120
 show-text 0 "フィアが自身満々な表情で言い放ってきた。確かに、俺は肉弾戦が専門だから魔法攻撃があると便利だな。"
 */
 // 输入原文：菲亚满脸自信地说出了这话。确实，我专精近身战，有魔法攻击会方便很多。
-show-text 0 @"菲亚满脸自信地说出了这话。确实，我专精近身战，有魔法攻击会方便很" 
+show-text 0 @"菲亚满脸自信地说出了这话。确实，我专精近身战，有魔"
 end-text-line 0
-show-text 0 @"多。"
+show-text 0 @"法攻击会方便很多。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10582,9 +10734,12 @@ display-furigana 0 "魔防" "まぼう"
 show-text 0 "）が低ければダメージが与えられる。俺が戦うかフィアに戦ってもらうか状況を見極めながらだな。"
 */
 // 输入原文：即便是物理防御（物防）高的敌人，只要魔法防御（魔防）低就能造成伤害。要视情况决定由我出战还是让菲亚出战。
-show-text 0 @"即便是物理防御（物防）高的敌人，只要魔法防御（魔防）低就能造成伤" 
+show-text 0 @"即便是物理防御（物防）高的敌人，只要魔法防御"
 end-text-line 0
-show-text 0 @"害。要视情况决定由我出战还是让菲亚出战。"
+show-text 0 @"（魔防）低就能造成伤害。要视情况决定由我出战还是"
+end-text-line 0
+show-text 0 @"让菲亚出战。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040

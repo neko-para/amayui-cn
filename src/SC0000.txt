@@ -1698,6 +1698,7 @@ show-text 0 "「凄いな、年代物の遺跡だ。修理の依頼を受けて�
 show-text 0 @"「好厉害，真是年代久远的遗迹。接下维修委托算"
 end-text-line 0
 show-text 0 @"是选对了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1735,6 +1736,7 @@ show-text 0 "えきれない声を出してしまう。"
 show-text 0 @"手指抚过刻在墙上的文字，无意间发出了难掩兴奋"
 end-text-line 0
 show-text 0 @"的声音。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1772,6 +1774,7 @@ display-furigana 0 @"古代仙灵语" @"古代魔法语"
 show-text 0 @"与人类语言交织而成、专用于施展"
 end-text-line 0
 show-text 0 @"魔术的文字。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -1815,6 +1818,7 @@ display-furigana 0 @"法斯缇娜神圣语" @"现代魔法语"
 show-text 0 @"吗……委托里说的损坏的古代装置，究"
 end-text-line 0
 show-text 0 @"竟是什么样子，真让人期待啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1852,6 +1856,7 @@ show-text 0 "として、とある王国の古い遺跡に来ていた。"
 show-text 0 @"为了筹集实现梦想的资金，我此刻来到了一座王国里"
 end-text-line 0
 show-text 0 @"的古老遗迹。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1887,6 +1892,7 @@ show-text 0 "った古代の装置の修理作業を請け負ったのだ。"
 show-text 0 @"我接下了一份维修带有魔力的古代装置的委托，正可尽情"
 end-text-line 0
 show-text 0 @"施展所学知识与技艺。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1922,6 +1928,7 @@ show-text 0 "かに魔力を感じられる。"
 show-text 0 @"仿佛在证明这里确有蕴藏魔力的装置一般，遗迹各处都隐"
 end-text-line 0
 show-text 0 @"约能感到魔力。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1954,6 +1961,7 @@ end-text-line 0
 show-text 0 @"断这是"
 display-furigana 0 @"先史文明期" @"古神时代"
 show-text 0 @"的东西」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -2002,6 +2010,7 @@ show-text 0 "に近い聖なる装置だと推測するのが妥当だろうか�
 show-text 0 @"刻下的文字多是祈祷与祝福之语。推断这是接近神圣魔术"
 end-text-line 0
 show-text 0 @"的圣洁装置，应该比较妥当吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2030,6 +2039,7 @@ show-text 0 "「う～ん、だけど上手く機能していないな。魔力�
 show-text 0 @"「唔～不过它运转得并不顺畅。感觉魔力的通路在途中"
 end-text-line 0
 show-text 0 @"某处断掉了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -2120,6 +2130,7 @@ show-text 0 "遺跡に散乱している判別の難しい金属の塊や機械�
 show-text 0 @"望着散落遗迹各处、难以分辨的金属块和机关般的遗物，"
 end-text-line 0
 show-text 0 @"嘴角不由自主地咧开了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2153,6 +2164,7 @@ show-text 0 "きっとこの遺跡に使われている技術を学べれば、�
 show-text 0 @"若能学会这座遗迹所用的技术，想必也能应用到今后"
 end-text-line 0
 show-text 0 @"的工作中吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 play-sound-effect 80 0
@@ -2284,6 +2296,7 @@ show-text 0 "「ほう、こんな複雑な文字を読めるとは大したも�
 */
 // 输入原文：「哦，居然能读懂这么复杂的文字，真是了不起」
 show-text 0 @"「哦，居然能读懂这么复杂的文字，真是了不起」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -2364,6 +2377,7 @@ show-text 0 "気が付けば、背後に俺を含めた修理技師の集団を�
 show-text 0 @"回过神来，身后站着一位女骑士，她负责监督包括我在内"
 end-text-line 0
 show-text 0 @"的维修技师们。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2395,6 +2409,7 @@ show-text 0 "どうやら熱中しすぎてしまっていたらしい。いつ�
 */
 // 输入原文：看来我太过专注了，不知不觉间已远离了队伍。
 show-text 0 @"看来我太过专注了，不知不觉间已远离了队伍。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2526,6 +2541,7 @@ show-text 0 "といったところだろうか。私にはなにが書いてあ�
 */
 // 输入原文：「不愧是锻梁师啊。这些文字写了什么，我完全看不懂」
 show-text 0 @"「不愧是锻梁师啊。这些文字写了什么，我完全看不懂」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -2571,6 +2587,7 @@ show-text 0 "による探索が専門の職業だからな」"
 show-text 0 @"「解析古代文字正是我的拿手好戏。毕竟我的职业专精于"
 end-text-line 0
 show-text 0 @"恰当的修缮作业，以及凭魔力感知进行探索」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2605,6 +2622,7 @@ show-text 0 "という通称は現代のものであり、探索や建設の分�
 show-text 0 @"「锻梁师」这一通称是近代才有的，指的是专精于探索与"
 end-text-line 0
 show-text 0 @"建造领域的魔术师。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2640,6 +2658,7 @@ show-text 0 "だと、その能力で巨大な迷宮をがんがん造ってい�
 show-text 0 @"据说远古时代的锻梁师能用那种能力接连构筑巨大的迷"
 end-text-line 0
 show-text 0 @"宫，而我还远未达到那个境界，仍是修行之身。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2666,6 +2685,7 @@ show-text 0 "「騎士様も興味があるなら教えてやろうか？　面�
 */
 // 输入原文：「骑士大人若感兴趣，我也教教你？挺有意思的哦」
 show-text 0 @"「骑士大人若感兴趣，我也教教你？挺有意思的哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2795,6 +2815,7 @@ show-text 0 "「ふふ、機会があればお願いしよう」"
 */
 // 输入原文：「呵呵，有机会的话就拜托你了」
 show-text 0 @"「呵呵，有机会的话就拜托你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2926,6 +2947,7 @@ show-text 0 "「今回の仕事場はもう少し進んだ先だ。研究に熱�
 show-text 0 @"「这次的工作地点还要再往前走一段。你对研究的热心让"
 end-text-line 0
 show-text 0 @"人放心，不过请先完成委托的职责再说吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3057,6 +3079,7 @@ show-text 0 "の腕の見せどころだろう。期待しているよ」"
 */
 // 输入原文：「遗迹的修缮正是锻梁师大显身手之处吧。我很期待哦」
 show-text 0 @"「遗迹的修缮正是锻梁师大显身手之处吧。我很期待哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3083,6 +3106,7 @@ show-text 0 "「ああ、任せてくれ。完璧にこなしてみせる」"
 */
 // 输入原文：「好，交给我吧。我会完美完成的」
 show-text 0 @"「好，交给我吧。我会完美完成的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -3332,6 +3356,7 @@ show-text 0 "「お、戻って来たなハーフエルフのあんちゃん。�
 */
 // 输入原文：「哦，半仙灵小哥回来了啊。我还以为你走丢了呢」
 show-text 0 @"「哦，半仙灵小哥回来了啊。我还以为你走丢了呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3358,6 +3383,7 @@ show-text 0 "「興味深いものが多くてついね」"
 */
 // 输入原文：「有趣的东西太多了，不知不觉就……」
 show-text 0 @"「有趣的东西太多了，不知不觉就……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3386,6 +3412,7 @@ show-text 0 "「ところで、できればその呼び方はやめてくれな�
 show-text 0 @"「话说回来，能的话请别那么叫我。我叫阿瓦罗，直"
 end-text-line 0
 show-text 0 @"呼名字就行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -3525,6 +3552,7 @@ show-text 0 "「おうそうか。悪かったな、あんちゃん」"
 */
 // 输入原文：「哦，是吗。抱歉啊，小哥」
 show-text 0 @"「哦，是吗。抱歉啊，小哥」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3551,6 +3579,7 @@ show-text 0 "「さては呼ぶ気ねぇな。まぁいいけどさ」"
 */
 // 输入原文：「看来你压根没打算改口。算了，随你吧」
 show-text 0 @"「看来你压根没打算改口。算了，随你吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -3755,6 +3784,7 @@ show-text 0 "からの派遣か？」"
 show-text 0 @"「阿瓦罗是吧，这附近没见过你这张脸啊。确认一下，你"
 end-text-line 0
 show-text 0 @"是铁刀匠合派来的吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3783,6 +3813,7 @@ show-text 0 "「いや、つい最近インフルース王国へ渡って来た�
 show-text 0 @"「不，我最近才来到因夫鲁斯王国，跟哪个组织都"
 end-text-line 0
 show-text 0 @"没关系」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3914,6 +3945,7 @@ show-text 0 "「そうかよ。他国から流れて来て早々に、こ�
 show-text 0 @"「是吗。刚流落到异国就碰上这么大的活，运气可"
 end-text-line 0
 show-text 0 @"真好啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3940,6 +3972,7 @@ show-text 0 "「そうなのか？」"
 */
 // 输入原文：「是吗？」
 show-text 0 @"「是吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -4107,6 +4140,7 @@ show-text 0 "「おうよ、つい先日ここらで土砂崩れが起こって�
 show-text 0 @"「可不是嘛，前几天这儿发生了塌方，这遗迹就是那时发"
 end-text-line 0
 show-text 0 @"现的。调查也是最近才开始的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4133,6 +4167,7 @@ show-text 0 "「へえ。もしかしてこの修理の仕事って今回が初�
 */
 // 输入原文：「哦？难道这次的维修工作不是第一次？」
 show-text 0 @"「哦？难道这次的维修工作不是第一次？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4262,6 +4297,7 @@ show-text 0 "「今回で２回目だ。でもまぁ、しばらく終わらな�
 */
 // 输入原文：「这是第二次了。不过嘛，一时半会儿怕是完不了」
 show-text 0 @"「这是第二次了。不过嘛，一时半会儿怕是完不了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4393,6 +4429,7 @@ show-text 0 "「規模が大きすぎるんだよ。とてもじゃねぇがす�
 show-text 0 @"「规模实在太大了。凭我们这点人手，想立刻全部修好"
 end-text-line 0
 show-text 0 @"是不可能的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4419,6 +4456,7 @@ show-text 0 "「ここにある『古代の装置』とやらはそんなに大�
 */
 // 输入原文：「这里的所谓『古代装置』，真有那么大吗」
 show-text 0 @"「这里的所谓『古代装置』，真有那么大吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4548,6 +4586,7 @@ show-text 0 "「本当になんにも知らないで来たんだな。こ�
 */
 // 输入原文：「你还真是啥都不知道就来了啊。据说这整座遗迹都是」
 show-text 0 @"「你还真是啥都不知道就来了啊。据说这整座遗迹都是」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4576,6 +4615,7 @@ show-text 0 "「この遺跡全部が！？　そりゃ規模が大きすぎる�
 show-text 0 @"「整座遗迹都是！？那规模也太大了，一两天可干"
 end-text-line 0
 show-text 0 @"不完啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4607,6 +4647,7 @@ show-text 0 "驚きよりも、嬉しさの方が勝っていた。"
 */
 // 输入原文：相比惊讶，喜悦更胜一筹。
 show-text 0 @"相比惊讶，喜悦更胜一筹。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4640,6 +4681,7 @@ show-text 0 "遺跡内全てを使った魔力を巡らせる装置なんて初�
 show-text 0 @"我还是头一次见到用整座遗迹来运转魔力的装置。这座遗"
 end-text-line 0
 show-text 0 @"迹本身就是宝藏。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4668,6 +4710,7 @@ show-text 0 "げそうな仕事にありつけるぜ」"
 */
 // 输入原文：「嘿嘿，总算找到一份能干长久的活了」
 show-text 0 @"「嘿嘿，总算找到一份能干长久的活了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4699,6 +4742,7 @@ show-text 0 "仕事をしながら技術と知識を学べるなんて夢のよ�
 */
 // 输入原文：一边工作还能一边学习技术与知识，简直像做梦一样。
 show-text 0 @"一边工作还能一边学习技术与知识，简直像做梦一样。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006fed8
@@ -4948,6 +4992,7 @@ show-text 0 "に留まらねぇ方が利口な選択だ。国を渡って来た�
 show-text 0 @"「嘿，原来如此。确实，对你来说，不在一地久留才是明"
 end-text-line 0
 show-text 0 @"智的选择。你越境来到此国，就是因为这个？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4976,6 +5021,7 @@ show-text 0 "「ああ、エルフの血が入っている奴は受け入れら�
 show-text 0 @"「是啊，很多组织都不接纳流着仙灵之血的人。真"
 end-text-line 0
 show-text 0 @"是让人头疼」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5006,6 +5052,7 @@ show-text 0 "いやしない。どこかで大きく稼ぐ方法を見つけな�
 show-text 0 @"「唉，一直这样下去，拥有工房的梦想可没法实现。得找"
 end-text-line 0
 show-text 0 @"个地方大赚一笔才行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5039,6 +5086,7 @@ show-text 0 "自分の工房を持ってしまえば、後は客に腕を認め�
 show-text 0 @"一旦有了自己的工房，之后只要让客人认可我的手"
 end-text-line 0
 show-text 0 @"艺就行了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5074,6 +5122,7 @@ show-text 0 "の仕事で金を貯めて、様々な技術を学んでいる。"
 show-text 0 @"为此我辗转各国，靠锻梁师的工作攒钱，同时学习"
 end-text-line 0
 show-text 0 @"各种技术。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5109,6 +5158,7 @@ end-text-line 0
 show-text 0 @"梁师事业。这是我自幼以来的目标，说是倾尽一生也要实"
 end-text-line 0
 show-text 0 @"现的梦想也不为过。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -5250,6 +5300,7 @@ show-text 0 "「自分の工房を持つ？　まったく若造がなに言っ�
 show-text 0 @"「拥有自己的工房？你这毛头小子说什么大话。反正手艺"
 end-text-line 0
 show-text 0 @"想必也不怎么样吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5278,6 +5329,7 @@ show-text 0 "「おいおい、エルフの血が入っているって言った�
 show-text 0 @"「喂喂，我不是说过我流着仙灵之血吗？光凭外表判断年"
 end-text-line 0
 show-text 0 @"龄，可不是一流人士会干的事哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -5419,6 +5471,7 @@ show-text 0 "「な、なるほど。確かにそうだな、エルフっての�
 show-text 0 @"「原、原来如此。确实，听说仙灵比人类长寿。那你实"
 end-text-line 0
 show-text 0 @"际多大了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5445,6 +5498,7 @@ show-text 0 "「大体見た目通りだと思って良いぜ。少なくとも�
 */
 // 输入原文：「你当我和外表差不多大就行。至少比你年轻」
 show-text 0 @"「你当我和外表差不多大就行。至少比你年轻」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -5584,6 +5638,7 @@ show-text 0 "「今のくだりはなんの意味があったんだよ！」"
 */
 // 输入原文：「那你刚才那番话到底有什么意义啊！」
 show-text 0 @"「那你刚才那番话到底有什么意义啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5612,6 +5667,7 @@ show-text 0 "「はは、見た目通りの若造だけど腕は確かだから�
 show-text 0 @"「哈哈，我虽说是表里如一的毛头小子，但手艺是靠得住"
 end-text-line 0
 show-text 0 @"的，你尽管放心。再怎么说我也在各国干过活」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -5753,6 +5809,7 @@ show-text 0 "「ったく、食えない奴だぜ。おいアヴァロ、仕事�
 show-text 0 @"「真是，你这家伙不好对付啊。喂，阿瓦罗，收工后陪我"
 end-text-line 0
 show-text 0 @"喝两杯，我有些事想跟你确认」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -5894,6 +5951,7 @@ show-text 0 "「渡って来た他国の話でも聞かせてくれぃ。べっ�
 show-text 0 @"「也讲讲你远渡而来的那些国家的事呗。要是有漂亮姑娘"
 end-text-line 0
 show-text 0 @"的地方，我给你介绍介绍」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5920,6 +5978,7 @@ show-text 0 "「そりゃいい！　綺麗な女の子は嫌いじゃないぜ�
 */
 // 输入原文：「那敢情好！漂亮姑娘我可不会讨厌」
 show-text 0 @"「那敢情好！漂亮姑娘我可不会讨厌」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6049,6 +6108,7 @@ show-text 0 "「おいおい、綺麗な女が好きじゃねぇ奴なんてこ�
 */
 // 输入原文：「喂喂，这世上哪有不喜欢漂亮女人的家伙」
 show-text 0 @"「喂喂，这世上哪有不喜欢漂亮女人的家伙」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6075,6 +6135,7 @@ show-text 0 "「ははっ、違いねぇ」"
 */
 // 输入原文：「哈哈哈，说得没错」
 show-text 0 @"「哈哈哈，说得没错」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6108,6 +6169,7 @@ show-text 0 "技術の道は、こうやって種族の壁すら飛び越えて�
 show-text 0 @"技术的道路，常常能像这样跨越种族的壁垒而为人接纳。"
 end-text-line 0
 show-text 0 @"或许正因如此，我才如此喜爱这条道路吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006fed8
@@ -6363,6 +6425,7 @@ show-text 0 "えよう」"
 */
 // 输入原文：「稍微收着点声吧」
 show-text 0 @"「稍微收着点声吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -6504,6 +6567,7 @@ show-text 0 "「現場の仲が良好なのは良いことだが、遺跡内は�
 show-text 0 @"「现场气氛融洽是好事，不过遗迹里声音传得很远，笑得"
 end-text-line 0
 show-text 0 @"太大声的话，会把魔物引来的哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6532,6 +6596,7 @@ show-text 0 "「騒がしくして悪かった。だけどその時は、騎士�
 show-text 0 @"「吵到你了抱歉。不过真到那时候，骑士大人会保护"
 end-text-line 0
 show-text 0 @"我们的吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -6673,6 +6738,7 @@ show-text 0 "でも注意して欲しい」"
 */
 // 输入原文：「那是当然。不过为了安全，也请各位各自多加小心」
 show-text 0 @"「那是当然。不过为了安全，也请各位各自多加小心」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6704,6 +6770,7 @@ show-text 0 "もっともな忠告に、俺たちは目線を合わせながら�
 */
 // 输入原文：面对这番中肯的忠告，我们相视耸肩，露出苦笑。
 show-text 0 @"面对这番中肯的忠告，我们相视耸肩，露出苦笑。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -6795,6 +6862,7 @@ show-text 0 "ふと気が付くと、大きな広間に出ていた。騎士は�
 show-text 0 @"回过神来，我们已经来到一座宽阔的大厅。骑士清点过技"
 end-text-line 0
 show-text 0 @"师人数后，高声宣布开始作业。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -6995,6 +7063,7 @@ show-text 0 "「今回の指定場所に着いた。それでは各々作業を�
 */
 // 输入原文：「已到达本次指定地点。那么，请各位开始作业」
 show-text 0 @"「已到达本次指定地点。那么，请各位开始作业」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7028,6 +7097,7 @@ show-text 0 "騎士の掛け声を受け、修理技師たちは適当な返事�
 show-text 0 @"听到骑士的号令，维修技师们随口应了一声，便各"
 end-text-line 0
 show-text 0 @"自散往岗位。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7069,6 +7139,7 @@ show-text 0 "「よっしゃ、お仕事開始といきますか」"
 */
 // 输入原文：「好嘞，那就开工吧」
 show-text 0 @"「好嘞，那就开工吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7202,6 +7273,7 @@ show-text 0 "んでいる箇所を修復し、流れが切れている箇所を�
 */
 // 输入原文：修复魔力淤积之处，重新接通断流的通路。
 show-text 0 @"修复魔力淤积之处，重新接通断流的通路。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7253,6 +7325,7 @@ show-text 0 "「ふぅ、この区画は大体終わったな」"
 */
 // 输入原文：「呼，这个区块基本完工了」
 show-text 0 @"「呼，这个区块基本完工了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7288,6 +7361,7 @@ show-text 0 "った。"
 */
 // 输入原文：修完看得见的地方，我抬手擦去额头上的汗水。
 show-text 0 @"修完看得见的地方，我抬手擦去额头上的汗水。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7543,6 +7617,7 @@ show-text 0 "「あんちゃんもう終わったのか。自分で言ってい�
 */
 // 输入原文：「小哥这就干完了？还真像你自己说的那么能干啊」
 show-text 0 @"「小哥这就干完了？还真像你自己说的那么能干啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7571,6 +7646,7 @@ show-text 0 "「魔力関係の物なら、どこを修理すればいいか見�
 show-text 0 @"「只要是和魔力相关的东西，我看一眼就大致知道"
 end-text-line 0
 show-text 0 @"该修哪里」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7710,6 +7786,7 @@ show-text 0 "「ほほう、そりゃハーフエルフの特性ってやつか�
 */
 // 输入原文：「哦哦，那就是半仙灵的特性吗？」
 show-text 0 @"「哦哦，那就是半仙灵的特性吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7736,6 +7813,7 @@ show-text 0 "「そんなもんかな」"
 */
 // 输入原文：「差不多吧」
 show-text 0 @"「差不多吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7767,6 +7845,7 @@ show-text 0 "きっとエルフの血が入っていることで、魔力の流�
 */
 // 输入原文：想必是因为流着仙灵之血，我才能看见魔力的流动吧。
 show-text 0 @"想必是因为流着仙灵之血，我才能看见魔力的流动吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -7908,6 +7987,7 @@ show-text 0 "もハーフエルフに生まれたかったもんだぜ」"
 */
 // 输入原文：「真好啊，我要是也生为半仙灵就好了」
 show-text 0 @"「真好啊，我要是也生为半仙灵就好了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7934,6 +8014,7 @@ show-text 0 "「言ってろ。種族が中途半端ってのは苦労も多い�
 */
 // 输入原文：「随你说吧。种族不上不下的，苦头也多着呢」
 show-text 0 @"「随你说吧。种族不上不下的，苦头也多着呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7965,6 +8046,7 @@ show-text 0 "軽口でやり取りをしていると、騎士の声が耳に入�
 */
 // 输入原文：正互相打趣时，骑士的声音传入耳中。
 show-text 0 @"正互相打趣时，骑士的声音传入耳中。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -8167,6 +8249,7 @@ show-text 0 "もう。作業が終わった者から休んでくれ」"
 */
 // 输入原文：「先休息一下吧。干完活的就先歇着」
 show-text 0 @"「先休息一下吧。干完活的就先歇着」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8296,6 +8379,7 @@ show-text 0 "「今日はもう少し先の区画まで修理を行う予定だ�
 */
 // 输入原文：「今天预定还要修到前面一点的区块，请大家留些体力」
 show-text 0 @"「今天预定还要修到前面一点的区块，请大家留些体力」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -8353,6 +8437,7 @@ show-text 0 "作業が一段落したらしい。"
 */
 // 输入原文：工作似乎告一段落了。
 show-text 0 @"工作似乎告一段落了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8384,6 +8469,7 @@ show-text 0 "ちょうどいい機会だ、気になっていたことを確か�
 */
 // 输入原文：正好趁这个机会，确认一下我一直惦记的事。
 show-text 0 @"正好趁这个机会，确认一下我一直惦记的事。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -8477,6 +8563,7 @@ show-text 0 "「この『古代の装置』はどういう機能を持つ器具�
 show-text 0 @"「这『古代装置』是什么功能的器具？我姑且修好了，却"
 end-text-line 0
 show-text 0 @"不清楚它的功能」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -8616,6 +8703,7 @@ show-text 0 "「儂も知らんよ。きっと他の奴らも知らないんじ�
 */
 // 输入原文：「我也不晓得。其他人八成也不知道吧」
 show-text 0 @"「我也不晓得。其他人八成也不知道吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8647,6 +8735,7 @@ show-text 0 "あれ、他の技師も分かってなかったのか。"
 */
 // 输入原文：咦，其他技师也不知道吗。
 show-text 0 @"咦，其他技师也不知道吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8680,6 +8769,7 @@ show-text 0 "その状態で、よく魔力を見られないまま修理でき�
 show-text 0 @"在那种状态下，居然能在看不见魔力的情况下修好。手艺"
 end-text-line 0
 show-text 0 @"一定很好吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8809,6 +8899,7 @@ show-text 0 "「あの騎士のねーちゃんからも、壊れている箇所�
 */
 // 输入原文：「那位骑士大姐也只说了一句，有损坏的地方就尽量修」
 show-text 0 @"「那位骑士大姐也只说了一句，有损坏的地方就尽量修」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -8948,6 +9039,7 @@ show-text 0 "「修理が完了して、動かしてみたら分かるんじゃ�
 */
 // 输入原文：「等修完动起来，不就知道了嘛」
 show-text 0 @"「等修完动起来，不就知道了嘛」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8979,6 +9071,7 @@ show-text 0 "なるほど、確かに古代の装置は一見しただけでは�
 */
 // 输入原文：原来如此，古代装置确实有很多单凭外表无法判断功能。
 show-text 0 @"原来如此，古代装置确实有很多单凭外表无法判断功能。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9012,6 +9105,7 @@ show-text 0 "使用できるようにして効果を把握することが、き�
 show-text 0 @"令其恢复可用、并掌握其效果，想必就是这次维修派"
 end-text-line 0
 show-text 0 @"遣的目的吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -9092,6 +9186,7 @@ show-text 0 "いてるってことは、もしかすると国はこの遺跡に�
 show-text 0 @"「骑士亲自担任监督，说不定国家对这座遗迹寄予了相"
 end-text-line 0
 show-text 0 @"当的期望呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9123,6 +9218,7 @@ show-text 0 "遺跡の規模からもそれが読み取れる。"
 */
 // 输入原文：从遗迹的规模也能看出这一点。
 show-text 0 @"从遗迹的规模也能看出这一点。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9156,6 +9252,7 @@ show-text 0 "少し気になるのは騎士１人で兵を連れていないこ�
 show-text 0 @"让我有些在意的是，骑士只身一人，并未带兵。嘛，想必"
 end-text-line 0
 show-text 0 @"她优秀到足以被委以重任吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9182,6 +9279,7 @@ show-text 0 "「あの騎士はインフルース王国の所属なんだよな�
 */
 // 输入原文：「那位骑士是隶属因夫鲁斯王国的吧」
 show-text 0 @"「那位骑士是隶属因夫鲁斯王国的吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9311,6 +9409,7 @@ show-text 0 "「ああ。だけど聞いたところによると客将っつう�
 */
 // 输入原文：「嗯。不过据我所知，她好像是个客将」
 show-text 0 @"「嗯。不过据我所知，她好像是个客将」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9337,6 +9436,7 @@ show-text 0 "「客将？　まだ正式に召し抱えられていないって�
 */
 // 输入原文：「客将？也就是说还没有被正式录用吗」
 show-text 0 @"「客将？也就是说还没有被正式录用吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9466,6 +9566,7 @@ show-text 0 "「仕官先を探して国を渡ってきたんだと」"
 */
 // 输入原文：「听说她是为了寻找仕官之地，才辗转来到这个国家的」
 show-text 0 @"「听说她是为了寻找仕官之地，才辗转来到这个国家的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9492,6 +9593,7 @@ show-text 0 "「俺と同じような理由でインフルース王国に�
 */
 // 输入原文：「她和我是出于相似的理由来到因夫鲁斯王国的吗」
 show-text 0 @"「她和我是出于相似的理由来到因夫鲁斯王国的吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -9580,6 +9682,7 @@ show-text 0 "『インフルース王国』はこの辺りで一番国土の広�
 */
 // 输入原文：『因夫鲁斯王国』是这一带国土最辽阔的人类之国。
 show-text 0 @"『因夫鲁斯王国』是这一带国土最辽阔的人类之国。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9613,6 +9716,7 @@ show-text 0 "この仕事で結果を出して良い縁を結べれば、ハー�
 show-text 0 @"若能在这份工作中做出成绩、结下良缘，就算身为半仙灵"
 end-text-line 0
 show-text 0 @"的我，或许也能在这个国家开设工房。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9644,6 +9748,7 @@ show-text 0 "一層の気合いを入れて、腕の良さを売り込んでい�
 */
 // 输入原文：我要再加把劲，好好推销自己的手艺。
 show-text 0 @"我要再加把劲，好好推销自己的手艺。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9670,6 +9775,7 @@ show-text 0 "「インフルース王国から気に入られる為にはどう�
 */
 // 输入原文：「要怎样才能讨因夫鲁斯王国的欢心呢？」
 show-text 0 @"「要怎样才能讨因夫鲁斯王国的欢心呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9801,6 +9907,7 @@ show-text 0 "「んん？　そうだなぁ、この国ではなにをするに�
 show-text 0 @"「嗯？这嘛，在这个国家，无论做什么都绕不开菲优"
 end-text-line 0
 show-text 0 @"希亚大人吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -9916,6 +10023,7 @@ show-text 0 "「フィユシア様っていうと、インフルース王国民�
 show-text 0 @"「菲优希亚大人，就是因夫鲁斯王国多数国民信仰的"
 end-text-line 0
 show-text 0 @"那位神明吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10049,6 +10157,7 @@ show-text 0 "』って聖地がある」"
 */
 // 输入原文：「这个国家北部，有一处名为『神响霞廊』的圣地」
 show-text 0 @"「这个国家北部，有一处名为『神响霞廊』的圣地」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10184,6 +10293,7 @@ show-text 0 "われていて、入り込んだ者は必ず遭難しちまうっ�
 show-text 0 @"「据说它在陡峭的山上，高度本就不是步行能抵达的，再"
 end-text-line 0
 show-text 0 @"加上浓雾密云笼罩，闯进去的人必定会遇难」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10215,6 +10325,7 @@ show-text 0 "なるほど、決して立ち入ることのできない聖地か�
 */
 // 输入原文：原来如此，是一处绝对无法涉足的圣地啊。
 show-text 0 @"原来如此，是一处绝对无法涉足的圣地啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10246,6 +10357,7 @@ show-text 0 "きっとフィユシア様は、信徒への試練として聖地�
 */
 // 输入原文：想必菲优希亚大人是将圣地定为对信徒的试炼了吧。
 show-text 0 @"想必菲优希亚大人是将圣地定为对信徒的试炼了吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10274,6 +10386,7 @@ show-text 0 "「そこに入ることができる技術を確立すれば、国�
 show-text 0 @"「若能掌握进入那里的技术，就等于证明了拥有全国第"
 end-text-line 0
 show-text 0 @"一的技术吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10305,6 +10418,7 @@ show-text 0 "燃えてくる話だ。やってやろうじゃないか。"
 */
 // 输入原文：这话听得我热血沸腾。那就干一场吧。
 show-text 0 @"这话听得我热血沸腾。那就干一场吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -10507,6 +10621,7 @@ show-text 0 "「立ち入ることを固く禁じているって話だけどな�
 */
 // 输入原文：「不过听说那里是严禁进入的哦」
 show-text 0 @"「不过听说那里是严禁进入的哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10533,6 +10648,7 @@ show-text 0 "「入っちゃダメなんじゃねぇか！」"
 */
 // 输入原文：「那不就是不能进去嘛！」
 show-text 0 @"「那不就是不能进去嘛！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -10674,6 +10790,7 @@ show-text 0 "「だから、侵入して怒りを買っちゃいけないって�
 show-text 0 @"「所以我才说，别闯进去惹恼了神。免得啥都不知道就被"
 end-text-line 0
 show-text 0 @"人家讨厌了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10700,6 +10817,7 @@ show-text 0 "「ご忠告どうも」"
 */
 // 输入原文：「多谢忠告」
 show-text 0 @"「多谢忠告」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10731,6 +10849,7 @@ show-text 0 "立ち入ることのできない場所にどうやって入れと�
 */
 // 输入原文：既然不能进入，又要怎么进去呢。
 show-text 0 @"既然不能进入，又要怎么进去呢。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10764,6 +10883,7 @@ show-text 0 "勝手に誤解した俺が悪いのだが、知りたかったの�
 show-text 0 @"虽然是我擅自误会了，但我想知道的是讨人欢心的方法，"
 end-text-line 0
 show-text 0 @"可不是避免被讨厌的方法。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415520
@@ -10894,6 +11014,7 @@ show-text 0 "「う、うわああああぁぁっ」"
 */
 // 输入原文：「呜、呜哇啊啊啊啊——」
 show-text 0 @"「呜、呜哇啊啊啊啊——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10920,6 +11041,7 @@ show-text 0 "「なんだ？　いま悲鳴が聞こえなかったか」"
 */
 // 输入原文：「怎么回事？刚才是不是有惨叫声？」
 show-text 0 @"「怎么回事？刚才是不是有惨叫声？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10951,6 +11073,7 @@ show-text 0 "遺跡の奥の方からだ。"
 */
 // 输入原文：是从遗迹深处传来的。
 show-text 0 @"是从遗迹深处传来的。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -11270,6 +11393,7 @@ show-text 0 "「ま、魔物が出たぞ！　おい騎士様早く対処しろ�
 */
 // 输入原文：「魔、魔物出现了！喂，骑士大人快想想办法啊！」
 show-text 0 @"「魔、魔物出现了！喂，骑士大人快想想办法啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11303,6 +11427,7 @@ show-text 0 "んでいた。"
 */
 // 输入原文：一名技师正惊慌失措地叫喊。
 show-text 0 @"一名技师正惊慌失措地叫喊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11336,6 +11461,7 @@ show-text 0 "そういえば騎士から遺跡には魔物が出ると注意を�
 show-text 0 @"说起来，骑士曾提醒过遗迹里会出现魔物。竟然真"
 end-text-line 0
 show-text 0 @"的出现了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -11536,6 +11662,7 @@ show-text 0 "「下がっていてくれ！」"
 */
 // 输入原文：「你们退后！」
 show-text 0 @"「你们退后！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 play-sound-effect c1 0
@@ -11597,6 +11724,7 @@ show-text 0 "けていった。"
 */
 // 输入原文：骑士拔出武器，朝声音传来的方向奔去。
 show-text 0 @"骑士拔出武器，朝声音传来的方向奔去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11632,6 +11760,7 @@ show-text 0 "し、戦闘が始まる。"
 show-text 0 @"她与四散奔逃的技师擦肩而过，迎面撞上魔物，战"
 end-text-line 0
 show-text 0 @"斗就此开始。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -11860,6 +11989,7 @@ show-text 0 "「思ったよりも数が多いな」"
 */
 // 输入原文：「数量比预想的还多啊」
 show-text 0 @"「数量比预想的还多啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11893,6 +12023,7 @@ show-text 0 "りが声に表れている。"
 */
 // 输入原文：骑士的焦躁从声音里流露出来。
 show-text 0 @"骑士的焦躁从声音里流露出来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11924,6 +12055,7 @@ show-text 0 "すぐに対処できる状況じゃないのかもしれない。"
 */
 // 输入原文：也许情势已经无法立刻应对了。
 show-text 0 @"也许情势已经无法立刻应对了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12055,6 +12187,7 @@ show-text 0 "「ここは私に任せて皆はすぐに遺跡から出ていて�
 show-text 0 @"「这里交给我，大家立刻离开遗迹。在我回来之前，不"
 end-text-line 0
 show-text 0 @"要进入遗迹」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12088,6 +12221,7 @@ show-text 0 "予想した通り、周囲に警護対象がいると戦いにく�
 show-text 0 @"正如我所料，一旦身边有需要保护的对象，战斗起来"
 end-text-line 0
 show-text 0 @"就束手束脚。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12119,6 +12253,7 @@ show-text 0 "騎士の指示を聞き、技師たちは青い顔を浮かべて�
 */
 // 输入原文：听到骑士的指示，技师们脸色发青，朝入口跑去。
 show-text 0 @"听到骑士的指示，技师们脸色发青，朝入口跑去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -12321,6 +12456,7 @@ show-text 0 "「あ、あんちゃんも早く逃げんと！」"
 */
 // 输入原文：「哎，小哥你也快逃啊！」
 show-text 0 @"「哎，小哥你也快逃啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12347,6 +12483,7 @@ show-text 0 "「いや、俺は残るぜ」"
 */
 // 输入原文：「不，我要留下」
 show-text 0 @"「不，我要留下」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -12499,6 +12636,7 @@ show-text 0 "「魔物の数が多いんだろう。国に腕を売り込むい�
 */
 // 输入原文：「魔物数量虽多，但这是向国家推销手艺的好机会」
 show-text 0 @"「魔物数量虽多，但这是向国家推销手艺的好机会」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12630,6 +12768,7 @@ show-text 0 "「くぅ、命知らずなあんちゃんだ。騎士様の邪魔�
 show-text 0 @"「啧，真是个不要命的小哥。可别拖骑士大人的后"
 end-text-line 0
 show-text 0 @"腿啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12663,6 +12802,7 @@ show-text 0 "』を構えた。"
 */
 // 输入原文：目送技师们离开后，我架起了爱用的武器『机轴锤』。
 show-text 0 @"目送技师们离开后，我架起了爱用的武器『机轴锤』。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12689,6 +12829,7 @@ show-text 0 "「騎士殿、助太刀するぜ」"
 */
 // 输入原文：「骑士大人，我来助你一臂之力」
 show-text 0 @"「骑士大人，我来助你一臂之力」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -12994,6 +13135,7 @@ show-text 0 "いはありがたいが、無理をする場面でもない。自�
 show-text 0 @"「嗯，你的好意我心领了，但眼下并非逞强的时候。我认"
 end-text-line 0
 show-text 0 @"为珍惜自己的性命才是上策，你觉得呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13022,6 +13164,7 @@ show-text 0 "「大事にしているからさ。これは俺のやりたいこ�
 show-text 0 @"「我正是珍惜性命才这么做的。这与我想要做的事"
 end-text-line 0
 show-text 0 @"息息相关」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13048,6 +13191,7 @@ show-text 0 "「いくら騎士だって、この数は１人じゃ辛いだろ�
 */
 // 输入原文：「就算您再厉害，这个数量一个人也吃不消吧？」
 show-text 0 @"「就算您再厉害，这个数量一个人也吃不消吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13074,6 +13218,7 @@ show-text 0 "「俺が修理だけじゃなく戦闘もできるってことを�
 */
 // 输入原文：「我也想请您记住，我不只会修理，也擅长战斗」
 show-text 0 @"「我也想请您记住，我不只会修理，也擅长战斗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -13338,6 +13483,7 @@ show-text 0 "「ふふ、なるほど。皆と一緒に入り口に戻れと言�
 show-text 0 @"「呵呵，原来如此。就算让你和大家一起回入口，你"
 end-text-line 0
 show-text 0 @"也不会听吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13469,6 +13615,7 @@ show-text 0 "「では、それほど腕に自信があるのならば戦力と�
 show-text 0 @"「那么，既然你对自己的本事如此自信，就请算你"
 end-text-line 0
 show-text 0 @"一份战力吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13495,6 +13642,7 @@ show-text 0 "「足手まといにはならないから安心してくれよ。�
 */
 // 输入原文：「我不会拖后腿的，您放心好了。骑士大人」
 show-text 0 @"「我不会拖后腿的，您放心好了。骑士大人」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13624,6 +13772,7 @@ show-text 0 "「キスニルだ。そう呼んでくれ」"
 */
 // 输入原文：「叫我姬斯尼尔吧」
 show-text 0 @"「叫我姬斯尼尔吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int f8019) 0
@@ -13705,6 +13854,7 @@ show-text 0 "「ああ、それじゃあ魔物退治といこうぜ、キスニ�
 */
 // 输入原文：「好，那就去收拾魔物吧，姬斯尼尔！」
 show-text 0 @"「好，那就去收拾魔物吧，姬斯尼尔！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -13851,6 +14001,7 @@ show-text 0 "「ふぅ、無事に片付いたな」"
 */
 // 输入原文：「呼，总算平安解决了」
 show-text 0 @"「呼，总算平安解决了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -14051,6 +14202,7 @@ show-text 0 "「ああ、後は皆が無事か確かめるだけだ」"
 */
 // 输入原文：「是啊，接下来只需确认大家是否平安」
 show-text 0 @"「是啊，接下来只需确认大家是否平安」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14082,6 +14234,7 @@ show-text 0 "そう言葉に出すキスニルは、表情にどこか暗い影�
 */
 // 输入原文：说出这话的姬斯尼尔，神情里却笼着一层阴影。
 show-text 0 @"说出这话的姬斯尼尔，神情里却笼着一层阴影。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14108,6 +14261,7 @@ show-text 0 "「どうしたんだ？」"
 */
 // 输入原文：「怎么了？」
 show-text 0 @"「怎么了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -14249,6 +14403,7 @@ show-text 0 "殿、あなたは強い」"
 */
 // 输入原文：「锻梁师阁下，你很强大」
 show-text 0 @"「锻梁师阁下，你很强大」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14380,6 +14535,7 @@ show-text 0 "「しかし戦闘は信じて任せて欲しかった。作業を�
 show-text 0 @"「但我希望你能信任我，把战斗交给我。我在这里，就是"
 end-text-line 0
 show-text 0 @"为了让负责作业的诸位不必战斗。……你没有受伤吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14411,6 +14567,7 @@ show-text 0 "なるほど、キスニルはこういう人間なのか。"
 */
 // 输入原文：原来如此，姬斯尼尔是这样的人啊。
 show-text 0 @"原来如此，姬斯尼尔是这样的人啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14444,6 +14601,7 @@ show-text 0 "だとしたら、下手に戦闘へ手を出さない方が印象�
 show-text 0 @"既然如此，或许我不该贸然插手战斗，那样留给她的"
 end-text-line 0
 show-text 0 @"印象会更好。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14472,6 +14630,7 @@ show-text 0 "「大丈夫だ、怪我はない。すまなかった。騎士で�
 show-text 0 @"「我没事，没有受伤。抱歉。那或许是没有信任身为骑士"
 end-text-line 0
 show-text 0 @"的你的行为，今后我会注意的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -14615,6 +14774,7 @@ show-text 0 "殿」"
 show-text 0 @"「不，这不过是我的牢骚罢了。能与你并肩作战，我心里"
 end-text-line 0
 show-text 0 @"踏实了许多。谢谢你，锻梁师阁下」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14646,6 +14806,7 @@ show-text 0 "その微笑みで、先ほどの注意が心配から来るもの�
 */
 // 输入原文：看到那抹微笑，我便明白刚才的告诫是出于关心。
 show-text 0 @"看到那抹微笑，我便明白刚才的告诫是出于关心。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14672,6 +14833,7 @@ show-text 0 "「アヴァロだ。そう呼んでくれ、キスニル」"
 */
 // 输入原文：「我叫阿瓦罗。这样叫我吧，姬斯尼尔」
 show-text 0 @"「我叫阿瓦罗。这样叫我吧，姬斯尼尔」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14705,6 +14867,7 @@ show-text 0 "こんな現場監督と一緒に仕事ができるとは運が良�
 show-text 0 @"能与这样的现场监督共事，真是幸运。希望今后也能与她"
 end-text-line 0
 show-text 0 @"保持良好往来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -14844,6 +15007,7 @@ show-text 0 "「ああ、分かった」"
 */
 // 输入原文：「好，我知道了」
 show-text 0 @"「好，我知道了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14975,6 +15139,7 @@ show-text 0 "「では入り口へ向かおうアヴァロ。皆と合流して�
 show-text 0 @"「那么，我们朝入口去吧，阿瓦罗。与大家会合后，若没"
 end-text-line 0
 show-text 0 @"有大问题就恢复作业」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15003,6 +15168,7 @@ show-text 0 "「へへっ、早く調査を始めたいぜ。古代の装置が�
 show-text 0 @"「嘿嘿，真想快点开始调查。确认古代装置究竟有什么功"
 end-text-line 0
 show-text 0 @"能，光是想想就让人期待」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15144,6 +15310,7 @@ show-text 0 "「アヴァロは本当にこの仕事が好きなのだな。私�
 show-text 0 @"「阿瓦罗真的很喜欢这份工作呢。我也希望能向国家做出"
 end-text-line 0
 show-text 0 @"好的汇报，就拜托你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15170,6 +15337,7 @@ show-text 0 "「任せてくれ。俺がきちんと修復して古代の装置�
 */
 // 输入原文：「交给我吧。我会把古代装置修好，让它恢复可用的」
 show-text 0 @"「交给我吧。我会把古代装置修好，让它恢复可用的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15201,6 +15369,7 @@ show-text 0 "そう呟いた時、ただ立っているだけのはずなのに�
 */
 // 输入原文：正这么喃喃自语时，明明只是站着，视野却猛地一偏。
 show-text 0 @"正这么喃喃自语时，明明只是站着，视野却猛地一偏。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 play-bgm 35
@@ -15239,6 +15408,7 @@ show-text 0 "れてまさか、土砂崩れか！？」"
 */
 // 输入原文：「地、地面在摇晃……难道，是塌方！？」
 show-text 0 @"「地、地面在摇晃……难道，是塌方！？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15270,6 +15440,7 @@ show-text 0 "壁に手をやり、倒れそうになるのを必死にこらえ�
 */
 // 输入原文：我伸手撑住墙壁，拼命稳住几欲跌倒的身体。
 show-text 0 @"我伸手撑住墙壁，拼命稳住几欲跌倒的身体。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15305,6 +15476,7 @@ show-text 0 "い、土や砂が上からパラパラと降ってきていた。�
 show-text 0 @"随着震动，泥土和沙砾从上方簌簌落下。这座遗迹太古老"
 end-text-line 0
 show-text 0 @"了，或许会承受不住而崩塌。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15444,6 +15616,7 @@ show-text 0 "「すぐに遺跡から出よう。こうなっては仕方ない�
 */
 // 输入原文：「立刻离开遗迹。事已至此也没办法，今天的作业中止」
 show-text 0 @"「立刻离开遗迹。事已至此也没办法，今天的作业中止」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15475,6 +15648,7 @@ show-text 0 "キスニルの判断は妥当だと思えた。揺れが落ち着�
 */
 // 输入原文：姬斯尼尔的判断很妥当。趁震动平息前，最好先缓一缓。
 show-text 0 @"姬斯尼尔的判断很妥当。趁震动平息前，最好先缓一缓。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15527,6 +15701,7 @@ show-text 0 "「分かった。急いで移動しよう！」"
 */
 // 输入原文：「明白。我们赶快行动吧！」
 show-text 0 @"「明白。我们赶快行动吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15558,6 +15733,7 @@ show-text 0 "キスニルに続き一歩踏み出そうとするも。"
 */
 // 输入原文：我正要跟着姬斯尼尔迈出一步——
 show-text 0 @"我正要跟着姬斯尼尔迈出一步——"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15596,6 +15772,7 @@ show-text 0 "「あれ？」"
 */
 // 输入原文：「咦？」
 show-text 0 @"「咦？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15725,6 +15902,7 @@ show-text 0 "「あ、アヴァロ！」"
 */
 // 输入原文：「啊，阿瓦罗！」
 show-text 0 @"「啊，阿瓦罗！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15771,6 +15949,7 @@ show-text 0 "「おいおい嘘だろおおおっ」"
 */
 // 输入原文：「喂喂，不会吧啊啊啊——」
 show-text 0 @"「喂喂，不会吧啊啊啊——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15802,6 +15981,7 @@ show-text 0 "足もとが崩れ、身体が倒れて転がり始める。"
 */
 // 输入原文：脚下崩裂，我的身体失去平衡，翻滚坠落。
 show-text 0 @"脚下崩裂，我的身体失去平衡，翻滚坠落。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -15858,6 +16038,7 @@ show-text 0 "「どわああああああぁぁ！」"
 */
 // 输入原文：「呜哇啊啊啊啊啊——！」
 show-text 0 @"「呜哇啊啊啊啊啊——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15891,6 +16072,7 @@ show-text 0 "う。"
 */
 // 输入原文：不断下坠的感觉侵袭全身。
 show-text 0 @"不断下坠的感觉侵袭全身。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15923,6 +16105,7 @@ show-text 0 "れが落盤を引き起こし、運悪くそれに巻き込まれ�
 */
 // 输入原文：震动引发了塌方，我不幸被卷了进去。
 show-text 0 @"震动引发了塌方，我不幸被卷了进去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15949,6 +16132,7 @@ show-text 0 "「と、止まらねぇ！」"
 */
 // 输入原文：「停、停不下来！」
 show-text 0 @"「停、停不下来！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -15983,6 +16167,7 @@ show-text 0 "に手を伸ばして踏ん張ろうとするも、勢いが付き�
 show-text 0 @"我下意识伸手想稳住身体，可下落之势太猛，根本"
 end-text-line 0
 show-text 0 @"无从着力。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16016,6 +16201,7 @@ show-text 0 "りながら、あぁ俺はこのまま死んでしまうのかと�
 */
 // 输入原文：我紧闭双眼，真心觉得自己就要这样死掉了。
 show-text 0 @"我紧闭双眼，真心觉得自己就要这样死掉了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -16102,6 +16288,7 @@ show-text 0 "「ごふぅっ！？」"
 */
 // 输入原文：「唔噗！？」
 show-text 0 @"「唔噗！？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16135,6 +16322,7 @@ show-text 0 "だが不幸中の幸いか俺の身体は止まってくれた。�
 show-text 0 @"不过算是不幸中的万幸，我的身体停了下来。看来塌方没"
 end-text-line 0
 show-text 0 @"有波及太深。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16161,6 +16349,7 @@ show-text 0 "「う、うぅ、いってー」"
 */
 // 输入原文：「呜、呜……好痛——」
 show-text 0 @"「呜、呜……好痛——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16194,6 +16383,7 @@ show-text 0 "身体が痛い。こりゃどこかぶつけたな。あれだけ�
 show-text 0 @"浑身都疼。肯定是撞到了什么地方。掉得那么猛，也是"
 end-text-line 0
 show-text 0 @"理所当然的。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16227,6 +16417,7 @@ show-text 0 "を開く。"
 */
 // 输入原文：我睁开眼，想先确认自己掉到了多深的地方。
 show-text 0 @"我睁开眼，想先确认自己掉到了多深的地方。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -16438,6 +16629,7 @@ show-text 0 "に信じられない光景が飛び込んできた。"
 */
 // 输入原文：映入眼帘的，是一幅难以置信的光景。
 show-text 0 @"映入眼帘的，是一幅难以置信的光景。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16464,6 +16656,7 @@ show-text 0 "「お、女の子？」"
 */
 // 输入原文：「女、女孩子？」
 show-text 0 @"「女、女孩子？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16497,6 +16690,7 @@ show-text 0 "の内部に、とても綺麗な女の子がいる。"
 */
 // 输入原文：半透明的魔石之中，躺着一位非常美丽的少女。
 show-text 0 @"半透明的魔石之中，躺着一位非常美丽的少女。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16528,6 +16722,7 @@ show-text 0 "瞳を閉じた状態で、身動き一つせず、時間が止ま�
 */
 // 输入原文：她闭着双眼，一动不动，仿佛连时间都停滞了一般。
 show-text 0 @"她闭着双眼，一动不动，仿佛连时间都停滞了一般。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16554,6 +16749,7 @@ show-text 0 "「生きて、いるのか？」"
 */
 // 输入原文：「她……还活着吗？」
 show-text 0 @"「她……还活着吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16589,6 +16785,7 @@ show-text 0 "まっている魔力の密度だ。"
 show-text 0 @"眼前的景象固然令人目眩，但最让我吃惊的，是这处空间"
 end-text-line 0
 show-text 0 @"里积蓄的魔力浓度。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16622,6 +16819,7 @@ show-text 0 "どうやら魔力は魔石から発生し各部へと流れてい�
 show-text 0 @"看来魔力正是从魔石中产生，流向各个部分。也就是说，"
 end-text-line 0
 show-text 0 @"这应该是古代装置的一部分吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16653,6 +16851,7 @@ show-text 0 "それに組み込まれているこの女の子は、今の時代�
 */
 // 输入原文：而被装置所容纳的这位少女，恐怕不是这个时代的人吧。
 show-text 0 @"而被装置所容纳的这位少女，恐怕不是这个时代的人吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -16725,6 +16924,7 @@ show-text 0 "「うっ！？」"
 */
 // 输入原文：「呜！？」
 show-text 0 @"「呜！？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16756,6 +16956,7 @@ show-text 0 "ずき、と頭に痛みが走る。"
 */
 // 输入原文：头部传来一阵刺痛。
 show-text 0 @"头部传来一阵刺痛。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16789,6 +16990,7 @@ show-text 0 "頭に手を当てると温かい液体の感触があり、見る�
 show-text 0 @"伸手摸头，指尖传来温热的液体触感，一看，手指"
 end-text-line 0
 show-text 0 @"上沾着血。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16822,6 +17024,7 @@ show-text 0 "に巻き込まれた時に怪我してしまったみたいだ。"
 */
 // 输入原文：果然，我在被崩塌卷入时受了伤。
 show-text 0 @"果然，我在被崩塌卷入时受了伤。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16853,6 +17056,7 @@ show-text 0 "痛みを自覚するも、俺の興味はなおも目の前の女�
 */
 // 输入原文：尽管感到了疼痛，我的兴趣依然全在眼前的少女身上。
 show-text 0 @"尽管感到了疼痛，我的兴趣依然全在眼前的少女身上。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16879,6 +17083,7 @@ show-text 0 "「なんで誰もこれを話題にしなかったんだ」"
 */
 // 输入原文：「为什么没人提起过这东西」
 show-text 0 @"「为什么没人提起过这东西」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16910,6 +17115,7 @@ show-text 0 "この光景を一目でも見れば、大騒ぎになっている�
 */
 // 输入原文：只要有人瞥见过这幅光景，恐怕早就闹得沸沸扬扬了。
 show-text 0 @"只要有人瞥见过这幅光景，恐怕早就闹得沸沸扬扬了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16941,6 +17147,7 @@ show-text 0 "細かな箇所の修理なんて目もくれず、この場所を�
 */
 // 输入原文：他们定会无视细处的修缮，彻底调查这个地方。
 show-text 0 @"他们定会无视细处的修缮，彻底调查这个地方。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -16974,6 +17181,7 @@ show-text 0 "キスニルからも技師たちからも、遺跡内にこんな�
 show-text 0 @"无论是姬斯尼尔还是技师们，都没提过遗迹里有这"
 end-text-line 0
 show-text 0 @"种东西。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17009,6 +17217,7 @@ show-text 0 "り着けたということなんだろうな。"
 show-text 0 @"也就是说，多亏刚才那阵震动，我才侥幸抵达了这"
 end-text-line 0
 show-text 0 @"个地方吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17035,6 +17244,7 @@ show-text 0 "「いや、いま考えるべきはそこじゃない」"
 */
 // 输入原文：「不，现在该想的不是这个」
 show-text 0 @"「不，现在该想的不是这个」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17066,6 +17276,7 @@ show-text 0 "頭を振って雑念を払いのけ、今なにをするべきか�
 */
 // 输入原文：我摇摇头拂去杂念，思考现在该做什么。
 show-text 0 @"我摇摇头拂去杂念，思考现在该做什么。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17099,6 +17310,7 @@ show-text 0 "遺跡から出る通路を探すべきか、はぐれてしまっ�
 show-text 0 @"是该寻找离开遗迹的通道，还是该设法与走散的姬"
 end-text-line 0
 show-text 0 @"斯尼尔会合。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17132,6 +17344,7 @@ show-text 0 "いくつかの選択肢がある中で、しかし俺はなにか�
 show-text 0 @"面前有好几个选项，可我却仿佛被什么牵引着，选择"
 end-text-line 0
 show-text 0 @"了那个行动。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -17223,6 +17436,7 @@ show-text 0 "どんな状況を経てこの女の子が魔石の内部にいる�
 show-text 0 @"尽管不知这位少女是经历了怎样的境遇才待在魔石之中，"
 end-text-line 0
 show-text 0 @"我的身体却想着「必须救她」，手不由自主地伸了出去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -17271,6 +17485,7 @@ show-text 0 "、魔石は自壊するかのように亀裂を生む。"
 */
 // 输入原文：就在指尖触及的刹那，魔石仿佛自行崩解般浮现出裂痕。
 show-text 0 @"就在指尖触及的刹那，魔石仿佛自行崩解般浮现出裂痕。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -17309,6 +17524,7 @@ show-text 0 "「え？」"
 */
 // 输入原文：「诶？」
 show-text 0 @"「诶？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00420270 (global-int f8024) a
@@ -17398,6 +17614,7 @@ show-text 0 "ピシピシと音を立てながら魔石が崩れ、内部にい�
 show-text 0 @"魔石发出噼噼啪啪的声响崩裂开来，其中的少女朝着"
 end-text-line 0
 show-text 0 @"我倒了下来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 play-sound-effect df 0
@@ -17426,6 +17643,7 @@ show-text 0 "「うわっ！」"
 */
 // 输入原文：「哇——！」
 show-text 0 @"「哇——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17459,6 +17677,7 @@ show-text 0 "倒れ行く女の子を受け止め、だが勢いを止められ�
 show-text 0 @"我接住了倒下的少女，却没能止住势头，与她一同摔倒在"
 end-text-line 0
 show-text 0 @"遗迹的地面上。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17491,6 +17710,7 @@ show-text 0 "けに、押し倒されるように身体が重なった。"
 */
 // 输入原文：她仰面朝上，身体如同将我压倒般交叠在一起。
 show-text 0 @"她仰面朝上，身体如同将我压倒般交叠在一起。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17524,6 +17744,7 @@ show-text 0 "が伝わってくる。"
 */
 // 输入原文：从贴着的胸口处，传来咚、咚的心跳声。
 show-text 0 @"从贴着的胸口处，传来咚、咚的心跳声。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17557,6 +17778,7 @@ show-text 0 "生身の温かさを感じ、この女の子がまだ生きてい�
 show-text 0 @"感受到血肉之躯的温暖，我安心下来——这位少女"
 end-text-line 0
 show-text 0 @"还活着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17583,6 +17805,7 @@ show-text 0 "「良かった。とりあえずここから移動しよう�
 */
 // 输入原文：「太好了。总之先离开这里吧」
 show-text 0 @"「太好了。总之先离开这里吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17614,6 +17837,7 @@ show-text 0 "意識のない肉体の重さを持ち上げようと、女の子�
 */
 // 输入原文：我按住少女的肩膀，想要抬起这具失去意识的沉重身体。
 show-text 0 @"我按住少女的肩膀，想要抬起这具失去意识的沉重身体。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17743,6 +17967,7 @@ show-text 0 "「う」"
 */
 // 输入原文：「唔——」
 show-text 0 @"「唔——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17774,6 +17999,7 @@ show-text 0 "女の子が声を出した。"
 */
 // 输入原文：少女发出了声音。
 show-text 0 @"少女发出了声音。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17805,6 +18031,7 @@ show-text 0 "良かった。もしかしてこのまま意識を取り戻して�
 */
 // 输入原文：太好了。说不定她会就这样恢复意识呢。
 show-text 0 @"太好了。说不定她会就这样恢复意识呢。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17934,6 +18161,7 @@ show-text 0 "「う～ん、むにゃむにゃ」"
 */
 // 输入原文：「唔～嗯，咂吧咂吧……」
 show-text 0 @"「唔～嗯，咂吧咂吧……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17965,6 +18193,7 @@ show-text 0 "う～ん、むにゃむにゃ！？"
 */
 // 输入原文：唔～嗯，咂吧咂吧！？
 show-text 0 @"唔～嗯，咂吧咂吧！？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -17998,6 +18227,7 @@ show-text 0 "そんな寝言ありかよ。まるで物語に出てくるよう�
 show-text 0 @"居然还有这种梦话？这反应简直像故事里走出来的"
 end-text-line 0
 show-text 0 @"一样老套。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18031,6 +18261,7 @@ show-text 0 "っていたのが嘘のようだ。"
 */
 // 输入原文：我不禁泄了气，方才的惊慌失措仿佛都是假的一样。
 show-text 0 @"我不禁泄了气，方才的惊慌失措仿佛都是假的一样。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18057,6 +18288,7 @@ show-text 0 "「おい、おいって。大丈夫か？」"
 */
 // 输入原文：「喂，喂，你没事吧？」
 show-text 0 @"「喂，喂，你没事吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18088,6 +18320,7 @@ show-text 0 "ペチペチと女の子の両肩を叩いて反応を見る。"
 */
 // 输入原文：我轻轻拍了拍少女的双肩，试探她的反应。
 show-text 0 @"我轻轻拍了拍少女的双肩，试探她的反应。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18217,6 +18450,7 @@ show-text 0 "「うぅ、はく」"
 */
 // 输入原文：「呜……呼……」
 show-text 0 @"「呜……呼……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18248,6 +18482,7 @@ show-text 0 "だが、女の子はうめくばかりで起きる様子はなか�
 */
 // 输入原文：可少女只是哼哼，丝毫没有要醒来的样子。
 show-text 0 @"可少女只是哼哼，丝毫没有要醒来的样子。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18279,6 +18514,7 @@ show-text 0 "起きないのなら仕方ない。とりあえず女の子をか�
 */
 // 输入原文：既然叫不醒，那也没办法。姑且把她背到城镇去吧。
 show-text 0 @"既然叫不醒，那也没办法。姑且把她背到城镇去吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -18418,6 +18654,7 @@ show-text 0 "「はやく、しんきょうのさんろへもどらない�
 */
 // 输入原文：「得快……回到……神响霞廊……」
 show-text 0 @"「得快……回到……神响霞廊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18449,6 +18686,7 @@ show-text 0 "そう言って、もぞもぞと女の子は動きを見せる。"
 */
 // 输入原文：这么说着，少女开始蠕动起来。
 show-text 0 @"这么说着，少女开始蠕动起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -18488,6 +18726,7 @@ show-text 0 "あまりにも自然すぎて、止める隙もなく女の子の�
 show-text 0 @"一切都太过自然，我连阻拦的间隙都没有，少女的脸"
 end-text-line 0
 show-text 0 @"便凑了过来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18514,6 +18753,7 @@ show-text 0 "「むぐっ！？」"
 */
 // 输入原文：「唔咕！？」
 show-text 0 @"「唔咕！？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18545,6 +18785,7 @@ show-text 0 "そして、唇が触れた。"
 */
 // 输入原文：紧接着，双唇相触。
 show-text 0 @"紧接着，双唇相触。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18578,6 +18819,7 @@ show-text 0 "なにが起こったのかと驚き、受け入れることも突�
 show-text 0 @"我惊愕于究竟发生了什么，既来不及接受，也来不"
 end-text-line 0
 show-text 0 @"及推开。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -18639,6 +18881,7 @@ show-text 0 "らかさを認識すると同時に、どうしてか身体から�
 show-text 0 @"在感知到嘴唇柔软的同时，不知为何浑身力气尽失，意识"
 end-text-line 0
 show-text 0 @"如同坠落般渐渐远去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -18692,6 +18935,7 @@ show-text 0 "が。"
 */
 // 输入原文：为什么，会突然这么困……
 show-text 0 @"为什么，会突然这么困……"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -18932,6 +19176,7 @@ show-text 0 "「おーい、起きてー！」"
 */
 // 输入原文：「喂——，快醒醒——！」
 show-text 0 @"「喂——，快醒醒——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -18958,6 +19203,7 @@ show-text 0 "「う」"
 */
 // 输入原文：「唔——」
 show-text 0 @"「唔——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19087,6 +19333,7 @@ show-text 0 "「起きてよー！」"
 */
 // 输入原文：「快起来啦——！」
 show-text 0 @"「快起来啦——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19120,6 +19367,7 @@ show-text 0 "れている。"
 */
 // 输入原文：身体正被左右摇晃着。
 show-text 0 @"身体正被左右摇晃着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19153,6 +19401,7 @@ show-text 0 "なぜか身体に力が上手く入らない。けだるい感覚�
 show-text 0 @"身体不知为何使不上力。我拖着慵懒的感觉，渐渐"
 end-text-line 0
 show-text 0 @"恢复了意识。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -19270,6 +19519,7 @@ show-text 0 "んでいた。"
 */
 // 输入原文：睁开眼帘，少女正面向我伫立在旁。
 show-text 0 @"睁开眼帘，少女正面向我伫立在旁。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19301,6 +19551,7 @@ show-text 0 "心配そうにしながらも、どこか嬉しそうに俺を見�
 */
 // 输入原文：她带着担忧的神色，却又有些欣喜地注视着我。
 show-text 0 @"她带着担忧的神色，却又有些欣喜地注视着我。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19430,6 +19681,7 @@ show-text 0 "「あ、起きた？」"
 */
 // 输入原文：「啊，你醒啦？」
 show-text 0 @"「啊，你醒啦？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19456,6 +19708,7 @@ show-text 0 "「ああ」"
 */
 // 输入原文：「嗯」
 show-text 0 @"「嗯」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -19598,6 +19851,7 @@ show-text 0 "「良かった。このまま起きなかったらどうしよう�
 show-text 0 @"「太好了。我还担心你要是就这么一直不醒该怎么办呢。"
 end-text-line 0
 show-text 0 @"来，站起来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19632,6 +19886,7 @@ show-text 0 "されゆっくりと立ち上がった。同時に身体になに�
 show-text 0 @"在她的催促下，我缓缓站起身，同时检查自己身体究竟"
 end-text-line 0
 show-text 0 @"发生了什么。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19665,6 +19920,7 @@ show-text 0 "どうやら異常にけだるいだけで体調に問題はない�
 show-text 0 @"看来只是异常困倦，身体并无大碍。不知为何，连头上的"
 end-text-line 0
 show-text 0 @"伤也痊愈了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -19807,6 +20063,7 @@ show-text 0 "「これからよろしくね。色々あるかもしれないけ�
 show-text 0 @"「今后请多关照啦。虽然可能会发生各种事情，但我们一"
 end-text-line 0
 show-text 0 @"起齐心协力、友好相处吧——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19833,6 +20090,7 @@ show-text 0 "「あ、ああ。よろしく？」"
 */
 // 输入原文：「啊、嗯。请多关照……？」
 show-text 0 @"「啊、嗯。请多关照……？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19864,6 +20122,7 @@ show-text 0 "差し出された手を取り、握手する。"
 */
 // 输入原文：我握住她伸来的手，与她握手。
 show-text 0 @"我握住她伸来的手，与她握手。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -19895,6 +20154,7 @@ show-text 0 "訳も分からないままに友好を結んでしまった。"
 */
 // 输入原文：糊里糊涂地，我就与她缔结了友谊。
 show-text 0 @"糊里糊涂地，我就与她缔结了友谊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20035,6 +20295,7 @@ show-text 0 "「う～ん。それで、あなたは誰なのかな」"
 */
 // 输入原文：「唔～嗯。那么，你究竟是谁呢」
 show-text 0 @"「唔～嗯。那么，你究竟是谁呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20061,6 +20322,7 @@ show-text 0 "「こっちのセリフだっつーの！」"
 */
 // 输入原文：「这句话该我问你才对！」
 show-text 0 @"「这句话该我问你才对！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20092,6 +20354,7 @@ show-text 0 "言葉を吐き出すと同時に手を振り払う。友好破棄�
 */
 // 输入原文：话一出口，我便甩开了她的手。友谊宣告破裂。
 show-text 0 @"话一出口，我便甩开了她的手。友谊宣告破裂。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20118,6 +20381,7 @@ show-text 0 "「まず状況を把握させてくれ。こっちはなにも分�
 */
 // 输入原文：「先让我搞清楚状况。我这边什么都不了解」
 show-text 0 @"「先让我搞清楚状况。我这边什么都不了解」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20258,6 +20522,7 @@ show-text 0 "「え、でもでも、あなたが私を起こしてくれたん�
 */
 // 输入原文：「诶，可是可是，是你唤醒了我吧？」
 show-text 0 @"「诶，可是可是，是你唤醒了我吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20294,6 +20559,7 @@ show-text 0 "けた。それを思うと、女の子の目覚めに俺が関係�
 show-text 0 @"我的手一触到魔石，它就碎裂了。这样想来，我不得不认"
 end-text-line 0
 show-text 0 @"为少女的苏醒与我有关。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20320,6 +20586,7 @@ show-text 0 "「そう、なるのかな。もしかしてマズかったのか�
 */
 // 输入原文：「是、是这样吗。难道我搞砸了？」
 show-text 0 @"「是、是这样吗。难道我搞砸了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20460,6 +20727,7 @@ show-text 0 "「ううん、すごく嬉しいよ！　そしてすごく感謝�
 */
 // 输入原文：「不不，我非常开心！也非常感谢你。谢谢你——！」
 show-text 0 @"「不不，我非常开心！也非常感谢你。谢谢你——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20493,6 +20761,7 @@ show-text 0 "しい。"
 */
 // 输入原文：她天真无邪的笑容如此耀眼。
 show-text 0 @"她天真无邪的笑容如此耀眼。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20524,6 +20793,7 @@ show-text 0 "見ていると混乱していた頭が少しずつ落ち着いて�
 */
 // 输入原文：看着看着，我混乱的头脑渐渐平静下来。
 show-text 0 @"看着看着，我混乱的头脑渐渐平静下来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20627,6 +20897,7 @@ show-text 0 "「あーよし、一つずつ確かめていこう。俺は�
 show-text 0 @"「啊——好，我们一件件确认吧。我对眼前的情况一无所"
 end-text-line 0
 show-text 0 @"知，想知道的事有一大堆」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20827,6 +21098,7 @@ show-text 0 "「うん、相互理解は大切だもんね。どんとこい！�
 */
 // 输入原文：「嗯，互相理解很重要嘛。放马过来！」
 show-text 0 @"「嗯，互相理解很重要嘛。放马过来！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -20855,6 +21127,7 @@ show-text 0 "「まず一つ。身体に異常はないか？　痛いところ�
 show-text 0 @"「第一件。身体有没有异常？比如哪里痛，或者哪"
 end-text-line 0
 show-text 0 @"里不对劲」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -20994,6 +21267,7 @@ show-text 0 "「えへへっ」"
 */
 // 输入原文：「诶嘿嘿——」
 show-text 0 @"「诶嘿嘿——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21020,6 +21294,7 @@ show-text 0 "「えぇ、なんで急に笑ったんだ？」"
 */
 // 输入原文：「诶，你怎么突然笑了？」
 show-text 0 @"「诶，你怎么突然笑了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -21161,6 +21436,7 @@ show-text 0 "「まず先に心配してくれたのが嬉しくて。身体は�
 show-text 0 @"「因为你最先关心我，我很开心呀。我的身体很健康"
 end-text-line 0
 show-text 0 @"，没问题的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21187,6 +21463,7 @@ show-text 0 "「そっか。そりゃ良かった」"
 */
 // 输入原文：「是吗。那就好」
 show-text 0 @"「是吗。那就好」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21218,6 +21495,7 @@ show-text 0 "なるほど、感情や好意を素直に出す女の子なんだ�
 */
 // 输入原文：原来如此，她是个会坦率表露情感与好意的女孩子啊。
 show-text 0 @"原来如此，她是个会坦率表露情感与好意的女孩子啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21246,6 +21524,7 @@ show-text 0 "「それじゃ次の質問にいこう。俺はアヴァロって�
 show-text 0 @"「那就问下一个问题。我叫阿瓦罗，方便的话，告诉我"
 end-text-line 0
 show-text 0 @"你的名字吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21375,6 +21654,7 @@ show-text 0 "「私は『フィア』だよ。アヴァロかぁ、いい名前�
 */
 // 输入原文：「我叫『菲亚』。阿瓦罗啊，真是个好名字呢」
 show-text 0 @"「我叫『菲亚』。阿瓦罗啊，真是个好名字呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21408,6 +21688,7 @@ show-text 0 "良かった。魔石の中に入っていたこともあるし、�
 show-text 0 @"太好了。她毕竟待在魔石之中，我还担心她背负着什么沉"
 end-text-line 0
 show-text 0 @"重的隐情，看来并没有大碍。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21439,6 +21720,7 @@ show-text 0 "ちゃんと名前も言えるし、受け答えもしっかりし�
 */
 // 输入原文：她能清楚说出自己的名字，对答也很利落。
 show-text 0 @"她能清楚说出自己的名字，对答也很利落。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21465,6 +21747,7 @@ show-text 0 "「ここはどこだ？　俺はさっきまで空が見える場�
 */
 // 输入原文：「这里是哪儿？刚才我应该还不在能看到天空的地方」
 show-text 0 @"「这里是哪儿？刚才我应该还不在能看到天空的地方」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -21606,6 +21889,7 @@ show-text 0 "「私がえいやーって運んできたの。あそこに倒れ�
 show-text 0 @"「是我嘿咻一下把你搬过来的。我想让你一直倒在那里"
 end-text-line 0
 show-text 0 @"太危险了嘛」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21643,6 +21927,7 @@ show-text 0 "り着いた。ありがたい判断だ。"
 show-text 0 @"原来如此，我是被崩塌卷入才落到那里的。她的判"
 end-text-line 0
 show-text 0 @"断令人感激。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21671,6 +21956,7 @@ show-text 0 "「遺跡から出してくれたんだな、助かるよ。よく�
 show-text 0 @"「你把我带出遗迹了啊，真是帮大忙了。没想到你搬得动"
 end-text-line 0
 show-text 0 @"一个失去意识的男人」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -21810,6 +22096,7 @@ show-text 0 "「えへへっ、おかげで元気がありあまってたから�
 */
 // 输入原文：「诶嘿嘿，多亏如此，我正精力过剩呢」
 show-text 0 @"「诶嘿嘿，多亏如此，我正精力过剩呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21836,6 +22123,7 @@ show-text 0 "「そっか」"
 */
 // 输入原文：「是吗」
 show-text 0 @"「是吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21869,6 +22157,7 @@ show-text 0 "めなかったが、まぁいいだろう。"
 */
 // 输入原文：我没太听懂她的意思，不过算了吧。
 show-text 0 @"我没太听懂她的意思，不过算了吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -21895,6 +22184,7 @@ show-text 0 "「俺の怪我が治ってるみたいなんだけど、どうし�
 */
 // 输入原文：「我的伤好像治好了，你知道是怎么回事吗」
 show-text 0 @"「我的伤好像治好了，你知道是怎么回事吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22036,6 +22326,7 @@ show-text 0 "「あ、それ私が治したんだよ～！　回復魔法でパ�
 show-text 0 @"「啊，那是我治好的哦～！用回复魔法唰地一下就"
 end-text-line 0
 show-text 0 @"治好啦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22062,6 +22353,7 @@ show-text 0 "「そうだったのか。ありがとう、色々と世話にな�
 */
 // 输入原文：「原来是这样。谢谢你，给你添了不少麻烦」
 show-text 0 @"「原来是这样。谢谢你，给你添了不少麻烦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22201,6 +22493,7 @@ show-text 0 "「いえいえ。さぁ、どんどん質問に答えちゃうよ�
 */
 // 输入原文：「哪里哪里。来吧，我会一个接一个回答你的问题的！」
 show-text 0 @"「哪里哪里。来吧，我会一个接一个回答你的问题的！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22227,6 +22520,7 @@ show-text 0 "「フィアはどうしてあの中に入っていたんだ？」"
 */
 // 输入原文：「菲亚为什么会待在那里面？」
 show-text 0 @"「菲亚为什么会待在那里面？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22366,6 +22660,7 @@ show-text 0 "「分かんない」"
 */
 // 输入原文：「不知道」
 show-text 0 @"「不知道」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22392,6 +22687,7 @@ show-text 0 "「分からないのかよ！」"
 */
 // 输入原文：「你居然不知道！」
 show-text 0 @"「你居然不知道！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22423,6 +22719,7 @@ show-text 0 "その答えは予想してなかった。くそう、と思わず�
 */
 // 输入原文：这个答案完全出乎我的预料。可恶，我忍不住吐槽起来。
 show-text 0 @"这个答案完全出乎我的预料。可恶，我忍不住吐槽起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22564,6 +22861,7 @@ show-text 0 "「なんかね、頭にモヤがかかったような、ぎゅっ�
 show-text 0 @"「怎么说呢，就像脑袋里罩着一层雾，被紧紧盖住了似的"
 end-text-line 0
 show-text 0 @"。好多事情都想不起来啦～」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22590,6 +22888,7 @@ show-text 0 "「それって、一部の記憶がないってことか？�
 */
 // 输入原文：「也就是说，你缺失了一部分记忆？」
 show-text 0 @"「也就是说，你缺失了一部分记忆？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22729,6 +23028,7 @@ show-text 0 "「そうだと思う。でも、あそこから出られて嬉し�
 */
 // 输入原文：「我想是的。不过，能从那里出来，我还是很开心的哦」
 show-text 0 @"「我想是的。不过，能从那里出来，我还是很开心的哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22755,6 +23055,7 @@ show-text 0 "「ということは、あの中に閉じ込められていたっ�
 */
 // 输入原文：「这么说来，你是被关在那里面了啊……」
 show-text 0 @"「这么说来，你是被关在那里面了啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22786,6 +23087,7 @@ show-text 0 "その上、記憶も失くしているとは。辛い事情を抱�
 */
 // 输入原文：不仅如此，还失去了记忆。她背负着沉重的过往啊。
 show-text 0 @"不仅如此，还失去了记忆。她背负着沉重的过往啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22817,6 +23119,7 @@ show-text 0 "名前を思い出せただけでも幸いなのかもしれない�
 */
 // 输入原文：能想起自己的名字，已算是不幸中的万幸了吧。
 show-text 0 @"能想起自己的名字，已算是不幸中的万幸了吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -22958,6 +23261,7 @@ show-text 0 "「ん～、どうなんだろう。あそこに入ってた理由�
 show-text 0 @"「嗯～怎么说呢。待在里面的理由我倒是记得，因为那样"
 end-text-line 0
 show-text 0 @"活动身体效率最高」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -22984,6 +23288,7 @@ show-text 0 "「身体って？」"
 */
 // 输入原文：「身体？」
 show-text 0 @"「身体？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23015,6 +23320,7 @@ show-text 0 "目すら開けられない状態だろうに、動かすもなに�
 */
 // 输入原文：明明是个连眼睛都睁不开的状态，哪有什么可活动的。
 show-text 0 @"明明是个连眼睛都睁不开的状态，哪有什么可活动的。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -23156,6 +23462,7 @@ show-text 0 "「私の能力のこと。今は目が覚めたばっかりで力�
 show-text 0 @"「我说的是我的能力。现在刚醒来，力量还不够，但只要"
 end-text-line 0
 show-text 0 @"好好循环起来，应该就能动了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23187,6 +23494,7 @@ show-text 0 "フィアがなにを言っているのか全く分からない。"
 */
 // 输入原文：我完全听不懂菲亚在说什么。
 show-text 0 @"我完全听不懂菲亚在说什么。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23220,6 +23528,7 @@ show-text 0 "という言葉はどこか引っかかる。"
 */
 // 输入原文：不过，「循环」这个词总让我有些在意。
 show-text 0 @"不过，「循环」这个词总让我有些在意。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -23313,6 +23622,7 @@ show-text 0 "俺が仕事として修理を手がけたのは、魔力の流れ�
 show-text 0 @"我作为工作修整的，正是魔力流动异常、或通路断裂无法"
 end-text-line 0
 show-text 0 @"顺畅循环的地方。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23348,6 +23658,7 @@ show-text 0 "から魔力が発生し、各部へと流れていくような印�
 show-text 0 @"而那处空间给我的印象，正是魔力从菲亚所在的魔石中产"
 end-text-line 0
 show-text 0 @"生，流向各个部分。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23374,6 +23685,7 @@ show-text 0 "「まさか、能力ってこの古代の装置のことを�
 */
 // 输入原文：「难道说，你说的能力是指这台古代装置？」
 show-text 0 @"「难道说，你说的能力是指这台古代装置？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23503,6 +23815,7 @@ show-text 0 "「こだい？　それは分からないけど、うん、�
 */
 // 输入原文：「古代？那个我倒不清楚，不过，嗯，大概吧」
 show-text 0 @"「古代？那个我倒不清楚，不过，嗯，大概吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23632,6 +23945,7 @@ show-text 0 "「この『グアラクーナ城砦』は、移動を可能とす�
 */
 // 输入原文：「这座『古亚拉库娜城砦』，是能够移动的我的身体哦」
 show-text 0 @"「这座『古亚拉库娜城砦』，是能够移动的我的身体哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23658,6 +23972,7 @@ show-text 0 "「この遺跡自体が、動くっていうのか？」"
 */
 // 输入原文：「你是说，这座遗迹本身会动？」
 show-text 0 @"「你是说，这座遗迹本身会动？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -23752,6 +24067,7 @@ show-text 0 "「そんなこと、できるわけないだろう」"
 */
 // 输入原文：「那种事，怎么可能做得到」
 show-text 0 @"「那种事，怎么可能做得到」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -23881,6 +24197,7 @@ show-text 0 "「できるよ」"
 */
 // 输入原文：「做得到哦」
 show-text 0 @"「做得到哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -23922,6 +24239,7 @@ show-text 0 "フィアは自信満々に笑顔を浮かべた。"
 */
 // 输入原文：菲亚露出了自信满满的笑容。
 show-text 0 @"菲亚露出了自信满满的笑容。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -24061,6 +24379,7 @@ show-text 0 "「私は神様だから！」"
 */
 // 输入原文：「因为我是神明嘛！」
 show-text 0 @"「因为我是神明嘛！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -24145,6 +24464,7 @@ show-text 0 "「マジかー」"
 */
 // 输入原文：「不是吧——」
 show-text 0 @"「不是吧——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24178,6 +24498,7 @@ show-text 0 "ははは、神様かぁ。この善良で脳天気そうな女の�
 show-text 0 @"哈哈哈，神明吗。就这个善良又看起来没心没肺的"
 end-text-line 0
 show-text 0 @"女孩子？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24307,6 +24628,7 @@ show-text 0 "「あれ、信じてない？」"
 */
 // 输入原文：「咦，你不信吗？」
 show-text 0 @"「咦，你不信吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24333,6 +24655,7 @@ show-text 0 "「どうやったら信じられるのか逆に教えてくれ」"
 */
 // 输入原文：「我倒想请教，要怎样才能让人信服」
 show-text 0 @"「我倒想请教，要怎样才能让人信服」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24364,6 +24687,7 @@ show-text 0 "だんだんフィアのことがうさん臭く見えてきた。"
 */
 // 输入原文：渐渐地，我觉得菲亚越来越可疑了。
 show-text 0 @"渐渐地，我觉得菲亚越来越可疑了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24397,6 +24721,7 @@ show-text 0 "記憶がないってのも嘘じゃないのか？　覚えてい�
 show-text 0 @"她失去记忆会不会也是谎话？记得的事情太过有限，感觉"
 end-text-line 0
 show-text 0 @"她只想起了对自己有利的部分。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24526,6 +24851,7 @@ show-text 0 "「とにかく、信仰心が満ちれば動かせるようにな�
 */
 // 输入原文：「总之，只要信仰之心充盈，我就能动起来了哦」
 show-text 0 @"「总之，只要信仰之心充盈，我就能动起来了哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24552,6 +24878,7 @@ show-text 0 "「はいはい。そりゃ良かった。とりあえず移動し�
 */
 // 输入原文：「是是。那太好了。总之我们先赶路吧」
 show-text 0 @"「是是。那太好了。总之我们先赶路吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24587,6 +24914,7 @@ show-text 0 "てもらった方がいいだろう。"
 show-text 0 @"她本人虽说没事，但果然还是去城镇好好检查一番"
 end-text-line 0
 show-text 0 @"比较稳妥。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24620,6 +24948,7 @@ show-text 0 "フィアのおかげで遺跡の外へ出ているのは好都合�
 show-text 0 @"多亏菲亚，我们已经在遗迹外了，正好。找一条能通往"
 end-text-line 0
 show-text 0 @"入口的路吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000725e4
@@ -24762,6 +25091,7 @@ show-text 0 "の契約しよっか！」"
 */
 // 输入原文：「明白。要赶路了是吧，那就赶紧缔结使徒契约吧！」
 show-text 0 @"「明白。要赶路了是吧，那就赶紧缔结使徒契约吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24793,6 +25123,7 @@ show-text 0 "フィアの言い放った言葉が耳に入るが、理解はで�
 */
 // 输入原文：菲亚的话传入耳中，我却无法理解。
 show-text 0 @"菲亚的话传入耳中，我却无法理解。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24828,6 +25159,7 @@ show-text 0 "？"
 */
 // 输入原文：使徒的……契约？
 show-text 0 @"使徒的……契约？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24961,6 +25293,7 @@ show-text 0 "』だよ」"
 show-text 0 @"「嗯。像我这样的神明，或拥有同等力量的神格者，会分"
 end-text-line 0
 show-text 0 @"出部分能力，请求对方协助自己。那就是『使徒』哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -24987,6 +25320,7 @@ show-text 0 "「いきなり、なに言っているんだ？」"
 */
 // 输入原文：「你突然之间，在说什么呢？」
 show-text 0 @"「你突然之间，在说什么呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -25132,6 +25466,7 @@ show-text 0 "』へ行く為には、アヴァロの力が絶対に必要だし�
 show-text 0 @"「诶，可是要去『神响霞廊』，就绝对需要阿瓦罗的"
 end-text-line 0
 show-text 0 @"力量呀……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25261,6 +25596,7 @@ show-text 0 "「その為にアヴァロは私を起こしてくれたんじゃ�
 */
 // 输入原文：「阿瓦罗唤醒我，不正是为了这个吗？」
 show-text 0 @"「阿瓦罗唤醒我，不正是为了这个吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25289,6 +25625,7 @@ show-text 0 "「待て待て待て。俺は修理の仕事でこの遺跡に入�
 show-text 0 @"「等等等等。我是接了维修工作才进入遗迹的。发现菲亚"
 end-text-line 0
 show-text 0 @"是偶然，唤醒你也不是我有意的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25321,6 +25658,7 @@ show-text 0 "が満ちると、この遺跡が動き出してしまうんだろ�
 show-text 0 @"「而且，如果菲亚说的全是真话，那我一旦成为使徒、信"
 end-text-line 0
 show-text 0 @"仰之心充盈，这座遗迹就会动起来吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -25460,6 +25798,7 @@ show-text 0 "「うん、そうなるね」"
 */
 // 输入原文：「嗯，会那样哦」
 show-text 0 @"「嗯，会那样哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25488,6 +25827,7 @@ show-text 0 "「それはダメだ。この遺跡の所有権はインフルー�
 show-text 0 @"「那可不行。这座遗迹的所有权属于因夫鲁斯王国。擅自"
 end-text-line 0
 show-text 0 @"带走是重罪，我会在这个国家再也接不到工作」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25519,6 +25859,7 @@ show-text 0 "それどころか、下手をすれば死罪になってしまう�
 */
 // 输入原文：弄不好，甚至会沦落到死罪吧。
 show-text 0 @"弄不好，甚至会沦落到死罪吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25549,6 +25890,7 @@ show-text 0 "めているんだ。国から追われるような犯罪をおか�
 show-text 0 @"「我有拥有自己工房的梦想。为此我一直在工作攒钱。绝"
 end-text-line 0
 show-text 0 @"不能犯下被国家追捕的罪行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -25688,6 +26030,7 @@ show-text 0 "「それはおかしいよ」"
 */
 // 输入原文：「那不对哦」
 show-text 0 @"「那不对哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25714,6 +26057,7 @@ show-text 0 "「どこがおかしいんだ？」"
 */
 // 输入原文：「哪里不对了？」
 show-text 0 @"「哪里不对了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25845,6 +26189,7 @@ show-text 0 "「だってこれは私の身体だもん。だから所有権は�
 show-text 0 @"「因为这是我的身体呀。所以所有权应该在我手里才"
 end-text-line 0
 show-text 0 @"对，对吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25871,6 +26216,7 @@ show-text 0 "「」"
 */
 // 输入原文：「……」
 show-text 0 @"「……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25904,6 +26250,7 @@ show-text 0 "もしフィアの話が全て真実だった場合、確かに遺�
 show-text 0 @"倘若菲亚所说全是事实，那这确实不该当作遗迹或古代装"
 end-text-line 0
 show-text 0 @"置对待，而是一位拥有这种能力的神明。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -25937,6 +26284,7 @@ show-text 0 "『神』人間を支配する側の存在。人間の国が�
 show-text 0 @"「神」——支配人类的存在。难道就能不受人类国家制定"
 end-text-line 0
 show-text 0 @"的法律束缚吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -26028,6 +26376,7 @@ show-text 0 "考え込む俺を見て、フィアは優しく微笑んだ。"
 */
 // 输入原文：看着陷入沉思的我，菲亚温柔地笑了。
 show-text 0 @"看着陷入沉思的我，菲亚温柔地笑了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26157,6 +26506,7 @@ show-text 0 "「それじゃあ、こうしよっか」"
 */
 // 输入原文：「那么，我们这样办吧」
 show-text 0 @"「那么，我们这样办吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26286,6 +26636,7 @@ show-text 0 "「アヴァロは自分の工房が欲しいんだよね」"
 */
 // 输入原文：「阿瓦罗想要属于自己的工房，对吧」
 show-text 0 @"「阿瓦罗想要属于自己的工房，对吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26314,6 +26665,7 @@ show-text 0 "える予定の俺の夢だ」"
 */
 // 输入原文：「没错，那是我总有一天要实现……我的梦想」
 show-text 0 @"「没错，那是我总有一天要实现……我的梦想」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -26456,6 +26808,7 @@ show-text 0 "「だったらやっぱりこれがいいね。アヴァロが私�
 show-text 0 @"「那就这么办最好啦。只要阿瓦罗愿意协助我的目标，我"
 end-text-line 0
 show-text 0 @"的身体随你处置哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -26492,6 +26845,7 @@ show-text 0 "「なんだって？」"
 */
 // 输入原文：「你说什么？」
 show-text 0 @"「你说什么？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26621,6 +26975,7 @@ show-text 0 "「私の身体を全部、アヴァロの工房にしちゃって�
 */
 // 输入原文：「你可以把我的整个身体，都变成阿瓦罗的工房」
 show-text 0 @"「你可以把我的整个身体，都变成阿瓦罗的工房」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26654,6 +27009,7 @@ show-text 0 "んだ。"
 */
 // 输入原文：我瞪大了双眼，倒吸一口凉气。
 show-text 0 @"我瞪大了双眼，倒吸一口凉气。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26687,6 +27043,7 @@ show-text 0 "もちろんフィアの言う身体とは、つい視線で追っ�
 show-text 0 @"当然，菲亚所说的身体，并非那个让人忍不住用视线追"
 end-text-line 0
 show-text 0 @"随、长着痣的女孩子的身体吧。也就是说——"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -26726,6 +27083,7 @@ show-text 0 "「この、大きな迷宮のような遺跡を丸ごと俺の工�
 show-text 0 @"「你是说，这整座如巨大迷宫般的遗迹，都可以当作"
 end-text-line 0
 show-text 0 @"我的工房？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26857,6 +27215,7 @@ show-text 0 "「うん。それに壊れてるところがあったら、直し�
 show-text 0 @"「嗯。而且要是哪里有损坏，你愿意帮我修好，我"
 end-text-line 0
 show-text 0 @"会更开心！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26883,6 +27242,7 @@ show-text 0 "「そっちが本音か」"
 */
 // 输入原文：「原来这才是你的真心话」
 show-text 0 @"「原来这才是你的真心话」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26914,6 +27274,7 @@ show-text 0 "だが、なんて魅力的な提案だろう。"
 */
 // 输入原文：不过，这是多么诱人的提议啊。
 show-text 0 @"不过，这是多么诱人的提议啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26950,6 +27311,7 @@ display-furigana 0 @"法斯缇娜神圣语" @"现代魔法语"
 show-text 0 @"控制、通过循环魔力来移"
 end-text-line 0
 show-text 0 @"动的巨型古代装置。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -26985,6 +27347,7 @@ show-text 0 "る。修理をしながら、古代の技術を学べるのは間�
 show-text 0 @"光是探索遗迹内部就让人心潮澎湃。边修理边学习古代技"
 end-text-line 0
 show-text 0 @"术，这一点毋庸置疑。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27018,6 +27381,7 @@ show-text 0 "さらにそれを自分のものにしていいだなんて、本�
 show-text 0 @"更何况还能将其据为己有，这本该是让人垂涎三尺"
 end-text-line 0
 show-text 0 @"的提议。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27044,6 +27408,7 @@ show-text 0 "「いや、やっぱりダメだ」"
 */
 // 输入原文：「不，果然还是不行」
 show-text 0 @"「不，果然还是不行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27075,6 +27440,7 @@ show-text 0 "だけど、とても重要なことを思い出してしまった�
 */
 // 输入原文：不过，我想起了一件非常重要的事。
 show-text 0 @"不过，我想起了一件非常重要的事。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27105,6 +27471,7 @@ show-text 0 "』ってところにいきたいんだよな」"
 */
 // 输入原文：「菲亚想去一个叫『神响霞廊』的地方，对吧」
 show-text 0 @"「菲亚想去一个叫『神响霞廊』的地方，对吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -27247,6 +27614,7 @@ show-text 0 "「うん、どうして行きたいのかは上手く思い出せ�
 show-text 0 @"「嗯，虽然我想不起来为什么想去……但不去的话"
 end-text-line 0
 show-text 0 @"绝对不行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27277,6 +27645,7 @@ end-text-line 0
 show-text 0 @"迹动起来就已经很难交代了，若再朝那里去，可就彻"
 end-text-line 0
 show-text 0 @"底无法开脱了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27308,6 +27677,7 @@ show-text 0 "すべてを敵に回す行為だ。命がいくつあっても足�
 */
 // 输入原文：那无异于与全世界为敌。有多少条命都不够赔。
 show-text 0 @"那无异于与全世界为敌。有多少条命都不够赔。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27341,6 +27711,7 @@ show-text 0 "せっかく工房を手に入れても、無事に研究や商売�
 show-text 0 @"好不容易得来的工房，若不能安心研究、做买卖，"
 end-text-line 0
 show-text 0 @"就毫无意义。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -27538,6 +27909,7 @@ show-text 0 "「ふうん、そっか」"
 */
 // 输入原文：「唔嗯，是吗……」
 show-text 0 @"「唔嗯，是吗……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27569,6 +27941,7 @@ show-text 0 "フィアは一呼吸置いたあと、自信満々に言い放つ�
 */
 // 输入原文：菲亚深吸一口气，随后自信满满地放言道。
 show-text 0 @"菲亚深吸一口气，随后自信满满地放言道。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -27753,6 +28126,7 @@ show-text 0 "「でも大丈夫だよ。私、神様だから！」"
 */
 // 输入原文：「不过没关系的。因为我是神明嘛！」
 show-text 0 @"「不过没关系的。因为我是神明嘛！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27779,6 +28153,7 @@ show-text 0 "「そうか」"
 */
 // 输入原文：「是吗」
 show-text 0 @"「是吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27810,6 +28185,7 @@ show-text 0 "そこまで言い切られると、もうなにも突っ込めな�
 */
 // 输入原文：她都把话说到这个份上了，我再也无法吐槽。
 show-text 0 @"她都把话说到这个份上了，我再也无法吐槽。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27843,6 +28219,7 @@ show-text 0 "フィアが神様なわけがないとか、もし敵対してい�
 show-text 0 @"菲亚不可能是神明啦、万一那是敌对神明的地盘就麻烦了"
 end-text-line 0
 show-text 0 @"啦——诸如此类，细想下去便没完没了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27874,6 +28251,7 @@ show-text 0 "反対する理由ばかりが浮かんでくる。"
 */
 // 输入原文：反对的理由一个接一个地浮现出来。
 show-text 0 @"反对的理由一个接一个地浮现出来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27900,6 +28278,7 @@ show-text 0 "「なら、大丈夫かもな」"
 */
 // 输入原文：「既然如此，或许没问题吧」
 show-text 0 @"「既然如此，或许没问题吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27931,6 +28310,7 @@ show-text 0 "だが、口に出た言葉はフィアを肯定するものだっ�
 */
 // 输入原文：可脱口而出的，却是肯定菲亚的话。
 show-text 0 @"可脱口而出的，却是肯定菲亚的话。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -27968,6 +28348,7 @@ show-text 0 "う』未来を前に浮かれてしまっている。"
 show-text 0 @"内心深处，我仿佛一直在寻找肯定的理由。正因如此，面"
 end-text-line 0
 show-text 0 @"对『梦想成真』的未来，我才这般心旌摇曳。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -28109,6 +28490,7 @@ show-text 0 "「それにね、実はもうアヴァロとは１つ目の契約�
 show-text 0 @"「而且呀，其实我和阿瓦罗之间，第一份契约已经完成了"
 end-text-line 0
 show-text 0 @"哦。不过这和使徒契约是两回事就是了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28135,6 +28517,7 @@ show-text 0 "「ん？　ど、どういうことだ？」"
 */
 // 输入原文：「嗯？这、这是什么意思？」
 show-text 0 @"「嗯？这、这是什么意思？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28266,6 +28649,7 @@ show-text 0 "「アヴァロは私を起こしてくれたでしょ。それは�
 show-text 0 @"「阿瓦罗唤醒了我，对吧。那就算作与城砦的契约已"
 end-text-line 0
 show-text 0 @"经完成了哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28292,6 +28676,7 @@ show-text 0 "「そうだったのか」"
 */
 // 输入原文：「原来如此」
 show-text 0 @"「原来如此」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28323,6 +28708,7 @@ show-text 0 "偶然見つけただけだというのに大変なことをして�
 */
 // 输入原文：明明只是偶然发现，我却闯下了一件大事。
 show-text 0 @"明明只是偶然发现，我却闯下了一件大事。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28349,6 +28735,7 @@ show-text 0 "「それなら仕方ないな」"
 */
 // 输入原文：「那就没办法了」
 show-text 0 @"「那就没办法了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -28490,6 +28877,7 @@ show-text 0 "「うん。だから、とりあえずアヴァロから直接力�
 show-text 0 @"「嗯。所以我才先直接从阿瓦罗那里吸取了力量。托你的"
 end-text-line 0
 show-text 0 @"福完全清醒了，谢谢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28523,6 +28911,7 @@ show-text 0 "める。"
 */
 // 输入原文：说着，菲亚伸出舌头，舔了舔嘴唇。
 show-text 0 @"说着，菲亚伸出舌头，舔了舔嘴唇。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -28614,6 +29003,7 @@ show-text 0 "あの口付けか。"
 */
 // 输入原文：原来是那个吻啊。
 show-text 0 @"原来是那个吻啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28640,6 +29030,7 @@ show-text 0 "「あれ、俺から力を吸い取ってたのかよ」"
 */
 // 输入原文：「喂，你原来是在吸取我的力量啊」
 show-text 0 @"「喂，你原来是在吸取我的力量啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28671,6 +29062,7 @@ show-text 0 "どうりで身体に力が入らないわけだ。"
 */
 // 输入原文：难怪我浑身使不上力气。
 show-text 0 @"难怪我浑身使不上力气。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -28704,6 +29096,7 @@ show-text 0 "なんじゃないか？"
 */
 // 输入原文：这家伙，该不会其实是睡魔吧？
 show-text 0 @"这家伙，该不会其实是睡魔吧？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -28797,6 +29190,7 @@ show-text 0 "とやらにならなければいけないんだ？　俺から力�
 show-text 0 @"「可是，既然如此，为什么非要当那什么使徒不可？既然"
 end-text-line 0
 show-text 0 @"已经吸走了我的力量，应该够了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -28940,6 +29334,7 @@ show-text 0 "』へ行くには信じてもらうことが大事なの」"
 */
 // 输入原文：「那个呀，要前往『神响霞廊』，被人相信是很重要的」
 show-text 0 @"「那个呀，要前往『神响霞廊』，被人相信是很重要的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -29079,6 +29474,7 @@ show-text 0 "「だから一番最初に私を信じるのは、アヴァロが�
 */
 // 输入原文：「所以，第一个相信我的人，我希望是阿瓦罗」
 show-text 0 @"「所以，第一个相信我的人，我希望是阿瓦罗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29110,6 +29506,7 @@ show-text 0 "真っ直ぐ俺を見るフィアの瞳は、明るい光が灯っ�
 */
 // 输入原文：菲亚直视着我的眼眸中，亮着清澈的光芒。
 show-text 0 @"菲亚直视着我的眼眸中，亮着清澈的光芒。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -29249,6 +29646,7 @@ show-text 0 "「アヴァロじゃなきゃダメなの」"
 */
 // 输入原文：「非阿瓦罗不可」
 show-text 0 @"「非阿瓦罗不可」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -29298,6 +29696,7 @@ show-text 0 "に尽きるってもんだな。"
 */
 // 输入原文：被如此恳求，也算是我莫大的荣幸了。
 show-text 0 @"被如此恳求，也算是我莫大的荣幸了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -29515,6 +29914,7 @@ show-text 0 "になって。アヴァロ」"
 */
 // 输入原文：「为了缔结更牢固的羁绊，成为我的使徒吧。阿瓦罗」
 show-text 0 @"「为了缔结更牢固的羁绊，成为我的使徒吧。阿瓦罗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29546,6 +29946,7 @@ show-text 0 "差し出されたフィアの手は輝いて見えた。"
 */
 // 输入原文：菲亚伸出的手，看起来仿佛在发光。
 show-text 0 @"菲亚伸出的手，看起来仿佛在发光。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29579,6 +29980,7 @@ show-text 0 "られるくらいに。"
 */
 // 输入原文：圣洁得让人几乎不敢触碰。
 show-text 0 @"圣洁得让人几乎不敢触碰。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -29671,6 +30073,7 @@ show-text 0 "「ああ、分かった。俺はフィアを信じるよ」"
 */
 // 输入原文：「好，我明白了。我相信菲亚」
 show-text 0 @"「好，我明白了。我相信菲亚」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29702,6 +30105,7 @@ show-text 0 "余計な言葉は飾らない方がいい。"
 */
 // 输入原文：多余的言辞，还是不加修饰为好。
 show-text 0 @"多余的言辞，还是不加修饰为好。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29733,6 +30137,7 @@ show-text 0 "一番素直な心で返事をしよう。"
 */
 // 输入原文：用最坦诚的心意来回应吧。
 show-text 0 @"用最坦诚的心意来回应吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006fed8
@@ -29772,6 +30177,7 @@ show-text 0 "」"
 */
 // 输入原文：「为了彼此的目标，一起合作吧，吾主。」
 show-text 0 @"「为了彼此的目标，一起合作吧，吾主。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -29805,6 +30211,7 @@ show-text 0 "げる。"
 */
 // 输入原文：我轻轻握住菲亚的手，在手背上献上誓言。
 show-text 0 @"我轻轻握住菲亚的手，在手背上献上誓言。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -29945,6 +30352,7 @@ show-text 0 "「ありがとう。へへ、呼び方はフィアのままでい�
 */
 // 输入原文：「谢谢你。嘿嘿，称呼还是叫我菲亚就好」
 show-text 0 @"「谢谢你。嘿嘿，称呼还是叫我菲亚就好」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -30087,6 +30495,7 @@ show-text 0 "「だけどアヴァロの目的って工房を持つことでし�
 show-text 0 @"「不过，阿瓦罗的目标是拥有工房吧？已经要实现了，那"
 end-text-line 0
 show-text 0 @"我该协助些什么才好呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -30128,6 +30537,7 @@ end-text-line 0
 show-text 0 @"研究，创造出有用的技术，传遍全世界。那才是我"
 end-text-line 0
 show-text 0 @"真正想做的事」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30257,6 +30667,7 @@ show-text 0 "「そっか、素敵な夢だね」"
 */
 // 输入原文：「是吗，真是美好的梦想呢」
 show-text 0 @"「是吗，真是美好的梦想呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -30399,6 +30810,7 @@ show-text 0 "「それじゃあ私は色んな人と縁を結べばいいんだ�
 show-text 0 @"「那我只要和各种人缔结缘分就行了，这可是我的强项，"
 end-text-line 0
 show-text 0 @"交给我吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30425,6 +30837,7 @@ show-text 0 "「ははっ、遠慮なく頼りにするぜ」"
 */
 // 输入原文：「哈哈，那我就不客气地仰仗你了」
 show-text 0 @"「哈哈，那我就不客气地仰仗你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30460,6 +30873,7 @@ show-text 0 "の契約が結ばれているのか、フィアに触れている�
 show-text 0 @"或许正因为使徒契约正在缔结，我触碰菲亚的地方"
 end-text-line 0
 show-text 0 @"开始发热。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30589,6 +31003,7 @@ show-text 0 "「んへへ、なんだかくすぐったいね」"
 */
 // 输入原文：「唔——嘿嘿，感觉有点痒痒的呢」
 show-text 0 @"「唔——嘿嘿，感觉有点痒痒的呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30615,6 +31030,7 @@ show-text 0 "「これでいいのか？」"
 */
 // 输入原文：「这样就行了吗？」
 show-text 0 @"「这样就行了吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -30755,6 +31171,7 @@ show-text 0 "「うん、ばっちり契約完了したよ！」"
 */
 // 输入原文：「嗯，契约完美完成啦！」
 show-text 0 @"「嗯，契约完美完成啦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30786,6 +31203,7 @@ show-text 0 "フィアは優しく微笑んで、落ち着いた様子で語り�
 */
 // 输入原文：菲亚温柔地微笑着，以沉稳的语气向我说道。
 show-text 0 @"菲亚温柔地微笑着，以沉稳的语气向我说道。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30915,6 +31333,7 @@ show-text 0 "「これで、あなたと私の縁は結ばれた」"
 */
 // 输入原文：「如此一来，你与我的缘分便已结下」
 show-text 0 @"「如此一来，你与我的缘分便已结下」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30946,6 +31365,7 @@ show-text 0 "フィアの力が、俺の中に流れ込んでくる。"
 */
 // 输入原文：菲亚的力量，正涌入我的体内。
 show-text 0 @"菲亚的力量，正涌入我的体内。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -30980,6 +31400,7 @@ show-text 0 "で底抜けに明るい元気なフィアの心が感じ取れる�
 show-text 0 @"我能感受到菲亚那颗天真烂漫、无比开朗活泼的心。那是"
 end-text-line 0
 show-text 0 @"一份令人安心的温暖。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -31113,6 +31534,7 @@ show-text 0 "の繋がり。どんな困難も一緒に乗り越えていくっ�
 show-text 0 @"「神明与使徒之间永不断绝的联系。无论面对怎样的困难"
 end-text-line 0
 show-text 0 @"都将携手跨越——这就是誓约的证明」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -31302,6 +31724,7 @@ show-text 0 "フィアの名において、あなたを使徒へと昇華させ�
 show-text 0 @"「渴求联系、欣喜于相触、以羁绊缔结缘分——我以司掌"
 end-text-line 0
 show-text 0 @"『结缘』的现神菲亚之名，将你升华为使徒」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -31432,6 +31855,7 @@ show-text 0 "反対に俺の力がフィアへと流れ込んでいくような�
 */
 // 输入原文：与此同时，我也感到自己的力量正流向菲亚。
 show-text 0 @"与此同时，我也感到自己的力量正流向菲亚。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -31465,6 +31889,7 @@ show-text 0 "になったってことか。"
 */
 // 输入原文：如此一来，联系便已诞生，我们算是生死与共了吧。
 show-text 0 @"如此一来，联系便已诞生，我们算是生死与共了吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec
@@ -31635,6 +32060,7 @@ show-text 0 "「嬉しいことも、苦しいことだって一緒に楽しん�
 show-text 0 @"「开心的事也好，辛苦的事也罢，都要一起尽情享受哦！"
 end-text-line 0
 show-text 0 @"今后请多关照啦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0006deec

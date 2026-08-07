@@ -1053,11 +1053,12 @@ display-furigana 0 "力" "ちから"
 show-text 0 "』が付いてしまいました。"
 */
 // 输入原文：获得了技能『被吸收的力量』。阿瓦罗的<ruby>ＦＳ<rt>疲劳强度</rt></ruby>值下降１０。
-show-text 0 @"获得了技能『被吸收的力量』。"
-end-text-line 0
-show-text 0 @"阿瓦罗的"
+show-text 0 @"获得了技能『被吸收的力量』。阿瓦罗的"
 display-furigana 0 @"ＦＳ" @"疲劳强度"
-show-text 0 @"值下降１０。"
+show-text 0 @"值下"
+end-text-line 0
+show-text 0 @"降１０。"
+// 页面结束
 end-text-line 0
 call label_0000684c
 exit

@@ -1052,9 +1052,12 @@ show-text 0 "アイテムや装備のボタンも表示されます。"
 end-text-line 0
 */
 // 输入原文：鼠标操作时，右键选择阿瓦罗，会显示道具与装备的按钮。另外，使用道具会消耗，但无论使用多少个都不会结束行动，请记住。
-show-text 0 @"鼠标操作时，右键选择阿瓦罗"
+show-text 0 @"鼠标操作时，右键选择阿瓦罗，会显示道具与装备的按"
 end-text-line 0
-show-text 0 @"会显示道具与装备的按钮。"
+show-text 0 @"钮。另外，使用道具会消耗，但无论使用多少个都不会结"
+end-text-line 0
+show-text 0 @"束行动，请记住。"
+// 页面结束
 end-text-line 0
 call label_00006a50
 eq (local-int 0) (global-int 0) 6

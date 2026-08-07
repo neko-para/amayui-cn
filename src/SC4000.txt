@@ -1483,6 +1483,7 @@ show-text 0 "「あんちゃん。この遺跡の修理に慣れたいなら、�
 show-text 0 @"「小哥，想熟悉这座遗迹的修理活的话，我来教教你"
 end-text-line 0
 show-text 0 @"怎么做吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1511,6 +1512,7 @@ show-text 0 "「大体のやり方は分かっているつもりだけど�
 show-text 0 @"「大致做法我自认还是懂的，不过若是有这个国家独有的"
 end-text-line 0
 show-text 0 @"技术，我倒想学一学」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010b74
@@ -1571,6 +1573,7 @@ show-text 0 "「そうだな、これも勉強だ。よければ教えてくれ�
 */
 // 输入原文：「是啊，这也算学习。方便的话就教教我吧」
 show-text 0 @"「是啊，这也算学习。方便的话就教教我吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1702,6 +1705,7 @@ show-text 0 "「おうさ。人の好意を素直に受け止められるあん�
 show-text 0 @"「好嘞。小哥你能坦率接受别人的好意，肯定很快"
 end-text-line 0
 show-text 0 @"就能学会的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010c38
@@ -1835,6 +1839,7 @@ show-text 0 "「ならこの辺りはあんちゃんに任せたぜ」"
 */
 // 输入原文：「那这片就交给小哥你了」
 show-text 0 @"「那这片就交给小哥你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1861,6 +1866,7 @@ show-text 0 "「ああ、任せておけって」"
 */
 // 输入原文：「啊，包在我身上」
 show-text 0 @"「啊，包在我身上」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010c38
@@ -1965,9 +1971,10 @@ u00416120
 show-text 0 "辺りに気を取られながらも作業をしていた俺の前に、女騎士が硬い表情で現れた。"
 */
 // 输入原文：我正一边留意四周一边干活，一名女骑士表情僵硬地出现在我面前。
-show-text 0 @"我正一边留意四周一边干活，一名女骑士表情"
+show-text 0 @"我正一边留意四周一边干活，一名女骑士表情僵硬地出"
 end-text-line 0
-show-text 0 @"僵硬地出现在我面前。"
+show-text 0 @"现在我面前。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 play-bgm 2d
@@ -2171,6 +2178,7 @@ show-text 0 "「戻りが遅いから心配して来てみたのだがど�
 show-text 0 @"「你迟迟未归，我担心便过来看看——看来，是我"
 end-text-line 0
 show-text 0 @"多虑了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2302,6 +2310,7 @@ show-text 0 "「研究するのも良いが、まずは“依頼をこなして�
 show-text 0 @"「研究固然不错，但我应该说过“先把委托做完再说”。"
 end-text-line 0
 show-text 0 @"看来你始终听不进去啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2430,9 +2439,10 @@ u00416120
 show-text 0 "「このままでは作業に遅れも出てしまうし、他の者への士気にも関わってしまう。申し訳ないが、この依頼からは外れてもらうことにするよ」"
 */
 // 输入原文：「这样下去工程会延误，也会影响其他人的士气。很抱歉，只好请你退出这项委托了」
-show-text 0 @"「这样下去工程会延误，也会影响其他人的士气。"
+show-text 0 @"「这样下去工程会延误，也会影响其他人的士气。很抱歉"
 end-text-line 0
-show-text 0 @"很抱歉，只好请你退出这项委托了」"
+show-text 0 @"，只好请你退出这项委托了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dfb4
@@ -2523,6 +2533,7 @@ show-text 0 "そのまま遺跡の外に出されてしまった俺は、イン�
 show-text 0 @"就这样被赶出遗迹的我，连在因夫鲁斯王国接工作"
 end-text-line 0
 show-text 0 @"都做不到了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -2761,9 +2772,10 @@ u00416120
 show-text 0 "「依頼のみならず戦闘に対しても自信があるようだが、私からの助言は必要ないかな？」"
 */
 // 输入原文：「你似乎不只对委托、就连战斗也很有自信，需要我指点一二吗？」
-show-text 0 @"「你似乎不只对委托、就连战斗也很有自信，需要我"
+show-text 0 @"「你似乎不只对委托、就连战斗也很有自信，需要我指"
 end-text-line 0
-show-text 0 @"指点一二吗？」"
+show-text 0 @"点一二吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010b74
@@ -2824,6 +2836,7 @@ show-text 0 "「よければ頼むよ。ちゃんとしたところで訓練し�
 */
 // 输入原文：「方便的话就拜托了。我毕竟没在正规地方受过训练」
 show-text 0 @"「方便的话就拜托了。我毕竟没在正规地方受过训练」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2953,6 +2966,7 @@ show-text 0 "「わかった。私もまだまだだが、できる限りのこ�
 */
 // 输入原文：「明白了。我自己也还差得远，不过会尽力教你的」
 show-text 0 @"「明白了。我自己也还差得远，不过会尽力教你的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010c38
@@ -2984,6 +2998,7 @@ show-text 0 "「大口叩いた手前、ここは任せてくれよ」"
 */
 // 输入原文：「既然夸下了海口，这里就交给我吧」
 show-text 0 @"「既然夸下了海口，这里就交给我吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3113,6 +3128,7 @@ show-text 0 "「そうか。では、この辺りの魔物を掃討してから�
 */
 // 输入原文：「是吗。那我扫清这附近的魔物之后，再与你会合吧」
 show-text 0 @"「是吗。那我扫清这附近的魔物之后，再与你会合吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010c38
@@ -3299,6 +3315,7 @@ show-text 0 "「一個体の強さはそれほどでもないのだが、こう�
 */
 // 输入原文：「单个个体倒没那么强，可数量多到这种地步……」
 show-text 0 @"「单个个体倒没那么强，可数量多到这种地步……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3429,9 +3446,10 @@ display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "殿。手伝ってくれるのはありがたいが、どうやら私１人の方が効率は良さそうだ。先に外へ向かってくれ」"
 */
 // 输入原文：「抱歉，锻梁师大人。你愿意帮忙我很感激，但看来我一个人效率更高。请先到外面去吧」
-show-text 0 @"「抱歉，锻梁师大人。你愿意帮忙我很感激，但"
+show-text 0 @"「抱歉，锻梁师大人。你愿意帮忙我很感激，但看来我一"
 end-text-line 0
-show-text 0 @"看来我一个人效率更高。请先到外面去吧」"
+show-text 0 @"个人效率更高。请先到外面去吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3458,6 +3476,7 @@ show-text 0 "「くそっ。俺程度じゃ、足手まといにしかならな�
 */
 // 输入原文：「可恶。原来以我的水平，只会成为累赘吗」
 show-text 0 @"「可恶。原来以我的水平，只会成为累赘吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -3561,9 +3580,10 @@ u00416120
 show-text 0 "俺はこの場をキスニルに任せ、遺跡の出口へ向かって走り、そのまま戦場を後にした。"
 */
 // 输入原文：我将此地交给姬斯尼尔，跑向遗迹出口，就此离开了战场。
-show-text 0 @"我将此地交给姬斯尼尔，跑向遗迹出口，就此"
+show-text 0 @"我将此地交给姬斯尼尔，跑向遗迹出口，就此离开"
 end-text-line 0
-show-text 0 @"离开了战场。"
+show-text 0 @"了战场。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3597,6 +3617,7 @@ show-text 0 "その後、間もなくキスニルも遺跡を脱出してきた�
 show-text 0 @"其后不久，姬斯尼尔也逃出了遗迹，但据说魔物还在不断"
 end-text-line 0
 show-text 0 @"增加，遗迹的修理也就无限期中止了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dfb4

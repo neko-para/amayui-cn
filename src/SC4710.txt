@@ -1481,6 +1481,7 @@ show-text 0 "「アヴァロ、あれを見て」"
 */
 // 输入原文：「阿瓦罗，你看那个」
 show-text 0 @"「阿瓦罗，你看那个」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
@@ -1643,7 +1644,10 @@ display-furigana 0 "芽" "め"
 show-text 0 "』っていって、制圧するとこの辺りの活性化に繋がるよ」"
 */
 // 输入原文：「那个叫『精域的嫩芽』，压制后就能带动这一带的活性化」
-show-text 0 @"「那个叫『精域的嫩芽』，压制后就能带动这一带的活性化」"
+show-text 0 @"「那个叫『精域的嫩芽』，压制后就能带动这一带"
+end-text-line 0
+show-text 0 @"的活性化」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1774,9 +1778,10 @@ display-furigana 0 "出撃門" "しゅつげきもん"
 show-text 0 "』と同じくその場所に待機するだけだから、見つけたら直ぐに制圧してね」"
 */
 // 输入原文：「要压制它，和『出击门』一样只要在那里待机就行，发现了就立刻压制吧」
-show-text 0 @"「要压制它，和『出击门』一样只要在那里待机就行，发现了" 
+show-text 0 @"「要压制它，和『出击门』一样只要在那里待机就行，发"
 end-text-line 0
-show-text 0 @"就立刻压制吧」"
+show-text 0 @"现了就立刻压制吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1806,9 +1811,10 @@ display-furigana 0 "芽" "め"
 show-text 0 "』を制圧していこう」"
 */
 // 输入原文：「压制那个就行吗。明白了，把这一带的『精域的嫩芽』都压制了吧」
-show-text 0 @"「压制那个就行吗。明白了，把这一带的『精域的嫩芽』都压" 
+show-text 0 @"「压制那个就行吗。明白了，把这一带的『精域的嫩芽』"
 end-text-line 0
-show-text 0 @"制了吧」"
+show-text 0 @"都压制了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c91c
@@ -2042,6 +2048,7 @@ show-text 0 "が張られてるみたい」"
 */
 // 输入原文：「等等，阿瓦罗。这附近似乎布下了防入侵者的陷阱」
 show-text 0 @"「等等，阿瓦罗。这附近似乎布下了防入侵者的陷阱」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
@@ -2242,9 +2249,11 @@ show-text 0 "が減ったりするし、ターン開始にも同じ数だけ減�
 // 输入原文：「陷阱会在上面待机时减少<ruby>ＨＰ<rt>耐久力</rt></ruby>，回合开始时也会减少同样的数值，所以绕开走比较好」
 show-text 0 @"「陷阱会在上面待机时减少"
 display-furigana 0 @"ＨＰ" @"耐久力"
-show-text 0 @"，回合开始时也会减少同样的数值，所以绕开走比"
+show-text 0 @"，"
+show-text 0 @"回合开始时也会减少同"
 end-text-line 0
-show-text 0 @"较好」"
+show-text 0 @"样的数值，所以绕开走比较好」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2373,9 +2382,10 @@ u00416120
 show-text 0 "「張られている罠によっては、対応したスキルを身に付けていると、罠の発動を無効化することもできるんだけどね」"
 */
 // 输入原文：「不过，根据布下的陷阱不同，如果学会了对应的技能，也能让陷阱失效哦」
-show-text 0 @"「不过，根据布下的陷阱不同，如果学会了对应的技能，也能让" 
+show-text 0 @"「不过，根据布下的陷阱不同，如果学会了对应的技能，"
 end-text-line 0
-show-text 0 @"陷阱失效哦」"
+show-text 0 @"也能让陷阱失效哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2402,6 +2412,7 @@ show-text 0 "「そうなのか。ない物ねだりしても仕方ないし、�
 */
 // 输入原文：「是吗。强求没有的东西也没办法，现在绕开走吧」
 show-text 0 @"「是吗。强求没有的东西也没办法，现在绕开走吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c91c
@@ -2633,6 +2644,7 @@ show-text 0 "「アヴァロ、扉があって先に進めないよ？」"
 */
 // 输入原文：「阿瓦罗，有扇门挡着，前进不了哦？」
 show-text 0 @"「阿瓦罗，有扇门挡着，前进不了哦？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
@@ -2693,7 +2705,10 @@ display-furigana 0 "開錠" "かいじょう"
 show-text 0 "』スキルを持っていないと開けられないから、スキルを持ったユニットで待機」"
 */
 // 输入原文：「门没有『开锁』技能就打不开，所以用有该技能的单位待机」
-show-text 0 @"「门没有『开锁』技能就打不开，所以用有该技能的单位待机」"
+show-text 0 @"「门没有『开锁』技能就打不开，所以用有该技能"
+end-text-line 0
+show-text 0 @"的单位待机」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2722,6 +2737,7 @@ show-text 0 "だ」"
 */
 // 输入原文：「这样就会出现选项，选择『开锁』应该就能打开了」
 show-text 0 @"「这样就会出现选项，选择『开锁』应该就能打开了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2749,9 +2765,10 @@ display-furigana 0 "施錠" "せじょう"
 show-text 0 "』することもできる。その時々で使ってみてくれ」"
 */
 // 输入原文：「用同样的方法，也可以给已开锁的门『上锁』。到时候随机应变吧」
-show-text 0 @"「用同样的方法，也可以给已开锁的门『上锁』。到时候随" 
+show-text 0 @"「用同样的方法，也可以给已开锁的门『上锁』。到时候"
 end-text-line 0
-show-text 0 @"机应变吧」"
+show-text 0 @"随机应变吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2781,9 +2798,10 @@ display-furigana 0 "鍵" "かぎ"
 show-text 0 "が必要なものがある。対応した鍵を持っていないと開錠できないから注意が必要だ」"
 */
 // 输入原文：「还有一点，有些门需要特殊的钥匙。没有对应的钥匙就无法开锁，要多加注意」
-show-text 0 @"「还有一点，有些门需要特殊的钥匙。没有对应的钥匙就无法开" 
+show-text 0 @"「还有一点，有些门需要特殊的钥匙。没有对应的钥匙就"
 end-text-line 0
-show-text 0 @"锁，要多加注意」"
+show-text 0 @"无法开锁，要多加注意」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c91c
@@ -2923,6 +2941,7 @@ show-text 0 "「難しそうだけど、アヴァロだったらできるんだ�
 */
 // 输入原文：「看起来很难，不过阿瓦罗的话一定行。那就交给你了」
 show-text 0 @"「看起来很难，不过阿瓦罗的话一定行。那就交给你了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f5a0
@@ -2953,6 +2972,7 @@ show-text 0 "「今開けるからちょっと待っててくれ」"
 */
 // 输入原文：「我现在就开，稍等一下」
 show-text 0 @"「我现在就开，稍等一下」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f5a0
@@ -2993,6 +3013,7 @@ show-text 0 "「なんだあいつは？　この辺りでは一段と強そう�
 */
 // 输入原文：「那家伙是什么？在这附近显得格外强啊」
 show-text 0 @"「那家伙是什么？在这附近显得格外强啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3019,6 +3040,7 @@ show-text 0 "「今は地下水脈を探す方が先だ。無用な戦いはや�
 */
 // 输入原文：「现在优先找地下水脉。别做无谓的战斗」
 show-text 0 @"「现在优先找地下水脉。别做无谓的战斗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
@@ -3065,9 +3087,10 @@ display-furigana 0 "抜" "ぬ"
 show-text 0 "け』が続いていて通ることができなさそうだ」"
 */
 // 输入原文：「里面好像有能前进的地方，但『风口』连绵不断，似乎过不去」
-show-text 0 @"「里面好像有能前进的地方，但『风口』连绵不断，似乎" 
+show-text 0 @"「里面好像有能前进的地方，但『风口』连绵不断，"
 end-text-line 0
-show-text 0 @"过不去」"
+show-text 0 @"似乎过不去」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3096,6 +3119,7 @@ show-text 0 "』してなら進めそうだけど、翼が生えている訳で�
 */
 // 输入原文：「『飞行』的话应该能过去，但我们又没有长翅膀」
 show-text 0 @"「『飞行』的话应该能过去，但我们又没有长翅膀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3122,6 +3146,7 @@ show-text 0 "「進める手段が手に入ったら、改めて来てみよう�
 */
 // 输入原文：「等有办法过去了，再回来看看吧」
 show-text 0 @"「等有办法过去了，再回来看看吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
@@ -3166,9 +3191,10 @@ display-furigana 0 "潜水" "せんすい"
 show-text 0 "』で潜っていくか」"
 */
 // 输入原文：「这里的水很深啊。用『飞行』飞过去，还是用『潜水』潜过去呢」
-show-text 0 @"「这里的水很深啊。用『飞行』飞过去，还是用『潜水』潜过去" 
+show-text 0 @"「这里的水很深啊。用『飞行』飞过去，还是用『潜水"
 end-text-line 0
-show-text 0 @"呢」"
+show-text 0 @"』潜过去呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3196,9 +3222,10 @@ display-furigana 0 "架" "か"
 show-text 0 "けてやるのが妥当なところか」"
 */
 // 输入原文：「总之，我和菲亚都做不到这些，架一座桥过去才是妥当的做法吧」
-show-text 0 @"「总之，我和菲亚都做不到这些，架一座桥过去才是妥当的做法" 
+show-text 0 @"「总之，我和菲亚都做不到这些，架一座桥过去才是妥"
 end-text-line 0
-show-text 0 @"吧」"
+show-text 0 @"当的做法吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3227,6 +3254,7 @@ show-text 0 "ったら造ってみよう」"
 */
 // 输入原文：「应该会很方便，材料齐了就造一座吧」
 show-text 0 @"「应该会很方便，材料齐了就造一座吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000f4dc
