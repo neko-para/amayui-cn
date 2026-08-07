@@ -40,6 +40,7 @@ E:\Games\Eushully\天結\
 │                          keywords-称号.md / prob-CCINIT.md / prob-DGINIT.md / prob-COMMITDR.md /
 │                          keywords-AIM.md / prob-AIM.md /
 │                          keywords-城砦配置.md / prob-SELFORT.md /
+│                          keywords-术语词典.md / prob-VIINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -155,6 +156,10 @@ E:\Games\Eushully\天結\
 - [x] **SELFORT 城砦配置翻译**：9 条 set-string（当前城砦配置 + 城砦方案０１〜０８）译完并通过
       assemble（骨架/SJIS/回读 9/9）；关键字表 `docs/keywords-城砦配置.md`、
       待定清单 `docs/prob-SELFORT.md` 已建立（マイセット 待 BIINIT 统一）
+- [x] **VIINIT 术语词典翻译**：30 个词条、277 条 set-string 全部译出并通过 assemble
+      （骨架/SJIS/回读 277/277）；关键字表 `docs/keywords-术语词典.md`、待定清单
+      `docs/prob-VIINIT.md` 已建立；按 VIINIT 阐述统一「歪み→歪曲」，回改 CIINIT 2 处、
+      STINIT2 1 处
 
 ## 4. 本地工具（tools/）
 
