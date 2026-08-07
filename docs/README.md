@@ -41,6 +41,7 @@ E:\Games\Eushully\天結\
 │                          keywords-AIM.md / prob-AIM.md /
 │                          keywords-城砦配置.md / prob-SELFORT.md /
 │                          keywords-术语词典.md / prob-VIINIT.md /
+│                          keywords-地形.md / prob-LAINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -160,6 +161,9 @@ E:\Games\Eushully\天結\
       （骨架/SJIS/回读 277/277）；关键字表 `docs/keywords-术语词典.md`、待定清单
       `docs/prob-VIINIT.md` 已建立；按 VIINIT 阐述统一「歪み→歪曲」，回改 CIINIT 2 处、
       STINIT2 1 处
+- [x] **LAINIT 地形名翻译**：35 条 set-string（吹き抜け→空洞 等 10 个唯一译文）译完并通过
+      assemble（骨架/SJIS/回读 10/10）；关键字表 `docs/keywords-地形.md`、待定清单
+      `docs/prob-LAINIT.md` 已建立；SC4710「风口」同步改为「空洞」
 
 ## 4. 本地工具（tools/）
 
