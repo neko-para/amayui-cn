@@ -108,9 +108,10 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 字体来源（`tools\SExtractor\tools\Font\`）：
 
 - `Amayui-CN_cnjp.ttf`：WenQuanYi 基底 + 按当前 `subs_cn_jp.json` 替换 + 唯一族名
-  “Amayui CN”（name 表全语言一致）；已合并游戏外字字形 U+E000/E001/E002/E003/E010。
-- `AGE-Extend_cnjp.ttf`：族名伪装为 AGE Extend 的同内容变体（文件覆盖方案遗留，
-  当前方案不再使用）。
+  “Amayui CN”（name 表全语言一致）；实测**不含**外字字形，停顿标记 U+E000–E010
+  由引擎处理/回退显示（可接受）。
+- `AGE-Extend_cnjp.ttf`：族名伪装为 AGE Extend 的同内容变体，且**已并入**原版
+  AGE-EXTEND.TTF 的外字字形 U+E000–E010（文件覆盖方案遗留，当前方案不再使用）。
 
 注意：SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
 （`python font_CN_JP.py MSGothic_WenQuanYi.ttf`，依赖 fonttools）。
