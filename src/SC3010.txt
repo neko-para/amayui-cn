@@ -627,16 +627,16 @@ call label_0000af6c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000af6c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1358,9 +1358,13 @@ label_00004e3c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "兼ねてよりフィアから提案のあった『"
 display-furigana 0 "訓練場" "くんれんじょう"
 show-text 0 "』が完成した。"
+*/
+// 输入原文：菲亚先前提议的『训练场』建成了。
+show-text 0 @"菲亚先前提议的『训练场』建成了。"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -1556,7 +1560,11 @@ play-voice (global-int f8007)
 
 label_00005c74
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これでもっと交流を深められるようになるんだね」"
+*/
+// 输入原文：「这样一来就能和大家加深交流了吧」
+show-text 0 @"「这样一来就能和大家加深交流了吧」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1578,20 +1586,24 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「準備が終わっただけで、直ぐにってわけにはいかないけどな」"
+*/
+// 输入原文：「只是准备就绪，还不到马上就能用的时候」
+show-text 0 @"「只是准备就绪，还不到马上就能用的时候」"
 wait-for-input 0
 end-text-line 0
 call label_0000de50
-set-string (global-string e3a) "召喚成長チュートリアルを受けますか？"
+set-string (global-string e3a) "召喚成長チュートリアルを受けますか？|要接受召唤成长教程吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受ける"
+set-string (local-string-ptr 0) "チュートリアルを受ける|接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受けない"
+set-string (local-string-ptr 0) "チュートリアルを受けない|不接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1633,9 +1645,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まずは完成した『"
 display-furigana 0 "訓練場" "くんれんじょう"
 show-text 0 "』を城砦内に配置してくれ。そうすると『訓練』を行うことができるようになる」"
+*/
+// 输入原文：「先把这个完成的『训练场』配置到城砦里吧。这样就能进行『训练』了」
+show-text 0 @"「先把这个完成的『训练场』配置到城砦里吧。这样就能" 
+end-text-line 0
+show-text 0 @"进行『训练』了」"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -1687,7 +1705,13 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「訓練したいユニットを選ぶとミッション一覧が表示されるから、その中から好きな項目を選ぶ」"
+*/
+// 输入原文：「选择想训练的单位后就会显示任务列表，从中挑喜欢的项目吧」
+show-text 0 @"「选择想训练的单位后就会显示任务列表，从中挑喜欢的项" 
+end-text-line 0
+show-text 0 @"目吧」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1709,9 +1733,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「訓練には項目別に"
 display-furigana 0 "捕獲" "ほかく"
 show-text 0 "した魔物に協力してもらうことになる。必要な魔物を選んで決定すると訓練完了だ」"
+*/
+// 输入原文：「训练需要按项目请捕获的魔物帮忙。选好所需的魔物并确定后，训练就完成了」
+show-text 0 @"「训练需要按项目请捕获的魔物帮忙。选好所需的魔物并确" 
+end-text-line 0
+show-text 0 @"定后，训练就完成了」"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -1763,9 +1793,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「と言うわけで、以前作った『"
 display-furigana 0 "結騎解放" "ゆいきかいほう"
 show-text 0 "の杖』に少しばかり手を加えておいた。これで魔物も捕獲できるはずだ」"
+*/
+// 输入原文：「所以呢，我稍微加工了一下之前做的『结骑解放之杖』。这样一来应该也能捕获魔物了」
+show-text 0 @"「所以呢，我稍微加工了一下之前做的『结骑解放之杖』。这" 
+end-text-line 0
+show-text 0 @"样一来应该也能捕获魔物了」"
 wait-for-input 0
 end-text-line 0
 call label_0000de50
@@ -1904,7 +1940,11 @@ play-voice (global-int f8007)
 
 label_000070f4
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なるほど、もっとたくさんの人たちと仲良くなっていけるんだね。私も頑張るよ」"
+*/
+// 输入原文：「原来如此，能和更多人变得要好呢。我也会努力的」
+show-text 0 @"「原来如此，能和更多人变得要好呢。我也会努力的」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1926,7 +1966,11 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「一応、誰でも使える捕獲アイテムもあるみたいだけど、それは次の機会だな」"
+*/
+// 输入原文：「好像也有谁都能用的捕获道具，不过那就等下次吧」
+show-text 0 @"「好像也有谁都能用的捕获道具，不过那就等下次吧」"
 wait-for-input 0
 end-text-line 0
 call label_0000de50
@@ -2076,9 +2120,13 @@ label_00007b3c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "訓練場に入れる魔物を捕まえることができる『"
 display-furigana 0 "捕獲" "ほかく"
 show-text 0 "ロープ』が完成した。"
+*/
+// 输入原文：能捕获放入训练场的魔物的『捕获绳索』完成了。
+show-text 0 @"能捕获放入训练场的魔物的『捕获绳索』完成了。"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2105,7 +2153,11 @@ label_00007cb8
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "これを装備した際に身に付くスキルで魔物を倒すと捕獲できるようになるはずだ。"
+*/
+// 输入原文：装备它时获得的技能击败魔物，应该就能捕获了。
+show-text 0 @"装备它时获得的技能击败魔物，应该就能捕获了。"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2127,7 +2179,11 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「さっそく迷宮探索に行ってみますか」"
+*/
+// 输入原文：「那这就去迷宫探索看看吧」
+show-text 0 @"「那这就去迷宫探索看看吧」"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -2326,9 +2382,13 @@ label_00008c34
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "花畑" "はなばたけ"
 show-text 0 "』を見ると、フィアはにこにこと笑顔になった。"
+*/
+// 输入原文：看到『花田』，菲亚露出了笑眯眯的笑容。
+show-text 0 @"看到『花田』，菲亚露出了笑眯眯的笑容。"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2453,7 +2513,11 @@ play-voice (global-int f8007)
 
 label_000093c8
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わぁ、お花が一杯だね」"
+*/
+// 输入原文：「哇，开满了花呢」
+show-text 0 @"「哇，开满了花呢」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2475,22 +2539,26 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ただ一杯にしたわけじゃないぞ。これには『"
 display-furigana 0 "結陣" "ゆいじん"
 show-text 0 "』の効果があるんだ」"
+*/
+// 输入原文：「可不是光为了好看哦。这个有『结阵』的效果」
+show-text 0 @"「可不是光为了好看哦。这个有『结阵』的效果」"
 wait-for-input 0
 end-text-line 0
 call label_0000de50
-set-string (global-string e3a) "結陣チュートリアルを受けますか？"
+set-string (global-string e3a) "結陣チュートリアルを受けますか？|要接受结阵教程吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受ける"
+set-string (local-string-ptr 0) "チュートリアルを受ける|接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受けない"
+set-string (local-string-ptr 0) "チュートリアルを受けない|不接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -2532,9 +2600,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「施設は配置するとそれだけで効果が出る物が"
 display-furigana 0 "殆" "ほとん"
 show-text 0 "どだけど、一部組合せで効果が出る物がある」"
+*/
+// 输入原文：「设施大多是配置后就能直接生效，但也有一小部分要组合起来才会生效」
+show-text 0 @"「设施大多是配置后就能直接生效，但也有一小部分要组合起来" 
+end-text-line 0
+show-text 0 @"才会生效」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2556,7 +2630,11 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「基本は縦に並べたり横に並べたりだけど、他にも色々な組み合わせがあるんだ」"
+*/
+// 输入原文：「基本是纵向或横向排列，此外还有各种不同的组合方式」
+show-text 0 @"「基本是纵向或横向排列，此外还有各种不同的组合方式」"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -2608,9 +2686,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「今回の花畑は『"
 display-furigana 0 "箱結陣" "はこゆいじん"
 show-text 0 "』だ。４マスの正方形型で発動するから、合計で４つ必要だ」"
+*/
+// 输入原文：「这次的花田是『箱结阵』。以４格正方形发动，所以总共需要４个」
+show-text 0 @"「这次的花田是『箱结阵』。以４格正方形发动，所以总共需" 
+end-text-line 0
+show-text 0 @"要４个」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2632,7 +2716,11 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「作り終わったら配置画面で４マス正方形に並べると完成だ。その時点で効果が出る」"
+*/
+// 输入原文：「做完后在配置画面摆成４格正方形就完成了。那时就会生效」
+show-text 0 @"「做完后在配置画面摆成４格正方形就完成了。那时就会生效」"
 wait-for-input 0
 end-text-line 0
 call label_0000b100
@@ -2684,9 +2772,15 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「とりあえず同じ花畑を用意するか、他の施設に『"
 display-furigana 0 "箱結陣" "はこゆいじん"
 show-text 0 "』があれば、並べていくといいよ」"
+*/
+// 输入原文：「总之，要么再准备同样的花田，要么用其他有『箱结阵』的设施，排在一起就好」
+show-text 0 @"「总之，要么再准备同样的花田，要么用其他有『箱结阵』的设" 
+end-text-line 0
+show-text 0 @"施，排在一起就好」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2708,7 +2802,11 @@ call label_0000d9d0
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まだ素材がたくさんあるわけではないけれど、片手間でもいいから少しずつ進めていこう」"
+*/
+// 输入原文：「虽然素材还不算多，不过哪怕随手做一点，也慢慢推进下去吧」
+show-text 0 @"「虽然素材还不算多，不过哪怕随手做一点，也慢慢推进下去吧」"
 wait-for-input 0
 end-text-line 0
 call label_0000dfd8

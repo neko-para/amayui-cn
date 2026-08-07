@@ -627,16 +627,16 @@ call label_0000c5e4
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000c5e4
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1302,7 +1302,13 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここが谷底か。けっこう暮らしにくそうだけど、本当に獣人が住んでるのか？」"
+*/
+// 输入原文：「这里就是谷底吗。看起来挺难住的，兽人真的住在这里吗？」
+show-text 0 @"「这里就是谷底吗。看起来挺难住的，兽人真的住在" 
+end-text-line 0
+show-text 0 @"这里吗？」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1324,7 +1330,13 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、逆に、こういうとこに住んでるなら不便も多いはずだし、俺たちの出番ってことでもあるか」"
+*/
+// 输入原文：「不，反过来说，住在这种地方应该有很多不便，正是我们出场的时候吧」
+show-text 0 @"「不，反过来说，住在这种地方应该有很多不便，正是我们出" 
+end-text-line 0
+show-text 0 @"场的时候吧」"
 wait-for-input 0
 end-text-line 0
 call label_0000c778
@@ -1520,7 +1532,13 @@ play-voice (global-int f8007)
 
 label_000059e4
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「獣人さんたちって、どんな生活してるのかなー。毎日もっふもふのふっさふさなんだろうなー」"
+*/
+// 输入原文：「兽人们过着怎样的生活呢——。每天都是毛茸茸蓬松松的吧——」
+show-text 0 @"「兽人们过着怎样的生活呢——。每天都是毛茸茸蓬松松的" 
+end-text-line 0
+show-text 0 @"吧——」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1542,7 +1560,11 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだそりゃ」"
+*/
+// 输入原文：「那是什么啊」
+show-text 0 @"「那是什么啊」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1564,7 +1586,11 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「とりあえず、獣人が見つからなかったとしても探索や素材収集だけでもやっておいて損はないし」"
+*/
+// 输入原文：「总之，就算找不到兽人，先探索或收集素材也不吃亏」
+show-text 0 @"「总之，就算找不到兽人，先探索或收集素材也不吃亏」"
 wait-for-input 0
 end-text-line 0
 call label_0000c778
@@ -1699,7 +1725,11 @@ play-voice (global-int f8007)
 
 label_000063c0
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あっ、人影だよ！　ほら、あっちあっち！」"
+*/
+// 输入原文：「啊，有人影！你看，那边那边！」
+show-text 0 @"「啊，有人影！你看，那边那边！」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1721,7 +1751,11 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お、本当か！？　よし、さっそく商売開始と行くか」"
+*/
+// 输入原文：「哦，真的吗！？好，马上开始做生意吧」
+show-text 0 @"「哦，真的吗！？好，马上开始做生意吧」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1846,7 +1880,11 @@ play-voice (global-int f8007)
 
 label_00006c0c
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よーし、みんなの役に立っていっぱい幸せにしちゃうぞ！」"
+*/
+// 输入原文：「好——，要帮上大家的忙，让大家都很幸福！」
+show-text 0 @"「好——，要帮上大家的忙，让大家都很幸福！」"
 wait-for-input 0
 end-text-line 0
 call label_0000faa8
@@ -2050,7 +2088,11 @@ play-voice (global-int f8007)
 
 label_00007a3c
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「２人とも大丈夫かな？」"
+*/
+// 输入原文：「那两个人没事吧？」
+show-text 0 @"「那两个人没事吧？」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2072,7 +2114,13 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「イオルのやる気を見ただろう。大丈夫だ、俺たちも急いで合流しよう」"
+*/
+// 输入原文：「你也看到伊欧露的干劲了吧。没问题，我们也赶紧去汇合吧」
+show-text 0 @"「你也看到伊欧露的干劲了吧。没问题，我们也赶紧去汇" 
+end-text-line 0
+show-text 0 @"合吧」"
 wait-for-input 0
 end-text-line 0
 call label_0000faa8
@@ -2279,7 +2327,11 @@ play-voice (global-int f8007)
 
 label_000089d0
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ミケユ、今行く」"
+*/
+// 输入原文：「米凯优，我现在就去」
+show-text 0 @"「米凯优，我现在就去」"
 wait-for-input 0
 end-text-line 0
 call label_0000faa8
@@ -2486,7 +2538,11 @@ play-voice (global-int f8007)
 
 label_00009864
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんとか頑張らないと」"
+*/
+// 输入原文：「得加把劲才行」
+show-text 0 @"「得加把劲才行」"
 wait-for-input 0
 end-text-line 0
 call label_0000faa8
@@ -2516,7 +2572,11 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィア、ちょっといいか？」"
+*/
+// 输入原文：「菲亚，能稍微打扰一下吗？」
+show-text 0 @"「菲亚，能稍微打扰一下吗？」"
 wait-for-input 0
 end-text-line 0
 call label_0000c778
@@ -2712,7 +2772,11 @@ play-voice (global-int f8007)
 
 label_0000a794
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「え、なになに？　私を呼んだ？」"
+*/
+// 输入原文：「诶，怎么了怎么了？你叫我吗？」
+show-text 0 @"「诶，怎么了怎么了？你叫我吗？」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2734,22 +2798,26 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「新しく行動を共にする仲間ができたから、迷宮探索をする時は『"
 display-furigana 0 "指揮力" "しきりょく"
 show-text 0 "』に注意してくれ」"
+*/
+// 输入原文：「因为有新伙伴同行了，探索迷宫时要注意『指挥力』」
+show-text 0 @"「因为有新伙伴同行了，探索迷宫时要注意『指挥力』」"
 wait-for-input 0
 end-text-line 0
 call label_0000fdf4
-set-string (global-string e3a) "指揮力チュートリアルを受けますか？"
+set-string (global-string e3a) "指揮力チュートリアルを受けますか？|要接受指挥力教程吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受ける"
+set-string (local-string-ptr 0) "チュートリアルを受ける|接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "チュートリアルを受けない"
+set-string (local-string-ptr 0) "チュートリアルを受けない|不接受教程"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -2791,7 +2859,13 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「迷宮を探索する際には、俺たちがその仲間に指示を出す為に必要な指揮力と言うものがある」"
+*/
+// 输入原文：「探索迷宫时，有我们向伙伴下达指示所需的指挥力这种东西」
+show-text 0 @"「探索迷宫时，有我们向伙伴下达指示所需的指挥力这种" 
+end-text-line 0
+show-text 0 @"东西」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2813,9 +2887,15 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺以外の仲間を参加させると"
 display-furigana 0 "出撃" "しゅつげき"
 show-text 0 "コストがかかり、その合計が指揮力を上回ると指示が行き渡りにくくなる」"
+*/
+// 输入原文：「让除我以外的伙伴参战会消耗出击成本，合计超过指挥力的话，指示就难以传达」
+show-text 0 @"「让除我以外的伙伴参战会消耗出击成本，合计超过指挥力" 
+end-text-line 0
+show-text 0 @"的话，指示就难以传达」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2837,9 +2917,15 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「指揮力を超えて参加させることもできるけど、その場合は移動に使用する"
 display-furigana 0 "ＦＳ" "疲労強度"
 show-text 0 "が増えるから、結果的には不利になることが多い」"
+*/
+// 输入原文：「虽然也可以超出指挥力参战，但那样移动消耗的<ruby>ＦＳ<rt>疲劳强度</rt></ruby>会增加，结果往往不利」
+show-text 0 @"「虽然也可以超出指挥力参战，但那样移动消耗的"
+display-furigana 0 @"ＦＳ" @"疲劳强度"
+show-text 0 @"会增加，结果往往不利」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2861,9 +2947,15 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「指揮力はフィアが力を取り戻して女神ランクが上がると高まるみたいだから、できるだけ"
 display-furigana 0 "女神力" "めがりょく"
 show-text 0 "を溜めていった方が良さそうだ」"
+*/
+// 输入原文：「指挥力似乎会随着菲亚恢复力量、女神等级提升而提高，所以最好尽量积攒女神力」
+show-text 0 @"「指挥力似乎会随着菲亚恢复力量、女神等级提升而提高，最" 
+end-text-line 0
+show-text 0 @"好尽量积攒女神力」"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2885,11 +2977,17 @@ call label_0000e974
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あとは、迷宮中にある『"
 display-furigana 0 "精域" "せいいき"
 show-text 0 "の"
 display-furigana 0 "芽" "め"
 show-text 0 "』なんかもその迷宮中に限定してだけど指揮力が上昇するみたいだ。ここも押さえておくべきだな」"
+*/
+// 输入原文：「另外，迷宫中的『精域的嫩芽』似乎也能提升指挥力，虽然只限于该迷宫内。这里也该好好掌握」
+show-text 0 @"「另外，迷宫中的『精域的嫩芽』似乎也能提升指挥力，虽然只" 
+end-text-line 0
+show-text 0 @"限于该迷宫内。这里也该好好掌握」"
 wait-for-input 0
 end-text-line 0
 
@@ -3026,7 +3124,11 @@ play-voice (global-int f8007)
 
 label_0000b8cc
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うん、アヴァロに任せた！」"
+*/
+// 输入原文：「嗯，就交给你了，阿瓦罗！」
+show-text 0 @"「嗯，就交给你了，阿瓦罗！」"
 wait-for-input 0
 end-text-line 0
 call label_0000faa8

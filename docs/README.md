@@ -39,6 +39,8 @@ E:\Games\Eushully\天結\
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
 │                          keywords-称号.md / prob-CCINIT.md / prob-DGINIT.md / prob-COMMITDR.md /
+│                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
+│                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md /
@@ -86,6 +88,8 @@ E:\Games\Eushully\天結\
       通过 assemble（骨架/SJIS/回读 26/26）；关键字表 `docs/keywords-序章战斗剧情.md`、待定清单 `docs/prob-SC4900.md` 已建立
 - [x] **SC4910 序章战斗剧情翻译**：13 页 ADV（13 条输入原文、6 条纯读音注音只存档、5 个唯一 set-string 译文）
       通过 assemble（骨架/SJIS/回读 23/23）；并入 `docs/keywords-序章战斗剧情.md`
+- [x] **SC4710 序章战斗教程翻译**：26 页 ADV（42 条 show-text、纯读音注音只存档、6 个唯一 set-string 译文）
+      通过 assemble（骨架/SJIS/回读 44/44）；并入 `docs/keywords-教程剧情.md`、待定清单 `docs/prob-SC4710.md`
 - [x] **OBINIT 战斗地点全量翻译**：131 条 set-string（111 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 111/111）；
       关键字表 `docs/keywords-战斗地点.md`、待定清单 `docs/prob-OBINIT.md` 已建立
 - [x] **CDINIT2 卡片全量翻译**：178 条 set-string（94 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 94/94）；
@@ -120,6 +124,13 @@ E:\Games\Eushully\天結\
 - [x] **SC4010 第一章 - 关卡剧情（教程类）翻译**：60 页 ADV（80 条 show-text、20 条注音
       （含 ＨＰ/ＳＰ 释义类 3 处保留）、14 处 set-string 配对）译完并通过 assemble（骨架/SJIS/回读 104/104）；
       配套 SG4015/SG4018（8/8、8/8）；并入 `docs/keywords-第一章剧情.md` §8、待定清单 `docs/prob-SC4010.md`
+- [x] **SC1500/SC2000/SC3000/SC3010 教程剧情翻译**：城砦角色与设施教程（SC1500 363 条 show-text、
+      SC2000 154 条、SC3000 215 条、SC3010 32 条）全部通过 assemble（348/348、149/149、205/205、38/38）；
+      配套 SG2002/SG2003/SG2004、SG3000/SG3007 已同步翻译；并入 `docs/keywords-教程剧情.md`，
+      待定清单 `docs/prob-SC1500.md` 等 4 份
+- [x] **SC4040/SC4070 第一章关卡剧情（教程）翻译**：伙伴出击与指挥力（28 条 show-text）、
+      防卫战与关卡剧情（83 条 show-text）通过 assemble（41/41、97/97）；配套 SG4072/SG4073/SG4075/SG4078
+      已同步翻译；并入 `docs/keywords-教程剧情.md`、待定清单 `docs/prob-SC4040.md` / `docs/prob-SC4070.md`
 - [x] **SG4900 序章 - 财宝获得（配套 SC4900）翻译**：4 行系统提示（鼠标/道具使用教程）译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第一章剧情.md` §8
 - [x] **CCINIT 角色称号全量翻译**：99 条 set-string（87 个唯一原文）译完并通过
