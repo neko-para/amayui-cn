@@ -43,6 +43,7 @@ E:\Games\Eushully\天結\
 │                          keywords-术语词典.md / prob-VIINIT.md /
 │                          keywords-地形.md / prob-LAINIT.md /
 │                          keywords-战斗奖励.md / prob-REWARD.md /
+│                          keywords-存档.md / prob-SAVE.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -168,6 +169,9 @@ E:\Games\Eushully\天結\
 - [x] **REWARD 战斗奖励翻译**：1 处字面量（お金→金钱）译完并通过 assemble
       （骨架/SJIS/回读 1/1）；关键字表 `docs/keywords-战斗奖励.md`、待定清单
       `docs/prob-REWARD.md` 已建立（道具名引用 ITINIT，页数符号保持原样）
+- [x] **SAVE 存档翻译**：确认对话框/存档位限制/游玩时间等 13 个唯一译文译完并通过
+      assemble（骨架/SJIS/回读 13/13）；关键字表 `docs/keywords-存档.md`、待定清单
+      `docs/prob-SAVE.md` 已建立（保存/读取/自动保存 与 OPINIT1 一致）
 
 ## 4. 本地工具（tools/）
 
