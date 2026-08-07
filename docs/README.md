@@ -47,6 +47,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC6510.md /
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
+│                          prob-SG0012.md / prob-SG0014.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -186,6 +187,10 @@ E:\Games\Eushully\天結\
 - [x] **STAGECLEAR 关卡通关结算翻译**：1 处字面量（お金→金钱）译完并通过 assemble
       （骨架/SJIS/回读 1/1）；并入 `docs/keywords-战斗奖励.md` §3、待定清单
       `docs/prob-STAGECLEAR.md` 已建立（道具/单位名为引用，源表已译）
+- [x] **SG0012 / SG0014 系统提示翻译**：SC0010 G0012/G0014 配套页（迷宫可访问提示 +
+      女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
+      `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /
+      `docs/prob-SG0014.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
