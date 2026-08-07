@@ -48,6 +48,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
 │                          prob-SG0012.md / prob-SG0014.md /
+│                          keywords-同伴.md / prob-FELLOW.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -191,6 +192,9 @@ E:\Games\Eushully\天結\
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /
       `docs/prob-SG0014.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **FELLOW 同伴翻译**：装备变更/卸装限制等 5 个唯一译文译完并通过 assemble
+      （骨架/SJIS/回读 5/5）；关键字表 `docs/keywords-同伴.md`、待定清单
+      `docs/prob-FELLOW.md` 已建立（concat 片段按 FIELD 先例处理）
 
 ## 4. 本地工具（tools/）
 

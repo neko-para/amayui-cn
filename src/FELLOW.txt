@@ -908,7 +908,7 @@ play-sound-effect 2e 1
 u0041D050 1
 jcc (global-int b1b5) ffffffff label_00003ab0
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "現在使用しても効果がありません"
+set-string (local-string-ptr 0) "現在使用しても効果がありません|现在使用也没有效果"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 call label_00001b48
@@ -1010,18 +1010,18 @@ lookup-array (local-ptr 4) (local-int 40d) (global-int 546e00)
 lookup-array (local-ptr 6) (global-int 6202a) (local-ptr 4)
 and (local-int e01) (local-ptr 6) 30000
 jcc (local-int e01) ffffffff label_00004270
-set-string (local-string 0) "行動中及び待機中は装備を変更できません"
+set-string (local-string 0) "行動中及び待機中は装備を変更できません|行动中及待机中无法变更装备"
 jmp label_000042f8
 
 label_00004270
 lookup-array (local-ptr 6) (global-int 72164) (global-int 546e00)
 and (local-int e01) (local-ptr 6) 60000
 jcc (local-int e01) ffffffff label_000042e4
-set-string (local-string 0) "療養中は装備を変更できません"
+set-string (local-string 0) "療養中は装備を変更できません|疗养中无法变更装备"
 jmp label_000042f8
 
 label_000042e4
-set-string (local-string 0) "選択中のキャラクターは現在操作できません"
+set-string (local-string 0) "選択中のキャラクターは現在操作できません|所选角色当前无法操作"
 
 label_000042f8
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
@@ -1051,7 +1051,7 @@ jcc (local-ptr 3) ffffffff label_00004528
 play-sound-effect 2e 1
 u0041D050 1
 lookup-array (local-string-ptr 0) (global-string 18e40) (global-int 546e03)
-concat (local-string 0) (local-string-ptr 0) "は外すことが出来ない…"
+concat (local-string 0) (local-string-ptr 0) @"无法卸下……"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -1093,7 +1093,7 @@ jcc (local-ptr 3) ffffffff label_00004828
 play-sound-effect 2e 1
 u0041D050 1
 lookup-array (local-string-ptr 0) (global-string 18e40) (global-int 546e03)
-concat (local-string 0) (local-string-ptr 0) "は外すことが出来ない…"
+concat (local-string 0) (local-string-ptr 0) @"无法卸下……"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
@@ -1168,18 +1168,18 @@ lookup-array (local-ptr 4) (local-int 40d) (global-int 546e00)
 lookup-array (local-ptr 6) (global-int 6202a) (local-ptr 4)
 and (local-int e01) (local-ptr 6) 30000
 jcc (local-int e01) ffffffff label_00004ca8
-set-string (local-string 0) "行動中及び待機中は装備を変更できません"
+set-string (local-string 0) "行動中及び待機中は装備を変更できません|行动中及待机中无法变更装备"
 jmp label_00004d30
 
 label_00004ca8
 lookup-array (local-ptr 6) (global-int 72164) (global-int 546e00)
 and (local-int e01) (local-ptr 6) 60000
 jcc (local-int e01) ffffffff label_00004d1c
-set-string (local-string 0) "療養中は装備を変更できません"
+set-string (local-string 0) "療養中は装備を変更できません|疗养中无法变更装备"
 jmp label_00004d30
 
 label_00004d1c
-set-string (local-string 0) "選択中のキャラクターは現在操作できません"
+set-string (local-string 0) "選択中のキャラクターは現在操作できません|所选角色当前无法操作"
 
 label_00004d30
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
