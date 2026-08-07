@@ -42,6 +42,7 @@ E:\Games\Eushully\天結\
 │                          keywords-城砦配置.md / prob-SELFORT.md /
 │                          keywords-术语词典.md / prob-VIINIT.md /
 │                          keywords-地形.md / prob-LAINIT.md /
+│                          keywords-战斗奖励.md / prob-REWARD.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -164,6 +165,9 @@ E:\Games\Eushully\天結\
 - [x] **LAINIT 地形名翻译**：35 条 set-string（吹き抜け→空洞 等 10 个唯一译文）译完并通过
       assemble（骨架/SJIS/回读 10/10）；关键字表 `docs/keywords-地形.md`、待定清单
       `docs/prob-LAINIT.md` 已建立；SC4710「风口」同步改为「空洞」
+- [x] **REWARD 战斗奖励翻译**：1 处字面量（お金→金钱）译完并通过 assemble
+      （骨架/SJIS/回读 1/1）；关键字表 `docs/keywords-战斗奖励.md`、待定清单
+      `docs/prob-REWARD.md` 已建立（道具名引用 ITINIT，页数符号保持原样）
 
 ## 4. 本地工具（tools/）
 
