@@ -1764,7 +1764,9 @@ display-furigana 0 "砦路樹" "がいろじゅ"
 show-text 0 "』の活性化を行なった後、フィアは気持ちよさそうに腕を伸ばした。"
 */
 // 输入原文：活性化『堆积的城砦行道树』之后，菲亚惬意地伸了个懒腰。
-show-text 0 @"活性化『堆积的城砦行道树』之后，菲亚惬意地伸了个懒腰。"
+show-text 0 @"活性化『堆积的城砦行道树』之后，"
+end-text-line 0
+show-text 0 @"菲亚惬意地伸了个懒腰。"
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7779,7 +7781,7 @@ show-text 0 @"「光看着多没意思，要不要听听作业说明？」"
 wait-for-input 0
 end-text-line 0
 call label_00074dbc
-set-string (global-string e3a) "工房チュートリアルを受けますか？"
+set-string (global-string e3a) "工房チュートリアルを受けますか？|要接受工房教程吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
 set-string (local-string-ptr 0) "チュートリアルを受ける|接受教程"
