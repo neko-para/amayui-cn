@@ -45,6 +45,7 @@ E:\Games\Eushully\天結\
 │                          keywords-战斗奖励.md / prob-REWARD.md /
 │                          keywords-存档.md / prob-SAVE.md /
 │                          prob-SC6510.md /
+│                          prob-SC5710.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -177,6 +178,10 @@ E:\Games\Eushully\天結\
       因夫鲁斯军包围城砦）译完并通过 assemble（骨架/SJIS/回读 107/107）；并入
       `docs/keywords-第一章剧情.md` §7.3、待定清单 `docs/prob-SC6510.md` 已建立
       （无配套 SG；章节归属待核）
+- [x] **SC5710 第一章·关卡剧情翻译**：57 页 ADV（SC6510 后续：流燐结骑退去/解放华燐结骑/
+      击破暗杀者）译完并通过 assemble（骨架/SJIS/回读 83/83）；并入
+      `docs/keywords-第一章剧情.md` §7.4、待定清单 `docs/prob-SC5710.md` 已建立
+      （无配套 SG；沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
