@@ -44,6 +44,7 @@ E:\Games\Eushully\天結\
 │                          keywords-地形.md / prob-LAINIT.md /
 │                          keywords-战斗奖励.md / prob-REWARD.md /
 │                          keywords-存档.md / prob-SAVE.md /
+│                          prob-STAGEREADY.md /
 │                          prob-SC6510.md /
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
@@ -207,6 +208,10 @@ E:\Games\Eushully\天結\
 - [x] **STAGECLEAR 关卡通关结算翻译**：1 处字面量（お金→金钱）译完并通过 assemble
       （骨架/SJIS/回读 1/1）；并入 `docs/keywords-战斗奖励.md` §3、待定清单
       `docs/prob-STAGECLEAR.md` 已建立（道具/单位名为引用，源表已译）
+- [x] **STAGEREADY 关卡准备（战斗条件）翻译**：出击前战斗条件 8 个唯一译文（仿爱绽放之人傀
+      击破 / 经过回合 / 据点被占领 / 我方全灭 / 到达指定位置 / 败北 / 相邻）译完并通过
+      assemble（骨架/SJIS/回读 8/8）；待定清单 `docs/prob-STAGEREADY.md` 已建立
+      （句式与专名全部复用 STINIT / EBINIT 定稿）
 - [x] **SG0012 / SG0014 系统提示翻译**：SC0010 G0012/G0014 配套页（迷宫可访问提示 +
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /

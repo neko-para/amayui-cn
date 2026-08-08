@@ -318,11 +318,11 @@ exit
 label_00001eb8
 eq (local-int 3) (global-int 2a46) 0
 jcc (local-int 3) ffffffff label_00001f7c
-set-string (global-string bc0) "『愛ヲ模リ咲ヒメル傀』の撃破"
-set-string (global-string bc1) "４０ターン経過"
+set-string (global-string bc0) "『愛ヲ模リ咲ヒメル傀』の撃破|击败『仿爱绽放之人傀』"
+set-string (global-string bc1) "４０ターン経過|经过４０回合"
 set-string (global-string bc2) ""
-set-string (global-string bc3) "自軍拠点の制圧"
-set-string (global-string bc4) "味方ユニットの全滅"
+set-string (global-string bc3) "自軍拠点の制圧|自军据点被占领"
+set-string (global-string bc4) "味方ユニットの全滅|我方单位全灭"
 set-string (global-string bc5) ""
 mov (global-int 5b8b0) 1
 
@@ -607,12 +607,12 @@ call-script 2fac
 jmp label_00002fa0
 
 label_00002f14
-set-string (global-string bc0) "『アヴァロ』の指定位置到達"
+set-string (global-string bc0) "『アヴァロ』の指定位置到達|『阿瓦罗』到达指定位置"
 set-string (global-string bc1) ""
 set-string (global-string bc2) ""
-set-string (global-string bc3) "２５ターン経過"
-set-string (global-string bc4) "『アヴァロ』の敗北"
-set-string (global-string bc5) "『キスニル』と『アヴァロ』が隣接"
+set-string (global-string bc3) "２５ターン経過|经过２５回合"
+set-string (global-string bc4) "『アヴァロ』の敗北|『阿瓦罗』败北"
+set-string (global-string bc5) "『キスニル』と『アヴァロ』が隣接|『姬斯尼尔』与『阿瓦罗』相邻"
 mov (global-int 5b8b0) 1
 
 label_00002fa0
