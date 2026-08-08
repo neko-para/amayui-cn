@@ -627,16 +627,16 @@ call label_00007d74
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00007d74
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1352,20 +1352,25 @@ u0041AD70 1 24 (local-int 0)
 
 label_00004e0c
 u0041BB40 1 1
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ここではフィアの衣装を変更できます。"
+*/
+// 输入原文：在这里可以更换菲亚的服装。
+show-text 0 @"在这里可以更换菲亚的服装。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000a7d8
-set-string (global-string e3a) "寝間着衣装に着替えますか？"
+set-string (global-string e3a) "寝間着衣装に着替えますか？|要换上睡衣装束吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "着替える"
+set-string (local-string-ptr 0) "着替える|更换"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "そのまま"
+set-string (local-string-ptr 0) "そのまま|保持原样"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1501,20 +1506,25 @@ u0041AD70 1 24 (local-int 0)
 
 label_00005778
 u0041BB40 1 1
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ここではフィアの衣装を変更できます。"
+*/
+// 输入原文：在这里可以更换菲亚的服装。
+show-text 0 @"在这里可以更换菲亚的服装。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000a7d8
-set-string (global-string e3a) "通常衣装に着替えますか？"
+set-string (global-string e3a) "通常衣装に着替えますか？|要换上通常装束吗？"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "着替える"
+set-string (local-string-ptr 0) "着替える|更换"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "そのまま"
+set-string (local-string-ptr 0) "そのまま|保持原样"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1642,7 +1652,14 @@ label_00006034
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "以前も城砦に訪れたことのある女性が、商会に依頼へということで訪ねて来ていた。"
+*/
+// 输入原文：一位以前也造访过城砦的女性，因有事要委托商会而前来拜访。
+show-text 0 @"一位以前也造访过城砦的女性，因有事要委托商会"
+end-text-line 0
+show-text 0 @"而前来拜访。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1664,7 +1681,12 @@ call label_0000a89c
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あぁ、分かったよ。なんとかしてみる」"
+*/
+// 输入原文：「啊，知道了。我会想办法的」
+show-text 0 @"「啊，知道了。我会想办法的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1789,7 +1811,12 @@ play-voice (global-int f8007)
 
 label_00006898
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ありがとうございます。よろしくお願いしますね」"
+*/
+// 输入原文：「谢谢您。那就拜托您了」
+show-text 0 @"「谢谢您。那就拜托您了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00007f08
@@ -1842,7 +1869,12 @@ label_00006bf4
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "にしても、城砦が埋まっていた場所に鬼族が集まってきているのか。"
+*/
+// 输入原文：话说回来，鬼族正聚集到城砦曾经埋没的地方吗。
+show-text 0 @"话说回来，鬼族正聚集到城砦曾经埋没的地方吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1869,7 +1901,14 @@ label_00006d40
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "クミル村のときもそうだったけど、城砦が原因だとすると他人事では片づけられないし。一度様子を見に行ってみよう。"
+*/
+// 输入原文：库米尔村那次也是如此，如果原因是城砦，那就无法置身事外了。去实地看看情况吧。
+show-text 0 @"库米尔村那次也是如此，如果原因是城砦，那就无法置身"
+end-text-line 0
+show-text 0 @"事外了。去实地看看情况吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
