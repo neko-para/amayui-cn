@@ -45,6 +45,7 @@ E:\Games\Eushully\天結\
 │                          keywords-战斗奖励.md / prob-REWARD.md /
 │                          keywords-存档.md / prob-SAVE.md /
 │                          prob-STAGEREADY.md /
+│                          prob-STAGEROUND.md /
 │                          prob-SC6510.md /
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
@@ -213,6 +214,9 @@ E:\Games\Eushully\天結\
       击破 / 经过回合 / 据点被占领 / 我方全灭 / 到达指定位置 / 败北 / 相邻）译完并通过
       assemble（骨架/SJIS/回读 8/8）；待定清单 `docs/prob-STAGEREADY.md` 已建立
       （句式与专名全部复用 STINIT / EBINIT 定稿）
+- [x] **STAGEROUND 关卡回合事件翻译**：兽人的暗杀者出现提示 1 个唯一译文 × 3 处 set-string
+      译完并通过 assemble（骨架/SJIS/回读 1/1）；待定清单 `docs/prob-STAGEROUND.md` 已建立
+      （獣人の暗殺者=伊欧露，复用 SC5430/SC6540 定稿）
 - [x] **SG0012 / SG0014 系统提示翻译**：SC0010 G0012/G0014 配套页（迷宫可访问提示 +
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /
