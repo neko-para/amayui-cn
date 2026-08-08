@@ -71,6 +71,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
+│                          prob-SC2530.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -281,6 +282,10 @@ E:\Games\Eushully\天結\
       + 10 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 101/101）；并入
       `docs/keywords-第二章剧情.md` §9、待定清单 `docs/prob-SC1530.md` 已建立
       （沿用页块留空 + reflow-apply 工作流）
+- [x] **SC2530 第一章·肩甲壳部区域战后与乔迁翻译**：142 页 ADV（G2530–G2531：米凯优录用
+      结果、吉尔什命罗兹利奴确保城砦、伊欧露与米凯优乔迁城砦）+ 10 个唯一 set-string
+      译完并通过 assemble（骨架/SJIS/回读 205/205）；并入 `docs/keywords-第一章剧情.md`
+      §6.5、待定清单 `docs/prob-SC2530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
