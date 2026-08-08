@@ -125,6 +125,10 @@ E:\Games\Eushully\天結\
       通过 assemble（骨架/SJIS/回读 23/23）；并入 `docs/keywords-序章战斗剧情.md`
 - [x] **SC4710 序章战斗教程翻译**：26 页 ADV（42 条 show-text、纯读音注音只存档、6 个唯一 set-string 译文）
       通过 assemble（骨架/SJIS/回读 44/44）；并入 `docs/keywords-教程剧情.md`、待定清单 `docs/prob-SC4710.md`
+- [x] **SC4080 第一章·幻兽的巢窟关卡开始剧情翻译**：3 页 ADV（进入巢窟、察觉危险、决定小心探索）
+      + 8 条系统 set-string（返回标题/结束游戏/场景回放结束/取消/是·否）译完并通过
+      assemble（骨架/SJIS/回读 10/10）；地名沿用 `docs/keywords-战斗地名.md` 定稿「幻兽的巢窟」，
+      系统确认串沿用 SC0000 定稿（沿用页块留空 + reflow-apply 工作流）
 - [x] **OBINIT 战斗地点全量翻译**：131 条 set-string（111 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 111/111）；
       关键字表 `docs/keywords-战斗地点.md`、待定清单 `docs/prob-OBINIT.md` 已建立
 - [x] **CDINIT2 卡片全量翻译**：178 条 set-string（94 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 94/94）；
