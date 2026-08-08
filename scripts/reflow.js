@@ -1,4 +1,5 @@
-// 折行工具 CLI：把文案（可含 <ruby>…<rt>…</rt></ruby> 注音、<nb>…</nb> 不折行）排版为
+// 折行工具 CLI：把文案（可含 <ruby>…<rt>…</rt></ruby> 注音、<nb>…</nb> 不折行、
+// <br> 强制换行）排版为
 // 标准脚本行（show-text / display-furigana / concat / end-text-line）。
 //
 // 用法:
@@ -20,7 +21,7 @@ import { reflow, DEFAULT_MAX } from './lib/reflow.js';
 function usage() {
   console.log('用法: node reflow.js <文案文件|-> [--max N] [--glossary 术语json] [--no-concat]');
   console.log('  --max N      每行最多 N 个中文字（默认 25，ASCII 按半个中文计）');
-  console.log('  文案支持标注：<ruby>主词<rt>注音</rt></ruby>、<nb>不折行内容</nb>');
+  console.log('  文案支持标注：<ruby>主词<rt>注音</rt></ruby>、<nb>不折行内容</nb>、<br>强制换行');
   console.log('  多个段落用空行分隔，每段输出为一个页面块');
   console.log('  页面最后一行不加 end-text-line（保留 concat）；末行 ≤5 字自动重排（≤3 次）');
 }

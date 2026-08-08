@@ -1,4 +1,4 @@
-// 折行核心：把一段文案（可含 <ruby> 注音标注与 <nb> 不折行标注）按
+// 折行核心：把一段文案（可含 <ruby> 注音标注、<nb> 不折行标注与 <br> 强制换行）按
 // “每行最多 maxLen 个中文字（默认 25，ASCII 按半个中文宽度计）”排版，
 // 输出标准游戏脚本指令行。
 //
@@ -7,7 +7,8 @@
 //   2. 有标注（<ruby>）的内容整体不折行；
 //   3. 连续词语尽量不折行：<nb> 区域、术语表词条、引号实体、拉丁/数字串均视为原子；
 //   4. 贪心排版：当前行放不下下一个词时提前折行；
-//   5. 输入允许携带 <nb>…</nb> 声明特定区域不得折行。
+//   5. 输入允许携带 <nb>…</nb> 声明特定区域不得折行；<br> 声明强制换行
+//      （断行位置由译员决定；含 <br> 时跳过孤行优化）。
 //   6. 行尾不得是左引号『：若当前行会以『结尾，提前折行把『移到下一行行首；
 //   7. 页面最后一行不加 end-text-line（保留 concat 镜像；对应原文结构，行由
 //      wait-for-input 后的 end-text-line 收尾）；
@@ -19,6 +20,7 @@
 // 输出约定（与 src 翻译语法一致）：
 //   - 普通文本  → show-text 0 @"…"
 //   - <ruby>…<rt>…</rt></ruby> → display-furigana 0 @"主词" @"注音"
+//   - <br> → 强制换行，正文中体现为 end-text-line 分隔的独立视觉行
 //   - 每个视觉行末尾：concat (global-string bba) (global-string bba) @"最后一段"；
 //     非末行追加 end-text-line 0，页面最后一行不加
 
@@ -46,7 +48,7 @@ export function strWidth(s) {
   return w;
 }
 
-const MARKUP_RE = /<ruby>([^<]*)<rt>([^<]*)<\/rt><\/ruby>|<nb>([^<]*)<\/nb>/g;
+const MARKUP_RE = /<ruby>([^<]*)<rt>([^<]*)<\/rt><\/ruby>|<nb>([^<]*)<\/nb>|<br\s*\/?>/g;
 const OPEN_CLOSE = { '「': '」', '『': '』', '（': '）', '(': ')', '【': '】' };
 const PUNCT = new Set('，。、；：！？…—·「」『』（）《》〈〉【】');
 const LATIN_RE = /^[A-Za-z0-9][A-Za-z0-9%.\-+]*/;
@@ -120,8 +122,10 @@ export function tokenize(text, glossary = []) {
     pushPlain(tokens, text.slice(last, m.index), glossary);
     if (m[1] !== undefined) {
       tokens.push({ type: 'ruby', main: m[1], rt: m[2], w: strWidth(m[1]) });
-    } else {
+    } else if (m[3] !== undefined) {
       tokens.push({ type: 'nb', text: m[3], w: strWidth(m[3]) });
+    } else {
+      tokens.push({ type: 'br', w: 0 });
     }
     last = MARKUP_RE.lastIndex;
   }
@@ -207,6 +211,11 @@ export function breakLines(tokens, maxLen = DEFAULT_MAX) {
   };
 
   for (const t of tokens) {
+    // <br>：强制换行（显式断行，不参与宽度计算）
+    if (t.type === 'br') {
+      flush(true);
+      continue;
+    }
     // 『 后紧跟注音标注会形成以『结尾的 show-text 段：提前折行，『 移到下一行
     if (t.type === 'ruby' && cur.length && lineEndsWithOpenQuote(cur)) {
       flush(true);
@@ -323,9 +332,12 @@ export function reflow(text, opts = {}) {
   const tokens = tokenize(text, glossary);
   let lines = breakLines(tokens, maxLen);
   // 孤行优化：最后一行 ≤5 字且行数 ≥2 时，递减行宽重排，最多重试 3 次
-  for (let attempt = 0; attempt < 3 && lines.length >= 2 && lineCharCount(lines[lines.length - 1]) <= 5 && maxLen > 10; attempt++) {
-    maxLen -= 1;
-    lines = breakLines(tokens, maxLen);
+  // （含显式 <br> 时跳过：断行位置由译员决定）
+  if (!/<br\s*\/?>/i.test(text)) {
+    for (let attempt = 0; attempt < 3 && lines.length >= 2 && lineCharCount(lines[lines.length - 1]) <= 5 && maxLen > 10; attempt++) {
+      maxLen -= 1;
+      lines = breakLines(tokens, maxLen);
+    }
   }
   lines = fixOpenQuoteLineEnd(lines, maxLen * 2);
   const flat = [];

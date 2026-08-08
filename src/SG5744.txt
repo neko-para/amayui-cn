@@ -1059,10 +1059,11 @@ end-text-line 0
 show-text 0 "☆印のついたこの技は合体攻撃技です。"
 end-text-line 0
 */
+// 输入原文：关于『☆双猫的乱捌』『☆双猫的乱雪』<br>带☆标记的这类技能是合体攻击技。
 show-text 0 @"关于『☆双猫的乱捌』『☆双猫的乱雪』"
 end-text-line 0
 show-text 0 @"带☆标记的这类技能是合体攻击技。"
-end-text-line 0
+// 页面结束
 call label_00006dd4
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003bc8
@@ -1112,12 +1113,13 @@ display-furigana 0 "ＳＰ" "技力"
 show-text 0 "も必要です。"
 end-text-line 0
 */
+// 输入原文：只要技能使用者旁边有伙伴，技能便会发动。<br>另外，发动还需要消耗伙伴的<ruby>ＳＰ<rt>技力</rt></ruby>。
 show-text 0 @"只要技能使用者旁边有伙伴，技能便会发动。"
 end-text-line 0
 show-text 0 @"另外，发动还需要消耗伙伴的"
 display-furigana 0 @"ＳＰ" @"技力"
 show-text 0 @"。"
-end-text-line 0
+// 页面结束
 call label_00006dd4
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003e8c
@@ -1165,10 +1167,11 @@ end-text-line 0
 show-text 0 "メニューよりスキルの付け替えを行ってください。"
 end-text-line 0
 */
+// 输入原文：使用时请留意技能的成本，<br>并从菜单中更换技能。
 show-text 0 @"使用时请留意技能的成本，"
 end-text-line 0
 show-text 0 @"并从菜单中更换技能。"
-end-text-line 0
+// 页面结束
 call label_00006dd4
 exit
 exit
