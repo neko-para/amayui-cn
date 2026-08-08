@@ -66,6 +66,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
+│                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -248,6 +249,11 @@ E:\Games\Eushully\天結\
 - [x] **$4$ITINIT / $5$ITINIT APPEND 物品翻译**：各 28 条 set-string 全部译出并通过
       assemble（28/28、28/28）；并入 `docs/keywords-装备与物品.md` §12/§13、待定清单
       `docs/prob-$4$ITINIT.md` / `docs/prob-$5$ITINIT.md` 已建立
+- [x] **SC0040 第二章开头剧情翻译**：178 页 ADV（G0040–G0049：伊欧露与米凯优的过往、
+      吉尔什报告会、伊欧露与盖达鲁决裂、邀请入住城砦、盖达鲁潜入中枢）+ 10 个唯一 set-string
+      译完并通过 assemble（骨架/SJIS/回读 250/250）；配套 SG0040（第二章迷宫开放提示）已同步
+      （7/7）；关键字表 `docs/keywords-第二章剧情.md`、待定清单 `docs/prob-SC0040.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
