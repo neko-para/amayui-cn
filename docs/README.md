@@ -49,6 +49,8 @@ E:\Games\Eushully\天結\
 │                          prob-STAGECLEAR.md /
 │                          prob-SG0012.md / prob-SG0014.md /
 │                          keywords-同伴.md / prob-FELLOW.md /
+│                          keywords-状态.md / prob-ILINIT.md /
+│                          keywords-基本信息.md / prob-BIINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -195,6 +197,12 @@ E:\Games\Eushully\天結\
 - [x] **FELLOW 同伴翻译**：装备变更/卸装限制等 5 个唯一译文译完并通过 assemble
       （骨架/SJIS/回读 5/5）；关键字表 `docs/keywords-同伴.md`、待定清单
       `docs/prob-FELLOW.md` 已建立（concat 片段按 FIELD 先例处理）
+- [x] **ILINIT 状态翻译**：127 条 set-string（即死/魅惑/剧毒/灼烧/恐惧/技回/疲回/激昂/痛击/
+      蓄力/HP吸收 等 27 组状态）译完并通过 assemble（骨架/SJIS/回读 127/127）；
+      关键字表 `docs/keywords-状态.md`、待定清单 `docs/prob-ILINIT.md` 已建立
+- [x] **BIINIT 基本信息翻译**：728 条 set-string（674 个唯一原文：基本/道具/战斗/效果参数/
+      城砦/迷宫/大地图 教程百科）译完并通过 assemble（骨架/SJIS/回读 660/660）；
+      关键字表 `docs/keywords-基本信息.md`、待定清单 `docs/prob-BIINIT.md` 已建立
 
 ## 4. 本地工具（tools/）
 
