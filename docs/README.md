@@ -62,6 +62,7 @@ E:\Games\Eushully\天結\
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
 │                          prob-$4$SKINIT.md / prob-$5$SKINIT.md /
 │                          prob-$4$ITINIT.md / prob-$5$ITINIT.md /
+│                          prob-$1$SC1820.md /
 │                          prob-SC6300.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
@@ -260,6 +261,11 @@ E:\Games\Eushully\天結\
 - [x] **$4$ITINIT / $5$ITINIT APPEND 物品翻译**：各 28 条 set-string 全部译出并通过
       assemble（28/28、28/28）；并入 `docs/keywords-装备与物品.md` §12/§13、待定清单
       `docs/prob-$4$ITINIT.md` / `docs/prob-$5$ITINIT.md` 已建立
+- [x] **$1$SC1820 APPEND 追加剧情翻译**：77 页 ADV（G1820–G1822：赫塔雷斯迷宫地图发现、
+      寻找魔王大人、赫塔泰特的像／难度切换）+ 13 个唯一 set-string（含难度切换对话框）
+      译完并通过 assemble（骨架/SJIS/回读 115/115）；配套 SG1822A–E（弱者祈祷／难度维持・
+      废柴・普通・强敌）已同步（2/2、1/1×4）；待定清单 `docs/prob-$1$SC1820.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流；SG1822A 两行系统提示用 `<br>` 分段）
 - [x] **SC0040 第二章开头剧情翻译**：178 页 ADV（G0040–G0049：伊欧露与米凯优的过往、
       吉尔什报告会、伊欧露与盖达鲁决裂、邀请入住城砦、盖达鲁潜入中枢）+ 10 个唯一 set-string
       译完并通过 assemble（骨架/SJIS/回读 250/250）；配套 SG0040（第二章迷宫开放提示）已同步

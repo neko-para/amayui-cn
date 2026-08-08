@@ -1043,10 +1043,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003a2c
 u0041BB40 1 2
 call label_00006774
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "弱き者は祈りを捧げよ"
 end-text-line 0
 show-text 0 "さすれば救いを与えん"
 end-text-line 0
+*/
+// 输入原文：弱者啊，献上祈祷吧<br>如此便能获得救赎。
+show-text 0 @"弱者啊，献上祈祷吧"
+end-text-line 0
+show-text 0 @"如此便能获得救赎。"
+// 页面结束
 call label_0000679c
 exit
 exit

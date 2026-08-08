@@ -1043,8 +1043,13 @@ u0041AD70 1 24 (local-int 0)
 label_00003a14
 u0041BB40 1 1
 call label_0000673c
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ゲーム難易度を『ヘタレ』に変更しました。"
 end-text-line 0
+*/
+// 输入原文：游戏难度已变更为『废柴』。
+show-text 0 @"游戏难度已变更为『废柴』。"
+// 页面结束
 call label_00006764
 exit
 exit
