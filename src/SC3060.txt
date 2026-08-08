@@ -3851,6 +3851,7 @@ label_0000e158
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "手に入れた"
 display-furigana 0 "蒼" "あお"
 show-text 0 "い"
@@ -3860,6 +3861,10 @@ display-furigana 0 "魔導" "まどう"
 show-text 0 "技術の基本となる"
 display-furigana 0 "魔鉛" "まえん"
 show-text 0 "の作成に取り組んできた。"
+*/
+// 输入原文：用入手到的苍蓝之铅，着手制作魔导技术基础的魔铅。
+show-text 0 @"用入手到的苍蓝之铅，着手制作魔导技术基础的魔铅。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
