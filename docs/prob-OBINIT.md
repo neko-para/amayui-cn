@@ -22,7 +22,7 @@
 |---|---|---|
 | 炎症効果 | 灼烧效果 | keywords-SKINIT 候选（灼烧/燃烧待定） |
 | 猛毒効果 | 剧毒效果 | keywords-SKINIT 候选（剧毒/猛毒待定） |
-| 『土流』 | 土流 | keywords-SKINIT 待定 |
+| 『土流』 | 泥行 | keywords-SKINIT 定稿（2026-08-08） |
 | 魅了効果 | 魅惑效果 | 装备表已采用「魅惑」（确认） |
 
 ## 3. 已按 ITINIT / MIINIT 对齐（非待定）
