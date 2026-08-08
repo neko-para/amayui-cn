@@ -53,6 +53,7 @@ E:\Games\Eushully\天結\
 │                          keywords-基本信息.md / prob-BIINIT.md /
 │                          keywords-结骑训练.md / prob-DRINIT.md /
 │                          keywords-剧情引导.md / prob-FAINIT.md /
+│                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
@@ -225,6 +226,9 @@ E:\Games\Eushully\天結\
 - [x] **$1$STINIT2 APPEND 1 地图名翻译**：12 条 set-string（12 个唯一原文：赫塔雷斯迷宫等）
       译完并通过 assemble（骨架/SJIS/回读 12/12）；并入 `docs/keywords-战斗地名.md` §8、
       待定清单 `docs/prob-$1$STINIT2.md` 已建立
+- [x] **LKINIT 结阵效果翻译**：12 条 set-string（双/列/箱/突/钩/雷六型结阵名与效果说明）
+      译完并通过 assemble（骨架/SJIS/回读 12/12）；关键字表 `docs/keywords-结阵效果.md`、
+      待定清单 `docs/prob-LKINIT.md` 已建立
 
 ## 4. 本地工具（tools/）
 
