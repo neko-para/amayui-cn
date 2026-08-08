@@ -67,6 +67,8 @@ E:\Games\Eushully\天結\
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
+│                          prob-SC0530.md /
+│                          prob-SC6540.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -254,6 +256,15 @@ E:\Games\Eushully\天結\
       译完并通过 assemble（骨架/SJIS/回读 250/250）；配套 SG0040（第二章迷宫开放提示）已同步
       （7/7）；关键字表 `docs/keywords-第二章剧情.md`、待定清单 `docs/prob-SC0040.md` 已建立
       （沿用页块留空 + reflow-apply 工作流）
+- [x] **SC0530 第二章剧情翻译**：163 页 ADV（G0530–G0533：兽斥之谷商会开业、米凯优求职与
+      录用测试、躯干第二层区域灵体目击、盖达鲁商会设局掳走米凯优）+ 10 个唯一 set-string
+      译完并通过 assemble（骨架/SJIS/回读 217/217）；配套 SG0530（天枯断层迷宫『废妖的谷底』
+      可访问了）已同步（7/7）；并入 `docs/keywords-第二章剧情.md` §5、待定清单
+      `docs/prob-SC0530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC6540 第二章剧情翻译**：57 页 ADV（G6540–G6545：废妖的谷底净化（鬼族/水源污染）、
+      菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
+      assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
+      `docs/prob-SC6540.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
