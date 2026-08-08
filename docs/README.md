@@ -46,6 +46,7 @@ E:\Games\Eushully\天結\
 │                          keywords-存档.md / prob-SAVE.md /
 │                          prob-STAGEREADY.md /
 │                          prob-STAGEROUND.md /
+│                          prob-SG0070.md（并入 keywords-第三章剧情.md §5）/
 │                          prob-SC6510.md /
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
@@ -72,6 +73,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC4010.md / prob-SC5400.md / prob-SC5410.md /
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
+│                          keywords-第三章剧情.md / prob-SC0070.md /
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md / prob-SC2030.md /
@@ -217,6 +219,12 @@ E:\Games\Eushully\天結\
 - [x] **STAGEROUND 关卡回合事件翻译**：兽人的暗杀者出现提示 1 个唯一译文 × 3 处 set-string
       译完并通过 assemble（骨架/SJIS/回读 1/1）；待定清单 `docs/prob-STAGEROUND.md` 已建立
       （獣人の暗殺者=伊欧露，复用 SC5430/SC6540 定稿）
+- [x] **SC0070 第三章开头剧情翻译**：261 页 ADV（G0070–G0074：米克修亚娜菲优希亚神殿会谈与
+      雷府云海、吉尔什暗跃与罗兹利奴报告、巫童卡特利特悲剧、孤独的卡特利特）+ 10 个唯一
+      set-string（含章节标题）译完并通过 assemble（骨架/SJIS/回读 388/388）；配套 SG0070
+      （森希湿地林迷宫『魔叶的河畔林』/天枯断层迷宫『幻兽的巢窟』可访问了＋女神等级提示）
+      已同步（10/10）；关键字表 `docs/keywords-第三章剧情.md`、待定清单 `docs/prob-SC0070.md`
+      已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SG0012 / SG0014 系统提示翻译**：SC0010 G0012/G0014 配套页（迷宫可访问提示 +
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /

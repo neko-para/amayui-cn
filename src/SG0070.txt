@@ -627,16 +627,16 @@ call label_00004f30
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004f30
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,6 +1045,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00007048
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "センシィの"
 display-furigana 0 "湿地森" "しっちりん"
 show-text 0 "の迷宮"
@@ -1055,6 +1056,10 @@ show-text 0 "の"
 display-furigana 0 "河畔林" "かはんりん"
 show-text 0 "』へ訪問できるようになった。"
 end-text-line 0
+*/
+// 输入原文：森希湿地林迷宫『魔叶的河畔林』可访问了。
+show-text 0 @"森希湿地林迷宫『魔叶的河畔林』可访问了。"
+// 页面结束
 call label_00007070
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003b98
@@ -1096,6 +1101,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003d70
 u0041BB40 1 2
 call label_00007048
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "天枯断層" "てんこだんそう"
 show-text 0 "の迷宮"
 end-text-line 0
@@ -1103,6 +1109,10 @@ show-text 0 "『幻獣の"
 display-furigana 0 "巣窟" "そうくつ"
 show-text 0 "』へ訪問できるようになった。"
 end-text-line 0
+*/
+// 输入原文：天枯断层迷宫『幻兽的巢窟』可访问了。
+show-text 0 @"天枯断层迷宫『幻兽的巢窟』可访问了。"
+// 页面结束
 call label_00007070
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003e78
@@ -1144,10 +1154,15 @@ u0041AD70 1 24 (local-int 1)
 label_00004050
 u0041BB40 1 2
 call label_00007048
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "城砦が次のポイントまで移動可能になる為には"
 end-text-line 0
 show-text 0 "女神ランク７への上昇が必要です。"
 end-text-line 0
+*/
+// 输入原文：城砦要能移动到下一个地点，需要女神等级提升到７。
+show-text 0 @"城砦要能移动到下一个地点，需要女神等级提升到７。"
+// 页面结束
 call label_00007070
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_0000410c
@@ -1189,11 +1204,16 @@ u0041AD70 1 24 (local-int 1)
 label_000042e4
 u0041BB40 1 2
 call label_00007048
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "不足素材の収集や工房での新発明などを行って"
 end-text-line 0
 display-furigana 0 "女神力" "めがりょく"
 show-text 0 "を集めていきましょう！"
 end-text-line 0
+*/
+// 输入原文：收集不足素材，并通过工房的新发明等积累女神力吧！
+show-text 0 @"收集不足素材，并通过工房的新发明等积累女神力吧！"
+// 页面结束
 call label_00007070
 exit
 exit
