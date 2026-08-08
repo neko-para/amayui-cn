@@ -54,6 +54,7 @@ E:\Games\Eushully\天結\
 │                          keywords-结骑训练.md / prob-DRINIT.md /
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
+│                          keywords-AFINIT.md / prob-AFINIT.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$3$DRINIT.md /
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
@@ -265,6 +266,9 @@ E:\Games\Eushully\天結\
       菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
       assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
       `docs/prob-SC6540.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
+      技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
+      关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
 
 ## 4. 本地工具（tools/）
 
