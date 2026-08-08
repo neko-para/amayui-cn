@@ -74,7 +74,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          keywords-第三章剧情.md / prob-SC0070.md /
-│                          prob-SC2060.md /
+│                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md / prob-SC2030.md /
@@ -342,6 +342,11 @@ E:\Games\Eushully\天結\
       配套 SG3060–SG3063（『机械防门』『铁球陷阱装置』『石弹发射砦』防卫战配置、
       迷宫『清澈的水源地』访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
       `docs/prob-SC3060.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC2130 第二章·城砦日常群像剧情翻译**：359 页 ADV（G2130–G2136：迪特的教诲、
+      卡特利特的成长与青春期、罗兹利奴登场、盖达鲁接触、菲亚约会、机轴武器集中攻击）
+      + 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 507/507）；并入
+      `docs/keywords-第二章剧情.md` §11、待定清单 `docs/prob-SC2130.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 
 ## 4. 本地工具（tools/）
 
