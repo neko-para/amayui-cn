@@ -51,6 +51,9 @@ E:\Games\Eushully\天結\
 │                          keywords-同伴.md / prob-FELLOW.md /
 │                          keywords-状态.md / prob-ILINIT.md /
 │                          keywords-基本信息.md / prob-BIINIT.md /
+│                          keywords-结骑训练.md / prob-DRINIT.md /
+│                          keywords-剧情引导.md / prob-FAINIT.md /
+│                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
@@ -207,6 +210,21 @@ E:\Games\Eushully\天結\
 - [x] **$2$ITINIT APPEND 追加装备翻译**：53 条 set-string（大师系装备/菲亚专用枕与睡衣/
       敌人攻击名）译完并通过 assemble（骨架/SJIS/回读 48/48）；并入
       `docs/keywords-装备与物品.md` §9、待定清单 `docs/prob-$2$ITINIT.md` 已建立
+- [x] **DRINIT 结骑训练词条翻译**：324 条 set-string（100 个唯一原文：星级/属性/种族/性别
+      掉落条件表）译完并通过 assemble（骨架/SJIS/回读 96/96）；关键字表
+      `docs/keywords-结骑训练.md`、待定清单 `docs/prob-DRINIT.md` 已建立
+- [x] **FAINIT 剧情引导翻译**：102 条 set-string（102 个唯一原文：任务/引导词条，句式统一
+      为「……吧」）译完并通过 assemble（骨架/SJIS/回读 102/102）；关键字表
+      `docs/keywords-剧情引导.md`、待定清单 `docs/prob-FAINIT.md` 已建立
+- [x] **$1$ITINIT APPEND 1 装备翻译**：87 条 set-string（85 个唯一原文：莉莉/瓦雷弗尔装备与
+      ヘタレス迷宫敌人攻击名）译完并通过 assemble（骨架/SJIS/回读 85/85）；并入
+      `docs/keywords-装备与物品.md` §10、待定清单 `docs/prob-$1$ITINIT.md` 已建立
+- [x] **$3$ITINIT APPEND 3 物品翻译**：312 条 set-string（309 个唯一原文：重要道具/素材/
+      装备/敌人攻击名）译完并通过 assemble（骨架/SJIS/回读 309/309）；并入
+      `docs/keywords-装备与物品.md` §11、待定清单 `docs/prob-$3$ITINIT.md` 已建立
+- [x] **$1$STINIT2 APPEND 1 地图名翻译**：12 条 set-string（12 个唯一原文：赫塔雷斯迷宫等）
+      译完并通过 assemble（骨架/SJIS/回读 12/12）；并入 `docs/keywords-战斗地名.md` §8、
+      待定清单 `docs/prob-$1$STINIT2.md` 已建立
 
 ## 4. 本地工具（tools/）
 
