@@ -74,6 +74,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          keywords-第三章剧情.md / prob-SC0070.md /
+│                          prob-SC2060.md /
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md / prob-SC2030.md /
@@ -225,6 +226,11 @@ E:\Games\Eushully\天結\
       （森希湿地林迷宫『魔叶的河畔林』/天枯断层迷宫『幻兽的巢窟』可访问了＋女神等级提示）
       已同步（10/10）；关键字表 `docs/keywords-第三章剧情.md`、待定清单 `docs/prob-SC0070.md`
       已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC2060 第二章·米凯优与伊欧露的日常篇翻译**：610 页 ADV（G2060–G2069：伊欧露的过去、
+      米凯优的觉悟、就任商会队长、伊欧露的料理、魔法才能检测、莉秀恩兹利登场、脱离商会者）+ 10 个
+      唯一 set-string（含购买确认 concat 与交易选项）译完并通过 assemble（骨架/SJIS/回读 839/839）；
+      配套 SG2062（关于阿瓦罗的『援护防御Ⅰ』技能）已同步（8/8）；待定清单
+      `docs/prob-SC2060.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SG0012 / SG0014 系统提示翻译**：SC0010 G0012/G0014 配套页（迷宫可访问提示 +
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /
