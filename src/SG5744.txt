@@ -627,16 +627,16 @@ call label_00004c94
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004c94
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,6 +1045,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006dac
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『☆"
 display-furigana 0 "双猫" "そうびょう"
 show-text 0 "の"
@@ -1056,6 +1057,11 @@ display-furigana 0 "乱雪" "らんせつ"
 show-text 0 "』について"
 end-text-line 0
 show-text 0 "☆印のついたこの技は合体攻撃技です。"
+end-text-line 0
+*/
+show-text 0 @"关于『☆双猫的乱捌』『☆双猫的乱雪』"
+end-text-line 0
+show-text 0 @"带☆标记的这类技能是合体攻击技。"
 end-text-line 0
 call label_00006dd4
 eq (local-int 0) (global-int 0) 6
@@ -1098,11 +1104,19 @@ u0041AD70 1 24 (local-int 1)
 label_00003da0
 u0041BB40 1 2
 call label_00006dac
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "スキル使用者と隣にパートナーがいれば技が発動します。"
 end-text-line 0
 show-text 0 "また、発動にはパートナーの"
 display-furigana 0 "ＳＰ" "技力"
 show-text 0 "も必要です。"
+end-text-line 0
+*/
+show-text 0 @"只要技能使用者旁边有伙伴，技能便会发动。"
+end-text-line 0
+show-text 0 @"另外，发动还需要消耗伙伴的"
+display-furigana 0 @"ＳＰ" @"技力"
+show-text 0 @"。"
 end-text-line 0
 call label_00006dd4
 eq (local-int 0) (global-int 0) 6
@@ -1145,9 +1159,15 @@ u0041AD70 1 24 (local-int 1)
 label_00004064
 u0041BB40 1 2
 call label_00006dac
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "使用の際は、スキルのコストに注意しながら"
 end-text-line 0
 show-text 0 "メニューよりスキルの付け替えを行ってください。"
+end-text-line 0
+*/
+show-text 0 @"使用时请留意技能的成本，"
+end-text-line 0
+show-text 0 @"并从菜单中更换技能。"
 end-text-line 0
 call label_00006dd4
 exit

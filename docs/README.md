@@ -70,7 +70,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          prob-SC0530.md /
-│                          prob-SC6540.md / prob-SC5430.md /
+│                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -271,6 +271,11 @@ E:\Games\Eushully\天結\
       与 SC6540 菲亚篇为同一事件的两条视角）+ 10 个唯一 set-string 译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第二章剧情.md` §7、待定清单
       `docs/prob-SC5430.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC5740 第二章剧情翻译**：92 页 ADV（G5740–G5744：伊欧露再次来袭、击破结晶化的
+      动力部、灵体退去、云驱吊桥真BOSS上级恶魔卡农）+ 14 个唯一 set-string（含战斗条件）
+      译完并通过 assemble（骨架/SJIS/回读 125/125）；配套 SG5744（合体攻击教程，文本与
+      控制流交错，采用原位翻译）已同步（15/15）；并入 `docs/keywords-第二章剧情.md` §8、
+      待定清单 `docs/prob-SC5740.md` 已建立
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
