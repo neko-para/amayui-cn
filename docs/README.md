@@ -55,6 +55,7 @@ E:\Games\Eushully\天結\
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
+│                          prob-$3$DRINIT.md /
 │                          prob-SC6300.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
@@ -234,6 +235,10 @@ E:\Games\Eushully\天結\
       唯一 set-string（系统确认串复用 SC0000 定稿）译完并通过 assemble
       （骨架/SJIS/回读 25/25）；并入 `docs/keywords-第一章剧情.md` §7.5、待定清单
       `docs/prob-SC6300.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **$3$DRINIT APPEND 3 结骑训练词条翻译**：116 条 set-string（45 个唯一原文，与基础
+      DRINIT 同句式，含 ×６/×８/×１０ 新组合）译完并通过 assemble（骨架/SJIS/回读 44/44）；
+      并入 `docs/keywords-结骑训练.md` §5、待定清单 `docs/prob-$3$DRINIT.md` 已建立
+      （$1/$2/$4/$5$DRINIT 为无文本空壳，无需翻译）
 
 ## 4. 本地工具（tools/）
 
