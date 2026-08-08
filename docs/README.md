@@ -55,6 +55,7 @@ E:\Games\Eushully\天結\
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          keywords-AFINIT.md / prob-AFINIT.md /
+│                          prob-SC3030.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$3$DRINIT.md /
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
@@ -269,6 +270,11 @@ E:\Games\Eushully\天結\
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
+- [x] **SC3030 第一章·配方（プラン）系列剧情翻译**：45 页 ADV（G3030–G3033：城砦扩建图纸Ⅱ、
+      魔法训练场试用、探灵水晶原理、公园落成）+ 10 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 71/71）；配套 SG3031（技能『未熟练』解除）/ SG3032
+      （躯干第二层区域可访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
+      `docs/prob-SC3030.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
