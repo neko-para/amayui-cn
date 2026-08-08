@@ -70,7 +70,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          prob-SC0530.md /
-│                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md /
+│                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -276,6 +276,11 @@ E:\Games\Eushully\天結\
       译完并通过 assemble（骨架/SJIS/回读 125/125）；配套 SG5744（合体攻击教程，文本与
       控制流交错，采用原位翻译）已同步（15/15）；并入 `docs/keywords-第二章剧情.md` §8、
       待定清单 `docs/prob-SC5740.md` 已建立
+- [x] **SC1530 第二章·米凯优的录用测试翻译**：69 页 ADV（G1530–G1531：城砦迷宫测试、
+      休息时菲亚摆弄米凯优耳朵、米凯优的梦想、阿瓦罗摸头引发菲亚吃醋、为伊欧露求工作）
+      + 10 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 101/101）；并入
+      `docs/keywords-第二章剧情.md` §9、待定清单 `docs/prob-SC1530.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
