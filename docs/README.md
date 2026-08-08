@@ -56,6 +56,9 @@ E:\Games\Eushully\天結\
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$3$DRINIT.md /
+│                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
+│                          prob-$4$SKINIT.md / prob-$5$SKINIT.md /
+│                          prob-$4$ITINIT.md / prob-$5$ITINIT.md /
 │                          prob-SC6300.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
@@ -239,6 +242,12 @@ E:\Games\Eushully\天結\
       DRINIT 同句式，含 ×６/×８/×１０ 新组合）译完并通过 assemble（骨架/SJIS/回读 44/44）；
       并入 `docs/keywords-结骑训练.md` §5、待定清单 `docs/prob-$3$DRINIT.md` 已建立
       （$1/$2/$4/$5$DRINIT 为无文本空壳，无需翻译）
+- [x] **$1$–$5$SKINIT APPEND 追加技能翻译**：248 条 set-string（$1$ 52 / $2$ 8 / $3$ 88 /
+      $4$ 56 / $5$ 44）全部译出并通过 assemble（52/52、8/8、88/88、56/56、44/44）；并入
+      `docs/keywords-SKINIT.md` §12、待定清单 `docs/prob-$1$SKINIT.md` 等 5 份已建立
+- [x] **$4$ITINIT / $5$ITINIT APPEND 物品翻译**：各 28 条 set-string 全部译出并通过
+      assemble（28/28、28/28）；并入 `docs/keywords-装备与物品.md` §12/§13、待定清单
+      `docs/prob-$4$ITINIT.md` / `docs/prob-$5$ITINIT.md` 已建立
 
 ## 4. 本地工具（tools/）
 
