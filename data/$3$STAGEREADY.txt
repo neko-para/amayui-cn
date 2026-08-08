@@ -1,0 +1,501 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 5 1 1 4 1 1 }
+====
+
+eq (local-int 0) (global-int b228) 2
+eq (local-int 1) (global-int b229) b
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000628 ffffffff
+eq (local-int 0) (global-int b228) 2
+eq (local-int 1) (global-int b229) c
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_000007bc ffffffff
+eq (local-int 0) (global-int b228) 2
+eq (local-int 1) (global-int b229) d
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000950 ffffffff
+eq (local-int 0) (global-int b228) 1d
+eq (local-int 1) (global-int b229) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000ae4 ffffffff
+eq (local-int 0) (global-int b228) 1d
+eq (local-int 1) (global-int b229) 2
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000b50 ffffffff
+eq (local-int 0) (global-int b228) 1d
+eq (local-int 1) (global-int b229) 3
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000bbc ffffffff
+eq (local-int 0) (global-int b228) 1d
+eq (local-int 1) (global-int b229) 4
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000c28 ffffffff
+eq (local-int 0) (global-int b228) 1e
+eq (local-int 1) (global-int b229) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000c94 ffffffff
+eq (local-int 0) (global-int b228) 1e
+eq (local-int 1) (global-int b229) 3
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000d00 ffffffff
+eq (local-int 0) (global-int b228) 1e
+eq (local-int 1) (global-int b229) 5
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000d6c ffffffff
+eq (local-int 0) (global-int b228) 1e
+eq (local-int 1) (global-int b229) 6
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000dd8 ffffffff
+sub (local-int 0) 0 1
+eq (local-int 1) (global-int b228) (local-int 0)
+eq (local-int 2) (global-int b229) 13
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) label_00000e58 ffffffff
+sub (local-int 0) 0 1
+eq (local-int 1) (global-int b228) (local-int 0)
+eq (local-int 2) (global-int b229) 14
+and (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) label_00001770 ffffffff
+exit
+
+label_00000628
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_000007b8
+mov (global-int f8019) 1
+jmp label_000006b8
+
+label_0000069c
+add (global-int f8019) (global-int f8019) 1
+
+label_000006b8
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_000007b8
+eq (local-int 0) (global-int f8019) 1
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 1
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_000007ac
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 1
+
+label_000007ac
+jmp label_0000069c
+
+label_000007b8
+exit
+
+label_000007bc
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_0000094c
+mov (global-int f8019) 1
+jmp label_0000084c
+
+label_00000830
+add (global-int f8019) (global-int f8019) 1
+
+label_0000084c
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_0000094c
+eq (local-int 0) (global-int f8019) 1
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 1
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00000940
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 1
+
+label_00000940
+jmp label_00000830
+
+label_0000094c
+exit
+
+label_00000950
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000ae0
+mov (global-int f8019) 1
+jmp label_000009e0
+
+label_000009c4
+add (global-int f8019) (global-int f8019) 1
+
+label_000009e0
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00000ae0
+eq (local-int 0) (global-int f8019) 1
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 1
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00000ad4
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 1
+
+label_00000ad4
+jmp label_000009c4
+
+label_00000ae0
+exit
+
+label_00000ae4
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000b4c
+bit-set (global-int b237) 1
+
+label_00000b4c
+exit
+
+label_00000b50
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000bb8
+bit-set (global-int b237) 1
+
+label_00000bb8
+exit
+
+label_00000bbc
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000c24
+bit-set (global-int b237) 1
+
+label_00000c24
+exit
+
+label_00000c28
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000c90
+bit-set (global-int b237) 1
+
+label_00000c90
+exit
+
+label_00000c94
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000cfc
+bit-set (global-int b237) 2
+
+label_00000cfc
+exit
+
+label_00000d00
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000d68
+bit-set (global-int b237) 6
+
+label_00000d68
+exit
+
+label_00000d6c
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000dd4
+bit-set (global-int b237) 3
+
+label_00000dd4
+exit
+
+label_00000dd8
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00000e54
+bit-set (global-int b237) 2
+bit-set (global-int b237) 7
+
+label_00000e54
+exit
+
+label_00000e58
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_0000176c
+set-array-to (global-int ea732) 1 64
+mov (global-int f8019) 1
+jmp label_00000f04
+
+label_00000ee8
+add (global-int f8019) (global-int f8019) 1
+
+label_00000f04
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001004
+eq (local-int 0) (global-int f8019) 1
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 1
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00000ff8
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00000ff8
+jmp label_00000ee8
+
+label_00001004
+mov (global-int f8019) 1
+jmp label_00001040
+
+label_00001024
+add (global-int f8019) (global-int f8019) 1
+
+label_00001040
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001140
+eq (local-int 0) (global-int f8019) 2
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 2
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001134
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001134
+jmp label_00001024
+
+label_00001140
+mov (global-int f8019) 1
+jmp label_0000117c
+
+label_00001160
+add (global-int f8019) (global-int f8019) 1
+
+label_0000117c
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_0000127c
+eq (local-int 0) (global-int f8019) 19
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 19
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001270
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001270
+jmp label_00001160
+
+label_0000127c
+mov (global-int f8019) 1
+jmp label_000012b8
+
+label_0000129c
+add (global-int f8019) (global-int f8019) 1
+
+label_000012b8
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_000013b8
+eq (local-int 0) (global-int f8019) 32
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 32
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_000013ac
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_000013ac
+jmp label_0000129c
+
+label_000013b8
+mov (global-int f8019) 1
+jmp label_000013f4
+
+label_000013d8
+add (global-int f8019) (global-int f8019) 1
+
+label_000013f4
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_000014f4
+eq (local-int 0) (global-int f8019) 33
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 33
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_000014e8
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_000014e8
+jmp label_000013d8
+
+label_000014f4
+mov (global-int f8019) 1
+jmp label_00001530
+
+label_00001514
+add (global-int f8019) (global-int f8019) 1
+
+label_00001530
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001630
+eq (local-int 0) (global-int f8019) 34
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 34
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001624
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001624
+jmp label_00001514
+
+label_00001630
+mov (global-int f8019) 1
+jmp label_0000166c
+
+label_00001650
+add (global-int f8019) (global-int f8019) 1
+
+label_0000166c
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_0000176c
+eq (local-int 0) (global-int f8019) 35
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 35
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001760
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001760
+jmp label_00001650
+
+label_0000176c
+exit
+
+label_00001770
+lookup-array (local-ptr 0) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 0) 0
+jcc (local-int 0) ffffffff label_00001f48
+set-array-to (global-int ea732) 1 64
+mov (global-int f8019) 1
+jmp label_0000181c
+
+label_00001800
+add (global-int f8019) (global-int f8019) 1
+
+label_0000181c
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_0000191c
+eq (local-int 0) (global-int f8019) 1
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 1
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001910
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001910
+jmp label_00001800
+
+label_0000191c
+mov (global-int f8019) 1
+jmp label_00001958
+
+label_0000193c
+add (global-int f8019) (global-int f8019) 1
+
+label_00001958
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001a58
+eq (local-int 0) (global-int f8019) 2
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 2
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001a4c
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001a4c
+jmp label_0000193c
+
+label_00001a58
+mov (global-int f8019) 1
+jmp label_00001a94
+
+label_00001a78
+add (global-int f8019) (global-int f8019) 1
+
+label_00001a94
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001b94
+eq (local-int 0) (global-int f8019) 32
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 32
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001b88
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001b88
+jmp label_00001a78
+
+label_00001b94
+mov (global-int f8019) 1
+jmp label_00001bd0
+
+label_00001bb4
+add (global-int f8019) (global-int f8019) 1
+
+label_00001bd0
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001cd0
+eq (local-int 0) (global-int f8019) 33
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 33
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001cc4
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001cc4
+jmp label_00001bb4
+
+label_00001cd0
+mov (global-int f8019) 1
+jmp label_00001d0c
+
+label_00001cf0
+add (global-int f8019) (global-int f8019) 1
+
+label_00001d0c
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001e0c
+eq (local-int 0) (global-int f8019) 34
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 34
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001e00
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001e00
+jmp label_00001cf0
+
+label_00001e0c
+mov (global-int f8019) 1
+jmp label_00001e48
+
+label_00001e2c
+add (global-int f8019) (global-int f8019) 1
+
+label_00001e48
+lt (local-int 0) (global-int f8019) 64
+jcc (local-int 0) ffffffff label_00001f48
+eq (local-int 0) (global-int f8019) 35
+lookup-array (local-ptr 1) (global-int 544e64) (global-int f8019)
+eq (local-int 1) (local-ptr 1) 35
+or (local-int 3) (local-int 0) (local-int 1)
+jcc (local-int 3) ffffffff label_00001f3c
+lookup-array (local-ptr 2) (global-int ea732) (global-int f8019)
+mov (local-ptr 2) 0
+
+label_00001f3c
+jmp label_00001e2c
+
+label_00001f48
+exit

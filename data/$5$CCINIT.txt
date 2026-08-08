@@ -1,0 +1,127 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 8 1 1 4 1 1 }
+====
+
+eq (local-int 0) (global-int 546e02) 1a
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 1
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 4b
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_0000041c
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 1
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 4b
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 4b 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000258
+mov (global-int 5465d4) 4b
+set-string (global-string 18e3e) "幸を見出した精霊"
+
+label_00000258
+add (global-int 5465d7) (global-int 5465d7) 1
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 5
+add (global-int 5465e8) (global-int 5465e8) 8
+add (global-int 5465e9) (global-int 5465e9) 5
+add (global-int 5465e0) (global-int 5465e0) 1
+add (global-int 5465e2) (global-int 5465e2) 3
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e7) (global-int 5465e7) a
+mov (global-int 5465f8) 19
+mov (global-int 546619) 1
+mov (global-int 5465f9) ba
+mov (global-int 5466ba) 1
+mov (global-int 5465fa) d8
+mov (global-int 5466d8) 1
+mov (global-int 5465fc) 47
+mov (global-int 546647) 1
+mov (global-int 5465ff) 3f
+mov (global-int 54663f) 1
+
+label_0000041c
+eq (local-int 0) (global-int 546e02) 1a
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 2
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 5a
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00000828
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 2
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 5a
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 5a 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000638
+mov (global-int 5465d4) 5a
+set-string (global-string 18e3e) "幸に選ばれた精霊"
+
+label_00000638
+add (global-int 5465d7) (global-int 5465d7) 1
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 5
+add (global-int 5465e8) (global-int 5465e8) a
+add (global-int 5465e9) (global-int 5465e9) 5
+add (global-int 5465e0) (global-int 5465e0) 2
+add (global-int 5465e1) (global-int 5465e1) 1
+add (global-int 5465e2) (global-int 5465e2) 4
+add (global-int 5465e3) (global-int 5465e3) 2
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) a
+mov (global-int 5465f8) 11
+mov (global-int 546611) 1
+mov (global-int 5465f9) bb
+mov (global-int 5466bb) 1
+mov (global-int 5465fa) d9
+mov (global-int 5466d9) 1
+mov (global-int 5465ff) 3e
+mov (global-int 54663e) 1
+
+label_00000828
+eq (local-int 0) (global-int 546e02) 1a
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 3
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 63
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00000b90
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 3
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 63
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 63 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000a44
+mov (global-int 5465d4) 63
+set-string (global-string 18e3e) "幸に包まれた精霊"
+
+label_00000a44
+add (global-int 5465d5) (global-int 5465d5) 5
+add (global-int 5465e8) (global-int 5465e8) c
+add (global-int 5465e9) (global-int 5465e9) a
+add (global-int 5465e0) (global-int 5465e0) 3
+add (global-int 5465e1) (global-int 5465e1) 2
+add (global-int 5465e2) (global-int 5465e2) 5
+add (global-int 5465e3) (global-int 5465e3) 3
+add (global-int 5465e4) (global-int 5465e4) 3
+add (global-int 5465e7) (global-int 5465e7) a
+mov (global-int 5465f9) bc
+mov (global-int 5466bc) 1
+mov (global-int 5465fa) da
+mov (global-int 5466da) 1
+
+label_00000b90
+exit

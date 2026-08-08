@@ -1,0 +1,434 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 8 1 1 4 1 1 }
+====
+
+eq (local-int 0) (global-int 546e02) 15
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 1
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) f
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00000464
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 1
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) f
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) f 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000258
+mov (global-int 5465d4) f
+set-string (global-string 18e3e) "復帰した使い魔"
+
+label_00000258
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 3
+add (global-int 5465e8) (global-int 5465e8) a
+add (global-int 5465e9) (global-int 5465e9) 4
+add (global-int 5465ea) (global-int 5465ea) 3
+add (global-int 5465de) (global-int 5465de) 5
+add (global-int 5465eb) (global-int 5465eb) 5
+add (global-int 5465e0) (global-int 5465e0) 2
+add (global-int 5465e1) (global-int 5465e1) 1
+add (global-int 5465e2) (global-int 5465e2) 4
+add (global-int 5465e3) (global-int 5465e3) 1
+add (global-int 5465e4) (global-int 5465e4) 1
+add (global-int 5465e7) (global-int 5465e7) e
+mov (global-int 5465f8) 15f
+mov (global-int 54675f) 1
+mov (global-int 5465f9) 15
+mov (global-int 546615) 1
+mov (global-int 5465fc) 68
+mov (global-int 546668) 1
+mov (global-int 5465fd) d8
+mov (global-int 5466d8) 1
+
+label_00000464
+eq (local-int 0) (global-int 546e02) 15
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 2
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 1e
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_0000088c
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 2
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 1e
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 1e 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000680
+mov (global-int 5465d4) 1e
+set-string (global-string 18e3e) "本気の使い魔"
+
+label_00000680
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 3
+add (global-int 5465e8) (global-int 5465e8) a
+add (global-int 5465e9) (global-int 5465e9) 4
+add (global-int 5465ea) (global-int 5465ea) 3
+add (global-int 5465e0) (global-int 5465e0) 3
+add (global-int 5465e1) (global-int 5465e1) 2
+add (global-int 5465e2) (global-int 5465e2) 5
+add (global-int 5465e3) (global-int 5465e3) 2
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) 12
+mov (global-int 5465f8) db
+mov (global-int 5466db) 1
+mov (global-int 5465f9) 16
+mov (global-int 546616) 1
+mov (global-int 5465fc) 6b
+mov (global-int 54666b) 1
+mov (global-int 5465ff) 38
+mov (global-int 546638) 1
+
+label_0000088c
+eq (local-int 0) (global-int 546e02) 15
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 3
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 32
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00000cb4
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 3
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 32
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 32 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000aa8
+mov (global-int 5465d4) 32
+set-string (global-string 18e3e) "おめかし使い魔"
+
+label_00000aa8
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 5
+add (global-int 5465e8) (global-int 5465e8) f
+add (global-int 5465e9) (global-int 5465e9) 8
+add (global-int 5465ea) (global-int 5465ea) 3
+add (global-int 5465de) (global-int 5465de) 5
+add (global-int 5465eb) (global-int 5465eb) 5
+add (global-int 5465e0) (global-int 5465e0) 2
+add (global-int 5465e1) (global-int 5465e1) 2
+add (global-int 5465e2) (global-int 5465e2) 5
+add (global-int 5465e3) (global-int 5465e3) 2
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e7) (global-int 5465e7) 14
+mov (global-int 5465f9) 17
+mov (global-int 546617) 1
+mov (global-int 5465fa) a7
+mov (global-int 5466a7) 1
+mov (global-int 5465fc) 6d
+mov (global-int 54666d) 1
+mov (global-int 5465fd) d9
+mov (global-int 5466d9) 1
+
+label_00000cb4
+eq (local-int 0) (global-int 546e02) 15
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 4
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 46
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00001088
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 4
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 46
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 46 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00000ed0
+mov (global-int 5465d4) 46
+set-string (global-string 18e3e) "天駆の使い魔"
+
+label_00000ed0
+add (global-int 5465d5) (global-int 5465d5) 9
+add (global-int 5465e8) (global-int 5465e8) f
+add (global-int 5465e9) (global-int 5465e9) 8
+add (global-int 5465ea) (global-int 5465ea) 3
+add (global-int 5465e0) (global-int 5465e0) 3
+add (global-int 5465e1) (global-int 5465e1) 3
+add (global-int 5465e2) (global-int 5465e2) 6
+add (global-int 5465e3) (global-int 5465e3) 2
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e7) (global-int 5465e7) 14
+mov (global-int 5465f8) 11
+mov (global-int 546611) 1
+mov (global-int 5465f9) 18
+mov (global-int 546618) 1
+mov (global-int 5465fc) 6c
+mov (global-int 54666c) 1
+mov (global-int 5465ff) 39
+mov (global-int 546639) 1
+
+label_00001088
+eq (local-int 0) (global-int 546e02) 15
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 5
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 63
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_000014cc
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 5
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 63
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 63 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000012a4
+mov (global-int 5465d4) 63
+set-string (global-string 18e3e) "きゅーきょく使い魔"
+
+label_000012a4
+add (global-int 5465d5) (global-int 5465d5) f
+add (global-int 5465e8) (global-int 5465e8) 1e
+add (global-int 5465e9) (global-int 5465e9) c
+add (global-int 5465ea) (global-int 5465ea) 3
+add (global-int 5465de) (global-int 5465de) 5
+add (global-int 5465eb) (global-int 5465eb) 5
+add (global-int 5465e0) (global-int 5465e0) 5
+add (global-int 5465e1) (global-int 5465e1) 4
+add (global-int 5465e2) (global-int 5465e2) a
+add (global-int 5465e3) (global-int 5465e3) 4
+add (global-int 5465e4) (global-int 5465e4) 5
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) 1e
+mov (global-int 5465f8) 2d
+mov (global-int 54662d) 1
+mov (global-int 5465f9) 19
+mov (global-int 546619) 1
+mov (global-int 5465fa) a8
+mov (global-int 5466a8) 1
+mov (global-int 5465fd) da
+mov (global-int 5466da) 1
+
+label_000014cc
+eq (local-int 0) (global-int 546e02) 16
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 1
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 2d
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00001938
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 1
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 2d
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 2d 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000016e8
+mov (global-int 5465d4) 2d
+set-string (global-string 18e3e) "爛漫なる神娘"
+
+label_000016e8
+add (global-int 5465d5) (global-int 5465d5) 3
+add (global-int 5465e8) (global-int 5465e8) 6
+add (global-int 5465e9) (global-int 5465e9) 2
+add (global-int 5465ea) (global-int 5465ea) 4
+add (global-int 5465df) (global-int 5465df) 5
+add (global-int 5465ec) (global-int 5465ec) 5
+add (global-int 5465e0) (global-int 5465e0) 2
+add (global-int 5465e1) (global-int 5465e1) 3
+add (global-int 5465e2) (global-int 5465e2) 2
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e5) (global-int 5465e5) 2
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) 5
+mov (global-int 5465f8) c
+mov (global-int 54660c) 1
+mov (global-int 5465f9) 79
+mov (global-int 546679) 1
+mov (global-int 5465fa) 150
+mov (global-int 546750) 1
+mov (global-int 5465fd) 88
+mov (global-int 546688) 1
+mov (global-int 5465fe) 9c
+mov (global-int 54669c) 1
+
+label_00001938
+eq (local-int 0) (global-int 546e02) 16
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 2
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 3c
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00001d60
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 2
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 3c
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 3c 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00001b54
+mov (global-int 5465d4) 3c
+set-string (global-string 18e3e) "天駆の盗獅子"
+
+label_00001b54
+add (global-int 5465dc) (global-int 5465dc) 1
+add (global-int 5465dd) (global-int 5465dd) 1
+add (global-int 5465d5) (global-int 5465d5) 3
+add (global-int 5465e8) (global-int 5465e8) 8
+add (global-int 5465e9) (global-int 5465e9) 2
+add (global-int 5465ea) (global-int 5465ea) 4
+add (global-int 5465df) (global-int 5465df) 5
+add (global-int 5465ec) (global-int 5465ec) 5
+add (global-int 5465e0) (global-int 5465e0) 3
+add (global-int 5465e2) (global-int 5465e2) 3
+add (global-int 5465e3) (global-int 5465e3) 3
+add (global-int 5465e4) (global-int 5465e4) 2
+add (global-int 5465e7) (global-int 5465e7) 7
+mov (global-int 5465f9) 7a
+mov (global-int 54667a) 1
+mov (global-int 5465fb) 220
+mov (global-int 546820) 1
+mov (global-int 5465fe) 9d
+mov (global-int 54669d) 1
+mov (global-int 5465ff) 39
+mov (global-int 546639) 1
+
+label_00001d60
+eq (local-int 0) (global-int 546e02) 16
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 3
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 4b
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_000021a4
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 3
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 4b
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 4b 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00001f7c
+mov (global-int 5465d4) 4b
+set-string (global-string 18e3e) "千刃の魔神"
+
+label_00001f7c
+add (global-int 5465d5) (global-int 5465d5) 4
+add (global-int 5465e8) (global-int 5465e8) a
+add (global-int 5465e9) (global-int 5465e9) 3
+add (global-int 5465ea) (global-int 5465ea) 8
+add (global-int 5465df) (global-int 5465df) 5
+add (global-int 5465ec) (global-int 5465ec) 5
+add (global-int 5465e0) (global-int 5465e0) 1
+add (global-int 5465e1) (global-int 5465e1) 3
+add (global-int 5465e2) (global-int 5465e2) 1
+add (global-int 5465e4) (global-int 5465e4) 3
+add (global-int 5465e5) (global-int 5465e5) 1
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) 9
+mov (global-int 5465f9) 7b
+mov (global-int 54667b) 1
+mov (global-int 5465fa) 151
+mov (global-int 546751) 1
+mov (global-int 5465fd) 89
+mov (global-int 546689) 1
+mov (global-int 5465fe) 9e
+mov (global-int 54669e) 1
+
+label_000021a4
+eq (local-int 0) (global-int 546e02) 16
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 4
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 5a
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_0000251c
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 4
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 5a
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 5a 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_000023c0
+mov (global-int 5465d4) 5a
+set-string (global-string 18e3e) "愛されし盗獅子"
+
+label_000023c0
+add (global-int 5465d5) (global-int 5465d5) 4
+add (global-int 5465e8) (global-int 5465e8) c
+add (global-int 5465e9) (global-int 5465e9) 4
+add (global-int 5465ea) (global-int 5465ea) 8
+add (global-int 5465df) (global-int 5465df) 5
+add (global-int 5465ec) (global-int 5465ec) 5
+add (global-int 5465e0) (global-int 5465e0) 2
+add (global-int 5465e2) (global-int 5465e2) 2
+add (global-int 5465e3) (global-int 5465e3) 3
+add (global-int 5465e4) (global-int 5465e4) 3
+add (global-int 5465e7) (global-int 5465e7) c
+mov (global-int 5465fb) 221
+mov (global-int 546821) 1
+
+label_0000251c
+eq (local-int 0) (global-int 546e02) 16
+lookup-array-2d (local-ptr 0) (global-int 8c294) (global-int 546e02) 14 5
+and (local-int 1) (local-ptr 0) 1
+eq (local-int 2) (local-int 1) 0
+and (local-int 3) (local-int 0) (local-int 2)
+lookup-array (local-ptr 1) (global-int 7254c) (global-int 546e02)
+gre (local-int 4) (local-ptr 1) 63
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_000028cc
+lookup-array-2d (local-ptr 2) (global-int 8c294) (global-int 546e02) 14 5
+bit-set (local-ptr 2) 0
+eq (local-int 0) (global-int 5465d4) 0
+lt (local-int 6) (global-int 5465d4) 63
+or (local-int 1) (local-int 0) (local-int 6)
+lt (local-int 2) 63 0
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_00002738
+mov (global-int 5465d4) 63
+set-string (global-string 18e3e) "爛漫を極めし神傑"
+
+label_00002738
+add (global-int 5465d5) (global-int 5465d5) 5
+add (global-int 5465e8) (global-int 5465e8) e
+add (global-int 5465e9) (global-int 5465e9) 5
+add (global-int 5465ea) (global-int 5465ea) c
+add (global-int 5465df) (global-int 5465df) 5
+add (global-int 5465ec) (global-int 5465ec) 5
+add (global-int 5465e0) (global-int 5465e0) 3
+add (global-int 5465e1) (global-int 5465e1) 3
+add (global-int 5465e2) (global-int 5465e2) 3
+add (global-int 5465e4) (global-int 5465e4) 5
+add (global-int 5465e6) (global-int 5465e6) 1
+add (global-int 5465f3) (global-int 5465f3) 1
+add (global-int 5465e7) (global-int 5465e7) f
+mov (global-int 5465fd) 8a
+mov (global-int 54668a) 1
+
+label_000028cc
+exit

@@ -1,0 +1,22 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 4 1 1 1 1 1 }
+====
+
+mov (global-int 14cacc) 11
+eq (local-int 0) (global-int 1af3) 1
+ne (local-int 1) (global-int 1c7d) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) ffffffff label_000000d4
+mov (global-int b1fa) 3
+
+label_000000d4
+mov (global-int 14cacd) 12
+eq (local-int 0) (global-int 170d) 1
+ne (local-int 1) (global-int 1c7d) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) ffffffff label_0000016c
+mov (global-int b1fb) 3
+
+label_0000016c
+exit

@@ -1,0 +1,72 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 2 1 1 1 1 1 }
+====
+
+eq (local-int 0) (global-int f8c46) 10001f8
+jcc (local-int 0) ffffffff label_000000b0
+341 10001f8 (global-int f8c47)
+345 100029a (global-int f8c47) 0
+jmp label_000004a4
+
+label_000000b0
+eq (local-int 0) (global-int f8c46) 1000226
+jcc (local-int 0) ffffffff label_00000124
+341 1000226 (global-int f8c47)
+345 100029b (global-int f8c47) 0
+jmp label_000004a4
+
+label_00000124
+eq (local-int 0) (global-int f8c46) 1000240
+jcc (local-int 0) ffffffff label_00000198
+341 1000240 (global-int f8c47)
+345 100029c (global-int f8c47) 0
+jmp label_000004a4
+
+label_00000198
+eq (local-int 0) (global-int f8c46) 1000247
+jcc (local-int 0) ffffffff label_0000020c
+341 1000247 (global-int f8c47)
+345 100029d (global-int f8c47) 0
+jmp label_000004a4
+
+label_0000020c
+eq (local-int 0) (global-int f8c46) 100024e
+jcc (local-int 0) ffffffff label_00000280
+341 100024e (global-int f8c47)
+345 100029e (global-int f8c47) 0
+jmp label_000004a4
+
+label_00000280
+eq (local-int 0) (global-int f8c46) 1000255
+jcc (local-int 0) ffffffff label_000002f4
+341 1000255 (global-int f8c47)
+345 100029f (global-int f8c47) 0
+jmp label_000004a4
+
+label_000002f4
+eq (local-int 0) (global-int f8c46) 100025d
+jcc (local-int 0) ffffffff label_00000384
+341 100025d (global-int f8c47)
+345 10002a0 (global-int f8c47) 0
+345 10002a1 (global-int f8c47) 1
+jmp label_000004a4
+
+label_00000384
+eq (local-int 0) (global-int f8c46) 1000264
+jcc (local-int 0) ffffffff label_00000414
+341 1000264 (global-int f8c47)
+345 10002a2 (global-int f8c47) 0
+345 10002a3 (global-int f8c47) 1
+jmp label_000004a4
+
+label_00000414
+eq (local-int 0) (global-int f8c46) 100026d
+jcc (local-int 0) ffffffff label_000004a4
+341 100026d (global-int f8c47)
+345 10002a4 (global-int f8c47) 0
+345 10002a5 (global-int f8c47) 1
+jmp label_000004a4
+
+label_000004a4
+exit

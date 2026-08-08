@@ -1,0 +1,66 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 5 1 1 2 1 1 }
+====
+
+eq (local-int 0) (global-int b228) 11
+eq (local-int 1) (global-int b229) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000190 ffffffff
+eq (local-int 0) (global-int b228) 11
+eq (local-int 1) (global-int b229) 6
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_00000244 ffffffff
+eq (local-int 0) (global-int b228) 12
+eq (local-int 1) (global-int b229) 1
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) label_000003ac ffffffff
+exit
+
+label_00000190
+eq (local-int 0) (global-int 3403) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 c
+gr (local-int 2) (local-ptr 0) 0
+and (local-int 3) (local-int 0) (local-int 2)
+jcc (local-int 3) ffffffff label_00000240
+mov (global-int 3403) 1
+
+label_00000240
+exit
+
+label_00000244
+eq (local-int 0) (global-int 33af) 0
+eq (local-int 1) (global-int 56d76) 0
+and (local-int 2) (local-int 0) (local-int 1)
+jcc (local-int 2) ffffffff label_000002c8
+mov (global-int 33af) 1
+
+label_000002c8
+eq (local-int 0) (global-int 340c) 0
+jcc (local-int 0) ffffffff label_000003a8
+mov (global-int f8c39) 5
+mov (global-int f8c3a) 3
+mov (global-int f8c3b) 7
+mov (global-int f8c3c) 5
+call-script 3989
+gr (local-int 0) (global-int 51049f) 0
+jcc (local-int 0) ffffffff label_000003a8
+mov (global-int 340c) 1
+
+label_000003a8
+exit
+
+label_000003ac
+eq (local-int 0) (global-int 340b) 0
+jcc (local-int 0) ffffffff label_0000048c
+mov (global-int f8c39) 12
+mov (global-int f8c3a) 1
+mov (global-int f8c3b) 16
+mov (global-int f8c3c) 5
+call-script 3989
+gr (local-int 0) (global-int 51049f) 0
+jcc (local-int 0) ffffffff label_0000048c
+mov (global-int 340b) 1
+
+label_0000048c
+exit
