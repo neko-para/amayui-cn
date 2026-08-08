@@ -627,16 +627,16 @@ call label_0000bb5c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000bb5c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1318,7 +1318,14 @@ call label_0000deec
 308 1
 u004213E0 1
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「やられち、まった。くそ、下手を打ったぜ。フィア、すまないっ」"
+*/
+// 输入原文：「被打败了……可恶，是我失手了。菲亚，对不起……！」
+show-text 0 @"「被打败了……可恶，是我失手了。菲亚，对不起"
+end-text-line 0
+show-text 0 @"……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e36c
@@ -1488,7 +1495,14 @@ play-voice (global-int f8007)
 
 label_0000550c
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぅ、もう身体が動かないよ。ダメ、なのに。神様の私が倒れちゃ、いけないのに」"
+*/
+// 输入原文：「……呜，身体已经动不了了……。不行，明明不行。身为神的我，怎么可以倒下……」
+show-text 0 @"「……呜，身体已经动不了了……。不行，明明不行。身"
+end-text-line 0
+show-text 0 @"为神的我，怎么可以倒下……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -1677,7 +1691,14 @@ play-voice (global-int f8007)
 
 label_00006020
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いた、い。もう、動けない。イオは、なにかを守れたのかな」"
+*/
+// 输入原文：「好、痛……。已经，动不了了……。伊欧，有没有守护住什么呢」
+show-text 0 @"「好、痛……。已经，动不了了……。伊欧，有没有守"
+end-text-line 0
+show-text 0 @"护住什么呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -1866,7 +1887,14 @@ play-voice (global-int f8007)
 
 label_00006b34
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぅ、わたしの、魔法通用しなかった。もっといっぱい、勉強しておけばこうならなかったのかな」"
+*/
+// 输入原文：「呜呜，我的魔法……没能奏效。要是再多学一些……是不是就不会变成这样了……」
+show-text 0 @"「呜呜，我的魔法……没能奏效。要是再多学一些……是"
+end-text-line 0
+show-text 0 @"不是就不会变成这样了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -2055,7 +2083,14 @@ play-voice (global-int f8007)
 
 label_00007648
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「む、無念だ。私の道は、ここで途切れるのか！　信念を突き通すことのできない騎士など、なんの意味がある」"
+*/
+// 输入原文：「唔，好不甘心。我的道路，就要在这里断绝了吗……！　无法贯彻信念的骑士，还有什么意义可言……」
+show-text 0 @"「唔，好不甘心。我的道路，就要在这里断绝了吗……！"
+end-text-line 0
+show-text 0 @"　无法贯彻信念的骑士，还有什么意义可言……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -2244,7 +2279,14 @@ play-voice (global-int f8007)
 
 label_0000815c
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺様も、ここまでか。くそ、最後に一目、家族の顔が見たかったぜ」"
+*/
+// 输入原文：「本大爷也到此为止了吗……。可恶，真想最后再看一眼家人的脸啊」
+show-text 0 @"「本大爷也到此为止了吗……。可恶，真想最后再看一眼"
+end-text-line 0
+show-text 0 @"家人的脸啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -2433,7 +2475,14 @@ play-voice (global-int f8007)
 
 label_00008c70
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あぁ、命が尽きそうだわ。ようやく生が終わると思えないのは、何故かしら」"
+*/
+// 输入原文：「……啊，生命就要耗尽了。为何我无法相信，自己的人生终于要迎来终结呢……」
+show-text 0 @"「……啊，生命就要耗尽了。为何我无法相信，自己的人"
+end-text-line 0
+show-text 0 @"生终于要迎来终结呢……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -2622,7 +2671,14 @@ play-voice (global-int f8007)
 
 label_00009784
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くぅ、どうしたんですの、私の足、立ち上がりなさい、動きなさい！　ここで終わる訳には、いきませんのにっ」"
+*/
+// 输入原文：「呜，我的脚是怎么了，站起来，动一动啊……！　明明不该在这里结束的……」
+show-text 0 @"「呜，我的脚是怎么了，站起来，动一动啊……！　明明"
+end-text-line 0
+show-text 0 @"不该在这里结束的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -2811,7 +2867,14 @@ play-voice (global-int f8007)
 
 label_0000a298
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「我が主よ、申し訳ありません。マーズテリアの名を、汚してしまいましたっ」"
+*/
+// 输入原文：「我的主人，万分抱歉。我玷污了马兹忒利亚之名……！」
+show-text 0 @"「我的主人，万分抱歉。我玷污了马兹忒利亚之名"
+end-text-line 0
+show-text 0 @"……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0
@@ -3000,7 +3063,14 @@ play-voice (global-int f8007)
 
 label_0000adac
 u00416120
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぅ、とと様、ごめんなさい。わたしもう、立ち上がれそうにない」"
+*/
+// 输入原文：「呜呜，父亲大人，对不起……。我好像，已经站不起来了……」
+show-text 0 @"「呜呜，父亲大人，对不起……。我好像，已经站不"
+end-text-line 0
+show-text 0 @"起来了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bcf0

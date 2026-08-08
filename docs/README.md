@@ -55,6 +55,7 @@ E:\Games\Eushully\天結\
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
+│                          prob-SC6300.md /
 │                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
@@ -229,6 +230,10 @@ E:\Games\Eushully\天結\
 - [x] **LKINIT 结阵效果翻译**：12 条 set-string（双/列/箱/突/钩/雷六型结阵名与效果说明）
       译完并通过 assemble（骨架/SJIS/回读 12/12）；关键字表 `docs/keywords-结阵效果.md`、
       待定清单 `docs/prob-LKINIT.md` 已建立
+- [x] **SC6300 第一章·败北事件集翻译**：10 页 ADV（G6300–G6309 十名主角战败台词）+ 8 个
+      唯一 set-string（系统确认串复用 SC0000 定稿）译完并通过 assemble
+      （骨架/SJIS/回读 25/25）；并入 `docs/keywords-第一章剧情.md` §7.5、待定清单
+      `docs/prob-SC6300.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
