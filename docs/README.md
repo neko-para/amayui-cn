@@ -58,7 +58,7 @@ E:\Games\Eushully\天結\
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          keywords-AFINIT.md / prob-AFINIT.md /
-│                          prob-SC3030.md /
+│                          prob-SC3030.md / prob-SC3060.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
 │                          prob-$3$DRINIT.md /
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
@@ -336,6 +336,12 @@ E:\Games\Eushully\天結\
       assemble（骨架/SJIS/回读 71/71）；配套 SG3031（技能『不熟练』解除）/ SG3032
       （躯干第二层区域可访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
       `docs/prob-SC3030.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC3060 第一章·配方（プラン）系列剧情翻译**：123 页 ADV（G3060–G3069：机械防门、
+      铁球陷阱装置、石弹发射砦、导热管、试作魔铅、古鲁利亚城壁修复、砖造房屋、灰砖制造机、
+      柔软的梯子、柔软的覆壁）+ 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 180/180）；
+      配套 SG3060–SG3063（『机械防门』『铁球陷阱装置』『石弹发射砦』防卫战配置、
+      迷宫『清澈的水源地』访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
+      `docs/prob-SC3060.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 
 ## 4. 本地工具（tools/）
 
