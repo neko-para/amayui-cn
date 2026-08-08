@@ -219,8 +219,8 @@ E:\Games\Eushully\天結\
 - [x] **DRINIT 结骑训练词条翻译**：324 条 set-string（100 个唯一原文：星级/属性/种族/性别
       掉落条件表）译完并通过 assemble（骨架/SJIS/回读 96/96）；关键字表
       `docs/keywords-结骑训练.md`、待定清单 `docs/prob-DRINIT.md` 已建立
-- [x] **FAINIT 剧情引导翻译**：102 条 set-string（102 个唯一原文：任务/引导词条，句式统一
-      为「……吧」）译完并通过 assemble（骨架/SJIS/回读 102/102）；关键字表
+- [x] **FAINIT 路线图（roadmap）翻译**：102 条 set-string（102 个唯一原文：任务/引导词条，
+      游戏内名 roadmap，句式统一为「……吧」）译完并通过 assemble（骨架/SJIS/回读 102/102）；关键字表
       `docs/keywords-剧情引导.md`、待定清单 `docs/prob-FAINIT.md` 已建立
 - [x] **$1$ITINIT APPEND 1 装备翻译**：87 条 set-string（85 个唯一原文：莉莉/瓦雷弗尔装备与
       ヘタレス迷宫敌人攻击名）译完并通过 assemble（骨架/SJIS/回读 85/85）；并入

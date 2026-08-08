@@ -85,7 +85,7 @@
 * ILINIT 状态
 * BIINIT 基本信息
 * DRINIT 结骑训练词条
-* FAINIT 剧情引导
+* FAINIT 路线图（roadmap）
 * LKINIT 结阵效果
 
 ### APPEND 追加包
