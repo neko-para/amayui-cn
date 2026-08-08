@@ -71,7 +71,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
-│                          prob-SC2530.md /
+│                          prob-SC2530.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
@@ -287,6 +287,11 @@ E:\Games\Eushully\天結\
       结果、吉尔什命罗兹利奴确保城砦、伊欧露与米凯优乔迁城砦）+ 10 个唯一 set-string
       译完并通过 assemble（骨架/SJIS/回读 205/205）；并入 `docs/keywords-第一章剧情.md`
       §6.5、待定清单 `docs/prob-SC2530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC2030 第二章剧情翻译**：165 页 ADV（G2030–G2032：城砦妖怪骚动、伊欧露决意中止暗杀、
+      伊欧露背叛的结果——米凯优被困云驱吊桥）+ 8 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 208/208）；配套 SG2032（天枯断层迷宫『云驱吊桥』可访问了）
+      已同步（7/7）；并入 `docs/keywords-第二章剧情.md` §10、待定清单
+      `docs/prob-SC2030.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
