@@ -72,6 +72,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0530.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md /
+│                          keywords-章节标题.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
