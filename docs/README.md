@@ -51,6 +51,7 @@ E:\Games\Eushully\天結\
 │                          keywords-同伴.md / prob-FELLOW.md /
 │                          keywords-状态.md / prob-ILINIT.md /
 │                          keywords-基本信息.md / prob-BIINIT.md /
+│                          prob-$2$ITINIT.md /
 │                          keywords-教程剧情.md / prob-SC1500.md / prob-SC2000.md / prob-SC3000.md /
 │                          prob-SC3010.md / prob-SC4040.md / prob-SC4070.md / prob-SC4710.md /
 │                          keywords-第一章剧情.md / prob-SC0010.md / prob-SG0010.md / prob-SC2500.md /
@@ -203,6 +204,9 @@ E:\Games\Eushully\天結\
 - [x] **BIINIT 基本信息翻译**：728 条 set-string（674 个唯一原文：基本/道具/战斗/效果参数/
       城砦/迷宫/大地图 教程百科）译完并通过 assemble（骨架/SJIS/回读 660/660）；
       关键字表 `docs/keywords-基本信息.md`、待定清单 `docs/prob-BIINIT.md` 已建立
+- [x] **$2$ITINIT APPEND 追加装备翻译**：53 条 set-string（大师系装备/菲亚专用枕与睡衣/
+      敌人攻击名）译完并通过 assemble（骨架/SJIS/回读 48/48）；并入
+      `docs/keywords-装备与物品.md` §9、待定清单 `docs/prob-$2$ITINIT.md` 已建立
 
 ## 4. 本地工具（tools/）
 
