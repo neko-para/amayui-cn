@@ -70,7 +70,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC0500.md / keywords-工坊.md / prob-ALCHEMY.md /
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          prob-SC0530.md /
-│                          prob-SC6540.md /
+│                          prob-SC6540.md / prob-SC5430.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
@@ -267,6 +267,10 @@ E:\Games\Eushully\天結\
       菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
       assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
       `docs/prob-SC6540.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC5430 第二章·兽人的暗杀者 阿瓦罗篇翻译**：4 页 ADV（阿瓦罗遭遇伊欧露刺杀，
+      与 SC6540 菲亚篇为同一事件的两条视角）+ 10 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第二章剧情.md` §7、待定清单
+      `docs/prob-SC5430.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /
       技能类别 13）全部覆盖，译出 43 条、同文 24 条，并通过 assemble（骨架/SJIS/回读 43/43）；
       关键字表 `docs/keywords-AFINIT.md`、待定清单 `docs/prob-AFINIT.md` 已建立
