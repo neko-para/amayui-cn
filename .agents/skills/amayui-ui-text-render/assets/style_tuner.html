@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>UI 文字样式调参</title>
+<style>
+  @font-face { font-family: "WenQuanYi"; src: url("wenquanyi.ttf"); }
+  @font-face { font-family: "AmayuiCN"; src: url("amayui_cn.ttf"); }
+  body { margin:0; padding:16px; background:#1e1e1e; color:#ddd;
+         font-family:system-ui,sans-serif; display:flex; gap:24px; align-items:flex-start; overflow-x:auto; }
+  .stage-wrap { flex:none; position:relative; }
+  .stage { position:absolute; left:0; top:0; transform-origin:top left; outline:1px solid #999; background:#fff; }
+  .stage img { position:absolute; left:0; top:0; }
+  .stage .ln { position:absolute; line-height:1; white-space:nowrap; }
+  .controls { width:370px; background:#2a2a2a; border-radius:8px; padding:14px; }
+  .controls h2 { margin:0 0 10px; font-size:15px; color:#fff; }
+  .row { display:flex; align-items:center; justify-content:space-between; margin:7px 0; gap:8px; }
+  .row label { flex:0 0 96px; font-size:13px; color:#bbb; }
+  .row input[type=range] { flex:1; }
+  .row input[type=number], .row input[type=text], .row select {
+    flex:1; min-width:0; background:#1e1e1e; color:#eee; border:1px solid #444; border-radius:4px; padding:3px 6px; }
+  .row input[type=color] { width:46px; height:26px; border:none; background:none; padding:0; }
+  .value { flex:0 0 42px; text-align:right; font-size:12px; color:#9cf; }
+  .group { border-top:1px solid #444; margin-top:10px; padding-top:8px; }
+  table.lines { width:100%; border-collapse:collapse; font-size:12px; }
+  table.lines th, table.lines td { padding:3px 4px; border-bottom:1px solid #444; text-align:left; }
+  table.lines input[type=text] { width:100%; box-sizing:border-box; }
+  table.lines input[type=number] { width:56px; }
+  textarea { width:100%; box-sizing:border-box; height:150px; margin-top:8px; background:#1e1e1e;
+             color:#8f8; border:1px solid #555; border-radius:4px; font:12px/1.45 Consolas,monospace; resize:vertical; }
+  .btn { margin-top:8px; padding:6px 10px; background:#3a6ea5; color:#fff; border:none;
+         border-radius:5px; cursor:pointer; font-size:13px; }
+  .btn:hover { background:#4a7eb5; }
+  .btn.del { background:#a33; padding:2px 6px; margin:0; }
+  .hint { font-size:12px; color:#999; margin-top:6px; max-width:360px; }
+</style>
+</head>
+<body>
+
+<div class="stage-wrap" id="stageWrap">
+  <div class="stage" id="stage">
+    <img id="bgimg" alt="原图">
+    <div id="lines"></div>
+  </div>
+</div>
+<div class="hint" id="stageHint" style="margin-left:16px;align-self:flex-start;"></div>
+
+<div class="controls">
+  <h2>文字样式（每场景重新确认）</h2>
+
+  <div class="group"><h2>行内容与位置</h2>
+    <table class="lines">
+      <thead><tr><th>文本</th><th>left</th><th>top</th><th></th></tr></thead>
+      <tbody id="lineRows"></tbody>
+    </table>
+    <button class="btn" id="addBtn">+ 添加行</button>
+  </div>
+
+  <div class="group"><h2>文字</h2>
+    <div class="row"><label>字体</label>
+      <select id="font">
+        <option value="WenQuanYi" selected>WenQuanYi（文泉驿）</option>
+        <option value="AmayuiCN">Amayui CN</option>
+        <option value="DengXian Light">等线 Light</option>
+        <option value="DengXian">等线</option>
+        <option value="Microsoft YaHei">微软雅黑</option>
+        <option value="SimSun">宋体</option>
+        <option value="FangSong">仿宋</option>
+      </select>
+    </div>
+    <div class="row"><label>字号 px</label><input type="number" id="size" value="20" min="8" max="48"></div>
+    <div class="row"><label>描边 px</label><input type="range" id="stroke" min="0" max="4" step="0.5" value="1"><span class="value" id="strokeV">1</span></div>
+    <div class="row"><label>文字颜色</label><input type="color" id="color" value="#FFFFFF"></div>
+  </div>
+
+  <div class="group"><h2>阴影</h2>
+    <div class="row"><label>偏移 X</label><input type="range" id="sx" min="-6" max="6" step="0.5" value="2"><span class="value" id="sxV">2</span></div>
+    <div class="row"><label>偏移 Y</label><input type="range" id="sy" min="-6" max="6" step="0.5" value="2"><span class="value" id="syV">2</span></div>
+    <div class="row"><label>模糊</label><input type="range" id="blur" min="0" max="6" step="0.1" value="1"><span class="value" id="blurV">1</span></div>
+    <div class="row"><label>阴影颜色</label><input type="color" id="shcolor" value="#000000"></div>
+    <div class="row"><label>阴影不透明 %</label><input type="range" id="alpha" min="0" max="100" step="1" value="100"><span class="value" id="alphaV">100</span></div>
+  </div>
+
+  <div class="group"><h2>预览</h2>
+    <div class="row"><label>背景</label>
+      <select id="bgmode">
+        <option value="white" selected>白色</option>
+        <option value="dark">深灰</option>
+        <option value="checker">棋盘透明</option>
+      </select>
+    </div>
+    <div class="row"><label>放大</label><input type="range" id="zoom" min="0.5" max="4" step="0.1" value="1.5"><span class="value" id="zoomV">1.5</span></div>
+  </div>
+
+  <div class="group">
+    <h2>CSS 配置（确认后复制）</h2>
+    <textarea id="cssOut"></textarea>
+    <button class="btn" id="copyBtn">复制 CSS</button>
+  </div>
+  <div class="hint">文字颜色请按原图像素取样（analyze 输出仅参考），全部参数以你在本页的调整为最终值；复制出的 CSS 用于最终渲染页。</div>
+</div>
+
+<script>
+// ===== 每场景修改以下 CONFIG =====
+const CONFIG = {
+  stageW: 712, stageH: 256,      // 原图宽高（与最终渲染/截图尺寸一致）
+  image: "cleaned.png",          // 垫底图（清理后的 PNG，与本页同目录）
+  scale: 1.5,                    // 预览默认放大倍率
+  lines: [                       // 每行：left/top 为最终渲染坐标（来自 analyze 结果）
+    { left: 100, top: 20, text: "示例文字" }
+  ]
+};
+// ===== 修改结束 =====
+
+const $ = id => document.getElementById(id);
+const linesBox = $('lines');
+const rowsBody = $('lineRows');
+
+function hexRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function cssFor() {
+  const font = $('font').value;
+  const size = +$('size').value;
+  const stroke = +$('stroke').value;
+  const color = $('color').value;
+  const sx = +$('sx').value, sy = +$('sy').value, blur = +$('blur').value;
+  const [sr, sg, sb] = hexRgb($('shcolor').value);
+  const alpha = +$('alpha').value / 100;
+  return {
+    fontFamily: `"${font}"`,
+    fontSize: `${size}px`,
+    color,
+    stroke: `${stroke}px ${color}`,
+    shadow: `${sx}px ${sy}px ${blur}px rgba(${sr},${sg},${sb},${alpha})`,
+    css: `font-family: "${font}";\nfont-size: ${size}px;\nline-height: 1;\ncolor: ${color};\n-webkit-text-stroke: ${stroke}px ${color};\ntext-shadow: ${sx}px ${sy}px ${blur}px rgba(${sr},${sg},${sb},${alpha});\nwhite-space: nowrap;`
+  };
+}
+
+function renderStage() {
+  const c = cssFor();
+  const zoom = +$('zoom').value;
+  const stage = $('stage');
+  stage.style.width = CONFIG.stageW + 'px';
+  stage.style.height = CONFIG.stageH + 'px';
+  stage.style.transform = `scale(${zoom})`;
+  $('stageWrap').style.width = Math.round(CONFIG.stageW * zoom) + 'px';
+  $('stageWrap').style.height = Math.round(CONFIG.stageH * zoom) + 'px';
+  const bg = $('bgmode').value;
+  stage.style.background = bg === 'white' ? '#fff' : bg === 'dark' ? '#333' :
+    'repeating-conic-gradient(#999 0% 25%, #fff 0% 50%) 0 0 / 16px 16px';
+  const img = $('bgimg');
+  img.src = CONFIG.image;
+  img.style.width = CONFIG.stageW + 'px';
+  img.style.height = CONFIG.stageH + 'px';
+  linesBox.innerHTML = '';
+  CONFIG.lines.forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'ln';
+    d.textContent = l.text;
+    d.style.left = l.left + 'px';
+    d.style.top = l.top + 'px';
+    d.style.fontFamily = c.fontFamily + ', sans-serif';
+    d.style.fontSize = c.fontSize;
+    d.style.color = c.color;
+    d.style.webkitTextStroke = c.stroke;
+    d.style.textShadow = c.shadow;
+    linesBox.appendChild(d);
+  });
+  $('stageHint').textContent =
+    `原图 ${CONFIG.stageW}×${CONFIG.stageH}，预览放大 ${zoom}×；样式参数请逐场景确认，勿沿用其它图片的数值。`;
+  $('cssOut').value = c.css;
+  $('sxV').textContent = $('sx').value;
+  $('syV').textContent = $('sy').value;
+  $('blurV').textContent = $('blur').value;
+  $('alphaV').textContent = $('alpha').value;
+  $('strokeV').textContent = $('stroke').value;
+  $('zoomV').textContent = $('zoom').value;
+}
+
+function renderRows() {
+  rowsBody.innerHTML = '';
+  CONFIG.lines.forEach((l, i) => {
+    const tr = document.createElement('tr');
+    const tdText = document.createElement('td');
+    const inpText = document.createElement('input');
+    inpText.type = 'text'; inpText.value = l.text;
+    inpText.addEventListener('input', () => { CONFIG.lines[i].text = inpText.value; renderStage(); });
+    tdText.appendChild(inpText);
+    const tdL = document.createElement('td');
+    const inpL = document.createElement('input');
+    inpL.type = 'number'; inpL.value = l.left;
+    inpL.addEventListener('input', () => { CONFIG.lines[i].left = +inpL.value; renderStage(); });
+    tdL.appendChild(inpL);
+    const tdT = document.createElement('td');
+    const inpT = document.createElement('input');
+    inpT.type = 'number'; inpT.value = l.top;
+    inpT.addEventListener('input', () => { CONFIG.lines[i].top = +inpT.value; renderStage(); });
+    tdT.appendChild(inpT);
+    const tdDel = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn del';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => { CONFIG.lines.splice(i, 1); renderRows(); renderStage(); });
+    tdDel.appendChild(delBtn);
+    tr.append(tdText, tdL, tdT, tdDel);
+    rowsBody.appendChild(tr);
+  });
+}
+
+$('addBtn').addEventListener('click', () => {
+  CONFIG.lines.push({ left: 100, top: 20, text: '新行' });
+  renderRows(); renderStage();
+});
+
+['font', 'size', 'stroke', 'color', 'sx', 'sy', 'blur', 'shcolor', 'alpha', 'bgmode', 'zoom']
+  .forEach(id => $(id).addEventListener('input', renderStage));
+
+$('copyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText($('cssOut').value).then(() => alert('已复制'));
+});
+
+renderRows();
+renderStage();
+</script>
+</body>
+</html>
