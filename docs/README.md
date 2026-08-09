@@ -75,7 +75,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第二章剧情.md / prob-SC0040.md /
 │                          keywords-第三章剧情.md / prob-SC0070.md /
 │                          prob-SC2060.md / prob-SC2130.md /
-│                          prob-SC0530.md /
+│                          prob-SC0530.md / prob-SC0560.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
@@ -307,6 +307,11 @@ E:\Games\Eushully\天結\
       译完并通过 assemble（骨架/SJIS/回读 217/217）；配套 SG0530（天枯断层迷宫『废妖的谷底』
       可访问了）已同步（7/7）；并入 `docs/keywords-第二章剧情.md` §5、待定清单
       `docs/prob-SC0530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC0560 第二章剧情翻译**：486 页 ADV（G0560–G0567：姬斯尼尔重逢与菲优希亚正史、
+      野餐戏水、岚燐回廊与岚燐结骑、龙鳄骑士团奇袭、姬斯尼尔加入城砦、里克贝尔告别宴会、
+      冰封的湖畔与流燐结骑）+ 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 682/682）；
+      并入 `docs/keywords-第二章剧情.md` §12、待定清单 `docs/prob-SC0560.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC6540 第二章剧情翻译**：57 页 ADV（G6540–G6545：废妖的谷底净化（鬼族/水源污染）、
       菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
       assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
