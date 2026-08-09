@@ -58,7 +58,7 @@ E:\Games\Eushully\天結\
 │                          keywords-剧情引导.md / prob-FAINIT.md /
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          keywords-AFINIT.md / prob-AFINIT.md /
-│                          prob-SC3030.md / prob-SC3060.md /
+│                          prob-SC3030.md / prob-SC3060.md / prob-SC3070.md /
 │                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md / prob-$2$STINIT2.md /
 │                          prob-$3$DRINIT.md /
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
@@ -377,6 +377,11 @@ E:\Games\Eushully\天結\
       配套 SG3060–SG3063（『机械防门』『铁球陷阱装置』『石弹发射砦』防卫战配置、
       迷宫『清澈的水源地』访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
       `docs/prob-SC3060.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC3070 第三章·配方（プラン）系列剧情翻译**：33 页 ADV（G3070–G3073：青铜导键、
+      城砦扩建图纸Ⅲ、精天蓼之药、城砦浴场）+ 8 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 56/56）；配套 SG3070（伊欧露的『隐秘心得』说明，2 页）
+      已同步（10/10）；并入 `docs/keywords-第三章剧情.md` §12、待定清单
+      `docs/prob-SC3070.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SC2130 第三章·城砦日常群像剧情翻译**：359 页 ADV（G2130–G2136：迪特的教诲、
       卡特利特的成长与青春期、罗兹利奴登场、盖达鲁接触、菲亚约会、机轴武器集中攻击）
       + 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 507/507）；并入
