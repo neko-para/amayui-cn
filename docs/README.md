@@ -77,6 +77,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md / prob-SC0560.md /
 │                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
+│                          prob-SC1560.md /
 │                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
 │                          SG与SC分节对应.md）
@@ -342,6 +343,12 @@ E:\Games\Eushully\天結\
       + 10 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 101/101）；并入
       `docs/keywords-第二章剧情.md` §9、待定清单 `docs/prob-SC1530.md` 已建立
       （沿用页块留空 + reflow-apply 工作流）
+- [x] **SC1560 第三章剧情翻译**：250 页 ADV（G1560–G1565：菲亚的过去与城砦损伤、
+      试作魔铅交换、城砦朝里克贝尔方向移动的准备、姬斯尼尔的家宴、岚燐结骑夺药、
+      城砦浴场）+ 14 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 344/344）；
+      配套 SG1561（交换品『真红的合成弓』提示）/ SG1564（岚燐结骑ＳＰ提升）已同步
+      （8/8、10/10）；并入 `docs/keywords-第三章剧情.md` §11、待定清单
+      `docs/prob-SC1560.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SC2530 第一章·肩甲壳部区域战后与乔迁翻译**：142 页 ADV（G2530–G2531：米凯优录用
       结果、吉尔什命罗兹利奴确保城砦、伊欧露与米凯优乔迁城砦）+ 10 个唯一 set-string
       译完并通过 assemble（骨架/SJIS/回读 205/205）；并入 `docs/keywords-第一章剧情.md`
