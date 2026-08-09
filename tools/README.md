@@ -56,7 +56,9 @@ cd tools/alf && cl /O2 /EHsc unpack_alf/unpack_alf.cpp lzss/lzss.cpp /Fe:unpack_
   要求尺寸一致；无头导入固定 24bpp 无压缩、丢弃 Alpha
 - 已实测：导出 MI040 / AE000AB / BG000AA 成功；有头注入 → 再导出 PNG 与原图 md5 一致（无损）；
   注入产物为无压缩写入，体积明显增大，回 ALF 打包会膨胀
-- 无界面批量（临时手段）：exe 为 PyInstaller（Python 3.13）打包，解包运行时在 `.tmp\agf_runtime`
-  （gitignore 覆盖，约 1GB），可用 `.tmp\py313\python.exe` import
-  `extract_agf_to_png / inject_acgf_fixed / build_nohead_agf_from_png` 调用
+- **Node 版（推荐）**：`scripts/agf/`，`npm run agf`——
+  `extract <AGF...> [--out 目录] [--mode auto|acgf|nohead]` /
+  `inject <原AGF> <PNG> -o <输出>` / `build <PNG> -o <输出>`（无头打包）
+  已与 Python 版交叉验证：导出像素级一致、有头注入无损、无头 build 字节一致
+  （含无头自回环 4 字节偏移的原工具固有行为）；PNG 仅支持 8 位非隔行
 - 注意：脚本 txt 不直接引用 `.AGF` 文件名，界面 → AGF 映射未建；该方向暂缓

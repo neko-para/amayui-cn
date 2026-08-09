@@ -429,6 +429,7 @@ npm run compare            # 对照 raw-manifest 比较 install 与 raw 是否�
 npm run register-font      # 会话级注册 Amayui CN 字体（重启后需重跑；或双击安装 TTF 永久生效）
 npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 → install → 回读验证
 npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 标注）→ 三段式页面块
+npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，见 §7.5）
 ```
 
 `config.js` 关键配置：
@@ -507,9 +508,16 @@ npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 
   - 注入产物为**无压缩写入**，体积明显增大，DATA1 回 ALF 打包会膨胀（引擎读取尚未实测）
   - 脚本 txt 中**不直接引用 `.AGF` 文件名** → “界面 → AGF”映射需另行建立（资源表/内存层面）
   - **优先级：低**：固定 UI 图面文字汉化暂缓，文案/剧情脚本优先
-- 无界面调用（临时手段）：exe 为 PyInstaller（Python 3.13）打包，已解包至 `.tmp\agf_runtime`
-  （约 1GB，gitignore 覆盖），可用 `.tmp\py313\python.exe` import
-  `extract_agf_to_png / inject_acgf_fixed / build_nohead_agf_from_png` 做批量处理；未纳入正式流水线
+- **Node 版已落地**（`scripts/agf/`，`npm run agf`）：按 Python 版字节码忠实移植
+  - `png.js`：最小 PNG 编解码（8 位非隔行，color type 0/2/3/4/6，内置 zlib）
+  - `format.js`：LZSS / ACGF 头 / 无头计划评分 / 提取 / 有头注入 / 无头打包
+  - `cli.js`：`extract` / `inject` / `build` 三个子命令
+  - 交叉验证：三个样本（ACGF 8bpp、ACGF 8bpp+ACIF、无头 24bpp）导出与 Python 版**像素级一致**；
+    有头注入回环无损且产物字节数与 Python 版一致；无头 build 产物**逐字节一致**
+  - 注意：无头**自回环**（build→再提取）存在 4 字节偏移，属原工具固有问题
+    （hdr8 计划 +3 分优先），Node 版行为与 Python 版完全一致；实际改图走有头注入（无损）
+  - 32bpp 路径按字节码移植，本游戏样本未遇到，未实测
+  - `.tmp\agf_runtime`（Python 3.13 运行时，约 1GB）已不再必需，可删除
 
 ## 8. 关键决策：方案 B（改数据文件）及依据
 
