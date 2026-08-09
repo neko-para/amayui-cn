@@ -28,7 +28,7 @@ E:\Games\Eushully\天結\
 │                          prob-STINIT2.md / keywords-单位名称.md / prob-EBINIT.md /
 │                          keywords-战斗目标.md / prob-STINIT.md / prob-AMINIT2.md /
 │                          keywords-关卡逻辑.md / prob-SELSTAGE.md /
-│                          keywords-任务目标.md / prob-MIINIT.md /
+│                          keywords-任务目标.md / prob-MIINIT.md / prob-追加MIINIT-STINIT.md /
 │                          keywords-序章战斗剧情.md / prob-SC4900.md /
 │                          keywords-战斗地点.md / prob-OBINIT.md /
 │                          keywords-卡片.md / prob-CDINIT2.md /
@@ -119,6 +119,11 @@ E:\Games\Eushully\天結\
       关键字表 `docs/keywords-关卡逻辑.md`、待定清单 `docs/prob-SELSTAGE.md` 已建立
 - [x] **MIINIT 任务/关卡内目标全量翻译**：228 条 set-string（41 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 41/41）；
       关键字表 `docs/keywords-任务目标.md`、待定清单 `docs/prob-MIINIT.md` 已建立
+- [x] **$1$–$5$MIINIT 追加任务目标 / $1$–$5$STINIT 追加战斗目标翻译**：112 + 196 条 set-string
+       （句式复用基础版定稿）译完并通过 assemble（$1$MIINIT 6/6、$2$MIINIT 7/7、$3$MIINIT 17/17、
+       $4$MIINIT 7/7、$5$MIINIT 9/9；$1$STINIT 9/9、$2$STINIT 6/6、$3$STINIT 24/24、
+       $4$STINIT 6/6、$5$STINIT 12/12）；并入 `docs/keywords-任务目标.md` §7 /
+       `docs/keywords-战斗目标.md` §6、待定清单 `docs/prob-追加MIINIT-STINIT.md` 已建立
 - [x] **SC4900 序章战斗剧情翻译**：15 页 ADV（28 条 show-text、13 条纯读音注音只存档）+ 6 个唯一 set-string 译文，
       通过 assemble（骨架/SJIS/回读 26/26）；关键字表 `docs/keywords-序章战斗剧情.md`、待定清单 `docs/prob-SC4900.md` 已建立
 - [x] **SC4910 序章战斗剧情翻译**：13 页 ADV（13 条输入原文、6 条纯读音注音只存档、5 个唯一 set-string 译文）
