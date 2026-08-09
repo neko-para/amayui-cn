@@ -76,7 +76,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第三章剧情.md / prob-SC0070.md /
 │                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md / prob-SC0560.md /
-│                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5450.md / prob-SC5740.md / prob-SC1530.md /
+│                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5450.md / prob-SC5740.md / prob-SC5770.md / prob-SC1530.md /
 │                          prob-SC1560.md /
 │                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
@@ -342,6 +342,12 @@ E:\Games\Eushully\天結\
       控制流交错，reflow 引入 `<br>` 强制换行后改走页块流程）已同步（15/15）；并入
       `docs/keywords-第二章剧情.md` §8、
       待定清单 `docs/prob-SC5740.md` 已建立
+- [x] **SC5770 第三章·关卡战斗事件翻译**：110 页 ADV（G5770–G5779：岚燐回廊解放/击破
+      岚燐结骑、清澈的水源地石巨人、砂萤溪谷击破姬斯尼尔、古鲁利亚城壁击破吉尔什、
+      冰封的湖畔解放/击破流燐结骑）+ 8 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 154/154）；配套 SG5770/SG5778（召唤单位出击规则）
+      已同步（各 11/11）；并入 `docs/keywords-第三章剧情.md` §14、待定清单
+      `docs/prob-SC5770.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SC1530 第二章·米凯优的录用测试翻译**：69 页 ADV（G1530–G1531：城砦迷宫测试、
       休息时菲亚摆弄米凯优耳朵、米凯优的梦想、阿瓦罗摸头引发菲亚吃醋、为伊欧露求工作）
       + 10 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 101/101）；并入
