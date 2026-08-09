@@ -6,11 +6,22 @@
 // 解析器依赖字符串终止符位置定位下一条结构，因此译文必须保持原 UTF-16
 // 单元数：不足部分用零宽空格 U+200B 补齐（显示不可见，结构零变化）。
 //
+// 运行时覆盖：主菜单栏的“调试”顶级项由引擎在启动时用 InsertMenuItemA 动态
+// 插入，文案来自 AGERC.DLL 的 ANSI 串表（.rdata 0x66200，原为 SJIS 半角片假名）；
+// 消息窗口右键菜单的“を表示する/を消す”开关项（ID 0x9c64）由 SetMenuItemInfoA
+// 用同一张 ANSI 串表（0x98128/0x98144）动态改写。这两处都走 ANSI 菜单 API，
+// 在 LE/SJIS 环境下只能显示日文、无法显示中文。
+// 方案（RUNTIME_MENU_EDITS）：把这些 ANSI 串原位改写为 UTF-16LE 中文，并把两个
+// 菜单 API 的导入名由 A 版原位改成 W 版（名字等长），使引擎按 UTF-16 直接设置
+// 文案——与区域设置无关。影响面：InsertMenuItemA 全 DLL 仅 1 处调用（调试标题），
+// SetMenuItemInfoA 仅 2 处调用（开关项），故全局换 W 版本安全。
+//
 // 用法：node patch-menu.js
 //   - 源：install/DATA1/AGERC.DLL（未修改的 849KB 版本）
 //   - 输出：install/AGERC.DLL（覆盖运行用副本，原文件先备份到 .tmp）
 import fs from 'node:fs';
 import path from 'node:path';
+import iconv from 'iconv-lite';
 import { ROOT_DIR, INSTALL_DIR } from './config.js';
 
 // 每个编辑项：offset = 字符串起始文件偏移；from = 原文（UTF-16 单元数即槽位长度）；
@@ -78,6 +89,16 @@ const EDITS = [
   { offset: 0xC6F4A, from: 'ﾌﾟﾛｸﾞﾗﾑの終了(&X)\tF12', to: '结束程序(&X)\tF12' },
 ];
 
+// 运行时菜单覆盖（见文件头注释）：ANSI 串→UTF-16LE + A 导入→W 导入。
+// 偏移基于 install/DATA1/AGERC.DLL（未修改版）；from 用 cp932 校验原文。
+const RUNTIME_MENU_EDITS = [
+  { offset: 0x66200, slotEnd: 0x66210, from: 'ﾃﾞﾊﾞｯｸﾞ(&D)', to: '调试(&D)', outEnc: 'utf16le' },
+  { offset: 0x66328, slotEnd: 0x66344, from: 'ﾒｯｾｰｼﾞｳｲﾝﾄﾞｳを消す(&H)', to: '隐藏消息窗口(&H)', outEnc: 'utf16le' },
+  { offset: 0x66344, slotEnd: 0x66364, from: 'ﾒｯｾｰｼﾞｳｲﾝﾄﾞｳを表示する(&O)', to: '显示消息窗口(&O)', outEnc: 'utf16le' },
+  { offset: 0x791AC, from: 'InsertMenuItemA', to: 'InsertMenuItemW', outEnc: 'ascii' },
+  { offset: 0x791E6, from: 'SetMenuItemInfoA', to: 'SetMenuItemInfoW', outEnc: 'ascii' },
+];
+
 const PAD = '\u200B'; // 零宽空格
 
 const SRC = path.join(INSTALL_DIR, 'DATA1', 'AGERC.DLL');
@@ -127,6 +148,29 @@ function main() {
     const slot = fromBytes.length / 2;
     encodeSlot(to, slot).copy(data, offset);
     console.log(`patched 0x${offset.toString(16)}: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`);
+  }
+  for (const { offset, slotEnd, from, to, outEnc } of RUNTIME_MENU_EDITS) {
+    const fromBytes = iconv.encode(from, 'cp932');
+    const cur = data.subarray(offset, offset + fromBytes.length);
+    if (!cur.equals(fromBytes)) {
+      console.error(`FAIL(runtime) @0x${offset.toString(16)}: expected ${fromBytes.toString('hex')}, found ${cur.toString('hex')}`);
+      process.exit(1);
+    }
+    let toBytes;
+    if (outEnc === 'utf16le') {
+      toBytes = toUtf16le(to); // 不含 NUL
+    } else {
+      toBytes = Buffer.from(to, 'ascii');
+    }
+    const total = toBytes.length + (outEnc === 'utf16le' ? 2 : 0);
+    const limit = slotEnd ? slotEnd - offset : fromBytes.length;
+    if (total > limit) {
+      console.error(`FAIL(runtime) @0x${offset.toString(16)}: ${to} too long (${total} > ${limit})`);
+      process.exit(1);
+    }
+    if (slotEnd) data.fill(0, offset, slotEnd); // 清槽位，保持 NUL 终止
+    toBytes.copy(data, offset);
+    console.log(`patched(runtime) 0x${offset.toString(16)}: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`);
   }
   fs.writeFileSync(DST, data);
   console.log(`written -> ${DST}`);
