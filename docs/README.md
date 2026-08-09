@@ -59,7 +59,7 @@ E:\Games\Eushully\天結\
 │                          keywords-结阵效果.md / prob-LKINIT.md /
 │                          keywords-AFINIT.md / prob-AFINIT.md /
 │                          prob-SC3030.md / prob-SC3060.md /
-│                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md /
+│                          prob-$1$ITINIT.md / prob-$3$ITINIT.md / prob-$1$STINIT2.md / prob-$2$STINIT2.md /
 │                          prob-$3$DRINIT.md /
 │                          prob-$1$SKINIT.md / prob-$2$SKINIT.md / prob-$3$SKINIT.md /
 │                          prob-$4$SKINIT.md / prob-$5$SKINIT.md /
@@ -266,6 +266,10 @@ E:\Games\Eushully\天結\
 - [x] **$1$STINIT2 APPEND 1 地图名翻译**：12 条 set-string（12 个唯一原文：赫塔雷斯迷宫等）
       译完并通过 assemble（骨架/SJIS/回读 12/12）；并入 `docs/keywords-战斗地名.md` §8、
       待定清单 `docs/prob-$1$STINIT2.md` 已建立
+- [x] **$2$STINIT2 APPEND 2 地图名翻译**：6 条 set-string（6 个唯一原文：封闭的浸水路、
+       深渊的大空洞、谋略的宝物库、尽头的电击回廊、史莱姆的疗养地、掘削出的空洞）
+       译完并通过 assemble（骨架/SJIS/回读 6/6）；并入 `docs/keywords-战斗地名.md` §9、
+       待定清单 `docs/prob-$2$STINIT2.md` 已建立（与 $2$SG1832 的『掘削出的空洞』一致）
 - [x] **LKINIT 结阵效果翻译**：12 条 set-string（双/列/箱/突/钩/雷六型结阵名与效果说明）
       译完并通过 assemble（骨架/SJIS/回读 12/12）；关键字表 `docs/keywords-结阵效果.md`、
       待定清单 `docs/prob-LKINIT.md` 已建立
