@@ -77,7 +77,7 @@ E:\Games\Eushully\天結\
 │                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md / prob-SC0560.md /
 │                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
-│                          prob-SC2530.md / prob-SC2030.md /
+│                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
 │                          SG与SC分节对应.md）
 ├── install-manifest.json install 文件 MD5
@@ -125,7 +125,7 @@ E:\Games\Eushully\天結\
       通过 assemble（骨架/SJIS/回读 23/23）；并入 `docs/keywords-序章战斗剧情.md`
 - [x] **SC4710 序章战斗教程翻译**：26 页 ADV（42 条 show-text、纯读音注音只存档、6 个唯一 set-string 译文）
       通过 assemble（骨架/SJIS/回读 44/44）；并入 `docs/keywords-教程剧情.md`、待定清单 `docs/prob-SC4710.md`
-- [x] **SC4080 第一章·幻兽的巢窟关卡开始剧情翻译**：3 页 ADV（进入巢窟、察觉危险、决定小心探索）
+- [x] **SC4080 第三章·幻兽的巢窟关卡开始剧情翻译**：3 页 ADV（进入巢窟、察觉危险、决定小心探索）
       + 8 条系统 set-string（返回标题/结束游戏/场景回放结束/取消/是·否）译完并通过
       assemble（骨架/SJIS/回读 10/10）；地名沿用 `docs/keywords-战斗地名.md` 定稿「幻兽的巢窟」，
       系统确认串沿用 SC0000 定稿（沿用页块留空 + reflow-apply 工作流）
@@ -307,10 +307,10 @@ E:\Games\Eushully\天結\
       译完并通过 assemble（骨架/SJIS/回读 217/217）；配套 SG0530（天枯断层迷宫『废妖的谷底』
       可访问了）已同步（7/7）；并入 `docs/keywords-第二章剧情.md` §5、待定清单
       `docs/prob-SC0530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
-- [x] **SC0560 第二章剧情翻译**：486 页 ADV（G0560–G0567：姬斯尼尔重逢与菲优希亚正史、
+- [x] **SC0560 第三章剧情翻译**：486 页 ADV（G0560–G0567：姬斯尼尔重逢与菲优希亚正史、
       野餐戏水、岚燐回廊与岚燐结骑、龙鳄骑士团奇袭、姬斯尼尔加入城砦、里克贝尔告别宴会、
       冰封的湖畔与流燐结骑）+ 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 682/682）；
-      并入 `docs/keywords-第二章剧情.md` §12、待定清单 `docs/prob-SC0560.md` 已建立
+      并入 `docs/keywords-第三章剧情.md` §7、待定清单 `docs/prob-SC0560.md` 已建立
       （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC6540 第二章剧情翻译**：57 页 ADV（G6540–G6545：废妖的谷底净化（鬼族/水源污染）、
       菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
@@ -336,6 +336,11 @@ E:\Games\Eushully\天結\
       结果、吉尔什命罗兹利奴确保城砦、伊欧露与米凯优乔迁城砦）+ 10 个唯一 set-string
       译完并通过 assemble（骨架/SJIS/回读 205/205）；并入 `docs/keywords-第一章剧情.md`
       §6.5、待定清单 `docs/prob-SC2530.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC2560 第三章剧情翻译**：341 页 ADV（G2560–G2563：防卫设备准备、砂萤溪谷停战与
+      吉尔什的陷阱（里克贝尔外壁事件）、古鲁利亚城壁修复与赈济、菲亚告白）+ 8 个唯一
+      set-string 译完并通过 assemble（骨架/SJIS/回读 517/517）；并入
+      `docs/keywords-第三章剧情.md` §6、待定清单 `docs/prob-SC2560.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC2030 第二章剧情翻译**：165 页 ADV（G2030–G2032：城砦妖怪骚动、伊欧露决意中止暗杀、
       伊欧露背叛的结果——米凯优被困云驱吊桥）+ 8 个唯一 set-string 译完并通过
       assemble（骨架/SJIS/回读 208/208）；配套 SG2032（天枯断层迷宫『云驱吊桥』可访问了）
@@ -349,16 +354,16 @@ E:\Games\Eushully\天結\
       assemble（骨架/SJIS/回读 71/71）；配套 SG3031（技能『不熟练』解除）/ SG3032
       （躯干第二层区域可访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
       `docs/prob-SC3030.md` 已建立（沿用页块留空 + reflow-apply 工作流）
-- [x] **SC3060 第一章·配方（プラン）系列剧情翻译**：123 页 ADV（G3060–G3069：机械防门、
+- [x] **SC3060 第三章·配方（プラン）系列剧情翻译**：123 页 ADV（G3060–G3069：机械防门、
       铁球陷阱装置、石弹发射砦、导热管、试作魔铅、古鲁利亚城壁修复、砖造房屋、灰砖制造机、
       柔软的梯子、柔软的覆壁）+ 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 180/180）；
       配套 SG3060–SG3063（『机械防门』『铁球陷阱装置』『石弹发射砦』防卫战配置、
       迷宫『清澈的水源地』访问）已同步（各 7/7）；并入 `docs/keywords-教程剧情.md`、待定清单
       `docs/prob-SC3060.md` 已建立（沿用页块留空 + reflow-apply 工作流）
-- [x] **SC2130 第二章·城砦日常群像剧情翻译**：359 页 ADV（G2130–G2136：迪特的教诲、
+- [x] **SC2130 第三章·城砦日常群像剧情翻译**：359 页 ADV（G2130–G2136：迪特的教诲、
       卡特利特的成长与青春期、罗兹利奴登场、盖达鲁接触、菲亚约会、机轴武器集中攻击）
       + 8 个唯一 set-string 译完并通过 assemble（骨架/SJIS/回读 507/507）；并入
-      `docs/keywords-第二章剧情.md` §11、待定清单 `docs/prob-SC2130.md` 已建立
+      `docs/keywords-第三章剧情.md` §8、待定清单 `docs/prob-SC2130.md` 已建立
       （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 
 ## 4. 本地工具（tools/）
