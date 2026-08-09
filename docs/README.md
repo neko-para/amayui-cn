@@ -47,6 +47,7 @@ E:\Games\Eushully\天結\
 │                          prob-STAGEREADY.md /
 │                          prob-STAGEROUND.md /
 │                          prob-SG0070.md（并入 keywords-第三章剧情.md §5）/
+│                          prob-CONFIG1.md /
 │                          prob-SC6510.md /
 │                          prob-SC5710.md /
 │                          prob-STAGECLEAR.md /
@@ -230,6 +231,14 @@ E:\Games\Eushully\天結\
 - [x] **STAGEROUND 关卡回合事件翻译**：兽人的暗杀者出现提示 1 个唯一译文 × 3 处 set-string
       译完并通过 assemble（骨架/SJIS/回读 1/1）；待定清单 `docs/prob-STAGEROUND.md` 已建立
       （獣人の暗殺者=伊欧露，复用 SC5430/SC6540 定稿）
+- [x] **CONFIG1 环境设定界面翻译**：10 条唯一 set-string（系统/游戏/ADV/声音/操作/环境设定
+      初始化确认＋是/否）与标题水印「天结神缘ＳＡＭＰＬＥ」译完并通过 assemble
+      （骨架/SJIS/回读 9/9）；术语与 `docs/images/SO009B.md` 菜单图六行中文对齐（设定）；
+      待定清单 `docs/prob-CONFIG1.md` 已建立
+- [x] **CONFIG / CONFIG2 环境设定界面翻译**：CONFIG（仅标题水印，回读 2/2）、CONFIG2
+      （角色设定/环境设定初始化确认＋标题水印，回读 6/6）译完并通过 assemble，已同步
+      patch/BIN；标题行与 CONFIG1 一致构造同文振假名 ruby；data 无 CONFIG0（仅
+      CONFIG/CONFIG1/CONFIG2）；并入 `docs/prob-CONFIG1.md`
 - [x] **SC0070 第三章开头剧情翻译**：261 页 ADV（G0070–G0074：米克修亚娜菲优希亚神殿会谈与
       雷府云海、吉尔什暗跃与罗兹利奴报告、巫童卡特利特悲剧、孤独的卡特利特）+ 10 个唯一
       set-string（含章节标题）译完并通过 assemble（骨架/SJIS/回读 388/388）；配套 SG0070

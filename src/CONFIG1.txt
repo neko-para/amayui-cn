@@ -819,46 +819,46 @@ jcc (local-int 57c3) ffffffff label_00003848
 mov (global-int f8fa5) 7
 eq (local-int 57c3) (global-int 12721e) 0
 jcc (local-int 57c3) ffffffff label_00003510
-set-string (global-string f17) "システム設定を初期化しますか？"
+set-string (global-string f17) "システム設定を初期化しますか？|要初始化系统设定吗？"
 sub (global-int f8fa4) 0 1
 jmp label_000036d4
 
 label_00003510
 eq (local-int 57c3) (global-int 12721e) 1
 jcc (local-int 57c3) ffffffff label_00003584
-set-string (global-string f17) "ゲーム設定を初期化しますか？"
+set-string (global-string f17) "ゲーム設定を初期化しますか？|要初始化游戏设定吗？"
 sub (global-int f8fa4) 0 1
 jmp label_000036d4
 
 label_00003584
 eq (local-int 57c3) (global-int 12721e) 2
 jcc (local-int 57c3) ffffffff label_000035f8
-set-string (global-string f17) "ＡＤＶ設定を初期化しますか？"
+set-string (global-string f17) "ＡＤＶ設定を初期化しますか？|要初始化ADV设定吗？"
 sub (global-int f8fa4) 0 1
 jmp label_000036d4
 
 label_000035f8
 eq (local-int 57c3) (global-int 12721e) 3
 jcc (local-int 57c3) ffffffff label_0000366c
-set-string (global-string f17) "サウンド設定を初期化しますか？"
+set-string (global-string f17) "サウンド設定を初期化しますか？|要初始化声音设定吗？"
 sub (global-int f8fa4) 0 1
 jmp label_000036d4
 
 label_0000366c
 eq (local-int 57c3) (global-int 12721e) 5
 jcc (local-int 57c3) ffffffff label_000036d4
-set-string (global-string f17) "操作設定を初期化しますか？"
+set-string (global-string f17) "操作設定を初期化しますか？|要初始化操作设定吗？"
 sub (global-int f8fa4) 0 1
 
 label_000036d4
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -916,16 +916,16 @@ jcc (local-int 57c4) ffffffff label_00003cf0
 and (local-int 57c3) (global-int a9cc) 4
 jcc (local-int 57c3) ffffffff label_00003c84
 mov (global-int f8fa5) 7
-set-string (global-string f17) "環境設定を全て初期化しますか？"
+set-string (global-string f17) "環境設定を全て初期化しますか？|要初始化全部环境设定吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -2918,8 +2918,12 @@ mov (local-int 57c2) 0
 mov (global-int 14acda) 0
 call label_0000dc98
 u0041A7B0 9
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "天結" "あまゆ"
 show-text 0 "いキャッスルマイスターＳＡＭＰＬＥ"
+*/
+display-furigana 0 @"天结" @"天结"
+show-text 0 @"神缘ＳＡＭＰＬＥ"
 end-text-line 0
 jcc (local-int 7f2) ffffffff label_0000c694
 301 9

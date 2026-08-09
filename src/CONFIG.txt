@@ -170,8 +170,12 @@ mov (global-int 14acda) 0
 call label_00001ae8
 300 9 1 3e8
 u0041A7B0 9
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "天結" "あまゆ"
 show-text 0 "いキャッスルマイスターＳＡＭＰＬＥ"
+*/
+display-furigana 0 @"天结" @"天结"
+show-text 0 @"神缘ＳＡＭＰＬＥ"
 end-text-line 0
 u00414C60 (local-int 1)
 jcc (local-int 1) ffffffff label_00000f68

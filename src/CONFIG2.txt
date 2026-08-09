@@ -797,16 +797,16 @@ jcc (local-int 193d) ffffffff label_00003394
 and (local-int 193d) (global-int a9cc) 4
 jcc (local-int 193d) ffffffff label_00003360
 mov (global-int f8fa5) 7
-set-string (global-string f17) "キャラクター設定を初期化しますか？"
+set-string (global-string f17) "キャラクター設定を初期化しますか？|要初始化角色设定吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -831,16 +831,16 @@ jcc (local-int 193e) ffffffff label_0000363c
 and (local-int 193d) (global-int a9cc) 4
 jcc (local-int 193d) ffffffff label_000035d8
 mov (global-int f8fa5) 7
-set-string (global-string f17) "環境設定を全て初期化しますか？"
+set-string (global-string f17) "環境設定を全て初期化しますか？|要初始化全部环境设定吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -1385,8 +1385,12 @@ label_00005c18
 mov (global-int 14acda) 0
 call label_00007178
 u0041A7B0 9
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "天結" "あまゆ"
 show-text 0 "いキャッスルマイスターＳＡＭＰＬＥ"
+*/
+display-furigana 0 @"天结" @"天结"
+show-text 0 @"神缘ＳＡＭＰＬＥ"
 end-text-line 0
 301 9
 ret
