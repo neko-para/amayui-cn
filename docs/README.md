@@ -76,7 +76,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第三章剧情.md / prob-SC0070.md /
 │                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md / prob-SC0560.md /
-│                          prob-SC6540.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
+│                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
 │                          SG与SC分节对应.md）
@@ -316,6 +316,11 @@ E:\Games\Eushully\天結\
       菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
       assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
       `docs/prob-SC6540.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC6570 第三章剧情翻译**：53 页 ADV（G6570–G6579：苔之山瀑探索、干风之山
+      柔软的藤梯/覆壁架设与迷宫入口发现、清澈的水源地石巨人）+ 8 个唯一 set-string
+      译完并通过 assemble（骨架/SJIS/回读 77/77）；配套 SG6571（迷宫『干风之山』可访问）/
+      SG6575（『岚燐回廊』可访问）已同步（各 7/7）；并入 `docs/keywords-第三章剧情.md`
+      §10、待定清单 `docs/prob-SC6570.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SC5430 第二章·兽人的暗杀者 阿瓦罗篇翻译**：4 页 ADV（阿瓦罗遭遇伊欧露刺杀，
       与 SC6540 菲亚篇为同一事件的两条视角）+ 10 个唯一 set-string 译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第二章剧情.md` §7、待定清单
