@@ -76,7 +76,7 @@ E:\Games\Eushully\天結\
 │                          keywords-第三章剧情.md / prob-SC0070.md /
 │                          prob-SC2060.md / prob-SC2130.md /
 │                          prob-SC0530.md / prob-SC0560.md /
-│                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5740.md / prob-SC1530.md /
+│                          prob-SC6540.md / prob-SC6570.md / prob-SC5430.md / prob-SC5450.md / prob-SC5740.md / prob-SC1530.md /
 │                          prob-SC1560.md /
 │                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
@@ -331,6 +331,10 @@ E:\Games\Eushully\天結\
       与 SC6540 菲亚篇为同一事件的两条视角）+ 10 个唯一 set-string 译完并通过
       assemble（骨架/SJIS/回读 10/10）；并入 `docs/keywords-第二章剧情.md` §7、待定清单
       `docs/prob-SC5430.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SC5450 第三章·关卡战斗事件翻译**：14 页 ADV（G5450–G5452：岚燐结骑对峙、
+      与姬斯尼尔再战、古鲁利亚城壁／与吉尔什开战前）+ 8 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 26/26）；并入 `docs/keywords-第三章剧情.md` §13、待定清单
+      `docs/prob-SC5450.md` 已建立（沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC5740 第二章剧情翻译**：92 页 ADV（G5740–G5744：伊欧露再次来袭、击破结晶化的
       动力部、灵体退去、云驱吊桥真BOSS上级恶魔卡农）+ 15 个唯一 set-string（含战斗条件；
       bc3「自军据点被占领」为 2026-08-08 补齐的漏译）
