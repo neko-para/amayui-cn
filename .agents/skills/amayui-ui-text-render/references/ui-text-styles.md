@@ -87,6 +87,48 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\<NAME>.AGF" `
 
 注入为有头注入（保留 ACGF 头/ACIF），8bpp 按原调色板量化，无压缩写入、体积膨胀属正常。
 
+## 按钮模式案例参数（SO020 / SO021 / SO025 已验证）
+
+### 上半按钮效果（纯色底，浅色背景）
+
+```css
+font-family: "WenQuanYi"; font-size: 20px; line-height: <块高>px;
+letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: center;
+```
+
+### 下半按钮效果（深色渐变底）
+
+文字主体同上（行高 = 块高），另加外层约 1px 白色描边（50% 透明度），双层 span 实现：
+
+```html
+<span class="out">菜单<span class="in">菜单</span></span>
+```
+
+```css
+.out { position:relative; display:inline-block; -webkit-text-stroke: 2px rgba(255,255,255,0.5); color: rgba(255,255,255,0.5); }
+.in  { position:absolute; left:0; top:0; -webkit-text-stroke: 0.5px #000; color: #000; }
+```
+
+### 列填充清理规则
+
+- 纯色底按钮：N=15，第 16px 列（x0+15）逐行填充中间；
+- 渐变底按钮：N=20，第 21px 列（x0+20）逐行填充（保留每行渐变值）；
+- 多行面板：N=40，第 41px 列填充；
+- 小按钮块：N=23，第 24px 列填充；
+- 填充前检查列是否穿过文字：统计列上深色像素行数，仅顶/底边框行深色即为干净；
+- 左右 N px 内的黑色边框/斜角装饰原样保留。
+
+### 案例记录
+
+| 图片 | 块 | 范围 | 清理 | 效果 |
+|---|---|---|---|---|
+| SO020 | 上半按钮（142×20） | 纯色底 | 15px/第16列 | 上半效果 |
+| SO020 | 下半按钮（150×28） | 渐变底 | 20px/第21列 | 下半效果 |
+| SO021 | A 多行面板（154×48） | x=660..813 y=749..796 | 40px/第41列 | 上半效果 |
+| SO021 | B 小按钮（122×29） | x=663..784 y=800..828 | 23px/第24列 | 下半效果（top +1px） |
+| SO025 | A 多行面板（154×48） | x=418..571 y=71..118 | 40px/第41列 | 上半效果 |
+| SO025 | B 小按钮（122×29） | x=421..542 y=122..150 | 23px/第24列 | 下半效果（top +1px） |
+
 ## 案例参数
 
 > 以下均为已处理图片的记录，参数只对各自图片有效；新场景按「调试页面」流程重新确认。
