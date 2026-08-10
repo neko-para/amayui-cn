@@ -157,3 +157,4 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 - 修改后 PNG/AGF 放 `res\`；patch 配置 `dst` 用 `AGF/` 子目录（`{ "src": "res/<NAME>.AGF", "dst": "AGF/<NAME>.AGF" }`）。
 - 每次处理记录到 `docs/images/<NAME>.md`（区域、CSS、布局、清理范围、复现命令、待办）。
 - install 根目录 AGF 为 overlay；还原时从 `install\DATA1\<NAME>.AGF` 复制覆盖。
+- 注入/新增 install 根目录文件后，运行 `npm run manifest`（scripts 目录）更新 install-manifest.json（可指定文件：`npm run manifest -- <NAME>.AGF`）。

@@ -96,7 +96,8 @@ install 根目录 AGF 为 overlay，引擎读取优先于 ALF。
 2. `patch\patch.config.json` 添加条目，`dst` 用 `AGF/` 子目录：
    `{ "src": "res/<NAME>.AGF", "dst": "AGF/<NAME>.AGF" }`
 3. 运行 `npm run sync-patch`（在 `scripts` 目录）。
-4. 记录到 `docs/images/<NAME>.md`：文字区域、行位置、**用户确认的 CSS**、布局参数、清理范围、复现命令、待办状态。
+4. 运行 `npm run manifest` 更新 install-manifest.json（在 `scripts` 目录；只更新单个文件可用 `npm run manifest -- <NAME>.AGF`）。
+5. 记录到 `docs/images/<NAME>.md`：文字区域、行位置、**用户确认的 CSS**、布局参数、清理范围、复现命令、待办状态。
 
 ### 8. 按钮/面板模式（连通块定位 + 列填充清理 + 居中渲染）
 
