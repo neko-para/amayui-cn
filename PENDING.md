@@ -157,6 +157,13 @@
   关联：docs/keywords-战斗目标.md、docs/prob-CVINIT.md
   待办：cd scripts && npm run assemble -- STINIT（重编译；patch.config 已有条目）；PROGRESS.md 无需改动
 
+- 脚本：$3$STINIT（追加战斗目标，已翻译脚本的术语统一）
+  类型：修改
+  状态：已翻译，未编译（macOS；术语统一重译）
+  改动：ティエネー 2 处 蒂耶内→提埃内（用户定稿 2026-08-11；与 CNINIT/EBINIT 统一）
+  关联：docs/keywords-战斗目标.md、docs/prob-追加MIINIT-STINIT.md、rules/glossary.json
+  待办：cd scripts && npm run assemble -- $3$STINIT（重编译；patch.config 已有条目）；PROGRESS.md 无需改动
+
 ### 追加包系统脚本（AP1-5，非 SC/SG/SP，42 个）
 
 > 以下条目统一：类型=完全新翻译；状态=已翻译，未编译（macOS）；
