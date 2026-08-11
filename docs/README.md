@@ -23,7 +23,7 @@ E:\Games\Eushully\天結\
 ├── src\                  可编辑开发源：341 个 txt（含翻译语法）
 ├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
 ├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
-├── docs\                 本文档（README.md / glossary-draft.md / keywords-装备与物品.md /
+├── docs\                 本文档（README.md / AGE脚本语言与物品数据结构.md / glossary-draft.md / keywords-装备与物品.md /
 │                          keywords-SKINIT.md / prob-SKINIT.md / keywords-战斗地名.md /
 │                          prob-STINIT2.md / keywords-单位名称.md / prob-EBINIT.md /
 │                          keywords-战斗目标.md / prob-STINIT.md / prob-AMINIT2.md /
@@ -502,6 +502,7 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
 - Kelebek1 反汇编输出 UTF-8 文本；SExtractor 正则：
   `show-text 0 "..."` / `display-furigana 0 "..." "..."` / `set-string (...) "..."`
 - 实测 SC0000.BIN：527 条 show-text、109 条 display-furigana、426 条 wait-for-input、16 条 set-string
+- 指令集、物品数据结构与配方调查详见 [AGE脚本语言与物品数据结构.md](AGE脚本语言与物品数据结构.md)
 
 ### 7.3 exe / DLL
 
