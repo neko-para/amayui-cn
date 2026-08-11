@@ -15,6 +15,15 @@ function relativePosix(root, filePath) {
   return path.relative(root, filePath).split(path.sep).join('/');
 }
 
+// manifest 文件名按不区分大小写的字典序排列（与 NTFS/现有 manifest 约定一致）
+function compareFileKeys(a, b) {
+  const x = a.toUpperCase();
+  const y = b.toUpperCase();
+  if (x < y) return -1;
+  if (x > y) return 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 // 只统计根目录下的顶层文件（DATA1-8 等解包子目录不属于改动追踪范围）
 function topLevelFiles(rootDir) {
   return fs
@@ -63,11 +72,16 @@ async function writeManifest(root, manifestPath, label, targets = null) {
       console.log('[md5]', rel);
     }
   }
+  // 无论全量还是增量更新，最终写出的 JSON 都按文件名排序，避免增量新增项堆积在末尾
+  const files = {};
+  for (const rel of Object.keys(out).sort(compareFileKeys)) {
+    files[rel] = out[rel];
+  }
   const manifest = {
     generated: new Date().toISOString(),
     root,
-    count: Object.keys(out).length,
-    files: out,
+    count: Object.keys(files).length,
+    files,
   };
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
   console.log(`\n已写入 ${manifestPath} (${manifest.count} 个文件)`);
