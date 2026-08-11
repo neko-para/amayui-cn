@@ -127,22 +127,50 @@
 2. 逐页翻译 `src\<SCRIPT>.txt`。ADV 页较多（如 SC*，约 ≥30 页）时优先用上节「大批量 SC 脚本」
    流程（提取 → 映射 → 批替换 → reflow-apply），临时映射 JSON 用后即删；页数很少时手工逐页改块，
    每完成约 30–50 页写回一次文件，避免长任务中断丢失进度；全部完成后确认文件完整。
-3. 在 `scripts` 目录运行 
-`npm run assemble -- <SCRIPT>`，必须通过（骨架校验/SJIS/回读验证）。
+3. 构建校验：
+   - Windows：在 `scripts` 目录运行 `npm run assemble -- <SCRIPT>`，必须通过
+     （骨架校验/SJIS/回读验证）。
+   - macOS：无法执行 assemble/安装，改用本地校验：`node scripts/reflow-apply.js --check <SCRIPT>`
+     （三段式页块流程时）、`node scripts/find-untranslated.js <SCRIPT>`、宽度/结构检查
+     （见 references/verify.md「macOS 本地校验」节）；完成后按下节格式写入项目根 `PENDING.md`。
 4. **文档沉淀**：为存疑名词建立/更新 `docs/prob-<SCRIPT>.md`（待定清单，按专名/音译、技能名译法、
    跨文档不一致、原文自身疑误分类，并给出后续动作）；为关键术语建立/更新
    `docs/keywords-<主题或脚本>.md`（关键字表，含状态 确认/建议/待定；已有同主题文档则合并更新，
    如 `docs/keywords-装备与物品.md`；技能类为 `docs/keywords-SKINIT.md`），必要时同步
    `docs/README.md` 的目录说明与完成状态。
-5. **记录**：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译内容索引）与
-   `patch/patch.config.json`（把 assemble 产物 BIN 加入补丁同步清单 files）。
+5. **记录**：
+   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译内容索引）与
+     `patch/patch.config.json`（把 assemble 产物 BIN 加入补丁同步清单 files）。
+   - macOS：只写项目根 `PENDING.md`（完全新翻译与修改均登记），不更新
+     `PROGRESS.md` / `patch/patch.config.json`，等 Windows assemble 通过后再按上面登记。
 6. 不修改 `data\`；不执行 git 提交。
+
+## macOS 流程与 PENDING.md 登记
+
+macOS 上无法实际运行 assemble 与安装流程（SJIS 写盘、install 树、DATA1 写入依赖 Windows）。
+文本更新完成后，在项目根 `PENDING.md`（不存在则新建，含顶部用途说明）登记「已翻译、未编译」条目，
+供回到 Windows 后补做编译；条目按日期分节、每脚本一条：
+
+- 脚本：`<SCRIPT>`（章节/用途说明，章节写法沿用 PROGRESS.md 归类，如「第三章 剧情」）
+- 类型：`完全新翻译` 或 `修改`（修改含重译、重排、局部修正、术语统一等）
+- 状态：`已翻译，未编译（macOS）`
+- 改动：翻译/修改范围与统计（页数、show-text/display-furigana/set-string 数量）+ 一句话概述
+- 关联：`docs/prob-<SCRIPT>.md`、`docs/keywords-*.md`（新建/更新）
+- 待办：Windows 上 `cd scripts && npm run assemble -- <SCRIPT>`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+规则：
+
+- 完全新翻译与修改都必须登记；仅排版/术语修正等小改也属「修改」；
+- 同一脚本已有条目时**更新合并**（改动累加、日期刷新），不重复追加；
+- `PENDING.md` 只含未编译条目：Windows assemble 通过并登记 `PROGRESS.md` /
+  `patch/patch.config.json` 后，删除对应条目，避免与 PROGRESS.md 重复记账。
 
 ## 报告内容
 
 - 翻译统计：处理页数、show-text/display-furigana/set-string 数量；
 - 术语应用情况（仙灵/迪尔-利菲娜/天结神缘）；
-- assemble 结果（字节数/骨架校验/回读）；
+- assemble 结果（字节数/骨架校验/回读；macOS 流程报告 PENDING.md 登记条目）；
 - 文档沉淀路径（prob / keywords / README 索引）；
-- PROGRESS.md 与 patch/patch.config.json 更新情况；
+- PROGRESS.md 与 patch/patch.config.json 更新情况（macOS 流程报告「待 Windows 补登记」）；
 - 不确定/存疑名词清单。
