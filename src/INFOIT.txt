@@ -841,9 +841,9 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_00003c3c
-draw-string c5 22 29 "情報"
-draw-string c5 22 167 "分解錬石"
-draw-string c5 22 1b7 "獲得手段"
+draw-string c5 22 29 "情報|情报"
+draw-string c5 22 167 "分解錬石|分解炼石"
+draw-string c5 22 1b7 "獲得手段|获得手段"
 jcc (local-int a44e) ffffffff label_0000657c
 lookup-array (local-ptr 1) (global-int 8de5b) (local-int a44e)
 jcc (local-ptr 1) ffffffff label_00006558
@@ -1165,7 +1165,7 @@ eq (local-int b3f8) (local-ptr 1) (local-int a44e)
 jcc (local-int b3f8) ffffffff label_00005a98
 eq (local-int b3f7) (local-int b3f3) 9
 jcc (local-int b3f7) ffffffff label_00005914
-set-string (local-string 0) "（以下略）"
+set-string (local-string 0) "（以下略）|（以下省略）"
 jmp label_0000599c
 
 label_00005914
@@ -1324,7 +1324,7 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_000067d8
-draw-string c4 9e 2 "アイテム"
+draw-string c4 9e 2 "アイテム|道具"
 add (local-int b3f7) 1d4c0 7ee
 draw-texture (local-int b3f7) c0 3bd 41c 32 13 32d 27e
 add (local-int b3f7) 1d4c0 7f8

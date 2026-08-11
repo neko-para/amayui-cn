@@ -9,9 +9,9 @@ eq (local-int 1) (global-int 132dc8) 1
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000110
-show-text 0 "標準の難易度でプレイします"
+show-text 0 @"以标准难度游玩"
 end-text-line 0
-show-text 0 "ストーリーに変更はありません"
+show-text 0 @"剧情没有变化"
 end-text-line 0
 jmp label_00000804
 
@@ -20,9 +20,9 @@ eq (local-int 1) (global-int 132dc8) 1
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000001cc
-show-text 0 "敵能力や罠配置設定などが厳しい状態でプレイします"
+show-text 0 @"在敌方能力、陷阱配置等更为严苛的状态下游玩"
 end-text-line 0
-show-text 0 "ストーリーに変更はありません"
+show-text 0 @"剧情没有变化"
 end-text-line 0
 jmp label_00000804
 
@@ -31,7 +31,7 @@ eq (local-int 1) (global-int 132dc8) b
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000268
-show-text 0 "ユニット能力や城砦配置などをクリア時の状態にします"
+show-text 0 @"将单位能力与城砦配置等设为通关时的状态"
 end-text-line 0
 jmp label_00000804
 
@@ -40,7 +40,7 @@ eq (local-int 1) (global-int 132dc8) b
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000304
-show-text 0 "ユニット能力や城砦配置などを初期状態にします"
+show-text 0 @"将单位能力与城砦配置等设为初始状态"
 end-text-line 0
 jmp label_00000804
 
@@ -49,7 +49,7 @@ eq (local-int 1) (global-int 132dc8) c
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000003a0
-show-text 0 "アイテムと所持金をクリア時の状態にします"
+show-text 0 @"将道具与持有金钱设为通关时的状态"
 end-text-line 0
 jmp label_00000804
 
@@ -58,7 +58,7 @@ eq (local-int 1) (global-int 132dc8) c
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_0000043c
-show-text 0 "アイテムと所持金を初期状態にします"
+show-text 0 @"将道具与持有金钱设为初始状态"
 end-text-line 0
 jmp label_00000804
 
@@ -67,7 +67,7 @@ eq (local-int 1) (global-int 132dc8) 15
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000004d8
-show-text 0 "仲間にしたユニットが最初から加入した状態でプレイします"
+show-text 0 @"以已收为同伴的单位从一开始就加入的状态游玩"
 end-text-line 0
 jmp label_00000804
 
@@ -76,7 +76,7 @@ eq (local-int 1) (global-int 132dc8) 15
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000574
-show-text 0 "ストーリー進行に合わせてユニットが加入する状態でプレイします"
+show-text 0 @"以随剧情推进加入单位的状态游玩"
 end-text-line 0
 jmp label_00000804
 
@@ -85,7 +85,7 @@ eq (local-int 1) (global-int 132dc8) 16
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000610
-show-text 0 "２周目以降専用のイベントを発生させます"
+show-text 0 @"触发仅二周目及以后才有的事件"
 end-text-line 0
 jmp label_00000804
 
@@ -94,7 +94,7 @@ eq (local-int 1) (global-int 132dc8) 16
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_000006ac
-show-text 0 "１周目と同じ条件でイベントを発生させます"
+show-text 0 @"以与一周目相同的条件触发事件"
 end-text-line 0
 jmp label_00000804
 
@@ -103,9 +103,9 @@ eq (local-int 1) (global-int 132dc8) 17
 eq (local-int 2) (global-int 132dc9) 0
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000768
-show-text 0 "ステージごとの敵レベル上限設定を解除します"
+show-text 0 @"解除各关卡敌方等级上限设定"
 end-text-line 0
-show-text 0 "敵が手強くなりますが、経験値が取得しやすくなります"
+show-text 0 @"敌人会变强，但更容易获得经验值"
 end-text-line 0
 jmp label_00000804
 
@@ -114,7 +114,7 @@ eq (local-int 1) (global-int 132dc8) 17
 eq (local-int 2) (global-int 132dc9) 1
 and (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000804
-show-text 0 "ステージごとの敵レベル上限設定を有効にします"
+show-text 0 @"启用各关卡敌方等级上限设定"
 end-text-line 0
 jmp label_00000804
 

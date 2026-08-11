@@ -9,7 +9,7 @@ gr (local-int 2) (local-int 1) 63
 jcc (local-int 2) ffffffff label_000004f4
 mov (global-int f8fa5) 7
 lookup-array (local-string-ptr 0) (global-string 18e40) (global-int 546e03)
-concat (local-string 0) (local-string-ptr 0) "が所持限界を超えています"
+concat (local-string 0) (local-string-ptr 0) @"已超过持有上限"
 set-string (global-string f17) (local-string 0)
 sub (global-int f8fa4) 0 1
 lookup-array-2d (local-ptr 1) (global-int 5befe5) (global-int 546e03) 3 1
@@ -20,7 +20,7 @@ sub (local-int 2) (local-int 1) 63
 lookup-array-2d (local-ptr 2) (global-int 5befe5) (global-int 546e03) 3 1
 mul (local-int 0) (local-ptr 2) (local-int 2)
 toString (local-string 0) (local-int 0)
-concat (local-string 0) "換金する（" (local-string 0)
+concat (local-string 0) @"换成金钱（" (local-string 0)
 concat (local-string 0) (local-string 0) "G）"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
@@ -32,7 +32,7 @@ jmp label_00000384
 
 label_000002f4
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "破棄する"
+set-string (local-string-ptr 0) "破棄する|丢弃"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) 1
 mov (global-int f8fa4) (global-int f8dfc)
@@ -40,7 +40,7 @@ add (global-int f8dfc) (global-int f8dfc) 1
 
 label_00000384
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 sub (local-ptr 1) 0 1
 mov (global-int f8fa4) (global-int f8dfc)

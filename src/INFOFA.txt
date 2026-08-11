@@ -785,10 +785,10 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_000035d4
-draw-string c5 22 29 "ゲーム設定"
+draw-string c5 22 29 "ゲーム設定|游戏设定"
 u0041AC30 12
 mov (local-int 7f4) 62
-draw-string c5 38 (local-int 7f4) "クリア回数"
+draw-string c5 38 (local-int 7f4) "クリア回数|通关次数"
 u00420A60 c5 178 (local-int 7f4) (global-int a9bd) 3 4
 add (local-int 143c) (local-int 7f4) 12
 u00420D50 c5 38 (local-int 143c) 1ae 2 80 ffffff
@@ -821,17 +821,17 @@ eq (local-int 143c) (local-ptr 1) 1
 jcc (local-int 143c) ffffffff label_0000398c
 eq (local-int 143c) (global-int a9bb) 0
 jcc (local-int 143c) ffffffff label_00003914
-set-string (local-string 0) "ヘタレ"
+set-string (local-string 0) "ヘタレ|简单"
 jmp label_00003980
 
 label_00003914
 eq (local-int 143c) (global-int a9bb) 1
 jcc (local-int 143c) ffffffff label_0000396c
-set-string (local-string 0) "通常"
+set-string (local-string 0) "通常|普通"
 jmp label_00003980
 
 label_0000396c
-set-string (local-string 0) "強敵"
+set-string (local-string 0) "強敵|强敌"
 
 label_00003980
 jmp label_00003ac4
@@ -842,11 +842,11 @@ eq (local-int 143c) (local-ptr 1) 2
 jcc (local-int 143c) ffffffff label_00003a58
 check-bit (local-int 143b) (global-int a9bf) (local-int 143a)
 jcc (local-int 143b) ffffffff label_00003a38
-set-string (local-string 0) "引継"
+set-string (local-string 0) "引継|继承"
 jmp label_00003a4c
 
 label_00003a38
-set-string (local-string 0) "初期"
+set-string (local-string 0) "初期|初始"
 
 label_00003a4c
 jmp label_00003ac4
@@ -897,7 +897,7 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_00003d8c
-draw-string c4 89 2 "ルートマップ"
+draw-string c4 89 2 "ルートマップ|路线地图"
 add (local-int 143c) 1d4c0 7e4
 draw-texture (local-int 143c) c4 0 0 190 18 30e 5b
 u0041AC30 12

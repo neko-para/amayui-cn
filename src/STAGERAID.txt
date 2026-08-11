@@ -548,7 +548,7 @@ eq (local-int 1b) (global-int 56d7a) 64
 and (local-int 13) (local-int 12) (local-int 1b)
 jcc (local-int 13) ffffffff label_00002ecc
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "異質な気配がする……"
+set-string (local-string-ptr 0) "異質な気配がする……|察觉到异样的气息……"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 mov (global-int 51004d) e
@@ -1279,7 +1279,7 @@ call-script 72
 
 label_00005b48
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "住人を生贄にガイダルは復活した！"
+set-string (local-string-ptr 0) "住人を生贄にガイダルは復活した！|以居民为祭品，盖达鲁复活了！"
 add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3
 

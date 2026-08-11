@@ -713,7 +713,7 @@ mov (global-int 3f36) b
 
 label_00003060
 u0041AC30 e
-set-string (local-string 0) "なし"
+set-string (local-string 0) "なし|无"
 lookup-array (local-ptr 1) (global-int 7049e9) (local-int b8b)
 jcc (local-ptr 1) ffffffff label_000031d0
 mov (local-int b8d) 1
@@ -970,7 +970,7 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_00004548
-draw-string c4 b3 2 "施設"
+draw-string c4 b3 2 "施設|设施"
 add (local-int b9e) 1d4c0 7ee
 draw-texture (local-int b9e) c0 3bd 41c 32 13 32d 27e
 add (local-int b9e) 1d4c0 7f8

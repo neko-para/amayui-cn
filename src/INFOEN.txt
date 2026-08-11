@@ -805,8 +805,8 @@ add (local-int 13c9) 1d4c0 4ba
 draw-texture (local-int 13c9) c0 49b 211 217 1a 49 61
 add (local-int 13c9) 1d4c0 4bb
 draw-texture (local-int 13c9) c0 49b 211 217 1a 49 107
-draw-string c5 22 29 "ドロップアイテム"
-draw-string c5 22 cf "出現ステージ"
+draw-string c5 22 29 "ドロップアイテム|掉落道具"
+draw-string c5 22 cf "出現ステージ|出现关卡"
 u0041AC30 12
 u0041AC60 402000
 u0041ACB0 402000
@@ -887,7 +887,7 @@ lookup-array-2d (local-ptr 1) (global-int 41adba) (local-int 13bd) 3e8 (local-in
 jcc (local-ptr 1) ffffffff label_00003c5c
 eq (local-int 13c9) (local-int 13c2) 23
 jcc (local-int 13c9) ffffffff label_00003aec
-set-string (local-string 0) "（以下略）"
+set-string (local-string 0) "（以下略）|（以下省略）"
 jmp label_00003b74
 
 label_00003aec
@@ -1282,7 +1282,7 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_00006558
-draw-string c4 9e 2 "ユニット"
+draw-string c4 9e 2 "ユニット|单位"
 add (local-int 13c9) 1d4c0 7ee
 draw-texture (local-int 13c9) c0 3bd 41c 32 13 32d 27e
 add (local-int 13c9) 1d4c0 7f8

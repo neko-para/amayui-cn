@@ -737,8 +737,8 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_000032fc
-draw-string c5 22 29 "効果"
-draw-string c5 22 153 "リンク発動条件"
+draw-string c5 22 29 "効果|效果"
+draw-string c5 22 153 "リンク発動条件|连携发动条件"
 jcc (local-int 13bd) ffffffff label_000049b4
 lookup-array (local-ptr 1) (global-int e746a) (local-int 13bd)
 jcc (local-ptr 1) ffffffff label_00004990
@@ -782,7 +782,7 @@ lt (local-int 13c1) (local-ptr 1) 0
 jcc (local-int 13c1) ffffffff label_000036d0
 mul (local-int 13c0) (local-int 7ec) 14
 add (local-int 13c1) 178 (local-int 13c0)
-draw-string c5 75 (local-int 13c1) "なし"
+draw-string c5 75 (local-int 13c1) "なし|无"
 jmp label_000038dc
 
 label_000036d0
@@ -1032,7 +1032,7 @@ u00423127 0
 mov (global-int 3f36) 17
 
 label_00004c10
-draw-string c4 94 2 "装備リンク"
+draw-string c4 94 2 "装備リンク|装备连携"
 add (local-int 13c0) 1d4c0 7ee
 draw-texture (local-int 13c0) c0 3bd 41c 32 13 32d 27e
 add (local-int 13c0) 1d4c0 7f8

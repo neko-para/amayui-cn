@@ -81,7 +81,9 @@ E:\Games\Eushully\天結\
 │                          prob-SC1560.md /
 │                          prob-SC2530.md / prob-SC2560.md / prob-SC2030.md /
 │                          keywords-章节标题.md /
-│                          SG与SC分节对应.md）
+│                          SG与SC分节对应.md /
+│                          keywords-周回引継.md / prob-INFOFA.md / prob-CVINIT.md /
+│                          prob-追加包系统.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -111,6 +113,14 @@ E:\Games\Eushully\天結\
 - [x] **名词共识草稿**：`docs/glossary-draft.md`（萌娘百科世界观页 + 游戏本体页提取，含角色/地理/诸神/种族，待人工审校）
 - [x] **SKINIT 技能全量翻译**：1549 条 set-string（1533 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 1532/1532）；
       技能关键字表 `docs/keywords-SKINIT.md`、待定清单 `docs/prob-SKINIT.md` 已建立
+- [ ] **系统/杂项批翻译（macOS，待 Windows assemble）**：GSINIT、GSMES、CVINIT（CV 名不译）、DPINIT、
+      MENU、GAMECLEAR、INFOFA、ADDSTOCK、STAGERAID 及 INFO* 图鉴子页（BA/CH/EN/IT/OF/PL/SK/VO）共 17 个
+      脚本已在 `src/` 翻译完成并通过本地校验（骨架一致/宽度/漏译扫描），未编译条目登记在根目录
+      `PENDING.md`；`keywords-周回引継.md`、`prob-INFOFA.md`、`prob-CVINIT.md` 已建立
+- [ ] **追加包系统脚本批翻译（macOS，待 Windows assemble）**：AP1-5 非 SC/SG/SP 的系统/数据脚本
+      42 个（EBINIT/PLINIT/FAINIT/CIINIT/CNINIT/CVINIT/CCINIT/OFINIT/STINIT2/CDINIT2/AMINIT2/
+      OBINIT/DPINIT 等）已在 `src/` 翻译完成并通过本地校验，未编译条目登记在 `PENDING.md`；
+      `docs/prob-追加包系统.md` 已建立
 - [x] **STINIT2 战斗地名全量翻译**：130 条 set-string（95 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 118/118）；
       关键字表 `docs/keywords-战斗地名.md`、待定清单 `docs/prob-STINIT2.md` 已建立
 - [x] **STINIT 战斗目标全量翻译**：1632 条 set-string（449 条非空、83 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 83/83）；
