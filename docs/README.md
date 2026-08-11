@@ -34,6 +34,7 @@ E:\Games\Eushully\天結\
 │                          keywords-卡片.md / prob-CDINIT2.md /
 │                          keywords-角色名称.md / prob-CNINIT.md /
 │                          keywords-角色图鉴.md / prob-CIINIT.md /
+│                          keywords-角色语气.md /
 │                          keywords-设施.md / prob-PLINIT.md /
 │                          keywords-场域消息.md / prob-FIELD.md /
 │                          keywords-情报首页.md / prob-INFO.md /
