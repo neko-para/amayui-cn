@@ -1476,6 +1476,7 @@ play-voice (global-int f8007)
 
 label_000057e4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「すごい。青色がキラキラしてて、とっても幻想的で素敵な洞窟だね」"
 wait-for-input 0
 end-text-line 0
@@ -1498,6 +1499,7 @@ call label_0000eab4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「仕掛けで巧妙に隠されていたみたいだしな。見る限り、長い間誰かが入った形跡がない」"
 wait-for-input 0
 end-text-line 0
@@ -1520,6 +1522,7 @@ call label_0000eab4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もしかしたらお宝が眠っているかもしれないぞ。わくわくしてきたな」"
 wait-for-input 0
 end-text-line 0
@@ -1655,6 +1658,7 @@ play-voice (global-int f8007)
 
 label_000061c0
 u00416120
+// FROM: 2 フィア
 show-text 0 "「わたしが言ってるのは、風景が綺麗だねってことだったんだけど」"
 wait-for-input 0
 end-text-line 0
@@ -1677,6 +1681,7 @@ call label_0000eab4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「あ、ああ。もちろんだ。うん、いやぁ綺麗だなぁ！」"
 wait-for-input 0
 end-text-line 0
@@ -1881,6 +1886,7 @@ play-voice (global-int f8007)
 
 label_000070f0
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「城砦を動かす？　なにを言っているのだ」"
 wait-for-input 0
 end-text-line 0
@@ -2006,6 +2012,7 @@ play-voice (global-int f8007)
 
 label_0000783c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「結界による拘束は解けたとはいえ、城砦は未だ係留施設に固定されているのだぞ」"
 wait-for-input 0
 end-text-line 0
@@ -2131,6 +2138,7 @@ play-voice (global-int f8007)
 
 label_00007f88
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「もはや抵抗は無意味だ。施設ごと破壊でもしなければ、城砦を動かすことは叶うまい」"
 wait-for-input 0
 end-text-line 0
@@ -2266,6 +2274,7 @@ play-voice (global-int f8007)
 
 label_00008764
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「直に『"
 display-furigana 0 "鯨顎岬" "げいがくこう"
 show-text 0 "』に待機していた部隊も到着する。我らの勝利は確実だ」"
@@ -2403,6 +2412,7 @@ play-voice (global-int f8007)
 
 label_00008f70
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「さぁ討伐を開始せよ！　ギルシュ殿下の命を奪った報いを受けさせるのだ！！」"
 wait-for-input 0
 end-text-line 0
@@ -2624,6 +2634,7 @@ play-voice (global-int f8007)
 
 label_00009ee4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「おお、ついに援軍が到着したか！　待っていたぞ、我らが勇猛なる戦士たちよ」"
 wait-for-input 0
 end-text-line 0
@@ -2749,6 +2760,7 @@ play-voice (global-int f8007)
 
 label_0000a630
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ふふふ、奴らの命運もここまでだ。行くぞ、一気に城砦を制圧せよ！」"
 wait-for-input 0
 end-text-line 0
@@ -2874,6 +2886,7 @@ play-voice (global-int f8007)
 
 label_0000ad7c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「街に被害を出さぬよう用兵せよ。許可したのは城砦への攻撃のみである」"
 wait-for-input 0
 end-text-line 0
@@ -2999,6 +3012,7 @@ play-voice (global-int f8007)
 
 label_0000b4c8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「反撃を許すな。時間を与えず、邪神に従う者たちを取り押さえよ」"
 wait-for-input 0
 end-text-line 0
@@ -4137,6 +4151,7 @@ set-string (global-string d5d) "？？？？"
 label_000100bc
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

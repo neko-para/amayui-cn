@@ -1358,6 +1358,7 @@ label_00004e3c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "今回分の城砦拡張作業も終わりを迎えようとしている時だった。"
 wait-for-input 0
 end-text-line 0
@@ -1556,6 +1557,7 @@ play-voice (global-int f8007)
 
 label_00005c44
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「アヴァロ隊長」"
 wait-for-input 0
 end-text-line 0
@@ -1578,6 +1580,7 @@ call label_0000a684
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「おっ、ロズリーヌか。もう少しでこの辺りの作業も終わるから待っててくれ」"
 wait-for-input 0
 end-text-line 0
@@ -1713,6 +1716,7 @@ play-voice (global-int f8007)
 
 label_00006520
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「楽しみね」"
 wait-for-input 0
 end-text-line 0
@@ -1735,6 +1739,7 @@ call label_0000a684
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「そうだな。これで新しい人たちとの交流もできるようになるはずだ」"
 wait-for-input 0
 end-text-line 0
@@ -1860,6 +1865,7 @@ play-voice (global-int f8007)
 
 label_00006d6c
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「アヴァロ隊長、頑張って」"
 wait-for-input 0
 end-text-line 0
@@ -1887,6 +1893,7 @@ label_00006ea0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "この後もロズリーヌに見守られながら作業を続けた。"
 wait-for-input 0
 end-text-line 0
@@ -3069,6 +3076,7 @@ set-string (global-string d5d) "？？？？"
 label_0000bd8c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

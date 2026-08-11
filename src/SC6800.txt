@@ -1303,6 +1303,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「すまない、こんなことに巻き込んでしまって」"
 wait-for-input 0
 end-text-line 0
@@ -1325,6 +1326,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺たちが通って来た道なら安全に逃げられるはずだ。急いで脱出してくれ」"
 wait-for-input 0
 end-text-line 0
@@ -1356,6 +1358,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「間に合った。大丈夫か？」"
 wait-for-input 0
 end-text-line 0
@@ -1378,6 +1381,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺たちが来た道からなら脱出できる。なんとか逃げ切ってくれ」"
 wait-for-input 0
 end-text-line 0
@@ -1409,6 +1413,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「助けに来たぞ。みんな無事か？」"
 wait-for-input 0
 end-text-line 0
@@ -1431,6 +1436,7 @@ call label_00008158
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「これから何が起こるか分からない。城砦から脱出してくれ」"
 wait-for-input 0
 end-text-line 0
@@ -2386,6 +2392,7 @@ set-string (global-string d5d) "？？？？"
 label_00008d68
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

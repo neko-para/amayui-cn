@@ -1439,6 +1439,7 @@ play-voice (global-int f8007)
 
 label_00005358
 u00416120
+// FROM: a カトリト
 show-text 0 "「や、やだっ、こっち来ないでっ」"
 wait-for-input 0
 end-text-line 0
@@ -1564,6 +1565,7 @@ play-voice (global-int f8007)
 
 label_00005aa4
 u00416120
+// FROM: a カトリト
 show-text 0 "「じじ様、たすけてっアヴァロ、たすけてっ」"
 wait-for-input 0
 end-text-line 0
@@ -1870,6 +1872,7 @@ play-voice (global-int f8007)
 
 label_00007174
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「ギルシュ殿下、お覚悟を！」"
 wait-for-input 0
 end-text-line 0
@@ -1995,6 +1998,7 @@ play-voice (global-int f8007)
 
 label_000078c0
 u00416120
+// FROM: 96 ギルシュ
 show-text 0 "「くはっ、ついに本格的な王国の敵となったか。情けは期待するなよ、キスニぃル！」"
 wait-for-input 0
 end-text-line 0
@@ -2120,6 +2124,7 @@ play-voice (global-int f8007)
 
 label_0000800c
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「一度はお仕えした身。せめて私の手で片をつけましょう」"
 wait-for-input 0
 end-text-line 0
@@ -2245,6 +2250,7 @@ play-voice (global-int f8007)
 
 label_00008758
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「貴方が民のことを考えて行動する方であれば、私は！」"
 wait-for-input 0
 end-text-line 0
@@ -2551,6 +2557,7 @@ play-voice (global-int f8007)
 
 label_00009e28
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ついに追い詰めましたわ！　ふふふ、この機会にインフルースの戦力を"
 display-furigana 0 "削" "けず"
 show-text 0 "らせていただきましょう」"
@@ -2678,6 +2685,7 @@ play-voice (global-int f8007)
 
 label_0000a5a4
 u00416120
+// FROM: 96 ギルシュ
 show-text 0 "「ふん、誰だ貴様は？　王族である余に声をかけるとはなんて不遜な。打ち首にしてやろう」"
 wait-for-input 0
 end-text-line 0
@@ -2814,6 +2822,7 @@ play-voice (global-int f8007)
 
 label_0000ad8c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「なっ、このラウロソ領主リシュエンツェーリを知らないとは、なんて愚かなのでしょう！　鉄槌をくだします！」"
 wait-for-input 0
 end-text-line 0
@@ -2939,6 +2948,7 @@ play-voice (global-int f8007)
 
 label_0000b4d8
 u00416120
+// FROM: 96 ギルシュ
 show-text 0 "「あぁラウロソあの田舎出身なのか。だからこんなに野蛮なのだな」"
 wait-for-input 0
 end-text-line 0
@@ -3064,6 +3074,7 @@ play-voice (global-int f8007)
 
 label_0000bc24
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「もも、もう許しませんわー！　覚悟してくださいませ！」"
 wait-for-input 0
 end-text-line 0
@@ -3259,6 +3270,7 @@ play-voice (global-int f8007)
 
 label_0000c818
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「行きますわよ！　ラウロソ領主として、役目を果たして見せますわ！」"
 wait-for-input 0
 end-text-line 0
@@ -3289,6 +3301,7 @@ call label_00010f58
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「みんな、大物の幽霊退治だ！　気合い入れていくぞぉっ」"
 wait-for-input 0
 end-text-line 0
@@ -3442,6 +3455,7 @@ play-voice (global-int f8007)
 
 label_0000d214
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「あの子の元へは行かせない。ここで死んでもらうわ！」"
 wait-for-input 0
 end-text-line 0
@@ -3595,6 +3609,7 @@ play-voice (global-int f8007)
 
 label_0000dad0
 u00416120
+// FROM: 96 ギルシュ
 show-text 0 "「もはや城砦を開け渡すだけでは済まさぬ。ズタズタに、切り刻んでやる！　今さら詫びを入れても遅いぞ、貴様らああぁっ」"
 wait-for-input 0
 end-text-line 0
@@ -4726,6 +4741,7 @@ set-string (global-string d5d) "？？？？"
 label_000126e8
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

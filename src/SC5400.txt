@@ -1476,6 +1476,7 @@ play-voice (global-int f8007)
 
 label_000057e4
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「さて、これから戦闘になるが基本的なことを説明しておこう」"
 */
@@ -1636,6 +1637,7 @@ play-voice (global-int f8007)
 
 label_000061f0
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「戦闘に入ると、通常の場合はお互いに攻撃を２回ずつ行うことになる。もちろん、攻撃を仕掛けた側が"
 display-furigana 0 "先行" "せんこう"
@@ -1780,6 +1782,7 @@ play-voice (global-int f8007)
 
 label_000069fc
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「２回目の攻撃は『"
 display-furigana 0 "敏捷" "びんしょう"
@@ -1928,6 +1931,7 @@ play-voice (global-int f8007)
 
 label_00007238
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「そして『敏捷』の値が相手よりも３以上高い場合は、"
 display-furigana 0 "更" "さら"
@@ -1959,6 +1963,7 @@ call label_0000d024
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「力や体力には自信があるけど、『"
 display-furigana 0 "敏捷" "びんしょう"
@@ -2022,6 +2027,7 @@ call label_0000d024
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、それじゃキスニル。俺の実力を見ていてくれ」"
 */
@@ -2231,6 +2237,7 @@ play-voice (global-int f8007)
 
 label_000084c8
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「戦闘について補足だ。敵が行う攻撃の中には体調に『"
 display-furigana 0 "異常" "いじょう"
@@ -2395,6 +2402,7 @@ play-voice (global-int f8007)
 
 label_00008f04
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「この敵が行う攻撃には『"
 display-furigana 0 "麻痺" "まひ"
@@ -2539,6 +2547,7 @@ play-voice (global-int f8007)
 
 label_00009710
 u00416120
+// FROM: 5 キスニル
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「時間が経てば治るが、異常回復アイテムならすぐだ。ない場合は回復の羽などで代用するしかない」"
 */
@@ -2596,6 +2605,7 @@ call label_0000d024
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「あまりやり合いたくないけど、そうも言ってられないか。気に"
 display-furigana 0 "留" "と"
@@ -3747,6 +3757,7 @@ set-string (global-string d5d) "？？？？"
 label_0000e62c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

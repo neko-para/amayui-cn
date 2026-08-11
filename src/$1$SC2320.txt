@@ -1506,6 +1506,7 @@ play-voice (global-int f8007)
 
 label_0000598c
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「ねぇヴァレフォル。この前、わたしとヴァレフォルが似てるねっていわれたよ」"
 wait-for-input 0
 end-text-line 0
@@ -1631,6 +1632,7 @@ play-voice (global-int f8007)
 
 label_000060d8
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「ワタシとリリィがねぇ」"
 wait-for-input 0
 end-text-line 0
@@ -1756,6 +1758,7 @@ play-voice (global-int f8007)
 
 label_00006824
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「うしろから見ると、見分けがつかないって」"
 wait-for-input 0
 end-text-line 0
@@ -1891,6 +1894,7 @@ play-voice (global-int f8007)
 
 label_00007000
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「ああ、なるほど。確かに髪の色も着ている服の色も似てるから、そう思われなくもないかも」"
 wait-for-input 0
 end-text-line 0
@@ -2026,6 +2030,7 @@ play-voice (global-int f8007)
 
 label_000077dc
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「それでね、わたしおもいついちゃったの。見ててね」"
 wait-for-input 0
 end-text-line 0
@@ -2060,6 +2065,7 @@ label_000079cc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リリィはそそくさとヴァレフォルの後ろに隠れ始めた"
 wait-for-input 0
 end-text-line 0
@@ -2197,6 +2203,7 @@ play-voice (global-int f8007)
 
 label_00008228
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「はぁー、分身！」"
 wait-for-input 0
 end-text-line 0
@@ -2332,6 +2339,7 @@ play-voice (global-int f8007)
 
 label_00008a04
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「えっと」"
 wait-for-input 0
 end-text-line 0
@@ -2457,6 +2465,7 @@ play-voice (global-int f8007)
 
 label_00009150
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「ほら、ヴァレフォルもいっしょに」"
 wait-for-input 0
 end-text-line 0
@@ -2700,6 +2709,7 @@ jcc (global-int f8007) ffffffff label_0000a06c
 
 label_0000a06c
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「はぁー、分身！」"
 wait-for-input 0
 end-text-line 0
@@ -2825,6 +2835,7 @@ play-voice (global-int f8007)
 
 label_0000a7b8
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「って、何やらせるのよ」"
 wait-for-input 0
 end-text-line 0
@@ -2960,6 +2971,7 @@ play-voice (global-int f8007)
 
 label_0000af94
 u00416120
+// FROM: 15 リリィ
 show-text 0 "「これで、ヴァレフォルが２人に。あれ、わたしはどこ？」"
 wait-for-input 0
 end-text-line 0
@@ -3095,6 +3107,7 @@ play-voice (global-int f8007)
 
 label_0000b770
 u00416120
+// FROM: 16 ヴァレフォル
 show-text 0 "「いやいや、リリィは初めからそこにいるでしょうに」"
 wait-for-input 0
 end-text-line 0
@@ -4301,6 +4314,7 @@ set-string (global-string d5d) "？？？？"
 label_000107bc
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

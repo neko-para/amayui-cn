@@ -1358,6 +1358,7 @@ label_00004e3c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "城砦の生活をより豊かにするため『"
 display-furigana 0 "風車" "ふうしゃ"
 show-text 0 "』を作成した。"
@@ -1387,6 +1388,7 @@ label_00004fb8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "城砦は地上よりも高い位置にあるからか、風の勢いも強い。これで"
 display-furigana 0 "製粉" "せいふん"
 show-text 0 "作業なども効率化が進むだろう。"
@@ -1416,6 +1418,7 @@ label_00005134
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "試作品は上手くできたし、これで住民の生活が楽になれば、嬉しいんだけど。"
 wait-for-input 0
 end-text-line 0
@@ -1591,6 +1594,7 @@ play-voice (global-int f8007)
 
 label_00005dd0
 u00416120
+// FROM: 6f 通りすがりの青年
 show-text 0 "「これ面白いなぁ。どうやって動いてるんだろう？」"
 wait-for-input 0
 end-text-line 0
@@ -1716,6 +1720,7 @@ play-voice (global-int f8007)
 
 label_0000651c
 u00416120
+// FROM: 73 通りすがりの娘
 show-text 0 "「なんだかいつもより景色が綺麗に見えるわ。うふふ、どんどん街らしくなっていく気がして、嬉しいわね」"
 wait-for-input 0
 end-text-line 0
@@ -1738,6 +1743,7 @@ call label_00009f34
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なるほど、そういう感想もあるのか」"
 wait-for-input 0
 end-text-line 0
@@ -1765,6 +1771,7 @@ label_00006750
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "どうやら風車は、鑑賞物としても効果があるようだった。"
 wait-for-input 0
 end-text-line 0
@@ -2867,6 +2874,7 @@ set-string (global-string d5d) "？？？？"
 label_0000aecc
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

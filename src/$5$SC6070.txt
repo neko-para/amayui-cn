@@ -1302,6 +1302,7 @@ call label_0000ad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ふう。なんとか、大人しくなってくれたみたいだな」"
 wait-for-input 0
 end-text-line 0
@@ -1447,6 +1448,7 @@ play-voice (global-int f8007)
 
 label_00005370
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「城砦を傷つけることがなくて良かったわ。なんの為に育てていたのか、分からなくなるところだった」"
 wait-for-input 0
 end-text-line 0
@@ -1582,6 +1584,7 @@ play-voice (global-int f8007)
 
 label_00005b4c
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「ごめんなさい。これからは、ゆっくりと眠って」"
 wait-for-input 0
 end-text-line 0
@@ -1707,6 +1710,7 @@ play-voice (global-int f8007)
 
 label_00006298
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「"
 display-furigana 0 "逞" "たくま"
 show-text 0 "しく育ってくれてありがとう、私のお花たち」"
@@ -1739,6 +1743,7 @@ call label_0000ad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「よし、なんとか鎮圧できたみたいだ。手強い相手だったな」"
 wait-for-input 0
 end-text-line 0
@@ -1884,6 +1889,7 @@ play-voice (global-int f8007)
 
 label_00006c84
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「無事に回収完了ですね。この天使を味方にできれば、マーズテリア神殿への良い報告となるでしょう」"
 wait-for-input 0
 end-text-line 0
@@ -1906,6 +1912,7 @@ call label_0000ad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「マーズテリアへはどうやって持っていくんだ？　結構大きいぞ、商会でなにか道具を用意しようか」"
 wait-for-input 0
 end-text-line 0
@@ -2041,6 +2048,7 @@ play-voice (global-int f8007)
 
 label_00007560
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「助かります。運搬する人員はこちらにて用意しますので、道具だけお借りします」"
 wait-for-input 0
 end-text-line 0
@@ -2166,6 +2174,7 @@ play-voice (global-int f8007)
 
 label_00007cac
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「では、これにて依頼達成です。ご協力いただきありがとうございました」"
 wait-for-input 0
 end-text-line 0
@@ -3310,6 +3319,7 @@ set-string (global-string d5d) "？？？？"
 label_0000c8c8
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

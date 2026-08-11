@@ -1427,6 +1427,7 @@ play-voice (global-int f8007)
 
 label_00005270
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「インフルース王国に刃向かうことがどれだけ愚かな行為か、教えてやろう！」"
 wait-for-input 0
 end-text-line 0
@@ -1580,6 +1581,7 @@ play-voice (global-int f8007)
 
 label_00005b2c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「禁忌と化した神に従う者共よ。フィユシア教の大司教を預かる身として、グアラクーナ城砦と共に鎮めよう」"
 wait-for-input 0
 end-text-line 0
@@ -1602,6 +1604,7 @@ call label_0000a3d8
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺はアンタと会って、城砦が禁忌だからって問答無用で襲いかかってくる奴ばかりじゃないんだと、嬉しかったんだけどな」"
 wait-for-input 0
 end-text-line 0
@@ -1624,6 +1627,7 @@ call label_0000a3d8
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「下手な言いがかりで城砦を破壊しようとしたこと、後悔させてやるぜ！」"
 wait-for-input 0
 end-text-line 0
@@ -1749,6 +1753,7 @@ play-voice (global-int f8007)
 
 label_00006478
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「言いがかり、か。ならば世の理不尽を乗り越え証明してみせよ」"
 wait-for-input 0
 end-text-line 0
@@ -1874,6 +1879,7 @@ play-voice (global-int f8007)
 
 label_00006bc4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「『精域葉』で決める予定であった、禁忌でありながらも、城砦はフィユシア教の為になるのだとな」"
 wait-for-input 0
 end-text-line 0
@@ -1896,6 +1902,7 @@ call label_0000a3d8
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なるほどな。どうしてアンタがこんな強引に戦いを仕掛けてきたのか、なんとなく意図が分かってきたぜ」"
 wait-for-input 0
 end-text-line 0
@@ -1918,6 +1925,7 @@ call label_0000a3d8
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だが、まずはアンタを倒す！　みんな、全力で行くぞ！！」"
 wait-for-input 0
 end-text-line 0
@@ -2982,6 +2990,7 @@ set-string (global-string d5d) "？？？？"
 label_0000b270
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

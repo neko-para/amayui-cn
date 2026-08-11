@@ -1441,6 +1441,7 @@ play-voice (global-int f8007)
 
 label_00005318
 u00416120
+// FROM: 3 イオル
 show-text 0 "「ミケユを助けない、と」"
 wait-for-input 0
 end-text-line 0
@@ -1611,6 +1612,7 @@ play-voice (global-int f8007)
 
 label_00005c88
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「イオル」"
 wait-for-input 0
 end-text-line 0
@@ -1781,6 +1783,7 @@ play-voice (global-int f8007)
 
 label_000065f8
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「くぁぁあああっ！　そんな、まさか！」"
 wait-for-input 0
 end-text-line 0
@@ -1906,6 +1909,7 @@ play-voice (global-int f8007)
 
 label_00006d44
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「何も出来ずただの、役立たずで終わるなんて無念、ですわ」"
 wait-for-input 0
 end-text-line 0
@@ -2076,6 +2080,7 @@ play-voice (global-int f8007)
 
 label_000076b4
 u00416120
+// FROM: a カトリト
 show-text 0 "「う、あぅぅごめんなさい、もう、だめ」"
 wait-for-input 0
 end-text-line 0
@@ -2201,6 +2206,7 @@ play-voice (global-int f8007)
 
 label_00007e00
 u00416120
+// FROM: a カトリト
 show-text 0 "「わたしできると、思ったんだけどな」"
 wait-for-input 0
 end-text-line 0
@@ -2326,6 +2332,7 @@ play-voice (global-int f8007)
 
 label_0000854c
 u00416120
+// FROM: a カトリト
 show-text 0 "「とと様じじ様みんな、ごめんなさいわたし、やっぱり、出来損ないだったみたい」"
 wait-for-input 0
 end-text-line 0
@@ -2373,6 +2380,7 @@ call label_0000be0c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ちっ、しくじっちまった」"
 wait-for-input 0
 end-text-line 0
@@ -2404,6 +2412,7 @@ call label_0000be0c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「こんなところで、倒れるわけには」"
 wait-for-input 0
 end-text-line 0
@@ -3462,6 +3471,7 @@ set-string (global-string d5d) "？？？？"
 label_0000cd68
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

@@ -1358,6 +1358,7 @@ label_00004e3c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィアから達ての希望により、『女神更衣室』が完成した。"
 wait-for-input 0
 end-text-line 0
@@ -1385,6 +1386,7 @@ label_00004f88
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "早速使ってみると入っていったフィアを待っているわけだが。"
 wait-for-input 0
 end-text-line 0
@@ -1407,6 +1409,7 @@ call label_0000ae60
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「作ったのはいいけれど、フィアっていつも着ている服以外に何か持っていたかな」"
 wait-for-input 0
 end-text-line 0
@@ -1603,6 +1606,7 @@ play-voice (global-int f8007)
 
 label_00005e90
 u00416120
+// FROM: 2 フィア
 show-text 0 "「え？　寝間着だよ？」"
 wait-for-input 0
 end-text-line 0
@@ -1630,6 +1634,7 @@ label_00005fc4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "更衣室から出てきたフィアは見間違えようもない、いつもの寝間着を着ていた。着替えるにしても、もう少し何かあったんじゃ。"
 wait-for-input 0
 end-text-line 0
@@ -1765,6 +1770,7 @@ play-voice (global-int f8007)
 
 label_000067b8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「失敬だな君は」"
 wait-for-input 0
 end-text-line 0
@@ -1792,6 +1798,7 @@ label_000068ec
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "俺の視線から言いたいことを感じ取ったのか、フィアは不機嫌な顔をしていた。"
 wait-for-input 0
 end-text-line 0
@@ -1814,6 +1821,7 @@ call label_0000ae60
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「何も言っていないだろ。フィアはいつでも可愛いよ」"
 wait-for-input 0
 end-text-line 0
@@ -1949,6 +1957,7 @@ play-voice (global-int f8007)
 
 label_000071e0
 u00416120
+// FROM: 2 フィア
 show-text 0 "「わーい！　アヴァロに褒められたー！」"
 wait-for-input 0
 end-text-line 0
@@ -3139,6 +3148,7 @@ set-string (global-string d5d) "？？？？"
 label_0000c11c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

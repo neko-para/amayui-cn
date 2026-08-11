@@ -1417,6 +1417,7 @@ play-voice (global-int f8007)
 
 label_000051f0
 u00416120
+// FROM: 2 フィア
 show-text 0 "「うわぁー。き、気持ち悪いなぁ。なにこれ、"
 display-furigana 0 "幻獣" "げんじゅう"
 show-text 0 "？」"
@@ -1591,6 +1592,7 @@ play-voice (global-int f8007)
 
 label_00005c38
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「なるほど、幻獣。さすが図体が大きいだけあって、斬り応えがある！」"
 wait-for-input 0
 end-text-line 0
@@ -1716,6 +1718,7 @@ play-voice (global-int f8007)
 
 label_00006384
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「目が"
 display-furigana 0 "爛々" "らんらん"
 show-text 0 "としています。騎士さんは戦うことが大好きなんですね」"
@@ -1843,6 +1846,7 @@ play-voice (global-int f8007)
 
 label_00006b00
 u00416120
+// FROM: 3 イオル
 show-text 0 "「大歓迎。この形状だと、蒲焼きにして食べるのがオススメ」"
 wait-for-input 0
 end-text-line 0
@@ -1968,6 +1972,7 @@ play-voice (global-int f8007)
 
 label_0000724c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「ゲテモノは美味しいっていうよね。コレを食べる勇気は、私にはないけど」"
 wait-for-input 0
 end-text-line 0
@@ -2104,6 +2109,7 @@ play-voice (global-int f8007)
 
 label_00007a34
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「おそらくこれは、ラウロソへの侵入を阻む仕掛けの一つだろう。ならば私の剣で突破する。これこそ城砦に乗り込んだ意義があるというものだ」"
 wait-for-input 0
 end-text-line 0
@@ -2239,6 +2245,7 @@ play-voice (global-int f8007)
 
 label_00008210
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「アヴァロへ至る道を作る。皆、私に続けぇ！」"
 wait-for-input 0
 end-text-line 0
@@ -2434,6 +2441,7 @@ play-voice (global-int f8007)
 
 label_00008e04
 u00416120
+// FROM: 3 イオル
 show-text 0 "「行く。この世界は弱肉強食。生存競争に勝つのは、イオたち！」"
 wait-for-input 0
 end-text-line 0
@@ -2587,6 +2595,7 @@ play-voice (global-int f8007)
 
 label_000096c0
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「行きますよ！　魔法で冷却して、村を守るんです！」"
 wait-for-input 0
 end-text-line 0
@@ -2740,6 +2749,7 @@ play-voice (global-int f8007)
 
 label_00009f7c
 u00416120
+// FROM: 33 溶燐結騎
 show-text 0 "「グハハハッ、導く者を"
 display-furigana 0 "騙" "かた"
 show-text 0 "る不届き者めが！　我の炎にて燃やし尽くしてくれようぞ！」"
@@ -3874,6 +3884,7 @@ set-string (global-string d5d) "？？？？"
 label_0000eb78
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

@@ -1426,6 +1426,7 @@ play-voice (global-int f8007)
 
 label_00005284
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ふふ、これはよいものを見つけましたわ。これだけあれば、ラウロソをより豊かにする助けとなるでしょう。民も喜ぶこと間違いなしですわ！」"
 wait-for-input 0
 end-text-line 0
@@ -1580,6 +1581,7 @@ play-voice (global-int f8007)
 
 label_00005b54
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「これをマーズテリアに持ち帰ることは可能でしょうか。難しそうですね。金銭で評価を買おうなどと、天使にあるまじき発想。自重することにします」"
 wait-for-input 0
 end-text-line 0
@@ -1734,6 +1736,7 @@ play-voice (global-int f8007)
 
 label_00006424
 u00416120
+// FROM: a カトリト
 show-text 0 "「わあ、目がチカチカします。どれくらいの価値があるんだろう。これがあれば、じじ様も喜んでくれるかな」"
 wait-for-input 0
 end-text-line 0
@@ -1918,6 +1921,7 @@ play-voice (global-int f8007)
 
 label_00006f94
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「拘束起重台が１つ破壊されたか！　だが"
 display-furigana 0 "焦" "あせ"
 show-text 0 "ることなどない。残りの施設を全力で死守せよ、我々の勝利は近い！」"
@@ -2104,6 +2108,7 @@ play-voice (global-int f8007)
 
 label_00007b34
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ちぃっ、２つ目も！　案ずるな、もうこれ以上の"
 display-furigana 0 "狼藉" "ろうぜき"
 show-text 0 "は許さぬ。なぜならば、私が直々に奴らと相対するからだ！」"
@@ -3171,6 +3176,7 @@ set-string (global-string d5d) "？？？？"
 label_0000c0ec
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

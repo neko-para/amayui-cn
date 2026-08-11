@@ -1302,6 +1302,7 @@ call label_00008d14
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「まさか、こうして魔神と戦うことになるとはな！　みんな、絶対に油断するなよ！」"
 wait-for-input 0
 end-text-line 0
@@ -1455,6 +1456,7 @@ play-voice (global-int f8007)
 
 label_000053b0
 u00416120
+// FROM: 18 フォルネウス
 show-text 0 "「邪魔する者は排除します。抵抗は無意味です。速やかに死んでください」"
 wait-for-input 0
 end-text-line 0
@@ -1608,6 +1610,7 @@ play-voice (global-int f8007)
 
 label_00005c6c
 u00416120
+// FROM: 17 べリアル
 show-text 0 "「死力を尽くすがよい。すぐに終わっては、つまらぬのでな！」"
 wait-for-input 0
 end-text-line 0
@@ -2683,6 +2686,7 @@ set-string (global-string d5d) "？？？？"
 label_0000a1b4
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

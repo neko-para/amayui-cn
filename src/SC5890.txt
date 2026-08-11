@@ -1365,6 +1365,7 @@ call label_0000fcc4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「このカトリトは、偽者か」"
 wait-for-input 0
 end-text-line 0
@@ -1387,6 +1388,7 @@ call label_0000fcc4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「よ、よかった。これが本物だったらどうしようかと。心臓に悪いなこの試練」"
 wait-for-input 0
 end-text-line 0
@@ -1583,6 +1585,7 @@ play-voice (global-int f8007)
 
 label_00005f48
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「どうやら偽者だったようね」"
 wait-for-input 0
 end-text-line 0
@@ -1708,6 +1711,7 @@ play-voice (global-int f8007)
 
 label_00006694
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「早く本物を見つけてあげないと、間違って攻撃してしまったら大変だわ」"
 wait-for-input 0
 end-text-line 0
@@ -1904,6 +1908,7 @@ play-voice (global-int f8007)
 
 label_00007404
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ふふ、当然ですわ！」"
 wait-for-input 0
 end-text-line 0
@@ -2029,6 +2034,7 @@ play-voice (global-int f8007)
 
 label_00007b50
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「私が見間違える訳がないでしょう。少しだけドキドキしたのは、内緒ですわ！」"
 wait-for-input 0
 end-text-line 0
@@ -2225,6 +2231,7 @@ play-voice (global-int f8007)
 
 label_000088c0
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「ふう、偽者でしたか」"
 wait-for-input 0
 end-text-line 0
@@ -2350,6 +2357,7 @@ play-voice (global-int f8007)
 
 label_0000900c
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「攻撃する際に見る、彼女の脅える顔は心にくるものがありますね」"
 wait-for-input 0
 end-text-line 0
@@ -2509,6 +2517,7 @@ play-voice (global-int f8007)
 
 label_00009928
 u00416120
+// FROM: a カトリト
 show-text 0 "「きゃ、きゃああああああああっ」"
 wait-for-input 0
 end-text-line 0
@@ -2634,6 +2643,7 @@ play-voice (global-int f8007)
 
 label_0000a074
 u00416120
+// FROM: a カトリト
 show-text 0 "「うぅ、皆さん酷いですわたしを見間違えるなんて」"
 wait-for-input 0
 end-text-line 0
@@ -2787,6 +2797,7 @@ play-voice (global-int f8007)
 
 label_0000a930
 u00416120
+// FROM: 235 カルメルグ
 show-text 0 "「ぐぅ、うぅもはや、これまでか！」"
 wait-for-input 0
 end-text-line 0
@@ -2912,6 +2923,7 @@ play-voice (global-int f8007)
 
 label_0000b07c
 u00416120
+// FROM: 235 カルメルグ
 show-text 0 "「まさか人間族ごときに、我ら誇り高き竜族が敗れるとは」"
 wait-for-input 0
 end-text-line 0
@@ -3047,6 +3059,7 @@ play-voice (global-int f8007)
 
 label_0000b858
 u00416120
+// FROM: 235 カルメルグ
 show-text 0 "「いや、まだだ、まだ終わらぬわ」"
 wait-for-input 0
 end-text-line 0
@@ -3172,6 +3185,7 @@ play-voice (global-int f8007)
 
 label_0000bfa4
 u00416120
+// FROM: 235 カルメルグ
 show-text 0 "「再起の機会は必ず来る。もはや"
 display-furigana 0 "雷府" "らいふ"
 show-text 0 "の血脈も途絶えたのだ。誰かが竜族を率いなければならぬ状態に変わりはない」"
@@ -3299,6 +3313,7 @@ play-voice (global-int f8007)
 
 label_0000c720
 u00416120
+// FROM: 235 カルメルグ
 show-text 0 "「そして、それはこの"
 display-furigana 0 "絶氷公" "ぜっひょうこう"
 show-text 0 "カルメルグしかいない！」"
@@ -4438,6 +4453,7 @@ set-string (global-string d5d) "？？？？"
 label_00011390
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

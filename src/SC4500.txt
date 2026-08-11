@@ -1476,6 +1476,7 @@ play-voice (global-int f8007)
 
 label_000057e4
 u00416120
+// FROM: 64 年老いた技師
 show-text 0 "「おっと、あんちゃん。洞窟の探索は初めてなのかもしれんが、先が見えないから気を付けて歩けよ」"
 wait-for-input 0
 end-text-line 0
@@ -1601,6 +1602,7 @@ play-voice (global-int f8007)
 
 label_00005f30
 u00416120
+// FROM: 64 年老いた技師
 show-text 0 "「騎士のねーちゃんも言っていたが、魔物が隠れているかもしれんし、古い遺跡ほど罠が仕掛けられてるかもしれんからな」"
 wait-for-input 0
 end-text-line 0
@@ -1623,6 +1625,7 @@ call label_0000a710
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「確かにそうだな。忠告、助かるぜ」"
 wait-for-input 0
 end-text-line 0
@@ -1748,6 +1751,7 @@ play-voice (global-int f8007)
 
 label_0000677c
 u00416120
+// FROM: 64 年老いた技師
 show-text 0 "「それと、移動にはＦＳ（"
 display-furigana 0 "疲労強度" "ひろうきょうど"
 show-text 0 "）が必要だ。調子にのって移動し過ぎると孤立するから気を付けてな」"
@@ -1875,6 +1879,7 @@ play-voice (global-int f8007)
 
 label_00006ef8
 u00416120
+// FROM: 64 年老いた技師
 show-text 0 "「"
 display-furigana 0 "ＦＳ" "疲労強度"
 show-text 0 "は毎ターン１ずつ回復するんだが、"
@@ -1901,6 +1906,7 @@ call label_0000a710
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「人より体力はあるはずだけど、気を付けるよ。よし、それじゃいくぜ」"
 wait-for-input 0
 end-text-line 0
@@ -2984,6 +2990,7 @@ set-string (global-string d5d) "？？？？"
 label_0000b5a8
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

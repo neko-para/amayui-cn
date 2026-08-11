@@ -1427,6 +1427,7 @@ play-voice (global-int f8007)
 
 label_00005270
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「くうぅ、まさか、私が敗れるとはっ」"
 wait-for-input 0
 end-text-line 0
@@ -1552,6 +1553,7 @@ play-voice (global-int f8007)
 
 label_000059bc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「フィユシア教に徒なす異教徒め、どれだけ傲慢になれば気が済むのだ」"
 wait-for-input 0
 end-text-line 0
@@ -1677,6 +1679,7 @@ play-voice (global-int f8007)
 
 label_00006108
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「いつまでも自分本位の考えを貫き、恥ずかしいとは考えぬのかっ」"
 wait-for-input 0
 end-text-line 0
@@ -1812,6 +1815,7 @@ play-voice (global-int f8007)
 
 label_000068e4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「貴様らはその存在だけで人を狂わす。世界から排除せねばならぬのだ罪人は大人しく我らに従え！」"
 wait-for-input 0
 end-text-line 0
@@ -1834,6 +1838,7 @@ call label_0000b014
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なにもかもが自分の思い通りに進むと思っているのは、そっちの方だろう」"
 wait-for-input 0
 end-text-line 0
@@ -1856,6 +1861,7 @@ call label_0000b014
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ギルシュの時も同じだ。自分のわがままが通らなければ、通さない周囲の方が間違っていると決めつける」"
 wait-for-input 0
 end-text-line 0
@@ -1878,6 +1884,7 @@ call label_0000b014
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうして『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』での決定前に動いたんだ。アンタらが負けたのは、自分から有利な立場を捨てて欲張った"
@@ -1904,6 +1911,7 @@ call label_0000b014
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「"
 display-furigana 0 "傲慢" "ごうまん"
 show-text 0 "なのも、自分本位なのも俺たちじゃないたまたま貴族に生まれたからって、最後まで立場が上だと思っているお前たちだ！」"
@@ -2090,6 +2098,7 @@ play-voice (global-int f8007)
 
 label_0000792c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「王国軍の"
 display-furigana 0 "要" "かなめ"
 show-text 0 "が破れたか。口ほど強くはなかったようだな。こうなっては仕方があるまい。私が出よう」"
@@ -3249,6 +3258,7 @@ set-string (global-string d5d) "？？？？"
 label_0000c61c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

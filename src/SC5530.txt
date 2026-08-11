@@ -1476,6 +1476,7 @@ play-voice (global-int f8007)
 
 label_000057e4
 u00416120
+// FROM: a カトリト
 show-text 0 "「み、皆さん、惑わされないでください！　わたしが本物のカトリトです！」"
 wait-for-input 0
 end-text-line 0
@@ -1498,6 +1499,7 @@ call label_00010154
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうなってんだよ。まさかこの中に本物がいるっていうのか？」"
 wait-for-input 0
 end-text-line 0
@@ -1520,6 +1522,7 @@ call label_00010154
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「確かめる方法は、攻撃してみるしかないのか。仲間の、しかも女の子に手を上げるなんてすげぇ気が向かないぜ」"
 wait-for-input 0
 end-text-line 0
@@ -1703,6 +1706,7 @@ play-voice (global-int f8007)
 
 label_000066a8
 u00416120
+// FROM: a カトリト
 show-text 0 "「わ、わたしがカトリトです。皆さんなら分かってくれますよね？」"
 wait-for-input 0
 end-text-line 0
@@ -1828,6 +1832,7 @@ play-voice (global-int f8007)
 
 label_00006df4
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「これは、私たちに本物を見極めろということ？」"
 wait-for-input 0
 end-text-line 0
@@ -1953,6 +1958,7 @@ play-voice (global-int f8007)
 
 label_00007540
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「たとえ偽者だとしても、顔見知りを攻撃するのはあまり気のいいものじゃないわね」"
 wait-for-input 0
 end-text-line 0
@@ -2078,6 +2084,7 @@ play-voice (global-int f8007)
 
 label_00007c8c
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「これって、カトリトの試練ではなく私たちのものじゃないかしら」"
 wait-for-input 0
 end-text-line 0
@@ -2261,6 +2268,7 @@ play-voice (global-int f8007)
 
 label_00008950
 u00416120
+// FROM: a カトリト
 show-text 0 "「うぅ怖いです。早く偽者を倒しちゃってください」"
 wait-for-input 0
 end-text-line 0
@@ -2386,6 +2394,7 @@ play-voice (global-int f8007)
 
 label_0000909c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ふむ。見る限りでは、外見や口調などに差異はないようですわね」"
 wait-for-input 0
 end-text-line 0
@@ -2511,6 +2520,7 @@ play-voice (global-int f8007)
 
 label_000097e8
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「しかしこのラウロソ領主である私リシュエンツェーリを侮ってもらっては困ります」"
 wait-for-input 0
 end-text-line 0
@@ -2646,6 +2656,7 @@ play-voice (global-int f8007)
 
 label_00009fc4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ふふ、日々触れあっていた本物の仲間を見抜くことなど容易いことですわ！」"
 wait-for-input 0
 end-text-line 0
@@ -2829,6 +2840,7 @@ play-voice (global-int f8007)
 
 label_0000ac88
 u00416120
+// FROM: a カトリト
 show-text 0 "「ここは皆さんにお任せするしか」"
 wait-for-input 0
 end-text-line 0
@@ -2954,6 +2966,7 @@ play-voice (global-int f8007)
 
 label_0000b3d4
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「これは、困りました」"
 wait-for-input 0
 end-text-line 0
@@ -3079,6 +3092,7 @@ play-voice (global-int f8007)
 
 label_0000bb20
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「私は未だ彼女と交流が少なく、見分ける為の材料がない」"
 wait-for-input 0
 end-text-line 0
@@ -3214,6 +3228,7 @@ play-voice (global-int f8007)
 
 label_0000c2fc
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「真偽を確かめる方法は、倒してみるしかないですね。申し訳ありませんが、覚悟していただきます」"
 wait-for-input 0
 end-text-line 0
@@ -3367,6 +3382,7 @@ play-voice (global-int f8007)
 
 label_0000cbb8
 u00416120
+// FROM: a カトリト
 show-text 0 "「とと様、わたしの成長を見届けてください。とと様に勝つことで、竜族の長に相応しいと証明してみせます！」"
 wait-for-input 0
 end-text-line 0
@@ -4493,6 +4509,7 @@ set-string (global-string d5d) "？？？？"
 label_0001175c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

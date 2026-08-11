@@ -1307,6 +1307,7 @@ label_00004b28
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "この場に足を踏み入れて間もなく、巨大な生物が歩く足音の様な音が聞こえてきた。"
 */
@@ -1334,6 +1335,7 @@ call label_0000808c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「この辺りには危険な何かが棲んでいるのかもしれないな。見つからないように探索して行くべきか、撤退してしまうか」"
 */
@@ -1363,6 +1365,7 @@ call label_0000808c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 /* 原文存档（对照用，不参与汇编）
 show-text 0 "「とにかく、気をつけて進んで行こう」"
 */
@@ -2378,6 +2381,7 @@ set-string (global-string d5d) "？？？？"
 label_00008c9c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

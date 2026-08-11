@@ -1427,6 +1427,7 @@ play-voice (global-int f8007)
 
 label_00005270
 u00416120
+// FROM: 19 ユエラ
 show-text 0 "「私に戦いを挑むとは、身の程を弁えていないみたいだな。その意気やよし、掛かって来るがいい」"
 wait-for-input 0
 end-text-line 0
@@ -2497,6 +2498,7 @@ set-string (global-string d5d) "？？？？"
 label_00009744
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

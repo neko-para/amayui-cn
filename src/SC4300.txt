@@ -1302,6 +1302,7 @@ call label_00008fec
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「まずは周りにある装置を止めることから始めよう。"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "の俺たちならどうにかできるはずだ」"
@@ -1490,6 +1491,7 @@ play-voice (global-int f8007)
 
 label_00005634
 u00416120
+// FROM: 6 ディートヘルム
 show-text 0 "「よーし、俺様もいっちょ派手にやってやるか」"
 wait-for-input 0
 end-text-line 0
@@ -1514,6 +1516,7 @@ call label_00008fec
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それと用意して来た『"
 display-furigana 0 "解放機軸" "かいほうきじく"
 show-text 0 "』を使えば誰でも装置が止められる。効率良く進めていこう」"
@@ -1540,6 +1543,7 @@ call label_00008fec
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺たちの全ての力でこの場を乗り切るぞ」"
 wait-for-input 0
 end-text-line 0
@@ -1622,6 +1626,7 @@ call label_00008fec
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「高純度の魔力がパライアに集まっていく。あれだけの再生能力を相手になんかできないぞ」"
 wait-for-input 0
 end-text-line 0
@@ -1644,6 +1649,7 @@ call label_00008fec
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「４つの装置が"
 display-furigana 0 "軸" "じく"
 show-text 0 "となっているみたいだ。やはり、その装置を先に止めないと」"
@@ -2727,6 +2733,7 @@ set-string (global-string d5d) "？？？？"
 label_0000a48c
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

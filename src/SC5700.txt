@@ -1302,6 +1302,7 @@ call label_000092d4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「いてて、怪我しちまったな」"
 wait-for-input 0
 end-text-line 0
@@ -1498,6 +1499,7 @@ play-voice (global-int f8007)
 
 label_000058e4
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「大丈夫か？　攻撃されると"
 display-furigana 0 "ＨＰ" "耐久力"
 show-text 0 "が減る、無理は禁物だ」"
@@ -1625,6 +1627,7 @@ play-voice (global-int f8007)
 
 label_00006060
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「回復の羽が近くにない時は、回復アイテムを使ってくれ。アイテムはメニュー画面から使うことができる」"
 wait-for-input 0
 end-text-line 0
@@ -1647,6 +1650,7 @@ call label_000092d4
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「探索前に回復品は携帯して来たから、それを使うことにするよ」"
 wait-for-input 0
 end-text-line 0
@@ -2730,6 +2734,7 @@ set-string (global-string d5d) "？？？？"
 label_0000a6b0
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

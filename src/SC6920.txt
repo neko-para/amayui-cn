@@ -1328,6 +1328,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「ターン開始イベントだ」"
 wait-for-input 0
 end-text-line 0
@@ -1350,6 +1351,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「おう」"
 wait-for-input 0
 end-text-line 0
@@ -1432,6 +1434,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 2 フィア
 show-text 0 "「移動開始だよ」"
 wait-for-input 0
 end-text-line 0
@@ -1454,6 +1457,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「緊張するな」"
 wait-for-input 0
 end-text-line 0
@@ -1534,6 +1538,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 3 イオル
 show-text 0 "「移動終わり」"
 wait-for-input 0
 end-text-line 0
@@ -1556,6 +1561,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「まだだ、まだ（行動は）終わらんよ」"
 wait-for-input 0
 end-text-line 0
@@ -1636,6 +1642,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「配置物踏んだ」"
 wait-for-input 0
 end-text-line 0
@@ -1658,6 +1665,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「処理実装保留中」"
 wait-for-input 0
 end-text-line 0
@@ -1738,6 +1746,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「いざ尋常に」"
 wait-for-input 0
 end-text-line 0
@@ -1760,6 +1769,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「勝負！」"
 wait-for-input 0
 end-text-line 0
@@ -1840,6 +1850,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 6 ディートヘルム
 show-text 0 "「くにへ　かえるがいい」"
 wait-for-input 0
 end-text-line 0
@@ -1862,6 +1873,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「おまえにも　かぞくがいるだろう」"
 wait-for-input 0
 end-text-line 0
@@ -1942,6 +1954,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「戦闘敗北」"
 wait-for-input 0
 end-text-line 0
@@ -1964,6 +1977,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「次は頑張ろう」"
 wait-for-input 0
 end-text-line 0
@@ -2060,6 +2074,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ゲームオーバーか」"
 wait-for-input 0
 end-text-line 0
@@ -2082,6 +2097,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「セーブは禁止だな」"
 wait-for-input 0
 end-text-line 0
@@ -2163,6 +2179,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「行動終了だ」"
 wait-for-input 0
 end-text-line 0
@@ -2185,6 +2202,7 @@ call label_0000bc6c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「この後の挙動は環境設定次第だな」"
 wait-for-input 0
 end-text-line 0
@@ -3316,6 +3334,7 @@ set-string (global-string d5d) "？？？？"
 label_0000caf8
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

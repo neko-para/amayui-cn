@@ -1302,6 +1302,7 @@ call label_00008f74
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「みんな、コイツを倒せば全てが分かるはずだ！　全力で行くぞぉっ」"
 wait-for-input 0
 end-text-line 0
@@ -1455,6 +1456,7 @@ play-voice (global-int f8007)
 
 label_000053b0
 u00416120
+// FROM: aa ガイダル
 show-text 0 "「いよいよだ。ようやく一族の悲願が叶う！　誰にも邪魔などさせはしない！」"
 wait-for-input 0
 end-text-line 0
@@ -1485,6 +1487,7 @@ call label_00008f74
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「これが最後の戦いだ！　神を封じ込める魔石を破壊して、過去から続く戦争を終わらせるぞ！」"
 wait-for-input 0
 end-text-line 0
@@ -1638,6 +1641,7 @@ play-voice (global-int f8007)
 
 label_00005dac
 u00416120
+// FROM: aa ガイダル
 show-text 0 "「ククク、実に愚かだね。神の力を得た私には、もう誰も敵わないというのに！」"
 wait-for-input 0
 end-text-line 0
@@ -1668,6 +1672,7 @@ call label_00008f74
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィアの姿を"
 display-furigana 0 "騙" "かた"
 show-text 0 "りやがって！　俺たちは城砦を止めるんだ、そこをどけぇ！」"
@@ -2733,6 +2738,7 @@ set-string (global-string d5d) "？？？？"
 label_0000a414
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

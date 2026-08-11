@@ -1365,6 +1365,7 @@ u004213E0 1
 u00416120
 
 label_00004e94
+// FROM: none
 show-text 0 "『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』の開催までに時間があるということで、城砦に滞在しているエルフ兵へ声をかけた。"
@@ -1389,6 +1390,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「確認したいことがあるんだけど、いいかな」"
 wait-for-input 0
 end-text-line 0
@@ -1411,6 +1413,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「城砦関連の人が街へ入ってもいいって許可はあるんだけど、街の周辺を探索しても問題ないか？」"
 wait-for-input 0
 end-text-line 0
@@ -1536,6 +1539,7 @@ play-voice (global-int f8007)
 
 label_0000580c
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「探索の目的を問う」"
 wait-for-input 0
 end-text-line 0
@@ -1558,6 +1562,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「商会活動に必要な素材集めとか、土地の活性化が主な目的だな」"
 wait-for-input 0
 end-text-line 0
@@ -1693,6 +1698,7 @@ play-voice (global-int f8007)
 
 label_000060e8
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「確認した。連峰北部地域以外ならば問題ない」"
 wait-for-input 0
 end-text-line 0
@@ -1720,6 +1726,7 @@ label_0000621c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "北部というと、聖地に通じる道を禁止区域にしているのか。"
 wait-for-input 0
 end-text-line 0
@@ -1742,6 +1749,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「おすすめの地域とか、あるかな？」"
 wait-for-input 0
 end-text-line 0
@@ -1877,6 +1885,7 @@ play-voice (global-int f8007)
 
 label_00006b10
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「西部地域へ行くといいだろう」"
 wait-for-input 0
 end-text-line 0
@@ -2002,6 +2011,7 @@ play-voice (global-int f8007)
 
 label_0000725c
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「フィユシア教の調査により豊富な資源が眠っていると確認されており、過去は人間族によって管理されていたが、管理する者が数十年前から不在である」"
 wait-for-input 0
 end-text-line 0
@@ -2024,6 +2034,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それは、どうして？」"
 wait-for-input 0
 end-text-line 0
@@ -2149,6 +2160,7 @@ play-voice (global-int f8007)
 
 label_00007aa8
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「西部は長く闇の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "が勢力地としていた。だが報告では、"
@@ -2175,6 +2187,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「な、なるほど」"
 wait-for-input 0
 end-text-line 0
@@ -2202,6 +2215,7 @@ label_00007d3c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その闇の眷属ってガイダルたち『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -2235,6 +2249,7 @@ label_00007f18
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "とすれば、勢力が弱まった原因は、俺たちとの戦闘だろうか。"
 wait-for-input 0
 end-text-line 0
@@ -2370,6 +2385,7 @@ play-voice (global-int f8007)
 
 label_0000870c
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「南部の探索は"
 display-furigana 0 "推奨" "すいしょう"
 show-text 0 "しない」"
@@ -2394,6 +2410,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「へえ、そっちにはなにが？」"
 wait-for-input 0
 end-text-line 0
@@ -2529,6 +2546,7 @@ play-voice (global-int f8007)
 
 label_00009018
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「『"
 display-furigana 0 "鯨顎岬" "げいがくこう"
 show-text 0 "』という地域があるが、現在インフルース王国軍が滞在しているとの報告があり"
@@ -2658,6 +2676,7 @@ play-voice (global-int f8007)
 
 label_000097c4
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「どうやら西部地域の混乱に乗じ、我らの許可を得ないまま居座ったようだ」"
 wait-for-input 0
 end-text-line 0
@@ -2783,6 +2802,7 @@ play-voice (global-int f8007)
 
 label_00009f10
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「しかし報告の後に"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "の開催が決まり、その独自行動については現在うやむやになってしまった。"
@@ -2809,6 +2829,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「そ、そう」"
 wait-for-input 0
 end-text-line 0
@@ -2836,6 +2857,7 @@ label_0000a1a4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それなら、もう少し感情的に言って欲しかったなぁ。"
 wait-for-input 0
 end-text-line 0
@@ -2858,6 +2880,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「とても参考になったよ。情報ありがとう」"
 wait-for-input 0
 end-text-line 0
@@ -2983,6 +3006,7 @@ play-voice (global-int f8007)
 
 label_0000aa08
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「巡礼者に許可が通達されている範囲ならば、行動に制限はない」"
 wait-for-input 0
 end-text-line 0
@@ -3108,6 +3132,7 @@ play-voice (global-int f8007)
 
 label_0000b154
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「貴殿らは『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』の参加者である。探索の際は怪我等に注意せよ」"
@@ -3137,6 +3162,7 @@ label_0000b2b8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "どこまでも声色が平坦で、感情が察しにくいが、どうやら心配してくれているようだ。"
 wait-for-input 0
 end-text-line 0
@@ -3454,6 +3480,7 @@ play-voice (global-int f8007)
 
 label_0000c83c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「失礼しますわ。アヴァロに報告しておきたいことがありますの」"
 wait-for-input 0
 end-text-line 0
@@ -3481,6 +3508,7 @@ label_0000c970
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "工房で作業をしていると、神妙な面持ちをしたリシュが訪ねて来た。"
 wait-for-input 0
 end-text-line 0
@@ -3503,6 +3531,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「報告したいこと？」"
 wait-for-input 0
 end-text-line 0
@@ -3530,6 +3559,7 @@ label_0000cbbc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュはどこか疲れているように見える。なにかあったのだろうか。"
 wait-for-input 0
 end-text-line 0
@@ -3655,6 +3685,7 @@ play-voice (global-int f8007)
 
 label_0000d320
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「実は先ほど大司教様とお話してきましたの」"
 wait-for-input 0
 end-text-line 0
@@ -3677,6 +3708,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「へえ、大司教と」"
 wait-for-input 0
 end-text-line 0
@@ -3704,6 +3736,7 @@ label_0000d554
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスとは面識があると言っていたな。その関係か。"
 wait-for-input 0
 end-text-line 0
@@ -3839,6 +3872,7 @@ play-voice (global-int f8007)
 
 label_0000dd48
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「そこで少し悲しい出来事がありましてぐすん」"
 wait-for-input 0
 end-text-line 0
@@ -3861,6 +3895,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「な、なにがあったんだ？」"
 wait-for-input 0
 end-text-line 0
@@ -3986,6 +4021,7 @@ play-voice (global-int f8007)
 
 label_0000e594
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「フィユシア聖堂騎士の名簿から、私の名前が外されてしまいましたわ。よよよ"
 display-furigana 0 "慰" "なぐさ"
 show-text 0 "めてくださいませ」"
@@ -4010,6 +4046,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「泣き真似がわざとらし過ぎて、フリに聞こえるんだが」"
 wait-for-input 0
 end-text-line 0
@@ -4032,6 +4069,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ていうか大丈夫なのかよ。聖堂騎士から除名って、結構な大事に聞こえるんだけど。原因は城砦に関わったからだろうし、責任を感じるな」"
 wait-for-input 0
 end-text-line 0
@@ -4167,6 +4205,7 @@ play-voice (global-int f8007)
 
 label_0000efa0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「まぁ、城砦の中で堂々と姿を"
 display-furigana 0 "晒" "さら"
 show-text 0 "してしまっているので、関係性が明らかになった時点でこうなると予想しておりましたわ」"
@@ -4294,6 +4333,7 @@ play-voice (global-int f8007)
 
 label_0000f71c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ですが私は聖堂騎士としての姿よりも、ラウロソ領の領主としての姿の方が名が通っておりますので、さほど変わりませんわ」"
 wait-for-input 0
 end-text-line 0
@@ -4321,6 +4361,7 @@ label_0000f850
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そういうものか。リシュが事情に納得しているのなら、俺が気落ちするとかえって気を遣わせてしまうのかもしれない。"
 wait-for-input 0
 end-text-line 0
@@ -4456,6 +4497,7 @@ play-voice (global-int f8007)
 
 label_00010044
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「そこでせっかくの機会だと思い、ラウロソ領主の名を以て我が主の名前を広めて来ましたの」"
 wait-for-input 0
 end-text-line 0
@@ -4478,6 +4520,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィアの名前を？」"
 wait-for-input 0
 end-text-line 0
@@ -4603,6 +4646,7 @@ play-voice (global-int f8007)
 
 label_00010890
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「少しでも会合にて有利に働くようになればと思いまして。フィユシア様に"
 display-furigana 0 "縁" "ゆかり"
 show-text 0 "がある神として、紹介させていただきました」"
@@ -4627,6 +4671,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「"
 display-furigana 0 "縁" "ゆかり"
 show-text 0 "があるって、そんな確証もないだろうに」"
@@ -4764,6 +4809,7 @@ play-voice (global-int f8007)
 
 label_000111cc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「私の中には確信がありますわ。我がラウロソに伝わる歴史では、精霊を目覚めさせることができるのは、フィユシア様"
 display-furigana 0 "縁" "ゆかり"
 show-text 0 "の者だけですので」"
@@ -4793,6 +4839,7 @@ label_00011330
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュはこほんと"
 display-furigana 0 "咳払" "せきば"
 show-text 0 "いをしてから、話を先へ進める。"
@@ -4930,6 +4977,7 @@ play-voice (global-int f8007)
 
 label_00011b54
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「まぁそんな感じで、色々と街を回っている時にお話を聞いていたのです」"
 wait-for-input 0
 end-text-line 0
@@ -5055,6 +5103,7 @@ play-voice (global-int f8007)
 
 label_000122a0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「どうやらインフルース王国軍が動き出しているようです。ここより南方の地域に"
 display-furigana 0 "駐留" "ちゅうりゅう"
 show-text 0 "しているとのことでした」"
@@ -5079,6 +5128,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうして王国軍がそこまで大々的に動くんだろうな。会合の警護役でも"
 display-furigana 0 "担" "にな"
 show-text 0 "っているのか？」"
@@ -5206,6 +5256,7 @@ play-voice (global-int f8007)
 
 label_00012b4c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「それもあるようですが、インフルース王国の代表として参加なされる方が、騎士団所属の御方だからという理由が強いようですわ」"
 wait-for-input 0
 end-text-line 0
@@ -5228,6 +5279,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「騎士団所属か。『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』に参加する国の代表ってことは、それに見合う格があるんだろうな」"
@@ -5257,6 +5309,7 @@ label_00012db0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ギルシュも第三王子という身分ではあったが、騎士団の団長を務めていた。"
 wait-for-input 0
 end-text-line 0
@@ -5392,6 +5445,7 @@ play-voice (global-int f8007)
 
 label_000135a4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「行軍の影響で、どうやら巡礼者の通行が制限されていたようですが、それが解除されたのもつい最近のようで」"
 wait-for-input 0
 end-text-line 0
@@ -5517,6 +5571,7 @@ play-voice (global-int f8007)
 
 label_00013cf0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「通行制限に"
 display-furigana 0 "伴" "とも"
 show-text 0 "い、現在街では行商や流れの職人も不足してしまっているようですの」"
@@ -5546,6 +5601,7 @@ label_00013e54
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "含みを持たせた視線を感じ、リシュの伝えたいことを把握する。"
 wait-for-input 0
 end-text-line 0
@@ -5568,6 +5624,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なるほど、グアラクーナ商会の出番って訳だな」"
 wait-for-input 0
 end-text-line 0
@@ -5703,6 +5760,7 @@ play-voice (global-int f8007)
 
 label_00014748
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ええ、周囲に良い影響を広められれば"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "での印象も良くなるはずですわ。張り切っていきましょう！」"
@@ -5974,6 +6032,7 @@ play-voice (global-int f8007)
 
 label_000157fc
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』に参列する代表者が"
@@ -6000,6 +6059,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ついに、来たか」"
 wait-for-input 0
 end-text-line 0
@@ -6027,6 +6087,7 @@ label_00015a90
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィユシア教５勢力の代表者が集まり、グアラクーナ城砦や"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "フィアの処遇について話される会合が、始まる。"
@@ -6154,6 +6215,7 @@ play-voice (global-int f8007)
 
 label_00016224
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「それでは会談場へと案内する」"
 wait-for-input 0
 end-text-line 0
@@ -6181,6 +6243,7 @@ label_00016358
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "エルフ兵の案内を受け、『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』が行われる会談場へ移動した。"
@@ -6414,6 +6477,7 @@ play-voice (global-int f8007)
 
 label_00017354
 u00416120
+// FROM: 2 フィア
 show-text 0 "「ふう、これから偉い人との話し合いが始まるんだね緊張で胸がドキドキするよ」"
 wait-for-input 0
 end-text-line 0
@@ -6539,6 +6603,7 @@ play-voice (global-int f8007)
 
 label_00017aa0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ご安心ください。集まった中で一番"
 display-furigana 0 "位" "くらい"
 show-text 0 "が高いのは、神である我が主フィア様ですわ」"
@@ -6676,6 +6741,7 @@ play-voice (global-int f8007)
 
 label_000182ac
 u00416120
+// FROM: 2 フィア
 show-text 0 "「そういう問題なのかなぁ。それで安心していいのかな？」"
 wait-for-input 0
 end-text-line 0
@@ -6703,6 +6769,7 @@ label_000183e0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "格として偉いかもしれないけど、"
 display-furigana 0 "詰問" "きつもん"
 show-text 0 "されるという微妙な立場ではあるからな。"
@@ -6727,6 +6794,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「リシュが居てくれて心強いよ。俺、"
 display-furigana 0 "畏" "かしこ"
 show-text 0 "まった場での話し方とか知らないしさ」"
@@ -6854,6 +6922,7 @@ play-voice (global-int f8007)
 
 label_00018ca4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「お任せくださいませ。サンタシィ・エイフ連合の代表として、我が主と城砦をお守りしてみせますわ」"
 wait-for-input 0
 end-text-line 0
@@ -6878,6 +6947,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「カトリトは準備があるから先に行っているって話だったか。なんにせよ、側にいてくれるだけで頼もしいよな」"
 wait-for-input 0
 end-text-line 0
@@ -6907,6 +6977,7 @@ label_00018f10
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "会合の場に、確実に俺たちの味方をしてくれる人がいる。それがとても嬉しい。"
 wait-for-input 0
 end-text-line 0
@@ -6929,6 +7000,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「リシュ、実際どういう話し合いでまとまると思う？　俺とフィアは話し合いの場で、なにかできそうか？」"
 wait-for-input 0
 end-text-line 0
@@ -7054,6 +7126,7 @@ play-voice (global-int f8007)
 
 label_00019774
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「最終的には、我が主の目的と城砦の扱いをどうするか５勢力の内半数以上を味方に付けられるかだと考えております」"
 wait-for-input 0
 end-text-line 0
@@ -7179,6 +7252,7 @@ play-voice (global-int f8007)
 
 label_00019ec0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「アヴァロや我が主に関しては、嘘偽りなく意思や目的を語ることこそが、その為の助けになるでしょう」"
 wait-for-input 0
 end-text-line 0
@@ -7201,6 +7275,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「相手に取り入るような、演技や小細工はしない方がいいってことか」"
 wait-for-input 0
 end-text-line 0
@@ -7326,6 +7401,7 @@ play-voice (global-int f8007)
 
 label_0001a70c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「思った以上に、腹芸というのは見抜かれてしまうものですわ。この場合、小細工はせず正直に話した方が上手くいくかと」"
 wait-for-input 0
 end-text-line 0
@@ -7461,6 +7537,7 @@ play-voice (global-int f8007)
 
 label_0001aee8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それだけで大丈夫なの？　それなら、なんとか乗り切れそうだね」"
 wait-for-input 0
 end-text-line 0
@@ -7586,6 +7663,7 @@ play-voice (global-int f8007)
 
 label_0001b634
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「最終的な採決についてはご心配なく。実は私が一つ、仕掛けを打っておりますの」"
 wait-for-input 0
 end-text-line 0
@@ -7608,6 +7686,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「リシュが打った仕掛け？」"
 wait-for-input 0
 end-text-line 0
@@ -7733,6 +7812,7 @@ play-voice (global-int f8007)
 
 label_0001be80
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「５勢力の代表の内、どう転ぶか読めない浮動票があるのです」"
 wait-for-input 0
 end-text-line 0
@@ -7858,6 +7938,7 @@ play-voice (global-int f8007)
 
 label_0001c5cc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「城砦と直接関わり合いのない、ラクスシア王国ですわ。それを取り込めるかどうかが勝負の鍵となるでしょう」"
 wait-for-input 0
 end-text-line 0
@@ -7880,6 +7961,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺たちと関わりのないラクスシア王国が、城砦の味方になってくれるっていうのか？」"
 wait-for-input 0
 end-text-line 0
@@ -8005,6 +8087,7 @@ play-voice (global-int f8007)
 
 label_0001ce18
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「城砦を知らない相手、そしてラクスシア王国だからこそ使える武器があるのですわ。ふふふのふ」"
 wait-for-input 0
 end-text-line 0
@@ -8027,6 +8110,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なるほど。開催前から既に勝負は始まっているってことか。本当に、頼もしいな」"
 wait-for-input 0
 end-text-line 0
@@ -8133,6 +8217,7 @@ label_0001d528
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "開催場に入ると、そこには大きな円卓があった。"
 wait-for-input 0
 end-text-line 0
@@ -8160,6 +8245,7 @@ label_0001d674
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "席は６席あり、５勢力の代表と城砦側代表であるフィアの席だと思われた。俺はフィアのすぐ後ろで"
 display-furigana 0 "控" "ひか"
 show-text 0 "えることにする。"
@@ -8236,6 +8322,7 @@ label_0001daa4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "既に着席しているのは３人。鎧に身を包んだ女性、そして豪華な衣服を着ている男性。"
 wait-for-input 0
 end-text-line 0
@@ -8331,6 +8418,7 @@ label_0001e008
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そして、竜族の代表であるカトリトだ。"
 wait-for-input 0
 end-text-line 0
@@ -8370,6 +8458,7 @@ label_0001e21c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "真っ先に目が合ったのはカトリトだ。小さくお辞儀してくれた。"
 wait-for-input 0
 end-text-line 0
@@ -8565,6 +8654,7 @@ play-voice (global-int f8007)
 
 label_0001ed98
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -8592,6 +8682,7 @@ label_0001eecc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "鎧姿の女性はなぜか、会場へ入ってきた俺たち２人をギロリと"
 display-furigana 0 "睨" "にら"
 show-text 0 "んでいる。"
@@ -8719,6 +8810,7 @@ play-voice (global-int f8007)
 
 label_0001f660
 u00416120
+// FROM: 2 フィア
 show-text 0 "「な、なんか睨まれているね？」"
 wait-for-input 0
 end-text-line 0
@@ -8741,6 +8833,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、あの鎧はインフルース王国のものかな」"
 wait-for-input 0
 end-text-line 0
@@ -8768,6 +8861,7 @@ label_0001f894
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ということは、男性の方はラクスシア王国の代表だろうか。"
 wait-for-input 0
 end-text-line 0
@@ -8795,6 +8889,7 @@ label_0001f9e0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "緑を基調とした質のいい衣服。顔には口髭を"
 display-furigana 0 "揃" "そろ"
 show-text 0 "えており、こちらへ物珍しそうな視線を向けてきている。"
@@ -8824,6 +8919,7 @@ label_0001fb5c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "感心の目を向けられて、少しの居心地の悪さを感じながら、フィアはおずおずと着席した。"
 wait-for-input 0
 end-text-line 0
@@ -8851,6 +8947,7 @@ label_0001fca8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そして最後に、フィユシア教で一番位の高い、壮齢のエルフが入室する。"
 wait-for-input 0
 end-text-line 0
@@ -9060,6 +9157,7 @@ play-voice (global-int f8007)
 
 label_00020924
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「どうやら私が最後のようだな」"
 wait-for-input 0
 end-text-line 0
@@ -9087,6 +9185,7 @@ label_00020a58
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスが着席したことで、会談場の場がピリリと引き締まった。"
 wait-for-input 0
 end-text-line 0
@@ -9280,6 +9379,7 @@ play-voice (global-int f8007)
 
 label_000215d4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「"
 display-furigana 0 "滞" "とどこお"
 show-text 0 "りなく、フィユシア様の下で力を合わせた英雄の"
@@ -9409,6 +9509,7 @@ play-voice (global-int f8007)
 
 label_00021d80
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「それでは『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』を始めよう。まずは各人、所属を述べよ」"
@@ -9574,6 +9675,7 @@ play-voice (global-int f8007)
 
 label_0002271c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「本日は王に代わり、インフルース王国代表を務めさせていただく『ジヌディーユ・ファーブル』であります」"
 wait-for-input 0
 end-text-line 0
@@ -9699,6 +9801,7 @@ play-voice (global-int f8007)
 
 label_00022e68
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ラクスシア王国代表、"
 display-furigana 0 "宰相" "さいしょう"
 show-text 0 "を務める『グラセス・スパジアリ』だ」"
@@ -9878,6 +9981,7 @@ play-voice (global-int f8007)
 
 label_000238b4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「サンタシィ・エイフ連合代表、ラウロソ領主『リシュエンツェーリ・ラウロソ』ですわ」"
 wait-for-input 0
 end-text-line 0
@@ -10113,6 +10217,7 @@ label_00024690
 u00416120
 
 label_00024694
+// FROM: a カトリト
 show-text 0 "「フィユシア教所属、竜族代表『カトリト』です」"
 wait-for-input 0
 end-text-line 0
@@ -10200,6 +10305,7 @@ label_00024b54
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "視線が俺たちに集まる。次は俺たちが名乗る番ということか。"
 wait-for-input 0
 end-text-line 0
@@ -10325,6 +10431,7 @@ play-voice (global-int f8007)
 
 label_000252b8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「えっと、グアラクーナ城砦から来ました。縁結びの"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "、『フィア』です」"
@@ -10349,6 +10456,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「その"
 display-furigana 0 "使徒" "しと"
 show-text 0 "、グアラクーナ商会責任者『アヴァロ』といいます」"
@@ -10378,6 +10486,7 @@ label_0002554c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そして最後に、会合の主催者であるクードヴァンスが締めた。"
 wait-for-input 0
 end-text-line 0
@@ -10571,6 +10680,7 @@ play-voice (global-int f8007)
 
 label_000260c8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「フィユシア教所属、大司教『クードヴァンス』である」"
 wait-for-input 0
 end-text-line 0
@@ -10696,6 +10806,7 @@ play-voice (global-int f8007)
 
 label_00026814
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「此度の『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』の議題は、"
@@ -10825,6 +10936,7 @@ play-voice (global-int f8007)
 
 label_00026fc0
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「その原因の解明そして原因の排除を目的とする。半数以上の可決をもって、行動に移ることとなろう」"
 wait-for-input 0
 end-text-line 0
@@ -10852,6 +10964,7 @@ label_000270f4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "鋭い視線と共に、これは“フィアと城砦を排除する”為の話し合いだと告げられる。"
 wait-for-input 0
 end-text-line 0
@@ -10879,6 +10992,7 @@ label_00027240
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言葉にいち早く反応したのは、ラクスシア王国の代表だった。"
 wait-for-input 0
 end-text-line 0
@@ -11041,6 +11155,7 @@ play-voice (global-int f8007)
 
 label_00027bb8
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ふむ、それはどこかの勢力が、フィユシア教を離れ、"
 display-furigana 0 "他" "た"
 show-text 0 "の神に付いたという"
@@ -11072,6 +11187,7 @@ label_00027d4c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そう問い掛けつつ、ラクスシア王国の代表はちらりとリシュを見る。そして彼女が、"
 display-furigana 0 "促" "うなが"
 show-text 0 "されるように口を開いた。"
@@ -11251,6 +11367,7 @@ play-voice (global-int f8007)
 
 label_000287b0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「そのことについて、事態の詳細を私から説明させていただきますわ」"
 wait-for-input 0
 end-text-line 0
@@ -11376,6 +11493,7 @@ play-voice (global-int f8007)
 
 label_00028efc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「まずは大司教様が話された、袂を分けた勢力があるというのは間違いです」"
 wait-for-input 0
 end-text-line 0
@@ -11501,6 +11619,7 @@ play-voice (global-int f8007)
 
 label_00029648
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「フィユシア教を離れたのではなく、内部にはびこる問題解決の為に助力したまでのこと」"
 wait-for-input 0
 end-text-line 0
@@ -11718,6 +11837,7 @@ play-voice (global-int f8007)
 
 label_0002a604
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ふ、その説明では“裏切ったのは自分だ”と言っているようなものではないか」"
 wait-for-input 0
 end-text-line 0
@@ -11745,6 +11865,7 @@ label_0002a738
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 display-furigana 0 "煽" "あお"
 show-text 0 "るような物言いに、リシュはにこりと微笑みを返した。"
 wait-for-input 0
@@ -11871,6 +11992,7 @@ play-voice (global-int f8007)
 
 label_0002aeb8
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「"
 display-furigana 0 "仰" "おっしゃ"
 show-text 0 "った言葉を理解していまして？　裏切った訳ではないと、そう説明したはずですが」"
@@ -11998,6 +12120,7 @@ play-voice (global-int f8007)
 
 label_0002b634
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「いち領主ごときが」"
 wait-for-input 0
 end-text-line 0
@@ -12226,6 +12349,7 @@ play-voice (global-int f8007)
 
 label_0002c73c
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ラウロソ殿、その問題というのは？」"
 wait-for-input 0
 end-text-line 0
@@ -12351,6 +12475,7 @@ play-voice (global-int f8007)
 
 label_0002ce88
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「まず問題となったのは、長き眠りから目覚めた神を、我が物にしようと"
 display-furigana 0 "無礼" "ぶれい"
 show-text 0 "を働いた勢力があるということ」"
@@ -12478,6 +12603,7 @@ play-voice (global-int f8007)
 
 label_0002d604
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「インフルース王国内の南部地域にて、"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "フィア様は目覚められた」"
@@ -12605,6 +12731,7 @@ play-voice (global-int f8007)
 
 label_0002dd80
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「神に"
 display-furigana 0 "付随" "ふずい"
 show-text 0 "している能力『グアラクーナ城砦』に目を付けたインフルース王国は、フィア様が神であることや城砦を渡せないという意思を無視し、力尽くで入手しようと動く」"
@@ -12732,6 +12859,7 @@ play-voice (global-int f8007)
 
 label_0002e4fc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「そして神からの抵抗に"
 display-furigana 0 "遭" "あ"
 show-text 0 "うことで、それを問題とし神を悪だと断じたのです」"
@@ -12859,6 +12987,7 @@ play-voice (global-int f8007)
 
 label_0002ec78
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ふむ。それではラウロソ殿は、インフルース王国の"
 display-furigana 0 "狼藉" "ろうぜき"
 show-text 0 "を許さぬと神に協力を申し出たと」"
@@ -12986,6 +13115,7 @@ play-voice (global-int f8007)
 
 label_0002f3f4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ええ、その通りですわ」"
 wait-for-input 0
 end-text-line 0
@@ -13036,6 +13166,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -13063,6 +13194,7 @@ label_0002f900
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "なるほど、おそらくこの流れはリシュの仕込みなんだろう。"
 wait-for-input 0
 end-text-line 0
@@ -13090,6 +13222,7 @@ label_0002fa4c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュは事前にラクスシア王国と連絡を取ったと言っていた。こうしてフィアの正当性を主張する為に、インフルース王国の行動を"
 display-furigana 0 "非難" "ひなん"
 show-text 0 "する流れを作ったのだ。"
@@ -13217,6 +13350,7 @@ play-voice (global-int f8007)
 
 label_000301e0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「自国領土内にあるからといって、それが全て国に"
 display-furigana 0 "帰属" "きぞく"
 show-text 0 "するとは限らない。ましてや上位の存在である神が関わっている事ならば、なおさらですわ」"
@@ -13344,6 +13478,7 @@ play-voice (global-int f8007)
 
 label_0003095c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「自国の民すら犠牲にしながらも、我が物にしようと"
 display-furigana 0 "固執" "こしつ"
 show-text 0 "するのは、果たしてフィユシア様の名の下で胸を張って正しいことだと言えるのでしょうか」"
@@ -13373,6 +13508,7 @@ label_00030ac0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュは、リックベルでの経緯を言っているんだな。"
 wait-for-input 0
 end-text-line 0
@@ -13400,6 +13536,7 @@ label_00030c0c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "街を犠牲にして、無理やりに有利な戦闘を作り出そうとしたあの悲劇を。"
 wait-for-input 0
 end-text-line 0
@@ -13525,6 +13662,7 @@ play-voice (global-int f8007)
 
 label_00031370
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「フィア様は決して、フィユシア教を"
 display-furigana 0 "陥" "おとしい"
 show-text 0 "れようとしている訳ではありません」"
@@ -13652,6 +13790,7 @@ play-voice (global-int f8007)
 
 label_00031aec
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「人との繋がりに重きを置きながら、"
 display-furigana 0 "紡" "つむ"
 show-text 0 "いだ縁を大事に扱い、まさしく神として周囲を良い方向へと導き、ひいては国益へも繋がる在り方を、"
@@ -13781,6 +13920,7 @@ play-voice (global-int f8007)
 
 label_00032298
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「故に我がラウロソ領を有するサンタシィ・エイフ連合は、フィア様に助力し、フィユシア教を内部から整えていたのです」"
 wait-for-input 0
 end-text-line 0
@@ -13808,6 +13948,7 @@ label_000323cc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュがまとめようと話を終えようとした時、横やりのように言葉が入ってくる。"
 wait-for-input 0
 end-text-line 0
@@ -13933,6 +14074,7 @@ play-voice (global-int f8007)
 
 label_00032b30
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「その説明には、"
 display-furigana 0 "誤" "あやま"
 show-text 0 "りがあるな」"
@@ -14161,6 +14303,7 @@ play-voice (global-int f8007)
 
 label_00033938
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「フィア様が真に神であることは"
 display-furigana 0 "疑" "うたが"
 show-text 0 "っていない。それはマーズテリア神殿からの申し出もあったことだ。だとすれば事情を考慮するのが当然だろう」"
@@ -14288,6 +14431,7 @@ play-voice (global-int f8007)
 
 label_000340b4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「だがそれは通常の状態であればの話。"
 display-furigana 0 "堕" "お"
 show-text 0 "ちた神となれば話は別だ」"
@@ -14415,6 +14559,7 @@ play-voice (global-int f8007)
 
 label_00034830
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「聞けば城砦というものは、神の能力ではないようではないかグアラクーナ城砦は、過去に人間族が造り出した遺物なのであろう？」"
 wait-for-input 0
 end-text-line 0
@@ -14540,6 +14685,7 @@ play-voice (global-int f8007)
 
 label_00034f7c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「そして城砦と一体化した神は『"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "』として処理される。そう報告を受けているのだ、我らインフルース王国の行動が非難を受ける要素などない」"
@@ -14759,6 +14905,7 @@ play-voice (global-int f8007)
 
 label_00035f68
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "を排除する為ならば、民を犠牲にしてもよいとでも？」"
@@ -14886,6 +15033,7 @@ play-voice (global-int f8007)
 
 label_000366e4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「なにを優先するかの話だ。軍が動けばどの道、命は失われる。犠牲を恐れていては、神を討ち取ることなどできやしまい」"
 wait-for-input 0
 end-text-line 0
@@ -14908,6 +15056,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -14935,6 +15084,7 @@ label_00036918
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そういう考え方をするのか。まさしく軍人らしく、貴族らしい思考のようだ。"
 wait-for-input 0
 end-text-line 0
@@ -14962,6 +15112,7 @@ label_00036a64
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "命の価値には立場で差があると考え、戦闘には無関係の者の被害など考慮しない。"
 wait-for-input 0
 end-text-line 0
@@ -14989,6 +15140,7 @@ label_00036bb0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "失われるのは自ら戦闘へ参加する兵士の命だけではない。街で平和に暮らしている民の命が犠牲となることに、罪の意識すら"
 display-furigana 0 "抱" "いだ"
 show-text 0 "かないのか。"
@@ -15116,6 +15268,7 @@ play-voice (global-int f8007)
 
 label_00037344
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「貴国が犠牲に用いた民を、フィア様は諦めることはなくお救いなさっている。それについて、なにか"
 display-furigana 0 "弁明" "べんめい"
 show-text 0 "は？」"
@@ -15253,6 +15406,7 @@ play-voice (global-int f8007)
 
 label_00037b50
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「お優しいことだ。だが問題になっているのは神の性質ではなく、"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "になってしまったその在り方であろう？」"
@@ -15380,6 +15534,7 @@ play-voice (global-int f8007)
 
 label_000382cc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「神の行動や、戦闘における被害については考慮しないと」"
 wait-for-input 0
 end-text-line 0
@@ -15407,6 +15562,7 @@ label_00038400
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "存在自体が悪なのだから、どんなに善行を積もうとそれは悪である。なんて、非人道的な答えなんだろう。"
 wait-for-input 0
 end-text-line 0
@@ -15542,6 +15698,7 @@ play-voice (global-int f8007)
 
 label_00038bf4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「言っておくが、戦闘による被害を受けたのはこちらの方だ」"
 wait-for-input 0
 end-text-line 0
@@ -15569,6 +15726,7 @@ label_00038d28
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルース王国の代表が"
 display-furigana 0 "憮然" "ぶぜん"
 show-text 0 "とした表情で放つ言葉に、リシュは少しの困惑を見せる。"
@@ -15796,6 +15954,7 @@ play-voice (global-int f8007)
 
 label_00039db4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「被害？　それは、そちらが仕掛けた戦闘で犠牲になった民のことでしょうか」"
 wait-for-input 0
 end-text-line 0
@@ -15921,6 +16080,7 @@ play-voice (global-int f8007)
 
 label_0003a500
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「違う。ひとりの王族が、禁忌の神を討ち取ろうと矛を振り上げたのち、戦死したのだ。そのことを言っている」"
 wait-for-input 0
 end-text-line 0
@@ -15943,6 +16103,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「っ。ギルシュ」"
 wait-for-input 0
 end-text-line 0
@@ -16153,6 +16314,7 @@ play-voice (global-int f8007)
 
 label_0003b2c8
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「"
 display-furigana 0 "使徒" "しと"
 show-text 0 "殿が仰った通りだ。城砦との戦闘の結果、ギルシュ・ルース第三王子殿下が"
@@ -16282,6 +16444,7 @@ play-voice (global-int f8007)
 
 label_0003ba74
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「断ずるに分かりやすく、言い逃れようのない罪である。それがどれほど重いか、領主である貴殿ならば理解できよう」"
 wait-for-input 0
 end-text-line 0
@@ -16309,6 +16472,7 @@ label_0003bba8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "王族の死その非を責められるも、リシュは冷静に言葉を返す。"
 wait-for-input 0
 end-text-line 0
@@ -16434,6 +16598,7 @@ play-voice (global-int f8007)
 
 label_0003c30c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ギルシュ殿下の死因は、高所からの"
 display-furigana 0 "墜落" "ついらく"
 show-text 0 "ですわ。戦死ではありません。自ら飛び降り死を選んだ決断を、私がその場にて見届けました」"
@@ -16561,6 +16726,7 @@ play-voice (global-int f8007)
 
 label_0003ca88
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「その言葉に信用性があるとでも？」"
 wait-for-input 0
 end-text-line 0
@@ -16686,6 +16852,7 @@ play-voice (global-int f8007)
 
 label_0003d1d4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「貴殿は神に味方し、ギルシュ殿下を追い詰めた一味であろう。"
 display-furigana 0 "庇" "かば"
 show-text 0 "う為の証言だと受け取られても、仕方があるまい」"
@@ -16850,6 +17017,7 @@ play-voice (global-int f8007)
 
 label_0003db64
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「どちらにせよ、貴殿らと戦うことで殿下は死へと追いやられたことは事実である。まさかそちらに責任は発生しないなどと、仰るおつもりか？」"
 wait-for-input 0
 end-text-line 0
@@ -17067,6 +17235,7 @@ play-voice (global-int f8007)
 
 label_0003eb20
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「くぅ」"
 wait-for-input 0
 end-text-line 0
@@ -17192,6 +17361,7 @@ play-voice (global-int f8007)
 
 label_0003f26c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「さらに此方には、神を討伐するに値する理由がある。我らフィユシア教ならば、見過ごせぬ行動がな」"
 wait-for-input 0
 end-text-line 0
@@ -17219,6 +17389,7 @@ label_0003f3a0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "言葉を引き継ぐように、クードヴァンスが口を開いた。"
 wait-for-input 0
 end-text-line 0
@@ -17455,6 +17626,7 @@ play-voice (global-int f8007)
 
 label_00040548
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「フィア様は、フィユシア教の聖地である『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -17586,6 +17758,7 @@ play-voice (global-int f8007)
 
 label_00040d24
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「これは大司教殿。その通りであります」"
 wait-for-input 0
 end-text-line 0
@@ -17711,6 +17884,7 @@ play-voice (global-int f8007)
 
 label_00041470
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「許可を得ないままに城砦にて我が王国内を移動し、民や諸国を混乱させている。それを止めようとすることに、なんの間違いがありましょうか」"
 wait-for-input 0
 end-text-line 0
@@ -17836,6 +18010,7 @@ play-voice (global-int f8007)
 
 label_00041bbc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「むしろ堕ちた神を"
 display-furigana 0 "擁立" "ようりつ"
 show-text 0 "する勢力の行動こそ、"
@@ -17988,6 +18163,7 @@ play-voice (global-int f8007)
 
 label_000424e4
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ふむ。なるほど」"
 wait-for-input 0
 end-text-line 0
@@ -18113,6 +18289,7 @@ play-voice (global-int f8007)
 
 label_00042c30
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「被害を受けたのは、我らインフルース王国だけではない。そうでしょう？　カトリト殿。竜族の領域すらも侵されたようではないですか」"
 wait-for-input 0
 end-text-line 0
@@ -18400,6 +18577,7 @@ label_00043cdc
 u00416120
 
 label_00043ce0
+// FROM: a カトリト
 show-text 0 "「その、通りです。我ら竜族はフィユシア様のご意思に従い、北上する城砦を食い止めようと兵を出しました」"
 wait-for-input 0
 end-text-line 0
@@ -18635,6 +18813,7 @@ label_00044ab8
 u00416120
 
 label_00044abc
+// FROM: a カトリト
 show-text 0 "「ですが敗北し、多くの竜族がその命を失った」"
 wait-for-input 0
 end-text-line 0
@@ -18662,6 +18841,7 @@ label_00044bec
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そらみろとばかりに、インフルース王国代表の口元が"
 display-furigana 0 "歪" "ゆが"
 show-text 0 "む。"
@@ -18899,6 +19079,7 @@ label_00045a10
 u00416120
 
 label_00045a14
+// FROM: a カトリト
 show-text 0 "「ですがその"
 display-furigana 0 "衝突" "しょうとつ"
 show-text 0 "は、違う視点からみれば、より多くの団結を生みました」"
@@ -19252,6 +19433,7 @@ play-voice (global-int f8007)
 
 label_000476dc
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「共通の敵が現れたことで、竜族がまとまったと？」"
 wait-for-input 0
 end-text-line 0
@@ -19487,6 +19669,7 @@ label_000484b8
 u00416120
 
 label_000484bc
+// FROM: a カトリト
 show-text 0 "「先代シウケトルが亡くなり、一度バラバラになってしまった竜族を、代々伝えられた血脈により統一するきっかけを作ってくれたと、わたしは解釈しています」"
 wait-for-input 0
 end-text-line 0
@@ -19612,6 +19795,7 @@ play-voice (global-int f8007)
 
 label_00048c04
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「それは、どういう？」"
 wait-for-input 0
 end-text-line 0
@@ -19847,6 +20031,7 @@ label_000499e0
 u00416120
 
 label_000499e4
+// FROM: a カトリト
 show-text 0 "「ただ集団としてまとまっているだけではなく、伝統に"
 display-furigana 0 "基" "もと"
 show-text 0 "づいた一族として、わたしは族長を"
@@ -20086,6 +20271,7 @@ label_0004a81c
 u00416120
 
 label_0004a820
+// FROM: a カトリト
 show-text 0 "「それはフィユシア様の下で一丸となって戦う竜族として、なによりも誇らしいこと」"
 wait-for-input 0
 end-text-line 0
@@ -20321,6 +20507,7 @@ label_0004b5f8
 u00416120
 
 label_0004b5fc
+// FROM: a カトリト
 show-text 0 "「だからわたしは、フィア様に感謝しています。その優しい心と行動を、支持したいと思えるほどに」"
 wait-for-input 0
 end-text-line 0
@@ -20343,6 +20530,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「カトリト」"
 wait-for-input 0
 end-text-line 0
@@ -20560,6 +20748,7 @@ play-voice (global-int f8007)
 
 label_0004c6b4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ちっ、竜族までも取り込んでいたのか」"
 wait-for-input 0
 end-text-line 0
@@ -20685,6 +20874,7 @@ play-voice (global-int f8007)
 
 label_0004ce00
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ぜひ聞きたいものだ。それほどまで周囲を"
 display-furigana 0 "惹" "ひ"
 show-text 0 "きつける神が、なぜ聖地へ赴こうというのかを」"
@@ -20913,6 +21103,7 @@ play-voice (global-int f8007)
 
 label_0004dc08
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「まさに問題はそこにある。その目的ゆえに城砦は移動を"
 display-furigana 0 "止" "や"
 show-text 0 "めず、多くの"
@@ -20944,6 +21135,7 @@ label_0004dd9c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスは話を引き継ぎ、フィアへと視線を向けた。"
 wait-for-input 0
 end-text-line 0
@@ -21069,6 +21261,7 @@ play-voice (global-int f8007)
 
 label_0004e500
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「フィア様が目的地と定め、フィユシア様の"
 display-furigana 0 "神域" "しんいき"
 show-text 0 "を侵そうとする理由を伺いたい」"
@@ -21196,6 +21389,7 @@ play-voice (global-int f8007)
 
 label_0004ec7c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「まずは神自身の口から、眠りから目覚め、その意思へ至るまでの経緯を聞かせていただこう」"
 wait-for-input 0
 end-text-line 0
@@ -21321,6 +21515,7 @@ play-voice (global-int f8007)
 
 label_0004f3c8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「うん。それじゃ話します」"
 wait-for-input 0
 end-text-line 0
@@ -21446,6 +21641,7 @@ play-voice (global-int f8007)
 
 label_0004fb14
 u00416120
+// FROM: 2 フィア
 show-text 0 "「えっと、私はずっと眠っていたんだけど」"
 wait-for-input 0
 end-text-line 0
@@ -21510,6 +21706,7 @@ label_0004fe5c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィアは静かに、だけど"
 display-furigana 0 "真摯" "しんし"
 show-text 0 "に自分の事情を語っていく。"
@@ -21539,6 +21736,7 @@ label_0004ffd8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 display-furigana 0 "魔石" "ませき"
 show-text 0 "に封じられ、近年まで眠りについていたこと。"
 wait-for-input 0
@@ -21567,6 +21765,7 @@ label_00050140
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "特殊な人間族の血によって、眠りから目覚めることができたこと。"
 wait-for-input 0
 end-text-line 0
@@ -21594,6 +21793,7 @@ label_0005028c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "目覚めた時に、ほとんどの記憶を失っているも、それでも『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -21625,6 +21825,7 @@ label_00050438
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "北上している途中で、城砦が神を封じ込めて動かす"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "の兵器であることを知ったこと。"
@@ -21654,6 +21855,7 @@ label_000505b4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "改めて自身の事情を"
 display-furigana 0 "鑑" "かんが"
 show-text 0 "みるも、フィユシア教の聖地への想いは、変わらず胸の内に熱く"
@@ -21838,6 +22040,7 @@ play-voice (global-int f8007)
 
 label_000510b4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -21967,6 +22170,7 @@ play-voice (global-int f8007)
 
 label_00051860
 u00416120
+// FROM: 2 フィア
 show-text 0 "「絶対に諦めちゃいけないことだけは分かってる。だけど、その理由は」"
 wait-for-input 0
 end-text-line 0
@@ -22092,6 +22296,7 @@ play-voice (global-int f8007)
 
 label_00051fac
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「ならば、聞き方を変えましょう」"
 wait-for-input 0
 end-text-line 0
@@ -22217,6 +22422,7 @@ play-voice (global-int f8007)
 
 label_000526f8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「聖地の侵入は、フィユシア様に敵対意思を持つが"
 display-furigana 0 "故" "ゆえ"
 show-text 0 "か」"
@@ -22344,6 +22550,7 @@ play-voice (global-int f8007)
 
 label_00052e74
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それは、ないよ。会ったこともない神様を、嫌いになんかなれない」"
 wait-for-input 0
 end-text-line 0
@@ -22469,6 +22676,7 @@ play-voice (global-int f8007)
 
 label_000535c0
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「聖地の侵入は、フィユシア様に"
 display-furigana 0 "集" "つど"
 show-text 0 "う信仰心を奪おうとの企てか」"
@@ -22596,6 +22804,7 @@ play-voice (global-int f8007)
 
 label_00053d3c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「んそれは、どういう意味かな。禁止されている場所に行こうって、信徒さんを誘惑しているかってこと？　だとしたら、それは絶対にない」"
 wait-for-input 0
 end-text-line 0
@@ -22721,6 +22930,7 @@ play-voice (global-int f8007)
 
 label_00054488
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「聖地の侵入は、私欲の為ではないと誓えるか」"
 wait-for-input 0
 end-text-line 0
@@ -22846,6 +23056,7 @@ play-voice (global-int f8007)
 
 label_00054bd4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それは、難しいね。昔のことをほとんど思い出せないから、はっきりとは言えない」"
 wait-for-input 0
 end-text-line 0
@@ -23026,6 +23237,7 @@ play-voice (global-int f8007)
 
 label_0005564c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「でもこれは『みんなの為に』なることだと思うよ。フィユシア教の人たちは絶対に喜んでくれる。うん、そんな感覚があるんだ」"
 wait-for-input 0
 end-text-line 0
@@ -23151,6 +23363,7 @@ play-voice (global-int f8007)
 
 label_00055d98
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「なるほど」"
 wait-for-input 0
 end-text-line 0
@@ -23178,6 +23391,7 @@ label_00055ecc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスは、フィアから目を"
 display-furigana 0 "逸" "そ"
 show-text 0 "らすことなく、その答えを飲み込んでいる。"
@@ -23365,6 +23579,7 @@ play-voice (global-int f8007)
 
 label_000569f0
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「大司教殿、神だけに問いをかけても足りないでしょう」"
 wait-for-input 0
 end-text-line 0
@@ -23392,6 +23607,7 @@ label_00056b24
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そう言ったインフルース王国代表は、俺へと鋭い視線を向ける。"
 wait-for-input 0
 end-text-line 0
@@ -23517,6 +23733,7 @@ play-voice (global-int f8007)
 
 label_00057288
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「神を目覚めさせたハーフエルフ。貴殿についても情報が入っているぞ」"
 wait-for-input 0
 end-text-line 0
@@ -23642,6 +23859,7 @@ play-voice (global-int f8007)
 
 label_000579d4
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -23675,6 +23893,7 @@ label_00057b98
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言葉に、ラクスシア王国の代表がピクリと反応した。"
 wait-for-input 0
 end-text-line 0
@@ -23702,6 +23921,7 @@ label_00057ce4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言い方だと、やっぱり各国の上層部には組織の名前が通っているんだろうな。そして城砦を動かせる要因に『血』が関わっていることも"
 display-furigana 0 "浸透" "しんとう"
 show-text 0 "している。"
@@ -23726,6 +23946,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それは絶対にない。そう言えるのは、俺たちはここへ来るまでに『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -23867,6 +24088,7 @@ play-voice (global-int f8007)
 
 label_00058698
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「な、そんなっ」"
 wait-for-input 0
 end-text-line 0
@@ -23992,6 +24214,7 @@ play-voice (global-int f8007)
 
 label_00058de4
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「それは、真の話か！？　真実ならば素晴らしい功績となるぞ」"
 wait-for-input 0
 end-text-line 0
@@ -24019,6 +24242,7 @@ label_00058f18
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その情報を知らなかったんだろうインフルースとラクスシアの代表は、目に見えて動揺した。"
 wait-for-input 0
 end-text-line 0
@@ -24181,6 +24405,7 @@ play-voice (global-int f8007)
 
 label_00059890
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「その情報は"
 display-furigana 0 "偽" "いつわ"
 show-text 0 "りではない。『"
@@ -24321,6 +24546,7 @@ play-voice (global-int f8007)
 
 label_0005a0d8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「使いを出し、ベルガラード王国における所在地を確認させた。確かに『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -24454,6 +24680,7 @@ play-voice (global-int f8007)
 
 label_0005a8e4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「だが現在組織を率いているヴァーツラフ・ガイダルの所在は確認がとれておらぬ。この件に関しては、引き続き王国軍にも調査を任せることになろう」"
 wait-for-input 0
 end-text-line 0
@@ -24481,6 +24708,7 @@ label_0005aa18
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスのお墨付きを受け、２人はごくりと喉を鳴らした。"
 wait-for-input 0
 end-text-line 0
@@ -24606,6 +24834,7 @@ play-voice (global-int f8007)
 
 label_0005b17c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「未だ残党はいよう。現在では様々な場所にて、あの者らの姿が確認されているからな」"
 wait-for-input 0
 end-text-line 0
@@ -24731,6 +24960,7 @@ play-voice (global-int f8007)
 
 label_0005b8c8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「だが拠点の一つはこれで潰えた。それはフィア様が打ち立てた功績と言えるだろう」"
 wait-for-input 0
 end-text-line 0
@@ -24758,6 +24988,7 @@ label_0005b9fc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "歯をギシリと強く噛み合わせながら、インフルース王国の代表は言葉を挟む。"
 wait-for-input 0
 end-text-line 0
@@ -24883,6 +25114,7 @@ play-voice (global-int f8007)
 
 label_0005c160
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「関係性を、探られない為の"
 display-furigana 0 "偽装" "ぎそう"
 show-text 0 "かもしれませぬ」"
@@ -25021,6 +25253,7 @@ play-voice (global-int f8007)
 
 label_0005c978
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「元の関係性を疑えばキリがない。かつてフィユシア教の内部まで食い込んだ組織だ。今この場で、完全に"
 display-furigana 0 "潔白" "けっぱく"
 show-text 0 "であると証明できる者などいまい」"
@@ -25185,6 +25418,7 @@ play-voice (global-int f8007)
 
 label_0005d308
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「は、大司教殿の仰る通りであります」"
 wait-for-input 0
 end-text-line 0
@@ -25310,6 +25544,7 @@ play-voice (global-int f8007)
 
 label_0005da54
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ですがやはり、神ごと城砦が操られている可能性は考慮せねばなりますまい」"
 wait-for-input 0
 end-text-line 0
@@ -25435,6 +25670,7 @@ play-voice (global-int f8007)
 
 label_0005e1a0
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「功績があるからといって、禁忌の存在であることが変わるわけでもないでしょう？」"
 wait-for-input 0
 end-text-line 0
@@ -25663,6 +25899,7 @@ play-voice (global-int f8007)
 
 label_0005f2a8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「それについては、使徒殿の話を聞くことが判断材料となろう」"
 wait-for-input 0
 end-text-line 0
@@ -25788,6 +26025,7 @@ play-voice (global-int f8007)
 
 label_0005f9f4
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ほう。というと？」"
 wait-for-input 0
 end-text-line 0
@@ -25913,6 +26151,7 @@ play-voice (global-int f8007)
 
 label_00060140
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「神の意志と、"
 display-furigana 0 "使徒" "しと"
 show-text 0 "の意思は同一ではないとの確認ができている。より明確な理由を以て『"
@@ -26044,6 +26283,7 @@ play-voice (global-int f8007)
 
 label_0006091c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「この場で改めて、その点を説明願おう」"
 wait-for-input 0
 end-text-line 0
@@ -26099,6 +26339,7 @@ label_00060d28
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスに"
 display-furigana 0 "促" "うなが"
 show-text 0 "され、俺は周りを見渡しながら口を開く。"
@@ -26123,6 +26364,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「分かった。それじゃあ、説明させてもらう」"
 wait-for-input 0
 end-text-line 0
@@ -26150,6 +26392,7 @@ label_00060fa4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それにしても、先ほどからどこかクードヴァンスの態度に違和感がある。"
 wait-for-input 0
 end-text-line 0
@@ -26177,6 +26420,7 @@ label_000610f0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "責められるフィアに味方をしてくれているような。今こうして俺に説明の機会を作ってくれたような。"
 wait-for-input 0
 end-text-line 0
@@ -26204,6 +26448,7 @@ label_0006123c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "いや、あくまで公平であろうとしているだけかもな。"
 wait-for-input 0
 end-text-line 0
@@ -26231,6 +26476,7 @@ label_00061388
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "あぁ、そういえばいつの間にか敬語じゃなくなってしまっている。やっぱり緊張しているのかもしれない。でもこのまま、嘘偽りない俺の気持ちを話そう。"
 wait-for-input 0
 end-text-line 0
@@ -26253,6 +26499,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ここに居る各勢力の代表者の中に、フィユシア教聖地の内部になにがあるのかを"
 display-furigana 0 "把握" "はあく"
 show-text 0 "している人はいるだろうか」"
@@ -26277,6 +26524,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もし知っているなら教えて欲しい。俺はいま、確実性がない推測を"
 display-furigana 0 "前提" "ぜんてい"
 show-text 0 "にして動いている。ただそう合って欲しいという希望で、周囲に迷惑をかけてしまっている」"
@@ -26306,6 +26554,7 @@ label_00061734
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "一呼吸置き、返事がないことを確認する。"
 wait-for-input 0
 end-text-line 0
@@ -26328,6 +26577,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -26355,6 +26605,7 @@ label_00061980
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そうか。やっぱりあの渦の中になにが隠されているのか、この場で話せる代表者はいないみたいだな。"
 wait-for-input 0
 end-text-line 0
@@ -26470,6 +26721,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「聖地へ行く最初の目的は、偶然にも目覚めさせた"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "フィアが行きたいと望んでいるからだった。事の重さも理解しないままに、目先の欲に釣られて協力したんだ」"
@@ -26494,6 +26746,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それからフィアと共に各地を巡り、色んな人と出会って、色んな事を知った」"
 wait-for-input 0
 end-text-line 0
@@ -26516,6 +26769,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィユシア教の成り立ちや、インフルース王国を中心とした周辺国の歴史」"
 wait-for-input 0
 end-text-line 0
@@ -26538,6 +26792,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「城砦が神を封じ込めることで動かしていることや、封じ込められた神を救う手立ては、今のところ見つかっていないことも」"
 wait-for-input 0
 end-text-line 0
@@ -26597,6 +26852,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だけどこの『ファラ＝レアロス』に至るまでの旅路で、見つけることができた」"
 wait-for-input 0
 end-text-line 0
@@ -26619,6 +26875,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺がいま『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -26648,6 +26905,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「あそこへ行けば、神と城砦を切り離す方法が分かるかもしれない。だから俺は、俺たちはフィユシア教の聖地を目指して進んでいる」"
 wait-for-input 0
 end-text-line 0
@@ -26712,6 +26970,7 @@ label_00062cd4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言葉に疑問を持ったのは、事態を把握していないラクスシア王国の代表だった。"
 wait-for-input 0
 end-text-line 0
@@ -26837,6 +27096,7 @@ play-voice (global-int f8007)
 
 label_00063438
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "の存在から解放"
@@ -26863,6 +27123,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ。聖地には、グアラクーナ城砦のような、"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "と呼ばれる兵器の製法があると聞いたんだ」"
@@ -26887,6 +27148,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「神を封じ込め、"
 display-furigana 0 "捧" "ささ"
 show-text 0 "げられた信仰力を原動力に変換してしまう禁忌の兵器の作り方が、眠っているってな」"
@@ -27014,6 +27276,7 @@ play-voice (global-int f8007)
 
 label_00063e44
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「なるほど。禁忌の製法を手に入れることで、神を解放する手段が判明するということか」"
 wait-for-input 0
 end-text-line 0
@@ -27036,6 +27299,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「その通りだ。設計図さえあれば、そこから逆算で導けると考えている」"
 wait-for-input 0
 end-text-line 0
@@ -27161,6 +27425,7 @@ play-voice (global-int f8007)
 
 label_00064690
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ふむ。ですがなぜ、フィユシア教の聖地にそれがあると？」"
 wait-for-input 0
 end-text-line 0
@@ -27183,6 +27448,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「"
 display-furigana 0 "遥" "はる"
 show-text 0 "か昔に起こった戦争が、その場所から始まったからだと聞いた」"
@@ -27212,6 +27478,7 @@ label_000648f4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言葉にピクリと反応したのは、クードヴァンスとインフルース王国代表だ。"
 wait-for-input 0
 end-text-line 0
@@ -27234,6 +27501,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「かつて『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -27363,6 +27631,7 @@ play-voice (global-int f8007)
 
 label_000651b8
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ほほう。戦争の、始まりの地ですか」"
 wait-for-input 0
 end-text-line 0
@@ -27390,6 +27659,7 @@ label_000652ec
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "俺の言葉に反応し、話を先へと"
 display-furigana 0 "促" "うなが"
 show-text 0 "してくれているラクスシア王国代表。これがリシュの仕込みなんだとすれば、本当に有り難いな。"
@@ -27419,6 +27689,7 @@ label_00065468
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ラクスシア代表の驚きを引き継ぐように、インフルース代表が口を開く。"
 wait-for-input 0
 end-text-line 0
@@ -27555,6 +27826,7 @@ play-voice (global-int f8007)
 
 label_00065c68
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「それが本当ならば、なるほど貴殿らは"
 display-furigana 0 "是" "ぜ"
 show-text 0 "が"
@@ -27684,6 +27956,7 @@ play-voice (global-int f8007)
 
 label_00066414
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「だが、かの地はインフルース史に残る歴史の中にも、内部へ侵入した事がない。なぜ使徒殿はそれがあると考えておられるのか」"
 wait-for-input 0
 end-text-line 0
@@ -27711,6 +27984,7 @@ label_00066548
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "疑いの視線をこちらへ向けながら、インフルース代表は語調を強める。"
 wait-for-input 0
 end-text-line 0
@@ -27847,6 +28121,7 @@ play-voice (global-int f8007)
 
 label_00066d48
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「戦争の始まりが聖地であると“聞いた”そう、言っていたな。それは、どこから出た情報か？」"
 wait-for-input 0
 end-text-line 0
@@ -27972,6 +28247,7 @@ play-voice (global-int f8007)
 
 label_00067494
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ふふ、それは"
 display-furigana 0 "此方" "こちら"
 show-text 0 "でも予想が付きますぞ。そこで『"
@@ -28105,6 +28381,7 @@ play-voice (global-int f8007)
 
 label_00067ca0
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「フィア様率いるグアラクーナ城砦は、その情報を探る為に、かの組織の本拠地へ乗り込んだのでは？」"
 wait-for-input 0
 end-text-line 0
@@ -28132,6 +28409,7 @@ label_00067dd4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ちょっと、違うんだけどな。"
 wait-for-input 0
 end-text-line 0
@@ -28154,6 +28432,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -28182,6 +28461,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だけど本拠地へ乗り込んだ経緯は別にあるんだ」"
 wait-for-input 0
 end-text-line 0
@@ -28241,6 +28521,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「あの組織も『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -28370,6 +28651,7 @@ play-voice (global-int f8007)
 
 label_00068b3c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -28397,6 +28679,7 @@ label_00068c70
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルース代表の視線は鋭いままだ。"
 wait-for-input 0
 end-text-line 0
@@ -28424,6 +28707,7 @@ label_00068dbc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "まだ俺たちが、ガイダルと繋がっていると考えているのだろうか。それとも王族の命が失われた件での恨みか。"
 wait-for-input 0
 end-text-line 0
@@ -28451,6 +28735,7 @@ label_00068f08
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "話をほじくり返すのは心苦しいが、俺の口からも言わなければならないだろう。"
 wait-for-input 0
 end-text-line 0
@@ -28510,6 +28795,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ギルシュ・ルース第三王子との戦いも同じ経緯だ」"
 wait-for-input 0
 end-text-line 0
@@ -28532,6 +28818,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「先ほどサンタシィ・エイフ連合代表が説明してくれた通り、ギルシュ殿下がフィアの存在を無視し強引な手段で城砦を入手しようとしてきた末の衝突だ」"
 wait-for-input 0
 end-text-line 0
@@ -28657,6 +28944,7 @@ play-voice (global-int f8007)
 
 label_00069a80
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「ずいぶんと一方的な物言いだ。それは城砦の所有権がどこにあるのかという話であろう」"
 wait-for-input 0
 end-text-line 0
@@ -28782,6 +29070,7 @@ play-voice (global-int f8007)
 
 label_0006a1cc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「城砦は人間族のものであり、それはインフルース王国領土内に保存されていた。ならば我らの手で管理するのは当然のこと」"
 wait-for-input 0
 end-text-line 0
@@ -28907,6 +29196,7 @@ play-voice (global-int f8007)
 
 label_0006a918
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「その話は既に済んでいる。グアラクーナ城砦は、インフルース王国の物ではない」"
 wait-for-input 0
 end-text-line 0
@@ -29032,6 +29322,7 @@ play-voice (global-int f8007)
 
 label_0006b064
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「あれは神と同化している。ならば神と同一のものとして扱うのが筋であろう」"
 wait-for-input 0
 end-text-line 0
@@ -29157,6 +29448,7 @@ play-voice (global-int f8007)
 
 label_0006b7b0
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「切り離すことができぬ能力は、もはや神のものと同様だと私は思う。そして"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "の兵器を管理すること自体が、フィユシア様の名を"
@@ -29286,6 +29578,7 @@ play-voice (global-int f8007)
 
 label_0006bf5c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「そうでしたな」"
 wait-for-input 0
 end-text-line 0
@@ -29313,6 +29606,7 @@ label_0006c090
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスが"
 display-furigana 0 "窘" "たしな"
 show-text 0 "めることで、インフルース代表はバツの悪い顔を浮かべた。"
@@ -29477,6 +29771,7 @@ play-voice (global-int f8007)
 
 label_0006ca38
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「先ほど使徒殿は『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -29505,6 +29800,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ。その通りだ」"
 wait-for-input 0
 end-text-line 0
@@ -29630,6 +29926,7 @@ play-voice (global-int f8007)
 
 label_0006d314
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「つまりグアラクーナ城砦ならば聖地へ入り込むことができるという認識でよろしいか」"
 wait-for-input 0
 end-text-line 0
@@ -29657,6 +29954,7 @@ label_0006d448
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ラクスシアの代表は、探るような問い掛けを投げかけてくる。"
 wait-for-input 0
 end-text-line 0
@@ -29782,6 +30080,7 @@ play-voice (global-int f8007)
 
 label_0006dbac
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「現時点で、フィア様はその手段を有している。そして城砦を手にすることができたならば、聖地への侵入が可能になると？」"
 wait-for-input 0
 end-text-line 0
@@ -29821,6 +30120,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「当然だけど、試したことはないんだ。だから確実にできるとは言えない」"
 wait-for-input 0
 end-text-line 0
@@ -29843,6 +30143,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「逆に言えば、神の力を用いる城砦ほどの兵器がなければ、たとえ『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -29876,6 +30177,7 @@ label_0006e0fc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "俺は周りを見渡しながら、問い掛けた。"
 wait-for-input 0
 end-text-line 0
@@ -29898,6 +30200,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうしてそこまで強固な結界で侵入を防いでいるのか。その理由を教えてもらうことはできないか？」"
 wait-for-input 0
 end-text-line 0
@@ -30023,6 +30326,7 @@ play-voice (global-int f8007)
 
 label_0006e960
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -30050,6 +30354,7 @@ label_0006ea94
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスは答えない。他の代表も、さして反論を挟んでこない。"
 wait-for-input 0
 end-text-line 0
@@ -30077,6 +30382,7 @@ label_0006ebe0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "やっぱり、あの暴風のような渦は、結界という認識で合っているんだな。"
 wait-for-input 0
 end-text-line 0
@@ -30099,6 +30405,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もし聖地の"
 display-furigana 0 "封鎖" "ふうさ"
 show-text 0 "に"
@@ -30125,6 +30432,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「製法が残っているか調べるだけでもいいんだ。それ以外に目的なんかない少なくとも、神の"
 display-furigana 0 "使徒" "しと"
 show-text 0 "である俺はとしか、言えないけれど」"
@@ -30154,6 +30462,7 @@ label_0006efbc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "肝心のフィアには記憶がなく、行きたい理由も説明ができない。"
 wait-for-input 0
 end-text-line 0
@@ -30181,6 +30490,7 @@ label_0006f108
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "だからこそ、それ以外で許可を貰えるならばその方がいいだろう。"
 wait-for-input 0
 end-text-line 0
@@ -30203,6 +30513,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だけど当然、簡単に許可を与えることは難しいと分かっている」"
 wait-for-input 0
 end-text-line 0
@@ -30225,6 +30536,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それでも調査自体を断るというのなら、せめてフィユシア教の正しさを証明して欲しいんだ」"
 wait-for-input 0
 end-text-line 0
@@ -30435,6 +30747,7 @@ play-voice (global-int f8007)
 
 label_0006ffe8
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「"
 display-furigana 0 "使徒" "しと"
 show-text 0 "殿、それはどういう意味か」"
@@ -30459,6 +30772,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もしこの推論が的外れではなく、本当に聖地の中に兵器の製法が眠っているのだとすれば、フィユシア教が『"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "の製法』を隠していると"
@@ -30691,6 +31005,7 @@ play-voice (global-int f8007)
 
 label_00071280
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -30718,6 +31033,7 @@ label_000713b4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスの瞳が、俺へ向いた。"
 wait-for-input 0
 end-text-line 0
@@ -30740,6 +31056,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「城砦を"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "だと責め立てるフィユシア教が、聖地にて禁忌の製法を隠しているのだとすれば、大きな問題になる」"
@@ -30764,6 +31081,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「マーズテリア神殿だって目を付けるだろう。いや、既に当たりを付けて動いているんじゃないのか」"
 wait-for-input 0
 end-text-line 0
@@ -30786,6 +31104,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「あの中に製法が残っているからこそ、フィユシア教は聖地と"
 display-furigana 0 "称" "しょう"
 show-text 0 "して封鎖している」"
@@ -30810,6 +31129,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だとすれば、フィユシア教が"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "の技術を故意に"
@@ -30864,6 +31184,7 @@ label_00071b3c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 display-furigana 0 "苛立" "いらだ"
 show-text 0 "ちを隠そうともせずに、インフルース代表は声を発した。"
 wait-for-input 0
@@ -30990,6 +31311,7 @@ play-voice (global-int f8007)
 
 label_000722bc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「貴殿は、フィユシア教を"
 display-furigana 0 "愚弄" "ぐろう"
 show-text 0 "するつもりか？」"
@@ -31014,6 +31336,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「本当に自分たちの都合を優先して情報を隠しているなら、そうなるな」"
 wait-for-input 0
 end-text-line 0
@@ -31139,6 +31462,7 @@ play-voice (global-int f8007)
 
 label_00072b38
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「貴様っ」"
 wait-for-input 0
 end-text-line 0
@@ -31161,6 +31485,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もちろん技術を悪用される恐れがある為に封鎖しているという解釈だってあるだろう」"
 wait-for-input 0
 end-text-line 0
@@ -31183,6 +31508,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だけど適切な管理をしているのであれば、必要以上に恐れることなんてないんじゃないか？」"
 wait-for-input 0
 end-text-line 0
@@ -31308,6 +31634,7 @@ play-voice (global-int f8007)
 
 label_00073484
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「使徒殿、『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -31334,6 +31661,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なぜそこへ行ってはいけないのかを説明してくれないと、諦めることはできない」"
 wait-for-input 0
 end-text-line 0
@@ -31356,6 +31684,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「各勢力の監視が同行したっていい。製法を悪用する考えなんて一切"
 display-furigana 0 "抱" "いだ"
 show-text 0 "いていない、フィアを城砦から切り離す方法が分かれば、それだけでいいんだ」"
@@ -31385,6 +31714,7 @@ label_00073848
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスに顔を向け、狙い打つように答えを求める。"
 wait-for-input 0
 end-text-line 0
@@ -31444,6 +31774,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「改めて問い掛けたい。どうして『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -31573,6 +31904,7 @@ play-voice (global-int f8007)
 
 label_00074320
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「“神の意志”だ。それ以外に理由などない」"
 wait-for-input 0
 end-text-line 0
@@ -31595,6 +31927,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だとすれば、こちらも“神が望んでいる”としか言えなくなる」"
 wait-for-input 0
 end-text-line 0
@@ -31622,6 +31955,7 @@ label_00074554
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスは瞳を閉じ、それ以上の言葉を発さない。"
 wait-for-input 0
 end-text-line 0
@@ -31644,6 +31978,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「聖地には誰も入ったことがないならば、製法がないという根拠もない。それが分かる資料があるならば別だけどな」"
 wait-for-input 0
 end-text-line 0
@@ -31666,6 +32001,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もし聖地の中には違うものがあると、製法なんか残っていないと知っているなら教えて欲しい。それが分かれば、俺は目指すことを止めてもいい」"
 wait-for-input 0
 end-text-line 0
@@ -31828,6 +32164,7 @@ play-voice (global-int f8007)
 
 label_000750cc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「そんな信用のおけない言葉をよく言えるものだ」"
 wait-for-input 0
 end-text-line 0
@@ -31953,6 +32290,7 @@ play-voice (global-int f8007)
 
 label_00075818
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「神が目指すと決めている以上、使徒殿がなにを言っても城砦は止まらないであろう」"
 wait-for-input 0
 end-text-line 0
@@ -32078,6 +32416,7 @@ play-voice (global-int f8007)
 
 label_00075f64
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「そして"
 display-furigana 0 "使徒" "しと"
 show-text 0 "殿は、今この場で『製法などない』と説いても、それを信用したりはしない。そう思えるが？」"
@@ -32107,6 +32446,7 @@ label_000760c8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルース代表の言い分に、俺は少し言葉を詰まってしまう。"
 wait-for-input 0
 end-text-line 0
@@ -32129,6 +32469,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「その、通りだな。この目で確かめるまで、俺はきっと止まれないだろう」"
 wait-for-input 0
 end-text-line 0
@@ -32151,6 +32492,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それしか方法がないんだ。すがりつくしかないきっと諦めることは、ないと思う」"
 wait-for-input 0
 end-text-line 0
@@ -32276,6 +32618,7 @@ play-voice (global-int f8007)
 
 label_00076a2c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「本性を現したな。結局は自分の主張が通らねば、強引な手段に"
 display-furigana 0 "訴" "うった"
 show-text 0 "えるのではないか」"
@@ -32300,6 +32643,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「だからこそ調査許可をお願いしたい。強引な手段ではなく、双方の合意が得られる為の結末を探したいんだ」"
 wait-for-input 0
 end-text-line 0
@@ -32322,6 +32666,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「封鎖の理由も説明せず、正当性も主張できないとしても、勝手に押し入っているのは俺たちだ」"
 wait-for-input 0
 end-text-line 0
@@ -32344,6 +32689,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「自分勝手な行動を取っているのは承知の上だ。それでも俺は、フィアを救いたい」"
 wait-for-input 0
 end-text-line 0
@@ -32371,6 +32717,7 @@ label_00076e90
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そう告げたあと、深く頭を下げる。そのまま言葉を続けた。"
 wait-for-input 0
 end-text-line 0
@@ -32393,6 +32740,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ギルシュとの戦闘の件も、命が失われる行為を止めることができず申し訳なかった」"
 wait-for-input 0
 end-text-line 0
@@ -32415,6 +32763,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「既にかけてしまった迷惑については、謝ることしかできない。だけどこれからのことは、話し合うことで解決できると考えている」"
 wait-for-input 0
 end-text-line 0
@@ -32437,6 +32786,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうか各代表へお願いしたい。神を救う手段を探す為に、神の想いを叶える為に、聖地である『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -32468,6 +32818,7 @@ label_0007733c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "言葉を終えても、俺は頭を下げ続ける。"
 wait-for-input 0
 end-text-line 0
@@ -32495,6 +32846,7 @@ label_00077488
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そのまま数秒ほど経ったあと、クードヴァンスからの確認で頭を上げた。"
 wait-for-input 0
 end-text-line 0
@@ -32657,6 +33009,7 @@ play-voice (global-int f8007)
 
 label_00077e00
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「使徒殿からの『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -32683,6 +33036,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ。話すべきことは全部説明したよ」"
 wait-for-input 0
 end-text-line 0
@@ -32819,6 +33173,7 @@ play-voice (global-int f8007)
 
 label_00078748
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「承知した。これで各代表における意見交換が終わり、判断材料となる情報は十分に行き渡ったであろう」"
 wait-for-input 0
 end-text-line 0
@@ -32944,6 +33299,7 @@ play-voice (global-int f8007)
 
 label_00078e94
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「此度の『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』における議題は理解したであろう。問うべき是非は、"
@@ -33077,6 +33433,7 @@ play-voice (global-int f8007)
 
 label_000796a0
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「その道筋に同調した者が、フィユシア教内部において袂を分けた。侵入を禁止されている聖地に立ち入るという誘惑に敗れたのだ」"
 wait-for-input 0
 end-text-line 0
@@ -33213,6 +33570,7 @@ play-voice (global-int f8007)
 
 label_00079e88
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「それでは、採決に移る"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "フィア率いるグアラクーナ城砦が、我らが聖地への立ち入りを許すべきか否か」"
@@ -33242,6 +33600,7 @@ label_00079fec
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスはそう言って、視線を順に各代表へと回していった。"
 wait-for-input 0
 end-text-line 0
@@ -33269,6 +33628,7 @@ label_0007a138
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "最初に答えたのは、インフルース王国代表だった。"
 wait-for-input 0
 end-text-line 0
@@ -33431,6 +33791,7 @@ play-voice (global-int f8007)
 
 label_0007aab0
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「『インフルース王国』は、フィア様は聖地へ赴くべきではないと考える」"
 wait-for-input 0
 end-text-line 0
@@ -33556,6 +33917,7 @@ play-voice (global-int f8007)
 
 label_0007b1fc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「相手がどんな者であれ、フィユシア様が定めた規律を破るべきではない」"
 wait-for-input 0
 end-text-line 0
@@ -33635,6 +33997,7 @@ label_0007b600
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルースに対抗する為にか、次に答えたのはリシュだった。"
 wait-for-input 0
 end-text-line 0
@@ -33760,6 +34123,7 @@ play-voice (global-int f8007)
 
 label_0007bd64
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ラウロソ領を有する『サンタシィ・エイフ連合』はフィア様の意思を支持し、『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -33889,6 +34253,7 @@ play-voice (global-int f8007)
 
 label_0007c510
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「フィア様の行動はまさしく神の加護を"
 display-furigana 0 "伴" "ともな"
 show-text 0 "い、連れだつ者を幸福へと導く存在ですわ。フィユシア様も快く許可してくださるでしょう」"
@@ -33918,6 +34283,7 @@ label_0007c674
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それを追うように答えたのは、カトリトだった。"
 wait-for-input 0
 end-text-line 0
@@ -34153,6 +34519,7 @@ label_0007d468
 u00416120
 
 label_0007d46c
+// FROM: a カトリト
 show-text 0 "「竜族はフィア様の意思を尊重します」"
 wait-for-input 0
 end-text-line 0
@@ -34388,6 +34755,7 @@ label_0007e244
 u00416120
 
 label_0007e248
+// FROM: a カトリト
 show-text 0 "「フィア様の意思や行動に、止めるべきものはありません。製法が手に入ることで禁忌でなくなるのならば、そうするべきだと思います」"
 wait-for-input 0
 end-text-line 0
@@ -34417,6 +34785,7 @@ label_0007e3b0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "よかった。カトリトもフィアの味方をしてくれたか。"
 wait-for-input 0
 end-text-line 0
@@ -34446,6 +34815,7 @@ label_0007e4fc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "カトリトの"
 display-furigana 0 "賛成" "さんせい"
 show-text 0 "票を確認して、リシュは口元で笑みを作り勝利を確信する。"
@@ -34475,6 +34845,7 @@ label_0007e678
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "おそらくラクスシア王国代表への仕込みが上手くいっているのだろう。"
 wait-for-input 0
 end-text-line 0
@@ -34502,6 +34873,7 @@ label_0007e7c4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "話し合いの場でも、"
 display-furigana 0 "随所" "ずいしょ"
 show-text 0 "でこちらを支援してくれていたからな。"
@@ -34531,6 +34903,7 @@ label_0007e940
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "これで無事、話し合いの場で解決できた"
 wait-for-input 0
 end-text-line 0
@@ -34694,6 +35067,7 @@ play-voice (global-int f8007)
 
 label_0007f2bc
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「我がラクスシア王国は、フィア様の『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -34823,6 +35197,7 @@ play-voice (global-int f8007)
 
 label_0007fa68
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「なっ」"
 wait-for-input 0
 end-text-line 0
@@ -34850,6 +35225,7 @@ label_0007fb9c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "思わず声が上がるほど、リシュは激しく動揺していた。"
 wait-for-input 0
 end-text-line 0
@@ -34877,6 +35253,7 @@ label_0007fce8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それは俺も同じだった。大きく反応こそしなかったが、内心では激しく動揺してしまっている。"
 wait-for-input 0
 end-text-line 0
@@ -34904,6 +35281,7 @@ label_0007fe34
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "どういうことだ。ラクスシア王国とは、話が付いていたんじゃなかったのか？"
 wait-for-input 0
 end-text-line 0
@@ -35030,6 +35408,7 @@ play-voice (global-int f8007)
 
 label_000805a4
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ラクスシアの意思は、全てフィユシア様に基づくもの」"
 wait-for-input 0
 end-text-line 0
@@ -35155,6 +35534,7 @@ play-voice (global-int f8007)
 
 label_00080cf0
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「さらに言うならば、目的の為にインフルースの王族を殺めておいて、自分だけ事を通そうとは、少々道理が立たないと思ったのだ」"
 wait-for-input 0
 end-text-line 0
@@ -35280,6 +35660,7 @@ play-voice (global-int f8007)
 
 label_0008143c
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「それは」"
 wait-for-input 0
 end-text-line 0
@@ -35416,6 +35797,7 @@ play-voice (global-int f8007)
 
 label_00081c24
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「おや？　どうしたのだ。ラウロソ領主殿。そんなに焦る場面だろうか」"
 wait-for-input 0
 end-text-line 0
@@ -35541,6 +35923,7 @@ play-voice (global-int f8007)
 
 label_00082370
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「これで票数は同数になった。まだ大司教殿が決断していないだろう。そこまで悲観することはあるまい？」"
 wait-for-input 0
 end-text-line 0
@@ -35568,6 +35951,7 @@ label_000824a4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルース王国代表のニタニタとした笑みがリシュに向けられる。"
 wait-for-input 0
 end-text-line 0
@@ -35595,6 +35979,7 @@ label_000825f0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "そこに、別方向からの援護射撃が加わってしまう。"
 wait-for-input 0
 end-text-line 0
@@ -35731,6 +36116,7 @@ play-voice (global-int f8007)
 
 label_00082df0
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「まぁまぁ、ラウロソ殿も初めから結果が分かっていたことでしょう？」"
 wait-for-input 0
 end-text-line 0
@@ -35856,6 +36242,7 @@ play-voice (global-int f8007)
 
 label_0008353c
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「此度は少しばかり運がなかっただけのこと。そう落ち込まず、これからゆっくりと経験を積めばよい」"
 wait-for-input 0
 end-text-line 0
@@ -35981,6 +36368,7 @@ play-voice (global-int f8007)
 
 label_00083c88
 u00416120
+// FROM: 80 グラセス
 show-text 0 "「ファーブル殿。志を同じくする同盟国として、今後とも若き指導者の育成に励もうではないか」"
 wait-for-input 0
 end-text-line 0
@@ -36117,6 +36505,7 @@ play-voice (global-int f8007)
 
 label_00084470
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「もちろんだ。フィユシア教に背を向けたサンタシィ・エイフ連合とて見捨てはしない。身の振り方から教えて差し上げよう」"
 wait-for-input 0
 end-text-line 0
@@ -36242,6 +36631,7 @@ play-voice (global-int f8007)
 
 label_00084bbc
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「そうだな。まずはこれだ"
 display-furigana 0 "弱輩" "じゃくはい"
 show-text 0 "は弱輩らしく、大人しくインフルース王国に"
@@ -36371,6 +36761,7 @@ play-voice (global-int f8007)
 
 label_00085368
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -36496,6 +36887,7 @@ play-voice (global-int f8007)
 
 label_00085ab4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「っ」"
 wait-for-input 0
 end-text-line 0
@@ -36523,6 +36915,7 @@ label_00085be8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュは歯をキシませて、事の思惑を受け止める。"
 wait-for-input 0
 end-text-line 0
@@ -36605,6 +36998,7 @@ label_00086070
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それで俺も、裏でどんな"
 display-furigana 0 "謀" "はかりごと"
 show-text 0 "が行われていたのか理解した。"
@@ -36634,6 +37028,7 @@ label_000861ec
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュはおそらく、フィユシア教における国の序列に目を付けたのだろう。"
 wait-for-input 0
 end-text-line 0
@@ -36661,6 +37056,7 @@ label_00086338
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "三国の中で、権威の大きい『インフルース王国』を共通の敵とし、フィアと城砦を使うことで出し抜こうとした。"
 wait-for-input 0
 end-text-line 0
@@ -36688,6 +37084,7 @@ label_00086484
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "だが逆にラクスシア王国は、サンタシィ・エイフ連合と差を付けることでインフルース王国を味方に付ける。"
 wait-for-input 0
 end-text-line 0
@@ -36715,6 +37112,7 @@ label_000865d0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "結果この"
 display-furigana 0 "共謀" "きょうぼう"
 show-text 0 "によって、三国の中でサンタシィ・エイフ連合だけが割を食った。罠にかけたつもりが、インフルース王国の"
@@ -36844,6 +37242,7 @@ play-voice (global-int f8007)
 
 label_00086d94
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「フィア様、申し訳ありません」"
 wait-for-input 0
 end-text-line 0
@@ -36989,6 +37388,7 @@ play-voice (global-int f8007)
 
 label_00087610
 u00416120
+// FROM: 2 フィア
 show-text 0 "「う、ううん。大丈夫だよ。まだ結果は、出ていないんだから」"
 wait-for-input 0
 end-text-line 0
@@ -37016,6 +37416,7 @@ label_00087744
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "これで可決２に、否決２となった。"
 wait-for-input 0
 end-text-line 0
@@ -37043,6 +37444,7 @@ label_00087890
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "残るは、フィユシア教筆頭である大司教クードヴァンスだけ。"
 wait-for-input 0
 end-text-line 0
@@ -37236,6 +37638,7 @@ play-voice (global-int f8007)
 
 label_0008840c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「我らルーンエルフ族は、当然反対票を投じさせてもらう」"
 wait-for-input 0
 end-text-line 0
@@ -37372,6 +37775,7 @@ play-voice (global-int f8007)
 
 label_00088bf4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「理由は聞かずとも分かろう。フィユシア様の意思に従えば、その決断へと自ずと導かれる」"
 wait-for-input 0
 end-text-line 0
@@ -37399,6 +37803,7 @@ label_00088d28
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "少しの迷いも見せず、クードヴァンスが反対に回る。これで、決着となってしまった。"
 wait-for-input 0
 end-text-line 0
@@ -37535,6 +37940,7 @@ play-voice (global-int f8007)
 
 label_00089528
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「票決だ。賛成数２票に反対数３票、フィユシア教はこれまで通り『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -37772,6 +38178,7 @@ play-voice (global-int f8007)
 
 label_0008a49c
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「大司教殿。それでは後の処理は我らインフルース王国にお任せください。すぐに軍を動かし、グアラクーナ城砦を取り押さえて」"
 wait-for-input 0
 end-text-line 0
@@ -37897,6 +38304,7 @@ play-voice (global-int f8007)
 
 label_0008abe8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「だが城砦の処遇と、先に取った採決は別の話である」"
 wait-for-input 0
 end-text-line 0
@@ -38022,6 +38430,7 @@ play-voice (global-int f8007)
 
 label_0008b334
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「大司教殿。それは、どういった意味でしょうか。神の意思はこの場で否決されたはず」"
 wait-for-input 0
 end-text-line 0
@@ -38157,6 +38566,7 @@ play-voice (global-int f8007)
 
 label_0008bb10
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「否決となったのはフィユシア教を侵すフィア様の意思、そして目的だけである」"
 wait-for-input 0
 end-text-line 0
@@ -38282,6 +38692,7 @@ play-voice (global-int f8007)
 
 label_0008c25c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「聖地への侵入は認めぬ。だがフィア様の"
 display-furigana 0 "殊遇" "しゅぐう"
 show-text 0 "に関しては、別のものとして考えねばならぬ案件であろう」"
@@ -38419,6 +38830,7 @@ play-voice (global-int f8007)
 
 label_0008ca68
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「可決に２勢力も回ったとあれば、別個の案件については改めて議題として扱うが適当である」"
 wait-for-input 0
 end-text-line 0
@@ -38554,6 +38966,7 @@ play-voice (global-int f8007)
 
 label_0008d244
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「何度機会を"
 display-furigana 0 "設" "もう"
 show-text 0 "けようと、フィユシア様のご意思は変わらぬと考えますが」"
@@ -38681,6 +39094,7 @@ play-voice (global-int f8007)
 
 label_0008d9c0
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「フィア様の打ち立てた功績が、フィユシア教徒へ影響を与えていることは事実だ」"
 wait-for-input 0
 end-text-line 0
@@ -38806,6 +39220,7 @@ play-voice (global-int f8007)
 
 label_0008e10c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「それを考慮せずに処断したとあっては、後にフィユシア様への不信感が生まれる可能性があると考える」"
 wait-for-input 0
 end-text-line 0
@@ -38931,6 +39346,7 @@ play-voice (global-int f8007)
 
 label_0008e858
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「事は神の処断という大きな問題だ。フィア様は既に、インフルース王国領内にて名前が通ってしまっている」"
 wait-for-input 0
 end-text-line 0
@@ -39056,6 +39472,7 @@ play-voice (global-int f8007)
 
 label_0008efa4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「もし扱いを誤れば、各地で暴動が生まれてもおかしくはなかろう」"
 wait-for-input 0
 end-text-line 0
@@ -39181,6 +39598,7 @@ play-voice (global-int f8007)
 
 label_0008f6f0
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「は」"
 wait-for-input 0
 end-text-line 0
@@ -39306,6 +39724,7 @@ play-voice (global-int f8007)
 
 label_0008fe3c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「我らは慎重に動かねばならぬ。非戦闘の意思を貫く神が相手ならば、なおさらだ」"
 wait-for-input 0
 end-text-line 0
@@ -39431,6 +39850,7 @@ play-voice (global-int f8007)
 
 label_00090588
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「フィア様を断ずるに値する理由があれば、別の話だがな」"
 wait-for-input 0
 end-text-line 0
@@ -39566,6 +39986,7 @@ play-voice (global-int f8007)
 
 label_00090d64
 u00416120
+// FROM: 99 ファーブル
 show-text 0 "「っ。なるほど、"
 display-furigana 0 "委細" "いさい"
 show-text 0 "承知しました」"
@@ -39595,6 +40016,7 @@ label_00090ec8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "どうやら、そのやり取りでインフルース王国代表は納得したようだ。"
 wait-for-input 0
 end-text-line 0
@@ -39617,6 +40039,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それは、こういうことか？」"
 wait-for-input 0
 end-text-line 0
@@ -39639,6 +40062,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「次に行われる『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』で、フィアが生きていることがフィユシア教の為になると判断されれば、処断されることはない。そう考えていいんだよな」"
@@ -39766,6 +40190,7 @@ play-voice (global-int f8007)
 
 label_0009185c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「そう"
 display-furigana 0 "捉" "とら"
 show-text 0 "えるならば、自身の弁舌により半数以上の票を獲得してみせるがいい」"
@@ -39893,6 +40318,7 @@ play-voice (global-int f8007)
 
 label_00091fd8
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "として処理することの正当性を、"
@@ -39919,6 +40345,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「処理の正当性を、覆す」"
 wait-for-input 0
 end-text-line 0
@@ -40002,6 +40429,7 @@ label_000926f4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "が定めた規定により、神を封じ込めた兵器であるグアラクーナ城砦は問答無用で"
 display-furigana 0 "禁忌" "きんき"
@@ -40130,6 +40558,7 @@ play-voice (global-int f8007)
 
 label_00092ea4
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -40157,6 +40586,7 @@ label_00092fd8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "この規定は何があっても変更されることはない。クードヴァンスの冷たい視線がそう語っていた。"
 wait-for-input 0
 end-text-line 0
@@ -40282,6 +40712,7 @@ play-voice (global-int f8007)
 
 label_0009373c
 u00416120
+// FROM: c8 クードヴァンス
 show-text 0 "「此度の『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』は解散とする。次回の開催の日時は追って通達を出す故、各代表は『ファラ＝レアロス』内にて待機せよ」"
@@ -40311,6 +40742,7 @@ label_000938a0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスの言葉により、その場は解散となった。"
 wait-for-input 0
 end-text-line 0
@@ -40463,6 +40895,7 @@ label_00094088
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "戦闘の最中、クードヴァンスから話され、新たに判明したことや整理できた情報を、みんなへ改めて伝えることにした。"
 wait-for-input 0
 end-text-line 0
@@ -40490,6 +40923,7 @@ label_000941d4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それは、『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』から続いていたクードヴァンスの思惑、フィアや城砦へ抱いていた想いの変化。"
@@ -40519,6 +40953,7 @@ label_00094350
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "強引な罠にはめ、城砦へ戦いを仕掛けて来た理由や、フィユシア教を代表する大司教としての"
 display-furigana 0 "矜持" "きょうじ"
 show-text 0 "などの情報だ。"
@@ -40548,6 +40983,7 @@ label_000944cc
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "だが、やはりと言うべきか、その中でも話題の中心になったのは『フィユシア神』のことだった。"
 wait-for-input 0
 end-text-line 0
@@ -40570,6 +41006,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィユシアという神は存在しない。大司教の口から、はっきりとそう言っていたよ」"
 wait-for-input 0
 end-text-line 0
@@ -40773,6 +41210,7 @@ play-voice (global-int f8007)
 
 label_00095328
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「ふぃ、フィユシア様が、かか、か、架空の存在！？」"
 wait-for-input 0
 end-text-line 0
@@ -40898,6 +41336,7 @@ play-voice (global-int f8007)
 
 label_00095a74
 u00416120
+// FROM: 6 ディートヘルム
 show-text 0 "「どうにも信じられねぇな。本当に、存在していないってのか？」"
 wait-for-input 0
 end-text-line 0
@@ -41023,6 +41462,7 @@ play-voice (global-int f8007)
 
 label_000961c0
 u00416120
+// FROM: 3 イオル
 show-text 0 "「びっくり仰天」"
 wait-for-input 0
 end-text-line 0
@@ -41050,6 +41490,7 @@ label_000962f4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "イオル、本当に驚いているか？　声色がいつもと変わらないぞ。"
 wait-for-input 0
 end-text-line 0
@@ -41236,6 +41677,7 @@ play-voice (global-int f8007)
 
 label_00096f5c
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -41361,6 +41803,7 @@ play-voice (global-int f8007)
 
 label_000976a8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「あれ？　ロズリーヌちゃん。おーい、固まってるの？」"
 wait-for-input 0
 end-text-line 0
@@ -41508,6 +41951,7 @@ play-voice (global-int f8007)
 
 label_00097f5c
 u00416120
+// FROM: a カトリト
 show-text 0 "「きゅぅ」"
 wait-for-input 0
 end-text-line 0
@@ -41530,6 +41974,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、こっちもか」"
 wait-for-input 0
 end-text-line 0
@@ -41557,6 +42002,7 @@ label_00098190
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "カトリトは竜族なんだから、元々知っていたのかなと思ったんだけど、知っているのはフィユシア教の中でも本当に限られた上役のみなんだろうな。"
 wait-for-input 0
 end-text-line 0
@@ -41614,6 +42060,7 @@ label_000985b4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "元々フィユシア教に関わりのある場所で育った面子は、ものすごいショックを受けているようだ。"
 wait-for-input 0
 end-text-line 0
@@ -41641,6 +42088,7 @@ label_00098700
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "逆に関わりの浅い土地で育った面子は、驚きはしていたがどこか冷静だった。"
 wait-for-input 0
 end-text-line 0
@@ -41766,6 +42214,7 @@ play-voice (global-int f8007)
 
 label_00098e64
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「以前、アヴァロへ一度話したことがあったが、フィユシアという男性神は王国史にも登場している"
 display-furigana 0 "歴" "れっき"
 show-text 0 "とした神だ」"
@@ -41893,6 +42342,7 @@ play-voice (global-int f8007)
 
 label_000995e0
 u00416120
+// FROM: 5 キスニル
 show-text 0 "「しかし大司教の話を聞く限り、実際にはいなく、書物や伝聞にしか存在していないということか？」"
 wait-for-input 0
 end-text-line 0
@@ -41915,6 +42365,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、集めた信仰は別の神様にいくと推測している」"
 wait-for-input 0
 end-text-line 0
@@ -41942,6 +42393,7 @@ label_00099814
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "実際にクードヴァンスは、架空の神を利用し“我らが神へ”信仰を捧げていると語っていたしな。"
 wait-for-input 0
 end-text-line 0
@@ -42067,6 +42519,7 @@ play-voice (global-int f8007)
 
 label_00099f78
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「なるほど、偽りの神」"
 wait-for-input 0
 end-text-line 0
@@ -42192,6 +42645,7 @@ play-voice (global-int f8007)
 
 label_0009a6c4
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「調査が必要な項目です。ますます聖地へ行くことが重要になってきました。きっとそれで、全ての真実が判明する」"
 wait-for-input 0
 end-text-line 0
@@ -42219,6 +42673,7 @@ label_0009a7f8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ミクシュアナの言う通り、様々なことが『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -42252,6 +42707,7 @@ label_0009a9d4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "複雑な気持ちに折り合いを付けながらも、進んでいくしかない。"
 wait-for-input 0
 end-text-line 0
@@ -42274,6 +42730,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「こんな時に、こう言うのはズルいかもしれない」"
 wait-for-input 0
 end-text-line 0
@@ -42296,6 +42753,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「それでも俺は、今までの生活に根付いてきた神ではなく、フィアの為に行動することを決意して欲しいと思っている」"
 wait-for-input 0
 end-text-line 0
@@ -42323,6 +42781,7 @@ label_0009ad20
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "今まではフィユシア神という存在が、大きな壁として眼前にあったように思える。"
 wait-for-input 0
 end-text-line 0
@@ -42350,6 +42809,7 @@ label_0009ae6c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それは、神が侵入禁止と定めた土地に、許可も得ず土足で踏み込んでいくということ"
 wait-for-input 0
 end-text-line 0
@@ -42377,6 +42837,7 @@ label_0009afb8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "インフルース王国にいる限り、みんなの心の中にあったはずの罪悪感だ。だけど、今は。"
 wait-for-input 0
 end-text-line 0
@@ -42691,6 +43152,7 @@ play-voice (global-int f8007)
 
 label_0009c4b0
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「そう、ですわね。神を"
 display-furigana 0 "騙" "かた"
 show-text 0 "られていたことを許せないという気持ちは、正直なところあります」"
@@ -42828,6 +43290,7 @@ play-voice (global-int f8007)
 
 label_0009ccbc
 u00416120
+// FROM: 2 フィア
 show-text 0 "「あるんだねぇ」"
 wait-for-input 0
 end-text-line 0
@@ -42855,6 +43318,7 @@ label_0009cdf0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "リシュは拳を握り締めながら、炎のような怒りに震えている。"
 wait-for-input 0
 end-text-line 0
@@ -42990,6 +43454,7 @@ play-voice (global-int f8007)
 
 label_0009d5e4
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』にて決定した内容も、全てはフィユシア様という存在があってこそです。それが"
@@ -43119,6 +43584,7 @@ play-voice (global-int f8007)
 
 label_0009dd90
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「神の存在ごと偽るなど、信徒を馬鹿にしていますわ。もはや遠慮する必要などありません」"
 wait-for-input 0
 end-text-line 0
@@ -43146,6 +43612,7 @@ label_0009dec4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 display-furigana 0 "憤" "いきどお"
 show-text 0 "るリシュを前に、フィアは神様としての意見を差し込んだ。"
 wait-for-input 0
@@ -43282,6 +43749,7 @@ play-voice (global-int f8007)
 
 label_0009e6d4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「んー。でもさ、いなかったとしても、フィユシアさんを信じる心は、みんなの心をすごく豊かにしてくれたんじゃないかな？」"
 wait-for-input 0
 end-text-line 0
@@ -43407,6 +43875,7 @@ play-voice (global-int f8007)
 
 label_0009ee20
 u00416120
+// FROM: 2 フィア
 show-text 0 "「フィユシアさんは、その名前だけでもみんなの力になってたんだと思う。できれば、嫌わないであげて欲しいな」"
 wait-for-input 0
 end-text-line 0
@@ -43542,6 +44011,7 @@ play-voice (global-int f8007)
 
 label_0009f5fc
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「我が主。さすが、大きな器ですわ」"
 wait-for-input 0
 end-text-line 0
@@ -43667,6 +44137,7 @@ play-voice (global-int f8007)
 
 label_0009fd48
 u00416120
+// FROM: 8 リシュエンツェーリ
 show-text 0 "「承知しました。怒りは抑え、"
 display-furigana 0 "静謐" "せいひつ"
 show-text 0 "な精神を心掛けながら、正々堂々と行動しましょう」"
@@ -43812,6 +44283,7 @@ play-voice (global-int f8007)
 
 label_000a05cc
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「そうね。元々私たちは、フィユシア様が定めた律を破ってでも進もうとしていたのだもの。その存在の嘘を暴かれたからといって、行動や指針が変わりはしない」"
 wait-for-input 0
 end-text-line 0
@@ -43839,6 +44311,7 @@ label_000a0700
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "おお、ロズリーヌが気を取り直したぞ。"
 wait-for-input 0
 end-text-line 0
@@ -43974,6 +44447,7 @@ play-voice (global-int f8007)
 
 label_000a0ef4
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「もはやフィユシア教は"
 display-furigana 0 "大儀" "たいぎ"
 show-text 0 "を失った。私たちの無理を通す為に、進みましょう」"
@@ -44003,6 +44477,7 @@ label_000a1058
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "今まであまり言葉を出さずに、じっとなにかを考えていたミケユが、おずおずと声を出した。"
 wait-for-input 0
 end-text-line 0
@@ -44128,6 +44603,7 @@ play-voice (global-int f8007)
 
 label_000a17bc
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「あの、隊長さん」"
 wait-for-input 0
 end-text-line 0
@@ -44150,6 +44626,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ん？　どうした、ミケユ」"
 wait-for-input 0
 end-text-line 0
@@ -44285,6 +44762,7 @@ play-voice (global-int f8007)
 
 label_000a2098
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「隊長さんのお祖父さん。大司教様は結局、立ち入り許可を出さなかったんですよね？」"
 wait-for-input 0
 end-text-line 0
@@ -44410,6 +44888,7 @@ play-voice (global-int f8007)
 
 label_000a27e4
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「ということは、『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -44436,6 +44915,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「そうだな。見て分かる通り、まだ聖地を覆う自然現象は消えていない。いくら時間が経っても、アレが自然消滅することはないだろう」"
 wait-for-input 0
 end-text-line 0
@@ -44463,6 +44943,7 @@ label_000a2a78
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ごくりと唾を飲み込みながら、ミケユは『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -44592,6 +45073,7 @@ play-voice (global-int f8007)
 
 label_000a323c
 u00416120
+// FROM: 4 ミケユ
 show-text 0 "「これから、城砦であの中に入っていくってことですね」"
 wait-for-input 0
 end-text-line 0
@@ -44727,6 +45209,7 @@ play-voice (global-int f8007)
 
 label_000a3a18
 u00416120
+// FROM: 2 フィア
 show-text 0 "「心配することなんてないよ。エルフさんの結界は、今まで誰も破ったことがないかもしれないけど」"
 wait-for-input 0
 end-text-line 0
@@ -44862,6 +45345,7 @@ play-voice (global-int f8007)
 
 label_000a41f4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「こっちにも、エルフさんの血を引くアヴァロがいるんだもん。大丈夫だよ！」"
 wait-for-input 0
 end-text-line 0
@@ -44884,6 +45368,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「そうだな、結界術が血に反応するものなら、母親から継いだエルフの血が助けてくれるだろう」"
 wait-for-input 0
 end-text-line 0
@@ -44906,6 +45391,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「そして俺たちには、暴風にも負けずに進むことができる、『グアラクーナ城砦』があるんだ。きっと上手くいく」"
 wait-for-input 0
 end-text-line 0
@@ -44933,6 +45419,7 @@ label_000a4528
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その言葉に、みんなは力強く頷き同意してくれる。"
 wait-for-input 0
 end-text-line 0
@@ -44955,6 +45442,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「まだ解かれていない強固な結界に突っ込むんだ。城砦にも、相応の強化が必要になってくるだろう」"
 wait-for-input 0
 end-text-line 0
@@ -44977,6 +45465,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「その為に、できる限り材料を集めて、装備を調えて、なにが起こっても大丈夫なようにしていこう！」"
 wait-for-input 0
 end-text-line 0
@@ -45102,6 +45591,7 @@ play-voice (global-int f8007)
 
 label_000a4e8c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「よーし、それじゃあ『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -45192,6 +45682,7 @@ label_000a5374
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "『ファラ＝レアロス』の街から離れるも、城砦の中には多数のエルフ兵が、武装を解かないままに取り残されていた。"
 wait-for-input 0
 end-text-line 0
@@ -45214,6 +45705,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ざっと数えて１００名くらい、だよな」"
 wait-for-input 0
 end-text-line 0
@@ -45241,6 +45733,7 @@ label_000a55c0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その戦力で城砦を"
 display-furigana 0 "占拠" "せんきょ"
 show-text 0 "しようと考えている訳じゃなさそうだけれど、エルフ兵の視線は"
@@ -45272,6 +45765,7 @@ label_000a576c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "その光景に、すっかり住人が"
 display-furigana 0 "脅" "おび"
 show-text 0 "えてしまっている。エルフ兵に"
@@ -45298,6 +45792,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「少し確認したいことがあるんだけど、大丈夫かな」"
 wait-for-input 0
 end-text-line 0
@@ -45473,6 +45968,7 @@ play-voice (global-int f8007)
 
 label_000a6568
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「問題ない」"
 wait-for-input 0
 end-text-line 0
@@ -45598,6 +46094,7 @@ play-voice (global-int f8007)
 
 label_000a6cb4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「あの、ここに残ってるエルフさんたちは、これからどうするんでしょう？」"
 wait-for-input 0
 end-text-line 0
@@ -45620,6 +46117,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「もし城砦から降りて街へ戻るつもりなら、その機会を作ろうと思うんだけれど。どうかな」"
 wait-for-input 0
 end-text-line 0
@@ -45745,6 +46243,7 @@ play-voice (global-int f8007)
 
 label_000a7500
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「気遣いは不要だ。我らは城砦に残ることが決まっている」"
 wait-for-input 0
 end-text-line 0
@@ -45880,6 +46379,7 @@ play-voice (global-int f8007)
 
 label_000a7cdc
 u00416120
+// FROM: 2 フィア
 show-text 0 "「そ、そうなのですか」"
 wait-for-input 0
 end-text-line 0
@@ -45907,6 +46407,7 @@ label_000a7e10
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "俺たちに許可を申し出ないままに、既に残ると決めているようだ。"
 wait-for-input 0
 end-text-line 0
@@ -45929,6 +46430,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「これも聞きたいんだけど、なんでその判断に？」"
 wait-for-input 0
 end-text-line 0
@@ -46054,6 +46556,7 @@ play-voice (global-int f8007)
 
 label_000a8674
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「大司教様から、戦闘終了後に開封せよと指令書を受け取っていた。それに従ったのだ」"
 wait-for-input 0
 end-text-line 0
@@ -46076,6 +46579,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「へえ、クードヴァンスからの指令書そこにはなんて？」"
 wait-for-input 0
 end-text-line 0
@@ -46201,6 +46705,7 @@ play-voice (global-int f8007)
 
 label_000a8ec0
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「グアラクーナ城砦の守備任務を命じる、とのことだ。『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』後の経緯も記されていた。フィユシア様の事情も、我らは把握している」"
@@ -46338,6 +46843,7 @@ play-voice (global-int f8007)
 
 label_000a96cc
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「フィユシア様については信じがたい情報だが、大司教様の言葉に間違いはない。時間はかかるが、呑み込んでみせよう」"
 wait-for-input 0
 end-text-line 0
@@ -46365,6 +46871,7 @@ label_000a9800
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィユシアが架空の神だということも伝えてあるのか。"
 wait-for-input 0
 end-text-line 0
@@ -46392,6 +46899,7 @@ label_000a994c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "クードヴァンスは、戦闘前にこうなることを予見して準備していたんだな。"
 wait-for-input 0
 end-text-line 0
@@ -46414,6 +46922,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「事情は分かった。城砦の守備任務ってことは、これからは俺たちに協力してくれると思っていいのか？」"
 wait-for-input 0
 end-text-line 0
@@ -46549,6 +47058,7 @@ play-voice (global-int f8007)
 
 label_000aa240
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「可能な限り、フィア様を支えよう」"
 wait-for-input 0
 end-text-line 0
@@ -46684,6 +47194,7 @@ play-voice (global-int f8007)
 
 label_000aaa1c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「わあ、ありがとう！　すっごく頼もしいよっ」"
 wait-for-input 0
 end-text-line 0
@@ -46711,6 +47222,7 @@ label_000aab50
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィアは"
 display-furigana 0 "屈託" "くったく"
 show-text 0 "ない笑顔を浮かべたあと、なぜかモジモジし始める。"
@@ -46848,6 +47360,7 @@ play-voice (global-int f8007)
 
 label_000ab374
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それで、えぇとさっそく協力して欲しいことがあるんですけどぉ」"
 wait-for-input 0
 end-text-line 0
@@ -46973,6 +47486,7 @@ play-voice (global-int f8007)
 
 label_000abac0
 u00416120
+// FROM: 2 フィア
 show-text 0 "「『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -47102,6 +47616,7 @@ play-voice (global-int f8007)
 
 label_000ac26c
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「かの聖地の結界は、由緒正しい血を引くエルフ族でも、最上位の者しか触れることができぬ」"
 wait-for-input 0
 end-text-line 0
@@ -47227,6 +47742,7 @@ play-voice (global-int f8007)
 
 label_000ac9b8
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「城砦に残れと指令を受けた我らの中に、それほどの使い手は居ない」"
 wait-for-input 0
 end-text-line 0
@@ -47362,6 +47878,7 @@ play-voice (global-int f8007)
 
 label_000ad194
 u00416120
+// FROM: 2 フィア
 show-text 0 "「ですよねー。うん、分かってたよ。自力で越えてみせるから、大丈夫だよ！」"
 wait-for-input 0
 end-text-line 0
@@ -47487,6 +48004,7 @@ play-voice (global-int f8007)
 
 label_000ad8e0
 u00416120
+// FROM: ca フィユシア神殿兵
 show-text 0 "「我らは聖地へ同行する。居住地などの手配を願いたい」"
 wait-for-input 0
 end-text-line 0
@@ -47509,6 +48027,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「分かった。任せてくれ」"
 wait-for-input 0
 end-text-line 0
@@ -47536,6 +48055,7 @@ label_000adb14
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -47620,6 +48140,7 @@ label_000adf5c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "『ファラ＝レアロス』北部にある霊峰の"
 display-furigana 0 "麓" "ふもと"
 show-text 0 "までグアラクーナ城砦を進めた。"
@@ -47649,6 +48170,7 @@ label_000ae0d8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "フィアと並び、手を握りながら『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -47832,6 +48354,7 @@ play-voice (global-int f8007)
 
 label_000aec2c
 u00416120
+// FROM: 2 フィア
 show-text 0 "「ついに、ここまで来たんだね」"
 wait-for-input 0
 end-text-line 0
@@ -47854,6 +48377,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、いよいよ聖地の目の前だ。ずっと目指してきた場所に行くんだぜ。"
 display-furigana 0 "感無量" "かんむりょう"
 show-text 0 "だよな」"
@@ -47981,6 +48505,7 @@ play-voice (global-int f8007)
 
 label_000af4a8
 u00416120
+// FROM: 2 フィア
 show-text 0 "「アヴァロの両親も目指してきたんだよ。きっと子供が想いを引き継いでくれて、すごく嬉しいんじゃないかな」"
 wait-for-input 0
 end-text-line 0
@@ -48003,6 +48528,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「どうかな。親とは目的が違うと思うし、俺はフィアの為にここまで来たから」"
 wait-for-input 0
 end-text-line 0
@@ -48128,6 +48654,7 @@ play-voice (global-int f8007)
 
 label_000afcf4
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それでも同じ行動を取ってくれてる。それはやっぱり、"
 display-furigana 0 "感慨" "かんがい"
 show-text 0 "深いことだと思うよ」"
@@ -48255,6 +48782,7 @@ play-voice (global-int f8007)
 
 label_000b0470
 u00416120
+// FROM: 2 フィア
 show-text 0 "「私もいま、なんだか泣きそうな気持ちでぐちゃぐちゃなんだ。だから、きっとそうなのかなって思うんだ」"
 wait-for-input 0
 end-text-line 0
@@ -48277,6 +48805,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィアは記憶がない状態で、たくさん不安なこともあったもんな」"
 wait-for-input 0
 end-text-line 0
@@ -48402,6 +48931,7 @@ play-voice (global-int f8007)
 
 label_000b0cbc
 u00416120
+// FROM: 2 フィア
 show-text 0 "「うん、色んな人と出会って、戦うこともあって、楽しいことも悲しいこともあったよ。それでも、みんなのおかげでここまで来られた」"
 wait-for-input 0
 end-text-line 0
@@ -48424,6 +48954,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「最後には『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』でフィアのことが決定する前に、クードヴァンスも送り出してくれた」"
@@ -48551,6 +49082,7 @@ play-voice (global-int f8007)
 
 label_000b1538
 u00416120
+// FROM: 2 フィア
 show-text 0 "「うん、厳しい態度だったけど、悪い人じゃなかった。イタズラに傷つけることを望んでいない、人を気遣える優しいエルフさんだったね」"
 wait-for-input 0
 end-text-line 0
@@ -48573,6 +49105,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「」"
 wait-for-input 0
 end-text-line 0
@@ -48600,6 +49133,7 @@ label_000b176c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "自ら戦場に出るも本気を出さず、俺たちが"
 display-furigana 0 "無闇" "むやみ"
 show-text 0 "やたらに相手を殺さないということを理解していた。"
@@ -48629,6 +49163,7 @@ label_000b18e8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "まあ、インフルースの将軍ジヌティーユ・ファーブルだったか。アイツは俺たちを本気で憎み、殺そうとしてきていたが。"
 wait-for-input 0
 end-text-line 0
@@ -48656,6 +49191,7 @@ label_000b1a34
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "強行に出ることで、ギルシュを失ったインフルースの顔も立てたということなんだろう。"
 wait-for-input 0
 end-text-line 0
@@ -48781,6 +49317,7 @@ play-voice (global-int f8007)
 
 label_000b2198
 u00416120
+// FROM: 2 フィア
 show-text 0 "「本当は、ああやって戦うことなく、ちゃんと認められて前へ進みたかったな」"
 wait-for-input 0
 end-text-line 0
@@ -48803,6 +49340,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「周囲に見せないといけない立場もあって、どうやっても聖地行きを周囲に認めさせることが難しいと、判断したんだろう」"
 wait-for-input 0
 end-text-line 0
@@ -48825,6 +49363,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「お互いに"
 display-furigana 0 "妥協" "だきょう"
 show-text 0 "できない大事なものがあって、それは"
@@ -48856,6 +49395,7 @@ label_000b252c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "俺たちが、振り切って行くしかないという状況を、自ら戦場に出ることで作り出してくれたんだと思う。"
 wait-for-input 0
 end-text-line 0
@@ -48981,6 +49521,7 @@ play-voice (global-int f8007)
 
 label_000b2c90
 u00416120
+// FROM: 2 フィア
 show-text 0 "「そっか。えへへ、不器用なお祖父ちゃんだねぇ」"
 wait-for-input 0
 end-text-line 0
@@ -49003,6 +49544,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「『"
 display-furigana 0 "精域葉" "せいいきよう"
 show-text 0 "』の場で、話し合いで分かり合うことは難しかった。大司教って立場を変えられないし、各勢力の思惑も絡んでいたからな」"
@@ -49032,6 +49574,7 @@ label_000b2ef4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "価値観はそれぞれ違っていて、だからこそ仲良くもできるし、争いにもなってしまう。"
 wait-for-input 0
 end-text-line 0
@@ -49059,6 +49602,7 @@ label_000b3040
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "それでもきっといつか互いを尊重し合う関係を結べると、俺たちはそう信じて行動していくんだ。"
 wait-for-input 0
 end-text-line 0
@@ -49081,6 +49625,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「俺は今でも城砦のことを『"
 display-furigana 0 "悪" "あく"
 show-text 0 "』だと思っていない」"
@@ -49105,6 +49650,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「たとえ、その製法が"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "だとしても、その行いは人の役に立っていると今でも思えるんだ」"
@@ -49129,6 +49675,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「フィアが人との繋がりを大事にしてきたから、そう確信できるんだよ」"
 wait-for-input 0
 end-text-line 0
@@ -49254,6 +49801,7 @@ play-voice (global-int f8007)
 
 label_000b3b04
 u00416120
+// FROM: 2 フィア
 show-text 0 "「そっか。そう、だよね」"
 wait-for-input 0
 end-text-line 0
@@ -49379,6 +49927,7 @@ play-voice (global-int f8007)
 
 label_000b4250
 u00416120
+// FROM: 2 フィア
 show-text 0 "「それでも、できる限りは戦いたくなかった。そんな気持ちは、わがままかな？」"
 wait-for-input 0
 end-text-line 0
@@ -49401,6 +49950,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「いや、それでいいと思うよ。優しいままでいて欲しい。だけどこれからも、フィアが危ない時は、俺たちがフィアを優先することを許してくれ」"
 wait-for-input 0
 end-text-line 0
@@ -49428,6 +49978,7 @@ label_000b4484
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "少しだけ"
 display-furigana 0 "寂" "さび"
 show-text 0 "しそうに微笑みながら、それでもフィアはしっかり頷いてくれる。"
@@ -49555,6 +50106,7 @@ play-voice (global-int f8007)
 
 label_000b4c18
 u00416120
+// FROM: 2 フィア
 show-text 0 "「ん、そうだね。そこで揺らいじゃ、いけないんだよね」"
 wait-for-input 0
 end-text-line 0
@@ -49680,6 +50232,7 @@ play-voice (global-int f8007)
 
 label_000b5364
 u00416120
+// FROM: 2 フィア
 show-text 0 "「私は私のままで、出会った人を幸せにしたいって思いながら、目的の為に行動するんだ！」"
 wait-for-input 0
 end-text-line 0
@@ -49805,6 +50358,7 @@ play-voice (global-int f8007)
 
 label_000b5ab0
 u00416120
+// FROM: 2 フィア
 show-text 0 "「みんなが幸せになる未来がこの道の先にあると信じよう！」"
 wait-for-input 0
 end-text-line 0
@@ -49832,6 +50386,7 @@ label_000b5be4
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -49858,6 +50413,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、ずっと目指していた『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -49889,6 +50445,7 @@ label_000b5ef0
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "一緒に迷いなく進んでいこう。この先に、みんなが手を取り合える未来があると信じて。"
 wait-for-input 0
 end-text-line 0
@@ -50014,6 +50571,7 @@ play-voice (global-int f8007)
 
 label_000b6654
 u00416120
+// FROM: 2 フィア
 show-text 0 "「みんなで行こう。ずっと目指して旅をしてきた『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
@@ -50046,6 +50604,7 @@ label_000b6804
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "はにかみながら、フィアはこちらへ確認を"
 display-furigana 0 "促" "うなが"
 show-text 0 "してくれる。"
@@ -50173,6 +50732,7 @@ play-voice (global-int f8007)
 
 label_000b6f98
 u00416120
+// FROM: 2 フィア
 show-text 0 "「アヴァロ。全部の準備は整ったかな？」"
 wait-for-input 0
 end-text-line 0
@@ -50195,6 +50755,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「ああ、もう準備はバッチリだぜ」"
 wait-for-input 0
 end-text-line 0
@@ -50217,6 +50778,7 @@ call label_000bad7c
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「さぁ行こうか。フィア！」"
 wait-for-input 0
 end-text-line 0
@@ -51460,6 +52022,7 @@ set-string (global-string d5d) "？？？？"
 label_000bc548
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

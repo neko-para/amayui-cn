@@ -1339,6 +1339,7 @@ label_00004d20
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ベリアルに呼び出され何事かと事情を聞いたところ、単純に暇を持て余しているということだった。"
 wait-for-input 0
 end-text-line 0
@@ -1361,6 +1362,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「要するに、その暇を解消する為の場所に連れて行けってことで良いのか？」"
 wait-for-input 0
 end-text-line 0
@@ -1506,6 +1508,7 @@ play-voice (global-int f8007)
 
 label_000056b4
 u00416120
+// FROM: 17 べリアル
 show-text 0 "「なかなか分かっているようだな」"
 wait-for-input 0
 end-text-line 0
@@ -1528,6 +1531,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「でも、ソロモン魔神が退屈しないような場所なんてこの辺りにはないような」"
 wait-for-input 0
 end-text-line 0
@@ -1555,6 +1559,7 @@ label_000058e8
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "地図を広げどこかいい場所を探していると、ベリアルがそっとある場所を指さした。"
 wait-for-input 0
 end-text-line 0
@@ -1680,6 +1685,7 @@ play-voice (global-int f8007)
 
 label_0000604c
 u00416120
+// FROM: 17 べリアル
 show-text 0 "「どうだ、よい提案だろう？」"
 wait-for-input 0
 end-text-line 0
@@ -1707,6 +1713,7 @@ label_00006180
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "示されたのは凍河秘境だった。確かに、紅魔の扉もあるし行ったことのない場所も多そうだ。"
 wait-for-input 0
 end-text-line 0
@@ -1729,6 +1736,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「わかったよ。でも、それだけ危険な場所なら頼りにさせてもらうぜ」"
 wait-for-input 0
 end-text-line 0
@@ -1854,6 +1862,7 @@ play-voice (global-int f8007)
 
 label_000069e4
 u00416120
+// FROM: 17 べリアル
 show-text 0 "「そうか、わしの力をみせてやろう」"
 wait-for-input 0
 end-text-line 0
@@ -2093,6 +2102,7 @@ play-voice (global-int f8007)
 
 label_00007838
 u00416120
+// FROM: 6 ディートヘルム
 show-text 0 "「アヴァロ、少し相談があるんだがな」"
 wait-for-input 0
 end-text-line 0
@@ -2120,6 +2130,7 @@ label_0000796c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "城砦を見て回っている際、ディートに声をかけられて店へと招き入れられた。"
 wait-for-input 0
 end-text-line 0
@@ -2230,6 +2241,7 @@ label_0000804c
 308 1
 u004213E0 1
 u00416120
+// FROM: none
 show-text 0 "ディートの話では、グシュエール遺跡にはまだ奥に続く通路があったらしい。"
 wait-for-input 0
 end-text-line 0
@@ -2252,6 +2264,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「と言うと、前に行った遺跡の奥にはまだ秘密が隠されているってことか？」"
 wait-for-input 0
 end-text-line 0
@@ -2387,6 +2400,7 @@ play-voice (global-int f8007)
 
 label_00008940
 u00416120
+// FROM: 6 ディートヘルム
 show-text 0 "「そこまでは知らん」"
 wait-for-input 0
 end-text-line 0
@@ -2409,6 +2423,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「なんだよ、期待させるだけさせておいて」"
 wait-for-input 0
 end-text-line 0
@@ -2431,6 +2446,7 @@ call label_0000c360
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「でも、時間があれば行ってみるのはありかもな。あれ以上の物はないとは思うけど」"
 wait-for-input 0
 end-text-line 0
@@ -3620,6 +3636,7 @@ set-string (global-string d5d) "？？？？"
 label_0000da68
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

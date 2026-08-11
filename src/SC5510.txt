@@ -1427,6 +1427,7 @@ play-voice (global-int f8007)
 
 label_00005270
 u00416120
+// FROM: aa ガイダル
 show-text 0 "「ククク、君たちの実力を見てやろう。かかってきたまえ」"
 wait-for-input 0
 end-text-line 0
@@ -1580,6 +1581,7 @@ play-voice (global-int f8007)
 
 label_00005b2c
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「正義は我にあり！　グアラクーナ城砦を制圧し、"
 display-furigana 0 "禁忌" "きんき"
 show-text 0 "に付き従う者を"
@@ -2648,6 +2650,7 @@ set-string (global-string d5d) "？？？？"
 label_0000a038
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)

@@ -1441,6 +1441,7 @@ play-voice (global-int f8007)
 
 label_00005318
 u00416120
+// FROM: 1a イブラム
 show-text 0 "「やっぱり、ワタシはここに居ては、いけない存在」"
 wait-for-input 0
 end-text-line 0
@@ -1630,6 +1631,7 @@ play-voice (global-int f8007)
 
 label_00005e2c
 u00416120
+// FROM: 7 ロズリーヌ
 show-text 0 "「あぁ、命が尽きそうだわ。ようやく生が終わると思えないのは、何故かしら」"
 wait-for-input 0
 end-text-line 0
@@ -1819,6 +1821,7 @@ play-voice (global-int f8007)
 
 label_00006940
 u00416120
+// FROM: 9 ミクシュアナ
 show-text 0 "「我が主よ、申し訳ありません。マーズテリアの名を、汚してしまいましたっ」"
 wait-for-input 0
 end-text-line 0
@@ -1885,6 +1888,7 @@ call label_0000a2a8
 308 1
 u004213E0 1
 u00416120
+// FROM: 1 アヴァロ
 show-text 0 "「やられち、まった。くそ、下手を打ったぜ。フィア、すまないっ」"
 wait-for-input 0
 end-text-line 0
@@ -2900,6 +2904,7 @@ set-string (global-string d5d) "？？？？"
 label_0000aeb8
 halve-strlen (global-int 3f39) (global-string d5d)
 u0041AC30 1c
+// FROM: none
 show-text 2 (global-string d5d)
 u0041AC30 1e
 u0041AC00 (global-int f7ffc)
