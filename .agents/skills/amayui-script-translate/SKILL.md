@@ -71,7 +71,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 6. **记录**：
    - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译索引）、`patch/patch.config.json`
      （把 assemble 产物 BIN 加入补丁同步清单）与 `patch/CHANGELOG.md`（按 conventions.md
-     「变更记录」节追加本次改动条目）。
+     「变更记录」节，把本次改动条目添加到「开发中」版本节最上方）。
    - macOS：只更新项目根 `PENDING.md`（同一脚本已有条目则更新合并，不重复追加）；
      `PROGRESS.md` 与 `patch/patch.config.json` 留待 Windows assemble 通过后登记。
 7. **报告**：翻译统计、术语应用、assemble 结果（macOS 流程为 PENDING.md 登记情况）、
@@ -97,7 +97,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
   对照 `docs/prob-角色翻译不一致.md` 的定案口径。
 - 沉淀：prob-<脚本>.md（待定）+ keywords-<主题>.md（关键字表）→ docs/；同步 docs/README.md。
 - 记录：Windows 上翻译完成后改 PROGRESS.md、patch/patch.config.json 与 patch/CHANGELOG.md
-  （追加变更条目）；macOS 上只写项目根 PENDING.md（已翻译未编译登记），待 Windows assemble
+  （变更条目添加到「开发中」版本节最上方）；macOS 上只写项目根 PENDING.md（已翻译未编译登记），待 Windows assemble
   通过后再登记 PROGRESS/patch.config/CHANGELOG。
 - 不修改 data/；不执行 git 提交。
 
