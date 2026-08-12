@@ -158,8 +158,9 @@
    如 `docs/keywords-装备与物品.md`；技能类为 `docs/keywords-SKINIT.md`），必要时同步
    `docs/README.md` 的目录说明与完成状态。
 5. **记录**：
-   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译内容索引）与
-     `patch/patch.config.json`（把 assemble 产物 BIN 加入补丁同步清单 files）。
+   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译内容索引）、
+     `patch/patch.config.json`（把 assemble 产物 BIN 加入补丁同步清单 files）与
+     `patch/CHANGELOG.md`（按「变更记录」节追加本次改动条目）。
    - macOS：只写项目根 `PENDING.md`（完全新翻译与修改均登记），不更新
      `PROGRESS.md` / `patch/patch.config.json`，等 Windows assemble 通过后再按上面登记。
 6. 不修改 `data\`；不执行 git 提交。
@@ -185,11 +186,52 @@ macOS 上无法实际运行 assemble 与安装流程（SJIS 写盘、install 树
 - `PENDING.md` 只含未编译条目：Windows assemble 通过并登记 `PROGRESS.md` /
   `patch/patch.config.json` 后，删除对应条目，避免与 PROGRESS.md 重复记账。
 
+## 变更记录（patch/CHANGELOG.md）
+
+每次修改完成（Windows assemble 通过并登记 `PROGRESS.md` / `patch.config.json`）后，
+必须同步在 `patch/CHANGELOG.md` 追加一条变更记录；macOS 流程不写本文件
+（改动已登记在项目根 `PENDING.md`，待 Windows 编译通过后一并追加）。
+
+### 格式
+
+- 版本节：当前开发版本写作 `## vX.Y（开发中）`（不带日期）；发布后补发布日期写作
+  `## vX.Y（YYYY-MM-DD）`；新版本在前；
+- 追加规则：技能默认把条目追加到最新一个标记「开发中」的版本节；若不存在「开发中」节
+  （如刚发布过），先新建 `## vX.(Y+1)（开发中）` 再追加，不直接写进已发布节；
+- 每条改动一个条目（单条 bullet，字段内联）：
+
+  `- [类型][脚本] 改动说明（关联：…；校验：assemble N/N 通过）`
+
+  - 类型：`新翻译`（首次翻译）/ `修改`（润色、重排、局部修正）/ `术语统一`
+    （译名/术语口径变更）/ `文档`（仅文档沉淀）/ `发布`（版本汇总条目）；
+  - 脚本：BIN 脚本名（如 SC0560、SKINIT、SG5744），多个用「、」分隔；
+    纯文档条目可省略；
+  - 改动说明：写清「旧 → 新」或行为变化；
+  - 关联：实际新增/更新的 docs 文件（prob/keywords 等），逗号分隔，无则省略；
+  - 校验：与 assemble 输出一致（如 `assemble 9/9 通过`）；多脚本写
+    `assemble A a/a、B b/b 通过`。
+
+### 示例
+
+    ## v1.2（开发中）
+
+    - [修改][SC0560] 阿瓦罗台词「……旧……」→「……新……」
+      （关联：docs/prob-SC0560.md；校验：assemble 12/12 通过）
+
+### 规则
+
+1. 同一版本节按时间先后追加，不做合并/去重（CHANGELOG 是流水账）；
+2. 条目内容必须与实际改动一致：脚本名、改动范围、校验数字均以 assemble 输出为准；
+3. 不记录 `data/` 改动（基线不允许修改）；
+4. 发布时由发布任务把「开发中」节改为发布日期（保留全部条目），并开启下一开发版本节；
+5. 报告时说明追加到的版本节与条目数。
+
 ## 报告内容
 
 - 翻译统计：处理页数、show-text/display-furigana/set-string 数量；
 - 术语应用情况（仙灵/迪尔-利菲娜/天结神缘）；
 - assemble 结果（字节数/骨架校验/回读；macOS 流程报告 PENDING.md 登记条目）；
+- CHANGELOG 更新情况（追加到哪个版本节、条目数）；
 - 文档沉淀路径（prob / keywords / README 索引）；
 - PROGRESS.md 与 patch/patch.config.json 更新情况（macOS 流程报告「待 Windows 补登记」）；
 - 不确定/存疑名词清单。

@@ -20,6 +20,8 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
    - 每页按 `// FROM: <id> <名称>` 查 `docs/keywords-角色语气.md` 保持角色语气；
    - 术语表（`rules/glossary.json`）、SC/SG 联动、不修改 `data/`；
    - macOS 流程：不 assemble，本地校验后登记项目根 `PENDING.md`。
+   - 记录：子进程不写 `PROGRESS.md` / `patch/patch.config.json` / `patch/CHANGELOG.md`，
+     由主进程统一追加（避免并发重复记账）。
 3. 用 `batch-task-runner/scripts/batch-run.js` 顺次执行（每次 codex CLI 调用输出/日志独立落文件，失败重试、断点续跑）。
 4. 全部完成后按「流程 4–7」统一复核、沉淀文档、登记记录并汇报。
 
@@ -67,12 +69,13 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
    原文疑误分类）；为关键术语建立/更新 `docs/keywords-<主题或脚本>.md`（关键字表，已有同主题文档
    则合并更新，如 `keywords-装备与物品.md`）；必要时同步 `docs/README.md` 的目录与完成状态。
 6. **记录**：
-   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译索引）与 `patch/patch.config.json`
-     （把 assemble 产物 BIN 加入补丁同步清单）。
+   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译索引）、`patch/patch.config.json`
+     （把 assemble 产物 BIN 加入补丁同步清单）与 `patch/CHANGELOG.md`（按 conventions.md
+     「变更记录」节追加本次改动条目）。
    - macOS：只更新项目根 `PENDING.md`（同一脚本已有条目则更新合并，不重复追加）；
      `PROGRESS.md` 与 `patch/patch.config.json` 留待 Windows assemble 通过后登记。
 7. **报告**：翻译统计、术语应用、assemble 结果（macOS 流程为 PENDING.md 登记情况）、
-   文档沉淀路径、存疑名词清单。
+   CHANGELOG 追加情况（版本节与条目数）、文档沉淀路径、存疑名词清单。
 
 ## 关键约定（概要；完整规则见 references/conventions.md）
 
@@ -93,14 +96,16 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
   保持自称/称呼、敬语层级、句尾语气、口头禅、拟声、译名一致；修正已有不一致时
   对照 `docs/prob-角色翻译不一致.md` 的定案口径。
 - 沉淀：prob-<脚本>.md（待定）+ keywords-<主题>.md（关键字表）→ docs/；同步 docs/README.md。
-- 记录：Windows 上翻译完成后改 PROGRESS.md 与 patch/patch.config.json；macOS 上只写
-  项目根 PENDING.md（已翻译未编译登记），待 Windows assemble 通过后再登记 PROGRESS/patch.config。
+- 记录：Windows 上翻译完成后改 PROGRESS.md、patch/patch.config.json 与 patch/CHANGELOG.md
+  （追加变更条目）；macOS 上只写项目根 PENDING.md（已翻译未编译登记），待 Windows assemble
+  通过后再登记 PROGRESS/patch.config/CHANGELOG。
 - 不修改 data/；不执行 git 提交。
 
 ## 资源
 
 - `references/conventions.md`：完整翻译约定（语法、注音、折行、concat、术语、执行步骤、报告）
 - `references/verify.md`：复核清单（assemble / 宽度 / 结构 / git status / 抽查）
+- `patch/CHANGELOG.md`：补丁更新记录（修改完成后按约定追加条目）
 - `docs/keywords-角色语气.md`：角色语气汇总（70 个角色；按 FROM 定向检索对应条目）
 - `docs/prob-角色翻译不一致.md`：已有译文不一致清单（含 2026-08-12 定案状态）
 - `scripts/extract-pages.js`：提取 ADV 页清单 / 生成译文映射骨架（`--out`），大批量 SC 流程第 1 步
