@@ -1367,3 +1367,178 @@
 - 关联：无新增
 - 待办：Windows 上 `cd scripts && npm run assemble -- $5$SC6320`，通过后登记
   `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+## 2026-08-12 SP 特别批翻译（21 个）
+
+> 全部 21 个 SP 特别剧本脚本（番外/温泉/日常/亲热 H 场景等）由 codex CLI 批量会话翻译，
+> macOS 本地校验通过（reflow --check 幂等 / find-untranslated 无假名残留 / ≤25 字宽度）；
+> 单任务耗时见 `.tmp/batch-translate-sp/PROGRESS.md`。归类沿用 PROGRESS.md「SP 特别」；
+> 正式归类以 Windows 上 assemble 后登记 PROGRESS.md 为准。
+
+- 脚本：`SP0131`（SP 特别：SP0131　　リシュエンツェーリと２人で）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：216 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 4m 47s）
+- 关联：`docs/prob-SP0131.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0131`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0162`（SP 特别：SP0162　　全員で温泉（全員））
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：48 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 3m 17s）
+- 关联：`docs/prob-SP0162.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0162`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0163`（SP 特别：SP0163　　全員で温泉（一部））
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：29 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 1m 58s）
+- 关联：无新增
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0163`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0317`（SP 特别：SP0317　　ベリアルと契約）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：126 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 4m 22s）
+- 关联：`docs/prob-SP0317.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0317`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0623`（SP 特别：SP0623　　フィアと夜デート）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：214 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 4m 53s）
+- 关联：`docs/prob-SP0623.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0623`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0680`（SP 特别：SP0680　　石灰棚のミクシュアナ）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：141 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 3m 54s）
+- 关联：`docs/prob-SP0680.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0680`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP0743`（SP 特别：SP0743　　リシュエンツェーリとの一時）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：181 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 55s）
+- 关联：`docs/prob-SP0743.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP0743`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP1599`（SP 特别：SP1599　　フィアと城砦浴場で）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：84 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 3m 43s）
+- 关联：`docs/prob-SP1599.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP1599`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP1628`（SP 特别：SP1628　　大人のカトリト）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：196 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 23s）
+- 关联：`docs/prob-SP1628.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP1628`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP1653`（SP 特别：SP1653　　３人でお風呂を克服）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：198 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 6m 47s）
+- 关联：`docs/prob-SP1653.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP1653`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2070`（SP 特别：SP2070　　嵐燐結騎の秘め事）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：152 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 20s）
+- 关联：`docs/prob-SP2070.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2070`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2091`（SP 特别：SP2091　　イオルの夜這い）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：254 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 32s）
+- 关联：`docs/prob-SP2091.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2091`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2093`（SP 特别：SP2093　　ミケユと性魔術）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：196 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 6m 15s）
+- 关联：`docs/prob-SP2093.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2093`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2099`（SP 特别：SP2099）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：165 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 6m 2s）
+- 关联：`docs/prob-SP2099.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2099`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2152`（SP 特别：SP2152　　ロズリーヌとの触れ合い）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：217 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 4s）
+- 关联：`docs/prob-SP2152.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2152`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2185`（SP 特别：SP2185　　縮まる距離）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：260 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 6m 52s）
+- 关联：`docs/prob-SP2185.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2185`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2563`（SP 特别：SP2563　　フィアとの初Ｈ）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：180 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 3m 31s）
+- 关联：`docs/prob-SP2563.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2563`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2623`（SP 特别：SP2623　　ロズリーヌを解放）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：173 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 4m 45s）
+- 关联：`docs/prob-SP2623.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2623`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2650`（SP 特别：SP2650　　キスニルの誘いに）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：181 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 1s）
+- 关联：`docs/prob-SP2650.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2650`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2711`（SP 特别：SP2711　　フィアの想い）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：156 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 13s）
+- 关联：`docs/prob-SP2711.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2711`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条
+
+- 脚本：`SP2802`（SP 特别：SP2802　　フォルネウスと契約）
+- 类型：完全新翻译
+- 状态：已翻译，未编译（macOS）
+- 改动：207 页 ADV + 9 条 set-string 字面量对译（8 条通用系统串定稿；耗时 5m 48s）
+- 关联：`docs/prob-SP2802.md`
+- 待办：Windows 上 `cd scripts && npm run assemble -- SP2802`，通过后登记
+  `PROGRESS.md` 与 `patch/patch.config.json`，并从 `PENDING.md` 删除该条

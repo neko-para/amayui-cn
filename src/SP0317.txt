@@ -627,16 +627,16 @@ call label_0001d19c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0001d19c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1063,7 +1063,14 @@ label_00003b0c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "契約を行うため、仲間たちから少し離れた場所でベリアルと２人きりになった。"
+*/
+// 输入原文：为了缔结契约，我带着贝莉阿尔来到离同伴们稍远的地方，两人独处。
+show-text 0 @"为了缔结契约，我带着贝莉阿尔来到离同伴们稍远的地"
+end-text-line 0
+show-text 0 @"方，两人独处。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1091,7 +1098,12 @@ label_00003c58
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なった、のだが。"
+*/
+// 输入原文：独处是独处了，可是……
+show-text 0 @"独处是独处了，可是……"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -1168,9 +1180,14 @@ label_00004090
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "どうしてか、ベリアルは足を使ってこちらの"
 display-furigana 0 "陰茎" "いんけい"
 show-text 0 "を挟んできた。"
+*/
+// 输入原文：不知为何，贝莉阿尔竟用双脚夹住了我的阴茎。
+show-text 0 @"不知为何，贝莉阿尔竟用双脚夹住了我的阴茎。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1198,7 +1215,12 @@ label_0000420c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "わずかに頬を染めながら、チラチラと視線を向けている。"
+*/
+// 输入原文：她微微红了脸颊，不时偷偷瞟向我这边。
+show-text 0 @"她微微红了脸颊，不时偷偷瞟向我这边。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 3f51) 0
@@ -1340,7 +1362,14 @@ play-voice (global-int f8007)
 label_00004a28
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだその顔は。お主がして欲しそうだったから、わざわざこんな格好をしてやってるというのに」"
+*/
+// 输入原文：「你那是什么表情。分明是你一副想要的样子，本座才特地摆出这副姿态来成全你」
+show-text 0 @"「你那是什么表情。分明是你一副想要的样子，本座才特"
+end-text-line 0
+show-text 0 @"地摆出这副姿态来成全你」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1363,7 +1392,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いやたしかに俺は契約に当たり、まずは雰囲気作りも兼ねて触って欲しいなとは思ってたけどさ」"
+*/
+// 输入原文：「不……我确实在缔结契约时，想着先让你摸摸我，顺便也营造一下气氛来着，可是……」
+show-text 0 @"「不……我确实在缔结契约时，想着先让你摸摸我，顺便"
+end-text-line 0
+show-text 0 @"也营造一下气氛来着，可是……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1391,7 +1427,12 @@ label_00004c5c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんで足で触っているんだ？"
+*/
+// 输入原文：可为什么要用脚来摸啊？
+show-text 0 @"可为什么要用脚来摸啊？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1419,7 +1460,14 @@ label_00004da8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "契約には同意してくれたはずなのに、嫌々やってる感を出してくるのはなぜだ。"
+*/
+// 输入原文：明明已经同意缔结契约了，为什么还要摆出一副不情不愿的样子。
+show-text 0 @"明明已经同意缔结契约了，为什么还要摆出一副不情"
+end-text-line 0
+show-text 0 @"不愿的样子。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1442,7 +1490,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うっとはいえ、これは、なかなか」"
+*/
+// 输入原文：「呜……不过，这种感觉，还真不赖……」
+show-text 0 @"「呜……不过，这种感觉，还真不赖……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1470,7 +1523,14 @@ label_00004ff4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ベリアルはこちらの反応を見ながら、足を器用に使い、ぎゅっと挟んだり、指先でなぞるようにして刺激を与えてくる。"
+*/
+// 输入原文：贝莉阿尔一边观察着我的反应，一边灵巧地摆弄双脚，时而紧紧夹住，时而又用脚趾轻轻描摹，刺激着我。
+show-text 0 @"贝莉阿尔一边观察着我的反应，一边灵巧地摆弄双脚，时"
+end-text-line 0
+show-text 0 @"而紧紧夹住，时而又用脚趾轻轻描摹，刺激着我。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1493,7 +1553,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「も、もしかして、こういうのに慣れてるのか？」"
+*/
+// 输入原文：「难、难道说，你早就习惯这种事了吗？」
+show-text 0 @"「难、难道说，你早就习惯这种事了吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1619,7 +1684,14 @@ play-voice (global-int f8007)
 label_00005858
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふんお主の方こそ気持ちよさそうな声を出して、そういう趣味の持ち主なのではないか？」"
+*/
+// 输入原文：「哼……你才是吧，发出那么舒服的声音，莫非你才是那种有癖好的人？」
+show-text 0 @"「哼……你才是吧，发出那么舒服的声音，莫非你才是那"
+end-text-line 0
+show-text 0 @"种有癖好的人？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1642,7 +1714,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、別にそんな趣味はないっ、うっと、言いたい、けど」"
+*/
+// 输入原文：「不，我倒没有那种癖——呜……是，想这么说，但是……」
+show-text 0 @"「不，我倒没有那种癖——呜……是，想这么说，"
+end-text-line 0
+show-text 0 @"但是……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1670,7 +1749,14 @@ label_00005a8c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんだよ、この気持ちよさは。俺って本当にそういう趣味があったのか？"
+*/
+// 输入原文：搞什么啊，这种舒服的感觉。难道我真是个有那种癖好的人？
+show-text 0 @"搞什么啊，这种舒服的感觉。难道我真是个有那种"
+end-text-line 0
+show-text 0 @"癖好的人？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1693,7 +1779,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ベリアル、まさか、魔力がなくなったってのは嘘で、くっ、なにか力を使ってるんじゃっ」"
+*/
+// 输入原文：「贝莉阿尔，难道说，魔力消失是骗人的——唔，你肯定是用了什么力量吧」
+show-text 0 @"「贝莉阿尔，难道说，魔力消失是骗人的——唔，你肯定"
+end-text-line 0
+show-text 0 @"是用了什么力量吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1819,7 +1912,12 @@ play-voice (global-int f8007)
 label_000062f0
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「魔力がなくなってしまったのは本当だ。お主だってそれは分かっているだろう」"
+*/
+// 输入原文：「魔力消失一事千真万确。这一点你也很清楚吧」
+show-text 0 @"「魔力消失一事千真万确。这一点你也很清楚吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1842,7 +1940,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それは、確かに」"
+*/
+// 输入原文：「那倒是，确实……」
+show-text 0 @"「那倒是，确实……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -1979,7 +2082,12 @@ play-voice (global-int f8007)
 label_00006bd8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なら変なことを口にするな」"
+*/
+// 输入原文：「那就别说些奇怪的话」
+show-text 0 @"「那就别说些奇怪的话」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2007,9 +2115,16 @@ label_00006d0c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "口を"
 display-furigana 0 "尖" "とが"
 show-text 0 "らせてそう言うと、怒りをぶつけるように足に力を込める。"
+*/
+// 输入原文：她噘着嘴这么说着，像是要把怒火都发泄出来似的，在脚上加了力气。
+show-text 0 @"她噘着嘴这么说着，像是要把怒火都发泄出来似的，在脚"
+end-text-line 0
+show-text 0 @"上加了力气。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2037,7 +2152,14 @@ label_00006e88
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "足裏の柔らかな部分で肉棒をさすったあと、足の指がわきわきと器用に動き、皮をぎゅっと摘まんできた。"
+*/
+// 输入原文：先用脚心柔软的部分蹭过肉棒，接着脚趾灵巧地蠕动起来，紧紧捏住了包皮。
+show-text 0 @"先用脚心柔软的部分蹭过肉棒，接着脚趾灵巧地蠕动起"
+end-text-line 0
+show-text 0 @"来，紧紧捏住了包皮。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2060,7 +2182,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うっ、痛っく、ないっ？」"
+*/
+// 输入原文：「呜、疼……不、不疼……吗？」
+show-text 0 @"「呜、疼……不、不疼……吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2088,7 +2215,14 @@ label_000070d4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "痛みで飛び上がるかと思ったが、それほどでもなく、むしろイタ気持ちいい感じだ。"
+*/
+// 输入原文：本以为会疼得跳起来，结果却没那么疼，反而有种又痛又爽的感觉。
+show-text 0 @"本以为会疼得跳起来，结果却没那么疼，反而有种又痛"
+end-text-line 0
+show-text 0 @"又爽的感觉。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -2225,9 +2359,16 @@ play-voice (global-int f8007)
 label_000078d4
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだお主、こんなところを"
 display-furigana 0 "抓" "つね"
 show-text 0 "られて感じてるのか？　ハーフエルフというのは変態なのだな」"
+*/
+// 输入原文：「怎么回事，你被捏着这里居然也有感觉？半仙灵果然都是变态啊」
+show-text 0 @"「怎么回事，你被捏着这里居然也有感觉？半仙灵果然"
+end-text-line 0
+show-text 0 @"都是变态啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2250,7 +2391,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺がハーフエルフなのと、今の状況とは無関係だと思うがっ」"
+*/
+// 输入原文：「……我是半仙灵这件事，和现在的情况应该没关系吧……唔」
+show-text 0 @"「……我是半仙灵这件事，和现在的情况应该没关"
+end-text-line 0
+show-text 0 @"系吧……唔」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2278,7 +2426,12 @@ label_00007b38
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "指先が敏感な部分を探して肉棒を隅から隅まで這いずり回る。"
+*/
+// 输入原文：脚趾搜寻着敏感的部位，在肉棒上从头到尾游走。
+show-text 0 @"脚趾搜寻着敏感的部位，在肉棒上从头到尾游走。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2404,7 +2557,12 @@ play-voice (global-int f8007)
 label_0000829c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ほう、つまり、お主が変態だと言いたいのだな」"
+*/
+// 输入原文：「哦——也就是说，你想说自己才是变态喽」
+show-text 0 @"「哦——也就是说，你想说自己才是变态喽」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2427,7 +2585,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんでそうなるっ、くぅぅ、ベリアルこそ、絶対これ、経験あるだろっ」"
+*/
+// 输入原文：「怎么会得出这种结论……唔……要说变态，贝莉阿尔你才绝对有经验吧」
+show-text 0 @"「怎么会得出这种结论……唔……要说变态，贝莉阿尔你"
+end-text-line 0
+show-text 0 @"才绝对有经验吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -2564,9 +2729,16 @@ play-voice (global-int f8007)
 label_00008b84
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「古来から王侯貴族などというものは性的刺激に執着するものでな、"
 display-furigana 0 "希有" "けう"
 show-text 0 "でいかがわしい趣味の持ち主など数多いるものだ」"
+*/
+// 输入原文：「自古以来，王侯贵族之类的人物就执着于性刺激，拥有稀奇又下流癖好的人也不在少数」
+show-text 0 @"「自古以来，王侯贵族之类的人物就执着于性刺激，拥有"
+end-text-line 0
+show-text 0 @"稀奇又下流癖好的人也不在少数」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2589,7 +2761,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それは、分からなくは、ないけどなっくぅっ」"
+*/
+// 输入原文：「这么说，也不是不能理解——唔……」
+show-text 0 @"「这么说，也不是不能理解——唔……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2617,7 +2794,14 @@ label_00008de8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "しかし俺は王侯貴族なんかじゃないし、契約のための儀式にわざわざコレを選ぶ理由も分からない。"
+*/
+// 输入原文：可我既不是什么王侯贵族，也搞不懂她为什么偏要选这种方式作为缔结契约的仪式。
+show-text 0 @"可我既不是什么王侯贵族，也搞不懂她为什么偏要选这种"
+end-text-line 0
+show-text 0 @"方式作为缔结契约的仪式。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2645,7 +2829,12 @@ label_00008f34
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんて他のことを考えていたら、ベリアルの足の動きが急に速くなった。"
+*/
+// 输入原文：正想着这些有的没的，贝莉阿尔脚下的动作突然变快了。
+show-text 0 @"正想着这些有的没的，贝莉阿尔脚下的动作突然变快了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2673,7 +2862,12 @@ label_00009080
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "足の裏で包み込むようにしながら力強く扱いていく。"
+*/
+// 输入原文：她用脚心包裹住肉棒，卖力地套弄起来。
+show-text 0 @"她用脚心包裹住肉棒，卖力地套弄起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2696,7 +2890,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちょ、ちょっと待ってくれよっ。いま、そんなに動かされたらっ」"
+*/
+// 输入原文：「等、等一下啊。现在被你这么动的话……」
+show-text 0 @"「等、等一下啊。现在被你这么动的话……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -2833,11 +3032,18 @@ play-voice (global-int f8007)
 label_00009980
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お主も権力者たちの"
 display-furigana 0 "嗜好" "しこう"
 show-text 0 "に"
 display-furigana 0 "倣" "なら"
 show-text 0 "って、ひとときの享楽に興じるがいい。ついでに魔力を少し分けてもらうとするかな」"
+*/
+// 输入原文：「你也不妨学学那些掌权者的癖好，享受一时的欢愉。顺便，也分些魔力给本座吧」
+show-text 0 @"「你也不妨学学那些掌权者的癖好，享受一时的欢愉。顺"
+end-text-line 0
+show-text 0 @"便，也分些魔力给本座吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2865,7 +3071,12 @@ label_00009b14
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ぐいぐいと力を入れながら肉棒を扱き上げていく。"
+*/
+// 输入原文：她一下一下地用力，将肉棒往上套弄。
+show-text 0 @"她一下一下地用力，将肉棒往上套弄。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2893,7 +3104,14 @@ label_00009c60
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "刺激で肉棒が固くなると、それに合わせて力加減も変え、強制的に快感を引き出していく。"
+*/
+// 输入原文：肉棒在刺激下变得坚硬，她便随之调整力度，强行榨出快感。
+show-text 0 @"肉棒在刺激下变得坚硬，她便随之调整力度，强行"
+end-text-line 0
+show-text 0 @"榨出快感。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2916,7 +3134,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「や、やばいっベリアルっ、このままだと、本当にいっちまいそうだっ」"
+*/
+// 输入原文：「糟、糟糕……贝莉阿尔，再这样下去，我真的要射出来了」
+show-text 0 @"「糟、糟糕……贝莉阿尔，再这样下去，我真的要"
+end-text-line 0
+show-text 0 @"射出来了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2944,7 +3169,12 @@ label_00009eac
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ぞくっとする魔力が流れ込んできて、抗いようのない射精感を促す。"
+*/
+// 输入原文：一股酥麻的魔力涌了进来，催促着无法抗拒的射精感。
+show-text 0 @"一股酥麻的魔力涌了进来，催促着无法抗拒的射精感。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2972,7 +3202,12 @@ label_00009ff8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "魔力が尽きたと言っていたのに、まだこれだけの力が残っているのか。"
+*/
+// 输入原文：明明说魔力已经耗尽，居然还剩着这样的力量吗。
+show-text 0 @"明明说魔力已经耗尽，居然还剩着这样的力量吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3098,7 +3333,12 @@ play-voice (global-int f8007)
 label_0000a75c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「遠慮することはない、いってしまえ。それで契約完了だ」"
+*/
+// 输入原文：「不必客气，射出来便是。如此，契约便算完成」
+show-text 0 @"「不必客气，射出来便是。如此，契约便算完成」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3126,7 +3366,12 @@ label_0000a890
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "だ、だめだ、本当にこのままでは！"
+*/
+// 输入原文：不、不行，再这样下去真的会——！
+show-text 0 @"不、不行，再这样下去真的会——！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u0041D080 (global-int f800f)
@@ -3161,7 +3406,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「く、うっ、うううーーーっ！」"
+*/
+// 输入原文：「唔、呜……呜呜呜——！」
+show-text 0 @"「唔、呜……呜呜呜——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3189,7 +3439,12 @@ label_0000ab7c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "全身を駆け抜けるような快感が走り、肉棒がびくびくと跳ね上がる。"
+*/
+// 输入原文：宛如贯穿全身的快感奔涌而过，肉棒剧烈地抽搐起来。
+show-text 0 @"宛如贯穿全身的快感奔涌而过，肉棒剧烈地抽搐起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3315,7 +3570,14 @@ play-voice (global-int f8007)
 label_0000b2e0
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふぅ終わったか。これで契約がな、ど、どういうことだ？　精液はどうした？」"
+*/
+// 输入原文：「呼……结束了吗。这样一来契约就……什、这、这是怎么回事？精液哪去了？」
+show-text 0 @"「呼……结束了吗。这样一来契约就……什、这、这是怎"
+end-text-line 0
+show-text 0 @"么回事？精液哪去了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3343,7 +3605,14 @@ label_0000b414
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "目を背けていたベリアルは、目の前の光景を改めて確認して驚き顔をする。"
+*/
+// 输入原文：方才别开视线的贝莉阿尔重新确认了眼前的光景，露出惊讶的表情。
+show-text 0 @"方才别开视线的贝莉阿尔重新确认了眼前的光景，露出"
+end-text-line 0
+show-text 0 @"惊讶的表情。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3371,9 +3640,14 @@ label_0000b560
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "肉棒はびくびくと"
 display-furigana 0 "痙攣" "けいれん"
 show-text 0 "していたが、辺りに精液は飛び散っていない。"
+*/
+// 输入原文：肉棒还在突突地痉挛着，可四周却没有溅出半点精液。
+show-text 0 @"肉棒还在突突地痉挛着，可四周却没有溅出半点精液。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3396,7 +3670,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふぅーーなんとか我慢できた」"
+*/
+// 输入原文：「呼——……总算是忍住了」
+show-text 0 @"「呼——……总算是忍住了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3424,9 +3703,16 @@ label_0000b7dc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ぎりぎりで射精をこらえたおかげで、逆に全身が"
 display-furigana 0 "痺" "しび"
 show-text 0 "れる程の快感を味わうことになった。"
+*/
+// 输入原文：多亏在最后关头忍住了射精，反倒尝到了爽到全身发麻的快感。
+show-text 0 @"多亏在最后关头忍住了射精，反倒尝到了爽到全身"
+end-text-line 0
+show-text 0 @"发麻的快感。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -3563,7 +3849,14 @@ play-voice (global-int f8007)
 label_0000c00c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お主、わしとの契約を済ませるのではなかったのか。ちゃんと射精しないかっ」"
+*/
+// 输入原文：「你难道不是要和本座完成契约吗？倒是给我好好射出来啊」
+show-text 0 @"「你难道不是要和本座完成契约吗？倒是给我好好"
+end-text-line 0
+show-text 0 @"射出来啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3586,7 +3879,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「もちろん契約はするよ。そのために我慢したんだ」"
+*/
+// 输入原文：「契约当然会缔结。我忍住就是为了这个」
+show-text 0 @"「契约当然会缔结。我忍住就是为了这个」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3614,7 +3912,12 @@ label_0000c240
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "肉棒はこれから起きることを期待して、まだまだ固さを保っている。"
+*/
+// 输入原文：肉棒期待着一会儿将要发生的事，依旧保持着坚挺。
+show-text 0 @"肉棒期待着一会儿将要发生的事，依旧保持着坚挺。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3642,9 +3945,14 @@ label_0000c38c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "その"
 display-furigana 0 "屹立" "きつりつ"
 show-text 0 "する姿を見て、ベリアルは唾を飲み込む。"
+*/
+// 输入原文：看着那屹立的姿态，贝莉阿尔咽了口唾沫。
+show-text 0 @"看着那屹立的姿态，贝莉阿尔咽了口唾沫。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3770,7 +4078,12 @@ play-voice (global-int f8007)
 label_0000cb20
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ど、どういうことだ、わしに、なにをしようというのだ」"
+*/
+// 输入原文：「这、这是怎么回事，你、你想对本座做什么」
+show-text 0 @"「这、这是怎么回事，你、你想对本座做什么」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3793,7 +4106,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「決まってるだろ。契約、だよ」"
+*/
+// 输入原文：「还用说吗。缔结契约啊」
+show-text 0 @"「还用说吗。缔结契约啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3919,7 +4237,14 @@ play-voice (global-int f8007)
 label_0000d36c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わしの中に入れようと言うのか？　ハーフエルフの、この鎌首をか？」"
+*/
+// 输入原文：「你是要把那东西放进本座体内吗？这个半仙灵的……这根蛇颈般的东西？」
+show-text 0 @"「你是要把那东西放进本座体内吗？这个半仙灵的……这"
+end-text-line 0
+show-text 0 @"根蛇颈般的东西？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3942,7 +4267,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はははっ、鎌首かそりゃあ、あれだけ興奮させてもらえたら、そうなるよ」"
+*/
+// 输入原文：「哈哈哈，蛇颈吗……那也是当然，被你撩得那么兴奋，自然会这样」
+show-text 0 @"「哈哈哈，蛇颈吗……那也是当然，被你撩得那么兴奋，"
+end-text-line 0
+show-text 0 @"自然会这样」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3970,7 +4302,12 @@ label_0000d5a0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "思わず笑うと、ベリアルは顔を赤くする。"
+*/
+// 输入原文：我忍不住笑出来，贝莉阿尔的脸一下子红了。
+show-text 0 @"我忍不住笑出来，贝莉阿尔的脸一下子红了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3993,7 +4330,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「じゃあ、始めようか。今度はこっちからやらせてもらうぞ」"
+*/
+// 输入原文：「那么，开始吧。这次换我来主动了」
+show-text 0 @"「那么，开始吧。这次换我来主动了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4021,7 +4363,12 @@ label_0000d7ec
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "言いながら身体を起こすと、ベリアルに迫った。"
+*/
+// 输入原文：我边说边直起身子，朝贝莉阿尔逼近。
+show-text 0 @"我边说边直起身子，朝贝莉阿尔逼近。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -4088,7 +4435,12 @@ label_0000db5c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ベリアルを抱きかかえるようにして膝の上に乗せる。"
+*/
+// 输入原文：我像抱起她似的，把贝莉阿尔放到了自己的膝上。
+show-text 0 @"我像抱起她似的，把贝莉阿尔放到了自己的膝上。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4214,7 +4566,12 @@ play-voice (global-int f8007)
 label_0000e2c0
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なっなんのつもりだ、この姿勢は」"
+*/
+// 输入原文：「你——你这是要干什么，这个姿势……」
+show-text 0 @"「你——你这是要干什么，这个姿势……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4237,7 +4594,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれ？　知らないのか？」"
+*/
+// 输入原文：「咦？你不知道吗？」
+show-text 0 @"「咦？你不知道吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4265,7 +4627,12 @@ label_0000e4f4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "いわゆるお姫さま抱っこって奴なんだけど、魔神には分からないかな？"
+*/
+// 输入原文：也就是所谓的公主抱，魔神大概不懂这个吧？
+show-text 0 @"也就是所谓的公主抱，魔神大概不懂这个吧？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4391,7 +4758,14 @@ play-voice (global-int f8007)
 label_0000ec58
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お主、わしと性行為をするつもりではなかったのか？　それとも、直前になって魔神と交わるのが恐くなったか？」"
+*/
+// 输入原文：「你难道不是打算和本座做那种事吗？还是说，事到临头又害怕和魔神交合了？」
+show-text 0 @"「你难道不是打算和本座做那种事吗？还是说，事到临头"
+end-text-line 0
+show-text 0 @"又害怕和魔神交合了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4414,7 +4788,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、今さら恐くはないよ。でもベリアルともっと深く繋がりたいと思ってさ」"
+*/
+// 输入原文：「不，事到如今也没什么好怕的。只是我想和贝莉阿尔更加深入地联系在一起」
+show-text 0 @"「不，事到如今也没什么好怕的。只是我想和贝莉阿尔更"
+end-text-line 0
+show-text 0 @"加深入地联系在一起」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4442,7 +4823,12 @@ label_0000ee8c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんでか分からないけど、こうした方がいいかなと思ったんだ。"
+*/
+// 输入原文：虽然自己也说不清原因，但我就是觉得这样比较好。
+show-text 0 @"虽然自己也说不清原因，但我就是觉得这样比较好。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -4579,7 +4965,14 @@ play-voice (global-int f8007)
 label_0000f68c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わしと、深く繋がる？　それは、いやらしい意味ではないのか？」"
+*/
+// 输入原文：「与本座……深入地联系在一起？那难道不是那种下流的意思吗？」
+show-text 0 @"「与本座……深入地联系在一起？那难道不是那种下流"
+end-text-line 0
+show-text 0 @"的意思吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4602,7 +4995,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そういう意味もあるけど、精神的にって意味だよ。せっかく契約するんだからな」"
+*/
+// 输入原文：「也有那层意思，但主要还是精神层面的意思。毕竟难得要缔结契约嘛」
+show-text 0 @"「也有那层意思，但主要还是精神层面的意思。毕竟难得"
+end-text-line 0
+show-text 0 @"要缔结契约嘛」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4625,7 +5025,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺の主であるフィアの言葉を借りるなら、仲良くしたいってことさ」"
+*/
+// 输入原文：「借用我主人菲亚的话来说，就是想和你好好相处」
+show-text 0 @"「借用我主人菲亚的话来说，就是想和你好好相处」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4751,7 +5156,12 @@ play-voice (global-int f8007)
 label_0000ffd8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だからって、この恰好は、まるでっ」"
+*/
+// 输入原文：「话虽如此，这副姿态简直就像……！」
+show-text 0 @"「话虽如此，这副姿态简直就像……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4779,7 +5189,12 @@ label_0001010c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんか、恥ずかしくて居心地が悪いって感じみたいだな。"
+*/
+// 输入原文：她似乎觉得又害羞又坐立不安。
+show-text 0 @"她似乎觉得又害羞又坐立不安。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4807,7 +5222,12 @@ label_00010258
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "やっぱり魔神でもお姫さま抱っこの意味は知ってるのか。"
+*/
+// 输入原文：果然即便是魔神，也懂得公主抱的含义啊。
+show-text 0 @"果然即便是魔神，也懂得公主抱的含义啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4830,7 +5250,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「こうしてると顔も近くて相手の顔がよく見えるし、口付けだってしやすいだろう？」"
+*/
+// 输入原文：「这样抱着，彼此的脸离得近，能看清对方的表情，要亲吻也很方便吧？」
+show-text 0 @"「这样抱着，彼此的脸离得近，能看清对方的表情，要亲"
+end-text-line 0
+show-text 0 @"吻也很方便吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 3f51) 0
@@ -4978,7 +5405,14 @@ play-voice (global-int f8007)
 label_00010bd4
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「な、なにをっん、ちゅっ、んあ、んっこら、いきなりっ、んちゅぅ、ちゅっ、じゅるっ、ふあぁっ」"
+*/
+// 输入原文：「你、你做什么……唔、啾、嗯啊、嗯……喂，别突然——啾唔、啾、滋溜、呼啊……」
+show-text 0 @"「你、你做什么……唔、啾、嗯啊、嗯……喂，别突然—"
+end-text-line 0
+show-text 0 @"—啾唔、啾、滋溜、呼啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5006,9 +5440,14 @@ label_00010d08
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "言葉を"
 display-furigana 0 "遮" "さえぎ"
 show-text 0 "るように口付けをし、さらにねぶるように唇を押し当て続ける。"
+*/
+// 输入原文：我用亲吻打断了她的话语，更缠绵地不断贴上她的唇。
+show-text 0 @"我用亲吻打断了她的话语，更缠绵地不断贴上她的唇。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5031,7 +5470,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ほら、契約するんだから、口を開けてくれ」"
+*/
+// 输入原文：「来，既然要缔结契约，就张开嘴吧」
+show-text 0 @"「来，既然要缔结契约，就张开嘴吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5059,9 +5503,16 @@ label_00010f84
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "舌で唇をなぞって"
 display-furigana 0 "促" "うなが"
 show-text 0 "すと、ベリアルは応えるように唇を開いて舌を受け入れる。"
+*/
+// 输入原文：我用舌尖描过她的唇瓣加以催促，贝莉阿尔便像回应似的张开嘴唇，接纳了我的舌头。
+show-text 0 @"我用舌尖描过她的唇瓣加以催促，贝莉阿尔便像回应似的"
+end-text-line 0
+show-text 0 @"张开嘴唇，接纳了我的舌头。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5187,7 +5638,14 @@ play-voice (global-int f8007)
 label_00011718
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んちゅぅ、ちゅっ、じゅるるっ、んっ、はむっんあぁ、ちゅっ、ちゅぅぅっ」"
+*/
+// 输入原文：「啾唔、啾、滋溜溜、嗯、唔……嗯啊、啾、啾唔唔……」
+show-text 0 @"「啾唔、啾、滋溜溜、嗯、唔……嗯啊、啾、啾唔"
+end-text-line 0
+show-text 0 @"唔……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5215,7 +5673,14 @@ label_0001184c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "自分から舌を絡ませ、首の後ろに回した腕に力を入れて抱きついてくる。"
+*/
+// 输入原文：她主动缠上我的舌头，收紧环在我颈后的手臂，紧紧抱住了我。
+show-text 0 @"她主动缠上我的舌头，收紧环在我颈后的手臂，紧"
+end-text-line 0
+show-text 0 @"紧抱住了我。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5243,7 +5708,14 @@ label_00011998
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "舌を吸ったり突いたりと刺激しながら、ベリアルの腰を持ち上げるようにして肉棒を触れさせる。"
+*/
+// 输入原文：我一边吸吮、顶弄着她的舌头，一边托起贝莉阿尔的腰，让肉棒抵了上去。
+show-text 0 @"我一边吸吮、顶弄着她的舌头，一边托起贝莉阿尔的腰，"
+end-text-line 0
+show-text 0 @"让肉棒抵了上去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5369,7 +5841,14 @@ play-voice (global-int f8007)
 label_000120fc
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふあっ、んっ、ま、待てっ、なにか、当たってっんちゅっ、ちゅぅぅっ、うぅっ、ちゅぅっ」"
+*/
+// 输入原文：「呼啊、嗯、等、等一下，有什么东西、抵住了……啾、啾唔唔、呜、啾……」
+show-text 0 @"「呼啊、嗯、等、等一下，有什么东西、抵住了……啾、"
+end-text-line 0
+show-text 0 @"啾唔唔、呜、啾……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5397,7 +5876,14 @@ label_00012230
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "口付けをしながら濡れた割れ目に肉棒の先端を擦り付けると、愛液を通して内部の熱が伝わってくる。"
+*/
+// 输入原文：我一边亲吻，一边用肉棒的顶端摩擦她湿润的花缝，滚烫的内部温度隔着爱液传了过来。
+show-text 0 @"我一边亲吻，一边用肉棒的顶端摩擦她湿润的花缝，滚烫"
+end-text-line 0
+show-text 0 @"的内部温度隔着爱液传了过来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5425,7 +5911,12 @@ label_0001237c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "割れ目の中がひくついているのが、肉棒を通しても分かる程だ。"
+*/
+// 输入原文：花缝深处在阵阵抽动，隔着肉棒都能感觉得一清二楚。
+show-text 0 @"花缝深处在阵阵抽动，隔着肉棒都能感觉得一清二楚。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u0041D080 (global-int f800f)
@@ -5569,7 +6060,12 @@ play-voice (global-int f8007)
 label_00012be0
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んちゅぅ、ふぁっん、お主、わしをどうしたいのだ」"
+*/
+// 输入原文：「啾唔、呼啊……嗯、你，到底想对本座做什么」
+show-text 0 @"「啾唔、呼啊……嗯、你，到底想对本座做什么」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5597,7 +6093,12 @@ label_00012d14
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ベリアルがとろんとした目で見つめ返してくる。"
+*/
+// 输入原文：贝莉阿尔用迷蒙的眼神回望着我。
+show-text 0 @"贝莉阿尔用迷蒙的眼神回望着我。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5620,7 +6121,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ベリアルはどうしたいんだ？」"
+*/
+// 输入原文：「贝莉阿尔想怎么样呢？」
+show-text 0 @"「贝莉阿尔想怎么样呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5648,7 +6154,12 @@ label_00012f60
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "質問で返すと、ベリアルは少し困ったような可愛い顔をする。"
+*/
+// 输入原文：被我反问回去，贝莉阿尔露出一副有些为难的可爱表情。
+show-text 0 @"被我反问回去，贝莉阿尔露出一副有些为难的可爱表情。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5774,7 +6285,14 @@ play-voice (global-int f8007)
 label_000136c4
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わしに、なにを言わせたいのだ。たかが、ハーフエルフの分際で」"
+*/
+// 输入原文：「你到底想让本座说什么……。不过区区一个半仙灵，也敢——」
+show-text 0 @"「你到底想让本座说什么……。不过区区一个半仙灵"
+end-text-line 0
+show-text 0 @"，也敢——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5797,7 +6315,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺はベリアルと仲良くしたいし、ちゃんと契約をしたい。ベリアルはどうなんだ？」"
+*/
+// 输入原文：「我想和贝莉阿尔好好相处，也想好好缔结契约。贝莉阿尔你呢？」
+show-text 0 @"「我想和贝莉阿尔好好相处，也想好好缔结契约。贝莉"
+end-text-line 0
+show-text 0 @"阿尔你呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5825,7 +6350,12 @@ label_000138f8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "肉棒が触れている割れ目がきゅんと締まって、熱い蜜がこぼれてきた。"
+*/
+// 输入原文：被肉棒抵着的花缝猛地一缩，滚烫的蜜液溢了出来。
+show-text 0 @"被肉棒抵着的花缝猛地一缩，滚烫的蜜液溢了出来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -5962,7 +6492,14 @@ play-voice (global-int f8007)
 label_000140f8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「馬鹿者がっ、分かっているだろうが。なら、早くしてくれっ」"
+*/
+// 输入原文：「蠢货——本座当然明白。既然如此，就快些动手吧——」
+show-text 0 @"「蠢货——本座当然明白。既然如此，就快些动手"
+end-text-line 0
+show-text 0 @"吧——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5985,7 +6522,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ。じゃあベリアルを抱くぞ」"
+*/
+// 输入原文：「好。那我可要抱贝莉阿尔了」
+show-text 0 @"「好。那我可要抱贝莉阿尔了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -6052,8 +6594,13 @@ label_00014560
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "宛" "あて"
 show-text 0 "がった肉棒に向かってベリアルの身体を下ろしていく。"
+*/
+// 输入原文：我朝着对准的肉棒，将贝莉阿尔的身体缓缓放下。
+show-text 0 @"我朝着对准的肉棒，将贝莉阿尔的身体缓缓放下。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 3f51) 0
@@ -6195,7 +6742,14 @@ play-voice (global-int f8007)
 label_00014d98
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふあっ、あ、あぁぁっ、入ってくるっ、あぁぁっ、わしの中にっ、お主の逸物がっ、あぁぁっ」"
+*/
+// 输入原文：「呼啊、啊、啊啊啊……进来了、啊啊……本座体内、你的阳物、啊啊……」
+show-text 0 @"「呼啊、啊、啊啊啊……进来了、啊啊……本座体内、你"
+end-text-line 0
+show-text 0 @"的阳物、啊啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6223,8 +6777,15 @@ label_00014ecc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "亀頭" "きとう"
 show-text 0 "が熱い蜜壺に包まれたと思った直後、いっきに奥へと飲み込まれていく。"
+*/
+// 输入原文：龟头刚被滚烫的蜜壶包裹住，下一瞬便被一口气吞入深处。
+show-text 0 @"龟头刚被滚烫的蜜壶包裹住，下一瞬便被一口气吞"
+end-text-line 0
+show-text 0 @"入深处。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6252,7 +6813,12 @@ label_00015034
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "魔神の体内に秘められた凄まじい熱量が、一斉に襲いかかってくるような感覚だ。"
+*/
+// 输入原文：仿佛魔神体内蕴藏的惊人热量，一下子全部涌袭而来。
+show-text 0 @"仿佛魔神体内蕴藏的惊人热量，一下子全部涌袭而来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -6286,7 +6852,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くぅっベリアル、少し、加減してくれっ」"
+*/
+// 输入原文：「唔……贝莉阿尔，稍微，悠着点啊……」
+show-text 0 @"「唔……贝莉阿尔，稍微，悠着点啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6412,7 +6983,14 @@ play-voice (global-int f8007)
 label_00015934
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「な、なにを言ってるんだっ、わしは、力など入れてないっそれに、魔力など、尽きているのだぞっふあぁっ」"
+*/
+// 输入原文：「你、你在说什么啊，本座可、可没有用力……再说，魔力也早就耗尽了——呼啊……」
+show-text 0 @"「你、你在说什么啊，本座可、可没有用力……再说，魔"
+end-text-line 0
+show-text 0 @"力也早就耗尽了——呼啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6440,7 +7018,12 @@ label_00015a68
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ベリアルも全身を震わせながら抱きついてくる。"
+*/
+// 输入原文：贝莉阿尔也浑身颤抖着抱紧了我。
+show-text 0 @"贝莉阿尔也浑身颤抖着抱紧了我。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6468,7 +7051,14 @@ label_00015bb4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "魔力が尽きていると言っても、これだけの力っこんなの、そう長くは持たないっ。"
+*/
+// 输入原文：虽说魔力已经耗尽，可这股力量……这样下去，我可撑不了太久。
+show-text 0 @"虽说魔力已经耗尽，可这股力量……这样下去，我可"
+end-text-line 0
+show-text 0 @"撑不了太久。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 3f51) 0
@@ -6616,7 +7206,14 @@ play-voice (global-int f8007)
 label_00016430
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ん、ちゅぅっちゅっ、はぁ、んっ、ちゅばっ、ちゅっ、ちゅぅぅっ、じゅる、じゅるるるっ」"
+*/
+// 输入原文：「嗯、啾唔……啾、哈啊、嗯、啵、啾、啾唔唔、滋溜、滋溜溜溜……」
+show-text 0 @"「嗯、啾唔……啾、哈啊、嗯、啵、啾、啾唔唔、滋溜、"
+end-text-line 0
+show-text 0 @"滋溜溜溜……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6644,7 +7241,14 @@ label_00016564
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "思わずという感じで口付けをすると、だんだん激しく舌を絡ませ、求めてくる。"
+*/
+// 输入原文：她像是不由自主似的吻了上来，舌头越缠越用力，不断索求着。
+show-text 0 @"她像是不由自主似的吻了上来，舌头越缠越用力，"
+end-text-line 0
+show-text 0 @"不断索求着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6770,7 +7374,14 @@ play-voice (global-int f8007)
 label_00016cc8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふぁぁ、んちゅっこんな、気持ちになったのは、いつ、以来かっんあっ、もう、覚えておらんっ、あぁぁっ」"
+*/
+// 输入原文：「呼啊、啾……这么舒服的感觉，是多久以前的事来着……嗯啊、本座已经，记不清了、啊啊……」
+show-text 0 @"「呼啊、啾……这么舒服的感觉，是多久以前的事来着…"
+end-text-line 0
+show-text 0 @"…嗯啊、本座已经，记不清了、啊啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6798,7 +7409,14 @@ label_00016dfc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "離れまいと首にしがみつきながら、腰をうねらせて快楽を貪ろうとする。"
+*/
+// 输入原文：她死死攀住我的脖子不肯放开，扭动腰肢，贪婪地攫取着快感。
+show-text 0 @"她死死攀住我的脖子不肯放开，扭动腰肢，贪婪地"
+end-text-line 0
+show-text 0 @"攫取着快感。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6826,7 +7444,14 @@ label_00016f48
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "それに負けぬように、ベリアルの身体を上下させ、こちらからも膣奥を突いてやる。"
+*/
+// 输入原文：我也不甘示弱，上下托动贝莉阿尔的身体，主动顶弄她的阴道深处。
+show-text 0 @"我也不甘示弱，上下托动贝莉阿尔的身体，主动顶弄她"
+end-text-line 0
+show-text 0 @"的阴道深处。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6952,7 +7577,14 @@ play-voice (global-int f8007)
 label_000176ac
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぐぅっ、ん、ちゅぅっすごい、ぞっ、お主のモノが、わしの奥を、突き上げてくるっんあ、ああっ」"
+*/
+// 输入原文：「呜咕、嗯、啾唔……好厉害、啊，你那话儿，顶到了本座的、最深处……嗯啊、啊啊……」
+show-text 0 @"「呜咕、嗯、啾唔……好厉害、啊，你那话儿，顶到了本"
+end-text-line 0
+show-text 0 @"座的、最深处……嗯啊、啊啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -6986,7 +7618,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ベリアルの中も、すごいぞっ。締め付けもすごいが、中がうねって、搾り取られそうだっ」"
+*/
+// 输入原文：「贝莉阿尔里面，也很厉害啊。绞得紧不说，里面还在蠕动，我都要被榨干了」
+show-text 0 @"「贝莉阿尔里面，也很厉害啊。绞得紧不说，里面还在蠕"
+end-text-line 0
+show-text 0 @"动，我都要被榨干了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7112,7 +7751,14 @@ play-voice (global-int f8007)
 label_00017f94
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んくぅっ、仕方ない、だろうっなくなった魔力を補おうと、んっ、身体が、勝手に、動くのだっ、くぅぅっ」"
+*/
+// 输入原文：「嗯呜……这也是、没办法吧……为了补充、消失的魔力，嗯，身体，自己就动起来了、呜……」
+show-text 0 @"「嗯呜……这也是、没办法吧……为了补充、消失的魔力"
+end-text-line 0
+show-text 0 @"，嗯，身体，自己就动起来了、呜……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7135,7 +7781,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かった。なら、好きなだけ吸収してくれっ」"
+*/
+// 输入原文：「明白了。那就尽管吸收吧」
+show-text 0 @"「明白了。那就尽管吸收吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7163,7 +7814,12 @@ label_000181c8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "全身で反動をつけてベリアルの膣内を擦り上げていく。"
+*/
+// 输入原文：我用全身发力，在贝莉阿尔的阴道内用力碾磨着。
+show-text 0 @"我用全身发力，在贝莉阿尔的阴道内用力碾磨着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mov (global-int 3f51) 0
@@ -7300,7 +7956,14 @@ play-voice (global-int f8007)
 label_000189a8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んじゅるるっ、んふ、んあぁっ、深いっ、深いぞぉっ、あぁぁ、お主と、わしが、深く、繋がっているぞぉっ、ふあぁぁっ」"
+*/
+// 输入原文：「嗯滋溜溜、嗯呼、嗯啊……好深、好深啊、啊啊、本座和、你，正深深地、联系在一起啊、呼啊啊……」
+show-text 0 @"「嗯滋溜溜、嗯呼、嗯啊……好深、好深啊、啊啊、本座"
+end-text-line 0
+show-text 0 @"和、你，正深深地、联系在一起啊、呼啊啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7328,7 +7991,14 @@ label_00018adc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "唇を強く押し付けて舌を突き入れ、互いに快感を高めながら動きを速くしていく。"
+*/
+// 输入原文：我用力贴上她的唇，探入舌头，两人在愈发高涨的快感中加快了动作。
+show-text 0 @"我用力贴上她的唇，探入舌头，两人在愈发高涨的快感中"
+end-text-line 0
+show-text 0 @"加快了动作。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7356,7 +8026,14 @@ label_00018c28
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "高ぶりに合わせてベリアルの膣がますます熱くなり、痛い程に締め付けてくる。"
+*/
+// 输入原文：随着情欲高涨，贝莉阿尔的阴道越来越灼热，绞得我发疼。
+show-text 0 @"随着情欲高涨，贝莉阿尔的阴道越来越灼热，绞得"
+end-text-line 0
+show-text 0 @"我发疼。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7482,7 +8159,16 @@ play-voice (global-int f8007)
 label_0001938c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んあ、ああぅぅっ、魔力を、感じるっあぁぅっ、んくぅっ、空っぽの、身体が、んあっ、満たされていく、みたいだっ、くぅぅっ」"
+*/
+// 输入原文：「嗯啊、啊啊呜……能感觉到、魔力……啊啊呜、嗯呜……空荡荡的、身体、嗯啊，好像正被、一点点填满、呜……」
+show-text 0 @"「嗯啊、啊啊呜……能感觉到、魔力……啊啊呜、嗯"
+end-text-line 0
+show-text 0 @"呜……空荡荡的、身体、嗯啊，好像正被、一点点填"
+end-text-line 0
+show-text 0 @"满、呜……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7505,7 +8191,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うくぅっ、ベリアル、そろそろ、いきそうだっ。もう、いってもいいかっ？」"
+*/
+// 输入原文：「唔呜……贝莉阿尔，我差不多，要射了。可以，射出来吗？」
+show-text 0 @"「唔呜……贝莉阿尔，我差不多，要射了。可以，"
+end-text-line 0
+show-text 0 @"射出来吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7631,7 +8324,14 @@ play-voice (global-int f8007)
 label_00019bd8
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あぁぁっ、いいぞっ、わしの中で、出してくれっ、んあぁ、お主の、熱い魔力を、わしのこの身体にっ、注ぎ込んでくれっ」"
+*/
+// 输入原文：「啊啊……好啊，就在本座体内，射出来吧、嗯啊，把你、滚烫的魔力，灌进本座、这具身体里吧」
+show-text 0 @"「啊啊……好啊，就在本座体内，射出来吧、嗯啊，把你"
+end-text-line 0
+show-text 0 @"、滚烫的魔力，灌进本座、这具身体里吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7654,7 +8354,12 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かったっくぅぅっ、いくぞっ！」"
+*/
+// 输入原文：「知道了……唔……要射了——！」
+show-text 0 @"「知道了……唔……要射了——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u004160D0
@@ -7796,7 +8501,14 @@ play-voice (global-int f8007)
 label_0001a4fc
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふあぁっ、あっ、あああっ、わしも、いくぞっあぁ、あああああーーーーっ！」"
+*/
+// 输入原文：「呼啊、啊、啊啊……本座也、要去了——啊、啊啊啊啊啊————！」
+show-text 0 @"「呼啊、啊、啊啊……本座也、要去了——啊、啊啊啊啊"
+end-text-line 0
+show-text 0 @"啊————！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -7910,7 +8622,12 @@ label_0001abf8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "痙攣するかのように収縮する膣内へ、多量の白濁液を吐き出していく。"
+*/
+// 输入原文：我朝着仿佛痉挛般收缩的阴道内，吐出了大量白浊液。
+show-text 0 @"我朝着仿佛痉挛般收缩的阴道内，吐出了大量白浊液。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8036,7 +8753,14 @@ play-voice (global-int f8007)
 label_0001b35c
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あぁぁ、出てるっんくっ、お主の、精気が、わしの身体に、染み込んでくるっ、あぁぁ」"
+*/
+// 输入原文：「啊啊、出来了……嗯呜……你的、精气，正在渗进、本座的身体、啊啊……」
+show-text 0 @"「啊啊、出来了……嗯呜……你的、精气，正在渗进、本"
+end-text-line 0
+show-text 0 @"座的身体、啊啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8064,7 +8788,12 @@ label_0001b490
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "うっとりと、ベリアルは注がれる精を堪能している。"
+*/
+// 输入原文：贝莉阿尔陶醉地尽情品尝着被注入的精液。
+show-text 0 @"贝莉阿尔陶醉地尽情品尝着被注入的精液。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8092,7 +8821,14 @@ label_0001b5dc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "彼女の膣が精気を吸収しているのか、尿道の奥に残った最後の一滴まで搾り取られていくようだった。"
+*/
+// 输入原文：她的阴道似乎在吸收着精气，连残留在尿道深处的最后一滴，也像要被榨取殆尽。
+show-text 0 @"她的阴道似乎在吸收着精气，连残留在尿道深处的最后一"
+end-text-line 0
+show-text 0 @"滴，也像要被榨取殆尽。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8115,7 +8851,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くぅぅまだ、搾られるっ！　おおい、ベリアル、さすがにこれ以上は、出ないってっ」"
+*/
+// 输入原文：「唔……还在榨啊——！喂，贝莉阿尔，再怎么挤，也真的没有了啊」
+show-text 0 @"「唔……还在榨啊——！喂，贝莉阿尔，再怎么挤，也真"
+end-text-line 0
+show-text 0 @"的没有了啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001d330
@@ -8252,7 +8995,12 @@ play-voice (global-int f8007)
 label_0001bedc
 u00416120
 // FROM: 17 べリアル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふぅ、ふぅなんだ、これで、終わりか？」"
+*/
+// 输入原文：「呼、呼……怎么，就这样，结束了——吗？」
+show-text 0 @"「呼、呼……怎么，就这样，结束了——吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8280,7 +9028,14 @@ label_0001c010
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ベリアルは少し残念そうな響きを含ませて、吐息を多く吐き出しながら確認を取る。"
+*/
+// 输入原文：贝莉阿尔的话语里带着一丝遗憾的意味，重重吐着气息向我确认。
+show-text 0 @"贝莉阿尔的话语里带着一丝遗憾的意味，重重吐着气"
+end-text-line 0
+show-text 0 @"息向我确认。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8303,7 +9058,14 @@ call label_000201f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、これでベリアルと繋がれたと思うよ」"
+*/
+// 输入原文：「……嗯，这样一来……我想，我已经和贝莉阿尔联系在一起了……」
+show-text 0 @"「……嗯，这样一来……我想，我已经和贝莉阿尔联系在"
+end-text-line 0
+show-text 0 @"一起了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64

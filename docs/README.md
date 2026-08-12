@@ -772,3 +772,30 @@ macOS 本地校验通过，已在 PENDING.md 登记待编译；本章节新增�
 - keywords-第十章剧情.md
 - keywords-第十一章剧情.md
 - keywords-终章剧情.md
+## SP 特别批翻译（2026-08-12）
+
+2026-08-12 完成全部 21 个 SP 特别剧本脚本批翻译（番外/温泉/日常/亲热 H 场景），
+macOS 本地校验通过，已在 PENDING.md 登记待编译；本章节新增文档：
+
+- prob-SP翻译不一致.md（多版本并存表述汇总 + 暂定口径，待用户定稿）
+- prob-SP0131.md
+- prob-SP0162.md
+- prob-SP0317.md
+- prob-SP0623.md
+- prob-SP0680.md
+- prob-SP0743.md
+- prob-SP1599.md
+- prob-SP1628.md
+- prob-SP1653.md
+- prob-SP2070.md
+- prob-SP2091.md
+- prob-SP2093.md
+- prob-SP2099.md
+- prob-SP2152.md
+- prob-SP2185.md
+- prob-SP2563.md
+- prob-SP2623.md
+- prob-SP2650.md
+- prob-SP2711.md
+- prob-SP2802.md
+- keywords-SP特别.md
