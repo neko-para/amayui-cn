@@ -1,6 +1,6 @@
 # 天結いキャッスルマイスター 汉化工程文档
 
-> 更新日期：2026-08-05
+> 更新日期：2026-08-12
 > 工程根目录：`E:\Games\Eushully\天結`（git 仓库，`.gitignore` 已排除 `/install`、`/raw`）
 > 游戏本体：`E:\Games\Eushully\天結いキャッスルマイスター`（Eushully，2017-05-26，v1.07 + AP01-05）
 
@@ -672,3 +672,103 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
 - ALF 若重打包，务必在 install 的副本上进行（install 已是独立拷贝，无硬链接风险）
 - `data\` 语料以松散版为准；ALF 内副本为旧版，切勿混用（ITINIT 等已证实有真实文本差异）
 - 日文语料中的 gaiji（U+E000–E010）保留在未翻译原文行（Decompiler 无损往返）；译文不写外字
+## SC 剧情批翻译（2026-08-12）
+
+2026-08-12 完成全部 134 个 SC 剧情脚本批翻译（主线 101 + APPEND 追加包 33），
+macOS 本地校验通过，已在 PENDING.md 登记待编译；本章节新增文档：
+
+- prob-SC0100.md
+- prob-SC0130.md
+- prob-SC0160.md
+- prob-SC0190.md
+- prob-SC0220.md
+- prob-SC0250.md
+- prob-SC0280.md
+- prob-SC0310.md
+- prob-SC0590.md
+- prob-SC0620.md
+- prob-SC0650.md
+- prob-SC0680.md
+- prob-SC0710.md
+- prob-SC0740.md
+- prob-SC0770.md
+- prob-SC1590.md
+- prob-SC1620.md
+- prob-SC1650.md
+- prob-SC1710.md
+- prob-SC1740.md
+- prob-SC1800.md
+- prob-SC2090.md
+- prob-SC2100.md
+- prob-SC2120.md
+- prob-SC2150.md
+- prob-SC2180.md
+- prob-SC2210.md
+- prob-SC2270.md
+- prob-SC2620.md
+- prob-SC2680.md
+- prob-SC2710.md
+- prob-SC2740.md
+- prob-SC2770.md
+- prob-SC2800.md
+- prob-SC3090.md
+- prob-SC3120.md
+- prob-SC3150.md
+- prob-SC3180.md
+- prob-SC3240.md
+- prob-SC3270.md
+- prob-SC3300.md
+- prob-SC4130.md
+- prob-SC4160.md
+- prob-SC4190.md
+- prob-SC4280.md
+- prob-SC4310.md
+- prob-SC4700.md
+- prob-SC5470.md
+- prob-SC5490.md
+- prob-SC5570.md
+- prob-SC5700.md
+- prob-SC5830.md
+- prob-SC5860.md
+- prob-SC5890.md
+- prob-SC5920.md
+- prob-SC6600.md
+- prob-SC6630.md
+- prob-SC6660.md
+- prob-SC6670.md
+- prob-SC6690.md
+- prob-SC6700.md
+- prob-SC6710.md
+- prob-SC6720.md
+- prob-SC6780.md
+- prob-SC6790.md
+- prob-SC6810.md
+- prob-$1$SC0330.md
+- prob-$1$SC2820.md
+- prob-$1$SC4330.md
+- prob-$2$SC2330.md
+- prob-$3$SC0840.md
+- prob-$3$SC1840.md
+- prob-$3$SC2340.md
+- prob-$3$SC2840.md
+- prob-$3$SC3340.md
+- prob-$3$SC3350.md
+- prob-$3$SC4350.md
+- prob-$3$SC4360.md
+- prob-$3$SC6850.md
+- prob-$4$SC1860.md
+- prob-$4$SC3370.md
+- prob-$4$SC4370.md
+- prob-$4$SC6870.md
+- prob-$5$SC0370.md
+- prob-$5$SC0860.md
+- prob-$5$SC2360.md
+- keywords-第四章剧情.md
+- keywords-第五章剧情.md
+- keywords-第六章剧情.md
+- keywords-第七章剧情.md
+- keywords-第八章剧情.md
+- keywords-第九章剧情.md
+- keywords-第十章剧情.md
+- keywords-第十一章剧情.md
+- keywords-终章剧情.md

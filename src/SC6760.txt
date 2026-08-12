@@ -627,16 +627,16 @@ call label_00008980
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00008980
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1427,7 +1427,16 @@ play-voice (global-int f8007)
 label_00005284
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、これはよいものを見つけましたわ。これだけあれば、ラウロソをより豊かにする助けとなるでしょう。民も喜ぶこと間違いなしですわ！」"
+*/
+// 输入原文：「呵呵，这可是找到了好东西呢。有这些的话，定能助劳罗索变得更加富庶吧。子民们也必定欢欣不已，绝不会错呢！」
+show-text 0 @"「呵呵，这可是找到了好东西呢。有这些的话，定能"
+end-text-line 0
+show-text 0 @"助劳罗索变得更加富庶吧。子民们也必定欢欣不已，"
+end-text-line 0
+show-text 0 @"绝不会错呢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b6d4
@@ -1582,7 +1591,16 @@ play-voice (global-int f8007)
 label_00005b54
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これをマーズテリアに持ち帰ることは可能でしょうか。難しそうですね。金銭で評価を買おうなどと、天使にあるまじき発想。自重することにします」"
+*/
+// 输入原文：「把它带回马兹忒利亚，是否可行呢。看来颇为困难啊。竟想用金钱收买估价——这种念头，实在有违天使之身。我还是自重为好。」
+show-text 0 @"「把它带回马兹忒利亚，是否可行呢。看来颇为困难啊。"
+end-text-line 0
+show-text 0 @"竟想用金钱收买估价——这种念头，实在有违天使之身。"
+end-text-line 0
+show-text 0 @"我还是自重为好。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b6d4
@@ -1737,7 +1755,14 @@ play-voice (global-int f8007)
 label_00006424
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わあ、目がチカチカします。どれくらいの価値があるんだろう。これがあれば、じじ様も喜んでくれるかな」"
+*/
+// 输入原文：「哇，眼睛被闪得发花啦……。这些究竟值多少钱呢。有了这些，爷爷也会高兴吧。」
+show-text 0 @"「哇，眼睛被闪得发花啦……。这些究竟值多少钱呢。有"
+end-text-line 0
+show-text 0 @"了这些，爷爷也会高兴吧。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b6d4
@@ -1922,9 +1947,16 @@ play-voice (global-int f8007)
 label_00006f94
 u00416120
 // FROM: 99 ファーブル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「拘束起重台が１つ破壊されたか！　だが"
 display-furigana 0 "焦" "あせ"
 show-text 0 "ることなどない。残りの施設を全力で死守せよ、我々の勝利は近い！」"
+*/
+// 输入原文：「束缚起重机台被破坏了一座吗……！不过无需焦躁。全力死守剩下的设施，我等的胜利近在眼前！」
+show-text 0 @"「束缚起重机台被破坏了一座吗……！不过无需焦躁。全"
+end-text-line 0
+show-text 0 @"力死守剩下的设施，我等的胜利近在眼前！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b6d4
@@ -2109,9 +2141,18 @@ play-voice (global-int f8007)
 label_00007b34
 u00416120
 // FROM: 99 ファーブル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちぃっ、２つ目も！　案ずるな、もうこれ以上の"
 display-furigana 0 "狼藉" "ろうぜき"
 show-text 0 "は許さぬ。なぜならば、私が直々に奴らと相対するからだ！」"
+*/
+// 输入原文：「切，连第二座也被破坏了！　无须忧虑，我绝不容许再发生更多的暴行。因为接下来，我要亲自出面与那些家伙正面对峙！」
+show-text 0 @"「切，连第二座也被破坏了！　无须忧虑，我绝不容许再"
+end-text-line 0
+show-text 0 @"发生更多的暴行。因为接下来，我要亲自出面与那些家伙"
+end-text-line 0
+show-text 0 @"正面对峙！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b6d4

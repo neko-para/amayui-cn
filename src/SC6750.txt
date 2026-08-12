@@ -627,16 +627,16 @@ call label_0000acf0
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000acf0
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,7 +1303,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ん？　なんだろう、この白いガラス玉」"
+*/
+// 输入原文：「……嗯？这颗白色的玻璃珠，是什么呢……」
+show-text 0 @"「……嗯？这颗白色的玻璃珠，是什么呢……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1326,7 +1331,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「かすかに精霊の力を感じる」"
+*/
+// 输入原文：「隐隐能感觉到精灵的力量」
+show-text 0 @"「隐隐能感觉到精灵的力量」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1349,7 +1359,14 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そういえば、ここはフィユシア教の調査が入った地域だって言っていたな」"
+*/
+// 输入原文：「说起来，之前有人说过，这里是菲优希亚教调查过的地区呢」
+show-text 0 @"「说起来，之前有人说过，这里是菲优希亚教调查"
+end-text-line 0
+show-text 0 @"过的地区呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1372,7 +1389,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「もしかしたら、フィユシア教にゆかりがある物かもしれない」"
+*/
+// 输入原文：「说不定，是跟菲优希亚教有渊源的东西」
+show-text 0 @"「说不定，是跟菲优希亚教有渊源的东西」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000d500
@@ -1577,7 +1599,12 @@ play-voice (global-int f8007)
 label_00005c24
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あら、珍しい物を手に入れましたわね」"
+*/
+// 输入原文：「哎呀，拿到了稀罕的东西呢」
+show-text 0 @"「哎呀，拿到了稀罕的东西呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1600,7 +1627,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだコレ？　羽か？　魔法で光っているような」"
+*/
+// 输入原文：「这是什么？羽毛……？像是被魔法照着发光似的……」
+show-text 0 @"「这是什么？羽毛……？像是被魔法照着发光似的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1623,11 +1655,16 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだか『"
 display-furigana 0 "神響" "しんきょう"
 show-text 0 "の"
 display-furigana 0 "霞廊" "さんろ"
 show-text 0 "』の青い光に似ている気がする」"
+*/
+// 输入原文：「总觉得有点像『神响霞廊』的青光」
+show-text 0 @"「总觉得有点像『神响霞廊』的青光」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1753,9 +1790,16 @@ play-voice (global-int f8007)
 label_000065d0
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この地域でしか入手できない特殊な水苔で、その性質や見た目から『"
 display-furigana 0 "神響羽" "しんきょうう"
 show-text 0 "』と呼ばれているのですわ」"
+*/
+// 输入原文：「这是只有这片地区才能入手的特殊水苔，因其性质与外观，被称为『神响羽』呢」
+show-text 0 @"「这是只有这片地区才能入手的特殊水苔，因其性质与外"
+end-text-line 0
+show-text 0 @"观，被称为『神响羽』呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1778,7 +1822,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「へえ、綺麗なもんだな。なにかの素材に使えないか、試してみよう」"
+*/
+// 输入原文：「嚯，真漂亮啊。看看能不能用作某种素材，试试看吧」
+show-text 0 @"「嚯，真漂亮啊。看看能不能用作某种素材，试试看吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -1809,7 +1858,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おお、この先に洞窟があるみたいだ」"
+*/
+// 输入原文：「哦哦，前面好像有个洞窟」
+show-text 0 @"「哦哦，前面好像有个洞窟」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -1845,7 +1899,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「滝の裏側に隠されていたのか。凝った真似するなぁ」"
+*/
+// 输入原文：「原来是藏在瀑布背后……。真会藏啊」
+show-text 0 @"「原来是藏在瀑布背后……。真会藏啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1868,7 +1927,12 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まだここには、探索できる地域が残っているってことか。行ってみよう！」"
+*/
+// 输入原文：「也就是说，这里还有能探索的区域啊。去看看！」
+show-text 0 @"「也就是说，这里还有能探索的区域啊。去看看！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000d500
@@ -1900,7 +1964,16 @@ call label_0000d080
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はははっ、やっぱりな！　あると思ったんだよ、これぞお約束ってやつだよな。いやぁこれだけあれば、工房の道具も最新のもので揃えられるぞ」"
+*/
+// 输入原文：「哈哈哈，果然！我就知道会有，这正是所谓的固定套路嘛。哇，有这么多的话，工房里的工具也能全换成最新的了」
+show-text 0 @"「哈哈哈，果然！我就知道会有，这正是所谓的固定"
+end-text-line 0
+show-text 0 @"套路嘛。哇，有这么多的话，工房里的工具也能全换"
+end-text-line 0
+show-text 0 @"成最新的了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000d500
@@ -2055,7 +2128,14 @@ play-voice (global-int f8007)
 label_000074e0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おおぉっ、キラキラしてるよ～！　一気に大金持ちになっちゃったね。お金に溺れるのはよくないかもだけど、お金があることで幸せになれることだってあるよ！」"
+*/
+// 输入原文：「哦哦，闪闪发光呢～！一口气变成大富翁啦。虽说沉溺于金钱不好，但有钱也能让人幸福哦！」
+show-text 0 @"「哦哦，闪闪发光呢～！一口气变成大富翁啦。虽说沉溺"
+end-text-line 0
+show-text 0 @"于金钱不好，但有钱也能让人幸福哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -2210,7 +2290,14 @@ play-voice (global-int f8007)
 label_00007db0
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お宝いっぱい。ほくほく。これがあれば、ずっとご飯たくさん食べられる。あ、お腹空いてきた」"
+*/
+// 输入原文：「宝贝，好多。收获满满。有了这些，就能一直吃很多很多饭。啊，肚子饿了……」
+show-text 0 @"「宝贝，好多。收获满满。有了这些，就能一直吃很多很"
+end-text-line 0
+show-text 0 @"多饭。啊，肚子饿了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -2365,7 +2452,16 @@ play-voice (global-int f8007)
 label_00008680
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「す、すごい光景ですっ。思わずごくりと唾を飲み込んでしまいました。お仕事中じゃなかったら、これをイオルと２人占めい、いえ、こんな考えいけません！」"
+*/
+// 输入原文：「好、好厉害的光景……！我不由自主地咽了口唾沫。要不是在工作，真想和伊欧露两个人分——不、不对，这种想法可不行！」
+show-text 0 @"「好、好厉害的光景……！我不由自主地咽了口唾沫。要"
+end-text-line 0
+show-text 0 @"不是在工作，真想和伊欧露两个人分——不、不对，这种"
+end-text-line 0
+show-text 0 @"想法可不行！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -2520,7 +2616,16 @@ play-voice (global-int f8007)
 label_00008f50
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「見ているだけでワクワクするな。いったい誰がここにこんな財宝を隠したのだろうか。未だ手を付けられていないということはすまない、有り難く頂いていく」"
+*/
+// 输入原文：「光是看着就让人兴奋啊。究竟是谁把这么多财宝藏在这里的呢。至今都没人动过的意思是……抱歉，我就心怀感激地收下了」
+show-text 0 @"「光是看着就让人兴奋啊。究竟是谁把这么多财宝藏在这"
+end-text-line 0
+show-text 0 @"里的呢。至今都没人动过的意思是……抱歉，我就心怀感"
+end-text-line 0
+show-text 0 @"激地收下了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -2675,7 +2780,16 @@ play-voice (global-int f8007)
 label_00009820
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふ、こりゃすげぇな。たまにこういった驚きがあるから探索は止められねぇ。どこの誰が蓄えていたものかは分からないが、有効活用させてもらうぜ」"
+*/
+// 输入原文：「哼，这可真厉害。正因为时不时有这种惊喜，探索才让人停不下来啊。不知是哪儿的谁攒下的，不过就让我好好利用起来吧」
+show-text 0 @"「哼，这可真厉害。正因为时不时有这种惊喜，探索才让"
+end-text-line 0
+show-text 0 @"人停不下来啊。不知是哪儿的谁攒下的，不过就让我好好"
+end-text-line 0
+show-text 0 @"利用起来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08
@@ -2830,7 +2944,16 @@ play-voice (global-int f8007)
 label_0000a0f0
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あまり通貨に関して詳しくはないのだけれど、これが価値の高いものだと分かるわ。隠していた人には少し申し訳ないけれど、せっかくの機会ですし頂いていきましょう」"
+*/
+// 输入原文：「虽然我对货币不太了解，但能看出这些价值不菲。对藏起它们的人有些过意不去，不过难得有这样的机会，我们就收下吧」
+show-text 0 @"「虽然我对货币不太了解，但能看出这些价值不菲。对"
+end-text-line 0
+show-text 0 @"藏起它们的人有些过意不去，不过难得有这样的机会，"
+end-text-line 0
+show-text 0 @"我们就收下吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000db08

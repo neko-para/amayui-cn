@@ -627,16 +627,16 @@ call label_00009538
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00009538
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1442,7 +1442,12 @@ play-voice (global-int f8007)
 label_00005318
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ミケユを助けない、と」"
+*/
+// 输入原文：「米凯优……不去救的话……」
+show-text 0 @"「米凯优……不去救的话……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c28c
@@ -1613,7 +1618,12 @@ play-voice (global-int f8007)
 label_00005c88
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「イオル」"
+*/
+// 输入原文：「伊欧……露……」
+show-text 0 @"「伊欧……露……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c28c
@@ -1784,7 +1794,12 @@ play-voice (global-int f8007)
 label_000065f8
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くぁぁあああっ！　そんな、まさか！」"
+*/
+// 输入原文：「唔啊啊啊——！　怎么会，怎么可能……！」
+show-text 0 @"「唔啊啊啊——！　怎么会，怎么可能……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1910,7 +1925,14 @@ play-voice (global-int f8007)
 label_00006d44
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「何も出来ずただの、役立たずで終わるなんて無念、ですわ」"
+*/
+// 输入原文：「什么都做不到……只能像个废物一样迎来终结……实在是不甘心啊……」
+show-text 0 @"「什么都做不到……只能像个废物一样迎来终结……实在"
+end-text-line 0
+show-text 0 @"是不甘心啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c28c
@@ -2081,7 +2103,12 @@ play-voice (global-int f8007)
 label_000076b4
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「う、あぅぅごめんなさい、もう、だめ」"
+*/
+// 输入原文：「呜、啊呜……对不起，已经，不行了……」
+show-text 0 @"「呜、啊呜……对不起，已经，不行了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2207,7 +2234,12 @@ play-voice (global-int f8007)
 label_00007e00
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わたしできると、思ったんだけどな」"
+*/
+// 输入原文：「我……还以为，自己能行的……」
+show-text 0 @"「我……还以为，自己能行的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2333,7 +2365,14 @@ play-voice (global-int f8007)
 label_0000854c
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「とと様じじ様みんな、ごめんなさいわたし、やっぱり、出来損ないだったみたい」"
+*/
+// 输入原文：「爹爹……爷爷……大家……对不起……我果然，还是，个废物啊……」
+show-text 0 @"「爹爹……爷爷……大家……对不起……我果然，还是，"
+end-text-line 0
+show-text 0 @"个废物啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c28c
@@ -2381,7 +2420,12 @@ call label_0000be0c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちっ、しくじっちまった」"
+*/
+// 输入原文：「啧，失手了……」
+show-text 0 @"「啧，失手了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c5d8
@@ -2413,7 +2457,12 @@ call label_0000be0c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「こんなところで、倒れるわけには」"
+*/
+// 输入原文：「在这种地方，可不能倒下……」
+show-text 0 @"「在这种地方，可不能倒下……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000c5d8

@@ -627,16 +627,16 @@ call label_00007e3c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00007e3c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1477,7 +1477,14 @@ play-voice (global-int f8007)
 label_000057e4
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おっと、あんちゃん。洞窟の探索は初めてなのかもしれんが、先が見えないから気を付けて歩けよ」"
+*/
+// 输入原文：「哎呀，小哥。你八成是头一回探索洞窟吧，前路看不清，走路可得留神啊」
+show-text 0 @"「哎呀，小哥。你八成是头一回探索洞窟吧，前路看不清"
+end-text-line 0
+show-text 0 @"，走路可得留神啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1603,7 +1610,14 @@ play-voice (global-int f8007)
 label_00005f30
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「騎士のねーちゃんも言っていたが、魔物が隠れているかもしれんし、古い遺跡ほど罠が仕掛けられてるかもしれんからな」"
+*/
+// 输入原文：「骑士大姐也说过，魔物可能藏在暗处，而且遗迹越古老，越可能设有陷阱啊」
+show-text 0 @"「骑士大姐也说过，魔物可能藏在暗处，而且遗迹越古老"
+end-text-line 0
+show-text 0 @"，越可能设有陷阱啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1626,7 +1640,12 @@ call label_0000a710
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「確かにそうだな。忠告、助かるぜ」"
+*/
+// 输入原文：「确实是啊。这忠告，帮大忙了」
+show-text 0 @"「确实是啊。这忠告，帮大忙了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1752,9 +1771,16 @@ play-voice (global-int f8007)
 label_0000677c
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それと、移動にはＦＳ（"
 display-furigana 0 "疲労強度" "ひろうきょうど"
 show-text 0 "）が必要だ。調子にのって移動し過ぎると孤立するから気を付けてな」"
+*/
+// 输入原文：「还有，移动需要ＦＳ（疲劳强度）。别得意忘形走过头，走太远会孤立无援，可得留神啊」
+show-text 0 @"「还有，移动需要ＦＳ（疲劳强度）。别得意忘形走过头"
+end-text-line 0
+show-text 0 @"，走太远会孤立无援，可得留神啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1880,11 +1906,20 @@ play-voice (global-int f8007)
 label_00006ef8
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「"
 display-furigana 0 "ＦＳ" "疲労強度"
 show-text 0 "は毎ターン１ずつ回復するんだが、"
 display-furigana 0 "待機" "たいき"
 show-text 0 "を選ぶことでさらに１回復ができる。状況に応じて判断してくればいい」"
+*/
+// 输入原文：「<ruby>ＦＳ<rt>疲劳强度</rt></ruby>每回合会恢复1点，不过选择待机的话还能再恢复1点。你就根据情况看着办吧」
+show-text 0 @"「"
+display-furigana 0 @"ＦＳ" @"疲劳强度"
+show-text 0 @"每回合会恢复1点，不过选择待机的话还能再恢复1"
+end-text-line 0
+show-text 0 @"点。你就根据情况看着办吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1907,7 +1942,14 @@ call label_0000a710
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「人より体力はあるはずだけど、気を付けるよ。よし、それじゃいくぜ」"
+*/
+// 输入原文：「我体力应该比一般人强，不过还是会小心的。好，那就出发吧」
+show-text 0 @"「我体力应该比一般人强，不过还是会小心的。好，"
+end-text-line 0
+show-text 0 @"那就出发吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040

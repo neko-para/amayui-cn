@@ -627,16 +627,16 @@ call label_0000d3f0
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000d3f0
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1366,7 +1366,12 @@ call label_0000fcc4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「このカトリトは、偽者か」"
+*/
+// 输入原文：「……这个卡特利特，是冒牌货吗」
+show-text 0 @"「……这个卡特利特，是冒牌货吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1389,7 +1394,14 @@ call label_0000fcc4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よ、よかった。これが本物だったらどうしようかと。心臓に悪いなこの試練」"
+*/
+// 输入原文：「呼、太好了……。要是她是本尊的话，我该怎么办啊。这试炼真让人心脏受不了啊……」
+show-text 0 @"「呼、太好了……。要是她是本尊的话，我该怎么办啊。"
+end-text-line 0
+show-text 0 @"这试炼真让人心脏受不了啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010144
@@ -1586,7 +1598,12 @@ play-voice (global-int f8007)
 label_00005f48
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうやら偽者だったようね」"
+*/
+// 输入原文：「看来是冒牌货呢」
+show-text 0 @"「看来是冒牌货呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1712,7 +1729,12 @@ play-voice (global-int f8007)
 label_00006694
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「早く本物を見つけてあげないと、間違って攻撃してしまったら大変だわ」"
+*/
+// 输入原文：「得快点找到本尊才行，万一不小心攻击到她就糟了」
+show-text 0 @"「得快点找到本尊才行，万一不小心攻击到她就糟了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010144
@@ -1909,7 +1931,12 @@ play-voice (global-int f8007)
 label_00007404
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、当然ですわ！」"
+*/
+// 输入原文：「呵呵，那是当然！」
+show-text 0 @"「呵呵，那是当然！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2035,7 +2062,14 @@ play-voice (global-int f8007)
 label_00007b50
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「私が見間違える訳がないでしょう。少しだけドキドキしたのは、内緒ですわ！」"
+*/
+// 输入原文：「本小姐怎么可能会认错呢。……方才稍微有点心跳加速的事，要保密哦！」
+show-text 0 @"「本小姐怎么可能会认错呢。……方才稍微有点心跳加速"
+end-text-line 0
+show-text 0 @"的事，要保密哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010144
@@ -2232,7 +2266,12 @@ play-voice (global-int f8007)
 label_000088c0
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふう、偽者でしたか」"
+*/
+// 输入原文：「呼，原来是个冒牌货……」
+show-text 0 @"「呼，原来是个冒牌货……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2358,7 +2397,12 @@ play-voice (global-int f8007)
 label_0000900c
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「攻撃する際に見る、彼女の脅える顔は心にくるものがありますね」"
+*/
+// 输入原文：「攻击时看到她受惊的脸，实在让人心里不好受呢」
+show-text 0 @"「攻击时看到她受惊的脸，实在让人心里不好受呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010144
@@ -2518,7 +2562,12 @@ play-voice (global-int f8007)
 label_00009928
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「きゃ、きゃああああああああっ」"
+*/
+// 输入原文：「呀、呀啊啊啊啊啊啊啊！」
+show-text 0 @"「呀、呀啊啊啊啊啊啊啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2644,7 +2693,12 @@ play-voice (global-int f8007)
 label_0000a074
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぅ、皆さん酷いですわたしを見間違えるなんて」"
+*/
+// 输入原文：「呜呜，大家太过分了……居然认错了我……」
+show-text 0 @"「呜呜，大家太过分了……居然认错了我……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010208
@@ -2798,7 +2852,12 @@ play-voice (global-int f8007)
 label_0000a930
 u00416120
 // FROM: 235 カルメルグ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ぐぅ、うぅもはや、これまでか！」"
+*/
+// 输入原文：「咕……唔……已然，到此为止了吗……！」
+show-text 0 @"「咕……唔……已然，到此为止了吗……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2924,7 +2983,12 @@ play-voice (global-int f8007)
 label_0000b07c
 u00416120
 // FROM: 235 カルメルグ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まさか人間族ごときに、我ら誇り高き竜族が敗れるとは」"
+*/
+// 输入原文：「没想到，我等高傲的龙族竟会败在区区人类手中！」
+show-text 0 @"「没想到，我等高傲的龙族竟会败在区区人类手中！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000d584
@@ -3060,7 +3124,12 @@ play-voice (global-int f8007)
 label_0000b858
 u00416120
 // FROM: 235 カルメルグ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、まだだ、まだ終わらぬわ」"
+*/
+// 输入原文：「……不，还没完，还没结束啊」
+show-text 0 @"「……不，还没完，还没结束啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3186,9 +3255,16 @@ play-voice (global-int f8007)
 label_0000bfa4
 u00416120
 // FROM: 235 カルメルグ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「再起の機会は必ず来る。もはや"
 display-furigana 0 "雷府" "らいふ"
 show-text 0 "の血脈も途絶えたのだ。誰かが竜族を率いなければならぬ状態に変わりはない」"
+*/
+// 输入原文：「东山再起的机会必定会来。雷府的血脉已然断绝，必须有人统领龙族这一点，不会有任何改变」
+show-text 0 @"「东山再起的机会必定会来。雷府的血脉已然断绝，必须"
+end-text-line 0
+show-text 0 @"有人统领龙族这一点，不会有任何改变」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3314,9 +3390,14 @@ play-voice (global-int f8007)
 label_0000c720
 u00416120
 // FROM: 235 カルメルグ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そして、それはこの"
 display-furigana 0 "絶氷公" "ぜっひょうこう"
 show-text 0 "カルメルグしかいない！」"
+*/
+// 输入原文：「而那个人，只有我绝冰公卡尔梅尔格……！」
+show-text 0 @"「而那个人，只有我绝冰公卡尔梅尔格……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010208

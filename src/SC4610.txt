@@ -627,16 +627,16 @@ call label_00010ca8
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00010ca8
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1466,7 +1466,14 @@ play-voice (global-int f8007)
 label_00005620
 u00416120
 // FROM: 33 溶燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ぐははは、この苦境、この戦況面白くなってきたな！」"
+*/
+// 输入原文：「咕哈哈哈，这般苦境、这般战况——变得有趣起来了啊！」
+show-text 0 @"「咕哈哈哈，这般苦境、这般战况——变得有趣起"
+end-text-line 0
+show-text 0 @"来了啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1592,9 +1599,16 @@ play-voice (global-int f8007)
 label_00005d6c
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちょっと！　笑ってないでその自慢の筋肉で、襲いかかってくる敵を"
 display-furigana 0 "薙" "な"
 show-text 0 "ぎ払いなさいよ！」"
+*/
+// 输入原文：「喂！别光顾着笑，用你引以为傲的肌肉，把扑过来的敌人扫开啦！」
+show-text 0 @"「喂！别光顾着笑，用你引以为傲的肌肉，把扑过来的敌"
+end-text-line 0
+show-text 0 @"人扫开啦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1720,7 +1734,14 @@ play-voice (global-int f8007)
 label_000064e8
 u00416120
 // FROM: 33 溶燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「言われんでもやってやるわ！　全て任せておけ、敵を燃やし尽くしてやる！！」"
+*/
+// 输入原文：「不消你说，我也做给你看！全都交给我，把敌人烧成灰烬！！」
+show-text 0 @"「不消你说，我也做给你看！全都交给我，把敌人烧"
+end-text-line 0
+show-text 0 @"成灰烬！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -1856,7 +1877,14 @@ play-voice (global-int f8007)
 label_00006cc4
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「筋肉、使わないの？　あーもうっ、仕方ないわね。あたしに攻撃を合わせなさいよ！　そーれ！！」"
+*/
+// 输入原文：「…………肌肉，不用吗？啊真是的，真拿你没办法呢。配合我的攻击吧！看招！！」
+show-text 0 @"「…………肌肉，不用吗？啊真是的，真拿你没办法呢。"
+end-text-line 0
+show-text 0 @"配合我的攻击吧！看招！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c
@@ -2021,7 +2049,12 @@ play-voice (global-int f8007)
 label_000076cc
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「緑、少なくなった。代わりに灰色多い」"
+*/
+// 输入原文：「绿色，变少了。取而代之的灰色…………很多」
+show-text 0 @"「绿色，变少了。取而代之的灰色…………很多」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -2178,7 +2211,14 @@ play-voice (global-int f8007)
 label_00008094
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「素晴らしいだろう。君たちの思い出の場所を、直々に壊してあげているんだよ。どんな気分かな？」"
+*/
+// 输入原文：「很棒吧？我正亲手为你们毁掉那些回忆之地呢。心情如何？」
+show-text 0 @"「很棒吧？我正亲手为你们毁掉那些回忆之地呢。"
+end-text-line 0
+show-text 0 @"心情如何？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -2314,9 +2354,14 @@ play-voice (global-int f8007)
 label_00008870
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ガイダル、許さない！　首、"
 display-furigana 0 "刎" "は"
 show-text 0 "ねる！」"
+*/
+// 输入原文：「盖达鲁，不可饶恕…………！　首级，斩下！」
+show-text 0 @"「盖达鲁，不可饶恕…………！　首级，斩下！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2442,7 +2487,14 @@ play-voice (global-int f8007)
 label_00008fec
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いい殺意だね。それをぷちっと踏み潰すのが気持ちいいんだ、ぜひ協力して欲しいところだよ。クククッ」"
+*/
+// 输入原文：「好杀意呢。把它啪地碾碎的感觉真是痛快，正希望你们多多配合呢。呵呵呵」
+show-text 0 @"「好杀意呢。把它啪地碾碎的感觉真是痛快，正希望你们"
+end-text-line 0
+show-text 0 @"多多配合呢。呵呵呵」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c
@@ -2607,7 +2659,14 @@ play-voice (global-int f8007)
 label_000099f4
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「クフハハハッ、もう君たちの知る城砦ではない私の、城砦になったんだよ」"
+*/
+// 输入原文：「呵哈哈哈，这里已不再是你们所知的城砦————而是我的，我的城砦了哦」
+show-text 0 @"「呵哈哈哈，这里已不再是你们所知的城砦————而是"
+end-text-line 0
+show-text 0 @"我的，我的城砦了哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -2764,9 +2823,16 @@ play-voice (global-int f8007)
 label_0000a3bc
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「っ、広場がっ。もう、みんなが笑顔でいられる"
 display-furigana 0 "憩" "いこ"
 show-text 0 "いの場じゃ、なくなってしまったんですね」"
+*/
+// 输入原文：「呜、广场竟然…………呜。已经不再是，大家能展露笑颜的休憩之所了呢」
+show-text 0 @"「呜、广场竟然…………呜。已经不再是，大家能展露笑"
+end-text-line 0
+show-text 0 @"颜的休憩之所了呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -2902,7 +2968,12 @@ play-voice (global-int f8007)
 label_0000abc8
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「許せません。わたしたちの城砦を、返してください！」"
+*/
+// 输入原文：「无法原谅。请把我们的城砦还回来！」
+show-text 0 @"「无法原谅。请把我们的城砦还回来！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c
@@ -3067,7 +3138,12 @@ play-voice (global-int f8007)
 label_0000b5d0
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「く、皆の住居が壊されて！」"
+*/
+// 输入原文：「呜、大家的住处都被毁坏了…………！」
+show-text 0 @"「呜、大家的住处都被毁坏了…………！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -3203,7 +3279,14 @@ play-voice (global-int f8007)
 label_0000bdac
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうしてこんなことをする！？　貴様らにとっても、住む場所は必要だろう！」"
+*/
+// 输入原文：「为什么要做这种事！？你们这些家伙，也需要住的地方吧！」
+show-text 0 @"「为什么要做这种事！？你们这些家伙，也需要住"
+end-text-line 0
+show-text 0 @"的地方吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -3360,7 +3443,14 @@ play-voice (global-int f8007)
 label_0000c774
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「クク、決まっているだろうに。君たちのそういう顔が、見たいからだよ」"
+*/
+// 输入原文：「呵呵，明明就是明摆着的事吧。我想看的，就是你们那种表情啊」
+show-text 0 @"「呵呵，明明就是明摆着的事吧。我想看的，就是你们"
+end-text-line 0
+show-text 0 @"那种表情啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -3496,7 +3586,12 @@ play-voice (global-int f8007)
 label_0000cf50
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「き、貴様あああああぁぁっ！！」"
+*/
+// 输入原文：「你、你这混蛋啊啊啊啊啊——！！」
+show-text 0 @"「你、你这混蛋啊啊啊啊啊——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c
@@ -3650,7 +3745,12 @@ play-voice (global-int f8007)
 label_0000d80c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あの美しかった噴水も今は見る影もない」"
+*/
+// 输入原文：「那座曾经美丽的喷泉也…………如今早已面目全非」
+show-text 0 @"「那座曾经美丽的喷泉也…………如今早已面目全非」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3776,9 +3876,14 @@ play-voice (global-int f8007)
 label_0000df58
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「景観が荒れていると、心も"
 display-furigana 0 "荒" "すさ"
 show-text 0 "んでいくものだわ」"
+*/
+// 输入原文：「景观一旦荒芜，人心也会随之荒芜下去呢」
+show-text 0 @"「景观一旦荒芜，人心也会随之荒芜下去呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -3914,6 +4019,7 @@ play-voice (global-int f8007)
 label_0000e764
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「"
 display-furigana 0 "歪" "ゆが"
 show-text 0 "んだ"
@@ -3921,6 +4027,10 @@ display-furigana 0 "性根" "しょうね"
 show-text 0 "を"
 display-furigana 0 "矯正" "きょうせい"
 show-text 0 "してあげる。覚悟しなさい」"
+*/
+// 输入原文：「我来矫正你扭曲的秉性。做好觉悟吧」
+show-text 0 @"「我来矫正你扭曲的秉性。做好觉悟吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c
@@ -4074,7 +4184,14 @@ play-voice (global-int f8007)
 label_0000f0b0
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんて悲しいのでしょうか。あの美しかった景観が、まるで廃墟のようですわ」"
+*/
+// 输入原文：「多么令人悲伤啊…………。那片曾经美丽的景观，简直就像废墟一样呢」
+show-text 0 @"「多么令人悲伤啊…………。那片曾经美丽的景观，简直"
+end-text-line 0
+show-text 0 @"就像废墟一样呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4200,9 +4317,16 @@ play-voice (global-int f8007)
 label_0000f7fc
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「我が主が"
 display-furigana 0 "専心" "せんしん"
 show-text 0 "し、商会の皆で整えた城砦が、このような姿になってしまうとは！」"
+*/
+// 输入原文：「我主倾尽心血，与商会众人一同整备起来的城砦，竟会变成这副模样…………！」
+show-text 0 @"「我主倾尽心血，与商会众人一同整备起来的城砦，竟会"
+end-text-line 0
+show-text 0 @"变成这副模样…………！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010e3c
@@ -4338,7 +4462,14 @@ play-voice (global-int f8007)
 label_00010008
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「責任を取ってもらいましょうか。私を不快にさせたことを、心の底から後悔させてあげますわ！」"
+*/
+// 输入原文：「该让你承担责任了呢。我要让你为惹本小姐不快这件事，从心底里后悔！」
+show-text 0 @"「该让你承担责任了呢。我要让你为惹本小姐不快这件事"
+end-text-line 0
+show-text 0 @"，从心底里后悔！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001416c

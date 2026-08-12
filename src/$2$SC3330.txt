@@ -627,16 +627,16 @@ call label_000083fc
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_000083fc
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1359,7 +1359,12 @@ label_00004e3c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "フィアから達ての希望により、『女神更衣室』が完成した。"
+*/
+// 输入原文：在菲亚的再三要求下，『女神更衣室』完工了。
+show-text 0 @"在菲亚的再三要求下，『女神更衣室』完工了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1387,7 +1392,12 @@ label_00004f88
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "早速使ってみると入っていったフィアを待っているわけだが。"
+*/
+// 输入原文：菲亚立刻就跑进去试用了，我便在外面等着她……。
+show-text 0 @"菲亚立刻就跑进去试用了，我便在外面等着她……。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1410,7 +1420,14 @@ call label_0000ae60
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「作ったのはいいけれど、フィアっていつも着ている服以外に何か持っていたかな」"
+*/
+// 输入原文：「建是建好了，不过菲亚除了平时穿的那身衣服以外，还有别的衣服吗？」
+show-text 0 @"「建是建好了，不过菲亚除了平时穿的那身衣服以外，还"
+end-text-line 0
+show-text 0 @"有别的衣服吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008590
@@ -1607,7 +1624,12 @@ play-voice (global-int f8007)
 label_00005e90
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「え？　寝間着だよ？」"
+*/
+// 输入原文：「诶？是睡衣啊？」
+show-text 0 @"「诶？是睡衣啊？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1635,7 +1657,14 @@ label_00005fc4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "更衣室から出てきたフィアは見間違えようもない、いつもの寝間着を着ていた。着替えるにしても、もう少し何かあったんじゃ。"
+*/
+// 输入原文：从更衣室里走出来的菲亚，身上穿的毫无疑问还是平时那身睡衣。既然是换衣服，也总该还有别的吧……。
+show-text 0 @"从更衣室里走出来的菲亚，身上穿的毫无疑问还是平时那"
+end-text-line 0
+show-text 0 @"身睡衣。既然是换衣服，也总该还有别的吧……。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008590
@@ -1771,7 +1800,12 @@ play-voice (global-int f8007)
 label_000067b8
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「失敬だな君は」"
+*/
+// 输入原文：「你这话可真失礼。」
+show-text 0 @"「你这话可真失礼。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1799,7 +1833,14 @@ label_000068ec
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "俺の視線から言いたいことを感じ取ったのか、フィアは不機嫌な顔をしていた。"
+*/
+// 输入原文：或许是从我的目光中察觉到了我的想法，菲亚露出了不悦的表情。
+show-text 0 @"或许是从我的目光中察觉到了我的想法，菲亚露出了"
+end-text-line 0
+show-text 0 @"不悦的表情。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1822,7 +1863,12 @@ call label_0000ae60
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「何も言っていないだろ。フィアはいつでも可愛いよ」"
+*/
+// 输入原文：「我可什么都没说吧。菲亚不管什么时候都很可爱啊。」
+show-text 0 @"「我可什么都没说吧。菲亚不管什么时候都很可爱啊。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008590
@@ -1958,7 +2004,12 @@ play-voice (global-int f8007)
 label_000071e0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わーい！　アヴァロに褒められたー！」"
+*/
+// 输入原文：「哇——！　被阿瓦罗夸奖了——！」
+show-text 0 @"「哇——！　被阿瓦罗夸奖了——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040

@@ -627,16 +627,16 @@ call label_00016424
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00016424
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1359,7 +1359,14 @@ label_00004e3c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "遺跡内部を突き進み、襲い掛かってくる魔族や魔獣を倒していく。"
+*/
+// 输入原文：在遗迹内部一路突进，将扑袭而来的魔族与魔兽逐一击倒。
+show-text 0 @"在遗迹内部一路突进，将扑袭而来的魔族与魔兽逐"
+end-text-line 0
+show-text 0 @"一击倒。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1382,7 +1389,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふう、なんとか無事に倒すことができたな」"
+*/
+// 输入原文：「呼，总算是平安无事地解决了啊……」
+show-text 0 @"「呼，总算是平安无事地解决了啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1405,7 +1417,14 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まったく、こんな奴まで用意しているのかよ。ガイダルの組織は」"
+*/
+// 输入原文：「真是的，居然连这种家伙都准备好了。盖达鲁的组织……」
+show-text 0 @"「真是的，居然连这种家伙都准备好了。盖达鲁的"
+end-text-line 0
+show-text 0 @"组织……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1433,7 +1452,14 @@ label_00005188
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "過去に上級悪魔までもけしかけて来たような組織だが、これは明らかにおかしい。"
+*/
+// 输入原文：过去甚至驱使过上级恶魔来袭的组织，这次的情况却明显不对劲。
+show-text 0 @"过去甚至驱使过上级恶魔来袭的组织，这次的情况却"
+end-text-line 0
+show-text 0 @"明显不对劲。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1461,7 +1487,14 @@ label_000052d4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "いくら本拠地の防衛だとしても、このような戦力を用意していること自体が異常なように思えた。"
+*/
+// 输入原文：即便是为了防卫据点，准备了如此战力一事本身，也让人觉得异常。
+show-text 0 @"即便是为了防卫据点，准备了如此战力一事本身，也让"
+end-text-line 0
+show-text 0 @"人觉得异常。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -1658,6 +1691,7 @@ play-voice (global-int f8007)
 label_000060dc
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そのことで一つ、思い出したことがありますわ。『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -1665,6 +1699,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』という組織のことです」"
+*/
+// 输入原文：「说到这个，我想起了一件事呢。就是名为『魔械封炼之匠』的组织。」
+show-text 0 @"「说到这个，我想起了一件事呢。就是名为『魔械封炼之"
+end-text-line 0
+show-text 0 @"匠』的组织。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1687,7 +1727,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ガイダル商会ではなく、か？」"
+*/
+// 输入原文：「不是盖达鲁商会，是吗？」
+show-text 0 @"「不是盖达鲁商会，是吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1813,7 +1858,14 @@ play-voice (global-int f8007)
 label_000069b8
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はい、裏社会に通じている者にとっては、そちらの方が名が通っているかもしれません」"
+*/
+// 输入原文：「是的。对于与地下世界相通的人来说，那个名头或许反而更响亮呢。」
+show-text 0 @"「是的。对于与地下世界相通的人来说，那个名头或许反"
+end-text-line 0
+show-text 0 @"而更响亮呢。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1836,7 +1888,14 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうか。リシュが知っているってことは、ラウロソでも知られているのかな」"
+*/
+// 输入原文：「这样啊……。连莉秀都知道的话，那在劳罗索是不是也很出名呢」
+show-text 0 @"「这样啊……。连莉秀都知道的话，那在劳罗索是不是"
+end-text-line 0
+show-text 0 @"也很出名呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1962,9 +2021,18 @@ play-voice (global-int f8007)
 label_00007204
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ええ、元々ラウロソは、旧インラクス王国から派生したインフルース王国と同じ道を"
 display-furigana 0 "辿" "たど"
 show-text 0 "る国、ガイダルにとっては復讐の対象となるのでしょう」"
+*/
+// 输入原文：「是的。劳罗索本是与旧英拉克斯王国所衍生的因夫鲁斯王国走着相同道路的国家，对盖达鲁而言，恐怕正是复仇的对象吧。」
+show-text 0 @"「是的。劳罗索本是与旧英拉克斯王国所衍生的因夫鲁斯"
+end-text-line 0
+show-text 0 @"王国走着相同道路的国家，对盖达鲁而言，恐怕正是复仇"
+end-text-line 0
+show-text 0 @"的对象吧。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1987,7 +2055,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「組織での活動範囲に含まれているってことか」"
+*/
+// 输入原文：「也就是说，劳罗索也被纳入了那组织的活动范围吗」
+show-text 0 @"「也就是说，劳罗索也被纳入了那组织的活动范围吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2015,7 +2088,14 @@ label_00007468
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "過去に自分たちを追放したフィユシア教に関わる国々であれば、ガイダルたちにとってそこは復讐の対象に成り得るのだ。"
+*/
+// 输入原文：只要是过去与驱逐了自己的菲优希亚教有关的国家，对盖达鲁他们而言，就可能成为复仇的对象。
+show-text 0 @"只要是过去与驱逐了自己的菲优希亚教有关的国家，对盖"
+end-text-line 0
+show-text 0 @"达鲁他们而言，就可能成为复仇的对象。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2141,11 +2221,18 @@ play-voice (global-int f8007)
 label_00007bcc
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この領域はベルガラード王国という、"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "が多く棲まうとされている場所です」"
+*/
+// 输入原文：「这片区域是名为贝尔加拉德王国的、据说栖息着众多黑暗眷属的地方。」
+show-text 0 @"「这片区域是名为贝尔加拉德王国的、据说栖息着众多黑"
+end-text-line 0
+show-text 0 @"暗眷属的地方。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2271,9 +2358,16 @@ play-voice (global-int f8007)
 label_00008378
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おそらくガイダル商会が魔族や魔獣を"
 display-furigana 0 "使役" "しえき"
 show-text 0 "できているのは、そういった理由からでしょう」"
+*/
+// 输入原文：「盖达鲁商会之所以能驱使魔族与魔兽，恐怕正是出于这样的缘故吧。」
+show-text 0 @"「盖达鲁商会之所以能驱使魔族与魔兽，恐怕正是出于这"
+end-text-line 0
+show-text 0 @"样的缘故吧。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2301,7 +2395,14 @@ label_000084dc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そういえば、ここはインフルース王国ではないと、そう言っていたな。ベルガラード王国の領地内であり、フィユシア教の影響は薄いと。"
+*/
+// 输入原文：说起来，确实有人说过这里不属于因夫鲁斯王国。这里在贝尔加拉德王国内，菲优希亚教的影响很薄弱。
+show-text 0 @"说起来，确实有人说过这里不属于因夫鲁斯王国。这里在"
+end-text-line 0
+show-text 0 @"贝尔加拉德王国内，菲优希亚教的影响很薄弱。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2324,11 +2425,16 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "」"
+*/
+// 输入原文：「黑暗眷属……」
+show-text 0 @"「黑暗眷属……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2356,11 +2462,18 @@ label_00008788
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "』とは、秩序を重んじる魔族や、人間族社会を追われてきた者たちによる集団の総称だったはずだ。"
+*/
+// 输入原文：所谓『黑暗眷属』，应当是重视秩序的魔族，以及被人族社会驱逐之人所结成的群体的总称。
+show-text 0 @"所谓『黑暗眷属』，应当是重视秩序的魔族，以及被人族"
+end-text-line 0
+show-text 0 @"社会驱逐之人所结成的群体的总称。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2486,6 +2599,7 @@ play-voice (global-int f8007)
 label_00008f4c
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -2493,6 +2607,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』という組織も、そちらの方面で名をはせているのですわ」"
+*/
+// 输入原文：「名为『魔械封炼之匠』的组织，在那个圈子里也很有名呢。」
+show-text 0 @"「名为『魔械封炼之匠』的组织，在那个圈子里也"
+end-text-line 0
+show-text 0 @"很有名呢。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2618,11 +2738,18 @@ play-voice (global-int f8007)
 label_00009728
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「"
 display-furigana 0 "曰" "いわ"
 show-text 0 "く罪人や没落貴族、獣人や魔族の"
 display-furigana 0 "末裔" "まつえい"
 show-text 0 "が集まって一大勢力になっていると」"
+*/
+// 输入原文：「据说，罪人、没落贵族，以及兽人和魔族的后裔聚集起来，已成一大势力。」
+show-text 0 @"「据说，罪人、没落贵族，以及兽人和魔族的后裔聚集起"
+end-text-line 0
+show-text 0 @"来，已成一大势力。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2748,9 +2875,18 @@ play-voice (global-int f8007)
 label_00009ed4
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「盗掘品の横流しや、非合法な商品の取り扱いなどを行い、ラウロソにも影響のある『フィアスピア"
 display-furigana 0 "魔法匠合" "まほうしょうあい"
 show-text 0 "』からも苦情が来ているそうです」"
+*/
+// 输入原文：「他们倒卖盗掘品、经手非法商品等，据说连在劳罗索也颇有影响力的『菲亚斯比亚魔法匠合』都对此提出了抗议呢。」
+show-text 0 @"「他们倒卖盗掘品、经手非法商品等，据说连在劳罗"
+end-text-line 0
+show-text 0 @"索也颇有影响力的『菲亚斯比亚魔法匠合』都对此提"
+end-text-line 0
+show-text 0 @"出了抗议呢。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2778,7 +2914,12 @@ label_0000a038
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "つまり、こういうことか。"
+*/
+// 输入原文：也就是说，原来是这么回事啊。
+show-text 0 @"也就是说，原来是这么回事啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2801,6 +2942,7 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「『"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
@@ -2812,6 +2954,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』はより動きが活発になった」"
+*/
+// 输入原文：「正因为来到了黑暗眷属聚集的贝尔加拉德王国，『魔械封炼之匠』的活动才变得更加活跃。」
+show-text 0 @"「正因为来到了黑暗眷属聚集的贝尔加拉德王国，『魔械"
+end-text-line 0
+show-text 0 @"封炼之匠』的活动才变得更加活跃。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2839,7 +2987,14 @@ label_0000a374
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そして、その行動には人間族の自由を求めて、神々への反逆を起こすという一貫性がある。"
+*/
+// 输入原文：而他们的行动，有着追求人族自由、向诸神发起叛逆的一贯性。
+show-text 0 @"而他们的行动，有着追求人族自由、向诸神发起叛"
+end-text-line 0
+show-text 0 @"逆的一贯性。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2862,6 +3017,7 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「つまりガイダルたちは、元々"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "の衰亡を願う勢力『"
@@ -2869,6 +3025,12 @@ display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "』だったってことか」"
+*/
+// 输入原文：「也就是说，盖达鲁他们原本就是盼着现神衰亡的势力——『黑暗眷属』啊」
+show-text 0 @"「也就是说，盖达鲁他们原本就是盼着现神衰亡的势力—"
+end-text-line 0
+show-text 0 @"—『黑暗眷属』啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2891,6 +3053,7 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この場所へ追いやられたと言っても、『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -2898,6 +3061,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』は同じ思想を持つ仲間と合流できたってことになる訳だ」"
+*/
+// 输入原文：「虽说被驱逐到了这个地方，但『魔械封炼之匠』也就等于与志同道合的同伴会合了。」
+show-text 0 @"「虽说被驱逐到了这个地方，但『魔械封炼之匠』也就等"
+end-text-line 0
+show-text 0 @"于与志同道合的同伴会合了。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3023,7 +3192,14 @@ play-voice (global-int f8007)
 label_0000adf8
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「酷い誤解だ。そう見えるというだけで、闇陣営の一味だと認識される」"
+*/
+// 输入原文：「真是严重的误会。仅仅因为看起来像，就被视作黑暗阵营的一伙。」
+show-text 0 @"「真是严重的误会。仅仅因为看起来像，就被视作黑暗阵"
+end-text-line 0
+show-text 0 @"营的一伙。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3051,7 +3227,12 @@ label_0000af2c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "その推測に、割り込むように声が響いた。"
+*/
+// 输入原文：仿佛要打断这份推测一般，一道声音响了起来。
+show-text 0 @"仿佛要打断这份推测一般，一道声音响了起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -3230,6 +3411,7 @@ play-voice (global-int f8007)
 label_0000bb4c
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そもそも『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -3237,6 +3419,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』は一族の血を継がせる為に作られた組織だ。アヴァロ君、君もその意思を持って生を受けたんだよ」"
+*/
+// 输入原文：「说到底，『魔械封炼之匠』是为了延续一族血脉而创建的组织。阿瓦罗，你也是带着这份意志出生的哦。」
+show-text 0 @"「说到底，『魔械封炼之匠』是为了延续一族血脉而创建"
+end-text-line 0
+show-text 0 @"的组织。阿瓦罗，你也是带着这份意志出生的哦。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3362,11 +3550,18 @@ play-voice (global-int f8007)
 label_0000c328
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "と我々では思想が違う。仲間になったつもりなどない、使える者は使ってやっているがね」"
+*/
+// 输入原文：「黑暗眷属与我们思想不同。我可没打算跟他们成为同伴，不过是有可用之人就拿来用罢了。」
+show-text 0 @"「黑暗眷属与我们思想不同。我可没打算跟他们成为同伴"
+end-text-line 0
+show-text 0 @"，不过是有可用之人就拿来用罢了。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3394,7 +3589,12 @@ label_0000c4bc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "まるで狙ったような瞬間に、ガイダルはいつも現れる。"
+*/
+// 输入原文：仿佛算准了时机似的，盖达鲁总是在这种时刻现身。
+show-text 0 @"仿佛算准了时机似的，盖达鲁总是在这种时刻现身。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3417,7 +3617,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そう言っても、やっていることは同じなんだろう」"
+*/
+// 输入原文：「……话虽这么说，你们干的事不还是一样的吧」
+show-text 0 @"「……话虽这么说，你们干的事不还是一样的吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3543,7 +3748,14 @@ play-voice (global-int f8007)
 label_0000cd20
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「君に説明しても分からないだろうけれど、我々は寄せ集めの集団とは違うんだよ」"
+*/
+// 输入原文：「就算跟你解释你也不会明白吧，不过我们可不是那种东拼西凑的乌合之众哦。」
+show-text 0 @"「就算跟你解释你也不会明白吧，不过我们可不是那种东"
+end-text-line 0
+show-text 0 @"拼西凑的乌合之众哦。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -3679,9 +3891,14 @@ play-voice (global-int f8007)
 label_0000d4fc
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「私たちは、なによりも『"
 display-furigana 0 "血脈" "けつみゃく"
 show-text 0 "』を重んじる」"
+*/
+// 输入原文：「我们最重视的，莫过于『血脉』。」
+show-text 0 @"「我们最重视的，莫过于『血脉』。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3807,9 +4024,16 @@ play-voice (global-int f8007)
 label_0000dc78
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「誇り高き血を持つ者こそが、変わりなき思想を継いでいけるのだ。人間族を解放するという、"
 display-furigana 0 "崇高" "すうこう"
 show-text 0 "なる使命をね」"
+*/
+// 输入原文：「唯有身怀高傲之血者，方能继承那不变的思想。也就是解放人族这一崇高的使命啊。」
+show-text 0 @"「唯有身怀高傲之血者，方能继承那不变的思想。也就是"
+end-text-line 0
+show-text 0 @"解放人族这一崇高的使命啊。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3935,7 +4159,12 @@ play-voice (global-int f8007)
 label_0000e3f4
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この地に追いやられてもなお、我らの活動は終わらない」"
+*/
+// 输入原文：「即使被驱逐到这片土地，我等的活动也绝不会终结。」
+show-text 0 @"「即使被驱逐到这片土地，我等的活动也绝不会终结。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -4071,7 +4300,14 @@ play-voice (global-int f8007)
 label_0000ebd0
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィユシア教の監視をかいくぐり、我々は長い年月をかけて、インフルース王国に根を伸ばしてきた」"
+*/
+// 输入原文：「我等避开菲优希亚教的监视，耗费漫长岁月，将根基伸入了因夫鲁斯王国。」
+show-text 0 @"「我等避开菲优希亚教的监视，耗费漫长岁月，将根基伸"
+end-text-line 0
+show-text 0 @"入了因夫鲁斯王国。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -4207,7 +4443,14 @@ play-voice (global-int f8007)
 label_0000f3ac
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「果ては王族内にすら、我らの血が広がっている。憎きエルフ族も、純血を保つという誇りを汚してやった。クク」"
+*/
+// 输入原文：「到头来，就连王族内部都遍布着我等的血脉。可恨的仙灵族，维系纯血的那份自豪也被我等玷污了。呵呵。」
+show-text 0 @"「到头来，就连王族内部都遍布着我等的血脉。可恨的仙"
+end-text-line 0
+show-text 0 @"灵族，维系纯血的那份自豪也被我等玷污了。呵呵。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4230,11 +4473,18 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうにも理解できないな。外から見ると、"
 display-furigana 0 "闇夜" "やみよ"
 show-text 0 "の"
 display-furigana 0 "眷属" "けんぞく"
 show-text 0 "と同じに見えるぜ」"
+*/
+// 输入原文：「实在无法理解啊。从外面看，你们跟黑暗眷属没什么两样哦。」
+show-text 0 @"「实在无法理解啊。从外面看，你们跟黑暗眷属没什"
+end-text-line 0
+show-text 0 @"么两样哦。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4262,7 +4512,12 @@ label_0000f640
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『血脈』を継いでいるということが、そんなにも重要なことなのだろうか。"
+*/
+// 输入原文：继承了『血脉』这件事，真有那么重要吗。
+show-text 0 @"继承了『血脉』这件事，真有那么重要吗。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4388,7 +4643,14 @@ play-voice (global-int f8007)
 label_0000fda4
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「酷いね。君だって同じ血を継ぐ者だろう。半分も、その身に流れている」"
+*/
+// 输入原文：「真过分呢。你不也是继承同一血脉之人吗。有一半，正流淌在你身上。」
+show-text 0 @"「真过分呢。你不也是继承同一血脉之人吗。有一半，正"
+end-text-line 0
+show-text 0 @"流淌在你身上。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4514,7 +4776,12 @@ play-voice (global-int f8007)
 label_000104f0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「アヴァロの、血」"
+*/
+// 输入原文：「…………阿瓦罗的、血……」
+show-text 0 @"「…………阿瓦罗的、血……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4537,7 +4804,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィア？」"
+*/
+// 输入原文：「菲亚……？」
+show-text 0 @"「菲亚……？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4565,9 +4837,16 @@ label_00010724
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "フィアは小さくそう"
 display-furigana 0 "呟" "つぶ"
 show-text 0 "いたあと、重々しい顔をして身体を震わせている。"
+*/
+// 输入原文：菲亚小声呢喃了这么一句后，神色沉重，身体不住地颤抖。
+show-text 0 @"菲亚小声呢喃了这么一句后，神色沉重，身体不住"
+end-text-line 0
+show-text 0 @"地颤抖。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4595,7 +4874,12 @@ label_000108a0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "なんだかまるで、なにかを恐がっているようだった。"
+*/
+// 输入原文：那模样，简直就像在害怕着什么。
+show-text 0 @"那模样，简直就像在害怕着什么。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -4731,7 +5015,14 @@ play-voice (global-int f8007)
 label_00011094
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「光栄に思いたまえ。君が偉大なる血脈を継いでいなければ、神と出会うことすらなかったのだから」"
+*/
+// 输入原文：「引以为荣吧。若非你继承了这伟大的血脉，你甚至不会与神明相遇。」
+show-text 0 @"「引以为荣吧。若非你继承了这伟大的血脉，你甚至不会"
+end-text-line 0
+show-text 0 @"与神明相遇。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4754,7 +5045,12 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺が血を継いでいたから、城砦を起動できたと言いたいのか」"
+*/
+// 输入原文：「你是想说，正因为继承了血脉，我才能启动城砦吗」
+show-text 0 @"「你是想说，正因为继承了血脉，我才能启动城砦吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4880,7 +5176,14 @@ play-voice (global-int f8007)
 label_000118e0
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうだ、一族の血に導かれグアラクーナ城砦へと辿り着いたのだろう？」"
+*/
+// 输入原文：「没错。你是被一族之血引导，才抵达古亚拉库娜城砦的吧？」
+show-text 0 @"「没错。你是被一族之血引导，才抵达古亚拉库娜"
+end-text-line 0
+show-text 0 @"城砦的吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4908,7 +5211,14 @@ label_00011a14
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "違う。俺がインフルース王国で城砦の調査仕事を受けたのは、ただの偶然だ。"
+*/
+// 输入原文：不对。我在因夫鲁斯王国接下城砦调查工作，纯粹只是偶然。
+show-text 0 @"不对。我在因夫鲁斯王国接下城砦调查工作，纯粹"
+end-text-line 0
+show-text 0 @"只是偶然。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4936,7 +5246,12 @@ label_00011b60
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そう口にすることは、うつむくフィアの顔を見るとできなかった。"
+*/
+// 输入原文：看着低垂着头的菲亚的脸，我终究没能把这句话说出口。
+show-text 0 @"看着低垂着头的菲亚的脸，我终究没能把这句话说出口。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -5072,11 +5387,18 @@ play-voice (global-int f8007)
 label_00012354
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「我らが思想は、相容れないはずの"
 display-furigana 0 "現神" "うつつかみ"
 show-text 0 "すら"
 display-furigana 0 "惹" "ひ"
 show-text 0 "かれていく。その証拠が、目の前にある」"
+*/
+// 输入原文：「我等的思想，连理应无法相容的现神都会被吸引。而证据，就在眼前。」
+show-text 0 @"「我等的思想，连理应无法相容的现神都会被吸引。而证"
+end-text-line 0
+show-text 0 @"据，就在眼前。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5202,7 +5524,14 @@ play-voice (global-int f8007)
 label_00012b00
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィアさん、貴女は誇りに想っていい。過去に我ら一族と志を同じくし、光の陣営と戦ったことを」"
+*/
+// 输入原文：「菲亚，你大可引以为傲。为过去曾与我等一族志同道合、与光之阵营战斗过的事。」
+show-text 0 @"「菲亚，你大可引以为傲。为过去曾与我等一族志同道合"
+end-text-line 0
+show-text 0 @"、与光之阵营战斗过的事。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5230,11 +5559,18 @@ label_00012c34
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ガイダルに話しかけられるたび、フィアは過去の自分を思い出そうとして、ぎゅっと目を"
 display-furigana 0 "瞑" "つむ"
 show-text 0 "り、額に"
 display-furigana 0 "皺" "しわ"
 show-text 0 "が寄る。"
+*/
+// 输入原文：每当被盖达鲁搭话，菲亚都会试图回想过去的自己，紧紧闭上眼睛，额头蹙起皱纹。
+show-text 0 @"每当被盖达鲁搭话，菲亚都会试图回想过去的自己，紧紧"
+end-text-line 0
+show-text 0 @"闭上眼睛，额头蹙起皱纹。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -5370,7 +5706,14 @@ play-voice (global-int f8007)
 label_00013488
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうかな。貴女さえ良ければ、もう一度手を取り合うことだってできるはずだ」"
+*/
+// 输入原文：「怎么样？只要你愿意，我们本可以再一次携手共进的。」
+show-text 0 @"「怎么样？只要你愿意，我们本可以再一次携手共"
+end-text-line 0
+show-text 0 @"进的。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5496,7 +5839,14 @@ play-voice (global-int f8007)
 label_00013bd4
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だって私たちは、争いを推奨している訳じゃないただ少しばかりの自由を、求めているだけなのだから」"
+*/
+// 输入原文：「毕竟我们并非在提倡争斗——我们只不过是在追寻些许自由罢了。」
+show-text 0 @"「毕竟我们并非在提倡争斗——我们只不过是在追寻些许"
+end-text-line 0
+show-text 0 @"自由罢了。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5622,7 +5972,12 @@ play-voice (global-int f8007)
 label_00014320
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わ、私はみんなをっ」"
+*/
+// 输入原文：「……我、我……大家……」
+show-text 0 @"「……我、我……大家……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5650,7 +6005,12 @@ label_00014454
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ごくりと喉を鳴らし、フィアは無理やりに言葉を出そうと唇を震わせている。"
+*/
+// 输入原文：菲亚咽了口唾沫，双唇颤抖着，想要勉强挤出话语。
+show-text 0 @"菲亚咽了口唾沫，双唇颤抖着，想要勉强挤出话语。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5673,7 +6033,14 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ガイダル、これ以上フィアに話しかけるんじゃねぇ。もう交渉は断ったはずだ」"
+*/
+// 输入原文：「盖达鲁，别再跟菲亚说话了。谈判我们早就已经回绝了。」
+show-text 0 @"「盖达鲁，别再跟菲亚说话了。谈判我们早就已经"
+end-text-line 0
+show-text 0 @"回绝了。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5696,6 +6063,7 @@ call label_00018e88
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ガイダル商会も『"
 display-furigana 0 "魔" "マ"
 show-text 0 "シキ"
@@ -5703,6 +6071,12 @@ display-furigana 0 "封錬" "フウレン"
 show-text 0 "ノ"
 display-furigana 0 "匠" "ショウ"
 show-text 0 "』も、まとめてここで終わってもらう」"
+*/
+// 输入原文：「盖达鲁商会也好，『魔械封炼之匠』也好，就一起在这里了结吧。」
+show-text 0 @"「盖达鲁商会也好，『魔械封炼之匠』也好，就一起在这"
+end-text-line 0
+show-text 0 @"里了结吧。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8
@@ -5838,7 +6212,14 @@ play-voice (global-int f8007)
 label_00014ed8
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「クク、恐いね。ではそうさせない為に、私も動かせてもらおう」"
+*/
+// 输入原文：「呵呵，真可怕呢。那么，为了不让它发生，我也该动起来了。」
+show-text 0 @"「呵呵，真可怕呢。那么，为了不让它发生，我也该"
+end-text-line 0
+show-text 0 @"动起来了。」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000165b8

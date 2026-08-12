@@ -627,16 +627,16 @@ call label_00008b28
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00008b28
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1329,7 +1329,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ターン開始イベントだ」"
+*/
+// 输入原文：「回合开始事件」
+show-text 0 @"「回合开始事件」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1352,7 +1357,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おう」"
+*/
+// 输入原文：「哦」
+show-text 0 @"「哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1435,7 +1445,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「移動開始だよ」"
+*/
+// 输入原文：「开始移动了哦！」
+show-text 0 @"「开始移动了哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1458,7 +1473,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「緊張するな」"
+*/
+// 输入原文：「别紧张啊」
+show-text 0 @"「别紧张啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1539,7 +1559,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「移動終わり」"
+*/
+// 输入原文：「移动结束」
+show-text 0 @"「移动结束」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1562,7 +1587,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まだだ、まだ（行動は）終わらんよ」"
+*/
+// 输入原文：「还没呢，行动还没完哦」
+show-text 0 @"「还没呢，行动还没完哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1643,7 +1673,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「配置物踏んだ」"
+*/
+// 输入原文：「踩到配置物了」
+show-text 0 @"「踩到配置物了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1666,7 +1701,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「処理実装保留中」"
+*/
+// 输入原文：「处理实装保留中」
+show-text 0 @"「处理实装保留中」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1747,7 +1787,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いざ尋常に」"
+*/
+// 输入原文：「来吧，堂堂正正地一战！」
+show-text 0 @"「来吧，堂堂正正地一战！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1770,7 +1815,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「勝負！」"
+*/
+// 输入原文：「一决胜负！」
+show-text 0 @"「一决胜负！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1851,7 +1901,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くにへ　かえるがいい」"
+*/
+// 输入原文：「回你的国家去吧」
+show-text 0 @"「回你的国家去吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1874,7 +1929,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おまえにも　かぞくがいるだろう」"
+*/
+// 输入原文：「你也有家人吧……」
+show-text 0 @"「你也有家人吧……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -1955,7 +2015,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「戦闘敗北」"
+*/
+// 输入原文：「战斗败北」
+show-text 0 @"「战斗败北」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1978,7 +2043,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「次は頑張ろう」"
+*/
+// 输入原文：「下次再加油吧」
+show-text 0 @"「下次再加油吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -2075,7 +2145,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ゲームオーバーか」"
+*/
+// 输入原文：「游戏结束了啊……」
+show-text 0 @"「游戏结束了啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2098,7 +2173,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「セーブは禁止だな」"
+*/
+// 输入原文：「保存是被禁止的啊」
+show-text 0 @"「保存是被禁止的啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc
@@ -2180,7 +2260,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「行動終了だ」"
+*/
+// 输入原文：「行动结束」
+show-text 0 @"「行动结束」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2203,7 +2288,12 @@ call label_0000bc6c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この後の挙動は環境設定次第だな」"
+*/
+// 输入原文：「之后的行为就看环境设定了啊」
+show-text 0 @"「之后的行为就看环境设定了啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008cbc

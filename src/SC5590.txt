@@ -627,16 +627,16 @@ call label_00006be4
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00006be4
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,7 +1303,14 @@ call label_00008f74
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「みんな、コイツを倒せば全てが分かるはずだ！　全力で行くぞぉっ」"
+*/
+// 输入原文：「大家，只要打倒这家伙，一切应该就能真相大白！　全力上啊——！」
+show-text 0 @"「大家，只要打倒这家伙，一切应该就能真相大白！　全"
+end-text-line 0
+show-text 0 @"力上啊——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000093f4
@@ -1457,7 +1464,14 @@ play-voice (global-int f8007)
 label_000053b0
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いよいよだ。ようやく一族の悲願が叶う！　誰にも邪魔などさせはしない！」"
+*/
+// 输入原文：「终于到了这一刻。吾族的夙愿终于要实现了……！　谁也别想妨碍我！」
+show-text 0 @"「终于到了这一刻。吾族的夙愿终于要实现了……！　谁"
+end-text-line 0
+show-text 0 @"也别想妨碍我！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000099fc
@@ -1488,7 +1502,14 @@ call label_00008f74
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これが最後の戦いだ！　神を封じ込める魔石を破壊して、過去から続く戦争を終わらせるぞ！」"
+*/
+// 输入原文：「这就是最后的战斗！　破坏封印着神的魔石，终结这场从过去延续至今的战争吧！」
+show-text 0 @"「这就是最后的战斗！　破坏封印着神的魔石，终结这场"
+end-text-line 0
+show-text 0 @"从过去延续至今的战争吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000093f4
@@ -1642,7 +1663,14 @@ play-voice (global-int f8007)
 label_00005dac
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ククク、実に愚かだね。神の力を得た私には、もう誰も敵わないというのに！」"
+*/
+// 输入原文：「呵呵呵，真是愚蠢呢。明明得到神之力的我，已经无人能敌了！」
+show-text 0 @"「呵呵呵，真是愚蠢呢。明明得到神之力的我，已经无"
+end-text-line 0
+show-text 0 @"人能敌了！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000099fc
@@ -1673,9 +1701,16 @@ call label_00008f74
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィアの姿を"
 display-furigana 0 "騙" "かた"
 show-text 0 "りやがって！　俺たちは城砦を止めるんだ、そこをどけぇ！」"
+*/
+// 输入原文：「竟敢冒充菲亚的样子……！　我们要阻止城砦，快给我让开！」
+show-text 0 @"「竟敢冒充菲亚的样子……！　我们要阻止城砦，快"
+end-text-line 0
+show-text 0 @"给我让开！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000093f4

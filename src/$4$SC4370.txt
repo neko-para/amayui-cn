@@ -627,16 +627,16 @@ call label_0000ac54
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000ac54
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,9 +1303,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここが"
 display-furigana 0 "件" "くだん"
 show-text 0 "のサンバグ族が居たっていう土地か」"
+*/
+// 输入原文：「这里就是传说中桑巴格族曾经居住过的土地吗」
+show-text 0 @"「这里就是传说中桑巴格族曾经居住过的土地吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1328,7 +1333,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「必要以上には荒らされていないようだけれど、どうして彼らは居なくなったんだ？」"
+*/
+// 输入原文：「虽然看起来没有被过度破坏，但他们为什么会消失了呢？」
+show-text 0 @"「虽然看起来没有被过度破坏，但他们为什么会消"
+end-text-line 0
+show-text 0 @"失了呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -1474,7 +1486,16 @@ play-voice (global-int f8007)
 label_000054a0
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「質の良い酒を作る水精サンバグ一族の土地だったが、次第に取引していたフジミル商会に吸収されていき、時代と共に姿を消したようだ」"
+*/
+// 输入原文：「这里曾是酿造优质美酒的水精灵桑巴格一族的土地，但他们渐渐被与之交易的弗吉米尔商会吞并，随着时代变迁销声匿迹了」
+show-text 0 @"「这里曾是酿造优质美酒的水精灵桑巴格一族的土地，但"
+end-text-line 0
+show-text 0 @"他们渐渐被与之交易的弗吉米尔商会吞并，随着时代变迁"
+end-text-line 0
+show-text 0 @"销声匿迹了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -1610,7 +1631,16 @@ play-voice (global-int f8007)
 label_00005c7c
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だが、彼らが造った半地下状の迷宮内には、酒造りに欠かせない植物や、その製法を記した石版などがあるという話だ。おそらくまだ持ち出されてはいないだろう」"
+*/
+// 输入原文：「不过，听说他们建造的半地下迷宫里，还留有酿酒不可或缺的植物，以及记载着酿法的石板之类。那些恐怕还没被人带走」
+show-text 0 @"「不过，听说他们建造的半地下迷宫里，还留有酿酒不"
+end-text-line 0
+show-text 0 @"可或缺的植物，以及记载着酿法的石板之类。那些恐怕"
+end-text-line 0
+show-text 0 @"还没被人带走」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1633,7 +1663,12 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ん？　それはどうしてだ？」"
+*/
+// 输入原文：「嗯？　那是为什么——」
+show-text 0 @"「嗯？　那是为什么——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1656,7 +1691,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そんなに有益な資料や素材が眠っているのなら、探索されている方が普通だと思うんだけど」"
+*/
+// 输入原文：「既然沉睡着那么有用的资料和素材，按理说早就该有人来探索了才对——」
+show-text 0 @"「既然沉睡着那么有用的资料和素材，按理说早就该有人"
+end-text-line 0
+show-text 0 @"来探索了才对——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -1792,7 +1834,14 @@ play-voice (global-int f8007)
 label_00006658
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「危険だからだ。この迷宮は手強い魔物が多く、許可のない者が立ち入らないよう封鎖されている」"
+*/
+// 输入原文：「因为很危险。这座迷宫里凶悍的魔物很多，为防未经许可者擅入，已被封锁起来」
+show-text 0 @"「因为很危险。这座迷宫里凶悍的魔物很多，为防未经许"
+end-text-line 0
+show-text 0 @"可者擅入，已被封锁起来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1815,7 +1864,12 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お、俺たちが入っても大丈夫なのか？」"
+*/
+// 输入原文：「我、我们进去也没问题吗？」
+show-text 0 @"「我、我们进去也没问题吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -1951,7 +2005,14 @@ play-voice (global-int f8007)
 label_00006f34
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、騎士団所属の私がいるから問題はない。さあ行こう！　そして上質な酒を造るのだ！」"
+*/
+// 输入原文：「呵呵，有身为骑士团一员的我在，不会有问题。来吧，出发！去酿造上等的美酒！」
+show-text 0 @"「呵呵，有身为骑士团一员的我在，不会有问题。来吧，"
+end-text-line 0
+show-text 0 @"出发！去酿造上等的美酒！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1974,7 +2035,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「酒のことだからか、普段よりも熱いな。よし、張り切って探索といこうか！」"
+*/
+// 输入原文：「果然一提到酒，你就比平时更来劲啊——。好，那就卯足干劲去探索一番吧！」
+show-text 0 @"「果然一提到酒，你就比平时更来劲啊——。好，那就卯"
+end-text-line 0
+show-text 0 @"足干劲去探索一番吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e118
@@ -2006,7 +2074,12 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「と言っても目の前にある結界をどうにかしないといけないみたいだな」"
+*/
+// 输入原文：「话虽如此，眼前的结界看来不设法解决不行啊」
+show-text 0 @"「话虽如此，眼前的结界看来不设法解决不行啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e464
@@ -2054,7 +2127,12 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「辺りに気になるものもあるし、そこから探りを入れてみよう」"
+*/
+// 输入原文：「周围也有让人在意的东西，就从那边开始探探看吧」
+show-text 0 @"「周围也有让人在意的东西，就从那边开始探探看吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -2098,7 +2176,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うっ！？　さ、酒くさいな。それに、なんだかここには、怨念のようなものが渦巻いているみたいだ」"
+*/
+// 输入原文：「呜！？　好、好重的酒味啊——。而且，这里似乎还有类似怨念的东西在翻涌」
+show-text 0 @"「呜！？　好、好重的酒味啊——。而且，这里似乎还有"
+end-text-line 0
+show-text 0 @"类似怨念的东西在翻涌」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -2244,7 +2329,14 @@ play-voice (global-int f8007)
 label_00007e94
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なるほど、怨念。奧から強烈な敵意を感じるのはそのためか」"
+*/
+// 输入原文：「原来如此，怨念——。从深处感受到的强烈敌意，就是因为这个吗」
+show-text 0 @"「原来如此，怨念——。从深处感受到的强烈敌意，就是"
+end-text-line 0
+show-text 0 @"因为这个吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2370,7 +2462,14 @@ play-voice (global-int f8007)
 label_000085e0
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「迷宮の番人か、それともサンバグ族がいなくなった後に居着いた力ある精霊か」"
+*/
+// 输入原文：「是迷宫的看守，还是桑巴格族消失后在此安家的强大精灵呢——」
+show-text 0 @"「是迷宫的看守，还是桑巴格族消失后在此安家的强大"
+end-text-line 0
+show-text 0 @"精灵呢——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2393,7 +2492,12 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どちらにせよ、侵入者である俺たちを排除する気満々だな」"
+*/
+// 输入原文：「不管怎样，它都是铁了心要排除我们这些入侵者啊」
+show-text 0 @"「不管怎样，它都是铁了心要排除我们这些入侵者啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -2529,7 +2633,14 @@ play-voice (global-int f8007)
 label_00008ebc
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、望むところだ。今の私を止められる者など存在しない全て蹴散らしてくれる」"
+*/
+// 输入原文：「呵呵，正合我意。如今能拦住我的人，一个都不存在——把你们统统踢飞！」
+show-text 0 @"「呵呵，正合我意。如今能拦住我的人，一个都不存在—"
+end-text-line 0
+show-text 0 @"—把你们统统踢飞！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ade8
@@ -2665,9 +2776,14 @@ play-voice (global-int f8007)
 label_00009698
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そこを"
 display-furigana 0 "退" "ど"
 show-text 0 "いてもらおう。私の酒造りを邪魔立てするならば、容赦はしない！」"
+*/
+// 输入原文：「给我退开。若敢妨碍我酿酒，我绝不会手下留情！」
+show-text 0 @"「给我退开。若敢妨碍我酿酒，我绝不会手下留情！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2793,7 +2909,14 @@ play-voice (global-int f8007)
 label_00009e14
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「行くぞ！　サンバグ族が持つ秘伝を入手し、城砦にて極上の酒を造り出すのだ！！」"
+*/
+// 输入原文：「上吧！取得桑巴格族所藏的秘传，在城砦酿造出极品美酒！！」
+show-text 0 @"「上吧！取得桑巴格族所藏的秘传，在城砦酿造出极"
+end-text-line 0
+show-text 0 @"品美酒！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2816,7 +2939,14 @@ call label_0000cfe4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ご、号令まで取られてしまった。熱いぜキスニル！　俺も全力で付いていくぞっ」"
+*/
+// 输入原文：「居、连号令都被你抢先了——。真有干劲啊姬斯尼尔！我也会全力跟上你的！」
+show-text 0 @"「居、连号令都被你抢先了——。真有干劲啊姬斯尼尔！"
+end-text-line 0
+show-text 0 @"我也会全力跟上你的！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e118

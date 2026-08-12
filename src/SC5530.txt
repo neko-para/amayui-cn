@@ -627,16 +627,16 @@ call label_0000d880
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000d880
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1477,7 +1477,14 @@ play-voice (global-int f8007)
 label_000057e4
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「み、皆さん、惑わされないでください！　わたしが本物のカトリトです！」"
+*/
+// 输入原文：「大、大家，请不要被迷惑！　我才是真正的卡特利特……！」
+show-text 0 @"「大、大家，请不要被迷惑！　我才是真正的卡特"
+end-text-line 0
+show-text 0 @"利特……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1500,7 +1507,14 @@ call label_00010154
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうなってんだよ。まさかこの中に本物がいるっていうのか？」"
+*/
+// 输入原文：「这到底是怎么回事啊。难道说，这些人里面真的有本尊吗？」
+show-text 0 @"「这到底是怎么回事啊。难道说，这些人里面真的"
+end-text-line 0
+show-text 0 @"有本尊吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1523,7 +1537,14 @@ call label_00010154
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「確かめる方法は、攻撃してみるしかないのか。仲間の、しかも女の子に手を上げるなんてすげぇ気が向かないぜ」"
+*/
+// 输入原文：「要确认的方法，难道只有动手攻击一试吗。对同伴——而且还是女孩子出手，我可真提不起劲啊」
+show-text 0 @"「要确认的方法，难道只有动手攻击一试吗。对同伴——"
+end-text-line 0
+show-text 0 @"而且还是女孩子出手，我可真提不起劲啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000105d4
@@ -1707,7 +1728,12 @@ play-voice (global-int f8007)
 label_000066a8
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わ、わたしがカトリトです。皆さんなら分かってくれますよね？」"
+*/
+// 输入原文：「我、我是卡特利特。大家一定能认出我的，对吧？」
+show-text 0 @"「我、我是卡特利特。大家一定能认出我的，对吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1833,7 +1859,12 @@ play-voice (global-int f8007)
 label_00006df4
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これは、私たちに本物を見極めろということ？」"
+*/
+// 输入原文：「……这是要我们分辨出真正的本尊吗？」
+show-text 0 @"「……这是要我们分辨出真正的本尊吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1959,7 +1990,12 @@ play-voice (global-int f8007)
 label_00007540
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「たとえ偽者だとしても、顔見知りを攻撃するのはあまり気のいいものじゃないわね」"
+*/
+// 输入原文：「就算是冒牌货，要攻击熟识之人也实在称不上愉快呢」
+show-text 0 @"「就算是冒牌货，要攻击熟识之人也实在称不上愉快呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2085,7 +2121,14 @@ play-voice (global-int f8007)
 label_00007c8c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これって、カトリトの試練ではなく私たちのものじゃないかしら」"
+*/
+// 输入原文：「这与其说是卡特利特的试炼，不如说是我们的试炼吧？」
+show-text 0 @"「这与其说是卡特利特的试炼，不如说是我们的试"
+end-text-line 0
+show-text 0 @"炼吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000105d4
@@ -2269,7 +2312,12 @@ play-voice (global-int f8007)
 label_00008950
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うぅ怖いです。早く偽者を倒しちゃってください」"
+*/
+// 输入原文：「呜呜……好可怕。请快点把冒牌货打倒吧」
+show-text 0 @"「呜呜……好可怕。请快点把冒牌货打倒吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2395,7 +2443,14 @@ play-voice (global-int f8007)
 label_0000909c
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふむ。見る限りでは、外見や口調などに差異はないようですわね」"
+*/
+// 输入原文：「唔姆……。就本小姐所见，外表与说话方式都没有差异呢」
+show-text 0 @"「唔姆……。就本小姐所见，外表与说话方式都没"
+end-text-line 0
+show-text 0 @"有差异呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2521,7 +2576,14 @@ play-voice (global-int f8007)
 label_000097e8
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「しかしこのラウロソ領主である私リシュエンツェーリを侮ってもらっては困ります」"
+*/
+// 输入原文：「不过，小看本小姐这位劳罗索领主莉秀恩兹利，可是会让人为难哦」
+show-text 0 @"「不过，小看本小姐这位劳罗索领主莉秀恩兹利，可是会"
+end-text-line 0
+show-text 0 @"让人为难哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000da14
@@ -2657,7 +2719,14 @@ play-voice (global-int f8007)
 label_00009fc4
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、日々触れあっていた本物の仲間を見抜くことなど容易いことですわ！」"
+*/
+// 输入原文：「呵呵，要认出朝夕相处的真正同伴，对本小姐来说轻而易举哦！」
+show-text 0 @"「呵呵，要认出朝夕相处的真正同伴，对本小姐来说轻"
+end-text-line 0
+show-text 0 @"而易举哦！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000105d4
@@ -2841,7 +2910,12 @@ play-voice (global-int f8007)
 label_0000ac88
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここは皆さんにお任せするしか」"
+*/
+// 输入原文：「这里只能拜托大家了……」
+show-text 0 @"「这里只能拜托大家了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2967,7 +3041,12 @@ play-voice (global-int f8007)
 label_0000b3d4
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これは、困りました」"
+*/
+// 输入原文：「……这，可真是难办了」
+show-text 0 @"「……这，可真是难办了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3093,7 +3172,12 @@ play-voice (global-int f8007)
 label_0000bb20
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「私は未だ彼女と交流が少なく、見分ける為の材料がない」"
+*/
+// 输入原文：「我与她至今交流尚浅，缺乏能够分辨真伪的材料」
+show-text 0 @"「我与她至今交流尚浅，缺乏能够分辨真伪的材料」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000da14
@@ -3229,7 +3313,14 @@ play-voice (global-int f8007)
 label_0000c2fc
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「真偽を確かめる方法は、倒してみるしかないですね。申し訳ありませんが、覚悟していただきます」"
+*/
+// 输入原文：「要确认真伪的方法，恐怕只有打倒一试了。……实在抱歉，还请您做好觉悟」
+show-text 0 @"「要确认真伪的方法，恐怕只有打倒一试了。……实在抱"
+end-text-line 0
+show-text 0 @"歉，还请您做好觉悟」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000105d4
@@ -3383,7 +3474,14 @@ play-voice (global-int f8007)
 label_0000cbb8
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「とと様、わたしの成長を見届けてください。とと様に勝つことで、竜族の長に相応しいと証明してみせます！」"
+*/
+// 输入原文：「爹爹，请见证我的成长。我要靠战胜爹爹，向大家证明自己配得上龙族族长之位！」
+show-text 0 @"「爹爹，请见证我的成长。我要靠战胜爹爹，向大家证明"
+end-text-line 0
+show-text 0 @"自己配得上龙族族长之位！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000105d4

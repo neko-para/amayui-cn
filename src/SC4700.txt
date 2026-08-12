@@ -627,16 +627,16 @@ call label_00012160
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00012160
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1477,7 +1477,12 @@ play-voice (global-int f8007)
 label_000057e4
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あんちゃん、止まってくれ。アレが見えるか？」"
+*/
+// 输入原文：「小哥，停一下。看到那个了吗？」
+show-text 0 @"「小哥，停一下。看到那个了吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014eb4
@@ -1633,9 +1638,16 @@ play-voice (global-int f8007)
 label_000061a0
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれは"
 display-furigana 0 "出撃門" "しゅつげきもん"
 show-text 0 "といって、制圧しておくと仲間が増えたときに、そこから出撃させることができるようになる」"
+*/
+// 输入原文：「那个叫『出击门』，压制住之后，等同伴增加时，就能从那里出击了」
+show-text 0 @"「那个叫『出击门』，压制住之后，等同伴增加时，就能"
+end-text-line 0
+show-text 0 @"从那里出击了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1761,9 +1773,14 @@ play-voice (global-int f8007)
 label_0000691c
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「逆に、出撃している仲間が出撃門に乗ると"
 display-furigana 0 "帰還" "きかん"
 show-text 0 "することが可能だ」"
+*/
+// 输入原文：「反过来，正在出击的同伴站上出击门，就可以返回了」
+show-text 0 @"「反过来，正在出击的同伴站上出击门，就可以返回了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1889,7 +1906,14 @@ play-voice (global-int f8007)
 label_00007098
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「組織に入ってないあんちゃんには関係ないかもしれんが、知っておくと良いだろう」"
+*/
+// 输入原文：「虽然对还没加入组织的小哥你来说，可能没什么关系，但知道总没坏处吧」
+show-text 0 @"「虽然对还没加入组织的小哥你来说，可能没什么关系，"
+end-text-line 0
+show-text 0 @"但知道总没坏处吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2015,7 +2039,14 @@ play-voice (global-int f8007)
 label_000077e4
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「出撃させたいときは、画面左上の『メニュー』か下の『新規出撃』ボタンから行うことができる」"
+*/
+// 输入原文：「想让他们出击的时候，从画面左上角的『菜单』或下方的『新规出击』按钮就可以操作」
+show-text 0 @"「想让他们出击的时候，从画面左上角的『菜单』或下方"
+end-text-line 0
+show-text 0 @"的『新规出击』按钮就可以操作」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2038,7 +2069,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺も工房を持とうとしている身だから、覚えておいて損はなさそうだな」"
+*/
+// 输入原文：「我也正打算开自己的工房，记住这些总没坏处啊」
+show-text 0 @"「我也正打算开自己的工房，记住这些总没坏处啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4
@@ -2122,7 +2158,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おっ、アレが壊れた遺跡だな。腕が鳴るぜ」"
+*/
+// 输入原文：「哦，那就是破损的遗迹吧。我手都痒了哦」
+show-text 0 @"「哦，那就是破损的遗迹吧。我手都痒了哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4
@@ -2319,7 +2360,14 @@ play-voice (global-int f8007)
 label_00008c10
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「一目見て分かるなんて、さすがだなあんちゃん。エルフの血は伊達じゃないってか？」"
+*/
+// 输入原文：「一眼就能看出来，真不愧是小哥。仙灵的血脉可不是白传的吧？」
+show-text 0 @"「一眼就能看出来，真不愧是小哥。仙灵的血脉可不是"
+end-text-line 0
+show-text 0 @"白传的吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2445,9 +2493,16 @@ play-voice (global-int f8007)
 label_0000935c
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「知ってるとは思うが、『"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "』スキルを装備してないと修理ができないことは忘れないでくれ」"
+*/
+// 输入原文：「我想你应该知道，但别忘了，不装备『锻梁师』技能就没法修理哦」
+show-text 0 @"「我想你应该知道，但别忘了，不装备『锻梁师』技能就"
+end-text-line 0
+show-text 0 @"没法修理哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2573,7 +2628,14 @@ play-voice (global-int f8007)
 label_00009ad8
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「スキルの装備は左上の『メニュー』ボタンからできるから、気になるなら確認してみるといい」"
+*/
+// 输入原文：「技能装备可以从左上角的『菜单』按钮进行，感兴趣的话就去确认一下吧」
+show-text 0 @"「技能装备可以从左上角的『菜单』按钮进行，感兴趣的"
+end-text-line 0
+show-text 0 @"话就去确认一下吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2596,7 +2658,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「既に装備しているから大丈夫だよ。よし、さっそく移動して作業開始だ」"
+*/
+// 输入原文：「我已经装备好了，没问题。好，马上动身开工吧」
+show-text 0 @"「我已经装备好了，没问题。好，马上动身开工吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -2840,7 +2907,12 @@ play-voice (global-int f8007)
 label_0000ac34
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あんちゃん、あそこに何か見えないか？」"
+*/
+// 输入原文：「小哥，你看那边是不是有什么东西？」
+show-text 0 @"「小哥，你看那边是不是有什么东西？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014eb4
@@ -2920,7 +2992,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちゃんと見てみないと分からないけど、何かの素材か？」"
+*/
+// 输入原文：「不仔细看看还说不准，是什么素材吗？」
+show-text 0 @"「不仔细看看还说不准，是什么素材吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3046,7 +3123,14 @@ play-voice (global-int f8007)
 label_0000b94c
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうだ。移動するときに『？』が表示されている場所に待機すると、隠されている素材を発見することができる」"
+*/
+// 输入原文：「没错。移动时，在有『？』标记的地方待机，就能发现隐藏的素材」
+show-text 0 @"「没错。移动时，在有『？』标记的地方待机，就能发现"
+end-text-line 0
+show-text 0 @"隐藏的素材」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3172,11 +3256,18 @@ play-voice (global-int f8007)
 label_0000c098
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「素材の『"
 display-furigana 0 "採取" "さいしゅ"
 show-text 0 "』は誰でもできるが、『"
 display-furigana 0 "発掘" "はっくつ"
 show-text 0 "』は名前の通り『発掘』スキルを持つ者にしかできないから注意が必要だ」"
+*/
+// 输入原文：「素材的『采集』谁都能做，但『发掘』正如其名，只有拥有『发掘』技能的人才能做，所以要注意啊」
+show-text 0 @"「素材的『采集』谁都能做，但『发掘』正如其名，只有"
+end-text-line 0
+show-text 0 @"拥有『发掘』技能的人才能做，所以要注意啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3302,9 +3393,16 @@ play-voice (global-int f8007)
 label_0000c844
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あんちゃんも『"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "』である以上、『発掘』もできるし、迷宮にある素材は何かと役に立つだろうから、見つけたら採取しておくといい」"
+*/
+// 输入原文：「小哥既然是『锻梁师』，自然也能『发掘』。迷宫里的素材总能派上用场，发现了就采集起来吧」
+show-text 0 @"「小哥既然是『锻梁师』，自然也能『发掘』。迷宫里的"
+end-text-line 0
+show-text 0 @"素材总能派上用场，发现了就采集起来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3327,7 +3425,14 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうだな。工房を持つと依頼に使うことも多そうだし、アレは採取しておくか」"
+*/
+// 输入原文：「说得也是。开了工房，做委托时也常用得上，那个就采集了吧」
+show-text 0 @"「说得也是。开了工房，做委托时也常用得上，那个"
+end-text-line 0
+show-text 0 @"就采集了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4
@@ -3584,7 +3689,12 @@ play-voice (global-int f8007)
 label_0000db0c
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あんちゃん、そろそろ疲れてきたんじゃないのか？」"
+*/
+// 输入原文：「小哥，这会儿该累了吧？」
+show-text 0 @"「小哥，这会儿该累了吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3607,7 +3717,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「確かに、慣れない所での作業だからな」"
+*/
+// 输入原文：「确实，毕竟是在不熟悉的地方干活啊」
+show-text 0 @"「确实，毕竟是在不熟悉的地方干活啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014eb4
@@ -3763,6 +3878,7 @@ play-voice (global-int f8007)
 label_0000e5c8
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だったらアレを使うといい。回復の羽といって、触れると"
 display-furigana 0 "ＨＰ" "耐久力"
 show-text 0 "、"
@@ -3770,6 +3886,17 @@ display-furigana 0 "ＳＰ" "技力"
 show-text 0 "、"
 display-furigana 0 "ＦＳ" "疲労強度"
 show-text 0 "が上限まで回復してくれるからな」"
+*/
+// 输入原文：「那就用那个吧。它叫回复之羽，碰一下，<ruby>ＨＰ<rt>耐久力</rt></ruby>、<ruby>ＳＰ<rt>技力</rt></ruby>、<ruby>ＦＳ<rt>疲劳强度</rt></ruby>就会恢复到上限哦」
+show-text 0 @"「那就用那个吧。它叫回复之羽，碰一下，"
+display-furigana 0 @"ＨＰ" @"耐久力"
+show-text 0 @"、"
+display-furigana 0 @"ＳＰ" @"技力"
+show-text 0 @"、"
+end-text-line 0
+display-furigana 0 @"ＦＳ" @"疲劳强度"
+show-text 0 @"就会恢复到上限哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3895,7 +4022,16 @@ play-voice (global-int f8007)
 label_0000eda4
 u00416120
 // FROM: 64 年老いた技師
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「儂は見たことがないんだが、回復の羽には赤いものがあるらしい。白いものと違って、一度触れると消えてしまうらしいんだが知識として覚えておいて損はないだろう」"
+*/
+// 输入原文：「我还没见过呢，不过听说回复之羽还有红色的。和白色的不同，据说碰一下就会消失……当作知识记下来总没坏处吧」
+show-text 0 @"「我还没见过呢，不过听说回复之羽还有红色的。和"
+end-text-line 0
+show-text 0 @"白色的不同，据说碰一下就会消失……当作知识记下"
+end-text-line 0
+show-text 0 @"来总没坏处吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3918,7 +4054,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かったよ。よし、回復の羽に触れてからもうひと頑張りだな」"
+*/
+// 输入原文：「知道了。好，碰一下回复之羽，再努把力吧」
+show-text 0 @"「知道了。好，碰一下回复之羽，再努把力吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4
@@ -4002,7 +4143,12 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれは何だ？　魔物が出てきているみたいだけど」"
+*/
+// 输入原文：「那是什么？好像有魔物从里面冒出来」
+show-text 0 @"「那是什么？好像有魔物从里面冒出来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4
@@ -4199,11 +4345,18 @@ play-voice (global-int f8007)
 label_000101d0
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれは『"
 display-furigana 0 "魔物" "まもの"
 show-text 0 "の"
 display-furigana 0 "渦" "うず"
 show-text 0 "』といって、一定時間経つと魔物が現れる厄介なものだ。見つけたら早めに制圧した方が良いだろう」"
+*/
+// 输入原文：「那个叫『魔物漩涡』，过一段时间就会有魔物出现，是个麻烦的东西。发现的话，还是尽早压制为好」
+show-text 0 @"「那个叫『魔物漩涡』，过一段时间就会有魔物出现，是"
+end-text-line 0
+show-text 0 @"个麻烦的东西。发现的话，还是尽早压制为好」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4329,7 +4482,14 @@ play-voice (global-int f8007)
 label_0001097c
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「制圧するには『魔物の渦』の上で待機をするだけでいい。そうしてしまえば、これ以上敵が現れることもなくなる」"
+*/
+// 输入原文：「要压制它，只要在『魔物漩涡』上待机就行。这样一来，就不会再有敌人出现了」
+show-text 0 @"「要压制它，只要在『魔物漩涡』上待机就行。这样一来"
+end-text-line 0
+show-text 0 @"，就不会再有敌人出现了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4455,11 +4615,18 @@ play-voice (global-int f8007)
 label_000110c8
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それともう一つ。『魔物の渦』の他に『"
 display-furigana 0 "出撃" "しゅつげき"
 show-text 0 "の"
 display-furigana 0 "旗" "はた"
 show-text 0 "』というものも存在する。効果に違いはないが、見た目が違うから気を付けてくれ」"
+*/
+// 输入原文：「还有一点。除了『魔物漩涡』，还有种叫『出击之旗』的东西。效果没有区别，只是外观不同，所以要注意哦」
+show-text 0 @"「还有一点。除了『魔物漩涡』，还有种叫『出击之旗』"
+end-text-line 0
+show-text 0 @"的东西。效果没有区别，只是外观不同，所以要注意哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4482,6 +4649,7 @@ call label_00014a34
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「『"
 display-furigana 0 "魔物" "まもの"
 show-text 0 "の"
@@ -4491,6 +4659,12 @@ display-furigana 0 "出撃" "しゅつげき"
 show-text 0 "の"
 display-furigana 0 "旗" "はた"
 show-text 0 "』か。とにかく、見つけたら制圧してしまえってことだな。手始めにその『魔物の渦』を封じてみるか」"
+*/
+// 输入原文：「『魔物漩涡』和『出击之旗』吗。总之，就是发现就压制掉的意思吧。先从那个『魔物漩涡』开始封印吧」
+show-text 0 @"「『魔物漩涡』和『出击之旗』吗。总之，就是发现就压"
+end-text-line 0
+show-text 0 @"制掉的意思吧。先从那个『魔物漩涡』开始封印吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000122f4

@@ -627,16 +627,16 @@ call label_00007b04
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00007b04
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1428,7 +1428,14 @@ play-voice (global-int f8007)
 label_00005270
 u00416120
 // FROM: 99 ファーブル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「インフルース王国に刃向かうことがどれだけ愚かな行為か、教えてやろう！」"
+*/
+// 输入原文：我便让你好好领教，与因夫鲁斯王国为敌是何等愚蠢的行径！
+show-text 0 @"我便让你好好领教，与因夫鲁斯王国为敌是何等愚"
+end-text-line 0
+show-text 0 @"蠢的行径！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000a858
@@ -1582,7 +1589,14 @@ play-voice (global-int f8007)
 label_00005b2c
 u00416120
 // FROM: c8 クードヴァンス
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「禁忌と化した神に従う者共よ。フィユシア教の大司教を預かる身として、グアラクーナ城砦と共に鎮めよう」"
+*/
+// 输入原文：追随那化为禁忌之神的众人啊。身为执掌菲优希亚教大司教之人，自当连同古亚拉库娜城砦，将你们一并镇压
+show-text 0 @"追随那化为禁忌之神的众人啊。身为执掌菲优希亚教大司"
+end-text-line 0
+show-text 0 @"教之人，自当连同古亚拉库娜城砦，将你们一并镇压"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1605,7 +1619,14 @@ call label_0000a3d8
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺はアンタと会って、城砦が禁忌だからって問答無用で襲いかかってくる奴ばかりじゃないんだと、嬉しかったんだけどな」"
+*/
+// 输入原文：……我原本还因为遇到你而高兴，觉得不是所有人都会因为城砦是禁忌，就不由分说地攻过来
+show-text 0 @"……我原本还因为遇到你而高兴，觉得不是所有人都会因"
+end-text-line 0
+show-text 0 @"为城砦是禁忌，就不由分说地攻过来"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1628,7 +1649,12 @@ call label_0000a3d8
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「下手な言いがかりで城砦を破壊しようとしたこと、後悔させてやるぜ！」"
+*/
+// 输入原文：敢用这种蹩脚的借口毁掉城砦，我会让你后悔的！
+show-text 0 @"敢用这种蹩脚的借口毁掉城砦，我会让你后悔的！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1754,7 +1780,12 @@ play-voice (global-int f8007)
 label_00006478
 u00416120
 // FROM: c8 クードヴァンス
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「言いがかり、か。ならば世の理不尽を乗り越え証明してみせよ」"
+*/
+// 输入原文：借口，么……。那便跨越这世间的不讲理，证明给我看吧
+show-text 0 @"借口，么……。那便跨越这世间的不讲理，证明给我看吧"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1880,7 +1911,14 @@ play-voice (global-int f8007)
 label_00006bc4
 u00416120
 // FROM: c8 クードヴァンス
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「『精域葉』で決める予定であった、禁忌でありながらも、城砦はフィユシア教の為になるのだとな」"
+*/
+// 输入原文：本预定在『精域叶』上作出议定——城砦虽是禁忌，却有益于菲优希亚教
+show-text 0 @"本预定在『精域叶』上作出议定——城砦虽是禁忌，却有"
+end-text-line 0
+show-text 0 @"益于菲优希亚教"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1903,7 +1941,14 @@ call label_0000a3d8
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なるほどな。どうしてアンタがこんな強引に戦いを仕掛けてきたのか、なんとなく意図が分かってきたぜ」"
+*/
+// 输入原文：……原来如此。我隐约明白你为什么要这么强硬地发起战斗了
+show-text 0 @"……原来如此。我隐约明白你为什么要这么强硬地"
+end-text-line 0
+show-text 0 @"发起战斗了"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1926,7 +1971,12 @@ call label_0000a3d8
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だが、まずはアンタを倒す！　みんな、全力で行くぞ！！」"
+*/
+// 输入原文：不过，先打倒你！大家，全力以赴！！
+show-text 0 @"不过，先打倒你！大家，全力以赴！！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000a858

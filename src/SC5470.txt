@@ -627,16 +627,16 @@ call label_0000ac9c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000ac9c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1418,9 +1418,14 @@ play-voice (global-int f8007)
 label_000051f0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うわぁー。き、気持ち悪いなぁ。なにこれ、"
 display-furigana 0 "幻獣" "げんじゅう"
 show-text 0 "？」"
+*/
+// 输入原文：「哇——……好、好恶心啊。这是什么呀，幻兽？」
+show-text 0 @"「哇——……好、好恶心啊。这是什么呀，幻兽？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ae30
@@ -1593,7 +1598,14 @@ play-voice (global-int f8007)
 label_00005c38
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なるほど、幻獣。さすが図体が大きいだけあって、斬り応えがある！」"
+*/
+// 输入原文：「原来如此，幻兽。不愧块头这么大，砍起来真带劲……！」
+show-text 0 @"「原来如此，幻兽。不愧块头这么大，砍起来真带"
+end-text-line 0
+show-text 0 @"劲……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1719,9 +1731,14 @@ play-voice (global-int f8007)
 label_00006384
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「目が"
 display-furigana 0 "爛々" "らんらん"
 show-text 0 "としています。騎士さんは戦うことが大好きなんですね」"
+*/
+// 输入原文：「眼睛闪闪发亮……骑士大人真的很喜欢战斗呢」
+show-text 0 @"「眼睛闪闪发亮……骑士大人真的很喜欢战斗呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1847,7 +1864,12 @@ play-voice (global-int f8007)
 label_00006b00
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「大歓迎。この形状だと、蒲焼きにして食べるのがオススメ」"
+*/
+// 输入原文：「大欢迎。这个形状，做成蒲烧来吃最推荐」
+show-text 0 @"「大欢迎。这个形状，做成蒲烧来吃最推荐」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1973,7 +1995,14 @@ play-voice (global-int f8007)
 label_0000724c
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ゲテモノは美味しいっていうよね。コレを食べる勇気は、私にはないけど」"
+*/
+// 输入原文：「都说怪东西很好吃呢。不过，我可没有吃这个的勇气就是了」
+show-text 0 @"「都说怪东西很好吃呢。不过，我可没有吃这个的"
+end-text-line 0
+show-text 0 @"勇气就是了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ae30
@@ -2110,7 +2139,14 @@ play-voice (global-int f8007)
 label_00007a34
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おそらくこれは、ラウロソへの侵入を阻む仕掛けの一つだろう。ならば私の剣で突破する。これこそ城砦に乗り込んだ意義があるというものだ」"
+*/
+// 输入原文：「这恐怕是阻挡入侵劳罗索的机关之一。那就用我的剑突破吧。这正是攻入城砦的意义所在」
+show-text 0 @"「这恐怕是阻挡入侵劳罗索的机关之一。那就用我的剑突"
+end-text-line 0
+show-text 0 @"破吧。这正是攻入城砦的意义所在」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ae30
@@ -2246,7 +2282,12 @@ play-voice (global-int f8007)
 label_00008210
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「アヴァロへ至る道を作る。皆、私に続けぇ！」"
+*/
+// 输入原文：「开辟通往阿瓦罗的道路。大家，跟我冲！」
+show-text 0 @"「开辟通往阿瓦罗的道路。大家，跟我冲！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ae30
@@ -2442,7 +2483,14 @@ play-voice (global-int f8007)
 label_00008e04
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「行く。この世界は弱肉強食。生存競争に勝つのは、イオたち！」"
+*/
+// 输入原文：「走。这个世界是弱肉强食。能在生存竞争中胜出的，是伊欧们……！」
+show-text 0 @"「走。这个世界是弱肉强食。能在生存竞争中胜出的，是"
+end-text-line 0
+show-text 0 @"伊欧们……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e160
@@ -2596,7 +2644,12 @@ play-voice (global-int f8007)
 label_000096c0
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「行きますよ！　魔法で冷却して、村を守るんです！」"
+*/
+// 输入原文：「要上了哦！用魔法冷却，保护好村子！」
+show-text 0 @"「要上了哦！用魔法冷却，保护好村子！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e160
@@ -2750,9 +2803,16 @@ play-voice (global-int f8007)
 label_00009f7c
 u00416120
 // FROM: 33 溶燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「グハハハッ、導く者を"
 display-furigana 0 "騙" "かた"
 show-text 0 "る不届き者めが！　我の炎にて燃やし尽くしてくれようぞ！」"
+*/
+// 输入原文：「咕哈哈哈哈！竟敢冒充引导者，你这放肆之徒！就用我的火焰，将你烧个精光！」
+show-text 0 @"「咕哈哈哈哈！竟敢冒充引导者，你这放肆之徒！就用我"
+end-text-line 0
+show-text 0 @"的火焰，将你烧个精光！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e160

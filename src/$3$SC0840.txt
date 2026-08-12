@@ -627,16 +627,16 @@ call label_00011210
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00011210
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1536,7 +1536,14 @@ play-voice (global-int f8007)
 label_00005ba0
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここが噂の迷宮ね。賭け事とはよく言ったものだわ、ただでは入ることができないみたい」"
+*/
+// 输入原文：「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说错——看来不花钱是进不去的」
+show-text 0 @"「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说"
+end-text-line 0
+show-text 0 @"错——看来不花钱是进不去的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1564,7 +1571,14 @@ label_00005cd4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "迷宮の扉は頑丈な造りをしており、ご丁寧に入場料を取る為の箱が用意されている。"
+*/
+// 输入原文：迷宫的门造得十分结实，还煞有介事地备好了收取入场费的箱子。
+show-text 0 @"迷宫的门造得十分结实，还煞有介事地备好了收取入"
+end-text-line 0
+show-text 0 @"场费的箱子。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1592,7 +1606,12 @@ label_00005e20
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ここにお金を入れると扉が開くんだろう。"
+*/
+// 输入原文：把钱投进去，门就会打开吧。
+show-text 0 @"把钱投进去，门就会打开吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -1733,24 +1752,29 @@ play-voice (global-int f8007)
 label_00006600
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうするの、アヴァロ隊長？」"
+*/
+// 输入原文：「该怎么办呢，阿瓦罗队长？」
+show-text 0 @"「该怎么办呢，阿瓦罗队长？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 gre (local-int 0) (global-int 8ca65) 2710
 jcc (local-int 0) ffffffff label_00007f4c
 call label_000140f4
 toString (global-string d5d) (global-int 8ca65)
-concat (global-string d5d) "入場料を払いますか？　所持金" (global-string d5d)
+concat (global-string d5d) @"要支付入场费吗？　持有金钱" (global-string d5d)
 set-string (global-string e3a) (global-string d5d)
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払う"
+set-string (local-string-ptr 0) "払う|付钱"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払わない"
+set-string (local-string-ptr 0) "払わない|不付"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1803,7 +1827,14 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「せっかく来たんだから、入ってみよう。珍しい物があるかもしれないし」"
+*/
+// 输入原文：「既然特意来了，就进去看看吧。说不定会有稀罕东西呢」
+show-text 0 @"「既然特意来了，就进去看看吧。说不定会有稀罕"
+end-text-line 0
+show-text 0 @"东西呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -1939,7 +1970,12 @@ play-voice (global-int f8007)
 label_00007230
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。では、お金を入れるわね」"
+*/
+// 输入原文：「我知道了。那我把钱投进去喽」
+show-text 0 @"「我知道了。那我把钱投进去喽」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -2008,7 +2044,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「賭け事は今の生活に影響が出るかもしれないし、入らないでおこう」"
+*/
+// 输入原文：「赌局说不定会影响现在的生活，还是别进去了吧」
+show-text 0 @"「赌局说不定会影响现在的生活，还是别进去了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -2144,7 +2185,12 @@ play-voice (global-int f8007)
 label_00007e54
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。残念だけれど、アヴァロ隊長に従うわ」"
+*/
+// 输入原文：「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」
+show-text 0 @"「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc
@@ -2183,7 +2229,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「手持ちじゃ、入場料には届かないみたいだ。また、今度来てみよう」"
+*/
+// 输入原文：「手头的钱好像不够入场费呢。改天再来吧」
+show-text 0 @"「手头的钱好像不够入场费呢。改天再来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2309,7 +2360,12 @@ play-voice (global-int f8007)
 label_00008768
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。お金が貯まったら是非来ましょう」"
+*/
+// 输入原文：「我知道了。等攒够钱了，一定要来哦」
+show-text 0 @"「我知道了。等攒够钱了，一定要来哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc
@@ -2583,7 +2639,14 @@ play-voice (global-int f8007)
 label_00009a0c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここが噂の迷宮ね。賭け事とはよく言ったものだわ、ただでは入ることができないみたい」"
+*/
+// 输入原文：「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说错——看来不花钱是进不去的」
+show-text 0 @"「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说"
+end-text-line 0
+show-text 0 @"错——看来不花钱是进不去的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2611,7 +2674,14 @@ label_00009b40
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "迷宮の扉は頑丈な造りをしており、ご丁寧に入場料を取る為の箱が用意されている。"
+*/
+// 输入原文：迷宫的门造得十分结实，还煞有介事地备好了收取入场费的箱子。
+show-text 0 @"迷宫的门造得十分结实，还煞有介事地备好了收取入"
+end-text-line 0
+show-text 0 @"场费的箱子。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2639,7 +2709,12 @@ label_00009c8c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ここにお金を入れると扉が開くんだろう。"
+*/
+// 输入原文：把钱投进去，门就会打开吧。
+show-text 0 @"把钱投进去，门就会打开吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -2780,24 +2855,29 @@ play-voice (global-int f8007)
 label_0000a46c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうするの、アヴァロ隊長？」"
+*/
+// 输入原文：「该怎么办呢，阿瓦罗队长？」
+show-text 0 @"「该怎么办呢，阿瓦罗队长？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 gre (local-int 0) (global-int 8ca65) 7530
 jcc (local-int 0) ffffffff label_0000bdb8
 call label_000140f4
 toString (global-string d5d) (global-int 8ca65)
-concat (global-string d5d) "入場料を払いますか？　所持金" (global-string d5d)
+concat (global-string d5d) @"要支付入场费吗？　持有金钱" (global-string d5d)
 set-string (global-string e3a) (global-string d5d)
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払う"
+set-string (local-string-ptr 0) "払う|付钱"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払わない"
+set-string (local-string-ptr 0) "払わない|不付"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -2850,7 +2930,14 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「せっかく来たんだから、入ってみよう。珍しい物があるかもしれないし」"
+*/
+// 输入原文：「既然特意来了，就进去看看吧。说不定会有稀罕东西呢」
+show-text 0 @"「既然特意来了，就进去看看吧。说不定会有稀罕"
+end-text-line 0
+show-text 0 @"东西呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -2986,7 +3073,12 @@ play-voice (global-int f8007)
 label_0000b09c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。では、お金を入れるわね」"
+*/
+// 输入原文：「我知道了。那我把钱投进去喽」
+show-text 0 @"「我知道了。那我把钱投进去喽」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -3055,7 +3147,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「賭け事は今の生活に影響が出るかもしれないし、入らないでおこう」"
+*/
+// 输入原文：「赌局说不定会影响现在的生活，还是别进去了吧」
+show-text 0 @"「赌局说不定会影响现在的生活，还是别进去了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -3191,7 +3288,12 @@ play-voice (global-int f8007)
 label_0000bcc0
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。残念だけれど、アヴァロ隊長に従うわ」"
+*/
+// 输入原文：「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」
+show-text 0 @"「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc
@@ -3230,7 +3332,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「手持ちじゃ、入場料には届かないみたいだ。また、今度来てみよう」"
+*/
+// 输入原文：「手头的钱好像不够入场费呢。改天再来吧」
+show-text 0 @"「手头的钱好像不够入场费呢。改天再来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3356,7 +3463,12 @@ play-voice (global-int f8007)
 label_0000c5d4
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。お金が貯まったら是非来ましょう」"
+*/
+// 输入原文：「我知道了。等攒够钱了，一定要来哦」
+show-text 0 @"「我知道了。等攒够钱了，一定要来哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc
@@ -3630,7 +3742,14 @@ play-voice (global-int f8007)
 label_0000d878
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここが噂の迷宮ね。賭け事とはよく言ったものだわ、ただでは入ることができないみたい」"
+*/
+// 输入原文：「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说错——看来不花钱是进不去的」
+show-text 0 @"「这里就是传闻中的迷宫呢。把它称作赌局，还真是没说"
+end-text-line 0
+show-text 0 @"错——看来不花钱是进不去的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3658,7 +3777,14 @@ label_0000d9ac
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "迷宮の扉は頑丈な造りをしており、ご丁寧に入場料を取る為の箱が用意されている。"
+*/
+// 输入原文：迷宫的门造得十分结实，还煞有介事地备好了收取入场费的箱子。
+show-text 0 @"迷宫的门造得十分结实，还煞有介事地备好了收取入"
+end-text-line 0
+show-text 0 @"场费的箱子。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3686,7 +3812,12 @@ label_0000daf8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ここにお金を入れると扉が開くんだろう。"
+*/
+// 输入原文：把钱投进去，门就会打开吧。
+show-text 0 @"把钱投进去，门就会打开吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -3827,24 +3958,29 @@ play-voice (global-int f8007)
 label_0000e2d8
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうするの、アヴァロ隊長？」"
+*/
+// 输入原文：「该怎么办呢，阿瓦罗队长？」
+show-text 0 @"「该怎么办呢，阿瓦罗队长？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 gre (local-int 0) (global-int 8ca65) c350
 jcc (local-int 0) ffffffff label_0000fc24
 call label_000140f4
 toString (global-string d5d) (global-int 8ca65)
-concat (global-string d5d) "入場料を払いますか？　所持金" (global-string d5d)
+concat (global-string d5d) @"要支付入场费吗？　持有金钱" (global-string d5d)
 set-string (global-string e3a) (global-string d5d)
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払う"
+set-string (local-string-ptr 0) "払う|付钱"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "払わない"
+set-string (local-string-ptr 0) "払わない|不付"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -3897,7 +4033,14 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「せっかく来たんだから、入ってみよう。珍しい物があるかもしれないし」"
+*/
+// 输入原文：「既然特意来了，就进去看看吧。说不定会有稀罕东西呢」
+show-text 0 @"「既然特意来了，就进去看看吧。说不定会有稀罕"
+end-text-line 0
+show-text 0 @"东西呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -4033,7 +4176,12 @@ play-voice (global-int f8007)
 label_0000ef08
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。では、お金を入れるわね」"
+*/
+// 输入原文：「我知道了。那我把钱投进去喽」
+show-text 0 @"「我知道了。那我把钱投进去喽」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -4102,7 +4250,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「賭け事は今の生活に影響が出るかもしれないし、入らないでおこう」"
+*/
+// 输入原文：「赌局说不定会影响现在的生活，还是别进去了吧」
+show-text 0 @"「赌局说不定会影响现在的生活，还是别进去了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_000113a4
@@ -4238,7 +4391,12 @@ play-voice (global-int f8007)
 label_0000fb2c
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。残念だけれど、アヴァロ隊長に従うわ」"
+*/
+// 输入原文：「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」
+show-text 0 @"「我知道了。虽然有点可惜，不过我听阿瓦罗队长的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc
@@ -4277,7 +4435,12 @@ call label_00013a20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「手持ちじゃ、入場料には届かないみたいだ。また、今度来てみよう」"
+*/
+// 输入原文：「手头的钱好像不够入场费呢。改天再来吧」
+show-text 0 @"「手头的钱好像不够入场费呢。改天再来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4403,7 +4566,12 @@ play-voice (global-int f8007)
 label_00010440
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わかったわ。お金が貯まったら是非来ましょう」"
+*/
+// 输入原文：「我知道了。等攒够钱了，一定要来哦」
+show-text 0 @"「我知道了。等攒够钱了，一定要来哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014acc

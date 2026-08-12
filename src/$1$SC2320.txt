@@ -627,16 +627,16 @@ call label_0000c9d8
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000c9d8
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1507,7 +1507,14 @@ play-voice (global-int f8007)
 label_0000598c
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ねぇヴァレフォル。この前、わたしとヴァレフォルが似てるねっていわれたよ」"
+*/
+// 输入原文：「呐，瓦雷弗尔。前几天有人跟我说，我和瓦雷弗尔长得很像哦」
+show-text 0 @"「呐，瓦雷弗尔。前几天有人跟我说，我和瓦雷弗尔"
+end-text-line 0
+show-text 0 @"长得很像哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1633,7 +1640,12 @@ play-voice (global-int f8007)
 label_000060d8
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ワタシとリリィがねぇ」"
+*/
+// 输入原文：「说我和莉莉很像啊～」
+show-text 0 @"「说我和莉莉很像啊～」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1759,7 +1771,12 @@ play-voice (global-int f8007)
 label_00006824
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うしろから見ると、見分けがつかないって」"
+*/
+// 输入原文：「说是从背后看的话，完全分不出谁是谁哦」
+show-text 0 @"「说是从背后看的话，完全分不出谁是谁哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -1895,7 +1912,14 @@ play-voice (global-int f8007)
 label_00007000
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、なるほど。確かに髪の色も着ている服の色も似てるから、そう思われなくもないかも」"
+*/
+// 输入原文：「啊，原来如此。头发和衣服的颜色确实都挺像的，会被人这么想也不奇怪呢」
+show-text 0 @"「啊，原来如此。头发和衣服的颜色确实都挺像的，会被"
+end-text-line 0
+show-text 0 @"人这么想也不奇怪呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2031,7 +2055,12 @@ play-voice (global-int f8007)
 label_000077dc
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それでね、わたしおもいついちゃったの。見ててね」"
+*/
+// 输入原文：「然后呀，我想到个好主意了。你看好哦」
+show-text 0 @"「然后呀，我想到个好主意了。你看好哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2066,7 +2095,12 @@ label_000079cc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "リリィはそそくさとヴァレフォルの後ろに隠れ始めた"
+*/
+// 输入原文：莉莉急急忙忙地躲到了瓦雷弗尔的身后藏了起来。
+show-text 0 @"莉莉急急忙忙地躲到了瓦雷弗尔的身后藏了起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2204,7 +2238,12 @@ play-voice (global-int f8007)
 label_00008228
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はぁー、分身！」"
+*/
+// 输入原文：「哈——，分身！」
+show-text 0 @"「哈——，分身！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2340,7 +2379,12 @@ play-voice (global-int f8007)
 label_00008a04
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「えっと」"
+*/
+// 输入原文：「呃……」
+show-text 0 @"「呃……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2466,7 +2510,12 @@ play-voice (global-int f8007)
 label_00009150
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ほら、ヴァレフォルもいっしょに」"
+*/
+// 输入原文：「来嘛，瓦雷弗尔也一起呀」
+show-text 0 @"「来嘛，瓦雷弗尔也一起呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2710,7 +2759,12 @@ jcc (global-int f8007) ffffffff label_0000a06c
 label_0000a06c
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はぁー、分身！」"
+*/
+// 输入原文：「哈——，分身！」
+show-text 0 @"「哈——，分身！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2836,7 +2890,12 @@ play-voice (global-int f8007)
 label_0000a7b8
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「って、何やらせるのよ」"
+*/
+// 输入原文：「等等，你这是让我干什么呀」
+show-text 0 @"「等等，你这是让我干什么呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -2972,7 +3031,14 @@ play-voice (global-int f8007)
 label_0000af94
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これで、ヴァレフォルが２人に。あれ、わたしはどこ？」"
+*/
+// 输入原文：「这样一来，瓦雷弗尔就变成两个了。咦，我在哪儿呀？」
+show-text 0 @"「这样一来，瓦雷弗尔就变成两个了。咦，我在哪"
+end-text-line 0
+show-text 0 @"儿呀？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000cb6c
@@ -3108,7 +3174,12 @@ play-voice (global-int f8007)
 label_0000b770
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いやいや、リリィは初めからそこにいるでしょうに」"
+*/
+// 输入原文：「不不，莉莉从一开始就在那里吧……」
+show-text 0 @"「不不，莉莉从一开始就在那里吧……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001002c

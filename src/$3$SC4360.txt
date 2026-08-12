@@ -627,16 +627,16 @@ call label_00008690
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00008690
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,7 +1303,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「さて、次なる場所に到着したんだが」"
+*/
+// 输入原文：「好了，已经抵达下一个地方了……」
+show-text 0 @"「好了，已经抵达下一个地方了……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1326,7 +1331,16 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうやら、間接攻撃が封じられているみたいだ。弓や魔法書の攻撃も出来ないみたいだし、適した人員で出撃していかないと苦戦しそうだな」"
+*/
+// 输入原文：「看来间接攻击被封印住了。弓箭和魔法书的攻击似乎也无法使用，不派合适的人手出击的话，恐怕会陷入苦战啊」
+show-text 0 @"「看来间接攻击被封印住了。弓箭和魔法书的攻击"
+end-text-line 0
+show-text 0 @"似乎也无法使用，不派合适的人手出击的话，恐怕"
+end-text-line 0
+show-text 0 @"会陷入苦战啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008824
@@ -1472,7 +1486,12 @@ play-voice (global-int f8007)
 label_00005470
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はい、相当の警戒が必要でしょう」"
+*/
+// 输入原文：「是的，想必需要相当程度的警戒吧」
+show-text 0 @"「是的，想必需要相当程度的警戒吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1495,7 +1514,14 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「幸い、自分中心の範囲攻撃は使えるみたいだから上手く活用していこう」"
+*/
+// 输入原文：「幸好，以自身为中心的范围攻击似乎还能使用，就好好活用吧」
+show-text 0 @"「幸好，以自身为中心的范围攻击似乎还能使用，就"
+end-text-line 0
+show-text 0 @"好好活用吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b3e4
@@ -1526,7 +1552,14 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「進むにつれて結界が強力になっているみたいだ。ここではスキル自体が使用できないらしい」"
+*/
+// 输入原文：「越往前走，结界似乎变得越强。在这里，好像连技能本身都无法使用了」
+show-text 0 @"「越往前走，结界似乎变得越强。在这里，好像连技能本"
+end-text-line 0
+show-text 0 @"身都无法使用了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1549,7 +1582,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まだ先があるみたいだけど、次は何が起こるんだ？」"
+*/
+// 输入原文：「前面似乎还有路，不过接下来又会发生什么呢？」
+show-text 0 @"「前面似乎还有路，不过接下来又会发生什么呢？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008824
@@ -1695,7 +1733,12 @@ play-voice (global-int f8007)
 label_0000602c
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「嫌な予感しかしませんね」"
+*/
+// 输入原文：「只有一股不祥的预感呢」
+show-text 0 @"「只有一股不祥的预感呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1718,7 +1761,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「気にしていても仕方がない、先へ進もう」"
+*/
+// 输入原文：「光担心也无济于事，继续前进吧」
+show-text 0 @"「光担心也无济于事，继续前进吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008824
@@ -1854,7 +1902,12 @@ play-voice (global-int f8007)
 label_00006908
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「アヴァロ、あれを見て」"
+*/
+// 输入原文：「阿瓦罗，你看那个」
+show-text 0 @"「阿瓦罗，你看那个」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008824
@@ -1909,7 +1962,14 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれは水精か。人懐っこそうだし、近付いたらついて来るかもな」"
+*/
+// 输入原文：「那是水精灵啊。看起来挺亲近人的，靠近的话说不定会跟过来呢」
+show-text 0 @"「那是水精灵啊。看起来挺亲近人的，靠近的话说不定"
+end-text-line 0
+show-text 0 @"会跟过来呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b3e4
@@ -1940,7 +2000,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうやらここが最下層みたいだけれど、思ったより広いな」"
+*/
+// 输入原文：「看来这里就是最底层了，不过比想象中要宽敞啊」
+show-text 0 @"「看来这里就是最底层了，不过比想象中要宽敞啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000bea0
@@ -1972,7 +2037,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そして、短い時間であの場所まで辿り着かなければならない、と」"
+*/
+// 输入原文：「然后，还得在短时间内抵达那个地方，是这样吧」
+show-text 0 @"「然后，还得在短时间内抵达那个地方，是这样吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1995,7 +2065,12 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「色々考えながら進まないと辿り着けそうもないな」"
+*/
+// 输入原文：「要是不边想办法边前进，恐怕很难抵达啊……」
+show-text 0 @"「要是不边想办法边前进，恐怕很难抵达啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b3e4
@@ -2026,7 +2101,14 @@ call label_0000aa20
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「縛りが徐々に強くなってきていたけれど、今度は近接攻撃とアイテムが封じられたか」"
+*/
+// 输入原文：「限制在逐渐变强，这次被封住的则是近接攻击和道具吗……」
+show-text 0 @"「限制在逐渐变强，这次被封住的则是近接攻击和"
+end-text-line 0
+show-text 0 @"道具吗……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00008824
@@ -2172,7 +2254,14 @@ play-voice (global-int f8007)
 label_000079a0
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「とにかく、この場を切り抜けるには各々最大限の力を出すしかない。気を引き締めましょう」"
+*/
+// 输入原文：「总之，要闯过这里，唯有各自发挥出最大限度的力量。大家都打起精神来吧」
+show-text 0 @"「总之，要闯过这里，唯有各自发挥出最大限度的力量。"
+end-text-line 0
+show-text 0 @"大家都打起精神来吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b3e4

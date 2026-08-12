@@ -627,16 +627,16 @@ call label_00034b10
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00034b10
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1359,10 +1359,17 @@ label_00004e3c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "足が隧道に埋まってしまった城砦を持ち上げるため、完成した『"
 display-furigana 0 "起重" "きじゅう"
 display-furigana 0 "機" "き"
 show-text 0 "』をさっそく取り付けた。"
+*/
+// 输入原文：为了抬起陷进隧道里的城砦，立刻把完工的『城砦起重机』装了上去。
+show-text 0 @"为了抬起陷进隧道里的城砦，立刻把完工的"
+end-text-line 0
+show-text 0 @"『城砦起重机』装了上去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1385,7 +1392,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「さあ、これに魔力を流し込めば城砦が持ち上がるはずだ。フィア、頼むぞ！」"
+*/
+// 输入原文：「来，只要往这里注入魔力，城砦应该就能被抬起来。菲亚，拜托你了！」
+show-text 0 @"「来，只要往这里注入魔力，城砦应该就能被抬起来。菲"
+end-text-line 0
+show-text 0 @"亚，拜托你了！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -1582,7 +1596,12 @@ play-voice (global-int f8007)
 label_00005d90
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よーし、まかせてよー。うにょにょにょにょー！」"
+*/
+// 输入原文：「好——，交给我吧——。唔呢呢呢呢呢——！」
+show-text 0 @"「好——，交给我吧——。唔呢呢呢呢呢——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -1679,7 +1698,14 @@ label_000064d0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "フィアが魔力を込めていくと起重機が動き始め、じわじわと城砦が持ち上がっていく。"
+*/
+// 输入原文：随着菲亚注入魔力，起重机开始运转，城砦缓缓地升了起来。
+show-text 0 @"随着菲亚注入魔力，起重机开始运转，城砦缓缓地"
+end-text-line 0
+show-text 0 @"升了起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1702,7 +1728,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし動いてるぞ。フィア、もっと力を入れるんだ。様子を見ながら慎重にな」"
+*/
+// 输入原文：「好，动起来了。菲亚，再加把劲。一边注意情况一边谨慎操作」
+show-text 0 @"「好，动起来了。菲亚，再加把劲。一边注意情况一"
+end-text-line 0
+show-text 0 @"边谨慎操作」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1828,7 +1861,12 @@ play-voice (global-int f8007)
 label_00006d34
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「がんばって！」"
+*/
+// 输入原文：「加油！」
+show-text 0 @"「加油！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1954,7 +1992,12 @@ play-voice (global-int f8007)
 label_00007480
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「にょー！　んぎぎぎぎ！」"
+*/
+// 输入原文：「唔哟——！　嗯叽叽叽叽！」
+show-text 0 @"「唔哟——！　嗯叽叽叽叽！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2080,7 +2123,12 @@ play-voice (global-int f8007)
 label_00007bcc
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「神さま、がんばる」"
+*/
+// 输入原文：「神明大人，加油」
+show-text 0 @"「神明大人，加油」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2206,7 +2254,12 @@ play-voice (global-int f8007)
 label_00008318
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうしたフィア、もっと気合いを入れろ！」"
+*/
+// 输入原文：「菲亚，怎么了？再拿出点气势来！」
+show-text 0 @"「菲亚，怎么了？再拿出点气势来！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -2242,7 +2295,12 @@ label_000084cc
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "起重機が勢いよく動き、激しい音を立てながらどんどん城砦を持ち上げていく。"
+*/
+// 输入原文：起重机剧烈运转起来，伴随着轰鸣声不断将城砦抬起。
+show-text 0 @"起重机剧烈运转起来，伴随着轰鸣声不断将城砦抬起。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2265,9 +2323,16 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よおーし、その調子だっあ、いや、ちょっと"
 display-furigana 0 "勢" "いきお"
 show-text 0 "いが良すぎるかな？　フィア、もう少しゆっくり頼む」"
+*/
+// 输入原文：「好——，就是那个势头——啊，不对，是不是劲儿太足了？　菲亚，再慢一点拜托了」
+show-text 0 @"「好——，就是那个势头——啊，不对，是不是劲儿太足"
+end-text-line 0
+show-text 0 @"了？　菲亚，再慢一点拜托了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2393,7 +2458,12 @@ play-voice (global-int f8007)
 label_00008d60
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「え、なにー？　聞こえないー！」"
+*/
+// 输入原文：「诶，什么——？　听不见——！」
+show-text 0 @"「诶，什么——？　听不见——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2416,7 +2486,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だからもう少しゆっくり！」"
+*/
+// 输入原文：「所以说再慢一点！」
+show-text 0 @"「所以说再慢一点！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -2550,7 +2625,12 @@ play-voice (global-int f8007)
 label_0000962c
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かった、もう少し力を入れればいいんだね！」"
+*/
+// 输入原文：「明白了，再多使点劲就行了吧！」
+show-text 0 @"「明白了，再多使点劲就行了吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -2692,9 +2772,14 @@ play-voice (global-int f8007)
 label_00009e78
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あ、あれ？　なんか、だんだん"
 display-furigana 0 "傾" "かたむ"
 show-text 0 "きが？」"
+*/
+// 输入原文：「啊，咦？　感觉好像渐渐倾斜了——？」
+show-text 0 @"「啊，咦？　感觉好像渐渐倾斜了——？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2820,7 +2905,12 @@ play-voice (global-int f8007)
 label_0000a5f4
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「神さま、がんばりすぎ？」"
+*/
+// 输入原文：「神明大人，是不是太用力了？」
+show-text 0 @"「神明大人，是不是太用力了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2946,7 +3036,12 @@ play-voice (global-int f8007)
 label_0000ad40
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「お、お、お？　こ、これは？」"
+*/
+// 输入原文：「哦、哦、哦？　这、这是——？」
+show-text 0 @"「哦、哦、哦？　这、这是——？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -3153,7 +3248,12 @@ play-voice (global-int f8007)
 label_0000b968
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ほう、すげぇじゃねぇか。あの重たそうな城砦がこれだけ持ち上がるとはな」"
+*/
+// 输入原文：「哦，真不赖嘛。那么笨重的城砦居然能抬这么高」
+show-text 0 @"「哦，真不赖嘛。那么笨重的城砦居然能抬这么高」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3279,7 +3379,14 @@ play-voice (global-int f8007)
 label_0000c0b4
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「順調だな。向こうは首尾良くやってるみたいだし、俺様たちも作業を終わらせちまうか」"
+*/
+// 输入原文：「进展顺利啊。那边看起来干得漂亮，本大爷们这边也把活儿干完吧」
+show-text 0 @"「进展顺利啊。那边看起来干得漂亮，本大爷们这边也把"
+end-text-line 0
+show-text 0 @"活儿干完吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3405,7 +3512,14 @@ play-voice (global-int f8007)
 label_0000c800
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「城砦を動かすときにアヴァロたちの邪魔にならねぇよう、道を開けてやらないとな」"
+*/
+// 输入原文：「别让城砦移动时碍着阿瓦罗他们，得把路给他们让开才行」
+show-text 0 @"「别让城砦移动时碍着阿瓦罗他们，得把路给他们"
+end-text-line 0
+show-text 0 @"让开才行」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3428,7 +3542,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「っ！！」"
+*/
+// 输入原文：「——！！」
+show-text 0 @"「——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3554,7 +3673,12 @@ play-voice (global-int f8007)
 label_0000d04c
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだアヴァロ、手なんか振りやがって。ん？」"
+*/
+// 输入原文：「怎么了阿瓦罗，在那乱挥手。——嗯？」
+show-text 0 @"「怎么了阿瓦罗，在那乱挥手。——嗯？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -3587,7 +3711,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ディートぉっ！　ろぉっ！」"
+*/
+// 输入原文：「迪特——！　快跑——！」
+show-text 0 @"「迪特——！　快跑——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -3718,7 +3847,14 @@ play-voice (global-int f8007)
 label_0000d9b4
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんだ？　にげろ？　おい待てよ、城砦が傾いてねぇか？」"
+*/
+// 输入原文：「怎么了？　快——跑——？　喂，等等，城砦是不是歪了？」
+show-text 0 @"「怎么了？　快——跑——？　喂，等等，城砦是"
+end-text-line 0
+show-text 0 @"不是歪了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3844,7 +3980,12 @@ play-voice (global-int f8007)
 label_0000e100
 u00416120
 // FROM: 7b 口髭の親父
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「団長、城砦がこっちに倒れてきてませんか？」"
+*/
+// 输入原文：「团长，城砦是不是朝这边倒过来了？」
+show-text 0 @"「团长，城砦是不是朝这边倒过来了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -3980,7 +4121,12 @@ play-voice (global-int f8007)
 label_0000e8dc
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「やべぇぞ。てめぇら、いいから逃げろぉっ！」"
+*/
+// 输入原文：「糟了。你们这帮家伙，别管了，快跑——！」
+show-text 0 @"「糟了。你们这帮家伙，别管了，快跑——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -4220,7 +4366,12 @@ play-voice (global-int f8007)
 label_0000f8d8
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うおおおっ、俺様の馬車があああっ！」"
+*/
+// 输入原文：「哇啊啊啊——！本大爷的马车啊啊啊——！」
+show-text 0 @"「哇啊啊啊——！本大爷的马车啊啊啊——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4346,7 +4497,12 @@ play-voice (global-int f8007)
 label_00010024
 u00416120
 // FROM: 7b 口髭の親父
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「団長ぉぉっ、商品がぁぁっ！！」"
+*/
+// 输入原文：「团长——！货物啊——！！」
+show-text 0 @"「团长——！货物啊——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4374,11 +4530,18 @@ label_00010158
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ふらついた城砦は地面についた足で『"
 display-furigana 0 "水闘獣" "すいとうじゅう"
 show-text 0 "の"
 display-furigana 0 "針団" "しんだん"
 show-text 0 "』の荷馬車を踏み抜いた。"
+*/
+// 输入原文：摇晃的城砦用落地的脚踩穿了『水斗兽针团』的运货马车。
+show-text 0 @"摇晃的城砦用落地的脚踩穿了『水斗兽针团』的运"
+end-text-line 0
+show-text 0 @"货马车。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4406,7 +4569,14 @@ label_00010304
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そこで止まったかに思えたが、揺り戻すように反対側に傾き、さらに反動で戻ってくる。"
+*/
+// 输入原文：本以为它就此停住，却又像回摆似的朝反方向倾斜，接着又借着反作用力倒了回来。
+show-text 0 @"本以为它就此停住，却又像回摆似的朝反方向倾斜，接着"
+end-text-line 0
+show-text 0 @"又借着反作用力倒了回来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4532,7 +4702,12 @@ play-voice (global-int f8007)
 label_00010a68
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おいやめろっ、それ以上はっ！」"
+*/
+// 输入原文：「喂，住手！再压下去就——！」
+show-text 0 @"「喂，住手！再压下去就——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00036c90
@@ -4582,6 +4757,7 @@ label_00010d54
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "二度目の着地で、残っていた『"
 display-furigana 0 "水闘獣" "すいとうじゅう"
 show-text 0 "の"
@@ -4591,6 +4767,12 @@ display-furigana 0 "踏" "ふ"
 show-text 0 "み"
 display-furigana 0 "砕" "くだ"
 show-text 0 "いてしまう。"
+*/
+// 输入原文：第二次落地时，将『水斗兽针团』幸存的货物踩了个粉碎。
+show-text 0 @"第二次落地时，将『水斗兽针团』幸存的货物踩了"
+end-text-line 0
+show-text 0 @"个粉碎。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4716,7 +4898,12 @@ play-voice (global-int f8007)
 label_00011578
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「っ！！」"
+*/
+// 输入原文：「——！！」
+show-text 0 @"「——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -4760,7 +4947,12 @@ label_000117ac
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ディートヘルムは目の前で起きた光景に頭を抱え、ただただ絶句していた。"
+*/
+// 输入原文：迪特赫鲁姆看着眼前发生的光景抱住脑袋，久久无言。
+show-text 0 @"迪特赫鲁姆看着眼前发生的光景抱住脑袋，久久无言。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -5014,7 +5206,12 @@ play-voice (global-int f8007)
 label_000127d0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ごめんなさい！　本当にごめんなさい！」"
+*/
+// 输入原文：「对不起！真的很对不起！」
+show-text 0 @"「对不起！真的很对不起！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5140,7 +5337,12 @@ play-voice (global-int f8007)
 label_00012f1c
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「」"
+*/
+// 输入原文：「……」
+show-text 0 @"「……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5163,9 +5365,16 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ディート、すまなかった。指示していた俺のミスだ。"
 display-furigana 0 "償" "つぐな"
 show-text 0 "わせて欲しい」"
+*/
+// 输入原文：「迪特，对不住。是下达指示的我的失误。让我补偿你吧」
+show-text 0 @"「迪特，对不住。是下达指示的我的失误。让我补"
+end-text-line 0
+show-text 0 @"偿你吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5291,7 +5500,14 @@ play-voice (global-int f8007)
 label_00013798
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「もういい。俺様のせいでもあるんだ。城砦を動かすと知ってたんだから馬車を移動させておくべきだった」"
+*/
+// 输入原文：「……算了。本大爷也有责任。既然知道城砦要移动，就该先把马车移开的」
+show-text 0 @"「……算了。本大爷也有责任。既然知道城砦要移动，就"
+end-text-line 0
+show-text 0 @"该先把马车移开的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5417,7 +5633,14 @@ play-voice (global-int f8007)
 label_00013ee4
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「自分の物は自分で守らなきゃならねぇ。それが道具であれ、現場であれ、商品であれ、命であれ。そう教え」"
+*/
+// 输入原文：「自己的东西必须自己守护。不管是工具、工地、货物，还是性命。本大爷就是这么被教——」
+show-text 0 @"「自己的东西必须自己守护。不管是工具、工地、货物，"
+end-text-line 0
+show-text 0 @"还是性命。本大爷就是这么被教——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -5553,7 +5776,14 @@ play-voice (global-int f8007)
 label_000146c0
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、お前は最初からよく分かってたな。だったらこれ以上は説明する必要ねぇだろ」"
+*/
+// 输入原文：「不，你从一开始就明白得很嘛。既然如此，本大爷也不用再多说了」
+show-text 0 @"「不，你从一开始就明白得很嘛。既然如此，本大爷也不"
+end-text-line 0
+show-text 0 @"用再多说了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5576,7 +5806,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「言いたいことは分かるよ。でもそれじゃあ俺の気が済まないんだよ」"
+*/
+// 输入原文：「你想说的我明白。可那样的话，我这心里过不去啊」
+show-text 0 @"「你想说的我明白。可那样的话，我这心里过不去啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5702,7 +5937,14 @@ play-voice (global-int f8007)
 label_00014f0c
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「気にするのは悪いことじゃねぇ。むしろ気にしなきゃいけねぇ。同じ間違いをくり返さないためにもな」"
+*/
+// 输入原文：「在意不是坏事。反而必须在意。这也是为了不再重蹈覆辙」
+show-text 0 @"「在意不是坏事。反而必须在意。这也是为了不再"
+end-text-line 0
+show-text 0 @"重蹈覆辙」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5828,7 +6070,14 @@ play-voice (global-int f8007)
 label_00015658
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だから俺様も、自分の荷を守れなかったことを人のせいにするつもりはねぇ」"
+*/
+// 输入原文：「所以本大爷也不会把没护住自己货物的事，怪到别人头上」
+show-text 0 @"「所以本大爷也不会把没护住自己货物的事，怪到"
+end-text-line 0
+show-text 0 @"别人头上」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -5851,7 +6100,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「でも、これからどうすんだよ」"
+*/
+// 输入原文：「……可是，接下来你打算怎么办啊」
+show-text 0 @"「……可是，接下来你打算怎么办啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -5987,7 +6241,12 @@ play-voice (global-int f8007)
 label_00015f34
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まずは残骸をかき集めて、荷馬車が修理できねぇかやってみる」"
+*/
+// 输入原文：「先把残骸收拾起来，看看马车还能不能修」
+show-text 0 @"「先把残骸收拾起来，看看马车还能不能修」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6113,7 +6372,14 @@ play-voice (global-int f8007)
 label_00016680
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「しばらくは移動もできねぇが、雨露さえしのげれば後はどうにかなるだろ」"
+*/
+// 输入原文：「虽然一时半会儿动不了，不过只要能遮风挡雨，后面总会有办法的」
+show-text 0 @"「虽然一时半会儿动不了，不过只要能遮风挡雨，后面总"
+end-text-line 0
+show-text 0 @"会有办法的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6136,7 +6402,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それならいい提案がある！　城砦を使ってくれよ！」"
+*/
+// 输入原文：「那我有个好提议！来用城砦吧！」
+show-text 0 @"「那我有个好提议！来用城砦吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -6272,7 +6543,12 @@ play-voice (global-int f8007)
 label_00016f5c
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あん？　お前の工房を借りる気はねぇよ」"
+*/
+// 输入原文：「嗯？本大爷可没打算借你的工房」
+show-text 0 @"「嗯？本大爷可没打算借你的工房」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6295,7 +6571,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「違うよ。城砦の一角を貸すから、荷馬車が修理できるまでの間、そこで雨露をしのいで欲しいってことさ」"
+*/
+// 输入原文：「不是啦。是把城砦的一角借给你，希望你在马车修好之前，先在那儿避避风雨」
+show-text 0 @"「不是啦。是把城砦的一角借给你，希望你在马车修好之"
+end-text-line 0
+show-text 0 @"前，先在那儿避避风雨」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6318,7 +6601,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「城砦が壊してしまったのは事実なんだ、責任はあるよ。償いをさせて欲しいとはもう言わないが、協力ぐらいさせてくれたっていいだろ？」"
+*/
+// 输入原文：「城砦弄坏了你的东西是事实，我们有责任。虽然我不再说要赔偿，但至少让我搭把手总可以吧？」
+show-text 0 @"「城砦弄坏了你的东西是事实，我们有责任。虽然我不再"
+end-text-line 0
+show-text 0 @"说要赔偿，但至少让我搭把手总可以吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6444,7 +6734,12 @@ play-voice (global-int f8007)
 label_000178a8
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あの城砦にか」"
+*/
+// 输入原文：「被那座城砦收——」
+show-text 0 @"「被那座城砦收——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6467,7 +6762,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「古い知り合いだからって特別扱いしてる訳じゃないぞ」"
+*/
+// 输入原文：「不是因为你是老交情才特别关照你的」
+show-text 0 @"「不是因为你是老交情才特别关照你的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6490,7 +6790,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それに、修理が終わったらすぐ出発してくれていい。無理に引き留めたりはしないよ」"
+*/
+// 输入原文：「而且，修好之后你们随时可以出发。我不会强留你们的」
+show-text 0 @"「而且，修好之后你们随时可以出发。我不会强留"
+end-text-line 0
+show-text 0 @"你们的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6616,9 +6923,14 @@ play-voice (global-int f8007)
 label_000181f4
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かった分かった。ったく、妙に"
 display-furigana 0 "逞" "たくま"
 show-text 0 "しくなりやがって」"
+*/
+// 输入原文：「知道了知道了。真是的，倒是变得挺能扛事了」
+show-text 0 @"「知道了知道了。真是的，倒是变得挺能扛事了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6744,7 +7056,14 @@ play-voice (global-int f8007)
 label_00018970
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ま、それも悪くねぇか。無事だった商品を一時的に保管する場所も必要だしな」"
+*/
+// 输入原文：「……嘛，倒也不赖。正好也需要个地方临时存放幸存的货物」
+show-text 0 @"「……嘛，倒也不赖。正好也需要个地方临时存放"
+end-text-line 0
+show-text 0 @"幸存的货物」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6870,7 +7189,12 @@ play-voice (global-int f8007)
 label_000190bc
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「しばらく世話になるから、よろしく頼む」"
+*/
+// 输入原文：「接下来要叨扰一阵子了，多多关照」
+show-text 0 @"「接下来要叨扰一阵子了，多多关照」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -6893,7 +7217,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よっしゃ。そうと決まったら、残った商品を集めてさっさと積み込んじまおうぜ！」"
+*/
+// 输入原文：「好嘞。既然定了，就把剩下的货收拾收拾，赶紧装上车吧！」
+show-text 0 @"「好嘞。既然定了，就把剩下的货收拾收拾，赶紧"
+end-text-line 0
+show-text 0 @"装上车吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7019,7 +7350,14 @@ play-voice (global-int f8007)
 label_00019908
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おいおい、急に張り切りやがって。てめぇ、これが目的でわざとやったんじゃないだろうなぁ？」"
+*/
+// 输入原文：「喂喂，突然这么来劲。你这家伙，该不会就是为了这个才故意搞出这一出的吧？」
+show-text 0 @"「喂喂，突然这么来劲。你这家伙，该不会就是为了这个"
+end-text-line 0
+show-text 0 @"才故意搞出这一出的吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7042,7 +7380,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そんな訳ないだろう。ディートにとって、どれだけ店が大事なのか分かっているつもりだぜ」"
+*/
+// 输入原文：「怎么可能。我清楚店面对你来说有多重要」
+show-text 0 @"「怎么可能。我清楚店面对你来说有多重要」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -7178,7 +7521,14 @@ play-voice (global-int f8007)
 label_0001a1e4
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふーん。これはきっと縁だね。なにせ私は縁結びの神様だから。つまり私のおかげ！」"
+*/
+// 输入原文：「哼哼——。这一定是缘分呢。毕竟我是掌管结缘的神明。也就是说，多亏了我！」
+show-text 0 @"「哼哼——。这一定是缘分呢。毕竟我是掌管结缘的神明"
+end-text-line 0
+show-text 0 @"。也就是说，多亏了我！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7201,7 +7551,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おかげっていうか、どっちかっていうとフィアのせいだろ。慎重にって言ったのに張り切り過ぎて」"
+*/
+// 输入原文：「与其说多亏了你，倒不如说是你的错吧。明明让你小心点，却太来劲了」
+show-text 0 @"「与其说多亏了你，倒不如说是你的错吧。明明让你小心"
+end-text-line 0
+show-text 0 @"点，却太来劲了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -7337,7 +7694,12 @@ play-voice (global-int f8007)
 label_0001aac0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はっ、そうだった！　ごめんなさい、ディート」"
+*/
+// 输入原文：「啊，对哦！对不起，迪特」
+show-text 0 @"「啊，对哦！对不起，迪特」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -7473,7 +7835,12 @@ play-voice (global-int f8007)
 label_0001b29c
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「気にすんな。神様に縁を結ばれたんじゃあ、しょうがねぇ」"
+*/
+// 输入原文：「别在意。被神明牵了红线，那也是没办法的事」
+show-text 0 @"「别在意。被神明牵了红线，那也是没办法的事」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7496,7 +7863,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんか俺のときと態度が違わないか？　たしか気にしろとか言っていた気がするんだけどな」"
+*/
+// 输入原文：「怎么感觉你对我俩的态度不一样啊？我记得你好像是让我记在心里的吧」
+show-text 0 @"「怎么感觉你对我俩的态度不一样啊？我记得你好像是让"
+end-text-line 0
+show-text 0 @"我记在心里的吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -7632,7 +8006,12 @@ play-voice (global-int f8007)
 label_0001bb78
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うるせぇ、さっさと作業に入るぞ」"
+*/
+// 输入原文：「少啰嗦，赶紧开工」
+show-text 0 @"「少啰嗦，赶紧开工」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -7768,7 +8147,12 @@ play-voice (global-int f8007)
 label_0001c354
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「私も手伝う！　えへへ、これからよろしくね、ディート」"
+*/
+// 输入原文：「我也来帮忙！诶嘿嘿，接下来多多关照哦，迪特」
+show-text 0 @"「我也来帮忙！诶嘿嘿，接下来多多关照哦，迪特」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -7894,7 +8278,12 @@ play-voice (global-int f8007)
 label_0001caa0
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、よろしく頼むぜ、嬢ちゃん」"
+*/
+// 输入原文：「啊，那就拜托你了，姑娘」
+show-text 0 @"「啊，那就拜托你了，姑娘」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038744
@@ -8037,9 +8426,16 @@ label_0001d2b8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『ドシュア"
 display-furigana 0 "砕屑崖" "さいせつがい"
 show-text 0 "』が噴火したことによる影響か、怪我を負う者が増えているようだった。"
+*/
+// 输入原文：或许是受了『多舒阿碎屑崖』喷发的影响，受伤的人似乎多了起来。
+show-text 0 @"或许是受了『多舒阿碎屑崖』喷发的影响，受伤的人似"
+end-text-line 0
+show-text 0 @"乎多了起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8067,8 +8463,15 @@ label_0001d434
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "火傷" "やけど"
 show-text 0 "跡を治すための薬を依頼され、今日、依頼主がその薬を受け取りに来た。"
+*/
+// 输入原文：有人委托制作治愈烧伤痕迹的药，今天，委托人前来取药了。
+show-text 0 @"有人委托制作治愈烧伤痕迹的药，今天，委托人前"
+end-text-line 0
+show-text 0 @"来取药了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8091,11 +8494,16 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これが依頼品の『"
 display-furigana 0 "治癒" "ちゆ"
 show-text 0 "の"
 display-furigana 0 "水蝋" "すいろう"
 show-text 0 "』です」"
+*/
+// 输入原文：「这就是委托品『治愈水蜡』」
+show-text 0 @"「这就是委托品『治愈水蜡』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -8292,7 +8700,12 @@ play-voice (global-int f8007)
 label_0001e3b8
 u00416120
 // FROM: a5 ラウロソ騎士
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ありがとう。すまないな、他に頼むところがなくて」"
+*/
+// 输入原文：「多谢。抱歉，实在是没有别的地方可以托付」
+show-text 0 @"「多谢。抱歉，实在是没有别的地方可以托付」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8320,7 +8733,12 @@ label_0001e4ec
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "依頼してきたのはラウロソの兵だった。"
+*/
+// 输入原文：前来委托的是劳罗索的士兵。
+show-text 0 @"前来委托的是劳罗索的士兵。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8348,7 +8766,14 @@ label_0001e638
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "部隊としての正式な依頼ではなく、現場で補給不足から困った兵が独断で動いていたもののようだ。"
+*/
+// 输入原文：这似乎并非部队的正式委托，而是前线因补给不足而犯难的士兵擅自行动所为。
+show-text 0 @"这似乎并非部队的正式委托，而是前线因补给不足而犯难"
+end-text-line 0
+show-text 0 @"的士兵擅自行动所为。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8474,7 +8899,14 @@ play-voice (global-int f8007)
 label_0001ed9c
 u00416120
 // FROM: a5 ラウロソ騎士
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「我々もあなた方を敵と見るかどうか迷うところではありますが、物資は不足しているもので」"
+*/
+// 输入原文：「我等也在犹豫，究竟该不该视诸位为敌。只是物资实在匮乏……」
+show-text 0 @"「我等也在犹豫，究竟该不该视诸位为敌。只是物资实"
+end-text-line 0
+show-text 0 @"在匮乏……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8502,7 +8934,14 @@ label_0001eed0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "話を聞く限り、ラウロソは苦戦しているようだ。長引けばもっと物資が不足することになるだろう。"
+*/
+// 输入原文：听他的话来看，劳罗索似乎正陷入苦战。战事拖得越久，物资想必会越发短缺。
+show-text 0 @"听他的话来看，劳罗索似乎正陷入苦战。战事拖得越久，"
+end-text-line 0
+show-text 0 @"物资想必会越发短缺。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8525,7 +8964,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「リシュはラウロソの領主はどうしてる？」"
+*/
+// 输入原文：「莉秀……劳罗索的领主怎么样了？」
+show-text 0 @"「莉秀……劳罗索的领主怎么样了？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8651,9 +9095,16 @@ play-voice (global-int f8007)
 label_0001f734
 u00416120
 // FROM: a5 ラウロソ騎士
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「詳しくは知りませんが、リシュエンツェーリ様が"
 display-furigana 0 "奮戦" "ふんせん"
 show-text 0 "されているおかげでなんとか保っていると聞いています」"
+*/
+// 输入原文：「详细情况我并不清楚，但听说多亏莉秀恩兹利大人奋力奋战，才勉强稳住了局势」
+show-text 0 @"「详细情况我并不清楚，但听说多亏莉秀恩兹利大人奋力"
+end-text-line 0
+show-text 0 @"奋战，才勉强稳住了局势」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -8779,11 +9230,18 @@ play-voice (global-int f8007)
 label_0001feb0
 u00416120
 // FROM: a5 ラウロソ騎士
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「我々は代々火の主を"
 display-furigana 0 "崇" "あが"
 show-text 0 "め、きちんと"
 display-furigana 0 "敬" "うやま"
 show-text 0 "ってきました。なぜ急にこんなことになったのか」"
+*/
+// 输入原文：「我等世代尊崇火之主，一直虔敬供奉。为何会突然变成这样——」
+show-text 0 @"「我等世代尊崇火之主，一直虔敬供奉。为何会突然变"
+end-text-line 0
+show-text 0 @"成这样——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -8837,9 +9295,16 @@ label_0002026c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "困り顔で"
 display-furigana 0 "呟" "つぶや"
 show-text 0 "いたラウロソ兵は、来たときと同じように人目をはばかるようにしながら帰って行った。"
+*/
+// 输入原文：那劳罗索士兵面带难色地嘟囔着，又像来时一样避人耳目地离开了。
+show-text 0 @"那劳罗索士兵面带难色地嘟囔着，又像来时一样避人耳"
+end-text-line 0
+show-text 0 @"目地离开了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -9039,11 +9504,18 @@ label_00021118
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "作成した『"
 display-furigana 0 "真紅" "しんく"
 show-text 0 "の"
 display-furigana 0 "絨毯" "じゅうたん"
 show-text 0 "』を見せると、キスニルは感嘆の息を漏らした。"
+*/
+// 输入原文：把做好的『真红的绒毯』拿给姬斯尼尔看，她不禁发出了赞叹。
+show-text 0 @"把做好的『真红的绒毯』拿给姬斯尼尔看，她不禁"
+end-text-line 0
+show-text 0 @"发出了赞叹。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9169,9 +9641,16 @@ play-voice (global-int f8007)
 label_000218dc
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ほう、これはまた素晴らしい"
 display-furigana 0 "絨毯" "じゅうたん"
 show-text 0 "だな。いかにもマーズテリアらしい色合いもいいではないか」"
+*/
+// 输入原文：「哦，这可真是块出色的绒毯啊。这副马兹忒利亚味十足的色彩，不也很不错吗」
+show-text 0 @"「哦，这可真是块出色的绒毯啊。这副马兹忒利亚味十足"
+end-text-line 0
+show-text 0 @"的色彩，不也很不错吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9194,7 +9673,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だろう？　金と赤はマーズテリアの色だし、格調の高さもある」"
+*/
+// 输入原文：「对吧？金与红是马兹忒利亚的颜色，还透着几分格调」
+show-text 0 @"「对吧？金与红是马兹忒利亚的颜色，还透着几分格调」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9217,9 +9701,16 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それにこの"
 display-furigana 0 "紋様" "もんよう"
 show-text 0 "も特徴だ。ガイダル商会では聖なる紋様を入れられる職人は少ないだろうからな」"
+*/
+// 输入原文：「而且这纹样也是一大特色。盖达鲁商会里，能刻圣纹的工匠恐怕没几个」
+show-text 0 @"「而且这纹样也是一大特色。盖达鲁商会里，能刻圣纹的"
+end-text-line 0
+show-text 0 @"工匠恐怕没几个」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -9355,7 +9846,14 @@ play-voice (global-int f8007)
 label_00022318
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なかなかの策士だな。アヴァロはそういうところも頼りになる。よし、私もひとつ手伝おうではないか」"
+*/
+// 输入原文：「真是好算计啊。阿瓦罗在这一点上也靠得住。好，那我也来帮一把如何」
+show-text 0 @"「真是好算计啊。阿瓦罗在这一点上也靠得住。好，那我"
+end-text-line 0
+show-text 0 @"也来帮一把如何」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9378,7 +9876,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、それはいい。キスニルにはもっと大事な仕事があるからな」"
+*/
+// 输入原文：「不，那就不必了。姬斯尼尔你还有更重要的事要做」
+show-text 0 @"「不，那就不必了。姬斯尼尔你还有更重要的事要做」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -9514,7 +10017,14 @@ play-voice (global-int f8007)
 label_00022bf4
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうか？　遠慮などしなくていいのだが、アヴァロがそう言うのならばそうしよう」"
+*/
+// 输入原文：「是吗？本不必与我客气的，不过既然阿瓦罗这么说了，那就照你说的办吧」
+show-text 0 @"「是吗？本不必与我客气的，不过既然阿瓦罗这么说了，"
+end-text-line 0
+show-text 0 @"那就照你说的办吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9542,7 +10052,14 @@ label_00022d28
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ふぅ、あぶなかった。キスニルが手伝ったらどうなってたことか。"
+*/
+// 输入原文：呼——，好险。要是让姬斯尼尔来帮忙，天知道会变成什么样——。
+show-text 0 @"呼——，好险。要是让姬斯尼尔来帮忙，天知道会变成"
+end-text-line 0
+show-text 0 @"什么样——。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -9700,11 +10217,18 @@ label_0002386c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "作成した『"
 display-furigana 0 "双頭獅子" "そうとうしし"
 show-text 0 "の"
 display-furigana 0 "焼型" "やきがた"
 show-text 0 "』を使用していると、フィアが興味深そうに覗きこんできた。"
+*/
+// 输入原文：正在使用做好的『双头狮子的烧型』时，菲亚一脸好奇地凑了过来。
+show-text 0 @"正在使用做好的『双头狮子的烧型』时，菲亚一脸好奇"
+end-text-line 0
+show-text 0 @"地凑了过来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9830,9 +10354,14 @@ play-voice (global-int f8007)
 label_00024030
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちょっとアヴァロー、なんか木が"
 display-furigana 0 "焦" "こ"
 show-text 0 "げてるみたいだけど大丈夫なの？」"
+*/
+// 输入原文：「等一下阿瓦罗——，木头好像有点焦了，没问题吗？」
+show-text 0 @"「等一下阿瓦罗——，木头好像有点焦了，没问题吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -9855,11 +10384,18 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、これは"
 display-furigana 0 "焼" "や"
 show-text 0 "き"
 display-furigana 0 "印" "いん"
 show-text 0 "だよ。これを熱して、木にこうやって当ててやると」"
+*/
+// 输入原文：「啊，这是烙铁印。把它烧热，像这样往木头上一按——」
+show-text 0 @"「啊，这是烙铁印。把它烧热，像这样往木头上一"
+end-text-line 0
+show-text 0 @"按——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -9995,7 +10531,12 @@ play-voice (global-int f8007)
 label_0002499c
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「かわいい動物の絵が！」"
+*/
+// 输入原文：「好可爱的动物图案！」
+show-text 0 @"「好可爱的动物图案！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10018,11 +10559,18 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これはフィルールっていう"
 display-furigana 0 "双頭" "そうとう"
 show-text 0 "の"
 display-furigana 0 "獅子" "しし"
 show-text 0 "で、マーズテリアを象徴する動物なんだ」"
+*/
+// 输入原文：「这叫菲鲁尔，是一种双头狮子，是象征马兹忒利亚的动物」
+show-text 0 @"「这叫菲鲁尔，是一种双头狮子，是象征马兹忒利"
+end-text-line 0
+show-text 0 @"亚的动物」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10045,7 +10593,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「こうやって木枠に押し付けるだけで、マーズテリア紋章の入った木製品を安価に大量生産できるってわけだ」"
+*/
+// 输入原文：「只要像这样往木框上一按，就能低价批量生产带有马兹忒利亚徽记的木制品了」
+show-text 0 @"「只要像这样往木框上一按，就能低价批量生产带有马兹"
+end-text-line 0
+show-text 0 @"忒利亚徽记的木制品了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -10181,7 +10736,12 @@ play-voice (global-int f8007)
 label_000253d8
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「私もやってみていい？」"
+*/
+// 输入原文：「我也可以试试吗？」
+show-text 0 @"「我也可以试试吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10204,9 +10764,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうぞ。職人じゃなくても"
 display-furigana 0 "紋様" "もんよう"
 show-text 0 "を描けるのもいいところなんだ」"
+*/
+// 输入原文：「请便。不是工匠也能印出纹样，这也是它的好处」
+show-text 0 @"「请便。不是工匠也能印出纹样，这也是它的好处」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -10342,7 +10907,14 @@ play-voice (global-int f8007)
 label_00025ce4
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ジューっ、おおー本当だ。私でもできたよー。ジュジュー、ジュジュジュー」"
+*/
+// 输入原文：「滋——，哦哦——真的耶。连我都能印出来——。滋滋——，滋滋滋——」
+show-text 0 @"「滋——，哦哦——真的耶。连我都能印出来——。滋滋"
+end-text-line 0
+show-text 0 @"——，滋滋滋——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10365,7 +10937,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あの、フィアさん？　そろそろ返してくれないかな。納品しに行きたいんだけど」"
+*/
+// 输入原文：「那个，菲亚小姐？差不多该还我了吧。我还得去交货呢」
+show-text 0 @"「那个，菲亚小姐？差不多该还我了吧。我还得去"
+end-text-line 0
+show-text 0 @"交货呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -10499,7 +11078,12 @@ play-voice (global-int f8007)
 label_000265b0
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おもしろーい。もっとやりたーい！　ジュジューッ！」"
+*/
+// 输入原文：「好有趣——。还想再玩——！　滋滋——！」
+show-text 0 @"「好有趣——。还想再玩——！　滋滋——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -10755,7 +11339,12 @@ play-voice (global-int f8007)
 label_000276f4
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「長い柄。それ、なに？」"
+*/
+// 输入原文：「好长的柄……。那是什么？」
+show-text 0 @"「好长的柄……。那是什么？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10778,6 +11367,7 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、これは前に井戸を掘るために作った魔力式穴掘り"
 display-furigana 0 "穿孔機" "ドリル"
 show-text 0 "を改良したものだよ。ズバリ『魔力式"
@@ -10787,6 +11377,12 @@ display-furigana 0 "出" "だ"
 show-text 0 "し"
 display-furigana 0 "穿孔機" "ドリル"
 show-text 0 "』という」"
+*/
+// 输入原文：「啊，这是把之前为挖井造的魔力式掘穴钻机改良而来的。说白了，就叫『魔力式挖掘钻机』」
+show-text 0 @"「啊，这是把之前为挖井造的魔力式掘穴钻机改良而来的"
+end-text-line 0
+show-text 0 @"。说白了，就叫『魔力式挖掘钻机』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10809,7 +11405,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「マーズテリアのいる古城には古井戸や古い水路があるはずだろ。それを再利用できないかと思って」"
+*/
+// 输入原文：「马兹忒利亚所在的古城里，应该有古井和旧水道吧。我想着能不能把它们再利用起来」
+show-text 0 @"「马兹忒利亚所在的古城里，应该有古井和旧水道吧。我"
+end-text-line 0
+show-text 0 @"想着能不能把它们再利用起来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10832,7 +11435,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「泥とか色々詰まってるだろうから、これでかき出してやろうってわけ」"
+*/
+// 输入原文：「里面大概堵了不少泥之类的，所以就用它来刮出来」
+show-text 0 @"「里面大概堵了不少泥之类的，所以就用它来刮出来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -10968,7 +11576,12 @@ play-voice (global-int f8007)
 label_00028290
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふーん」"
+*/
+// 输入原文：「唔——」
+show-text 0 @"「唔——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -10991,7 +11604,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あれ、あんまり興味なかったか？」"
+*/
+// 输入原文：「咦，你不怎么感兴趣吗？」
+show-text 0 @"「咦，你不怎么感兴趣吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11117,7 +11735,12 @@ play-voice (global-int f8007)
 label_00028adc
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あまりというか、ぜんぜん」"
+*/
+// 输入原文：「与其说是不怎么感兴趣，不如说完全没兴趣」
+show-text 0 @"「与其说是不怎么感兴趣，不如说完全没兴趣」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11140,7 +11763,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そ、そうか」"
+*/
+// 输入原文：「这、这样啊」
+show-text 0 @"「这、这样啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11168,7 +11796,12 @@ label_00028d10
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "けっこう上手く出来たと思ったんだけどなぁ。"
+*/
+// 输入原文：明明觉得做得挺不错的来着。
+show-text 0 @"明明觉得做得挺不错的来着。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -11250,7 +11883,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よーし、できたぞ。どうだカトリト」"
+*/
+// 输入原文：「好——，做好了。怎么样，卡特利特」
+show-text 0 @"「好——，做好了。怎么样，卡特利特」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11278,11 +11916,16 @@ label_000292b0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "作成した『"
 display-furigana 0 "精密" "せいみつ"
 show-text 0 "な"
 display-furigana 0 "円盤" "えんばん"
 show-text 0 "』を、自信をもってカトリトへ見せる。"
+*/
+// 输入原文：信心满满地将做好的『精密圆盘』拿给卡特利特看。
+show-text 0 @"信心满满地将做好的『精密圆盘』拿给卡特利特看。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -11479,7 +12122,12 @@ play-voice (global-int f8007)
 label_0002a118
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これ、小さくなった？」"
+*/
+// 输入原文：「这个，变小了……？」
+show-text 0 @"「这个，变小了……？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11502,7 +12150,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そう、カトリトの身体に合わせて小さくしたんだ。でも円盤の中に小さな球を組み込むことで回転が落ちず」"
+*/
+// 输入原文：「嗯，是按卡特利特的身形做小了。不过，在圆盘里嵌入了小珠子，转速就不会下降——」
+show-text 0 @"「嗯，是按卡特利特的身形做小了。不过，在圆盘里嵌入"
+end-text-line 0
+show-text 0 @"了小珠子，转速就不会下降——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11628,7 +12283,12 @@ play-voice (global-int f8007)
 label_0002a964
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「？」"
+*/
+// 输入原文：「……？」
+show-text 0 @"「……？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -11651,9 +12311,16 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「要するに回転を"
 display-furigana 0 "増幅" "ぞうふく"
 show-text 0 "することで威力が増すし、カトリトにも使い易くなったはずだ」"
+*/
+// 输入原文：「……总之，通过放大转速威力会增强，对卡特利特来说应该也更好用了」
+show-text 0 @"「……总之，通过放大转速威力会增强，对卡特利特来说"
+end-text-line 0
+show-text 0 @"应该也更好用了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -11789,7 +12456,12 @@ play-voice (global-int f8007)
 label_0002b270
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うん、ありがとう」"
+*/
+// 输入原文：「嗯，谢谢你」
+show-text 0 @"「嗯，谢谢你」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -11871,11 +12543,18 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「カトリト、新しい防具を作ったから着てみてくれないか。とりあえず『"
 display-furigana 0 "緋繭" "ひけん"
 show-text 0 "の"
 display-furigana 0 "衣" "ころも"
 show-text 0 "』と名付けてみた」"
+*/
+// 输入原文：「卡特利特，我做了新防具，你试试看吧。暂时先命名为『绯茧之衣』」
+show-text 0 @"「卡特利特，我做了新防具，你试试看吧。暂时先命名为"
+end-text-line 0
+show-text 0 @"『绯茧之衣』」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -12072,7 +12751,12 @@ play-voice (global-int f8007)
 label_0002c514
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うんんしょ、えーっと？」"
+*/
+// 输入原文：「嗯……嘿咻，那个，呃？」
+show-text 0 @"「嗯……嘿咻，那个，呃？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12095,7 +12779,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああ、これはこうして普通の服の下に」"
+*/
+// 输入原文：「啊，这个要像这样穿在普通衣服的下面——」
+show-text 0 @"「啊，这个要像这样穿在普通衣服的下面——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -12231,7 +12920,12 @@ play-voice (global-int f8007)
 label_0002cdf0
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はぅ！？　やっ、あの、じ、自分で、できますっ」"
+*/
+// 输入原文：「呀呜！？　呀、那个、我、我自己，可以的——！」
+show-text 0 @"「呀呜！？　呀、那个、我、我自己，可以的——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -12280,7 +12974,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そ、そうだよな。ごめん」"
+*/
+// 输入原文：「说、说得也是。抱歉……」
+show-text 0 @"「说、说得也是。抱歉……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -12362,7 +13061,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うーん、こんなもんかなぁ。カトリト、ちょっとこれを着けてみてくれないか」"
+*/
+// 输入原文：「嗯——，差不多就这样吧。卡特利特，能戴上这个试试吗」
+show-text 0 @"「嗯——，差不多就这样吧。卡特利特，能戴上这"
+end-text-line 0
+show-text 0 @"个试试吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12390,10 +13096,15 @@ label_0002d6a0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "竜禍石" "りゅうかせき"
 show-text 0 "を利用した『"
 display-furigana 0 "首飾" "くびかざ"
 show-text 0 "り』をカトリトに着けてもらった。"
+*/
+// 输入原文：让卡特利特戴上了用龙祸石制成的『项链』。
+show-text 0 @"让卡特利特戴上了用龙祸石制成的『项链』。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12416,7 +13127,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうだ、なにか感じるか？」"
+*/
+// 输入原文：「怎么样，有什么感觉吗？」
+show-text 0 @"「怎么样，有什么感觉吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -12613,7 +13329,12 @@ play-voice (global-int f8007)
 label_0002e5f4
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「んー、なんか、ぽかぽかする気がする？」"
+*/
+// 输入原文：「唔——……总感觉，暖洋洋的……？」
+show-text 0 @"「唔——……总感觉，暖洋洋的……？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12636,7 +13357,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうかそうか、なら成功だ。竜族の血と相性がいいはずだし、血行もよくなって体が丈夫になるはずだ」"
+*/
+// 输入原文：「是吗是吗，那就是成功了。它应该和龙族的血很合得来，还能促进血液循环，让身体更强壮」
+show-text 0 @"「是吗是吗，那就是成功了。它应该和龙族的血很合得来"
+end-text-line 0
+show-text 0 @"，还能促进血液循环，让身体更强壮」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12659,7 +13387,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これを身につけてたら、もしかしたら体も成長するかもしれないぞ。なーんてな」"
+*/
+// 输入原文：「一直戴着它的话，说不定身体还会长大哦。开玩笑的——」
+show-text 0 @"「一直戴着它的话，说不定身体还会长大哦。开玩"
+end-text-line 0
+show-text 0 @"笑的——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -12795,7 +13530,12 @@ play-voice (global-int f8007)
 label_0002efd0
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「え、ほんとに？　アヴァロ、ありがとうっ」"
+*/
+// 输入原文：「诶，真的吗？阿瓦罗，谢谢你！」
+show-text 0 @"「诶，真的吗？阿瓦罗，谢谢你！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12818,7 +13558,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「あああ、うん。カトリト、いちおう言っておくけど、成長するかもしれないってのは冗談で」"
+*/
+// 输入原文：「啊……啊啊，嗯。卡特利特，姑且先说明一下，会长大什么的其实是玩笑话——」
+show-text 0 @"「啊……啊啊，嗯。卡特利特，姑且先说明一下，会长大"
+end-text-line 0
+show-text 0 @"什么的其实是玩笑话——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -12970,7 +13717,12 @@ play-voice (global-int f8007)
 label_0002f9ac
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「成長かぁわたしにも、できるなら。そしたら」"
+*/
+// 输入原文：「长大啊……如果我也能的话……。那样的话……」
+show-text 0 @"「长大啊……如果我也能的话……。那样的话……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -12993,7 +13745,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「」"
+*/
+// 输入原文：「……」
+show-text 0 @"「……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808
@@ -13080,7 +13837,14 @@ label_0002ff34
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ディートが一時的に城砦で生活することになってから、手を借りながらも拡張をしていた作業がひと段落ついた。"
+*/
+// 输入原文：自从迪特暂住在城砦里以来，借着他的帮忙推进的扩建作业总算告一段落。
+show-text 0 @"自从迪特暂住在城砦里以来，借着他的帮忙推进的扩建作"
+end-text-line 0
+show-text 0 @"业总算告一段落。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13108,9 +13872,14 @@ label_00030080
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "城砦拡張図面" "じょうさいかくちょうずめん"
 show-text 0 "』を広げながら、２人で歓談にふける。"
+*/
+// 输入原文：两人摊开『城砦扩建图纸』，愉快地聊了起来。
+show-text 0 @"两人摊开『城砦扩建图纸』，愉快地聊了起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -13307,7 +14076,14 @@ play-voice (global-int f8007)
 label_00030eb8
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「作業が終わってから聞くのもなんだが、何故わざわざこんな奥を拡張したんだ？」"
+*/
+// 输入原文：「活儿干完了才问是有点怪，不过你为什么要特意扩建这么深的地方？」
+show-text 0 @"「活儿干完了才问是有点怪，不过你为什么要特意扩建这"
+end-text-line 0
+show-text 0 @"么深的地方？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13330,7 +14106,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「人がだいぶ増えてきたしな。合わせて使える所も増やしておきたかったんだよ」"
+*/
+// 输入原文：「人多了不少嘛。所以想把能用的地方也多扩一些」
+show-text 0 @"「人多了不少嘛。所以想把能用的地方也多扩一些」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13353,7 +14134,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺だけだったら苦労してただろうけど、ディートなら手伝ってくれると思ってたからさ」"
+*/
+// 输入原文：「要是我一个人的话，肯定得吃不少苦。不过我想，换成迪特的话一定会来帮忙的」
+show-text 0 @"「要是我一个人的话，肯定得吃不少苦。不过我想，换成"
+end-text-line 0
+show-text 0 @"迪特的话一定会来帮忙的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13376,7 +14164,14 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それに言うだろ。立っている者は親でも使えってさ」"
+*/
+// 输入原文：「而且老话不是说了嘛，站着的人，哪怕是亲爹也照使唤」
+show-text 0 @"「而且老话不是说了嘛，站着的人，哪怕是亲爹也"
+end-text-line 0
+show-text 0 @"照使唤」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13502,7 +14297,12 @@ play-voice (global-int f8007)
 label_00031904
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なるほどな。アヴァロ、これは貸しにしておくからな」"
+*/
+// 输入原文：「原来如此。阿瓦罗，这个人情我可记下了」
+show-text 0 @"「原来如此。阿瓦罗，这个人情我可记下了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -13551,7 +14351,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちょ、待ってくれよ、ディート」"
+*/
+// 输入原文：「等、等一下啊，迪特」
+show-text 0 @"「等、等一下啊，迪特」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -13636,8 +14441,15 @@ label_0003216c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "大袈裟" "おおげさ"
 show-text 0 "に貸しと言われたものの、その日の飲みに一回付き合わされるだけで済んだ。"
+*/
+// 输入原文：虽然被夸大其词地记了一笔人情，不过最后只是陪他喝了顿酒就了事了。
+show-text 0 @"虽然被夸大其词地记了一笔人情，不过最后只是陪他喝了"
+end-text-line 0
+show-text 0 @"顿酒就了事了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 mul (local-int 0) 0 64
@@ -13754,9 +14566,14 @@ label_000327e8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "城砦内に『"
 display-furigana 0 "噴水" "ふんすい"
 show-text 0 "』施設を設置できるよう準備を進めた。"
+*/
+// 输入原文：着手准备，好让城砦内能够设置『喷泉』设施。
+show-text 0 @"着手准备，好让城砦内能够设置『喷泉』设施。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -13784,9 +14601,16 @@ label_00032964
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "少しずつ、城砦の上層を"
 display-furigana 0 "巡" "めぐ"
 show-text 0 "る水の流れを把握できたことで目を喜ばす鑑賞用にでもと思ったのだが。"
+*/
+// 输入原文：随着逐渐摸清流经城砦上层的水流走向，本想着不如造一座养眼的观赏设施——。
+show-text 0 @"随着逐渐摸清流经城砦上层的水流走向，本想着不如造一"
+end-text-line 0
+show-text 0 @"座养眼的观赏设施——。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00034ca4
@@ -13983,7 +14807,12 @@ play-voice (global-int f8007)
 label_0003379c
 u00416120
 // FROM: 79 大人しい女の子
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おおー。みずが、でてるこれって、のめるの？」"
+*/
+// 输入原文：「哇哦——……水，流出来了……这个，能喝吗？」
+show-text 0 @"「哇哦——……水，流出来了……这个，能喝吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14006,11 +14835,18 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はは、大きい問題はないけれど、飲み水は別に用意しているから、そっちで"
 display-furigana 0 "喉" "のど"
 show-text 0 "を"
 display-furigana 0 "潤" "うるお"
 show-text 0 "して欲しいかな」"
+*/
+// 输入原文：「哈哈，倒是没什么大问题。不过饮用水是另外准备的，想喝的话请用那边」
+show-text 0 @"「哈哈，倒是没什么大问题。不过饮用水是另外准备的，"
+end-text-line 0
+show-text 0 @"想喝的话请用那边」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14033,7 +14869,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「井戸から出る水は、もっとキチンと清潔を保っているからさ」"
+*/
+// 输入原文：「井里出的水，一直都好好保持着清洁嘛」
+show-text 0 @"「井里出的水，一直都好好保持着清洁嘛」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14061,9 +14902,16 @@ label_00033b30
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そう言うと、子供は少し不思議そうにしながらも、ちゃんと"
 display-furigana 0 "頷" "うなづ"
 show-text 0 "いてくれた。"
+*/
+// 输入原文：听阿瓦罗这么说，小女孩虽然一脸疑惑，还是乖乖地点了点头。
+show-text 0 @"听阿瓦罗这么说，小女孩虽然一脸疑惑，还是乖乖"
+end-text-line 0
+show-text 0 @"地点了点头。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14086,7 +14934,12 @@ call label_00037574
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ひょっとすると、注意書きが必要かな？」"
+*/
+// 输入原文：「说不定，还真得放个提示牌——？」
+show-text 0 @"「说不定，还真得放个提示牌——？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14114,7 +14967,12 @@ label_00033dac
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "一見する限りでは、井戸との違いが分からないのかもしれない。"
+*/
+// 输入原文：光看外表，也许根本看不出它和水井的区别。
+show-text 0 @"光看外表，也许根本看不出它和水井的区别。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -14142,7 +15000,12 @@ label_00033ef8
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『この噴水は飲用施設ではありません』と、立て札でも置こうかな。"
+*/
+// 输入原文：要不立块牌子，写上『本喷泉并非饮用水设施』吧。
+show-text 0 @"要不立块牌子，写上『本喷泉并非饮用水设施』吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00038808

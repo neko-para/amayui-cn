@@ -627,16 +627,16 @@ call label_0000ae90
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000ae90
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1359,7 +1359,12 @@ label_00004e3c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "散歩がてらに広場を歩いていると、何処からか妙な声が聞こえてきた。"
+*/
+// 输入原文：散步时顺道走过广场，不知从何处传来一阵奇怪的声音。
+show-text 0 @"散步时顺道走过广场，不知从何处传来一阵奇怪的声音。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1382,7 +1387,12 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これって、もしかしてアレの声、だよな」"
+*/
+// 输入原文：「这个，该不会是……那家伙的声音吧……」
+show-text 0 @"「这个，该不会是……那家伙的声音吧……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1410,7 +1420,12 @@ label_00005088
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "いったい誰だよ、こんな人目に付きそうな場所で。"
+*/
+// 输入原文：到底是谁啊，在这种显眼的地方……。
+show-text 0 @"到底是谁啊，在这种显眼的地方……。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1438,9 +1453,16 @@ label_000051d4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "ドキドキしながら、吸い寄せられるようにその声の方へ向かい、そっと"
 display-furigana 0 "覗" "のぞ"
 show-text 0 "き込んだ。"
+*/
+// 输入原文：心里怦怦直跳，像被吸引过去一般朝那声音的方向走去，悄悄探头窥看。
+show-text 0 @"心里怦怦直跳，像被吸引过去一般朝那声音的方向走去，"
+end-text-line 0
+show-text 0 @"悄悄探头窥看。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -1602,7 +1624,12 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「誰にも見られてなかったみたいだな」"
+*/
+// 输入原文：「……好像没人看见我们啊」
+show-text 0 @"「……好像没人看见我们啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1630,7 +1657,14 @@ label_00005c8c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "２人で広場に出るとき、誰かに見やれてやしないかと思ってきょろきょろ辺りを見回したが、大丈夫だったようだ。"
+*/
+// 输入原文：两人走出广场时，担心会不会被人看到，警惕地环顾四周，看来并没有问题。
+show-text 0 @"两人走出广场时，担心会不会被人看到，警惕地环顾四"
+end-text-line 0
+show-text 0 @"周，看来并没有问题。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1756,7 +1790,12 @@ play-voice (global-int f8007)
 label_000063f0
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふぅ、満足した。んじゃあね」"
+*/
+// 输入原文：「呼——，满足了。那，再见啦——」
+show-text 0 @"「呼——，满足了。那，再见啦——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -1791,8 +1830,13 @@ label_000065e0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 display-furigana 0 "嵐燐結騎" "らんりんゆいき"
 show-text 0 "はあっけらかんとした様子で去ろうとする。"
+*/
+// 输入原文：岚燐结骑一副满不在乎的样子，打算就此离开。
+show-text 0 @"岚燐结骑一副满不在乎的样子，打算就此离开。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1815,7 +1859,12 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ちょ、ちょっと待てよ」"
+*/
+// 输入原文：「等、等一下啊」
+show-text 0 @"「等、等一下啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1941,7 +1990,12 @@ play-voice (global-int f8007)
 label_00006e60
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なぁに？」"
+*/
+// 输入原文：「干嘛？」
+show-text 0 @"「干嘛？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1964,7 +2018,14 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、さっきのことだけど、いちおう誰にも言わない方がいいかと思ってな」"
+*/
+// 输入原文：「不，是说刚才的事。我想着还是暂且别告诉任何人为好」
+show-text 0 @"「不，是说刚才的事。我想着还是暂且别告诉任何"
+end-text-line 0
+show-text 0 @"人为好」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -2100,7 +2161,12 @@ play-voice (global-int f8007)
 label_0000773c
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんで？」"
+*/
+// 输入原文：「为什么？」
+show-text 0 @"「为什么？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2123,7 +2189,12 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、なんでって」"
+*/
+// 输入原文：「不，要说为什么的话……」
+show-text 0 @"「不，要说为什么的话……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2151,7 +2222,12 @@ label_00007970
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "広場の側であんなことをしてたなんて知られたら。"
+*/
+// 输入原文：要是被人知道我们在广场边上做了那种事的话……。
+show-text 0 @"要是被人知道我们在广场边上做了那种事的话……。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -2287,7 +2363,14 @@ play-voice (global-int f8007)
 label_00008164
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「え、バレちゃ困るような悪いことしたの？　へぇぇー、そうなんだ、悪いことしちゃったんだぁ」"
+*/
+// 输入原文：「诶，你做了什么见不得人的坏事吗？诶——，原来如此，你做了坏事呀」
+show-text 0 @"「诶，你做了什么见不得人的坏事吗？诶——，原来如此"
+end-text-line 0
+show-text 0 @"，你做了坏事呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2310,9 +2393,16 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんで当事者が嬉しそうに言うんだよ。っていうか、"
 display-furigana 0 "嵐燐結騎" "らんりんゆいき"
 show-text 0 "だって薬に酔って妙なことしてたとか知られたくないだろ？」"
+*/
+// 输入原文：「为什么当事人还说得这么开心啊。话说回来，你也不希望被人知道，喝药喝醉后做了什么奇怪的事吧？」
+show-text 0 @"「为什么当事人还说得这么开心啊。话说回来，你也不希"
+end-text-line 0
+show-text 0 @"望被人知道，喝药喝醉后做了什么奇怪的事吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -2448,7 +2538,12 @@ play-voice (global-int f8007)
 label_00008a70
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「別に」"
+*/
+// 输入原文：「没什么」
+show-text 0 @"「没什么」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2476,7 +2571,12 @@ label_00008ba4
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "あ、そうなんだ。精霊だから、なのか？"
+*/
+// 输入原文：啊，原来如此。是因为她是精灵，才会这样吗？
+show-text 0 @"啊，原来如此。是因为她是精灵，才会这样吗？"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2499,7 +2599,14 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「分かった、じゃあもういいよ。まあ、いちおう誰にも言わないでおくからさ」"
+*/
+// 输入原文：「……知道了，那就算了吧。嘛，总之我不会告诉任何人的」
+show-text 0 @"「……知道了，那就算了吧。嘛，总之我不会告诉"
+end-text-line 0
+show-text 0 @"任何人的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2625,7 +2732,14 @@ play-voice (global-int f8007)
 label_00009408
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「えー、なに、もしかして恩でも売ったつもり？　それとも、薬で酔った精霊と関係を持ったなんて知られたら、とか心配しちゃってる？」"
+*/
+// 输入原文：「诶——，什么呀，难道你还想卖我个人情？还是说，你在担心被人知道你和喝药喝醉的精灵发生关系？」
+show-text 0 @"「诶——，什么呀，难道你还想卖我个人情？还是说，你"
+end-text-line 0
+show-text 0 @"在担心被人知道你和喝药喝醉的精灵发生关系？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2648,9 +2762,14 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「だから"
 display-furigana 0 "煽" "あお"
 show-text 0 "るなって。お前も当事者だろ」"
+*/
+// 输入原文：「所以说别煽风点火了。你也是当事人吧」
+show-text 0 @"「所以说别煽风点火了。你也是当事人吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2776,7 +2895,14 @@ play-voice (global-int f8007)
 label_00009c84
 u00416120
 // FROM: 34 嵐燐結騎
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「変なの。気持ちよかったし、それでいいでしょ。んじゃあねー」"
+*/
+// 输入原文：「真奇怪啊——。反正很舒服，那样不就行了嘛。那，再见啦——」
+show-text 0 @"「真奇怪啊——。反正很舒服，那样不就行了嘛。那，"
+end-text-line 0
+show-text 0 @"再见啦——」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000b024
@@ -2830,9 +2956,14 @@ label_00009fe0
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "そう言って"
 display-furigana 0 "嵐燐結騎" "らんりんゆいき"
 show-text 0 "は機嫌良さそうに飛んでいってしまった。"
+*/
+// 输入原文：说完，岚燐结骑心情很好地飞走了。
+show-text 0 @"说完，岚燐结骑心情很好地飞走了。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2855,7 +2986,12 @@ call label_0000d8f4
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「精霊らしいというかなんというか、だな」"
+*/
+// 输入原文：「该说很有精灵的作风呢，还是该怎么说呢……」
+show-text 0 @"「该说很有精灵的作风呢，还是该怎么说呢……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000e4e4

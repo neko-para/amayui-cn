@@ -627,16 +627,16 @@ call label_00006c5c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00006c5c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,9 +1303,16 @@ call label_00008fec
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まずは周りにある装置を止めることから始めよう。"
 display-furigana 0 "鍛梁師" "たんりょうし"
 show-text 0 "の俺たちならどうにかできるはずだ」"
+*/
+// 输入原文：先从停掉周围的装置开始吧。身为锻梁师的我们，应该有办法做到的。
+show-text 0 @"先从停掉周围的装置开始吧。身为锻梁师的我们，应该有"
+end-text-line 0
+show-text 0 @"办法做到的。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000946c
@@ -1492,7 +1499,12 @@ play-voice (global-int f8007)
 label_00005634
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よーし、俺様もいっちょ派手にやってやるか」"
+*/
+// 输入原文：好嘞，本大爷也来大干一场吧！
+show-text 0 @"好嘞，本大爷也来大干一场吧！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 209e) 1
@@ -1517,9 +1529,16 @@ call label_00008fec
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「それと用意して来た『"
 display-furigana 0 "解放機軸" "かいほうきじく"
 show-text 0 "』を使えば誰でも装置が止められる。効率良く進めていこう」"
+*/
+// 输入原文：还有，只要用上带来的『解放机轴』，任何人都能停下装置。我们高效地推进吧。
+show-text 0 @"还有，只要用上带来的『解放机轴』，任何人都能停下装"
+end-text-line 0
+show-text 0 @"置。我们高效地推进吧。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -1544,7 +1563,12 @@ call label_00008fec
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「俺たちの全ての力でこの場を乗り切るぞ」"
+*/
+// 输入原文：我们使出全部力量，闯过这一关！
+show-text 0 @"我们使出全部力量，闯过这一关！"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00009a74
@@ -1627,7 +1651,14 @@ call label_00008fec
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「高純度の魔力がパライアに集まっていく。あれだけの再生能力を相手になんかできないぞ」"
+*/
+// 输入原文：高纯度的魔力正不断汇集到帕莱雅身上。那种再生能力，我们根本不是对手啊。
+show-text 0 @"高纯度的魔力正不断汇集到帕莱雅身上。那种再生能力，"
+end-text-line 0
+show-text 0 @"我们根本不是对手啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1650,9 +1681,16 @@ call label_00008fec
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「４つの装置が"
 display-furigana 0 "軸" "じく"
 show-text 0 "となっているみたいだ。やはり、その装置を先に止めないと」"
+*/
+// 输入原文：那四个装置似乎是轴心。果然，还是得先把那些装置停掉才行啊。
+show-text 0 @"那四个装置似乎是轴心。果然，还是得先把那些装置"
+end-text-line 0
+show-text 0 @"停掉才行啊。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000946c

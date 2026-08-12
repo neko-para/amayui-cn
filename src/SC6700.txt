@@ -627,16 +627,16 @@ call label_000120b8
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_000120b8
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1456,7 +1456,14 @@ play-voice (global-int f8007)
 label_00005678
 u00416120
 // FROM: 238 雷府の蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おお、姫さま！　生きていらっしゃったのですね。それに、ずいぶんと立派になられた」"
+*/
+// 输入原文：「啊，公主殿下！您还活着啊。而且，已经出落得相当出色了」
+show-text 0 @"「啊，公主殿下！您还活着啊。而且，已经出落得"
+end-text-line 0
+show-text 0 @"相当出色了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1582,7 +1589,12 @@ play-voice (global-int f8007)
 label_00005dc4
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「この身体なら、カルメルグとも渡り合えるかな」"
+*/
+// 输入原文：「这副身体的话，说不定能和卡尔梅尔格一较高下了吧」
+show-text 0 @"「这副身体的话，说不定能和卡尔梅尔格一较高下了吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1708,9 +1720,14 @@ play-voice (global-int f8007)
 label_00006510
 u00416120
 // FROM: 238 雷府の蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「無論です。"
 display-furigana 0 "雷府竜" "らいふりゅう"
 show-text 0 "の御力を、奴めに思い知らせてくださいませ」"
+*/
+// 输入原文：「当然。请让那家伙好好领教一下雷府龙的力量吧」
+show-text 0 @"「当然。请让那家伙好好领教一下雷府龙的力量吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014e0c
@@ -1928,7 +1945,14 @@ play-voice (global-int f8007)
 label_0000744c
 u00416120
 // FROM: 238 雷府の蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そ、その御姿は、まさかカトリト様ですか？　立派に、成長なされましたね！」"
+*/
+// 输入原文：「这、这副身姿……莫非是卡特利特大人？您已经成长得如此出色了……！」
+show-text 0 @"「这、这副身姿……莫非是卡特利特大人？您已经成长得"
+end-text-line 0
+show-text 0 @"如此出色了……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2054,7 +2078,12 @@ play-voice (global-int f8007)
 label_00007b98
 u00416120
 // FROM: c 成竜型カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「竜族の誇りを、取り戻しに来たの」"
+*/
+// 输入原文：「我是来把龙族的骄傲夺回来的」
+show-text 0 @"「我是来把龙族的骄傲夺回来的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2180,7 +2209,12 @@ play-voice (global-int f8007)
 label_000082e4
 u00416120
 // FROM: 238 雷府の蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ご武運を。シウケトル様もきっと喜んでおられるでしょう」"
+*/
+// 输入原文：「祝您武运昌隆。希乌凯托尔大人也一定正为您高兴吧」
+show-text 0 @"「祝您武运昌隆。希乌凯托尔大人也一定正为您高兴吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014e0c
@@ -2347,7 +2381,12 @@ play-voice (global-int f8007)
 label_00008c7c
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ん。通して、くれるの？」"
+*/
+// 输入原文：「嗯……。可以让我过去吗？」
+show-text 0 @"「嗯……。可以让我过去吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2473,7 +2512,12 @@ play-voice (global-int f8007)
 label_000093c8
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いい子だね。ありがとう、それじゃ行かせてもらう」"
+*/
+// 输入原文：「真是个好孩子。谢谢你，那我这就过去了」
+show-text 0 @"「真是个好孩子。谢谢你，那我这就过去了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2599,7 +2643,12 @@ play-voice (global-int f8007)
 label_00009b14
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「竜族の誇りを示す為に、この先にいる相手と話さないと」"
+*/
+// 输入原文：「为了彰显龙族的骄傲，我得先去和前面的那位谈一谈」
+show-text 0 @"「为了彰显龙族的骄傲，我得先去和前面的那位谈一谈」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00014e0c
@@ -2746,7 +2795,12 @@ play-voice (global-int f8007)
 label_0000a37c
 u00416120
 // FROM: c 成竜型カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「恐がらないで。大丈夫、わたしだよ」"
+*/
+// 输入原文：「别害怕。没事的，是我呀」
+show-text 0 @"「别害怕。没事的，是我呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2872,7 +2926,12 @@ play-voice (global-int f8007)
 label_0000aac8
 u00416120
 // FROM: c 成竜型カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「わたしは、とと様の為にもここを通らないといけないの」"
+*/
+// 输入原文：「为了爹爹，我也必须从这里过去」
+show-text 0 @"「为了爹爹，我也必须从这里过去」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2998,7 +3057,12 @@ play-voice (global-int f8007)
 label_0000b214
 u00416120
 // FROM: c 成竜型カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ありがとう。それじゃ行ってくるね」"
+*/
+// 输入原文：「谢谢你。那我走了」
+show-text 0 @"「谢谢你。那我走了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00015158
@@ -3248,7 +3312,12 @@ play-voice (global-int f8007)
 label_0000c318
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「少し話を聞いて欲しい。こちらに戦闘の意思はないの」"
+*/
+// 输入原文：「希望你能听我说几句。我这边没有战斗的意思」
+show-text 0 @"「希望你能听我说几句。我这边没有战斗的意思」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3374,7 +3443,14 @@ play-voice (global-int f8007)
 label_0000ca64
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「できれば、カルメルグのところまで通してくれると有り難いのだけど」"
+*/
+// 输入原文：「可以的话，要是能让我一路通行到卡尔梅尔格那里，就感激不尽了」
+show-text 0 @"「可以的话，要是能让我一路通行到卡尔梅尔格那里，就"
+end-text-line 0
+show-text 0 @"感激不尽了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3397,7 +3473,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 239 蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「キシャアアアアアアアアアアッ」"
+*/
+// 输入原文：「喀沙啊啊啊啊啊啊——！！」
+show-text 0 @"「喀沙啊啊啊啊啊啊——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001224c
@@ -3591,7 +3672,12 @@ play-voice (global-int f8007)
 label_0000d6c8
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「問答無用という訳ね」"
+*/
+// 输入原文：「……也就是说，完全不容分说了呢」
+show-text 0 @"「……也就是说，完全不容分说了呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3717,7 +3803,16 @@ play-voice (global-int f8007)
 label_0000de14
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「やっぱり、わたしを邪魔に思い敵対意思を示す竜族もいる。分かっていたつもりだけど、実際に知るとくるものがあるわ」"
+*/
+// 输入原文：「果然也有龙族把我当成碍事的人，对我表现出敌意啊。我自以为心里早有准备，可真当亲眼所见时，还是不免受到触动」
+show-text 0 @"「果然也有龙族把我当成碍事的人，对我表现出敌意啊"
+end-text-line 0
+show-text 0 @"。我自以为心里早有准备，可真当亲眼所见时，还是不"
+end-text-line 0
+show-text 0 @"免受到触动」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001224c
@@ -3854,7 +3949,14 @@ play-voice (global-int f8007)
 label_0000e5fc
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「でもそっちがやる気ならばこっちも容赦はしない！」"
+*/
+// 输入原文：「不过……既然你们动真格的，那我这边也绝不会手下留情！」
+show-text 0 @"「不过……既然你们动真格的，那我这边也绝不会"
+end-text-line 0
+show-text 0 @"手下留情！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001224c
@@ -3990,7 +4092,14 @@ play-voice (global-int f8007)
 label_0000edd8
 u00416120
 // FROM: b 思春期カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「成長したわたしの実力を見せて、認めさせてあげる」"
+*/
+// 输入原文：「就让你们好好见识见识成长后的我的实力，好叫你们心服口服」
+show-text 0 @"「就让你们好好见识见识成长后的我的实力，好叫你"
+end-text-line 0
+show-text 0 @"们心服口服」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001224c
@@ -4105,7 +4214,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 239 蜥竜兵
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「キシャアアアアアアアアアアッ」"
+*/
+// 输入原文：「喀沙啊啊啊啊啊啊——！！」
+show-text 0 @"「喀沙啊啊啊啊啊啊——！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4231,7 +4345,12 @@ play-voice (global-int f8007)
 label_0000fc24
 u00416120
 // FROM: c 成竜型カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「グルルッ、グルアアアアアアアアアァッ」"
+*/
+// 输入原文：「咕噜噜……！咕噜啊啊啊啊——！」
+show-text 0 @"「咕噜噜……！咕噜啊啊啊啊——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4254,7 +4373,14 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんか。そもそも話し合いに発展する要素がないよね、これ」"
+*/
+// 输入原文：「……怎么说呢。这打从一开始就没有能谈得拢的要素啊，这场」
+show-text 0 @"「……怎么说呢。这打从一开始就没有能谈得拢的要"
+end-text-line 0
+show-text 0 @"素啊，这场」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4380,7 +4506,12 @@ play-voice (global-int f8007)
 label_00010470
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「カトリトちゃん、かっこいいね～」"
+*/
+// 输入原文：「卡特利特酱，好帅呀～」
+show-text 0 @"「卡特利特酱，好帅呀～」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4403,7 +4534,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うん、そうだね」"
+*/
+// 输入原文：「嗯，是啊……」
+show-text 0 @"「嗯，是啊……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -4426,7 +4562,14 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まぁいいか。向こうも元からやる気だったみたいだし、こっちも負けてられないぞ！」"
+*/
+// 输入原文：「嘛，算了。反正对面打从一开始就杀气腾腾的，我们这边也不能落后啊！」
+show-text 0 @"「嘛，算了。反正对面打从一开始就杀气腾腾的，我们这"
+end-text-line 0
+show-text 0 @"边也不能落后啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0001224c
@@ -4499,7 +4642,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「床に何か書いてあるな」"
+*/
+// 输入原文：「地板上写着什么啊」
+show-text 0 @"「地板上写着什么啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -4535,7 +4683,14 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうやら、相応しい誰かが立たないとだめみたいだな。長になるべき者か」"
+*/
+// 输入原文：「看来必须由合适的人站上去才行啊。该成为族长的人吗……」
+show-text 0 @"「看来必须由合适的人站上去才行啊。该成为族长"
+end-text-line 0
+show-text 0 @"的人吗……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00015158
@@ -4595,7 +4750,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おっ、開いたみたいだ。これで次に進めるな」"
+*/
+// 输入原文：「哦，好像开了。这样就能继续往前走了」
+show-text 0 @"「哦，好像开了。这样就能继续往前走了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00015158
@@ -4626,7 +4786,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここの床にも何か書いてあるみたいだな」"
+*/
+// 输入原文：「这里的地板上好像也写着什么啊」
+show-text 0 @"「这里的地板上好像也写着什么啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -4662,7 +4827,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「今度は光の者か」"
+*/
+// 输入原文：「这次是光之人吗……」
+show-text 0 @"「这次是光之人吗……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00015158
@@ -4722,7 +4892,12 @@ call label_0001498c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、ここの解除も完了だ。次へ急ごう」"
+*/
+// 输入原文：「好，这里的解除也完成了。赶紧去下一处吧」
+show-text 0 @"「好，这里的解除也完成了。赶紧去下一处吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00015158

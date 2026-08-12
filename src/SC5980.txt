@@ -627,16 +627,16 @@ call label_0000eb8c
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000eb8c
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1355,7 +1355,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、無事に倒せたな！」"
+*/
+// 输入原文：「好，成功打倒它了！」
+show-text 0 @"「好，成功打倒它了！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ed20
@@ -1543,7 +1548,14 @@ play-voice (global-int f8007)
 label_00005a48
 u00416120
 // FROM: 5 キスニル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「制圧完了だな。もう動かないとは思うがまだ油断できないだろうか？」"
+*/
+// 输入原文：「压制完成了吧。虽然应该已经不会动了，但还是不能大意吧？」
+show-text 0 @"「压制完成了吧。虽然应该已经不会动了，但还是不"
+end-text-line 0
+show-text 0 @"能大意吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1669,7 +1681,14 @@ play-voice (global-int f8007)
 label_00006194
 u00416120
 // FROM: 6 ディートヘルム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「いや、動作できないほど各部を破壊したんだ。もう大丈夫だろう。少しもったいなかったがな詳しく調べてみたかったぜ」"
+*/
+// 输入原文：「不，我已经把各部破坏到它无法动弹了。应该没问题了吧。虽然有点可惜——本来还想仔细研究一下的」
+show-text 0 @"「不，我已经把各部破坏到它无法动弹了。应该没问题了"
+end-text-line 0
+show-text 0 @"吧。虽然有点可惜——本来还想仔细研究一下的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ed20
@@ -1813,7 +1832,12 @@ play-voice (global-int f8007)
 label_000069e8
 u00416120
 // FROM: 3 イオル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふう。達成感、すごい」"
+*/
+// 输入原文：「呼。成就感，好厉害」
+show-text 0 @"「呼。成就感，好厉害」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1939,7 +1963,12 @@ play-voice (global-int f8007)
 label_00007134
 u00416120
 // FROM: 4 ミケユ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「そうだねー。やりきった！　って感じするね」"
+*/
+// 输入原文：「是呢～。有种干完了！的感觉呢」
+show-text 0 @"「是呢～。有种干完了！的感觉呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ed20
@@ -2092,7 +2121,14 @@ play-voice (global-int f8007)
 label_00007b44
 u00416120
 // FROM: 7 ロズリーヌ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ふふ、素晴らしい充実感ね。今すぐにでも駆け出して、あの扉を開きに行きたいわ」"
+*/
+// 输入原文：「呵呵，真是绝佳的充实感呢。真想现在立刻就冲出去，把那扇门打开啊」
+show-text 0 @"「呵呵，真是绝佳的充实感呢。真想现在立刻就冲出去，"
+end-text-line 0
+show-text 0 @"把那扇门打开啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 1498) 1
@@ -2220,7 +2256,12 @@ play-voice (global-int f8007)
 label_000082c8
 u00416120
 // FROM: a カトリト
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「はい、これで扉まで行くことができますねっ」"
+*/
+// 输入原文：「是的，这样一来就能走到那扇门前了呢！」
+show-text 0 @"「是的，这样一来就能走到那扇门前了呢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 
@@ -2348,7 +2389,14 @@ play-voice (global-int f8007)
 label_00008a14
 u00416120
 // FROM: 8 リシュエンツェーリ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これで障害はなくなりました。やはり私たちは、運命に愛されているのですね！」"
+*/
+// 输入原文：「这样一来，障碍就消除了。我们果然是被命运眷顾着呢！」
+show-text 0 @"「这样一来，障碍就消除了。我们果然是被命运眷"
+end-text-line 0
+show-text 0 @"顾着呢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2474,7 +2522,14 @@ play-voice (global-int f8007)
 label_00009160
 u00416120
 // FROM: 9 ミクシュアナ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「これで任務完了になるとよいですね。フィア様が争いから解放されるよう、マーズテリアを代表して願っております」"
+*/
+// 输入原文：「希望这样一来，任务就能圆满完成。我代表马兹忒利亚，祈愿菲亚大人能从纷争中解放出来」
+show-text 0 @"「希望这样一来，任务就能圆满完成。我代表马兹忒利亚"
+end-text-line 0
+show-text 0 @"，祈愿菲亚大人能从纷争中解放出来」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2600,7 +2655,12 @@ play-voice (global-int f8007)
 label_000098ac
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うんっ、ありがとう！　よーし、扉まで一直線だ！！」"
+*/
+// 输入原文：「嗯！谢谢大家！好——，一口气直奔那扇门！！」
+show-text 0 @"「嗯！谢谢大家！好——，一口气直奔那扇门！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000ed20
@@ -2650,12 +2710,12 @@ mov (global-int 14d712) 18
 mov (global-int 5bd01) 18
 mov (global-int 5bd03) 0
 mov (global-int b1b7) 0
-set-string (global-string bc0) "指定位置到達"
+set-string (global-string bc0) "指定位置到達|到达指定位置"
 set-string (global-string bc1) ""
 set-string (global-string bc2) ""
-set-string (global-string bc3) "自軍拠点の制圧"
-set-string (global-string bc4) "５０ターン経過"
-set-string (global-string bc5) "味方ユニットの全滅"
+set-string (global-string bc3) "自軍拠点の制圧|自军据点被占领"
+set-string (global-string bc4) "５０ターン経過|经过５０回合"
+set-string (global-string bc5) "味方ユニットの全滅|我方单位全灭"
 mov (global-int 5b8b0) 1
 ret
 
@@ -2803,7 +2863,12 @@ play-voice (global-int f8007)
 label_0000a4f4
 u00416120
 // FROM: 73 通りすがりの娘
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「きゃああああああっ」"
+*/
+// 输入原文：「呀啊啊啊啊——！」
+show-text 0 @"「呀啊啊啊啊——！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2826,7 +2891,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くっ、住民の被害が多すぎる。これ以上ここで作業するのは無理だ」"
+*/
+// 输入原文：「可恶，居民伤亡太严重了。没法再在这里继续作业了」
+show-text 0 @"「可恶，居民伤亡太严重了。没法再在这里继续作业了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2849,7 +2919,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「すまない。安易に許可するべきではなかったっ」"
+*/
+// 输入原文：「抱歉。我不该那么轻易就批准下来的……」
+show-text 0 @"「抱歉。我不该那么轻易就批准下来的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00012050
@@ -2984,9 +3059,14 @@ play-voice (global-int f8007)
 label_0000ae8c
 u00416120
 // FROM: 170 フィア＝イブラム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「クク、我ラヲ倒シテモ『"
 display-furigana 0 "絶望" "ゼツボウ"
 show-text 0 "』ハ、終ワラヌ」"
+*/
+// 输入原文：「库库，即便打倒吾等，『绝望』也不会终结」
+show-text 0 @"「库库，即便打倒吾等，『绝望』也不会终结」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3112,9 +3192,16 @@ play-voice (global-int f8007)
 label_0000b608
 u00416120
 // FROM: 170 フィア＝イブラム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「今モ魔力は神ヲ"
 display-furigana 0 "蝕" "ムシバ"
 show-text 0 "ミ、犯シ、狂ワセテイル！」"
+*/
+// 输入原文：「此刻，魔力仍在侵蚀神、侵犯神，使神陷入疯狂……！」
+show-text 0 @"「此刻，魔力仍在侵蚀神、侵犯神，使神陷入疯狂"
+end-text-line 0
+show-text 0 @"……！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3240,9 +3327,16 @@ play-voice (global-int f8007)
 label_0000bd84
 u00416120
 // FROM: 170 フィア＝イブラム
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「クヒャハハハハハハッ、サア、世界ガ"
 display-furigana 0 "滅" "ホロ"
 show-text 0 "ビヘ向カウ運命ニ絶望セヨ！！」"
+*/
+// 输入原文：「库呀哈哈哈哈，来吧，为世界走向灭亡的命运而绝望吧！！」
+show-text 0 @"「库呀哈哈哈哈，来吧，为世界走向灭亡的命运而"
+end-text-line 0
+show-text 0 @"绝望吧！！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3265,7 +3359,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くそ、すっきりとしない勝利だぜ」"
+*/
+// 输入原文：「……可恶，赢得真不痛快啊」
+show-text 0 @"「……可恶，赢得真不痛快啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3288,7 +3387,14 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「フィアの顔で言われると、やっぱりくるものがあるな。フィア、今どこにいるんだ」"
+*/
+// 输入原文：「由菲亚的那张脸说出那些话，心里果然还是很难受啊。菲亚，你现在究竟在哪里……」
+show-text 0 @"「由菲亚的那张脸说出那些话，心里果然还是很难受啊。"
+end-text-line 0
+show-text 0 @"菲亚，你现在究竟在哪里……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3311,7 +3417,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「落ち込んでいる暇はない。さあ、次に行くぞ！」"
+*/
+// 输入原文：「没空消沉了。走吧，去下一个目标！」
+show-text 0 @"「没空消沉了。走吧，去下一个目标！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -3474,7 +3585,12 @@ play-voice (global-int f8007)
 label_0000c964
 u00416120
 // FROM: 7d 体格の良い男
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うわああぁ！」"
+*/
+// 输入原文：「哇啊啊啊！」
+show-text 0 @"「哇啊啊啊！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3497,7 +3613,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くっ、住民の被害が多すぎる。これ以上ここで作業するのは無理だ」"
+*/
+// 输入原文：「可恶，居民伤亡太严重了。没法再在这里继续作业了」
+show-text 0 @"「可恶，居民伤亡太严重了。没法再在这里继续作业了」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3520,7 +3641,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「すまない。安易に許可するべきではなかったっ」"
+*/
+// 输入原文：「抱歉。我不该那么轻易就批准下来的……」
+show-text 0 @"「抱歉。我不该那么轻易就批准下来的……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00012050
@@ -3675,7 +3801,12 @@ play-voice (global-int f8007)
 label_0000d42c
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ククッ、残念だったね」"
+*/
+// 输入原文：「呵呵，真遗憾呢」
+show-text 0 @"「呵呵，真遗憾呢」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3703,7 +3834,14 @@ label_0000d560
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "致命傷を負わせたはずのガイダルの周りに生命の力が集まり、その傷を癒していく。"
+*/
+// 输入原文：理应已令盖达鲁身负致命伤，可生命之力却在他周围聚集，治愈着那些伤口。
+show-text 0 @"理应已令盖达鲁身负致命伤，可生命之力却在他周围聚"
+end-text-line 0
+show-text 0 @"集，治愈着那些伤口。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3726,7 +3864,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まさか、城砦の人たちを生贄にして。なにを考えているんだ！」"
+*/
+// 输入原文：「竟然拿城砦的人们当活祭品……你到底在想什么！」
+show-text 0 @"「竟然拿城砦的人们当活祭品……你到底在想什么！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3852,7 +3995,14 @@ play-voice (global-int f8007)
 label_0000ddc4
 u00416120
 // FROM: aa ガイダル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「おいおい、人のせいにするなよ。私に敵意を向けるというのは、そういうことだよ」"
+*/
+// 输入原文：「喂喂，别把责任推给别人啊。向我表露敌意，就是这个下场哦」
+show-text 0 @"「喂喂，别把责任推给别人啊。向我表露敌意，就是"
+end-text-line 0
+show-text 0 @"这个下场哦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3875,7 +4025,12 @@ call label_0001139c
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「くそっ、こんな奴の手を借りなければ」"
+*/
+// 输入原文：「可恶，竟然非得借助这种家伙的手……」
+show-text 0 @"「可恶，竟然非得借助这种家伙的手……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00012368

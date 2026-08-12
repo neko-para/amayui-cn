@@ -627,16 +627,16 @@ call label_0000dab4
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_0000dab4
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1303,7 +1303,12 @@ call label_0000fe44
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「なんとか倒せた。それにしても手強い相手だったな」"
+*/
+// 输入原文：「总算把它干掉了……不过，还真是个难缠的对手啊」
+show-text 0 @"「总算把它干掉了……不过，还真是个难缠的对手啊」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -1500,7 +1505,14 @@ play-voice (global-int f8007)
 label_000058e4
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ここって楽して得する場所じゃなかったの？　こんな子がいるなんて」"
+*/
+// 输入原文：「这里不是那种能轻轻松松白占便宜的地方吗？居然会有这样的孩子呀」
+show-text 0 @"「这里不是那种能轻轻松松白占便宜的地方吗？居然会有"
+end-text-line 0
+show-text 0 @"这样的孩子呀」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1523,7 +1535,12 @@ call label_0000fe44
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「楽してばかりじゃなくて、苦労もちゃんとしろってことなんじゃないのか」"
+*/
+// 输入原文：「这不是在说，别光想着偷懒，也得好好吃点苦头吗？」
+show-text 0 @"「这不是在说，别光想着偷懒，也得好好吃点苦头吗？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1546,7 +1563,12 @@ call label_0000fe44
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「実入りがあったのは間違いないんだ、とりあえず帰ろうぜ」"
+*/
+// 输入原文：「收获确实不小，总之先回去吧」
+show-text 0 @"「收获确实不小，总之先回去吧」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1569,7 +1591,12 @@ call label_0000fe44
 u004213E0 1
 u00416120
 // FROM: 1 アヴァロ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ん？　少し気分が晴れたような気のせいか」"
+*/
+// 输入原文：「嗯？好像心情畅快了一些……是错觉吗」
+show-text 0 @"「嗯？好像心情畅快了一些……是错觉吗」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 u00415040
@@ -1767,7 +1794,14 @@ play-voice (global-int f8007)
 label_00006938
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「やったぁー、最後の欠片を手に入れたよっ！　これでリリィもご主人様に会えるね！」"
+*/
+// 输入原文：「太好啦——，拿到最后的碎片了！这样莉莉也能见到主人大人了呢！」
+show-text 0 @"「太好啦——，拿到最后的碎片了！这样莉莉也能见到主"
+end-text-line 0
+show-text 0 @"人大人了呢！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -1893,7 +1927,12 @@ play-voice (global-int f8007)
 label_00007084
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「う、うん。まおーさまの、元ヘ」"
+*/
+// 输入原文：「嗯、嗯……回魔王大人身边……」
+show-text 0 @"「嗯、嗯……回魔王大人身边……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2019,7 +2058,14 @@ play-voice (global-int f8007)
 label_000077d0
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「どうしたの、もっと素直に喜びなよ。ほら、転移門の準備をしてあげるから、早く帰ろうっ！」"
+*/
+// 输入原文：「怎么了嘛，再坦率一点高兴嘛。来，我来准备好转移门，快点回家吧！」
+show-text 0 @"「怎么了嘛，再坦率一点高兴嘛。来，我来准备好转移门"
+end-text-line 0
+show-text 0 @"，快点回家吧！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_00010808
@@ -2087,7 +2133,14 @@ label_00007b3c
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "魔王の姿であるそれは、幾度の攻撃を受け、その動きを鈍らせる。"
+*/
+// 输入原文：以魔王之姿现身的它，在承受了数次攻击之后，动作渐渐变得迟钝起来。
+show-text 0 @"以魔王之姿现身的它，在承受了数次攻击之后，动作渐渐"
+end-text-line 0
+show-text 0 @"变得迟钝起来。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2115,7 +2168,12 @@ label_00007c88
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "こちらへ向ける敵意も薄れているようだ。"
+*/
+// 输入原文：它朝这边投来的敌意，似乎也在逐渐消退。
+show-text 0 @"它朝这边投来的敌意，似乎也在逐渐消退。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -2294,7 +2352,12 @@ play-voice (global-int f8007)
 label_00008700
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「よし、大人しくなったっ！」"
+*/
+// 输入原文：「好，终于老实下来了！」
+show-text 0 @"「好，终于老实下来了！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -2457,7 +2520,14 @@ play-voice (global-int f8007)
 label_00009060
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「まおーさままおーさまっ、わたしだよ、リリィだよ、わかる？　ね、まおーさまが待ってるから、いっしょに帰ろう？」"
+*/
+// 输入原文：「魔王大人魔王大人！是我呀，是莉莉呀，你认得我吗？呐，魔王大人还在等着，我们一起回去吧？」
+show-text 0 @"「魔王大人魔王大人！是我呀，是莉莉呀，你认得我吗？"
+end-text-line 0
+show-text 0 @"呐，魔王大人还在等着，我们一起回去吧？」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -2552,7 +2622,12 @@ label_00009648
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "リリィの声を受け、それは淡い光を発し始める。"
+*/
+// 输入原文：听到莉莉的声音，它开始散发出淡淡的光芒。
+show-text 0 @"听到莉莉的声音，它开始散发出淡淡的光芒。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2580,7 +2655,12 @@ label_00009794
 u004213E0 1
 u00416120
 // FROM: none
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "まるで吸い込まれるように、その光はリリィへと向かっていった。"
+*/
+// 输入原文：那光芒仿佛被吸进去一般，径直朝着莉莉涌了过去。
+show-text 0 @"那光芒仿佛被吸进去一般，径直朝着莉莉涌了过去。"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -2791,7 +2871,12 @@ play-voice (global-int f8007)
 label_0000a51c
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「ああったかい。まおーさまだ」"
+*/
+// 输入原文：「啊……好温暖……是魔王大人……」
+show-text 0 @"「啊……好温暖……是魔王大人……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -2917,7 +3002,14 @@ play-voice (global-int f8007)
 label_0000ac68
 u00416120
 // FROM: 2 フィア
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「えへへ、良かったねぇ、ぐすっ、なんか私、嬉しくて泣けて来ちゃったよぉ」"
+*/
+// 输入原文：「诶嘿嘿，太好了呢，呜……不知怎么的，我高兴得都快要哭出来了啦」
+show-text 0 @"「诶嘿嘿，太好了呢，呜……不知怎么的，我高兴得都快"
+end-text-line 0
+show-text 0 @"要哭出来了啦」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3043,7 +3135,14 @@ play-voice (global-int f8007)
 label_0000b3b4
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うんうんでも、これは肉体の一部だったんだね。リリィのご主人様の肉体はばらばらになっちゃってるのか」"
+*/
+// 输入原文：「嗯嗯……不过，这是身体的一部分呢。莉莉的主人大人的身体，已经四分五裂了吗……」
+show-text 0 @"「嗯嗯……不过，这是身体的一部分呢。莉莉的主人大人"
+end-text-line 0
+show-text 0 @"的身体，已经四分五裂了吗……」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
@@ -3179,7 +3278,14 @@ play-voice (global-int f8007)
 label_0000bb90
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うんでも、こうしてひとつ見つかったし、きっとまおーさまも喜ぶとおもう」"
+*/
+// 输入原文：「嗯……不过，既然这样找到了一片，我想魔王大人也一定会高兴的」
+show-text 0 @"「嗯……不过，既然这样找到了一片，我想魔王大人也一"
+end-text-line 0
+show-text 0 @"定会高兴的」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3305,7 +3411,14 @@ play-voice (global-int f8007)
 label_0000c2dc
 u00416120
 // FROM: 16 ヴァレフォル
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うん、きっとそうだよ。さあ、今度こそ、ご主人様の元へ帰ろうか！」"
+*/
+// 输入原文：「嗯，一定是的。来吧，这次一定要回到主人大人身边去！」
+show-text 0 @"「嗯，一定是的。来吧，这次一定要回到主人大人"
+end-text-line 0
+show-text 0 @"身边去！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 eq (local-int 0) (global-int 0) 6
@@ -3431,7 +3544,12 @@ play-voice (global-int f8007)
 label_0000ca28
 u00416120
 // FROM: 15 リリィ
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "「うん！」"
+*/
+// 输入原文：「嗯！」
+show-text 0 @"「嗯！」"
+// 页面结束
 wait-for-input 0
 end-text-line 0
 call label_0000dc48
