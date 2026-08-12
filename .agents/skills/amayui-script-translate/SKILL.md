@@ -15,6 +15,8 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 - `src\<脚本>.txt`：开发源（修改对象；未翻译时为基线副本）
 - `rules/glossary.json`：已确认术语（仙灵 / 迪尔-利菲娜 / 天结神缘）
 - `docs/glossary-draft.md`：名词/世界观背景
+- `docs/keywords-角色语气.md`：角色语气汇总（70 个角色；翻译时按页首 `// FROM: <id> <名称>` 定向检索）
+- `docs/prob-角色翻译不一致.md`：已有译文不一致清单（2026-08-12 定案）
 - `scripts/translate.js`：assemble（骨架校验 + SJIS + 回读）
 - `scripts/lib/reflow.js` + `scripts/reflow.js`：折行工具（`npm run reflow`）
 - Decompiler 路径必须走 ASCII junction `E:\Games\Eushully\wk -> 天結`（translate.js 已内置）
@@ -25,8 +27,12 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 ## 流程
 
 1. **准备**：确认目标脚本存在于 `data\` 与 `src\`；读 `references/conventions.md` 与
-   `rules/glossary.json`、`docs/glossary-draft.md`。
+   `rules/glossary.json`、`docs/glossary-draft.md`；了解 `docs/keywords-角色语气.md`
+   的角色条目结构与 `docs/prob-角色翻译不一致.md`（翻译时按 FROM 定向检索，不必通读）。
 2. **翻译**：按 `references/conventions.md` 的规则逐页修改 `src\<脚本>.txt`：
+   - 每个 ADV 页先看页首 `// FROM: <id> <名称>` 确定说话人（`none` = 旁白），
+     翻译前在 `docs/keywords-角色语气.md` 检索该角色条目，按其中「日文表达风格 /
+     中文译文风格 / 翻译一致性注意事项」保持语气与译名一致；
    - 每个文本页：`/* 原文存档 */` 块注释（原文逐字含外字）→ `// 输入原文：…` 单行注释 →
      `@"译文"` 正文；
    - ADV 页较多（如 SC*）用「提取 → 映射 → 批替换 → reflow-apply」流程
@@ -66,6 +72,9 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
   `<br>` 强制换行保留分段；concat 仅当原文有才生成镜像行。
 - 页块三段式：`// 输入原文` 注释 + 正文 + `// 页面结束` 结束注释；行尾不得是『（提前折行）。
 - 术语：仙灵 / 迪尔-利菲娜 / 天结神缘；其余查 docs/glossary-draft.md。
+- 角色语气：按页首 `// FROM: <id> <名称>` 查 `docs/keywords-角色语气.md` 对应条目，
+  保持自称/称呼、敬语层级、句尾语气、口头禅、拟声、译名一致；修正已有不一致时
+  对照 `docs/prob-角色翻译不一致.md` 的定案口径。
 - 沉淀：prob-<脚本>.md（待定）+ keywords-<主题>.md（关键字表）→ docs/；同步 docs/README.md。
 - 记录：Windows 上翻译完成后改 PROGRESS.md 与 patch/patch.config.json；macOS 上只写
   项目根 PENDING.md（已翻译未编译登记），待 Windows assemble 通过后再登记 PROGRESS/patch.config。
@@ -75,5 +84,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 
 - `references/conventions.md`：完整翻译约定（语法、注音、折行、concat、术语、执行步骤、报告）
 - `references/verify.md`：复核清单（assemble / 宽度 / 结构 / git status / 抽查）
+- `docs/keywords-角色语气.md`：角色语气汇总（70 个角色；按 FROM 定向检索对应条目）
+- `docs/prob-角色翻译不一致.md`：已有译文不一致清单（含 2026-08-12 定案状态）
 - `scripts/extract-pages.js`：提取 ADV 页清单 / 生成译文映射骨架（`--out`），大批量 SC 流程第 1 步
 - `scripts/apply-page-blocks.js`：按译文映射批量替换为三段式页块（校验全覆盖），大批量 SC 流程第 3 步
