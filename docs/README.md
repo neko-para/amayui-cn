@@ -85,7 +85,7 @@ E:\Games\Eushully\天結\
 │                          keywords-章节标题.md /
 │                          SG与SC分节对应.md /
 │                          keywords-周回引継.md / prob-INFOFA.md / prob-CVINIT.md /
-│                          prob-追加包系统.md）
+│                          prob-追加包系统.md / prob-SG追加包.md）
 ├── install-manifest.json install 文件 MD5
 ├── raw-manifest.json     游戏本体 + 补丁目录文件 MD5
 └── .gitignore            /install、/raw
@@ -123,6 +123,9 @@ E:\Games\Eushully\天結\
       42 个（EBINIT/PLINIT/FAINIT/CIINIT/CNINIT/CVINIT/CCINIT/OFINIT/STINIT2/CDINIT2/AMINIT2/
       OBINIT/DPINIT 等）已在 `src/` 翻译完成并通过本地校验，未编译条目登记在 `PENDING.md`；
       `docs/prob-追加包系统.md` 已建立
+- [ ] **追加包 SG 系统提示批翻译（macOS，待 Windows assemble）**：AP1-5 的 33 个 SG 系统提示脚本
+      （$1$SG0331 ～ $5$SG4382）已在 `src/` 翻译完成并通过本地校验，未编译条目登记在 `PENDING.md`；
+      `docs/prob-SG追加包.md` 已建立
 - [x] **STINIT2 战斗地名全量翻译**：130 条 set-string（95 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 118/118）；
       关键字表 `docs/keywords-战斗地名.md`、待定清单 `docs/prob-STINIT2.md` 已建立
 - [x] **STINIT 战斗目标全量翻译**：1632 条 set-string（449 条非空、83 个唯一原文）译完并通过 assemble（骨架/SJIS/回读 83/83）；
