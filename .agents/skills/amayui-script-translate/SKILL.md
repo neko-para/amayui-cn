@@ -35,7 +35,8 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 - `docs/prob-角色翻译不一致.md`：已有译文不一致清单（2026-08-12 定案）
 - `scripts/translate.js`：assemble（骨架校验 + SJIS + 回读）
 - `scripts/lib/reflow.js` + `scripts/reflow.js`：折行工具（`npm run reflow`）
-- Decompiler 路径必须走 ASCII junction `E:\Games\Eushully\wk -> 天結`（translate.js 已内置）
+- Decompiler（已改用 cmake 构建，二进制为 `tools\eushully-decompiler\build\Release\age-asm.exe`）
+  路径必须走 ASCII junction `E:\Games\Eushully\wk -> 天結`（translate.js 已内置）
 - macOS 环境：当前仓库可在 macOS（`/Users/nekosu/Documents/Projects/amayui-cn`）上翻译与本地校验
   （node 工具均可运行）；assemble 与安装（SJIS 写盘 / install 树 / DATA1 写入）依赖 Windows，
   macOS 上翻译/修改完成后在项目根 `PENDING.md` 登记「已翻译、未编译」条目（格式见 conventions.md）。

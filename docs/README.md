@@ -469,7 +469,7 @@ E:\Games\Eushully\天結\
 |------|------|------|------|
 | `alf\unpack_alf.exe` | foxofice/alf `8a70066` (2025-09-26) | 已编译可用（已去 getchar 阻塞） | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI`（LZSS 解 TOC） |
 | `alf\packdata`（源码） | 同上（战Z中文项目遗留） | 需适配 | 修改文件重打包进 ALF 并重建 SYS4INI.BIN 索引 |
-| `eushully-decompiler\Decompiler\Decompiler.exe` | Kelebek1 `21da1e8` (2024-08-30) | 已编译可用 | AGE 脚本反汇编 `-d` / 重汇编 `-a` / 往返校验 `-x` |
+| `eushully-decompiler\build\Release\age-asm.exe` | Kelebek1 `21da1e8` (2024-08-30)；cmake 构建 | 已编译可用 | AGE 脚本反汇编 `-d` / 重汇编 `-a` / 往返校验 `-x` |
 | `SExtractor\` | satan53x（HEAD） | 依赖已装（Python 3.11） | 正则提取/导入参考；`subs_cn_jp.json` 为 SJIS 码位映射字典来源 |
 | `Eushully_AGF_TooL\Eushully_AGF_TooL.exe` | Koreanshy（ai2.moe「Eushully会社 AGF图片处理工具」） | 2026-02-20（PyInstaller GUI） | 可用（已实测；可无界面调用） | AGF→PNG 批量导出 / PNG→AGF 有头注入与无头打包（UI/背景图片） |
 | `UniversalInjectorFramework\` | AtomCrafty（HEAD） | **已放弃** | AGE.EXE 加壳，UIF 全走 IAT hook 实测全部失败（`Unable to enumerate import address table`） |
@@ -481,15 +481,16 @@ E:\Games\Eushully\天結\
 tools/alf/unpack_alf.exe SYS4INI.BIN
 
 # 反汇编 / 重汇编 / 往返校验
-tools/eushully-decompiler/Decompiler/Decompiler.exe -d SC0000.BIN SC0000.txt
-tools/eushully-decompiler/Decompiler/Decompiler.exe -a SC0000.txt SC0000.BIN
-tools/eushully-decompiler/Decompiler/Decompiler.exe -x SC0000.BIN
+tools/eushully-decompiler/build/Release/age-asm.exe -d SC0000.BIN SC0000.txt
+tools/eushully-decompiler/build/Release/age-asm.exe -a SC0000.txt SC0000.BIN
+tools/eushully-decompiler/build/Release/age-asm.exe -x SC0000.BIN
 ```
 
 构建备注：
 
-- Decompiler 为 VS 工程（v143 工具集）；本机为 VS18/v180，手动编译方式：
-  `cl /std:c++20 /O2 /EHsc age-asm.cpp age-shared.cpp disassembler.cpp reassembler.cpp /Fe:Decompiler.exe`
+- Decompiler 为 cmake 工程（MSVC，`-A x64`）：
+  `cmake -S tools/eushully-decompiler -B tools/eushully-decompiler/build -A x64` +
+  `cmake --build tools/eushully-decompiler/build --config Release`（产物 `tools/eushully-decompiler/build/Release/age-asm.exe`）
 - unpack_alf 手动编译：`cl /O2 /EHsc unpack_alf.cpp lzss.cpp /Fe:unpack_alf.exe /link Shlwapi.lib`
 - `unpack_alf` 运行时会生成 `lzssdata.bin/lzssdata2.bin` 调试文件（可删）
 

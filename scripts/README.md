@@ -63,7 +63,7 @@ npm run check -- AIM.BIN                  # 仅核对 AIM.BIN 是否与清单一
 
 ## Decompiler 路径坑（重要）
 
-`Decompiler.exe` 用 ANSI 参数接收路径（系统 ACP=936），含日文/中文的绝对路径会被搅乱，
+`age-asm.exe`（cmake 构建产物）用 ANSI 参数接收路径（系统 ACP=936），含日文/中文的绝对路径会被搅乱，
 PowerShell 的 `Push-Location` / `cd /d` 也靠不住。统一做法：使用 ASCII 别名 junction：
 
 ```powershell
@@ -73,7 +73,7 @@ New-Item -ItemType Junction -Path "E:\Games\Eushully\wk" -Target "E:\Games\Eushu
 之后所有汇编/反汇编用 `E:\Games\Eushully\wk\...` 绝对路径：
 
 ```bash
-E:\Games\Eushully\wk\tools\eushully-decompiler\Decompiler\Decompiler.exe -e sjis -a data\OPINIT1.txt .tmp\OPINIT1.smoke.BIN
+E:\Games\Eushully\wk\tools\eushully-decompiler\build\Release\age-asm.exe -e sjis -a data\OPINIT1.txt .tmp\OPINIT1.smoke.BIN
 ```
 
 ## hook 路线结论（已放弃 UIF）

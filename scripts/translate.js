@@ -4,9 +4,9 @@ import { execFileSync } from 'node:child_process';
 import { ROOT_DIR, INSTALL_DIR, SRC_DIR } from './config.js';
 import { mapToSjis, validateSjis } from './lib/sjis-encode.js';
 
-// Decompiler 对含日文/中文的绝对路径参数支持不佳（ANSI 936），统一走 ASCII junction
+// age-asm（cmake 构建）对含日文/中文的绝对路径参数支持不佳（ANSI 936），统一走 ASCII junction
 const ASCII_JUNCTION = 'E:\\Games\\Eushully\\wk';
-const DECOMPILER = path.join(ASCII_JUNCTION, 'tools', 'eushully-decompiler', 'Decompiler', 'Decompiler.exe');
+const DECOMPILER = path.join(ASCII_JUNCTION, 'tools', 'eushully-decompiler', 'build', 'Release', 'age-asm.exe');
 
 const DATA_DIR = path.join(ROOT_DIR, 'data');   // 只读比较基线（原始日文）
 
