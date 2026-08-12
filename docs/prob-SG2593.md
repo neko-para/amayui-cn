@@ -16,7 +16,7 @@
 
 | 日文原名 | 本次译文 | 冲突现状 | 处理 |
 |---|---|---|---|
-| ドシュア砕屑崖 | 多舒阿碎屑崖 | `src/STINIT2.txt` 作「多舒阿碎屑崖」（prob-STINIT2 标记音译待考）；`src/FAINIT.txt` / `src/VIINIT.txt` 作「多舒亚碎屑崖」（prob-FAINIT 称按 VIINIT 定稿对齐） | 本页按「迷宫名=STINIT2/OBINIT 定稿」口径以 STINIT2 为准；若审校定为「多舒亚」，需同步回改 STINIT2 与本页 |
+| ドシュア砕屑崖 | 多舒阿碎屑崖 | 2026-08-12 用户定稿采用「多舒阿碎屑崖」；FAINIT/VIINIT 已同步修改 | 已定稿 |
 
 ## 3. 处理说明
 
