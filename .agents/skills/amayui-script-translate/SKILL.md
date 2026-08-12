@@ -1,13 +1,29 @@
 ---
 name: amayui-script-translate
-description: 直接执行《天結いキャッスルマイスター》汉化工程的游戏脚本翻译流程：把 src/*.txt（如 SC0000、SC0001、OPINIT1）从日文翻译为简体中文，并按既有约定完成排版（≤25 字/行）、构建校验（assemble；macOS 无法汇编时在 PENDING.md 登记未编译条目）。当用户要求：翻译/重译某个游戏脚本、重排已翻译脚本、或并行翻译多个脚本时，使用本技能（本会话内直接执行，不借助 codex CLI 子进程）。
+description: 直接执行《天結いキャッスルマイスター》汉化工程的游戏脚本翻译流程：把 src/*.txt（如 SC0000、SC0001、OPINIT1）从日文翻译为简体中文，并按既有约定完成排版（≤25 字/行）、构建校验（assemble；macOS 无法汇编时在 PENDING.md 登记未编译条目）。当用户要求：翻译/重译某个游戏脚本、重排已翻译脚本、或并行翻译多个脚本时，使用本技能（单脚本在本会话内直接执行；批量/并行长流程可交由 batch-task-runner 技能用 codex CLI 子进程顺次执行）。
 ---
 
 # Amayui Script Translate（天結い脚本翻译）
 
 ## 概述
 
-本会话内**直接执行**游戏脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表），最后校验——Windows 上用 `assemble`，macOS 上无法汇编/安装，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。
+本会话内**直接执行**单脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表、角色语气），最后校验——Windows 上用 `assemble`，macOS 上无法汇编/安装，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。**批量场景**（一次处理多个脚本/大量同质任务、流程长、需稳定可续跑）可改用 `batch-task-runner` 技能，用 codex CLI 子进程顺次执行，见下节。
+
+## 批量执行（可选；可借助 codex CLI）
+
+单脚本翻译始终在本会话内直接执行；当用户要求**批量**处理多个同质任务（如一次翻译/重排 N 个脚本、并行多会话、逐脚本长流程）时，不再回避 codex CLI——改用 `batch-task-runner` 技能：
+
+1. 在 `.tmp/` 下建任务专用目录（如 `.tmp/batch-translate/`）：`tasks.json`（每脚本一个任务，id=脚本名，input=`src/<脚本>.txt`）、`PROMPT.md`（通用模板）、`PROGRESS.md`（进度）。
+2. `PROMPT.md` 模板必须内联本技能的**全部硬性约定**，并引用 `references/conventions.md`：
+   - 三段式页块（`/* 原文存档 */` → `// 输入原文：…` → `@"译文"` → `// 页面结束`）；
+   - ≤25 字折行与 reflow（`node reflow-apply.js <脚本>`）；
+   - 每页按 `// FROM: <id> <名称>` 查 `docs/keywords-角色语气.md` 保持角色语气；
+   - 术语表（`rules/glossary.json`）、SC/SG 联动、不修改 `data/`；
+   - macOS 流程：不 assemble，本地校验后登记项目根 `PENDING.md`。
+3. 用 `batch-task-runner/scripts/batch-run.js` 顺次执行（每次 codex CLI 调用输出/日志独立落文件，失败重试、断点续跑）。
+4. 全部完成后按「流程 4–7」统一复核、沉淀文档、登记记录并汇报。
+
+子进程提示词必须引用约定文档而非自由发挥；单脚本仍走本技能直接流程，批量只是把同一套约定分发给多个 codex 子进程。
 
 ## 环境事实（仓库 E:\Games\Eushully\天結）
 
@@ -88,3 +104,4 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 - `docs/prob-角色翻译不一致.md`：已有译文不一致清单（含 2026-08-12 定案状态）
 - `scripts/extract-pages.js`：提取 ADV 页清单 / 生成译文映射骨架（`--out`），大批量 SC 流程第 1 步
 - `scripts/apply-page-blocks.js`：按译文映射批量替换为三段式页块（校验全覆盖），大批量 SC 流程第 3 步
+- `batch-task-runner` 技能：批量执行多个同质任务（codex CLI 子进程顺次执行），见「批量执行」节
