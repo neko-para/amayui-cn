@@ -266,6 +266,47 @@ E:\Games\Eushully\天結\
       女神等级条件）译完并通过 assemble（SG0012 8/8、SG0014 7/7）；并入
       `docs/keywords-第一章剧情.md` §5.1、待定清单 `docs/prob-SG0012.md` /
       `docs/prob-SG0014.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0100 第四章系统提示翻译**：SC0100 G0100 配套页（搜寻阿瓦罗期间工房与迷宫访问限制）
+      译完并通过 assemble（骨架/SJIS/回读 8/8）；confirm 串沿用 SG0010 定稿；待定清单
+      `docs/prob-SG0100.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0104 第四章系统提示翻译**：SC0100 G0104 配套页（把刚才收到的钱还给了戴头巾的男人）
+      译完并通过 assemble（骨架/SJIS/回读 7/7）；confirm 串沿用 SG0010 定稿；待定清单
+      `docs/prob-SG0104.md` 已建立（沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0132 第五章系统提示翻译**：SC0130 G0132 配套页（卡特利特「雷府龙」技能说明与
+      成体解放操作、胆小的公主解除、统治心得获得，3 页）译完并通过 assemble
+      （骨架/SJIS/回读 13/13）；confirm 串沿用 SG0010 定稿，技能名沿用
+      `src/SKINIT.txt` 定稿；待定清单 `docs/prob-SG0132.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0220 第八章系统提示翻译**：SC0220 G0220 配套页（雷府云海迷宫『荒芜的北山峡』
+      开放 + 新的出发准备，2 页）译完并通过 assemble（骨架/SJIS/回读 8/8）；
+      confirm 串沿用 SG0010 定稿，迷宫名沿用 `src/STINIT2.txt` 定稿
+      （雷府云海/荒芜的北山峡）；待定清单 `docs/prob-SG0220.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0281 终章系统提示翻译**：SC0280 G0281 配套页（神响霞廊迷宫『辉封庙门』
+      可访问提示，1 页）译完并通过 assemble（骨架/SJIS/回读 7/7）；
+      confirm 串沿用 SG0010 定稿，迷宫名沿用 `src/STINIT2.txt` 定稿
+      （神响霞廊/辉封庙门）；待定清单 `docs/prob-SG0281.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0285 终章系统提示翻译**：SC0280 G0285 配套页（水斗兽针团设施开放提示：
+      『交易』『工房』『训练』项目可使用，1 页）译完并通过 assemble（骨架/SJIS/回读 8/8）；
+      confirm 串沿用 SG0010 定稿，设施/菜单名沿用 EBINIT/BIINIT 定稿
+      （水斗兽针团/交易/训练）；待定清单 `docs/prob-SG0285.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0310 终章系统提示翻译**：SC0310 G0310 配套页（通关后 EX 模式入口提示：
+      封闭的冰都市到达封印扉，1 页）译完并通过 assemble（骨架/SJIS/回读 8/8）；
+      confirm 串沿用 SG0010 定稿，迷宫名沿用 `src/STINIT2.txt` 定稿
+      （封闭的冰都市）；待定清单 `docs/prob-SG0310.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0315 终章系统提示翻译**：SC0310 G0315 配套页（魔神漩涡迷宫『千足的魔神列车』
+      可访问提示，1 页）译完并通过 assemble（骨架/SJIS/回读 7/7）；
+      confirm 串沿用 SG0010 定稿，迷宫名沿用 `docs/keywords-战斗地名.md` 定稿
+      （魔神漩涡/千足的魔神列车）；待定清单 `docs/prob-SG0315.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
+- [x] **SG0316 终章系统提示翻译**：SC0310 G0316 配套页（魔神漩涡迷宫『鼓炎啸』
+      可访问提示，1 页）译完并通过 assemble（骨架/SJIS/回读 7/7）；
+      confirm 串沿用 SG0010 定稿，迷宫名沿用 `docs/keywords-战斗地名.md` 定稿
+      （魔神漩涡/鼓炎啸）；待定清单 `docs/prob-SG0316.md` 已建立
+      （沿用页块留空 + reflow-apply 工作流）
 - [x] **FELLOW 同伴翻译**：装备变更/卸装限制等 5 个唯一译文译完并通过 assemble
       （骨架/SJIS/回读 5/5）；关键字表 `docs/keywords-同伴.md`、待定清单
       `docs/prob-FELLOW.md` 已建立（concat 片段按 FIELD 先例处理）

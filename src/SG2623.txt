@@ -627,16 +627,16 @@ call label_00004b20
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004b20
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,6 +1045,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006c38
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "霊虚" "レイキョ"
 show-text 0 "二"
@@ -1065,6 +1066,12 @@ show-text 0 "』について"
 end-text-line 0
 show-text 0 "ロズリーヌに仕えていた２体の召喚が可能となります。"
 end-text-line 0
+*/
+// 输入原文：关于『灵虚双舞之人傀』『仿爱绽放之人傀』。<br>侍奉过罗兹利奴的两体召唤物，现在可以召唤了。
+show-text 0 @"关于『灵虚双舞之人傀』『仿爱绽放之人傀』。"
+end-text-line 0
+show-text 0 @"侍奉过罗兹利奴的两体召唤物，现在可以召唤了。"
+// 页面结束
 call label_00006c60
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003c88
@@ -1106,6 +1113,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003e60
 u0041BB40 1 2
 call label_00006c38
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "召喚" "しょうかん"
 show-text 0 "ユニット』の出撃は"
@@ -1116,6 +1124,14 @@ show-text 0 "自軍の"
 display-furigana 0 "占有地" "せんゆうち"
 show-text 0 "の場合のみ出撃させることが可能です。"
 end-text-line 0
+*/
+// 输入原文：『召唤单位』只能在<ruby>召唤者<rt>罗兹利奴</rt></ruby>的相邻格<br>且该格为自军占领地时才能出击。
+show-text 0 @"『召唤单位』只能在"
+display-furigana 0 @"召唤者" @"罗兹利奴"
+show-text 0 @"的相邻格"
+end-text-line 0
+show-text 0 @"且该格为自军占领地时才能出击。"
+// 页面结束
 call label_00006c60
 exit
 exit

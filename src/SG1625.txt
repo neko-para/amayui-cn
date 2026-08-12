@@ -627,16 +627,16 @@ call label_00004b08
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004b08
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1030,6 +1030,7 @@ u00416120
 play-sound-effect 3193 0
 u0041D050 0
 call label_00006c20
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "『"
 display-furigana 0 "成体解放" "せいたいかいほう"
 show-text 0 "』スキルについて"
@@ -1040,6 +1041,14 @@ show-text 0 "カトリト』の枠が追加され"
 end-text-line 0
 show-text 0 "新しい専用のスキルや装備を設定することができます。"
 end-text-line 0
+*/
+// 输入原文：关于『成体解放』技能<br>菜单中追加了『青春期卡特利特』的栏位<br>可为其设置新的专属技能与装备。
+show-text 0 @"关于『成体解放』技能"
+end-text-line 0
+show-text 0 @"菜单中追加了『青春期卡特利特』的栏位"
+end-text-line 0
+show-text 0 @"可为其设置新的专属技能与装备。"
+// 页面结束
 call label_00006c48
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003a6c
@@ -1081,10 +1090,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003c44
 u0041BB40 1 2
 call label_00006c20
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "スキルを装備した状態で、迷宮マップにいるカトリトを"
 end-text-line 0
 show-text 0 "クリックすると、成長した姿に変身することができます。"
 end-text-line 0
+*/
+// 输入原文：在装备技能的状态下，点击迷宫地图上的卡特利特<br>即可变身为成长后的姿态。
+show-text 0 @"在装备技能的状态下，点击迷宫地图上的卡特利特"
+end-text-line 0
+show-text 0 @"即可变身为成长后的姿态。"
+// 页面结束
 call label_00006c48
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003d00
@@ -1126,10 +1142,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003ed8
 u0041BB40 1 2
 call label_00006c20
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "変身後、『元に戻る』を選択すると本来の姿に戻り"
 end-text-line 0
 show-text 0 "５ターンの間、変身できませんので注意してください。"
 end-text-line 0
+*/
+// 输入原文：变身后，选择『变回原样』将恢复原本的姿态<br>请注意，５回合内无法再次变身。
+show-text 0 @"变身后，选择『变回原样』将恢复原本的姿态"
+end-text-line 0
+show-text 0 @"请注意，５回合内无法再次变身。"
+// 页面结束
 call label_00006c48
 exit
 exit

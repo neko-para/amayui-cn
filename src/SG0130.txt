@@ -627,16 +627,16 @@ call label_00004940
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_00004940
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,12 +1045,19 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006a58
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "新しい戦いに備えて武具や城砦の『"
 display-furigana 0 "結陣" "ゆいじん"
 show-text 0 "』強化を行い"
 end-text-line 0
 show-text 0 "女神力を集めて女神ランク１０を目指しましょう。"
 end-text-line 0
+*/
+// 输入原文：为迎接新的战斗，强化武具与城砦的『结阵』，收集女神力，以女神等级１０为目标吧。
+show-text 0 @"为迎接新的战斗，强化武具与城砦的『结阵』，收集女神"
+end-text-line 0
+show-text 0 @"力，以女神等级１０为目标吧。"
+// 页面结束
 call label_00006a80
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003b38
@@ -1092,10 +1099,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003d10
 u0041BB40 1 2
 call label_00006a58
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "また、仲間との親睦を深める条件にレベルが関係して"
 end-text-line 0
 show-text 0 "いることもあります。育成も確認していきましょう。"
 end-text-line 0
+*/
+// 输入原文：此外，加深与同伴亲密的条件有时也与等级有关，记得也要确认培养情况。
+show-text 0 @"此外，加深与同伴亲密的条件有时也与等级有关，记得也"
+end-text-line 0
+show-text 0 @"要确认培养情况。"
+// 页面结束
 call label_00006a80
 exit
 exit

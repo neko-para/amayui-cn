@@ -627,16 +627,16 @@ call label_000049bc
 and (local-int 0) (global-int a9cc) 1
 jcc (local-int 0) ffffffff label_00002500
 mov (global-int f8fa5) 7
-set-string (global-string f17) "タイトル画面に戻りますか？"
+set-string (global-string f17) "タイトル画面に戻りますか？|要返回标题画面吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -682,16 +682,16 @@ call label_000049bc
 and (local-int 0) (global-int a9cc) 2
 jcc (local-int 0) ffffffff label_00002944
 mov (global-int f8fa5) 7
-set-string (global-string f17) "ゲームを終了しますか？"
+set-string (global-string f17) "ゲームを終了しますか？|要结束游戏吗？"
 sub (global-int f8fa4) 0 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "はい"
+set-string (local-string-ptr 0) "はい|是"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
-set-string (local-string-ptr 0) "いいえ"
+set-string (local-string-ptr 0) "いいえ|否"
 lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
@@ -801,13 +801,13 @@ u00415040
 u00416120
 jcc (global-int f8009) ffffffff label_00002f68
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "シーン再生終了"
+set-string (local-string-ptr 0) "シーン再生終了|场景回放结束"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
-set-string (local-string-ptr 0) "キャンセル"
+set-string (local-string-ptr 0) "キャンセル|取消"
 lookup-array (local-ptr 1) (global-int f8c53) (global-int f8c50)
 mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
@@ -1045,12 +1045,17 @@ u0041AD70 1 24 (local-int 1)
 label_00003a4c
 u0041BB40 1 2
 call label_00006ad4
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "グアラクーナ城砦の迷宮"
 end-text-line 0
 show-text 0 "『"
 display-furigana 0 "螺旋駆動" "らせんくどう"
 show-text 0 "区域』へ訪問できるようなった。"
 end-text-line 0
+*/
+// 输入原文：古亚拉库娜城砦迷宫『螺旋驱动区域』可访问了。
+show-text 0 @"古亚拉库娜城砦迷宫『螺旋驱动区域』可访问了。"
+// 页面结束
 call label_00006afc
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003b38
@@ -1092,6 +1097,7 @@ u0041AD70 1 24 (local-int 1)
 label_00003d10
 u0041BB40 1 2
 call label_00006ad4
+/* 原文存档（对照用，不参与汇编）
 show-text 0 "まずは城砦を引き上げる『城砦"
 display-furigana 0 "起重機" "きじゅうき"
 show-text 0 "』を開発しながら"
@@ -1101,6 +1107,12 @@ show-text 0 "を"
 display-furigana 0 "溜" "た"
 show-text 0 "めて女神ランク９を目指しましょう。"
 end-text-line 0
+*/
+// 输入原文：首先，一边开发吊起城砦的『城砦起重机』，<br>一边积攒女神力，以女神等级９为目标吧。
+show-text 0 @"首先，一边开发吊起城砦的『城砦起重机』，"
+end-text-line 0
+show-text 0 @"一边积攒女神力，以女神等级９为目标吧。"
+// 页面结束
 call label_00006afc
 exit
 exit
