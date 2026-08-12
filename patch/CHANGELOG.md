@@ -7,14 +7,15 @@
 
 ## v1.1（开发中）
 
+- [修改][SC2560] 菲亚台词「正如你明察」→「正如你所料」
 - [修改][SC0560] 阿瓦罗台词「可恶，心跳得好吵——真是被她撩得心怦怦直跳」→
-  「可恶，烦死了——真是被她撩得心跳个不停」（校验：assemble 683/683 通过）
+  「可恶，烦死了——真是被她撩得心跳个不停」
 - [术语统一][ALCHEMY] 系统提示「已追加新的配方」→「已追加新的设计」
-  （关联：docs/keywords-工坊.md、docs/prob-ALCHEMY.md；校验：assemble 9/9 通过）
+  （关联：docs/keywords-工坊.md、docs/prob-ALCHEMY.md）
 - [术语统一][SKINIT、SG5744] 技能名中的「捌」→「切」：斩骨捌→斩骨切、互流捌→互流切、
   双猫的乱捌→双猫的乱切
   （关联：docs/keywords-SKINIT.md、docs/prob-SKINIT.md、docs/keywords-第二章剧情.md、
-  docs/prob-SC5740.md；校验：assemble SKINIT 1532/1532、SG5744 14/14 通过）
+  docs/prob-SC5740.md）
 
 ## v1.0（2026-08-03）
 

@@ -94,7 +94,7 @@ git -C E:\Games\Eushully\天結 status --porcelain
 - Windows：`PROGRESS.md` 已包含 `<SCRIPT>`（已翻译索引）；`patch/patch.config.json` 的
   `files` 已包含 `install/<SCRIPT>.BIN` 同步条目；`patch/CHANGELOG.md` 已按
   conventions.md「变更记录」节把本次改动追加到当前「开发中」版本节
-  （类型/脚本/校验与 assemble 输出一致）。
+  （类型/脚本/改动与实际一致，不含 assemble 等技术校验信息）。
 - macOS：`PENDING.md` 已包含 `<SCRIPT>` 条目（类型/改动/待办齐全），且 `PROGRESS.md` 与
   `patch/patch.config.json`、`patch/CHANGELOG.md` 未被修改。
 
