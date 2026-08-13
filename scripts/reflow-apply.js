@@ -15,7 +15,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT_DIR, SRC_DIR } from './config.js';
+import { SRC_DIR } from './config.js';
 import { reflow, DEFAULT_MAX, PAGE_END_COMMENT } from './lib/reflow.js';
 
 const COMMENT_PREFIX = '// 输入原文：';
@@ -29,11 +29,6 @@ function usage() {
   console.log('  无脚本名    处理 src 下所有含 `// 输入原文：` 的脚本');
   console.log('  每个 ADV 页从 `// 输入原文：…` 注释提取排版前原文，用 reflow 重排后替换正文；');
   console.log('  页块以 `// 页面结束` 为显式结束注释；concat 按该页现有正文是否含 concat 行决定。');
-}
-
-function loadGlossary(p) {
-  const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-  return (data.terms ?? []).flatMap((t) => t.zh ?? []).filter(Boolean);
 }
 
 // 定位一个页块：返回区域起点 i、终点 j（区域后第一个行号）、区域行、是否含结束注释。
@@ -80,7 +75,7 @@ function printPageDiff(label, oldLines, newLines) {
   }
 }
 
-function processScript(name, glossary, apply, sampleCount, rng) {
+function processScript(name, apply, sampleCount, rng) {
   const p = path.join(SRC_DIR, `${name}.txt`);
   const raw = fs.readFileSync(p, 'utf8');
   const eol = raw.includes('\r\n') ? '\r\n' : '\n';
@@ -95,7 +90,7 @@ function processScript(name, glossary, apply, sampleCount, rng) {
 
     const region = findPage(lines, i);
     const concat = region.body.some((b) => b.trim().startsWith('concat'));
-    const newBlock = reflow(text, { maxLen: DEFAULT_MAX, glossary, concat });
+    const newBlock = reflow(text, { maxLen: DEFAULT_MAX, concat });
 
     const oldComment = lines[i];
     const oldBody = region.hasMarker ? region.body.slice(0, -1) : region.body;
@@ -146,8 +141,6 @@ for (let i = 0; i < argv.length; i++) {
   }
   names.push(argv[i]);
 }
-const glossary = loadGlossary(path.join(ROOT_DIR, 'rules', 'glossary.json'));
-
 let targets;
 if (names.length > 0) {
   targets = names;
@@ -174,7 +167,7 @@ for (const name of targets) {
   const raw = fs.readFileSync(p, 'utf8');
   if (!raw.includes(COMMENT_PREFIX)) continue; // 未翻译/无 ADV 页
 
-  const r = processScript(name, glossary, !check, sampleCount, rng);
+  const r = processScript(name, !check, sampleCount, rng);
   totalPages += r.total;
   totalChanged += r.changedPages.length;
   totalContentChanged += r.contentChangedPages.length;

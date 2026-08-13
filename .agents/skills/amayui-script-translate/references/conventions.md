@@ -49,7 +49,7 @@
 - `draw-string` 为固定控件文本（非 ADV 视觉行），不适用 ≤25 字规则；但受控件绘制宽度限制，
   译文超宽需精简或用更短同义词，并在游戏内确认不溢出。
 - 建议用 reflow 工具排版：把该页译文（含 `<ruby>主词<rt>释义</rt></ruby>` 标注）写入临时文件，运行
-  `node scripts/reflow.js <临时文件> [--no-concat] --glossary rules/glossary.json`（输出为三段式：`// 输入原文` + 正文 + `// 页面结束`），把输出贴到 src；
+  `node scripts/reflow.js <临时文件> [--no-concat]`（输出为三段式：`// 输入原文` + 正文 + `// 页面结束`），把输出贴到 src；
   也可手工按上述规则排版。
 
 ## concat
@@ -94,7 +94,7 @@
 
 ## 术语（必须遵守）
 
-- `rules/glossary.json` 已确认：エルフ/Elf→**仙灵**、ディル＝リフィーナ→**迪尔-利菲娜**、
+- `docs/glossary-draft.md` 已确认：エルフ/Elf→**仙灵**、ディル＝リフィーナ→**迪尔-利菲娜**、
   天結いキャッスルマイスター→**天结神缘**；
 - 其余名词参考 `docs/glossary-draft.md`（角色/地名/诸神/种族）；拿不准的保留日文或按上下文合理处理，
   并在报告中列出待审名词。
@@ -125,7 +125,7 @@
 
 ## 执行步骤
 
-1. 先读 `rules/glossary.json`、`docs/glossary-draft.md`、`scripts/README.md`（语法说明）、
+1. 先读 `docs/glossary-draft.md`、`docs/prob-决策清单.md`、`scripts/README.md`（语法说明）、
    `scripts/lib/reflow.js`；并了解 `docs/keywords-角色语气.md`（角色条目结构；翻译时按
    FROM 定向检索）与 `docs/prob-角色翻译不一致.md`（已定案清单）。
 1.5 SC/SG 联动：翻译 SC 脚本时，先扫描其 `comment "▼Gxxxx …"` 分节标记；按「SG 编号 = G 分节编号」

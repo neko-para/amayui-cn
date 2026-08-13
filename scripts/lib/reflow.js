@@ -53,28 +53,13 @@ const OPEN_CLOSE = { '「': '」', '『': '』', '（': '）', '(': ')', '【': 
 const PUNCT = new Set('，。、；：！？…—·「」『』（）《》〈〉【】');
 const LATIN_RE = /^[A-Za-z0-9][A-Za-z0-9%.\-+]*/;
 
-function pushPlain(tokens, seg, glossary) {
+function pushPlain(tokens, seg) {
   const n = seg.length;
   let i = 0;
   while (i < n) {
     const ch = seg[i];
     if (/\s/.test(ch)) {
       i++;
-      continue;
-    }
-    // 术语表词条（调用方需按长度降序传入）
-    let gl = null;
-    if (glossary) {
-      for (const g of glossary) {
-        if (seg.startsWith(g, i)) {
-          gl = g;
-          break;
-        }
-      }
-    }
-    if (gl) {
-      tokens.push({ type: 'plain', text: gl, w: strWidth(gl), atomic: true });
-      i += gl.length;
       continue;
     }
     // 引号实体（如 『因夫鲁斯王国』）整体不折行
@@ -113,13 +98,13 @@ function pushPlain(tokens, seg, glossary) {
   }
 }
 
-export function tokenize(text, glossary = []) {
+export function tokenize(text) {
   const tokens = [];
   let last = 0;
   MARKUP_RE.lastIndex = 0;
   let m;
   while ((m = MARKUP_RE.exec(text))) {
-    pushPlain(tokens, text.slice(last, m.index), glossary);
+    pushPlain(tokens, text.slice(last, m.index));
     if (m[1] !== undefined) {
       tokens.push({ type: 'ruby', main: m[1], rt: m[2], w: strWidth(m[1]) });
     } else if (m[3] !== undefined) {
@@ -129,7 +114,7 @@ export function tokenize(text, glossary = []) {
     }
     last = MARKUP_RE.lastIndex;
   }
-  pushPlain(tokens, text.slice(last), glossary);
+  pushPlain(tokens, text.slice(last));
   return tokens;
 }
 
@@ -328,8 +313,7 @@ function lineCharCount(line) {
 // 一段文案 → 标准脚本指令行列表（页面最后一行不加 end-text-line）
 export function reflow(text, opts = {}) {
   let maxLen = opts.maxLen ?? DEFAULT_MAX;
-  const glossary = (opts.glossary ?? []).slice().sort((a, b) => b.length - a.length);
-  const tokens = tokenize(text, glossary);
+  const tokens = tokenize(text);
   let lines = breakLines(tokens, maxLen);
   // 孤行优化：最后一行 ≤5 字且行数 ≥2 时，递减行宽重排，最多重试 3 次
   // （含显式 <br> 时跳过：断行位置由译员决定）

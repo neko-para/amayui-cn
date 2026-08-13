@@ -152,8 +152,7 @@ npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码�
   放不下提前折行、**行尾不得是『**（发现则提前折行，把『移到下一行行首）。
   用 `npm run reflow -- <文案文件>` 自动生成标准脚本行：
   - 文案支持 `<ruby>主词<rt>注音</rt></ruby>`（→ display-furigana）与 `<nb>不折行内容</nb>`；
-  - `--max N` 改行宽（默认 25 中文字）、`--glossary rules/glossary.json` 注入术语原子、
-    `--no-concat` 去掉 concat 镜像行；
+  - `--max N` 改行宽（默认 25 中文字）、`--no-concat` 去掉 concat 镜像行；
   - 每个页面块为三段式：首行 `// 输入原文：…` 单行注释（含 ruby 标记，排版前原文）、
     正文（show-text/display-furigana/concat/end-text-line）、末行 `// 页面结束`
     特殊结束注释（页块显式边界，reflow-apply 据此定位）；
