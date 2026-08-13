@@ -5,7 +5,7 @@
 > （draw-string 为参数化控件文本；空串/纯引用类 set-string 不计文本）；
 > `$N$` 为 APPEND 追加包数据，计入需翻译）
 
-## 已翻译（447/465）
+## 已翻译（453/465）
 
 ### 序章
 
@@ -491,12 +491,18 @@
 * $5$SG2361
 * $5$SG2362
 * $5$SG4382
+* $3$SP1842
+* $3$SP2341
+* $4$SP3373
+* $5$SP0371
+* $5$SP0372
+* $5$SP2860
 
-## 未翻译（18/465，待处理）
+## 未翻译（12/465，待处理）
 
 系统/杂项（10）：CHECKCONFIG、DEBUGADV、DEBUGADV2、DRAWILLTIP、INIT、INIT2、INITCONFIG0、MUINIT、REACH、TITLE
 
-APPEND 追加包（8）：$3$AGENCY、$3$SP1842、$3$SP2341、$4$CNINIT、$4$SP3373、$5$SP0371、$5$SP0372、$5$SP2860
+APPEND 追加包（2）：$3$AGENCY、$4$CNINIT
 
 ## 说明
 
