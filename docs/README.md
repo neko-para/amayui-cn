@@ -558,7 +558,7 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
 | `天结.exe` | 19,980,350 | 心愿屋汉化壳 = 引擎 + 18.9MB overlay（加密翻译表，方案 B 弃用） |
 | `AGE.EXE` | 1,007,104 | 原版引擎（干净，无 overlay） |
 | `start.exe` | 31,945,168 | 启动器（2014 时间戳，带签名） |
-| `AGERC.DLL` | 335,872 | 资源 DLL（标题菜单/模态窗口，可能含少量 UI 文本，待验证） |
+| `AGERC.DLL` | 335,872 | 资源 DLL（主菜单 MENU 110/124 + 16 个对话框；汉化流程见 [AGERC对话框汉化.md](AGERC对话框汉化.md)） |
 
 ### 7.4 gaiji 外字（重要）
 
@@ -570,6 +570,8 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
 - **处理要求**：外字只出现在**未翻译的原文行**（保留原样，Decompiler 无损往返）；译文不写外字；
   Amayui CN 字体本身不含外字字形，游戏中停顿标记由引擎处理/回退显示（实测可接受）；
   字体构建/重建细节见 [font-build.md](font-build.md)
+- AGERC.DLL 对话框/菜单汉化流程（2026-08-13，DIALOG 3 退出确认框定稿）见
+  [AGERC对话框汉化.md](AGERC对话框汉化.md)
 
 ### 7.5 AGF 图片格式（UI / 背景图）
 
