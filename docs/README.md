@@ -384,7 +384,7 @@ E:\Games\Eushully\天結\
       并入 `docs/keywords-第三章剧情.md` §7、待定清单 `docs/prob-SC0560.md` 已建立
       （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC6540 第二章剧情翻译**：57 页 ADV（G6540–G6545：废妖的谷底净化（鬼族/水源污染）、
-      菲亚篇、云驱吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
+      菲亚篇、凌云吊桥营救米凯优）+ 14 个唯一 set-string（含战斗条件）译完并通过
       assemble（骨架/SJIS/回读 88/88）；并入 `docs/keywords-第二章剧情.md` §6、待定清单
       `docs/prob-SC6540.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **SC6570 第三章剧情翻译**：53 页 ADV（G6570–G6579：苔之山瀑探索、干风之山
@@ -401,7 +401,7 @@ E:\Games\Eushully\天結\
       assemble（骨架/SJIS/回读 26/26）；并入 `docs/keywords-第三章剧情.md` §13、待定清单
       `docs/prob-SC5450.md` 已建立（沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC5740 第二章剧情翻译**：92 页 ADV（G5740–G5744：伊欧露再次来袭、击破结晶化的
-      动力部、灵体退去、云驱吊桥真BOSS上级恶魔卡农）+ 15 个唯一 set-string（含战斗条件；
+      动力部、灵体退去、凌云吊桥真BOSS上级恶魔卡农）+ 15 个唯一 set-string（含战斗条件；
       bc3「自军据点被占领」为 2026-08-08 补齐的漏译）
       译完并通过 assemble（骨架/SJIS/回读 125/125）；配套 SG5744（合体攻击教程，文本与
       控制流交错，reflow 引入 `<br>` 强制换行后改走页块流程）已同步（15/15）；并入
@@ -434,8 +434,8 @@ E:\Games\Eushully\天結\
       `docs/keywords-第三章剧情.md` §6、待定清单 `docs/prob-SC2560.md` 已建立
       （沿用页块留空 + reflow-apply 工作流；无配套 SG）
 - [x] **SC2030 第二章剧情翻译**：165 页 ADV（G2030–G2032：城砦妖怪骚动、伊欧露决意中止暗杀、
-      伊欧露背叛的结果——米凯优被困云驱吊桥）+ 8 个唯一 set-string 译完并通过
-      assemble（骨架/SJIS/回读 208/208）；配套 SG2032（天枯断层迷宫『云驱吊桥』可访问了）
+      伊欧露背叛的结果——米凯优被困凌云吊桥）+ 8 个唯一 set-string 译完并通过
+      assemble（骨架/SJIS/回读 208/208）；配套 SG2032（天枯断层迷宫『凌云吊桥』可访问了）
       已同步（7/7）；并入 `docs/keywords-第二章剧情.md` §10、待定清单
       `docs/prob-SC2030.md` 已建立（沿用页块留空 + reflow-apply 工作流）
 - [x] **AFINIT 属性/类别标签翻译**：67 条 set-string（种族 15 / 属性耐性 12 / 道具类别 27 /

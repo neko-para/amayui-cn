@@ -1,7 +1,7 @@
 # SC4040 待定内容清单（prob-SC4040.md）
 
 > 更新日期：2026-08-07
-> 来源：`src/SC4040.txt`（废妖谷底 / 腾云吊桥 / 伙伴出击与指挥力：28 条 show-text、
+> 来源：`src/SC4040.txt`（废妖谷底 / 凌云吊桥 / 伙伴出击与指挥力：28 条 show-text、
 > 6 条 display-furigana、17 条 set-string；assemble 回读 41/41）
 > 用途：记录 SC4040 翻译中**已采用但未定稿**的措辞，供人工审校与
 > MIINIT / SG4015 / SG4018 联合检查。
