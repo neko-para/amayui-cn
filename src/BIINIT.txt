@@ -4,963 +4,2439 @@ local_vars = { 1 1 1 1 1 1 }
 ====
 
 mov (global-int 14956a) a
-set-string (global-string cb1b) "【基本】　女神力（めがりょく）|【基本】　女神力"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb1b) "【基本】　女神力（めがりょく）"
+*/
+set-string (global-string cb1b) @"【基本】　女神力"
 mov (global-int 149952) 39c7
-set-string (global-string cf0c) "縁結びの神であるフィアが得られる力です。|结缘之神菲亚所能获得的力量。"
-set-string (global-string cf0d) "イベント内での人々との交流や、工房での製作、迷宮で|通过与剧情中人们的交流、在工房制作，以及在迷宫中"
-set-string (global-string cf0e) "の植物活性化、壊れたものの修復などの行動によって獲|活化植物、修复损坏之物等行动来获"
-set-string (global-string cf0f) "得できます。|得。"
-set-string (global-string cf11) "女神力のゲージが溜まると『女神ランク』がひとつ上昇|当女神力的量表蓄满时，『女神等级』便会提升一级"
-set-string (global-string cf12) "します。|。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf0c) "縁結びの神であるフィアが得られる力です。"
+set-string (global-string cf0d) "イベント内での人々との交流や、工房での製作、迷宮で"
+set-string (global-string cf0e) "の植物活性化、壊れたものの修復などの行動によって獲"
+set-string (global-string cf0f) "得できます。"
+set-string (global-string cf11) "女神力のゲージが溜まると『女神ランク』がひとつ上昇"
+set-string (global-string cf12) "します。"
+*/
+set-string (global-string cf0c) @"结缘之神菲亚所能获得的力量。通过与剧情中人们的交"
+set-string (global-string cf0d) @"流、在工房制作，以及在迷宫中活化植物、修复损坏之物"
+set-string (global-string cf0e) @"等行动来获得。当女神力的量表蓄满时，『女神等级』便"
+set-string (global-string cf0f) @"会提升一级。"
+set-string (global-string cf11) @""
+set-string (global-string cf12) @""
 mov (global-int 14956b) 14
-set-string (global-string cb1c) "【基本】　女神ランク|【基本】　女神等级"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb1c) "【基本】　女神ランク"
+*/
+set-string (global-string cb1c) @"【基本】　女神等级"
 mov (global-int 149953) 39c8
-set-string (global-string cf16) "フィアの神としてのランクです。|菲亚作为神明的等级。"
-set-string (global-string cf17) "女神力が一定値に達することで上昇し、フィアがクラス|女神力达到一定值后便会提升，菲亚随之进行职业"
-set-string (global-string cf18) "チェンジします。|转换。"
-set-string (global-string cf1a) "女神ランクが上がると、新たなプランの追加や、指揮力|女神等级提升后，会获得追加新设计、增加指挥力"
-set-string (global-string cf1b) "の増加など、様々な恩恵があります。|等种种恩惠。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf16) "フィアの神としてのランクです。"
+set-string (global-string cf17) "女神力が一定値に達することで上昇し、フィアがクラス"
+set-string (global-string cf18) "チェンジします。"
+set-string (global-string cf1a) "女神ランクが上がると、新たなプランの追加や、指揮力"
+set-string (global-string cf1b) "の増加など、様々な恩恵があります。"
+*/
+set-string (global-string cf16) @"菲亚作为神明的等级。女神力达到一定值后便会提升，菲"
+set-string (global-string cf17) @"亚随之进行职业转换。女神等级提升后，会获得追加新设"
+set-string (global-string cf18) @"计、增加指挥力等种种恩惠。"
+set-string (global-string cf1a) @""
+set-string (global-string cf1b) @""
 mov (global-int 14956c) 1e
-set-string (global-string cb1d) "【基本】　通貨（ギフル）|【基本】　通货（吉弗尔）"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb1d) "【基本】　通貨（ギフル）"
+*/
+set-string (global-string cb1d) @"【基本】　通货（吉弗尔）"
 mov (global-int 149954) 39c9
-set-string (global-string cf20) "お店での資材や消耗品、また装備品の購入に使用します。|用于在店铺购买资材、消耗品以及装备品。"
-set-string (global-string cf21) "迷宮探索や物品の売却、施設配置による収入を得ること|可通过探索迷宫、出售物品、配置设施获得收入"
-set-string (global-string cf22) "ができます。|。"
-set-string (global-string cf24) "また、アイテム獲得時に最大所持数を超えた場合は自動|此外，获得物品时若超过最大持有数，会自动"
-set-string (global-string cf25) "換金されます。|换成金钱。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf20) "お店での資材や消耗品、また装備品の購入に使用します。"
+set-string (global-string cf21) "迷宮探索や物品の売却、施設配置による収入を得ること"
+set-string (global-string cf22) "ができます。"
+set-string (global-string cf24) "また、アイテム獲得時に最大所持数を超えた場合は自動"
+set-string (global-string cf25) "換金されます。"
+*/
+set-string (global-string cf20) @"用于在店铺购买资材、消耗品以及装备品。可通过探索迷"
+set-string (global-string cf21) @"宫、出售物品、配置设施获得收入。此外，获得物品时若"
+set-string (global-string cf22) @"超过最大持有数，会自动换成金钱。"
+set-string (global-string cf24) @""
+set-string (global-string cf25) @""
 mov (global-int 14956d) 28
-set-string (global-string cb1e) "【基本】　経過日数|【基本】　经过天数"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb1e) "【基本】　経過日数"
+*/
+set-string (global-string cb1e) @"【基本】　经过天数"
 mov (global-int 149955) 39ca
-set-string (global-string cf2a) "迷宮の探索や、各地への訪問を行うと日数が経過します。|探索迷宫或访问各地都会使天数流逝。"
-set-string (global-string cf2b) "日数が経過すると、イベントが発生したり、城砦に配置|天数流逝后，会触发事件，并按城砦中配置"
-set-string (global-string cf2c) "した施設に応じてアイテムや通貨の収入が得られます。|的设施获得道具与通货收入。"
-set-string (global-string cf2d) "収入は自動的に加算されます。|收入会自动累加。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf2a) "迷宮の探索や、各地への訪問を行うと日数が経過します。"
+set-string (global-string cf2b) "日数が経過すると、イベントが発生したり、城砦に配置"
+set-string (global-string cf2c) "した施設に応じてアイテムや通貨の収入が得られます。"
+set-string (global-string cf2d) "収入は自動的に加算されます。"
+*/
+set-string (global-string cf2a) @"探索迷宫或访问各地都会使天数流逝。天数流逝后，会触"
+set-string (global-string cf2b) @"发事件，并按城砦中配置的设施获得道具与通货收入。收"
+set-string (global-string cf2c) @"入会自动累加。"
+set-string (global-string cf2d) @""
 mov (global-int 14956e) 32
-set-string (global-string cb1f) "【基本】　属性|【基本】　属性"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb1f) "【基本】　属性"
+*/
+set-string (global-string cb1f) @"【基本】　属性"
 mov (global-int 149956) 39cb
-set-string (global-string cf34) "攻撃属性は『物理』『火炎』『冷却』『電撃』『地脈』|攻击属性分为『物理』『火炎』『冷却』『电击』『地脉』"
-set-string (global-string cf35) "『神聖』『暗黒』『無属』の８種あります。|『神圣』『暗黑』『无属』共８种。"
-set-string (global-string cf37) "ユニットごとに、それらに対する属性耐性があり、相性|各单位对这些属性都有耐性，相性"
-set-string (global-string cf38) "が良いと攻撃力が最大２倍になります。|良好时攻击力最高可变为２倍。"
-set-string (global-string cf39) "逆に相性が悪いと攻撃力が低下したり、吸収されて相手|反之相性不佳时攻击力会下降，甚至被吸收而恢复"
-set-string (global-string cf3a) "のＨＰを回復してしまうこともあります。|对方的ＨＰ。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf34) "攻撃属性は『物理』『火炎』『冷却』『電撃』『地脈』"
+set-string (global-string cf35) "『神聖』『暗黒』『無属』の８種あります。"
+set-string (global-string cf37) "ユニットごとに、それらに対する属性耐性があり、相性"
+set-string (global-string cf38) "が良いと攻撃力が最大２倍になります。"
+set-string (global-string cf39) "逆に相性が悪いと攻撃力が低下したり、吸収されて相手"
+set-string (global-string cf3a) "のＨＰを回復してしまうこともあります。"
+*/
+set-string (global-string cf34) @"攻击属性：『物理』『火炎』『冷却』『电击』『地脉』"
+set-string (global-string cf35) @"『神圣』『暗黑』『无属』共８种。各单位对这些属性都"
+set-string (global-string cf37) @"有耐性，相性良好时攻击力最高可变为２倍。反之相性不"
+set-string (global-string cf38) @"佳时攻击力会下降，甚至被吸收而恢复对方的ＨＰ。"
+set-string (global-string cf39) @""
+set-string (global-string cf3a) @""
 mov (global-int 14956f) 3c
-set-string (global-string cb20) "【基本】　種族|【基本】　种族"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb20) "【基本】　種族"
+*/
+set-string (global-string cb20) @"【基本】　种族"
 mov (global-int 149957) 39cc
-set-string (global-string cf3e) "種族は『人間』『亜人』『一般』『鬼』『巨人』|种族分为『人类』『亚人』『一般』『鬼』『巨人』"
-set-string (global-string cf3f) "『精霊』『天使』『悪魔』『魔獣』『幻獣』『霊体』|『精灵』『天使』『恶魔』『魔兽』『幻兽』『灵体』"
-set-string (global-string cf40) "『不死』『創造』『魔神』『神格』の１５種です。|『不死』『创造』『魔神』『神格』共１５种。"
-set-string (global-string cf42) "種族によって、効果パラメータへの耐性が変わります。|对效果参数的耐性因种族而异。"
-set-string (global-string cf43) "また、特定種族に対して発動するスキルが存在します。|此外，还存在对特定种族生效的技能。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf3e) "種族は『人間』『亜人』『一般』『鬼』『巨人』"
+set-string (global-string cf3f) "『精霊』『天使』『悪魔』『魔獣』『幻獣』『霊体』"
+set-string (global-string cf40) "『不死』『創造』『魔神』『神格』の１５種です。"
+set-string (global-string cf42) "種族によって、効果パラメータへの耐性が変わります。"
+set-string (global-string cf43) "また、特定種族に対して発動するスキルが存在します。"
+*/
+set-string (global-string cf3e) @"种族：『人类』『亚人』『一般』『鬼』『巨人』"
+set-string (global-string cf3f) @"『精灵』『天使』『恶魔』『魔兽』『幻兽』『灵体』"
+set-string (global-string cf40) @"『不死』『创造』『魔神』『神格』共１５种。对效果参"
+set-string (global-string cf42) @"数的耐性因种族而异。此外，还存在对特定种族生效的技"
+set-string (global-string cf43) @"能。"
 mov (global-int 149571) 3f2
-set-string (global-string cb22) "【アイテム】　重要|【道具】　重要"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb22) "【アイテム】　重要"
+*/
+set-string (global-string cb22) @"【道具】　重要"
 mov (global-int 149959) 39cd
-set-string (global-string cf52) "ゲームの進行上で入手するアイテムになります。|随游戏进度获得的道具。"
-set-string (global-string cf53) "基本的に持っているだけでその効果を発揮する物であり、|基本上只要持有便会发挥效果，"
-set-string (global-string cf54) "扉を開閉できる鍵もここに分類されます。|能开闭门扉的钥匙也归类于此。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf52) "ゲームの進行上で入手するアイテムになります。"
+set-string (global-string cf53) "基本的に持っているだけでその効果を発揮する物であり、"
+set-string (global-string cf54) "扉を開閉できる鍵もここに分類されます。"
+*/
+set-string (global-string cf52) @"随游戏进度获得的道具。基本上只要持有便会发挥效果，"
+set-string (global-string cf53) @"能开闭门扉的钥匙也归类于此。"
+set-string (global-string cf54) @""
 mov (global-int 149572) 3fc
-set-string (global-string cb23) "【アイテム】　資材|【道具】　资材"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb23) "【アイテム】　資材"
+*/
+set-string (global-string cb23) @"【道具】　资材"
 mov (global-int 14995a) 39ce
-set-string (global-string cf5c) "工房やお店で使用できるアイテムになります。|可在工房或店铺使用的道具。"
-set-string (global-string cf5d) "資材は『素材』『売却専用』『防衛』の３種類です。|资材分为『素材』『仅可出售』『防卫』３种。"
-set-string (global-string cf5f) "『素材』は、迷宮内にある採取ポイントや発掘ポイント|『素材』可在迷宫内的采集点或发掘点"
-set-string (global-string cf60) "で入手可能で、工房でのアイテム製作に必要です。|获得，是工房制作道具所必需的。"
-set-string (global-string cf62) "『売却専用』はお店で売却することで換金します。|『仅可出售』可在店铺出售换成金钱。"
-set-string (global-string cf64) "『防衛』は防衛戦マップにて配置可能なアイテムで、|『防卫』是可在防卫战地图中配置的道具，"
-set-string (global-string cf65) "使用や破壊で消費されることはありません。|不会因使用或被破坏而消耗。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf5c) "工房やお店で使用できるアイテムになります。"
+set-string (global-string cf5d) "資材は『素材』『売却専用』『防衛』の３種類です。"
+set-string (global-string cf5f) "『素材』は、迷宮内にある採取ポイントや発掘ポイント"
+set-string (global-string cf60) "で入手可能で、工房でのアイテム製作に必要です。"
+set-string (global-string cf62) "『売却専用』はお店で売却することで換金します。"
+set-string (global-string cf64) "『防衛』は防衛戦マップにて配置可能なアイテムで、"
+set-string (global-string cf65) "使用や破壊で消費されることはありません。"
+*/
+set-string (global-string cf5c) @"可在工房或店铺使用的道具。资材分为『素材』"
+set-string (global-string cf5d) @"『仅可出售』『防卫』３种。『素材』可在迷宫内的采集"
+set-string (global-string cf5f) @"点或发掘点获得，是工房制作道具所必需的。"
+set-string (global-string cf60) @"『仅可出售』可在店铺出售换成金钱。『防卫』是可在防"
+set-string (global-string cf62) @"卫战地图中配置的道具，不会因使用或被破坏而消耗。"
+set-string (global-string cf64) @""
+set-string (global-string cf65) @""
 mov (global-int 149573) 406
-set-string (global-string cb24) "【アイテム】　消費|【道具】　消耗"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb24) "【アイテム】　消費"
+*/
+set-string (global-string cb24) @"【道具】　消耗"
 mov (global-int 14995b) 39cf
-set-string (global-string cf66) "迷宮などで使用することができるアイテムになります。|可在迷宫等处使用的道具。"
-set-string (global-string cf67) "使用すると所持数が減ります。|使用后持有数会减少。"
-set-string (global-string cf69) "ステータス回復や状態回復といったものから、能力値を|从恢复状态、解除异常，到提升能力值"
-set-string (global-string cf6a) "上昇させるアイテムなど、様々な効果を発生させます。|的道具，种类繁多、效果各异。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf66) "迷宮などで使用することができるアイテムになります。"
+set-string (global-string cf67) "使用すると所持数が減ります。"
+set-string (global-string cf69) "ステータス回復や状態回復といったものから、能力値を"
+set-string (global-string cf6a) "上昇させるアイテムなど、様々な効果を発生させます。"
+*/
+set-string (global-string cf66) @"可在迷宫等处使用的道具。使用后持有数会减少。从恢复"
+set-string (global-string cf67) @"状态、解除异常，到提升能力值的道具，种类繁多、效果"
+set-string (global-string cf69) @"各异。"
+set-string (global-string cf6a) @""
 mov (global-int 149574) 410
-set-string (global-string cb25) "【アイテム】　武器|【道具】　武器"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb25) "【アイテム】　武器"
+*/
+set-string (global-string cb25) @"【道具】　武器"
 mov (global-int 14995c) 39d0
-set-string (global-string cf70) "武器枠に装備可能なアイテムになります。|可装备于武器栏的道具。"
-set-string (global-string cf71) "各ユニットに『機軸鎚』など装備カテゴリが存在します。|各单位都有『机轴锤』等装备类别。"
-set-string (global-string cf72) "主に攻撃力上昇やスキルの付加などの効果があり、武器|主要带来攻击力提升或技能付加等效果，武器"
-set-string (global-string cf73) "によって攻撃属性も変わるので使い分けが必要です。|不同攻击属性也会不同，需要酌情使用。"
-set-string (global-string cf74) "『拳』カテゴリは、多くのユニットが装備可能で、間接|『拳』类别多数单位均可装备，即使持有间接"
-set-string (global-string cf75) "武器を持つユニットでも移動攻撃が可能になります。|武器的单位也能进行移动攻击。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf70) "武器枠に装備可能なアイテムになります。"
+set-string (global-string cf71) "各ユニットに『機軸鎚』など装備カテゴリが存在します。"
+set-string (global-string cf72) "主に攻撃力上昇やスキルの付加などの効果があり、武器"
+set-string (global-string cf73) "によって攻撃属性も変わるので使い分けが必要です。"
+set-string (global-string cf74) "『拳』カテゴリは、多くのユニットが装備可能で、間接"
+set-string (global-string cf75) "武器を持つユニットでも移動攻撃が可能になります。"
+*/
+set-string (global-string cf70) @"可装备于武器栏的道具。各单位都有『机轴锤』等装备类"
+set-string (global-string cf71) @"别。主要带来攻击力提升或技能付加等效果，武器不同攻"
+set-string (global-string cf72) @"击属性也会不同，需要酌情使用。『拳』类别多数单位均"
+set-string (global-string cf73) @"可装备，即使持有间接武器的单位也能进行移动攻击。"
+set-string (global-string cf74) @""
+set-string (global-string cf75) @""
 mov (global-int 149575) 41a
-set-string (global-string cb26) "【アイテム】　盾|【道具】　盾"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb26) "【アイテム】　盾"
+*/
+set-string (global-string cb26) @"【道具】　盾"
 mov (global-int 14995d) 39d1
-set-string (global-string cf7a) "盾枠に装備可能なアイテムになります。|可装备于盾栏的道具。"
-set-string (global-string cf7b) "盾には『小盾』と『大盾』が存在し、ユニットによって|盾分为『小盾』与『大盾』，部分单位"
-set-string (global-string cf7c) "は装備できない場合があります。|可能无法装备。"
-set-string (global-string cf7e) "『小盾』は主に回避上昇や盾スキルの付加。|『小盾』主要提升回避或付加盾技能。"
-set-string (global-string cf7f) "『大盾』は主に防御力上昇や盾スキルが付加されます。|『大盾』主要提升防御力或付加盾技能。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf7a) "盾枠に装備可能なアイテムになります。"
+set-string (global-string cf7b) "盾には『小盾』と『大盾』が存在し、ユニットによって"
+set-string (global-string cf7c) "は装備できない場合があります。"
+set-string (global-string cf7e) "『小盾』は主に回避上昇や盾スキルの付加。"
+set-string (global-string cf7f) "『大盾』は主に防御力上昇や盾スキルが付加されます。"
+*/
+set-string (global-string cf7a) @"可装备于盾栏的道具。盾分为『小盾』与『大盾』，部分"
+set-string (global-string cf7b) @"单位可能无法装备。『小盾』主要提升回避或付加盾技"
+set-string (global-string cf7c) @"能。『大盾』主要提升防御力或付加盾技能。"
+set-string (global-string cf7e) @""
+set-string (global-string cf7f) @""
 mov (global-int 149576) 424
-set-string (global-string cb27) "【アイテム】　防具|【道具】　防具"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb27) "【アイテム】　防具"
+*/
+set-string (global-string cb27) @"【道具】　防具"
 mov (global-int 14995e) 39d2
-set-string (global-string cf84) "防具枠には『軽装』『中装』『重装』が存在します。|防具栏分为『轻装』『中装』『重装』。"
-set-string (global-string cf86) "主に防御力の上昇や、スキルの付加などの効果があり、|主要带来防御力提升或技能付加等效果，"
-set-string (global-string cf87) "属性耐性上昇効果もあるので使い分けが必要になります。|也有效果能提升属性耐性，需要酌情使用。"
-set-string (global-string cf88) "ユニットによっては装備できない場合があります。|部分单位可能无法装备。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf84) "防具枠には『軽装』『中装』『重装』が存在します。"
+set-string (global-string cf86) "主に防御力の上昇や、スキルの付加などの効果があり、"
+set-string (global-string cf87) "属性耐性上昇効果もあるので使い分けが必要になります。"
+set-string (global-string cf88) "ユニットによっては装備できない場合があります。"
+*/
+set-string (global-string cf84) @"防具栏分为『轻装』『中装』『重装』。主要带来防御力"
+set-string (global-string cf86) @"提升或技能付加等效果，也有效果能提升属性耐性，需要"
+set-string (global-string cf87) @"酌情使用。部分单位可能无法装备。"
+set-string (global-string cf88) @""
 mov (global-int 149577) 42e
-set-string (global-string cb28) "【アイテム】　靴|【道具】　靴"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb28) "【アイテム】　靴"
+*/
+set-string (global-string cb28) @"【道具】　靴"
 mov (global-int 14995f) 39d3
-set-string (global-string cf8e) "靴枠には『軽靴』と『重靴』が存在します。|靴栏分为『轻靴』与『重靴』。"
-set-string (global-string cf90) "『軽靴』は主に敏捷上昇やスキルの付加。|『轻靴』主要提升敏捷或付加技能。"
-set-string (global-string cf91) "『重靴』は主に防御力上昇やスキルが付加されます。|『重靴』主要提升防御力或付加技能。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf8e) "靴枠には『軽靴』と『重靴』が存在します。"
+set-string (global-string cf90) "『軽靴』は主に敏捷上昇やスキルの付加。"
+set-string (global-string cf91) "『重靴』は主に防御力上昇やスキルが付加されます。"
+*/
+set-string (global-string cf8e) @"靴栏分为『轻靴』与『重靴』。『轻靴』主要提升敏捷或"
+set-string (global-string cf90) @"付加技能。『重靴』主要提升防御力或付加技能。"
+set-string (global-string cf91) @""
 mov (global-int 149578) 438
-set-string (global-string cb29) "【アイテム】　装飾|【道具】　装饰"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb29) "【アイテム】　装飾"
+*/
+set-string (global-string cb29) @"【道具】　装饰"
 mov (global-int 149960) 39d4
-set-string (global-string cf98) "装飾枠に装備可能なアイテムになります。|可装备于装饰栏的道具。"
-set-string (global-string cf9a) "能力上昇やスキル付加の他にも、迷宮進行において有利|除提升能力、付加技能外，还有许多能在迷宫"
-set-string (global-string cf9b) "に展開する物が多く存在します。|探索中占据优势的物品。"
-set-string (global-string cf9c) "一部を除いて、どのユニットでも装備可能になります。|除一部分外，任何单位均可装备。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cf98) "装飾枠に装備可能なアイテムになります。"
+set-string (global-string cf9a) "能力上昇やスキル付加の他にも、迷宮進行において有利"
+set-string (global-string cf9b) "に展開する物が多く存在します。"
+set-string (global-string cf9c) "一部を除いて、どのユニットでも装備可能になります。"
+*/
+set-string (global-string cf98) @"可装备于装饰栏的道具。除提升能力、付加技能外，还有"
+set-string (global-string cf9a) @"许多能在迷宫探索中占据优势的物品。除一部分外，任何"
+set-string (global-string cf9b) @"单位均可装备。"
+set-string (global-string cf9c) @""
 mov (global-int 149579) 442
-set-string (global-string cb2a) "【アイテム】　スキル|【道具】　技能"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2a) "【アイテム】　スキル"
+*/
+set-string (global-string cb2a) @"【道具】　技能"
 mov (global-int 149961) 39d5
-set-string (global-string cfa2) "各ユニットが独自に所持している特殊能力になります。|各单位独有的特殊能力。"
-set-string (global-string cfa4) "装備にはＣＰ（キャパシティポイント）が必要で、|装备需要ＣＰ（容量点数），"
-set-string (global-string cfa5) "その上限値内であれば好きな組み合わせが可能です。|在上限值内可自由组合。"
-set-string (global-string cfa6) "また、一部アイテムを装備することによって付与される|此外，还有通过装备部分道具而获得"
-set-string (global-string cfa7) "『装備スキル』もあり、これらはＣＰに関係ありません。|的『装备技能』，它们与ＣＰ无关。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfa2) "各ユニットが独自に所持している特殊能力になります。"
+set-string (global-string cfa4) "装備にはＣＰ（キャパシティポイント）が必要で、"
+set-string (global-string cfa5) "その上限値内であれば好きな組み合わせが可能です。"
+set-string (global-string cfa6) "また、一部アイテムを装備することによって付与される"
+set-string (global-string cfa7) "『装備スキル』もあり、これらはＣＰに関係ありません。"
+*/
+set-string (global-string cfa2) @"各单位独有的特殊能力。装备需要ＣＰ（容量点数），在"
+set-string (global-string cfa4) @"上限值内可自由组合。此外，还有通过装备部分道具而获"
+set-string (global-string cfa5) @"得的『装备技能』，它们与ＣＰ无关。"
+set-string (global-string cfa6) @""
+set-string (global-string cfa7) @""
 mov (global-int 14957a) 44c
-set-string (global-string cb2b) "【アイテム】　施設|【道具】　设施"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2b) "【アイテム】　施設"
+*/
+set-string (global-string cb2b) @"【道具】　设施"
 mov (global-int 149962) 39d6
-set-string (global-string cfac) "城砦上に配置することで収入増加や資材収穫が可能です。|配置在城砦上可获得收入增加或收获资材。"
-set-string (global-string cfad) "採集や発掘ＬＶの増加など、様々な恩恵も受けられます。|还能获得采集、发掘ＬＶ提升等种种恩惠。"
-set-string (global-string cfaf) "また、結陣効果を持つ施設を上手く配置することで、|此外，巧妙配置带有结阵效果的设施，"
-set-string (global-string cfb0) "ユニットの能力を上昇させることができます。|可以提升单位的能力。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfac) "城砦上に配置することで収入増加や資材収穫が可能です。"
+set-string (global-string cfad) "採集や発掘ＬＶの増加など、様々な恩恵も受けられます。"
+set-string (global-string cfaf) "また、結陣効果を持つ施設を上手く配置することで、"
+set-string (global-string cfb0) "ユニットの能力を上昇させることができます。"
+*/
+set-string (global-string cfac) @"配置在城砦上可获得收入增加或收获资材。还能获得采"
+set-string (global-string cfad) @"集、发掘ＬＶ提升等种种恩惠。此外，巧妙配置带有结阵"
+set-string (global-string cfaf) @"效果的设施，可以提升单位的能力。"
+set-string (global-string cfb0) @""
 mov (global-int 14957b) 3d1
-set-string (global-string cb2c) "【戦闘】　基本攻撃|【战斗】　基本攻击"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2c) "【戦闘】　基本攻撃"
+*/
+set-string (global-string cb2c) @"【战斗】　基本攻击"
 mov (global-int 149963) 39d7
-set-string (global-string cfb6) "武器を装備していない状態での『素手』攻撃になります。|未装备武器时的『空手』攻击。"
-set-string (global-string cfb7) "武器を装備すると、基本攻撃の代わりに装備した武器に|装备武器后，基本攻击会切换为该武器"
-set-string (global-string cfb8) "よる攻撃方法に切り替わります。|对应的攻击方式。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfb6) "武器を装備していない状態での『素手』攻撃になります。"
+set-string (global-string cfb7) "武器を装備すると、基本攻撃の代わりに装備した武器に"
+set-string (global-string cfb8) "よる攻撃方法に切り替わります。"
+*/
+set-string (global-string cfb6) @"未装备武器时的『空手』攻击。装备武器后，基本攻击会"
+set-string (global-string cfb7) @"切换为该武器对应的攻击方式。"
+set-string (global-string cfb8) @""
 mov (global-int 14957c) 3d3
-set-string (global-string cb2d) "【戦闘】　防御|【战斗】　防御"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2d) "【戦闘】　防御"
+*/
+set-string (global-string cb2d) @"【战斗】　防御"
 mov (global-int 149964) 39d8
-set-string (global-string cfc0) "攻撃せず、防御に徹することでそれぞれの防御値を＋３、|不攻击而专注于防御，可使各项防御值＋３、"
-set-string (global-string cfc1) "回避を＋１０して戦闘パートに移ることができます。|回避＋１０，再进入战斗环节。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfc0) "攻撃せず、防御に徹することでそれぞれの防御値を＋３、"
+set-string (global-string cfc1) "回避を＋１０して戦闘パートに移ることができます。"
+*/
+set-string (global-string cfc0) @"不攻击而专注于防御，可使各项防御值＋３、回避＋１"
+set-string (global-string cfc1) @"０，再进入战斗环节。"
 mov (global-int 14957d) 3d5
-set-string (global-string cb2e) "【戦闘】　必殺|【战斗】　必杀"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2e) "【戦闘】　必殺"
+*/
+set-string (global-string cb2e) @"【战斗】　必杀"
 mov (global-int 149965) 39d9
-set-string (global-string cfca) "物理攻撃系のステータスを参照した特殊攻撃になります。|参照物理攻击系数值发动的特殊攻击。"
-set-string (global-string cfcc) "攻撃能力が上昇するほか、今の攻撃属性とは別の属性へ|除提升攻击能力外，有的还能将攻击属性改为"
-set-string (global-string cfcd) "変更できるものもあるので、使い分けが重要になります。|当前属性以外的属性，酌情使用十分重要。"
-set-string (global-string cfcf) "使用時には主にＳＰを消費して発動します。|发动时主要消耗ＳＰ。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfca) "物理攻撃系のステータスを参照した特殊攻撃になります。"
+set-string (global-string cfcc) "攻撃能力が上昇するほか、今の攻撃属性とは別の属性へ"
+set-string (global-string cfcd) "変更できるものもあるので、使い分けが重要になります。"
+set-string (global-string cfcf) "使用時には主にＳＰを消費して発動します。"
+*/
+set-string (global-string cfca) @"参照物理攻击系数值发动的特殊攻击。除提升攻击能力"
+set-string (global-string cfcc) @"外，有的还能将攻击属性改为当前属性以外的属性，酌情"
+set-string (global-string cfcd) @"使用十分重要。发动时主要消耗ＳＰ。"
+set-string (global-string cfcf) @""
 mov (global-int 14957e) 3d7
-set-string (global-string cb2f) "【戦闘】　魔術|【战斗】　魔术"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb2f) "【戦闘】　魔術"
+*/
+set-string (global-string cb2f) @"【战斗】　魔术"
 mov (global-int 149966) 39da
-set-string (global-string cfd4) "魔術攻撃系のステータスを参照した特殊攻撃になります。|参照魔术攻击系数值发动的特殊攻击。"
-set-string (global-string cfd6) "色々な属性の魔法や射程の長い魔法などが存在するので|存在各种属性的魔法与射程较长的魔法，"
-set-string (global-string cfd7) "場合に応じた使い分けが可能になります。|可根据情况灵活使用。"
-set-string (global-string cfd9) "使用時には主にＳＰを消費して発動します。|发动时主要消耗ＳＰ。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfd4) "魔術攻撃系のステータスを参照した特殊攻撃になります。"
+set-string (global-string cfd6) "色々な属性の魔法や射程の長い魔法などが存在するので"
+set-string (global-string cfd7) "場合に応じた使い分けが可能になります。"
+set-string (global-string cfd9) "使用時には主にＳＰを消費して発動します。"
+*/
+set-string (global-string cfd4) @"参照魔术攻击系数值发动的特殊攻击。存在各种属性的魔"
+set-string (global-string cfd6) @"法与射程较长的魔法，可根据情况灵活使用。发动时主要"
+set-string (global-string cfd7) @"消耗ＳＰ。"
+set-string (global-string cfd9) @""
 mov (global-int 14957f) 3d9
-set-string (global-string cb30) "【戦闘】　攻撃順|【战斗】　攻击顺序"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb30) "【戦闘】　攻撃順"
+*/
+set-string (global-string cb30) @"【战斗】　攻击顺序"
 mov (global-int 149967) 39db
-set-string (global-string cfde) "戦闘の基本として、攻撃する順番が決まっています。|作为战斗的基本，攻击顺序是固定的。"
-set-string (global-string cfdf) "双方合わせて、最大で５回の攻撃が発生します。|双方合计最多发生５次攻击。"
-set-string (global-string cfe0) "５回目の攻撃は速度差が３以上ある場合のみ発生します。|第５次攻击仅在速度差为３以上时发生。"
-set-string (global-string cfe2) "①攻撃を仕掛けた側|①发起攻击的一方"
-set-string (global-string cfe3) "②攻撃を受けた側|②受到攻击的一方"
-set-string (global-string cfe4) "③速度の勝っている側|③速度占优的一方"
-set-string (global-string cfe5) "④速度の劣っている側|④速度处于劣势的一方"
-set-string (global-string cfe6) "⑤速度の値が３以上勝っている側|⑤速度值领先３以上的一方"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfde) "戦闘の基本として、攻撃する順番が決まっています。"
+set-string (global-string cfdf) "双方合わせて、最大で５回の攻撃が発生します。"
+set-string (global-string cfe0) "５回目の攻撃は速度差が３以上ある場合のみ発生します。"
+*/
+set-string (global-string cfde) @"作为战斗的基本，攻击顺序是固定的。双方合计最多发生"
+set-string (global-string cfdf) @"５次攻击。第５次攻击仅在速度差为３以上时发生。"
+set-string (global-string cfe0) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe2) "①攻撃を仕掛けた側"
+*/
+set-string (global-string cfe2) @"①发起攻击的一方"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe3) "②攻撃を受けた側"
+*/
+set-string (global-string cfe3) @"②受到攻击的一方"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe4) "③速度の勝っている側"
+*/
+set-string (global-string cfe4) @"③速度占优的一方"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe5) "④速度の劣っている側"
+*/
+set-string (global-string cfe5) @"④速度处于劣势的一方"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe6) "⑤速度の値が３以上勝っている側"
+*/
+set-string (global-string cfe6) @"⑤速度值领先３以上的一方"
 mov (global-int 149580) 3db
-set-string (global-string cb31) "【戦闘】　攻撃回数|【战斗】　攻击次数"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb31) "【戦闘】　攻撃回数"
+*/
+set-string (global-string cb31) @"【战斗】　攻击次数"
 mov (global-int 149968) 39dc
-set-string (global-string cfe8) "戦闘の基本として双方が２回ずつ攻撃を行います。|作为战斗的基本，双方各攻击２次。"
-set-string (global-string cfea) "速度が３以上離れている場合は、速度の勝っている方が|速度相差３以上时，速度占优的一方"
-set-string (global-string cfeb) "攻撃回数＋１となります。|攻击次数＋１。"
-set-string (global-string cfed) "攻撃回数は、戦闘開始前に確認可能です。|攻击次数可在战斗开始前确认。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cfe8) "戦闘の基本として双方が２回ずつ攻撃を行います。"
+set-string (global-string cfea) "速度が３以上離れている場合は、速度の勝っている方が"
+set-string (global-string cfeb) "攻撃回数＋１となります。"
+set-string (global-string cfed) "攻撃回数は、戦闘開始前に確認可能です。"
+*/
+set-string (global-string cfe8) @"作为战斗的基本，双方各攻击２次。速度相差３以上时，"
+set-string (global-string cfea) @"速度占优的一方攻击次数＋１。攻击次数可在战斗开始前"
+set-string (global-string cfeb) @"确认。"
+set-string (global-string cfed) @""
 mov (global-int 149583) 3df
-set-string (global-string cb34) "【戦闘】　召喚ユニット|【战斗】　召唤单位"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb34) "【戦闘】　召喚ユニット"
+*/
+set-string (global-string cb34) @"【战斗】　召唤单位"
 mov (global-int 14996b) 39dd
-set-string (global-string d006) "召喚の条件として、召喚主の隣接マスが自勢力の占有地|召唤条件是召唤主相邻的格子属于己方势力的占领地"
-set-string (global-string d007) "である場合のみ、出撃することができます。|时方可出击。"
-set-string (global-string d009) "撤退は行動前であればどこからでも可能で、戦闘不能に|只要在行动前，无论身处何处都可撤退，直至战斗不能"
-set-string (global-string d00a) "なるまで何度でも帰還と召喚ができます。|为止可反复返回与召唤。"
-set-string (global-string d00b) "ただし、召喚主が戦闘不能になってしまった場合は、|不过，若召唤主陷入战斗不能，"
-set-string (global-string d00c) "召喚ユニットも同じタイミングで撤退してしまいます。|召唤单位也会在同一时刻撤退。"
-set-string (global-string d00e) "召喚ユニットは、一切の装備アイテムの変更ができない|召唤单位完全无法变更装备道具，"
-set-string (global-string d00f) "代わりに、訓練所での強化が可能になります。|取而代之可在训练所进行强化。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d006) "召喚の条件として、召喚主の隣接マスが自勢力の占有地"
+set-string (global-string d007) "である場合のみ、出撃することができます。"
+set-string (global-string d009) "撤退は行動前であればどこからでも可能で、戦闘不能に"
+set-string (global-string d00a) "なるまで何度でも帰還と召喚ができます。"
+set-string (global-string d00b) "ただし、召喚主が戦闘不能になってしまった場合は、"
+set-string (global-string d00c) "召喚ユニットも同じタイミングで撤退してしまいます。"
+set-string (global-string d00e) "召喚ユニットは、一切の装備アイテムの変更ができない"
+set-string (global-string d00f) "代わりに、訓練所での強化が可能になります。"
+*/
+set-string (global-string d006) @"召唤条件是召唤主相邻的格子属于己方势力的占领地时方"
+set-string (global-string d007) @"可出击。只要在行动前，无论身处何处都可撤退，直至战"
+set-string (global-string d009) @"斗不能为止可反复返回与召唤。不过，若召唤主陷入战斗"
+set-string (global-string d00a) @"不能，召唤单位也会在同一时刻撤退。召唤单位完全无法"
+set-string (global-string d00b) @"变更装备道具，取而代之可在训练所进行强化。"
+set-string (global-string d00c) @""
+set-string (global-string d00e) @""
+set-string (global-string d00f) @""
 mov (global-int 149584) 3e1
-set-string (global-string cb35) "【戦闘】　変身ユニット|【战斗】　变身单位"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb35) "【戦闘】　変身ユニット"
+*/
+set-string (global-string cb35) @"【战斗】　变身单位"
 mov (global-int 14996c) 39de
-set-string (global-string d010) "この変身スキルを使用することで、違う形態に変身する|使用变身技能，可以变身为"
-set-string (global-string d011) "ことができます。|不同形态。"
-set-string (global-string d013) "変身することで能力値が上昇し、別の攻撃やスキルを使|变身后能力值提升，可使用不同的攻击与技能，"
-set-string (global-string d014) "うことができますが、形態ごとに装備やスキルを設定す|但需要为各形态分别设定装备与技能。"
-set-string (global-string d015) "る必要があります。|。"
-set-string (global-string d017) "変身前に戻りたいときは『元に戻る』を使用します。|想恢复变身前的形态时，使用『恢复原状』。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d010) "この変身スキルを使用することで、違う形態に変身する"
+set-string (global-string d011) "ことができます。"
+set-string (global-string d013) "変身することで能力値が上昇し、別の攻撃やスキルを使"
+set-string (global-string d014) "うことができますが、形態ごとに装備やスキルを設定す"
+set-string (global-string d015) "る必要があります。"
+set-string (global-string d017) "変身前に戻りたいときは『元に戻る』を使用します。"
+*/
+set-string (global-string d010) @"使用变身技能，可以变身为不同形态。变身后能力值提"
+set-string (global-string d011) @"升，可使用不同的攻击与技能，但需要为各形态分别设定"
+set-string (global-string d013) @"装备与技能。想恢复变身前的形态时，使用"
+set-string (global-string d014) @"『恢复原状』。"
+set-string (global-string d015) @""
+set-string (global-string d017) @""
 mov (global-int 149585) 3e3
-set-string (global-string cb36) "【戦闘】　合体攻撃|【战斗】　合体攻击"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb36) "【戦闘】　合体攻撃"
+*/
+set-string (global-string cb36) @"【战斗】　合体攻击"
 mov (global-int 14996d) 39df
-set-string (global-string d01a) "信頼関係のあるユニットが攻撃選択時に隣接マスにいる|选择攻击时，若有信赖关系的单位位于相邻格子"
-set-string (global-string d01b) "と選択できるようになります。|便可以选择合体攻击。"
-set-string (global-string d01d) "発動者と隣接ユニットの双方のＳＰを消費します。|发动者与相邻单位双方都会消耗ＳＰ。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d01a) "信頼関係のあるユニットが攻撃選択時に隣接マスにいる"
+set-string (global-string d01b) "と選択できるようになります。"
+set-string (global-string d01d) "発動者と隣接ユニットの双方のＳＰを消費します。"
+*/
+set-string (global-string d01a) @"选择攻击时，若有信赖关系的单位位于相邻格子便可以选"
+set-string (global-string d01b) @"择合体攻击。发动者与相邻单位双方都会消耗ＳＰ。"
+set-string (global-string d01d) @""
 mov (global-int 149586) 3e5
-set-string (global-string cb37) "【戦闘】　援護防御|【战斗】　援护防御"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb37) "【戦闘】　援護防御"
+*/
+set-string (global-string cb37) @"【战斗】　援护防御"
 mov (global-int 14996e) 39e0
-set-string (global-string d024) "攻撃を受けた際に、援護防御スキルを所持したユニット|受到攻击时，若持有援护防御技能的单位"
-set-string (global-string d025) "が隣接マスにいると、確率で発動します。|位于相邻格子，便会按概率发动。"
-set-string (global-string d027) "発動すれば攻撃を回避することができます。|发动后可以回避攻击。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d024) "攻撃を受けた際に、援護防御スキルを所持したユニット"
+set-string (global-string d025) "が隣接マスにいると、確率で発動します。"
+set-string (global-string d027) "発動すれば攻撃を回避することができます。"
+*/
+set-string (global-string d024) @"受到攻击时，若持有援护防御技能的单位位于相邻格子，"
+set-string (global-string d025) @"便会按概率发动。发动后可以回避攻击。"
+set-string (global-string d027) @""
 mov (global-int 149587) 3e7
-set-string (global-string cb38) "【戦闘】　装備リンク|【战斗】　装备连携"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb38) "【戦闘】　装備リンク"
+*/
+set-string (global-string cb38) @"【战斗】　装备连携"
 mov (global-int 14996f) 39e1
-set-string (global-string d02e) "各装備品による特定の組み合わせによって発動します。|通过各装备的特定组合发动。"
-set-string (global-string d02f) "専用スキル付与や能力上昇などの様々な恩恵があります。|会带来付与专用技能、提升能力等种种恩惠。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d02e) "各装備品による特定の組み合わせによって発動します。"
+set-string (global-string d02f) "専用スキル付与や能力上昇などの様々な恩恵があります。"
+*/
+set-string (global-string d02e) @"通过各装备的特定组合发动。会带来付与专用技能、提升"
+set-string (global-string d02f) @"能力等种种恩惠。"
 mov (global-int 149588) 4ba
-set-string (global-string cb39) "【効果パラメータ】　即死|【效果参数】　即死"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb39) "【効果パラメータ】　即死"
+*/
+set-string (global-string cb39) @"【效果参数】　即死"
 mov (global-int 149970) 39e2
-set-string (global-string d038) "発動すると残りＨＰに関係なく一撃で死に至らしめます。|发动后无视剩余ＨＰ，一击致死。"
-set-string (global-string d039) "種族によって耐性が異なり、発動率が変わります。|耐性因种族而异，发动率也会变化。"
-set-string (global-string d03b) "ボスには発動しません。|对ＢＯＳＳ无效。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d038) "発動すると残りＨＰに関係なく一撃で死に至らしめます。"
+set-string (global-string d039) "種族によって耐性が異なり、発動率が変わります。"
+set-string (global-string d03b) "ボスには発動しません。"
+*/
+set-string (global-string d038) @"发动后无视剩余ＨＰ，一击致死。耐性因种族而异，发动"
+set-string (global-string d039) @"率也会变化。对ＢＯＳＳ无效。"
+set-string (global-string d03b) @""
 mov (global-int 149589) 4c4
-set-string (global-string cb3a) "【効果パラメータ】　ＨＰ吸|【效果参数】　HP吸收"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3a) "【効果パラメータ】　ＨＰ吸"
+*/
+set-string (global-string cb3a) @"【效果参数】　HP吸收"
 mov (global-int 149971) 39e3
-set-string (global-string d042) "攻撃を当てた際にＨＰを回復します。|攻击命中时恢复ＨＰ。"
-set-string (global-string d043) "レベルは５段階あり、上昇するほど回復量が増えます。|等级共５段，越高回复量越多。"
-set-string (global-string d045) "■ＨＰ吸Ⅰ…ＨＰを２回復|■HP吸收Ⅰ…恢复ＨＰ２"
-set-string (global-string d046) "■ＨＰ吸Ⅱ…ＨＰを４回復|■HP吸收Ⅱ…恢复ＨＰ４"
-set-string (global-string d047) "■ＨＰ吸Ⅲ…ＨＰを６回復|■HP吸收Ⅲ…恢复ＨＰ６"
-set-string (global-string d048) "■ＨＰ吸Ⅳ…ＨＰを８回復|■HP吸收Ⅳ…恢复ＨＰ８"
-set-string (global-string d049) "■ＨＰ吸Ⅴ…ＨＰを１０回復|■HP吸收Ⅴ…恢复ＨＰ１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d042) "攻撃を当てた際にＨＰを回復します。"
+set-string (global-string d043) "レベルは５段階あり、上昇するほど回復量が増えます。"
+*/
+set-string (global-string d042) @"攻击命中时恢复ＨＰ。等级共５段，越高回复量越多。"
+set-string (global-string d043) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d045) "■ＨＰ吸Ⅰ…ＨＰを２回復"
+*/
+set-string (global-string d045) @"■HP吸收Ⅰ…恢复ＨＰ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d046) "■ＨＰ吸Ⅱ…ＨＰを４回復"
+*/
+set-string (global-string d046) @"■HP吸收Ⅱ…恢复ＨＰ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d047) "■ＨＰ吸Ⅲ…ＨＰを６回復"
+*/
+set-string (global-string d047) @"■HP吸收Ⅲ…恢复ＨＰ６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d048) "■ＨＰ吸Ⅳ…ＨＰを８回復"
+*/
+set-string (global-string d048) @"■HP吸收Ⅳ…恢复ＨＰ８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d049) "■ＨＰ吸Ⅴ…ＨＰを１０回復"
+*/
+set-string (global-string d049) @"■HP吸收Ⅴ…恢复ＨＰ１０"
 mov (global-int 14958a) 4ce
-set-string (global-string cb3b) "【効果パラメータ】　ＳＰ吸|【效果参数】　SP吸收"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3b) "【効果パラメータ】　ＳＰ吸"
+*/
+set-string (global-string cb3b) @"【效果参数】　SP吸收"
 mov (global-int 149972) 39e4
-set-string (global-string d04c) "攻撃を当てた際にＳＰを回復します。|攻击命中时恢复ＳＰ。"
-set-string (global-string d04d) "レベルは５段階あり、上昇するほど回復量が増えます。|等级共５段，越高回复量越多。"
-set-string (global-string d04f) "■ＳＰ吸Ⅰ…ＳＰを１回復|■SP吸收Ⅰ…恢复ＳＰ１"
-set-string (global-string d050) "■ＳＰ吸Ⅱ…ＳＰを２回復|■SP吸收Ⅱ…恢复ＳＰ２"
-set-string (global-string d051) "■ＳＰ吸Ⅲ…ＳＰを３回復|■SP吸收Ⅲ…恢复ＳＰ３"
-set-string (global-string d052) "■ＳＰ吸Ⅳ…ＳＰを４回復|■SP吸收Ⅳ…恢复ＳＰ４"
-set-string (global-string d053) "■ＳＰ吸Ⅴ…ＳＰを５回復|■SP吸收Ⅴ…恢复ＳＰ５"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d04c) "攻撃を当てた際にＳＰを回復します。"
+set-string (global-string d04d) "レベルは５段階あり、上昇するほど回復量が増えます。"
+*/
+set-string (global-string d04c) @"攻击命中时恢复ＳＰ。等级共５段，越高回复量越多。"
+set-string (global-string d04d) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d04f) "■ＳＰ吸Ⅰ…ＳＰを１回復"
+*/
+set-string (global-string d04f) @"■SP吸收Ⅰ…恢复ＳＰ１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d050) "■ＳＰ吸Ⅱ…ＳＰを２回復"
+*/
+set-string (global-string d050) @"■SP吸收Ⅱ…恢复ＳＰ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d051) "■ＳＰ吸Ⅲ…ＳＰを３回復"
+*/
+set-string (global-string d051) @"■SP吸收Ⅲ…恢复ＳＰ３"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d052) "■ＳＰ吸Ⅳ…ＳＰを４回復"
+*/
+set-string (global-string d052) @"■SP吸收Ⅳ…恢复ＳＰ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d053) "■ＳＰ吸Ⅴ…ＳＰを５回復"
+*/
+set-string (global-string d053) @"■SP吸收Ⅴ…恢复ＳＰ５"
 mov (global-int 14958b) 4d8
-set-string (global-string cb3c) "【効果パラメータ】　ＦＳ吸|【效果参数】　FS吸收"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3c) "【効果パラメータ】　ＦＳ吸"
+*/
+set-string (global-string cb3c) @"【效果参数】　FS吸收"
 mov (global-int 149973) 39e5
-set-string (global-string d056) "攻撃を当てた際にＦＳを回復します。|攻击命中时恢复ＦＳ。"
-set-string (global-string d057) "レベルは５段階あり、上昇するほど回復量が増えます。|等级共５段，越高回复量越多。"
-set-string (global-string d059) "■ＦＳ吸Ⅰ…ＦＳを２回復|■FS吸收Ⅰ…恢复ＦＳ２"
-set-string (global-string d05a) "■ＦＳ吸Ⅱ…ＦＳを４回復|■FS吸收Ⅱ…恢复ＦＳ４"
-set-string (global-string d05b) "■ＦＳ吸Ⅲ…ＦＳを６回復|■FS吸收Ⅲ…恢复ＦＳ６"
-set-string (global-string d05c) "■ＦＳ吸Ⅳ…ＦＳを８回復|■FS吸收Ⅳ…恢复ＦＳ８"
-set-string (global-string d05d) "■ＦＳ吸Ⅴ…ＦＳを１０回復|■FS吸收Ⅴ…恢复ＦＳ１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d056) "攻撃を当てた際にＦＳを回復します。"
+set-string (global-string d057) "レベルは５段階あり、上昇するほど回復量が増えます。"
+*/
+set-string (global-string d056) @"攻击命中时恢复ＦＳ。等级共５段，越高回复量越多。"
+set-string (global-string d057) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d059) "■ＦＳ吸Ⅰ…ＦＳを２回復"
+*/
+set-string (global-string d059) @"■FS吸收Ⅰ…恢复ＦＳ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d05a) "■ＦＳ吸Ⅱ…ＦＳを４回復"
+*/
+set-string (global-string d05a) @"■FS吸收Ⅱ…恢复ＦＳ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d05b) "■ＦＳ吸Ⅲ…ＦＳを６回復"
+*/
+set-string (global-string d05b) @"■FS吸收Ⅲ…恢复ＦＳ６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d05c) "■ＦＳ吸Ⅳ…ＦＳを８回復"
+*/
+set-string (global-string d05c) @"■FS吸收Ⅳ…恢复ＦＳ８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d05d) "■ＦＳ吸Ⅴ…ＦＳを１０回復"
+*/
+set-string (global-string d05d) @"■FS吸收Ⅴ…恢复ＦＳ１０"
 mov (global-int 14958c) 4e2
-set-string (global-string cb3d) "【効果パラメータ】　魅了|【效果参数】　魅惑"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3d) "【効果パラメータ】　魅了"
+*/
+set-string (global-string cb3d) @"【效果参数】　魅惑"
 mov (global-int 149974) 39e6
-set-string (global-string d060) "効果時間中はなにも行動できない状態になります。|效果期间内无法进行任何行动。"
-set-string (global-string d061) "レベルは５段階あり、上昇すると持続ターンが増えます。|等级共５段，越高持续回合越多。"
-set-string (global-string d063) "■魅了Ⅰ…２ターン持続|■魅惑Ⅰ…持续２回合"
-set-string (global-string d064) "■魅了Ⅱ…３ターン持続|■魅惑Ⅱ…持续３回合"
-set-string (global-string d065) "■魅了Ⅲ…４ターン持続|■魅惑Ⅲ…持续４回合"
-set-string (global-string d066) "■魅了Ⅳ…５ターン持続|■魅惑Ⅳ…持续５回合"
-set-string (global-string d067) "■魅了Ⅴ…６ターン持続|■魅惑Ⅴ…持续６回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d060) "効果時間中はなにも行動できない状態になります。"
+set-string (global-string d061) "レベルは５段階あり、上昇すると持続ターンが増えます。"
+*/
+set-string (global-string d060) @"效果期间内无法进行任何行动。等级共５段，越高持续回"
+set-string (global-string d061) @"合越多。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d063) "■魅了Ⅰ…２ターン持続"
+*/
+set-string (global-string d063) @"■魅惑Ⅰ…持续２回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d064) "■魅了Ⅱ…３ターン持続"
+*/
+set-string (global-string d064) @"■魅惑Ⅱ…持续３回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d065) "■魅了Ⅲ…４ターン持続"
+*/
+set-string (global-string d065) @"■魅惑Ⅲ…持续４回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d066) "■魅了Ⅳ…５ターン持続"
+*/
+set-string (global-string d066) @"■魅惑Ⅳ…持续５回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d067) "■魅了Ⅴ…６ターン持続"
+*/
+set-string (global-string d067) @"■魅惑Ⅴ…持续６回合"
 mov (global-int 14958d) 4ec
-set-string (global-string cb3e) "【効果パラメータ】　混乱|【效果参数】　混乱"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3e) "【効果パラメータ】　混乱"
+*/
+set-string (global-string cb3e) @"【效果参数】　混乱"
 mov (global-int 149975) 39e7
-set-string (global-string d06a) "命中と回避が低下し、攻撃スキルが選べなくなります。|命中与回避下降，且无法选择攻击技能。"
-set-string (global-string d06b) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d06c) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d06e) "■混乱Ⅰ…命中と回避が２低下|■混乱Ⅰ…命中与回避下降２"
-set-string (global-string d06f) "■混乱Ⅱ…命中と回避が４低下|■混乱Ⅱ…命中与回避下降４"
-set-string (global-string d070) "■混乱Ⅲ…命中と回避が６低下|■混乱Ⅲ…命中与回避下降６"
-set-string (global-string d071) "■混乱Ⅳ…命中と回避が８低下|■混乱Ⅳ…命中与回避下降８"
-set-string (global-string d072) "■混乱Ⅴ…命中と回避が１０低下|■混乱Ⅴ…命中与回避下降１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d06a) "命中と回避が低下し、攻撃スキルが選べなくなります。"
+set-string (global-string d06b) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d06c) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d06a) @"命中与回避下降，且无法选择攻击技能。等级共５段，越"
+set-string (global-string d06b) @"高补正值越高。效果在所有等级下均固定持续５回合。"
+set-string (global-string d06c) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d06e) "■混乱Ⅰ…命中と回避が２低下"
+*/
+set-string (global-string d06e) @"■混乱Ⅰ…命中与回避下降２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d06f) "■混乱Ⅱ…命中と回避が４低下"
+*/
+set-string (global-string d06f) @"■混乱Ⅱ…命中与回避下降４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d070) "■混乱Ⅲ…命中と回避が６低下"
+*/
+set-string (global-string d070) @"■混乱Ⅲ…命中与回避下降６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d071) "■混乱Ⅳ…命中と回避が８低下"
+*/
+set-string (global-string d071) @"■混乱Ⅳ…命中与回避下降８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d072) "■混乱Ⅴ…命中と回避が１０低下"
+*/
+set-string (global-string d072) @"■混乱Ⅴ…命中与回避下降１０"
 mov (global-int 14958e) 4f6
-set-string (global-string cb3f) "【効果パラメータ】　麻痺|【效果参数】　麻痹"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb3f) "【効果パラメータ】　麻痺"
+*/
+set-string (global-string cb3f) @"【效果参数】　麻痹"
 mov (global-int 149976) 39e8
-set-string (global-string d074) "回避、敏捷、移動力が低下した状態になります。|回避、敏捷、移动力下降的状态。"
-set-string (global-string d075) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d076) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d078) "■麻痺Ⅰ…回避が１０、敏捷２、移動力１低下|■麻痹Ⅰ…回避下降１０、敏捷２、移动力１"
-set-string (global-string d079) "■麻痺Ⅱ…回避が２０、敏捷４、移動力２低下|■麻痹Ⅱ…回避下降２０、敏捷４、移动力２"
-set-string (global-string d07a) "■麻痺Ⅲ…回避が３０、敏捷６、移動力３低下|■麻痹Ⅲ…回避下降３０、敏捷６、移动力３"
-set-string (global-string d07b) "■麻痺Ⅳ…回避が４０、敏捷８、移動力４低下|■麻痹Ⅳ…回避下降４０、敏捷８、移动力４"
-set-string (global-string d07c) "■麻痺Ⅴ…回避が５０、敏捷１０、移動力５低下|■麻痹Ⅴ…回避下降５０、敏捷１０、移动力５"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d074) "回避、敏捷、移動力が低下した状態になります。"
+set-string (global-string d075) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d076) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d074) @"回避、敏捷、移动力下降的状态。等级共５段，越高补正"
+set-string (global-string d075) @"值越高。效果在所有等级下均固定持续５回合。"
+set-string (global-string d076) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d078) "■麻痺Ⅰ…回避が１０、敏捷２、移動力１低下"
+*/
+set-string (global-string d078) @"■麻痹Ⅰ…回避下降１０、敏捷２、移动力１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d079) "■麻痺Ⅱ…回避が２０、敏捷４、移動力２低下"
+*/
+set-string (global-string d079) @"■麻痹Ⅱ…回避下降２０、敏捷４、移动力２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d07a) "■麻痺Ⅲ…回避が３０、敏捷６、移動力３低下"
+*/
+set-string (global-string d07a) @"■麻痹Ⅲ…回避下降３０、敏捷６、移动力３"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d07b) "■麻痺Ⅳ…回避が４０、敏捷８、移動力４低下"
+*/
+set-string (global-string d07b) @"■麻痹Ⅳ…回避下降４０、敏捷８、移动力４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d07c) "■麻痺Ⅴ…回避が５０、敏捷１０、移動力５低下"
+*/
+set-string (global-string d07c) @"■麻痹Ⅴ…回避下降５０、敏捷１０、移动力５"
 mov (global-int 14958f) 500
-set-string (global-string cb40) "【効果パラメータ】　猛毒|【效果参数】　剧毒"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb40) "【効果パラメータ】　猛毒"
+*/
+set-string (global-string cb40) @"【效果参数】　剧毒"
 mov (global-int 149977) 39e9
-set-string (global-string d07e) "ターン開始時に、ＨＰにダメージを受けます。|回合开始时受到ＨＰ伤害。"
-set-string (global-string d07f) "レベルは５段階あり、受けるダメージ量が上昇します。|等级共５段，越高受到的伤害越多。"
-set-string (global-string d080) "このダメージでは撤退せず、最低『１』は残ります。|此伤害不会导致撤退，至少会保留『１』。"
-set-string (global-string d081) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d083) "■猛毒Ⅰ…ＨＰに１ダメージ|■剧毒Ⅰ…受到ＨＰ１伤害"
-set-string (global-string d084) "■猛毒Ⅱ…ＨＰに２ダメージ|■剧毒Ⅱ…受到ＨＰ２伤害"
-set-string (global-string d085) "■猛毒Ⅲ…ＨＰに３ダメージ|■剧毒Ⅲ…受到ＨＰ３伤害"
-set-string (global-string d086) "■猛毒Ⅳ…ＨＰに４ダメージ|■剧毒Ⅳ…受到ＨＰ４伤害"
-set-string (global-string d087) "■猛毒Ⅴ…ＨＰに５ダメージ|■剧毒Ⅴ…受到ＨＰ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d07e) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d07f) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d080) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d081) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d07e) @"回合开始时受到ＨＰ伤害。等级共５段，越高受到的伤害"
+set-string (global-string d07f) @"越多。此伤害不会导致撤退，至少会保留『１』。效果在"
+set-string (global-string d080) @"所有等级下均固定持续５回合。"
+set-string (global-string d081) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d083) "■猛毒Ⅰ…ＨＰに１ダメージ"
+*/
+set-string (global-string d083) @"■剧毒Ⅰ…受到ＨＰ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d084) "■猛毒Ⅱ…ＨＰに２ダメージ"
+*/
+set-string (global-string d084) @"■剧毒Ⅱ…受到ＨＰ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d085) "■猛毒Ⅲ…ＨＰに３ダメージ"
+*/
+set-string (global-string d085) @"■剧毒Ⅲ…受到ＨＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d086) "■猛毒Ⅳ…ＨＰに４ダメージ"
+*/
+set-string (global-string d086) @"■剧毒Ⅳ…受到ＨＰ４伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d087) "■猛毒Ⅴ…ＨＰに５ダメージ"
+*/
+set-string (global-string d087) @"■剧毒Ⅴ…受到ＨＰ５伤害"
 mov (global-int 149590) 50a
-set-string (global-string cb41) "【効果パラメータ】　水流|【效果参数】　水流"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb41) "【効果パラメータ】　水流"
+*/
+set-string (global-string cb41) @"【效果参数】　水流"
 mov (global-int 149978) 39ea
-set-string (global-string d088) "ターン開始時に、ＨＰにダメージを受けます。|回合开始时受到ＨＰ伤害。"
-set-string (global-string d089) "レベルは５段階あり、受けるダメージ量が上昇します。|等级共５段，越高受到的伤害越多。"
-set-string (global-string d08a) "このダメージでは撤退せず、最低『１』は残ります。|此伤害不会导致撤退，至少会保留『１』。"
-set-string (global-string d08b) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d08d) "■水流Ⅰ…ＨＰに１ダメージ|■水流Ⅰ…受到ＨＰ１伤害"
-set-string (global-string d08e) "■水流Ⅱ…ＨＰに２ダメージ|■水流Ⅱ…受到ＨＰ２伤害"
-set-string (global-string d08f) "■水流Ⅲ…ＨＰに３ダメージ|■水流Ⅲ…受到ＨＰ３伤害"
-set-string (global-string d090) "■水流Ⅳ…ＨＰに４ダメージ|■水流Ⅳ…受到ＨＰ４伤害"
-set-string (global-string d091) "■水流Ⅴ…ＨＰに５ダメージ|■水流Ⅴ…受到ＨＰ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d088) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d089) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d08a) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d08b) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d088) @"回合开始时受到ＨＰ伤害。等级共５段，越高受到的伤害"
+set-string (global-string d089) @"越多。此伤害不会导致撤退，至少会保留『１』。效果在"
+set-string (global-string d08a) @"所有等级下均固定持续５回合。"
+set-string (global-string d08b) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d08d) "■水流Ⅰ…ＨＰに１ダメージ"
+*/
+set-string (global-string d08d) @"■水流Ⅰ…受到ＨＰ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d08e) "■水流Ⅱ…ＨＰに２ダメージ"
+*/
+set-string (global-string d08e) @"■水流Ⅱ…受到ＨＰ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d08f) "■水流Ⅲ…ＨＰに３ダメージ"
+*/
+set-string (global-string d08f) @"■水流Ⅲ…受到ＨＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d090) "■水流Ⅳ…ＨＰに４ダメージ"
+*/
+set-string (global-string d090) @"■水流Ⅳ…受到ＨＰ４伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d091) "■水流Ⅴ…ＨＰに５ダメージ"
+*/
+set-string (global-string d091) @"■水流Ⅴ…受到ＨＰ５伤害"
 mov (global-int 149591) 514
-set-string (global-string cb42) "【効果パラメータ】　強酸|【效果参数】　强酸"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb42) "【効果パラメータ】　強酸"
+*/
+set-string (global-string cb42) @"【效果参数】　强酸"
 mov (global-int 149979) 39eb
-set-string (global-string d092) "ターン開始時に、ＨＰとＦＳにダメージを受けます。|回合开始时受到ＨＰ与ＦＳ伤害。"
-set-string (global-string d093) "レベルは５段階あり、受けるダメージ量が上昇します。|等级共５段，越高受到的伤害越多。"
-set-string (global-string d094) "このダメージでは撤退せず、最低『１』は残ります。|此伤害不会导致撤退，至少会保留『１』。"
-set-string (global-string d095) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d097) "■強酸Ⅰ…ＨＰとＦＳに１ダメージ|■强酸Ⅰ…受到ＨＰ与ＦＳ１伤害"
-set-string (global-string d098) "■強酸Ⅱ…ＨＰとＦＳに２ダメージ|■强酸Ⅱ…受到ＨＰ与ＦＳ２伤害"
-set-string (global-string d099) "■強酸Ⅲ…ＨＰとＦＳに３ダメージ|■强酸Ⅲ…受到ＨＰ与ＦＳ３伤害"
-set-string (global-string d09a) "■強酸Ⅳ…ＨＰとＦＳに４ダメージ|■强酸Ⅳ…受到ＨＰ与ＦＳ４伤害"
-set-string (global-string d09b) "■強酸Ⅴ…ＨＰとＦＳに５ダメージ|■强酸Ⅴ…受到ＨＰ与ＦＳ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d092) "ターン開始時に、ＨＰとＦＳにダメージを受けます。"
+set-string (global-string d093) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d094) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d095) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d092) @"回合开始时受到ＨＰ与ＦＳ伤害。等级共５段，越高受到"
+set-string (global-string d093) @"的伤害越多。此伤害不会导致撤退，至少会保留『１』。"
+set-string (global-string d094) @"效果在所有等级下均固定持续５回合。"
+set-string (global-string d095) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d097) "■強酸Ⅰ…ＨＰとＦＳに１ダメージ"
+*/
+set-string (global-string d097) @"■强酸Ⅰ…受到ＨＰ与ＦＳ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d098) "■強酸Ⅱ…ＨＰとＦＳに２ダメージ"
+*/
+set-string (global-string d098) @"■强酸Ⅱ…受到ＨＰ与ＦＳ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d099) "■強酸Ⅲ…ＨＰとＦＳに３ダメージ"
+*/
+set-string (global-string d099) @"■强酸Ⅲ…受到ＨＰ与ＦＳ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d09a) "■強酸Ⅳ…ＨＰとＦＳに４ダメージ"
+*/
+set-string (global-string d09a) @"■强酸Ⅳ…受到ＨＰ与ＦＳ４伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d09b) "■強酸Ⅴ…ＨＰとＦＳに５ダメージ"
+*/
+set-string (global-string d09b) @"■强酸Ⅴ…受到ＨＰ与ＦＳ５伤害"
 mov (global-int 149592) 51e
-set-string (global-string cb43) "【効果パラメータ】　炎症|【效果参数】　灼烧"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb43) "【効果パラメータ】　炎症"
+*/
+set-string (global-string cb43) @"【效果参数】　灼烧"
 mov (global-int 14997a) 39ec
-set-string (global-string d09c) "ターン開始時に、ＨＰにダメージを受けます。|回合开始时受到ＨＰ伤害。"
-set-string (global-string d09d) "レベルは５段階あり、受けるダメージ量が上昇します。|等级共５段，越高受到的伤害越多。"
-set-string (global-string d09e) "このダメージでは撤退せず、最低『１』は残ります。|此伤害不会导致撤退，至少会保留『１』。"
-set-string (global-string d09f) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0a1) "■炎症Ⅰ…ＨＰに１ダメージ|■灼烧Ⅰ…受到ＨＰ１伤害"
-set-string (global-string d0a2) "■炎症Ⅱ…ＨＰに２ダメージ|■灼烧Ⅱ…受到ＨＰ２伤害"
-set-string (global-string d0a3) "■炎症Ⅲ…ＨＰに３ダメージ|■灼烧Ⅲ…受到ＨＰ３伤害"
-set-string (global-string d0a4) "■炎症Ⅳ…ＨＰに４ダメージ|■灼烧Ⅳ…受到ＨＰ４伤害"
-set-string (global-string d0a5) "■炎症Ⅴ…ＨＰに５ダメージ|■灼烧Ⅴ…受到ＨＰ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d09c) "ターン開始時に、ＨＰにダメージを受けます。"
+set-string (global-string d09d) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d09e) "このダメージでは撤退せず、最低『１』は残ります。"
+set-string (global-string d09f) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d09c) @"回合开始时受到ＨＰ伤害。等级共５段，越高受到的伤害"
+set-string (global-string d09d) @"越多。此伤害不会导致撤退，至少会保留『１』。效果在"
+set-string (global-string d09e) @"所有等级下均固定持续５回合。"
+set-string (global-string d09f) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a1) "■炎症Ⅰ…ＨＰに１ダメージ"
+*/
+set-string (global-string d0a1) @"■灼烧Ⅰ…受到ＨＰ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a2) "■炎症Ⅱ…ＨＰに２ダメージ"
+*/
+set-string (global-string d0a2) @"■灼烧Ⅱ…受到ＨＰ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a3) "■炎症Ⅲ…ＨＰに３ダメージ"
+*/
+set-string (global-string d0a3) @"■灼烧Ⅲ…受到ＨＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a4) "■炎症Ⅳ…ＨＰに４ダメージ"
+*/
+set-string (global-string d0a4) @"■灼烧Ⅳ…受到ＨＰ４伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a5) "■炎症Ⅴ…ＨＰに５ダメージ"
+*/
+set-string (global-string d0a5) @"■灼烧Ⅴ…受到ＨＰ５伤害"
 mov (global-int 149593) 528
-set-string (global-string cb44) "【効果パラメータ】　恐怖|【效果参数】　恐惧"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb44) "【効果パラメータ】　恐怖"
+*/
+set-string (global-string cb44) @"【效果参数】　恐惧"
 mov (global-int 14997b) 39ed
-set-string (global-string d0a6) "ターン開始時に、ＦＳにダメージを受けます。|回合开始时受到ＦＳ伤害。"
-set-string (global-string d0a7) "レベルは５段階あり、受けるダメージ量が上昇します。|等级共５段，越高受到的伤害越多。"
-set-string (global-string d0a8) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0aa) "■恐怖Ⅰ…ＦＳに１ダメージ|■恐惧Ⅰ…受到ＦＳ１伤害"
-set-string (global-string d0ab) "■恐怖Ⅱ…ＦＳに２ダメージ|■恐惧Ⅱ…受到ＦＳ２伤害"
-set-string (global-string d0ac) "■恐怖Ⅲ…ＦＳに３ダメージ|■恐惧Ⅲ…受到ＦＳ３伤害"
-set-string (global-string d0ad) "■恐怖Ⅳ…ＦＳに４ダメージ|■恐惧Ⅳ…受到ＦＳ４伤害"
-set-string (global-string d0ae) "■恐怖Ⅴ…ＦＳに５ダメージ|■恐惧Ⅴ…受到ＦＳ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0a6) "ターン開始時に、ＦＳにダメージを受けます。"
+set-string (global-string d0a7) "レベルは５段階あり、受けるダメージ量が上昇します。"
+set-string (global-string d0a8) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d0a6) @"回合开始时受到ＦＳ伤害。等级共５段，越高受到的伤害"
+set-string (global-string d0a7) @"越多。效果在所有等级下均固定持续５回合。"
+set-string (global-string d0a8) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0aa) "■恐怖Ⅰ…ＦＳに１ダメージ"
+*/
+set-string (global-string d0aa) @"■恐惧Ⅰ…受到ＦＳ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ab) "■恐怖Ⅱ…ＦＳに２ダメージ"
+*/
+set-string (global-string d0ab) @"■恐惧Ⅱ…受到ＦＳ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ac) "■恐怖Ⅲ…ＦＳに３ダメージ"
+*/
+set-string (global-string d0ac) @"■恐惧Ⅲ…受到ＦＳ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ad) "■恐怖Ⅳ…ＦＳに４ダメージ"
+*/
+set-string (global-string d0ad) @"■恐惧Ⅳ…受到ＦＳ４伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ae) "■恐怖Ⅴ…ＦＳに５ダメージ"
+*/
+set-string (global-string d0ae) @"■恐惧Ⅴ…受到ＦＳ５伤害"
 mov (global-int 149594) 532
-set-string (global-string cb45) "【効果パラメータ】　再生|【效果参数】　再生"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb45) "【効果パラメータ】　再生"
+*/
+set-string (global-string cb45) @"【效果参数】　再生"
 mov (global-int 14997c) 39ee
-set-string (global-string d0b0) "ターン開始時にＨＰが回復します。|回合开始时恢复ＨＰ。"
-set-string (global-string d0b1) "レベルは５段階あり、上昇するほど回復量が高まります。|等级共５段，越高回复量越多。"
-set-string (global-string d0b2) "効果は全てのレベル固定で永続します。|效果在所有等级下均永久持续。"
-set-string (global-string d0b4) "■再生Ⅰ…ＨＰが２回復|■再生Ⅰ…恢复ＨＰ２"
-set-string (global-string d0b5) "■再生Ⅱ…ＨＰが４回復|■再生Ⅱ…恢复ＨＰ４"
-set-string (global-string d0b6) "■再生Ⅲ…ＨＰが６回復|■再生Ⅲ…恢复ＨＰ６"
-set-string (global-string d0b7) "■再生Ⅳ…ＨＰが８回復|■再生Ⅳ…恢复ＨＰ８"
-set-string (global-string d0b8) "■再生Ⅴ…ＨＰが１０回復|■再生Ⅴ…恢复ＨＰ１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b0) "ターン開始時にＨＰが回復します。"
+set-string (global-string d0b1) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0b2) "効果は全てのレベル固定で永続します。"
+*/
+set-string (global-string d0b0) @"回合开始时恢复ＨＰ。等级共５段，越高回复量越多。效"
+set-string (global-string d0b1) @"果在所有等级下均永久持续。"
+set-string (global-string d0b2) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b4) "■再生Ⅰ…ＨＰが２回復"
+*/
+set-string (global-string d0b4) @"■再生Ⅰ…恢复ＨＰ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b5) "■再生Ⅱ…ＨＰが４回復"
+*/
+set-string (global-string d0b5) @"■再生Ⅱ…恢复ＨＰ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b6) "■再生Ⅲ…ＨＰが６回復"
+*/
+set-string (global-string d0b6) @"■再生Ⅲ…恢复ＨＰ６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b7) "■再生Ⅳ…ＨＰが８回復"
+*/
+set-string (global-string d0b7) @"■再生Ⅳ…恢复ＨＰ８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0b8) "■再生Ⅴ…ＨＰが１０回復"
+*/
+set-string (global-string d0b8) @"■再生Ⅴ…恢复ＨＰ１０"
 mov (global-int 149595) 53c
-set-string (global-string cb46) "【効果パラメータ】　技再|【效果参数】　技回"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb46) "【効果パラメータ】　技再"
+*/
+set-string (global-string cb46) @"【效果参数】　技回"
 mov (global-int 14997d) 39ef
-set-string (global-string d0ba) "ターン開始時にＳＰが回復します。|回合开始时恢复ＳＰ。"
-set-string (global-string d0bb) "レベルは５段階あり、上昇するほど回復量が高まります。|等级共５段，越高回复量越多。"
-set-string (global-string d0bc) "効果は全てのレベル固定で永続します。|效果在所有等级下均永久持续。"
-set-string (global-string d0be) "■技再Ⅰ…ＳＰが２回復|■技回Ⅰ…恢复ＳＰ２"
-set-string (global-string d0bf) "■技再Ⅱ…ＳＰが４回復|■技回Ⅱ…恢复ＳＰ４"
-set-string (global-string d0c0) "■技再Ⅲ…ＳＰが６回復|■技回Ⅲ…恢复ＳＰ６"
-set-string (global-string d0c1) "■技再Ⅳ…ＳＰが８回復|■技回Ⅳ…恢复ＳＰ８"
-set-string (global-string d0c2) "■技再Ⅴ…ＳＰが１０回復|■技回Ⅴ…恢复ＳＰ１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ba) "ターン開始時にＳＰが回復します。"
+set-string (global-string d0bb) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0bc) "効果は全てのレベル固定で永続します。"
+*/
+set-string (global-string d0ba) @"回合开始时恢复ＳＰ。等级共５段，越高回复量越多。效"
+set-string (global-string d0bb) @"果在所有等级下均永久持续。"
+set-string (global-string d0bc) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0be) "■技再Ⅰ…ＳＰが２回復"
+*/
+set-string (global-string d0be) @"■技回Ⅰ…恢复ＳＰ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0bf) "■技再Ⅱ…ＳＰが４回復"
+*/
+set-string (global-string d0bf) @"■技回Ⅱ…恢复ＳＰ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c0) "■技再Ⅲ…ＳＰが６回復"
+*/
+set-string (global-string d0c0) @"■技回Ⅲ…恢复ＳＰ６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c1) "■技再Ⅳ…ＳＰが８回復"
+*/
+set-string (global-string d0c1) @"■技回Ⅳ…恢复ＳＰ８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c2) "■技再Ⅴ…ＳＰが１０回復"
+*/
+set-string (global-string d0c2) @"■技回Ⅴ…恢复ＳＰ１０"
 mov (global-int 149596) 546
-set-string (global-string cb47) "【効果パラメータ】　疲再|【效果参数】　疲回"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb47) "【効果パラメータ】　疲再"
+*/
+set-string (global-string cb47) @"【效果参数】　疲回"
 mov (global-int 14997e) 39f0
-set-string (global-string d0c4) "ターン開始時にＦＳが回復します。|回合开始时恢复ＦＳ。"
-set-string (global-string d0c5) "レベルは５段階あり、上昇するほど回復量が高まります。|等级共５段，越高回复量越多。"
-set-string (global-string d0c6) "効果は全てのレベル固定で永続します。|效果在所有等级下均永久持续。"
-set-string (global-string d0c8) "■疲再Ⅰ…ＦＳが２回復|■疲回Ⅰ…恢复ＦＳ２"
-set-string (global-string d0c9) "■疲再Ⅱ…ＦＳが４回復|■疲回Ⅱ…恢复ＦＳ４"
-set-string (global-string d0ca) "■疲再Ⅲ…ＦＳが６回復|■疲回Ⅲ…恢复ＦＳ６"
-set-string (global-string d0cb) "■疲再Ⅳ…ＦＳが８回復|■疲回Ⅳ…恢复ＦＳ８"
-set-string (global-string d0cc) "■疲再Ⅴ…ＦＳが１０回復|■疲回Ⅴ…恢复ＦＳ１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c4) "ターン開始時にＦＳが回復します。"
+set-string (global-string d0c5) "レベルは５段階あり、上昇するほど回復量が高まります。"
+set-string (global-string d0c6) "効果は全てのレベル固定で永続します。"
+*/
+set-string (global-string d0c4) @"回合开始时恢复ＦＳ。等级共５段，越高回复量越多。效"
+set-string (global-string d0c5) @"果在所有等级下均永久持续。"
+set-string (global-string d0c6) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c8) "■疲再Ⅰ…ＦＳが２回復"
+*/
+set-string (global-string d0c8) @"■疲回Ⅰ…恢复ＦＳ２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0c9) "■疲再Ⅱ…ＦＳが４回復"
+*/
+set-string (global-string d0c9) @"■疲回Ⅱ…恢复ＦＳ４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ca) "■疲再Ⅲ…ＦＳが６回復"
+*/
+set-string (global-string d0ca) @"■疲回Ⅲ…恢复ＦＳ６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0cb) "■疲再Ⅳ…ＦＳが８回復"
+*/
+set-string (global-string d0cb) @"■疲回Ⅳ…恢复ＦＳ８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0cc) "■疲再Ⅴ…ＦＳが１０回復"
+*/
+set-string (global-string d0cc) @"■疲回Ⅴ…恢复ＦＳ１０"
 mov (global-int 149597) 550
-set-string (global-string cb48) "【効果パラメータ】　高揚|【效果参数】　激昂"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb48) "【効果パラメータ】　高揚"
+*/
+set-string (global-string cb48) @"【效果参数】　激昂"
 mov (global-int 14997f) 39f1
-set-string (global-string d0ce) "攻撃力と痛打が上昇しますが、防御力が低下します。|攻击力与痛击上升，但防御力下降。"
-set-string (global-string d0cf) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d0d0) "効果は全てのレベル固定で１０ターン持続します。|效果在所有等级下均固定持续１０回合。"
-set-string (global-string d0d2) "■高揚Ⅰ…攻撃が２、痛打２上昇、防御２低下|■激昂Ⅰ…攻击＋２、痛击＋２、防御－２"
-set-string (global-string d0d3) "■高揚Ⅱ…攻撃が４、痛打４上昇、防御４低下|■激昂Ⅱ…攻击＋４、痛击＋４、防御－４"
-set-string (global-string d0d4) "■高揚Ⅲ…攻撃が６、痛打６上昇、防御６低下|■激昂Ⅲ…攻击＋６、痛击＋６、防御－６"
-set-string (global-string d0d5) "■高揚Ⅳ…攻撃が８、痛打８上昇、防御８低下|■激昂Ⅳ…攻击＋８、痛击＋８、防御－８"
-set-string (global-string d0d6) "■高揚Ⅴ…攻撃が１０、痛打１０上昇、防御１０低下|■激昂Ⅴ…攻击＋１０、痛击＋１０、防御－１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ce) "攻撃力と痛打が上昇しますが、防御力が低下します。"
+set-string (global-string d0cf) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0d0) "効果は全てのレベル固定で１０ターン持続します。"
+*/
+set-string (global-string d0ce) @"攻击力与痛击上升，但防御力下降。等级共５段，越高补"
+set-string (global-string d0cf) @"正值越高。效果在所有等级下均固定持续１０回合。"
+set-string (global-string d0d0) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d2) "■高揚Ⅰ…攻撃が２、痛打２上昇、防御２低下"
+*/
+set-string (global-string d0d2) @"■激昂Ⅰ…攻击＋２、痛击＋２、防御－２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d3) "■高揚Ⅱ…攻撃が４、痛打４上昇、防御４低下"
+*/
+set-string (global-string d0d3) @"■激昂Ⅱ…攻击＋４、痛击＋４、防御－４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d4) "■高揚Ⅲ…攻撃が６、痛打６上昇、防御６低下"
+*/
+set-string (global-string d0d4) @"■激昂Ⅲ…攻击＋６、痛击＋６、防御－６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d5) "■高揚Ⅳ…攻撃が８、痛打８上昇、防御８低下"
+*/
+set-string (global-string d0d5) @"■激昂Ⅳ…攻击＋８、痛击＋８、防御－８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d6) "■高揚Ⅴ…攻撃が１０、痛打１０上昇、防御１０低下"
+*/
+set-string (global-string d0d6) @"■激昂Ⅴ…攻击＋１０、痛击＋１０、防御－１０"
 mov (global-int 149598) 55a
-set-string (global-string cb49) "【効果パラメータ】　命中|【效果参数】　命中"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb49) "【効果パラメータ】　命中"
+*/
+set-string (global-string cb49) @"【效果参数】　命中"
 mov (global-int 149980) 39f2
-set-string (global-string d0d8) "命中が上昇します。|命中上升。"
-set-string (global-string d0d9) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d0da) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0dc) "■命中Ⅰ…命中が４上昇|■命中Ⅰ…命中＋４"
-set-string (global-string d0dd) "■命中Ⅱ…命中が８上昇|■命中Ⅱ…命中＋８"
-set-string (global-string d0de) "■命中Ⅲ…命中が１２上昇|■命中Ⅲ…命中＋１２"
-set-string (global-string d0df) "■命中Ⅳ…命中が１６上昇|■命中Ⅳ…命中＋１６"
-set-string (global-string d0e0) "■命中Ⅴ…命中が２０上昇|■命中Ⅴ…命中＋２０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0d8) "命中が上昇します。"
+set-string (global-string d0d9) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0da) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d0d8) @"命中上升。等级共５段，越高补正值越高。效果在所有等"
+set-string (global-string d0d9) @"级下均固定持续５回合。"
+set-string (global-string d0da) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0dc) "■命中Ⅰ…命中が４上昇"
+*/
+set-string (global-string d0dc) @"■命中Ⅰ…命中＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0dd) "■命中Ⅱ…命中が８上昇"
+*/
+set-string (global-string d0dd) @"■命中Ⅱ…命中＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0de) "■命中Ⅲ…命中が１２上昇"
+*/
+set-string (global-string d0de) @"■命中Ⅲ…命中＋１２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0df) "■命中Ⅳ…命中が１６上昇"
+*/
+set-string (global-string d0df) @"■命中Ⅳ…命中＋１６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e0) "■命中Ⅴ…命中が２０上昇"
+*/
+set-string (global-string d0e0) @"■命中Ⅴ…命中＋２０"
 mov (global-int 149599) 564
-set-string (global-string cb4a) "【効果パラメータ】　回避|【效果参数】　回避"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4a) "【効果パラメータ】　回避"
+*/
+set-string (global-string cb4a) @"【效果参数】　回避"
 mov (global-int 149981) 39f3
-set-string (global-string d0e2) "回避が上昇します。|回避上升。"
-set-string (global-string d0e3) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d0e4) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0e6) "■回避Ⅰ…回避が４上昇|■回避Ⅰ…回避＋４"
-set-string (global-string d0e7) "■回避Ⅱ…回避が８上昇|■回避Ⅱ…回避＋８"
-set-string (global-string d0e8) "■回避Ⅲ…回避が１２上昇|■回避Ⅲ…回避＋１２"
-set-string (global-string d0e9) "■回避Ⅳ…回避が１６上昇|■回避Ⅳ…回避＋１６"
-set-string (global-string d0ea) "■回避Ⅴ…回避が２０上昇|■回避Ⅴ…回避＋２０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e2) "回避が上昇します。"
+set-string (global-string d0e3) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0e4) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d0e2) @"回避上升。等级共５段，越高补正值越高。效果在所有等"
+set-string (global-string d0e3) @"级下均固定持续５回合。"
+set-string (global-string d0e4) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e6) "■回避Ⅰ…回避が４上昇"
+*/
+set-string (global-string d0e6) @"■回避Ⅰ…回避＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e7) "■回避Ⅱ…回避が８上昇"
+*/
+set-string (global-string d0e7) @"■回避Ⅱ…回避＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e8) "■回避Ⅲ…回避が１２上昇"
+*/
+set-string (global-string d0e8) @"■回避Ⅲ…回避＋１２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0e9) "■回避Ⅳ…回避が１６上昇"
+*/
+set-string (global-string d0e9) @"■回避Ⅳ…回避＋１６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ea) "■回避Ⅴ…回避が２０上昇"
+*/
+set-string (global-string d0ea) @"■回避Ⅴ…回避＋２０"
 mov (global-int 14959a) 56e
-set-string (global-string cb4b) "【効果パラメータ】　物攻|【效果参数】　物攻"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4b) "【効果パラメータ】　物攻"
+*/
+set-string (global-string cb4b) @"【效果参数】　物攻"
 mov (global-int 149982) 39f4
-set-string (global-string d0ec) "物理攻撃が上昇します。|物理攻击上升。"
-set-string (global-string d0ed) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d0ee) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0f0) "■物攻Ⅰ…物理攻撃が２上昇|■物攻Ⅰ…物理攻击＋２"
-set-string (global-string d0f1) "■物攻Ⅱ…物理攻撃が４上昇|■物攻Ⅱ…物理攻击＋４"
-set-string (global-string d0f2) "■物攻Ⅲ…物理攻撃が６上昇|■物攻Ⅲ…物理攻击＋６"
-set-string (global-string d0f3) "■物攻Ⅳ…物理攻撃が８上昇|■物攻Ⅳ…物理攻击＋８"
-set-string (global-string d0f4) "■物攻Ⅴ…物理攻撃が１０上昇|■物攻Ⅴ…物理攻击＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0ec) "物理攻撃が上昇します。"
+set-string (global-string d0ed) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0ee) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d0ec) @"物理攻击上升。等级共５段，越高补正值越高。效果在所"
+set-string (global-string d0ed) @"有等级下均固定持续５回合。"
+set-string (global-string d0ee) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f0) "■物攻Ⅰ…物理攻撃が２上昇"
+*/
+set-string (global-string d0f0) @"■物攻Ⅰ…物理攻击＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f1) "■物攻Ⅱ…物理攻撃が４上昇"
+*/
+set-string (global-string d0f1) @"■物攻Ⅱ…物理攻击＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f2) "■物攻Ⅲ…物理攻撃が６上昇"
+*/
+set-string (global-string d0f2) @"■物攻Ⅲ…物理攻击＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f3) "■物攻Ⅳ…物理攻撃が８上昇"
+*/
+set-string (global-string d0f3) @"■物攻Ⅳ…物理攻击＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f4) "■物攻Ⅴ…物理攻撃が１０上昇"
+*/
+set-string (global-string d0f4) @"■物攻Ⅴ…物理攻击＋１０"
 mov (global-int 14959b) 578
-set-string (global-string cb4c) "【効果パラメータ】　物防|【效果参数】　物防"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4c) "【効果パラメータ】　物防"
+*/
+set-string (global-string cb4c) @"【效果参数】　物防"
 mov (global-int 149983) 39f5
-set-string (global-string d0f6) "物理防御が上昇します。|物理防御上升。"
-set-string (global-string d0f7) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d0f8) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d0fa) "■物防Ⅰ…物理防御が２上昇|■物防Ⅰ…物理防御＋２"
-set-string (global-string d0fb) "■物防Ⅱ…物理防御が４上昇|■物防Ⅱ…物理防御＋４"
-set-string (global-string d0fc) "■物防Ⅲ…物理防御が６上昇|■物防Ⅲ…物理防御＋６"
-set-string (global-string d0fd) "■物防Ⅳ…物理防御が８上昇|■物防Ⅳ…物理防御＋８"
-set-string (global-string d0fe) "■物防Ⅴ…物理防御が１０上昇|■物防Ⅴ…物理防御＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0f6) "物理防御が上昇します。"
+set-string (global-string d0f7) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d0f8) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d0f6) @"物理防御上升。等级共５段，越高补正值越高。效果在所"
+set-string (global-string d0f7) @"有等级下均固定持续５回合。"
+set-string (global-string d0f8) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0fa) "■物防Ⅰ…物理防御が２上昇"
+*/
+set-string (global-string d0fa) @"■物防Ⅰ…物理防御＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0fb) "■物防Ⅱ…物理防御が４上昇"
+*/
+set-string (global-string d0fb) @"■物防Ⅱ…物理防御＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0fc) "■物防Ⅲ…物理防御が６上昇"
+*/
+set-string (global-string d0fc) @"■物防Ⅲ…物理防御＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0fd) "■物防Ⅳ…物理防御が８上昇"
+*/
+set-string (global-string d0fd) @"■物防Ⅳ…物理防御＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d0fe) "■物防Ⅴ…物理防御が１０上昇"
+*/
+set-string (global-string d0fe) @"■物防Ⅴ…物理防御＋１０"
 mov (global-int 14959c) 582
-set-string (global-string cb4d) "【効果パラメータ】　魔攻|【效果参数】　魔攻"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4d) "【効果パラメータ】　魔攻"
+*/
+set-string (global-string cb4d) @"【效果参数】　魔攻"
 mov (global-int 149984) 39f6
-set-string (global-string d100) "魔法攻撃が上昇します。|魔法攻击上升。"
-set-string (global-string d101) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d102) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d104) "■魔攻Ⅰ…魔法攻撃が２上昇|■魔攻Ⅰ…魔法攻击＋２"
-set-string (global-string d105) "■魔攻Ⅱ…魔法攻撃が４上昇|■魔攻Ⅱ…魔法攻击＋４"
-set-string (global-string d106) "■魔攻Ⅲ…魔法攻撃が６上昇|■魔攻Ⅲ…魔法攻击＋６"
-set-string (global-string d107) "■魔攻Ⅳ…魔法攻撃が８上昇|■魔攻Ⅳ…魔法攻击＋８"
-set-string (global-string d108) "■魔攻Ⅴ…魔法攻撃が１０上昇|■魔攻Ⅴ…魔法攻击＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d100) "魔法攻撃が上昇します。"
+set-string (global-string d101) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d102) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d100) @"魔法攻击上升。等级共５段，越高补正值越高。效果在所"
+set-string (global-string d101) @"有等级下均固定持续５回合。"
+set-string (global-string d102) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d104) "■魔攻Ⅰ…魔法攻撃が２上昇"
+*/
+set-string (global-string d104) @"■魔攻Ⅰ…魔法攻击＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d105) "■魔攻Ⅱ…魔法攻撃が４上昇"
+*/
+set-string (global-string d105) @"■魔攻Ⅱ…魔法攻击＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d106) "■魔攻Ⅲ…魔法攻撃が６上昇"
+*/
+set-string (global-string d106) @"■魔攻Ⅲ…魔法攻击＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d107) "■魔攻Ⅳ…魔法攻撃が８上昇"
+*/
+set-string (global-string d107) @"■魔攻Ⅳ…魔法攻击＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d108) "■魔攻Ⅴ…魔法攻撃が１０上昇"
+*/
+set-string (global-string d108) @"■魔攻Ⅴ…魔法攻击＋１０"
 mov (global-int 14959d) 58c
-set-string (global-string cb4e) "【効果パラメータ】　魔防|【效果参数】　魔防"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4e) "【効果パラメータ】　魔防"
+*/
+set-string (global-string cb4e) @"【效果参数】　魔防"
 mov (global-int 149985) 39f7
-set-string (global-string d10a) "魔法防御が上昇します。|魔法防御上升。"
-set-string (global-string d10b) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d10c) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d10e) "■魔防Ⅰ…魔法防御が２上昇|■魔防Ⅰ…魔法防御＋２"
-set-string (global-string d10f) "■魔防Ⅱ…魔法防御が４上昇|■魔防Ⅱ…魔法防御＋４"
-set-string (global-string d110) "■魔防Ⅲ…魔法防御が６上昇|■魔防Ⅲ…魔法防御＋６"
-set-string (global-string d111) "■魔防Ⅳ…魔法防御が８上昇|■魔防Ⅳ…魔法防御＋８"
-set-string (global-string d112) "■魔防Ⅴ…魔法防御が１０上昇|■魔防Ⅴ…魔法防御＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d10a) "魔法防御が上昇します。"
+set-string (global-string d10b) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d10c) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d10a) @"魔法防御上升。等级共５段，越高补正值越高。效果在所"
+set-string (global-string d10b) @"有等级下均固定持续５回合。"
+set-string (global-string d10c) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d10e) "■魔防Ⅰ…魔法防御が２上昇"
+*/
+set-string (global-string d10e) @"■魔防Ⅰ…魔法防御＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d10f) "■魔防Ⅱ…魔法防御が４上昇"
+*/
+set-string (global-string d10f) @"■魔防Ⅱ…魔法防御＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d110) "■魔防Ⅲ…魔法防御が６上昇"
+*/
+set-string (global-string d110) @"■魔防Ⅲ…魔法防御＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d111) "■魔防Ⅳ…魔法防御が８上昇"
+*/
+set-string (global-string d111) @"■魔防Ⅳ…魔法防御＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d112) "■魔防Ⅴ…魔法防御が１０上昇"
+*/
+set-string (global-string d112) @"■魔防Ⅴ…魔法防御＋１０"
 mov (global-int 14959e) 596
-set-string (global-string cb4f) "【効果パラメータ】　速度|【效果参数】　速度"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb4f) "【効果パラメータ】　速度"
+*/
+set-string (global-string cb4f) @"【效果参数】　速度"
 mov (global-int 149986) 39f8
-set-string (global-string d114) "敏捷が上昇します。|敏捷上升。"
-set-string (global-string d115) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d116) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d118) "■速度Ⅰ…敏捷が２上昇|■速度Ⅰ…敏捷＋２"
-set-string (global-string d119) "■速度Ⅱ…敏捷が４上昇|■速度Ⅱ…敏捷＋４"
-set-string (global-string d11a) "■速度Ⅲ…敏捷が６上昇|■速度Ⅲ…敏捷＋６"
-set-string (global-string d11b) "■速度Ⅳ…敏捷が８上昇|■速度Ⅳ…敏捷＋８"
-set-string (global-string d11c) "■速度Ⅴ…敏捷が１０上昇|■速度Ⅴ…敏捷＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d114) "敏捷が上昇します。"
+set-string (global-string d115) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d116) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d114) @"敏捷上升。等级共５段，越高补正值越高。效果在所有等"
+set-string (global-string d115) @"级下均固定持续５回合。"
+set-string (global-string d116) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d118) "■速度Ⅰ…敏捷が２上昇"
+*/
+set-string (global-string d118) @"■速度Ⅰ…敏捷＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d119) "■速度Ⅱ…敏捷が４上昇"
+*/
+set-string (global-string d119) @"■速度Ⅱ…敏捷＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d11a) "■速度Ⅲ…敏捷が６上昇"
+*/
+set-string (global-string d11a) @"■速度Ⅲ…敏捷＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d11b) "■速度Ⅳ…敏捷が８上昇"
+*/
+set-string (global-string d11b) @"■速度Ⅳ…敏捷＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d11c) "■速度Ⅴ…敏捷が１０上昇"
+*/
+set-string (global-string d11c) @"■速度Ⅴ…敏捷＋１０"
 mov (global-int 14959f) 5a0
-set-string (global-string cb50) "【効果パラメータ】　痛打|【效果参数】　痛击"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb50) "【効果パラメータ】　痛打"
+*/
+set-string (global-string cb50) @"【效果参数】　痛击"
 mov (global-int 149987) 39f9
-set-string (global-string d11e) "痛打が上昇します。|痛击上升。"
-set-string (global-string d11f) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d120) "効果は全てのレベル固定で５ターン持続します。|效果在所有等级下均固定持续５回合。"
-set-string (global-string d122) "■痛打Ⅰ…痛打が２上昇|■痛击Ⅰ…痛击＋２"
-set-string (global-string d123) "■痛打Ⅱ…痛打が４上昇|■痛击Ⅱ…痛击＋４"
-set-string (global-string d124) "■痛打Ⅲ…痛打が６上昇|■痛击Ⅲ…痛击＋６"
-set-string (global-string d125) "■痛打Ⅳ…痛打が８上昇|■痛击Ⅳ…痛击＋８"
-set-string (global-string d126) "■痛打Ⅴ…痛打が１０上昇|■痛击Ⅴ…痛击＋１０"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d11e) "痛打が上昇します。"
+set-string (global-string d11f) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d120) "効果は全てのレベル固定で５ターン持続します。"
+*/
+set-string (global-string d11e) @"痛击上升。等级共５段，越高补正值越高。效果在所有等"
+set-string (global-string d11f) @"级下均固定持续５回合。"
+set-string (global-string d120) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d122) "■痛打Ⅰ…痛打が２上昇"
+*/
+set-string (global-string d122) @"■痛击Ⅰ…痛击＋２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d123) "■痛打Ⅱ…痛打が４上昇"
+*/
+set-string (global-string d123) @"■痛击Ⅱ…痛击＋４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d124) "■痛打Ⅲ…痛打が６上昇"
+*/
+set-string (global-string d124) @"■痛击Ⅲ…痛击＋６"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d125) "■痛打Ⅳ…痛打が８上昇"
+*/
+set-string (global-string d125) @"■痛击Ⅳ…痛击＋８"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d126) "■痛打Ⅴ…痛打が１０上昇"
+*/
+set-string (global-string d126) @"■痛击Ⅴ…痛击＋１０"
 mov (global-int 1495a0) 5aa
-set-string (global-string cb51) "【効果パラメータ】　歩低|【效果参数】　移动降低"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb51) "【効果パラメータ】　歩低"
+*/
+set-string (global-string cb51) @"【效果参数】　移动降低"
 mov (global-int 149988) 39fa
-set-string (global-string d128) "移動力が低下します。|移动力下降。"
-set-string (global-string d129) "レベルは５段階あり、上昇するほど補正値が高まります。|等级共５段，越高补正值越高。"
-set-string (global-string d12a) "効果は全てのレベル固定で永続します。|效果在所有等级下均永久持续。"
-set-string (global-string d12c) "■歩低Ⅰ…移動力が１低下|■移动降低Ⅰ…移动力－１"
-set-string (global-string d12d) "■歩低Ⅱ…移動力が２低下|■移动降低Ⅱ…移动力－２"
-set-string (global-string d12e) "■歩低Ⅲ…移動力が３低下|■移动降低Ⅲ…移动力－３"
-set-string (global-string d12f) "■歩低Ⅳ…移動力が４低下|■移动降低Ⅳ…移动力－４"
-set-string (global-string d130) "■歩低Ⅴ…移動力が５低下|■移动降低Ⅴ…移动力－５"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d128) "移動力が低下します。"
+set-string (global-string d129) "レベルは５段階あり、上昇するほど補正値が高まります。"
+set-string (global-string d12a) "効果は全てのレベル固定で永続します。"
+*/
+set-string (global-string d128) @"移动力下降。等级共５段，越高补正值越高。效果在所有"
+set-string (global-string d129) @"等级下均永久持续。"
+set-string (global-string d12a) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d12c) "■歩低Ⅰ…移動力が１低下"
+*/
+set-string (global-string d12c) @"■移动降低Ⅰ…移动力－１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d12d) "■歩低Ⅱ…移動力が２低下"
+*/
+set-string (global-string d12d) @"■移动降低Ⅱ…移动力－２"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d12e) "■歩低Ⅲ…移動力が３低下"
+*/
+set-string (global-string d12e) @"■移动降低Ⅲ…移动力－３"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d12f) "■歩低Ⅳ…移動力が４低下"
+*/
+set-string (global-string d12f) @"■移动降低Ⅳ…移动力－４"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d130) "■歩低Ⅴ…移動力が５低下"
+*/
+set-string (global-string d130) @"■移动降低Ⅴ…移动力－５"
 mov (global-int 1495a1) 5b4
-set-string (global-string cb52) "【効果パラメータ】　溜め|【效果参数】　蓄力"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb52) "【効果パラメータ】　溜め"
+*/
+set-string (global-string cb52) @"【效果参数】　蓄力"
 mov (global-int 149989) 39fb
-set-string (global-string d132) "チャージスキルを持つ武器を装備することで発動します。|装备带有蓄力技能的武器时发动。"
-set-string (global-string d133) "攻撃することでチャージ段階が上昇します。|进行攻击可提升蓄力阶段。"
-set-string (global-string d135) "チャージスキルには必要チャージレベルが存在し、|蓄力技能设有所需的蓄力等级，"
-set-string (global-string d136) "チャージが溜まると使用可能になります。|蓄力积满后即可使用。"
-set-string (global-string d138) "使用後はチャージレベルが０に戻ります。|使用后蓄力等级归０。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d132) "チャージスキルを持つ武器を装備することで発動します。"
+set-string (global-string d133) "攻撃することでチャージ段階が上昇します。"
+set-string (global-string d135) "チャージスキルには必要チャージレベルが存在し、"
+set-string (global-string d136) "チャージが溜まると使用可能になります。"
+set-string (global-string d138) "使用後はチャージレベルが０に戻ります。"
+*/
+set-string (global-string d132) @"装备带有蓄力技能的武器时发动。进行攻击可提升蓄力阶"
+set-string (global-string d133) @"段。蓄力技能设有所需的蓄力等级，蓄力积满后即可使"
+set-string (global-string d135) @"用。使用后蓄力等级归０。"
+set-string (global-string d136) @""
+set-string (global-string d138) @""
 mov (global-int 1495a2) 23a
-set-string (global-string cb53) "【城砦】　城砦効果|【城砦】　城砦效果"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb53) "【城砦】　城砦効果"
+*/
+set-string (global-string cb53) @"【城砦】　城砦效果"
 mov (global-int 14998a) 39fc
-set-string (global-string d13c) "グアラクーナ城砦に、施設を配置することで発生します。|通过在古亚拉库娜城砦配置设施发动。"
-set-string (global-string d13d) "配置する施設の種類によって様々な効果が発生します。|效果随所配置设施的种类而异。"
-set-string (global-string d13f) "施設単体を配置すると『配置効果』の欄が、結陣を成立|单独配置设施时数值计入『配置效果』栏，成立结阵"
-set-string (global-string d140) "させると『結陣効果』の欄に数値が加算されていきます。|时则累加至『结阵效果』栏。"
-set-string (global-string d141) "小数点以下の数値は能力に反映されません。|小数点以下的数值不会反映到能力中。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d13c) "グアラクーナ城砦に、施設を配置することで発生します。"
+set-string (global-string d13d) "配置する施設の種類によって様々な効果が発生します。"
+set-string (global-string d13f) "施設単体を配置すると『配置効果』の欄が、結陣を成立"
+set-string (global-string d140) "させると『結陣効果』の欄に数値が加算されていきます。"
+set-string (global-string d141) "小数点以下の数値は能力に反映されません。"
+*/
+set-string (global-string d13c) @"通过在古亚拉库娜城砦配置设施发动。效果随所配置设施"
+set-string (global-string d13d) @"的种类而异。单独配置设施时数值计入『配置效果』栏，"
+set-string (global-string d13f) @"成立结阵时则累加至『结阵效果』栏。小数点以下的数值"
+set-string (global-string d140) @"不会反映到能力中。"
+set-string (global-string d141) @""
 mov (global-int 1495a3) 244
-set-string (global-string cb54) "【城砦】　城砦モード／訪問|【城砦】　城砦模式／访问"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb54) "【城砦】　城砦モード／訪問"
+*/
+set-string (global-string cb54) @"【城砦】　城砦模式／访问"
 mov (global-int 14998b) 39fd
-set-string (global-string d146) "各種施設の利用や、城砦内の探索ができます。|可使用各种设施，或在城砦内探索。"
-set-string (global-string d147) "仲間との親睦イベントなどが発生します。|会触发与伙伴加深情谊的事件等。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d146) "各種施設の利用や、城砦内の探索ができます。"
+set-string (global-string d147) "仲間との親睦イベントなどが発生します。"
+*/
+set-string (global-string d146) @"可使用各种设施，或在城砦内探索。会触发与伙伴加深情"
+set-string (global-string d147) @"谊的事件等。"
 mov (global-int 1495a4) 24e
-set-string (global-string cb55) "【城砦】　城砦モード／配置|【城砦】　城砦模式／配置"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb55) "【城砦】　城砦モード／配置"
+*/
+set-string (global-string cb55) @"【城砦】　城砦模式／配置"
 mov (global-int 14998c) 39fe
-set-string (global-string d150) "製作した施設を城砦に配置することができます。|可将在工房制作的设施配置到城砦。"
-set-string (global-string d151) "重要な施設は固定配置になります。|重要设施为固定配置。"
-set-string (global-string d153) "重要以外の施設は移動や保管も自由に変更可能です。|重要以外的设施可自由移动或保管。"
-set-string (global-string d154) "『城砦拡張図面』を製作することで、配置できる区画が|制作『城砦扩张图纸』后，可配置的区域"
-set-string (global-string d155) "開拓されていきます。|会不断开拓。"
-set-string (global-string d157) "２ｘ２などの建物サイズが大きいものは|２ｘ２等建筑尺寸较大的设施，"
-set-string (global-string d158) "配置先の一番下が建物の頂点になります。|配置位置的最下方为建筑的顶点。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d150) "製作した施設を城砦に配置することができます。"
+set-string (global-string d151) "重要な施設は固定配置になります。"
+set-string (global-string d153) "重要以外の施設は移動や保管も自由に変更可能です。"
+set-string (global-string d154) "『城砦拡張図面』を製作することで、配置できる区画が"
+set-string (global-string d155) "開拓されていきます。"
+set-string (global-string d157) "２ｘ２などの建物サイズが大きいものは"
+set-string (global-string d158) "配置先の一番下が建物の頂点になります。"
+*/
+set-string (global-string d150) @"可将在工房制作的设施配置到城砦。重要设施为固定配"
+set-string (global-string d151) @"置。重要以外的设施可自由移动或保管。制作"
+set-string (global-string d153) @"『城砦扩张图纸』后，可配置的区域会不断开拓。２ｘ２"
+set-string (global-string d154) @"等建筑尺寸较大的设施，配置位置的最下方为建筑的顶"
+set-string (global-string d155) @"点。"
+set-string (global-string d157) @""
+set-string (global-string d158) @""
 mov (global-int 1495a5) 258
-set-string (global-string cb56) "【城砦】　結陣／双結陣|【城砦】　结阵／双结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb56) "【城砦】　結陣／双結陣"
+*/
+set-string (global-string cb56) @"【城砦】　结阵／双结阵"
 mov (global-int 14998d) 39ff
-set-string (global-string d15a) "双結陣に対応した施設を、既定の配列に配置することで|将对应双结阵的设施按既定排列配置，"
-set-string (global-string d15b) "味方ユニットの『命中』が『２』上昇します。|我方单位的『命中』上升『２』。"
-set-string (global-string d15d) "成立した結陣の数でその値は上昇し、別の双結陣と重な|数值随成立结阵的数量上升，与其他双结阵重叠"
-set-string (global-string d15e) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d15a) "双結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d15b) "味方ユニットの『命中』が『２』上昇します。"
+set-string (global-string d15d) "成立した結陣の数でその値は上昇し、別の双結陣と重な"
+set-string (global-string d15e) "ることで重複発動します。"
+*/
+set-string (global-string d15a) @"将对应双结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d15b) @"『命中』上升『２』。数值随成立结阵的数量上升，与其"
+set-string (global-string d15d) @"他双结阵重叠时会重复发动。"
+set-string (global-string d15e) @""
 mov (global-int 1495a6) 262
-set-string (global-string cb57) "【城砦】　結陣／列結陣|【城砦】　结阵／列结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb57) "【城砦】　結陣／列結陣"
+*/
+set-string (global-string cb57) @"【城砦】　结阵／列结阵"
 mov (global-int 14998e) 3a00
-set-string (global-string d164) "列結陣に対応した施設を、既定の配列に配置することで|将对应列结阵的设施按既定排列配置，"
-set-string (global-string d165) "味方ユニットの『回避』が『２』上昇します。|我方单位的『回避』上升『２』。"
-set-string (global-string d167) "成立した結陣の数でその値は上昇し、別の列結陣と重な|数值随成立结阵的数量上升，与其他列结阵重叠"
-set-string (global-string d168) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d164) "列結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d165) "味方ユニットの『回避』が『２』上昇します。"
+set-string (global-string d167) "成立した結陣の数でその値は上昇し、別の列結陣と重な"
+set-string (global-string d168) "ることで重複発動します。"
+*/
+set-string (global-string d164) @"将对应列结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d165) @"『回避』上升『２』。数值随成立结阵的数量上升，与其"
+set-string (global-string d167) @"他列结阵重叠时会重复发动。"
+set-string (global-string d168) @""
 mov (global-int 1495a7) 26c
-set-string (global-string cb58) "【城砦】　結陣／箱結陣|【城砦】　结阵／箱结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb58) "【城砦】　結陣／箱結陣"
+*/
+set-string (global-string cb58) @"【城砦】　结阵／箱结阵"
 mov (global-int 14998f) 3a01
-set-string (global-string d16e) "箱結陣に対応した施設を、既定の配列に配置することで|将对应箱结阵的设施按既定排列配置，"
-set-string (global-string d16f) "味方ユニットの『最大ＨＰ』が『３』、|我方单位的『最大ＨＰ』上升『３』，"
-set-string (global-string d170) "『最大ＳＰ』と『最大ＦＳ』が『１』上昇します。|『最大ＳＰ』与『最大ＦＳ』上升『１』。"
-set-string (global-string d172) "成立した結陣の数でその値は上昇し、別の箱結陣と重な|数值随成立结阵的数量上升，与其他箱结阵重叠"
-set-string (global-string d173) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d16e) "箱結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d16f) "味方ユニットの『最大ＨＰ』が『３』、"
+set-string (global-string d170) "『最大ＳＰ』と『最大ＦＳ』が『１』上昇します。"
+set-string (global-string d172) "成立した結陣の数でその値は上昇し、別の箱結陣と重な"
+set-string (global-string d173) "ることで重複発動します。"
+*/
+set-string (global-string d16e) @"将对应箱结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d16f) @"『最大ＨＰ』上升『３』，『最大ＳＰ』与『最大ＦＳ』"
+set-string (global-string d170) @"上升『１』。数值随成立结阵的数量上升，与其他箱结阵"
+set-string (global-string d172) @"重叠时会重复发动。"
+set-string (global-string d173) @""
 mov (global-int 1495a8) 276
-set-string (global-string cb59) "【城砦】　結陣／突結陣|【城砦】　结阵／突结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb59) "【城砦】　結陣／突結陣"
+*/
+set-string (global-string cb59) @"【城砦】　结阵／突结阵"
 mov (global-int 149990) 3a02
-set-string (global-string d178) "突結陣に対応した施設を、既定の配列に配置することで|将对应突结阵的设施按既定排列配置，"
-set-string (global-string d179) "味方ユニットの『攻撃』が『１』上昇します。|我方单位的『攻击』上升『１』。"
-set-string (global-string d17b) "成立した結陣の数でその値は上昇し、別の突結陣と重な|数值随成立结阵的数量上升，与其他突结阵重叠"
-set-string (global-string d17c) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d178) "突結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d179) "味方ユニットの『攻撃』が『１』上昇します。"
+set-string (global-string d17b) "成立した結陣の数でその値は上昇し、別の突結陣と重な"
+set-string (global-string d17c) "ることで重複発動します。"
+*/
+set-string (global-string d178) @"将对应突结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d179) @"『攻击』上升『１』。数值随成立结阵的数量上升，与其"
+set-string (global-string d17b) @"他突结阵重叠时会重复发动。"
+set-string (global-string d17c) @""
 mov (global-int 1495a9) 280
-set-string (global-string cb5a) "【城砦】　結陣／鈎結陣|【城砦】　结阵／钩结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5a) "【城砦】　結陣／鈎結陣"
+*/
+set-string (global-string cb5a) @"【城砦】　结阵／钩结阵"
 mov (global-int 149991) 3a03
-set-string (global-string d182) "鈎結陣に対応した施設を、既定の配列に配置することで|将对应钩结阵的设施按既定排列配置，"
-set-string (global-string d183) "味方ユニットの『防御』が『１』上昇します。|我方单位的『防御』上升『１』。"
-set-string (global-string d185) "成立した結陣の数でその値は上昇し、別の鈎結陣と重な|数值随成立结阵的数量上升，与其他钩结阵重叠"
-set-string (global-string d186) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d182) "鈎結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d183) "味方ユニットの『防御』が『１』上昇します。"
+set-string (global-string d185) "成立した結陣の数でその値は上昇し、別の鈎結陣と重な"
+set-string (global-string d186) "ることで重複発動します。"
+*/
+set-string (global-string d182) @"将对应钩结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d183) @"『防御』上升『１』。数值随成立结阵的数量上升，与其"
+set-string (global-string d185) @"他钩结阵重叠时会重复发动。"
+set-string (global-string d186) @""
 mov (global-int 1495aa) 28a
-set-string (global-string cb5b) "【城砦】　結陣／雷結陣|【城砦】　结阵／雷结阵"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5b) "【城砦】　結陣／雷結陣"
+*/
+set-string (global-string cb5b) @"【城砦】　结阵／雷结阵"
 mov (global-int 149992) 3a04
-set-string (global-string d18c) "雷結陣に対応した施設を、既定の配列に配置することで|将对应雷结阵的设施按既定排列配置，"
-set-string (global-string d18d) "味方ユニットの『敏捷』が『１』、|我方单位的『敏捷』上升『１』，"
-set-string (global-string d18e) "『運』と『痛打』が『０．５』上昇します。|『运气』与『痛击』上升『０．５』。"
-set-string (global-string d190) "成立した結陣の数でその値は上昇し、別の雷結陣と重な|数值随成立结阵的数量上升，与其他雷结阵重叠"
-set-string (global-string d191) "ることで重複発動します。|时会重复发动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d18c) "雷結陣に対応した施設を、既定の配列に配置することで"
+set-string (global-string d18d) "味方ユニットの『敏捷』が『１』、"
+set-string (global-string d18e) "『運』と『痛打』が『０．５』上昇します。"
+set-string (global-string d190) "成立した結陣の数でその値は上昇し、別の雷結陣と重な"
+set-string (global-string d191) "ることで重複発動します。"
+*/
+set-string (global-string d18c) @"将对应雷结阵的设施按既定排列配置，我方单位的"
+set-string (global-string d18d) @"『敏捷』上升『１』，『运气』与『痛击』上升"
+set-string (global-string d18e) @"『０．５』。数值随成立结阵的数量上升，与其他雷结阵"
+set-string (global-string d190) @"重叠时会重复发动。"
+set-string (global-string d191) @""
 mov (global-int 1495ab) 294
-set-string (global-string cb5c) "【城砦】　探索|【城砦】　探索"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5c) "【城砦】　探索"
+*/
+set-string (global-string cb5c) @"【城砦】　探索"
 mov (global-int 149993) 3a05
-set-string (global-string d196) "グアラクーナ城砦内の探索を行うことができます。|可在古亚拉库娜城砦内进行探索。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d196) "グアラクーナ城砦内の探索を行うことができます。"
+*/
+set-string (global-string d196) @"可在古亚拉库娜城砦内进行探索。"
 mov (global-int 1495ac) 29e
-set-string (global-string cb5d) "【城砦】　工房|【城砦】　工房"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5d) "【城砦】　工房"
+*/
+set-string (global-string cb5d) @"【城砦】　工房"
 mov (global-int 149994) 3a06
-set-string (global-string d1a0) "迷宮などで入手した素材を使って様々な施設やアイテム、|可使用迷宫等处获得的素材，制作各种设施、道具"
-set-string (global-string d1a1) "装備品の『製作』ができます。|与装备品。"
-set-string (global-string d1a3) "余った装備品や壊れた装備品がある場合は『分解』する|若有剩余的装备或损坏的装备，可进行『分解』，"
-set-string (global-string d1a4) "ことができ、分解で得た錬石を使用することで、装備品|使用分解获得的炼石，可对装备品"
-set-string (global-string d1a5) "を『強化』することができます。|进行『强化』。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1a0) "迷宮などで入手した素材を使って様々な施設やアイテム、"
+set-string (global-string d1a1) "装備品の『製作』ができます。"
+set-string (global-string d1a3) "余った装備品や壊れた装備品がある場合は『分解』する"
+set-string (global-string d1a4) "ことができ、分解で得た錬石を使用することで、装備品"
+set-string (global-string d1a5) "を『強化』することができます。"
+*/
+set-string (global-string d1a0) @"可使用迷宫等处获得的素材，制作各种设施、道具与装备"
+set-string (global-string d1a1) @"品。若有剩余的装备或损坏的装备，可进行『分解』，使"
+set-string (global-string d1a3) @"用分解获得的炼石，可对装备品进行『强化』。"
+set-string (global-string d1a4) @""
+set-string (global-string d1a5) @""
 mov (global-int 1495ad) 2a8
-set-string (global-string cb5e) "【城砦】　錬成／製作|【城砦】　炼成／制作"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5e) "【城砦】　錬成／製作"
+*/
+set-string (global-string cb5e) @"【城砦】　炼成／制作"
 mov (global-int 149995) 3a07
-set-string (global-string d1aa) "工房で実行可能になります。|可在工房执行。"
-set-string (global-string d1ab) "製作プランに必要な素材を使い、施設や装備品など、|使用制作设计所需的素材，可制作设施、装备品等"
-set-string (global-string d1ac) "物語の進行に必要なアイテムを製作することができます。|推进剧情所需的道具。"
-set-string (global-string d1ae) "各プランは、初回に限り女神力を獲得する事ができます。|各设计仅在首次制作时可获得女神力。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1aa) "工房で実行可能になります。"
+set-string (global-string d1ab) "製作プランに必要な素材を使い、施設や装備品など、"
+set-string (global-string d1ac) "物語の進行に必要なアイテムを製作することができます。"
+set-string (global-string d1ae) "各プランは、初回に限り女神力を獲得する事ができます。"
+*/
+set-string (global-string d1aa) @"可在工房执行。使用制作设计所需的素材，可制作设施、"
+set-string (global-string d1ab) @"装备品等推进剧情所需的道具。各设计仅在首次制作时可"
+set-string (global-string d1ac) @"获得女神力。"
+set-string (global-string d1ae) @""
 mov (global-int 1495ae) 2b2
-set-string (global-string cb5f) "【城砦】　錬成／分解|【城砦】　炼成／分解"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb5f) "【城砦】　錬成／分解"
+*/
+set-string (global-string cb5f) @"【城砦】　炼成／分解"
 mov (global-int 149996) 3a08
-set-string (global-string d1b4) "工房で実行可能になります。|可在工房执行。"
-set-string (global-string d1b5) "分解することで強化素材である『錬石』を獲得できます。|通过分解可获得强化素材『炼石』。"
-set-string (global-string d1b7) "複数の錬石に分解可能な武具がある為|由于存在可分解为多块炼石的武具，"
-set-string (global-string d1b8) "錬石が９９個を超えても分解は可能ですが、|即使炼石超过９９块也可继续分解，"
-set-string (global-string d1b9) "一度に所持できる錬石は最大数は９９個です。|但一次最多只能持有９９块炼石。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1b4) "工房で実行可能になります。"
+set-string (global-string d1b5) "分解することで強化素材である『錬石』を獲得できます。"
+set-string (global-string d1b7) "複数の錬石に分解可能な武具がある為"
+set-string (global-string d1b8) "錬石が９９個を超えても分解は可能ですが、"
+set-string (global-string d1b9) "一度に所持できる錬石は最大数は９９個です。"
+*/
+set-string (global-string d1b4) @"可在工房执行。通过分解可获得强化素材『炼石』。由于"
+set-string (global-string d1b5) @"存在可分解为多块炼石的武具，即使炼石超过９９块也可"
+set-string (global-string d1b7) @"继续分解，但一次最多只能持有９９块炼石。"
+set-string (global-string d1b8) @""
+set-string (global-string d1b9) @""
 mov (global-int 1495af) 2bc
-set-string (global-string cb60) "【城砦】　錬成／強化|【城砦】　炼成／强化"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb60) "【城砦】　錬成／強化"
+*/
+set-string (global-string cb60) @"【城砦】　炼成／强化"
 mov (global-int 149997) 3a09
-set-string (global-string d1be) "工房で実行可能になります。|可在工房执行。"
-set-string (global-string d1bf) "迷宮で獲得するか、分解で得た『錬石』を使用して装備|使用迷宫获得或分解得到的『炼石』，可对装备"
-set-string (global-string d1c0) "品の強化を行うことができます。|品进行强化。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1be) "工房で実行可能になります。"
+set-string (global-string d1bf) "迷宮で獲得するか、分解で得た『錬石』を使用して装備"
+set-string (global-string d1c0) "品の強化を行うことができます。"
+*/
+set-string (global-string d1be) @"可在工房执行。使用迷宫获得或分解得到的『炼石』，可"
+set-string (global-string d1bf) @"对装备品进行强化。"
+set-string (global-string d1c0) @""
 mov (global-int 1495b0) 2c6
-set-string (global-string cb61) "【城砦】　訓練|【城砦】　训练"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb61) "【城砦】　訓練"
+*/
+set-string (global-string cb61) @"【城砦】　训练"
 mov (global-int 149998) 3a0a
-set-string (global-string d1c8) "捕獲した魔物の協力を得て召喚ユニットを訓練します。|借助捕获魔物的协助来训练召唤单位。"
-set-string (global-string d1c9) "召喚ユニットの能力が上昇する代わりに、訓練に協力し|召唤单位能力提升的同时，协助训练的"
-set-string (global-string d1ca) "た魔物は解放されます。|魔物会被解放。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1c8) "捕獲した魔物の協力を得て召喚ユニットを訓練します。"
+set-string (global-string d1c9) "召喚ユニットの能力が上昇する代わりに、訓練に協力し"
+set-string (global-string d1ca) "た魔物は解放されます。"
+*/
+set-string (global-string d1c8) @"借助捕获魔物的协助来训练召唤单位。召唤单位能力提升"
+set-string (global-string d1c9) @"的同时，协助训练的魔物会被解放。"
+set-string (global-string d1ca) @""
 mov (global-int 1495b2) 2da
-set-string (global-string cb63) "【迷宮】　占有率|【迷宫】　占有率"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb63) "【迷宮】　占有率"
+*/
+set-string (global-string cb63) @"【迷宫】　占有率"
 mov (global-int 14999a) 3a0b
-set-string (global-string d1dc) "迷宮マップにおける各勢力別の占有度合を指します。|指迷宫地图中各势力的占领程度。"
-set-string (global-string d1de) "占有率は、ミッションのＣＯＭＰＬＥＴＥ条件の１つに|占有率也是任务达成条件之一"
-set-string (global-string d1df) "も含まれております。|。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1dc) "迷宮マップにおける各勢力別の占有度合を指します。"
+set-string (global-string d1de) "占有率は、ミッションのＣＯＭＰＬＥＴＥ条件の１つに"
+set-string (global-string d1df) "も含まれております。"
+*/
+set-string (global-string d1dc) @"指迷宫地图中各势力的占领程度。占有率也是任务达成条"
+set-string (global-string d1de) @"件之一。"
+set-string (global-string d1df) @""
 mov (global-int 1495b3) 2e4
-set-string (global-string cb64) "【迷宮】　指揮力|【迷宫】　指挥力"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb64) "【迷宮】　指揮力"
+*/
+set-string (global-string cb64) @"【迷宫】　指挥力"
 mov (global-int 14999b) 3a0c
-set-string (global-string d1e6) "ユニットが出撃する為に必要なコストの最大値です。|单位出击所需消耗的上限值。"
-set-string (global-string d1e7) "ユニットごとに固有の数値を所持しており、ゲーム内で|各单位持有固有数值，游戏中"
-set-string (global-string d1e8) "は『使用値／最大値』と表示されます。|显示为『使用值／最大值』。"
-set-string (global-string d1ea) "使用値が最大値を上回ると、出撃中のユニット全てに|使用值超过最大值时，所有出击中的单位都会"
-set-string (global-string d1eb) "移動ペナルティが発生します。|受到移动惩罚。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1e6) "ユニットが出撃する為に必要なコストの最大値です。"
+set-string (global-string d1e7) "ユニットごとに固有の数値を所持しており、ゲーム内で"
+set-string (global-string d1e8) "は『使用値／最大値』と表示されます。"
+set-string (global-string d1ea) "使用値が最大値を上回ると、出撃中のユニット全てに"
+set-string (global-string d1eb) "移動ペナルティが発生します。"
+*/
+set-string (global-string d1e6) @"单位出击所需消耗的上限值。各单位持有固有数值，游戏"
+set-string (global-string d1e7) @"中显示为『使用值／最大值』。使用值超过最大值时，所"
+set-string (global-string d1e8) @"有出击中的单位都会受到移动惩罚。"
+set-string (global-string d1ea) @""
+set-string (global-string d1eb) @""
 mov (global-int 1495b4) 2ee
-set-string (global-string cb65) "【迷宮】　ＣＯＳＴ（コスト）|【迷宫】　ＣＯＳＴ（消耗）"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb65) "【迷宮】　ＣＯＳＴ（コスト）"
+*/
+set-string (global-string cb65) @"【迷宫】　ＣＯＳＴ（消耗）"
 mov (global-int 14999c) 3a0d
-set-string (global-string d1f0) "ユニットが出撃するために必要な値になります。|单位出击所需的数值。"
-set-string (global-string d1f1) "その値はユニットにより異なります。|该数值因单位而异。"
-set-string (global-string d1f2) "値はユニットがクラスチェンジすると上昇します。|单位职业转换后数值会上升。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1f0) "ユニットが出撃するために必要な値になります。"
+set-string (global-string d1f1) "その値はユニットにより異なります。"
+set-string (global-string d1f2) "値はユニットがクラスチェンジすると上昇します。"
+*/
+set-string (global-string d1f0) @"单位出击所需的数值。该数值因单位而异。单位职业转换"
+set-string (global-string d1f1) @"后数值会上升。"
+set-string (global-string d1f2) @""
 mov (global-int 1495b5) 2f8
-set-string (global-string cb66) "【迷宮】　ターン|【迷宫】　回合"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb66) "【迷宮】　ターン"
+*/
+set-string (global-string cb66) @"【迷宫】　回合"
 mov (global-int 14999d) 3a0e
-set-string (global-string d1fa) "味方ユニット全員の行動が終了すると、他勢力が行動し、|我方单位全部行动完毕后，其他势力行动，"
-set-string (global-string d1fb) "全ての勢力の行動が終了すると、１ターンが経過します。|所有势力行动完毕后，经过１回合。"
-set-string (global-string d1fd) "ゲーム内では『現在ターン／最大ターン』と表示され|游戏中显示为『当前回合／最大回合』，"
-set-string (global-string d1fe) "最大ターン到達でゲームオーバーとなる場合があります。|达到最大回合时可能游戏结束。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d1fa) "味方ユニット全員の行動が終了すると、他勢力が行動し、"
+set-string (global-string d1fb) "全ての勢力の行動が終了すると、１ターンが経過します。"
+set-string (global-string d1fd) "ゲーム内では『現在ターン／最大ターン』と表示され"
+set-string (global-string d1fe) "最大ターン到達でゲームオーバーとなる場合があります。"
+*/
+set-string (global-string d1fa) @"我方单位全部行动完毕后，其他势力行动，所有势力行动"
+set-string (global-string d1fb) @"完毕后，经过１回合。游戏中显示为"
+set-string (global-string d1fd) @"『当前回合／最大回合』，达到最大回合时可能游戏结"
+set-string (global-string d1fe) @"束。"
 mov (global-int 1495b6) 302
-set-string (global-string cb67) "【迷宮】　ミニマップ|【迷宫】　小地图"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb67) "【迷宮】　ミニマップ"
+*/
+set-string (global-string cb67) @"【迷宫】　小地图"
 mov (global-int 14999e) 3a0f
-set-string (global-string d204) "画面左上に表示されている、迷宮の縮小地図になります。|显示在画面左上方的迷宫缩略地图。"
-set-string (global-string d206) "地図の上部に表示されている各ボタンに対応していて、|对应地图上方显示的各按钮，"
-set-string (global-string d207) "表示の切り替えや、非表示の選択などが可能になります。|可切换显示或选择隐藏。"
-set-string (global-string d209) "拡縮ボタンを操作をすることで迷宮表示が拡縮可能です。|操作缩放按钮可缩放迷宫显示。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d204) "画面左上に表示されている、迷宮の縮小地図になります。"
+set-string (global-string d206) "地図の上部に表示されている各ボタンに対応していて、"
+set-string (global-string d207) "表示の切り替えや、非表示の選択などが可能になります。"
+set-string (global-string d209) "拡縮ボタンを操作をすることで迷宮表示が拡縮可能です。"
+*/
+set-string (global-string d204) @"显示在画面左上方的迷宫缩略地图。对应地图上方显示的"
+set-string (global-string d206) @"各按钮，可切换显示或选择隐藏。操作缩放按钮可缩放迷"
+set-string (global-string d207) @"宫显示。"
+set-string (global-string d209) @""
 mov (global-int 1495b7) 30c
-set-string (global-string cb68) "【迷宮】　勢力|【迷宫】　势力"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb68) "【迷宮】　勢力"
+*/
+set-string (global-string cb68) @"【迷宫】　势力"
 mov (global-int 14999f) 3a10
-set-string (global-string d20e) "迷宮内で、対立や同盟となる最大５つの勢力を指します。|指迷宫内相互敌对或结盟、最多５个的势力。"
-set-string (global-string d20f) "対立勢力と接触した場合は戦闘パートに移行します。|与敌对势力接触时进入战斗环节。"
-set-string (global-string d211) "それぞれの勢力には色分けがされています。|各势力以颜色区分。"
-set-string (global-string d212) "『青色』は自勢力。|『蓝色』为已方势力。"
-set-string (global-string d213) "『緑色』は友軍勢力。|『绿色』为友军势力。"
-set-string (global-string d214) "『赤色』は敵勢力。|『红色』为敌方势力。"
-set-string (global-string d215) "『黄色』は第三勢力（敵勢力の同盟など）。|『黄色』为第三势力（敌方的同盟等）。"
-set-string (global-string d216) "『灰色』は無所属で、どの勢力とも敵対状態になります。|『灰色』为无所属，与任何势力都处于敌对状态。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d20e) "迷宮内で、対立や同盟となる最大５つの勢力を指します。"
+set-string (global-string d20f) "対立勢力と接触した場合は戦闘パートに移行します。"
+set-string (global-string d211) "それぞれの勢力には色分けがされています。"
+set-string (global-string d212) "『青色』は自勢力。"
+set-string (global-string d213) "『緑色』は友軍勢力。"
+set-string (global-string d214) "『赤色』は敵勢力。"
+set-string (global-string d215) "『黄色』は第三勢力（敵勢力の同盟など）。"
+set-string (global-string d216) "『灰色』は無所属で、どの勢力とも敵対状態になります。"
+*/
+set-string (global-string d20e) @"指迷宫内相互敌对或结盟、最多５个的势力。与敌对势力"
+set-string (global-string d20f) @"接触时进入战斗环节。各势力以颜色区分。『蓝色』为已"
+set-string (global-string d211) @"方势力。『绿色』为友军势力。『红色』为敌方势力。"
+set-string (global-string d212) @"『黄色』为第三势力（敌方的同盟等）。『灰色』为无所"
+set-string (global-string d213) @"属，与任何势力都处于敌对状态。"
+set-string (global-string d214) @""
+set-string (global-string d215) @""
+set-string (global-string d216) @""
 mov (global-int 1495b8) 316
-set-string (global-string cb69) "【迷宮】　出撃ユニット|【迷宫】　出击单位"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb69) "【迷宮】　出撃ユニット"
+*/
+set-string (global-string cb69) @"【迷宫】　出击单位"
 mov (global-int 1499a0) 3a11
-set-string (global-string d218) "迷宮画面の下に表示されている出撃中ユニットです。|显示在迷宫画面下方的出击中单位。"
-set-string (global-string d219) "出撃中のユニットを選択することで、操作対象を切り替|选择出击中的单位可切换操作对象，"
-set-string (global-string d21a) "えたり、空欄の選択で新規出撃が可能となります。|选择空栏则可新出击单位。"
-set-string (global-string d21c) "マウスホイールでも操作ユニットを切り替えられます。|也可用鼠标滚轮切换操作单位。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d218) "迷宮画面の下に表示されている出撃中ユニットです。"
+set-string (global-string d219) "出撃中のユニットを選択することで、操作対象を切り替"
+set-string (global-string d21a) "えたり、空欄の選択で新規出撃が可能となります。"
+set-string (global-string d21c) "マウスホイールでも操作ユニットを切り替えられます。"
+*/
+set-string (global-string d218) @"显示在迷宫画面下方的出击中单位。选择出击中的单位可"
+set-string (global-string d219) @"切换操作对象，选择空栏则可新出击单位。也可用鼠标滚"
+set-string (global-string d21a) @"轮切换操作单位。"
+set-string (global-string d21c) @""
 mov (global-int 1495b9) 320
-set-string (global-string cb6a) "【迷宮】　出撃する|【迷宫】　出击"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6a) "【迷宮】　出撃する"
+*/
+set-string (global-string cb6a) @"【迷宫】　出击"
 mov (global-int 1499a1) 3a12
-set-string (global-string d222) "ユニットを出撃させるには指揮力が必要になります。|让单位出击需要指挥力。"
-set-string (global-string d223) "指揮力の最大値を上回っても出撃は可能ですが、全ての|即使超过指挥力上限也可出击，但所有"
-set-string (global-string d224) "ユニットの移動にペナルティが発生します。|单位的移动都会受到惩罚。"
-set-string (global-string d226) "出撃しているユニットが帰還した場合、そのユニットが|出击中的单位返回时，该单位"
-set-string (global-string d227) "使用していた指揮力は使用前の値に戻ります。|使用的指挥力会回到使用前的数值。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d222) "ユニットを出撃させるには指揮力が必要になります。"
+set-string (global-string d223) "指揮力の最大値を上回っても出撃は可能ですが、全ての"
+set-string (global-string d224) "ユニットの移動にペナルティが発生します。"
+set-string (global-string d226) "出撃しているユニットが帰還した場合、そのユニットが"
+set-string (global-string d227) "使用していた指揮力は使用前の値に戻ります。"
+*/
+set-string (global-string d222) @"让单位出击需要指挥力。即使超过指挥力上限也可出击，"
+set-string (global-string d223) @"但所有单位的移动都会受到惩罚。出击中的单位返回时，"
+set-string (global-string d224) @"该单位使用的指挥力会回到使用前的数值。"
+set-string (global-string d226) @""
+set-string (global-string d227) @""
 mov (global-int 1495ba) 32a
-set-string (global-string cb6b) "【迷宮】　撤退する|【迷宫】　撤退"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6b) "【迷宮】　撤退する"
+*/
+set-string (global-string cb6b) @"【迷宫】　撤退"
 mov (global-int 1499a2) 3a13
-set-string (global-string d22c) "一度クリアした迷宮や、ＦＲＥＥとなっている迷宮では|在已通关或处于ＦＲＥＥ状态的迷宫中，"
-set-string (global-string d22d) "画面の上部に『戦場から撤退する』ボタンが登場し、こ|画面上方会出现『从战场撤退』按钮，"
-set-string (global-string d22e) "れを使用すると即座に迷宮から脱出することができます。|使用后即可立即脱离迷宫。"
-set-string (global-string d230) "撤退のペナルティはありませんが、日数は経過します。|撤退没有惩罚，但天数会流逝。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d22c) "一度クリアした迷宮や、ＦＲＥＥとなっている迷宮では"
+set-string (global-string d22d) "画面の上部に『戦場から撤退する』ボタンが登場し、こ"
+set-string (global-string d22e) "れを使用すると即座に迷宮から脱出することができます。"
+set-string (global-string d230) "撤退のペナルティはありませんが、日数は経過します。"
+*/
+set-string (global-string d22c) @"在已通关或处于ＦＲＥＥ状态的迷宫中，画面上方会出现"
+set-string (global-string d22d) @"『从战场撤退』按钮，使用后即可立即脱离迷宫。撤退没"
+set-string (global-string d22e) @"有惩罚，但天数会流逝。"
+set-string (global-string d230) @""
 mov (global-int 1495bb) 334
-set-string (global-string cb6c) "【迷宮】　移動|【迷宫】　移动"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6c) "【迷宮】　移動"
+*/
+set-string (global-string cb6c) @"【迷宫】　移动"
 mov (global-int 1499a3) 3a14
-set-string (global-string d236) "迷宮を１マス移動する際にＦＳを１消費します。|在迷宫移动１格消耗ＦＳ１。"
-set-string (global-string d237) "移動地形によってＦＳ消費量が増えることがあります。|部分移动地形会增加ＦＳ消耗。"
-set-string (global-string d239) "敵勢力が占有している部屋を移動する時は、部屋ＺＯＣ|在敌方势力占领的房间移动时，受房间ＺＯＣ"
-set-string (global-string d23a) "の関係で、１歩ずつしか移動できません。|影响，只能一格一格移动。"
-set-string (global-string d23c) "指揮力の最大値が上回っている場合、全てのユニットの|超过指挥力上限时，所有单位的"
-set-string (global-string d23d) "移動にＦＳ消費量×３のペナルティが発生します。|移动会受到ＦＳ消耗×３的惩罚。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d236) "迷宮を１マス移動する際にＦＳを１消費します。"
+set-string (global-string d237) "移動地形によってＦＳ消費量が増えることがあります。"
+set-string (global-string d239) "敵勢力が占有している部屋を移動する時は、部屋ＺＯＣ"
+set-string (global-string d23a) "の関係で、１歩ずつしか移動できません。"
+set-string (global-string d23c) "指揮力の最大値が上回っている場合、全てのユニットの"
+set-string (global-string d23d) "移動にＦＳ消費量×３のペナルティが発生します。"
+*/
+set-string (global-string d236) @"在迷宫移动１格消耗ＦＳ１。部分移动地形会增加ＦＳ消"
+set-string (global-string d237) @"耗。在敌方势力占领的房间移动时，受房间ＺＯＣ影响，"
+set-string (global-string d239) @"只能一格一格移动。超过指挥力上限时，所有单位的移动"
+set-string (global-string d23a) @"会受到ＦＳ消耗×３的惩罚。"
+set-string (global-string d23c) @""
+set-string (global-string d23d) @""
 mov (global-int 1495bc) 33e
-set-string (global-string cb6d) "【迷宮】　行動前に戻る|【迷宫】　返回行动前"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6d) "【迷宮】　行動前に戻る"
+*/
+set-string (global-string cb6d) @"【迷宫】　返回行动前"
 mov (global-int 1499a4) 3a15
-set-string (global-string d240) "ユニットの行動終了後に、迷宮マップ画面の右下に出る|单位行动结束后，点击迷宫地图画面右下出现的"
-set-string (global-string d241) "『行動前に戻る』ボタンを押すことで、１つ前の行動ま|『返回行动前』按钮，可将行动回退到"
-set-string (global-string d242) "で巻き戻すことができます。|上一个行动。"
-set-string (global-string d244) "戻る先のユニット及びターン数はボタンに表示されます。|返回目标的单位与回合数会显示在按钮上。"
-set-string (global-string d246) "ショートカットとして『ＳＨＩＦＴ』ボタンを押すこと|也可按『ＳＨＩＦＴ』键作为快捷键"
-set-string (global-string d247) "でも行えます。|执行。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d240) "ユニットの行動終了後に、迷宮マップ画面の右下に出る"
+set-string (global-string d241) "『行動前に戻る』ボタンを押すことで、１つ前の行動ま"
+set-string (global-string d242) "で巻き戻すことができます。"
+set-string (global-string d244) "戻る先のユニット及びターン数はボタンに表示されます。"
+set-string (global-string d246) "ショートカットとして『ＳＨＩＦＴ』ボタンを押すこと"
+set-string (global-string d247) "でも行えます。"
+*/
+set-string (global-string d240) @"单位行动结束后，点击迷宫地图画面右下出现的"
+set-string (global-string d241) @"『返回行动前』按钮，可将行动回退到上一个行动。返回"
+set-string (global-string d242) @"目标的单位与回合数会显示在按钮上。也可按"
+set-string (global-string d244) @"『ＳＨＩＦＴ』键作为快捷键执行。"
+set-string (global-string d246) @""
+set-string (global-string d247) @""
 mov (global-int 1495bd) 348
-set-string (global-string cb6e) "【迷宮】　出撃設定|【迷宫】　出击设定"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6e) "【迷宮】　出撃設定"
+*/
+set-string (global-string cb6e) @"【迷宫】　出击设定"
 mov (global-int 1499a5) 3a16
-set-string (global-string d24a) "全体マップからの迷宮選択時に、ユニットの初期配置が|从大地图选择迷宫时，可设定单位的"
-set-string (global-string d24b) "できます。|初始配置。"
-set-string (global-string d24c) "出撃設定時の最大指揮力には注意が必要です。|需注意出击设定时的最大指挥力。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d24a) "全体マップからの迷宮選択時に、ユニットの初期配置が"
+set-string (global-string d24b) "できます。"
+set-string (global-string d24c) "出撃設定時の最大指揮力には注意が必要です。"
+*/
+set-string (global-string d24a) @"从大地图选择迷宫时，可设定单位的初始配置。需注意出"
+set-string (global-string d24b) @"击设定时的最大指挥力。"
+set-string (global-string d24c) @""
 mov (global-int 1495be) 352
-set-string (global-string cb6f) "【迷宮】　ミッションと報酬|【迷宫】　任务与报酬"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb6f) "【迷宮】　ミッションと報酬"
+*/
+set-string (global-string cb6f) @"【迷宫】　任务与报酬"
 mov (global-int 1499a6) 3a17
-set-string (global-string d254) "各迷宮に設定されている報酬リストです。|各迷宫设定的报酬清单。"
-set-string (global-string d255) "主に、敵関係・配置物関係・占有率関係・ターン制限など|主要达成与敌人、配置物、占有率、回合限制等"
-set-string (global-string d256) "様々な特定条件を達成することで獲得できます。|相关的各种特定条件即可获得。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d254) "各迷宮に設定されている報酬リストです。"
+set-string (global-string d255) "主に、敵関係・配置物関係・占有率関係・ターン制限など"
+set-string (global-string d256) "様々な特定条件を達成することで獲得できます。"
+*/
+set-string (global-string d254) @"各迷宫设定的报酬清单。主要达成与敌人、配置物、占有"
+set-string (global-string d255) @"率、回合限制等相关的各种特定条件即可获得。"
+set-string (global-string d256) @""
 mov (global-int 1495bf) 35c
-set-string (global-string cb70) "【迷宮】　地形属性|【迷宫】　地形属性"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb70) "【迷宮】　地形属性"
+*/
+set-string (global-string cb70) @"【迷宫】　地形属性"
 mov (global-int 1499a7) 3a18
-set-string (global-string d25e) "迷宮の地形の中には、属性を持つ場所が存在します。|迷宫地形中，存在带有属性的场所。"
-set-string (global-string d25f) "水中や泥沼などがあり、地形に適したスキルを装備して|如水下、泥沼等，装备适合地形的技能"
-set-string (global-string d260) "いれば、能力アップなどの恩恵が得られます。|即可获得能力提升等恩惠。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d25e) "迷宮の地形の中には、属性を持つ場所が存在します。"
+set-string (global-string d25f) "水中や泥沼などがあり、地形に適したスキルを装備して"
+set-string (global-string d260) "いれば、能力アップなどの恩恵が得られます。"
+*/
+set-string (global-string d25e) @"迷宫地形中，存在带有属性的场所。如水下、泥沼等，装"
+set-string (global-string d25f) @"备适合地形的技能即可获得能力提升等恩惠。"
+set-string (global-string d260) @""
 mov (global-int 1495c0) 366
-set-string (global-string cb71) "【迷宮/配置物】　拠点|【迷宫/配置物】　据点"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb71) "【迷宮/配置物】　拠点"
+*/
+set-string (global-string cb71) @"【迷宫/配置物】　据点"
 mov (global-int 1499a8) 3a19
-set-string (global-string d268) "迷宮画面における最初の出撃地点です。|迷宫画面中的初始出击地点。"
-set-string (global-string d269) "基本的に敵勢力に制圧されると、ゲームオーバーになる|基本上被敌方势力占领便会游戏结束，"
-set-string (global-string d26a) "重要な場所です。|是重要的场所。"
-set-string (global-string d26c) "ユニットがそのマスに乗ることで、ターン開始時に多少|单位进入该格子后，回合开始时会有少量"
-set-string (global-string d26d) "の回復や防御効果が得られます。|恢复与防御效果。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d268) "迷宮画面における最初の出撃地点です。"
+set-string (global-string d269) "基本的に敵勢力に制圧されると、ゲームオーバーになる"
+set-string (global-string d26a) "重要な場所です。"
+set-string (global-string d26c) "ユニットがそのマスに乗ることで、ターン開始時に多少"
+set-string (global-string d26d) "の回復や防御効果が得られます。"
+*/
+set-string (global-string d268) @"迷宫画面中的初始出击地点。基本上被敌方势力占领便会"
+set-string (global-string d269) @"游戏结束，是重要的场所。单位进入该格子后，回合开始"
+set-string (global-string d26a) @"时会有少量恢复与防御效果。"
+set-string (global-string d26c) @""
+set-string (global-string d26d) @""
 mov (global-int 1495c1) 370
-set-string (global-string cb72) "【迷宮/配置物】　精域の芽|【迷宫/配置物】　精域的嫩芽"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb72) "【迷宮/配置物】　精域の芽"
+*/
+set-string (global-string cb72) @"【迷宫/配置物】　精域的嫩芽"
 mov (global-int 1499a9) 3a1a
-set-string (global-string d272) "特定の迷宮に存在する植物の芽になります。|存在于特定迷宫中的植物嫩芽。"
-set-string (global-string d273) "誰でも活性化させることが可能です。|任何人都可以将其活性化。"
-set-string (global-string d275) "初回時に活性化することで女神力を獲得し、探索中の迷|首次活性化可获得女神力，并在探索中的迷宫"
-set-string (global-string d276) "宮に限り指揮力が増加します。|内增加指挥力。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d272) "特定の迷宮に存在する植物の芽になります。"
+set-string (global-string d273) "誰でも活性化させることが可能です。"
+set-string (global-string d275) "初回時に活性化することで女神力を獲得し、探索中の迷"
+set-string (global-string d276) "宮に限り指揮力が増加します。"
+*/
+set-string (global-string d272) @"存在于特定迷宫中的植物嫩芽。任何人都可以将其活性"
+set-string (global-string d273) @"化。首次活性化可获得女神力，并在探索中的迷宫内增加"
+set-string (global-string d275) @"指挥力。"
+set-string (global-string d276) @""
 mov (global-int 1495c2) 37a
-set-string (global-string cb73) "【迷宮/配置物】　祭祀|【迷宫/配置物】　祭祀"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb73) "【迷宮/配置物】　祭祀"
+*/
+set-string (global-string cb73) @"【迷宫/配置物】　祭祀"
 mov (global-int 1499aa) 3a1b
-set-string (global-string d27c) "迷宮内に存在する祭祀の『石碑』や『祠』を指します。|指迷宫内的祭祀『石碑』或『祠堂』。"
-set-string (global-string d27d) "鍛梁師スキルを持っていると修復が可能になります。|持有锻梁师技能即可修复。"
-set-string (global-string d27f) "初回時に修復することで女神力を獲得し、探索中の迷宮|首次修复可获得女神力，并在探索中的迷宫"
-set-string (global-string d280) "に限り指揮力が増加します。|内增加指挥力。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d27c) "迷宮内に存在する祭祀の『石碑』や『祠』を指します。"
+set-string (global-string d27d) "鍛梁師スキルを持っていると修復が可能になります。"
+set-string (global-string d27f) "初回時に修復することで女神力を獲得し、探索中の迷宮"
+set-string (global-string d280) "に限り指揮力が増加します。"
+*/
+set-string (global-string d27c) @"指迷宫内的祭祀『石碑』或『祠堂』。持有锻梁师技能即"
+set-string (global-string d27d) @"可修复。首次修复可获得女神力，并在探索中的迷宫内增"
+set-string (global-string d27f) @"加指挥力。"
+set-string (global-string d280) @""
 mov (global-int 1495c3) 384
-set-string (global-string cb74) "【迷宮/配置物】　出撃門|【迷宫/配置物】　出击门"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb74) "【迷宮/配置物】　出撃門"
+*/
+set-string (global-string cb74) @"【迷宫/配置物】　出击门"
 mov (global-int 1499ab) 3a1c
-set-string (global-string d286) "制圧することで、拠点と同じく出撃させることが可能に|占领后，可与据点一样出击单位"
-set-string (global-string d287) "なります。|。"
-set-string (global-string d289) "ユニットがそのマスに乗ることで、ターン開始時に多少|单位进入该格子后，回合开始时会有少量"
-set-string (global-string d28a) "の回復や防御効果が得られます。|恢复与防御效果。"
-set-string (global-string d28c) "敵勢力に制圧されると使用できなくなります。|被敌方势力占领后便无法使用。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d286) "制圧することで、拠点と同じく出撃させることが可能に"
+set-string (global-string d287) "なります。"
+set-string (global-string d289) "ユニットがそのマスに乗ることで、ターン開始時に多少"
+set-string (global-string d28a) "の回復や防御効果が得られます。"
+set-string (global-string d28c) "敵勢力に制圧されると使用できなくなります。"
+*/
+set-string (global-string d286) @"占领后，可与据点一样出击单位。单位进入该格子后，回"
+set-string (global-string d287) @"合开始时会有少量恢复与防御效果。被敌方势力占领后便"
+set-string (global-string d289) @"无法使用。"
+set-string (global-string d28a) @""
+set-string (global-string d28c) @""
 mov (global-int 1495c4) 38e
-set-string (global-string cb75) "【迷宮/配置物】　魔物の渦|【迷宫/配置物】　魔物之涡"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb75) "【迷宮/配置物】　魔物の渦"
+*/
+set-string (global-string cb75) @"【迷宫/配置物】　魔物之涡"
 mov (global-int 1499ac) 3a1d
-set-string (global-string d290) "魔物系ユニットが増援として出現する地点になります。|魔物系单位作为增援出现的地点。"
-set-string (global-string d291) "ここを制圧することで、それ以上の出現を抑えることが|占领此处后，可抑制后续出现"
-set-string (global-string d292) "できます。|初始配置。"
-set-string (global-string d294) "魔物の渦ごとに、魔物の種類や出現タイミングが異なる|每个魔物之涡出现的魔物种类与时机各不相同"
-set-string (global-string d295) "ので注意が必要です。|，需要留意。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d290) "魔物系ユニットが増援として出現する地点になります。"
+set-string (global-string d291) "ここを制圧することで、それ以上の出現を抑えることが"
+set-string (global-string d292) "できます。"
+set-string (global-string d294) "魔物の渦ごとに、魔物の種類や出現タイミングが異なる"
+set-string (global-string d295) "ので注意が必要です。"
+*/
+set-string (global-string d290) @"魔物系单位作为增援出现的地点。占领此处后，可抑制后"
+set-string (global-string d291) @"续出现的增援。每个魔物之涡出现的魔物种类与时机各不"
+set-string (global-string d292) @"相同，需要留意。"
+set-string (global-string d294) @""
+set-string (global-string d295) @""
 mov (global-int 1495c5) 398
-set-string (global-string cb76) "【迷宮/配置物】　回復の羽|【迷宫/配置物】　回复之羽"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb76) "【迷宮/配置物】　回復の羽"
+*/
+set-string (global-string cb76) @"【迷宫/配置物】　回复之羽"
 mov (global-int 1499ad) 3a1e
-set-string (global-string d29a) "この場所で待機すると全てのステータスを回復します。|在此处待机可恢复全部状态。"
-set-string (global-string d29c) "回復の羽は使用回数別で２種類存在します。|回复之羽按使用次数分为２种。"
-set-string (global-string d29d) "■回復の羽（白）…何度でも使用可能|■回复之羽（白）…可反复使用"
-set-string (global-string d29e) "■回復の羽（赤）…一度のみ使用可能|■回复之羽（赤）…仅可使用一次"
-set-string (global-string d2a0) "敵味方関係なく使用可能なので注意が必要です。|敌我双方皆可使用，需要留意。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d29a) "この場所で待機すると全てのステータスを回復します。"
+set-string (global-string d29c) "回復の羽は使用回数別で２種類存在します。"
+*/
+set-string (global-string d29a) @"在此处待机可恢复全部状态。回复之羽按使用次数分为２"
+set-string (global-string d29c) @"种。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d29d) "■回復の羽（白）…何度でも使用可能"
+*/
+set-string (global-string d29d) @"■回复之羽（白）…可反复使用"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d29e) "■回復の羽（赤）…一度のみ使用可能"
+*/
+set-string (global-string d29e) @"■回复之羽（赤）…仅可使用一次"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2a0) "敵味方関係なく使用可能なので注意が必要です。"
+*/
+set-string (global-string d2a0) @"敌我双方皆可使用，需要留意。"
 mov (global-int 1495c6) 3a2
-set-string (global-string cb77) "【迷宮/配置物】　転移門|【迷宫/配置物】　转移门"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb77) "【迷宮/配置物】　転移門"
+*/
+set-string (global-string cb77) @"【迷宫/配置物】　转移门"
 mov (global-int 1499ae) 3a1f
-set-string (global-string d2a4) "転移門の上で待機して『転移』を選択すると、指定され|在转移门上待机并选择『转移』，即可瞬间移动到"
-set-string (global-string d2a5) "た別の場所へ瞬時に移動できます。|指定的其他地点。"
-set-string (global-string d2a7) "基本的には２つの転移門が繋がっていますが、一方通行|基本上两扇转移门相连，但也有单向通行"
-set-string (global-string d2a8) "の場合もあります。|的情况。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2a4) "転移門の上で待機して『転移』を選択すると、指定され"
+set-string (global-string d2a5) "た別の場所へ瞬時に移動できます。"
+set-string (global-string d2a7) "基本的には２つの転移門が繋がっていますが、一方通行"
+set-string (global-string d2a8) "の場合もあります。"
+*/
+set-string (global-string d2a4) @"在转移门上待机并选择『转移』，即可瞬间移动到指定的"
+set-string (global-string d2a5) @"其他地点。基本上两扇转移门相连，但也有单向通行的情"
+set-string (global-string d2a7) @"况。"
+set-string (global-string d2a8) @""
 mov (global-int 1495c7) 3ac
-set-string (global-string cb78) "【迷宮/配置物】　扉|【迷宫/配置物】　门扉"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb78) "【迷宮/配置物】　扉"
+*/
+set-string (global-string cb78) @"【迷宫/配置物】　门扉"
 mov (global-int 1499af) 3a20
-set-string (global-string d2ae) "迷宮内にある扉は『開錠』スキルを所持していることで|迷宫内的门扉，持有『开锁』技能即可"
-set-string (global-string d2af) "開閉することが可能になります。|开闭。"
-set-string (global-string d2b1) "また、特定の『鍵』が必要な扉も存在し、対応した鍵を|此外，也存在需要特定『钥匙』的门扉，须使用"
-set-string (global-string d2b2) "用いて開くことができます。|对应的钥匙开启。"
-set-string (global-string d2b3) "■青銅の扉…青銅の導鍵と『開錠』所持で開閉可能|■青铜门扉…持有青铜导键与『开锁』即可开闭"
-set-string (global-string d2b4) "■白銀の扉…白銀の導鍵と『開錠』所持で開閉可能|■白银门扉…持有白银导键与『开锁』即可开闭"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2ae) "迷宮内にある扉は『開錠』スキルを所持していることで"
+set-string (global-string d2af) "開閉することが可能になります。"
+set-string (global-string d2b1) "また、特定の『鍵』が必要な扉も存在し、対応した鍵を"
+set-string (global-string d2b2) "用いて開くことができます。"
+*/
+set-string (global-string d2ae) @"迷宫内的门扉，持有『开锁』技能即可开闭。此外，也存"
+set-string (global-string d2af) @"在需要特定『钥匙』的门扉，须使用对应的钥匙开启。"
+set-string (global-string d2b1) @""
+set-string (global-string d2b2) @""
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2b3) "■青銅の扉…青銅の導鍵と『開錠』所持で開閉可能"
+*/
+set-string (global-string d2b3) @"■青铜门扉…持有青铜导键与『开锁』即可开闭"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2b4) "■白銀の扉…白銀の導鍵と『開錠』所持で開閉可能"
+*/
+set-string (global-string d2b4) @"■白银门扉…持有白银导键与『开锁』即可开闭"
 mov (global-int 1495c8) 3b6
-set-string (global-string cb79) "【迷宮/配置物】　採取ポイント|【迷宫/配置物】　采集点"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb79) "【迷宮/配置物】　採取ポイント"
+*/
+set-string (global-string cb79) @"【迷宫/配置物】　采集点"
 mov (global-int 1499b0) 3a21
-set-string (global-string d2b8) "プランの製作に必要な素材を入手できる場所になります。|可获得制作设计所需素材的场所。"
-set-string (global-string d2b9) "必要なスキルはなく、誰でも採取が可能です。|无需技能，任何人都可采集。"
-set-string (global-string d2bb) "採取したアイテムは、迷宮クリア時に確定され、再訪問|采集到的道具在通关迷宫时确定，再次访问"
-set-string (global-string d2bc) "で同じ採取が可能になります。|可再次采集同样内容。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2b8) "プランの製作に必要な素材を入手できる場所になります。"
+set-string (global-string d2b9) "必要なスキルはなく、誰でも採取が可能です。"
+set-string (global-string d2bb) "採取したアイテムは、迷宮クリア時に確定され、再訪問"
+set-string (global-string d2bc) "で同じ採取が可能になります。"
+*/
+set-string (global-string d2b8) @"可获得制作设计所需素材的场所。无需技能，任何人都可"
+set-string (global-string d2b9) @"采集。采集到的道具在通关迷宫时确定，再次访问可再次"
+set-string (global-string d2bb) @"采集同样内容。"
+set-string (global-string d2bc) @""
 mov (global-int 1495c9) 3c0
-set-string (global-string cb7a) "【迷宮/配置物】　発掘ポイント|【迷宫/配置物】　发掘点"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7a) "【迷宮/配置物】　発掘ポイント"
+*/
+set-string (global-string cb7a) @"【迷宫/配置物】　发掘点"
 mov (global-int 1499b1) 3a22
-set-string (global-string d2c2) "プランの製作に必要な素材を入手できる場所になります。|可获得制作设计所需素材的场所。"
-set-string (global-string d2c3) "『発掘』スキルを所持していないと実行できません。|未持有『发掘』技能则无法执行。"
-set-string (global-string d2c5) "発掘したアイテムは、迷宮クリア時に確定され、再訪問|发掘到的道具在通关迷宫时确定，再次访问"
-set-string (global-string d2c6) "で同じ発掘が可能になります。|可再次发掘同样内容。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2c2) "プランの製作に必要な素材を入手できる場所になります。"
+set-string (global-string d2c3) "『発掘』スキルを所持していないと実行できません。"
+set-string (global-string d2c5) "発掘したアイテムは、迷宮クリア時に確定され、再訪問"
+set-string (global-string d2c6) "で同じ発掘が可能になります。"
+*/
+set-string (global-string d2c2) @"可获得制作设计所需素材的场所。未持有『发掘』技能则"
+set-string (global-string d2c3) @"无法执行。发掘到的道具在通关迷宫时确定，再次访问可"
+set-string (global-string d2c5) @"再次发掘同样内容。"
+set-string (global-string d2c6) @""
 mov (global-int 1495ca) 3c5
-set-string (global-string cb7b) "【迷宮/配置物】　罠|【迷宫/配置物】　陷阱"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7b) "【迷宮/配置物】　罠"
+*/
+set-string (global-string cb7b) @"【迷宫/配置物】　陷阱"
 mov (global-int 1499b2) 3a23
-set-string (global-string d2cc) "迷宮内に配置されている罠で、様々な効果があります。|配置在迷宫内的陷阱，效果多种多样。"
-set-string (global-string d2cd) "■針…停止時にＨＰに２ダメージ|■针…停下时受到ＨＰ２伤害"
-set-string (global-string d2ce) "■炎…停止時にＨＰに３ダメージ|■火炎…停下时受到ＨＰ３伤害"
-set-string (global-string d2cf) "■電流…停止時にＨＰに１ダメージ、『麻痺』＋１|■电流…停下时受到ＨＰ１伤害、『麻痹』＋１"
-set-string (global-string d2d0) "■毒沼…停止時にＨＰに１ダメージ、『猛毒』＋１|■毒沼…停下时受到ＨＰ１伤害、『剧毒』＋１"
-set-string (global-string d2d1) "■水沼…停止時にＨＰに１ダメージ、『水流』＋１|■水沼…停下时受到ＨＰ１伤害、『水流』＋１"
-set-string (global-string d2d2) "■泥沼…停止時にＦＳに１ダメージ|■泥沼…停下时受到ＦＳ１伤害"
-set-string (global-string d2d3) "■活力拡散結界…停止時にＨＰに３ダメージ|■活力扩散结界…停下时受到ＨＰ３伤害"
-set-string (global-string d2d4) "■技力拡散結界…停止時にＳＰに３ダメージ|■技力扩散结界…停下时受到ＳＰ３伤害"
-set-string (global-string d2d5) "■意気消沈結界…停止時にＦＳに５ダメージ|■意气消沉结界…停下时受到ＦＳ５伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2cc) "迷宮内に配置されている罠で、様々な効果があります。"
+*/
+set-string (global-string d2cc) @"配置在迷宫内的陷阱，效果多种多样。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2cd) "■針…停止時にＨＰに２ダメージ"
+*/
+set-string (global-string d2cd) @"■针…停下时受到ＨＰ２伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2ce) "■炎…停止時にＨＰに３ダメージ"
+*/
+set-string (global-string d2ce) @"■火炎…停下时受到ＨＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2cf) "■電流…停止時にＨＰに１ダメージ、『麻痺』＋１"
+*/
+set-string (global-string d2cf) @"■电流…停下时受到ＨＰ１伤害、『麻痹』＋１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d0) "■毒沼…停止時にＨＰに１ダメージ、『猛毒』＋１"
+*/
+set-string (global-string d2d0) @"■毒沼…停下时受到ＨＰ１伤害、『剧毒』＋１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d1) "■水沼…停止時にＨＰに１ダメージ、『水流』＋１"
+*/
+set-string (global-string d2d1) @"■水沼…停下时受到ＨＰ１伤害、『水流』＋１"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d2) "■泥沼…停止時にＦＳに１ダメージ"
+*/
+set-string (global-string d2d2) @"■泥沼…停下时受到ＦＳ１伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d3) "■活力拡散結界…停止時にＨＰに３ダメージ"
+*/
+set-string (global-string d2d3) @"■活力扩散结界…停下时受到ＨＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d4) "■技力拡散結界…停止時にＳＰに３ダメージ"
+*/
+set-string (global-string d2d4) @"■技力扩散结界…停下时受到ＳＰ３伤害"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d5) "■意気消沈結界…停止時にＦＳに５ダメージ"
+*/
+set-string (global-string d2d5) @"■意气消沉结界…停下时受到ＦＳ５伤害"
 mov (global-int 1495cb) 3ca
-set-string (global-string cb7c) "【迷宮/配置物】　女神カード|【迷宫/配置物】　女神卡片"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7c) "【迷宮/配置物】　女神カード"
+*/
+set-string (global-string cb7c) @"【迷宫/配置物】　女神卡片"
 mov (global-int 1499b3) 3a24
-set-string (global-string d2d6) "迷宮に落ちているカードで、様々な効果が発生します。|掉落在迷宫中的卡片，会触发各种效果。"
-set-string (global-string d2d7) "ステータスを回復するものや、アイテムを入手するもの、|有恢复状态的、获得道具的，"
-set-string (global-string d2d8) "ダメージを受けたり、状態異常を受ける効果など|也有受到伤害或陷入异常状态的效果，"
-set-string (global-string d2d9) "拾った時によって発生するイベントは様々になります。|拾取时触发的事件各不相同。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2d6) "迷宮に落ちているカードで、様々な効果が発生します。"
+set-string (global-string d2d7) "ステータスを回復するものや、アイテムを入手するもの、"
+set-string (global-string d2d8) "ダメージを受けたり、状態異常を受ける効果など"
+set-string (global-string d2d9) "拾った時によって発生するイベントは様々になります。"
+*/
+set-string (global-string d2d6) @"掉落在迷宫中的卡片，会触发各种效果。有恢复状态的、"
+set-string (global-string d2d7) @"获得道具的，也有受到伤害或陷入异常状态的效果，拾取"
+set-string (global-string d2d8) @"时触发的事件各不相同。"
+set-string (global-string d2d9) @""
 mov (global-int 1495cc) 3cf
-set-string (global-string cb7d) "【迷宮/配置物】　イベント|【迷宫/配置物】　事件"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7d) "【迷宮/配置物】　イベント"
+*/
+set-string (global-string cb7d) @"【迷宫/配置物】　事件"
 mov (global-int 1499b4) 3a25
-set-string (global-string d2e0) "画面上に『！』と表示されたイベント発生地点です。|画面上显示『！』的事件发生地点。"
-set-string (global-string d2e1) "このマスにユニットを待機させると、イベントが発生し|让单位在此格待机便会触发事件"
-set-string (global-string d2e2) "ます。|。"
-set-string (global-string d2e4) "どのユニットでも発生するものと、特定ユニットでのみ|有的任何单位都可触发，有的仅限特定单位，"
-set-string (global-string d2e5) "発生するものがありますので、地形情報にて確認してく|请在地形信息中确认"
-set-string (global-string d2e6) "ださい。|。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2e0) "画面上に『！』と表示されたイベント発生地点です。"
+set-string (global-string d2e1) "このマスにユニットを待機させると、イベントが発生し"
+set-string (global-string d2e2) "ます。"
+set-string (global-string d2e4) "どのユニットでも発生するものと、特定ユニットでのみ"
+set-string (global-string d2e5) "発生するものがありますので、地形情報にて確認してく"
+set-string (global-string d2e6) "ださい。"
+*/
+set-string (global-string d2e0) @"画面上显示『！』的事件发生地点。让单位在此格待机便"
+set-string (global-string d2e1) @"会触发事件。有的任何单位都可触发，有的仅限特定单"
+set-string (global-string d2e2) @"位，请在地形信息中确认。"
+set-string (global-string d2e4) @""
+set-string (global-string d2e5) @""
+set-string (global-string d2e6) @""
 mov (global-int 1495cd) 35d
-set-string (global-string cb7e) "【迷宮】　戦闘（近接攻撃）|【迷宫】　战斗（近接攻击）"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7e) "【迷宮】　戦闘（近接攻撃）"
+*/
+set-string (global-string cb7e) @"【迷宫】　战斗（近接攻击）"
 mov (global-int 1499b5) 3a26
-set-string (global-string d2ea) "射程０の攻撃を持っていると、移動範囲内の敵ユニット|持有射程０的攻击时，移动范围内存在敌方单位"
-set-string (global-string d2eb) "がいるマスに『戦闘』マークが表示されます。|的格子会显示『战斗』标记。"
-set-string (global-string d2ec) "このマスをクリックすると、ユニットがそのマスに|点击该格子，单位便会移动到该格"
-set-string (global-string d2ed) "移動して近接攻撃による戦闘が行われます。|进行近接攻击战斗。"
-set-string (global-string d2ef) "防御側を撃破した場合、攻撃側ユニットはそのマスに|击破防御方时，攻击方单位会停留在该格，"
-set-string (global-string d2f0) "留まり、占有処理や配置物処理が行われます。|并进行占领处理与配置物处理。"
-set-string (global-string d2f1) "撃破できなかった場合は、移動ルートに沿って誰もいな|未能击破时，会沿移动路线回到"
-set-string (global-string d2f2) "いマスまで戻ります。|没有人的格子。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2ea) "射程０の攻撃を持っていると、移動範囲内の敵ユニット"
+set-string (global-string d2eb) "がいるマスに『戦闘』マークが表示されます。"
+set-string (global-string d2ec) "このマスをクリックすると、ユニットがそのマスに"
+set-string (global-string d2ed) "移動して近接攻撃による戦闘が行われます。"
+set-string (global-string d2ef) "防御側を撃破した場合、攻撃側ユニットはそのマスに"
+set-string (global-string d2f0) "留まり、占有処理や配置物処理が行われます。"
+set-string (global-string d2f1) "撃破できなかった場合は、移動ルートに沿って誰もいな"
+set-string (global-string d2f2) "いマスまで戻ります。"
+*/
+set-string (global-string d2ea) @"持有射程０的攻击时，移动范围内存在敌方单位的格子会"
+set-string (global-string d2eb) @"显示『战斗』标记。点击该格子，单位便会移动到该格进"
+set-string (global-string d2ec) @"行近接攻击战斗。击破防御方时，攻击方单位会停留在该"
+set-string (global-string d2ed) @"格，并进行占领处理与配置物处理。未能击破时，会沿移"
+set-string (global-string d2ef) @"动路线回到没有人的格子。"
+set-string (global-string d2f0) @""
+set-string (global-string d2f1) @""
+set-string (global-string d2f2) @""
 mov (global-int 1495ce) 35e
-set-string (global-string cb7f) "【迷宮】　射撃（間接攻撃）|【迷宫】　射击（间接攻击）"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb7f) "【迷宮】　射撃（間接攻撃）"
+*/
+set-string (global-string cb7f) @"【迷宫】　射击（间接攻击）"
 mov (global-int 1499b6) 3a27
-set-string (global-string d2f4) "射程１以上の攻撃を持っていると、射程内の敵ユニット|持有射程１以上的攻击时，射程内存在敌方单位"
-set-string (global-string d2f5) "がいるマスに『射撃』マークが表示されます。|的格子会显示『射击』标记。"
-set-string (global-string d2f6) "このマスをクリックすると、ユニットがその場に留まっ|点击该格子，单位会留在原地"
-set-string (global-string d2f7) "たまま、間接攻撃による戦闘が行われます。|进行间接攻击战斗。"
-set-string (global-string d2f9) "近接攻撃とは異なり、敵を倒しても占有処理や配置物処|与近接攻击不同，即使击倒敌人也不会进行占领"
-set-string (global-string d2fa) "理は行われず、ユニットも移動しません。|处理与配置物处理，单位也不会移动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2f4) "射程１以上の攻撃を持っていると、射程内の敵ユニット"
+set-string (global-string d2f5) "がいるマスに『射撃』マークが表示されます。"
+set-string (global-string d2f6) "このマスをクリックすると、ユニットがその場に留まっ"
+set-string (global-string d2f7) "たまま、間接攻撃による戦闘が行われます。"
+set-string (global-string d2f9) "近接攻撃とは異なり、敵を倒しても占有処理や配置物処"
+set-string (global-string d2fa) "理は行われず、ユニットも移動しません。"
+*/
+set-string (global-string d2f4) @"持有射程１以上的攻击时，射程内存在敌方单位的格子会"
+set-string (global-string d2f5) @"显示『射击』标记。点击该格子，单位会留在原地进行间"
+set-string (global-string d2f6) @"接攻击战斗。与近接攻击不同，即使击倒敌人也不会进行"
+set-string (global-string d2f7) @"占领处理与配置物处理，单位也不会移动。"
+set-string (global-string d2f9) @""
+set-string (global-string d2fa) @""
 mov (global-int 1495cf) 360
-set-string (global-string cb80) "【迷宮】　支援|【迷宫】　支援"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb80) "【迷宮】　支援"
+*/
+set-string (global-string cb80) @"【迷宫】　支援"
 mov (global-int 1499b7) 3a28
-set-string (global-string d2fe) "支援には、ユニットの回復や強化、転送などがあります。|支援包括单位恢复、强化、传送等。"
-set-string (global-string d2ff) "使用するにはＳＰを消費します。|使用需要消耗ＳＰ。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d2fe) "支援には、ユニットの回復や強化、転送などがあります。"
+set-string (global-string d2ff) "使用するにはＳＰを消費します。"
+*/
+set-string (global-string d2fe) @"支援包括单位恢复、强化、传送等。使用需要消耗ＳＰ。"
+set-string (global-string d2ff) @""
 mov (global-int 1495d0) 35f
-set-string (global-string cb81) "【迷宮】　範囲（範囲攻撃）|【迷宫】　范围（范围攻击）"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb81) "【迷宮】　範囲（範囲攻撃）"
+*/
+set-string (global-string cb81) @"【迷宫】　范围（范围攻击）"
 mov (global-int 1499b8) 3a29
-set-string (global-string d308) "一度に複数の敵を攻撃できる特殊技です。|可同时攻击多个敌人的特殊技。"
-set-string (global-string d309) "移動前にユニット自身を選択すると選択できます。|移动前选择单位自身即可使用。"
-set-string (global-string d30b) "効果範囲は種類によって異なり、射程内であっても壁の|效果范围因种类而异，即使处于射程内，也无法"
-set-string (global-string d30c) "回り込みや、未開拓の場所の攻撃はできません。|绕过墙壁或攻击未开拓的场所。"
-set-string (global-string d30e) "攻撃回数は１回のみで、経験値は敵１体に対して通常の|攻击次数仅１次，对单个敌人的经验值为通常的"
-set-string (global-string d30f) "半分の獲得量になります。|一半。"
-set-string (global-string d311) "一度使用したあとは、一定の充填時間が必要となります。|使用一次后需要一定的充填时间。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d308) "一度に複数の敵を攻撃できる特殊技です。"
+set-string (global-string d309) "移動前にユニット自身を選択すると選択できます。"
+set-string (global-string d30b) "効果範囲は種類によって異なり、射程内であっても壁の"
+set-string (global-string d30c) "回り込みや、未開拓の場所の攻撃はできません。"
+set-string (global-string d30e) "攻撃回数は１回のみで、経験値は敵１体に対して通常の"
+set-string (global-string d30f) "半分の獲得量になります。"
+set-string (global-string d311) "一度使用したあとは、一定の充填時間が必要となります。"
+*/
+set-string (global-string d308) @"可同时攻击多个敌人的特殊技。移动前选择单位自身即可"
+set-string (global-string d309) @"使用。效果范围因种类而异，即使处于射程内，也无法绕"
+set-string (global-string d30b) @"过墙壁或攻击未开拓的场所。攻击次数仅１次，对单个敌"
+set-string (global-string d30c) @"人的经验值为通常的一半。使用一次后需要一定的充填时"
+set-string (global-string d30e) @"间。"
+set-string (global-string d30f) @""
+set-string (global-string d311) @""
 mov (global-int 1495d1) 2db
-set-string (global-string cb82) "【迷宮】　部屋ＺＯＣ|【迷宫】　房间ＺＯＣ"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb82) "【迷宮】　部屋ＺＯＣ"
+*/
+set-string (global-string cb82) @"【迷宫】　房间ＺＯＣ"
 mov (global-int 1499b9) 3a2a
-set-string (global-string d312) "部屋に単一勢力のユニットや拠点しかない場合、部屋全|若房间内只有单一势力的单位或据点，整个房间"
-set-string (global-string d313) "部がその勢力の占有下となり、マスの色が変わります。|都会处于该势力的占领下，格子颜色随之改变。"
-set-string (global-string d315) "敵対する勢力色になったマスは、１歩ずつしか進めない|变为敌对势力颜色的格子只能一格一格前进，"
-set-string (global-string d316) "ため、これを活用することで敵の進軍を抑えることがで|活用这一点可以抑制敌人的进军"
-set-string (global-string d317) "きます。|。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d312) "部屋に単一勢力のユニットや拠点しかない場合、部屋全"
+set-string (global-string d313) "部がその勢力の占有下となり、マスの色が変わります。"
+set-string (global-string d315) "敵対する勢力色になったマスは、１歩ずつしか進めない"
+set-string (global-string d316) "ため、これを活用することで敵の進軍を抑えることがで"
+set-string (global-string d317) "きます。"
+*/
+set-string (global-string d312) @"若房间内只有单一势力的单位或据点，整个房间都会处于"
+set-string (global-string d313) @"该势力的占领下，格子颜色随之改变。变为敌对势力颜色"
+set-string (global-string d315) @"的格子只能一格一格前进，活用这一点可以抑制敌人的进"
+set-string (global-string d316) @"军。"
+set-string (global-string d317) @""
 mov (global-int 1495d2) 30d
-set-string (global-string cb83) "【迷宮】　同盟|【迷宫】　同盟"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb83) "【迷宮】　同盟"
+*/
+set-string (global-string cb83) @"【迷宫】　同盟"
 mov (global-int 1499ba) 3a2b
-set-string (global-string d31c) "ステージの中には、異なる勢力同士が同盟として協力し|部分关卡中，不同势力会作为同盟相互协作"
-set-string (global-string d31d) "合うものがあります。|。"
-set-string (global-string d31e) "同盟同士は、互いに戦闘することはなく、部屋ＺＯＣに|同盟之间互不交战，在房间ＺＯＣ"
-set-string (global-string d31f) "に移動制限もありません。|也没有移动限制。"
-set-string (global-string d321) "マスの占有処理は、通常と同様に行われます。|格子的占领处理与通常相同。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d31c) "ステージの中には、異なる勢力同士が同盟として協力し"
+set-string (global-string d31d) "合うものがあります。"
+set-string (global-string d31e) "同盟同士は、互いに戦闘することはなく、部屋ＺＯＣに"
+set-string (global-string d31f) "に移動制限もありません。"
+set-string (global-string d321) "マスの占有処理は、通常と同様に行われます。"
+*/
+set-string (global-string d31c) @"部分关卡中，不同势力会作为同盟相互协作。同盟之间互"
+set-string (global-string d31d) @"不交战，在房间ＺＯＣ也没有移动限制。格子的占领处理"
+set-string (global-string d31e) @"与通常相同。"
+set-string (global-string d31f) @""
+set-string (global-string d321) @""
 mov (global-int 1495d3) 363
-set-string (global-string cb84) "【迷宮】　視界|【迷宫】　视野"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb84) "【迷宮】　視界"
+*/
+set-string (global-string cb84) @"【迷宫】　视野"
 mov (global-int 1499bb) 3a2c
-set-string (global-string d326) "迷宮の中には、天井に覆われて中の様子を確認できない|迷宫中有些地方被天花板覆盖，无法确认内部"
-set-string (global-string d327) "場所があります。|情况。"
-set-string (global-string d328) "これらの場所は、実際にユニットが踏み入ることで部屋|这些场所只有单位实际踏入后，才会按房间"
-set-string (global-string d329) "単位の視界が開けるようになります。|展开视野。"
-set-string (global-string d32b) "視界が開けていないマスに入って、そこに敵が居た場合、|若进入未展开视野的格子且那里有敌人，"
-set-string (global-string d32c) "近接攻撃を持たないユニットは一方的に攻撃される恐れ|未持有近接攻击的单位可能被单方面攻击，"
-set-string (global-string d32d) "があるので注意が必要です。|需要留意。"
-set-string (global-string d32e) "両者とも近接攻撃を持っていない場合は、戦闘不成立で|若双方都未持有近接攻击，则战斗不成立，"
-set-string (global-string d32f) "攻撃を行わずに戦闘終了します。|不进行攻击便结束战斗。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d326) "迷宮の中には、天井に覆われて中の様子を確認できない"
+set-string (global-string d327) "場所があります。"
+set-string (global-string d328) "これらの場所は、実際にユニットが踏み入ることで部屋"
+set-string (global-string d329) "単位の視界が開けるようになります。"
+set-string (global-string d32b) "視界が開けていないマスに入って、そこに敵が居た場合、"
+set-string (global-string d32c) "近接攻撃を持たないユニットは一方的に攻撃される恐れ"
+set-string (global-string d32d) "があるので注意が必要です。"
+set-string (global-string d32e) "両者とも近接攻撃を持っていない場合は、戦闘不成立で"
+set-string (global-string d32f) "攻撃を行わずに戦闘終了します。"
+*/
+set-string (global-string d326) @"迷宫中有些地方被天花板覆盖，无法确认内部情况。这些"
+set-string (global-string d327) @"场所只有单位实际踏入后，才会按房间展开视野。若进入"
+set-string (global-string d328) @"未展开视野的格子且那里有敌人，未持有近接攻击的单位"
+set-string (global-string d329) @"可能被单方面攻击，需要留意。若双方都未持有近接攻"
+set-string (global-string d32b) @"击，则战斗不成立，不进行攻击便结束战斗。"
+set-string (global-string d32c) @""
+set-string (global-string d32d) @""
+set-string (global-string d32e) @""
+set-string (global-string d32f) @""
 mov (global-int 1495d4) 364
-set-string (global-string cb85) "【迷宮】　ステータス表示|【迷宫】　状态显示"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb85) "【迷宮】　ステータス表示"
+*/
+set-string (global-string cb85) @"【迷宫】　状态显示"
 mov (global-int 1499bc) 3a2d
-set-string (global-string d330) "迷宮のマス選択中に右クリックするか、タッチ右押しで|在迷宫中选择格子时，右键点击或长按触摸，"
-set-string (global-string d331) "地形・配置物・ユニットの情報を確認できます。|可确认地形、配置物与单位的信息。"
-set-string (global-string d333) "視界の開けていないマスや、マス以外の場所はメニュー|未展开视野的格子或格子以外的场所会显示"
-set-string (global-string d334) "画面が表示されます。|菜单画面。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d330) "迷宮のマス選択中に右クリックするか、タッチ右押しで"
+set-string (global-string d331) "地形・配置物・ユニットの情報を確認できます。"
+set-string (global-string d333) "視界の開けていないマスや、マス以外の場所はメニュー"
+set-string (global-string d334) "画面が表示されます。"
+*/
+set-string (global-string d330) @"在迷宫中选择格子时，右键点击或长按触摸，可确认地"
+set-string (global-string d331) @"形、配置物与单位的信息。未展开视野的格子或格子以外"
+set-string (global-string d333) @"的场所会显示菜单画面。"
+set-string (global-string d334) @""
 mov (global-int 1495d5) 365
-set-string (global-string cb86) "【迷宮】　ショートカット|【迷宫】　快捷键"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb86) "【迷宮】　ショートカット"
+*/
+set-string (global-string cb86) @"【迷宫】　快捷键"
 mov (global-int 1499bd) 3a2e
-set-string (global-string d33a) "迷宮では一部の機能がショートカット対応しています。|迷宫中的部分功能支持快捷键。"
-set-string (global-string d33c) "■ＣＴＲＬ…ユニットの移動アニメスキップ|■ＣＴＲＬ…跳过单位移动动画"
-set-string (global-string d33d) "■ＳＨＩＦＴ…行動やり直し|■ＳＨＩＦＴ…重做行动"
-set-string (global-string d33e) "■ＳＰＡＣＥ…床勢力カラー表示ＯＮ／ＯＦＦ|■ＳＰＡＣＥ…开关地面势力颜色显示"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d33a) "迷宮では一部の機能がショートカット対応しています。"
+*/
+set-string (global-string d33a) @"迷宫中的部分功能支持快捷键。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d33c) "■ＣＴＲＬ…ユニットの移動アニメスキップ"
+*/
+set-string (global-string d33c) @"■ＣＴＲＬ…跳过单位移动动画"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d33d) "■ＳＨＩＦＴ…行動やり直し"
+*/
+set-string (global-string d33d) @"■ＳＨＩＦＴ…重做行动"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d33e) "■ＳＰＡＣＥ…床勢力カラー表示ＯＮ／ＯＦＦ"
+*/
+set-string (global-string d33e) @"■ＳＰＡＣＥ…开关地面势力颜色显示"
 mov (global-int 1495d6) 3e9
-set-string (global-string cb87) "【戦闘】　再行動|【战斗】　再行动"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb87) "【戦闘】　再行動"
+*/
+set-string (global-string cb87) @"【战斗】　再行动"
 mov (global-int 1499be) 3a2f
-set-string (global-string d344) "スキルの中には、行動終了後に再び行動できるものが存|部分技能可在行动结束后再次行动"
-set-string (global-string d345) "在します。|。"
-set-string (global-string d347) "確率で発動する『再行動』と、必ず発動する『二回行動』|分为按概率发动的『再行动』与必定发动的『二回行动』"
-set-string (global-string d348) "の２種類で、同じユニットが３回目の行動を行うことは|两种，同一单位不会进行"
-set-string (global-string d349) "ありません。|第三次行动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d344) "スキルの中には、行動終了後に再び行動できるものが存"
+set-string (global-string d345) "在します。"
+set-string (global-string d347) "確率で発動する『再行動』と、必ず発動する『二回行動』"
+set-string (global-string d348) "の２種類で、同じユニットが３回目の行動を行うことは"
+set-string (global-string d349) "ありません。"
+*/
+set-string (global-string d344) @"部分技能可在行动结束后再次行动。分为按概率发动的"
+set-string (global-string d345) @"『再行动』与必定发动的『二回行动』两种，同一单位不"
+set-string (global-string d347) @"会进行第三次行动。"
+set-string (global-string d348) @""
+set-string (global-string d349) @""
 mov (global-int 1495d8) 3eb
-set-string (global-string cb89) "【戦闘】　捕獲|【战斗】　捕获"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb89) "【戦闘】　捕獲"
+*/
+set-string (global-string cb89) @"【战斗】　捕获"
 mov (global-int 1499c0) 3a30
-set-string (global-string d358) "施設『訓練場』を作ると、敵を捕獲できるようになりま|制作设施『训练场』后，便可捕获敌人"
-set-string (global-string d359) "す。|。"
-set-string (global-string d35b) "敵を捕獲するためには、『捕獲攻撃』などの捕獲効果の|要捕获敌人，需要使用『捕获攻击』等带捕获效果"
-set-string (global-string d35c) "あるスキルを使用して敵を倒す必要があります。|的技能击倒敌人。"
-set-string (global-string d35e) "一部の敵やボスなどは捕獲できません。|部分敌人或ＢＯＳＳ无法捕获。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d358) "施設『訓練場』を作ると、敵を捕獲できるようになりま"
+set-string (global-string d359) "す。"
+set-string (global-string d35b) "敵を捕獲するためには、『捕獲攻撃』などの捕獲効果の"
+set-string (global-string d35c) "あるスキルを使用して敵を倒す必要があります。"
+set-string (global-string d35e) "一部の敵やボスなどは捕獲できません。"
+*/
+set-string (global-string d358) @"制作设施『训练场』后，便可捕获敌人。要捕获敌人，需"
+set-string (global-string d359) @"要使用『捕获攻击』等带捕获效果的技能击倒敌人。部分"
+set-string (global-string d35b) @"敌人或ＢＯＳＳ无法捕获。"
+set-string (global-string d35c) @""
+set-string (global-string d35e) @""
 mov (global-int 1495d9) 3ed
-set-string (global-string cb8a) "【戦闘】　捕獲一覧|【战斗】　捕获一览"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8a) "【戦闘】　捕獲一覧"
+*/
+set-string (global-string cb8a) @"【战斗】　捕获一览"
 mov (global-int 1499c1) 3a31
-set-string (global-string d362) "捕獲したユニットは、メニュー画面や訓練場画面にある|捕获的单位可通过菜单画面或训练场画面中的"
-set-string (global-string d363) "『捕獲一覧』ボタンを押すことで確認できます。|『捕获一览』按钮查看。"
-set-string (global-string d365) "閲覧するだけではなく、不要なユニットを解放したり、|除查看外，还可解放不需要的单位，"
-set-string (global-string d366) "解放や訓練で消したくないユニットをロックすることも|或锁定不想在解放与训练中消失的单位"
-set-string (global-string d367) "できます。|初始配置。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d362) "捕獲したユニットは、メニュー画面や訓練場画面にある"
+set-string (global-string d363) "『捕獲一覧』ボタンを押すことで確認できます。"
+set-string (global-string d365) "閲覧するだけではなく、不要なユニットを解放したり、"
+set-string (global-string d366) "解放や訓練で消したくないユニットをロックすることも"
+set-string (global-string d367) "できます。"
+*/
+set-string (global-string d362) @"捕获的单位可通过菜单画面或训练场画面中的"
+set-string (global-string d363) @"『捕获一览』按钮查看。除查看外，还可解放不需要的单"
+set-string (global-string d365) @"位，或锁定不想在解放与训练中消失的单位也可以做到。"
+set-string (global-string d366) @""
+set-string (global-string d367) @""
 mov (global-int 1495da) 2d1
-set-string (global-string cb8b) "【全体マップ】　迷宮|【大地图】　迷宫"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8b) "【全体マップ】　迷宮"
+*/
+set-string (global-string cb8b) @"【大地图】　迷宫"
 mov (global-int 1499c2) 3a32
-set-string (global-string d36c) "全体マップにて表示される『迷宮』タイプの拠点は、迷|大地图上显示的『迷宫』型据点可选择迷宫"
-set-string (global-string d36d) "宮選択できるものです。|。"
-set-string (global-string d36f) "戦闘がなく、イベントのみは『ＥＶＥＮＴ』表示され、|无战斗、仅事件的地点显示为『ＥＶＥＮＴ』，"
-set-string (global-string d370) "進行に関係ない場合は『ＦＲＥＥ』表示されます。|与进度无关的地点显示为『ＦＲＥＥ』。"
-set-string (global-string d372) "選択時に迷宮の詳細を参照することも可能です。|选择时还可查看迷宫的详情。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d36c) "全体マップにて表示される『迷宮』タイプの拠点は、迷"
+set-string (global-string d36d) "宮選択できるものです。"
+set-string (global-string d36f) "戦闘がなく、イベントのみは『ＥＶＥＮＴ』表示され、"
+set-string (global-string d370) "進行に関係ない場合は『ＦＲＥＥ』表示されます。"
+set-string (global-string d372) "選択時に迷宮の詳細を参照することも可能です。"
+*/
+set-string (global-string d36c) @"大地图上显示的『迷宫』型据点可选择迷宫。无战斗、仅"
+set-string (global-string d36d) @"事件的地点显示为『ＥＶＥＮＴ』，与进度无关的地点显"
+set-string (global-string d36f) @"示为『ＦＲＥＥ』。选择时还可查看迷宫的详情。"
+set-string (global-string d370) @""
+set-string (global-string d372) @""
 mov (global-int 1495db) 2d2
-set-string (global-string cb8c) "【全体マップ】　街|【大地图】　城镇"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8c) "【全体マップ】　街"
+*/
+set-string (global-string cb8c) @"【大地图】　城镇"
 mov (global-int 1499c3) 3a33
-set-string (global-string d376) "全体マップ内にある『街』タイプの拠点は、イベント発|大地图内的『城镇』型据点，仅在事件发生"
-set-string (global-string d377) "生時のみ訪問することができるものです。|时可访问。"
-set-string (global-string d378) "ただし、訪問イベントの中には、戦闘が発生する特殊な|不过，部分访问事件会发生战斗等"
-set-string (global-string d379) "ものが存在します。|特殊情况。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d376) "全体マップ内にある『街』タイプの拠点は、イベント発"
+set-string (global-string d377) "生時のみ訪問することができるものです。"
+set-string (global-string d378) "ただし、訪問イベントの中には、戦闘が発生する特殊な"
+set-string (global-string d379) "ものが存在します。"
+*/
+set-string (global-string d376) @"大地图内的『城镇』型据点，仅在事件发生时可访问。不"
+set-string (global-string d377) @"过，部分访问事件会发生战斗等特殊情况。"
+set-string (global-string d378) @""
+set-string (global-string d379) @""
 mov (global-int 1495dc) 2d3
-set-string (global-string cb8d) "【全体マップ】　城砦|【大地图】　城砦"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8d) "【全体マップ】　城砦"
+*/
+set-string (global-string cb8d) @"【大地图】　城砦"
 mov (global-int 1499c4) 3a34
-set-string (global-string d380) "全体マップで城砦を選ぶと、城砦マップ画面に入ります。|在大地图选择城砦后，进入城砦地图画面。"
-set-string (global-string d381) "画面右下の『城砦へ』ボタンを押すことでも入れます。|也可点击画面右下方的『前往城砦』按钮进入。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d380) "全体マップで城砦を選ぶと、城砦マップ画面に入ります。"
+set-string (global-string d381) "画面右下の『城砦へ』ボタンを押すことでも入れます。"
+*/
+set-string (global-string d380) @"在大地图选择城砦后，进入城砦地图画面。也可点击画面"
+set-string (global-string d381) @"右下方的『前往城砦』按钮进入。"
 mov (global-int 1495dd) 2d4
-set-string (global-string cb8e) "【全体マップ】　お店|【大地图】　店铺"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8e) "【全体マップ】　お店"
+*/
+set-string (global-string cb8e) @"【大地图】　店铺"
 mov (global-int 1499c5) 3a35
-set-string (global-string d38a) "全体マップで『お店』タイプの拠点を選ぶと、アイテム|在大地图选择『店铺』型据点后，可进行道具"
-set-string (global-string d38b) "の売買を行えます。|的买卖。"
-set-string (global-string d38c) "取引終了後は、全体マップに戻ります。|交易结束后返回大地图。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d38a) "全体マップで『お店』タイプの拠点を選ぶと、アイテム"
+set-string (global-string d38b) "の売買を行えます。"
+set-string (global-string d38c) "取引終了後は、全体マップに戻ります。"
+*/
+set-string (global-string d38a) @"在大地图选择『店铺』型据点后，可进行道具的买卖。交"
+set-string (global-string d38b) @"易结束后返回大地图。"
+set-string (global-string d38c) @""
 mov (global-int 1495de) 23b
-set-string (global-string cb8f) "【城砦】　マイセット|【城砦】　我的方案"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb8f) "【城砦】　マイセット"
+*/
+set-string (global-string cb8f) @"【城砦】　我的方案"
 mov (global-int 1499c6) 3a36
-set-string (global-string d394) "城砦マップ上の施設配置を『マイセット』に保存したり、|可将城砦地图上的设施配置保存到『我的方案』，"
-set-string (global-string d395) "保存した『マイセット』を読み込み、施設配置を変える|也可读取保存的『我的方案』来变更"
-set-string (global-string d396) "こともできます。|设施配置。"
-set-string (global-string d397) "状況に合わせて城砦効果を使い分けたいときに便利です。|想根据情况切换城砦效果时十分便利。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d394) "城砦マップ上の施設配置を『マイセット』に保存したり、"
+set-string (global-string d395) "保存した『マイセット』を読み込み、施設配置を変える"
+set-string (global-string d396) "こともできます。"
+set-string (global-string d397) "状況に合わせて城砦効果を使い分けたいときに便利です。"
+*/
+set-string (global-string d394) @"可将城砦地图上的设施配置保存到『我的方案』，也可读"
+set-string (global-string d395) @"取保存的『我的方案』来变更设施配置。想根据情况切换"
+set-string (global-string d396) @"城砦效果时十分便利。"
+set-string (global-string d397) @""
 mov (global-int 1495df) 250
-set-string (global-string cb90) "【城砦】　配置|【城砦】　配置"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb90) "【城砦】　配置"
+*/
+set-string (global-string cb90) @"【城砦】　配置"
 mov (global-int 1499c7) 3a37
-set-string (global-string d39e) "すでに製作した施設を、城砦に配置することができます。|可将已制作的设施配置到城砦。"
-set-string (global-string d3a0) "『配置』モードに変えたあと、置きたい場所を選択して|切换为『配置』模式后，选择想放置的位置，"
-set-string (global-string d3a1) "置きたい施設を選択します。|再选择想放置的设施。"
-set-string (global-string d3a3) "一度置いたあとも、移動や保管することが可能です。|放置后仍可移动或保管。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d39e) "すでに製作した施設を、城砦に配置することができます。"
+set-string (global-string d3a0) "『配置』モードに変えたあと、置きたい場所を選択して"
+set-string (global-string d3a1) "置きたい施設を選択します。"
+set-string (global-string d3a3) "一度置いたあとも、移動や保管することが可能です。"
+*/
+set-string (global-string d39e) @"可将已制作的设施配置到城砦。切换为『配置』模式后，"
+set-string (global-string d3a0) @"选择想放置的位置，再选择想放置的设施。放置后仍可移"
+set-string (global-string d3a1) @"动或保管。"
+set-string (global-string d3a3) @""
 mov (global-int 1495e0) 251
-set-string (global-string cb91) "【城砦】　移動|【城砦】　移动"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb91) "【城砦】　移動"
+*/
+set-string (global-string cb91) @"【城砦】　移动"
 mov (global-int 1499c8) 3a38
-set-string (global-string d3a8) "すでに城砦に配置した施設を移動することができます。|可移动已配置在城砦上的设施。"
-set-string (global-string d3a9) "『配置』モードの時に、配置済み施設を選んで『移動』|在『配置』模式下选择已配置的设施并选『移动』，"
-set-string (global-string d3aa) "を選択、そのあと移動させたい場所を選びます。|之后选择想移动到的位置。"
-set-string (global-string d3ac) "移動したあとも保管は可能ですが、仲間の家などの一部|移动后仍可保管，但伙伴的家等部分"
-set-string (global-string d3ad) "施設は移動ができません。|设施无法移动。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d3a8) "すでに城砦に配置した施設を移動することができます。"
+set-string (global-string d3a9) "『配置』モードの時に、配置済み施設を選んで『移動』"
+set-string (global-string d3aa) "を選択、そのあと移動させたい場所を選びます。"
+set-string (global-string d3ac) "移動したあとも保管は可能ですが、仲間の家などの一部"
+set-string (global-string d3ad) "施設は移動ができません。"
+*/
+set-string (global-string d3a8) @"可移动已配置在城砦上的设施。在『配置』模式下选择已"
+set-string (global-string d3a9) @"配置的设施并选『移动』，之后选择想移动到的位置。移"
+set-string (global-string d3aa) @"动后仍可保管，但伙伴的家等部分设施无法移动。"
+set-string (global-string d3ac) @""
+set-string (global-string d3ad) @""
 mov (global-int 1495e1) 252
-set-string (global-string cb92) "【城砦】　保管|【城砦】　保管"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb92) "【城砦】　保管"
+*/
+set-string (global-string cb92) @"【城砦】　保管"
 mov (global-int 1499c9) 3a39
-set-string (global-string d3b2) "すでに城砦に配置した施設を保管することができます。|可将已配置在城砦上的设施保管起来。"
-set-string (global-string d3b3) "『配置』モードの時に、配置済み施設を選んで『保管』|在『配置』模式下选择已配置的设施并选『保管』，"
-set-string (global-string d3b4) "を選択すると、施設が城砦マップから撤去されます。|设施便会从城砦地图上撤除。"
-set-string (global-string d3b6) "撤去した施設は消滅せず、所持状態に戻ります。|撤除的设施不会消失，会回到持有状态。"
-set-string (global-string d3b7) "仲間の家などの一部施設は保管ができません。|伙伴的家等部分设施无法保管。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d3b2) "すでに城砦に配置した施設を保管することができます。"
+set-string (global-string d3b3) "『配置』モードの時に、配置済み施設を選んで『保管』"
+set-string (global-string d3b4) "を選択すると、施設が城砦マップから撤去されます。"
+set-string (global-string d3b6) "撤去した施設は消滅せず、所持状態に戻ります。"
+set-string (global-string d3b7) "仲間の家などの一部施設は保管ができません。"
+*/
+set-string (global-string d3b2) @"可将已配置在城砦上的设施保管起来。在『配置』模式下"
+set-string (global-string d3b3) @"选择已配置的设施并选『保管』，设施便会从城砦地图上"
+set-string (global-string d3b4) @"撤除。撤除的设施不会消失，会回到持有状态。伙伴的家"
+set-string (global-string d3b6) @"等部分设施无法保管。"
+set-string (global-string d3b7) @""
 mov (global-int 1495e8) 41
-set-string (global-string cb99) "【基本】　ルートマップ|【基本】　路线地图"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string cb99) "【基本】　ルートマップ"
+*/
+set-string (global-string cb99) @"【基本】　路线地图"
 mov (global-int 1499d0) 3a3a
-set-string (global-string d3f8) "メニューから『ルートマップ』を選択すると確認するこ|从菜单选择『路线地图』即可查看"
-set-string (global-string d3f9) "とができます。|。"
-set-string (global-string d3fa) "ルートマップには次に何をするか目的が記されています|路线地图上记载着接下来该做什么的目标，"
-set-string (global-string d3fb) "ので、攻略に詰まったら、ここを確認してみましょう。|卡关时不妨来这里确认一下。"
+/* 原文存档（对照用，不参与汇编）
+set-string (global-string d3f8) "メニューから『ルートマップ』を選択すると確認するこ"
+set-string (global-string d3f9) "とができます。"
+set-string (global-string d3fa) "ルートマップには次に何をするか目的が記されています"
+set-string (global-string d3fb) "ので、攻略に詰まったら、ここを確認してみましょう。"
+*/
+set-string (global-string d3f8) @"从菜单选择『路线地图』即可查看。路线地图上记载着接"
+set-string (global-string d3f9) @"下来该做什么的目标，卡关时不妨来这里确认一下。"
+set-string (global-string d3fa) @""
+set-string (global-string d3fb) @""
 exit
