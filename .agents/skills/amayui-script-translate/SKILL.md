@@ -18,7 +18,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
    - 三段式页块（`/* 原文存档 */` → `// 输入原文：…` → `@"译文"` → `// 页面结束`）；
    - ≤25 字折行与 reflow（`node reflow-apply.js <脚本>`）；
    - 每页按 `// FROM: <id> <名称>` 查 `docs/keywords-角色语气.md` 保持角色语气；
-   - 术语表（`rules/glossary.json`）、SC/SG 联动、不修改 `data/`；
+   - 术语表（`docs/glossary-draft.md`）、SC/SG 联动、不修改 `data/`；
    - macOS 流程：不 assemble，本地校验后登记项目根 `PENDING.md`。
    - 记录：子进程不写 `PROGRESS.md` / `patch/patch.config.json` / `patch/CHANGELOG.md`，
      由主进程统一追加（避免并发重复记账）。
@@ -31,8 +31,8 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 
 - `data\<脚本>.txt`：只读日文基线（**严禁修改**），assemble 骨架校验依据
 - `src\<脚本>.txt`：开发源（修改对象；未翻译时为基线副本）
-- `rules/glossary.json`：已确认术语（仙灵 / 迪尔-利菲娜 / 天结神缘）
-- `docs/glossary-draft.md`：名词/世界观背景
+- `docs/glossary-draft.md`：已确认术语（仙灵 / 迪尔-利菲娜 / 天结神缘）与名词/世界观背景
+- `docs/prob-决策清单.md`：跨文件译名/术语定稿决策表（唯一决策源）
 - `docs/keywords-角色语气.md`：角色语气汇总（70 个角色；翻译时按页首 `// FROM: <id> <名称>` 定向检索）
 - `docs/prob-角色翻译不一致.md`：已有译文不一致清单（2026-08-12 定案）
 - `scripts/translate.js`：assemble（骨架校验 + SJIS + 回读）
@@ -46,7 +46,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 ## 流程
 
 1. **准备**：确认目标脚本存在于 `data\` 与 `src\`；读 `references/conventions.md` 与
-   `rules/glossary.json`、`docs/glossary-draft.md`；了解 `docs/keywords-角色语气.md`
+   `docs/glossary-draft.md`、`docs/prob-决策清单.md`；了解 `docs/keywords-角色语气.md`
    的角色条目结构与 `docs/prob-角色翻译不一致.md`（翻译时按 FROM 定向检索，不必通读）。
 2. **翻译**：按 `references/conventions.md` 的规则逐页修改 `src\<脚本>.txt`：
    - 每个 ADV 页先看页首 `// FROM: <id> <名称>` 确定说话人（`none` = 旁白），
