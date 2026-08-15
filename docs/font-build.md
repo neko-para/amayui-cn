@@ -5,7 +5,7 @@
 
 ## 1. 原理
 
-- 译文写入脚本时用 `subs_cn_jp.json`（3000 条：简体 → 日文写法）把无法 cp932 编码的简体字
+- 译文写入脚本时用 `res/subs_cn_jp.json`（3000 条：简体 → 日文写法）把无法 cp932 编码的简体字
   替换为日文写法占位（如 `说→説`、`为→為`）；
 - 引擎按 SJIS 解码后，占位字符落在对应日文码位；
 - 字体构建把“日文码位的字形”替换为“对应中文字码位的字形”，于是占位文本在游戏中显示为简体。
@@ -13,21 +13,22 @@
 ## 2. 依赖
 
 - Python 3 + `fonttools`（`pip install fonttools`）
-- 替换字典：`tools/SExtractor/src/subs_cn_jp.json`（3000 条，简体→日文写法）
-- 基底字体：WenQuanYi（文泉驿微米黑），`MSGothic_WenQuanYi.ttf`（族名伪装为 `ＭＳ ゴシック` 的版本）
+- 替换字典：`res/subs_cn_jp.json`（3000 条，简体→日文写法）
+- 基底字体：WenQuanYi（文泉驿微米黑），`res/fonts/MSGothic_WenQuanYi.ttf`（族名伪装为 `ＭＳ ゴシック` 的版本）
 
 ## 3. 构建步骤
 
-### 3.1 标准 cnjp 字体（SExtractor 流程）
+### 3.1 标准 cnjp 字体（上游 SExtractor 同款流程）
 
 ```bash
-cd tools/SExtractor/tools/Font
-python font_CN_JP.py MSGothic_WenQuanYi.ttf
+python scripts/font_CN_JP.py res/fonts/MSGothic_WenQuanYi.ttf
 ```
+
+或 `--dict` 指定其它字典（默认 `res/subs_cn_jp.json`）；输入路径相对于执行时的工作目录。
 
 脚本行为（`font_CN_JP.py`，fonttools 版）：
 
-1. 读入 `../../src/subs_cn_jp.json`；
+1. 读入 `res/subs_cn_jp.json`（脚本按自身位置解析，与执行目录无关）；
 2. `Reverse = True`：键值互换（得到 日文写法 → 简体）；
 3. 遍历 cmap（跳过 mac 平台），对每个（日文码位, 中文字形来源）做
    `cmap[中文字符] = cmap[日文字符]`——把日文码位渲染为简体字形；
@@ -65,15 +66,15 @@ python font_CN_JP.py MSGothic_WenQuanYi.ttf
 
 ## 5. 使用与分发
 
-- 注册：`npm run register-font`（会话级，重启后需重跑）或双击安装 `Amayui-CN_cnjp.ttf` 永久生效；
+- 注册：`npm run register-font`（会话级，重启后需重跑）或双击安装 `res/fonts/Amayui-CN_cnjp.ttf` 永久生效；
 - 游戏内：设置界面把字体分类（説明文、パラメータ文字/数字、ＡＤＶルビ、ＡＤＶメッセージ）
   设为 **Amayui CN**（パラメータ文字/数字 = 设置界面自身字体）；
-- 分发：随 `patch\` 打包（`npm run sync-patch` 已含字体条目）。
+- 分发：随 `patch\` 打包（`npm run sync-patch` 从 `res/fonts/` 复制字体条目）。
 
 ## 6. 注意事项
 
 - SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，**必须按当前字典重新生成**，不要直接复用旧产物；
-- 字典维护：`subs_cn_jp.json` 删除某条目 = 该简体字不再可用（渲染时按字典缺失报错）；
+- 字典维护：`res/subs_cn_jp.json` 删除某条目 = 该简体字不再可用（渲染时按字典缺失报错）；
 - 构建依赖字典、基底、工具三者的版本一致性；重生成后需重新装字体并重启游戏验证。
 
 ## 7. 旧方案（v1，仅历史参考）

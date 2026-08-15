@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { ROOT_DIR } from './config.js';
+import { FONTS_DIR } from './config.js';
 
 // 会话级注册 cnjp 字体：调用 gdi32 AddFontResourceEx 使字体对当前 Windows 会话可用
 // （无需永久安装；重启/注销后需重新运行本脚本，或改为在 Windows 中双击安装字体）。
-const FONT = path.join(ROOT_DIR, 'tools', 'SExtractor', 'tools', 'Font', 'Amayui-CN_cnjp.ttf');
+const FONT = path.join(FONTS_DIR, 'Amayui-CN_cnjp.ttf');
 
 const ps = `
 Add-Type @'

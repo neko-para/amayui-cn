@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import iconv from 'iconv-lite';
-import { ROOT_DIR } from '../config.js';
+import { RES_DIR } from '../config.js';
 
-// 简体中文 → SJIS 码位映射（与 SExtractor 的 generateSubsJis 同一机制、同一字典）
+// 简体中文 → SJIS 码位映射（与上游 SExtractor 的 generateSubsJis 同一机制，字典已内置于 res/）
 // 规则：字符本身可 cp932 编码 → 原样保留；
-//       否则查 subs_cn_jp.json（简体→日文写法）→ 用日文写法占位，渲染时由 cnjp 字体还原。
-const SUBS_PATH = path.join(ROOT_DIR, 'tools', 'SExtractor', 'src', 'subs_cn_jp.json');
+//       否则查 res/subs_cn_jp.json（简体→日文写法）→ 用日文写法占位，渲染时由 cnjp 字体还原。
+const SUBS_PATH = path.join(RES_DIR, 'subs_cn_jp.json');
 
 let subs = null;
 function loadSubs() {

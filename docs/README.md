@@ -22,7 +22,8 @@ E:\Games\Eushully\天結\
 ├── data\                 只读比较基线：341 个反汇编 txt（原始日文，不再修改）
 ├── src\                  可编辑开发源：341 个 txt（含翻译语法）
 ├── scripts\              Node.js 工程脚本（setup/verify/manifest/translate）
-├── tools\                本地工具链（alf / eushully-decompiler / SExtractor / UIF-已弃用）
+├── res\                  工程自有资源（subs_cn_jp.json、fonts\、AGERC 资源与 AGF 图片）
+├── tools\                本地工具链（alf / eushully-decompiler / SExtractor-上游参考 / UIF-已弃用）
 ├── docs\                 本文档（README.md / AGE脚本语言与物品数据结构.md / glossary-draft.md / keywords-装备与物品.md /
 │                          keywords-SKINIT.md / prob-SKINIT.md / keywords-战斗地名.md /
 │                          prob-STINIT2.md / keywords-单位名称.md / prob-EBINIT.md /
@@ -470,7 +471,7 @@ E:\Games\Eushully\天結\
 | `alf\unpack_alf.exe` | foxofice/alf `8a70066` (2025-09-26) | 已编译可用（已去 getchar 阻塞） | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI`（LZSS 解 TOC） |
 | `alf\packdata`（源码） | 同上（战Z中文项目遗留） | 需适配 | 修改文件重打包进 ALF 并重建 SYS4INI.BIN 索引 |
 | `eushully-decompiler\build\Release\age-asm.exe` | Kelebek1 `21da1e8` (2024-08-30)；cmake 构建 | 已编译可用 | AGE 脚本反汇编 `-d` / 重汇编 `-a` / 往返校验 `-x` |
-| `SExtractor\` | satan53x（HEAD） | 依赖已装（Python 3.11） | 正则提取/导入参考；`subs_cn_jp.json` 为 SJIS 码位映射字典来源 |
+| `SExtractor\` | satan53x（HEAD） | 仅保留作上游参考，工程不再引用 | 正则提取/导入历史参考；SJIS 字典已内置于 `res/subs_cn_jp.json`，字体资产在 `res/fonts/` |
 | `Eushully_AGF_TooL\Eushully_AGF_TooL.exe` | Koreanshy（ai2.moe「Eushully会社 AGF图片处理工具」） | 2026-02-20（PyInstaller GUI） | 可用（已实测；可无界面调用） | AGF→PNG 批量导出 / PNG→AGF 有头注入与无头打包（UI/背景图片） |
 | `UniversalInjectorFramework\` | AtomCrafty（HEAD） | **已放弃** | AGE.EXE 加壳，UIF 全走 IAT hook 实测全部失败（`Unable to enumerate import address table`） |
 
@@ -623,7 +624,7 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
    支持翻译语法（`"原文|译文"` 对、`@"译文"` 标记、`/* */` 块注释重写——
    原文行保持与基线逐字一致，git diff 只显示实际修改）；
    `scripts/translate.js` 提供 assemble（语法展开+骨架校验+编码映射），
-   编码映射同 SExtractor 的 JIS 替换字典 `subs_cn_jp.json`。
+   编码映射同上游 SExtractor 的 JIS 替换字典，字典已内置于 `res/subs_cn_jp.json`。
    **ADV 折行**：show-text/display-furigana 到 `end-text-line` 前始终为同一视觉行，
    `end-text-line` 已释放为可调文本行；每视觉行 ≤25 中文字，由 `scripts/lib/reflow.js`
    （`npm run reflow`，支持 `<ruby>`/`<nb>` 标注、放不下提前折行、行尾不得悬空左引号『、
@@ -634,7 +635,7 @@ npm run agf -- extract <AGF...> --out <目录>   # AGF 导出 PNG（Node 版，�
    已完成：OPINIT1（172 条设置文案）、SN0000 开场 ADV 段落（重排示例，待游戏内验证）。
    注音策略（当前）：释义/称号类注音保留在 display-furigana 位置（中文释义作注音），
    纯读音（假名）类注音移除。
-3. **编码策略（已定）**：SJIS 码位映射（`subs_cn_jp.json` 字典：可编码原样、否则日文写法占位），
+3. **编码策略（已定）**：SJIS 码位映射（`res/subs_cn_jp.json` 字典：可编码原样、否则日文写法占位），
    渲染时由 cnjp 字体 Amayui CN 还原简体；不再考虑 tunnel/GBK 直写
 4. **写回**：`-a` 重汇编 → 覆盖 install 根目录松散 BIN → 游戏内验证（字体/截断/分行）
 5. **ALF 内脚本**：packdata 适配重打包，或实测松散同名文件覆盖 ALF 副本

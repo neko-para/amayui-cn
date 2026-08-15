@@ -9,6 +9,7 @@ E:\Games\Eushully\天結\
 ├── data\      只读比较基线（341 个反汇编 txt，原始日文，不再修改）
 ├── src\       可编辑开发源（341 个 txt，含翻译语法）
 ├── scripts\   本脚本目录
+├── res\       工程自有资源（subs_cn_jp.json、fonts\）
 ├── install-manifest.json   install 文件 MD5
 └── raw-manifest.json       raw（游戏本体）文件 MD5
 ```
@@ -95,7 +96,7 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 原文件备份在 `.tmp\font-backup\`（楷体 11.7MB、原版 323KB、v2 两份）。
 
 1. 注册字体：`npm run register-font`（AddFontResourceEx 会话级；重启后需重跑，
-   或双击 `tools\SExtractor\tools\Font\Amayui-CN_cnjp.ttf` 永久安装）。
+   或双击 `res/fonts/Amayui-CN_cnjp.ttf` 永久安装）。
 2. 启动游戏（LE 932），设置界面中把字体分类（説明文、パラメータ文字/数字、
    ＡＤＶルビ、ＡＤＶメッセージ）设为 **Amayui CN**——已实测可枚举并可设置成功；
    注意：**パラメータ文字/数字 = 设置界面自身的字体**；ＡＤＶメッセージ字体落在
@@ -105,16 +106,18 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
    注意：若某分类保持默认（ＭＳ 明朝），该区域会显示衬线且**缺外字字形**，
    所有分类都应指向 Amayui CN（或后续用 FontSubstitutes 兜底）。
 
-字体来源（`tools\SExtractor\tools\Font\`）：
+字体来源（`res/fonts/`）：
 
-- `Amayui-CN_cnjp.ttf`：WenQuanYi 基底 + 按当前 `subs_cn_jp.json` 替换 + 唯一族名
+- `Amayui-CN_cnjp.ttf`：WenQuanYi 基底 + 按当前 `res/subs_cn_jp.json` 替换 + 唯一族名
   “Amayui CN”（name 表全语言一致）；实测**不含**外字字形，停顿标记 U+E000–E010
   由引擎处理/回退显示（可接受）。
+- `MSGothic_WenQuanYi.ttf` / `WenQuanYi.ttf`：重建基底字体。
 - `AGE-Extend_cnjp.ttf`：族名伪装为 AGE Extend 的同内容变体，且**已并入**原版
-  AGE-EXTEND.TTF 的外字字形 U+E000–E010（文件覆盖方案遗留，当前方案不再使用）。
+  AGE-EXTEND.TTF 的外字字形 U+E000–E010（文件覆盖方案遗留，当前方案不再使用；
+  未迁入 res/fonts，需要时可从上游 SExtractor 目录取用）。
 
-注意：SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
-（`python font_CN_JP.py MSGothic_WenQuanYi.ttf`，依赖 fonttools）。
+注意：上游 SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
+（`python font_CN_JP.py ../res/fonts/MSGothic_WenQuanYi.ttf`，依赖 fonttools，在 `scripts/` 下执行）。
 
 ## 标准翻译流程（src 源文件 + 翻译语法）
 
@@ -140,7 +143,7 @@ npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码�
 - **骨架校验**：除文本行（set-string / show-text / display-furigana / concat / **end-text-line**）外，
   所有控制行（label / u 字节码 / jcc 等）必须与 data 基线逐字节一致；误删控制行编译期报错；
 - **外字**（U+E000–E010）：原文中保留（Decompiler 可无损往返），译文不写外字；
-- **编码映射**：与 SExtractor 的 JIS 替换同一字典（`subs_cn_jp.json`），可编码原样、否则日文写法占位、
+- **编码映射**：与上游 SExtractor 的 JIS 替换同一字典（`res/subs_cn_jp.json`），可编码原样、否则日文写法占位、
   渲染时由 Amayui CN 字体还原简体；字典缺失字符在 assemble 时报错；
 - **注音策略（当前）**：释义/称号类注音保留在 display-furigana 位置（中文释义作注音，
   避免正文行过长）；纯读音（假名）类注音移除；

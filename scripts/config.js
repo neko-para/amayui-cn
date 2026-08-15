@@ -15,6 +15,12 @@ export const INSTALL_DIR = path.join(ROOT_DIR, 'install');
 // data：只读比较基线（原始日文，不再修改）；src：可编辑开发源（含翻译语法）
 export const SRC_DIR = path.join(ROOT_DIR, 'src');
 
+// res：工程自有资源（字体资产、SJIS 映射字典、AGERC 资源脚本等）
+export const RES_DIR = path.join(ROOT_DIR, 'res');
+
+// res/fonts：cnjp 字体成品与重建基底
+export const FONTS_DIR = path.join(RES_DIR, 'fonts');
+
 // 脚本目录
 export const SCRIPTS_DIR = path.join(ROOT_DIR, 'scripts');
 

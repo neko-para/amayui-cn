@@ -20,19 +20,19 @@
 
 | 元素 | 文本管线 | 渲染字体 | 结论 |
 |---|---|---|---|
-| 控件文本（STATIC/BUTTON） | 引擎创建对话框时把模板字符串转 SJIS，非 cp932 字符丢失 | Amayui CN（游戏字体设置） | 用 `subs_cn_jp.json` 的日文写法占位，字体把日文码位字形替换为简体 |
+| 控件文本（STATIC/BUTTON） | 引擎创建对话框时把模板字符串转 SJIS，非 cp932 字符丢失 | Amayui CN（游戏字体设置） | 用 `res/subs_cn_jp.json` 的日文写法占位，字体把日文码位字形替换为简体 |
 | 标题（CAPTION） | 同样经过 SJIS 管线 | Windows 系统标题栏字体（非客户区，DS_SETFONT / Amayui CN 不生效） | 无法显示简体 → **标题栏留空** |
 | 菜单（MENU 110/124） | UTF-16 W API（运行时补丁，见 menu-patch-notes.md） | Win32 菜单 | 直接写简体，无需映射 |
 
 - LANGUAGE：DIALOG 3 标记为 `LANG_CHINESE, 0x2`（0x0804）时游戏可正常加载（按语言中性查找）；
   其余资源保持 `LANG_JAPANESE, 0x1`（1041）。
-- 映射字典：`tools/SExtractor/src/subs_cn_jp.json`（3000 条：简体 → 日文写法，cp932 可编码；
+- 映射字典：`res/subs_cn_jp.json`（3000 条：简体 → 日文写法，cp932 可编码；
   字体构建机制见 font-build.md）。本对话框用到的映射：
   `结→俟`、`吗→龜`、`标→標`、`题→題`、`确→確`；其余字符本身就在 cp932 内。
 
 ## 3. 字体方案
 
-- `Amayui-CN_cnjp.ttf`（族名 `Amayui CN`；`tools/SExtractor/tools/Font/` 与 `patch/` 各一份）。
+- `Amayui-CN_cnjp.ttf`（族名 `Amayui CN`；`res/fonts/` 与 `patch/` 各一份）。
 - 注册/分发：`npm run register-font`（会话级 AddFontResourceEx）或双击安装字体；
   游戏内把字体分类（説明文、パラメータ文字/数字、ADVルビ、ADVメッセージ）设为 **Amayui CN**。
 
@@ -106,7 +106,7 @@ powershell -ExecutionPolicy Bypass -File res\build-localized-agerc.ps1
 
 1. 在 `res/AGERC.DLL.rc` 找到对应 `DIALOGEX` 块，翻译控件文本。
 2. **CAPTION 留空**（标题栏由系统字体绘制，Amayui CN 不生效）。
-3. 控件文本逐字查 `subs_cn_jp.json`：cp932 编码不了的简体字换成映射的日文写法占位。
+3. 控件文本逐字查 `res/subs_cn_jp.json`：cp932 编码不了的简体字换成映射的日文写法占位。
 4. 需要时把整块 `LANGUAGE` 改为 `LANG_CHINESE, 0x2`（游戏按语言中性查找可加载；
    若发现加载不出来再改回日语）。
 5. 运行构建脚本，按第 6 节校验，再进游戏实测。

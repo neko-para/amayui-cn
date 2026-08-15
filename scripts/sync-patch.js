@@ -4,7 +4,7 @@
 // {
 //   "files": [
 //     { "src": "install/SC0000.BIN", "dst": "BIN/SC0000.BIN" },
-//     { "src": "tools/SExtractor/tools/Font/Amayui-CN_cnjp.ttf", "dst": "Amayui-CN_cnjp.ttf" }
+//     { "src": "res/fonts/Amayui-CN_cnjp.ttf", "dst": "Amayui-CN_cnjp.ttf" }
 //   ]
 // }
 //
