@@ -32,6 +32,7 @@ npm run assemble -- <脚本> # src → 语法展开 → 骨架校验 → 汇编 
 npm run reflow -- <文案>   # 按每行 ≤25 中文字排版（支持 ruby/nb 标注）→ 三段式页面块
 npm run reflow-apply [-- --check] [--sample N] [脚本...] # 从 // 输入原文 注释重排并替换 ADV 页正文（--check 只检查不写回；--sample N 随机抽查 N 个内容变更页）
 npm run strip-punct-space [-- --check] [脚本...] # 移除 ADV 层「？　」「！　」标点后全角空格（// 输入原文 注释行 + concat 行；--check 只检查不写回；原文存档/show-text 正文/set-string 及【】　格式空格一律不动）
+npm run adv-context -- <脚本> <行号> [--lines N] [--raw] # 提取 ADV 片段上下文：定位目标行所在页块，输出前后各 N 块（默认 10）的说话人/译文/行号范围；--raw 附加原文存档与正文行（译文评估前取证用）
 npm run sync-patch         # 按 patch/patch.config.json 同步补丁包（src 相对工程根，dst 相对 patch/）
 ```
 

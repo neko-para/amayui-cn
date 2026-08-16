@@ -25,6 +25,10 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
 ## 流程
 
 1. **定位与取证**
+   - 用户给出目标行号时，先用 `node adv-context.js <脚本> <行号> [--lines N] [--raw]`
+     （scripts 目录执行）**提取该句上下各 N 个页块（默认 10）的上下文**：每块输出
+     行号范围、`FROM` 说话人、译文；`--raw` 附加 `/* 原文存档 */` 日文与正文行，
+     作为评估前的标准取证（说话人/语流/话题均以此为准，不凭台词内容猜角色）；
    - 在 `src/<脚本>.txt` 定位目标页：`// 输入原文：…` 注释 → 该页正文；
    - 以页首 `// FROM: <id> <名称>` 确定**真实说话人**（不能凭台词内容猜测角色）；
    - 读 `/* 原文存档 */` 块内的日文原句，逐字对照；
@@ -81,6 +85,8 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
 ## 资源
 
 - `src/<脚本>.txt`：开发源（修改对象）；`data/<脚本>.txt`：只读基线（不修改）
+- `scripts/adv-context.js`：ADV 片段上下文提取（`node adv-context.js <脚本> <行号> [--lines N] [--raw]`，
+  输出目标页块前后各 N 块的说话人/译文/行号范围；--raw 附原文存档与正文）
 - `docs/keywords-角色语气.md`：说话人语气核对
 - `patch/CHANGELOG.md`：变更记录（添加到「开发中」版本节最上方）
 - `E:\Games\Eushully\天結\.agents\skills\amayui-script-translate\references\conventions.md`：
