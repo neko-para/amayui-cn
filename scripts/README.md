@@ -44,6 +44,17 @@ npm run manifest -- AIM.BIN SC0010.BIN   # 仅重算这两个文件的 MD5 并�
 npm run check -- AIM.BIN                  # 仅核对 AIM.BIN 是否与清单一致
 ```
 
+以上命令还支持 `--diff`：不列文件，自动从当前 git 变更（含未跟踪新增）中收集所有 `*.txt`，
+只处理对应的同名顶层 `*.BIN`（如 `src/SC0620.txt` → `SC0620.BIN`），改完脚本后快速核对/更新：
+
+```bash
+npm run check -- --diff      # 仅核对当前 diff 中所有 txt 对应的 bin
+npm run manifest -- --diff   # 仅重算这些 bin 的 MD5 并写回 install-manifest
+```
+
+注意：`--diff` 与文件参数互斥，且不适用于 `compare`；bin 不在清单/目标目录顶层时（如
+APPEND01 等子目录内的脚本）会打印 `[skip]` 跳过，不视为错误。
+
 ## 文件策略（config.js）
 
 - install 为**全量真拷贝**：游戏资源聚合在 ALF 内（含后续要改写的脚本），硬链接可省空间有限，
