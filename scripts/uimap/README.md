@@ -56,3 +56,24 @@ python3 scripts/uimap/scan_blocks.py <png> [--alpha N] [--min-px N] [--out out.h
 - 依赖仅 Pillow；Python 3.14 / Pillow 12.3 验证通过。
 - 大图（2000×2000）全图扫描约 1-2 秒，HTML 自包含体积约等于原图 base64（3MB 图 → ~4MB HTML）。
 - 后续工具 B（清理工作台）将消费本工具导出的 `components` 列表。
+
+## 清理执行器 clean_fill.py（工具 B 的最终清理引擎）
+
+由清理工作台导出的方案脚本调用；也支持手动使用（列填充/置透明/跨图贴底图/局部恢复）。
+
+```bash
+python3 scripts/uimap/clean_fill.py <png> <out> --x0 X --y0 Y --x1 X --y1 Y [选项]
+# 列填充（默认）：保留左 keep-l、右 keep-r（默认=keep-l，可不对称），中间逐行复制 fill-col 列
+python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --keep-l 15
+# 不对称：左 10 右 20
+python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --keep-l 10 --keep-r 20 --fill-col 1021
+# 置透明（兼容 clean_text_area.py）
+python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --transparent
+# 跨图贴底图（SO020 关闭菜单模式：从 SO021 干净块贴到目标区域）
+python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1113 --y0 602 --x1 1266 --y1 649 \
+    --paste-src res/SO021.png --paste-x0 660 --paste-y0 749 --paste-x1 813 --paste-y1 796
+# 局部恢复（复杂拼接：从输入图自身恢复某区域，覆盖粘贴/填充结果）
+#   --restore-x0 --restore-y0 --restore-x1 --restore-y1
+```
+
+方案脚本（`.tmp/<名>_clean.sh`）为链式调用：上一块输出作为下一块输入，最后一块的输出即最终清理图。

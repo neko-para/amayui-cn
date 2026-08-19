@@ -121,14 +121,16 @@
 | 运行 Python 脚本 | `shell` 服务（resolve→run，返回 exitCode/stdout/stderr）可用，可调 `scan_blocks.py` |
 | 图片直出浏览器 | `webServer.register({kind:'prefix', path:'/dsh-uimap/'})` 可把 PNG 字节直接流给 GUI 页面，免 base64 膨胀 |
 
-**架构（工具 A 直接形态）**：
+**架构（工具 A 直接形态，2026-08 落地后修订）**：
 
 1. agent 调用 `amayui_uimap` 工具（参数 `png` / `alpha` / `min_px`）→ Host 经 `shell` 跑
    `scan_blocks.py --json-only`，把最近一次扫描状态存内存；
-2. Run 卡片（`tool.view.cordis`）内渲染交互地图：原图 + 块画框、悬停详情、点击选中、缩放、
-   右侧清单过滤/勾选（复用 scan_blocks.py 现有 HTML 的交互语义）；
-3. 「导出选中 JSON」→ `host.call('uimap-export')` → Host 直写 `.tmp/<名>_selected.json`，
-   返回路径给 agent 直接读取 → 无文件下载、无手工打开 HTML。
+2. 工具结果卡片（`tool.call.toolview` key `amayui_uimap`）显示已选摘要与入口；点「🖥 全屏选择」
+   打开**全屏模态**（`shell.overlay` id `uimap-dialog`）：原图 + 块画框、悬停详情、点击选中
+   （金色蒙层）、缩放、右侧清单过滤/勾选；
+3. 「导出选中 JSON」→ `host.call('uimap-export')` → Host 直写 `.tmp/<名>_selected.json`；
+4. 选中块后可进「🧹 清理工作台」（同模态内切换视图）：列密度直方图 + 选列即时预览（列填充/
+   置透明/贴底图）→ `host.call('uimap-clean-export')` 导出方案 JSON + 清理脚本。
 
 **否决/回退**：
 
@@ -191,13 +193,31 @@
 ## 八、当前进度（2026-08，新环境）
 
 1. **第五节评估已完成并选定方案 A**（见 5.1，本环境具备动态 Cordis 插件能力，已实测验证）。
-2. **工具 A 直接形态已实现**（动态插件 `uimap-1`，源码备份于 `.dsh/plugins/uimap-1/`）：
+2. **工具 A 直接形态已实现并验证通过**（动态插件 `uimap-1`，源码备份于 `.dsh/plugins/uimap-1/`）：
    - Host 半：工具 `amayui_uimap`（shell 调 `scan_blocks.py --json-only`）+ RPC `uimap-state` / `uimap-export`
      + webServer 路由 `/dsh-uimap/*`（PNG 直出浏览器）；
-   - Client 半：`tool.view.cordis`（key self）Run 卡片内交互地图（画框/悬停/点选/缩放/清单/导出）；
-   - 导出 JSON 直写 `.tmp/<名>_selected.json`，结构与 scan_blocks.py 导出一致。
-3. **验证状态**：`uimap-1/pkg-3` 已定义并提交 `cordis_run`，Client 半首次激活需 GUI 审批
-   （run-1 曾因 `btnStyle` TDZ 渲染失败，pkg-3 已修复；审批通过后即激活）。
-4. **工具 B 设计已定**（见 6.1，Client 端 canvas 统计+预览），待工具 A 验证通过后实现。
+   - Client 半：工具结果卡片（`tool.call.toolview` key `amayui_uimap`）+ 全屏模态（`shell.overlay` id
+     `uimap-dialog`）——地图视图画框/悬停/点选（金色蒙层）/缩放/清单/导出；
+   - 导出 JSON 直写 `.tmp/<名>_selected.json`，结构与 scan_blocks.py 导出一致；
+   - 验证：SO020 244 块坐标与 docs 吻合；`_selected.json` 7 按钮全部命中；路由 200/404/400 正确。
+3. **工具 B 清理工作台已实现（pkg-9/pkg-10，已激活 run-9）**，见 §6.1：
+   - 列笔画密度直方图（与背景众数色差异>120 的像素数/列）+ 点击选列；
+   - 列填充即时预览：**原始 ImageData 缓存 + putImageData 还原**（透明背景可正确刷新，修复残留）；
+   - keepL/keepR **左右独立** + 工作画布**金色边界线拖拽**调整（拖拽侧红色高亮），预设 15/20/40/23；
+   - 置透明、跨图贴底图预览；多块逐个「加入方案」；
+   - RPC `uimap-clean-export`：写 `.tmp/<名>_clean.json` + 生成 `.tmp/<名>_clean.sh`
+     （逐块调用 `clean_fill.py` 链式脚本，`--keep-l/--keep-r/--fill-col`）；
+   - 执行器 `scripts/uimap/clean_fill.py`：列填充/置透明/贴底图/局部恢复，**已支持左右不对称保留**
+     （对称 15/15 与非对称 10/20 均通过逐像素校验）。
+4. **踩坑记录**（后续迭代必读，见 `.dsh/plugins/uimap-1/README.md`）：
+   - webServer 路由 path 不带尾斜杠；`register` 须 `ctx.effect` 包裹（disposer）；
+   - Client 动态包禁用浏览器 timer 全局 → `inject:['timer']` + `ctx.timer.timeout`；
+   - 共享 store 订阅 force 必须递增（无参 setState 会 bail out：加载中卡死/关不掉）；
+   - 列填充预览须先 putImageData 还原原始 ImageData（透明区 drawImage 覆盖不了）。
+5. **待办（下次会话）**：
+   - 扫描状态落盘（当前 Host 内存态，插件 update/重启即丢，旧卡片需重扫）；
+   - 清理工作台交互打磨（用户尚未最终确认拖拽/预览体验）；
+   - 复杂拼接局部恢复（`clean_fill.py --restore-*` 已支持，UI 尚未暴露）；
+   - 工具 B 端到端验证（导出方案 → 跑 `.sh` → 校验清理图）。
 
 ---

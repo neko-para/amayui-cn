@@ -1,8 +1,7 @@
-// 天結 UI 元素地图（工具 A 直接形态）Host 半：
+// 天結 UI 元素地图（工具 A）+ 清理工作台（工具 B）Host 半：
 // - 工具 amayui_uimap：shell 调 scan_blocks.py --json-only 扫描 PNG 连通块，最近一次结果存内存
-// - RPC uimap-state：Client 拉取最近一次扫描（blocks + 图片 URL）
-// - RPC uimap-export：Client 提交选中块 index 清单 → 直写 .tmp/<名>_selected.json
-// - webServer 路由 /dsh-uimap（无尾斜杠；带尾斜杠会导致 match 拼出 /dsh-uimap// 永不命中）
+// - RPC uimap-state / uimap-export / uimap-clean-export
+// - webServer 路由 /dsh-uimap（无尾斜杠）
 return {
   inject: ['fs'],
   apply(ctx) {
@@ -12,7 +11,7 @@ return {
     const webServer = ctx.get('webServer')
 
     let root = undefined
-    let latest = null // { rel, png, size, alpha, min_px, blocks, imageUrl }
+    let latest = null
 
     function workspaceRoot(exec) {
       try {
@@ -28,8 +27,6 @@ return {
       return "'" + String(s).replace(/'/g, "'\\''") + "'"
     }
 
-    // ---- 图片直出路由：/dsh-uimap/<相对路径> ----
-    // 注意：register path 不带尾斜杠；match 逻辑是 pathname.startsWith(prefix + '/')
     if (webServer) {
       ctx.effect(() => webServer.register({
         kind: 'prefix',
@@ -76,18 +73,18 @@ return {
       return [
         '已扫描：' + value.png + '（' + value.size.w + '×' + value.size.h + '，alpha≥' + value.alpha + '，min_px≥' + value.min_px + '）→ ' + value.block_count + ' 个连通块。',
         '',
-        '交互地图已在本插件 Run 卡片中生成：',
-        '· 图上块分级画框（橙≥100k / 蓝≥3k / 绿≥500 / 灰更小），悬停看详情，点击选中/取消（金色加粗框）；',
-        '· 右侧清单按像素数排序，可勾选、可「只显示选中」、可调最小面积过滤；',
-        '· 画布可缩放（− / + / 适应宽度）。',
+        '交互地图已在本工具卡片中生成，可点「🖥 全屏选择」打开大画布：',
+        '· 图上块分级画框（橙≥100k / 蓝≥3k / 绿≥500 / 灰更小），悬停看详情；',
+        '· 点击选中/取消，选中块显示金色蒙层；',
+        '· 选中后点「🧹 清理工作台」对每块做密度统计 + 选列即时预览；',
         '',
-        '选好后点「导出选中 JSON」→ 文件写入 .tmp/' + name + '_selected.json，直接读取该文件即可继续处理。',
+        '选好后点「导出选中 JSON」或「导出清理方案」。',
       ].join('\n')
     }
 
     harness.registerTool(ctx, harness.defineTool({
       name: 'amayui_uimap',
-      description: '扫描天結 UI 图片（PNG）的 alpha 连通块并生成交互式 UI 元素地图。调用后：1) 用 scan_blocks.py 全图扫描连通块并记住结果；2) 在本插件 Run 卡片中渲染可交互地图（图上块分级画框、悬停看详情、点击选中/取消、可缩放，右侧清单可过滤/勾选）；3) 用户选好后点「导出选中 JSON」，Host 把清单直写 .tmp/<名>_selected.json 并返回路径。替代「猜坐标 → cc_scan 逐点查询」的人工定位循环，无需再生成 HTML 文件手动打开。用户要求定位 UI 元素坐标/按钮区域/待清理文字块时使用；无 OCR、无 AI，纯几何连通块扫描。',
+      description: '扫描天結 UI 图片（PNG）的 alpha 连通块并生成交互式 UI 元素地图。调用后：1) 用 scan_blocks.py 全图扫描连通块并记住结果；2) 在本工具结果卡片中生成交互入口，点「🖥 全屏选择」打开全屏模态（图上块分级画框、悬停看详情、点击选中/取消并显示金色蒙层、可缩放，右侧清单可过滤/勾选）；3) 选中块后可进「🧹 清理工作台」：逐块统计列笔画密度直方图、点击选列即时预览列填充（保留左右 N px 复制选定列，左右保留可拖拽独立配置）、支持置透明与跨图贴底图预览，导出清理方案 JSON + clean_fill.py 调用脚本到 .tmp/。替代「猜坐标 → cc_scan 逐点查询」的人工定位循环与手工构造清理命令。用户要求定位 UI 元素坐标/按钮区域/待清理文字块/生成清理脚本时使用；无 OCR、无 AI，纯几何连通块扫描。',
       parameters: {
         png: { type: 'string', required: true, description: 'UI 图片 PNG 路径：相对工程根（如 res/SO020.png）或绝对路径' },
         alpha: { type: 'integer', description: 'alpha 前景阈值，默认 128（实体范围）；要含羽化边缘用 1' },
@@ -120,7 +117,7 @@ return {
         const alpha = args.alpha === undefined ? 128 : Math.max(0, Math.min(255, args.alpha | 0))
         const minPx = args.min_px === undefined ? 300 : Math.max(1, args.min_px | 0)
         const base = workspaceRoot(exec)
-        if (!base) throw new Error('无法确定工程根目录（会话 cwd 与 sandboxPolicy.workspaceRoot 均不可用）')
+        if (!base) throw new Error('无法确定工程根目录')
         root = base
         const sh = ctx.get('shell')
         if (!sh) throw new Error('shell 服务不可用，无法运行 scan_blocks.py')
@@ -151,12 +148,11 @@ return {
           min_px: data.min_px,
           block_count: data.blocks.length,
           imageUrl: latest.imageUrl,
-          note: '交互地图已生成，请在 Run 卡片中查看并点选元素。',
+          note: '交互地图已生成，请在工具卡片中点「全屏选择」查看并点选元素。',
         }
       },
     }))
 
-    // ---- Client→Host RPC ----
     harness.handle('uimap-state', async () => {
       if (!latest) return { ready: false }
       return {
@@ -195,6 +191,51 @@ return {
       const policy = sandboxPolicy ? sandboxPolicy.resolve() : undefined
       await fs.writeText(target, JSON.stringify(out, null, 2), undefined, undefined, policy)
       return { ok: true, path: rel, selected_count: components.length }
+    })
+
+    // 清理方案导出：keepL/keepR 独立；写方案 JSON + 生成 clean_fill.py 链式脚本
+    harness.handle('uimap-clean-export', async (args) => {
+      if (!latest) return { ok: false, error: '尚未扫描' }
+      const blocks = Array.isArray(args && args.blocks) ? args.blocks : []
+      if (!blocks.length) return { ok: false, error: '方案为空' }
+      const base = root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+      if (!base) return { ok: false, error: '无法确定工程根目录' }
+      const policy = sandboxPolicy ? sandboxPolicy.resolve() : undefined
+      const name = (latest.png.replace(/\.png$/i, '') || 'map') + '_clean'
+      const jsonRel = '.tmp/' + name + '.json'
+      const shRel = '.tmp/' + name + '.sh'
+      const plan = { png: latest.png, size: latest.size, blocks }
+      await fs.writeText(await fs.resolve(jsonRel, { cwd: base }), JSON.stringify(plan, null, 2), undefined, undefined, policy)
+      const lines = [
+        '#!/bin/bash',
+        'set -e',
+        '# 天結 UI 清理方案：' + name + '（由清理工作台导出，逐块调用 scripts/uimap/clean_fill.py）',
+        '',
+      ]
+      let prev = latest.rel
+      blocks.forEach((b, i) => {
+        const out = '.tmp/' + name + '_' + (i + 1) + '.png'
+        let cmd = 'python3 scripts/uimap/clean_fill.py ' + quote(prev) + ' ' + quote(out) +
+          ' --x0 ' + b.x0 + ' --y0 ' + b.y0 + ' --x1 ' + b.x1 + ' --y1 ' + b.y1
+        if (b.mode === 'transparent') cmd += ' --transparent'
+        else if (b.mode === 'paste' && b.paste && b.paste.src) {
+          cmd += ' --paste-src ' + quote(b.paste.src) +
+            ' --paste-x0 ' + b.paste.x0 + ' --paste-y0 ' + b.paste.y0 +
+            ' --paste-x1 ' + b.paste.x1 + ' --paste-y1 ' + b.paste.y1
+        } else {
+          const keepL = b.keepL === undefined ? 15 : b.keepL
+          const keepR = b.keepR === undefined ? keepL : b.keepR
+          const fillCol = b.fillCol === undefined ? b.x0 + keepL : b.fillCol
+          cmd += ' --keep-l ' + keepL + ' --keep-r ' + keepR + ' --fill-col ' + fillCol
+        }
+        lines.push('# 块 #' + b.index + ' (' + b.w + '×' + b.h + ')')
+        lines.push(cmd)
+        lines.push('')
+        prev = out
+      })
+      lines.push('echo "完成：最终清理图 = ' + prev + '"')
+      await fs.writeText(await fs.resolve(shRel, { cwd: base }), lines.join('\n'), undefined, undefined, policy)
+      return { ok: true, jsonPath: jsonRel, scriptPath: shRel, block_count: blocks.length }
     })
   },
 }
