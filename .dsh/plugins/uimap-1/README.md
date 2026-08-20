@@ -6,10 +6,10 @@
 
 ## 保存时的运行状态
 
-- 最近一次恢复：pluginId `uimap-2`、packageId `pkg-8`（current）、pluginRunId `run-8`（2026-08，Windows 环境）
+- 最近一次恢复：pluginId `uimap-2`、packageId `pkg-9`（current）、pluginRunId `run-9`（2026-08，Windows 环境）
   —— 恢复后新增 **pkg-3**（解释器自适应）、**pkg-4**（四边保留）、**pkg-5**（两页独立）、
-  **pkg-6**（清理预览+窄把手）、**pkg-7**（预览刷新+关插值+整像素）、**pkg-8**（一键打开），
-  本备份的 host.js / client.js 已同步为 pkg-8 版本。
+  **pkg-6**（清理预览+窄把手）、**pkg-7**（预览刷新+关插值+整像素）、**pkg-8**（一键打开）、
+  **pkg-9**（地图选中优先+导出回归），本备份的 host.js / client.js 已同步为 pkg-9 版本。
 - 原始 macOS 保存态：pluginId `uimap-1`；packageId `pkg-10`（current）；pluginRunId `run-9`
 - Host 半 + Client 半（Client 激活已获授权：单勾覆盖当前包；后续新包可能仍需一次授权）
 - 注册的模型可见工具：`amayui_uimap`
@@ -68,6 +68,9 @@
 
 ## 变更历史
 
+- `pkg-9`（2026-08 新增）：① **清理工作台块清单「地图选中优先」**——挂载/切图时若地图有选中
+  则用选中（新图新选块不再被 `.tmp/*_groups.json` 旧文件覆盖），否则文件 → 全部块；
+  ② 模态顶栏恢复**「⬇ 导出选中 JSON」**按钮（pkg-8 重写顶栏时丢失，`doExport` 一直存在）。
 - `pkg-8`（2026-08 新增）：**一键打开**——会话头部常驻按钮「🔍 UI 地图」
   （`conversation.session.header.actions` id `uimap-open`）点击自动扫描并打开模态，**无需 agent
   触发工具卡片**；模态顶部新增「🔄 重新扫描」+ png 输入框（可换图）；Host 新增 RPC `uimap-scan`

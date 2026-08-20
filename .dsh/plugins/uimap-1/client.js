@@ -14,6 +14,9 @@
 //        ③ 拖拽把手坐标与位移全部取整（Math.round），keep 值始终为整像素。
 // pkg-8: 一键打开——会话头部常驻按钮「🔍 UI 地图」点击自动扫描并打开模态（无需 agent 触发工具）；
 //        模态顶部新增「🔄 重新扫描」+ png 输入框（可换图），Host 新增 RPC uimap-scan。
+// pkg-9: ① 清理工作台块清单来源改为「地图选中优先」——地图刚选中的新块不会被
+//        .tmp/*_groups.json 等旧文件覆盖（修复扫新图后仍载入旧 16 块）；
+//        ② 模态顶栏恢复「⬇ 导出选中 JSON」按钮（pkg-8 重写顶栏时丢失，doExport 一直存在）。
 
 let timerApi = null
 
@@ -375,10 +378,17 @@ function UimapOverlay() {
         }, scanBusy ? '扫描中…' : '🔄 重新扫描'),
         React.createElement('span', { style: { flex: '1' } }),
         view === 'map'
-          ? React.createElement('button', {
-              onClick: () => setShared({ view: 'clean' }),
-              style: Object.assign({}, btnStyle, { background: '#2ba85a', borderColor: '#2ba85a', color: '#fff' }),
-            }, '🧹 清理工作台（' + selCount + ' 块）')
+          ? React.createElement(React.Fragment, null,
+              React.createElement('button', {
+                onClick: doExport,
+                disabled: exporting,
+                style: Object.assign({}, btnStyle, { background: '#c98a00', borderColor: '#c98a00', color: '#fff' }),
+              }, exporting ? '导出中…' : '⬇ 导出选中 JSON'),
+              React.createElement('button', {
+                onClick: () => setShared({ view: 'clean' }),
+                style: Object.assign({}, btnStyle, { background: '#2ba85a', borderColor: '#2ba85a', color: '#fff' }),
+              }, '🧹 清理工作台（' + selCount + ' 块）'),
+            )
           : React.createElement('button', { onClick: () => setShared({ view: 'map' }), style: btnStyle }, '← 返回选择'),
         React.createElement('button', { onClick: () => setShared({ open: false }), style: Object.assign({}, btnStyle, { background: '#e5484d', borderColor: '#e5484d', color: '#fff' }) }, '✕ 关闭'),
       ),
@@ -435,7 +445,7 @@ function UimapOverlay() {
   )
 }
 
-// ---- 清理工作台（pkg-5：块清单独立载入 + 组/块下拉；pkg-6：独立清理预览 + 窄拖拽把手）----
+// ---- 清理工作台（pkg-5：块清单独立载入 + 组/块下拉；pkg-6：独立清理预览 + 窄拖拽把手；pkg-7：预览刷新/关插值/整像素；pkg-9：地图选中优先）----
 function CleanWorkbench({ scan, selected }) {
   const [curIdx, setCurIdx] = React.useState(0)
   const [mode, setMode] = React.useState('fill')
@@ -468,7 +478,7 @@ function CleanWorkbench({ scan, selected }) {
   const dragRef = React.useRef(null) // { side, startX, startY, startKeep }
   const HIT_PX = 3 // 边距把手命中宽度（屏幕像素，固定；基准线=靠中心一侧的边沿）
 
-  // 独立载入块清单：文件（groups/selected）→ 地图选中 → 全部块
+  // 独立载入块清单：地图选中（优先）→ 文件（groups/selected）→ 全部块
   function loadFromFile() {
     host.call('uimap-clean-list', {}).then((r) => {
       if (r && r.ok && r.groups && r.groups.length) {
@@ -488,9 +498,9 @@ function CleanWorkbench({ scan, selected }) {
         setCurIdx(0)
         setSrcName('导出清单（' + r.indices.length + ' 块，' + (r.source || '') + '）')
       } else {
-        loadFromMap()
+        loadAll()
       }
-    }).catch(() => loadFromMap())
+    }).catch(() => loadAll())
   }
 
   function loadFromMap() {
@@ -511,8 +521,12 @@ function CleanWorkbench({ scan, selected }) {
     setSrcName('全部块（' + idxs.length + '）')
   }
 
+  // 挂载/切图时：地图有选中 → 用选中（新选块不会被旧文件覆盖）；否则文件 → 全部
   React.useEffect(() => {
-    if (scan) loadFromFile()
+    if (!scan) return
+    const idxs = Object.keys(selected || {}).filter((i) => selected[i])
+    if (idxs.length) loadFromMap()
+    else loadFromFile()
   }, [scan])
 
   const block = workList.length && scan ? scan.blocks.find((b) => b.index === workList[curIdx]) : null
