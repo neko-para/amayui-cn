@@ -1,11 +1,23 @@
 // 天結 UI 元素地图（工具 A）+ 清理工作台（工具 B）Client 半：
 // 修复：
 // 1) 列填充预览前先 putImageData 还原原始块（原图透明区 drawImage 无法覆盖，必须用原始 ImageData 还原）；
-// 2) keepL/keepR 左右独立，工作画布上叠加金色边界线，按住拖拽调整保留宽度。
+// 2) keepL/keepR 左右独立，工作画布上叠加金色边界线，按住拖拽调整保留宽度；
+// pkg-4: 新增 keepT/keepB 上下保留（四边保留），预览/拖拽/方案导出均支持。
+// pkg-5: 选区/清理两页独立——view 状态入 shared store；工具卡片新增「🧹 清理工作台」独立入口；
+//        CleanWorkbench 块清单改为独立载入（groups/selected 文件 → 地图选中 → 全部块），
+//        组/块下拉选择，不再依赖地图视图实时选中。
+// pkg-6: ① 新增「清理效果预览」画布（干净结果，无边界线/蒙层，与编辑画布并排）；
+//        ② 边距拖拽把手改窄——命中判定改为固定 3 屏幕像素，基准线=靠中心一侧的边沿
+//        （保留区/填充区分界线，画线/命中/拖拽同一位置）。
+// pkg-7: ① 修复预览不刷新——新增 imgReady 状态（img onLoad 触发）作为绘制/预览 effect 依赖；
+//        ② 所有 canvas drawImage 前显式关闭插值（imageSmoothingEnabled=false），放大渲染保持像素锐利；
+//        ③ 拖拽把手坐标与位移全部取整（Math.round），keep 值始终为整像素。
+// pkg-8: 一键打开——会话头部常驻按钮「🔍 UI 地图」点击自动扫描并打开模态（无需 agent 触发工具）；
+//        模态顶部新增「🔄 重新扫描」+ png 输入框（可换图），Host 新增 RPC uimap-scan。
 
 let timerApi = null
 
-const shared = { scan: null, selected: {}, open: false, imgLoaded: false }
+const shared = { scan: null, selected: {}, open: false, imgLoaded: false, view: 'map' }
 const listeners = new Set()
 function bump() { for (const l of listeners) l() }
 function setShared(patch) { Object.assign(shared, patch); bump() }
@@ -44,11 +56,46 @@ return {
       { name: 'shell.overlay', id: 'uimap-dialog', order: 100 },
       () => React.createElement(UimapOverlay),
     ))
+    slots.inject('conversation.session.header.actions', () => slots.register(
+      { name: 'conversation.session.header.actions', id: 'uimap-open', order: 30 },
+      (props) => React.createElement(HeaderUimapButton),
+    ))
   },
+}
+
+// ---- 会话头部常驻按钮：一键扫描并打开模态（无需 agent 触发工具卡片）----
+function HeaderUimapButton() {
+  const shared = useShared()
+  const [busy, setBusy] = React.useState(false)
+  function open() {
+    if (busy) return
+    if (shared.scan) { setShared({ open: true, view: shared.view || 'map' }); return }
+    setBusy(true)
+    host.call('uimap-scan', {}).then((s) => {
+      setBusy(false)
+      if (s && s.ok && s.scan) {
+        setShared({ scan: s.scan, imgLoaded: false, open: true, view: 'map' })
+      } else {
+        setShared({ open: true, view: 'map' })
+      }
+    }).catch(() => {
+      setBusy(false)
+      setShared({ open: true, view: 'map' })
+    })
+  }
+  return React.createElement('button', {
+    onClick: open,
+    disabled: busy,
+    style: Object.assign({}, btnStyle, {
+      background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff', padding: '2px 10px', fontSize: '12px',
+    }),
+    title: '扫描/打开 UI 元素地图（无需 agent）',
+  }, busy ? '扫描中…' : '🔍 UI 地图')
 }
 
 function drawMap(ctx2d, img, scan, selected, hovered, minPx, onlySel) {
   const W = scan.size.w, H = scan.size.h
+  ctx2d.imageSmoothingEnabled = false // 关闭插值，保持像素锐利
   ctx2d.clearRect(0, 0, W, H)
   ctx2d.drawImage(img, 0, 0, W, H)
   const visible = scan.blocks.filter((b) => b.px >= minPx && (!onlySel || selected[b.index]))
@@ -134,6 +181,7 @@ function AmayuiUimapToolView(props) {
         onClick: () => setShared({ open: true }),
         style: Object.assign({}, btnStyle, { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' }),
       }, '🖥 全屏选择'),
+      React.createElement('button', { onClick: () => setShared({ open: true, view: 'clean' }), style: Object.assign({}, btnStyle, { background: '#2ba85a', borderColor: '#2ba85a', color: '#fff' }) }, '🧹 清理工作台'),
       React.createElement('button', { onClick: doExport, disabled: exporting, style: Object.assign({}, btnStyle, { background: '#c98a00', borderColor: '#c98a00', color: '#fff' }) },
         exporting ? '导出中…' : '导出选中 JSON'),
       React.createElement('button', { onClick: () => setShared({ selected: {} }), style: btnStyle }, '清空'),
@@ -158,14 +206,14 @@ function AmayuiUimapToolView(props) {
       }),
     ),
     React.createElement('div', { style: { marginTop: '6px', color: '#98a1b0', fontSize: '11px' } },
-      '点「全屏选择」打开大画布点选；导出后 agent 读取 .tmp/' + (argPng ? argPng.replace(/\.png$/i, '') : '') + '_selected.json 继续。'),
+      '「全屏选择」打开地图选区；「清理工作台」直接进清理页（块清单独立载入）。也可用会话头部「🔍 UI 地图」按钮一键打开（无需 agent）。导出后 agent 读取 .tmp/' + (argPng ? argPng.replace(/\.png$/i, '') : '') + '_selected.json 继续。'),
   )
 }
 
 // ---- 全屏模态 ----
 function UimapOverlay() {
   const shared = useShared()
-  const [view, setView] = React.useState('map')
+  const view = shared.view || 'map'
   const [minPx, setMinPx] = React.useState(300)
   const [onlySel, setOnlySel] = React.useState(false)
   const [zoom, setZoom] = React.useState(1)
@@ -174,6 +222,8 @@ function UimapOverlay() {
   const [exportMsg, setExportMsg] = React.useState('')
   const [exporting, setExporting] = React.useState(false)
   const [err, setErr] = React.useState(null)
+  const [scanPng, setScanPng] = React.useState('') // 重新扫描输入框
+  const [scanBusy, setScanBusy] = React.useState(false)
   const canvasRef = React.useRef(null)
   const imgRef = React.useRef(null)
   const wrapRef = React.useRef(null)
@@ -181,9 +231,10 @@ function UimapOverlay() {
   React.useEffect(() => {
     if (!shared.open) return
     setErr(null)
+    if (shared.scan && shared.scan.rel) setScanPng(shared.scan.rel)
     host.call('uimap-state', {}).then((s) => {
       if (s && s.ready) setShared({ scan: s, imgLoaded: false })
-      else setErr('尚未扫描：请先让助手运行 amayui_uimap 工具。')
+      else setErr('尚未扫描：请点「🔄 重新扫描」输入 png 路径，或让助手运行 amayui_uimap 工具。')
     }).catch((e) => setErr('读取扫描状态失败：' + String(e && e.message || e)))
   }, [shared.open])
 
@@ -203,6 +254,23 @@ function UimapOverlay() {
     if (!cv || !img || !shared.scan || !shared.imgLoaded) return
     drawMap(cv.getContext('2d'), img, shared.scan, shared.selected, hovered, minPx, onlySel)
   }, [shared.scan, shared.imgLoaded, shared.selected, hovered, minPx, onlySel])
+
+  function rescan() {
+    if (scanBusy) return
+    setScanBusy(true)
+    setErr(null)
+    host.call('uimap-scan', { png: scanPng || undefined }).then((s) => {
+      setScanBusy(false)
+      if (s && s.ok && s.scan) {
+        setShared({ scan: s.scan, imgLoaded: false, selected: {}, view: 'map' })
+      } else {
+        setErr('扫描失败：' + String(s && s.error || '未知错误'))
+      }
+    }).catch((e) => {
+      setScanBusy(false)
+      setErr('扫描失败：' + String(e && e.message || e))
+    })
+  }
 
   if (!shared.open) return null
   const scan = shared.scan
@@ -294,13 +362,24 @@ function UimapOverlay() {
         React.createElement('b', { style: { fontSize: '13px' } }, '🖥 UI 元素地图 · ' + (view === 'map' ? '选择' : '清理工作台')),
         scan && view === 'map' && React.createElement('span', { style: { color: '#666' } },
           scan.png + ' · ' + scan.size.w + '×' + scan.size.h + ' · ' + scan.blocks.length + ' 块 · 已选 ' + selCount),
+        React.createElement('input', {
+          value: scanPng,
+          onChange: (e) => setScanPng(e.target.value),
+          placeholder: 'png 路径（如 res/SO020.png）',
+          style: { width: '180px', padding: '2px 6px', border: '1px solid #d8dce3', borderRadius: '4px', fontSize: '12px' },
+        }),
+        React.createElement('button', {
+          onClick: rescan,
+          disabled: scanBusy,
+          style: Object.assign({}, btnStyle, { background: '#e07b00', borderColor: '#e07b00', color: '#fff' }),
+        }, scanBusy ? '扫描中…' : '🔄 重新扫描'),
         React.createElement('span', { style: { flex: '1' } }),
         view === 'map'
           ? React.createElement('button', {
-              onClick: () => setView('clean'),
+              onClick: () => setShared({ view: 'clean' }),
               style: Object.assign({}, btnStyle, { background: '#2ba85a', borderColor: '#2ba85a', color: '#fff' }),
             }, '🧹 清理工作台（' + selCount + ' 块）')
-          : React.createElement('button', { onClick: () => setView('map'), style: btnStyle }, '← 返回选择'),
+          : React.createElement('button', { onClick: () => setShared({ view: 'map' }), style: btnStyle }, '← 返回选择'),
         React.createElement('button', { onClick: () => setShared({ open: false }), style: Object.assign({}, btnStyle, { background: '#e5484d', borderColor: '#e5484d', color: '#fff' }) }, '✕ 关闭'),
       ),
       view === 'map'
@@ -356,12 +435,14 @@ function UimapOverlay() {
   )
 }
 
-// ---- 清理工作台（keepL/keepR 独立 + 画布拖拽边界 + 原始 ImageData 还原）----
+// ---- 清理工作台（pkg-5：块清单独立载入 + 组/块下拉；pkg-6：独立清理预览 + 窄拖拽把手）----
 function CleanWorkbench({ scan, selected }) {
   const [curIdx, setCurIdx] = React.useState(0)
   const [mode, setMode] = React.useState('fill')
   const [keepL, setKeepL] = React.useState(15)
   const [keepR, setKeepR] = React.useState(15)
+  const [keepT, setKeepT] = React.useState(0)
+  const [keepB, setKeepB] = React.useState(0)
   const [fillColRel, setFillColRel] = React.useState(null)
   const [density, setDensity] = React.useState(null)
   const [err, setErr] = React.useState(null)
@@ -373,46 +454,101 @@ function CleanWorkbench({ scan, selected }) {
   const [plan, setPlan] = React.useState([])
   const [planMsg, setPlanMsg] = React.useState('')
   const [exporting, setExporting] = React.useState(false)
-  const [dragging, setDragging] = React.useState(null) // 'l' | 'r' | null
+  const [dragging, setDragging] = React.useState(null) // 'l' | 'r' | 't' | 'b' | null
+  const [srcName, setSrcName] = React.useState('') // 块清单来源描述
+  const [workGroups, setWorkGroups] = React.useState([]) // [{name, indices:[]}]
+  const [workList, setWorkList] = React.useState([]) // 平铺块索引
+  const [imgReady, setImgReady] = React.useState(false) // 主图加载完成（绘制/预览 effect 依赖，修复预览不刷新）
   const workRef = React.useRef(null)
+  const previewRef = React.useRef(null) // 清理效果预览（干净结果）
   const histRef = React.useRef(null)
   const srcImgRef = React.useRef(null)
   const mainImgRef = React.useRef(null)
   const origRef = React.useRef(null) // 原始块 ImageData（还原用）
-  const dragRef = React.useRef(null) // { side, startX, startKeep }
+  const dragRef = React.useRef(null) // { side, startX, startY, startKeep }
+  const HIT_PX = 3 // 边距把手命中宽度（屏幕像素，固定；基准线=靠中心一侧的边沿）
 
-  const selIndices = Object.keys(selected).filter((i) => selected[i]).map(Number).sort((a, b) => a - b)
-  const block = selIndices.length ? scan.blocks.find((b) => b.index === selIndices[curIdx]) : null
+  // 独立载入块清单：文件（groups/selected）→ 地图选中 → 全部块
+  function loadFromFile() {
+    host.call('uimap-clean-list', {}).then((r) => {
+      if (r && r.ok && r.groups && r.groups.length) {
+        const flat = []
+        const gs = r.groups.map((g) => {
+          const idxs = g.indices.map(Number).filter((n) => Number.isInteger(n))
+          flat.push(...idxs)
+          return { name: String(g.name || '组'), indices: idxs }
+        }).filter((g) => g.indices.length)
+        setWorkGroups(gs)
+        setWorkList(flat)
+        setCurIdx(0)
+        setSrcName('导出清单（' + flat.length + ' 块 / ' + gs.length + ' 组，' + (r.source || '') + '）')
+      } else if (r && r.ok && r.indices && r.indices.length) {
+        setWorkGroups([])
+        setWorkList(r.indices.map(Number))
+        setCurIdx(0)
+        setSrcName('导出清单（' + r.indices.length + ' 块，' + (r.source || '') + '）')
+      } else {
+        loadFromMap()
+      }
+    }).catch(() => loadFromMap())
+  }
 
-  // 主图加载完成 → 绘制当前块并缓存原始 ImageData
+  function loadFromMap() {
+    const idxs = Object.keys(selected || {}).filter((i) => selected[i]).map(Number).sort((a, b) => a - b)
+    if (!idxs.length) { loadAll(); return }
+    setWorkGroups([])
+    setWorkList(idxs)
+    setCurIdx(0)
+    setSrcName('地图选中（' + idxs.length + ' 块）')
+  }
+
+  function loadAll() {
+    if (!scan) return
+    const idxs = scan.blocks.map((b) => b.index)
+    setWorkGroups([])
+    setWorkList(idxs)
+    setCurIdx(0)
+    setSrcName('全部块（' + idxs.length + '）')
+  }
+
+  React.useEffect(() => {
+    if (scan) loadFromFile()
+  }, [scan])
+
+  const block = workList.length && scan ? scan.blocks.find((b) => b.index === workList[curIdx]) : null
+
+  // 主图加载完成 → 绘制当前块并缓存原始 ImageData（关闭插值）
   React.useEffect(() => {
     const img = mainImgRef.current
     if (!img || !block || !scan) return
-    if (!(img.complete && img.naturalWidth > 0)) return
+    if (!imgReady && !(img.complete && img.naturalWidth > 0)) return
     const cv = workRef.current
     if (!cv) return
     const bw = block.x1 - block.x0 + 1, bh = block.y1 - block.y0 + 1
     cv.width = bw; cv.height = bh
     const ctx2d = cv.getContext('2d')
+    ctx2d.imageSmoothingEnabled = false // 关闭插值，放大渲染保持像素锐利
     ctx2d.clearRect(0, 0, bw, bh)
     ctx2d.drawImage(img, block.x0, block.y0, bw, bh, 0, 0, bw, bh)
     origRef.current = ctx2d.getImageData(0, 0, bw, bh)
     const dens = computeDensity(origRef.current.data, bw, bh)
     setDensity(dens)
     setFillColRel(null)
-  }, [block, scan])
+  }, [block, scan, imgReady])
 
   // 预览：先 putImageData 还原原始，再应用填充/透明/粘贴，最后画保留边界线
   React.useEffect(() => {
     const cv = workRef.current
     const img = mainImgRef.current
     if (!cv || !img || !block || !scan) return
-    if (!(img.complete && img.naturalWidth > 0) || !origRef.current) return
+    if (!imgReady && !(img.complete && img.naturalWidth > 0)) return
+    if (!origRef.current) return
     const bw = block.x1 - block.x0 + 1, bh = block.y1 - block.y0 + 1
     const ctx2d = cv.getContext('2d')
+    ctx2d.imageSmoothingEnabled = false
     ctx2d.putImageData(origRef.current, 0, 0) // 还原（透明像素也能被覆盖）
     if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
-      applyColumnFill(ctx2d, bw, bh, keepL, keepR, fillColRel)
+      applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel)
     } else if (mode === 'transparent') {
       applyTransparent(ctx2d, bw, bh)
     } else if (mode === 'paste') {
@@ -422,18 +558,57 @@ function CleanWorkbench({ scan, selected }) {
         ctx2d.drawImage(srcImg, sx0, sy0, sx1 - sx0 + 1, sy1 - sy0 + 1, 0, 0, bw, bh)
       }
     }
-    // 保留区边界线（金色，拖拽侧红色高亮）
+    // 四边保留区边界线（金色，拖拽侧红色高亮）
     if (mode === 'fill') {
       ctx2d.fillStyle = 'rgba(201,138,0,.08)'
-      ctx2d.fillRect(0, 0, keepL, bh)
-      ctx2d.fillRect(bw - keepR, 0, keepR, bh)
-      ctx2d.strokeStyle = dragging === 'l' ? '#e5484d' : '#c98a00'
+      if (keepL > 0) ctx2d.fillRect(0, 0, keepL, bh)
+      if (keepR > 0) ctx2d.fillRect(bw - keepR, 0, keepR, bh)
+      if (keepT > 0) ctx2d.fillRect(0, 0, bw, keepT)
+      if (keepB > 0) ctx2d.fillRect(0, bh - keepB, bw, keepB)
       ctx2d.lineWidth = 2
-      ctx2d.beginPath(); ctx2d.moveTo(keepL + 1, 0); ctx2d.lineTo(keepL + 1, bh); ctx2d.stroke()
-      ctx2d.strokeStyle = dragging === 'r' ? '#e5484d' : '#c98a00'
-      ctx2d.beginPath(); ctx2d.moveTo(bw - keepR - 1, 0); ctx2d.lineTo(bw - keepR - 1, bh); ctx2d.stroke()
+      if (keepL > 0) {
+        ctx2d.strokeStyle = dragging === 'l' ? '#e5484d' : '#c98a00'
+        ctx2d.beginPath(); ctx2d.moveTo(keepL + 1, 0); ctx2d.lineTo(keepL + 1, bh); ctx2d.stroke()
+      }
+      if (keepR > 0) {
+        ctx2d.strokeStyle = dragging === 'r' ? '#e5484d' : '#c98a00'
+        ctx2d.beginPath(); ctx2d.moveTo(bw - keepR - 1, 0); ctx2d.lineTo(bw - keepR - 1, bh); ctx2d.stroke()
+      }
+      if (keepT > 0) {
+        ctx2d.strokeStyle = dragging === 't' ? '#e5484d' : '#c98a00'
+        ctx2d.beginPath(); ctx2d.moveTo(0, keepT + 1); ctx2d.lineTo(bw, keepT + 1); ctx2d.stroke()
+      }
+      if (keepB > 0) {
+        ctx2d.strokeStyle = dragging === 'b' ? '#e5484d' : '#c98a00'
+        ctx2d.beginPath(); ctx2d.moveTo(0, bh - keepB - 1); ctx2d.lineTo(bw, bh - keepB - 1); ctx2d.stroke()
+      }
     }
-  }, [mode, keepL, keepR, fillColRel, block, scan, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1, dragging])
+  }, [mode, keepL, keepR, keepT, keepB, fillColRel, block, scan, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1, dragging])
+
+  // 清理效果预览：干净结果（无边界线/蒙层），与编辑画布并排；依赖 imgReady 保证随参数刷新
+  React.useEffect(() => {
+    const cv = previewRef.current
+    const img = mainImgRef.current
+    if (!cv || !img || !block || !scan) return
+    if (!imgReady && !(img.complete && img.naturalWidth > 0)) return
+    if (!origRef.current) return
+    const bw = block.x1 - block.x0 + 1, bh = block.y1 - block.y0 + 1
+    cv.width = bw; cv.height = bh
+    const ctx2d = cv.getContext('2d')
+    ctx2d.imageSmoothingEnabled = false
+    ctx2d.putImageData(origRef.current, 0, 0)
+    if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
+      applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel)
+    } else if (mode === 'transparent') {
+      applyTransparent(ctx2d, bw, bh)
+    } else if (mode === 'paste') {
+      const srcImg = srcImgRef.current
+      const sx0 = parseInt(pasteX0, 10), sy0 = parseInt(pasteY0, 10), sx1 = parseInt(pasteX1, 10), sy1 = parseInt(pasteY1, 10)
+      if (srcImg && srcImg.complete && srcImg.naturalWidth > 0 && !isNaN(sx0) && !isNaN(sy0) && !isNaN(sx1) && !isNaN(sy1)) {
+        ctx2d.drawImage(srcImg, sx0, sy0, sx1 - sx0 + 1, sy1 - sy0 + 1, 0, 0, bw, bh)
+      }
+    }
+  }, [mode, keepL, keepR, keepT, keepB, fillColRel, block, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1])
 
   // 直方图
   React.useEffect(() => {
@@ -460,11 +635,16 @@ function CleanWorkbench({ scan, selected }) {
     }
   }, [density, fillColRel, keepL, keepR, block])
 
+  if (!scan || !workList.length) {
+    return React.createElement('div', { style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#98a1b0', padding: '40px' } },
+      '正在载入块清单…（无清单时可在右侧载入地图选中或全部块）')
+  }
   if (!block) {
     return React.createElement('div', { style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#98a1b0', padding: '40px' } },
-      '请先在地图视图中选中要清理的块（点图上的块或勾选清单）。')
+      '块清单为空：请在右侧选择载入来源。')
   }
   const bw = block.x1 - block.x0 + 1
+  const bh = block.y1 - block.y0 + 1
   const scale = Math.max(2, Math.min(8, Math.round(480 / bw)))
 
   function onHistClick(e) {
@@ -475,16 +655,25 @@ function CleanWorkbench({ scan, selected }) {
     setFillColRel(Math.max(0, Math.min(bw - 1, col)))
   }
 
-  // 画布拖拽：按下时判定命中哪条边界线
+  // 画布拖拽：命中判定用屏幕像素（固定窄把手，整像素取整），基准线 = 靠中心一侧的边沿
   function canvasMouseDown(e) {
     const cv = workRef.current
     const r = cv.getBoundingClientRect()
-    const x = Math.round((e.clientX - r.left) / r.width * bw)
-    const hitL = Math.abs(x - keepL) <= 2
-    const hitR = Math.abs(x - (bw - keepR)) <= 2
-    if (hitL || hitR) {
-      const side = hitL ? 'l' : 'r'
-      dragRef.current = { side, startX: x, startKeep: side === 'l' ? keepL : keepR }
+    const mx = e.clientX - r.left
+    const my = e.clientY - r.top
+    const sx = (v) => Math.round(v / bw * r.width)
+    const sy = (v) => Math.round(v / bh * r.height)
+    const hitL = keepL > 0 && Math.abs(mx - sx(keepL + 1)) <= HIT_PX
+    const hitR = keepR > 0 && Math.abs(mx - sx(bw - keepR - 1)) <= HIT_PX
+    const hitT = keepT > 0 && Math.abs(my - sy(keepT + 1)) <= HIT_PX
+    const hitB = keepB > 0 && Math.abs(my - sy(bh - keepB - 1)) <= HIT_PX
+    if (hitL || hitR || hitT || hitB) {
+      let side = 'l'
+      if (hitL) side = 'l'
+      else if (hitR) side = 'r'
+      else if (hitT) side = 't'
+      else side = 'b'
+      dragRef.current = { side, startX: mx, startY: my, startKeep: side === 'l' ? keepL : side === 'r' ? keepR : side === 't' ? keepT : keepB }
       setDragging(side)
     }
   }
@@ -492,12 +681,16 @@ function CleanWorkbench({ scan, selected }) {
     if (!dragRef.current) return
     const cv = workRef.current
     const r = cv.getBoundingClientRect()
-    const x = Math.round((e.clientX - r.left) / r.width * bw)
     const d = dragRef.current
-    const delta = x - d.startX
-    const maxKeep = Math.max(0, bw - 4)
-    if (d.side === 'l') setKeepL(Math.max(0, Math.min(maxKeep, d.startKeep + delta)))
-    else setKeepR(Math.max(0, Math.min(maxKeep, d.startKeep - delta)))
+    // 位移按整像素取整，保证 keep 值始终是整数
+    const dx = Math.round(((e.clientX - r.left) - d.startX) / r.width * bw)
+    const dy = Math.round(((e.clientY - r.top) - d.startY) / r.height * bh)
+    const maxKeepX = Math.max(0, bw - 4)
+    const maxKeepY = Math.max(0, bh - 4)
+    if (d.side === 'l') setKeepL(Math.max(0, Math.min(maxKeepX, d.startKeep + dx)))
+    else if (d.side === 'r') setKeepR(Math.max(0, Math.min(maxKeepX, d.startKeep - dx)))
+    else if (d.side === 't') setKeepT(Math.max(0, Math.min(maxKeepY, d.startKeep + dy)))
+    else setKeepB(Math.max(0, Math.min(maxKeepY, d.startKeep - dy)))
   }
   function canvasMouseUp() {
     dragRef.current = null
@@ -515,6 +708,8 @@ function CleanWorkbench({ scan, selected }) {
       const fc = fillColRel !== null && fillColRel !== undefined ? fillColRel : keepL
       entry.keepL = keepL
       entry.keepR = keepR
+      entry.keepT = keepT
+      entry.keepB = keepB
       entry.fillCol = block.x0 + fc
     } else if (mode === 'paste') {
       entry.paste = {
@@ -525,8 +720,8 @@ function CleanWorkbench({ scan, selected }) {
     }
     const next = plan.concat([entry])
     setPlan(next)
-    setPlanMsg('已加入 #' + block.index + '（' + (mode === 'fill' ? '列填充 L=' + keepL + ' R=' + keepR + ' col=' + entry.fillCol : mode === 'transparent' ? '置透明' : '贴底图') + '）')
-    if (curIdx < selIndices.length - 1) setCurIdx(curIdx + 1)
+    setPlanMsg('已加入 #' + block.index + '（' + (mode === 'fill' ? '列填充 L=' + keepL + ' R=' + keepR + ' T=' + keepT + ' B=' + keepB + ' col=' + entry.fillCol : mode === 'transparent' ? '置透明' : '贴底图') + '）')
+    if (curIdx < workList.length - 1) setCurIdx(curIdx + 1)
   }
 
   function removePlan(i) {
@@ -547,25 +742,60 @@ function CleanWorkbench({ scan, selected }) {
     })
   }
 
+  // 组/块下拉：按组 optgroup 展示（无组时平铺）
+  function blockOptions() {
+    if (workGroups.length) {
+      const opts = []
+      workGroups.forEach((g) => {
+        const children = g.indices.map((idx) => {
+          const b = scan.blocks.find((x) => x.index === idx)
+          const pos = workList.indexOf(idx)
+          if (!b || pos < 0) return null
+          return React.createElement('option', { key: idx, value: pos }, '#' + idx + '  ' + b.w + '×' + b.h + '  x=' + b.x0 + '..' + b.x1 + ' y=' + b.y0 + '..' + b.y1)
+        }).filter(Boolean)
+        opts.push(React.createElement('optgroup', { key: g.name, label: g.name }, children))
+      })
+      return opts
+    }
+    return workList.map((idx, i) => {
+      const b = scan.blocks.find((x) => x.index === idx)
+      if (!b) return null
+      return React.createElement('option', { key: idx, value: i }, '#' + idx + '  ' + b.w + '×' + b.h + '  x=' + b.x0 + '..' + b.x1 + ' y=' + b.y0 + '..' + b.y1)
+    })
+  }
+
   return React.createElement('div', { style: { flex: 1, display: 'flex', minHeight: 0 } },
     React.createElement('div', { style: { flex: 1, overflow: 'auto', padding: '12px' } },
       React.createElement('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' } },
-        React.createElement('b', null, '清理块 ' + (curIdx + 1) + '/' + selIndices.length),
+        React.createElement('b', null, '清理块 ' + (curIdx + 1) + '/' + workList.length),
         React.createElement('button', { onClick: () => setCurIdx(Math.max(0, curIdx - 1)), disabled: curIdx === 0, style: btnStyle }, '‹ 上一块'),
-        React.createElement('button', { onClick: () => setCurIdx(Math.min(selIndices.length - 1, curIdx + 1)), disabled: curIdx >= selIndices.length - 1, style: btnStyle }, '下一块 ›'),
+        React.createElement('button', { onClick: () => setCurIdx(Math.min(workList.length - 1, curIdx + 1)), disabled: curIdx >= workList.length - 1, style: btnStyle }, '下一块 ›'),
+        React.createElement('select', { value: curIdx, onChange: (e) => setCurIdx(Number(e.target.value)), style: { maxWidth: '360px' } }, blockOptions()),
         React.createElement('span', { style: { color: '#666', fontFamily: 'ui-monospace,Menlo,monospace' } },
           '#' + block.index + '  ' + block.w + '×' + block.h + '  x=' + block.x0 + '..' + block.x1 + ' y=' + block.y0 + '..' + block.y1),
       ),
-      React.createElement('div', { style: {
-        border: '1px solid #d8dce3', borderRadius: '6px', padding: '8px', background: 'repeating-conic-gradient(#fff 0 25%, #f0f0f0 0 50%) 0 0/16px 16px',
-        display: 'inline-block', marginBottom: '8px',
-      } },
-        React.createElement('canvas', { ref: workRef, style: {
-          width: bw * scale, height: block.h * scale, imageRendering: 'pixelated', display: 'block', cursor: dragging ? 'ew-resize' : 'pointer',
-        },
-          onMouseDown: canvasMouseDown, onMouseMove: canvasMouseMove, onMouseUp: canvasMouseUp, onMouseLeave: canvasMouseUp }),
-        React.createElement('img', { ref: mainImgRef, src: scan.imageUrl, alt: '', style: { display: 'none' } }),
-        React.createElement('img', { ref: srcImgRef, src: pasteSrc ? '/dsh-uimap/' + pasteSrc.replace(/^\//, '') : '', alt: '', style: { display: 'none' } }),
+      React.createElement('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '8px', alignItems: 'flex-start' } },
+        React.createElement('div', { style: {
+          border: '1px solid #d8dce3', borderRadius: '6px', padding: '8px', background: 'repeating-conic-gradient(#fff 0 25%, #f0f0f0 0 50%) 0 0/16px 16px',
+          display: 'inline-block',
+        } },
+          React.createElement('div', { style: { color: '#666', fontSize: '11px', marginBottom: '4px' } }, '编辑画布（拖动金色边线调保留区）'),
+          React.createElement('canvas', { ref: workRef, style: {
+            width: bw * scale, height: bh * scale, imageRendering: 'pixelated', display: 'block', cursor: dragging ? 'ew-resize' : 'pointer',
+          },
+            onMouseDown: canvasMouseDown, onMouseMove: canvasMouseMove, onMouseUp: canvasMouseUp, onMouseLeave: canvasMouseUp }),
+          React.createElement('img', { ref: mainImgRef, src: scan.imageUrl, alt: '', style: { display: 'none' },\n            onLoad: () => setImgReady(true) }),
+          React.createElement('img', { ref: srcImgRef, src: pasteSrc ? '/dsh-uimap/' + pasteSrc.replace(/^\//, '') : '', alt: '', style: { display: 'none' } }),
+        ),
+        React.createElement('div', { style: {
+          border: '1px solid #2ba85a', borderRadius: '6px', padding: '8px', background: 'repeating-conic-gradient(#fff 0 25%, #f0f0f0 0 50%) 0 0/16px 16px',
+          display: 'inline-block',
+        } },
+          React.createElement('div', { style: { color: '#2ba85a', fontSize: '11px', marginBottom: '4px' } }, '清理效果预览（最终结果）'),
+          React.createElement('canvas', { ref: previewRef, style: {
+            width: bw * scale, height: bh * scale, imageRendering: 'pixelated', display: 'block',
+          } }),
+        ),
       ),
       React.createElement('div', { style: { marginBottom: '8px' } },
         React.createElement('div', { style: { color: '#666', marginBottom: '2px', fontSize: '11px' } },
@@ -577,6 +807,15 @@ function CleanWorkbench({ scan, selected }) {
       err && React.createElement('div', { style: { color: '#b3261e', margin: '4px 0' } }, err),
     ),
     React.createElement('div', { style: { width: '320px', flex: 'none', borderLeft: '1px solid #d8dce3', display: 'flex', flexDirection: 'column', minHeight: 0 } },
+      React.createElement('div', { style: { padding: '8px 12px', borderBottom: '1px solid #d8dce3' } },
+        React.createElement('div', { style: { fontWeight: 600, marginBottom: '6px' } }, '块清单来源'),
+        React.createElement('div', { style: { display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' } },
+          React.createElement('button', { onClick: loadFromFile, style: Object.assign({}, btnStyle, { borderColor: '#2ba85a', color: '#2ba85a' }) }, '从导出清单'),
+          React.createElement('button', { onClick: loadFromMap, style: Object.assign({}, btnStyle, { borderColor: '#1f7ad6', color: '#1f7ad6' }) }, '从地图选中'),
+          React.createElement('button', { onClick: loadAll, style: Object.assign({}, btnStyle, { borderColor: '#c98a00', color: '#c98a00' }) }, '全部块'),
+        ),
+        srcName && React.createElement('div', { style: { color: '#1f7a3d', fontSize: '11px', fontFamily: 'ui-monospace,Menlo,monospace', wordBreak: 'break-all' } }, srcName),
+      ),
       React.createElement('div', { style: { padding: '8px 12px', borderBottom: '1px solid #d8dce3' } },
         React.createElement('div', { style: { fontWeight: 600, marginBottom: '6px' } }, '清理方式'),
         React.createElement('div', { style: { display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' } },
@@ -598,8 +837,18 @@ function CleanWorkbench({ scan, selected }) {
               React.createElement('input', { type: 'number', min: '0', max: '80', value: keepR, onChange: (e) => setKeepR(Math.max(0, Math.min(80, parseInt(e.target.value, 10) || 0))), style: { width: '52px' } }),
             ),
           ),
+          React.createElement('div', { style: { display: 'flex', gap: '8px', marginBottom: '6px', alignItems: 'center' } },
+            React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
+              '上 T',
+              React.createElement('input', { type: 'number', min: '0', max: '80', value: keepT, onChange: (e) => setKeepT(Math.max(0, Math.min(80, parseInt(e.target.value, 10) || 0))), style: { width: '52px' } }),
+            ),
+            React.createElement('label', { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
+              '下 B',
+              React.createElement('input', { type: 'number', min: '0', max: '80', value: keepB, onChange: (e) => setKeepB(Math.max(0, Math.min(80, parseInt(e.target.value, 10) || 0))), style: { width: '52px' } }),
+            ),
+          ),
           React.createElement('div', { style: { color: '#666', fontSize: '11px', marginBottom: '6px' } },
-            '填充列（绝对 x）：' + (fillColRel !== null && fillColRel !== undefined ? block.x0 + fillColRel : '未选（默认 ' + (block.x0 + keepL) + '）') + '  ← 点直方图选列；左右边界可在图上拖拽'),
+            '填充列（绝对 x）：' + (fillColRel !== null && fillColRel !== undefined ? block.x0 + fillColRel : '未选（默认 ' + (block.x0 + keepL) + '）') + '  ← 点直方图选列；拖拽基准=靠中心一侧的边沿（把手 ±' + HIT_PX + 'px，整像素）'),
         ),
         mode === 'paste' && React.createElement('div', null,
           React.createElement('div', { style: { color: '#666', fontSize: '11px', marginBottom: '4px' } }, '来源图（相对工程根，如 res/SO021.png）：'),
@@ -625,7 +874,7 @@ function CleanWorkbench({ scan, selected }) {
             } },
               React.createElement('span', { style: { color: '#8a94a3', fontFamily: 'ui-monospace,Menlo,monospace', width: '30px', flex: 'none' } }, '#' + p.index),
               React.createElement('span', { style: { flex: '1', fontSize: '11px', color: '#333' } },
-                p.mode === 'fill' ? ('填充 L=' + p.keepL + ' R=' + p.keepR + ' col=' + p.fillCol)
+                p.mode === 'fill' ? ('填充 L=' + p.keepL + ' R=' + p.keepR + ' T=' + (p.keepT || 0) + ' B=' + (p.keepB || 0) + ' col=' + p.fillCol)
                   : p.mode === 'transparent' ? '置透明' : ('贴 ' + (p.paste && p.paste.src || '?'))),
               React.createElement('button', { onClick: () => removePlan(i), style: Object.assign({}, btnStyle, { padding: '1px 8px', color: '#e5484d' }) }, '✕'),
             )),
@@ -665,11 +914,12 @@ function computeDensity(data, bw, bh) {
   return { cols, rows, bg: { r: bgR, g: bgG, b: bgB } }
 }
 
-function applyColumnFill(ctx2d, bw, bh, keepL, keepR, fillColRel) {
+function applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel) {
   const imgData = ctx2d.getImageData(0, 0, bw, bh)
   const d = imgData.data
   const rightFrom = bw - keepR
-  for (let y = 0; y < bh; y++) {
+  const bottomFrom = bh - keepB
+  for (let y = keepT; y < bottomFrom; y++) {
     const rowBase = y * bw * 4
     const srcIdx = rowBase + fillColRel * 4
     const sr = d[srcIdx], sg = d[srcIdx + 1], sb = d[srcIdx + 2], sa = d[srcIdx + 3]

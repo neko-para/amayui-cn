@@ -6,7 +6,11 @@
 
 ## 保存时的运行状态
 
-- pluginId：`uimap-1`；packageId：`pkg-10`（current）；pluginRunId：`run-9`
+- 最近一次恢复：pluginId `uimap-2`、packageId `pkg-8`（current）、pluginRunId `run-8`（2026-08，Windows 环境）
+  —— 恢复后新增 **pkg-3**（解释器自适应）、**pkg-4**（四边保留）、**pkg-5**（两页独立）、
+  **pkg-6**（清理预览+窄把手）、**pkg-7**（预览刷新+关插值+整像素）、**pkg-8**（一键打开），
+  本备份的 host.js / client.js 已同步为 pkg-8 版本。
+- 原始 macOS 保存态：pluginId `uimap-1`；packageId `pkg-10`（current）；pluginRunId `run-9`
 - Host 半 + Client 半（Client 激活已获授权：单勾覆盖当前包；后续新包可能仍需一次授权）
 - 注册的模型可见工具：`amayui_uimap`
 - Client 插槽：
@@ -64,7 +68,32 @@
 
 ## 变更历史
 
-- `pkg-10`（current）：清理工作台修复——列填充预览前 putImageData 还原原始块（透明区可刷新）；
+- `pkg-8`（2026-08 新增）：**一键打开**——会话头部常驻按钮「🔍 UI 地图」
+  （`conversation.session.header.actions` id `uimap-open`）点击自动扫描并打开模态，**无需 agent
+  触发工具卡片**；模态顶部新增「🔄 重新扫描」+ png 输入框（可换图）；Host 新增 RPC `uimap-scan`
+  （png 缺省用上次路径），`runScan` 抽为公共函数供工具 execute 与 RPC 复用。
+- `pkg-7`（2026-08 新增）：修复三处渲染问题——① **预览不刷新**：新增 `imgReady` 状态
+  （img onLoad 触发）作为绘制/预览 effect 依赖，参数变化即时重绘；② **canvas 关闭插值**
+  （`imageSmoothingEnabled=false`，地图/绘制/编辑/清理预览 4 处 drawImage 均显式关闭），
+  放大渲染保持像素锐利；③ **拖拽整像素**：把手命中坐标与位移全部 `Math.round` 取整，
+  keep 值始终为整数（不再出现 15.33 这类浮点）。
+- `pkg-6`（2026-08 新增）：清理工作台新增**独立「清理效果预览」画布**（干净结果，无边界线/
+  蒙层，与编辑画布并排）；边距拖拽把手改窄——命中判定改为**固定 3 屏幕像素**（不再随画布
+  缩放变宽），基准线明确为**靠中心一侧的边沿**（保留区/填充区分界线，画线/命中/拖拽同一位置）。
+- `pkg-5`（2026-08 新增）：**选区/清理两页独立**——view 状态移入共享 store；工具结果卡片新增
+  「🧹 清理工作台」独立入口（不经地图选区直接打开清理页）；`CleanWorkbench` 块清单改为
+  **三级独立载入**（`uimap-clean-list` 读 `.tmp/<名>_groups.json` 优先、回退 `_selected.json`
+  → 地图选中 → 全部块），组/块下拉选择（optgroup）；Host 新增 RPC `uimap-clean-list`；
+  配套生成 `.tmp/<名>_groups.json` 的脚本 `make_so030_groups.py`（与配对检查页同规则）。
+- `pkg-4`（2026-08 新增）：列填充模式新增**上下保留范围 keepT/keepB**（四边保留原图，填充后
+  上/下边距覆盖回填充结果）；Client 预览/画布四边金色边界线拖拽/方案导出、Host 导出的
+  `clean_fill.py` 命令均支持 `--keep-t/--keep-b`；`clean_fill.py` 同步新增两参数（逐像素校验通过）。
+- `pkg-3`（2026-08 恢复时新增，恢复后 current）：Python 解释器自适应——运行时先探测 `python3`
+  （macOS 约定）、找不到回退 `python`（Windows 常见，本机只有 Python 3.11 + Pillow 11.3）；
+  扫描命令与导出的清理脚本均使用检测到的解释器（原 hardcode `python3` 在 Windows 上直接报
+  "not recognized"）。注意：Windows 侧 DSH `shell` 服务走 PowerShell，`quote()` 的单引号
+  包裹在 PowerShell 与 bash 下均合法。
+- `pkg-10`（原始 macOS 保存态 current）：清理工作台修复——列填充预览前 putImageData 还原原始块（透明区可刷新）；
   keepL/keepR 左右独立 + 画布金色边界线拖拽；`clean_fill.py` 增加 `--keep-r`。
 - `pkg-9`：新增清理工作台（密度直方图/选列预览/置透明/贴底图/方案导出）+ RPC `uimap-clean-export`。
 - `pkg-8`：修复 store 订阅失效（force 递增），解决加载中卡死与关闭无效。

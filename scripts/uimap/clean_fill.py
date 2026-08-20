@@ -10,6 +10,8 @@
 选项:
   --keep-l N        列填充：左侧保留 N px（不动的干净带），默认 15
   --keep-r N        列填充：右侧保留 N px（默认等于 --keep-l，可左右不一致）
+  --keep-t N        列填充：顶部保留 N px（原图保留带，默认 0）
+  --keep-b N        列填充：底部保留 N px（原图保留带，默认 0）
   --fill-col N      列填充：复制的列（绝对 x 坐标），默认 x0+keep-l（即第 keep-l+1 列）
   --transparent     置透明模式（兼容 clean_text_area.py，替代 --keep-l）
   --paste-src SRC --paste-x0 X --paste-y0 Y --paste-x1 X --paste-y1 Y
@@ -22,6 +24,8 @@
 列填充语义（与 docs 中已确认规则一致）:
   - 区域左边缘保留 x0..x0+keep-l-1 不变；
   - 区域右边缘保留 x1-keep-r+1..x1 不变（keep-r 可独立于 keep-l）；
+  - 区域上边缘保留 y0..y0+keep-t-1 不变（原图覆盖回填充结果）；
+  - 区域下边缘保留 y1-keep-b+1..y1 不变；
   - 中间每一行复制 fill-col 那一列的像素（纯色底/渐变底均适用：渐变底逐行复制保留每行渐变值）。
 
 示例:
@@ -42,15 +46,22 @@ def load_rgba(path):
     return img.convert("RGBA"), img.size
 
 
-def fill_columns(img, x0, y0, x1, y1, keep_l, keep_r, fill_col):
-    """列填充：中间区域每行复制 fill_col 列的像素（左右保留宽度可不对称）。"""
+def fill_columns(img, x0, y0, x1, y1, keep_l, keep_r, keep_t, keep_b, fill_col):
+    """列填充：中间区域每行复制 fill_col 列的像素（四边保留宽度均可独立配置）。
+
+    填充区域 = (x0+keep_l .. x1-keep_r) × (y0+keep_t .. y1-keep_b)；
+    四条边缘带保持原图像素不变（上下保留带会在填充后覆盖回填充结果）。
+    """
     px = img.load()
     W, H = img.size
     x0 = max(0, x0); y0 = max(0, y0); x1 = min(W - 1, x1); y1 = min(H - 1, y1)
     bw = x1 - x0 + 1
+    bh = y1 - y0 + 1
     keep_l = max(0, min(keep_l, bw))
     keep_r = max(0, min(keep_r, bw - keep_l))
-    for y in range(y0, y1 + 1):
+    keep_t = max(0, min(keep_t, bh))
+    keep_b = max(0, min(keep_b, bh - keep_t))
+    for y in range(y0 + keep_t, y1 - keep_b + 1):
         src = px[fill_col, y]
         for x in range(x0 + keep_l, x1 - keep_r + 1):
             px[x, y] = src
@@ -97,6 +108,8 @@ def main():
     ap.add_argument("--y1", type=int, required=True)
     ap.add_argument("--keep-l", type=int, default=15, help="列填充：左侧保留宽度（默认 15）")
     ap.add_argument("--keep-r", type=int, default=None, help="列填充：右侧保留宽度（默认 = keep-l）")
+    ap.add_argument("--keep-t", type=int, default=0, help="列填充：顶部保留宽度（默认 0）")
+    ap.add_argument("--keep-b", type=int, default=0, help="列填充：底部保留宽度（默认 0）")
     ap.add_argument("--fill-col", type=int, default=None, help="列填充：复制列（绝对 x；默认 x0+keep-l）")
     ap.add_argument("--transparent", action="store_true", help="置透明模式（兼容 clean_text_area.py）")
     ap.add_argument("--paste-src", default=None, help="跨图贴底图：来源图路径")
@@ -124,7 +137,8 @@ def main():
     else:
         fill_col = args.fill_col if args.fill_col is not None else args.x0 + args.keep_l
         keep_r = args.keep_r if args.keep_r is not None else args.keep_l
-        fill_columns(img, args.x0, args.y0, args.x1, args.y1, args.keep_l, keep_r, fill_col)
+        fill_columns(img, args.x0, args.y0, args.x1, args.y1,
+                     args.keep_l, keep_r, args.keep_t, args.keep_b, fill_col)
 
     if args.restore_x0 is not None:
         restore_region(img, orig, args.restore_x0, args.restore_y0, args.restore_x1, args.restore_y1)
@@ -138,7 +152,9 @@ def main():
     else:
         fill_col = args.fill_col if args.fill_col is not None else args.x0 + args.keep_l
         keep_r = args.keep_r if args.keep_r is not None else args.keep_l
-        ops.append(f"列填充 keep_l={args.keep_l} keep_r={keep_r} fill_col={fill_col}")
+        keep_t = args.keep_t or 0
+        keep_b = args.keep_b or 0
+        ops.append(f"列填充 keep_l={args.keep_l} keep_r={keep_r} keep_t={keep_t} keep_b={keep_b} fill_col={fill_col}")
     if args.restore_x0 is not None:
         ops.append(f"恢复 ({args.restore_x0},{args.restore_y0})-({args.restore_x1},{args.restore_y1})")
     print(f"saved {args.out}  区域 x {args.x0}-{args.x1} / y {args.y0}-{args.y1}  「{' + '.join(ops)}」")
