@@ -28869,8 +28869,10 @@ show-text 0 "』で沼を"
 display-furigana 0 "踏破" "とうは"
 show-text 0 "していく。"
 */
-// 输入原文：我们乘着行进顺畅的『守护土精之船』，踏平了沼泽。
-show-text 0 @"我们乘着行进顺畅的『守护土精之船』，踏平了沼泽。"
+// 输入原文：我们乘着行进顺畅的『守护土精之船』，一路穿过了沼泽。
+show-text 0 @"我们乘着行进顺畅的『守护土精之船』，一路穿过"
+end-text-line 0
+show-text 0 @"了沼泽。"
 // 页面结束
 wait-for-input 0
 end-text-line 0
