@@ -44,15 +44,27 @@ npm run manifest -- AIM.BIN SC0010.BIN   # 仅重算这两个文件的 MD5 并�
 npm run check -- AIM.BIN                  # 仅核对 AIM.BIN 是否与清单一致
 ```
 
-以上命令还支持 `--diff`：不列文件，自动从当前 git 变更（含未跟踪新增）中收集所有 `*.txt`，
-只处理对应的同名顶层 `*.BIN`（如 `src/SC0620.txt` → `SC0620.BIN`），改完脚本后快速核对/更新：
+以上命令还支持 `--diff`：不列文件，自动从当前 git 变更（含未跟踪新增）中收集所有 `*.txt` 与
+`*.AGF`，只处理对应的同名顶层目标文件（如 `src/SC0620.txt` → `SC0620.BIN`，
+`res/SO009A.AGF` → `SO009A.AGF`），改完脚本/UI 图后快速核对/更新：
 
 ```bash
-npm run check -- --diff      # 仅核对当前 diff 中所有 txt 对应的 bin
-npm run manifest -- --diff   # 仅重算这些 bin 的 MD5 并写回 install-manifest
+npm run check -- --diff      # 仅核对当前 diff 中所有 txt 对应的 bin 及 agf 对应的 AGF
+npm run manifest -- --diff   # 仅重算这些 bin/AGF 的 MD5 并写回 install-manifest
 ```
 
-注意：`--diff` 与文件参数互斥，且不适用于 `compare`；bin 不在清单/目标目录顶层时（如
+`--update*` / `--check` 默认跳过 50MB 以上的大文件（如 `DATA*.ALF`，哈希很慢且从不改动），
+加 `--full` 强制处理全部文件：update 对跳过的文件沿用旧清单哈希（保证 `compare` 可用的同时
+不重算），check 不比对这些文件：
+
+```bash
+npm run manifest            # 快速更新（大文件沿用旧哈希）
+npm run manifest -- --full  # 全量重算所有文件哈希
+npm run check               # 快速检查（跳过 >50MB 大文件）
+npm run check -- --full     # 全量检查（含所有大文件）
+```
+
+注意：`--diff` 与文件参数互斥，且不适用于 `compare`；bin/AGF 不在清单/目标目录顶层时（如
 APPEND01 等子目录内的脚本）会打印 `[skip]` 跳过，不视为错误。
 
 ## 文件策略（config.js）
