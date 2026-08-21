@@ -4,20 +4,24 @@
 > 坐标、产物、状态），重绘时按本文档逐图核对复现。详细参数与复现命令见各图独立文档。
 >
 > 状态核对日期：2026-08（install 根 overlay AGF 与 res AGF 哈希一致，均为已修改版本）。
+> 2026-08 全量重绘：字体 WenQuanYi → **Sarasa Gothic SC**（渲染页**必须加 @font-face 引用本地
+> `res/fonts/SarasaGothicSC/*.ttf`**——headless 对系统字体的拉丁会 fallback，见 §6）；产物在
+> `res\images\`（`-0` 原图 + `-N` 版本，**版本号最高者生效**，无裸 `<NAME>.png`）。
 
 ## 1. 总览表
 
-| 图 | 尺寸 | 变更内容 | 状态 | 详情 |
+| 图 | 尺寸 | 变更内容 | 当前版本（res\images\） | 详情 |
 |---|---|---|---|---|
-| SO009A | 1280×1152 | ①三行金文字（返回/初始化本页/初始化全部）②「返回」大按钮×2 | ✅ 已安装 | [SO009A.md](SO009A.md) |
-| SO009B | 712×256 | 菜单文字样式测试图：第二列金、第三列青六行中文；**第一列 outline 未处理** | 🟡 部分 | [SO009B.md](SO009B.md) |
-| SO017 | 900×1280 | 兵种技能名红字渐变（SKINIT 全量，96 区域） | ✅ 已安装（待游戏内目检） | [SO017.md](SO017.md) |
-| SO020 | 1792×1280 | ①22 按钮（上纯色/下渐变）②关闭菜单面板×2 ③探索开始/出击 4 按钮 ④返回/物品/装备/技能 8 按钮 | ✅ 已安装 | [SO020.md](SO020.md) |
-| SO021 | 1280×1280 | 「菜单」块 A（154×48）+ 块 B（122×29） | ✅ 已安装 | [SO021.md](SO021.md) |
-| SO025 | 1280×512 | 「菜单」块 A + 块 B（**以 overlay 变体为输入**） | ✅ 已安装 | [SO025.md](SO025.md) |
-| SO030 | 2000×2000 | ①「菜单」块 A/B ②16 按钮（8 组）③4 按钮（防卫开始/决定，红字） | ✅ 已安装 | [SO030.md](SO030.md) |
+| SO009A | 1280×1152 | ①三行金文字（返回/初始化本页/初始化全部）②「返回」大按钮×2 | SO009A-2 | [SO009A.md](SO009A.md) |
+| SO009B | 712×256 | 第二列金、第三列青六行中文（**@font-face 重渲，ADV 行 letter-spacing 修正**）；第一列 outline 未处理 | SO009B-2 | [SO009B.md](SO009B.md) |
+| SO017 | 900×1280 | 兵种技能名红字渐变（SKINIT 全量，96 区域；@font-face 重渲钉住本地字体） | SO017-2 | [SO017.md](SO017.md) |
+| SO020 | 1792×1280 | ①22 按钮（上纯色/下渐变）②关闭菜单面板×2 ③探索开始/出击 4 按钮 ④返回/物品/装备/技能 8 按钮 | SO020-4 | [SO020.md](SO020.md) |
+| SO021 | 1280×1280 | 「菜单」块 A（154×48）+ 块 B（122×29） | SO021-1 | [SO021.md](SO021.md) |
+| SO025 | 1280×512 | 「菜单」块 A + 块 B（**以 overlay 变体为输入**） | SO025-1 | [SO025.md](SO025.md) |
+| SO030 | 2000×2000 | ①「菜单」块 A/B ②16 按钮（8 组）③4 按钮（防卫开始/决定，红字） | SO030-3 | [SO030.md](SO030.md) |
 
-字体：当前 UI 渲染统一用文泉驿微米黑（`res/fonts/WenQuanYi.ttf`）；游戏内字体已换 **Amayui CN（Sarasa SC 基底）**（见 [docs/font-build.md](../font-build.md)）。
+字体：UI 图片渲染统一 **Sarasa Gothic SC**（`res/fonts/SarasaGothicSC/`，@font-face 引用）；
+游戏内字体为 **Amayui CN（Sarasa SC 基底，cnjp 替换版）**（见 [docs/font-build.md](../font-build.md)）。
 
 ## 2. 效果速查（详见 [FONT.md](FONT.md)）
 
@@ -97,6 +101,23 @@
 
 1. **清理**：`clean_fill.py` 列填充（纯色底 keep 左右 15px / 渐变底 20px / 面板 40px / 103×73 按钮按模板），fill-col 必须避开笔画；
 2. **渲染**：`.tmp` 下渲染 HTML + headless Chrome 截图（712×256~2000×2000，透明背景，**需提权**运行）；
+   **渲染页必须加 @font-face 引用本地字体**（见 §6），否则 headless 拉丁 fallback；
 3. **注入**：`node scripts/agf/cli.js inject <DATA1原版.AGF> <渲染PNG> -o <install根>.AGF`（8bpp + ACIF，有头注入体积膨胀属正常）；
 4. **同步**：复制到 `res\` → `npm run sync-patch`（patch.config.json 已登记各图）→ `npm run manifest` 更新 install-manifest；
 5. **还原**：从 `install\DATA1\<NAME>.AGF` 复制覆盖 install 根即可。
+
+## 6. 教训：headless Chrome 对系统字体的拉丁 fallback（2026-08）
+
+- **现象**：渲染页用 `font-family:"Sarasa Gothic SC"` 但不加 @font-face 时，headless 截图对
+  **拉丁/罗马数字**字形 fallback（汉字正常），与用户浏览器（真实 Sarasa）不一致；SVG `<text>`
+  与 HTML div 均受影响（SO009B 的 ADV、SO017 的 ⅠⅡⅢ）。
+- **判定**：headless 渲染字形与 PIL 读字体文件对比（同尺寸二值化差异 >50% 即 fallback）；
+  宽度巧合接近可能掩盖（20px ADV fallback 41.38 vs 真实 42.00）。
+- **修复**：渲染页 CSS 顶部加
+  ```css
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Bold.ttf"); font-weight: 700; }
+  ```
+  （`../../../` 相对 `.tmp\ui-redraw\<图>\`；含中文路径的 file:// @font-face 已 A/B 验证可用）。
+  加后 headless 与浏览器宽度一致（28px bold ADV设定 均 112.30px）。
+- **影响**：SO009B、SO017 已按此重渲为 -2；其余图（纯中文）不受影响。
