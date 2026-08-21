@@ -798,7 +798,8 @@ function CleanWorkbench({ scan, selected }) {
             width: bw * scale, height: bh * scale, imageRendering: 'pixelated', display: 'block', cursor: dragging ? 'ew-resize' : 'pointer',
           },
             onMouseDown: canvasMouseDown, onMouseMove: canvasMouseMove, onMouseUp: canvasMouseUp, onMouseLeave: canvasMouseUp }),
-          React.createElement('img', { ref: mainImgRef, src: scan.imageUrl, alt: '', style: { display: 'none' },\n            onLoad: () => setImgReady(true) }),
+          React.createElement('img', { ref: mainImgRef, src: scan.imageUrl, alt: '', style: { display: 'none' },
+            onLoad: () => setImgReady(true) }),
           React.createElement('img', { ref: srcImgRef, src: pasteSrc ? '/dsh-uimap/' + pasteSrc.replace(/^\//, '') : '', alt: '', style: { display: 'none' } }),
         ),
         React.createElement('div', { style: {

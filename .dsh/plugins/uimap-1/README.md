@@ -50,6 +50,9 @@
 
 ## 恢复步骤（DSH 重启后）
 
+> 2026-08 恢复时修复：`client.js` 第 801 行（`mainImgRef` 的 `<img>` 元素）原备份含**字面量 `\n`**（`},` 与 `onLoad:` 之间），
+> 属备份损坏（自 d150ac0 起即存在），JS 无法解析 → 恢复前已改为真实换行；`node --check` 通过。恢复后本备份即已修正。
+
 1. 读取 `host.js` 全文，逐字作为 `cordis_define` 的 `code.host`（含开头注释，不要改动转义）。
 2. 读取 `client.js` 全文，逐字作为 `cordis_define` 的 `code.client`。
 3. `cordis_define` 参数：
