@@ -95,6 +95,79 @@ def scan_all(img, alpha_th, min_px):
     ]
 
 
+def intervals_overlap_or_near(a0, a1, b0, b1, gap):
+    """一维区间 [a0,a1] 与 [b0,b1]：重叠（相交）或间隔 ≤ gap（gap>=0）。"""
+    return max(a0, b0) - min(a1, b1) <= gap
+
+
+def intervals_intersect(a0, a1, b0, b1):
+    """一维区间相交（有共同像素）。"""
+    return max(a0, b0) <= min(a1, b1)
+
+
+def rects_mergeable(a, b, gap_x, gap_y):
+    """两个矩形是否可合并（横纵阈值独立）：
+    - 横向：x 轴重叠或间隔 ≤ gap_x 且 y 轴相交；
+    - 纵向：y 轴重叠或间隔 ≤ gap_y 且 x 轴相交。
+    """
+    x_near = intervals_overlap_or_near(a["x0"], a["x1"], b["x0"], b["x1"], gap_x)
+    y_near = intervals_overlap_or_near(a["y0"], a["y1"], b["y0"], b["y1"], gap_y)
+    x_int = intervals_intersect(a["x0"], a["x1"], b["x0"], b["x1"])
+    y_int = intervals_intersect(a["y0"], a["y1"], b["y0"], b["y1"])
+    return (x_near and y_int) or (y_near and x_int)
+
+
+def count_foreground(img, mask, x0, y0, x1, y1):
+    """统计矩形区域内 alpha≥阈值 的前景像素数（mask 为全图掩码）。"""
+    W, H = img.size
+    rw = x1 - x0 + 1
+    n = 0
+    for y in range(y0, y1 + 1):
+        base = y * W + x0
+        row = mask[base:base + rw]
+        n += sum(row)
+    return n
+
+
+def merge_blocks(img, alpha_th, blocks, gap_x, gap_y):
+    """迭代合并可合并的矩形对（原图连通块只扫一次，此处只做矩形合并）。
+
+    每次合并两个矩形为外接大矩形，并重新统计区域内前景像素数；
+    合并后继续查找新的可合并对，直到无可合并为止（gap=0 时仅重叠/相交可合并）。
+    横纵阈值独立：gap_x 控制横向（x 接近且 y 相交）、gap_y 控制纵向（y 接近且 x 相交）。
+    """
+    if (gap_x < 0 or gap_y < 0) or len(blocks) < 2:
+        return blocks
+    W, H = img.size
+    mask, rw, rh = build_mask(img, 0, 0, W - 1, H - 1, alpha_th)
+    work = [dict(b) for b in blocks]
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(work)):
+            for j in range(i + 1, len(work)):
+                a, b = work[i], work[j]
+                if rects_mergeable(a, b, gap_x, gap_y):
+                    nx0 = min(a["x0"], b["x0"]); nx1 = max(a["x1"], b["x1"])
+                    ny0 = min(a["y0"], b["y0"]); ny1 = max(a["y1"], b["y1"])
+                    npx = count_foreground(img, mask, nx0, ny0, nx1, ny1)
+                    merged = {
+                        "index": a["index"],
+                        "x0": nx0, "x1": nx1, "y0": ny0, "y1": ny1,
+                        "px": npx, "w": nx1 - nx0 + 1, "h": ny1 - ny0 + 1,
+                    }
+                    work[i] = merged
+                    work.pop(j)
+                    changed = True
+                    break
+            if changed:
+                break
+    work.sort(key=lambda c: (c["y0"], c["x0"]))
+    for k, b in enumerate(work, 1):
+        b["index"] = k
+    return work
+
+
 HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -335,20 +408,35 @@ def main():
     ap.add_argument("png", help="PNG 文件路径")
     ap.add_argument("--alpha", type=int, default=128, help="alpha 阈值（默认 128）")
     ap.add_argument("--min-px", type=int, default=300, help="最小像素数过滤（默认 300）")
+    ap.add_argument("--merge-gap", type=int, default=0,
+                    help="自动合并阈值（同时设置横纵）：一个维度重叠或间隔≤该值、另一维度相交的两个块合并"
+                         "为大矩形（默认 0 = 仅重叠/相交才合并；原图连通块只扫一次，合并迭代进行）")
+    ap.add_argument("--merge-gap-x", type=int, default=None,
+                    help="横向合并阈值（x 轴重叠或间隔≤该值且 y 轴相交时合并；缺省用 --merge-gap）")
+    ap.add_argument("--merge-gap-y", type=int, default=None,
+                    help="纵向合并阈值（y 轴重叠或间隔≤该值且 x 轴相交时合并；缺省用 --merge-gap）")
     ap.add_argument("--out", default=None, help="输出 HTML 路径")
     ap.add_argument("--json-only", default=None, help="只输出块数据 JSON（调试）")
     args = ap.parse_args()
 
+    gap_x = args.merge_gap_x if args.merge_gap_x is not None else args.merge_gap
+    gap_y = args.merge_gap_y if args.merge_gap_y is not None else args.merge_gap
+
     img = Image.open(args.png)
     W, H = img.size
     blocks = scan_all(img, args.alpha, args.min_px)
-    print(f"[uimap] {args.png} {W}×{H} alpha>={args.alpha} 连通块={len(blocks)}")
+    if gap_x > 0 or gap_y > 0:
+        blocks = merge_blocks(img, args.alpha, blocks, gap_x, gap_y)
+    print(f"[uimap] {args.png} {W}×{H} alpha>={args.alpha} 连通块={len(blocks)}"
+          + (f" (merge-gap-x={gap_x}, merge-gap-y={gap_y})" if gap_x > 0 or gap_y > 0 else ""))
 
     data = {
         "png": os.path.basename(args.png),
         "size": {"w": W, "h": H},
         "alpha": args.alpha,
         "min_px": args.min_px,
+        "merge_gap_x": gap_x,
+        "merge_gap_y": gap_y,
         "blocks": blocks,
     }
 
