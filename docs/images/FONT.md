@@ -33,6 +33,7 @@
 | E6 | 红字+白描边（SO030 第二轮上半） | 红字按钮（SO030-2 上半、SO020-1） | 28/30px | `#FD480A`（无黑描边） | 4px `rgba(255,255,255,1)` | `0 4px 4px #000` 于描边层 | docs/images/SO030.md §7、SO020.md §7 |
 | E7 | 阴刻 outline（棕褐环+半透明灰内部） | 设置页顶部标题（SO009B 第一列） | 28px bold | 内部 `#26201E` 50% | 棕褐外环 `#b4887c`（region filter） | 外阴影 `#25201d` 50% | 本文件 E7 节、docs/images/SO009B.md §9 |
 | E8 | 两段式渐变字（上白下浅绿）+深绿描边+黑阴影 | SO039 第三列（同组列1=E5 上半、列2=E5 下半） | 24px | 上 `#FFFFFF`／下 `#CDFDCD`（0%/50% 硬切） | 深绿 3px `#015514` | `0 4px 4px rgba(0,0,0,1)` 独立层 `.shd` | docs/images/SO039.md §3.2 |
+| E9 | 黑红混排按钮字（E5 上半 + E6） | 同一行黑字+红字并存（SO021「去城砦」） | 20px（黑部件 18px） | 黑 `#000` / 红 `#FD480A` | 黑 0.5px `#000`；红无；白描边 4px 100% | `0 4px 4px rgba(0,0,0,1)` 于描边层 | docs/images/SO021.md §8.3 |
 
 ---
 
@@ -337,6 +338,35 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 
 ---
 
+## E9 黑红混排按钮字（E5 上半 + E6 同框）— SO021「去城砦」
+
+**场景**：同一行内「黑字（E5 上半）」与「红字（E6）」并存（如 SO021「去城砦」：**去=黑（E5 上半）、城砦=红（E6）**）。两者共用白描边 4px 100% + 阴影 `0 4px 4px`（`.out` 层对整串描边），文字填充按字分色（`.in` 层）。**字号可按部件独立设置**（黑部件 `.s18` 18px / 红部件默认 20px，可按需改）。
+
+```css
+.btn { position:absolute; text-align:center; font-family:"Sarasa Gothic SC"; font-size:20px;
+       letter-spacing:1px; white-space:nowrap; }   /* 基准 20px；部件用 .s18 等覆盖字号 */
+/* 白描边 100% + 阴影（整串，`.out` 层）；`<span class="s18">` 用于字号不同的部件，须与 `.in` 同拆分 */
+.out { position:absolute; left:0; right:0; top:0; z-index:1;
+       -webkit-text-stroke:4px rgba(255,255,255,1); color:rgba(255,255,255,1); text-shadow:0 4px 4px rgba(0,0,0,1); }
+.in  { position:absolute; left:0; right:0; top:0; z-index:2; }
+.s18 { font-size:18px; }                                     /* 黑色部件字号 */
+.in .e5 { color:#000; -webkit-text-stroke:0.5px #000; }      /* 黑（E5 上半） */
+.in .e6 { color:#FD480A; -webkit-text-stroke:0; }            /* 红（E6） */
+```
+
+```html
+<div class="btn" style="left:<x0>px; top:<y0-1>px; width:<w>px; line-height:<块高>px;">
+  <span class="out"><span class="s18">去</span>城砦</span>
+  <span class="in"><span class="s18 e5">去</span><span class="e6">城砦</span></span>
+</div>
+```
+
+- `.out` 与 `.in` 必须按**同样的部件/字号拆分**（保证白描边与填色逐字对齐）；共用一行基线，行高 = 块高垂直居中。
+- 定位：`top = y0 - 1`（**向上偏移 1px**，用户指定）。
+- 应用图：`res\images\SO021-3.png`（SO021「去城砦」黑 18px / 红 20px）。
+
+---
+
 ## 附：各效果已应用图（速查）
 
 | 效果 | 图片 | 详情 |
@@ -349,6 +379,7 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 | E6 | SO030 第二轮 4 按钮（防卫开始/决定）、SO020 4 按钮（探索开始/出击） | docs/images/SO030.md §7、SO020.md §7 |
 | E7 | SO009B 第一列（outline 阴刻，三列最终版 SO009B-4） | 本文件 E7 节、docs/images/SO009B.md §9 |
 | E8 | SO039 第三列（上白下浅绿两段式 + 深绿描边 + 黑阴影，SO039-1） | 本文件 E8 节、docs/images/SO039.md §3.2 |
+| E9 | SO021「去城砦」（黑=E5 上半 18px + 红=E6 20px，SO021-3） | 本文件 E9 节、docs/images/SO021.md §8.3 |
 
 ## 附：关键踩坑汇总
 
