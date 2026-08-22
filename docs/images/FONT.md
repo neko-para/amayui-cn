@@ -6,10 +6,13 @@
 
 ## 0. 通用基础
 
-- **字体**：文泉驿微米黑 `res/fonts/WenQuanYi.ttf`，统一 `@font-face`：
+- **字体**：**Sarasa Gothic SC**（更纱黑体 SC，`res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf` + `-Bold.ttf`）。
+  **渲染页必须加 @font-face 引用本地文件**（防 headless 拉丁 fallback，见附录踩坑 7），路径相对渲染页位置调整：
   ```css
-  @font-face { font-family: "WenQuanYi"; src: url("../res/fonts/WenQuanYi.ttf"); }
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("<相对路径>/SarasaGothicSC-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("<相对路径>/SarasaGothicSC-Bold.ttf"); font-weight: 700; }
   ```
+  > 历史（2026-08 前）：文泉驿微米黑 `res/fonts/WenQuanYi.ttf`，`font-family:"WenQuanYi"`；全量重绘起由 Sarasa 替换。
 - **画布**：`html, body { margin:0; padding:0; width:<W>px; height:<H>px; background:transparent; overflow:hidden; }`，垫底 `<img id="bg">` 为清理后整图。
 - **文字定位**：`.btn`（或 `.ln`）`position:absolute`；按钮模式 `text-align:center` + `line-height:<块高>px` 实现水平垂直居中；纯文本行模式 `line-height:1` 直接给 left/top。
 - **并列结构约定**（按钮模式通用，用户确认）：`.in`（文字层）与 `.out`（描边层）为**兄弟节点并列**，均 `position:absolute; left:0; right:0; top:0`，`z-index` 分层（`.in` z=2 上、`.out` z=1 下）：
@@ -28,6 +31,7 @@
 | E4 | 红描边渐变字 | 兵种名红字（SO017） | 22px | 纵向渐变 `#FEFE13→#FEFEFD→#FEFE13` | 外 2px `#C90000`（露出 1px） | `2px 2px 2px #000` 独立层 | docs/images/SO017.md |
 | E5 | 30px 规则（黑字+白描边） | 103×73 / 117×81 等按钮（SO030 第一轮、SO020-2、SO009A-1） | 30px | `#000` + 0.5px `#000` | 4px `rgba(255,255,255,1/0.5)` | 上半 `0 4px 4px #000` 于描边层 | docs/images/SO030.md §6、SO020.md §8、SO009A.md §7 |
 | E6 | 红字+白描边（SO030 第二轮上半） | 红字按钮（SO030-2 上半、SO020-1） | 28/30px | `#FD480A`（无黑描边） | 4px `rgba(255,255,255,1)` | `0 4px 4px #000` 于描边层 | docs/images/SO030.md §7、SO020.md §7 |
+| E7 | 阴刻 outline（棕褐环+半透明灰内部） | 设置页顶部标题（SO009B 第一列） | 28px bold | 内部 `#26201E` 50% | 棕褐外环 `#b4887c`（region filter） | 外阴影 `#25201d` 50% | 本文件 E7 节、docs/images/SO009B.md §9 |
 
 ---
 
@@ -36,7 +40,7 @@
 **场景**：SO009A 设置页三行文字、SO009B 三列菜单文字（透明/纯色背景上的单行文字）。
 
 ```css
-font-family: "WenQuanYi"; font-size: 20px; line-height: 1;
+font-family: "Sarasa Gothic SC"; font-size: 20px; line-height: 1;
 color: #ffd6a4;                          /* 金色；青色变体 #08F4F4 */
 -webkit-text-stroke: 0.5px #ffd6a4;      /* 描边色 = 文字色 */
 text-shadow: 2px 2px 1px rgba(0,0,0,1);  /* 右下偏移 2px，模糊 1px，纯黑 */
@@ -54,7 +58,7 @@ text-shadow: 2px 2px 1px rgba(0,0,0,1);  /* 右下偏移 2px，模糊 1px，纯�
 **场景**：SO020 上半 11 个纯色底按钮（米白底 #FEF3E5/#F0F0E0、无边框）、SO021/SO025 块 A 面板等。
 
 ```css
-font-family: "WenQuanYi"; font-size: 20px; line-height: <块高>px;  /* 块高=按钮高度，垂直居中 */
+font-family: "Sarasa Gothic SC"; font-size: 20px; line-height: <块高>px;  /* 块高=按钮高度，垂直居中 */
 letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: center;
 ```
 
@@ -72,7 +76,7 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 
 ```css
 /* 文字主体同 E2 */
-font-family: "WenQuanYi"; font-size: 20px; line-height: <块高>px;
+font-family: "Sarasa Gothic SC"; font-size: 20px; line-height: <块高>px;
 letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: center;
 ```
 
@@ -96,7 +100,7 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 **场景**：SO017 兵种名红字（红色描边 + 白心渐变 + 黑阴影），坐标中心定位。
 
 ```css
-.ln { position: absolute; font-family: "WenQuanYi"; font-size: 22px; line-height: 1;
+.ln { position: absolute; font-family: "Sarasa Gothic SC"; font-size: 22px; line-height: 1;
       white-space: nowrap; transform: translate(-50%,-50%); }   /* left/top = 中心坐标 */
 /* ① 阴影层（最底）：描边字型独立成层（WebKit 中 text-shadow 绘制于 text-stroke 之上） */
 .sh { position: absolute; left:0; top:0; color: transparent;
@@ -129,7 +133,7 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 
 ```css
 .btn { position: absolute; width: <w>px; text-align: center; line-height: <块高>px;
-       font-family: "WenQuanYi"; font-size: 30px; letter-spacing: 1px; white-space: nowrap;
+       font-family: "Sarasa Gothic SC"; font-size: 30px; letter-spacing: 1px; white-space: nowrap;
        transform: translateY(-0.5px); }          /* 整体偏移 (0,-0.5)，用户确认 */
 .out { position: absolute; left:0; right:0; top:0; z-index:1; }
 .in  { position: absolute; left:0; right:0; top:0; z-index:2;
@@ -168,6 +172,108 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 
 ---
 
+## E7 阴刻 outline（棕褐外环 + 半透明灰内部）— SO009B 第一列
+
+**场景**：SO009B 第一列（设置页顶部标题，outline 阴刻样式；游戏内不明显但已实现），712×256 全图。
+**已应用产物**：`res\images\SO009B-4.png`（三列最终版，当前生效）；完整渲染页 `.tmp\ui-redraw\SO009B\col1\render_final.html`。
+
+### 核心思路（勿再重蹈覆辙）
+
+1. **SVG `<text stroke>` 与 CSS `-webkit-text-stroke` 都按"每个笔画轮廓"描边**（对多笔画汉字笔画内部重叠杂乱）——**不可用于汉字描边**；
+2. 正确做法：把文字 alpha 当**整体 region**，用 SVG filter 形态学操作：
+   - **外环 = `feMorphology dilate(region, r) − region`**（只沿整体外轮廓+内部空洞边缘，笔画内部不产生线条）；
+   - 内部 fill、内阴影棱、外阴影各自独立 filter/层，**不与环混合**（混合会导致内部 fill 被破坏）；
+3. **渲染页必须 @font-face 引用本地字体文件**（headless 对系统字体的拉丁会 fallback，见附录踩坑 7）；
+4. **宽度测量必须异步**（`await document.fonts.load` + `document.fonts.ready` 后 canvas measureText；同步 `getBoundingClientRect` 会在 @font-face 未就绪时返回 fallback 宽度，见附录踩坑 8）。
+
+### 完整 HTML/CSS（SO009B 三列最终版核心）
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<style>
+  /* @font-face 必须（防 headless 拉丁 fallback） */
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Bold.ttf"); font-weight: 700; }
+  html, body { margin:0; padding:0; width:712px; height:256px; background:transparent; overflow:hidden; }
+  /* 第二三列（E1：20px 金/青） */
+  .ln { position:absolute; font-family:"Sarasa Gothic SC"; font-size:20px; line-height:1;
+        color:#ffd6a4; -webkit-text-stroke:0.5px #ffd6a4;
+        text-shadow:2px 2px 1px rgba(0,0,0,1); white-space:nowrap; }
+  .ln.cy { color:#08F4F4; -webkit-text-stroke:0.5px #08F4F4; }
+  /* 第一列（outline：28px bold 三层） */
+  text.txt { font-family:"Sarasa Gothic SC"; font-size:28px; font-weight:bold; }
+  .fill  { fill:#26201E; fill-opacity:0.5; }        /* 内部半透明灰 */
+  .inset { filter:url(#inset1); }                    /* 内阴影棱 */
+  .ring  { filter:url(#ring1); }                     /* 棕褐外环 */
+</style>
+</head>
+<body>
+<svg width="712" height="256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 每行独立 filter id（Chrome 同一 id 多处引用会缓存出错）：
+         inset1-6 / ring1-6 六个同构副本，此处仅列行1 -->
+    <filter id="inset1" x="-30%" y="-30%" width="160%" height="160%">
+      <feOffset dx="1" dy="1" result="off"/>
+      <feComposite in="SourceAlpha" in2="off" operator="out" result="diff"/>
+      <feGaussianBlur in="diff" stdDeviation="0.2" result="blur"/>
+      <feComposite in="blur" in2="SourceAlpha" operator="in" result="clip"/>
+      <feFlood flood-color="#000000" flood-opacity="0.5" result="color"/>
+      <feComposite in="color" in2="clip" operator="in"/>
+    </filter>
+    <filter id="ring1" x="-30%" y="-30%" width="160%" height="160%">
+      <feMorphology operator="dilate" radius="1" in="SourceAlpha" result="d"/>
+      <feComposite in="d" in2="SourceAlpha" operator="out" result="ring"/>
+      <feFlood flood-color="#b4887c" result="c"/>
+      <feComposite in="c" in2="ring" operator="in"/>
+    </filter>
+  </defs>
+  <!-- 第一列六行（每行三层 text 叠加，坐标 x=4 / top=3,40,77,114,151,188） -->
+  <text class="txt fill"  x="4" y="3"  dominant-baseline="text-before-edge">系统设定</text>
+  <text class="txt inset" x="4" y="3"  dominant-baseline="text-before-edge">系统设定</text>
+  <text class="txt ring"  x="4" y="3"  dominant-baseline="text-before-edge">系统设定</text>
+  <!-- …其余五行同构；ADV 行（top=77）写法： -->
+  <text class="txt fill"  x="4" y="77" dominant-baseline="text-before-edge"><tspan letter-spacing="-1.6">ADV</tspan><tspan>设定</tspan></text>
+  <text class="txt inset" x="4" y="77" dominant-baseline="text-before-edge"><tspan letter-spacing="-1.6">ADV</tspan><tspan>设定</tspan></text>
+  <text class="txt ring"  x="4" y="77" dominant-baseline="text-before-edge"><tspan letter-spacing="-1.6">ADV</tspan><tspan>设定</tspan></text>
+</svg>
+<!-- 第二列（金，left=387）/ 第三列（青，left=578），top=4,31,58,85,112,139 -->
+<div class="ln" style="left:387px; top:4px;">系统设定</div>
+<!-- …第二三列各六行；ADV 行：<span style="letter-spacing:-0.4px">ADV</span>设定 -->
+</body>
+</html>
+```
+
+### 参数与公式
+
+| 项 | 值 |
+|---|---|
+| 第一列字号/字重 | 28px bold（`@font-face` Bold 700） |
+| 内部 fill | `fill:#26201E; fill-opacity:0.5`（半透明灰，独立 alpha） |
+| 内阴影棱 | `feOffset(1,1)` → `SourceAlpha − off` → `blur 0.2` → 与 SourceAlpha 相与 → `#000` 50%（左/上缘暗棱，凹陷朝右下） |
+| 棕褐外环 | `dilate(SourceAlpha, 1) − SourceAlpha` → `#b4887c`（整体外环，含内部空洞边缘） |
+| 外阴影（可选层 `.shd`） | 偏移 (+2,+3) 的 `rgba(37,32,29,0.5)` 文字层 |
+| **ADV 行宽公式** | ADV设定 默认超宽 **X** px（28px bold：X=4.93；20px：X=1.36）→ ADV 配 `letter-spacing:-X/3`（向下取整 0.1）→ 第一列 **-1.6**、第二三列 **-0.4**；ADV-设定 间不加额外间距 |
+
+### 复现命令（截图 → 注入）
+
+```powershell
+# 截图（712×256 透明背景，独立 user-data-dir，--virtual-time-budget=10000）
+$ud = "E:\Games\Eushully\天結\.tmp\chrome_tmp"
+Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList @(
+  "--headless=new","--disable-gpu","--no-first-run","--no-sandbox","--disable-crash-reporter",
+  "--user-data-dir=$ud","--screenshot=E:\Games\Eushully\天結\res\images\SO009B-4.png",
+  "--window-size=712,256","--force-device-scale-factor=1","--default-background-color=00000000",
+  "--virtual-time-budget=10000","file:///E:/Games/Eushully/天結/.tmp/ui-redraw/SO009B/col1/render_final.html")
+# 注入
+cd E:\Games\Eushully\天結\scripts
+node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\Games\Eushully\天結\res\images\SO009B-4.png" -o "E:\Games\Eushully\天結\install\SO009B.AGF"
+```
+
+---
+
 ## 附：各效果已应用图（速查）
 
 | 效果 | 图片 | 详情 |
@@ -178,6 +284,7 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 | E4 | SO017 兵种名 | docs/images/SO017.md |
 | E5 | SO030 第一轮 16 按钮、SO020 8 按钮（返回/物品/装备/技能）、SO009A 返回×2 | docs/images/SO030.md §6、SO020.md §8、SO009A.md §7 |
 | E6 | SO030 第二轮 4 按钮（防卫开始/决定）、SO020 4 按钮（探索开始/出击） | docs/images/SO030.md §7、SO020.md §7 |
+| E7 | SO009B 第一列（outline 阴刻，三列最终版 SO009B-4） | 本文件 E7 节、docs/images/SO009B.md §9 |
 
 ## 附：关键踩坑汇总
 
@@ -187,3 +294,6 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 4. **关闭插值**：所有 canvas drawImage 前 `imageSmoothingEnabled=false`，放大保持像素锐利。
 5. **字号与原文比对**：新字号先对日文原文做逐行方差/投影测量（如 SO020 8 按钮 28→30px 依据：探索開始≈27–28 / 出撃=30 / 戻る=29，戻る 偏矮属字形本身）。
 6. **清理列检查**：fill-col 必须避开文字笔画（统计列上深色像素行数，仅顶/底边框行深色才干净）。
+7. **headless 拉丁 fallback**：渲染页若不加 @font-face 引用本地字体，headless Chrome 对系统字体「Sarasa Gothic SC」的拉丁/罗马数字会 fallback（汉字正常、ADV/ⅠⅡⅢ 委托系统西文字体，与浏览器不一致；SVG `<text>` 与 HTML 均受影响）。修复：CSS 顶部加 `@font-face`（Regular 400 / Bold 700，相对路径 `../../../res/fonts/SarasaGothicSC/...`）——加后 headless 与浏览器宽度一致。
+8. **同步测量 fallback 假象**：@font-face 字体异步加载，**同步** `getBoundingClientRect`/`measureText` 可能在字体未就绪时返回 fallback 宽度（曾误判 ADV 窄 1.2/2.86px）。宽度测量必须 **`await document.fonts.load(...)` + `await document.fonts.ready` 后**用 canvas `measureText`（E7 的 X 计算即此方法：28px bold X=4.93、20px X=1.36）。
+9. **SVG text stroke 逐笔画**：SVG `<text stroke>` 与 CSS `-webkit-text-stroke` 对多笔画汉字按每个笔画轮廓描边（内部重叠杂乱），汉字描边须用 region filter 环（E7）。
