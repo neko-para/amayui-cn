@@ -59,14 +59,19 @@ python3 scripts/uimap/scan_blocks.py <png> [--alpha N] [--min-px N] [--out out.h
 
 ## 清理执行器 clean_fill.py（工具 B 的最终清理引擎）
 
-由清理工作台导出的方案脚本调用；也支持手动使用（列填充/置透明/跨图贴底图/局部恢复）。
+由清理工作台导出的方案脚本调用；也支持手动使用（列填充 / 行填充 / 置透明 / 跨图贴底图 / 局部恢复）。
+**列填充与行填充为并列模式**：二者都由 `--fill-col` / `--fill-row` 触发，且都保留四方向固定宽度（`--keep-l/r/t/b`）。
 
 ```bash
 python3 scripts/uimap/clean_fill.py <png> <out> --x0 X --y0 Y --x1 X --y1 Y [选项]
-# 列填充（默认）：保留左 keep-l、右 keep-r（默认=keep-l，可不对称），中间逐行复制 fill-col 列
+# 列填充（默认）：保留左 keep-l、右 keep-r（默认=keep-l，可不对称）、上 keep-t、下 keep-b，
+#                中间逐行复制 fill-col 列
 python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --keep-l 15
 # 不对称：左 10 右 20
 python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --keep-l 10 --keep-r 20 --fill-col 1021
+# 行填充（并列模式）：保留上 keep-t、下 keep-b、左 keep-l、右 keep-r，
+#                中间逐列复制 fill-row 行（适合背景横向一致：纯色/横向渐变/横向纹理，按行抹除文字）
+python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --keep-t 5 --keep-b 5 --fill-row 11
 # 置透明（兼容 clean_text_area.py）
 python3 scripts/uimap/clean_fill.py res/SO020.png out.png --x0 1006 --y0 6 --x1 1147 --y1 25 --transparent
 # 跨图贴底图（SO020 关闭菜单模式：从 SO021 干净块贴到目标区域）

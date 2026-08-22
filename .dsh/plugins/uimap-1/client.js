@@ -17,6 +17,8 @@
 // pkg-9: ① 清理工作台块清单来源改为「地图选中优先」——地图刚选中的新块不会被
 //        .tmp/*_groups.json 等旧文件覆盖（修复扫新图后仍载入旧 16 块）；
 //        ② 模态顶栏恢复「⬇ 导出选中 JSON」按钮（pkg-8 重写顶栏时丢失，doExport 一直存在）。
+// pkg-10: 清理工作台新增行填充（fillAxis 'col'|'row'，默认列）：直方图按轴点选列/行、预览与方案/导出
+//         均支持 applyRowFill（保留区内每列复制选定行的像素，与 applyColumnFill 并列）；列填充路径不变。
 
 let timerApi = null
 
@@ -454,6 +456,8 @@ function CleanWorkbench({ scan, selected }) {
   const [keepT, setKeepT] = React.useState(0)
   const [keepB, setKeepB] = React.useState(0)
   const [fillColRel, setFillColRel] = React.useState(null)
+  const [fillAxis, setFillAxis] = React.useState('col') // 'col' 列填充 | 'row' 行填充
+  const [fillRowRel, setFillRowRel] = React.useState(null)
   const [density, setDensity] = React.useState(null)
   const [err, setErr] = React.useState(null)
   const [pasteSrc, setPasteSrc] = React.useState('')
@@ -548,6 +552,7 @@ function CleanWorkbench({ scan, selected }) {
     const dens = computeDensity(origRef.current.data, bw, bh)
     setDensity(dens)
     setFillColRel(null)
+    setFillRowRel(null)
   }, [block, scan, imgReady])
 
   // 预览：先 putImageData 还原原始，再应用填充/透明/粘贴，最后画保留边界线
@@ -561,7 +566,9 @@ function CleanWorkbench({ scan, selected }) {
     const ctx2d = cv.getContext('2d')
     ctx2d.imageSmoothingEnabled = false
     ctx2d.putImageData(origRef.current, 0, 0) // 还原（透明像素也能被覆盖）
-    if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
+    if (mode === 'fill' && fillAxis === 'row' && fillRowRel !== null && fillRowRel !== undefined) {
+      applyRowFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillRowRel)
+    } else if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
       applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel)
     } else if (mode === 'transparent') {
       applyTransparent(ctx2d, bw, bh)
@@ -597,7 +604,7 @@ function CleanWorkbench({ scan, selected }) {
         ctx2d.beginPath(); ctx2d.moveTo(0, bh - keepB - 1); ctx2d.lineTo(bw, bh - keepB - 1); ctx2d.stroke()
       }
     }
-  }, [mode, keepL, keepR, keepT, keepB, fillColRel, block, scan, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1, dragging])
+  }, [mode, fillAxis, fillRowRel, keepL, keepR, keepT, keepB, fillColRel, block, scan, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1, dragging])
 
   // 清理效果预览：干净结果（无边界线/蒙层），与编辑画布并排；依赖 imgReady 保证随参数刷新
   React.useEffect(() => {
@@ -611,7 +618,9 @@ function CleanWorkbench({ scan, selected }) {
     const ctx2d = cv.getContext('2d')
     ctx2d.imageSmoothingEnabled = false
     ctx2d.putImageData(origRef.current, 0, 0)
-    if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
+    if (mode === 'fill' && fillAxis === 'row' && fillRowRel !== null && fillRowRel !== undefined) {
+      applyRowFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillRowRel)
+    } else if (mode === 'fill' && fillColRel !== null && fillColRel !== undefined) {
       applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel)
     } else if (mode === 'transparent') {
       applyTransparent(ctx2d, bw, bh)
@@ -622,32 +631,46 @@ function CleanWorkbench({ scan, selected }) {
         ctx2d.drawImage(srcImg, sx0, sy0, sx1 - sx0 + 1, sy1 - sy0 + 1, 0, 0, bw, bh)
       }
     }
-  }, [mode, keepL, keepR, keepT, keepB, fillColRel, block, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1])
+  }, [mode, fillAxis, fillRowRel, keepL, keepR, keepT, keepB, fillColRel, block, imgReady, pasteSrc, pasteX0, pasteY0, pasteX1, pasteY1])
 
-  // 直方图
+  // 直方图（列模式：竖向列密度条；行模式：横向行密度条，随轴切换并可点选行）
   React.useEffect(() => {
     const cv = histRef.current
     if (!cv || !density || !block) return
     const bw = block.x1 - block.x0 + 1
-    cv.width = Math.max(bw, 40); cv.height = 64
+    const bh = block.y1 - block.y0 + 1
+    cv.width = Math.max(bw, 40)
+    cv.height = fillAxis === 'row' ? Math.max(bh, 64) : 64
     const ctx2d = cv.getContext('2d')
     ctx2d.clearRect(0, 0, cv.width, cv.height)
-    const max = Math.max(1, ...density.cols)
-    for (let x = 0; x < bw; x++) {
-      const h = Math.round(density.cols[x] / max * 56)
-      let color = '#1f7ad6'
-      if (x === fillColRel) color = '#c98a00'
-      else if (x < keepL || x >= bw - keepR) color = '#d8dce3'
-      ctx2d.fillStyle = color
-      ctx2d.fillRect(x, 64 - h, 1, h)
+    if (fillAxis === 'row') {
+      const maxR = Math.max(1, ...density.rows)
+      for (let y = 0; y < bh; y++) {
+        const w = Math.round(density.rows[y] / maxR * (cv.width - 8))
+        let color = '#1f7ad6'
+        if (y === fillRowRel) color = '#c98a00'
+        else if (y < keepT || y >= bh - keepB) color = '#d8dce3'
+        ctx2d.fillStyle = color
+        ctx2d.fillRect(0, y, w, 1)
+      }
+    } else {
+      const max = Math.max(1, ...density.cols)
+      for (let x = 0; x < bw; x++) {
+        const h = Math.round(density.cols[x] / max * 56)
+        let color = '#1f7ad6'
+        if (x === fillColRel) color = '#c98a00'
+        else if (x < keepL || x >= bw - keepR) color = '#d8dce3'
+        ctx2d.fillStyle = color
+        ctx2d.fillRect(x, 64 - h, 1, h)
+      }
+      const maxR = Math.max(1, ...density.rows)
+      ctx2d.fillStyle = '#9aa2ad'
+      for (let y = 0; y < density.rows.length && y < 8; y++) {
+        const h = Math.round(density.rows[y] / maxR * 56)
+        ctx2d.fillRect(0, y + 64 - 8, h, 1)
+      }
     }
-    const maxR = Math.max(1, ...density.rows)
-    ctx2d.fillStyle = '#9aa2ad'
-    for (let y = 0; y < density.rows.length && y < 8; y++) {
-      const h = Math.round(density.rows[y] / maxR * 56)
-      ctx2d.fillRect(0, y + 64 - 8, h, 1)
-    }
-  }, [density, fillColRel, keepL, keepR, block])
+  }, [density, fillAxis, fillColRel, fillRowRel, keepL, keepR, keepT, keepB, block])
 
   if (!scan || !workList.length) {
     return React.createElement('div', { style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#98a1b0', padding: '40px' } },
@@ -665,8 +688,13 @@ function CleanWorkbench({ scan, selected }) {
     const cv = histRef.current
     if (!cv || !density) return
     const r = cv.getBoundingClientRect()
-    const col = Math.floor((e.clientX - r.left) / r.width * bw)
-    setFillColRel(Math.max(0, Math.min(bw - 1, col)))
+    if (fillAxis === 'row') {
+      const row = Math.floor((e.clientY - r.top) / r.height * bh)
+      setFillRowRel(Math.max(0, Math.min(bh - 1, row)))
+    } else {
+      const col = Math.floor((e.clientX - r.left) / r.width * bw)
+      setFillColRel(Math.max(0, Math.min(bw - 1, col)))
+    }
   }
 
   // 画布拖拽：命中判定用屏幕像素（固定窄把手，整像素取整），基准线 = 靠中心一侧的边沿
@@ -719,12 +747,18 @@ function CleanWorkbench({ scan, selected }) {
       mode,
     }
     if (mode === 'fill') {
-      const fc = fillColRel !== null && fillColRel !== undefined ? fillColRel : keepL
       entry.keepL = keepL
       entry.keepR = keepR
       entry.keepT = keepT
       entry.keepB = keepB
-      entry.fillCol = block.x0 + fc
+      if (fillAxis === 'row') {
+        const fr = fillRowRel !== null && fillRowRel !== undefined ? fillRowRel : keepT
+        entry.fillAxis = 'row'
+        entry.fillRow = block.y0 + fr
+      } else {
+        const fc = fillColRel !== null && fillColRel !== undefined ? fillColRel : keepL
+        entry.fillCol = block.x0 + fc
+      }
     } else if (mode === 'paste') {
       entry.paste = {
         src: pasteSrc,
@@ -734,7 +768,12 @@ function CleanWorkbench({ scan, selected }) {
     }
     const next = plan.concat([entry])
     setPlan(next)
-    setPlanMsg('已加入 #' + block.index + '（' + (mode === 'fill' ? '列填充 L=' + keepL + ' R=' + keepR + ' T=' + keepT + ' B=' + keepB + ' col=' + entry.fillCol : mode === 'transparent' ? '置透明' : '贴底图') + '）')
+    setPlanMsg('已加入 #' + block.index + '（' +
+      (mode === 'fill'
+        ? (fillAxis === 'row'
+            ? '行填充 L=' + keepL + ' R=' + keepR + ' T=' + keepT + ' B=' + keepB + ' row=' + entry.fillRow
+            : '列填充 L=' + keepL + ' R=' + keepR + ' T=' + keepT + ' B=' + keepB + ' col=' + entry.fillCol)
+        : mode === 'transparent' ? '置透明' : '贴底图') + '）')
     if (curIdx < workList.length - 1) setCurIdx(curIdx + 1)
   }
 
@@ -814,7 +853,9 @@ function CleanWorkbench({ scan, selected }) {
       ),
       React.createElement('div', { style: { marginBottom: '8px' } },
         React.createElement('div', { style: { color: '#666', marginBottom: '2px', fontSize: '11px' } },
-          '列笔画密度（蓝=笔画多 灰=保留区 金色=当前填充列；点击选列）：'),
+          fillAxis === 'row'
+            ? '行笔画密度（蓝=笔画多 灰=保留区 金色=当前填充行；点击选行）：'
+            : '列笔画密度（蓝=笔画多 灰=保留区 金色=当前填充列；点击选列）：'),
         React.createElement('canvas', { ref: histRef, onClick: onHistClick, style: {
           border: '1px solid #d8dce3', borderRadius: '4px', cursor: 'pointer', display: 'block', width: '100%', maxWidth: '640px',
         } }),
@@ -837,6 +878,11 @@ function CleanWorkbench({ scan, selected }) {
           React.createElement('button', { onClick: () => setMode('fill'), style: Object.assign({}, btnStyle, mode === 'fill' ? { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' } : {}) }, '列填充'),
           React.createElement('button', { onClick: () => setMode('transparent'), style: Object.assign({}, btnStyle, mode === 'transparent' ? { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' } : {}) }, '置透明'),
           React.createElement('button', { onClick: () => setMode('paste'), style: Object.assign({}, btnStyle, mode === 'paste' ? { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' } : {}) }, '贴底图'),
+        ),
+        mode === 'fill' && React.createElement('div', { style: { display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center' } },
+          React.createElement('span', { style: { color: '#666', fontSize: '11px' } }, '填充轴：'),
+          React.createElement('button', { onClick: () => setFillAxis('col'), style: Object.assign({}, btnStyle, fillAxis === 'col' ? { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' } : {}) }, '列填充'),
+          React.createElement('button', { onClick: () => setFillAxis('row'), style: Object.assign({}, btnStyle, fillAxis === 'row' ? { background: '#1f7ad6', borderColor: '#1f7ad6', color: '#fff' } : {}) }, '行填充'),
         ),
         mode === 'fill' && React.createElement('div', null,
           React.createElement('div', { style: { display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' } },
@@ -863,7 +909,9 @@ function CleanWorkbench({ scan, selected }) {
             ),
           ),
           React.createElement('div', { style: { color: '#666', fontSize: '11px', marginBottom: '6px' } },
-            '填充列（绝对 x）：' + (fillColRel !== null && fillColRel !== undefined ? block.x0 + fillColRel : '未选（默认 ' + (block.x0 + keepL) + '）') + '  ← 点直方图选列；拖拽基准=靠中心一侧的边沿（把手 ±' + HIT_PX + 'px，整像素）'),
+            fillAxis === 'row'
+              ? '填充行（绝对 y）：' + (fillRowRel !== null && fillRowRel !== undefined ? block.y0 + fillRowRel : '未选（默认 ' + (block.y0 + keepT) + '）') + '  ← 点直方图选行；拖拽基准=靠中心一侧的边沿（把手 ±' + HIT_PX + 'px，整像素）'
+              : '填充列（绝对 x）：' + (fillColRel !== null && fillColRel !== undefined ? block.x0 + fillColRel : '未选（默认 ' + (block.x0 + keepL) + '）') + '  ← 点直方图选列；拖拽基准=靠中心一侧的边沿（把手 ±' + HIT_PX + 'px，整像素）'),
         ),
         mode === 'paste' && React.createElement('div', null,
           React.createElement('div', { style: { color: '#666', fontSize: '11px', marginBottom: '4px' } }, '来源图（相对工程根，如 res/SO021.png）：'),
@@ -889,7 +937,10 @@ function CleanWorkbench({ scan, selected }) {
             } },
               React.createElement('span', { style: { color: '#8a94a3', fontFamily: 'ui-monospace,Menlo,monospace', width: '30px', flex: 'none' } }, '#' + p.index),
               React.createElement('span', { style: { flex: '1', fontSize: '11px', color: '#333' } },
-                p.mode === 'fill' ? ('填充 L=' + p.keepL + ' R=' + p.keepR + ' T=' + (p.keepT || 0) + ' B=' + (p.keepB || 0) + ' col=' + p.fillCol)
+                p.mode === 'fill'
+                  ? (p.fillAxis === 'row'
+                      ? ('行填充 L=' + p.keepL + ' R=' + p.keepR + ' T=' + (p.keepT || 0) + ' B=' + (p.keepB || 0) + ' row=' + p.fillRow)
+                      : ('列填充 L=' + p.keepL + ' R=' + p.keepR + ' T=' + (p.keepT || 0) + ' B=' + (p.keepB || 0) + ' col=' + p.fillCol))
                   : p.mode === 'transparent' ? '置透明' : ('贴 ' + (p.paste && p.paste.src || '?'))),
               React.createElement('button', { onClick: () => removePlan(i), style: Object.assign({}, btnStyle, { padding: '1px 8px', color: '#e5484d' }) }, '✕'),
             )),
@@ -940,6 +991,25 @@ function applyColumnFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillColRel) 
     const sr = d[srcIdx], sg = d[srcIdx + 1], sb = d[srcIdx + 2], sa = d[srcIdx + 3]
     for (let x = keepL; x < rightFrom; x++) {
       const dst = rowBase + x * 4
+      d[dst] = sr; d[dst + 1] = sg; d[dst + 2] = sb; d[dst + 3] = sa
+    }
+  }
+  ctx2d.putImageData(imgData, 0, 0)
+}
+
+// 行填充（列填充的并列模式）：保留区内（x∈[keepL,bw-keepR)，y∈[keepT,bh-keepB)）每列复制
+// fillRowRel 行的像素——取 (x, fillRowRel) 后沿该列向下复制，适合背景横向一致的按行抹字。
+function applyRowFill(ctx2d, bw, bh, keepL, keepR, keepT, keepB, fillRowRel) {
+  const imgData = ctx2d.getImageData(0, 0, bw, bh)
+  const d = imgData.data
+  const rightFrom = bw - keepR
+  const bottomFrom = bh - keepB
+  const srcRowBase = fillRowRel * bw * 4
+  for (let x = keepL; x < rightFrom; x++) {
+    const srcIdx = srcRowBase + x * 4
+    const sr = d[srcIdx], sg = d[srcIdx + 1], sb = d[srcIdx + 2], sa = d[srcIdx + 3]
+    for (let y = keepT; y < bottomFrom; y++) {
+      const dst = y * bw * 4 + x * 4
       d[dst] = sr; d[dst + 1] = sg; d[dst + 2] = sb; d[dst + 3] = sa
     }
   }

@@ -9,6 +9,8 @@
 //        返回可独立载入的块清单（清理工作台不再依赖地图选中）。
 // pkg-8：新增 RPC uimap-scan——直接执行扫描（供会话头部「🔍 UI 地图」一键按钮与模态「🔄 重新扫描」
 //        使用，无需 agent 触发工具卡片）；runScan 抽为公共函数供工具 execute 复用。
+// pkg-10：清理导出支持行填充——方案块标记 fillAxis='row' 时生成 --fill-row <absY>（与 --fill-col 并列），
+//         四边 --keep-l/r/t/b 照常输出；amayui_uimap 工具描述同步注明列/行填充。
 return {
   inject: ['fs'],
   apply(ctx) {
@@ -134,7 +136,7 @@ return {
 
     harness.registerTool(ctx, harness.defineTool({
       name: 'amayui_uimap',
-      description: '扫描天結 UI 图片（PNG）的 alpha 连通块并生成交互式 UI 元素地图。调用后：1) 用 scan_blocks.py 全图扫描连通块并记住结果；2) 在本工具结果卡片中生成交互入口，点「🖥 全屏选择」打开全屏模态（图上块分级画框、悬停看详情、点击选中/取消并显示金色蒙层、可缩放，右侧清单可过滤/勾选）；3) 选中块后可进「🧹 清理工作台」：逐块统计列笔画密度直方图、点击选列即时预览列填充（保留左右 N px 复制选定列，左右保留可拖拽独立配置）、支持置透明与跨图贴底图预览，导出清理方案 JSON + clean_fill.py 调用脚本到 .tmp/。替代「猜坐标 → cc_scan 逐点查询」的人工定位循环与手工构造清理命令。用户要求定位 UI 元素坐标/按钮区域/待清理文字块/生成清理脚本时使用；无 OCR、无 AI，纯几何连通块扫描。',
+      description: '扫描天結 UI 图片（PNG）的 alpha 连通块并生成交互式 UI 元素地图。调用后：1) 用 scan_blocks.py 全图扫描连通块并记住结果；2) 在本工具结果卡片中生成交互入口，点「🖥 全屏选择」打开全屏模态（图上块分级画框、悬停看详情、点击选中/取消并显示金色蒙层、可缩放，右侧清单可过滤/勾选）；3) 选中块后可进「🧹 清理工作台」：逐块统计行列笔画密度直方图、点击选列/选行即时预览列填充与行填充（保留上下左右 N px 复制选定列/行，四边保留可拖拽独立配置）、支持置透明与跨图贴底图预览，导出清理方案 JSON + clean_fill.py 调用脚本到 .tmp/。替代「猜坐标 → cc_scan 逐点查询」的人工定位循环与手工构造清理命令。用户要求定位 UI 元素坐标/按钮区域/待清理文字块/生成清理脚本时使用；无 OCR、无 AI，纯几何连通块扫描。',
       parameters: {
         png: { type: 'string', required: true, description: 'UI 图片 PNG 路径：相对工程根（如 res/SO020.png）或绝对路径' },
         alpha: { type: 'integer', description: 'alpha 前景阈值，默认 128（实体范围）；要含羽化边缘用 1' },
@@ -312,8 +314,13 @@ return {
           const keepR = b.keepR === undefined ? keepL : b.keepR
           const keepT = b.keepT === undefined ? 0 : b.keepT
           const keepB = b.keepB === undefined ? 0 : b.keepB
-          const fillCol = b.fillCol === undefined ? b.x0 + keepL : b.fillCol
-          cmd += ' --keep-l ' + keepL + ' --keep-r ' + keepR + ' --keep-t ' + keepT + ' --keep-b ' + keepB + ' --fill-col ' + fillCol
+          cmd += ' --keep-l ' + keepL + ' --keep-r ' + keepR + ' --keep-t ' + keepT + ' --keep-b ' + keepB
+          if (b.fillAxis === 'row' && b.fillRow !== undefined) {
+            cmd += ' --fill-row ' + b.fillRow
+          } else {
+            const fillCol = b.fillCol === undefined ? b.x0 + keepL : b.fillCol
+            cmd += ' --fill-col ' + fillCol
+          }
         }
         lines.push('# 块 #' + b.index + ' (' + b.w + '×' + b.h + ')')
         lines.push(cmd)
