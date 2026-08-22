@@ -32,10 +32,15 @@
 | E5 | 30px 规则（黑字+白描边） | 103×73 / 117×81 等按钮（SO030 第一轮、SO020-2、SO009A-1） | 30px | `#000` + 0.5px `#000` | 4px `rgba(255,255,255,1/0.5)` | 上半 `0 4px 4px #000` 于描边层 | docs/images/SO030.md §6、SO020.md §8、SO009A.md §7 |
 | E6 | 红字+白描边（SO030 第二轮上半） | 红字按钮（SO030-2 上半、SO020-1） | 28/30px | `#FD480A`（无黑描边） | 4px `rgba(255,255,255,1)` | `0 4px 4px #000` 于描边层 | docs/images/SO030.md §7、SO020.md §7 |
 | E7 | 阴刻 outline（棕褐环+半透明灰内部） | 设置页顶部标题（SO009B 第一列） | 28px bold | 内部 `#26201E` 50% | 棕褐外环 `#b4887c`（region filter） | 外阴影 `#25201d` 50% | 本文件 E7 节、docs/images/SO009B.md §9 |
+| E8 | 两段式渐变字（上白下浅绿）+深绿描边+黑阴影 | SO039 第三列（同组列1=E5 上半、列2=E5 下半） | 24px | 上 `#FFFFFF`／下 `#CDFDCD`（0%/50% 硬切） | 深绿 3px `#015514` | `0 4px 4px rgba(0,0,0,1)` 独立层 `.shd` | docs/images/SO039.md §3.2 |
 
 ---
 
 ## E1 纯文本行（金色/青色）— 设置页文字行
+
+![E1 示例：金色描边纯文本行（返回／初始化本页／初始化全部）](../../res/images/fonts/E1_gold_text.png)
+
+> 裁自 `res\images\fonts\E1_gold_text.png`（原图 `res\images\SO009A-2.png`(968,682)-(1136,768)）；对应场景 SO009A 三行、SO009B 金/青两列
 
 **场景**：SO009A 设置页三行文字、SO009B 三列菜单文字（透明/纯色背景上的单行文字）。
 
@@ -55,6 +60,10 @@ text-shadow: 2px 2px 1px rgba(0,0,0,1);  /* 右下偏移 2px，模糊 1px，纯�
 
 ## E2 纯色底按钮（黑字）
 
+![E2 示例：纯色底按钮黑字「菜单」](../../res/images/fonts/E2_solid_button.png)
+
+> 裁自 `res\images\fonts\E2_solid_button.png`（原图 `res\images\SO021-1.png`(656,742)-(822,803)）；对应场景 SO020 上半、SO021/SO025 块 A
+
 **场景**：SO020 上半 11 个纯色底按钮（米白底 #FEF3E5/#F0F0E0、无边框）、SO021/SO025 块 A 面板等。
 
 ```css
@@ -71,6 +80,10 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 - 清理：纯色底保留左右 15px、中间逐行复制第 16px 列（x0+15）。
 
 ## E3 渐变底按钮（黑字 + 半透明白边）
+
+![E3 示例：渐变底按钮黑字+半透明白边「菜单」](../../res/images/fonts/E3_grad_button.png)
+
+> 裁自 `res\images\fonts\E3_grad_button.png`（原图 `res\images\SO021-1.png`(650,789)-(798,841)）；对应场景 SO020 下半、SO021/SO025 块 B
 
 **场景**：SO020 下半 11 个边框+渐变按钮（黑色圆角边框 + 青蓝渐变底）、SO021/SO025 块 B 小按钮。
 
@@ -96,6 +109,10 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 - 清理：渐变底保留左右 20px、中间逐行复制第 21px 列（x0+20，保留每行渐变值）。
 
 ## E4 红描边渐变字（SO017 兵种名）
+
+![E4 示例：红描边渐变字（人类杀手／幻兽杀手）](../../res/images/fonts/E4_red_grad.png)
+
+> 裁自 `res\images\fonts\E4_red_grad.png`（原图 `res\images\SO017-2.png`(15,0)-(175,68)）；对应场景 SO017 全量兵种名
 
 **场景**：SO017 兵种名红字（红色描边 + 白心渐变 + 黑阴影），坐标中心定位。
 
@@ -128,6 +145,10 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 
 ## E5 30px 规则（黑字 + 白描边 4px）— 标准大按钮
 
+![E5 示例：30px 黑字+白描边（归还，上半）](../../res/images/fonts/E5_30px_rule.png)
+
+> 裁自 `res\images\fonts\E5_30px_rule.png`（原图 `res\images\SO030-3.png`(663,550)-(790,648)）；对应场景 SO030 第一轮、SO020 8 按钮、SO009A 返回×2
+
 **场景**：SO030 第一轮 16 按钮（103×73）、SO020 8 按钮（103×73）、SO009A 返回按钮 ×2（117×81）。
 **这是当前 30px 大按钮的标准效果**（用户确认）。
 
@@ -157,6 +178,10 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 
 ## E6 红字 + 白描边（SO030 第二轮「上半」效果）
 
+![E6 示例：红字+白描边（防卫开始，上半 `#FD480A`）](../../res/images/fonts/E6_red_white.png)
+
+> 裁自 `res\images\fonts\E6_red_white.png`（原图 `res\images\SO030-3.png`(1000,1140)-(1250,1240)）；对应场景 SO030 第二轮上半、SO020 探索开始/出击
+
 **场景**：SO030 第二轮 4 按钮上半（#147/#167，213×73）、SO020-1 4 按钮（探索开始/出击，213×73，**全部用上半效果**）。
 
 ```css
@@ -173,6 +198,10 @@ letter-spacing: 1px; color: #000; -webkit-text-stroke: 0.5px #000; text-align: c
 ---
 
 ## E7 阴刻 outline（棕褐外环 + 半透明灰内部）— SO009B 第一列
+
+![E7 示例：阴刻 outline 六行（系统设定／游戏设定／ADV设定／声音设定／角色设定／操作设定）](../../res/images/fonts/E7_outline.png)
+
+> 裁自 `res\images\fonts\E7_outline.png`（原图 `res\images\SO009B-4.png`(0,0)-(240,228)）；对应场景 SO009B 第一列（当前生效三列版）
 
 **场景**：SO009B 第一列（设置页顶部标题，outline 阴刻样式；游戏内不明显但已实现），712×256 全图。
 **已应用产物**：`res\images\SO009B-4.png`（三列最终版，当前生效）；完整渲染页 `.tmp\ui-redraw\SO009B\col1\render_final.html`。
@@ -274,6 +303,40 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 
 ---
 
+## E8 两段式渐变字（上白下浅绿）+ 深绿描边 + 黑阴影 — SO039 第三列
+
+**场景**：SO039「锁定/释放」2×3 按钮组的**第三列**（绿边按钮）。同组**列1=E5 上半、列2=E5 下半**；本效果为列 3 的「上白/下浅绿两段式 + 原图深绿描边 + 黑色下阴影」样式，后续其它按钮可复用。
+**排版**：24px **Sarasa Gothic SC**，字距 1px，`text-align:center` + `line-height:<块高>px` 居中，**`top = y0`（无上移——用户要求取消 E5 的 `top=y0-1` + `translateY(-0.5px)`）**。
+
+- **两段式平铺**（非渐变）：上 0%–50% 纯白 `#FFFFFF`、下 50%–100% 浅绿 `#CDFDCD`（`#CDFDCD` 取原图字形下端，`#FFFFFF` 取上端近白——原图经用户确认是**上半白/下半浅绿的两段**，不是渐变）；
+- **深绿描边**：3px `#015514`（原图字形 `(1,85,20)`）；
+- **黑色下阴影**：`0 4px 4px rgba(0,0,0,1)`，置于**独立底层 `.shd`**（避免落在 `background-clip:text` 的渐变层上失效；与 E5 上半同款阴影）。
+
+```css
+.btn { position:absolute; text-align:center; font-family:"Sarasa Gothic SC"; font-size:24px;
+       letter-spacing:1px; white-space:nowrap; }   /* left/width 定位 + line-height=<块高> 居中 */
+/* 三层兄弟节点并列（.shd=0 < .gout=1 < .gin=2） */
+.shd  { position:absolute; left:0; right:0; top:0; z-index:0; color:#fff;
+        -webkit-text-stroke:3px #fff;              /* 字形剪影（含描边范围），供阴影使用 */
+        text-shadow:0 4px 4px rgba(0,0,0,1); }
+.gout { position:absolute; left:0; right:0; top:0; z-index:1;
+        color:transparent; -webkit-text-stroke:3px #015514; }
+.gin  { position:absolute; left:0; right:0; top:0; z-index:2; -webkit-text-stroke:0;
+        background:linear-gradient(to bottom, #FFFFFF 0%, #FFFFFF 50%, #CDFDCD 50%, #CDFDCD 100%);
+        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+```
+
+```html
+<div class="btn" style="left:<x0>px; top:<y0>px; width:<w>px; line-height:<块高>px;">
+  <span class="shd">中文</span><span class="gout">中文</span><span class="gin">中文</span>
+</div>
+```
+
+- 踩坑：`.gin` 必须显式 `-webkit-text-stroke:0`（承接自父层/兄弟描边会盖住渐变）；`.shd` 用 `#fff` 加 3px 白描边构成字形剪影，其本身被 `.gout`/`.gin` 覆盖，仅影出下方阴影。
+- 应用图：`res\images\SO039-1.png`（SO039 第三列）；对比页 `.tmp\so039_compare.html`（live CSS，可 DevTools 调 `.shd/.gout/.gin`）。
+
+---
+
 ## 附：各效果已应用图（速查）
 
 | 效果 | 图片 | 详情 |
@@ -285,6 +348,7 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 | E5 | SO030 第一轮 16 按钮、SO020 8 按钮（返回/物品/装备/技能）、SO009A 返回×2 | docs/images/SO030.md §6、SO020.md §8、SO009A.md §7 |
 | E6 | SO030 第二轮 4 按钮（防卫开始/决定）、SO020 4 按钮（探索开始/出击） | docs/images/SO030.md §7、SO020.md §7 |
 | E7 | SO009B 第一列（outline 阴刻，三列最终版 SO009B-4） | 本文件 E7 节、docs/images/SO009B.md §9 |
+| E8 | SO039 第三列（上白下浅绿两段式 + 深绿描边 + 黑阴影，SO039-1） | 本文件 E8 节、docs/images/SO039.md §3.2 |
 
 ## 附：关键踩坑汇总
 
