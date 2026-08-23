@@ -34,6 +34,7 @@
 | E7 | 阴刻 outline（棕褐环+半透明灰内部） | 设置页顶部标题（SO009B 第一列） | 28px bold | 内部 `#26201E` 50% | 棕褐外环 `#b4887c`（region filter） | 外阴影 `#25201d` 50% | 本文件 E7 节、docs/images/SO009B.md §9 |
 | E8 | 两段式渐变字（上白下浅绿）+深绿描边+黑阴影 | SO039 第三列（同组列1=E5 上半、列2=E5 下半） | 24px | 上 `#FFFFFF`／下 `#CDFDCD`（0%/50% 硬切） | 深绿 3px `#015514` | `0 4px 4px rgba(0,0,0,1)` 独立层 `.shd` | docs/images/SO039.md §3.2 |
 | E9 | 黑红混排按钮字（E5 上半 + E6） | 同一行黑字+红字并存（SO021「去城砦」） | 20px（黑部件 18px） | 黑 `#000` / 红 `#FD480A` | 黑 0.5px `#000`；红无；白描边 4px 100% | `0 4px 4px rgba(0,0,0,1)` 于描边层 | docs/images/SO021.md §8.3 |
+| E10 | 同纹三列变体（同图切换） | SO001 5 行按钮（列1 米白 / 列2 纯青 / 列3 灰） | 22px bold | 渐变字（见各列） | 列1 深棕 `2px #3A2709`；列2 深蓝 `2px #1438E0`；列3 黑 `2px rgba(0,0,0,.6)` | 仅列1 `2px 2px 1px rgba(0,0,0,1)`（列2/3 无） | 本文件 E10 节、docs/images/SO001.md |
 
 ---
 
@@ -367,6 +368,60 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 
 ---
 
+## E10 同纹三列变体（同图切换）— SO001 按钮
+
+![E10 示例：同纹三列变体（列1 米白 / 列2 纯青 / 列3 灰）](../../res/images/fonts/E10_so001_3col.png)
+
+> 裁自 `res\images\fonts\E10_so001_3col.png`（三块并排，各 77×78 放大 3x）；对应场景 SO001 5 行 × 3 列按钮（设定变更/初始化/全解除/閉じる/戻る → 变更设置/初始化/全部移除/关闭/返回）
+
+**场景**：同一按钮图形存在三列可互相切换的变体（**同一底图几何、同一文字；仅配色/填色换肤**），且三列周围花纹（边框/角纹/内圈）逐像素一致。三列分别为：
+
+| 列 | 底 | 文字填充 | 描边 | 阴影 |
+|---|---|---|---|---|
+| 列1 米白 | 米白/暖棕渐变 | 黄金渐变字（白→金） | `2px #3A2709`（深棕） | `2px 2px 1px rgba(0,0,0,1)` |
+| 列2 纯青 | 纯浅青 `(1,254,255)` | **白→青**渐变字（底部 = 背景纯青） | `2px #1438E0`（深蓝） | 无 |
+| 列3 灰 | 灰白渐变（= 列1 去饱和度） | **透明→50%黑**渐变（叠灰底 = 与背景混合） | `2px rgba(0,0,0,.6)`（黑） | 无 |
+
+> 备注：列2 字内下半部分 = 外部背景纯青（字在青底上是"白→青"渐变）；列3 的半透明黑字叠于灰底，视觉与背景混合（非 PNG 透明）。
+
+**通用**：Sarasa Gothic SC **bold**、22px、letter-spacing 1px、字宽缩放（2/3 字 `scaleX(0.8)`、4 字 `scaleX(0.6)`）；三层 `grid-area:1/1` 重叠（需描边则 `.out` + 填充 `.gin`，列1 另加阴影层 `.shd`）。
+
+```css
+.tbox { display:grid; place-items:center; font-family:"Sarasa Gothic SC"; font-weight:700;
+        font-size:22px; letter-spacing:1px; line-height:22px; white-space:nowrap; transform:scaleX(0.8); }
+.ly { grid-area:1/1; }
+
+/* 列1 米白：白→金渐变 + 深棕描边 + 黑阴影 */
+.w-shd { color:transparent; -webkit-text-stroke:0; text-shadow:2px 2px 1px rgba(0,0,0,1); }
+.w-out { color:transparent; -webkit-text-stroke:2px #3A2709; }
+.w-gin { color:transparent; -webkit-text-fill-color:transparent;
+         background:linear-gradient(to bottom,#FFFFFF 0%,#FDD896 30%,#FBC568 62%,#FDAB0A 100%);
+         -webkit-background-clip:text; background-clip:text; }
+
+/* 列2 纯青：白→青渐变（底部=背景青）+ 深蓝描边，无阴影 */
+.c-out { color:transparent; -webkit-text-stroke:2px #1438E0; }
+.c-gin { color:transparent; -webkit-text-fill-color:transparent;
+         background:linear-gradient(to bottom,#FFFFFF 0%,#C8ECFF 30%,#4FD4FF 70%,#01FEFF 100%);
+         -webkit-background-clip:text; background-clip:text; }
+
+/* 列3 灰：透明→50%黑渐变（叠灰底=与背景混合）+ 黑描边，无阴影 */
+.g-out { color:transparent; -webkit-text-stroke:2px rgba(0,0,0,0.6); }
+.g-gin { -webkit-text-stroke:0;
+         background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.22) 45%,rgba(0,0,0,0.45) 100%);
+         -webkit-background-clip:text; background-clip:text;
+         -webkit-text-fill-color:transparent; color:transparent; }
+```
+
+```html
+<!-- 列1（含阴影层）；列2/列3 去掉 .w-shd 层即无阴影 -->
+<div class="tbox"><span class="ly w-shd">返回</span><span class="ly w-out">返回</span><span class="ly w-gin">返回</span></div>
+```
+
+- 三列文字渐变边界一致（同字形、同位置、同字号、`background-clip:text` 落字内），保证同图切换时边界不跳。
+- 应用图：`res\images\SO001-1.png`；清理流程见 `docs/images/SO001.md`。
+
+---
+
 ## 附：各效果已应用图（速查）
 
 | 效果 | 图片 | 详情 |
@@ -380,6 +435,7 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 | E7 | SO009B 第一列（outline 阴刻，三列最终版 SO009B-4） | 本文件 E7 节、docs/images/SO009B.md §9 |
 | E8 | SO039 第三列（上白下浅绿两段式 + 深绿描边 + 黑阴影，SO039-1） | 本文件 E8 节、docs/images/SO039.md §3.2 |
 | E9 | SO021「去城砦」（黑=E5 上半 18px + 红=E6 20px，SO021-3） | 本文件 E9 节、docs/images/SO021.md §8.3 |
+| E10 | SO001 同纹三列变体（列1 米白 / 列2 纯青 / 列3 灰，SO001-1） | 本文件 E10 节、docs/images/SO001.md |
 
 ## 附：关键踩坑汇总
 
