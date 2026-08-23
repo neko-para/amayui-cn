@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>UI 文字样式调参</title>
 <style>
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf"); font-weight:400; }
+  @font-face { font-family: "Sarasa Gothic SC"; src: url("../../../res/fonts/SarasaGothicSC/SarasaGothicSC-Bold.ttf");  font-weight:700; }
   @font-face { font-family: "WenQuanYi"; src: url("wenquanyi.ttf"); }
   @font-face { font-family: "AmayuiCN"; src: url("amayui_cn.ttf"); }
   body { margin:0; padding:16px; background:#1e1e1e; color:#ddd;
@@ -59,7 +61,8 @@
   <div class="group"><h2>文字</h2>
     <div class="row"><label>字体</label>
       <select id="font">
-        <option value="WenQuanYi" selected>WenQuanYi（文泉驿）</option>
+        <option value="Sarasa Gothic SC" selected>Sarasa Gothic SC（更纱·工程统一）</option>
+        <option value="WenQuanYi">WenQuanYi（旧·已弃用）</option>
         <option value="AmayuiCN">Amayui CN</option>
         <option value="DengXian Light">等线 Light</option>
         <option value="DengXian">等线</option>
