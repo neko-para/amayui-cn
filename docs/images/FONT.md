@@ -386,6 +386,9 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 
 **通用**：Sarasa Gothic SC **bold**、22px、letter-spacing 1px、字宽缩放（2/3 字 `scaleX(0.8)`、4 字 `scaleX(0.6)`）；三层 `grid-area:1/1` 重叠（需描边则 `.out` + 填充 `.gin`，列1 另加阴影层 `.shd`）。
 
+> **变体（SO001 右带两半，2026-08）**：同「同纹三列」样式但用于**上下两半同序列按钮**（上半=列1 暖、下半=列2 青），
+> 参数调整为 **16px、stroke 2px、除 2字（历史/情报）与 SAVE/LOAD 外 `scaleX(0.9)`**（原图日文横向压缩过；2字与 SAVE/LOAD 自然宽 <60px 不压）。渲染产物 `res\images\SO001-2.png`（**RGBA，透明区与原图逐像素一致**），详见 docs/images/SO001.md §7。
+
 ```css
 .tbox { display:grid; place-items:center; font-family:"Sarasa Gothic SC"; font-weight:700;
         font-size:22px; letter-spacing:1px; line-height:22px; white-space:nowrap; transform:scaleX(0.8); }
