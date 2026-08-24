@@ -1,0 +1,8 @@
+# @amayui/html-preview-card bundle patch.
+# Inserts the plugin row over the empty profile root. The row names this
+# package, whose Host half registers the `preview_html` tool; the same package
+# carries `dsh.client` metadata, so the web modules node also serves and loads
+# its browser half (the tool card + modal).
+- insert:
+    - id: html-preview-card
+      name: '@amayui/html-preview-card'
