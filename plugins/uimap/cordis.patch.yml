@@ -1,0 +1,9 @@
+# @amayui/uimap bundle patch.
+# Inserts the plugin row over the empty profile root. The row names this
+# package, whose Host half registers the `amayui_uimap` tool, the `/dsh-uimap`
+# image route, and the `/dsh-uimap/api/*` JSON endpoints. The same package
+# carries `dsh.client` metadata, so the web modules node also serves and loads
+# its browser half (the map card + full-screen overlay + header button).
+- insert:
+    - id: amayui-uimap
+      name: '@amayui/uimap'
