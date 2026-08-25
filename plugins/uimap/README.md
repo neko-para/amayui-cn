@@ -32,10 +32,14 @@ plugins/uimap/
 
 ## 关键设计
 
-- **Host 半**（`lib/index.js`）：`inject:['tools']` + `ctx.tools.register(defineTool({...}))`；
+- **Host 半**（`lib/index.js`）：`inject:['tools','fs','shell','webServer']` + `ctx.tools.register(defineTool({...}))`；
   工具参数 `png`（必填）/`alpha`/`min_px`。返回结构含 `output.schema` + `render`。
-  `execute` 经 `ctx.get('shell')` 跑 `scripts/uimap/scan_blocks.py`（解释器自适应 python3/python）；
-  最近一次扫描存进程内 `latest` 状态。
+  `execute` 经 `ctx.shell` 跑 `scripts/uimap/scan_blocks.py`（解释器自适应 python3/python）；
+  最近一次扫描存进程内 `latest` 状态。`sandboxPolicy` 为可选服务，用 `ctx.get('sandboxPolicy')` 惰性读取。
+- **⚠️ 必须 `inject` `webServer`**：`webServer` 由 `@deepseek-ai/dsh-web-app` bundle 提供，加载晚于基础
+  `tools`/`fs`/`shell`。若只 `inject:['tools']`，插件会在 base 阶段挂载，`ctx.get('webServer')` 返回
+  `undefined`，于是 `/dsh-uimap` 路由**静默跳过**——表现为图形卡能开、但「重新扫描」报未知错误、图片全 404。
+  把 `webServer` 放进 `inject` 后 Cordis 会等它就绪再挂载，路由即正常注册。
 - **webServer 路由**：`ctx.effect(() => webServer.register({ kind:'prefix', path:'/dsh-uimap', handler }))`。
   - `GET /dsh-uimap/<png>` → 直接回 PNG 字节；
   - `POST /dsh-uimap/api/<method>`（`state` / `scan` / `export` / `clean-list` / `clean-export`）→ JSON。

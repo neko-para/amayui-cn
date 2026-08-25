@@ -27,9 +27,12 @@ window.__ModuleLoader__.load({
       } catch (e) {
         return { ok: false, error: 'API 请求失败：' + String(e && e.message || e) }
       }
-      const text = await res.text()
-      if (!text) return null
-      try { return JSON.parse(text) } catch { return { ok: false, error: 'invalid JSON response' } }
+      let text = ''
+      try { text = await res.text() } catch (e) { text = '' }
+      if (!text) return { ok: false, error: 'API 返回空响应（HTTP ' + res.status + '）' }
+      try { return JSON.parse(text) } catch {
+        return { ok: false, error: 'API 返回非 JSON（HTTP ' + res.status + '）：' + text.slice(0, 120) }
+      }
     }
 
     const shared = { scan: null, selected: {}, open: false, imgLoaded: false, view: 'map' }

@@ -4,15 +4,23 @@
 // (state / scan / export / clean-list / clean-export). This is a static bundle
 // (survives restart), so the client↔host bridge is plain HTTP instead of the
 // dynamic-package `harness.handle`/`host.call` pairing.
+//
+// Service acquisition: `tools`, `fs`, `shell`, `webServer` are declared in
+// `inject` so Cordis parks this plugin until all four are mounted. `webServer`
+// comes from the `dsh-web-app` bundle, which loads AFTER the base services
+// (`tools`/`fs`/`shell`), so it MUST be injected — reading `ctx.get('webServer')`
+// at apply time (without inject) returns undefined while only base is up, which
+// silently skips the image/API route. `sandboxPolicy` is optional, read lazily.
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 export const name = 'amayui-uimap'
-export const inject = ['tools']
+export const inject = ['tools', 'fs', 'shell', 'webServer']
 
 export function apply(ctx) {
-  const fs = ctx.get('fs')
-  const webServer = ctx.get('webServer')
-  const sandboxPolicy = ctx.get('sandboxPolicy')
+  const fs = ctx.fs
+  const shell = ctx.shell
+  const webServer = ctx.webServer
+  const getPolicy = () => ctx.get('sandboxPolicy')
 
   let root = undefined
   let latest = null
@@ -27,7 +35,8 @@ export function apply(ctx) {
         if (s.header && s.header.cwd) return s.header.cwd
       }
     } catch (e) { /* ignore */ }
-    if (sandboxPolicy && sandboxPolicy.workspaceRoot) return sandboxPolicy.workspaceRoot
+    const policy = getPolicy()
+    if (policy && policy.workspaceRoot) return policy.workspaceRoot
     return undefined
   }
 
@@ -37,7 +46,8 @@ export function apply(ctx) {
 
   async function resolvePython(sh, base) {
     if (pyChecked) return py
-    const workdir = base || root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+    const policy = getPolicy()
+    const workdir = base || root || (policy && policy.workspaceRoot)
     for (const cand of ['python3', 'python']) {
       try {
         const spec = sh.resolve({ command: cand + ' --version', workdir, timeoutMs: 15000, stdoutMaxBytes: 4096 })
@@ -50,14 +60,13 @@ export function apply(ctx) {
 
   // 公共扫描函数：执行 scan_blocks.py 并更新 latest（工具 execute 与 API uimap-scan 共用）
   async function runScan(png, alpha, minPx, base, signal) {
-    const sh = ctx.get('shell')
-    if (!sh) throw new Error('shell 服务不可用，无法运行 scan_blocks.py')
+    if (!shell) throw new Error('shell 服务不可用，无法运行 scan_blocks.py')
     if (!fs) throw new Error('fs 服务不可用，无法读写扫描结果')
-    const interpreter = await resolvePython(sh, base)
+    const interpreter = await resolvePython(shell, base)
     const tmpJson = '.tmp/uimap_scan_tmp.json'
     const cmd = interpreter + ' scripts/uimap/scan_blocks.py ' + quote(png) + ' --alpha ' + alpha + ' --min-px ' + minPx + ' --json-only ' + quote(tmpJson)
-    const spec = sh.resolve({ command: cmd, workdir: base, timeoutMs: 120000, stdoutMaxBytes: 16384 })
-    const result = await sh.run(spec)
+    const spec = shell.resolve({ command: cmd, workdir: base, timeoutMs: 120000, stdoutMaxBytes: 16384 })
+    const result = await shell.run(spec)
     if (result.exitCode !== 0) {
       const stderr = result.stderr && result.stderr.text ? result.stderr.text : '(无 stderr)'
       throw new Error('scan_blocks.py 失败 (exit ' + result.exitCode + '): ' + stderr)
@@ -160,7 +169,8 @@ export function apply(ctx) {
 
   async function apiScan(args) {
     try {
-      const base = root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+      const policy = getPolicy()
+      const base = root || (policy && policy.workspaceRoot)
       if (!base) return { ok: false, error: '无法确定工程根目录' }
       const input = args || {}
       let png = String(input.png || '').trim()
@@ -198,20 +208,21 @@ export function apply(ctx) {
       selected_count: components.length,
       components: components.map((b) => ({ index: b.index, x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y1, w: b.w, h: b.h, px: b.px })),
     }
-    const base = root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+    const policy = getPolicy()
+    const base = root || (policy && policy.workspaceRoot)
     if (!base) return { ok: false, error: '无法确定工程根目录' }
     const name = (latest.png.replace(/\.png$/i, '') || 'map') + '_selected.json'
     const rel = '.tmp/' + name
     const target = await fs.resolve(rel, { cwd: base })
-    const policy = sandboxPolicy ? sandboxPolicy.resolve() : undefined
-    await fs.writeText(target, JSON.stringify(out, null, 2), undefined, undefined, policy)
+    await fs.writeText(target, JSON.stringify(out, null, 2), undefined, undefined, policy && policy.resolve())
     return { ok: true, path: rel, selected_count: components.length }
   }
 
   async function apiCleanList() {
     if (!latest) return { ok: false, error: '尚未扫描' }
     if (!fs) return { ok: false, error: 'fs 服务不可用' }
-    const base = root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+    const policy = getPolicy()
+    const base = root || (policy && policy.workspaceRoot)
     if (!base) return { ok: false, error: '无法确定工程根目录' }
     const name = (latest.png.replace(/\.png$/i, '') || 'map')
     for (const rel of ['.tmp/' + name + '_groups.json', '.tmp/' + name + '_selected.json']) {
@@ -242,20 +253,19 @@ export function apply(ctx) {
     const input = args || {}
     const blocks = Array.isArray(input.blocks) ? input.blocks : []
     if (!blocks.length) return { ok: false, error: '方案为空' }
-    const base = root || (sandboxPolicy && sandboxPolicy.workspaceRoot)
+    const policy = getPolicy()
+    const base = root || (policy && policy.workspaceRoot)
     if (!base) return { ok: false, error: '无法确定工程根目录' }
-    const policy = sandboxPolicy ? sandboxPolicy.resolve() : undefined
-    const sh = ctx.get('shell')
     let interpreter = py
     if (!pyChecked) {
-      if (!sh) return { ok: false, error: 'shell 服务不可用，无法生成清理脚本' }
-      interpreter = await resolvePython(sh, base)
+      if (!shell) return { ok: false, error: 'shell 服务不可用，无法生成清理脚本' }
+      interpreter = await resolvePython(shell, base)
     }
     const name = (latest.png.replace(/\.png$/i, '') || 'map') + '_clean'
     const jsonRel = '.tmp/' + name + '.json'
     const shRel = '.tmp/' + name + '.sh'
     const plan = { png: latest.png, size: latest.size, blocks }
-    await fs.writeText(await fs.resolve(jsonRel, { cwd: base }), JSON.stringify(plan, null, 2), undefined, undefined, policy)
+    await fs.writeText(await fs.resolve(jsonRel, { cwd: base }), JSON.stringify(plan, null, 2), undefined, undefined, policy && policy.resolve())
     const lines = [
       '#!/bin/bash',
       'set -e',
@@ -291,12 +301,16 @@ export function apply(ctx) {
       prev = out
     })
     lines.push('echo "完成：最终清理图 = ' + prev + '"')
-    await fs.writeText(await fs.resolve(shRel, { cwd: base }), lines.join('\n'), undefined, undefined, policy)
+    await fs.writeText(await fs.resolve(shRel, { cwd: base }), lines.join('\n'), undefined, undefined, policy && policy.resolve())
     return { ok: true, jsonPath: jsonRel, scriptPath: shRel, block_count: blocks.length }
   }
 
   async function dispatchApi(method, args) {
-    switch (method) {
+    // Client sends the original dynamic-RPC names (uimap-scan / uimap-state /
+    // uimap-export / uimap-clean-list / uimap-clean-export). Strip the `uimap-`
+    // prefix so both the long and short forms route to the same handler.
+    const m = method.startsWith('uimap-') ? method.slice(6) : method
+    switch (m) {
       case 'state': return apiState()
       case 'scan': return apiScan(args)
       case 'export': return apiExport(args)
@@ -330,7 +344,8 @@ export function apply(ctx) {
             res.end('bad path')
             return
           }
-          const base = sandboxPolicy && sandboxPolicy.workspaceRoot
+          const policy = getPolicy()
+          const base = policy && policy.workspaceRoot
           if (!base) {
             res.writeHead(500, { 'Content-Type': 'text/plain' })
             res.end('no workspace root')

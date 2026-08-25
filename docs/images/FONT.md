@@ -430,8 +430,8 @@ node agf/cli.js inject "E:\Games\Eushully\天結\install\DATA1\SO009B.AGF" "E:\G
 | 效果 | 图片 | 详情 |
 |---|---|---|
 | E1 | SO009A（三行）、SO009B（金/青两列） | docs/images/SO009A.md §2–3、SO009B.md |
-| E2 | SO020 上半 11 按钮、SO021 块 A、SO025 块 A | docs/images/SO020.md §4、SO021.md、SO025.md |
-| E3 | SO020 下半 11 按钮、SO021 块 B、SO025 块 B | docs/images/SO020.md §5、SO021.md、SO025.md |
+| E2 | SO020 上半 11 按钮、SO021 块 A、SO025 块 A、SO002 块 A | docs/images/SO020.md §4、SO021.md、SO025.md、SO002.md |
+| E3 | SO020 下半 11 按钮、SO021 块 B、SO025 块 B、SO002 块 B | docs/images/SO020.md §5、SO021.md、SO025.md、SO002.md |
 | E4 | SO017 兵种名 | docs/images/SO017.md |
 | E5 | SO030 第一轮 16 按钮、SO020 8 按钮（返回/物品/装备/技能）、SO009A 返回×2 | docs/images/SO030.md §6、SO020.md §8、SO009A.md §7 |
 | E6 | SO030 第二轮 4 按钮（防卫开始/决定）、SO020 4 按钮（探索开始/出击） | docs/images/SO030.md §7、SO020.md §7 |
