@@ -16,3 +16,12 @@
 - 待办：Windows 上分别对以上 34 个脚本 `cd scripts && npm run assemble -- <SCRIPT>`，通过后登记 `PROGRESS.md` 与 `patch/patch.config.json`，并从本文件删除该条。
 
 注：非批量同场景一致性整理（`TODO.md` line 5 所述同一原文跨脚本措辞/断句/术语口径统一）仍留待后续按定案处理。
+
+### 引号丢失补全（日文有「」引导，译文丢失 → 机械补全）
+
+- 脚本：`$3$SC6850`、`$3$SP2341`、`SC0710`、`SC4300`、`SC5490`、`SC5570`、`SC6710`（共 7 个；其中 `$3$SP2341`、`SC0710` 已含在上一短句回改条目，此条为该类新增改动，现合并计入同一批待汇编脚本）
+- 类型：`修改`（引号丢失补全：日文原文以外层「」引导、译文丢失全部引号字形的行，机械补回「」）
+- 状态：`已翻译，未编译（macOS）`
+- 改动：对 239 处「日文有「」但译文无任何引号」的页，把 `// 输入原文` 整句补上外层「」（236 处本次写出；3 处已在上一短句回改时补好，跳过）。经 `reflow-apply.js` 刷新（236 页），`--check` 幂等通过；`data/` 零改动。
+- 关联：`scripts/check-lost-quotes.js`（扫描）与 `todo/ja-lost-quotes.csv`（236 处 + 已在上一批补好的 3 处全量清单）
+- 待办：Windows 上分别对以上 7 个脚本 `cd scripts && npm run assemble -- <SCRIPT>`，通过后登记 `PROGRESS.md` 与 `patch/patch.config.json`，并从本文件删除该条。
