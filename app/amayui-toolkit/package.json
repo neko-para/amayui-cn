@@ -1,0 +1,32 @@
+{
+  "name": "amayui-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "天結いキャッスルマイスター 数据查询/制作规划 SPA（GitHub Pages 静态部署 + 可选 WebView2 薄壳）",
+  "scripts": {
+    "build:data": "node scripts/extract-metadata.mjs",
+    "build:web": "vite build",
+    "build": "node scripts/extract-metadata.mjs && vite build",
+    "dev": "node scripts/extract-metadata.mjs && vite",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.15.20",
+    "@mui/material": "^5.15.20",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.4",
+    "vitest": "^1.6.0"
+  }
+}
