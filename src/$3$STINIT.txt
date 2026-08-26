@@ -3,62 +3,62 @@ signature = SYS4450
 local_vars = { 2 1 1 1 1 1 }
 ====
 
-eq (local-int 0) (global-int b222) 1
+eq (local-int 0) (global-int b222) 1  // 遺跡地下の調査区域 遗迹地下的调查区域
 jcc (local-int 0) ffffffff label_00000080
 jmp label_000212ec
 
 label_00000080
-eq (local-int 0) (global-int b222) 2
+eq (local-int 0) (global-int b222) 2  // 調査区域の奥 调查区域的深处
 jcc (local-int 0) ffffffff label_000000c4
 jmp label_000212ec
 
 label_000000c4
-eq (local-int 0) (global-int b222) b
+eq (local-int 0) (global-int b222) b  // 堆積した砦路樹 堆积的城砦行道树
 jcc (local-int 0) ffffffff label_00000108
 jmp label_000212ec
 
 label_00000108
-eq (local-int 0) (global-int b222) c
+eq (local-int 0) (global-int b222) c  // 崩れた調査区域 崩塌的调查区域
 jcc (local-int 0) ffffffff label_0000014c
 jmp label_000212ec
 
 label_0000014c
-eq (local-int 0) (global-int b222) d
+eq (local-int 0) (global-int b222) d  // 魔物のいた調査区域 曾有魔物的调查区域
 jcc (local-int 0) ffffffff label_00000190
 jmp label_000212ec
 
 label_00000190
-eq (local-int 0) (global-int b222) e
+eq (local-int 0) (global-int b222) e  // 胴部第一層区域 躯干第一层区域
 jcc (local-int 0) ffffffff label_000001d4
 jmp label_000212ec
 
 label_000001d4
-eq (local-int 0) (global-int b222) f
+eq (local-int 0) (global-int b222) f  // 肩甲殻部区域 肩甲壳部区域
 jcc (local-int 0) ffffffff label_00000218
 jmp label_000212ec
 
 label_00000218
-eq (local-int 0) (global-int b222) 10
+eq (local-int 0) (global-int b222) 10  // 胴部第二層区域 躯干第二层区域
 jcc (local-int 0) ffffffff label_0000025c
 jmp label_000212ec
 
 label_0000025c
-eq (local-int 0) (global-int b222) 11
+eq (local-int 0) (global-int b222) 11  // 清らかな水源地 清澈的水源地
 jcc (local-int 0) ffffffff label_000002a0
 jmp label_000212ec
 
 label_000002a0
-eq (local-int 0) (global-int b222) 12
+eq (local-int 0) (global-int b222) 12  // 螺旋駆動区域 螺旋驱动区域
 jcc (local-int 0) ffffffff label_000002e4
 jmp label_000212ec
 
 label_000002e4
-eq (local-int 0) (global-int b222) 13
+eq (local-int 0) (global-int b222) 13  // 封印されし破条殿 被封印的破条殿
 jcc (local-int 0) ffffffff label_00000328
 jmp label_000212ec
 
 label_00000328
-eq (local-int 0) (global-int b222) 15
+eq (local-int 0) (global-int b222) 15  // 猫の隠れ家 猫之藏身处
 jcc (local-int 0) ffffffff label_00001d5c
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -249,7 +249,7 @@ mov (global-int 14dc8d) 6
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 3a4
+mov (global-int 14dd41) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd5f) 28
 mov (global-int 14dd7d) 32
 mov (global-int 14dd9b) 1
@@ -260,7 +260,7 @@ mov (global-int 14dc8e) 7
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3a4
+mov (global-int 14dd42) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd60) 28
 mov (global-int 14dd7e) 32
 mov (global-int 14dd9c) 1
@@ -269,7 +269,7 @@ mov (global-int 14dc53) 1
 mov (global-int 14dc71) 9
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
-mov (global-int 14dd43) 3a4
+mov (global-int 14dd43) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd61) 28
 mov (global-int 14dd7f) 32
 mov (global-int 14dd9d) 1
@@ -280,7 +280,7 @@ mov (global-int 14dc90) 6
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 3a5
+mov (global-int 14dd44) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd62) 28
 mov (global-int 14dd80) 32
 mov (global-int 14dd9e) 1
@@ -291,7 +291,7 @@ mov (global-int 14dc91) 7
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dd27) 1
-mov (global-int 14dd45) 3a5
+mov (global-int 14dd45) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd63) 28
 mov (global-int 14dd81) 32
 mov (global-int 14dd9f) 1
@@ -300,7 +300,7 @@ mov (global-int 14dc56) a
 mov (global-int 14dc74) 6
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3a5
+mov (global-int 14dd46) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd64) 28
 mov (global-int 14dd82) 32
 mov (global-int 14dda0) 1
@@ -311,7 +311,7 @@ mov (global-int 14dc93) 6
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3a6
+mov (global-int 14dd47) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd65) 28
 mov (global-int 14dd83) 32
 mov (global-int 14dda1) 1
@@ -322,7 +322,7 @@ mov (global-int 14dc94) 7
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 3a6
+mov (global-int 14dd48) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd66) 28
 mov (global-int 14dd84) 32
 mov (global-int 14dda2) 1
@@ -331,7 +331,7 @@ mov (global-int 14dc59) 4
 mov (global-int 14dc77) b
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3a6
+mov (global-int 14dd49) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd67) 28
 mov (global-int 14dd85) 32
 mov (global-int 14dda3) 1
@@ -340,7 +340,7 @@ mov (global-int 14dc5a) c
 mov (global-int 14dc78) c
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 2c7
+mov (global-int 14dd4a) 2c7  // 自壊した石造兵 自毁的石造兵
 mov (global-int 14dd68) 28
 mov (global-int 14dd86) 32
 mov (global-int 14dda4) 1
@@ -349,7 +349,7 @@ mov (global-int 14dc5b) 7
 mov (global-int 14dc79) b
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 195
+mov (global-int 14dd4b) 195  // 癒使霊 愈使灵
 mov (global-int 14dd69) 28
 mov (global-int 14dd87) 32
 mov (global-int 14dda5) 1
@@ -358,7 +358,7 @@ mov (global-int 14dc5c) 4
 mov (global-int 14dc7a) f
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 240
+mov (global-int 14dd4c) 240  // 紅魔コウモリ 红魔蝙蝠
 mov (global-int 14dd6a) 28
 mov (global-int 14dd88) 32
 mov (global-int 14dda6) 1
@@ -395,7 +395,7 @@ mov (global-int 14e029) 1ac3
 jmp label_000212ec
 
 label_00001d5c
-eq (local-int 0) (global-int b222) 16
+eq (local-int 0) (global-int b222) 16  // 白猫の泣く歪宮 白猫哭泣的歪宫
 jcc (local-int 0) ffffffff label_00004334
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -650,7 +650,7 @@ mov (global-int 14dc8d) 6
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 3a4
+mov (global-int 14dd41) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd5f) 29
 mov (global-int 14dd7d) 33
 mov (global-int 14dd9b) 1
@@ -661,7 +661,7 @@ mov (global-int 14dc8e) 8
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3a4
+mov (global-int 14dd42) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd60) 29
 mov (global-int 14dd7e) 33
 mov (global-int 14dd9c) 1
@@ -672,7 +672,7 @@ mov (global-int 14dc8f) 9
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 3a4
+mov (global-int 14dd43) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd61) 29
 mov (global-int 14dd7f) 33
 mov (global-int 14dd9d) 1
@@ -681,7 +681,7 @@ mov (global-int 14dc54) 9
 mov (global-int 14dc72) 8
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
-mov (global-int 14dd44) 3a4
+mov (global-int 14dd44) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd62) 29
 mov (global-int 14dd80) 33
 mov (global-int 14dd9e) 1
@@ -690,7 +690,7 @@ mov (global-int 14dc55) 5
 mov (global-int 14dc73) 7
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3a4
+mov (global-int 14dd45) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd63) 29
 mov (global-int 14dd81) 33
 mov (global-int 14dd9f) 1
@@ -701,7 +701,7 @@ mov (global-int 14dc92) a
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3a5
+mov (global-int 14dd46) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd64) 29
 mov (global-int 14dd82) 33
 mov (global-int 14dda0) 1
@@ -712,7 +712,7 @@ mov (global-int 14dc93) b
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3a5
+mov (global-int 14dd47) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd65) 29
 mov (global-int 14dd83) 33
 mov (global-int 14dda1) 1
@@ -721,7 +721,7 @@ mov (global-int 14dc58) 5
 mov (global-int 14dc76) 10
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3a5
+mov (global-int 14dd48) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd66) 29
 mov (global-int 14dd84) 33
 mov (global-int 14dda2) 1
@@ -730,7 +730,7 @@ mov (global-int 14dc59) 9
 mov (global-int 14dc77) 3
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3a5
+mov (global-int 14dd49) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd67) 29
 mov (global-int 14dd85) 33
 mov (global-int 14dda3) 1
@@ -739,7 +739,7 @@ mov (global-int 14dc5a) e
 mov (global-int 14dc78) d
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 3a5
+mov (global-int 14dd4a) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd68) 29
 mov (global-int 14dd86) 33
 mov (global-int 14dda4) 1
@@ -748,7 +748,7 @@ mov (global-int 14dc5b) 4
 mov (global-int 14dc79) 6
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 3a5
+mov (global-int 14dd4b) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd69) 29
 mov (global-int 14dd87) 33
 mov (global-int 14dda5) 1
@@ -759,7 +759,7 @@ mov (global-int 14dc98) 7
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) 3a6
+mov (global-int 14dd4c) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6a) 29
 mov (global-int 14dd88) 33
 mov (global-int 14dda6) 1
@@ -770,7 +770,7 @@ mov (global-int 14dc99) 9
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
 mov (global-int 14dd2f) 1
-mov (global-int 14dd4d) 3a6
+mov (global-int 14dd4d) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6b) 29
 mov (global-int 14dd89) 33
 mov (global-int 14dda7) 1
@@ -779,7 +779,7 @@ mov (global-int 14dc5e) d
 mov (global-int 14dc7c) 5
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 3a6
+mov (global-int 14dd4e) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6c) 29
 mov (global-int 14dd8a) 33
 mov (global-int 14dda8) 1
@@ -788,7 +788,7 @@ mov (global-int 14dc5f) c
 mov (global-int 14dc7d) c
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
-mov (global-int 14dd4f) 3a6
+mov (global-int 14dd4f) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6d) 29
 mov (global-int 14dd8b) 33
 mov (global-int 14dda9) 1
@@ -797,7 +797,7 @@ mov (global-int 14dc60) a
 mov (global-int 14dc7e) 2
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
-mov (global-int 14dd50) 195
+mov (global-int 14dd50) 195  // 癒使霊 愈使灵
 mov (global-int 14dd6e) 29
 mov (global-int 14dd8c) 33
 mov (global-int 14ddaa) 1
@@ -808,7 +808,7 @@ mov (global-int 14dc9d) c
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
 mov (global-int 14dd33) 1
-mov (global-int 14dd51) 296
+mov (global-int 14dd51) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd6f) 29
 mov (global-int 14dd8d) 33
 mov (global-int 14ddab) 1
@@ -817,7 +817,7 @@ mov (global-int 14dc62) d
 mov (global-int 14dc80) 12
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
-mov (global-int 14dd52) 2c7
+mov (global-int 14dd52) 2c7  // 自壊した石造兵 自毁的石造兵
 mov (global-int 14dd70) 29
 mov (global-int 14dd8e) 33
 mov (global-int 14ddac) 1
@@ -826,7 +826,7 @@ mov (global-int 14dc63) 6
 mov (global-int 14dc81) e
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
-mov (global-int 14dd53) 240
+mov (global-int 14dd53) 240  // 紅魔コウモリ 红魔蝙蝠
 mov (global-int 14dd71) 29
 mov (global-int 14dd8f) 33
 mov (global-int 14ddad) 1
@@ -835,7 +835,7 @@ mov (global-int 14dc64) 4
 mov (global-int 14dc82) 10
 mov (global-int 14dcbe) 2
 mov (global-int 14dcdc) 7
-mov (global-int 14dd54) 148
+mov (global-int 14dd54) 148  // 狂ったジルニー 疯狂的吉尔尼
 mov (global-int 14dd72) 29
 mov (global-int 14dd90) 33
 mov (global-int 14ddae) 1
@@ -844,7 +844,7 @@ mov (global-int 14dc65) 6
 mov (global-int 14dc83) 10
 mov (global-int 14dcbf) 2
 mov (global-int 14dcdd) 7
-mov (global-int 14dd55) 148
+mov (global-int 14dd55) 148  // 狂ったジルニー 疯狂的吉尔尼
 mov (global-int 14dd73) 29
 mov (global-int 14dd91) 33
 mov (global-int 14ddaf) 1
@@ -881,7 +881,7 @@ mov (global-int 14e029) 1ac4
 jmp label_000212ec
 
 label_00004334
-eq (local-int 0) (global-int b222) 17
+eq (local-int 0) (global-int b222) 17  // 歪宮中心部 歪宫中心部
 jcc (local-int 0) ffffffff label_0000645c
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -1064,7 +1064,7 @@ mov (global-int 14dc6f) 2
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3a7
+mov (global-int 14dd41) 3a7  // 歪宮の守護者 歪宫的守护者
 mov (global-int 14dd5f) 2b
 mov (global-int 14dd7d) 35
 mov (global-int 14dd9b) 1
@@ -1074,7 +1074,7 @@ mov (global-int 14dc70) 9
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 3a7
+mov (global-int 14dd42) 3a7  // 歪宮の守護者 歪宫的守护者
 mov (global-int 14dd60) 2b
 mov (global-int 14dd7e) 35
 mov (global-int 14dd9c) 1
@@ -1084,7 +1084,7 @@ mov (global-int 14dc71) 9
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 3a7
+mov (global-int 14dd43) 3a7  // 歪宮の守護者 歪宫的守护者
 mov (global-int 14dd61) 2b
 mov (global-int 14dd7f) 35
 mov (global-int 14dd9d) 1
@@ -1094,7 +1094,7 @@ mov (global-int 14dc72) 10
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dcea) 2
-mov (global-int 14dd44) 3a7
+mov (global-int 14dd44) 3a7  // 歪宮の守護者 歪宫的守护者
 mov (global-int 14dd62) 2b
 mov (global-int 14dd80) 35
 mov (global-int 14dd9e) 1
@@ -1105,7 +1105,7 @@ mov (global-int 14dc91) 8
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dd27) 1
-mov (global-int 14dd45) 3a4
+mov (global-int 14dd45) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd63) 2a
 mov (global-int 14dd81) 34
 mov (global-int 14dd9f) 1
@@ -1116,7 +1116,7 @@ mov (global-int 14dc92) a
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3a4
+mov (global-int 14dd46) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd64) 2a
 mov (global-int 14dd82) 34
 mov (global-int 14dda0) 1
@@ -1127,7 +1127,7 @@ mov (global-int 14dc93) d
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3a4
+mov (global-int 14dd47) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd65) 2a
 mov (global-int 14dd83) 34
 mov (global-int 14dda1) 1
@@ -1138,7 +1138,7 @@ mov (global-int 14dc94) e
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 3a4
+mov (global-int 14dd48) 3a4  // 不思議な小鬼 不可思议的小鬼
 mov (global-int 14dd66) 2a
 mov (global-int 14dd84) 34
 mov (global-int 14dda2) 1
@@ -1149,7 +1149,7 @@ mov (global-int 14dc95) 8
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 3a5
+mov (global-int 14dd49) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd67) 2a
 mov (global-int 14dd85) 34
 mov (global-int 14dda3) 1
@@ -1160,7 +1160,7 @@ mov (global-int 14dc96) a
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) 3a5
+mov (global-int 14dd4a) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd68) 2a
 mov (global-int 14dd86) 34
 mov (global-int 14dda4) 1
@@ -1171,7 +1171,7 @@ mov (global-int 14dc97) d
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dd2d) 1
-mov (global-int 14dd4b) 3a5
+mov (global-int 14dd4b) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd69) 2a
 mov (global-int 14dd87) 34
 mov (global-int 14dda5) 1
@@ -1182,7 +1182,7 @@ mov (global-int 14dc98) e
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) 3a5
+mov (global-int 14dd4c) 3a5  // 不思議な雷蝶 不可思议的雷蝶
 mov (global-int 14dd6a) 2a
 mov (global-int 14dd88) 34
 mov (global-int 14dda6) 1
@@ -1193,7 +1193,7 @@ mov (global-int 14dc99) 8
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
 mov (global-int 14dd2f) 1
-mov (global-int 14dd4d) 3a6
+mov (global-int 14dd4d) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6b) 2a
 mov (global-int 14dd89) 34
 mov (global-int 14dda7) 1
@@ -1204,7 +1204,7 @@ mov (global-int 14dc9a) a
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
 mov (global-int 14dd30) 1
-mov (global-int 14dd4e) 3a6
+mov (global-int 14dd4e) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6c) 2a
 mov (global-int 14dd8a) 34
 mov (global-int 14dda8) 1
@@ -1215,7 +1215,7 @@ mov (global-int 14dc9b) d
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
 mov (global-int 14dd31) 1
-mov (global-int 14dd4f) 3a6
+mov (global-int 14dd4f) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6d) 2a
 mov (global-int 14dd8b) 34
 mov (global-int 14dda9) 1
@@ -1226,7 +1226,7 @@ mov (global-int 14dc9c) e
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
 mov (global-int 14dd32) 1
-mov (global-int 14dd50) 3a6
+mov (global-int 14dd50) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6e) 2a
 mov (global-int 14dd8c) 34
 mov (global-int 14ddaa) 1
@@ -1237,7 +1237,7 @@ mov (global-int 14dc9d) 9
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
 mov (global-int 14dd33) 1
-mov (global-int 14dd51) 3a6
+mov (global-int 14dd51) 3a6  // 不思議なドリュアス 不可思议的德律阿斯
 mov (global-int 14dd6f) 2a
 mov (global-int 14dd8d) 34
 mov (global-int 14ddab) 1
@@ -1248,7 +1248,7 @@ mov (global-int 14dc9e) b
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
 mov (global-int 14dd34) 1
-mov (global-int 14dd52) 296
+mov (global-int 14dd52) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd70) 2a
 mov (global-int 14dd8e) 34
 mov (global-int 14ddac) 1
@@ -1259,7 +1259,7 @@ mov (global-int 14dc9f) c
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
 mov (global-int 14dd35) 1
-mov (global-int 14dd53) 296
+mov (global-int 14dd53) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd71) 2a
 mov (global-int 14dd8f) 34
 mov (global-int 14ddad) 1
@@ -1270,7 +1270,7 @@ mov (global-int 14dca0) 9
 mov (global-int 14dcbe) 2
 mov (global-int 14dcdc) 7
 mov (global-int 14dd36) 1
-mov (global-int 14dd54) 296
+mov (global-int 14dd54) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd72) 2a
 mov (global-int 14dd90) 34
 mov (global-int 14ddae) 1
@@ -1307,362 +1307,362 @@ mov (global-int 14e029) 1ac5
 jmp label_000212ec
 
 label_0000645c
-eq (local-int 0) (global-int b222) 29
+eq (local-int 0) (global-int b222) 29  // クミル村の水源地 库米尔村的水源地
 jcc (local-int 0) ffffffff label_000064a0
 jmp label_000212ec
 
 label_000064a0
-eq (local-int 0) (global-int b222) 2a
+eq (local-int 0) (global-int b222) 2a  // 忘神の墓 忘神之墓
 jcc (local-int 0) ffffffff label_000064e4
 jmp label_000212ec
 
 label_000064e4
-eq (local-int 0) (global-int b222) 2b
+eq (local-int 0) (global-int b222) 2b  // 魔葉の河畔林 魔叶的河畔林
 jcc (local-int 0) ffffffff label_00006528
 jmp label_000212ec
 
 label_00006528
-eq (local-int 0) (global-int b222) 33
+eq (local-int 0) (global-int b222) 33  // 湿地帯の河原 湿地的河滩
 jcc (local-int 0) ffffffff label_0000656c
 jmp label_000212ec
 
 label_0000656c
-eq (local-int 0) (global-int b222) 3d
+eq (local-int 0) (global-int b222) 3d  // クミル村 库米尔村
 jcc (local-int 0) ffffffff label_000065b0
 jmp label_000212ec
 
 label_000065b0
-eq (local-int 0) (global-int b222) 51
+eq (local-int 0) (global-int b222) 51  // 廃妖の谷底 废妖的谷底
 jcc (local-int 0) ffffffff label_000065f4
 jmp label_000212ec
 
 label_000065f4
-eq (local-int 0) (global-int b222) 52
+eq (local-int 0) (global-int b222) 52  // 雲駆る吊り橋 凌云吊桥
 jcc (local-int 0) ffffffff label_00006638
 jmp label_000212ec
 
 label_00006638
-eq (local-int 0) (global-int b222) 53
+eq (local-int 0) (global-int b222) 53  // 幻獣の巣窟 幻兽的巢窟
 jcc (local-int 0) ffffffff label_0000667c
 jmp label_000212ec
 
 label_0000667c
-eq (local-int 0) (global-int b222) 54
+eq (local-int 0) (global-int b222) 54  // 飢狼の黒曜湖 饥狼的黑曜湖
 jcc (local-int 0) ffffffff label_000066c0
 jmp label_000212ec
 
 label_000066c0
-eq (local-int 0) (global-int b222) 5b
+eq (local-int 0) (global-int b222) 5b  // 獣斥の谷 兽斥之谷
 jcc (local-int 0) ffffffff label_00006704
 jmp label_000212ec
 
 label_00006704
-eq (local-int 0) (global-int b222) 5c
+eq (local-int 0) (global-int b222) 5c  // 黒曜湖畔の集落 黑曜湖畔的村落
 jcc (local-int 0) ffffffff label_00006748
 jmp label_000212ec
 
 label_00006748
-eq (local-int 0) (global-int b222) 65
+eq (local-int 0) (global-int b222) 65  // 苔の山滝 苔山瀑布
 jcc (local-int 0) ffffffff label_0000678c
 jmp label_000212ec
 
 label_0000678c
-eq (local-int 0) (global-int b222) 66
+eq (local-int 0) (global-int b222) 66  // 乾風の山 干风之山
 jcc (local-int 0) ffffffff label_000067d0
 jmp label_000212ec
 
 label_000067d0
-eq (local-int 0) (global-int b222) 67
+eq (local-int 0) (global-int b222) 67  // 嵐燐回廊 岚燐回廊
 jcc (local-int 0) ffffffff label_00006814
 jmp label_000212ec
 
 label_00006814
-eq (local-int 0) (global-int b222) 68
+eq (local-int 0) (global-int b222) 68  // 遺却の旧鉱山 废弃的旧矿山
 jcc (local-int 0) ffffffff label_00006858
 jmp label_000212ec
 
 label_00006858
-eq (local-int 0) (global-int b222) 6f
+eq (local-int 0) (global-int b222) 6f  // 麓の森林地帯 山麓的森林地带
 jcc (local-int 0) ffffffff label_0000689c
 jmp label_000212ec
 
 label_0000689c
-eq (local-int 0) (global-int b222) 79
+eq (local-int 0) (global-int b222) 79  // リックベルの街 里克贝尔城镇
 jcc (local-int 0) ffffffff label_000068e0
 jmp label_000212ec
 
 label_000068e0
-eq (local-int 0) (global-int b222) 8d
+eq (local-int 0) (global-int b222) 8d  // 国境の迎撃隧道 国境的迎击隧道
 jcc (local-int 0) ffffffff label_00006924
 jmp label_000212ec
 
 label_00006924
-eq (local-int 0) (global-int b222) 8e
+eq (local-int 0) (global-int b222) 8e  // 崖下の熱滝 崖下的热瀑布
 jcc (local-int 0) ffffffff label_00006968
 jmp label_000212ec
 
 label_00006968
-eq (local-int 0) (global-int b222) 8f
+eq (local-int 0) (global-int b222) 8f  // ドシュア砕屑崖 多舒阿碎屑崖
 jcc (local-int 0) ffffffff label_000069ac
 jmp label_000212ec
 
 label_000069ac
-eq (local-int 0) (global-int b222) a1
+eq (local-int 0) (global-int b222) a1  // 溶け落ちる集落 熔解的村落
 jcc (local-int 0) ffffffff label_000069f0
 jmp label_000212ec
 
 label_000069f0
-eq (local-int 0) (global-int b222) a2
+eq (local-int 0) (global-int b222) a2  // 魔人墓楼
 jcc (local-int 0) ffffffff label_00006a34
 jmp label_000212ec
 
 label_00006a34
-eq (local-int 0) (global-int b222) b5
+eq (local-int 0) (global-int b222) b5  // 荒れ果てた森都 荒废的森都
 jcc (local-int 0) ffffffff label_00006a78
 jmp label_000212ec
 
 label_00006a78
-eq (local-int 0) (global-int b222) c9
+eq (local-int 0) (global-int b222) c9  // 罪磁の塔 罪磁之塔
 jcc (local-int 0) ffffffff label_00006abc
 jmp label_000212ec
 
 label_00006abc
-eq (local-int 0) (global-int b222) ca
+eq (local-int 0) (global-int b222) ca  // 怨嗟の間 怨嗟之间
 jcc (local-int 0) ffffffff label_00006b00
 jmp label_000212ec
 
 label_00006b00
-eq (local-int 0) (global-int b222) cb
+eq (local-int 0) (global-int b222) cb  // 黒檀の籠属宮 黑檀笼属宫
 jcc (local-int 0) ffffffff label_00006b44
 jmp label_000212ec
 
 label_00006b44
-eq (local-int 0) (global-int b222) cc
+eq (local-int 0) (global-int b222) cc  // 溢霊の沼 溢灵之沼
 jcc (local-int 0) ffffffff label_00006b88
 jmp label_000212ec
 
 label_00006b88
-eq (local-int 0) (global-int b222) d3
+eq (local-int 0) (global-int b222) d3  // 霊洩れの途 灵泄之途
 jcc (local-int 0) ffffffff label_00006bcc
 jmp label_000212ec
 
 label_00006bcc
-eq (local-int 0) (global-int b222) dd
+eq (local-int 0) (global-int b222) dd  // グレーベル大堤防 格雷贝尔大堤防
 jcc (local-int 0) ffffffff label_00006c10
 jmp label_000212ec
 
 label_00006c10
-eq (local-int 0) (global-int b222) f1
+eq (local-int 0) (global-int b222) f1  // ルベータ・テルメス 卢贝塔·特尔梅斯
 jcc (local-int 0) ffffffff label_00006c54
 jmp label_000212ec
 
 label_00006c54
-eq (local-int 0) (global-int b222) f2
+eq (local-int 0) (global-int b222) f2  // ルベータ石灰棚 卢贝塔石灰台地
 jcc (local-int 0) ffffffff label_00006c98
 jmp label_000212ec
 
 label_00006c98
-eq (local-int 0) (global-int b222) fb
+eq (local-int 0) (global-int b222) fb  // ルベータ石灰棚 卢贝塔石灰台地
 jcc (local-int 0) ffffffff label_00006cdc
 jmp label_000212ec
 
 label_00006cdc
-eq (local-int 0) (global-int b222) 105
+eq (local-int 0) (global-int b222) 105  // モルツィオーネ城 莫尔齐奥内城
 jcc (local-int 0) ffffffff label_00006d20
 jmp label_000212ec
 
 label_00006d20
-eq (local-int 0) (global-int b222) 119
+eq (local-int 0) (global-int b222) 119  // 天土の竜石橋 天土龙石桥
 jcc (local-int 0) ffffffff label_00006d64
 jmp label_000212ec
 
 label_00006d64
-eq (local-int 0) (global-int b222) 11a
+eq (local-int 0) (global-int b222) 11a  // 府幻の祠 府幻之祠
 jcc (local-int 0) ffffffff label_00006da8
 jmp label_000212ec
 
 label_00006da8
-eq (local-int 0) (global-int b222) 11b
+eq (local-int 0) (global-int b222) 11b  // 府幻の環状列石 府幻的环状列石
 jcc (local-int 0) ffffffff label_00006dec
 jmp label_000212ec
 
 label_00006dec
-eq (local-int 0) (global-int b222) 11c
+eq (local-int 0) (global-int b222) 11c  // 府幻の鏡柱殿 府幻的镜柱殿
 jcc (local-int 0) ffffffff label_00006e30
 jmp label_000212ec
 
 label_00006e30
-eq (local-int 0) (global-int b222) 11d
+eq (local-int 0) (global-int b222) 11d  // 府幻の竜骨堂 府幻的龙骨堂
 jcc (local-int 0) ffffffff label_00006e74
 jmp label_000212ec
 
 label_00006e74
-eq (local-int 0) (global-int b222) 11e
+eq (local-int 0) (global-int b222) 11e  // 荒んだ北山峡 荒芜的北山峡
 jcc (local-int 0) ffffffff label_00006eb8
 jmp label_000212ec
 
 label_00006eb8
-eq (local-int 0) (global-int b222) 12d
+eq (local-int 0) (global-int b222) 12d  // 竜閣の城砦 龙阁城砦
 jcc (local-int 0) ffffffff label_00006efc
 jmp label_000212ec
 
 label_00006efc
-eq (local-int 0) (global-int b222) 12e
+eq (local-int 0) (global-int b222) 12e  // 竜閣の強襲路 龙阁强袭路
 jcc (local-int 0) ffffffff label_00006f40
 jmp label_000212ec
 
 label_00006f40
-eq (local-int 0) (global-int b222) 137
+eq (local-int 0) (global-int b222) 137  // 西ユウトリド連峰 西尤特里德连峰
 jcc (local-int 0) ffffffff label_00006f84
 jmp label_000212ec
 
 label_00006f84
-eq (local-int 0) (global-int b222) 169
+eq (local-int 0) (global-int b222) 169  // 凍てつく湖畔 冰封的湖畔
 jcc (local-int 0) ffffffff label_00006fc8
 jmp label_000212ec
 
 label_00006fc8
-eq (local-int 0) (global-int b222) 16a
+eq (local-int 0) (global-int b222) 16a  // 閉ざされた氷都市 封闭的冰都市
 jcc (local-int 0) ffffffff label_0000700c
 jmp label_000212ec
 
 label_0000700c
-eq (local-int 0) (global-int b222) 16b
+eq (local-int 0) (global-int b222) 16b  // 紅魔の扉 红魔之门
 jcc (local-int 0) ffffffff label_00007050
 jmp label_000212ec
 
 label_00007050
-eq (local-int 0) (global-int b222) 16c
+eq (local-int 0) (global-int b222) 16c  // 歪滅妖の裂け目 歪灭妖的裂缝
 jcc (local-int 0) ffffffff label_00007094
 jmp label_000212ec
 
 label_00007094
-eq (local-int 0) (global-int b222) 173
+eq (local-int 0) (global-int b222) 173  // 凍河秘境 冻河秘境
 jcc (local-int 0) ffffffff label_000070d8
 jmp label_000212ec
 
 label_000070d8
-eq (local-int 0) (global-int b222) 17d
+eq (local-int 0) (global-int b222) 17d  // ブネの歪巣 布涅的歪巢
 jcc (local-int 0) ffffffff label_0000711c
 jmp label_000212ec
 
 label_0000711c
-eq (local-int 0) (global-int b222) 17e
+eq (local-int 0) (global-int b222) 17e  // 歪みの滅妖駅 歪曲的灭妖车站
 jcc (local-int 0) ffffffff label_00007160
 jmp label_000212ec
 
 label_00007160
-eq (local-int 0) (global-int b222) 17f
+eq (local-int 0) (global-int b222) 17f  // 千足の魔神列車 千足的魔神列车
 jcc (local-int 0) ffffffff label_000071a4
 jmp label_000212ec
 
 label_000071a4
-eq (local-int 0) (global-int b222) 180
+eq (local-int 0) (global-int b222) 180  // 鼓炎嘯 鼓炎啸
 jcc (local-int 0) ffffffff label_000071e8
 jmp label_000212ec
 
 label_000071e8
-eq (local-int 0) (global-int b222) 191
+eq (local-int 0) (global-int b222) 191  // 絶天縁の座 绝天缘之座
 jcc (local-int 0) ffffffff label_0000722c
 jmp label_000212ec
 
 label_0000722c
-eq (local-int 0) (global-int b222) 192
+eq (local-int 0) (global-int b222) 192  // 魔シキ封錬ノ塔茎 魔式封炼之塔茎
 jcc (local-int 0) ffffffff label_00007270
 jmp label_000212ec
 
 label_00007270
-eq (local-int 0) (global-int b222) 193
+eq (local-int 0) (global-int b222) 193  // ルーン＝ラクスミウ 卢恩-拉克丝米乌
 jcc (local-int 0) ffffffff label_000072b4
 jmp label_000212ec
 
 label_000072b4
-eq (local-int 0) (global-int b222) 1a5
+eq (local-int 0) (global-int b222) 1a5  // ヴィネヘデス遺跡 维内赫德斯遗迹
 jcc (local-int 0) ffffffff label_000072f8
 jmp label_000212ec
 
 label_000072f8
-eq (local-int 0) (global-int b222) 1a6
+eq (local-int 0) (global-int b222) 1a6  // 封錬ノ城 封炼之城
 jcc (local-int 0) ffffffff label_0000733c
 jmp label_000212ec
 
 label_0000733c
-eq (local-int 0) (global-int b222) 1a7
+eq (local-int 0) (global-int b222) 1a7  // 封錬ノ大祭壇 封炼之大祭坛
 jcc (local-int 0) ffffffff label_00007380
 jmp label_000212ec
 
 label_00007380
-eq (local-int 0) (global-int b222) 1b9
+eq (local-int 0) (global-int b222) 1b9  // フィユシア神殿の街 菲优希亚神殿城镇
 jcc (local-int 0) ffffffff label_000073c4
 jmp label_000212ec
 
 label_000073c4
-eq (local-int 0) (global-int b222) 1cd
+eq (local-int 0) (global-int b222) 1cd  // 瀑布の川 瀑布之川
 jcc (local-int 0) ffffffff label_00007408
 jmp label_000212ec
 
 label_00007408
-eq (local-int 0) (global-int b222) 1ce
+eq (local-int 0) (global-int b222) 1ce  // 蒼涙の洞窟 苍泪洞窟
 jcc (local-int 0) ffffffff label_0000744c
 jmp label_000212ec
 
 label_0000744c
-eq (local-int 0) (global-int b222) 1e1
+eq (local-int 0) (global-int b222) 1e1  // 荒廃した聖地 荒废的圣地
 jcc (local-int 0) ffffffff label_00007490
 jmp label_000212ec
 
 label_00007490
-eq (local-int 0) (global-int b222) 1e2
+eq (local-int 0) (global-int b222) 1e2  // 封錬廠廊 封炼厂廊
 jcc (local-int 0) ffffffff label_000074d4
 jmp label_000212ec
 
 label_000074d4
-eq (local-int 0) (global-int b222) 1e3
+eq (local-int 0) (global-int b222) 1e3  // 水焚の卿杜 水焚之卿杜
 jcc (local-int 0) ffffffff label_00007518
 jmp label_000212ec
 
 label_00007518
-eq (local-int 0) (global-int b222) 1e4
+eq (local-int 0) (global-int b222) 1e4  // レザァリグラ柱廊 雷扎里格拉柱廊
 jcc (local-int 0) ffffffff label_0000755c
 jmp label_000212ec
 
 label_0000755c
-eq (local-int 0) (global-int b222) 1e5
+eq (local-int 0) (global-int b222) 1e5  // 輝封廟門 辉封庙门
 jcc (local-int 0) ffffffff label_000075a0
 jmp label_000212ec
 
 label_000075a0
-eq (local-int 0) (global-int b222) 1eb
+eq (local-int 0) (global-int b222) 1eb  // 神響の霞廊 神响霞廊
 jcc (local-int 0) ffffffff label_000075e4
 jmp label_000212ec
 
 label_000075e4
-eq (local-int 0) (global-int b222) 1f5
+eq (local-int 0) (global-int b222) 1f5  // 神々の古戦場 诸神的古战场
 jcc (local-int 0) ffffffff label_00007628
 jmp label_000212ec
 
 label_00007628
-eq (local-int 0) (global-int b222) 209
+eq (local-int 0) (global-int b222) 209  // ミストメリラクーナ 米斯特梅利拉库娜
 jcc (local-int 0) ffffffff label_0000766c
 jmp label_000212ec
 
 label_0000766c
-eq (local-int 0) (global-int b222) 21d
+eq (local-int 0) (global-int b222) 21d  // 破炎浄化の城 破炎净化之城
 jcc (local-int 0) ffffffff label_000076b0
 jmp label_000212ec
 
 label_000076b0
-eq (local-int 0) (global-int b222) 21e
+eq (local-int 0) (global-int b222) 21e  // 追憶の広場 追忆的广场
 jcc (local-int 0) ffffffff label_000076f4
 jmp label_000212ec
 
 label_000076f4
-eq (local-int 0) (global-int b222) 227
+eq (local-int 0) (global-int b222) 227  // グアラクーナ城砦 古亚拉库娜城砦
 jcc (local-int 0) ffffffff label_00007738
 jmp label_000212ec
 
 label_00007738
-eq (local-int 0) (global-int b222) 231
+eq (local-int 0) (global-int b222) 231  // 黄橡の華楼 黄橡华楼
 jcc (local-int 0) ffffffff label_00009548
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -1898,7 +1898,7 @@ mov (global-int 14dc6f) 2
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3a8
+mov (global-int 14dd41) 3a8  // 古代迷宮の守人 古代迷宫的守人
 mov (global-int 14dd5f) 2d
 mov (global-int 14dd7d) 37
 mov (global-int 14dd9b) 1
@@ -1908,7 +1908,7 @@ mov (global-int 14dc70) 3
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 3a9
+mov (global-int 14dd42) 3a9  // 彷徨う石巨人 彷徨的石巨人
 mov (global-int 14dd60) 28
 mov (global-int 14dd7e) 32
 mov (global-int 14dd9c) 1
@@ -1918,7 +1918,7 @@ mov (global-int 14dc71) 3
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 3a9
+mov (global-int 14dd43) 3a9  // 彷徨う石巨人 彷徨的石巨人
 mov (global-int 14dd61) 28
 mov (global-int 14dd7f) 32
 mov (global-int 14dd9d) 1
@@ -1927,7 +1927,7 @@ mov (global-int 14dc54) a
 mov (global-int 14dc72) 5
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
-mov (global-int 14dd44) 3a9
+mov (global-int 14dd44) 3a9  // 彷徨う石巨人 彷徨的石巨人
 mov (global-int 14dd62) 28
 mov (global-int 14dd80) 32
 mov (global-int 14dd9e) 1
@@ -1936,7 +1936,7 @@ mov (global-int 14dc55) 8
 mov (global-int 14dc73) 8
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3a9
+mov (global-int 14dd45) 3a9  // 彷徨う石巨人 彷徨的石巨人
 mov (global-int 14dd63) 28
 mov (global-int 14dd81) 32
 mov (global-int 14dd9f) 1
@@ -1947,7 +1947,7 @@ mov (global-int 14dc92) 7
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3aa
+mov (global-int 14dd46) 3aa  // 彷徨う骸骨 彷徨的骸骨
 mov (global-int 14dd64) 28
 mov (global-int 14dd82) 32
 mov (global-int 14dda0) 1
@@ -1958,7 +1958,7 @@ mov (global-int 14dc93) 5
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3aa
+mov (global-int 14dd47) 3aa  // 彷徨う骸骨 彷徨的骸骨
 mov (global-int 14dd65) 28
 mov (global-int 14dd83) 32
 mov (global-int 14dda1) 1
@@ -1967,7 +1967,7 @@ mov (global-int 14dc58) 10
 mov (global-int 14dc76) 9
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3aa
+mov (global-int 14dd48) 3aa  // 彷徨う骸骨 彷徨的骸骨
 mov (global-int 14dd66) 28
 mov (global-int 14dd84) 32
 mov (global-int 14dda2) 1
@@ -1978,7 +1978,7 @@ mov (global-int 14dc95) 5
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 3ab
+mov (global-int 14dd49) 3ab  // 彷徨う死体 彷徨的尸体
 mov (global-int 14dd67) 28
 mov (global-int 14dd85) 32
 mov (global-int 14dda3) 1
@@ -1987,7 +1987,7 @@ mov (global-int 14dc5a) 10
 mov (global-int 14dc78) f
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 3ab
+mov (global-int 14dd4a) 3ab  // 彷徨う死体 彷徨的尸体
 mov (global-int 14dd68) 28
 mov (global-int 14dd86) 32
 mov (global-int 14dda4) 1
@@ -1998,7 +1998,7 @@ mov (global-int 14dc97) 6
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dd2d) 1
-mov (global-int 14dd4b) 3ac
+mov (global-int 14dd4b) 3ac  // 彷徨う蝙蝠 彷徨的蝙蝠
 mov (global-int 14dd69) 28
 mov (global-int 14dd87) 32
 mov (global-int 14dda5) 1
@@ -2009,7 +2009,7 @@ mov (global-int 14dc98) 8
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) 3ac
+mov (global-int 14dd4c) 3ac  // 彷徨う蝙蝠 彷徨的蝙蝠
 mov (global-int 14dd6a) 28
 mov (global-int 14dd88) 32
 mov (global-int 14dda6) 1
@@ -2048,7 +2048,7 @@ mov (global-int 14e029) 17a7
 jmp label_000212ec
 
 label_00009548
-eq (local-int 0) (global-int b222) 232
+eq (local-int 0) (global-int b222) 232  // 浅縹の流塔 浅缥流塔
 jcc (local-int 0) ffffffff label_0000b960
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -2357,7 +2357,7 @@ mov (global-int 14dc6f) 2
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3ad
+mov (global-int 14dd41) 3ad  // 流神殿騎士団長 流神殿骑士团长
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -2367,7 +2367,7 @@ mov (global-int 14dc70) 1
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 3ae
+mov (global-int 14dd42) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd60) 32
 mov (global-int 14dd7e) 3c
 mov (global-int 14dd9c) 1
@@ -2377,7 +2377,7 @@ mov (global-int 14dc71) 3
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 3ae
+mov (global-int 14dd43) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd61) 32
 mov (global-int 14dd7f) 3c
 mov (global-int 14dd9d) 1
@@ -2388,7 +2388,7 @@ mov (global-int 14dc90) 2
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 3ae
+mov (global-int 14dd44) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd62) 32
 mov (global-int 14dd80) 3c
 mov (global-int 14dd9e) 1
@@ -2397,7 +2397,7 @@ mov (global-int 14dc55) 7
 mov (global-int 14dc73) c
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3ae
+mov (global-int 14dd45) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd63) 32
 mov (global-int 14dd81) 3c
 mov (global-int 14dd9f) 1
@@ -2406,7 +2406,7 @@ mov (global-int 14dc56) 8
 mov (global-int 14dc74) 11
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3ae
+mov (global-int 14dd46) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd64) 32
 mov (global-int 14dd82) 3c
 mov (global-int 14dda0) 1
@@ -2415,7 +2415,7 @@ mov (global-int 14dc57) 17
 mov (global-int 14dc75) 16
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
-mov (global-int 14dd47) 3ae
+mov (global-int 14dd47) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd65) 32
 mov (global-int 14dd83) 3c
 mov (global-int 14dda1) 1
@@ -2424,7 +2424,7 @@ mov (global-int 14dc58) c
 mov (global-int 14dc76) 2
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3af
+mov (global-int 14dd48) 3af  // 流神殿弓騎士 流神殿弓骑士
 mov (global-int 14dd66) 32
 mov (global-int 14dd84) 3c
 mov (global-int 14dda2) 1
@@ -2433,7 +2433,7 @@ mov (global-int 14dc59) 3
 mov (global-int 14dc77) 15
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3af
+mov (global-int 14dd49) 3af  // 流神殿弓騎士 流神殿弓骑士
 mov (global-int 14dd67) 32
 mov (global-int 14dd85) 3c
 mov (global-int 14dda3) 1
@@ -2442,7 +2442,7 @@ mov (global-int 14dc5a) 3
 mov (global-int 14dc78) 17
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 3af
+mov (global-int 14dd4a) 3af  // 流神殿弓騎士 流神殿弓骑士
 mov (global-int 14dd68) 32
 mov (global-int 14dd86) 3c
 mov (global-int 14dda4) 1
@@ -2453,7 +2453,7 @@ mov (global-int 14dc97) 2
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dd2d) 1
-mov (global-int 14dd4b) 3b0
+mov (global-int 14dd4b) 3b0  // 流神殿術師 流神殿术师
 mov (global-int 14dd69) 32
 mov (global-int 14dd87) 3c
 mov (global-int 14dda5) 1
@@ -2462,7 +2462,7 @@ mov (global-int 14dc5c) 7
 mov (global-int 14dc7a) b
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 3b0
+mov (global-int 14dd4c) 3b0  // 流神殿術師 流神殿术师
 mov (global-int 14dd6a) 32
 mov (global-int 14dd88) 3c
 mov (global-int 14dda6) 1
@@ -2471,7 +2471,7 @@ mov (global-int 14dc5d) 7
 mov (global-int 14dc7b) d
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) 3b0
+mov (global-int 14dd4d) 3b0  // 流神殿術師 流神殿术师
 mov (global-int 14dd6b) 32
 mov (global-int 14dd89) 3c
 mov (global-int 14dda7) 1
@@ -2510,7 +2510,7 @@ mov (global-int 14e029) 17a8
 jmp label_000212ec
 
 label_0000b960
-eq (local-int 0) (global-int b222) 233
+eq (local-int 0) (global-int b222) 233  // 真赭の溶壁 真赭熔壁
 jcc (local-int 0) ffffffff label_0000d908
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -2747,7 +2747,7 @@ mov (global-int 14dc6f) 10
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3b1
+mov (global-int 14dd41) 3b1  // 巨鉄亀の騎士 巨铁龟骑士
 mov (global-int 14dd5f) 3c
 mov (global-int 14dd7d) 46
 mov (global-int 14dd9b) 1
@@ -2757,7 +2757,7 @@ mov (global-int 14dc70) 10
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 3b2
+mov (global-int 14dd42) 3b2  // 鉄騎兵 铁骑兵
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -2767,7 +2767,7 @@ mov (global-int 14dc71) f
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 3b3
+mov (global-int 14dd43) 3b3  // 鉄騎弓兵 铁骑弓兵
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -2777,7 +2777,7 @@ mov (global-int 14dc72) 11
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dcea) 2
-mov (global-int 14dd44) 3b4
+mov (global-int 14dd44) 3b4  // 鉄騎術師 铁骑术师
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -2788,7 +2788,7 @@ mov (global-int 14dc91) 5
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dd27) 1
-mov (global-int 14dd45) 3b2
+mov (global-int 14dd45) 3b2  // 鉄騎兵 铁骑兵
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -2799,7 +2799,7 @@ mov (global-int 14dc92) 4
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3b2
+mov (global-int 14dd46) 3b2  // 鉄騎兵 铁骑兵
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -2808,7 +2808,7 @@ mov (global-int 14dc57) e
 mov (global-int 14dc75) 3
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
-mov (global-int 14dd47) 3b2
+mov (global-int 14dd47) 3b2  // 鉄騎兵 铁骑兵
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -2817,7 +2817,7 @@ mov (global-int 14dc58) 12
 mov (global-int 14dc76) b
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3b2
+mov (global-int 14dd48) 3b2  // 鉄騎兵 铁骑兵
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -2828,7 +2828,7 @@ mov (global-int 14dc95) 5
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 3b3
+mov (global-int 14dd49) 3b3  // 鉄騎弓兵 铁骑弓兵
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -2839,7 +2839,7 @@ mov (global-int 14dc96) 6
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) 3b3
+mov (global-int 14dd4a) 3b3  // 鉄騎弓兵 铁骑弓兵
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -2848,7 +2848,7 @@ mov (global-int 14dc5b) 6
 mov (global-int 14dc79) 5
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 3b3
+mov (global-int 14dd4b) 3b3  // 鉄騎弓兵 铁骑弓兵
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -2859,7 +2859,7 @@ mov (global-int 14dc98) 4
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) 3b4
+mov (global-int 14dd4c) 3b4  // 鉄騎術師 铁骑术师
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -2868,7 +2868,7 @@ mov (global-int 14dc5d) 8
 mov (global-int 14dc7b) 8
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) 3b4
+mov (global-int 14dd4d) 3b4  // 鉄騎術師 铁骑术师
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -2877,7 +2877,7 @@ mov (global-int 14dc5e) 11
 mov (global-int 14dc7c) 12
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 3b4
+mov (global-int 14dd4e) 3b4  // 鉄騎術師 铁骑术师
 mov (global-int 14dd6c) 37
 mov (global-int 14dd8a) 41
 mov (global-int 14dda8) 1
@@ -2916,7 +2916,7 @@ mov (global-int 14e029) 17a9
 jmp label_000212ec
 
 label_0000d908
-eq (local-int 0) (global-int b222) 234
+eq (local-int 0) (global-int b222) 234  // 錆浅葱の嵐渦 锈浅葱岚涡
 jcc (local-int 0) ffffffff label_0000f298
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -3111,7 +3111,7 @@ mov (global-int 14dc6f) 8
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3b5
+mov (global-int 14dd41) 3b5  // 滅殺の雷竜 灭杀雷龙
 mov (global-int 14dd5f) 32
 mov (global-int 14dd7d) 3c
 mov (global-int 14dd9b) 1
@@ -3122,7 +3122,7 @@ mov (global-int 14dc8e) 4
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3b6
+mov (global-int 14dd42) 3b6  // 破術の飛蛇 破术飞蛇
 mov (global-int 14dd60) 2d
 mov (global-int 14dd7e) 37
 mov (global-int 14dd9c) 1
@@ -3131,7 +3131,7 @@ mov (global-int 14dc53) 11
 mov (global-int 14dc71) 1
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
-mov (global-int 14dd43) 3b6
+mov (global-int 14dd43) 3b6  // 破術の飛蛇 破术飞蛇
 mov (global-int 14dd61) 2d
 mov (global-int 14dd7f) 37
 mov (global-int 14dd9d) 1
@@ -3140,7 +3140,7 @@ mov (global-int 14dc54) 12
 mov (global-int 14dc72) d
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
-mov (global-int 14dd44) 3b6
+mov (global-int 14dd44) 3b6  // 破術の飛蛇 破术飞蛇
 mov (global-int 14dd62) 2d
 mov (global-int 14dd80) 37
 mov (global-int 14dd9e) 1
@@ -3149,7 +3149,7 @@ mov (global-int 14dc55) a
 mov (global-int 14dc73) 2
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3b7
+mov (global-int 14dd45) 3b7  // 神速の飛蛇 神速飞蛇
 mov (global-int 14dd63) 2d
 mov (global-int 14dd81) 37
 mov (global-int 14dd9f) 1
@@ -3158,7 +3158,7 @@ mov (global-int 14dc56) e
 mov (global-int 14dc74) 7
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3b7
+mov (global-int 14dd46) 3b7  // 神速の飛蛇 神速飞蛇
 mov (global-int 14dd64) 2d
 mov (global-int 14dd82) 37
 mov (global-int 14dda0) 1
@@ -3167,7 +3167,7 @@ mov (global-int 14dc57) 19
 mov (global-int 14dc75) c
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
-mov (global-int 14dd47) 3b7
+mov (global-int 14dd47) 3b7  // 神速の飛蛇 神速飞蛇
 mov (global-int 14dd65) 2d
 mov (global-int 14dd83) 37
 mov (global-int 14dda1) 1
@@ -3176,7 +3176,7 @@ mov (global-int 14dc58) 6
 mov (global-int 14dc76) d
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3b7
+mov (global-int 14dd48) 3b7  // 神速の飛蛇 神速飞蛇
 mov (global-int 14dd66) 2d
 mov (global-int 14dd84) 37
 mov (global-int 14dda2) 1
@@ -3187,7 +3187,7 @@ mov (global-int 14dc95) 5
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 3b8
+mov (global-int 14dd49) 3b8  // 特攻の飛蛇 特攻飞蛇
 mov (global-int 14dd67) 2d
 mov (global-int 14dd85) 37
 mov (global-int 14dda3) 1
@@ -3196,7 +3196,7 @@ mov (global-int 14dc5a) c
 mov (global-int 14dc78) 9
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 3b8
+mov (global-int 14dd4a) 3b8  // 特攻の飛蛇 特攻飞蛇
 mov (global-int 14dd68) 2d
 mov (global-int 14dd86) 37
 mov (global-int 14dda4) 1
@@ -3205,7 +3205,7 @@ mov (global-int 14dc5b) 8
 mov (global-int 14dc79) a
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 3b8
+mov (global-int 14dd4b) 3b8  // 特攻の飛蛇 特攻飞蛇
 mov (global-int 14dd69) 2d
 mov (global-int 14dd87) 37
 mov (global-int 14dda5) 1
@@ -3244,7 +3244,7 @@ mov (global-int 14e029) 17aa
 jmp label_000212ec
 
 label_0000f298
-eq (local-int 0) (global-int b222) 245
+eq (local-int 0) (global-int b222) 245  // 睡魔の歪空間 睡魔的歪曲空间
 jcc (local-int 0) ffffffff label_00010a60
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -3436,7 +3436,7 @@ mov (global-int 14dc8d) 2
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 3ba
+mov (global-int 14dd41) 3ba  // 睡魔リリエール 睡魔莉莉艾尔
 mov (global-int 14dd5f) 38
 mov (global-int 14dd7d) 42
 mov (global-int 14dd9b) 1
@@ -3447,7 +3447,7 @@ mov (global-int 14dc8e) 3
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3ba
+mov (global-int 14dd42) 3ba  // 睡魔リリエール 睡魔莉莉艾尔
 mov (global-int 14dd60) 38
 mov (global-int 14dd7e) 42
 mov (global-int 14dd9c) 1
@@ -3458,7 +3458,7 @@ mov (global-int 14dc8f) 4
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 3ba
+mov (global-int 14dd43) 3ba  // 睡魔リリエール 睡魔莉莉艾尔
 mov (global-int 14dd61) 38
 mov (global-int 14dd7f) 42
 mov (global-int 14dd9d) 1
@@ -3469,7 +3469,7 @@ mov (global-int 14dc90) 5
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 3b9
+mov (global-int 14dd44) 3b9  // 睡魔リリス 睡魔莉莉丝
 mov (global-int 14dd62) 39
 mov (global-int 14dd80) 43
 mov (global-int 14dd9e) 1
@@ -3480,7 +3480,7 @@ mov (global-int 14dc91) 6
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dd27) 1
-mov (global-int 14dd45) 3b9
+mov (global-int 14dd45) 3b9  // 睡魔リリス 睡魔莉莉丝
 mov (global-int 14dd63) 39
 mov (global-int 14dd81) 43
 mov (global-int 14dd9f) 1
@@ -3491,7 +3491,7 @@ mov (global-int 14dc92) 7
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3b9
+mov (global-int 14dd46) 3b9  // 睡魔リリス 睡魔莉莉丝
 mov (global-int 14dd64) 39
 mov (global-int 14dd82) 43
 mov (global-int 14dda0) 1
@@ -3502,7 +3502,7 @@ mov (global-int 14dc93) 8
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3bb
+mov (global-int 14dd47) 3bb  // 睡魔スゥーティ 睡魔斯乌提
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -3513,7 +3513,7 @@ mov (global-int 14dc94) 9
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 3bb
+mov (global-int 14dd48) 3bb  // 睡魔スゥーティ 睡魔斯乌提
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -3524,7 +3524,7 @@ mov (global-int 14dc95) a
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 3bb
+mov (global-int 14dd49) 3bb  // 睡魔スゥーティ 睡魔斯乌提
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -3550,7 +3550,7 @@ mov (global-int 14dfe7) c
 jmp label_000212ec
 
 label_00010a60
-eq (local-int 0) (global-int b222) 246
+eq (local-int 0) (global-int b222) 246  // 峻険の大渓谷 峻险的大溪谷
 jcc (local-int 0) ffffffff label_00012e58
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -3794,7 +3794,7 @@ mov (global-int 14dc8d) 6
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 3be
+mov (global-int 14dd41) 3be  // ゴブル 哥布尔
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -3805,7 +3805,7 @@ mov (global-int 14dc8e) 7
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3be
+mov (global-int 14dd42) 3be  // ゴブル 哥布尔
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -3816,7 +3816,7 @@ mov (global-int 14dc8f) 8
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 3be
+mov (global-int 14dd43) 3be  // ゴブル 哥布尔
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -3825,7 +3825,7 @@ mov (global-int 14dc54) a
 mov (global-int 14dc72) 9
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
-mov (global-int 14dd44) 3be
+mov (global-int 14dd44) 3be  // ゴブル 哥布尔
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -3834,7 +3834,7 @@ mov (global-int 14dc55) b
 mov (global-int 14dc73) 9
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3be
+mov (global-int 14dd45) 3be  // ゴブル 哥布尔
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -3843,7 +3843,7 @@ mov (global-int 14dc56) e
 mov (global-int 14dc74) c
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3be
+mov (global-int 14dd46) 3be  // ゴブル 哥布尔
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -3854,7 +3854,7 @@ mov (global-int 14dc93) 6
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3bc
+mov (global-int 14dd47) 3bc  // エリートオーク 精英半兽人
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -3863,7 +3863,7 @@ mov (global-int 14dc58) 5
 mov (global-int 14dc76) 2
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3bc
+mov (global-int 14dd48) 3bc  // エリートオーク 精英半兽人
 mov (global-int 14dd66) 39
 mov (global-int 14dd84) 43
 mov (global-int 14dda2) 1
@@ -3872,7 +3872,7 @@ mov (global-int 14dc59) c
 mov (global-int 14dc77) 1
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3bc
+mov (global-int 14dd49) 3bc  // エリートオーク 精英半兽人
 mov (global-int 14dd67) 39
 mov (global-int 14dd85) 43
 mov (global-int 14dda3) 1
@@ -3881,7 +3881,7 @@ mov (global-int 14dc5a) b
 mov (global-int 14dc78) f
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 3bc
+mov (global-int 14dd4a) 3bc  // エリートオーク 精英半兽人
 mov (global-int 14dd68) 39
 mov (global-int 14dd86) 43
 mov (global-int 14dda4) 1
@@ -3892,7 +3892,7 @@ mov (global-int 14dc97) 7
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dd2d) 1
-mov (global-int 14dd4b) 3bd
+mov (global-int 14dd4b) 3bd  // ゴブルシャーマン 哥布尔萨满
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -3903,7 +3903,7 @@ mov (global-int 14dc98) 8
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) 3bd
+mov (global-int 14dd4c) 3bd  // ゴブルシャーマン 哥布尔萨满
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -3912,7 +3912,7 @@ mov (global-int 14dc5d) 6
 mov (global-int 14dc7b) 8
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) 3bd
+mov (global-int 14dd4d) 3bd  // ゴブルシャーマン 哥布尔萨满
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -3921,7 +3921,7 @@ mov (global-int 14dc5e) 3
 mov (global-int 14dc7c) 13
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 3bc
+mov (global-int 14dd4e) 3bc  // エリートオーク 精英半兽人
 mov (global-int 14dd6c) 39
 mov (global-int 14dd8a) 43
 mov (global-int 14dda8) 1
@@ -3930,7 +3930,7 @@ mov (global-int 14dc5f) e
 mov (global-int 14dc7d) 4
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
-mov (global-int 14dd4f) 106
+mov (global-int 14dd4f) 106  // エーグ呪霊種 埃古咒灵种
 mov (global-int 14dd6d) 37
 mov (global-int 14dd8b) 41
 mov (global-int 14dda9) 1
@@ -3939,7 +3939,7 @@ mov (global-int 14dc60) 3
 mov (global-int 14dc7e) c
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
-mov (global-int 14dd50) 106
+mov (global-int 14dd50) 106  // エーグ呪霊種 埃古咒灵种
 mov (global-int 14dd6e) 37
 mov (global-int 14dd8c) 41
 mov (global-int 14ddaa) 1
@@ -3948,7 +3948,7 @@ mov (global-int 14dc61) f
 mov (global-int 14dc7f) 7
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
-mov (global-int 14dd51) 148
+mov (global-int 14dd51) 148  // 狂ったジルニー 疯狂的吉尔尼
 mov (global-int 14dd6f) 37
 mov (global-int 14dd8d) 41
 mov (global-int 14ddab) 1
@@ -3957,7 +3957,7 @@ mov (global-int 14dc62) 7
 mov (global-int 14dc80) 13
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
-mov (global-int 14dd52) 148
+mov (global-int 14dd52) 148  // 狂ったジルニー 疯狂的吉尔尼
 mov (global-int 14dd70) 37
 mov (global-int 14dd8e) 41
 mov (global-int 14ddac) 1
@@ -3966,7 +3966,7 @@ mov (global-int 14dc63) 2
 mov (global-int 14dc81) e
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
-mov (global-int 14dd53) 124
+mov (global-int 14dd53) 124  // 黒プテテット 黑史莱姆
 mov (global-int 14dd71) 37
 mov (global-int 14dd8f) 41
 mov (global-int 14ddad) 1
@@ -3977,7 +3977,7 @@ mov (global-int 14dca0) 5
 mov (global-int 14dcbe) 2
 mov (global-int 14dcdc) 7
 mov (global-int 14dd36) 1
-mov (global-int 14dd54) de
+mov (global-int 14dd54) de  // グロウハルピュア 格洛哈尔皮亚
 mov (global-int 14dd72) 37
 mov (global-int 14dd90) 41
 mov (global-int 14ddae) 1
@@ -3986,7 +3986,7 @@ mov (global-int 14dc65) c
 mov (global-int 14dc83) f
 mov (global-int 14dcbf) 2
 mov (global-int 14dcdd) 7
-mov (global-int 14dd55) de
+mov (global-int 14dd55) de  // グロウハルピュア 格洛哈尔皮亚
 mov (global-int 14dd73) 37
 mov (global-int 14dd91) 41
 mov (global-int 14ddaf) 1
@@ -4012,7 +4012,7 @@ mov (global-int 14dfe7) f
 jmp label_000212ec
 
 label_00012e58
-eq (local-int 0) (global-int b222) 247
+eq (local-int 0) (global-int b222) 247  // 静炎の洞穴 静炎的洞穴
 jcc (local-int 0) ffffffff label_00014970
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -4220,7 +4220,7 @@ mov (global-int 14dc8d) 3
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 3c0
+mov (global-int 14dd41) 3c0  // アイアンワーム 钢铁蠕虫
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -4231,7 +4231,7 @@ mov (global-int 14dc8e) 5
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 3c0
+mov (global-int 14dd42) 3c0  // アイアンワーム 钢铁蠕虫
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -4242,7 +4242,7 @@ mov (global-int 14dc8f) 4
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 3c1
+mov (global-int 14dd43) 3c1  // ワーム 蠕虫
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -4253,7 +4253,7 @@ mov (global-int 14dc90) 6
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 3c1
+mov (global-int 14dd44) 3c1  // ワーム 蠕虫
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -4262,7 +4262,7 @@ mov (global-int 14dc55) 8
 mov (global-int 14dc73) 8
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3c1
+mov (global-int 14dd45) 3c1  // ワーム 蠕虫
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -4271,7 +4271,7 @@ mov (global-int 14dc56) e
 mov (global-int 14dc74) 4
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3bf
+mov (global-int 14dd46) 3bf  // マグナワーム 马格纳蠕虫
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -4280,7 +4280,7 @@ mov (global-int 14dc57) d
 mov (global-int 14dc75) 5
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
-mov (global-int 14dd47) 3bf
+mov (global-int 14dd47) 3bf  // マグナワーム 马格纳蠕虫
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -4289,7 +4289,7 @@ mov (global-int 14dc58) f
 mov (global-int 14dc76) 5
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 3bf
+mov (global-int 14dd48) 3bf  // マグナワーム 马格纳蠕虫
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -4298,7 +4298,7 @@ mov (global-int 14dc59) e
 mov (global-int 14dc77) 6
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3bf
+mov (global-int 14dd49) 3bf  // マグナワーム 马格纳蠕虫
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -4307,7 +4307,7 @@ mov (global-int 14dc5a) a
 mov (global-int 14dc78) 3
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 1f4
+mov (global-int 14dd4a) 1f4  // イル＝レブルドル 伊尔-雷布尔多尔
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -4316,7 +4316,7 @@ mov (global-int 14dc5b) 1
 mov (global-int 14dc79) 1
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 228
+mov (global-int 14dd4b) 228  // 角蜥蜴ワミロドン 角蜥蜴瓦米罗顿
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -4325,7 +4325,7 @@ mov (global-int 14dc5c) c
 mov (global-int 14dc7a) c
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 14b
+mov (global-int 14dd4c) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -4334,7 +4334,7 @@ mov (global-int 14dc5d) 10
 mov (global-int 14dc7b) 8
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) 2d2
+mov (global-int 14dd4d) 2d2  // 火炎彫像 火焰雕像
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -4360,7 +4360,7 @@ mov (global-int 14dfe7) 4
 jmp label_000212ec
 
 label_00014970
-eq (local-int 0) (global-int b222) 248
+eq (local-int 0) (global-int b222) 248  // 隠された書史殿 被隐藏的书史殿
 jcc (local-int 0) ffffffff label_00016dcc
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -4595,7 +4595,7 @@ mov (global-int 14dc6f) 3
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 4
-mov (global-int 14dd41) 2d5
+mov (global-int 14dd41) 2d5  // 捕食箱
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -4604,7 +4604,7 @@ mov (global-int 14dc70) f
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 4
-mov (global-int 14dd42) 2d7
+mov (global-int 14dd42) 2d7  // 誘う捕食箱 引诱的捕食箱
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -4613,7 +4613,7 @@ mov (global-int 14dc71) 10
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 4
-mov (global-int 14dd43) 2d8
+mov (global-int 14dd43) 2d8  // 希少な捕食箱 稀有的捕食箱
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -4623,7 +4623,7 @@ mov (global-int 14dc90) 4
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 296
+mov (global-int 14dd44) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -4632,7 +4632,7 @@ mov (global-int 14dc55) 4
 mov (global-int 14dc73) 6
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 296
+mov (global-int 14dd45) 296  // 籠魅魔霊 笼魅魔灵
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -4643,7 +4643,7 @@ mov (global-int 14dc92) 5
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3a0
+mov (global-int 14dd46) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -4654,7 +4654,7 @@ mov (global-int 14dc93) 6
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) af
+mov (global-int 14dd47) af  // 地の大魔術師 地之大魔术师
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -4665,7 +4665,7 @@ mov (global-int 14dc94) 6
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) b0
+mov (global-int 14dd48) b0  // 水の大魔術師 水之大魔术师
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -4674,7 +4674,7 @@ mov (global-int 14dc59) 8
 mov (global-int 14dc77) 8
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) b0
+mov (global-int 14dd49) b0  // 水の大魔術師 水之大魔术师
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -4685,7 +4685,7 @@ mov (global-int 14dc96) 6
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) b1
+mov (global-int 14dd4a) b1  // 火の大魔術師 火之大魔术师
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -4694,7 +4694,7 @@ mov (global-int 14dc5b) a
 mov (global-int 14dc79) 8
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) b1
+mov (global-int 14dd4b) b1  // 火の大魔術師 火之大魔术师
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -4705,7 +4705,7 @@ mov (global-int 14dc98) 6
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dd2e) 1
-mov (global-int 14dd4c) b2
+mov (global-int 14dd4c) b2  // 風の大魔術師 风之大魔术师
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -4714,7 +4714,7 @@ mov (global-int 14dc5d) 6
 mov (global-int 14dc7b) 4
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) b2
+mov (global-int 14dd4d) b2  // 風の大魔術師 风之大魔术师
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -4723,7 +4723,7 @@ mov (global-int 14dc5e) 11
 mov (global-int 14dc7c) 5
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 3ae
+mov (global-int 14dd4e) 3ae  // 流神殿騎士 流神殿骑士
 mov (global-int 14dd6c) 37
 mov (global-int 14dd8a) 41
 mov (global-int 14dda8) 1
@@ -4734,7 +4734,7 @@ mov (global-int 14dc9b) 4
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
 mov (global-int 14dd31) 1
-mov (global-int 14dd4f) 3b9
+mov (global-int 14dd4f) 3b9  // 睡魔リリス 睡魔莉莉丝
 mov (global-int 14dd6d) 37
 mov (global-int 14dd8b) 41
 mov (global-int 14dda9) 1
@@ -4745,7 +4745,7 @@ mov (global-int 14dc9c) 7
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
 mov (global-int 14dd32) 1
-mov (global-int 14dd50) 194
+mov (global-int 14dd50) 194  // 楯使霊 盾使灵
 mov (global-int 14dd6e) 37
 mov (global-int 14dd8c) 41
 mov (global-int 14ddaa) 1
@@ -4754,7 +4754,7 @@ mov (global-int 14dc61) 5
 mov (global-int 14dc7f) 11
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
-mov (global-int 14dd51) 194
+mov (global-int 14dd51) 194  // 楯使霊 盾使灵
 mov (global-int 14dd6f) 37
 mov (global-int 14dd8d) 41
 mov (global-int 14ddab) 1
@@ -4763,7 +4763,7 @@ mov (global-int 14dc62) 13
 mov (global-int 14dc80) a
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
-mov (global-int 14dd52) 195
+mov (global-int 14dd52) 195  // 癒使霊 愈使灵
 mov (global-int 14dd70) 37
 mov (global-int 14dd8e) 41
 mov (global-int 14ddac) 1
@@ -4774,7 +4774,7 @@ mov (global-int 14dc9f) 7
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
 mov (global-int 14dd35) 1
-mov (global-int 14dd53) 39d
+mov (global-int 14dd53) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd71) 37
 mov (global-int 14dd8f) 41
 mov (global-int 14ddad) 1
@@ -4783,7 +4783,7 @@ mov (global-int 14dc64) 2
 mov (global-int 14dc82) e
 mov (global-int 14dcbe) 2
 mov (global-int 14dcdc) 7
-mov (global-int 14dd54) 39d
+mov (global-int 14dd54) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd72) 37
 mov (global-int 14dd90) 41
 mov (global-int 14ddae) 1
@@ -4792,7 +4792,7 @@ mov (global-int 14dc65) 9
 mov (global-int 14dc83) e
 mov (global-int 14dcbf) 2
 mov (global-int 14dcdd) 7
-mov (global-int 14dd55) 3b0
+mov (global-int 14dd55) 3b0  // 流神殿術師 流神殿术师
 mov (global-int 14dd73) 2d
 mov (global-int 14dd91) 37
 mov (global-int 14ddaf) 1
@@ -4801,7 +4801,7 @@ mov (global-int 14dc66) c
 mov (global-int 14dc84) 11
 mov (global-int 14dcc0) 2
 mov (global-int 14dcde) 7
-mov (global-int 14dd56) 3b0
+mov (global-int 14dd56) 3b0  // 流神殿術師 流神殿术师
 mov (global-int 14dd74) 2d
 mov (global-int 14dd92) 37
 mov (global-int 14ddb0) 1
@@ -4827,7 +4827,7 @@ mov (global-int 14dfe7) 3
 jmp label_000212ec
 
 label_00016dcc
-eq (local-int 0) (global-int b222) 249
+eq (local-int 0) (global-int b222) 249  // 誘いの緑地 诱惑的绿地
 jcc (local-int 0) ffffffff label_00018d10
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -5021,7 +5021,7 @@ mov (global-int 14dc6f) 2
 mov (global-int 14dcab) 3
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 132
+mov (global-int 14dd41) 132  // 水精ティエネー 水精提埃内
 mov (global-int 14dd5f) 1
 mov (global-int 14dd7d) 1
 mov (global-int 14dd9b) 1
@@ -5030,7 +5030,7 @@ mov (global-int 14dc52) 3
 mov (global-int 14dc70) d
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
-mov (global-int 14dd42) 3c2
+mov (global-int 14dd42) 3c2  // グロウサーペント 格罗巨蛇
 mov (global-int 14dd60) 3c
 mov (global-int 14dd7e) 46
 mov (global-int 14dd9c) 1
@@ -5041,7 +5041,7 @@ mov (global-int 14dc8f) 4
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 3c3
+mov (global-int 14dd43) 3c3  // メタルサーペント 金属巨蛇
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -5052,7 +5052,7 @@ mov (global-int 14dc90) 8
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 3c3
+mov (global-int 14dd44) 3c3  // メタルサーペント 金属巨蛇
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -5061,7 +5061,7 @@ mov (global-int 14dc55) 6
 mov (global-int 14dc73) 4
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 3c3
+mov (global-int 14dd45) 3c3  // メタルサーペント 金属巨蛇
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -5070,7 +5070,7 @@ mov (global-int 14dc56) 13
 mov (global-int 14dc74) 11
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 3c3
+mov (global-int 14dd46) 3c3  // メタルサーペント 金属巨蛇
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -5081,7 +5081,7 @@ mov (global-int 14dc93) 5
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 3c4
+mov (global-int 14dd47) 3c4  // サーペント 巨蛇
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -5092,7 +5092,7 @@ mov (global-int 14dc94) 7
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 3c4
+mov (global-int 14dd48) 3c4  // サーペント 巨蛇
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -5101,7 +5101,7 @@ mov (global-int 14dc59) e
 mov (global-int 14dc77) 7
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 3c4
+mov (global-int 14dd49) 3c4  // サーペント 巨蛇
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -5112,7 +5112,7 @@ mov (global-int 14dc96) 6
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) 3c5
+mov (global-int 14dd4a) 3c5  // リザードモール 蜥蜴鼹鼠
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -5121,7 +5121,7 @@ mov (global-int 14dc5b) 1
 mov (global-int 14dc79) 2
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 3c5
+mov (global-int 14dd4b) 3c5  // リザードモール 蜥蜴鼹鼠
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -5130,7 +5130,7 @@ mov (global-int 14dc5c) a
 mov (global-int 14dc7a) 5
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 3c5
+mov (global-int 14dd4c) 3c5  // リザードモール 蜥蜴鼹鼠
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -5139,7 +5139,7 @@ mov (global-int 14dc5d) 11
 mov (global-int 14dc7b) f
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
-mov (global-int 14dd4d) 3c5
+mov (global-int 14dd4d) 3c5  // リザードモール 蜥蜴鼹鼠
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -5148,7 +5148,7 @@ mov (global-int 14dc5e) 7
 mov (global-int 14dc7c) d
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 39e
+mov (global-int 14dd4e) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd6c) 37
 mov (global-int 14dd8a) 41
 mov (global-int 14dda8) 1
@@ -5157,7 +5157,7 @@ mov (global-int 14dc5f) e
 mov (global-int 14dc7d) f
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
-mov (global-int 14dd4f) de
+mov (global-int 14dd4f) de  // グロウハルピュア 格洛哈尔皮亚
 mov (global-int 14dd6d) 37
 mov (global-int 14dd8b) 41
 mov (global-int 14dda9) 1
@@ -5166,7 +5166,7 @@ mov (global-int 14dc60) 2
 mov (global-int 14dc7e) 9
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
-mov (global-int 14dd50) 15b
+mov (global-int 14dd50) 15b  // ラヴェニゥス 拉维纽斯
 mov (global-int 14dd6e) 37
 mov (global-int 14dd8c) 41
 mov (global-int 14ddaa) 1
@@ -5175,7 +5175,7 @@ mov (global-int 14dc61) 11
 mov (global-int 14dc7f) b
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
-mov (global-int 14dd51) 15b
+mov (global-int 14dd51) 15b  // ラヴェニゥス 拉维纽斯
 mov (global-int 14dd6f) 37
 mov (global-int 14dd8d) 41
 mov (global-int 14ddab) 1
@@ -5184,7 +5184,7 @@ mov (global-int 14dc62) c
 mov (global-int 14dc80) a
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
-mov (global-int 14dd52) 155
+mov (global-int 14dd52) 155  // 木精ネミルユイチリ 木精内米尔由伊奇利
 mov (global-int 14dd70) 37
 mov (global-int 14dd8e) 41
 mov (global-int 14ddac) 1
@@ -5193,7 +5193,7 @@ mov (global-int 14dc63) 9
 mov (global-int 14dc81) f
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
-mov (global-int 14dd53) 155
+mov (global-int 14dd53) 155  // 木精ネミルユイチリ 木精内米尔由伊奇利
 mov (global-int 14dd71) 37
 mov (global-int 14dd8f) 41
 mov (global-int 14ddad) 1
@@ -5202,7 +5202,7 @@ mov (global-int 14dc64) 13
 mov (global-int 14dc82) c
 mov (global-int 14dcbe) 2
 mov (global-int 14dcdc) 7
-mov (global-int 14dd54) 21e
+mov (global-int 14dd54) 21e  // 水棲獣ピュネス 水栖兽皮内斯
 mov (global-int 14dd72) 37
 mov (global-int 14dd90) 41
 mov (global-int 14ddae) 1
@@ -5228,7 +5228,7 @@ mov (global-int 14dfe7) 3
 jmp label_000212ec
 
 label_00018d10
-eq (local-int 0) (global-int b222) 24a
+eq (local-int 0) (global-int b222) 24a  // 荒原を臨む狩場 临荒原的狩猎场
 jcc (local-int 0) ffffffff label_0001a8dc
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -5424,7 +5424,7 @@ mov (global-int 14dc8d) 4
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dd23) 1
-mov (global-int 14dd41) 14a
+mov (global-int 14dd41) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -5435,7 +5435,7 @@ mov (global-int 14dc8e) 5
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dd24) 1
-mov (global-int 14dd42) 14a
+mov (global-int 14dd42) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -5446,7 +5446,7 @@ mov (global-int 14dc8f) a
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dd25) 1
-mov (global-int 14dd43) 14a
+mov (global-int 14dd43) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -5457,7 +5457,7 @@ mov (global-int 14dc90) b
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dd26) 1
-mov (global-int 14dd44) 14a
+mov (global-int 14dd44) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd62) 37
 mov (global-int 14dd80) 41
 mov (global-int 14dd9e) 1
@@ -5466,7 +5466,7 @@ mov (global-int 14dc55) 8
 mov (global-int 14dc73) 3
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
-mov (global-int 14dd45) 14a
+mov (global-int 14dd45) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -5475,7 +5475,7 @@ mov (global-int 14dc56) 8
 mov (global-int 14dc74) d
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
-mov (global-int 14dd46) 14a
+mov (global-int 14dd46) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -5486,7 +5486,7 @@ mov (global-int 14dc93) 6
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 14b
+mov (global-int 14dd47) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -5497,7 +5497,7 @@ mov (global-int 14dc94) 7
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 14b
+mov (global-int 14dd48) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -5508,7 +5508,7 @@ mov (global-int 14dc95) 8
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dd2b) 1
-mov (global-int 14dd49) 14b
+mov (global-int 14dd49) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -5519,7 +5519,7 @@ mov (global-int 14dc96) 9
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) 14b
+mov (global-int 14dd4a) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -5528,7 +5528,7 @@ mov (global-int 14dc5b) 3
 mov (global-int 14dc79) 8
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 14b
+mov (global-int 14dd4b) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -5537,7 +5537,7 @@ mov (global-int 14dc5c) d
 mov (global-int 14dc7a) 8
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 14b
+mov (global-int 14dd4c) 14b  // 火蜥蜴ゴーファラム 火蜥蜴戈法拉姆
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -5548,7 +5548,7 @@ mov (global-int 14dc99) c
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
 mov (global-int 14dd2f) 1
-mov (global-int 14dd4d) 22c
+mov (global-int 14dd4d) 22c  // 這竜リムドラギル 爬龙利姆德拉吉尔
 mov (global-int 14dd6b) 37
 mov (global-int 14dd89) 41
 mov (global-int 14dda7) 1
@@ -5559,7 +5559,7 @@ mov (global-int 14dc9a) d
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
 mov (global-int 14dd30) 1
-mov (global-int 14dd4e) de
+mov (global-int 14dd4e) de  // グロウハルピュア 格洛哈尔皮亚
 mov (global-int 14dd6c) 37
 mov (global-int 14dd8a) 41
 mov (global-int 14dda8) 1
@@ -5585,7 +5585,7 @@ mov (global-int 14dfe7) 9
 jmp label_000212ec
 
 label_0001a8dc
-eq (local-int 0) (global-int b222) 24b
+eq (local-int 0) (global-int b222) 24b  // 狂飆荒む空洞 狂风肆虐的空洞
 jcc (local-int 0) ffffffff label_0001c1bc
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -5770,7 +5770,7 @@ mov (global-int 14dc51) 5
 mov (global-int 14dc6f) 8
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
-mov (global-int 14dd41) 2bf
+mov (global-int 14dd41) 2bf  // 転がる大岩 滚动的大岩
 mov (global-int 14dd5f) 37
 mov (global-int 14dd7d) 41
 mov (global-int 14dd9b) 1
@@ -5779,7 +5779,7 @@ mov (global-int 14dc52) 8
 mov (global-int 14dc70) b
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
-mov (global-int 14dd42) 2bf
+mov (global-int 14dd42) 2bf  // 転がる大岩 滚动的大岩
 mov (global-int 14dd60) 37
 mov (global-int 14dd7e) 41
 mov (global-int 14dd9c) 1
@@ -5789,7 +5789,7 @@ mov (global-int 14dc71) 3
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 1
-mov (global-int 14dd43) 10b
+mov (global-int 14dd43) 10b  // 破裂飢狼 破裂饥狼
 mov (global-int 14dd61) 37
 mov (global-int 14dd7f) 41
 mov (global-int 14dd9d) 1
@@ -5799,7 +5799,7 @@ mov (global-int 14dc72) 7
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dcea) 1
-mov (global-int 14dd44) 3b9
+mov (global-int 14dd44) 3b9  // 睡魔リリス 睡魔莉莉丝
 mov (global-int 14dd62) 39
 mov (global-int 14dd80) 43
 mov (global-int 14dd9e) 1
@@ -5809,7 +5809,7 @@ mov (global-int 14dc73) c
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dceb) 1
-mov (global-int 14dd45) 3be
+mov (global-int 14dd45) 3be  // ゴブル 哥布尔
 mov (global-int 14dd63) 37
 mov (global-int 14dd81) 41
 mov (global-int 14dd9f) 1
@@ -5819,7 +5819,7 @@ mov (global-int 14dc74) 9
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dcec) 1
-mov (global-int 14dd46) 3bd
+mov (global-int 14dd46) 3bd  // ゴブルシャーマン 哥布尔萨满
 mov (global-int 14dd64) 37
 mov (global-int 14dd82) 41
 mov (global-int 14dda0) 1
@@ -5829,7 +5829,7 @@ mov (global-int 14dc75) d
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dced) 1
-mov (global-int 14dd47) 3c0
+mov (global-int 14dd47) 3c0  // アイアンワーム 钢铁蠕虫
 mov (global-int 14dd65) 37
 mov (global-int 14dd83) 41
 mov (global-int 14dda1) 1
@@ -5839,7 +5839,7 @@ mov (global-int 14dc76) 14
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dcee) 1
-mov (global-int 14dd48) 3c1
+mov (global-int 14dd48) 3c1  // ワーム 蠕虫
 mov (global-int 14dd66) 37
 mov (global-int 14dd84) 41
 mov (global-int 14dda2) 1
@@ -5849,7 +5849,7 @@ mov (global-int 14dc77) 13
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
 mov (global-int 14dcef) 1
-mov (global-int 14dd49) 3c5
+mov (global-int 14dd49) 3c5  // リザードモール 蜥蜴鼹鼠
 mov (global-int 14dd67) 37
 mov (global-int 14dd85) 41
 mov (global-int 14dda3) 1
@@ -5859,7 +5859,7 @@ mov (global-int 14dc78) 19
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dcf0) 1
-mov (global-int 14dd4a) 14a
+mov (global-int 14dd4a) 14a  // 雷精獣ジルラム 雷精兽吉尔拉姆
 mov (global-int 14dd68) 37
 mov (global-int 14dd86) 41
 mov (global-int 14dda4) 1
@@ -5869,7 +5869,7 @@ mov (global-int 14dc79) 18
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dcf1) 1
-mov (global-int 14dd4b) 148
+mov (global-int 14dd4b) 148  // 狂ったジルニー 疯狂的吉尔尼
 mov (global-int 14dd69) 37
 mov (global-int 14dd87) 41
 mov (global-int 14dda5) 1
@@ -5879,7 +5879,7 @@ mov (global-int 14dc7a) e
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
 mov (global-int 14dcf2) 1
-mov (global-int 14dd4c) 223
+mov (global-int 14dd4c) 223  // 魔獣ギガデルピュネ 魔兽吉加德尔皮内
 mov (global-int 14dd6a) 37
 mov (global-int 14dd88) 41
 mov (global-int 14dda6) 1
@@ -5905,7 +5905,7 @@ mov (global-int 14dfe7) 19
 jmp label_000212ec
 
 label_0001c1bc
-eq (local-int 0) (global-int b222) 26d
+eq (local-int 0) (global-int b222) 26d  // 金緑石の枢 金绿石之枢
 jcc (local-int 0) ffffffff label_0001c9a8
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -6008,7 +6008,7 @@ mov (global-int 14dfe7) 8
 jmp label_000212ec
 
 label_0001c9a8
-eq (local-int 0) (global-int b222) 26e
+eq (local-int 0) (global-int b222) 26e  // 縞瑪瑙の枢 条纹玛瑙之枢
 jcc (local-int 0) ffffffff label_0001cfa0
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -6086,7 +6086,7 @@ mov (global-int 14dfe7) 8
 jmp label_000212ec
 
 label_0001cfa0
-eq (local-int 0) (global-int b222) 26f
+eq (local-int 0) (global-int b222) 26f  // 緑柱石の枢 绿柱石之枢
 jcc (local-int 0) ffffffff label_0001d598
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -6164,107 +6164,107 @@ mov (global-int 14dfe7) 8
 jmp label_000212ec
 
 label_0001d598
-eq (local-int 0) (global-int b222) 321
+eq (local-int 0) (global-int b222) 321  // 城砦跡地 城砦遗迹地
 jcc (local-int 0) ffffffff label_0001d5dc
 jmp label_000212ec
 
 label_0001d5dc
-eq (local-int 0) (global-int b222) 35d
+eq (local-int 0) (global-int b222) 35d  // 夜の広場１ 夜之广场１
 jcc (local-int 0) ffffffff label_0001d620
 jmp label_000212ec
 
 label_0001d620
-eq (local-int 0) (global-int b222) 35e
+eq (local-int 0) (global-int b222) 35e  // 夜の広場２ 夜之广场２
 jcc (local-int 0) ffffffff label_0001d664
 jmp label_000212ec
 
 label_0001d664
-eq (local-int 0) (global-int b222) 35f
+eq (local-int 0) (global-int b222) 35f  // 夜の広場３ 夜之广场３
 jcc (local-int 0) ffffffff label_0001d6a8
 jmp label_000212ec
 
 label_0001d6a8
-eq (local-int 0) (global-int b222) 385
+eq (local-int 0) (global-int b222) 385  // 夜の裏路地 夜之小巷
 jcc (local-int 0) ffffffff label_0001d6ec
 jmp label_000212ec
 
 label_0001d6ec
-eq (local-int 0) (global-int b222) 386
+eq (local-int 0) (global-int b222) 386  // 城砦野営地付近 城砦野营地附近
 jcc (local-int 0) ffffffff label_0001d730
 jmp label_000212ec
 
 label_0001d730
-eq (local-int 0) (global-int b222) 387
+eq (local-int 0) (global-int b222) 387  // 砂蛍渓谷 砂萤溪谷
 jcc (local-int 0) ffffffff label_0001d774
 jmp label_000212ec
 
 label_0001d774
-eq (local-int 0) (global-int b222) 388
+eq (local-int 0) (global-int b222) 388  // グルーリャ城壁 古鲁利亚城壁
 jcc (local-int 0) ffffffff label_0001d7b8
 jmp label_000212ec
 
 label_0001d7b8
-eq (local-int 0) (global-int b222) 389
+eq (local-int 0) (global-int b222) 389  // 魔人墓楼・最奥部 魔人墓楼・最深处
 jcc (local-int 0) ffffffff label_0001d7fc
 jmp label_000212ec
 
 label_0001d7fc
-eq (local-int 0) (global-int b222) 38a
+eq (local-int 0) (global-int b222) 38a  // 死沼の入口 死沼的入口
 jcc (local-int 0) ffffffff label_0001d840
 jmp label_000212ec
 
 label_0001d840
-eq (local-int 0) (global-int b222) 38b
+eq (local-int 0) (global-int b222) 38b  // 心学の村 心学之村
 jcc (local-int 0) ffffffff label_0001d884
 jmp label_000212ec
 
 label_0001d884
-eq (local-int 0) (global-int b222) 38c
+eq (local-int 0) (global-int b222) 38c  // 胴部第三層区域 躯干第三层区域
 jcc (local-int 0) ffffffff label_0001d8c8
 jmp label_000212ec
 
 label_0001d8c8
-eq (local-int 0) (global-int b222) 38d
+eq (local-int 0) (global-int b222) 38d  // 雲海城砦 云海城砦
 jcc (local-int 0) ffffffff label_0001d90c
 jmp label_000212ec
 
 label_0001d90c
-eq (local-int 0) (global-int b222) 38e
+eq (local-int 0) (global-int b222) 38e  // 竜閣の強襲路 龙阁强袭路
 jcc (local-int 0) ffffffff label_0001d950
 jmp label_000212ec
 
 label_0001d950
-eq (local-int 0) (global-int b222) 38f
+eq (local-int 0) (global-int b222) 38f  // 頭部防衛区域 头部防卫区域
 jcc (local-int 0) ffffffff label_0001d994
 jmp label_000212ec
 
 label_0001d994
-eq (local-int 0) (global-int b222) 390
+eq (local-int 0) (global-int b222) 390  // 後部防衛区域 后部防卫区域
 jcc (local-int 0) ffffffff label_0001d9d8
 jmp label_000212ec
 
 label_0001d9d8
-eq (local-int 0) (global-int b222) 391
+eq (local-int 0) (global-int b222) 391  // 天の棺橋 天之棺桥
 jcc (local-int 0) ffffffff label_0001da1c
 jmp label_000212ec
 
 label_0001da1c
-eq (local-int 0) (global-int b222) 394
+eq (local-int 0) (global-int b222) 394  // 神殿係留地 神殿停泊地
 jcc (local-int 0) ffffffff label_0001da60
 jmp label_000212ec
 
 label_0001da60
-eq (local-int 0) (global-int b222) 395
+eq (local-int 0) (global-int b222) 395  // グアミウロスの巣 古阿米乌罗斯之巢
 jcc (local-int 0) ffffffff label_0001daa4
 jmp label_000212ec
 
 label_0001daa4
-eq (local-int 0) (global-int b222) 396
+eq (local-int 0) (global-int b222) 396  // 解放すべき神の途 应解放的神之途
 jcc (local-int 0) ffffffff label_0001dae8
 jmp label_000212ec
 
 label_0001dae8
-eq (local-int 0) (global-int b222) 397
+eq (local-int 0) (global-int b222) 397  // 魅了斑の結界 魅惑斑纹的结界
 jcc (local-int 0) ffffffff label_0001f5e0
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -6458,7 +6458,7 @@ mov (global-int 14dc6f) 5
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 39c
+mov (global-int 14dd41) 39c  // 魅惑のロズリーヌ 魅惑的罗兹利奴
 mov (global-int 14dd5f) 28
 mov (global-int 14dd7d) 32
 mov (global-int 14dd9b) 1
@@ -6468,7 +6468,7 @@ mov (global-int 14dc70) 5
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 39a
+mov (global-int 14dd42) 39a  // 魅惑のミクシュアナ 魅惑的米克修亚娜
 mov (global-int 14dd60) 28
 mov (global-int 14dd7e) 32
 mov (global-int 14dd9c) 1
@@ -6478,7 +6478,7 @@ mov (global-int 14dc71) 7
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 39b
+mov (global-int 14dd43) 39b  // 魅惑のイオル 魅惑的伊欧露
 mov (global-int 14dd61) 28
 mov (global-int 14dd7f) 32
 mov (global-int 14dd9d) 1
@@ -6488,7 +6488,7 @@ mov (global-int 14dc72) 7
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dcea) 2
-mov (global-int 14dd44) 399
+mov (global-int 14dd44) 399  // 魅惑のキスニル 魅惑的姬斯尼尔
 mov (global-int 14dd62) 28
 mov (global-int 14dd80) 32
 mov (global-int 14dd9e) 1
@@ -6499,7 +6499,7 @@ mov (global-int 14dc91) 1
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dd27) 1
-mov (global-int 14dd45) 3a0
+mov (global-int 14dd45) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd63) 24
 mov (global-int 14dd81) 2e
 mov (global-int 14dd9f) 1
@@ -6510,7 +6510,7 @@ mov (global-int 14dc92) 6
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 3a0
+mov (global-int 14dd46) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd64) 24
 mov (global-int 14dd82) 2e
 mov (global-int 14dda0) 1
@@ -6519,7 +6519,7 @@ mov (global-int 14dc57) 7
 mov (global-int 14dc75) a
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
-mov (global-int 14dd47) 3a0
+mov (global-int 14dd47) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd65) 24
 mov (global-int 14dd83) 2e
 mov (global-int 14dda1) 1
@@ -6530,7 +6530,7 @@ mov (global-int 14dc94) 2
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
 mov (global-int 14dd2a) 1
-mov (global-int 14dd48) 39d
+mov (global-int 14dd48) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd66) 24
 mov (global-int 14dd84) 2e
 mov (global-int 14dda2) 1
@@ -6539,7 +6539,7 @@ mov (global-int 14dc59) 6
 mov (global-int 14dc77) 9
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 39d
+mov (global-int 14dd49) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd67) 24
 mov (global-int 14dd85) 2e
 mov (global-int 14dda3) 1
@@ -6550,7 +6550,7 @@ mov (global-int 14dc96) 3
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
 mov (global-int 14dd2c) 1
-mov (global-int 14dd4a) 39e
+mov (global-int 14dd4a) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd68) 24
 mov (global-int 14dd86) 2e
 mov (global-int 14dda4) 1
@@ -6561,7 +6561,7 @@ mov (global-int 14dc97) 4
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
 mov (global-int 14dd2d) 1
-mov (global-int 14dd4b) 39e
+mov (global-int 14dd4b) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd69) 24
 mov (global-int 14dd87) 2e
 mov (global-int 14dda5) 1
@@ -6570,7 +6570,7 @@ mov (global-int 14dc5c) 9
 mov (global-int 14dc7a) a
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 39e
+mov (global-int 14dd4c) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd6a) 24
 mov (global-int 14dd88) 2e
 mov (global-int 14dda6) 1
@@ -6581,7 +6581,7 @@ mov (global-int 14dc99) 5
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
 mov (global-int 14dd2f) 1
-mov (global-int 14dd4d) 39f
+mov (global-int 14dd4d) 39f  // 魅惑の部族弓兵 魅惑的部族弓兵
 mov (global-int 14dd6b) 24
 mov (global-int 14dd89) 2e
 mov (global-int 14dda7) 1
@@ -6590,7 +6590,7 @@ mov (global-int 14dc5e) a
 mov (global-int 14dc7c) 9
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 39f
+mov (global-int 14dd4e) 39f  // 魅惑の部族弓兵 魅惑的部族弓兵
 mov (global-int 14dd6c) 24
 mov (global-int 14dd8a) 2e
 mov (global-int 14dda8) 1
@@ -6610,7 +6610,7 @@ mov (global-int 14dff5) 1
 jmp label_000212ec
 
 label_0001f5e0
-eq (local-int 0) (global-int b222) 398
+eq (local-int 0) (global-int b222) 398  // 月爛殿 月烂殿
 jcc (local-int 0) ffffffff label_000212ec
 set-string (global-string 121de) ""
 set-string (global-string 121df) ""
@@ -6793,7 +6793,7 @@ mov (global-int 14dc6f) 2
 mov (global-int 14dcab) 2
 mov (global-int 14dcc9) 7
 mov (global-int 14dce7) 2
-mov (global-int 14dd41) 3a1
+mov (global-int 14dd41) 3a1  // 魔法使いユエラ 魔术师由艾拉
 mov (global-int 14dd5f) 2d
 mov (global-int 14dd7d) 37
 mov (global-int 14dd9b) 1
@@ -6803,7 +6803,7 @@ mov (global-int 14dc70) a
 mov (global-int 14dcac) 2
 mov (global-int 14dcca) 7
 mov (global-int 14dce8) 2
-mov (global-int 14dd42) 3a3
+mov (global-int 14dd42) 3a3  // 借物のソルガッシュ 借来的索尔加修
 mov (global-int 14dd60) 2a
 mov (global-int 14dd7e) 34
 mov (global-int 14dd9c) 1
@@ -6813,7 +6813,7 @@ mov (global-int 14dc71) 12
 mov (global-int 14dcad) 2
 mov (global-int 14dccb) 7
 mov (global-int 14dce9) 2
-mov (global-int 14dd43) 3a2
+mov (global-int 14dd43) 3a2  // 借物のゴーレム 借来的魔像
 mov (global-int 14dd61) 2a
 mov (global-int 14dd7f) 34
 mov (global-int 14dd9d) 1
@@ -6823,7 +6823,7 @@ mov (global-int 14dc72) 3
 mov (global-int 14dcae) 2
 mov (global-int 14dccc) 7
 mov (global-int 14dcea) 2
-mov (global-int 14dd44) 39e
+mov (global-int 14dd44) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd62) 28
 mov (global-int 14dd80) 32
 mov (global-int 14dd9e) 1
@@ -6833,7 +6833,7 @@ mov (global-int 14dc73) 3
 mov (global-int 14dcaf) 2
 mov (global-int 14dccd) 7
 mov (global-int 14dceb) 2
-mov (global-int 14dd45) 39e
+mov (global-int 14dd45) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd63) 28
 mov (global-int 14dd81) 32
 mov (global-int 14dd9f) 1
@@ -6844,7 +6844,7 @@ mov (global-int 14dc92) 1
 mov (global-int 14dcb0) 2
 mov (global-int 14dcce) 7
 mov (global-int 14dd28) 1
-mov (global-int 14dd46) 39e
+mov (global-int 14dd46) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd64) 28
 mov (global-int 14dd82) 32
 mov (global-int 14dda0) 1
@@ -6855,7 +6855,7 @@ mov (global-int 14dc93) 2
 mov (global-int 14dcb1) 2
 mov (global-int 14dccf) 7
 mov (global-int 14dd29) 1
-mov (global-int 14dd47) 39e
+mov (global-int 14dd47) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd65) 28
 mov (global-int 14dd83) 32
 mov (global-int 14dda1) 1
@@ -6864,7 +6864,7 @@ mov (global-int 14dc58) 3
 mov (global-int 14dc76) 16
 mov (global-int 14dcb2) 2
 mov (global-int 14dcd0) 7
-mov (global-int 14dd48) 39e
+mov (global-int 14dd48) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd66) 28
 mov (global-int 14dd84) 32
 mov (global-int 14dda2) 1
@@ -6873,7 +6873,7 @@ mov (global-int 14dc59) 7
 mov (global-int 14dc77) 16
 mov (global-int 14dcb3) 2
 mov (global-int 14dcd1) 7
-mov (global-int 14dd49) 39e
+mov (global-int 14dd49) 39e  // 魅惑の部族兵 魅惑的部族兵
 mov (global-int 14dd67) 28
 mov (global-int 14dd85) 32
 mov (global-int 14dda3) 1
@@ -6882,7 +6882,7 @@ mov (global-int 14dc5a) 3
 mov (global-int 14dc78) 8
 mov (global-int 14dcb4) 2
 mov (global-int 14dcd2) 7
-mov (global-int 14dd4a) 39f
+mov (global-int 14dd4a) 39f  // 魅惑の部族弓兵 魅惑的部族弓兵
 mov (global-int 14dd68) 28
 mov (global-int 14dd86) 32
 mov (global-int 14dda4) 1
@@ -6891,7 +6891,7 @@ mov (global-int 14dc5b) 7
 mov (global-int 14dc79) 8
 mov (global-int 14dcb5) 2
 mov (global-int 14dcd3) 7
-mov (global-int 14dd4b) 39f
+mov (global-int 14dd4b) 39f  // 魅惑の部族弓兵 魅惑的部族弓兵
 mov (global-int 14dd69) 28
 mov (global-int 14dd87) 32
 mov (global-int 14dda5) 1
@@ -6900,7 +6900,7 @@ mov (global-int 14dc5c) 3
 mov (global-int 14dc7a) 10
 mov (global-int 14dcb6) 2
 mov (global-int 14dcd4) 7
-mov (global-int 14dd4c) 39f
+mov (global-int 14dd4c) 39f  // 魅惑の部族弓兵 魅惑的部族弓兵
 mov (global-int 14dd6a) 28
 mov (global-int 14dd88) 32
 mov (global-int 14dda6) 1
@@ -6911,7 +6911,7 @@ mov (global-int 14dc99) 3
 mov (global-int 14dcb7) 2
 mov (global-int 14dcd5) 7
 mov (global-int 14dd2f) 1
-mov (global-int 14dd4d) 39d
+mov (global-int 14dd4d) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd6b) 28
 mov (global-int 14dd89) 32
 mov (global-int 14dda7) 1
@@ -6920,7 +6920,7 @@ mov (global-int 14dc5e) 3
 mov (global-int 14dc7c) c
 mov (global-int 14dcb8) 2
 mov (global-int 14dcd6) 7
-mov (global-int 14dd4e) 39d
+mov (global-int 14dd4e) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd6c) 28
 mov (global-int 14dd8a) 32
 mov (global-int 14dda8) 1
@@ -6929,7 +6929,7 @@ mov (global-int 14dc5f) 7
 mov (global-int 14dc7d) 12
 mov (global-int 14dcb9) 2
 mov (global-int 14dcd7) 7
-mov (global-int 14dd4f) 39d
+mov (global-int 14dd4f) 39d  // 魅惑の天使 魅惑的天使
 mov (global-int 14dd6d) 28
 mov (global-int 14dd8b) 32
 mov (global-int 14dda9) 1
@@ -6940,7 +6940,7 @@ mov (global-int 14dc9c) 4
 mov (global-int 14dcba) 2
 mov (global-int 14dcd8) 7
 mov (global-int 14dd32) 1
-mov (global-int 14dd50) 3a0
+mov (global-int 14dd50) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd6e) 28
 mov (global-int 14dd8c) 32
 mov (global-int 14ddaa) 1
@@ -6949,7 +6949,7 @@ mov (global-int 14dc61) 7
 mov (global-int 14dc7f) c
 mov (global-int 14dcbb) 2
 mov (global-int 14dcd9) 7
-mov (global-int 14dd51) 3a0
+mov (global-int 14dd51) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd6f) 28
 mov (global-int 14dd8d) 32
 mov (global-int 14ddab) 1
@@ -6958,7 +6958,7 @@ mov (global-int 14dc62) 4
 mov (global-int 14dc80) e
 mov (global-int 14dcbc) 2
 mov (global-int 14dcda) 7
-mov (global-int 14dd52) 3a0
+mov (global-int 14dd52) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd70) 28
 mov (global-int 14dd8e) 32
 mov (global-int 14ddac) 1
@@ -6967,7 +6967,7 @@ mov (global-int 14dc63) 6
 mov (global-int 14dc81) e
 mov (global-int 14dcbd) 2
 mov (global-int 14dcdb) 7
-mov (global-int 14dd53) 3a0
+mov (global-int 14dd53) 3a0  // 魅惑の霊体 魅惑的灵体
 mov (global-int 14dd71) 28
 mov (global-int 14dd8f) 32
 mov (global-int 14ddad) 1
