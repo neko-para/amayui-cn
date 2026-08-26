@@ -1,0 +1,1805 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 1a 1 1 c 1 1 }
+====
+
+eq (local-int 3) (global-int 3402) 0
+jcc (local-int 3) ffffffff label_00000264
+mov (local-int 2) 0
+mov (local-int 1) 1
+jmp label_000000c4
+
+label_000000a8
+add (local-int 1) (local-int 1) 1
+
+label_000000c4
+lt (local-int 3) (local-int 1) 64
+jcc (local-int 3) ffffffff label_00000218
+lookup-array (local-ptr 0) (global-int 72164) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+eq (local-int 4) (local-int 3) 1
+jcc (local-int 4) ffffffff label_0000020c
+lookup-array (local-ptr 0) (global-int 72358) (local-int 1)
+gr (local-int 3) (local-ptr 0) 0
+jcc (local-int 3) ffffffff label_0000020c
+lookup-array (local-ptr 0) (global-int 72358) (local-int 1)
+add (local-int 3) (local-int 2) (local-ptr 0)
+mov (local-int 2) (local-int 3)
+
+label_0000020c
+jmp label_000000a8
+
+label_00000218
+gre (local-int 3) (local-int 2) 3
+jcc (local-int 3) ffffffff label_00000264
+mov (global-int 3402) 1
+
+label_00000264
+eq (local-int 3) (global-int 2fa5) 0
+gre (local-int 5) (global-int 72555) 28
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_000002e8
+mov (global-int 2fa5) 1
+
+label_000002e8
+eq (local-int 3) (global-int 2fa6) 0
+gre (local-int 5) (global-int 72554) 21
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_0000036c
+mov (global-int 2fa6) 1
+
+label_0000036c
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00001a30 ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00001cb8 ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00002008 ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 6
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00002298 ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 7
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00002358 ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 8
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000262c ffffffff
+eq (local-int 3) (global-int b228) 2
+eq (local-int 5) (global-int b229) 9
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000028d4 ffffffff
+eq (local-int 3) (global-int b228) 3
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00002ab4 ffffffff
+eq (local-int 3) (global-int b228) 3
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00002e5c ffffffff
+eq (local-int 3) (global-int b228) 5
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000031b4 ffffffff
+eq (local-int 3) (global-int b228) 5
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00003934 ffffffff
+eq (local-int 3) (global-int b228) 5
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00003b34 ffffffff
+eq (local-int 3) (global-int b228) 5
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00003d6c ffffffff
+eq (local-int 3) (global-int b228) 6
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000406c ffffffff
+eq (local-int 3) (global-int b228) 6
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000040f4 ffffffff
+eq (local-int 3) (global-int b228) 6
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000459c ffffffff
+eq (local-int 3) (global-int b228) 6
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00004838 ffffffff
+eq (local-int 3) (global-int b228) 8
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00004a18 ffffffff
+eq (local-int 3) (global-int b228) 8
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00004aa0 ffffffff
+eq (local-int 3) (global-int b228) 8
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00004df0 ffffffff
+eq (local-int 3) (global-int b228) 9
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00005644 ffffffff
+eq (local-int 3) (global-int b228) 9
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000058e0 ffffffff
+eq (local-int 3) (global-int b228) a
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00005a50 ffffffff
+eq (local-int 3) (global-int b228) b
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00005c30 ffffffff
+eq (local-int 3) (global-int b228) b
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00005fcc ffffffff
+eq (local-int 3) (global-int b228) b
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000061a0 ffffffff
+eq (local-int 3) (global-int b228) b
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00006448 ffffffff
+eq (local-int 3) (global-int b228) c
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000064fc ffffffff
+eq (local-int 3) (global-int b228) d
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00006808 ffffffff
+eq (local-int 3) (global-int b228) d
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00006b78 ffffffff
+eq (local-int 3) (global-int b228) e
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00006bc4 ffffffff
+eq (local-int 3) (global-int b228) f
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00006fac ffffffff
+eq (local-int 3) (global-int b228) f
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00007034 ffffffff
+eq (local-int 3) (global-int b228) f
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000714c ffffffff
+eq (local-int 3) (global-int b228) f
+eq (local-int 5) (global-int b229) 6
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000071d4 ffffffff
+eq (local-int 3) (global-int b228) 10
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000725c ffffffff
+eq (local-int 3) (global-int b228) 10
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000076e0 ffffffff
+eq (local-int 3) (global-int b228) 13
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00007b64 ffffffff
+eq (local-int 3) (global-int b228) 13
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00007eb4 ffffffff
+eq (local-int 3) (global-int b228) 15
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00008144 ffffffff
+eq (local-int 3) (global-int b228) 15
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00008388 ffffffff
+eq (local-int 3) (global-int b228) 16
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000085cc ffffffff
+eq (local-int 3) (global-int b228) 16
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000086e4 ffffffff
+eq (local-int 3) (global-int b228) 16
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_000089d8 ffffffff
+eq (local-int 3) (global-int b228) 18
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00008af0 ffffffff
+eq (local-int 3) (global-int b228) 18
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00008df0 ffffffff
+eq (local-int 3) (global-int b228) 19
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000933c ffffffff
+eq (local-int 3) (global-int b228) 19
+eq (local-int 5) (global-int b229) 2
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00009824 ffffffff
+eq (local-int 3) (global-int b228) 19
+eq (local-int 5) (global-int b229) 3
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00009a30 ffffffff
+eq (local-int 3) (global-int b228) 19
+eq (local-int 5) (global-int b229) 4
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00009dec ffffffff
+eq (local-int 3) (global-int b228) 19
+eq (local-int 5) (global-int b229) 5
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_00009f68 ffffffff
+eq (local-int 3) (global-int b228) 1a
+eq (local-int 5) (global-int b229) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) label_0000a210 ffffffff
+exit
+
+label_00001a30
+eq (local-int 3) (global-int 337f) 0
+jcc (local-int 3) ffffffff label_00001c04
+mov (local-int 0) 0
+mov (local-int 1) a
+jmp label_00001ab8
+
+label_00001a9c
+add (local-int 1) (local-int 1) 1
+
+label_00001ab8
+lt (local-int 3) (local-int 1) 32
+jcc (local-int 3) ffffffff label_00001bb8
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_00001bac
+lookup-array (local-ptr 0) (global-int 61fc6) (local-int 1)
+eq (local-int 3) (local-ptr 0) fe
+jcc (local-int 3) ffffffff label_00001bac
+mov (local-int 0) 1
+
+label_00001bac
+jmp label_00001a9c
+
+label_00001bb8
+eq (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00001c04
+mov (global-int 337f) 1
+
+label_00001c04
+eq (local-int 3) (global-int 3383) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 3
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+jcc (local-int 6) ffffffff label_00001cb4
+mov (global-int 3383) 1
+
+label_00001cb4
+exit
+
+label_00001cb8
+eq (local-int 3) (global-int 3380) 0
+jcc (local-int 3) ffffffff label_00001e8c
+mov (local-int 0) 0
+mov (local-int 1) a
+jmp label_00001d40
+
+label_00001d24
+add (local-int 1) (local-int 1) 1
+
+label_00001d40
+lt (local-int 3) (local-int 1) 32
+jcc (local-int 3) ffffffff label_00001e40
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_00001e34
+lookup-array (local-ptr 0) (global-int 61fc6) (local-int 1)
+eq (local-int 3) (local-ptr 0) 12c
+jcc (local-int 3) ffffffff label_00001e34
+mov (local-int 0) 1
+
+label_00001e34
+jmp label_00001d24
+
+label_00001e40
+eq (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00001e8c
+mov (global-int 3380) 1
+
+label_00001e8c
+eq (local-int 3) (global-int 3384) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00002004
+mov (global-int 3384) 1
+
+label_00002004
+exit
+
+label_00002008
+eq (local-int 3) (global-int 338d) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00002180
+mov (global-int 338d) 1
+
+label_00002180
+eq (local-int 3) (global-int 338e) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00002294
+mov (global-int 338e) 1
+
+label_00002294
+exit
+
+label_00002298
+eq (local-int 3) (global-int 3396) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00002354
+mov (global-int 3396) 1
+
+label_00002354
+exit
+
+label_00002358
+eq (local-int 3) (global-int 33a2) 0
+lte (local-int 5) (global-int b236) f
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d74) 0
+and (local-int b) (local-int 4) (local-int 6)
+eq (local-int 7) (global-int 56d76) 0
+and (local-int 8) (local-int b) (local-int 7)
+jcc (local-int 8) ffffffff label_0000244c
+mov (global-int 33a2) 1
+
+label_0000244c
+eq (local-int 3) (global-int 33a3) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00002628
+mov (global-int 33a3) 1
+
+label_00002628
+exit
+
+label_0000262c
+eq (local-int 3) (global-int 33bf) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+jcc (local-int 11) ffffffff label_000028d0
+mov (global-int 33bf) 1
+
+label_000028d0
+exit
+
+label_000028d4
+eq (local-int 3) (global-int 33d7) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00002ab0
+mov (global-int 33d7) 1
+
+label_00002ab0
+exit
+
+label_00002ab4
+eq (local-int 3) (global-int 3385) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 18
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00002bc8
+mov (global-int 3385) 1
+
+label_00002bc8
+eq (local-int 3) (global-int 3386) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00002c84
+mov (global-int 3386) 1
+
+label_00002c84
+eq (local-int 3) (global-int 3387) 0
+jcc (local-int 3) ffffffff label_00002e58
+mov (local-int 0) 0
+mov (local-int 1) a
+jmp label_00002d0c
+
+label_00002cf0
+add (local-int 1) (local-int 1) 1
+
+label_00002d0c
+lt (local-int 3) (local-int 1) 32
+jcc (local-int 3) ffffffff label_00002e0c
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_00002e00
+lookup-array (local-ptr 0) (global-int 61fc6) (local-int 1)
+eq (local-int 3) (local-ptr 0) 21c
+jcc (local-int 3) ffffffff label_00002e00
+mov (local-int 0) 1
+
+label_00002e00
+jmp label_00002cf0
+
+label_00002e0c
+eq (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00002e58
+mov (global-int 3387) 1
+
+label_00002e58
+exit
+
+label_00002e5c
+eq (local-int 3) (global-int 3388) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 6
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 4a5f0) (global-int b222) 32 7
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 8
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00003038
+mov (global-int 3388) 1
+
+label_00003038
+eq (local-int 3) (global-int 3389) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_000031b0
+mov (global-int 3389) 1
+
+label_000031b0
+exit
+
+label_000031b4
+eq (local-int 3) (global-int 338f) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 2
+eq (local-int 4) (local-ptr 0) 1
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 3
+eq (local-int 7) (local-ptr 1) 1
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_000032c8
+mov (global-int 338f) 1
+
+label_000032c8
+eq (local-int 3) (global-int 3390) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_00003508
+mov (global-int 3390) 1
+
+label_00003508
+eq (local-int 3) (global-int 3391) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+lookup-array-2d (local-ptr 7) (global-int 3e2a0) (global-int b222) 32 13
+gr (local-int 14) (local-ptr 7) 0
+and (local-int 15) (local-int 13) (local-int 14)
+jcc (local-int 15) ffffffff label_00003874
+mov (global-int 3391) 1
+
+label_00003874
+eq (local-int 3) (global-int 3392) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00003930
+mov (global-int 3392) 1
+
+label_00003930
+exit
+
+label_00003934
+eq (local-int 3) (global-int 3397) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 2
+eq (local-int 4) (local-ptr 0) 1
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 3
+eq (local-int 7) (local-ptr 1) 1
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 4a5f0) (global-int b222) 32 4
+eq (local-int 9) (local-ptr 2) 1
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00003aac
+mov (global-int 3397) 1
+
+label_00003aac
+eq (local-int 3) (global-int 3398) 0
+eq (local-int 5) (global-int 56d76) 0
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_00003b30
+mov (global-int 3398) 1
+
+label_00003b30
+exit
+
+label_00003b34
+eq (local-int 3) (global-int 33a5) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00003cac
+mov (global-int 33a5) 1
+
+label_00003cac
+eq (local-int 3) (global-int 33a6) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00003d68
+mov (global-int 33a6) 1
+
+label_00003d68
+exit
+
+label_00003d6c
+eq (local-int 3) (global-int 33c0) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_00003fac
+mov (global-int 33c0) 1
+
+label_00003fac
+eq (local-int 3) (global-int 33c1) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00004068
+mov (global-int 33c1) 1
+
+label_00004068
+exit
+
+label_0000406c
+eq (local-int 3) (global-int 2f98) 0
+gre (local-int 5) (global-int 56d7a) 4b
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_000040f0
+mov (global-int 2f98) 1
+
+label_000040f0
+exit
+
+label_000040f4
+eq (local-int 3) (global-int 339e) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_000042d0
+mov (global-int 339e) 1
+
+label_000042d0
+eq (local-int 3) (global-int 339f) 0
+jcc (local-int 3) ffffffff label_00004598
+mov (local-int 0) 0
+eq (local-int 3) (global-int 2d84) 0
+jcc (local-int 3) ffffffff label_000043fc
+mov (global-int f8c39) 3
+mov (global-int f8c3a) 3
+mov (global-int f8c3b) 5
+mov (global-int f8c3c) 5
+call-script 3989
+lt (local-int 3) (global-int 5104a2) 3
+jcc (local-int 3) ffffffff label_000043fc
+mov (local-int 0) 1
+
+label_000043fc
+mov (global-int f8c39) b
+mov (global-int f8c3a) 3
+mov (global-int f8c3b) d
+mov (global-int f8c3c) 8
+call-script 3989
+lt (local-int 3) (global-int 5104a2) 2
+jcc (local-int 3) ffffffff label_000044a4
+mov (local-int 0) 1
+
+label_000044a4
+mov (global-int f8c39) 2
+mov (global-int f8c3a) 8
+mov (global-int f8c3b) 4
+mov (global-int f8c3c) d
+call-script 3989
+lt (local-int 3) (global-int 5104a2) 2
+jcc (local-int 3) ffffffff label_0000454c
+mov (local-int 0) 1
+
+label_0000454c
+gr (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00004598
+mov (global-int 339f) 1
+
+label_00004598
+exit
+
+label_0000459c
+eq (local-int 3) (global-int 33a0) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+lookup-array-2d (local-ptr 8) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 16) (local-ptr 8) 0
+and (local-int c) (local-int 9) (local-int 16)
+or (local-int d) (local-int 8) (local-int c)
+jcc (local-int d) ffffffff label_00004778
+mov (global-int 33a0) 1
+
+label_00004778
+eq (local-int 3) (global-int 33a1) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00004834
+mov (global-int 33a1) 1
+
+label_00004834
+exit
+
+label_00004838
+eq (local-int 3) (global-int 33c5) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 2
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 3
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 9) (local-ptr 2) 0
+lookup-array-2d (local-ptr 8) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 16) (local-ptr 8) 0
+and (local-int c) (local-int 9) (local-int 16)
+or (local-int d) (local-int 8) (local-int c)
+jcc (local-int d) ffffffff label_00004a14
+mov (global-int 33c5) 1
+
+label_00004a14
+exit
+
+label_00004a18
+eq (local-int 3) (global-int 33a4) 0
+eq (local-int 5) (global-int 56d76) 0
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_00004a9c
+mov (global-int 33a4) 1
+
+label_00004a9c
+exit
+
+label_00004aa0
+eq (local-int 3) (global-int 33a7) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00004c18
+mov (global-int 33a7) 1
+
+label_00004c18
+eq (local-int 3) (global-int 33a8) 0
+jcc (local-int 3) ffffffff label_00004dec
+mov (local-int 0) 0
+mov (local-int 1) a
+jmp label_00004ca0
+
+label_00004c84
+add (local-int 1) (local-int 1) 1
+
+label_00004ca0
+lt (local-int 3) (local-int 1) 32
+jcc (local-int 3) ffffffff label_00004da0
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_00004d94
+lookup-array (local-ptr 0) (global-int 61fc6) (local-int 1)
+eq (local-int 3) (local-ptr 0) 232
+jcc (local-int 3) ffffffff label_00004d94
+mov (local-int 0) 1
+
+label_00004d94
+jmp label_00004c84
+
+label_00004da0
+eq (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00004dec
+mov (global-int 33a8) 1
+
+label_00004dec
+exit
+
+label_00004df0
+eq (local-int 3) (global-int 33c9) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 4
+eq (local-int 4) (local-ptr 0) 1
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 5
+eq (local-int 7) (local-ptr 1) 1
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 4a5f0) (global-int b222) 32 6
+eq (local-int 9) (local-ptr 2) 1
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 2c
+eq (local-int c) (local-ptr 3) 1
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00004fcc
+mov (global-int 33c9) 1
+
+label_00004fcc
+eq (local-int 3) (global-int 338c) 1
+jcc (local-int 3) ffffffff label_00005318
+eq (local-int 3) (global-int 33ca) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 30
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_0000530c
+mov (global-int 33ca) 1
+
+label_0000530c
+jmp label_000055bc
+
+label_00005318
+eq (local-int 3) (global-int 33ca) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+jcc (local-int 11) ffffffff label_000055bc
+mov (global-int 33ca) 1
+
+label_000055bc
+eq (local-int 3) (global-int 338c) 0
+eq (local-int 5) (global-int 2a7f) 1
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_00005640
+mov (global-int 338c) 1
+
+label_00005640
+exit
+
+label_00005644
+eq (local-int 3) (global-int 33c7) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 18
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 19
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 1a
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 1b
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00005820
+mov (global-int 33c7) 1
+
+label_00005820
+eq (local-int 3) (global-int 33c8) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_000058dc
+mov (global-int 33c8) 1
+
+label_000058dc
+exit
+
+label_000058e0
+eq (local-int 3) (global-int 33cb) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+jcc (local-int 6) ffffffff label_00005990
+mov (global-int 33cb) 1
+
+label_00005990
+eq (local-int 3) (global-int 33cf) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00005a4c
+mov (global-int 33cf) 1
+
+label_00005a4c
+exit
+
+label_00005a50
+eq (local-int 3) (global-int 33d0) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 13
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 14
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 15
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 16
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00005c2c
+mov (global-int 33d0) 1
+
+label_00005c2c
+exit
+
+label_00005c30
+eq (local-int 3) (global-int 33d1) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 2
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 3
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 9) (local-ptr 2) 0
+lookup-array-2d (local-ptr 8) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 16) (local-ptr 8) 0
+and (local-int c) (local-int 9) (local-int 16)
+lookup-array-2d (local-ptr 9) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 17) (local-ptr 9) 0
+and (local-int e) (local-int c) (local-int 17)
+lookup-array-2d (local-ptr a) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 18) (local-ptr a) 0
+and (local-int 10) (local-int e) (local-int 18)
+or (local-int 11) (local-int 8) (local-int 10)
+jcc (local-int 11) ffffffff label_00005ed4
+mov (global-int 33d1) 1
+
+label_00005ed4
+eq (local-int 3) (global-int 33d2) 0
+lte (local-int 5) (global-int b236) f
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d74) 0
+and (local-int b) (local-int 4) (local-int 6)
+eq (local-int 7) (global-int 56d76) 0
+and (local-int 8) (local-int b) (local-int 7)
+jcc (local-int 8) ffffffff label_00005fc8
+mov (global-int 33d2) 1
+
+label_00005fc8
+exit
+
+label_00005fcc
+eq (local-int 3) (global-int 33d3) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 14
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 15
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_000060e0
+mov (global-int 33d3) 1
+
+label_000060e0
+eq (local-int 3) (global-int 33d4) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_0000619c
+mov (global-int 33d4) 1
+
+label_0000619c
+exit
+
+label_000061a0
+eq (local-int 3) (global-int 33d5) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 2
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 3
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+jcc (local-int 11) ffffffff label_00006444
+mov (global-int 33d5) 1
+
+label_00006444
+exit
+
+label_00006448
+eq (local-int 3) (global-int 33dc) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 10
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+jcc (local-int 6) ffffffff label_000064f8
+mov (global-int 33dc) 1
+
+label_000064f8
+exit
+
+label_000064fc
+eq (local-int 3) (global-int 33d6) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_00006804
+mov (global-int 33d6) 1
+
+label_00006804
+exit
+
+label_00006808
+eq (local-int 3) (global-int 33db) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+lookup-array-2d (local-ptr 7) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int 14) (local-ptr 7) 0
+and (local-int 15) (local-int 13) (local-int 14)
+jcc (local-int 15) ffffffff label_00006b74
+mov (global-int 33db) 1
+
+label_00006b74
+exit
+
+label_00006b78
+mov (global-int 2fa0) 0
+mov (global-int f8c39) 62
+mov (global-int f8c3a) 1
+call-script 50e2
+exit
+
+label_00006bc4
+eq (local-int 3) (global-int 33e1) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 13
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00006da0
+mov (global-int 33e1) 1
+
+label_00006da0
+eq (local-int 3) (global-int 33e2) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 25
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 26
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00006eb4
+mov (global-int 33e2) 1
+
+label_00006eb4
+eq (local-int 3) (global-int 33e3) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+eq (local-int 7) (global-int 56d77) 0
+and (local-int 8) (local-int b) (local-int 7)
+jcc (local-int 8) ffffffff label_00006fa8
+mov (global-int 33e3) 1
+
+label_00006fa8
+exit
+
+label_00006fac
+eq (local-int 3) (global-int 33e7) 0
+eq (local-int 5) (global-int 56d76) 0
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_00007030
+mov (global-int 33e7) 1
+
+label_00007030
+exit
+
+label_00007034
+eq (local-int 3) (global-int 33e8) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00007148
+mov (global-int 33e8) 1
+
+label_00007148
+exit
+
+label_0000714c
+eq (local-int 3) (global-int 33e9) 0
+eq (local-int 5) (global-int 56d76) 0
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_000071d0
+mov (global-int 33e9) 1
+
+label_000071d0
+exit
+
+label_000071d4
+eq (local-int 3) (global-int 33f2) 0
+eq (local-int 5) (global-int 56d76) 0
+and (local-int 4) (local-int 3) (local-int 5)
+jcc (local-int 4) ffffffff label_00007258
+mov (global-int 33f2) 1
+
+label_00007258
+exit
+
+label_0000725c
+eq (local-int 3) (global-int 33a9) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_000073d4
+mov (global-int 33a9) 1
+
+label_000073d4
+eq (local-int 3) (global-int 33aa) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 14
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 15
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 16
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 17
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 18
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 19
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 1a
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_000076dc
+mov (global-int 33aa) 1
+
+label_000076dc
+exit
+
+label_000076e0
+eq (local-int 3) (global-int 33ab) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00007858
+mov (global-int 33ab) 1
+
+label_00007858
+eq (local-int 3) (global-int 33ac) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 13
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_00007b60
+mov (global-int 33ac) 1
+
+label_00007b60
+exit
+
+label_00007b64
+eq (local-int 3) (global-int 33b2) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00007cdc
+mov (global-int 33b2) 1
+
+label_00007cdc
+eq (local-int 3) (global-int 33b3) 0
+jcc (local-int 3) ffffffff label_00007eb0
+mov (local-int 0) 0
+mov (local-int 1) a
+jmp label_00007d64
+
+label_00007d48
+add (local-int 1) (local-int 1) 1
+
+label_00007d64
+lt (local-int 3) (local-int 1) 32
+jcc (local-int 3) ffffffff label_00007e64
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 1)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_00007e58
+lookup-array (local-ptr 0) (global-int 61fc6) (local-int 1)
+eq (local-int 3) (local-ptr 0) 136
+jcc (local-int 3) ffffffff label_00007e58
+mov (local-int 0) 1
+
+label_00007e58
+jmp label_00007d48
+
+label_00007e64
+eq (local-int 3) (local-int 0) 0
+jcc (local-int 3) ffffffff label_00007eb0
+mov (global-int 33b3) 1
+
+label_00007eb0
+exit
+
+label_00007eb4
+eq (local-int 3) (global-int 3411) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00008090
+mov (global-int 3411) 1
+
+label_00008090
+eq (local-int 3) (global-int 3412) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+jcc (local-int 6) ffffffff label_00008140
+mov (global-int 3412) 1
+
+label_00008140
+exit
+
+label_00008144
+eq (local-int 3) (global-int 3413) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_00008384
+mov (global-int 3413) 1
+
+label_00008384
+exit
+
+label_00008388
+eq (local-int 3) (global-int 3414) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 b
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_000085c8
+mov (global-int 3414) 1
+
+label_000085c8
+exit
+
+label_000085cc
+eq (local-int 3) (global-int 33ea) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 b
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 c
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_000086e0
+mov (global-int 33ea) 1
+
+label_000086e0
+exit
+
+label_000086e4
+eq (local-int 3) (global-int 33eb) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 2
+eq (local-int 4) (local-ptr 0) 1
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 3
+eq (local-int 7) (local-ptr 1) 1
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_000087f8
+mov (global-int 33eb) 1
+
+label_000087f8
+eq (local-int 3) (global-int 33ec) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_000089d4
+mov (global-int 33ec) 1
+
+label_000089d4
+exit
+
+label_000089d8
+eq (local-int 3) (global-int 33ed) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00008aec
+mov (global-int 33ed) 1
+
+label_00008aec
+exit
+
+label_00008af0
+eq (local-int 3) (global-int 33ee) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 4
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_00008d30
+mov (global-int 33ee) 1
+
+label_00008d30
+eq (local-int 3) (global-int 33ef) 0
+eq (local-int 5) (global-int 56d74) 0
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d76) 0
+and (local-int b) (local-int 4) (local-int 6)
+jcc (local-int b) ffffffff label_00008dec
+mov (global-int 33ef) 1
+
+label_00008dec
+exit
+
+label_00008df0
+eq (local-int 3) (global-int 33f0) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 5
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_00009030
+mov (global-int 33f0) 1
+
+label_00009030
+eq (local-int 3) (global-int 33f1) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 11
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 4a5f0) (global-int b222) 32 12
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 4a5f0) (global-int b222) 32 13
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 4a5f0) (global-int b222) 32 14
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_00009338
+mov (global-int 33f1) 1
+
+label_00009338
+exit
+
+label_0000933c
+eq (local-int 3) (global-int 33f9) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 15
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 16
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 17
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 18
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 19
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+jcc (local-int f) ffffffff label_0000957c
+mov (global-int 33f9) 1
+
+label_0000957c
+eq (local-int 3) (global-int 33fa) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 1a
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 1b
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 1c
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 1d
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 1e
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 1f
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+jcc (local-int 11) ffffffff label_00009820
+mov (global-int 33fa) 1
+
+label_00009820
+exit
+
+label_00009824
+eq (local-int 3) (global-int 33fb) 0
+lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 10
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 4a5f0) (global-int b222) 32 11
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00009938
+mov (global-int 33fb) 1
+
+label_00009938
+eq (local-int 3) (global-int 33fc) 0
+lte (local-int 5) (global-int b236) f
+and (local-int 4) (local-int 3) (local-int 5)
+eq (local-int 6) (global-int 56d74) 0
+and (local-int b) (local-int 4) (local-int 6)
+eq (local-int 7) (global-int 56d76) 0
+and (local-int 8) (local-int b) (local-int 7)
+jcc (local-int 8) ffffffff label_00009a2c
+mov (global-int 33fc) 1
+
+label_00009a2c
+exit
+
+label_00009a30
+eq (local-int 3) (global-int 33fd) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 6
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 7
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00009c0c
+mov (global-int 33fd) 1
+
+label_00009c0c
+eq (local-int 3) (global-int 33fe) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 14
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 15
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 16
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 17
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+jcc (local-int d) ffffffff label_00009de8
+mov (global-int 33fe) 1
+
+label_00009de8
+exit
+
+label_00009dec
+eq (local-int 3) (global-int 33ff) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 8
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 9
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 a
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+jcc (local-int a) ffffffff label_00009f64
+mov (global-int 33ff) 1
+
+label_00009f64
+exit
+
+label_00009f68
+eq (local-int 3) (global-int 3400) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 13
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 14
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 15
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 16
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+jcc (local-int 11) ffffffff label_0000a20c
+mov (global-int 3400) 1
+
+label_0000a20c
+exit
+
+label_0000a210
+eq (local-int 3) (global-int 3401) 0
+lookup-array-2d (local-ptr 0) (global-int 3e2a0) (global-int b222) 32 c
+gr (local-int 4) (local-ptr 0) 0
+and (local-int 6) (local-int 3) (local-int 4)
+lookup-array-2d (local-ptr 1) (global-int 3e2a0) (global-int b222) 32 d
+gr (local-int 7) (local-ptr 1) 0
+and (local-int 8) (local-int 6) (local-int 7)
+lookup-array-2d (local-ptr 2) (global-int 3e2a0) (global-int b222) 32 e
+gr (local-int 9) (local-ptr 2) 0
+and (local-int a) (local-int 8) (local-int 9)
+lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 f
+gr (local-int c) (local-ptr 3) 0
+and (local-int d) (local-int a) (local-int c)
+lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 10
+gr (local-int e) (local-ptr 4) 0
+and (local-int f) (local-int d) (local-int e)
+lookup-array-2d (local-ptr 5) (global-int 3e2a0) (global-int b222) 32 11
+gr (local-int 10) (local-ptr 5) 0
+and (local-int 11) (local-int f) (local-int 10)
+lookup-array-2d (local-ptr 6) (global-int 3e2a0) (global-int b222) 32 12
+gr (local-int 12) (local-ptr 6) 0
+and (local-int 13) (local-int 11) (local-int 12)
+jcc (local-int 13) ffffffff label_0000a518
+mov (global-int 3401) 1
+
+label_0000a518
+exit

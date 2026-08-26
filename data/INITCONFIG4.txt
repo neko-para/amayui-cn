@@ -1,0 +1,38 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 3 1 1 3 1 1 }
+====
+
+copy-to-global (global-int 3b4e) 3e8
+set-array-to (global-int a9e5) 2710 3e8
+mov (local-int 0) 0
+jmp label_000000a8
+
+label_0000008c
+add (local-int 0) (local-int 0) 1
+
+label_000000a8
+lt (local-int 1) (local-int 0) 3e8
+jcc (local-int 1) ffffffff label_0000022c
+lookup-array (local-ptr 0) (global-int 3b4e) (local-int 0)
+u00428010 (local-ptr 0)
+lookup-array (local-ptr 0) (global-int a9e5) (local-int 0)
+u00428010 (local-ptr 0)
+lookup-array (local-ptr 0) (global-int 14a8f1) (local-int 0)
+jcc (local-ptr 0) ffffffff label_000001c0
+lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
+lookup-array (local-ptr 1) (global-int 14a8f1) (local-int 0)
+mov (local-ptr 0) (local-ptr 1)
+jmp label_000001f8
+
+label_000001c0
+lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
+sub (local-ptr 0) 0 1
+
+label_000001f8
+lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
+u00428010 (local-ptr 0)
+jmp label_0000008c
+
+label_0000022c
+exit

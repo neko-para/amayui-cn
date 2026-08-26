@@ -1,0 +1,106 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 7 1 1 4 1 1 }
+====
+
+mov (global-int 14d711) 0
+mov (global-int 14d714) c0
+mov (global-int 14d715) ffffff
+mov (global-int 14e0f6) 0
+mov (global-int 14e0f7) 0
+copy-to-global (global-int 14d71b) 7
+copy-to-global (global-int 14d716) 2
+copy-to-global (global-int 14d718) 2
+copy-to-global (global-int 14d722) 5
+copy-to-global (global-int 14d728) 14
+copy-to-global (global-int 14d73c) 32
+copy-to-global (global-int 14d76e) 32
+copy-to-global (global-int 14d7a0) 32
+copy-to-global (global-int 14d7d2) 32
+copy-to-global (global-int 14d804) 32
+copy-to-global (global-int 14d836) 32
+copy-to-global (global-int 14d868) 32
+copy-to-global (global-int 14d89a) 32
+copy-to-global (global-int 14d8cc) 32
+mul (local-int 0) 32 5
+copy-to-global (global-int 14db56) (local-int 0)
+mul (local-int 0) 32 7
+copy-to-global (global-int 14d8fe) (local-int 0)
+mul (local-int 0) 32 5
+copy-to-global (global-int 14da5c) (local-int 0)
+copy-to-global (global-int 14dc50) 1e
+copy-to-global (global-int 14dc6e) 1e
+copy-to-global (global-int 14dc8c) 1e
+copy-to-global (global-int 14dcaa) 1e
+copy-to-global (global-int 14dcc8) 1e
+copy-to-global (global-int 14dce6) 1e
+copy-to-global (global-int 14dd04) 1e
+copy-to-global (global-int 14dd22) 1e
+copy-to-global (global-int 14dd40) 1e
+copy-to-global (global-int 14dd5e) 1e
+copy-to-global (global-int 14dd7c) 1e
+copy-to-global (global-int 14dd9a) 1e
+mul (local-int 0) 1e 3
+copy-to-global (global-int 14ddb8) (local-int 0)
+mul (local-int 0) 1e 3
+copy-to-global (global-int 14de12) (local-int 0)
+mul (local-int 0) 1e 7
+copy-to-global (global-int 14de6c) (local-int 0)
+mul (local-int 0) 1e 5
+copy-to-global (global-int 14df3e) (local-int 0)
+copy-to-global (global-int 14dfd4) a
+copy-to-global (global-int 14dfde) a
+copy-to-global (global-int 14dfe8) a
+copy-to-global (global-int 14dff2) a
+mul (local-int 0) a 5
+copy-to-global (global-int 14dffc) (local-int 0)
+mul (local-int 0) a 5
+copy-to-global (global-int 14e02e) (local-int 0)
+copy-to-global (global-int 14e060) a
+copy-to-global (global-int 14e06a) a
+copy-to-global (global-int 14e074) a
+copy-to-global (global-int 14e07e) a
+copy-to-global (global-int 14e088) a
+mul (local-int 0) a 5
+copy-to-global (global-int 14e092) (local-int 0)
+mul (local-int 0) a 5
+copy-to-global (global-int 14e0c4) (local-int 0)
+mov (local-int 1) 0
+jmp label_000005a8
+
+label_0000058c
+add (local-int 1) (local-int 1) 1
+
+label_000005a8
+lt (local-int 0) (local-int 1) 20
+jcc (local-int 0) ffffffff label_0000064c
+lookup-array (local-ptr 0) (global-int 708a56) (local-int 1)
+jcc (local-ptr 0) ffffffff label_00000640
+lookup-array (local-ptr 0) (global-int 708a56) (local-int 1)
+call-script (local-ptr 0)
+
+label_00000640
+jmp label_0000058c
+
+label_0000064c
+lookup-array (local-ptr 0) (global-int 1565c8) (global-int b222)
+jcc (local-ptr 0) ffffffff label_000006a4
+mov (global-int 510911) 28
+jmp label_000006b8
+
+label_000006a4
+mov (global-int 510911) 31
+
+label_000006b8
+lookup-array (local-ptr 1) (global-int ba08) (global-int b222)
+eq (local-int 0) (local-ptr 1) 1
+lookup-array (local-ptr 2) (global-int 155df8) (global-int b222)
+eq (local-int 2) (local-ptr 2) 1
+or (local-int 3) (local-int 0) (local-int 2)
+eq (local-int 4) (global-int 14d71a) 0
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_000007ac
+copy-local-array (global-int 14d71b) [0 0 0 0 0 1 0]
+
+label_000007ac
+exit

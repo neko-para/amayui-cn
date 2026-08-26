@@ -1,0 +1,67 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 8 1 1 4 1 1 }
+====
+
+u004160D0
+lookup-array (local-ptr 0) (global-int 7042e1) (global-int 703e2e)
+gre (local-int 2) (local-ptr 0) 1
+jcc (local-int 2) ffffffff label_0000048c
+lookup-array (local-ptr 1) (global-int a3140) (global-int 703e2e)
+lookup-array (local-ptr 0) (global-int a3140) (global-int 703e2e)
+add (local-ptr 1) (local-ptr 0) (global-int 703e30)
+lookup-array (local-ptr 0) (global-int a3140) (global-int 703e2e)
+lt (local-int 2) (local-ptr 0) 0
+jcc (local-int 2) ffffffff label_00000178
+lookup-array (local-ptr 1) (global-int a3140) (global-int 703e2e)
+mov (local-ptr 1) 0
+jmp label_000003c4
+
+label_00000178
+lookup-array (local-ptr 1) (global-int 704791) (global-int 703e2e)
+jcc (local-ptr 1) ffffffff label_000001d0
+mov (local-int 0) 1
+jmp label_00000340
+
+label_000001d0
+mov (local-int 0) 9
+mov (local-int 1) 0
+jmp label_00000220
+
+label_00000204
+add (local-int 1) (local-int 1) 1
+
+label_00000220
+lt (local-int 2) (local-int 1) (local-int 0)
+jcc (local-int 2) ffffffff label_00000340
+lookup-array-2d (local-ptr 1) (global-int 7072ed) (global-int 703e2e) 9 (local-int 1)
+eq (local-int 3) (local-ptr 1) 0
+lookup-array-2d (local-ptr 2) (global-int 7072ed) (global-int 703e2e) 9 (local-int 1)
+gr (local-int 4) (local-ptr 2) (global-int a40e1)
+or (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_00000334
+mov (local-int 0) (local-int 1)
+
+label_00000334
+jmp label_00000204
+
+label_00000340
+lookup-array (local-ptr 0) (global-int a3140) (global-int 703e2e)
+gr (local-int 2) (local-ptr 0) (local-int 0)
+jcc (local-int 2) ffffffff label_000003c4
+lookup-array (local-ptr 1) (global-int a3140) (global-int 703e2e)
+mov (local-ptr 1) (local-int 0)
+
+label_000003c4
+eq (local-int 2) (global-int 708024) 0
+eq (local-int 3) (global-int 708ad8) 0
+and (local-int 6) (local-int 2) (local-int 3)
+jcc (local-int 6) ffffffff label_0000048c
+lookup-array (local-ptr 1) (global-int a3910) (global-int 703e2e)
+mov (local-ptr 1) 1
+lookup-array (local-ptr 1) (global-int a3910) (global-int 703e2e)
+u00428010 (local-ptr 1)
+
+label_0000048c
+u00416120
+exit

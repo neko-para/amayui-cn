@@ -1,0 +1,20 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 3 1 1 2 1 1 }
+====
+
+mov (local-int 0) 0
+jmp label_00000078
+
+label_0000005c
+add (local-int 0) (local-int 0) 1
+
+label_00000078
+lt (local-int 1) (local-int 0) 9
+jcc (local-int 1) ffffffff label_000000e4
+lookup-array (local-ptr 0) (global-int 13b0) (local-int 0)
+string-lookup-set (local-ptr 0)
+jmp label_0000005c
+
+label_000000e4
+exit

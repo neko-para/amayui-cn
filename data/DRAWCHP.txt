@@ -1,0 +1,666 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 13ba 1 2 6 1 3 }
+====
+
+copy-local-array (local-int 3fb) [0 2 1]
+copy-local-array (local-int 139f) [1a0 1a0 1cb 1a0 1a0 1cb 1a0]
+copy-local-array (local-int 13a8) [4af 505 484 484 4da 459 459]
+sub (local-int 13b0) 0 1
+ne (local-int 13b2) (global-int b22b) 2
+jcc (local-int 13b2) ffffffff label_00000178
+add (local-int 13b2) 11558 12f
+u00421160 (local-int 11) (local-int 13b2)
+gre (local-int 13b2) (local-int 11) 0
+jcc (local-int 13b2) ffffffff label_00000178
+mov (local-int 13b0) 30d40
+add (local-int 13b2) 11558 12f
+u00421410 (local-int 13b2) (local-int 13b0)
+
+label_00000178
+u00420270 11558 1f4
+add (local-int 13b2) 11558 258
+u00420270 (local-int 13b2) 64
+ne (local-int 13b2) (global-int b22b) 2
+lookup-array (local-ptr 0) (global-int 6202a) (global-int b225)
+and (local-int 13b3) (local-ptr 0) 1
+eq (local-int 13b4) (local-int 13b3) 1
+and (local-int 13b5) (local-int 13b2) (local-int 13b4)
+jcc (local-int 13b5) ffffffff label_00000f48
+mov (local-int 1) 0
+lookup-array-2d (local-ptr 1) (global-int 624da) (global-int b225) d a
+jcc (local-ptr 1) ffffffff label_000003f4
+lookup-array-2d (local-ptr 1) (global-int 629ee) (global-int b225) 3 0
+mul (local-int 13b3) (local-ptr 1) 64
+lookup-array-2d (local-ptr 0) (global-int 624da) (global-int b225) d a
+div (local-int 5) (local-int 13b3) (local-ptr 0)
+lte (local-int 13b2) (local-int 5) 19
+jcc (local-int 13b2) ffffffff label_000003a8
+mov (local-int 1) 2
+jmp label_000003f4
+
+label_000003a8
+lte (local-int 13b2) (local-int 5) 32
+jcc (local-int 13b2) ffffffff label_000003f4
+mov (local-int 1) 1
+
+label_000003f4
+lookup-array-2d (local-ptr 1) (global-int 61c74) (global-int b225) 11 (local-int 1)
+jcc (local-ptr 1) ffffffff label_000005b0
+u004211A0 (local-int 13b1) 4f
+lookup-array-2d (local-ptr 1) (global-int 61c74) (global-int b225) 11 (local-int 1)
+ne (local-int 13b3) (local-int 13b1) (local-ptr 1)
+jcc (local-int 13b3) ffffffff label_00000518
+lookup-array-2d (local-ptr 1) (global-int 61c74) (global-int b225) 11 (local-int 1)
+sub (local-int 13b3) 0 1
+u00422EB0 (local-ptr 1) 4f (local-int 13b3)
+
+label_00000518
+u00420BF0 4f (local-int 2) (local-int 3)
+sub (local-int 13b2) 500 (local-int 2)
+sub (local-int 13b3) 2d0 (local-int 3)
+draw-texture 11558 4f 0 0 (local-int 2) (local-int 3) (local-int 13b2) (local-int 13b3)
+
+label_000005b0
+add (local-int 13b2) 11558 a
+draw-texture (local-int 13b2) 49 4c2 5ad e4 67 416 262
+add (local-int 13b2) 11558 14
+draw-texture (local-int 13b2) 49 4c4 29f 19 14 4a5 24b
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 391 1c 25 2 (local-int 13b2)
+add (local-int 13b2) 11558 15
+lookup-array (local-ptr 2) (global-int 62156) (global-int b225)
+u00422460 (local-int 13b2) 0 (local-ptr 2) 4c1 23a 2 2
+mov (local-int 0) 0
+jmp label_00000780
+
+label_00000764
+add (local-int 0) (local-int 0) 1
+
+label_00000780
+lt (local-int 13b2) (local-int 0) 3
+jcc (local-int 13b2) ffffffff label_00000d30
+add (local-int 13b2) 11558 1e
+mul (local-int 13b3) (local-int 0) a
+add (local-int 10) (local-int 13b2) (local-int 13b3)
+mul (local-int 13b2) (local-int 0) 17
+add (local-int b) 289 (local-int 13b2)
+lookup-array (local-ptr 1) (local-int 3fb) (local-int 0)
+mov (local-int 1) (local-ptr 1)
+mul (local-int 13b2) (local-int 1) 14
+add (local-int 13b3) 7f (local-int 13b2)
+sub (local-int 13b6) (local-int b) 4
+draw-texture (local-int 10) 49 467 (local-int 13b3) 1c 12 41c (local-int 13b6)
+add (local-int 13b2) a (local-int 0)
+lookup-array-2d (local-ptr 2) (global-int 624da) (global-int b225) d (local-int 13b2)
+jcc (local-ptr 2) ffffffff label_00000ab4
+lookup-array-2d (local-ptr 1) (global-int 629ee) (global-int b225) 3 (local-int 0)
+mul (local-int 13b3) 4f (local-ptr 1)
+add (local-int 13b6) a (local-int 0)
+lookup-array-2d (local-ptr 3) (global-int 624da) (global-int b225) d (local-int 13b6)
+div (local-int 5) (local-int 13b3) (local-ptr 3)
+add (local-int 13b2) (local-int 10) 1
+mul (local-int 13b3) (local-int 1) e
+add (local-int 13b6) 7f (local-int 13b3)
+draw-texture (local-int 13b2) 49 416 (local-int 13b6) (local-int 5) c 43a (local-int b)
+
+label_00000ab4
+mul (local-int 13b2) (local-int 1) 18
+add (local-int 9) 408 (local-int 13b2)
+sub (local-int 13b2) 0 1
+u004234E0 0 49 5da (local-int 9) 10 16 2 (local-int 13b2)
+add (local-int 13b2) (local-int 10) 2
+lookup-array-2d (local-ptr 2) (global-int 629ee) (global-int b225) 3 (local-int 0)
+sub (local-int 13b6) (local-int b) 7
+u00422460 (local-int 13b2) 0 (local-ptr 2) 48b (local-int 13b6) 3 0
+add (local-int 13b2) (local-int 10) 5
+sub (local-int 13b3) (local-int b) 7
+draw-texture (local-int 13b2) 49 68e (local-int 9) 10 16 4b8 (local-int 13b3)
+add (local-int 13b2) (local-int 10) 6
+add (local-int 13b3) a (local-int 0)
+lookup-array-2d (local-ptr 0) (global-int 624da) (global-int b225) d (local-int 13b3)
+sub (local-int 13b4) (local-int b) 7
+u00422460 (local-int 13b2) 0 (local-ptr 0) 4c7 (local-int 13b4) 3 0
+jmp label_00000764
+
+label_00000d30
+create-texture 51 e4 18 0
+u0041AC30 12
+u0041AC60 ffffff
+u0041ACB0 ffffff
+ne (local-int 13b2) (global-int 3f36) d
+jcc (local-int 13b2) ffffffff label_00000e08
+set-font (global-string bbd)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) d
+
+label_00000e08
+lookup-array (local-ptr 2) (global-int 61fc6) (global-int b225)
+lookup-array (local-string-ptr 0) (global-string 17ab6) (local-ptr 2)
+strlen (local-int 4) (local-string-ptr 0)
+mul (local-int 13b2) (local-int 4) 9
+sub (local-int 13b3) dd (local-int 13b2)
+lookup-array (local-ptr 3) (global-int 61fc6) (global-int b225)
+lookup-array (local-string-ptr 1) (global-string 17ab6) (local-ptr 3)
+draw-string 51 (local-int 13b3) 3 (local-string-ptr 1)
+add (local-int 13b2) 11558 3c
+draw-texture (local-int 13b2) 51 0 0 e4 18 416 262
+
+label_00000f48
+add (local-int 13b2) 11558 64
+draw-texture (local-int 13b2) 49 0 7f 414 40 0 0
+lt (local-int 13b2) (global-int 8ca65) 0
+jcc (local-int 13b2) ffffffff label_00001308
+sub (local-int 13b2) 0 2
+u004234E0 0 49 642 31a 10 14 2 (local-int 13b2)
+add (local-int 13b2) 11558 6e
+sub (local-int 13b3) 0 (global-int 8ca65)
+u00422460 (local-int 13b2) 0 (local-int 13b3) 114 4 7 0
+mov (local-int 0) 1
+jmp label_000010f0
+
+label_000010d4
+add (local-int 0) (local-int 0) 1
+
+label_000010f0
+lt (local-int 13b2) (local-int 0) 8
+jcc (local-int 13b2) ffffffff label_0000129c
+add (local-int 13b2) 11558 6e
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+u00421160 (local-int 11) (local-int 13b3)
+lt (local-int 13b2) (local-int 11) 0
+jcc (local-int 13b2) ffffffff label_00001290
+add (local-int 13b2) 11558 6e
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+sub (local-int 13b6) 7 (local-int 0)
+mul (local-int 13b4) (local-int 13b6) e
+add (local-int 13b5) 106 (local-int 13b4)
+draw-texture (local-int 13b3) 49 6f5 31a 10 14 (local-int 13b5) 4
+mov (local-int 0) 8
+
+label_00001290
+jmp label_000010d4
+
+label_0000129c
+sub (local-int 13b2) 0 1
+u004234E0 0 49 5da 450 f 14 2 (local-int 13b2)
+jmp label_000013c0
+
+label_00001308
+sub (local-int 13b2) 0 1
+u004234E0 0 49 5da 450 f 14 2 (local-int 13b2)
+add (local-int 13b2) 11558 6e
+u00422460 (local-int 13b2) 0 (global-int 8ca65) 115 4 7 0
+
+label_000013c0
+add (local-int 13b2) 11558 78
+u00422460 (local-int 13b2) 0 (global-int a40e1) 241 4 2 0
+gr (local-int 13b2) (global-int a40e1) 0
+add (local-int 13b3) (global-int a40e1) 1
+lookup-array (local-ptr 3) (global-int 6daf72) (local-int 13b3)
+eq (local-int 13b6) (local-ptr 3) 0
+and (local-int 13b5) (local-int 13b2) (local-int 13b6)
+jcc (local-int 13b5) ffffffff label_00001550
+sub (local-int 13b2) (global-int a40e1) 1
+lookup-array (local-ptr 2) (global-int 6daf72) (global-int a40e1)
+lookup-array (local-ptr 0) (global-int 6daf72) (local-int 13b2)
+sub (local-int 7) (local-ptr 2) (local-ptr 0)
+mov (local-int 6) (local-int 7)
+jmp label_0000160c
+
+label_00001550
+lookup-array (local-ptr 2) (global-int 6daf72) (global-int a40e1)
+sub (local-int 13b2) (global-int a40e0) (local-ptr 2)
+mov (local-int 6) (local-int 13b2)
+add (local-int 13b2) (global-int a40e1) 1
+lookup-array (local-ptr 2) (global-int 6daf72) (local-int 13b2)
+lookup-array (local-ptr 0) (global-int 6daf72) (global-int a40e1)
+sub (local-int 7) (local-ptr 2) (local-ptr 0)
+
+label_0000160c
+add (local-int 13b2) 11558 82
+u00422460 (local-int 13b2) 0 (local-int 6) 347 4 5 0
+add (local-int 13b2) 11558 87
+draw-texture (local-int 13b2) 49 684 450 f 14 38d 4
+add (local-int 13b2) 11558 88
+u00422460 (local-int 13b2) 0 (local-int 7) 39c 4 5 4
+gr (local-int 13b2) (local-int 6) 0
+gr (local-int 13b3) (local-int 7) 0
+and (local-int 13b6) (local-int 13b2) (local-int 13b3)
+jcc (local-int 13b6) ffffffff label_00001870
+mul (local-int 13b2) 77 (local-int 6)
+div (local-int 5) (local-int 13b2) (local-int 7)
+gr (local-int 13b2) (local-int 5) 77
+jcc (local-int 13b2) ffffffff label_00001810
+mov (local-int 5) 77
+
+label_00001810
+add (local-int 13b2) 11558 8d
+draw-texture (local-int 13b2) 49 42a 643 (local-int 5) b 2ca 9
+
+label_00001870
+add (local-int 13b2) 11558 96
+draw-texture (local-int 13b2) 49 237 48b 33 14 154 24
+add (local-int 13b2) 11558 97
+draw-texture (local-int 13b2) 49 26c 48b 14 14 285 24
+add (local-int 13b2) 11558 98
+u00422460 (local-int 13b2) 0 (global-int 56d7a) 257 24 3 0
+add (local-int 13b2) 11558 a0
+draw-texture (local-int 13b2) 49 3f8 62a c8 17 18c 23
+add (local-int 13b2) 11558 a1
+draw-texture (local-int 13b2) 49 3f8 611 c8 17 18c 23
+add (local-int 10) 11558 a2
+mov (local-int 5) 0
+mov (local-int c) 1
+jmp label_00001ab4
+
+label_00001a98
+add (local-int c) (local-int c) 1
+
+label_00001ab4
+lte (local-int 13b2) (local-int c) 4
+jcc (local-int 13b2) ffffffff label_00001c70
+lookup-array (local-ptr 1) (global-int 56d79) (local-int c)
+jcc (local-ptr 1) ffffffff label_00001c64
+lookup-array (local-ptr 1) (global-int 56d79) (local-int c)
+mul (local-int 6) (local-ptr 1) 2
+add (local-int 13b2) 3f8 (local-int 5)
+sub (local-int 13b3) (local-int c) 1
+mul (local-int 13b6) (local-int 13b3) 19
+add (local-int 13b4) 5ad (local-int 13b6)
+add (local-int 13b5) 18c (local-int 5)
+draw-texture (local-int 10) 49 (local-int 13b2) (local-int 13b4) (local-int 6) 17 (local-int 13b5) 23
+add (local-int 5) (local-int 5) (local-int 6)
+add (local-int 10) (local-int 10) 1
+
+label_00001c64
+jmp label_00001a98
+
+label_00001c70
+jcc (global-int b237) ffffffff label_00001e28
+add (local-int 10) 11558 aa
+mov (local-int a) 2cb
+mov (local-int 0) 1
+jmp label_00001cf8
+
+label_00001cdc
+add (local-int 0) (local-int 0) 1
+
+label_00001cf8
+lt (local-int 13b2) (local-int 0) 8
+jcc (local-int 13b2) ffffffff label_00001e28
+check-bit (local-int 4) (global-int b237) (local-int 0)
+jcc (local-int 4) ffffffff label_00001e1c
+lookup-array (local-ptr 1) (local-int 139e) (local-int 0)
+lookup-array (local-ptr 2) (local-int 13a7) (local-int 0)
+draw-texture (local-int 10) 49 (local-ptr 1) (local-ptr 2) 29 29 (local-int a) 22
+add (local-int 10) (local-int 10) 1
+add (local-int a) (local-int a) 2d
+
+label_00001e1c
+jmp label_00001cdc
+
+label_00001e28
+add (local-int 13b2) 11558 c8
+draw-texture (local-int 13b2) 49 237 55d 9c 31 1b 9
+add (local-int 13b2) 11558 c9
+draw-texture (local-int 13b2) 49 357 5c1 94 1c ab 21
+eq (local-int 13b2) (global-int b22b) 2
+jcc (local-int 13b2) ffffffff label_00002c40
+add (local-int 13b2) 11558 12c
+draw-texture (local-int 13b2) 49 3f8 481 d7 49 35 1b0
+mov (local-int 0) 1
+jmp label_00001fbc
+
+label_00001fa0
+add (local-int 0) (local-int 0) 1
+
+label_00001fbc
+lt (local-int 13b2) (local-int 0) a
+jcc (local-int 13b2) ffffffff label_000020e0
+lookup-array (local-ptr 2) (global-int 58631) (local-int 0)
+gr (local-int 13b2) (local-ptr 2) 0
+jcc (local-int 13b2) ffffffff label_000020d4
+lookup-array (local-ptr 2) (global-int 58631) (local-int 0)
+lookup-array (local-ptr 1) (local-int 3fe) (local-ptr 2)
+lookup-array (local-ptr 3) (global-int 58631) (local-int 0)
+lookup-array (local-ptr 0) (local-int 3fe) (local-ptr 3)
+add (local-ptr 1) (local-ptr 0) 1
+
+label_000020d4
+jmp label_00001fa0
+
+label_000020e0
+add (local-int 13b2) 11558 190
+draw-texture (local-int 13b2) 49 5d2 22f 1db ce b 200
+add (local-int 13b2) 11558 19a
+draw-texture (local-int 13b2) 49 3e9 650 b9 18 9d 299
+create-texture 320 5a 18 0
+u0041AC30 12
+u0041AC60 ffffff
+u0041ACB0 ffffff
+ne (local-int 13b2) (global-int 3f36) 14
+jcc (local-int 13b2) ffffffff label_00002278
+set-font (global-string bbe)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) 14
+
+label_00002278
+add (local-int 13b2) (global-int 56978) 1
+u00420A60 320 e 3 (local-int 13b2) 3 10000
+draw-string 320 29 3 "/"
+u00420A60 320 32 3 (global-int 51090f) 3 10004
+add (local-int 13b2) 11558 19b
+draw-texture (local-int 13b2) 320 0 0 5a 18 cc 29a
+gr (local-int 13b2) (global-int 51090f) 1
+jcc (local-int 13b2) ffffffff label_00002478
+add (local-int 13b2) 11558 1a4
+draw-texture (local-int 13b2) 49 373 53d 77 1f 1e 295
+add (local-int 13b2) 11558 1a5
+draw-texture (local-int 13b2) 49 373 55e 77 1f 15b 295
+
+label_00002478
+mov (local-int 0) 0
+jmp label_000024b4
+
+label_00002498
+add (local-int 0) (local-int 0) 1
+
+label_000024b4
+lt (local-int 13b2) (local-int 0) (global-int 510910)
+jcc (local-int 13b2) ffffffff label_00002c34
+mul (local-int 13b2) (local-int 0) 55
+add (local-int a) 28 (local-int 13b2)
+mov (local-int b) 23e
+mul (local-int 13b2) (global-int 56978) 5
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+lookup-array (local-ptr 0) (global-int 5108aa) (local-int 13b3)
+mov (local-int f) (local-ptr 0)
+lookup-array (local-ptr 1) (global-int 5c8c25) (local-int f)
+mov (local-int e) (local-ptr 1)
+eq (local-int 13b2) (local-int f) (global-int 56977)
+jcc (local-int 13b2) ffffffff label_00002690
+add (local-int 13b2) 11558 1ae
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+draw-texture (local-int 13b3) 49 6aa 1c7 4e 4e (local-int a) (local-int b)
+jmp label_0000270c
+
+label_00002690
+add (local-int 13b2) 11558 1ae
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+draw-texture (local-int 13b3) 49 6fa 1c7 4e 4e (local-int a) (local-int b)
+
+label_0000270c
+lookup-array-2d (local-ptr 1) (global-int 523b24) (local-int e) 11 7
+jcc (local-ptr 1) ffffffff label_00002930
+add (local-int 11) 321 (local-int 0)
+lookup-array-2d (local-ptr 1) (global-int 523b24) (local-int e) 11 7
+sub (local-int 13b3) 0 1
+set-texture (local-ptr 1) (local-int 11) (local-int 13b3)
+u00420BF0 (local-int 11) (local-int 2) (local-int 3)
+div (local-int 2) (local-int 2) 2
+div (local-int 3) (local-int 3) 2
+add (local-int 13b2) 11558 262
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 27
+div (local-int 13b4) (local-int 2) 2
+sub (local-int 13b5) (local-int 13b6) (local-int 13b4)
+add (local-int 13b7) (local-int b) 4a
+sub (local-int 13b8) (local-int 13b7) (local-int 3)
+draw-texture (local-int 13b3) (local-int 11) 0 0 (local-int 2) (local-int 3) (local-int 13b5) (local-int 13b8)
+
+label_00002930
+sub (local-int 13b2) 0 2
+u004234E0 0 49 642 307 d 11 2 (local-int 13b2)
+add (local-int 13b2) 11558 26c
+mul (local-int 13b3) (local-int 0) 5
+add (local-int 13b6) (local-int 13b2) (local-int 13b3)
+lookup-array (local-ptr 3) (local-int 3fe) (local-int f)
+add (local-int 13b5) (local-int a) b
+add (local-int 13b7) (local-int b) 34
+u00422460 (local-int 13b6) 0 (local-ptr 3) (local-int 13b5) (local-int 13b7) 2 0
+add (local-int 13b2) 11558 26e
+mul (local-int 13b3) (local-int 0) 5
+add (local-int 13b6) (local-int 13b2) (local-int 13b3)
+add (local-int 13b4) (local-int a) 21
+add (local-int 13b5) (local-int b) 34
+draw-texture (local-int 13b6) 49 6d8 307 d 11 (local-int 13b4) (local-int 13b5)
+add (local-int 13b2) 11558 26f
+mul (local-int 13b3) (local-int 0) 5
+add (local-int 13b6) (local-int 13b2) (local-int 13b3)
+lookup-array (local-ptr 3) (global-int 8cebb) (local-int f)
+add (local-int 13b5) (local-int a) 2c
+add (local-int 13b7) (local-int b) 34
+u00422460 (local-int 13b6) 0 (local-ptr 3) (local-int 13b5) (local-int 13b7) 2 4
+jmp label_00002498
+
+label_00002c34
+jmp label_00004404
+
+label_00002c40
+lookup-array (local-ptr 2) (global-int ba08) (global-int b222)
+lookup-array (local-ptr 0) (global-int 155df8) (global-int b222)
+or (local-int 13b2) (local-ptr 2) (local-ptr 0)
+jcc (local-int 13b2) ffffffff label_00002d10
+add (local-int 13b2) 11558 fa
+draw-texture (local-int 13b2) 49 4c8 316 69 49 40d 6
+
+label_00002d10
+add (local-int 13b2) 11558 104
+draw-texture (local-int 13b2) 49 4cb 517 7d 49 47b 6
+sub (local-int 13b2) 0 3
+u004234E0 0 49 5da 3b8 14 1c 2 (local-int 13b2)
+add (local-int 13b2) 11558 105
+u00422460 (local-int 13b2) 0 (global-int b236) 495 1a 2 0
+add (local-int 13b2) 11558 107
+draw-texture (local-int 13b2) 49 67a 466 e 13 4b8 23
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 466 e 13 2 (local-int 13b2)
+add (local-int 13b2) 11558 108
+lookup-array (local-ptr 3) (global-int ba08) (global-int b222)
+lookup-array (local-ptr 4) (global-int 155df8) (global-int b222)
+or (local-int 13b6) (local-ptr 3) (local-ptr 4)
+lookup-array (local-ptr 2) (global-int 14d718) (local-int 13b6)
+u00422460 (local-int 13b2) 0 (local-ptr 2) 4c4 23 2 4
+add (local-int 13b2) 11558 12c
+draw-texture (local-int 13b2) 49 270 743 128 21 0 254
+jcc (global-int 56d6b) ffffffff label_0000321c
+lte (local-int 13b2) (global-int 56d70) (global-int 56d6b)
+jcc (local-int 13b2) ffffffff label_00003108
+mul (local-int 13b2) 64 (global-int 56d70)
+div (local-int 5) (local-int 13b2) (global-int 56d6b)
+add (local-int 13b2) 11558 12d
+draw-texture (local-int 13b2) 49 3d2 6c5 (local-int 5) b 42 25f
+jmp label_0000321c
+
+label_00003108
+add (local-int 13b2) 11558 12d
+draw-texture (local-int 13b2) 49 438 6c5 64 b 42 25f
+jcc (global-int 56d70) ffffffff label_0000321c
+mul (local-int 13b2) 64 (global-int 56d6b)
+div (local-int 5) (local-int 13b2) (global-int 56d70)
+add (local-int 13b2) 11558 12e
+draw-texture (local-int 13b2) 49 3d2 6c5 (local-int 5) b 42 25f
+
+label_0000321c
+lte (local-int 13b2) (global-int 56d70) (global-int 56d6b)
+jcc (local-int 13b2) ffffffff label_000032c0
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 450 f 14 2 (local-int 13b2)
+jmp label_00003474
+
+label_000032c0
+lt (local-int 13b2) (local-int 13b0) 0
+jcc (local-int 13b2) ffffffff label_000033e4
+add (local-int 13b2) 11558 12f
+draw-texture (local-int 13b2) a6 0 0 148 30 0 24c
+add (local-int 13b2) 11558 12f
+u00420950 (local-int 13b2) 1 ff ffffff
+add (local-int 13b2) 11558 12f
+u00421EA0 (local-int 13b2) 64 10 1
+jmp label_00003414
+
+label_000033e4
+add (local-int 13b2) 11558 12f
+u00421410 (local-int 13b0) (local-int 13b2)
+
+label_00003414
+sub (local-int 13b2) 0 2
+u004234E0 0 49 642 37b f 14 2 (local-int 13b2)
+
+label_00003474
+gre (local-int 13b2) (local-int 13b0) 0
+jcc (local-int 13b2) ffffffff label_000034c0
+u00420270 (local-int 13b0) 1
+
+label_000034c0
+add (local-int 13b2) 11558 136
+u00422460 (local-int 13b2) 0 (global-int 56d70) aa 25b 3 0
+add (local-int 13b2) 11558 139
+draw-texture (local-int 13b2) 49 684 450 f 14 d1 25b
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 450 f 14 2 (local-int 13b2)
+add (local-int 13b2) 11558 13a
+u00422460 (local-int 13b2) 0 (global-int 56d6b) de 25b 3 0
+jcc (global-int 3319) ffffffff label_000036ac
+add (local-int 13b2) 11558 140
+draw-texture (local-int 13b2) 10 14a ac 7e 38 11c 23d
+
+label_000036ac
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 48f b f 2 (local-int 13b2)
+mov (local-int 0) 0
+jmp label_00003748
+
+label_0000372c
+add (local-int 0) (local-int 0) 1
+
+label_00003748
+lt (local-int 13b2) (local-int 0) 9
+jcc (local-int 13b2) ffffffff label_0000407c
+mul (local-int 13b2) (local-int 0) 3c
+add (local-int a) 8 (local-int 13b2)
+add (local-int 13b2) 11558 190
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+draw-texture (local-int 13b3) 49 448 316 3e 52 (local-int a) 27a
+add (local-int d) 1 (local-int 0)
+lookup-array (local-ptr 2) (global-int 6202a) (local-int d)
+and (local-int 13b2) (local-ptr 2) 1
+jcc (local-int 13b2) ffffffff label_00003fd8
+mov (global-int f8019) 6
+add (global-int f801f) 320 (local-int d)
+lookup-array (local-ptr 1) (global-int 61fc6) (local-int d)
+mov (global-int 519afb) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 52ac6c) (global-int 519afb)
+jcc (local-ptr 1) ffffffff label_00003978
+lookup-array (local-ptr 1) (global-int 52ac6c) (global-int 519afb)
+mov (global-int 546e02) (local-ptr 1)
+jmp label_0000398c
+
+label_00003978
+mov (global-int 546e02) (global-int 519afb)
+
+label_0000398c
+call-script 50f5
+add (local-int 13b2) 11558 258
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 5
+draw-texture (local-int 13b3) (global-int f801f) 0 0 34 48 (local-int 13b6) 27f
+add (local-int 13b2) 11558 262
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 5
+draw-texture (local-int 13b3) 49 3af 717 34 16 (local-int 13b6) 2b1
+add (local-int 13b2) 11558 26c
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 5
+draw-texture (local-int 13b3) 49 4df 29f 16 10 (local-int 13b6) 2b2
+add (local-int 13b2) 11558 276
+mul (local-int 13b3) (local-int 0) 2
+add (local-int 13b6) (local-int 13b2) (local-int 13b3)
+lookup-array (local-ptr 3) (global-int 62156) (local-int d)
+add (local-int 13b5) (local-int a) 24
+u00422460 (local-int 13b6) 0 (local-ptr 3) (local-int 13b5) 2b2 2 0
+lookup-array-2d (local-ptr 1) (global-int 624da) (local-int d) d a
+jcc (local-ptr 1) ffffffff label_00003ee0
+add (local-int 13b2) 11558 28a
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 5
+draw-texture (local-int 13b3) 49 3e5 71f 32 6 (local-int 13b6) 2c1
+lookup-array-2d (local-ptr 1) (global-int 629ee) (local-int d) 3 0
+gr (local-int 13b3) (local-ptr 1) 0
+jcc (local-int 13b3) ffffffff label_00003ee0
+lookup-array-2d (local-ptr 1) (global-int 629ee) (local-int d) 3 0
+mul (local-int 13b3) 32 (local-ptr 1)
+lookup-array-2d (local-ptr 0) (global-int 624da) (local-int d) d a
+div (local-int 5) (local-int 13b3) (local-ptr 0)
+lt (local-int 13b2) (local-int 5) 1
+jcc (local-int 13b2) ffffffff label_00003e48
+mov (local-int 5) 1
+
+label_00003e48
+add (local-int 13b2) 11558 294
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) 5
+draw-texture (local-int 13b3) 49 3e5 717 (local-int 5) 6 (local-int 13b6) 2c1
+
+label_00003ee0
+lookup-array (local-ptr 2) (global-int 6202a) (local-int d)
+and (local-int 13b2) (local-ptr 2) 10000
+jcc (local-int 13b2) ffffffff label_00003fcc
+add (local-int 13b2) 11558 29e
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) c
+draw-texture (local-int 13b3) 49 357 64b 24 15 (local-int 13b6) 27c
+
+label_00003fcc
+jmp label_00004070
+
+label_00003fd8
+add (local-int 13b2) 11558 258
+add (local-int 13b3) (local-int 13b2) (local-int 0)
+add (local-int 13b6) (local-int a) d
+draw-texture (local-int 13b3) 49 419 232 24 27 (local-int 13b6) 28f
+
+label_00004070
+jmp label_0000372c
+
+label_0000407c
+jcc (global-int a8b7e) ffffffff label_00004404
+add (local-int 13b2) 11558 19a
+draw-texture (local-int 13b2) 49 23a 66e 7f 41 38e 285
+lookup-array (local-ptr 1) (global-int af29e) (global-int a8b80)
+mov (local-int e) (local-ptr 1)
+add (local-int 13b3) 3e8 (local-int e)
+lookup-array (local-ptr 1) (global-int d9d6e) (local-int 13b3)
+jcc (local-ptr 1) ffffffff label_000041c8
+add (local-int 13b2) 3e8 (local-int e)
+lookup-array (local-ptr 2) (global-int d9d6e) (local-int 13b2)
+mov (local-int e) (local-ptr 2)
+
+label_000041c8
+lookup-array (local-ptr 1) (global-int 14a509) (local-int e)
+jcc (local-ptr 1) ffffffff label_000042b4
+lookup-array (local-ptr 1) (global-int 14a509) (local-int e)
+sub (local-int 13b3) 0 1
+set-texture (local-ptr 1) 320 (local-int 13b3)
+add (local-int 13b2) 11558 2a8
+draw-texture (local-int 13b2) 320 0 0 32 32 3d9 292
+
+label_000042b4
+ne (local-int 13b2) (global-int a8b87) (global-int b236)
+jcc (local-int 13b2) ffffffff label_00004404
+add (local-int 13b2) 11558 19b
+draw-texture (local-int 13b2) 49 23a 6b1 21 f 3b3 296
+sub (local-int 13b2) 0 2
+u004234E0 0 49 5da 450 f 14 2 (local-int 13b2)
+add (local-int 13b2) 11558 2a9
+u00422460 (local-int 13b2) 0 (global-int a8b87) 398 292 2 0
+
+label_00004404
+exit

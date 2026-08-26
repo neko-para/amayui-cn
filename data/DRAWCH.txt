@@ -1,0 +1,70 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { f 1 1 7 1 1 }
+====
+
+add (local-int 0) ea60 (global-int 519af9)
+and (local-int 7) (global-int a9d6) 2
+jcc (local-int 7) ffffffff label_000000b0
+u00420270 (local-int 0) 1
+jmp label_000000c4
+
+label_000000b0
+u00421410 ea60 (local-int 0)
+
+label_000000c4
+lookup-array-2d (local-ptr 0) (global-int 61c74) (global-int 519af9) 11 7
+mov (local-int 5) (local-ptr 0)
+jcc (local-int 5) ffffffff label_000005cc
+add (local-int 1) 12c (global-int 519af9)
+u004211A0 (local-int 6) (local-int 1)
+ne (local-int 7) (local-int 5) (local-int 6)
+jcc (local-int 7) ffffffff label_000001a4
+set-texture (local-int 5) (local-int 1) ff00
+
+label_000001a4
+u00420BF0 (local-int 1) (local-int 2) (local-int 3)
+div (local-int 2) (local-int 2) 2
+div (local-int 3) (local-int 3) 2
+lookup-array (local-ptr 1) (global-int 6f18a) (global-int 519af9)
+mul (local-int 7) (local-ptr 1) 64
+add (local-int 8) (local-int 7) 32
+div (local-int 9) (local-int 2) 2
+sub (local-int a) (local-int 8) (local-int 9)
+lookup-array (local-ptr 2) (global-int 6f1bc) (global-int 519af9)
+mul (local-int b) (local-ptr 2) 64
+add (local-int c) (local-int b) 41
+sub (local-int d) (local-int c) (local-int 3)
+draw-texture (local-int 0) (local-int 1) 0 0 (local-int 2) (local-int 3) (local-int a) (local-int d)
+lookup-array (local-ptr 1) (global-int 6f18a) (global-int 519af9)
+mul (local-int 7) (local-ptr 1) 64
+add (local-int 8) (local-int 7) 32
+lookup-array (local-ptr 3) (global-int 6f1bc) (global-int 519af9)
+mul (local-int 9) (local-ptr 3) 64
+add (local-int b) (local-int 9) 32
+u004211E0 (local-int 0) (local-int 8) (local-int b) 0
+lookup-array (local-ptr 1) (global-int 6f1bc) (global-int 519af9)
+mul (local-int 7) (local-ptr 1) 2
+lookup-array (local-ptr 4) (global-int 6f18a) (global-int 519af9)
+mul (local-int 8) (local-ptr 4) 2
+lookup-array-2d (local-ptr 3) (global-int 56d7e) (local-int 7) 41 (local-int 8)
+jcc (local-ptr 3) ffffffff label_00000548
+lookup-array (local-ptr 1) (global-int 6f1bc) (global-int 519af9)
+lookup-array-2d (local-ptr 0) (global-int 25c00) (global-int b222) 64 (local-ptr 1)
+lookup-array (local-ptr 5) (global-int 6f18a) (global-int 519af9)
+check-bit (local-int 4) (local-ptr 0) (local-ptr 5)
+jmp label_0000055c
+
+label_00000548
+mov (local-int 4) 0
+
+label_0000055c
+jcc (local-int 4) ffffffff label_000005a8
+u00420950 (local-int 0) 0 ff ffffff
+jmp label_000005cc
+
+label_000005a8
+u00420950 (local-int 0) 0 0 ffffff
+
+label_000005cc
+exit

@@ -1,0 +1,66 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { f 1 1 5 1 1 }
+====
+
+u004160D0
+mul (local-int 7) (global-int f8c39) 2
+sub (local-int 2) (local-int 7) 1
+mul (local-int 7) (global-int f8c3a) 2
+sub (local-int 3) (local-int 7) 1
+mul (local-int 7) (global-int f8c3b) 2
+add (local-int 4) (local-int 7) 1
+mul (local-int 7) (global-int f8c3c) 2
+add (local-int 5) (local-int 7) 1
+mov (local-int 1) (local-int 3)
+jmp label_0000015c
+
+label_00000140
+add (local-int 1) (local-int 1) 1
+
+label_0000015c
+lte (local-int 7) (local-int 1) (local-int 5)
+jcc (local-int 7) ffffffff label_000004bc
+mov (local-int 0) (local-int 2)
+jmp label_000001d0
+
+label_000001b4
+add (local-int 0) (local-int 0) 1
+
+label_000001d0
+lte (local-int 7) (local-int 0) (local-int 4)
+jcc (local-int 7) ffffffff label_000004b0
+lookup-array-2d (local-ptr 0) (global-int 5bd04) (local-int 1) 41 (local-int 0)
+mov (local-int 6) (local-ptr 0)
+lookup-array-2d (local-ptr 0) (global-int 56d7e) (local-int 1) 41 (local-int 0)
+mov (local-ptr 0) (local-int 6)
+mod (local-int 7) (local-int 0) 2
+eq (local-int 8) (local-int 7) 0
+mod (local-int 9) (local-int 1) 2
+eq (local-int a) (local-int 9) 0
+and (local-int b) (local-int 8) (local-int a)
+jcc (local-int b) ffffffff label_000004a4
+lookup-array (local-ptr 1) (global-int 510d73) (local-int 6)
+eq (local-int 7) (local-ptr 1) 1
+lookup-array (local-ptr 2) (global-int bdf0) (global-int b222)
+eq (local-int 9) (local-ptr 2) 1
+lookup-array (local-ptr 3) (global-int 510d73) (local-int 6)
+gr (local-int b) (local-ptr 3) 0
+and (local-int c) (local-int 9) (local-int b)
+or (local-int d) (local-int 7) (local-int c)
+jcc (local-int d) ffffffff label_000004a4
+div (local-int 7) (local-int 1) 2
+lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-int 7)
+div (local-int 9) (local-int 0) 2
+bit-set (local-ptr 1) (local-int 9)
+
+label_000004a4
+jmp label_000001b4
+
+label_000004b0
+jmp label_00000140
+
+label_000004bc
+bit-set (global-int 56940) 0
+u00416120
+exit

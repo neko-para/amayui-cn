@@ -1,0 +1,66 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { ce 1f7 1 4 3 1 }
+====
+
+u004160D0
+sub (global-int f801f) 0 1
+lookup-array (local-ptr 0) (global-int 4009) (global-int f801d)
+gre (local-int c9) (local-ptr 0) 3
+lookup-array (local-ptr 1) (global-int 4fbd) (global-int f801d)
+gr (local-int ca) (local-ptr 1) 0
+and (local-int cb) (local-int c9) (local-int ca)
+jcc (local-int cb) ffffffff label_00000590
+lookup-array (local-ptr 2) (global-int 4fbd) (global-int f801d)
+sub (local-int cc) 0 1
+set-texture (local-ptr 2) 2a (local-int cc)
+u00420BF0 2a (global-int f8020) (global-int f8021)
+u0042B990 (local-float 0) (global-int f8020)
+u0042B990 (local-float 1) (global-int f8021)
+mov (local-int 0) 0
+jmp label_000001d8
+
+label_000001bc
+add (local-int 0) (local-int 0) 1
+
+label_000001d8
+lookup-array (local-ptr 0) (global-int 4009) (global-int f801d)
+lt (local-int c9) (local-int 0) (local-ptr 0)
+jcc (local-int c9) ffffffff label_000003c8
+lookup-array-2d (local-ptr 2) (global-int 401d) (global-int f801d) 64 (local-int 0)
+lookup-array (local-float-ptr 0) (local-float 2) (local-int 0)
+u0042B990 (local-float-ptr 0) (local-ptr 2)
+lookup-array-2d (local-ptr 2) (global-int 47ed) (global-int f801d) 64 (local-int 0)
+lookup-array (local-float-ptr 0) (local-float 66) (local-int 0)
+u0042B990 (local-float-ptr 0) (local-ptr 2)
+lookup-array (local-float-ptr 1) (local-float ca) (local-int 0)
+u0042B990 (local-float-ptr 1) 0
+lookup-array (local-float-ptr 1) (local-float 12e) (local-int 0)
+lookup-array (local-float-ptr 0) (local-float 2) (local-int 0)
+u0042B970 (local-float-ptr 1) (local-float-ptr 0) (local-float 0)
+lookup-array (local-float-ptr 1) (local-float 192) (local-int 0)
+lookup-array (local-float-ptr 0) (local-float 66) (local-int 0)
+u0042B970 (local-float-ptr 1) (local-float-ptr 0) (local-float 1)
+jmp label_000001bc
+
+label_000003c8
+lookup-array (local-ptr 2) (global-int 4009) (global-int f801d)
+set-array-to (local-int 1) ff (local-ptr 2)
+lookup-array (local-ptr 2) (global-int 4009) (global-int f801d)
+set-array-to (local-int 65) ffffff (local-ptr 2)
+lookup-array (local-ptr 2) (global-int 4009) (global-int f801d)
+u0043AA20 30d40 (local-float 2) (local-float 66) (local-float ca) (local-int 1) (local-int 65) (local-float 12e) (local-float 192) (local-ptr 2) 1
+u0043AA30 30d40 0 2a
+lookup-array-2d (local-ptr 2) (global-int 3f54) (global-int f801d) 3 0
+mov (global-int f801f) (local-ptr 2)
+create-texture (global-int f801f) (global-int f8020) (global-int f8021) 1
+u00420E10 (global-int f801f)
+u004216C0 30d40 1
+sub (local-int c9) 0 1
+u00420E10 (local-int c9)
+u00420270 30d40 1
+u00420480 2a
+
+label_00000590
+u00416120
+exit
