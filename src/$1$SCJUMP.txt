@@ -6,34 +6,34 @@ local_vars = { 14 1 1 c 1 1 }
 eq (local-int 1) (global-int 3f3d) 1
 jcc (local-int 1) label_00000390 ffffffff
 eq (local-int 1) (global-int 3f3d) 2
-jcc (local-int 1) label_000018fc ffffffff
+jcc (local-int 1) label_00001934 ffffffff
 eq (local-int 1) (global-int 3f3d) 3
-jcc (local-int 1) label_00001fe4 ffffffff
+jcc (local-int 1) label_0000201c ffffffff
 eq (local-int 1) (global-int 3f3d) 4
-jcc (local-int 1) label_00001ff0 ffffffff
+jcc (local-int 1) label_00002028 ffffffff
 eq (local-int 1) (global-int 3f3d) 5
-jcc (local-int 1) label_00001ffc ffffffff
+jcc (local-int 1) label_00002034 ffffffff
 eq (local-int 1) (global-int 3f3d) 6
-jcc (local-int 1) label_00002008 ffffffff
+jcc (local-int 1) label_000021cc ffffffff
 eq (local-int 1) (global-int 3f3d) 7
-jcc (local-int 1) label_00002014 ffffffff
+jcc (local-int 1) label_000021d8 ffffffff
 eq (local-int 1) (global-int 3f3d) 8
-jcc (local-int 1) label_00002b7c ffffffff
+jcc (local-int 1) label_00002d40 ffffffff
 eq (local-int 1) (global-int 3f3d) 9
-jcc (local-int 1) label_00002b94 ffffffff
+jcc (local-int 1) label_00002d58 ffffffff
 eq (local-int 1) (global-int 3f3d) a
-jcc (local-int 1) label_00002b88 ffffffff
+jcc (local-int 1) label_00002d4c ffffffff
 eq (local-int 1) (global-int 3f3d) b
-jcc (local-int 1) label_00000680 ffffffff
+jcc (local-int 1) label_000006b8 ffffffff
 eq (local-int 1) (global-int 3f3d) c
-jcc (local-int 1) label_00000ba0 ffffffff
+jcc (local-int 1) label_00000bd8 ffffffff
 eq (local-int 1) (global-int 3f3d) d
-jcc (local-int 1) label_00000f88 ffffffff
+jcc (local-int 1) label_00000fc0 ffffffff
 eq (local-int 1) (global-int 3f3d) e
-jcc (local-int 1) label_000010f0 ffffffff
+jcc (local-int 1) label_00001128 ffffffff
 eq (local-int 1) (global-int 3f3d) f
-jcc (local-int 1) label_0000136c ffffffff
-jmp label_00003cc4
+jcc (local-int 1) label_000013a4 ffffffff
+jmp label_00003c8c
 
 label_00000390
 eq (local-int 1) (global-int 1dd7) 1
@@ -41,52 +41,54 @@ eq (local-int 2) (global-int 3318) 1
 and (local-int 3) (local-int 1) (local-int 2)
 ne (local-int 4) (global-int 1521) 1
 and (local-int 5) (local-int 3) (local-int 4)
-jcc (local-int 5) ffffffff label_000004ac
+ne (local-int 6) (global-int 2f3c) 1
+and (local-int 7) (local-int 5) (local-int 6)
+jcc (local-int 7) ffffffff label_000004e4
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_000004ac
+jcc (local-int 1) ffffffff label_000004e4
 mov (global-int 0) 1
 mov (global-int 3f3c) 14a
 mov (global-int f8080) a
 
-label_000004ac
+label_000004e4
 eq (local-int 1) (global-int 24c4) 1
 ne (local-int 2) (global-int 1522) 1
 and (local-int 3) (local-int 1) (local-int 2)
-jcc (local-int 3) ffffffff label_00000590
+jcc (local-int 3) ffffffff label_000005c8
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_00000590
+jcc (local-int 1) ffffffff label_000005c8
 mov (global-int 0) 1
 mov (global-int 3f3c) 14b
 mov (global-int f8080) a
 
-label_00000590
+label_000005c8
 eq (local-int 1) (global-int 2b67) 1
 ne (local-int 2) (global-int 1523) 1
 and (local-int 3) (local-int 1) (local-int 2)
-jcc (local-int 3) ffffffff label_00000674
+jcc (local-int 3) ffffffff label_000006ac
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_00000674
+jcc (local-int 1) ffffffff label_000006ac
 mov (global-int 0) 1
 mov (global-int 3f3c) 14c
 mov (global-int f8080) a
 
-label_00000674
-jmp label_00003cc4
+label_000006ac
+jmp label_00003c8c
 
-label_00000680
+label_000006b8
 ne (local-int 1) (global-int 170b) 1
 eq (local-int 2) (global-int b228) 2
 and (local-int 3) (local-int 1) (local-int 2)
 eq (local-int 4) (global-int b229) a
 and (local-int 5) (local-int 3) (local-int 4)
-jcc (local-int 5) ffffffff label_0000079c
+jcc (local-int 5) ffffffff label_000007d4
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_0000079c
+jcc (local-int 1) ffffffff label_000007d4
 mov (global-int 0) 1
 mov (global-int 3f3c) 334
 mov (global-int f8080) a
 
-label_0000079c
+label_000007d4
 eq (local-int 1) (global-int 1af4) 1
 ne (local-int 2) (global-int 170c) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -96,14 +98,14 @@ eq (local-int 6) (global-int b228) 2
 and (local-int 7) (local-int 5) (local-int 6)
 eq (local-int 8) (global-int b229) 1f
 and (local-int 9) (local-int 7) (local-int 8)
-jcc (local-int 9) ffffffff label_00000928
+jcc (local-int 9) ffffffff label_00000960
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_00000928
+jcc (local-int 1) ffffffff label_00000960
 mov (global-int 0) 1
 mov (global-int 3f3c) 335
 mov (global-int f8080) a
 
-label_00000928
+label_00000960
 eq (local-int 1) (global-int 2e88) 1
 eq (local-int 2) (global-int 2e89) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -121,17 +123,17 @@ eq (local-int e) (global-int b228) 2
 and (local-int f) (local-int d) (local-int e)
 eq (local-int 10) (global-int b229) 1f
 and (local-int 11) (local-int f) (local-int 10)
-jcc (local-int 11) ffffffff label_00000b94
+jcc (local-int 11) ffffffff label_00000bcc
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_00000b94
+jcc (local-int 1) ffffffff label_00000bcc
 mov (global-int 0) 1
 mov (global-int 3f3c) 336
 mov (global-int f8080) a
 
-label_00000b94
-jmp label_00003cc4
+label_00000bcc
+jmp label_00003c8c
 
-label_00000ba0
+label_00000bd8
 eq (local-int 1) (global-int 3402) 1
 eq (local-int 2) (global-int 1d9d) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -144,13 +146,13 @@ and (local-int 9) (local-int 7) (local-int 8)
 and (local-int a) (global-int 724ea) 3
 eq (local-int b) (local-int a) 3
 and (local-int c) (local-int 9) (local-int b)
-jcc (local-int c) ffffffff label_00000d6c
+jcc (local-int c) ffffffff label_00000da4
 gr (local-int 1) (global-int f846b) a
-jcc (local-int 1) ffffffff label_00000d6c
+jcc (local-int 1) ffffffff label_00000da4
 mov (global-int f846b) a
 mov (global-int a1ec) 71c
 
-label_00000d6c
+label_00000da4
 eq (local-int 1) (global-int 1edc) 1
 ne (local-int 2) (global-int 1af4) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -158,26 +160,26 @@ ne (local-int 4) (global-int 2f3c) 1
 and (local-int 5) (local-int 3) (local-int 4)
 ne (local-int 6) (global-int 2f31) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_00000eac
+jcc (local-int 7) ffffffff label_00000ee4
 gr (local-int 1) (global-int f8476) a
-jcc (local-int 1) ffffffff label_00000eac
+jcc (local-int 1) ffffffff label_00000ee4
 mov (global-int f8476) a
 mov (global-int a1f7) 71d
 
-label_00000eac
+label_00000ee4
 eq (local-int 1) (global-int 2e87) 1
 ne (local-int 2) (global-int 2f31) 1
 and (local-int 3) (local-int 1) (local-int 2)
-jcc (local-int 3) ffffffff label_00000f7c
+jcc (local-int 3) ffffffff label_00000fb4
 gr (local-int 1) (global-int f84e5) a
-jcc (local-int 1) ffffffff label_00000f7c
+jcc (local-int 1) ffffffff label_00000fb4
 mov (global-int f84e5) a
 mov (global-int a266) 71e
 
-label_00000f7c
-jmp label_00003cc4
+label_00000fb4
+jmp label_00003c8c
 
-label_00000f88
+label_00000fc0
 eq (local-int 1) (global-int 1523) 1
 ne (local-int 2) (global-int 1ce7) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -186,16 +188,16 @@ and (local-int 5) (local-int 3) (local-int 4)
 and (local-int 6) (global-int 724fd) 3
 eq (local-int 7) (local-int 6) 3
 and (local-int 8) (local-int 5) (local-int 7)
-jcc (local-int 8) ffffffff label_000010e4
+jcc (local-int 8) ffffffff label_0000111c
 gr (local-int 1) (global-int f8866) a
-jcc (local-int 1) ffffffff label_000010e4
+jcc (local-int 1) ffffffff label_0000111c
 mov (global-int f8866) a
 mov (global-int a5e7) 910
 
-label_000010e4
-jmp label_00003cc4
+label_0000111c
+jmp label_00003c8c
 
-label_000010f0
+label_00001128
 eq (local-int 1) (global-int 1521) 1
 eq (local-int 2) (global-int 1adf) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -205,70 +207,70 @@ ne (local-int 6) (global-int 2f3c) 1
 and (local-int 7) (local-int 5) (local-int 6)
 gre (local-int 8) (global-int 783c) 1
 and (local-int 9) (local-int 7) (local-int 8)
-jcc (local-int 9) ffffffff label_0000127c
+jcc (local-int 9) ffffffff label_000012b4
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_0000127c
+jcc (local-int 1) ffffffff label_000012b4
 mov (global-int 0) 1
 mov (global-int 3f3c) b04
 mov (global-int f8080) a
 
-label_0000127c
+label_000012b4
 eq (local-int 1) (global-int 170b) 1
 ne (local-int 2) (global-int 1edc) 1
 and (local-int 3) (local-int 1) (local-int 2)
-jcc (local-int 3) ffffffff label_00001360
+jcc (local-int 3) ffffffff label_00001398
 gr (local-int 1) (global-int f8080) a
-jcc (local-int 1) ffffffff label_00001360
+jcc (local-int 1) ffffffff label_00001398
 mov (global-int 0) 1
 mov (global-int 3f3c) b05
 mov (global-int f8080) a
 
-label_00001360
-jmp label_00003cc4
+label_00001398
+jmp label_00003c8c
 
-label_0000136c
+label_000013a4
 ne (local-int 1) (global-int 20cf) 1
 ne (local-int 2) (global-int 1c7d) 1
 and (local-int 3) (local-int 1) (local-int 2)
 gre (local-int 4) (global-int 923a0) 1
 and (local-int 5) (local-int 3) (local-int 4)
-jcc (local-int 5) ffffffff label_00001530
+jcc (local-int 5) ffffffff label_00001568
 gre (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001530
+jcc (local-int 1) ffffffff label_00001568
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000014ac
+jcc (local-int 1) ffffffff label_000014e4
 mov (global-int f8080) 0
 mov (global-int 76f0) 0
 
-label_000014ac
+label_000014e4
 lt (local-int 1) (global-int 76f0) 2710
-jcc (local-int 1) ffffffff label_00001530
+jcc (local-int 1) ffffffff label_00001568
 lookup-array (local-ptr 0) (global-int 4fe0) (global-int 76f0)
 mov (local-ptr 0) cf8
 add (global-int 76f0) (global-int 76f0) 1
 
-label_00001530
+label_00001568
 ne (local-int 1) (global-int 20d0) 1
 ne (local-int 2) (global-int 1c7d) 1
 and (local-int 3) (local-int 1) (local-int 2)
 gre (local-int 4) (global-int 923a1) 1
 and (local-int 5) (local-int 3) (local-int 4)
-jcc (local-int 5) ffffffff label_000016f4
+jcc (local-int 5) ffffffff label_0000172c
 gre (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000016f4
+jcc (local-int 1) ffffffff label_0000172c
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001670
+jcc (local-int 1) ffffffff label_000016a8
 mov (global-int f8080) 0
 mov (global-int 76f0) 0
 
-label_00001670
+label_000016a8
 lt (local-int 1) (global-int 76f0) 2710
-jcc (local-int 1) ffffffff label_000016f4
+jcc (local-int 1) ffffffff label_0000172c
 lookup-array (local-ptr 0) (global-int 4fe0) (global-int 76f0)
 mov (local-ptr 0) cf9
 add (global-int 76f0) (global-int 76f0) 1
 
-label_000016f4
+label_0000172c
 eq (local-int 1) (global-int 1523) 1
 ne (local-int 2) (global-int 20d1) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -276,25 +278,25 @@ ne (local-int 4) (global-int 1c7d) 1
 and (local-int 5) (local-int 3) (local-int 4)
 gre (local-int 6) (global-int 92167) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_000018f0
+jcc (local-int 7) ffffffff label_00001928
 gre (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000018f0
+jcc (local-int 1) ffffffff label_00001928
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_0000186c
+jcc (local-int 1) ffffffff label_000018a4
 mov (global-int f8080) 0
 mov (global-int 76f0) 0
 
-label_0000186c
+label_000018a4
 lt (local-int 1) (global-int 76f0) 2710
-jcc (local-int 1) ffffffff label_000018f0
+jcc (local-int 1) ffffffff label_00001928
 lookup-array (local-ptr 0) (global-int 4fe0) (global-int 76f0)
 mov (local-ptr 0) cfa
 add (global-int 76f0) (global-int 76f0) 1
 
-label_000018f0
-jmp label_00003cc4
+label_00001928
+jmp label_00003c8c
 
-label_000018fc
+label_00001934
 ne (local-int 1) (global-int 24c1) 1
 eq (local-int 2) (global-int b228) 11
 and (local-int 3) (local-int 1) (local-int 2)
@@ -302,14 +304,14 @@ eq (local-int 4) (global-int b229) 1
 and (local-int 5) (local-int 3) (local-int 4)
 eq (local-int 6) (global-int 56d69) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_00001a50
+jcc (local-int 7) ffffffff label_00001a88
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001a50
+jcc (local-int 1) ffffffff label_00001a88
 mov (global-int 0) 1
 mov (global-int 3f3c) 10ea
 mov (global-int f8080) 0
 
-label_00001a50
+label_00001a88
 ne (local-int 1) (global-int 24c2) 1
 eq (local-int 2) (global-int b228) 2
 and (local-int 3) (local-int 1) (local-int 2)
@@ -317,14 +319,14 @@ eq (local-int 4) (global-int b229) a
 and (local-int 5) (local-int 3) (local-int 4)
 eq (local-int 6) (global-int 56d69) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_00001ba4
+jcc (local-int 7) ffffffff label_00001bdc
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001ba4
+jcc (local-int 1) ffffffff label_00001bdc
 mov (global-int 0) 1
 mov (global-int 3f3c) 10eb
 mov (global-int f8080) 0
 
-label_00001ba4
+label_00001bdc
 ne (local-int 1) (global-int 24c3) 1
 eq (local-int 2) (global-int b228) 2
 and (local-int 3) (local-int 1) (local-int 2)
@@ -334,14 +336,14 @@ eq (local-int 6) (global-int b236) 2
 and (local-int 7) (local-int 5) (local-int 6)
 eq (local-int 8) (global-int 56d69) 1
 and (local-int 9) (local-int 7) (local-int 8)
-jcc (local-int 9) ffffffff label_00001d30
+jcc (local-int 9) ffffffff label_00001d68
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001d30
+jcc (local-int 1) ffffffff label_00001d68
 mov (global-int 0) 1
 mov (global-int 3f3c) 10ec
 mov (global-int f8080) 0
 
-label_00001d30
+label_00001d68
 ne (local-int 1) (global-int 24c4) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -349,14 +351,14 @@ eq (local-int 4) (global-int b229) 1
 and (local-int 5) (local-int 3) (local-int 4)
 eq (local-int 6) (global-int 56d69) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_00001e84
+jcc (local-int 7) ffffffff label_00001ebc
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001e84
+jcc (local-int 1) ffffffff label_00001ebc
 mov (global-int 0) 1
 mov (global-int 3f3c) 10ed
 mov (global-int f8080) 0
 
-label_00001e84
+label_00001ebc
 ne (local-int 1) (global-int 24c5) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -364,29 +366,46 @@ eq (local-int 4) (global-int b229) 2
 and (local-int 5) (local-int 3) (local-int 4)
 eq (local-int 6) (global-int 56d69) 1
 and (local-int 7) (local-int 5) (local-int 6)
-jcc (local-int 7) ffffffff label_00001fd8
+jcc (local-int 7) ffffffff label_00002010
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00001fd8
+jcc (local-int 1) ffffffff label_00002010
 mov (global-int 0) 1
 mov (global-int 3f3c) 10ee
 mov (global-int f8080) 0
 
-label_00001fd8
-jmp label_00003cc4
+label_00002010
+jmp label_00003c8c
 
-label_00001fe4
-jmp label_00003cc4
+label_0000201c
+jmp label_00003c8c
 
-label_00001ff0
-jmp label_00003cc4
+label_00002028
+jmp label_00003c8c
 
-label_00001ffc
-jmp label_00003cc4
+label_00002034
+ne (local-int 1) (global-int 2e85) 1
+eq (local-int 2) (global-int b228) 11
+and (local-int 3) (local-int 1) (local-int 2)
+eq (local-int 4) (global-int b229) 1
+and (local-int 5) (local-int 3) (local-int 4)
+eq (local-int 6) (global-int 56d69) 1
+and (local-int 7) (local-int 5) (local-int 6)
+eq (local-int 8) (global-int 56d63) 6
+and (local-int 9) (local-int 7) (local-int 8)
+jcc (local-int 9) ffffffff label_000021c0
+gr (local-int 1) (global-int f8080) 0
+jcc (local-int 1) ffffffff label_000021c0
+mov (global-int 0) 1
+mov (global-int 3f3c) 1aae
+mov (global-int f8080) 0
 
-label_00002008
-jmp label_00003cc4
+label_000021c0
+jmp label_00003c8c
 
-label_00002014
+label_000021cc
+jmp label_00003c8c
+
+label_000021d8
 ne (local-int 1) (global-int 2b65) 1
 eq (local-int 2) (global-int 56d69) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -396,14 +415,14 @@ and (local-int 6) (local-int 3) (local-int 5)
 lookup-array (local-ptr 1) (global-int 61fc6) (global-int 61c73)
 eq (local-int 7) (local-ptr 1) 389
 and (local-int 9) (local-int 6) (local-int 7)
-jcc (local-int 9) ffffffff label_000021a0
+jcc (local-int 9) ffffffff label_00002364
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000021a0
+jcc (local-int 1) ffffffff label_00002364
 mov (global-int 0) 1
 mov (global-int 3f3c) 178e
 mov (global-int f8080) 0
 
-label_000021a0
+label_00002364
 ne (local-int 1) (global-int 2b65) 1
 lookup-array (local-ptr 2) (global-int 6f158) (global-int 61c73)
 eq (local-int 2) (local-ptr 2) 1
@@ -414,14 +433,14 @@ and (local-int 7) (local-int 4) (local-int 6)
 lookup-array (local-ptr 3) (global-int 61fc6) (global-int 61c72)
 eq (local-int 8) (local-ptr 3) 389
 and (local-int a) (local-int 7) (local-int 8)
-jcc (local-int a) ffffffff label_00002348
+jcc (local-int a) ffffffff label_0000250c
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00002348
+jcc (local-int 1) ffffffff label_0000250c
 mov (global-int 0) 1
 mov (global-int 3f3c) 178e
 mov (global-int f8080) 0
 
-label_00002348
+label_0000250c
 ne (local-int 1) (global-int 2b66) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -435,14 +454,14 @@ and (local-int a) (local-int 7) (local-int 9)
 lookup-array (local-ptr 4) (global-int 61fc6) (global-int 61c73)
 eq (local-int b) (local-ptr 4) 38e
 and (local-int d) (local-int a) (local-int b)
-jcc (local-int d) ffffffff label_00002544
+jcc (local-int d) ffffffff label_00002708
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00002544
+jcc (local-int 1) ffffffff label_00002708
 mov (global-int 0) 1
 mov (global-int 3f3c) 178f
 mov (global-int f8080) 0
 
-label_00002544
+label_00002708
 ne (local-int 1) (global-int 2b66) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -457,14 +476,14 @@ and (local-int b) (local-int 8) (local-int a)
 lookup-array (local-ptr 6) (global-int 61fc6) (global-int 61c72)
 eq (local-int c) (local-ptr 6) 38e
 and (local-int e) (local-int b) (local-int c)
-jcc (local-int e) ffffffff label_0000275c
+jcc (local-int e) ffffffff label_00002920
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_0000275c
+jcc (local-int 1) ffffffff label_00002920
 mov (global-int 0) 1
 mov (global-int 3f3c) 178f
 mov (global-int f8080) 0
 
-label_0000275c
+label_00002920
 ne (local-int 1) (global-int 2b67) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -478,14 +497,14 @@ and (local-int a) (local-int 7) (local-int 9)
 lookup-array (local-ptr 4) (global-int 61fc6) (global-int 61c73)
 eq (local-int b) (local-ptr 4) 393
 and (local-int d) (local-int a) (local-int b)
-jcc (local-int d) ffffffff label_00002958
+jcc (local-int d) ffffffff label_00002b1c
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00002958
+jcc (local-int 1) ffffffff label_00002b1c
 mov (global-int 0) 1
 mov (global-int 3f3c) 1790
 mov (global-int f8080) 0
 
-label_00002958
+label_00002b1c
 ne (local-int 1) (global-int 2b67) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -500,44 +519,23 @@ and (local-int b) (local-int 8) (local-int a)
 lookup-array (local-ptr 6) (global-int 61fc6) (global-int 61c72)
 eq (local-int c) (local-ptr 6) 393
 and (local-int e) (local-int b) (local-int c)
-jcc (local-int e) ffffffff label_00002b70
+jcc (local-int e) ffffffff label_00002d34
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00002b70
+jcc (local-int 1) ffffffff label_00002d34
 mov (global-int 0) 1
 mov (global-int 3f3c) 1790
 mov (global-int f8080) 0
 
-label_00002b70
-jmp label_00003cc4
+label_00002d34
+jmp label_00003c8c
 
-label_00002b7c
-jmp label_00003cc4
+label_00002d40
+jmp label_00003c8c
 
-label_00002b88
-jmp label_00003cc4
+label_00002d4c
+jmp label_00003c8c
 
-label_00002b94
-ne (local-int 1) (global-int 2e85) 1
-eq (local-int 2) (global-int b228) 11
-and (local-int 3) (local-int 1) (local-int 2)
-eq (local-int 4) (global-int b229) 1
-and (local-int 5) (local-int 3) (local-int 4)
-eq (local-int 6) (global-int 56d69) 1
-and (local-int 7) (local-int 5) (local-int 6)
-lookup-array (local-ptr 3) (global-int 6f18a) (global-int 61c72)
-eq (local-int 8) (local-ptr 3) 6
-and (local-int a) (local-int 7) (local-int 8)
-lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
-eq (local-int b) (local-ptr 4) 2
-and (local-int d) (local-int a) (local-int b)
-jcc (local-int d) ffffffff label_00002d90
-gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00002d90
-mov (global-int 0) 1
-mov (global-int 3f3c) 1aae
-mov (global-int f8080) 0
-
-label_00002d90
+label_00002d58
 ne (local-int 1) (global-int 2e86) 1
 eq (local-int 2) (global-int b228) 12
 and (local-int 3) (local-int 1) (local-int 2)
@@ -557,14 +555,14 @@ and (local-int 10) (local-int d) (local-int e)
 lookup-array (local-ptr 8) (global-int 6f1bc) (global-int 61c72)
 lte (local-int 11) (local-ptr 8) 8
 and (local-int 12) (local-int 10) (local-int 11)
-jcc (local-int 12) ffffffff label_00003034
+jcc (local-int 12) ffffffff label_00002ffc
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00003034
+jcc (local-int 1) ffffffff label_00002ffc
 mov (global-int 0) 1
 mov (global-int 3f3c) 1aaf
 mov (global-int f8080) 0
 
-label_00003034
+label_00002ffc
 eq (local-int 1) (global-int 3403) 1
 ne (local-int 2) (global-int 2e87) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -574,14 +572,14 @@ eq (local-int 6) (global-int b229) 1
 and (local-int 7) (local-int 5) (local-int 6)
 eq (local-int 8) (global-int 56d69) 1
 and (local-int 9) (local-int 7) (local-int 8)
-jcc (local-int 9) ffffffff label_000031c0
+jcc (local-int 9) ffffffff label_00003188
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000031c0
+jcc (local-int 1) ffffffff label_00003188
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab0
 mov (global-int f8080) 0
 
-label_000031c0
+label_00003188
 eq (local-int 1) (global-int 170c) 1
 ne (local-int 2) (global-int 2e88) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -597,14 +595,14 @@ and (local-int c) (local-int 9) (local-int a)
 lookup-array (local-ptr a) (global-int 6f1bc) (global-int 61c72)
 eq (local-int d) (local-ptr a) 4
 and (local-int f) (local-int c) (local-int d)
-jcc (local-int f) ffffffff label_000033f4
+jcc (local-int f) ffffffff label_000033bc
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_000033f4
+jcc (local-int 1) ffffffff label_000033bc
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab1
 mov (global-int f8080) 0
 
-label_000033f4
+label_000033bc
 eq (local-int 1) (global-int 170c) 1
 ne (local-int 2) (global-int 2e89) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -620,14 +618,14 @@ and (local-int c) (local-int 9) (local-int a)
 lookup-array (local-ptr a) (global-int 6f1bc) (global-int 61c72)
 eq (local-int d) (local-ptr a) 5
 and (local-int f) (local-int c) (local-int d)
-jcc (local-int f) ffffffff label_00003628
+jcc (local-int f) ffffffff label_000035f0
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00003628
+jcc (local-int 1) ffffffff label_000035f0
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab2
 mov (global-int f8080) 0
 
-label_00003628
+label_000035f0
 eq (local-int 1) (global-int 170c) 1
 ne (local-int 2) (global-int 2e8a) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -643,14 +641,14 @@ and (local-int c) (local-int 9) (local-int a)
 lookup-array (local-ptr a) (global-int 6f1bc) (global-int 61c72)
 eq (local-int d) (local-ptr a) 4
 and (local-int f) (local-int c) (local-int d)
-jcc (local-int f) ffffffff label_0000385c
+jcc (local-int f) ffffffff label_00003824
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_0000385c
+jcc (local-int 1) ffffffff label_00003824
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab3
 mov (global-int f8080) 0
 
-label_0000385c
+label_00003824
 eq (local-int 1) (global-int 170c) 1
 ne (local-int 2) (global-int 2e8b) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -666,14 +664,14 @@ and (local-int c) (local-int 9) (local-int a)
 lookup-array (local-ptr a) (global-int 6f1bc) (global-int 61c72)
 eq (local-int d) (local-ptr a) 5
 and (local-int f) (local-int c) (local-int d)
-jcc (local-int f) ffffffff label_00003a90
+jcc (local-int f) ffffffff label_00003a58
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00003a90
+jcc (local-int 1) ffffffff label_00003a58
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab4
 mov (global-int f8080) 0
 
-label_00003a90
+label_00003a58
 eq (local-int 1) (global-int 170c) 1
 ne (local-int 2) (global-int 2e8c) 1
 and (local-int 3) (local-int 1) (local-int 2)
@@ -689,12 +687,12 @@ and (local-int c) (local-int 9) (local-int a)
 lookup-array (local-ptr a) (global-int 6f1bc) (global-int 61c72)
 eq (local-int d) (local-ptr a) 6
 and (local-int f) (local-int c) (local-int d)
-jcc (local-int f) ffffffff label_00003cc4
+jcc (local-int f) ffffffff label_00003c8c
 gr (local-int 1) (global-int f8080) 0
-jcc (local-int 1) ffffffff label_00003cc4
+jcc (local-int 1) ffffffff label_00003c8c
 mov (global-int 0) 1
 mov (global-int 3f3c) 1ab5
 mov (global-int f8080) 0
 
-label_00003cc4
+label_00003c8c
 exit

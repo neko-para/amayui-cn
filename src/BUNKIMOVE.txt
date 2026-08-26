@@ -1,0 +1,347 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { d 1 1 1 1 2 }
+====
+
+mov (local-int 2) 1adb0
+mov (local-int 4) 0
+mov (local-int 6) 0
+mov (local-int 0) 0
+jmp label_000000b4
+
+label_00000098
+add (local-int 0) (local-int 0) 1
+
+label_000000b4
+lt (local-int 8) (local-int 0) (global-int f8c50)
+jcc (local-int 8) ffffffff label_00000174
+lookup-array (local-string-ptr 0) (global-string d5e) (local-int 0)
+u0042B5E0 (local-int 7) (local-string-ptr 0)
+lt (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00000168
+mov (local-int 6) (local-int 7)
+
+label_00000168
+jmp label_00000098
+
+label_00000174
+gr (local-int 8) (local-int 6) 14
+jcc (local-int 8) ffffffff label_000001c0
+mov (local-int 6) 14
+
+label_000001c0
+jcc (global-int 4) ffffffff label_00000d00
+gre (local-int 8) (global-int f8c51) 0
+jcc (local-int 8) ffffffff label_00000bc4
+add (local-int 2) 1adb0 1
+mov (local-int 0) 0
+jmp label_0000026c
+
+label_00000250
+add (local-int 0) (local-int 0) 1
+
+label_0000026c
+lt (local-int 8) (local-int 0) (global-int f8c50)
+jcc (local-int 8) ffffffff label_00000bbc
+eq (local-int 8) (local-int 0) (global-int f8c51)
+jcc (local-int 8) ffffffff label_000005e0
+add (local-int 8) (local-int 2) 64
+add (local-int 9) 1adb0 6a4
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) c8
+add (local-int 9) 1adb0 6a5
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 12c
+add (local-int 9) 1adb0 6a6
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 190
+add (local-int 9) 1adb0 6a7
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 1f4
+add (local-int 9) 1adb0 6a8
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 258
+add (local-int 9) 1adb0 6a9
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 514
+add (local-int 9) 1adb0 6aa
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 578
+add (local-int 9) 1adb0 6ab
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 5dc
+add (local-int 9) 1adb0 6ac
+u00421120 (local-int 8) (local-int 9)
+add (local-int 8) (local-int 2) 320
+add (local-int 9) 1adb0 6ad
+u00421120 (local-int 8) (local-int 9)
+jmp label_00000b94
+
+label_000005e0
+add (local-int 8) (local-int 2) 64
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) c8
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 12c
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 190
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 1f4
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 258
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 514
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 578
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 5dc
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) (global-int f8c51) (local-int 0)
+mul (local-int a) (local-int 9) 46
+u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) 0 1
+u00420880 (local-int 8) 0 c8 0 (local-int 9)
+
+label_00000b94
+add (local-int 2) (local-int 2) 1
+jmp label_00000250
+
+label_00000bbc
+u00415BF0
+u00416270
+
+label_00000bc4
+mov (local-int 2) 1adb0
+jmp label_00000c00
+
+label_00000be4
+add (local-int 2) (local-int 2) 1
+
+label_00000c00
+add (local-int 8) 1adb0 7d0
+lte (local-int 9) (local-int 2) (local-int 8)
+jcc (local-int 9) ffffffff label_00000cf4
+u00421160 (local-int 3) (local-int 2)
+gre (local-int 8) (local-int 3) 0
+jcc (local-int 8) ffffffff label_00000ce8
+sub (local-int 8) 0 1
+u00420880 (local-int 2) (local-int 4) c8 0 (local-int 8)
+
+label_00000ce8
+jmp label_00000be4
+
+label_00000cf4
+jmp label_00002298
+
+label_00000d00
+u00425580 (local-int 8) (global-string e3a) ""
+jcc (local-int 8) ffffffff label_000010c4
+add (local-int 8) (local-int 2) 64
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 64
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) c8
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) c8
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 12c
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 12c
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 4) (local-int 4) 32
+
+label_000010c4
+add (local-int 2) (local-int 2) 1
+mov (local-int 0) 0
+jmp label_0000111c
+
+label_00001100
+add (local-int 0) (local-int 0) 1
+
+label_0000111c
+lt (local-int 8) (local-int 0) (global-int f8c50)
+jcc (local-int 8) ffffffff label_000020cc
+sub (local-int 8) 0 1
+sub (local-int 9) 0 1
+u00420880 (local-int 2) (local-int 4) c8 (local-int 8) (local-int 9)
+sub (local-int 8) 0 1
+u00420950 (local-int 2) 0 0 (local-int 8)
+u00420770 (local-int 2) 0 14 0
+u004215D0 (local-int 2) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 64
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 64
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 64
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 64
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) c8
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) c8
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) c8
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) c8
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 12c
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 12c
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 12c
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 12c
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 190
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 190
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 190
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 190
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 1f4
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 1f4
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 1f4
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 1f4
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 258
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 258
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 258
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 258
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 514
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 514
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 514
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 514
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 578
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 578
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 578
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 578
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 5dc
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 5dc
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 5dc
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 5dc
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) 0 1
+sub (local-int a) 0 1
+u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+add (local-int 8) (local-int 2) 320
+sub (local-int 9) 0 1
+u00420950 (local-int 8) 0 0 (local-int 9)
+add (local-int 8) (local-int 2) 320
+u00420770 (local-int 8) 0 14 0
+add (local-int 8) (local-int 2) 320
+u004215D0 (local-int 8) (local-int 4) c8 0 0 0
+add (local-int 4) (local-int 4) 32
+add (local-int 2) (local-int 2) 1
+jmp label_00001100
+
+label_000020cc
+eq (local-int 8) (global-int 0) 1
+jcc (local-int 8) ffffffff label_00002298
+mov (local-int 0) 0
+jmp label_00002140
+
+label_00002124
+add (local-int 0) (local-int 0) 1
+
+label_00002140
+lt (local-int 8) (local-int 0) 3
+jcc (local-int 8) ffffffff label_00002298
+add (local-int 8) 1adb0 708
+add (local-int 9) (local-int 8) (local-int 0)
+sub (local-int a) 0 1
+sub (local-int b) 0 1
+u00420880 (local-int 9) (local-int 4) c8 (local-int a) (local-int b)
+add (local-int 8) 1adb0 708
+add (local-int 9) (local-int 8) (local-int 0)
+sub (local-int a) 0 1
+u00420950 (local-int 9) 0 0 (local-int a)
+jmp label_00002124
+
+label_00002298
+u00415BF0
+u00416270
+exit

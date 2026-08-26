@@ -1,0 +1,277 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 2e9 1 1 2 1 1 }
+====
+
+copy-local-array (local-int cc) [0 75 0 23]
+copy-local-array (local-int d0) [0 38 0 4b]
+copy-local-array (local-int d4) [0 38 0 4b]
+copy-local-array (local-int 4) [d d 4a]
+copy-local-array (local-int 68) [5d d d]
+mov (local-int 25c) 3
+sub (global-int f8dfe) 0 1
+sub (local-int 2e1) (global-int 707ffa) 48
+sub (local-int 2e2) (global-int 707ffb) 98
+sub (local-int 2e3) 0 a
+lt (local-int 2e4) (local-int 2e2) (local-int 2e3)
+jcc (local-int 2e4) ffffffff label_00000178
+sub (local-int 2e2) 0 a
+
+label_00000178
+call label_00000af4
+sub (local-int 2cb) 0 1
+mov (local-int 2cc) 0
+sub (local-int 2cd) 0 1
+mov (local-int 2c6) 0
+mov (local-int 2d1) 0
+mov (local-int 2c8) 0
+u00415EC0 (local-int 2c3) (local-int 2c4)
+call label_0000076c
+
+label_0000022c
+get-input-type
+eq (local-int 2e3) (local-int 2c8) 1
+jcc (local-int 2e3) label_000012c4 ffffffff
+sleep 1
+jmp label_0000022c
+
+label_00000280
+call label_0000029c
+call label_000012bc
+ret
+
+label_0000029c
+add (local-int 2c7) (local-int 2c7) 1
+2FC (local-int 2d1) (local-int 2c1) (local-int 2c2) (local-int 2d2) (local-int 2d3)
+jcc (local-int 2d1) ffffffff label_00000320
+mov (local-int 2c5) 1
+jmp label_00000340
+
+label_00000320
+u00415EC0 (local-int 2c1) (local-int 2c2)
+u00415E70 (local-int 2c5)
+
+label_00000340
+ne (local-int 2e3) (local-int 2c3) (local-int 2c1)
+ne (local-int 2e4) (local-int 2c4) (local-int 2c2)
+or (local-int 2e5) (local-int 2e3) (local-int 2e4)
+jcc (local-int 2e5) ffffffff label_0000048c
+sub (local-int 2cd) 0 1
+sub (local-int 2c9) 0 1
+sub (local-int 2e3) (local-int 2c1) (local-int 2e1)
+sub (local-int 2e4) (local-int 2c2) (local-int 2e2)
+u0041E940 (local-int 2c9) (local-int 0) (local-int 2e3) (local-int 2e4) (local-int cc) (local-int 4) (local-int 68) (local-int 25c)
+mov (local-int 2c3) (local-int 2c1)
+mov (local-int 2c4) (local-int 2c2)
+
+label_0000048c
+ne (local-int 2e3) (local-int 2c9) (local-int 2ca)
+jcc (local-int 2e3) ffffffff label_00000574
+mov (local-int 2ca) (local-int 2c9)
+mov (local-int 2cb) (local-int 2c9)
+gre (local-int 2e3) (local-int 2cb) 0
+lt (local-int 2e4) (local-int 2cb) (local-int 25c)
+and (local-int 2e5) (local-int 2e3) (local-int 2e4)
+jcc (local-int 2e5) ffffffff label_00000568
+u0041D050 2
+
+label_00000568
+call label_00000f6c
+
+label_00000574
+and (local-int 2e3) (local-int 2c5) 2
+jcc (local-int 2e3) ffffffff label_000005cc
+bit-set (local-int 2c6) 1
+jmp label_00000624
+
+label_000005cc
+and (local-int 2e3) (local-int 2c6) 2
+jcc (local-int 2e3) ffffffff label_00000624
+bit-reset (local-int 2c6) 1
+jmp label_00000990
+
+label_00000624
+and (local-int 2e3) (local-int 2c5) 1
+jcc (local-int 2e3) ffffffff label_0000067c
+bit-set (local-int 2c6) 0
+jmp label_000006d4
+
+label_0000067c
+and (local-int 2e3) (local-int 2c6) 1
+jcc (local-int 2e3) ffffffff label_000006d4
+bit-reset (local-int 2c6) 0
+jmp label_000009c8
+
+label_000006d4
+mod (local-int 2e3) (local-int 2c7) 2
+eq (local-int 2e4) (local-int 2e3) 0
+jcc (local-int 2e4) ffffffff label_00000768
+eq (local-int 2e3) (local-int 2c6) 0
+jcc (local-int 2e3) ffffffff label_00000768
+u00415A10
+u00415A60
+
+label_00000768
+ret
+
+label_0000076c
+play-sound-effect 39a3 2
+mov (local-int 2c9) (local-int 2cb)
+mov (local-int 2ca) (local-int 2cb)
+sub (local-int 2cd) 0 1
+mov (local-int 2d0) 1
+joy_callback 0 label_0000098c
+joy_callback 1 label_0000098c
+joy_callback 2 label_0000098c
+joy_callback 3 label_0000098c
+joy_callback 4 label_000008f4
+joy_callback 5 label_0000098c
+joy_callback 6 label_0000098c
+joy_callback 7 label_00000934
+joy_callback 8 label_0000098c
+joy_callback 9 label_0000098c
+joy_callback a label_0000098c
+joy_callback b label_0000098c
+joy_callback c label_00000974
+mouse_callback 32 label_00000280
+ret
+
+label_000008f4
+jcc (local-int 2d0) ffffffff label_00000914
+ret
+
+label_00000914
+mov (local-int 2d0) 1
+jmp label_000009c8
+
+label_00000934
+jcc (local-int 2d0) ffffffff label_00000954
+ret
+
+label_00000954
+mov (local-int 2d0) 1
+jmp label_00000990
+
+label_00000974
+mov (local-int 2d0) 0
+ret
+
+label_0000098c
+ret
+
+label_00000990
+play-sound-effect 39a4 1
+u0041D050 1
+mov (local-int 2c8) 1
+ret
+
+label_000009c8
+lt (local-int 2e3) (local-int 2cb) 0
+gre (local-int 2e4) (local-int 2cb) (local-int 25c)
+or (local-int 2e5) (local-int 2e3) (local-int 2e4)
+jcc (local-int 2e5) ffffffff label_00000a3c
+ret
+
+label_00000a3c
+eq (local-int 2e3) (local-int 2cb) 0
+jcc (local-int 2e3) ffffffff label_00000aa0
+play-sound-effect 39a5 1
+u0041D050 1
+jmp label_00000adc
+
+label_00000aa0
+play-sound-effect 39a5 1
+u0041D050 1
+sub (global-int f8dfe) (local-int 2cb) 1
+
+label_00000adc
+mov (local-int 2c8) 1
+ret
+
+label_00000af4
+u0042B990 (global-float 9) 0
+u0042B990 (global-float a) 500
+u0042B990 (global-float b) 0
+u0042B990 (global-float c) 500
+u0042B990 (global-float d) 0
+u0042B990 (global-float e) 0
+u0042B990 (global-float f) 2d0
+u0042B990 (global-float 10) 2d0
+u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+u0043AA40 1d4c0 0 80 0
+lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
+jcc (local-ptr 0) ffffffff label_00000d40
+lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
+add (local-int 2e4) 1d4c0 64
+u00421410 (local-ptr 0) (local-int 2e4)
+add (local-int 2e3) 1d4c0 64
+sub (local-int 2e4) 0 424
+sub (local-int 2e5) (local-int 2e4) (global-int a2052)
+sub (local-int 2e6) 0 9b
+sub (local-int 2e7) (local-int 2e6) (global-int a2053)
+u00420770 (local-int 2e3) (local-int 2e5) (local-int 2e7) 0
+
+label_00000d40
+add (local-int 2e3) 1d4c0 c8
+draw-texture (local-int 2e3) 48 23e 6d 8f 98 (local-int 2e1) (local-int 2e2)
+add (local-int 2e3) 1d4c0 d2
+add (local-int 2e4) (local-int 2e1) b
+add (local-int 2e5) (local-int 2e2) b
+draw-texture (local-int 2e3) 48 2cf 6d 3c 4f (local-int 2e4) (local-int 2e5)
+add (local-int 2e3) 1d4c0 d3
+add (local-int 2e4) (local-int 2e1) 48
+add (local-int 2e5) (local-int 2e2) b
+draw-texture (local-int 2e3) 48 30d 6d 3c 4f (local-int 2e4) (local-int 2e5)
+add (local-int 2e3) 1d4c0 d4
+add (local-int 2e4) (local-int 2e1) b
+add (local-int 2e5) (local-int 2e2) 5b
+draw-texture (local-int 2e3) 48 2cf be 79 27 (local-int 2e4) (local-int 2e5)
+ret
+
+label_00000f6c
+call label_00001288
+gre (local-int 2e3) (local-int 2cb) 0
+lt (local-int 2e4) (local-int 2cb) (local-int 25c)
+and (local-int 2e5) (local-int 2e3) (local-int 2e4)
+jcc (local-int 2e5) ffffffff label_00001284
+mov (local-int 2cc) (local-int 2cb)
+eq (local-int 2e3) (local-int 2cb) 0
+jcc (local-int 2e3) ffffffff label_000010d8
+add (local-int 2e3) 1d4c0 12c
+add (local-int 2e4) (local-int 2e1) b
+add (local-int 2e5) (local-int 2e2) 5b
+draw-texture (local-int 2e3) 48 34b be 79 27 (local-int 2e4) (local-int 2e5)
+jmp label_00001284
+
+label_000010d8
+eq (local-int 2e3) (local-int 2cb) 1
+jcc (local-int 2e3) ffffffff label_000011b4
+add (local-int 2e3) 1d4c0 12c
+add (local-int 2e4) (local-int 2e1) b
+add (local-int 2e5) (local-int 2e2) b
+draw-texture (local-int 2e3) 48 34b 6d 3c 4f (local-int 2e4) (local-int 2e5)
+jmp label_00001284
+
+label_000011b4
+eq (local-int 2e3) (local-int 2cb) 2
+jcc (local-int 2e3) ffffffff label_00001284
+add (local-int 2e3) 1d4c0 12c
+add (local-int 2e4) (local-int 2e1) 48
+add (local-int 2e5) (local-int 2e2) b
+draw-texture (local-int 2e3) 48 389 6d 3c 4f (local-int 2e4) (local-int 2e5)
+
+label_00001284
+ret
+
+label_00001288
+add (local-int 2e3) 1d4c0 12c
+u00420270 (local-int 2e3) 1
+ret
+
+label_000012bc
+u00416200
+ret
+
+label_000012c4
+u00420270 1d4c0 190
+exit

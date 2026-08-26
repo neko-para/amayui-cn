@@ -1,0 +1,127 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { d7 1 1 4 1 1 }
+====
+
+and (local-int d4) (global-int 5afe2) 1
+jcc (local-int d4) ffffffff label_00000908
+u00417FC0 1f
+mov (local-int 35) 0
+mov (local-int 0) 1
+jmp label_000000d0
+
+label_000000b4
+add (local-int 0) (local-int 0) 1
+
+label_000000d0
+lt (local-int d4) (local-int 0) 32
+jcc (local-int d4) ffffffff label_000006b8
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
+and (local-int d4) (local-ptr 0) 1
+jcc (local-int d4) ffffffff label_000006ac
+lookup-array (local-ptr 1) (global-int 6f158) (local-int 0)
+check-bit (local-int cc) (global-int 5b7e5) (local-ptr 1)
+eq (local-int d4) (local-int cc) 0
+jcc (local-int d4) ffffffff label_000006ac
+lookup-array (local-ptr 1) (global-int 6f18a) (local-int 0)
+mov (local-int 1) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 6f1bc) (local-int 0)
+mov (local-int 2) (local-ptr 1)
+lookup-array-2d (local-ptr 1) (global-int 597df) (local-int 2) 20 (local-int 1)
+jcc (local-ptr 1) ffffffff label_000006ac
+lookup-array-2d (local-ptr 1) (global-int 62d72) (local-int 0) 3e8 5c
+jcc (local-ptr 1) ffffffff label_000002dc
+mov (local-int cd) 1
+jmp label_000002f0
+
+label_000002dc
+mov (local-int cd) (global-int 5affb)
+
+label_000002f0
+mov (local-int d2) 0
+mov (local-int ce) 0
+jmp label_00000340
+
+label_00000324
+add (local-int ce) (local-int ce) 1
+
+label_00000340
+lt (local-int d4) (local-int ce) (local-int cd)
+jcc (local-int d4) ffffffff label_0000059c
+check-bit (local-int cc) (global-int 5afe2) (local-int ce)
+jcc (local-int cc) ffffffff label_00000590
+lookup-array (local-ptr 1) (global-int 5afec) (local-int ce)
+mov (local-int cf) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 6cb3c2) (local-int cf)
+jcc (local-ptr 1) ffffffff label_0000045c
+lookup-array (local-ptr 1) (global-int 6cb3c2) (local-int cf)
+sub (local-int d0) (local-ptr 1) 1
+jmp label_000004cc
+
+label_0000045c
+lookup-array-2d (local-ptr 1) (global-int 6205c) (global-int 61c72) 5 0
+mov (local-int d1) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 55f4a5) (local-int d1)
+mov (local-int d0) (local-ptr 1)
+
+label_000004cc
+lookup-array-2d (local-ptr 1) (global-int 621ba) (local-int 0) 8 (local-int d0)
+mov (local-int d3) (local-ptr 1)
+lookup-array (local-ptr 0) (global-int 6f22ef) (local-int d3)
+lt (local-int d4) (local-int d2) (local-ptr 0)
+jcc (local-int d4) ffffffff label_00000590
+lookup-array (local-ptr 1) (global-int 6f22ef) (local-int d3)
+mov (local-int d2) (local-ptr 1)
+
+label_00000590
+jmp label_00000324
+
+label_0000059c
+jcc (local-int d2) ffffffff label_000006ac
+u0041A270 (local-int cc) 64
+shl (local-int d4) (local-int d2) 10
+add (local-int d5) (local-int d4) (local-int cc)
+lookup-array (local-ptr 2) (local-int 68) (local-int 35)
+sub (local-ptr 2) 0 (local-int d5)
+shl (local-int d4) (local-int 1) 10
+lookup-array (local-ptr 0) (local-int 3) (local-int 35)
+add (local-ptr 0) (local-int d4) (local-int 2)
+add (local-int 35) (local-int 35) 1
+
+label_000006ac
+jmp label_000000b4
+
+label_000006b8
+jcc (local-int 35) ffffffff label_00000908
+u0041ECB0 (local-int 36) (local-int 68) (local-int 9a) (local-int 35)
+mov (local-int ce) 0
+jmp label_00000734
+
+label_00000718
+add (local-int ce) (local-int ce) 1
+
+label_00000734
+lt (local-int d4) (local-int ce) (local-int 35)
+jcc (local-int d4) ffffffff label_00000874
+lookup-array (local-ptr 0) (local-int 36) (local-int ce)
+lookup-array (local-ptr 1) (local-int 3) (local-ptr 0)
+sar (global-int 51004d) (local-ptr 1) 10
+lookup-array (local-ptr 0) (local-int 36) (local-int ce)
+lookup-array (local-ptr 1) (local-int 3) (local-ptr 0)
+and (global-int 51004e) (local-ptr 1) ffff
+u00417FC0 1e
+lookup-array-2d (local-ptr 1) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
+jcc (local-ptr 1) label_00000880 ffffffff
+jmp label_00000718
+
+label_00000874
+jmp label_00000908
+
+label_00000880
+lookup-array-2d (local-ptr 1) (global-int 704ae) (global-int 61c72) 32 (global-int 1d0eb9)
+lookup-array-2d (local-ptr 0) (global-int 704ae) (global-int 61c72) 32 (global-int 1d0eb9)
+add (local-ptr 0) (local-ptr 1) 1
+mov (global-int b223) 1
+
+label_00000908
+exit

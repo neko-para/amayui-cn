@@ -1,0 +1,61 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 8 1 1 4 1 1 }
+====
+
+mov (local-int 0) (global-int f8c39)
+mov (local-int 1) (global-int f8c3a)
+mov (local-int 2) 1
+jmp label_000000a0
+
+label_00000084
+add (local-int 2) (local-int 2) 1
+
+label_000000a0
+lt (local-int 4) (local-int 2) 64
+jcc (local-int 4) ffffffff label_000001bc
+lookup-array (local-ptr 0) (global-int 72164) (local-int 2)
+and (local-int 4) (local-ptr 0) 1
+jcc (local-int 4) ffffffff label_000001b0
+lookup-array (local-ptr 0) (global-int 71d7c) (local-int 2)
+eq (local-int 4) (local-ptr 0) (local-int 0)
+jcc (local-int 4) ffffffff label_000001b0
+lookup-array (local-ptr 1) (global-int 71d7c) (local-int 2)
+mov (local-ptr 1) (local-int 1)
+
+label_000001b0
+jmp label_00000084
+
+label_000001bc
+jcc (global-int b226) ffffffff label_000003e8
+mov (local-int 3) 1
+jmp label_00000214
+
+label_000001f8
+add (local-int 3) (local-int 3) 1
+
+label_00000214
+lt (local-int 4) (local-int 3) 32
+jcc (local-int 4) ffffffff label_000003e8
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 3)
+and (local-int 4) (local-ptr 0) 1
+jcc (local-int 4) ffffffff label_000003dc
+lookup-array (local-ptr 0) (global-int 6f158) (local-int 3)
+eq (local-int 4) (local-ptr 0) 1
+lookup-array (local-ptr 2) (global-int 61fc6) (local-int 3)
+eq (local-int 5) (local-ptr 2) (local-int 0)
+and (local-int 6) (local-int 4) (local-int 5)
+jcc (local-int 6) ffffffff label_000003dc
+lookup-array (local-ptr 1) (global-int 61fc6) (local-int 3)
+mov (local-ptr 1) (local-int 1)
+mov (global-int 519af9) (local-int 3)
+call-script 50f2
+eq (local-int 4) (local-int 3) (global-int b225)
+jcc (local-int 4) ffffffff label_000003dc
+call-script 3994
+
+label_000003dc
+jmp label_000001f8
+
+label_000003e8
+exit

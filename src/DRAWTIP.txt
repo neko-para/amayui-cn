@@ -1,0 +1,51 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { c 1 2 1 1 1 }
+====
+
+eq (local-int a) (global-int 707ffc) 1
+jcc (local-int a) ffffffff label_000000fc
+sub (local-int 0) (global-int 707ffa) 23
+sub (local-int 1) (global-int 707ffb) 52
+draw-texture 1fbd0 10 294 1f1 148 52 (local-int 0) (local-int 1)
+jmp label_00000178
+
+label_000000fc
+sub (local-int 0) (global-int 707ffa) a4
+sub (local-int 1) (global-int 707ffb) 52
+draw-texture 1fbd0 10 0 bd 148 52 (local-int 0) (local-int 1)
+
+label_00000178
+create-texture 384 148 a8 0
+add (local-int a) 1fbd0 1
+draw-texture (local-int a) 384 0 0 148 a8 (local-int 0) (local-int 1)
+u0041AC30 12
+u0041AC60 ffffff
+u0041ACB0 ffffff
+ne (local-int a) (global-int 3f36) d
+jcc (local-int a) ffffffff label_000002b0
+set-font (global-string bbd)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) d
+
+label_000002b0
+draw-string 384 a a (global-string 1fc9a)
+u0041AC30 12
+u0041AC60 0
+u0041ACB0 0
+ne (local-int a) (global-int 3f36) 12
+jcc (local-int a) ffffffff label_00000388
+set-font (global-string bbf)
+u00423100 0
+u0041AD00 1
+u0041B580 0 0
+u00423127 0
+mov (global-int 3f36) 12
+
+label_00000388
+draw-string 384 a 28 (global-string 1fc9b)
+mov (global-int 707ffc) 0
+exit

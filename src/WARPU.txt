@@ -1,0 +1,39 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 5 1 1 2 1 1 }
+====
+
+and (local-int 1) (global-int 5108a9) 102
+ne (local-int 2) (local-int 1) 102
+jcc (local-int 2) ffffffff label_000000b0
+play-sound-effect 5146 3
+u0041D050 3
+
+label_000000b0
+lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
+and (local-int 1) (local-ptr 0) 20000
+jcc (local-int 1) ffffffff label_0000012c
+add (local-int 0) ea60 76c
+jmp label_00000148
+
+label_0000012c
+add (local-int 0) ea60 (global-int 519af9)
+
+label_00000148
+u00421450 (local-int 0) 0 c8 a 190 64
+u00420880 (local-int 0) 0 c8 0 ffffff
+and (local-int 1) (global-int a9d6) 2
+and (local-int 2) (global-int 5108a9) 100
+or (local-int 3) (local-int 1) (local-int 2)
+jcc (local-int 3) ffffffff label_0000022c
+u00417070
+u00416200
+jmp label_00000234
+
+label_0000022c
+u00415BF0
+u00416270
+
+label_00000234
+u00420270 (local-int 0) 1
+exit

@@ -1,0 +1,43 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 7 1 1 4 1 1 }
+====
+
+u004160D0
+mov (local-int 1) (global-int f8c39)
+mov (local-int 2) (global-int f8c3a)
+mov (local-int 0) 1
+jmp label_000000a4
+
+label_00000088
+add (local-int 0) (local-int 0) 1
+
+label_000000a4
+lt (local-int 3) (local-int 0) 32
+jcc (local-int 3) ffffffff label_000002c4
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
+and (local-int 3) (local-ptr 0) 1
+jcc (local-int 3) ffffffff label_000002b8
+lookup-array (local-ptr 0) (global-int 6f158) (local-int 0)
+ne (local-int 3) (local-ptr 0) 1
+lookup-array (local-ptr 1) (global-int 61ff8) (local-int 0)
+eq (local-int 4) (local-ptr 1) (local-int 1)
+and (local-int 5) (local-int 3) (local-int 4)
+jcc (local-int 5) ffffffff label_000002b8
+mov (global-int 519af9) (local-int 0)
+mov (global-int 519afa) (local-int 2)
+lookup-array (local-ptr 2) (global-int 14dd40) (global-int 519afa)
+mov (global-int 519afb) (local-ptr 2)
+lookup-array (local-ptr 2) (global-int 6202a) (global-int 519af9)
+bit-set (local-ptr 2) 17
+call-script 4f99
+ne (local-int 3) (global-int b22a) 0
+jcc (local-int 3) ffffffff label_000002b8
+bit-set (global-int 56940) 1
+
+label_000002b8
+jmp label_00000088
+
+label_000002c4
+u00416120
+exit

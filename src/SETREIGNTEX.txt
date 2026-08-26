@@ -1,0 +1,83 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { b 1 1 4 1 1 }
+====
+
+sub (local-int 6) 0 1
+set-texture 5189 48 (local-int 6)
+sub (local-int 6) 0 1
+set-texture 518a 49 (local-int 6)
+sub (local-int 6) 0 1
+set-texture 518b 52 (local-int 6)
+mov (local-int 2) 1
+jmp label_00000120
+
+label_00000104
+add (local-int 2) (local-int 2) 1
+
+label_00000120
+lt (local-int 6) (local-int 2) 1e
+jcc (local-int 6) ffffffff label_0000027c
+lookup-array (local-ptr 0) (global-int 703e10) (local-int 2)
+ne (local-int 6) (local-ptr 0) 0
+lookup-array (local-ptr 1) (global-int 934a6) (local-int 2)
+eq (local-int 7) (local-ptr 1) 1
+and (local-int 8) (local-int 6) (local-int 7)
+jcc (local-int 8) ffffffff label_00000270
+lookup-array (local-ptr 2) (global-int 703e10) (local-int 2)
+add (local-int 9) 52 (local-int 2)
+sub (local-int 7) 0 1
+set-texture (local-ptr 2) (local-int 9) (local-int 7)
+
+label_00000270
+jmp label_00000104
+
+label_0000027c
+mov (local-int 3) 1
+jmp label_000002b8
+
+label_0000029c
+add (local-int 3) (local-int 3) 1
+
+label_000002b8
+lt (local-int 6) (local-int 3) 12c
+jcc (local-int 6) ffffffff label_000003a4
+lookup-array (local-ptr 2) (global-int a3528) (local-int 3)
+jcc (local-ptr 2) ffffffff label_00000398
+lookup-array (local-ptr 2) (global-int 704b15) (local-int 3)
+add (local-int 9) 12c (local-int 3)
+sub (local-int 7) 0 1
+set-texture (local-ptr 2) (local-int 9) (local-int 7)
+
+label_00000398
+jmp label_0000029c
+
+label_000003a4
+mov (local-int 0) 0
+jmp label_000003e0
+
+label_000003c4
+add (local-int 0) (local-int 0) 1
+
+label_000003e0
+lt (local-int 6) (local-int 0) (global-int 934c4)
+jcc (local-int 6) ffffffff label_00000588
+lookup-array (local-ptr 2) (global-int 934c5) (local-int 0)
+mov (local-int 4) (local-ptr 2)
+mov (local-int 5) (local-int 4)
+add (local-int 9) 3e8 (local-int 5)
+lookup-array (local-ptr 2) (global-int d9d6e) (local-int 9)
+jcc (local-ptr 2) ffffffff label_000004fc
+add (local-int 6) 3e8 (local-int 5)
+lookup-array (local-ptr 0) (global-int d9d6e) (local-int 6)
+mov (local-int 5) (local-ptr 0)
+
+label_000004fc
+lookup-array-2d (local-ptr 2) (global-int 523b24) (local-int 5) 11 7
+add (local-int 9) 258 (local-int 4)
+sub (local-int 7) 0 1
+set-texture (local-ptr 2) (local-int 9) (local-int 7)
+jmp label_000003c4
+
+label_00000588
+exit

@@ -1,0 +1,52 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 3 1 1 2 1 1 }
+====
+
+string-lookup-set (global-int a9ce)
+string-lookup-set (global-int a9cd)
+string-lookup-set (global-int a9d5)
+string-lookup-set (global-int a9d0)
+string-lookup-set (global-int a9cb)
+string-lookup-set (global-int a9cc)
+string-lookup-set (global-int b1b6)
+string-lookup-set (global-int a9e4)
+string-lookup-set (global-int 139b)
+string-lookup-set (global-int a9d6)
+u00425920 (global-string bbd)
+u00425920 (global-string bbe)
+u00425920 (global-string bbf)
+u00425920 (global-string bbb)
+u00425920 (global-string bbc)
+string-lookup-set (global-int a9de)
+string-lookup-set (global-int a9dd)
+string-lookup-set (global-int a9db)
+string-lookup-set (global-int a9df)
+string-lookup-set (global-int a9e0)
+string-lookup-set (global-int a9e1)
+string-lookup-set (global-int a9e2)
+string-lookup-set (global-int a9dc)
+string-lookup-set (global-int a9d4)
+string-lookup-set (global-int a9da)
+string-lookup-set (global-int a9d9)
+string-lookup-set (global-int a9e3)
+string-lookup-set (global-int a9d2)
+mov (local-int 0) 0
+jmp label_000001c8
+
+label_000001ac
+add (local-int 0) (local-int 0) 1
+
+label_000001c8
+lt (local-int 1) (local-int 0) 3e8
+jcc (local-int 1) ffffffff label_00000284
+lookup-array (local-ptr 0) (global-int 3b4e) (local-int 0)
+string-lookup-set (local-ptr 0)
+lookup-array (local-ptr 0) (global-int a9e5) (local-int 0)
+string-lookup-set (local-ptr 0)
+lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
+string-lookup-set (local-ptr 0)
+jmp label_000001ac
+
+label_00000284
+exit

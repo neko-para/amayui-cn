@@ -1,0 +1,60 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { e 1 1 5 1 1 }
+====
+
+u004160D0
+mul (local-int 2) (global-int f8c39) 2
+mul (local-int 3) (global-int f8c3a) 2
+mul (local-int 4) (global-int f8c3b) 2
+mul (local-int 5) (global-int f8c3c) 2
+mov (local-int 1) (local-int 3)
+jmp label_000000ec
+
+label_000000d0
+add (local-int 1) (local-int 1) 1
+
+label_000000ec
+lte (local-int 6) (local-int 1) (local-int 5)
+jcc (local-int 6) ffffffff label_0000040c
+mov (local-int 0) (local-int 2)
+jmp label_00000160
+
+label_00000144
+add (local-int 0) (local-int 0) 1
+
+label_00000160
+lte (local-int 6) (local-int 0) (local-int 4)
+jcc (local-int 6) ffffffff label_00000400
+lookup-array-2d (local-ptr 0) (global-int 56d7e) (local-int 1) 41 (local-int 0)
+mov (local-ptr 0) (global-int 510cfa)
+mod (local-int 6) (local-int 0) 2
+eq (local-int 7) (local-int 6) 0
+mod (local-int 8) (local-int 1) 2
+eq (local-int 9) (local-int 8) 0
+and (local-int a) (local-int 7) (local-int 9)
+jcc (local-int a) ffffffff label_000003f4
+lookup-array (local-ptr 1) (global-int 510d73) (global-int 510cfa)
+eq (local-int 6) (local-ptr 1) 1
+lookup-array (local-ptr 2) (global-int bdf0) (global-int b222)
+eq (local-int 8) (local-ptr 2) 1
+lookup-array (local-ptr 3) (global-int 510d73) (global-int 510cfa)
+gr (local-int a) (local-ptr 3) 0
+and (local-int b) (local-int 8) (local-int a)
+or (local-int c) (local-int 6) (local-int b)
+jcc (local-int c) ffffffff label_000003f4
+div (local-int 6) (local-int 1) 2
+lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-int 6)
+div (local-int 8) (local-int 0) 2
+bit-set (local-ptr 1) (local-int 8)
+
+label_000003f4
+jmp label_00000144
+
+label_00000400
+jmp label_000000d0
+
+label_0000040c
+bit-set (global-int 56940) 0
+u00416120
+exit

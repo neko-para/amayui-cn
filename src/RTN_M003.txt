@@ -1,0 +1,80 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { d3 1 1 4 1 1 }
+====
+
+and (local-int cf) (global-int 5afe2) 1
+jcc (local-int cf) ffffffff label_000005fc
+u00417FC0 1f
+call-script 5198
+mov (local-int 35) 0
+mov (local-int 0) 1
+jmp label_000000dc
+
+label_000000c0
+add (local-int 0) (local-int 0) 1
+
+label_000000dc
+lt (local-int cf) (local-int 0) 32
+jcc (local-int cf) ffffffff label_000003ac
+lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
+and (local-int cf) (local-ptr 0) 1
+jcc (local-int cf) ffffffff label_000003a0
+lookup-array (local-ptr 1) (global-int 6f158) (local-int 0)
+check-bit (local-int cc) (global-int 5b7e5) (local-ptr 1)
+eq (local-int cf) (local-int cc) 0
+jcc (local-int cf) ffffffff label_000003a0
+lookup-array (local-ptr 1) (global-int 6f18a) (local-int 0)
+mov (local-int 1) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 6f1bc) (local-int 0)
+mov (local-int 2) (local-ptr 1)
+lookup-array-2d (local-ptr 1) (global-int 59bdf) (local-int 2) 20 (local-int 1)
+jcc (local-ptr 1) ffffffff label_000003a0
+u0041A270 (local-int cc) 64
+lookup-array-2d (local-ptr 1) (global-int 59bdf) (local-int 2) 20 (local-int 1)
+shl (local-int d0) (local-ptr 1) 10
+add (local-int d1) (local-int d0) (local-int cc)
+lookup-array (local-ptr 2) (local-int 68) (local-int 35)
+sub (local-ptr 2) 0 (local-int d1)
+shl (local-int cf) (local-int 1) 10
+lookup-array (local-ptr 0) (local-int 3) (local-int 35)
+add (local-ptr 0) (local-int cf) (local-int 2)
+add (local-int 35) (local-int 35) 1
+
+label_000003a0
+jmp label_000000c0
+
+label_000003ac
+jcc (local-int 35) ffffffff label_000005fc
+u0041ECB0 (local-int 36) (local-int 68) (local-int 9a) (local-int 35)
+mov (local-int ce) 0
+jmp label_00000428
+
+label_0000040c
+add (local-int ce) (local-int ce) 1
+
+label_00000428
+lt (local-int cf) (local-int ce) (local-int 35)
+jcc (local-int cf) ffffffff label_00000568
+lookup-array (local-ptr 0) (local-int 36) (local-int ce)
+lookup-array (local-ptr 1) (local-int 3) (local-ptr 0)
+sar (global-int 51004d) (local-ptr 1) 10
+lookup-array (local-ptr 0) (local-int 36) (local-int ce)
+lookup-array (local-ptr 1) (local-int 3) (local-ptr 0)
+and (global-int 51004e) (local-ptr 1) ffff
+u00417FC0 1e
+lookup-array-2d (local-ptr 1) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
+jcc (local-ptr 1) label_00000574 ffffffff
+jmp label_0000040c
+
+label_00000568
+jmp label_000005fc
+
+label_00000574
+lookup-array-2d (local-ptr 1) (global-int 704ae) (global-int 61c72) 32 (global-int 1d0eb9)
+lookup-array-2d (local-ptr 0) (global-int 704ae) (global-int 61c72) 32 (global-int 1d0eb9)
+add (local-ptr 0) (local-ptr 1) 1
+mov (global-int b223) 1
+
+label_000005fc
+exit

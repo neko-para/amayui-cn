@@ -1,0 +1,85 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 7 2 1 3 1 1 }
+====
+
+u004160D0
+u0043AA60
+u0043AB11 0
+u0043AAF0 ff ffffff
+u00420480 3e
+32A 0
+32A 1
+32A 2
+jcc (global-int 4fdb) ffffffff label_00000604
+eq (local-int 5) (global-int 4fdb) 1
+jcc (local-int 5) ffffffff label_00000164
+sub (local-int 5) 0 8
+u0043AAE0 0 4 (local-int 5) 0 1 0
+u0043AA70 0 18e70
+u0043AA90 (global-int 4fdc)
+jmp label_00000604
+
+label_00000164
+eq (local-int 5) (global-int 4fdb) 2
+jcc (local-int 5) ffffffff label_000002f0
+sub (local-int 5) 0 8
+u0043AAE0 0 4 (local-int 5) 0 1 0
+jcc (global-int 4fdd) ffffffff label_0000024c
+sub (local-int 5) 0 1
+set-texture (global-int 4fdd) 3e (local-int 5)
+jmp label_000002ac
+
+label_0000024c
+create-texture 3e a a 0
+u00420D50 3e 0 0 a a ff ffffff
+
+label_000002ac
+u0043AA70 18e70 18e70
+u0043AA80 (global-int 4fdc) 3e 1 1
+jmp label_00000604
+
+label_000002f0
+mov (local-int 0) 0
+jmp label_0000032c
+
+label_00000310
+add (local-int 0) (local-int 0) 1
+
+label_0000032c
+lt (local-int 5) (local-int 0) 3
+jcc (local-int 5) ffffffff label_00000440
+lookup-array (local-ptr 0) (global-int 4fdd) (local-int 0)
+gr (local-int 5) (local-ptr 0) 0
+jcc (local-int 5) ffffffff label_00000434
+lookup-array (local-ptr 1) (global-int 4fdd) (local-int 0)
+u0043AAB0 (local-ptr 1) (local-int 0)
+lookup-array (local-ptr 1) (local-int 1) (local-int 4)
+mov (local-ptr 1) (local-int 0)
+add (local-int 4) (local-int 4) 1
+
+label_00000434
+jmp label_00000310
+
+label_00000440
+jcc (local-int 4) ffffffff label_00000604
+eq (local-int 5) (global-int 4fdb) 4
+jcc (local-int 5) ffffffff label_000004f0
+sub (local-int 5) 0 4
+u0043AAE0 0 (local-int 5) 1 0 8 0
+jmp label_00000540
+
+label_000004f0
+sub (local-int 5) 0 8
+u0043AAE0 0 4 (local-int 5) 0 1 0
+
+label_00000540
+u0042B950 (local-float 0) (float 0) (float 3e99999a)
+u0043AB10 0 3 0 0 0 1 (local-float 0) 1 0 cc9966 3e8
+u0043AA70 18e70 18e70
+u0043AB20 1 ff ffffff
+u0043AAA0 (global-int 4fdc) (local-int 1) (local-int 4)
+
+label_00000604
+u00416120
+exit

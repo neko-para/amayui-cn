@@ -1,0 +1,57 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 6 1 1 4 1 1 }
+====
+
+and (local-int 2) (global-int 5108a9) 102
+ne (local-int 3) (local-int 2) 102
+jcc (local-int 3) ffffffff label_000000b0
+play-sound-effect 5145 3
+u0041D050 3
+
+label_000000b0
+lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
+and (local-int 2) (local-ptr 0) 20000
+jcc (local-int 2) ffffffff label_0000012c
+add (local-int 0) ea60 76c
+jmp label_00000148
+
+label_0000012c
+add (local-int 0) ea60 (global-int 519af9)
+
+label_00000148
+call-script 50f2
+add (local-int 2) ea60 (global-int 519af9)
+sub (local-int 3) 0 1
+u00420950 (local-int 2) 0 0 (local-int 3)
+add (local-int 2) ea60 (global-int 519af9)
+ne (local-int 3) (local-int 0) (local-int 2)
+jcc (local-int 3) ffffffff label_00000234
+add (local-int 2) ea60 (global-int 519af9)
+u00421410 (local-int 2) (local-int 0)
+
+label_00000234
+u00420620 (local-int 0) a 190 64
+u00421450 (local-int 0) 0 c8 64 64 64
+lookup-array (local-ptr 0) (global-int 6f1bc) (global-int 519af9)
+lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-ptr 0)
+lookup-array (local-ptr 2) (global-int 6f18a) (global-int 519af9)
+check-bit (local-int 1) (local-ptr 1) (local-ptr 2)
+jcc (local-int 1) ffffffff label_00000354
+u00420880 (local-int 0) 0 c8 ff ffffff
+
+label_00000354
+and (local-int 2) (global-int a9d6) 2
+and (local-int 3) (global-int 5108a9) 100
+or (local-int 4) (local-int 2) (local-int 3)
+jcc (local-int 4) ffffffff label_000003d8
+u00417070
+u00416200
+jmp label_000003e0
+
+label_000003d8
+u00415BF0
+u00416270
+
+label_000003e0
+exit

@@ -1,0 +1,73 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { f 1 1 6 1 1 }
+====
+
+lookup-array-2d (local-ptr 1) (global-int 5613e5) (global-int 519adf) 8 0
+u00414A60 (local-ptr 0) (local-ptr 1)
+u0041A510 (local-ptr 0) (global-int 519ae1) 8
+lookup-array-2d (local-ptr 1) (global-int 5ac705) (global-int 519adf) d 0
+u00414A60 (local-ptr 0) (local-ptr 1)
+u0041A510 (local-ptr 0) (global-int 519ae9) d
+lookup-array (local-ptr 1) (global-int 5b9225) (global-int 519adf)
+mov (global-int 519af6) (local-ptr 1)
+lookup-array (local-ptr 1) (global-int 5ab765) (global-int 519adf)
+mov (global-int 519af8) (local-ptr 1)
+mov (local-int 0) 0
+jmp label_00000190
+
+label_00000174
+add (local-int 0) (local-int 0) 1
+
+label_00000190
+lt (local-int c) (local-int 0) (global-int 519ae0)
+jcc (local-int c) ffffffff label_00000528
+mov (local-int 1) 0
+jmp label_00000204
+
+label_000001e8
+add (local-int 1) (local-int 1) 1
+
+label_00000204
+lt (local-int c) (local-int 1) 8
+jcc (local-int c) ffffffff label_00000300
+mul (local-int c) (local-int 0) 8
+add (local-int d) (local-int c) (local-int 1)
+lookup-array-2d (local-ptr 2) (global-int 5d7685) (global-int 519adf) 50 (local-int d)
+lookup-array (local-ptr 3) (global-int 519ae1) (local-int 1)
+lookup-array (local-ptr 4) (global-int 519ae1) (local-int 1)
+add (local-ptr 3) (local-ptr 4) (local-ptr 2)
+jmp label_000001e8
+
+label_00000300
+mov (local-int 1) 0
+jmp label_0000033c
+
+label_00000320
+add (local-int 1) (local-int 1) 1
+
+label_0000033c
+lt (local-int c) (local-int 1) d
+jcc (local-int c) ffffffff label_00000438
+mul (local-int c) (local-int 0) d
+add (local-int d) (local-int c) (local-int 1)
+lookup-array-2d (local-ptr 2) (global-int 625885) (global-int 519adf) 82 (local-int d)
+lookup-array (local-ptr 3) (global-int 519ae9) (local-int 1)
+lookup-array (local-ptr 4) (global-int 519ae9) (local-int 1)
+add (local-ptr 3) (local-ptr 4) (local-ptr 2)
+jmp label_00000320
+
+label_00000438
+lookup-array-2d (local-ptr 1) (global-int 6a47c5) (global-int 519adf) a (local-int 0)
+add (local-int d) (global-int 519af6) (local-ptr 1)
+mov (global-int 519af6) (local-int d)
+lookup-array-2d (local-ptr 1) (global-int 6ae405) (global-int 519adf) a (local-int 0)
+jcc (local-ptr 1) ffffffff label_0000051c
+lookup-array-2d (local-ptr 1) (global-int 6ae405) (global-int 519adf) a (local-int 0)
+mov (global-int 519af8) (local-ptr 1)
+
+label_0000051c
+jmp label_00000174
+
+label_00000528
+exit

@@ -1,0 +1,82 @@
+==Binary Information - do not edit==
+signature = SYS4450 
+local_vars = { 2 1 1 3 1 1 }
+====
+
+eq (local-int 0) (global-int 4fd9) 1
+jcc (local-int 0) ffffffff label_000002b4
+mov (global-int 4fd9) 0
+mov (global-int b22a) 0
+u0042B990 (global-float 9) 0
+u0042B990 (global-float a) 500
+u0042B990 (global-float b) 0
+u0042B990 (global-float c) 500
+u0042B990 (global-float d) 0
+u0042B990 (global-float e) 0
+u0042B990 (global-float f) 2d0
+u0042B990 (global-float 10) 2d0
+u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+jcc 1 ffffffff label_00000208
+u0043AA40 30d40 0 0 0
+u0043AA50 30d40 0 12c ff 0
+jmp label_00000258
+
+label_00000208
+u0043AA40 30d40 0 ff 0
+u0043AA50 30d40 0 12c 0 0
+
+label_00000258
+u00422EA0 10001
+u00416270
+u00420270 30d40 1
+u00415BF0
+u004219E0 0 0 0 0 0
+u00416170
+u004162F0
+
+label_000002b4
+u004156C0
+play-bgm 10
+lookup-array (local-ptr 1) (global-int 7042e1) (global-int deb8f)
+lookup-array (local-ptr 0) (global-int 702ae7) (local-ptr 1)
+jcc (local-ptr 0) ffffffff label_00000368
+lookup-array (local-ptr 1) (global-int 7042e1) (global-int deb8f)
+lookup-array (local-ptr 0) (global-int 702ae7) (local-ptr 1)
+call-script (local-ptr 0)
+jmp label_00000374
+
+label_00000368
+call-script 5161
+
+label_00000374
+eq (local-int 0) (global-int 0) 8
+jcc (local-int 0) ffffffff label_00000544
+jcc (global-int 9346a) ffffffff label_0000048c
+ne (local-int 0) (global-int 0) 1
+jcc (local-int 0) ffffffff label_00000414
+mov (global-int 2) (global-int 0)
+
+label_00000414
+mov (global-int 0) 3
+mov (global-int 1) 0
+jcc (global-int b226) ffffffff label_00000480
+mov (global-int b226) 0
+mov (global-int 51004c) 1
+
+label_00000480
+jmp label_00000544
+
+label_0000048c
+ne (local-int 0) (global-int 0) 1
+jcc (local-int 0) ffffffff label_000004d8
+mov (global-int 2) (global-int 0)
+
+label_000004d8
+mov (global-int 0) 2
+mov (global-int 1) 0
+jcc (global-int b226) ffffffff label_00000544
+mov (global-int b226) 0
+mov (global-int 51004c) 1
+
+label_00000544
+exit
