@@ -14,6 +14,7 @@ export const INSTALL_DIR = path.join(ROOT_DIR, 'install');
 
 // data：只读比较基线（原始日文，不再修改）；src：可编辑开发源（含翻译语法）
 export const SRC_DIR = path.join(ROOT_DIR, 'src');
+export const DATA_DIR = path.join(ROOT_DIR, 'data');
 
 // res：工程自有资源（字体资产、SJIS 映射字典、AGERC 资源脚本等）
 export const RES_DIR = path.join(ROOT_DIR, 'res');
