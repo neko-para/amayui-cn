@@ -37,7 +37,7 @@ export default function App() {
             <Typography variant="h6" sx={{ flexGrow: 1, pl: 1 }}>Amayui Toolkit</Typography>
             {dataset && (
               <Typography variant="caption" sx={{ mr: 2 }}>
-                物品 {dataset.metadata.counts.items} · 配方 {dataset.metadata.counts.recipes} · 单位 {dataset.metadata.counts.units}
+                物品 {dataset.metadata.counts.items} · 配方 {dataset.metadata.counts.recipes} · 单位 {dataset.metadata.counts.units} · 地图 {dataset.metadata.counts.maps}
               </Typography>
             )}
             <IconButton color="inherit" onClick={() => setTheme(mode === 'dark' ? 'light' : 'dark')} title="切换主题">

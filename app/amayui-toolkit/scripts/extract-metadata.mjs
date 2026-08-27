@@ -31,7 +31,7 @@ const OUT_FILE = path.join(OUT_DIR, 'metadata.json');
 const BASE_ITEM = 0x18e40;        // 物品 id 基数
 const BASE_BUILDING = 0x1f5ba;    // 建筑/设施 id 基数
 const ITEM_ADDR_MAX = 0x1a000;    // 物品名地址上限
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;         // v2：新增 maps/mapUnits
 
 /* ------------------------- 名称解析（src set-string "日|中"） ------------------------- */
 
@@ -219,7 +219,7 @@ function parseEbinit() {
       rate: rate.value,
       rateRaw: rate.valueRaw,
       itemRaw: item.valueRaw,
-      rateMeaning: 'unknown',
+      rateMeaning: 'percent',
     }));
     units.push({
       unitId: h.nameOp.addr,
@@ -236,6 +236,102 @@ function parseEbinit() {
 }
 
 const units = parseEbinit();
+
+/* ------------------------- 地图 + 地图内单位（STINIT/STINIT2） ------------------------- */
+
+const BASE_MAP = 0x121e2;   // 地图名 addr = BASE_MAP + mapNo
+const BASE_UNIT = 0x17ab6;  // 单位名 addr = BASE_UNIT + 单位槽寄存器 id（与 EBINIT units[].unitId 同键）
+const UNIT_REG_BASE = 0x14dd00;
+const UNIT_MIN = 0x41, UNIT_MAX = 0x5d;
+const isMk = (a) => (a & 0xffffff00) === UNIT_REG_BASE && (a & 0xff) >= UNIT_MIN && (a & 0xff) <= UNIT_MAX;
+
+/** 地图名表：mapNo(hex 字符串) → { name, nameZh } */
+function collectMapNames() {
+  const byAddr = new Map();
+  for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit2\.txt$/i.test(x)).sort()) {
+    const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+    for (const line of text.split(/\r\n|\r|\n/)) {
+      const p = parseNameLine(line);
+      if (!p) continue;
+      if (!byAddr.has(p.addr)) byAddr.set(p.addr, p);
+    }
+  }
+  return byAddr;
+}
+const mapNameByAddr = collectMapNames();
+
+/** 解析所有 STINIT：地图块内单位槽（不含掉落；掉落走 EBINIT）。 */
+function parseStinitMaps() {
+  const files = fs.readdirSync(SRC_DIR).filter((x) => /stinit\.txt$/i.test(x)).sort();
+  const maps = [];
+  for (const f of files) {
+    const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+    const ops = [];
+    for (const l of text.split(/\r\n|\r|\n/)) {
+      if (!l.trim()) continue;
+      const me = l.match(/eq \(local-int 0\) \(global-int b222\) ([0-9a-f]+)(\s|$)/);
+      if (me) { ops.push({ kind: 'map', mapNo: me[1] }); continue; }
+      const mm = l.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
+      if (mm) { ops.push({ kind: 'mov', addr: parseInt(mm[1], 16), val: parseInt(mm[2], 16) }); continue; }
+    }
+    // 按地图块切分：[map header] .. [下一 map header)
+    const headers = ops.map((o, i) => ({ o, i })).filter((x) => x.o.kind === 'map');
+    for (let bi = 0; bi < headers.length; bi++) {
+      const start = headers[bi].i;
+      const end = bi + 1 < headers.length ? headers[bi + 1].i : ops.length;
+      const mapNo = ops[start].mapNo;
+      const nameEnt = mapNameByAddr.get(BASE_MAP + parseInt(mapNo, 16));
+      const unitRecords = [];
+      let cur = null;
+      for (let idx = start; idx < end; idx++) {
+        const op = ops[idx];
+        if (op.kind !== 'mov') continue;
+        if (!isMk(op.addr)) continue;
+        const K = op.addr;
+        // 前部：单调递减、窗口 [K-0xF0,K]
+        let j = idx, last = K;
+        const pre = new Map();
+        while (j > 0) {
+          const a = ops[j - 1];
+          if (a.kind === 'mov' && a.addr < last && a.addr >= K - 0xF0) { pre.set(K - a.addr, a.val); last = a.addr; j--; } else break;
+        }
+        // 后部：单调递增、窗口 [K,K+0xF0]
+        let k = idx, last2 = K;
+        const post = new Map();
+        while (k + 1 < ops.length) {
+          const a = ops[k + 1];
+          if (a.kind === 'mov' && a.addr > last2 && a.addr <= K + 0xF0) { post.set(a.addr - K, a.val); last2 = a.addr; k++; } else break;
+        }
+        const extra = [];
+        for (const [off, v] of pre) if (![0x1e, 0x96, 0xd2, 0xf0].includes(off)) extra.push({ off: `-${off.toString(16)}`, val: v.toString(16) });
+        for (const [off, v] of post) if (![0x1e, 0x3c].includes(off)) extra.push({ off: `+${off.toString(16)}`, val: v.toString(16) });
+        unitRecords.push({
+          unitRef: BASE_UNIT + op.val,   // 0x17ab6 + 寄存器 id，与 units[].unitId 同键
+          spawnFlag: pre.has(0x1e) ? pre.get(0x1e) : null,
+          faction: pre.has(0x96) ? pre.get(0x96) : null,
+          row: pre.has(0xd2) ? pre.get(0xd2) : null,
+          col: pre.has(0xf0) ? pre.get(0xf0) : null,
+          levelMin: post.has(0x1e) ? post.get(0x1e) : null,
+          levelMax: post.has(0x3c) ? post.get(0x3c) : null,
+          extra,
+        });
+      }
+      maps.push({
+        mapNo,
+        name: nameEnt ? nameEnt.name : '',
+        nameZh: nameEnt ? nameEnt.nameZh : '',
+        source: f,
+        units: unitRecords,
+      });
+    }
+  }
+  return maps;
+}
+
+const maps = parseStinitMaps();
+const mapUnitEntries = maps.reduce((s, m) => s + m.units.length, 0);
+const mapUnitDistinct = new Set(maps.flatMap((m) => m.units.map((u) => u.unitRef)));
+const mapSpawnableEntries = maps.reduce((s, m) => s + m.units.filter((u) => u.spawnFlag === 1).length, 0);
 
 /* ------------------------- 派生 / 校验 / 组装 ------------------------- */
 
@@ -267,6 +363,10 @@ const counts = {
   unitsWithDrops: units.filter((u) => u.hasDrops).length,
   dropEntries,
   distinctDropItemIds: dropItemIds.size,
+  maps: maps.length,
+  mapUnitEntries,
+  mapUnitDistinctUnits: mapUnitDistinct.size,
+  mapSpawnableEntries,
 };
 
 const out = {
@@ -279,6 +379,7 @@ const out = {
   buildings,
   recipes,
   units,
+  maps,
 };
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -286,7 +387,8 @@ fs.writeFileSync(OUT_FILE, JSON.stringify(out, null, 2), 'utf8');
 console.log('已写出', OUT_FILE);
 console.log(`items=${items.length} buildings=${buildings.length} recipes=${recipes.length}` +
   ` (item=${itemRecipes.length}, building=${buildRecipes.length}) units=${units.length}` +
-  ` (withDrops=${counts.unitsWithDrops}) dropEntries=${dropEntries} distinctDropItemIds=${dropItemIds.size}`);
+  ` (withDrops=${counts.unitsWithDrops}) dropEntries=${dropEntries} distinctDropItemIds=${dropItemIds.size}` +
+  ` maps=${maps.length} mapUnitEntries=${mapUnitEntries} mapUnitDistinctUnits=${mapUnitDistinct.size} mapSpawnable=${mapSpawnableEntries}`);
 console.log('校验：缺产品名配方=', missingProduct, ' 缺物品的原材料 id=', [...missingMaterial].map(String).join(','), ' 缺物品的掉落 id=', [...missingDropItem].map(String).join(','));
 
 // 采样展示（含中文名）
@@ -299,3 +401,5 @@ const r = itemRecipes.find((x) => x.materials.length) || itemRecipes[0];
 if (r) console.log(`配方(${r.type}) ${r.product}→${r.productZh} : ${r.materials.map((m) => `${itemLookup.get(m.itemId)?.nameZh}×${m.count}`).join(' + ')}`);
 const u = units.find((x) => x.hasDrops && x.drops.length >= 3);
 if (u) console.log(`单位[${u.unitId.toString(16)}] ${u.name}→${u.nameZh} 〈${u.title}→${u.titleZh}〉 掉落: ${u.drops.map((d) => `${itemLookup.get(d.itemId)?.nameZh}(rate=${d.rate})`).join(' ') || '无'}`);
+const mu = maps.find((x) => x.units.length >= 5);
+if (mu) console.log(`地图[${mu.mapNo}] ${mu.name}→${mu.nameZh} (单位槽=${mu.units.length}, src=${mu.source}) 首个: ${mu.units.slice(0, 3).map((z) => `${z.unitRef.toString(16)}行=${z.row}列=${z.col}等=${z.levelMin}..${z.levelMax}`).join(' | ')}`);

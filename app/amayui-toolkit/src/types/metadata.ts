@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 1;
+export const METADATA_SCHEMA_VERSION = 2;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -76,13 +76,13 @@ export interface Recipe {
 
 /* ---------------------------------- 单位掉落 ---------------------------------- */
 
-/** 掉落率语义：未定。当前值域多为 5..64(100)，可能是掉落率或权重。 */
+/** 掉落率语义：暂按百分比理解（100=必定掉落）。 */
 export type RateMeaning = 'percent' | 'weight' | 'unknown';
 
 /** 一条掉落（rate/item 由 EBINIT 的 (rate@53eXXX, item@53dXXX) 双+1 配对） */
 export interface DropEntry {
   itemId: number;
-  /** 十进制掉落率/权重（语义未定，见 rateMeaning） */
+  /** 十进制掉落率，按百分比理解（100 = 必定掉落；rateMeaning='percent'） */
   rate: number;
   /** 率 hex 原值 */
   rateRaw: string;
@@ -109,7 +109,42 @@ export interface Unit {
   drops: DropEntry[];
 }
 
-/* ---------------------------------- 聚合入口 ---------------------------------- */
+/* ---------------------------------- 地图 / 地图内单位（STINIT + STINIT2 + EBINIT） ---------------------------------- */
+
+/** 地图内一个单位槽（单位 id 行 14dd<0x40+i> 的前/后字段）。字段语义见 docs/地图内单位.md。 */
+export interface MapUnit {
+  /** 单位名串地址 = 0x17ab6 + 单位槽寄存器 id；与 `units[].unitId` 同键，用于反查单位名。 */
+  unitRef: number;
+  /**
+   * 前部「是否可从刷怪点刷新」：`1` 可刷怪点刷出、`2` 疑似出击旗（待验证）、`null` 固定摆位/无此标记。
+   * （EBINIT 掉落/单位表之外，这块是 STINIT 每关的单位槽自己的放置/刷新属性。）
+   */
+  spawnFlag: number | null;
+  /** 前部「阵营」：`2` 敌方(红)、`3` 中立友方(黄绿)、`4` 中立敌方(黄)；`null` 未知。语义待验证。 */
+  faction: number | null;
+  /** 前部「放置坐标-行」（地图左上角为原点，1-based）；`null` 表示无固定位置。 */
+  row: number | null;
+  /** 前部「放置坐标-列」（地图左上角为原点，1-based）；`null` 表示无固定位置。 */
+  col: number | null;
+  /** 后部「等级下限」（`+0x1E`）；`null` 未知。 */
+  levelMin: number | null;
+  /** 后部「等级上限」（`+0x3C`，通常 = 下限 + 10）；`null` 未知。 */
+  levelMax: number | null;
+  /** 前/后其它尚未定义的字段（offset→值，作为 hex 字符串），保序显示用。 */
+  extra: { off: string; val: string }[];
+}
+
+/** 一张地图（关卡） */
+export interface MapData {
+  /** mapNo（`eq (local-int 0) (global-int b222) <mapNo>` 第三个参数，hex 字符串） */
+  mapNo: string;
+  name: string;
+  nameZh: string;
+  /** 出现该地图的源脚本文件名（如 STINIT.txt / $1$STINIT.txt） */
+  source: string;
+  /** 该地图内的单位槽（按 STINIT 中出现顺序） */
+  units: MapUnit[];
+}
 
 /** 各表计数与统计 */
 export interface MetadataCounts {
@@ -122,6 +157,10 @@ export interface MetadataCounts {
   unitsWithDrops: number;
   dropEntries: number;
   distinctDropItemIds: number;
+  maps: number;
+  mapUnitEntries: number;
+  mapUnitDistinctUnits: number;
+  mapSpawnableEntries: number;
 }
 
 /** 统一后的元数据（单一 `metadata.json`） */
@@ -136,4 +175,6 @@ export interface Metadata {
   /** 全部配方（type 1 物品 + type 2 建筑） */
   recipes: Recipe[];
   units: Unit[];
+  /** 全部地图（关卡）与其内单位槽 */
+  maps: MapData[];
 }

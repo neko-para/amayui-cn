@@ -2,7 +2,7 @@
  * 数据集：载入 `metadata.json` 并建立索引与搜索项。
  * 前端一次性持有全量数据，查询/反查/跳转均在内存完成（无后端/IPC）。
  */
-import type { Metadata, Item, Building, Unit, Recipe } from '../types/metadata';
+import type { Metadata, Item, Building, Unit, Recipe, MapData } from '../types/metadata';
 import type { EntityTag } from '../types/nav';
 
 /** 搜索项（Autocomplete 选项） */
@@ -14,12 +14,21 @@ export interface SearchEntry {
   sub: string; // 描述（单位：副标题；物品/设施：类型）
 }
 
+/** 某单位在某地图的一次出现（地图 + 该单位在此是否可重复刷新） */
+export interface MapAppearance {
+  map: MapData;
+  /** 该单位在该地图是否有“可刷新槽”（spawnFlag==1）。false = 固定/出击/摆位。 */
+  spawnable: boolean;
+}
+
 /** 载入后的索引集合 */
 export interface Dataset {
   metadata: Metadata;
   byItem: Map<number, Item>;
   byBuilding: Map<number, Building>;
   byUnit: Map<number, Unit>;
+  byMap: Map<string, MapData>;
+  byMapNum: Map<number, MapData>;
   /** 物品配方：产品 itemId → 配方（type=1） */
   recipeByItemProduct: Map<number, Recipe>;
   /** 建筑配方：产品 buildingId → 配方（type=2） */
@@ -28,6 +37,8 @@ export interface Dataset {
   recipesUsingItem: Map<number, Recipe[]>;
   /** 物品 itemId → 掉落它的单位 */
   unitsDropItem: Map<number, Unit[]>;
+  /** 单位 unitId → 出现它的地图（含该单位在每图是否可刷新，按地图名排序） */
+  mapsWithUnit: Map<number, MapAppearance[]>;
   search: SearchEntry[];
 }
 
@@ -40,9 +51,12 @@ export function buildDataset(md: Metadata): Dataset {
   const byItem = new Map<number, Item>();
   const byBuilding = new Map<number, Building>();
   const byUnit = new Map<number, Unit>();
+  const byMap = new Map<string, MapData>();
+  const byMapNum = new Map<number, MapData>();
   for (const i of md.items) byItem.set(i.id, i);
   for (const b of md.buildings) byBuilding.set(b.id, b);
   for (const u of md.units) byUnit.set(u.unitId, u);
+  for (const m of md.maps) { byMap.set(m.mapNo, m); byMapNum.set(parseInt(m.mapNo, 16), m); }
 
   const recipeByItemProduct = new Map<number, Recipe>();
   const recipeByBuildingProduct = new Map<number, Recipe>();
@@ -67,20 +81,42 @@ export function buildDataset(md: Metadata): Dataset {
     }
   }
 
+  // 单位 unitRef(=unit.unitId) → 出现它的地图（含该单位在每图是否可刷新；按 地图名 排序）
+  const mapsWithUnit = new Map<number, MapAppearance[]>();
+  for (const m of md.maps) {
+    // 统计该图内某单位是否有“可刷新槽”
+    const spawnableByUnit = new Map<number, boolean>();
+    for (const mu of m.units) {
+      const cur = spawnableByUnit.get(mu.unitRef) ?? false;
+      spawnableByUnit.set(mu.unitRef, cur || mu.spawnFlag === 1);
+    }
+    for (const [unitRef, spawnable] of spawnableByUnit) {
+      const arr = mapsWithUnit.get(unitRef);
+      const entry = { map: m, spawnable };
+      if (arr) arr.push(entry);
+      else mapsWithUnit.set(unitRef, [entry]);
+    }
+  }
+  for (const arr of mapsWithUnit.values()) arr.sort((a, b) => (a.map.nameZh || a.map.name).localeCompare(b.map.nameZh || b.map.name, 'zh'));
+
   const search: SearchEntry[] = [];
   for (const i of md.items) search.push({ kind: 'item', id: i.id, name: i.name, nameZh: i.nameZh, sub: '物品' });
   for (const b of md.buildings) search.push({ kind: 'building', id: b.id, name: b.name, nameZh: b.nameZh, sub: '设施' });
   for (const u of md.units) search.push({ kind: 'unit', id: u.unitId, name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
+  for (const m of md.maps) search.push({ kind: 'map', id: parseInt(m.mapNo, 16), name: m.name, nameZh: m.nameZh, sub: '地图' });
 
   return {
     metadata: md,
     byItem,
     byBuilding,
     byUnit,
+    byMap,
+    byMapNum,
     recipeByItemProduct,
     recipeByBuildingProduct,
     recipesUsingItem,
     unitsDropItem,
+    mapsWithUnit,
     search,
   };
 }
