@@ -1,0 +1,50 @@
+name: Deploy Toolkit to GitHub Pages (web-deploy)
+
+# 触发：push 到 main（及手动），将在 CI 构建 amayui-toolkit 并把 dist/ 提交到 web-deploy 分支。
+on:
+  push:
+    branches: [main]
+    paths: ['app/amayui-toolkit/**', 'src/**']   # 只在前端代码或数据源变化时构建
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and publish to web-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/amayui-toolkit/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app/amayui-toolkit
+        run: npm ci
+
+      # 生成 public/data/metadata.json（读工程根 src/ 权威数据源）并 Vite 构建 dist/
+      - name: Extract metadata + build
+        working-directory: app/amayui-toolkit
+        run: npm run build
+
+      # 把 dist/ 发布到独立的 web-deploy 分支根目录（纯产物分支）
+      - name: Publish dist to web-deploy branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: app/amayui-toolkit/dist
+          publish_branch: web-deploy
+          force_orphan: true          # 该分支仅保留产物（孤儿提交，无历史累积）
+          allow_empty_commit: false
+          commit_message: "Deploy amayui-toolkit (build ${{ github.sha }})"
