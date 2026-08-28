@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildDataset, querySearch, type Dataset } from '../services/dataset';
+import { buildDataset, querySearch, describeView, type Dataset } from '../services/dataset';
 import type { Metadata, MapData } from '../types/metadata';
 
 let ds: Dataset;
@@ -83,5 +83,34 @@ describe('数据一致性', () => {
   it('counts.maps 与实际地图数组一致', () => {
     expect(md.counts.maps).toBe(md.maps.length);
     expect(md.counts.mapUnitEntries).toBe(md.maps.reduce((s: number, m: MapData) => s + m.units.length, 0));
+  });
+});
+
+describe('describeView（历史条目）', () => {
+  it('物品单卡生成 key/label 且 kind=item', () => {
+    const e = describeView([{ kind: 'item', id: 1 }], ds)!;
+    expect(e.key).toBe('item:1');
+    expect(e.label).toContain('青铜导键');
+    expect(e.kind).toBe('item');
+  });
+
+  it('地图单卡生成 key/label 且 kind=map', () => {
+    const e = describeView([{ kind: 'map', mapNo: parseInt('54', 16) }], ds)!;
+    expect(e.key).toBe(`map:${parseInt('54', 16)}`);
+    expect(e.label).toContain('饥狼的黑曜湖');
+    expect(e.kind).toBe('map');
+  });
+
+  it('空 view 与 message 不生成条目', () => {
+    expect(describeView([], ds)).toBeNull();
+    expect(describeView([{ kind: 'message', text: 'hi' }], ds)).toBeNull();
+  });
+
+  it('不同目标 key 唯一；同一目标 key 相同（供去重）', () => {
+    const a = describeView([{ kind: 'unit', id: ds.metadata.units[0].unitId }], ds)!;
+    const b = describeView([{ kind: 'unit', id: ds.metadata.units[0].unitId }], ds)!;
+    const c = describeView([{ kind: 'item', id: 2 }], ds)!;
+    expect(a.key).toBe(b.key);
+    expect(a.key).not.toBe(c.key);
   });
 });

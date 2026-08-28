@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Dataset } from '../services/dataset';
-import { loadDataset } from '../services/dataset';
+import type { Dataset, ViewEntry } from '../services/dataset';
+import { loadDataset, describeView } from '../services/dataset';
 import type { View } from '../types/nav';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -12,6 +12,8 @@ interface AppState {
   /** 内存历史栈（当前视图 = history[pos]） */
   history: View[];
   pos: number;
+  /** 去重后的历史记录（最新在前），用于左侧列表 */
+  historyEntries: ViewEntry[];
   theme: ThemeMode;
   setTheme: (t: ThemeMode) => void;
   init: () => Promise<void>;
@@ -28,6 +30,7 @@ export const useStore = create<AppState>((set, get) => ({
   error: null,
   history: [INITIAL_VIEW],
   pos: 0,
+  historyEntries: [],
   theme: 'system',
 
   setTheme: (t) => set({ theme: t }),
@@ -44,9 +47,16 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   navigate: (cards) => {
-    const { history, pos } = get();
+    const { history, pos, dataset, historyEntries } = get();
+    // 1) 栈式：push 到当前位置之后
     const next = [...history.slice(0, pos + 1), cards];
-    set({ history: next, pos: next.length - 1 });
+    // 2) 去重历史记录：同一目标(entry.key)只保留最新一条，最新插入到顶部
+    const entry = dataset ? describeView(cards, dataset) : null;
+    let entries = historyEntries;
+    if (entry) {
+      entries = [entry, ...historyEntries.filter((e) => e.key !== entry.key)];
+    }
+    set({ history: next, pos: next.length - 1, historyEntries: entries });
   },
 
   goBack: () => {

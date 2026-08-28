@@ -3,7 +3,7 @@
  * 前端一次性持有全量数据，查询/反查/跳转均在内存完成（无后端/IPC）。
  */
 import type { Metadata, Item, Building, Unit, Recipe, MapData } from '../types/metadata';
-import type { EntityTag } from '../types/nav';
+import type { EntityTag, View, CardSpec, CardKind } from '../types/nav';
 
 /** 搜索项（Autocomplete 选项） */
 export interface SearchEntry {
@@ -126,6 +126,56 @@ export function querySearch(search: SearchEntry[], text: string): SearchEntry[] 
   const q = normalize(text.trim());
   if (!q) return [];
   return search.filter((e) => normalize(e.name).includes(q) || normalize(e.nameZh).includes(q));
+}
+
+/** 历史条目：展示标签 + 去重 key + 点击时重新跳转的目标 view */
+export interface ViewEntry {
+  /** 去重 key（同一目标只保留最新一条） */
+  key: string;
+  /** 展示标签（如「物品 · 青铜导键」） */
+  label: string;
+  /** 主卡片 kind（用于图标/挑色） */
+  kind: CardKind;
+  /** 点击时重新 navigate 的目标 */
+  view: View;
+}
+
+/**
+ * 把一条 View（通常是单卡片）反查为历史条目。
+ * 空 view → 保留为空态；首个非 message 卡片作为主目标。
+ */
+export function describeView(view: View, ds: Dataset): ViewEntry | null {
+  if (!view || view.length === 0) return null;
+  const first = view[0];
+  if (first.kind === 'message') return null;
+  const { key, label } = describeCard(first, ds);
+  return { key, label, kind: first.kind, view };
+}
+
+function describeCard(spec: CardSpec, ds: Dataset): { key: string; label: string } {
+  switch (spec.kind) {
+    case 'item': {
+      const it = ds.byItem.get(spec.id);
+      return { key: `item:${spec.id}`, label: `物品 · ${it?.nameZh || '#' + spec.id}` };
+    }
+    case 'unit': {
+      const u = ds.byUnit.get(spec.id);
+      return { key: `unit:${spec.id}`, label: `单位 · ${u?.nameZh || '#' + spec.id}` };
+    }
+    case 'building': {
+      const b = ds.byBuilding.get(spec.id);
+      return { key: `building:${spec.id}`, label: `设施 · ${b?.nameZh || '#' + spec.id}` };
+    }
+    case 'recipe': {
+      return { key: `recipe:${spec.productId}`, label: `配方 · #${spec.productId}` };
+    }
+    case 'map': {
+      const m = ds.byMapNum.get(spec.mapNo);
+      return { key: `map:${spec.mapNo}`, label: `地图 · ${m?.nameZh || '#' + spec.mapNo}` };
+    }
+    case 'message':
+      return { key: `message:${spec.text}`, label: spec.text };
+  }
 }
 
 /** 载入数据（fetch 静态资源） */

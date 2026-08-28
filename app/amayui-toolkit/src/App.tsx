@@ -7,6 +7,9 @@ import { ArrowBack, ArrowForward, Brightness4, Brightness7 } from '@mui/icons-ma
 import { useStore, selectView } from './store/useStore';
 import { SearchBar } from './components/SearchBar';
 import { CardList } from './components/CardList';
+import { HistorySidebar } from './components/HistorySidebar';
+
+const SIDEBAR_W = 272;
 
 export default function App() {
   const init = useStore((s) => s.init);
@@ -25,6 +28,8 @@ export default function App() {
   const muiTheme = useMemo(() => createTheme({ palette: { mode } }), [mode]);
 
   useEffect(() => { void init(); }, [init]);
+
+  const sidebar = <HistorySidebar />;
 
   return (
     <ThemeProvider theme={muiTheme}>
@@ -46,22 +51,29 @@ export default function App() {
           </Toolbar>
         </AppBar>
 
-        <Box component="main" sx={{
-          flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2,
-          p: { xs: 2, md: 3 }, maxWidth: 920, width: '100%', mx: 'auto',
-        }}>
-          {/* 上半：搜索区 */}
-          <SearchBar />
+        <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
+          {/* 左侧：历史记录（桌面固定，移动端抽屉） */}
+          <Box component="nav" sx={{
+            width: SIDEBAR_W, flexShrink: 0, borderRight: 1, borderColor: 'divider',
+            display: { xs: 'none', md: 'block' },
+          }}>{sidebar}</Box>
 
-          {error && <Alert severity="error">数据载入失败：{error}</Alert>}
-          {!dataset && !error && <LinearProgress />}
+          {/* 右侧：主体内容 */}
+          <Box component="main" sx={{
+            flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2,
+            p: { xs: 2, md: 3 }, maxWidth: 920, width: '100%', mx: 'auto',
+          }}>
+            <SearchBar />
 
-          {/* 下半：通用卡片容器（数据区） */}
-          {dataset && (
-            <Box sx={{ flexGrow: 1 }}>
-              <CardList cards={view} />
-            </Box>
-          )}
+            {error && <Alert severity="error">数据载入失败：{error}</Alert>}
+            {!dataset && !error && <LinearProgress />}
+
+            {dataset && (
+              <Box sx={{ flexGrow: 1 }}>
+                <CardList cards={view} />
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>
