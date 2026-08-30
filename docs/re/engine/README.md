@@ -16,6 +16,7 @@
 | [`03-opcode分发与解释器.md`](./03-opcode分发与解释器.md) | **opcode→handler 分发机制的最终结论**（一维函数指针表 + 解释器主循环 + 操作数访问原语 + 算术簇对照） |
 | [`05-操作数访问原语.md`](./05-操作数访问原语.md) | **`sub_41BF50`/`sub_41C300`（读 int/float 操作数）**：全类型 switch、`DEC` 异或+循环移位去混淆、0x8003/0x8009 整型数组批量 |
 | [`06-opcode到handler映射表.md`](./06-opcode到handler映射表.md) | **opcode→已知名称(age-shared)→本引擎 handler 全量表**（544 条）+ 具名助记符清单 + 回退默认 `sub_418E30` 清单 |
+| [`07-提取全局数据与定位this.md`](./07-提取全局数据与定位this.md) | **从运行进程提取 global 数据**：数据路径（`global_int_base`/`key`/`DEC` 间接+编码）+ 定位 `this` 的方案（hook ECX / dispatch 表指纹扫描）+ 打包壳/ASLR/DEC 坑 |
 
 ## 核心结论速览
 
