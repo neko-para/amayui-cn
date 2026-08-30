@@ -327,49 +327,49 @@ call label_000039a8
 sub (global-int 708001) (local-int 106) 1
 eq (local-int 113) (global-int 708001) 0
 jcc (local-int 113) ffffffff label_00001284
-call-script 51ee
+call-script 51ee  // INFOVO
 jmp label_000014a8
 
 label_00001284
 eq (local-int 113) (global-int 708001) 1
 jcc (local-int 113) ffffffff label_000012d4
-call-script 51ef
+call-script 51ef  // INFOCH
 jmp label_000014a8
 
 label_000012d4
 eq (local-int 113) (global-int 708001) 2
 jcc (local-int 113) ffffffff label_00001324
-call-script 51f0
+call-script 51f0  // INFOEN
 jmp label_000014a8
 
 label_00001324
 eq (local-int 113) (global-int 708001) 3
 jcc (local-int 113) ffffffff label_00001374
-call-script 51f1
+call-script 51f1  // INFOIT
 jmp label_000014a8
 
 label_00001374
 eq (local-int 113) (global-int 708001) 4
 jcc (local-int 113) ffffffff label_000013c4
-call-script 51f2
+call-script 51f2  // INFOOF
 jmp label_000014a8
 
 label_000013c4
 eq (local-int 113) (global-int 708001) 5
 jcc (local-int 113) ffffffff label_00001414
-call-script 51f3
+call-script 51f3  // INFOPL
 jmp label_000014a8
 
 label_00001414
 eq (local-int 113) (global-int 708001) 6
 jcc (local-int 113) ffffffff label_00001464
-call-script 51f4
+call-script 51f4  // INFOSK
 jmp label_000014a8
 
 label_00001464
 eq (local-int 113) (global-int 708001) 7
 jcc (local-int 113) ffffffff label_000014a8
-call-script 51f5
+call-script 51f5  // INFOBA
 
 label_000014a8
 call label_00002b5c

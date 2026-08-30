@@ -574,8 +574,8 @@ sub (local-int 41e) (local-int 3fa) a
 eq (local-int 950) (local-int 8f9) 0
 jcc (local-int 950) ffffffff label_0000234c
 mov (global-int 9358d) (local-int 41e)
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 call label_00002bfc
 call label_00004148
 call label_00006098
@@ -619,8 +619,8 @@ and (local-int 952) (local-int 950) (local-int 951)
 eq (local-int 954) (local-int 41e) (global-int 9358d)
 or (local-int 953) (local-int 952) (local-int 954)
 jcc (local-int 953) ffffffff label_00002698
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 call label_00002bfc
 call label_00004148
 call label_0000790c
@@ -641,8 +641,8 @@ u00414A60 (local-ptr 0) (local-ptr 4)
 copy-to-global (local-ptr 0) 258
 eq (local-int 950) (local-int 41e) (global-int 9358d)
 jcc (local-int 950) ffffffff label_000027f0
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 call label_00002bfc
 call label_00004148
 call label_0000790c
@@ -674,8 +674,8 @@ u00414A60 (local-ptr 0) (global-int 935f2)
 lookup-array-2d (local-ptr 4) (global-int 935f2) (global-int 9358d) 258 0
 u00414A60 (local-ptr 1) (local-ptr 4)
 u0041A510 (local-ptr 0) (local-ptr 1) 258
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 call label_00002bfc
 call label_00003200
 call label_00004148
@@ -1631,7 +1631,7 @@ lookup-array (local-ptr 3) (local-int 552) (local-int 951)
 mov (global-int 707ddd) (local-ptr 3)
 mov (global-int 707ffa) 27c
 add (global-int 707ffb) (local-int 414) 3
-call-script 5187
+call-script 5187  // DRAWLINKTIP
 jmp label_000077ec
 
 label_00007694
@@ -1646,7 +1646,7 @@ lookup-array (local-ptr 3) (local-int 425) (local-int 951)
 mov (global-int 703e2e) (local-ptr 3)
 mov (global-int 707ffa) 27c
 add (global-int 707ffb) (local-int 414) 3
-call-script 5157
+call-script 5157  // DRAWPLANTTIP
 
 label_000077ec
 ne (local-int 950) (global-int 703e2e) (local-int 423)
@@ -1841,8 +1841,8 @@ ret
 
 label_000086b8
 mov (global-int 9358d) 0
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 u00420270 1d4c0 2710
 u00420270 1fbd0 3e8
 u00420480 c0

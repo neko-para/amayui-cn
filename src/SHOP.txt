@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { fe44 1 2 6 1 2 }
 ====
 
-call-script 142f
+call-script 142f  // SETEQUIP
 copy-local-array (local-int 2364) [441 2a1 40d 3d9 2d5 33d 309 371 3a5]
 copy-local-array (local-int 25d) [1 ffffffff 2 8]
 copy-local-array (local-int 261) [ffffffff ffffffff 0 8]
@@ -600,7 +600,7 @@ play-sound-effect 39a5 1
 u0041D050 1
 u00420270 190 640
 mov (global-int 93465) 3
-call-script 5111
+call-script 5111  // FELLOW
 sub (local-int 3f7) 0 1
 call label_00001214
 call label_00003600
@@ -1122,13 +1122,13 @@ mov (global-int 70801f) 3
 mov (global-int 708020) (local-int 41a)
 lookup-array (local-ptr 4) (local-int ee96) (local-int 41a)
 mov (global-int 708021) (local-ptr 4)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_000044fc
 mov (global-int 546e03) (local-int 41a)
 lookup-array (local-ptr 4) (local-int ee96) (local-int 41a)
 mov (global-int 546e04) (local-ptr 4)
-call-script 77a
+call-script 77a  // ADDITEM
 jmp label_0000467c
 
 label_00004558
@@ -1139,14 +1139,14 @@ mov (global-int 708020) (local-int 41a)
 lookup-array (local-ptr 3) (local-int ee96) (local-int 41a)
 sub (local-int fe3d) 0 (local-ptr 3)
 mov (global-int 708021) (local-int fe3d)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00004610
 mov (global-int 546e03) (local-int 41a)
 lookup-array (local-ptr 3) (local-int ee96) (local-int 41a)
 sub (local-int fe3d) 0 (local-ptr 3)
 mov (global-int 546e04) (local-int fe3d)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_0000467c
 jmp label_0000435c

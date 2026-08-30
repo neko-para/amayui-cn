@@ -159,7 +159,7 @@ lookup-array (local-ptr 0) (global-int 90d3b) (global-int 546e03)
 mov (global-int 519ae0) (local-ptr 0)
 
 label_00000c5c
-call-script 50f0
+call-script 50f0  // CALCARM
 u0041A510 (global-int 519ae9) (local-int d) d
 u0041A510 (global-int 519ae1) (local-int 1a) 8
 mov (local-int 22) (global-int 519af6)
@@ -167,7 +167,7 @@ mov (local-int 23) (global-int 519af8)
 lt (local-int 154) (global-int 519ae0) (global-int 707ffd)
 jcc (local-int 154) ffffffff label_00000d20
 mov (global-int 519ae0) (global-int 707ffd)
-call-script 50f0
+call-script 50f0  // CALCARM
 
 label_00000d20
 sub (local-int 2) (global-int 707ffa) 100
@@ -729,7 +729,7 @@ jcc (local-int 155) ffffffff label_000035e4
 mov (global-int 519ae0) (global-int 707ffd)
 
 label_000035e4
-call-script 50f0
+call-script 50f0  // CALCARM
 mov (local-int 24) 0
 mov (local-int 5) 1
 jmp label_00003640

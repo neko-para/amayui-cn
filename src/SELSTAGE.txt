@@ -625,8 +625,8 @@ lookup-array (local-ptr 2) (local-int 33bd) (local-int 37a6)
 jcc (local-ptr 2) ffffffff label_00002d9c
 lookup-array (local-ptr 2) (local-int 33bd) (local-int 37a6)
 mov (global-int b222) (local-ptr 2)
-call-script 510a
-call-script 50ee
+call-script 510a  // SETSTAGE
+call-script 50ee  // CHECKMISSION
 mov (local-int 7e06) 1
 jmp label_00002688
 
@@ -1105,7 +1105,7 @@ u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "必須ユニットが同行していません|必需单位未同行"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00000990
 ret
 
@@ -1151,7 +1151,7 @@ jmp label_0000489c
 label_0000495c
 lookup-array (local-ptr 2) (global-int 14ecb0) (local-int 37ab)
 mov (global-int f8c43) (local-ptr 2)
-call-script 512e
+call-script 512e  // ADDPROG
 jmp label_00004a70
 
 label_000049a4
@@ -1159,7 +1159,7 @@ play-sound-effect 39a5 1
 u0041D050 1
 u00420270 1d4c0 3e8
 mov (global-int b222) (local-int 37ab)
-call-script 5188
+call-script 5188  // ORGANIZE
 call label_00000990
 ne (local-int 7e0c) (global-int 0) 4
 jcc (local-int 7e0c) ffffffff label_00004a70
@@ -2337,5 +2337,5 @@ exit
 exit
 
 label_0000ac0c
-call-script 512f
+call-script 512f  // SETADVFLAG
 ret

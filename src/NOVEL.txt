@@ -85,7 +85,7 @@ jcc (global-int 139a) ffffffff label_0000064c
 mov (global-int 1399) 2
 
 label_0000064c
-call-script 3a
+call-script 3a  // SETCHARM
 mov (global-int 139d) 0
 mov (global-int 139f) 0
 mov (global-int 13a0) 0
@@ -331,7 +331,7 @@ draw-texture (local-int 0) 11 0 97 444 9a 5a 229
 
 label_00001670
 jcc (global-int 1399) ffffffff label_00001698
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_00001698
 ret
@@ -441,7 +441,7 @@ exit
 
 label_00001ef8
 mov (global-int 4fdb) 0
-call-script 47
+call-script 47  // SETWEATHER
 ret
 exit
 

@@ -133,7 +133,7 @@ eq (local-int a1) (global-int 139b) 0
 and (local-int a2) (local-int a0) (local-int a1)
 jcc (local-int a2) ffffffff label_00000978
 mov (global-int 4) 0
-call-script 51c1
+call-script 51c1  // BUNKIMOVE
 
 label_00000978
 u00416200
@@ -506,7 +506,7 @@ label_00001e84
 sub (global-int f801b) 0 1
 
 label_00001ea0
-call-script 2f
+call-script 2f  // MENU
 eq (local-int 9f) (global-int f801b) 0
 jcc (local-int 9f) ffffffff label_00001f04
 mov (local-int 9) (global-int f8c50)
@@ -819,7 +819,7 @@ sub (local-int 9) 0 1
 call label_00003508
 u00416200
 mov (global-int 4) 1
-call-script 51c1
+call-script 51c1  // BUNKIMOVE
 
 label_00003c90
 u00420270 1adb0 7d0
@@ -941,7 +941,7 @@ draw-texture (local-int 9f) 11 0 97 444 9a 5a 229
 
 label_00004368
 jcc (global-int 1399) ffffffff label_00004390
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_00004390
 ret

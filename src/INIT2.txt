@@ -63,46 +63,46 @@ copy-local-array (global-int 510022) [c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 3e7 c8 c8 c8
 copy-local-array (global-int 51002f) [ffffff9d ffffff9d 0 0 0 0 0 0 1 0 1 0 0 0]
 copy-local-array (global-int 6ff5ad) [0 2 2 1 1 1 1 7 5 5 5 6 6 4 4 3 3 3 3 3 3 3 3 3 3 3 3]
 copy-local-array (global-int 5108a4) [5a5a5a 68ff aa0000 24aa00 aa9000]
-call-script 51fc
-call-script 51fd
-call-script 51fe
-call-script 51ff
-call-script 5200
-call-script 5201
-call-script 5202
-call-script 5203
-call-script 5204
-call-script 5205
-call-script 5206
-call-script 5207
-call-script 5208
-call-script 5209
-call-script 520a
-call-script 520b
-call-script 520c
-call-script 520d
-call-script 520e
-call-script 520f
-call-script 5210
-call-script 5211
-call-script 5212
-call-script 5213
-call-script 5214
-call-script 5215
-call-script 5216
-call-script 5217
-call-script 5218
-call-script 5219
-call-script 521a
-call-script 521b
-call-script 521c
-call-script 521d
-call-script 521e
-call-script 521f
-call-script 5220
-call-script 5221
-call-script 5222
-call-script 5223
+call-script 51fc  // SCINIT
+call-script 51fd  // CTINIT
+call-script 51fe  // PLINIT
+call-script 51ff  // AMINIT2
+call-script 5200  // WDINIT
+call-script 5201  // LKINIT
+call-script 5202  // DPINIT
+call-script 5203  // ALINIT
+call-script 5204  // IMINIT
+call-script 5205  // RCINIT
+call-script 5206  // SHINIT2
+call-script 5207  // EBINIT
+call-script 5208  // CNINIT
+call-script 5209  // ITINIT
+call-script 520a  // SKINIT
+call-script 520b  // ILINIT
+call-script 520c  // AFINIT
+call-script 520d  // OFINIT
+call-script 520e  // DGINIT
+call-script 520f  // LAINIT
+call-script 5210  // OBINIT
+call-script 5211  // RTINIT
+call-script 5212  // STINIT2
+call-script 5213  // HAINIT
+call-script 5214  // DIINIT
+call-script 5215  // CDINIT2
+call-script 5216  // MIINIT
+call-script 5217  // CVINIT
+call-script 5218  // OPINIT1
+call-script 5219  // OPINIT2
+call-script 521a  // GSINIT
+call-script 521b  // EUINIT
+call-script 521c  // CGINIT
+call-script 521d  // SPINIT
+call-script 521e  // MUINIT
+call-script 521f  // FAINIT
+call-script 5220  // VIINIT
+call-script 5221  // CIINIT
+call-script 5222  // BIINIT
+call-script 5223  // BTANINIT2
 mov (global-int 708996) 5224
 mov (global-int 7089b6) 5225
 mov (global-int 7089f6) 5226
@@ -164,23 +164,23 @@ jmp label_00000998
 
 label_00000b14
 jcc (global-int b226) ffffffff label_00000b84
-call-script 510a
-call-script 5128
-call-script 5124
-call-script 511a
-call-script 510f
-call-script 51d0
+call-script 510a  // SETSTAGE
+call-script 5128  // SETMAPTEX
+call-script 5124  // SETHALLTEX
+call-script 511a  // SETOBJ
+call-script 510f  // DRAWMAP
+call-script 51d0  // RESETMAPAN
 jmp label_00000bb8
 
 label_00000b84
 jcc (global-int 9346a) ffffffff label_00000bb8
-call-script 5170
-call-script 51d1
+call-script 5170  // SETREIGNTEX
+call-script 51d1  // RESETREIGNAN
 
 label_00000bb8
 eq (local-int 1) (global-int 0) 1
 jcc (local-int 1) ffffffff label_00000bfc
-call-script 47
+call-script 47  // SETWEATHER
 
 label_00000bfc
 mov (global-int f7ff1) 1

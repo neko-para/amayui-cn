@@ -105,7 +105,7 @@ eq (local-int 3) (global-int 5cd87) 1
 gr (local-int 4) (global-int 546e04) 0
 and (local-int 5) (local-int 3) (local-int 4)
 jcc (local-int 5) ffffffff label_00000a80
-call-script 50ee
+call-script 50ee  // CHECKMISSION
 mov (local-int 2) 0
 jmp label_000008e4
 

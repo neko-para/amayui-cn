@@ -49,10 +49,10 @@ label_00000380
 jmp label_00000164
 
 label_0000038c
-call-script 50ed
+call-script 50ed  // CALCREVISE
 eq (local-int 4) (global-int 519af9) (global-int b225)
 jcc (local-int 4) ffffffff label_000003dc
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_000003dc
 exit

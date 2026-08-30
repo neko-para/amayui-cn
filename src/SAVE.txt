@@ -887,7 +887,7 @@ add (global-int f8dfc) (global-int f8dfc) 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "アペンドデータをインストールしてください|请安装追加数据"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 mov (local-int e) 3
 ret
 
@@ -912,7 +912,7 @@ lookup-array (local-ptr 0) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 0) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 21c6) (global-int f8dfe) 1
 jcc (local-int 21c6) ffffffff label_000039cc
 mov (local-int e) 3
@@ -943,7 +943,7 @@ u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "自動セーブ枠とクイックセーブ枠には任意セーブできません|无法对自动保存位与快速保存位进行手动保存"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 mov (local-int e) 3
 ret
 
@@ -965,7 +965,7 @@ lookup-array (local-ptr 0) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 0) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 21c6) (global-int f8dfe) 1
 jcc (local-int 21c6) ffffffff label_00003db0
 mov (local-int e) 3
@@ -1179,7 +1179,7 @@ lookup-array (local-ptr 0) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 0) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 21c6) (global-int f8dfe) 1
 jcc (local-int 21c6) ffffffff label_00004f38
 mov (local-int e) 3
@@ -1378,7 +1378,7 @@ u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "自動セーブ枠とクイックセーブ枠にはコピーできません|无法复制到自动保存位与快速保存位"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 mov (local-int e) 3
 ret
 
@@ -1409,7 +1409,7 @@ lookup-array (local-ptr 0) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 0) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 21c6) (global-int f8dfe) 1
 jcc (local-int 21c6) ffffffff label_00005f98
 mov (local-int e) 3
@@ -1434,7 +1434,7 @@ lookup-array (local-ptr 0) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 0) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 21c6) (global-int f8dfe) 1
 jcc (local-int 21c6) ffffffff label_000061ac
 mov (local-int e) 3

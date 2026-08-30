@@ -38,7 +38,7 @@ jcc (local-int 9cf) label_00000ec0 ffffffff
 lookup-array (local-ptr 0) (global-int 6f158) (global-int 519af9)
 lookup-array (local-ptr 1) (global-int 14dcaa) (global-int 519afa)
 mov (local-ptr 0) (local-ptr 1)
-call-script 4f99
+call-script 4f99  // SETEN
 lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
 bit-set (local-ptr 0) 0
 lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
@@ -185,7 +185,7 @@ label_00000cf8
 u00417FC0 1f
 eq (local-int 9cf) (local-int 9ce) 0
 jcc (local-int 9cf) ffffffff label_00000d54
-call-script 50e7
+call-script 50e7  // REMOVECH
 jmp label_00000ec0
 
 label_00000d54

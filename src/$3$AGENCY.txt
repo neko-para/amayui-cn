@@ -592,7 +592,7 @@ u0041D050 1
 call label_00006a00
 sub (local-int 2b4a) 0 1
 set-texture 5102 c2 (local-int 2b4a)
-call-script 50f8
+call-script 50f8  // STALL
 u00420480 c2
 sub (local-int 3f7) 0 1
 call label_00001304
@@ -784,7 +784,7 @@ ret
 
 label_00002eb4
 mov (global-int 6c477f) 0
-call-script 5120
+call-script 5120  // CHECKFIT
 mov (global-int 6c4b68) 0
 u0041ECB0 (local-int 41d) (global-int 5298e4) (local-int 805) 3e8
 mov (local-int 407) 0

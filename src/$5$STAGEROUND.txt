@@ -70,7 +70,7 @@ jcc (local-int 16) ffffffff label_00000550
 mov (global-int 519afa) 2
 mov (global-int f8c39) 4
 mov (global-int f8c3a) c
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (local-int 7) 1
 
 label_00000550
@@ -82,7 +82,7 @@ jcc (local-int 16) ffffffff label_00000638
 mov (global-int 519afa) 3
 mov (global-int f8c39) a
 mov (global-int f8c3a) c
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (local-int 7) 1
 
 label_00000638
@@ -94,7 +94,7 @@ jcc (local-int 16) ffffffff label_00000720
 mov (global-int 519afa) 4
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 12
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (local-int 7) 1
 
 label_00000720
@@ -106,7 +106,7 @@ jcc (local-int 16) ffffffff label_00000808
 mov (global-int 519afa) 5
 mov (global-int f8c39) a
 mov (global-int f8c3a) 12
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (local-int 7) 1
 
 label_00000808
@@ -115,7 +115,7 @@ eq (local-int 13) (global-int 0) 4
 eq (local-int 14) (global-int 4fd9) 1
 or (local-int 15) (local-int 13) (local-int 14)
 jcc (local-int 15) ffffffff label_000008a0
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000008a0
 exit

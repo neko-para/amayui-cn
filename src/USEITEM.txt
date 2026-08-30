@@ -154,7 +154,7 @@ lookup-array-2d (local-ptr 2) (global-int 71de0) (global-int 546e00) 5 (local-in
 mov (local-ptr 2) 0
 lookup-array-2d (local-ptr 2) (global-int 6205c) (global-int 519af9) 5 (local-int 0)
 mov (local-ptr 2) 0
-call-script 5135
+call-script 5135  // EQUIP
 bit-set (local-int 4b) 1
 
 label_00000b28
@@ -284,7 +284,7 @@ jcc (local-ptr 2) ffffffff label_00001768
 mov (global-int 6da5f2) (local-int 0)
 lookup-array-2d (local-ptr 2) (global-int 570de5) (global-int 546e03) 1e (local-int 0)
 mov (global-int 6da5f3) (local-ptr 2)
-call-script 50ec
+call-script 50ec  // ADDILLSUB
 lookup-array-2d (local-ptr 2) (global-int 6f1ee) (global-int 519af9) 1e (local-int 0)
 lookup-array (local-ptr 5) (local-int f) (local-int 0)
 ne (local-int 4f) (local-ptr 2) (local-ptr 5)
@@ -350,7 +350,7 @@ u00414A60 (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 62764) (global-int 519af9) d 0
 u00414A60 (local-ptr 1) (local-ptr 2)
 u0041A510 (local-ptr 0) (local-ptr 1) d
-call-script 50ed
+call-script 50ed  // CALCREVISE
 
 label_00001b6c
 jmp label_000017cc
@@ -366,7 +366,7 @@ u00414A60 (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 62764) (global-int 519af9) d 0
 u00414A60 (local-ptr 1) (local-ptr 2)
 u0041A510 (local-ptr 0) (local-ptr 1) d
-call-script 50ed
+call-script 50ed  // CALCREVISE
 
 label_00001c64
 eq (local-int 4c) (local-int 4b) 0

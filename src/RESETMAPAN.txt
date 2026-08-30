@@ -4,8 +4,8 @@ local_vars = { 4 1 1 1 1 1 }
 ====
 
 u00420270 3a98 32
-call-script 5117
-call-script 5129
+call-script 5117  // DRAWOBJ
+call-script 5129  // DRAWCHALL
 and (local-int 1) (global-int a9d6) 2
 jcc (local-int 1) ffffffff label_00000170
 mov (local-int 0) 0

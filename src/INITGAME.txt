@@ -8,11 +8,11 @@ jcc (local-int 0) ffffffff label_000000c4
 mov (global-int 70801f) 0
 mov (global-int 708020) 1
 add (global-int 708021) 2 0
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_000000c4
 mov (global-int 546ddf) 1
 mov (global-int 546de7) 0
 mov (global-int 546dff) 1
-call-script 5e
+call-script 5e  // UNITECH
 exit

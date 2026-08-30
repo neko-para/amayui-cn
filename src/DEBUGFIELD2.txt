@@ -19,13 +19,13 @@ jcc (local-int 1) ffffffff label_00000180
 mov (global-int 70801f) 0
 mov (global-int 708020) (local-int 0)
 add (global-int 708021) 2 0
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00000180
 mov (global-int 546ddf) (local-int 0)
 mov (global-int 546de7) 0
 mov (global-int 546dff) 1
-call-script 5e
+call-script 5e  // UNITECH
 
 label_000001c8
 jmp label_0000005c
@@ -48,12 +48,12 @@ jcc (local-int 1) ffffffff label_0000031c
 mov (global-int 70801f) 3
 mov (global-int 708020) (local-int 0)
 mov (global-int 708021) 32
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_0000031c
 mov (global-int 546e03) (local-int 0)
 mov (global-int 546e04) 32
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_00000350
 jmp label_000001f4

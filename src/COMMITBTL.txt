@@ -187,7 +187,7 @@ eq (local-int 1b) (global-int 0) 5
 jcc (local-int 1b) ffffffff label_00000d00
 mov (global-int 519af9) (local-int 9)
 mov (global-int 708023) (global-int 6f341a)
-call-script 39a1
+call-script 39a1  // ADDEXP
 
 label_00000d00
 and (local-int 1b) (global-int 928a6) 4
@@ -378,7 +378,7 @@ eq (local-int 1b) (global-int 0) 5
 jcc (local-int 1b) ffffffff label_00001ba4
 jcc (global-int 701543) ffffffff label_00001ba4
 mov (global-int 701544) 0
-call-script 39a2
+call-script 39a2  // REWARD
 
 label_00001ba4
 mov (local-int 0) 0

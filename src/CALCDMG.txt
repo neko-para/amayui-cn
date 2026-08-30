@@ -972,7 +972,7 @@ add (local-int fe4) (local-ptr 5) (local-ptr 1)
 lookup-array-2d (local-ptr a) (global-int 6dfdf7) (local-int d) 1e (global-int 6da5f2)
 add (global-int 6da5f3) (local-int fe4) (local-ptr a)
 jcc (global-int 6da5f3) ffffffff label_000051d4
-call-script 39a0
+call-script 39a0  // CALCILL
 
 label_000051d4
 jmp label_0000509c
@@ -986,7 +986,7 @@ or (local-int fe2) (local-int fe4) (local-ptr a)
 jcc (local-int fe2) ffffffff label_000052ec
 mov (global-int 6da5f2) 1
 mov (global-int 6da5f3) 1
-call-script 39a0
+call-script 39a0  // CALCILL
 
 label_000052ec
 lookup-array-2d (local-ptr 5) (global-int 6f246f) (global-int 6f2466) 3e8 a6

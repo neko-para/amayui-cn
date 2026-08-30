@@ -22,7 +22,7 @@ label_00000194
 lookup-array (local-ptr 2) (global-int 6f158) (global-int 519af9)
 eq (local-int 22) (local-ptr 2) 1
 jcc (local-int 22) ffffffff label_00000200
-call-script 50f1
+call-script 50f1  // CALCOUTFIT
 jmp label_00000214
 
 label_00000200
@@ -94,7 +94,7 @@ lookup-array (local-ptr 2) (local-int 3) (global-int 6da5f2)
 sub (global-int 6da5f3) (local-ptr 1) (local-ptr 2)
 
 label_00000750
-call-script 50ec
+call-script 50ec  // ADDILLSUB
 jmp label_000002a4
 
 label_00000768

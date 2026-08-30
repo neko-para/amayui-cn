@@ -97,7 +97,7 @@ mov (local-ptr 1) (local-int 40f)
 lookup-array (local-ptr 1) (global-int 6f0f4) (global-int 92894)
 lookup-array (local-ptr 2) (local-int 811) (local-int 40f)
 mov (local-ptr 1) (local-ptr 2)
-call-script 3992
+call-script 3992  // CALCBTPARAM
 call label_00005018
 mov (local-int 3f5) 0
 mov (local-int 3f3) 0
@@ -469,7 +469,7 @@ mov (local-ptr 1) (local-int 40f)
 lookup-array (local-ptr 1) (global-int 6f0f4) (global-int 92894)
 lookup-array (local-ptr 2) (local-int 811) (local-int 40f)
 mov (local-ptr 1) (local-ptr 2)
-call-script 3992
+call-script 3992  // CALCBTPARAM
 call label_00005018
 
 label_00001bb4
@@ -553,20 +553,20 @@ jmp label_00002214
 
 label_00002138
 mov (global-int 519af9) (global-int 92894)
-call-script 39a6
+call-script 39a6  // CALCSCOPE
 mov (global-int 6f2465) 0
-call-script 39a7
+call-script 39a7  // BTRTN
 lookup-array (local-ptr 1) (global-int 6f0f4) (global-int 92894)
 mov (local-int bf9) (local-ptr 1)
 jcc (local-int 425) ffffffff label_00002214
 mov (global-int 6f2465) (local-int 425)
-call-script 39a7
+call-script 39a7  // BTRTN
 lookup-array (local-ptr 1) (global-int 6f0f4) (global-int 92894)
 mov (local-int bfa) (local-ptr 1)
 
 label_00002214
 mov (global-int 519af9) (global-int 92895)
-call-script 39a6
+call-script 39a6  // CALCSCOPE
 lookup-array (local-ptr 1) (global-int 5afe2) (local-int 425)
 mov (local-int 427) (local-ptr 1)
 lookup-array-2d (local-ptr 1) (global-int 59fdf) (global-int 6f341d) 20 (global-int 6f341c)
@@ -878,7 +878,7 @@ mov (local-ptr 1) (local-int 40f)
 lookup-array (local-ptr 1) (global-int 6f0f4) (global-int 61c73)
 lookup-array (local-ptr 2) (local-int 811) (local-int 40f)
 mov (local-ptr 1) (local-ptr 2)
-call-script 3992
+call-script 3992  // CALCBTPARAM
 add (local-int fe8) 1d4c0 12c
 add (local-int fe9) (local-int fe8) (local-int 402)
 draw-texture (local-int fe9) 49 0 760 c9 1b 330 (local-int 411)

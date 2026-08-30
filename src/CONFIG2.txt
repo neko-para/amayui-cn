@@ -811,14 +811,14 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00000d44
 eq (local-int 193d) (global-int f8dfe) 1
 jcc (local-int 193d) ffffffff label_00003360
 ret
 
 label_00003360
-call-script 51df
+call-script 51df  // INITCONFIG4
 call label_00005b1c
 call label_00004da4
 ret
@@ -845,18 +845,18 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00000d44
 eq (local-int 193d) (global-int f8dfe) 1
 jcc (local-int 193d) ffffffff label_000035d8
 ret
 
 label_000035d8
-call-script 51dc
-call-script 51d6
-call-script 51d8
-call-script 51da
-call-script 51db
+call-script 51dc  // INITCONFIG
+call-script 51d6  // INITREGMES
+call-script 51d8  // INITREGSOUND
+call-script 51da  // INITREGINPUT
+call-script 51db  // CHECKCONFIG
 call label_00005b1c
 call label_00004da4
 ret
@@ -895,7 +895,7 @@ play-sound-effect 39a5 1
 u0041D050 1
 call label_00006c24
 mov (global-int 14acda) (local-int 7ff)
-call-script 51e0
+call-script 51e0  // CONFIGCV
 sub (local-int 7e0) 0 1
 call label_00000d44
 call label_00004da4

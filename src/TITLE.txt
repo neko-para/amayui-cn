@@ -316,7 +316,7 @@ jmp label_00001fb8
 play-sound-effect 32 1
 u0041D050 1
 call label_00003874
-call-script 526b
+call-script 526b  // GAMESTART
 eq (local-int 40d) (global-int 0) 0
 jcc (local-int 40d) ffffffff label_00001220
 call label_000024b8
@@ -332,7 +332,7 @@ play-sound-effect 32 1
 u0041D050 1
 mov (global-int 3f50) 1
 mov (global-int f7ff0) 1
-call-script 33
+call-script 33  // SAVE
 mov (global-int 3f50) 0
 mov (local-int 3fc) 2
 jmp label_00001fb8
@@ -362,16 +362,16 @@ u00416270
 u00420270 30d40 1
 u00415BF0
 call label_0000384c
-call-script 526c
+call-script 526c  // ROOM
 jmp label_00001fb8
 play-sound-effect 32 1
 u0041D050 1
-call-script 34
+call-script 34  // CONFIG
 mov (local-int 3fc) 3
 jmp label_00001fb8
 play-sound-effect 32 1
 u0041D050 1
-call-script 37
+call-script 37  // QUIT
 set-string (global-string e3a) "デバッグメニュー"
 sub (global-int f8df8) 0 1
 lookup-array (local-string-ptr 0) (global-string d5e) (global-int f8c50)
@@ -435,11 +435,11 @@ sub (local-ptr 1) 0 1
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 mov (global-int f8df9) 5
-call-script 38
+call-script 38  // BUNKI
 mouse_callback 10 label_00000460
 gre (local-int 40d) (global-int f8c52) 0
 jcc (local-int 40d) ffffffff label_00001fac
-call-script 51e4
+call-script 51e4  // INITGAME
 u00427C00
 u00427FD0 0 712
 u00427FD0 1 712
@@ -473,27 +473,27 @@ mov (global-int 1394) 4f98
 mov (local-int 3fc) 1
 jmp label_00001fac
 mov (global-int 0) 3
-call-script 526d
+call-script 526d  // DEBUGREIGN
 mov (local-int 3fc) 1
 jmp label_00001fac
 mov (global-int 0) 4
-call-script 526e
+call-script 526e  // DEBUGFIELD
 mov (local-int 3fc) 1
 jmp label_00001fac
 mov (global-int 0) 4
-call-script 526f
+call-script 526f  // DEBUGFIELD2
 mov (local-int 3fc) 1
 jmp label_00001fac
 mov (global-int 708ad7) 1
-call-script 5270
-call-script 511f
+call-script 5270  // DEBUGBTL
+call-script 511f  // BTL
 mov (global-int 708ad7) 0
 mov (local-int 3fc) 3
 jmp label_00001fac
 mov (global-int 708ad7) 2
-call-script 5270
-call-script 5271
-call-script 511f
+call-script 5270  // DEBUGBTL
+call-script 5271  // DEBUGANIME
+call-script 511f  // BTL
 mov (global-int 708ad7) 0
 mov (local-int 3fc) 3
 jmp label_00001fac

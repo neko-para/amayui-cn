@@ -415,7 +415,7 @@ ret
 label_00001924
 eq (local-int 245) (local-int 7) 0
 jcc (local-int 245) ffffffff label_00001998
-call-script 51c8
+call-script 51c8  // INITCHARM
 call label_00002aec
 call label_00003aec
 call label_00002214
@@ -1127,7 +1127,7 @@ label_00004e10
 ret
 
 label_00004e14
-call-script 46
+call-script 46  // DRAWCHARM
 u00420270 1d4c0 12c
 eq (local-int 245) (global-int 0) 1
 eq (local-int 246) (global-int 0) 6

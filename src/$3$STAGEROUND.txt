@@ -19,19 +19,19 @@ mov (global-int f8c3a) 7
 mov (global-int f8c3b) 14
 mov (global-int f8c3c) 8
 mov (global-int 510cfa) 1b
-call-script 2fd8
+call-script 2fd8  // SETLAND
 mov (global-int f8c39) 8
 mov (global-int f8c3a) d
 mov (global-int f8c3b) b
 mov (global-int f8c3c) e
 mov (global-int 510cfa) 1b
-call-script 2fd8
+call-script 2fd8  // SETLAND
 mov (global-int f8c39) e
 mov (global-int f8c3a) d
 mov (global-int f8c3b) f
 mov (global-int f8c3c) e
 mov (global-int 510cfa) 1b
-call-script 2fd8
+call-script 2fd8  // SETLAND
 jmp label_0000039c
 
 label_00000274
@@ -40,24 +40,24 @@ mov (global-int f8c39) 11
 mov (global-int f8c3a) 6
 mov (global-int f8c3b) 14
 mov (global-int f8c3c) 9
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) 8
 mov (global-int f8c3a) c
 mov (global-int f8c3b) b
 mov (global-int f8c3c) f
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) c
 mov (global-int f8c3a) 6
 mov (global-int f8c3b) f
 mov (global-int f8c3c) e
-call-script 2c90
+call-script 2c90  // RESETLAND
 
 label_0000039c
 eq (local-int 13) (global-int 0) 4
 eq (local-int 14) (global-int 4fd9) 1
 or (local-int 15) (local-int 13) (local-int 14)
 jcc (local-int 15) ffffffff label_00000418
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00000418
 exit

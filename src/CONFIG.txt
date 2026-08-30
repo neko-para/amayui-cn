@@ -50,11 +50,11 @@ label_0000035c
 call label_00000518
 eq (local-int c) (global-int 12721e) 4
 jcc (local-int c) ffffffff label_000003b8
-call-script 51cb
+call-script 51cb  // CONFIG2
 jmp label_000003c4
 
 label_000003b8
-call-script 51cc
+call-script 51cc  // CONFIG1
 
 label_000003c4
 gre (local-int c) (global-int 12721e) 0
@@ -283,14 +283,14 @@ and (local-int c) (local-int b) 20
 and (local-int d) (global-int b1b6) 20
 ne (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_00001610
-call-script 510f
+call-script 510f  // DRAWMAP
 
 label_00001610
 and (local-int c) (local-int a) 2
 and (local-int d) (global-int a9d6) 2
 ne (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_0000168c
-call-script 51d0
+call-script 51d0  // RESETMAPAN
 
 label_0000168c
 jmp label_0000187c
@@ -306,7 +306,7 @@ and (local-int c) (local-int a) 4
 and (local-int d) (global-int a9d6) 4
 ne (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_000017bc
-call-script 51d1
+call-script 51d1  // RESETREIGNAN
 
 label_000017bc
 jmp label_0000187c
@@ -318,7 +318,7 @@ and (local-int c) (local-int a) 8
 and (local-int d) (global-int a9d6) 8
 ne (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_0000187c
-call-script 51d2
+call-script 51d2  // RESETWORLDAN
 
 label_0000187c
 u00415620 (local-int 3)
@@ -467,7 +467,7 @@ draw-texture (local-int c) 11 0 97 444 9a 5a 229
 
 label_000021b0
 jcc (global-int 1399) ffffffff label_000021d8
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_000021d8
 ret

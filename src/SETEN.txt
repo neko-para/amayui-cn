@@ -282,7 +282,7 @@ mov (local-ptr 3) (local-ptr 2)
 jmp label_000015f4
 
 label_000016c0
-call-script 5135
+call-script 5135  // EQUIP
 lookup-array-2d (local-ptr 2) (global-int 52f2bc) (global-int 519afb) 8 0
 lookup-array-2d (local-ptr 3) (global-int 62ab6) (global-int 519af9) e 0
 mov (local-ptr 3) (local-ptr 2)
@@ -319,7 +319,7 @@ mov (local-ptr 3) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 52f2bc) (global-int 519afb) 8 7
 lookup-array-2d (local-ptr 3) (global-int 62ab6) (global-int 519af9) e d
 mov (local-ptr 3) (local-ptr 2)
-call-script 50ed
+call-script 50ed  // CALCREVISE
 lookup-array (local-ptr 3) (global-int 6202a) (global-int 519af9)
 and (local-int 19) (local-ptr 3) 1
 eq (local-int 1a) (local-int 19) 0

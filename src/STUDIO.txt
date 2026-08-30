@@ -57,7 +57,7 @@ label_00000378
 mov (global-int 6c61b4) 24d
 
 label_0000038c
-call-script 518f
+call-script 518f  // ALCHEMY
 mov (global-int 3f3d) f
 ne (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_000003f8
@@ -129,5 +129,5 @@ exit
 exit
 
 label_00000734
-call-script 512f
+call-script 512f  // SETADVFLAG
 ret

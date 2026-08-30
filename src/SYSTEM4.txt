@@ -70,18 +70,18 @@ u004210D0 8 19a28 1f4
 303 8 1 1f4
 string-lookup-set (global-int 5)
 jcc (global-int 5) ffffffff label_0000068c
-call-script 5258
-call-script 51c3
+call-script 5258  // LOADCONFIG
+call-script 51c3  // LOADCHARM
 jmp label_000006c4
 
 label_0000068c
-call-script 51dc
-call-script 51c8
+call-script 51dc  // INITCONFIG
+call-script 51c8  // INITCHARM
 mov (global-int 5) 1
 u00428010 (global-int 5)
 
 label_000006c4
-call-script 51db
+call-script 51db  // CHECKCONFIG
 copy-local-array (global-int f800f) [0 4 5 7]
 u0041E360 c
 u0041E5E0 4 2c
@@ -121,7 +121,7 @@ sub (local-int 0) 0 1
 set-texture 525f 10 (local-int 0)
 sub (local-int 0) 0 1
 set-texture 5260 11 (local-int 0)
-call-script 5261
+call-script 5261  // INIT2
 mov (global-int 3f36) 0
 u0041AC30 1e
 u0041AC60 (global-int f807b)
@@ -143,11 +143,11 @@ label_00000b00
 u00415130
 u00415F40 (local-int 2)
 jcc (local-int 2) ffffffff label_00000b38
-call-script 5262
+call-script 5262  // LOGO
 
 label_00000b38
-call-script 5263
-call-script 5264
+call-script 5263  // INIT
+call-script 5264  // TITLE
 
 label_00000b50
 jcc 1 ffffffff label_00001ec0
@@ -236,7 +236,7 @@ jcc (global-int 139a) ffffffff label_000011a0
 mov (global-int 1399) 2
 
 label_000011a0
-call-script 3a
+call-script 3a  // SETCHARM
 mov (global-int 139d) 0
 mov (global-int 139f) 0
 mov (global-int 13a0) 0
@@ -410,7 +410,7 @@ u00428010 (local-ptr 0)
 
 label_00001c04
 u00416120
-call-script 51e5
+call-script 51e5  // SETFATE
 jcc (global-int 76f0) ffffffff label_00001c58
 add (global-int 76f1) (global-int 76f1) 1
 jmp label_00001ca4
@@ -426,37 +426,37 @@ jmp label_00001eb4
 label_00001cb0
 eq (local-int 0) (global-int 0) 2
 jcc (local-int 0) ffffffff label_00001d00
-call-script 5265
+call-script 5265  // ALLMAP
 jmp label_00001eb4
 
 label_00001d00
 eq (local-int 0) (global-int 0) 3
 jcc (local-int 0) ffffffff label_00001d50
-call-script 5266
+call-script 5266  // REIGN
 jmp label_00001eb4
 
 label_00001d50
 eq (local-int 0) (global-int 0) 4
 jcc (local-int 0) ffffffff label_00001da0
-call-script 5267
+call-script 5267  // FIELD
 jmp label_00001eb4
 
 label_00001da0
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00001df0
-call-script 5268
+call-script 5268  // NOVEL
 jmp label_00001eb4
 
 label_00001df0
 eq (local-int 0) (global-int 0) 7
 jcc (local-int 0) ffffffff label_00001e40
-call-script 5269
+call-script 5269  // STUDIO
 jmp label_00001eb4
 
 label_00001e40
 eq (local-int 0) (global-int 0) 8
 jcc (local-int 0) ffffffff label_00001e90
-call-script 526a
+call-script 526a  // DEAL
 jmp label_00001eb4
 
 label_00001e90
@@ -544,7 +544,7 @@ draw-texture (local-int 0) 11 0 97 444 9a 5a 229
 
 label_0000241c
 jcc (global-int 1399) ffffffff label_00002444
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_00002444
 ret
@@ -647,7 +647,7 @@ exit
 
 label_00002c60
 mov (global-int 4fdb) 0
-call-script 47
+call-script 47  // SETWEATHER
 ret
 exit
 

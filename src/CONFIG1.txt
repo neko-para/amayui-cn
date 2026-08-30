@@ -863,7 +863,7 @@ lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00001168
 eq (local-int 57c3) (global-int f8dfe) 1
 jcc (local-int 57c3) ffffffff label_00003848
@@ -872,39 +872,39 @@ ret
 label_00003848
 eq (local-int 57c3) (global-int 12721e) 0
 jcc (local-int 57c3) ffffffff label_000038ac
-call-script 51d3
+call-script 51d3  // INITCONFIG0
 mov (local-int 57c2) 1
 jmp label_00003a18
 
 label_000038ac
 eq (local-int 57c3) (global-int 12721e) 1
 jcc (local-int 57c3) ffffffff label_000038fc
-call-script 51d4
+call-script 51d4  // INITCONFIG1
 jmp label_00003a18
 
 label_000038fc
 eq (local-int 57c3) (global-int 12721e) 2
 jcc (local-int 57c3) ffffffff label_0000396c
-call-script 51d5
-call-script 51d6
+call-script 51d5  // INITCONFIG2
+call-script 51d6  // INITREGMES
 mov (local-int 57c2) 1
 jmp label_00003a18
 
 label_0000396c
 eq (local-int 57c3) (global-int 12721e) 3
 jcc (local-int 57c3) ffffffff label_000039c8
-call-script 51d7
-call-script 51d8
+call-script 51d7  // INITCONFIG3
+call-script 51d8  // INITREGSOUND
 jmp label_00003a18
 
 label_000039c8
 eq (local-int 57c3) (global-int 12721e) 5
 jcc (local-int 57c3) ffffffff label_00003a18
-call-script 51d9
-call-script 51da
+call-script 51d9  // INITCONFIG5
+call-script 51da  // INITREGINPUT
 
 label_00003a18
-call-script 51db
+call-script 51db  // CHECKCONFIG
 call label_00009d80
 ret
 jmp label_000045b0
@@ -930,18 +930,18 @@ lookup-array (local-ptr 4) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 4) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00001168
 eq (local-int 57c3) (global-int f8dfe) 1
 jcc (local-int 57c3) ffffffff label_00003c84
 ret
 
 label_00003c84
-call-script 51dc
-call-script 51d6
-call-script 51d8
-call-script 51da
-call-script 51db
+call-script 51dc  // INITCONFIG
+call-script 51d6  // INITREGMES
+call-script 51d8  // INITREGSOUND
+call-script 51da  // INITREGINPUT
+call-script 51db  // CHECKCONFIG
 mov (local-int 57c2) 1
 call label_00009d80
 ret
@@ -1046,7 +1046,7 @@ mov (global-int 707ffa) 348
 lookup-array (local-ptr 2) (local-int 5629) (local-int 7e0)
 mul (local-int 57c3) (local-ptr 2) 32
 add (global-int 707ffb) 78 (local-int 57c3)
-call-script 51dd
+call-script 51dd  // SELFONT
 sub (local-int 7e0) 0 1
 call label_00001168
 u00425480 (local-int 57c3) (global-string d5d) (local-string 0)

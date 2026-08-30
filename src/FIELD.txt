@@ -286,7 +286,7 @@ mov (global-int 519af9) 0
 mov (global-int 6f158) 1
 mov (global-int 61fc6) (global-int 519afb)
 bit-set (global-int 6202a) 0
-call-script 50ed
+call-script 50ed  // CALCREVISE
 bit-reset (global-int 6202a) 0
 u00414A60 (local-ptr 1) (global-int 624e4)
 lookup-array-2d (local-ptr 3) (global-int 7222c) (local-int 3005) 3 0
@@ -299,8 +299,8 @@ jmp label_00001038
 label_000015fc
 ne (local-int 819f) (global-int b22a) 1
 jcc (local-int 819f) ffffffff label_0000164c
-call-script 5109
-call-script 510a
+call-script 5109  // SETFIELD
+call-script 510a  // SETSTAGE
 
 label_0000164c
 eq (local-int 819f) (global-int b22a) 0
@@ -688,7 +688,7 @@ lookup-array (local-ptr 4) (global-int 14dc6e) (global-int 519afa)
 mov (local-ptr 3) (local-ptr 4)
 
 label_00003170
-call-script 4f99
+call-script 4f99  // SETEN
 lookup-array (local-ptr 3) (global-int 54524c) (global-int 519afb)
 jcc (local-ptr 3) ffffffff label_000031f0
 lookup-array (local-ptr 3) (global-int 6202a) (global-int 519af9)
@@ -776,7 +776,7 @@ label_0000380c
 mov (global-int b237) 0
 mov (local-int 2ff5) 0
 call label_0000f858
-call-script 510b
+call-script 510b  // SETROOM
 mov (local-int 3002) 1
 jmp label_00003888
 
@@ -1104,7 +1104,7 @@ play-bgm (global-int 14d712)
 
 label_00004ddc
 jcc (global-int 56940) ffffffff label_00004e04
-call-script 510b
+call-script 510b  // SETROOM
 
 label_00004e04
 eq (local-int 819f) (global-int b22a) 0
@@ -1127,7 +1127,7 @@ eq (local-int 819f) (global-int b22a) 2
 eq (local-int 81a2) (global-int 4fd9) 1
 or (local-int 81a0) (local-int 819f) (local-int 81a2)
 jcc (local-int 81a0) ffffffff label_00004f70
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 
 label_00004f70
 call label_00041a64
@@ -1178,7 +1178,7 @@ u00415BF0
 
 label_0000526c
 jcc (global-int 56940) ffffffff label_00005294
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00005294
 jcc (global-int 51004c) ffffffff label_000052d0
@@ -1187,7 +1187,7 @@ jmp label_000424ec
 
 label_000052d0
 jcc (global-int 5b8b0) ffffffff label_000052f8
-call-script 510d
+call-script 510d  // AIM
 
 label_000052f8
 call label_00006850
@@ -1232,7 +1232,7 @@ sub (local-int 2fbb) 0 1
 mov (local-int 2fbc) 0
 eq (local-int 819f) (global-int b22a) 0
 jcc (local-int 819f) ffffffff label_00005618
-call-script 510e
+call-script 510e  // ENTERMAP
 mov (global-int 56d69) 0
 call label_0002d194
 jmp label_00005654
@@ -1817,7 +1817,7 @@ bit-set (global-int b1b6) 5
 
 label_00007928
 u00428010 (global-int b1b6)
-call-script 510f
+call-script 510f  // DRAWMAP
 
 label_00007940
 ret
@@ -2245,7 +2245,7 @@ mod (global-int 56978) (local-int 819f) (global-int 51090f)
 label_0000947c
 call label_00037ae8
 call label_00013bf4
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_000094a0
 jmp label_0000a2fc
@@ -2526,7 +2526,7 @@ label_0000a4ac
 and (local-int 819f) (global-int b224) 100
 jcc (local-int 819f) ffffffff label_0000a51c
 mov (global-int 519af9) (global-int b225)
-call-script 50e7
+call-script 50e7  // REMOVECH
 call label_00018284
 jmp label_0000a5a4
 
@@ -2573,8 +2573,8 @@ sub (global-int f801b) 0 1
 
 label_0000a760
 mov (global-int b22a) 2
-call-script 2f
-call-script 3994
+call-script 2f  // MENU
+call-script 3994  // DRAWCHP
 mov (global-int b22a) 1
 eq (local-int 819f) (global-int f801b) 0
 jcc (local-int 819f) ffffffff label_0000a7f8
@@ -2638,10 +2638,10 @@ mov (local-int 2fd2) 1
 
 label_0000ab1c
 jcc (local-int 2fd2) ffffffff label_0000ac18
-call-script 5110
+call-script 5110  // STATUS
 and (local-int 819f) (global-int 93460) 1
 jcc (local-int 819f) ffffffff label_0000abf8
-call-script 5111
+call-script 5111  // FELLOW
 bit-reset (global-int 93460) 0
 call label_0000fce4
 call label_00013bf4
@@ -2761,7 +2761,7 @@ label_0000b270
 mov (global-int 546e00) 1
 
 label_0000b284
-call-script 5111
+call-script 5111  // FELLOW
 call label_00006850
 and (local-int 819f) (global-int b224) 100
 jcc (local-int 819f) ffffffff label_0000b300
@@ -2817,7 +2817,7 @@ lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00006850
 eq (local-int 819f) (global-int f8dfe) 1
 jcc (local-int 819f) ffffffff label_0000b648
@@ -2845,7 +2845,7 @@ lookup-array (local-ptr 3) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 3) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 call label_00006850
 eq (local-int 819f) (global-int f8dfe) 1
 jcc (local-int 819f) ffffffff label_0000b858
@@ -2877,7 +2877,7 @@ eq (local-int 819f) (local-int 2fbb) d
 jcc (local-int 819f) ffffffff label_0000b9c8
 play-sound-effect 39a5 1
 u0041D050 1
-call-script 510d
+call-script 510d  // AIM
 call label_00006850
 jmp label_0000f268
 
@@ -2915,7 +2915,7 @@ call label_00039310
 and (local-int 819f) (global-int 56941) 100
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_0000bc28
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 
 label_0000bc28
 jmp label_0000f268
@@ -2934,7 +2934,7 @@ call label_00039310
 and (local-int 819f) (global-int 56941) 100
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_0000bd74
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 
 label_0000bd74
 jmp label_0000f268
@@ -2953,7 +2953,7 @@ call label_00039310
 and (local-int 819f) (global-int 56941) 100
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_0000bec0
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 
 label_0000bec0
 jmp label_0000f268
@@ -2964,7 +2964,7 @@ jcc (local-int 819f) ffffffff label_0000bf74
 play-sound-effect 39a5 1
 u0041D050 1
 bit-set (global-int 56941) 8
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 call label_00039310
 call label_00039c9c
 call label_0003f55c
@@ -2976,7 +2976,7 @@ jcc (local-int 819f) ffffffff label_0000c01c
 play-sound-effect 39a5 1
 u0041D050 1
 bit-reset (global-int 56941) 8
-call-script 510c
+call-script 510c  // DRAWMINIMAP
 call label_00039310
 call label_00039c9c
 call label_0003f55c
@@ -3090,7 +3090,7 @@ sub (local-int 81a2) (local-int 819f) 1
 mod (global-int 56978) (local-int 81a2) (global-int 51090f)
 call label_00037ae8
 call label_00013bf4
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_0000f268
 
 label_0000c760
@@ -3102,7 +3102,7 @@ add (local-int 819f) (global-int 56978) 1
 mod (global-int 56978) (local-int 819f) (global-int 51090f)
 call label_00037ae8
 call label_00013bf4
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_0000f268
 
 label_0000c820
@@ -3115,7 +3115,7 @@ add (local-int 81a2) (local-int 819f) (local-int 2fbb)
 sub (local-int 81a0) (local-int 81a2) 1b
 lookup-array (local-ptr 5) (global-int 5108aa) (local-int 81a0)
 mov (global-int 56977) (local-ptr 5)
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_0000f268
 
 label_0000c914
@@ -3163,7 +3163,7 @@ add (global-int 519af9) 28 (local-int 300e)
 lookup-array (local-ptr 4) (global-int 58631) (local-int 300e)
 eq (local-int 819f) (local-ptr 4) (global-int 56977)
 jcc (local-int 819f) ffffffff label_0000cd04
-call-script 50e7
+call-script 50e7  // REMOVECH
 lookup-array (local-ptr 3) (global-int 58631) (local-int 300e)
 mov (local-ptr 3) 0
 jmp label_0000cf58
@@ -3199,7 +3199,7 @@ label_0000ce80
 lookup-array (local-ptr 4) (global-int 6202a) (global-int 519af9)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0000cee0
-call-script 50e7
+call-script 50e7  // REMOVECH
 
 label_0000cee0
 lookup-array (local-ptr 3) (global-int 58631) (local-int 300e)
@@ -3207,13 +3207,13 @@ mov (local-ptr 3) (global-int 56977)
 lookup-array (local-ptr 3) (global-int 5c8c25) (global-int 56977)
 mov (global-int 519afb) (local-ptr 3)
 call label_00017a8c
-call-script 50f2
+call-script 50f2  // DRAWCH
 
 label_0000cf58
 play-sound-effect 39a5 1
 u0041D050 1
-call-script 510c
-call-script 3994
+call-script 510c  // DRAWMINIMAP
+call-script 3994  // DRAWCHP
 call label_0000fce4
 call label_0003a6dc
 call label_00039f88
@@ -3242,7 +3242,7 @@ mov (local-ptr 3) (local-int 2ff9)
 mov (local-int 80f2) 0
 call label_00032e20
 mov (global-int 519af9) (global-int 61c72)
-call-script 5112
+call-script 5112  // WARPD
 bit-reset (global-int b224) 8
 call label_00032204
 call label_000392b0
@@ -3272,12 +3272,12 @@ lookup-array (local-ptr 4) (global-int 6f0f4) (local-int 3012)
 lookup-array (local-ptr 3) (global-int 6d9652) (local-ptr 4)
 mov (local-int 819a) (local-ptr 3)
 call label_0003e160
-call-script 5113
+call-script 5113  // WARPU
 lookup-array (local-ptr 3) (global-int 6f18a) (global-int 519af9)
 mov (local-ptr 3) (local-int 2ff8)
 lookup-array (local-ptr 3) (global-int 6f1bc) (global-int 519af9)
 mov (local-ptr 3) (local-int 2ff9)
-call-script 5112
+call-script 5112  // WARPD
 call label_00032204
 call label_000392b0
 call label_00039c9c
@@ -3355,7 +3355,7 @@ label_0000dac8
 jmp label_0000d600
 
 label_0000dad4
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (global-int b223) 3
 jmp label_00018b10
 
@@ -3385,7 +3385,7 @@ eq (local-int 81a0) (local-int 81a2) 140
 jcc (local-int 81a0) ffffffff label_0000dd64
 lookup-array (local-ptr 3) (global-int 5b8bb) (global-int 5b8ca)
 mov (global-int 6c61b9) (local-ptr 3)
-call-script 5114
+call-script 5114  // SETBOMBTARGET
 eq (local-int 819f) (global-int 5bcfd) 0
 jcc (local-int 819f) ffffffff label_0000dd3c
 play-sound-effect 2e 1
@@ -3443,7 +3443,7 @@ label_0000e050
 jmp label_0000decc
 
 label_0000e05c
-call-script 5115
+call-script 5115  // SELBOMB
 call label_00006850
 eq (local-int 819f) (global-int 5b8ae) 3
 jcc (local-int 819f) ffffffff label_0000e0cc
@@ -3516,7 +3516,7 @@ jmp label_0000e344
 label_0000e4c8
 mov (global-int 6f341c) (local-int 2ff8)
 mov (global-int 6f341d) (local-int 2ff9)
-call-script 5116
+call-script 5116  // SELACT
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_0000e570
@@ -3542,7 +3542,7 @@ bit-set (global-int b224) b
 call label_0000fce4
 call label_00013bf4
 call label_0003a6dc
-call-script 3994
+call-script 3994  // DRAWCHP
 ret
 
 label_0000e6a0
@@ -3672,9 +3672,9 @@ label_0000f01c
 jmp label_0000ed2c
 
 label_0000f028
-call-script 50f2
-call-script 5117
-call-script 510c
+call-script 50f2  // DRAWCH
+call-script 5117  // DRAWOBJ
+call-script 510c  // DRAWMINIMAP
 play-sound-effect 39a9 1
 u0041D050 1
 and (local-int 819f) (global-int a9d6) 2
@@ -4007,7 +4007,7 @@ jmp label_0000fd78
 
 label_00010740
 mov (global-int 519af9) (global-int 61c72)
-call-script 39a6
+call-script 39a6  // CALCSCOPE
 and (local-int 819f) (global-int b224) 100
 eq (local-int 81a2) (local-int 819f) 100
 lookup-array (local-ptr a) (global-int 61fc6) (global-int 61c72)
@@ -5486,7 +5486,7 @@ mov (global-int 546e02) (global-int 519afb)
 label_00017850
 lookup-array (local-ptr 3) (global-int 6f158) (global-int 519af9)
 mov (local-ptr 3) 1
-call-script 50fb
+call-script 50fb  // SETCH
 lookup-array-2d (local-ptr 3) (global-int 7222c) (global-int 546e00) 3 0
 u00414A60 (local-ptr 1) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 519af9) 3 0
@@ -5525,7 +5525,7 @@ div (local-int 819f) (global-int deb92) a
 lookup-array (local-ptr 4) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 6) (global-int 531db4) (global-int 519afb)
 add (local-ptr 4) (local-ptr 6) (local-int 819f)
-call-script 4f99
+call-script 4f99  // SETEN
 lookup-array (local-ptr 3) (global-int 6202a) (global-int 519af9)
 bit-set (local-ptr 3) 0
 lookup-array (local-ptr 3) (global-int 6202a) (global-int 519af9)
@@ -5605,7 +5605,7 @@ label_00018270
 ret
 
 label_00018274
-call-script 511a
+call-script 511a  // SETOBJ
 ret
 
 label_00018284
@@ -5614,7 +5614,7 @@ and (local-int 819f) (local-ptr 4) 40001
 eq (local-int 81a0) (local-int 819f) 1
 jcc (local-int 81a0) ffffffff label_00018314
 mov (global-int 519af9) (global-int 61c72)
-call-script 50f2
+call-script 50f2  // DRAWCH
 
 label_00018314
 mov (global-int 61c72) (global-int b225)
@@ -5639,8 +5639,8 @@ call label_00041a64
 call label_0000fce4
 call label_00013bf4
 call label_0003a6dc
-call-script 3994
-call-script 510c
+call-script 3994  // DRAWCHP
+call-script 510c  // DRAWMINIMAP
 and (local-int 819f) (global-int b224) 100
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_000185c4
@@ -5813,7 +5813,7 @@ jcc (local-int 81a2) ffffffff label_000191ac
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) "再行動スキル発動！|再行动技能发动！"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 
 label_000191ac
@@ -5828,7 +5828,7 @@ sub (global-int 56979) (global-int 56979) 1
 add (global-int f7fea) (global-int f7fea) 1
 
 label_00019240
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (global-int b224) 0
 mov (global-int 928a6) 0
 gr (local-int 819f) (global-int 56979) 0
@@ -5959,7 +5959,7 @@ mov (global-int 928a6) 0
 call label_0003a310
 call label_000416fc
 call label_0000fb10
-call-script 511b
+call-script 511b  // MVRTN
 
 label_00019a20
 eq (local-int 819f) (global-int b223) 4
@@ -6171,7 +6171,7 @@ ret
 label_0001a81c
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (global-int 3f3d) 9
 call label_000332ec
 jcc (local-int 2fb8) ffffffff label_0001a880
@@ -6245,7 +6245,7 @@ jcc (local-ptr 3) ffffffff label_0001add8
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) 1d
 sub (global-int 6da5f3) 0 5
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0001add8
 mov (local-int 2fcf) 0
@@ -6303,7 +6303,7 @@ label_0001b2c0
 jmp label_0001adf8
 
 label_0001b2cc
-call-script 3994
+call-script 3994  // DRAWCHP
 lookup-array (local-ptr 3) (global-int 61fc6) (global-int 61c72)
 mov (global-int 519afb) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 93077) (global-int 519afb)
@@ -6508,7 +6508,7 @@ mov (global-int 6da5f2) (local-int 2fd7)
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 6cb7aa) (local-ptr 4) 1e (local-int 2fd7)
 mov (global-int 6da5f3) (local-ptr 3)
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0001c27c
 jmp label_0001c134
@@ -6583,7 +6583,7 @@ mov (global-int 519af9) (global-int 61c72)
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 lookup-array (local-ptr 3) (global-int 6d6f42) (local-ptr 4)
 mov (global-int 708023) (local-ptr 3)
-call-script 39a1
+call-script 39a1  // ADDEXP
 
 label_0001c800
 mov (global-int 3f3d) 9
@@ -6702,7 +6702,7 @@ jcc (local-ptr 3) ffffffff label_0001d07c
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) 1d
 sub (global-int 6da5f3) 0 5
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0001d07c
 mov (local-int 2fcf) 0
@@ -6760,7 +6760,7 @@ label_0001d564
 jmp label_0001d09c
 
 label_0001d570
-call-script 3994
+call-script 3994  // DRAWCHP
 lookup-array (local-ptr 3) (global-int 61fc6) (global-int 61c72)
 mov (global-int 519afb) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 93077) (global-int 519afb)
@@ -6944,8 +6944,8 @@ lookup-array (local-ptr 3) (global-int 6f0f4) (global-int 61c73)
 mov (local-ptr 3) 0
 
 label_0001e300
-call-script 3992
-call-script 3997
+call-script 3992  // CALCBTPARAM
+call-script 3997  // CALCDMG
 mov (local-int 2fd0) 0
 jmp label_0001e354
 
@@ -7103,7 +7103,7 @@ u00420770 (local-int 819f) (local-int 81a2) 0 0
 jmp label_0001edec
 
 label_0001f0d4
-call-script 511c
+call-script 511c  // DRAWVOL
 add (local-int 819f) ea60 1db3
 mul (local-int 81a2) (global-int 519af9) 6
 add (local-int 80e5) (local-int 819f) (local-int 81a2)
@@ -7281,7 +7281,7 @@ mov (global-int 6da5f2) (local-int 2fd7)
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 6cb7aa) (local-ptr 4) 1e (local-int 2fd7)
 mov (global-int 6da5f3) (local-ptr 3)
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0001ff28
 jmp label_0001fde0
@@ -7406,10 +7406,10 @@ label_0002093c
 jmp label_00020560
 
 label_00020948
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (local-int 80f2) 0
 call label_00032e20
-call-script 5112
+call-script 5112  // WARPD
 mov (local-int 3005) 64
 
 label_00020994
@@ -7436,7 +7436,7 @@ lt (local-int 819f) (local-int 2fcf) (global-int 5bcfd)
 jcc (local-int 819f) ffffffff label_00020bdc
 lookup-array (local-ptr 3) (global-int 5bccb) (local-int 2fcf)
 mov (global-int 61c73) (local-ptr 3)
-call-script 399e
+call-script 399e  // COMMITBTL
 jcc (global-int 6f341a) ffffffff label_00020bd0
 sub (local-int 819f) (global-int 6f341a) 1
 div (local-int 81a2) (local-int 819f) 2
@@ -7452,10 +7452,10 @@ eq (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_00020cb8
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 708023) (local-int 2fd3)
-call-script 39a1
+call-script 39a1  // ADDEXP
 jcc (global-int 701543) ffffffff label_00020ca0
 mov (global-int 701544) 0
-call-script 39a2
+call-script 39a2  // REWARD
 
 label_00020ca0
 call label_00006850
@@ -7482,7 +7482,7 @@ mov (global-int 519af9) (global-int 61c72)
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 lookup-array (local-ptr 3) (global-int 6d6f42) (local-ptr 4)
 mov (global-int 708023) (local-ptr 3)
-call-script 39a1
+call-script 39a1  // ADDEXP
 
 label_00020e44
 call label_00038ed4
@@ -7602,7 +7602,7 @@ ret
 label_00021650
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (global-int 3f3d) 9
 call label_000332ec
 jcc (local-int 2fb8) ffffffff label_000216b4
@@ -7662,7 +7662,7 @@ call label_00021be0
 bit-set (global-int b224) 0
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00021a8c
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00021a8c
 mov (global-int 3f3d) 4
@@ -7682,7 +7682,7 @@ label_00021b0c
 mov (global-int b227) 0
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00021b44
 and (local-int 819f) (global-int 928a6) 2
@@ -7799,7 +7799,7 @@ lookup-array (local-ptr 3) (global-int 6f1bc) (global-int 61c72)
 mov (local-ptr 3) (local-int 2ff9)
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00022480
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00022480
 mov (global-int 61c73) (global-int 61c72)
@@ -7904,7 +7904,7 @@ mov (local-ptr 6) (local-ptr 4)
 label_00022ce0
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00022d24
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00022d24
 lookup-array-2d (local-ptr 3) (global-int 61c74) (global-int 61c72) 11 8
@@ -8053,7 +8053,7 @@ u00416270
 label_000238ec
 call label_00041a64
 mov (global-int 519af9) (global-int 61c72)
-call-script 50f2
+call-script 50f2  // DRAWCH
 add (local-int 819f) ea60 (global-int 61c72)
 add (local-int 81a2) ea60 76c
 u00421410 (local-int 819f) (local-int 81a2)
@@ -8216,7 +8216,7 @@ label_00024424
 lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 (global-int 56d63)
 lookup-array-2d (local-ptr 4) (global-int 3e2a0) (global-int b222) 32 (global-int 56d63)
 add (local-ptr 4) (local-ptr 3) 1
-call-script 50ee
+call-script 50ee  // CHECKMISSION
 mov (local-int 3010) 0
 jmp label_000244e0
 
@@ -8290,7 +8290,7 @@ ret
 label_000248b0
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_00023fac
 ret
 
@@ -8396,7 +8396,7 @@ lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-in
 mov (local-ptr 3) (global-int 56d69)
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00025220
 lookup-array (local-ptr 3) (global-int 61fc6) (global-int 61c72)
@@ -8435,7 +8435,7 @@ call label_00032e20
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 call label_0003357c
 and (local-int 819f) (global-int b1b6) 1
@@ -8456,7 +8456,7 @@ lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-in
 mov (local-ptr 3) (global-int 56d69)
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00025548
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
@@ -8483,7 +8483,7 @@ call label_00032e20
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 call label_0003357c
 and (local-int 819f) (global-int b1b6) 1
@@ -8508,14 +8508,14 @@ concat (local-string 0) (local-string-ptr 2) @"已封锁！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_000259c8
 and (local-int 819f) (global-int b224) 1
 jcc (local-int 819f) ffffffff label_00025914
-call-script 5115
+call-script 5115  // SELBOMB
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_00025914
@@ -8555,7 +8555,7 @@ mov (local-ptr 3) (local-ptr 4)
 mov (global-int 61c73) (global-int 61c72)
 mov (global-int 5108a9) 1
 call label_0002a0d0
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_00029d78
 jcc (global-int 51004a) ffffffff label_00025b4c
 ret
@@ -8600,14 +8600,14 @@ lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int 708020) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 mov (global-int 708021) (local-ptr 3)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00025f3c
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int 546e03) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 mov (global-int 546e04) (local-ptr 3)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_00025fa8
 jmp label_0002639c
@@ -8670,7 +8670,7 @@ mov (local-int 819a) (local-ptr 3)
 call label_0003de24
 mov (local-int 80f2) 1
 call label_00032e20
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
 jcc (global-int 51004a) ffffffff label_00026494
@@ -8713,14 +8713,14 @@ lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int 708020) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 mov (global-int 708021) (local-ptr 3)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00026820
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int 546e03) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 14d836) (global-int 56d63)
 mov (global-int 546e04) (local-ptr 3)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_0002688c
 jmp label_00026c80
@@ -8781,7 +8781,7 @@ mov (local-int 819a) (local-ptr 3)
 call label_0003de24
 mov (local-int 80f2) 1
 call label_00032e20
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
 lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-int 56d63)
@@ -8801,7 +8801,7 @@ jmp label_00026ebc
 label_00026e1c
 and (local-int 819f) (global-int b224) 1
 jcc (local-int 819f) ffffffff label_00026ebc
-call-script 5115
+call-script 5115  // SELBOMB
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_00026ebc
@@ -8848,7 +8848,7 @@ label_00027154
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 
 label_000271b8
@@ -8866,7 +8866,7 @@ jmp label_00027300
 label_00027260
 and (local-int 819f) (global-int b224) 1
 jcc (local-int 819f) ffffffff label_00027300
-call-script 5115
+call-script 5115  // SELBOMB
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_00027300
@@ -8904,13 +8904,13 @@ call label_000392bc
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) "扉が開放された！|门打开了！"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 
 label_000274f8
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 jmp label_00029d78
 jcc (global-int 51004a) ffffffff label_00027548
 ret
@@ -8924,7 +8924,7 @@ u0041A510 (local-ptr 1) (local-ptr 2) 3
 lookup-array (local-ptr 3) (global-int 511bd4) (local-int 3001)
 mov (local-int 819a) (local-ptr 3)
 call label_0003e160
-call-script 50e5
+call-script 50e5  // RECOVER
 jmp label_00029d78
 jcc (global-int 51004a) ffffffff label_00027640
 ret
@@ -8940,7 +8940,7 @@ mov (local-int 819a) (local-ptr 3)
 call label_0003e160
 eq (local-int 819f) (global-int 519af9) (global-int b225)
 jcc (local-int 819f) ffffffff label_00027744
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00027744
 eq (local-int 819f) (local-int 3001) 12
@@ -8948,7 +8948,7 @@ jcc (local-int 819f) ffffffff label_000277d0
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) c
 mov (global-int 6da5f3) 1
-call-script 3993
+call-script 3993  // ADDILL
 jmp label_000279b4
 
 label_000277d0
@@ -8959,7 +8959,7 @@ jcc (local-int 81a0) ffffffff label_0002789c
 mov (global-int 519af9) (global-int 61c72)
 sub (global-int 6da5f2) (local-int 3001) b
 mov (global-int 6da5f3) 1
-call-script 3993
+call-script 3993  // ADDILL
 jmp label_000279b4
 
 label_0002789c
@@ -8968,7 +8968,7 @@ jcc (local-int 819f) ffffffff label_00027928
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) 7
 mov (global-int 6da5f3) 1
-call-script 3993
+call-script 3993  // ADDILL
 jmp label_000279b4
 
 label_00027928
@@ -8977,7 +8977,7 @@ jcc (local-int 819f) ffffffff label_000279b4
 mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) 6
 mov (global-int 6da5f3) 1
-call-script 3993
+call-script 3993  // ADDILL
 jmp label_000279b4
 
 label_000279b4
@@ -9155,14 +9155,14 @@ lookup-array (local-ptr 3) (global-int 514caa) (global-int 514731)
 mov (global-int 708020) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 514d72) (global-int 514731)
 mov (global-int 708021) (local-ptr 3)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00028740
 lookup-array (local-ptr 3) (global-int 514caa) (global-int 514731)
 mov (global-int 546e03) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 514d72) (global-int 514731)
 mov (global-int 546e04) (local-ptr 3)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_000287ac
 lookup-array (local-ptr 3) (global-int 514f02) (global-int 514731)
@@ -9199,7 +9199,7 @@ mov (global-int 519af9) (global-int 61c72)
 mov (global-int 6da5f2) (local-int 2fd7)
 lookup-array-2d (local-ptr 3) (global-int 5159f2) (global-int 514731) 1e (local-int 2fd7)
 mov (global-int 6da5f3) (local-ptr 3)
-call-script 3993
+call-script 3993  // ADDILL
 
 label_00028a58
 jmp label_00028948
@@ -9313,7 +9313,7 @@ mov (global-int 5108a9) 1
 call label_0002a0d0
 
 label_00029184
-call-script 3994
+call-script 3994  // DRAWCHP
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 lookup-array (local-string-ptr 3) (global-string 1753e) (global-int 514731)
 set-string (local-string-ptr 2) (local-string-ptr 3)
@@ -9322,7 +9322,7 @@ lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 lookup-array (local-string-ptr 3) (global-string 17606) (global-int 514731)
 set-string (local-string-ptr 2) (local-string-ptr 3)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
 jcc (global-int 51004a) ffffffff label_000292a4
@@ -9355,7 +9355,7 @@ concat (local-string 0) (local-string 0) @"个已放入采集袋！"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 sub (local-int 819f) (local-int 3001) 1f
 mul (local-int 81a2) (local-int 819f) 64
@@ -9378,7 +9378,7 @@ lookup-array (local-ptr 3) (global-int 50ff9f) (global-int 56d63)
 bit-set (local-ptr 3) 2
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 lookup-array (local-ptr 3) (global-int 511bd4) (local-int 3001)
 mov (local-int 819a) (local-ptr 3)
 call label_0003de24
@@ -9408,14 +9408,14 @@ set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
 
 label_000298d8
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 jcc (local-ptr 3) ffffffff label_00029a94
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int f8c43) (local-ptr 3)
-call-script 21f
-call-script 3994
+call-script 21f  // ADDDP
+call-script 3994  // DRAWCHP
 and (local-int 819f) (global-int a9d6) 10000
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_00029a88
@@ -9426,7 +9426,7 @@ u004223C0 11d28 0 320 10 8 0
 u00422D60 11d28 1
 
 label_00029a88
-call-script 220
+call-script 220  // COMMITDR
 
 label_00029a94
 jmp label_00029d78
@@ -9441,7 +9441,7 @@ lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-in
 mov (local-ptr 3) (global-int 56d69)
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_00029c04
 lookup-array (local-string-ptr 2) (global-string 17412) (local-int 3001)
@@ -9468,7 +9468,7 @@ call label_00032e20
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 call label_0003357c
 
@@ -9483,7 +9483,7 @@ ret
 label_00029d9c
 mov (global-int 56d63) (local-int 3002)
 mov (global-int 519af9) (local-int 3007)
-call-script 511e
+call-script 511e  // CHECKOBJ
 ret
 
 label_00029dd4
@@ -9553,7 +9553,7 @@ bit-set (global-int 5108a9) 8
 
 label_0002a188
 mov (global-int 519af9) (global-int 61c73)
-call-script 5113
+call-script 5113  // WARPU
 eq (local-int 819f) (global-int 56d69) 1
 ne (local-int 81a2) (global-int 61c73) (global-int 61c72)
 or (local-int 81a0) (local-int 819f) (local-int 81a2)
@@ -9585,7 +9585,7 @@ bit-set (global-int b224) 3
 
 label_0002a378
 mov (global-int 519af9) (global-int 61c73)
-call-script 5112
+call-script 5112  // WARPD
 mov (global-int 5108a9) 0
 ret
 
@@ -9658,7 +9658,7 @@ lookup-array (local-ptr 4) (global-int 6f158) (global-int 61c73)
 eq (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0002a834
 mov (global-int b225) (global-int 61c73)
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_0002a834
 call label_0003f094
@@ -9736,7 +9736,7 @@ jcc (local-int 81a1) ffffffff label_0002af54
 and (local-int 819f) (global-int b224) 10
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_0002aefc
-call-script 5116
+call-script 5116  // SELACT
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_0002aefc
@@ -9757,7 +9757,7 @@ and (local-int 819f) (global-int b224) 1
 jcc (local-int 819f) ffffffff label_0002afcc
 mov (global-int 6f2465) 0
 mov (global-int 519af9) (global-int 61c72)
-call-script 39a7
+call-script 39a7  // BTRTN
 jmp label_0002b018
 
 label_0002afcc
@@ -9767,9 +9767,9 @@ mov (global-int 6f2465) (local-ptr 3)
 
 label_0002b018
 mov (global-int 519af9) (global-int 61c73)
-call-script 39a6
-call-script 39a7
-call-script 3992
+call-script 39a6  // CALCSCOPE
+call-script 39a7  // BTRTN
+call-script 3992  // CALCBTPARAM
 
 label_0002b050
 bit-reset (global-int b224) 4
@@ -9815,7 +9815,7 @@ ret
 
 label_0002b348
 mov (global-int b227) 0
-call-script 511f
+call-script 511f  // BTL
 call label_00006850
 mov (local-int 3007) (global-int 61c72)
 call label_0003de00
@@ -9933,7 +9933,7 @@ label_0002ba80
 u00420880 (local-int 80e5) 0 c8 0 ffffff
 u00415BF0
 u00416270
-call-script 50e7
+call-script 50e7  // REMOVECH
 lookup-array (local-ptr 4) (global-int 6f158) (global-int 519af9)
 ne (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0002bc14
@@ -9947,8 +9947,8 @@ lookup-array-2d (local-ptr 6) (global-int df364) (global-int b222) 1e (local-ptr
 add (local-ptr 6) (local-ptr 3) 1
 
 label_0002bc14
-call-script 3994
-call-script 510c
+call-script 3994  // DRAWCHP
+call-script 510c  // DRAWMINIMAP
 ne (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_0002bc70
 call label_0003a310
@@ -10116,7 +10116,7 @@ jmp label_0002c494
 label_0002c800
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_0002c824
 ret
@@ -10236,7 +10236,7 @@ ret
 
 label_0002cf0c
 mov (global-int 6c477f) 0
-call-script 5120
+call-script 5120  // CHECKFIT
 div (local-int 819f) (global-int deb90) a
 gre (local-int 81a2) (global-int 6c477e) (local-int 819f)
 jcc (local-int 81a2) ffffffff label_0002cfa0
@@ -10264,7 +10264,7 @@ concat (local-string 0) (local-string 0) "）"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 2) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 call label_00006850
 ret
 
@@ -10341,7 +10341,7 @@ mov (global-int 519af9) 0
 mov (global-int 6f158) 1
 mov (global-int 61fc6) (global-int 519afb)
 bit-set (global-int 6202a) 0
-call-script 50ed
+call-script 50ed  // CALCREVISE
 bit-reset (global-int 6202a) 0
 mov (local-int 2fcf) 0
 jmp label_0002d7b8
@@ -10424,7 +10424,7 @@ label_0002dd6c
 jmp label_0002dbc4
 
 label_0002dd78
-call-script 3994
+call-script 3994  // DRAWCHP
 gr (local-int 819f) (global-int b236) 1
 eq (local-int 81a2) (global-int 56d69) 1
 and (local-int 81a0) (local-int 819f) (local-int 81a2)
@@ -10442,7 +10442,7 @@ ret
 label_0002de60
 mov (global-int b227) 0
 jcc (global-int 5b8b0) ffffffff label_0002dea8
-call-script 510d
+call-script 510d  // AIM
 call label_00006850
 
 label_0002dea8
@@ -10739,7 +10739,7 @@ jcc (local-int 81a2) ffffffff label_0002f2c8
 mov (global-int 519af9) (local-int 3007)
 mov (global-int 6da5f2) (local-int 2fd7)
 sub (global-int 6da5f3) 0 5
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0002f2c8
 jmp label_0002ef20
@@ -10853,7 +10853,7 @@ jcc (local-ptr 3) ffffffff label_0002faf8
 mov (global-int 519af9) (local-int 3007)
 mov (global-int 6da5f2) 6
 mov (global-int 6da5f3) 1
-call-script 3993
+call-script 3993  // ADDILL
 
 label_0002faf8
 jmp label_0002f944
@@ -10932,7 +10932,7 @@ lookup-array (local-ptr 3) (local-int 3aac) (local-int 2fd2)
 mov (global-int f8c39) (local-ptr 3)
 lookup-array (local-ptr 3) (local-int 3e30) (local-int 2fd2)
 mov (global-int f8c3a) (local-ptr 3)
-call-script 2c30
+call-script 2c30  // ADDEN
 lookup-array (local-ptr 4) (global-int 6202a) (global-int 519af9)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_000303a4
@@ -10952,13 +10952,13 @@ u0041A510 (local-ptr 1) (local-ptr 2) d
 lookup-array (local-ptr 3) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 4) (global-int 62156) (local-int 3007)
 mov (local-ptr 3) (local-ptr 4)
-call-script 50ed
+call-script 50ed  // CALCREVISE
 
 label_000303a4
 jmp label_0002fd64
 
 label_000303b0
-call-script 72
+call-script 72  // RENDERMAP
 ret
 
 label_000303c0
@@ -10969,7 +10969,7 @@ and (local-int 81a3) (local-int 819f) (local-int 81a2)
 jcc (local-int 81a3) ffffffff label_000305a4
 and (local-int 819f) (global-int b224) 1
 jcc (local-int 819f) ffffffff label_000304ec
-call-script 5115
+call-script 5115  // SELBOMB
 call label_00006850
 and (local-int 819f) (global-int b224) 20
 jcc (local-int 819f) ffffffff label_000304ec
@@ -11073,7 +11073,7 @@ lte (local-int 819f) (local-ptr 4) (local-int 2fd3)
 jcc (local-int 819f) ffffffff label_00030dcc
 call label_00030e54
 jcc (global-int 519af9) ffffffff label_00030dcc
-call-script 50f2
+call-script 50f2  // DRAWCH
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 519af9)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 519af9)
@@ -11094,7 +11094,7 @@ call label_00032204
 call label_000392b0
 eq (local-int 819f) (global-int b227) 0
 jcc (local-int 819f) ffffffff label_00030e3c
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00030e3c
 mov (global-int 56943) 0
@@ -11199,7 +11199,7 @@ label_00031480
 lookup-array (local-ptr 3) (global-int 6f158) (global-int 519af9)
 lookup-array (local-ptr 4) (global-int 14dcaa) (global-int 519afa)
 mov (local-ptr 3) (local-ptr 4)
-call-script 4f99
+call-script 4f99  // SETEN
 lookup-array (local-ptr 3) (global-int 6202a) (global-int 519af9)
 bit-set (local-ptr 3) 0
 lookup-array (local-ptr 3) (global-int 6f126) (global-int 519af9)
@@ -11373,7 +11373,7 @@ label_00032200
 ret
 
 label_00032204
-call-script 5121
+call-script 5121  // CALCOCC
 ret
 
 label_00032214
@@ -12051,9 +12051,9 @@ add (global-int b22d) (local-int 819f) 32
 
 label_00035130
 mov (global-int b22a) 2
-call-script 510b
-call-script 5124
-call-script 511a
+call-script 510b  // SETROOM
+call-script 5124  // SETHALLTEX
+call-script 511a  // SETOBJ
 mov (global-int b22a) 1
 call label_0003928c
 call label_000392b0
@@ -12630,7 +12630,7 @@ u00416270
 mov (global-int b22b) 2
 mov (global-int 56977) (global-int 5108aa)
 call label_00037ae8
-call-script 3994
+call-script 3994  // DRAWCHP
 mov (local-int 2fcf) 12c
 jmp label_00038320
 
@@ -12698,7 +12698,7 @@ sub (local-int 819f) 0 1
 set-texture 5126 4b (local-int 819f)
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 call label_00039f88
 call label_00039310
 mov (local-int 2fcf) 0
@@ -12861,24 +12861,24 @@ ret
 label_0003928c
 u00416170
 u004162F0
-call-script 5128
-call-script 5124
+call-script 5128  // SETMAPTEX
+call-script 5124  // SETHALLTEX
 ret
 
 label_000392b0
-call-script 510f
+call-script 510f  // DRAWMAP
 
 label_000392bc
-call-script 5117
-call-script 510c
+call-script 5117  // DRAWOBJ
+call-script 510c  // DRAWMINIMAP
 ret
 
 label_000392d8
-call-script 5129
+call-script 5129  // DRAWCHALL
 ret
 
 label_000392e8
-call-script 3994
+call-script 3994  // DRAWCHP
 call label_00039310
 call label_00039c9c
 ret
@@ -13671,7 +13671,7 @@ ret
 
 label_0003de00
 mov (global-int 519af9) (local-int 3007)
-call-script 512a
+call-script 512a  // DRAWCHSTATE
 ret
 
 label_0003de24
@@ -13805,7 +13805,7 @@ u00420770 (local-int 819f) (local-int 81a2) 0 0
 jmp label_0003e744
 
 label_0003e9d4
-call-script 511c
+call-script 511c  // DRAWVOL
 add (local-int 819f) ea60 1db3
 mul (local-int 81a2) (global-int 519af9) 6
 add (local-int 80e5) (local-int 819f) (local-int 81a2)
@@ -14145,7 +14145,7 @@ div (local-int 819f) (global-int deb92) a
 lookup-array (local-ptr 4) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 6) (global-int 531db4) (global-int 519afb)
 add (local-ptr 4) (local-ptr 6) (local-int 819f)
-call-script 4f99
+call-script 4f99  // SETEN
 copy-to-global (global-int 6ff5cb) 5
 copy-to-global (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 3) (global-int 621ba) (global-int 519af9) 8 0
@@ -14180,7 +14180,7 @@ label_00040e0c
 mov (global-int 707ffa) 325
 mov (global-int 707ffb) 34
 sub (global-int 707ffe) 12110 1f4
-call-script 5103
+call-script 5103  // DRAWSTATUS
 lookup-array (local-string-ptr 2) (global-string 18e40) (local-int 300d)
 set-string (global-string 1fc9a) (local-string-ptr 2)
 lookup-array (local-string-ptr 2) (global-string 19de0) (local-int 300d)
@@ -14189,7 +14189,7 @@ mul (local-int 819f) (local-int 2fd7) 55
 add (global-int 707ffa) 4b (local-int 819f)
 mov (global-int 707ffb) 248
 mov (global-int 707ffc) 1
-call-script 5108
+call-script 5108  // DRAWTIP
 jmp label_0004157c
 
 label_00040f34
@@ -14229,7 +14229,7 @@ mov (global-int 510003) (local-int 2ff8)
 mov (global-int 510004) (local-int 2ff9)
 lookup-array (local-ptr 3) (global-int 5b8bb) (global-int 5b8ca)
 mov (global-int 6c61b9) (local-ptr 3)
-call-script 512b
+call-script 512b  // BOMBSEEK
 call label_0003c1f8
 
 label_000412ec
@@ -14260,7 +14260,7 @@ eq (local-int 81a0) (local-ptr 5) (local-int 2ff9)
 and (local-int 81a1) (local-int 819f) (local-int 81a0)
 jcc (local-int 81a1) ffffffff label_00041570
 mov (global-int 519af9) (local-int 3007)
-call-script 511c
+call-script 511c  // DRAWVOL
 mov (local-int 3007) 32
 
 label_00041570
@@ -14547,7 +14547,7 @@ jmp label_00042734
 label_00042af4
 call label_00032204
 call label_000392b0
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_00042b18
 mov (local-int 2ff5) 1
@@ -14604,7 +14604,7 @@ label_00042e94
 lookup-array (local-ptr 4) (global-int bdf0) (global-int b222)
 eq (local-int 819f) (local-ptr 4) 0
 jcc (local-int 819f) ffffffff label_00043314
-call-script 50ee
+call-script 50ee  // CHECKMISSION
 lookup-array (local-ptr 3) (global-int bdf0) (global-int b222)
 mov (local-ptr 3) 1
 mov (local-int 3010) 0
@@ -14659,8 +14659,8 @@ label_00043308
 jmp label_00043174
 
 label_00043314
-call-script 512c
-call-script 512d
+call-script 512c  // STAGECLEAR
+call-script 512d  // DIG
 jmp label_000434bc
 
 label_00043338
@@ -14762,7 +14762,7 @@ jcc (local-int 819f) ffffffff label_00043a20
 lookup-array (local-ptr 4) (global-int 6202a) (global-int 519af9)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_00043a14
-call-script 50e7
+call-script 50e7  // REMOVECH
 
 label_00043a14
 jmp label_00043960
@@ -14791,7 +14791,7 @@ label_00043b60
 copy-to-global (global-int 8ceb2) 9
 lookup-array (local-ptr 3) (global-int 14ecb0) (global-int b222)
 mov (global-int f8c43) (local-ptr 3)
-call-script 512e
+call-script 512e  // ADDPROG
 mov (global-int b22a) 0
 sub (local-int 819f) 0 1
 eq (local-int 81a2) (global-int b228) (local-int 819f)
@@ -14834,7 +14834,7 @@ exit
 exit
 
 label_00043e08
-call-script 512f
+call-script 512f  // SETADVFLAG
 ret
 exit
 

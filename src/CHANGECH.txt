@@ -49,10 +49,10 @@ jcc (local-int 6) ffffffff label_000003dc
 lookup-array (local-ptr 1) (global-int 61fc6) (local-int 3)
 mov (local-ptr 1) (local-int 1)
 mov (global-int 519af9) (local-int 3)
-call-script 50f2
+call-script 50f2  // DRAWCH
 eq (local-int 4) (local-int 3) (global-int b225)
 jcc (local-int 4) ffffffff label_000003dc
-call-script 3994
+call-script 3994  // DRAWCHP
 
 label_000003dc
 jmp label_000001f8

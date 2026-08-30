@@ -46,8 +46,8 @@ lookup-array (local-ptr 0) (global-int 6f18a) (global-int 61c72)
 mov (global-int 510003) (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 6f1bc) (global-int 61c72)
 mov (global-int 510004) (local-ptr 0)
-call-script 512b
-call-script 5114
+call-script 512b  // BOMBSEEK
+call-script 5114  // SETBOMBTARGET
 mov (local-int 2) 0
 mov (local-int 0) 0
 jmp label_00000478
@@ -122,8 +122,8 @@ check-bit (local-int 1) (local-ptr 0) (local-int 1392)
 jcc (local-int 1) ffffffff label_00000c94
 mov (global-int 510003) (local-int 4)
 mov (global-int 510004) (local-int 5)
-call-script 512b
-call-script 5114
+call-script 512b  // BOMBSEEK
+call-script 5114  // SETBOMBTARGET
 mov (local-int 2) 0
 mov (local-int 0) 0
 jmp label_000009c0
@@ -186,8 +186,8 @@ sar (local-int 1398) (local-ptr 2) 8
 and (global-int 510003) (local-int 1398) ff
 lookup-array (local-ptr 0) (local-int 6) (local-int 1)
 and (global-int 510004) (local-ptr 0) ff
-call-script 512b
-call-script 5114
+call-script 512b  // BOMBSEEK
+call-script 5114  // SETBOMBTARGET
 lookup-array (local-ptr 0) (global-int 6f0f4) (global-int 61c72)
 mov (local-ptr 0) (global-int 6c61b9)
 lookup-array-2d (local-ptr 0) (global-int 704ae) (global-int 61c72) 32 (global-int 1d0eb9)

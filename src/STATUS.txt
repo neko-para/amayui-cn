@@ -650,7 +650,7 @@ ret
 
 label_00002934
 mov (global-int 519af9) (local-int 40f)
-call-script 399f
+call-script 399f  // CALCSUPPORT
 copy-to-global (global-int 6ff5cb) 5
 copy-to-global (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 5) (global-int 621ba) (global-int 519af9) 8 0
@@ -918,7 +918,7 @@ mov (global-int 519af9) (local-int 40f)
 mov (global-int 707ffa) 325
 mov (global-int 707ffb) 34
 add (global-int 707ffe) 1d4c0 1f4
-call-script 5103
+call-script 5103  // DRAWSTATUS
 jcc (local-int 437) ffffffff label_00004088
 add (local-int 451) 1d4c0 38e
 draw-texture (local-int 451) c0 4b8 e7 2b 2c 45e 5
@@ -987,7 +987,7 @@ jmp label_00004610
 label_000045d4
 lookup-array (local-ptr 5) (global-int 71d18) (local-int 40f)
 mov (global-int 6dafd6) (local-ptr 5)
-call-script 5107
+call-script 5107  // DRAWOUTFITTIP
 
 label_00004610
 jmp label_000047b4
@@ -1006,7 +1006,7 @@ lookup-array (local-string-ptr 0) (global-string 1d4f4) (local-int 417)
 set-string (global-string 1fc9a) (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string 1d8dc) (local-int 417)
 set-string (global-string 1fc9b) (local-string-ptr 0)
-call-script 5108
+call-script 5108  // DRAWTIP
 
 label_000047b4
 jmp label_00004aac
@@ -1018,7 +1018,7 @@ add (local-int 451) 1d4c0 3b6
 draw-texture (local-int 451) c0 4b8 115 2b 2c 45e 5
 mov (global-int 707ffa) 41f
 mov (global-int 707ffb) 2c
-call-script 5105
+call-script 5105  // DRAWILLTIP
 jmp label_00004aac
 
 label_00004898

@@ -1374,7 +1374,7 @@ draw-texture (local-int 20f7) c0 581 d5 d4 1f 24b (local-int 2e9)
 label_00005ee8
 mov (global-int 707ffa) 298
 add (global-int 707ffb) (local-int 2e9) 3
-call-script 5157
+call-script 5157  // DRAWPLANTTIP
 lookup-array (local-ptr 3) (global-int 7049e9) (global-int 703e2e)
 jcc (local-ptr 3) ffffffff label_00006094
 mov (local-int 2f8) 1
@@ -1392,7 +1392,7 @@ jcc (local-int 2de) ffffffff label_00006088
 mov (global-int 707ddd) (local-int 2f8)
 mov (global-int 707ffa) 403
 add (global-int 707ffb) (local-int 2e9) 3
-call-script 5187
+call-script 5187  // DRAWLINKTIP
 mov (local-int 2f8) 1e
 
 label_00006088

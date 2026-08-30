@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 11ae5 1 2 7 1 2 }
 ====
 
-call-script 142f
+call-script 142f  // SETEQUIP
 jcc (global-int 16dc) ffffffff label_000000fc
 mov (local-int 11ad5) 6
 mov (local-int 11ad6) 24e
@@ -661,7 +661,7 @@ play-sound-effect 39a5 1
 u0041D050 1
 u00420270 190 640
 mov (global-int 93465) 3
-call-script 5111
+call-script 5111  // FELLOW
 sub (local-int 3f7) 0 1
 call label_0000146c
 call label_00008e20
@@ -722,12 +722,12 @@ jcc (local-int 11add) ffffffff label_00002bec
 mov (global-int 70801f) 3
 mov (global-int 708020) (local-int b7ed)
 mov (global-int 708021) (local-int 40b)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00002bec
 mov (global-int 546e03) (local-int b7ed)
 mov (global-int 546e04) (local-int 40b)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_00002c20
 jmp label_00002aa8
@@ -752,13 +752,13 @@ mov (global-int 70801f) 6
 mov (global-int 708020) (local-int b7ef)
 lookup-array (local-ptr 2) (local-int fa5f) (local-int b7ef)
 mov (global-int 708021) (local-ptr 2)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00002dac
 mov (global-int 703e2e) (local-int b7ef)
 lookup-array (local-ptr 2) (local-int fa5f) (local-int b7ef)
 mov (global-int 703e30) (local-ptr 2)
-call-script 5f
+call-script 5f  // ADDPLANT
 
 label_00002dfc
 jmp label_00002c84
@@ -868,13 +868,13 @@ mov (global-int 70801f) 6
 mov (global-int 708020) (local-int b7ef)
 lookup-array (local-ptr 2) (local-int e6d7) (local-int b7ec)
 mov (global-int 708021) (local-ptr 2)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_0000357c
 mov (global-int 703e2e) (local-int b7ef)
 lookup-array (local-ptr 2) (local-int e6d7) (local-int b7ec)
 mov (global-int 703e30) (local-ptr 2)
-call-script 5f
+call-script 5f  // ADDPLANT
 jmp label_000036c4
 
 label_000035d8
@@ -884,13 +884,13 @@ mov (global-int 70801f) 3
 mov (global-int 708020) (local-int b7ed)
 lookup-array (local-ptr 2) (local-int e6d7) (local-int b7ec)
 mov (global-int 708021) (local-ptr 2)
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00003674
 mov (global-int 546e03) (local-int b7ed)
 lookup-array (local-ptr 2) (local-int e6d7) (local-int b7ec)
 mov (global-int 546e04) (local-ptr 2)
-call-script 77a
+call-script 77a  // ADDITEM
 
 label_000036c4
 lookup-array (local-ptr 2) (global-int 920c3) (local-int b7ec)
@@ -941,13 +941,13 @@ mov (global-int 70801f) 3
 lookup-array (local-ptr 2) (global-int 6b8045) (global-int 546e03)
 mov (global-int 708020) (local-ptr 2)
 mov (global-int 708021) 1
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_00003aa0
 lookup-array (local-ptr 2) (global-int 6b8045) (global-int 546e03)
 mov (global-int 546e03) (local-ptr 2)
 mov (global-int 546e04) 1
-call-script 77a
+call-script 77a  // ADDITEM
 lookup-array (local-ptr 2) (local-int eabf) (global-int 546e03)
 lookup-array (local-ptr 3) (local-int eabf) (global-int 546e03)
 add (local-ptr 2) (local-ptr 3) 1
@@ -975,7 +975,7 @@ eq (local-int 11add) (local-int 11ad3) 0
 jcc (local-int 11add) ffffffff label_0000442c
 jcc (local-int 11ad0) ffffffff label_00003df8
 mov (global-int f8c43) (local-int 11ad0)
-call-script 21f
+call-script 21f  // ADDDP
 call label_00009f28
 and (local-int 11add) (global-int a9d6) 10000
 eq (local-int 11ade) (local-int 11add) 0
@@ -987,7 +987,7 @@ u004223C0 11d28 0 320 10 1 0
 u00422D60 11d28 1
 
 label_00003dec
-call-script 220
+call-script 220  // COMMITDR
 
 label_00003df8
 mov (local-int b7ec) 0
@@ -1065,7 +1065,7 @@ concat (local-string 0) (local-string 0) @"个！"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 
 label_00004408
 jmp label_00003e18
@@ -1124,7 +1124,7 @@ concat (local-string 0) (local-string 0) @"』1个"
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 
 label_00004884
 jmp label_00004484
@@ -1523,7 +1523,7 @@ label_00006388
 ret
 
 label_0000638c
-call-script 5154
+call-script 5154  // CHECKRECIPE
 copy-to-global (local-int 13b4) 3e8
 mov (local-int b7ec) 0
 jmp label_000063e8
@@ -3337,7 +3337,7 @@ sub (local-int 11adf) 1cb (local-int 40f)
 draw-texture 726 5c 0 0 (local-int 40e) (local-int 40f) (local-int 11ade) (local-int 11adf)
 
 label_0000f88c
-call-script 5157
+call-script 5157  // DRAWPLANTTIP
 u0041AC30 12
 u0041AC60 ffffff
 u0041ACB0 ffffff
@@ -3389,7 +3389,7 @@ u0041D050 1
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "新たなプランが追加されました|已追加新的设计"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 mov (local-int b7df) 0
 jmp label_0000fcd4
 
@@ -3410,7 +3410,7 @@ jcc (local-int 11ae0) ffffffff label_0000fe3c
 mov (global-int 70801f) 1
 mov (global-int 708020) (local-int b7ec)
 mov (global-int 708021) 1
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_0000fe3c
 jmp label_0000fcb8

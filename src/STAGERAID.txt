@@ -144,12 +144,12 @@ mov (global-int 51004e) 3
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00000f40
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00000f40
 ne (local-int f) (global-int 0) 1
@@ -439,14 +439,14 @@ mov (global-int 51004e) 6
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int 519afa) 5
-call-script 2e58
+call-script 2e58  // DELEN
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_000023cc
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000023cc
 mov (global-int f8019) 1
@@ -489,7 +489,7 @@ mov (global-int f8c39) 1
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) 9
 mov (global-int f8c3c) b
-call-script 3989
+call-script 3989  // COUNTUNIT
 eq (local-int f) (global-int 5104a0) 0
 jcc (local-int f) ffffffff label_000027d4
 mov (global-int 51004d) a
@@ -497,12 +497,12 @@ mov (global-int 51004e) 6
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_0000274c
-call-script 72
+call-script 72  // RENDERMAP
 
 label_0000274c
 ne (local-int f) (global-int 0) 1
@@ -524,7 +524,7 @@ mov (global-int f8c39) 1
 mov (global-int f8c3a) 6
 mov (global-int f8c3b) 9
 mov (global-int f8c3c) a
-call-script 3989
+call-script 3989  // COUNTUNIT
 eq (local-int f) (global-int 5104a0) 0
 jcc (local-int f) ffffffff label_0000292c
 ne (local-int f) (global-int 0) 1
@@ -550,61 +550,61 @@ jcc (local-int 13) ffffffff label_00002ecc
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "異質な気配がする……|察觉到异样的气息……"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 mov (global-int 51004d) e
 mov (global-int 51004e) a
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int f8c39) 1
 mov (global-int f8c3a) 10
 mov (global-int f8c3b) f
 mov (global-int f8c3c) 12
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) d
 mov (global-int f8c3a) d
 mov (global-int f8c3b) f
 mov (global-int f8c3c) f
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) c
 mov (global-int f8c3a) 9
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) b
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int 519afa) 1
 mov (global-int f8c39) e
 mov (global-int f8c3a) a
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) 6
 mov (global-int f8c39) d
 mov (global-int f8c3a) 9
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) 6
 mov (global-int f8c39) e
 mov (global-int f8c3a) 8
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) 6
 mov (global-int f8c39) f
 mov (global-int f8c3a) 9
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) e
 mov (global-int f8c39) d
 mov (global-int f8c3a) b
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) e
 mov (global-int f8c39) e
 mov (global-int f8c3a) c
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) e
 mov (global-int f8c39) f
 mov (global-int f8c3a) b
-call-script 2c30
+call-script 2c30  // ADDEN
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00002e44
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00002e44
 ne (local-int f) (global-int 0) 1
@@ -629,7 +629,7 @@ mov (global-int f8c39) 5
 mov (global-int f8c3a) c
 mov (global-int f8c3b) 7
 mov (global-int f8c3c) e
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int f) (global-int 51049f) 0
 jcc (local-int f) ffffffff label_00003684
 mov (global-int 3421) 1
@@ -638,7 +638,7 @@ mov (global-int 51004e) b
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 u00422390 12c
 u00416270
 create-texture 1 500 2d0 2
@@ -683,17 +683,17 @@ mov (global-int f8c39) 9
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 9
 mov (global-int f8c3c) c
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) d
 mov (global-int f8c3a) a
 mov (global-int f8c3b) d
 mov (global-int f8c3c) c
-call-script 2c90
+call-script 2c90  // RESETLAND
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00003498
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00003498
 create-texture 1 500 2d0 2
@@ -767,13 +767,13 @@ mov (global-int 51004e) 4
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int 33c2) 1
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_000039c0
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000039c0
 jmp label_00003b3c
@@ -788,13 +788,13 @@ mov (global-int 51004e) a
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int 33c3) 1
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00003b3c
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00003b3c
 exit
@@ -844,7 +844,7 @@ mov (global-int 51004e) b
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 u00422390 12c
 u00416270
 create-texture 1 500 2d0 2
@@ -889,27 +889,27 @@ mov (global-int f8c39) a
 mov (global-int f8c3a) 5
 mov (global-int f8c3b) c
 mov (global-int f8c3c) 6
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) 5
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 6
 mov (global-int f8c3c) c
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) 10
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 11
 mov (global-int f8c3c) c
-call-script 2c90
+call-script 2c90  // RESETLAND
 mov (global-int f8c39) a
 mov (global-int f8c3a) 10
 mov (global-int f8c3b) c
 mov (global-int f8c3c) 11
-call-script 2c90
+call-script 2c90  // RESETLAND
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00004348
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00004348
 create-texture 1 500 2d0 2
@@ -954,7 +954,7 @@ mov (global-int f8c39) 1
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) a
 mov (global-int f8c3c) c
-call-script 3989
+call-script 3989  // COUNTUNIT
 eq (local-int f) (global-int 5104a0) 0
 jcc (local-int f) ffffffff label_0000468c
 ne (local-int f) (global-int 0) 1
@@ -1021,13 +1021,13 @@ mov (global-int 51004e) b
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int 33b5) 1
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00004aa8
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00004aa8
 ne (local-int f) (global-int 0) 1
@@ -1108,7 +1108,7 @@ mov (global-int f8c3a) 1
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 2
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 
 label_00005084
 eq (local-int f) (local-int 9) 2
@@ -1118,7 +1118,7 @@ mov (global-int f8c3a) 4
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 4
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 
 label_0000512c
 eq (local-int f) (local-int 9) 3
@@ -1128,7 +1128,7 @@ mov (global-int f8c3a) 11
 mov (global-int f8c3b) 5
 mov (global-int f8c3c) 12
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 
 label_000051d4
 gr (local-int f) (local-int 9) 0
@@ -1137,7 +1137,7 @@ eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00005288
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00005288
 eq (local-int f) (local-int 9) 1
@@ -1206,7 +1206,7 @@ mov (global-int f8c39) 10
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 1
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int f) (global-int 5104a1) 0
 jcc (local-int f) ffffffff label_00005798
 mov (global-int f8c39) 10
@@ -1214,7 +1214,7 @@ mov (global-int f8c3a) 1
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 1
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 jmp label_0000581c
 
 label_00005798
@@ -1223,7 +1223,7 @@ mov (global-int f8c3a) 2
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 2
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 mov (global-int 33b6) 1
 
 label_0000581c
@@ -1237,7 +1237,7 @@ mov (global-int f8c3a) 4
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) 4
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 mov (global-int 33b7) 1
 jmp label_00005a84
 
@@ -1246,7 +1246,7 @@ mov (global-int f8c39) 5
 mov (global-int f8c3a) 11
 mov (global-int f8c3b) 5
 mov (global-int f8c3c) 11
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int f) (global-int 5104a1) 0
 jcc (local-int f) ffffffff label_00005a00
 mov (global-int f8c39) 5
@@ -1254,7 +1254,7 @@ mov (global-int f8c3a) 11
 mov (global-int f8c3b) 5
 mov (global-int f8c3c) 11
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 jmp label_00005a84
 
 label_00005a00
@@ -1263,25 +1263,25 @@ mov (global-int f8c3a) 12
 mov (global-int f8c3b) 5
 mov (global-int f8c3c) 12
 mov (global-int 510cfa) 3
-call-script 2e96
+call-script 2e96  // DELENMASS
 mov (global-int 33b8) 1
 
 label_00005a84
 mov (global-int 519afa) 1
 mov (global-int f8c39) e
 mov (global-int f8c3a) 11
-call-script 2c30
+call-script 2c30  // ADDEN
 eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00005b48
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00005b48
 lookup-array (local-string-ptr 0) (global-string e3b) (global-int f8dfc)
 set-string (local-string-ptr 0) "住人を生贄にガイダルは復活した！|以居民为祭品，盖达鲁复活了！"
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 50e3
+call-script 50e3  // MES
 
 label_00005ba0
 exit
@@ -1333,7 +1333,7 @@ eq (local-int f) (global-int 0) 4
 eq (local-int 10) (global-int 4fd9) 1
 or (local-int 11) (local-int f) (local-int 10)
 jcc (local-int 11) ffffffff label_00005ef0
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00005ef0
 exit

@@ -45,12 +45,12 @@ mov (global-int 51004e) 11
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int a) (global-int 0) 4
 eq (local-int b) (global-int 4fd9) 1
 or (local-int c) (local-int a) (local-int b)
 jcc (local-int c) ffffffff label_000003c4
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000003c4
 eq (local-int a) (global-int 33df) 0
@@ -88,12 +88,12 @@ mov (global-int 51004e) 12
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int a) (global-int 0) 4
 eq (local-int b) (global-int 4fd9) 1
 or (local-int c) (local-int a) (local-int b)
 jcc (local-int c) ffffffff label_000006d8
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000006d8
 exit

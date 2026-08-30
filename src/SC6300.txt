@@ -212,7 +212,7 @@ mov (global-int f7ffb) 0
 call label_0000afa0
 u00415040
 u00416120
-call-script 2d
+call-script 2d  // CHARMEDIT
 call label_00000320
 ret
 
@@ -416,7 +416,7 @@ eq (local-int 0) (local-ptr 0) 1
 jcc (local-int 0) ffffffff label_0000176c
 call label_000014dc
 u00415040
-call-script 2f
+call-script 2f  // MENU
 call label_00000320
 jmp label_00002950
 
@@ -470,7 +470,7 @@ eq (local-int 0) (local-ptr 0) 5
 jcc (local-int 0) ffffffff label_00001a04
 u004160D0
 call label_0000afa0
-call-script 30
+call-script 30  // REPLAYVOICE
 u00416120
 jmp label_00002950
 
@@ -482,7 +482,7 @@ u004160D0
 call label_0000afa0
 u00416120
 u00415040
-call-script 31
+call-script 31  // HISTORY
 u0041AC30 1e
 u0041AC60 (global-int f807b)
 u0041ACB0 (global-int f807c)
@@ -587,7 +587,7 @@ eq (local-int 0) (local-ptr 0) d
 jcc (local-int 0) ffffffff label_00002110
 call label_0000bb5c
 mov (global-int f7ff0) 0
-call-script 33
+call-script 33  // SAVE
 call label_0000bbb8
 jmp label_00002950
 
@@ -597,7 +597,7 @@ eq (local-int 0) (local-ptr 0) e
 jcc (local-int 0) ffffffff label_000021a8
 call label_0000bb5c
 mov (global-int f7ff0) 1
-call-script 33
+call-script 33  // SAVE
 call label_0000bbb8
 jmp label_00002950
 
@@ -606,7 +606,7 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) f
 jcc (local-int 0) ffffffff label_0000222c
 call label_0000bb5c
-call-script 34
+call-script 34  // CONFIG
 call label_0000bbb8
 jmp label_00002950
 
@@ -615,7 +615,7 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) 10
 jcc (local-int 0) ffffffff label_000022b0
 call label_0000bb5c
-call-script 35
+call-script 35  // INFO
 call label_0000bbb8
 jmp label_00002950
 
@@ -641,7 +641,7 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 0) (global-int f8dfe) 1
 jcc (local-int 0) ffffffff label_00002500
 call label_0000bbb8
@@ -696,14 +696,14 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 0) (global-int f8dfe) 1
 jcc (local-int 0) ffffffff label_00002944
 call label_0000bbb8
 ret
 
 label_00002944
-call-script 37
+call-script 37  // QUIT
 
 label_00002950
 ret
@@ -813,7 +813,7 @@ mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 mov (global-int f8df9) 7
-call-script 38
+call-script 38  // BUNKI
 eq (local-int 0) (global-int f8c52) 0
 jcc (local-int 0) ffffffff label_00002f5c
 exit
@@ -822,7 +822,7 @@ label_00002f5c
 jmp label_00002f74
 
 label_00002f68
-call-script 2f
+call-script 2f  // MENU
 
 label_00002f74
 call label_00000320
@@ -833,7 +833,7 @@ u004160D0
 mov (global-int f7ffb) 0
 u00415040
 u00416120
-call-script 31
+call-script 31  // HISTORY
 call label_00000320
 ret
 
@@ -973,7 +973,7 @@ mov (global-int f8043) 1f4
 call label_0000bcfc
 call label_0000c6ac
 u00415040
-call-script 39
+call-script 39  // HIDEWIN
 jcc (global-int f800c) ffffffff label_00003748
 u004160D0
 call label_0000d228
@@ -1077,7 +1077,7 @@ jcc (global-int 139a) ffffffff label_00003d3c
 mov (global-int 1399) 2
 
 label_00003d3c
-call-script 3a
+call-script 3a  // SETCHARM
 mov (global-int 139d) 0
 mov (global-int 139f) 0
 mov (global-int 13a0) 0
@@ -1293,7 +1293,7 @@ bit-reset (global-int 3f50) 0
 label_00004a6c
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00004abc
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00004abc
@@ -1330,7 +1330,7 @@ show-text 0 @"……！」"
 wait-for-input 0
 end-text-line 0
 call label_0000e36c
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00004be8
@@ -1348,7 +1348,7 @@ bit-reset (global-int 3f50) 0
 label_00004c60
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00004cb0
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00004cb0
@@ -1527,7 +1527,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_000056fc
@@ -1545,7 +1545,7 @@ bit-reset (global-int 3f50) 0
 label_00005774
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_000057c4
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_000057c4
@@ -1724,7 +1724,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00006210
@@ -1742,7 +1742,7 @@ bit-reset (global-int 3f50) 0
 label_00006288
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_000062d8
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_000062d8
@@ -1921,7 +1921,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00006d24
@@ -1939,7 +1939,7 @@ bit-reset (global-int 3f50) 0
 label_00006d9c
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00006dec
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00006dec
@@ -2118,7 +2118,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00007838
@@ -2136,7 +2136,7 @@ bit-reset (global-int 3f50) 0
 label_000078b0
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00007900
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00007900
@@ -2315,7 +2315,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_0000834c
@@ -2333,7 +2333,7 @@ bit-reset (global-int 3f50) 0
 label_000083c4
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00008414
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00008414
@@ -2512,7 +2512,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00008e60
@@ -2530,7 +2530,7 @@ bit-reset (global-int 3f50) 0
 label_00008ed8
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00008f28
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00008f28
@@ -2709,7 +2709,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_00009974
@@ -2727,7 +2727,7 @@ bit-reset (global-int 3f50) 0
 label_000099ec
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_00009a3c
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_00009a3c
@@ -2906,7 +2906,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 
 label_0000a488
@@ -2924,7 +2924,7 @@ bit-reset (global-int 3f50) 0
 label_0000a500
 eq (local-int 0) (global-int 0) 1
 jcc (local-int 0) ffffffff label_0000a550
-call-script 3a
+call-script 3a  // SETCHARM
 call label_0000afa0
 
 label_0000a550
@@ -3103,7 +3103,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 320
 call label_0000bcfc
 call label_0000c6ac
-call-script 2bd8
+call-script 2bd8  // GAMEOVER
 ret
 exit
 
@@ -3134,7 +3134,7 @@ draw-texture (local-int 0) 11 0 97 444 9a 5a 229
 
 label_0000b214
 jcc (global-int 1399) ffffffff label_0000b23c
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_0000b23c
 ret
@@ -3767,7 +3767,7 @@ exit
 
 label_0000dd48
 mov (global-int 4fdb) 0
-call-script 47
+call-script 47  // SETWEATHER
 ret
 exit
 

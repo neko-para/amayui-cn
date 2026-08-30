@@ -4,7 +4,7 @@ local_vars = { 1 1 2 1 1 2 }
 ====
 
 u004160D0
-call-script 50f3
+call-script 50f3  // CHECKDEGREE
 jcc (global-int 5465d4) ffffffff label_00000124
 concat (local-string 0) @"菲亚的女神等级提升为" (global-int a40e1)
 concat (local-string 0) (local-string 0) @"了！"
@@ -13,8 +13,8 @@ set-string (local-string-ptr 0) (local-string 0)
 add (global-int f8dfc) (global-int f8dfc) 1
 play-sound-effect 50f4 1
 u0041D050 1
-call-script 50e3
-call-script 50ea
+call-script 50e3  // MES
+call-script 50ea  // SHOWCC
 
 label_00000124
 u00416120

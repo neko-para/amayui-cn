@@ -108,8 +108,8 @@ call label_000071b0
 call label_00007450
 call label_00007d14
 call label_000078b0
-call-script 516e
-call-script 516f
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
 call label_000086ec
 eq (local-int 1de7) (global-int 4fd9) 1
 jcc (local-int 1de7) ffffffff label_00000740
@@ -153,9 +153,9 @@ jcc (local-int 1ab6) ffffffff label_00001394
 u0041A510 (global-int 934a6) (local-int 1a98) 1e
 u0041A510 (local-int 1a7a) (global-int 934a6) 1e
 call label_000078b0
-call-script 516e
-call-script 516f
-call-script 5170
+call-script 516e  // SETGARDEN
+call-script 516f  // COUNTLINK
+call-script 5170  // SETREIGNTEX
 call label_000099f8
 sub (local-int 1de7) 0 1
 set-texture 5171 2a (local-int 1de7)
@@ -887,7 +887,7 @@ jmp label_00003b94
 label_00003d64
 lookup-array-2d (local-ptr 0) (global-int 935f2) (global-int 9358d) 258 (global-int 93487)
 mov (local-ptr 0) (global-int 703e2e)
-call-script 516f
+call-script 516f  // COUNTLINK
 mov (global-int 9346b) 1
 call label_000086ec
 call label_000099f8
@@ -952,10 +952,10 @@ lookup-array (local-ptr 1) (global-int 7042e1) (local-int 2f9)
 eq (local-int 1de7) (local-ptr 1) 2
 jcc (local-int 1de7) ffffffff label_000042a4
 call label_0000e600
-call-script 5158
+call-script 5158  // CHECKSTAGE
 lookup-array (local-ptr 0) (global-int 70440d) (local-int 2f9)
 mov (global-int b228) (local-ptr 0)
-call-script 515a
+call-script 515a  // SELSTAGE
 sub (local-int 2ce) 0 1
 call label_0000364c
 jmp label_000043b0
@@ -1025,13 +1025,13 @@ sub (local-int 1de8) (local-int 1de7) (global-int a2053)
 sub (global-int 707ffb) (local-int 1de8) 32
 mov (global-int 703e2e) (local-int 2f9)
 mov (global-int 93487) (local-int 2e7)
-call-script 5173
+call-script 5173  // PLANTMENU
 sub (local-int 2ce) 0 1
 call label_0000364c
 eq (local-int 1de7) (global-int f8dfe) 0
 jcc (local-int 1de7) ffffffff label_00004834
 call label_00008e8c
-call-script 516f
+call-script 516f  // COUNTLINK
 call label_000099f8
 mov (global-int 9346b) 2
 call label_000086ec
@@ -1174,7 +1174,7 @@ mov (local-ptr 0) 0
 
 label_000053ec
 call label_00008e8c
-call-script 516f
+call-script 516f  // COUNTLINK
 call label_000099f8
 call label_0000ad5c
 
@@ -1299,7 +1299,7 @@ label_00005b60
 mov (global-int 701549) (local-int 2e7)
 eq (local-int 1de7) (global-int 9346b) 1
 jcc (local-int 1de7) ffffffff label_00005d1c
-call-script 517b
+call-script 517b  // SELPLANT
 sub (local-int 2ce) 0 1
 call label_0000364c
 call label_0000e600
@@ -1387,7 +1387,7 @@ add (local-ptr 0) (local-ptr 1) 1
 label_0000618c
 lookup-array-2d (local-ptr 0) (global-int 935f2) (global-int 9358d) 258 (global-int 701549)
 mov (local-ptr 0) (global-int 703e2e)
-call-script 516f
+call-script 516f  // COUNTLINK
 eq (local-int 1de7) (global-int 9346b) 2
 jcc (local-int 1de7) ffffffff label_00006230
 play-sound-effect 517c 3
@@ -1593,7 +1593,7 @@ play-sound-effect 39a5 1
 u0041D050 1
 mov (local-int 1de2) 1
 call label_00009680
-call-script 5184
+call-script 5184  // SELFORT
 sub (local-int 2ce) 0 1
 call label_0000364c
 call label_0000e600
@@ -2151,7 +2151,7 @@ label_00009220
 sub (global-int f801b) 0 1
 
 label_0000923c
-call-script 2f
+call-script 2f  // MENU
 eq (local-int 1de7) (global-int f801b) 0
 jcc (local-int 1de7) ffffffff label_000092a0
 mov (local-int 2ce) 0
@@ -2261,7 +2261,7 @@ label_000099b0
 copy-to-global (global-int f7b39) 258
 copy-to-global (global-int f7d91) 258
 u00416170
-call-script 5170
+call-script 5170  // SETREIGNTEX
 call label_0000ef0c
 ret
 
@@ -2298,7 +2298,7 @@ label_00009cb4
 jmp label_00009a80
 
 label_00009cc0
-call-script 5185
+call-script 5185  // DRAWPLANT
 
 label_00009ccc
 u00420270 c8 4b0
@@ -3057,7 +3057,7 @@ mov (global-int 703e2e) (local-ptr 0)
 mov (global-int 707ffa) a
 mov (global-int 707ffb) 23e
 mov (global-int 707ffc) 1
-call-script 5157
+call-script 5157  // DRAWPLANTTIP
 mov (global-int 703e2e) (local-int 2f9)
 
 label_0000e134
@@ -3374,7 +3374,7 @@ exit
 exit
 
 label_0000f790
-call-script 512f
+call-script 512f  // SETADVFLAG
 ret
 exit
 

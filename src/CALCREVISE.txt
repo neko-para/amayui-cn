@@ -92,7 +92,7 @@ lookup-array (local-ptr 3) (global-int 6c533d) (local-ptr 2)
 jcc (local-ptr 3) ffffffff label_00000b7c
 lookup-array (local-ptr 3) (global-int 61fc6) (global-int 519af9)
 mov (global-int f8c44) (local-ptr 3)
-call-script 50ef
+call-script 50ef  // SETDRILL
 mov (local-int d) 1
 jmp label_00000878
 
@@ -216,7 +216,7 @@ jcc (local-int 419) ffffffff label_000013c8
 mov (global-int 519adf) (local-int 5)
 lookup-array (local-ptr 3) (global-int 90d3b) (local-int 5)
 mov (global-int 519ae0) (local-ptr 3)
-call-script 50f0
+call-script 50f0  // CALCARM
 mov (local-int 1) 0
 jmp label_00001128
 
@@ -322,7 +322,7 @@ mov (local-ptr 3) (local-ptr 2)
 lookup-array (local-ptr 2) (global-int 6f158) (global-int 519af9)
 eq (local-int 416) (local-ptr 2) 1
 jcc (local-int 416) ffffffff label_000018a8
-call-script 50f1
+call-script 50f1  // CALCOUTFIT
 jmp label_000018bc
 
 label_000018a8

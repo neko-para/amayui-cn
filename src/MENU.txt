@@ -50,20 +50,20 @@ u00427FD0 6 219
 u00427FD0 7 29f
 u00427FD0 8 2aa
 u004244D0 (global-int f801a) 2b5
-call-script 5111
+call-script 5111  // FELLOW
 jmp label_00000b10
-call-script 35
+call-script 35  // INFO
 mov (global-int f801a) 0
 jmp label_00000b10
 mov (global-int f7ff0) 0
-call-script 33
+call-script 33  // SAVE
 mov (global-int f801a) 0
 jmp label_00000b10
 mov (global-int f7ff0) 1
-call-script 33
+call-script 33  // SAVE
 mov (global-int f801a) 0
 jmp label_00000b10
-call-script 34
+call-script 34  // CONFIG
 mov (global-int f801a) 0
 eq (local-int 6) (global-int 0) 2
 jcc (local-int 6) ffffffff label_000004a0
@@ -88,7 +88,7 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 6) (global-int f8dfe) 1
 jcc (local-int 6) ffffffff label_000006ac
 mov (global-int f801a) 0
@@ -137,19 +137,19 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 6) (global-int f8dfe) 1
 jcc (local-int 6) ffffffff label_00000aa0
 mov (global-int f801a) 0
 jmp label_00000b10
 
 label_00000aa0
-call-script 37
+call-script 37  // QUIT
 jmp label_00000b10
-call-script 31
+call-script 31  // HISTORY
 mov (global-int f801a) 0
 jmp label_00000b10
-call-script 5249
+call-script 5249  // INFOFA
 mov (global-int f801a) 0
 jmp label_00000b10
 
@@ -186,7 +186,7 @@ and (local-int 9) (global-int f8df9) 10000
 eq (local-int a) (local-int 9) 0
 and (local-int b) (local-int 8) (local-int a)
 jcc (local-int b) ffffffff label_00000da4
-call-script 46
+call-script 46  // DRAWCHARM
 u00415BF0
 call label_000010b0
 comment "loadms "
@@ -237,7 +237,7 @@ draw-texture (local-int 6) 11 0 97 444 9a 5a 229
 
 label_00001080
 jcc (global-int 1399) ffffffff label_000010a8
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_000010a8
 ret

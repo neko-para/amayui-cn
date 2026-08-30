@@ -739,7 +739,7 @@ mov (global-int f8c39) 3
 mov (global-int f8c3a) 3
 mov (global-int f8c3b) 5
 mov (global-int f8c3c) 5
-call-script 3989
+call-script 3989  // COUNTUNIT
 lt (local-int 3) (global-int 5104a2) 3
 jcc (local-int 3) ffffffff label_000043fc
 mov (local-int 0) 1
@@ -749,7 +749,7 @@ mov (global-int f8c39) b
 mov (global-int f8c3a) 3
 mov (global-int f8c3b) d
 mov (global-int f8c3c) 8
-call-script 3989
+call-script 3989  // COUNTUNIT
 lt (local-int 3) (global-int 5104a2) 2
 jcc (local-int 3) ffffffff label_000044a4
 mov (local-int 0) 1
@@ -759,7 +759,7 @@ mov (global-int f8c39) 2
 mov (global-int f8c3a) 8
 mov (global-int f8c3b) 4
 mov (global-int f8c3c) d
-call-script 3989
+call-script 3989  // COUNTUNIT
 lt (local-int 3) (global-int 5104a2) 2
 jcc (local-int 3) ffffffff label_0000454c
 mov (local-int 0) 1
@@ -1189,7 +1189,7 @@ label_00006b78
 mov (global-int 2fa0) 0
 mov (global-int f8c39) 62
 mov (global-int f8c3a) 1
-call-script 50e2
+call-script 50e2  // CHANGECH
 exit
 
 label_00006bc4

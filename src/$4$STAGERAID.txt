@@ -116,7 +116,7 @@ mov (global-int f8c39) 9
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) b
 mov (global-int f8c3c) 4
-call-script 2c90
+call-script 2c90  // RESETLAND
 
 label_00000924
 eq (local-int c) (local-int 7) 2
@@ -125,7 +125,7 @@ mov (global-int f8c39) 1
 mov (global-int f8c3a) 10
 mov (global-int f8c3b) 3
 mov (global-int f8c3c) 13
-call-script 2c90
+call-script 2c90  // RESETLAND
 
 label_000009b8
 eq (local-int c) (local-int 7) 3
@@ -134,7 +134,7 @@ mov (global-int f8c39) 11
 mov (global-int f8c3a) 10
 mov (global-int f8c3b) 13
 mov (global-int f8c3c) 13
-call-script 2c90
+call-script 2c90  // RESETLAND
 
 label_00000a4c
 add (local-int b) (local-int b) 1
@@ -156,7 +156,7 @@ eq (local-int c) (global-int 0) 4
 eq (local-int d) (global-int 4fd9) 1
 or (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_00000bdc
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00000bdc
 ne (local-int c) (global-int 0) 1
@@ -175,7 +175,7 @@ eq (local-int c) (global-int 0) 4
 eq (local-int d) (global-int 4fd9) 1
 or (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_00000d18
-call-script 72
+call-script 72  // RENDERMAP
 
 label_00000d18
 ne (local-int c) (global-int 0) 1

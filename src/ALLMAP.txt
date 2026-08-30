@@ -98,7 +98,7 @@ label_0000059c
 jmp label_000004e8
 
 label_000005a8
-call-script 5158
+call-script 5158  // CHECKSTAGE
 mov (local-int 550) (global-int b1bc)
 mov (global-int b1bc) 1
 jmp label_00000604
@@ -777,7 +777,7 @@ label_00002f98
 mov (global-int b228) 0
 
 label_00002fac
-call-script 515a
+call-script 515a  // SELSTAGE
 call label_000020dc
 eq (local-int 566) (global-int 0) 2
 jcc (local-int 566) ffffffff label_00003164
@@ -891,7 +891,7 @@ add (local-int 28d) 3 (global-int 14c898)
 ret
 
 label_00003764
-call-script 515b
+call-script 515b  // SETORN
 ret
 
 label_00003774
@@ -1052,7 +1052,7 @@ label_00004234
 sub (global-int f801b) 0 1
 
 label_00004250
-call-script 2f
+call-script 2f  // MENU
 eq (local-int 566) (global-int f801b) 0
 jcc (local-int 566) ffffffff label_000042b4
 mov (local-int 8) 2
@@ -1451,7 +1451,7 @@ exit
 exit
 
 label_000065cc
-call-script 512f
+call-script 512f  // SETADVFLAG
 ret
 exit
 

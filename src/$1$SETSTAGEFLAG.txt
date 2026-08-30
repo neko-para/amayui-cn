@@ -42,7 +42,7 @@ mov (global-int f8c39) 5
 mov (global-int f8c3a) 3
 mov (global-int f8c3b) 7
 mov (global-int f8c3c) 5
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int 0) (global-int 51049f) 0
 jcc (local-int 0) ffffffff label_000003a8
 mov (global-int 340c) 1
@@ -57,7 +57,7 @@ mov (global-int f8c39) 12
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) 16
 mov (global-int f8c3c) 5
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int 0) (global-int 51049f) 0
 jcc (local-int 0) ffffffff label_0000048c
 mov (global-int 340b) 1

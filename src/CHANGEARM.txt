@@ -134,7 +134,7 @@ eq (local-int 8) (local-ptr 4) (global-int 546e02)
 or (local-int b) (local-int a) (local-int 8)
 jcc (local-int b) ffffffff label_00000ad8
 mov (global-int 519af9) (local-int 3)
-call-script 50ed
+call-script 50ed  // CALCREVISE
 ne (local-int 6) (global-int b22a) 0
 jcc (local-int 6) ffffffff label_00000ad8
 bit-set (global-int 56940) 1

@@ -121,7 +121,7 @@ u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int 
 u0043AA40 19258 (global-int 4fd1) (global-int 4fd2) (global-int 4fd3)
 
 label_00000774
-call-script 51c3
+call-script 51c3  // LOADCHARM
 call label_00000fa4
 call label_00001248
 u00416360
@@ -167,7 +167,7 @@ jmp label_00000b40
 label_00000afc
 lookup-array (local-ptr 0) (global-int 4009) (global-int f801d)
 jcc (local-ptr 0) ffffffff label_00000b40
-call-script ca
+call-script ca  // SETPOLYGON
 
 label_00000b40
 jmp label_000007bc
@@ -273,7 +273,7 @@ draw-texture (local-int 1) 11 0 97 444 9a 5a 229
 
 label_00001218
 jcc (global-int 1399) ffffffff label_00001240
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_00001240
 ret

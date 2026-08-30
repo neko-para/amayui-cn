@@ -747,8 +747,8 @@ lookup-array (local-ptr 3) (global-int 14e4e0) (global-int b222)
 mov (global-int b228) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 14e8c8) (global-int b222)
 mov (global-int b229) (local-ptr 3)
-call-script 5109
-call-script 510a
+call-script 5109  // SETFIELD
+call-script 510a  // SETSTAGE
 mov (local-int 418) 1
 jmp label_00002ce0
 
@@ -1100,10 +1100,10 @@ label_000042bc
 ret
 
 label_000042c0
-call-script 50f9
+call-script 50f9  // SETUNITLIST
 
 label_000042cc
-call-script 50fa
+call-script 50fa  // SETUNITBOX
 gr (local-int 490) (global-int 6f68ee) 1
 jcc (local-int 490) ffffffff label_00004344
 mov (local-int 19) 0
@@ -1221,7 +1221,7 @@ copy-to-global (global-int 519acc) 5
 copy-to-global (global-int 6ff5cb) 5
 copy-to-global (global-int 519ad1) e
 copy-to-global (global-int 6ff5d0) e
-call-script 50fb
+call-script 50fb  // SETCH
 u0041A510 (global-int 621ba) (global-int 6ff5de) 8
 u0041A510 (global-int 624da) (global-int 6ff5e6) d
 u0041A510 (global-int 62ab6) (global-int 6ff5f3) e
@@ -1590,7 +1590,7 @@ label_00006d9c
 mov (global-int 546e02) (global-int 519afb)
 
 label_00006db0
-call-script 50f5
+call-script 50f5  // READICON
 add (local-int 490) 1d4c0 6c2
 add (local-int 491) (local-int 490) (local-int 404)
 add (local-int 492) (local-int 414) 12
@@ -1794,7 +1794,7 @@ mov (global-int 519af9) 0
 mov (global-int 707ffa) 325
 mov (global-int 707ffb) 34
 add (global-int 707ffe) 1d4c0 1f4
-call-script 5103
+call-script 5103  // DRAWSTATUS
 
 label_0000808c
 ret

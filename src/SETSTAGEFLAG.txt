@@ -106,7 +106,7 @@ mov (global-int f8c39) 9
 mov (global-int f8c3a) 1
 mov (global-int f8c3b) d
 mov (global-int f8c3c) 9
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int 9) (global-int 51049f) 0
 jcc (local-int 9) ffffffff label_00000ad8
 mov (global-int 33be) 1
@@ -121,7 +121,7 @@ mov (global-int f8c39) 4
 mov (global-int f8c3a) 4
 mov (global-int f8c3b) a
 mov (global-int f8c3c) a
-call-script 3989
+call-script 3989  // COUNTUNIT
 gr (local-int 9) (global-int 51049f) 0
 jcc (local-int 9) ffffffff label_00000bbc
 mov (global-int 3381) 1
@@ -499,7 +499,7 @@ mov (global-int f8c39) 3
 mov (global-int f8c3a) b
 mov (global-int f8c3b) 7
 mov (global-int f8c3c) d
-call-script 3989
+call-script 3989  // COUNTUNIT
 eq (local-int 9) (global-int 51049f) 4
 jcc (local-int 9) ffffffff label_000025e4
 mov (global-int 33b0) 1

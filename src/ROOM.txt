@@ -65,7 +65,7 @@ copy-local-array (local-int b) [4ba 36b 36b 36b 36b]
 copy-local-array (local-int 33) [28b 67 f3 17f 20b]
 mov (local-int fb) 5
 play-bgm 29
-call-script 524c
+call-script 524c  // SETMEMOIR
 mov (local-int 107) 1
 
 label_00000454
@@ -402,20 +402,20 @@ mov (local-int 112) (local-int 106)
 call label_00001a80
 eq (local-int 12a) (local-int 106) 1
 jcc (local-int 12a) ffffffff label_00001720
-call-script 524d
+call-script 524d  // CGMODE
 jmp label_000017c0
 
 label_00001720
 eq (local-int 12a) (local-int 106) 2
 jcc (local-int 12a) ffffffff label_0000177c
-call-script 524e
-call-script 524c
+call-script 524e  // HMODE
+call-script 524c  // SETMEMOIR
 jmp label_000017c0
 
 label_0000177c
 eq (local-int 12a) (local-int 106) 3
 jcc (local-int 12a) ffffffff label_000017c0
-call-script 524f
+call-script 524f  // MMODE
 
 label_000017c0
 mov (local-int 106) (global-int 107a0a)
@@ -453,7 +453,7 @@ u00415BF0
 call label_00002904
 mov (local-int 112) 4
 call label_00001a80
-call-script 35
+call-script 35  // INFO
 mov (local-int 2) 3
 
 label_00001a7c

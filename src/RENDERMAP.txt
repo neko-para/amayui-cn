@@ -7,8 +7,8 @@ u004160D0
 jcc (global-int 56940) ffffffff label_00000af8
 and (local-int 5) (global-int 56940) 1
 jcc (local-int 5) ffffffff label_00000308
-call-script 510b
-call-script 5124
+call-script 510b  // SETROOM
+call-script 5124  // SETHALLTEX
 mov (local-int 0) 1
 jmp label_000000e8
 
@@ -61,7 +61,7 @@ lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
 and (local-int 5) (local-ptr 0) 800000
 jcc (local-int 5) ffffffff label_00000428
 mov (global-int 519af9) (local-int 0)
-call-script 50f2
+call-script 50f2  // DRAWCH
 
 label_00000428
 lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
@@ -76,14 +76,14 @@ jmp label_00000534
 label_000004f8
 add (local-int 1) ea60 (local-int 0)
 mov (global-int 519af9) (local-int 0)
-call-script 512a
+call-script 512a  // DRAWCHSTATE
 
 label_00000534
 lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
 and (local-int 5) (local-ptr 0) 100000
 jcc (local-int 5) ffffffff label_00000770
 mov (global-int 519af9) (local-int 0)
-call-script 50f2
+call-script 50f2  // DRAWCH
 lookup-array (local-ptr 0) (global-int 6f1bc) (local-int 0)
 lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-ptr 0)
 lookup-array (local-ptr 2) (global-int 6f18a) (local-int 0)
@@ -135,18 +135,18 @@ and (local-int 5) (local-ptr 0) 200001
 eq (local-int 7) (local-int 5) 200001
 jcc (local-int 7) ffffffff label_00000988
 mov (global-int 519af9) (local-int 0)
-call-script 50e7
+call-script 50e7  // REMOVECH
 
 label_00000988
 jmp label_000008a4
 
 label_00000994
-call-script 5121
-call-script 510f
-call-script 510c
+call-script 5121  // CALCOCC
+call-script 510f  // DRAWMAP
+call-script 510c  // DRAWMINIMAP
 eq (local-int 5) (global-int 4fd9) 0
 jcc (local-int 5) ffffffff label_00000af8
-call-script 3994
+call-script 3994  // DRAWCHP
 u0041AC30 1e
 u0041AC60 (global-int f807b)
 u0041ACB0 (global-int f807c)
@@ -164,8 +164,8 @@ u00423127 1
 mov (global-int 3f36) 2
 
 label_00000af8
-call-script 511a
-call-script 5117
+call-script 511a  // SETOBJ
+call-script 5117  // DRAWOBJ
 u00416200
 mov (global-int 56940) 0
 u00416120

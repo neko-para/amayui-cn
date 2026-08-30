@@ -33,12 +33,12 @@ mov (global-int 51004e) a
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int a) (global-int 0) 4
 eq (local-int b) (global-int 4fd9) 1
 or (local-int c) (local-int a) (local-int b)
 jcc (local-int c) ffffffff label_000003dc
-call-script 72
+call-script 72  // RENDERMAP
 
 label_000003dc
 exit

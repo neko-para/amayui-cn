@@ -177,7 +177,7 @@ jmp label_00000918
 
 label_00000ec8
 mov (global-int 708022) 1
-call-script 50e8
+call-script 50e8  // SHOWGROW
 lookup-array (local-ptr 2) (global-int 7254c) (global-int 546e02)
 mov (global-int 5469e8) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72934) (global-int 546e02) d 0
@@ -270,19 +270,19 @@ jcc (local-int 51) ffffffff label_000015a0
 lookup-array (local-ptr 2) (global-int 7254c) (global-int 546e02)
 lookup-array (local-ptr 3) (global-int 7254c) (local-int b)
 mov (local-ptr 2) (local-ptr 3)
-call-script 50e9
+call-script 50e9  // CALCCC
 eq (local-int 4b) (global-int 546e02) (local-int b)
 gr (local-int 4f) (global-int 5465d4) 0
 and (local-int 4c) (local-int 4b) (local-int 4f)
 jcc (local-int 4c) ffffffff label_000015a0
-call-script 50ea
+call-script 50ea  // SHOWCC
 
 label_000015a0
 jmp label_00001360
 
 label_000015ac
 mov (global-int 546e02) (local-int c)
-call-script 50eb
+call-script 50eb  // COMMITGROW
 
 label_000015cc
 exit

@@ -732,7 +732,7 @@ ret
 
 label_00002c14
 mov (global-int 6c477f) 0
-call-script 5120
+call-script 5120  // CHECKFIT
 copy-to-global (global-int 6c4f55) 3e8
 mov (global-int 6c4b68) 0
 mov (global-int 6c4f54) 0
@@ -868,7 +868,7 @@ u00420270 (local-int be9) 1f4
 mov (global-int 707ffa) (local-int 40f)
 mov (global-int 707ffb) (local-int 410)
 mov (global-int 707fff) 38e
-call-script 516a
+call-script 516a  // DRAWSTALL
 ret
 
 label_00003820
@@ -897,7 +897,7 @@ lookup-array (local-ptr 1) (global-int 6c4780) (local-int bea)
 mov (global-int 519afb) (local-ptr 1)
 add (global-int 707ffa) (local-int 40c) 26
 add (global-int 707ffb) (local-int 40d) 8
-call-script 516b
+call-script 516b  // DRAWSTALLTIP
 jmp label_00003fd4
 
 label_00003af4

@@ -212,7 +212,7 @@ mov (global-int f7ffb) 0
 call label_00020128
 u00415040
 u00416120
-call-script 2d
+call-script 2d  // CHARMEDIT
 call label_00000320
 ret
 
@@ -416,7 +416,7 @@ eq (local-int 0) (local-ptr 0) 1
 jcc (local-int 0) ffffffff label_0000176c
 call label_000014dc
 u00415040
-call-script 2f
+call-script 2f  // MENU
 call label_00000320
 jmp label_00002950
 
@@ -470,7 +470,7 @@ eq (local-int 0) (local-ptr 0) 5
 jcc (local-int 0) ffffffff label_00001a04
 u004160D0
 call label_00020128
-call-script 30
+call-script 30  // REPLAYVOICE
 u00416120
 jmp label_00002950
 
@@ -482,7 +482,7 @@ u004160D0
 call label_00020128
 u00416120
 u00415040
-call-script 31
+call-script 31  // HISTORY
 u0041AC30 1e
 u0041AC60 (global-int f807b)
 u0041ACB0 (global-int f807c)
@@ -587,7 +587,7 @@ eq (local-int 0) (local-ptr 0) d
 jcc (local-int 0) ffffffff label_00002110
 call label_00020ce4
 mov (global-int f7ff0) 0
-call-script 33
+call-script 33  // SAVE
 call label_00020d40
 jmp label_00002950
 
@@ -597,7 +597,7 @@ eq (local-int 0) (local-ptr 0) e
 jcc (local-int 0) ffffffff label_000021a8
 call label_00020ce4
 mov (global-int f7ff0) 1
-call-script 33
+call-script 33  // SAVE
 call label_00020d40
 jmp label_00002950
 
@@ -606,7 +606,7 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) f
 jcc (local-int 0) ffffffff label_0000222c
 call label_00020ce4
-call-script 34
+call-script 34  // CONFIG
 call label_00020d40
 jmp label_00002950
 
@@ -615,7 +615,7 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) 10
 jcc (local-int 0) ffffffff label_000022b0
 call label_00020ce4
-call-script 35
+call-script 35  // INFO
 call label_00020d40
 jmp label_00002950
 
@@ -641,7 +641,7 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 0) (global-int f8dfe) 1
 jcc (local-int 0) ffffffff label_00002500
 call label_00020d40
@@ -696,14 +696,14 @@ lookup-array (local-ptr 1) (global-int f8dff) (global-int f8dfc)
 mov (local-ptr 1) (global-int f8dfc)
 mov (global-int f8fa4) (global-int f8dfc)
 add (global-int f8dfc) (global-int f8dfc) 1
-call-script 36
+call-script 36  // SBUNKI
 eq (local-int 0) (global-int f8dfe) 1
 jcc (local-int 0) ffffffff label_00002944
 call label_00020d40
 ret
 
 label_00002944
-call-script 37
+call-script 37  // QUIT
 
 label_00002950
 ret
@@ -813,7 +813,7 @@ mov (local-ptr 1) (global-int f8c50)
 mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 mov (global-int f8df9) 7
-call-script 38
+call-script 38  // BUNKI
 eq (local-int 0) (global-int f8c52) 0
 jcc (local-int 0) ffffffff label_00002f5c
 exit
@@ -822,7 +822,7 @@ label_00002f5c
 jmp label_00002f74
 
 label_00002f68
-call-script 2f
+call-script 2f  // MENU
 
 label_00002f74
 call label_00000320
@@ -833,7 +833,7 @@ u004160D0
 mov (global-int f7ffb) 0
 u00415040
 u00416120
-call-script 31
+call-script 31  // HISTORY
 call label_00000320
 ret
 
@@ -973,7 +973,7 @@ mov (global-int f8043) 1f4
 call label_00020e84
 call label_00021834
 u00415040
-call-script 39
+call-script 39  // HIDEWIN
 jcc (global-int f800c) ffffffff label_00003748
 u004160D0
 call label_000223b0
@@ -1077,7 +1077,7 @@ jcc (global-int 139a) ffffffff label_00003d3c
 mov (global-int 1399) 2
 
 label_00003d3c
-call-script 3a
+call-script 3a  // SETCHARM
 mov (global-int 139d) 0
 mov (global-int 139f) 0
 mov (global-int 13a0) 0
@@ -4174,7 +4174,7 @@ mov (global-int 51004e) 9
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_0000f284
 u0041A7B0 8
@@ -4208,7 +4208,7 @@ mov (global-int 51004e) 3
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_0000f3f4
 u0041A7B0 8
@@ -4242,7 +4242,7 @@ mov (global-int 51004e) 3
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_0000f564
 u0041A7B0 8
@@ -4276,7 +4276,7 @@ mov (global-int 51004e) 2
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_0000f6d4
 u0041A7B0 8
@@ -4308,7 +4308,7 @@ show-text 0 @"「顺便查一下堵泥的原因，能解决的话就解决掉吧
 wait-for-input 0
 end-text-line 0
 u00415040
-call-script 2c17
+call-script 2c17  // SG4072
 jcc (global-int f800c) ffffffff label_0000f80c
 u004160D0
 call label_000223b0
@@ -4642,7 +4642,7 @@ show-text 0 @"「好，护住菲亚，撑到城砦穿过溪谷。防卫城砦吧
 wait-for-input 0
 end-text-line 0
 u00415040
-call-script 2c19
+call-script 2c19  // SG4073
 jcc (global-int f800c) ffffffff label_0001082c
 u004160D0
 call label_000223b0
@@ -4672,7 +4672,7 @@ mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 mov (global-int f8df9) 2
 u00415040
-call-script 38
+call-script 38  // BUNKI
 jcc (global-int f800c) ffffffff label_00010a2c
 u004160D0
 call label_000223b0
@@ -4809,7 +4809,7 @@ dev_ukn
 mov (global-int 519afa) 1
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 call label_00022ef8
 call label_00020e78
 u004160D0
@@ -5737,7 +5737,7 @@ show-text 0 @"一边防住敌人的入侵，一边把城里的大家救出来！
 wait-for-input 0
 end-text-line 0
 u00415040
-call-script 2c1f
+call-script 2c1f  // SG4075
 jcc (global-int f800c) ffffffff label_00014618
 u004160D0
 call label_000223b0
@@ -5762,7 +5762,7 @@ mov (global-int 51004e) 9
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 call label_00022ef8
 call label_00020e78
 u004160D0
@@ -8305,20 +8305,20 @@ jcc (local-int 0) ffffffff label_0001e1c8
 mov (global-int 70801f) 0
 mov (global-int 708020) 5
 add (global-int 708021) 2 0
-call-script 5d
+call-script 5d  // SHOWPOP
 
 label_0001e1c8
 mov (global-int 546ddf) 5
 mov (global-int 546de7) 0
 mov (global-int 546dff) 1
-call-script 5e
+call-script 5e  // UNITECH
 mov (global-int 70801f) 4
 mov (global-int 708020) 0
 mov (global-int 708021) c8
-call-script 5d
+call-script 5d  // SHOWPOP
 mov (global-int f8c43) c8
 u00415040
-call-script 21f
+call-script 21f  // ADDDP
 jcc (global-int f800c) ffffffff label_0001e2c4
 u004160D0
 call label_000223b0
@@ -8331,7 +8331,7 @@ u0041ADB0 label_000036a4 label_00003774
 call label_00000320
 u004154F0
 u00415040
-call-script 220
+call-script 220  // COMMITDR
 jcc (global-int f800c) ffffffff label_0001e340
 u004160D0
 call label_000223b0
@@ -8346,7 +8346,7 @@ u004154F0
 call label_00022e64
 call label_00022ef8
 u00415040
-call-script 2c2f
+call-script 2c2f  // SG4078
 jcc (global-int f800c) ffffffff label_0001e3d4
 u004160D0
 call label_000223b0
@@ -8404,15 +8404,15 @@ call label_00021834
 mov (global-int 519afa) d
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 3
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) e
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 4
-call-script 2c30
+call-script 2c30  // ADDEN
 mov (global-int 519afa) f
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 5
-call-script 2c30
+call-script 2c30  // ADDEN
 ret
 
 label_0001e818
@@ -8771,16 +8771,16 @@ mov (global-int 51004e) 7
 mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
-call-script 2bf3
+call-script 2bf3  // LOOK
 mov (global-int 519afa) 1
 mov (global-int f8c39) f
 mov (global-int f8c3a) 7
-call-script 2c30
+call-script 2c30  // ADDEN
 eq (local-int 0) (global-int 0) 4
 eq (local-int 1) (global-int 4fd9) 1
 or (local-int 2) (local-int 0) (local-int 1)
 jcc (local-int 2) ffffffff label_0001ff54
-call-script 72
+call-script 72  // RENDERMAP
 
 label_0001ff54
 eq (local-int 0) (global-int 2d8d) 1
@@ -8838,7 +8838,7 @@ draw-texture (local-int 0) 11 0 97 444 9a 5a 229
 
 label_0002039c
 jcc (global-int 1399) ffffffff label_000203c4
-call-script 46
+call-script 46  // DRAWCHARM
 
 label_000203c4
 ret
@@ -9471,7 +9471,7 @@ exit
 
 label_00022ed0
 mov (global-int 4fdb) 0
-call-script 47
+call-script 47  // SETWEATHER
 ret
 exit
 

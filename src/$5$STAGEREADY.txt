@@ -46,7 +46,7 @@ mov (global-int f8c3a) 11
 mov (global-int f8c3b) 8
 mov (global-int f8c3c) 13
 mov (global-int 510cfa) 2
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int 14d712) 19
 mov (global-int 5bd01) 19
 mov (global-int 5bd03) 0
@@ -63,13 +63,13 @@ mov (global-int f8c3a) 1
 mov (global-int f8c3b) b
 mov (global-int f8c3c) 1
 mov (global-int 510cfa) 2
-call-script 2fd8
+call-script 2fd8  // SETLAND
 mov (global-int f8c39) 6
 mov (global-int f8c3a) 2
 mov (global-int f8c3b) a
 mov (global-int f8c3c) 2
 mov (global-int 510cfa) 2
-call-script 2fd8
+call-script 2fd8  // SETLAND
 
 label_00000558
 exit
@@ -83,43 +83,43 @@ mov (global-int f8c3a) 4
 mov (global-int f8c3b) 7
 mov (global-int f8c3c) 6
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 3
 mov (global-int f8c3b) 6
 mov (global-int f8c3c) 3
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 7
 mov (global-int f8c3b) 6
 mov (global-int f8c3c) 9
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) 4
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 6
 mov (global-int f8c3c) d
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) 7
 mov (global-int f8c3a) 9
 mov (global-int f8c3b) c
 mov (global-int f8c3c) b
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) d
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 10
 mov (global-int f8c3c) c
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) b
 mov (global-int f8c3a) c
 mov (global-int f8c3b) b
 mov (global-int f8c3c) d
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 
 label_000008c0
 exit
@@ -134,19 +134,19 @@ mov (global-int f8c3a) 7
 mov (global-int f8c3b) 6
 mov (global-int f8c3c) 9
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) 7
 mov (global-int f8c3a) 9
 mov (global-int f8c3b) c
 mov (global-int f8c3c) b
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 mov (global-int f8c39) b
 mov (global-int f8c3a) c
 mov (global-int f8c3b) b
 mov (global-int f8c3c) d
 mov (global-int 510cfa) 1
-call-script 2d68
+call-script 2d68  // SETOCC
 
 label_00000a7c
 exit
