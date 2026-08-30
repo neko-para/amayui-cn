@@ -35,3 +35,6 @@
 | `this + 0x0A509C` | 引擎 | opcode→handler 函数指针表基址（下标=opcode，上限 0x400） |
 | `sub_412290` / `.text:00412290` | 引擎 | **解释器主循环**（读 opcode → dispatch → 推进 IP） |
 | `sub_42C6E0` | 引擎 | **`mod`(0x54) opcode handler**（`param1 = param2 % param3`） |
+| `sub_41BF50` / `sub_41C300` | 引擎 | **读 int / 读 float 操作数原语**（按 type 分支 + `DEC` 去混淆）见 `engine/05-操作数访问原语.md` |
+| `sub_42B4B0` / `sub_42BA00` | 引擎 | **写 int / 写 float 操作数原语**（`ENC` 编码 = `DEC` 逆运算）见 `engine/05-操作数访问原语.md` |
+| `sub_415640` | 引擎 | **`Command` 构造器**（初始化 dispatch 表：`this+0xA509C`，默认 `sub_418E30`） |

@@ -83,7 +83,7 @@ if ( v18 > 0x3FF ) goto LABEL_229;                          // opcode 越界 →
 
 ## 6. Todo（engine 域）
 
-- [ ] 完整 548 条 opcode→handler 对照表（按 §5-2 读 `.lst` 区域可全量导出）。
+- [x] opcode→handler 对照表（**544 条**，按 §5-2 读 `.lst` `sub_415640` 区域全量导出）——见 [`06-opcode到handler映射表.md`](./06-opcode到handler映射表.md)。
 - [ ] `global_int` 数组基址（`[base+index*4]`）→ 索引→地址映射（§5-4）。
 - [x] 字节码 opcode dispatch 载体 —— **一维函数指针表 `this+0xA509C + 4*opcode`，上限 0x400，默认 `sub_418E30`**；主循环在 `sub_412290`。（本次已解）
 - [x] `off_5530E0/5530E8` 实体结构 —— **游戏对象/类型方法表（非 opcode dispatch）**，已排除。
