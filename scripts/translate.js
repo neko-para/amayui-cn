@@ -58,14 +58,20 @@ function preprocess(srcText) {
       if (p.length) problems.push(`${line.trim()} : ${p.join('; ')}`);
       return `"${text}"`;
     });
-    lines.push(out);
+    // 控制行可能带 annotate-call-script 追加的行尾注释（如 `call-script 2d  // CHARMEDIT`），
+    // 写盘给 age-asm 前须剥离开头/行尾 `//` 注释；文本指令行(可含字符串)不做此处理，保护字符串内 `//`。
+    lines.push(TEXT_INSTR.test(out) ? out : out.replace(/\s*\/\/.*$/, ''));
   }
   return { lines, eol, problems };
 }
 
 // 骨架：去掉注释与文本内容行后的控制流序列（label/u/指令/end-text-line 等）
+// 注：call-script 等控制行可能带 annotate-call-script 追加的行尾注释（如 `// CHARMEDIT`），
+//     比较前须剥离行尾 `//` 注释，否则会与无注释的 data 基线误判为「控制行被改动」。
 function skeleton(lines) {
-  return lines.map((l) => l.trim()).filter((l) => l && !l.startsWith('//') && !TEXT_INSTR.test(l));
+  return lines
+    .map((l) => l.trim().replace(/\s*\/\/.*$/, ''))
+    .filter((l) => l && !l.startsWith('//') && !TEXT_INSTR.test(l));
 }
 
 function checkSkeleton(script, curLines, baselinePath) {

@@ -44,7 +44,8 @@ function skeletonFromText(text) {
     if (t.startsWith('//')) continue;          // 行注释
     if (TEXT_INSTR.test(t)) continue;          // 文本内容行(可增删改)
     if (t === '') continue;
-    out.push(t);                               // 控制行
+    // 控制行：剥离开头行注释与行尾注释（call-script 等可能带 annotate-call-script 追加的 `// NAME`）
+    out.push(t.replace(/\s*\/\/.*$/, '').trim()); // 控制行
   }
   return out;
 }
