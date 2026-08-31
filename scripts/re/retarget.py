@@ -221,6 +221,15 @@ def main():
         r'(?<![A-Za-z0-9_:])(' + '|'.join(re.escape(n) for n in member_names) + r')'
         r'\(\s*(?:\([^()]*\)\s*)?_this\s*,')
     text = call_pat.sub(lambda m: f"this->{m.group(1)}(", text)
+    # 帧字段化：`_this[30 * this->cur_script + K]` -> `this->frames[this->cur_script].field`
+    #   K 是 _DWORD 下标；帧内偏移 = 4*K - FRAMES_BASE(0x5D894)；命中 FRAME_FIELD 才改写，
+    #   未确认的偏移（如 0x34/0x40..）保持原样，绝不臆测。
+    _fr = re.compile(r'_this\[\s*30\s*\*\s*this->cur_script\s*\+\s*(\d+)\s*\]')
+    def _frame_repl(m):
+        off = 4 * int(m.group(1)) - retype.FRAMES_BASE
+        fld = retype.FRAME_FIELD.get(off)
+        return f"this->frames[this->cur_script].{fld}" if fld is not None else m.group(0)
+    text = _fr.sub(_frame_repl, text)
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(text)
     print(f"[retarget] members_touched={touched}  edits={len(keep)}  out={out_path}")
