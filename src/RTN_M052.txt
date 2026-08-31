@@ -121,7 +121,7 @@ jmp label_00000194
 
 label_000008e0
 jcc (local-int 38) ffffffff label_00000e28
-u0041A270 (local-int 1) (local-int 38)
+random (local-int 1) (local-int 38)
 lookup-array (local-ptr 0) (local-int 6) (local-int 1)
 mov (global-int 61c73) (local-ptr 0)
 mov (local-int 38) 0
@@ -180,7 +180,7 @@ label_00000d34
 jmp label_00000a90
 
 label_00000d40
-u0041A270 (local-int 1) (local-int 38)
+random (local-int 1) (local-int 38)
 lookup-array (local-ptr 0) (global-int 6f0f4) (global-int 61c72)
 lookup-array (local-ptr 1) (local-int 6) (local-int 1)
 mov (local-ptr 0) (local-ptr 1)

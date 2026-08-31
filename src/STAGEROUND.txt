@@ -882,7 +882,7 @@ label_00004074
 gr (local-int 14d) (local-int 100) 0
 jcc (local-int 14d) ffffffff label_000043cc
 mov (local-int 9) 0
-u0041A270 (local-int 3) (local-int 100)
+random (local-int 3) (local-int 100)
 lookup-array (local-ptr 5) (local-int 133) (local-int 3)
 mov (local-int 6) (local-ptr 5)
 lookup-array (local-ptr 5) (local-int 101) (local-int 6)
@@ -910,7 +910,7 @@ label_0000426c
 sub (local-int 14d) 4 (local-int 5)
 lt (local-int 14e) (local-int 0) (local-int 14d)
 jcc (local-int 14e) ffffffff label_000043cc
-u0041A270 (local-int 3) (local-int 100)
+random (local-int 3) (local-int 100)
 lookup-array (local-ptr 5) (local-int 133) (local-int 3)
 mov (local-int 6) (local-ptr 5)
 lookup-array (local-ptr 5) (local-int 101) (local-int 6)
@@ -1179,7 +1179,7 @@ jmp label_00005444
 label_00005544
 gr (local-int 14d) (local-int 100) 0
 jcc (local-int 14d) ffffffff label_0000567c
-u0041A270 (local-int 3) (local-int 100)
+random (local-int 3) (local-int 100)
 lookup-array (local-ptr 5) (local-int 15) (local-int 3)
 mov (local-int 4) (local-ptr 5)
 lookup-array (local-ptr 5) (global-int 6f18a) (local-int 4)
@@ -1218,7 +1218,7 @@ jmp label_000056e8
 label_000057e8
 gr (local-int 14d) (local-int 100) 0
 jcc (local-int 14d) ffffffff label_00005920
-u0041A270 (local-int 3) (local-int 100)
+random (local-int 3) (local-int 100)
 lookup-array (local-ptr 5) (local-int 15) (local-int 3)
 mov (local-int 4) (local-ptr 5)
 lookup-array (local-ptr 5) (global-int 6f18a) (local-int 4)

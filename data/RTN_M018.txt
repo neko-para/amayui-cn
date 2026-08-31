@@ -78,7 +78,7 @@ jmp label_00000324
 
 label_0000059c
 jcc (local-int d2) ffffffff label_000006ac
-u0041A270 (local-int cc) 64
+random (local-int cc) 64
 shl (local-int d4) (local-int d2) 10
 add (local-int d5) (local-int d4) (local-int cc)
 lookup-array (local-ptr 2) (local-int 68) (local-int 35)
