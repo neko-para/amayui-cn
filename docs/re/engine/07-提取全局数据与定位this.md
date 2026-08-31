@@ -130,9 +130,13 @@ for unitId 140..750, slot 0..4:
 
 ## 8. 全量导出工具与掉落区检查（`scripts/re/extract_global_data.ps1`）
 
-**用法**：`pwsh -File scripts/re/extract_global_data.ps1 -ProcId <pid> [-From <n> -To <n>] [-OutFile <csv>]`
+**用法**：`pwsh -File scripts/re/extract_global_data.ps1 -ProcId <pid> [-From <n> -To <n>] [-OutFile <csv>] [-DumpLocal -LocalOut <csv> -LocalCount <n>]`
 - 默认导出**整个 global 表**（到数组区末尾，~7.38M 槽，实测 `8M` 内）。
 - 输出格式 `type,index,value`：`int,<HEX>,<value>`；`empty,<HEX>` 或 `empty,<HEXstart>~<HEXend>`（**连续空折叠**）；索引为**无 `0x` 的十六进制**、无十进制；`empty` 是 **type** 而非 int 的 value。
+- `-DumpLocal`：额外导出**每脚本局部栈**（`Engine.frames[40]`，`this+0x5D894`，0x78/帧）到 `local_stack.csv`：
+  - `scope,frame,index,field,value` → `engine,..,cur_script/call_ret/call_link/call_flag`；`frame,<cur>,..,str_table/ip/local_*/caller/frame_arg/arity/array_container`；`local_int/float/string/ptr/float_ptr,<cur>,<idx>,-,<value>`。
+  - 局部池每类导出前 `-LocalCount`（默认 64）槽；`local_int` 走 `DEC`、`local_float` 直取、`local_string` 解析 SSO(28B)、`local_ptr/float_ptr` 槽值即指针。
+  - 字段偏移与 `engine/engine.hpp`（`ScriptContext` 0x78 布局）逐字段一致（见 `08-脚本上下文与调用栈.md`）。
 - 解引用 `this` 用 dispatch 表指纹；解码 = `DEC`；写文件在 C# 内完成（4M 行 ~14s）。
 
 **三次导出（空闲 / 战斗存档 / COMMITBTL 掉落瞬间）的结论**：

@@ -1,21 +1,31 @@
-# Full-data export of the AGE engine's GLOBAL TABLE from a RUNNING process.
-# 导出整个 global 表（单一动态数组，mixed types）——本版先按 [From..To] 的 int 解码值导出，int/empty。
-# 命中 this 用 Approach-B（dispatch 表 RVA 指纹，只读不改，兼容带壳/去壳）。解码+写文件全部在 C# 内做，快。
+﻿# Full-data export of the AGE engine's GLOBAL TABLE + per-script LOCAL stack from a RUNNING process.
+#  - global 表：单一动态数组（mixed types），[From..To] 的 int 解码值，int/empty。
+#  - 局部栈（-DumpLocal）：引擎 40 帧帧数组（this+0x5D894, 0x78/frame）各帧字段 + 每帧 local_* 局部池内容。
+# 命中 this 用 Approach-B（dispatch 表 RVA 指纹，只读不改，兼容带壳/去壳）。解码+写文件在 C# 内做，快。
 #
 # Usage:
-#   pwsh -File .tmp/extract_global_data.ps1 -ProcId 27848                # 默认导出整个 global 表（到数组区末尾）
-#   pwsh -File .tmp/extract_global_data.ps1 -ProcId 27848 -To 5000000 -OutFile out.csv
+#   pwsh -File scripts/re/extract_global_data.ps1 -ProcId 27848                          # 导出整个 global 表
+#   pwsh -File scripts/re/extract_global_data.ps1 -ProcId 27848 -DumpLocal -LocalOut local.csv   # 加上局部栈
+#   pwsh -File scripts/re/extract_global_data.ps1 -ProcId 27848 -DumpLocal -LocalCount 128
 param(
     [int]$ProcId,
     [string]$ProcessName,
     [int64]$From = 0,
     [int64]$To   = -1,   # <0 => 自动到 global 数组实际长度（其内存区末尾）
-    [string]$OutFile
+    [string]$OutFile,
+    [switch]$DumpLocal,  # 额外导出每脚本局部栈（帧数组 + 局部池）
+    [string]$LocalOut,   # 局部栈输出文件
+    [int]$LocalCount = 64   # 每个局部池导出的槽数上限
 )
 $ErrorActionPreference='Stop'
 $SCRIPTDIR=Split-Path -Parent $MyInvocation.MyCommand.Path
 if(-not $OutFile){ $OutFile=Join-Path $SCRIPTDIR 'global_data.csv' }
+if(-not $LocalOut){ $LocalOut=Join-Path $SCRIPTDIR 'local_stack.csv' }
 $SignatureJson=Join-Path $SCRIPTDIR 'dispatch_signature.json'
+
+# Engine 对象模型偏移（engine/engine.hpp 已用 static_assert 锁定）
+$OFF_CUR=0x5D880; $OFF_CALLRET=0x5D884; $OFF_CALLLINK=0x5D888; $OFF_CALLFLAG=0x5D88C
+$OFF_FRAMES=0x5D894; $FRAME_STRIDE=0x78; $NFRAMES=40
 
 Add-Type -TypeDefinition @'
 using System; using System.Text; using System.IO; using System.Runtime.InteropServices;
@@ -67,6 +77,60 @@ $h=[GD]::OpenProcess(0x0410,$false,$proc.Id)
 if($h -eq [IntPtr]::Zero){ Write-Warning "OpenProcess failed"; exit 2 }
 function RegionEnd([int64]$p){ $m=New-Object GD+MBI; if([GD]::VirtualQueryEx($h,[IntPtr]$p,[ref]$m,[Runtime.InteropServices.Marshal]::SizeOf($m))){ return ($m.BaseAddress.ToInt64()+$m.RegionSize.ToInt64()) }; return 0 }
 function ReadDword([int64]$a){ $b=New-Object byte[] 4; $r=[IntPtr]::Zero; if([GD]::ReadProcessMemory($h,[IntPtr]$a,$b,4,[ref]$r)){ return ([int64][GD]::B32($b,0)) }; return -1 }
+function ReadBytes([int64]$a,[int]$len){ $b=New-Object byte[] $len; $r=[IntPtr]::Zero; if([GD]::ReadProcessMemory($h,[IntPtr]$a,$b,$len,[ref]$r)){ $n=$r.ToInt64(); if($n -lt $len){ $b=$b[0..($n-1)] }; return $b }; return $null }
+
+# 把一个局部池（local_int/float/string/ptr/float_ptr）的前 LocalCount 槽追加到 $out
+function DumpPool($out,$name,$frame,$base){
+  if($base -eq 0 -or $base -eq -1){ return }
+  $elem = if($name -eq 'local_string'){ 28 } else { 4 }
+  $buf = ReadBytes $base ($LocalCount*$elem)
+  if(-not $buf){ return }
+  for($j=0;$j -lt $LocalCount;$j++){
+    $off=$j*$elem; if($off+$elem -gt $buf.Length){ break }
+    if($name -eq 'local_int'){
+      $raw=[GD]::B32($buf,$off); $v=[GD]::Decode($raw,[uint32]$key)
+      $out.Add(('local_int,{0},{1},-,{2}' -f $frame,$j,$v))
+    } elseif($name -eq 'local_float'){
+      $f=[BitConverter]::ToSingle($buf,$off); $out.Add(('local_float,{0},{1},-,{2}' -f $frame,$j,$f))
+    } elseif($name -eq 'local_string'){
+      $len=[BitConverter]::ToInt32($buf,$off+0x14); $txt=''
+      if($len -ge 0 -and $len -lt 0x10){ $txt=[Text.Encoding]::ASCII.GetString($buf,$off,$len) }
+      else { $ptr=[GD]::B32($buf,$off); if($ptr -ne 0){ $pb=ReadBytes $ptr 32; if($pb){ $txt=[Text.Encoding]::ASCII.GetString($pb).Split([char]0)[0] } else { $txt=('ptr=0x{0:X}' -f $ptr) } } }
+      if($txt.Length -eq 0){ $txt='empty' }
+      $out.Add(('local_string,{0},{1},-,{2}' -f $frame,$j,$txt))
+    } else {  # local_ptr / local_float_ptr：槽里是指针
+      $p=[GD]::B32($buf,$off); $out.Add(('{0},{1},{2},-,0x{3:X}' -f $name,$frame,$j,$p))
+    }
+  }
+}
+
+# 导出每脚本局部栈：40 帧帧数组字段 + 各帧局部池
+function DumpLocalStack([int64]$thisAddr){
+  $out=New-Object System.Collections.Generic.List[string]
+  $out.Add('scope,frame,index,field,value')
+  $cur=ReadDword ($thisAddr+$OFF_CUR); $cret=ReadDword ($thisAddr+$OFF_CALLRET); $clink=ReadDword ($thisAddr+$OFF_CALLLINK); $cflag=ReadDword ($thisAddr+$OFF_CALLFLAG)
+  $out.Add(('engine,-,-,cur_script,{0:X}' -f $cur)); $out.Add(('engine,-,-,call_ret,{0:X}' -f $cret))
+  $out.Add(('engine,-,-,call_link,{0:X}' -f $clink)); $out.Add(('engine,-,-,call_flag,{0:X}' -f $cflag))
+  for($f=0;$f -lt $NFRAMES;$f++){
+    $fb=$thisAddr+$OFF_FRAMES+$FRAME_STRIDE*$f
+    $strTab=ReadDword $fb; $ip=ReadDword ($fb+0x04)
+    $lInt=ReadDword ($fb+0x20); $lFloat=ReadDword ($fb+0x24); $lStr=ReadDword ($fb+0x28); $lPtr=ReadDword ($fb+0x2C); $lFPtr=ReadDword ($fb+0x30)
+    $caller=ReadDword ($fb+0x38); $ffarg=ReadDword ($fb+0x3C); $arity=ReadDword ($fb+0x60); $arrC=ReadDword ($fb+0x70)
+    $out.Add(('frame,{0},-,str_table,0x{1:X}' -f $f,$strTab)); $out.Add(('frame,{0},-,ip,0x{1:X}' -f $f,$ip))
+    $out.Add(('frame,{0},-,local_int,0x{1:X}' -f $f,$lInt)); $out.Add(('frame,{0},-,local_float,0x{1:X}' -f $f,$lFloat))
+    $out.Add(('frame,{0},-,local_string,0x{1:X}' -f $f,$lStr)); $out.Add(('frame,{0},-,local_ptr,0x{1:X}' -f $f,$lPtr))
+    $out.Add(('frame,{0},-,local_float_ptr,0x{1:X}' -f $f,$lFPtr))
+    $out.Add(('frame,{0},-,caller,{1:X}' -f $f,$caller)); $out.Add(('frame,{0},-,frame_arg,{1:X}' -f $f,$ffarg))
+    $out.Add(('frame,{0},-,arity,{1}' -f $f,$arity)); $out.Add(('frame,{0},-,array_container,0x{1:X}' -f $f,$arrC))
+    DumpPool $out 'local_int' $f $lInt
+    DumpPool $out 'local_float' $f $lFloat
+    DumpPool $out 'local_string' $f $lStr
+    DumpPool $out 'local_ptr' $f $lPtr
+    DumpPool $out 'local_float_ptr' $f $lFPtr
+  }
+  [System.IO.File]::WriteAllLines($LocalOut,$out,[System.Text.UTF8Encoding]::new($false))
+  Write-Host ("LOCAL STACK -> {0}  ({1} lines)" -f $LocalOut,$out.Count)
+}
 
 try{
   $mods=New-Object 'System.IntPtr[]' 1024; $need=0
@@ -114,4 +178,6 @@ try{
     } else { Write-Warning ("bulk read failed: {0}" -f [Runtime.InteropServices.Marshal]::GetLastWin32Error()) }
   }
   Write-Host "file head:"; Get-Content $OutFile -TotalCount 6
+
+  if($DumpLocal){ DumpLocalStack $thisAddr }
 } finally { [void][GD]::CloseHandle($h) }
