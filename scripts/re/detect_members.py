@@ -152,6 +152,18 @@ def detect_names(tu):
         if d['data']['seed']:
             d['engine_params'].add(d['data']['seed'])
 
+    # 特殊标定（special calibration）：个别成员因形参类型（如 `char* this`）导致基准
+    # （`_this[K]` 命中 ENGINE_TOP）与调用边（accessor 调用参数类型不匹配 → 那一 CALL_EXPR 变成
+    # “no matching function” 错误节点，边丢失）都无法命中，故在此直接将其首参标定为 Engine this。
+    # 离线已确认这些函数确为引擎成员（如 opcode handler）。可继续扩充。
+    SPECIAL_MEMBERS = {
+        'sub_42CA50',   # opcode 0x60 random；char* this + sub_41BF50(_this,2) 参数不匹配
+    }
+    for nm in SPECIAL_MEMBERS:
+        d = info.get(nm)
+        if d and d['params']:
+            d['engine_params'].add(d['params'][0])
+
     def this_values(name):
         d = info[name]
         vals = set(d['engine_params'])

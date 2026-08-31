@@ -191,16 +191,12 @@ namespace std {
   }
 }
 
-typedef struct _ti_dummy { int vfptr; int sz; } _TI1_AVBadAlloc_Exception__;
-typedef struct _ti_dummy _TI1_AVCAtlException_ATL__;
-typedef struct _ti_dummy _TI1_AVCommand_Exit_Exception__;
-typedef struct _ti_dummy _TI1_AVCommand_ShowMessage_Exception__;
-typedef struct _ti_dummy _TI1_AVCommand_Type_Exception__;
-typedef struct _ti_dummy _TI1_AVGeneric_Exception__;
-typedef struct _ti_dummy _TI1_AVSE_Exception__;
-typedef struct _ti_dummy _TI2_;
-typedef struct _ti_dummy _TI3_;
+// `_TI1_*`/`_TI2_*`/`_TI3_*` 是引擎侧（_utf8.c 的 RTTI 全局区）定义的 `_ThrowInfo` **全局对象**，
+// 这里**不再**把它们 typedef 成类型（否则 `&_TI1_...` 会被当作“对类型取址”，clang 报
+// `unexpected type name '...'`，从而丢弃含 `_CxxThrowException(&_TI1_...)` 的函数体）。
+// 只定义 `_ThrowInfo` 结构（与其 `{v, pfn, pnih, pcatch} = {0u, &sub, NULL, &_CTA}` 初始化对位）。
+typedef struct _ThrowInfo { unsigned long vfptr; void* pmfn; void* pnih; void* pcatcharray; } _ThrowInfo;
 
-void _CxxThrowException(void*, struct _ti_dummy*);
+void _CxxThrowException(void*, void*);
 void *__RTDynamicCast(void*, long, void*, void*, int*);
 #endif
