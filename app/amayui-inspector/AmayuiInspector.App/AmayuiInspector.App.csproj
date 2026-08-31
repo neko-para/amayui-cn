@@ -16,4 +16,9 @@
     <ProjectReference Include="..\AmayuiInspector.Core\AmayuiInspector.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 全局字符串展示用的「日文写法 → 简体」反查字典（构建时嵌入，运行时读资源） -->
+    <EmbeddedResource Include="..\..\..\res\subs_cn_jp.json" Link="Resources\subs_cn_jp.json" />
+  </ItemGroup>
+
 </Project>

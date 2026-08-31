@@ -45,9 +45,10 @@
                   VirtualizingPanel.VirtualizationMode="Recycling"
                   GridLinesVisibility="Horizontal">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="索引" Binding="{Binding IndexText}" SortMemberPath="Index" Width="120"/>
-                <DataGridTextColumn Header="值" Binding="{Binding ValueText}" Width="120"/>
-                <DataGridTextColumn Header="区域" Binding="{Binding ZoneText}" Width="90"/>
+                <DataGridTextColumn Header="索引" Binding="{Binding IndexText}" SortMemberPath="Index" Width="110"/>
+                <DataGridTextColumn Header="值" Binding="{Binding ValueText}" Width="110"/>
+                <DataGridTextColumn Header="字符串" Binding="{Binding StringText}" Width="180"/>
+                <DataGridTextColumn Header="区域" Binding="{Binding ZoneText}" Width="80"/>
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>

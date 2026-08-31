@@ -43,7 +43,7 @@ dotnet app/amayui-inspector/AmayuiInspector.App/bin/Debug/net10.0-windows/Amayui
 ```
 
 **WPF 壳用法**：下拉选进程 →「扫描 this」（定位 `this`，填充 Engine 面板）→「刷新快照」重读当前状态；
-「全局表」按 过滤(仅非空/仅掉落区/全部)/范围(hex) 加载解码后的 global-int，支持**「全量」**(0..区段末，≈8M 槽)与**分页**，避免一次物化过多行；「脚本帧」展示 40 帧字段（高亮当前帧）。
+「全局表」按 过滤(仅非空/仅掉落区/全部)/范围(hex) 加载解码后的 global-int，支持**「全量」**(0..区段末，≈8M 槽)与**分页**，避免一次物化过多行；每行含 **「字符串」列**（对应槽位的 global-string，经嵌入的 `subs_cn_jp.json` 把运行时占位码位还原为简体，取前 16 字符）；「脚本帧」展示 40 帧字段（高亮当前帧，`frame_arg` 映射脚本文件名）。
 
 CLI 用法：
 

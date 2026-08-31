@@ -31,6 +31,9 @@ public sealed class GlobalTableVm : ViewModelBase
     private uint _startIndex = 0;
     private List<int>? _view;       // 命中槽（相对 _decoded 的下标）；null = 全量顺序
     private long _totalCount = 0;
+    private int _pageGen = 0;
+
+    private static readonly Lazy<TextMapper> _mapper = new(() => TextMapper.LoadFromEmbedded());
 
     public GlobalTableVm()
     {
@@ -167,17 +170,40 @@ public sealed class GlobalTableVm : ViewModelBase
     private void Materialize()
     {
         if (_decoded == null) return;
+        _pageGen++;
         Rows.Clear();
         int start = _currentPage * _pageSize;
         int end = (int)Math.Min(start + _pageSize, _totalCount);
+        var page = new List<GlobalSlotRow>(end - start);
         for (int i = start; i < end; i++)
         {
             int off = _view == null ? i : _view[i];
             uint idx = _startIndex + (uint)off;
             uint val = _decoded[off];
-            Rows.Add(new GlobalSlotRow(idx, val, idx >= EngineOffsets.DropItemStart && idx < EngineOffsets.DropEnd));
+            var row = new GlobalSlotRow(idx, val, idx >= EngineOffsets.DropItemStart && idx < EngineOffsets.DropEnd);
+            page.Add(row);
+            Rows.Add(row);
         }
         OnPropertyChanged(nameof(PageInfo));
+        _ = RefillStringsAsync(page, _pageGen);
+    }
+
+    /// <summary>为当前页逐槽读取 global-string（还原简体、截断 16 字符），后台执行，页码代际防过期。</summary>
+    private async Task RefillStringsAsync(IReadOnlyList<GlobalSlotRow> page, int gen)
+    {
+        if (_session == null || page.Count == 0) return;
+        var session = _session;
+        var mapper = _mapper.Value;
+        var texts = await Task.Run(() =>
+        {
+            var r = new string[page.Count];
+            for (int k = 0; k < page.Count; k++)
+                r[k] = mapper.MapAndTruncate(session.ReadGlobalString(page[k].Index), 16);
+            return r;
+        });
+        if (gen != _pageGen) return; // 已翻页/换数据，丢弃过期结果
+        for (int k = 0; k < page.Count && k < texts.Length; k++)
+            page[k].StringText = texts[k];
     }
 
     private void Clamp()

@@ -150,6 +150,20 @@ internal static class Program
                 }
             }
 
+            // ---- 8.8) 导出 global-string 槽（--gstr <fromHex> [<toHex>]）----
+            if (opt.GStrFrom is int gf && snap.GlobalStringBase != 0)
+            {
+                int gt = opt.GStrTo ?? (gf + 999);
+                if (gt < gf) gt = gf;
+                int gcount = gt - gf + 1;
+                Console.WriteLine();
+                Console.WriteLine($"[gstr] global_string_base=0x{snap.GlobalStringBase:X}  slots {gf:X}..{gt:X}  count={gcount:N0}");
+                var strs = reader.ReadGlobalStrings(snap.GlobalStringBase, (uint)gf, gcount);
+                Console.WriteLine($"[gstr] non-empty = {strs.Count}");
+                foreach (var (idx, text) in strs.Take(80))
+                    Console.WriteLine($"  0x{idx:X} = {text}");
+            }
+
             Console.WriteLine();
             Console.WriteLine("[OK] M1 core read completed.");
             return 0;
@@ -170,6 +184,8 @@ internal static class Program
         public bool FullGlobal;
         public bool List;
         public bool Scripts;
+        public int? GStrFrom;
+        public int? GStrTo;
     }
 
     private static Options ParseArgs(string[] args)
@@ -187,9 +203,21 @@ internal static class Program
                 case "--fullglobal": o.FullGlobal = true; break;
                 case "--list": o.List = true; break;
                 case "--scripts": o.Scripts = true; break;
+                case "--gstr":
+                    o.GStrFrom = ParseHexInt(args[++i]);
+                    o.GStrTo = o.GStrFrom;
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith("-")) o.GStrTo = ParseHexInt(args[++i]);
+                    break;
             }
         }
         return o;
+    }
+
+    private static int ParseHexInt(string s)
+    {
+        s = (s ?? "").Trim();
+        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) s = s.Substring(2);
+        return int.Parse(s, System.Globalization.NumberStyles.HexNumber);
     }
 
     private static System.Diagnostics.Process? ResolveTarget(Options o)

@@ -27,6 +27,7 @@ public sealed class EngineSession : IDisposable
     public uint ThisAddr { get; }
     public DispatchSignature Signature { get; }
     public uint GlobalIntBase { get; }
+    public uint GlobalStringBase { get; }
     public uint Key { get; }
 
     private EngineSession(IntPtr handle, int pid, string moduleName, uint moduleBase, uint thisAddr, DispatchSignature signature)
@@ -40,6 +41,7 @@ public sealed class EngineSession : IDisposable
         _scanner = new MemoryScanner(handle);
 
         GlobalIntBase = ReadU32(thisAddr + EngineOffsets.GlobalIntBase);
+        GlobalStringBase = ReadU32(thisAddr + EngineOffsets.GlobalStringBase);
         Key = ReadU32(thisAddr + EngineOffsets.Key);
     }
 
@@ -49,6 +51,10 @@ public sealed class EngineSession : IDisposable
         _scanner.TryReadUInt32((ulong)GlobalIntBase + (ulong)index * 4, out uint raw);
         return Dec.Decode(raw, Key);
     }
+
+    /// <summary>读一条 global-string（SSO + CP932 解码），未命中返回 null。</summary>
+    public string? ReadGlobalString(uint index)
+        => new EngineReader(_scanner).ReadGlobalString(GlobalStringBase, index);
 
     /// <summary>估算 global-int 数组可用槽数上限 = (global_int_base 所在区段末尾 − 基址) / 4。失败返回 0。</summary>
     public int MaxGlobalSlots() => new EngineReader(_scanner).MaxGlobalSlots(GlobalIntBase);

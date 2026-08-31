@@ -1,3 +1,4 @@
+using System.Text;
 using AmayuiInspector.Core.Decode;
 using AmayuiInspector.Core.Model;
 using AmayuiInspector.Core.Scan;
@@ -118,5 +119,67 @@ public sealed class EngineReader
     {
         _scanner.TryReadUInt32(addr, out uint v);
         return v;
+    }
+
+    // ------------------------------------------------------------------
+    // global-string（SSO）读取：元素 = 28 字节 EngineString
+    //   +0x00 data（length<0x10 → 内联字符[≤15]；否则 = 堆指针）
+    //   +0x10 保留   +0x14 length   +0x18 capacity
+    // 内容为 SJIS(CP932) 字节；CN 补丁用 subs_cn_jp 把简体码到 cp932 可编码码位，
+    // 运行时存的是这些码位字节（字形由字体替换显示）。
+    // ------------------------------------------------------------------
+    private static readonly Encoding _sjis = InitSjis();
+
+    private static Encoding InitSjis()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance); // .NET Core 注册旧码页
+        return Encoding.GetEncoding(932); // CP932 / Shift-JIS
+    }
+
+    /// <summary>读取 global-string 数组的某个槽（SSO 解码）；空/无效返回 null。</summary>
+    public string? ReadGlobalString(uint globalStringBase, uint index)
+    {
+        var elem = _scanner.ReadBytes((ulong)globalStringBase + (ulong)index * 28, 28);
+        if (elem == null || elem.Length < 28) return null;
+        return DecodeString(elem);
+    }
+
+    /// <summary>读取一段 global-string 槽，返回非空（索引, 文本）对。</summary>
+    public List<(uint Index, string Text)> ReadGlobalStrings(uint globalStringBase, uint from, int count)
+    {
+        var list = new List<(uint, string)>();
+        for (int i = 0; i < count; i++)
+        {
+            uint idx = from + (uint)i;
+            var s = ReadGlobalString(globalStringBase, idx);
+            if (!string.IsNullOrEmpty(s)) list.Add((idx, s));
+        }
+        return list;
+    }
+
+    private string DecodeString(byte[] elem)
+    {
+        uint length = Dec.B32(elem, 0x14);
+        if (length == 0 || length == uint.MaxValue) return "";
+
+        byte[] bytes;
+        if (length < 0x10)
+        {
+            bytes = elem[..(int)length];                 // 内联小串：字符在头部
+        }
+        else
+        {
+            uint heap = Dec.B32(elem, 0x00);             // 长串：+0 是堆指针
+            if (heap == 0) return "";
+            int n = (int)Math.Min(length, 4096);         // 防越界/超长读
+            var rb = _scanner.ReadBytes(heap, n);
+            if (rb == null || rb.Length == 0) return "";
+            bytes = rb;
+        }
+
+        string s = _sjis.GetString(bytes);
+        int z = s.IndexOf('\0');
+        if (z >= 0) s = s[..z];
+        return s;
     }
 }
