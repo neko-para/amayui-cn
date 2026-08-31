@@ -62,6 +62,38 @@ public sealed class EngineReader
         return Dec.Decode(raw, key);
     }
 
+    /// <summary>估算 global-int 数组可用槽数上限 = (global_int_base 所在区段末尾 − 基址) / 4。失败返回 0。</summary>
+    public int MaxGlobalSlots(uint globalIntBase)
+    {
+        ulong end = _scanner.RegionEnd(globalIntBase);
+        if (end <= globalIntBase) return 0;
+        return (int)Math.Max(0, (end - globalIntBase) / 4);
+    }
+
+    /// <summary>批量读取并解码 <paramref name="count"/> 个 global-int 槽（从 VM 索引 <paramref name="from"/> 起），逐块读，于区段边界截断。</summary>
+    public uint[] ReadGlobalIntsRange(uint globalIntBase, uint key, uint from, int count)
+    {
+        var result = new uint[count];
+        const int chunk = 0x10000; // 每次 256KB
+        int offset = 0;
+        while (offset < count)
+        {
+            int take = Math.Min(count - offset, chunk);
+            var bytes = _scanner.ReadBytes((ulong)globalIntBase + (ulong)(from + (uint)offset) * 4, take * 4);
+            int n = (bytes?.Length ?? 0) / 4;
+            for (int i = 0; i < n; i++)
+                result[offset + i] = Dec.Decode(Dec.B32(bytes!, i * 4), key);
+            if (n < take)
+            {
+                var cut = new uint[offset + n];
+                Array.Copy(result, cut, offset + n);
+                return cut;
+            }
+            offset += take;
+        }
+        return result;
+    }
+
     /// <summary>
     /// 读取掉落静态表样本（global-int VM 索引区间）。返回每个 slot 的 (unit, slot, item, rate)，
     /// 其中 item 来自 [DropItemStart, DropRateStart)、rate 来自 [DropRateStart, DropEnd)，每单位 5 槽。

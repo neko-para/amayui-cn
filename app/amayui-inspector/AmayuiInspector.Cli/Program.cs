@@ -30,6 +30,14 @@ internal static class Program
             return rt ? 0 : 1;
         }
 
+        if (opt.List)
+        {
+            Console.WriteLine("[list] candidate processes (exact AGE or 天结*/天結*):");
+            foreach (var t in AmayuiInspector.Core.Process.ProcessLocator.FindTargets())
+                Console.WriteLine($"   {t.Id,-6} {t.ProcessName}");
+            return 0;
+        }
+
         // ---- 1) 找目标进程 ----
         var proc = ResolveTarget(opt);
         if (proc == null)
@@ -100,6 +108,21 @@ internal static class Program
                         Console.WriteLine($"        unit {u} S{s}: item={item} rate={rate}");
             }
 
+            // ---- 7.5) 全量 global-range 校验（--fullglobal）----
+            if (opt.FullGlobal && snap.GlobalIntBase != 0)
+            {
+                Console.WriteLine();
+                int maxSlots = reader.MaxGlobalSlots(snap.GlobalIntBase);
+                Console.WriteLine($"[fullglobal] MaxGlobalSlots = {maxSlots:N0}");
+                var vals = reader.ReadGlobalIntsRange(snap.GlobalIntBase, snap.Key, 0, maxSlots);
+                int nonEmpty = 0;
+                foreach (var v in vals) if (v != 0) nonEmpty++;
+                Console.WriteLine($"[fullglobal] read {vals.Length:N0} slots, non-empty {nonEmpty:N0}");
+                int shown = 0;
+                for (int i = 0; i < vals.Length && shown < 5; i++)
+                    if (vals[i] != 0) { Console.WriteLine($"        idx 0x{i:X} = {vals[i]}"); shown++; }
+            }
+
             // ---- 8) 40 帧字段概览 ----
             Console.WriteLine();
             Console.WriteLine("[snap] 40-frame fields (str_table ip localInt localStr caller frame_arg arity)");
@@ -108,6 +131,23 @@ internal static class Program
             {
                 var fr = snap.Frames[f];
                 Console.WriteLine($"  f[{f,2}] str=0x{fr.StrTable:X} ip=0x{fr.Ip:X} lInt=0x{fr.LocalInt:X} lStr=0x{fr.LocalString:X} caller={fr.Caller} arg={fr.FrameArg} arity={fr.Arity}");
+            }
+
+            // ---- 8.5) frame_arg -> 脚本文件名（--scripts）----
+            if (opt.Scripts)
+            {
+                var sidx = AmayuiInspector.Core.Engine.ScriptIndex.Load();
+                Console.WriteLine();
+                Console.WriteLine($"[scripts] index loaded={sidx.Loaded} (count={sidx.Count})");
+                for (int f = 0; f < EngineOffsets.FrameCount; f++)
+                {
+                    uint arg = snap.Frames[f].FrameArg;
+                    if (arg == uint.MaxValue || arg == 0) continue;
+                    string name = arg >= 0x0100_0000u
+                        ? $"派发槽 0x{arg:X}"
+                        : sidx.Resolve(arg) ?? $"0x{arg:X}(未命中)";
+                    Console.WriteLine($"  f[{f,2}] frame_arg=0x{arg:X} -> {name}");
+                }
             }
 
             Console.WriteLine();
@@ -127,6 +167,9 @@ internal static class Program
         public bool NoProcess;
         public int MaxFrames = 40;
         public string? SignaturePath;
+        public bool FullGlobal;
+        public bool List;
+        public bool Scripts;
     }
 
     private static Options ParseArgs(string[] args)
@@ -141,6 +184,9 @@ internal static class Program
                 case "--no-process": o.NoProcess = true; break;
                 case "--frames": o.MaxFrames = int.Parse(args[++i]); break;
                 case "--sig": o.SignaturePath = args[++i]; break;
+                case "--fullglobal": o.FullGlobal = true; break;
+                case "--list": o.List = true; break;
+                case "--scripts": o.Scripts = true; break;
             }
         }
         return o;

@@ -115,6 +115,14 @@ public sealed class MemoryScanner : IDisposable
         return true;
     }
 
+    /// <summary>返回 <paramref name="addr"/> 所在可提交区段的结束地址（含），用于估算数组可用长度；失败返回 0。</summary>
+    public ulong RegionEnd(ulong addr)
+    {
+        bool q = Win32.VirtualQueryEx(_handle, (IntPtr)(long)addr, out var mbi, Marshal.SizeOf<Win32.MBI>());
+        if (!q) return 0;
+        return (ulong)mbi.BaseAddress + (ulong)mbi.RegionSize;
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

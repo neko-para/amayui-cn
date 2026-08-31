@@ -1,7 +1,9 @@
 namespace AmayuiInspector.Core.Process;
 
 /// <summary>
-/// 枚举目标 AGE 引擎进程，按名称匹配 <c>AGE*</c> / <c>*unpacked*</c> / 天結（天结）。
+/// 枚举目标 AGE 引擎进程。匹配规则（依约定收敛，避免 name 前缀撞车）：
+/// 进程名**精确**为 <c>AGE</c>（即 AGE.EXE），或以 <c>天结</c>/<c>天結</c> 开头（如 天結_unpacked.exe）。
+/// 不再用「AGE* 前缀 / 包含 unpacked」的宽松匹配，以免误配 Agent.exe 等。
 /// </summary>
 public static class ProcessLocator
 {
@@ -17,10 +19,9 @@ public static class ProcessLocator
             string n;
             try { n = p.ProcessName; } catch { continue; }
             if (string.IsNullOrEmpty(n)) continue;
-            if (n.StartsWith("AGE", StringComparison.OrdinalIgnoreCase) ||
-                n.Contains("unpacked", StringComparison.OrdinalIgnoreCase) ||
-                n.Contains("天結", StringComparison.Ordinal) ||
-                n.Contains("天结", StringComparison.Ordinal))
+            if (n.Equals("AGE", StringComparison.OrdinalIgnoreCase) ||
+                n.StartsWith("天结", StringComparison.Ordinal) ||
+                n.StartsWith("天結", StringComparison.Ordinal))
             {
                 list.Add(p);
             }

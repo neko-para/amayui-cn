@@ -1,0 +1,41 @@
+<UserControl x:Class="AmayuiInspector.App.Views.FrameStackControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Padding="6" Background="#EAF2FA">
+            <StackPanel>
+                <TextBlock Text="{Binding HeaderText}" FontWeight="Bold"/>
+                <TextBlock Text="{Binding ActiveRender}" Foreground="#555" Margin="0,2,0,0" FontFamily="Consolas"/>
+            </StackPanel>
+        </Border>
+        <DataGrid ItemsSource="{Binding Rows}"
+                  IsReadOnly="True" AutoGenerateColumns="False"
+                  CanUserAddRows="False" HeadersVisibility="Column"
+                  EnableRowVirtualization="True">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="FontFamily" Value="Consolas"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Active}" Value="True">
+                            <Setter Property="Background" Value="#D6EAF8"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="帧" Binding="{Binding Header}" Width="60"/>
+                <DataGridTextColumn Header="str__table" Binding="{Binding StrTable}" Width="100"/>
+                <DataGridTextColumn Header="ip" Binding="{Binding Ip}" Width="100"/>
+                <DataGridTextColumn Header="local__int" Binding="{Binding LocalInt}" Width="100"/>
+                <DataGridTextColumn Header="local__string" Binding="{Binding LocalString}" Width="100"/>
+                <DataGridTextColumn Header="local__ptr" Binding="{Binding LocalPtr}" Width="100"/>
+                <DataGridTextColumn Header="caller" Binding="{Binding Caller}" Width="70"/>
+                <DataGridTextColumn Header="frame__arg" Binding="{Binding FrameArg}" Width="80"/>
+                <DataGridTextColumn Header="脚本" Binding="{Binding Script}" Width="150"/>
+                <DataGridTextColumn Header="arity" Binding="{Binding Arity}" Width="56"/>
+                <DataGridTextColumn Header="array__container" Binding="{Binding ArrayContainer}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>
