@@ -160,8 +160,8 @@ mov (global-int 519ae0) (local-ptr 0)
 
 label_00000c5c
 call-script 50f0  // CALCARM
-u0041A510 (global-int 519ae9) (local-int d) d
-u0041A510 (global-int 519ae1) (local-int 1a) 8
+memcpy (global-int 519ae9) (local-int d) d
+memcpy (global-int 519ae1) (local-int 1a) 8
 mov (local-int 22) (global-int 519af6)
 mov (local-int 23) (global-int 519af8)
 lt (local-int 154) (global-int 519ae0) (global-int 707ffd)

@@ -654,14 +654,14 @@ call-script 399f
 copy-to-global (global-int 6ff5cb) 5
 copy-to-global (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 5) (global-int 621ba) (global-int 519af9) 8 0
-u00414A60 (local-ptr 0) (local-ptr 5)
-u0041A510 (local-ptr 0) (global-int 6ff5de) 8
+lea (local-ptr 0) (local-ptr 5)
+memcpy (local-ptr 0) (global-int 6ff5de) 8
 lookup-array-2d (local-ptr 5) (global-int 624da) (global-int 519af9) d 0
-u00414A60 (local-ptr 0) (local-ptr 5)
-u0041A510 (local-ptr 0) (global-int 6ff5e6) d
+lea (local-ptr 0) (local-ptr 5)
+memcpy (local-ptr 0) (global-int 6ff5e6) d
 lookup-array-2d (local-ptr 5) (global-int 62ab6) (global-int 519af9) e 0
-u00414A60 (local-ptr 0) (local-ptr 5)
-u0041A510 (local-ptr 0) (global-int 6ff5f3) e
+lea (local-ptr 0) (local-ptr 5)
+memcpy (local-ptr 0) (global-int 6ff5f3) e
 lookup-array (local-ptr 5) (global-int 71d18) (global-int 519af9)
 mov (global-int 6ff601) (local-ptr 5)
 lookup-array (local-ptr 5) (global-int 71d4a) (global-int 519af9)

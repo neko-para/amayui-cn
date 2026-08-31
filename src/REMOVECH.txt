@@ -76,10 +76,10 @@ eq (local-int d) (local-ptr 4) (local-ptr 5)
 or (local-int f) (local-int b) (local-int d)
 jcc (local-int f) ffffffff label_00000778
 lookup-array-2d (local-ptr 2) (global-int 624da) (global-int 519af9) d a
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 7222c) (local-int 2) 3 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 3
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 3
 mov (local-int 2) (local-int 5)
 mov (local-int 5) 64
 
@@ -90,17 +90,17 @@ label_00000784
 lookup-array-2d (local-ptr 2) (global-int 62d72) (global-int 519af9) 3e8 db
 jcc (local-ptr 2) ffffffff label_00000818
 lookup-array-2d (local-ptr 2) (global-int 624da) (global-int 519af9) d a
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 jmp label_00000858
 
 label_00000818
 lookup-array-2d (local-ptr 2) (global-int 629ee) (global-int 519af9) 3 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 
 label_00000858
 lookup-array-2d (local-ptr 2) (global-int 7222c) (local-int 2) 3 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 3
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 3
 lookup-array-2d (local-ptr 2) (global-int 629ee) (global-int 519af9) 3 0
 eq (local-int c) (local-ptr 2) 0
 jcc (local-int c) ffffffff label_000009cc
@@ -129,19 +129,19 @@ mov (local-ptr 2) 0
 lookup-array (local-ptr 2) (global-int 71c1e) (global-int 519af9)
 mov (local-ptr 2) 0
 lookup-array-2d (local-ptr 2) (global-int 6f1ee) (global-int 519af9) 1e 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) 1e
 lookup-array-2d (local-ptr 2) (global-int 6f7ca) (global-int 519af9) 1e 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) 1e
 lookup-array-2d (local-ptr 2) (global-int 704ae) (global-int 519af9) 32 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) 14
 lookup-array-2d (local-ptr 2) (global-int 70e72) (global-int 519af9) 32 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) 14
 lookup-array-2d (local-ptr 2) (global-int eb3cd) (global-int 519af9) 5 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) 5
 mov (global-int 56979) 0
 mov (local-int 1) 1

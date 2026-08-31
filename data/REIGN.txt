@@ -150,8 +150,8 @@ label_00000954
 eq (local-int 1de7) (global-int 0) 1
 jcc (local-int 1de7) label_0000f454 ffffffff
 jcc (local-int 1ab6) ffffffff label_00001394
-u0041A510 (global-int 934a6) (local-int 1a98) 1e
-u0041A510 (local-int 1a7a) (global-int 934a6) 1e
+memcpy (global-int 934a6) (local-int 1a98) 1e
+memcpy (local-int 1a7a) (global-int 934a6) 1e
 call label_000078b0
 call-script 516e
 call-script 516f
@@ -1682,7 +1682,7 @@ ret
 label_00007450
 mov (local-int 1ab6) 0
 mov (global-int 934a6) 1
-u0041A510 (global-int 934a6) (local-int 1a7a) 1e
+memcpy (global-int 934a6) (local-int 1a7a) 1e
 mov (local-int 2f8) 1
 jmp label_000074d0
 

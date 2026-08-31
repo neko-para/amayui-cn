@@ -79,10 +79,10 @@
 | 0x5D | 3 | lte | sub_42C960 |
 | 0x5E | 3 | gr | sub_42C9B0 |
 | 0x5F | 3 | gre | sub_42CA00 |
-| 0x60 | 2 | u0041A270 | sub_42CA50 |
+| 0x60 | 2 | random | sub_42CA50 |
 | 0x61 | 3 | lookup-array | sub_42CB00 |
 | 0x62 | 3 | u0041A360 | sub_42CB50 |
-| 0x63 | 2 | u00414A60 | sub_42CBA0 |
+| 0x63 | 2 | lea | sub_42CBA0 |
 | 0x64 | 2 | copy-local-array | sub_42CBE0 |
 | 0x65 | 2 | u00414AA0 | sub_418F10 |
 | 0x66 | 3 | u00414AE0 | sub_42CC90 |
@@ -276,7 +276,7 @@
 | 0x1AD | 0 | u004154F0 | sub_4196F0 |
 | 0x1AE | 3 | u0041CED0 | sub_42E1F0 |
 | 0x1AF | 3 | u004245C0 | sub_42E320 |
-| 0x1B0 | 3 | u0041A510 | sub_42D150 |
+| 0x1B0 | 3 | memcpy | sub_42D150 |
 | 0x1B1 | 1 | u0041B5C0 | sub_41FEA0 |
 | 0x1B2 | 1 | u00425790 | sub_42A9B0 |
 | 0x1B3 | 0 | u004257D0 | sub_42AA00 |
@@ -585,7 +585,9 @@
 | 0x5D | 3 | lte | sub_42C960 |  |
 | 0x5E | 3 | gr | sub_42C9B0 |  |
 | 0x5F | 3 | gre | sub_42CA00 |  |
+| 0x60 | 2 | random | sub_42CA50 | param1 = rand() % param2 |
 | 0x61 | 3 | lookup-array | sub_42CB00 | lookup: param1=param2[param3] |
+| 0x63 | 2 | lea | sub_42CBA0 | param1 = address of param2 |
 | 0x64 | 2 | copy-local-array | sub_42CBE0 | copy local array |
 | 0x6C | 2 | copy-to-global | sub_42CE70 | loop copy local→global |
 | 0x6E | 2 | show-text | sub_41EB20 |  |
@@ -615,6 +617,7 @@
 | 0x1A6 | 2 | halve-strlen | sub_42D110 | halve-strlen |
 | 0x1A7 | 1 | comment | sub_4191B0 | dev comment |
 | 0x1A8 | 0 | dev_ukn | sub_419690 | dev ukn |
+| 0x1B0 | 3 | memcpy | sub_42D150 | param1=dest param2=src size=4*param3 |
 | 0x1C8 | 2 | toString | sub_433820 | toString |
 | 0x1F8 | 4 | create-texture | sub_422C20 | create-texture |
 | 0x1F9 | 3 | set-texture | sub_422CB0 | set-texture |

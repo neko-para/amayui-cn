@@ -20,7 +20,7 @@ add (local-int 5) (local-ptr 0) 1
 
 label_0000017c
 mul (local-int 1095) 41 41
-u0041A510 (global-int 56d7e) (local-int 14) (local-int 1095)
+memcpy (global-int 56d7e) (local-int 14) (local-int 1095)
 eq (local-int 1095) (global-int 510005) 2
 jcc (local-int 1095) ffffffff label_000003e0
 mov (local-int a) 1

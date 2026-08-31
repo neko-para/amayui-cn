@@ -36,11 +36,11 @@ mov (global-int 5469e8) (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 73870) (global-int 546e02)
 mov (global-int 5469e9) (local-ptr 1)
 lookup-array-2d (local-ptr 1) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 0) (local-ptr 1)
-u0041A510 (local-ptr 0) (global-int 5469ea) d
+lea (local-ptr 0) (local-ptr 1)
+memcpy (local-ptr 0) (global-int 5469ea) d
 lookup-array-2d (local-ptr 1) (global-int 73bf4) (global-int 546e02) 3e8 0
-u00414A60 (local-ptr 0) (local-ptr 1)
-u0041A510 (local-ptr 0) (global-int 5469f7) 3e8
+lea (local-ptr 0) (local-ptr 1)
+memcpy (local-ptr 0) (global-int 5469f7) 3e8
 mov (local-int 5) 0
 mov (local-int 2) 1
 jmp label_0000035c

@@ -70,10 +70,10 @@ lookup-array (local-ptr 4) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 2) (global-int 7254c) (local-int 3)
 mov (local-ptr 4) (local-ptr 2)
 lookup-array-2d (local-ptr 4) (global-int 72934) (local-int 3) d 0
-u00414A60 (local-ptr 0) (local-ptr 4)
+lea (local-ptr 0) (local-ptr 4)
 lookup-array-2d (local-ptr 4) (global-int 62764) (global-int 519af9) d 0
-u00414A60 (local-ptr 1) (local-ptr 4)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 4)
+memcpy (local-ptr 0) (local-ptr 1) d
 call-script 50ed  // CALCREVISE
 
 label_000005b4

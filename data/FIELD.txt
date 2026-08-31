@@ -279,19 +279,19 @@ mov (global-int 519ad4) (local-ptr 3)
 copy-to-global (global-int 6205c) 5
 copy-to-global (global-int 62ab6) e
 lookup-array-2d (local-ptr 3) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u00414A60 (local-ptr 2) (global-int 62764)
-u0041A510 (local-ptr 1) (local-ptr 2) d
+lea (local-ptr 1) (local-ptr 3)
+lea (local-ptr 2) (global-int 62764)
+memcpy (local-ptr 1) (local-ptr 2) d
 mov (global-int 519af9) 0
 mov (global-int 6f158) 1
 mov (global-int 61fc6) (global-int 519afb)
 bit-set (global-int 6202a) 0
 call-script 50ed
 bit-reset (global-int 6202a) 0
-u00414A60 (local-ptr 1) (global-int 624e4)
+lea (local-ptr 1) (global-int 624e4)
 lookup-array-2d (local-ptr 3) (global-int 7222c) (local-int 3005) 3 0
-u00414A60 (local-ptr 2) (local-ptr 3)
-u0041A510 (local-ptr 1) (local-ptr 2) 3
+lea (local-ptr 2) (local-ptr 3)
+memcpy (local-ptr 1) (local-ptr 2) 3
 
 label_000015f0
 jmp label_00001038
@@ -379,7 +379,7 @@ jcc (local-int 819f) ffffffff label_00004cf0
 mul (local-int 819f) 20 20
 copy-to-global (global-int 57dff) (local-int 819f)
 mul (local-int 819f) 41 41
-u0041A510 (global-int 5bd04) (global-int 56d7e) (local-int 819f)
+memcpy (global-int 5bd04) (global-int 56d7e) (local-int 819f)
 eq (local-int 819f) (global-int 61ba8) 1
 lookup-array (local-ptr 6) (global-int ba08) (global-int b222)
 eq (local-int 81a2) (local-ptr 6) 0
@@ -388,10 +388,10 @@ jcc (local-int 81a3) ffffffff label_00001cdc
 lookup-array (local-ptr 3) (global-int c1d8) (global-int b222)
 mov (local-ptr 3) 0
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 copy-to-global (local-ptr 0) 64
 lookup-array-2d (local-ptr 3) (global-int c5c0) (global-int b222) 64 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 copy-to-global (local-ptr 0) 64
 
 label_00001cdc
@@ -4789,7 +4789,7 @@ jmp label_00014388
 label_00014434
 mul (local-int 819f) (local-int 80d1) 4
 lookup-array (local-ptr 4) (local-int fa4) (local-int 819f)
-u00414A60 (local-ptr 0) (local-ptr 4)
+lea (local-ptr 0) (local-ptr 4)
 mul (local-int 819f) (local-int 78fa) 4
 copy-to-global (local-ptr 0) (local-int 819f)
 mov (local-int 2ee4) (local-int 80d1)
@@ -5488,10 +5488,10 @@ lookup-array (local-ptr 3) (global-int 6f158) (global-int 519af9)
 mov (local-ptr 3) 1
 call-script 50fb
 lookup-array-2d (local-ptr 3) (global-int 7222c) (global-int 546e00) 3 0
-u00414A60 (local-ptr 1) (local-ptr 3)
+lea (local-ptr 1) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 519af9) 3 0
-u00414A60 (local-ptr 2) (local-ptr 3)
-u0041A510 (local-ptr 1) (local-ptr 2) 3
+lea (local-ptr 2) (local-ptr 3)
+memcpy (local-ptr 1) (local-ptr 2) 3
 lookup-array (local-ptr 3) (global-int 71cb4) (global-int 519af9)
 lookup-array (local-ptr 4) (global-int 72420) (global-int 546e00)
 mov (local-ptr 3) (local-ptr 4)
@@ -6443,8 +6443,8 @@ lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 eq (local-int 819f) (local-ptr 4) 1a5
 jcc (local-int 819f) ffffffff label_0001bd70
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 61c72) 3 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (local-int 80e9) 3
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (local-int 80e9) 3
 jmp label_0001c038
 
 label_0001bd70
@@ -6566,7 +6566,7 @@ lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 eq (local-int 819f) (local-ptr 4) 1a5
 jcc (local-int 819f) ffffffff label_0001c6d0
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 61c72) 3 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 copy-to-global (local-ptr 0) 3
 mov (global-int 519af9) (global-int 61c72)
 call label_0002b944
@@ -8918,9 +8918,9 @@ ret
 label_00027548
 mov (global-int 519af9) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 624da) (global-int 519af9) d a
-u00414A60 (local-ptr 1) (local-ptr 3)
-u00414A60 (local-ptr 2) (local-int 80e9)
-u0041A510 (local-ptr 1) (local-ptr 2) 3
+lea (local-ptr 1) (local-ptr 3)
+lea (local-ptr 2) (local-int 80e9)
+memcpy (local-ptr 1) (local-ptr 2) 3
 lookup-array (local-ptr 3) (global-int 511bd4) (local-int 3001)
 mov (local-int 819a) (local-ptr 3)
 call label_0003e160
@@ -8931,9 +8931,9 @@ ret
 
 label_00027640
 lookup-array-2d (local-ptr 3) (global-int 5118b4) (local-int 3001) 3 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u00414A60 (local-ptr 2) (local-int 80e9)
-u0041A510 (local-ptr 1) (local-ptr 2) 3
+lea (local-ptr 1) (local-ptr 3)
+lea (local-ptr 2) (local-int 80e9)
+memcpy (local-ptr 1) (local-ptr 2) 3
 mov (global-int 519af9) (global-int 61c72)
 lookup-array (local-ptr 3) (global-int 511bd4) (local-int 3001)
 mov (local-int 819a) (local-ptr 3)
@@ -10334,9 +10334,9 @@ mov (global-int 519ad4) (local-ptr 3)
 copy-to-global (global-int 6205c) 5
 copy-to-global (global-int 62ab6) e
 lookup-array-2d (local-ptr 3) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u00414A60 (local-ptr 2) (global-int 62764)
-u0041A510 (local-ptr 1) (local-ptr 2) d
+lea (local-ptr 1) (local-ptr 3)
+lea (local-ptr 2) (global-int 62764)
+memcpy (local-ptr 1) (local-ptr 2) d
 mov (global-int 519af9) 0
 mov (global-int 6f158) 1
 mov (global-int 61fc6) (global-int 519afb)
@@ -10940,15 +10940,15 @@ lookup-array-2d (local-ptr 3) (global-int 629ee) (local-int 3007) 3 0
 lookup-array-2d (local-ptr 4) (global-int 629ee) (local-int 3007) 3 0
 div (local-ptr 4) (local-ptr 3) 2
 lookup-array-2d (local-ptr 3) (global-int 629ee) (local-int 3007) 3 0
-u00414A60 (local-ptr 1) (local-ptr 3)
+lea (local-ptr 1) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 519af9) 3 0
-u00414A60 (local-ptr 2) (local-ptr 3)
-u0041A510 (local-ptr 1) (local-ptr 2) 3
+lea (local-ptr 2) (local-ptr 3)
+memcpy (local-ptr 1) (local-ptr 2) 3
 lookup-array-2d (local-ptr 3) (global-int 62764) (local-int 3007) d 0
-u00414A60 (local-ptr 1) (local-ptr 3)
+lea (local-ptr 1) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 62764) (global-int 519af9) d 0
-u00414A60 (local-ptr 2) (local-ptr 3)
-u0041A510 (local-ptr 1) (local-ptr 2) d
+lea (local-ptr 2) (local-ptr 3)
+memcpy (local-ptr 1) (local-ptr 2) d
 lookup-array (local-ptr 3) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 4) (global-int 62156) (local-int 3007)
 mov (local-ptr 3) (local-ptr 4)
@@ -12150,135 +12150,135 @@ mov (global-int a8b87) (global-int b236)
 lookup-array (local-ptr 3) (global-int 25818) (global-int b222)
 mov (global-int a8b88) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int ad9a9) 20
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int ad9a9) 20
 lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int ada0d) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int ada0d) 32
 lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int ada3f) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int ada3f) 32
 lookup-array-2d (local-ptr 3) (global-int eb5c1) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int f7911) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int f7911) 32
 lookup-array-2d (local-ptr 3) (global-int df364) (global-int b222) 1e 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int e6894) 1e
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int e6894) 1e
 lookup-array-2d (local-ptr 3) (global-int 5cd88) (global-int b222) a 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int ada71) a
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int ada71) a
 lookup-array-2d (local-ptr 3) (global-int 5f498) (global-int b222) a 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int ada7b) a
-u0041A510 (global-int 13d7) (global-int a8b89) 2710
-u0041A510 (global-int 8cebb) (global-int ab299) fa0
-u0041A510 (global-int 8edfb) (global-int ac239) fa0
-u0041A510 (global-int a3140) (global-int ad1d9) 12c
-u0041A510 (global-int 8caca) (global-int ad5c1) 3e8
-u0041A510 (global-int 56d6a) (global-int ada85) 5
-u0041A510 (global-int 56d6f) (global-int ada8a) 5
-u0041A510 (global-int 56d74) (global-int ada8f) 5
-u0041A510 (global-int 56d79) (global-int ada94) 5
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int ada7b) a
+memcpy (global-int 13d7) (global-int a8b89) 2710
+memcpy (global-int 8cebb) (global-int ab299) fa0
+memcpy (global-int 8edfb) (global-int ac239) fa0
+memcpy (global-int a3140) (global-int ad1d9) 12c
+memcpy (global-int 8caca) (global-int ad5c1) 3e8
+memcpy (global-int 56d6a) (global-int ada85) 5
+memcpy (global-int 56d6f) (global-int ada8a) 5
+memcpy (global-int 56d74) (global-int ada8f) 5
+memcpy (global-int 56d79) (global-int ada94) 5
 mul (local-int 819f) 41 41
-u0041A510 (global-int 56d7e) (global-int ada99) (local-int 819f)
+memcpy (global-int 56d7e) (global-int ada99) (local-int 819f)
 mul (local-int 819f) 20 20
-u0041A510 (global-int 57dff) (global-int aeb1a) (local-int 819f)
-u0041A510 (global-int 585ff) (global-int aef1a) 32
-u0041A510 (global-int 56944) (global-int bf054) 32
+memcpy (global-int 57dff) (global-int aeb1a) (local-int 819f)
+memcpy (global-int 585ff) (global-int aef1a) 32
+memcpy (global-int 56944) (global-int bf054) 32
 mul (local-int 819f) 32 14
-u0041A510 (global-int 5697a) (global-int eafe5) (local-int 819f)
+memcpy (global-int 5697a) (global-int eafe5) (local-int 819f)
 mul (local-int 819f) 32 11
-u0041A510 (global-int 61c74) (global-int aef4c) (local-int 819f)
-u0041A510 (global-int 61fc6) (global-int af29e) 32
-u0041A510 (global-int 61ff8) (global-int af2d0) 32
-u0041A510 (global-int 6202a) (global-int af302) 32
+memcpy (global-int 61c74) (global-int aef4c) (local-int 819f)
+memcpy (global-int 61fc6) (global-int af29e) 32
+memcpy (global-int 61ff8) (global-int af2d0) 32
+memcpy (global-int 6202a) (global-int af302) 32
 mul (local-int 819f) 32 5
-u0041A510 (global-int 6205c) (global-int af334) (local-int 819f)
-u0041A510 (global-int 62156) (global-int af42e) 32
-u0041A510 (global-int 62188) (global-int af460) 32
+memcpy (global-int 6205c) (global-int af334) (local-int 819f)
+memcpy (global-int 62156) (global-int af42e) 32
+memcpy (global-int 62188) (global-int af460) 32
 mul (local-int 819f) 32 8
-u0041A510 (global-int 621ba) (global-int af492) (local-int 819f)
+memcpy (global-int 621ba) (global-int af492) (local-int 819f)
 mul (local-int 819f) 32 8
-u0041A510 (global-int 6234a) (global-int af622) (local-int 819f)
+memcpy (global-int 6234a) (global-int af622) (local-int 819f)
 mul (local-int 819f) 32 d
-u0041A510 (global-int 624da) (global-int af7b2) (local-int 819f)
+memcpy (global-int 624da) (global-int af7b2) (local-int 819f)
 mul (local-int 819f) 32 d
-u0041A510 (global-int 62764) (global-int afa3c) (local-int 819f)
+memcpy (global-int 62764) (global-int afa3c) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int 629ee) (global-int afcc6) (local-int 819f)
-u0041A510 (global-int 62a84) (global-int afd5c) 32
+memcpy (global-int 629ee) (global-int afcc6) (local-int 819f)
+memcpy (global-int 62a84) (global-int afd5c) 32
 mul (local-int 819f) 32 e
-u0041A510 (global-int 62ab6) (global-int afd8e) (local-int 819f)
+memcpy (global-int 62ab6) (global-int afd8e) (local-int 819f)
 mul (local-int 819f) 32 3e8
-u0041A510 (global-int 62d72) (global-int b004a) (local-int 819f)
-u0041A510 (global-int 6f0c2) (global-int bc39a) 32
-u0041A510 (global-int 6f0f4) (global-int bc3cc) 32
-u0041A510 (global-int 6f126) (global-int bc3fe) 32
-u0041A510 (global-int 6f158) (global-int bc430) 32
-u0041A510 (global-int 6f18a) (global-int bc462) 32
-u0041A510 (global-int 6f1bc) (global-int bc494) 32
+memcpy (global-int 62d72) (global-int b004a) (local-int 819f)
+memcpy (global-int 6f0c2) (global-int bc39a) 32
+memcpy (global-int 6f0f4) (global-int bc3cc) 32
+memcpy (global-int 6f126) (global-int bc3fe) 32
+memcpy (global-int 6f158) (global-int bc430) 32
+memcpy (global-int 6f18a) (global-int bc462) 32
+memcpy (global-int 6f1bc) (global-int bc494) 32
 mul (local-int 819f) 32 1e
-u0041A510 (global-int 6f1ee) (global-int bc4c6) (local-int 819f)
+memcpy (global-int 6f1ee) (global-int bc4c6) (local-int 819f)
 mul (local-int 819f) 32 1e
-u0041A510 (global-int 6f7ca) (global-int bcaa2) (local-int 819f)
+memcpy (global-int 6f7ca) (global-int bcaa2) (local-int 819f)
 mul (local-int 819f) 32 1e
-u0041A510 (global-int 6fda6) (global-int bd07e) (local-int 819f)
+memcpy (global-int 6fda6) (global-int bd07e) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int 70382) (global-int bd65a) (local-int 819f)
+memcpy (global-int 70382) (global-int bd65a) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int 70418) (global-int bd6f0) (local-int 819f)
+memcpy (global-int 70418) (global-int bd6f0) (local-int 819f)
 mul (local-int 819f) 32 32
-u0041A510 (global-int 704ae) (global-int bd786) (local-int 819f)
+memcpy (global-int 704ae) (global-int bd786) (local-int 819f)
 mul (local-int 819f) 32 32
-u0041A510 (global-int 70e72) (global-int be14a) (local-int 819f)
+memcpy (global-int 70e72) (global-int be14a) (local-int 819f)
 mul (local-int 819f) 32 a
-u0041A510 (global-int 71836) (global-int beb0e) (local-int 819f)
+memcpy (global-int 71836) (global-int beb0e) (local-int 819f)
 mul (local-int 819f) 32 a
-u0041A510 (global-int 71a2a) (global-int bed02) (local-int 819f)
-u0041A510 (global-int 71c1e) (global-int beef6) 32
+memcpy (global-int 71a2a) (global-int bed02) (local-int 819f)
+memcpy (global-int 71c1e) (global-int beef6) 32
 mul (local-int 819f) 32 5
-u0041A510 (global-int eb3cd) (global-int eb4c7) (local-int 819f)
-u0041A510 (global-int 71c50) (global-int bef28) 32
-u0041A510 (global-int 71c82) (global-int bef5a) 32
-u0041A510 (global-int 71cb4) (global-int bef8c) 32
-u0041A510 (global-int 71ce6) (global-int befbe) 32
-u0041A510 (global-int 71d18) (global-int beff0) 32
-u0041A510 (global-int 71d7c) (global-int bf086) 64
+memcpy (global-int eb3cd) (global-int eb4c7) (local-int 819f)
+memcpy (global-int 71c50) (global-int bef28) 32
+memcpy (global-int 71c82) (global-int bef5a) 32
+memcpy (global-int 71cb4) (global-int bef8c) 32
+memcpy (global-int 71ce6) (global-int befbe) 32
+memcpy (global-int 71d18) (global-int beff0) 32
+memcpy (global-int 71d7c) (global-int bf086) 64
 mul (local-int 819f) 64 5
-u0041A510 (global-int 71de0) (global-int bf0ea) (local-int 819f)
+memcpy (global-int 71de0) (global-int bf0ea) (local-int 819f)
 mul (local-int 819f) 64 4
-u0041A510 (global-int 71fd4) (global-int bf2de) (local-int 819f)
-u0041A510 (global-int 72164) (global-int bf46e) 64
-u0041A510 (global-int 721c8) (global-int bf4d2) 64
+memcpy (global-int 71fd4) (global-int bf2de) (local-int 819f)
+memcpy (global-int 72164) (global-int bf46e) 64
+memcpy (global-int 721c8) (global-int bf4d2) 64
 mul (local-int 819f) 64 3
-u0041A510 (global-int 7222c) (global-int bf536) (local-int 819f)
-u0041A510 (global-int 72358) (global-int bf662) 64
-u0041A510 (global-int 723bc) (global-int bf6c6) 64
-u0041A510 (global-int 72420) (global-int bf72a) 64
-u0041A510 (global-int 72484) (global-int bf78e) 64
-u0041A510 (global-int 724e8) (global-int bf7f2) 64
-u0041A510 (global-int 7254c) (global-int bf856) 64
-u0041A510 (global-int 725b0) (global-int bf8ba) 64
+memcpy (global-int 7222c) (global-int bf536) (local-int 819f)
+memcpy (global-int 72358) (global-int bf662) 64
+memcpy (global-int 723bc) (global-int bf6c6) 64
+memcpy (global-int 72420) (global-int bf72a) 64
+memcpy (global-int 72484) (global-int bf78e) 64
+memcpy (global-int 724e8) (global-int bf7f2) 64
+memcpy (global-int 7254c) (global-int bf856) 64
+memcpy (global-int 725b0) (global-int bf8ba) 64
 mul (local-int 819f) 64 8
-u0041A510 (global-int 72614) (global-int bf91e) (local-int 819f)
+memcpy (global-int 72614) (global-int bf91e) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int 72934) (global-int bfc3e) (local-int 819f)
+memcpy (global-int 72934) (global-int bfc3e) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int 72e48) (global-int c0152) (local-int 819f)
+memcpy (global-int 72e48) (global-int c0152) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int 7335c) (global-int c0666) (local-int 819f)
-u0041A510 (global-int 73870) (global-int c0b7a) 64
+memcpy (global-int 7335c) (global-int c0666) (local-int 819f)
+memcpy (global-int 73870) (global-int c0b7a) 64
 mul (local-int 819f) 64 8
-u0041A510 (global-int 738d4) (global-int c0bde) (local-int 819f)
+memcpy (global-int 738d4) (global-int c0bde) (local-int 819f)
 mul (local-int 819f) 64 3e8
-u0041A510 (global-int 73bf4) (global-int c0efe) (local-int 819f)
+memcpy (global-int 73bf4) (global-int c0efe) (local-int 819f)
 mul (local-int 819f) 64 14
-u0041A510 (global-int 8c294) (global-int d959e) (local-int 819f)
-u0041A510 (global-int ea732) (global-int ea796) 64
-u0041A510 (global-int e9f62) (global-int ea34a) 3e8
-u0041A510 (global-int 5b7e6) (global-int d9d6e) c8
-u0041A510 (global-int def7c) (global-int da53e) 3e8
-u0041A510 (global-int 92c8f) (global-int da926) 3e8
+memcpy (global-int 8c294) (global-int d959e) (local-int 819f)
+memcpy (global-int ea732) (global-int ea796) 64
+memcpy (global-int e9f62) (global-int ea34a) 3e8
+memcpy (global-int 5b7e6) (global-int d9d6e) c8
+memcpy (global-int def7c) (global-int da53e) 3e8
+memcpy (global-int 92c8f) (global-int da926) 3e8
 mov (global-int dc096) 1
 mov (global-int a8b7e) 1
 ret
@@ -12345,136 +12345,136 @@ mov (global-int b236) (global-int a8b87)
 lookup-array (local-ptr 3) (global-int 25818) (global-int b222)
 mov (local-ptr 3) (global-int a8b88)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int ad9a9) (local-ptr 0) 20
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int ad9a9) (local-ptr 0) 20
 lookup-array-2d (local-ptr 3) (global-int 3e2a0) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int ada0d) (local-ptr 0) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int ada0d) (local-ptr 0) 32
 lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int ada3f) (local-ptr 0) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int ada3f) (local-ptr 0) 32
 lookup-array-2d (local-ptr 3) (global-int eb5c1) (global-int b222) 32 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int f7911) (local-ptr 0) 32
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int f7911) (local-ptr 0) 32
 lookup-array-2d (local-ptr 3) (global-int df364) (global-int b222) 1e 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int e6894) (local-ptr 0) 1e
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int e6894) (local-ptr 0) 1e
 lookup-array-2d (local-ptr 3) (global-int 5cd88) (global-int b222) a 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int ada71) (local-ptr 0) a
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int ada71) (local-ptr 0) a
 lookup-array-2d (local-ptr 3) (global-int 5f498) (global-int b222) a 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (global-int ada7b) (local-ptr 0) a
-u0041A510 (global-int a8b89) (global-int 13d7) 2710
-u0041A510 (global-int ab299) (global-int 8cebb) fa0
-u0041A510 (global-int ac239) (global-int 8edfb) fa0
-u0041A510 (global-int ad1d9) (global-int a3140) 12c
-u0041A510 (global-int ad5c1) (global-int 8caca) 3e8
-u0041A510 (global-int ada85) (global-int 56d6a) 5
-u0041A510 (global-int ada8a) (global-int 56d6f) 5
-u0041A510 (global-int ada8f) (global-int 56d74) 5
-u0041A510 (global-int ada94) (global-int 56d79) 5
+lea (local-ptr 0) (local-ptr 3)
+memcpy (global-int ada7b) (local-ptr 0) a
+memcpy (global-int a8b89) (global-int 13d7) 2710
+memcpy (global-int ab299) (global-int 8cebb) fa0
+memcpy (global-int ac239) (global-int 8edfb) fa0
+memcpy (global-int ad1d9) (global-int a3140) 12c
+memcpy (global-int ad5c1) (global-int 8caca) 3e8
+memcpy (global-int ada85) (global-int 56d6a) 5
+memcpy (global-int ada8a) (global-int 56d6f) 5
+memcpy (global-int ada8f) (global-int 56d74) 5
+memcpy (global-int ada94) (global-int 56d79) 5
 mul (local-int 819f) 41 41
-u0041A510 (global-int ada99) (global-int 56d7e) (local-int 819f)
+memcpy (global-int ada99) (global-int 56d7e) (local-int 819f)
 mul (local-int 819f) 20 20
-u0041A510 (global-int aeb1a) (global-int 57dff) (local-int 819f)
-u0041A510 (global-int aef1a) (global-int 585ff) 32
-u0041A510 (global-int bf054) (global-int 56944) 32
+memcpy (global-int aeb1a) (global-int 57dff) (local-int 819f)
+memcpy (global-int aef1a) (global-int 585ff) 32
+memcpy (global-int bf054) (global-int 56944) 32
 mul (local-int 819f) 32 14
-u0041A510 (global-int eafe5) (global-int 5697a) (local-int 819f)
+memcpy (global-int eafe5) (global-int 5697a) (local-int 819f)
 mul (local-int 819f) 32 11
-u0041A510 (global-int aef4c) (global-int 61c74) (local-int 819f)
-u0041A510 (global-int af29e) (global-int 61fc6) 32
-u0041A510 (global-int af2d0) (global-int 61ff8) 32
-u0041A510 (global-int af302) (global-int 6202a) 32
+memcpy (global-int aef4c) (global-int 61c74) (local-int 819f)
+memcpy (global-int af29e) (global-int 61fc6) 32
+memcpy (global-int af2d0) (global-int 61ff8) 32
+memcpy (global-int af302) (global-int 6202a) 32
 mul (local-int 819f) 32 5
-u0041A510 (global-int af334) (global-int 6205c) (local-int 819f)
-u0041A510 (global-int af42e) (global-int 62156) 32
-u0041A510 (global-int af460) (global-int 62188) 32
+memcpy (global-int af334) (global-int 6205c) (local-int 819f)
+memcpy (global-int af42e) (global-int 62156) 32
+memcpy (global-int af460) (global-int 62188) 32
 mul (local-int 819f) 32 8
-u0041A510 (global-int af492) (global-int 621ba) (local-int 819f)
+memcpy (global-int af492) (global-int 621ba) (local-int 819f)
 mul (local-int 819f) 32 8
-u0041A510 (global-int af622) (global-int 6234a) (local-int 819f)
+memcpy (global-int af622) (global-int 6234a) (local-int 819f)
 mul (local-int 819f) 32 d
-u0041A510 (global-int af7b2) (global-int 624da) (local-int 819f)
+memcpy (global-int af7b2) (global-int 624da) (local-int 819f)
 mul (local-int 819f) 32 d
-u0041A510 (global-int afa3c) (global-int 62764) (local-int 819f)
+memcpy (global-int afa3c) (global-int 62764) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int afcc6) (global-int 629ee) (local-int 819f)
-u0041A510 (global-int afd5c) (global-int 62a84) 32
+memcpy (global-int afcc6) (global-int 629ee) (local-int 819f)
+memcpy (global-int afd5c) (global-int 62a84) 32
 mul (local-int 819f) 32 e
-u0041A510 (global-int afd8e) (global-int 62ab6) (local-int 819f)
+memcpy (global-int afd8e) (global-int 62ab6) (local-int 819f)
 mul (local-int 819f) 32 3e8
-u0041A510 (global-int b004a) (global-int 62d72) (local-int 819f)
-u0041A510 (global-int bc39a) (global-int 6f0c2) 32
-u0041A510 (global-int bc3cc) (global-int 6f0f4) 32
-u0041A510 (global-int bc3fe) (global-int 6f126) 32
-u0041A510 (global-int bc430) (global-int 6f158) 32
-u0041A510 (global-int bc462) (global-int 6f18a) 32
-u0041A510 (global-int bc494) (global-int 6f1bc) 32
+memcpy (global-int b004a) (global-int 62d72) (local-int 819f)
+memcpy (global-int bc39a) (global-int 6f0c2) 32
+memcpy (global-int bc3cc) (global-int 6f0f4) 32
+memcpy (global-int bc3fe) (global-int 6f126) 32
+memcpy (global-int bc430) (global-int 6f158) 32
+memcpy (global-int bc462) (global-int 6f18a) 32
+memcpy (global-int bc494) (global-int 6f1bc) 32
 mul (local-int 819f) 32 1e
-u0041A510 (global-int bc4c6) (global-int 6f1ee) (local-int 819f)
+memcpy (global-int bc4c6) (global-int 6f1ee) (local-int 819f)
 mul (local-int 819f) 32 1e
-u0041A510 (global-int bcaa2) (global-int 6f7ca) (local-int 819f)
+memcpy (global-int bcaa2) (global-int 6f7ca) (local-int 819f)
 mul (local-int 819f) 32 1e
-u0041A510 (global-int bd07e) (global-int 6fda6) (local-int 819f)
+memcpy (global-int bd07e) (global-int 6fda6) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int bd65a) (global-int 70382) (local-int 819f)
+memcpy (global-int bd65a) (global-int 70382) (local-int 819f)
 mul (local-int 819f) 32 3
-u0041A510 (global-int bd6f0) (global-int 70418) (local-int 819f)
+memcpy (global-int bd6f0) (global-int 70418) (local-int 819f)
 mul (local-int 819f) 32 32
-u0041A510 (global-int bd786) (global-int 704ae) (local-int 819f)
+memcpy (global-int bd786) (global-int 704ae) (local-int 819f)
 mul (local-int 819f) 32 32
-u0041A510 (global-int be14a) (global-int 70e72) (local-int 819f)
+memcpy (global-int be14a) (global-int 70e72) (local-int 819f)
 mul (local-int 819f) 32 a
-u0041A510 (global-int beb0e) (global-int 71836) (local-int 819f)
+memcpy (global-int beb0e) (global-int 71836) (local-int 819f)
 mul (local-int 819f) 32 a
-u0041A510 (global-int bed02) (global-int 71a2a) (local-int 819f)
-u0041A510 (global-int beef6) (global-int 71c1e) 32
+memcpy (global-int bed02) (global-int 71a2a) (local-int 819f)
+memcpy (global-int beef6) (global-int 71c1e) 32
 mul (local-int 819f) 32 5
-u0041A510 (global-int eb4c7) (global-int eb3cd) (local-int 819f)
-u0041A510 (global-int bef28) (global-int 71c50) 32
-u0041A510 (global-int bef5a) (global-int 71c82) 32
-u0041A510 (global-int bef8c) (global-int 71cb4) 32
-u0041A510 (global-int befbe) (global-int 71ce6) 32
-u0041A510 (global-int beff0) (global-int 71d18) 32
-u0041A510 (global-int bf086) (global-int 71d7c) 64
+memcpy (global-int eb4c7) (global-int eb3cd) (local-int 819f)
+memcpy (global-int bef28) (global-int 71c50) 32
+memcpy (global-int bef5a) (global-int 71c82) 32
+memcpy (global-int bef8c) (global-int 71cb4) 32
+memcpy (global-int befbe) (global-int 71ce6) 32
+memcpy (global-int beff0) (global-int 71d18) 32
+memcpy (global-int bf086) (global-int 71d7c) 64
 mul (local-int 819f) 64 5
-u0041A510 (global-int bf0ea) (global-int 71de0) (local-int 819f)
+memcpy (global-int bf0ea) (global-int 71de0) (local-int 819f)
 mul (local-int 819f) 64 4
-u0041A510 (global-int bf2de) (global-int 71fd4) (local-int 819f)
-u0041A510 (global-int bf46e) (global-int 72164) 64
-u0041A510 (global-int bf4d2) (global-int 721c8) 64
+memcpy (global-int bf2de) (global-int 71fd4) (local-int 819f)
+memcpy (global-int bf46e) (global-int 72164) 64
+memcpy (global-int bf4d2) (global-int 721c8) 64
 mul (local-int 819f) 64 3
-u0041A510 (global-int bf536) (global-int 7222c) (local-int 819f)
-u0041A510 (global-int bf662) (global-int 72358) 64
-u0041A510 (global-int bf6c6) (global-int 723bc) 64
-u0041A510 (global-int bf72a) (global-int 72420) 64
-u0041A510 (global-int bf78e) (global-int 72484) 64
-u0041A510 (global-int bf7f2) (global-int 724e8) 64
-u0041A510 (global-int bf856) (global-int 7254c) 64
-u0041A510 (global-int bf8ba) (global-int 725b0) 64
+memcpy (global-int bf536) (global-int 7222c) (local-int 819f)
+memcpy (global-int bf662) (global-int 72358) 64
+memcpy (global-int bf6c6) (global-int 723bc) 64
+memcpy (global-int bf72a) (global-int 72420) 64
+memcpy (global-int bf78e) (global-int 72484) 64
+memcpy (global-int bf7f2) (global-int 724e8) 64
+memcpy (global-int bf856) (global-int 7254c) 64
+memcpy (global-int bf8ba) (global-int 725b0) 64
 mul (local-int 819f) 64 8
-u0041A510 (global-int bf91e) (global-int 72614) (local-int 819f)
+memcpy (global-int bf91e) (global-int 72614) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int bfc3e) (global-int 72934) (local-int 819f)
+memcpy (global-int bfc3e) (global-int 72934) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int c0152) (global-int 72e48) (local-int 819f)
+memcpy (global-int c0152) (global-int 72e48) (local-int 819f)
 mul (local-int 819f) 64 d
-u0041A510 (global-int c0666) (global-int 7335c) (local-int 819f)
-u0041A510 (global-int c0b7a) (global-int 73870) 64
+memcpy (global-int c0666) (global-int 7335c) (local-int 819f)
+memcpy (global-int c0b7a) (global-int 73870) 64
 mul (local-int 819f) 64 8
-u0041A510 (global-int c0bde) (global-int 738d4) (local-int 819f)
+memcpy (global-int c0bde) (global-int 738d4) (local-int 819f)
 mul (local-int 819f) 64 3e8
-u0041A510 (global-int c0efe) (global-int 73bf4) (local-int 819f)
+memcpy (global-int c0efe) (global-int 73bf4) (local-int 819f)
 mul (local-int 819f) 64 14
-u0041A510 (global-int d959e) (global-int 8c294) (local-int 819f)
-u0041A510 (global-int ea796) (global-int ea732) 64
-u0041A510 (global-int ea34a) (global-int e9f62) 3e8
-u0041A510 (global-int d9d6e) (global-int 5b7e6) c8
+memcpy (global-int d959e) (global-int 8c294) (local-int 819f)
+memcpy (global-int ea796) (global-int ea732) 64
+memcpy (global-int ea34a) (global-int e9f62) 3e8
+memcpy (global-int d9d6e) (global-int 5b7e6) c8
 jcc (global-int dc096) ffffffff label_0003784c
-u0041A510 (global-int da53e) (global-int def7c) 3e8
-u0041A510 (global-int da926) (global-int 92c8f) 3e8
+memcpy (global-int da53e) (global-int def7c) 3e8
+memcpy (global-int da926) (global-int 92c8f) 3e8
 
 label_0003784c
 mov (global-int a8b7e) 0
@@ -14149,14 +14149,14 @@ call-script 4f99
 copy-to-global (global-int 6ff5cb) 5
 copy-to-global (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 3) (global-int 621ba) (global-int 519af9) 8 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int 6ff5de) 8
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int 6ff5de) 8
 lookup-array-2d (local-ptr 3) (global-int 624da) (global-int 519af9) d 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int 6ff5e6) d
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int 6ff5e6) d
 lookup-array-2d (local-ptr 3) (global-int 62ab6) (global-int 519af9) e 0
-u00414A60 (local-ptr 0) (local-ptr 3)
-u0041A510 (local-ptr 0) (global-int 6ff5f3) e
+lea (local-ptr 0) (local-ptr 3)
+memcpy (local-ptr 0) (global-int 6ff5f3) e
 lookup-array (local-ptr 3) (global-int 71d18) (global-int 519af9)
 mov (global-int 6ff601) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 71d4a) (global-int 519af9)

@@ -37,4 +37,5 @@
 | `sub_42C6E0` | 引擎 | **`mod`(0x54) opcode handler**（`param1 = param2 % param3`） |
 | `sub_41BF50` / `sub_41C300` | 引擎 | **读 int / 读 float 操作数原语**（按 type 分支 + `DEC` 去混淆）见 `engine/05-操作数访问原语.md` |
 | `sub_42B4B0` / `sub_42BA00` | 引擎 | **写 int / 写 float 操作数原语**（`ENC` 编码 = `DEC` 逆运算）见 `engine/05-操作数访问原语.md` |
+| `sub_42AEA0` / `sub_418B90` | 引擎 | **地址/指针操作数原语**：`sub_42AEA0`=取操作数内存地址/指针（`operandAddress_42AEA0`），`sub_418B90`=把值写入指针型操作数槽（`writePointerOperand_418B90`）；为 `lea`(0x63)/`memcpy`(0x1B0) 的底座 |
 | `sub_415640` | 引擎 | **`Command` 构造器**（初始化 dispatch 表：`this+0xA509C`，默认 `sub_418E30`） |

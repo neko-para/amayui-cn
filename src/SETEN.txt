@@ -14,11 +14,11 @@ lookup-array (local-ptr 2) (global-int 6f0c2) (global-int 519af9)
 lookup-array (local-ptr 3) (global-int 5319cc) (global-int 519afb)
 mov (local-ptr 2) (local-ptr 3)
 lookup-array-2d (local-ptr 2) (global-int 70382) (global-int 519af9) 3 0
-u00414A60 (local-ptr 1) (local-ptr 2)
+lea (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 2) (global-int 545a1c) (global-int 519afb)
 set-array-to (local-ptr 1) (local-ptr 2) 3
 lookup-array-2d (local-ptr 2) (global-int 70418) (global-int 519af9) 3 0
-u00414A60 (local-ptr 1) (local-ptr 2)
+lea (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 2) (global-int 545e04) (global-int 519afb)
 set-array-to (local-ptr 1) (local-ptr 2) 3
 jcc (global-int 519afa) ffffffff label_00000428
@@ -49,15 +49,15 @@ jmp label_00000260
 
 label_00000428
 lookup-array-2d (local-ptr 2) (global-int 523b24) (global-int 519afb) 11 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 61c74) (global-int 519af9) 11 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 11
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 11
 lookup-array-2d (local-ptr 2) (global-int 532d54) (global-int 519afb) d 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 624da) (global-int 519af9) d 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) d
 eq (local-int 19) (global-int 519afa) 0
 jcc (local-int 19) ffffffff label_00000690
 lookup-array (local-ptr 3) (global-int 62156) (global-int 519af9)
@@ -341,10 +341,10 @@ jmp label_00001c48
 
 label_00001d30
 lookup-array-2d (local-ptr 2) (global-int 71836) (global-int 519af9) a 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) a
 lookup-array-2d (local-ptr 2) (global-int 71a2a) (global-int 519af9) a 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 copy-to-global (local-ptr 0) a
 lookup-array (local-ptr 2) (global-int 6f0f4) (global-int 519af9)
 mov (local-ptr 2) 0

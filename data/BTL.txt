@@ -813,7 +813,7 @@ jmp label_00003d00
 
 label_00003e68
 mul (local-int fff) 2 3
-u0041A510 (local-int fd9) (local-int fdf) (local-int fff)
+memcpy (local-int fd9) (local-int fdf) (local-int fff)
 call label_0000b508
 mov (local-int 0) 0
 jmp label_00003ee8
@@ -1016,7 +1016,7 @@ jmp label_00004b94
 
 label_00004cfc
 mul (local-int fff) 2 3
-u0041A510 (local-int fdf) (local-int fd9) (local-int fff)
+memcpy (local-int fdf) (local-int fd9) (local-int fff)
 jmp label_00004ae4
 
 label_00004d40
@@ -2996,7 +2996,7 @@ ret
 
 label_0000fbec
 mul (local-int fff) 2 3
-u0041A510 (local-int fd9) (local-int fdf) (local-int fff)
+memcpy (local-int fd9) (local-int fdf) (local-int fff)
 mul (local-int fff) 6 3
 copy-to-global (local-int 101d) (local-int fff)
 mov (local-int 102f) 0
@@ -3593,7 +3593,7 @@ mov (local-int 7) (local-int fff)
 
 label_000129c0
 mul (local-int fff) 2 3
-u0041A510 (local-int fdf) (local-int fd9) (local-int fff)
+memcpy (local-int fdf) (local-int fd9) (local-int fff)
 mov (local-int 0) 0
 jmp label_00012a34
 
@@ -4661,7 +4661,7 @@ ret
 
 label_00017fa8
 mul (local-int fff) 2 3
-u0041A510 (local-int fd9) (local-int fdf) (local-int fff)
+memcpy (local-int fd9) (local-int fdf) (local-int fff)
 mov (local-int 101a) 0
 mov (local-int 101b) 0
 mov (local-int 101c) 0

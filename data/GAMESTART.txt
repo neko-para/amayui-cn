@@ -533,7 +533,7 @@ lt (local-int 4d6) (local-int 402) 2
 jcc (local-int 4d6) ffffffff label_00002018
 mul (local-int 4d6) (local-int 405) 4
 lookup-array (local-ptr 3) (local-int 5) (local-int 4d6)
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 copy-local-array (local-ptr 0) [0 34 0 23]
 mul (local-int 4d6) (local-int 402) 34
 lookup-array (local-ptr 3) (local-int 195) (local-int 405)

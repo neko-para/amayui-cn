@@ -4,11 +4,11 @@ local_vars = { f 1 1 6 1 1 }
 ====
 
 lookup-array-2d (local-ptr 1) (global-int 5613e5) (global-int 519adf) 8 0
-u00414A60 (local-ptr 0) (local-ptr 1)
-u0041A510 (local-ptr 0) (global-int 519ae1) 8
+lea (local-ptr 0) (local-ptr 1)
+memcpy (local-ptr 0) (global-int 519ae1) 8
 lookup-array-2d (local-ptr 1) (global-int 5ac705) (global-int 519adf) d 0
-u00414A60 (local-ptr 0) (local-ptr 1)
-u0041A510 (local-ptr 0) (global-int 519ae9) d
+lea (local-ptr 0) (local-ptr 1)
+memcpy (local-ptr 0) (global-int 519ae9) d
 lookup-array (local-ptr 1) (global-int 5b9225) (global-int 519adf)
 mov (global-int 519af6) (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 5ab765) (global-int 519adf)

@@ -602,10 +602,10 @@ lookup-array (local-ptr 4) (global-int 9358e) (local-int 41e)
 lookup-array (local-ptr 5) (global-int 9358e) (local-int 8fa)
 mov (local-ptr 4) (local-ptr 5)
 lookup-array-2d (local-ptr 4) (global-int 935f2) (local-int 8fa) 258 0
-u00414A60 (local-ptr 0) (local-ptr 4)
+lea (local-ptr 0) (local-ptr 4)
 lookup-array-2d (local-ptr 4) (global-int 935f2) (local-int 41e) 258 0
-u00414A60 (local-ptr 1) (local-ptr 4)
-u0041A510 (local-ptr 0) (local-ptr 1) 258
+lea (local-ptr 1) (local-ptr 4)
+memcpy (local-ptr 0) (local-ptr 1) 258
 eq (local-int 950) (local-int 8f9) 1
 jcc (local-int 950) ffffffff label_000025b4
 lookup-array (local-ptr 4) (global-int 9358e) (local-int 8fa)
@@ -637,7 +637,7 @@ jcc (local-int 950) ffffffff label_000027f0
 lookup-array (local-ptr 4) (global-int 9358e) (local-int 41e)
 mov (local-ptr 4) 0
 lookup-array-2d (local-ptr 4) (global-int 935f2) (local-int 41e) 258 0
-u00414A60 (local-ptr 0) (local-ptr 4)
+lea (local-ptr 0) (local-ptr 4)
 copy-to-global (local-ptr 0) 258
 eq (local-int 950) (local-int 41e) (global-int 9358d)
 jcc (local-int 950) ffffffff label_000027f0
@@ -670,10 +670,10 @@ play-sound-effect 32 1
 u0041D050 1
 lookup-array (local-ptr 4) (global-int 9358e) (global-int 9358d)
 mov (local-ptr 4) (global-int 9358e)
-u00414A60 (local-ptr 0) (global-int 935f2)
+lea (local-ptr 0) (global-int 935f2)
 lookup-array-2d (local-ptr 4) (global-int 935f2) (global-int 9358d) 258 0
-u00414A60 (local-ptr 1) (local-ptr 4)
-u0041A510 (local-ptr 0) (local-ptr 1) 258
+lea (local-ptr 1) (local-ptr 4)
+memcpy (local-ptr 0) (local-ptr 1) 258
 call-script 516e
 call-script 516f
 call label_00002bfc
@@ -702,9 +702,9 @@ u0041D050 1
 lookup-array (local-ptr 4) (global-int 9358e) (global-int 9358d)
 mov (global-int 9358e) (local-ptr 4)
 lookup-array-2d (local-ptr 4) (global-int 935f2) (global-int 9358d) 258 0
-u00414A60 (local-ptr 0) (local-ptr 4)
-u00414A60 (local-ptr 1) (global-int 935f2)
-u0041A510 (local-ptr 0) (local-ptr 1) 258
+lea (local-ptr 0) (local-ptr 4)
+lea (local-ptr 1) (global-int 935f2)
+memcpy (local-ptr 0) (local-ptr 1) 258
 call label_00006098
 
 label_00002bf8

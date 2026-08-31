@@ -88,7 +88,7 @@ lt (local-int 9f) (local-int 5) (global-int f8c50)
 jcc (local-int 9f) ffffffff label_0000070c
 mul (local-int 9f) (local-int 5) 4
 lookup-array (local-ptr 1) (local-int 40) (local-int 9f)
-u00414A60 (local-ptr 0) (local-ptr 1)
+lea (local-ptr 0) (local-ptr 1)
 copy-local-array (local-ptr 0) [0 0 0 2f]
 mul (local-int 9f) (local-int 9d) 1d
 mul (local-int a1) (local-int 5) 4
@@ -117,7 +117,7 @@ and (local-int a4) (local-int a1) (local-int a3)
 jcc (local-int a4) ffffffff label_000008c0
 mul (local-int 9f) (local-int 90) 4
 lookup-array (local-ptr 1) (local-int 40) (local-int 9f)
-u00414A60 (local-ptr 0) (local-ptr 1)
+lea (local-ptr 0) (local-ptr 1)
 copy-local-array (local-ptr 0) [0 8e 0 28]
 lookup-array (local-ptr 4) (local-int 18) (local-int 90)
 mov (local-ptr 4) 22

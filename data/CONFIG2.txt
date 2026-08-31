@@ -1127,10 +1127,10 @@ lookup-array (local-ptr 1) (global-int 14bc7c) (local-int 7ff)
 jcc (local-ptr 1) ffffffff label_00004ac4
 mul (local-int 193d) (local-int 0) 4
 lookup-array (local-ptr 5) (local-int 5) (local-int 193d)
-u00414A60 (local-ptr 0) (local-ptr 5)
+lea (local-ptr 0) (local-ptr 5)
 copy-local-array (local-ptr 0) [0 24 0 22 0 56 0 24 0 56 0 24 0 56 0 24 0 28 0 24]
 lookup-array (local-ptr 1) (local-int 325) (local-int 0)
-u00414A60 (local-ptr 0) (local-ptr 1)
+lea (local-ptr 0) (local-ptr 1)
 copy-local-array (local-ptr 0) [11f 36c 3ca 428 486]
 lookup-array (local-ptr 1) (local-int 3ed) (local-int 0)
 add (local-ptr 1) (local-int 7fc) 3
@@ -1147,7 +1147,7 @@ add (local-int 193e) (local-int 0) 4
 lookup-array (local-ptr 1) (local-int 3ed) (local-int 193e)
 add (local-ptr 1) (local-int 7fc) 2
 lookup-array (local-ptr 1) (local-int 1872) (local-int 0)
-u00414A60 (local-ptr 0) (local-ptr 1)
+lea (local-ptr 0) (local-ptr 1)
 copy-local-array (local-ptr 0) [1 2 3 4 5]
 mov (local-int 7ed) 0
 jmp label_00004a28
@@ -1169,7 +1169,7 @@ jmp label_00004d74
 label_00004ac4
 mul (local-int 193d) (local-int 0) 4
 lookup-array (local-ptr 5) (local-int 5) (local-int 193d)
-u00414A60 (local-ptr 0) (local-ptr 5)
+lea (local-ptr 0) (local-ptr 5)
 copy-local-array (local-ptr 0) [0 24 0 22 0 56 0 1c]
 lookup-array (local-ptr 1) (local-int 325) (local-int 0)
 mov (local-ptr 1) 11f

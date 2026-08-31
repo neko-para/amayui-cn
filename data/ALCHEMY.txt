@@ -2174,7 +2174,7 @@ call label_00008090
 jmp label_00008f1c
 
 label_00008fc8
-u0041A510 (local-int b7f7) (local-int c797) fa0
+memcpy (local-int b7f7) (local-int c797) fa0
 ret
 
 label_00008fe8
@@ -3449,7 +3449,7 @@ u00420270 30d40 1
 u00415BF0
 u00416170
 u004162F0
-u0041A510 (global-int 91cdb) (global-int ea7fa) 3e8
+memcpy (global-int 91cdb) (global-int ea7fa) 3e8
 mov (global-int f7fe9) 0
 mov (local-int b7ec) 1
 jmp label_000100d8

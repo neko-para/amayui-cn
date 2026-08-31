@@ -232,11 +232,11 @@ label_00001004
 lt (local-int 9eb) (local-int 2) 5
 jcc (local-int 9eb) ffffffff label_00001100
 lookup-array-2d (local-ptr 3) (local-int 9d2) (local-int 2) 5 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 add (local-int 9eb) (local-int d) (local-int 2)
 lookup-array-2d (local-ptr 2) (local-int e) (local-int 9eb) 32 (local-int c)
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 5
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 5
 jmp label_00000fe8
 
 label_00001100

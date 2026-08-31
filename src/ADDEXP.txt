@@ -74,9 +74,9 @@ mov (global-int 5465d4) 0
 lookup-array (local-ptr 2) (global-int 7254c) (global-int 546e02)
 mov (global-int 5469e8) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 0) (local-ptr 2)
-u00414A60 (local-ptr 1) (global-int 5469ea)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 0) (local-ptr 2)
+lea (local-ptr 1) (global-int 5469ea)
+memcpy (local-ptr 0) (local-ptr 1) d
 call label_00000fbc
 u00416200
 play-sound-effect 39aa 2
@@ -181,8 +181,8 @@ call-script 50e8  // SHOWGROW
 lookup-array (local-ptr 2) (global-int 7254c) (global-int 546e02)
 mov (global-int 5469e8) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 0) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 0) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) d
 mov (local-int 3) 1
 
 label_00000f88

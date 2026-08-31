@@ -8,28 +8,28 @@ and (local-int 416) (local-ptr 2) 800001
 eq (local-int 417) (local-int 416) 1
 jcc (local-int 417) ffffffff label_000001f0
 lookup-array-2d (local-ptr 3) (global-int 6234a) (global-int 519af9) 8 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 621ba) (global-int 519af9) 8 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u0041A510 (local-ptr 0) (local-ptr 1) 8
+lea (local-ptr 1) (local-ptr 3)
+memcpy (local-ptr 0) (local-ptr 1) 8
 lookup-array-2d (local-ptr 3) (global-int 62764) (global-int 519af9) d 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 624da) (global-int 519af9) d 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 3)
+memcpy (local-ptr 0) (local-ptr 1) d
 jmp label_00000328
 
 label_000001f0
 lookup-array-2d (local-ptr 3) (global-int 621ba) (global-int 519af9) 8 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 6234a) (global-int 519af9) 8 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u0041A510 (local-ptr 0) (local-ptr 1) 8
+lea (local-ptr 1) (local-ptr 3)
+memcpy (local-ptr 0) (local-ptr 1) 8
 lookup-array-2d (local-ptr 3) (global-int 624da) (global-int 519af9) d 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 62764) (global-int 519af9) d 0
-u00414A60 (local-ptr 1) (local-ptr 3)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 3)
+memcpy (local-ptr 0) (local-ptr 1) d
 
 label_00000328
 lookup-array (local-ptr 3) (global-int 62a84) (global-int 519af9)
@@ -398,7 +398,7 @@ mov (local-ptr 3) (local-ptr 2)
 lookup-array (local-ptr 3) (global-int 71d18) (global-int 519af9)
 mov (local-ptr 3) (global-int 6dafd6)
 lookup-array-2d (local-ptr 3) (global-int 62d72) (global-int 519af9) 3e8 0
-u00414A60 (local-ptr 0) (local-ptr 3)
+lea (local-ptr 0) (local-ptr 3)
 copy-to-global (local-ptr 0) 12c
 u0041EF00 0
 mov (local-int 0) 0

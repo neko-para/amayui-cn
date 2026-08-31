@@ -69,25 +69,25 @@ mov (local-ptr 2) (local-ptr 3)
 lookup-array (local-ptr 2) (global-int 725b0) (global-int 546e02)
 mov (local-ptr 2) 0
 lookup-array-2d (local-ptr 2) (global-int 532d54) (global-int 546e02) d 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72934) (global-int 546e02) d 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) d
 lookup-array-2d (local-ptr 2) (global-int 5392e4) (global-int 546e02) d 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72e48) (global-int 546e02) d 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) d
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) d
 lookup-array-2d (local-ptr 2) (global-int 52b43c) (global-int 546e02) 8 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 72614) (global-int 546e02) 8 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 8
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 8
 lookup-array-2d (local-ptr 2) (global-int 52f2bc) (global-int 546e02) 8 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 738d4) (global-int 546e02) 8 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 8
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 8
 mov (local-int a) 0
 jmp label_000006dc
 
@@ -236,10 +236,10 @@ eq (local-int e) (local-ptr 5) 0
 or (local-int 10) (local-int d) (local-int e)
 jcc (local-int 10) ffffffff label_000012d0
 lookup-array-2d (local-ptr 2) (global-int 738d4) (global-int 546e02) 8 0
-u00414A60 (local-ptr 0) (local-ptr 2)
+lea (local-ptr 0) (local-ptr 2)
 lookup-array-2d (local-ptr 2) (global-int 71fd4) (local-int 6) 4 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 4
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 4
 
 label_000012d0
 mov (local-int a) 0
@@ -353,10 +353,10 @@ mov (global-int 6f158) 1
 copy-to-global (global-int 6f1ee) 1e
 copy-to-global (global-int 6f7ca) 1e
 call-script 50fb  // SETCH
-u00414A60 (local-ptr 0) (global-int 624e4)
+lea (local-ptr 0) (global-int 624e4)
 lookup-array-2d (local-ptr 2) (global-int 7222c) (global-int 546e00) 3 0
-u00414A60 (local-ptr 1) (local-ptr 2)
-u0041A510 (local-ptr 0) (local-ptr 1) 3
+lea (local-ptr 1) (local-ptr 2)
+memcpy (local-ptr 0) (local-ptr 1) 3
 mov (global-int 546e00) (local-int 8)
 
 label_00001b10
