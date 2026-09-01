@@ -5,6 +5,7 @@ import {
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
+import { entityTagLabel, idHex } from '../../services/idspace';
 
 /** 阵营/刷怪的简短说明（与 docs/地图内单位.md 对应） */
 const FACTION_LABEL: Record<number, string> = {
@@ -17,7 +18,7 @@ export function MapCard({ mapNo }: { mapNo: number }) {
   const dataset = useStore((s) => s.dataset);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const map = dataset.byMapNum.get(mapNo);
-  if (!map) return <MessageCard text={`找不到地图 #${mapNo}`} />;
+  if (!map) return <MessageCard text={`找不到地图 #${idHex(mapNo)}`} />;
 
   const units = map.units;
 
@@ -27,7 +28,7 @@ export function MapCard({ mapNo }: { mapNo: number }) {
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="h6">{map.nameZh || map.name}</Typography>
           <Typography variant="body2" color="text.secondary">{map.name}</Typography>
-          <Chip size="small" variant="outlined" label={`地图 #${map.mapNo}`} />
+          <Chip size="small" variant="outlined" label={entityTagLabel('map', parseInt(map.mapNo, 16))} />
           <Chip size="small" label={`单位槽 ${units.length}`} />
           {map.locationId != null && (
             <RefChip label={`← ${dataset.byLocation.get(map.locationId)?.nameZh || '地点'}`}

@@ -2,12 +2,13 @@ import { Alert, Box, Card, CardContent, Chip, Divider, Stack, Typography } from 
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
+import { entityTagLabel, idHex } from '../../services/idspace';
 
 export function ItemCard({ id }: { id: number }) {
   const dataset = useStore((s) => s.dataset);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const item = dataset.byItem.get(id);
-  if (!item) return <MessageCard text={`找不到物品 #${id}`} />;
+  if (!item) return <MessageCard text={`找不到物品 #${idHex(id)}`} />;
 
   const recipe = dataset.recipeByItemProduct.get(id);
   const asMaterial = dataset.recipesUsingItem.get(id) ?? [];
@@ -23,7 +24,7 @@ export function ItemCard({ id }: { id: number }) {
           <Typography variant="body2" color="text.secondary">{item.name}</Typography>
           <Chip size="small" label={item.craftable ? '可合成' : '不可合成'}
             color={item.craftable ? 'success' : 'default'} />
-          <Chip size="small" variant="outlined" label={`物品 #${item.id}`} />
+          <Chip size="small" variant="outlined" label={entityTagLabel('item', item.id)} />
         </Box>
 
         {recipe && (
@@ -34,7 +35,7 @@ export function ItemCard({ id }: { id: number }) {
                 const mat = dataset.byItem.get(m.itemId);
                 return (
                   <RefChip key={i}
-                    label={`${mat?.nameZh || '#' + m.itemId} ×${m.count}`}
+                    label={`${mat?.nameZh || '#' + idHex(m.itemId)} ×${m.count}`}
                     target={{ kind: 'item', id: m.itemId }} />
                 );
               })}
@@ -58,7 +59,7 @@ export function ItemCard({ id }: { id: number }) {
                   <Typography variant="caption" color="text.secondary">物品配方（{asMaterialItems.length}）</Typography>
                   <Stack direction="row" sx={{ mt: 0.5, flexWrap: 'wrap', gap: 1 }}>
                     {asMaterialItems.map((r, i) => (
-                      <RefChip key={i} label={dataset.byItem.get(r.productId)?.nameZh || `#${r.productId}`}
+                      <RefChip key={i} label={dataset.byItem.get(r.productId)?.nameZh || `#${idHex(r.productId)}`}
                         target={{ kind: 'item', id: r.productId }} />
                     ))}
                   </Stack>
@@ -70,7 +71,7 @@ export function ItemCard({ id }: { id: number }) {
                   <Typography variant="caption" color="text.secondary">建筑配方（{asMaterialBuildings.length}）</Typography>
                   <Stack direction="row" sx={{ mt: 0.5, flexWrap: 'wrap', gap: 1 }}>
                     {asMaterialBuildings.map((r, i) => (
-                      <RefChip key={i} label={dataset.byBuilding.get(r.productId)?.nameZh || `#${r.productId}`}
+                      <RefChip key={i} label={dataset.byBuilding.get(r.productId)?.nameZh || `#${idHex(r.productId)}`}
                         target={{ kind: 'building', id: r.productId }} />
                     ))}
                   </Stack>

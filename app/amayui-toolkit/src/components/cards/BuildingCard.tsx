@@ -2,12 +2,13 @@ import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
+import { entityTagLabel, idHex } from '../../services/idspace';
 
 export function BuildingCard({ id }: { id: number }) {
   const dataset = useStore((s) => s.dataset);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const building = dataset.byBuilding.get(id);
-  if (!building) return <MessageCard text={`找不到设施 #${id}`} />;
+  if (!building) return <MessageCard text={`找不到设施 #${idHex(id)}`} />;
 
   const recipe = dataset.recipeByBuildingProduct.get(id);
 
@@ -17,7 +18,7 @@ export function BuildingCard({ id }: { id: number }) {
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="h6">{building.nameZh || building.name}</Typography>
           <Typography variant="body2" color="text.secondary">{building.name}</Typography>
-          <Chip size="small" variant="outlined" label={`设施 #${building.id}`} />
+          <Chip size="small" variant="outlined" label={entityTagLabel('building', building.id)} />
         </Box>
 
         {recipe && (
@@ -28,7 +29,7 @@ export function BuildingCard({ id }: { id: number }) {
                 const mat = dataset.byItem.get(m.itemId);
                 return (
                   <RefChip key={i}
-                    label={`${mat?.nameZh || '#' + m.itemId} ×${m.count}`}
+                    label={`${mat?.nameZh || '#' + idHex(m.itemId)} ×${m.count}`}
                     target={{ kind: 'item', id: m.itemId }} />
                 );
               })}

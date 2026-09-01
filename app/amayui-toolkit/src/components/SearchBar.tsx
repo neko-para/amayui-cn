@@ -12,6 +12,7 @@ const KIND_TAG: Record<EntityTag, string> = {
   building: '设施',
   map: '地图',
   location: '地点',
+  skill: '技能',
 };
 
 /** 顶部搜索区（Autocomplete，日/中双索引；同名同类型合并，选中下放全部命中卡片） */
@@ -33,7 +34,7 @@ export function SearchBar() {
       noOptionsText="无匹配"
       clearOnBlur={false}   // 保留已输入内容，点击展开时继续用输入文字搜索
       onChange={(_e, o) => { if (o) { setInputValue(''); navigate(toView(o)); } }}
-      renderInput={(params) => <TextField {...params} label="搜索 物品 / 单位 / 设施 / 地图 / 地点（日/中）" />}
+      renderInput={(params) => <TextField {...params} label="搜索 物品 / 单位 / 设施 / 地图 / 地点 / 技能（日/中）" />}
       renderOption={(props, o) => {
         const merged = o.count > 1;
         return (
@@ -70,5 +71,6 @@ function cardFor(kind: EntityTag, id: number): CardSpec {
     case 'building': return { kind: 'building', id };
     case 'map': return { kind: 'map', mapNo: id };
     case 'location': return { kind: 'location', locationId: id };
+    case 'skill': return { kind: 'skill', skillId: id };
   }
 }

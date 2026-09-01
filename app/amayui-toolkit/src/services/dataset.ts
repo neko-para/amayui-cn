@@ -2,8 +2,9 @@
  * 数据集：载入 `metadata.json` 并建立索引与搜索项。
  * 前端一次性持有全量数据，查询/反查/跳转均在内存完成（无后端/IPC）。
  */
-import type { Metadata, Item, Building, Unit, Recipe, MapData, Location } from '../types/metadata';
+import type { Metadata, Item, Building, Unit, Recipe, MapData, Location, Skill } from '../types/metadata';
 import type { EntityTag, View, CardSpec, CardKind } from '../types/nav';
+import { addrHex, idHex, ID_SPACE_LABEL } from './idspace';
 
 /** 搜索项（Autocomplete 选项）。同名同类型实体合并为一条，`ids` 为保序成员 id 列表。 */
 export interface SearchEntry {
@@ -36,6 +37,8 @@ export interface Dataset {
   byMapNum: Map<number, MapData>;
   /** 抽象地点 locationId → Location；同一地点可被多个地图共享 */
   byLocation: Map<number, Location>;
+  /** 技能 skillId → Skill（skillId = 名串地址 − 0x1d4f4） */
+  bySkill: Map<number, Skill>;
   /** 地点 locationId → 该地点内的所有地图（按地图名排序）—— 地点 → 地图 跳转 */
   mapsByLocation: Map<number, MapAppearance[]>;
   /** 物品配方：产品 itemId → 配方（type=1） */
@@ -63,11 +66,13 @@ export function buildDataset(md: Metadata): Dataset {
   const byMap = new Map<string, MapData>();
   const byMapNum = new Map<number, MapData>();
   const byLocation = new Map<number, Location>();
+  const bySkill = new Map<number, Skill>();
   for (const i of md.items) byItem.set(i.id, i);
   for (const b of md.buildings) byBuilding.set(b.id, b);
   for (const u of md.units) byUnit.set(u.unitId, u);
   for (const m of md.maps) { byMap.set(m.mapNo, m); byMapNum.set(parseInt(m.mapNo, 16), m); }
   for (const l of md.locations) byLocation.set(l.locationId, l);
+  for (const s of md.skills ?? []) bySkill.set(s.skillId, s);
 
   const recipeByItemProduct = new Map<number, Recipe>();
   const recipeByBuildingProduct = new Map<number, Recipe>();
@@ -123,9 +128,9 @@ export function buildDataset(md: Metadata): Dataset {
   }
 
   const search: SearchEntry[] = [];
-  for (const i of md.items) search.push({ kind: 'item', ids: [i.id], count: 1, addr: (0x18e40 + i.id).toString(16), name: i.name, nameZh: i.nameZh, sub: '物品' });
-  for (const b of md.buildings) search.push({ kind: 'building', ids: [b.id], count: 1, addr: (0x1f5ba + b.id).toString(16), name: b.name, nameZh: b.nameZh, sub: '设施' });
-  for (const u of md.units) search.push({ kind: 'unit', ids: [u.unitId], count: 1, addr: (0x17ab6 + u.unitId).toString(16), name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
+  for (const i of md.items) search.push({ kind: 'item', ids: [i.id], count: 1, addr: addrHex('item', i.id), name: i.name, nameZh: i.nameZh, sub: '物品' });
+  for (const b of md.buildings) search.push({ kind: 'building', ids: [b.id], count: 1, addr: addrHex('building', b.id), name: b.name, nameZh: b.nameZh, sub: '设施' });
+  for (const u of md.units) search.push({ kind: 'unit', ids: [u.unitId], count: 1, addr: addrHex('unit', u.unitId), name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
   // 地图：同一场景(mapNo)在 base+$1..$5 的 STINIT 里各出现一次（单位子集不同）。
   // 搜索只留一个 mapNo 对应的 entry，避免「干风之山」等重复出现。
   const seenMapId = new Set<number>();
@@ -133,9 +138,11 @@ export function buildDataset(md: Metadata): Dataset {
     const mid = parseInt(m.mapNo, 16);
     if (seenMapId.has(mid)) continue;
     seenMapId.add(mid);
-    search.push({ kind: 'map', ids: [mid], count: 1, addr: (0x121e2 + mid).toString(16), name: m.name, nameZh: m.nameZh, sub: '地图' });
+    search.push({ kind: 'map', ids: [mid], count: 1, addr: addrHex('map', mid), name: m.name, nameZh: m.nameZh, sub: '地图' });
   }
-  for (const l of md.locations) search.push({ kind: 'location', ids: [l.locationId], count: 1, addr: (0x1216e + l.locationId).toString(16), name: l.name, nameZh: l.nameZh, sub: '地点' });
+  for (const l of md.locations) search.push({ kind: 'location', ids: [l.locationId], count: 1, addr: addrHex('location', l.locationId), name: l.name, nameZh: l.nameZh, sub: '地点' });
+  // 技能：sub 用中文简述（三行描述的第 3 行），便于在候选列表里直接看清效果
+  for (const sk of md.skills ?? []) search.push({ kind: 'skill', ids: [sk.skillId], count: 1, addr: addrHex('skill', sk.skillId), name: sk.name, nameZh: sk.nameZh, sub: sk.shortZh || sk.short || '技能' });
 
   return {
     metadata: md,
@@ -145,6 +152,7 @@ export function buildDataset(md: Metadata): Dataset {
     byMap,
     byMapNum,
     byLocation,
+    bySkill,
     mapsByLocation,
     recipeByItemProduct,
     recipeByBuildingProduct,
@@ -217,26 +225,30 @@ function describeCard(spec: CardSpec, ds: Dataset): { key: string; label: string
   switch (spec.kind) {
     case 'item': {
       const it = ds.byItem.get(spec.id);
-      return { key: `item:${spec.id}`, label: `物品 · ${it?.nameZh || '#' + spec.id}` };
+      return { key: `item:${spec.id}`, label: `${ID_SPACE_LABEL.item} · ${it?.nameZh || '#' + idHex(spec.id)}` };
     }
     case 'unit': {
       const u = ds.byUnit.get(spec.id);
-      return { key: `unit:${spec.id}`, label: `单位 · ${u?.nameZh || '#' + spec.id}` };
+      return { key: `unit:${spec.id}`, label: `${ID_SPACE_LABEL.unit} · ${u?.nameZh || '#' + idHex(spec.id)}` };
     }
     case 'building': {
       const b = ds.byBuilding.get(spec.id);
-      return { key: `building:${spec.id}`, label: `设施 · ${b?.nameZh || '#' + spec.id}` };
+      return { key: `building:${spec.id}`, label: `${ID_SPACE_LABEL.building} · ${b?.nameZh || '#' + idHex(spec.id)}` };
     }
     case 'recipe': {
-      return { key: `recipe:${spec.productId}`, label: `配方 · #${spec.productId}` };
+      return { key: `recipe:${spec.productId}`, label: `配方 · #${idHex(spec.productId)}` };
     }
     case 'map': {
       const m = ds.byMapNum.get(spec.mapNo);
-      return { key: `map:${spec.mapNo}`, label: `地图 · ${m?.nameZh || '#' + spec.mapNo}` };
+      return { key: `map:${spec.mapNo}`, label: `${ID_SPACE_LABEL.map} · ${m?.nameZh || '#' + idHex(spec.mapNo)}` };
     }
     case 'location': {
       const l = ds.byLocation.get(spec.locationId);
-      return { key: `location:${spec.locationId}`, label: `地点 · ${l?.nameZh || '#' + spec.locationId}` };
+      return { key: `location:${spec.locationId}`, label: `${ID_SPACE_LABEL.location} · ${l?.nameZh || '#' + idHex(spec.locationId)}` };
+    }
+    case 'skill': {
+      const sk = ds.bySkill.get(spec.skillId);
+      return { key: `skill:${spec.skillId}`, label: `${ID_SPACE_LABEL.skill} · ${sk?.nameZh || '#' + idHex(spec.skillId)}` };
     }
     case 'message':
       return { key: `message:${spec.text}`, label: spec.text };

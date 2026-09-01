@@ -4,6 +4,7 @@ import {
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
+import { entityTagLabel, idHex } from '../../services/idspace';
 
 /**
  * 抽象地点卡片：展示地点名 + 其下所有地图（可点地图跳转）。
@@ -13,7 +14,7 @@ export function LocationCard({ locationId }: { locationId: number }) {
   const dataset = useStore((s) => s.dataset);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const loc = dataset.byLocation.get(locationId);
-  if (!loc) return <MessageCard text={`找不到地点 #${locationId}`} />;
+  if (!loc) return <MessageCard text={`找不到地点 #${idHex(locationId)}`} />;
 
   const maps = dataset.mapsByLocation.get(locationId) ?? [];
 
@@ -23,7 +24,7 @@ export function LocationCard({ locationId }: { locationId: number }) {
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="h6">{loc.nameZh || loc.name}</Typography>
           <Typography variant="body2" color="text.secondary">{loc.name}</Typography>
-          <Chip size="small" variant="outlined" label={`地点 #${loc.locationId.toString(16)}`} />
+          <Chip size="small" variant="outlined" label={entityTagLabel('location', loc.locationId)} />
           <Chip size="small" label={`地图 ${maps.length}`} />
         </Box>
         <Typography variant="caption" color="text.secondary">来源：{loc.source}</Typography>

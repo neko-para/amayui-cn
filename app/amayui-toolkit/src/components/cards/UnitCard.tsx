@@ -2,12 +2,13 @@ import { Box, Card, CardContent, Chip, Divider, Stack, Typography } from '@mui/m
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
+import { entityTagLabel, idHex } from '../../services/idspace';
 
 export function UnitCard({ id }: { id: number }) {
   const dataset = useStore((s) => s.dataset);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const unit = dataset.byUnit.get(id);
-  if (!unit) return <MessageCard text={`找不到单位 #${id}`} />;
+  if (!unit) return <MessageCard text={`找不到单位 #${idHex(id)}`} />;
   const maps = dataset.mapsWithUnit.get(id) ?? [];
   const spawnable = maps.filter((a) => a.spawnable);
   const fixed = maps.filter((a) => !a.spawnable);
@@ -18,7 +19,7 @@ export function UnitCard({ id }: { id: number }) {
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="h6">{unit.nameZh || unit.name}</Typography>
           <Typography variant="body2" color="text.secondary">{unit.name}</Typography>
-          <Chip size="small" variant="outlined" label={`单位 #${unit.unitId}`} />
+          <Chip size="small" variant="outlined" label={entityTagLabel('unit', unit.unitId)} />
         </Box>
         <Typography variant="body2" sx={{ mt: 1 }}>{unit.titleZh || unit.title}</Typography>
 
@@ -33,7 +34,7 @@ export function UnitCard({ id }: { id: number }) {
               const rateLabel = d.rate >= 100 ? '100%' : `${d.rate}%`;
               return (
                 <RefChip key={i}
-                  label={`${it?.nameZh || '#' + d.itemId} ${rateLabel}`}
+                  label={`${it?.nameZh || '#' + idHex(d.itemId)} ${rateLabel}`}
                   target={{ kind: 'item', id: d.itemId }} />
               );
             })}

@@ -1,7 +1,7 @@
 /**
  * 天結いキャッスルマイスター —— 元数据（metadata）统一类型契约
  *
- * 数据来源：工程根 `src/`（权威数据源）中的 ITINIT / PLINIT / ALINIT / EBINIT 脚本。
+ * 数据来源：工程根 `src/`（权威数据源）中的 ITINIT / PLINIT / ALINIT / EBINIT / STINIT / STINIT2 / SKINIT 脚本。
  *           提取脚本 `scripts/extract-metadata.mjs` 将这些反推结果归一化为单一 `metadata.json`。
  * 注意：
  *   - `metadata.json` 是**中间产物**（不入 git），由 src 重新生成。
@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 3;
+export const METADATA_SCHEMA_VERSION = 4;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -172,6 +172,50 @@ export interface Location {
   maps: string[];
 }
 
+/* ---------------------------------- 技能（SKINIT） ---------------------------------- */
+
+/**
+ * 技能：SKINIT 的**技能名 + 三行描述文案**（日/中双份）。
+ *
+ * 地址模型（三段并列定长数组，stride = 0x3e8 = 1000，按 skillId 直接算地址）：
+ * ```
+ *   name  = 0x1d4f4 + skillId                    技能名
+ *   short = 0x1d4f4 + 0x3e8 + skillId            单行简述（= 0x1d8dc + skillId）
+ *   title = 0x1d4f4 + 2*0x3e8 + 2*skillId        题头（= 0x1dcc4 + 2*skillId）  ← 2 槽/技能的配对段
+ *   body  = 0x1dcc4 + 2*skillId + 1              详述
+ * ```
+ * 全量实证见 `docs/re/src/05-技能数据.md`：450 个技能、id 稀疏分布于 1..803，
+ * base 与 `$1$`..`$5$` 六个 SKINIT 之间零地址冲突。
+ *
+ * 注：`mov` 数值字段（威力/射程/消耗等）尚未提取，语义未定。
+ */
+export interface Skill {
+  /** 技能 id = 名串地址 − 0x1d4f4（稀疏，实测 1..803） */
+  skillId: number;
+  /** 技能名（日文） */
+  name: string;
+  /** 技能名（中文） */
+  nameZh: string;
+  /**
+   * 描述第 1 行 · 题头：`【<分类>：<技能名>（假名）】　<属性后缀>`。
+   * 无描述的内部状态技能（如 #40 進行不可）为 `null`。
+   */
+  title: string | null;
+  titleZh: string | null;
+  /** 描述第 2 行 · 详述（多以全角空格起首，含射程/命中/消耗等文案）。无描述时 `null`。 */
+  body: string | null;
+  bodyZh: string | null;
+  /** 描述第 3 行 · 单行简述（列表用紧凑摘要）。无描述时 `null`。 */
+  short: string | null;
+  shortZh: string | null;
+  /** 是否带完整三行描述（false = 仅有名字的内部状态技能，实测仅 #40） */
+  hasDesc: boolean;
+  /** 定义它的源脚本文件名（如 SKINIT.txt / $3$SKINIT.txt） */
+  source: string;
+  /** 技能名串在源脚本中的行号 */
+  nameLine: number | null;
+}
+
 /** 各表计数与统计 */
 export interface MetadataCounts {
   items: number;
@@ -189,6 +233,10 @@ export interface MetadataCounts {
   mapSpawnableEntries: number;
   locations: number;
   mapsWithLocation: number;
+  /** 技能总数（SKINIT base + $1$..$5$ 合并） */
+  skills: number;
+  /** 带完整三行描述的技能数（其余为仅有名字的内部状态技能） */
+  skillsWithDesc: number;
 }
 
 /** 统一后的元数据（单一 `metadata.json`） */
@@ -207,4 +255,6 @@ export interface Metadata {
   maps: MapData[];
   /** 全部抽象地点（场景按地点归并；地图 ↔ 地点互跳） */
   locations: Location[];
+  /** 全部技能（SKINIT 技能名 + 三行描述文案） */
+  skills: Skill[];
 }

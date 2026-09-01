@@ -32,7 +32,11 @@ const BASE_ITEM = 0x18e40;        // 物品 id 基数
 const BASE_BUILDING = 0x1f5ba;    // 建筑/设施 id 基数
 const BASE_UNIT = 0x17ab6;        // 单位名 addr = BASE_UNIT + 单位 id（1-based；单位统一用 1-based 下标而非名串地址）
 const ITEM_ADDR_MAX = 0x1a000;    // 物品名地址上限
-const SCHEMA_VERSION = 3;         // v3：新增 locations + maps[].locationId（场景→地点）
+const BASE_SKILL = 0x1d4f4;       // SKINIT 技能名基址（skillId = 名串地址 − 0x1d4f4）
+const SKILL_STRIDE = 0x3e8;       // 技能表段长 = 1000（三段并列数组的 stride）
+const SKILL_SHORT_BASE = BASE_SKILL + SKILL_STRIDE;       // 0x1d8dc：单行简述段
+const SKILL_DESC_BASE = BASE_SKILL + 2 * SKILL_STRIDE;    // 0x1dcc4：题头/详述配对段（2 槽/技能）
+const SCHEMA_VERSION = 4;         // v4：新增 skills（SKINIT 技能名 + 三行描述文案）
 
 /* ------------------------- 名称解析（src set-string "日|中"） ------------------------- */
 
@@ -447,6 +451,63 @@ for (const [locId, mapNoSet] of locationMapNos) {
 locations.sort((a, b) => a.locationId - b.locationId);
 const mapsWithLocation = maps.filter((m) => m.locationId != null).length;
 
+/* ------------------------- 技能 SKINIT ------------------------- */
+
+/**
+ * SKINIT 技能表 = 三段并列定长数组，stride = 0x3e8(1000)，按 skillId 直接算地址（与掉落表同款模型）：
+ *   name  (技能名)         = 0x1d4f4 + id
+ *   short (单行简述)       = 0x1d4f4 + 0x3e8 + id            = 0x1d8dc + id
+ *   title (【分类：名】题头) = 0x1d4f4 + 2*0x3e8 + 2*id        = 0x1dcc4 + 2id     ← 2 槽/技能的配对数组
+ *   body  (详述)           = 0x1dcc4 + 2id + 1
+ * 详见 docs/re/src/05-技能数据.md。本轮只导出这四行文案（日/中），mov 数值字段不提取。
+ */
+function parseSkinit() {
+  const files = fs.readdirSync(SRC_DIR).filter((x) => /skinit\.txt$/i.test(x)).sort();
+  const bySkillId = new Map();
+  const conflicts = [];   // 同一 (skillId, field) 被多个文件重复定义
+  const orphans = [];     // 落在 id 合法区间外的 set-string 地址
+
+  for (const file of files) {
+    const lines = fs.readFileSync(path.join(SRC_DIR, file), 'utf8').split(/\r\n|\r|\n/);
+    for (let idx = 0; idx < lines.length; idx++) {
+      const p = parseNameLine(lines[idx]);
+      if (!p) continue;
+      let skillId, field;
+      if (p.addr < SKILL_SHORT_BASE) { skillId = p.addr - BASE_SKILL; field = 'name'; }
+      else if (p.addr < SKILL_DESC_BASE) { skillId = p.addr - SKILL_SHORT_BASE; field = 'short'; }
+      else {
+        const off = p.addr - SKILL_DESC_BASE;
+        skillId = off >> 1;
+        field = (off & 1) ? 'body' : 'title';
+      }
+      if (skillId < 1 || skillId >= SKILL_STRIDE) { orphans.push(`${p.addr.toString(16)}@${file}:${idx + 1}`); continue; }
+
+      let s = bySkillId.get(skillId);
+      if (!s) {
+        s = {
+          skillId, name: null, nameZh: null, title: null, titleZh: null,
+          body: null, bodyZh: null, short: null, shortZh: null,
+          source: file, nameLine: null,
+        };
+        bySkillId.set(skillId, s);
+      }
+      if (s[field] !== null) conflicts.push(`#${skillId}.${field} (${s.source} vs ${file}:${idx + 1})`);
+      s[field] = p.name;
+      s[`${field}Zh`] = p.nameZh;
+      if (field === 'name') { s.source = file; s.nameLine = idx + 1; }
+    }
+  }
+
+  const skills = [...bySkillId.values()].sort((a, b) => a.skillId - b.skillId);
+  // hasDesc：是否带三行描述（id=40「進行不可」为纯内部状态技能，只有名字）
+  for (const s of skills) s.hasDesc = s.title !== null && s.body !== null && s.short !== null;
+  return { skills, conflicts, orphans };
+}
+
+const { skills, conflicts: skillConflicts, orphans: skillOrphans } = parseSkinit();
+const skillsMissingName = skills.filter((s) => s.name === null).map((s) => s.skillId);
+const skillsWithDesc = skills.filter((s) => s.hasDesc).length;
+
 /* ------------------------- 派生 / 校验 / 组装 ------------------------- */
 
 const craftableIds = new Set(itemRecipes.map((r) => r.productId));
@@ -483,13 +544,15 @@ const counts = {
   mapSpawnableEntries,
   locations: locations.length,
   mapsWithLocation,
+  skills: skills.length,
+  skillsWithDesc,
 };
 
 const out = {
   schemaVersion: SCHEMA_VERSION,
   generatedAt: new Date().toISOString(),
   sourceTree: 'src',
-  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT/STINIT/STINIT2 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。v3 新增 locations（场景→地点，地点 id=addr-0x1216e；loc 槽=0x14e4e1+sceneIdx，seq=loc+0x3e8；sub 0 1 即 loc=-1）。',
+  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT/STINIT/STINIT2/SKINIT 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。v3 新增 locations（场景→地点，地点 id=addr-0x1216e；loc 槽=0x14e4e1+sceneIdx，seq=loc+0x3e8；sub 0 1 即 loc=-1）。v4 新增 skills（技能 id=addr-0x1d4f4；三段并列数组 stride=0x3e8：name=base+id，short=base+0x3e8+id，title/body=base+2*0x3e8+2*id 与 +1）。',
   counts,
   items,
   buildings,
@@ -497,6 +560,7 @@ const out = {
   units,
   maps,
   locations,
+  skills,
 };
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -506,8 +570,13 @@ console.log(`items=${items.length} buildings=${buildings.length} recipes=${recip
   ` (item=${itemRecipes.length}, building=${buildRecipes.length}) units=${units.length}` +
   ` (withDrops=${counts.unitsWithDrops}) dropEntries=${dropEntries} distinctDropItemIds=${dropItemIds.size}` +
   ` maps=${maps.length} mapUnitEntries=${mapUnitEntries} mapUnitDistinctUnits=${mapUnitDistinct.size} mapSpawnable=${mapSpawnableEntries}` +
-  ` locations=${locations.length} mapsWithLocation=${mapsWithLocation}`);
+  ` locations=${locations.length} mapsWithLocation=${mapsWithLocation}` +
+  ` skills=${skills.length} (withDesc=${skillsWithDesc})`);
 console.log('校验：缺产品名配方=', missingProduct, ' 缺物品的原材料 id=', [...missingMaterial].map(String).join(','), ' 缺物品的掉落 id=', [...missingDropItem].map(String).join(','));
+console.log('校验(技能)：地址冲突=', skillConflicts.length, skillConflicts.slice(0, 5).join(' '),
+  ' 越界地址=', skillOrphans.length, skillOrphans.slice(0, 5).join(' '),
+  ' 无名技能 id=', skillsMissingName.join(','),
+  ' 无描述技能 id=', skills.filter((s) => !s.hasDesc).map((s) => s.skillId).join(','));
 
 // 采样展示（含中文名）
 console.log('\n===== 采样 =====');
@@ -521,3 +590,10 @@ const u = units.find((x) => x.hasDrops && x.drops.length >= 3);
 if (u) console.log(`单位[${u.unitId.toString(16)}] ${u.name}→${u.nameZh} 〈${u.title}→${u.titleZh}〉 掉落: ${u.drops.map((d) => `${itemLookup.get(d.itemId)?.nameZh}(rate=${d.rate})`).join(' ') || '无'}`);
 const mu = maps.find((x) => x.units.length >= 5);
 if (mu) console.log(`地图[${mu.mapNo}] ${mu.name}→${mu.nameZh} (单位槽=${mu.units.length}, src=${mu.source}) 首个: ${mu.units.slice(0, 3).map((z) => `${z.unitRef.toString(16)}行=${z.row}列=${z.col}等=${z.levelMin}..${z.levelMax}`).join(' | ')}`);
+const sk = skills.find((x) => x.hasDesc);
+if (sk) {
+  console.log(`技能[${sk.skillId}/${(BASE_SKILL + sk.skillId).toString(16)}] ${sk.name}→${sk.nameZh} (src=${sk.source}:${sk.nameLine})`);
+  console.log(`  题头 ${sk.title} → ${sk.titleZh}`);
+  console.log(`  详述 ${sk.body} → ${sk.bodyZh}`);
+  console.log(`  简述 ${sk.short} → ${sk.shortZh}`);
+}

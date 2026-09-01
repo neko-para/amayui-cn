@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider } from '@mui/material';
-import { Inventory2, Groups, Apartment, Map, Place, MenuBook, ChevronRight } from '@mui/icons-material';
+import { Inventory2, Groups, Apartment, Map, Place, MenuBook, AutoAwesome, ChevronRight } from '@mui/icons-material';
 import { useStore } from '../store/useStore';
 import type { CardKind } from '../types/nav';
 
@@ -11,6 +11,7 @@ const KIND_ICON: Record<CardKind, ReactNode> = {
   map: <Map fontSize="small" />,
   location: <Place fontSize="small" />,
   recipe: <MenuBook fontSize="small" />,
+  skill: <AutoAwesome fontSize="small" />,
   message: <ChevronRight fontSize="small" />,
 };
 

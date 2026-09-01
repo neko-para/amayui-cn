@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDataset, querySearch, describeView, type Dataset } from '../services/dataset';
 import type { Metadata, MapData } from '../types/metadata';
+import { addrHex, entityTagLabel } from './idspace';
 
 let ds: Dataset;
 let md: Metadata;
@@ -177,6 +178,132 @@ describe('单位导出覆盖（含追加包，不做可玩角色过滤）', () =
     }
     // 追加包样例：姬斯尼尔(旧地址 0x17abb → 1-based id 0x5) 曾被漏掉，现在应在
     expect(ds.byUnit.has(0x5)).toBe(true);
+  });
+});
+
+describe('skill（SKINIT 技能名 + 三行描述）', () => {
+  it('counts 与数组一致；450 个技能、449 个带描述', () => {
+    expect(md.counts.skills).toBe(md.skills.length);
+    expect(md.counts.skillsWithDesc).toBe(md.skills.filter((s) => s.hasDesc).length);
+    expect(md.skills.length).toBe(450);
+    expect(md.counts.skillsWithDesc).toBe(449);
+  });
+
+  it('bySkill 反查：#1 防御 的名 + 三行文案（日/中）齐全', () => {
+    const sk = ds.bySkill.get(1)!;
+    expect(sk).toBeDefined();
+    expect(sk.name).toBe('防御');
+    expect(sk.title).toBe('【行動：防御】');
+    expect(sk.titleZh).toBe('【行动：防御】');
+    expect(sk.body).toBe('　攻撃しない防御態勢 回避+10 物防と魔防+3');
+    expect(sk.bodyZh).toBe('　不攻击的防御姿态 回避+10 物防与魔防+3');
+    expect(sk.short).toBe('回避+10 物防&魔防+3　攻撃不可');
+    expect(sk.shortZh).toBe('回避+10 物防&魔防+3　不可攻击');
+    expect(sk.hasDesc).toBe(true);
+    expect(sk.source).toBe('SKINIT.txt');
+  });
+
+  it('三段并列数组地址模型：skillId 唯一、落在 1..0x3e8 内', () => {
+    const seen = new Set<number>();
+    for (const s of md.skills) {
+      expect(seen.has(s.skillId)).toBe(false);
+      seen.add(s.skillId);
+      expect(s.skillId).toBeGreaterThanOrEqual(1);
+      expect(s.skillId).toBeLessThan(0x3e8);
+      expect(s.name).toBeTruthy();       // 每个技能必有名字
+    }
+  });
+
+  it('带描述的技能三行齐全；hasDesc=false 的三行全 null（实测仅 #40 進行不可）', () => {
+    for (const s of md.skills) {
+      if (s.hasDesc) {
+        expect(s.title).not.toBeNull();
+        expect(s.body).not.toBeNull();
+        expect(s.short).not.toBeNull();
+      } else {
+        expect(s.title).toBeNull();
+        expect(s.body).toBeNull();
+        expect(s.short).toBeNull();
+      }
+    }
+    const noDesc = md.skills.filter((s) => !s.hasDesc);
+    expect(noDesc.map((s) => s.skillId)).toEqual([40]);
+    expect(noDesc[0].name).toBe('進行不可');
+  });
+
+  it('追加包 $n$SKINIT 的技能也被收录', () => {
+    const append = md.skills.filter((s) => s.source !== 'SKINIT.txt');
+    expect(append.length).toBeGreaterThan(0);
+    const s = ds.bySkill.get(352)!;   // $3$SKINIT.txt：零距離流刃槍破
+    expect(s.source).toBe('$3$SKINIT.txt');
+    expect(s.nameZh).toBe('零距离流刃枪破');
+  });
+
+  it('技能可按中/日名搜索，sub 显示中文简述', () => {
+    const zh = querySearch(ds.search, '铁壁').filter((e) => e.kind === 'skill');
+    expect(zh.length).toBeGreaterThanOrEqual(1);
+    expect(zh[0].sub).toBe('回避+10 物防&魔防+6　不可攻击');
+    const jp = querySearch(ds.search, '鉄壁');
+    expect(jp.some((e) => e.kind === 'skill' && e.nameZh === '铁壁')).toBe(true);
+  });
+
+  it('16 进制搜索按技能名串地址（0x1d4f4 + skillId）完整匹配', () => {
+    // #1 防御 → addr 1d4f5
+    expect(querySearch(ds.search, '1d4f5').some((e) => e.kind === 'skill' && e.nameZh === '防御')).toBe(true);
+    // 前缀不完整 → 不命中
+    expect(querySearch(ds.search, '1d4f').filter((e) => e.kind === 'skill').length).toBe(0);
+  });
+
+  it('describeView：技能单卡生成 key/label 且 kind=skill', () => {
+    const e = describeView([{ kind: 'skill', skillId: 1 }], ds)!;
+    expect(e.key).toBe('skill:1');
+    expect(e.label).toBe('技能 · 防御');
+    expect(e.kind).toBe('skill');
+  });
+});
+
+describe('id 空间与地址徽标（idspace）', () => {
+  it('各 id 空间基址与实体名串地址吻合（抽样对照已知实体）', () => {
+    expect(addrHex('item', 1)).toBe('18e41');        // 青铜导键
+    expect(addrHex('unit', 0x9b)).toBe('17b51');     // 因夫鲁斯骑士
+    expect(addrHex('skill', 1)).toBe('1d4f5');       // 防御
+    expect(addrHex('map', 0x54)).toBe('12236');      // 饥狼的黑曜湖
+    expect(addrHex('location', 0x11)).toBe('1217f'); // 弱者的遗迹
+  });
+
+  it('徽标格式统一为「类型 #id16 · 地址16」，id 与地址都用 16 进制', () => {
+    expect(entityTagLabel('item', 1)).toBe('物品 #1 · 18e41');
+    expect(entityTagLabel('skill', 0x28)).toBe('技能 #28 · 1d51c');   // #40 進行不可
+    expect(entityTagLabel('location', 0x11)).toBe('地点 #11 · 1217f');
+  });
+
+  it('卡片上显示的地址 = 搜索项的 addr（即可直接粘回搜索框定位）', () => {
+    // 这是本次改动的核心不变量：展示地址与搜索键必须同源同形
+    for (const e of ds.search) {
+      expect(e.addr).toBe(addrHex(e.kind, e.ids[0]));
+    }
+  });
+
+  it('每个 id 空间都能用卡片上的地址反查回同一实体', () => {
+    const cases: [Parameters<typeof addrHex>[0], number, string][] = [
+      ['item', 1, '青铜导键'],
+      ['building', 1, '阿瓦罗的工房'],
+      ['unit', 0x9b, '因夫鲁斯骑士'],
+      ['map', 0x54, '饥狼的黑曜湖'],
+      ['location', 0x11, '弱者的遗迹'],
+      ['skill', 1, '防御'],
+    ];
+    for (const [space, id, nameZh] of cases) {
+      const hit = querySearch(ds.search, addrHex(space, id));
+      expect(hit.some((e) => e.kind === space && e.nameZh === nameZh)).toBe(true);
+    }
+  });
+
+  it('物品/建筑 id 空间重叠时地址仍可区分（同 id 不同实体）', () => {
+    // id 51：物品=城砦拡張図面Ⅰ，建筑=小さな家（黄）——id 相同，名串地址不同
+    expect(addrHex('item', 51)).not.toBe(addrHex('building', 51));
+    expect(ds.byItem.get(51)).toBeDefined();
+    expect(ds.byBuilding.get(51)).toBeDefined();
   });
 });
 

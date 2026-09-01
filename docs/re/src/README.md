@@ -1,7 +1,7 @@
 # src 层面数据分析（docs/re/src）
 
 > **分析对象**：游戏**脚本字节码**与**静态数据表**（属于 AGE 引擎「沙盒外」的业务语义层）。
-> - 反汇编脚本：`src/*.txt`（如 `$1$AFINIT.txt`、`$1$AUTORUN.txt`、`SC*.txt`、`SG*.txt`、`EBINIT.txt`）。
+> - 反汇编脚本：`src/*.txt`（如 `$1$AFINIT.txt`、`$1$AUTORUN.txt`、`SC*.txt`、`SG*.txt`、`EBINIT.txt`、`SKINIT.txt`）。
 > - 静态数据表：`data/*.txt`（如 `data/EBINIT.txt`）。
 > - 脚本文件容器：`SYS4INI.BIN` / `APPENDnn.AAI`（LZSS → `scripts/alf/unpack_alf.mjs` + `lzss.mjs`）。
 > - 调用图产出：`output/callgraph*.html/.gv/.json`（`scripts/build-callgraph.mjs`）。
@@ -16,6 +16,7 @@
 | [`02-jcc语义.md`](./02-jcc语义.md) | `jcc` 两目标条件跳转语义 + 统计 |
 | [`03-掉落数据.md`](./03-掉落数据.md) | 单位掉落表结构（item/rate 连续数组）、`rate` 语义（概率刻度 vs rate/100 保底）、1000 容量、掉落调用链 FIELD-BTL-COMMITBTL-REWARD、随机池 `0x5697a` |
 | [`04-存档与内存.md`](./04-存档与内存.md) | 存档 ≠ BIN 快照；进程内存扫描结论 |
+| [`05-技能数据.md`](./05-技能数据.md) | 技能表结构（名/简述/题头+详述 三段并列数组，stride 0x3e8）、题头文法与分类、数值字段骨架 |
 
 ## 核心结论速览
 
@@ -27,3 +28,4 @@
 - **`0x53f48c` 区段恒 0 / 项目未用**：`COMMITBTL` 中 `X=0x53f48c[b*5]`、`X<=Y` 是**死判断**（通用逻辑，本项目未写），真实判定在 `RNG < rate+0xa3578`；`0x928a7` 的 Y 因此不影响掉落。
 - **随机池 `0x5697a` 的初始化**：FIELD 用**嵌套循环 + `random 0x64` 指令**逐项填 1000 项（=0x32×0x14 = 50 行×20 列），`random`=`rand()%param2`，值 0–99；读档/撤退用 `memcpy` 走 `0xeafe5`（1000 项）持久化；计数器 `0x5b8af`（`%0x14`=20）随存档存于 `0xa8b85`。**src 字面量为 16 进制**（0x64=100）。
 - **存档 ≠ BIN 快照**：`SAVE*.DAT` 是结构化动态状态流，**不持久化静态数据表**。
+- **技能表是「三段并列定长数组」**（`skillId = 名串地址 − 0x1d4f4`，段间 stride `0x3e8`=1000）：名 `0x1d4f4+id`、简述 `0x1d8dc+id`、题头/详述 `0x1dcc4+2id` 与 `+1`（**2 槽/技能**）。450 技能、id 稀疏于 1..803，六文件零冲突；`set-string` 汉化覆盖 100%；唯一 #40「進行不可」只有名字无描述。数值字段 `mov` 为「字段主序 1000-stride 数组 + 多槽二维子数组」，已解释 89.6%，语义未定。
