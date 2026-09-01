@@ -29,6 +29,10 @@ export function MapCard({ mapNo }: { mapNo: number }) {
           <Typography variant="body2" color="text.secondary">{map.name}</Typography>
           <Chip size="small" variant="outlined" label={`地图 #${map.mapNo}`} />
           <Chip size="small" label={`单位槽 ${units.length}`} />
+          {map.locationId != null && (
+            <RefChip label={`← ${dataset.byLocation.get(map.locationId)?.nameZh || '地点'}`}
+              target={{ kind: 'location', locationId: map.locationId }} />
+          )}
         </Box>
         <Typography variant="caption" color="text.secondary">来源：{map.source}</Typography>
 

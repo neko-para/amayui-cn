@@ -5,6 +5,7 @@ import { UnitCard } from './cards/UnitCard';
 import { BuildingCard } from './cards/BuildingCard';
 import { RecipeCard } from './cards/RecipeCard';
 import { MapCard } from './cards/MapCard';
+import { LocationCard } from './cards/LocationCard';
 import { MessageCard } from './cards/MessageCard';
 
 /** 把 CardSpec 映射到对应卡片组件 */
@@ -15,6 +16,7 @@ export function CardRenderer({ spec }: { spec: CardSpec }) {
     case 'building': return <BuildingCard id={spec.id} />;
     case 'recipe': return <RecipeCard productId={spec.productId} />;
     case 'map': return <MapCard mapNo={spec.mapNo} />;
+    case 'location': return <LocationCard locationId={spec.locationId} />;
     case 'message': return <MessageCard text={spec.text} />;
   }
 }

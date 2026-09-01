@@ -8,7 +8,7 @@
 
 import type { Item, Building, Recipe } from './metadata';
 /** 卡片类型 */
-export type CardKind = 'item' | 'unit' | 'building' | 'recipe' | 'map' | 'message';
+export type CardKind = 'item' | 'unit' | 'building' | 'recipe' | 'map' | 'location' | 'message';
 
 /** 具体的卡片描述（每种卡片只需最小定位信息，其余由 dataset 反查） */
 export type CardSpec =
@@ -17,10 +17,11 @@ export type CardSpec =
   | { kind: 'building'; id: number }
   | { kind: 'recipe'; productId: number } // 按 productId 定位配方（type1 或 type2）
   | { kind: 'map'; mapNo: number } // mapNo = 十进制（0x121e2+mapNo 为名地址；由 byMapNum 反查）
+  | { kind: 'location'; locationId: number } // 抽象地点（0x1216e+locationId 为名地址；由 byLocation 反查）
   | { kind: 'message'; text: string };
 
 /** 当前视图 = 有序卡片列表（下半区直接渲染） */
 export type View = CardSpec[];
 
 /** 数据类型标签（用于展示/徽标/搜索分组） */
-export type EntityTag = 'item' | 'unit' | 'building' | 'map';
+export type EntityTag = 'item' | 'unit' | 'building' | 'map' | 'location';

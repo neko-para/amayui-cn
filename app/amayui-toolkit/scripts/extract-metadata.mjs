@@ -31,7 +31,7 @@ const OUT_FILE = path.join(OUT_DIR, 'metadata.json');
 const BASE_ITEM = 0x18e40;        // 物品 id 基数
 const BASE_BUILDING = 0x1f5ba;    // 建筑/设施 id 基数
 const ITEM_ADDR_MAX = 0x1a000;    // 物品名地址上限
-const SCHEMA_VERSION = 2;         // v2：新增 maps/mapUnits
+const SCHEMA_VERSION = 3;         // v3：新增 locations + maps[].locationId（场景→地点）
 
 /* ------------------------- 名称解析（src set-string "日|中"） ------------------------- */
 
@@ -245,7 +245,7 @@ const UNIT_REG_BASE = 0x14dd00;
 const UNIT_MIN = 0x41, UNIT_MAX = 0x5d;
 const isMk = (a) => (a & 0xffffff00) === UNIT_REG_BASE && (a & 0xff) >= UNIT_MIN && (a & 0xff) <= UNIT_MAX;
 
-/** 地图名表：mapNo(hex 字符串) → { name, nameZh } */
+/** 地图名表：addr → { name, nameZh, source } */
 function collectMapNames() {
   const byAddr = new Map();
   for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit2\.txt$/i.test(x)).sort()) {
@@ -253,85 +253,191 @@ function collectMapNames() {
     for (const line of text.split(/\r\n|\r|\n/)) {
       const p = parseNameLine(line);
       if (!p) continue;
-      if (!byAddr.has(p.addr)) byAddr.set(p.addr, p);
+      if (!byAddr.has(p.addr)) byAddr.set(p.addr, { ...p, source: f });
     }
   }
   return byAddr;
 }
 const mapNameByAddr = collectMapNames();
 
-/** 解析所有 STINIT：地图块内单位槽（不含掉落；掉落走 EBINIT）。 */
-function parseStinitMaps() {
-  const files = fs.readdirSync(SRC_DIR).filter((x) => /stinit\.txt$/i.test(x)).sort();
-  const maps = [];
-  for (const f of files) {
-    const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
-    const ops = [];
-    for (const l of text.split(/\r\n|\r|\n/)) {
-      if (!l.trim()) continue;
-      const me = l.match(/eq \(local-int 0\) \(global-int b222\) ([0-9a-f]+)(\s|$)/);
-      if (me) { ops.push({ kind: 'map', mapNo: me[1] }); continue; }
-      const mm = l.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
-      if (mm) { ops.push({ kind: 'mov', addr: parseInt(mm[1], 16), val: parseInt(mm[2], 16) }); continue; }
-    }
-    // 按地图块切分：[map header] .. [下一 map header)
-    const headers = ops.map((o, i) => ({ o, i })).filter((x) => x.o.kind === 'map');
-    for (let bi = 0; bi < headers.length; bi++) {
-      const start = headers[bi].i;
-      const end = bi + 1 < headers.length ? headers[bi + 1].i : ops.length;
-      const mapNo = ops[start].mapNo;
-      const nameEnt = mapNameByAddr.get(BASE_MAP + parseInt(mapNo, 16));
-      const unitRecords = [];
-      let cur = null;
-      for (let idx = start; idx < end; idx++) {
-        const op = ops[idx];
-        if (op.kind !== 'mov') continue;
-        if (!isMk(op.addr)) continue;
-        const K = op.addr;
-        // 前部：单调递减、窗口 [K-0xF0,K]
-        let j = idx, last = K;
-        const pre = new Map();
-        while (j > 0) {
-          const a = ops[j - 1];
-          if (a.kind === 'mov' && a.addr < last && a.addr >= K - 0xF0) { pre.set(K - a.addr, a.val); last = a.addr; j--; } else break;
-        }
-        // 后部：单调递增、窗口 [K,K+0xF0]
-        let k = idx, last2 = K;
-        const post = new Map();
-        while (k + 1 < ops.length) {
-          const a = ops[k + 1];
-          if (a.kind === 'mov' && a.addr > last2 && a.addr <= K + 0xF0) { post.set(a.addr - K, a.val); last2 = a.addr; k++; } else break;
-        }
-        const extra = [];
-        for (const [off, v] of pre) if (![0x1e, 0x96, 0xd2, 0xf0].includes(off)) extra.push({ off: `-${off.toString(16)}`, val: v.toString(16) });
-        for (const [off, v] of post) if (![0x1e, 0x3c].includes(off)) extra.push({ off: `+${off.toString(16)}`, val: v.toString(16) });
-        unitRecords.push({
-          unitRef: BASE_UNIT + op.val,   // 0x17ab6 + 寄存器 id，与 units[].unitId 同键
-          spawnFlag: pre.has(0x1e) ? pre.get(0x1e) : null,
-          faction: pre.has(0x96) ? pre.get(0x96) : null,
-          row: pre.has(0xd2) ? pre.get(0xd2) : null,
-          col: pre.has(0xf0) ? pre.get(0xf0) : null,
-          levelMin: post.has(0x1e) ? post.get(0x1e) : null,
-          levelMax: post.has(0x3c) ? post.get(0x3c) : null,
-          extra,
-        });
+/**
+ * 解析所有 STINIT：把每个地图块的单位槽按 (mapNo, 单位槽寄存器 id) 合并成索引。
+ * 注意：同一场景(mapNo)在 base + $1..$5 的 STINIT 里各出现一次（单位子集不同），
+ *   这里按 mapNo 归并、并以「单位槽寄存器 id(addr&0xff)」去重（后续文件覆盖前面的），
+ *   得到每张场景地图的**完整**单位清单。不含掉落（掉落走 EBINIT）。
+ */
+const unitByMapNo = new Map(); // mapNo → Map<registerId, MapUnit>
+for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit\.txt$/i.test(x)).sort()) {
+  const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+  const ops = [];
+  for (const l of text.split(/\r\n|\r|\n/)) {
+    if (!l.trim()) continue;
+    const me = l.match(/eq \(local-int 0\) \(global-int b222\) ([0-9a-f]+)(\s|$)/);
+    if (me) { ops.push({ kind: 'map', mapNo: me[1] }); continue; }
+    const mm = l.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
+    if (mm) { ops.push({ kind: 'mov', addr: parseInt(mm[1], 16), val: parseInt(mm[2], 16) }); continue; }
+  }
+  // 按地图块切分：[map header] .. [下一 map header)
+  const headers = ops.map((o, i) => ({ o, i })).filter((x) => x.o.kind === 'map');
+  for (let bi = 0; bi < headers.length; bi++) {
+    const start = headers[bi].i;
+    const end = bi + 1 < headers.length ? headers[bi + 1].i : ops.length;
+    const mapNo = ops[start].mapNo;
+    let slots = unitByMapNo.get(mapNo);
+    if (!slots) { slots = new Map(); unitByMapNo.set(mapNo, slots); }
+    for (let idx = start; idx < end; idx++) {
+      const op = ops[idx];
+      if (op.kind !== 'mov') continue;
+      if (!isMk(op.addr)) continue;
+      const K = op.addr;
+      const regId = (op.addr & 0xff).toString(16);
+      // 前部：单调递减、窗口 [K-0xF0,K]
+      let j = idx, last = K;
+      const pre = new Map();
+      while (j > 0) {
+        const a = ops[j - 1];
+        if (a.kind === 'mov' && a.addr < last && a.addr >= K - 0xF0) { pre.set(K - a.addr, a.val); last = a.addr; j--; } else break;
       }
-      maps.push({
-        mapNo,
-        name: nameEnt ? nameEnt.name : '',
-        nameZh: nameEnt ? nameEnt.nameZh : '',
-        source: f,
-        units: unitRecords,
+      // 后部：单调递增、窗口 [K,K+0xF0]
+      let k = idx, last2 = K;
+      const post = new Map();
+      while (k + 1 < ops.length) {
+        const a = ops[k + 1];
+        if (a.kind === 'mov' && a.addr > last2 && a.addr <= K + 0xF0) { post.set(a.addr - K, a.val); last2 = a.addr; k++; } else break;
+      }
+      const extra = [];
+      for (const [off, v] of pre) if (![0x1e, 0x96, 0xd2, 0xf0].includes(off)) extra.push({ off: `-${off.toString(16)}`, val: v.toString(16) });
+      for (const [off, v] of post) if (![0x1e, 0x3c].includes(off)) extra.push({ off: `+${off.toString(16)}`, val: v.toString(16) });
+      slots.set(regId, {
+        unitRef: BASE_UNIT + op.val,   // 0x17ab6 + 寄存器 id，与 units[].unitId 同键
+        spawnFlag: pre.has(0x1e) ? pre.get(0x1e) : null,
+        faction: pre.has(0x96) ? pre.get(0x96) : null,
+        row: pre.has(0xd2) ? pre.get(0xd2) : null,
+        col: pre.has(0xf0) ? pre.get(0xf0) : null,
+        levelMin: post.has(0x1e) ? post.get(0x1e) : null,
+        levelMax: post.has(0x3c) ? post.get(0x3c) : null,
+        extra,
       });
     }
   }
-  return maps;
+}
+// 转换为每个 mapNo 的数组（按寄存器 id 排序，保证稳定）
+const unitByMapNoArr = new Map();
+for (const [mapNo, slots] of unitByMapNo) {
+  unitByMapNoArr.set(mapNo, [...slots.entries()].sort((a, b) => parseInt(a[0], 16) - parseInt(b[0], 16)).map(([, v]) => v));
 }
 
-const maps = parseStinitMaps();
+/* ------------------------- 场景 → 地点（STINIT2 场景记录 loc 字段） ------------------------- */
+
+const BASE_LOC = 0x1216e;       // 地点名 addr = BASE_LOC + locationId
+const LOC_SEQ_DIFF = 0x3e8;     // seq 槽 addr − loc 槽 addr 恒为 0x3e8（线性槽位）
+const LOC_IDX_BASE = 0x14e4e1;  // loc 槽基址 = LOC_IDX_BASE + sceneIdx（仅作校验；实际直接从段尾读值）
+
+/** 收集地点名表（STINIT2 中 addr∈[0x1216f,0x121e0) 的 set-string；locationId = addr − BASE_LOC） */
+function collectLocationNames() {
+  const byAddr = new Map();
+  for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit2\.txt$/i.test(x)).sort()) {
+    const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+    for (const line of text.split(/\r\n|\r|\n/)) {
+      const p = parseNameLine(line);
+      if (!p || p.addr < 0x1216f || p.addr >= 0x121e0) continue;
+      if (!byAddr.has(p.addr)) byAddr.set(p.addr, { ...p, source: f });
+    }
+  }
+  return byAddr;
+}
+const locationNameByAddr = collectLocationNames();
+const locationName = (loc) => {
+  const e = locationNameByAddr.get(BASE_LOC + loc);
+  return e ? { name: e.name, nameZh: e.nameZh, source: e.source } : null;
+};
+
+/**
+ * 解析 STINIT2 场景记录 → 场景名地址 → { locId, seq }。
+ * 线性公式（已证实）：loc 槽 addr = 0x14e4e1 + sceneIdx，seq 槽 addr = 0x14e8c9 + sceneIdx，
+ *   且 seq_addr − loc_addr 恒为 0x3e8。
+ * 结构：每段（上一个 set-string → 下一个 set-string）**末尾**两 mov 为 (loc, seq)，
+ *   它们属于**其下方**（紧随其后）的场景名（与「地点字段在名称上方」一致）。
+ * `sub (global-int X) 0 1` → X = -1（无标准战场地点的特殊/事件图）。
+ */
+function parseStinit2SceneLoc() {
+  const sceneLoc = new Map();
+  for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit2\.txt$/i.test(x)).sort()) {
+    const text = fs.readFileSync(path.join(SRC_DIR, f), 'utf8');
+    const toks = [];
+    for (const line of text.split(/\r\n|\r|\n/)) {
+      const p = parseNameLine(line);
+      if (p) { toks.push({ kind: 'NAME', addr: p.addr }); continue; }
+      const mm = line.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
+      if (mm) { toks.push({ kind: 'MOV', addr: parseInt(mm[1], 16), value: parseInt(mm[2], 16) }); continue; }
+      const sm = line.match(/sub \(global-int ([0-9a-f]+)\) ([0-9a-f]+) ([0-9a-f]+)/);
+      if (sm) toks.push({ kind: 'MOV', addr: parseInt(sm[1], 16), value: parseInt(sm[2], 16) - parseInt(sm[3], 16) });
+    }
+    let lastTwo = [];
+    for (const t of toks) {
+      if (t.kind === 'MOV') {
+        lastTwo.push(t);
+        if (lastTwo.length > 2) lastTwo.shift();
+      } else if (t.kind === 'NAME' && t.addr >= 0x121e0) {
+        const isPair = lastTwo.length === 2 && (lastTwo[1].addr - lastTwo[0].addr) === LOC_SEQ_DIFF;
+        sceneLoc.set(t.addr, { locId: isPair ? lastTwo[0].value : null, seq: isPair ? lastTwo[1].value : null });
+        lastTwo = [];
+      }
+    }
+  }
+  return sceneLoc;
+}
+const sceneLocByAddr = parseStinit2SceneLoc();
+
+// maps = STINIT2 场景（每场景一张地图；mapNo = 场景名 addr − 0x121e2；单位由 STINIT 按 mapNo join）
+const maps = [];
+for (const [addr, ent] of [...mapNameByAddr.entries()].sort((a, b) => a[0] - b[0])) {
+  if (addr < 0x121e0) continue;                       // 只取场景名（>=0x121e0）
+  const mapNo = (addr - BASE_MAP).toString(16);
+  const scene = sceneLocByAddr.get(addr);
+  maps.push({
+    mapNo,
+    name: ent.name,
+    nameZh: ent.nameZh,
+    source: ent.source,
+    seq: scene ? scene.seq : null,                 // 场景在所属地点内的序号（用于地点内排序）
+    locationId: scene && scene.locId !== null && scene.locId >= 0 ? scene.locId : null,
+    units: unitByMapNoArr.get(mapNo) ?? [],
+  });
+}
 const mapUnitEntries = maps.reduce((s, m) => s + m.units.length, 0);
 const mapUnitDistinct = new Set(maps.flatMap((m) => m.units.map((u) => u.unitRef)));
 const mapSpawnableEntries = maps.reduce((s, m) => s + m.units.filter((u) => u.spawnFlag === 1).length, 0);
+
+// 按 locationId 分组地图 → 抽象「地点」（mapNo 去重；同名地点保留不同 id —— 同名属正常，按 id 区分）
+const locationMapNos = new Map();
+for (const m of maps) {
+  if (m.locationId == null) continue;
+  let set = locationMapNos.get(m.locationId);
+  if (!set) { set = new Set(); locationMapNos.set(m.locationId, set); }
+  set.add(m.mapNo);
+}
+const locations = [];
+const seqByMapNo = new Map(maps.map((m) => [m.mapNo, m.seq]));
+for (const [locId, mapNoSet] of locationMapNos) {
+  const nm = locationName(locId);
+  // 地点内的场景按场景自己的 seq 字段（地点内序号）排序，非按 mapNo
+  const mapNos = [...mapNoSet].sort((a, b) => {
+    const sa = seqByMapNo.get(a) ?? Number.MAX_SAFE_INTEGER;
+    const sb = seqByMapNo.get(b) ?? Number.MAX_SAFE_INTEGER;
+    if (sa !== sb) return sa - sb;
+    return parseInt(a, 16) - parseInt(b, 16);
+  });
+  locations.push({
+    locationId: locId,
+    name: nm ? nm.name : '',
+    nameZh: nm ? nm.nameZh : `地点 #${locId}`,
+    source: nm ? nm.source : '',
+    maps: mapNos,
+  });
+}
+locations.sort((a, b) => a.locationId - b.locationId);
+const mapsWithLocation = maps.filter((m) => m.locationId != null).length;
 
 /* ------------------------- 派生 / 校验 / 组装 ------------------------- */
 
@@ -367,19 +473,22 @@ const counts = {
   mapUnitEntries,
   mapUnitDistinctUnits: mapUnitDistinct.size,
   mapSpawnableEntries,
+  locations: locations.length,
+  mapsWithLocation,
 };
 
 const out = {
   schemaVersion: SCHEMA_VERSION,
   generatedAt: new Date().toISOString(),
   sourceTree: 'src',
-  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。',
+  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT/STINIT/STINIT2 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。v3 新增 locations（场景→地点，地点 id=addr-0x1216e；loc 槽=0x14e4e1+sceneIdx，seq=loc+0x3e8；sub 0 1 即 loc=-1）。',
   counts,
   items,
   buildings,
   recipes,
   units,
   maps,
+  locations,
 };
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -388,7 +497,8 @@ console.log('已写出', OUT_FILE);
 console.log(`items=${items.length} buildings=${buildings.length} recipes=${recipes.length}` +
   ` (item=${itemRecipes.length}, building=${buildRecipes.length}) units=${units.length}` +
   ` (withDrops=${counts.unitsWithDrops}) dropEntries=${dropEntries} distinctDropItemIds=${dropItemIds.size}` +
-  ` maps=${maps.length} mapUnitEntries=${mapUnitEntries} mapUnitDistinctUnits=${mapUnitDistinct.size} mapSpawnable=${mapSpawnableEntries}`);
+  ` maps=${maps.length} mapUnitEntries=${mapUnitEntries} mapUnitDistinctUnits=${mapUnitDistinct.size} mapSpawnable=${mapSpawnableEntries}` +
+  ` locations=${locations.length} mapsWithLocation=${mapsWithLocation}`);
 console.log('校验：缺产品名配方=', missingProduct, ' 缺物品的原材料 id=', [...missingMaterial].map(String).join(','), ' 缺物品的掉落 id=', [...missingDropItem].map(String).join(','));
 
 // 采样展示（含中文名）

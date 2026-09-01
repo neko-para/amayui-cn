@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 2;
+export const METADATA_SCHEMA_VERSION = 3;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -142,8 +142,34 @@ export interface MapData {
   nameZh: string;
   /** 出现该地图的源脚本文件名（如 STINIT.txt / $1$STINIT.txt） */
   source: string;
+  /**
+   * 该地图所属地点 id（= STINIT2 场景 loc 字段值；地点 id = 名串地址 − 0x1216e）。
+   * `null` = 无标准战场地点（事件/特殊图，loc 为 -1 或未定义）。
+   */
+  locationId: number | null;
+  /** 场景在所属地点内的序号（STINIT2 场景 seq 槽 = 0x14e8c9 + sceneIdx；用于地点内排序） */
+  seq: number | null;
   /** 该地图内的单位槽（按 STINIT 中出现顺序） */
   units: MapUnit[];
+}
+
+/* ---------------------------------- 地点 / 场景（STINIT2 loc 字段） ---------------------------------- */
+
+/**
+ * 抽象地点：由 STINIT2 场景记录的 loc 字段（= 地点 id）归并而成。
+ * 地点 id = 地点名 `set-string` 地址 − 0x1216e；loc 槽 = 0x14e4e1 + sceneIdx，seq 槽 = loc + 0x3e8。
+ * `sub 0 1` → loc = -1（无地点），此类场景所属为 null。
+ */
+export interface Location {
+  /** 地点 id（0x1216e 编号） */
+  locationId: number;
+  name: string;
+  nameZh: string;
+  /** 定义它的源脚本文件名（如 STINIT2.txt） */
+  source: string;
+  /** 该地点包含的地图 mapNo（十进制字符串，去重；由 byMapNum 反查地图）
+   *  —— 作为「地点 → 地图」的跳转键。 */
+  maps: string[];
 }
 
 /** 各表计数与统计 */
@@ -161,6 +187,8 @@ export interface MetadataCounts {
   mapUnitEntries: number;
   mapUnitDistinctUnits: number;
   mapSpawnableEntries: number;
+  locations: number;
+  mapsWithLocation: number;
 }
 
 /** 统一后的元数据（单一 `metadata.json`） */
@@ -177,4 +205,6 @@ export interface Metadata {
   units: Unit[];
   /** 全部地图（关卡）与其内单位槽 */
   maps: MapData[];
+  /** 全部抽象地点（场景按地点归并；地图 ↔ 地点互跳） */
+  locations: Location[];
 }

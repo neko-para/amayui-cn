@@ -17,7 +17,7 @@ export function SearchBar() {
       getOptionLabel={(o) => o.nameZh || o.name}
       noOptionsText="无匹配"
       onChange={(_e, o) => { if (o) navigate([toCard(o)]); }}
-      renderInput={(params) => <TextField {...params} label="搜索 物品 / 单位 / 设施 / 地图（日/中）" />}
+      renderInput={(params) => <TextField {...params} label="搜索 物品 / 单位 / 设施 / 地图 / 地点（日/中）" />}
       renderOption={(props, o) => (
         <Box component="li" {...props} key={`${o.kind}-${o.id}`}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 2 }}>
@@ -36,5 +36,6 @@ function toCard(e: SearchEntry): CardSpec {
   if (e.kind === 'item') return { kind: 'item', id: e.id };
   if (e.kind === 'unit') return { kind: 'unit', id: e.id };
   if (e.kind === 'map') return { kind: 'map', mapNo: e.id };
+  if (e.kind === 'location') return { kind: 'location', locationId: e.id };
   return { kind: 'building', id: e.id };
 }

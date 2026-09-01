@@ -2,7 +2,7 @@
  * 数据集：载入 `metadata.json` 并建立索引与搜索项。
  * 前端一次性持有全量数据，查询/反查/跳转均在内存完成（无后端/IPC）。
  */
-import type { Metadata, Item, Building, Unit, Recipe, MapData } from '../types/metadata';
+import type { Metadata, Item, Building, Unit, Recipe, MapData, Location } from '../types/metadata';
 import type { EntityTag, View, CardSpec, CardKind } from '../types/nav';
 
 /** 搜索项（Autocomplete 选项） */
@@ -29,6 +29,10 @@ export interface Dataset {
   byUnit: Map<number, Unit>;
   byMap: Map<string, MapData>;
   byMapNum: Map<number, MapData>;
+  /** 抽象地点 locationId → Location；同一地点可被多个地图共享 */
+  byLocation: Map<number, Location>;
+  /** 地点 locationId → 该地点内的所有地图（按地图名排序）—— 地点 → 地图 跳转 */
+  mapsByLocation: Map<number, MapAppearance[]>;
   /** 物品配方：产品 itemId → 配方（type=1） */
   recipeByItemProduct: Map<number, Recipe>;
   /** 建筑配方：产品 buildingId → 配方（type=2） */
@@ -53,10 +57,12 @@ export function buildDataset(md: Metadata): Dataset {
   const byUnit = new Map<number, Unit>();
   const byMap = new Map<string, MapData>();
   const byMapNum = new Map<number, MapData>();
+  const byLocation = new Map<number, Location>();
   for (const i of md.items) byItem.set(i.id, i);
   for (const b of md.buildings) byBuilding.set(b.id, b);
   for (const u of md.units) byUnit.set(u.unitId, u);
   for (const m of md.maps) { byMap.set(m.mapNo, m); byMapNum.set(parseInt(m.mapNo, 16), m); }
+  for (const l of md.locations) byLocation.set(l.locationId, l);
 
   const recipeByItemProduct = new Map<number, Recipe>();
   const recipeByBuildingProduct = new Map<number, Recipe>();
@@ -99,11 +105,32 @@ export function buildDataset(md: Metadata): Dataset {
   }
   for (const arr of mapsWithUnit.values()) arr.sort((a, b) => (a.map.nameZh || a.map.name).localeCompare(b.map.nameZh || b.map.name, 'zh'));
 
+  // 地点 → 该地点内的所有地图（按 locations[].maps 顺序 = 场景 seq 字段顺序）。地图 → 地点 由 map.locationId 反查 byLocation。
+  const mapsByLocation = new Map<number, MapAppearance[]>();
+  for (const l of md.locations) {
+    const arr: MapAppearance[] = [];
+    for (const mapNo of l.maps) {
+      const m = byMap.get(mapNo);
+      if (!m) continue;
+      arr.push({ map: m, spawnable: m.units.some((mu) => mu.spawnFlag === 1) });
+    }
+    mapsByLocation.set(l.locationId, arr);
+  }
+
   const search: SearchEntry[] = [];
   for (const i of md.items) search.push({ kind: 'item', id: i.id, name: i.name, nameZh: i.nameZh, sub: '物品' });
   for (const b of md.buildings) search.push({ kind: 'building', id: b.id, name: b.name, nameZh: b.nameZh, sub: '设施' });
   for (const u of md.units) search.push({ kind: 'unit', id: u.unitId, name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
-  for (const m of md.maps) search.push({ kind: 'map', id: parseInt(m.mapNo, 16), name: m.name, nameZh: m.nameZh, sub: '地图' });
+  // 地图：同一场景(mapNo)在 base+$1..$5 的 STINIT 里各出现一次（单位子集不同）。
+  // 搜索只留一个 mapNo 对应的 entry，避免「干风之山」等重复出现。
+  const seenMapId = new Set<number>();
+  for (const m of md.maps) {
+    const mid = parseInt(m.mapNo, 16);
+    if (seenMapId.has(mid)) continue;
+    seenMapId.add(mid);
+    search.push({ kind: 'map', id: mid, name: m.name, nameZh: m.nameZh, sub: '地图' });
+  }
+  for (const l of md.locations) search.push({ kind: 'location', id: l.locationId, name: l.name, nameZh: l.nameZh, sub: '地点' });
 
   return {
     metadata: md,
@@ -112,6 +139,8 @@ export function buildDataset(md: Metadata): Dataset {
     byUnit,
     byMap,
     byMapNum,
+    byLocation,
+    mapsByLocation,
     recipeByItemProduct,
     recipeByBuildingProduct,
     recipesUsingItem,
@@ -172,6 +201,10 @@ function describeCard(spec: CardSpec, ds: Dataset): { key: string; label: string
     case 'map': {
       const m = ds.byMapNum.get(spec.mapNo);
       return { key: `map:${spec.mapNo}`, label: `地图 · ${m?.nameZh || '#' + spec.mapNo}` };
+    }
+    case 'location': {
+      const l = ds.byLocation.get(spec.locationId);
+      return { key: `location:${spec.locationId}`, label: `地点 · ${l?.nameZh || '#' + spec.locationId}` };
     }
     case 'message':
       return { key: `message:${spec.text}`, label: spec.text };

@@ -84,6 +84,64 @@ describe('数据一致性', () => {
     expect(md.counts.maps).toBe(md.maps.length);
     expect(md.counts.mapUnitEntries).toBe(md.maps.reduce((s: number, m: MapData) => s + m.units.length, 0));
   });
+
+  it('地图以 STINIT2 场景为源：mapNo 唯一（无跨文件重复），单位按槽合并', () => {
+    const seen = new Set<string>();
+    for (const m of md.maps) expect(seen.has(m.mapNo)).toBe(false), seen.add(m.mapNo);
+    // 干风之山：曾跨 6 个 STINIT 文件重复；现在应唯一且单位来自合并
+    const gf = md.maps.filter((m) => m.nameZh === '干风之山');
+    expect(gf.length).toBe(1);
+    expect(gf[0].units.length).toBeGreaterThan(0);
+  });
+});
+
+describe('location（抽象地点）数据', () => {
+  it('locations 数量一致；弱者的遗迹(0x11) 归并 6 张地图', () => {
+    expect(md.counts.locations).toBe(md.locations.length);
+    const loc = ds.byLocation.get(0x11);
+    expect(loc).toBeDefined();
+    expect(loc!.nameZh).toBe('弱者的遗迹');
+    expect(loc!.maps).toHaveLength(6);
+  });
+
+  it('龙笛峡谷(0xc) 归并格雷贝尔大堤防；地图 locationId 反查正确', () => {
+    const loc = ds.byLocation.get(0xc)!;
+    expect(loc.nameZh).toBe('龙笛峡谷');
+    const map = ds.byMapNum.get(parseInt(loc.maps[0], 16))!;
+    expect(map.locationId).toBe(0xc);
+    const apps = ds.mapsByLocation.get(0xc)!;
+    expect(apps.length).toBeGreaterThanOrEqual(1);
+    expect(apps[0].map.nameZh).toBe('格雷贝尔大堤防');
+  });
+
+  it('map → location 反查（互跳键）', () => {
+    const map = ds.byMapNum.get(parseInt('141', 16))!; // 赫塔雷斯迷宫１Ｆ
+    expect(map.locationId).toBe(0x11);
+    expect(ds.byLocation.get(map.locationId!)!.nameZh).toBe('弱者的遗迹');
+  });
+
+  it('地点搜索项可查询', () => {
+    const hit = querySearch(ds.search, '乌拉加尔');
+    expect(hit.some((e) => e.kind === 'location' && e.nameZh === '乌拉加尔双山')).toBe(true);
+  });
+
+  it('地图搜索按 mapNo 去重（干风之山只出现一条）', () => {
+    const hit = querySearch(ds.search, '干风之山');
+    const maps = hit.filter((e) => e.kind === 'map');
+    expect(maps.length).toBe(1);
+    expect(maps[0].nameZh).toBe('干风之山');
+  });
+
+  it('地点内场景按场景 seq 字段排序', () => {
+    // 弱者的遗迹：赫塔雷斯 1F..6F 依 seq=1..6
+    const ru = ds.byLocation.get(0x11)!;
+    const ruSeqs = ru.maps.map((mn) => ds.byMapNum.get(parseInt(mn, 16))!.seq);
+    expect(ruSeqs).toEqual([1, 2, 3, 4, 5, 6]);
+    // 乌拉加尔双山：苔山→干风→岚燐→废弃矿山→山麓森林
+    const ug = ds.byLocation.get(0x6)!;
+    const ugNames = ug.maps.map((mn) => ds.byMapNum.get(parseInt(mn, 16))!.nameZh);
+    expect(ugNames).toEqual(['苔山瀑布', '干风之山', '岚燐回廊', '废弃的旧矿山', '山麓的森林地带']);
+  });
 });
 
 describe('describeView（历史条目）', () => {
