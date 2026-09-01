@@ -2,7 +2,6 @@ import { Alert, Box, Card, CardContent, Chip, Divider, Stack, Typography } from 
 import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
-import type { CardSpec } from '../../types/nav';
 
 export function ItemCard({ id }: { id: number }) {
   const dataset = useStore((s) => s.dataset);
@@ -12,6 +11,8 @@ export function ItemCard({ id }: { id: number }) {
 
   const recipe = dataset.recipeByItemProduct.get(id);
   const asMaterial = dataset.recipesUsingItem.get(id) ?? [];
+  const asMaterialItems = asMaterial.filter((r) => r.productRef === 'item');
+  const asMaterialBuildings = asMaterial.filter((r) => r.productRef === 'building');
   const droppedBy = dataset.unitsDropItem.get(id) ?? [];
 
   return (
@@ -51,21 +52,30 @@ export function ItemCard({ id }: { id: number }) {
             <Divider sx={{ my: 2 }} />
             <Box>
               <Typography variant="subtitle2">作为材料（{asMaterial.length}）</Typography>
-              <Stack direction="row" sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
-                {asMaterial.map((r, i) => {
-                  const name = r.productRef === 'item'
-                    ? dataset.byItem.get(r.productId)?.nameZh
-                    : dataset.byBuilding.get(r.productId)?.nameZh;
-                  const target: CardSpec = r.productRef === 'item'
-                    ? { kind: 'item', id: r.productId }
-                    : { kind: 'building', id: r.productId };
-                  return (
-                    <RefChip key={i}
-                      label={`${name || '#' + r.productId}（${r.type === 1 ? '物品' : '建筑'}配方）`}
-                      target={target} />
-                  );
-                })}
-              </Stack>
+
+              {asMaterialItems.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">物品配方（{asMaterialItems.length}）</Typography>
+                  <Stack direction="row" sx={{ mt: 0.5, flexWrap: 'wrap', gap: 1 }}>
+                    {asMaterialItems.map((r, i) => (
+                      <RefChip key={i} label={dataset.byItem.get(r.productId)?.nameZh || `#${r.productId}`}
+                        target={{ kind: 'item', id: r.productId }} />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
+              {asMaterialBuildings.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">建筑配方（{asMaterialBuildings.length}）</Typography>
+                  <Stack direction="row" sx={{ mt: 0.5, flexWrap: 'wrap', gap: 1 }}>
+                    {asMaterialBuildings.map((r, i) => (
+                      <RefChip key={i} label={dataset.byBuilding.get(r.productId)?.nameZh || `#${r.productId}`}
+                        target={{ kind: 'building', id: r.productId }} />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
             </Box>
           </>
         )}

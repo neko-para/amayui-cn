@@ -30,6 +30,7 @@ const OUT_FILE = path.join(OUT_DIR, 'metadata.json');
 
 const BASE_ITEM = 0x18e40;        // 物品 id 基数
 const BASE_BUILDING = 0x1f5ba;    // 建筑/设施 id 基数
+const BASE_UNIT = 0x17ab6;        // 单位名 addr = BASE_UNIT + 单位 id（1-based；单位统一用 1-based 下标而非名串地址）
 const ITEM_ADDR_MAX = 0x1a000;    // 物品名地址上限
 const SCHEMA_VERSION = 3;         // v3：新增 locations + maps[].locationId（场景→地点）
 
@@ -158,79 +159,86 @@ const buildRecipes = recipes.filter((r) => r.type === 2);
 /* ------------------------- 单位 + 掉落 EBINIT ------------------------- */
 
 function parseEbinit() {
-  const lines = fs.readFileSync(path.join(SRC_DIR, 'EBINIT.txt'), 'utf8').split(/\r\n|\r|\n/);
-  const ops = [];
-  for (let idx = 0; idx < lines.length; idx++) {
-    const l = lines[idx];
-    if (!l.trim()) continue;
-    const ms = l.match(/set-string \(global-string ([0-9a-f]+)\) "([^"]*)"/);
-    if (ms) {
-      const addr = parseInt(ms[1], 16);
-      const kind = (addr >= 0x17a00 && addr < 0x17f00) ? 'name'
-                 : (addr >= 0x17f00 && addr < 0x18200) ? 'sub'
-                 : 'str';
-      const p = parseNameLine(l);
-      ops.push({ line: idx + 1, kind, addr, name: p.name, nameZh: p.nameZh });
-      continue;
-    }
-    const mm = l.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
-    if (mm) ops.push({ line: idx + 1, kind: 'mov', addr: parseInt(mm[1], 16), value: parseInt(mm[2], 16), valueRaw: mm[2] });
-  }
-  const isNameOp = (op) => op.kind === 'name';
-  const isSubOp = (op) => op.kind === 'sub';
-  const unitHeaders = [];
-  for (let i = 0; i < ops.length - 1; i++) {
-    if (isNameOp(ops[i]) && isSubOp(ops[i + 1])) unitHeaders.push({ start: i, nameOp: ops[i], subOp: ops[i + 1] });
-  }
-  const isItem = (a) => (a & 0xffff000) === 0x53d000;
-  const isRate = (a) => (a & 0xffff000) === 0x53e000;
-
-  function extractDrops(startIdx, endIdx) {
-    const kEnd = Math.min(endIdx, ops.length);
-    const pairs = [];
-    let k = startIdx;
-    let lastRate = null, lastItem = null;
-    while (k + 1 < kEnd) {
-      const r = ops[k], it = ops[k + 1];
-      if (r.kind === 'mov' && it.kind === 'mov' && isRate(r.addr) && isItem(it.addr)) break;
-      k++;
-    }
-    while (k + 1 < kEnd) {
-      const r = ops[k], it = ops[k + 1];
-      if (r.kind === 'mov' && it.kind === 'mov' && isRate(r.addr) && isItem(it.addr)
-          && (lastRate === null || (r.addr === lastRate + 1 && it.addr === lastItem + 1))) {
-        pairs.push({ rate: r, item: it });
-        lastRate = r.addr; lastItem = it.addr; k += 2;
+  const allFiles = fs.readdirSync(SRC_DIR).filter((x) => /ebinit\.txt$/i.test(x)).sort();
+  const units = [];
+  const seenUnitId = new Set();
+  for (const file of allFiles) {
+    const lines = fs.readFileSync(path.join(SRC_DIR, file), 'utf8').split(/\r\n|\r|\n/);
+    const ops = [];
+    for (let idx = 0; idx < lines.length; idx++) {
+      const l = lines[idx];
+      if (!l.trim()) continue;
+      const ms = l.match(/set-string \(global-string ([0-9a-f]+)\) "([^"]*)"/);
+      if (ms) {
+        const addr = parseInt(ms[1], 16);
+        // 单位名 / 副标题均保留（不做「可玩角色」过滤）。kind 仅用于区分 set-string 与 mov。
+        const kind = (addr >= 0x17a00) ? 'str' : 'str';
+        const p = parseNameLine(l);
+        ops.push({ line: idx + 1, kind, addr, name: p.name, nameZh: p.nameZh });
         continue;
       }
-      break;
+      const mm = l.match(/mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
+      if (mm) ops.push({ line: idx + 1, kind: 'mov', addr: parseInt(mm[1], 16), value: parseInt(mm[2], 16), valueRaw: mm[2] });
     }
-    return pairs;
-  }
+    const isSetString = (op) => op.kind !== 'mov';   // set-string（name/sub/str 皆保留）
+    const unitHeaders = [];
+    for (let i = 0; i < ops.length - 1; i++) {
+      const a = ops[i], b = ops[i + 1];
+      // 相邻 set-string 对：第一个为单位名、第二个为副标题（命名地址升序）
+      if (isSetString(a) && isSetString(b) && a.addr < b.addr) unitHeaders.push({ start: i, nameOp: a, subOp: b });
+    }
+    const isItem = (a) => (a & 0xffff000) === 0x53d000;
+    const isRate = (a) => (a & 0xffff000) === 0x53e000;
 
-  const units = [];
-  for (let u = 0; u < unitHeaders.length; u++) {
-    const h = unitHeaders[u];
-    const start = h.start;
-    const end = (u + 1 < unitHeaders.length) ? unitHeaders[u + 1].start : ops.length;
-    const pairs = extractDrops(start + 2, end);
-    const drops = pairs.map(({ rate, item }) => ({
-      itemId: item.value,
-      rate: rate.value,
-      rateRaw: rate.valueRaw,
-      itemRaw: item.valueRaw,
-      rateMeaning: 'percent',
-    }));
-    units.push({
-      unitId: h.nameOp.addr,
-      name: h.nameOp.name,
-      nameZh: h.nameOp.nameZh,
-      title: h.subOp.name,
-      titleZh: h.subOp.nameZh,
-      nameLine: h.nameOp.line,
-      hasDrops: drops.length > 0,
-      drops,
-    });
+    function extractDrops(startIdx, endIdx) {
+      const kEnd = Math.min(endIdx, ops.length);
+      const pairs = [];
+      let k = startIdx;
+      let lastRate = null, lastItem = null;
+      while (k + 1 < kEnd) {
+        const r = ops[k], it = ops[k + 1];
+        if (r.kind === 'mov' && it.kind === 'mov' && isRate(r.addr) && isItem(it.addr)) break;
+        k++;
+      }
+      while (k + 1 < kEnd) {
+        const r = ops[k], it = ops[k + 1];
+        if (r.kind === 'mov' && it.kind === 'mov' && isRate(r.addr) && isItem(it.addr)
+            && (lastRate === null || (r.addr === lastRate + 1 && it.addr === lastItem + 1))) {
+          pairs.push({ rate: r, item: it });
+          lastRate = r.addr; lastItem = it.addr; k += 2;
+          continue;
+        }
+        break;
+      }
+      return pairs;
+    }
+
+    for (let u = 0; u < unitHeaders.length; u++) {
+      const h = unitHeaders[u];
+      const start = h.start;
+      const end = (u + 1 < unitHeaders.length) ? unitHeaders[u + 1].start : ops.length;
+      if (seenUnitId.has(h.nameOp.addr)) continue;    // 跨文件按 单位名地址 去重（地址空间不重叠，去重仅兜底）
+      const pairs = extractDrops(start + 2, end);
+      const drops = pairs.map(({ rate, item }) => ({
+        itemId: item.value,
+        rate: rate.value,
+        rateRaw: rate.valueRaw,
+        itemRaw: item.valueRaw,
+        rateMeaning: 'percent',
+      }));
+      units.push({
+        unitId: h.nameOp.addr - BASE_UNIT,   // 统一 1-based 下标（addr − 0x17ab6），与地图 unitRef(=op.val) 同键
+        name: h.nameOp.name,
+        nameZh: h.nameOp.nameZh,
+        title: h.subOp.name,
+        titleZh: h.subOp.nameZh,
+        nameLine: h.nameOp.line,
+        source: file,
+        hasDrops: drops.length > 0,
+        drops,
+      });
+      seenUnitId.add(h.nameOp.addr);
+    }
   }
   return units;
 }
@@ -240,7 +248,7 @@ const units = parseEbinit();
 /* ------------------------- 地图 + 地图内单位（STINIT/STINIT2） ------------------------- */
 
 const BASE_MAP = 0x121e2;   // 地图名 addr = BASE_MAP + mapNo
-const BASE_UNIT = 0x17ab6;  // 单位名 addr = BASE_UNIT + 单位槽寄存器 id（与 EBINIT units[].unitId 同键）
+// (BASE_UNIT 已提升到顶部常量区)
 const UNIT_REG_BASE = 0x14dd00;
 const UNIT_MIN = 0x41, UNIT_MAX = 0x5d;
 const isMk = (a) => (a & 0xffffff00) === UNIT_REG_BASE && (a & 0xff) >= UNIT_MIN && (a & 0xff) <= UNIT_MAX;
@@ -309,7 +317,7 @@ for (const f of fs.readdirSync(SRC_DIR).filter((x) => /stinit\.txt$/i.test(x)).s
       for (const [off, v] of pre) if (![0x1e, 0x96, 0xd2, 0xf0].includes(off)) extra.push({ off: `-${off.toString(16)}`, val: v.toString(16) });
       for (const [off, v] of post) if (![0x1e, 0x3c].includes(off)) extra.push({ off: `+${off.toString(16)}`, val: v.toString(16) });
       slots.set(regId, {
-        unitRef: BASE_UNIT + op.val,   // 0x17ab6 + 寄存器 id，与 units[].unitId 同键
+        unitRef: op.val,   // 1-based 单位 id（= EBINIT units[].unitId = 名串地址 − 0x17ab6）
         spawnFlag: pre.has(0x1e) ? pre.get(0x1e) : null,
         faction: pre.has(0x96) ? pre.get(0x96) : null,
         row: pre.has(0xd2) ? pre.get(0xd2) : null,

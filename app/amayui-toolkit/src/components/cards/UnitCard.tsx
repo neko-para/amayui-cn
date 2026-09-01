@@ -30,15 +30,18 @@ export function UnitCard({ id }: { id: number }) {
           <Stack direction="row" sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
             {unit.drops.map((d, i) => {
               const it = dataset.byItem.get(d.itemId);
+              const rateLabel = d.rate >= 100 ? '100%' : `${d.rate}%`;
               return (
                 <RefChip key={i}
-                  label={`${it?.nameZh || '#' + d.itemId} ${d.rate}%`}
+                  label={`${it?.nameZh || '#' + d.itemId} ${rateLabel}`}
                   target={{ kind: 'item', id: d.itemId }} />
               );
             })}
           </Stack>
         )}
-        <Typography variant="caption" color="text.secondary">掉落率按百分比理解（100=必定掉落），语义待与游戏内进一步核对。</Typography>
+        <Typography variant="caption" color="text.secondary">
+          掉落率按百分比理解：低于 100 为对应概率，100 为必定掉落（BOSS 专属/保底）。
+        </Typography>
 
         {maps.length > 0 && (
           <>

@@ -5,13 +5,18 @@
 import type { Metadata, Item, Building, Unit, Recipe, MapData, Location } from '../types/metadata';
 import type { EntityTag, View, CardSpec, CardKind } from '../types/nav';
 
-/** 搜索项（Autocomplete 选项） */
+/** 搜索项（Autocomplete 选项）。同名同类型实体合并为一条，`ids` 为保序成员 id 列表。 */
 export interface SearchEntry {
   kind: EntityTag;
-  id: number; // item.id / building.id / unit.unitId
-  name: string; // 日文
+  /** 该组命中的实体 id（保序）；同型同名合并后可能多个 */
+  ids: number[];
+  /** 合并后命中数 = ids.length */
+  count: number;
+  /** 该组首个成员的十六进制「名串地址」（非单位存 id+基址；单位即 unitId），用于 16 进制搜索匹配 */
+  addr: string;
+  name: string; // 日文（该组首个成员的日文名）
   nameZh: string; // 中文
-  sub: string; // 描述（单位：副标题；物品/设施：类型）
+  sub: string; // 类型说明（物品/设施/单位/地图/地点）
 }
 
 /** 某单位在某地图的一次出现（地图 + 该单位在此是否可重复刷新） */
@@ -118,9 +123,9 @@ export function buildDataset(md: Metadata): Dataset {
   }
 
   const search: SearchEntry[] = [];
-  for (const i of md.items) search.push({ kind: 'item', id: i.id, name: i.name, nameZh: i.nameZh, sub: '物品' });
-  for (const b of md.buildings) search.push({ kind: 'building', id: b.id, name: b.name, nameZh: b.nameZh, sub: '设施' });
-  for (const u of md.units) search.push({ kind: 'unit', id: u.unitId, name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
+  for (const i of md.items) search.push({ kind: 'item', ids: [i.id], count: 1, addr: (0x18e40 + i.id).toString(16), name: i.name, nameZh: i.nameZh, sub: '物品' });
+  for (const b of md.buildings) search.push({ kind: 'building', ids: [b.id], count: 1, addr: (0x1f5ba + b.id).toString(16), name: b.name, nameZh: b.nameZh, sub: '设施' });
+  for (const u of md.units) search.push({ kind: 'unit', ids: [u.unitId], count: 1, addr: (0x17ab6 + u.unitId).toString(16), name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
   // 地图：同一场景(mapNo)在 base+$1..$5 的 STINIT 里各出现一次（单位子集不同）。
   // 搜索只留一个 mapNo 对应的 entry，避免「干风之山」等重复出现。
   const seenMapId = new Set<number>();
@@ -128,9 +133,9 @@ export function buildDataset(md: Metadata): Dataset {
     const mid = parseInt(m.mapNo, 16);
     if (seenMapId.has(mid)) continue;
     seenMapId.add(mid);
-    search.push({ kind: 'map', id: mid, name: m.name, nameZh: m.nameZh, sub: '地图' });
+    search.push({ kind: 'map', ids: [mid], count: 1, addr: (0x121e2 + mid).toString(16), name: m.name, nameZh: m.nameZh, sub: '地图' });
   }
-  for (const l of md.locations) search.push({ kind: 'location', id: l.locationId, name: l.name, nameZh: l.nameZh, sub: '地点' });
+  for (const l of md.locations) search.push({ kind: 'location', ids: [l.locationId], count: 1, addr: (0x1216e + l.locationId).toString(16), name: l.name, nameZh: l.nameZh, sub: '地点' });
 
   return {
     metadata: md,
@@ -150,11 +155,38 @@ export function buildDataset(md: Metadata): Dataset {
   };
 }
 
-/** 按 日/中 名做子串搜索（中/日任一命中即返回） */
+/** 按 日/中 名做子串搜索（中/日任一命中即返回）；若输入是 16 进制数，则同时按实体十六进制「名串地址/成员 id」后缀匹配；
+ *  同名同类型实体合并为一条（保序、去重 id）。 */
 export function querySearch(search: SearchEntry[], text: string): SearchEntry[] {
-  const q = normalize(text.trim());
+  const raw = text.trim();
+  const q = normalize(raw);
   if (!q) return [];
-  return search.filter((e) => normalize(e.name).includes(q) || normalize(e.nameZh).includes(q));
+  const hits = search.filter((e) => normalize(e.name).includes(q) || normalize(e.nameZh).includes(q));
+  // 16 进制数：仅完整匹配（addr 或成员 id 的 hex 精确相等），不做前缀/后缀模糊
+  if (/^[0-9a-f]+$/i.test(raw)) {
+    const hex = raw.toLowerCase();
+    for (const e of search) {
+      const byAddr = e.addr && e.addr.toLowerCase() === hex;
+      const byId = e.ids.some((id) => id.toString(16) === hex);
+      if ((byAddr || byId) && !hits.includes(e)) hits.push(e);
+    }
+  }
+  // 同名同类型合并
+  const out: SearchEntry[] = [];
+  const byKey = new Map<string, SearchEntry>();
+  for (const e of hits) {
+    const key = `${e.kind}|${normalize(e.nameZh || e.name)}`;
+    const ex = byKey.get(key);
+    if (!ex) {
+      const ne = { ...e, ids: [...e.ids], count: e.ids.length };
+      byKey.set(key, ne);
+      out.push(ne);
+    } else {
+      for (const id of e.ids) if (!ex.ids.includes(id)) ex.ids.push(id);
+      ex.count = ex.ids.length;
+    }
+  }
+  return out;
 }
 
 /** 历史条目：展示标签 + 去重 key + 点击时重新跳转的目标 view */

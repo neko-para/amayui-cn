@@ -132,6 +132,28 @@ describe('location（抽象地点）数据', () => {
     expect(maps[0].nameZh).toBe('干风之山');
   });
 
+  it('同名同类型合并：重名单位归并为一条且保留全部 id', () => {
+    // 菲亚-伊布拉姆 存在重名单位（3 个）
+    const hit = querySearch(ds.search, '菲亚-伊布拉姆');
+    const units = hit.filter((e) => e.kind === 'unit');
+    expect(units.length).toBe(1);
+    expect(units[0].count).toBeGreaterThan(1);
+    expect(units[0].ids.length).toBe(units[0].count);
+    // 选中下放全部命中卡片（由 ids 逐条生成）
+    expect(units[0].ids.length).toBeGreaterThan(1);
+  });
+
+  it('16 进制数搜索：按名串地址完整匹配对应实体（不做前缀/后缀模糊）', () => {
+    // 因夫鲁斯骑士 的 unitId=0x17b51 → addr '17b51'（完整匹配命中）
+    expect(querySearch(ds.search, '17b51').some((e) => e.kind === 'unit' && e.nameZh === '因夫鲁斯骑士')).toBe(true);
+    // 后缀 '7b51' 不完整 → 不应命中
+    expect(querySearch(ds.search, '7b51').filter((e) => e.kind === 'unit').length).toBe(0);
+    // 物品地址（0x18e40 + id）：青铜导键 id=1 → addr '18e41'
+    expect(querySearch(ds.search, '18e41').some((e) => e.kind === 'item' && e.nameZh === '青铜导键')).toBe(true);
+    // 前缀 '18e4' 不完整 → 不应命中
+    expect(querySearch(ds.search, '18e4').filter((e) => e.kind === 'item').length).toBe(0);
+  });
+
   it('地点内场景按场景 seq 字段排序', () => {
     // 弱者的遗迹：赫塔雷斯 1F..6F 依 seq=1..6
     const ru = ds.byLocation.get(0x11)!;
@@ -141,6 +163,20 @@ describe('location（抽象地点）数据', () => {
     const ug = ds.byLocation.get(0x6)!;
     const ugNames = ug.maps.map((mn) => ds.byMapNum.get(parseInt(mn, 16))!.nameZh);
     expect(ugNames).toEqual(['苔山瀑布', '干风之山', '岚燐回廊', '废弃的旧矿山', '山麓的森林地带']);
+  });
+});
+
+describe('单位导出覆盖（含追加包，不做可玩角色过滤）', () => {
+  it('全量保留 EBINIT 单位（含追加包 $n$），地图引用全部可解析', () => {
+    // 追加包单位存在（source != EBINIT.txt）
+    const append = md.units.filter((u) => u.source !== 'EBINIT.txt');
+    expect(append.length).toBeGreaterThan(0);
+    // 每个地图单位槽的 unitRef 都能反查到单位
+    for (const m of md.maps) for (const mu of m.units) {
+      expect(ds.byUnit.has(mu.unitRef)).toBe(true);
+    }
+    // 追加包样例：姬斯尼尔(旧地址 0x17abb → 1-based id 0x5) 曾被漏掉，现在应在
+    expect(ds.byUnit.has(0x5)).toBe(true);
   });
 });
 
