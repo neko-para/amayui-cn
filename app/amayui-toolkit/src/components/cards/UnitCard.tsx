@@ -3,15 +3,37 @@ import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
 import { entityTagLabel, idHex } from '../../services/idspace';
+import { RACE_NAME, GENDER_NAME, ATTR_NAME } from '../../types/metadata';
+import { buildResults, queryFromUnitAttr, queryFromUnitStar } from '../../services/search';
+import { cardFromResult } from '../../types/search';
+import type { UnitAttrKind } from '../../types/search';
 
 export function UnitCard({ id }: { id: number }) {
   const dataset = useStore((s) => s.dataset);
+  const navigate = useStore((s) => s.navigate);
   if (!dataset) return <MessageCard text="数据加载中…" />;
   const unit = dataset.byUnit.get(id);
   if (!unit) return <MessageCard text={`找不到单位 #${idHex(id)}`} />;
   const maps = dataset.mapsWithUnit.get(id) ?? [];
   const spawnable = maps.filter((a) => a.spawnable);
   const fixed = maps.filter((a) => !a.spawnable);
+
+  // 单位自身情报（EBINIT per-unit struct，v5 + v7 星级）
+  const raceName = unit.race != null ? RACE_NAME[unit.race] : null;
+  const genderName = unit.gender != null ? GENDER_NAME[unit.gender] : null;
+  const attrName = unit.attribute != null ? ATTR_NAME[unit.attribute] : null;
+  const star = unit.star != null ? unit.star + 1 : null;   // 0-based → ★N
+
+  // 点击属性 chip → 构造 queryFromUnitAttr（自动 category=unit）→ 求值该属性值的全部单位
+  const goAttr = (attr: UnitAttrKind, value: number) => {
+    const expr = queryFromUnitAttr(attr, value);
+    navigate(expr, buildResults(expr, dataset).map((r) => cardFromResult(r.kind, r.id)));
+  };
+  // 点击星级 chip → 构造 queryFromUnitStar(op='gte')（≥ 该星）→ 求值 ≥★N 的全部单位
+  const goStar = (n: number) => {
+    const expr = queryFromUnitStar('gte', n);
+    navigate(expr, buildResults(expr, dataset).map((r) => cardFromResult(r.kind, r.id)));
+  };
 
   return (
     <Card>
@@ -22,6 +44,29 @@ export function UnitCard({ id }: { id: number }) {
           <Chip size="small" variant="outlined" label={entityTagLabel('unit', unit.unitId)} />
         </Box>
         <Typography variant="body2" sx={{ mt: 1 }}>{unit.titleZh || unit.title}</Typography>
+
+        {/* 单位自身情报：种族 / 性别 / 属性（EBINIT per-unit struct）；点击 → 该类属性值的全部单位 */}
+        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+          {raceName && unit.race != null && (
+            <Chip size="small" color="primary" variant="outlined" label={`种族 · ${raceName}`} title="点击查看同种族单位"
+              clickable onClick={() => goAttr('race', unit.race!)} />
+          )}
+          {genderName && unit.gender != null && (
+            <Chip size="small" variant="outlined" label={`性别 · ${genderName}`} title="点击查看同性别单位"
+              clickable onClick={() => goAttr('gender', unit.gender!)} />
+          )}
+          {attrName && unit.attribute != null && (
+            <Chip size="small" color="secondary" variant="outlined" label={`属性 · ${attrName}`} title="点击查看同属性单位"
+              clickable onClick={() => goAttr('attribute', unit.attribute!)} />
+          )}
+          {star != null && (
+            <Chip size="small" color="warning" variant="outlined" label={`★${star}`} title="点击查看 ≥★N 的单位"
+              clickable onClick={() => goStar(star)} />
+          )}
+          {!raceName && !genderName && !attrName && star == null && (
+            <Typography variant="body2" color="text.secondary">（该单位暂无种族/性别/属性/星级数据）</Typography>
+          )}
+        </Stack>
 
         <Divider sx={{ my: 2 }} />
         <Typography variant="subtitle2">掉落物{!unit.hasDrops ? '（无）' : ''}</Typography>

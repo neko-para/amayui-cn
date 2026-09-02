@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDataset, type Dataset } from './dataset';
-import { buildResults, queryFromEntry, queryFromId, expressionKey, expressionLabel } from './search';
-import { cardFromResult } from '../types/search';
+import { buildResults, queryFromEntry, queryFromId, queryFromUnitAttr, queryFromUnitStar, expressionKey, expressionLabel } from './search';
+import { cardFromResult, type SearchExpression } from '../types/search';
 import type { Metadata } from '../types/metadata';
 
 let ds: Dataset;
@@ -82,5 +82,88 @@ describe('搜索内核：expressionKey / expressionLabel', () => {
     const label = expressionLabel(expr);
     expect(label).toBe('单位 · 火');
     expect(label).not.toContain('nameExact');
+  });
+});
+
+describe('搜索内核：unitAttr（单位属性，自动附加 category=unit）', () => {
+  it('queryFromUnitAttr 返回 [category=unit, unitAttr]，且求值 = 同属性单位', () => {
+    const expr = queryFromUnitAttr('race', 4);   // 鬼
+    expect(expr).toEqual([
+      { type: 'category', value: 'unit' },
+      { type: 'unitAttr', attr: 'race', value: 4 },
+    ]);
+    const view = buildResults(expr, ds).map((r) => cardFromResult(r.kind, r.id));
+    expect(view.length).toBeGreaterThan(0);
+    expect(view.every((c) => c.kind === 'unit')).toBe(true);
+  });
+
+  it('只含 unitAttr 无 category 时，自动强制 category=unit（不命中其它类型）', () => {
+    const expr: SearchExpression = [{ type: 'unitAttr', attr: 'attribute', value: 6 }];  // 神圣
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    expect(view.every((r) => r.kind === 'unit')).toBe(true);
+    // 神圣属性单位必须 attribute=6
+    for (const r of view) {
+      const u = ds.byUnit.get(r.id)!;
+      expect(u.attribute).toBe(6);
+    }
+  });
+
+  it('性别子句（queryFromUnitAttr gender=2 女）命中女性单位', () => {
+    const expr = queryFromUnitAttr('gender', 2);
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    for (const r of view) expect(ds.byUnit.get(r.id)!.gender).toBe(2);
+  });
+
+  it('key 规范化：unitAttr 子句稳定、顺序无关', () => {
+    const e1: SearchExpression = [{ type: 'unitAttr', attr: 'race', value: 4 }, { type: 'category', value: 'unit' }];
+    const e2: SearchExpression = [{ type: 'category', value: 'unit' }, { type: 'unitAttr', attr: 'race', value: 4 }];
+    expect(expressionKey(e1)).toBe(expressionKey(e2));
+  });
+
+  it('label 显示「单位 · 种族 · 鬼」', () => {
+    const expr = queryFromUnitAttr('race', 4);
+    expect(expressionLabel(expr)).toBe('单位 · 种族 · 鬼');
+  });
+});
+
+describe('搜索内核：unitStar（星级，自动附加 category=unit）', () => {
+  it('queryFromUnitStar 返回 [category=unit, unitStar]，eq 精确匹配星数', () => {
+    const expr = queryFromUnitStar('eq', 3);   // ★3
+    expect(expr).toEqual([
+      { type: 'category', value: 'unit' },
+      { type: 'unitStar', op: 'eq', value: 3 },
+    ]);
+    // 锚点：狂暴的冰少女(0x136) star=2(0-based)→★3；哈尔皮亚(0xdc)=★2
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    for (const r of view) expect(ds.byUnit.get(r.id)!.star! + 1).toBe(3);
+    expect(view.some((r) => r.id === 0x136)).toBe(true);   // 冰少女 ★3
+  });
+
+  it('gte 匹配 ≥★N（含更高星）', () => {
+    const expr = queryFromUnitStar('gte', 4);   // ≥★4
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    for (const r of view) expect(ds.byUnit.get(r.id)!.star! + 1).toBeGreaterThanOrEqual(4);
+  });
+
+  it('只含 unitStar 无 category 时，自动强制 category=unit', () => {
+    const expr: SearchExpression = [{ type: 'unitStar', op: 'gte', value: 4 }];
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    expect(view.every((r) => r.kind === 'unit')).toBe(true);
+  });
+
+  it('key 规范化：unitStar 子句稳定、顺序无关', () => {
+    const e1: SearchExpression = [{ type: 'unitStar', op: 'gte', value: 4 }, { type: 'category', value: 'unit' }];
+    const e2: SearchExpression = [{ type: 'category', value: 'unit' }, { type: 'unitStar', op: 'gte', value: 4 }];
+    expect(expressionKey(e1)).toBe(expressionKey(e2));
+  });
+
+  it('label 显示「单位 · 星级 ≥ ★3」/恒等「=」', () => {
+    expect(expressionLabel(queryFromUnitStar('gte', 3))).toBe('单位 · 星级 ≥ ★3');
+    expect(expressionLabel(queryFromUnitStar('eq', 2))).toBe('单位 · 星级 = ★2');
   });
 });

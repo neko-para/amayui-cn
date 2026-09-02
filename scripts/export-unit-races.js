@@ -29,6 +29,7 @@ import { SRC_DIR, DATA_DIR, ROOT_DIR } from './config.js';
 const RACE_BASE = 0x52a0b4;
 const GENDER_BASE = 0x52a49c;
 const ATTR_BASE = 0x52b054;
+const STAR_BASE = 0x5461ec;   // 单位星级：star_val = STAR_BASE + unitId（0-based：0=★1 .. 4=★5）
 const UNIT_BASE = 0x17ab6;
 
 // 种族值 → 名称（0xe/0xf 未在 DRINIT 训练里出现，据单位名归类）
@@ -55,7 +56,7 @@ const nameOf = (id) => disp(names[UNIT_BASE + id]);
 // 收集有名字的单位（含追加包 $n$），按单位 id 排序
 const unitIds = Object.keys(names).map(Number).filter((a) => a >= UNIT_BASE && a - UNIT_BASE > 0 && a - UNIT_BASE < 0x3e8).map((a) => a - UNIT_BASE).sort((x, y) => x - y);
 
-const csv = ['单位id,单位名,种族值,种族,性别值,性别,属性值,属性,单位名地址'];
+const csv = ['单位id,单位名,种族值,种族,性别值,性别,属性值,属性,星级,单位名地址'];
 for (const id of unitIds) {
   const name = nameOf(id);
   const v = movs[RACE_BASE + id];
@@ -67,22 +68,27 @@ for (const id of unitIds) {
   const a = movs[ATTR_BASE + id];
   const aval = a === undefined ? '' : a;
   const attr = a === undefined ? '' : (ATTR_NAME[parseInt(a, 16)] ?? `(未知${a})`);
-  csv.push(`${id.toString(16)},${name},${val},${race},${gval},${gender},${aval},${attr},${(UNIT_BASE + id).toString(16)}`);
+  const st = movs[STAR_BASE + id];
+  const star = st === undefined ? '' : `${parseInt(st, 16) + 1}`;   // 0-based → ★N
+  csv.push(`${id.toString(16)},${name},${val},${race},${gval},${gender},${aval},${attr},${star},${(UNIT_BASE + id).toString(16)}`);
 }
 fs.writeFileSync(path.join(ROOT_DIR, 'output', 'unit-races.csv'), csv.join('\n') + '\n', 'utf8');
 
-const dist = {}, gdist = {}, adist = {};
-let withRace = 0, withGender = 0, withAttr = 0;
+const dist = {}, gdist = {}, adist = {}, sdist = {};
+let withRace = 0, withGender = 0, withAttr = 0, withStar = 0;
 for (const id of unitIds) {
   const v = movs[RACE_BASE + id]; if (v) { withRace++; dist[v] = (dist[v] || 0) + 1; }
   const g = movs[GENDER_BASE + id]; if (g) { withGender++; gdist[g] = (gdist[g] || 0) + 1; }
   const a = movs[ATTR_BASE + id]; if (a) { withAttr++; adist[a] = (adist[a] || 0) + 1; }
+  const s = movs[STAR_BASE + id]; if (s !== undefined) { withStar++; sdist[parseInt(s, 16) + 1] = (sdist[parseInt(s, 16) + 1] || 0) + 1; }
 }
 console.log(`已写出 output/unit-races.csv`);
-console.log(`单位总数=${unitIds.length}  有种族=${withRace}  有性别=${withGender}  有属性=${withAttr}`);
+console.log(`单位总数=${unitIds.length}  有种族=${withRace}  有性别=${withGender}  有属性=${withAttr}  有星级=${withStar}`);
 console.log('种族分布:');
 for (const v of Object.keys(dist).sort((a, b) => a - b)) console.log(`  0x${v} ${(RACE_NAME[parseInt(v, 16)] ?? '?')}: ${dist[v]}`);
 console.log('性别分布:');
 for (const v of Object.keys(gdist).sort((a, b) => a - b)) console.log(`  0x${v} ${(GENDER_NAME[parseInt(v, 16)] ?? '?')}: ${gdist[v]}`);
 console.log('属性分布:');
 for (const v of Object.keys(adist).sort((a, b) => a - b)) console.log(`  0x${v} ${(ATTR_NAME[parseInt(v, 16)] ?? '?')}: ${adist[v]}`);
+console.log('星级分布(★N):');
+for (const v of Object.keys(sdist).sort((a, b) => a - b)) console.log(`  ★${v}: ${sdist[v]}`);

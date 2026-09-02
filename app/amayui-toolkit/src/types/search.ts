@@ -23,12 +23,20 @@ import type { EntityTag, CardSpec } from './nav';
 /** 实体类型标签（category 的取值；也是 id 精确的 id 空间）。 */
 export type SearchCategory = EntityTag;
 
+/** 单位自身属性字段（EBINIT per-unit struct，v5）：种族 / 性别 / 属性。 */
+export type UnitAttrKind = 'race' | 'gender' | 'attribute';
+
+/** 单位星级比较操作：eq = 等于 N 星；gte = 大于等于 N 星。 */
+export type StarOp = 'eq' | 'gte';
+
 /** 一条判断子句（表达式里各子句为 AND 交集）。 */
 export type SearchPredicate =
   | { type: 'nameSub'; value: string }       // name == "%Keyword%"
   | { type: 'nameExact'; value: string }     // name == "Keyword"
   | { type: 'idExact'; value: number }       // id(name) == parseHex(Keyword)
-  | { type: 'category'; value: SearchCategory };
+  | { type: 'category'; value: SearchCategory }
+  | { type: 'unitAttr'; attr: UnitAttrKind; value: number }  // 单位自身属性（种族/性别/属性）
+  | { type: 'unitStar'; op: StarOp; value: number };          // 单位星级（value = 星数 N；0-based 存储）
 
 /** 表达式 = 子句数组（AND 交集）。空数组 = 无过滤（不常用）。 */
 export type SearchExpression = SearchPredicate[];

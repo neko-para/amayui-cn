@@ -205,6 +205,22 @@ describe('单位种族/性别/属性（EBINIT per-unit struct，v5）', () => {
     });
     expect(ok).toBe(true);
   });
+
+  it('星级（EBINIT 0x5461ec+id，0-based：0=★1..4=★5）锚点全命中', () => {
+    // 用户提供的锚点：value = 星级 - 1（0-based 存储）
+    const starOf = (id) => md.units.find((u) => u.unitId === id)!.star;
+    expect(starOf(0x136)).toBe(2);   // 狂暴的冰少女 ★3
+    expect(starOf(0xfb)).toBe(0);    // 小鬼族 ★1
+    expect(starOf(0xdc)).toBe(1);    // 哈尔皮亚 ★2
+    expect(starOf(0xdd)).toBe(2);    // 鲁托哈尔皮亚 ★3
+  });
+
+  it('星级值域 0..4；仅 0xcb 系留员神殿兵 为 null', () => {
+    const nullStar = md.units.filter((u) => u.star === null);
+    expect(nullStar.map((u) => u.unitId)).toEqual([0xcb]);
+    const ok = md.units.every((u) => u.star === null || (u.star >= 0 && u.star <= 4));
+    expect(ok).toBe(true);
+  });
 });
 
 describe('trainings（DRINIT 训练所，独立数据域 v6）', () => {

@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 6;
+export const METADATA_SCHEMA_VERSION = 7;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -113,6 +113,8 @@ export interface Unit {
   gender: number | null;
   /** 属性值（EBINIT `0x52b054 + unitId`；1=物理 2=地脉 3=冷却 4=火炎 5=电击 6=神圣 7=暗黑），null=无（如 0xcb 系留系神殿兵） */
   attribute: number | null;
+  /** 捕获星级（EBINIT `0x5461ec + unitId`；**0-based**：0=★1 .. 4=★5），null=无（0xcb 系留系神殿兵） */
+  star: number | null;
 }
 
 /** 种族枚举（数值 → 名称），与 `Unit.race` 对应 */

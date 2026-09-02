@@ -36,10 +36,11 @@ const BASE_SKILL = 0x1d4f4;       // SKINIT 技能名基址（skillId = 名串�
 const SKILL_STRIDE = 0x3e8;       // 技能表段长 = 1000（三段并列数组的 stride）
 const SKILL_SHORT_BASE = BASE_SKILL + SKILL_STRIDE;       // 0x1d8dc：单行简述段
 const SKILL_DESC_BASE = BASE_SKILL + 2 * SKILL_STRIDE;    // 0x1dcc4：题头/详述配对段（2 槽/技能）
-const SCHEMA_VERSION = 6;         // v6：新增 trainings（DRINIT 训练所，独立数据域）
+const SCHEMA_VERSION = 7;         // v7：单位新增 star（捕获星级，0x5461ec+id，0-based）
 const RACE_ADDR = 0x52a0b4;       // 单位种族：race_val = RACE_ADDR + unitId
 const GENDER_ADDR = 0x52a49c;     // 单位性别：gender_val = GENDER_ADDR + unitId
 const ATTR_ADDR = 0x52b054;       // 单位属性：attr_val = ATTR_ADDR + unitId
+const STAR_ADDR = 0x5461ec;       // 单位星级：star_val = STAR_ADDR + unitId（0-based：0=★1 .. 4=★5）
 const TID_BASE = 0x1d490;         // DRINIT 训练内容槽基数：TID = 描述串地址 − 0x1d490
 
 /* ------------------------- 名称解析（src set-string "日|中"） ------------------------- */
@@ -241,6 +242,7 @@ function parseEbinit() {
       const raceVal = unitField(RACE_ADDR);
       const genderVal = unitField(GENDER_ADDR);
       const attrVal = unitField(ATTR_ADDR);
+      const starVal = unitField(STAR_ADDR);
       const pairs = extractDrops(start + 2, end);
       const drops = pairs.map(({ rate, item }) => ({
         itemId: item.value,
@@ -262,6 +264,7 @@ function parseEbinit() {
         race: raceVal,
         gender: genderVal,
         attribute: attrVal,
+        star: starVal,
       });
       seenUnitId.add(h.nameOp.addr);
     }
