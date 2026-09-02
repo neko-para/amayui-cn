@@ -2,22 +2,29 @@ import { create } from 'zustand';
 import type { Dataset, ViewEntry } from '../services/dataset';
 import { loadDataset, describeView } from '../services/dataset';
 import type { View } from '../types/nav';
+import type { SearchExpression } from '../types/search';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+/** 一条历史 = 内部 query（表达式）+ 其结果视图。 */
+interface HistoryRecord {
+  expr: SearchExpression;
+  view: View;
+}
 
 interface AppState {
   dataset: Dataset | null;
   loading: boolean;
   error: string | null;
-  /** 内存历史栈（当前视图 = history[pos]） */
-  history: View[];
+  /** 内存历史栈（当前视图 = history[pos].view） */
+  history: HistoryRecord[];
   pos: number;
   /** 去重后的历史记录（最新在前），用于左侧列表 */
   historyEntries: ViewEntry[];
   theme: ThemeMode;
   setTheme: (t: ThemeMode) => void;
   init: () => Promise<void>;
-  navigate: (cards: View) => void;
+  navigate: (expr: SearchExpression, view: View) => void;
   goBack: () => void;
   goForward: () => void;
 }
@@ -28,7 +35,7 @@ export const useStore = create<AppState>((set, get) => ({
   dataset: null,
   loading: false,
   error: null,
-  history: [INITIAL_VIEW],
+  history: [{ expr: [], view: INITIAL_VIEW }],
   pos: 0,
   historyEntries: [],
   theme: 'system',
@@ -46,12 +53,12 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  navigate: (cards) => {
+  navigate: (expr, view) => {
     const { history, pos, dataset, historyEntries } = get();
     // 1) 栈式：push 到当前位置之后
-    const next = [...history.slice(0, pos + 1), cards];
-    // 2) 去重历史记录：同一目标(entry.key)只保留最新一条，最新插入到顶部
-    const entry = dataset ? describeView(cards, dataset) : null;
+    const next = [...history.slice(0, pos + 1), { expr, view }];
+    // 2) 去重历史记录：同一表达式(key)只保留最新一条，最新插入到顶部
+    const entry = dataset ? describeView(expr, view, dataset) : null;
     let entries = historyEntries;
     if (entry) {
       entries = [entry, ...historyEntries.filter((e) => e.key !== entry.key)];
@@ -71,4 +78,7 @@ export const useStore = create<AppState>((set, get) => ({
 }));
 
 /** 当前视图（下半区内容） */
-export const selectView = (s: AppState): View => s.history[s.pos] ?? INITIAL_VIEW;
+export const selectView = (s: AppState): View => s.history[s.pos]?.view ?? INITIAL_VIEW;
+
+/** 当前激活的表达式（供标题/调试图标等；历史回放时用它重新求值） */
+export const selectExpr = (s: AppState): SearchExpression => s.history[s.pos]?.expr ?? [];

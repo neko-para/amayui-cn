@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildDataset, querySearch, describeView, type Dataset } from '../services/dataset';
+import { buildDataset, filterCandidates, describeView, type Dataset } from '../services/dataset';
+import { buildResults, queryFromId, queryFromEntry } from '../services/search';
+import { cardFromResult } from '../types/search';
 import type { Metadata, MapData } from '../types/metadata';
 import { addrHex, entityTagLabel } from './idspace';
 
@@ -54,17 +56,18 @@ describe('map 数据索引', () => {
   });
 });
 
-describe('搜索（含地图）', () => {
-  it('可按地图中/日名搜索', () => {
-    const zh = querySearch(ds.search, '饥狼');
+describe('候选筛选（filterCandidates，输入仅筛候选，不解析表达式）', () => {
+  it('可按地图中/日名筛选候选', () => {
+    const zh = filterCandidates(ds.search, '饥狼');
     expect(zh.some((e) => e.kind === 'map')).toBe(true);
-    const jp = querySearch(ds.search, '黒曜湖');
+    const jp = filterCandidates(ds.search, '黒曜湖');
     expect(jp.some((e) => e.kind === 'map')).toBe(true);
   });
 
-  it('地图搜索项 sub 标记为地图', () => {
-    const r = querySearch(ds.search, '饥狼').find((e) => e.kind === 'map');
-    expect(r?.sub).toBe('地图');
+  it('候选条目单实体；sub 标记为地图', () => {
+    const r = filterCandidates(ds.search, '饥狼').find((e) => e.kind === 'map');
+    expect(r).toBeDefined();
+    expect(r!.sub).toBe('地图');
   });
 });
 
@@ -121,38 +124,27 @@ describe('location（抽象地点）数据', () => {
     expect(ds.byLocation.get(map.locationId!)!.nameZh).toBe('弱者的遗迹');
   });
 
-  it('地点搜索项可查询', () => {
-    const hit = querySearch(ds.search, '乌拉加尔');
+  it('地点候选可筛选', () => {
+    const hit = filterCandidates(ds.search, '乌拉加尔');
     expect(hit.some((e) => e.kind === 'location' && e.nameZh === '乌拉加尔双山')).toBe(true);
   });
 
-  it('地图搜索按 mapNo 去重（干风之山只出现一条）', () => {
-    const hit = querySearch(ds.search, '干风之山');
+  it('地图候选按 mapNo 去重（干风之山只出现一条）', () => {
+    const hit = filterCandidates(ds.search, '干风之山');
     const maps = hit.filter((e) => e.kind === 'map');
     expect(maps.length).toBe(1);
     expect(maps[0].nameZh).toBe('干风之山');
   });
 
-  it('同名同类型合并：重名单位归并为一条且保留全部 id', () => {
-    // 菲亚-伊布拉姆 存在重名单位（3 个）
-    const hit = querySearch(ds.search, '菲亚-伊布拉姆');
-    const units = hit.filter((e) => e.kind === 'unit');
-    expect(units.length).toBe(1);
-    expect(units[0].count).toBeGreaterThan(1);
-    expect(units[0].ids.length).toBe(units[0].count);
-    // 选中下放全部命中卡片（由 ids 逐条生成）
-    expect(units[0].ids.length).toBeGreaterThan(1);
-  });
-
-  it('16 进制数搜索：按名串地址完整匹配对应实体（不做前缀/后缀模糊）', () => {
+  it('16 进制数候选：按名串地址完整匹配对应实体（不做前缀/后缀模糊）', () => {
     // 因夫鲁斯骑士 的 unitId=0x17b51 → addr '17b51'（完整匹配命中）
-    expect(querySearch(ds.search, '17b51').some((e) => e.kind === 'unit' && e.nameZh === '因夫鲁斯骑士')).toBe(true);
+    expect(filterCandidates(ds.search, '17b51').some((e) => e.kind === 'unit' && e.nameZh === '因夫鲁斯骑士')).toBe(true);
     // 后缀 '7b51' 不完整 → 不应命中
-    expect(querySearch(ds.search, '7b51').filter((e) => e.kind === 'unit').length).toBe(0);
+    expect(filterCandidates(ds.search, '7b51').filter((e) => e.kind === 'unit').length).toBe(0);
     // 物品地址（0x18e40 + id）：青铜导键 id=1 → addr '18e41'
-    expect(querySearch(ds.search, '18e41').some((e) => e.kind === 'item' && e.nameZh === '青铜导键')).toBe(true);
+    expect(filterCandidates(ds.search, '18e41').some((e) => e.kind === 'item' && e.nameZh === '青铜导键')).toBe(true);
     // 前缀 '18e4' 不完整 → 不应命中
-    expect(querySearch(ds.search, '18e4').filter((e) => e.kind === 'item').length).toBe(0);
+    expect(filterCandidates(ds.search, '18e4').filter((e) => e.kind === 'item').length).toBe(0);
   });
 
   it('地点内场景按场景 seq 字段排序', () => {
@@ -322,25 +314,28 @@ describe('skill（SKINIT 技能名 + 三行描述）', () => {
     expect(s.nameZh).toBe('零距离流刃枪破');
   });
 
-  it('技能可按中/日名搜索，sub 显示中文简述', () => {
-    const zh = querySearch(ds.search, '铁壁').filter((e) => e.kind === 'skill');
+  it('技能可按中/日名筛选候选，sub 显示中文简述', () => {
+    const zh = filterCandidates(ds.search, '铁壁').filter((e) => e.kind === 'skill');
     expect(zh.length).toBeGreaterThanOrEqual(1);
     expect(zh[0].sub).toBe('回避+10 物防&魔防+6　不可攻击');
-    const jp = querySearch(ds.search, '鉄壁');
+    const jp = filterCandidates(ds.search, '鉄壁');
     expect(jp.some((e) => e.kind === 'skill' && e.nameZh === '铁壁')).toBe(true);
   });
 
-  it('16 进制搜索按技能名串地址（0x1d4f4 + skillId）完整匹配', () => {
+  it('16 进制候选按技能名串地址（0x1d4f4 + skillId）完整匹配', () => {
     // #1 防御 → addr 1d4f5
-    expect(querySearch(ds.search, '1d4f5').some((e) => e.kind === 'skill' && e.nameZh === '防御')).toBe(true);
+    expect(filterCandidates(ds.search, '1d4f5').some((e) => e.kind === 'skill' && e.nameZh === '防御')).toBe(true);
     // 前缀不完整 → 不命中
-    expect(querySearch(ds.search, '1d4f').filter((e) => e.kind === 'skill').length).toBe(0);
+    expect(filterCandidates(ds.search, '1d4f').filter((e) => e.kind === 'skill').length).toBe(0);
   });
 
-  it('describeView：技能单卡生成 key/label 且 kind=skill', () => {
-    const e = describeView([{ kind: 'skill', skillId: 1 }], ds)!;
-    expect(e.key).toBe('skill:1');
-    expect(e.label).toBe('技能 · 防御');
+  it('queryFromId 求值：技能单实体的 view 与历史标签', () => {
+    const expr = queryFromId('skill', 1);
+    const view = buildResults(expr, ds).map((r) => cardFromResult(r.kind, r.id));
+    expect(view).toEqual([{ kind: 'skill', skillId: 1 }]);
+    const e = describeView(expr, view, ds)!;
+    expect(e.key).toBe('category:skill & idExact:1');
+    expect(e.label).toContain('防御');
     expect(e.kind).toBe('skill');
   });
 });
@@ -363,7 +358,7 @@ describe('id 空间与地址徽标（idspace）', () => {
   it('卡片上显示的地址 = 搜索项的 addr（即可直接粘回搜索框定位）', () => {
     // 这是本次改动的核心不变量：展示地址与搜索键必须同源同形
     for (const e of ds.search) {
-      expect(e.addr).toBe(addrHex(e.kind, e.ids[0]));
+      expect(e.addr).toBe(addrHex(e.kind, e.id));
     }
   });
 
@@ -377,7 +372,7 @@ describe('id 空间与地址徽标（idspace）', () => {
       ['skill', 1, '防御'],
     ];
     for (const [space, id, nameZh] of cases) {
-      const hit = querySearch(ds.search, addrHex(space, id));
+      const hit = filterCandidates(ds.search, addrHex(space, id));
       expect(hit.some((e) => e.kind === space && e.nameZh === nameZh)).toBe(true);
     }
   });
@@ -390,30 +385,51 @@ describe('id 空间与地址徽标（idspace）', () => {
   });
 });
 
-describe('describeView（历史条目）', () => {
-  it('物品单卡生成 key/label 且 kind=item', () => {
-    const e = describeView([{ kind: 'item', id: 1 }], ds)!;
-    expect(e.key).toBe('item:1');
+describe('describeView（历史条目：表达式 query 模型）', () => {
+  it('queryFromId 单实体生成 key/label 且 kind=item', () => {
+    const expr = queryFromId('item', 1);
+    const view = buildResults(expr, ds).map((r) => cardFromResult(r.kind, r.id));
+    const e = describeView(expr, view, ds)!;
+    expect(e.key).toBe('category:item & idExact:1');
     expect(e.label).toContain('青铜导键');
     expect(e.kind).toBe('item');
   });
 
-  it('地图单卡生成 key/label 且 kind=map', () => {
-    const e = describeView([{ kind: 'map', mapNo: parseInt('54', 16) }], ds)!;
-    expect(e.key).toBe(`map:${parseInt('54', 16)}`);
+  it('queryFromId 地图单实体生成 key/label 且 kind=map', () => {
+    const expr = queryFromId('map', parseInt('54', 16));
+    const view = buildResults(expr, ds).map((r) => cardFromResult(r.kind, r.id));
+    const e = describeView(expr, view, ds)!;
+    expect(e.key).toBe(`category:map & idExact:${parseInt('54', 16).toString(16)}`);
     expect(e.label).toContain('饥狼的黑曜湖');
     expect(e.kind).toBe('map');
   });
 
-  it('空 view 与 message 不生成条目', () => {
-    expect(describeView([], ds)).toBeNull();
-    expect(describeView([{ kind: 'message', text: 'hi' }], ds)).toBeNull();
+  it('queryFromEntry 同名组生成「类型 · 名称 ×N」标签（重名单位多个）', () => {
+    // 菲亚-伊布拉姆 存在重名单位（3 个）；queryFromEntry 用 category+nameExact 命中全部同名
+    const u = ds.search.find((e) => e.kind === 'unit' && e.nameZh === '菲亚-伊布拉姆')!;
+    const expr = queryFromEntry(u);
+    const view = buildResults(expr, ds).map((r) => cardFromResult(r.kind, r.id));
+    expect(view.length).toBeGreaterThan(1);
+    const e = describeView(expr, view, ds)!;
+    expect(e.label).toContain('×');
   });
 
-  it('不同目标 key 唯一；同一目标 key 相同（供去重）', () => {
-    const a = describeView([{ kind: 'unit', id: ds.metadata.units[0].unitId }], ds)!;
-    const b = describeView([{ kind: 'unit', id: ds.metadata.units[0].unitId }], ds)!;
-    const c = describeView([{ kind: 'item', id: 2 }], ds)!;
+  it('空 view 与 message 不生成条目', () => {
+    expect(describeView([], [], ds)).toBeNull();
+    expect(describeView([], [{ kind: 'message', text: 'hi' }], ds)).toBeNull();
+  });
+
+  it('不同表达式 key 唯一；同一表达式 key 相同（供去重）', () => {
+    const unitId = ds.metadata.units[0].unitId;
+    const aExpr = queryFromId('unit', unitId);
+    const aView = buildResults(aExpr, ds).map((r) => cardFromResult(r.kind, r.id));
+    const bExpr = queryFromId('unit', unitId);
+    const bView = buildResults(bExpr, ds).map((r) => cardFromResult(r.kind, r.id));
+    const cExpr = queryFromId('item', 2);
+    const cView = buildResults(cExpr, ds).map((r) => cardFromResult(r.kind, r.id));
+    const a = describeView(aExpr, aView, ds)!;
+    const b = describeView(bExpr, bView, ds)!;
+    const c = describeView(cExpr, cView, ds)!;
     expect(a.key).toBe(b.key);
     expect(a.key).not.toBe(c.key);
   });

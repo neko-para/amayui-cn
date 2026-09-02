@@ -5,20 +5,12 @@
 import type { Metadata, Item, Building, Unit, Recipe, MapData, Location, Skill } from '../types/metadata';
 import type { EntityTag, View, CardSpec, CardKind } from '../types/nav';
 import { addrHex, idHex, ID_SPACE_LABEL } from './idspace';
+import type { SearchExpression, SearchResultEntry } from '../types/search';
+import { CATEGORY_LABEL, CATEGORY_ORDER } from '../types/search';
+import { expressionKey, expressionLabel } from './search';
 
-/** 搜索项（Autocomplete 选项）。同名同类型实体合并为一条，`ids` 为保序成员 id 列表。 */
-export interface SearchEntry {
-  kind: EntityTag;
-  /** 该组命中的实体 id（保序）；同型同名合并后可能多个 */
-  ids: number[];
-  /** 合并后命中数 = ids.length */
-  count: number;
-  /** 该组首个成员的十六进制「名串地址」（非单位存 id+基址；单位即 unitId），用于 16 进制搜索匹配 */
-  addr: string;
-  name: string; // 日文（该组首个成员的日文名）
-  nameZh: string; // 中文
-  sub: string; // 类型说明（物品/设施/单位/地图/地点）
-}
+/** 搜索结果条目（一条 = 一个命中的实体）。由 search 内核生成。 */
+export type SearchEntry = SearchResultEntry;
 
 /** 某单位在某地图的一次出现（地图 + 该单位在此是否可重复刷新） */
 export interface MapAppearance {
@@ -127,22 +119,23 @@ export function buildDataset(md: Metadata): Dataset {
     mapsByLocation.set(l.locationId, arr);
   }
 
-  const search: SearchEntry[] = [];
-  for (const i of md.items) search.push({ kind: 'item', ids: [i.id], count: 1, addr: addrHex('item', i.id), name: i.name, nameZh: i.nameZh, sub: '物品' });
-  for (const b of md.buildings) search.push({ kind: 'building', ids: [b.id], count: 1, addr: addrHex('building', b.id), name: b.name, nameZh: b.nameZh, sub: '设施' });
-  for (const u of md.units) search.push({ kind: 'unit', ids: [u.unitId], count: 1, addr: addrHex('unit', u.unitId), name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
+  // 全量实体搜索结果集（一条 = 一个实体，不再按同名合并成组；合并改到「视图」层）。
+  const search: SearchResultEntry[] = [];
+  for (const i of md.items) search.push({ kind: 'item', id: i.id, addr: addrHex('item', i.id), name: i.name, nameZh: i.nameZh, sub: CATEGORY_LABEL.item });
+  for (const b of md.buildings) search.push({ kind: 'building', id: b.id, addr: addrHex('building', b.id), name: b.name, nameZh: b.nameZh, sub: CATEGORY_LABEL.building });
+  for (const u of md.units) search.push({ kind: 'unit', id: u.unitId, addr: addrHex('unit', u.unitId), name: u.name, nameZh: u.nameZh, sub: u.titleZh || u.title });
   // 地图：同一场景(mapNo)在 base+$1..$5 的 STINIT 里各出现一次（单位子集不同）。
-  // 搜索只留一个 mapNo 对应的 entry，避免「干风之山」等重复出现。
+  // 搜索结果只留一个 mapNo 对应的实体，避免「干风之山」等重复出现。
   const seenMapId = new Set<number>();
   for (const m of md.maps) {
     const mid = parseInt(m.mapNo, 16);
     if (seenMapId.has(mid)) continue;
     seenMapId.add(mid);
-    search.push({ kind: 'map', ids: [mid], count: 1, addr: addrHex('map', mid), name: m.name, nameZh: m.nameZh, sub: '地图' });
+    search.push({ kind: 'map', id: mid, addr: addrHex('map', mid), name: m.name, nameZh: m.nameZh, sub: CATEGORY_LABEL.map });
   }
-  for (const l of md.locations) search.push({ kind: 'location', ids: [l.locationId], count: 1, addr: addrHex('location', l.locationId), name: l.name, nameZh: l.nameZh, sub: '地点' });
+  for (const l of md.locations) search.push({ kind: 'location', id: l.locationId, addr: addrHex('location', l.locationId), name: l.name, nameZh: l.nameZh, sub: CATEGORY_LABEL.location });
   // 技能：sub 用中文简述（三行描述的第 3 行），便于在候选列表里直接看清效果
-  for (const sk of md.skills ?? []) search.push({ kind: 'skill', ids: [sk.skillId], count: 1, addr: addrHex('skill', sk.skillId), name: sk.name, nameZh: sk.nameZh, sub: sk.shortZh || sk.short || '技能' });
+  for (const sk of md.skills ?? []) search.push({ kind: 'skill', id: sk.skillId, addr: addrHex('skill', sk.skillId), name: sk.name, nameZh: sk.nameZh, sub: sk.shortZh || sk.short || CATEGORY_LABEL.skill });
 
   return {
     metadata: md,
@@ -163,62 +156,79 @@ export function buildDataset(md: Metadata): Dataset {
   };
 }
 
-/** 按 日/中 名做子串搜索（中/日任一命中即返回）；若输入是 16 进制数，则同时按实体十六进制「名串地址/成员 id」后缀匹配；
- *  同名同类型实体合并为一条（保序、去重 id）。 */
-export function querySearch(search: SearchEntry[], text: string): SearchEntry[] {
+/**
+ * 按输入文本筛选候选（下拉 Autocomplete 用）。输入**仅用于筛选**（名称/hex 子串），
+ * 不解析成表达式；点选候选时才构造 query。返回保序的 `SearchEntry[]`（每实体一条，已规范化排序去重）。
+ */
+export function filterCandidates(search: SearchEntry[], text: string): SearchEntry[] {
   const raw = text.trim();
+  if (!raw) return [];
   const q = normalize(raw);
-  if (!q) return [];
   const hits = search.filter((e) => normalize(e.name).includes(q) || normalize(e.nameZh).includes(q));
-  // 16 进制数：仅完整匹配（addr 或成员 id 的 hex 精确相等），不做前缀/后缀模糊
+  // 十六进制数：也按名串地址/实体 id 的 hex 精确匹配（不做前缀/后缀模糊）。
   if (/^[0-9a-f]+$/i.test(raw)) {
     const hex = raw.toLowerCase();
     for (const e of search) {
-      const byAddr = e.addr && e.addr.toLowerCase() === hex;
-      const byId = e.ids.some((id) => id.toString(16) === hex);
+      const byAddr = e.addr.toLowerCase() === hex;
+      const byId = e.id.toString(16) === hex;
       if ((byAddr || byId) && !hits.includes(e)) hits.push(e);
     }
   }
-  // 同名同类型合并
-  const out: SearchEntry[] = [];
-  const byKey = new Map<string, SearchEntry>();
-  for (const e of hits) {
-    const key = `${e.kind}|${normalize(e.nameZh || e.name)}`;
-    const ex = byKey.get(key);
-    if (!ex) {
-      const ne = { ...e, ids: [...e.ids], count: e.ids.length };
-      byKey.set(key, ne);
-      out.push(ne);
-    } else {
-      for (const id of e.ids) if (!ex.ids.includes(id)) ex.ids.push(id);
-      ex.count = ex.ids.length;
-    }
-  }
-  return out;
+  return hits.sort(kindThenId);
 }
 
-/** 历史条目：展示标签 + 去重 key + 点击时重新跳转的目标 view */
+/** 结果排序第一键 = kind 固定序，第二键 = 实体序号。 */
+function kindThenId(a: SearchEntry, b: SearchEntry): number {
+  const ka = CATEGORY_ORDER[a.kind], kb = CATEGORY_ORDER[b.kind];
+  if (ka !== kb) return ka - kb;
+  return a.id - b.id;
+}
+
+/**
+ * 历史条目：一条历史 = 一次【表达式（query）】及其结果视图。
+ * `key` = 规范化表达式串（去重/回放用）；`expr` = 内部 query；`view` = 该 query 的全部结果卡片。
+ */
 export interface ViewEntry {
-  /** 去重 key（同一目标只保留最新一条） */
+  /** 去重 key（同一表达式只保留最新一条；= 规范化表达式串） */
   key: string;
-  /** 展示标签（如「物品 · 青铜导键」） */
+  /** 展示标签（如「单位 · 火 ×12」） */
   label: string;
   /** 主卡片 kind（用于图标/挑色） */
   kind: CardKind;
-  /** 点击时重新 navigate 的目标 */
+  /** 内部 query（回放 = 重新求值该表达式） */
+  expr: SearchExpression;
+  /** 展示的视图（= 该表达式全部结果卡片） */
   view: View;
 }
 
 /**
- * 把一条 View（通常是单卡片）反查为历史条目。
- * 空 view → 保留为空态；首个非 message 卡片作为主目标。
+ * 由一次搜索构造历史条目（供 navigate 调用）。
+ * `expr` 为内部 query；`view` 为其结果视图。空/纯 message → null。
  */
-export function describeView(view: View, ds: Dataset): ViewEntry | null {
+export function describeView(expr: SearchExpression, view: View, ds: Dataset): ViewEntry | null {
   if (!view || view.length === 0) return null;
   const first = view[0];
   if (first.kind === 'message') return null;
-  const { key, label } = describeCard(first, ds);
-  return { key, label, kind: first.kind, view };
+  const key = expressionKey(expr);
+  const label = describeViewLabel(view, expr, ds);
+  return { key, label, kind: first.kind, expr, view };
+}
+
+/** 生成历史/标题标签：优先用实体名；多实体 → 「类型 · 名称 ×N」。 */
+function describeViewLabel(view: View, expr: SearchExpression, ds: Dataset): string {
+  // 单实体：直接显示「类型 · 实体名」（用卡片反查名称）。
+  if (view.length === 1) {
+    const { label } = describeCard(view[0], ds);
+    return label;
+  }
+  // 多实体：表达式标签（类型 · 名称）+ 命中数；若表达式无名称子句（如纯 idExact），用首个实体名。
+  let base = expressionLabel(expr);
+  if (!base || expr.every((p) => p.type === 'category' || p.type === 'idExact')) {
+    // 无姓名子句：取首个实体的「类型 · 名」
+    const firstLabel = describeCard(view[0], ds).label;
+    base = firstLabel;
+  }
+  return `${base} ×${view.length}`;
 }
 
 function describeCard(spec: CardSpec, ds: Dataset): { key: string; label: string } {

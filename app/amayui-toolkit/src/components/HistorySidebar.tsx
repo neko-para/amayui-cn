@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography, Divider } from '@mui/material';
 import { Inventory2, Groups, Apartment, Map, Place, MenuBook, AutoAwesome, ChevronRight } from '@mui/icons-material';
 import { useStore } from '../store/useStore';
+import { buildResults } from '../services/search';
+import { cardFromResult } from '../types/search';
+import type { SearchExpression } from '../types/search';
 import type { CardKind } from '../types/nav';
 
 const KIND_ICON: Record<CardKind, ReactNode> = {
@@ -15,10 +18,16 @@ const KIND_ICON: Record<CardKind, ReactNode> = {
   message: <ChevronRight fontSize="small" />,
 };
 
-/** 左侧纵向历史记录列表：点击触发新跳转（而非恢复历史）；去重（取最新）。 */
+/** 左侧纵向历史记录列表：点击回放该表达式的全部结果（重新求值 → navigate）；去重（取最新）。 */
 export function HistorySidebar() {
   const entries = useStore((s) => s.historyEntries);
+  const dataset = useStore((s) => s.dataset);
   const navigate = useStore((s) => s.navigate);
+
+  const replay = (expr: SearchExpression) => {
+    if (!dataset) return;
+    navigate(expr, buildResults(expr, dataset).map((r) => cardFromResult(r.kind, r.id)));
+  };
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -36,8 +45,8 @@ export function HistorySidebar() {
             <ListItemButton
               key={e.key}
               sx={{ borderRadius: 1, px: 1 }}
-              title="点击跳转到这一条（生成新历史）"
-              onClick={() => navigate(e.view)}
+              title="点击回放此表达式（重新求值）"
+              onClick={() => replay(e.expr)}
             >
               <ListItemIcon sx={{ minWidth: 30 }}>{KIND_ICON[e.kind]}</ListItemIcon>
               <ListItemText

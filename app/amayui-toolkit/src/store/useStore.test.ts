@@ -5,6 +5,8 @@ import { useStore } from './useStore';
 import { buildDataset } from '../services/dataset';
 import type { Dataset } from '../services/dataset';
 import type { Metadata } from '../types/metadata';
+import { queryFromId, queryFromEntry } from '../services/search';
+import { cardFromResult } from '../types/search';
 
 let ds: Dataset;
 
@@ -17,37 +19,43 @@ beforeEach(() => {
   // 重置到初始态
   useStore.setState({
     dataset: ds,
-    history: [{ kind: 'message', text: 'init' }],
+    history: [{ expr: [], view: [{ kind: 'message', text: 'init' }] }],
     pos: 0,
     historyEntries: [],
   });
 });
 
-describe('store 历史去重（最新在前，点击重新跳转）', () => {
-  it('同一目标只保留最新一条，且最新在顶部', () => {
+describe('store 历史（表达式 query 模型）', () => {
+  it('同一表达式只保留最新一条，且最新在顶部', () => {
     const s = useStore.getState();
     const u = ds.metadata.units[0].unitId;
+    const unitExpr = queryFromId('unit', u);        // category+idExact（单实体）
+    const itemExpr = queryFromId('item', 2);
 
-    s.navigate([{ kind: 'unit', id: u }]);          // 第 1 次
-    s.navigate([{ kind: 'item', id: 2 }]);          // 第 2 次
-    s.navigate([{ kind: 'unit', id: u }]);          // 第 3 次（重复单位）
+    const nav = (expr: typeof unitExpr, kind: Parameters<typeof cardFromResult>[0], id: number) =>
+      s.navigate(expr, [cardFromResult(kind, id)]);
+
+    nav(unitExpr, 'unit', u);   // 第 1 次（单位）
+    nav(itemExpr, 'item', 2);   // 第 2 次（物品）
+    nav(unitExpr, 'unit', u);   // 第 3 次（重复单位）
 
     const entries = useStore.getState().historyEntries;
-    // 去重后：unit、item 两条；unit 最新在前
     expect(entries.length).toBe(2);
-    expect(entries[0].key).toBe(`unit:${u}`);
-    expect(entries[1].key).toBe('item:2');
+    expect(entries[0].key).toBe('category:unit & idExact:' + u.toString(16));
+    expect(entries[1].key).toBe('category:item & idExact:2');
   });
 
   it('点击历史项调用 navigate（生成新历史，而非恢复 pos）', () => {
     const s = useStore.getState();
-    s.navigate([{ kind: 'item', id: 2 }]);
+    const unit = ds.metadata.units[0];
+    const expr = queryFromEntry({ kind: 'unit', name: unit.name, nameZh: unit.nameZh });
+    s.navigate(expr, [cardFromResult('unit', unit.unitId)]);
     const posBefore = useStore.getState().pos;
     const histLenBefore = useStore.getState().history.length;
 
-    // 模拟点击历史：navigate 到历史条目 view
+    // 模拟点击历史：navigate 到历史条目（用其 expr + view）
     const e = useStore.getState().historyEntries[0];
-    useStore.getState().navigate(e.view);
+    useStore.getState().navigate(e.expr, e.view);
 
     const st = useStore.getState();
     expect(st.history.length).toBe(histLenBefore + 1); // 新增一条（非覆盖）
