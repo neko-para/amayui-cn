@@ -231,6 +231,33 @@ function unitStarLabel(p: Extract<SearchPredicate, { type: 'unitStar' }>): strin
   return `星级 ${op} ★${p.value}`;
 }
 
+/* ------------------------------------------------------------------ */
+/* 4) 训练需求（DRINIT 被消耗单位条件）→ query                           */
+/* ------------------------------------------------------------------ */
+
+import type { Training } from '../types/metadata';
+
+/**
+ * 从训练条目的【非空字段】构造 query。忠实反映规则：
+ *   - level != null → 星级门槛：≥★(level+1)，五星（level=4 → ★5）为恰好 5 星（eq）。
+ *   - race/gender/attribute != null → 对应 unitAttr 子句（相等）。
+ *   多条件 AND 交集；保证非空：至少含 `category: unit`（训练需求面向单位）。
+ *   （文案用现成的 textZh，不在此构造。）
+ */
+export function queryFromTraining(t: Pick<Training, 'race' | 'gender' | 'attribute' | 'level'>): SearchExpression {
+  const expr: SearchPredicate[] = [];
+  if (t.race != null) expr.push({ type: 'unitAttr', attr: 'race', value: t.race });
+  if (t.gender != null) expr.push({ type: 'unitAttr', attr: 'gender', value: t.gender });
+  if (t.attribute != null) expr.push({ type: 'unitAttr', attr: 'attribute', value: t.attribute });
+  if (t.level != null) {
+    const n = t.level + 1;                 // 0-based → 星数
+    expr.push({ type: 'unitStar', op: n >= 5 ? 'eq' : 'gte', value: n });
+  }
+  // 训练需求面向「单位」消费；保证表达式不为空（如「★1以上 ×N」无其它字段时）。
+  if (expr.length === 0) expr.push({ type: 'category', value: 'unit' });
+  return expr;
+}
+
 const UNIT_ATTR_LABEL: Record<UnitAttrKind, string> = {
   race: '种族',
   gender: '性别',

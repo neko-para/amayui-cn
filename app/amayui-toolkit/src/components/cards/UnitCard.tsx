@@ -4,7 +4,7 @@ import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
 import { entityTagLabel, idHex } from '../../services/idspace';
 import { RACE_NAME, GENDER_NAME, ATTR_NAME } from '../../types/metadata';
-import { buildResults, queryFromUnitAttr, queryFromUnitStar } from '../../services/search';
+import { buildResults, queryFromId, queryFromUnitAttr, queryFromUnitStar, queryFromTraining } from '../../services/search';
 import { cardFromResult } from '../../types/search';
 import type { UnitAttrKind } from '../../types/search';
 
@@ -67,6 +67,54 @@ export function UnitCard({ id }: { id: number }) {
             <Typography variant="body2" color="text.secondary">（该单位暂无种族/性别/属性/星级数据）</Typography>
           )}
         </Stack>
+
+        {/* 训练内容：仅训练者单位展示（trainerId === unit.unitId）。左=需求（textZh，点击 query），右=收益（技能/未解析） */}
+        {(() => {
+          const trainings = dataset.metadata.trainings
+            .filter((t) => t.trainerId === unit.unitId)
+            .sort((a, b) => ((a.order ?? 0) - (b.order ?? 0)) || (a.tid - b.tid));   // 游戏内顺序 = order(6c5595)升序
+          if (trainings.length === 0) return null;
+          const goTraining = (t: typeof trainings[number]) => {
+            const expr = queryFromTraining(t);
+            navigate(expr, buildResults(expr, dataset).map((r) => cardFromResult(r.kind, r.id)));
+          };
+          return (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box>
+                <Typography variant="subtitle2">训练内容（{trainings.length}）</Typography>
+                <Typography variant="caption" color="text.secondary">该训练者消耗满足条件的单位（点击需求可反查对应单位）</Typography>
+                <Stack sx={{ mt: 1, spacing: 1.5 }} rowGap={1.5}>
+                  {trainings.map((t, i) => {
+                    const sk = t.skillId != null ? dataset.bySkill.get(t.skillId) : null;
+                    return (
+                      <Stack key={t.tid} direction="row" sx={{ alignItems: 'flex-start', gap: 2, pt: 0.75 }}>
+                        {/* 左：需求（textZh，点击 query） */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            label={t.textZh}
+                            title={t.text || t.textZh}
+                            clickable
+                            onClick={() => goTraining(t)}
+                          />
+                        </Box>
+                        {/* 右：收益（技能可点击 / 暂未解析） */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          {sk
+                            ? <Chip size="small" variant="outlined" color="success" clickable label={`技能 ${sk.nameZh || sk.name}`} title="点击查看技能" onClick={() => navigate(queryFromId('skill', sk.skillId), [cardFromResult('skill', sk.skillId)])} />
+                            : <Chip size="small" variant="outlined" label="暂未解析" disabled />}
+                        </Box>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              </Box>
+            </>
+          );
+        })()}
 
         <Divider sx={{ my: 2 }} />
         <Typography variant="subtitle2">掉落物{!unit.hasDrops ? '（无）' : ''}</Typography>

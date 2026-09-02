@@ -36,7 +36,7 @@ const BASE_SKILL = 0x1d4f4;       // SKINIT 技能名基址（skillId = 名串�
 const SKILL_STRIDE = 0x3e8;       // 技能表段长 = 1000（三段并列数组的 stride）
 const SKILL_SHORT_BASE = BASE_SKILL + SKILL_STRIDE;       // 0x1d8dc：单行简述段
 const SKILL_DESC_BASE = BASE_SKILL + 2 * SKILL_STRIDE;    // 0x1dcc4：题头/详述配对段（2 槽/技能）
-const SCHEMA_VERSION = 7;         // v7：单位新增 star（捕获星级，0x5461ec+id，0-based）
+const SCHEMA_VERSION = 8;         // v8：trainings 新增 order（游戏内排序键 0x6c5595）
 const RACE_ADDR = 0x52a0b4;       // 单位种族：race_val = RACE_ADDR + unitId
 const GENDER_ADDR = 0x52a49c;     // 单位性别：gender_val = GENDER_ADDR + unitId
 const ATTR_ADDR = 0x52b054;       // 单位属性：attr_val = ATTR_ADDR + unitId
@@ -585,6 +585,7 @@ function parseDrinit() {
     text: r.jp,
     textZh: r.zh,
     source: r.source,
+    order: field(r, '6c5595'),         // 游戏内渲染顺序键（按此升序展示）
     prereq: field(r, '6c55f9'),      // 前置要求
     quantity: field(r, '6c565d'),    // 数量
     race: field(r, '6c56c1'),        // 类型-种族
@@ -593,7 +594,8 @@ function parseDrinit() {
     level: field(r, '6c57ed'),       // 等级(★条件)
     skillId: field(r, '6c6085'),     // 效果-技能
   }));
-  decoded.sort((a, b) => (a.trainerId - b.trainerId) || (a.tid - b.tid));
+  // 游戏内顺序 = 按 order(6c5595) 升序；作为兜底再按 tid 稳定排序。
+  decoded.sort((a, b) => (a.trainerId - b.trainerId) || ((a.order ?? 0) - (b.order ?? 0)) || (a.tid - b.tid));
   return decoded;
 }
 

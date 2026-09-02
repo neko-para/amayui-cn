@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDataset, type Dataset } from './dataset';
-import { buildResults, queryFromEntry, queryFromId, queryFromUnitAttr, queryFromUnitStar, expressionKey, expressionLabel } from './search';
+import { buildResults, queryFromEntry, queryFromId, queryFromUnitAttr, queryFromUnitStar, queryFromTraining, expressionKey, expressionLabel } from './search';
 import { cardFromResult, type SearchExpression } from '../types/search';
 import type { Metadata } from '../types/metadata';
 
@@ -165,5 +165,42 @@ describe('搜索内核：unitStar（星级，自动附加 category=unit）', () 
   it('label 显示「单位 · 星级 ≥ ★3」/恒等「=」', () => {
     expect(expressionLabel(queryFromUnitStar('gte', 3))).toBe('单位 · 星级 ≥ ★3');
     expect(expressionLabel(queryFromUnitStar('eq', 2))).toBe('单位 · 星级 = ★2');
+  });
+});
+
+describe('搜索内核：queryFromTraining（DRINIT 训练需求 → query，文案用 textZh）', () => {
+  it('纯属性条件：非空字段 → 对应 unitAttr；无 level 不加星子句', () => {
+    const expr = queryFromTraining({ race: null, gender: null, attribute: 3, level: null });
+    expect(expr).toEqual([{ type: 'unitAttr', attr: 'attribute', value: 3 }]);
+  });
+
+  it('属性+等级：level=2（★3 门槛）→ [unitAttr, unitStar gte 3]；自动 category=unit', () => {
+    const expr = queryFromTraining({ race: null, gender: null, attribute: 3, level: 2 });
+    expect(expr).toEqual([
+      { type: 'unitAttr', attr: 'attribute', value: 3 },
+      { type: 'unitStar', op: 'gte', value: 3 },
+    ]);
+    const view = buildResults(expr, ds);
+    expect(view.length).toBeGreaterThan(0);
+    expect(view.every((r) => r.kind === 'unit')).toBe(true);
+  });
+
+  it('level=4（★5）→ eq(5)（五星恰好、不说以上）', () => {
+    const expr = queryFromTraining({ race: null, gender: null, attribute: 3, level: 4 });
+    expect(expr).toContainEqual({ type: 'unitStar', op: 'eq', value: 5 });
+  });
+
+  it('种族/性别条件 → 对应 unitAttr 子句', () => {
+    expect(queryFromTraining({ race: 4, gender: null, attribute: null, level: null }))
+      .toContainEqual({ type: 'unitAttr', attr: 'race', value: 4 });
+    expect(queryFromTraining({ race: null, gender: 2, attribute: null, level: null }))
+      .toContainEqual({ type: 'unitAttr', attr: 'gender', value: 2 });
+  });
+
+  it('空条件（仅数量 / ★1以上无类型）→ 至少 category=unit（训练需求面向单位，不产生空 query）', () => {
+    const expr = queryFromTraining({ race: null, gender: null, attribute: null, level: null });
+    expect(expr).toEqual([{ type: 'category', value: 'unit' }]);
+    // 求值 = 全部单位（非空），而不是空结果
+    expect(buildResults(expr, ds).length).toBeGreaterThan(0);
   });
 });

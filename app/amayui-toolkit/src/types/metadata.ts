@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 7;
+export const METADATA_SCHEMA_VERSION = 8;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -265,6 +265,8 @@ export interface Training {
   textZh: string;
   /** 来源脚本文件名（DRINIT.txt / $3$DRINIT.txt） */
   source: string;
+  /** 游戏内渲染顺序键（0x6c5595；按此升序展示），null=无 */
+  order: number | null;
   /** 前置要求（0x6c55f9）；null=无 */
   prereq: number | null;
   /** 数量（0x6c565d） */
