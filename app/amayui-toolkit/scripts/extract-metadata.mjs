@@ -36,12 +36,21 @@ const BASE_SKILL = 0x1d4f4;       // SKINIT 技能名基址（skillId = 名串�
 const SKILL_STRIDE = 0x3e8;       // 技能表段长 = 1000（三段并列数组的 stride）
 const SKILL_SHORT_BASE = BASE_SKILL + SKILL_STRIDE;       // 0x1d8dc：单行简述段
 const SKILL_DESC_BASE = BASE_SKILL + 2 * SKILL_STRIDE;    // 0x1dcc4：题头/详述配对段（2 槽/技能）
-const SCHEMA_VERSION = 8;         // v8：trainings 新增 order（游戏内排序键 0x6c5595）
+const SCHEMA_VERSION = 9;         // v9：trainings 新增「效果-耐性/能力值」多槽数组（6c5851 / 6c5b71）
 const RACE_ADDR = 0x52a0b4;       // 单位种族：race_val = RACE_ADDR + unitId
 const GENDER_ADDR = 0x52a49c;     // 单位性别：gender_val = GENDER_ADDR + unitId
 const ATTR_ADDR = 0x52b054;       // 单位属性：attr_val = ATTR_ADDR + unitId
 const STAR_ADDR = 0x5461ec;       // 单位星级：star_val = STAR_ADDR + unitId（0-based：0=★1 .. 4=★5）
 const TID_BASE = 0x1d490;         // DRINIT 训练内容槽基数：TID = 描述串地址 − 0x1d490
+
+// 训练「效果」**多槽数组**（K−TID=字段id 只对单槽字段成立；此处按 基址+槽 对齐，见 docs/re/src/06-训练所数据.md）：
+//   效果-耐性    6c5851[配方×8 + 槽]，槽 0..7 → 無属/物理/地脈/冷却/火炎/電撃/神聖/暗黒（名表 INIT2 0x1f542+槽）
+const RES_EFFECT_BASE = 0x6c5851, RES_EFFECT_STRIDE = 8;
+const RES_NAME = ['無属', '物理', '地脉', '冷却', '火炎', '电击', '神圣', '暗黑'];
+//   效果-能力值  6c5b71[配方×13 + 槽]，槽 0..12 → 命中/回避/物攻/物防/魔攻/魔防/敏捷/運/移動/ＣＰ/ＨＰ/ＳＰ/ＦＳ
+//   （与 REACH 顶部状态名表 local-string 1..d 一致）
+const ATTR_EFFECT_BASE = 0x6c5b71, ATTR_EFFECT_STRIDE = 13;
+const STAT_NAME = ['命中', '回避', '物攻', '物防', '魔攻', '魔防', '敏捷', '運', '移動', 'ＣＰ', 'ＨＰ', 'ＳＰ', 'ＦＳ'];
 
 /* ------------------------- 名称解析（src set-string "日|中"） ------------------------- */
 
@@ -541,12 +550,14 @@ const skillsWithDesc = skills.filter((s) => s.hasDesc).length;
  * 结构（详见 docs/re/src/06-训练所数据.md）：
  *   每个训练者一个块：eq … f8c44 <unitId>；块内每条训练配方 = set-string（描述文案）+ 若干 mov（meta 字段）。
  *   TID = 描述串地址 − 0x1d490（块内槽）。
- *   meta 字段 (K,V) 按「列 = K − TID」归位（K 编码为 字段基址 + TID）。
+ *   meta 字段 (K,V)：单槽按「列 = K − TID」归位；「效果」多槽数组按「基址 + TID×槽宽 + 槽」对齐。
  *
  * 已确认字段（样例见 docs/re/src/06-训练所数据.md §4）：
  *   6c55f9 前置要求   6c565d 数量   6c56c1 类型-种族   6c5725 类型-性别
  *   6c5789 类型-属性  6c57ed 等级   6c6085 效果-技能
- * 其中种族/性别/属性枚举与 units 的 race/gender/attribute 同构。
+ *   效果-耐性        6c5851[配方×8+槽]（槽 0..7 → RES_NAME，值=+N）
+ *   效果-能力值      6c5b71[配方×13+槽]（槽 0..12 → STAT_NAME，值=+N）
+ * 其中种族/性别/属性枚举与 units 的 race/gender/attribute 同构；每条配方只给一种奖励（技能/耐性/能力值三选一）。
  */
 function parseDrinit() {
   const files = fs.readdirSync(SRC_DIR).filter((x) => /drinit\.txt$/i.test(x)).sort();
@@ -570,7 +581,20 @@ function parseDrinit() {
       const mm = l.match(/^mov \(global-int ([0-9a-f]+)\) ([0-9a-f]+)/);
       if (mm && curContent) {
         const k = parseInt(mm[1], 16);
-        curContent.fields[(k - curContent.tid).toString(16)] = parseInt(mm[2], 16);
+        const tid = curContent.tid;
+        const val = parseInt(mm[2], 16);
+        // 「效果」多槽数组：配方索引 = TID（引擎按 base + TID*槽宽 + 槽 布局）。
+        const relRes = k - RES_EFFECT_BASE;
+        const relAttr = k - ATTR_EFFECT_BASE;
+        if (relRes >= tid * RES_EFFECT_STRIDE && relRes < tid * RES_EFFECT_STRIDE + RES_EFFECT_STRIDE) {
+          curContent.resistSlot = relRes - tid * RES_EFFECT_STRIDE;   // 耐性槽（0..7）
+          curContent.resistValue = val;                                // +N
+        } else if (relAttr >= tid * ATTR_EFFECT_STRIDE && relAttr < tid * ATTR_EFFECT_STRIDE + ATTR_EFFECT_STRIDE) {
+          curContent.statSlot = relAttr - tid * ATTR_EFFECT_STRIDE;   // 能力值槽（0..12）
+          curContent.statValue = val;                                  // +N
+        } else {
+          curContent.fields[(k - tid).toString(16)] = val;             // 单槽字段（K−TID 恒定）
+        }
       }
     }
   }
@@ -593,6 +617,12 @@ function parseDrinit() {
     attribute: field(r, '6c5789'),   // 类型-属性
     level: field(r, '6c57ed'),       // 等级(★条件)
     skillId: field(r, '6c6085'),     // 效果-技能
+    // 效果-耐性（6c5851[配方×8+槽]）：值=+N（数据恒 1）
+    resistance: r.resistSlot ?? null,
+    resistanceAmount: r.resistValue ?? null,
+    // 效果-能力值（6c5b71[配方×13+槽]）：值=+N
+    stat: r.statSlot ?? null,
+    statAmount: r.statValue ?? null,
   }));
   // 游戏内顺序 = 按 order(6c5595) 升序；作为兜底再按 tid 稳定排序。
   decoded.sort((a, b) => (a.trainerId - b.trainerId) || ((a.order ?? 0) - (b.order ?? 0)) || (a.tid - b.tid));
@@ -649,7 +679,7 @@ const out = {
   schemaVersion: SCHEMA_VERSION,
   generatedAt: new Date().toISOString(),
   sourceTree: 'src',
-  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT/STINIT/STINIT2/SKINIT/DRINIT 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。v3 新增 locations（场景→地点，地点 id=addr-0x1216e；loc 槽=0x14e4e1+sceneIdx，seq=loc+0x3e8；sub 0 1 即 loc=-1）。v4 新增 skills（技能 id=addr-0x1d4f4；三段并列数组 stride=0x3e8：name=base+id，short=base+0x3e8+id，title/body=base+2*0x3e8+2*id 与 +1）。v5 单位新增 race/gender/attribute（EBINIT per-unit struct：race=0x52a0b4+id，gender=0x52a49c+id，attribute=0x52b054+id）。v6 新增 trainings（DRINIT 训练所：训练者单位消耗满足条件的单位；TID=addr-0x1d490 块内槽；字段按 K-TID 归位：6c55f9前置 6c565d数量 6c56c1种族 6c5725性别 6c5789属性 6c57ed等级 6c6085技能，枚举与 units 同构）。',
+  note: '天結いキャッスルマイスター 元数据（由 src/ ITINIT/PLINIT/ALINIT/EBINIT/STINIT/STINIT2/SKINIT/DRINIT 提取；中间产物，不入 git）。物品 id=addr-0x18e40，建筑 id=addr-0x1f5ba；名称=src set-string "日文|中文"。metadata 与 rate 语义未定。v3 新增 locations（场景→地点，地点 id=addr-0x1216e；loc 槽=0x14e4e1+sceneIdx，seq=loc+0x3e8；sub 0 1 即 loc=-1）。v4 新增 skills（技能 id=addr-0x1d4f4；三段并列数组 stride=0x3e8：name=base+id，short=base+0x3e8+id，title/body=base+2*0x3e8+2*id 与 +1）。v5 单位新增 race/gender/attribute（EBINIT per-unit struct：race=0x52a0b4+id，gender=0x52a49c+id，attribute=0x52b054+id）。v6 新增 trainings（DRINIT 训练所：训练者单位消耗满足条件的单位；TID=addr-0x1d490 块内槽；单槽字段按 K-TID 归位：6c55f9前置 6c565d数量 6c56c1种族 6c5725性别 6c5789属性 6c57ed等级 6c6085技能，枚举与 units 同构）。v9 trainings 新增「效果」多槽数组：耐性 6c5851[配方×8+槽]（槽 0..7→RES_NAME）、能力值 6c5b71[配方×13+槽]（槽 0..12→STAT_NAME）；仅 1 槽字段才用 K-TID 归位。',
   counts,
   items,
   buildings,
@@ -679,6 +709,20 @@ console.log('校验(技能)：地址冲突=', skillConflicts.length, skillConfli
 console.log('校验(训练)：训练者=', [...new Set(trainings.map((t) => t.trainerId))].map((x) => x.toString(16)).join(','));
 const badTrain = trainings.filter((t) => t.race !== null && (t.race < 2 || t.race > 0xd)).length;
 console.log('校验(训练)：种族值域异常=', badTrain, ' 数量非空=', trainings.filter((t) => t.quantity !== null).length);
+const rewardKinds = {
+  skill: trainings.filter((t) => t.skillId != null).length,
+  resist: trainings.filter((t) => t.resistance != null).length,
+  stat: trainings.filter((t) => t.stat != null).length,
+};
+const rewardMulti = trainings.filter((t) => [t.skillId, t.resistance, t.stat].filter((x) => x != null).length > 1).length;
+const resistByName = {};
+for (const t of trainings) if (t.resistance != null) resistByName[RES_NAME[t.resistance]] = (resistByName[RES_NAME[t.resistance]] || 0) + 1;
+const statByName = {};
+for (const t of trainings) if (t.stat != null) statByName[STAT_NAME[t.stat]] = (statByName[STAT_NAME[t.stat]] || 0) + 1;
+console.log('校验(训练)：奖励 技能=', rewardKinds.skill, ' 耐性=', rewardKinds.resist,
+  '(', Object.entries(resistByName).map(([k, v]) => `${k}:${v}`).join(' '), ')',
+  ' 能力值=', rewardKinds.stat, '(', Object.entries(statByName).map(([k, v]) => `${k}:${v}`).join(' '), ')',
+  '（合计=', rewardKinds.skill + rewardKinds.resist + rewardKinds.stat, '；多奖励=', rewardMulti, '）');
 
 // 采样展示（含中文名）
 console.log('\n===== 采样 =====');

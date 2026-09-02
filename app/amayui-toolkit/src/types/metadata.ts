@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 8;
+export const METADATA_SCHEMA_VERSION = 9;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -134,6 +134,18 @@ export const ATTR_NAME: Record<number, string> = {
   0x1: '物理', 0x2: '地脉', 0x3: '冷却', 0x4: '火炎', 0x5: '电击', 0x6: '神圣', 0x7: '暗黑',
 };
 
+/** 训练「效果-耐性」枚举（数值 → 名称；槽 0..7，与 INIT2 的 `0x1f542+槽` 名表一致）。
+ *  0=無属 在数据里未用于训练奖励（REACH 的耐性展示从槽 1 起）。命名与 `ATTR_NAME` 同风格（简体）。 */
+export const RESIST_NAME: Record<number, string> = {
+  0x0: '無属', 0x1: '物理', 0x2: '地脉', 0x3: '冷却', 0x4: '火炎', 0x5: '电击', 0x6: '神圣', 0x7: '暗黑',
+};
+
+/** 训练「效果-能力值」枚举（数值 → 名称；槽 0..12，与 REACH 顶部状态名表 local-string 1..d 一致） */
+export const STAT_NAME: Record<number, string> = {
+  0x0: '命中', 0x1: '回避', 0x2: '物攻', 0x3: '物防', 0x4: '魔攻', 0x5: '魔防',
+  0x6: '敏捷', 0x7: '運', 0x8: '移動', 0x9: 'ＣＰ', 0xa: 'ＨＰ', 0xb: 'ＳＰ', 0xc: 'ＦＳ',
+};
+
 /* ---------------------------------- 地图 / 地图内单位（STINIT + STINIT2 + EBINIT） ---------------------------------- */
 
 /** 地图内一个单位槽（单位 id 行 14dd<0x40+i> 的前/后字段）。字段语义见 docs/地图内单位.md。 */
@@ -246,9 +258,13 @@ export interface Skill {
 /**
  * 一条训练配方（DRINIT）：训练者单位（四结骑 + 双傀）**消耗**满足条件的单位。
  *
- * TID = 描述串地址 − 0x1d490（块内槽）。字段按「K − TID」归位（见 docs/re/src/06-训练所数据.md）：
- *   - race/gender/attribute 用与 `Unit` 同构的枚举（RACE_NAME/GENDER_NAME/ATTR_NAME）。
+ * TID = 描述串地址 − 0x1d490（块内槽）。
+ * 字段（见 docs/re/src/06-训练所数据.md）：
+ *   - 单槽字段（K−TID 恒定）：race/gender/attribute/level/skillId/order/…；
+ *   - 「效果」**多槽数组**（K−TID 不恒定，按 基址+槽 对齐）：耐性 `6c5851[配方×8+槽]`、能力值 `6c5b71[配方×13+槽]`。
+ *   - race/gender/attribute/resistance/stat 用与 `Unit` 同构的枚举（RACE_NAME/GENDER_NAME/ATTR_NAME/RESIST_NAME/STAT_NAME）。
  *   - 这些是**被消耗单位**的条件，不是训练者自身的属性（训练者自身见 `Unit.race/gender/attribute`）。
+ *   - **每条配方只给一种奖励**（技能 / 耐性 / 能力值 三选一），故 skillId/resistance/stat 至多一个非空。
  */
 export interface Training {
   /** 训练者单位 id（四结骑 + 双傀：0x32..0x38） */
@@ -281,6 +297,16 @@ export interface Training {
   level: number | null;
   /** 效果-技能 id（0x6c6085），可与 `skills[].skillId` 交叉反查；null=无 */
   skillId: number | null;
+  /** 效果-耐性（6c5851[配方×8+槽] 多槽数组）：耐性型槽 0..7，枚举见 RESIST_NAME；null=无。
+   *  若存在则本配方奖励 = `{RESIST_NAME[resistance]}耐性+{resistanceAmount}`。 */
+  resistance: number | null;
+  /** 耐性奖励量（+N，数据恒为 1）；null=无 */
+  resistanceAmount: number | null;
+  /** 效果-能力值（6c5b71[配方×13+槽] 多槽数组）：能力值槽 0..12，枚举见 STAT_NAME；null=无。
+   *  若存在则本配方奖励 = `{STAT_NAME[stat]}+{statAmount}`。 */
+  stat: number | null;
+  /** 能力值加成量（+N，十进制）；null=无 */
+  statAmount: number | null;
 }
 
 /** 各表计数与统计 */

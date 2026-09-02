@@ -5,6 +5,7 @@ import { buildDataset, filterCandidates, describeView, type Dataset } from '../s
 import { buildResults, queryFromId, queryFromEntry } from '../services/search';
 import { cardFromResult } from '../types/search';
 import type { Metadata, MapData } from '../types/metadata';
+import { RESIST_NAME, STAT_NAME } from '../types/metadata';
 import { addrHex, entityTagLabel } from './idspace';
 
 let ds: Dataset;
@@ -269,6 +270,25 @@ describe('trainings（DRINIT 训练所，独立数据域 v6）', () => {
     // 至少部分 skillId 能命中 skills 表
     const hit = withSkill.some((t) => md.skills.some((s) => s.skillId === t.skillId));
     expect(hit).toBe(true);
+  });
+
+  it('效果奖励：技能 / 耐性 / 能力值 三选一（多槽数组按 基址+槽 对齐，不再用 K−TID）', () => {
+    // 地脉属性配方 → 地脉耐性+1（resistance 槽=2=地脈；与类型-属性 2=地脉 一致）
+    const jimyaku = md.trainings.find((t) => t.textZh.includes('地脉') && t.resistance != null)!;
+    expect(jimyaku).toBeDefined();
+    expect(RESIST_NAME[jimyaku.resistance!]).toBe('地脉');
+    expect(jimyaku.resistanceAmount).toBe(1);
+    expect(jimyaku.attribute).toBe(2);
+    // 鬼配方 → ＨＰ 能力值加成（stat 槽=0xa=ＨＰ）
+    const oniHp = md.trainings.find((t) => t.textZh.includes('鬼') && t.stat != null)!;
+    expect(oniHp).toBeDefined();
+    expect(STAT_NAME[oniHp.stat!]).toBe('ＨＰ');
+    expect(oniHp.statAmount).toBeGreaterThan(0);
+    // 每配方只给一种奖励：skillId/resistance/stat 至多一个非空
+    const multi = md.trainings.filter((t) => [t.skillId, t.resistance, t.stat].filter((x) => x != null).length > 1);
+    expect(multi).toEqual([]);
+    // 全部配方都带某种奖励（无「无奖励」的配方）
+    expect(md.trainings.filter((t) => t.skillId == null && t.resistance == null && t.stat == null).length).toBe(0);
   });
 });
 

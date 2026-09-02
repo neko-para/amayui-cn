@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { RefChip } from '../RefChip';
 import { MessageCard } from './MessageCard';
 import { entityTagLabel, idHex } from '../../services/idspace';
-import { RACE_NAME, GENDER_NAME, ATTR_NAME } from '../../types/metadata';
+import { RACE_NAME, GENDER_NAME, ATTR_NAME, RESIST_NAME, STAT_NAME } from '../../types/metadata';
 import { buildResults, queryFromId, queryFromUnitAttr, queryFromUnitStar, queryFromTraining } from '../../services/search';
 import { cardFromResult } from '../../types/search';
 import type { UnitAttrKind } from '../../types/search';
@@ -68,7 +68,7 @@ export function UnitCard({ id }: { id: number }) {
           )}
         </Stack>
 
-        {/* 训练内容：仅训练者单位展示（trainerId === unit.unitId）。左=需求（textZh，点击 query），右=收益（技能/未解析） */}
+        {/* 训练内容：仅训练者单位展示（trainerId === unit.unitId）。左=需求（textZh，点击 query），右=收益（技能/耐性/能力值） */}
         {(() => {
           const trainings = dataset.metadata.trainings
             .filter((t) => t.trainerId === unit.unitId)
@@ -101,11 +101,23 @@ export function UnitCard({ id }: { id: number }) {
                             onClick={() => goTraining(t)}
                           />
                         </Box>
-                        {/* 右：收益（技能可点击 / 暂未解析） */}
+                        {/* 右：收益（技能可点击反查；耐性/能力值→文案展示） */}
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          {sk
-                            ? <Chip size="small" variant="outlined" color="success" clickable label={`技能 ${sk.nameZh || sk.name}`} title="点击查看技能" onClick={() => navigate(queryFromId('skill', sk.skillId), [cardFromResult('skill', sk.skillId)])} />
-                            : <Chip size="small" variant="outlined" label="暂未解析" disabled />}
+                          {sk ? (
+                            <Chip size="small" variant="outlined" color="success" clickable
+                              label={`技能 ${sk.nameZh || sk.name}`} title="点击查看技能"
+                              onClick={() => navigate(queryFromId('skill', sk.skillId!), [cardFromResult('skill', sk.skillId!)])} />
+                          ) : t.resistance != null ? (
+                            <Chip size="small" variant="outlined" color="success"
+                              label={`${RESIST_NAME[t.resistance] ?? '#' + t.resistance}耐性+${t.resistanceAmount ?? 1}`}
+                              title="训练奖励：耐性提升" />
+                          ) : t.stat != null ? (
+                            <Chip size="small" variant="outlined" color="success"
+                              label={`${STAT_NAME[t.stat] ?? '#' + t.stat}+${t.statAmount ?? ''}`}
+                              title="训练奖励：能力值提升" />
+                          ) : (
+                            <Chip size="small" variant="outlined" label="暂未解析" disabled />
+                          )}
                         </Box>
                       </Stack>
                     );
