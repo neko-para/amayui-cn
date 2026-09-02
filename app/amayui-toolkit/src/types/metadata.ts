@@ -13,7 +13,7 @@
  */
 
 /** 当前 schema 版本（变更需 bump，前端按版本兼容） */
-export const METADATA_SCHEMA_VERSION = 4;
+export const METADATA_SCHEMA_VERSION = 6;
 
 /** 数据源目录：权威 = src/ */
 export const SOURCE_TREE = 'src' as const;
@@ -107,7 +107,30 @@ export interface Unit {
   hasDrops: boolean;
   /** 掉落条目（可能为空） */
   drops: DropEntry[];
+  /** 种族值（EBINIT `0x52a0b4 + unitId`；枚举见下），null=无 */
+  race: number | null;
+  /** 性别值（EBINIT `0x52a49c + unitId`；1=男 2=女 3=无性别），null=无 */
+  gender: number | null;
+  /** 属性值（EBINIT `0x52b054 + unitId`；1=物理 2=地脉 3=冷却 4=火炎 5=电击 6=神圣 7=暗黑），null=无（如 0xcb 系留系神殿兵） */
+  attribute: number | null;
 }
+
+/** 种族枚举（数值 → 名称），与 `Unit.race` 对应 */
+export const RACE_NAME: Record<number, string> = {
+  0x1: '人族', 0x2: '亜人', 0x3: '一般', 0x4: '鬼', 0x5: '巨人',
+  0x6: '精霊', 0x7: '天使', 0x8: '悪魔', 0x9: '魔獣', 0xa: '幻獣',
+  0xb: '霊体', 0xc: '不死', 0xd: '創造', 0xe: '魔神', 0xf: '特殊',
+};
+
+/** 性别枚举（数值 → 名称），与 `Unit.gender` 对应 */
+export const GENDER_NAME: Record<number, string> = {
+  0x1: '男', 0x2: '女', 0x3: '无性别',
+};
+
+/** 属性枚举（数值 → 名称），与 `Unit.attribute` 对应；与 DRINIT 训练所「类型-属性」同构 */
+export const ATTR_NAME: Record<number, string> = {
+  0x1: '物理', 0x2: '地脉', 0x3: '冷却', 0x4: '火炎', 0x5: '电击', 0x6: '神圣', 0x7: '暗黑',
+};
 
 /* ---------------------------------- 地图 / 地图内单位（STINIT + STINIT2 + EBINIT） ---------------------------------- */
 
@@ -216,6 +239,46 @@ export interface Skill {
   nameLine: number | null;
 }
 
+/* ---------------------------------- 训练配方（DRINIT） ---------------------------------- */
+
+/**
+ * 一条训练配方（DRINIT）：训练者单位（四结骑 + 双傀）**消耗**满足条件的单位。
+ *
+ * TID = 描述串地址 − 0x1d490（块内槽）。字段按「K − TID」归位（见 docs/re/src/06-训练所数据.md）：
+ *   - race/gender/attribute 用与 `Unit` 同构的枚举（RACE_NAME/GENDER_NAME/ATTR_NAME）。
+ *   - 这些是**被消耗单位**的条件，不是训练者自身的属性（训练者自身见 `Unit.race/gender/attribute`）。
+ */
+export interface Training {
+  /** 训练者单位 id（四结骑 + 双傀：0x32..0x38） */
+  trainerId: number;
+  /** 训练者名（日文） */
+  trainerName: string;
+  /** 训练者名（中文） */
+  trainerNameZh: string;
+  /** 训练内容槽（块内，1-based；base 1..0x36、追加 $3$ 从 0x37 续） */
+  tid: number;
+  /** 文案（日文） */
+  text: string;
+  /** 文案（中文） */
+  textZh: string;
+  /** 来源脚本文件名（DRINIT.txt / $3$DRINIT.txt） */
+  source: string;
+  /** 前置要求（0x6c55f9）；null=无 */
+  prereq: number | null;
+  /** 数量（0x6c565d） */
+  quantity: number | null;
+  /** 类型-种族（0x6c56c1），枚举同 `Unit.race` 的 RACE_NAME；null=无 */
+  race: number | null;
+  /** 类型-性别（0x6c5725），枚举同 `Unit.gender` 的 GENDER_NAME；null=无 */
+  gender: number | null;
+  /** 类型-属性（0x6c5789），枚举同 `Unit.attribute` 的 ATTR_NAME；null=无 */
+  attribute: number | null;
+  /** 等级（0x6c57ed，≧★N 的 N−1）；null=无 */
+  level: number | null;
+  /** 效果-技能 id（0x6c6085），可与 `skills[].skillId` 交叉反查；null=无 */
+  skillId: number | null;
+}
+
 /** 各表计数与统计 */
 export interface MetadataCounts {
   items: number;
@@ -237,6 +300,10 @@ export interface MetadataCounts {
   skills: number;
   /** 带完整三行描述的技能数（其余为仅有名字的内部状态技能） */
   skillsWithDesc: number;
+  /** 训练配方总数（DRINIT base + $3$ 合并） */
+  trainings: number;
+  /** 训练者单位数（四结骑 + 双傀） */
+  trainers: number;
 }
 
 /** 统一后的元数据（单一 `metadata.json`） */
@@ -257,4 +324,6 @@ export interface Metadata {
   locations: Location[];
   /** 全部技能（SKINIT 技能名 + 三行描述文案） */
   skills: Skill[];
+  /** 全部训练配方（DRINIT；训练者单位消耗满足条件的单位） */
+  trainings: Training[];
 }

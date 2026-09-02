@@ -37,6 +37,8 @@
 ## 数据 / 提取一致性说明（重要）
 
 - **计数已核对**：`metadata.json` 实测 **items=923，buildings=113，recipes=458（物品 356 / 建筑 102），units=373（带掉落 214），dropEntries=671，去重掉落物品 254，maps=145，locations=34，skills=450（带描述 449）**。
+- **训练所（v6 新增）**：`metadata.json` 现含 `trainings[]`（DRINIT，独立数据域）：训练者单位（四结骑+双傀）消耗满足条件的单位，每条约 `(trainerId, tid)`，字段 `prereq/quantity/race/gender/attribute/level/skillId`（枚举与 units 同构）；`skillId` 100% 命中 `skills[]`。
+- **单位自身字段（v5 新增）**：`units[]` 现含 `race`（0x52a0b4+id）/ `gender`（0x52a49c+id）/ `attribute`（0x52b054+id）三字段，枚举见 `src/types/metadata.ts` 的 `RACE_NAME`/`GENDER_NAME`/`ATTR_NAME`。特例 `0xcb 系留员神殿兵` 属性为 null（模板占位）。
 - **技能（v4 新增）**：源自 `src/` 的 `SKINIT.txt` + `$1$`..`$5$`，**只导出技能名 + 三行描述文案**（题头 / 详述 / 简述，日中双份）。地址模型（三段并列数组，`skillId = 名串地址 − 0x1d4f4`）与全量校验见 `docs/re/src/05-技能数据.md`；技能的数值字段尚未提取。
 - **中文名真值来源**：`src/` 的 `set-string "日文|中文"`（管道分隔），读取 `|` 后半段。`metadata.json` 已带 `nameZh`/`titleZh`/`productZh`。
 - **未汉化项**：`metadata.json` 中 `nameZh===name` 的物品 40 / 建筑 8 / 单位 6（未汉化或两侧同名），前端需按“未汉化”回退展示。

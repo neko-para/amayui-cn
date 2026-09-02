@@ -181,6 +181,89 @@ describe('单位导出覆盖（含追加包，不做可玩角色过滤）', () =
   });
 });
 
+describe('单位种族/性别/属性（EBINIT per-unit struct，v5）', () => {
+  it('种族/性别全有值；属性仅 0xcb 系留系神殿兵 为 null（模板占位，如实保留）', () => {
+    expect(md.units.filter((u) => u.race === null).length).toBe(0);
+    expect(md.units.filter((u) => u.gender === null).length).toBe(0);
+    const nullAttr = md.units.filter((u) => u.attribute === null);
+    expect(nullAttr.map((u) => u.unitId)).toEqual([0xcb]);
+    expect(nullAttr[0].nameZh).toBe('系留员神殿兵');
+  });
+
+  it('训练单位自身 种族/属性 与设定吻合（天使→神圣、鬼→物理、创造→物理）', () => {
+    // 天使：大天使拉乌纳斯（名字带「大天使」，属性为神圣）
+    const angel = md.units.find((u) => u.nameZh === '大天使拉乌纳斯')!;
+    expect(angel.race).toBe(7);          // 天使
+    expect(angel.attribute).toBe(6);     // 神圣
+    // 鬼
+    const oni = ds.byUnit.get(0xfa)!;    // 迷い入った小鬼
+    expect(oni.race).toBe(4);            // 鬼
+    expect(oni.attribute).toBe(1);       // 物理
+    // 创造（石巨人）
+    const construct = md.units.find((u) => u.nameZh === '封炼的石巨人')!;
+    expect(construct.race).toBe(0xd);    // 創造
+    expect(construct.attribute).toBe(1); // 物理
+  });
+
+  it('种族/性别/属性 值域合法（性别 1..3、属性 1..7）', () => {
+    const ok = md.units.every((u) => {
+      if (u.gender !== null && (u.gender < 1 || u.gender > 3)) return false;
+      if (u.attribute !== null && (u.attribute < 1 || u.attribute > 7)) return false;
+      return true;
+    });
+    expect(ok).toBe(true);
+  });
+});
+
+describe('trainings（DRINIT 训练所，独立数据域 v6）', () => {
+  it('counts 与数组一致；440 条、6 个训练者（四结骑+双傀）', () => {
+    expect(md.counts.trainings).toBe(md.trainings.length);
+    expect(md.counts.trainers).toBe(new Set(md.trainings.map((t) => t.trainerId)).size);
+    expect(md.trainings.length).toBe(440);
+    expect(md.counts.trainers).toBe(6);
+  });
+
+  it('训练者单位与 6 个单位对应（0x32..0x38），名已解码', () => {
+    const trainers = [...new Set(md.trainings.map((t) => t.trainerId))].sort((a, b) => a - b);
+    expect(trainers).toEqual([0x32, 0x33, 0x34, 0x35, 0x37, 0x38]);
+    // 训练者名反查 units
+    for (const t of md.trainings) {
+      const u = ds.byUnit.get(t.trainerId)!;
+      expect(t.trainerNameZh).toBe(u.nameZh);
+    }
+  });
+
+  it('TID 连贯：base 1..0x36 → $3$ 从 0x37 续（训练者 0x32 有 80 条）', () => {
+    const t32 = md.trainings.filter((t) => t.trainerId === 0x32).sort((a, b) => a.tid - b.tid);
+    expect(t32.length).toBe(80);
+    expect(t32[0].tid).toBe(1);
+    expect(t32[79].tid).toBe(0x50);
+    // base 与 $3$ 交界：TID 1..0x36 来自 DRINIT.txt，0x37 起来自 $3$DRINIT.txt
+    expect(t32[0x36 - 1].source).toBe('DRINIT.txt');
+    expect(t32[0x36].source).toBe('$3$DRINIT.txt');
+  });
+
+  it('字段解码符合设定（种族/性别/属性枚举同 units）', () => {
+    // 冷却属性 ×５ → attribute=3(冷却), quantity=5
+    const cooling = md.trainings.find((t) => t.textZh.includes('冷却属性') && t.race === null)!;
+    expect(cooling.attribute).toBe(3);
+    expect(cooling.quantity).toBeGreaterThan(0);
+    // 鬼 ★３以上 ×４ → race=4(鬼), level=2(★3→N-1), quantity=4
+    const oni = md.trainings.find((t) => t.textZh.includes('鬼') && t.textZh.includes('★３以上'))!;
+    expect(oni.race).toBe(4);
+    expect(oni.level).toBe(2);
+    expect(oni.quantity).toBe(3);   // ★３以上の鬼 ×３
+  });
+
+  it('技能效果 id 可与 skills 交叉反查（部分指向真实技能）', () => {
+    const withSkill = md.trainings.filter((t) => t.skillId !== null);
+    expect(withSkill.length).toBeGreaterThan(0);
+    // 至少部分 skillId 能命中 skills 表
+    const hit = withSkill.some((t) => md.skills.some((s) => s.skillId === t.skillId));
+    expect(hit).toBe(true);
+  });
+});
+
 describe('skill（SKINIT 技能名 + 三行描述）', () => {
   it('counts 与数组一致；450 个技能、449 个带描述', () => {
     expect(md.counts.skills).toBe(md.skills.length);
