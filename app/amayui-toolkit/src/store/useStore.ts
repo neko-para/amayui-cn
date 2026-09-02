@@ -3,6 +3,7 @@ import type { Dataset, ViewEntry } from '../services/dataset';
 import { loadDataset, describeView } from '../services/dataset';
 import type { View } from '../types/nav';
 import type { SearchExpression } from '../types/search';
+import { useSearchDraft } from './useSearchDraft';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -55,6 +56,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   navigate: (expr, view) => {
     const { history, pos, dataset, historyEntries } = get();
+    // 0) 顶部搜索区同步为当前「激活规则」（卡片/历史等任何路径进入都生效；草稿态仅在编辑时存在）
+    useSearchDraft.getState().load(expr);
     // 1) 栈式：push 到当前位置之后
     const next = [...history.slice(0, pos + 1), { expr, view }];
     // 2) 去重历史记录：同一表达式(key)只保留最新一条，最新插入到顶部
@@ -67,13 +70,21 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   goBack: () => {
-    const { pos } = get();
-    if (pos > 0) set({ pos: pos - 1 });
+    const { pos, history } = get();
+    if (pos > 0) {
+      const next = pos - 1;
+      set({ pos: next });
+      useSearchDraft.getState().load(history[next]?.expr ?? []);
+    }
   },
 
   goForward: () => {
     const { history, pos } = get();
-    if (pos < history.length - 1) set({ pos: pos + 1 });
+    if (pos < history.length - 1) {
+      const next = pos + 1;
+      set({ pos: next });
+      useSearchDraft.getState().load(history[next]?.expr ?? []);
+    }
   },
 }));
 

@@ -6,6 +6,7 @@ import {
 import { ArrowBack, ArrowForward, Brightness4, Brightness7, Menu } from '@mui/icons-material';
 import { useStore, selectView } from './store/useStore';
 import { SearchBar } from './components/SearchBar';
+import { FilterBar } from './components/FilterBar';
 import { CardList } from './components/CardList';
 import { HistorySidebar } from './components/HistorySidebar';
 
@@ -98,6 +99,7 @@ export default function App() {
               px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 1,
             }}>
               <SearchBar />
+              <Box sx={{ mt: 0.5 }}><FilterBar /></Box>
             </Box>
 
             {/* 滚动区：内容被裁剪（不溢出到搜索头之上），两侧对称预留滚动条槽(防止单侧滚动条把内容往左挤) */}

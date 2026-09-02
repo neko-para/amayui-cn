@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { useStore } from './useStore';
+import { useSearchDraft } from './useSearchDraft';
 import { buildDataset } from '../services/dataset';
 import type { Dataset } from '../services/dataset';
 import type { Metadata } from '../types/metadata';
@@ -23,6 +24,7 @@ beforeEach(() => {
     pos: 0,
     historyEntries: [],
   });
+  useSearchDraft.getState().reset();
 });
 
 describe('store 历史（表达式 query 模型）', () => {
@@ -61,5 +63,20 @@ describe('store 历史（表达式 query 模型）', () => {
     expect(st.history.length).toBe(histLenBefore + 1); // 新增一条（非覆盖）
     expect(st.pos).toBe(st.history.length - 1);
     expect(st.pos).toBeGreaterThanOrEqual(posBefore);
+  });
+
+  it('navigate（卡片等任意路径）会把激活规则同步到搜索区草稿（顶部不失效）', () => {
+    const s = useStore.getState();
+    // 卡片/RefChip 路径：queryFromId（category+idExact）
+    const unit = ds.metadata.units[0];
+    const idExpr = queryFromId('unit', unit.unitId);
+    s.navigate(idExpr, [cardFromResult('unit', unit.unitId)]);
+    expect(useSearchDraft.getState().expr).toEqual(idExpr);
+    expect(useSearchDraft.getState().nameInput).toBe('');   // idExact 无名称谓词 → 名称框空
+
+    // 候选/历史路径：queryFromEntry（category+nameExact）→ 名称框同步
+    const nameExpr = queryFromEntry({ kind: 'unit', name: unit.name, nameZh: unit.nameZh });
+    s.navigate(nameExpr, [cardFromResult('unit', unit.unitId)]);
+    expect(useSearchDraft.getState().nameInput).toBe(unit.nameZh || unit.name);
   });
 });
