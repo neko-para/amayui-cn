@@ -42,5 +42,5 @@
 - **技能（v4 新增）**：源自 `src/` 的 `SKINIT.txt` + `$1$`..`$5$`，**只导出技能名 + 三行描述文案**（题头 / 详述 / 简述，日中双份）。地址模型（三段并列数组，`skillId = 名串地址 − 0x1d4f4`）与全量校验见 `docs/re/src/05-技能数据.md`；技能的数值字段尚未提取。
 - **中文名真值来源**：`src/` 的 `set-string "日文|中文"`（管道分隔），读取 `|` 后半段。`metadata.json` 已带 `nameZh`/`titleZh`/`productZh`。
 - **未汉化项**：`metadata.json` 中 `nameZh===name` 的物品 40 / 建筑 8 / 单位 6（未汉化或两侧同名），前端需按“未汉化”回退展示。
-- **主工程旧产物/文档**：主工程 `scripts/extract-recipes.js`、`extract-unit-drops.js` 及 `metadata/` 下 5 个旧 JSON（多文件、纯日文、两任务格式）已被本工程的 **单一 `metadata.json`** 取代。**建议**后续把这些旧提取脚本与旧文档（`docs/物品建筑配方.md`、`docs/单位掉落物.md`）对齐到新统一格式；本工程默认忽略，不作真值。
+- **主工程旧产物/文档**：主工程 `scripts/extract-recipes.js`、`extract-unit-drops.js` 及 `metadata/` 下 5 个旧 JSON（多文件、纯日文、两任务格式）已被本工程的 **单一 `metadata.json`** 取代。**建议**后续把这些旧提取脚本与旧文档（已归入 `docs/re/src/10-物品与配方数据.md`、`docs/re/src/03-掉落数据.md` §5）对齐到新统一格式；本工程默认忽略，不作真值。
 - **待复核**：单位“副标题”地址在 `src` 多落在 `17e` 区间，与某些旧提取脚本的副标题判据（`17f-181`）表面不一致；本脚本沿用现有已验证的判据，产出 `title`/`titleZh` 正确。

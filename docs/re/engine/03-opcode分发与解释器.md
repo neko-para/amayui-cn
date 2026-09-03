@@ -41,7 +41,7 @@
 
 **统一模式**：`v2=sub_41BF50(this,3); v3=sub_41BF50(this,2); return sub_42B4B0(this,1, <op>);`（参数 1=目的，2=左操作数，3=右操作数）。
 
-> 另：`sub_42CA50`(0x60? 随机) = `rand()%v2`；`sub_42C570`(0x4D/0x28?) = 特殊；`sub_42CB00`/`sub_42CB50`/`sub_42CBA0`/`sub_42CBE0` = 跳转/数组类（还调 `sub_418CC0`/`sub_418B90`/`sub_42CB...`）。
+> 另（→ 已由 [`06-opcode到handler映射表.md`](./06-opcode到handler映射表.md) **确认**）：`sub_42CA50`(0x60) = `random`（`param1 = rand() % param2`）；`sub_42C570`(0x13) = 特殊；`sub_42CB00`/`sub_42CB50`/`sub_42CBA0`/`sub_42CBE0` = 数组/跳转类（`lookup-array`(0x61) / 0x62 / `lea`(0x63) / `copy-local-array`(0x64)，还调 `sub_418CC0`/`sub_418B90`/`sub_42CB...`）。
 
 ---
 
