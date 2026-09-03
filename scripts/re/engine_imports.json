@@ -1,0 +1,1307 @@
+{
+  "source": "raw/天结_unpacked.exe (same engine build as AGE; import list is identical)",
+  "note": "Original-entry list (all by name, none by ordinal). AGE==天结, so this is AGE's import list too.",
+  "image_base": "0x400000",
+  "import_dir_rva": "0x1b1b9c",
+  "import_dir_size": "0x154",
+  "dlls": [
+    {
+      "dll": "advapi32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "RegQueryValueExA"
+        },
+        {
+          "hint": 0,
+          "name": "RegOpenKeyExA"
+        },
+        {
+          "hint": 0,
+          "name": "RegEnumValueA"
+        },
+        {
+          "hint": 0,
+          "name": "RegSetValueExA"
+        },
+        {
+          "hint": 0,
+          "name": "RegCreateKeyExA"
+        }
+      ]
+    },
+    {
+      "dll": "evr.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "MFCreateVideoSampleFromSurface"
+        }
+      ]
+    },
+    {
+      "dll": "gdi32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "DeleteObject"
+        },
+        {
+          "hint": 0,
+          "name": "AddFontMemResourceEx"
+        },
+        {
+          "hint": 0,
+          "name": "SelectObject"
+        },
+        {
+          "hint": 0,
+          "name": "GetTextExtentPoint32A"
+        },
+        {
+          "hint": 0,
+          "name": "GetTextMetricsA"
+        },
+        {
+          "hint": 0,
+          "name": "GetGlyphOutline"
+        },
+        {
+          "hint": 0,
+          "name": "CreateFontIndirectA"
+        },
+        {
+          "hint": 0,
+          "name": "PtInRegion"
+        },
+        {
+          "hint": 0,
+          "name": "RemoveFontMemResourceEx"
+        },
+        {
+          "hint": 0,
+          "name": "DeleteDC"
+        },
+        {
+          "hint": 0,
+          "name": "EnumFontFamiliesExA"
+        },
+        {
+          "hint": 0,
+          "name": "CreateICA"
+        },
+        {
+          "hint": 0,
+          "name": "GetRegionData"
+        },
+        {
+          "hint": 0,
+          "name": "GetRgnBox"
+        },
+        {
+          "hint": 0,
+          "name": "CreateRectRgn"
+        },
+        {
+          "hint": 0,
+          "name": "GetStockObject"
+        },
+        {
+          "hint": 0,
+          "name": "CreatePolygonRgn"
+        },
+        {
+          "hint": 0,
+          "name": "CombineRgn"
+        },
+        {
+          "hint": 0,
+          "name": "CreateEllipticRgnIndirect"
+        },
+        {
+          "hint": 0,
+          "name": "SetBkMode"
+        },
+        {
+          "hint": 0,
+          "name": "TextOutA"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentObject"
+        },
+        {
+          "hint": 0,
+          "name": "SetTextColor"
+        }
+      ]
+    },
+    {
+      "dll": "imm32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "ImmAssociateContext"
+        }
+      ]
+    },
+    {
+      "dll": "kernel32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "GetStringTypeW"
+        },
+        {
+          "hint": 0,
+          "name": "IsValidLocale"
+        },
+        {
+          "hint": 0,
+          "name": "EnumSystemLocalesA"
+        },
+        {
+          "hint": 0,
+          "name": "GetLocaleInfoA"
+        },
+        {
+          "hint": 0,
+          "name": "GetLocaleInfoW"
+        },
+        {
+          "hint": 0,
+          "name": "HeapSize"
+        },
+        {
+          "hint": 0,
+          "name": "IsValidCodePage"
+        },
+        {
+          "hint": 0,
+          "name": "GetOEMCP"
+        },
+        {
+          "hint": 0,
+          "name": "GetACP"
+        },
+        {
+          "hint": 0,
+          "name": "GetCPInfo"
+        },
+        {
+          "hint": 0,
+          "name": "IsProcessorFeaturePresent"
+        },
+        {
+          "hint": 0,
+          "name": "IsDebuggerPresent"
+        },
+        {
+          "hint": 0,
+          "name": "SetUnhandledExceptionFilter"
+        },
+        {
+          "hint": 0,
+          "name": "UnhandledExceptionFilter"
+        },
+        {
+          "hint": 0,
+          "name": "TerminateProcess"
+        },
+        {
+          "hint": 0,
+          "name": "SetLastError"
+        },
+        {
+          "hint": 0,
+          "name": "TlsFree"
+        },
+        {
+          "hint": 0,
+          "name": "TlsSetValue"
+        },
+        {
+          "hint": 0,
+          "name": "TlsAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "LCMapStringW"
+        },
+        {
+          "hint": 0,
+          "name": "HeapCreate"
+        },
+        {
+          "hint": 0,
+          "name": "CreateFileW"
+        },
+        {
+          "hint": 0,
+          "name": "SleepEx"
+        },
+        {
+          "hint": 0,
+          "name": "SignalObjectAndWait"
+        },
+        {
+          "hint": 0,
+          "name": "SetStdHandle"
+        },
+        {
+          "hint": 0,
+          "name": "WriteConsoleW"
+        },
+        {
+          "hint": 0,
+          "name": "FlushFileBuffers"
+        },
+        {
+          "hint": 0,
+          "name": "GetConsoleMode"
+        },
+        {
+          "hint": 0,
+          "name": "GetConsoleCP"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentProcessId"
+        },
+        {
+          "hint": 0,
+          "name": "QueryPerformanceCounter"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileType"
+        },
+        {
+          "hint": 0,
+          "name": "SetHandleCount"
+        },
+        {
+          "hint": 0,
+          "name": "GlobalFree"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileSize"
+        },
+        {
+          "hint": 0,
+          "name": "GlobalAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "SetFilePointer"
+        },
+        {
+          "hint": 0,
+          "name": "CreateFileA"
+        },
+        {
+          "hint": 0,
+          "name": "FindClose"
+        },
+        {
+          "hint": 0,
+          "name": "FindNextFileA"
+        },
+        {
+          "hint": 0,
+          "name": "FindFirstFileA"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentDirectoryA"
+        },
+        {
+          "hint": 0,
+          "name": "ReadFile"
+        },
+        {
+          "hint": 0,
+          "name": "WriteFile"
+        },
+        {
+          "hint": 0,
+          "name": "LocalAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "InitializeCriticalSection"
+        },
+        {
+          "hint": 0,
+          "name": "DeleteCriticalSection"
+        },
+        {
+          "hint": 0,
+          "name": "EnterCriticalSection"
+        },
+        {
+          "hint": 0,
+          "name": "LeaveCriticalSection"
+        },
+        {
+          "hint": 0,
+          "name": "SetEvent"
+        },
+        {
+          "hint": 0,
+          "name": "WaitForSingleObject"
+        },
+        {
+          "hint": 0,
+          "name": "ResetEvent"
+        },
+        {
+          "hint": 0,
+          "name": "CloseHandle"
+        },
+        {
+          "hint": 0,
+          "name": "WaitForMultipleObjects"
+        },
+        {
+          "hint": 0,
+          "name": "GetLastError"
+        },
+        {
+          "hint": 0,
+          "name": "CreateThread"
+        },
+        {
+          "hint": 0,
+          "name": "LocalFree"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileAttributesA"
+        },
+        {
+          "hint": 0,
+          "name": "GetVolumeInformationA"
+        },
+        {
+          "hint": 0,
+          "name": "GetDriveTypeA"
+        },
+        {
+          "hint": 0,
+          "name": "GetLogicalDrives"
+        },
+        {
+          "hint": 0,
+          "name": "InterlockedDecrement"
+        },
+        {
+          "hint": 0,
+          "name": "InterlockedIncrement"
+        },
+        {
+          "hint": 0,
+          "name": "Sleep"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentThreadId"
+        },
+        {
+          "hint": 0,
+          "name": "WideCharToMultiByte"
+        },
+        {
+          "hint": 0,
+          "name": "FreeLibrary"
+        },
+        {
+          "hint": 0,
+          "name": "LoadLibraryA"
+        },
+        {
+          "hint": 0,
+          "name": "GetVersionExA"
+        },
+        {
+          "hint": 0,
+          "name": "MoveFileA"
+        },
+        {
+          "hint": 0,
+          "name": "DeleteFileA"
+        },
+        {
+          "hint": 0,
+          "name": "CopyFileA"
+        },
+        {
+          "hint": 0,
+          "name": "VirtualFree"
+        },
+        {
+          "hint": 0,
+          "name": "OutputDebugStringA"
+        },
+        {
+          "hint": 0,
+          "name": "VirtualLock"
+        },
+        {
+          "hint": 0,
+          "name": "VirtualAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "GetLocalTime"
+        },
+        {
+          "hint": 0,
+          "name": "GetUserDefaultLCID"
+        },
+        {
+          "hint": 0,
+          "name": "GetSystemDefaultLCID"
+        },
+        {
+          "hint": 0,
+          "name": "CreateDirectoryA"
+        },
+        {
+          "hint": 0,
+          "name": "CreateProcessA"
+        },
+        {
+          "hint": 0,
+          "name": "lstrlen"
+        },
+        {
+          "hint": 0,
+          "name": "SetFilePointerEx"
+        },
+        {
+          "hint": 0,
+          "name": "CreateEventA"
+        },
+        {
+          "hint": 0,
+          "name": "InitializeCriticalSectionAndSpinCount"
+        },
+        {
+          "hint": 0,
+          "name": "RaiseException"
+        },
+        {
+          "hint": 0,
+          "name": "MultiByteToWideChar"
+        },
+        {
+          "hint": 0,
+          "name": "GetComputerNameA"
+        },
+        {
+          "hint": 0,
+          "name": "SetFileAttributesA"
+        },
+        {
+          "hint": 0,
+          "name": "SetFileTime"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileTime"
+        },
+        {
+          "hint": 0,
+          "name": "GetModuleFileNameA"
+        },
+        {
+          "hint": 0,
+          "name": "SetThreadPriority"
+        },
+        {
+          "hint": 0,
+          "name": "ResumeThread"
+        },
+        {
+          "hint": 0,
+          "name": "GetTempFileNameA"
+        },
+        {
+          "hint": 0,
+          "name": "GetTempPathA"
+        },
+        {
+          "hint": 0,
+          "name": "GetStartupInfoA"
+        },
+        {
+          "hint": 0,
+          "name": "SetCurrentDirectoryA"
+        },
+        {
+          "hint": 0,
+          "name": "CreateSemaphoreA"
+        },
+        {
+          "hint": 0,
+          "name": "CreateTimerQueueTimer"
+        },
+        {
+          "hint": 0,
+          "name": "DeleteTimerQueueTimer"
+        },
+        {
+          "hint": 0,
+          "name": "CreateTimerQueue"
+        },
+        {
+          "hint": 0,
+          "name": "HeapReAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "ExitProcess"
+        },
+        {
+          "hint": 0,
+          "name": "GetModuleHandleW"
+        },
+        {
+          "hint": 0,
+          "name": "GetSystemTimeAsFileTime"
+        },
+        {
+          "hint": 0,
+          "name": "GetStartupInfoW"
+        },
+        {
+          "hint": 0,
+          "name": "HeapSetInformation"
+        },
+        {
+          "hint": 0,
+          "name": "GetCommandLineA"
+        },
+        {
+          "hint": 0,
+          "name": "GetThreadTimes"
+        },
+        {
+          "hint": 0,
+          "name": "FreeLibraryAndExitThread"
+        },
+        {
+          "hint": 0,
+          "name": "GetModuleFileNameW"
+        },
+        {
+          "hint": 0,
+          "name": "LoadLibraryW"
+        },
+        {
+          "hint": 0,
+          "name": "SwitchToThread"
+        },
+        {
+          "hint": 0,
+          "name": "TlsGetValue"
+        },
+        {
+          "hint": 0,
+          "name": "HeapAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "HeapFree"
+        },
+        {
+          "hint": 0,
+          "name": "ExitThread"
+        },
+        {
+          "hint": 0,
+          "name": "DecodePointer"
+        },
+        {
+          "hint": 0,
+          "name": "EncodePointer"
+        },
+        {
+          "hint": 0,
+          "name": "RtlUnwind"
+        },
+        {
+          "hint": 0,
+          "name": "MulDiv"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentProcess"
+        },
+        {
+          "hint": 0,
+          "name": "DuplicateHandle"
+        },
+        {
+          "hint": 0,
+          "name": "GetSystemInfo"
+        },
+        {
+          "hint": 0,
+          "name": "ReleaseSemaphore"
+        },
+        {
+          "hint": 0,
+          "name": "GetTickCount"
+        },
+        {
+          "hint": 0,
+          "name": "GetCurrentThread"
+        },
+        {
+          "hint": 0,
+          "name": "GetThreadPriority"
+        },
+        {
+          "hint": 0,
+          "name": "GetEnvironmentStringsW"
+        },
+        {
+          "hint": 0,
+          "name": "GetModuleHandleA"
+        },
+        {
+          "hint": 0,
+          "name": "FreeEnvironmentStringsW"
+        },
+        {
+          "hint": 0,
+          "name": "SetThreadAffinityMask"
+        },
+        {
+          "hint": 0,
+          "name": "VirtualProtect"
+        },
+        {
+          "hint": 0,
+          "name": "GetProcessAffinityMask"
+        },
+        {
+          "hint": 0,
+          "name": "GetVersionExW"
+        },
+        {
+          "hint": 0,
+          "name": "GetStdHandle"
+        },
+        {
+          "hint": 0,
+          "name": "InitializeSListHead"
+        },
+        {
+          "hint": 0,
+          "name": "InterlockedPushEntrySList"
+        },
+        {
+          "hint": 0,
+          "name": "QueryDepthSList"
+        },
+        {
+          "hint": 0,
+          "name": "CreateSemaphoreW"
+        },
+        {
+          "hint": 0,
+          "name": "InterlockedPopEntrySList"
+        },
+        {
+          "hint": 0,
+          "name": "InterlockedFlushSList"
+        },
+        {
+          "hint": 0,
+          "name": "CreateEventW"
+        },
+        {
+          "hint": 0,
+          "name": "GetProcAddress"
+        }
+      ]
+    },
+    {
+      "dll": "mfplat.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "MFInvokeCallback"
+        },
+        {
+          "hint": 0,
+          "name": "MFCreateAsyncResult"
+        },
+        {
+          "hint": 0,
+          "name": "MFCreateAttributes"
+        },
+        {
+          "hint": 0,
+          "name": "MFShutdown"
+        },
+        {
+          "hint": 0,
+          "name": "MFStartup"
+        },
+        {
+          "hint": 0,
+          "name": "MFCreateMediaType"
+        }
+      ]
+    },
+    {
+      "dll": "oleaut32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "VariantInit"
+        },
+        {
+          "hint": 0,
+          "name": "SysStringLen"
+        },
+        {
+          "hint": 0,
+          "name": "VariantClear"
+        }
+      ]
+    },
+    {
+      "dll": "shell32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "SHGetSpecialFolderPathA"
+        }
+      ]
+    },
+    {
+      "dll": "shlwapi.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "PathRemoveFileSpecA"
+        }
+      ]
+    },
+    {
+      "dll": "user32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "UpdateWindow"
+        },
+        {
+          "hint": 0,
+          "name": "PostMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "InvalidateRect"
+        },
+        {
+          "hint": 0,
+          "name": "ValidateRect"
+        },
+        {
+          "hint": 0,
+          "name": "GetWindowLongA"
+        },
+        {
+          "hint": 0,
+          "name": "DefWindowProcA"
+        },
+        {
+          "hint": 0,
+          "name": "IsIconic"
+        },
+        {
+          "hint": 0,
+          "name": "DestroyWindow"
+        },
+        {
+          "hint": 0,
+          "name": "ShowWindow"
+        },
+        {
+          "hint": 0,
+          "name": "PostQuitMessage"
+        },
+        {
+          "hint": 0,
+          "name": "GetSystemMenu"
+        },
+        {
+          "hint": 0,
+          "name": "RemoveMenu"
+        },
+        {
+          "hint": 0,
+          "name": "CreateWindowExA"
+        },
+        {
+          "hint": 0,
+          "name": "SetTimer"
+        },
+        {
+          "hint": 0,
+          "name": "GetMenu"
+        },
+        {
+          "hint": 0,
+          "name": "RegisterClassExA"
+        },
+        {
+          "hint": 0,
+          "name": "GetQueueStatus"
+        },
+        {
+          "hint": 0,
+          "name": "RegisterClipboardFormatA"
+        },
+        {
+          "hint": 0,
+          "name": "MsgWaitForMultipleObjects"
+        },
+        {
+          "hint": 0,
+          "name": "wsprintfA"
+        },
+        {
+          "hint": 0,
+          "name": "SetRectEmpty"
+        },
+        {
+          "hint": 0,
+          "name": "ScreenToClient"
+        },
+        {
+          "hint": 0,
+          "name": "GetCursorPos"
+        },
+        {
+          "hint": 0,
+          "name": "GetSubMenu"
+        },
+        {
+          "hint": 0,
+          "name": "TrackPopupMenu"
+        },
+        {
+          "hint": 0,
+          "name": "DestroyMenu"
+        },
+        {
+          "hint": 0,
+          "name": "ShowCursor"
+        },
+        {
+          "hint": 0,
+          "name": "KillTimer"
+        },
+        {
+          "hint": 0,
+          "name": "LoadIconA"
+        },
+        {
+          "hint": 0,
+          "name": "GetForegroundWindow"
+        },
+        {
+          "hint": 0,
+          "name": "MessageBoxA"
+        },
+        {
+          "hint": 0,
+          "name": "GetClientRect"
+        },
+        {
+          "hint": 0,
+          "name": "GetWindowPlacement"
+        },
+        {
+          "hint": 0,
+          "name": "SendMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "SetWindowPos"
+        },
+        {
+          "hint": 0,
+          "name": "GetUpdateRgn"
+        },
+        {
+          "hint": 0,
+          "name": "ValidateRgn"
+        },
+        {
+          "hint": 0,
+          "name": "LoadCursorA"
+        },
+        {
+          "hint": 0,
+          "name": "SetCursor"
+        },
+        {
+          "hint": 0,
+          "name": "PostThreadMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "GetAsyncKeyState"
+        },
+        {
+          "hint": 0,
+          "name": "GetParent"
+        },
+        {
+          "hint": 0,
+          "name": "UnhookWindowsHookEx"
+        },
+        {
+          "hint": 0,
+          "name": "SetRect"
+        },
+        {
+          "hint": 0,
+          "name": "ClientToScreen"
+        },
+        {
+          "hint": 0,
+          "name": "MonitorFromWindow"
+        },
+        {
+          "hint": 0,
+          "name": "GetMonitorInfoA"
+        },
+        {
+          "hint": 0,
+          "name": "SetWindowLongA"
+        },
+        {
+          "hint": 0,
+          "name": "SetMenu"
+        },
+        {
+          "hint": 0,
+          "name": "LoadMenuA"
+        },
+        {
+          "hint": 0,
+          "name": "DrawMenuBar"
+        },
+        {
+          "hint": 0,
+          "name": "PeekMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "GetMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "TranslateMessage"
+        },
+        {
+          "hint": 0,
+          "name": "DispatchMessageA"
+        },
+        {
+          "hint": 0,
+          "name": "WaitMessage"
+        },
+        {
+          "hint": 0,
+          "name": "IsDialogMessage"
+        },
+        {
+          "hint": 0,
+          "name": "SystemParametersInfoA"
+        },
+        {
+          "hint": 0,
+          "name": "GetWindowRect"
+        },
+        {
+          "hint": 0,
+          "name": "SetCursorPos"
+        },
+        {
+          "hint": 0,
+          "name": "GetSystemMetrics"
+        },
+        {
+          "hint": 0,
+          "name": "LoadCursorFromFileA"
+        }
+      ]
+    },
+    {
+      "dll": "version.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "VerQueryValueA"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileVersionInfoA"
+        },
+        {
+          "hint": 0,
+          "name": "GetFileVersionInfoSizeA"
+        }
+      ]
+    },
+    {
+      "dll": "winmm.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "timeSetEvent"
+        },
+        {
+          "hint": 0,
+          "name": "mciGetErrorStringA"
+        },
+        {
+          "hint": 0,
+          "name": "mciSendCommandA"
+        },
+        {
+          "hint": 0,
+          "name": "mixerClose"
+        },
+        {
+          "hint": 0,
+          "name": "mixerSetControlDetails"
+        },
+        {
+          "hint": 0,
+          "name": "mixerOpen"
+        },
+        {
+          "hint": 0,
+          "name": "timeGetTime"
+        },
+        {
+          "hint": 0,
+          "name": "timeBeginPeriod"
+        },
+        {
+          "hint": 0,
+          "name": "timeGetDevCaps"
+        },
+        {
+          "hint": 0,
+          "name": "joyGetPosEx"
+        },
+        {
+          "hint": 0,
+          "name": "joyGetDevCapsA"
+        },
+        {
+          "hint": 0,
+          "name": "joyGetNumDevs"
+        },
+        {
+          "hint": 0,
+          "name": "mciSendStringA"
+        },
+        {
+          "hint": 0,
+          "name": "mmioClose"
+        },
+        {
+          "hint": 0,
+          "name": "mmioAscend"
+        },
+        {
+          "hint": 0,
+          "name": "mmioRead"
+        },
+        {
+          "hint": 0,
+          "name": "mmioDescend"
+        },
+        {
+          "hint": 0,
+          "name": "mmioOpenA"
+        },
+        {
+          "hint": 0,
+          "name": "timeKillEvent"
+        },
+        {
+          "hint": 0,
+          "name": "timeEndPeriod"
+        }
+      ]
+    },
+    {
+      "dll": "d3d9.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "Direct3DCreate9"
+        },
+        {
+          "hint": 0,
+          "name": "Direct3DCreate9Ex"
+        }
+      ]
+    },
+    {
+      "dll": "d3dx9_43.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "D3DXCreateEffectFromResourceA"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXCreateTextureFromFileInMemory"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixTranslation"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixRotationYawPitchRoll"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixScaling"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXFrameFind"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXLoadMeshHierarchyFromXInMemory"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXComputeNormals"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXLoadSurfaceFromSurface"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXCreateTexture"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixLookAtLH"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXVec3Normalize"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixPerspectiveFovLH"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixRotationAxis"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixDecompose"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXCreateSprite"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixOrthoLH"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXVec4Transform"
+        },
+        {
+          "hint": 0,
+          "name": "D3DXMatrixMultiply"
+        }
+      ]
+    },
+    {
+      "dll": "dxva2.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "DXVA2CreateDirect3DDeviceManager9"
+        }
+      ]
+    },
+    {
+      "dll": "imagehlp.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "MakeSureDirectoryPathExists"
+        }
+      ]
+    },
+    {
+      "dll": "ole32.dll",
+      "functions": [
+        {
+          "hint": 0,
+          "name": "CoAddRefServerProcess"
+        },
+        {
+          "hint": 0,
+          "name": "CoReleaseServerProcess"
+        },
+        {
+          "hint": 0,
+          "name": "CoInitialize"
+        },
+        {
+          "hint": 0,
+          "name": "PropVariantClear"
+        },
+        {
+          "hint": 0,
+          "name": "CoUninitialize"
+        },
+        {
+          "hint": 0,
+          "name": "CoCreateInstance"
+        },
+        {
+          "hint": 0,
+          "name": "CoTaskMemAlloc"
+        },
+        {
+          "hint": 0,
+          "name": "CoFreeUnusedLibraries"
+        },
+        {
+          "hint": 0,
+          "name": "CoTaskMemFree"
+        }
+      ]
+    }
+  ],
+  "total_functions": 303
+}
