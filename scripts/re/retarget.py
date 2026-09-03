@@ -162,7 +162,18 @@ def main():
     with open(src_path, 'rb') as f:
         src = f.read()
     tu = parse(src_path)
-    members = set(DM.detect_names(tu))      # 复用成员检测（同一个 TU，不重复 parse）
+    # 成员检测：先跑 detect_members.detect_names，再并入已记录的成员清单
+    # （docs/re/engine/member_functions.detected.txt）。后者是更完整的权威清单，合并可保证
+    # 「重跑重建」不会因本环境重检测到的成员数（可能偏少）而回退既有成员改名。
+    detected = set(DM.detect_names(tu))
+    members = set(detected)
+    det_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            '..', '..', 'docs', 're', 'engine', 'member_functions.detected.txt')
+    if os.path.exists(det_file):
+        with open(det_file, encoding='utf-8') as f:
+            recorded = [ln.strip() for ln in f if ln.strip()]
+        members |= set(recorded)
+        print(f"[retarget] detected={len(detected)} +recorded={len(recorded)} -> members={len(members)}")
 
     # 成员名映射：sub_<addr> -> <sem>_<addr>（未知 -> sub_<addr>，地址始终保留）
     name_map = {}

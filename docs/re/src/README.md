@@ -23,6 +23,7 @@
 | [`09-地图内单位.md`](./09-地图内单位.md) | STINIT 单位摆放（`eq … b222 <mapNo>` 关卡 id + `0x121e2+mapNo` 关名 + 单位槽寄存器区间）、STINIT2 场景（loc/seq）、特殊点位（采集/挖掘/刷怪旋涡）坐标/类型（原 `docs/地图内单位.md`） |
 | [`10-物品与配方数据.md`](./10-物品与配方数据.md) | ITINIT 物品（id=`名称串−0x18e40`、并行数组字段）、PLINIT 建筑（`0x1f5ba`）、ALINIT 配方表（标记 1 物品/2 建筑 + 材料）；合并自 `docs/物品建筑配方.md` + 旧 `AGE脚本语言与物品数据结构.md` §4/§5 |
 | [`11-说话人id与EBINIT.md`](./11-说话人id与EBINIT.md) | 说话人 id ↔ EBINIT（CNINIT 缺席补名、记录序+1=说话人 id、0x132 重复问题）；承接旧 `AGE脚本语言与物品数据结构.md` §7 |
+| [`12-脚本控制流结构化与伪代码.md`](./12-脚本控制流结构化与伪代码.md) | 把 `src/*.txt` 反汇编还原为结构伪代码：CFG（基本块/边）→ 支配/自然循环 → `if/if-else/while` 递归结构化 → 无括号 Python 风格输出；含业界 structuring 算法调研；工具 `scripts/re/structured_cfg.js` |
 
 ## 核心结论速览
 
