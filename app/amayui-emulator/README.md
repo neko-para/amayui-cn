@@ -8,8 +8,8 @@
 
 ## 定位与现状
 
-- **当前阶段**：方案与背景已沉淀（见本目录 docs）；**实现尚未开始**（M0 待做）。
-- **第一里程碑**（对应 `docs/03` 的 M0–M3）：**在无任何界面层输入/输出的前提下，让解释器执行启动链，并正确运行到 `src/TITLE.txt`（游戏开始界面脚本）的执行点。**
+- **当前阶段**：**M0–M3 里程碑已达到**——解释器已能从 `SYSTEM4.BIN`（index 0）一路执行，经过全部数据表 INIT 脚本（AMINIT2 / WDINIT / ALINIT / EBINIT / ITINIT / SKINIT / CGINIT / BTANINIT2…），正确运行到 **`TITLE.BIN`（622 条指令）执行点**——这是 `docs/03` 的第一里程碑。`npm test` 12/12 通过（含 5 条指针模型测试），`tsc` 干净。TITLE 其后进入 Live2D/消息主循环（`setL2DMOC`、等待输入），M0 无界面 stub 使其停在消息循环，属预期。
+- **第一里程碑**（对应 `docs/03` 的 M0–M3）：**在无任何界面层输入/输出的前提下，让解释器执行启动链，并正确运行到 `src/TITLE.txt`（游戏开始界面脚本）的执行点。**（✅ 已达成）
 - **技术前提（用户已确认）**：JS 可安全操作 2^53 内的整数/double，除非引擎使用 int64——当前引擎为 x86 32 位，未见 int64，故可用 `number`（配合显式 32 位位运算）。
 
 ---
@@ -23,6 +23,7 @@
 | [`docs/03-development-plan.md`](./docs/03-development-plan.md) | 分阶段里程碑 M0–M5 + 完成定义（DoD）+ 依赖图 |
 | [`docs/04-boot-chain-analysis.md`](./docs/04-boot-chain-analysis.md) | 启动链实证（SYSTEM4→…→TITLE）+ opcode 清点 + 分类方法 |
 | [`docs/06-function-status-registry.md`](./docs/06-function-status-registry.md) | **函数级状态追踪注册表**（ADR-010：每个原函数重写状态 + 确认忽略的证据/复核） |
+| [`docs/07-pointer-operand-model.md`](./docs/07-pointer-operand-model.md) | **指针操作数模型**（ADR-011）：`lea`/`lookup-array`/`memcpy` 的模拟隐患——指针=带标记引用，读解引用/写写穿，不当数值 |
 
 ---
 

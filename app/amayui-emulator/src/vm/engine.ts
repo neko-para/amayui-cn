@@ -2,14 +2,16 @@
 import type { ScriptBinary } from '../script/bin.js';
 import type { FileSource } from '../arch/fileSource.js';
 import type { NativeBridge } from './native.js';
+import type { Ref } from './ref.js';
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
   int = new Map<number, number>(); // 存 ENC 位模式
   float = new Map<number, number>();
   str = new Map<number, string>();
-  ptr = new Map<number, number>(); // 存 u32 地址（M0 不真正解引用数值）
-  floatPtr = new Map<number, number>();
+  /** 指针池存 Ref|0（0=空引用），见 ADR-011 / docs/07。 */
+  ptr = new Map<number, Ref | 0>();
+  floatPtr = new Map<number, Ref | 0>();
 }
 
 /** 每脚本帧（120 字节 / 0x78 的语义重建模），对应 ScriptContext。 */
@@ -40,8 +42,9 @@ export class GlobalArrays {
   int = new Map<number, number>();
   float = new Map<number, number>();
   str = new Map<number, string>();
-  ptr = new Map<number, number>();
-  floatPtr = new Map<number, number>();
+  /** 指针池存 Ref|0（0=空引用），见 ADR-011 / docs/07。 */
+  ptr = new Map<number, Ref | 0>();
+  floatPtr = new Map<number, Ref | 0>();
 }
 
 /** 引擎对象：解释器/Command 的 `this` 语义重建模。 */

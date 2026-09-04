@@ -29,3 +29,11 @@ export function asI32(v: number): number {
 export function i32(v: number): number {
   return v | 0;
 }
+
+/** 简单 atoi（字符串 -> int；age 语义：解析十进制前缀，空/失败返 0）。 */
+export function atoi(s: string): number {
+  const m = /^\s*[+-]?\d+/.exec(s);
+  if (!m) return 0;
+  const v = Number.parseInt(m[0], 10);
+  return Number.isFinite(v) ? v | 0 : 0;
+}

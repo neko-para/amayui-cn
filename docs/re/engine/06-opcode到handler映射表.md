@@ -595,10 +595,10 @@
 | 0x5E | 3 | gr | sub_42C9B0 | 【已核对】`op1 = (op2 > op3)` |
 | 0x5F | 3 | gre | sub_42CA00 | 【已核对】`op1 = (op2 >= op3)` |
 | 0x60 | 2 | random | sub_42CA50 | 【已核对】`op1 = rand() % op2` |
-| 0x61 | 3 | lookup-array | sub_42CB00 | 【推测】`op1 = op2[op3]`（数组索引取值）。未读体 |
-| 0x63 | 2 | lea | sub_42CBA0 | 【推测】`op1 = &op2`（取地址）。未读体 |
-| 0x64 | 2 | copy-local-array | sub_42CBE0 | 【推测】把数据数组拷入局部（BIN 里第 2 参是数据数组引用）。未读体 |
-| 0x6C | 2 | copy-to-global | sub_42CE70 | 【推测】局部→全局循环拷贝。未读体 |
+| 0x61 | 3 | lookup-array | sub_42CB00 | 【已核对】`op1 = &op2[op3]`（取数组元素**地址**写入 op1 指针槽：sub_42AEA0 取 op2 基址 → sub_418CC0 写 `基址+4*op3`；与 lea 同底座）。handler=sub_42CB00（raw .c 37742）。⚠️ 修正旧「取值」——实际存的是元素**地址**（AGE 指针操作数后续读取时自动解引用即成值） |
+| 0x63 | 2 | lea | sub_42CBA0 | 【已核对】`op1 = &op2`（取 op2 的**内存地址**写入 op1 指针槽：`sub_42AEA0(this,2)` 取址 → `sub_418B90(this,1,addr)` 写指针/地址型操作数）。handler=sub_42CBA0（raw .c 37766） |
+| 0x64 | 2 | copy-local-array | sub_42CBE0 | 【已核对】把 op2 索引的字面数组（count=池`[4*op2]`；源=池`+4*op2+4`；每项经 `key ^ ROR` 解码后写入）拷入 op1 指向的数组 —— **数组/地板填充的底座**（MPINIT 地板用）。handler=sub_42CBE0（raw .c 37776） |
+| 0x6C | 2 | copy-to-global | sub_42CE70 | 【已核对】`op1 起的 count 个槽置 0`（**非 mov 值拷贝**）：`v2=&op1; n=op2(count); while(n--) *v2++ = _this[97060]`；`_this[97060]`=**ENC(0)**（`ROL(x,11)==key` 反篡改校验在 3 处独立成立唯一确定）。handler=sub_42CE70（raw .c 37876）。⚠️ 修正旧「局部→全局循环拷贝」——实为 bulk 零初始化 |
 | 0x6E | 2 | show-text | sub_41EB20 | 【推测(子系统)】显示文本。未读体 |
 | 0x6F | 1 | end-text-line | sub_41ECE0 | 【推测(子系统)】结束当前文本行。未读体 |
 | 0x72 | 1 | wait-for-input | sub_41EEF0 | 【推测(子系统)】等待输入。未读体 |
@@ -613,13 +613,13 @@
 | 0xCD | 0 | get-input-type | sub_41ACD0 | 【推测(子系统)】取输入类型。未读体 |
 | 0xFB | 2 | joy_callback | sub_421B80 | 【推测(子系统)】注册手柄回调。未读体 |
 | 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 【推测】二维数组查找。未读体 |
-| 0x135 | 2 | bit-set | sub_42F8B0 | 【推测】置位 `op1 \|= op2`。未读体 |
-| 0x136 | 2 | bit-reset | sub_42F920 | 【推测】复位 `op1 &= ~op2`。未读体 |
-| 0x13F | 3 | check-bit | sub_42FB40 | 【推测】测位。未读体 |
+| 0x135 | 2 | bit-set | sub_42F8B0 | 【已核对】`op1 \|= (1<<op2)`（置位；op2=bit 位，>0x1F 报错 `setbit`）。handler=sub_42F8B0（raw .c 39402） |
+| 0x136 | 2 | bit-reset | sub_42F920 | 【已核对】`op1 &= ~(1<<op2)`（复位；op2=bit 位，>0x1F 报错 `rembit`）。handler=sub_42F920（raw .c 39424） |
+| 0x13F | 3 | check-bit | sub_42FB40 | 【已核对】`op1 = ((1<<op3) & op2) != 0`（op3=bit 位，op2=待测值，>0x1F 报错 `getbit`）。handler=sub_42FB40（raw .c 39549） |
 | 0x14C | 2 | set-agerc-export | sub_422AB0 | 【推测】绑定 agerc 导出。未读体 |
 | 0x14D | 6 | call-agerc-export | sub_430170 | 【推测】调用 agerc 导出。未读体 |
-| 0x192 | 2 | set-string | sub_433660 | 【推测】写字符串（global-string；**汉化核心指令之一**）。未读体 |
-| 0x193 | 3 | concat | sub_433710 | 【推测】字符串拼接。未读体 |
+| 0x192 | 2 | set-string | sub_433660 | 【已核对】`op1 = op2`（**汉化核心指令**：把字符串 op2 赋给 op1 串槽。`sub_42A420(this,&buf,2)` 读 op2 字符串对象 → `sub_433310(this,1,buf)` 写入 op1）。handler=sub_433660（raw .c 41936） |
+| 0x193 | 3 | concat | sub_433710 | 【已核对】`op1 = op2 + op3`（字符串拼接：`sub_42A420` 读 op3/op2 → `sub_42AA90` 拼接（**op2 在前**）→ `sub_433310` 写入 op1）。handler=sub_433710（raw .c 41952） |
 | 0x196 | 3 | display-furigana | sub_41FC20 | 【推测】显示注音。未读体 |
 | 0x1A3 | 1 | string-lookup-set | sub_42DF40 | 【已核对-部分】读 op1 → 在 `_this+5452` str 查找表按键取值 → 写回 op1。handler=sub_42DF40（raw .c 38443）。字符串表语义 M1 细化 |
 | 0x1A5 | 1 | set-font | sub_433290 | 【推测(子系统)】设置字体。未读体 |
@@ -633,9 +633,9 @@
 | 0x1FB | 8 | draw-texture | sub_422E70 | 【推测(子系统)】绘制贴图。未读体 |
 | 0x204 | 4 | draw-string | sub_423390 | 【推测(子系统)】绘制字符串。未读体 |
 | 0x2C5 | 2 | strlen | sub_430900 | 【推测】字符串长度。未读体 |
-| 0x2D8 | 3 | set-array-to | sub_430CF0 | 【推测】数组填充。未读体 |
+| 0x2D8 | 3 | set-array-to | sub_430CF0 | 【已核对】`op1 起 count 个槽填 op2 值`（**脚本值 bulk 填充**；对比 copy-to-global 固定 0）：`v2=&op1; v5=ENC(op2); n=op3; memset32(v2,v5,n)`。handler=sub_430CF0（raw .c 40206） |
 
-> 上表「已核对」的算术/比较/random 依据 `docs/re/engine/03`；控制流（exit/ret/exit-script/call/call-script/jmp）依据本轮读 `raw .c` handler + `docs/re/engine/08`；`jcc` 依据 `docs/re/engine/02`。
+> 上表「已核对」的算术/比较/random 依据 `docs/re/engine/03`；控制流（exit/ret/exit-script/call/call-script/jmp）依据本轮读 `raw .c` handler + `docs/re/engine/08`；`jcc` 依据 `docs/re/engine/02`；`lea(0x63)`/`set-string(0x192)`/`concat(0x193)` 依据本轮直接读 `raw .c` handler 体（各见同行行号）。
 
 ---
 

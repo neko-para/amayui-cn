@@ -11,6 +11,8 @@ export interface NativeBridge {
   setTexture?(args: number[]): void;
   setFont?(args: number[]): void;
   setString?(s: string): void;
+  /** string→resource-id 查找（设置/消息子系统，sub_428990 on _this+21324）。返回 -1 = 未找到。 */
+  stringResourceId?(s: string): number;
   getInputType?(): number;
   sleep?(ms: number): void;
   /** 未实现/待处理的子系统 opcode 兜底：记录后返回（不阻塞 VM） */
@@ -44,6 +46,10 @@ export class StubNative implements NativeBridge {
   }
   setString(s: string): void {
     this.log(`[native:stub] set-string "${s}"`);
+  }
+  stringResourceId(s: string): number {
+    this.log(`[native:stub] string-resource-id "${s}"`);
+    return -1; // 未找到 → CHECKCONFIG 据此跳过默认重置分支
   }
   getInputType(): number {
     return 0; // 无界面：默认无输入；TITLE 主循环据此选择分支

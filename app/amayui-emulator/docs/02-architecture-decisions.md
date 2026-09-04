@@ -115,6 +115,7 @@ interface NativeBridge {
 | `unimplemented` | 未分类/未读体 | **硬报错**（NotImplementedOp） |
 
 > 判定 `engine-internal` 必须**读 handler 体**（ADR-010）。当前已在 boot 路径分类 ~24 个（见 `docs/06 §2.2`）；`string-lookup-set`(0x1a3)/0x1a2/0x1a9 这类字符串表操作暂列插桩，M1 需细化。
+> **里程碑：M0–M3 已达**——解释器一路从 SYSTEM4 执行到 `TITLE.BIN`（经全部数据表 INIT 脚本），未再触发"未实现 opcode 硬报错"；`npm test` 12/12 通过、`tsc` 干净。期间实现/分类了 ~70 个 opcode（VM 核心：lea/lookup-array(-2d)/memcpy/copy-local-array/copy-to-global/set-array-to/random/bit-*/float-*/strlen/atoi/预装帧；engine-internal/native：消息窗/配置/图形 L2D/纹理/子系统等），并修复 bin.ts 的 copy-local-array 越界与 op_jcc 的 `0xFFFFFFFF` 真分支误判。
 
 ---
 
@@ -217,6 +218,35 @@ Arg = { type:u32, raw:u32 }
 
 ---
 
+## ADR-011 · 指针操作数 = 带标记引用（Ref），读=解引用，绝不当数值（✅ 已定，评估结论）
+
+> 触发：确认 `lea`/`lookup-array` 等「取地址」指令时发现的**核心模拟隐患**。完整分析见 [`07-pointer-operand-model.md`](./07-pointer-operand-model.md)。
+> **进度：✅ 已实现（M0）**——`src/vm/ref.ts`（Ref + readRef/writeRef/refAt）、`operand.ts`（指针型=解引用/写穿 + setRefOperand/refFromOperand）、`ops.ts`（lea/lookup-array/lookup-array-2d/memcpy/copy-local-array/random）、`engine.ts`（指针池存 `Ref|0`）；新增 `test/ptr.test.ts`。启动链已从"遇指针 op 即停"推进到 `INITCONFIG4`，下一阻塞为未实现 op `0x6c copy-to-global`。
+
+**结论**：指针型操作数（`local-ptr`/`global-ptr`/`*-string-ptr`/`*-float-ptr`）在重写版里必须是**带标记的引用对象（Ref）**，**不能**用 `number` 表示其"地址"；且**读指针操作数必须解引用（deref）取所指值，写必须写穿（write-through）**。地址**从不**作为数值进入算术/比较域。
+
+**证据（读 handler 体，raw `.c`）**：
+- 读（`sub_41BF50`，case 6/12）：`**(_DWORD **)(ptr_base + 4*idx)` —— **双重解引用**，读到的是**所指处**的值。
+- 写（`sub_42B4B0`，case 6/12）：先取 ptr 槽存的地址 `A`，再 `*A = ENC(value)` —— **写穿**到所指处。
+- 取址（`sub_42AEA0`，lea/lookup 底座）：对直接型返回 `base + stride*idx`；对指针型返回"所指处地址"（即**引用拷贝/别名**）。
+- 目标恒为指针操作数：全工程 `lea` 173 条、`lookup-array` 14.4 万条，dest **全部是指针型**（`local-ptr/local-string-ptr/local-float-ptr`）；`global-ptr` 在本作出现 **0** 次。
+- 指针在值语境被广泛使用且引擎**解引用**：如 `gr (local-int 0) (local-ptr 0) 0`、`jcc (local-ptr 1) …`、`lt (local-int 4f) (local-ptr 5) (local-ptr 4)` —— 这些都**比较/判断的是所指值**，不是地址。
+
+**因此（风险重新定性）**：
+- ❌ **不是**「BIN 会拿地址做算术」——因为引擎对指针操作数**一律解引用**，地址从不会以数值形式参与普通运算。
+- ✅ **而是**「要实现正确的**引用/解引用模型**」：指针池不能存裸 `number`（在按类型分池、无线性内存的模型里，`base+4*idx` 无意义），必须存 **Ref**；`readIntOperand`/`writeIntOperand` 对指针型必须 deref/write-through。当前 `operand.ts` 对指针型**读返回裸值、写改指针槽**，是**错的**（会立刻破坏全工程 29.8 万处指针值语境）。
+
+**实现要求**：
+1. `type Ref = { scope:'global'|'local'; kind:'int'|'float'|'str'|'ptr'|'fptr'; index:number; stride:number }`；指针池存 `Ref | 0`（0=空引用）。
+2. `readIntOperand(ptr)` → 跟随 Ref 到 `pool[index]`（int 族过 DEC）；`writeIntOperand(ptr)` → 写穿（int 族过 ENC）。
+3. `lea`/`lookup-array`/`lookup-array-2d` 负责**构造 Ref**；`memcpy`/`copy-local-array` 按 **stride** 逐元素搬运（跨池/跨宽须校验，越界/类型不匹配硬报错）。
+4. 需区分「**设置引用**」（lea/lookup 写 ptr 槽，写 Ref 对象）与「**写穿**」（普通 op 写指针所指处）——当前一个 `writeIntOperand` 混用了，必须拆开。
+5. **ADR-010 联动**：`lookup-array`/`memcpy`/`copy-*` 属 ADR-010 §10.2 的高危信号（数据/状态操作），**不得**标 `engine-internal` 跳过，必须精确实现。
+
+**保留的残余风险**：指针操作数被用作值时引擎**解引用**；若某处本意是「判空指针」却写成 `eq (ptr) 0`，引擎会解引用（空则崩）。模拟器必须**忠实复刻解引用语义**，不得把"指针 vs 数字"特判成地址比较。
+
+---
+
 ## 决策速查表
 
 | # | 决策 | 状态 |
@@ -231,3 +261,4 @@ Arg = { type:u32, raw:u32 }
 | ADR-008 | 目标脚本集合口径 | 🔄 |
 | ADR-009 | 插件机制（后置） | 🔄 |
 | ADR-010 | 函数级状态追踪（强制约束） | ✅ 最高优先级 |
+| ADR-011 | 指针操作数 = 带标记引用（Ref），读解引用/写写穿，不当数值 | ✅ |

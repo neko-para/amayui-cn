@@ -169,7 +169,10 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
         str = isVer5 ? readV5String(v, headerLen, raw) : readV4String(v, headerLen, raw);
       } else if (opcode === 0x64 && i === 1) {
         // copy-local-array 第 2 个参数：raw 指向数据区里的数组（len u32 + len 个 u32），不在指令流内。
-        let ap = headerLen + raw * 4;
+        // 该字面数组位于"松散数据区"（可能在 string 表起点之前）；指令流必须在其之前停止，
+        // 否则会把字面数组误读成指令（越界）。故与 string 一样收窄 curDataEnd。
+        const dataArrayStart = headerLen + raw * 4;
+        let ap = dataArrayStart;
         const len = v.u32(ap);
         ap += 4;
         const vals: number[] = [];
@@ -178,6 +181,7 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
           ap += 4;
         }
         dataArray = vals;
+        if (dataArrayStart < curDataEnd) curDataEnd = dataArrayStart;
       }
       args.push({ type, raw, str, dataArray });
     }
