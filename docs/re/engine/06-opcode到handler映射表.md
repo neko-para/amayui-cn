@@ -8,6 +8,13 @@
 > - **实现函数名称**：本条 opcode 在本引擎 dispatch 表中的 handler（`engine/天结_unpacked.exe_utf8.c` 里的 `sub_XXXXXX`，由 `.lst` 的 `mov [esi+0A50XXh], offset sub_XXXX` 反推）。
 > - **参数个数（argc）**：来自 age-shared 的 `argument_count`（单位 = 一个 typed arg = 8 字节；指令长度 = `4 + 8*argc`）。
 
+> **本文件的"指令语义"下列各标记（务必区分，避免把推测当定论）**：
+> - **【已核对】**：已在 `engine/天结_unpacked.exe_utf8.c`（或 `engine.cpp`）里**读到该 opcode 的 handler 体、确证其行为**。标注出处（如 `sub_XXXX（.c 行 N）`）。
+> - **【推测】**：语义**仅由 age-shared 助记符名 / 命名约定 / 用法推断**，"handler 体尚未逐条读"；**可能失真**（AGE 的助记符有误导性，如 `exit`≠程序退出、`ret`≠跨脚本返回）。**不可当作定论**。
+> - **【未解】**：尚无任何语义表征（仅知其 opcode/handler 地址）。绝大多数 `uXXXX` 属此列。
+>
+> 说明：本文档的**映射表本身（opcode→name→handler）是已确认的**；**语义列是"核对状态"**，其中仅少数已读体确认，多数仍是推测/未解。这是"逐步核对"的工作记录，非一次性终结结论。
+
 表内共 **544** 条 opcode（有自定义 handler）。age-shared 定义但不在此引擎实现（落到默认 `sub_418E30`）/ 其它游戏专属的 30 条见文末「回退默认」。
 
 ## 完整映射（按 opcode 升序）
@@ -559,72 +566,111 @@
 | 0x351 |  | （age-shared 未收录） | sub_428320 |
 | 0x352 | 3 | 352 | sub_4283B0 |
 
-## 具名（可读助记符）opcode 一览
+## 具名（可读助记符）opcode 一览 + 语义核对状态
 
-> 只列 age-shared 里带真实助记符（非 `u00xxxxxx`、非纯数字编号）的指令；这些是有明确语义、可直接回填到字节码分析的条目。
+> 只列 age-shared 里带真实助记符（非 `u00xxxxxx`、非纯数字编号）的指令。
+> **语义列严格区分核对状态**：`【已核对】`=读了 handler 体确证；`【推测】`=仅凭助记符名推断、**handler 未读体、可能失真**；`【未解】`=无表征。
+> ⚠️ 反复强调：AGE 助记符名**不可靠**（例：`exit`≠程序退出，是"跨脚本返回"；`ret`≠跨脚本返回，是"同脚本子程序返回"）。凡未读体的 `【推测】` 一律不可当定论。
 
-| opcode | argc | 已知名称（age-shared） | 本引擎实现函数 | 备注 |
+| opcode | argc | 已知名称（age-shared） | 本引擎实现函数 | 语义（含核对状态） |
 |---|---|---|---|---|
-| 0x2 | 0 | exit | sub_41A820 |  |
-| 0x3 | 1 | call-script | sub_41C6A0 | call another script |
-| 0x5 | 0 | ret | sub_41A9B0 |  |
-| 0x9 | 0 | exit-script | sub_428A60 |  |
-| 0x50 | 3 | add | sub_42C5E0 |  |
-| 0x51 | 3 | sub | sub_42C620 |  |
-| 0x52 | 3 | mul | sub_42C660 |  |
-| 0x53 | 3 | div | sub_42C6A0 |  |
-| 0x54 | 3 | mod | sub_42C6E0 | param1=param2%param3 |
-| 0x55 | 2 | mov | sub_42C720 |  |
-| 0x56 | 3 | and | sub_42C750 |  |
-| 0x57 | 3 | or | sub_42C790 |  |
-| 0x58 | 3 | sar | sub_42C7D0 |  |
-| 0x59 | 3 | shl | sub_42C820 |  |
-| 0x5A | 3 | eq | sub_42C870 |  |
-| 0x5B | 3 | ne | sub_42C8C0 |  |
-| 0x5C | 3 | lt | sub_42C910 |  |
-| 0x5D | 3 | lte | sub_42C960 |  |
-| 0x5E | 3 | gr | sub_42C9B0 |  |
-| 0x5F | 3 | gre | sub_42CA00 |  |
-| 0x60 | 2 | random | sub_42CA50 | param1 = rand() % param2 |
-| 0x61 | 3 | lookup-array | sub_42CB00 | lookup: param1=param2[param3] |
-| 0x63 | 2 | lea | sub_42CBA0 | param1 = address of param2 |
-| 0x64 | 2 | copy-local-array | sub_42CBE0 | copy local array |
-| 0x6C | 2 | copy-to-global | sub_42CE70 | loop copy local→global |
-| 0x6E | 2 | show-text | sub_41EB20 |  |
-| 0x6F | 1 | end-text-line | sub_41ECE0 |  |
-| 0x72 | 1 | wait-for-input | sub_41EEF0 |  |
-| 0x8C | 1 | jmp | sub_4203D0 | 跳转/分支 |
-| 0x8F | 1 | call | sub_420560 | call |
-| 0xA0 | 3 | jcc | sub_4209B0 | jcc |
-| 0xB4 | 2 | play-sound-effect | sub_420B00 | play sound effect |
-| 0xBF | 1 | play-bgm | sub_420CC0 | play bgm |
-| 0xC4 | 1 | play-voice | sub_420F70 | play voice |
-| 0xC8 | 1 | sleep | sub_4218D0 | sleep |
-| 0xCC | 2 | mouse_callback | sub_421980 | set mouse/keyboard callback |
-| 0xCD | 0 | get-input-type | sub_41ACD0 | get input type |
-| 0xFB | 2 | joy_callback | sub_421B80 | joystick callback |
-| 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 2d array lookup |
-| 0x135 | 2 | bit-set | sub_42F8B0 | bts param1|=param2 |
-| 0x136 | 2 | bit-reset | sub_42F920 | btr param1 &=~param2 |
-| 0x13F | 3 | check-bit | sub_42FB40 | check-bit |
-| 0x14C | 2 | set-agerc-export | sub_422AB0 | bind agerc export |
-| 0x14D | 6 | call-agerc-export | sub_430170 | call agerc export |
-| 0x192 | 2 | set-string | sub_433660 | set-string |
-| 0x193 | 3 | concat | sub_433710 | concat |
-| 0x196 | 3 | display-furigana | sub_41FC20 | display-furigana |
-| 0x1A3 | 1 | string-lookup-set | sub_42DF40 | string-lookup-set |
-| 0x1A5 | 1 | set-font | sub_433290 | set-font |
-| 0x1A6 | 2 | halve-strlen | sub_42D110 | halve-strlen |
-| 0x1A7 | 1 | comment | sub_4191B0 | dev comment |
-| 0x1A8 | 0 | dev_ukn | sub_419690 | dev ukn |
-| 0x1B0 | 3 | memcpy | sub_42D150 | param1=dest param2=src size=4*param3 |
-| 0x1C8 | 2 | toString | sub_433820 | toString |
-| 0x1F8 | 4 | create-texture | sub_422C20 | create-texture |
-| 0x1F9 | 3 | set-texture | sub_422CB0 | set-texture |
-| 0x1FB | 8 | draw-texture | sub_422E70 | draw-texture |
-| 0x204 | 4 | draw-string | sub_423390 | draw-string |
-| 0x2C5 | 2 | strlen | sub_430900 | strlen |
-| 0x2D8 | 3 | set-array-to | sub_430CF0 | set-array-to |
+| 0x2 | 0 | exit | sub_41A820 | 【已核对】跨脚本**返回调用层**（`cur=frame.caller`；顶层 caller<0 才程序退出）。handler=sub_41A820（raw .c 25629） |
+| 0x3 | 1 | call-script | sub_41C6A0 | 【已核对】读 operand1=目标脚本索引 → 压帧（cur++）+ 装载新脚本帧。handler=sub_41C6A0（raw .c 26762） |
+| 0x5 | 0 | ret | sub_41A9B0 | 【已核对】**同脚本**子程序返回（弹每帧返回栈 `256*cur+97193`；栈空 no-op）。handler=sub_41A9B0（raw .c 25704） |
+| 0x9 | 0 | exit-script | sub_428A60 | 【已核对】**全量 teardown**：清 40 帧 + 重置全局数组 → 回根态。handler=sub_428A60（raw .c 35171） |
+| 0x50 | 3 | add | sub_42C5E0 | 【已核对】`op1 = op2 + op3`（read op2/op3 → write op1） |
+| 0x51 | 3 | sub | sub_42C620 | 【已核对】`op1 = op2 - op3` |
+| 0x52 | 3 | mul | sub_42C660 | 【已核对】`op1 = op2 * op3` |
+| 0x53 | 3 | div | sub_42C6A0 | 【已核对】`op1 = op2 / op3` |
+| 0x54 | 3 | mod | sub_42C6E0 | 【已核对】`op1 = op2 % op3` |
+| 0x55 | 2 | mov | sub_42C720 | 【已核对】`op1 = op2` |
+| 0x56 | 3 | and | sub_42C750 | 【已核对】`op1 = op2 & op3` |
+| 0x57 | 3 | or | sub_42C790 | 【已核对】`op1 = op2 \| op3` |
+| 0x58 | 3 | sar | sub_42C7D0 | 【已核对】`op1 = op2 >> op3` |
+| 0x59 | 3 | shl | sub_42C820 | 【已核对】`op1 = op2 << op3` |
+| 0x5A | 3 | eq | sub_42C870 | 【已核对】`op1 = (op2 == op3)` |
+| 0x5B | 3 | ne | sub_42C8C0 | 【已核对】`op1 = (op2 != op3)` |
+| 0x5C | 3 | lt | sub_42C910 | 【已核对】`op1 = (op2 < op3)` |
+| 0x5D | 3 | lte | sub_42C960 | 【已核对】`op1 = (op2 <= op3)` |
+| 0x5E | 3 | gr | sub_42C9B0 | 【已核对】`op1 = (op2 > op3)` |
+| 0x5F | 3 | gre | sub_42CA00 | 【已核对】`op1 = (op2 >= op3)` |
+| 0x60 | 2 | random | sub_42CA50 | 【已核对】`op1 = rand() % op2` |
+| 0x61 | 3 | lookup-array | sub_42CB00 | 【推测】`op1 = op2[op3]`（数组索引取值）。未读体 |
+| 0x63 | 2 | lea | sub_42CBA0 | 【推测】`op1 = &op2`（取地址）。未读体 |
+| 0x64 | 2 | copy-local-array | sub_42CBE0 | 【推测】把数据数组拷入局部（BIN 里第 2 参是数据数组引用）。未读体 |
+| 0x6C | 2 | copy-to-global | sub_42CE70 | 【推测】局部→全局循环拷贝。未读体 |
+| 0x6E | 2 | show-text | sub_41EB20 | 【推测(子系统)】显示文本。未读体 |
+| 0x6F | 1 | end-text-line | sub_41ECE0 | 【推测(子系统)】结束当前文本行。未读体 |
+| 0x72 | 1 | wait-for-input | sub_41EEF0 | 【推测(子系统)】等待输入。未读体 |
+| 0x8C | 1 | jmp | sub_4203D0 | 【已核对】跳到 operand1 的 label（无条件，不入栈） |
+| 0x8F | 1 | call | sub_420560 | 【已核对】同脚本子程序调用：push 下一指令到每帧返回栈，跳 label；operand==-1 则弹回不跳。handler=sub_420560（raw .c 29452） |
+| 0xA0 | 3 | jcc | sub_4209B0 | 【已核对】`cond=op2`；cond!=0→跳 op3 的 label；cond==0→跳 op4 的 label；对应 label==0xFFFFFFFF 则不跳（falls through）。注：条件读 op2（非 op1）；两目标在 args[1]/args[2] |
+| 0xB4 | 2 | play-sound-effect | sub_420B00 | 【推测(子系统)】播放音效。未读体 |
+| 0xBF | 1 | play-bgm | sub_420CC0 | 【推测(子系统)】播放 BGM。未读体 |
+| 0xC4 | 1 | play-voice | sub_420F70 | 【推测(子系统)】播放语音。未读体 |
+| 0xC8 | 1 | sleep | sub_4218D0 | 【推测(子系统)】睡眠/延时。未读体 |
+| 0xCC | 2 | mouse_callback | sub_421980 | 【推测(子系统)】注册鼠标/键盘回调。未读体 |
+| 0xCD | 0 | get-input-type | sub_41ACD0 | 【推测(子系统)】取输入类型。未读体 |
+| 0xFB | 2 | joy_callback | sub_421B80 | 【推测(子系统)】注册手柄回调。未读体 |
+| 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 【推测】二维数组查找。未读体 |
+| 0x135 | 2 | bit-set | sub_42F8B0 | 【推测】置位 `op1 \|= op2`。未读体 |
+| 0x136 | 2 | bit-reset | sub_42F920 | 【推测】复位 `op1 &= ~op2`。未读体 |
+| 0x13F | 3 | check-bit | sub_42FB40 | 【推测】测位。未读体 |
+| 0x14C | 2 | set-agerc-export | sub_422AB0 | 【推测】绑定 agerc 导出。未读体 |
+| 0x14D | 6 | call-agerc-export | sub_430170 | 【推测】调用 agerc 导出。未读体 |
+| 0x192 | 2 | set-string | sub_433660 | 【推测】写字符串（global-string；**汉化核心指令之一**）。未读体 |
+| 0x193 | 3 | concat | sub_433710 | 【推测】字符串拼接。未读体 |
+| 0x196 | 3 | display-furigana | sub_41FC20 | 【推测】显示注音。未读体 |
+| 0x1A3 | 1 | string-lookup-set | sub_42DF40 | 【已核对-部分】读 op1 → 在 `_this+5452` str 查找表按键取值 → 写回 op1。handler=sub_42DF40（raw .c 38443）。字符串表语义 M1 细化 |
+| 0x1A5 | 1 | set-font | sub_433290 | 【推测(子系统)】设置字体。未读体 |
+| 0x1A6 | 2 | halve-strlen | sub_42D110 | 【推测】字符串半长。未读体 |
+| 0x1A7 | 1 | comment | sub_4191B0 | 【已核对】nop（dev 注释，无副作用） |
+| 0x1A8 | 0 | dev_ukn | sub_419690 | 【已核对】nop（dev 未知指令，通常空实现） |
+| 0x1B0 | 3 | memcpy | sub_42D150 | 【推测】`op1 = dest; op2 = src; size = 4*op3`。未读体（备注来自 age-shared 注释） |
+| 0x1C8 | 2 | toString | sub_433820 | 【推测】转字符串。未读体 |
+| 0x1F8 | 4 | create-texture | sub_422C20 | 【推测(子系统)】创建贴图。未读体 |
+| 0x1F9 | 3 | set-texture | sub_422CB0 | 【推测(子系统)】设置贴图。未读体 |
+| 0x1FB | 8 | draw-texture | sub_422E70 | 【推测(子系统)】绘制贴图。未读体 |
+| 0x204 | 4 | draw-string | sub_423390 | 【推测(子系统)】绘制字符串。未读体 |
+| 0x2C5 | 2 | strlen | sub_430900 | 【推测】字符串长度。未读体 |
+| 0x2D8 | 3 | set-array-to | sub_430CF0 | 【推测】数组填充。未读体 |
+
+> 上表「已核对」的算术/比较/random 依据 `docs/re/engine/03`；控制流（exit/ret/exit-script/call/call-script/jmp）依据本轮读 `raw .c` handler + `docs/re/engine/08`；`jcc` 依据 `docs/re/engine/02`。
+
+---
+
+## 补充项：已核对语义（读 handler 体）的引擎内部/子系统 opcode
+
+> 这些无具名助记符（`uXXXX`/数字名），但**本轮已读 handler 体确认**其行为：皆属**引擎内部状态 / AGE 消息窗口系统 / 配置 setter**，只写引擎内部字段（`_this[offset]`）或调用子系统对象方法（`_this+21324` / `_this+174405`），**不读/写 VM 可见状态**（全局数组、脚本帧、IP、cur），不影响控制流 → 对"到 TITLE"路径良性，模拟器可"插桩跳过"（见 `app/amayui-emulator/docs/06 §2.2`）。**这些是 `【已核对】`**（非推测）。
+
+| opcode | name | handler（raw .c 行） | 已核对语义 |
+|---|---|---|---|
+| 0x2F6 | 2F6 | sub_426820（.c 33219） | 读 op1 → 引擎内部按索引初始化槽（`_this[v2+21315/21318/122505/122508]`清零 + `sub_404CB0`） |
+| 0x2F8 | 2F8 | sub_4268D0（.c 33245） | 读 op1/op2 → `sub_4B6940(v2+12,v4)`（子系统对象方法） |
+| 0x149 | u0041FCE0 | sub_4229A0（.c 30687） | `_this[97058]=op1`（config setter） |
+| 0x88 | u0041B290 | sub_41FAB0（.c 28686） | `_this[1415]/[97050]=op1` + flag |
+| 0x21B | u004213E0 | sub_423C20（.c 31433） | `_this[166965]=(op1!=0)` |
+| 0x1CA | u0041B9B0 | sub_420240（.c 29019） | config `set-message-read-texture`（调 `config->vtable+12`） |
+| 0x252 | u00423000 | sub_425AB0（.c 32631） | `_this[92323]=op1` |
+| 0x324 | u0043AA60 | sub_41A470（.c 25205） | `sub_453530(_this[93384])`（arity 1，子系统） |
+| 0x32F | u0043AB11 | sub_4272B0（.c 33637） | `sub_49A150(_this+80708,op1)` |
+| 0x70 | u0041A750 | sub_41ED20（.c 28141） | 消息系统 `sub_45D660(_this+21324,…)` |
+| 0x71 | u0041A7B0 | sub_41ED80（.c 28158） | 消息系统 + 缓冲拷贝 |
+| 0x73 | u0041AB30 | sub_41F250（.c 28338） | 消息系统 |
+| 0x78 | u0041AD00 | sub_41F450（.c 28417） | `_this[21667]=op1`; `sub_459F40()` |
+| 0x79 | u0041AD30 | sub_41F490（.c 28427） | 消息系统 `sub_4563A0(_this+21324,…)` |
+| 0x1C1 | u0041B820 | sub_420070（.c 28953） | 消息系统 `sub_4563D0(_this+21324,…)` |
+| 0x212 | u00421090 | sub_423A30（.c 31357） | 消息部件 `_this[result+21585]+100=op2` |
+| 0x213 | u004210D0 | sub_423A80（.c 31372） | 消息部件 `_this[result+21585]+104/108=op3/op2` |
+| 0x25D | u00423123 | sub_425EF0（.c 32811） | 消息部件 `_this[result+21585]+276/280` |
+| 0x2DB | u004235C0 | sub_426500（.c 33073） | `_this[71744]=op1`; `sub_459F40()` |
+| 0x303 | 303 | sub_426A90（.c 33314） | 消息系统 `sub_456600(_this+21324,…)` |
+| 0x1A2 | u00428010 | sub_434F60（.c 42215） | 写内部字符串查找表 `_this+5452` |
+| 0x1A9 | u00428090 | sub_434FE0（.c 42229） | 写内部字符串查找表 `_this+5472` |
+
+> ⚠️ 诚实边界：上表**handler 行为已读体核对**，但"归类为引擎内部/子系统、对 VM 可见状态无影响"这一**判断本身是工作假设**——因为 `_this[offset]` 的长偏移字段语义尚未逐一定义到语义名。若后续发现某 offset 实为全局/脚本字段，需**升级为 VM 核心**改精确实现。这是 ADR-010 的高危信号提醒。
+
+---
 
 ## 回退默认 `sub_418E30` 的 opcode（age-shared 已定义，但本引擎未实现）
 

@@ -1,0 +1,17 @@
+{
+  "name": "amayui-emulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AGE 引擎 VM 的 TypeScript 重写：加载 .BIN 脚本并逐条执行（无界面，先跑到 TITLE）",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "run": "tsx src/run.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}
