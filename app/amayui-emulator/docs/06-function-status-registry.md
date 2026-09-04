@@ -155,6 +155,10 @@
 > ⚠️ **标题背景/版权真相**：`src/LOGO.txt` 用 `set-texture 5245 2a (SO006→slot 0x2a)`、`set-texture 5246 2b (SO005→slot 0x2b)` 设置背景/版权；
 > `src/TITLE.txt` 用 `set-texture 5272 4 (SO004→slot 4)` 设菜单。**set-texture slot(0x2a/0x2b/4) 与 draw-texture 纹理 id(0x30d40…)是两个索引空间**（`docs/09` §5）。
 
+> ⚠️ **淡入淡出 / 渐变（本次核查）**：引擎确有渐变/淡入淡出设施——`SetFade`、`SetLineFade`、`SetRandomFade`（实现含错误串，engine.cpp ~50082/51807/53243）、`FadeTimer`（vftable，~64894）、配置键 `"Fade"`（~5181）。
+> **常被忽略的渐变「颜色/α」配置指令**：`0x202`(u00420880→`sub_4231F0`→`sub_4AD0C0`) 与 `0x203`(u00420950→`sub_4232C0`→`sub_4ACF60`) 给绘制命令设**填充色 + alpha**（TITLE 里各用 49/50 次，如按钮/高亮/叠加层颜色）。二者已 `ignored`（NATIVE_OPS→stubSubsystem，只读操作数、不写 VM 态）。
+> **时间性淡入淡出**：脚本路径（LOGO→TITLE）**没有显式的逐帧 fade opcode**——淡入淡出更可能是引擎主循环内部的 `FadeTimer` 过渡（场景切换时）或配置驱动，而非脚本单条指令。需要渲染器层面按场景切换做 alpha 过渡（pacing）才能复现；模拟器当前未建模 `FadeTimer`。
+
 ---
 
 ## 3. 如何填充 / 更新本注册表

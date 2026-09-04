@@ -621,3 +621,134 @@ export function injectAcgfFixed(origAgfPath, pngPath, outPath, log = console.log
     return false;
   }
 }
+
+/**
+ * 把 AGF 字节解码成 top-down RGBA（供渲染直接用，不落盘）。
+ * 返回 `{ width, height, rgba }`；无法识别返回 null。
+ * 与 extractAgfToPng 的解析一致，但只返回内存 rgba，便于主进程经 IPC 送给 renderer。
+ * 复用模块内 readSection / lzssDecompress / parseWhBpp / extractPaletteRgb / enumerateNoheadPlans / strideFor。
+ */
+export function decodeAgfRgba(buf, log = console.log) {
+  if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
+  const reader = { buf, pos: 0 };
+  if (buf.length < 32) return null;
+  let isAcgf;
+  if (buf.subarray(0, 4).toString('latin1') === 'ACGF') isAcgf = true;
+  else if (buf.subarray(0, 4).equals(Buffer.alloc(4))) isAcgf = false;
+  else return null;
+  let alpha = null;
+  let hasAcif = false;
+  let w;
+  let h;
+  let bpp;
+  let metaData;
+  let bodyData;
+  if (isAcgf) {
+    const metaUnp = buf.readInt32LE(12);
+    const metaPak = buf.readInt32LE(20);
+    const metaOff = 24;
+    const metaPacked = buf.subarray(metaOff, metaOff + metaPak);
+    if (metaPacked.length !== metaPak) return null;
+    metaData = metaUnp === metaPak ? metaPacked : lzssDecompress(metaPacked, metaUnp);
+    [w, h, bpp] = parseWhBpp(metaData);
+    const bodyHdrPos = metaOff + metaPak;
+    const bh = buf.subarray(bodyHdrPos, bodyHdrPos + 12);
+    if (bh.length < 12) return null;
+    const bodyUnp = bh.readInt32LE(4);
+    const bodyPak = bh.readInt32LE(8);
+    reader.pos = bodyHdrPos + 12;
+    bodyData = readSection(reader, bodyUnp, bodyPak);
+    const end = reader.pos;
+    const tail = buf.subarray(end, end + 2048);
+    const idx = tail.indexOf(Buffer.from('ACIF', 'latin1'));
+    if (idx >= 0) {
+      const acifOff = end + idx;
+      const aUnp = buf.readInt32LE(acifOff + 4 + 24);
+      const aPak = buf.readInt32LE(acifOff + 4 + 24 + 4);
+      if (aUnp === w * h) {
+        reader.pos = acifOff + 4 + 24 + 8;
+        alpha = readSection(reader, aUnp, aPak);
+        hasAcif = true;
+      }
+    }
+  } else {
+    const metaUnp = buf.readInt32LE(12);
+    const metaPak = buf.readInt32LE(20);
+    const plans = enumerateNoheadPlans(reader, buf.length, metaUnp, metaPak);
+    if (!plans.length) return null;
+    const plan = plans.reduce((a, b) => (b.score > a.score ? b : a));
+    w = plan.w;
+    h = plan.h;
+    bpp = plan.bpp;
+    metaData = plan.metaData;
+    reader.pos = plan.bodyHdrPos + plan.bodyHdrSize;
+    bodyData = readSection(reader, plan.bodyUnp, plan.bodyPak);
+  }
+  let palette = null;
+  if (bpp === 8) {
+    palette = extractPaletteRgb(metaData);
+    if (!palette) {
+      if (metaData.length >= 1024) {
+        const palData = metaData.subarray(metaData.length - 1024);
+        palette = [];
+        for (let i = 0; i < 256; i++) {
+          palette.push([palData[i * 4 + 2], palData[i * 4 + 1], palData[i * 4]]);
+        }
+      } else {
+        palette = [];
+        for (let i = 0; i < 256; i++) palette.push([i, i, i]);
+      }
+    }
+  }
+  const s = strideFor(w, bpp);
+  const need = s * h;
+  if (bodyData.length < need) {
+    bodyData = Buffer.concat([bodyData, Buffer.alloc(need - bodyData.length)]);
+  }
+  const applyAlpha = hasAcif && alpha && alpha.length === w * h;
+  const rgba = Buffer.alloc(w * h * 4);
+  if (bpp === 24) {
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * s;
+      for (let x = 0; x < w; x++) {
+        const d = (y * w + x) * 4;
+        const s2 = srcRow + x * 3;
+        rgba[d] = bodyData[s2 + 2];
+        rgba[d + 1] = bodyData[s2 + 1];
+        rgba[d + 2] = bodyData[s2];
+        rgba[d + 3] = applyAlpha ? alpha[y * w + x] : 255;
+      }
+    }
+  } else if (bpp === 32) {
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * s;
+      for (let x = 0; x < w; x++) {
+        const d = (y * w + x) * 4;
+        const s2 = srcRow + x * 4;
+        rgba[d] = bodyData[s2 + 2];
+        rgba[d + 1] = bodyData[s2 + 1];
+        rgba[d + 2] = bodyData[s2];
+        rgba[d + 3] = bodyData[s2 + 3];
+      }
+    }
+    if (applyAlpha) {
+      for (let i = 0; i < w * h; i++) rgba[i * 4 + 3] = alpha[i];
+    }
+  } else if (bpp === 8) {
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * s;
+      for (let x = 0; x < w; x++) {
+        const c = palette[bodyData[srcRow + x]];
+        const d = (y * w + x) * 4;
+        rgba[d] = c[0];
+        rgba[d + 1] = c[1];
+        rgba[d + 2] = c[2];
+        rgba[d + 3] = applyAlpha ? alpha[y * w + x] : 255;
+      }
+    }
+  } else {
+    log(`[decodeAgfRgba] 不支持 bpp=${bpp}`);
+    return null;
+  }
+  return { width: w, height: h, rgba };
+}

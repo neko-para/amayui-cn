@@ -364,9 +364,13 @@ const op_string_resource_id: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, id);
 };
 
-/** 0x106 等：引擎配置 getter（读 _this[字段] 写 op1）。无界面态默认返回 0。 */
+/** 0x106 等：引擎配置 getter（读 _this[字段] 写 op1）。各 opcode 读不同字段，此处按 opcode 读取建模值。 */
 const op_get_engine_value: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+  // 仅 0x130 已知读 _this[96983]（engine.cpp sub_42F7A0=38664；构造函数默认置 1，见 Engine.engineValues）。
+  // SYSTEM4 据此决定是否执行 `call-script LOGO`（开场版权/背景 = SO006+SO005）。其余 getter 无界面态保持 0。
+  let v = 0;
+  if (c.instr.opcode === 0x130) v = c.e.engineValues.get(96983) ?? 0;
+  writeIntOperand(c.e, c.frame, c.instr, 1, v);
 };
 
 const stubSubsystem: OpHandler = (c) => {
@@ -485,8 +489,11 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x207, stubSubsystem], // 纹理 op（sub_423480）
   [0x208, stubSubsystem], // 图形子系统方法（sub_49ED60(_this+80708, op1,…)）
   [0x1f7, stubSubsystem], // texture 相关（sub_422BC0，读 op1/2）
+  [0x1f8, stubSubsystem], // create-texture（sub_422C20，造纹理对象；LOGO 场景用到）
+  [0x1fa, stubSubsystem], // u00420480（release 纹理/层；LOGO 场景用到）
   [0x1fb, stubSubsystem],
   [0x1f9, stubSubsystem],
+  [0x20f, stubSubsystem], // u00420E40（LOGO.MPG 视频句柄；LOGO 场景用到）
   [0x1a5, stubSubsystem],
   [0xcd, stubSubsystem],
   [0xc8, stubSubsystem],

@@ -10,6 +10,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'node:path';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+// 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ -> ../../.. = 仓库根
+import { decodeAgfRgba } from '../../../scripts/agf/format.js';
 
 // dist/electron/main.cjs -> app/amayui-emulator/dist/electron -> 仓库根 = 上4级
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
@@ -23,7 +25,7 @@ function createWindow(): void {
   win = new BrowserWindow({
     width: 1280,
     height: 720,
-    useContentSize: true, // 内容区 1280×720；renderer 在 Pixi 1920×1080 画布上缩放显示
+    useContentSize: true, // 内容区 1280×720（真实视口，见 docs/10 §4）；renderer 的 Pixi 画布同为 1280×720
     title: '天結いキャッスルマイスター',
     backgroundColor: '#000000',
     resizable: false,
@@ -34,6 +36,9 @@ function createWindow(): void {
     },
   });
   win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  // 强制内容区为 1280×720（16:9）。useContentSize 在 Windows DPI 缩放下可能不准（electron#10659），
+  // 显式 setContentSize 保证内容区比例正确，避免画布填满后仍因内容区非 16:9 出现黑边。
+  win.setContentSize(1280, 720);
   win.on('closed', () => {
     win = null;
   });
@@ -50,6 +55,15 @@ app.whenReady().then(() => {
   ipcMain.handle('read-file', async (_e, p: string) => {
     const b = await fileSource.readFile(p);
     return Array.from(b);
+  });
+  // 按统一资源 id 取一张图像：resolveEntry(id) -> AGF 字节 -> 解码成 top-down RGBA
+  ipcMain.handle('image', async (_e, id: number) => {
+    const r = await fileSource.readById(id);
+    if (!r) return null;
+    const img = decodeAgfRgba(r.data);
+    if (!img) return null;
+    // Buffer 经 structured clone 到 renderer 变 Uint8Array
+    return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
   createWindow();
   app.on('activate', () => {

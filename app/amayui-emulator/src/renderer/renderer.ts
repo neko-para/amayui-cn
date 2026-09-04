@@ -15,6 +15,11 @@ async function main(): Promise<void> {
   const e = new Engine(native);
   e.fileSource = src;
 
+  // 预载标题所需的图像（LOGO 背景/版权 + 主菜单），避免 set-texture 后 draw 立即执行时的异步竞态。
+  for (const imgid of [0x5245, 0x5246, 0x5272, 0x5273]) {
+    await native.preloadImage(imgid);
+  }
+
   try {
     const boot = await src.readScript(0);
     if (!boot) {

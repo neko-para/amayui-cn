@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld('api', {
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
   /** 读任意文件原始字节（number[]）。 */
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+  /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
+  image: (id: number) => ipcRenderer.invoke('image', id),
 });

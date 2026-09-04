@@ -75,9 +75,19 @@
 
 - AGF 解码工具：`scripts/agf/format.js`（`extractAgfToPng(agfPath, outDir)`）已在本工程 JS 实现，`scripts/agf/png.js`、`cli.js`。
 
-### 3.3 当前渲染效果
-`PixiBackend.drawTexture(args)` 仍用**原始 raw 参数**，把 draw-texture 画成**按纹理号着色的占位矩形**（布局/坐标即游戏原布局，图像非真实）。
-窗口 1280×720（内容区），Pixi 内部 1920×1080 画布缩放到窗口显示。
+### 3.3 当前渲染效果（**已接入真实图像 + 正确放置**）
+- `image(id)` IPC（主进程）：`resolveEntry(id)` → AGF 字节 → `decodeAgfRgba` → `{width,height,rgba}`。
+- `PixiBackend`：`setTexture([imgid,slot,color])` 绑定 `slot→该 imgid 纹理`；`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])`
+  用 `layer` 取绑定纹理，按 **op3-6=源裁剪矩形**、**op7/op8=目标屏幕位置**、1:1 贴上；场景切换（脚本名变化）清空绘制层。
+- **视口 1280×720**（背景源(0,0,1280,720)铺满、按钮最大(1263,710)），Pixi 画布与窗口均 1280×720。
+- 无界面光栅验证（真实 VM 到 TITLE）：产出与真实标题菜单**布局吻合**的渲染（标题 logo、5 个**散布**按钮、版权行、背景）——见 `docs/10` §4。
+- 标题图像 id（`renderer.ts` 预载）：0x5245(SO006 背景)/0x5246(SO005 版权)/0x5272(SO004 菜单)/0x5273(SO004A)。
+- **LOGO 场景已接入**：`SYSTEM4` 第 146 行 `call-script LOGO(0x5262)` 仅在 `_this[96983]` 为真时执行（opcode 0x130）。**96983 的“为何为 1”**：engine.cpp 引擎构造函数/初始化（行 22404，字节偏移 387932）把该字段默认置 **1**；另一处重置（行 34632）清 0。模拟器已把 `_this[96983]` 建模为 `Engine.engineValues`（构造函数默认 1），`op_get_engine_value`(0x130) 读它——**不是硬编码返回 1**。故 LOGO 在启动链里被 set-texture（SO006/SO005）。
+  LOGO 专用 opcode `0x1f8(create-texture)/0x1fa(u00420480)/0x20f(u00420E40 视频句柄)` 已在 `ops.ts` 注册为桩，LOGO 可跑通、启动链仍到 TITLE。
+- **窗口/DPI 适配**：视口 1280×720。窗口 `useContentSize:true` + **`win.setContentSize(1280, 720)`** 强制内容区为 16:9（useContentSize 在 Windows DPI 缩放下可能不准，electron#10659；不显式 setContentSize 会导致内容区比例错、黑边）。renderer 固定渲染 1280×720 + `autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清），画布正好填满 16:9 内容区，无黑边；DPI 只放大物理尺寸不改变比例。已移除 `resizeTo`/`#fitView` 的 letterbox 方案（会因内容区非 16:9 留黑边）。
+- **淡入淡出 / 渐变**：引擎有 `SetFade/SetLineFade/SetRandomFade/FadeTimer/"Fade"` 设施。**常被忽略的渐变「颜色/α」配置指令 = `0x202`(sub_4AD0C0) / `0x203`(sub_4ACF60)**（设填充色+α，TITLE 各用 49/50 次）；时间性淡入淡出更像引擎内部 `FadeTimer` 场景切换过渡，脚本路径无显式 fade opcode（见 `docs/06` §2.3.2）。
+- ⏳ **角色图层未接入**：真实标题左侧有角色立绘，但 TITLE 帧只 set-texture 到 slot 4(SO004)，角色来自单独的图/L2D/角色显示子系统，尚未定位。
+- ⏳ **LOGO 展示时长**：LOGO→INIT→TITLE 在 VM 循环里同步连跑，renderer 按脚本名清空绘制层，LOGO 背景/版权只闪现；若要用户看清步骤1，需渲染器在场景间让出帧（pacing）。
 
 ---
 
@@ -118,12 +128,13 @@
 
 ## 6. 待办（按优先级）
 
-1. **确认 set-texture slot ↔ draw-texture 纹理 id(0x30d40) 的生成关系**（决定逐碎片精确渲染，或改走整页复合图）。
-2. **图像渲染**：
-   - 主进程加 `image(id)` IPC：按统一 id → `resolveEntry` → AGF 字节（松散或 ALF 切片）→ 解码 PNG → 发给 renderer。
-   - renderer（PixiBackend）用 `Texture.from(createImageBitmap(blob))` 包成 Texture。
-   - 按序列展示：SO006 背景 + SO005 版权叠加 →（跳过/暂缓视频）→ SO004 菜单（SO004A 不管）。
-3. **确定真实屏幕分辨率**（1280×720 还是更大 → 影响窗口/画布与按钮位置），见 §7。
+1. **slot↔AGF 文件映射已实证**（`set-texture <imgid> <slot>` 即唯一绑定，`[5*slot+466]=imgid`，imgid→resolveEntry→文件名；见 **`docs/10`**）；draw-texture 的 `tex` 为图形子系统独立句柄。剩余「tex 句柄→子图切块」仅在逐碎片渲染时才需追。
+2. **图像渲染（已接入，含正确放置）**：
+   - ✅ 主进程 `image(id)` IPC：统一 id → `resolveEntry` → AGF 字节 → `decodeAgfRgba` → `{width,height,rgba}` 给 renderer。
+   - ✅ renderer：`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])` 按 **op3-6=源裁剪、op7/op8=目标位置、1:1** 贴上（按钮散布位置来自数组 `[44e 3e0 365 2d9 453]`/`[126 192 1e5 21f 22a]`）；`setTexture` 绑定 slot→imgid 纹理。
+   - ✅ 视口 1280×720；无界面光栅已验证标题布局（logo+散布按钮+版权+背景）吻合真实菜单。
+   - ⏳ **角色图层**：左侧角色立绘来源未定位（TITLE 帧无对应 set-texture；疑 L2D/角色显示子系统），待接。
+3. **真实屏幕分辨率（已定 1280×720）**：背景源(0,0,1280,720)铺满、按钮最大(1263,710)均在 1280×720 内；之前「按钮延伸到 x≈1596→1920×1080」的判断来自错误的统一列 dest 读数，已作废。见 `docs/10` §4。
 4. **操作数解码**：把 `draw-texture`/`set-texture`/`draw-string` 改为 `readIntOperand/readStringOperand` 解码后再调类型化 native 方法（当前是 raw 直传）。
 5. （后置）**视频（步骤2）**、**Live2D（SO004A）**、**输入**（让菜单可选择）——均属较大子系统，需独立处理。
 
@@ -131,9 +142,9 @@
 
 ## 7. 待确认 / 开放问题
 
-- **set-texture slot ↔ draw-texture 纹理 id**：LOGO 的 `set-texture … slot 0x2a/0x2b`（存 SO006/SO005）与 `draw-texture 0x30d40 … layer 0x2a/0x2b` 的纹理 id(0x30d40) 生成/映射关系未定（`docs/09` §5）。
-- **真实屏幕分辨率**：config 默认 640×480 但与 draw 坐标（背景 1280×720、按钮延伸到 ~1596 宽）不符。怀疑 **1920×1080** 或类似；需确认后调整窗口/画布与坐标。
-- **纹理 id→图像 id 表在启动链的填充**：数据载入 op(0xAB/0x190/0x19F/0x1A1) 只在 APPEND 脚本，启动→TITLE 路径没有——标题背景纹理的精确 imgid 仍需继续追引擎 init（或采纳整页复合图方案）。
+- **set-texture slot ↔ draw-texture 纹理 id(0x30d40) 是不同索引空间（已实证）**：slot 由 `set-texture <imgid> <slot>` 绑定到文件（`[5*slot+466]=imgid`，imgid→resolveEntry→SOxxx.AGF）；draw-texture 的 `tex`(0x30d40/0xa/0x64…) 是图形子系统纹理对象句柄（`sub_4AAD40` 按键查），与文件无直接映射。**绑定完全由 set-texture 指令决定**，见 **`docs/10`**（含标题启动路径 slot↔AGF 实测表，并修正 0x5247=LOGO.MPG）。
+- **真实屏幕分辨率（已定 1280×720）**：config 默认 640×480；实际背景源(0,0,1280,720)铺满、按钮最大(1263,710)，视口 1280×720。之前「1920×1080」判断源于错误的均匀列 dest 读数（x≈1596），已作废（正确模型 op3-6=源裁剪、op7/op8=目标位置）。见 `docs/10` §4。
+- **纹理 id→图像 id 表在启动链的填充**：数据载入 op(0xAB/0x190/0x19F/0x1A1) 只在 APPEND 脚本，启动→TITLE 路径没有——标题纹理的 imgid 由 `set-texture` 直接决定（slot↔imgid 绑定，见 docs/10），渲染已按「layer→slot→文件 + 按 dest 裁源」实现，无需再追该表。
 - **视频（步骤2）**：`TITLE.MTN`，文件格式/播放方案未定。
 - **操作数解码细节**：`draw-texture` 的 p/q 参数语义。
 

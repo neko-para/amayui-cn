@@ -94,6 +94,15 @@ export class NodeFileSource implements FileSource {
     return null;
   }
 
+  /** 按统一文件 id 读出原始字节（含文件名）。用于资源（如图像 AGF / 视频 MPG）读取。 */
+  async readById(id: number): Promise<{ name: string; data: Uint8Array } | null> {
+    const r = await this.resolveEntry(id);
+    if (!r) return null;
+    const data = await this.#readEntry(r.entry, r.archives);
+    if (!data) return null;
+    return { name: r.entry.name, data };
+  }
+
   async readScript(index: number): Promise<ScriptBytes | null> {
     const r = await this.resolveEntry(index);
     if (!r) return null;

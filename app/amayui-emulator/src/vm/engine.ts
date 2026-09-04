@@ -63,6 +63,11 @@ export class Engine {
   callLink = -1;
   callFlag = 0;
 
+  // 引擎配置字段（稀疏 _this 索引，fidelity 到 engine.cpp）。默认值与引擎构造函数一致：
+  // 构造函数/初始化（engine.cpp 22404，字节偏移 387932 = _this[96983]）把 96983 置 1；另一处重置（34632）清 0。
+  // SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。
+  engineValues = new Map<number, number>([[96983, 1]]);
+
   constructor(native: NativeBridge) {
     this.native = native;
     for (let i = 0; i < 40; i++) this.frames.push(new Frame());
