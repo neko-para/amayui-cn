@@ -23,8 +23,7 @@
 
 ## 2. 首批记录（发动机核心 + 启动链相关，诚实反映当前状态）
 
-> **说明**：当前项目尚未开始编码（M0 待做）。因此绝大多数条目为 `studying`（已读/在分析，但**尚未编译成 TS 实现**）或 `untouched`。**没有一条标 `rewritten`**（因为还没写）。
-> 下列「子系统类」函数虽大概率可忽略，但**证据目前只是启发式**（age-shared 具名 + 调用计数特征），**尚未逐个读 handler 体确认**——故暂标 `studying`，待 M2 正式确认后转 `ignored`。**这正体现了 ADR-010 的严谨性：不凭感觉跳过。**
+> **说明**：本 §2 首批/子系统记录写于工程早期（当时 M0 未编码）。**当前 M0–M3 已达成**（解释器能跑到 TITLE，`npm test` 12/12）；§2 的 `studying` 条目大多已实现或已确认，但**尚未逐条回填 `rewritten`**（按 §3 的「旧条目待 M1 回填」约定）。**本次会话新增的确认见 §2.3。**
 
 | 函数（原引擎） | 语义名 | 状态 | 证据 / 备注 |
 |---|---|---|---|
@@ -113,6 +112,48 @@
 | 0x1a9 | u00428090 | `sub_434FE0`(42229) | ignored | 写内部字符串查找表 `_this+5472` |
 | 0x1a3 | string-lookup-set | `sub_42DF40`(raw 38443) | **studying** | 读 op1 → 查 `_this+5452` str 表 → 写回 op1；M1 细化 |
 | 0x6e/0x6f/0x72… | show-text/end-text-line/wait-for-input | — | native | 子系统（在 `NATIVE_OPS` 桩） |
+
+---
+
+## 2.3 数据模型 / 读取逻辑 / 图形子系统（本次会话确认，`docs/09` 详细实证）
+
+> **说明**：本节记录对「归档读取」「资源 id→文件」「纹理映射表」「图形子系统」相关函数的**已读 handler 体确认结论**。
+> 其中归档/资源读取已在 TS 侧实现（`src/script/alf.ts` + `src/arch/nodeFileSource.ts`）→ 标 `rewritten`；
+> 图形子系统（create/set/draw-texture 等）已确认**只读操作数 + 排绘制命令，不写 VM 态** → 标 `ignored`（renderer 处理）。
+
+### 2.3.1 归档 / 资源读取（已在 TS 实现 → `rewritten`）
+
+| 函数（原引擎） | 语义名 | 状态 | 证据 / 备注（TS 实现） |
+|---|---|---|---|
+| `sub_414AC0`(0x414AC0, 21799) | `loadArchiveIndex(SYS4INI/AAI)` | `rewritten` | 打开文件→读 0x12C 头→判 `S3IN/S4IN`(压缩)/`S3IC/S4IC`→解压 TOC→交 `sub_454D30`。TS：`src/script/alf.ts` `parseSys4Index` / `parseAppendIndex`。 |
+| `sub_454D30`(0x454D30, 66274) | `parseTOC` | `rewritten` | 建资源管理器：`arcCount+archives[](256B/项)+filCount+files[](80B/项: name[64]+arch_idx+file_idx+offset+length)`；`offset` 先置 -1 表「松散」。TS：`alf.ts` `parseSys4Toc`（S4TOCARCHDR/S4TOCFILENTRY 布局一致）。 |
+| `sub_4559C0`(0x4559C0, 66810) | `fileId→句柄` | `rewritten` | `id&0xFF000000`→APPEND 包（`_this[pack#+3082]`，低24位=包内索引）；否则本体 `files+80*id`，松散优先否则归档切片(`archives[archive_index]`+`offset/length`)。TS：`alf.ts` `resolveFileEntry` + `nodeFileSource.ts` `resolveEntry`/`#readArchiveSlice`。 |
+| `sub_455000`(0x455000) | `name→fileId` | `studying` | 按名找文件返回 id；TS 侧暂以 id 直读（`readScript(index)`），不依赖按名查询。 |
+| `sub_455560`/`sub_455420`/`sub_455620` | file lock/read/unlock | `studying` | 线程安全读句柄；TS `nodeFileSource.ts` 以异步 fs 代替，无需锁。 |
+
+### 2.3.2 图形 / 纹理子系统（已确认不写 VM 态 → `ignored`，renderer 处理）
+
+| 函数（原引擎） | 语义名 | 状态 | 证据 / 备注 |
+|---|---|---|---|
+| `op_create_texture_422C20`(0x1F8, 30797) | `create-texture` | `ignored` | 读 op1-4 → `(_this+80708)->sub_4A2C10(id,w,h,?)` 建 CTexture；**只读操作数，不写 VM 态**。 |
+| `op_set_texture_422CB0`(0x1F9, 30827) | `set-texture` | `ignored` | 读 op1(imgid)/op2(slot)/op3(color) → `sub_4559C0` 取文件 + `sub_4A3800` 把 imgid 写进图形表 `[5*slot+466]`；**引擎内部图形态，不写 VM 脚本态**。 |
+| `op_draw_texture_422E70`(0x1FB, 30904) | `draw-texture` | `ignored` | 读 op1-8 → `sub_4ACE50` 排一条绘制命令（`result[1..11]`）+ `_this[11627]=1` 置脏；**只排队绘制，不写 VM 态**。 |
+| `sub_4A3800`(0x4A3800, 121932) | `setTextureLoader` | `studying` | `sub_49E9D0` 载图到 slot a4，成功后 `[5*slot+466]=imgid`、`[467]=color`；`sub_410160`/`op_set_texture`/`sub_425310` 调用。纹理映射表端点。 |
+| `sub_49E9D0` / `sub_49E980` | texture 载入/创建 | `studying` | 图形对象上建/载纹理；引擎内部。 |
+| `sub_499BC0`(0x499BC0, 114926) | `initTextureTable` | `ignored` | 1000×5int 表，image id 初值 -1；构造函数里 `sub_40DF10` 调它。 |
+| `sub_410160`(0x410160, 19155) | `loadDataFile(含纹理预载)` | `studying` | 通用数据文件载入器：`sub_438120/sub_437980` 读入→拷进全局数组/100 角色图/1000 纹理表，`a6` 时跑**纹理预载循环**(for texid 0..999 判 `[5*texid+151525]==1` 且 `[5*texid+151523]>=0` → `sub_4A3800`)。数据载入 op(0xAB/0x190/0x19F/0x1A1) 只在 APPEND 脚本。 |
+| `sub_430380`(0x216, 39259) | `getTextureImageId` | `studying` | `op1 = _this[5*op2+81174]`（纹理 id→图像 id 查询）。 |
+| `sub_455750`(0x455750, 66738) | `loadAppendPacks(*.AAI)` | `ignored` | `FindFirstFileA("*.AAI")` → 逐个 `sub_401100` 载入注册 `_this[pack#+3082]`。引擎侧加载，模拟器在 `nodeFileSource` 以 `#loadAppends()` 复刻（TS 侧）。 |
+| `sub_401100`(0x401100, 7850) | `loadAppendAAI` | `ignored` | 读 0x10C(268B) 头验 `S4AC` 魔数 + 版本；**包号=头部偏移 264**。模拟器 `parseAppendIndex`。 |
+
+### 2.3.3 纹理 id→图像 id 表（核心数据模型，`docs/09` §4）
+
+- 表：`_this[5*texid + 81174]`（DWORD 索引，=byte `324696+20*texid`），1000 项×20B；复制链 `[81174]→[86174]→[151523]`。
+- **填充者**：`set-texture`(0x1F9→`sub_4A3800`→`sub_49E9D0` 写 `[5*slot+466]=imgid`) + 数据载入(`sub_410160` 读数据文件)。
+- 数据载入 op(0xAB/0x190/0x19F/0x1A1) **只在 APPEND(DLC) 脚本**，**不在启动→TITLE 路径**。
+
+> ⚠️ **标题背景/版权真相**：`src/LOGO.txt` 用 `set-texture 5245 2a (SO006→slot 0x2a)`、`set-texture 5246 2b (SO005→slot 0x2b)` 设置背景/版权；
+> `src/TITLE.txt` 用 `set-texture 5272 4 (SO004→slot 4)` 设菜单。**set-texture slot(0x2a/0x2b/4) 与 draw-texture 纹理 id(0x30d40…)是两个索引空间**（`docs/09` §5）。
 
 ---
 
