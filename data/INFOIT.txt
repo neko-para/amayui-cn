@@ -777,7 +777,7 @@ jmp label_00002fb0
 
 label_000031e8
 add (local-int b3f7) 1d4c0 4ce
-u00420950 (local-int b3f7) 0 ff 808080
+set-draw-color-alpha (local-int b3f7) 0 ff 808080
 add (local-int b3f7) 1d4c0 4e2
 draw-texture (local-int b3f7) c0 3cd 431 6d 12 78 89
 add (local-int b3f7) 1d4c0 4e3
@@ -1655,9 +1655,9 @@ label_000083d0
 add (local-int b3f7) 1d4c0 3e8
 u00420270 (local-int b3f7) 7d0
 342 0
-u00420480 c4
-u00420480 c5
-u00420480 c6
+release-texture c4
+release-texture c5
+release-texture c6
 eq (local-int b3f7) (local-int 7e0) 0
 jcc (local-int b3f7) ffffffff label_00008488
 mov (global-int 708002) 0

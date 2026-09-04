@@ -12,20 +12,20 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff ffffff
+set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) ffffff
 mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc 1 ffffffff label_00000244
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 c8 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 c8 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00000284
 
 label_00000244
-u0043AA50 19258 0 c8 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 c8 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00000284
@@ -51,7 +51,7 @@ u0042B990 (global-float 11) (float 0)
 u0042B990 (global-float 12) (float 0)
 u0042B990 (global-float 13) (float 0)
 u0042B990 (global-float 14) (float 0)
-u0043AA40 0 0 ff ffffff
+set-vertex-color 0 0 ff ffffff
 mov (global-int 56d62) 21
 mov (global-int 519afb) 14
 mov (global-int 519af9) 1

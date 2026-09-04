@@ -698,7 +698,7 @@ ret
 label_00002c90
 u00420270 1d4c0 3e8
 u0043AA20 1d4c0 (local-float 0) (local-float a) (local-float 14) (local-int 43c) (local-int 446) (local-float 1e) (local-float 28) a 0
-u0043AA40 1d4c0 0 c0 0
+set-vertex-color 1d4c0 0 c0 0
 jcc (local-int 411) ffffffff label_00003844
 lookup-array (local-ptr 2) (global-int 510439) (local-int 411)
 gr (local-int 451) (local-ptr 2) 0
@@ -1048,11 +1048,11 @@ ret
 label_00004ab0
 u00420270 1d4c0 3e8
 u00420270 1fbd0 12c
-u00420480 b6
-u00420480 c0
-u00420480 c1
-u00420480 c2
-u00420480 c3
-u00420480 c4
-u00420480 384
+release-texture b6
+release-texture c0
+release-texture c1
+release-texture c2
+release-texture c3
+release-texture c4
+release-texture 384
 exit

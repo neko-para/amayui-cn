@@ -19,13 +19,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_000001f8
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 1f4 ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 1f4 ff 0
 jmp label_00000248
 
 label_000001f8
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 1f4 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 1f4 0 0
 
 label_00000248
 u00422EA0 10001
@@ -63,7 +63,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 0 0 ff ffffff
+set-vertex-color 0 0 ff ffffff
 draw-texture 1 2a 0 0 1a1 1a1 1af 97
 draw-texture 2 2a 1a3 0 110 132 90 d4
 draw-texture 3 2a 0 1a3 151 22 1da 18b
@@ -84,21 +84,21 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 64 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 64 0 ff 0
+set-vertex-color 64 0 ff 0
 sub (local-int d) 0 1
-u0043AA50 64 0 12c 0 (local-int d)
+set-vertex-color-alpha 64 0 12c 0 (local-int d)
 sub (local-int d) 0 1
-u00420950 1 0 0 (local-int d)
+set-draw-color-alpha 1 0 0 (local-int d)
 sub (local-int d) 0 1
-u00420880 1 c8 190 80 (local-int d)
+set-draw-color 1 c8 190 80 (local-int d)
 sub (local-int d) 0 1
-u00420950 2 0 0 (local-int d)
+set-draw-color-alpha 2 0 0 (local-int d)
 sub (local-int d) 0 1
-u00420880 2 5dc 12c ff (local-int d)
+set-draw-color 2 5dc 12c ff (local-int d)
 sub (local-int d) 0 1
-u00420950 3 0 0 (local-int d)
+set-draw-color-alpha 3 0 0 (local-int d)
 sub (local-int d) 0 1
-u00420880 3 708 c8 ff (local-int d)
+set-draw-color 3 708 c8 ff (local-int d)
 mov (local-int 0) 0
 jmp label_00000ac8
 
@@ -118,11 +118,11 @@ sub (local-int d) 0 46
 u00420770 (local-int c) (local-int d) 0 0
 u004215D0 (local-int c) 5dc 1f4 0 0 0
 sub (local-int d) 0 1
-u00420950 (local-int c) 0 0 (local-int d)
+set-draw-color-alpha (local-int c) 0 0 (local-int d)
 mul (local-int d) (local-int 0) 32
 add (local-int e) 1f4 (local-int d)
 sub (local-int f) 0 1
-u00420880 (local-int c) (local-int e) 12c ff (local-int f)
+set-draw-color (local-int c) (local-int e) 12c ff (local-int f)
 jmp label_00000aac
 
 label_00000d10
@@ -258,7 +258,7 @@ mov (global-int 3f53) 1
 
 label_00001424
 mov (global-int 3f52) 0
-u0043AA50 64 0 5dc ff 0
+set-vertex-color-alpha 64 0 5dc ff 0
 u00422EA0 10001
 u00415BF0
 u00416270

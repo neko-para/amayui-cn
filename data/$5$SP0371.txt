@@ -141,7 +141,7 @@ eq (local-int 0) (global-int 1398) 1
 jcc (local-int 0) ffffffff label_00000e20
 add (local-int 0) 19834 1
 sub (local-int 1) 0 1
-u00420880 (local-int 0) 0 c8 0 (local-int 1)
+set-draw-color (local-int 0) 0 c8 0 (local-int 1)
 
 label_00000e20
 u00416270
@@ -180,7 +180,7 @@ eq (local-int 0) (global-int 1398) 1
 jcc (local-int 0) ffffffff label_00001024
 add (local-int 0) 19834 1
 sub (local-int 1) 0 1
-u00420880 (local-int 0) 0 c8 ff (local-int 1)
+set-draw-color (local-int 0) 0 c8 ff (local-int 1)
 
 label_00001024
 u00416270
@@ -658,13 +658,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_0000266c
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 1f4 ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 1f4 ff 0
 jmp label_000026bc
 
 label_0000266c
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 1f4 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 1f4 0 0
 
 label_000026bc
 u00422EA0 10001
@@ -1032,13 +1032,13 @@ call label_00026830
 u00416120
 call label_000245b0
 jcc 0 ffffffff label_00003a20
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 640 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00003a60
 
 label_00003a20
-u0043AA50 19258 0 640 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00003a60
@@ -4786,20 +4786,20 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff ffffff
+set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) ffffff
 mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc 1 ffffffff label_00010de4
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00010e24
 
 label_00010de4
-u0043AA50 19258 0 4b0 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00010e24
@@ -4820,13 +4820,13 @@ mov (global-int f8006) 50002df
 call label_00026830
 u00416120
 jcc 0 ffffffff label_00010f90
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00010fd0
 
 label_00010f90
-u0043AA50 19258 0 4b0 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00010fd0
@@ -5187,20 +5187,20 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff 0
+set-vertex-color 19258 0 ff 0
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) 0
 mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc 1 ffffffff label_00012578
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_000125b8
 
 label_00012578
-u0043AA50 19258 0 4b0 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_000125b8
@@ -5208,9 +5208,9 @@ mov (global-int 4fd3) (global-int 4fd5)
 mov (global-int f8047) 1
 call label_00024f6c
 u00420270 (global-int f8024) a
-u00420480 (global-int 3f57)
-u00420480 (global-int 3f58)
-u00420480 (global-int 3f59)
+release-texture (global-int 3f57)
+release-texture (global-int 3f58)
+release-texture (global-int 3f59)
 mov (global-int 3f92) 0
 mov (global-int 3fa6) 0
 mov (global-int 3fce) 0
@@ -5577,13 +5577,13 @@ call label_00026830
 u00416120
 call label_000245b0
 jcc 0 ffffffff label_00013b2c
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 640 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00013b6c
 
 label_00013b2c
-u0043AA50 19258 0 640 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00013b6c
@@ -9271,20 +9271,20 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff ffffff
+set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) ffffff
 mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc 1 ffffffff label_00020988
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_000209c8
 
 label_00020988
-u0043AA50 19258 0 4b0 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_000209c8
@@ -9305,13 +9305,13 @@ mov (global-int f8006) 50002e7
 call label_00026830
 u00416120
 jcc 0 ffffffff label_00020b34
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_00020b74
 
 label_00020b34
-u0043AA50 19258 0 4b0 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 4b0 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_00020b74
@@ -9825,20 +9825,20 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff 0
+set-vertex-color 19258 0 ff 0
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) 0
 mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc 1 ffffffff label_000229b8
-u0043AA40 19258 (global-int 4fd1) 0 (global-int 4fd5)
-u0043AA50 19258 0 640 (global-int 4fd4) (global-int 4fd5)
+set-vertex-color 19258 (global-int 4fd1) 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 (global-int 4fd4) (global-int 4fd5)
 mov (global-int 4fd2) (global-int 4fd4)
 jmp label_000229f8
 
 label_000229b8
-u0043AA50 19258 0 640 0 (global-int 4fd5)
+set-vertex-color-alpha 19258 0 640 0 (global-int 4fd5)
 mov (global-int 4fd2) 0
 
 label_000229f8
@@ -9846,9 +9846,9 @@ mov (global-int 4fd3) (global-int 4fd5)
 mov (global-int f8047) 1
 call label_00024f6c
 u00420270 (global-int f8024) a
-u00420480 (global-int 3f57)
-u00420480 (global-int 3f58)
-u00420480 (global-int 3f59)
+release-texture (global-int 3f57)
+release-texture (global-int 3f58)
+release-texture (global-int 3f59)
 mov (global-int 3f92) 0
 mov (global-int 3fa6) 0
 mov (global-int 3fce) 0
@@ -10121,12 +10121,12 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19640 0 (global-int f807d) 0
+set-vertex-color 19640 0 (global-int f807d) 0
 jmp label_00023ad4
 
 label_00023a0c
 draw-texture 19640 11 0 0 43e 95 5d 22c
-u00420950 19640 0 (global-int f807d) (global-int a9db)
+set-draw-color-alpha 19640 0 (global-int f807d) (global-int a9db)
 add (local-int 0) 19640 1
 draw-texture (local-int 0) 11 0 97 444 9a 5a 229
 
@@ -10210,11 +10210,11 @@ sub (local-int 0) 0 1
 u00420E10 (local-int 0)
 create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
-u00420480 2
-u00420480 2a
+release-texture 2
+release-texture 2a
 u00420270 30d40 1
 u0041CED0 (global-int 1396) (global-int f8019) e
-u00420480 e
+release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
 set-string (local-string-ptr 0) ""
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
@@ -10302,9 +10302,9 @@ eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_000246c0
 sub (local-int 0) 0 1
 sub (local-int 1) 0 1
-u0043AA50 19640 0 (global-int f8043) (local-int 0) (local-int 1)
+set-vertex-color-alpha 19640 0 (global-int f8043) (local-int 0) (local-int 1)
 sub (local-int 0) 0 1
-u0043AA40 19640 0 0 (local-int 0)
+set-vertex-color 19640 0 0 (local-int 0)
 jmp label_00024978
 
 label_000246c0
@@ -10320,10 +10320,10 @@ jcc (local-int 0) ffffffff label_0002481c
 add (local-int 0) 19640 (global-int f8019)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
+set-draw-color (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
 add (local-int 0) 19640 (global-int f8019)
 sub (local-int 1) 0 1
-u00420950 (local-int 0) 0 0 (local-int 1)
+set-draw-color-alpha (local-int 0) 0 0 (local-int 1)
 jmp label_000246e0
 
 label_0002481c
@@ -10339,10 +10339,10 @@ jcc (local-int 0) ffffffff label_00024978
 add (local-int 0) 19708 (global-int f8019)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
+set-draw-color (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
 add (local-int 0) 19708 (global-int f8019)
 sub (local-int 1) 0 1
-u00420950 (local-int 0) 0 0 (local-int 1)
+set-draw-color-alpha (local-int 0) 0 0 (local-int 1)
 jmp label_0002483c
 
 label_00024978
@@ -10358,10 +10358,10 @@ jcc (local-int 0) ffffffff label_00024ad4
 add (local-int 0) 19834 (global-int f8019)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
+set-draw-color (local-int 0) 0 (global-int f8043) (local-int 1) (local-int 2)
 add (local-int 0) 19834 (global-int f8019)
 sub (local-int 1) 0 1
-u00420950 (local-int 0) 0 0 (local-int 1)
+set-draw-color-alpha (local-int 0) 0 0 (local-int 1)
 jmp label_00024998
 
 label_00024ad4
@@ -10371,7 +10371,7 @@ label_00024ae0
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00024b6c
 sub (local-int 0) 0 1
-u0043AA50 19640 0 (global-int f8043) 0 (local-int 0)
+set-vertex-color-alpha 19640 0 (global-int f8043) 0 (local-int 0)
 jmp label_00024d34
 
 label_00024b6c
@@ -10386,7 +10386,7 @@ lt (local-int 0) (global-int f8019) 2
 jcc (local-int 0) ffffffff label_00024c50
 add (local-int 0) 19640 (global-int f8019)
 sub (local-int 1) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) 0 (local-int 1)
+set-draw-color (local-int 0) 0 (global-int f8043) 0 (local-int 1)
 jmp label_00024b8c
 
 label_00024c50
@@ -10401,7 +10401,7 @@ lt (local-int 0) (global-int f8019) 6
 jcc (local-int 0) ffffffff label_00024d34
 add (local-int 0) 19708 (global-int f8019)
 sub (local-int 1) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) 0 (local-int 1)
+set-draw-color (local-int 0) 0 (global-int f8043) 0 (local-int 1)
 jmp label_00024c70
 
 label_00024d34
@@ -10416,7 +10416,7 @@ lt (local-int 0) (global-int f8019) 19
 jcc (local-int 0) ffffffff label_00024e18
 add (local-int 0) 19834 (global-int f8019)
 sub (local-int 1) 0 1
-u00420880 (local-int 0) 0 (global-int f8043) 0 (local-int 1)
+set-draw-color (local-int 0) 0 (global-int f8043) 0 (local-int 1)
 jmp label_00024d54
 
 label_00024e18
@@ -10509,7 +10509,7 @@ lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 u00421160 (global-int f8c39) (local-ptr 1)
 ne (local-int 0) (global-int f801f) (global-int f8c39)
 jcc (local-int 0) ffffffff label_00025360
-u00420480 (global-int f801f)
+release-texture (global-int f801f)
 
 label_00025360
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
@@ -10520,11 +10520,11 @@ jcc (local-int 0) ffffffff label_000254b4
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420950 (local-ptr 1) 0 (local-int 1) (local-int 2)
+set-draw-color-alpha (local-ptr 1) 0 (local-int 1) (local-int 2)
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 2
 u00420270 (local-int 0) 1
-u00420480 (global-int f801f)
+release-texture (global-int f801f)
 
 label_000254b4
 lookup-array (local-ptr 0) (global-int f8049) (global-int f801d)
@@ -10532,7 +10532,7 @@ eq (local-int 0) (local-ptr 0) 1
 jcc (local-int 0) ffffffff label_00025570
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 sub (local-int 1) 0 1
-u00420950 (local-ptr 1) 0 0 (local-int 1)
+set-draw-color-alpha (local-ptr 1) 0 0 (local-int 1)
 jmp label_0002563c
 
 label_00025570
@@ -10542,7 +10542,7 @@ jcc (local-int 0) ffffffff label_0002563c
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420950 (local-ptr 1) 0 (local-int 1) (local-int 2)
+set-draw-color-alpha (local-ptr 1) 0 (local-int 1) (local-int 2)
 
 label_0002563c
 jmp label_00025190
@@ -10557,19 +10557,19 @@ jcc (global-int f8048) ffffffff label_00025a34
 and (local-int 0) (global-int f8048) 1
 jcc (local-int 0) ffffffff label_000256fc
 u00420270 19578 2
-u00420480 1
-u00420480 a
+release-texture 1
+release-texture a
 
 label_000256fc
 and (local-int 0) (global-int f8048) 2
 jcc (local-int 0) ffffffff label_000257e8
 add (local-int 0) 19258 1
 u00420270 (local-int 0) 1
-u00420480 b
+release-texture b
 eq (local-int 0) (global-int f8068) 1
 jcc (local-int 0) ffffffff label_000257e8
 sub (local-int 0) 0 1
-u00420950 19258 (global-int 4fd1) 0 (local-int 0)
+set-draw-color-alpha 19258 (global-int 4fd1) 0 (local-int 0)
 
 label_000257e8
 and (local-int 0) (global-int f8048) 4
@@ -10589,13 +10589,13 @@ lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
 u00420270 (local-int 0) 1
 lookup-array-2d (local-ptr 1) (global-int 3f54) (global-int f801d) 3 2
-u00420480 (local-ptr 1)
+release-texture (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f805d) (global-int f801d)
 eq (local-int 0) (local-ptr 0) 1
 jcc (local-int 0) ffffffff label_00025a00
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 sub (local-int 1) 0 1
-u00420950 (local-ptr 1) 0 0 (local-int 1)
+set-draw-color-alpha (local-ptr 1) 0 0 (local-int 1)
 
 label_00025a00
 jmp label_00025840
@@ -10659,7 +10659,7 @@ label_00025e60
 lt (local-int 0) (global-int f8019) 3
 jcc (local-int 0) ffffffff label_00025ee4
 add (local-int 0) 19708 (global-int f8019)
-u00420950 (local-int 0) 0 (global-int f807d) (global-int a9db)
+set-draw-color-alpha (local-int 0) 0 (global-int f807d) (global-int a9db)
 jmp label_00025e44
 
 label_00025ee4
@@ -10683,7 +10683,7 @@ jmp label_00026200
 
 label_00026138
 draw-texture 19708 11 b6 62e ea 2a 4b 1f7
-u00420950 19708 0 (global-int f807d) (global-int a9db)
+set-draw-color-alpha 19708 0 (global-int f807d) (global-int a9db)
 add (local-int 0) 19708 3
 draw-texture (local-int 0) 11 b6 5fc f0 30 46 205
 
@@ -10699,89 +10699,89 @@ exit
 
 label_00026228
 u00420270 (global-int f8023) a
-u00420480 (global-int 3f54)
-u00420480 (global-int 3f55)
-u00420480 (global-int 3f56)
+release-texture (global-int 3f54)
+release-texture (global-int 3f55)
+release-texture (global-int 3f56)
 mov (global-int 3f91) 0
 mov (global-int 3fa5) 0
 mov (global-int 3fcd) 0
 mov (global-int 4009) 0
 u00420270 (global-int f8024) a
-u00420480 (global-int 3f57)
-u00420480 (global-int 3f58)
-u00420480 (global-int 3f59)
+release-texture (global-int 3f57)
+release-texture (global-int 3f58)
+release-texture (global-int 3f59)
 mov (global-int 3f92) 0
 mov (global-int 3fa6) 0
 mov (global-int 3fce) 0
 mov (global-int 400a) 0
 u00420270 (global-int f8025) a
-u00420480 (global-int 3f5a)
-u00420480 (global-int 3f5b)
-u00420480 (global-int 3f5c)
+release-texture (global-int 3f5a)
+release-texture (global-int 3f5b)
+release-texture (global-int 3f5c)
 mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
 u00420270 (global-int f8026) a
-u00420480 (global-int 3f5d)
-u00420480 (global-int 3f5e)
-u00420480 (global-int 3f5f)
+release-texture (global-int 3f5d)
+release-texture (global-int 3f5e)
+release-texture (global-int 3f5f)
 mov (global-int 3f94) 0
 mov (global-int 3fa8) 0
 mov (global-int 3fd0) 0
 mov (global-int 400c) 0
 u00420270 (global-int f8027) a
-u00420480 (global-int 3f60)
-u00420480 (global-int 3f61)
-u00420480 (global-int 3f62)
+release-texture (global-int 3f60)
+release-texture (global-int 3f61)
+release-texture (global-int 3f62)
 mov (global-int 3f95) 0
 mov (global-int 3fa9) 0
 mov (global-int 3fd1) 0
 mov (global-int 400d) 0
 u00420270 (global-int f8028) a
-u00420480 (global-int 3f63)
-u00420480 (global-int 3f64)
-u00420480 (global-int 3f65)
+release-texture (global-int 3f63)
+release-texture (global-int 3f64)
+release-texture (global-int 3f65)
 mov (global-int 3f96) 0
 mov (global-int 3faa) 0
 mov (global-int 3fd2) 0
 mov (global-int 400e) 0
 u00420270 (global-int f8029) a
-u00420480 (global-int 3f66)
-u00420480 (global-int 3f67)
-u00420480 (global-int 3f68)
+release-texture (global-int 3f66)
+release-texture (global-int 3f67)
+release-texture (global-int 3f68)
 mov (global-int 3f97) 0
 mov (global-int 3fab) 0
 mov (global-int 3fd3) 0
 mov (global-int 400f) 0
 u00420270 (global-int f802a) a
-u00420480 (global-int 3f69)
-u00420480 (global-int 3f6a)
-u00420480 (global-int 3f6b)
+release-texture (global-int 3f69)
+release-texture (global-int 3f6a)
+release-texture (global-int 3f6b)
 mov (global-int 3f98) 0
 mov (global-int 3fac) 0
 mov (global-int 3fd4) 0
 mov (global-int 4010) 0
 u00420270 (global-int f802b) a
-u00420480 (global-int 3f6c)
-u00420480 (global-int 3f6d)
-u00420480 (global-int 3f6e)
+release-texture (global-int 3f6c)
+release-texture (global-int 3f6d)
+release-texture (global-int 3f6e)
 mov (global-int 3f99) 0
 mov (global-int 3fad) 0
 mov (global-int 3fd5) 0
 mov (global-int 4011) 0
 u00420270 (global-int f802c) a
-u00420480 (global-int 3f6f)
-u00420480 (global-int 3f70)
-u00420480 (global-int 3f71)
+release-texture (global-int 3f6f)
+release-texture (global-int 3f70)
+release-texture (global-int 3f71)
 mov (global-int 3f9a) 0
 mov (global-int 3fae) 0
 mov (global-int 3fd6) 0
 mov (global-int 4012) 0
 u00420270 (global-int f802d) a
-u00420480 (global-int 3f72)
-u00420480 (global-int 3f73)
-u00420480 (global-int 3f74)
+release-texture (global-int 3f72)
+release-texture (global-int 3f73)
+release-texture (global-int 3f74)
 mov (global-int 3f9b) 0
 mov (global-int 3faf) 0
 mov (global-int 3fd7) 0
@@ -10990,16 +10990,16 @@ lt (local-int 0) (global-int f801f) 0
 jcc (local-int 0) ffffffff label_00027608
 call label_00026830
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
-u00420880 (local-ptr 1) (global-int f8042) (global-int f8043) ff ffffff
+set-draw-color (local-ptr 1) (global-int f8042) (global-int f8043) ff ffffff
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
-u00420950 (local-ptr 1) 0 0 ffffff
+set-draw-color-alpha (local-ptr 1) 0 0 ffffff
 jmp label_00027c68
 
 label_00027608
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-u00420950 (local-ptr 1) 2 (local-int 1) (local-int 2)
+set-draw-color-alpha (local-ptr 1) 2 (local-int 1) (local-int 2)
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 lookup-array (local-ptr 2) (global-int f8023) (global-int f801d)
 add (local-int 1) (local-ptr 2) 1

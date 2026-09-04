@@ -596,7 +596,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 2e630 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 2e630 0 80 0
+set-vertex-color 2e630 0 80 0
 add (local-int 41b) 2e630 a
 draw-texture (local-int 41b) c1 10f 158 11a 1e0 (local-int 419) (local-int 41a)
 add (local-int 41b) 2e630 b
@@ -763,5 +763,5 @@ ret
 
 label_000032b8
 u00420270 2e630 c8
-u00420480 c6
+release-texture c6
 exit

@@ -737,7 +737,7 @@ ret
 label_00002d3c
 add (local-int 2776) 1d4c0 3e8
 u00420270 (local-int 2776) 384
-u00420480 c6
+release-texture c6
 add (local-int 2776) 1d4c0 44c
 draw-texture (local-int 2776) c0 49b 1f5 22a 1a 0 2e
 add (local-int 2776) 1d4c0 4b0
@@ -1380,9 +1380,9 @@ ret
 label_00006bb0
 add (local-int 2776) 1d4c0 3e8
 u00420270 (local-int 2776) 7d0
-u00420480 c4
-u00420480 c5
-u00420480 c6
+release-texture c4
+release-texture c5
+release-texture c6
 eq (local-int 2776) (local-int 7e0) 0
 jcc (local-int 2776) ffffffff label_00006c5c
 mov (global-int 708002) 0

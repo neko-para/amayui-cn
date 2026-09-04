@@ -457,12 +457,12 @@ mov (local-int 99) (local-ptr 4)
 add (local-int 9e) (local-int 9a) 64
 draw-texture (local-int 9e) f 0 9d 50 2f (local-int 98) (local-int 99)
 add (local-int 9e) (local-int 9a) 64
-u00420950 (local-int 9e) 0 (local-int 94) 0
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) 0
 add (local-int 9e) (local-int 9a) c8
 add (local-int 9f) (local-int 98) 50
 draw-texture (local-int 9e) f 50 9d 1 2f (local-int 9f) (local-int 99)
 add (local-int 9e) (local-int 9a) c8
-u00420950 (local-int 9e) 0 (local-int 94) 0
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) 0
 add (local-int 9e) (local-int 9a) c8
 add (local-int 9f) (local-int 98) 50
 u004211E0 (local-int 9e) (local-int 9f) (local-int 99) 0
@@ -476,16 +476,16 @@ mul (local-int a0) 1d (local-int 9c)
 add (local-int a1) (local-int 9f) (local-int a0)
 draw-texture (local-int 9e) f b5 9d 50 2f (local-int a1) (local-int 99)
 add (local-int 9e) (local-int 9a) 12c
-u00420950 (local-int 9e) 0 (local-int 94) 0
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) 0
 add (local-int 9e) (local-int 9a) 190
 draw-texture (local-int 9e) f 0 ce 50 2f (local-int 98) (local-int 99)
 add (local-int 9e) (local-int 9a) 190
-u00420950 (local-int 9e) 0 (local-int 94) (global-int a9db)
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) (global-int a9db)
 add (local-int 9e) (local-int 9a) 1f4
 add (local-int 9f) (local-int 98) 50
 draw-texture (local-int 9e) f 50 ce 1 2f (local-int 9f) (local-int 99)
 add (local-int 9e) (local-int 9a) 1f4
-u00420950 (local-int 9e) 0 (local-int 94) (global-int a9db)
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) (global-int a9db)
 add (local-int 9e) (local-int 9a) 1f4
 add (local-int 9f) (local-int 98) 50
 u004211E0 (local-int 9e) (local-int 9f) (local-int 99) 0
@@ -499,7 +499,7 @@ mul (local-int a0) 1d (local-int 9c)
 add (local-int a1) (local-int 9f) (local-int a0)
 draw-texture (local-int 9e) f b5 ce 50 2f (local-int a1) (local-int 99)
 add (local-int 9e) (local-int 9a) 258
-u00420950 (local-int 9e) 0 (local-int 94) (global-int a9db)
+set-draw-color-alpha (local-int 9e) 0 (local-int 94) (global-int a9db)
 add (local-int 9e) (local-int 9a) 514
 sub (local-int 9f) (local-int 98) 5
 sub (local-int a0) (local-int 99) 5
@@ -663,7 +663,7 @@ call-script 5255  // SBUNKIMOVE
 
 label_000032e8
 u00420270 2e630 7d0
-u00420480 13
+release-texture 13
 u00416200
 set-string (global-string f17) ""
 mov (global-int f8dfc) 0

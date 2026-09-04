@@ -257,7 +257,7 @@ label_00001a40
 lt (local-int 1a) (local-int 5) 9
 jcc (local-int 1a) ffffffff label_00001ac4
 add (local-int 1a) 2e630 (local-int 5)
-u00420950 (local-int 1a) 0 (local-int 13) (global-int a9db)
+set-draw-color-alpha (local-int 1a) 0 (local-int 13) (global-int a9db)
 jmp label_00001a24
 
 label_00001ac4
@@ -451,8 +451,8 @@ ret
 label_000025bc
 jcc (global-int f8dfc) ffffffff label_00002774
 u00420270 2e630 64
-u00420480 e
-u00420480 2a
+release-texture e
+release-texture 2a
 u00416200
 mov (global-int f8dfc) 0
 mov (global-int f8e13) 0

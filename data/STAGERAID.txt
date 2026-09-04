@@ -656,7 +656,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff ffffff
+set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) ffffff
@@ -675,10 +675,10 @@ jcc (local-int f) ffffffff label_00003358
 sub (local-int f) 0 1
 u00420E10 (local-int f)
 u00418B40 1 2 28
-u00420480 2
+release-texture 2
 
 label_00003358
-u00420480 1
+release-texture 1
 mov (global-int f8c39) 9
 mov (global-int f8c3a) a
 mov (global-int f8c3b) 9
@@ -721,10 +721,10 @@ jcc (local-int f) ffffffff label_00003668
 sub (local-int f) 0 1
 u00420E10 (local-int f)
 u00418B40 1 2 28
-u00420480 2
+release-texture 2
 
 label_00003668
-u00420480 1
+release-texture 1
 u00422390 12c
 u00416270
 
@@ -862,7 +862,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 19258 0 ff ffffff
+set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
 mov (global-int 4fd3) ffffff
@@ -881,10 +881,10 @@ jcc (local-int f) ffffffff label_00004150
 sub (local-int f) 0 1
 u00420E10 (local-int f)
 u00418B40 1 2 28
-u00420480 2
+release-texture 2
 
 label_00004150
-u00420480 1
+release-texture 1
 mov (global-int f8c39) a
 mov (global-int f8c3a) 5
 mov (global-int f8c3b) c
@@ -937,10 +937,10 @@ jcc (local-int f) ffffffff label_00004518
 sub (local-int f) 0 1
 u00420E10 (local-int f)
 u00418B40 1 2 28
-u00420480 2
+release-texture 2
 
 label_00004518
-u00420480 1
+release-texture 1
 u00422390 12c
 u00416270
 

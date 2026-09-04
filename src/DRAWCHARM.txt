@@ -56,7 +56,7 @@ eq (local-int 0) (local-ptr 0) 0
 jcc (local-int 0) ffffffff label_0000060c
 add (local-int 0) 19834 4
 add (local-int 1) (local-int 0) (global-int f8019)
-u00420950 (local-int 1) 0 ff 909090
+set-draw-color-alpha (local-int 1) 0 ff 909090
 
 label_0000060c
 jmp label_000002b0
@@ -90,7 +90,7 @@ lookup-array (local-ptr 0) (global-int 13b9) (global-int f8c39)
 eq (local-int 0) (local-ptr 0) 0
 jcc (local-int 0) ffffffff label_00000974
 add (local-int 0) 19834 d
-u00420950 (local-int 0) 0 ff 909090
+set-draw-color-alpha (local-int 0) 0 ff 909090
 
 label_00000974
 mov (global-int f8019) 0
@@ -150,7 +150,7 @@ eq (local-int 0) (local-ptr 0) 0
 jcc (local-int 0) ffffffff label_00000efc
 add (local-int 0) 19834 e
 add (local-int 1) (local-int 0) (global-int f8019)
-u00420950 (local-int 1) 0 ff 909090
+set-draw-color-alpha (local-int 1) 0 ff 909090
 
 label_00000efc
 jmp label_00000994

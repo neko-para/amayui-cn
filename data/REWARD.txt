@@ -27,18 +27,18 @@ and (local-int 31c8) (local-int 31c6) (local-int 31c7)
 jcc (local-int 31c8) ffffffff label_0000021c
 add (local-int 31c6) 2e630 (local-int 270)
 sub (local-int 31c7) 0 1
-u00420950 (local-int 31c6) 1 0 (local-int 31c7)
+set-draw-color-alpha (local-int 31c6) 1 0 (local-int 31c7)
 jmp label_00000278
 
 label_0000021c
 add (local-int 31c6) 2e630 (local-int 270)
 sub (local-int 31c7) 0 1
-u00420950 (local-int 31c6) 0 0 (local-int 31c7)
+set-draw-color-alpha (local-int 31c6) 0 0 (local-int 31c7)
 
 label_00000278
 add (local-int 31c6) 2e630 (local-int 270)
 sub (local-int 31c7) 0 1
-u00420880 (local-int 31c6) 0 c8 ff (local-int 31c7)
+set-draw-color (local-int 31c6) 0 c8 ff (local-int 31c7)
 jmp label_000000f0
 
 label_000002e8
@@ -818,7 +818,7 @@ sub (local-int 31c8) (local-int 31c4) 1c
 draw-texture (local-int 31c7) 2b 0 0 1ec 54 18a (local-int 31c8)
 add (local-int 31c6) 2e630 46
 add (local-int 31c7) (local-int 31c6) (local-int 270)
-u00420950 (local-int 31c7) 1 ff ffffff
+set-draw-color-alpha (local-int 31c7) 1 ff ffffff
 add (local-int 31c6) 2e630 46
 add (local-int 31c7) (local-int 31c6) (local-int 270)
 u00421EA0 (local-int 31c7) 32 14 2
@@ -833,7 +833,7 @@ sub (local-int 31c8) (local-int 31c4) 1c
 draw-texture (local-int 31c7) 2c 0 0 1ec 54 18a (local-int 31c8)
 add (local-int 31c6) 2e630 46
 add (local-int 31c7) (local-int 31c6) (local-int 270)
-u00420950 (local-int 31c7) 1 ff ffffff
+set-draw-color-alpha (local-int 31c7) 1 ff ffffff
 add (local-int 31c6) 2e630 46
 add (local-int 31c7) (local-int 31c6) (local-int 270)
 u00421EA0 (local-int 31c7) 32 14 2
@@ -961,17 +961,17 @@ lte (local-int 31c6) (local-int 270) 64
 jcc (local-int 31c6) ffffffff label_00003eb4
 add (local-int 31c6) 2e630 (local-int 270)
 sub (local-int 31c7) 0 1
-u00420880 (local-int 31c6) 0 c8 0 (local-int 31c7)
+set-draw-color (local-int 31c6) 0 c8 0 (local-int 31c7)
 jmp label_00003df0
 
 label_00003eb4
 u00415BF0
 u00416270
 u00420270 2e630 65
-u00420480 2a
+release-texture 2a
 eq (local-int 31c6) (global-int b226) 0
 jcc (local-int 31c6) ffffffff label_00003f20
-u00420480 49
+release-texture 49
 
 label_00003f20
 copy-to-global (global-int 6ff603) fa0

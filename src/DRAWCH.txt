@@ -60,11 +60,11 @@ mov (local-int 4) 0
 
 label_0000055c
 jcc (local-int 4) ffffffff label_000005a8
-u00420950 (local-int 0) 0 ff ffffff
+set-draw-color-alpha (local-int 0) 0 ff ffffff
 jmp label_000005cc
 
 label_000005a8
-u00420950 (local-int 0) 0 0 ffffff
+set-draw-color-alpha (local-int 0) 0 0 ffffff
 
 label_000005cc
 exit

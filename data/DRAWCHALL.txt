@@ -4,7 +4,7 @@ local_vars = { 5 1 1 2 1 1 }
 ====
 
 draw-texture ea60 48 0 0 0 0 0 0
-u00420950 ea60 0 0 0
+set-draw-color-alpha ea60 0 0 0
 u00421EA0 ea60 c8 4 2
 mov (local-int 0) 1
 jmp label_00000104
@@ -24,7 +24,7 @@ lookup-array (local-ptr 0) (global-int 6202a) (local-int 0)
 and (local-int 1) (local-ptr 0) 100000
 jcc (local-int 1) ffffffff label_00000244
 add (local-int 1) ea60 (local-int 0)
-u00420950 (local-int 1) 0 0 ffffff
+set-draw-color-alpha (local-int 1) 0 0 ffffff
 
 label_00000244
 jmp label_000000e8
@@ -38,7 +38,7 @@ add (local-int 1) ea60 (global-int 61c72)
 add (local-int 3) ea60 76c
 u00421410 (local-int 1) (local-int 3)
 add (local-int 1) ea60 (global-int 61c72)
-u00420950 (local-int 1) 0 0 ffffff
+set-draw-color-alpha (local-int 1) 0 0 ffffff
 
 label_0000034c
 exit

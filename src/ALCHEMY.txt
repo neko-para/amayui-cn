@@ -148,13 +148,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_00000b94
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 12c ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 12c ff 0
 jmp label_00000be4
 
 label_00000b94
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 12c 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00000be4
 u00422EA0 10001
@@ -165,7 +165,7 @@ call label_0000fa18
 jcc (local-int 406) ffffffff label_00000cc8
 mov (local-int 406) 0
 sub (local-int 11add) 2e248 1
-u0043AA50 (local-int 11add) 0 c8 0 0
+set-vertex-color-alpha (local-int 11add) 0 c8 0 0
 u00415BF0
 u00416270
 sub (local-int 11add) 2e248 1
@@ -982,7 +982,7 @@ eq (local-int 11ade) (local-int 11add) 0
 jcc (local-int 11ade) ffffffff label_00003dec
 u00420270 11d28 1
 draw-texture 11d28 4c 0 0 dc 40 1bb 292
-u00420950 11d28 1 ff ffffff
+set-draw-color-alpha 11d28 1 ff ffffff
 u004223C0 11d28 0 320 10 1 0
 u00422D60 11d28 1
 
@@ -1015,9 +1015,9 @@ u0042B990 (global-float 10) 2d0
 sub (local-int 11add) 2e248 1
 u0043AA20 (local-int 11add) (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 sub (local-int 11add) 2e248 1
-u0043AA40 (local-int 11add) 0 0 0
+set-vertex-color (local-int 11add) 0 0 0
 sub (local-int 11add) 2e248 1
-u0043AA50 (local-int 11add) 0 c8 80 0
+set-vertex-color-alpha (local-int 11add) 0 c8 80 0
 u00415BF0
 u00416270
 
@@ -1102,9 +1102,9 @@ u0042B990 (global-float 10) 2d0
 sub (local-int 11add) 2e248 1
 u0043AA20 (local-int 11add) (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 sub (local-int 11add) 2e248 1
-u0043AA40 (local-int 11add) 0 0 0
+set-vertex-color (local-int 11add) 0 0 0
 sub (local-int 11add) 2e248 1
-u0043AA50 (local-int 11add) 0 c8 80 0
+set-vertex-color-alpha (local-int 11add) 0 c8 80 0
 u00415BF0
 u00416270
 
@@ -1133,7 +1133,7 @@ label_00004890
 jcc (local-int 406) ffffffff label_00004940
 mov (local-int 406) 0
 sub (local-int 11add) 2e248 1
-u0043AA50 (local-int 11add) 0 c8 0 0
+set-vertex-color-alpha (local-int 11add) 0 c8 0 0
 u00415BF0
 u00416270
 sub (local-int 11add) 2e248 1
@@ -2276,8 +2276,8 @@ eq (local-int 11add) (global-int 708ad8) 0
 eq (local-int 11ade) (global-int 1ba9) 0
 and (local-int 11adf) (local-int 11add) (local-int 11ade)
 jcc (local-int 11adf) ffffffff label_000097e8
-u00420950 19b 0 ff 808080
-u00420950 19c 0 ff 808080
+set-draw-color-alpha 19b 0 ff 808080
+set-draw-color-alpha 19c 0 ff 808080
 
 label_000097e8
 mul (local-int 11add) (local-int 11ad3) 38
@@ -2300,7 +2300,7 @@ eq (local-int 11add) (global-int a3141) 0
 eq (local-int 11ade) (global-int 708ad8) 0
 and (local-int 11adf) (local-int 11add) (local-int 11ade)
 jcc (local-int 11adf) ffffffff label_00009ad4
-u00420950 2c8 0 ff 808080
+set-draw-color-alpha 2c8 0 ff 808080
 
 label_00009ad4
 create-texture 52 58 3c 0
@@ -3235,7 +3235,7 @@ ret
 label_0000f02c
 u00420270 708 64
 u00420270 1fbd0 3e8
-u00420480 5c
+release-texture 5c
 create-texture 56 1ec 5c 0
 draw-texture 9c4 56 0 0 1ec 5c 106 1e5
 jcc (global-int 546e03) ffffffff label_0000f34c
@@ -3377,9 +3377,9 @@ u0042B990 (global-float 10) 2d0
 sub (local-int 11add) 2e248 1
 u0043AA20 (local-int 11add) (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 sub (local-int 11add) 2e248 1
-u0043AA40 (local-int 11add) 0 0 0
+set-vertex-color (local-int 11add) 0 0 0
 sub (local-int 11add) 2e248 1
-u0043AA50 (local-int 11add) 0 c8 80 0
+set-vertex-color-alpha (local-int 11add) 0 c8 80 0
 u00415BF0
 u00416270
 
@@ -3434,13 +3434,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_0000ffec
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 12c ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 12c ff 0
 jmp label_0001003c
 
 label_0000ffec
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 12c 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_0001003c
 u00422EA0 10001

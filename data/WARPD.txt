@@ -23,7 +23,7 @@ label_00000148
 call-script 50f2
 add (local-int 2) ea60 (global-int 519af9)
 sub (local-int 3) 0 1
-u00420950 (local-int 2) 0 0 (local-int 3)
+set-draw-color-alpha (local-int 2) 0 0 (local-int 3)
 add (local-int 2) ea60 (global-int 519af9)
 ne (local-int 3) (local-int 0) (local-int 2)
 jcc (local-int 3) ffffffff label_00000234
@@ -38,7 +38,7 @@ lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-ptr
 lookup-array (local-ptr 2) (global-int 6f18a) (global-int 519af9)
 check-bit (local-int 1) (local-ptr 1) (local-ptr 2)
 jcc (local-int 1) ffffffff label_00000354
-u00420880 (local-int 0) 0 c8 ff ffffff
+set-draw-color (local-int 0) 0 c8 ff ffffff
 
 label_00000354
 and (local-int 2) (global-int a9d6) 2

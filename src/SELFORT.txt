@@ -995,7 +995,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 1d4c0 0 c0 0
+set-vertex-color 1d4c0 0 c0 0
 add (local-int 950) 1d4c0 64
 draw-texture (local-int 950) c0 0 260 1e0 1e0 19 69
 mov (local-int 40e) 0
@@ -1414,9 +1414,9 @@ draw-texture (local-int 950) c0 4bf 389 73 27 461 93
 eq (local-int 950) (global-int 9358d) 0
 jcc (local-int 950) ffffffff label_00006448
 add (local-int 950) 1d4c0 5f0
-u00420950 (local-int 950) 0 ff 808080
+set-draw-color-alpha (local-int 950) 0 ff 808080
 add (local-int 950) 1d4c0 5f1
-u00420950 (local-int 950) 0 ff 808080
+set-draw-color-alpha (local-int 950) 0 ff 808080
 jmp label_0000658c
 
 label_00006448
@@ -1424,7 +1424,7 @@ and (local-int 950) (global-int 9358e) 2
 eq (local-int 951) (local-int 950) 0
 jcc (local-int 951) ffffffff label_000064dc
 add (local-int 950) 1d4c0 5f0
-u00420950 (local-int 950) 0 ff 808080
+set-draw-color-alpha (local-int 950) 0 ff 808080
 
 label_000064dc
 lookup-array (local-ptr 5) (global-int 9358e) (global-int 9358d)
@@ -1432,7 +1432,7 @@ and (local-int 950) (local-ptr 5) 2
 eq (local-int 952) (local-int 950) 0
 jcc (local-int 952) ffffffff label_0000658c
 add (local-int 950) 1d4c0 5f1
-u00420950 (local-int 950) 0 ff 808080
+set-draw-color-alpha (local-int 950) 0 ff 808080
 
 label_0000658c
 add (local-int 950) 1d4c0 76c
@@ -1845,10 +1845,10 @@ call-script 516e  // SETGARDEN
 call-script 516f  // COUNTLINK
 u00420270 1d4c0 2710
 u00420270 1fbd0 3e8
-u00420480 c0
-u00420480 c1
-u00420480 c2
-u00420480 c3
-u00420480 c4
-u00420480 c5
+release-texture c0
+release-texture c1
+release-texture c2
+release-texture c3
+release-texture c4
+release-texture c5
 exit

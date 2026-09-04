@@ -708,7 +708,7 @@ ret
 label_00002ce0
 u00420270 1d4c0 3e8
 u0043AA20 1d4c0 (local-float 0) (local-float a) (local-float 14) (local-int c18) (local-int c22) (local-float 1e) (local-float 28) a 0
-u0043AA40 1d4c0 0 80 0
+set-vertex-color 1d4c0 0 80 0
 mul (local-int c2c) 25 (local-int 420)
 sub (local-int 40e) 168 (local-int c2c)
 mov (local-int 401) 0
@@ -731,7 +731,7 @@ lookup-array (local-ptr 0) (local-int 421) (local-int 401)
 jcc (local-ptr 0) ffffffff label_00002fb0
 add (local-int c2c) 1d4c0 64
 add (local-int c2d) (local-int c2c) (local-int 401)
-u00420950 (local-int c2d) 0 ff 808080
+set-draw-color-alpha (local-int c2d) 0 ff 808080
 
 label_00002fb0
 add (local-int 40e) (local-int 40e) 4a
@@ -1076,6 +1076,6 @@ ret
 
 label_0000519c
 u00420270 1d4c0 3e8
-u00420480 2a
-u00420480 c0
+release-texture 2a
+release-texture c0
 exit

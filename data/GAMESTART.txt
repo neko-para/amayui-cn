@@ -1107,7 +1107,7 @@ draw-texture (local-int 4d6) c0 (local-int 40c) 132 66 23 442 (local-int 40f)
 lookup-array (local-ptr 2) (local-int 4d2) (local-int 406)
 jcc (local-ptr 2) ffffffff label_000042a0
 add (local-int 4d6) 514 (local-int 405)
-u00420950 (local-int 4d6) 0 ff 808080
+set-draw-color-alpha (local-int 4d6) 0 ff 808080
 
 label_000042a0
 add (local-int 4d6) 532 (local-int 405)
@@ -1316,13 +1316,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00005244
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 5dc ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 5dc ff 0
 jmp label_00005294
 
 label_00005244
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 5dc 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 5dc 0 0
 
 label_00005294
 u00422EA0 10001
@@ -1354,6 +1354,6 @@ sub (local-int 4d6) 0 1
 u0041BB40 (local-int 4d6) 0
 u0041AF00 1
 u00420270 3e8 3e8
-u00420480 c0
-u00420480 c1
+release-texture c0
+release-texture c1
 exit

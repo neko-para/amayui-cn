@@ -9,8 +9,8 @@ shl (local-int 2) (local-int 0) 2
 or (local-int 1) (local-int 2) 20000
 create-texture 2a 500 2d0 0
 draw-texture 30d40 2a 0 0 500 2d0 0 0
-u00420E40 4e2c 2a (local-int 1)
+play-movie 4e2c 2a (local-int 1)
 u00420270 30d40 1
-u00420480 2a
+release-texture 2a
 u00415BF0
 exit

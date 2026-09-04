@@ -632,7 +632,7 @@ ret
 label_00002540
 add (local-int b9e) 1d4c0 3e8
 u00420270 (local-int b9e) 384
-u00420480 c6
+release-texture c6
 add (local-int b9e) 1d4c0 44c
 draw-texture (local-int b9e) c0 49b 1f5 22a 1a 0 2e
 add (local-int b9e) 1d4c0 4b0
@@ -1231,9 +1231,9 @@ ret
 label_00005ad4
 add (local-int b9e) 1d4c0 3e8
 u00420270 (local-int b9e) 7d0
-u00420480 c4
-u00420480 c5
-u00420480 c6
+release-texture c4
+release-texture c5
+release-texture c6
 eq (local-int b9e) (local-int 7e0) 0
 jcc (local-int b9e) ffffffff label_00005b80
 mov (global-int 708002) 0

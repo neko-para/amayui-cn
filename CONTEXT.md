@@ -83,9 +83,9 @@
 - 无界面光栅验证（真实 VM 到 TITLE）：产出与真实标题菜单**布局吻合**的渲染（标题 logo、5 个**散布**按钮、版权行、背景）——见 `docs/10` §4。
 - 标题图像 id（`renderer.ts` 预载）：0x5245(SO006 背景)/0x5246(SO005 版权)/0x5272(SO004 菜单)/0x5273(SO004A)。
 - **LOGO 场景已接入**：`SYSTEM4` 第 146 行 `call-script LOGO(0x5262)` 仅在 `_this[96983]` 为真时执行（opcode 0x130）。**96983 的“为何为 1”**：engine.cpp 引擎构造函数/初始化（行 22404，字节偏移 387932）把该字段默认置 **1**；另一处重置（行 34632）清 0。模拟器已把 `_this[96983]` 建模为 `Engine.engineValues`（构造函数默认 1），`op_get_engine_value`(0x130) 读它——**不是硬编码返回 1**。故 LOGO 在启动链里被 set-texture（SO006/SO005）。
-  LOGO 专用 opcode `0x1f8(create-texture)/0x1fa(u00420480)/0x20f(u00420E40 视频句柄)` 已在 `ops.ts` 注册为桩，LOGO 可跑通、启动链仍到 TITLE。
+  LOGO 专用 opcode `0x1f8(create-texture)/0x1fa(release-texture)/0x20f(play-movie 视频句柄)` 已在 `ops.ts` 注册为桩，LOGO 可跑通、启动链仍到 TITLE。
 - **窗口/DPI 适配**：视口 1280×720。窗口 `useContentSize:true` + **`win.setContentSize(1280, 720)`** 强制内容区为 16:9（useContentSize 在 Windows DPI 缩放下可能不准，electron#10659；不显式 setContentSize 会导致内容区比例错、黑边）。renderer 固定渲染 1280×720 + `autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清），画布正好填满 16:9 内容区，无黑边；DPI 只放大物理尺寸不改变比例。已移除 `resizeTo`/`#fitView` 的 letterbox 方案（会因内容区非 16:9 留黑边）。
-- **淡入淡出 / 渐变**：引擎有 `SetFade/SetLineFade/SetRandomFade/FadeTimer/"Fade"` 设施。**常被忽略的渐变「颜色/α」配置指令 = `0x202`(sub_4AD0C0) / `0x203`(sub_4ACF60)**（设填充色+α，TITLE 各用 49/50 次）；时间性淡入淡出更像引擎内部 `FadeTimer` 场景切换过渡，脚本路径无显式 fade opcode（见 `docs/06` §2.3.2）。
+- **淡入淡出 / 渐变**：引擎实现 = **FadeTimer 步进计时器**（7 DWORD+vtable；字段 `[1]elapsed/[2]step/[3]leftover/[4]stop/[5]startTime/[6]stepDur`；`sub_453A20` ctor / `sub_453A60` start / `sub_453AF0` tick）+ **fade opcode 家族 0x20–0x38**（`sub_41D180…`，各调 `sub_441410(mode)`：mode0=SetFade、1-8=SetLineFade、9=SetRandomFade）。**常被忽略的静态「颜色/α」指令** = `0x202`(sub_4AD0C0)/`0x203`(sub_4ACF60)。boot→TITLE 路径**不调用** fade opcode（0x20-0x38 未触发、模拟器也未实现）；时间性淡入淡出更像主循环场景切换时内部驱动 FadeTimer。详细见 **`docs/11`**。
 - ⏳ **角色图层未接入**：真实标题左侧有角色立绘，但 TITLE 帧只 set-texture 到 slot 4(SO004)，角色来自单独的图/L2D/角色显示子系统，尚未定位。
 - ⏳ **LOGO 展示时长**：LOGO→INIT→TITLE 在 VM 循环里同步连跑，renderer 按脚本名清空绘制层，LOGO 背景/版权只闪现；若要用户看清步骤1，需渲染器在场景间让出帧（pacing）。
 

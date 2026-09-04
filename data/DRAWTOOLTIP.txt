@@ -101,7 +101,7 @@ and (local-int 154) (local-int c) 1
 eq (local-int 156) (local-int 154) 0
 jcc (local-int 156) ffffffff label_000007e8
 add (local-int 154) 1fbd0 (local-int 8)
-u00420950 (local-int 154) 0 ff 808080
+set-draw-color-alpha (local-int 154) 0 ff 808080
 
 label_000007e8
 and (local-int 154) (local-int c) 2

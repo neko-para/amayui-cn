@@ -1258,7 +1258,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 1d4c0 0 80 0
+set-vertex-color 1d4c0 0 80 0
 add (local-int 490) 1d4c0 64
 draw-texture (local-int 490) c0 0 470 95 90 36 193
 add (local-int 490) 1d4c0 6e
@@ -1404,7 +1404,7 @@ draw-texture (local-int 416) (local-int 417) 0 0 (local-int 40a) (local-int 40b)
 lookup-array (local-ptr 0) (global-int 72164) (local-int 40f)
 and (local-int 490) (local-ptr 0) 4
 jcc (local-int 490) ffffffff label_00005bd4
-u00420950 (local-int 416) 0 ff 808080
+set-draw-color-alpha (local-int 416) 0 ff 808080
 
 label_00005bd4
 lookup-array (local-ptr 0) (global-int 72164) (local-int 40f)
@@ -1505,7 +1505,7 @@ draw-texture (local-int 490) c0 71 30b d5 49 d 232
 eq (local-int 490) (local-int 48c) 0
 jcc (local-int 490) ffffffff label_000065a0
 add (local-int 490) 1d4c0 3e8
-u00420950 (local-int 490) 0 ff 808080
+set-draw-color-alpha (local-int 490) 0 ff 808080
 
 label_000065a0
 add (local-int 490) 1d4c0 47e
@@ -1549,7 +1549,7 @@ lookup-array (local-ptr 3) (local-int 41c) (local-int 404)
 jcc (local-ptr 3) ffffffff label_00006aa0
 add (local-int 490) 1d4c0 6ae
 add (local-int 491) (local-int 490) (local-int 404)
-u00420950 (local-int 491) 0 ff 808080
+set-draw-color-alpha (local-int 491) 0 ff 808080
 
 label_00006aa0
 add (local-int 490) 1d4c0 6b8
@@ -1603,7 +1603,7 @@ eq (local-int 494) (local-int 490) 0
 jcc (local-int 494) ffffffff label_00006f58
 add (local-int 490) 1d4c0 6c2
 add (local-int 491) (local-int 490) (local-int 404)
-u00420950 (local-int 491) 0 ff 808080
+set-draw-color-alpha (local-int 491) 0 ff 808080
 
 label_00006f58
 add (local-int 490) 1d4c0 6cc
@@ -1803,11 +1803,11 @@ label_00008090
 ne (local-int 490) (global-int 0) 4
 jcc (local-int 490) ffffffff label_000081c0
 u00420270 1d4c0 7d0
-u00420480 c0
-u00420480 c1
-u00420480 c2
-u00420480 c3
-u00420480 c4
+release-texture c0
+release-texture c1
+release-texture c2
+release-texture c3
+release-texture c4
 mov (local-int 404) 0
 jmp label_00008154
 
@@ -1818,7 +1818,7 @@ label_00008154
 lt (local-int 490) (local-int 404) c8
 jcc (local-int 490) ffffffff label_000081c0
 add (local-int 490) 320 (local-int 404)
-u00420480 (local-int 490)
+release-texture (local-int 490)
 jmp label_00008138
 
 label_000081c0

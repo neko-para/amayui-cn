@@ -120,7 +120,7 @@ mul (local-int a) (local-int 9) 46
 u004215D0 (local-int 8) 0 c8 0 (local-int a) 0
 add (local-int 8) (local-int 2) 320
 sub (local-int 9) 0 1
-u00420880 (local-int 8) 0 c8 0 (local-int 9)
+set-draw-color (local-int 8) 0 c8 0 (local-int 9)
 
 label_00000b94
 add (local-int 2) (local-int 2) 1
@@ -145,7 +145,7 @@ u00421160 (local-int 3) (local-int 2)
 gre (local-int 8) (local-int 3) 0
 jcc (local-int 8) ffffffff label_00000ce8
 sub (local-int 8) 0 1
-u00420880 (local-int 2) (local-int 4) c8 0 (local-int 8)
+set-draw-color (local-int 2) (local-int 4) c8 0 (local-int 8)
 
 label_00000ce8
 jmp label_00000be4
@@ -159,31 +159,31 @@ jcc (local-int 8) ffffffff label_000010c4
 add (local-int 8) (local-int 2) 64
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 64
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) c8
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) c8
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 12c
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 12c
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 320
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 320
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 4) (local-int 4) 1e
 
 label_000010c4
@@ -199,18 +199,18 @@ lt (local-int 8) (local-int 0) (global-int f8dfc)
 jcc (local-int 8) ffffffff label_000020cc
 sub (local-int 8) 0 1
 sub (local-int 9) 0 1
-u00420880 (local-int 2) (local-int 4) c8 (local-int 8) (local-int 9)
+set-draw-color (local-int 2) (local-int 4) c8 (local-int 8) (local-int 9)
 sub (local-int 8) 0 1
-u00420950 (local-int 2) 0 0 (local-int 8)
+set-draw-color-alpha (local-int 2) 0 0 (local-int 8)
 u00420770 (local-int 2) 0 14 0
 u004215D0 (local-int 2) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 64
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 64
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 64
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 64
@@ -218,10 +218,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) c8
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) c8
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) c8
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) c8
@@ -229,10 +229,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 12c
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 12c
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 12c
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 12c
@@ -240,10 +240,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 190
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 190
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 190
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 190
@@ -251,10 +251,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 1f4
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 1f4
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 1f4
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 1f4
@@ -262,10 +262,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 258
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 258
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 258
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 258
@@ -273,10 +273,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 514
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 514
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 514
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 514
@@ -284,10 +284,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 578
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 578
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 578
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 578
@@ -295,10 +295,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 5dc
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 5dc
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 5dc
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 5dc
@@ -306,10 +306,10 @@ u004215D0 (local-int 8) (local-int 4) c8 0 0 0
 add (local-int 8) (local-int 2) 320
 sub (local-int 9) 0 1
 sub (local-int a) 0 1
-u00420880 (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
+set-draw-color (local-int 8) (local-int 4) c8 (local-int 9) (local-int a)
 add (local-int 8) (local-int 2) 320
 sub (local-int 9) 0 1
-u00420950 (local-int 8) 0 0 (local-int 9)
+set-draw-color-alpha (local-int 8) 0 0 (local-int 9)
 add (local-int 8) (local-int 2) 320
 u00420770 (local-int 8) 0 14 0
 add (local-int 8) (local-int 2) 320

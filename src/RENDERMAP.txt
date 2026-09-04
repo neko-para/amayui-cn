@@ -36,11 +36,11 @@ lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-ptr
 lookup-array (local-ptr 2) (global-int 6f18a) (local-int 0)
 check-bit (local-int 4) (local-ptr 1) (local-ptr 2)
 jcc (local-int 4) ffffffff label_000002d8
-u00420950 (local-int 1) 0 ff ffffff
+set-draw-color-alpha (local-int 1) 0 ff ffffff
 jmp label_000002fc
 
 label_000002d8
-u00420950 (local-int 1) 0 0 ffffff
+set-draw-color-alpha (local-int 1) 0 0 ffffff
 
 label_000002fc
 jmp label_000000cc
@@ -90,7 +90,7 @@ lookup-array (local-ptr 2) (global-int 6f18a) (local-int 0)
 check-bit (local-int 4) (local-ptr 1) (local-ptr 2)
 jcc (local-int 4) ffffffff label_00000734
 add (local-int 5) ea60 (local-int 0)
-u00420950 (local-int 5) 0 0 ffffff
+set-draw-color-alpha (local-int 5) 0 0 ffffff
 add (local-int 5) ea60 (local-int 0)
 ne (local-int 6) (local-int 1) (local-int 5)
 jcc (local-int 6) ffffffff label_00000708
@@ -98,7 +98,7 @@ add (local-int 5) ea60 (local-int 0)
 u00421410 (local-int 5) (local-int 1)
 
 label_00000708
-u00420880 (local-int 1) 0 c8 ff ffffff
+set-draw-color (local-int 1) 0 c8 ff ffffff
 
 label_00000734
 lookup-array (local-ptr 1) (global-int 6202a) (local-int 0)
@@ -114,7 +114,7 @@ add (local-int 5) ea60 64
 mul (local-int 6) (local-int 0) 1e
 add (local-int 7) (local-int 5) (local-int 6)
 u00420270 (local-int 7) 1e
-u00420880 (local-int 1) 0 c8 0 ffffff
+set-draw-color (local-int 1) 0 c8 0 ffffff
 
 label_00000874
 jmp label_00000360

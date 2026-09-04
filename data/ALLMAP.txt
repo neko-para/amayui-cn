@@ -282,13 +282,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_0000123c
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 1f4 ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 1f4 ff 0
 jmp label_0000128c
 
 label_0000123c
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 1f4 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 1f4 0 0
 
 label_0000128c
 u00422EA0 10001
@@ -1302,9 +1302,9 @@ and (local-int 566) (local-ptr 1) 2
 eq (local-int 569) (local-int 566) 0
 jcc (local-int 569) ffffffff label_00005aac
 add (local-int 566) 12c (local-int 283)
-u00420950 (local-int 566) 0 ff 808080
+set-draw-color-alpha (local-int 566) 0 ff 808080
 add (local-int 566) 190 (local-int 283)
-u00420950 (local-int 566) 0 ff 808080
+set-draw-color-alpha (local-int 566) 0 ff 808080
 
 label_00005aac
 lookup-array (local-ptr 1) (global-int b1bd) (local-int 550)
@@ -1428,13 +1428,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00006514
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 12c ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 12c ff 0
 jmp label_00006564
 
 label_00006514
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 12c 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00006564
 u00422EA0 10001
@@ -1527,11 +1527,11 @@ sub (local-int 566) 0 1
 u00420E10 (local-int 566)
 create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
-u00420480 2
-u00420480 2a
+release-texture 2
+release-texture 2a
 u00420270 30d40 1
 u0041CED0 (global-int 1396) (global-int f8019) e
-u00420480 e
+release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
 set-string (local-string-ptr 0) ""
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)

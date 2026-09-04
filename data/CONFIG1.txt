@@ -2888,7 +2888,7 @@ jcc (local-int 57c3) ffffffff label_0000c4b8
 add (local-int 57c3) 1d4c0 a28
 add (local-int 57c4) (local-int 57c3) (local-int 7ec)
 lookup-array (local-ptr 1) (global-int a9df) (local-int 7ec)
-u00420950 (local-int 57c4) 0 (local-ptr 1) (global-int a9db)
+set-draw-color-alpha (local-int 57c4) 0 (local-ptr 1) (global-int a9db)
 jmp label_0000c3e0
 
 label_0000c4b8
@@ -3117,7 +3117,7 @@ u00420270 (local-int 57c3) 1
 add (local-int 57c3) 1d4c0 b54
 u00420270 (local-int 57c3) 1
 u00420270 2e630 3
-u00420480 c5
+release-texture c5
 eq (local-int 57c3) (local-int 7e1) 9
 jcc (local-int 57c3) ffffffff label_0000d85c
 call label_0000c698

@@ -56,7 +56,7 @@ u004211E0 2e248 280 168 0
 u00420620 2e248 64 0 64
 u00421450 2e248 0 c8 64 64 64
 sub (local-int 805) 0 1
-u00420880 2e248 3e8 c8 0 (local-int 805)
+set-draw-color 2e248 3e8 c8 0 (local-int 805)
 lt (local-int 805) (global-int 5465d4) 0
 jcc (local-int 805) ffffffff label_00000530
 add (local-int 805) 2e248 1
@@ -72,10 +72,10 @@ add (local-int 805) 2e248 1
 u004211E0 (local-int 805) 280 168 0
 add (local-int 805) 2e248 1
 sub (local-int 806) 0 1
-u00420950 (local-int 805) 0 0 (local-int 806)
+set-draw-color-alpha (local-int 805) 0 0 (local-int 806)
 add (local-int 805) 2e248 1
 sub (local-int 806) 0 1
-u00420880 (local-int 805) 64 64 ff (local-int 806)
+set-draw-color (local-int 805) 64 64 ff (local-int 806)
 add (local-int 805) 2e248 1
 u00421450 (local-int 805) 3e8 c8 0 0 0
 u00416270
@@ -278,7 +278,7 @@ lookup-array (local-ptr 3) (local-int 18) (local-int 0)
 add (local-int 808) (local-int 9) (local-ptr 3)
 sub (local-int 80a) (local-int 808) d
 draw-texture (local-int 5) ad 0 0 50 28 (local-int 807) (local-int 80a)
-u00420950 (local-int 5) 1 ff ffffff
+set-draw-color-alpha (local-int 5) 1 ff ffffff
 u004223C0 (local-int 5) 0 12c 8 2 0
 u0041AC60 ffff
 u0041ACB0 ffff
@@ -316,7 +316,7 @@ add (local-int 5) (local-int 805) (local-int 0)
 add (local-int 805) (local-int 8) 1f7
 add (local-int 806) (local-int 9) 85
 draw-texture (local-int 5) ad 0 0 50 28 (local-int 805) (local-int 806)
-u00420950 (local-int 5) 1 ff ffffff
+set-draw-color-alpha (local-int 5) 1 ff ffffff
 u004223C0 (local-int 5) 0 12c 8 2 0
 u0041AC60 ffff
 u0041ACB0 ffff
@@ -472,7 +472,7 @@ jcc (local-int 805) ffffffff label_000028d0
 add (local-int 805) 2e248 12c
 add (local-int 806) (local-int 805) (local-int 0)
 sub (local-int 807) 0 1
-u00420880 (local-int 806) 0 12c 0 (local-int 807)
+set-draw-color (local-int 806) 0 12c 0 (local-int 807)
 jmp label_000027f0
 
 label_000028d0
@@ -488,12 +488,12 @@ label_0000291c
 u00420270 2e248 1f4
 ne (local-int 805) (global-int 708022) 1
 jcc (local-int 805) ffffffff label_00002974
-u00420480 ac
+release-texture ac
 
 label_00002974
-u00420480 ad
-u00420480 b6
-u00420480 b7
+release-texture ad
+release-texture b6
+release-texture b7
 u0041AC30 1e
 u0041AC60 (global-int f807b)
 u0041ACB0 (global-int f807c)

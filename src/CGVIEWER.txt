@@ -42,13 +42,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_000003f4
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 c8 ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 c8 ff 0
 jmp label_00000444
 
 label_000003f4
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 c8 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 c8 0 0
 
 label_00000444
 u00422EA0 10001
@@ -1315,10 +1315,10 @@ call label_0000622c
 call label_00006c64
 add (local-int 2970) 1d4c0 1
 sub (local-int 2971) 0 1
-u00420950 (local-int 2970) 0 ff (local-int 2971)
+set-draw-color-alpha (local-int 2970) 0 ff (local-int 2971)
 add (local-int 2970) 1d4c0 1
 sub (local-int 2971) 0 1
-u00420880 (local-int 2970) (local-int 28ff) (local-int 28fe) 0 (local-int 2971)
+set-draw-color (local-int 2970) (local-int 28ff) (local-int 28fe) 0 (local-int 2971)
 mov (local-int 0) 0
 jmp label_00005a88
 
@@ -1572,7 +1572,7 @@ mod (local-int 2970) (local-int 594) d
 lookup-array-2d (local-ptr 2) (local-int 2902) (local-int 0) 3 0
 ne (local-int 2972) (local-ptr 2) (local-int 2970)
 jcc (local-int 2972) ffffffff label_00006fa4
-u00420950 (local-int 5b1) 0 ff 808080
+set-draw-color-alpha (local-int 5b1) 0 ff 808080
 
 label_00006fa4
 lookup-array-2d (local-ptr 0) (local-int 2902) (local-int 0) 3 0
@@ -1680,13 +1680,13 @@ u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_000078cc
-u0043AA40 30d40 0 0 0
-u0043AA50 30d40 0 c8 ff 0
+set-vertex-color 30d40 0 0 0
+set-vertex-color-alpha 30d40 0 c8 ff 0
 jmp label_0000791c
 
 label_000078cc
-u0043AA40 30d40 0 ff 0
-u0043AA50 30d40 0 c8 0 0
+set-vertex-color 30d40 0 ff 0
+set-vertex-color-alpha 30d40 0 c8 0 0
 
 label_0000791c
 u00422EA0 10001
@@ -1706,9 +1706,9 @@ label_000079ac
 lt (local-int 2970) (local-int 0) 14
 jcc (local-int 2970) ffffffff label_00007a40
 add (local-int 2970) 2a (local-int 0)
-u00420480 (local-int 2970)
+release-texture (local-int 2970)
 add (local-int 2970) 7a (local-int 0)
-u00420480 (local-int 2970)
+release-texture (local-int 2970)
 jmp label_00007990
 
 label_00007a40

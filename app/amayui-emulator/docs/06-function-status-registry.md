@@ -155,9 +155,9 @@
 > ⚠️ **标题背景/版权真相**：`src/LOGO.txt` 用 `set-texture 5245 2a (SO006→slot 0x2a)`、`set-texture 5246 2b (SO005→slot 0x2b)` 设置背景/版权；
 > `src/TITLE.txt` 用 `set-texture 5272 4 (SO004→slot 4)` 设菜单。**set-texture slot(0x2a/0x2b/4) 与 draw-texture 纹理 id(0x30d40…)是两个索引空间**（`docs/09` §5）。
 
-> ⚠️ **淡入淡出 / 渐变（本次核查）**：引擎确有渐变/淡入淡出设施——`SetFade`、`SetLineFade`、`SetRandomFade`（实现含错误串，engine.cpp ~50082/51807/53243）、`FadeTimer`（vftable，~64894）、配置键 `"Fade"`（~5181）。
-> **常被忽略的渐变「颜色/α」配置指令**：`0x202`(u00420880→`sub_4231F0`→`sub_4AD0C0`) 与 `0x203`(u00420950→`sub_4232C0`→`sub_4ACF60`) 给绘制命令设**填充色 + alpha**（TITLE 里各用 49/50 次，如按钮/高亮/叠加层颜色）。二者已 `ignored`（NATIVE_OPS→stubSubsystem，只读操作数、不写 VM 态）。
-> **时间性淡入淡出**：脚本路径（LOGO→TITLE）**没有显式的逐帧 fade opcode**——淡入淡出更可能是引擎主循环内部的 `FadeTimer` 过渡（场景切换时）或配置驱动，而非脚本单条指令。需要渲染器层面按场景切换做 alpha 过渡（pacing）才能复现；模拟器当前未建模 `FadeTimer`。
+> ⚠️ **淡入淡出 / 渐变（详细见 `docs/11`，FadeTimer 结构实证）**：引擎的淡入淡出 = **FadeTimer 步进计时器**（7 DWORD+vtable，字段 `[1]elapsed/[2]step/[3]leftover/[4]stop/[5]startTime/[6]stepDur`；方法 `sub_453A20`(ctor)/`sub_453A60`(start)/`sub_453AF0`(tick)，engine.cpp 64892+) + **fade opcode 家族 0x20–0x38**（`sub_41D180…sub_41EA30`，各调 `sub_441410(mode,…)`：mode0=SetFade 整屏混合、1-8=SetLineFade、9=SetRandomFade）。
+> **常被忽略的渐变「颜色/α」配置指令**：`0x202`(set-draw-color→`sub_4231F0`→`sub_4AD0C0`) 与 `0x203`(set-draw-color-alpha→`sub_4232C0`→`sub_4ACF60`) 给绘制命令设**静态填充色 + alpha**（TITLE 里各用 49/50 次）——与 FadeTimer 的时间性淡入淡出不同。
+> **时间性淡入淡出**：boot→TITLE 脚本路径 **没有显式 fade opcode**（0x20–0x38 未被调用）；更像引擎主循环在场景切换时内部驱动 `FadeTimer` 过渡。模拟器复现最省力点 = 场景切换时叠加全屏 α 遮罩（按 FadeTimer 进度），而非逐条实现 fade opcode。
 
 ---
 

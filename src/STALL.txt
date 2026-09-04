@@ -818,7 +818,7 @@ u0042B990 (global-float 10) 2d0
 add (local-int be9) 1d4c0 fa0
 u0043AA20 (local-int be9) (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 add (local-int be9) 1d4c0 fa0
-u0043AA40 (local-int be9) 0 c0 0
+set-vertex-color (local-int be9) 0 c0 0
 ret
 
 label_00003238
@@ -853,9 +853,9 @@ draw-texture (local-int be9) c2 42f (local-int beb) 7d 37 3c9 (local-int bec)
 ne (local-int be9) (local-int be6) 1
 jcc (local-int be9) ffffffff label_00003770
 add (local-int be9) 1d4c0 107c
-u00420950 (local-int be9) 0 ff 808080
+set-draw-color-alpha (local-int be9) 0 ff 808080
 add (local-int be9) 1d4c0 107d
-u00420950 (local-int be9) 0 ff 808080
+set-draw-color-alpha (local-int be9) 0 ff 808080
 
 label_00003770
 ret
@@ -977,7 +977,7 @@ label_000040d0
 lt (local-int be9) (local-int 400) 64
 jcc (local-int be9) ffffffff label_0000413c
 add (local-int be9) 384 (local-int 400)
-u00420480 (local-int be9)
+release-texture (local-int be9)
 jmp label_000040b4
 
 label_0000413c

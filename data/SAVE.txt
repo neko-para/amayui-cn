@@ -1074,8 +1074,8 @@ sub (local-int 21c6) 0 1
 u00420E10 (local-int 21c6)
 create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
-u00420480 2
-u00420480 2a
+release-texture 2
+release-texture 2a
 u00420270 30d40 1
 mov (global-int f8002) (global-int 1397)
 eq (local-int 21c6) (global-int 0) 6
@@ -1098,7 +1098,7 @@ jcc (local-int 21c6) ffffffff label_00004c80
 mov (global-int 138f) (local-int 214)
 u00428010 (global-int 138f)
 u0041CED0 (local-int 12) (local-int 214) e
-u00420480 e
+release-texture e
 lookup-array (local-ptr 0) (local-int 61d) (local-int 214)
 lookup-array (local-ptr 2) (local-int a05) (local-int 214)
 lookup-array (local-ptr 3) (local-int ded) (local-int 214)
@@ -2188,9 +2188,9 @@ add (local-int 21c7) (local-int 21c6) (local-int f)
 add (local-int 21c8) (local-int 224) f
 draw-texture (local-int 21c7) c0 367 11c 85 18 d7 (local-int 21c8)
 add (local-int 21c6) c8 (local-int f)
-u00420480 (local-int 21c6)
+release-texture (local-int 21c6)
 add (local-int 21c6) d2 (local-int f)
-u00420480 (local-int 21c6)
+release-texture (local-int 21c6)
 
 label_0000a464
 jmp label_000085a4
@@ -2376,7 +2376,7 @@ label_0000b3f4
 lt (local-int 21c6) (local-int f) e
 jcc (local-int 21c6) ffffffff label_0000b460
 add (local-int 21c6) c0 (local-int f)
-u00420480 (local-int 21c6)
+release-texture (local-int 21c6)
 jmp label_0000b3d8
 
 label_0000b460
@@ -2390,7 +2390,7 @@ label_0000b49c
 lt (local-int 21c6) (local-int f) 37
 jcc (local-int 21c6) ffffffff label_0000b508
 add (local-int 21c6) 384 (local-int f)
-u00420480 (local-int 21c6)
+release-texture (local-int 21c6)
 jmp label_0000b480
 
 label_0000b508

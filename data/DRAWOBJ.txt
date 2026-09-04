@@ -40,7 +40,7 @@ lookup-array (local-ptr 0) (global-int 50ff9f) (local-int 2)
 and (local-int a) (local-ptr 0) 4
 eq (local-int b) (local-int a) 0
 jcc (local-int b) ffffffff label_0000033c
-u00420950 (local-int 9) 0 0 ffffff
+set-draw-color-alpha (local-int 9) 0 0 ffffff
 
 label_0000033c
 lookup-array (local-ptr 0) (global-int 511080) (local-int 1)
@@ -149,11 +149,11 @@ lookup-array-2d (local-ptr 1) (global-int 25c00) (global-int b222) 64 (local-int
 check-bit (local-int 7) (local-ptr 1) (local-int 4)
 jcc (local-int 7) ffffffff label_00000c9c
 lookup-array (local-ptr 1) (global-int 5110e4) (local-int 1)
-u00420950 (local-int 9) (local-ptr 1) ff ffffff
+set-draw-color-alpha (local-int 9) (local-ptr 1) ff ffffff
 jmp label_00000cc0
 
 label_00000c9c
-u00420950 (local-int 9) 0 0 ffffff
+set-draw-color-alpha (local-int 9) 0 0 ffffff
 
 label_00000cc0
 ret

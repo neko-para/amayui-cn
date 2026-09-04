@@ -91,7 +91,7 @@ u0042B990 (global-float 11) (float 0)
 u0042B990 (global-float 12) (float 0)
 u0042B990 (global-float 13) (float 0)
 u0042B990 (global-float 14) (float 0)
-u0043AA40 0 0 ff (global-int 14d711)
+set-vertex-color 0 0 ff (global-int 14d711)
 mov (local-int 9) 1
 jmp label_000006fc
 
@@ -238,7 +238,7 @@ label_0000137c
 jcc (local-int 22) ffffffff label_0000175c
 draw-texture (local-int 2) 48 46 46 64 64 (local-int 1d) (local-int 1e)
 add (local-int 2) (local-int 2) 1
-u00420950 (local-int 3) 0 (global-int 14d714) (global-int 14d715)
+set-draw-color-alpha (local-int 3) 0 (global-int 14d714) (global-int 14d715)
 and (local-int 3b4) (local-int 22) 2
 jcc (local-int 3b4) ffffffff label_000014ec
 add (local-int 3) (local-int 3) 1

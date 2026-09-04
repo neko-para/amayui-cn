@@ -60,9 +60,9 @@ u0041B7B0 1
 
 label_000003ec
 sub (local-int 48) 0 1
-u0043AA40 1d4c0 0 0 (local-int 48)
+set-vertex-color 1d4c0 0 0 (local-int 48)
 sub (local-int 48) 0 1
-u0043AA50 1d4c0 0 c8 c0 (local-int 48)
+set-vertex-color-alpha 1d4c0 0 c8 c0 (local-int 48)
 mov (local-int c) 0
 jmp label_000004b0
 
@@ -75,11 +75,11 @@ jcc (local-int 48) ffffffff label_000005ec
 add (local-int 48) 1d4c0 a
 add (local-int 49) (local-int 48) (local-int c)
 sub (local-int 4b) 0 1
-u00420950 (local-int 49) 0 0 (local-int 4b)
+set-draw-color-alpha (local-int 49) 0 0 (local-int 4b)
 add (local-int 48) 1d4c0 a
 add (local-int 49) (local-int 48) (local-int c)
 sub (local-int 4b) 0 1
-u00420880 (local-int 49) 64 c8 ff (local-int 4b)
+set-draw-color (local-int 49) 64 c8 ff (local-int 4b)
 jmp label_00000494
 
 label_000005ec
@@ -90,7 +90,7 @@ u00422FF0 30d40 e (local-int 48) 5a 64 280 d6 0 280 d6 64 1f4
 u00415BF0
 u00416270
 u00420270 30d40 1
-u00420480 e
+release-texture e
 
 label_000006fc
 mov (local-int 7) 0
@@ -284,7 +284,7 @@ u0042B990 (global-float e) 0
 u0042B990 (global-float f) 2d0
 u0042B990 (global-float 10) 2d0
 u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0043AA40 1d4c0 0 80 0
+set-vertex-color 1d4c0 0 80 0
 add (local-int 48) 1d4c0 a
 draw-texture (local-int 48) 49 0 c1 29f 21a 130 4c
 add (local-int 48) 1d4c0 b
@@ -465,7 +465,7 @@ ret
 label_00002164
 jcc (global-int 5b8b0) ffffffff label_00002314
 sub (local-int 48) 0 1
-u0043AA50 1d4c0 64 c8 0 (local-int 48)
+set-vertex-color-alpha 1d4c0 64 c8 0 (local-int 48)
 mov (local-int c) 0
 jmp label_00002204
 
@@ -478,7 +478,7 @@ jcc (local-int 48) ffffffff label_000022c8
 add (local-int 48) 1d4c0 a
 add (local-int 49) (local-int 48) (local-int c)
 sub (local-int 4b) 0 1
-u00420880 (local-int 49) 0 c8 0 (local-int 4b)
+set-draw-color (local-int 49) 0 c8 0 (local-int 4b)
 jmp label_000021e8
 
 label_000022c8
@@ -490,5 +490,5 @@ mov (global-int 5b8b0) 0
 
 label_00002314
 u00420270 1d4c0 64
-u00420480 2a
+release-texture 2a
 exit
