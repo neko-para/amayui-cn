@@ -24,6 +24,7 @@
 | [`docs/04-boot-chain-analysis.md`](./docs/04-boot-chain-analysis.md) | 启动链实证（SYSTEM4→…→TITLE）+ opcode 清点 + 分类方法 |
 | [`docs/06-function-status-registry.md`](./docs/06-function-status-registry.md) | **函数级状态追踪注册表**（ADR-010：每个原函数重写状态 + 确认忽略的证据/复核） |
 | [`docs/07-pointer-operand-model.md`](./docs/07-pointer-operand-model.md) | **指针操作数模型**（ADR-011）：`lea`/`lookup-array`/`memcpy` 的模拟隐患——指针=带标记引用，读解引用/写写穿，不当数值 |
+| [`docs/08-render-backend.md`](./docs/08-render-backend.md) | **渲染后端选型**：Canvas 2D 起步 + WebGL2 预留；窗口/文件流/渲染壳已接到 Electron |
 
 ---
 
@@ -47,14 +48,16 @@
 
 ```
 app/amayui-emulator/
-├─ docs/            # 背景/ADR/计划/启动链分析/函数注册表
+├─ docs/            # 背景/ADR/计划/启动链分析/函数注册表/渲染后端
+├─ electron/        # Electron 壳：main.ts(主进程+文件IPC) / preload.ts(contextBridge)
 ├─ src/
 │  ├─ arch/         # FileSource 抽象 + Node 实现（异步文件代理）
+│  ├─ renderer/     # IpcFileSource + PixiBackend(PixiJS v8 WebGL 渲染后端) + renderer.ts(入口)
 │  ├─ script/       # lzss / alf(索引) / bin(SYS4450 解析) / opcodes 表
 │  ├─ util/         # 字节读取
 │  └─ vm/           # engine / operand(DEC·ENC) / ops / interpreter / native(stub)
 ├─ test/            # xval(解析vs文本) + boot(管线级)
-└─ package.json     # npm run = 启动；npm test = 测试
+└─ package.json     # npm run = 启动；npm test = 测试；electron:dev = 构建+渲染壳
 ```
 
 ## 权威事实来源（本工程其它目录）
