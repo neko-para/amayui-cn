@@ -133,16 +133,18 @@ install 中 `AGE-EXTEND.TTF` 已移除（`config.js` 已将其加入排除名单
 
 字体来源（`res/fonts/`）：
 
-- `Amayui-CN_cnjp.ttf`：WenQuanYi 基底 + 按当前 `res/subs_cn_jp.json` 替换 + 唯一族名
-  “Amayui CN”（name 表全语言一致）；实测**不含**外字字形，停顿标记 U+E000–E010
-  由引擎处理/回退显示（可接受）。
-- `MSGothic_WenQuanYi.ttf` / `WenQuanYi.ttf`：重建基底字体。
+- `Amayui-CN_cnjp.ttf`：**Sarasa Gothic SC 基底**（更纱黑体 SC，2026-08 起替换 WenQuanYi）+ 按当前
+  `res/subs_cn_jp.json` 替换 + 唯一族名“Amayui CN”（name 表全语言一致）+ 声明 Shift-JIS(932) 码页；
+  实测**不含**外字字形，停顿标记 U+E000–E010 由引擎处理/回退显示（可接受）。
+- `SarasaGothicSC/SarasaGothicSC-Regular_cnjp.ttf`：中间产物（cnjp 替换但未改族名）。
+- `MSGothic_WenQuanYi.ttf` / `WenQuanYi.ttf`：**旧 WenQuanYi 基底**（已弃用，可回退）。
 - `AGE-Extend_cnjp.ttf`：族名伪装为 AGE Extend 的同内容变体，且**已并入**原版
   AGE-EXTEND.TTF 的外字字形 U+E000–E010（文件覆盖方案遗留，当前方案不再使用；
   未迁入 res/fonts，需要时可从上游 SExtractor 目录取用）。
 
 注意：上游 SExtractor 自带的老版 cnjp 字体缺 `顕→显` 替换，必须按当前字典重新生成
-（`python font_CN_JP.py ../res/fonts/MSGothic_WenQuanYi.ttf`，依赖 fonttools，在 `scripts/` 下执行）。
+（Sarasa 基底：`python font_CN_JP.py ../res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf`，
+依赖 fonttools，在 `scripts/` 下执行；再改族名 + 对齐 932 码页，见 `docs/font-build.md` §8）。
 
 ## 标准翻译流程（src 源文件 + 翻译语法）
 
