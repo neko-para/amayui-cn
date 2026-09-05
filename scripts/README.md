@@ -87,20 +87,24 @@ APPEND01 等子目录内的脚本）会打印 `[skip]` 跳过，不视为错误�
 
 注意：manifest 只统计顶层文件，生成很快；install 解包出来的 DATA1-8 子目录不参与 MD5 追踪。
 
-## Decompiler 路径坑（重要）
+## 脚本汇编器（Node 版 age-asm）
 
-`age-asm.exe`（cmake 构建产物）用 ANSI 参数接收路径（系统 ACP=936），含日文/中文的绝对路径会被搅乱，
-PowerShell 的 `Push-Location` / `cd /d` 也靠不住。统一做法：使用 ASCII 别名 junction：
-
-```powershell
-New-Item -ItemType Junction -Path "E:\Games\Eushully\wk" -Target "E:\Games\Eushully\天結"
-```
-
-之后所有汇编/反汇编用 `E:\Games\Eushully\wk\...` 绝对路径：
+脚本反汇编/重汇编现由 **Node 版 age-asm**（`scripts/asm/`）承担，`translate.js` 直接调用，
+可替代 `tools/eushully-decompiler/build/Release/age-asm.exe`：
 
 ```bash
-E:\Games\Eushully\wk\tools\eushully-decompiler\build\Release\age-asm.exe -e sjis -a data\OPINIT1.txt .tmp\OPINIT1.smoke.BIN
+node scripts/asm/cli.js -e sjis -d <in.bin> <out.txt>   # 反汇编
+node scripts/asm/cli.js -e sjis -a <in.txt> <out.bin>   # 重汇编
+node scripts/asm/cli.js -e sjis -x <in.bin>             # 往返校验（逐字节 equal）
 ```
+
+- **跨平台**：仅依赖 `iconv-lite`，macOS/Linux 可直接运行，无需 Wine / cmake 重编译；
+- **data-driven 指令集**：`scripts/asm/opcodes.json` 运行时加载，更新指令集改 JSON 即可；
+- **路径**：Node 以 UTF-8 处理路径，含日文/中文绝对路径可直接用，
+  **不再需要 `E:\Games\Eushully\wk` ASCII junction**（旧 age-asm.exe 用 ANSI 接收路径、
+  ACP=936 会搅乱日文/中文路径）。
+
+`npm run assemble -- <脚本>` 内部即用该 Node 汇编器。
 
 ## hook 路线结论（已放弃 UIF）
 
@@ -169,7 +173,7 @@ npm run assemble -- OPINIT1   # src → 语法展开（对/标记 → SJIS 码�
 
 - **骨架校验**：除文本行（set-string / show-text / display-furigana / concat / **end-text-line**）外，
   所有控制行（label / u 字节码 / jcc 等）必须与 data 基线逐字节一致；误删控制行编译期报错；
-- **外字**（U+E000–E010）：原文中保留（Decompiler 可无损往返），译文不写外字；
+- **外字**（U+E000–E010）：原文中保留（asm 工具可无损往返），译文不写外字；
 - **编码映射**：与上游 SExtractor 的 JIS 替换同一字典（`res/subs_cn_jp.json`），可编码原样、否则日文写法占位、
   渲染时由 Amayui CN 字体还原简体；字典缺失字符在 assemble 时报错；
 - **注音策略（当前）**：释义/称号类注音保留在 display-furigana 位置（中文释义作注音，

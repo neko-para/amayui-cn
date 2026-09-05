@@ -45,9 +45,12 @@ E:\Games\Eushully\天結\
 
 ## 5. 运行与工具
 
-- 反汇编/重汇编：`tools/eushully-decompiler/build/Release/age-asm.exe -d|-a|-x`。
+- 反汇编/重汇编（**推荐 Node 版 age-asm**）：`node scripts/asm/cli.js -e sjis -d|-a|-x`（data-driven 指令集
+  `scripts/asm/opcodes.json`，跨平台、无路径坑，更新指令集改 JSON 无需重编译）。旧 Windows 版
+  `tools/eushully-decompiler/build/Release/age-asm.exe` 仅作参考。
 - ALF 解包（**推荐 Node 重写版**）：`node scripts/alf/unpack_alf.mjs SYS4INI.BIN`（跨平台，无 Wine/Windows CRT；
   `--out <目录>` 指定输出根，归档按索引所在目录解析）。调试文件 `lzssdata*.bin` 默认**不写**（`DEBUG_DUMP=true` 才写）。
   旧 Windows C 版 `tools/alf/unpack_alf.exe` 仅作参考。
-- ⚠️ `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱；用 ASCII 别名 junction：
-  `New-Item -ItemType Junction -Path "E:\Games\Eushully\wk" -Target "E:\Games\Eushully\天結"`，之后全用 `E:\Games\Eushully\wk\...`。
+- ⚠️ 旧 `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱，需用 ASCII 别名 junction
+  （`New-Item -ItemType Junction -Path "E:\Games\Eushully\wk" -Target "E:\Games\Eushully\天結"`）。
+  **Node 版 `scripts/asm/cli.js` 以 UTF-8 处理路径，无此问题**，无需 junction。

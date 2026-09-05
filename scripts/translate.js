@@ -1,13 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { ROOT_DIR, INSTALL_DIR, SRC_DIR } from './config.js';
 import { mapToSjis, validateSjis } from './lib/sjis-encode.js';
+import { assemble as assembleScript } from './asm/reassembler.mjs';
+import { disassemble as disassembleScript } from './asm/disassembler.mjs';
 
-// age-asm（cmake 构建）对含日文/中文的绝对路径参数支持不佳（ANSI 936），统一走 ASCII junction
-const ASCII_JUNCTION = 'E:\\Games\\Eushully\\wk';
-const DECOMPILER = path.join(ASCII_JUNCTION, 'tools', 'eushully-decompiler', 'build', 'Release', 'age-asm.exe');
-
+// Node 版 age-asm（scripts/asm，跨平台，指令集数据驱动）。与原 age-asm.exe 等价，
+// 且不再受 ANSI 936 路径限制，无需 E:\Games\Eushully\wk ASCII junction。
 const DATA_DIR = path.join(ROOT_DIR, 'data');   // 只读比较基线（原始日文）
 
 // 翻译语法（src 源文件内）：
@@ -123,11 +122,13 @@ function assemble(script) {
     process.exit(1);
   }
 
-  fs.mkdirSync(path.join(ASCII_JUNCTION, '.tmp'), { recursive: true });
-  const asciiPlain = path.join(ASCII_JUNCTION, '.tmp', `${script}.plain.txt`);
-  const asciiOut = path.join(ASCII_JUNCTION, '.tmp', `${script}.BIN`);
+  fs.mkdirSync(path.join(ROOT_DIR, '.tmp'), { recursive: true });
+  const asciiPlain = path.join(ROOT_DIR, '.tmp', `${script}.plain.txt`);
+  const asciiOut = path.join(ROOT_DIR, '.tmp', `${script}.BIN`);
+  // Node 版汇编：直接读 preprocess 展开的文本 → BIN（无 junction / Windows 路径限制）
+  const bin = assembleScript(plain, null, 932);
   fs.writeFileSync(asciiPlain, plain, 'utf8');
-  execFileSync(DECOMPILER, ['-e', 'sjis', '-a', asciiPlain, asciiOut]);
+  fs.writeFileSync(asciiOut, bin);
 
   // 安装：install 根 + install/DATA1（松散覆盖）
   const installed = [];
@@ -138,9 +139,7 @@ function assemble(script) {
   }
 
   // 回读验证：反汇编后应包含所有展开的译文
-  const asciiCheck = path.join(ASCII_JUNCTION, '.tmp', `${script}.check.txt`);
-  execFileSync(DECOMPILER, ['-e', 'sjis', '-d', asciiOut, asciiCheck]);
-  const check = fs.readFileSync(asciiCheck, 'utf8');
+  const check = disassembleScript(bin, null, 932);
   const expected = [];
   for (const line of src.split(/\r\n|\r|\n/)) {
     if (line.trim().startsWith('//')) continue;

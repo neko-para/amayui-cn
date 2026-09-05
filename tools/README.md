@@ -6,7 +6,7 @@
 |------|------|------|------|------|
 | `alf\unpack_alf.exe` | foxofice/alf（源自 asmodean exs4alf） | 8a70066 (2025-09-26) | 已编译可用（已移除 getchar 阻塞） | 解包 `SYS4INI.BIN`+`DATA*.ALF`、`APPEND*.AAI` |
 | `alf\packdata`（源码） | 同上（战Z中文项目） | 同上 | 源码，需按天結い适配 | 修改文件重打包进 ALF 并重建索引 |
-| `eushully-decompiler\build\Release\age-asm.exe` | Kelebek1/Eushully-Decompiler | 21da1e8 (2024-08-30)；cmake 构建 | 已编译可用 | AGE 脚本反汇编(`-d`)/重汇编(`-a`)/往返校验(`-x`) |
+| `eushully-decompiler\build\Release\age-asm.exe` | Kelebek1/Eushully-Decompiler | 21da1e8 (2024-08-30)；cmake 构建 | 可用（Windows）；**推荐改用 Node 版** | AGE 脚本反汇编(`-d`)/重汇编(`-a`)/往返校验(`-x`) |
 | `SExtractor\` | satan53x/SExtractor | 克隆时 HEAD | Python 3.9+ GUI 工具，依赖已按 requirements 安装 | 按正则从脚本提取/导入文本；可导出 UIF 的 JIS 替换配置与 `sjis_ext.bin`（tunnel 编码） |
 | `Eushully_AGF_TooL\Eushully_AGF_TooL.exe` | Koreanshy（ai2.moe「Eushully会社 AGF图片处理工具」） | 2026-02-20（PyInstaller GUI） | 可用（已实测；可无界面调用） | AGF→PNG 批量导出 / PNG→AGF 有头注入、无头打包（UI/背景图片） |
 | `UniversalInjectorFramework\` | AtomCrafty/UniversalInjectorFramework | 克隆时 HEAD | 源码（无 release，VS v143 工程，需编译） | 运行时注入：字体/编码/转区（中文显示方案） |
@@ -26,10 +26,15 @@ python -m pip install -r tools/SExtractor/requirements.txt
 # 解包（在含 SYS4INI.BIN 的目录运行）
 tools/alf/unpack_alf.exe SYS4INI.BIN
 
-# 反汇编/重汇编/往返校验
+# 反汇编/重汇编/往返校验（Windows 版，仍需 ASCII junction 处理日文/中文路径）
 tools/eushully-decompiler/build/Release/age-asm.exe -d SC0000.BIN SC0000.txt
 tools/eushully-decompiler/build/Release/age-asm.exe -a SC0000.txt SC0000.BIN
 tools/eushully-decompiler/build/Release/age-asm.exe -x SC0000.BIN
+
+# Node 版（推荐）——跨平台、data-driven 指令集、无路径坑；见 ../scripts/asm/README.md
+node scripts/asm/cli.js -e sjis -d SC0000.BIN SC0000.txt
+node scripts/asm/cli.js -e sjis -a SC0000.txt SC0000.BIN
+node scripts/asm/cli.js -e sjis -x SC0000.BIN
 ```
 
 ## 编译方式（如需要重新构建）

@@ -13,7 +13,8 @@
 
 - 头部：`SYS4450 ` + 6 个 u32 局部变量数 + 0x1C + 三张表（length/offset）。
 - 指令流为 AGE 字节码；字符串位于数据表尾部，**0xFF 按位取反 + SJIS** 存储，0xFF 结束。
-- 反汇编/重汇编：`age-asm.exe`（`-d` 反汇编 / `-a` 重汇编 / `-x` 往返校验，逐字节 equal）。
+- 反汇编/重汇编：**Node 版 age-asm**（`scripts/asm/cli.js`，data-driven 指令集 `scripts/asm/opcodes.json`；
+  `-d` 反汇编 / `-a` 重汇编 / `-x` 往返校验，逐字节 equal，跨平台、无路径坑）。`age-asm.exe` 为旧 Windows 版（仅兜底）。
 
 ## 3. AGF 图片格式（UI / 背景）
 
@@ -35,20 +36,22 @@
 
 - Shift-JIS `0xF040–0xF9FC` 为用户定义外字区，CP932 线性映射到私有区 `U+E000–U+E757`。
 - 天結い脚本大量使用：U+E000 共 17,210 处（156 个文件），成对出现在台词开头/停顿/句尾，语义为**停顿/无声标记**。
-- **处理要求**：外字只出现在**未翻译原文行**（保留原样，Decompiler 无损往返）；**译文不写外字**；`Amayui CN` 字体本身不含外字字形，游戏中停顿标记由引擎处理/回退显示（实测可接受）。
+- **处理要求**：外字只出现在**未翻译原文行**（保留原样，asm 工具（scripts/asm）无损往返）；**译文不写外字**；`Amayui CN` 字体本身不含外字字形，游戏中停顿标记由引擎处理/回退显示（实测可接受）。
 
 ## 6. 工具链常用命令
 
 ```bash
 node scripts/alf/unpack_alf.mjs SYS4INI.BIN                 # ALF 解包（Node 跨平台版，推荐）
 node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN
-tools/eushully-decompiler/build/Release/age-asm.exe -d SC0000.BIN SC0000.txt
-tools/eushully-decompiler/build/Release/age-asm.exe -a SC0000.txt SC0000.BIN
-tools/eushully-decompiler/build/Release/age-asm.exe -x SC0000.BIN
+node scripts/asm/cli.js -e sjis -d SC0000.BIN SC0000.txt    # 反汇编（Node 版，推荐）
+node scripts/asm/cli.js -e sjis -a SC0000.txt SC0000.BIN    # 重汇编
+node scripts/asm/cli.js -e sjis -x SC0000.BIN               # 往返校验（逐字节 equal）
 node scripts/agf/cli.js extract <AGF...> --out <目录>      # AGF→PNG（Node 版）
 ```
 
-> ⚠️ `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱；用 ASCII 别名 junction（见 `../00-overview/conventions.md`）。
+> ⚠️ 旧 `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱；
+> **Node 版 `scripts/asm/cli.js` 无此问题**（UTF-8 处理路径），无需 ASCII 别名 junction。
+> Node 版指令集数据也在 `scripts/asm/opcodes.json`，更新指令集改该 JSON 即可，无需重编译。
 
 ## 7. 交叉引用
 

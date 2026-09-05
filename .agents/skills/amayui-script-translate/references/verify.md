@@ -1,18 +1,18 @@
 # 翻译复核清单
 
-翻译完成后，必须执行以下复核（写仓库需提权）。assemble 为 Windows 专属流程；
-macOS 上改用第 1.5 节本地校验并登记 PENDING.md。
+翻译完成后，必须执行以下复核（写仓库需提权）。assemble 由 Node 版 age-asm（scripts/asm）承担、
+跨平台（任何平台均可）；仅在尚未构建 install 树 / 无法运行游戏验证时改用第 1.5 节本地校验并登记 PENDING.md。
 
-## 1. 官方 assemble（必做，仅 Windows）
+## 1. 官方 assemble（必做，默认）
 ```powershell
 cd E:\Games\Eushully\天結\scripts
 npm run assemble -- <SCRIPT>
 ```
 必须输出“骨架校验通过，回读验证 N/N 处译文”并写入 install 根 + DATA1。
 
-## 1.5 macOS 本地校验 + PENDING.md 登记（必做，仅 macOS）
+## 1.5 本地校验 + PENDING.md 登记（备用，仅当暂不 assemble）
 
-macOS 无法执行 assemble/安装，用以下本地校验替代：
+若尚未构建 install 树 / 无法运行游戏验证，用以下本地校验替代：
 
 ```bash
 # 三段式页块流程：reflow 幂等验证（0 差异）
@@ -21,12 +21,11 @@ node scripts/reflow-apply.js --check <SCRIPT>
 node scripts/find-untranslated.js <SCRIPT>
 ```
 
-- 宽度/结构检查仍按第 2、3 节执行（src 路径用
-  `/Users/nekosu/Documents/Projects/amayui-cn/src/<SCRIPT>.txt`）；
+- 宽度/结构检查仍按第 2、3 节执行（src 路径用仓库内相对路径，如 `src/<SCRIPT>.txt`）；
 - 项目根 `PENDING.md` 必须已登记该脚本（完全新翻译或修改），格式见
-  conventions.md「macOS 流程与 PENDING.md 登记」；
+  conventions.md「本地校验流程与 PENDING.md 登记」；
 - 条目内容须与实际改动一致：类型（完全新翻译/修改）、改动统计、关联文档、
-  待办（Windows 上 `npm run assemble -- <SCRIPT>`）。
+  待办（`npm run assemble -- <SCRIPT>`）。
 
 ## 2. 宽度检查（≤25 中文字 = ≤50 显示单位）
 （仅适用于 ADV 视觉行 show-text/display-furigana/concat；draw-string 为固定控件文本，不适用
@@ -85,17 +84,17 @@ node find-untranslated.js [文件...]
 git -C E:\Games\Eushully\天結 status --porcelain
 ```
 预期出现 `src/<SCRIPT>.txt`（M）、`docs/prob-<SCRIPT>.md`（??/M）、
-`docs/keywords-<主题或脚本>.md`（??/M）；Windows 流程另见 `PROGRESS.md`（M）、
-`patch/patch.config.json`（M），macOS 流程则见根目录 `PENDING.md`（M/??）且
+`docs/keywords-<主题或脚本>.md`（??/M）；完成 assemble 的流程另见 `PROGRESS.md`（M）、
+`patch/patch.config.json`（M），未 assemble 只做本地校验的流程则见根目录 `PENDING.md`（M/??）且
 **不得修改** `PROGRESS.md` 与 `patch/patch.config.json`；其余为先前既有/用户并发改动，不要触碰。
 大批量流程后不得残留 `scripts/tmp-<SCRIPT>-map.json` 等临时映射（`??` 即不合格，须删除）。
 
 ## 5. 记录检查
-- Windows：`PROGRESS.md` 已包含 `<SCRIPT>`（已翻译索引）；`patch/patch.config.json` 的
+- 完成 assemble：`PROGRESS.md` 已包含 `<SCRIPT>`（已翻译索引）；`patch/patch.config.json` 的
   `files` 已包含 `install/<SCRIPT>.BIN` 同步条目；`patch/CHANGELOG.md` 已按
   conventions.md「变更记录」节把本次改动追加到当前「开发中」版本节
   （类型/脚本/改动与实际一致，不含 assemble 等技术校验信息）。
-- macOS：`PENDING.md` 已包含 `<SCRIPT>` 条目（类型/改动/待办齐全），且 `PROGRESS.md` 与
+- 仅本地校验：`PENDING.md` 已包含 `<SCRIPT>` 条目（类型/改动/待办齐全），且 `PROGRESS.md` 与
   `patch/patch.config.json`、`patch/CHANGELOG.md` 未被修改。
 
 ## 6. 抽查

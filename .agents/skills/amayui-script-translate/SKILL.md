@@ -1,13 +1,13 @@
 ---
 name: amayui-script-translate
-description: 直接执行《天結いキャッスルマイスター》汉化工程的游戏脚本翻译流程：把 src/*.txt（如 SC0000、SC0001、OPINIT1）从日文翻译为简体中文，并按既有约定完成排版（≤25 字/行）、构建校验（assemble；macOS 无法汇编时在 PENDING.md 登记未编译条目）。当用户要求：翻译/重译某个游戏脚本、重排已翻译脚本、或并行翻译多个脚本时，使用本技能（单脚本在本会话内直接执行；批量/并行长流程可交由 batch-task-runner 技能用 codex CLI 子进程顺次执行）。
+description: 直接执行《天結いキャッスルマイスター》汉化工程的游戏脚本翻译流程：把 src/*.txt（如 SC0000、SC0001、OPINIT1）从日文翻译为简体中文，并按既有约定完成排版（≤25 字/行）、构建校验（assemble；Node 版 age-asm 跨平台，任何平台均可校验）。当用户要求：翻译/重译某个游戏脚本、重排已翻译脚本、或并行翻译多个脚本时，使用本技能（单脚本在本会话内直接执行；批量/并行长流程可交由 batch-task-runner 技能用 codex CLI 子进程顺次执行）。
 ---
 
 # Amayui Script Translate（天結い脚本翻译）
 
 ## 概述
 
-本会话内**直接执行**单脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表、角色语气），最后校验——Windows 上用 `assemble`，macOS 上无法汇编/安装，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。**批量场景**（一次处理多个脚本/大量同质任务、流程长、需稳定可续跑）可改用 `batch-task-runner` 技能，用 codex CLI 子进程顺次执行，见下节。
+本会话内**直接执行**单脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表、角色语气），最后校验——`npm run assemble -- <脚本>`（Node 版 age-asm 跨平台，任何平台均可）。若尚未构建 install 树/无法运行游戏验证，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。**批量场景**（一次处理多个脚本/大量同质任务、流程长、需稳定可续跑）可改用 `batch-task-runner` 技能，用 codex CLI 子进程顺次执行，见下节。
 
 ## 批量执行（可选；可借助 codex CLI）
 
@@ -19,7 +19,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
    - ≤25 字折行与 reflow（`node reflow-apply.js <脚本>`）；
    - 每页按 `// FROM: <id> <名称>` 查 `docs/keywords-角色语气.md` 保持角色语气；
    - 术语表（`docs/glossary-draft.md`）、SC/SG 联动、不修改 `data/`；
-   - macOS 流程：不 assemble，本地校验后登记项目根 `PENDING.md`。
+   - 备用流程：不 assemble（如尚未构建 install 树），本地校验后登记项目根 `PENDING.md`。
    - 记录：子进程不写 `PROGRESS.md` / `patch/patch.config.json` / `patch/CHANGELOG.md`，
      由主进程统一追加（避免并发重复记账）。
 3. 用 `batch-task-runner/scripts/batch-run.js` 顺次执行（每次 codex CLI 调用输出/日志独立落文件，失败重试、断点续跑）。
@@ -35,13 +35,14 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 - `docs/prob-决策清单.md`：跨文件译名/术语定稿决策表（唯一决策源）
 - `docs/keywords-角色语气.md`：角色语气汇总（70 个角色；翻译时按页首 `// FROM: <id> <名称>` 定向检索）
 - `docs/prob-角色翻译不一致.md`：已有译文不一致清单（2026-08-12 定案）
-- `scripts/translate.js`：assemble（骨架校验 + SJIS + 回读）
+- `scripts/translate.js`：assemble（骨架校验 + SJIS + 回读；内部调用 Node 版 age-asm）
 - `scripts/lib/reflow.js` + `scripts/reflow.js`：折行工具（`npm run reflow`）
-- Decompiler（已改用 cmake 构建，二进制为 `tools\eushully-decompiler\build\Release\age-asm.exe`）
-  路径必须走 ASCII junction `E:\Games\Eushully\wk -> 天結`（translate.js 已内置）
-- macOS 环境：当前仓库可在 macOS（`/Users/nekosu/Documents/Projects/amayui-cn`）上翻译与本地校验
-  （node 工具均可运行）；assemble 与安装（SJIS 写盘 / install 树 / DATA1 写入）依赖 Windows，
-  macOS 上翻译/修改完成后在项目根 `PENDING.md` 登记「已翻译、未编译」条目（格式见 conventions.md）。
+- Node 版 age-asm（`scripts/asm/`）：反汇编/重汇编/往返校验，data-driven 指令集
+  `scripts/asm/opcodes.json`（更新指令集改 JSON 即可，无需重编译）；
+  `translate.js` 已直接调用，跨平台，无 ASCII junction / ANSI 936 路径限制
+- macOS 环境：当前仓库可在 macOS（`/Users/nekosu/Documents/Projects/amayui-cn`）上翻译、本地校验
+  并 `npm run assemble`（Node 版 age-asm 跨平台）。若尚未构建 install 树 / 无法运行游戏验证，
+  仍可只做本地校验并把该脚本登记到项目根 `PENDING.md`（格式见 conventions.md）。
 
 ## 流程
 
@@ -58,9 +59,10 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
      （见 conventions.md「大批量 SC 脚本」节），临时映射 JSON 用后即删；
      页数很少时才手工逐页改块，每完成约 30–50 页写回一次文件。
 3. **构建校验**：
-   - Windows：在 `scripts` 目录运行 `npm run assemble -- <脚本>`，必须通过
-     （骨架校验 / SJIS / 回读验证），产物写入 install 根 + DATA1。
-   - macOS：无法 assemble / 安装。改用本地校验（`reflow-apply.js --check`、
+   - 在 `scripts` 目录运行 `npm run assemble -- <脚本>`，必须通过
+     （骨架校验 / SJIS / 回读验证；Node 版 age-asm 跨平台，任何平台均可运行），
+     产物写入 install 根 + DATA1。
+   - 若尚未构建 install 树 / 无法运行游戏验证：改用本地校验（`reflow-apply.js --check`、
      `find-untranslated.js`、宽度/结构检查，见 `references/verify.md`），
      并在项目根 `PENDING.md` 登记该脚本（完全新翻译与修改均登记）。
 4. **复核**：按 `references/verify.md` 检查宽度（≤25 中文字）、结构（`// 输入原文` 注释、
@@ -69,12 +71,13 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
    原文疑误分类）；为关键术语建立/更新 `docs/keywords-<主题或脚本>.md`（关键字表，已有同主题文档
    则合并更新，如 `keywords-装备与物品.md`）；必要时同步 `docs/README.md` 的目录与完成状态。
 6. **记录**：
-   - Windows：翻译完成后更新 `PROGRESS.md`（把脚本加入已翻译索引）、`patch/patch.config.json`
+   - 完成 `npm run assemble -- <脚本>`（任何平台均可，Node 版 age-asm）后：
+     更新 `PROGRESS.md`（把脚本加入已翻译索引）、`patch/patch.config.json`
      （把 assemble 产物 BIN 加入补丁同步清单）与 `patch/CHANGELOG.md`（按 conventions.md
      「变更记录」节，把本次改动条目添加到「开发中」版本节最上方）。
-   - macOS：只更新项目根 `PENDING.md`（同一脚本已有条目则更新合并，不重复追加）；
-     `PROGRESS.md` 与 `patch/patch.config.json` 留待 Windows assemble 通过后登记。
-7. **报告**：翻译统计、术语应用、assemble 结果（macOS 流程为 PENDING.md 登记情况）、
+   - 若只做了本地校验、尚未 assemble：只更新项目根 `PENDING.md`（同一脚本已有条目则更新合并，
+     不重复追加）；`PROGRESS.md` 与 `patch/patch.config.json` 留待 assemble 通过后登记。
+7. **报告**：翻译统计、术语应用、assemble 结果（若只做本地校验则为 PENDING.md 登记情况）、
    CHANGELOG 追加情况（版本节与条目数）、文档沉淀路径、存疑名词清单。
 
 ## 关键约定（概要；完整规则见 references/conventions.md）
@@ -96,9 +99,10 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
   保持自称/称呼、敬语层级、句尾语气、口头禅、拟声、译名一致；修正已有不一致时
   对照 `docs/prob-角色翻译不一致.md` 的定案口径。
 - 沉淀：prob-<脚本>.md（待定）+ keywords-<主题>.md（关键字表）→ docs/；同步 docs/README.md。
-- 记录：Windows 上翻译完成后改 PROGRESS.md、patch/patch.config.json 与 patch/CHANGELOG.md
-  （变更条目添加到「开发中」版本节最上方）；macOS 上只写项目根 PENDING.md（已翻译未编译登记），待 Windows assemble
-  通过后再登记 PROGRESS/patch.config/CHANGELOG。
+- 记录：翻译完成后在任意平台 `npm run assemble -- <脚本>`（Node 版 age-asm 跨平台），
+  通过后改 PROGRESS.md、patch/patch.config.json 与 patch/CHANGELOG.md
+  （变更条目添加到「开发中」版本节最上方）；若只做了本地校验尚未 assemble，
+  则只写项目根 PENDING.md（已翻译未编译登记），待 assemble 通过后再登记这三处。
 - 不修改 data/；不执行 git 提交。
 
 ## 资源

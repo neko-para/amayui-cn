@@ -47,7 +47,8 @@
 ### 3.2 脚本格式（SYS4450）
 - 头部：`SYS4450 ` + 6 个 u32 局部变量数 + 0x1C + 三张表（length/offset）。
 - 指令流为 AGE 字节码；字符串在数据表尾部，**0xFF 按位取反 + SJIS**，0xFF 结束。
-- 反汇编输出 UTF-8；`age-asm` 支持 `-d`(反汇编)/`-a`(重汇编)/`-x`(往返校验)。
+- 反汇编输出 UTF-8；**Node 版 age-asm**（`scripts/asm/cli.js`）支持 `-d`(反汇编)/`-a`(重汇编)/`-x`(往返校验)，
+  跨平台、data-driven 指令集；`age-asm.exe` 为旧 Windows 版（仅兜底）。
 
 ### 3.3 AGF 图片格式（UI / 背景）
 - 分两种：带 `ACGF` 固定头 / 无头（`00 00 00 00` 开头）。install 全量 5608 个 = 3136 ACGF + 2472 无头。

@@ -47,8 +47,8 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
    - 单行放得下的页最终应是一行 show-text + `// 页面结束`，无 end-text-line。
 5. **校验**
    - `node reflow-apply.js --check <脚本>`：0 差异（幂等）；
-   - Windows：`npm run assemble -- <脚本>`，必须通过（骨架校验/SJIS/回读验证），
-     产物写入 install 根 + DATA1；macOS 流程按 translate 技能登记 PENDING.md。
+   - `npm run assemble -- <脚本>`，必须通过（骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，
+     任何平台均可运行），产物写入 install 根 + DATA1；若尚未构建 install 树，按 translate 技能登记 PENDING.md。
 6. **记录**
    - 按 `references/conventions.md`「变更记录」节，在 `patch/CHANGELOG.md` 当前
      「开发中」版本节**最上方**添加条目（最新在前，不从下方追加）：
@@ -66,8 +66,8 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
 2. 评估阶段（用户确认前）不得修改 `src/` 与 `docs/`。
 3. 只改 `src/` 与 `docs/`；不修改 `data/` 基线；不执行 git 提交。
 4. 说话人以页首 `// FROM:` 为准，不得凭台词内容（如台词里的称呼）推断说话人。
-5. 页块修改后必须 `reflow-apply --check` 通过；Windows 上 assemble 必须通过，
-   未通过不得报告完成。
+5. 页块修改后必须 `reflow-apply --check` 通过；assemble 必须通过
+    （Node 版跨平台），未通过不得报告完成。
 6. 行宽 ≤25 中文字/视觉行；放不下时交给 reflow 断行，不手工硬折；
    行尾不得是『。
 7. CHANGELOG 条目添加到当前「开发中」版本节最上方（最新在前），格式见 translate 技能

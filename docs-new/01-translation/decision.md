@@ -13,7 +13,7 @@
 
 ## 3. 为什么方案 B 可行
 
-1. **工具链已实测通过**：脚本反汇编/重汇编往返 `-x` 逐字节 equal；ALF 解包成功；AGF 工具 AGF→PNG、有头注入回环无损（见 `./format-toolchain.md`）。
+1. **工具链已实测通过**：脚本反汇编/重汇编往返 `-x` 逐字节 equal（Node 版 `scripts/asm/cli.js`，data-driven 指令集 `scripts/asm/opcodes.json`；旧 Windows 版 `age-asm.exe` 仅兜底）；ALF 解包成功；AGF 工具 AGF→PNG、有头注入回环无损（见 `./format-toolchain.md`）。
 2. **社区先例**：ZAP 英化本作（备份并覆盖 BIN/AGF）；封緘のグラセスタ（2018，同代引擎）汉化 V1.3（覆盖 BIN + LE 启动）；天结2（2021）汉化（BIN + AGERC.DLL）。
 3. **游戏直读松散文件**：多数文本（全部剧情脚本）无需动 ALF；ALF 内独有脚本缺口由 `alf/packdata` 补上。
 4. **显示层不改游戏文件**：cnjp 字体 + 游戏内字体分类（见 `./encoding-font.md`）。
