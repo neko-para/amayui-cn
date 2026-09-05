@@ -46,6 +46,8 @@ E:\Games\Eushully\天結\
 ## 5. 运行与工具
 
 - 反汇编/重汇编：`tools/eushully-decompiler/build/Release/age-asm.exe -d|-a|-x`。
-- ALF 解包：`tools/alf/unpack_alf.exe SYS4INI.BIN`（会生成 `lzssdata*.bin` 调试文件，可删）。
+- ALF 解包（**推荐 Node 重写版**）：`node scripts/alf/unpack_alf.mjs SYS4INI.BIN`（跨平台，无 Wine/Windows CRT；
+  `--out <目录>` 指定输出根，归档按索引所在目录解析）。调试文件 `lzssdata*.bin` 默认**不写**（`DEBUG_DUMP=true` 才写）。
+  旧 Windows C 版 `tools/alf/unpack_alf.exe` 仅作参考。
 - ⚠️ `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱；用 ASCII 别名 junction：
   `New-Item -ItemType Junction -Path "E:\Games\Eushully\wk" -Target "E:\Games\Eushully\天結"`，之后全用 `E:\Games\Eushully\wk\...`。

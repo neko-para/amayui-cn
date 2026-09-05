@@ -10,6 +10,7 @@
 ## 2. opcode→handler 全表
 
 - ✅ 全量表 544 条：含已知名称（age-shared 助记符）→ 本引擎 handler；另列具名助记符清单与回退默认 `sub_418E30` 清单。
+  **完整的 opcode→引擎位置 / 语义 / 分析状态表**见 [`./opcode-table.md`](./opcode-table.md)。
 - 常见类别：`set-string`/`show-text`/`display-furigana`/`concat`/`draw-texture`/`set-texture`（0x1F9→sub_4A3800）/`call-script`/`jcc`/`lea`(0x63)/`memcpy`(0x1B0)/`mod`(0x54)/`random`（`rand()%param2`）/`end-text-line`。
 - ✅ 数据载入 op（0xAB/0x190/0x19F/0x1A1）只在 APPEND(DLC) 脚本出现；启动→TITLE 路径不触发。
 - ✅ 渲染/子系统 op（0x1F7–0x208）语义已逐条核对：**fire-and-forget**（只读操作数、排队绘制、不写 VM 状态）。

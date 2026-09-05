@@ -40,7 +40,8 @@
 ## 6. 工具链常用命令
 
 ```bash
-tools/alf/unpack_alf.exe SYS4INI.BIN                      # 解包（在含 SYS4INI.BIN 目录运行）
+node scripts/alf/unpack_alf.mjs SYS4INI.BIN                 # ALF 解包（Node 跨平台版，推荐）
+node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN
 tools/eushully-decompiler/build/Release/age-asm.exe -d SC0000.BIN SC0000.txt
 tools/eushully-decompiler/build/Release/age-asm.exe -a SC0000.txt SC0000.BIN
 tools/eushully-decompiler/build/Release/age-asm.exe -x SC0000.BIN

@@ -49,6 +49,7 @@ docs-new/
 ├── 03-engine/                ← 游戏引擎分析
 │   ├── unpacking.md          ← AGE 引擎加壳拆壳 + 重定型管线
 │   ├── vm-opcodes.md         ← 解释器主循环 / opcode 分发 / handler 表
+│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（544+30 条）**
 │   ├── operands.md           ← 操作数原语 / DEC·ENC / 指针模型
 │   ├── runtime-memory.md     ← this 对象布局 / 脚本帧 / 调用栈（引擎内部）
 │   ├── resource-loading.md   ← 统一文件 id 空间 / 启动链 / 纹理·AGF 映射
