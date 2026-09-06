@@ -68,6 +68,9 @@ export class Engine {
   // SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。
   engineValues = new Map<number, number>([[96983, 1]]);
 
+  /** effect_flags 的等待位（如 0x21C 置 0x400）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
+  waitFlags = 0;
+
   constructor(native: NativeBridge) {
     this.native = native;
     for (let i = 0; i < 40; i++) this.frames.push(new Frame());

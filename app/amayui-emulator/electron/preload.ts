@@ -11,4 +11,8 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
+  /** 诊断日志：追加一行到主进程的 .tmp/amayui-emulator.log（异步批量）。 */
+  logLine: (text: string) => ipcRenderer.send('log-line', text),
+  /** 诊断日志：同步追加（关窗前保证落盘，阻塞直至主进程写完）。 */
+  logLineSync: (text: string) => ipcRenderer.sendSync('log-line-sync', text),
 });

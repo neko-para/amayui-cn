@@ -11,6 +11,8 @@ declare global {
       readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
       readFile(path: string): Promise<number[]>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
+      logLine(text: string): void;
+      logLineSync(text: string): string;
     };
   }
 }

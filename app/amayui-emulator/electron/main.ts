@@ -9,6 +9,7 @@
  */
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ -> ../../.. = 仓库根
 import { decodeAgfRgba } from '../../../scripts/agf/format.js';
@@ -18,6 +19,9 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const RAW_DIR = path.join(REPO_ROOT, 'raw');
 
 const fileSource = new NodeFileSource({ rawDir: RAW_DIR });
+
+/** 诊断日志文件（renderer 经 'log-line' IPC 追加到此处）。 */
+const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
 
 let win: BrowserWindow | null = null;
 
@@ -45,6 +49,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // 启动即建诊断日志文件（写头），确认通道/路径可用。
+  try {
+    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    fs.writeFileSync(LOG_PATH, '=== amayui-emulator.log ===\n');
+    console.log(`[main] diagnostic log -> ${LOG_PATH}`);
+  } catch (err) {
+    console.error(`[main] init log failed: ${(err as Error).message}`);
+  }
   // 读脚本（call-script 索引 -> 原始字节 + 文件名）
   ipcMain.handle('read-script', async (_e, index: number) => {
     const r = await fileSource.readScript(index);
@@ -65,6 +77,24 @@ app.whenReady().then(() => {
     // Buffer 经 structured clone 到 renderer 变 Uint8Array
     return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
+  // 诊断日志：追加到 .tmp/amayui-emulator.log（异步批量）
+  ipcMain.on('log-line', (_e, line: string) => {
+    try {
+      fs.appendFileSync(LOG_PATH, line + '\n');
+    } catch (err) {
+      console.error(`[log-line] ${(err as Error).message}`);
+    }
+  });
+  // 诊断日志：同步最终落盘（renderer 关窗前调用，保证不丢尾）
+  ipcMain.on('log-line-sync', (e, line: string) => {
+    try {
+      fs.appendFileSync(LOG_PATH, line + '\n');
+    } catch (err) {
+      console.error(`[log-line-sync] ${(err as Error).message}`);
+    }
+    e.returnValue = 'ok';
+  });
+  console.log(`[main] diagnostic log -> ${LOG_PATH}`);
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -406,6 +406,82 @@ const stubSubsystem: OpHandler = (c) => {
   }
 };
 
+// ---- 引擎渲染配置 opcodes（Plan A：配置对象到场景图，含严格 flag 校验）----
+// 操作数布局：与 engine 反编译一致（handle 在 op1；颜色用 (opN<<24)|opN+1 的 ARGB）。
+const op_mesh_create: OpHandler = (c) => {
+  // u0043AA20 (0x320)：op1=handle, op9=vcount, op10=layer/tail；顶点源暂用默认满屏四边形。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const layer = readIntOperand(c.e, c.frame, c.instr, 10);
+  const vcount = readIntOperand(c.e, c.frame, c.instr, 9);
+  const verts = Array.from({ length: Math.max(0, vcount) }, () => ({ x: 0, y: 0, u: 0, w: 1, diffuse: 0xffffffff }));
+  c.native.createMesh?.({ handle, layer, vcount, verts });
+};
+const op_set_vertex_color: OpHandler = (c) => {
+  // 0x322：op1=handle, op3=alpha, op4=rgb → state0 (ARGB)。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const a = readIntOperand(c.e, c.frame, c.instr, 3);
+  const b = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.setVertexColor?.(handle, ((a & 0xff) << 24) | (b & 0xffffff));
+};
+const op_set_vertex_color_alpha: OpHandler = (c) => {
+  // 0x323：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → state1 (ARGB)。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const count = readIntOperand(c.e, c.frame, c.instr, 3);
+  const a = readIntOperand(c.e, c.frame, c.instr, 4);
+  const b = readIntOperand(c.e, c.frame, c.instr, 5);
+  c.native.setVertexColorAlpha?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
+};
+const op_set_draw_color: OpHandler = (c) => {
+  // 0x202：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → to (ARGB)。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const count = readIntOperand(c.e, c.frame, c.instr, 3);
+  const a = readIntOperand(c.e, c.frame, c.instr, 4);
+  const b = readIntOperand(c.e, c.frame, c.instr, 5);
+  c.native.setDrawColor?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
+};
+const op_set_draw_color_alpha: OpHandler = (c) => {
+  // 0x203：op1=handle, op2=blend(+48), op3=from(+96 无色 alpha 的高位；这里取 RGB)。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const from = readIntOperand(c.e, c.frame, c.instr, 3);
+  c.native.setDrawColorAlpha?.(handle, from & 0xffffff);
+};
+const op_release_texture: OpHandler = (c) => {
+  // 0x1FA：op1=layer。
+  const layer = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.releaseTexture?.(layer);
+};
+const op_play_movie: OpHandler = (c) => {
+  // 0x20F：op1=movieId。
+  const id = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.playMovie?.(id);
+};
+const op_set_wait_flag: OpHandler = (c) => {
+  // 0x21C u00416270：置 effect_flags |= 0x400（版权页动画等待）。
+  c.native.setWaitFlag?.(0x400);
+  c.e.waitFlags |= 0x400;
+};
+const op_draw_texture: OpHandler = (c) => {
+  // 0x1FB draw-texture：op1=handle、op2=layer、op3-6=源矩形、op7/8=目标位置。
+  // 必须用 readIntOperand 解析 handle（(local-int 0) 等 ref 才能得 0x30d41，而非 raw=0）。
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const layer = readIntOperand(c.e, c.frame, c.instr, 2);
+  const srcX = readIntOperand(c.e, c.frame, c.instr, 3);
+  const srcY = readIntOperand(c.e, c.frame, c.instr, 4);
+  const srcW = readIntOperand(c.e, c.frame, c.instr, 5);
+  const srcH = readIntOperand(c.e, c.frame, c.instr, 6);
+  const dstX = readIntOperand(c.e, c.frame, c.instr, 7);
+  const dstY = readIntOperand(c.e, c.frame, c.instr, 8);
+  c.native.configureDrawItem?.({ handle, layer, srcX, srcY, srcW, srcH, dstX, dstY, tex: handle });
+};
+const op_set_texture: OpHandler = (c) => {
+  // 0x1F9 set-texture：op1=imgid、op2=slot。
+  const imgid = readIntOperand(c.e, c.frame, c.instr, 1);
+  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.bindTexture?.(imgid, slot);
+};
+
 /** 已实现的最小 VM 指令表。 */
 export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x50, op_add],
@@ -477,23 +553,26 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x341, stubSubsystem], // L2D 模型文件加载（sub_4559C0/…/sub_4A1860；失败弹"L2Dモデルファイル…読み込みに失敗"。无界面 stub）
   [0x345, stubSubsystem], // 图形模型文件加载（sub_427CF0，同 0x341 模式）
   [0x34e, stubSubsystem], // 图形模型文件加载（sub_428200，同 0x341 模式）
-  [0x320, stubSubsystem], // 顶点缓冲/几何设置（sub_4ADFE0(_this+322832, …)；无界面 stub）
+  [0x320, op_mesh_create], // 顶点缓冲/几何设置（sub_4ADFE0）→ 建 mesh 到场景图
+  [0x322, op_set_vertex_color], // set-vertex-color → mesh state0
+  [0x323, op_set_vertex_color_alpha], // set-vertex-color-alpha → mesh 动画窗
   [0x1fc, stubSubsystem], // 纹理/图形子系统方法（sub_4AC470(_this+80708, op1)）
   [0x1fd, stubSubsystem], // 纹理变换 op（读浮点）
   [0x1fe, stubSubsystem], // 纹理变换 op（读 4 浮点）
   [0x1ff, stubSubsystem], // 纹理变换 op（读浮点）
-  [0x202, stubSubsystem], // 纹理子系统 op（sub_4231F0）
-  [0x203, stubSubsystem], // 纹理/图形 op（sub_4232C0）
+  [0x202, op_set_draw_color], // set-draw-color（sub_4231F0 → 字体/图形颜色动画窗）
+  [0x203, op_set_draw_color_alpha], // set-draw-color-alpha（sub_4232C0）
   [0x204, stubSubsystem], // draw-string（读 op3 字符串绘制；无界面 stub）
   [0x205, stubSubsystem], // 纹理/文本 op（sub_4233E0）
   [0x207, stubSubsystem], // 纹理 op（sub_423480）
   [0x208, stubSubsystem], // 图形子系统方法（sub_49ED60(_this+80708, op1,…)）
   [0x1f7, stubSubsystem], // texture 相关（sub_422BC0，读 op1/2）
   [0x1f8, stubSubsystem], // create-texture（sub_422C20，造纹理对象；LOGO 场景用到）
-  [0x1fa, stubSubsystem], // u00420480（release 纹理/层；LOGO 场景用到）
-  [0x1fb, stubSubsystem],
-  [0x1f9, stubSubsystem],
-  [0x20f, stubSubsystem], // u00420E40（LOGO.MPG 视频句柄；LOGO 场景用到）
+  [0x1fa, op_release_texture], // release-texture（LOGO 场景用到）
+  [0x1fb, op_draw_texture], // draw-texture → configureDrawItem（readIntOperand 解析 handle）
+  [0x1f9, op_set_texture], // set-texture → bindTexture
+  [0x20f, op_play_movie], // play-movie（LOGO.MPG 视频句柄）
+  [0x21c, op_set_wait_flag], // u00416270 → 置 0x400 等待旗标
   [0x1a5, stubSubsystem],
   [0xcd, stubSubsystem],
   [0xc8, stubSubsystem],

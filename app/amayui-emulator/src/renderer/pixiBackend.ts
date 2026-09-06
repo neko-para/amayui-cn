@@ -1,23 +1,16 @@
 /**
- * PixiJS v8 渲染后端（实现 NativeBridge，最终替换 Canvas 占位）。
- * 用 WebGL/WebGPU（Pixi v8 后端）把 AGE 的 draw 调用画成 Sprite（批量），HUD 显示状态。
+ * PixiJS v8 渲染后端（Plan A：引擎式「配置对象 + 每帧 present 合成」）。
  *
- * 真实图像接入（本次）：
- *  - set-texture 的 imgid（op1）经 `window.api.image(imgid)` 取到 AGF 解码后的 RGBA，包成 Pixi Texture 缓存；
- *  - set-texture 绑定「slot(op2) -> 该 imgid 的纹理」；
- *  - draw-texture 语义（实证，docs/10 §4）：`[tex, layer, srcX, srcY, srcW, srcH, dstX, dstY]`
- *    - op3-6 = **源裁剪矩形**（图集内位置）；op7/op8 = **目标屏幕位置**；目标尺寸 = 源尺寸（1:1）。
- *    - 用 layer 查 slot 绑定纹理，按源矩形裁剪、贴到屏幕位置 (dstX,dstY)。
- *  - 场景切换（脚本名变化）时清空绘制层，避免上一场景残留。
+ * 架构（区别于旧"按指令推渲染"）：
+ *  - 指令只**配置对象**（draw-item/mesh/纹理槽/颜色），存到持久场景图 `drawItems`/`meshes`；
+ *  - 渲染帧循环（Pixi ticker）每帧推进 `clockMs`（墙钟 ms，等价引擎 this[46500]），调用 `present()`，
+ *    对**整个场景图**合成到 backbuffer——动画在此逐帧求值，与 VM 指令解耦；
+ *  - 动画槽两套、正交：
+ *      · 背景(2a) = mesh#1/mesh#2 的**vertex color**（CalcDiffuse，黑覆盖层 alpha）。
+ *      · 文字(2b) = draw-item 的**diffuse alpha**（+96 from → +100 to，只插 alpha，逐像素淡入）。
+ *  - **严格 flag**：配置/渲染读 flags 时，未知位立刻抛 `UnknownFlagError`（绝不静默忽略）。
  *
- * 说明：视口为 1280×720（背景源(0,0,1280,720)+按钮最大(1263,710)均在内），Pixi 画布即 1280×720。
- * 标题菜单的按钮两态（normal/hover）由 draw-texture 的源矩形从 SO004 图集选列 + 目标位置(dstX,dstY)决定。
- *
- * 说明：
- *  - 仍保留「未绑定纹理」时的占位色块回退，保证非标题场景也能画出布局。
- *  - draw-texture 的 tex(0x30d40/0xa/0x64…) 是图形子系统句柄（见 docs/10），本实现按「layer==slot」整页贴图，
- *    对标题第1/2步(整页背景/版权)正确；对主菜单图集的子图切块是近似（整张 SO004 贴到各 dest rect）。
- *    → 后续要精确，可改为「tex 句柄 -> 图集子 UV」映射。
+ * 说明：视口 1280×720；真实纹理经 `window.api.image(imgid)` 取 AGF 解码 RGBA 包成 Texture。
  */
 import {
   Application,
@@ -29,39 +22,88 @@ import {
   Texture,
   type ContainerChild,
 } from 'pixi.js';
-import type { NativeBridge } from '../vm/native.js';
+import {
+  assertFlags,
+  UnknownFlagError,
+  type DrawItemConfig,
+  type MeshCreateSpec,
+  type NativeBridge,
+} from '../vm/native.js';
+
 export interface RenderStatus {
   scriptName: string;
   ip: number;
   steps: number;
   log: string[];
+  /** 全量日志（不截断），供渲染器按批次落盘诊断。 */
+  trace: string[];
 }
+
+interface AnimWindow {
+  delay: number;
+  count: number;
+  start: number;
+  started: boolean;
+}
+
+interface Item {
+  handle: number;
+  layer: number;
+  srcX: number;
+  srcY: number;
+  srcW: number;
+  srcH: number;
+  dstX: number;
+  dstY: number;
+  flags: number; // 仅 bit0 存在 | bit1 颜色动画（&2）；其余位 assertFlags 拒绝
+  from: number; // +96 (ARGB)
+  to: number; // +100 (ARGB)
+  anim?: AnimWindow; // +52 start / +56 delay / +76 count
+}
+
+interface MeshObj {
+  handle: number;
+  layer: number;
+  flags: number; // 仅 bit0 存在 | bit1 颜色动画
+  state0: number;
+  state1: number;
+  anim?: AnimWindow; // +10 start / +11 delay / +12 count
+}
+
+const W = 1280;
+const H = 720;
 
 export class PixiBackend implements NativeBridge {
   private app: Application;
   private stage: Container<ContainerChild>;
-  private drawRoot: Container<ContainerChild>; // 场景绘制（可整批清空）
+  private drawRoot: Container<ContainerChild>; // 场景绘制（每次 present 重建）
   private hud: Text;
   private status: RenderStatus;
-  private unit: Texture; // 1x1 白纹理，占位用
-  private imgCache = new Map<number, Texture>(); // imgid -> Texture（AGF 解码后）
+  private unit: Texture;
+  private imgCache = new Map<number, Texture>();
   private slotTex = new Map<number, Texture>(); // slot/layer -> Texture（set-texture 绑定）
   private pendingImg = new Set<number>();
   private lastScript = '';
   private drawCount = 0;
 
+  // Plan A：持久场景图
+  private drawItems = new Map<number, Item>();
+  private meshes = new Map<number, MeshObj>();
+  private waitFlags = 0; // effect_flags 中的等待位（0x400 等）——由 setWaitFlag 置
+  private clockMs = 0; // 渲染帧时钟（ms，等价 this[46500]）
+  private wallStart = 0; // 帧循环起点（performance.now），时钟 = now - wallStart（墙钟，保证推进）
+  private frameStarted = false;
+  private lastSummary = -1;
+
   static async create(
     status: RenderStatus,
-    width = 1280,
-    height = 720,
+    width = W,
+    height = H,
     displayWidth = 1280,
     displayHeight = 720,
   ): Promise<PixiBackend> {
     const b = new PixiBackend(status);
     b.app = new Application();
-    // 固定渲染到 1280×720（游戏设计分辨率），autoDensity + devicePixelRatio：canvas CSS 保持 1280×720，
-    // 底层按 DPR 渲染（高 DPI 清晰）。窗口内容区由 main.ts 用 setContentSize(1280,720) 强制 16:9，
-    // 因此画布正好填满内容区，无黑边；DPI 只放大物理尺寸，不改变比例。
     await b.app.init({
       width,
       height,
@@ -76,11 +118,10 @@ export class PixiBackend implements NativeBridge {
     b.app.canvas.style.display = 'block';
     b.app.canvas.style.imageRendering = 'pixelated';
     b.stage = b.app.stage;
-    // 绘制层在下、HUD 在上
     b.drawRoot = new Container();
     b.drawRoot.label = 'drawRoot';
     b.stage.addChild(b.drawRoot);
-    b.unit = Texture.WHITE; // 内置 1x1 白纹理
+    b.unit = Texture.WHITE;
     b.hud = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 13, fill: 0x7cfc00 } });
     b.hud.position.set(8, 8);
     b.stage.addChild(b.hud);
@@ -89,7 +130,6 @@ export class PixiBackend implements NativeBridge {
 
   private constructor(status: RenderStatus) {
     this.status = status;
-    // 占位（app 在 create 里初始化）
     this.app = null as unknown as Application;
     this.stage = null as unknown as Container<ContainerChild>;
     this.drawRoot = null as unknown as Container<ContainerChild>;
@@ -100,9 +140,11 @@ export class PixiBackend implements NativeBridge {
   #pushLog(msg: string): void {
     this.status.log.push(msg);
     if (this.status.log.length > 8) this.status.log.shift();
+    this.status.trace.push(msg);
   }
 
-  /** 预载某资源 id 对应的图像纹理（先于 VM 执行，避免 draw 时纹理未到）。 */
+  // ---- 纹理 ---- //
+
   async preloadImage(imgid: number): Promise<void> {
     if (this.imgCache.has(imgid) || this.pendingImg.has(imgid)) return;
     this.pendingImg.add(imgid);
@@ -120,15 +162,15 @@ export class PixiBackend implements NativeBridge {
     }
   }
 
-  /** 把 top-down RGBA 包成 Pixi Texture。 */
   async #rgbaToTexture(w: number, h: number, data: Uint8Array): Promise<Texture> {
-    const clamped = new Uint8ClampedArray(data); // 拷贝出独立 ArrayBuffer
+    const clamped = new Uint8ClampedArray(data);
     const imageData = new ImageData(clamped, w, h);
     const bmp = await createImageBitmap(imageData);
     return Texture.from(bmp);
   }
 
-  // ---- NativeBridge ----
+  // ---- NativeBridge：日志/音频（供 VM 用） ---- //
+
   log(msg: string): void {
     this.#pushLog(msg);
   }
@@ -141,103 +183,319 @@ export class PixiBackend implements NativeBridge {
   playVoice(id: number): void {
     this.#pushLog(`voice#${id}`);
   }
-
-  drawTexture(args: number[]): void {
-    // 原始 args：[tex, layer, srcX, srcY, srcW, srcH, dstX, dstY]
-    //  op3-6 = 源裁剪矩形（图集内），op7/op8 = 目标屏幕位置，目标尺寸 = 源尺寸（1:1）。
-    const [tex = 0, layer = 0, x = 0, y = 0, w = 0, h = 0, p = 0, q = 0] = args;
-    // 场景切换：脚本名变化时清空绘制层（避免 LOGO 背景残留到菜单）。
-    if (this.status.scriptName !== this.lastScript) {
-      this.lastScript = this.status.scriptName;
-      this.drawRoot.removeChildren();
-      this.drawCount = 0;
-    }
-    if (w <= 0 || h <= 0) return;
-    // 优先：layer 已绑定真实纹理 -> 按源矩形 (x,y,w,h) 裁剪，贴到屏幕位置 (p,q)，1:1。
-    const real = this.slotTex.get(layer);
-    if (real) {
-      const frame = new Rectangle(x, y, w, h);
-      const cropped = new Texture({ source: real.source, frame });
-      const spr = new Sprite(cropped);
-      spr.position.set(p, q);
-      this.drawRoot.addChild(spr);
-      this.#pushLog(`drawTexture tex=${tex} layer=${layer} src(${x},${y},${w}x${h}) dst(${p},${q}) real`);
-      this.drawCount++;
-      return;
-    }
-    // 回退：占位色块（保持布局）
-    this.#pushLog(`drawTexture tex=${tex} layer=${layer} src(${x},${y},${w}x${h}) dst(${p},${q}) placeholder`);
-    const spr = new Sprite(this.unit);
-    spr.width = w;
-    spr.height = h;
-    spr.position.set(p, q);
-    spr.tint = hsl((tex * 47) % 360, 65, 48);
-    const border = new Graphics();
-    border.rect(p, q, w, h).stroke({ color: 0xffffff, width: 1, alpha: 0.7 });
-    this.drawRoot.addChild(spr, border);
-    this.drawCount++;
-  }
-
-  setTexture(args: number[]): void {
-    // 原始 args：[imgid, slot, color]（set-texture 的 op1=imgid, op2=slot）
-    const [imgid = 0, slot = 0] = args;
-    this.#pushLog(`setTexture imgid=0x${imgid.toString(16)} slot=0x${slot.toString(16)}`);
-    if (imgid !== 0) {
-      const tex = this.imgCache.get(imgid);
-      if (tex) {
-        this.slotTex.set(slot, tex);
-        this.#pushLog(`  bind slot 0x${slot.toString(16)} <- imgid 0x${imgid.toString(16)}`);
-      } else {
-        // 纹理可能尚未预载：异步补载后绑定
-        void this.preloadImage(imgid).then(() => {
-          const t2 = this.imgCache.get(imgid);
-          if (t2) this.slotTex.set(slot, t2);
-        });
-      }
-    }
-  }
-
   setFont(args: number[]): void {
     this.#pushLog(`setFont [${args.map((a) => '0x' + a.toString(16)).join(', ')}]`);
   }
-
   setString(s: string): void {
     this.#pushLog(`setString "${s}"`);
   }
-
   stringResourceId(s: string): number {
     this.#pushLog(`stringResourceId "${s}"`);
     return -1;
   }
-
   getInputType(): number {
     return 0;
   }
-
   sleep(_ms: number): void {
-    /* renderer 内 no-op */
+    /* renderer 内 no-op，帧循环自走 */
   }
-
   unhandled(opcode: number, name: string): void {
     this.#pushLog(`unhandled 0x${opcode.toString(16)} ${name}`);
   }
 
+  // ---- 配置（指令 -> 场景图，Plan A） ---- //
+
+  drawTexture(args: number[]): void {
+    // raw：[tex, layer, srcX, srcY, srcW, srcH, dstX, dstY]
+    const [tex = 0, layer = 0, x = 0, y = 0, w = 0, h = 0, p = 0, q = 0] = args;
+    this.configureDrawItem({ handle: tex, layer, srcX: x, srcY: y, srcW: w, srcH: h, dstX: p, dstY: q, tex });
+  }
+
+  setTexture(args: number[]): void {
+    // raw：[imgid, slot, color]
+    const [imgid = 0, slot = 0] = args;
+    this.bindTexture(imgid, slot);
+  }
+
+  configureDrawItem(cfg: DrawItemConfig): void {
+    this.#onSceneChange(cfg.handle);
+    const it = this.drawItems.get(cfg.handle) ?? {
+      handle: cfg.handle,
+      layer: cfg.layer,
+      srcX: cfg.srcX,
+      srcY: cfg.srcY,
+      srcW: cfg.srcW,
+      srcH: cfg.srcH,
+      dstX: cfg.dstX,
+      dstY: cfg.dstY,
+      flags: 0,
+      from: 0xffffffff,
+      to: 0xffffffff,
+    };
+    it.layer = cfg.layer;
+    it.srcX = cfg.srcX;
+    it.srcY = cfg.srcY;
+    it.srcW = cfg.srcW;
+    it.srcH = cfg.srcH;
+    it.dstX = cfg.dstX;
+    it.dstY = cfg.dstY;
+    it.flags |= 1; // bit0 = 存在
+    assertFlags('drawitem', it.handle, it.flags);
+    this.drawItems.set(cfg.handle, it);
+    this.#pushLog(`configureDrawItem h=0x${cfg.handle.toString(16)} layer=${cfg.layer} (${cfg.srcX},${cfg.srcY},${cfg.srcW}x${cfg.srcH})`);
+  }
+
+  bindTexture(imgid: number, slot: number): void {
+    this.#pushLog(`bindTexture imgid=0x${imgid.toString(16)} slot=${slot}`);
+    const tex = this.imgCache.get(imgid);
+    if (tex) {
+      this.slotTex.set(slot, tex);
+      this.#pushLog(`  bind slot ${slot} <- imgid 0x${imgid.toString(16)}`);
+    } else {
+      void this.preloadImage(imgid).then(() => {
+        const t2 = this.imgCache.get(imgid);
+        if (t2) this.slotTex.set(slot, t2);
+      });
+    }
+  }
+
+  createMesh(spec: MeshCreateSpec): void {
+    this.#onSceneChange(spec.handle);
+    const m = this.meshes.get(spec.handle) ?? {
+      handle: spec.handle,
+      layer: spec.layer,
+      flags: 0,
+      state0: 0xffffffff,
+      state1: 0,
+      anim: undefined,
+    };
+    m.flags |= 1; // bit0 = 存在
+    assertFlags('mesh', m.handle, m.flags);
+    this.meshes.set(spec.handle, m);
+    this.#pushLog(`createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
+  }
+
+  setVertexColor(handle: number, state0: number): void {
+    const m = this.meshes.get(handle);
+    if (!m) {
+      this.#pushLog(
+        `setVertexColor: mesh 0x${handle.toString(16)} 不存在（现有 mesh: ${[...this.meshes.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
+      );
+      return;
+    }
+    assertFlags('mesh', m.handle, m.flags);
+    m.state0 = state0;
+    this.#pushLog(`setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}`);
+  }
+
+  setVertexColorAlpha(handle: number, delay: number, count: number, state1: number): void {
+    const m = this.meshes.get(handle);
+    if (!m) {
+      this.#pushLog(
+        `setVertexColorAlpha: mesh 0x${handle.toString(16)} 不存在（现有 mesh: ${[...this.meshes.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
+      );
+      return;
+    }
+    m.flags |= 2; // bit1 = 颜色动画
+    assertFlags('mesh', m.handle, m.flags);
+    m.state1 = state1;
+    m.anim = { delay, count, start: 0, started: false };
+    this.#pushLog(`setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}`);
+  }
+
+  setDrawColorAlpha(handle: number, from: number): void {
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(
+        `setDrawColorAlpha: item 0x${handle.toString(16)} 不存在（现有 item: ${[...this.drawItems.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
+      );
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    it.from = from;
+    this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
+  }
+
+  setDrawColor(handle: number, delay: number, count: number, to: number): void {
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(
+        `setDrawColor: item 0x${handle.toString(16)} 不存在（现有 item: ${[...this.drawItems.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
+      );
+      return;
+    }
+    it.flags |= 2; // bit1 = 颜色动画
+    assertFlags('drawitem', it.handle, it.flags);
+    it.to = to;
+    it.anim = { delay, count, start: 0, started: false };
+    this.#pushLog(`setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}`);
+  }
+
+  setWaitFlag(mask: number): void {
+    this.waitFlags |= mask;
+    this.#pushLog(`setWaitFlag 0x${mask.toString(16)} (~0x${(this.waitFlags & mask).toString(16)})`);
+  }
+
+  releaseTexture(layer: number): void {
+    this.slotTex.delete(layer);
+    this.#pushLog(`releaseTexture layer=${layer}`);
+  }
+
+  playMovie(id: number): void {
+    this.#pushLog(`playMovie id=0x${id.toString(16)}`);
+  }
+
+  // ---- 动画求值（每帧 present 调用） ---- //
+
+  /** mesh+draw-item 全部是否已完成动画（供 0x400 门控放行判断）。 */
+  sceneAnimationsDone(): boolean {
+    for (const it of this.drawItems.values()) {
+      if (it.flags & 2 && it.anim && !this.#windowDone(it.anim, this.clockMs)) return false;
+    }
+    for (const m of this.meshes.values()) {
+      if (m.flags & 2 && m.anim && !this.#windowDone(m.anim, this.clockMs)) return false;
+    }
+    return true;
+  }
+
+  #windowDone(w: AnimWindow, clock: number): boolean {
+    if (!w.started) return false; // 尚未开播，视为未完成
+    return clock >= w.start + w.delay + w.count;
+  }
+
+  /** mesh 顶点色 CalcDiffuse：state0↔state1 逐字节 lerp（黑覆盖层的 alpha）。 */
+  #calcDiffuse(m: MeshObj, clock: number): number {
+    assertFlags('mesh', m.handle, m.flags);
+    if (!(m.flags & 2) || !m.anim || m.anim.count <= 0) return m.state1;
+    const w = m.anim;
+    if (!w.started) {
+      w.start = clock;
+      w.started = true;
+    }
+    if (clock >= w.start + w.delay + w.count) return m.state1;
+    if (clock <= w.start + w.delay) return m.state0;
+    const a = (clock - w.start - w.delay) / w.count;
+    return this.#lerpArgb(m.state0, m.state1, a);
+  }
+
+  /** draw-item diffuse alpha：from→to 只插 alpha 字节（RGB 恒白，逐像素淡入）。返回 0..255。 */
+  #itemAlpha(it: Item, clock: number): number {
+    assertFlags('drawitem', it.handle, it.flags);
+    if (!(it.flags & 2) || !it.anim) return 255;
+    const w = it.anim;
+    if (!w.started) {
+      w.start = clock;
+      w.started = true;
+    }
+    if (clock >= w.start + w.delay + w.count) return (it.to >> 24) & 0xff;
+    if (clock <= w.start + w.delay) return (it.from >> 24) & 0xff;
+    const a = (clock - w.start - w.delay) / w.count;
+    const fa = (it.from >> 24) & 0xff;
+    const ta = (it.to >> 24) & 0xff;
+    return Math.round(fa + (ta - fa) * a);
+  }
+
+  #lerpArgb(a: number, b: number, t: number): number {
+    const ch = (shift: number) => {
+      const av = (a >> shift) & 0xff;
+      const bv = (b >> shift) & 0xff;
+      return Math.round(av + (bv - av) * t);
+    };
+    return (ch(24) << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0);
+  }
+
+  // ---- 每帧渲染 ---- //
+
+  /** 启动每帧渲染循环（Pixi ticker）。clock = 墙钟毫秒（performance.now - wallStart），单调、保证推进。 */
+  startFrameLoop(now = 0): void {
+    if (this.frameStarted) return;
+    this.frameStarted = true;
+    this.wallStart = performance.now();
+    this.app.ticker.add(() => {
+      this.clockMs = performance.now() - this.wallStart;
+      this.present();
+      this.drawHud();
+    });
+  }
+
+  present(): void {
+    const clock = this.clockMs;
+    this.drawRoot.removeChildren();
+
+    // 节流诊断：每 ~500ms 记一次 scene 合成状态（看动画推进 + 是否有 item/mesh/纹理）。
+    if (clock - this.lastSummary >= 500) {
+      this.lastSummary = clock;
+      const itemInfo = [...this.drawItems.values()]
+        .map((it) => `${it.layer}:a${this.#itemAlpha(it, clock)}`)
+        .join(' ');
+      const meshInfo = [...this.meshes.values()]
+        .map((m) => `${(m.handle & 0xf).toString(16)}:a${(this.#calcDiffuse(m, clock) >> 24) & 0xff}`)
+        .join(' ');
+      this.#pushLog(
+        `[present ${Math.round(clock)}ms] items={${itemInfo || '无'}} meshes={${meshInfo || '无'}} slotTex=${this.slotTex.size} wait=0x${this.waitFlags.toString(16)}`,
+      );
+    }
+
+    // 1) draw-items（图像）：按 layer 升序、再 handle 升序。
+    const items = [...this.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
+    for (const it of items) {
+      const alpha = this.#itemAlpha(it, clock);
+      if (alpha <= 0) continue; // 全透明跳过
+      const tex = this.slotTex.get(it.layer);
+      const spr = tex ? this.#cropSprite(tex, it) : this.#placeholder(it);
+      spr.position.set(it.dstX, it.dstY);
+      spr.alpha = alpha / 255; // 逐像素 alpha 淡入
+      this.drawRoot.addChild(spr);
+    }
+
+    // 2) meshes（顶点色黑覆盖层）：按 handle 升序，叠在图之上。
+    const meshes = [...this.meshes.values()].sort((a, b) => a.handle - b.handle);
+    for (const m of meshes) {
+      const diffuse = this.#calcDiffuse(m, clock);
+      const a = (diffuse >> 24) & 0xff;
+      if (a <= 0) continue;
+      const ov = new Sprite(this.unit);
+      ov.width = W;
+      ov.height = H;
+      ov.tint = 0x000000;
+      ov.alpha = a / 255;
+      this.drawRoot.addChild(ov);
+    }
+    this.drawCount++;
+  }
+
+  #cropSprite(tex: Texture, it: Item): Sprite {
+    const frame = new Rectangle(it.srcX, it.srcY, it.srcW, it.srcH);
+    const cropped = new Texture({ source: tex.source, frame });
+    return new Sprite(cropped);
+  }
+
+  #placeholder(it: Item): Sprite {
+    const spr = new Sprite(this.unit);
+    spr.width = it.srcW;
+    spr.height = it.srcH;
+    spr.tint = (((it.layer * 47) % 360) << 8) | 0x6a;
+    return spr;
+  }
+
+  // ---- HUD ---- //
+
   drawHud(): void {
-    this.hud.text = `script=${this.status.scriptName}  ip=${this.status.ip}  step=${this.status.steps}  draws=${this.drawCount}\n` +
+    this.hud.text =
+      `script=${this.status.scriptName}  ip=${this.status.ip}  step=${this.status.steps}  draws=${this.drawCount}\n` +
+      `clock=${Math.round(this.clockMs)}ms  items=${this.drawItems.size}  meshes=${this.meshes.size}  wait=0x${this.waitFlags.toString(16)}\n` +
       this.status.log.map((s) => `  ${s}`).join('\n');
   }
-}
 
-/** hsl(色相, 饱和度%, 亮度%) -> 0xRRGGBB */
-function hsl(h: number, s: number, l: number): number {
-  const s2 = s / 100;
-  const l2 = l / 100;
-  const c = (1 - Math.abs(2 * l2 - 1)) * s2;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l2 - c / 2;
-  let r = 0, g = 0, b = 0;
-  if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
-  else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
-  else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
-  return ((r + m) * 255 << 16) | ((g + m) * 255 << 8) | ((b + m) * 255 | 0);
+  #onSceneChange(_handle: number): void {
+    if (this.status.scriptName !== this.lastScript) {
+      this.lastScript = this.status.scriptName;
+      this.drawRoot.removeChildren();
+      this.drawItems.clear();
+      this.meshes.clear();
+      this.waitFlags = 0;
+      // 不重置 clockMs：墙钟单调推进；新场景对象在首次 present 时各自 lock 起点。
+      this.drawCount = 0;
+    }
+  }
 }

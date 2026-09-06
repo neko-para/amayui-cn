@@ -1,173 +1,147 @@
-# CONTEXT — 天結いキャッスルマイスター Emulator 进展快照
+# CONTEXT — 天結いキャッスルマイスター Emulator / 引擎逆向进展快照
 
 > 本文件是**会话外恢复用的上下文快照**（新开会话先读我）。记录当前整体进展、关键技术事实、文件清单、
-> 待办与阻塞。有歧义处会明确标注「待确认」。
+> 待办与阻塞。有歧义处明确标注「待确认」。
 
 ---
 
 ## 0. 一句话现状
 
-用 **TypeScript + Electron + PixiJS v8** 重写《天結いキャッスルマイスター》的 AGE/System4 引擎 VM。
-解释器已能无界面跑启动链到 **TITLE.BIN**；**Electron 渲染壳已接通**（窗口 + IPC 文件流 + PixiJS WebGL 渲染），
-已把标题**布局**（背景/按钮占位色块）画到屏上，但**真实 CG/按钮图像**尚未接入。当前正做「标题真实图像」阶段。
-
-> **本次会话重大进展（逆向+实证）**：已完整建立「**本体 SYS4INI + 5 个 APPEND.AAI 的统一文件 id 空间合并**」模型、
-> 摸清引擎侧读取逻辑（`sub_414AC0/sub_454D30/sub_4559C0/sub_410160`）、定位初始化调用链（主循环
-> `interpreterMainLoop_412290`）、并发现**标题背景/版权来源是 `LOGO.txt`**（set-texture SO006/SO005）。
-> 模拟器已实现 APPEND 包加载。**详见 `app/amayui-emulator/docs/09-data-model-and-reading-logic.md`**。
+用 **TypeScript + Electron + PixiJS v8** 重写《天結いキャッスルマイスター》的 AGE/System4 引擎 VM
+（解释器已能无界面跑启动链到 `TITLE.BIN`，Electron 渲染壳已接通）。**本次会话深入逆向引擎的
+「淡入淡出 + 场景切换停留」机制**，以及 `this` 对象布局、opcode 语义、并搭了一套 **32 位 Python 实机内存探测**工具。
 
 ---
 
 ## 1. 工程位置
 
-- 仓库根：`/Users/nekosu/Documents/Projects/amayui-cn`
-- 本工程根：`app/amayui-emulator/`
-- 反向依据：`engine/engine.cpp`（5.2MB，反编译）、`engine/engine.hpp`（this 对象模型）、
-  `docs/re/engine/`（15 篇逆向文档）、`docs/re/engine/06-opcode到handler映射表.md`（opcode→handler 全表）
-- 脚本反汇编：`src/*.txt`（游戏脚本）；松散 BIN：`raw/`；ALF 索引：`raw/SYS4INI.BIN`；图像：`raw-parts/DATA1/`（AGF）
+- 仓库根：`E:\Games\Eushully\天結`
+- 逆向依据：`engine/engine.cpp`（Hex-Rays 反编译，约 18.1 万行）、`engine/天结_unpacked.exe_utf8.c`（同内容，行号略偏）
+- 权威文档：`docs-new/`（唯一新来源；含 `03-engine/opcode-table.md`、`rendering.md`、`runtime-memory.md` 等）
+- 脚本反汇编：`src/*.txt`（941 个）；容器 `install/SYS4INI.BIN` + `APPEND*.AAI`；游戏数据 `install/DATA*.ALF`
+- 实机进程：`天结_unpacked`（= 去壳版，与 `install/AGE_free.EXE` 同布局；用户用调试器以管理员启动）
 
 ---
 
-## 2. 已完成 / 可用状态
+## 2. 引擎关键事实（本次已确认）
 
-### 2.1 解释器（VM 核心，黑盒无界面）
-- `docs/03` 里程碑 M0–M3 已达成：启动链 `SYSTEM4(0) → 数据表 INIT(AMINIT2/WDINIT/ALINIT/EBINIT/ITINIT/SKINIT/CGINIT/BTANINIT2…) → INIT → TITLE.BIN(622 指令)`。
-- `npm test` 12/12 通过（含 5 条指针模型测试）；`tsc` 干净。
-- 关键模型：ADR-011 指针=带标记引用（`Ref={scope,kind,index,stride}`），读解引用/写写穿；`DEC(x)=ror32(key^rol32(x,11),25)`、`ENC(x)=rol32(key^ror32(x,7),21)`，`_this[97059]=key`、`_this[97060]=ENC(0)`。
-- 子系统/渲染 opcode（0x1F7–0x208）已逐条核对语义（**fire-and-forget**，只读操作数、排队绘制、不写 VM 状态）——见 `docs/08` 与本文 §4。
+### 2.1 架构 / 单线程
+- **引擎单线程**：渲染与脚本解释都在同一 `interpreterMainLoop_412290`（line 20291）里交替执行。
+  两个 `CreateThread` 分别是**文件异步读**（`sub_47B200`）与 **DirectSound 音频**（`sub_4B5AA0`），**无独立渲染线程**。
+- 全局引擎单例 = **`dword_55E1BC`**（＝ `Engine *this`）。**模块基址 = 0x400000（固定，无 ASLR）**。
 
-### 2.2 Electron 渲染壳（本阶段产出）
-| 文件 | 作用 |
-|---|---|
-| `electron/main.ts` | 主进程：开窗口（内容区 1280×720，标题 天結いキャッスルマイスター），`read-script`/`read-file` IPC，复用 `NodeFileSource`(读 `raw/`) |
-| `electron/preload.ts` | `contextBridge` 暴露 `window.api.readScript(index)` / `readFile(path)` |
-| `src/renderer/ipcFileSource.ts` | renderer 侧 `FileSource`（IPC 转发到主进程） |
-| `src/renderer/pixiBackend.ts` | **PixiJS v8 渲染后端**（实现 `NativeBridge`）：`drawTexture`→批量 Sprite，`setTexture`→记录，HUD |
-| `src/renderer/canvasNative.ts` | Canvas 2D 占位后端（**现已被 Pixi 取代，保留作参考**） |
-| `src/renderer/renderer.ts` | 入口：IPC FileSource + Engine + 跑启动链到 TITLE + 调 `native.drawHud()` |
-| `src/renderer/index.html` | CSP 已含 `unsafe-eval`（Pixi v8 需要）+ `img-src`/`blob:` |
-| `build-electron.mjs` | esbuild：`electron/main.ts`→`dist/electron/main.cjs`(CJS,node)，`preload.ts`→`.cjs`，`renderer.ts`→`dist/renderer/renderer.js`(IIFE,browser)，拷 index.html |
+### 2.2 启动初始化链（WinMain → 进入 VM 主循环）
+`WinMain`(139773) → `CoInitialize`/注册窗口类 → `commandConstructor_415640`(22242)（建 `this`+dispatch 表 0xA509C + `srand`）→ 命令行解析 → `sub_4B8D00`(工程名) → `sub_414AC0`(读 sys4ini.bin) → `sub_476190`(配置类) → `sub_40AEE0`(SAVE 存档) → `sub_4084E0`(版本/校名) → `sub_4BA310`(建主窗口) → `-d` 系列(D3D 设备/回缓冲配置) → `sub_417800`(最大 init：读配置/载字体/timeBeginPeriod/建 D3D 设备) → `SetThreadExecutionState` → `loadScriptFrame_40ED40`(140215)（**加载初始脚本帧 = SYSTEM4**）→ `SetTimer(hWnd,2,0x2710,0)`（10s 防睡眠，与版权页无关）→ `interpreterMainLoop_412290`(140221)。
 
-- package.json 脚本：`build`(tsc) / `run`(tsx src/run.ts) / `test` / `build:electron`(esbuild) / `electron`(=`electron .`) / `electron:dev`(build+launch)。
-- 依赖：`electron@44.2.0`、`pixi.js@8.20.1`（另有 tsx/typescript/@types/node）。
-- **验证结果**：`npm run electron:dev`（沙箱环境需 `--no-sandbox`）后，日志 `[boot] done script=TITLE.BIN ip=47 steps=97376 reachedTitle=true`，Pixi 无报错渲染标题布局。
+**关键：初始化阶段没有为"等待/渐变"预置任何东西**（无固定 Sleep、无计时器预启动、无 fade/画面字段预写）。`dword_55E1BC` 是 this；`_this[174801]=*(_this+699204)`。
 
----
+### 2.3 主循环"指令不推进/等待"机制（已确认）
+- 主循环 = **10 层嵌套 `while(1)` + 跨层 goto**（LABEL_4/108/126/186/215/216/229）。
+- 派发点在 **21036-21047**：`v18=**(_this+120*cur+383128); if>0x3FF goto LABEL_229(sub_418E30); (*handler)(_this); _this[120*cur+383128] += 4*arity;`
+- **每层 while 是一道"门"，由 `_this[174801]`(**byte 699204**) 的一个 hold 位控制**：该位=1 → 该层驻留（做异步工作 + present/重绘），**不落派发处 → 脚本 ip 保持当前 opcode**；异步完成清位 → 逐层 break → 才派发并 `ip += 4*arity`。还有最快路径 `if(!v17) goto LABEL_216`（20595）：无任何 flag 时直接派发推进。
 
-## 3. 当前目标：渲染标题画面（真实背景 + 按钮/版权/菜单）
-
-### 3.1 用户给出的标题展示序列
-1. **步骤 1**：`SO006`（背景）+ `SO005`（版权提示）**叠加展示**（SO005 压在 SO006 上）。
-2. **步骤 2**：播放一个**视频/动画**（尚未处理——视频格式未知，属于独立难点）。
-3. **步骤 3**：渲染**主菜单** `SO004`。
-- `SO004A` 是 Live2D 用的图（主菜单左侧展示），**当前先不管**。
-
-### 3.2 图像资产（已转换）
-已把 `raw-parts/DATA1/*.AGF`（**2556 个**）批量转成 PNG，输出到 **`raw-parts/DATA1-png/`**（2556 个，~743MB），
-用 `scripts/agf/cli.js extract raw-parts/DATA1 --out raw-parts/DATA1-png`（日志 `[extract] 2556/2556`）。
-
-| 图像 | 尺寸 | 角色 |
+| 层 | hold 位 | 驻留做的事 |
 |---|---|---|
-| `SO006.png` | 1280×720 RGB | 背景（步骤1） |
-| `SO005.png` | 1280×720 RGBA | 版权提示（步骤1，叠加在 SO006 上） |
-| `SO004.png` | 1664×1536 RGBA | 主菜单（步骤3） |
-| `SO004A.png` | 740×700 RGBA | Live2D 用（暂不管） |
+| L5 | **0x2000（影片/媒体）** | 画影片帧、检测结束/跳过、重排 0x2000 |
+| L2 | 0x8000000（消息） | sub_411900 显示消息+重绘 |
+| L4 | 0x80 / 0x400（系统特效/按键等待） | sub_447810 / sub_407E20 |
+| L7 | 0x4000000（输入/脚本处理） | sub_478090 读输入→699208 |
+| L9 | 0x400000（窗口消息泵） | WaitMessage/GetMessage |
+| L8 | 0x1000000（影片结束清理） | 清影片 + Sleep(5) |
+| L6 | 0x100000 | sub_411590 + Sleep(5) |
+| L3 | 0x40 | sub_408F10 |
+| L1 | 0x20/0x1/0x10000000/0x800000/0x80000000 | 本帧不派发 |
 
-- AGF 解码工具：`scripts/agf/format.js`（`extractAgfToPng(agfPath, outDir)`）已在本工程 JS 实现，`scripts/agf/png.js`、`cli.js`。
+- **`play-movie`(0x20F, sub_4237B0) 用 0x2000 hold 脚本**：函数尾 `*(_this+699204)|=0x2000; *(_this+675972)=1;`（31226-31227）；L5 的 0x2000 分支（20723-20799）读按键、用 `(_this+7912)+12` 画影片帧，LABEL_126（20743-20768）遍历媒体槽：**只要还有存活对象就重排 0x2000** → 20724 的 break 永不成立 → L5 一直驻留、ip 不推进；影片对象全销毁才推进。`675972` 只是驱动媒体帧更新（20504-20563）。
 
-### 3.3 当前渲染效果（**已接入真实图像 + 正确放置**）
-- `image(id)` IPC（主进程）：`resolveEntry(id)` → AGF 字节 → `decodeAgfRgba` → `{width,height,rgba}`。
-- `PixiBackend`：`setTexture([imgid,slot,color])` 绑定 `slot→该 imgid 纹理`；`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])`
-  用 `layer` 取绑定纹理，按 **op3-6=源裁剪矩形**、**op7/op8=目标屏幕位置**、1:1 贴上；场景切换（脚本名变化）清空绘制层。
-- **视口 1280×720**（背景源(0,0,1280,720)铺满、按钮最大(1263,710)），Pixi 画布与窗口均 1280×720。
-- 无界面光栅验证（真实 VM 到 TITLE）：产出与真实标题菜单**布局吻合**的渲染（标题 logo、5 个**散布**按钮、版权行、背景）——见 `docs/10` §4。
-- 标题图像 id（`renderer.ts` 预载）：0x5245(SO006 背景)/0x5246(SO005 版权)/0x5272(SO004 菜单)/0x5273(SO004A)。
-- **LOGO 场景已接入**：`SYSTEM4` 第 146 行 `call-script LOGO(0x5262)` 仅在 `_this[96983]` 为真时执行（opcode 0x130）。**96983 的“为何为 1”**：engine.cpp 引擎构造函数/初始化（行 22404，字节偏移 387932）把该字段默认置 **1**；另一处重置（行 34632）清 0。模拟器已把 `_this[96983]` 建模为 `Engine.engineValues`（构造函数默认 1），`op_get_engine_value`(0x130) 读它——**不是硬编码返回 1**。故 LOGO 在启动链里被 set-texture（SO006/SO005）。
-  LOGO 专用 opcode `0x1f8(create-texture)/0x1fa(release-texture)/0x20f(play-movie 视频句柄)` 已在 `ops.ts` 注册为桩，LOGO 可跑通、启动链仍到 TITLE。
-- **窗口/DPI 适配**：视口 1280×720。窗口 `useContentSize:true` + **`win.setContentSize(1280, 720)`** 强制内容区为 16:9（useContentSize 在 Windows DPI 缩放下可能不准，electron#10659；不显式 setContentSize 会导致内容区比例错、黑边）。renderer 固定渲染 1280×720 + `autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清），画布正好填满 16:9 内容区，无黑边；DPI 只放大物理尺寸不改变比例。已移除 `resizeTo`/`#fitView` 的 letterbox 方案（会因内容区非 16:9 留黑边）。
-- **淡入淡出 / 渐变**：引擎实现 = **FadeTimer 步进计时器**（7 DWORD+vtable；字段 `[1]elapsed/[2]step/[3]leftover/[4]stop/[5]startTime/[6]stepDur`；`sub_453A20` ctor / `sub_453A60` start / `sub_453AF0` tick）+ **fade opcode 家族 0x20–0x38**（`sub_41D180…`，各调 `sub_441410(mode)`：mode0=SetFade、1-8=SetLineFade、9=SetRandomFade）。**常被忽略的静态「颜色/α」指令** = `0x202`(sub_4AD0C0)/`0x203`(sub_4ACF60)。boot→TITLE 路径**不调用** fade opcode（0x20-0x38 未触发、模拟器也未实现）；时间性淡入淡出更像主循环场景切换时内部驱动 FadeTimer。详细见 **`docs/11`**。
-- ⏳ **角色图层未接入**：真实标题左侧有角色立绘，但 TITLE 帧只 set-texture 到 slot 4(SO004)，角色来自单独的图/L2D/角色显示子系统，尚未定位。
-- ⏳ **LOGO 展示时长**：LOGO→INIT→TITLE 在 VM 循环里同步连跑，renderer 按脚本名清空绘制层，LOGO 背景/版权只闪现；若要用户看清步骤1，需渲染器在场景间让出帧（pacing）。
+### 2.4 淡入淡出（结论）
+- **引擎唯一的"整屏黑幕渐变"图元 = fade opcode 族（0x20-0x38）**：`_this[174801]|=bit0x8` → `sub_453A60` 启动 `_this+429844` 计时器 → 主循环 `sub_453AF0` → `sub_441E10` 用 `_this+8120`(α) + `_this+7912` vtable+36 画整屏纯色矩形（`sub_498B60` 先 D3D Clear 黑）。
+- **但版权页/菜单的渐变不是它**：54 个 boot 脚本全指令流无 fade opcode；且 `_this+8120/+8128`/bit0x8/FadeTimer/gamma/D3D 实机实测**全 0**。
+- ⚠️ **旧推测「渐变感 = present 的"清黑→逐帧绘出新场景"」已基本排除**：`present`(`sub_4B4040`) 的 ClearTarget(`sub_498B60`) 被 `(_this+46460)&1` 守卫，而 `_this+46460` 只在图形设备 ctor（raw.c 128412）被置 0，**全文件无任何 `|=1`/非零写入** → present **从不**无条件清黑；且 present 只在 `sub_40BE10(_this+322832)==1`（图形池脏/挂起）时执行（主循环 line 20581-20583），并非每帧都跑。
+- **版权页/菜单过渡渐变（未完全定论）最可能是引擎内建的「场景切换/加载」暗场渐变**，独立于 fade opcode 族与 present 的清黑：主循环 0x1000 过渡门（line 20663-20683，`sub_421AA0` 置 0x1000 + 启动 `_this+430096` 场景 FadeTimer）+ 场景内容分帧提交；`u00420D50`(0x20B, `sub_4A4C70`)=纯色+α 填充、`set-vertex-color-alpha`(0x323)=静态网格遮罩（均无逐帧计时，非动画）。
+- **`_this+8128`**（byte 0x1FC0）是整屏淡入 α（`sub_4A2D50` 用），而 **`_this+8120`(0x1FB8) 只是淡出步进计数**（`+=_this[8232]` clamp 256）。
+- **`_this+8128`**（byte 0x1FC0）是整屏淡入 α（`sub_4A2D50` 用），而 **`_this+8120`(0x1FB8) 只是淡出步进计数**（`+=_this[8232]` clamp 256）。
 
----
+### 2.5 版权页"等几秒"（已收敛：0x400 卫门）
+- **不是脚本 wait 指令**：`src/LOGO.txt` 无 0x1F4/0x1F5/0x20C/sleep/wait；`u00420270`(0x1F7) 是同步图形池区间重排（`sub_422BC0`→`sub_4ABB60`，ip 无条件推进，非等待点）。
+- **等待 = 主循环 0x400 卫门**：`LOGO.txt:46 u00416270`(0x21C, `sub_41A260`) 置 `_this[174801]|=0x400`（并 `[30*cur+95805]=1`）。主循环 0x400 分支（line 20934-20977）在 `0x400` 置位时**每帧驻留**：调 `sub_407E20(_this+322832)`（图形池"挂起/计时"检查，byte 369356=时长/369352=起始/369344=强制结束标/11627=脏）或 `v95`(影片标志)为真则 `goto LABEL_186` 不落派发、脚本 ip 停在 `LOGO.txt:47`；当 `sub_407E20` 返回 0 且 `!v95` 时清 0x400 → 才派发 `u00420270` 并推进。**这解释了实机观察的 ip=47 / effect_flags=0x400。**
+- **"几秒"的量**（已收敛）：不是脚本计时。`sub_407E20`(12679) 的 `_this[11631]`(+46524) **恒为 0**（全文件只被清零，从不设正值）→ 它恒返回 `_this[11629]`(=+46516 图形池挂起旗标)。而 `_this[46516]` 由 **mesh 颜色动画**在动画窗口每帧置 1（mesh 绘制 `sub_4AF1C0` glob码 131503），帧始 `sub_4B4040` 清 0（134752）。⇒ **等待时长 = 版权页两个 mesh 的 CalcDiffuse 动画窗口**（`sub_4AF1C0` 里 `_this[46500]` 帧钟从 `entry[11]` 推进 `entry[11]+entry[12]` 的 tick 数）。动画完成（`_this[46500]>=start+count` 或 `_this[46512]` 强制快进 `sub_407EA0`）即 `_this[46516]` 不再置位 → `sub_407E20` 返 0 → 清 0x400 放行。**不是异步纹理装载/场景 FadeTimer。**
+- **`sub_407E20`/`sub_40BE10` 同属图形池"挂起"检查**（`sub_40BE10` 还查 `_this[11627]` 脏位与链表 `_this[259]`、`_this[12676]`）、`sub_41B180`/`sub_41B1C0`（0x243/0x305）以 `[369344]=1;[369352]=0;[369356]=0` 强制"结束挂起"，非脚本级 sleep。脚本级"等待"原语 = `0x1F4`/`0x1F5`/`0x20C`，LOGO.txt 未用。
 
-## 4. 关键技术事实（引擎绘制模型，供继续用）
+### 2.6 `this` 对象布局新增信息（byte 偏移）
+| 对象/字段 | byte 偏移 | DWORD 下标 | 说明 |
+|---|---|---|---|
+| 消息窗对象（台词窗） | **0x14D30** | `_this[21324]` | ⚠️ 修正！之前误写 `0x534C`；正确 `0x14D30`。`show-text`(0x6E)/`end-text-line`/`wait-for-input` 与 `0x70-0x79/1C1/197/1A5/2BD/2DB/2FE/303` 都打它；`sub_459F40` 重建字体 |
+| 图形/纹理池 | **0x4ED10** | `_this[80708]` | `draw-texture`/`set-vertex-color`/`create-texture`/`sub_4ACE50`/`sub_4AE330`/`sub_4ADFE0` 经它；`[11627]`=重画位（byte 46508） |
+| 图形设备对象 | **0x1EE8** | `_this[1978]`(byte 7912) | `sub_441410`/`sub_441E10`/`vtable+36`；present 的渲染对象 |
+| 资源路径解析 | **0xA609C** | `_this[340023]` | `sub_454FA0/4559C0/455560` |
+| 配置/接口对象 | **0xAA514** | `_this[174405]` | vtable 派发 `"message"/"readtex"/"MessageAutomes_1"/"set:SaveVersion"` |
+| effect/movie 标志位图 | **0xAAB44** | `_this[174801]` | = byte 699204；bits 见 2.3 |
+| fade α(步进计数) | 0x1FB8 | `_this[8120]` | 淡出步进计数 |
+| fade α(整屏淡入) | 0x1FC0 | `_this[8128]` | `sub_4A2D50` 用 |
+| fade type / 目标 / 步进 | 0x1FBC/0x1FC4/0x2028 | 8124/8132/8232 | `sub_441410` 写 |
+| 命令级 FadeTimer | **0x68F14** | (=429844) | bit0x8 步进源 |
 
-> 数据模型/读取逻辑的完整实证见 `docs/09`。此处列绘制与资源映射的要点。
+**FadeTimer 结构**（28B）：`vtable / elapsed / step(计步,初1) / leftover / stop / startTime(timeGetTime) / stepDur(周期ms)`。实例集群在 byte 0x68F14(429844)/0x69010(430096 场景切换)/0x69208(430600 轮播)/0x68FBC(430012 BGM) 等。
 
-- **绘制分辨率**：回缓冲 `_this[699168]×[699172]`（`sub_440A20` 创建）。config 默认 640×480，但**实际 draw 坐标**：
-  - 背景 `draw-texture a 4 0 0 500 2d0 0 0` → dest rect `(0,0, 0x500=1280, 0x2d0=720)`，即 1280×720。
-  - 按钮矩形：`draw-texture 12c 4 5a0 0 9c 9c 44e 126` → `(0x5a0=1440,0)`，尺寸 `(0x9c=156,0x9c=156)`；另有 x=0x502=1282 的一列。
-  - ⇒ **有按钮/内容绘制到 x≈1440+156=1596**，故**真实屏幕宽度 ≥1596**（怀疑 1920×1080；待确认，见 §7）。
-- **draw-texture 语义**（`op_draw_texture_422E70`）：`draw-texture tex layer x y w h p q` → 目标矩形 `(x, y, x+w, y+h)`，`p/q` 读为 int 再 `(float)` 强转（可能为 scale/alpha，待渲染层定）。
-- **set-texture 语义**（`op_set_texture_422CB0`）：`set-texture imageId slot color`（imageId 经 `sub_4559C0` 加载图像文件到 slot；失败弹「画像ファイル %s の読み込みに失敗しました」）。
-- **贴图变换是 D3D9 矩阵**：`sub_4AC5F0`(scale)/`sub_4AC660`(rot-axis)/`sub_4AC750`(translate)——正交投影下是 2D 仿射，Canvas2D `setTransform`/Pixi 均可表达。
-- **分层队列**：`graphics+258` 的绘制队列，`_this[11627]=1` 置脏标记；颜色填充 `sub_4AD0C0`(0x202)/`sub_4ACF60`(0x203)，文本走 GDI（`sub_456710`，0x204/0x205）。
-- **分类**：0x1F7–0x208 全部是**只读操作数 + 排绘制命令 + 不写 VM 状态** → M0 用 stub 放行安全。
-- **统一文件 id 空间（难点已解）**：资源 id 与脚本索引**共用 ALF 索引**。本体 `SYS4INI.BIN`(S4IC, 300B 头) + `APPEND01..05.AAI`(S4AC, 268B 头，**包号=头部@264**)，统一 id = `pack#<<24 | idx`。已实测：SO006=`0x5245`、SO005=`0x5246`、SO004=`0x5272`、SO004A=`0x5273`、TITLE.MTN=`0x5274`、TITLE.BIN=`0x5264`。
-- **纹理 id→图像 id 表**：`_this[5*texid + 81174]`（byte 324696+20*texid），1000 项×20B；复制链 `[81174]→[86174]→[151523]`。**由 set-texture(0x1F9→sub_4A3800→sub_49E9D0，写 `[5*slot+466]=imgid`) 与 数据载入 op(0xAB/0x190/0x19F/0x1A1→sub_410160) 在运行时填充**。数据载入 op 只在 APPEND(DLC) 脚本，**不在启动→TITLE 路径**。
-
----
-
-## 5. 资产/资源映射现状（**已基本解决**）
-
-- **统一 id 空间已建立**：resource id 与脚本索引共用 ALF 索引，本体+APPEND 合并（见 §4 末、`docs/09` §1）。
-  模拟器 `NodeFileSource` 已实现 `resolveEntry(id)`（base+APPEND），`npm test` 12/12 通过。
-- **标题各 SO 文件 id 已定位**（本体 `DATA1.ALF`）：
-  | 图像 | id | 尺寸 | 角色 | 来源脚本 |
-  |---|---|---|---|---|
-  | `SO006` | `0x5245` | 1280×720 | 背景（步骤1） | `LOGO.txt` set-texture→slot 0x2a |
-  | `SO005` | `0x5246` | 1280×720 | 版权（步骤1，叠加） | `LOGO.txt` set-texture→slot 0x2b |
-  | `SO004` | `0x5272` | 1664×1536 | 主菜单（步骤3） | `TITLE.txt` set-texture→slot 4 |
-  | `SO004A` | `0x5273` | 740×700 | Live2D（暂不管） | `TITLE.txt` set-texture→slot 5 |
-- **`draw-texture` 的纹理 id（0xa/0x14/0x12c…/0x30d40）与 `set-texture` 的 slot（0x2a/0x2b/4/5）是两个不同索引空间**。
-  LOGO 的 draw 用**生成纹理 id `0x30d40`**，画在 layer `0x2a/0x2b`（与 set-texture slot 一致）。此层生成关系待确认（见 §7）。
-- 纹理 id→图像 id 表 `_this[5*texid+81174]` 由 set-texture / sub_410160 运行时填充（**非引擎硬编码**；数据载入 op 只在 APPEND 脚本）。
+**帧模型**：`frames[40]`，`frame[0]` 其实是 SYSTEM4（inspector 之前显示错了）；boot 主要跑 `cur_script=1`。帧 ip 在派发处**无条件推进**；`frames[cur].ip 指针` = `this + 120*cur + 383128`（读 opcode 用）。
 
 ---
 
-## 6. 待办（按优先级）
-
-1. **slot↔AGF 文件映射已实证**（`set-texture <imgid> <slot>` 即唯一绑定，`[5*slot+466]=imgid`，imgid→resolveEntry→文件名；见 **`docs/10`**）；draw-texture 的 `tex` 为图形子系统独立句柄。剩余「tex 句柄→子图切块」仅在逐碎片渲染时才需追。
-2. **图像渲染（已接入，含正确放置）**：
-   - ✅ 主进程 `image(id)` IPC：统一 id → `resolveEntry` → AGF 字节 → `decodeAgfRgba` → `{width,height,rgba}` 给 renderer。
-   - ✅ renderer：`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])` 按 **op3-6=源裁剪、op7/op8=目标位置、1:1** 贴上（按钮散布位置来自数组 `[44e 3e0 365 2d9 453]`/`[126 192 1e5 21f 22a]`）；`setTexture` 绑定 slot→imgid 纹理。
-   - ✅ 视口 1280×720；无界面光栅已验证标题布局（logo+散布按钮+版权+背景）吻合真实菜单。
-   - ⏳ **角色图层**：左侧角色立绘来源未定位（TITLE 帧无对应 set-texture；疑 L2D/角色显示子系统），待接。
-3. **真实屏幕分辨率（已定 1280×720）**：背景源(0,0,1280,720)铺满、按钮最大(1263,710)均在 1280×720 内；之前「按钮延伸到 x≈1596→1920×1080」的判断来自错误的统一列 dest 读数，已作废。见 `docs/10` §4。
-4. **操作数解码**：把 `draw-texture`/`set-texture`/`draw-string` 改为 `readIntOperand/readStringOperand` 解码后再调类型化 native 方法（当前是 raw 直传）。
-5. （后置）**视频（步骤2）**、**Live2D（SO004A）**、**输入**（让菜单可选择）——均属较大子系统，需独立处理。
+## 3. opcode 分析（本次补了 25 个 SYSTEM4/LOGO 缺口）
+`docs-new/03-engine/opcode-table.md` 已把这 25 个"仅映射"补成"已核对"（含语义+raw.c 行号）：
+`0x1F4`(帧计时)/`0x1F5`(帧倒计+派发)/`0x20B`(颜色+α 填充)/`0x1CE`(消息点击-跳读状态机，置 0x40000000+430600)/`0x1CF`(消息跳读态)/`0x19C`/`0x19B`(ADV 进/出)/`0x1BC`/`0x1BF`/`0xD9`(清 0x1000)/`0x93`(显示态切换)/`0xB6`(声音)/`0x1FD`(缩放)/`0x217`(变换)/`0x20E`(图形提交)/`0x1F6`(清图形链)/`0x23D`/`0x259`(纹理清理)/`0x229`(绘制模式)/`0x215`/`0x216`(getter)/`0x1B2`/`0x1B3`/`0x1B4`(调试/错误)/`0x1`(抛 Exit)。
+此前已确认 64 个 boot→TITLE 执行 opcode（含 0x6 load-into-frame、0x1F9 set-texture、0x1FB draw-texture、0x1A3 string-lookup-set、0x2D5 float mov 等）。
 
 ---
 
-## 7. 待确认 / 开放问题
+## 4. 实机探测工具（本次搭好）
 
-- **set-texture slot ↔ draw-texture 纹理 id(0x30d40) 是不同索引空间（已实证）**：slot 由 `set-texture <imgid> <slot>` 绑定到文件（`[5*slot+466]=imgid`，imgid→resolveEntry→SOxxx.AGF）；draw-texture 的 `tex`(0x30d40/0xa/0x64…) 是图形子系统纹理对象句柄（`sub_4AAD40` 按键查），与文件无直接映射。**绑定完全由 set-texture 指令决定**，见 **`docs/10`**（含标题启动路径 slot↔AGF 实测表，并修正 0x5247=LOGO.MPG）。
-- **真实屏幕分辨率（已定 1280×720）**：config 默认 640×480；实际背景源(0,0,1280,720)铺满、按钮最大(1263,710)，视口 1280×720。之前「1920×1080」判断源于错误的均匀列 dest 读数（x≈1596），已作废（正确模型 op3-6=源裁剪、op7/op8=目标位置）。见 `docs/10` §4。
-- **纹理 id→图像 id 表在启动链的填充**：数据载入 op(0xAB/0x190/0x19F/0x1A1) 只在 APPEND 脚本，启动→TITLE 路径没有——标题纹理的 imgid 由 `set-texture` 直接决定（slot↔imgid 绑定，见 docs/10），渲染已按「layer→slot→文件 + 按 dest 裁源」实现，无需再追该表。
-- **视频（步骤2）**：`TITLE.MTN`，文件格式/播放方案未定。
-- **操作数解码细节**：`draw-texture` 的 p/q 参数语义。
+**32 位 Python**（`C:\Program Files (x86)\Python313-32\python.exe`）在 **`tools/fade_probe_proj/`**：
+- `age_query.py <PID>`：提权+dispatch 扫描定位 `this` → 读 `frame(cur)`/当前 VM 指令(opcode+参数)/`effect_flags`，并**写 `proc_state.json`**。
+- `age_thread_eip.py <PID>`：枚举线程 + `GetThreadContext` 读 **EIP**，按已知函数地址猜所在函数。
+- `age_fade_wait_probe.py <PID> <this> [间隔] [时长] [csv]`：提权附加，连续采样 `effect_flags`/fade α/各计时器/纹理槽。
+- `age_spawn_wait_probe.py [时长] [间隔]`：**自己 CreateProcess 启动游戏** + 扫描 `this` + 采样（避免"事后 attach 太晚"）。
+- **Node 映射器** `app/amayui-emulator/age_map_src.mjs`：读 `proc_state.json` → 复用 emulator 的 `dist/script/alf.js`(SYS4INI scriptIndex→文件名) + `dist/script/bin.js`(OPCODE_TABLE) → 输出 `src/<名>.txt` + 当前指令行（尽力）。
+
+**C# 探测**（`tools/fade_probe_proj/`）：`age_free_fade_probe.cs` + `fade_probe_proj.csproj`（`dotnet build -c Release` → `bin/Release/net10.0/age_free_fade_probe.exe`）。`--spawn` 自启动/`--debug` 断点法；提权读取用 `Start-Process -Verb RunAs`（或用户管理员终端直接跑）。
+
+**实机关键数据（进程 9544，`天结_unpacked`）**：
+- `this=0x27CA020`，`cur=0x1`（frame[1]），`effect_flags=0x400`（0x21C 置的每脚本槽位）。
+- 版权页暂停时脚本 ip 指向 `LOGO.txt:47 u00420270 30d40 4`（0x1F7，同步重排，**非等待**）；播放 Stage2 时 ip=**第53行 release-texture 2a**（play-movie 后一行 → play-movie 已执行并推进）。
+- 主线程 EIP 在 `sub_4B4040`(present)。
+- 游戏进程为**管理员**提权 → py/C# 需 `SeDebug` 或 `RunAs` 才能读。
 
 ---
 
-## 8. 运行方式
+## 5. 关键文件清单（本次涉及）
+- 文档：`docs-new/03-engine/opcode-table.md`（+89 行已核对）、`rendering.md`（§3 fade/等待结论待最终定稿）、`runtime-memory.md`（§1.1 消息窗对象；`this` 增量待补）、`engine/engine.hpp`（**待更新**：`this` 新信息 + 消息窗偏移 `0x534C→0x14D30`）。
+- 工具：`tools/fade_probe_proj/*.py`、`tools/fade_probe_proj/age_free_fade_probe.cs`、`tools/fade_probe_proj/fade_probe_proj.csproj`、`app/amayui-emulator/age_map_src.mjs`。
 
+---
+
+## 6. 待办 / 未解
+1. **版权页"等几秒"** — ✅ 已收敛为**主循环 0x400 卫门**（`LOGO.txt:46 0x21C`→`sub_41A260` 置 `|=0x400`；主循环 line 20934-20977 驻留，`sub_407E20(_this+322832)` 图形池挂起/计时检查为真即不落派发，脚本 ip 停 LOGO:47；`sub_407E20` 返 0 且 `!v95` 才清 0x400）。**唯一未收敛项：`sub_407E20` 挂起时长（byte 369356）的具体设值来源**（候选：set-texture 异步纹理装载 / 场景载入 FadeTimer）。
+2. **版权页/菜单「黑渐变」的画面原语** — 已排除 fade opcode 族与 present 清黑（present 的 ClearTarget 被 `_this+46460&1` 守卫、字段恒 0；present 仅图形池脏时执行）。未定论：是否为 0x1000 过渡门（`sub_421AA0` 置 0x1000 + `_this+430096` 场景 FadeTimer）+ 场景内容分帧提交（推荐下轮用实机在**过渡瞬间**采样 `effect_flags`/`_this+430096` FadeTimer/`_this+46460` 或逐帧截图确认）。
+3. **落盘**：`engine/engine.hpp`（`this` 新信息 + 消息窗偏移 `0x534C→0x14D30` 修正）、`runtime-memory.md` 定稿。`rendering.md` §3 本轮已更新（等待=0x400 卫门；渐变=引擎内建场景切换/加载暗场渐变，非 fade 计数、非 present 清黑）。
+4. 其余（emulator 侧）：角色立绘、视频(LOGO.MPG/TITLE.MTN)、Live2D、输入。
+
+---
+
+## 7. 运行方式
 ```bash
-cd app/amayui-emulator
-npm run electron:dev      # 构建 + 启动 Electron 渲染壳（PixiJS）
-# 沙箱/无头环境需加 --no-sandbox（本机终端自跑无需）
+# 解释器/emulator
+cd app/amayui-emulator && npm run run      # tsx src/run.ts（无界面跑到 TITLE）
+# 32 位 Python 实机探测（管理员）
+& "C:\Program Files (x86)\Python313-32\python.exe" tools/fade_probe_proj/age_query.py <PID>
+node app/amayui-emulator/age_map_src.mjs
 ```
 
-- node v24.16.0；npm 缓存路径因 root 属主问题需用项目内缓存：`--cache ./node_modules/.cache/npm`（electron 二进制另用 `electron_config_cache` 项目内目录手动下载）。
-
 ---
 
-## 9. 注意点 / 坑
-
-- 沙箱里跑 Electron 会因 Chromium 沙箱/GPU 初始化失败，需 `--no-sandbox`；GPU 进程在只加 `--no-sandbox` 时不崩（WebGL 可用）。
-- PixiJS v8 需要 CSP `unsafe-eval`（已加）；`Container.name` 已弃用改 `label`，用 `getChildByLabel`。
-- npm 对 `~/.npm` 报 EPERM（root 属主文件），用 `--cache` 指向项目内目录解决。
-- **已确认当前可看图像**（`read_image`）：SO006=皮革底+金边背景、SO005=白底日文版权页、SO004=整张主菜单复合图，均已用视觉确认。
-- **`@viz-js/viz` 已装到 `app/amayui-emulator/node_modules`**（`npm install --no-save`），用于把调用图 DOT 渲染成 SVG（`app/amayui-emulator/.tmp/*.dot → *.svg`）。
-- 引擎 `engine.cpp` 是反编译 C，`_this` 在部分函数是 DWORD 索引、部分是字节偏移——跨函数换算偏移时须按各自 `_this` 类型确认（`docs/09` §4 已按函数标注）。
-- 数据载入 opcode（0xAB/0x190/0x19F/0x1A1）在 `opcodes.ts` 有表项，但**尚未在 `ops.ts` 实现**（当前未实现则硬报错）；启动→TITLE 路径不会触发。
+## 8. 注意点 / 坑
+- 游戏进程为**管理员**提权；py/C# 读取需 `SeDebugPrivilege`（若进程本身非管理员则失败）或 `Start-Process -Verb RunAs` 提权启动探测。
+- `engine.cpp` 中 `_this` 有 byte 偏移（`*(_DWORD*)(_this+N)`）与 DWORD 下标（`_this[N]`，×4=byte）两种形态，跨函数换算须按各自 `_this` 类型确认（**易踩坑**：消息窗我一度误写成 `0x534C`，实为 DWORD 下标 21324 → byte `0x14D30`）。
+- 主循环是**含跨层 goto 的嵌套状态机**；子代理对个别 goto 目标作用域仅按大括号推断，未单步。
+- 32 位 Python 读线程上下文须用 `GetThreadContext`；`CreateToolhelp32Snapshot` 枚举线程用 `TH32CS_SNAPTHREAD=0x4`（0x2 是进程快照）。
+- 提权进程的控制台输出不易被父会话捕获 → 探测结果靠**写文件**（`probe_run.log`/`proc_state.json`/`*_stdout.txt`）。
