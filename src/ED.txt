@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 5 1 1 1 1 1 }
 ====
 
-u00415BF0
+poll-input
 mov (local-int 2) 4e2d
 u0041C680 (local-int 0) (local-int 2)
 shl (local-int 3) (local-int 0) 2
@@ -11,7 +11,7 @@ or (local-int 1) (local-int 3) 20000
 create-texture 2a 500 2d0 0
 draw-texture 30d40 2a 0 0 500 2d0 0 0
 play-movie (local-int 2) 2a (local-int 1)
-u00420270 30d40 1
+texture-op 30d40 1
 release-texture 2a
-u00415BF0
+poll-input
 exit

@@ -713,16 +713,16 @@ label_00002ae8
 ret
 
 label_00002aec
-u00420270 1d4c0 c8
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+texture-op 1d4c0 c8
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 80 0
 add (local-int 245) 1d4c0 a
 draw-texture (local-int 245) 11 13e 31a 11a 2e0 32a 0
@@ -746,7 +746,7 @@ ret
 
 label_00002f1c
 add (local-int 245) 1d4c0 32
-u00420270 (local-int 245) 96
+texture-op (local-int 245) 96
 u00414E50 (global-int f7ff5)
 u00414FD0 (global-int f7ff6)
 u00414F60 (global-int f7ff7)
@@ -912,9 +912,9 @@ ret
 
 label_00003aec
 add (local-int 245) 1d4c0 64
-u00420270 (local-int 245) 1
+texture-op (local-int 245) 1
 add (local-int 245) 1d4c0 9f
-u00420270 (local-int 245) 1
+texture-op (local-int 245) 1
 gre (local-int 245) (local-int 7) 0
 lt (local-int 246) (local-int 7) 3
 and (local-int 247) (local-int 245) (local-int 246)
@@ -1006,26 +1006,26 @@ jmp label_000046a8
 label_00004428
 set-array-to (local-int 217) 40 4
 set-array-to (local-int 21b) ff 4
-u0042B990 (local-float 0) 49c
+float-mov (local-float 0) 49c
 sub (local-int 245) (local-int 7) 3
 mul (local-int 246) (local-int 245) 32
 u0042B940 (local-float 4) 72 (local-int 246)
-u0042B990 (local-float 1) 4ec
+float-mov (local-float 1) 4ec
 sub (local-int 245) (local-int 7) 3
 mul (local-int 246) (local-int 245) 32
 u0042B940 (local-float 5) 72 (local-int 246)
-u0042B990 (local-float 2) 4ec
+float-mov (local-float 2) 4ec
 sub (local-int 245) (local-int 7) 3
 mul (local-int 246) (local-int 245) 32
 add (local-int 247) 72 (local-int 246)
 add (local-float 6) (local-int 247) 30
-u0042B990 (local-float 3) 49c
+float-mov (local-float 3) 49c
 sub (local-int 245) (local-int 7) 3
 mul (local-int 246) (local-int 245) 32
 add (local-int 247) 72 (local-int 246)
 add (local-float 7) (local-int 247) 30
 add (local-int 245) 1d4c0 64
-u0043AA20 (local-int 245) (local-float 0) (local-float 4) (local-float 8) (local-int 217) (local-int 21b) (local-float c) (local-float 10) 4 1
+create-mesh (local-int 245) (local-float 0) (local-float 4) (local-float 8) (local-int 217) (local-int 21b) (local-float c) (local-float 10) 4 1
 
 label_000046a8
 jmp label_00004e10
@@ -1105,16 +1105,16 @@ and (local-int 247) (local-int 245) (local-int 246)
 jcc (local-int 247) ffffffff label_00004ddc
 set-array-to (local-int 217) 40 4
 set-array-to (local-int 21b) ff 4
-u0042B990 (local-float 0) 334
-u0042B990 (local-float 4) 6e
-u0042B990 (local-float 1) 438
-u0042B990 (local-float 5) 6e
-u0042B990 (local-float 2) 438
-u0042B990 (local-float 6) 26c
-u0042B990 (local-float 3) 334
-u0042B990 (local-float 7) 26c
+float-mov (local-float 0) 334
+float-mov (local-float 4) 6e
+float-mov (local-float 1) 438
+float-mov (local-float 5) 6e
+float-mov (local-float 2) 438
+float-mov (local-float 6) 26c
+float-mov (local-float 3) 334
+float-mov (local-float 7) 26c
 add (local-int 245) 1d4c0 9f
-u0043AA20 (local-int 245) (local-float 0) (local-float 4) (local-float 8) (local-int 217) (local-int 21b) (local-float c) (local-float 10) 4 1
+create-mesh (local-int 245) (local-float 0) (local-float 4) (local-float 8) (local-int 217) (local-int 21b) (local-float c) (local-float 10) 4 1
 
 label_00004ddc
 jmp label_00004e10
@@ -1128,7 +1128,7 @@ ret
 
 label_00004e14
 call-script 46  // DRAWCHARM
-u00420270 1d4c0 12c
+texture-op 1d4c0 12c
 eq (local-int 245) (global-int 0) 1
 eq (local-int 246) (global-int 0) 6
 or (local-int 247) (local-int 245) (local-int 246)
@@ -1136,7 +1136,7 @@ and (local-int 248) (global-int f8df9) 10000
 eq (local-int 249) (local-int 248) 0
 and (local-int 24a) (local-int 247) (local-int 249)
 jcc (local-int 24a) ffffffff label_00004f20
-u00415BF0
+poll-input
 call label_00004f88
 308 1
 u004213E0 1

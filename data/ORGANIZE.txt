@@ -1248,16 +1248,16 @@ u00416200
 ret
 
 label_00004ba0
-u00420270 1d4c0 7d0
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+texture-op 1d4c0 7d0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 80 0
 add (local-int 490) 1d4c0 64
 draw-texture (local-int 490) c0 0 470 95 90 36 193
@@ -1273,11 +1273,11 @@ ret
 
 label_00004e50
 add (local-int 490) 1d4c0 44c
-u00420270 (local-int 490) 32
+texture-op (local-int 490) 32
 add (local-int 490) 1d4c0 4b0
-u00420270 (local-int 490) 32
+texture-op (local-int 490) 32
 add (local-int 490) 1d4c0 578
-u00420270 (local-int 490) fa
+texture-op (local-int 490) fa
 add (local-int 490) 1d4c0 44c
 draw-texture (local-int 490) c0 0 0 209 a1 118 2e
 add (local-int 490) 1d4c0 456
@@ -1495,11 +1495,11 @@ ret
 
 label_00006438
 add (local-int 490) 1d4c0 47e
-u00420270 (local-int 490) 32
+texture-op (local-int 490) 32
 add (local-int 490) 1d4c0 4e2
-u00420270 (local-int 490) 32
+texture-op (local-int 490) 32
 add (local-int 490) 1d4c0 6a4
-u00420270 (local-int 490) 64
+texture-op (local-int 490) 64
 add (local-int 490) 1d4c0 3e8
 draw-texture (local-int 490) c0 71 30b d5 49 d 232
 eq (local-int 490) (local-int 48c) 0
@@ -1777,16 +1777,16 @@ ret
 
 label_00007f10
 add (local-int 490) 1d4c0 514
-u00420270 (local-int 490) 1
+texture-op (local-int 490) 1
 add (local-int 490) 1d4c0 708
-u00420270 (local-int 490) 1
+texture-op (local-int 490) 1
 ret
 
 label_00007f74
 add (local-int 490) 1d4c0 1f4
-u00420270 (local-int 490) 64
+texture-op (local-int 490) 64
 add (local-int 490) 1d4c0 2bc
-u00420270 (local-int 490) 12c
+texture-op (local-int 490) 12c
 lookup-array (local-ptr 0) (global-int 72164) (global-int 546e00)
 and (local-int 490) (local-ptr 0) a
 jcc (local-int 490) ffffffff label_0000808c
@@ -1802,7 +1802,7 @@ ret
 label_00008090
 ne (local-int 490) (global-int 0) 4
 jcc (local-int 490) ffffffff label_000081c0
-u00420270 1d4c0 7d0
+texture-op 1d4c0 7d0
 release-texture c0
 release-texture c1
 release-texture c2

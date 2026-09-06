@@ -191,7 +191,7 @@ jmp label_00000604
 label_00000f94
 call label_00001004
 u00422390 1f4
-u00416270
+wait
 jmp label_000012f0
 
 label_00000fbc
@@ -200,7 +200,7 @@ ret
 
 label_00001004
 add (local-int 4b) 1fbd0 64
-u00420270 (local-int 4b) c8
+texture-op (local-int 4b) c8
 mov (local-int 0) 0
 jmp label_00001070
 
@@ -242,7 +242,7 @@ label_000012ec
 ret
 
 label_000012f0
-u00420270 1fbd0 12c
+texture-op 1fbd0 12c
 release-texture ac
 
 label_00001310

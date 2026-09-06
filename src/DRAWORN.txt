@@ -31,7 +31,7 @@ jcc (local-int 5) ffffffff label_00000204
 add (local-int 3) (local-int 3) 1d4c0
 
 label_00000204
-u00420270 (local-int 3) 1
+texture-op (local-int 3) 1
 add (local-int 5) 190 (local-int 0)
 lookup-array (local-ptr 1) (global-int 14cc83) (local-int 4)
 lookup-array (local-ptr 2) (global-int 14cce7) (local-int 4)
@@ -56,7 +56,7 @@ and (local-int 5) (global-int a9d6) 8
 jcc (local-int 5) ffffffff label_00000510
 lookup-array (local-ptr 0) (global-int 14d1fb) (local-int 4)
 jcc (local-ptr 0) ffffffff label_000004d4
-u00420270 (local-int 3) 1
+texture-op (local-int 3) 1
 
 label_000004d4
 lookup-array (local-ptr 0) (global-int 14c8ff) (local-int 0)

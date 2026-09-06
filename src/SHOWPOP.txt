@@ -247,16 +247,16 @@ u004215D0 (local-int 6) 0 c8 0 0 0
 jmp label_000013bc
 
 label_000014ac
-u00415BF0
-u00416270
+poll-input
+wait
 jcc (local-int 5) ffffffff label_000014f0
 play-sound-effect (local-int 5) 0
 u0041D050 0
 
 label_000014f0
 u00422390 7d0
-u00415BF0
-u00416270
+poll-input
+wait
 mov (local-int 3) 0
 jmp label_00001540
 
@@ -272,8 +272,8 @@ u004215D0 (local-int 6) 0 c8 (local-int 7) 0 0
 jmp label_00001524
 
 label_000015f0
-u00416270
-u00420270 2e248 4
+wait
+texture-op 2e248 4
 release-texture e
 release-texture 2a
 release-texture 3e

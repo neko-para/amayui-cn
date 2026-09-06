@@ -1050,15 +1050,15 @@ set-texture 39a8 c1 (local-int 20f7)
 ret
 
 label_00003f78
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 c0 0
 add (local-int 20f7) 1d4c0 64
 draw-texture (local-int 20f7) c0 0 260 1e0 1e0 19 69
@@ -1105,11 +1105,11 @@ ret
 
 label_00004480
 add (local-int 20f7) 1d4c0 3e8
-u00420270 (local-int 20f7) c8
+texture-op (local-int 20f7) c8
 add (local-int 20f7) 1d4c0 514
-u00420270 (local-int 20f7) 64
+texture-op (local-int 20f7) 64
 add (local-int 20f7) 1d4c0 5dc
-u00420270 (local-int 20f7) c8
+texture-op (local-int 20f7) c8
 add (local-int 20f7) 1d4c0 3e8
 draw-texture (local-int 20f7) c0 0 0 24a 25e 230 42
 add (local-int 20f7) 1d4c0 3e9
@@ -1409,16 +1409,16 @@ ret
 
 label_000060e8
 add (local-int 20f7) 1d4c0 4b0
-u00420270 (local-int 20f7) 3
+texture-op (local-int 20f7) 3
 add (local-int 20f7) 1d4c0 578
-u00420270 (local-int 20f7) 1
-u00420270 1fbd0 3e8
+texture-op (local-int 20f7) 1
+texture-op 1fbd0 3e8
 mov (global-int 703e2e) 0
 ret
 
 label_00006174
 add (local-int 20f7) 1d4c0 9c4
-u00420270 (local-int 20f7) 1
+texture-op (local-int 20f7) 1
 jcc (global-int 703e2e) ffffffff label_00006398
 create-texture c5 1ec 5c 0
 add (local-int 20f7) 1d4c0 9c4
@@ -1447,7 +1447,7 @@ ret
 
 label_000063b0
 add (local-int 20f7) 1d4c0 7d0
-u00420270 (local-int 20f7) 1f40
+texture-op (local-int 20f7) 1f40
 lookup-array (local-ptr 3) (global-int 70154b) (global-int 701549)
 mov (local-int 2eb) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 7017a3) (global-int 701549)
@@ -1672,8 +1672,8 @@ u00416200
 ret
 
 label_00007650
-u00420270 1d4c0 2710
-u00420270 1fbd0 3e8
+texture-op 1d4c0 2710
+texture-op 1fbd0 3e8
 release-texture c0
 release-texture c1
 release-texture c2

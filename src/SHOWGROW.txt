@@ -78,8 +78,8 @@ sub (local-int 806) 0 1
 set-draw-color (local-int 805) 64 64 ff (local-int 806)
 add (local-int 805) 2e248 1
 u00421450 (local-int 805) 3e8 c8 0 0 0
-u00416270
-u00420270 2e248 2
+wait
+texture-op 2e248 2
 
 label_000006f8
 eq (local-int 805) (global-int 708022) 2
@@ -453,7 +453,7 @@ jmp label_00002770
 
 label_00002760
 u00422390 258
-u00416270
+wait
 
 label_00002770
 call-script 50e3  // MES
@@ -476,16 +476,16 @@ set-draw-color (local-int 806) 0 12c 0 (local-int 807)
 jmp label_000027f0
 
 label_000028d0
-u00416270
+wait
 
 label_000028d4
 ne (local-int 805) (global-int 0) 5
 jcc (local-int 805) ffffffff label_0000291c
 u00422EA0 0
-u00415BF0
+poll-input
 
 label_0000291c
-u00420270 2e248 1f4
+texture-op 2e248 1f4
 ne (local-int 805) (global-int 708022) 1
 jcc (local-int 805) ffffffff label_00002974
 release-texture ac

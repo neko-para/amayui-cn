@@ -631,7 +631,7 @@ ret
 
 label_00002540
 add (local-int b9e) 1d4c0 3e8
-u00420270 (local-int b9e) 384
+texture-op (local-int b9e) 384
 release-texture c6
 add (local-int b9e) 1d4c0 44c
 draw-texture (local-int b9e) c0 49b 1f5 22a 1a 0 2e
@@ -947,9 +947,9 @@ ret
 
 label_000042f0
 add (local-int b9e) 1d4c0 7d0
-u00420270 (local-int b9e) c8
+texture-op (local-int b9e) c8
 add (local-int b9e) 1d4c0 8fc
-u00420270 (local-int b9e) c8
+texture-op (local-int b9e) c8
 create-texture c4 190 1e4 0
 add (local-int b9e) 1d4c0 7d0
 draw-texture (local-int b9e) c0 0 0 248 257 2b8 50
@@ -1102,14 +1102,14 @@ jmp label_000050b4
 
 label_00005084
 add (local-int b9e) 1d4c0 956
-u00420270 (local-int b9e) 1
+texture-op (local-int b9e) 1
 
 label_000050b4
 ret
 
 label_000050b8
 add (local-int b9e) 1d4c0 b54
-u00420270 (local-int b9e) 14
+texture-op (local-int b9e) 14
 jcc (local-int b87) ffffffff label_00005550
 add (local-int b9e) 1d4c0 b54
 sub (local-int b9f) 7a 4
@@ -1195,7 +1195,7 @@ lookup-array (local-ptr 1) (global-int e8bda) (local-int b8b)
 u00428010 (local-ptr 1)
 add (local-int b9e) 1d4c0 960
 add (local-int b9f) (local-int b9e) (local-int 7ef)
-u00420270 (local-int b9f) 1
+texture-op (local-int b9f) 1
 
 label_00005970
 ne (local-int b9e) (local-int b8b) (local-int b8c)
@@ -1208,9 +1208,9 @@ ret
 
 label_000059cc
 add (local-int b9e) 1d4c0 898
-u00420270 (local-int b9e) 1
+texture-op (local-int b9e) 1
 add (local-int b9e) 1d4c0 c80
-u00420270 (local-int b9e) 1
+texture-op (local-int b9e) 1
 eq (local-int b9e) (local-int 7e1) 1
 jcc (local-int b9e) ffffffff label_00005a70
 call label_000050b8
@@ -1230,7 +1230,7 @@ ret
 
 label_00005ad4
 add (local-int b9e) 1d4c0 3e8
-u00420270 (local-int b9e) 7d0
+texture-op (local-int b9e) 7d0
 release-texture c4
 release-texture c5
 release-texture c6

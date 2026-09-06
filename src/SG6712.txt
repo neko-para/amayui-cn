@@ -144,7 +144,7 @@ sub (local-int 1) 0 1
 set-draw-color (local-int 0) 0 c8 0 (local-int 1)
 
 label_00000e20
-u00416270
+wait
 mov (global-int 1399) 2
 mov (global-int f7ffb) 0
 mov (global-int f8005) 0
@@ -183,7 +183,7 @@ sub (local-int 1) 0 1
 set-draw-color (local-int 0) 0 c8 ff (local-int 1)
 
 label_00001024
-u00416270
+wait
 mov (global-int 1399) 1
 mov (global-int f7ffb) 0
 mov (global-int f8005) 0
@@ -428,8 +428,8 @@ u004160D0
 u0041B290 1
 call label_00003aa0
 u00422390 64
-u00416270
-u00415BF0
+wait
+poll-input
 u00416120
 u00415040
 call label_00000320
@@ -445,8 +445,8 @@ sub (global-int 139d) 1 (global-int 139d)
 u0041B9B0 (global-int 139d)
 call label_00003aa0
 u00422390 64
-u00416270
-u00415BF0
+wait
+poll-input
 u00416120
 u00415040
 call label_00000320
@@ -648,15 +648,15 @@ call label_000046b8
 ret
 
 label_00002500
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_0000266c
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 1f4 ff 0
@@ -668,9 +668,9 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 
 label_000026bc
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 exit-script
 jmp label_00002950
 
@@ -1059,21 +1059,21 @@ exit
 exit
 
 label_00003aa0
-u00420270 19640 2
-u00420270 19834 19
+texture-op 19640 2
+texture-op 19834 19
 jcc (global-int 1397) ffffffff label_00003d3c
 call label_000067e8
 eq (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00003c4c
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19640 0 (global-int f807d) 0
 jmp label_00003d14
 
@@ -1165,7 +1165,7 @@ create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-u00420270 30d40 1
+texture-op 30d40 1
 u0041CED0 (global-int 1396) (global-int f8019) e
 release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
@@ -1236,7 +1236,7 @@ u00423127 1
 mov (global-int 3f36) 2
 
 label_000047b4
-u00415BF0
+poll-input
 call label_00006984
 308 1
 u004213E0 1
@@ -1389,7 +1389,7 @@ mov (global-int 13ad) 0
 mov (global-int f7ffb) 0
 
 label_00005170
-u00420270 197d0 1
+texture-op 197d0 1
 call label_000069e4
 mov (global-int f8047) 1
 ret
@@ -1435,7 +1435,7 @@ u00416200
 jmp label_000053ac
 
 label_000053a8
-u00416270
+wait
 
 label_000053ac
 u00416290
@@ -1457,7 +1457,7 @@ gre (local-int 0) (global-int f801f) 0
 jcc (local-int 0) ffffffff label_000055a0
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-u00420270 (local-int 0) 1
+texture-op (local-int 0) 1
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 u00421160 (global-int f8c39) (local-ptr 1)
 ne (local-int 0) (global-int f801f) (global-int f8c39)
@@ -1476,7 +1476,7 @@ sub (local-int 2) 0 1
 set-draw-color-alpha (local-ptr 1) 0 (local-int 1) (local-int 2)
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 2
-u00420270 (local-int 0) 1
+texture-op (local-int 0) 1
 release-texture (global-int f801f)
 
 label_000056f4
@@ -1509,7 +1509,7 @@ label_000058bc
 jcc (global-int f8048) ffffffff label_00005c74
 and (local-int 0) (global-int f8048) 1
 jcc (local-int 0) ffffffff label_0000593c
-u00420270 19578 2
+texture-op 19578 2
 release-texture 1
 release-texture a
 
@@ -1517,7 +1517,7 @@ label_0000593c
 and (local-int 0) (global-int f8048) 2
 jcc (local-int 0) ffffffff label_00005a28
 add (local-int 0) 19258 1
-u00420270 (local-int 0) 1
+texture-op (local-int 0) 1
 release-texture b
 eq (local-int 0) (global-int f8068) 1
 jcc (local-int 0) ffffffff label_00005a28
@@ -1540,7 +1540,7 @@ lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 jcc (local-ptr 1) ffffffff label_00005c40
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-u00420270 (local-int 0) 1
+texture-op (local-int 0) 1
 lookup-array-2d (local-ptr 1) (global-int 3f54) (global-int f801d) 3 2
 release-texture (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f805d) (global-int f801d)
@@ -1580,7 +1580,7 @@ exit
 label_00005d54
 ne (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_00006460
-u00420270 19708 6
+texture-op 19708 6
 jcc (global-int 1397) ffffffff label_0000644c
 gre (local-int 0) (global-int 3f37) 0
 jcc (local-int 0) ffffffff label_00006440
@@ -1766,9 +1766,9 @@ ret
 exit
 
 label_000069e4
-u00420270 1976c 3
-u00420270 19a28 1f4
-u00420270 1a9c8 64
+texture-op 1976c 3
+texture-op 19a28 1f4
+texture-op 1a9c8 64
 eq (local-int 0) (global-int a9dc) 0
 jcc (local-int 0) ffffffff label_00006ab4
 2F6 0
@@ -1782,8 +1782,8 @@ ret
 exit
 
 label_00006abc
-u00420270 19a28 1f4
-u00420270 1a9c8 64
+texture-op 19a28 1f4
+texture-op 1a9c8 64
 and (local-int 0) (global-int 1397) (global-int 3f38)
 jcc (local-int 0) ffffffff label_00006b84
 eq (local-int 0) (global-int 0) 6

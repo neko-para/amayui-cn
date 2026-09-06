@@ -189,15 +189,15 @@ mov (local-int 2c8) 1
 ret
 
 label_00000af4
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 80 0
 lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
 jcc (local-ptr 0) ffffffff label_00000d40
@@ -265,7 +265,7 @@ ret
 
 label_00001288
 add (local-int 2e3) 1d4c0 12c
-u00420270 (local-int 2e3) 1
+texture-op (local-int 2e3) 1
 ret
 
 label_000012bc
@@ -273,5 +273,5 @@ u00416200
 ret
 
 label_000012c4
-u00420270 1d4c0 190
+texture-op 1d4c0 190
 exit

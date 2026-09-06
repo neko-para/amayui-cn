@@ -338,15 +338,15 @@ mov (local-int 3fc) 2
 jmp label_00001fb8
 play-sound-effect 32 1
 u0041D050 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00001454
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 c8 ff 0
@@ -358,9 +358,9 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 
 label_000014a4
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 call label_0000384c
 call-script 526c  // ROOM
 jmp label_00001fb8
@@ -544,23 +544,23 @@ ret
 
 label_000021a4
 u00416170
-u0042B990 (global-float 11) 1
-u0042B990 (global-float 12) 1
-u0042B990 (global-float 13) 1
-u0042B990 (global-float 14) 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0042B990 (global-float 11) (float 0)
-u0042B990 (global-float 12) (float 0)
-u0042B990 (global-float 13) (float 0)
-u0042B990 (global-float 14) (float 0)
+float-mov (global-float 11) 1
+float-mov (global-float 12) 1
+float-mov (global-float 13) 1
+float-mov (global-float 14) 1
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 11) (float 0)
+float-mov (global-float 12) (float 0)
+float-mov (global-float 13) (float 0)
+float-mov (global-float 14) (float 0)
 set-vertex-color 0 0 ff 0
 draw-texture a 4 0 0 500 2d0 0 0
 u00420770 a 0 0 1
@@ -708,15 +708,15 @@ set-draw-color-alpha (local-int 40e) 0 0 (local-int 40f)
 jmp label_00002fe4
 
 label_00003158
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_000032c4
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 12c ff 0
@@ -728,13 +728,13 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00003314
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 ret
 
 label_00003340
-u00420270 96 1
+texture-op 96 1
 gre (local-int 40d) (local-int 3f8) 0
 lt (local-int 40e) (local-int 3f8) 5
 and (local-int 40f) (local-int 40d) (local-int 40e)
@@ -744,7 +744,7 @@ add (local-int 40e) 12c (local-int 40d)
 set-draw-color-alpha (local-int 40e) 0 ff ffffff
 mul (local-int 40d) (local-int 3f8) 2
 add (local-int 40e) 12d (local-int 40d)
-u00420270 (local-int 40e) 1
+texture-op (local-int 40e) 1
 
 label_0000346c
 gre (local-int 40d) (local-int 3f7) 0
@@ -801,11 +801,11 @@ u0043AAD0
 ret
 
 label_00003874
-u00420270 64 12c
+texture-op 64 12c
 ret
 
 label_0000388c
 call label_0000384c
-u00415BF0
+poll-input
 u00414EC0
 exit

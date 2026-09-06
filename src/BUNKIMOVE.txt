@@ -127,8 +127,8 @@ add (local-int 2) (local-int 2) 1
 jmp label_00000250
 
 label_00000bbc
-u00415BF0
-u00416270
+poll-input
+wait
 
 label_00000bc4
 mov (local-int 2) 1adb0
@@ -342,6 +342,6 @@ set-draw-color-alpha (local-int 9) 0 0 (local-int a)
 jmp label_00002124
 
 label_00002298
-u00415BF0
-u00416270
+poll-input
+wait
 exit

@@ -7,15 +7,15 @@ eq (local-int 0) (global-int 4fd9) 1
 jcc (local-int 0) ffffffff label_000002b4
 mov (global-int 4fd9) 0
 mov (global-int b22a) 0
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00000208
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 12c ff 0
@@ -27,9 +27,9 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00000258
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 u004219E0 0 0 0 0 0
 u00416170
 u004162F0

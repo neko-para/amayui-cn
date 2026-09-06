@@ -1137,7 +1137,7 @@ label_000044f8
 ret
 
 label_000044fc
-u00420270 640 1e
+texture-op 640 1e
 mov (local-int 405) 0
 mov (local-int 40f) 87
 mov (local-int 406) 1
@@ -1210,8 +1210,8 @@ label_000049cc
 ret
 
 label_000049d0
-u00420270 44c 1
-u00420270 578 2
+texture-op 44c 1
+texture-op 578 2
 mov (global-int 132dc8) 0
 mov (global-int 132dc9) 0
 gre (local-int 4d6) (local-int 3f7) 0
@@ -1306,15 +1306,15 @@ ret
 label_000050b8
 play-sound-effect 51e3 1
 u0041D050 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00005244
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 5dc ff 0
@@ -1326,9 +1326,9 @@ set-vertex-color-alpha 30d40 0 5dc 0 0
 
 label_00005294
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 u0041A7B0 9
 u0041B7B0 1
 sub (local-int 4d6) 0 1
@@ -1353,7 +1353,7 @@ u0041B7B0 1
 sub (local-int 4d6) 0 1
 u0041BB40 (local-int 4d6) 0
 u0041AF00 1
-u00420270 3e8 3e8
+texture-op 3e8 3e8
 release-texture c0
 release-texture c1
 exit

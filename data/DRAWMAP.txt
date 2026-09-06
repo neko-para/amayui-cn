@@ -63,8 +63,8 @@ label_00000420
 jmp label_000000d8
 
 label_0000042c
-u00420270 0 3a98
-u00420270 4e20 88b8
+texture-op 0 3a98
+texture-op 4e20 88b8
 mov (local-int 0) 3e8
 mov (local-int 5) 7d0
 mov (local-int 6) bb8
@@ -74,23 +74,23 @@ mov (local-int 2) 4e20
 mov (local-int 3) c350
 mov (local-int 4) cf08
 mov (local-int 8) d2f0
-u0042B990 (global-float 11) 1
-u0042B990 (global-float 12) 1
-u0042B990 (global-float 13) 1
-u0042B990 (global-float 14) 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0042B990 (global-float 11) (float 0)
-u0042B990 (global-float 12) (float 0)
-u0042B990 (global-float 13) (float 0)
-u0042B990 (global-float 14) (float 0)
+float-mov (global-float 11) 1
+float-mov (global-float 12) 1
+float-mov (global-float 13) 1
+float-mov (global-float 14) 1
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 11) (float 0)
+float-mov (global-float 12) (float 0)
+float-mov (global-float 13) (float 0)
+float-mov (global-float 14) (float 0)
 set-vertex-color 0 0 ff (global-int 14d711)
 mov (local-int 9) 1
 jmp label_000006fc

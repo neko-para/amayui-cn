@@ -3,15 +3,15 @@ signature = SYS4450
 local_vars = { 1 1 1 2 1 1 }
 ====
 
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
@@ -31,26 +31,26 @@ mov (global-int 4fd2) 0
 label_00000284
 mov (global-int 4fd3) (global-int 4fd5)
 mov (global-int f8047) 1
-u00415BF0
-u00416270
+poll-input
+wait
 u00416170
-u0042B990 (global-float 11) 1
-u0042B990 (global-float 12) 1
-u0042B990 (global-float 13) 1
-u0042B990 (global-float 14) 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
-u0042B990 (global-float 11) (float 0)
-u0042B990 (global-float 12) (float 0)
-u0042B990 (global-float 13) (float 0)
-u0042B990 (global-float 14) (float 0)
+float-mov (global-float 11) 1
+float-mov (global-float 12) 1
+float-mov (global-float 13) 1
+float-mov (global-float 14) 1
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 11) (float 0)
+float-mov (global-float 12) (float 0)
+float-mov (global-float 13) (float 0)
+float-mov (global-float 14) (float 0)
 set-vertex-color 0 0 ff ffffff
 mov (global-int 56d62) 21
 mov (global-int 519afb) 14

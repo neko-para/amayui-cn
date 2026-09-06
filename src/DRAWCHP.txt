@@ -18,9 +18,9 @@ add (local-int 13b2) 11558 12f
 u00421410 (local-int 13b2) (local-int 13b0)
 
 label_00000178
-u00420270 11558 1f4
+texture-op 11558 1f4
 add (local-int 13b2) 11558 258
-u00420270 (local-int 13b2) 64
+texture-op (local-int 13b2) 64
 ne (local-int 13b2) (global-int b22b) 2
 lookup-array (local-ptr 0) (global-int 6202a) (global-int b225)
 and (local-int 13b3) (local-ptr 0) 1
@@ -517,7 +517,7 @@ u004234E0 0 49 642 37b f 14 2 (local-int 13b2)
 label_00003474
 gre (local-int 13b2) (local-int 13b0) 0
 jcc (local-int 13b2) ffffffff label_000034c0
-u00420270 (local-int 13b0) 1
+texture-op (local-int 13b0) 1
 
 label_000034c0
 add (local-int 13b2) 11558 136

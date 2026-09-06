@@ -18,34 +18,34 @@ copy-local-array (local-int c03) [497 2a1 30c 377 2a1 30c 497]
 copy-local-array (local-int c11) [209 27d 27d 27d 313 313 254]
 set-array-to (local-int c18) ff a
 set-array-to (local-int c22) ffffff a
-u0042B990 (local-float 0) 0
+float-mov (local-float 0) 0
 div (local-int c2c) (global-int b234) 2
 u0042B950 (local-float 1) 280 (local-int c2c)
-u0042B990 (local-float 2) 0
+float-mov (local-float 2) 0
 div (local-int c2c) (global-int b234) 2
 u0042B950 (local-float 3) 280 (local-int c2c)
-u0042B990 (local-float 4) 500
+float-mov (local-float 4) 500
 div (local-int c2c) (global-int b234) 2
 u0042B940 (local-float 5) 280 (local-int c2c)
-u0042B990 (local-float 6) 500
+float-mov (local-float 6) 500
 div (local-int c2c) (global-int b234) 2
 u0042B940 (local-float 7) 280 (local-int c2c)
-u0042B990 (local-float 8) (local-float 0)
-u0042B990 (local-float 9) (local-float 1)
-u0042B990 (local-float a) 0
+float-mov (local-float 8) (local-float 0)
+float-mov (local-float 9) (local-float 1)
+float-mov (local-float a) 0
 div (local-int c2c) (global-int b234) 2
 u0042B950 (local-float b) 168 (local-int c2c)
-u0042B990 (local-float c) 2d0
+float-mov (local-float c) 2d0
 div (local-int c2c) (global-int b234) 2
 u0042B940 (local-float d) 168 (local-int c2c)
-u0042B990 (local-float e) 2d0
+float-mov (local-float e) 2d0
 div (local-int c2c) (global-int b234) 2
 u0042B940 (local-float f) 168 (local-int c2c)
-u0042B990 (local-float 10) 0
+float-mov (local-float 10) 0
 div (local-int c2c) (global-int b234) 2
 u0042B950 (local-float 11) 168 (local-int c2c)
-u0042B990 (local-float 12) (local-float a)
-u0042B990 (local-float 13) (local-float b)
+float-mov (local-float 12) (local-float a)
+float-mov (local-float 13) (local-float b)
 copy-local-array (local-int 25d) [1 a ffffffff ffffffff]
 copy-local-array (local-int 261) [2 a 0 ffffffff]
 copy-local-array (local-int 265) [3 a 1 ffffffff]
@@ -706,8 +706,8 @@ set-texture 39a8 c0 (local-int c2c)
 ret
 
 label_00002ce0
-u00420270 1d4c0 3e8
-u0043AA20 1d4c0 (local-float 0) (local-float a) (local-float 14) (local-int c18) (local-int c22) (local-float 1e) (local-float 28) a 0
+texture-op 1d4c0 3e8
+create-mesh 1d4c0 (local-float 0) (local-float a) (local-float 14) (local-int c18) (local-int c22) (local-float 1e) (local-float 28) a 0
 set-vertex-color 1d4c0 0 80 0
 mul (local-int c2c) 25 (local-int 420)
 sub (local-int 40e) 168 (local-int c2c)
@@ -1003,11 +1003,11 @@ ret
 
 label_00004920
 add (local-int c2c) 1d4c0 78
-u00420270 (local-int c2c) 2
+texture-op (local-int c2c) 2
 add (local-int c2c) 1d4c0 190
-u00420270 (local-int c2c) 8
+texture-op (local-int c2c) 8
 add (local-int c2c) 1d4c0 258
-u00420270 (local-int c2c) 1
+texture-op (local-int c2c) 1
 gre (local-int c2c) (local-int 3f7) 0
 lt (local-int c2d) (local-int 3f7) (local-int 0)
 and (local-int c2e) (local-int c2c) (local-int c2d)
@@ -1075,7 +1075,7 @@ label_00005198
 ret
 
 label_0000519c
-u00420270 1d4c0 3e8
+texture-op 1d4c0 3e8
 release-texture 2a
 release-texture c0
 exit

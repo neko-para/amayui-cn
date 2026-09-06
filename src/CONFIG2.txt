@@ -1212,9 +1212,9 @@ ret
 
 label_00004da4
 add (local-int 193d) 1d4c0 3e8
-u00420270 (local-int 193d) 190
+texture-op (local-int 193d) 190
 add (local-int 193d) 1d4c0 5dc
-u00420270 (local-int 193d) c8
+texture-op (local-int 193d) c8
 create-texture c4 274 168 0
 mov (local-int 7fc) 64
 mov (local-int 7ec) 0
@@ -1397,7 +1397,7 @@ ret
 
 label_00005c90
 add (local-int 193d) 1d4c0 76c
-u00420270 (local-int 193d) 14
+texture-op (local-int 193d) 14
 jcc (local-int 17a5) ffffffff label_000060ac
 add (local-int 193d) 1d4c0 76c
 sub (local-int 193e) 6a 4
@@ -1568,12 +1568,12 @@ ret
 
 label_00006c24
 add (local-int 193d) 1d4c0 578
-u00420270 (local-int 193d) 1
+texture-op (local-int 193d) 1
 add (local-int 193d) 1d4c0 898
-u00420270 (local-int 193d) 1
+texture-op (local-int 193d) 1
 add (local-int 193d) 1d4c0 b54
-u00420270 (local-int 193d) 1
-u00420270 2e630 3
+texture-op (local-int 193d) 1
+texture-op 2e630 3
 release-texture c5
 eq (local-int 193d) (local-int 7e1) 9
 jcc (local-int 193d) ffffffff label_00006d18
@@ -1584,7 +1584,7 @@ ret
 
 label_00006d1c
 add (local-int 193d) 1d4c0 3e8
-u00420270 (local-int 193d) 3e8
+texture-op (local-int 193d) 3e8
 call label_00006c24
 release-texture c4
 release-texture c5

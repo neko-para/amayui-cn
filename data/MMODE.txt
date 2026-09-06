@@ -72,9 +72,9 @@ u00421410 0 7d0
 sub (local-int 283) 0 1
 set-draw-color 7d0 0 c8 0 (local-int 283)
 u00422EA0 10001
-u00416270
-u00415BF0
-u00420270 7d0 1
+wait
+poll-input
+texture-op 7d0 1
 
 label_000005b4
 play-sound-effect 39a3 2
@@ -585,9 +585,9 @@ mov (global-int f800c) 0
 ret
 
 label_00002204
-u00420270 5dc 1
-u00420270 708 1
-u00420270 8fc 1
+texture-op 5dc 1
+texture-op 708 1
+texture-op 8fc 1
 gre (local-int 283) (local-int 270) 0
 jcc (local-int 283) ffffffff label_0000275c
 mov (local-int 271) (local-int 270)
@@ -665,8 +665,8 @@ draw-texture 898 48 1ea 4ea 49 49 4b3 284
 ret
 
 label_00002ac4
-u00420270 4b0 12c
-u00420270 640 64
+texture-op 4b0 12c
+texture-op 640 64
 draw-texture 4b0 48 0 e8 41f 1ff 73 67
 mov (local-int 0) 0
 jmp label_00002b6c
@@ -715,7 +715,7 @@ label_00002f58
 ret
 
 label_00002f5c
-u00420270 6a4 64
+texture-op 6a4 64
 u00415620 (local-int 281)
 gre (local-int 283) (local-int 280) 0
 jcc (local-int 283) ffffffff label_00003230
@@ -766,8 +766,8 @@ set-draw-color 7d0 0 c8 ff (local-int 283)
 sub (local-int 283) 0 1
 set-draw-color-alpha 7d0 0 0 (local-int 283)
 u00422EA0 10001
-u00416270
-u00415BF0
+wait
+poll-input
 u00416170
 u004162F0
 play-bgm 29

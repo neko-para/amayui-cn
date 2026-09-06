@@ -84,21 +84,21 @@ u00421410 0 1f4
 sub (local-int 12a) 0 1
 set-draw-color 1f4 0 c8 0 (local-int 12a)
 u00422EA0 10001
-u00416270
-u00415BF0
-u00420270 1f4 1
+wait
+poll-input
+texture-op 1f4 1
 jmp label_0000077c
 
 label_00000598
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_00000704
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 c8 ff 0
@@ -110,9 +110,9 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 
 label_00000754
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 
 label_0000077c
 play-sound-effect 39a3 2
@@ -395,8 +395,8 @@ set-draw-color 1f4 0 c8 (local-int 12a) (local-int 12b)
 sub (local-int 12a) 0 1
 set-draw-color-alpha 1f4 0 0 (local-int 12a)
 u00422EA0 10001
-u00416270
-u00415BF0
+wait
+poll-input
 call label_00002904
 mov (local-int 112) (local-int 106)
 call label_00001a80
@@ -427,15 +427,15 @@ eq (local-int 12a) (local-int 106) 4
 jcc (local-int 12a) ffffffff label_00001a7c
 play-sound-effect 32 1
 u0041D050 1
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_000019b8
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 c8 ff 0
@@ -447,9 +447,9 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 
 label_00001a08
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 call label_00002904
 mov (local-int 112) 4
 call label_00001a80
@@ -536,8 +536,8 @@ mov (global-int f800c) 0
 ret
 
 label_00001f78
-u00420270 c8 1
-u00420270 2bc 1
+texture-op c8 1
+texture-op 2bc 1
 gre (local-int 12a) (local-int 106) 0
 lt (local-int 12b) (local-int 106) (local-int fb)
 and (local-int 12c) (local-int 12a) (local-int 12b)
@@ -614,15 +614,15 @@ u004162F0
 ret
 
 label_00002910
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_00002a7c
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 12c ff 0
@@ -634,8 +634,8 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00002acc
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 exit-script
 exit

@@ -736,7 +736,7 @@ ret
 
 label_00002d3c
 add (local-int 2776) 1d4c0 3e8
-u00420270 (local-int 2776) 384
+texture-op (local-int 2776) 384
 release-texture c6
 add (local-int 2776) 1d4c0 44c
 draw-texture (local-int 2776) c0 49b 1f5 22a 1a 0 2e
@@ -1031,9 +1031,9 @@ ret
 
 label_00004dd0
 add (local-int 2776) 1d4c0 7d0
-u00420270 (local-int 2776) c8
+texture-op (local-int 2776) c8
 add (local-int 2776) 1d4c0 8fc
-u00420270 (local-int 2776) c8
+texture-op (local-int 2776) c8
 create-texture c4 190 1e4 0
 add (local-int 2776) 1d4c0 7d0
 draw-texture (local-int 2776) c0 0 0 248 257 2b8 50
@@ -1226,14 +1226,14 @@ jmp label_00005f3c
 
 label_00005f0c
 add (local-int 2776) 1d4c0 956
-u00420270 (local-int 2776) 1
+texture-op (local-int 2776) 1
 
 label_00005f3c
 ret
 
 label_00005f40
 add (local-int 2776) 1d4c0 b54
-u00420270 (local-int 2776) 14
+texture-op (local-int 2776) 14
 jcc (local-int 2745) ffffffff label_000063d8
 add (local-int 2776) 1d4c0 b54
 sub (local-int 2777) 7a 4
@@ -1344,7 +1344,7 @@ lookup-array (local-ptr 1) (global-int e87f2) (local-int 2769)
 u00428010 (local-ptr 1)
 add (local-int 2776) 1d4c0 960
 add (local-int 2777) (local-int 2776) (local-int 7ef)
-u00420270 (local-int 2777) 1
+texture-op (local-int 2777) 1
 
 label_00006a4c
 ne (local-int 2776) (local-int 2769) (local-int 276a)
@@ -1357,9 +1357,9 @@ ret
 
 label_00006aa8
 add (local-int 2776) 1d4c0 898
-u00420270 (local-int 2776) 1
+texture-op (local-int 2776) 1
 add (local-int 2776) 1d4c0 c80
-u00420270 (local-int 2776) 1
+texture-op (local-int 2776) 1
 eq (local-int 2776) (local-int 7e1) 7
 jcc (local-int 2776) ffffffff label_00006b4c
 call label_00005f40
@@ -1379,7 +1379,7 @@ ret
 
 label_00006bb0
 add (local-int 2776) 1d4c0 3e8
-u00420270 (local-int 2776) 7d0
+texture-op (local-int 2776) 7d0
 release-texture c4
 release-texture c5
 release-texture c6

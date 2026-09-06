@@ -640,22 +640,22 @@ mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
 call-script 2bf3  // LOOK
 u00422390 12c
-u00416270
+wait
 create-texture 1 500 2d0 2
 u00420E10 1
 u00416250
 u00416200
 sub (local-int f) 0 1
 u00420E10 (local-int f)
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
@@ -702,7 +702,7 @@ u00416250
 u00416200
 sub (local-int f) 0 1
 u00420E10 (local-int f)
-u00420270 19258 1
+texture-op 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
 mov (global-int 4fd3) 0
@@ -726,7 +726,7 @@ release-texture 2
 label_00003668
 release-texture 1
 u00422390 12c
-u00416270
+wait
 
 label_00003684
 exit
@@ -846,22 +846,22 @@ mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
 call-script 2bf3  // LOOK
 u00422390 12c
-u00416270
+wait
 create-texture 1 500 2d0 2
 u00420E10 1
 u00416250
 u00416200
 sub (local-int f) 0 1
 u00420E10 (local-int f)
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19258 0 ff ffffff
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) ff
@@ -918,7 +918,7 @@ u00416250
 u00416200
 sub (local-int f) 0 1
 u00420E10 (local-int f)
-u00420270 19258 1
+texture-op 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
 mov (global-int 4fd3) 0
@@ -942,7 +942,7 @@ release-texture 2
 label_00004518
 release-texture 1
 u00422390 12c
-u00416270
+wait
 
 label_00004534
 exit

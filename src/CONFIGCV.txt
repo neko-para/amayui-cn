@@ -610,16 +610,16 @@ label_000026c4
 ret
 
 label_000026c8
-u00420270 2e630 c8
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 2e630 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+texture-op 2e630 c8
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 2e630 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 2e630 0 80 0
 add (local-int 422) 2e630 64
 draw-texture (local-int 422) c1 10f 339 2f0 104 177 be
@@ -663,7 +663,7 @@ ret
 
 label_00002c48
 add (local-int 422) 2e630 12c
-u00420270 (local-int 422) 64
+texture-op (local-int 422) 64
 create-texture c7 180 c8 0
 mov (local-int 410) c8
 u0041AC30 1e
@@ -909,13 +909,13 @@ ret
 
 label_00004228
 add (local-int 422) 2e630 c8
-u00420270 (local-int 422) 1
+texture-op (local-int 422) 1
 add (local-int 422) 2e630 190
-u00420270 (local-int 422) 3
+texture-op (local-int 422) 3
 ret
 
 label_0000428c
-u00420270 2e630 1f4
+texture-op 2e630 1f4
 release-texture c6
 release-texture c7
 release-texture c8

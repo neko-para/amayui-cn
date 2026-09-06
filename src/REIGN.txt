@@ -122,15 +122,15 @@ call label_000099b0
 call label_000099f8
 call label_0000a5e0
 call label_0000c390
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 0 ffffffff label_000008dc
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 1f4 ff 0
@@ -142,9 +142,9 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 
 label_0000092c
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 
 label_00000954
 eq (local-int 1de7) (global-int 0) 1
@@ -259,9 +259,9 @@ label_00001340
 play-sound-effect 5172 1
 u0041D050 1
 u00422EA0 10001
-u00416270
-u00415BF0
-u00420270 320 (global-int 70154a)
+wait
+poll-input
+texture-op 320 (global-int 70154a)
 release-texture 2a
 
 label_00001394
@@ -424,7 +424,7 @@ sub (local-int 1de7) 0 1
 set-texture 5159 e (local-int 1de7)
 draw-texture 2e630 e 0 0 500 1f 0 0
 u00416200
-u00420270 2e630 1
+texture-op 2e630 1
 string-lookup-set (global-int 1391)
 add (local-int 1de7) (global-int 1391) 1
 mod (global-int 1391) (local-int 1de7) a
@@ -1013,8 +1013,8 @@ sub (local-int 1de8) (local-int 1de7) (global-int a2052)
 sub (local-int 1de9) 0 9b
 sub (local-int 1deb) (local-int 1de9) (global-int a2053)
 u00421DD0 0 64 (local-int 1de8) (local-int 1deb) 0
-u00415BF0
-u00416270
+poll-input
+wait
 call label_0000ef0c
 
 label_000046b8
@@ -1148,10 +1148,10 @@ u004223C0 (local-ptr 0) 0 1f4 10 4 0
 jmp label_0000500c
 
 label_00005218
-u00415BF0
-u00416270
-u00420270 (local-int 1ddf) 1
-u00420270 (local-int 1de0) 1
+poll-input
+wait
+texture-op (local-int 1ddf) 1
+texture-op (local-int 1de0) 1
 release-texture 8e
 release-texture 8f
 
@@ -1495,10 +1495,10 @@ u004223C0 (local-ptr 0) 0 1f4 10 4 0
 jmp label_00006890
 
 label_00006a9c
-u00415BF0
-u00416270
-u00420270 (local-int 1ddf) 1
-u00420270 (local-int 1de0) 1
+poll-input
+wait
+texture-op (local-int 1ddf) 1
+texture-op (local-int 1de0) 1
 release-texture 8e
 release-texture 8f
 
@@ -1890,7 +1890,7 @@ jcc (local-int 1de7) ffffffff label_00008198
 lookup-array-2d (local-ptr 0) (global-int f7a71) (local-int 2de) 2 (local-int 2df)
 jcc (local-ptr 0) ffffffff label_0000818c
 lookup-array-2d (local-ptr 0) (global-int f7a71) (local-int 2de) 2 (local-int 2df)
-u00420270 (local-ptr 0) 1
+texture-op (local-ptr 0) 1
 
 label_0000818c
 jmp label_000080b0
@@ -2096,7 +2096,7 @@ ret
 
 label_00008e8c
 lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
-u00420270 (local-ptr 0) 1
+texture-op (local-ptr 0) 1
 lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
 mov (local-ptr 0) 0
 lookup-array-2d (local-ptr 0) (global-int 935f2) (global-int 9358d) 258 (local-int 2e7)
@@ -2301,7 +2301,7 @@ label_00009cc0
 call-script 5185  // DRAWPLANT
 
 label_00009ccc
-u00420270 c8 4b0
+texture-op c8 4b0
 mov (local-int 2e7) 0
 jmp label_00009d1c
 
@@ -2449,12 +2449,12 @@ mul (local-int 1de7) (local-int 2f3) 64
 add (local-int 2fe) (local-int 1de7) 32
 mul (local-int 1de7) (local-int 2f4) 64
 add (local-int 2ff) (local-int 1de7) 32
-u0042B990 (local-float 0) (local-int 2fe)
+float-mov (local-float 0) (local-int 2fe)
 u0042B950 (local-float 0) (local-float 0) (local-int 2ff)
 u0042B970 (local-float 0) (local-float 0) 2
 mul (local-int 1de7) 22 32
 u0042B940 (local-float 0) (local-float 0) (local-int 1de7)
-u0042B990 (local-float 1) (local-int 2fe)
+float-mov (local-float 1) (local-int 2fe)
 u0042B940 (local-float 1) (local-float 1) (local-int 2ff)
 u0042B970 (local-float 1) (local-float 1) 4
 mul (local-int 1de7) 2 32
@@ -2748,7 +2748,7 @@ add (local-int 1d0f) (local-int 1d0f) 1
 ret
 
 label_0000c378
-u00420270 61a8 2ee0
+texture-op 61a8 2ee0
 ret
 
 label_0000c390
@@ -2910,7 +2910,7 @@ label_0000d3c4
 ret
 
 label_0000d3c8
-u00420270 9c40 3e8
+texture-op 9c40 3e8
 ret
 
 label_0000d3e0
@@ -3190,21 +3190,21 @@ label_0000ebcc
 sub (local-int 1de7) (local-int 2eb) c8
 add (local-int 1de8) (local-int 2f1) (local-int 2f2)
 add (local-int 1de9) (local-int 1de8) 1
-u00420270 (local-int 1de7) (local-int 1de9)
+texture-op (local-int 1de7) (local-int 1de9)
 add (local-int 1de7) (local-int 2f1) (local-int 2f2)
-u00420270 (local-int 2eb) (local-int 1de7)
+texture-op (local-int 2eb) (local-int 1de7)
 
 label_0000ec64
-u00420270 9bdc 1
-u00420270 9ca4 1
-u00420270 9dd0 1
-u00420270 9e98 1
-u00420270 a410 21
-u00420270 1fbd0 3e8
+texture-op 9bdc 1
+texture-op 9ca4 1
+texture-op 9dd0 1
+texture-op 9e98 1
+texture-op a410 21
+texture-op 1fbd0 3e8
 ret
 
 label_0000ece0
-u00420270 9bdc 1
+texture-op 9bdc 1
 eq (local-int 1de7) (global-int 9346b) 2
 jcc (local-int 1de7) ffffffff label_0000ef04
 add (local-int 2ec) 12c (global-int 703e2e)
@@ -3279,8 +3279,8 @@ label_0000f200
 jmp label_0000f01c
 
 label_0000f20c
-u00415BF0
-u00416270
+poll-input
+wait
 ret
 
 label_0000f218
@@ -3317,8 +3317,8 @@ label_0000f430
 jmp label_0000f250
 
 label_0000f43c
-u00415BF0
-u00416270
+poll-input
+wait
 call label_0000d3c8
 ret
 
@@ -3342,15 +3342,15 @@ mov (global-int b22a) 0
 mov (global-int 4fd9) 0
 
 label_0000f570
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 30d40 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 jcc 1 ffffffff label_0000f6dc
 set-vertex-color 30d40 0 0 0
 set-vertex-color-alpha 30d40 0 12c ff 0
@@ -3362,9 +3362,9 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_0000f72c
 u00422EA0 10001
-u00416270
-u00420270 30d40 1
-u00415BF0
+wait
+texture-op 30d40 1
+poll-input
 u004219E0 0 0 0 0 0
 u00416170
 u004162F0
@@ -3452,7 +3452,7 @@ create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-u00420270 30d40 1
+texture-op 30d40 1
 u0041CED0 (global-int 1396) (global-int f8019) e
 release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)

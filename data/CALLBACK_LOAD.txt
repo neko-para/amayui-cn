@@ -13,7 +13,7 @@ mov (global-int 3f36) 0
 sub (local-int 1) 0 1
 u00420E10 (local-int 1)
 u00416250
-u00420270 1adb0 7d0
+texture-op 1adb0 7d0
 u0043AA60
 2FA 0
 mov (global-int 3f36) 0
@@ -91,33 +91,33 @@ eq (local-int 1) (global-int 0) 1
 eq (local-int 2) (global-int 0) 6
 or (local-int 3) (local-int 1) (local-int 2)
 jcc (local-int 3) ffffffff label_00000b64
-u0042B990 (global-float 11) (float 0)
-u0042B990 (global-float 12) (float 0)
-u0042B990 (global-float 13) (float 0)
-u0042B990 (global-float 14) (float 0)
-u0042B990 (global-float 15) (float 0)
-u0042B990 (global-float 16) (float 3f800000)
-u0042B990 (global-float 17) (float 0)
-u0042B990 (global-float 18) (float 3f800000)
-u0042B990 (global-float 19) (float 0)
-u0042B990 (global-float 1a) (float 0)
-u0042B990 (global-float 1b) (float 3f800000)
-u0042B990 (global-float 1c) (float 3f800000)
+float-mov (global-float 11) (float 0)
+float-mov (global-float 12) (float 0)
+float-mov (global-float 13) (float 0)
+float-mov (global-float 14) (float 0)
+float-mov (global-float 15) (float 0)
+float-mov (global-float 16) (float 3f800000)
+float-mov (global-float 17) (float 0)
+float-mov (global-float 18) (float 3f800000)
+float-mov (global-float 19) (float 0)
+float-mov (global-float 1a) (float 0)
+float-mov (global-float 1b) (float 3f800000)
+float-mov (global-float 1c) (float 3f800000)
 copy-local-array (global-int f8c48) [ff ff ff ff]
 copy-local-array (global-int f8c4c) [ffffff ffffff ffffff ffffff]
 u0041F1C0 0
 string-lookup-set (global-int a9db)
 string-lookup-set (global-int a9d1)
 jcc (global-int 4fd2) ffffffff label_00000774
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19258 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19258 (global-int 4fd1) (global-int 4fd2) (global-int 4fd3)
 
 label_00000774
@@ -173,7 +173,7 @@ label_00000b40
 jmp label_000007bc
 
 label_00000b4c
-u00415BF0
+poll-input
 u00414EC0
 comment "loadmesskip callback_load"
 dev_ukn
@@ -247,21 +247,21 @@ ret
 exit
 
 label_00000fa4
-u00420270 19640 2
-u00420270 19834 19
+texture-op 19640 2
+texture-op 19834 19
 jcc (global-int 1397) ffffffff label_00001240
 call label_0000195c
 eq (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_00001150
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19640 0 (global-int f807d) 0
 jmp label_00001218
 
@@ -282,7 +282,7 @@ exit
 label_00001248
 ne (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_00001954
-u00420270 19708 6
+texture-op 19708 6
 jcc (global-int 1397) ffffffff label_00001940
 gre (local-int 1) (global-int 3f37) 0
 jcc (local-int 1) ffffffff label_00001934

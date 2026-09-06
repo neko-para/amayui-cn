@@ -986,15 +986,15 @@ set-texture 39a8 c1 (local-int 950)
 ret
 
 label_00003c40
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 c0 0
 add (local-int 950) 1d4c0 64
 draw-texture (local-int 950) c0 0 260 1e0 1e0 19 69
@@ -1041,9 +1041,9 @@ ret
 
 label_00004148
 add (local-int 950) 1d4c0 3e8
-u00420270 (local-int 950) c8
+texture-op (local-int 950) c8
 add (local-int 950) 1d4c0 514
-u00420270 (local-int 950) c8
+texture-op (local-int 950) c8
 add (local-int 950) 1d4c0 3e8
 draw-texture (local-int 950) c0 297 0 1d7 25e 1fe 42
 gre (local-int 950) (local-int 571) 1
@@ -1383,9 +1383,9 @@ ret
 
 label_00006098
 add (local-int 950) 1d4c0 5dc
-u00420270 (local-int 950) c8
+texture-op (local-int 950) c8
 add (local-int 950) 1d4c0 708
-u00420270 (local-int 950) c8
+texture-op (local-int 950) c8
 add (local-int 950) 1d4c0 5dc
 draw-texture (local-int 950) c0 470 0 10f 204 3d9 47
 mov (local-int 407) 0
@@ -1660,17 +1660,17 @@ ret
 
 label_0000786c
 add (local-int 950) 1d4c0 4b0
-u00420270 (local-int 950) 1
+texture-op (local-int 950) 1
 add (local-int 950) 1d4c0 6a4
-u00420270 (local-int 950) 1
-u00420270 1fbd0 3e8
+texture-op (local-int 950) 1
+texture-op 1fbd0 3e8
 mov (global-int 703e2e) 0
 mov (global-int 707ddd) 0
 ret
 
 label_0000790c
 add (local-int 950) 1d4c0 7d0
-u00420270 (local-int 950) 1f40
+texture-op (local-int 950) 1f40
 mov (local-int 8fb) 0
 jcc (global-int 707ddd) ffffffff label_00007980
 bit-set (local-int 8fb) (global-int 707ddd)
@@ -1843,8 +1843,8 @@ label_000086b8
 mov (global-int 9358d) 0
 call-script 516e
 call-script 516f
-u00420270 1d4c0 2710
-u00420270 1fbd0 3e8
+texture-op 1d4c0 2710
+texture-op 1fbd0 3e8
 release-texture c0
 release-texture c1
 release-texture c2

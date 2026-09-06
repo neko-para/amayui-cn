@@ -2505,16 +2505,16 @@ set-texture 5102 c2 (local-int e01)
 ret
 
 label_0000a584
-u00420270 1d4c0 7d0
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+texture-op 1d4c0 7d0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 c0 0
 add (local-int e01) 1d4c0 64
 draw-texture (local-int e01) c0 310 3f1 38f 26 0 2aa
@@ -2728,9 +2728,9 @@ ret
 
 label_0000b9bc
 add (local-int e01) 1d4c0 1f4
-u00420270 (local-int e01) 64
+texture-op (local-int e01) 64
 add (local-int e01) 1d4c0 2bc
-u00420270 (local-int e01) 12c
+texture-op (local-int e01) 12c
 lookup-array (local-ptr 3) (global-int 71d7c) (global-int 546e00)
 mov (global-int 519afb) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 52ac6c) (global-int 519afb)
@@ -2814,11 +2814,11 @@ ret
 
 label_0000c024
 add (local-int e01) 1d4c0 44c
-u00420270 (local-int e01) 32
+texture-op (local-int e01) 32
 add (local-int e01) 1d4c0 4b0
-u00420270 (local-int e01) 32
+texture-op (local-int e01) 32
 add (local-int e01) 1d4c0 578
-u00420270 (local-int e01) fa
+texture-op (local-int e01) fa
 add (local-int e01) 1d4c0 44c
 draw-texture (local-int e01) c0 0 0 209 25e 118 2e
 add (local-int e01) 1d4c0 44d
@@ -3148,11 +3148,11 @@ ret
 
 label_0000e184
 add (local-int e01) 1d4c0 47e
-u00420270 (local-int e01) 32
+texture-op (local-int e01) 32
 add (local-int e01) 1d4c0 4e2
-u00420270 (local-int e01) 32
+texture-op (local-int e01) 32
 add (local-int e01) 1d4c0 672
-u00420270 (local-int e01) 96
+texture-op (local-int e01) 96
 lt (local-int e01) (global-int 93465) 8
 jcc (local-int e01) ffffffff label_0000e3d8
 add (local-int e01) 1d4c0 47e
@@ -3447,7 +3447,7 @@ label_0000fdc0
 add (local-int e01) 1d4c0 4e2
 add (local-int e02) (local-int e01) a
 add (local-int e03) (local-int e02) (local-int 404)
-u00420270 (local-int e03) 1
+texture-op (local-int e03) 1
 
 label_0000fe28
 mul (local-int e01) (local-int 404) 18
@@ -3883,14 +3883,14 @@ ret
 
 label_00012160
 add (local-int e01) 1d4c0 12c
-u00420270 (local-int e01) 1
+texture-op (local-int e01) 1
 add (local-int e01) 1d4c0 258
-u00420270 (local-int e01) 1
+texture-op (local-int e01) 1
 add (local-int e01) 1d4c0 514
-u00420270 (local-int e01) 2
+texture-op (local-int e01) 2
 add (local-int e01) 1d4c0 708
-u00420270 (local-int e01) 1
-u00420270 1fbd0 12c
+texture-op (local-int e01) 1
+texture-op 1fbd0 12c
 mov (global-int 546e03) 0
 mov (global-int 6c61b9) 0
 ret
@@ -3949,8 +3949,8 @@ ne (local-int e03) (global-int f801a) 6
 and (local-int e04) (local-int e02) (local-int e03)
 or (local-int e05) (local-int e01) (local-int e04)
 jcc (local-int e05) ffffffff label_000128b0
-u00420270 1d4c0 bb8
-u00420270 1fbd0 12c
+texture-op 1d4c0 bb8
+texture-op 1fbd0 12c
 release-texture b6
 mov (local-int 404) 0
 jmp label_000126fc

@@ -34,21 +34,21 @@ ret
 exit
 
 label_00000160
-u00420270 19640 2
-u00420270 19834 19
+texture-op 19640 2
+texture-op 19834 19
 jcc (global-int 1397) ffffffff label_000003fc
 call label_00000be8
 eq (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_0000030c
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 19640 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 19640 0 (global-int f807d) 0
 jmp label_000003d4
 
@@ -69,7 +69,7 @@ exit
 label_00000404
 ne (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_00000b10
-u00420270 19708 6
+texture-op 19708 6
 jcc (global-int 1397) ffffffff label_00000afc
 gre (local-int 1) (global-int 3f37) 0
 jcc (local-int 1) ffffffff label_00000af0
@@ -140,8 +140,8 @@ ret
 exit
 
 label_00000b18
-u00420270 19a28 1f4
-u00420270 1a9c8 64
+texture-op 19a28 1f4
+texture-op 1a9c8 64
 and (local-int 1) (global-int 1397) (global-int 3f38)
 jcc (local-int 1) ffffffff label_00000be0
 eq (local-int 1) (global-int 0) 6

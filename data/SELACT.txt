@@ -756,16 +756,16 @@ u004234E0 4 49 642 362 11 17 2 (local-int fe8)
 ret
 
 label_00003008
-u00420270 1d4c0 3e8
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+texture-op 1d4c0 3e8
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 80 0
 add (local-int fe8) 1d4c0 1
 draw-texture (local-int fe8) 49 2a1 36d 13e 133 1e0 a7
@@ -1097,7 +1097,7 @@ ret
 
 label_00005018
 add (local-int fe8) 1d4c0 a
-u00420270 (local-int fe8) 3c
+texture-op (local-int fe8) 3c
 mov (local-int 40a) (global-int 92894)
 mov (local-int 40b) (global-int 92895)
 lookup-array (local-ptr 2) (global-int 62156) (local-int 40a)
@@ -1812,13 +1812,13 @@ ret
 
 label_00008f6c
 add (local-int fe8) 1d4c0 78
-u00420270 (local-int fe8) 2
+texture-op (local-int fe8) 2
 add (local-int fe8) 1d4c0 190
-u00420270 (local-int fe8) 6
+texture-op (local-int fe8) 6
 add (local-int fe8) 1d4c0 258
-u00420270 (local-int fe8) 1
+texture-op (local-int fe8) 1
 add (local-int fe8) 1d4c0 3b6
-u00420270 (local-int fe8) 1
+texture-op (local-int fe8) 1
 gre (local-int fe8) (local-int 3f8) 0
 lt (local-int fe9) (local-int 3f8) (local-int 1)
 and (local-int fea) (local-int fe8) (local-int fe9)
@@ -1907,7 +1907,7 @@ lookup-array (local-ptr 2) (global-int 6f0f4) (global-int 92895)
 mov (local-ptr 1) (local-ptr 2)
 
 label_00009924
-u00420270 1d4c0 3e8
+texture-op 1d4c0 3e8
 release-texture 2a
 release-texture 2b
 release-texture c0

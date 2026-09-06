@@ -335,10 +335,10 @@ label_00001f68
 add (local-int 1a) 2e630 32
 draw-texture (local-int 1a) 2a 0 0 (local-int a) (local-int b) (local-int 0) (local-int 1)
 u00416200
-u00415BF0
+poll-input
 u00422390 64
 u00422EA0 10003
-u00416270
+wait
 
 label_00001fec
 mov (local-int 8) 0
@@ -450,7 +450,7 @@ ret
 
 label_000025bc
 jcc (global-int f8dfc) ffffffff label_00002774
-u00420270 2e630 64
+texture-op 2e630 64
 release-texture e
 release-texture 2a
 u00416200
@@ -476,7 +476,7 @@ u00423127 1
 mov (global-int 3f36) 2
 
 label_00002770
-u00415BF0
+poll-input
 
 label_00002774
 eq (local-int 1a) (global-int 0) 1

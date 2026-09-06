@@ -127,8 +127,8 @@ add (local-int 2) (local-int 2) 1
 jmp label_00000250
 
 label_00000bbc
-u00415BF0
-u00416270
+poll-input
+wait
 
 label_00000bc4
 mov (local-int 2) 2e630
@@ -319,6 +319,6 @@ add (local-int 2) (local-int 2) 1
 jmp label_00001100
 
 label_000020cc
-u00415BF0
-u00416270
+poll-input
+wait
 exit

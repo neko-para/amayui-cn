@@ -1076,7 +1076,7 @@ create-texture e 140 b4 2
 u004197C0 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-u00420270 30d40 1
+texture-op 30d40 1
 mov (global-int f8002) (global-int 1397)
 eq (local-int 21c6) (global-int 0) 6
 jcc (local-int 21c6) ffffffff label_00004760
@@ -1673,7 +1673,7 @@ label_000071e0
 ret
 
 label_000071e4
-u00420270 1d4c0 bb8
+texture-op 1d4c0 bb8
 draw-texture 1d4c0 c1 0 0 500 2d0 0 0
 add (local-int 21c6) 1d4c0 3e8
 draw-texture (local-int 21c6) c0 14e cd 1f8 27 0 0
@@ -1705,9 +1705,9 @@ ret
 
 label_00007670
 add (local-int 21c6) 1d4c0 4b0
-u00420270 (local-int 21c6) 64
+texture-op (local-int 21c6) 64
 add (local-int 21c6) 1d4c0 6a4
-u00420270 (local-int 21c6) 64
+texture-op (local-int 21c6) 64
 mov (local-int f) 0
 jmp label_0000770c
 
@@ -1761,9 +1761,9 @@ and (local-int 21c6) (global-int 3f50) 1
 eq (local-int 21c7) (local-int 21c6) 1
 jcc (local-int 21c7) ffffffff label_00007bc8
 add (local-int 21c6) 1d4c0 4b0
-u00420270 (local-int 21c6) 1
+texture-op (local-int 21c6) 1
 add (local-int 21c6) 1d4c0 6a4
-u00420270 (local-int 21c6) 1
+texture-op (local-int 21c6) 1
 
 label_00007bc8
 lt (local-int 21c6) (global-int 138e) 5a
@@ -1875,11 +1875,11 @@ ret
 
 label_00008438
 add (local-int 21c6) 1d4c0 64
-u00420270 (local-int 21c6) c8
+texture-op (local-int 21c6) c8
 add (local-int 21c6) 1d4c0 190
-u00420270 (local-int 21c6) 258
+texture-op (local-int 21c6) 258
 add (local-int 21c6) 1d4c0 76c
-u00420270 (local-int 21c6) 64
+texture-op (local-int 21c6) 64
 sub (local-int 21c6) 0 1
 u004234E0 0 c0 e5 20e d 16 2 (local-int 21c6)
 create-texture c2 370 190 0
@@ -2353,11 +2353,11 @@ ret
 
 label_0000b308
 add (local-int 21c6) 1d4c0 12c
-u00420270 (local-int 21c6) 1
+texture-op (local-int 21c6) 1
 add (local-int 21c6) 1d4c0 5dc
-u00420270 (local-int 21c6) 4
+texture-op (local-int 21c6) 4
 add (local-int 21c6) 1d4c0 7d0
-u00420270 (local-int 21c6) 2
+texture-op (local-int 21c6) 2
 ret
 
 label_0000b39c
@@ -2365,7 +2365,7 @@ u00416200
 ret
 
 label_0000b3a4
-u00420270 1d4c0 bb8
+texture-op 1d4c0 bb8
 mov (local-int f) 0
 jmp label_0000b3f4
 

@@ -8,6 +8,8 @@
 > - **分析状态**：`已核对`（读了 handler 体确证，附 raw .c 行号）/ `推测`（仅凭名称推断、handler 未读体、**可能失真**）/ `未解`（无表征）/ `仅映射`（仅知 opcode→handler，语义未读）。
 > - **操作数编号**：语义列用 **op1 / op2 / op3…（1-based）= 该指令的第 1 / 第 2 / 第 3… 个参数**（等价 args[0]/args[1]/args[2]…），**不含 opcode**，个数与 `argc` 一致。
 > ⚠️ AGE 助记符不可靠（`exit`≠程序退出，是跨脚本返回；`ret`≠跨脚本返回，是同脚本子程序返回）。凡`推测`/未读体一律不可当定论。
+>
+> **效果相关指令已语义化命名**（版权页/淡入淡出等）：`create-mesh`(0x320)、`set-vertex-color`(0x322)、`set-vertex-color-alpha`(0x323)、`set-draw-color`(0x202)、`set-draw-color-alpha`(0x203)、`draw-texture`(0x1FB)、`set-texture`(0x1F9)、`create-texture`(0x1F8)、`release-texture`(0x1FA)、`play-movie`(0x20F)、`wait`(0x21C)、`float-mov`(0x2D5)、`poll-input`(0x101)、`texture-op`(0x1F7)。旧的 `u00xxxxxx` 保留为**别名**（汇编器同时接受），源脚本已批量替换为主标签。这些的完整机制见 `./copyright-effect.md`。
 
 ## 全部 544 个已映射 opcode
 
@@ -194,7 +196,7 @@
 | 0xFE | 1 | u0041E360 | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30046） |
 | 0xFF | 0 | u00415A10 | sub_419A90 | 仅映射 |  |
 | 0x100 | 0 | u00415A60 | sub_419AF0 | 仅映射 |  |
-| 0x101 | 0 | u00415BF0 | sub_419CC0 | 已核对 | **读输入状态并重置**：读输入位掩码到 `_this[174802]` 后丢弃；清 `_this[174801]` 的 0x8000000 位，置 `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。handler=sub_419CC0（raw .c 24831） |
+| 0x101 | 0 | poll-input | sub_419CC0 | 已核对 | **读输入状态并重置**：读输入位掩码到 `_this[174802]` 后丢弃；清 `_this[174801]` 的 0x8000000 位，置 `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。handler=sub_419CC0（raw .c 24831）。旧 label `u00415BF0` |
 | 0x102 | 3 | u0041E3C0 | sub_421D00 | 仅映射 |  |
 | 0x103 | 1 | u0041E4A0 | sub_421DE0 | 仅映射 |  |
 | 0x104 | 0 | u00415C50 | sub_419D20 | 仅映射 |  |
@@ -320,7 +322,7 @@
 | 0x1F4 | 0 | u004160D0 | sub_41A090 | 已核对 | **帧计时(等待底盘)**：`_this[107438]` 已置→`++_this[107439]`(累加帧计数)；否则 `_this[107438]=1`+`timeGetTime()` 写 `_this[92333]/[92334]`。handler=sub_41A090（raw .c 25194） |
 | 0x1F5 | 0 | u00416120 | sub_41A0E0 | 已核对 | **帧倒计+派发(等待底盘)**：每帧递减 `_this[107439]`；到 0 清 `_this[107438]` 且 `_this[124350]==0` 时 `sub_40FB60()` 派发排队脚本(续跑)。handler=sub_41A0E0（raw .c 25215） |
 | 0x1F6 | 0 | u00416170 | sub_41A130 | 已核对 | **清图形对象链**：`sub_4AB7A0`。handler=sub_41A130（raw .c 24986） |
-| 0x1F7 | 2 | u00420270 | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1/op2，按 op2 选调图形子系统 `sub_4AB950(_this+80708, op1)`（单参）或 `sub_4ABB60`（双参）。fire-and-forget。handler=sub_422BC0（raw .c 30717） |
+| 0x1F7 | 2 | texture-op | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1/op2，按 op2 选调图形子系统 `sub_4AB950(_this+80708, op1)`（单参）或 `sub_4ABB60`（双参）。fire-and-forget。handler=sub_422BC0（raw .c 30717）。旧 label `u00420270` |
 | 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=纹理槽、op2/3/4；先释放旧槽对象（`sub_488FB0`+vtable delete+置0），调 `sub_4A2C10(_this+80708, op1, op2, op3, op4)` 创建纹理；失败抛「CTexture エラー：テクスチャ作成に失敗」。fire-and-forget。handler=sub_422C20（raw .c 30739） |
 | 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 30769） |
 | 0x1FA | 1 | u00420480 | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 30822） |
@@ -357,7 +359,7 @@
 | 0x219 | 4 | u004212E0 | sub_423BA0 | 仅映射 |  |
 | 0x21A | 4 | u00421370 | sub_430450 | 仅映射 |  |
 | 0x21B | 1 | u004213E0 | sub_423C20 | 已核对 | **引擎布尔标志**：读 op1，写 `_this[166965]=(op1!=0)`（成对读取方 sub_430810 回写操作数 1）。handler=sub_423C20（raw .c 31375） |
-| 0x21C | 0 | u00416270 | sub_41A260 | 已核对 | **每脚本引擎状态槽**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`。handler=sub_41A260（raw .c 25043） |
+| 0x21C | 0 | wait | sub_41A260 | 已核对 | **每脚本引擎状态槽→0x400 动画等待**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`（版权页/淡入淡出的"等几秒"等待门）。handler=sub_41A260（raw .c 25043）。旧 label `u00416270` |
 | 0x21D | 2 | u00421410 | sub_423C60 | 仅映射 |  |
 | 0x21E | 6 | u00421450 | sub_423CA0 | 仅映射 |  |
 | 0x21F | 7 | u00421510 | sub_423D40 | 仅映射 |  |
@@ -452,7 +454,7 @@
 | 0x2D2 | 3 | u0042B960 | sub_430B10 | 仅映射 |  |
 | 0x2D3 | 3 | u0042B970 | sub_430B70 | 仅映射 |  |
 | 0x2D4 | - | （age-shared 未收录） | sub_430BD0 | 仅映射 |  |
-| 0x2D5 | 2 | u0042B990 | sub_430C30 | 已核对 | **float mov**：`op1 = op2`（`readFloatOperand(2)` → `writeFloatOperand(1)`）。handler=sub_430C30（raw .c 39455） |
+| 0x2D5 | 2 | float-mov | sub_430C30 | 已核对 | **float mov**：`op1 = op2`（`readFloatOperand(2)` → `writeFloatOperand(1)`）。handler=sub_430C30（raw .c 39455）。旧 label `u0042B990` |
 | 0x2D6 | - | （age-shared 未收录） | sub_430C70 | 仅映射 |  |
 | 0x2D7 | 2 | u0042B9B0 | sub_430CB0 | 仅映射 |  |
 | 0x2D8 | 3 | set-array-to | sub_430CF0 | 已核对 | `op1 起 count 个槽填 op2 值`（**脚本值 bulk 填充**；对比 copy-to-global 固定 0）：`v2=&op1; v5=ENC(op2); n=op3; memset32(v2,v5,n)`。handler=sub_430CF0（raw .c 40206） |
@@ -506,7 +508,7 @@
 | 0x308 | 1 | 308 | sub_426B20 | 已核对 | **输入触摸注册**：读 op1，调全局输入管理器 `sub_407B20(_this[96981], op1)`（LoadLibrary+GetProcAddress 注册/注销触摸），置 `_this[1954]`。handler=sub_426B20（raw .c 33282） |
 | 0x309 | - | （age-shared 未收录） | sub_432000 | 仅映射 |  |
 | 0x30A | 2 | 30A | sub_426B60 | 已核对 | **SetGesKey**：读 op1=值、op2=索引；`op1>0x1F` 或 `op2>7` 抛 ShowMessage「SetGesKey」，否则写 `_this[op2+1969]=op1`。handler=sub_426B60（raw .c 33292） |
-| 0x320 | 10 | u0043AA20 | sub_432150 | 已核对 | **顶点网格配置**：读 op1/9/10 及多操作数；`op9>0` 时申请缓冲、用 key `_this[388236]`（ROL11^XOR^ROR25）解码顶点，`sub_4ADFE0(_this+322832, obj, …)` 配置网格（顶点+索引+材质）；`op9≤0` 报「頂点数%dは不正です．」。fire-and-forget。handler=sub_432150（raw .c 40262） |
+| 0x320 | 10 | create-mesh | sub_432150 | 已核对 | **顶点网格配置**：读 op1/9/10 及多操作数；`op9>0` 时申请缓冲、用 key `_this[388236]`（ROL11^XOR^ROR25）解码顶点，`sub_4ADFE0(_this+322832, obj, …)` 配置网格（顶点+索引+材质）；`op9≤0` 报「頂点数%dは不正です．」。fire-and-forget。handler=sub_432150（raw .c 40262）。旧 label `u0043AA20` |
 | 0x321 | 3 | u0043AA30 | sub_426BD0 | 仅映射 |  |
 | 0x322 | 4 | u0043AA40 | sub_426C20 | 已核对 | **set-vertex-color**：读 op1=网格id、op2/3/4；op3/op4 作颜色分量（clamp/回退），组装 32 位色 → `sub_4AE2C0(_this+80708, op1, op2, color)` 写网格顶点色。handler=sub_426C20（raw .c 33324） |
 | 0x323 | 5 | u0043AA50 | sub_426CF0 | 已核对 | **set-vertex-color-alpha**：读 op1=网格id、op2/3/4/5；组装色（含 alpha）→ `sub_4AE330(_this+80708, op1, op2, op3, color)` 写网格顶点色+alpha。handler=sub_426CF0（raw .c 33358） |

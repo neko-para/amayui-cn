@@ -1157,7 +1157,7 @@ jmp label_00004a70
 label_000049a4
 play-sound-effect 39a5 1
 u0041D050 1
-u00420270 1d4c0 3e8
+texture-op 1d4c0 3e8
 mov (global-int b222) (local-int 37ab)
 call-script 5188  // ORGANIZE
 call label_00000990
@@ -1296,15 +1296,15 @@ label_0000515c
 ret
 
 label_00005160
-u0042B990 (global-float 9) 0
-u0042B990 (global-float a) 500
-u0042B990 (global-float b) 0
-u0042B990 (global-float c) 500
-u0042B990 (global-float d) 0
-u0042B990 (global-float e) 0
-u0042B990 (global-float f) 2d0
-u0042B990 (global-float 10) 2d0
-u0043AA20 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
+float-mov (global-float 9) 0
+float-mov (global-float a) 500
+float-mov (global-float b) 0
+float-mov (global-float c) 500
+float-mov (global-float d) 0
+float-mov (global-float e) 0
+float-mov (global-float f) 2d0
+float-mov (global-float 10) 2d0
+create-mesh 1d4c0 (global-float 9) (global-float d) (global-float 11) (global-int f8c48) (global-int f8c4c) (global-float 15) (global-float 19) 4 0
 set-vertex-color 1d4c0 0 80 0
 add (local-int 7e0c) 1d4c0 64
 draw-texture (local-int 7e0c) (local-int 7e0a) 0 5c 1af 259 33c 2c
@@ -1411,11 +1411,11 @@ ret
 
 label_00005b40
 add (local-int 7e0c) 1d4c0 12c
-u00420270 (local-int 7e0c) c8
+texture-op (local-int 7e0c) c8
 add (local-int 7e0c) 1d4c0 2bc
-u00420270 (local-int 7e0c) 12c
+texture-op (local-int 7e0c) 12c
 add (local-int 7e0c) 1d4c0 708
-u00420270 (local-int 7e0c) 64
+texture-op (local-int 7e0c) 64
 create-texture b6 b8 a8 0
 add (local-int 7e0c) 1d4c0 12c
 draw-texture (local-int 7e0c) (local-int 7e0a) 18e 307 6e 18 3dc 259
@@ -1745,9 +1745,9 @@ ret
 
 label_00007c68
 add (local-int 7e0c) 1d4c0 4b0
-u00420270 (local-int 7e0c) 190
+texture-op (local-int 7e0c) 190
 add (local-int 7e0c) 1d4c0 6a4
-u00420270 (local-int 7e0c) 64
+texture-op (local-int 7e0c) 64
 jcc (global-int b228) ffffffff label_0000a144
 eq (local-int 7e0c) (local-int 37aa) 0
 jcc (local-int 7e0c) ffffffff label_00007f68
@@ -2234,9 +2234,9 @@ ret
 
 label_0000a38c
 add (local-int 7e0c) 1d4c0 1f4
-u00420270 (local-int 7e0c) 2
+texture-op (local-int 7e0c) 2
 add (local-int 7e0c) 1d4c0 640
-u00420270 (local-int 7e0c) 1
+texture-op (local-int 7e0c) 1
 gre (local-int 7e0c) (local-int 9) 0
 lt (local-int 7e0d) (local-int 9) (local-int 40b)
 and (local-int 7e0e) (local-int 7e0c) (local-int 7e0d)
@@ -2319,7 +2319,7 @@ eq (local-int 7e0f) (global-int 0) 3
 and (local-int 7e11) (local-int 7e10) (local-int 7e0f)
 or (local-int 7e12) (local-int 7e0e) (local-int 7e11)
 jcc (local-int 7e12) ffffffff label_0000ac04
-u00420270 1d4c0 7d0
+texture-op 1d4c0 7d0
 release-texture c0
 release-texture c1
 release-texture c2
