@@ -94,6 +94,7 @@ export class PixiBackend implements NativeBridge {
   private wallStart = 0; // 帧循环起点（performance.now），时钟 = now - wallStart（墙钟，保证推进）
   private frameStarted = false;
   private lastSummary = -1;
+  private sceneDirty = false; // 场景"脏"= 本次有配置类 op 改动过场景（引擎：present 须由脏标记 + 0x2400/0x400 门控驱动）
 
   static async create(
     status: RenderStatus,
@@ -219,6 +220,7 @@ export class PixiBackend implements NativeBridge {
 
   configureDrawItem(cfg: DrawItemConfig): void {
     this.#onSceneChange(cfg.handle);
+    this.#markDirty();
     const it = this.drawItems.get(cfg.handle) ?? {
       handle: cfg.handle,
       layer: cfg.layer,
@@ -246,6 +248,7 @@ export class PixiBackend implements NativeBridge {
   }
 
   bindTexture(imgid: number, slot: number): void {
+    this.#markDirty();
     this.#pushLog(`bindTexture imgid=0x${imgid.toString(16)} slot=${slot}`);
     const tex = this.imgCache.get(imgid);
     if (tex) {
@@ -261,6 +264,7 @@ export class PixiBackend implements NativeBridge {
 
   createMesh(spec: MeshCreateSpec): void {
     this.#onSceneChange(spec.handle);
+    this.#markDirty();
     const m = this.meshes.get(spec.handle) ?? {
       handle: spec.handle,
       layer: spec.layer,
@@ -276,6 +280,7 @@ export class PixiBackend implements NativeBridge {
   }
 
   setVertexColor(handle: number, state0: number): void {
+    this.#markDirty();
     const m = this.meshes.get(handle);
     if (!m) {
       this.#pushLog(
@@ -289,6 +294,7 @@ export class PixiBackend implements NativeBridge {
   }
 
   setVertexColorAlpha(handle: number, delay: number, count: number, state1: number): void {
+    this.#markDirty();
     const m = this.meshes.get(handle);
     if (!m) {
       this.#pushLog(
@@ -304,6 +310,7 @@ export class PixiBackend implements NativeBridge {
   }
 
   setDrawColorAlpha(handle: number, from: number): void {
+    this.#markDirty();
     const it = this.drawItems.get(handle);
     if (!it) {
       this.#pushLog(
@@ -317,6 +324,7 @@ export class PixiBackend implements NativeBridge {
   }
 
   setDrawColor(handle: number, delay: number, count: number, to: number): void {
+    this.#markDirty();
     const it = this.drawItems.get(handle);
     if (!it) {
       this.#pushLog(
@@ -333,15 +341,18 @@ export class PixiBackend implements NativeBridge {
 
   setWaitFlag(mask: number): void {
     this.waitFlags |= mask;
+    this.#markDirty();
     this.#pushLog(`setWaitFlag 0x${mask.toString(16)} (~0x${(this.waitFlags & mask).toString(16)})`);
   }
 
   releaseTexture(layer: number): void {
+    this.#markDirty();
     this.slotTex.delete(layer);
     this.#pushLog(`releaseTexture layer=${layer}`);
   }
 
   playMovie(id: number): void {
+    this.#markDirty();
     this.#pushLog(`playMovie id=0x${id.toString(16)}`);
   }
 
@@ -356,6 +367,20 @@ export class PixiBackend implements NativeBridge {
       if (m.flags & 2 && m.anim && !this.#windowDone(m.anim, this.clockMs)) return false;
     }
     return true;
+  }
+
+  /** 场景"脏"：有配置类 op 改动过场景（present 的触发条件之一）。 */
+  sceneDirtyFlag(): boolean {
+    return this.sceneDirty;
+  }
+
+  /** 引擎式 present 条件："场景脏 || 仍有动画在播 || 命中 0x400 等待门"。 */
+  needsRender(): boolean {
+    return this.sceneDirty || !this.sceneAnimationsDone() || (this.waitFlags & 0x400) !== 0;
+  }
+
+  #markDirty(): void {
+    this.sceneDirty = true;
   }
 
   #windowDone(w: AnimWindow, clock: number): boolean {
@@ -406,19 +431,18 @@ export class PixiBackend implements NativeBridge {
 
   // ---- 每帧渲染 ---- //
 
-  /** 启动每帧渲染循环（Pixi ticker）。clock = 墙钟毫秒（performance.now - wallStart），单调、保证推进。 */
+  /** 启动渲染：仅记录起点（墙钟）并保留一个 ticker 画 HUD。
+   *  注意：present() 不再由 ticker 并发调用——引擎是"跑完一批指令 → present"，
+   *  所以 present() 由 renderer 循环在每批指令之后（帧末）调用，避免中间态场景图闪一帧。 */
   startFrameLoop(now = 0): void {
     if (this.frameStarted) return;
     this.frameStarted = true;
     this.wallStart = performance.now();
-    this.app.ticker.add(() => {
-      this.clockMs = performance.now() - this.wallStart;
-      this.present();
-      this.drawHud();
-    });
+    this.app.ticker.add(() => this.drawHud());
   }
 
   present(): void {
+    this.clockMs = performance.now() - this.wallStart; // 墙钟毫秒（单调推进）
     const clock = this.clockMs;
     this.drawRoot.removeChildren();
 
@@ -462,6 +486,7 @@ export class PixiBackend implements NativeBridge {
       this.drawRoot.addChild(ov);
     }
     this.drawCount++;
+    this.sceneDirty = false; // present 已消费本次"脏"标记
   }
 
   #cropSprite(tex: Texture, it: Item): Sprite {
@@ -490,11 +515,10 @@ export class PixiBackend implements NativeBridge {
   #onSceneChange(_handle: number): void {
     if (this.status.scriptName !== this.lastScript) {
       this.lastScript = this.status.scriptName;
-      this.drawRoot.removeChildren();
       this.drawItems.clear();
       this.meshes.clear();
       this.waitFlags = 0;
-      // 不重置 clockMs：墙钟单调推进；新场景对象在首次 present 时各自 lock 起点。
+      this.#markDirty(); // 场景切换需触发一次 present（引擎：新场景要渲染）
       this.drawCount = 0;
     }
   }

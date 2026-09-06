@@ -9,8 +9,11 @@ import { ScriptReset } from '../vm/ops.js';
 import { IpcFileSource } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
 
-/** 每帧最多推进的指令数（无门控时；引擎在门控间是"快速跑到门控"）。 */
-const QUOTA_PER_FRAME = 500;
+/**
+ * 一帧内最多推进的指令数（安全上限）：引擎是"一条一条跑到门控止"，无每帧指令上限。
+ * 这里 SAFETY 只作防"无门控死循环"（如 TITLE 轮询）的兜底，不是 present 的触发条件。
+ */
+const SAFETY_PER_FRAME = 10000;
 const MAX_STEPS = 400000;
 
 function nextFrame(): Promise<void> {
@@ -93,10 +96,9 @@ async function main(): Promise<void> {
           if (!waiting) trace(`=== gate 0x400 WAIT (scene anims pending) steps=${steps} ===`);
           waiting = true;
         }
-      }
-
-      if (!waiting) {
-        for (let k = 0; k < QUOTA_PER_FRAME; k++) {
+        native.present(); // 动画播放（每帧）
+      } else {
+        for (let k = 0; k < SAFETY_PER_FRAME; k++) {
           const f = e.curScript();
           const name = f.name || status.scriptName;
           status.scriptName = name;
@@ -130,6 +132,8 @@ async function main(): Promise<void> {
           if (e.waitFlags & 0x400) break; // 遇到门控（0x21C 置位），停这批
         }
         if (titleSteps > 1200) break; // 已进入 TITLE 一段时间（含菜单轮询），停止
+        // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
+        if (native.needsRender()) native.present();
       }
 
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
