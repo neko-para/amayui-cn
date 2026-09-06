@@ -140,3 +140,18 @@ if (flags&2) {                     // bit1 门控
 | image 绘制器 | `sub_4A2D50` 121065 → texture-slot vtable+20 |
 | 0x400 等待门 | `sub_407E20` 12679（图形池 pending `_this[369348]`）|
 | 淡出后的硬切 | `release-texture` 0x1FA `sub_422E00` 30822、`play-movie` 0x20F `sub_4237B0` 31165 |
+
+---
+
+## 7. 关于"先后"的最终判定（重要，附判定法）
+
+**背景(2a)先、文字(2b)后** 的成因是 **两组正交颜色动画**，**不是**覆盖层 z 序 / LAYER 次序 / mesh 间 z：
+- **背景(2a)** = mesh#1 的 **vertex-color** 动画（CalcDiffuse 黑罩淡出，窗 `[0,0x1f4]`）。
+- **文字(2b)** = draw-item 的 **diffuse-alpha** 动画（L34+L36 作用于 0x30d41，`+56=300/+76=300`，from 0x00FFFFFF→to 0xFFFFFFFF，窗 ≈`[300,600]`ms，**逐像素 alpha 淡入**）。
+- 二者**逐像素相乘** ⇒ 文字不随 mesh#1（独立动画槽）、mesh#1 慢速时文字被主导。实机改 mesh#1 为 `0~1`(瞬时)/`0~4500`(慢)→文字保持默认速度/跟随，以及改 L36 `12c 12c` 为 `0 1`(瞬现)/`0 4500`(慢现)——**全部吻合**。image-swap 跟随槽位（内容是"文字/大理石"互换后仍先出现 2a 槽内容）亦由此解释（各自动画槽，非内容/感知）。
+
+> 曾被（错误地归因）为"单一均匀黑覆盖层 + LAYER 2a<2b 依次暴露"，经判定法证伪并推翻；真相为上述两组正交动画。
+
+## 8. Emulator 实现落点
+
+机制已在 emulator 落地（`PixiBackend` 场景图 + 引擎式 present + 严格 flag + 文件日志）。具体实现模型/改动文件/验证见 **`docs-new/04-app/emulator-copyright-effect.md` §0「实现状态」**；本文件为**引擎机制权威记录**，实现细节以该文件为准。

@@ -96,9 +96,12 @@ else  // 完成/收尾
 
 ## 4. 渲染后端现状（app/amayui-emulator）
 
-- ✅ `PixiBackend`（PixiJS v8 WebGL）：`setTexture([imgid,slot,color])` 绑定 slot→imgid 纹理；`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])` 按 op3-6=源裁剪、op7/op8=目标位置 1:1 贴；场景切换（脚本名变化）清空绘制层。
+- ✅ `PixiBackend`（PixiJS v8 WebGL）已改为 **引擎式"配置对象 + 每帧 present 合成"**：`drawItems`/`meshes` 两张以句柄为键的持久场景图；`present()` 按 layer/handle 升序合成（图在下、mesh 黑覆盖层在上），动画（mesh `#calcDiffuse`、draw-item `#itemAlpha`）逐帧求值（墙钟）；`sceneDirty`/`needsRender` 驱动引擎式 present（`0x400` 动画等待每帧 present）。**版权页 frame 效果已实现**（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现。
 - ✅ 视口 1280×720；窗口 `useContentSize:true` + `win.setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清）。
+- ✅ 严格 flag：draw-item/mesh 只认 bit0|bit1，未知位（如 draw-item `&4`）抛 `UnknownFlagError` 中断；未实现 opcode 抛 `NotImplementedOp`。
+- ✅ 诊断日志：`log-line`/`log-line-sync` IPC → `app/amayui-emulator/.tmp/..`(实际 `E:\Games\Eushully\天結\.tmp\amayui-emulator.log`)；renderer 逐行/批次落盘 + 关窗同步兜底。
 - ✅ 无界面光栅验证：真实 VM 到 TITLE 产出与真实标题菜单布局吻合（logo+散布按钮+版权+背景）。
+- 机制权威记录见 `./copyright-effect.md`；实现模型/改动文件/验证见 `../04-app/emulator-copyright-effect.md`。
 
 ## 5. 交叉引用
 
