@@ -1,0 +1,579 @@
+{
+  "_comment": "引擎分析台账；每次确证一个函数后，把其状态/证据/说明写进 funcs。字段：old=原始名；new=语义名；op=opcode(可空)；status=ANALYZED|PARTIAL|STUB|UNKNOWN；lines=[start,end] raw.c 行区间；evidence=证据(路径+行)；notes=一句话。初始基线：尚无函数确证进账，funcs 为空，随 docs-new/03-engine 分析推进而填充。",
+  "funcs": [
+    {
+      "old": "sub_42C5E0",
+      "new": "op_add",
+      "op": "0x50",
+      "status": "ANALYZED",
+      "lines": [
+        37525,
+        37534
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_add> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 + op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C620",
+      "new": "op_sub",
+      "op": "0x51",
+      "status": "ANALYZED",
+      "lines": [
+        37537,
+        37546
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_sub> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 - op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C660",
+      "new": "op_mul",
+      "op": "0x52",
+      "status": "ANALYZED",
+      "lines": [
+        37549,
+        37558
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mul> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 * op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C6A0",
+      "new": "op_div",
+      "op": "0x53",
+      "status": "ANALYZED",
+      "lines": [
+        37561,
+        37570
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_div> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 / op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C6E0",
+      "new": "op_mod",
+      "op": "0x54",
+      "status": "ANALYZED",
+      "lines": [
+        37573,
+        37582
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mod> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 % op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C720",
+      "new": "op_mov",
+      "op": "0x55",
+      "status": "ANALYZED",
+      "lines": [
+        37585,
+        37592
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mov> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C750",
+      "new": "op_and",
+      "op": "0x56",
+      "status": "ANALYZED",
+      "lines": [
+        37595,
+        37604
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_and> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 & op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C790",
+      "new": "op_or",
+      "op": "0x57",
+      "status": "ANALYZED",
+      "lines": [
+        37607,
+        37616
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_or> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 | op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C7D0",
+      "new": "op_sar",
+      "op": "0x58",
+      "status": "ANALYZED",
+      "lines": [
+        37619,
+        37628
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_sar> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 >> op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C820",
+      "new": "op_shl",
+      "op": "0x59",
+      "status": "ANALYZED",
+      "lines": [
+        37631,
+        37640
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_shl> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = op2 << op3",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C870",
+      "new": "op_eq",
+      "op": "0x5A",
+      "status": "ANALYZED",
+      "lines": [
+        37643,
+        37652
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_eq> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 == op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C8C0",
+      "new": "op_ne",
+      "op": "0x5B",
+      "status": "ANALYZED",
+      "lines": [
+        37655,
+        37664
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_ne> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 != op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C910",
+      "new": "op_lt",
+      "op": "0x5C",
+      "status": "ANALYZED",
+      "lines": [
+        37667,
+        37676
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_lt> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 < op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C960",
+      "new": "op_lte",
+      "op": "0x5D",
+      "status": "ANALYZED",
+      "lines": [
+        37679,
+        37688
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_lte> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 <= op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42C9B0",
+      "new": "op_gt",
+      "op": "0x5E",
+      "status": "ANALYZED",
+      "lines": [
+        37691,
+        37700
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_gt> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 > op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42CA00",
+      "new": "op_gte",
+      "op": "0x5F",
+      "status": "ANALYZED",
+      "lines": [
+        37703,
+        37712
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_gte> op3>); readIntOperand of op2,op3",
+      "notes": "op1 = (op2 >= op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42CB00",
+      "new": "op_lookup_array",
+      "op": "0x61",
+      "status": "ANALYZED",
+      "lines": [
+        37742,
+        37751
+      ],
+      "evidence": "v4=readIntOperand(3); v2=operandAddress(2); return sub_418CC0(1, v2, v4, -1, -1)",
+      "notes": "op1 = &op2[op3]  (element address; index=readInt(op3), base=operandAddress(op2)); op1 written via sub_418CC0 type-tagged",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_42CBA0",
+      "new": "op_lea",
+      "op": "0x63",
+      "status": "ANALYZED",
+      "lines": [
+        37766,
+        37773
+      ],
+      "evidence": "v2=operandAddress(2); return writePointerOperand_418B90(1, v2, -1, -1)",
+      "notes": "op1 = &op2 (address of operand 2), stored as pointer operand",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_42CBE0",
+      "new": "op_copy_local_array",
+      "op": "0x64",
+      "status": "ANALYZED",
+      "lines": [
+        37776,
+        37801
+      ],
+      "evidence": "v2=operandAddress(1); result=*(str_table+4*readInt(2)); do result=__ROL4__(key^__ROR4__(*(v2+v5),7),21); *v2++=result; while(--v6)",
+      "notes": "copy local array: from frames[cur_script].str_table[idx] (count=*(str_table+4*idx)) into op1 array, each element dec/enc-transformed (ROL4(key^ROR4(v,7),21)); op1 array memory written",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42CE70",
+      "new": "op_fill_zero",
+      "op": "0x6C",
+      "status": "ANALYZED",
+      "lines": [
+        37876,
+        37894
+      ],
+      "evidence": "v2=operandAddress(1); result=readInt(2); do *v2++=_this[97060]; while(--result)",
+      "notes": "fill op1 array[0..op2-1] with the constant stored at engine global offset 388240 (_this[97060]); op1 array memory written",
+      "pure": false,
+      "decEnc": false
+    },
+    {
+      "old": "sub_42EFD0",
+      "new": "op_lookup_array_2d",
+      "op": "0x12C",
+      "status": "ANALYZED",
+      "lines": [
+        39137,
+        39150
+      ],
+      "evidence": "v2=readInt(4); v3=readInt(3)*v2; v6=v3+readInt(5); v4=operandAddress(2); return sub_418CC0(1,v4,v6,-1,-1)",
+      "notes": "op1 = &op2[ op3*op4 + op5 ]  (2-D element address); op1 written type-tagged via sub_418CC0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430CF0",
+      "new": "op_set_array_to",
+      "op": "0x2D8",
+      "status": "ANALYZED",
+      "lines": [
+        40206,
+        40224
+      ],
+      "evidence": "v2=operandAddress(1); v5=__ROL4__(key^__ROR4__(readInt(2),7),21); result=readInt(3); memset32(v2,v5,result)",
+      "notes": "fill op1 array[0..op3-1] with DEC-encoded value of op2 (memset32), where D(v)=ROL4(key^ROR4(v,7),21); op1 array memory written",
+      "pure": true,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42F8B0",
+      "new": "op_bit_set",
+      "op": "0x135",
+      "status": "ANALYZED",
+      "lines": [
+        39402,
+        39421
+      ],
+      "evidence": "v2=readInt(2); if(v2>0x1F){sub_408050(...aSetbit); sub_4034D0(...);} else {v4=readInt(1); writeIntOperand(1,(1<<v3)|v4);}",
+      "notes": "if op2>0x1F(>=32): error-report (sprintf aSetbit + sub_4034D0) w/o writing op1; else op1 = op1 | (1<<op2) written back",
+      "pure": false,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42F920",
+      "new": "op_bit_reset",
+      "op": "0x136",
+      "status": "ANALYZED",
+      "lines": [
+        39424,
+        39443
+      ],
+      "evidence": "v2=readInt(2); if(v2>0x1F){...aRembit...} else {v4=readInt(1); writeIntOperand(1,~(1<<v3)&v4);}",
+      "notes": "if op2>0x1F: error-report (sprintf aRembit + sub_4034D0); else op1 = op1 & ~(1<<op2) written back",
+      "pure": false,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42FB40",
+      "new": "op_check_bit",
+      "op": "0x13F",
+      "status": "ANALYZED",
+      "lines": [
+        39549,
+        39568
+      ],
+      "evidence": "v2=readInt(3); if(v2>0x1F){...aGetbit...} else {v4=readInt(2); writeIntOperand(1,((1<<v3)&v4)!=0);}",
+      "notes": "if op3>0x1F: error-report (sprintf aGetbit + sub_4034D0); else op1 = ((1<<op3) & op2) != 0",
+      "pure": false,
+      "decEnc": true
+    },
+    {
+      "old": "sub_42D150",
+      "new": "op_memcpy",
+      "op": "0x1B0",
+      "status": "ANALYZED",
+      "lines": [
+        37985,
+        37996
+      ],
+      "evidence": "v5=4*readInt(3); v4=operandAddress(1); v2=operandAddress(2); return memcpy(v2,v4,v5);",
+      "notes": "memcpy(dest=op2, src=op1, n=4*op3) — raw byte copy of op3 32-bit elements from op1 to op2; no dec/enc transform applied",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_433660",
+      "new": "op_set_string",
+      "op": "0x192",
+      "status": "ANALYZED",
+      "lines": [
+        41936,
+        41949
+      ],
+      "evidence": "v2=sub_42A420(v3,2); sub_433310(1,(int)v2);",
+      "notes": "op1(SSO) = op2(SSO); string copy via sub_42A420(read op2) + sub_433310(write op1)",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_433710",
+      "new": "op_concat",
+      "op": "0x193",
+      "status": "ANALYZED",
+      "lines": [
+        41952,
+        41987
+      ],
+      "evidence": "v2=sub_42A420(v5,3); v3=sub_42A420(v8,2); v4=sub_42AA90(v6,v3,v2); sub_433310(1,(int)v4);",
+      "notes": "op1(SSO) = op2(SSO) + op3(SSO); string concat via sub_42AA90 + sub_433310(write op1)",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_433820",
+      "new": "op_to_string",
+      "op": "0x1C8",
+      "status": "ANALYZED",
+      "lines": [
+        41990,
+        42010
+      ],
+      "evidence": "v2=readInt(2); sub_408050(Buffer,256,\"%d\",v2); ... sub_433310(1,(int)v3);",
+      "notes": "op1(SSO) = sprintf(\"%d\", op2)  (int -> decimal string); via sub_408050 + sub_433310",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430900",
+      "new": "op_strlen",
+      "op": "0x2C5",
+      "status": "ANALYZED",
+      "lines": [
+        40064,
+        40071
+      ],
+      "evidence": "v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1,v2);",
+      "notes": "op1 = strlen(op2)  (sub_41B640 reads SSO string); byte length",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_42D110",
+      "new": "op_halve_strlen",
+      "op": "0x1A6",
+      "status": "ANALYZED",
+      "lines": [
+        37975,
+        37982
+      ],
+      "evidence": "v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1, v2>>1);",
+      "notes": "op1 = strlen(op2) >> 1  (halved byte length)",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_42DF40",
+      "new": "op_string_lookup_set",
+      "op": "0x1A3",
+      "status": "ANALYZED",
+      "lines": [
+        38443,
+        38459
+      ],
+      "evidence": "v2=sub_418A30(1); wsprintfA(v6,\"%c%8.8x\",3,v2); v3=sub_428E00(_this+5452,v6); if(v3)v4=*v3; else v4=0; writeIntOperand(1,v4);",
+      "notes": "read op1 value, wsprintf \"%c%8.8x\", look up in engine global string table (_this+5452) via sub_428E00, write op1 = associated int; returns looked-up value (or 0)",
+      "pure": false,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430C30",
+      "new": "op_float_mov",
+      "op": "0x2D5",
+      "status": "ANALYZED",
+      "lines": [
+        40176,
+        40183
+      ],
+      "evidence": "v3=readFloatOperand(2); return writeFloatOperand_42BA00(1,v3);",
+      "notes": "op1(float) = op2(float); float move",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430C70",
+      "new": "op_int_to_float",
+      "op": "0x2D6",
+      "status": "ANALYZED",
+      "lines": [
+        40186,
+        40193
+      ],
+      "evidence": "v3=(float)readIntOperand(2); return writeFloatOperand_42BA00(1,v3);",
+      "notes": "op1(float) = (float)op2(int); int->float cast",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430CB0",
+      "new": "op_float_to_int",
+      "op": "0x2D7",
+      "status": "ANALYZED",
+      "lines": [
+        40196,
+        40203
+      ],
+      "evidence": "v2=readFloatOperand(2); return writeIntOperand_42B4B0(1,(int)v2);",
+      "notes": "op1(int) = (int)op2(float)  (truncating); float->int cast",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430E30",
+      "new": "op_float_eq",
+      "op": "0x2DF",
+      "status": "ANALYZED",
+      "lines": [
+        40264,
+        40274
+      ],
+      "evidence": "v2=readFloat(2); if(v2==readFloat(3)) writeIntOperand(1,1); else writeIntOperand(1,0);",
+      "notes": "op1 = (op2 == op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430EA0",
+      "new": "op_float_ne",
+      "op": "0x2E0",
+      "status": "ANALYZED",
+      "lines": [
+        40277,
+        40287
+      ],
+      "evidence": "v2=readFloat(2); if(v2==readFloat(3)) writeIntOperand(1,0); else writeIntOperand(1,1);",
+      "notes": "op1 = (op2 != op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430F10",
+      "new": "op_float_lt",
+      "op": "0x2E1",
+      "status": "ANALYZED",
+      "lines": [
+        40290,
+        40300
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)<=v3) writeIntOperand(1,0); else writeIntOperand(1,1);",
+      "notes": "op1 = (op2 < op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430F80",
+      "new": "op_float_lte",
+      "op": "0x2E2",
+      "status": "ANALYZED",
+      "lines": [
+        40303,
+        40313
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)<v3) writeIntOperand(1,0); else writeIntOperand(1,1);",
+      "notes": "op1 = (op2 <= op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_430FF0",
+      "new": "op_float_gt",
+      "op": "0x2E3",
+      "status": "ANALYZED",
+      "lines": [
+        40316,
+        40326
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)>=v3) writeIntOperand(1,0); else writeIntOperand(1,1);",
+      "notes": "op1 = (op2 > op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    },
+    {
+      "old": "sub_431060",
+      "new": "op_float_gte",
+      "op": "0x2E4",
+      "status": "ANALYZED",
+      "lines": [
+        40329,
+        40339
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)>v3) writeIntOperand(1,0); else writeIntOperand(1,1);",
+      "notes": "op1 = (op2 >= op3) ? 1 : 0",
+      "pure": true,
+      "decEnc": false
+    }
+  ]
+}

@@ -10,6 +10,12 @@
 > ⚠️ AGE 助记符不可靠（`exit`≠程序退出，是跨脚本返回；`ret`≠跨脚本返回，是同脚本子程序返回）。凡`推测`/未读体一律不可当定论。
 >
 > **效果相关指令已语义化命名**（版权页/淡入淡出等）：`create-mesh`(0x320)、`set-vertex-color`(0x322)、`set-vertex-color-alpha`(0x323)、`set-draw-color`(0x202)、`set-draw-color-alpha`(0x203)、`draw-texture`(0x1FB)、`set-texture`(0x1F9)、`create-texture`(0x1F8)、`release-texture`(0x1FA)、`play-movie`(0x20F)、`wait`(0x21C)、`float-mov`(0x2D5)、`poll-input`(0x101)、`texture-op`(0x1F7)。旧的 `u00xxxxxx` 保留为**别名**（汇编器同时接受），源脚本已批量替换为主标签。这些的完整机制见 `./copyright-effect.md`。
+>
+> **染色/成员化进展（2025-09）**：本表所列 handler 已按「明确已知 Engine 成员函数」染色并**抽取到独立文件 `engine-refined/engine-members.cpp`**（`Engine::<name>` 成员形式，`_this`→`this->` 对字段/帧/成员调用已转换；由 `scripts/engine-refined/memberize.cjs` 无 libclang 生成）。成员索引见 `engine-refined/member-index.json`；**纯数值/字符串操作接口**（运算/位/索引/数组/字符串/浮点，见 `0x50-0x5F`、`0x61`、`0x63`、`0x64`、`0x6C`、`0x12C`、`0x135-0x13F`、`0x192/193`、`0x1A6`、`0x1B0`、`0x1C8`、`0x2C5`、`0x2D5-0x2E4`、`0x2D8`、`0x1A3`）已逐一读体、确认接口并记录进 `analysis-registry.json`（`status=ANALYZED`，附 `pure`/`decEnc` 附加字段）。
+>
+> **代码分区（每段只在一处，基线除外）**：`engine-refined/engine-members.cpp` = 已提取的 Engine 成员函数；`engine-refined/remaining-code.cpp` = 其余全部代码（**已提取成员的函数定义区间已替换为空行**，行号与原始完全一致，便于映射回 `engine/天结_unpacked.exe_utf8.c`；由 `scripts/engine-refined/remaining.cjs` 生成）。原始基准 `engine/天结_unpacked.exe_utf8.c` 与 `engine-refined/天结_unpacked.exe_utf8.cpp`（逐字节副本，只读对照）保留全部代码。
+>
+> **参考**：`engine-refined/engine-members.cpp`、`engine-refined/member-index.json`、`analysis-registry.json`（dsw 台账）。
 
 ## 全部 544 个已映射 opcode
 
@@ -267,7 +273,7 @@
 | 0x1A3 | 1 | string-lookup-set | sub_42DF40 | 已核对 | **string-lookup-set**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 37793） |
 | 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 28797） |
 | 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41043） |
-| 0x1A6 | 2 | halve-strlen | sub_42D110 | 推测 | 字符串半长。未读体 |
+| 0x1A6 | 2 | halve-strlen | sub_42D110 | 已核对 | **halve-strlen**：`op1 = strlen(op2) >> 1`（`sub_41B640(2)` 读 op2 → `strlen` → `writeIntOperand_42B4B0(1, len>>1)`）。handler=sub_42D110（raw .c 37975；engine-refined/engine-members.cpp `Engine::op_halve_strlen_42D110`），纯 |
 | 0x1A7 | 1 | comment | sub_4191B0 | 已核对 | nop（dev 注释，无副作用） |
 | 0x1A8 | 0 | dev_ukn | sub_419690 | 已核对 | nop（dev 未知指令，通常空实现） |
 | 0x1A9 | 1 |  | sub_434FE0 | 已核对 | **写字符串哈希表**：`sub_42A420` 读 op1 字符串、`sub_418AE0(1)` 读值，键 `"%c%8.8x",5,val`，`sub_434E00(key, str)` 插入/更新（table 满 `sub_434AF0` 扩容）。handler=sub_434FE0（raw .c 42154） |
@@ -277,7 +283,7 @@
 | 0x1AD | 0 |  | sub_4196F0 | 仅映射 |  |
 | 0x1AE | 3 |  | sub_42E1F0 | 仅映射 |  |
 | 0x1AF | 3 |  | sub_42E320 | 仅映射 |  |
-| 0x1B0 | 3 | memcpy | sub_42D150 | 推测 | `op1 = dest; op2 = src; size = 4*op3`。未读体（备注来自 age-shared 注释） |
+| 0x1B0 | 3 | memcpy | sub_42D150 | 已核对 | **memcpy**：`memcpy(dest=op2, src=op1, n=4*op3)`（`operandAddress(1)` 取 op1 基址、`operandAddress(2)` 取 op2 基址、`4*op3` 为字节数）。handler=sub_42D150（raw .c 37985；engine-refined/engine-members.cpp `Engine::op_memcpy_42D150`），纯内存拷贝 |
 | 0x1B1 | 1 |  | sub_41FEA0 | 仅映射 |  |
 | 0x1B2 | 1 |  | sub_42A9B0 | 已核对 | **字符串 append 日志缓冲**：`sub_40C660(_this+124336)`。handler=sub_42A9B0（raw .c 41442） |
 | 0x1B3 | 0 |  | sub_42AA00 | 已核对 | **append 2 字符换行**。handler=sub_42AA00（raw .c 41452） |
@@ -301,7 +307,7 @@
 | 0x1C5 | 4 |  | sub_433930 | 仅映射 |  |
 | 0x1C6 | 2 |  | sub_421690 | 仅映射 |  |
 | 0x1C7 | 1 |  | sub_42D390 | 仅映射 |  |
-| 0x1C8 | 2 | toString | sub_433820 | 推测 | 转字符串。未读体 |
+| 0x1C8 | 2 | toString | sub_433820 | 已核对 | **toString**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990；engine-refined/engine-members.cpp `Engine::op_toString_433820`），纯 |
 | 0x1C9 | 3 |  | sub_420160 | 仅映射 |  |
 | 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 28961） |
 | 0x1CB | 1 |  | sub_42D3D0 | 仅映射 |  |
@@ -438,7 +444,7 @@
 | 0x2C2 | 6 |  | sub_433DE0 | 仅映射 |  |
 | 0x2C3 | 2 |  | sub_430890 | 仅映射 |  |
 | 0x2C4 | 0 |  | sub_41A3F0 | 仅映射 |  |
-| 0x2C5 | 2 | strlen | sub_430900 | 推测 | 字符串长度。未读体 |
+| 0x2C5 | 2 | strlen | sub_430900 | 已核对 | **strlen**：`op1 = strlen(op2)`（`sub_41B640(2)` 读 op2 字符串 → `strlen` → `writeIntOperand_42B4B0(1)`）。handler=sub_430900（raw .c 40064；engine-refined/engine-members.cpp `Engine::op_strlen_430900`），纯 |
 | 0x2C6 | 2 |  | sub_430940 | 仅映射 |  |
 | 0x2C7 | 4 |  | sub_433FD0 | 仅映射 |  |
 | 0x2C8 | 4 |  | sub_434260 | 仅映射 |  |

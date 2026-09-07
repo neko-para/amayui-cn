@@ -1,0 +1,31 @@
+/* =============================================================================
+ * engine-members.cpp — 天結いキャッスルマイスター「Engine 成员函数」染色视图
+ *
+ * 由 scripts/engine-refined/memberize.cjs 生成（无 libclang）。
+ * 原始反编译基准：engine-refined/天结_unpacked.exe_utf8.cpp（只读，未改动）。
+ *
+ * 范围（明确已知 Engine 成员）：
+ *   - 成员集合 = docs/re/engine/member_functions.detected.txt 的 1235 个 sub_* 成员
+ *     （先前 libclang 基线检测：以「_this 高偏移命中 Engine 顶层字段」为种子 + 调用图双向传播）
+ *     ∪ opcode-table.md 全部已映射 handler（dispatch 表 this+0xA509C 分发，必然以 Engine this 为接收者，
+ *       可补上 libclang 种子漏检的、只经 helper 调用的 handler，如 random=sub_42CA50）。
+ *     共 1241 个。
+ *   - 每个成员都抽取于此，改写成 `Engine::<sem>_<addr>(_DWORD *_this, ...)` 成员形式。
+ *
+ * 转换约定（只改「可确证」部分，绝不臆测）：
+ *   - 签名：`RET __thiscall sub_<addr>` -> `RET Engine::<sem>_<addr>`（去掉 __thiscall，
+ *     保留 `_DWORD *_this` 形参以维持 DWORD 下标语义；语义名取自 scripts/re/semantic_names.json，
+ *     未知语义回退 `sub_<addr>`，地址始终保留以对回汇编）。
+ *   - 顶层字段：`_this[K]` 且 K*4 命中 Engine 顶层字节偏移 -> `this->field`
+ *     （cur_script / key / frames / dispatch / global_*_base 等，见 engine/engine.hpp）。
+ *   - 帧字段：`_this[30*<cur>+K]` 且帧内偏移命中 FRAME_FIELD -> `this->frames[<cur>].field`。
+ *   - 成员调用：`<sem>_<addr>(_this, ...)` -> `this-><sem>_<addr>(...)`（接收者=首实参 _this）。
+ *     首实参不是裸 `_this`（如 `_this+258` 子对象）的留作普通函数调用，不做 this 化。
+ *   - 语义改名：已知语义的 `sub_<addr>` -> `<sem>_<addr>`（调用点/原型同步）。
+ *
+ * 保留原样：未命中的 `_this[K]` 保持 `_this[K]`（字段尚未确证，不臆测命名）；
+ * `_this + N`（子对象偏移）保持 `_this + N`。
+ *
+ * 索引：engine-refined/member-index.json（每成员 old/new/op/status/lines 机器可读）。
+ * 行号依据：raw 行区间与该文件内定义一致（原始基准不变，可用于 evidence 对照）。
+ * ============================================================================= */

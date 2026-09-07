@@ -1,0 +1,1308 @@
+{
+  "_comment": "纯数值/字符串 opcode handler 接口记录（依据 engine-refined/engine-members.cpp 实际读体，非臆测）。\n\n约定：\n- 本表默认每个 handler 首行都执行 `frames[cur_script].arity = N`（N 记录在 arity 字段），这是操作数帧元数据回写，属于 VM 操作数访问机制，不视为游戏/UI 副作用；除此外若仅写 op1 则 pure=true，若再有引擎字段读写/越界报错/OS/异常等副作用则 pure=false 并注明。\n- int 操作数读取走 DEC（readIntOperand_41BF50），写回走 ENC（writeIntOperand_42B4B0），故 decEnc=true；float 直接存取（readFloatOperand_41C300/writeFloatOperand_42BA00），decEnc=false；string 为 SSO(28B) 类型，经 sub_42A420/sub_433310/sub_41B640 存取，无 DEC/ENC。\n- lines 为反编译原始文件（天結_unpacked.exe_utf8.c/ .cpp）行区间，取自 member-index.json。\n- refinedStatus 为 engine-refined/engine-members.cpp 中该成员的染色注释状态（ANALYZED/STUB/UNKNOWN）。\n\n未纳入的候选：\n- random(0x60)：member-index.json 无对应 handler（未染色/未检测为成员），跳过。\n- 0x2D9/0x2DA/0x2DB/0x2DC/0x2DD/0x2DE：位于 float 区段但确认非纯/非数值运算——0x2D9 sub_430D60 为 GetUserDefaultLCID/GetSystemDefaultLCID（OS 调用）；0x2DA sub_426420 写引擎全局数组（_this+…）；0x2DB sub_426500 写 _this[71744]+sub_459F40；0x2DC sub_430DB0 读引擎全局 _this[71740/71741]；0x2DD sub_434720 读引擎全局数组并可能 throw std::out_of_range；0x2DE sub_430DF0 查引擎全局字符串表(_this+21324)。均已阅读确认，未列入 ops。\n- sub_42CEC0(0x191, fabs 浮点取绝对值, 纯) 与 sub_42D1A0(0x1CD, sqrt 浮点开方, 纯) 亦为纯浮点运算，但不在本任务清单范围内，仅此注明。\n\n成员名 hint：本清单 op 多数在 member-index 中 status=已核对/推测；op_memcpy/op_strlen/op_toString/op_halve_strlen 在 refined 中为 STUB，但体已完整读出，按实际读体定名。op_copy_to_global(0x6C) 工程语义实为 fill-from-global（非纯），refined 名 op_copy_to_global 与 opcode-table 的 fill-zero 不一致，已标注。",
+  "ops": [
+    {
+      "opcode": "0x50",
+      "name": "op_add",
+      "handler": "sub_42C5E0",
+      "new": "Engine::op_add_42C5E0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 + op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37525,
+        37534
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_add> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x51",
+      "name": "op_sub",
+      "handler": "sub_42C620",
+      "new": "Engine::op_sub_42C620",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 - op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37537,
+        37546
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_sub> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x52",
+      "name": "op_mul",
+      "handler": "sub_42C660",
+      "new": "Engine::op_mul_42C660",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 * op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37549,
+        37558
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mul> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x53",
+      "name": "op_div",
+      "handler": "sub_42C6A0",
+      "new": "Engine::op_div_42C6A0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 / op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37561,
+        37570
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_div> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x54",
+      "name": "op_mod",
+      "handler": "sub_42C6E0",
+      "new": "Engine::op_mod_42C6E0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 % op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37573,
+        37582
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mod> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x55",
+      "name": "op_mov",
+      "handler": "sub_42C720",
+      "new": "Engine::op_mov_42C720",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37585,
+        37592
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_mov> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x56",
+      "name": "op_and",
+      "handler": "sub_42C750",
+      "new": "Engine::op_and_42C750",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 & op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37595,
+        37604
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_and> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x57",
+      "name": "op_or",
+      "handler": "sub_42C790",
+      "new": "Engine::op_or_42C790",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 | op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37607,
+        37616
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_or> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x58",
+      "name": "op_sar",
+      "handler": "sub_42C7D0",
+      "new": "Engine::op_sar_42C7D0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 >> op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37619,
+        37628
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_sar> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x59",
+      "name": "op_shl",
+      "handler": "sub_42C820",
+      "new": "Engine::op_shl_42C820",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = op2 << op3",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37631,
+        37640
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_shl> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5A",
+      "name": "op_eq",
+      "handler": "sub_42C870",
+      "new": "Engine::op_eq_42C870",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 == op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37643,
+        37652
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_eq> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5B",
+      "name": "op_ne",
+      "handler": "sub_42C8C0",
+      "new": "Engine::op_ne_42C8C0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 != op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37655,
+        37664
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_ne> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5C",
+      "name": "op_lt",
+      "handler": "sub_42C910",
+      "new": "Engine::op_lt_42C910",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 < op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37667,
+        37676
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_lt> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5D",
+      "name": "op_lte",
+      "handler": "sub_42C960",
+      "new": "Engine::op_lte_42C960",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 <= op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37679,
+        37688
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_lte> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5E",
+      "name": "op_gt",
+      "handler": "sub_42C9B0",
+      "new": "Engine::op_gt_42C9B0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 > op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37691,
+        37700
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_gt> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x5F",
+      "name": "op_gte",
+      "handler": "sub_42CA00",
+      "new": "Engine::op_gte_42CA00",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ],
+        [
+          3,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 >= op3) ? 1 : 0",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37703,
+        37712
+      ],
+      "evidence": "writeIntOperand_42B4B0(1, <op2 <op_gte> op3>); readIntOperand of op2,op3"
+    },
+    {
+      "opcode": "0x61",
+      "name": "op_lookup_array",
+      "handler": "sub_42CB00",
+      "new": "Engine::op_lookup_array_42CB00",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "ptr",
+          "dest"
+        ],
+        [
+          2,
+          "array",
+          "src(base)"
+        ],
+        [
+          3,
+          "int",
+          "index"
+        ]
+      ],
+      "effect": "op1 = &op2[op3]  (element address; index=readInt(op3), base=operandAddress(op2)); op1 written via sub_418CC0 type-tagged",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        37742,
+        37751
+      ],
+      "evidence": "v4=readIntOperand(3); v2=operandAddress(2); return sub_418CC0(1, v2, v4, -1, -1)",
+      "note": "sub_418CC0 also writes internal global dword_55C4B8 (operand-descriptor ptr); plus frames[cur_script].arity bookkeeping; no game/UI side effect."
+    },
+    {
+      "opcode": "0x63",
+      "name": "op_lea",
+      "handler": "sub_42CBA0",
+      "new": "Engine::op_lea_42CBA0",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "ptr",
+          "dest"
+        ],
+        [
+          2,
+          "any",
+          "src-address"
+        ]
+      ],
+      "effect": "op1 = &op2 (address of operand 2), stored as pointer operand",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        37766,
+        37773
+      ],
+      "evidence": "v2=operandAddress(2); return writePointerOperand_418B90(1, v2, -1, -1)"
+    },
+    {
+      "opcode": "0x64",
+      "name": "op_copy_local_array",
+      "handler": "sub_42CBE0",
+      "new": "Engine::op_copy_local_array_42CBE0",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "array",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "index"
+        ]
+      ],
+      "effect": "copy local array: from frames[cur_script].str_table[idx] (count=*(str_table+4*idx)) into op1 array, each element dec/enc-transformed (ROL4(key^ROR4(v,7),21)); op1 array memory written",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        37776,
+        37801
+      ],
+      "evidence": "v2=operandAddress(1); result=*(str_table+4*readInt(2)); do result=__ROL4__(key^__ROR4__(*(v2+v5),7),21); *v2++=result; while(--v6)",
+      "note": "reads frame str_table (operand/local-array storage) and writes op1 array; no game state/UI side effect."
+    },
+    {
+      "opcode": "0x6C",
+      "name": "op_fill_zero",
+      "handler": "sub_42CE70",
+      "new": "Engine::op_copy_to_global_42CE70",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "array",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "count"
+        ]
+      ],
+      "effect": "fill op1 array[0..op2-1] with the constant stored at engine global offset 388240 (_this[97060]); op1 array memory written",
+      "decEnc": false,
+      "pure": false,
+      "lines": [
+        37876,
+        37894
+      ],
+      "evidence": "v2=operandAddress(1); result=readInt(2); do *v2++=_this[97060]; while(--result)",
+      "note": "NON-PURE: fill value is read from engine global _this[97060] (memberize left it raw, offset 388240), i.e. an engine-field read beyond the operand stream. Memberize name op_copy_to_global mismatches opcode-table term fill-zero; semantic is a fill-from-global."
+    },
+    {
+      "opcode": "0x12C",
+      "name": "op_lookup_array_2d",
+      "handler": "sub_42EFD0",
+      "new": "Engine::op_lookup_array_2d_42EFD0",
+      "refinedStatus": "ANALYZED",
+      "arity": 11,
+      "operands": [
+        [
+          1,
+          "ptr",
+          "dest"
+        ],
+        [
+          2,
+          "array",
+          "src(base)"
+        ],
+        [
+          3,
+          "int",
+          "row"
+        ],
+        [
+          4,
+          "int",
+          "col-dim"
+        ],
+        [
+          5,
+          "int",
+          "col"
+        ]
+      ],
+      "effect": "op1 = &op2[ op3*op4 + op5 ]  (2-D element address); op1 written type-tagged via sub_418CC0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        39137,
+        39150
+      ],
+      "evidence": "v2=readInt(4); v3=readInt(3)*v2; v6=v3+readInt(5); v4=operandAddress(2); return sub_418CC0(1,v4,v6,-1,-1)",
+      "note": "sub_418CC0 writes internal global dword_55C4B8; plus arity bookkeeping; no game/UI side effect."
+    },
+    {
+      "opcode": "0x2D8",
+      "name": "op_set_array_to",
+      "handler": "sub_430CF0",
+      "new": "Engine::op_set_array_to_430CF0",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "array",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "value"
+        ],
+        [
+          3,
+          "int",
+          "count"
+        ]
+      ],
+      "effect": "fill op1 array[0..op3-1] with DEC-encoded value of op2 (memset32), where D(v)=ROL4(key^ROR4(v,7),21); op1 array memory written",
+      "decEnc": true,
+      "pure": true,
+      "lines": [
+        40206,
+        40224
+      ],
+      "evidence": "v2=operandAddress(1); v5=__ROL4__(key^__ROR4__(readInt(2),7),21); result=readInt(3); memset32(v2,v5,result)",
+      "note": "reads operand value through DEC, writes op1 array; no game/UI side effect."
+    },
+    {
+      "opcode": "0x135",
+      "name": "op_bit_set",
+      "handler": "sub_42F8B0",
+      "new": "Engine::op_bit_set_42F8B0",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest/in"
+        ],
+        [
+          2,
+          "int",
+          "bit"
+        ]
+      ],
+      "effect": "if op2>0x1F(>=32): error-report (sprintf aSetbit + sub_4034D0) w/o writing op1; else op1 = op1 | (1<<op2) written back",
+      "decEnc": true,
+      "pure": false,
+      "lines": [
+        39402,
+        39421
+      ],
+      "evidence": "v2=readInt(2); if(v2>0x1F){sub_408050(...aSetbit); sub_4034D0(...);} else {v4=readInt(1); writeIntOperand(1,(1<<v3)|v4);}",
+      "note": "NON-PURE: out-of-range bit (>=32) triggers engine error-report (sprintf+sub_4034D0); valid path is pure op1|=(1<<bit)."
+    },
+    {
+      "opcode": "0x136",
+      "name": "op_bit_reset",
+      "handler": "sub_42F920",
+      "new": "Engine::op_bit_reset_42F920",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest/in"
+        ],
+        [
+          2,
+          "int",
+          "bit"
+        ]
+      ],
+      "effect": "if op2>0x1F: error-report (sprintf aRembit + sub_4034D0); else op1 = op1 & ~(1<<op2) written back",
+      "decEnc": true,
+      "pure": false,
+      "lines": [
+        39424,
+        39443
+      ],
+      "evidence": "v2=readInt(2); if(v2>0x1F){...aRembit...} else {v4=readInt(1); writeIntOperand(1,~(1<<v3)&v4);}",
+      "note": "NON-PURE: out-of-range bit triggers engine error-report; valid path pure op1&=~(1<<bit)."
+    },
+    {
+      "opcode": "0x13F",
+      "name": "op_check_bit",
+      "handler": "sub_42FB40",
+      "new": "Engine::op_check_bit_42FB40",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "value"
+        ],
+        [
+          3,
+          "int",
+          "bit"
+        ]
+      ],
+      "effect": "if op3>0x1F: error-report (sprintf aGetbit + sub_4034D0); else op1 = ((1<<op3) & op2) != 0",
+      "decEnc": true,
+      "pure": false,
+      "lines": [
+        39549,
+        39568
+      ],
+      "evidence": "v2=readInt(3); if(v2>0x1F){...aGetbit...} else {v4=readInt(2); writeIntOperand(1,((1<<v3)&v4)!=0);}",
+      "note": "NON-PURE: out-of-range bit triggers engine error-report; valid path pure op1=((1<<bit)&op2)!=0."
+    },
+    {
+      "opcode": "0x1B0",
+      "name": "op_memcpy",
+      "handler": "sub_42D150",
+      "new": "Engine::op_memcpy_42D150",
+      "refinedStatus": "STUB",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "array",
+          "src"
+        ],
+        [
+          2,
+          "array",
+          "dest"
+        ],
+        [
+          3,
+          "int",
+          "count"
+        ]
+      ],
+      "effect": "memcpy(dest=op2, src=op1, n=4*op3) — raw byte copy of op3 32-bit elements from op1 to op2; no dec/enc transform applied",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        37985,
+        37996
+      ],
+      "evidence": "v5=4*readInt(3); v4=operandAddress(1); v2=operandAddress(2); return memcpy(v2,v4,v5);",
+      "note": "index status '推测/STUB' but body fully read; raw memcpy, no D/E — note engine ints are DEC-encoded so a raw copy may be unusual; flagged for review."
+    },
+    {
+      "opcode": "0x192",
+      "name": "op_set_string",
+      "handler": "sub_433660",
+      "new": "Engine::op_set_string_433660",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "string(SSO)",
+          "dest"
+        ],
+        [
+          2,
+          "string(SSO)",
+          "src"
+        ]
+      ],
+      "effect": "op1(SSO) = op2(SSO); string copy via sub_42A420(read op2) + sub_433310(write op1)",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        41936,
+        41949
+      ],
+      "evidence": "v2=sub_42A420(v3,2); sub_433310(1,(int)v2);",
+      "note": "pure string copy; SSO 28-byte string operands, no dec/enc."
+    },
+    {
+      "opcode": "0x193",
+      "name": "op_concat",
+      "handler": "sub_433710",
+      "new": "Engine::op_concat_433710",
+      "refinedStatus": "ANALYZED",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "string(SSO)",
+          "dest"
+        ],
+        [
+          2,
+          "string(SSO)",
+          "src"
+        ],
+        [
+          3,
+          "string(SSO)",
+          "src"
+        ]
+      ],
+      "effect": "op1(SSO) = op2(SSO) + op3(SSO); string concat via sub_42AA90 + sub_433310(write op1)",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        41952,
+        41987
+      ],
+      "evidence": "v2=sub_42A420(v5,3); v3=sub_42A420(v8,2); v4=sub_42AA90(v6,v3,v2); sub_433310(1,(int)v4);",
+      "note": "pure string concat; SSO string operands, no dec/enc."
+    },
+    {
+      "opcode": "0x1C8",
+      "name": "op_to_string",
+      "handler": "sub_433820",
+      "new": "Engine::op_toString_433820",
+      "refinedStatus": "STUB",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "string(SSO)",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1(SSO) = sprintf(\"%d\", op2)  (int -> decimal string); via sub_408050 + sub_433310",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        41990,
+        42010
+      ],
+      "evidence": "v2=readInt(2); sub_408050(Buffer,256,\"%d\",v2); ... sub_433310(1,(int)v3);",
+      "note": "index status '推测/STUB' but body fully read; pure int->string."
+    },
+    {
+      "opcode": "0x2C5",
+      "name": "op_strlen",
+      "handler": "sub_430900",
+      "new": "Engine::op_strlen_430900",
+      "refinedStatus": "STUB",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "string(SSO)",
+          "src"
+        ]
+      ],
+      "effect": "op1 = strlen(op2)  (sub_41B640 reads SSO string); byte length",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40064,
+        40071
+      ],
+      "evidence": "v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1,v2);",
+      "note": "index status '推测/STUB'; body fully read; pure strlen."
+    },
+    {
+      "opcode": "0x1A6",
+      "name": "op_halve_strlen",
+      "handler": "sub_42D110",
+      "new": "Engine::op_halve_strlen_42D110",
+      "refinedStatus": "STUB",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "string(SSO)",
+          "src"
+        ]
+      ],
+      "effect": "op1 = strlen(op2) >> 1  (halved byte length)",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        37975,
+        37982
+      ],
+      "evidence": "v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1, v2>>1);",
+      "note": "index status '推测/STUB'; body fully read; pure halved strlen."
+    },
+    {
+      "opcode": "0x1A3",
+      "name": "op_string_lookup_set",
+      "handler": "sub_42DF40",
+      "new": "Engine::op_string_lookup_set_42DF40",
+      "refinedStatus": "ANALYZED",
+      "arity": 3,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest/in"
+        ]
+      ],
+      "effect": "read op1 value, wsprintf \"%c%8.8x\", look up in engine global string table (_this+5452) via sub_428E00, write op1 = associated int; returns looked-up value (or 0)",
+      "decEnc": false,
+      "pure": false,
+      "lines": [
+        38443,
+        38459
+      ],
+      "evidence": "v2=sub_418A30(1); wsprintfA(v6,\"%c%8.8x\",3,v2); v3=sub_428E00(_this+5452,v6); if(v3)v4=*v3; else v4=0; writeIntOperand(1,v4);",
+      "note": "NON-PURE: touches engine global string/container at _this+5452 via sub_428E00 (lookup table), beyond operand stream."
+    },
+    {
+      "opcode": "0x2D5",
+      "name": "op_float_mov",
+      "handler": "sub_430C30",
+      "new": "Engine::sub_430C30",
+      "refinedStatus": "ANALYZED",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "float",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1(float) = op2(float); float move",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40176,
+        40183
+      ],
+      "evidence": "v3=readFloatOperand(2); return writeFloatOperand_42BA00(1,v3);"
+    },
+    {
+      "opcode": "0x2D6",
+      "name": "op_int_to_float",
+      "handler": "sub_430C70",
+      "new": "Engine::sub_430C70",
+      "refinedStatus": "UNKNOWN",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "float",
+          "dest"
+        ],
+        [
+          2,
+          "int",
+          "src"
+        ]
+      ],
+      "effect": "op1(float) = (float)op2(int); int->float cast",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40186,
+        40193
+      ],
+      "evidence": "v3=(float)readIntOperand(2); return writeFloatOperand_42BA00(1,v3);"
+    },
+    {
+      "opcode": "0x2D7",
+      "name": "op_float_to_int",
+      "handler": "sub_430CB0",
+      "new": "Engine::sub_430CB0",
+      "refinedStatus": "UNKNOWN",
+      "arity": 5,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1(int) = (int)op2(float)  (truncating); float->int cast",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40196,
+        40203
+      ],
+      "evidence": "v2=readFloatOperand(2); return writeIntOperand_42B4B0(1,(int)v2);"
+    },
+    {
+      "opcode": "0x2DF",
+      "name": "op_float_eq",
+      "handler": "sub_430E30",
+      "new": "Engine::sub_430E30",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 == op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40264,
+        40274
+      ],
+      "evidence": "v2=readFloat(2); if(v2==readFloat(3)) writeIntOperand(1,1); else writeIntOperand(1,0);"
+    },
+    {
+      "opcode": "0x2E0",
+      "name": "op_float_ne",
+      "handler": "sub_430EA0",
+      "new": "Engine::sub_430EA0",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 != op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40277,
+        40287
+      ],
+      "evidence": "v2=readFloat(2); if(v2==readFloat(3)) writeIntOperand(1,0); else writeIntOperand(1,1);"
+    },
+    {
+      "opcode": "0x2E1",
+      "name": "op_float_lt",
+      "handler": "sub_430F10",
+      "new": "Engine::sub_430F10",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 < op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40290,
+        40300
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)<=v3) writeIntOperand(1,0); else writeIntOperand(1,1);"
+    },
+    {
+      "opcode": "0x2E2",
+      "name": "op_float_lte",
+      "handler": "sub_430F80",
+      "new": "Engine::sub_430F80",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 <= op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40303,
+        40313
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)<v3) writeIntOperand(1,0); else writeIntOperand(1,1);"
+    },
+    {
+      "opcode": "0x2E3",
+      "name": "op_float_gt",
+      "handler": "sub_430FF0",
+      "new": "Engine::sub_430FF0",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 > op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40316,
+        40326
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)>=v3) writeIntOperand(1,0); else writeIntOperand(1,1);"
+    },
+    {
+      "opcode": "0x2E4",
+      "name": "op_float_gte",
+      "handler": "sub_431060",
+      "new": "Engine::sub_431060",
+      "refinedStatus": "UNKNOWN",
+      "arity": 7,
+      "operands": [
+        [
+          1,
+          "int",
+          "dest"
+        ],
+        [
+          2,
+          "float",
+          "src"
+        ],
+        [
+          3,
+          "float",
+          "src"
+        ]
+      ],
+      "effect": "op1 = (op2 >= op3) ? 1 : 0",
+      "decEnc": false,
+      "pure": true,
+      "lines": [
+        40329,
+        40339
+      ],
+      "evidence": "v3=readFloat(2); if(readFloat(3)>v3) writeIntOperand(1,0); else writeIntOperand(1,1);"
+    }
+  ]
+}

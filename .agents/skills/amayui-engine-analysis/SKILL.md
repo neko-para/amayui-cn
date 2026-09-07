@@ -36,7 +36,10 @@ description: 系统分析《天結いキャッスルマイスター》引擎反�
 engine/
 └─ 天结_unpacked.exe_utf8.c        # 原始反编译（只读基准；git 提交后不再改）
 engine-refined/
-└─ 天结_unpacked.exe_utf8.cpp      # 精修产物（C++ 风格；每次分析后改这里；git 提交逐步推进）
+├─ 天结_unpacked.exe_utf8.cpp      # 原始基准逐字节副本（只读对照，保持行号；git 提交后不再改）
+├─ engine-members.cpp              # 已提取的 Engine 成员函数（Engine::<name>；memberize.cjs 生成）
+├─ remaining-code.cpp              # 剩余代码（已提取成员函数定义区间替换为空行；行号与原始一致；remaining.cjs 生成）
+└─ member-index.json               # 成员染色索引（old/new/op/status/lines 机器可读）
 analysis-registry.json             # 机器可读台账（放仓库根或 engine-refined/ 下）
 .agents/skills/amayui-engine-analysis/
 ├─ SKILL.md                        # 本文档
@@ -44,8 +47,13 @@ analysis-registry.json             # 机器可读台账（放仓库根或 engine
 │  ├─ func-list.js                 # 解析 .c/.cpp 提取函数列表 + 行区间
 │  ├─ scan-status.js               # 扫精修 .cpp 的状态标记 → 按状态统计并列出
 │  ├─ func-table.js                # 函数列表 × 台账 → 汇总表（完成度/证据）
-│  └─ diff-refined.js              # 原始 .c vs 精修 .cpp → 已改函数/行统计（git 优先，缺则行数对比）
+│  ├─ diff-refined.js              # 原始 .c vs 精修 .cpp → 已改函数/行统计（git 优先，缺则行数对比）
+│  └─ (scripts/engine-refined/ 里另有 memberize.cjs / remaining.cjs / integrate-records.cjs)
 └─ registry.template.json          # analysis-registry.json 模板
+
+> **代码分区（每段只出现在一处，基线除外）**：Engine 成员函数体只在 `engine-members.cpp`；
+> 其余代码（非成员函数、全局、声明/调用点）只在 `remaining-code.cpp`；原始基准保留全部对照。
+> 已提取成员的函数定义区间在 remaining-code.cpp 里**替换为空行**以保持行对应，方便映射回原始。
 
 > **命名**：函数/字段按 C++ 语义命名；`_this`=这类 `this` 指针、成员访问写作 `this->…` 或
 > `obj->…`；`sub_XXXXXX` 确证后改名（如 `poll-input`→`pollInput` 或 `Engine::pollInput`）。
