@@ -99,7 +99,7 @@ char *__thiscall sub_403470(char *_this, char a2);
 _DWORD *__thiscall sub_4034A0(_DWORD *_this);
 void __thiscall sub_4034B0(_DWORD *_this);
 void __thiscall sub_4034C0(int *_this, const void *a2);
-void __thiscall sub_4034D0(void **_this, const char *a2);
+void __thiscall showMessage(void **_this, const char *a2);
 int __thiscall sub_4034E0(_DWORD **_this);
 int __thiscall sub_4034F0(_DWORD **_this);
 void __stdcall sub_403500(int a1, unsigned int a2, int a3, int a4, int a5, int a6, int *a7, int *a8, float a9, float a10, int a11, int a12, int a13);
@@ -7003,7 +7003,7 @@ int dword_55E0A8[2]; // weak
 char byte_55E0B0[260]; // idb
 int (__stdcall *dword_55E1B4)(_DWORD, _DWORD, _DWORD); // weak
 int (__stdcall *dword_55E1B8)(_DWORD, _DWORD, _DWORD, _DWORD); // weak
-int dword_55E1BC; // weak
+
 int dword_55E1C0; // weak
 int (__stdcall *dword_55E1C4)(_DWORD); // weak
 int (__stdcall *dword_55E1C8)(_DWORD); // weak
@@ -11983,7 +11983,7 @@ int __thiscall sub_4066C0(_DWORD *_this, int a2, int a3)
 
 
 // 5518C0: using guessed type int dword_5518C0;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00406C70) --------------------------------------------------------
 
@@ -12225,8 +12225,8 @@ int __thiscall sub_4072F0(_DWORD *_this, _BYTE *a2, int *a3, int a4, int a5, int
   psizl.cy = v7;
   v17 = 0;
   v8 = 0;
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aSetBlankextent) == 1 )
   {
     if ( (a6 & 0x10000) != 0 )
@@ -12332,7 +12332,7 @@ LABEL_20:
   *v20 = v14;
   return result;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00407540) --------------------------------------------------------
 int __usercall sub_407540@<eax>(int a1@<ecx>, int a2@<ebx>, int a3@<edi>)
@@ -21866,7 +21866,7 @@ unsigned int __thiscall sub_4138F0(unsigned int *_this, int a2)
 
 
 // 55E1B8: using guessed type int (__stdcall *dword_55E1B8)(_DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00414940) --------------------------------------------------------
 const void **__thiscall sub_414940(unsigned int *_this, const void **a2)
@@ -23832,7 +23832,7 @@ void __thiscall sub_4155B0(_DWORD *_this, int a2)
 
 // 418E30: using guessed type void __thiscall __noreturn sub_418E30(_DWORD);
 // 55C3A0: using guessed type int dword_55C3A0;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004181F0) --------------------------------------------------------
 BOOL __thiscall sub_4181F0(_DWORD *_this, int a2)
@@ -30551,10 +30551,10 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
   if ( !*(_DWORD *)(a1 + 671960) )
   {
     v3 = (double)*(int *)(a1 + 430836);
-    HIDWORD(v15) = *(_DWORD *)(dword_55E1BC + 699168) + 2 * v14;
+    HIDWORD(v15) = *(_DWORD *)(engine + 699168) + 2 * v14;
     v4 = (double)SHIDWORD(v15);
-    HIDWORD(v15) = *(_DWORD *)(dword_55E1BC + 699172) + 2 * v13;
-    v5 = *(int (__cdecl **)(char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 4);
+    HIDWORD(v15) = *(_DWORD *)(engine + 699172) + 2 * v13;
+    v5 = *(int (__cdecl **)(char *, int))(*(_DWORD *)(engine + 697620) + 4);
     v9 = v3 / v4;
     v15 = (double)*(int *)(a1 + 430840) / (double)SHIDWORD(v15);
     if ( v5(aDisplayVirtual_0, a2) == 2 )
@@ -30576,8 +30576,8 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
       Point.x += v10;
       Point.y += v11;
     }
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayVirtual)
       && (1.0 != v9 || v15 != 1.0) )
     {
@@ -30587,8 +30587,8 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
   }
   ClientToScreen(*(HWND *)(a1 + 387924), &Point);
   if ( !*(_DWORD *)(a1 + 671960)
-    && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+    && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayVirtual_0) == 2 )
   {
     Point.x += v10;
@@ -30597,7 +30597,7 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
   return SetCursorPos(Point.x, Point.y);
 }
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00422070) --------------------------------------------------------
 
@@ -33813,7 +33813,7 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00426B60) --------------------------------------------------------
 
@@ -39108,7 +39108,7 @@ int __thiscall sub_42AE70(void *_this, const void **a2, const void **a3, int a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0042EF50) --------------------------------------------------------
 
@@ -40824,7 +40824,7 @@ int __thiscall sub_42AE70(void *_this, const void **a2, const void **a3, int a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00431CF0) --------------------------------------------------------
 
@@ -40942,7 +40942,7 @@ int __thiscall sub_42AE70(void *_this, const void **a2, const void **a3, int a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00431FC0) --------------------------------------------------------
 
@@ -41006,7 +41006,7 @@ int __thiscall sub_42AE70(void *_this, const void **a2, const void **a3, int a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00432150) --------------------------------------------------------
 
@@ -44849,7 +44849,7 @@ LABEL_37:
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00437980) --------------------------------------------------------
 
@@ -45089,7 +45089,7 @@ LABEL_37:
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004380F0) --------------------------------------------------------
 int __thiscall sub_4380F0(_DWORD *_this)
@@ -45147,7 +45147,7 @@ int __thiscall sub_4380F0(_DWORD *_this)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004382A0) --------------------------------------------------------
 int __thiscall sub_4382A0(_DWORD *_this)
@@ -45650,11 +45650,11 @@ void __thiscall sub_438C50(_DWORD *_this, int a2)
 
   if ( a2 )
   {
-    sub_409A40((_DWORD *)dword_55E1BC, FileName, 0x100u, (int)aErrorLog);
+    sub_409A40((_DWORD *)engine, FileName, 0x100u, (int)aErrorLog);
     _this[1] = CreateFileA(FileName, 0x40000000u, 1u, 0, 2u, 0x80u, 0);
   }
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00438CC0) --------------------------------------------------------
 void __thiscall sub_438CC0(_DWORD *_this, LPCVOID lpBuffer)
@@ -45672,9 +45672,9 @@ int __thiscall sub_438D00(void *_this, HWND hWnd, LPCVOID lpBuffer)
   sub_497620((int)_this, asc_5219E8);
   sub_497620((int)_this, lpBuffer);
   sub_497620((int)_this, asc_5219E4);
-  return sub_4065F0((_DWORD *)dword_55E1BC, hWnd, (LPCSTR)lpBuffer);
+  return sub_4065F0((_DWORD *)engine, hWnd, (LPCSTR)lpBuffer);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00438D40) --------------------------------------------------------
 int __thiscall sub_438D40(void *_this, HWND a2, LPCVOID lpBuffer, int a4)
@@ -45682,9 +45682,9 @@ int __thiscall sub_438D40(void *_this, HWND a2, LPCVOID lpBuffer, int a4)
   sub_497620((int)_this, asc_5219E8);
   sub_497620((int)_this, lpBuffer);
   sub_497620((int)_this, asc_5219E4);
-  return sub_40A4C0((int *)dword_55E1BC, a2, (const CHAR *)lpBuffer, a4);
+  return sub_40A4C0((int *)engine, a2, (const CHAR *)lpBuffer, a4);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00438D90) --------------------------------------------------------
 
@@ -47821,9 +47821,9 @@ char *__stdcall sub_43B830(int a1)
 //----- (0043BEA0) --------------------------------------------------------
 int __stdcall sub_43BEA0(_DWORD *a1, int a2)
 {
-  return sub_43AFE0(dword_55E1BC + 7912, a1, a2);
+  return sub_43AFE0(engine + 7912, a1, a2);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0043BEC0) --------------------------------------------------------
 void __usercall sub_43BEC0(int *a1@<ecx>, int a2@<edi>)
@@ -49199,7 +49199,7 @@ LABEL_3:
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0043DD20) --------------------------------------------------------
 
@@ -50898,7 +50898,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00441410) --------------------------------------------------------
 
@@ -51267,7 +51267,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00441E10) --------------------------------------------------------
 
@@ -52618,7 +52618,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00443B20) --------------------------------------------------------
 
@@ -52984,7 +52984,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00444350) --------------------------------------------------------
 
@@ -54243,7 +54243,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00445D70) --------------------------------------------------------
 
@@ -54628,7 +54628,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004469A0) --------------------------------------------------------
 
@@ -54943,7 +54943,7 @@ int *__userpurge sub_43E920@<eax>(int *a1@<ecx>, int a2@<edi>, char a3)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004470C0) --------------------------------------------------------
 int __thiscall sub_4470C0(int *_this, int a2, int a3, int a4, int a5)
@@ -57345,7 +57345,7 @@ LABEL_16:
 // 449F9D: conditional instruction was optimized away because eax.4>=0
 // 44A144: conditional instruction was optimized away because ecx.4>=0
 // 44A291: conditional instruction was optimized away because ecx.4>=0
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0044A3B0) --------------------------------------------------------
 int __thiscall sub_44A3B0(_DWORD *_this)
@@ -64862,7 +64862,7 @@ int __thiscall sub_450B50(_DWORD *_this)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 452330: using guessed type int ArgList;
 // 452330: using guessed type _DWORD var_70[27];
 // 452330: using guessed type _DWORD var_DC[27];
@@ -68130,7 +68130,7 @@ LABEL_6:
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004561E0) --------------------------------------------------------
 
@@ -68641,7 +68641,7 @@ int __thiscall sub_456600(_DWORD *_this, int a2, int a3, int a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00456B80) --------------------------------------------------------
 
@@ -70801,7 +70801,7 @@ LABEL_22:
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00459C50) --------------------------------------------------------
 
@@ -70895,7 +70895,7 @@ LABEL_22:
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00459EA0) --------------------------------------------------------
 int **__thiscall sub_459EA0(_DWORD *_this, int **a2, _DWORD *a3)
@@ -71187,7 +71187,7 @@ _DWORD *__thiscall sub_459F10(void *_this, _DWORD *a2, _DWORD *a3, _DWORD *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045A6E0) --------------------------------------------------------
 
@@ -71272,7 +71272,7 @@ _DWORD *__thiscall sub_459F10(void *_this, _DWORD *a2, _DWORD *a3, _DWORD *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 45A6E0: using guessed type int var_90[5];
 
 //----- (0045A910) --------------------------------------------------------
@@ -71476,7 +71476,7 @@ int __thiscall sub_45A910(_DWORD *_this, int a2, int a3, int a4)
 // 45AA12: variable 'v31' is possibly undefined
 // 45AA15: variable 'v29' is possibly undefined
 // 45AA99: variable 'v30' is possibly undefined
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045AD30) --------------------------------------------------------
 int __thiscall sub_45AD30(int _this, int a2)
@@ -71548,7 +71548,7 @@ int __thiscall sub_45AD30(int _this, int a2)
         - 1;
     v4 = v42;
   }
-  if ( v4 && *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( v4 && *(_DWORD *)(engine + 667856) == 1 )
   {
     sub_4ABB60(
       *(_DWORD **)(_this + 1040),
@@ -71748,7 +71748,7 @@ LABEL_42:
   return result;
 }
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045B2B0) --------------------------------------------------------
 int __thiscall sub_45B2B0(int _this, int a2)
@@ -71803,7 +71803,7 @@ int __thiscall sub_45B2B0(int _this, int a2)
           / 24
           - 1 )
   {
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       if ( v4 < *(_DWORD *)(*(_DWORD *)(_this + 4 * v2 + 1044) + 108) )
       {
@@ -72003,7 +72003,7 @@ int __thiscall sub_45B2B0(int _this, int a2)
   return result;
 }
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045B980) --------------------------------------------------------
 _DWORD *__thiscall sub_45B980(void *_this, _DWORD *a2, _DWORD *a3, _DWORD *a4)
@@ -72229,7 +72229,7 @@ int __thiscall sub_45BE20(int _this, int a2)
           / 24
           - 1 )
   {
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       if ( v5 >= *(_DWORD *)(*(_DWORD *)(_this + 4 * v2 + 1044) + 108) )
         return result;
@@ -72456,7 +72456,7 @@ LABEL_38:
   return result;
 }
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045C520) --------------------------------------------------------
 unsigned int __thiscall sub_45C520(int _this, char *a2)
@@ -73161,7 +73161,7 @@ int __thiscall sub_45D660(int _this, int a2, int a3, int a4, int a5, int a6, int
   v11 = *(_DWORD *)(_this + 4 * v7 + 1044);
   *(_DWORD *)(v11 + 36) = a3;
   *(_DWORD *)(v11 + 40) = a4;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     v12 = (int)(*(float *)(_this + 218592) * (double)a3 + dbl_51D7F8);
     v18 = (int)(dbl_51D7F8 + *(float *)(_this + 218596) * (double)a4);
@@ -73192,7 +73192,7 @@ int __thiscall sub_45D660(int _this, int a2, int a3, int a4, int a5, int a6, int
   return result;
 }
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045D7D0) --------------------------------------------------------
 char *__thiscall sub_45D7D0(void *_this, int a2, int a3, char *a4)
@@ -74280,7 +74280,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0045EEA0) --------------------------------------------------------
 
@@ -76208,7 +76208,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 // 51D7F8: using guessed type double dbl_51D7F8;
 // 526954: using guessed type float flt_526954;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00461A10) --------------------------------------------------------
 
@@ -77494,7 +77494,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004634B0) --------------------------------------------------------
 
@@ -78711,7 +78711,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 4634B0: using guessed type char var_410[1024];
 
 //----- (00464FD0) --------------------------------------------------------
@@ -79314,7 +79314,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00466000) --------------------------------------------------------
 
@@ -80307,7 +80307,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004675A0) --------------------------------------------------------
 
@@ -81518,7 +81518,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 
 // 51D7F8: using guessed type double dbl_51D7F8;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004691A0) --------------------------------------------------------
 
@@ -82624,7 +82624,7 @@ int __stdcall Proc(const LOGFONTA *a1, const TEXTMETRICA *a2, DWORD a3, int *a4)
 
 // 51D7F8: using guessed type double dbl_51D7F8;
 // 526954: using guessed type float flt_526954;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046AF90) --------------------------------------------------------
 
@@ -85243,7 +85243,7 @@ int __stdcall sub_46D8D0(_BYTE *a1, int a2, _DWORD *a3, int a4, _BYTE *a5, int a
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046E3E0) --------------------------------------------------------
 
@@ -85670,7 +85670,7 @@ int __stdcall sub_46D8D0(_BYTE *a1, int a2, _DWORD *a3, int a4, _BYTE *a5, int a
 // 51D7F8: using guessed type double dbl_51D7F8;
 // 526954: using guessed type float flt_526954;
 // 526A78: using guessed type double dbl_526A78;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046ECC0) --------------------------------------------------------
 int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
@@ -85885,7 +85885,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046F190) --------------------------------------------------------
 
@@ -85928,7 +85928,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046F2D0) --------------------------------------------------------
 
@@ -86353,7 +86353,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 // 51D868: using guessed type float flt_51D868;
 // 526954: using guessed type float flt_526954;
 // 526A88: using guessed type float flt_526A88;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046FA60) --------------------------------------------------------
 
@@ -86402,7 +86402,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (0046FB90) --------------------------------------------------------
 
@@ -87097,7 +87097,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 // 55D7E6: using guessed type char byte_55D7E6;
 // 55D7E7: using guessed type __int16 word_55D7E7;
 // 55D7E9: using guessed type char byte_55D7E9;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00471180) --------------------------------------------------------
 
@@ -87741,7 +87741,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 // 526A8C: using guessed type float flt_526A8C;
 // 526A90: using guessed type double dbl_526A90;
 // 526A98: using guessed type double dbl_526A98;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00471DF0) --------------------------------------------------------
 
@@ -88473,7 +88473,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 // 55D7ED: using guessed type char byte_55D7ED;
 // 55D7EE: using guessed type __int16 word_55D7EE;
 // 55D7F0: using guessed type char byte_55D7F0;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004734F0) --------------------------------------------------------
 
@@ -89102,7 +89102,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 // 526A8C: using guessed type float flt_526A8C;
 // 526A90: using guessed type double dbl_526A90;
 // 526A98: using guessed type double dbl_526A98;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 4734F0: using guessed type HDC X[5];
 
 //----- (004742F0) --------------------------------------------------------
@@ -89152,7 +89152,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00474440) --------------------------------------------------------
 
@@ -89198,7 +89198,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004745A0) --------------------------------------------------------
 
@@ -89675,7 +89675,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00474F60) --------------------------------------------------------
 
@@ -89951,7 +89951,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00475450) --------------------------------------------------------
 
@@ -90134,7 +90134,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004757F0) --------------------------------------------------------
 
@@ -90421,7 +90421,7 @@ int __stdcall sub_46ECC0(float a1, _DWORD *a2, _DWORD *a3, int a4, int a5)
 
 
 // 51D034: using guessed type int (__stdcall *GetGlyphOutline)(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00475CF0) --------------------------------------------------------
 int __thiscall sub_475CF0(_DWORD *_this, int a2, int a3)
@@ -90676,23 +90676,23 @@ _DWORD *__thiscall sub_476210(_DWORD *_this)
 //----- (00476230) --------------------------------------------------------
 int sub_476230()
 {
-  return *(_DWORD *)(dword_55E1BC + 388200);
+  return *(_DWORD *)(engine + 388200);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476240) --------------------------------------------------------
 int sub_476240()
 {
-  return *(_DWORD *)(dword_55E1BC + 671960);
+  return *(_DWORD *)(engine + 671960);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476250) --------------------------------------------------------
 int sub_476250()
 {
-  return *(_DWORD *)(dword_55E1BC + 388208);
+  return *(_DWORD *)(engine + 388208);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476260) --------------------------------------------------------
 int __stdcall sub_476260(int a1)
@@ -90700,59 +90700,59 @@ int __stdcall sub_476260(int a1)
   int result; // eax
 
   result = a1;
-  *(_DWORD *)(dword_55E1BC + 86672) = a1;
+  *(_DWORD *)(engine + 86672) = a1;
   return result;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476280) --------------------------------------------------------
 LRESULT sub_476280()
 {
-  return sub_406050(dword_55E1BC);
+  return sub_406050(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476290) --------------------------------------------------------
 int sub_476290()
 {
-  return sub_406220(dword_55E1BC);
+  return sub_406220(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762A0) --------------------------------------------------------
 int __stdcall sub_4762A0(int a1)
 {
-  return sub_413DD0(dword_55E1BC, a1);
+  return sub_413DD0(engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762B0) --------------------------------------------------------
 void __stdcall sub_4762B0(char *a1)
 {
-  sub_411560((_DWORD *)dword_55E1BC, a1);
+  sub_411560((_DWORD *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762C0) --------------------------------------------------------
 int __stdcall sub_4762C0(int a1)
 {
-  return sub_408CF0((int *)dword_55E1BC, a1);
+  return sub_408CF0((int *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762D0) --------------------------------------------------------
 int __stdcall sub_4762D0(int a1)
 {
-  return sub_408D90(dword_55E1BC, a1);
+  return sub_408D90(engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762E0) --------------------------------------------------------
 int __stdcall sub_4762E0(int a1)
 {
-  return sub_408E20(dword_55E1BC, a1);
+  return sub_408E20(engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004762F0) --------------------------------------------------------
 int sub_4762F0()
@@ -90761,12 +90761,12 @@ int sub_4762F0()
   int v1; // eax
   int v3; // ecx
 
-  v3 = dword_55E1BC;
-  v0 = (_DWORD *)dword_55E1BC;
-  v1 = *(_DWORD *)(dword_55E1BC + 699204);
+  v3 = engine;
+  v0 = (_DWORD *)engine;
+  v1 = *(_DWORD *)(engine + 699204);
   if ( (v1 & 0x400000) != 0 )
   {
-    *(_DWORD *)(dword_55E1BC + 699204) = v1 & 0xFFBFFFFF;
+    *(_DWORD *)(engine + 699204) = v1 & 0xFFBFFFFF;
     sub_406220(v3);
     if ( v0[166964] == 1 )
     {
@@ -90777,14 +90777,14 @@ int sub_4762F0()
   sub_477080(v0 + 258, 0);
   return 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476300) --------------------------------------------------------
 int __stdcall sub_476300(int a1)
 {
-  return sub_436380(dword_55E1BC, a1);
+  return sub_436380(engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476310) --------------------------------------------------------
 unsigned int __stdcall sub_476310(unsigned int a1, int a2)
@@ -90793,38 +90793,38 @@ unsigned int __stdcall sub_476310(unsigned int a1, int a2)
 
   result = a1;
   if ( a1 <= 0x1F )
-    *(_DWORD *)(dword_55E1BC + 4 * a2 + 5532) = a1;
+    *(_DWORD *)(engine + 4 * a2 + 5532) = a1;
   return result;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476330) --------------------------------------------------------
 int __stdcall sub_476330(int a1)
 {
-  return sub_4092C0((_DWORD *)dword_55E1BC, a1);
+  return sub_4092C0((_DWORD *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476340) --------------------------------------------------------
 int sub_476340()
 {
-  return *(_DWORD *)(dword_55E1BC + 20032);
+  return *(_DWORD *)(engine + 20032);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476350) --------------------------------------------------------
 int __stdcall sub_476350(int a1)
 {
-  return sub_409290((int *)dword_55E1BC, a1);
+  return sub_409290((int *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476360) --------------------------------------------------------
 int sub_476360()
 {
-  return sub_489BE0((_DWORD *)(dword_55E1BC + 697816));
+  return sub_489BE0((_DWORD *)(engine + 697816));
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476380) --------------------------------------------------------
 int __stdcall sub_476380(int a1)
@@ -90832,21 +90832,21 @@ int __stdcall sub_476380(int a1)
   int v1; // ebx
   int i; // esi
 
-  v1 = dword_55E1BC;
-  sub_4071D0((int *)dword_55E1BC, a1, 2);
+  v1 = engine;
+  sub_4071D0((int *)engine, a1, 2);
   *(_DWORD *)(v1 + 489992) = a1;
   for ( i = 0; i < 10; ++i )
     sub_4B68E0((int *)(v1 + 18664), i, a1);
   return 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004763C0) --------------------------------------------------------
 int sub_4763C0()
 {
-  return *(_DWORD *)(dword_55E1BC + 489992);
+  return *(_DWORD *)(engine + 489992);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004763D0) --------------------------------------------------------
 int __stdcall sub_4763D0(int a1)
@@ -90854,56 +90854,56 @@ int __stdcall sub_4763D0(int a1)
   int v1; // ebx
   int i; // esi
 
-  v1 = dword_55E1BC;
-  sub_4071D0((int *)dword_55E1BC, a1, 3);
+  v1 = engine;
+  sub_4071D0((int *)engine, a1, 3);
   *(_DWORD *)(v1 + 489996) = a1;
   for ( i = 0; i < 3; ++i )
     sub_4B68E0((int *)(v1 + 18664), i + 12, a1);
   return 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476420) --------------------------------------------------------
 int sub_476420()
 {
-  return *(_DWORD *)(dword_55E1BC + 489996);
+  return *(_DWORD *)(engine + 489996);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476430) --------------------------------------------------------
 int __stdcall sub_476430(int a1, int a2)
 {
-  return sub_40A8A0(dword_55E1BC, a1, a2);
+  return sub_40A8A0(engine, a1, a2);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476440) --------------------------------------------------------
 int sub_476440()
 {
-  return (*(int (__thiscall **)(int, int))(*(_DWORD *)(dword_55E1BC + 697620) + 36))(
-           dword_55E1BC + 697620,
-           dword_55E1BC + 698912);
+  return (*(int (__thiscall **)(int, int))(*(_DWORD *)(engine + 697620) + 36))(
+           engine + 697620,
+           engine + 698912);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476460) --------------------------------------------------------
 int sub_476460()
 {
-  return (*(int (__thiscall **)(int, int))(*(_DWORD *)(dword_55E1BC + 697620) + 40))(
-           dword_55E1BC + 697620,
-           dword_55E1BC + 698912);
+  return (*(int (__thiscall **)(int, int))(*(_DWORD *)(engine + 697620) + 40))(
+           engine + 697620,
+           engine + 698912);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476480) --------------------------------------------------------
 int __usercall sub_476480@<eax>(int a1@<esi>)
 {
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
-    return sub_497FE0(dword_55E1BC + 321572, a1);
+  if ( *(_DWORD *)(engine + 667856) == 1 )
+    return sub_497FE0(engine + 321572, a1);
   else
-    return sub_43AF20((_DWORD *)(dword_55E1BC + 7912));
+    return sub_43AF20((_DWORD *)(engine + 7912));
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004764B0) --------------------------------------------------------
 int sub_4764B0()
@@ -90913,10 +90913,10 @@ int sub_4764B0()
   int v3; // esi
   int v4; // ecx
 
-  v4 = dword_55E1BC;
-  v0 = (_DWORD *)dword_55E1BC;
-  v1 = *(_DWORD *)(dword_55E1BC + 699168);
-  *(_DWORD *)(dword_55E1BC + 16004) = *(_DWORD *)(dword_55E1BC + 699172);
+  v4 = engine;
+  v0 = (_DWORD *)engine;
+  v1 = *(_DWORD *)(engine + 699168);
+  *(_DWORD *)(engine + 16004) = *(_DWORD *)(engine + 699172);
   v0[4000] = v1;
   if ( !sub_43AE30((int *)(v4 + 7912)) || !sub_43C380((int)(v0 + 1978), 0) || !sub_43C470((int)(v0 + 1978)) )
     return 0;
@@ -90927,21 +90927,21 @@ int sub_4764B0()
   (*(void (__thiscall **)(_DWORD *, char *, _DWORD *))(v0[174405] + 24))(v0 + 174405, aSetGamename, v0 + 174728);
   return v3;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004764C0) --------------------------------------------------------
 BOOL sub_4764C0()
 {
-  return *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 489488) != -1;
+  return *(_DWORD *)(engine + 4 * engine->cur_script + 489488) != -1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004764E0) --------------------------------------------------------
 void __usercall sub_4764E0(int a1@<edi>)
 {
-  sub_4090F0((_DWORD *)dword_55E1BC, a1);
+  sub_4090F0((_DWORD *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004764F0) --------------------------------------------------------
 void sub_4764F0()
@@ -90951,15 +90951,15 @@ void sub_4764F0()
   int v2; // eax
   int v3; // eax
 
-  v0 = (_DWORD *)dword_55E1BC;
-  if ( *(_DWORD *)(dword_55E1BC + 388200) )
+  v0 = (_DWORD *)engine;
+  if ( *(_DWORD *)(engine + 388200) )
   {
-    *(_DWORD *)(dword_55E1BC + 388200) = 0;
+    *(_DWORD *)(engine + 388200) = 0;
   }
   else
   {
-    if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-            dword_55E1BC + 697620,
+    if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+            engine + 697620,
             aSetCoexistmess) )
       v0[97052] = 0;
     v0[97050] = 1;
@@ -90989,105 +90989,105 @@ void sub_4764F0()
     }
   }
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476500) --------------------------------------------------------
 int sub_476500()
 {
   int result; // eax
 
-  result = dword_55E1BC;
-  if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x4000000) != 0 )
-    *(_DWORD *)(dword_55E1BC + 699208) |= 0x80000000;
+  result = engine;
+  if ( (*(_DWORD *)(engine + 699204) & 0x4000000) != 0 )
+    *(_DWORD *)(engine + 699208) |= 0x80000000;
   else
-    *(_DWORD *)(dword_55E1BC + 699208) |= 0x20u;
+    *(_DWORD *)(engine + 699208) |= 0x20u;
   return result;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476530) --------------------------------------------------------
 int __stdcall sub_476530(char *a1)
 {
-  return sub_455000((_DWORD *)(dword_55E1BC + 680092), a1);
+  return sub_455000((_DWORD *)(engine + 680092), a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476550) --------------------------------------------------------
 int sub_476550()
 {
-  return *(_DWORD *)(dword_55E1BC + 681128);
+  return *(_DWORD *)(engine + 681128);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476560) --------------------------------------------------------
 char *__stdcall sub_476560(int a1)
 {
-  return sub_454FA0((_DWORD *)(dword_55E1BC + 680092), a1);
+  return sub_454FA0((_DWORD *)(engine + 680092), a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476580) --------------------------------------------------------
 int __stdcall sub_476580(int a1)
 {
-  return sub_408790((_DWORD *)dword_55E1BC, a1);
+  return sub_408790((_DWORD *)engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476590) --------------------------------------------------------
 int sub_476590()
 {
-  return sub_428A60(dword_55E1BC);
+  return sub_428A60(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004765A0) --------------------------------------------------------
 int __usercall sub_4765A0@<eax>(int a1@<ebx>)
 {
-  return sub_4350F0(dword_55E1BC, a1);
+  return sub_4350F0(engine, a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004765B0) --------------------------------------------------------
 int sub_4765B0()
 {
-  return sub_435800(dword_55E1BC);
+  return sub_435800(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004765C0) --------------------------------------------------------
 BOOL sub_4765C0()
 {
-  return *(_DWORD *)(dword_55E1BC + 699248) != 0;
+  return *(_DWORD *)(engine + 699248) != 0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004765E0) --------------------------------------------------------
 int sub_4765E0()
 {
-  return (*(_DWORD *)(dword_55E1BC + 699204) >> 26) & 1;
+  return (*(_DWORD *)(engine + 699204) >> 26) & 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476600) --------------------------------------------------------
 BOOL sub_476600()
 {
-  return *(int *)(dword_55E1BC + 699204) < 0;
+  return *(int *)(engine + 699204) < 0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476620) --------------------------------------------------------
 int sub_476620()
 {
-  return (*(_DWORD *)(dword_55E1BC + 699204) >> 28) & 1;
+  return (*(_DWORD *)(engine + 699204) >> 28) & 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476640) --------------------------------------------------------
 int sub_476640()
 {
-  return (*(_DWORD *)(dword_55E1BC + 699204) >> 22) & 1;
+  return (*(_DWORD *)(engine + 699204) >> 22) & 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476660) --------------------------------------------------------
 LRESULT __stdcall sub_476660(HWND hWnd)
@@ -91110,9 +91110,9 @@ void __usercall sub_4766D0(int a1@<edi>, int a2@<esi>)
   int *v2; // esi
   int v3; // eax
 
-  v2 = (int *)dword_55E1BC;
-  (*(int (__thiscall **)(int, char *, int, int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-    dword_55E1BC + 697620,
+  v2 = (int *)engine;
+  (*(int (__thiscall **)(int, char *, int, int))(*(_DWORD *)(engine + 697620) + 4))(
+    engine + 697620,
     aMessageReadtex,
     a1,
     a2);
@@ -91140,38 +91140,38 @@ void __usercall sub_4766D0(int a1@<edi>, int a2@<esi>)
   }
 }
 // 4766D0: could not find valid save-restore pair for esi
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004766E0) --------------------------------------------------------
 int __stdcall sub_4766E0(int a1)
 {
-  return (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 12))(
-           dword_55E1BC + 697620,
+  return (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)(engine + 697620) + 12))(
+           engine + 697620,
            aDisplayForcesc,
            a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476710) --------------------------------------------------------
 int __usercall sub_476710@<eax>(int a1@<ebx>, int a2@<edi>)
 {
-  return sub_407540(dword_55E1BC, a1, a2);
+  return sub_407540(engine, a1, a2);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476730) --------------------------------------------------------
 BOOL __stdcall sub_476730(int a1)
 {
-  return *(_DWORD *)(dword_55E1BC + 4 * a1 + 692420) != 0;
+  return *(_DWORD *)(engine + 4 * a1 + 692420) != 0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476750) --------------------------------------------------------
 char *sub_476750()
 {
-  return sub_4078E0(dword_55E1BC);
+  return sub_4078E0(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476760) --------------------------------------------------------
 
@@ -91243,16 +91243,16 @@ void __userpurge sub_476850(LONG *a1@<ecx>, int a2@<edi>, int a3, int a4)
 //----- (00476950) --------------------------------------------------------
 void __userpurge sub_476950(int a1@<edi>, int a2, int a3)
 {
-  sub_476850((LONG *)dword_55E1BC, a1, a2, a3);
+  sub_476850((LONG *)engine, a1, a2, a3);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476960) --------------------------------------------------------
 int sub_476960()
 {
-  return sub_476760(dword_55E1BC);
+  return sub_476760(engine);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476970) --------------------------------------------------------
 int __thiscall sub_476970(_DWORD *_this, const char *a2)
@@ -91283,43 +91283,43 @@ int __thiscall sub_476970(_DWORD *_this, const char *a2)
 //----- (004769F0) --------------------------------------------------------
 int __stdcall sub_4769F0(const char *a1)
 {
-  return sub_476970(*(_DWORD **)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964), a1);
+  return sub_476970(*(_DWORD **)(engine + 4 * engine->cur_script + 495964), a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476A10) --------------------------------------------------------
 int sub_476A10()
 {
   int v0; // ecx
 
-  v0 = *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964);
+  v0 = *(_DWORD *)(engine + 4 * engine->cur_script + 495964);
   return (*(_DWORD *)(v0 + 28) - *(_DWORD *)(v0 + 24)) >> 3;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476A30) --------------------------------------------------------
 int __stdcall sub_476A30(int a1)
 {
   int v1; // ecx
 
-  v1 = *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964);
+  v1 = *(_DWORD *)(engine + 4 * engine->cur_script + 495964);
   return *(_DWORD *)(v1 + 8) + *(_DWORD *)(*(_DWORD *)(v1 + 24) + 8 * a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476A60) --------------------------------------------------------
 void __stdcall sub_476A60(int a1)
 {
   int v1; // esi
 
-  v1 = dword_55E1BC;
-  (*(void (__thiscall **)(int, char *, bool))(*(_DWORD *)(dword_55E1BC + 697620) + 12))(
-    dword_55E1BC + 697620,
+  v1 = engine;
+  (*(void (__thiscall **)(int, char *, bool))(*(_DWORD *)(engine + 697620) + 12))(
+    engine + 697620,
     aMessageUseanti,
     a1 != 0);
   sub_4155B0((_DWORD *)(v1 + 85296), a1);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00476AA0) --------------------------------------------------------
 
@@ -91446,8 +91446,8 @@ int __thiscall sub_476E40(_DWORD *_this, int a2)
   struct tagJOYCAPSA pjc; // [esp+8h] [ebp-1CCh] BYREF
   struct joyinfoex_tag pji; // [esp+19Ch] [ebp-38h] BYREF
 
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aSystemLimitjoy) == 1 )
   {
 LABEL_2:
@@ -91505,7 +91505,7 @@ LABEL_2:
   }
   return 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00477000) --------------------------------------------------------
 int __thiscall sub_477000(_DWORD *_this, int a2)
@@ -110609,7 +110609,7 @@ BOOL __thiscall sub_4900F0(void *_this, char *a2, unsigned int a3)
   sub_407FD0(a2, a3, (int)DirPath);
   if ( strcmp(a2, byte_51EA3C) )
     sub_407FD0(a2, a3, (int)asc_51D6DC);
-  if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+  if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
     sub_407FD0(a2, a3, (int)aSys4regIni);
   else
     sub_407FD0(a2, a3, (int)aSys3regIni);
@@ -110624,7 +110624,7 @@ BOOL __thiscall sub_4900F0(void *_this, char *a2, unsigned int a3)
 // 49019D: conditional instruction was optimized away because edx.4!=0
 // 49022E: conditional instruction was optimized away because edx.4!=0
 // 49026E: conditional instruction was optimized away because esi.4!=0
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004903E0) --------------------------------------------------------
 int __thiscall sub_4903E0(_DWORD *_this, char *a2)
@@ -110823,9 +110823,9 @@ int __thiscall sub_490590(_DWORD *_this, int a2)
     {
       if ( (*(int (__thiscall **)(_DWORD *, char *))(*_this + 4))(_this, aDisplayScreenm) == 1 )
       {
-        *(_DWORD *)Data = *(_DWORD *)(dword_55E1BC + 699224);
-        *(_DWORD *)v63 = *(_DWORD *)(dword_55E1BC + 699228);
-        if ( GetWindowPlacement(*(HWND *)(dword_55E1BC + 387924), &wndpl) )
+        *(_DWORD *)Data = *(_DWORD *)(engine + 699224);
+        *(_DWORD *)v63 = *(_DWORD *)(engine + 699228);
+        if ( GetWindowPlacement(*(HWND *)(engine + 387924), &wndpl) )
         {
           *(_DWORD *)Data = wndpl.rcNormalPosition.left;
           *(_DWORD *)v63 = wndpl.rcNormalPosition.top;
@@ -110958,7 +110958,7 @@ int __thiscall sub_490590(_DWORD *_this, int a2)
   sub_495F50(v60);
   return 1;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 490590: using guessed type unsigned int var_3AC[25];
 
 //----- (00490F20) --------------------------------------------------------
@@ -113964,10 +113964,10 @@ int sub_496AB0()
   sub_436DA0(v12);
   LOBYTE(v26) = 1;
   sub_436BC0(v20);
-  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620, aSetRegkey);
+  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620, aSetRegkey);
   if ( !v0 )
     goto LABEL_2;
-  if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+  if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
   {
     if ( !sub_454730((int)v13, aSys4rkBin) )
       goto LABEL_18;
@@ -113977,7 +113977,7 @@ int sub_496AB0()
     goto LABEL_18;
   }
   sub_454800(v13, v14, 0x20u);
-  if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+  if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
   {
     if ( v14[0] != 1263678547 )
       goto LABEL_18;
@@ -114034,7 +114034,7 @@ LABEL_18:
   sub_454920(v13);
   return 0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 496AB0: using guessed type HANDLE var_980[2];
 // 496AB0: using guessed type _DWORD var_990[4];
 // 496AB0: using guessed type _DWORD var_958[513];
@@ -114059,7 +114059,7 @@ char *sub_496DB0()
   memset(Buffer, 0, sizeof(Buffer));
   nSize = 256;
   GetComputerNameA(Buffer, &nSize);
-  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620, aSetRegkey);
+  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620, aSetRegkey);
   v1 = v0 ^ *(_DWORD *)Buffer;
   v0 += 185273099;
   v2 = v0 ^ *(_DWORD *)&Buffer[4];
@@ -114093,7 +114093,7 @@ char *sub_496DB0()
     (unsigned __int8)(v10 + v9 + v4 + v3));
   return byte_55DEA0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00496EF0) --------------------------------------------------------
 char *sub_496EF0()
@@ -114123,8 +114123,8 @@ char *sub_496EF0()
   nSize = 256;
   GetComputerNameA(Buffer, &nSize);
   v0 = 0;
-  v1 = (char *)(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 8))(
-                 dword_55E1BC + 697620,
+  v1 = (char *)(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 8))(
+                 engine + 697620,
                  aSetVerregpos);
   v2 = *v1;
   if ( *v1 )
@@ -114194,7 +114194,7 @@ char *sub_496EF0()
     (unsigned __int8)(v13 + v17 + v8 + v9));
   return byte_55DFA0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (00497080) --------------------------------------------------------
 BOOL __cdecl sub_497080(const char *a1)
@@ -114278,7 +114278,7 @@ LABEL_24:
   memset(Buffer, 0, sizeof(Buffer));
   nSize = 256;
   GetComputerNameA(Buffer, &nSize);
-  v9 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620, aSetRegkey);
+  v9 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620, aSetRegkey);
   v10 = v9 ^ *(_DWORD *)Buffer;
   v9 += 185273099;
   v16[0] = v10;
@@ -114290,7 +114290,7 @@ LABEL_24:
   v12 = sub_436D00(v15, 12, (unsigned __int8 *)v16);
   return v13[1] == v12;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 497080: using guessed type _DWORD var_914[513];
 
 //----- (00497250) --------------------------------------------------------
@@ -114335,7 +114335,7 @@ int sub_497250()
   memset(Buffer, 0, sizeof(Buffer));
   nSize = 256;
   GetComputerNameA(Buffer, &nSize);
-  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620, aSetRegkey);
+  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620, aSetRegkey);
   v1 = v0 ^ *(_DWORD *)Buffer;
   v0 += 185273099;
   v21[0] = v1;
@@ -114343,7 +114343,7 @@ int sub_497250()
   v21[2] = (v0 + 185273099) ^ *(_DWORD *)&Buffer[8];
   Src[12] = sub_436D50(v19, 12, (unsigned __int8 *)v21);
   Src[13] = sub_436D00(v19, 12, (unsigned __int8 *)v21);
-  v11 = strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) != 0 ? 1263678291 : 1263678547;
+  v11 = strncmp(Str1, (const char *)(engine + 698904), 2u) != 0 ? 1263678291 : 1263678547;
   v12 = 1;
   v13 = 0;
   v15 = sub_436D50(v19, 56, (unsigned __int8 *)Src);
@@ -114360,7 +114360,7 @@ int sub_497250()
   sub_436DE0((int)v8, v17, v18);
   sub_454700(v10);
   LOBYTE(v23) = 1;
-  if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+  if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
     sub_454770((int)v10, aSys4rkBin);
   else
     sub_454770((int)v10, aSys3rkBin);
@@ -114375,7 +114375,7 @@ int sub_497250()
   sub_436DC0(v8);
   return 0;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 497250: using guessed type _DWORD var_994[4];
 // 497250: using guessed type _DWORD var_958[513];
 // 497250: using guessed type HANDLE var_980[2];
@@ -114434,19 +114434,19 @@ void __thiscall sub_4976A0(void *_this, const char *lpBuffer)
   int v7; // [esp+8h] [ebp-8h]
   int v8; // [esp+Ch] [ebp-4h]
 
-  v3 = dword_55E1BC->cur_script;
+  v3 = engine->cur_script;
   v7 = (int)_this;
-  if ( *(_DWORD *)(dword_55E1BC + 4 * v3 + 497112) )
+  if ( *(_DWORD *)(engine + 4 * v3 + 497112) )
   {
-    v8 = *(unsigned __int16 *)(*(_DWORD *)(*(_DWORD *)(dword_55E1BC + 4 * v3 + 497112) + 24)
+    v8 = *(unsigned __int16 *)(*(_DWORD *)(*(_DWORD *)(engine + 4 * v3 + 497112) + 24)
                              + 2
-                             * ((dword_55E1BC->frames[dword_55E1BC->cur_script].ip
-                               - dword_55E1BC->frames[dword_55E1BC->cur_script].str_table) >> 2));
+                             * ((engine->frames[engine->cur_script].ip
+                               - engine->frames[engine->cur_script].str_table) >> 2));
     v4 = (char *)operator new[](strlen(lpBuffer) + 1024);
     v5 = strlen(lpBuffer);
     v6 = sub_454FA0(
-           (_DWORD *)(dword_55E1BC + 680092),
-           dword_55E1BC->frames[dword_55E1BC->cur_script].frame_arg);
+           (_DWORD *)(engine + 680092),
+           engine->frames[engine->cur_script].frame_arg);
     sprintf_s(v4, v5 + 1024, "(%s：%d行目) %s", v6, v8, lpBuffer);
     sub_497620(v7, v4);
     operator delete[](v4);
@@ -114457,7 +114457,7 @@ void __thiscall sub_4976A0(void *_this, const char *lpBuffer)
   }
 }
 // 4976F1: conditional instruction was optimized away because %var_4.4<10000u
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004977A0) --------------------------------------------------------
 int __thiscall sub_4977A0(_DWORD *_this)
@@ -127411,7 +127411,7 @@ int __thiscall sub_4A6E00(_DWORD *_this, _DWORD *a2)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004A8120) --------------------------------------------------------
 _DWORD *__thiscall sub_4A8120(_DWORD *_this, int a2)
@@ -127896,7 +127896,7 @@ _DWORD *__thiscall sub_4A8180(_DWORD *_this, int a2)
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004A8720) --------------------------------------------------------
 
@@ -136730,7 +136730,7 @@ void __userpurge sub_4B0360(_DWORD *a1@<ecx>, int a2@<ebp>, int a3@<edi>, int a4
 // 51D860: using guessed type double dbl_51D860;
 // 51D868: using guessed type float flt_51D868;
 // 520448: using guessed type double dbl_520448;
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004B4020) --------------------------------------------------------
 
@@ -137427,7 +137427,7 @@ void __userpurge sub_4B0360(_DWORD *a1@<ecx>, int a2@<ebp>, int a3@<edi>, int a4
 
 
 
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004B4B90) --------------------------------------------------------
 
@@ -137814,13 +137814,13 @@ int __thiscall sub_4B5230(_DWORD *_this, int a2)
 int *__stdcall GetClassObject(const char *a1)
 {
   if ( !strcmp(a1, aAgeReg) )
-    return (int *)(dword_55E1BC + 697620);
+    return (int *)(engine + 697620);
   if ( !strcmp(a1, aAgeIageservice) )
     return dword_55E0A8;
   return 0;
 }
 // 55E0A8: using guessed type int dword_55E0A8[2];
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004B5390) --------------------------------------------------------
 void __thiscall sub_4B5390(float *_this)
@@ -140965,10 +140965,10 @@ HGLOBAL __cdecl sub_4B9090(HWND hWnd)
 
   RectRgn = CreateRectRgn(0, 0, 1, 1);
   UpdateRgn = GetUpdateRgn(hWnd, RectRgn, 0);
-  v3 = dword_55E1BC;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  v3 = engine;
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
-    if ( *(_DWORD *)(dword_55E1BC + 671960) )
+    if ( *(_DWORD *)(engine + 671960) )
     {
 LABEL_5:
       sub_499220((void *)(v3 + 321572));
@@ -140976,18 +140976,18 @@ LABEL_6:
       ValidateRgn(hWnd, RectRgn);
       return (HGLOBAL)DeleteObject(RectRgn);
     }
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayVirtual) )
     {
-      v3 = dword_55E1BC;
+      v3 = engine;
       goto LABEL_5;
     }
   }
   if ( UpdateRgn == 2 )
   {
     GetRgnBox(RectRgn, &rc);
-    sub_4065A0((_DWORD *)dword_55E1BC, rc.left, rc.top, rc.right, rc.bottom);
+    sub_4065A0((_DWORD *)engine, rc.left, rc.top, rc.right, rc.bottom);
     goto LABEL_6;
   }
   if ( UpdateRgn != 3 )
@@ -141002,7 +141002,7 @@ LABEL_6:
     do
     {
       rc = *Buffer;
-      sub_4065A0((_DWORD *)dword_55E1BC, Buffer->left, Buffer->top, Buffer->right, Buffer->bottom);
+      sub_4065A0((_DWORD *)engine, Buffer->left, Buffer->top, Buffer->right, Buffer->bottom);
       ++Buffer;
       ++v8;
     }
@@ -141012,7 +141012,7 @@ LABEL_6:
   DeleteObject(RectRgn);
   return GlobalFree(v6);
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004B9210) --------------------------------------------------------
 HWND __cdecl sub_4B9210(HWND hWnd)
@@ -141035,10 +141035,10 @@ __int16 __cdecl sub_4B9240(HWND hWnd)
   DWORD v2; // esi
   SHORT (__stdcall *v3)(int); // esi
 
-  LOWORD(v1) = dword_55E1BC;
-  if ( dword_55E1BC )
+  LOWORD(v1) = engine;
+  if ( engine )
   {
-    v2 = *(_DWORD *)(dword_55E1BC + 388232);
+    v2 = *(_DWORD *)(engine + 388232);
     v1 = timeGetTime() - dword_55E1D8;
     if ( v1 > v2 )
     {
@@ -141049,14 +141049,14 @@ __int16 __cdecl sub_4B9240(HWND hWnd)
         LOWORD(v1) = v3(2);
         if ( (v1 & 0xFF00) == 0 )
         {
-          LOWORD(v1) = dword_55E1BC;
-          if ( !*(_DWORD *)(dword_55E1BC + 671960) )
+          LOWORD(v1) = engine;
+          if ( !*(_DWORD *)(engine + 671960) )
           {
             v1 = dword_55E1B4(-1, hWnd, 0);
             if ( !v1 )
             {
-              sub_477080((_DWORD *)(dword_55E1BC + 1032), 1);
-              sub_408620(dword_55E1BC);
+              sub_477080((_DWORD *)(engine + 1032), 1);
+              sub_408620(engine);
               dword_55E1D8 = 0;
               LOWORD(v1) = KillTimer(hWnd, 1u);
             }
@@ -141068,7 +141068,7 @@ __int16 __cdecl sub_4B9240(HWND hWnd)
   return v1;
 }
 // 55E1B4: using guessed type int (__stdcall *dword_55E1B4)(_DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 55E1D8: using guessed type int dword_55E1D8;
 
 //----- (004B92F0) --------------------------------------------------------
@@ -141115,44 +141115,44 @@ int __stdcall sub_4B92F0(HWND hWnd, UINT Msg, signed int wParam, unsigned int lP
           OutputDebugStringA(aDestroyed);
           return 0;
         case 3u:
-          if ( dword_55E1BC )
-            sub_4066C0((_DWORD *)dword_55E1BC, (__int16)lParam, SHIWORD(lParam));
+          if ( engine )
+            sub_4066C0((_DWORD *)engine, (__int16)lParam, SHIWORD(lParam));
           return 0;
         case 6u:
           OutputDebugStringA(aWmActivate);
-          if ( dword_55E1BC )
+          if ( engine )
           {
-            if ( *(_DWORD *)(dword_55E1BC + 671960) )
-              sub_477080((_DWORD *)(dword_55E1BC + 1032), wParam == 0);
+            if ( *(_DWORD *)(engine + 671960) )
+              sub_477080((_DWORD *)(engine + 1032), wParam == 0);
             else
-              sub_477080((_DWORD *)(dword_55E1BC + 1032), 0);
-            sub_4053C0((_DWORD *)dword_55E1BC);
+              sub_477080((_DWORD *)(engine + 1032), 0);
+            sub_4053C0((_DWORD *)engine);
           }
           return DefWindowProcA(hWnd, Msg, wParam, lParam);
         case 0xFu:
-          v5 = (_DWORD *)dword_55E1BC;
-          if ( !dword_55E1BC )
+          v5 = (_DWORD *)engine;
+          if ( !engine )
             goto LABEL_26;
           if ( dword_55E2EC )
           {
-            SetCursorPos(*(_DWORD *)(dword_55E1BC + 699168) / 2, *(_DWORD *)(dword_55E1BC + 699172) / 2);
+            SetCursorPos(*(_DWORD *)(engine + 699168) / 2, *(_DWORD *)(engine + 699172) / 2);
             SetWindowPos(hWnd, HWND_MESSAGE|0x2, 0, 0, 0, 0, 3u);
-            sub_476760(dword_55E1BC);
+            sub_476760(engine);
             dword_55E2EC = 0;
             InvalidateRect(0, 0, 1);
 LABEL_25:
-            v5 = (_DWORD *)dword_55E1BC;
+            v5 = (_DWORD *)engine;
             goto LABEL_26;
           }
-          if ( !*(_DWORD *)(dword_55E1BC + 667856) )
+          if ( !*(_DWORD *)(engine + 667856) )
           {
-            v6 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            v6 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aDisplayUseivid);
-            v5 = (_DWORD *)dword_55E1BC;
+            v5 = (_DWORD *)engine;
             if ( v6 )
             {
-              if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x2000) != 0 )
+              if ( (*(_DWORD *)(engine + 699204) & 0x2000) != 0 )
                 return DefWindowProcA(hWnd, Msg, wParam, lParam);
             }
           }
@@ -141176,20 +141176,20 @@ LABEL_26:
           }
           break;
         case 0x10u:
-          v8 = dword_55E1BC;
-          if ( !dword_55E1BC )
+          v8 = engine;
+          if ( !engine )
             goto LABEL_50;
           if ( wParam == 1 )
             goto LABEL_47;
-          if ( sub_4057B0(dword_55E1BC) )
+          if ( sub_4057B0(engine) )
           {
-            v8 = dword_55E1BC;
+            v8 = engine;
 LABEL_47:
             if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(v8 + 697620) + 4))(v8 + 697620, aSetNosavedat) )
-              sub_40AAE0(dword_55E1BC);
-            sub_4761B0((_DWORD *)dword_55E1BC);
-            sub_40FDE0(dword_55E1BC);
-            sub_40B3B0((_DWORD *)dword_55E1BC, FileName, 0x100u);
+              sub_40AAE0(engine);
+            sub_4761B0((_DWORD *)engine);
+            sub_40FDE0(engine);
+            sub_40B3B0((_DWORD *)engine, FileName, 0x100u);
             DeleteFileA(FileName);
             KillTimer(hWnd, 2u);
 LABEL_50:
@@ -141202,32 +141202,32 @@ LABEL_50:
           return 1;
         case 0x1Cu:
           OutputDebugStringA(aWmActivateapp);
-          if ( dword_55E1BC )
+          if ( engine )
           {
             if ( wParam )
             {
               dword_551B3C = 1;
-              if ( !IsIconic(hWnd) && (*(_DWORD *)(dword_55E1BC + 699204) & 0x1000000) != 0 )
+              if ( !IsIconic(hWnd) && (*(_DWORD *)(engine + 699204) & 0x1000000) != 0 )
               {
-                if ( *(_DWORD *)(dword_55E1BC + 671960) )
-                  sub_476760(dword_55E1BC);
+                if ( *(_DWORD *)(engine + 671960) )
+                  sub_476760(engine);
                 else
                   dword_55E2EC = 1;
               }
             }
             else
             {
-              sub_476850((LONG *)dword_55E1BC, lParam, 0, (*(_DWORD *)(dword_55E1BC + 699204) >> 21) & 1);
+              sub_476850((LONG *)engine, lParam, 0, (*(_DWORD *)(engine + 699204) >> 21) & 1);
             }
           }
           return 0;
         case 0x20u:
-          if ( !dword_55E1BC )
+          if ( !engine )
             return 0;
-          if ( *(_DWORD *)(dword_55E1BC + 697580) == *(_DWORD *)(dword_55E1BC + 697584) )
+          if ( *(_DWORD *)(engine + 697580) == *(_DWORD *)(engine + 697584) )
             return DefWindowProcA(hWnd, Msg, wParam, lParam);
-          if ( (unsigned __int16)lParam == 1 && (*(_DWORD *)(dword_55E1BC + 699204) & 0x600000) == 0 )
-            SetCursor(*(HCURSOR *)(dword_55E1BC + 697584));
+          if ( (unsigned __int16)lParam == 1 && (*(_DWORD *)(engine + 699204) & 0x600000) == 0 )
+            SetCursor(*(HCURSOR *)(engine + 697584));
           return 1;
         case 0x24u:
           GetClientRect(hWnd, &Rect);
@@ -141245,26 +141245,26 @@ LABEL_50:
           *(_DWORD *)(lParam + 36) = v13;
           return 0;
         case 0xA0u:
-          if ( dword_55E1BC )
+          if ( engine )
           {
-            sub_4B8680(dword_55E1BC + 696548);
-            sub_405330((_DWORD *)dword_55E1BC);
+            sub_4B8680(engine + 696548);
+            sub_405330((_DWORD *)engine);
           }
           return 0;
         case 0xA3u:
-          if ( wParam == 2 && dword_55E1BC )
-            sub_4053C0((_DWORD *)dword_55E1BC);
+          if ( wParam == 2 && engine )
+            sub_4053C0((_DWORD *)engine);
           return DefWindowProcA(hWnd, Msg, wParam, lParam);
         case 0x100u:
           if ( wParam == 27 )
             PostMessageA(hWnd, 0x10u, 0, 0);
-          v4 = dword_55E1BC;
-          if ( dword_55E1BC )
+          v4 = engine;
+          if ( engine )
           {
             if ( (lParam & 0x40000000) == 0 )
             {
-              sub_4B8DF0((_DWORD *)dword_55E1BC, wParam);
-              v4 = dword_55E1BC;
+              sub_4B8DF0((_DWORD *)engine, wParam);
+              v4 = engine;
             }
             if ( wParam == 112 && (*(_BYTE *)(v4 + 489476) & 1) == 0 )
               sub_408790((_DWORD *)v4, 0);
@@ -141275,14 +141275,14 @@ LABEL_50:
       }
       return DefWindowProcA(hWnd, Msg, wParam, lParam);
     }
-    if ( !dword_55E1BC )
+    if ( !engine )
       return DefWindowProcA(hWnd, 0x104u, wParam, lParam);
-    if ( wParam == 121 && (*(_DWORD *)(dword_55E1BC + 489476) & 0x200) != 0 )
+    if ( wParam == 121 && (*(_DWORD *)(engine + 489476) & 0x200) != 0 )
       return 0;
-    if ( *(_DWORD *)(dword_55E1BC + 671960) || wParam != 18 )
+    if ( *(_DWORD *)(engine + 671960) || wParam != 18 )
       return DefWindowProcA(hWnd, 0x104u, wParam, lParam);
-    sub_477080((_DWORD *)(dword_55E1BC + 1032), 1);
-    sub_408620(dword_55E1BC);
+    sub_477080((_DWORD *)(engine + 1032), 1);
+    sub_408620(engine);
     dword_55E1D8 = 0;
     KillTimer(hWnd, 1u);
     return 0;
@@ -141291,10 +141291,10 @@ LABEL_50:
   {
     if ( Msg == 512 )
     {
-      if ( dword_55E1BC )
+      if ( engine )
       {
-        if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x200000) == 0 )
-          sub_4B86B0(dword_55E1BC + 696548);
+        if ( (*(_DWORD *)(engine + 699204) & 0x200000) == 0 )
+          sub_4B86B0(engine + 696548);
         if ( !dword_55E2E4 )
         {
           dword_55E2E4 = 1;
@@ -141319,9 +141319,9 @@ LABEL_50:
           dword_55E1D8 = timeGetTime();
           SetTimer(hWnd, 1u, 0x64u, 0);
         }
-        if ( *(int *)(dword_55E1BC + 699244) >= 0 && (dword_551B38 != (unsigned __int16)lParam || dword_551B34 != v18) )
+        if ( *(int *)(engine + 699244) >= 0 && (dword_551B38 != (unsigned __int16)lParam || dword_551B34 != v18) )
         {
-          sub_4B8D50((_DWORD *)dword_55E1BC, (unsigned __int16)lParam, v18);
+          sub_4B8D50((_DWORD *)engine, (unsigned __int16)lParam, v18);
           dword_551B38 = (unsigned __int16)lParam;
           dword_551B34 = HIWORD(lParam);
         }
@@ -141331,7 +141331,7 @@ LABEL_50:
     switch ( Msg )
     {
       case 0x111u:
-        if ( !dword_55E1BC )
+        if ( !engine )
           return 0;
         if ( (unsigned __int16)wParam == 40001 )
         {
@@ -141345,16 +141345,16 @@ LABEL_50:
         }
         return 0;
       case 0x112u:
-        v14 = dword_55E1BC;
-        if ( !dword_55E1BC )
+        v14 = engine;
+        if ( !engine )
           return DefWindowProcA(hWnd, Msg, wParam, lParam);
         v15 = wParam & 0xFFF0;
         if ( v15 == 61472 )
         {
-          if ( !*(_DWORD *)(dword_55E1BC + 671960) )
+          if ( !*(_DWORD *)(engine + 671960) )
           {
-            if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                    dword_55E1BC + 697620,
+            if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                    engine + 697620,
                     aDisplayVirtual) )
             {
 LABEL_83:
@@ -141362,7 +141362,7 @@ LABEL_83:
               RemoveMenu(SystemMenu, 0xF030u, 0);
               return DefWindowProcA(hWnd, Msg, wParam, lParam);
             }
-            v14 = dword_55E1BC;
+            v14 = engine;
           }
           *(_DWORD *)(v14 + 699204) |= 0x1000000u;
           goto LABEL_83;
@@ -141371,8 +141371,8 @@ LABEL_83:
         {
           if ( v15 == 61488 )
           {
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aDisplayForcesc) == 1 )
               return 0;
           }
@@ -141380,26 +141380,26 @@ LABEL_83:
           {
             if ( v15 != 61696 || lParam != 13 )
               return DefWindowProcA(hWnd, Msg, wParam, lParam);
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aDisplayForcesc) == 1 )
               return 0;
-            if ( !*(_DWORD *)(dword_55E1BC + 671960) )
+            if ( !*(_DWORD *)(engine + 671960) )
             {
-              sub_413DD0(dword_55E1BC, 1);
+              sub_413DD0(engine, 1);
               return 0;
             }
           }
-          sub_413DD0(dword_55E1BC, 0);
+          sub_413DD0(engine, 0);
           return 0;
         }
-        if ( *(_DWORD *)(dword_55E1BC + 671960) )
+        if ( *(_DWORD *)(engine + 671960) )
           goto LABEL_88;
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aDisplayVirtual) )
         {
-          v14 = dword_55E1BC;
+          v14 = engine;
 LABEL_88:
           *(_DWORD *)(v14 + 699204) &= ~0x1000000u;
         }
@@ -141414,8 +141414,8 @@ LABEL_88:
         {
           if ( dword_55E1C4 )
             dword_55E1C4(3);
-          if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x1000000) != 0
-            && !*(_DWORD *)(dword_55E1BC + 671960)
+          if ( (*(_DWORD *)(engine + 699204) & 0x1000000) != 0
+            && !*(_DWORD *)(engine + 671960)
             && GetForegroundWindow() == hWnd )
           {
             SendMessageA(hWnd, 0x1Cu, 1u, 0);
@@ -141428,10 +141428,10 @@ LABEL_88:
         DrawMenuBar(hWnd);
         return 0;
       case 0x119u:
-        if ( !dword_55E1BC )
+        if ( !engine )
           return DefWindowProcA(hWnd, 0x119u, wParam, lParam);
-        if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                dword_55E1BC + 697620,
+        if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                engine + 697620,
                 aSystemLimittou) & 4) != 0 )
           return DefWindowProcA(hWnd, 0x119u, wParam, lParam);
         LibraryA = LoadLibraryA(LibFileName);
@@ -141439,7 +141439,7 @@ LABEL_88:
         if ( !LibraryA )
           return DefWindowProcA(hWnd, 0x119u, wParam, lParam);
         dword_55E1D0 = (int (__stdcall *)(_DWORD))GetProcAddress(LibraryA, aClosegesturein);
-        if ( dword_55E1D0 && sub_477CE0(dword_55E1BC + 1032, lParam) )
+        if ( dword_55E1D0 && sub_477CE0(engine + 1032, lParam) )
         {
           dword_55E1D0(lParam);
           FreeLibrary((HMODULE)Point.y);
@@ -141486,17 +141486,17 @@ LABEL_211:
         }
         return 0;
       case 0x1401u:
-        if ( dword_55E1BC )
+        if ( engine )
         {
-          v24 = *(_DWORD *)(dword_55E1BC + 388228);
+          v24 = *(_DWORD *)(engine + 388228);
           if ( timeGetTime() - v24 >= 0x3E8
             && dword_551B3C
             && sub_4B9210((HWND)wParam) != hWnd
-            && !*(_DWORD *)(dword_55E1BC + 671960) )
+            && !*(_DWORD *)(engine + 671960) )
           {
-            v27 = (*(_DWORD *)(dword_55E1BC + 699204) >> 21) & 1;
+            v27 = (*(_DWORD *)(engine + 699204) >> 21) & 1;
             dword_551B3C = 0;
-            sub_476850((LONG *)dword_55E1BC, v24, 1, v27);
+            sub_476850((LONG *)engine, v24, 1, v27);
           }
         }
         return 0;
@@ -141505,14 +141505,14 @@ LABEL_211:
   }
   if ( Msg == 953 )
   {
-    if ( dword_55E1BC && wParam == 1 )
-      sub_489CE0((_DWORD *)(dword_55E1BC + 697816));
+    if ( engine && wParam == 1 )
+      sub_489CE0((_DWORD *)(engine + 697816));
     return 0;
   }
   switch ( Msg )
   {
     case 0x201u:
-      if ( !dword_55E1BC )
+      if ( !engine )
         return 0;
       dword_55E1D8 = 0;
       KillTimer(hWnd, 1u);
@@ -141520,27 +141520,27 @@ LABEL_211:
         return 0;
       goto LABEL_159;
     case 0x202u:
-      if ( !dword_55E1BC || !dword_55E1D4 )
+      if ( !engine || !dword_55E1D4 )
         return 0;
 LABEL_159:
-      sub_4B8DC0((_DWORD *)dword_55E1BC, 0);
+      sub_4B8DC0((_DWORD *)engine, 0);
       return 0;
     case 0x204u:
-      if ( dword_55E1BC )
+      if ( engine )
       {
         dword_55E1D8 = 0;
         KillTimer(hWnd, 1u);
         if ( !dword_55E1D4 )
-          sub_4B8DC0((_DWORD *)dword_55E1BC, 1);
-        if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x94800000) != 0
-          && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+          sub_4B8DC0((_DWORD *)engine, 1);
+        if ( (*(_DWORD *)(engine + 699204) & 0x94800000) != 0
+          && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aMessageRmousee) == 2 )
         {
           v20 = (HINSTANCE)GetWindowLongA(hWnd, -6);
           MenuA = LoadMenuA(v20, (LPCSTR)0x6E);
-          if ( !*(_DWORD *)(dword_55E1BC + 671960) )
-            sub_406050(dword_55E1BC);
+          if ( !*(_DWORD *)(engine + 671960) )
+            sub_406050(engine);
           Point.x = (unsigned __int16)lParam;
           Point.y = HIWORD(lParam);
           ClientToScreen(hWnd, &Point);
@@ -141548,86 +141548,86 @@ LABEL_159:
           SubMenu = GetSubMenu(MenuA, 2);
           TrackPopupMenu(SubMenu, 0, v26.x, v26.y, 0, hWnd, 0);
           DestroyMenu(MenuA);
-          if ( !*(_DWORD *)(dword_55E1BC + 671960) )
-            sub_406220(dword_55E1BC);
+          if ( !*(_DWORD *)(engine + 671960) )
+            sub_406220(engine);
         }
       }
       return 0;
     case 0x205u:
-      if ( dword_55E1BC && dword_55E1D4 )
-        sub_4B8DC0((_DWORD *)dword_55E1BC, 1);
+      if ( engine && dword_55E1D4 )
+        sub_4B8DC0((_DWORD *)engine, 1);
       return 0;
     case 0x20Au:
-      if ( !dword_55E1BC )
+      if ( !engine )
         return 0;
-      if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x90100000) != 0 )
+      if ( (*(_DWORD *)(engine + 699204) & 0x90100000) != 0 )
       {
         if ( SHIWORD(wParam) > 0 )
         {
-          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                  dword_55E1BC + 697620,
+          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                  engine + 697620,
                   aSetWheelkeyup);
           goto LABEL_147;
         }
         if ( wParam < 0 )
         {
-          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                  dword_55E1BC + 697620,
+          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                  engine + 697620,
                   aSetWheelkeydow);
           goto LABEL_147;
         }
       }
       else
       {
-        *(_DWORD *)(dword_55E1BC + 7796) += SHIWORD(wParam);
+        *(_DWORD *)(engine + 7796) += SHIWORD(wParam);
       }
       return 0;
     case 0x20Eu:
-      if ( !dword_55E1BC )
+      if ( !engine )
         return 0;
-      if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x90100000) != 0 )
+      if ( (*(_DWORD *)(engine + 699204) & 0x90100000) != 0 )
       {
         if ( SHIWORD(wParam) <= 0 )
         {
           if ( wParam >= 0 )
             return 0;
-          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                  dword_55E1BC + 697620,
+          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                  engine + 697620,
                   aSetHwheelkeydo);
         }
         else
         {
-          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                  dword_55E1BC + 697620,
+          v19 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                  engine + 697620,
                   aSetHwheelkeyup);
         }
 LABEL_147:
         if ( v19 >= 0 )
-          *(_DWORD *)(dword_55E1BC + 699208) |= 1 << v19;
+          *(_DWORD *)(engine + 699208) |= 1 << v19;
       }
       else
       {
-        *(_DWORD *)(dword_55E1BC + 7800) += SHIWORD(wParam);
+        *(_DWORD *)(engine + 7800) += SHIWORD(wParam);
       }
       return 0;
     case 0x211u:
-      if ( !dword_55E1BC )
+      if ( !engine )
         return 0;
-      sub_4034C0((int *)dword_55E1BC, aEntermenu);
-      sub_477080((_DWORD *)(dword_55E1BC + 1032), 1);
+      sub_4034C0((int *)engine, aEntermenu);
+      sub_477080((_DWORD *)(engine + 1032), 1);
       goto LABEL_177;
     case 0x212u:
-      if ( !dword_55E1BC )
+      if ( !engine )
         return 0;
-      sub_477080((_DWORD *)(dword_55E1BC + 1032), 0);
+      sub_477080((_DWORD *)(engine + 1032), 0);
 LABEL_177:
-      sub_4053C0((_DWORD *)dword_55E1BC);
+      sub_4053C0((_DWORD *)engine);
       return 0;
     case 0x240u:
-      if ( !dword_55E1BC )
+      if ( !engine )
         goto LABEL_187;
-      if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-              dword_55E1BC + 697620,
+      if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+              engine + 697620,
               aSystemLimittou) & 2) != 0 )
         goto LABEL_187;
       v23 = LoadLibraryA(LibFileName);
@@ -141635,7 +141635,7 @@ LABEL_177:
       if ( !v23 )
         goto LABEL_187;
       dword_55E1CC = (int (__stdcall *)(_DWORD))GetProcAddress(v23, aClosetouchinpu);
-      if ( dword_55E1CC && sub_477B70(dword_55E1BC + 1032, (unsigned __int16)wParam, lParam) )
+      if ( dword_55E1CC && sub_477B70(engine + 1032, (unsigned __int16)wParam, lParam) )
       {
         dword_55E1CC(lParam);
         FreeLibrary((HMODULE)Point.y);
@@ -141646,7 +141646,7 @@ LABEL_187:
       result = DefWindowProcA(hWnd, 0x240u, wParam, lParam);
       break;
     case 0x2A3u:
-      sub_405330((_DWORD *)dword_55E1BC);
+      sub_405330((_DWORD *)engine);
       dword_55E2E4 = 0;
       return 0;
     default:
@@ -141658,7 +141658,7 @@ LABEL_187:
 // 551B38: using guessed type int dword_551B38;
 // 551B3C: using guessed type int dword_551B3C;
 // 55E1B8: using guessed type int (__stdcall *dword_55E1B8)(_DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 55E1C0: using guessed type int dword_55E1C0;
 // 55E1C4: using guessed type int (__stdcall *dword_55E1C4)(_DWORD);
 // 55E1C8: using guessed type int (__stdcall *dword_55E1C8)(_DWORD);
@@ -141693,39 +141693,39 @@ HWND __usercall sub_4BA310@<eax>(int a1@<ebx>, HINSTANCE a2, HINSTANCE a3, int n
   char Destination[256]; // [esp+21Ch] [ebp-104h] BYREF
 
   sub_4B8E20(Destination, 0x100u);
-  v4 = dword_55E1BC;
-  *(_BYTE *)(dword_55E1BC + 382688) = Destination[0];
+  v4 = engine;
+  *(_BYTE *)(engine + 382688) = Destination[0];
   *(_BYTE *)(v4 + 382689) = Destination[2];
   *(_BYTE *)(v4 + 382690) = Destination[3];
   *(_WORD *)(v4 + 382691) = (unsigned __int8)Destination[4];
-  StringFormat(WindowName, 256, "%s", (const char *)(dword_55E1BC + 698912));
+  StringFormat(WindowName, 256, "%s", (const char *)(engine + 698912));
   sub_4B8EF0(Source, 0x100u);
-  strcpy_s((char *)(dword_55E1BC + 382696), 0x100u, Source);
-  if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-          dword_55E1BC + 697620,
+  strcpy_s((char *)(engine + 382696), 0x100u, Source);
+  if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+          engine + 697620,
           aSetCreateobjec) & 2) != 0 )
   {
-    v5 = dword_55E1BC;
-    *(_DWORD *)(v5 + 369532) = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                                 dword_55E1BC + 697620,
+    v5 = engine;
+    *(_DWORD *)(v5 + 369532) = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                                 engine + 697620,
                                  aSetOuterframem);
   }
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayForcesc) == 1 )
-    (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 12))(
-      dword_55E1BC + 697620,
+    (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(engine + 697620) + 12))(
+      engine + 697620,
       aDisplayScreenm,
       1);
-  v18 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-          dword_55E1BC + 697620,
+  v18 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+          engine + 697620,
           aDisplayScreenm);
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayForcesc) == 1 )
     v18 = 1;
-  v6 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  v6 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayVirtual,
          a1);
   v7 = GetSystemMetrics;
@@ -141733,30 +141733,30 @@ HWND __usercall sub_4BA310@<eax>(int a1@<ebx>, HINSTANCE a2, HINSTANCE a3, int n
   v16 = v6;
   if ( v18 )
   {
-    SystemMetrics = *(_DWORD *)(dword_55E1BC + 699168) + 2 * GetSystemMetrics(7);
+    SystemMetrics = *(_DWORD *)(engine + 699168) + 2 * GetSystemMetrics(7);
     v10 = 2 * v7(8);
     v11 = v7(15) + v10;
-    v12 = v11 + *(_DWORD *)(dword_55E1BC + 699172) + v7(4);
+    v12 = v11 + *(_DWORD *)(engine + 699172) + v7(4);
     dwStyle = -1865744384;
     hInstance = LoadMenuA(a3, (LPCSTR)0x6E);
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aSetSavewinpos) )
     {
-      v8 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-             dword_55E1BC + 697620,
+      v8 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+             engine + 697620,
              aSetWinpostop);
     }
     else
     {
       v8 = 0x80000000;
     }
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aSetSavewinpos) )
     {
-      v13 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-              dword_55E1BC + 697620,
+      v13 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+              engine + 697620,
               aSetWinposleft);
     }
     else
@@ -141785,13 +141785,13 @@ HWND __usercall sub_4BA310@<eax>(int a1@<ebx>, HINSTANCE a2, HINSTANCE a3, int n
              hInstance,
              a2,
              0);
-  if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-          dword_55E1BC + 697620,
+  if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+          engine + 697620,
           aDisplayLimitae) & 1) != 0 )
     goto LABEL_20;
   if ( !v16
-    || ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-          dword_55E1BC + 697620,
+    || ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+          engine + 697620,
           aDisplayLimitae) & 2) != 0 )
   {
     if ( v18 )
@@ -141807,7 +141807,7 @@ LABEL_21:
   UpdateWindow(Window);
   return Window;
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 
 //----- (004BA6B0) --------------------------------------------------------
 int sub_4BA6B0()
@@ -141826,26 +141826,26 @@ int sub_4BA6B0()
 
   sub_454700(v8);
   v11 = 0;
-  sub_40B3B0((_DWORD *)dword_55E1BC, FileName, 0x100u);
+  sub_40B3B0((_DWORD *)engine, FileName, 0x100u);
   if ( !sub_454730((int)v8, FileName) )
     goto LABEL_11;
   sub_454710(v8);
-  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  v0 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aSetCreateobjec);
-  v1 = dword_55E1BC + 697620;
+  v1 = engine + 697620;
   v2 = (v0 & 2) == 0;
-  v3 = *(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4);
+  v3 = *(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4);
   if ( v2 )
   {
     v3(v1, aDisplayScreenm);
     v5 = aHighColor;
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayFullscr) != 32 )
       v5 = aTrueColor;
-    v6 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    v6 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayFullscr);
     StringFormat(Text, 2048, asc_52DA08, v5, v6 != 32 ? 32 : 16);
   }
@@ -141892,7 +141892,7 @@ LABEL_11:
     return 0;
   }
 }
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 4BA6B0: using guessed type HANDLE var_918[2];
 
 //----- (004BA890) --------------------------------------------------------
@@ -142009,7 +142009,7 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
   else
     v9 = 0;
   LOBYTE(v71) = 0;
-  dword_55E1BC = v9;
+  engine = v9;
   v10 = operator new(0xCu);
   v59 = v10;
   LOBYTE(v71) = 2;
@@ -142041,18 +142041,18 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     }
   }
   if ( sub_401B40(v11, aB, &MaxCount) )
-    *(_DWORD *)(dword_55E1BC + 699204) |= 0x80000u;
-  sub_4B8D00((CHAR *)dword_55E1BC);
-  if ( !sub_414AC0(dword_55E1BC, 0, aSys4iniBin) && !sub_414AC0(dword_55E1BC, 0, aSys3iniBin) )
+    *(_DWORD *)(engine + 699204) |= 0x80000u;
+  sub_4B8D00((CHAR *)engine);
+  if ( !sub_414AC0(engine, 0, aSys4iniBin) && !sub_414AC0(engine, 0, aSys3iniBin) )
   {
     MessageBoxA(0, aEE, byte_51EA3C, 0x10u);
     if ( v11 )
       (*(void (__thiscall **)(_DWORD *, int))*v11)(v11, 1);
-    if ( dword_55E1BC )
-      (**(void (__thiscall ***)(int, int))dword_55E1BC)(dword_55E1BC, 1);
+    if ( engine )
+      (**(void (__thiscall ***)(int, int))engine)(engine, 1);
     goto LABEL_26;
   }
-  if ( sub_418940((_DWORD *)dword_55E1BC) )
+  if ( sub_418940((_DWORD *)engine) )
     goto LABEL_26;
   v14 = sub_401B40(v11, aRpath, &MaxCount);
   if ( v14 )
@@ -142065,8 +142065,8 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     }
     strncpy_s(Destination, 0x100u, v14, v15);
     Destination[MaxCount] = 0;
-    (*(void (__thiscall **)(int, char *, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 16))(
-      dword_55E1BC + 697620,
+    (*(void (__thiscall **)(int, char *, char *))(*(_DWORD *)(engine + 697620) + 16))(
+      engine + 697620,
       aSetRegrootpath,
       Destination);
   }
@@ -142081,8 +142081,8 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     }
     strncpy_s(Destination, 0x100u, v16, v17);
     Destination[MaxCount] = 0;
-    (*(void (__thiscall **)(int, char *, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 16))(
-      dword_55E1BC + 697620,
+    (*(void (__thiscall **)(int, char *, char *))(*(_DWORD *)(engine + 697620) + 16))(
+      engine + 697620,
       aSetRegsubkey,
       Destination);
   }
@@ -142097,17 +142097,17 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     }
     strncpy_s(Destination, 0x100u, v18, v19);
     Destination[MaxCount] = 0;
-    v20 = *(_DWORD *)(dword_55E1BC + 697620);
+    v20 = *(_DWORD *)(engine + 697620);
     v21 = atoi(Destination);
-    (*(void (__thiscall **)(int, char *, int))(v20 + 12))(dword_55E1BC + 697620, aSetAutolinefee, v21);
+    (*(void (__thiscall **)(int, char *, int))(v20 + 12))(engine + 697620, aSetAutolinefee, v21);
   }
-  sub_476190((_DWORD *)dword_55E1BC);
-  if ( sub_418940((_DWORD *)dword_55E1BC) )
+  sub_476190((_DWORD *)engine);
+  if ( sub_418940((_DWORD *)engine) )
     goto LABEL_26;
-  sub_40AEE0(dword_55E1BC);
-  if ( sub_418940((_DWORD *)dword_55E1BC) )
+  sub_40AEE0(engine);
+  if ( sub_418940((_DWORD *)engine) )
     goto LABEL_26;
-  sub_40B3B0((_DWORD *)dword_55E1BC, FileName, 0x100u);
+  sub_40B3B0((_DWORD *)engine, FileName, 0x100u);
   if ( sub_401B40(v11, off_52DF9C, &MaxCount) )
   {
     StringFormat(CommandLine, 256, "AGE.EXE %s", (const char *)hWnd + 4);
@@ -142130,11 +142130,11 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     dword_55E1B4(9, 0, &nCmdShow);
     if ( v11 )
       (*(void (__thiscall **)(_DWORD *, int))*v11)(v11, 1);
-    v27 = dword_55E1BC;
-    if ( !dword_55E1BC )
+    v27 = engine;
+    if ( !engine )
       goto LABEL_120;
 LABEL_119:
-    (**(void (__thiscall ***)(int, int))dword_55E1BC)(v27, 1);
+    (**(void (__thiscall ***)(int, int))engine)(v27, 1);
     goto LABEL_120;
   }
   v24 = sub_401B40(v11, aUninstall, &MaxCount);
@@ -142152,10 +142152,10 @@ LABEL_119:
       MessageBoxA(0, aE_3, byte_51EA3C, 0x10u);
     goto LABEL_52;
   }
-  if ( !sub_418940((_DWORD *)dword_55E1BC) )
+  if ( !sub_418940((_DWORD *)engine) )
   {
-    v26 = (HWND)(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                  dword_55E1BC + 697620,
+    v26 = (HWND)(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                  engine + 697620,
                   aSetRcversion);
     if ( v26 && v26 != v63[5] )
     {
@@ -142163,8 +142163,8 @@ LABEL_119:
 LABEL_52:
       if ( v11 )
         (*(void (__thiscall **)(_DWORD *, int))*v11)(v11, 1);
-      if ( dword_55E1BC )
-        (**(void (__thiscall ***)(int, int))dword_55E1BC)(dword_55E1BC, 1);
+      if ( engine )
+        (**(void (__thiscall ***)(int, int))engine)(engine, 1);
       v71 = -1;
       goto LABEL_121;
     }
@@ -142178,18 +142178,18 @@ LABEL_52:
       v71 = -1;
       goto LABEL_121;
     }
-    if ( sub_418940((_DWORD *)dword_55E1BC) )
+    if ( sub_418940((_DWORD *)engine) )
       goto LABEL_26;
-    if ( sub_4084E0((_DWORD *)dword_55E1BC) < -1 )
+    if ( sub_4084E0((_DWORD *)engine) < -1 )
     {
       if ( v11 )
         (*(void (__thiscall **)(_DWORD *, int))*v11)(v11, 1);
-      v27 = dword_55E1BC;
-      if ( !dword_55E1BC )
+      v27 = engine;
+      if ( !engine )
         goto LABEL_120;
       goto LABEL_119;
     }
-    if ( sub_418940((_DWORD *)dword_55E1BC) )
+    if ( sub_418940((_DWORD *)engine) )
     {
 LABEL_120:
       v71 = -1;
@@ -142200,7 +142200,7 @@ LABEL_120:
     sub_454770((int)v62, FileName);
     sub_454710(v62);
     dword_55E1C0 = 1;
-    *(_DWORD *)(dword_55E1BC + 388224) = sub_48E620((int)v63);
+    *(_DWORD *)(engine + 388224) = sub_48E620((int)v63);
     v54 = nCmdShow;
     v28 = (HINSTANCE)sub_48E620((int)v63);
     v29 = sub_4BA310(0, (HINSTANCE)v61, v28, v54);
@@ -142210,18 +142210,18 @@ LABEL_120:
       goto LABEL_71;
     j_ImmAssociateContext(v29, 0);
     dword_55E1C0 = 0;
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayScreenm) )
     {
       Menu = GetMenu(v30);
       dword_55E1B8(1, v30, Menu, 0);
       DrawMenuBar(v30);
     }
-    *(_DWORD *)(dword_55E1BC + 387924) = v30;
+    *(_DWORD *)(engine + 387924) = v30;
     if ( sub_401B40(v11, aNh, &MaxCount) )
-      (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 12))(
-        dword_55E1BC + 697620,
+      (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(engine + 697620) + 12))(
+        engine + 697620,
         aSetDisablehook,
         1);
     v33 = sub_401B40(v11, aD_6, &MaxCount);
@@ -142235,7 +142235,7 @@ LABEL_120:
       }
       strncpy_s(Destination, 0x100u, v33, v34);
       Destination[MaxCount] = 0;
-      sub_4350B0((_DWORD *)dword_55E1BC, (int)Destination);
+      sub_4350B0((_DWORD *)engine, (int)Destination);
       v35 = sub_401B40(v11, aDof, &MaxCount);
       if ( v35 )
       {
@@ -142303,7 +142303,7 @@ LABEL_120:
         sub_4350E0((int)Destination);
       }
     }
-    else if ( sub_4350B0((_DWORD *)dword_55E1BC, 0) )
+    else if ( sub_4350B0((_DWORD *)engine, 0) )
     {
       sub_4350E0(0);
       sub_4350E0(0);
@@ -142312,12 +142312,12 @@ LABEL_120:
     }
     if ( v11 )
       (*(void (__thiscall **)(_DWORD *, int))*v11)(v11, 1);
-    v46 = sub_417800(dword_55E1BC, v44, v61, v30);
-    v31 = (void (__thiscall ***)(_DWORD, int))dword_55E1BC;
+    v46 = sub_417800(engine, v44, v61, v30);
+    v31 = (void (__thiscall ***)(_DWORD, int))engine;
     if ( !v46 )
       goto LABEL_72;
-    dword_55E1D4 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                     dword_55E1BC + 697620,
+    dword_55E1D4 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                     engine + 697620,
                      aSetClickonup);
     v47 = LoadLibraryA;
     LibraryA = LoadLibraryA(aKernel32Dll);
@@ -142334,22 +142334,22 @@ LABEL_120:
     if ( v50 )
       dword_55E1C8 = (int (__stdcall *)(_DWORD))GetProcAddress(v50, aTrackmouseeven);
     v51 = sub_496AB0();
-    (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(dword_55E1BC + 697620) + 20))(
-      dword_55E1BC + 697620,
+    (*(void (__thiscall **)(int, char *, int))(*(_DWORD *)(engine + 697620) + 20))(
+      engine + 697620,
       aSetIsreggist,
       v51);
-    if ( !sub_418940((_DWORD *)dword_55E1BC) && sub_40ED40(dword_55E1BC, v52, hWnd, 0) == 1 )
+    if ( !sub_418940((_DWORD *)engine) && sub_40ED40(engine, v52, hWnd, 0) == 1 )
     {
-      *(_DWORD *)(dword_55E1BC + 699204) &= ~0x1000000u;
-      if ( !sub_418940((_DWORD *)dword_55E1BC) )
+      *(_DWORD *)(engine + 699204) &= ~0x1000000u;
+      if ( !sub_418940((_DWORD *)engine) )
       {
         SetTimer(hWnd, 2u, 0x2710u, 0);
-        sub_412290(dword_55E1BC);
+        sub_412290(engine);
       }
       goto LABEL_74;
     }
 LABEL_71:
-    v31 = (void (__thiscall ***)(_DWORD, int))dword_55E1BC;
+    v31 = (void (__thiscall ***)(_DWORD, int))engine;
 LABEL_72:
     if ( v31 )
       (**v31)(v31, 1);
@@ -142369,7 +142369,7 @@ LABEL_121:
 // 4BB4CC: variable 'v52' is possibly undefined
 // 55E1B4: using guessed type int (__stdcall *dword_55E1B4)(_DWORD, _DWORD, _DWORD);
 // 55E1B8: using guessed type int (__stdcall *dword_55E1B8)(_DWORD, _DWORD, _DWORD, _DWORD);
-// 55E1BC: using guessed type int dword_55E1BC;
+// 55E1BC: using guessed type Engine *engine;
 // 55E1C0: using guessed type int dword_55E1C0;
 // 55E1C4: using guessed type int (__stdcall *dword_55E1C4)(_DWORD);
 // 55E1C8: using guessed type int (__stdcall *dword_55E1C8)(_DWORD);

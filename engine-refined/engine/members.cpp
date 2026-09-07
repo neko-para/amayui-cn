@@ -178,12 +178,26 @@ void Engine::sub_4034C0(int *_this, const void *a2)
 }
 
 
-/* ===== [stained] sub_4034D0  状态: UNKNOWN =====
- * Engine 成员函数  → sub_4034D0
+/* ===== [x] sub_4034D0  →  showMessage                  状态: PARTIAL =====
+ * Engine 成员函数  →  Engine::showMessage
  * raw 行区间 [9433, 9436]
- * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
+ * 分析结论（已读体）: 引擎「显示/报告运行期消息」的薄封装 —— `sub_4976A0(_this[1], a2)`。
+ *   - a2 = 待显示文本：引擎内几乎全是错误/提示串（如 bit-set/reset/check-bit 的"位号越界"
+ *     串 aSetbit/aRembit/aGetbit；错误/读取失败等文案）。
+ *   - `_this[1]`（字节 0x4，vftable 之后的首个子对象指针，作为「消息输出/日志对象」）传 sub_4976A0。
+ *   - 下钻 sub_4976A0（@114428，remaining-code.cpp）: 源码定位上下文（全局游戏对象 engine +
+ *     当前脚本行 v8 = msg[+24] 处行号、sub_454FA0(_this+680092, …) 取当前函数名 v6）存在时用
+ *     sprintf_s 拼前导 "(%s：%d行目) %s"，否则原样；随后统一 sub_497620（@114402）输出。
+ *   - sub_497620: 先试 _this+1040 处的写出函数指针（由 _this+1056 标志决定是否可用），
+ *     不可用回退 sub_438CC0 输出。
+ * 故本函数 = 引擎统一的运行期消息/错误报告入口（配合 StringFormat 构串后调用）。
+ * 遗留（故标 PARTIAL）:
+ *   - 未建模字段 `_this[1]`（0x4 消息输出对象指针，**待确认**）；
+ *   - 调用未分析 sub_4976A0（其内部再调未分析 sub_454FA0 / sub_497620 / sub_438CC0）。
+ * 兄弟: sub_4034C0（members.cpp 175）= 不经 sub_4976A0 加注释、直接 sub_497620 的原样变体。
+ * 证据: engine/天结_unpacked.exe_utf8.c raw 9433；调用例 raw 39414(bit-set)、27445。
  */
-void Engine::sub_4034D0(void **_this, const char *a2)
+void Engine::showMessage(void **_this, const char *a2)
 {
   sub_4976A0(_this[1], a2);
 }
@@ -1811,8 +1825,8 @@ int Engine::sub_406730(int _this, HWND hWnd)
       this->sub_4065F0( hWnd, aDirectxgraphic);
       return 0;
     }
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayVirtual) )
     {
       GetClientRect(*(HWND *)(_this + 387924), (LPRECT)(_this + 430828));
@@ -1821,8 +1835,8 @@ int Engine::sub_406730(int _this, HWND hWnd)
     {
       *(_DWORD *)(_this + 430828) = 0;
       *(_DWORD *)(_this + 430832) = 0;
-      *(_DWORD *)(_this + 430836) = *(_DWORD *)(dword_55E1BC + 699168);
-      *(_DWORD *)(_this + 430840) = *(_DWORD *)(dword_55E1BC + 699172);
+      *(_DWORD *)(_this + 430836) = *(_DWORD *)(engine + 699168);
+      *(_DWORD *)(_this + 430840) = *(_DWORD *)(engine + 699172);
     }
     v21 = *(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4);
     *(_DWORD *)(_this + 369508) = *(_DWORD *)(_this + 671960);
@@ -8770,14 +8784,14 @@ LABEL_12:
           v13 = GetSystemMetrics;
           v56 = 2 * GetSystemMetrics(8);
           v56 += v13(15);
-          v42 = v56 + *(_DWORD *)(dword_55E1BC + 699172) + v13(4);
+          v42 = v56 + *(_DWORD *)(engine + 699172) + v13(4);
           v14 = v13(7);
           SetWindowPos(
             *(HWND *)(_this + 387924),
             (HWND)0xFFFFFFFE,
             Rect.left,
             Rect.top,
-            *(_DWORD *)(dword_55E1BC + 699168) + 2 * v14,
+            *(_DWORD *)(engine + 699168) + 2 * v14,
             v42,
             0x20u);
           MenuA = LoadMenuA(*(HINSTANCE *)(_this + 388224), (LPCSTR)0x6E);
@@ -8835,8 +8849,8 @@ LABEL_12:
         }
         if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSetCreateobjec) & 2) == 0 )
           goto LABEL_74;
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aDisplayVirtual) )
         {
           GetClientRect(*(HWND *)(_this + 387924), (LPRECT)(_this + 430828));
@@ -8847,9 +8861,9 @@ LABEL_12:
         {
           *(_DWORD *)(_this + 430828) = 0;
           *(_DWORD *)(_this + 430832) = 0;
-          *(_DWORD *)(_this + 430836) = *(_DWORD *)(dword_55E1BC + 699168);
+          *(_DWORD *)(_this + 430836) = *(_DWORD *)(engine + 699168);
           v19 = *(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4);
-          *(_DWORD *)(_this + 430840) = *(_DWORD *)(dword_55E1BC + 699172);
+          *(_DWORD *)(_this + 430840) = *(_DWORD *)(engine + 699172);
           if ( (v19(_this + 697620, aDisplayLimitae) & 1) == 0 )
           {
             if ( *(_DWORD *)(_this + 671960) )
@@ -10826,9 +10840,9 @@ int __fastcall Engine::sub_417800(int a1, int a2, int a3, HWND a4)
     sub_498350((_DWORD *)(a1 + 321572), &pFileView, &hFile);
     v84 = *(int *)(a1 + 671960);
     p_hFile = (DWORD *)hFile;
-    v54 = *(char **)(dword_55E1BC + 699172);
-    v55 = *(char **)(dword_55E1BC + 699168);
-    lpText = (LPCSTR)(dword_55E1BC + 697620);
+    v54 = *(char **)(engine + 699172);
+    v55 = *(char **)(engine + 699168);
+    lpText = (LPCSTR)(engine + 697620);
     v69 = (int)pFileView;
     v68 = (int)v54;
     v56 = *(_DWORD *)(a1 + 697620);
@@ -10838,9 +10852,9 @@ int __fastcall Engine::sub_417800(int a1, int a2, int a3, HWND a4)
     sub_404E20(a1 + 51904, v84, v58, (int)aDisplayVirtual_0, (int)v67, v68, v69, (int)p_hFile);
     v84 = *(int *)(a1 + 671960);
     p_hFile = (DWORD *)hFile;
-    v59 = *(char **)(dword_55E1BC + 699172);
-    v60 = *(char **)(dword_55E1BC + 699168);
-    lpText = (LPCSTR)(dword_55E1BC + 697620);
+    v59 = *(char **)(engine + 699172);
+    v60 = *(char **)(engine + 699168);
+    lpText = (LPCSTR)(engine + 697620);
     v69 = (int)pFileView;
     v68 = (int)v59;
     v61 = *(_DWORD *)(a1 + 697620);
@@ -14382,7 +14396,7 @@ void Engine::sub_41D6A0(int _this)
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefwpType01E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14421,7 +14435,7 @@ void Engine::sub_41D780(int _this)
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefblType01E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14460,7 +14474,7 @@ void Engine::sub_41D860(int _this)
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefbl2Type01);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14499,7 +14513,7 @@ void Engine::sub_41D940(int _this)
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 2 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefskType02E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14538,7 +14552,7 @@ void Engine::sub_41DA20(int _this)
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 4 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefrbType04E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14694,7 +14708,7 @@ void Engine::sub_41DBA0(int _this)
         v10,
         v42,
         v11);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
       return;
     }
   }
@@ -14761,7 +14775,7 @@ LABEL_22:
     {
       v16 = sub_401A60((char *)v14);
       StringFormat((char *)(this->message_buf), 1024, "関数：ComEfCA エラー：%s\r\n", v16);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
       (*(void (__thiscall **)(_DWORD *, int))*v14)(v14, 1);
       sub_455C60(v39, *(int *)v40);
     }
@@ -14769,7 +14783,7 @@ LABEL_22:
   else
   {
     StringFormat((char *)(this->message_buf), 1024, aComefca);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     sub_455C60(v39, *(int *)v40);
   }
 }
@@ -14851,7 +14865,7 @@ void Engine::sub_41E0A0(int _this)
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 1 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComeflpType01E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14891,7 +14905,7 @@ void Engine::sub_41E180(int _this)
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 5 )
   {
     StringFormat((char *)(this->message_buf), 1024, aComefrlType05E);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -16396,7 +16410,7 @@ void Engine::sub_41FF60(int _this)
     else
     {
       StringFormat((char *)(this->message_buf), 1024, aGetautomessp);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -16425,7 +16439,7 @@ void Engine::sub_420000(int _this)
     else
     {
       StringFormat((char *)(this->message_buf), 1024, aSettb);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -17332,7 +17346,7 @@ void Engine::sub_421070(int _this)
     else
     {
       sprintf_s((char *const)(this->message_buf), 0x400u, aSetvolume);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -17382,7 +17396,7 @@ void Engine::sub_421200(int _this)
   else
   {
     StringFormat((char *)(this->message_buf), 1024, aSetsoundmode);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
 }
 
@@ -18064,7 +18078,7 @@ void Engine::sub_422150(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aResetq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18100,7 +18114,7 @@ void Engine::sub_422240(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aAddq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18128,7 +18142,7 @@ void Engine::sub_4222B0(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aResetstack);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18159,7 +18173,7 @@ void Engine::sub_4223A0(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aPush);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18184,7 +18198,7 @@ void Engine::sub_422410(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aCgnumber);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18403,7 +18417,7 @@ void Engine::sub_4224E0(int _this)
   else
   {
     StringFormat((char *)(this->message_buf), 1024, aCgnumber);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
 }
 
@@ -18422,7 +18436,7 @@ void Engine::sub_422860(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aRewindq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -18445,7 +18459,7 @@ void Engine::sub_4228C0(int _this)
   if ( (unsigned int)this->readIntOperand_41BF50( 1) > 0x10 )
   {
     StringFormat((char *)(this->message_buf), 1024, aGetmeswina);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -20227,7 +20241,7 @@ void Engine::sub_424970(int _this)
   else
   {
     sprintf_s((char *const)(this->message_buf), 0x400u, aCgnumber);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
 }
 
@@ -21413,7 +21427,7 @@ void Engine::sub_426420(int _this)
   if ( v2 > 0xA )
   {
     sprintf_s((char *const)(this->message_buf), 0x400u, aCgnumber);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -21469,7 +21483,7 @@ void Engine::sub_426540(int _this)
     else
     {
       sprintf_s((char *const)(this->message_buf), 0x400u, aGetautomespi);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -21809,7 +21823,7 @@ BOOL Engine::sub_426B20(_DWORD *_this)
 
   this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
-  return sub_407B20((_DWORD *)dword_55E1BC, _this[96981], v2);
+  return sub_407B20((_DWORD *)engine, _this[96981], v2);
 }
 
 
@@ -24748,7 +24762,7 @@ void Engine::sub_42D2F0(int _this)
     else
     {
       StringFormat((char *)(this->message_buf), 1024, aGetautomessp);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -25439,7 +25453,7 @@ void Engine::sub_42E540(int _this)
     else
     {
       sprintf_s((char *const)(this->message_buf), 0x400u, aGetvolume);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -25500,7 +25514,7 @@ LABEL_12:
     return;
   }
   StringFormat((char *)(this->message_buf), 1024, aGetsoundmode);
-  this->sub_4034D0( (const char *)(this->message_buf));
+  this->showMessage( (const char *)(this->message_buf));
 }
 
 
@@ -25944,14 +25958,14 @@ int Engine::sub_42EE10(_DWORD *_this)
     x = Point.x;
     v14 = v3;
     y = Point.y;
-    v13 = *(float *)(dword_55E1BC + 699172);
-    v12 = *(float *)(dword_55E1BC + 699168);
-    v5 = dword_55E1BC + 697620;
+    v13 = *(float *)(engine + 699172);
+    v12 = *(float *)(engine + 699168);
+    v5 = engine + 697620;
     v8 = _this[107707];
     v9 = _this[107708];
     v10 = _this[107709];
     v11 = _this[107710];
-    v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620);
+    v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620);
     v7 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)v5 + 4))(v5, aDisplayVirtual, v6);
     sub_403500(v7, (unsigned int)aDisplayVirtual_0, v8, v9, v10, v11, &x, &y, v12, v13, v4, v14, v15);
     Point.y = y;
@@ -26223,7 +26237,7 @@ void Engine::sub_42F810(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aGetq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -26268,7 +26282,7 @@ void Engine::sub_42F990(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aPop);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -26310,7 +26324,7 @@ void Engine::sub_42FA20(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aAcquireq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -26350,7 +26364,7 @@ void Engine::sub_42FAC0(int _this)
   if ( v2 > 0xA )
   {
     StringFormat((char *)(this->message_buf), 1024, aTotalq);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -27191,7 +27205,7 @@ void Engine::sub_431110(int _this)
     else
     {
       sprintf_s((char *const)(this->message_buf), 0x400u, aGetautomespi);
-      this->sub_4034D0( (const char *)(this->message_buf));
+      this->showMessage( (const char *)(this->message_buf));
     }
   }
   else
@@ -27358,7 +27372,7 @@ int Engine::sub_431270(void **_this)
       return v18(v15);
     }
   }
-  this->sub_4034D0( asc_520830);
+  this->showMessage( asc_520830);
   if ( v4 == 1 )
     DeleteObject(hrgnDst);
   return this->writeIntOperand_42B4B0( 1, 0);
@@ -27434,14 +27448,14 @@ int Engine::sub_431460(void **_this)
     }
     else
     {
-      this->sub_4034D0( asc_520830);
+      this->showMessage( asc_520830);
       DeleteObject(ho);
       return this->writeIntOperand_42B4B0( 1, 0);
     }
   }
   else
   {
-    this->sub_4034D0( asc_520858);
+    this->showMessage( asc_520858);
     return this->writeIntOperand_42B4B0( 1, 0);
   }
 }
@@ -27533,7 +27547,7 @@ int Engine::sub_4316E0(void **_this)
       return v16(v13);
     }
   }
-  this->sub_4034D0( asc_520858);
+  this->showMessage( asc_520858);
   if ( v5 == 1 )
     DeleteObject(hrgnDst);
   return this->writeIntOperand_42B4B0( 1, 0);
@@ -27575,7 +27589,7 @@ int Engine::sub_4318A0(void **_this)
   }
   else
   {
-    this->sub_4034D0( asc_520858);
+    this->showMessage( asc_520858);
     return this->writeIntOperand_42B4B0( 1, 0);
   }
 }
@@ -27686,14 +27700,14 @@ int Engine::sub_431BA0(_DWORD *_this)
   x = Point.x;
   v14 = v3;
   y = Point.y;
-  v13 = *(float *)(dword_55E1BC + 699172);
-  v12 = *(float *)(dword_55E1BC + 699168);
-  v5 = dword_55E1BC + 697620;
+  v13 = *(float *)(engine + 699172);
+  v12 = *(float *)(engine + 699168);
+  v5 = engine + 697620;
   v8 = _this[107707];
   v9 = _this[107708];
   v10 = _this[107709];
   v11 = _this[107710];
-  v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620);
+  v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620);
   v7 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)v5 + 4))(v5, aDisplayVirtual, v6);
   sub_403500(v7, (unsigned int)aDisplayVirtual_0, v8, v9, v10, v11, &x, &y, v12, v13, v4, v14, v15);
   Point.x = x;
@@ -27786,16 +27800,16 @@ void Engine::sub_431CF0(_DWORD *_this)
           x = v32[v8].x;
           v12 = _this[167990];
           v37 = v11;
-          v34 = dword_55E1BC + 697620;
+          v34 = engine + 697620;
           v23 = v10;
           v22 = v12;
-          v21 = *(float *)(dword_55E1BC + 699172);
-          v20 = *(float *)(dword_55E1BC + 699168);
+          v21 = *(float *)(engine + 699172);
+          v20 = *(float *)(engine + 699168);
           v16 = _this[107707];
           v17 = _this[107708];
           v18 = _this[107709];
           v19 = _this[107710];
-          v13 = (*(int (__thiscall **)(int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620);
+          v13 = (*(int (__thiscall **)(int))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620);
           v14 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)v34 + 4))(v34, aDisplayVirtual, v13);
           sub_403500(v14, (unsigned int)aDisplayVirtual_0, v16, v17, v18, v19, &x, &v37, v20, v21, v22, v23, v24);
           v15 = v37;
@@ -27881,14 +27895,14 @@ int Engine::sub_432000(_DWORD *_this)
   x = Point.x;
   v14 = v3;
   y = Point.y;
-  v13 = *(float *)(dword_55E1BC + 699172);
-  v12 = *(float *)(dword_55E1BC + 699168);
-  v5 = dword_55E1BC + 697620;
+  v13 = *(float *)(engine + 699172);
+  v12 = *(float *)(engine + 699168);
+  v5 = engine + 697620;
   v8 = _this[107707];
   v9 = _this[107708];
   v10 = _this[107709];
   v11 = _this[107710];
-  v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(dword_55E1BC + 697620);
+  v6 = (*(int (__thiscall **)(int))(*(_DWORD *)(engine + 697620) + 4))(engine + 697620);
   v7 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)v5 + 4))(v5, aDisplayVirtual, v6);
   sub_403500(v7, (unsigned int)aDisplayVirtual_0, v8, v9, v10, v11, &x, &y, v12, v13, v4, v14, v15);
   Point.x = x;
@@ -27970,7 +27984,7 @@ void Engine::sub_432150(int _this)
   else
   {
     sprintf_s((char *const)(this->message_buf), 0x400u, "頂点数%dは不正です．\r\n", v2);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
 }
 
@@ -28067,7 +28081,7 @@ void Engine::sub_4328F0(int _this, char *Source)
       0x400u,
       "警告：[%s]は選択可能フォントの一覧に含まれていません。\r\n",
       Source);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   v3 = *(_DWORD *)(_this + 201684);
   *(_DWORD *)(_this + 1236) = v3 / -2;
@@ -28299,7 +28313,7 @@ void Engine::sub_432DD0(int _this, char *Source)
       0x400u,
       "警告：[%s]は選択可能フォントの一覧に含まれていません。\r\n",
       Source);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   v4 = *(_DWORD *)(_this + 218584);
   *(_DWORD *)(_this + 1296) = v4 / -2;
@@ -30068,7 +30082,7 @@ int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __
       (*(void (__thiscall **)(_DWORD *, int))*v29)(v29, 1);
   }
   memset(Buffer, 0, sizeof(Buffer));
-  v22 = strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u);
+  v22 = strncmp(Str1, (const char *)(engine + 698904), 2u);
   v23 = *a3;
   *(_DWORD *)Buffer = v22 != 0 ? 1146303315 : 1146303571;
   *(_DWORD *)&Buffer[4] = v23;
@@ -30167,7 +30181,7 @@ int Engine::sub_437980(int *_this, HANDLE hFile, int a3, const char *a4, void **
   v40 = 0;
   if ( !ReadFile(hFile, Buffer, 0x124u, &NumberOfBytesRead, 0) || NumberOfBytesRead != 292 )
     goto LABEL_58;
-  if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+  if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
     strcpy_s(Destination, 5u, aS4sd);
   else
     strcpy_s(Destination, 5u, aS3sd);
@@ -30376,7 +30390,7 @@ int Engine::sub_438120(int *_this, HANDLE hFile, int a3, const char *a4, int *a5
   memset(Buffer, 0, sizeof(Buffer));
   if ( ReadFile(hFile, Buffer, 0x124u, &NumberOfBytesRead, 0) && NumberOfBytesRead == 292 )
   {
-    if ( !strncmp(Str1, (const char *)(dword_55E1BC + 698904), 2u) )
+    if ( !strncmp(Str1, (const char *)(engine + 698904), 2u) )
       strcpy_s(Destination, 5u, aS4sd);
     else
       strcpy_s(Destination, 5u, aS3sd);
@@ -32597,7 +32611,7 @@ LABEL_44:
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー元のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v12);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
@@ -32608,7 +32622,7 @@ LABEL_44:
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー先のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v13);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   v14 = (_DWORD *)(_this + 36 * a2);
@@ -32758,7 +32772,7 @@ int Engine::sub_43DBA0(int _this, int a2, int a3, int a4, int a5)
   v30 = a3;
   v31 = a4;
   v32 = a5;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
     return 1;
   v6 = *(_DWORD *)(_this + 4468);
   v25 = v6 + a2;
@@ -33020,7 +33034,7 @@ int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
       0x400u,
       "関数：ddMirrorSurface エラー：サーフェイスに画像が読み込まれていません [%s]\r\n",
       v5);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   if ( *(_DWORD *)(_this + 8060) && !a2 && *(_DWORD *)(_this + 8072) == 1 )
@@ -33077,7 +33091,7 @@ int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
       32,
       v3,
       v19);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
 LABEL_12:
@@ -33332,7 +33346,7 @@ LABEL_44:
     0x400u,
     "関数：ddFillSurface エラー：サーフェイスに画像が読み込まれていません [%s]\r\n",
     v9);
-  this->sub_4034D0( (const char *)(this->message_buf));
+  this->showMessage( (const char *)(this->message_buf));
   return 0;
 }
 
@@ -33352,7 +33366,7 @@ int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
   if ( !a2 )
   {
     sprintf_s((char *const)(this->message_buf), 0x400u, aGetsurfacepoin);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   if ( !*(_DWORD *)(_this + 4032) && !a2 )
     return 0;
@@ -33715,7 +33729,7 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
           {
             v18 = sub_401A60(*(char **)(_this + 4 * v5 + 4056));
             sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v18);
-            this->sub_4034D0( (const char *)(this->message_buf));
+            this->showMessage( (const char *)(this->message_buf));
             v19 = *(void (__thiscall ****)(_DWORD, int))(_this + 4 * v5 + 4056);
             if ( v19 )
               (**v19)(v19, 1);
@@ -34420,7 +34434,7 @@ int Engine::sub_441060(int _this, signed int a2, int a3)
   float v28; // [esp+3Ch] [ebp-Ch]
   float v29; // [esp+40h] [ebp-8h]
 
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     sub_4A6D60(*(int **)(_this + 8112));
     sub_49DFD0(*(float **)(_this + 8112));
@@ -34608,7 +34622,7 @@ int Engine::sub_441410(int _this, unsigned int a2, unsigned int a3, int a4, void
   v7 = (int *)(_this + 8208);
   *(_DWORD *)(_this + 8208) = 0;
   *(_DWORD *)(_this + 8212) = 0;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
     sub_49ED60(*(_DWORD *)(_this + 8112), a2, &v30, &v32);
   else
     this->sub_43B1A0( a2, &v30, &v32, &v28);
@@ -34627,7 +34641,7 @@ int Engine::sub_441410(int _this, unsigned int a2, unsigned int a3, int a4, void
   *(_DWORD *)(_this + 8132) = a3;
   v11 = a4;
   *(_DWORD *)(_this + 8124) = a4;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     switch ( a4 )
     {
@@ -35121,7 +35135,7 @@ int Engine::sub_441E10(int _this, int a2)
   v184[14] = -5;
   v184[24] = -5;
   v169 = 0xFFFFFF;
-  v3 = *(_DWORD *)(dword_55E1BC + 667856) == 1;
+  v3 = *(_DWORD *)(engine + 667856) == 1;
   v4 = *(_DWORD *)(_this + 8124);
   v184[1] = 5;
   v184[6] = 20;
@@ -36302,7 +36316,7 @@ int Engine::sub_443B20(int _this, float a2, float a3, int a4)
   v4 = LODWORD(a2);
   *(_DWORD *)(_this + 8208) = 0;
   *(_DWORD *)(_this + 8212) = 0;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
     sub_49ED60(*(_DWORD *)(_this + 8112), v4, &v41, &v40);
   else
     this->sub_43B1A0( v4, &v41, &v40, &v39);
@@ -36324,7 +36338,7 @@ int Engine::sub_443B20(int _this, float a2, float a3, int a4)
   *(_DWORD *)(_this + 8128) = v4;
   *(_DWORD *)(_this + 8124) = v9;
   *(float *)(_this + 8224) = v10;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     v11 = *(_DWORD *)(_this + 8112);
     a3 = 0.0;
@@ -36820,7 +36834,7 @@ int Engine::sub_444350(int _this, int a2)
   *(_DWORD *)(_this + 8164) = v4;
   *(_DWORD *)(_this + 8168) = v5;
   *(_DWORD *)(_this + 8172) = v6;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     v7 = *(_DWORD *)(_this + 8112);
     v172 = 0.0;
@@ -37965,7 +37979,7 @@ LABEL_73:
   }
   *(_DWORD *)(_this + 8208) = 0;
   *(_DWORD *)(_this + 8212) = 0;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
     sub_49ED60(*(_DWORD *)(_this + 8112), a2, &v71, &v72);
   else
     this->sub_43B1A0( a2, &v71, &v72, &v70);
@@ -37992,7 +38006,7 @@ LABEL_73:
   *(_DWORD *)(_this + 8240) = v8;
   *(_DWORD *)(_this + 8272) = 0;
   memset(v8, 0, v62);
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     v9 = *(_DWORD *)(_this + 8200) - *(_DWORD *)(_this + 0x2000);
     v75 = *(_DWORD *)(_this + 8204) - *(_DWORD *)(_this + 8196);
@@ -38537,7 +38551,7 @@ int Engine::sub_446EC0(int _this)
     v1 = 0.0;
     *(_DWORD *)(_this + 8272) = 0;
   }
-  if ( *(_DWORD *)(dword_55E1BC + 667856) != 1 )
+  if ( *(_DWORD *)(engine + 667856) != 1 )
     return this->sub_43D870(
              0,
              *(_DWORD *)(_this + 0x2000),
@@ -38977,7 +38991,7 @@ int Engine::sub_447810(_DWORD *_this, int a2)
   float v389; // [esp+50h] [ebp-8h]
 
   LODWORD(v377) = 1;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) != 1 )
+  if ( *(_DWORD *)(engine + 667856) != 1 )
   {
     switch ( _this[2031] )
     {
@@ -42324,7 +42338,7 @@ int Engine::sub_452330(int _this,
   v12 = a7;
   v14 = ArgList;
   v19 = 0;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
     return sub_4A54A0(*(char **)(_this + 8112), a7, ArgList, a8, a9, a10, a11, a3, a4, a5, a6, a12);
   if ( *(_DWORD *)(_this + 4 * a7 + 1036) )
   {
@@ -44057,7 +44071,7 @@ void Engine::sub_455ED0(int _this,
 
   v10 = a2;
   GetTextMetricsA(*(HDC *)(_this + 1108), &tm);
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     if ( a9 )
     {
@@ -44374,7 +44388,7 @@ void Engine::sub_456820(int _this,
   struct tagTEXTMETRICA tm; // [esp+24h] [ebp-3Ch] BYREF
 
   v10 = a2;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) != 1 )
+  if ( *(_DWORD *)(engine + 667856) != 1 )
   {
     v14 = a3;
     if ( *(int *)(_this + 1356) >= 3 && a10 == 1 )
@@ -45683,8 +45697,8 @@ _DWORD * Engine::sub_459A20(_DWORD *_this, int a2, char *Source, int a4, _DWORD 
   this->sub_456DF0( (HFONT *)&ho, &lf, &v20, (int)v21, a4);
   DeleteObject(ho);
   v7 = !strcmp((const char *)(a2 + 28), aIpaP) || !strcmp((const char *)(v18 + 28), aIpaP_0);
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayAspectm) )
   {
     goto LABEL_14;
@@ -45781,8 +45795,8 @@ _DWORD * Engine::sub_459C50(_DWORD *_this, int a2, char *Source, int a4, _DWORD 
   DeleteObject(ho);
   if ( !strcmp((const char *)(v19 + 28), aIpaP_1) || !strcmp((const char *)(v19 + 28), aIpaP_2) )
     v17 = 1;
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayAspectm) )
   {
     goto LABEL_16;
@@ -45964,10 +45978,10 @@ void Engine::sub_459F40(int _this)
     this->sub_459C50( (int)&v36, v36.lfFaceName, (int)(v22 + dbl_51D7F8), (_DWORD *)(_this + 218604));
     lfWidth = lf.lfWidth;
   }
-  if ( !dword_55E1BC )
+  if ( !engine )
     goto LABEL_18;
-  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-         dword_55E1BC + 697620,
+  if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+         engine + 697620,
          aDisplayAspectm) != 1
     || *(float *)(_this + 218596) == *(float *)(_this + 218592) )
   {
@@ -46012,9 +46026,9 @@ LABEL_18:
       v39.lfWidth = 0;
       this->sub_459C50( (int)&v39, v39.lfFaceName, (int)(v27 + dbl_51D7F8), v40);
     }
-    if ( dword_55E1BC
-      && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( engine
+      && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayAspectm) == 1
       && *(float *)(_this + 218596) != *(float *)(_this + 218592) )
     {
@@ -46136,10 +46150,10 @@ void Engine::sub_45A6E0(int _this)
   v15.lfWidth = lf.lfHeight / 2;
   lfWidth = lf.lfHeight / 2;
   lf.lfWidth = lf.lfHeight / 2;
-  if ( dword_55E1BC )
+  if ( engine )
   {
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayAspectm) == 1
       && *(float *)(_this + 218596) != *(float *)(_this + 218592) )
     {
@@ -46254,7 +46268,7 @@ void Engine::sub_45A940(int *_this, int a2, int a3, _DWORD *a4)
       v30 = v6[4] + v6[21];
       v10 = v6[4] + v6[21] + v6[19] - v6[17];
     }
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       v13 = a3;
       if ( a3 == -1 )
@@ -47206,7 +47220,7 @@ int Engine::sub_45EC60(_DWORD *_this, int a2, int a3)
   v21 = 0;
   HIDWORD(v22) = v11[6];
   LODWORD(v22) = v12;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     v13 = _this[260];
     v19 = v11[32];
@@ -48455,7 +48469,7 @@ void Engine::sub_45FF00(int _this, int a2, _DWORD *a3)
   sub_459EA0((_DWORD *)(v25 + 1032), (int **)&h, &v174);
   if ( h == *(HGDIOBJ *)(v25 + 1036) || sub_4ADC20(v25, v168) != a2 + 20 )
     v169 = *(float *)&v156;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     sub_49ED60(*(_DWORD *)(_this + 1040), a2 + 20, &h, &v173);
     v26 = *(float *)(_this + 218592);
@@ -48649,7 +48663,7 @@ LABEL_93:
         v172 = v52;
         if ( v167 )
         {
-          if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+          if ( *(_DWORD *)(engine + 667856) == 1 )
           {
             v53 = v173 * *(float *)(_this + 218592);
             v162 = (int)(*(float *)&v166 * *(float *)(_this + 218592) + v48);
@@ -48926,7 +48940,7 @@ LABEL_119:
 LABEL_159:
         if ( SLODWORD(v169) < v156 && v167 )
         {
-          if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+          if ( *(_DWORD *)(engine + 667856) == 1 )
           {
             v162 = (int)((double)v204 * *(float *)(_this + 218592) + v73);
             v164 = (int)((double)(int)v206 * *(float *)(_this + 218592) + v73);
@@ -49040,7 +49054,7 @@ LABEL_185:
 LABEL_186:
   v102 = *(_DWORD *)(_this + 1040);
   if ( *(_DWORD *)(v102 + 46676)
-    && *(_DWORD *)(dword_55E1BC + 667856) == 1
+    && *(_DWORD *)(engine + 667856) == 1
     && *(_DWORD *)(*(_DWORD *)(_this + 1036) + 1164) == 2 )
   {
     sub_49ED60(v102, v3 + 20, &v177, &v174);
@@ -49804,7 +49818,7 @@ void Engine::sub_462040(int _this, int a2, int a3, char a4, int a5, int a6, int 
     v37 = *(_DWORD *)(v36 + 20);
     v38 = *(_DWORD *)(v36 + 24);
     v167 = v37;
-    v39 = *(_DWORD *)(dword_55E1BC + 667856);
+    v39 = *(_DWORD *)(engine + 667856);
     v166 = 0;
     v168 = v38;
     if ( v39 == 1 )
@@ -49846,16 +49860,16 @@ void Engine::sub_462040(int _this, int a2, int a3, char a4, int a5, int a6, int 
       *(_DWORD *)(_this + 1364) = BYTE2(a6) + ((BYTE1(a6) + ((unsigned __int8)a6 << 8)) << 8);
       sub_459F40(_this);
     }
-    v41 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699260) = 0;
+    v41 = engine;
+    *(_DWORD *)(engine + 699260) = 0;
     *(_DWORD *)(v41 + 699276) = 0;
     *(_DWORD *)(v41 + 699264) = 0;
-    v42 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699288) = 0;
+    v42 = engine;
+    *(_DWORD *)(engine + 699288) = 0;
     *(_DWORD *)(v42 + 699304) = 0;
     *(_DWORD *)(v42 + 699292) = 0;
-    v43 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699316) = 0;
+    v43 = engine;
+    *(_DWORD *)(engine + 699316) = 0;
     *(_DWORD *)(v43 + 699332) = 0;
     *(_DWORD *)(v43 + 699320) = 0;
     memset(v182, 0, sizeof(v182));
@@ -49883,11 +49897,11 @@ void Engine::sub_462040(int _this, int a2, int a3, char a4, int a5, int a6, int 
             v50 = *(_DWORD *)(v48 + 32);
             if ( sub_404CB0(v144) && v182[v50] > 0 )
             {
-              sub_409E10(dword_55E1BC + 28 * v50 + 699252, *(_DWORD *)(v47 + *(_DWORD *)(_this + 3364) + 20));
+              sub_409E10(engine + 28 * v50 + 699252, *(_DWORD *)(v47 + *(_DWORD *)(_this + 3364) + 20));
             }
             else
             {
-              sub_407120(dword_55E1BC);
+              sub_407120(engine);
               sub_4BB840(
                 (int)v144,
                 v50,
@@ -50278,7 +50292,7 @@ LABEL_151:
         SelectObject(*(HDC *)(_this + 1108), h);
       if ( (a4 & 4) == 0 )
       {
-        if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+        if ( *(_DWORD *)(engine + 667856) == 1 )
         {
           v103 = *(_DWORD *)(_this + 4 * v175 + 1044);
           v104 = *(_DWORD **)(v103 + 12);
@@ -50430,7 +50444,7 @@ LABEL_176:
       *(_DWORD *)(_this + 1360) = v139;
       sub_459F40(_this);
     }
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 && (a4 & 0x20) != 0 )
+    if ( *(_DWORD *)(engine + 667856) == 1 && (a4 & 0x20) != 0 )
     {
       v127 = *(_DWORD **)(_this + 4 * v175 + 1044);
       if ( v127[56] )
@@ -50752,7 +50766,7 @@ HGDIOBJ Engine::sub_4634B0(int _this, int a2, int a3, char a4, int a5, int a6, i
     v197 = 0;
     v25 = *(char **)(v24 + 24);
     v199 = v25;
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       if ( (a4 & 0x40) == 0 )
       {
@@ -50799,16 +50813,16 @@ HGDIOBJ Engine::sub_4634B0(int _this, int a2, int a3, char a4, int a5, int a6, i
       *(_DWORD *)(_this + 1364) = BYTE2(a6) + ((BYTE1(a6) + ((unsigned __int8)a6 << 8)) << 8);
       sub_459F40(_this);
     }
-    v27 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699260) = 0;
+    v27 = engine;
+    *(_DWORD *)(engine + 699260) = 0;
     *(_DWORD *)(v27 + 699276) = 0;
     *(_DWORD *)(v27 + 699264) = 0;
-    v28 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699288) = 0;
+    v28 = engine;
+    *(_DWORD *)(engine + 699288) = 0;
     *(_DWORD *)(v28 + 699304) = 0;
     *(_DWORD *)(v28 + 699292) = 0;
-    v29 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699316) = 0;
+    v29 = engine;
+    *(_DWORD *)(engine + 699316) = 0;
     *(_DWORD *)(v29 + 699332) = 0;
     *(_DWORD *)(v29 + 699320) = 0;
     v30 = *(_DWORD *)(*(_DWORD *)(_this + 4 * v7 + 1044) + 48);
@@ -50847,11 +50861,11 @@ HGDIOBJ Engine::sub_4634B0(int _this, int a2, int a3, char a4, int a5, int a6, i
             v40 = *((_DWORD *)v39 + 8);
             if ( sub_404CB0(v157) && v200[v40] > 0 )
             {
-              sub_409E10(dword_55E1BC + 28 * v40 + 699252, *(_DWORD *)(v37 + *(_DWORD *)(_this + 3364) + 20));
+              sub_409E10(engine + 28 * v40 + 699252, *(_DWORD *)(v37 + *(_DWORD *)(_this + 3364) + 20));
             }
             else
             {
-              sub_407120(dword_55E1BC);
+              sub_407120(engine);
               sub_4BB840(
                 (int)v157,
                 v40,
@@ -51069,7 +51083,7 @@ LABEL_65:
                   SLODWORD(v148));
               if ( (a4 & 4) == 0 )
               {
-                if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+                if ( *(_DWORD *)(engine + 667856) == 1 )
                 {
                   v65 = *(_DWORD *)(_this + 4 * v191 + 1044);
                   v66 = *(_DWORD *)(v65 + 16);
@@ -51426,7 +51440,7 @@ LABEL_163:
         {
           v109 = v191;
         }
-        else if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+        else if ( *(_DWORD *)(engine + 667856) == 1 )
         {
           v175 = (int)((double)v196 * *(float *)(_this + 218592) + v102);
           v107 = (double)(int)v170 * *(float *)(_this + 218592) + v102;
@@ -51609,7 +51623,7 @@ LABEL_196:
     }
     v133 = *(_DWORD *)(_this + 1040);
     if ( *(_DWORD *)(v133 + 46676)
-      && *(_DWORD *)(dword_55E1BC + 667856) == 1
+      && *(_DWORD *)(engine + 667856) == 1
       && *(_DWORD *)(*(_DWORD *)(_this + 1036) + 1164) == 2 )
     {
       v134 = v191;
@@ -51651,7 +51665,7 @@ LABEL_196:
     }
     result = SelectObject(*(HDC *)(_this + 1108), h);
     *(_DWORD *)(_this + 218520) = 0;
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 && (a4 & 0x20) != 0 )
+    if ( *(_DWORD *)(engine + 667856) == 1 && (a4 & 0x20) != 0 )
     {
       v142 = *(_DWORD **)(_this + 4 * v134 + 1044);
       if ( v142[56] )
@@ -52170,7 +52184,7 @@ int Engine::sub_465A20(int _this, int a2, LPCSTR lpString, int a4, int a5, _DWOR
   v18 = v59 + *a6 - v63;
   v19 = *(_DWORD *)(_this + 1292) + a6[1];
   v53 = v17;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) != 1 && !*(_DWORD *)(_this + 218600) )
+  if ( *(_DWORD *)(engine + 667856) != 1 && !*(_DWORD *)(_this + 218600) )
     ++v19;
   v62 = *(_DWORD *)(_this + 4 * a2 + 1044);
   *(_DWORD *)(*(_DWORD *)(v62 + 48) - 20) = v18;
@@ -52629,7 +52643,7 @@ void Engine::sub_466000(int _this, int a2, int a3, char a4, int a5, int a6, int 
     v37 = *(_DWORD *)(v36 + 20);
     v38 = *(_DWORD *)(v36 + 24);
     v164 = v37;
-    v39 = *(_DWORD *)(dword_55E1BC + 667856);
+    v39 = *(_DWORD *)(engine + 667856);
     y = 0;
     v165 = v38;
     if ( v39 == 1 )
@@ -52671,16 +52685,16 @@ void Engine::sub_466000(int _this, int a2, int a3, char a4, int a5, int a6, int 
       *(_DWORD *)(_this + 1364) = BYTE2(a6) + ((BYTE1(a6) + ((unsigned __int8)a6 << 8)) << 8);
       sub_459F40(_this);
     }
-    v41 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699260) = 0;
+    v41 = engine;
+    *(_DWORD *)(engine + 699260) = 0;
     *(_DWORD *)(v41 + 699276) = 0;
     *(_DWORD *)(v41 + 699264) = 0;
-    v42 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699288) = 0;
+    v42 = engine;
+    *(_DWORD *)(engine + 699288) = 0;
     *(_DWORD *)(v42 + 699304) = 0;
     *(_DWORD *)(v42 + 699292) = 0;
-    v43 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699316) = 0;
+    v43 = engine;
+    *(_DWORD *)(engine + 699316) = 0;
     *(_DWORD *)(v43 + 699332) = 0;
     *(_DWORD *)(v43 + 699320) = 0;
     memset(v182, 0, sizeof(v182));
@@ -52708,11 +52722,11 @@ void Engine::sub_466000(int _this, int a2, int a3, char a4, int a5, int a6, int 
             v50 = *(_DWORD *)(v48 + 32);
             if ( sub_404CB0(v144) && v182[v50] > 0 )
             {
-              sub_409E10(dword_55E1BC + 28 * v50 + 699252, *(_DWORD *)(v47 + *(_DWORD *)(_this + 3364) + 20));
+              sub_409E10(engine + 28 * v50 + 699252, *(_DWORD *)(v47 + *(_DWORD *)(_this + 3364) + 20));
             }
             else
             {
-              sub_407120(dword_55E1BC);
+              sub_407120(engine);
               sub_4BB840(
                 (int)v144,
                 v50,
@@ -52855,7 +52869,7 @@ LABEL_160:
           SelectObject(*(HDC *)(_this + 1108), h);
         if ( (a4 & 4) == 0 )
         {
-          if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+          if ( *(_DWORD *)(engine + 667856) == 1 )
           {
             v105 = *(_DWORD *)(_this + 4 * v175 + 1044);
             v106 = *(void **)(v105 + 12);
@@ -53260,7 +53274,7 @@ LABEL_188:
       *(_DWORD *)(_this + 1360) = v138;
       sub_459F40(_this);
     }
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 && (a4 & 0x20) != 0 )
+    if ( *(_DWORD *)(engine + 667856) == 1 && (a4 & 0x20) != 0 )
     {
       v129 = *(_DWORD **)(_this + 4 * v175 + 1044);
       if ( v129[56] )
@@ -53589,7 +53603,7 @@ int Engine::sub_4675A0(int _this, int a2, int a3, char a4, int a5, int a6, int *
     v209 = 0;
     v24 = *(char **)(v23 + 24);
     v211 = v24;
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       if ( (a4 & 0x40) == 0 )
       {
@@ -53636,16 +53650,16 @@ int Engine::sub_4675A0(int _this, int a2, int a3, char a4, int a5, int a6, int *
       *(_DWORD *)(_this + 1364) = BYTE2(a6) + ((BYTE1(a6) + ((unsigned __int8)a6 << 8)) << 8);
       sub_459F40(_this);
     }
-    v26 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699260) = 0;
+    v26 = engine;
+    *(_DWORD *)(engine + 699260) = 0;
     *(_DWORD *)(v26 + 699276) = 0;
     *(_DWORD *)(v26 + 699264) = 0;
-    v27 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699288) = 0;
+    v27 = engine;
+    *(_DWORD *)(engine + 699288) = 0;
     *(_DWORD *)(v27 + 699304) = 0;
     *(_DWORD *)(v27 + 699292) = 0;
-    v28 = dword_55E1BC;
-    *(_DWORD *)(dword_55E1BC + 699316) = 0;
+    v28 = engine;
+    *(_DWORD *)(engine + 699316) = 0;
     *(_DWORD *)(v28 + 699332) = 0;
     *(_DWORD *)(v28 + 699320) = 0;
     v164 = *(_DWORD *)(_this + 4 * v7 + 1044);
@@ -53685,11 +53699,11 @@ int Engine::sub_4675A0(int _this, int a2, int a3, char a4, int a5, int a6, int *
           v40 = *((_DWORD *)v39 + 8);
           if ( sub_404CB0(v167) && v212[v40] > 0 )
           {
-            sub_409E10(dword_55E1BC + 28 * v40 + 699252, *(_DWORD *)(v37 + *(_DWORD *)(_this + 3364) + 20));
+            sub_409E10(engine + 28 * v40 + 699252, *(_DWORD *)(v37 + *(_DWORD *)(_this + 3364) + 20));
           }
           else
           {
-            sub_407120(dword_55E1BC);
+            sub_407120(engine);
             sub_4BB840(
               (int)v167,
               v40,
@@ -53874,7 +53888,7 @@ LABEL_70:
               this->sub_46FA60( v191, x, v58, *(_DWORD *)(_this + 218576), tm.tmAscent, &Src, SLODWORD(v159));
             if ( !v196 )
             {
-              if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+              if ( *(_DWORD *)(engine + 667856) == 1 )
               {
                 v64 = *(_DWORD *)(_this + 4 * v202 + 1044);
                 v65 = *(void **)(v64 + 16);
@@ -54060,7 +54074,7 @@ LABEL_167:
         v211 = v183;
         if ( (a4 & 4) == 0 )
         {
-          if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+          if ( *(_DWORD *)(engine + 667856) == 1 )
           {
             x = (int)((double)v208 * *(float *)(_this + 218592) + dbl_51D7F8);
             v188 = (int)((double)(int)v180 * *(float *)(_this + 218592) + dbl_51D7F8);
@@ -54431,7 +54445,7 @@ LABEL_122:
 LABEL_204:
     v144 = *(_DWORD *)(_this + 1040);
     if ( *(_DWORD *)(v144 + 46676)
-      && *(_DWORD *)(dword_55E1BC + 667856) == 1
+      && *(_DWORD *)(engine + 667856) == 1
       && *(_DWORD *)(*(_DWORD *)(_this + 1036) + 1164) == 2 )
     {
       v145 = v202;
@@ -54473,7 +54487,7 @@ LABEL_204:
     }
     result = (int)SelectObject(*(HDC *)(_this + 1108), h);
     *(_DWORD *)(_this + 218520) = 0;
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 && (a4 & 0x20) != 0 )
+    if ( *(_DWORD *)(engine + 667856) == 1 && (a4 & 0x20) != 0 )
     {
       v153 = *(_DWORD **)(_this + 4 * v145 + 1044);
       if ( v153[56] )
@@ -55006,7 +55020,7 @@ void Engine::sub_469260(int _this)
     sub_459EA0((_DWORD *)(v38 + 1032), &v152, &v188);
     if ( v152 == *(int **)(v38 + 1036) || sub_4ADC20(v38, v187) != v11 + 20 )
       v189 = *(float *)&v179;
-    if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+    if ( *(_DWORD *)(engine + 667856) == 1 )
     {
       sub_49ED60(*(_DWORD *)(_this + 1040), v11 + 20, &v151, &v150);
       v39 = *(float *)(_this + 218592);
@@ -55138,7 +55152,7 @@ void Engine::sub_469260(int _this)
 LABEL_189:
             if ( SLODWORD(v189) < v179 )
             {
-              if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+              if ( *(_DWORD *)(engine + 667856) == 1 )
               {
                 x = (int)((double)v226 * *(float *)(_this + 218592) + dbl_51D7F8);
                 v100 = (int)((double)(int)v228 * *(float *)(_this + 218592) + dbl_51D7F8);
@@ -55445,7 +55459,7 @@ LABEL_98:
             v66 = v192 + 2;
 LABEL_118:
             v192 = v66;
-            if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+            if ( *(_DWORD *)(engine + 667856) == 1 )
             {
               *(float *)&v196 = (float)v226;
               v67 = *(float *)&v196;
@@ -55548,7 +55562,7 @@ LABEL_213:
     }
     v113 = *(_DWORD *)(_this + 1040);
     if ( *(_DWORD *)(v113 + 46676)
-      && *(_DWORD *)(dword_55E1BC + 667856) == 1
+      && *(_DWORD *)(engine + 667856) == 1
       && *(_DWORD *)(*(_DWORD *)(_this + 1036) + 1164) == 2 )
     {
       sub_49ED60(v113, v11 + 20, &v149, &v159);
@@ -56013,7 +56027,7 @@ LABEL_19:
             1024,
             "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
             *(const char **)ArgList);
-          this->sub_4034D0( (const char *)(this->message_buf));
+          this->showMessage( (const char *)(this->message_buf));
           break;
         }
       }
@@ -56745,7 +56759,7 @@ LABEL_21:
           1024,
           "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
           *(const char **)ArgList);
-        this->sub_4034D0( (const char *)(this->message_buf));
+        this->showMessage( (const char *)(this->message_buf));
         break;
       }
       v55 = *(_DWORD *)Src;
@@ -57641,8 +57655,8 @@ LABEL_14:
                *(_DWORD *)(_this + 102092),
                v34) == -1 )
         {
-          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                 dword_55E1BC + 697620,
+          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                 engine + 697620,
                  aSetBlankextent) == 1 )
           {
             this->sub_404EE0( &psizl, v9);
@@ -57884,8 +57898,8 @@ void Engine::sub_46E3E0(int _this, unsigned int a2, int a3, int a4, int a5, int 
           {
             v53 = v14 + 1;
 LABEL_23:
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &psizl, v15);
@@ -58154,8 +58168,8 @@ LABEL_86:
             v45 = v69 - v71 + v55 - 1;
           goto LABEL_103;
         }
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aSetBlankextent) == 1 )
         {
           this->sub_404EE0( &v42, v15);
@@ -58270,8 +58284,8 @@ LABEL_14:
         this->sub_455E40( _this[308]);
         if ( v23 || GetGlyphOutline(_this[277], (unsigned __int16)v9, 5, &v25, _this[354], _this[352], v30) == -1 )
         {
-          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                 dword_55E1BC + 697620,
+          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                 engine + 697620,
                  aSetBlankextent) == 1 )
           {
             this->sub_404EE0( &psizl, v9);
@@ -58361,7 +58375,7 @@ void Engine::sub_46F190(int *_this, int a2, int a3, int a4, int a5, int a6, char
   int *v10; // [esp+1Ch] [ebp-4h]
 
   v10 = _this;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     this->sub_46E3E0( a2, a3, a4, a5, a6, Source);
   }
@@ -58524,8 +58538,8 @@ void Engine::sub_46F2D0(int _this, int a2, int a3, int a4, int a5, int a6, void 
           {
             v63 = v13 + 1;
 LABEL_27:
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &psizl, v14);
@@ -58761,8 +58775,8 @@ LABEL_73:
           a3 += v38;
           goto LABEL_81;
         }
-        v43 = *(int (__thiscall **)(int, int *))(*(_DWORD *)(dword_55E1BC + 697620) + 4);
-        v44 = dword_55E1BC + 697620;
+        v43 = *(int (__thiscall **)(int, int *))(*(_DWORD *)(engine + 697620) + 4);
+        v44 = engine + 697620;
         v45 = *(_DWORD *)(_this + 201680) <= 1;
         GlyphOutline = (int *)aSetBlankextent;
         if ( v45 )
@@ -58831,7 +58845,7 @@ void Engine::sub_46FA60(int _this, int a2, int a3, int a4, int a5, int a6, char 
   unsigned int *v11; // ebx
 
   v8 = (int *)_this;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     this->sub_46F2D0( a2, a3, a4, a5, a6, Source);
   }
@@ -59033,8 +59047,8 @@ void Engine::sub_46FB90(int _this, int a2, int a3, int a4, int a5, int a6, char 
           {
             v122 = v9 + 1;
 LABEL_14:
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &psizl, v10);
@@ -59179,8 +59193,8 @@ LABEL_42:
             *v23 %= 4096;
           if ( GlyphOutline == -1 )
           {
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &v91, v130);
@@ -59733,8 +59747,8 @@ void Engine::sub_471180(int _this, int a2, int a3, int a4, int a5, int a6, char 
             v96 = v15 + 1;
 LABEL_26:
             if ( *(int *)(_this + 201680) <= 1
-              && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+              && (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &psizl, v16);
@@ -60147,8 +60161,8 @@ LABEL_58:
           *v38 %= 4096;
         if ( *(float *)&Source != NAN )
           goto LABEL_85;
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aSetBlankextent) == 1 )
         {
           this->sub_404EE0( &v82, *(unsigned __int16 *)SubStr);
@@ -60362,8 +60376,8 @@ void Engine::sub_471DF0(int _this, int a2, int a3, int a4, int a5, int a6, char 
           {
             v123 = v9 + 1;
 LABEL_14:
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               this->sub_404EE0( &psizl, v10);
@@ -60508,8 +60522,8 @@ LABEL_43:
             *v23 %= 4096;
           if ( v132 == -1 )
           {
-            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                   dword_55E1BC + 697620,
+            if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                   engine + 697620,
                    aSetBlankextent) == 1 )
             {
               v70 = *(_WORD *)SubStr;
@@ -61324,8 +61338,8 @@ LABEL_67:
                 SelectObject(*(HDC *)(_this + 1108), h);
               if ( v88 == NAN )
               {
-                if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                       dword_55E1BC + 697620,
+                if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                       engine + 697620,
                        aSetBlankextent) == 1 )
                 {
                   this->sub_404EE0( &v65, v45);
@@ -61521,8 +61535,8 @@ LABEL_112:
           if ( v15 != 32 )
             goto LABEL_14;
         }
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aSetBlankextent) == 1 )
         {
           this->sub_404EE0( &psizl, v15);
@@ -61563,7 +61577,7 @@ void Engine::sub_4742F0(int _this, int a2, int a3, int a4, int a5, int a6, char 
   unsigned int *v12; // ebx
 
   v9 = (int *)_this;
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     this->sub_471180( a2, a3, a4, a5, a6, Source, a8);
   }
@@ -61614,7 +61628,7 @@ void Engine::sub_474440(int _this, int a2, int a3, char *a4, int a5, int a6, cha
   int v11; // eax
   unsigned int *v12; // eax
 
-  if ( *(_DWORD *)(dword_55E1BC + 667856) == 1 )
+  if ( *(_DWORD *)(engine + 667856) == 1 )
   {
     this->sub_4734F0( a2, a3, a4, a5, a6, Source, a8);
   }
@@ -62028,8 +62042,8 @@ void Engine::sub_474BD0(int *_this, int a2, int a3, int a4, int a5, int a6, unsi
         this->sub_455E40( _this[308]);
         if ( GetGlyphOutline(_this[277], v10, 5, &v35, _this[354], _this[352], v40) == -1 )
         {
-          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-                 dword_55E1BC + 697620,
+          if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+                 engine + 697620,
                  aSetBlankextent) == 1 )
           {
             this->sub_404EE0( &psizl, v10);
@@ -62220,8 +62234,8 @@ LABEL_11:
     this->sub_455E40( _this[308]);
     if ( GetGlyphOutline(_this[277], v10, 5, &v43, _this[354], _this[352], v48) != -1 )
       break;
-    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+    if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aSetBlankextent) == 1 )
     {
       this->sub_404EE0( &psizl, v10);
@@ -62495,8 +62509,8 @@ void Engine::sub_475450(int _this, int a2, int a3, int a4, int a5, int a6, unsig
              *(_DWORD *)(_this + 1408),
              v38) == -1 )
       {
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aSetBlankextent) == 1 )
         {
           this->sub_404EE0( &psizl, v11);
@@ -62694,8 +62708,8 @@ void Engine::sub_4757F0(int _this, int a2, int a3, int a4, int a5, int a6, unsig
                *(_DWORD *)(_this + 1408),
                v49) != -1 )
           break;
-        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-               dword_55E1BC + 697620,
+        if ( (*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+               engine + 697620,
                aSetBlankextent) == 1 )
         {
           this->sub_404EE0( &psizl, v11);
@@ -71582,7 +71596,7 @@ int Engine::sub_49E700(int _this, int a2, int a3, unsigned int a4)
       0x400u,
       "関数：DrawModel エラー：描画元メッシュモデルが作成されていません． Mesh=%d\r\n",
       a2);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   v6 = *(_DWORD *)(*(_DWORD *)(_this + 1860) + 1040);
@@ -72436,7 +72450,7 @@ int Engine::sub_49FCD0(int _this)
     v22 = aRenderframe;
 LABEL_7:
     sprintf_s((char *const)(this->message_buf), 0x400u, v22);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 42452) )
@@ -72587,7 +72601,7 @@ LABEL_18:
       0x400u,
       "関数：RenderFrame エラー：描画に失敗しました． %s\r\n",
       v21);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   else
@@ -73418,13 +73432,13 @@ int Engine::sub_4A2D50(int _this, float a2, int *a3, int a4, int *a5, int a6, in
       0x400u,
       "関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 42452) )
   {
     sprintf_s((char *const)(this->message_buf), 0x400u, aDrawtexture);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   v10 = *a3;
@@ -73698,7 +73712,7 @@ LABEL_58:
       "関数：DrawTexture エラー：描画に失敗しました． TEXTURE=%d %s\r\n",
       v22,
       v35);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   (*(void (__stdcall **)(_DWORD))(**(_DWORD **)(_this + 42452) + 44))(*(_DWORD *)(_this + 42452));
@@ -77547,8 +77561,8 @@ int Engine::sub_4A7DA0(int _this)
   if ( !*(_DWORD *)(_this + 46676)
     && (!v6
      || v6 == 1
-     && !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-           dword_55E1BC + 697620,
+     && !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+           engine + 697620,
            aDisplayAspectm))
     && *(_DWORD *)(_this + 46672) )
   {
@@ -78129,20 +78143,20 @@ int Engine::sub_4A8620(int _this)
   if ( *(_DWORD *)(_this + 46672) )
   {
     (*(void (__thiscall **)(_DWORD))(**(_DWORD **)(_this + 46672) + 8))(*(_DWORD *)(_this + 46672));
-    if ( !*(_DWORD *)(dword_55E1BC + 671960) )
+    if ( !*(_DWORD *)(engine + 671960) )
     {
-      v6 = *(_DWORD *)(dword_55E1BC + 369516);
+      v6 = *(_DWORD *)(engine + 369516);
       if ( v6 == 1 )
       {
-        sub_4A5470((_DWORD *)(dword_55E1BC + 322832), *(_DWORD *)(dword_55E1BC + 369520));
+        sub_4A5470((_DWORD *)(engine + 322832), *(_DWORD *)(engine + 369520));
         return sub_4A1D50((_DWORD *)_this);
       }
       if ( v6 == 2 )
       {
-        sub_408440(dword_55E1BC, *(_DWORD *)(dword_55E1BC + 369524));
+        sub_408440(engine, *(_DWORD *)(engine + 369524));
         return sub_4A1D50((_DWORD *)_this);
       }
-      sub_4A5470((_DWORD *)(dword_55E1BC + 322832), 0);
+      sub_4A5470((_DWORD *)(engine + 322832), 0);
     }
   }
   return sub_4A1D50((_DWORD *)_this);
@@ -82861,8 +82875,8 @@ LABEL_84:
 LABEL_150:
     v53 = v384[4];
     if ( *(_DWORD *)(_this + 46512) )
-      sub_4A6E70((int *)dword_55E1BC, v384[4]);
-    if ( *(_DWORD *)(dword_55E1BC + 4 * v53 + 378688) )
+      sub_4A6E70((int *)engine, v384[4]);
+    if ( *(_DWORD *)(engine + 4 * v53 + 378688) )
     {
       *(_DWORD *)(_this + 46516) = 1;
     }
@@ -83513,8 +83527,8 @@ int Engine::sub_4B4910(int _this)
     if ( !*(_DWORD *)(_this + 46676)
       && (!v6
        || v6 == 1
-       && !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
-             dword_55E1BC + 697620,
+       && !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(engine + 697620) + 4))(
+             engine + 697620,
              aDisplayAspectm))
       && *(_DWORD *)(_this + 46672) )
     {
@@ -84170,7 +84184,7 @@ int Engine::sub_4B6020(int _this, unsigned int a2, int a3)
     v6 = aDsplayD;
 LABEL_11:
     wsprintfA(this->message_buf, v6, v7);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
     return 0;
   }
   if ( *(_DWORD *)(_this + 4 * a2 + 1440) )

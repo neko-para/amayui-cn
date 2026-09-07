@@ -12,8 +12,8 @@
 /* ===== [stained] sub_42F8B0  状态: PARTIAL =====
  * Engine 成员函数  → op_bit_set_42F8B0
  * raw 行区间 [39402, 39421]; op=0x135 指令名『bit-set』
- * 分析结论（已读体）: if op2>0x1F(>=32): error-report (sprintf aSetbit + sub_4034D0) w/o writing op1; else op1 = op1 | (1<<op2) written back; 操作数类型=int/int; 操作数=[1:int/dest/in, 2:int/bit]; arity=5; evidence=v2=readInt(2); if(v2>0x1F){StringFormat(...aSetbit); sub_4034D0(...);} else {v4=readInt(1); writeIntOperand(1,(1<<v3)|v4);}; decEnc=true; pure=false
- * ⚠ 未分析被调: sub_4034D0；分析这些函数后方可标已分析
+ * 分析结论（已读体）: if op2>0x1F(>=32): error-report (sprintf aSetbit + showMessage) w/o writing op1; else op1 = op1 | (1<<op2) written back; 操作数类型=int/int; 操作数=[1:int/dest/in, 2:int/bit]; arity=5; evidence=v2=readInt(2); if(v2>0x1F){StringFormat(...aSetbit); showMessage(...);} else {v4=readInt(1); writeIntOperand(1,(1<<v3)|v4);}; decEnc=true; pure=false
+ * ⚠ 未分析被调: showMessage(原 sub_4034D0；已 PARTIAL —— 其内部再调未分析 sub_4976A0)；分析后方可标已分析
  */
 void Engine::op_bit_set_42F8B0(int _this)
 {
@@ -27,7 +27,7 @@ void Engine::op_bit_set_42F8B0(int _this)
   if ( v2 > 0x1F )
   {
     StringFormat((char *)(this->message_buf), 1024, aSetbit);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -40,8 +40,8 @@ void Engine::op_bit_set_42F8B0(int _this)
 /* ===== [stained] sub_42F920  状态: PARTIAL =====
  * Engine 成员函数  → op_bit_reset_42F920
  * raw 行区间 [39424, 39443]; op=0x136 指令名『bit-reset』
- * 分析结论（已读体）: if op2>0x1F: error-report (sprintf aRembit + sub_4034D0); else op1 = op1 & ~(1<<op2) written back; 操作数类型=int/int; 操作数=[1:int/dest/in, 2:int/bit]; arity=5; evidence=v2=readInt(2); if(v2>0x1F){...aRembit...} else {v4=readInt(1); writeIntOperand(1,~(1<<v3)&v4);}; decEnc=true; pure=false
- * ⚠ 未分析被调: sub_4034D0；分析这些函数后方可标已分析
+ * 分析结论（已读体）: if op2>0x1F: error-report (sprintf aRembit + showMessage); else op1 = op1 & ~(1<<op2) written back; 操作数类型=int/int; 操作数=[1:int/dest/in, 2:int/bit]; arity=5; evidence=v2=readInt(2); if(v2>0x1F){...aRembit...} else {v4=readInt(1); writeIntOperand(1,~(1<<v3)&v4);}; decEnc=true; pure=false
+ * ⚠ 未分析被调: showMessage(原 sub_4034D0；已 PARTIAL —— 其内部再调未分析 sub_4976A0)；分析后方可标已分析
  */
 void Engine::op_bit_reset_42F920(int _this)
 {
@@ -55,7 +55,7 @@ void Engine::op_bit_reset_42F920(int _this)
   if ( v2 > 0x1F )
   {
     StringFormat((char *)(this->message_buf), 1024, aRembit);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
@@ -68,8 +68,8 @@ void Engine::op_bit_reset_42F920(int _this)
 /* ===== [stained] sub_42FB40  状态: PARTIAL =====
  * Engine 成员函数  → op_check_bit_42FB40
  * raw 行区间 [39549, 39568]; op=0x13F 指令名『check-bit』
- * 分析结论（已读体）: if op3>0x1F: error-report (sprintf aGetbit + sub_4034D0); else op1 = ((1<<op3) & op2) != 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/value, 3:int/bit]; arity=7; evidence=v2=readInt(3); if(v2>0x1F){...aGetbit...} else {v4=readInt(2); writeIntOperand(1,((1<<v3)&v4)!=0);}; decEnc=true; pure=false
- * ⚠ 未分析被调: sub_4034D0；分析这些函数后方可标已分析
+ * 分析结论（已读体）: if op3>0x1F: error-report (sprintf aGetbit + showMessage); else op1 = ((1<<op3) & op2) != 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/value, 3:int/bit]; arity=7; evidence=v2=readInt(3); if(v2>0x1F){...aGetbit...} else {v4=readInt(2); writeIntOperand(1,((1<<v3)&v4)!=0);}; decEnc=true; pure=false
+ * ⚠ 未分析被调: showMessage(原 sub_4034D0；已 PARTIAL —— 其内部再调未分析 sub_4976A0)；分析后方可标已分析
  */
 void Engine::op_check_bit_42FB40(int _this)
 {
@@ -83,7 +83,7 @@ void Engine::op_check_bit_42FB40(int _this)
   if ( v2 > 0x1F )
   {
     StringFormat((char *)(this->message_buf), 1024, aGetbit);
-    this->sub_4034D0( (const char *)(this->message_buf));
+    this->showMessage( (const char *)(this->message_buf));
   }
   else
   {
