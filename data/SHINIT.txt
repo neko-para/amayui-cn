@@ -6,8 +6,8 @@ local_vars = { 4 1 1 1 1 1 }
 mov (global-int 6c61b3) 0
 mov (global-int 6c61b4) 0
 mov (global-int 6c61b2) 0
-copy-to-global (global-int 6c61b5) 4
-copy-to-global (global-int 6c60ea) c8
+fill-zero (global-int 6c61b5) 4
+fill-zero (global-int 6c60ea) c8
 eq (local-int 0) (global-int 6c60e9) 1
 jcc (local-int 0) ffffffff label_000016a4
 mov (global-int 6c61b4) 4e00

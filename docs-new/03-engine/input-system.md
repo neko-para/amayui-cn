@@ -2,7 +2,7 @@
 
 > 本文档是《天結いキャッスルマイスター》引擎**输入子系统**的权威机制记录（反编译自 `engine/天结_unpacked.exe_utf8.c`，
 > 模块基址 0x400000，引擎单例 `this`，**字节偏移**；`_this[N]` 为 **DWORD 下标**，换算 `N×4 = 字节偏移`）。
-> 覆盖：输入位掩码语义、两次"设备刷子"、各设备轮询、回调注册模型（`mouse_callback`/`joy_callback`）、
+> 覆盖：输入位掩码语义、两次"设备刷子"、各设备轮询、回调注册模型（`mouse-callback`/`joy-callback`）、
 > 输入派发子程序（`get-input-type`/`poll-input`）、鼠标位置/按钮读取指令、按键绑定指令、光标外观，以及 TITLE 等脚本的实际用法。
 >
 > 依赖与范围：`../03-engine/opcode-table.md`（opcode→handler 全表）、`runtime-memory.md`（this 布局）、
@@ -18,7 +18,7 @@
    - `sub_478090`（VM 指令 `/ 消息推进` 用）：**吸取**累计/挂起事件（键按下、手柄按钮、POV/摇杆、鼠标），读后即清。
 3. 鼠标按钮在**输入掩码**里占 **bit4=左 / bit5=右**（随 SM_SWAPBUTTON 互换）；而**鼠标按钮值读取指令（0x108）**走另一约定，把左/右放到 **bit0/bit1**。两者勿混。
 4. 鼠标**位置**由 `GetCursorPos + ScreenToClient` 读成窗口客户区坐标，再经虚拟显示映射 `sub_403500` 换算；**0x109** 读 X/Y 到 op1/op2，**0x108** 读按钮态到 op1。
-5. `mouse_callback`(0xCC) / `joy_callback`(0xFB) **不是 hook 函数指针**，而是给"某个输入槽"记一个**脚本跳转目标**（label）。鼠标走 `_this[107664]` + 节流对象 `_this+107447`；手柄走 `_this[33*cur+107725+btn]`。按下匹配时把当前脚本 IP 跳到该 label。
+5. `mouse-callback`(0xCC) / `joy-callback`(0xFB) **不是 hook 函数指针**，而是给"某个输入槽"记一个**脚本跳转目标**（label）。鼠标走 `_this[107664]` + 节流对象 `_this+107447`；手柄走 `_this[33*cur+107725+btn]`。按下匹配时把当前脚本 IP 跳到该 label。
 6. `get-input-type`(0xCD) 是**消息/ADV 的"点击推进"门**：按 `timeGetTime()` 节流；若注册过鼠标跳转目标（`_this[107664]≠-1`）则把脚本设到 `4*_this[107664]` 偏移处（即跳到 label），无则回退不跳。**它不"返回输入类型"**（旧描述不准确）。
 7. `poll-input`(0x101) 做 `sub_478090` 刷掩码 → 清 `_this[174801]&0x8000000`、`_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。脚本用它"空耗一帧"并把挂起输入转交给下一条逻辑。
 8. **手柄 POV/摇杆方向**映射为输入掩码 bit1/2/4/8（上/右/下/左），由 `sub_4774F0` 维护**按下保持态** `_this[4*dev+4640]`（bitmask 记忆四向，边沿只在"新按下"那帧置入掩码）。
@@ -39,9 +39,9 @@
 | `_this[1159]` | 输入管理器内 **键按挂起累加器**（`sub_477130` 消费后置 0）。 |
 | `_this[1688]` | 输入管理器内 **键盘/鼠标轮询开关**（`sub_477080` 置）。为 1 才跑 `GetAsyncKeyState` 轮询。 |
 | `_this[517]` | 主引擎 **SetKeyTotal**（`0xFE` 写）——"当前配置了多少个键/输入位"，也是消息跳读扫描的上限。 |
-| `_this[107664]` | 鼠标回调的**跳转目标**（`mouse_callback` 的 op2）。`_this[430656]`（字节偏移）= 同一字段。 |
-| `_this[107453]` | 鼠标回调节流对象的"槽/率"字段（`mouse_callback` 的 op1）。 |
-| `_this[33*cur+107725+btn]` | 手柄回调映射表（`joy_callback` 的 op2），按下 btn 时跳到该 label。 |
+| `_this[107664]` | 鼠标回调的**跳转目标**（`mouse-callback` 的 op2）。`_this[430656]`（字节偏移）= 同一字段。 |
+| `_this[107453]` | 鼠标回调节流对象的"槽/率"字段（`mouse-callback` 的 op1）。 |
+| `_this[33*cur+107725+btn]` | 手柄回调映射表（`joy-callback` 的 op2），按下 btn 时跳到该 label。 |
 
 > 注意区分两个 `_this` 尺度：**主引擎**（`sub_41ACD0` 等函数用 `int _this`，字节寻址，如 `*(_DWORD*)(_this+430656)`）
 > 与**输入管理器**（`sub_478090/_this+258`，其内部 `_this[1157]` 是相对输入管理器基址 +1157*4）。
@@ -57,7 +57,7 @@ OS 鼠标/键盘/手柄事件
   → sub_478090(_this+258, _this+174802)   // 实时刷：键盘 GetAsyncKeyState + 鼠标按钮 + 手柄 POV/摇杆/按钮
   → _this[174802]                          // 输入状态位掩码
   → 脚本读：poll-input(0x101) 刷后复位 / get-input-type(0xCD) 消息推进
-           / 位检查 check-bit(0x13F) 或 (1<<bit)&value / joy·mouse_callback 注册的跳转
+           / 位检查 check-bit(0x13F) 或 (1<<bit)&value / joy·mouse-callback 注册的跳转
 ```
 
 关键分叉：**帧循环**（`sub_411900`，每帧执行）用 `sub_4780D0` 把当前按住态刷进掩码，**逐条派发 opcode**（dispatch 表 = `this+0xA509C`，`_this[opcode+168999]` 函数指针）。
@@ -125,7 +125,7 @@ if (_this[1157]) *a2 |= 0x40u;
 
 ## 6. 回调注册模型（不是函数指针！）
 
-### 6a. `mouse_callback`（0xCC，sub_421980）— raw.c 30317
+### 6a. `mouse-callback`（0xCC，sub_421980）— raw.c 30317
 ```c
 _this[30*cur + 95805] = 5;                 // 设本脚本 arity=5（argc=2）
 _this[107664] = sub_41BF50(_this, 2);      // op2 → 鼠标跳转目标(label 值)
@@ -133,17 +133,17 @@ _this[107674] = _this[30*cur + 95796];     // 当前脚本 depth
 v2 = sub_41BF50(_this, 1);                 // op1 → 鼠标"槽/率"
 return sub_453A60(_this + 107447, v2);     // 节流对象 [this+2]=1, [this+5]=timeGetTime(), [this+6]=op1
 ```
-⇒ **一条 `mouse_callback <slot> <label>` 注册**：`op2`(label) 存进 `_this[107664]`，`op1`(slot) 存进节流对象 `_this+107447`（`_this[107453]`）。
+⇒ **一条 `mouse-callback <slot> <label>` 注册**：`op2`(label) 存进 `_this[107664]`，`op1`(slot) 存进节流对象 `_this+107447`（`_this[107453]`）。
 
-### 6b. `joy_callback`（0xFB，sub_421B80）— raw.c 30400
+### 6b. `joy-callback`（0xFB，sub_421B80）— raw.c 30400
 ```c
 _this[30*cur + 95805] = 5;
 if (op1 < 0 || op1 >= 32) throw ShowMessage("set-keyjump");   // 校验 0..31
 _this[33*cur + 107725 + op1] = op2;        // 手柄按钮 op1 → 跳转 label=op2（每脚本×每键）
 ```
-⇒ **一条 `joy_callback <btn0..31> <label>`**：在**当前脚本帧**的把手表 `_this[33*cur+107725+btn]` 记 `label`。手柄按钮共 32 个（`sub_477000` 的 `_this[1125..]` 虚拟位）。
+⇒ **一条 `joy-callback <btn0..31> <label>`**：在**当前脚本帧**的把手表 `_this[33*cur+107725+btn]` 记 `label`。手柄按钮共 32 个（`sub_477000` 的 `_this[1125..]` 虚拟位）。
 
-> ⚠️ **勘误（对旧 CONTEXT/表）**：`joy_callback`(0xFB) **不**做 `sub_453A60(_this+107454, op1)`。`sub_453A60(_this+107454, …)` 的写法属于 **0xCE（sub_4219E0）**——它注册的是另一组（`_this[107665]/[107666]` + `_this+107454`）节流。`0xFB` 实为"把手按 label 记到 `_this[33*cur+107725+btn]`"。
+> ⚠️ **勘误（对旧 CONTEXT/表）**：`joy-callback`(0xFB) **不**做 `sub_453A60(_this+107454, op1)`。`sub_453A60(_this+107454, …)` 的写法属于 **0xCE（sub_4219E0）**——它注册的是另一组（`_this[107665]/[107666]` + `_this+107454`）节流。`0xFB` 实为"把手按 label 记到 `_this[33*cur+107725+btn]`"。
 
 ### 6c. 节流/计时对象：`sub_453A60` / `sub_453AF0`（raw.c 66101 / 66148）
 - `sub_453A60(this, a2)`: `this[2]=1; this[5]=timeGetTime(); this[6]=a2?a2:1;`（起一个"帧率/等待"计时器：帧数、起始时刻、步长）。
@@ -198,7 +198,7 @@ if (v2) {                                  // 有键按下
 }
 _this[30*cur + 95805] = 0;
 ```
-⇒ **0x100 是"消息跳读/按键推进"派发器**：找掩码里最低按下位，按该位在**本脚本节**的 `_this[33*cur+107725+bit]` 跳到注册 label（`joy_callback` 登记）；未注册则回退。`_this[517]`(SetKeyTotal) 用它做"默认键/总键数"的扫描上限与默认检查。
+⇒ **0x100 是"消息跳读/按键推进"派发器**：找掩码里最低按下位，按该位在**本脚本节**的 `_this[33*cur+107725+bit]` 跳到注册 label（`joy-callback` 登记）；未注册则回退。`_this[517]`(SetKeyTotal) 用它做"默认键/总键数"的扫描上限与默认检查。
 
 ---
 
@@ -211,7 +211,7 @@ _this[30*cur + 95805] = 0;
 
 - `0x109` 若 `Point` 为 (-100000,-100000)（鼠标未初始化/出窗口），写 op1=-100000、op2=Point.y；否则 `sub_498350`(坐标变换)、`sub_403500`(虚拟显示映射，用 `_this[699168]/[699172]` 分辨率、`_this+697620` 显示对象、`_this[107707..107710]` 裁剪) 后写 op1=X、op2=Y。
 - **TITLE 用法**（src/TITLE.txt）：
-  - `mouse_callback 10 label_00000460`（L53）：鼠标"槽 10"按下 → 跳到悬停/点击菜单处理。
+  - `mouse-callback 10 label_00000460`（L53）：鼠标"槽 10"按下 → 跳到悬停/点击菜单处理。
   - `label_0000047c`（L72 起）被点击时调用：`2FC (local 3fe)(local 3f0)(local 3f1)(local 3ff)(local 400)` 做 **UI 命中测试**（0x2FC，`sub_431BA0`——给定鼠标 X/Y，判定选中哪个菜单项）；随后 `u00415EC0` 重读位置、`u00415E70` 读按钮态，`and (local)(按钮态) 2` 判**右键**推进/取消。
   - 主轮询 `label_0000039c`（L56 起）：`get-input-type` → 按 `local 3fc`(当前菜单状态 1/2/3) 分支跳转；`sleep 1; jmp label_0000039c` 空转等待，直到手柄回调/鼠标回调把 `local 3fc` 改走。
 
@@ -251,13 +251,13 @@ _this[30*cur + 95805] = 0;
 - **`InputManager`**（emulator 侧重建模输入管理器）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿（mouse/joy）、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（`flush()` 生成，鼠标=bit4/5、手把=bit4+i）。
 - **已实现的输入 opcode**（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/注册/跳转均真实生效）：
   - `0x108` 读鼠标按钮值→op1；`0x109` 读鼠标位置 X/Y→op1/op2（-100000=未初始化）。
-  - `0xCC` mouse_callback：记 `input.mouseSlot=op1`、`input.mouseJump=op2`；`0xFB` joy_callback：记 `input.joyJump[btn]=op2`（校验 0..31）。
+  - `0xCC` mouse-callback：记 `input.mouseSlot=op1`、`input.mouseJump=op2`；`0xFB` joy-callback：记 `input.joyJump[btn]=op2`（校验 0..31）。
   - `0xCD` get-input-type：有挂起鼠标活动（**移动** 或 按下沿）且注册过 `mouseJump` → **压返回地址**并派发跳到该 label（hover/点击；handler 的 `ret` 回到循环下一条）；否则扫手把沿、有注册目标则跳；都没有则吞活动落回。
   - `0x12E` (u0041E940) 悬停命中：point-in-rect，**几何完全读取自脚本数据数组**（op5=size 盒数组逐项 4 值、op6=base X 数组、op7=base Y 数组、op8=count；判定 `dx0≤x-baseX[i]≤dx1 && dy0≤y-baseY[i]≤dy1`）。TITLE 实例用 `local cd/d1/d5/d9/dd`（size）+ `local 5`/`local 69`（base X/Y）+ `local 0`=count=5；**不在引擎里写死/模拟任何按钮坐标**。
   - `0x2FC` (sub_431BA0) 读鼠标触点 + 虚拟坐标：有触点写 `op1=1`、`op2=X`、`op3=Y`、`op4≈按钮态`、`op5=0`；无触点写 `op1=0`。TITLE 紧随 `jcc(op1) … label_00000500` 据此走"聚焦/选中"分支。
   - `0x100` / `0xFF` / `0x101`：掩码派发扫描 / 重置重刷 / 刷后清零。
 - **DOM 鼠标捕获**（`PixiBackend.create(status, input)`）：监听 canvas 的 `mousemove`/`mousedown`/`mouseup`/`mouseleave`，映射到虚拟坐标并写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 顶部显示 `mouse=(x,y) btn=L/R`。
-- **测试**：`test/input.test.ts` 覆盖 InputManager 单元 + TITLE 端到端（登记 mouse_callback → 首条 get-input-type → 注入**鼠标移动**/点击 → 派发跳到目标，hover handler 跑完回循环且不离开 TITLE）。
+- **测试**：`test/input.test.ts` 覆盖 InputManager 单元 + TITLE 端到端（登记 mouse-callback → 首条 get-input-type → 注入**鼠标移动**/点击 → 派发跳到目标，hover handler 跑完回循环且不离开 TITLE）。
 
 > ⚠️ **hover 高亮可随光标移动并可回退**：`0x2FC` 取鼠标（op1=触点?1:0、op2/3=坐标）、`0x12E` 按脚本数据命中、`texture-op`(0x1F7) 标记图元重渲染；`0x203 set-draw-color-alpha` 按引擎读 **op3=alpha、op4=color → ARGB**（修正此前误把 op3 当整色），`PixiBackend` 在无动画窗时也尊重显式设色的 alpha（`colorSet`，供 hover 叠层淡入/淡出）。
 > ⚠️ 剩余：`0xA1/0xA2/0xA3`（菜单派发表）与 `0x20C/0xB5/0x23D/0x32B`（图形/声音清理）仍是**安全桩**（no-op）。**点击选中菜单项**仍需完整菜单派发（`0xA1/0xA2/0xA3`）子系统。**未初始化菜单**（无 SYSTEM4）时点击可能退化进入 GAMESTART/游戏启动路径。
@@ -270,7 +270,7 @@ _this[30*cur + 95805] = 0;
 
 | 文档 | 旧述 | 修正 |
 |---|---|---|
-| CONTEXT.md 0xFB 行 | "joy_callback（sub_421B80）：sub_453A60(_this+107454, op1)" | **错**。0xFB 实为 `_this[33*cur+107725+op1]=op2`（每脚本把手表）。`sub_453A60(_this+107454,…)` 属 **0xCE**(sub_4219E0)。 |
+| CONTEXT.md 0xFB 行 | "joy-callback（sub_421B80）：sub_453A60(_this+107454, op1)" | **错**。0xFB 实为 `_this[33*cur+107725+op1]=op2`（每脚本把手表）。`sub_453A60(_this+107454,…)` 属 **0xCE**(sub_4219E0)。 |
 | CONTEXT.md 0xCD 行 | "判输入模式/时序……返回输入类型（0=无输入）" | **不准确**。0xCD 是消息"点击推进"门：节流 + 读到 `_this[107664]`(鼠标目标)≠-1 则跳转；未注册则原地/回退。无"返回输入类型值"这一语义。 |
 | opcode-table.md | 0xCC/0xCD/0xFB/0x108/0x109/0x100/0x101 均为"仅映射/未读体" | 本文件已读体，语义如上；0xCC/0xCD/0xFB/0x101 已核实（见 opcode-table 对应行更新）。 |
 | CONTEXT.md "poll-input 读取后复位为 0" | 概况 | 精确：`sub_478090` 刷掩码 → 清 `0x8000000` → `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`；掩码供同批位检查，随即清零。 |
@@ -282,9 +282,9 @@ _this[30*cur + 95805] = 0;
 
 | opcode | 名称 | handler | 语义类别 |
 |---|---|---|---|
-| 0xCC | mouse_callback | sub_421980 | 注册鼠标跳转目标（`_this[107664]`=label，`_this+107447`=节流） |
+| 0xCC | mouse-callback | sub_421980 | 注册鼠标跳转目标（`_this[107664]`=label，`_this+107447`=节流） |
 | 0xCD | get-input-type | sub_41ACD0 | 消息"点击推进"门（节流+跳转/回退） |
-| 0xFB | joy_callback | sub_421B80 | 注册手柄跳转（`_this[33*cur+107725+btn]`=label） |
+| 0xFB | joy-callback | sub_421B80 | 注册手柄跳转（`_this[33*cur+107725+btn]`=label） |
 | 0x100 | （消息跳读派发） | sub_419AF0 | 扫掩码最低位→按键表跳转 |
 | 0x101 | poll-input | sub_419CC0 | 刷掩码+清 act（`0x8000000`）+复位 |
 | 0x108 | u00415E70 | sub_42EDC0 | 读鼠标按钮值（bit0/1）op1 |

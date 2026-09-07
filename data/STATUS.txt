@@ -311,20 +311,20 @@ mov (local-int 400) 0
 sub (local-int 3f5) 0 1
 sub (local-int 3f6) 0 1
 sub (local-int 3f7) 0 1
-joy_callback 0 label_00001758
-joy_callback 1 label_00001e84
-joy_callback 2 label_000019bc
-joy_callback 3 label_00001c20
-joy_callback 4 label_000020e8
-joy_callback 5 label_00002188
-joy_callback 6 label_00002188
-joy_callback 7 label_0000212c
-joy_callback 8 label_00002188
-joy_callback 9 label_00002188
-joy_callback a label_00002188
-joy_callback b label_00002188
-joy_callback c label_00002170
-mouse_callback 32 label_000010f0
+joy-callback 0 label_00001758
+joy-callback 1 label_00001e84
+joy-callback 2 label_000019bc
+joy-callback 3 label_00001c20
+joy-callback 4 label_000020e8
+joy-callback 5 label_00002188
+joy-callback 6 label_00002188
+joy-callback 7 label_0000212c
+joy-callback 8 label_00002188
+joy-callback 9 label_00002188
+joy-callback a label_00002188
+joy-callback b label_00002188
+joy-callback c label_00002170
+mouse-callback 32 label_000010f0
 ret
 
 label_00001758
@@ -651,8 +651,8 @@ ret
 label_00002934
 mov (global-int 519af9) (local-int 40f)
 call-script 399f
-copy-to-global (global-int 6ff5cb) 5
-copy-to-global (global-int 6ff5d0) e
+fill-zero (global-int 6ff5cb) 5
+fill-zero (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 5) (global-int 621ba) (global-int 519af9) 8 0
 lea (local-ptr 0) (local-ptr 5)
 memcpy (local-ptr 0) (global-int 6ff5de) 8

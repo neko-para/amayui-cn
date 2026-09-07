@@ -350,8 +350,8 @@ mov (local-int 8) (global-int 546e00)
 mov (global-int 546e00) (local-int 6)
 mov (global-int 519af9) 0
 mov (global-int 6f158) 1
-copy-to-global (global-int 6f1ee) 1e
-copy-to-global (global-int 6f7ca) 1e
+fill-zero (global-int 6f1ee) 1e
+fill-zero (global-int 6f7ca) 1e
 call-script 50fb
 lea (local-ptr 0) (global-int 624e4)
 lookup-array-2d (local-ptr 2) (global-int 7222c) (global-int 546e00) 3 0

@@ -153,20 +153,20 @@ label_00000990
 mov (local-int e) 1
 mov (local-int 13) 0
 i10d (local-int 5)
-joy_callback 0 label_00000ae0
-joy_callback 1 label_0000120c
-joy_callback 2 label_00000d44
-joy_callback 3 label_00000fa8
-joy_callback 4 label_0000148c
-joy_callback 5 label_00001488
-joy_callback 6 label_00001488
-joy_callback 7 label_000014d0
-joy_callback 8 label_00001510
-joy_callback 9 label_00001580
-joy_callback a label_00001488
-joy_callback b label_00001488
-joy_callback c label_00001470
-mouse_callback 10 label_0000042c
+joy-callback 0 label_00000ae0
+joy-callback 1 label_0000120c
+joy-callback 2 label_00000d44
+joy-callback 3 label_00000fa8
+joy-callback 4 label_0000148c
+joy-callback 5 label_00001488
+joy-callback 6 label_00001488
+joy-callback 7 label_000014d0
+joy-callback 8 label_00001510
+joy-callback 9 label_00001580
+joy-callback a label_00001488
+joy-callback b label_00001488
+joy-callback c label_00001470
+mouse-callback 10 label_0000042c
 ret
 
 label_00000ae0
@@ -469,7 +469,7 @@ ret
 label_00001abc
 mov (local-int 37a6) 0
 mov (local-int 37a5) 0
-copy-to-global (local-int 33bd) 3e8
+fill-zero (local-int 33bd) 3e8
 jcc (global-int b228) ffffffff label_00001e74
 i12f (local-int 415) (global-int 1569b0) (local-int 2355) 3e8
 mov (local-int 404) 0
@@ -618,9 +618,9 @@ mov (local-int 8) (local-int b)
 
 label_0000256c
 mul (local-int 7e0c) 2 fa0
-copy-to-global (local-int 3b95) (local-int 7e0c)
+fill-zero (local-int 3b95) (local-int 7e0c)
 mul (local-int 7e0c) 2 2
-copy-to-global (local-int 7a15) (local-int 7e0c)
+fill-zero (local-int 7a15) (local-int 7e0c)
 lookup-array (local-ptr 2) (local-int 33bd) (local-int 37a6)
 jcc (local-ptr 2) ffffffff label_00002d9c
 lookup-array (local-ptr 2) (local-int 33bd) (local-int 37a6)
@@ -716,7 +716,7 @@ label_00002d9c
 ret
 
 label_00002da0
-copy-to-global (local-int 37ad) 3e8
+fill-zero (local-int 37ad) 3e8
 jcc (global-int b228) ffffffff label_0000344c
 mov (local-int 37ab) 0
 jmp label_00002e0c
@@ -1924,7 +1924,7 @@ draw-texture (local-int 7e0d) (local-int 7e0a) 330 388 18a 1c b1 (local-int 7e10
 jmp label_00008b14
 
 label_00008c28
-copy-to-global (local-int 7a19) 3e8
+fill-zero (local-int 7a19) 3e8
 mov (global-int 519afa) 1
 jmp label_00008c78
 

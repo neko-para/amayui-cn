@@ -5,11 +5,11 @@ local_vars = { a 1 1 5 1 2 }
 
 mov (global-int 5465d4) 0
 mov (global-int 5465d5) 0
-copy-to-global (global-int 5465de) d
-copy-to-global (global-int 5465eb) d
-copy-to-global (global-int 5465d6) 8
-copy-to-global (global-int 5465f8) 8
-copy-to-global (global-int 546600) 3e8
+fill-zero (global-int 5465de) d
+fill-zero (global-int 5465eb) d
+fill-zero (global-int 5465d6) 8
+fill-zero (global-int 5465f8) 8
+fill-zero (global-int 546600) 3e8
 mov (local-int 0) 0
 jmp label_00000104
 

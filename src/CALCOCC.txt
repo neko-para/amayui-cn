@@ -212,7 +212,7 @@ jmp label_00000ce8
 label_00000f48
 mov (local-int 10) 0
 copy-local-array (global-int 56d79) [64 0 0 0 0]
-copy-to-global (global-int 50ff9a) 5
+fill-zero (global-int 50ff9a) 5
 mov (local-int 4) 1
 jmp label_00000fc0
 

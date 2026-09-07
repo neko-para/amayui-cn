@@ -6,11 +6,11 @@ local_vars = { 404 1 1 8 1 1 }
 mov (global-int 5affb) 0
 mov (global-int 5b014) 0
 mov (global-int 5b8c9) 0
-copy-to-global (global-int 5afe2) a
-copy-to-global (global-int 5affc) a
-copy-to-global (global-int 5b8b1) a
+fill-zero (global-int 5afe2) a
+fill-zero (global-int 5affc) a
+fill-zero (global-int 5b8b1) a
 mul (local-int 3fb) 20 20
-copy-to-global (global-int 5104a4) (local-int 3fb)
+fill-zero (global-int 5104a4) (local-int 3fb)
 lookup-array-2d (local-ptr 0) (global-int 6f1ee) (global-int 519af9) 1e 6
 jcc (local-ptr 0) label_00001fb0 ffffffff
 lookup-array-2d (local-ptr 0) (global-int 6205c) (global-int 519af9) 5 0

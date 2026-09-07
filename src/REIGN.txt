@@ -741,20 +741,20 @@ mov (local-int 2cd) (local-int 2ce)
 mov (local-int 2d2) 1
 i109 (local-int 2c1) (local-int 2c2)
 i10d (local-int 2dd)
-joy_callback 0 label_000037d8
-joy_callback 1 label_000038e4
-joy_callback 2 label_0000384c
-joy_callback 3 label_000038c0
-joy_callback 4 label_00003908
-joy_callback 5 label_000039a0
-joy_callback 6 label_000039a0
-joy_callback 7 label_00003948
-joy_callback 8 label_000039a4
-joy_callback 9 label_000039c4
-joy_callback a label_000039a0
-joy_callback b label_000039a0
-joy_callback c label_00003988
-mouse_callback 10 label_00002048
+joy-callback 0 label_000037d8
+joy-callback 1 label_000038e4
+joy-callback 2 label_0000384c
+joy-callback 3 label_000038c0
+joy-callback 4 label_00003908
+joy-callback 5 label_000039a0
+joy-callback 6 label_000039a0
+joy-callback 7 label_00003948
+joy-callback 8 label_000039a4
+joy-callback 9 label_000039c4
+joy-callback a label_000039a0
+joy-callback b label_000039a0
+joy-callback c label_00003988
+mouse-callback 10 label_00002048
 ret
 
 label_000037d8
@@ -1635,7 +1635,7 @@ ret
 
 label_000071b0
 mul (local-int 1de7) 26 26
-copy-to-global (global-int 7019fb) (local-int 1de7)
+fill-zero (global-int 7019fb) (local-int 1de7)
 mov (global-int 70154a) 0
 mov (local-int 2ff) 0
 jmp label_00007230
@@ -1747,7 +1747,7 @@ ret
 
 label_000078b0
 mul (local-int 1de7) 26 26
-copy-to-global (global-int 702543) (local-int 1de7)
+fill-zero (global-int 702543) (local-int 1de7)
 mov (local-int 2ff) 0
 jmp label_0000791c
 
@@ -1899,7 +1899,7 @@ label_00008198
 jmp label_0000803c
 
 label_000081a4
-copy-to-global (global-int 934c5) 64
+fill-zero (global-int 934c5) 64
 sub (local-int 1de7) 0 1
 set-array-to (global-int 93529) (local-int 1de7) 64
 mov (local-int 2e7) 0
@@ -2258,8 +2258,8 @@ label_000099ac
 ret
 
 label_000099b0
-copy-to-global (global-int f7b39) 258
-copy-to-global (global-int f7d91) 258
+fill-zero (global-int f7b39) 258
+fill-zero (global-int f7d91) 258
 i1f6
 call-script 5170  // SETREIGNTEX
 call label_0000ef0c

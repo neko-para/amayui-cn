@@ -4,11 +4,11 @@ local_vars = { a 1 1 4 1 1 }
 ====
 
 mul (local-int 6) 28 7d0
-copy-to-global (global-int 10e3af) (local-int 6)
+fill-zero (global-int 10e3af) (local-int 6)
 mul (local-int 6) 28 14
-copy-to-global (global-int 121c2f) (local-int 6)
+fill-zero (global-int 121c2f) (local-int 6)
 mul (local-int 6) 28 14
-copy-to-global (global-int 121f4f) (local-int 6)
+fill-zero (global-int 121f4f) (local-int 6)
 mov (global-int 10e3ad) 0
 mov (global-int 10e3ae) 0
 mov (global-int 10e3ac) 0
@@ -74,7 +74,7 @@ div (global-int 10e3ac) (local-int 6) (global-int 10e3ae)
 
 label_00000624
 mul (local-int 6) 28 8
-copy-to-global (global-int 12251c) (local-int 6)
+fill-zero (global-int 12251c) (local-int 6)
 mov (global-int 12251a) 0
 mov (global-int 12251b) 0
 mov (global-int 122519) 0
@@ -120,7 +120,7 @@ mul (local-int 6) (global-int 12251a) 64
 div (global-int 122519) (local-int 6) (global-int 12251b)
 
 label_00000900
-copy-to-global (global-int 122731) 64
+fill-zero (global-int 122731) 64
 mov (global-int 12272e) 0
 mov (global-int 12272f) 0
 mov (global-int 122730) 0

@@ -270,20 +270,20 @@ sub (local-int 3f6) 0 1
 i109 (local-int 3ef) (local-int 3f0)
 i10d (local-int 403)
 i2e5 (local-int 404)
-joy_callback 0 label_000013bc
-joy_callback 1 label_00001ae8
-joy_callback 2 label_00001620
-joy_callback 3 label_00001884
-joy_callback 4 label_00001d4c
-joy_callback 5 label_00001e9c
-joy_callback 6 label_00001e9c
-joy_callback 7 label_00001e40
-joy_callback 8 label_00001ea0
-joy_callback 9 label_00001f10
-joy_callback a label_00001e9c
-joy_callback b label_00001e9c
-joy_callback c label_00001e84
-mouse_callback 32 label_00000b34
+joy-callback 0 label_000013bc
+joy-callback 1 label_00001ae8
+joy-callback 2 label_00001620
+joy-callback 3 label_00001884
+joy-callback 4 label_00001d4c
+joy-callback 5 label_00001e9c
+joy-callback 6 label_00001e9c
+joy-callback 7 label_00001e40
+joy-callback 8 label_00001ea0
+joy-callback 9 label_00001f10
+joy-callback a label_00001e9c
+joy-callback b label_00001e9c
+joy-callback c label_00001e84
+mouse-callback 32 label_00000b34
 ret
 
 label_000013bc
@@ -814,8 +814,8 @@ label_00002fdc
 ret
 
 label_00002fe0
-copy-to-global (local-int b00d) 9
-copy-to-global (local-int cf56) fa0
+fill-zero (local-int b00d) 9
+fill-zero (local-int cf56) fa0
 eq (local-int fe3d) (local-int fe3b) 0
 jcc (local-int fe3d) ffffffff label_00003180
 mov (local-int 407) 0
@@ -904,7 +904,7 @@ label_000035fc
 ret
 
 label_00003600
-copy-to-global (local-int def6) fa0
+fill-zero (local-int def6) fa0
 eq (local-int fe3d) (local-int fe3b) 0
 jcc (local-int fe3d) ffffffff label_000038bc
 eq (local-int fe3d) (local-int fe3b) 0
@@ -1055,7 +1055,7 @@ label_00004090
 ret
 
 label_00004094
-copy-to-global (local-int b016) fa0
+fill-zero (local-int b016) fa0
 mul (local-int 2360) (local-int 2361) 8
 jmp label_000040ec
 
@@ -1169,8 +1169,8 @@ mov (local-int fe38) 1
 label_00004734
 mov (local-int fe37) 0
 mov (local-int fe36) 0
-copy-to-global (local-int ee96) fa0
-copy-to-global (local-int b016) fa0
+fill-zero (local-int ee96) fa0
+fill-zero (local-int b016) fa0
 mov (local-int 2360) 0
 jmp label_000047c0
 

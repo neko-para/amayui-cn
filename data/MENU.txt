@@ -67,7 +67,7 @@ call-script 34
 mov (global-int f801a) 0
 eq (local-int 6) (global-int 0) 2
 jcc (local-int 6) ffffffff label_000004a0
-copy-to-global (global-int 14c8ff) 64
+fill-zero (global-int 14c8ff) 64
 
 label_000004a0
 jmp label_00000b10

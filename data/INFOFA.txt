@@ -75,20 +75,20 @@ poll-input
 
 label_00000580
 play-sound-effect 39a3 2
-joy_callback 0 label_0000114c
-joy_callback 1 label_000015e4
-joy_callback 2 label_0000133c
-joy_callback 3 label_00001500
-joy_callback 4 label_000016c8
-joy_callback 5 label_00001148
-joy_callback 6 label_00001148
-joy_callback 7 label_00001708
-joy_callback 8 label_00001748
-joy_callback 9 label_000017d8
-joy_callback a label_00001148
-joy_callback b label_00001148
-joy_callback c label_00001130
-mouse_callback 10 label_000007b0
+joy-callback 0 label_0000114c
+joy-callback 1 label_000015e4
+joy-callback 2 label_0000133c
+joy-callback 3 label_00001500
+joy-callback 4 label_000016c8
+joy-callback 5 label_00001148
+joy-callback 6 label_00001148
+joy-callback 7 label_00001708
+joy-callback 8 label_00001748
+joy-callback 9 label_000017d8
+joy-callback a label_00001148
+joy-callback b label_00001148
+joy-callback c label_00001130
+mouse-callback 10 label_000007b0
 mov (local-int 7dd) 0
 mov (local-int 7da) 0
 mov (local-int 7e5) 0
@@ -521,7 +521,7 @@ call label_00004a94
 ret
 
 label_00001e84
-copy-to-global (local-int 1435) 4
+fill-zero (local-int 1435) 4
 i12f (local-int 7f9) (global-int 132dca) (local-int be1) 1e
 mov (local-int 7ec) 0
 jmp label_00001ef8

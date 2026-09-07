@@ -19,9 +19,9 @@ call-script 3992
 
 label_00000150
 mul (local-int fff) 2 3e8
-copy-to-global (global-int 6f2c3f) (local-int fff)
+fill-zero (global-int 6f2c3f) (local-int fff)
 mul (local-int fff) 2 5
-copy-to-global (global-int 6f340f) (local-int fff)
+fill-zero (global-int 6f340f) (local-int fff)
 eq (local-int fff) (global-int 708ad7) 0
 jcc (local-int fff) ffffffff label_00000dbc
 mov (local-int d) 0
@@ -547,7 +547,7 @@ mov (local-int fc9) 2
 
 label_00002988
 mul (local-int fff) 2 3e8
-copy-to-global (global-int 6f246f) (local-int fff)
+fill-zero (global-int 6f246f) (local-int fff)
 eq (local-int fff) (global-int 92894) (global-int 61c72)
 jcc (local-int fff) ffffffff label_00002a10
 mov (local-int d) 0
@@ -1229,7 +1229,7 @@ mov (global-int 6f341e) 21
 lookup-array-2d (local-ptr 0) (global-int 629ee) (local-int 15) 3 0
 mov (local-ptr 0) 0
 mul (local-int fff) 2 3e8
-copy-to-global (global-int 6f246f) (local-int fff)
+fill-zero (global-int 6f246f) (local-int fff)
 eq (local-int fff) (local-int fc9) 1
 jcc (local-int fff) ffffffff label_00005d00
 call label_0000fbec
@@ -1337,7 +1337,7 @@ mov (global-int 6f2468) 1
 lookup-array (local-ptr 0) (global-int 6d7712) (local-int 18)
 mov (global-int 6f341e) (local-ptr 0)
 mul (local-int fff) 2 3e8
-copy-to-global (global-int 6f246f) (local-int fff)
+fill-zero (global-int 6f246f) (local-int fff)
 lookup-array-2d (local-ptr 0) (global-int 6f246f) (global-int 6f2467) 3e8 (local-int 18)
 mov (local-ptr 0) 1
 lookup-array-2d (local-ptr 0) (global-int 629ee) (local-int 15) 3 0
@@ -1421,7 +1421,7 @@ mov (global-int 6f2467) (global-int 6f2466)
 lookup-array (local-ptr 0) (global-int 6d7712) (local-int 18)
 mov (global-int 6f341e) (local-ptr 0)
 mul (local-int fff) 2 3e8
-copy-to-global (global-int 6f246f) (local-int fff)
+fill-zero (global-int 6f246f) (local-int fff)
 lookup-array-2d (local-ptr 0) (global-int 6f246f) (global-int 6f2466) 3e8 (local-int 18)
 mov (local-ptr 0) 1
 lookup-array-2d (local-ptr 0) (global-int 629ee) (local-int 13) 3 0
@@ -2998,7 +2998,7 @@ label_0000fbec
 mul (local-int fff) 2 3
 memcpy (local-int fd9) (local-int fdf) (local-int fff)
 mul (local-int fff) 6 3
-copy-to-global (local-int 101d) (local-int fff)
+fill-zero (local-int 101d) (local-int fff)
 mov (local-int 102f) 0
 mov (local-int 101a) 0
 mov (local-int 101b) 0

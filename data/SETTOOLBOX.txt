@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 5 1 1 4 1 1 }
 ====
 
-copy-to-global (global-int 6ff5a1) a
+fill-zero (global-int 6ff5a1) a
 lookup-array (local-ptr 0) (global-int 6ff597) (global-int 93465)
 sub (local-int 1) (local-ptr 0) 1
 div (local-int 2) (local-int 1) a

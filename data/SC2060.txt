@@ -47044,7 +47044,7 @@ mov (global-int 1397) 0
 mov (global-int f8043) 190
 call label_000ba280
 call label_000bac30
-toString (global-string d5d) (global-int 8ca65)
+function toString() { [native code] } (global-string d5d) (global-int 8ca65)
 concat (global-string d5d) "本当に買いますか？　所持金" (global-string d5d)
 set-string (global-string e3a) (global-string d5d)
 sub (global-int f8df8) 0 1
@@ -51678,7 +51678,7 @@ jmp label_000bae54
 
 label_000bb30c
 mov (global-int f8047) 0
-copy-to-global (global-int f8049) 14
+fill-zero (global-int f8049) 14
 call label_000bfab8
 
 label_000bb340
@@ -51731,7 +51731,7 @@ jmp label_000bb504
 
 label_000bb6d0
 mov (global-int f8048) 0
-copy-to-global (global-int f805d) 14
+fill-zero (global-int f805d) 14
 
 label_000bb6f8
 jcc (global-int f8071) ffffffff label_000bb78c
@@ -51741,7 +51741,7 @@ jcc (local-int 0) ffffffff label_000bb78c
 i229 0 0 0 0 0
 
 label_000bb78c
-copy-to-global (global-int 3fcd) 14
+fill-zero (global-int 3fcd) 14
 i1f5
 ret
 exit

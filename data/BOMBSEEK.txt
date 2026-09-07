@@ -4,7 +4,7 @@ local_vars = { 9f2 1 1 9 1 1 }
 ====
 
 mul (local-int 9eb) 20 20
-copy-to-global (global-int 5b8cb) (local-int 9eb)
+fill-zero (global-int 5b8cb) (local-int 9eb)
 lookup-array (local-ptr 2) (global-int 6ca422) (global-int 6c61b9)
 eq (local-int 9eb) (local-ptr 2) 0
 jcc (local-int 9eb) ffffffff label_00000144

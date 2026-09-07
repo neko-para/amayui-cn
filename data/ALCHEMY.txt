@@ -306,20 +306,20 @@ mov (local-int 3f5) (local-int 3f7)
 mov (local-int 3f6) (local-int 3f7)
 i10d (local-int 402)
 i2e5 (local-int 403)
-joy_callback 0 label_00001604
-joy_callback 1 label_00001d30
-joy_callback 2 label_00001868
-joy_callback 3 label_00001acc
-joy_callback 4 label_00001f94
-joy_callback 5 label_00002218
-joy_callback 6 label_00002218
-joy_callback 7 label_00002088
-joy_callback 8 label_000020cc
-joy_callback 9 label_00002158
-joy_callback a label_00002218
-joy_callback b label_00002218
-joy_callback c label_000021ec
-mouse_callback 32 label_00000d5c
+joy-callback 0 label_00001604
+joy-callback 1 label_00001d30
+joy-callback 2 label_00001868
+joy-callback 3 label_00001acc
+joy-callback 4 label_00001f94
+joy-callback 5 label_00002218
+joy-callback 6 label_00002218
+joy-callback 7 label_00002088
+joy-callback 8 label_000020cc
+joy-callback 9 label_00002158
+joy-callback a label_00002218
+joy-callback b label_00002218
+joy-callback c label_000021ec
+mouse-callback 32 label_00000d5c
 ret
 
 label_00001604
@@ -765,7 +765,7 @@ jmp label_00002c84
 
 label_00002e08
 mov (local-int 11ad0) 0
-copy-to-global (local-int e6d7) 3e8
+fill-zero (local-int e6d7) 3e8
 mov (local-int b7df) 0
 jmp label_00002e6c
 
@@ -911,7 +911,7 @@ jmp label_00003c0c
 label_000037a4
 eq (local-int 11add) (local-int 11ad3) 2
 jcc (local-int 11add) ffffffff label_00003c0c
-copy-to-global (local-int eabf) fa0
+fill-zero (local-int eabf) fa0
 mov (local-int b7df) 0
 jmp label_0000382c
 
@@ -1524,7 +1524,7 @@ ret
 
 label_0000638c
 call-script 5154
-copy-to-global (local-int 13b4) 3e8
+fill-zero (local-int 13b4) 3e8
 mov (local-int b7ec) 0
 jmp label_000063e8
 
@@ -1562,7 +1562,7 @@ jmp label_000063cc
 
 label_0000660c
 i12f (local-int fcc) (local-int 13b4) (local-int 179c) 3e8
-copy-to-global (local-int fc9) 3
+fill-zero (local-int fc9) 3
 mov (local-int 407) 0
 jmp label_00006680
 
@@ -1627,7 +1627,7 @@ label_00006b08
 ret
 
 label_00006b0c
-copy-to-global (local-int b7c4) a
+fill-zero (local-int b7c4) a
 eq (local-int 11add) (local-int 11ad3) 0
 jcc (local-int 11add) ffffffff label_00006ec0
 mov (local-int b7e9) 0
@@ -1923,7 +1923,7 @@ label_00007f68
 ret
 
 label_00007f6c
-copy-to-global (local-int b7f7) fa0
+fill-zero (local-int b7f7) fa0
 mul (local-int b7df) (local-int b7e0) 8
 jmp label_00007fc4
 
@@ -2154,11 +2154,11 @@ mov (global-int 703e2e) 0
 mov (local-int 11acb) 0
 mov (local-int 11acc) 0
 mov (local-int 11acd) 0
-copy-to-global (local-int d737) fa0
-copy-to-global (local-int fa5f) 12c
-copy-to-global (local-int fb8b) fa0
-copy-to-global (local-int 10b2b) fa0
-copy-to-global (local-int b7f7) fa0
+fill-zero (local-int d737) fa0
+fill-zero (local-int fa5f) 12c
+fill-zero (local-int fb8b) fa0
+fill-zero (local-int 10b2b) fa0
+fill-zero (local-int b7f7) fa0
 mov (local-int b7df) 0
 jmp label_00008f38
 

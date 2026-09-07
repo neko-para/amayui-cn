@@ -3,18 +3,18 @@ signature = SYS4450
 local_vars = { 3 1 1 2 1 1 }
 ====
 
-copy-to-global (global-int 6c5595) 64
-copy-to-global (global-int 6c55f9) 64
-copy-to-global (global-int 6c565d) 64
-copy-to-global (global-int 6c56c1) 64
-copy-to-global (global-int 6c5725) 64
-copy-to-global (global-int 6c5789) 64
-copy-to-global (global-int 6c57ed) 64
+fill-zero (global-int 6c5595) 64
+fill-zero (global-int 6c55f9) 64
+fill-zero (global-int 6c565d) 64
+fill-zero (global-int 6c56c1) 64
+fill-zero (global-int 6c5725) 64
+fill-zero (global-int 6c5789) 64
+fill-zero (global-int 6c57ed) 64
 mul (local-int 0) 64 8
-copy-to-global (global-int 6c5851) (local-int 0)
+fill-zero (global-int 6c5851) (local-int 0)
 mul (local-int 0) 64 d
-copy-to-global (global-int 6c5b71) (local-int 0)
-copy-to-global (global-int 6c6085) 64
+fill-zero (global-int 6c5b71) (local-int 0)
+fill-zero (global-int 6c6085) 64
 mov (local-int 1) 0
 jmp label_00000178
 

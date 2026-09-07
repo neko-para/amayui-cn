@@ -26,8 +26,8 @@ label_0000019c
 jmp label_0000005c
 
 label_000001a8
-copy-to-global (global-int f7b39) 258
-copy-to-global (global-int f7d91) 258
+fill-zero (global-int f7b39) 258
+fill-zero (global-int f7d91) 258
 and (local-int 266) (global-int 9346c) 1
 eq (local-int 267) (local-int 266) 0
 jcc (local-int 267) ffffffff label_00000ab4

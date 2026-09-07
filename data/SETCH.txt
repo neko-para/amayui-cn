@@ -159,10 +159,10 @@ jmp label_00000c4c
 label_00000d34
 lookup-array-2d (local-ptr 2) (global-int 71836) (global-int 519af9) a 0
 lea (local-ptr 0) (local-ptr 2)
-copy-to-global (local-ptr 0) a
+fill-zero (local-ptr 0) a
 lookup-array-2d (local-ptr 2) (global-int 71a2a) (global-int 519af9) a 0
 lea (local-ptr 0) (local-ptr 2)
-copy-to-global (local-ptr 0) a
+fill-zero (local-ptr 0) a
 
 label_00000ddc
 exit

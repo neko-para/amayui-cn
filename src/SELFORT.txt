@@ -239,21 +239,21 @@ mov (local-int 3ff) 1
 mov (local-int 404) 0
 i10d (local-int 405)
 i2e5 (local-int 406)
-joy_callback 0 label_000011c4
-joy_callback 1 label_000018f0
-joy_callback 2 label_00001428
-joy_callback 3 label_0000168c
-joy_callback 4 label_00001b54
-joy_callback 4 label_00001b54
-joy_callback 5 label_00001bec
-joy_callback 6 label_00001bec
-joy_callback 7 label_00001b94
-joy_callback 8 label_00001bf0
-joy_callback 9 label_00001c68
-joy_callback a label_00001bec
-joy_callback b label_00001bec
-joy_callback c label_00001bd4
-mouse_callback 32 label_00000a54
+joy-callback 0 label_000011c4
+joy-callback 1 label_000018f0
+joy-callback 2 label_00001428
+joy-callback 3 label_0000168c
+joy-callback 4 label_00001b54
+joy-callback 4 label_00001b54
+joy-callback 5 label_00001bec
+joy-callback 6 label_00001bec
+joy-callback 7 label_00001b94
+joy-callback 8 label_00001bf0
+joy-callback 9 label_00001c68
+joy-callback a label_00001bec
+joy-callback b label_00001bec
+joy-callback c label_00001bd4
+mouse-callback 32 label_00000a54
 ret
 
 label_000011c4
@@ -610,7 +610,7 @@ eq (local-int 950) (local-int 8f9) 1
 jcc (local-int 950) ffffffff label_000025b4
 lookup-array (local-ptr 4) (global-int 9358e) (local-int 8fa)
 mov (local-ptr 4) 0
-copy-to-global (local-ptr 0) 258
+fill-zero (local-ptr 0) 258
 
 label_000025b4
 eq (local-int 950) (local-int 8f9) 1
@@ -638,7 +638,7 @@ lookup-array (local-ptr 4) (global-int 9358e) (local-int 41e)
 mov (local-ptr 4) 0
 lookup-array-2d (local-ptr 4) (global-int 935f2) (local-int 41e) 258 0
 lea (local-ptr 0) (local-ptr 4)
-copy-to-global (local-ptr 0) 258
+fill-zero (local-ptr 0) 258
 eq (local-int 950) (local-int 41e) (global-int 9358d)
 jcc (local-int 950) ffffffff label_000027f0
 call-script 516e  // SETGARDEN

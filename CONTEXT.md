@@ -30,12 +30,12 @@ OS 鼠标/键盘/手柄事件
 ### 指令（opcode 表）
 | opcode | 名称 | handler | 位置（dispatch 槽） | 架构语义 |
 |---|---|---|---|---|
-| 0xCC | `mouse_callback` | sub_421980 | `_this+676812` | **注册鼠标跳转目标**：读 op2→`_this[107664]`（label），`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象）。按下匹配时 0xCD 跳到 `_this[107664]`。 |
+| 0xCC | `mouse-callback` | sub_421980 | `_this+676812` | **注册鼠标跳转目标**：读 op2→`_this[107664]`（label），`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象）。按下匹配时 0xCD 跳到 `_this[107664]`。 |
 | 0xCD | `get-input-type` | sub_41ACD0 | `_this+676816` | **消息/ADV"点击推进"门**：`timeGetTime()` 与 `_this[429808/429812]` 节流（或 `effect_flags&0x8000000` 激活）；读到 `_this[430656]`(=鼠标目标)≠-1 则跳转，==-1 则原地/回退。**不返回输入类型**（旧述不准确）。 |
-| 0xFB | `joy_callback` | sub_421B80 | `_this+677000` | **注册手柄跳转目标**：校验 op1∈[0,32)，`_this[33*cur+107725+op1]=op2`（把手表）。⚠️ 修正：非 `sub_453A60(_this+107454,op1)`（那属 0xCE）。 |
+| 0xFB | `joy-callback` | sub_421B80 | `_this+677000` | **注册手柄跳转目标**：校验 op1∈[0,32)，`_this[33*cur+107725+op1]=op2`（把手表）。⚠️ 修正：非 `sub_453A60(_this+107454,op1)`（那属 0xCE）。 |
 | 0x101 | `poll-input` | sub_419CC0 | `_this+677024` | **刷掩码并复位**：`sub_478090(_this+258, _this+174802)` 刷累计事件进掩码 → 清 `_this[174801]&0x8000000` → `_this[174802]=0`，置 `_this[122367]=1`、`_this[122370]=0`。供同批位检查读，随即清零。 |
 
-> 旧 label：`mouse_callback`/`get-input-type`/`joy_callback`/`poll-input` 已是语义名（具体旧名见 `docs-new/03-engine/opcode-table.md`）。**emulator 已实现这些输入指令**（见下节「emulator 输入/hover 实现现状」）。
+> 旧 label：`mouse-callback`/`get-input-type`/`joy-callback`/`poll-input` 已是语义名（具体旧名见 `docs-new/03-engine/opcode-table.md`）。**emulator 已实现这些输入指令**（见下节「emulator 输入/hover 实现现状」）。
 
 ### 鼠标位置 / 光标
 - **读位置**：`GetCursorPos(&Point)`（9992/10009）取光标屏幕坐标 → `ScreenToClient` 得客户区坐标（`sub_4771D0`）。
@@ -50,7 +50,7 @@ OS 鼠标/键盘/手柄事件
 
 ### 已实现（输入链路通）
 - `src/vm/input.ts` `InputManager`：光标位置（虚拟 1280×720）、鼠标按钮(bit0/1)、按下沿、**移动标记 `mouseMoved`（hover 派发用）**、回调跳转目标(`mouseJump`/`joyJump[]`)、`flush()` 掩码。
-- opcodes（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/跳转真实生效）：`0x108`(读按钮)、`0x109`(读位置)、`0xCC`(mouse_callback)、`0xFB`(joy_callback)、`0xCD`(get-input-type：**鼠标移动/点击皆派发，并压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，不在引擎写死)、`0x2FC`(读鼠标触点+坐标)、`0x100/0xFF/0x101`、`0x1F7 texture-op`。
+- opcodes（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/跳转真实生效）：`0x108`(读按钮)、`0x109`(读位置)、`0xCC`(mouse-callback)、`0xFB`(joy-callback)、`0xCD`(get-input-type：**鼠标移动/点击皆派发，并压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，不在引擎写死)、`0x2FC`(读鼠标触点+坐标)、`0x100/0xFF/0x101`、`0x1F7 texture-op`。
 - DOM 捕获：`PixiBackend#attachMouseInput` 监听 **window** `mousemove/mousedown/mouseup/contextmenu`，用 `canvas.getBoundingClientRect()` 求虚拟坐标写入 `InputManager`。
 - 交互运行（`renderer.ts`）：进入 TITLE 后**不再按 `titleSteps`/低 `MAX_STEPS` 自动截止**（脚本退出/重置/错误/关窗才收尾）；TITLE 后**停逐条步进日志**（只记 `[input]`/`[input-state]`/错误/切换）。`MAX_STEPS=1e8` 兜底。
 - 诊断：日志里有 `[input] move/down`（DOM 事件）、`[input-state] hasCursor/pos/moved/edge/btn/mouseJump + items={…}`（VM 侧输入 + draw-item 实况，含 handle/layer/dst/alpha，按绘制顺序）。

@@ -203,20 +203,20 @@ mov (local-int d) 0
 i109 (local-int 21f) (local-int 220)
 i10d (local-int 14)
 i2e5 (local-int 15)
-joy_callback 0 label_0000163c
-joy_callback 1 label_00001b10
-joy_callback 2 label_000017d8
-joy_callback 3 label_00001974
-joy_callback 4 label_00001cac
-joy_callback 5 label_00001d44
-joy_callback 6 label_00001d44
-joy_callback 7 label_00001cec
-joy_callback 8 label_00001d48
-joy_callback 9 label_00001dd4
-joy_callback a label_00001d44
-joy_callback b label_00001d44
-joy_callback c label_00001d2c
-mouse_callback 10 label_00001104
+joy-callback 0 label_0000163c
+joy-callback 1 label_00001b10
+joy-callback 2 label_000017d8
+joy-callback 3 label_00001974
+joy-callback 4 label_00001cac
+joy-callback 5 label_00001d44
+joy-callback 6 label_00001d44
+joy-callback 7 label_00001cec
+joy-callback 8 label_00001d48
+joy-callback 9 label_00001dd4
+joy-callback a label_00001d44
+joy-callback b label_00001d44
+joy-callback c label_00001d2c
+mouse-callback 10 label_00001104
 
 label_00000ff4
 mov (local-int e) 0
@@ -1884,7 +1884,7 @@ sub (local-int 21c6) 0 1
 i2da 0 c0 e5 20e d 16 2 (local-int 21c6)
 create-texture c2 370 190 0
 create-texture c3 148 c8 0
-copy-to-global (local-int 21b2) a
+fill-zero (local-int 21b2) a
 mov (local-int f) 0
 jmp label_000085c0
 

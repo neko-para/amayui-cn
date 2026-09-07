@@ -399,7 +399,7 @@ lookup-array (local-ptr 3) (global-int 71d18) (global-int 519af9)
 mov (local-ptr 3) (global-int 6dafd6)
 lookup-array-2d (local-ptr 3) (global-int 62d72) (global-int 519af9) 3e8 0
 lea (local-ptr 0) (local-ptr 3)
-copy-to-global (local-ptr 0) 12c
+fill-zero (local-ptr 0) 12c
 i132 0
 mov (local-int 0) 0
 jmp label_00001e40
@@ -739,6 +739,6 @@ lookup-array (local-ptr 3) (global-int 62a84) (global-int 519af9)
 mov (local-ptr 3) c8
 
 label_000037cc
-copy-to-global (global-int 519acc) 5
-copy-to-global (global-int 519ad1) e
+fill-zero (global-int 519acc) 5
+fill-zero (global-int 519ad1) e
 exit

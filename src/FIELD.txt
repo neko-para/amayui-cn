@@ -130,7 +130,7 @@ jcc (local-int 819f) ffffffff label_00000cd8
 mov (global-int b226) 1
 mov (global-int 9346a) 0
 mov (global-int b22a) 0
-copy-to-global (global-int ea732) 64
+fill-zero (global-int ea732) 64
 eq (local-int 819f) (global-int 708024) 0
 eq (local-int 81a2) (global-int 708ad8) 0
 and (local-int 81a0) (local-int 819f) (local-int 81a2)
@@ -199,31 +199,31 @@ mov (global-int b1b7) 0
 mov (global-int b236) 0
 mov (global-int f7fea) 0
 mov (global-int 56978) 0
-copy-to-global (global-int 56d6f) 5
-copy-to-global (global-int 56d74) 5
-copy-to-global (local-int 39d7) 32
-copy-to-global (global-int 6202a) 32
+fill-zero (global-int 56d6f) 5
+fill-zero (global-int 56d74) 5
+fill-zero (local-int 39d7) 32
+fill-zero (global-int 6202a) 32
 mul (local-int 819f) 32 3
-copy-to-global (global-int 6205c) (local-int 819f)
+fill-zero (global-int 6205c) (local-int 819f)
 mul (local-int 819f) 32 1e
-copy-to-global (global-int 6f1ee) (local-int 819f)
+fill-zero (global-int 6f1ee) (local-int 819f)
 mul (local-int 819f) 32 1e
-copy-to-global (global-int 6f7ca) (local-int 819f)
+fill-zero (global-int 6f7ca) (local-int 819f)
 mul (local-int 819f) 32 32
-copy-to-global (global-int 704ae) (local-int 819f)
+fill-zero (global-int 704ae) (local-int 819f)
 mul (local-int 819f) 32 32
-copy-to-global (global-int 70e72) (local-int 819f)
-copy-to-global (global-int 71c1e) 32
+fill-zero (global-int 70e72) (local-int 819f)
+fill-zero (global-int 71c1e) 32
 mul (local-int 819f) 32 5
-copy-to-global (global-int eb3cd) (local-int 819f)
-copy-to-global (global-int 71cb4) 32
-copy-to-global (global-int 56944) 32
-copy-to-global (global-int 50ff9f) 32
-copy-to-global (global-int 585ff) 32
-copy-to-global (global-int 58631) a
-copy-to-global (global-int 5863b) a
-copy-to-global (global-int 72420) 64
-copy-to-global (global-int e9f62) 3e8
+fill-zero (global-int eb3cd) (local-int 819f)
+fill-zero (global-int 71cb4) 32
+fill-zero (global-int 56944) 32
+fill-zero (global-int 50ff9f) 32
+fill-zero (global-int 585ff) 32
+fill-zero (global-int 58631) a
+fill-zero (global-int 5863b) a
+fill-zero (global-int 72420) 64
+fill-zero (global-int e9f62) 3e8
 mov (local-int 3005) 1
 jmp label_00001054
 
@@ -276,8 +276,8 @@ lookup-array-2d (local-ptr 3) (global-int 71fd4) (local-int 3005) 4 2
 mov (global-int 519ad3) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 71fd4) (local-int 3005) 4 3
 mov (global-int 519ad4) (local-ptr 3)
-copy-to-global (global-int 6205c) 5
-copy-to-global (global-int 62ab6) e
+fill-zero (global-int 6205c) 5
+fill-zero (global-int 62ab6) e
 lookup-array-2d (local-ptr 3) (global-int 72934) (global-int 546e02) d 0
 lea (local-ptr 1) (local-ptr 3)
 lea (local-ptr 2) (global-int 62764)
@@ -377,7 +377,7 @@ mov (global-int b234) (local-ptr 3)
 eq (local-int 819f) (global-int b22a) 0
 jcc (local-int 819f) ffffffff label_00004cf0
 mul (local-int 819f) 20 20
-copy-to-global (global-int 57dff) (local-int 819f)
+fill-zero (global-int 57dff) (local-int 819f)
 mul (local-int 819f) 41 41
 memcpy (global-int 5bd04) (global-int 56d7e) (local-int 819f)
 eq (local-int 819f) (global-int 61ba8) 1
@@ -389,10 +389,10 @@ lookup-array (local-ptr 3) (global-int c1d8) (global-int b222)
 mov (local-ptr 3) 0
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 0
 lea (local-ptr 0) (local-ptr 3)
-copy-to-global (local-ptr 0) 64
+fill-zero (local-ptr 0) 64
 lookup-array-2d (local-ptr 3) (global-int c5c0) (global-int b222) 64 0
 lea (local-ptr 0) (local-ptr 3)
-copy-to-global (local-ptr 0) 64
+fill-zero (local-ptr 0) 64
 
 label_00001cdc
 mov (local-int 2ff9) 1
@@ -1508,20 +1508,20 @@ mov (local-int 2fc1) 0
 mov (local-int 2fcb) 0
 i109 (local-int 2fad) (local-int 2fae)
 i10d (local-int 2fcd)
-joy_callback 0 label_00006a04
-joy_callback 1 label_00006d60
-joy_callback 2 label_000070bc
-joy_callback 3 label_00007418
-joy_callback 4 label_00007c5c
-joy_callback 5 label_00007774
-joy_callback 6 label_00007944
-joy_callback 7 label_00007d60
-joy_callback 8 label_00007dbc
-joy_callback 9 label_00007e68
-joy_callback a label_00007998
-joy_callback b label_00007ae0
-joy_callback c label_00007da0
-mouse_callback 32 label_00005860
+joy-callback 0 label_00006a04
+joy-callback 1 label_00006d60
+joy-callback 2 label_000070bc
+joy-callback 3 label_00007418
+joy-callback 4 label_00007c5c
+joy-callback 5 label_00007774
+joy-callback 6 label_00007944
+joy-callback 7 label_00007d60
+joy-callback 8 label_00007dbc
+joy-callback 9 label_00007e68
+joy-callback a label_00007998
+joy-callback b label_00007ae0
+joy-callback c label_00007da0
+mouse-callback 32 label_00005860
 ret
 
 label_00006a04
@@ -3267,7 +3267,7 @@ add (local-int 819f) ea60 64
 mul (local-int 81a2) (global-int 519af9) 1e
 add (local-int 81a0) (local-int 819f) (local-int 81a2)
 texture-op (local-int 81a0) 1e
-copy-to-global (local-int 80e9) 3
+fill-zero (local-int 80e9) 3
 lookup-array (local-ptr 4) (global-int 6f0f4) (local-int 3012)
 lookup-array (local-ptr 3) (global-int 6d9652) (local-ptr 4)
 mov (local-int 819a) (local-ptr 3)
@@ -3850,7 +3850,7 @@ label_0000fb0c
 ret
 
 label_0000fb10
-copy-to-global (global-int 510912) 3e8
+fill-zero (global-int 510912) 3e8
 lookup-array-2d (local-ptr 3) (global-int 62d72) (global-int 61c72) 3e8 1a0
 lookup-array-2d (local-ptr 4) (global-int 62d72) (global-int 61c72) 3e8 1a3
 or (local-int 81a0) (local-ptr 3) (local-ptr 4)
@@ -3875,9 +3875,9 @@ ret
 label_0000fce4
 mov (local-int 78fa) 0
 mul (local-int 819f) 20 20
-copy-to-global (local-int 65f2) (local-int 819f)
+fill-zero (local-int 65f2) (local-int 819f)
 mul (local-int 819f) 20 20
-copy-to-global (local-int 6df2) (local-int 819f)
+fill-zero (local-int 6df2) (local-int 819f)
 mov (local-int 2ff9) 1
 jmp label_0000fd94
 
@@ -4791,7 +4791,7 @@ mul (local-int 819f) (local-int 80d1) 4
 lookup-array (local-ptr 4) (local-int fa4) (local-int 819f)
 lea (local-ptr 0) (local-ptr 4)
 mul (local-int 819f) (local-int 78fa) 4
-copy-to-global (local-ptr 0) (local-int 819f)
+fill-zero (local-ptr 0) (local-int 819f)
 mov (local-int 2ee4) (local-int 80d1)
 mov (local-int 2fcf) 0
 jmp label_00014500
@@ -5151,7 +5151,7 @@ ret
 
 label_00016138
 mul (local-int 819f) 20 20
-copy-to-global (global-int 59fdf) (local-int 819f)
+fill-zero (global-int 59fdf) (local-int 819f)
 mov (global-int 5abdf) 0
 ret
 
@@ -5654,7 +5654,7 @@ label_000185c4
 ret
 
 label_000185c8
-copy-to-global (global-int 5b3fd) 3e8
+fill-zero (global-int 5b3fd) 3e8
 lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_00018b0c
@@ -6438,7 +6438,7 @@ mov (local-int 80f2) c
 
 label_0001bc94
 call label_00032e20
-copy-to-global (local-int 80e9) 3
+fill-zero (local-int 80e9) 3
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 eq (local-int 819f) (local-ptr 4) 1a5
 jcc (local-int 819f) ffffffff label_0001bd70
@@ -6567,7 +6567,7 @@ eq (local-int 819f) (local-ptr 4) 1a5
 jcc (local-int 819f) ffffffff label_0001c6d0
 lookup-array-2d (local-ptr 3) (global-int 629ee) (global-int 61c72) 3 0
 lea (local-ptr 0) (local-ptr 3)
-copy-to-global (local-ptr 0) 3
+fill-zero (local-ptr 0) 3
 mov (global-int 519af9) (global-int 61c72)
 call label_0002b944
 
@@ -6823,7 +6823,7 @@ lookup-array (local-ptr 4) (global-int 6c715a) (local-ptr 6)
 ne (local-int 819f) (local-ptr 4) c
 jcc (local-int 819f) ffffffff label_0001e400
 mul (local-int 819f) 32 3
-copy-to-global (local-int 80fb) (local-int 819f)
+fill-zero (local-int 80fb) (local-int 819f)
 lookup-array (local-ptr 3) (global-int 6f158) (global-int 61c72)
 mov (local-int 3004) (local-ptr 3)
 ne (local-int 819f) (local-int 3004) 1
@@ -6964,7 +6964,7 @@ label_0001e3f4
 jmp label_0001dbc4
 
 label_0001e400
-copy-to-global (local-int 8191) 7
+fill-zero (local-int 8191) 7
 lookup-array (local-ptr 4) (global-int 6f0f4) (global-int 61c72)
 lookup-array (local-ptr 3) (global-int 6d9a3a) (local-ptr 4)
 jcc (local-ptr 3) ffffffff label_0001e8e8
@@ -7462,8 +7462,8 @@ call label_00006850
 jmp label_00020d08
 
 label_00020cb8
-copy-to-global (global-int 6ff603) fa0
-copy-to-global (global-int 7005a3) fa0
+fill-zero (global-int 6ff603) fa0
+fill-zero (global-int 7005a3) fa0
 mov (global-int 701543) 0
 mov (global-int 701545) 0
 
@@ -8989,8 +8989,8 @@ label_000279e0
 lookup-array (local-ptr 3) (global-int 14d804) (global-int 56d63)
 mov (global-int 51722a) (local-ptr 3)
 mul (local-int 819f) 64 3
-copy-to-global (global-int 51722b) (local-int 819f)
-copy-to-global (global-int 517357) 64
+fill-zero (global-int 51722b) (local-int 819f)
+fill-zero (global-int 517357) 64
 mov (local-int 2fcf) 0
 jmp label_00027a90
 
@@ -9076,7 +9076,7 @@ label_00027fcc
 jmp label_00027ee0
 
 label_00027fd8
-copy-to-global (local-int 80e9) 3
+fill-zero (local-int 80e9) 3
 mov (local-int 2fcf) 0
 jmp label_00028028
 
@@ -10018,7 +10018,7 @@ bit-set (local-int 80ed) (local-int 3004)
 
 label_0002c114
 mul (local-int 819f) 20 20
-copy-to-global (local-int 61f2) (local-int 819f)
+fill-zero (local-int 61f2) (local-int 819f)
 mov (local-int 2ff9) 1
 jmp label_0002c180
 
@@ -10254,11 +10254,11 @@ set-string (local-string 0) "敵を捕獲しました。|捕获了敌人。"
 
 label_0002d05c
 concat (local-string 0) (local-string 0) "（"
-toString (local-string 1) (global-int 6c477e)
+function toString() { [native code] } (local-string 1) (global-int 6c477e)
 concat (local-string 0) (local-string 0) (local-string 1)
 concat (local-string 0) (local-string 0) "/"
 div (local-int 819f) (global-int deb90) a
-toString (local-string 1) (local-int 819f)
+function toString() { [native code] } (local-string 1) (local-int 819f)
 concat (local-string 0) (local-string 0) (local-string 1)
 concat (local-string 0) (local-string 0) "）"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)
@@ -10331,8 +10331,8 @@ lookup-array-2d (local-ptr 3) (global-int 71fd4) (local-int 3005) 4 2
 mov (global-int 519ad3) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (global-int 71fd4) (local-int 3005) 4 3
 mov (global-int 519ad4) (local-ptr 3)
-copy-to-global (global-int 6205c) 5
-copy-to-global (global-int 62ab6) e
+fill-zero (global-int 6205c) 5
+fill-zero (global-int 62ab6) e
 lookup-array-2d (local-ptr 3) (global-int 72934) (global-int 546e02) d 0
 lea (local-ptr 1) (local-ptr 3)
 lea (local-ptr 2) (global-int 62764)
@@ -10790,7 +10790,7 @@ ret
 label_0002f610
 mov (local-int 2fd2) 0
 mul (local-int 819f) 20 20
-copy-to-global (local-int 61f2) (local-int 819f)
+fill-zero (local-int 61f2) (local-int 819f)
 mov (local-int 3007) 1
 jmp label_0002f690
 
@@ -10992,7 +10992,7 @@ label_000305a4
 ret
 
 label_000305a8
-copy-to-global (local-int 39d7) 32
+fill-zero (local-int 39d7) 32
 mov (global-int 519afa) 0
 jmp label_000305f8
 
@@ -11730,7 +11730,7 @@ ret
 
 label_0003399c
 jcc (global-int 14d720) ffffffff label_00033e34
-copy-to-global (local-int 80f7) 4
+fill-zero (local-int 80f7) 4
 mov (local-int 3002) 1
 jmp label_00033a08
 
@@ -14146,8 +14146,8 @@ lookup-array (local-ptr 4) (global-int 62156) (global-int 519af9)
 lookup-array (local-ptr 6) (global-int 531db4) (global-int 519afb)
 add (local-ptr 4) (local-ptr 6) (local-int 819f)
 call-script 4f99  // SETEN
-copy-to-global (global-int 6ff5cb) 5
-copy-to-global (global-int 6ff5d0) e
+fill-zero (global-int 6ff5cb) 5
+fill-zero (global-int 6ff5d0) e
 lookup-array-2d (local-ptr 3) (global-int 621ba) (global-int 519af9) 8 0
 lea (local-ptr 0) (local-ptr 3)
 memcpy (local-ptr 0) (global-int 6ff5de) 8
@@ -14788,7 +14788,7 @@ bit-reset (local-ptr 3) 18
 jmp label_00043a40
 
 label_00043b60
-copy-to-global (global-int 8ceb2) 9
+fill-zero (global-int 8ceb2) 9
 lookup-array (local-ptr 3) (global-int 14ecb0) (global-int b222)
 mov (global-int f8c43) (local-ptr 3)
 call-script 512e  // ADDPROG

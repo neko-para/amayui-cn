@@ -12,7 +12,7 @@ mov (global-int 510004) (local-ptr 0)
 
 label_000000d4
 mul (local-int d) 20 20
-copy-to-global (global-int 5abe2) (local-int d)
+fill-zero (global-int 5abe2) (local-int d)
 i132 0
 shl (local-int d) (global-int 510003) 10
 add (local-int e) (local-int d) (global-int 510004)

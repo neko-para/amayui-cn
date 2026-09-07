@@ -282,20 +282,20 @@ sub (local-int 3f6) 0 1
 i109 (local-int 3ef) (local-int 3f0)
 i10d (local-int 403)
 i2e5 (local-int 404)
-joy_callback 0 label_000014ac
-joy_callback 1 label_00001bd8
-joy_callback 2 label_00001710
-joy_callback 3 label_00001974
-joy_callback 4 label_00001e3c
-joy_callback 5 label_00001f8c
-joy_callback 6 label_00001f8c
-joy_callback 7 label_00001f30
-joy_callback 8 label_00001f90
-joy_callback 9 label_00002000
-joy_callback a label_00001f8c
-joy_callback b label_00001f8c
-joy_callback c label_00001f74
-mouse_callback 32 label_00000c24
+joy-callback 0 label_000014ac
+joy-callback 1 label_00001bd8
+joy-callback 2 label_00001710
+joy-callback 3 label_00001974
+joy-callback 4 label_00001e3c
+joy-callback 5 label_00001f8c
+joy-callback 6 label_00001f8c
+joy-callback 7 label_00001f30
+joy-callback 8 label_00001f90
+joy-callback 9 label_00002000
+joy-callback a label_00001f8c
+joy-callback b label_00001f8c
+joy-callback c label_00001f74
+mouse-callback 32 label_00000c24
 ret
 
 label_000014ac
@@ -811,7 +811,7 @@ label_00003040
 ret
 
 label_00003044
-copy-to-global (local-int 1f7c) 5
+fill-zero (local-int 1f7c) 5
 i12f (local-int 41d) (global-int 5298e4) (local-int 805) 3e8
 mov (local-int 407) 0
 jmp label_000030b8
@@ -972,7 +972,7 @@ label_00003c7c
 ret
 
 label_00003c80
-copy-to-global (local-int 1f81) 3e8
+fill-zero (local-int 1f81) 3e8
 mul (local-int bf0) (local-int bf1) b
 jmp label_00003cd8
 
@@ -1067,8 +1067,8 @@ mov (local-int 2b3b) 1
 label_000041cc
 mov (local-int 2b3a) 0
 mov (local-int 2b39) 0
-copy-to-global (local-int 2751) 3e8
-copy-to-global (local-int 1f81) 3e8
+fill-zero (local-int 2751) 3e8
+fill-zero (local-int 1f81) 3e8
 mov (local-int bef) 0
 jmp label_00004258
 

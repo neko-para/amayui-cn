@@ -122,11 +122,11 @@ jmp label_00000610
 
 label_0000091c
 mul (local-int 1095) 20 20
-copy-to-global (global-int 597df) (local-int 1095)
+fill-zero (global-int 597df) (local-int 1095)
 mul (local-int 1095) 20 20
-copy-to-global (global-int 5a3df) (local-int 1095)
+fill-zero (global-int 5a3df) (local-int 1095)
 mul (local-int 1095) 20 20
-copy-to-global (global-int 5a7df) (local-int 1095)
+fill-zero (global-int 5a7df) (local-int 1095)
 mov (local-int 12) (global-int 510003)
 mov (local-int 13) (global-int 510004)
 call label_00001268

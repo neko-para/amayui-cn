@@ -58,20 +58,20 @@ call label_00004dd0
 call label_00005f40
 call label_000063dc
 play-sound-effect 39a3 2
-joy_callback 0 label_00001018
-joy_callback 1 label_000017b0
-joy_callback 2 label_000012d8
-joy_callback 3 label_000015dc
-joy_callback 4 label_000019b0
-joy_callback 5 label_00001014
-joy_callback 6 label_00001014
-joy_callback 7 label_000019f0
-joy_callback 8 label_00001a30
-joy_callback 9 label_00001ac0
-joy_callback a label_00001014
-joy_callback b label_00001014
-joy_callback c label_00000ffc
-mouse_callback 10 label_0000067c
+joy-callback 0 label_00001018
+joy-callback 1 label_000017b0
+joy-callback 2 label_000012d8
+joy-callback 3 label_000015dc
+joy-callback 4 label_000019b0
+joy-callback 5 label_00001014
+joy-callback 6 label_00001014
+joy-callback 7 label_000019f0
+joy-callback 8 label_00001a30
+joy-callback 9 label_00001ac0
+joy-callback a label_00001014
+joy-callback b label_00001014
+joy-callback c label_00000ffc
+mouse-callback 10 label_0000067c
 mov (local-int 7dd) 0
 mov (local-int 7da) 0
 mov (local-int 7e5) 0
@@ -593,7 +593,7 @@ call label_000063dc
 ret
 
 label_000022cc
-copy-to-global (local-int 273b) 6
+fill-zero (local-int 273b) 6
 i12f (local-int 7fb) (global-int 6c65a2) (local-int be3) 3e8
 mov (local-int 7ec) 0
 jmp label_00002340

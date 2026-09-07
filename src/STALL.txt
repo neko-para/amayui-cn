@@ -198,20 +198,20 @@ sub (local-int 3f5) 0 1
 sub (local-int 3f6) 0 1
 i109 (local-int 3ef) (local-int 3f0)
 i10d (local-int 3ff)
-joy_callback 0 label_00000ec4
-joy_callback 1 label_000015f0
-joy_callback 2 label_00001128
-joy_callback 3 label_0000138c
-joy_callback 4 label_00001854
-joy_callback 5 label_000018f4
-joy_callback 6 label_000018f4
-joy_callback 7 label_00001898
-joy_callback 8 label_000018f8
-joy_callback 9 label_00001968
-joy_callback a label_000018f4
-joy_callback b label_000018f4
-joy_callback c label_000018dc
-mouse_callback 32 label_00000818
+joy-callback 0 label_00000ec4
+joy-callback 1 label_000015f0
+joy-callback 2 label_00001128
+joy-callback 3 label_0000138c
+joy-callback 4 label_00001854
+joy-callback 5 label_000018f4
+joy-callback 6 label_000018f4
+joy-callback 7 label_00001898
+joy-callback 8 label_000018f8
+joy-callback 9 label_00001968
+joy-callback a label_000018f4
+joy-callback b label_000018f4
+joy-callback c label_000018dc
+mouse-callback 32 label_00000818
 ret
 
 label_00000ec4
@@ -733,7 +733,7 @@ ret
 label_00002c14
 mov (global-int 6c477f) 0
 call-script 5120  // CHECKFIT
-copy-to-global (global-int 6c4f55) 3e8
+fill-zero (global-int 6c4f55) 3e8
 mov (global-int 6c4b68) 0
 mov (global-int 6c4f54) 0
 mov (local-int be7) 0

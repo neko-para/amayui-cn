@@ -62,7 +62,7 @@ jmp label_00000684
 label_00000408
 eq (local-int 6) (global-int 70801f) 3
 jcc (local-int 6) ffffffff label_000004b4
-toString (local-string 0) (global-int 708021)
+function toString() { [native code] } (local-string 0) (global-int 708021)
 concat (local-string 0) "×" (local-string 0)
 lookup-array (local-string-ptr 0) (global-string 18e40) (global-int 708020)
 concat (local-string 0) (local-string-ptr 0) (local-string 0)
@@ -89,14 +89,14 @@ jmp label_00000684
 label_000005c4
 eq (local-int 6) (global-int 70801f) 6
 jcc (local-int 6) ffffffff label_00000670
-toString (local-string 0) (global-int 708021)
+function toString() { [native code] } (local-string 0) (global-int 708021)
 concat (local-string 0) "×" (local-string 0)
 lookup-array (local-string-ptr 0) (global-string 1f5ba) (global-int 708020)
 concat (local-string 0) (local-string-ptr 0) (local-string 0)
 jmp label_00000684
 
 label_00000670
-toString (local-string 0) (global-int 708021)
+function toString() { [native code] } (local-string 0) (global-int 708021)
 
 label_00000684
 strlen (local-int 0) (local-string 0)

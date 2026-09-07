@@ -815,7 +815,7 @@ jmp label_00004480
 
 label_00003c70
 mul (local-int 14d) f f
-copy-to-global (local-int 1f) (local-int 14d)
+fill-zero (local-int 1f) (local-int 14d)
 mov (local-int 0) a
 jmp label_00003cdc
 
@@ -839,9 +839,9 @@ label_00003e08
 jmp label_00003cc0
 
 label_00003e14
-copy-to-global (local-int 133) 19
-copy-to-global (local-int 101) 19
-copy-to-global (local-int 11a) 19
+fill-zero (local-int 133) 19
+fill-zero (local-int 101) 19
+fill-zero (local-int 11a) 19
 mov (local-int 100) 0
 mov (local-int 0) 1
 jmp label_00003ea0

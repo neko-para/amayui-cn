@@ -312,20 +312,20 @@ mov (local-int 3f5) (local-int 3f7)
 mov (local-int 3f6) (local-int 3f7)
 i109 (local-int 3ef) (local-int 3f0)
 i10d (local-int 400)
-joy_callback 0 label_00001794
-joy_callback 1 label_00001ec0
-joy_callback 2 label_000019f8
-joy_callback 3 label_00001c5c
-joy_callback 4 label_00002124
-joy_callback 5 label_000021c4
-joy_callback 6 label_000021c4
-joy_callback 7 label_00002168
-joy_callback 8 label_000021c8
-joy_callback 9 label_00002238
-joy_callback a label_000021c4
-joy_callback b label_000021c4
-joy_callback c label_000021ac
-mouse_callback 32 label_00001130
+joy-callback 0 label_00001794
+joy-callback 1 label_00001ec0
+joy-callback 2 label_000019f8
+joy-callback 3 label_00001c5c
+joy-callback 4 label_00002124
+joy-callback 5 label_000021c4
+joy-callback 6 label_000021c4
+joy-callback 7 label_00002168
+joy-callback 8 label_000021c8
+joy-callback 9 label_00002238
+joy-callback a label_000021c4
+joy-callback b label_000021c4
+joy-callback c label_000021ac
+mouse-callback 32 label_00001130
 ret
 
 label_00001794
@@ -1666,7 +1666,7 @@ label_0000699c
 ret
 
 label_000069a0
-copy-to-global (local-int 680) 64
+fill-zero (local-int 680) 64
 mov (local-int 401) 0
 jmp label_000069f0
 
@@ -1719,7 +1719,7 @@ ret
 
 label_00006cc0
 mul (local-int 12be) 64 3
-copy-to-global (local-int 4ec) (local-int 12be)
+fill-zero (local-int 4ec) (local-int 12be)
 mov (local-int 416) (global-int f8c44)
 mov (local-int 401) 0
 jmp label_00006d40
@@ -1796,12 +1796,12 @@ mov (global-int 546e00) (local-ptr 3)
 mov (global-int 519afb) (global-int f8c44)
 mov (global-int 519af9) 0
 mov (global-int 6f158) 1
-copy-to-global (global-int 6f1ee) 1e
-copy-to-global (global-int 6f7ca) 1e
-copy-to-global (global-int 519acc) 5
-copy-to-global (global-int 6ff5cb) 5
-copy-to-global (global-int 519ad1) e
-copy-to-global (global-int 6ff5d0) e
+fill-zero (global-int 6f1ee) 1e
+fill-zero (global-int 6f7ca) 1e
+fill-zero (global-int 519acc) 5
+fill-zero (global-int 6ff5cb) 5
+fill-zero (global-int 519ad1) e
+fill-zero (global-int 6ff5d0) e
 call-script 50fb
 memcpy (global-int 621ba) (global-int 6ff5de) 8
 memcpy (global-int 624da) (global-int 6ff5e6) d
@@ -1832,10 +1832,10 @@ ret
 label_00007428
 mov (global-int 6c477f) (local-int 414)
 call-script 5120
-copy-to-global (global-int 6c4f55) 3e8
+fill-zero (global-int 6c4f55) 3e8
 mov (global-int 6c4b68) 0
 mov (global-int 6c4f54) 0
-copy-to-global (local-int aec) 3e8
+fill-zero (local-int aec) 3e8
 mov (local-int 41c) 1
 jmp label_000074d4
 

@@ -2165,7 +2165,7 @@ jmp label_00007cb8
 
 label_00008170
 mov (global-int f8047) 0
-copy-to-global (global-int f8049) 14
+fill-zero (global-int f8049) 14
 call label_0000a1e0
 
 label_000081a4
@@ -2218,7 +2218,7 @@ jmp label_00008368
 
 label_00008534
 mov (global-int f8048) 0
-copy-to-global (global-int f805d) 14
+fill-zero (global-int f805d) 14
 
 label_0000855c
 jcc (global-int f8071) ffffffff label_000085f0
@@ -2228,7 +2228,7 @@ jcc (local-int 0) ffffffff label_000085f0
 i229 0 0 0 0 0
 
 label_000085f0
-copy-to-global (global-int 3fcd) 14
+fill-zero (global-int 3fcd) 14
 i1f5
 ret
 exit

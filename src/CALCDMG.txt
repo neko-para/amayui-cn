@@ -6,8 +6,8 @@ local_vars = { feb 1 1 f 1 1 }
 copy-local-array (local-int fc7) [1 1 2 2 2 3 4 5 2 6 8 8 7 0 0]
 mov (global-int 6f2468) 0
 sub (global-int 6f2467) 1 (global-int 6f2466)
-copy-to-global (global-int 6f2469) 3
-copy-to-global (global-int 6f246c) 3
+fill-zero (global-int 6f2469) 3
+fill-zero (global-int 6f246c) 3
 lookup-array (local-ptr 2) (global-int 92896) (global-int 6f2466)
 lookup-array (local-ptr 1) (global-int 6c715a) (local-ptr 2)
 eq (local-int fda) (local-ptr 1) 6
@@ -52,7 +52,7 @@ mov (global-int 6f341e) (local-ptr 5)
 
 label_00000404
 mul (local-int fda) 2 3e8
-copy-to-global (global-int 6f246f) (local-int fda)
+fill-zero (global-int 6f246f) (local-int fda)
 sub (local-int fda) 1 (global-int 6f2466)
 lookup-array-2d (local-ptr 1) (local-int 7e6) (local-int fda) 3e8 65
 lea (local-ptr 0) (local-ptr 1)

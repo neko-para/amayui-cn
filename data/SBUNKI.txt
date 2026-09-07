@@ -94,28 +94,28 @@ call-script 5255
 label_00000680
 i20c
 mov (local-int 90) 0
-joy_callback 0 label_00001224
-joy_callback 1 label_000015ac
-joy_callback 2 label_00001370
-joy_callback 3 label_000014d8
-joy_callback 4 label_00001680
-joy_callback 5 label_00001808
-joy_callback 6 label_00001808
+joy-callback 0 label_00001224
+joy-callback 1 label_000015ac
+joy-callback 2 label_00001370
+joy-callback 3 label_000014d8
+joy-callback 4 label_00001680
+joy-callback 5 label_00001808
+joy-callback 6 label_00001808
 and (local-int 9e) (global-int f8fa5) 4
 jcc (local-int 9e) ffffffff label_0000077c
-joy_callback 7 label_0000176c
+joy-callback 7 label_0000176c
 jmp label_00000790
 
 label_0000077c
-joy_callback 7 label_00001808
+joy-callback 7 label_00001808
 
 label_00000790
-joy_callback 8 label_00001808
-joy_callback 9 label_00001808
-joy_callback a label_00001808
-joy_callback b label_00001808
-joy_callback c label_000017f0
-mouse_callback 10 label_000009f8
+joy-callback 8 label_00001808
+joy-callback 9 label_00001808
+joy-callback a label_00001808
+joy-callback b label_00001808
+joy-callback c label_000017f0
+mouse-callback 10 label_000009f8
 sub (local-int 8) 0 1
 sub (local-int 9) 0 1
 mov (local-int a) 0

@@ -56,20 +56,20 @@ poll-input
 
 label_0000041c
 play-sound-effect 39a3 2
-joy_callback 0 label_00000b18
-joy_callback 1 label_00000f58
-joy_callback 2 label_00000cbc
-joy_callback 3 label_00000e74
-joy_callback 4 label_0000103c
-joy_callback 5 label_00000b14
-joy_callback 6 label_00000b14
-joy_callback 7 label_0000107c
-joy_callback 8 label_00000b14
-joy_callback 9 label_00000b14
-joy_callback a label_00000b14
-joy_callback b label_00000b14
-joy_callback c label_00000afc
-mouse_callback 32 label_0000064c
+joy-callback 0 label_00000b18
+joy-callback 1 label_00000f58
+joy-callback 2 label_00000cbc
+joy-callback 3 label_00000e74
+joy-callback 4 label_0000103c
+joy-callback 5 label_00000b14
+joy-callback 6 label_00000b14
+joy-callback 7 label_0000107c
+joy-callback 8 label_00000b14
+joy-callback 9 label_00000b14
+joy-callback a label_00000b14
+joy-callback b label_00000b14
+joy-callback c label_00000afc
+mouse-callback 32 label_0000064c
 mov (local-int 2) 0
 mov (local-int 105) 0
 mov (local-int 109) 0
@@ -380,9 +380,9 @@ label_000014dc
 ret
 
 label_000014e0
-copy-to-global (global-int 708003) 7
-copy-to-global (global-int 708015) 7
-copy-to-global (global-int 70800c) 7
+fill-zero (global-int 708003) 7
+fill-zero (global-int 708015) 7
+fill-zero (global-int 70800c) 7
 mov (local-int 0) 0
 jmp label_00001558
 
@@ -411,7 +411,7 @@ string-lookup-set (local-ptr 0)
 jmp label_000015e4
 
 label_0000166c
-copy-to-global (global-int 708025) 3e8
+fill-zero (global-int 708025) 3e8
 mov (local-int 0) 0
 jmp label_000016bc
 
@@ -473,7 +473,7 @@ label_00001a68
 jmp label_000016a0
 
 label_00001a74
-copy-to-global (global-int 70840d) 3e8
+fill-zero (global-int 70840d) 3e8
 mov (local-int 0) 0
 jmp label_00001ac4
 

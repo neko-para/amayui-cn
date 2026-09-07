@@ -48,9 +48,9 @@ jmp label_0000005c
 label_00000340
 lookup-array (local-ptr 2) (global-int 9358e) (global-int 9358d)
 bit-set (local-ptr 2) 0
-copy-to-global (global-int a3528) 12c
+fill-zero (global-int a3528) 12c
 mul (local-int 7) 26 26
-copy-to-global (global-int a2054) (local-int 7)
+fill-zero (global-int a2054) (local-int 7)
 mov (local-int 1) 0
 jmp label_000003f0
 

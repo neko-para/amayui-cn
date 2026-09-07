@@ -174,20 +174,20 @@ mov (local-int 2d3) 1
 mov (local-int 2d8) 0
 i10d (local-int 2d9)
 i2e5 (local-int 2da)
-joy_callback 0 label_00000c8c
-joy_callback 1 label_000013b8
-joy_callback 2 label_00000ef0
-joy_callback 3 label_00001154
-joy_callback 4 label_0000161c
-joy_callback 5 label_000016b4
-joy_callback 6 label_000016b4
-joy_callback 7 label_0000165c
-joy_callback 8 label_000016b8
-joy_callback 9 label_00001730
-joy_callback a label_000016b4
-joy_callback b label_000016b4
-joy_callback c label_0000169c
-mouse_callback 32 label_00000530
+joy-callback 0 label_00000c8c
+joy-callback 1 label_000013b8
+joy-callback 2 label_00000ef0
+joy-callback 3 label_00001154
+joy-callback 4 label_0000161c
+joy-callback 5 label_000016b4
+joy-callback 6 label_000016b4
+joy-callback 7 label_0000165c
+joy-callback 8 label_000016b8
+joy-callback 9 label_00001730
+joy-callback a label_000016b4
+joy-callback b label_000016b4
+joy-callback c label_0000169c
+mouse-callback 32 label_00000530
 ret
 
 label_00000c8c
@@ -512,7 +512,7 @@ label_00001da4
 ret
 
 label_00001da8
-copy-to-global (local-int b30) 4
+fill-zero (local-int b30) 4
 i12f (local-int c6b) (global-int 703e31) (local-int ec3) 12c
 mov (local-int 2e2) 0
 jmp label_00001e1c
@@ -732,7 +732,7 @@ ret
 
 label_00002b74
 mul (local-int 20f7) 26 26
-copy-to-global (local-int ff1) (local-int 20f7)
+fill-zero (local-int ff1) (local-int 20f7)
 mul (local-int 20f7) 26 26
 memcpy (local-int 1595) (local-int 1b39) (local-int 20f7)
 lookup-array (local-ptr 2) (global-int 7049e9) (global-int 703e2e)

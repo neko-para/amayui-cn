@@ -15,7 +15,7 @@
 
 | opcode | argc | 名称（age-shared） | 引擎位置（handler） | 分析状态 | 已知语义 |
 |---|---|---|---|---|---|
-| 0x1 | 0 |  | sub_418E60 | 已核对 | **抛 Exit 异常(程序退出)**：`_CxxThrowException(Command_Exit)`。handler=sub_418E60（raw .c 25682） |
+| 0x1 | 0 | abort | sub_418E60 | 已核对 | **抛 Exit 异常(程序退出)**：`_CxxThrowException(Command_Exit)`。handler=sub_418E60（raw .c 25682） |
 | 0x2 | 0 | exit | sub_41A820 | 已核对 | 跨脚本**返回调用层**（`cur=frame.caller`；顶层 caller<0 才程序退出）。handler=sub_41A820（raw .c 25629） |
 | 0x3 | 1 | call-script | sub_41C6A0 | 已核对 | 读 operand1=目标脚本索引 → 压帧（cur++）+ 装载新脚本帧。handler=sub_41C6A0（raw .c 26762） |
 | 0x4 | 2 |  | sub_41C770 | 仅映射 |  |
@@ -92,7 +92,7 @@
 | 0x69 | 3 |  | sub_42CD80 | 仅映射 |  |
 | 0x6A | 3 |  | sub_42CDD0 | 仅映射 |  |
 | 0x6B | 3 |  | sub_42CE20 | 仅映射 |  |
-| 0x6C | 2 | copy-to-global | sub_42CE70 | 已核对 | `op1 起的 count 个槽置 0`（**非 mov 值拷贝**）：`v2=&op1; n=op2(count); while(n--) *v2++ = _this[97060]`；`_this[97060]`=**ENC(0)**（`ROL(x,11)==key` 反篡改校验在 3 处独立成立唯一确定）。handler=sub_42CE70（raw .c 37876）。⚠️ 修正旧「局部→全局循环拷贝」——实为 bulk 零初始化 |
+| 0x6C | 2 | fill-zero | sub_42CE70 | 已核对 | `op1 起的 count 个槽置 0`（**非 mov 值拷贝**）：`v2=&op1; n=op2(count); while(n--) *v2++ = _this[97060]`；`_this[97060]`=**ENC(0)**（`ROL(x,11)==key` 反篡改校验在 3 处独立成立唯一确定）。handler=sub_42CE70（raw .c 37876）。⚠️ 修正旧「局部→全局循环拷贝」——实为 bulk 零初始化 |
 | 0x6D | 0 |  | sub_41AA50 | 仅映射 |  |
 | 0x6E | 2 | show-text | sub_41EB20 | 仅映射 | 显示文本。未读体 |
 | 0x6F | 1 | end-text-line | sub_41ECE0 | 仅映射 | 结束当前文本行。未读体 |
@@ -174,7 +174,7 @@
 | 0xC9 | 0 |  | sub_4198A0 | 仅映射 |  |
 | 0xCA | 0 |  | sub_4198E0 | 仅映射 |  |
 | 0xCB | 1 |  | sub_42E8E0 | 仅映射 |  |
-| 0xCC | 2 | mouse_callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、[6]=op1）。按下匹配时 get-input-type(0xCD) 跳到 `_this[107664]`。handler=sub_421980（raw .c 30317） |
+| 0xCC | 2 | mouse-callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、[6]=op1）。按下匹配时 get-input-type(0xCD) 跳到 `_this[107664]`。handler=sub_421980（raw .c 30317） |
 | 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（默认 200ms）节流，或 `(effect_flags&0x8000000)` 激活即推进；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827） |
 | 0xCE | 3 |  | sub_4219E0 | 仅映射 |  |
 | 0xCF | 0 |  | sub_41AE40 | 仅映射 |  |
@@ -190,7 +190,7 @@
 | 0xD9 | 0 |  | sub_419970 | 已核对 | **清标志位**：`_this[174801]&=~0x1000`。handler=sub_419970（raw .c 25022） |
 | 0xDA | 6 |  | sub_42EAE0 | 仅映射 |  |
 | 0xFA | 0 |  | sub_4199B0 | 仅映射 |  |
-| 0xFB | 2 | joy_callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
+| 0xFB | 2 | joy-callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
 | 0xFC | 0 |  | sub_419A70 | 仅映射 |  |
 | 0xFD | 2 |  | sub_421C10 | 仅映射 |  |
 | 0xFE | 1 |  | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30046） |

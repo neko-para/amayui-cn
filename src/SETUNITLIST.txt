@@ -4,8 +4,8 @@ local_vars = { 137 1 1 5 1 1 }
 ====
 
 mul (local-int 131) 4 64
-copy-to-global (global-int 6f675a) (local-int 131)
-copy-to-global (global-int 6f68ea) 4
+fill-zero (global-int 6f675a) (local-int 131)
+fill-zero (global-int 6f68ea) 4
 mov (local-int 1) 1
 jmp label_000000bc
 

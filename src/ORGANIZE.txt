@@ -203,20 +203,20 @@ play-sound-effect 39a3 2
 mov (local-int 3fc) 1
 mov (local-int 3fe) 0
 i10d (local-int 402)
-joy_callback 0 label_00000ef0
-joy_callback 1 label_0000161c
-joy_callback 2 label_00001154
-joy_callback 3 label_000013b8
-joy_callback 4 label_00001880
-joy_callback 5 label_00001a40
-joy_callback 6 label_00001a40
-joy_callback 7 label_000018c4
-joy_callback 8 label_00001908
-joy_callback 9 label_00001994
-joy_callback a label_00001a40
-joy_callback b label_00001a40
-joy_callback c label_00001a28
-mouse_callback 10 label_00000828
+joy-callback 0 label_00000ef0
+joy-callback 1 label_0000161c
+joy-callback 2 label_00001154
+joy-callback 3 label_000013b8
+joy-callback 4 label_00001880
+joy-callback 5 label_00001a40
+joy-callback 6 label_00001a40
+joy-callback 7 label_000018c4
+joy-callback 8 label_00001908
+joy-callback 9 label_00001994
+joy-callback a label_00001a40
+joy-callback b label_00001a40
+joy-callback c label_00001a28
+mouse-callback 10 label_00000828
 ret
 
 label_00000ef0
@@ -741,7 +741,7 @@ label_00002c00
 ret
 
 label_00002c04
-copy-to-global (global-int 8ceb2) 9
+fill-zero (global-int 8ceb2) 9
 mov (local-int 489) 1
 lookup-array (local-ptr 3) (global-int 14e4e0) (global-int b222)
 mov (global-int b228) (local-ptr 3)
@@ -863,7 +863,7 @@ ret
 
 label_000033f0
 mov (local-int 41a) 0
-copy-to-global (local-int 425) 64
+fill-zero (local-int 425) 64
 mov (local-int 404) 0
 jmp label_00003454
 
@@ -1215,12 +1215,12 @@ mov (global-int 546e02) (global-int 519afb)
 label_000049b4
 mov (global-int 519af9) 0
 mov (global-int 6f158) 1
-copy-to-global (global-int 6f1ee) 1e
-copy-to-global (global-int 6f7ca) 1e
-copy-to-global (global-int 519acc) 5
-copy-to-global (global-int 6ff5cb) 5
-copy-to-global (global-int 519ad1) e
-copy-to-global (global-int 6ff5d0) e
+fill-zero (global-int 6f1ee) 1e
+fill-zero (global-int 6f7ca) 1e
+fill-zero (global-int 519acc) 5
+fill-zero (global-int 6ff5cb) 5
+fill-zero (global-int 519ad1) e
+fill-zero (global-int 6ff5d0) e
 call-script 50fb  // SETCH
 memcpy (global-int 621ba) (global-int 6ff5de) 8
 memcpy (global-int 624da) (global-int 6ff5e6) d

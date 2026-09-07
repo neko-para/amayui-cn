@@ -4,14 +4,14 @@ local_vars = { 1b 1 1 6 1 1 }
 ====
 
 mul (local-int 13) 20 20
-copy-to-global (global-int 581ff) (local-int 13)
+fill-zero (global-int 581ff) (local-int 13)
 mul (local-int 13) 20 20
-copy-to-global (global-int eabe2) (local-int 13)
-copy-to-global (global-int 58646) 385
-copy-to-global (global-int 589cb) 385
-copy-to-global (global-int 58d50) 385
-copy-to-global (global-int 590d5) 385
-copy-to-global (global-int 5945a) 385
+fill-zero (global-int eabe2) (local-int 13)
+fill-zero (global-int 58646) 385
+fill-zero (global-int 589cb) 385
+fill-zero (global-int 58d50) 385
+fill-zero (global-int 590d5) 385
+fill-zero (global-int 5945a) 385
 mov (global-int 58645) 0
 mov (local-int a) 1
 jmp label_00000150

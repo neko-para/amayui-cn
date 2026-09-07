@@ -708,7 +708,7 @@ lookup-array (local-string-ptr 0) (global-string 17ab6) (global-int 519afb)
 draw-string b6 37 a (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string bc6) (global-int 519af9)
 draw-string b6 37 23 (local-string-ptr 0)
-copy-to-global (local-int 24) 3e8
+fill-zero (local-int 24) 3e8
 mov (local-int 0) 0
 jmp label_00004088
 
@@ -901,7 +901,7 @@ jcc (local-int 40d) ffffffff label_00004e18
 lookup-array-2d (local-ptr 0) (global-int 71836) (global-int 519af9) a (local-int 0)
 jcc (local-ptr 0) ffffffff label_00004e0c
 lookup-array-2d (local-ptr 0) (global-int 71a2a) (global-int 519af9) a (local-int 0)
-toString (local-string 0) (local-ptr 0)
+function toString() { [native code] } (local-string 0) (local-ptr 0)
 concat (local-string 0) "×" (local-string 0)
 lookup-array-2d (local-ptr 1) (global-int 71836) (global-int 519af9) a (local-int 0)
 lookup-array (local-string-ptr 0) (global-string 18e40) (local-ptr 1)

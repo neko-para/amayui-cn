@@ -37,20 +37,20 @@ sub (local-int 3f6) 0 1
 sub (local-int 3f7) 0 1
 call label_00003340
 i109 (local-int 404) (local-int 405)
-joy_callback 0 label_000008ec
-joy_callback 1 label_00000d6c
-joy_callback 2 label_00000a6c
-joy_callback 3 label_00000bec
-joy_callback 4 label_00000eec
-joy_callback 5 label_00000fa0
-joy_callback 6 label_00000fa0
-joy_callback 7 label_00000f2c
-joy_callback 8 label_00000fa0
-joy_callback 9 label_00000fa0
-joy_callback a label_00000fa0
-joy_callback b label_00000fa0
-joy_callback c label_00000f6c
-mouse_callback 10 label_00000460
+joy-callback 0 label_000008ec
+joy-callback 1 label_00000d6c
+joy-callback 2 label_00000a6c
+joy-callback 3 label_00000bec
+joy-callback 4 label_00000eec
+joy-callback 5 label_00000fa0
+joy-callback 6 label_00000fa0
+joy-callback 7 label_00000f2c
+joy-callback 8 label_00000fa0
+joy-callback 9 label_00000fa0
+joy-callback a label_00000fa0
+joy-callback b label_00000fa0
+joy-callback c label_00000f6c
+mouse-callback 10 label_00000460
 
 label_0000039c
 get-input-type
@@ -436,7 +436,7 @@ mov (global-int f8df8) (global-int f8c50)
 add (global-int f8c50) (global-int f8c50) 1
 mov (global-int f8df9) 5
 call-script 38
-mouse_callback 10 label_00000460
+mouse-callback 10 label_00000460
 gre (local-int 40d) (global-int f8c52) 0
 jcc (local-int 40d) ffffffff label_00001fac
 call-script 51e4
