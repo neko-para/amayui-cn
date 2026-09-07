@@ -37,7 +37,13 @@ engine/
 └─ 天结_unpacked.exe_utf8.c        # 原始反编译（只读基准；git 提交后不再改）
 engine-refined/
 ├─ 天结_unpacked.exe_utf8.cpp      # 原始基准逐字节副本（只读对照，保持行号；git 提交后不再改）
-├─ engine-members.cpp              # 已提取的 Engine 成员函数（Engine::<name>；memberize.cjs 生成）
+├─ engine/                         # 已提取的 Engine 成员函数（按 op-records 分类拆分；split-members.cjs 生成）
+│  ├─ arith-ops.cpp                # 整数算术/逻辑/比较（add..random）
+│  ├─ bit-ops.cpp                  # 位操作（bit-set/reset/check-bit）
+│  ├─ float-ops.cpp                # 浮点（float-mov, int↔float, 比较）
+│  ├─ str-ops.cpp                  # 字符串（set-string, concat, strlen…）
+│  ├─ memory-ops.cpp               # 数组/索引/取地址(lea)（lookup-array, lea, memcpy…）
+│  └─ members.cpp                  # 其余 Engine 成员函数（未分类/未分析/非纯）
 ├─ remaining-code.cpp              # 剩余代码（已提取成员函数定义区间替换为空行；行号与原始一致；remaining.cjs 生成）
 └─ member-index.json               # 成员染色索引（old/new/op/status/lines 机器可读）
 analysis-registry.json             # 机器可读台账（放仓库根或 engine-refined/ 下）
@@ -48,10 +54,10 @@ analysis-registry.json             # 机器可读台账（放仓库根或 engine
 │  ├─ scan-status.js               # 扫精修 .cpp 的状态标记 → 按状态统计并列出
 │  ├─ func-table.js                # 函数列表 × 台账 → 汇总表（完成度/证据）
 │  ├─ diff-refined.js              # 原始 .c vs 精修 .cpp → 已改函数/行统计（git 优先，缺则行数对比）
-│  └─ (scripts/engine-refined/ 里另有 memberize.cjs / remaining.cjs / integrate-records.cjs)
+│  └─ (scripts/engine-refined/ 里另有 memberize.cjs / split-members.cjs / remaining.cjs / integrate-records.cjs)
 └─ registry.template.json          # analysis-registry.json 模板
 
-> **代码分区（每段只出现在一处，基线除外）**：Engine 成员函数体只在 `engine-members.cpp`；
+> **代码分区（每段只出现在一处，基线除外）**：Engine 成员函数体只在 `engine-refined/engine/*.cpp`；
 > 其余代码（非成员函数、全局、声明/调用点）只在 `remaining-code.cpp`；原始基准保留全部对照。
 > 已提取成员的函数定义区间在 remaining-code.cpp 里**替换为空行**以保持行对应，方便映射回原始。
 

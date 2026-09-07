@@ -1,33 +1,10 @@
 /* =============================================================================
- * engine-members.cpp — 天結いキャッスルマイスター「Engine 成员函数」染色视图
- *
- * 由 scripts/engine-refined/memberize.cjs 生成（无 libclang）。
- * 原始反编译基准：engine-refined/天结_unpacked.exe_utf8.cpp（只读，未改动）。
- *
- * 范围（明确已知 Engine 成员）：
- *   - 成员集合 = docs/re/engine/member_functions.detected.txt 的 1235 个 sub_* 成员
- *     （先前 libclang 基线检测：以「_this 高偏移命中 Engine 顶层字段」为种子 + 调用图双向传播）
- *     ∪ opcode-table.md 全部已映射 handler（dispatch 表 this+0xA509C 分发，必然以 Engine this 为接收者，
- *       可补上 libclang 种子漏检的、只经 helper 调用的 handler，如 random=sub_42CA50）。
- *     共 1241 个。
- *   - 每个成员都抽取于此，改写成 `Engine::<sem>_<addr>(_DWORD *_this, ...)` 成员形式。
- *
- * 转换约定（只改「可确证」部分，绝不臆测）：
- *   - 签名：`RET __thiscall sub_<addr>` -> `RET Engine::<sem>_<addr>`（去掉 __thiscall，
- *     保留 `_DWORD *_this` 形参以维持 DWORD 下标语义；语义名取自 scripts/re/semantic_names.json，
- *     未知语义回退 `sub_<addr>`，地址始终保留以对回汇编）。
- *   - 顶层字段：`_this[K]` 且 K*4 命中 Engine 顶层字节偏移 -> `this->field`
- *     （cur_script / key / frames / dispatch / global_*_base 等，见 engine/engine.hpp）。
- *   - 帧字段：`_this[30*<cur>+K]` 且帧内偏移命中 FRAME_FIELD -> `this->frames[<cur>].field`。
- *   - 成员调用：`<sem>_<addr>(_this, ...)` -> `this-><sem>_<addr>(...)`（接收者=首实参 _this）。
- *     首实参不是裸 `_this`（如 `_this+258` 子对象）的留作普通函数调用，不做 this 化。
- *   - 语义改名：已知语义的 `sub_<addr>` -> `<sem>_<addr>`（调用点/原型同步）。
- *
- * 保留原样：未命中的 `_this[K]` 保持 `_this[K]`（字段尚未确证，不臆测命名）；
- * `_this + N`（子对象偏移）保持 `_this + N`。
- *
- * 索引：engine-refined/member-index.json（每成员 old/new/op/status/lines 机器可读）。
- * 行号依据：raw 行区间与该文件内定义一致（原始基准不变，可用于 evidence 对照）。
+ * members.cpp — 其余 Engine 成员函数（未分类/未分析/非纯）
+ * 由 scripts/engine-refined/split-members.cjs 从 engine-members.cpp 按 op-records.json 分类拆出。
+ * 本文件行数/行号**不**与原文件对应（是拆出的成员子集），行对应请查 member-index.json 的 raw 行区间。
+ * 包含成员：1199 个
+ * 已分类 op：
+  （无已分类 op 记录）
  * ============================================================================= */
 
 /* ===== [stained] sub_4015B0  状态: UNKNOWN =====
@@ -42,6 +19,7 @@ void * Engine::sub_4015B0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4015F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4015F0
@@ -58,6 +36,7 @@ void Engine::sub_4015F0(_DWORD *_this)
     operator delete[](v1);
 }
 
+
 /* ===== [stained] sub_401A70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_401A70
  * raw 行区间 [8302, 8308]
@@ -71,6 +50,7 @@ _DWORD * Engine::sub_401A70(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_401C60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_401C60
  * raw 行区间 [8425, 8431]
@@ -83,6 +63,7 @@ void * Engine::sub_401C60(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_402910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_402910
@@ -101,6 +82,7 @@ HMODULE Engine::sub_402910(void **_this)
   return sub_4D08D0(v2);
 }
 
+
 /* ===== [stained] sub_403140  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403140
  * raw 行区间 [9259, 9269]
@@ -118,6 +100,7 @@ HMODULE Engine::sub_403140(char *_this)
   return sub_4CFC70((int)_this);
 }
 
+
 /* ===== [stained] sub_403290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403290
  * raw 行区间 [9320, 9323]
@@ -127,6 +110,7 @@ void ** Engine::sub_403290(void **_this, char a2)
 {
   return sub_403380(_this - 2, a2);
 }
+
 
 /* ===== [stained] sub_403380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403380
@@ -141,6 +125,7 @@ void ** Engine::sub_403380(void **_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_403470  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403470
  * raw 行区间 [9398, 9404]
@@ -153,6 +138,7 @@ char * Engine::sub_403470(char *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4034A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034A0
@@ -169,6 +155,7 @@ _DWORD * Engine::sub_4034A0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4034B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034B0
  * raw 行区间 [9420, 9423]
@@ -178,6 +165,7 @@ void Engine::sub_4034B0(_DWORD *_this)
 {
   *_this = &BaseObject___vftable_;
 }
+
 
 /* ===== [stained] sub_4034C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034C0
@@ -189,6 +177,7 @@ void Engine::sub_4034C0(int *_this, const void *a2)
   sub_497620(_this[1], a2);
 }
 
+
 /* ===== [stained] sub_4034D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034D0
  * raw 行区间 [9433, 9436]
@@ -198,6 +187,7 @@ void Engine::sub_4034D0(void **_this, const char *a2)
 {
   sub_4976A0(_this[1], a2);
 }
+
 
 /* ===== [stained] sub_4034E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034E0
@@ -209,6 +199,7 @@ int Engine::sub_4034E0(_DWORD **_this)
   return (*(int (__thiscall **)(_DWORD *))(*_this[1] + 8))(_this[1]);
 }
 
+
 /* ===== [stained] sub_4034F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034F0
  * raw 行区间 [9445, 9448]
@@ -218,6 +209,7 @@ int Engine::sub_4034F0(_DWORD **_this)
 {
   return (*(int (__thiscall **)(_DWORD *))(*_this[1] + 4))(_this[1]);
 }
+
 
 /* ===== [stained] sub_403600  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403600
@@ -231,6 +223,7 @@ _DWORD * Engine::sub_403600(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_403660  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403660
@@ -250,6 +243,7 @@ HLOCAL Engine::sub_403660(HLOCAL *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_403680  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403680
  * raw 行区间 [9553, 9561]
@@ -264,6 +258,7 @@ HLOCAL Engine::sub_403680(int _this, SIZE_T uBytes)
   *(_DWORD *)(_this + 1084) = result;
   return result;
 }
+
 
 /* ===== [stained] sub_403700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403700
@@ -356,6 +351,7 @@ int Engine::sub_403700(int _this, HANDLE hFile)
   }
 }
 
+
 /* ===== [stained] sub_403AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AA0
  * raw 行区间 [9715, 9719]
@@ -366,6 +362,7 @@ HLOCAL Engine::sub_403AA0(HLOCAL *_this)
   *_this = &Bmpdata___vftable_;
   return sub_403660(_this);
 }
+
 
 /* ===== [stained] sub_403AB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AB0
@@ -380,6 +377,7 @@ HLOCAL * Engine::sub_403AB0(HLOCAL *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_403AE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AE0
  * raw 行区间 [9732, 9736]
@@ -390,6 +388,7 @@ void Engine::sub_403AE0(_DWORD *_this)
   *_this = &CBunki___vftable_;
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_403FF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403FF0
@@ -403,6 +402,7 @@ _DWORD * Engine::sub_403FF0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_404150  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404150
@@ -419,6 +419,7 @@ _DWORD * Engine::sub_404150(_DWORD *_this)
   _this[850] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_4041C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4041C0
@@ -466,6 +467,7 @@ int Engine::sub_4041C0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_4042C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4042C0
  * raw 行区间 [10122, 10141]
@@ -491,6 +493,7 @@ int Engine::sub_4042C0(int _this)
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_404340  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404340
@@ -543,6 +546,7 @@ LABEL_6:
   return result;
 }
 
+
 /* ===== [stained] sub_404460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404460
  * raw 行区间 [10193, 10205]
@@ -561,6 +565,7 @@ int Engine::sub_404460(int _this)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_4044D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4044D0
@@ -597,6 +602,7 @@ int Engine::sub_4044D0(int _this)
   return 0;
 }
 
+
 /* ===== [stained] sub_404580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404580
  * raw 行区间 [10241, 10257]
@@ -620,6 +626,7 @@ int Engine::sub_404580(int _this, DWORD_PTR dwParam2)
   return 0;
 }
 
+
 /* ===== [stained] sub_404780  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404780
  * raw 行区间 [10356, 10365]
@@ -636,6 +643,7 @@ void Engine::sub_404780(_DWORD *_this)
   sub_48A8D0((int)_this);
 }
 
+
 /* ===== [stained] sub_4047F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4047F0
  * raw 行区间 [10369, 10375]
@@ -648,6 +656,7 @@ _DWORD * Engine::sub_4047F0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_404CB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404CB0
@@ -670,6 +679,7 @@ int Engine::sub_404CB0(int **_this)
   return 1;
 }
 
+
 /* ===== [stained] sub_404EC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404EC0
  * raw 行区间 [10707, 10713]
@@ -682,6 +692,7 @@ int Engine::sub_404EC0(_DWORD *_this)
   else
     return -_this[308];
 }
+
 
 /* ===== [stained] sub_404EE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404EE0
@@ -713,6 +724,7 @@ LPSIZE Engine::sub_404EE0(int _this, LPSIZE psizl, unsigned __int16 a3)
   return psizl;
 }
 
+
 /* ===== [stained] sub_4051A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4051A0
  * raw 行区间 [10924, 10935]
@@ -731,6 +743,7 @@ void Engine::sub_4051A0(int *_this)
   }
 }
 
+
 /* ===== [stained] sub_4051E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4051E0
  * raw 行区间 [10938, 10941]
@@ -740,6 +753,7 @@ int Engine::sub_4051E0(_DWORD *_this, int a2)
 {
   return (this->frames[a2].ip - this->frames[a2].str_table) >> 2;
 }
+
 
 /* ===== [stained] sub_405210  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405210
@@ -784,6 +798,7 @@ LONG Engine::sub_405210(LONG *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4052B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4052B0
  * raw 行区间 [10985, 11013]
@@ -819,6 +834,7 @@ int Engine::sub_4052B0(char *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_405330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405330
  * raw 行区间 [11018, 11028]
@@ -836,6 +852,7 @@ int Engine::sub_405330(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_405360  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405360
  * raw 行区间 [11031, 11041]
@@ -852,6 +869,7 @@ int Engine::sub_405360(_DWORD *_this, int a2)
   ++_this[v2 + 97153];
   return (int)&_this[v2 + 97153];
 }
+
 
 /* ===== [stained] sub_4053C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4053C0
@@ -873,6 +891,7 @@ void Engine::sub_4053C0(_DWORD *_this)
     v2[1690] = 1;
   *v1 = 0;
 }
+
 
 /* ===== [stained] sub_405410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405410
@@ -897,6 +916,7 @@ int Engine::sub_405410(_DWORD *_this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_405460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405460
@@ -928,6 +948,7 @@ BOOL Engine::sub_405460(_DWORD *_this, int a2)
   return v3 != 0;
 }
 
+
 /* ===== [stained] sub_4054D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4054D0
  * raw 行区间 [11107, 11118]
@@ -945,6 +966,7 @@ int Engine::sub_4054D0(_DWORD *_this, int a2)
     return 3;
   return (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aSetDependmovie);
 }
+
 
 /* ===== [stained] sub_405530  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405530
@@ -967,6 +989,7 @@ int Engine::sub_405530(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_405580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405580
  * raw 行区间 [11138, 11149]
@@ -985,6 +1008,7 @@ int Engine::sub_405580(HWND *_this, LONG *a2, LONG *a3)
   return 1;
 }
 
+
 /* ===== [stained] sub_4055F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4055F0
  * raw 行区间 [11152, 11159]
@@ -998,6 +1022,7 @@ int Engine::sub_4055F0(int _this, int a2)
   else
     return this->sub_4863C0( 0);
 }
+
 
 /* ===== [stained] sub_405640  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptContextInit_405640
@@ -1032,6 +1057,7 @@ _DWORD * Engine::scriptContextInit_405640(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4056F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4056F0
  * raw 行区间 [11197, 11205]
@@ -1046,6 +1072,7 @@ void * Engine::sub_4056F0(_DWORD *_this)
   _this[122245] = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_405730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405730
@@ -1068,6 +1095,7 @@ int Engine::sub_405730(_DWORD *_this, int a2, int a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4057B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4057B0
@@ -1363,6 +1391,7 @@ LABEL_23:
   }
 }
 
+
 /* ===== [stained] sub_406050  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406050
  * raw 行区间 [11517, 11592]
@@ -1444,6 +1473,7 @@ LRESULT Engine::sub_406050(int _this)
   *(_DWORD *)(_this + 699204) |= 0x200000u;
   return result;
 }
+
 
 /* ===== [stained] sub_406220  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406220
@@ -1587,6 +1617,7 @@ int Engine::sub_406220(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_4065F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4065F0
  * raw 行区间 [11743, 11755]
@@ -1606,6 +1637,7 @@ int Engine::sub_4065F0(_DWORD *_this, HWND hWnd, LPCSTR lpText)
   return result;
 }
 
+
 /* ===== [stained] sub_406650  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406650
  * raw 行区间 [11758, 11770]
@@ -1624,6 +1656,7 @@ int Engine::sub_406650(_DWORD *_this, HWND hWnd, LPCSTR lpText, LPCSTR lpCaption
     sub_406220((int)_this);
   return v7;
 }
+
 
 /* ===== [stained] sub_406730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406730
@@ -1818,6 +1851,7 @@ int Engine::sub_406730(int _this, HWND hWnd)
   return 1;
 }
 
+
 /* ===== [stained] sub_406C70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406C70
  * raw 行区间 [11989, 12008]
@@ -1843,6 +1877,7 @@ int Engine::sub_406C70(_DWORD *_this, int a2, HWND hWnd)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_406CE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406CE0
@@ -1878,6 +1913,7 @@ LABEL_8:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_406DF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406DF0
@@ -1954,6 +1990,7 @@ int Engine::sub_406DF0(int *_this, int a2, int a3)
   return result;
 }
 
+
 /* ===== [stained] sub_407120  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_407120
  * raw 行区间 [12113, 12140]
@@ -1987,6 +2024,7 @@ void Engine::sub_407120(int _this)
     }
   }
 }
+
 
 /* ===== [stained] sub_4071D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4071D0
@@ -2046,6 +2084,7 @@ int Engine::sub_4071D0(int *_this, int a2, int a3)
   while ( v8 );
   return result;
 }
+
 
 /* ===== [stained] sub_4078E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4078E0
@@ -2141,6 +2180,7 @@ LABEL_15:
   return &byte_55C3A8;
 }
 
+
 /* ===== [stained] sub_407B20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_407B20
  * raw 行区间 [12580, 12618]
@@ -2186,6 +2226,7 @@ BOOL Engine::sub_407B20(_DWORD *_this, int a2, BOOL a3)
   return result;
 }
 
+
 /* ===== [stained] sub_4080B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4080B0
  * raw 行区间 [12961, 12980]
@@ -2211,6 +2252,7 @@ double Engine::sub_4080B0(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_408130  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408130
@@ -2238,6 +2280,7 @@ double Engine::sub_408130(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_4081B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4081B0
  * raw 行区间 [13009, 13024]
@@ -2260,6 +2303,7 @@ int Engine::sub_4081B0(int _this, double a2)
   return result;
 }
 
+
 /* ===== [stained] sub_408260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408260
  * raw 行区间 [13049, 13058]
@@ -2276,6 +2320,7 @@ int Engine::sub_408260(int *_this, int a2)
   return 1;
 }
 
+
 /* ===== [stained] sub_4082A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4082A0
  * raw 行区间 [13061, 13070]
@@ -2291,6 +2336,7 @@ int Engine::sub_4082A0(int *_this, int a2)
     sub_4B68E0(_this + 4666, i + 12, a2);
   return 1;
 }
+
 
 /* ===== [stained] sub_4082F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4082F0
@@ -2316,6 +2362,7 @@ int Engine::sub_4082F0(_DWORD *_this)
   return 0;
 }
 
+
 /* ===== [stained] sub_408350  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408350
  * raw 行区间 [13093, 13110]
@@ -2339,6 +2386,7 @@ int Engine::sub_408350(_DWORD *_this, int a2)
   }
   return 0;
 }
+
 
 /* ===== [stained] sub_4083B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4083B0
@@ -2364,6 +2412,7 @@ int Engine::sub_4083B0(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_408440  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408440
@@ -2395,6 +2444,7 @@ int Engine::sub_408440(int _this, int ArgList)
   }
   return sub_455C60((int *)v3, v4);
 }
+
 
 /* ===== [stained] sub_408620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408620
@@ -2441,6 +2491,7 @@ int Engine::sub_408620(int _this)
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_408A40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408A40
@@ -2568,6 +2619,7 @@ BOOL Engine::sub_408A40(_DWORD *_this, char *a2, unsigned int a3)
   return MakeSureDirectoryPathExists(DirPath);
 }
 
+
 /* ===== [stained] sub_408CF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408CF0
  * raw 行区间 [13515, 13543]
@@ -2603,6 +2655,7 @@ LABEL_6:
   return 1;
 }
 
+
 /* ===== [stained] sub_408D90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408D90
  * raw 行区间 [13546, 13571]
@@ -2634,6 +2687,7 @@ int Engine::sub_408D90(int _this, int a2)
   this->sub_406DF0( 2, a2);
   return 1;
 }
+
 
 /* ===== [stained] sub_408E20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408E20
@@ -2667,6 +2721,7 @@ int Engine::sub_408E20(int _this, int a2)
   return 1;
 }
 
+
 /* ===== [stained] sub_408EB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408EB0
  * raw 行区间 [13602, 13609]
@@ -2680,6 +2735,7 @@ int Engine::sub_408EB0(int *_this, int a2)
   this->sub_406DF0( 4, a2);
   return 1;
 }
+
 
 /* ===== [stained] sub_408F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408F10
@@ -2760,6 +2816,7 @@ void Engine::sub_408F10(int _this)
   }
 }
 
+
 /* ===== [stained] sub_409290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409290
  * raw 行区间 [13744, 13748]
@@ -2770,6 +2827,7 @@ int Engine::sub_409290(int *_this, int a2)
   this->sub_4071D0( a2, 1);
   return sub_489B80(_this + 174454, a2);
 }
+
 
 /* ===== [stained] sub_4092C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4092C0
@@ -2846,6 +2904,7 @@ int Engine::sub_4092C0(_DWORD *_this, int a2)
   while ( v11 );
   return sub_4B68A0(_this + 4666, a2);
 }
+
 
 /* ===== [stained] sub_409400  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409400
@@ -2999,6 +3058,7 @@ LABEL_40:
   return result;
 }
 
+
 /* ===== [stained] sub_409700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409700
  * raw 行区间 [13971, 14052]
@@ -3087,6 +3147,7 @@ int Engine::sub_409700(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4098E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4098E0
  * raw 行区间 [14055, 14105]
@@ -3144,6 +3205,7 @@ int Engine::sub_4098E0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_409EE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409EE0
  * raw 行区间 [14329, 14339]
@@ -3160,6 +3222,7 @@ _DWORD * Engine::sub_409EE0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_409F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409F10
@@ -3180,6 +3243,7 @@ _DWORD * Engine::sub_409F10(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_409F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409F50
  * raw 行区间 [14359, 14371]
@@ -3199,6 +3263,7 @@ _DWORD * Engine::sub_409F50(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_40A480  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A480
  * raw 行区间 [14734, 14744]
@@ -3215,6 +3280,7 @@ int Engine::sub_40A480(_DWORD *_this)
   else
     return -1;
 }
+
 
 /* ===== [stained] sub_40A4C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A4C0
@@ -3391,6 +3457,7 @@ LABEL_25:
   return v4;
 }
 
+
 /* ===== [stained] sub_40A8A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A8A0
  * raw 行区间 [14919, 14980]
@@ -3458,6 +3525,7 @@ int Engine::sub_40A8A0(int _this, int a2, int a3)
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_40AAE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40AAE0
@@ -3602,6 +3670,7 @@ HANDLE Engine::sub_40AAE0(int _this)
   v33 = -1;
   return sub_454920(v27);
 }
+
 
 /* ===== [stained] sub_40AEE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40AEE0
@@ -3779,6 +3848,7 @@ LABEL_23:
   return sub_454920(v22);
 }
 
+
 /* ===== [stained] sub_40B720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40B720
  * raw 行区间 [15470, 15635]
@@ -3950,6 +4020,7 @@ LABEL_42:
   *a2 = v7;
   return result;
 }
+
 
 /* ===== [stained] sub_40B930  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40B930
@@ -4154,6 +4225,7 @@ LABEL_50:
   return result;
 }
 
+
 /* ===== [stained] sub_40BD30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BD30
  * raw 行区间 [15942, 16011]
@@ -4230,6 +4302,7 @@ int Engine::sub_40BD30(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
   return result;
 }
 
+
 /* ===== [stained] sub_40BEB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BEB0
  * raw 行区间 [16046, 16070]
@@ -4261,6 +4334,7 @@ int Engine::sub_40BEB0(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_40BF20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BF20
  * raw 行区间 [16073, 16087]
@@ -4281,6 +4355,7 @@ int Engine::sub_40BF20(_DWORD *_this, int a2, int a3, void *a4, int a5)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_40C310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40C310
@@ -4357,6 +4432,7 @@ int Engine::sub_40C310(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_40CD10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40CD10
@@ -5195,6 +5271,7 @@ LABEL_164:
   return v15;
 }
 
+
 /* ===== [stained] sub_40DF10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40DF10
  * raw 行区间 [17933, 18181]
@@ -5450,6 +5527,7 @@ int Engine::sub_40DF10(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_40E8F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40E8F0
  * raw 行区间 [18358, 18379]
@@ -5478,6 +5556,7 @@ void Engine::sub_40E8F0(void *_this)
   *((_DWORD *)_this + 8) = 0;
 }
 
+
 /* ===== [stained] sub_40E9A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40E9A0
  * raw 行区间 [18383, 18389]
@@ -5490,6 +5569,7 @@ void * Engine::sub_40E9A0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_40EA00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40EA00
@@ -5673,6 +5753,7 @@ LABEL_27:
     }
   }
 }
+
 
 /* ===== [stained] sub_40ED40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → loadScriptFrame_40ED40
@@ -5978,6 +6059,7 @@ int __fastcall Engine::loadScriptFrame_40ED40(int a1, int a2, void *a3, int a4)
   }
 }
 
+
 /* ===== [stained] sub_40F750  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40F750
  * raw 行区间 [18877, 18951]
@@ -6059,6 +6141,7 @@ int Engine::sub_40F750(_DWORD *_this, int a2, int a3)
   return result;
 }
 
+
 /* ===== [stained] sub_40FB60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → dispatchQueuedScripts_40FB60
  * raw 行区间 [18954, 19016]
@@ -6128,6 +6211,7 @@ void Engine::dispatchQueuedScripts_40FB60(int _this)
   }
 }
 
+
 /* ===== [stained] sub_40FC90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → queueScript_40FC90
  * raw 行区间 [19019, 19027]
@@ -6142,6 +6226,7 @@ void Engine::queueScript_40FC90(_DWORD *_this, int a2)
       dispatchQueuedScripts_40FB60((int)_this);
   }
 }
+
 
 /* ===== [stained] sub_40FDE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40FDE0
@@ -6358,6 +6443,7 @@ int Engine::sub_40FDE0(int _this)
   while ( v23 );
   return result;
 }
+
 
 /* ===== [stained] sub_410160  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_410160
@@ -7022,6 +7108,7 @@ LABEL_137:
   return 0;
 }
 
+
 /* ===== [stained] sub_411560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411560
  * raw 行区间 [19938, 19944]
@@ -7034,6 +7121,7 @@ void Engine::sub_411560(_DWORD *_this, char *String2)
   v3 = sub_455000(_this + 170023, String2);
   this->queueScript_40FC90( v3);
 }
+
 
 /* ===== [stained] sub_411590  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411590
@@ -7188,6 +7276,7 @@ void Engine::sub_411590(int _this)
   }
 }
 
+
 /* ===== [stained] sub_411900  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411900
  * raw 行区间 [20096, 20202]
@@ -7300,6 +7389,7 @@ void Engine::sub_411900(int *_this)
     }
   }
 }
+
 
 /* ===== [stained] sub_411BC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411BC0
@@ -7563,6 +7653,7 @@ LABEL_68:
     }
   }
 }
+
 
 /* ===== [stained] sub_412290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → interpreterMainLoop_412290
@@ -8336,6 +8427,7 @@ LABEL_216:
   }
 }
 
+
 /* ===== [stained] sub_413970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_413970
  * raw 行区间 [21265, 21430]
@@ -8507,6 +8599,7 @@ void Engine::sub_413970(int _this)
   sub_477FF0((void **)(_this + 1032));
   sub_4034B0((_DWORD *)_this);
 }
+
 
 /* ===== [stained] sub_413DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_413DD0
@@ -8944,6 +9037,7 @@ LABEL_74:
   return 1;
 }
 
+
 /* ===== [stained] sub_414A90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_414A90
  * raw 行区间 [21922, 21928]
@@ -8956,6 +9050,7 @@ void * Engine::sub_414A90(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_414AC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_414AC0
@@ -9374,6 +9469,7 @@ LABEL_81:
   sub_455750((int *)(_this + 680092), (const char *)(_this + 698912));
   return 1;
 }
+
 
 /* ===== [stained] sub_415640  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → commandConstructor_415640
@@ -10411,6 +10507,7 @@ int Engine::commandConstructor_415640(int _this)
   return _this;
 }
 
+
 /* ===== [stained] sub_417800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_417800
  * raw 行区间 [23467, 23832]
@@ -10783,6 +10880,7 @@ int __fastcall Engine::sub_417800(int a1, int a2, int a3, HWND a4)
   return 1;
 }
 
+
 /* ===== [stained] sub_4182D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4182D0
  * raw 行区间 [23887, 23908]
@@ -10810,6 +10908,7 @@ void Engine::sub_4182D0(int _this, int a2, int a3, int a4, int a5, int a6)
     this->sub_4034C0( (const void *)(_this + 8));
   }
 }
+
 
 /* ===== [stained] sub_418340  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418340
@@ -10854,6 +10953,7 @@ void Engine::sub_418340(int _this, int a2, float a3, int a4, int a5)
   }
 }
 
+
 /* ===== [stained] sub_4183F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4183F0
  * raw 行区间 [23951, 23975]
@@ -10885,6 +10985,7 @@ int Engine::sub_4183F0(int _this, int a2, int a3, int a4)
   return sub_453510(*(_DWORD ***)(_this + 50704));
 }
 
+
 /* ===== [stained] sub_418520  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418520
  * raw 行区间 [24011, 24033]
@@ -10913,6 +11014,7 @@ int Engine::sub_418520(_DWORD *_this, int a2, int a3)
   sub_4B73E0(v5, v7);
   return 1;
 }
+
 
 /* ===== [stained] sub_4185F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4185F0
@@ -10944,6 +11046,7 @@ void Engine::sub_4185F0(int _this, int a2)
   sub_459F40(_this);
 }
 
+
 /* ===== [stained] sub_418940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418940
  * raw 行区间 [24235, 24241]
@@ -10956,6 +11059,7 @@ BOOL Engine::sub_418940(_DWORD *_this)
   v2 = (int (*)(void))_this[97062];
   return v2 && v2() || !this->key || __ROL4__(_this[97060], 11) != this->key;
 }
+
 
 /* ===== [stained] sub_4189B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4189B0
@@ -10981,6 +11085,7 @@ int Engine::sub_4189B0(_DWORD *_this, int pExceptionObject)
   return this->frames[this->cur_script].local_ptr + 4 * *(_DWORD *)(this->frames[this->cur_script].ip + 8 * pExceptionObject);
 }
 
+
 /* ===== [stained] sub_418A30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418A30
  * raw 行区间 [24274, 24292]
@@ -11005,6 +11110,7 @@ int Engine::sub_418A30(_DWORD *_this, int pExceptionObject)
   }
   return (*(_DWORD *)(this->frames[this->cur_script].local_ptr + 4 * *(_DWORD *)v2) - this->global_int_base) >> 2;
 }
+
 
 /* ===== [stained] sub_418AE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418AE0
@@ -11036,6 +11142,7 @@ int Engine::sub_418AE0(_DWORD *_this, int pExceptionObject)
   }
   return (*(_DWORD *)(v4 + 4 * *(_DWORD *)v2) - this->global_string_base) / 28;
 }
+
 
 /* ===== [stained] sub_418B90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writePointerOperand_418B90
@@ -11082,6 +11189,7 @@ int Engine::writePointerOperand_418B90(_DWORD *_this, int a2, int pExceptionObje
   return result;
 }
 
+
 /* ===== [stained] sub_418CC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418CC0
  * raw 行区间 [24366, 24404]
@@ -11127,6 +11235,7 @@ int Engine::sub_418CC0(_DWORD *_this, int a2, int a3, int pExceptionObject, int 
   return result;
 }
 
+
 /* ===== [stained] sub_418E80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418E80
  * raw 行区间 [24429, 24433]; op=0xC
@@ -11137,6 +11246,7 @@ int Engine::sub_418E80(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_43E950((int)(_this + 1978));
 }
+
 
 /* ===== [stained] sub_418EB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418EB0
@@ -11151,6 +11261,7 @@ int Engine::sub_418EB0(_DWORD *_this)
   this->frames[result].arity = 9;
   return result;
 }
+
 
 /* ===== [stained] sub_418ED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418ED0
@@ -11172,6 +11283,7 @@ int Engine::sub_418ED0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_418F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F10
  * raw 行区间 [24462, 24469]; op=0x65
@@ -11186,6 +11298,7 @@ int Engine::sub_418F10(_DWORD *_this)
   return this->writePointerOperand_418B90( 1, v2, -1, -1);
 }
 
+
 /* ===== [stained] sub_418F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F50
  * raw 行区间 [24472, 24476]; op=0x85
@@ -11196,6 +11309,7 @@ unsigned int Engine::sub_418F50(int *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_45EBE0(_this + 21324);
 }
+
 
 /* ===== [stained] sub_418F80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F80
@@ -11212,6 +11326,7 @@ HCURSOR Engine::sub_418F80(_DWORD *_this)
     return (HCURSOR)sub_4B7D20(_this + 1978);
   return result;
 }
+
 
 /* ===== [stained] sub_418FC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418FC0
@@ -11258,6 +11373,7 @@ int Engine::sub_418FC0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4190E0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4190E0
  * raw 行区间 [24532, 24543]; op=0x19B
@@ -11275,6 +11391,7 @@ int Engine::sub_4190E0(_DWORD *_this)
   _this[122370] = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_419120  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419120
@@ -11313,6 +11430,7 @@ int Engine::sub_419120(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4191B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_comment_4191B0
  * raw 行区间 [24579, 24586]; op=0x1A7 指令名『comment』
@@ -11326,6 +11444,7 @@ int Engine::op_comment_4191B0(_DWORD *_this)
   this->frames[result].arity = 3;
   return result;
 }
+
 
 /* ===== [stained] sub_4191D0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4191D0
@@ -11346,6 +11465,7 @@ int Engine::sub_4191D0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_419230  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419230
  * raw 行区间 [24604, 24609]; op=0x94
@@ -11357,6 +11477,7 @@ void Engine::sub_419230(_DWORD *_this)
   _this[12957] = 1;
   sub_404020((int)(_this + 5494), 10000);
 }
+
 
 /* ===== [stained] sub_419260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419260
@@ -11377,6 +11498,7 @@ int Engine::sub_419260(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4192C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4192C0
  * raw 行区间 [24627, 24631]; op=0xAD
@@ -11387,6 +11509,7 @@ int Engine::sub_4192C0(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4380F0(_this + 5191);
 }
+
 
 /* ===== [stained] sub_4192F0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4192F0
@@ -11534,6 +11657,7 @@ LABEL_26:
   return result;
 }
 
+
 /* ===== [stained] sub_419690  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_dev_ukn_419690
  * raw 行区间 [24776, 24783]; op=0x1A8 指令名『dev_ukn』
@@ -11547,6 +11671,7 @@ int Engine::op_dev_ukn_419690(_DWORD *_this)
   this->frames[result].arity = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_4196B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4196B0
@@ -11572,6 +11697,7 @@ _DWORD * Engine::sub_4196B0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4196F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4196F0
  * raw 行区间 [24806, 24814]; op=0x1AD
@@ -11586,6 +11712,7 @@ int Engine::sub_4196F0(_DWORD *_this)
   _this[166963] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_419720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419720
@@ -11606,6 +11733,7 @@ int Engine::sub_419720(_DWORD *_this)
   return sub_489B50(_this + 174454);
 }
 
+
 /* ===== [stained] sub_419770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419770
  * raw 行区间 [24832, 24842]; op=0xC1
@@ -11622,6 +11750,7 @@ int Engine::sub_419770(_DWORD *_this)
   v1[260] = v1[260] == 0;
   return (*(int (__thiscall **)(_DWORD, _DWORD))(*(_DWORD *)v1[v2 + 269] + 12))(v1[v2 + 269], v1[260]);
 }
+
 
 /* ===== [stained] sub_4197A0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4197A0
@@ -11656,6 +11785,7 @@ int Engine::sub_4197A0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_419840  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419840
  * raw 行区间 [24874, 24885]; op=0x1BF
@@ -11674,6 +11804,7 @@ int Engine::sub_419840(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_419880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419880
  * raw 行区间 [24888, 24896]; op=0x1D5
@@ -11688,6 +11819,7 @@ int Engine::sub_419880(_DWORD *_this)
   _this[21315] = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_4198A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4198A0
@@ -11704,6 +11836,7 @@ DWORD Engine::sub_4198A0(_DWORD *_this)
   _this[107701] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_4198E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4198E0
@@ -11729,6 +11862,7 @@ DWORD Engine::sub_4198E0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_419940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419940
  * raw 行区间 [24932, 24936]; op=0xD1
@@ -11739,6 +11873,7 @@ DWORD Engine::sub_419940(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_453A90(_this + 107475);
 }
+
 
 /* ===== [stained] sub_419970  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419970
@@ -11756,6 +11891,7 @@ int Engine::sub_419970(_DWORD *_this)
     this->call_flag &= ~0x1000u;
   return result;
 }
+
 
 /* ===== [stained] sub_4199B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4199B0
@@ -11800,6 +11936,7 @@ _DWORD * Engine::sub_4199B0(int *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_419A70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419A70
  * raw 行区间 [24991, 24995]; op=0xFC
@@ -11810,6 +11947,7 @@ void * Engine::sub_419A70(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4056F0(_this);
 }
+
 
 /* ===== [stained] sub_419A90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419A90
@@ -11828,6 +11966,7 @@ int Engine::sub_419A90(int *_this)
   _this[result + 122327] = _this[517];
   return result;
 }
+
 
 /* ===== [stained] sub_419AF0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419AF0
@@ -11890,6 +12029,7 @@ _DWORD * Engine::sub_419AF0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_419CC0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419CC0
  * raw 行区间 [25069, 25082]; op=0x101 指令名『poll-input』
@@ -11909,6 +12049,7 @@ _DWORD * Engine::sub_419CC0(_DWORD *_this)
   _this[122370] = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_419D20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419D20
@@ -11996,6 +12137,7 @@ LABEL_4:
   return result;
 }
 
+
 /* ===== [stained] sub_41A000  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → dispatchScriptRequests_41A000
  * raw 行区间 [25168, 25191]; op=0x143
@@ -12026,6 +12168,7 @@ void Engine::dispatchScriptRequests_41A000(_DWORD *_this)
   dispatchQueuedScripts_40FB60((int)_this);
 }
 
+
 /* ===== [stained] sub_41A090  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A090
  * raw 行区间 [25194, 25212]; op=0x1F4
@@ -12050,6 +12193,7 @@ DWORD Engine::sub_41A090(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41A0E0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A0E0
@@ -12079,6 +12223,7 @@ void Engine::sub_41A0E0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41A130  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A130
  * raw 行区间 [25239, 25243]; op=0x1F6
@@ -12089,6 +12234,7 @@ int Engine::sub_41A130(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4AB7A0(_this + 80708);
 }
+
 
 /* ===== [stained] sub_41A160  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A160
@@ -12106,6 +12252,7 @@ void  __noreturn Engine::sub_41A160(_DWORD *_this)
   pExceptionObject[1] = 65541;
   _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
 }
+
 
 /* ===== [stained] sub_41A1A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A1A0
@@ -12129,6 +12276,7 @@ int Engine::sub_41A1A0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41A200  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A200
  * raw 行区间 [25277, 25287]; op=0x20E
@@ -12146,6 +12294,7 @@ int Engine::sub_41A200(_DWORD *_this)
   return sub_498B60((int)(_this + 80393));
 }
 
+
 /* ===== [stained] sub_41A260  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A260
  * raw 行区间 [25290, 25298]; op=0x21C 指令名『wait』
@@ -12161,6 +12310,7 @@ int Engine::sub_41A260(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41A290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A290
  * raw 行区间 [25301, 25305]; op=0x224
@@ -12171,6 +12321,7 @@ int Engine::sub_41A290(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4AA180(_this + 80708);
 }
+
 
 /* ===== [stained] sub_41A2C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A2C0
@@ -12187,6 +12338,7 @@ DWORD Engine::sub_41A2C0(_DWORD *_this)
   _this[92333] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41A300  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A300
@@ -12222,6 +12374,7 @@ int Engine::sub_41A300(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41A370  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A370
  * raw 行区间 [25350, 25354]; op=0x244
@@ -12232,6 +12385,7 @@ int Engine::sub_41A370(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4AD9F0(_this + 80708, 2);
 }
+
 
 /* ===== [stained] sub_41A3A0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A3A0
@@ -12259,6 +12413,7 @@ _DWORD * Engine::sub_41A3A0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41A3F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A3F0
  * raw 行区间 [25379, 25383]; op=0x2C4
@@ -12269,6 +12424,7 @@ int Engine::sub_41A3F0(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_4B51E0(_this + 20719);
 }
+
 
 /* ===== [stained] sub_41A420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A420
@@ -12291,6 +12447,7 @@ int Engine::sub_41A420(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41A470  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A470
  * raw 行区间 [25403, 25407]; op=0x324
@@ -12301,6 +12458,7 @@ int Engine::sub_41A470(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_453530(_this[93384]);
 }
+
 
 /* ===== [stained] sub_41A4A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A4A0
@@ -12320,6 +12478,7 @@ void Engine::sub_41A4A0(_DWORD *_this)
   while ( v1 < 1000 );
 }
 
+
 /* ===== [stained] sub_41A4E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A4E0
  * raw 行区间 [25425, 25436]; op=0x343
@@ -12337,6 +12496,7 @@ void Engine::sub_41A4E0(_DWORD *_this)
     sub_4A1A60(v2, v1++);
   while ( v1 < 10 );
 }
+
 
 /* ===== [stained] sub_41A780  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A780
@@ -12374,6 +12534,7 @@ const char * Engine::sub_41A780(_DWORD *_this, int pExceptionObject)
   _itoa_s(*(_DWORD *)(v8 + 4 * v7), Buffer, 0x400u, 16);
   return sub_41A6C0(Buffer);
 }
+
 
 /* ===== [stained] sub_41A820  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptReturn_41A820
@@ -12454,6 +12615,7 @@ LABEL_14:
   *(_DWORD *)(_this + 120 * v13 + 383216) = -1;
 }
 
+
 /* ===== [stained] sub_41A9B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_ret_41A9B0
  * raw 行区间 [25704, 25727]; op=0x5 指令名『ret』
@@ -12483,6 +12645,7 @@ int Engine::op_ret_41A9B0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41AA50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AA50
@@ -12537,6 +12700,7 @@ int Engine::sub_41AA50(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41AB80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AB80
  * raw 行区间 [25779, 25824]; op=0x7C
@@ -12588,6 +12752,7 @@ void Engine::sub_41AB80(int _this)
       dispatchQueuedScripts_40FB60(_this);
   }
 }
+
 
 /* ===== [stained] sub_41ACD0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_get_input_type_41ACD0
@@ -12644,6 +12809,7 @@ DWORD Engine::op_get_input_type_41ACD0(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41AE40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AE40
@@ -12783,6 +12949,7 @@ DWORD Engine::sub_41AE40(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41B180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B180
  * raw 行区间 [26017, 26031]; op=0x243
@@ -12803,6 +12970,7 @@ int Engine::sub_41B180(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41B1C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B1C0
@@ -12878,6 +13046,7 @@ LABEL_12:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41B640  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B640
@@ -12996,6 +13165,7 @@ LABEL_4:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41B9B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B9B0
@@ -13187,6 +13357,7 @@ LABEL_37:
   return result;
 }
 
+
 /* ===== [stained] sub_41BF50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → readIntOperand_41BF50
  * raw 行区间 [26555, 26651]
@@ -13289,6 +13460,7 @@ LABEL_25:
   }
   return 0;
 }
+
 
 /* ===== [stained] sub_41C300  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → readFloatOperand_41C300
@@ -13400,6 +13572,7 @@ LABEL_14:
   return 0.0;
 }
 
+
 /* ===== [stained] sub_41C6A0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → callScript_41C6A0
  * raw 行区间 [26762, 26800]; op=0x3 指令名『call-script』
@@ -13445,6 +13618,7 @@ int Engine::callScript_41C6A0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41C770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptReturnEx_41C770
  * raw 行区间 [26803, 26819]; op=0x4
@@ -13467,6 +13641,7 @@ int Engine::scriptReturnEx_41C770(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41C7C0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C7C0
@@ -13515,6 +13690,7 @@ int Engine::sub_41C7C0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41C8D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C8D0
  * raw 行区间 [26867, 26874]; op=0x7
@@ -13528,6 +13704,7 @@ void Engine::sub_41C8D0(_DWORD *_this)
   v2 = (void *)this->readIntOperand_41BF50( 1);
   this->sub_40EA00( v2);
 }
+
 
 /* ===== [stained] sub_41C900  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C900
@@ -13571,6 +13748,7 @@ int Engine::sub_41C900(int _this)
   *(_DWORD *)(_this + 120 * result + 383220) = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_41C9E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C9E0
@@ -13620,6 +13798,7 @@ int Engine::sub_41C9E0(_DWORD *_this)
            v7);
 }
 
+
 /* ===== [stained] sub_41CAF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CAF0
  * raw 行区间 [26961, 26976]; op=0xD
@@ -13641,6 +13820,7 @@ int Engine::sub_41CAF0(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, int, int, int, int))(v2 + 4))(_this + 1978, v3, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_41CB50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CB50
@@ -13678,6 +13858,7 @@ int Engine::sub_41CB50(_DWORD *_this)
   return sub_43DD20((int)(_this + 1978), v4, v11, v12, v13, v14, v6, v9, v10, v3, v2, v7, v8);
 }
 
+
 /* ===== [stained] sub_41CC50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CC50
  * raw 行区间 [27011, 27022]; op=0xF
@@ -13695,6 +13876,7 @@ int Engine::sub_41CC50(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, int))(v2 + 32))(v1, v3);
 }
+
 
 /* ===== [stained] sub_41CC90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CC90
@@ -13738,6 +13920,7 @@ int Engine::sub_41CC90(_DWORD *_this)
            v9);
 }
 
+
 /* ===== [stained] sub_41CD60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CD60
  * raw 行区间 [27063, 27074]; op=0x12
@@ -13755,6 +13938,7 @@ int Engine::sub_41CD60(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, int))(v2 + 8))(v1, v3);
 }
+
 
 /* ===== [stained] sub_41CDA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CDA0
@@ -13786,6 +13970,7 @@ int * Engine::sub_41CDA0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41CE40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CE40
  * raw 行区间 [27103, 27112]; op=0x16
@@ -13801,6 +13986,7 @@ int Engine::sub_41CE40(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_43B0E0((int)(_this + 1978), v2, v4);
 }
+
 
 /* ===== [stained] sub_41CE80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CE80
@@ -13819,6 +14005,7 @@ int Engine::sub_41CE80(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, int, int))(v2 + 28))(_this + 1978, v3, v5);
 }
+
 
 /* ===== [stained] sub_41CED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CED0
@@ -13862,6 +14049,7 @@ int Engine::sub_41CED0(_DWORD *_this)
            v7,
            &v11);
 }
+
 
 /* ===== [stained] sub_41CFB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CFB0
@@ -13918,6 +14106,7 @@ int Engine::sub_41CFB0(_DWORD *_this)
            v8);
 }
 
+
 /* ===== [stained] sub_41D0E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D0E0
  * raw 行区间 [27219, 27247]; op=0x20
@@ -13952,6 +14141,7 @@ int Engine::sub_41D0E0(_DWORD *_this)
            v7,
            &v10);
 }
+
 
 /* ===== [stained] sub_41D180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D180
@@ -13994,6 +14184,7 @@ int Engine::sub_41D180(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_41D290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D290
  * raw 行区间 [27287, 27319]; op=0x22
@@ -14032,6 +14223,7 @@ void Engine::sub_41D290(_DWORD *_this)
     _this[174802] = 0;
   }
 }
+
 
 /* ===== [stained] sub_41D390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D390
@@ -14074,6 +14266,7 @@ void Engine::sub_41D390(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_41D490  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D490
  * raw 行区间 [27359, 27391]; op=0x24
@@ -14112,6 +14305,7 @@ void Engine::sub_41D490(_DWORD *_this)
     _this[174802] = 0;
   }
 }
+
 
 /* ===== [stained] sub_41D590  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D590
@@ -14156,6 +14350,7 @@ void Engine::sub_41D590(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_41D6A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D6A0
  * raw 行区间 [27433, 27464]; op=0x26
@@ -14193,6 +14388,7 @@ void Engine::sub_41D6A0(int _this)
     }
   }
 }
+
 
 /* ===== [stained] sub_41D780  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D780
@@ -14232,6 +14428,7 @@ void Engine::sub_41D780(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41D860  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D860
  * raw 行区间 [27501, 27532]; op=0x28
@@ -14270,6 +14467,7 @@ void Engine::sub_41D860(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41D940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D940
  * raw 行区间 [27535, 27565]; op=0x2A
@@ -14306,6 +14504,7 @@ void Engine::sub_41D940(int _this)
     sub_4053C0((_DWORD *)_this);
   }
 }
+
 
 /* ===== [stained] sub_41DA20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DA20
@@ -14347,6 +14546,7 @@ void Engine::sub_41DA20(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41DB00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DB00
  * raw 行区间 [27604, 27630]; op=0x2C
@@ -14379,6 +14579,7 @@ int Engine::sub_41DB00(int *_this)
     return sub_453A60(_this + 107496, v3);
   }
 }
+
 
 /* ===== [stained] sub_41DBA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DBA0
@@ -14559,6 +14760,7 @@ LABEL_22:
   }
 }
 
+
 /* ===== [stained] sub_41DFA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DFA0
  * raw 行区间 [27809, 27860]; op=0x2E
@@ -14617,6 +14819,7 @@ void Engine::sub_41DFA0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41E0A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E0A0
  * raw 行区间 [27863, 27894]; op=0x2F
@@ -14654,6 +14857,7 @@ void Engine::sub_41E0A0(int _this)
     }
   }
 }
+
 
 /* ===== [stained] sub_41E180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E180
@@ -14695,6 +14899,7 @@ void Engine::sub_41E180(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41E260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E260
  * raw 行区间 [27933, 27952]; op=0x31
@@ -14720,6 +14925,7 @@ int Engine::sub_41E260(_DWORD *_this)
   _this[4028] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41E2D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E2D0
@@ -14781,6 +14987,7 @@ int Engine::sub_41E2D0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41E420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E420
  * raw 行区间 [28011, 28058]; op=0x33
@@ -14834,6 +15041,7 @@ int Engine::sub_41E420(int _this)
     return sub_4A5A60((char *)(_this + 322832), v7, v8, &v11, &v11, 0, 255, 255, 255);
   }
 }
+
 
 /* ===== [stained] sub_41E540  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E540
@@ -14889,6 +15097,7 @@ int Engine::sub_41E540(_DWORD *_this)
            v3,
            v8);
 }
+
 
 /* ===== [stained] sub_41E670  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E670
@@ -14951,6 +15160,7 @@ int Engine::sub_41E670(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41E7E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E7E0
  * raw 行区间 [28169, 28200]; op=0x36
@@ -14988,6 +15198,7 @@ void Engine::sub_41E7E0(_DWORD *_this)
     _this[174802] = 0;
   }
 }
+
 
 /* ===== [stained] sub_41E8C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E8C0
@@ -15050,6 +15261,7 @@ int Engine::sub_41E8C0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_41EA30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41EA30
  * raw 行区间 [28260, 28304]; op=0x38
@@ -15100,6 +15312,7 @@ int Engine::sub_41EA30(_DWORD *_this)
            v11,
            v12);
 }
+
 
 /* ===== [stained] sub_41EB20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_show_text_41EB20
@@ -15187,6 +15400,7 @@ LABEL_11:
   return result;
 }
 
+
 /* ===== [stained] sub_41ECE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_end_text_line_41ECE0
  * raw 行区间 [28389, 28398]; op=0x6F 指令名『end-text-line』
@@ -15202,6 +15416,7 @@ void Engine::op_end_text_line_41ECE0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_46AF90((int)(_this + 21324), v2, v3);
 }
+
 
 /* ===== [stained] sub_41ED20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41ED20
@@ -15224,6 +15439,7 @@ int Engine::sub_41ED20(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_45D660((int)(_this + 21324), v2, v4, v5, v6, v7, 0);
 }
+
 
 /* ===== [stained] sub_41ED80  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41ED80
@@ -15274,6 +15490,7 @@ int Engine::sub_41ED80(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_41EEF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_wait_for_input_41EEF0
@@ -15415,6 +15632,7 @@ LABEL_32:
   return result;
 }
 
+
 /* ===== [stained] sub_41F250  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F250
  * raw 行区间 [28601, 28639]; op=0x73
@@ -15460,6 +15678,7 @@ int Engine::sub_41F250(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41F320  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F320
  * raw 行区间 [28642, 28650]; op=0x74
@@ -15475,6 +15694,7 @@ int Engine::sub_41F320(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41F350  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F350
  * raw 行区间 [28653, 28660]; op=0x75
@@ -15488,6 +15708,7 @@ void Engine::sub_41F350(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_4185F0((int)(_this + 21324), v2);
 }
+
 
 /* ===== [stained] sub_41F390  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F390
@@ -15504,6 +15725,7 @@ void Engine::sub_41F390(_DWORD *_this)
   sub_459F40((int)(_this + 21324));
 }
 
+
 /* ===== [stained] sub_41F3F0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F3F0
  * raw 行区间 [28674, 28682]; op=0x77
@@ -15519,6 +15741,7 @@ void Engine::sub_41F3F0(_DWORD *_this)
   sub_459F40((int)(_this + 21324));
 }
 
+
 /* ===== [stained] sub_41F450  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F450
  * raw 行区间 [28685, 28693]; op=0x78
@@ -15533,6 +15756,7 @@ void Engine::sub_41F450(_DWORD *_this)
   _this[21667] = this->readIntOperand_41BF50( 1);
   sub_459F40(v1);
 }
+
 
 /* ===== [stained] sub_41F490  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F490
@@ -15552,6 +15776,7 @@ int Engine::sub_41F490(_DWORD *_this)
   return sub_4563A0(_this + 21324, v2, v4, v5);
 }
 
+
 /* ===== [stained] sub_41F4E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F4E0
  * raw 行区间 [28710, 28721]; op=0x7A
@@ -15570,6 +15795,7 @@ int Engine::sub_41F4E0(_DWORD *_this)
   return sub_45A910(_this + 21324, v2, v4, v5);
 }
 
+
 /* ===== [stained] sub_41F530  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F530
  * raw 行区间 [28724, 28733]; op=0x7B
@@ -15585,6 +15811,7 @@ int Engine::sub_41F530(_DWORD *_this)
   _this[this->cur_script + 122412] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41F580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F580
@@ -15622,6 +15849,7 @@ int Engine::sub_41F580(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_41F630  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F630
  * raw 行区间 [28768, 28784]; op=0x7E
@@ -15645,6 +15873,7 @@ LRESULT Engine::sub_41F630(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41F690  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F690
  * raw 行区间 [28787, 28795]; op=0x80
@@ -15660,6 +15889,7 @@ int Engine::sub_41F690(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41F6C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F6C0
  * raw 行区间 [28798, 28806]; op=0x81
@@ -15674,6 +15904,7 @@ void Engine::sub_41F6C0(_DWORD *_this)
   _this[21666] = BYTE2(v2) + ((BYTE1(v2) + ((unsigned __int8)v2 << 8)) << 8);
   sub_459F40((int)(_this + 21324));
 }
+
 
 /* ===== [stained] sub_41F720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F720
@@ -15698,6 +15929,7 @@ void Engine::sub_41F720(int **_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_466000((int)(_this + 21324), v2, v3, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_41F790  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F790
@@ -15819,6 +16051,7 @@ LABEL_15:
   }
 }
 
+
 /* ===== [stained] sub_41FA20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FA20
  * raw 行区间 [28945, 28962]; op=0x86
@@ -15843,6 +16076,7 @@ int Engine::sub_41FA20(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41FAB0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FAB0
  * raw 行区间 [28965, 28978]; op=0x88
@@ -15863,6 +16097,7 @@ int Engine::sub_41FAB0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41FB00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FB00
  * raw 行区间 [28981, 28994]; op=0x89
@@ -15882,6 +16117,7 @@ void Engine::sub_41FB00(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_4561E0((int)(_this + 21324), v2, v3, v4, v5);
 }
+
 
 /* ===== [stained] sub_41FB50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FB50
@@ -15911,6 +16147,7 @@ void Engine::sub_41FB50(_DWORD *_this)
   sub_4561E0((int)(_this + 21324), v3, String, v5, v7);
 }
 
+
 /* ===== [stained] sub_41FBF0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FBF0
  * raw 行区间 [29021, 29029]; op=0x8B
@@ -15925,6 +16162,7 @@ int Engine::sub_41FBF0(_DWORD *_this)
   _this[21669] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41FC20  状态: STUB =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_display_furigana_41FC20
@@ -16014,6 +16252,7 @@ int Engine::op_display_furigana_41FC20(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_41FDD0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FDD0
  * raw 行区间 [29117, 29124]; op=0x197
@@ -16027,6 +16266,7 @@ void Engine::sub_41FDD0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_418680(_this + 21324, v2);
 }
+
 
 /* ===== [stained] sub_41FE10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FE10
@@ -16046,6 +16286,7 @@ int Engine::sub_41FE10(_DWORD *_this)
   return sub_456400(_this + 21324, v2, v4, v5);
 }
 
+
 /* ===== [stained] sub_41FE60  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FE60
  * raw 行区间 [29141, 29152]; op=0x1A4
@@ -16064,6 +16305,7 @@ int Engine::sub_41FE60(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_41FEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FEA0
  * raw 行区间 [29155, 29163]; op=0x1B1
@@ -16078,6 +16320,7 @@ int Engine::sub_41FEA0(_DWORD *_this)
   _this[21672] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41FED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FED0
@@ -16098,6 +16341,7 @@ int Engine::sub_41FED0(_DWORD *_this)
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v3 + 12))(_this + 174405, aMessageMessage, v4);
 }
 
+
 /* ===== [stained] sub_41FF20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FF20
  * raw 行区间 [29181, 29189]; op=0x1B7
@@ -16112,6 +16356,7 @@ BOOL Engine::sub_41FF20(_DWORD *_this)
   _this[97052] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_41FF60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FF60
@@ -16148,6 +16393,7 @@ void Engine::sub_41FF60(int _this)
   }
 }
 
+
 /* ===== [stained] sub_420000  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420000
  * raw 行区间 [29223, 29242]; op=0x1BB
@@ -16174,6 +16420,7 @@ void Engine::sub_420000(int _this)
   }
 }
 
+
 /* ===== [stained] sub_420070  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420070
  * raw 行区间 [29245, 29256]; op=0x1C1
@@ -16191,6 +16438,7 @@ int Engine::sub_420070(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4563D0(_this + 21324, v2, v4, v5);
 }
+
 
 /* ===== [stained] sub_4200C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4200C0
@@ -16212,6 +16460,7 @@ int Engine::sub_4200C0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420110  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420110
  * raw 行区间 [29275, 29288]; op=0x1C3
@@ -16231,6 +16480,7 @@ int Engine::sub_420110(_DWORD *_this)
     *(_DWORD *)(v4 + 4) = v2;
   return result;
 }
+
 
 /* ===== [stained] sub_420160  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420160
@@ -16260,6 +16510,7 @@ int Engine::sub_420160(int _this)
   return sub_4B7B70((_DWORD *)(_this + 7912), Point.x, Point.y);
 }
 
+
 /* ===== [stained] sub_420240  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420240
  * raw 行区间 [29315, 29326]; op=0x1CA
@@ -16277,6 +16528,7 @@ int Engine::sub_420240(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v2 + 12))(v1, aMessageReadtex, v3);
 }
+
 
 /* ===== [stained] sub_420280  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420280
@@ -16307,6 +16559,7 @@ void Engine::sub_420280(int *_this)
   }
 }
 
+
 /* ===== [stained] sub_420310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420310
  * raw 行区间 [29354, 29371]; op=0x1D1
@@ -16331,6 +16584,7 @@ int Engine::sub_420310(int **_this)
   return sub_4675A0((int)(_this + 21324), v2, v4, v5, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_420380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420380
  * raw 行区间 [29374, 29386]; op=0x1D2
@@ -16349,6 +16603,7 @@ void Engine::sub_420380(int *_this)
     sub_45EFA0(_this + 21324, 0, v2, v3);
   }
 }
+
 
 /* ===== [stained] sub_4203D0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_jmp_4203D0
@@ -16369,6 +16624,7 @@ int Engine::op_jmp_4203D0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_420450  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420450
@@ -16396,6 +16652,7 @@ int Engine::sub_420450(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4204D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4204D0
@@ -16425,6 +16682,7 @@ int Engine::sub_4204D0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420560  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_call_420560
  * raw 行区间 [29452, 29474]; op=0x8F 指令名『call』
@@ -16453,6 +16711,7 @@ int Engine::op_call_420560(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_420640  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420640
@@ -16503,6 +16762,7 @@ int Engine::sub_420640(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420740  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420740
  * raw 行区间 [29522, 29543]; op=0x91
@@ -16530,6 +16790,7 @@ int Engine::sub_420740(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4207D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4207D0
@@ -16560,6 +16821,7 @@ int Engine::sub_4207D0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420870  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420870
  * raw 行区间 [29571, 29593]; op=0x95
@@ -16589,6 +16851,7 @@ int Engine::sub_420870(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420910
  * raw 行区间 [29596, 29612]; op=0x97
@@ -16611,6 +16874,7 @@ void Engine::sub_420910(_DWORD *_this)
   v4 = this->readIntOperand_41BF50( 5);
   sub_403D10(_this + 5494, v5, v4);
 }
+
 
 /* ===== [stained] sub_4209B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_jcc_4209B0
@@ -16643,6 +16907,7 @@ int Engine::op_jcc_4209B0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420A50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420A50
  * raw 行区间 [29642, 29650]; op=0xB0
@@ -16658,6 +16923,7 @@ int Engine::sub_420A50(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420A80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420A80
  * raw 行区间 [29653, 29661]; op=0xB1
@@ -16672,6 +16938,7 @@ int Engine::sub_420A80(_DWORD *_this)
   _this[174805] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_420AB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420AB0
@@ -16691,6 +16958,7 @@ int Engine::sub_420AB0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420B00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_sound_effect_420B00
  * raw 行区间 [29678, 29687]; op=0xB4 指令名『play-sound-effect』
@@ -16707,6 +16975,7 @@ int Engine::op_play_sound_effect_420B00(_DWORD *_this)
   return sub_4B4F60((int)(_this + 20719), v2, v4);
 }
 
+
 /* ===== [stained] sub_420B40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420B40
  * raw 行区间 [29690, 29697]; op=0xB5
@@ -16720,6 +16989,7 @@ int Engine::sub_420B40(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B5020(_this + 20719, v2, 0);
 }
+
 
 /* ===== [stained] sub_420B80  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420B80
@@ -16735,6 +17005,7 @@ int Engine::sub_420B80(_DWORD *_this)
   return sub_4B5050(_this + 20719, v2);
 }
 
+
 /* ===== [stained] sub_420BC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420BC0
  * raw 行区间 [29710, 29717]; op=0xBA
@@ -16748,6 +17019,7 @@ int Engine::sub_420BC0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B5020(_this + 20719, v2, 1);
 }
+
 
 /* ===== [stained] sub_420C00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420C00
@@ -16770,6 +17042,7 @@ int Engine::sub_420C00(_DWORD *_this)
   return sub_489F80(_this + 174454, v3, 1);
 }
 
+
 /* ===== [stained] sub_420C60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420C60
  * raw 行区间 [29737, 29751]; op=0xB9
@@ -16790,6 +17063,7 @@ int Engine::sub_420C60(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return sub_489F80(_this + 174454, v3, 0);
 }
+
 
 /* ===== [stained] sub_420CC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_bgm_420CC0
@@ -16824,6 +17098,7 @@ int Engine::op_play_bgm_420CC0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_420D90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420D90
  * raw 行区间 [29783, 29790]; op=0xBB
@@ -16837,6 +17112,7 @@ int Engine::sub_420D90(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return this->sub_408D90( v2);
 }
+
 
 /* ===== [stained] sub_420DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420DC0
@@ -16853,6 +17129,7 @@ unsigned int Engine::sub_420DC0(int *_this)
     return this->sub_408CF0( result - 1);
   return result;
 }
+
 
 /* ===== [stained] sub_420E00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420E00
@@ -16897,6 +17174,7 @@ int Engine::sub_420E00(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_420F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420F10
  * raw 行区间 [29844, 29859]; op=0xC3
@@ -16918,6 +17196,7 @@ int Engine::sub_420F10(_DWORD *_this)
   _this[174713] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_420F70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_voice_420F70
@@ -16975,6 +17254,7 @@ void Engine::op_play_voice_420F70(int *_this)
   if ( _this[21293] )
     _this[122501] = 1;
 }
+
 
 /* ===== [stained] sub_421070  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421070
@@ -17051,6 +17331,7 @@ void Engine::sub_421070(int _this)
   }
 }
 
+
 /* ===== [stained] sub_421200  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421200
  * raw 行区间 [29986, 30019]; op=0x1BA
@@ -17090,6 +17371,7 @@ void Engine::sub_421200(int _this)
     this->sub_4034D0( (const char *)(_this + 8));
   }
 }
+
 
 /* ===== [stained] sub_4212C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4212C0
@@ -17142,6 +17424,7 @@ void Engine::sub_4212C0(int *_this)
     _this[122501] = 1;
 }
 
+
 /* ===== [stained] sub_4213C0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4213C0
  * raw 行区间 [30069, 30077]; op=0x1CF
@@ -17156,6 +17439,7 @@ int Engine::sub_4213C0(_DWORD *_this)
   _this[122504] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_4213F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4213F0
@@ -17183,6 +17467,7 @@ int Engine::sub_4213F0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_421450  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421450
@@ -17279,6 +17564,7 @@ int Engine::sub_421450(_DWORD *_this)
   _this[107700] = -1;
   return result;
 }
+
 
 /* ===== [stained] sub_421690  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421690
@@ -17377,6 +17663,7 @@ int Engine::sub_421690(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4218D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sleep_4218D0
  * raw 行区间 [30288, 30314]; op=0xC8 指令名『sleep』
@@ -17410,6 +17697,7 @@ void Engine::op_sleep_4218D0(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_421980  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mouse_callback_421980
  * raw 行区间 [30317, 30326]; op=0xCC 指令名『mouse-callback』
@@ -17425,6 +17713,7 @@ int Engine::op_mouse_callback_421980(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_453A60(_this + 107447, v2);
 }
+
 
 /* ===== [stained] sub_4219E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4219E0
@@ -17442,6 +17731,7 @@ int Engine::sub_4219E0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_453A60(_this + 107454, v2);
 }
+
 
 /* ===== [stained] sub_421A50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421A50
@@ -17464,6 +17754,7 @@ int Engine::sub_421A50(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_421AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421AA0
  * raw 行区间 [30359, 30371]; op=0xD8
@@ -17482,6 +17773,7 @@ int Engine::sub_421AA0(_DWORD *_this)
   _this[107699] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_421AF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421AF0
@@ -17513,6 +17805,7 @@ int Engine::sub_421AF0(_DWORD *_this)
   return v3;
 }
 
+
 /* ===== [stained] sub_421B80  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_joy_callback_421B80
  * raw 行区间 [30400, 30419]; op=0xFB 指令名『joy-callback』
@@ -17538,6 +17831,7 @@ int Engine::op_joy_callback_421B80(_DWORD *_this)
   _this[33 * result + 107725 + v3] = v2;
   return result;
 }
+
 
 /* ===== [stained] sub_421C10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421C10
@@ -17565,6 +17859,7 @@ unsigned int Engine::sub_421C10(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_421CA0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421CA0
  * raw 行区间 [30444, 30459]; op=0xFE
@@ -17586,6 +17881,7 @@ unsigned int Engine::sub_421CA0(_DWORD *_this)
   _this[517] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_421D00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421D00
@@ -17620,6 +17916,7 @@ int Engine::sub_421D00(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_421DE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421DE0
  * raw 行区间 [30491, 30502]; op=0x103
@@ -17638,6 +17935,7 @@ int Engine::sub_421DE0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_421E20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421E20
  * raw 行区间 [30505, 30513]; op=0x105
@@ -17652,6 +17950,7 @@ int Engine::sub_421E20(_DWORD *_this)
   _this[122246] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_421E50  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421E50
@@ -17671,6 +17970,7 @@ unsigned int Engine::sub_421E50(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_422070  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422070
  * raw 行区间 [30603, 30614]; op=0x10B
@@ -17688,6 +17988,7 @@ unsigned int Engine::sub_422070(_DWORD *_this)
     _this[v2 + 1383] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_4220B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4220B0
@@ -17713,6 +18014,7 @@ unsigned int Engine::sub_4220B0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_422120  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422120
  * raw 行区间 [30637, 30645]; op=0x10F
@@ -17727,6 +18029,7 @@ int Engine::sub_422120(_DWORD *_this)
   _this[122369] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_422150  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422150
@@ -17767,6 +18070,7 @@ void Engine::sub_422150(int _this)
   }
 }
 
+
 /* ===== [stained] sub_422240  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422240
  * raw 行区间 [30684, 30701]; op=0x133
@@ -17790,6 +18094,7 @@ void Engine::sub_422240(int _this)
     sub_409E10(*(_DWORD *)(_this + 4 * v2 + 388252), v3);
   }
 }
+
 
 /* ===== [stained] sub_4222B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4222B0
@@ -17824,6 +18129,7 @@ void Engine::sub_4222B0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_4223A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4223A0
  * raw 行区间 [30733, 30750]; op=0x138
@@ -17847,6 +18153,7 @@ void Engine::sub_4223A0(int _this)
     sub_409D40(*(_DWORD *)(_this + 4 * v2 + 388292), v3);
   }
 }
+
 
 /* ===== [stained] sub_422410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422410
@@ -17877,6 +18184,7 @@ void Engine::sub_422410(int _this)
     v3[97089] = 0;
   }
 }
+
 
 /* ===== [stained] sub_4224E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4224E0
@@ -18085,6 +18393,7 @@ void Engine::sub_4224E0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_422860  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422860
  * raw 行区间 [30982, 30997]; op=0x13C
@@ -18106,6 +18415,7 @@ void Engine::sub_422860(int _this)
     *(_DWORD *)(*(_DWORD *)(_this + 4 * v2 + 388252) + 24) = *(_DWORD *)(*(_DWORD *)(_this + 4 * v2 + 388252) + 8);
   }
 }
+
 
 /* ===== [stained] sub_4228C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4228C0
@@ -18131,6 +18441,7 @@ void Engine::sub_4228C0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_422930  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422930
  * raw 行区间 [31020, 31028]; op=0x142
@@ -18145,6 +18456,7 @@ int Engine::sub_422930(_DWORD *_this)
   _this[174812] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_422960  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422960
@@ -18164,6 +18476,7 @@ int Engine::sub_422960(_DWORD *_this)
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v2 + 20))(v1, aMkMksh, v3);
 }
 
+
 /* ===== [stained] sub_4229A0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4229A0
  * raw 行区间 [31045, 31053]; op=0x149
@@ -18178,6 +18491,7 @@ int Engine::sub_4229A0(_DWORD *_this)
   _this[97058] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_4229D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4229D0
@@ -18217,6 +18531,7 @@ HMODULE Engine::sub_4229D0(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_422AB0  状态: STUB =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_agerc_export_422AB0
@@ -18269,6 +18584,7 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_422BC0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422BC0
  * raw 行区间 [31138, 31158]; op=0x1F7 指令名『texture-op』
@@ -18295,6 +18611,7 @@ int * Engine::sub_422BC0(_DWORD *_this)
     return sub_4ABB60(_this + 80708, v3, v6);
   }
 }
+
 
 /* ===== [stained] sub_422C20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_create_texture_422C20
@@ -18330,6 +18647,7 @@ int Engine::op_create_texture_422C20(_DWORD *_this)
   v5 = this->readIntOperand_41BF50( 1);
   return sub_4A2C10((int)(_this + 80708), v5, v7, v8, v9);
 }
+
 
 /* ===== [stained] sub_422CB0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_texture_422CB0
@@ -18389,6 +18707,7 @@ int Engine::op_set_texture_422CB0(int _this)
   return sub_455C60((int *)(_this + 680092), *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_422E00  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422E00
  * raw 行区间 [31246, 31268]; op=0x1FA
@@ -18417,6 +18736,7 @@ int Engine::sub_422E00(_DWORD *_this)
   v5 = this->readIntOperand_41BF50( 1);
   return sub_49E980(_this + 80708, v5);
 }
+
 
 /* ===== [stained] sub_422E70  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_draw_texture_422E70
@@ -18454,6 +18774,7 @@ _DWORD * Engine::op_draw_texture_422E70(_DWORD *_this)
   return sub_4ACE50(_this + 80708, v5, v7, v8.left, v8.top, v8.right, v8.bottom, v12, v13, COERCE_INT(0.0));
 }
 
+
 /* ===== [stained] sub_422F80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422F80
  * raw 行区间 [31303, 31310]; op=0x1FC
@@ -18467,6 +18788,7 @@ float * Engine::sub_422F80(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AC470(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_422FD0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422FD0
@@ -18487,6 +18809,7 @@ int Engine::sub_422FD0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AC5F0(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_423060  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423060
@@ -18510,6 +18833,7 @@ int Engine::sub_423060(_DWORD *_this)
   return sub_4AC660(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_4230F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4230F0
  * raw 行区间 [31348, 31361]; op=0x1FF
@@ -18529,6 +18853,7 @@ int Engine::sub_4230F0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AC750(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_423170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423170
@@ -18551,6 +18876,7 @@ void Engine::sub_423170(int _this)
     this->sub_4034C0( (const void *)(_this + 8));
   }
 }
+
 
 /* ===== [stained] sub_4231F0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4231F0
@@ -18593,6 +18919,7 @@ int Engine::sub_4231F0(_DWORD *_this)
   return sub_4AD0C0(_this + 80708, v6, v8, v9, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
 
+
 /* ===== [stained] sub_4232C0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4232C0
  * raw 行区间 [31419, 31451]; op=0x203
@@ -18632,6 +18959,7 @@ int Engine::sub_4232C0(_DWORD *_this)
   return sub_4ACF60(_this + 80708, v6, v8, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
 
+
 /* ===== [stained] sub_423390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_draw_string_423390
  * raw 行区间 [31454, 31467]; op=0x204 指令名『draw-string』
@@ -18651,6 +18979,7 @@ void Engine::op_draw_string_423390(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_456710((int)(_this + 21324), v2, v3, v4, v5);
 }
+
 
 /* ===== [stained] sub_4233E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4233E0
@@ -18679,6 +19008,7 @@ void Engine::sub_4233E0(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   sub_456710((int)(_this + 21324), v3, v9, v5, v7);
 }
+
 
 /* ===== [stained] sub_423480  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423480
@@ -18714,6 +19044,7 @@ int Engine::sub_423480(_DWORD *_this)
   return sub_4A3980((int)(_this + 80708), v6, v8, v9, v10);
 }
 
+
 /* ===== [stained] sub_423580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423580
  * raw 行区间 [31524, 31543]; op=0x209
@@ -18739,6 +19070,7 @@ void Engine::sub_423580(_DWORD *_this)
   v5 = this->readIntOperand_41BF50( 1);
   sub_4182D0((int)(_this + 80708), v5, v7, v8, v3, v6);
 }
+
 
 /* ===== [stained] sub_423620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423620
@@ -18766,6 +19098,7 @@ void Engine::sub_423620(int *_this)
     sub_45A940(_this + 21324, v4, v5, 0);
   }
 }
+
 
 /* ===== [stained] sub_423690  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423690
@@ -18797,6 +19130,7 @@ int Engine::sub_423690(int *_this)
   return sub_4A4C70(_this + 80708, v4, &v7, v6, v2);
 }
 
+
 /* ===== [stained] sub_423770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423770
  * raw 行区间 [31595, 31602]; op=0x20D
@@ -18810,6 +19144,7 @@ int Engine::sub_423770(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4A50C0((int)(_this + 80708), v2);
 }
+
 
 /* ===== [stained] sub_4237B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4237B0
@@ -18883,6 +19218,7 @@ int Engine::sub_4237B0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_423980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423980
  * raw 行区间 [31673, 31696]; op=0x210
@@ -18912,6 +19248,7 @@ int Engine::sub_423980(int *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4239F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4239F0
@@ -18960,6 +19297,7 @@ int Engine::sub_4239F0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_423A30  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423A30
  * raw 行区间 [31742, 31755]; op=0x212
@@ -18979,6 +19317,7 @@ int Engine::sub_423A30(_DWORD *_this)
     *(_DWORD *)(v4 + 100) = v2;
   return result;
 }
+
 
 /* ===== [stained] sub_423A80  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423A80
@@ -19005,6 +19344,7 @@ int Engine::sub_423A80(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_423AE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423AE0
  * raw 行区间 [31779, 31788]; op=0x214
@@ -19020,6 +19360,7 @@ int * Engine::sub_423AE0(int *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4ABEF0(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_423B20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423B20
@@ -19041,6 +19382,7 @@ _DWORD * Engine::sub_423B20(_DWORD *_this)
   return sub_4ACF20(_this + 80708, v2, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_423BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423BA0
  * raw 行区间 [31807, 31820]; op=0x219
@@ -19061,6 +19403,7 @@ _DWORD * Engine::sub_423BA0(_DWORD *_this)
   return sub_4ACEE0(_this + 80708, v2, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_423C20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423C20
  * raw 行区间 [31823, 31831]; op=0x21B
@@ -19075,6 +19418,7 @@ BOOL Engine::sub_423C20(_DWORD *_this)
   _this[166965] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_423C60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423C60
@@ -19091,6 +19435,7 @@ int Engine::sub_423C60(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AC0D0((int)(_this + 80708), v2, v4);
 }
+
 
 /* ===== [stained] sub_423CA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423CA0
@@ -19115,6 +19460,7 @@ _BYTE * Engine::sub_423CA0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD170(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_423D40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423D40
@@ -19142,6 +19488,7 @@ _BYTE * Engine::sub_423D40(_DWORD *_this)
   return sub_4AD250(_this + 80708, v2, v4, v5, v6, v7, v8, v9);
 }
 
+
 /* ===== [stained] sub_423DE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423DE0
  * raw 行区间 [31889, 31906]; op=0x220
@@ -19166,6 +19513,7 @@ _BYTE * Engine::sub_423DE0(_DWORD *_this)
   return sub_4AD3C0(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_423E70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423E70
  * raw 行区间 [31909, 31922]; op=0x221
@@ -19186,6 +19534,7 @@ int Engine::sub_423E70(_DWORD *_this)
   return sub_456B80((int)(_this + 21324), v2, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_423EC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423EC0
  * raw 行区间 [31925, 31934]; op=0x222
@@ -19201,6 +19550,7 @@ int Engine::sub_423EC0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B4460((int)(_this + 80708), v2, v4);
 }
+
 
 /* ===== [stained] sub_423F00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423F00
@@ -19230,6 +19580,7 @@ int * Engine::sub_423F00(_DWORD *_this)
   return sub_4ADDB0(_this + 80708, v2, v4, v5, v6, v7, v8, v9, v10);
 }
 
+
 /* ===== [stained] sub_423F80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423F80
  * raw 行区间 [31961, 31981]; op=0x225
@@ -19257,6 +19608,7 @@ int * Engine::sub_423F80(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_423FE0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423FE0
  * raw 行区间 [31984, 32001]; op=0x229
@@ -19281,6 +19633,7 @@ int Engine::sub_423FE0(_DWORD *_this)
   return sub_49A6F0(_this + 80708, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_424080  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424080
  * raw 行区间 [32004, 32015]; op=0x22A
@@ -19298,6 +19651,7 @@ int Engine::sub_424080(_DWORD *_this)
   v5 = this->readFloatOperand_41C300( 3) / dbl_5201F0;
   return sub_49A720(_this + 80708, v3, v4, v5);
 }
+
 
 /* ===== [stained] sub_424100  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424100
@@ -19319,6 +19673,7 @@ int Engine::sub_424100(_DWORD *_this)
   return sub_49A770((int)(_this + 80708), v3, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_424180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424180
  * raw 行区间 [32035, 32046]; op=0x22C
@@ -19336,6 +19691,7 @@ int Engine::sub_424180(_DWORD *_this)
   v5 = this->readFloatOperand_41C300( 3);
   return sub_49A820(_this + 80708, v3, v4, v5);
 }
+
 
 /* ===== [stained] sub_4241F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4241F0
@@ -19358,6 +19714,7 @@ int Engine::sub_4241F0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_49A870(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_424290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424290
@@ -19383,6 +19740,7 @@ int Engine::sub_424290(_DWORD *_this)
   return sub_49A8E0((int)(_this + 80708), v2, v4, v5, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_424330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424330
  * raw 行区间 [32088, 32103]; op=0x22F
@@ -19405,6 +19763,7 @@ int Engine::sub_424330(_DWORD *_this)
   return sub_49A9C0(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_4243B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4243B0
  * raw 行区间 [32106, 32113]; op=0x230
@@ -19418,6 +19777,7 @@ int Engine::sub_4243B0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD580(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_4243F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4243F0
@@ -19438,6 +19798,7 @@ int Engine::sub_4243F0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD690(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_424440  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424440
@@ -19478,6 +19839,7 @@ int Engine::sub_424440(_DWORD *_this)
   return sub_4AD730(_this + 80708, v6, v8, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
 
+
 /* ===== [stained] sub_424510  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424510
  * raw 行区间 [32167, 32182]; op=0x233
@@ -19499,6 +19861,7 @@ int Engine::sub_424510(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD7B0(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_4245B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4245B0
@@ -19522,6 +19885,7 @@ float * Engine::sub_4245B0(_DWORD *_this)
   return sub_4AD850(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_424630  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424630
  * raw 行区间 [32204, 32219]; op=0x235
@@ -19543,6 +19907,7 @@ int Engine::sub_424630(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD900(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_4246B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4246B0
@@ -19617,6 +19982,7 @@ int Engine::sub_4246B0(char *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_424880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424880
  * raw 行区间 [32291, 32300]; op=0x237
@@ -19633,6 +19999,7 @@ int Engine::sub_424880(_DWORD *_this)
   return sub_49F790((int)(_this + 80708), v2, v4);
 }
 
+
 /* ===== [stained] sub_4248C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4248C0
  * raw 行区间 [32303, 32312]; op=0x238
@@ -19648,6 +20015,7 @@ int Engine::sub_4248C0(_DWORD *_this)
   _this[92339] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_424900  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424900
@@ -19672,6 +20040,7 @@ int Engine::sub_424900(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD4A0(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_424970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424970
@@ -19848,6 +20217,7 @@ void Engine::sub_424970(int _this)
   }
 }
 
+
 /* ===== [stained] sub_424DA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424DA0
  * raw 行区间 [32506, 32573]; op=0x240
@@ -19921,6 +20291,7 @@ int Engine::sub_424DA0(char *_this)
   *((_DWORD *)_this + 168993) = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_424FA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424FA0
@@ -19997,6 +20368,7 @@ int Engine::sub_424FA0(char *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4251A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4251A0
  * raw 行区间 [32649, 32658]; op=0x242
@@ -20012,6 +20384,7 @@ int Engine::sub_4251A0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AD9A0(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_4251E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4251E0
@@ -20034,6 +20407,7 @@ int Engine::sub_4251E0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_425250  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425250
@@ -20062,6 +20436,7 @@ int Engine::sub_425250(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4252E0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4252E0
  * raw 行区间 [32705, 32713]; op=0x248
@@ -20076,6 +20451,7 @@ int Engine::sub_4252E0(_DWORD *_this)
   dword_55052C = result;
   return result;
 }
+
 
 /* ===== [stained] sub_425310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425310
@@ -20135,6 +20511,7 @@ int Engine::sub_425310(int _this)
   return sub_455C60((int *)(_this + 680092), *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_425460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425460
  * raw 行区间 [32771, 32807]; op=0x24B
@@ -20178,6 +20555,7 @@ int Engine::sub_425460(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_425530  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425530
  * raw 行区间 [32811, 32837]; op=0x24C
@@ -20210,6 +20588,7 @@ int Engine::sub_425530(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4255E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4255E0
@@ -20331,6 +20710,7 @@ int * Engine::sub_4255E0(char *_this)
            v29);
 }
 
+
 /* ===== [stained] sub_4258C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4258C0
  * raw 行区间 [32959, 32967]; op=0x24E
@@ -20345,6 +20725,7 @@ int Engine::sub_4258C0(_DWORD *_this)
   _this[92340] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_4258F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4258F0
@@ -20378,6 +20759,7 @@ void Engine::sub_4258F0(_DWORD *_this)
   sub_4AF6A0((int)(_this + 80708), v2, v3, v4, v5, v6, v7, v8, v9, v10, v11);
 }
 
+
 /* ===== [stained] sub_425980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425980
  * raw 行区间 [32998, 33023]; op=0x250
@@ -20409,6 +20791,7 @@ int * Engine::sub_425980(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AF880(_this + 80708, v2, v4, v5, v6, v7, v8, v9, v10, v11, v12);
 }
+
 
 /* ===== [stained] sub_425A10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425A10
@@ -20446,6 +20829,7 @@ int * Engine::sub_425A10(_DWORD *_this)
   return sub_4AFA30(_this + 80708, v2, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14);
 }
 
+
 /* ===== [stained] sub_425AB0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425AB0
  * raw 行区间 [33058, 33066]; op=0x252
@@ -20460,6 +20844,7 @@ int Engine::sub_425AB0(_DWORD *_this)
   _this[92323] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_425AE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425AE0
@@ -20476,6 +20861,7 @@ _DWORD * Engine::sub_425AE0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AC7C0(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_425B20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425B20
@@ -20498,6 +20884,7 @@ int Engine::sub_425B20(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4ACA10(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_425BC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425BC0
@@ -20523,6 +20910,7 @@ _DWORD * Engine::sub_425BC0(_DWORD *_this)
   return sub_4ACB50(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_425C30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425C30
  * raw 行区间 [33120, 33135]; op=0x256
@@ -20545,6 +20933,7 @@ int Engine::sub_425C30(_DWORD *_this)
   return sub_4ACD10(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_425CA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425CA0
  * raw 行区间 [33138, 33153]; op=0x257
@@ -20566,6 +20955,7 @@ int Engine::sub_425CA0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4ACFB0(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_425D20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425D20
@@ -20603,6 +20993,7 @@ _DWORD * Engine::sub_425D20(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_425DB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425DB0
  * raw 行区间 [33188, 33203]; op=0x25A
@@ -20625,6 +21016,7 @@ int Engine::sub_425DB0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_425E20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425E20
  * raw 行区间 [33206, 33221]; op=0x25B
@@ -20646,6 +21038,7 @@ int Engine::sub_425E20(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_425E70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425E70
@@ -20675,6 +21068,7 @@ int Engine::sub_425E70(_DWORD *_this)
   return sub_456510(_this + 21324, v2, v4, v5, v6, v7, v8, v9, v10);
 }
 
+
 /* ===== [stained] sub_425EF0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425EF0
  * raw 行区间 [33248, 33266]; op=0x25D
@@ -20699,6 +21093,7 @@ int Engine::sub_425EF0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_425F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425F50
@@ -20726,6 +21121,7 @@ _DWORD * Engine::sub_425F50(_DWORD *_this)
   return sub_456590(_this + 21324, v4, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_425FF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425FF0
  * raw 行区间 [33291, 33308]; op=0x25F
@@ -20749,6 +21145,7 @@ int Engine::sub_425FF0(_DWORD *_this)
   v4 = this->readIntOperand_41BF50( 1);
   return sub_4565D0(_this + 21324, v4, v6, v7);
 }
+
 
 /* ===== [stained] sub_426080  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426080
@@ -20774,6 +21171,7 @@ int Engine::sub_426080(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4260F0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4260F0
  * raw 行区间 [33331, 33339]; op=0x261
@@ -20788,6 +21186,7 @@ int Engine::sub_4260F0(_DWORD *_this)
   _this[80101] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_426120  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426120
@@ -20836,6 +21235,7 @@ int Engine::sub_426120(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_426200  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426200
  * raw 行区间 [33385, 33402]; op=0x2BD
@@ -20859,6 +21259,7 @@ void Engine::sub_426200(_DWORD *_this)
   }
   sub_459F40(v1);
 }
+
 
 /* ===== [stained] sub_426260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426260
@@ -20884,6 +21285,7 @@ void Engine::sub_426260(_DWORD *_this)
   sub_45A6E0(v1);
 }
 
+
 /* ===== [stained] sub_4262C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4262C0
  * raw 行区间 [33425, 33436]; op=0x2BF
@@ -20901,6 +21303,7 @@ int Engine::sub_4262C0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B5170((int)(_this + 20719), v2, v4, v5);
 }
+
 
 /* ===== [stained] sub_426310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426310
@@ -20920,6 +21323,7 @@ int Engine::sub_426310(_DWORD *_this)
   return sub_4BBA40(_this + 21032, v2, v4, v5, 0);
 }
 
+
 /* ===== [stained] sub_426360  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426360
  * raw 行区间 [33453, 33461]; op=0x2CB
@@ -20934,6 +21338,7 @@ int Engine::sub_426360(_DWORD *_this)
   _this[5037] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_426390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426390
@@ -20952,6 +21357,7 @@ int Engine::sub_426390(_DWORD *_this)
   v3 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v2 + 12))(v1, aMessageAdvance, v3);
 }
+
 
 /* ===== [stained] sub_4263D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4263D0
@@ -20976,6 +21382,7 @@ int Engine::sub_4263D0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_426420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426420
@@ -21007,6 +21414,7 @@ void Engine::sub_426420(int _this)
   }
 }
 
+
 /* ===== [stained] sub_426500  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426500
  * raw 行区间 [33524, 33532]; op=0x2DB
@@ -21021,6 +21429,7 @@ void Engine::sub_426500(_DWORD *_this)
   _this[71744] = this->readIntOperand_41BF50( 1);
   sub_459F40(v1);
 }
+
 
 /* ===== [stained] sub_426540  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426540
@@ -21057,6 +21466,7 @@ void Engine::sub_426540(int _this)
   }
 }
 
+
 /* ===== [stained] sub_4265E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4265E0
  * raw 行区间 [33566, 33577]; op=0x2E8
@@ -21075,6 +21485,7 @@ int Engine::sub_4265E0(_DWORD *_this)
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v2 + 12))(v1, aMessageAutomes_1, v3);
 }
 
+
 /* ===== [stained] sub_426620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426620
  * raw 行区间 [33580, 33588]; op=0x2E9
@@ -21089,6 +21500,7 @@ int Engine::sub_426620(_DWORD *_this)
   _this[122464] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_426650  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426650
@@ -21108,6 +21520,7 @@ int Engine::sub_426650(_DWORD *_this)
   v4 = this->readIntOperand_41BF50( 1);
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v3 + 12))(_this + 174405, aMessageMessage_0, v4);
 }
+
 
 /* ===== [stained] sub_4266A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4266A0
@@ -21168,6 +21581,7 @@ void Engine::sub_4266A0(int *_this)
     _this[122501] = 1;
 }
 
+
 /* ===== [stained] sub_4267D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4267D0
  * raw 行区间 [33661, 33674]; op=0x2F5
@@ -21187,6 +21601,7 @@ int Engine::sub_4267D0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4BBA40(_this + 21032, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_426820  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426820
@@ -21210,6 +21625,7 @@ int Engine::sub_426820(int **_this)
   return result;
 }
 
+
 /* ===== [stained] sub_426890  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426890
  * raw 行区间 [33695, 33703]; op=0x2F7
@@ -21224,6 +21640,7 @@ int Engine::sub_426890(_DWORD *_this)
   _this[result + 21315] = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_4268D0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4268D0
@@ -21241,6 +21658,7 @@ int Engine::sub_4268D0(int *_this)
   return sub_4B6940(_this + 4666, v2 + 12, v4);
 }
 
+
 /* ===== [stained] sub_426910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426910
  * raw 行区间 [33718, 33726]; op=0x2FA
@@ -21255,6 +21673,7 @@ int Engine::sub_426910(_DWORD *_this)
   _this[1951] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_426940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426940
@@ -21274,6 +21693,7 @@ int Engine::sub_426940(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_426990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426990
  * raw 行区间 [33743, 33754]; op=0x300
@@ -21292,6 +21712,7 @@ int Engine::sub_426990(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4269F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4269F0
  * raw 行区间 [33757, 33765]; op=0x301
@@ -21306,6 +21727,7 @@ int * Engine::sub_4269F0(_DWORD *_this)
   _this[v2 + 122486] = 0;
   return sub_404F80((int)(_this + 21324), v2);
 }
+
 
 /* ===== [stained] sub_426A30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426A30
@@ -21322,6 +21744,7 @@ int Engine::sub_426A30(int _this)
   *(_DWORD *)(_this + 4 * v2 + 85284) = this->readIntOperand_41BF50( 2);
   return sub_4BBC30((int **)(_this + 84128), v2, *(_DWORD *)(_this + 489996));
 }
+
 
 /* ===== [stained] sub_426A90  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426A90
@@ -21341,6 +21764,7 @@ int Engine::sub_426A90(_DWORD *_this)
   return sub_456600(_this + 21324, v2, v4, v5);
 }
 
+
 /* ===== [stained] sub_426AE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426AE0
  * raw 行区间 [33794, 33805]; op=0x307
@@ -21359,6 +21783,7 @@ int Engine::sub_426AE0(_DWORD *_this)
   return (*(int (__thiscall **)(_DWORD *, char *, int))(v2 + 12))(v1, aSystemEffectsk, v3);
 }
 
+
 /* ===== [stained] sub_426B20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426B20
  * raw 行区间 [33808, 33815]; op=0x308
@@ -21372,6 +21797,7 @@ BOOL Engine::sub_426B20(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_407B20((_DWORD *)dword_55E1BC, _this[96981], v2);
 }
+
 
 /* ===== [stained] sub_426B60  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426B60
@@ -21397,6 +21823,7 @@ unsigned int Engine::sub_426B60(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_426BD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426BD0
  * raw 行区间 [33839, 33850]; op=0x321
@@ -21414,6 +21841,7 @@ int * Engine::sub_426BD0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE280(_this + 80708, v2, v4, v5);
 }
+
 
 /* ===== [stained] sub_426C20  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426C20
@@ -21453,6 +21881,7 @@ void Engine::sub_426C20(_DWORD *_this)
   v6 = this->readIntOperand_41BF50( 1);
   sub_4AE2C0(_this + 80708, v6, v7, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
+
 
 /* ===== [stained] sub_426CF0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426CF0
@@ -21495,6 +21924,7 @@ int * Engine::sub_426CF0(_DWORD *_this)
   return sub_4AE330(_this + 80708, v6, v8, v9, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
 
+
 /* ===== [stained] sub_426DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426DC0
  * raw 行区间 [33925, 33938]; op=0x325
@@ -21514,6 +21944,7 @@ int Engine::sub_426DC0(_DWORD *_this)
   *(_DWORD *)(v4 + 1240) = result;
   return result;
 }
+
 
 /* ===== [stained] sub_426E10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426E10
@@ -21535,6 +21966,7 @@ void Engine::sub_426E10(_DWORD *_this)
   sub_418340((int)(_this + 80708), v2, v3, v4, v5);
 }
 
+
 /* ===== [stained] sub_426E70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426E70
  * raw 行区间 [33957, 33964]; op=0x327
@@ -21548,6 +21980,7 @@ float * Engine::sub_426E70(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_453280(*(_DWORD **)(_this + 373536), v2);
 }
+
 
 /* ===== [stained] sub_426EB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426EB0
@@ -21589,6 +22022,7 @@ int Engine::sub_426EB0(int _this)
   return sub_455C60(v5, *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_426F80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426F80
  * raw 行区间 [34003, 34010]; op=0x32A
@@ -21602,6 +22036,7 @@ void Engine::sub_426F80(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_4A0750(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_427040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427040
@@ -21630,6 +22065,7 @@ int Engine::sub_427040(_DWORD *_this)
   v9 = dbl_51FA60 * (double)HIBYTE(v4);
   return sub_499DF0(_this + 80708, v6, v7, v8, v9);
 }
+
 
 /* ===== [stained] sub_427110  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427110
@@ -21693,6 +22129,7 @@ int Engine::sub_427110(_DWORD *_this)
   return sub_49A080(_this + 80708, v7, v9, v15, v16, v17, SLOBYTE(v18), v24, v26, v10, v11, v12, v13, v14);
 }
 
+
 /* ===== [stained] sub_4272B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4272B0
  * raw 行区间 [34117, 34124]; op=0x32F
@@ -21706,6 +22143,7 @@ int Engine::sub_4272B0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_49A150(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_4272F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4272F0
@@ -21722,6 +22160,7 @@ int Engine::sub_4272F0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE410(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_427330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427330
@@ -21742,6 +22181,7 @@ int Engine::sub_427330(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AEC80(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_427380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427380
@@ -21781,6 +22221,7 @@ int Engine::sub_427380(_DWORD *_this)
   v6 = this->readIntOperand_41BF50( 1);
   return sub_4AE460(_this + 80708, v6, v8, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
+
 
 /* ===== [stained] sub_427450  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427450
@@ -21823,6 +22264,7 @@ int Engine::sub_427450(_DWORD *_this)
   return sub_4AE4B0(_this + 80708, v6, v8, v9, (unsigned __int8)v3 | ((BYTE1(v3) | (((v2 << 8) | BYTE2(v3)) << 8)) << 8));
 }
 
+
 /* ===== [stained] sub_427520  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427520
  * raw 行区间 [34227, 34234]; op=0x334
@@ -21836,6 +22278,7 @@ float * Engine::sub_427520(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE5A0(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_427560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427560
@@ -21856,6 +22299,7 @@ int Engine::sub_427560(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE780(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_4275F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4275F0
@@ -21879,6 +22323,7 @@ int Engine::sub_4275F0(_DWORD *_this)
   return sub_4AE7F0(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_427680  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427680
  * raw 行区间 [34272, 34285]; op=0x337
@@ -21898,6 +22343,7 @@ int Engine::sub_427680(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE8E0(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_427700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427700
@@ -21922,6 +22368,7 @@ _BYTE * Engine::sub_427700(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AE950(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_4277A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4277A0
@@ -21949,6 +22396,7 @@ _BYTE * Engine::sub_4277A0(_DWORD *_this)
   return sub_4AEA30(_this + 80708, v2, v4, v5, v6, v7, v8, v9);
 }
 
+
 /* ===== [stained] sub_427840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427840
  * raw 行区间 [34331, 34348]; op=0x33A
@@ -21973,6 +22421,7 @@ _BYTE * Engine::sub_427840(_DWORD *_this)
   return sub_4AEBA0(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
 
+
 /* ===== [stained] sub_4278D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4278D0
  * raw 行区间 [34351, 34364]; op=0x33B
@@ -21993,6 +22442,7 @@ _DWORD * Engine::sub_4278D0(_DWORD *_this)
   return sub_4AE560(_this + 80708, v2, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_427950  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427950
  * raw 行区间 [34367, 34376]; op=0x33C
@@ -22008,6 +22458,7 @@ int Engine::sub_427950(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AED30(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_4279B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4279B0
@@ -22026,6 +22477,7 @@ int * Engine::sub_4279B0(_DWORD *_this)
   v3 = this->readFloatOperand_41C300( 1);
   return sub_49A230((int)(_this + 80708), v3, v4, v5);
 }
+
 
 /* ===== [stained] sub_427A00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427A00
@@ -22048,6 +22500,7 @@ int Engine::sub_427A00(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AEDD0(_this + 80708, v2, v4, v5, v6, v7);
 }
+
 
 /* ===== [stained] sub_427A90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427A90
@@ -22092,6 +22545,7 @@ int Engine::sub_427A90(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_427B60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427B60
  * raw 行区间 [34451, 34458]; op=0x340
@@ -22105,6 +22559,7 @@ int Engine::sub_427B60(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_49A2D0(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_427BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427BA0
@@ -22146,6 +22601,7 @@ int Engine::sub_427BA0(int _this)
   return sub_455C60(v5, *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_427C70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427C70
  * raw 行区间 [34497, 34504]; op=0x342
@@ -22159,6 +22615,7 @@ void Engine::sub_427C70(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   sub_4A1A60(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_427CB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427CB0
@@ -22175,6 +22632,7 @@ int Engine::sub_427CB0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AFBF0(_this + 80708, v2, v4);
 }
+
 
 /* ===== [stained] sub_427CF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427CF0
@@ -22218,6 +22676,7 @@ int Engine::sub_427CF0(int _this)
   return sub_455C60(v5, *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_427DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427DD0
  * raw 行区间 [34557, 34564]; op=0x346
@@ -22231,6 +22690,7 @@ float * Engine::sub_427DD0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AFC40(_this + 80708, v2);
 }
+
 
 /* ===== [stained] sub_427E10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427E10
@@ -22251,6 +22711,7 @@ int Engine::sub_427E10(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AFE20(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_427EA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427EA0
@@ -22274,6 +22735,7 @@ int Engine::sub_427EA0(_DWORD *_this)
   return sub_4AFE90(_this + 80708, v2, v4, v5, v6, v7);
 }
 
+
 /* ===== [stained] sub_427F30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427F30
  * raw 行区间 [34602, 34615]; op=0x349
@@ -22294,6 +22756,7 @@ int Engine::sub_427F30(_DWORD *_this)
   return sub_4AFF80(_this + 80708, v2, v4, v5, v6);
 }
 
+
 /* ===== [stained] sub_427FB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427FB0
  * raw 行区间 [34618, 34631]; op=0x34A
@@ -22313,6 +22776,7 @@ _DWORD * Engine::sub_427FB0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4AFFF0(_this + 80708, v2, v4, v5, v6);
 }
+
 
 /* ===== [stained] sub_428030  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428030
@@ -22337,6 +22801,7 @@ _BYTE * Engine::sub_428030(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B0030(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_4280D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4280D0
@@ -22364,6 +22829,7 @@ _BYTE * Engine::sub_4280D0(_DWORD *_this)
   return sub_4B0110(_this + 80708, v2, v4, v5, v6, v7, v8, v9);
 }
 
+
 /* ===== [stained] sub_428170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428170
  * raw 行区间 [34677, 34694]; op=0x34D
@@ -22387,6 +22853,7 @@ _BYTE * Engine::sub_428170(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4B0280(_this + 80708, v2, v4, v5, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_428200  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428200
@@ -22432,6 +22899,7 @@ int Engine::sub_428200(int _this)
   return sub_455C60(v5, *(int *)ArgList);
 }
 
+
 /* ===== [stained] sub_4282E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4282E0
  * raw 行区间 [34737, 34744]; op=0x350
@@ -22445,6 +22913,7 @@ _DWORD * Engine::sub_4282E0(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4A1AA0((char **)(_this + 322832), v2);
 }
+
 
 /* ===== [stained] sub_428320  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428320
@@ -22482,6 +22951,7 @@ LABEL_6:
   sub_4A07C0((_DWORD **)(_this + 322832), v3, v4, v5);
 }
 
+
 /* ===== [stained] sub_4283B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4283B0
  * raw 行区间 [34780, 34791]; op=0x352
@@ -22499,6 +22969,7 @@ int Engine::sub_4283B0(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4A1AC0(_this + 80708, v2, v4, v5);
 }
+
 
 /* ===== [stained] sub_428400  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428400
@@ -22533,6 +23004,7 @@ int Engine::sub_428400(int _this)
   v4 = this->readIntOperand_41BF50( 1);
   return sub_4A0790((_DWORD ****)(_this + 322832), v4, v6, v7, v8);
 }
+
 
 /* ===== [stained] sub_428990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428990
@@ -22583,6 +23055,7 @@ int Engine::sub_428990(_DWORD *_this, _BYTE *a2)
   }
   return v13;
 }
+
 
 /* ===== [stained] sub_428A60  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_exit_script_428A60
@@ -22739,6 +23212,7 @@ int Engine::op_exit_script_428A60(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_428DB0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428DB0
  * raw 行区间 [35323, 35331]; op=0x1B4
@@ -22753,6 +23227,7 @@ _DWORD * Engine::sub_428DB0(int _this)
   sub_4034F0((_DWORD **)_this);
   return sub_40B420(v1, 0, 0xFFFFFFFF);
 }
+
 
 /* ===== [stained] sub_429460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_429460
@@ -22813,6 +23288,7 @@ int Engine::sub_429460(int _this)
   return sub_455C60(v7, v3);
 }
 
+
 /* ===== [stained] sub_429830  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_429830
  * raw 行区间 [35742, 35758]; op=0xA3
@@ -22835,6 +23311,7 @@ int Engine::sub_429830(_DWORD *_this)
   this->frames[result].arity = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_42A420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42A420
@@ -23069,6 +23546,7 @@ LABEL_9:
   return v10;
 }
 
+
 /* ===== [stained] sub_42A9B0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42A9B0
  * raw 行区间 [36551, 36558]; op=0x1B2
@@ -23083,6 +23561,7 @@ _DWORD * Engine::sub_42A9B0(_DWORD *_this)
   return sub_40C660(_this + 124336, v2, strlen(v2));
 }
 
+
 /* ===== [stained] sub_42AA00  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42AA00
  * raw 行区间 [36561, 36565]; op=0x1B3
@@ -23093,6 +23572,7 @@ _DWORD * Engine::sub_42AA00(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_40C660(_this + 124336, asc_51EE84, 2u);
 }
+
 
 /* ===== [stained] sub_42AC40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42AC40
@@ -23117,6 +23597,7 @@ int Engine::sub_42AC40(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_42ACC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42ACC0
@@ -23162,6 +23643,7 @@ int Engine::sub_42ACC0(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_42AEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → operandAddress_42AEA0
@@ -23374,6 +23856,7 @@ LABEL_42:
   return v18;
 }
 
+
 /* ===== [stained] sub_42B4B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writeIntOperand_42B4B0
  * raw 行区间 [36965, 37126]
@@ -23541,6 +24024,7 @@ LABEL_17:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_42BA00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writeFloatOperand_42BA00
@@ -23711,6 +24195,7 @@ LABEL_18:
   *(float *)result = a3;
   return result;
 }
+
 
 /* ===== [stained] sub_42BF60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42BF60
@@ -23923,6 +24408,7 @@ LABEL_42:
   return v18;
 }
 
+
 /* ===== [stained] sub_42C570  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42C570
  * raw 行区间 [37509, 37522]; op=0x13
@@ -23943,304 +24429,6 @@ int Engine::sub_42C570(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 4, v4);
 }
 
-/* ===== [stained] sub_42C5E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_add_42C5E0
- * raw 行区间 [37525, 37534]; op=0x50 指令名『add』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_add_42C5E0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 + v2);
-}
-
-/* ===== [stained] sub_42C620  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sub_42C620
- * raw 行区间 [37537, 37546]; op=0x51 指令名『sub』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_sub_42C620(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 - v2);
-}
-
-/* ===== [stained] sub_42C660  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mul_42C660
- * raw 行区间 [37549, 37558]; op=0x52 指令名『mul』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_mul_42C660(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 * v2);
-}
-
-/* ===== [stained] sub_42C6A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_div_42C6A0
- * raw 行区间 [37561, 37570]; op=0x53 指令名『div』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_div_42C6A0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 / v2);
-}
-
-/* ===== [stained] sub_42C6E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mod_42C6E0
- * raw 行区间 [37573, 37582]; op=0x54 指令名『mod』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_mod_42C6E0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 % v2);
-}
-
-/* ===== [stained] sub_42C720  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mov_42C720
- * raw 行区间 [37585, 37592]; op=0x55 指令名『mov』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_mov_42C720(_DWORD *_this)
-{
-  int v2; // eax
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v2);
-}
-
-/* ===== [stained] sub_42C750  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_and_42C750
- * raw 行区间 [37595, 37604]; op=0x56 指令名『and』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_and_42C750(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 & v2);
-}
-
-/* ===== [stained] sub_42C790  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_or_42C790
- * raw 行区间 [37607, 37616]; op=0x57 指令名『or』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_or_42C790(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 | v2);
-}
-
-/* ===== [stained] sub_42C7D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sar_42C7D0
- * raw 行区间 [37619, 37628]; op=0x58 指令名『sar』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_sar_42C7D0(_DWORD *_this)
-{
-  char v2; // di
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 >> v2);
-}
-
-/* ===== [stained] sub_42C820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_shl_42C820
- * raw 行区间 [37631, 37640]; op=0x59 指令名『shl』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_shl_42C820(_DWORD *_this)
-{
-  char v2; // di
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 << v2);
-}
-
-/* ===== [stained] sub_42C870  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_eq_42C870
- * raw 行区间 [37643, 37652]; op=0x5A 指令名『eq』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_eq_42C870(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 == v2);
-}
-
-/* ===== [stained] sub_42C8C0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_ne_42C8C0
- * raw 行区间 [37655, 37664]; op=0x5B 指令名『ne』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_ne_42C8C0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 != v2);
-}
-
-/* ===== [stained] sub_42C910  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lt_42C910
- * raw 行区间 [37667, 37676]; op=0x5C 指令名『lt』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_lt_42C910(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 < v2);
-}
-
-/* ===== [stained] sub_42C960  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lte_42C960
- * raw 行区间 [37679, 37688]; op=0x5D 指令名『lte』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_lte_42C960(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 <= v2);
-}
-
-/* ===== [stained] sub_42C9B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_gt_42C9B0
- * raw 行区间 [37691, 37700]; op=0x5E 指令名『gr』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_gt_42C9B0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 > v2);
-}
-
-/* ===== [stained] sub_42CA00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_gte_42CA00
- * raw 行区间 [37703, 37712]; op=0x5F 指令名『gre』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_gte_42CA00(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // eax
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = this->readIntOperand_41BF50( 2);
-  return this->writeIntOperand_42B4B0( 1, v3 >= v2);
-}
-
-/* ===== [stained] sub_42CA50  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_random_42CA50
- * raw 行区间 [37715, 37737]; op=0x60 指令名『random』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_random_42CA50(char *_this)
-{
-  int v2; // ecx
-  char *v3; // esi
-  int pExceptionObject[2]; // [esp+4h] [ebp-8h] BYREF
-
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 5;
-  if ( (int)++*((_DWORD *)_this + 107724) > 12 )
-    *((_DWORD *)_this + 107724) = 0;
-  dword_55D54C = rand();
-  v2 = this->readIntOperand_41BF50( 2);
-  dword_55D548 = v2;
-  if ( !v2 )
-  {
-    this->writeIntOperand_42B4B0( 1, 0);
-    v3 = _this + 8;
-    sub_408050(v3, 1024, aRandom0);
-    pExceptionObject[0] = (int)v3;
-    pExceptionObject[1] = 65541;
-    _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
-  }
-  return this->writeIntOperand_42B4B0( 1, dword_55D54C % v2);
-}
-
-/* ===== [stained] sub_42CB00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lookup_array_42CB00
- * raw 行区间 [37742, 37751]; op=0x61 指令名『lookup-array』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_lookup_array_42CB00(_DWORD *_this)
-{
-  int v2; // eax
-  int v4; // [esp-Ch] [ebp-18h]
-
-  this->frames[this->cur_script].arity = 7;
-  v4 = this->readIntOperand_41BF50( 3);
-  v2 = this->operandAddress_42AEA0( 2);
-  return this->sub_418CC0( 1, v2, v4, -1, -1);
-}
 
 /* ===== [stained] sub_42CB50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CB50
@@ -24258,51 +24446,6 @@ int Engine::sub_42CB50(_DWORD *_this)
   return this->sub_418CC0( 1, v2, v4, -1, -1);
 }
 
-/* ===== [stained] sub_42CBA0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lea_42CBA0
- * raw 行区间 [37766, 37773]; op=0x63 指令名『lea』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_lea_42CBA0(_DWORD *_this)
-{
-  int v2; // eax
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = this->operandAddress_42AEA0( 2);
-  return this->writePointerOperand_418B90( 1, v2, -1, -1);
-}
-
-/* ===== [stained] sub_42CBE0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_copy_local_array_42CBE0
- * raw 行区间 [37776, 37801]; op=0x64 指令名『copy-local-array』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_copy_local_array_42CBE0(_DWORD *_this)
-{
-  int *v2; // edi
-  int v3; // ebx
-  int result; // eax
-  int v5; // ecx
-  int v6; // edx
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = (int *)this->operandAddress_42AEA0( 1);
-  v3 = this->frames[this->cur_script].str_table + 4 * this->readIntOperand_41BF50( 2) + 4;
-  result = *(_DWORD *)(this->frames[this->cur_script].str_table + 4 * this->readIntOperand_41BF50( 2));
-  if ( result > 0 )
-  {
-    v5 = v3 - (_DWORD)v2;
-    v6 = result;
-    do
-    {
-      result = __ROL4__(this->key ^ __ROR4__(*(int *)((char *)v2 + v5), 7), 21);
-      *v2++ = result;
-      --v6;
-    }
-    while ( v6 );
-  }
-  return result;
-}
 
 /* ===== [stained] sub_42CC90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CC90
@@ -24320,6 +24463,7 @@ int Engine::sub_42CC90(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3 == v2);
 }
 
+
 /* ===== [stained] sub_42CCE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CCE0
  * raw 行区间 [37816, 37825]; op=0x67
@@ -24335,6 +24479,7 @@ int Engine::sub_42CCE0(_DWORD *_this)
   v3 = this->operandAddress_42AEA0( 2);
   return this->writeIntOperand_42B4B0( 1, v3 != v2);
 }
+
 
 /* ===== [stained] sub_42CD30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CD30
@@ -24352,6 +24497,7 @@ int Engine::sub_42CD30(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3 < v2);
 }
 
+
 /* ===== [stained] sub_42CD80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CD80
  * raw 行区间 [37840, 37849]; op=0x69
@@ -24367,6 +24513,7 @@ int Engine::sub_42CD80(_DWORD *_this)
   v3 = this->operandAddress_42AEA0( 2);
   return this->writeIntOperand_42B4B0( 1, v2 >= v3);
 }
+
 
 /* ===== [stained] sub_42CDD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CDD0
@@ -24384,6 +24531,7 @@ int Engine::sub_42CDD0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v2 < v3);
 }
 
+
 /* ===== [stained] sub_42CE20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CE20
  * raw 行区间 [37864, 37873]; op=0x6B
@@ -24400,30 +24548,6 @@ int Engine::sub_42CE20(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3 >= v2);
 }
 
-/* ===== [stained] sub_42CE70  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_fill_zero_42CE70
- * raw 行区间 [37876, 37894]; op=0x6C 指令名『fill-zero』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_fill_zero_42CE70(_DWORD *_this)
-{
-  _DWORD *v2; // edi
-  int result; // eax
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = (_DWORD *)this->operandAddress_42AEA0( 1);
-  result = this->readIntOperand_41BF50( 2);
-  if ( result > 0 )
-  {
-    do
-    {
-      *v2++ = _this[97060];
-      --result;
-    }
-    while ( result );
-  }
-  return result;
-}
 
 /* ===== [stained] sub_42CEC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CEC0
@@ -24440,6 +24564,7 @@ int Engine::sub_42CEC0(_DWORD *_this)
   v4 = fabs(v3);
   return this->writeFloatOperand_42BA00( 1, v4);
 }
+
 
 /* ===== [stained] sub_42CF10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CF10
@@ -24478,6 +24603,7 @@ void Engine::sub_42CF10(_DWORD *_this)
     operator delete(v6[0]);
 }
 
+
 /* ===== [stained] sub_42D010  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D010
  * raw 行区间 [37942, 37972]; op=0x195
@@ -24515,37 +24641,6 @@ void Engine::sub_42D010(_DWORD *_this)
     operator delete(v6[0]);
 }
 
-/* ===== [stained] sub_42D110  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_halve_strlen_42D110
- * raw 行区间 [37975, 37982]; op=0x1A6 指令名『halve-strlen』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_halve_strlen_42D110(_DWORD *_this)
-{
-  unsigned int v2; // kr00_4
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = strlen(this->sub_41B640( 2));
-  return this->writeIntOperand_42B4B0( 1, v2 >> 1);
-}
-
-/* ===== [stained] sub_42D150  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_memcpy_42D150
- * raw 行区间 [37985, 37996]; op=0x1B0 指令名『memcpy』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void * Engine::op_memcpy_42D150(_DWORD *_this)
-{
-  void *v2; // eax
-  const void *v4; // [esp-8h] [ebp-Ch]
-  size_t v5; // [esp-4h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 7;
-  v5 = 4 * this->readIntOperand_41BF50( 3);
-  v4 = (const void *)this->operandAddress_42AEA0( 1);
-  v2 = (void *)this->operandAddress_42AEA0( 2);
-  return memcpy(v2, v4, v5);
-}
 
 /* ===== [stained] sub_42D1A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D1A0
@@ -24563,6 +24658,7 @@ int Engine::sub_42D1A0(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 1, v4);
 }
 
+
 /* ===== [stained] sub_42D1F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D1F0
  * raw 行区间 [38011, 38015]; op=0x7F
@@ -24573,6 +24669,7 @@ int Engine::sub_42D1F0(int *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[21668]);
 }
+
 
 /* ===== [stained] sub_42D220  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D220
@@ -24591,6 +24688,7 @@ int Engine::sub_42D220(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 3, v3);
 }
 
+
 /* ===== [stained] sub_42D290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D290
  * raw 行区间 [38031, 38035]; op=0x19A
@@ -24602,6 +24700,7 @@ int Engine::sub_42D290(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, _this[97050]);
 }
 
+
 /* ===== [stained] sub_42D2C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D2C0
  * raw 行区间 [38038, 38042]; op=0x1B6
@@ -24612,6 +24711,7 @@ int Engine::sub_42D2C0(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[97052] != 0);
 }
+
 
 /* ===== [stained] sub_42D2F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D2F0
@@ -24644,6 +24744,7 @@ void Engine::sub_42D2F0(int _this)
   }
 }
 
+
 /* ===== [stained] sub_42D390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D390
  * raw 行区间 [38072, 38079]; op=0x1C7
@@ -24657,6 +24758,7 @@ int Engine::sub_42D390(_DWORD *_this)
   else
     return this->writeIntOperand_42B4B0( 1, 0);
 }
+
 
 /* ===== [stained] sub_42D3D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D3D0
@@ -24672,6 +24774,7 @@ int Engine::sub_42D3D0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v2);
 }
 
+
 /* ===== [stained] sub_42D410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D410
  * raw 行区间 [38092, 38096]; op=0x1CC
@@ -24682,6 +24785,7 @@ int Engine::sub_42D410(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[122455]);
 }
+
 
 /* ===== [stained] sub_42D440  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D440
@@ -24700,6 +24804,7 @@ int Engine::sub_42D440(_DWORD *_this)
   this->writeIntOperand_42B4B0( 1, v5);
   return this->writeIntOperand_42B4B0( 2, v4);
 }
+
 
 /* ===== [stained] sub_42D4A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D4A0
@@ -24723,6 +24828,7 @@ int Engine::sub_42D4A0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 2, v7);
 }
 
+
 /* ===== [stained] sub_42D510  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D510
  * raw 行区间 [38131, 38145]; op=0x1D4
@@ -24743,6 +24849,7 @@ int Engine::sub_42D510(_DWORD *_this)
   this->writeIntOperand_42B4B0( 1, v7);
   return this->writeIntOperand_42B4B0( 2, v6);
 }
+
 
 /* ===== [stained] sub_42D580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D580
@@ -24777,6 +24884,7 @@ int Engine::sub_42D580(int _this)
   }
 }
 
+
 /* ===== [stained] sub_42D650  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D650
  * raw 行区间 [38177, 38200]; op=0xAB
@@ -24806,6 +24914,7 @@ int Engine::sub_42D650(_DWORD *_this)
   this->writeIntOperand_42B4B0( 1, v8);
   return CloseHandle(FileA);
 }
+
 
 /* ===== [stained] sub_42D700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D700
@@ -24850,6 +24959,7 @@ int Engine::sub_42D700(int _this)
   return CloseHandle(FileA);
 }
 
+
 /* ===== [stained] sub_42D830  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D830
  * raw 行区间 [38243, 38264]; op=0x190
@@ -24878,6 +24988,7 @@ int Engine::sub_42D830(_DWORD *_this)
   return CloseHandle(FileA);
 }
 
+
 /* ===== [stained] sub_42D8E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D8E0
  * raw 行区间 [38267, 38285]; op=0x19D
@@ -24902,6 +25013,7 @@ int Engine::sub_42D8E0(_DWORD *_this)
   v6 = sub_4181F0(_this + 170023, v5);
   return this->writeIntOperand_42B4B0( 1, v6);
 }
+
 
 /* ===== [stained] sub_42D980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D980
@@ -24953,6 +25065,7 @@ int Engine::sub_42D980(int _this)
   }
 }
 
+
 /* ===== [stained] sub_42DB10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DB10
  * raw 行区间 [38335, 38363]; op=0x19F
@@ -24987,6 +25100,7 @@ int Engine::sub_42DB10(_DWORD *_this)
     *(_DWORD *)(this->global_int_base + 4 * i) = __ROL4__(this->key ^ __ROR4__(*(_DWORD *)(this->global_int_base + 4 * i), 7), 21);
   return this->writeIntOperand_42B4B0( 1, v7);
 }
+
 
 /* ===== [stained] sub_42DC70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DC70
@@ -25033,6 +25147,7 @@ int Engine::sub_42DC70(int _this)
   return CloseHandle(FileA);
 }
 
+
 /* ===== [stained] sub_42DDE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DDE0
  * raw 行区间 [38408, 38440]; op=0x1A1
@@ -25072,28 +25187,6 @@ int Engine::sub_42DDE0(_DWORD *_this)
   return result;
 }
 
-/* ===== [stained] sub_42DF40  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_string_lookup_set_42DF40
- * raw 行区间 [38443, 38459]; op=0x1A3 指令名『string-lookup-set』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_string_lookup_set_42DF40(_DWORD *_this)
-{
-  int v2; // eax
-  int *v3; // eax
-  int v4; // eax
-  char v6[12]; // [esp+4h] [ebp-10h] BYREF
-
-  this->frames[this->cur_script].arity = 3;
-  v2 = this->sub_418A30( 1);
-  wsprintfA(v6, "%c%8.8x", 3, v2);
-  v3 = (int *)sub_428E00(_this + 5452, v6);
-  if ( v3 )
-    v4 = *v3;
-  else
-    v4 = 0;
-  return this->writeIntOperand_42B4B0( 1, v4);
-}
 
 /* ===== [stained] sub_42DFC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DFC0
@@ -25121,6 +25214,7 @@ int Engine::sub_42DFC0(_DWORD *_this)
     v4 = 2;
   return this->writeIntOperand_42B4B0( 1, v4);
 }
+
 
 /* ===== [stained] sub_42E0A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E0A0
@@ -25155,6 +25249,7 @@ int Engine::sub_42E0A0(_DWORD *_this)
     v5 = 2;
   return this->writeIntOperand_42B4B0( 1, v5);
 }
+
 
 /* ===== [stained] sub_42E1F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E1F0
@@ -25196,6 +25291,7 @@ int Engine::sub_42E1F0(_DWORD *_this)
   }
   return this->writeIntOperand_42B4B0( 1, v7);
 }
+
 
 /* ===== [stained] sub_42E320  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E320
@@ -25245,6 +25341,7 @@ int Engine::sub_42E320(int *_this)
   }
 }
 
+
 /* ===== [stained] sub_42E460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E460
  * raw 行区间 [38597, 38606]; op=0xBD
@@ -25261,6 +25358,7 @@ int Engine::sub_42E460(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, (v3 != 1) + 1);
 }
 
+
 /* ===== [stained] sub_42E4D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E4D0
  * raw 行区间 [38609, 38616]; op=0xBE
@@ -25275,6 +25373,7 @@ int Engine::sub_42E4D0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v2 + 1);
 }
 
+
 /* ===== [stained] sub_42E510  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E510
  * raw 行区间 [38619, 38623]; op=0xC0
@@ -25285,6 +25384,7 @@ int Engine::sub_42E510(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[174713]);
 }
+
 
 /* ===== [stained] sub_42E540  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E540
@@ -25334,6 +25434,7 @@ void Engine::sub_42E540(int _this)
     this->writeIntOperand_42B4B0( 2, v2);
   }
 }
+
 
 /* ===== [stained] sub_42E670  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E670
@@ -25388,6 +25489,7 @@ LABEL_12:
   this->sub_4034D0( (const char *)(_this + 8));
 }
 
+
 /* ===== [stained] sub_42E770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E770
  * raw 行区间 [38720, 38729]; op=0x1BE
@@ -25404,6 +25506,7 @@ int Engine::sub_42E770(int _this)
   return this->writeIntOperand_42B4B0( 1, v3 != 0);
 }
 
+
 /* ===== [stained] sub_42E7C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E7C0
  * raw 行区间 [38732, 38741]; op=0x1D6
@@ -25419,6 +25522,7 @@ int Engine::sub_42E7C0(int _this)
   v3 = sub_48A140(*(_DWORD **)(_this + 698900), v2);
   return this->writeIntOperand_42B4B0( 1, v3);
 }
+
 
 /* ===== [stained] sub_42E800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E800
@@ -25437,6 +25541,7 @@ int Engine::sub_42E800(int _this)
   v4 = (*(int (__thiscall **)(_DWORD, int))(v2 + 44))(*(_DWORD *)(_this + 698900), v3);
   return this->writeIntOperand_42B4B0( 1, v4);
 }
+
 
 /* ===== [stained] sub_42E850  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E850
@@ -25458,6 +25563,7 @@ int Engine::sub_42E850(int _this)
   return this->writeIntOperand_42B4B0( 1, v4);
 }
 
+
 /* ===== [stained] sub_42E8A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E8A0
  * raw 行区间 [38774, 38781]; op=0x1C4
@@ -25472,6 +25578,7 @@ int Engine::sub_42E8A0(int _this)
   return this->writeIntOperand_42B4B0( 1, v2 != 0);
 }
 
+
 /* ===== [stained] sub_42E8E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E8E0
  * raw 行区间 [38784, 38788]; op=0xCB
@@ -25482,6 +25589,7 @@ int Engine::sub_42E8E0(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[107702]);
 }
+
 
 /* ===== [stained] sub_42E910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E910
@@ -25496,6 +25604,7 @@ int Engine::sub_42E910(_DWORD *_this)
   Time = timeGetTime();
   return this->writeIntOperand_42B4B0( 1, Time);
 }
+
 
 /* ===== [stained] sub_42E940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E940
@@ -25608,6 +25717,7 @@ LABEL_30:
   return result;
 }
 
+
 /* ===== [stained] sub_42EAE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EAE0
  * raw 行区间 [38908, 38920]; op=0xDA
@@ -25626,6 +25736,7 @@ int Engine::sub_42EAE0(_DWORD *_this)
   this->writeIntOperand_42B4B0( 5, SystemTime.wMinute);
   return this->writeIntOperand_42B4B0( 6, SystemTime.wSecond);
 }
+
 
 /* ===== [stained] sub_42EB80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EB80
@@ -25748,6 +25859,7 @@ LABEL_31:
   return result;
 }
 
+
 /* ===== [stained] sub_42ED90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42ED90
  * raw 行区间 [39040, 39044]; op=0x106
@@ -25758,6 +25870,7 @@ int Engine::sub_42ED90(int *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[550]);
 }
+
 
 /* ===== [stained] sub_42EDC0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EDC0
@@ -25773,6 +25886,7 @@ int Engine::sub_42EDC0(_DWORD *_this)
   sub_477220(_this + 258, &v3);
   return this->writeIntOperand_42B4B0( 1, v3);
 }
+
 
 /* ===== [stained] sub_42EE10  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EE10
@@ -25833,6 +25947,7 @@ int Engine::sub_42EE10(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_42EF50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EF50
  * raw 行区间 [39114, 39122]; op=0x10D
@@ -25847,6 +25962,7 @@ int Engine::sub_42EF50(_DWORD *_this)
   _this[1949] = 0;
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_42EF90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EF90
@@ -25864,25 +25980,6 @@ int Engine::sub_42EF90(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
-/* ===== [stained] sub_42EFD0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lookup_array_2d_42EFD0
- * raw 行区间 [39137, 39150]; op=0x12C 指令名『lookup-array-2d』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_lookup_array_2d_42EFD0(_DWORD *_this)
-{
-  int v2; // edi
-  int v3; // edi
-  int v4; // eax
-  int v6; // [esp-Ch] [ebp-20h]
-
-  this->frames[this->cur_script].arity = 11;
-  v2 = this->readIntOperand_41BF50( 4);
-  v3 = this->readIntOperand_41BF50( 3) * v2;
-  v6 = v3 + this->readIntOperand_41BF50( 5);
-  v4 = this->operandAddress_42AEA0( 2);
-  return this->sub_418CC0( 1, v4, v6, -1, -1);
-}
 
 /* ===== [stained] sub_42F040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F040
@@ -25928,6 +26025,7 @@ int Engine::sub_42F040(_DWORD *_this)
                                                                                                this->key ^ __ROL4__(*(_DWORD *)dword_55D55C, 11),
                                                                                                25)) | (__ROR4__(this->key ^ __ROL4__(*(_DWORD *)(dword_55D558 + 12), 11), 25) - (v4 - v3) - __ROR4__(this->key ^ __ROL4__(*(_DWORD *)(dword_55D55C + 8), 11), 25))) >= 0);
 }
+
 
 /* ===== [stained] sub_42F230  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F230
@@ -25988,6 +26086,7 @@ int Engine::sub_42F230(_DWORD *_this)
   }
   return this->writeIntOperand_42B4B0( 1, ((dword_55D568 - dword_55D590) >> 2) / 4);
 }
+
 
 /* ===== [stained] sub_42F560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F560
@@ -26062,6 +26161,7 @@ LABEL_6:
   return result;
 }
 
+
 /* ===== [stained] sub_42F7A0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F7A0
  * raw 行区间 [39343, 39347]; op=0x130
@@ -26072,6 +26172,7 @@ int Engine::sub_42F7A0(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[96983]);
 }
+
 
 /* ===== [stained] sub_42F7D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F7D0
@@ -26086,6 +26187,7 @@ int Engine::sub_42F7D0(_DWORD *_this)
   v2 = (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aMessageMeswina);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_42F810  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F810
@@ -26132,57 +26234,6 @@ void Engine::sub_42F810(int _this)
   }
 }
 
-/* ===== [stained] sub_42F8B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_bit_set_42F8B0
- * raw 行区间 [39402, 39421]; op=0x135 指令名『bit-set』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_bit_set_42F8B0(int _this)
-{
-  unsigned int v2; // eax
-  char v3; // di
-  int v4; // eax
-
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
-  v2 = this->readIntOperand_41BF50( 2);
-  v3 = v2;
-  if ( v2 > 0x1F )
-  {
-    sub_408050((char *)(_this + 8), 1024, aSetbit);
-    this->sub_4034D0( (const char *)(_this + 8));
-  }
-  else
-  {
-    v4 = this->readIntOperand_41BF50( 1);
-    this->writeIntOperand_42B4B0( 1, (1 << v3) | v4);
-  }
-}
-
-/* ===== [stained] sub_42F920  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_bit_reset_42F920
- * raw 行区间 [39424, 39443]; op=0x136 指令名『bit-reset』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_bit_reset_42F920(int _this)
-{
-  unsigned int v2; // eax
-  char v3; // di
-  int v4; // eax
-
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
-  v2 = this->readIntOperand_41BF50( 2);
-  v3 = v2;
-  if ( v2 > 0x1F )
-  {
-    sub_408050((char *)(_this + 8), 1024, aRembit);
-    this->sub_4034D0( (const char *)(_this + 8));
-  }
-  else
-  {
-    v4 = this->readIntOperand_41BF50( 1);
-    this->writeIntOperand_42B4B0( 1, ~(1 << v3) & v4);
-  }
-}
 
 /* ===== [stained] sub_42F990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F990
@@ -26225,6 +26276,7 @@ void Engine::sub_42F990(int _this)
   }
 }
 
+
 /* ===== [stained] sub_42FA20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FA20
  * raw 行区间 [39484, 39518]; op=0x13D
@@ -26266,6 +26318,7 @@ void Engine::sub_42FA20(int _this)
   }
 }
 
+
 /* ===== [stained] sub_42FAC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FAC0
  * raw 行区间 [39522, 39546]; op=0x13E
@@ -26297,31 +26350,6 @@ void Engine::sub_42FAC0(int _this)
   }
 }
 
-/* ===== [stained] sub_42FB40  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_check_bit_42FB40
- * raw 行区间 [39549, 39568]; op=0x13F 指令名『check-bit』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_check_bit_42FB40(int _this)
-{
-  unsigned int v2; // eax
-  char v3; // di
-  int v4; // eax
-
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
-  v2 = this->readIntOperand_41BF50( 3);
-  v3 = v2;
-  if ( v2 > 0x1F )
-  {
-    sub_408050((char *)(_this + 8), 1024, aGetbit);
-    this->sub_4034D0( (const char *)(_this + 8));
-  }
-  else
-  {
-    v4 = this->readIntOperand_41BF50( 2);
-    this->writeIntOperand_42B4B0( 1, ((1 << v3) & v4) != 0);
-  }
-}
 
 /* ===== [stained] sub_42FBC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FBC0
@@ -26397,6 +26425,7 @@ int Engine::sub_42FBC0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_42FCF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FCF0
  * raw 行区间 [39644, 39653]; op=0x145
@@ -26412,6 +26441,7 @@ int Engine::sub_42FCF0(_DWORD *_this)
   v2 = (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aMkMksh);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_42FD60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FD60
@@ -26466,6 +26496,7 @@ void Engine::sub_42FD60(int *_this)
   operator delete[](v11);
 }
 
+
 /* ===== [stained] sub_42FEC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FEC0
  * raw 行区间 [39705, 39709]; op=0x148
@@ -26476,6 +26507,7 @@ int Engine::sub_42FEC0(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[97058]);
 }
+
 
 /* ===== [stained] sub_42FEF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FEF0
@@ -26578,6 +26610,7 @@ int Engine::sub_42FEF0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v23);
 }
 
+
 /* ===== [stained] sub_430170  状态: STUB =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_call_agerc_export_430170
  * raw 行区间 [39810, 39855]; op=0x14D 指令名『call-agerc-export』
@@ -26630,6 +26663,7 @@ int Engine::op_call_agerc_export_430170(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 2, v13);
 }
 
+
 /* ===== [stained] sub_4302B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4302B0
  * raw 行区间 [39859, 39863]; op=0x201
@@ -26640,6 +26674,7 @@ int Engine::sub_4302B0(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[166964]);
 }
+
 
 /* ===== [stained] sub_4302E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4302E0
@@ -26659,6 +26694,7 @@ int Engine::sub_4302E0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 3, v4);
 }
 
+
 /* ===== [stained] sub_430340  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430340
  * raw 行区间 [39880, 39889]; op=0x215
@@ -26675,6 +26711,7 @@ int Engine::sub_430340(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
+
 /* ===== [stained] sub_430380  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430380
  * raw 行区间 [39892, 39899]; op=0x216
@@ -26688,6 +26725,7 @@ int Engine::sub_430380(_DWORD *_this)
   v2 = this->readIntOperand_41BF50( 2);
   return this->writeIntOperand_42B4B0( 1, _this[5 * v2 + 81174]);
 }
+
 
 /* ===== [stained] sub_4303C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4303C0
@@ -26707,6 +26745,7 @@ int Engine::sub_4303C0(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 4, v4[2]);
 }
 
+
 /* ===== [stained] sub_430450  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430450
  * raw 行区间 [39916, 39927]; op=0x21A
@@ -26724,6 +26763,7 @@ int Engine::sub_430450(_DWORD *_this)
   this->writeFloatOperand_42BA00( 3, v4[1]);
   return this->writeFloatOperand_42BA00( 4, v4[2]);
 }
+
 
 /* ===== [stained] sub_4304E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4304E0
@@ -26751,6 +26791,7 @@ int Engine::sub_4304E0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, 0);
 }
 
+
 /* ===== [stained] sub_4305A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4305A0
  * raw 行区间 [39953, 39970]; op=0x227
@@ -26775,6 +26816,7 @@ int Engine::sub_4305A0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, 0);
 }
 
+
 /* ===== [stained] sub_430650  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430650
  * raw 行区间 [39973, 39988]; op=0x228
@@ -26797,6 +26839,7 @@ int Engine::sub_430650(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, 0);
 }
 
+
 /* ===== [stained] sub_4306F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4306F0
  * raw 行区间 [39991, 40001]; op=0x23A
@@ -26813,6 +26856,7 @@ int Engine::sub_4306F0(_DWORD *_this)
   else
     return this->writeIntOperand_42B4B0( 1, 0);
 }
+
 
 /* ===== [stained] sub_430750  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430750
@@ -26832,6 +26876,7 @@ int Engine::sub_430750(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, (int)v3);
 }
 
+
 /* ===== [stained] sub_4307B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4307B0
  * raw 行区间 [40019, 40030]; op=0x23F
@@ -26850,6 +26895,7 @@ int Engine::sub_4307B0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, (int)v3);
 }
 
+
 /* ===== [stained] sub_430810  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430810
  * raw 行区间 [40034, 40038]; op=0x247
@@ -26860,6 +26906,7 @@ int Engine::sub_430810(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[166965] != 0);
 }
+
 
 /* ===== [stained] sub_430840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430840
@@ -26873,6 +26920,7 @@ int Engine::sub_430840(_DWORD *_this)
   this->writeIntOperand_42B4B0( 2, dword_55DD8C);
   return this->writeIntOperand_42B4B0( 3, dword_55DD88);
 }
+
 
 /* ===== [stained] sub_430890  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430890
@@ -26892,19 +26940,6 @@ int Engine::sub_430890(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
-/* ===== [stained] sub_430900  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_strlen_430900
- * raw 行区间 [40064, 40071]; op=0x2C5 指令名『strlen』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_strlen_430900(_DWORD *_this)
-{
-  int v2; // kr00_4
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = strlen(this->sub_41B640( 2));
-  return this->writeIntOperand_42B4B0( 1, v2);
-}
 
 /* ===== [stained] sub_430940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430940
@@ -26922,6 +26957,7 @@ int Engine::sub_430940(_DWORD *_this)
   v3 = _mbstrlen(v2);
   return this->writeIntOperand_42B4B0( 1, v3);
 }
+
 
 /* ===== [stained] sub_430990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430990
@@ -26941,6 +26977,7 @@ int Engine::sub_430990(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
+
 /* ===== [stained] sub_4309E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4309E0
  * raw 行区间 [40101, 40108]; op=0x2CC
@@ -26955,6 +26992,7 @@ int Engine::sub_4309E0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v2);
 }
 
+
 /* ===== [stained] sub_430A20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430A20
  * raw 行区间 [40111, 40115]; op=0x2CE
@@ -26965,6 +27003,7 @@ int Engine::sub_430A20(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   return this->writeIntOperand_42B4B0( 1, _this[167990] != 0);
 }
+
 
 /* ===== [stained] sub_430A50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430A50
@@ -26981,6 +27020,7 @@ int Engine::sub_430A50(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 1, *((float *)&v3 + 1));
 }
 
+
 /* ===== [stained] sub_430AB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430AB0
  * raw 行区间 [40129, 40137]; op=0x2D1
@@ -26995,6 +27035,7 @@ int Engine::sub_430AB0(_DWORD *_this)
   *((float *)&v3 + 1) = v3 - this->readFloatOperand_41C300( 3);
   return this->writeFloatOperand_42BA00( 1, *((float *)&v3 + 1));
 }
+
 
 /* ===== [stained] sub_430B10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430B10
@@ -27011,6 +27052,7 @@ int Engine::sub_430B10(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 1, *((float *)&v3 + 1));
 }
 
+
 /* ===== [stained] sub_430B70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430B70
  * raw 行区间 [40151, 40159]; op=0x2D3
@@ -27025,6 +27067,7 @@ int Engine::sub_430B70(_DWORD *_this)
   *((float *)&v3 + 1) = v3 / this->readFloatOperand_41C300( 3);
   return this->writeFloatOperand_42BA00( 1, *((float *)&v3 + 1));
 }
+
 
 /* ===== [stained] sub_430BD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430BD0
@@ -27044,72 +27087,6 @@ int Engine::sub_430BD0(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 1, v4);
 }
 
-/* ===== [stained] sub_430C30  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_mov_430C30
- * raw 行区间 [40176, 40183]; op=0x2D5 指令名『float-mov』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_mov_430C30(_DWORD *_this)
-{
-  float v3; // [esp+0h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 5;
-  v3 = this->readFloatOperand_41C300( 2);
-  return this->writeFloatOperand_42BA00( 1, v3);
-}
-
-/* ===== [stained] sub_430C70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_int_to_float_430C70
- * raw 行区间 [40186, 40193]; op=0x2D6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_int_to_float_430C70(_DWORD *_this)
-{
-  float v3; // [esp+0h] [ebp-Ch]
-
-  this->frames[this->cur_script].arity = 5;
-  v3 = (float)this->readIntOperand_41BF50( 2);
-  return this->writeFloatOperand_42BA00( 1, v3);
-}
-
-/* ===== [stained] sub_430CB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_to_int_430CB0
- * raw 行区间 [40196, 40203]; op=0x2D7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_to_int_430CB0(_DWORD *_this)
-{
-  double v2; // st7
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = this->readFloatOperand_41C300( 2);
-  return this->writeIntOperand_42B4B0( 1, (int)v2);
-}
-
-/* ===== [stained] sub_430CF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_array_to_430CF0
- * raw 行区间 [40206, 40224]; op=0x2D8 指令名『set-array-to』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_set_array_to_430CF0(_DWORD *_this)
-{
-  void *v2; // edi
-  int result; // eax
-  unsigned int v4; // ecx
-  int v5; // [esp+Ch] [ebp-4h]
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = (void *)this->operandAddress_42AEA0( 1);
-  v5 = __ROL4__(this->key ^ __ROR4__(this->readIntOperand_41BF50( 2), 7), 21);
-  result = this->readIntOperand_41BF50( 3);
-  if ( result > 0 )
-  {
-    v4 = result;
-    result = v5;
-    memset32(v2, v5, v4);
-  }
-  return result;
-}
 
 /* ===== [stained] sub_430D60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430D60
@@ -27128,6 +27105,7 @@ int Engine::sub_430D60(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, UserDefaultLCID);
 }
 
+
 /* ===== [stained] sub_430DB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430DB0
  * raw 行区间 [40240, 40249]; op=0x2DC
@@ -27143,6 +27121,7 @@ int Engine::sub_430DB0(_DWORD *_this)
     v1 = -1;
   return this->writeIntOperand_42B4B0( 1, v1);
 }
+
 
 /* ===== [stained] sub_430DF0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430DF0
@@ -27160,107 +27139,6 @@ int Engine::sub_430DF0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
-/* ===== [stained] sub_430E30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_eq_430E30
- * raw 行区间 [40264, 40274]; op=0x2DF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_eq_430E30(_DWORD *_this)
-{
-  double v2; // st6
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readFloatOperand_41C300( 2);
-  if ( v2 == this->readFloatOperand_41C300( 3) )
-    return this->writeIntOperand_42B4B0( 1, 1);
-  else
-    return this->writeIntOperand_42B4B0( 1, 0);
-}
-
-/* ===== [stained] sub_430EA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_ne_430EA0
- * raw 行区间 [40277, 40287]; op=0x2E0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_ne_430EA0(_DWORD *_this)
-{
-  double v2; // st6
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->readFloatOperand_41C300( 2);
-  if ( v2 == this->readFloatOperand_41C300( 3) )
-    return this->writeIntOperand_42B4B0( 1, 0);
-  else
-    return this->writeIntOperand_42B4B0( 1, 1);
-}
-
-/* ===== [stained] sub_430F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_lt_430F10
- * raw 行区间 [40290, 40300]; op=0x2E1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_lt_430F10(_DWORD *_this)
-{
-  double v3; // [esp+4h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 7;
-  v3 = this->readFloatOperand_41C300( 2);
-  if ( this->readFloatOperand_41C300( 3) <= v3 )
-    return this->writeIntOperand_42B4B0( 1, 0);
-  else
-    return this->writeIntOperand_42B4B0( 1, 1);
-}
-
-/* ===== [stained] sub_430F80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_lte_430F80
- * raw 行区间 [40303, 40313]; op=0x2E2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_lte_430F80(_DWORD *_this)
-{
-  double v3; // [esp+4h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 7;
-  v3 = this->readFloatOperand_41C300( 2);
-  if ( this->readFloatOperand_41C300( 3) < v3 )
-    return this->writeIntOperand_42B4B0( 1, 0);
-  else
-    return this->writeIntOperand_42B4B0( 1, 1);
-}
-
-/* ===== [stained] sub_430FF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_gt_430FF0
- * raw 行区间 [40316, 40326]; op=0x2E3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_gt_430FF0(_DWORD *_this)
-{
-  double v3; // [esp+4h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 7;
-  v3 = this->readFloatOperand_41C300( 2);
-  if ( this->readFloatOperand_41C300( 3) >= v3 )
-    return this->writeIntOperand_42B4B0( 1, 0);
-  else
-    return this->writeIntOperand_42B4B0( 1, 1);
-}
-
-/* ===== [stained] sub_431060  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_float_gte_431060
- * raw 行区间 [40329, 40339]; op=0x2E4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-int Engine::op_float_gte_431060(_DWORD *_this)
-{
-  double v3; // [esp+4h] [ebp-8h]
-
-  this->frames[this->cur_script].arity = 7;
-  v3 = this->readFloatOperand_41C300( 2);
-  if ( this->readFloatOperand_41C300( 3) > v3 )
-    return this->writeIntOperand_42B4B0( 1, 0);
-  else
-    return this->writeIntOperand_42B4B0( 1, 1);
-}
 
 /* ===== [stained] sub_4310D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4310D0
@@ -27276,6 +27154,7 @@ int Engine::sub_4310D0(_DWORD *_this)
   _this[1950] = 0;
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_431110  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431110
@@ -27308,6 +27187,7 @@ void Engine::sub_431110(int _this)
   }
 }
 
+
 /* ===== [stained] sub_4311B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4311B0
  * raw 行区间 [40380, 40387]; op=0x2EA
@@ -27321,6 +27201,7 @@ int Engine::sub_4311B0(_DWORD *_this)
   v2 = (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aMessageAutomes_1);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_4311F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4311F0
@@ -27338,6 +27219,7 @@ int Engine::sub_4311F0(_DWORD *_this)
   return this->writeIntOperand_42B4B0( 1, v3);
 }
 
+
 /* ===== [stained] sub_431230  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431230
  * raw 行区间 [40402, 40409]; op=0x2ED
@@ -27351,6 +27233,7 @@ int Engine::sub_431230(_DWORD *_this)
   v2 = (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aMessageMessage_0);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_431270  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431270
@@ -27467,6 +27350,7 @@ int Engine::sub_431270(void **_this)
   return this->writeIntOperand_42B4B0( 1, 0);
 }
 
+
 /* ===== [stained] sub_431460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431460
  * raw 行区间 [40523, 40597]; op=0x2F0
@@ -27547,6 +27431,7 @@ int Engine::sub_431460(void **_this)
     return this->writeIntOperand_42B4B0( 1, 0);
   }
 }
+
 
 /* ===== [stained] sub_4316E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4316E0
@@ -27640,6 +27525,7 @@ int Engine::sub_4316E0(void **_this)
   return this->writeIntOperand_42B4B0( 1, 0);
 }
 
+
 /* ===== [stained] sub_4318A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4318A0
  * raw 行区间 [40688, 40721]; op=0x2F2
@@ -27680,6 +27566,7 @@ int Engine::sub_4318A0(void **_this)
   }
 }
 
+
 /* ===== [stained] sub_431A10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431A10
  * raw 行区间 [40724, 40741]; op=0x2F3
@@ -27703,6 +27590,7 @@ int Engine::sub_431A10(_DWORD *_this)
   this->writeIntOperand_42B4B0( 2, v7);
   return this->writeIntOperand_42B4B0( 3, v6);
 }
+
 
 /* ===== [stained] sub_431AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431AA0
@@ -27730,6 +27618,7 @@ int Engine::sub_431AA0(_DWORD *_this)
   return this->writeFloatOperand_42BA00( 7, v4);
 }
 
+
 /* ===== [stained] sub_431B60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431B60
  * raw 行区间 [40766, 40773]; op=0x2FB
@@ -27743,6 +27632,7 @@ int Engine::sub_431B60(_DWORD *_this)
   v2 = sub_477470(_this + 258, 0);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_431BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431BA0
@@ -27800,6 +27690,7 @@ int Engine::sub_431BA0(_DWORD *_this)
   this->writeIntOperand_42B4B0( 4, v18);
   return this->writeIntOperand_42B4B0( 5, v17);
 }
+
 
 /* ===== [stained] sub_431CF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431CF0
@@ -27922,6 +27813,7 @@ void Engine::sub_431CF0(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_431FC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431FC0
  * raw 行区间 [40948, 40955]; op=0x306
@@ -27935,6 +27827,7 @@ int Engine::sub_431FC0(_DWORD *_this)
   v2 = (*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aSystemEffectsk);
   return this->writeIntOperand_42B4B0( 1, v2);
 }
+
 
 /* ===== [stained] sub_432000  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432000
@@ -27992,6 +27885,7 @@ int Engine::sub_432000(_DWORD *_this)
   this->writeIntOperand_42B4B0( 4, v18);
   return this->writeIntOperand_42B4B0( 5, v17);
 }
+
 
 /* ===== [stained] sub_432150  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432150
@@ -28066,6 +27960,7 @@ void Engine::sub_432150(int _this)
   }
 }
 
+
 /* ===== [stained] sub_432300  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432300
  * raw 行区间 [41081, 41113]; op=0x328
@@ -28104,6 +27999,7 @@ void Engine::sub_432300(_DWORD *_this)
   sub_4183F0((int)(_this + 80708), v7, (int)v3, v2);
   operator delete[](v4);
 }
+
 
 /* ===== [stained] sub_4328F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4328F0
@@ -28331,6 +28227,7 @@ LABEL_44:
     goto LABEL_55;
   }
 }
+
 
 /* ===== [stained] sub_432DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432DD0
@@ -28568,6 +28465,7 @@ LABEL_46:
   }
 }
 
+
 /* ===== [stained] sub_433290  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_font_433290
  * raw 行区间 [41802, 41809]; op=0x1A5 指令名『set-font』
@@ -28582,6 +28480,7 @@ void Engine::op_set_font_433290(_DWORD *_this)
   sub_4328F0((int)(_this + 21324), v2);
 }
 
+
 /* ===== [stained] sub_4332D0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4332D0
  * raw 行区间 [41812, 41819]; op=0x2FE
@@ -28595,6 +28494,7 @@ void Engine::sub_4332D0(_DWORD *_this)
   v2 = this->sub_41B640( 1);
   sub_432DD0((int)(_this + 21324), v2);
 }
+
 
 /* ===== [stained] sub_433310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433310
@@ -28713,94 +28613,6 @@ LABEL_24:
   return sub_40C120(v7, v3, 0, 0xFFFFFFFF);
 }
 
-/* ===== [stained] sub_433660  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_string_433660
- * raw 行区间 [41936, 41949]; op=0x192 指令名『set-string』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_set_string_433660(_DWORD *_this)
-{
-  _DWORD *v2; // eax
-  void *v3[7]; // [esp+8h] [ebp-2Ch] BYREF
-  int v4; // [esp+30h] [ebp-4h]
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = this->sub_42A420( v3, 2);
-  v4 = 0;
-  this->sub_433310( 1, (int)v2);
-  v4 = -1;
-  if ( v3[5] >= (void *)0x10 )
-    operator delete(v3[0]);
-}
-
-/* ===== [stained] sub_433710  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_concat_433710
- * raw 行区间 [41952, 41987]; op=0x193 指令名『concat』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_concat_433710(_DWORD *_this)
-{
-  _DWORD *v2; // edi
-  _DWORD *v3; // eax
-  _DWORD *v4; // eax
-  void *v5[7]; // [esp+10h] [ebp-64h] BYREF
-  void *v6[5]; // [esp+2Ch] [ebp-48h] BYREF
-  unsigned int v7; // [esp+40h] [ebp-34h]
-  void *v8[5]; // [esp+48h] [ebp-2Ch] BYREF
-  unsigned int v9; // [esp+5Ch] [ebp-18h]
-  int v10; // [esp+70h] [ebp-4h]
-
-  this->frames[this->cur_script].arity = 7;
-  v2 = this->sub_42A420( v5, 3);
-  v10 = 0;
-  v3 = this->sub_42A420( v8, 2);
-  LOBYTE(v10) = 1;
-  v4 = sub_42AA90(v6, v3, v2);
-  LOBYTE(v10) = 2;
-  this->sub_433310( 1, (int)v4);
-  LOBYTE(v10) = 1;
-  if ( v7 >= 0x10 )
-    operator delete(v6[0]);
-  v7 = 15;
-  v6[4] = 0;
-  LOBYTE(v6[0]) = 0;
-  LOBYTE(v10) = 0;
-  if ( v9 >= 0x10 )
-    operator delete(v8[0]);
-  v9 = 15;
-  v8[4] = 0;
-  LOBYTE(v8[0]) = 0;
-  v10 = -1;
-  if ( v5[5] >= (void *)0x10 )
-    operator delete(v5[0]);
-}
-
-/* ===== [stained] sub_433820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_toString_433820
- * raw 行区间 [41990, 42010]; op=0x1C8 指令名『toString』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
- */
-void Engine::op_toString_433820(_DWORD *_this)
-{
-  int v2; // eax
-  void *v3[5]; // [esp+Ch] [ebp-12Ch] BYREF
-  unsigned int v4; // [esp+20h] [ebp-118h]
-  char Buffer[256]; // [esp+28h] [ebp-110h] BYREF
-  int v6; // [esp+134h] [ebp-4h]
-
-  this->frames[this->cur_script].arity = 5;
-  v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(Buffer, 256, "%d", v2);
-  v4 = 15;
-  v3[4] = 0;
-  LOBYTE(v3[0]) = 0;
-  sub_40C210((int)v3, Buffer, strlen(Buffer));
-  v6 = 0;
-  this->sub_433310( 1, (int)v3);
-  v6 = -1;
-  if ( v4 >= 0x10 )
-    operator delete(v3[0]);
-}
 
 /* ===== [stained] sub_433930  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433930
@@ -28839,6 +28651,7 @@ void Engine::sub_433930(_DWORD *_this)
     operator delete(v6[0]);
 }
 
+
 /* ===== [stained] sub_433A40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433A40
  * raw 行区间 [42046, 42050]; op=0xA1
@@ -28849,6 +28662,7 @@ const void ** Engine::sub_433A40(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   return sub_415530((int)(_this + 107679), 0xFFFu);
 }
+
 
 /* ===== [stained] sub_433A70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433A70
@@ -28865,6 +28679,7 @@ const void ** Engine::sub_433A70(_DWORD *_this)
   v3 = sub_429390(_this + 5191, 5, v2);
   return this->sub_433310( 1, (int)v3);
 }
+
 
 /* ===== [stained] sub_433AB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433AB0
@@ -28961,6 +28776,7 @@ void Engine::sub_433AB0(_DWORD *_this)
     operator delete(v17[0]);
 }
 
+
 /* ===== [stained] sub_433CE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433CE0
  * raw 行区间 [42159, 42177]; op=0x2C1
@@ -28985,6 +28801,7 @@ void Engine::sub_433CE0(_DWORD *_this)
   if ( v3 >= 0x10 )
     operator delete(v2[0]);
 }
+
 
 /* ===== [stained] sub_433DE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433DE0
@@ -29069,6 +28886,7 @@ void Engine::sub_433DE0(_DWORD *_this)
   if ( v15 >= 0x10 )
     operator delete(v13[0]);
 }
+
 
 /* ===== [stained] sub_433FD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433FD0
@@ -29193,6 +29011,7 @@ LABEL_27:
   }
 }
 
+
 /* ===== [stained] sub_434260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434260
  * raw 行区间 [42379, 42457]; op=0x2C8
@@ -29277,6 +29096,7 @@ void Engine::sub_434260(_DWORD *_this)
   if ( v14 >= 0x10 )
     operator delete(v13[0]);
 }
+
 
 /* ===== [stained] sub_4344A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4344A0
@@ -29364,6 +29184,7 @@ LABEL_9:
   return this->sub_418CC0( 1, *v6, v3, -1, -1);
 }
 
+
 /* ===== [stained] sub_434720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434720
  * raw 行区间 [42542, 42572]; op=0x2DD
@@ -29401,6 +29222,7 @@ void Engine::sub_434720(_DWORD *_this)
     operator delete(v5[0]);
 }
 
+
 /* ===== [stained] sub_434830  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434830
  * raw 行区间 [42575, 42593]; op=0x2EB
@@ -29426,6 +29248,7 @@ void Engine::sub_434830(_DWORD *_this)
     operator delete(v3[0]);
 }
 
+
 /* ===== [stained] sub_434F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434F10
  * raw 行区间 [42908, 42917]; op=0xA2
@@ -29441,6 +29264,7 @@ void Engine::sub_434F10(unsigned int *_this)
   v2 = this->sub_41B640( 1);
   sub_434D00(_this + 107679, v2, &v3);
 }
+
 
 /* ===== [stained] sub_434F60  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434F60
@@ -29459,6 +29283,7 @@ void Engine::sub_434F60(unsigned int *_this)
   wsprintfA(Src, "%c%8.8x", 3, v2);
   sub_434D00(_this + 5452, Src, &v3);
 }
+
 
 /* ===== [stained] sub_434FE0  状态: ANALYZED =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434FE0
@@ -29483,6 +29308,7 @@ void Engine::sub_434FE0(unsigned int *_this)
   if ( v4[5] >= (void *)0x10 )
     operator delete(v4[0]);
 }
+
 
 /* ===== [stained] sub_435800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_435800
@@ -29930,6 +29756,7 @@ int Engine::sub_435800(int _this)
   return MessageBoxA(*(HWND *)(_this + 387924), Text, asc_520CD4, 0x40u);
 }
 
+
 /* ===== [stained] sub_436380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436380
  * raw 行区间 [43654, 43715]
@@ -29997,6 +29824,7 @@ int Engine::sub_436380(int _this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_436500  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436500
  * raw 行区间 [43730, 43737]
@@ -30011,6 +29839,7 @@ void Engine::sub_436500(_DWORD *_this)
   operator delete[](v1);
 }
 
+
 /* ===== [stained] sub_436B90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436B90
  * raw 行区间 [44118, 44124]
@@ -30023,6 +29852,7 @@ _DWORD * Engine::sub_436B90(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_436DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436DC0
@@ -30039,6 +29869,7 @@ void Engine::sub_436DC0(void *_this)
   operator delete[](*((void **)_this + 3));
 }
 
+
 /* ===== [stained] sub_436F90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436F90
  * raw 行区间 [44404, 44410]
@@ -30052,6 +29883,7 @@ void * Engine::sub_436F90(void *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_436FC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436FC0
  * raw 行区间 [44413, 44416]
@@ -30061,6 +29893,7 @@ void Engine::sub_436FC0(_DWORD *_this)
 {
   *_this = &CStream___vftable_;
 }
+
 
 /* ===== [stained] sub_437150  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437150
@@ -30074,6 +29907,7 @@ _DWORD * Engine::sub_437150(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_437440  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437440
@@ -30092,6 +29926,7 @@ int Engine::sub_437440(_DWORD *_this)
   _this[258] = HIDWORD(v2) >> 6;
   return v2;
 }
+
 
 /* ===== [stained] sub_437480  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437480
@@ -30265,6 +30100,7 @@ LABEL_33:
     (*(void (__thiscall **)(_DWORD *, int))*v17)(v17, 1);
   return 1;
 }
+
 
 /* ===== [stained] sub_437980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437980
@@ -30509,6 +30345,7 @@ LABEL_34:
   return (v34 >> 2) - 2;
 }
 
+
 /* ===== [stained] sub_438120  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438120
  * raw 行区间 [45106, 45149]
@@ -30559,6 +30396,7 @@ int Engine::sub_438120(int *_this, HANDLE hFile, int a3, const char *a4, int *a5
   return 0;
 }
 
+
 /* ===== [stained] sub_438650  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438650
  * raw 行区间 [45357, 45390]
@@ -30599,6 +30437,7 @@ int Engine::sub_438650(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_438720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438720
  * raw 行区间 [45394, 45400]
@@ -30611,6 +30450,7 @@ _DWORD * Engine::sub_438720(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_438750  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438750
@@ -30625,6 +30465,7 @@ void Engine::sub_438750(_DWORD *_this)
   sub_4034B0(_this);
 }
 
+
 /* ===== [stained] sub_4387C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4387C0
  * raw 行区间 [45413, 45419]
@@ -30637,6 +30478,7 @@ _DWORD * Engine::sub_4387C0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4388C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4388C0
@@ -30652,6 +30494,7 @@ int Engine::sub_4388C0(int _this)
   sub_437440((_DWORD *)_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_438940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438940
@@ -30803,6 +30646,7 @@ int Engine::sub_438940(int _this,
   return 1;
 }
 
+
 /* ===== [stained] sub_438C30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438C30
  * raw 行区间 [45633, 45643]
@@ -30820,6 +30664,7 @@ BOOL Engine::sub_438C30(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_438D90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438D90
  * raw 行区间 [45690, 45696]
@@ -30832,6 +30677,7 @@ _DWORD * Engine::sub_438D90(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_43A5C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A5C0
@@ -30847,6 +30693,7 @@ _DWORD * Engine::sub_43A5C0(_DWORD *_this, int a2, int a3)
   _this[278] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_43A630  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A630
@@ -30879,6 +30726,7 @@ void Engine::sub_43A630(int _this)
   sub_48C790(_this);
 }
 
+
 /* ===== [stained] sub_43A710  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A710
  * raw 行区间 [46602, 46608]
@@ -30891,6 +30739,7 @@ void * Engine::sub_43A710(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_43AA80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AA80
@@ -30954,6 +30803,7 @@ _DWORD * Engine::sub_43AA80(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_43AE30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AE30
  * raw 行区间 [47006, 47043]
@@ -30998,6 +30848,7 @@ LABEL_3:
   return 1;
 }
 
+
 /* ===== [stained] sub_43AEB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AEB0
  * raw 行区间 [47046, 47065]
@@ -31023,6 +30874,7 @@ int Engine::sub_43AEB0(_DWORD *_this, HWND hWnd)
   _this[2014] = result;
   return result;
 }
+
 
 /* ===== [stained] sub_43B070  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B070
@@ -31051,6 +30903,7 @@ int Engine::sub_43B070(int _this, int a2, int a3)
   }
 }
 
+
 /* ===== [stained] sub_43B0E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B0E0
  * raw 行区间 [47160, 47180]
@@ -31076,6 +30929,7 @@ int Engine::sub_43B0E0(int _this, int a2, int a3)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_43B1A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B1A0
@@ -31110,6 +30964,7 @@ int Engine::sub_43B1A0(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4, _DWOR
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_43B260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B260
@@ -31208,6 +31063,7 @@ LABEL_16:
   return 1;
 }
 
+
 /* ===== [stained] sub_43B460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B460
  * raw 行区间 [47306, 47323]
@@ -31231,6 +31087,7 @@ int Engine::sub_43B460(int _this, int a2, int a3)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_43B4C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B4C0
@@ -31256,6 +31113,7 @@ void Engine::sub_43B4C0(int _this, int a2, _DWORD *a3)
     this->sub_4034C0( (const void *)(_this + 8));
   }
 }
+
 
 /* ===== [stained] sub_43B520  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B520
@@ -31285,6 +31143,7 @@ int Engine::sub_43B520(int _this)
   return 0;
 }
 
+
 /* ===== [stained] sub_43B5A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B5A0
  * raw 行区间 [47371, 47384]
@@ -31304,6 +31163,7 @@ int Engine::sub_43B5A0(_DWORD *_this, int a2)
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_43B5F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B5F0
@@ -31499,6 +31359,7 @@ LABEL_8:
   return result;
 }
 
+
 /* ===== [stained] sub_43B9D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B9D0
  * raw 行区间 [47634, 47819]
@@ -31691,6 +31552,7 @@ LABEL_62:
   return byte_55D6D8;
 }
 
+
 /* ===== [stained] sub_43BF20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43BF20
  * raw 行区间 [47839, 48015]
@@ -31874,6 +31736,7 @@ int Engine::sub_43BF20(int _this, int a2, void *a3)
   }
 }
 
+
 /* ===== [stained] sub_43C380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C380
  * raw 行区间 [48018, 48071]
@@ -31934,6 +31797,7 @@ int Engine::sub_43C380(int _this, int a2)
   }
 }
 
+
 /* ===== [stained] sub_43C470  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C470
  * raw 行区间 [48074, 48097]
@@ -31963,6 +31827,7 @@ int Engine::sub_43C470(int _this)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_43C4D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C4D0
@@ -32097,6 +31962,7 @@ LABEL_14:
   }
   return 0;
 }
+
 
 /* ===== [stained] sub_43CBD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43CBD0
@@ -32405,6 +32271,7 @@ int Engine::sub_43CBD0(char *_this, int a2, int a3)
   }
 }
 
+
 /* ===== [stained] sub_43D500  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43D500
  * raw 行区间 [48680, 48905]
@@ -32636,6 +32503,7 @@ LABEL_4:
   }
 }
 
+
 /* ===== [stained] sub_43D870  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43D870
  * raw 行区间 [48908, 49103]
@@ -32837,6 +32705,7 @@ LABEL_44:
   return (*(int (__thiscall **)(int, int, int, int, int))(v28 + 20))(_this, a3, v34, v26, v27 + v36);
 }
 
+
 /* ===== [stained] sub_43DBA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DBA0
  * raw 行区间 [49106, 49201]
@@ -32938,6 +32807,7 @@ int Engine::sub_43DBA0(int _this, int a2, int a3, int a4, int a5)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_43DD20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DD20
@@ -33080,6 +32950,7 @@ LABEL_4:
   else
     return 1;
 }
+
 
 /* ===== [stained] sub_43DF20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DF20
@@ -33258,6 +33129,7 @@ LABEL_12:
   else
     return 1;
 }
+
 
 /* ===== [stained] sub_43E260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E260
@@ -33450,6 +33322,7 @@ LABEL_44:
   return 0;
 }
 
+
 /* ===== [stained] sub_43E550  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E550
  * raw 行区间 [49705, 49741]
@@ -33493,6 +33366,7 @@ int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
   return 1;
 }
 
+
 /* ===== [stained] sub_43E620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E620
  * raw 行区间 [49744, 49764]
@@ -33519,6 +33393,7 @@ void Engine::sub_43E620(int _this, int a2)
     this->sub_4034C0( (const void *)(_this + 8));
   }
 }
+
 
 /* ===== [stained] sub_43E680  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E680
@@ -33617,6 +33492,7 @@ int Engine::sub_43E680(int _this, int a2, int a3)
   return 1;
 }
 
+
 /* ===== [stained] sub_43E950  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E950
  * raw 行区间 [49892, 49924]
@@ -33654,6 +33530,7 @@ int Engine::sub_43E950(int _this)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_43E9F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E9F0
@@ -33848,6 +33725,7 @@ LABEL_7:
     (**(void (__thiscall ***)(char *, int))v7)(v7, 1);
   return 0;
 }
+
 
 /* ===== [stained] sub_4404B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4404B0
@@ -34143,6 +34021,7 @@ LABEL_8:
   return 1;
 }
 
+
 /* ===== [stained] sub_440A20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440A20
  * raw 行区间 [50408, 50523]
@@ -34265,6 +34144,7 @@ BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
   return this->sub_4404B0( v15, v6) != 0;
 }
 
+
 /* ===== [stained] sub_440C90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440C90
  * raw 行区间 [50526, 50590]
@@ -34334,6 +34214,7 @@ LABEL_4:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_440DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440DD0
@@ -34425,6 +34306,7 @@ int Engine::sub_440DD0(int _this, int a2, int a3, int a4, int a5)
   return 1;
 }
 
+
 /* ===== [stained] sub_440FD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440FD0
  * raw 行区间 [50680, 50739]
@@ -34489,6 +34371,7 @@ int Engine::sub_440FD0(int *_this,
              a16,
              a17);
 }
+
 
 /* ===== [stained] sub_441060  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441060
@@ -34650,6 +34533,7 @@ int Engine::sub_441060(int _this, signed int a2, int a3)
              (unsigned __int8 *)&a3);
   }
 }
+
 
 /* ===== [stained] sub_441410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441410
@@ -35015,6 +34899,7 @@ LABEL_34:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_441E10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441E10
@@ -36353,6 +36238,7 @@ LABEL_29:
   return 0;
 }
 
+
 /* ===== [stained] sub_443B20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_443B20
  * raw 行区间 [52624, 52986]
@@ -36719,6 +36605,7 @@ LABEL_102:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_444350  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_444350
@@ -37964,6 +37851,7 @@ LABEL_146:
   return result;
 }
 
+
 /* ===== [stained] sub_445D70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_445D70
  * raw 行区间 [54249, 54630]
@@ -38350,6 +38238,7 @@ LABEL_71:
   return result;
 }
 
+
 /* ===== [stained] sub_4469A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4469A0
  * raw 行区间 [54634, 54732]
@@ -38454,6 +38343,7 @@ int Engine::sub_4469A0(_DWORD *_this, unsigned int a2, unsigned int a3, int a4, 
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_446C20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_446C20
@@ -38589,6 +38479,7 @@ LABEL_21:
   return 1;
 }
 
+
 /* ===== [stained] sub_446EC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_446EC0
  * raw 行区间 [54865, 54945]
@@ -38674,6 +38565,7 @@ int Engine::sub_446EC0(int _this)
   sub_499220(*(void **)(_this + 8108));
   return sub_4A6D00(*(_DWORD **)(_this + 8112));
 }
+
 
 /* ===== [stained] sub_447810  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_447810
@@ -40796,6 +40688,7 @@ LABEL_53:
   return result;
 }
 
+
 /* ===== [stained] sub_44A7F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44A7F0
  * raw 行区间 [57595, 57611]
@@ -40818,6 +40711,7 @@ _DWORD * Engine::sub_44A7F0(_DWORD *_this)
   _this[2068] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_44E320  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44E320
@@ -41084,6 +40978,7 @@ LABEL_12:
   return 1;
 }
 
+
 /* ===== [stained] sub_44F360  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44F360
  * raw 行区间 [62161, 62392]
@@ -41322,6 +41217,7 @@ void Engine::sub_44F360(int _this, int a2, int *a3, int a4, int *a5)
   operator delete[](v52);
 }
 
+
 /* ===== [stained] sub_450700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450700
  * raw 行区间 [63383, 63396]
@@ -41341,6 +41237,7 @@ int Engine::sub_450700(int _this, unsigned int a2, int a3, int a4, __int64 a5, u
   return 1;
 }
 
+
 /* ===== [stained] sub_450B70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450B70
  * raw 行区间 [63720, 63726]
@@ -41353,6 +41250,7 @@ void * Engine::sub_450B70(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_450BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450BA0
@@ -41516,6 +41414,7 @@ int Engine::sub_450BA0(char *_this,
   return 0;
 }
 
+
 /* ===== [stained] sub_450F20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450F20
  * raw 行区间 [63891, 64032]
@@ -41663,6 +41562,7 @@ LABEL_5:
   return 0;
 }
 
+
 /* ===== [stained] sub_4512C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4512C0
  * raw 行区间 [64038, 64172]
@@ -41802,6 +41702,7 @@ LABEL_16:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_4515C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4515C0
@@ -41976,6 +41877,7 @@ LABEL_47:
   return 1;
 }
 
+
 /* ===== [stained] sub_4519A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4519A0
  * raw 行区间 [64351, 64499]
@@ -42130,6 +42032,7 @@ LABEL_3:
   return 1;
 }
 
+
 /* ===== [stained] sub_451D40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_451D40
  * raw 行区间 [64505, 64646]
@@ -42277,6 +42180,7 @@ LABEL_5:
   return 0;
 }
 
+
 /* ===== [stained] sub_4520E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4520E0
  * raw 行区间 [64652, 64743]
@@ -42374,6 +42278,7 @@ LABEL_5:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_452330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452330
@@ -42496,6 +42401,7 @@ int Engine::sub_452330(int _this,
   this->sub_4034C0( (const void *)(_this + 8));
   return 1;
 }
+
 
 /* ===== [stained] sub_452600  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452600
@@ -42638,6 +42544,7 @@ LABEL_3:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_452940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452940
@@ -42874,6 +42781,7 @@ int Engine::sub_452940(int _this,
   return 1;
 }
 
+
 /* ===== [stained] sub_453070  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453070
  * raw 行区间 [65321, 65333]
@@ -42893,6 +42801,7 @@ int Engine::sub_453070(void *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_453080  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453080
  * raw 行区间 [65337, 65343]
@@ -42905,6 +42814,7 @@ void * Engine::sub_453080(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4530B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4530B0
@@ -42929,6 +42839,7 @@ _DWORD * Engine::sub_4530B0(_DWORD *_this, int a2)
   _this[316] = -1;
   return _this;
 }
+
 
 /* ===== [stained] sub_453150  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453150
@@ -42964,6 +42875,7 @@ int Engine::sub_453150(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4537A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4537A0
  * raw 行区间 [65918, 65923]
@@ -42975,6 +42887,7 @@ void Engine::sub_4537A0(_DWORD *_this)
   sub_453150(_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_453800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453800
@@ -42989,6 +42902,7 @@ _DWORD * Engine::sub_453800(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_453A50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453A50
  * raw 行区间 [66094, 66097]
@@ -42998,6 +42912,7 @@ void Engine::sub_453A50(_DWORD *_this)
 {
   *_this = &FadeTimer___vftable_;
 }
+
 
 /* ===== [stained] sub_453C10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453C10
@@ -43012,6 +42927,7 @@ _DWORD * Engine::sub_453C10(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_453E20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453E20
  * raw 行区间 [66360, 66365]
@@ -43023,6 +42939,7 @@ void __cdecl Engine::sub_453E20(void *a1, int a2, int a3, int a4, int a5, unsign
   if ( a6 >= 0x10 )
     operator delete(a1);
 }
+
 
 /* ===== [stained] sub_453EA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453EA0
@@ -43036,6 +42953,7 @@ void __cdecl Engine::sub_453EA0(void *a1, int a2, int a3, int a4, int a5, unsign
     operator delete(a1);
 }
 
+
 /* ===== [stained] sub_453F20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453F20
  * raw 行区间 [66378, 66383]
@@ -43047,6 +42965,7 @@ void __cdecl Engine::sub_453F20(void *a1, int a2, int a3, int a4, int a5, unsign
   if ( a6 >= 0x10 )
     operator delete(a1);
 }
+
 
 /* ===== [stained] sub_453FA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453FA0
@@ -43577,6 +43496,7 @@ LABEL_126:
   return a1;
 }
 
+
 /* ===== [stained] sub_454710  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454710
  * raw 行区间 [66934, 66945]
@@ -43595,6 +43515,7 @@ HANDLE Engine::sub_454710(HANDLE *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_454730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454730
  * raw 行区间 [66948, 66956]
@@ -43610,6 +43531,7 @@ BOOL Engine::sub_454730(int _this, LPCSTR lpFileName)
   return FileA + 1 != 0;
 }
 
+
 /* ===== [stained] sub_454770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454770
  * raw 行区间 [66959, 66967]
@@ -43624,6 +43546,7 @@ BOOL Engine::sub_454770(int _this, LPCSTR lpFileName)
   *(_DWORD *)(_this + 4) = FileA;
   return FileA + 1 != 0;
 }
+
 
 /* ===== [stained] sub_4547B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4547B0
@@ -43643,6 +43566,7 @@ int Engine::sub_4547B0(int _this, LPCSTR lpFileName)
   return 1;
 }
 
+
 /* ===== [stained] sub_454920  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454920
  * raw 行区间 [67042, 67046]
@@ -43653,6 +43577,7 @@ HANDLE Engine::sub_454920(HANDLE *_this)
   *_this = &off_52662C;
   return sub_454710(_this);
 }
+
 
 /* ===== [stained] sub_454930  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454930
@@ -43666,6 +43591,7 @@ HANDLE * Engine::sub_454930(HANDLE *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_454A20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454A20
@@ -43759,6 +43685,7 @@ unsigned int * Engine::sub_454A20(unsigned int *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_4553A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4553A0
  * raw 行区间 [67577, 67596]
@@ -43784,6 +43711,7 @@ void Engine::sub_4553A0(_DWORD *_this)
   sub_454C50((int)_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_455560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455560
@@ -43820,6 +43748,7 @@ int Engine::sub_455560(char *_this, int ArgList)
   return *((_DWORD *)v2 + 265);
 }
 
+
 /* ===== [stained] sub_455620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455620
  * raw 行区间 [67666, 67691]
@@ -43851,6 +43780,7 @@ int Engine::sub_455620(char *_this, int ArgList)
   LeaveCriticalSection((LPCRITICAL_SECTION)(v2 + 1076));
   return 1;
 }
+
 
 /* ===== [stained] sub_455750  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455750
@@ -43921,6 +43851,7 @@ LABEL_13:
   return v8;
 }
 
+
 /* ===== [stained] sub_455990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455990
  * raw 行区间 [67786, 67792]
@@ -43933,6 +43864,7 @@ _DWORD * Engine::sub_455990(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_455C60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455C60
@@ -43968,6 +43900,7 @@ int Engine::sub_455C60(int *_this, int ArgList)
   }
 }
 
+
 /* ===== [stained] sub_455D20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455D20
  * raw 行区间 [67919, 67942]
@@ -43998,6 +43931,7 @@ _DWORD * Engine::sub_455D20(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_455DB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455DB0
  * raw 行区间 [67945, 67964]
@@ -44024,6 +43958,7 @@ int Engine::sub_455DB0(int _this, int a2, HGDIOBJ h)
   return result;
 }
 
+
 /* ===== [stained] sub_455E00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455E00
  * raw 行区间 [67967, 67980]
@@ -44043,6 +43978,7 @@ void Engine::sub_455E00(int _this)
     *v3 = 0;
   }
 }
+
 
 /* ===== [stained] sub_455E40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455E40
@@ -44075,6 +44011,7 @@ int Engine::sub_455E40(int _this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_455ED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455ED0
@@ -44202,6 +44139,7 @@ void Engine::sub_455ED0(int _this,
   }
 }
 
+
 /* ===== [stained] sub_4561E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4561E0
  * raw 行区间 [68136, 68230]
@@ -44302,6 +44240,7 @@ void Engine::sub_4561E0(int _this, int a2, CHAR *lpString, int x, int y)
   }
 }
 
+
 /* ===== [stained] sub_456630  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456630
  * raw 行区间 [68421, 68466]
@@ -44354,6 +44293,7 @@ int Engine::sub_456630(int *_this, int a2, int a3)
   return result;
 }
 
+
 /* ===== [stained] sub_456710  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456710
  * raw 行区间 [68470, 68495]
@@ -44385,6 +44325,7 @@ void Engine::sub_456710(int _this, int a2, char *a3, int a4, int a5)
       this->sub_46F2D0( a2, a4, v8, *(_DWORD *)(_this + 1236), tm.tmAscent, a3);
   }
 }
+
 
 /* ===== [stained] sub_456820  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456820
@@ -44536,6 +44477,7 @@ LABEL_30:
     this->sub_46E3E0( v10, a3, y, v12, tmAscent, lpString);
 }
 
+
 /* ===== [stained] sub_456B80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456B80
  * raw 行区间 [68647, 68675]
@@ -44570,6 +44512,7 @@ int Engine::sub_456B80(int _this, unsigned int a2, char *a3, int a4, char *a5)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_456C90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456C90
@@ -44622,6 +44565,7 @@ int Engine::sub_456C90(int _this, int a2, struct tagTEXTMETRICA *a3, int a4)
   return result;
 }
 
+
 /* ===== [stained] sub_456DF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456DF0
  * raw 行区间 [68726, 68760]
@@ -44662,6 +44606,7 @@ int Engine::sub_456DF0(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRI
   GetGlyphOutline(*(_DWORD *)(_this + 1108), 35971, 0, a5, 0, 0, v11);
   return (int)v8(*(HDC *)(_this + 1108), *(HGDIOBJ *)(_this + 201856));
 }
+
 
 /* ===== [stained] sub_456F40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456F40
@@ -44704,6 +44649,7 @@ int Engine::sub_456F40(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRI
   return (int)v8(*(HDC *)(_this + 1108), *(HGDIOBJ *)(_this + 201856));
 }
 
+
 /* ===== [stained] sub_457940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_457940
  * raw 行区间 [69323, 69326]
@@ -44713,6 +44659,7 @@ int Engine::sub_457940(HGDIOBJ *_this, int a2)
 {
   return this->sub_455DB0( a2, _this[271]);
 }
+
 
 /* ===== [stained] sub_457CE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_457CE0
@@ -44879,6 +44826,7 @@ int Engine::sub_457CE0(int *_this, void *a2)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_4581F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4581F0
@@ -45107,6 +45055,7 @@ LABEL_33:
   return result;
 }
 
+
 /* ===== [stained] sub_4587D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4587D0
  * raw 行区间 [69947, 70019]
@@ -45186,6 +45135,7 @@ LABEL_10:
   return result;
 }
 
+
 /* ===== [stained] sub_458A30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_458A30
  * raw 行区间 [70023, 70063]
@@ -45231,6 +45181,7 @@ HGDIOBJ Engine::sub_458A30(int _this,
   *v23 = v21;
   return SelectObject(*(HDC *)(_this + 1108), v21);
 }
+
 
 /* ===== [stained] sub_458AD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_458AD0
@@ -45472,6 +45423,7 @@ LABEL_36:
   return result;
 }
 
+
 /* ===== [stained] sub_4590C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4590C0
  * raw 行区间 [70306, 70398]
@@ -45571,6 +45523,7 @@ LABEL_13:
   return result;
 }
 
+
 /* ===== [stained] sub_459330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459330
  * raw 行区间 [70402, 70442]
@@ -45616,6 +45569,7 @@ HGDIOBJ Engine::sub_459330(int _this,
   *v23 = v21;
   return SelectObject(*(HDC *)(_this + 1108), v21);
 }
+
 
 /* ===== [stained] sub_459770  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459770
@@ -45675,6 +45629,7 @@ int Engine::sub_459770(_DWORD *_this, int a2, int a3)
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_459A20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459A20
@@ -45758,6 +45713,7 @@ LABEL_12:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_459C50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459C50
@@ -45855,6 +45811,7 @@ LABEL_14:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_459F40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459F40
@@ -46107,6 +46064,7 @@ LABEL_18:
   *(_DWORD *)(_this + 1092) = SelectObject(v32, v33);
 }
 
+
 /* ===== [stained] sub_45A6E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45A6E0
  * raw 行区间 [71193, 71273]
@@ -46193,6 +46151,7 @@ LABEL_18:
   *(_DWORD *)(_this + 101856) = v11;
   SelectObject(v12, h);
 }
+
 
 /* ===== [stained] sub_45A940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45A940
@@ -46379,6 +46338,7 @@ void Engine::sub_45A940(int *_this, int a2, int a3, _DWORD *a4)
   }
 }
 
+
 /* ===== [stained] sub_45BC70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45BC70
  * raw 行区间 [72095, 72110]
@@ -46400,6 +46360,7 @@ void Engine::sub_45BC70(_DWORD *_this, int a2, int a3)
   *(_DWORD *)(v4 + 204) = v3;
   sub_45A6E0((int)_this);
 }
+
 
 /* ===== [stained] sub_45BCD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45BCD0
@@ -46464,6 +46425,7 @@ int Engine::sub_45BCD0(_DWORD *_this, char *a2)
   return result;
 }
 
+
 /* ===== [stained] sub_45C610  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45C610
  * raw 行区间 [72493, 72537]
@@ -46514,6 +46476,7 @@ void Engine::sub_45C610(int _this,
     operator delete(a2);
 }
 
+
 /* ===== [stained] sub_45C6E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45C6E0
  * raw 行区间 [72540, 72545]
@@ -46526,6 +46489,7 @@ void Engine::sub_45C6E0(const void **_this, void *a2, int a3, int a4, int a5, in
     operator delete(a2);
 }
 
+
 /* ===== [stained] sub_45D800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45D800
  * raw 行区间 [73204, 73207]
@@ -46535,6 +46499,7 @@ const void ** Engine::sub_45D800(void *_this, int a2, int a3, const void **a4)
 {
   return sub_45CC30(a2, a3, a4, (int)_this + 12);
 }
+
 
 /* ===== [stained] sub_45D890  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45D890
@@ -46560,6 +46525,7 @@ int Engine::sub_45D890(void *_this, int a2, int a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_45DA10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DA10
@@ -46592,6 +46558,7 @@ _DWORD * Engine::sub_45DA10(int *_this, _DWORD *a2, _DWORD *a3, int a4)
   *a2 = v5;
   return result;
 }
+
 
 /* ===== [stained] sub_45DC70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DC70
@@ -46631,6 +46598,7 @@ unsigned int Engine::sub_45DC70(int *_this, char *a2)
   return result;
 }
 
+
 /* ===== [stained] sub_45DED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DED0
  * raw 行区间 [73575, 73598]
@@ -46660,6 +46628,7 @@ unsigned int Engine::sub_45DED0(int *_this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_45DF50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DF50
@@ -46948,6 +46917,7 @@ void Engine::sub_45DF50(int _this)
   sub_4034B0((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_45E730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E730
  * raw 行区间 [73963, 73984]
@@ -46975,6 +46945,7 @@ int Engine::sub_45E730(int *_this, unsigned int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_45E7E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E7E0
@@ -47005,6 +46976,7 @@ const void ** Engine::sub_45E7E0(int *_this, unsigned int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_45E870  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E870
@@ -47130,6 +47102,7 @@ void Engine::sub_45E870(int _this,
     operator delete(a10);
 }
 
+
 /* ===== [stained] sub_45EBB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EBB0
  * raw 行区间 [74174, 74180]
@@ -47142,6 +47115,7 @@ void * Engine::sub_45EBB0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_45EBE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EBE0
@@ -47160,6 +47134,7 @@ unsigned int Engine::sub_45EBE0(int *_this)
     _this[846] = v2;
   return sub_45D1B0(_this + 845, 0);
 }
+
 
 /* ===== [stained] sub_45EC60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EC60
@@ -47253,6 +47228,7 @@ int Engine::sub_45EC60(_DWORD *_this, int a2, int a3)
   return result;
 }
 
+
 /* ===== [stained] sub_45EEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EEA0
  * raw 行区间 [74286, 74320]
@@ -47294,6 +47270,7 @@ void Engine::sub_45EEA0(int *_this, int a2, int a3, int a4, int a5, int a6)
     operator delete(v10[0]);
 }
 
+
 /* ===== [stained] sub_45EFA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EFA0
  * raw 行区间 [74323, 74357]
@@ -47334,6 +47311,7 @@ void Engine::sub_45EFA0(int *_this, int a2, int a3, int a4)
   if ( v9 >= 0x10 )
     operator delete(v8[0]);
 }
+
 
 /* ===== [stained] sub_45F090  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F090
@@ -47381,6 +47359,7 @@ void Engine::sub_45F090(int *_this, int a2, int a3, int *a4, int a5, int a6, voi
   if ( v14 >= 0x10 )
     operator delete(v13[0]);
 }
+
 
 /* ===== [stained] sub_45F1B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F1B0
@@ -47619,6 +47598,7 @@ LABEL_42:
   sub_436500(v50);
   return 1;
 }
+
 
 /* ===== [stained] sub_45F6C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F6C0
@@ -48104,6 +48084,7 @@ LABEL_118:
     operator delete(v52);
   }
 }
+
 
 /* ===== [stained] sub_45FF00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45FF00
@@ -49197,6 +49178,7 @@ LABEL_238:
   }
 }
 
+
 /* ===== [stained] sub_461A10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_461A10
  * raw 行区间 [76214, 76508]
@@ -49497,6 +49479,7 @@ LABEL_33:
   *(_DWORD *)(_this + 201848) = 0;
   return 1;
 }
+
 
 /* ===== [stained] sub_462040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_462040
@@ -50483,6 +50466,7 @@ LABEL_176:
       operator delete(Src[0]);
   }
 }
+
 
 /* ===== [stained] sub_4634B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4634B0
@@ -51697,6 +51681,7 @@ LABEL_196:
   return result;
 }
 
+
 /* ===== [stained] sub_464FD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_464FD0
  * raw 行区间 [78718, 78820]
@@ -51805,6 +51790,7 @@ int Engine::sub_464FD0(int _this)
   strcpy_s((char *)(_this + 201988), 0x80u, asc_526958);
   return _this;
 }
+
 
 /* ===== [stained] sub_465390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465390
@@ -51951,6 +51937,7 @@ void Engine::sub_465390(int _this, int a2, int a3, int a4, char *Source)
     operator delete(v27[0]);
 }
 
+
 /* ===== [stained] sub_465840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465840
  * raw 行区间 [78965, 79059]
@@ -52051,6 +52038,7 @@ void Engine::sub_465840(int _this, int a2, int a3)
     sub_45A6E0(_this);
   }
 }
+
 
 /* ===== [stained] sub_465A20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465A20
@@ -52311,6 +52299,7 @@ LABEL_40:
   *(_DWORD *)(_this + 201848) = 0;
   return 1;
 }
+
 
 /* ===== [stained] sub_466000  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_466000
@@ -53303,6 +53292,7 @@ LABEL_188:
       operator delete(Src[0]);
   }
 }
+
 
 /* ===== [stained] sub_4675A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4675A0
@@ -54513,6 +54503,7 @@ LABEL_204:
   return result;
 }
 
+
 /* ===== [stained] sub_4691A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4691A0
  * raw 行区间 [81524, 81527]
@@ -54522,6 +54513,7 @@ void Engine::sub_4691A0(int *_this, int a2, int a3, int *a4, int a5, void *Src)
 {
   this->sub_45F090( a2, a3, a4, a5, _this[343], Src);
 }
+
 
 /* ===== [stained] sub_4691D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4691D0
@@ -54553,6 +54545,7 @@ void Engine::sub_4691D0(int *_this, int a2, int a3)
     this->sub_4691A0( v3, a3 | 8, v6, 0, &unk_51F030);
   }
 }
+
 
 /* ===== [stained] sub_469260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_469260
@@ -55628,6 +55621,7 @@ LABEL_232:
     operator delete(Src[0]);
 }
 
+
 /* ===== [stained] sub_46AF90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46AF90
  * raw 行区间 [82630, 82732]
@@ -55736,6 +55730,7 @@ void Engine::sub_46AF90(int _this, int a2, int a3)
     }
   }
 }
+
 
 /* ===== [stained] sub_46B100  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46B100
@@ -56366,6 +56361,7 @@ LABEL_19:
   *(_DWORD *)(_this + 218520) = 0;
   return 1;
 }
+
 
 /* ===== [stained] sub_46BE30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46BE30
@@ -57003,6 +56999,7 @@ LABEL_93:
   return 1;
 }
 
+
 /* ===== [stained] sub_46CBF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CBF0
  * raw 行区间 [83999, 84010]
@@ -57021,6 +57018,7 @@ int Engine::sub_46CBF0(_DWORD *_this, int a2, char *a3, CHAR *a4, int a5)
   return result;
 }
 
+
 /* ===== [stained] sub_46CC40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CC40
  * raw 行区间 [84013, 84016]
@@ -57030,6 +57028,7 @@ void Engine::sub_46CC40(void *_this, int a2)
 {
   this->sub_46AF90( a2, 0x80000000);
 }
+
 
 /* ===== [stained] sub_46CC60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CC60
@@ -57101,6 +57100,7 @@ _DWORD * Engine::sub_46CC60(_DWORD *_this, int a2, _DWORD *a3)
   return result;
 }
 
+
 /* ===== [stained] sub_46CE20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CE20
  * raw 行区间 [84085, 84118]
@@ -57140,6 +57140,7 @@ _DWORD * Engine::sub_46CE20(int _this, _DWORD *a2, int a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_46CEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CEA0
@@ -57183,6 +57184,7 @@ int Engine::sub_46CEA0(const char *_this, int SubStr)
   return v3 + 1;
 }
 
+
 /* ===== [stained] sub_46CF60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CF60
  * raw 行区间 [84159, 84178]
@@ -57208,6 +57210,7 @@ int Engine::sub_46CF60(const char *_this, int SubStr)
   }
   return v3;
 }
+
 
 /* ===== [stained] sub_46CFD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CFD0
@@ -57307,6 +57310,7 @@ int Engine::sub_46CFD0(_DWORD *_this, _BYTE *a2, int a3, int *a4, int a5, int a6
   }
   return result;
 }
+
 
 /* ===== [stained] sub_46D9F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46D9F0
@@ -57524,6 +57528,7 @@ int Engine::sub_46D9F0(_DWORD *_this, int a2, int a3, int *a4, int a5, int a6, i
   }
   return result;
 }
+
 
 /* ===== [stained] sub_46DED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46DED0
@@ -57743,6 +57748,7 @@ LABEL_31:
     sub_43E620(*(_DWORD *)(_this + 1032), a2);
   }
 }
+
 
 /* ===== [stained] sub_46E3E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46E3E0
@@ -58168,6 +58174,7 @@ LABEL_103:
   }
 }
 
+
 /* ===== [stained] sub_46ED70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46ED70
  * raw 行区间 [85734, 85886]
@@ -58327,6 +58334,7 @@ LABEL_14:
   }
 }
 
+
 /* ===== [stained] sub_46F190  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46F190
  * raw 行区间 [85891, 85930]
@@ -58372,6 +58380,7 @@ void Engine::sub_46F190(int *_this, int a2, int a3, int a4, int a5, int a6, char
     }
   }
 }
+
 
 /* ===== [stained] sub_46F2D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46F2D0
@@ -58794,6 +58803,7 @@ LABEL_100:
   }
 }
 
+
 /* ===== [stained] sub_46FA60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46FA60
  * raw 行区间 [86359, 86404]
@@ -58845,6 +58855,7 @@ void Engine::sub_46FA60(int _this, int a2, int a3, int a4, int a5, int a6, char 
     }
   }
 }
+
 
 /* ===== [stained] sub_46FB90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46FB90
@@ -59535,6 +59546,7 @@ LABEL_112:
   }
 }
 
+
 /* ===== [stained] sub_471180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_471180
  * raw 行区间 [87103, 87735]
@@ -60170,6 +60182,7 @@ LABEL_58:
     sub_4A3910(*(_DWORD *)(_this + 1040), a2);
   }
 }
+
 
 /* ===== [stained] sub_471DF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_471DF0
@@ -60898,6 +60911,7 @@ LABEL_119:
   }
 }
 
+
 /* ===== [stained] sub_4734F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4734F0
  * raw 行区间 [88479, 89098]
@@ -61521,6 +61535,7 @@ LABEL_145:
   }
 }
 
+
 /* ===== [stained] sub_4742F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4742F0
  * raw 行区间 [89109, 89154]
@@ -61573,6 +61588,7 @@ void Engine::sub_4742F0(int _this, int a2, int a3, int a4, int a5, int a6, char 
   }
 }
 
+
 /* ===== [stained] sub_474440  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474440
  * raw 行区间 [89158, 89200]
@@ -61621,6 +61637,7 @@ void Engine::sub_474440(int _this, int a2, int a3, char *a4, int a5, int a6, cha
     }
   }
 }
+
 
 /* ===== [stained] sub_4745A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4745A0
@@ -61922,6 +61939,7 @@ void Engine::sub_4745A0(_DWORD *_this)
   }
 }
 
+
 /* ===== [stained] sub_474BD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474BD0
  * raw 行区间 [89500, 89676]
@@ -62104,6 +62122,7 @@ LABEL_42:
     sub_43E620(_this[258], a2);
   }
 }
+
 
 /* ===== [stained] sub_474F60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474F60
@@ -62383,6 +62402,7 @@ LABEL_72:
   sub_43E620(_this[258], a2);
 }
 
+
 /* ===== [stained] sub_475450  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_475450
  * raw 行区间 [89957, 90135]
@@ -62567,6 +62587,7 @@ LABEL_45:
     sub_43E620(*(_DWORD *)(_this + 1032), a2);
   }
 }
+
 
 /* ===== [stained] sub_4757F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4757F0
@@ -62857,6 +62878,7 @@ LABEL_74:
   }
 }
 
+
 /* ===== [stained] sub_475F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_475F10
  * raw 行区间 [90532, 90568]
@@ -62900,6 +62922,7 @@ int Engine::sub_475F10(void *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_476010  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476010
  * raw 行区间 [90572, 90578]
@@ -62912,6 +62935,7 @@ void * Engine::sub_476010(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_476040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476040
@@ -62928,6 +62952,7 @@ _DWORD * Engine::sub_476040(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_476100  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476100
  * raw 行区间 [90612, 90617]
@@ -62939,6 +62964,7 @@ void Engine::sub_476100(_DWORD *_this)
   sub_4760D0((int)_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_476160  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476160
@@ -62953,6 +62979,7 @@ _DWORD * Engine::sub_476160(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_476220  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476220
  * raw 行区间 [90670, 90673]
@@ -62962,6 +62989,7 @@ void Engine::sub_476220(_DWORD *_this)
 {
   *_this = &IAGEService___vftable_;
 }
+
 
 /* ===== [stained] sub_476760  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476760
@@ -63000,6 +63028,7 @@ int Engine::sub_476760(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_476920  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476920
  * raw 行区间 [91235, 91241]
@@ -63012,6 +63041,7 @@ _DWORD * Engine::sub_476920(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_476AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476AA0
@@ -63119,6 +63149,7 @@ int Engine::sub_476AA0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_477050  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477050
  * raw 行区间 [91530, 91538]
@@ -63133,6 +63164,7 @@ int Engine::sub_477050(void **_this)
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_477DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477DD0
@@ -63193,6 +63225,7 @@ _DWORD * Engine::sub_477DD0(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_477FF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477FF0
  * raw 行区间 [92430, 92435]
@@ -63204,6 +63237,7 @@ void Engine::sub_477FF0(void **_this)
   sub_477050(_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_478100  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_478100
@@ -63217,6 +63251,7 @@ void ** Engine::sub_478100(void **_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_478F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_478F50
@@ -63256,6 +63291,7 @@ int Engine::sub_478F50(int _this,
   return _this;
 }
 
+
 /* ===== [stained] sub_479010  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479010
  * raw 行区间 [93358, 93383]
@@ -63288,6 +63324,7 @@ void Engine::sub_479010(void *_this)
   *((_DWORD *)_this + 37) = 0;
 }
 
+
 /* ===== [stained] sub_479200  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479200
  * raw 行区间 [93458, 93464]
@@ -63300,6 +63337,7 @@ void * Engine::sub_479200(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_479290  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479290
@@ -63316,6 +63354,7 @@ int __stdcall Engine::sub_479290(int a1, void *a2)
   return 0;
 }
 
+
 /* ===== [stained] sub_47A220  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47A220
  * raw 行区间 [94261, 94269]
@@ -63330,6 +63369,7 @@ int __stdcall Engine::sub_47A220(int a1, void *a2)
   }
   return 0;
 }
+
 
 /* ===== [stained] sub_47AD40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47AD40
@@ -63407,6 +63447,7 @@ int Engine::sub_47AD40(int _this, HRESULT *a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47AEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47AEA0
  * raw 行区间 [94851, 94908]
@@ -63471,6 +63512,7 @@ int Engine::sub_47AEA0(char *_this)
   return nullsub_1(_this);
 }
 
+
 /* ===== [stained] sub_47B100  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47B100
  * raw 行区间 [94974, 94980]
@@ -63483,6 +63525,7 @@ char * Engine::sub_47B100(char *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47BD70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BD70
@@ -63562,6 +63605,7 @@ char * Engine::sub_47BD70(char *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_47BF30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BF30
  * raw 行区间 [95624, 95627]
@@ -63571,6 +63615,7 @@ void * Engine::sub_47BF30(char *_this, char a2)
 {
   return sub_47C3F0(_this - 24, a2);
 }
+
 
 /* ===== [stained] sub_47BF40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BF40
@@ -63618,6 +63663,7 @@ int Engine::sub_47BF40(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_47C0B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C0B0
  * raw 行区间 [95673, 95685]
@@ -63637,6 +63683,7 @@ int Engine::sub_47C0B0(int _this, int a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47C360  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C360
  * raw 行区间 [95832, 95835]
@@ -63646,6 +63693,7 @@ _DWORD * Engine::sub_47C360(_DWORD *_this, char a2)
 {
   return sub_47C4C0(_this - 6, a2);
 }
+
 
 /* ===== [stained] sub_47C3F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C3F0
@@ -63659,6 +63707,7 @@ void * Engine::sub_47C3F0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47C420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C420
@@ -63680,6 +63729,7 @@ int Engine::sub_47C420(_DWORD *_this)
   return sub_47BF40((int)_this);
 }
 
+
 /* ===== [stained] sub_47C4C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C4C0
  * raw 行区间 [95915, 95921]
@@ -63693,6 +63743,7 @@ _DWORD * Engine::sub_47C4C0(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47CF90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47CF90
  * raw 行区间 [96397, 96403]
@@ -63705,6 +63756,7 @@ _DWORD * Engine::sub_47CF90(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47D790  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D790
@@ -63720,6 +63772,7 @@ _DWORD * Engine::sub_47D790(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47D8C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D8C0
  * raw 行区间 [96836, 96843]
@@ -63733,6 +63786,7 @@ _DWORD * Engine::sub_47D8C0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47D9E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D9E0
@@ -63748,6 +63802,7 @@ _DWORD * Engine::sub_47D9E0(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47DB00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DB00
  * raw 行区间 [96942, 96949]
@@ -63761,6 +63816,7 @@ _DWORD * Engine::sub_47DB00(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47DC30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DC30
@@ -63776,6 +63832,7 @@ _DWORD * Engine::sub_47DC30(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47DD50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DD50
  * raw 行区间 [97054, 97061]
@@ -63789,6 +63846,7 @@ _DWORD * Engine::sub_47DD50(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47DE70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DE70
@@ -63804,6 +63862,7 @@ _DWORD * Engine::sub_47DE70(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47DF90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DF90
  * raw 行区间 [97161, 97168]
@@ -63818,6 +63877,7 @@ _DWORD * Engine::sub_47DF90(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47E660  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47E660
  * raw 行区间 [97450, 97455]
@@ -63829,6 +63889,7 @@ void Engine::sub_47E660(void *_this, int a2)
   if ( (_BYTE)a2 )
     operator delete(_this);
 }
+
 
 /* ===== [stained] sub_47F950  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47F950
@@ -63843,6 +63904,7 @@ _DWORD * Engine::sub_47F950(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47FB40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FB40
  * raw 行区间 [98366, 98372]
@@ -63855,6 +63917,7 @@ _DWORD * Engine::sub_47FB40(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_47FB70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FB70
@@ -63869,6 +63932,7 @@ _DWORD * Engine::sub_47FB70(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_47FBB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FBB0
  * raw 行区间 [98393, 98399]
@@ -63881,6 +63945,7 @@ _DWORD * Engine::sub_47FBB0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4811E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4811E0
@@ -63903,6 +63968,7 @@ _DWORD * Engine::sub_4811E0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_481780  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481780
@@ -63967,6 +64033,7 @@ int Engine::sub_481780(int _this, int a2)
   InterlockedDecrement(lpAddend);
   return 0;
 }
+
 
 /* ===== [stained] sub_481D10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481D10
@@ -64043,6 +64110,7 @@ LABEL_7:
   return v3;
 }
 
+
 /* ===== [stained] sub_481F90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481F90
  * raw 行区间 [100181, 100208]
@@ -64077,6 +64145,7 @@ int Engine::sub_481F90(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4820B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4820B0
  * raw 行区间 [100231, 100237]
@@ -64089,6 +64158,7 @@ _DWORD * Engine::sub_4820B0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4820F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4820F0
@@ -64104,6 +64174,7 @@ _DWORD * Engine::sub_4820F0(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_482350  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482350
  * raw 行区间 [100365, 100371]
@@ -64116,6 +64187,7 @@ void * Engine::sub_482350(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4823B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4823B0
@@ -64302,6 +64374,7 @@ LABEL_44:
   return 0;
 }
 
+
 /* ===== [stained] sub_482A90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482A90
  * raw 行区间 [100764, 100770]
@@ -64315,6 +64388,7 @@ void * Engine::sub_482A90(void *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_482AC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482AC0
  * raw 行区间 [100773, 100779]
@@ -64327,6 +64401,7 @@ void * Engine::sub_482AC0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_483040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483040
@@ -64344,6 +64419,7 @@ _DWORD * Engine::sub_483040(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_483120  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483120
@@ -64366,6 +64442,7 @@ int Engine::sub_483120(_DWORD *_this)
   return sub_481AE0(_this + 3);
 }
 
+
 /* ===== [stained] sub_4831C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4831C0
  * raw 行区间 [101075, 101081]
@@ -64378,6 +64455,7 @@ _DWORD * Engine::sub_4831C0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_483A60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483A60
@@ -64392,6 +64470,7 @@ bool __cdecl Engine::sub_483A60(int a1, _BYTE *a2)
   return sub_480DE0(v2, a1, a2) == 0;
 }
 
+
 /* ===== [stained] sub_483CD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483CD0
  * raw 行区间 [101559, 101566]
@@ -64405,6 +64484,7 @@ void Engine::sub_483CD0(_DWORD *_this)
   sub_482830((int)(_this + 3));
   *_this = &Concurrency__ISource_bool____vftable_;
 }
+
 
 /* ===== [stained] sub_483D50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483D50
@@ -64423,6 +64503,7 @@ _DWORD * Engine::sub_483D50(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_483ED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483ED0
  * raw 行区间 [101621, 101624]
@@ -64432,6 +64513,7 @@ void * Engine::sub_483ED0(char *_this, char a2)
 {
   return sub_484E30(_this - 168, a2);
 }
+
 
 /* ===== [stained] sub_4844D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4844D0
@@ -64458,6 +64540,7 @@ void * Engine::sub_4844D0(void *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_484740  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484740
  * raw 行区间 [101985, 101988]
@@ -64467,6 +64550,7 @@ bool __cdecl Engine::sub_484740(int a1, _BYTE *a2)
 {
   return sub_483A60(a1, a2);
 }
+
 
 /* ===== [stained] sub_484CD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484CD0
@@ -64515,6 +64599,7 @@ void Engine::sub_484CD0(int _this)
   *(_DWORD *)_this = &Concurrency__ISource_bool____vftable_;
 }
 
+
 /* ===== [stained] sub_484E30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484E30
  * raw 行区间 [102323, 102329]
@@ -64527,6 +64612,7 @@ void * Engine::sub_484E30(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_484FE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484FE0
@@ -64566,6 +64652,7 @@ void Engine::sub_484FE0(_DWORD *_this)
   sub_484CD0((int)_this);
 }
 
+
 /* ===== [stained] sub_4850C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4850C0
  * raw 行区间 [102437, 102440]
@@ -64575,6 +64662,7 @@ _DWORD * Engine::sub_4850C0(_DWORD *_this, char a2)
 {
   return sub_4853A0(_this - 42, a2);
 }
+
 
 /* ===== [stained] sub_4853A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4853A0
@@ -64588,6 +64676,7 @@ _DWORD * Engine::sub_4853A0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4853D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4853D0
@@ -64647,6 +64736,7 @@ int Engine::sub_4853D0(char *_this)
   return nullsub_1(_this);
 }
 
+
 /* ===== [stained] sub_485610  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485610
  * raw 行区间 [102710, 102713]
@@ -64656,6 +64746,7 @@ char * Engine::sub_485610(char *_this, char a2)
 {
   return sub_485850(_this - 16, a2);
 }
+
 
 /* ===== [stained] sub_485620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485620
@@ -64732,6 +64823,7 @@ int Engine::sub_485620(int _this, int a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_485850  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485850
  * raw 行区间 [102793, 102799]
@@ -64744,6 +64836,7 @@ char * Engine::sub_485850(char *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_485880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485880
@@ -64887,6 +64980,7 @@ LABEL_24:
   return 0;
 }
 
+
 /* ===== [stained] sub_485BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485BA0
  * raw 行区间 [102946, 102996]
@@ -64944,6 +65038,7 @@ LABEL_2:
   return v3;
 }
 
+
 /* ===== [stained] sub_485D40  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485D40
  * raw 行区间 [102999, 103006]
@@ -64958,6 +65053,7 @@ _DWORD * Engine::sub_485D40(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_485DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485DD0
  * raw 行区间 [103017, 103024]
@@ -64971,6 +65067,7 @@ MCIERROR Engine::sub_485DD0(_DWORD *_this)
   _this[334] = 0;
   return result;
 }
+
 
 /* ===== [stained] sub_485DF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485DF0
@@ -64987,6 +65084,7 @@ int Engine::sub_485DF0(_DWORD *_this)
   return 1;
 }
 
+
 /* ===== [stained] sub_485E20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485E20
  * raw 行区间 [103038, 103044]
@@ -64999,6 +65097,7 @@ void Engine::sub_485E20(_DWORD *_this)
     sub_485DF0(_this);
   sub_48A8D0((int)_this);
 }
+
 
 /* ===== [stained] sub_485E90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485E90
@@ -65013,6 +65112,7 @@ _DWORD * Engine::sub_485E90(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_485ED0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485ED0
  * raw 行区间 [103064, 103070]
@@ -65025,6 +65125,7 @@ _DWORD * Engine::sub_485ED0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_485FA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485FA0
@@ -65058,6 +65159,7 @@ _DWORD * Engine::sub_485FA0(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_486110  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486110
  * raw 行区间 [103166, 103183]
@@ -65081,6 +65183,7 @@ int Engine::sub_486110(int **_this)
   ((void (__thiscall *)(int **))(*_this)[1])(_this);
   return 1;
 }
+
 
 /* ===== [stained] sub_486330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486330
@@ -65127,6 +65230,7 @@ int Engine::sub_486330(int **_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4863C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4863C0
  * raw 行区间 [103303, 103315]
@@ -65146,6 +65250,7 @@ int Engine::sub_4863C0(_DWORD **_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4865B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4865B0
  * raw 行区间 [103394, 103403]
@@ -65162,6 +65267,7 @@ char * Engine::sub_4865B0(char *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_486630  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486630
  * raw 行区间 [103408, 103414]
@@ -65175,6 +65281,7 @@ char * Engine::sub_486630(char *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_486690  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486690
  * raw 行区间 [103417, 103423]
@@ -65187,6 +65294,7 @@ void Engine::sub_486690(int **_this)
   sub_486080(_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_4866F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4866F0
@@ -65245,6 +65353,7 @@ LABEL_3:
   return (*(int (__thiscall **)(int, _DWORD))(*(_DWORD *)_this + 40))(_this, *(_DWORD *)(_this + 1052)) != 0;
 }
 
+
 /* ===== [stained] sub_486970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486970
  * raw 行区间 [103598, 103609]
@@ -65263,6 +65372,7 @@ int Engine::sub_486970(int _this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_486990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486990
  * raw 行区间 [103612, 103618]
@@ -65275,6 +65385,7 @@ int ** Engine::sub_486990(int **_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4869C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4869C0
@@ -65341,6 +65452,7 @@ LABEL_3:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_486AD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486AD0
@@ -65427,6 +65539,7 @@ LABEL_3:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_486C20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486C20
@@ -65562,6 +65675,7 @@ LABEL_13:
   return 0;
 }
 
+
 /* ===== [stained] sub_486F70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486F70
  * raw 行区间 [103903, 103918]
@@ -65583,6 +65697,7 @@ _DWORD * Engine::sub_486F70(_DWORD *_this)
   _this[288] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_487010  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487010
@@ -65611,6 +65726,7 @@ int Engine::sub_487010(int **_this)
   ((void (__thiscall *)(int **))(*_this)[1])(_this);
   return 1;
 }
+
 
 /* ===== [stained] sub_4872D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4872D0
@@ -65682,6 +65798,7 @@ int Engine::sub_4872D0(int **_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4873D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4873D0
  * raw 行区间 [104112, 104120]
@@ -65696,6 +65813,7 @@ void Engine::sub_4873D0(int **_this)
   sub_4873C0(_this);
   sub_486690(v2);
 }
+
 
 /* ===== [stained] sub_487430  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487430
@@ -65758,6 +65876,7 @@ LABEL_3:
   }
   return 1;
 }
+
 
 /* ===== [stained] sub_487530  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487530
@@ -65895,6 +66014,7 @@ LABEL_11:
   return 1;
 }
 
+
 /* ===== [stained] sub_487880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487880
  * raw 行区间 [104326, 104332]
@@ -65907,6 +66027,7 @@ int ** Engine::sub_487880(int **_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_487A80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487A80
@@ -65923,6 +66044,7 @@ char * Engine::sub_487A80(_DWORD *_this, char *Str)
     _this[271] = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_487AD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487AD0
@@ -65951,6 +66073,7 @@ HMODULE Engine::sub_487AD0(int _this)
   sub_4034B0((_DWORD *)(_this + 352));
   return sub_4D6040(_this);
 }
+
 
 /* ===== [stained] sub_487C60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487C60
@@ -66206,6 +66329,7 @@ int Engine::sub_487C60(int _this, int a2)
   return 0;
 }
 
+
 /* ===== [stained] sub_488420  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488420
  * raw 行区间 [104990, 105023]
@@ -66246,6 +66370,7 @@ LABEL_10:
   return 1;
 }
 
+
 /* ===== [stained] sub_488950  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488950
  * raw 行区间 [105306, 105329]
@@ -66276,6 +66401,7 @@ _DWORD * Engine::sub_488950(_DWORD *_this, _DWORD *a2, _DWORD *a3)
   return _this;
 }
 
+
 /* ===== [stained] sub_488A50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488A50
  * raw 行区间 [105339, 105345]
@@ -66288,6 +66414,7 @@ void * Engine::sub_488A50(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_488A80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488A80
@@ -66387,6 +66514,7 @@ int Engine::sub_488A80(int _this, int a2)
   }
 }
 
+
 /* ===== [stained] sub_488CA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488CA0
  * raw 行区间 [105443, 105473]
@@ -66423,6 +66551,7 @@ void Engine::sub_488CA0(_DWORD *_this)
     (*(void (__stdcall **)(_DWORD))(*(_DWORD *)v7 + 8))(_this[258]);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_488DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488DC0
@@ -66522,6 +66651,7 @@ LABEL_10:
   return 1;
 }
 
+
 /* ===== [stained] sub_489040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489040
  * raw 行区间 [105608, 105674]
@@ -66595,6 +66725,7 @@ _DWORD * Engine::sub_489040(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_489200  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489200
  * raw 行区间 [105678, 105684]
@@ -66607,6 +66738,7 @@ _DWORD * Engine::sub_489200(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_489230  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489230
@@ -66954,6 +67086,7 @@ LABEL_32:
   return 1;
 }
 
+
 /* ===== [stained] sub_489910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489910
  * raw 行区间 [106066, 106073]
@@ -66967,6 +67100,7 @@ _DWORD * Engine::sub_489910(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_489970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489970
@@ -67034,6 +67168,7 @@ _DWORD * Engine::sub_489970(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_489AF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489AF0
  * raw 行区间 [106141, 106168]
@@ -67068,6 +67203,7 @@ int Engine::sub_489AF0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_489F20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489F20
  * raw 行区间 [106344, 106349]
@@ -67079,6 +67215,7 @@ void Engine::sub_489F20(_DWORD *_this)
   sub_489AF0(_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_489FF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489FF0
@@ -67092,6 +67229,7 @@ _DWORD * Engine::sub_489FF0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48A830  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48A830
@@ -67114,6 +67252,7 @@ _DWORD * Engine::sub_48A830(_DWORD *_this)
   _this[325] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_48A8D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48A8D0
@@ -67144,6 +67283,7 @@ void Engine::sub_48A8D0(int _this)
   sub_4034B0((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_48AA30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48AA30
  * raw 行区间 [106857, 106863]
@@ -67156,6 +67296,7 @@ void * Engine::sub_48AA30(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48AB20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48AB20
@@ -67176,6 +67317,7 @@ _DWORD * Engine::sub_48AB20(_DWORD *_this, int a2, int a3)
   _this[275] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_48ABD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48ABD0
@@ -67206,6 +67348,7 @@ void Engine::sub_48ABD0(int *_this)
   }
 }
 
+
 /* ===== [stained] sub_48ADD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48ADD0
  * raw 行区间 [107047, 107067]
@@ -67232,6 +67375,7 @@ int Engine::sub_48ADD0(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_48C790  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C790
@@ -67265,6 +67409,7 @@ void Engine::sub_48C790(int _this)
   sub_4034B0((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_48C840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C840
  * raw 行区间 [108065, 108071]
@@ -67277,6 +67422,7 @@ void * Engine::sub_48C840(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48C870  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C870
@@ -67295,6 +67441,7 @@ _DWORD * Engine::sub_48C870(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_48C900  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C900
  * raw 行区间 [108100, 108104]
@@ -67305,6 +67452,7 @@ void Engine::sub_48C900(_DWORD *_this)
   *_this = &OggStream___vftable_;
   sub_48D590((int)_this);
 }
+
 
 /* ===== [stained] sub_48C950  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C950
@@ -67461,6 +67609,7 @@ LABEL_22:
   return _this + 9960;
 }
 
+
 /* ===== [stained] sub_48CD80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CD80
  * raw 行区间 [108261, 108269]
@@ -67476,6 +67625,7 @@ int Engine::sub_48CD80(int _this)
   return this->sub_48C950( v2, *(_DWORD *)(_this + 10020));
 }
 
+
 /* ===== [stained] sub_48CDD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CDD0
  * raw 行区间 [108272, 108278]
@@ -67488,6 +67638,7 @@ _DWORD * Engine::sub_48CDD0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48CE00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CE00
@@ -67523,6 +67674,7 @@ int Engine::sub_48CE00(int _this, char *NumberOfBytesRead, int ArgList)
   }
 }
 
+
 /* ===== [stained] sub_48CEC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CEC0
  * raw 行区间 [108311, 108314]
@@ -67532,6 +67684,7 @@ void Engine::sub_48CEC0(_DWORD *_this)
 {
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_48CF10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CF10
@@ -67545,6 +67698,7 @@ _DWORD * Engine::sub_48CF10(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48CF70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CF70
@@ -67711,6 +67865,7 @@ LABEL_22:
   return _this + 9960;
 }
 
+
 /* ===== [stained] sub_48D3E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D3E0
  * raw 行区间 [108489, 108505]
@@ -67734,6 +67889,7 @@ int Engine::sub_48D3E0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_48D460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D460
  * raw 行区间 [108508, 108519]
@@ -67752,6 +67908,7 @@ _DWORD * Engine::sub_48D460(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_48D590  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D590
  * raw 行区间 [108551, 108558]
@@ -67766,6 +67923,7 @@ void Engine::sub_48D590(int _this)
   sub_4034B0((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_48D940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D940
  * raw 行区间 [108562, 108568]
@@ -67778,6 +67936,7 @@ void * Engine::sub_48D940(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48D970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D970
@@ -67793,6 +67952,7 @@ _DWORD * Engine::sub_48D970(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_48D9D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D9D0
  * raw 行区间 [108582, 108586]
@@ -67803,6 +67963,7 @@ void Engine::sub_48D9D0(_DWORD *_this)
   *_this = &PCM___vftable_;
   sub_48A8D0((int)_this);
 }
+
 
 /* ===== [stained] sub_48DB50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48DB50
@@ -67816,6 +67977,7 @@ _DWORD * Engine::sub_48DB50(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48E220  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E220
@@ -67832,6 +67994,7 @@ void Engine::sub_48E220(void *_this)
   operator delete[](*((void **)_this + 2));
 }
 
+
 /* ===== [stained] sub_48E5D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E5D0
  * raw 行区间 [109297, 109303]
@@ -67844,6 +68007,7 @@ void * Engine::sub_48E5D0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48E720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E720
@@ -67864,6 +68028,7 @@ int Engine::sub_48E720(void *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_48E840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E840
  * raw 行区间 [109431, 109437]
@@ -67876,6 +68041,7 @@ void * Engine::sub_48E840(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48EA60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48EA60
@@ -67895,6 +68061,7 @@ _DWORD * Engine::sub_48EA60(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48EB60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48EB60
@@ -68007,6 +68174,7 @@ LABEL_12:
   }
 }
 
+
 /* ===== [stained] sub_48F480  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F480
  * raw 行区间 [109972, 109993]
@@ -68035,6 +68203,7 @@ void Engine::sub_48F480(void *_this)
   *((_DWORD *)_this + 8) = 0;
 }
 
+
 /* ===== [stained] sub_48F530  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F530
  * raw 行区间 [109997, 110003]
@@ -68047,6 +68216,7 @@ void * Engine::sub_48F530(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48F560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F560
@@ -68092,6 +68262,7 @@ LABEL_8:
   sub_4034B0(_this);
 }
 
+
 /* ===== [stained] sub_48F650  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F650
  * raw 行区间 [110048, 110054]
@@ -68104,6 +68275,7 @@ _DWORD * Engine::sub_48F650(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_48FAF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48FAF0
@@ -68126,6 +68298,7 @@ int Engine::sub_48FAF0(int _this)
   *(_DWORD *)(_this + 1140) = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_48FCE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48FCE0
@@ -68233,6 +68406,7 @@ LABEL_16:
   return 0;
 }
 
+
 /* ===== [stained] sub_490F20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_490F20
  * raw 行区间 [110965, 110995]
@@ -68270,6 +68444,7 @@ void Engine::sub_490F20(_DWORD *_this)
   sub_40E8F0(_this + 1);
 }
 
+
 /* ===== [stained] sub_491030  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_491030
  * raw 行区间 [110999, 111005]
@@ -68282,6 +68457,7 @@ _DWORD * Engine::sub_491030(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_491800  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_491800
@@ -68302,6 +68478,7 @@ void Engine::sub_491800(unsigned int *_this,
   if ( a8 >= 0x10 )
     operator delete(a3);
 }
+
 
 /* ===== [stained] sub_495610  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495610
@@ -68427,6 +68604,7 @@ _DWORD *__cdecl Engine::sub_495610(_DWORD *a1,
   return a1;
 }
 
+
 /* ===== [stained] sub_495F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495F50
  * raw 行区间 [113404, 113421]
@@ -68451,6 +68629,7 @@ int Engine::sub_495F50(_DWORD *_this)
   return sub_438650(_this + 1);
 }
 
+
 /* ===== [stained] sub_495FE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495FE0
  * raw 行区间 [113425, 113431]
@@ -68464,6 +68643,7 @@ _DWORD * Engine::sub_495FE0(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4975D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4975D0
  * raw 行区间 [114394, 114398]
@@ -68474,6 +68654,7 @@ BOOL Engine::sub_4975D0(_DWORD *_this)
   *_this = &RemoteDebug___vftable_;
   return sub_438C30(_this);
 }
+
 
 /* ===== [stained] sub_497670  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497670
@@ -68487,6 +68668,7 @@ _DWORD * Engine::sub_497670(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_497810  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497810
@@ -68504,6 +68686,7 @@ _DWORD * Engine::sub_497810(_DWORD *_this)
   _this[283] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_497880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497880
@@ -68806,6 +68989,7 @@ LABEL_13:
   return result;
 }
 
+
 /* ===== [stained] sub_497EE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497EE0
  * raw 行区间 [114805, 114825]
@@ -68833,6 +69017,7 @@ int Engine::sub_497EE0(int _this, int a2, int a3, int a4)
            _this + 1040);
 }
 
+
 /* ===== [stained] sub_497F50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497F50
  * raw 行区间 [114828, 114843]
@@ -68854,6 +69039,7 @@ BOOL Engine::sub_497F50(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_498310  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498310
@@ -68879,6 +69065,7 @@ int Engine::sub_498310(_DWORD *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4983E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4983E0
@@ -69034,6 +69221,7 @@ LABEL_39:
   return v10;
 }
 
+
 /* ===== [stained] sub_4986C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4986C0
  * raw 行区间 [115210, 115215]
@@ -69045,6 +69233,7 @@ void Engine::sub_4986C0(_DWORD *_this)
   sub_498310(_this);
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_498720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498720
@@ -69161,6 +69350,7 @@ LABEL_12:
   return v7;
 }
 
+
 /* ===== [stained] sub_498930  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498930
  * raw 行区间 [115330, 115415]
@@ -69253,6 +69443,7 @@ LABEL_9:
   return v7;
 }
 
+
 /* ===== [stained] sub_498AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498AA0
  * raw 行区间 [115418, 115452]
@@ -69294,6 +69485,7 @@ int Engine::sub_498AA0(int _this, int a2, int a3)
   return 0;
 }
 
+
 /* ===== [stained] sub_498B60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498B60
  * raw 行区间 [115455, 115478]
@@ -69323,6 +69515,7 @@ int Engine::sub_498B60(int _this)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_498BC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498BC0
@@ -69364,6 +69557,7 @@ int Engine::sub_498BC0(int _this, int *a2, int *a3, int a4)
   }
 }
 
+
 /* ===== [stained] sub_498C90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498C90
  * raw 行区间 [115518, 115524]
@@ -69376,6 +69570,7 @@ _DWORD * Engine::sub_498C90(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_498CC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498CC0
@@ -69693,6 +69888,7 @@ LABEL_62:
   return 0;
 }
 
+
 /* ===== [stained] sub_4997D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4997D0
  * raw 行区间 [116076, 116084]
@@ -69708,6 +69904,7 @@ void Engine::sub_4997D0(void **_this)
   _this[3] = 0;
 }
 
+
 /* ===== [stained] sub_499840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_499840
  * raw 行区间 [116088, 116094]
@@ -69721,6 +69918,7 @@ void ** Engine::sub_499840(void **_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_499BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_499BA0
  * raw 行区间 [116325, 116331]
@@ -69733,6 +69931,7 @@ BOOL Engine::sub_499BA0(_DWORD *_this)
   v1 = _this[11614];
   return v1 < 0 || v1 == 38;
 }
+
 
 /* ===== [stained] sub_49A300  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A300
@@ -69919,6 +70118,7 @@ int Engine::sub_49A300(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_49A640  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A640
  * raw 行区间 [117060, 117077]
@@ -69943,6 +70143,7 @@ BOOL Engine::sub_49A640(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_49A690  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A690
  * raw 行区间 [117080, 117090]
@@ -69959,6 +70160,7 @@ int Engine::sub_49A690(_DWORD *_this)
   _this[11627] = 1;
   return result;
 }
+
 
 /* ===== [stained] sub_49AA30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49AA30
@@ -70661,6 +70863,7 @@ LABEL_72:
   return j_D3DXMatrixMultiply(v73, v73, v119);
 }
 
+
 /* ===== [stained] sub_49BCC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49BCC0
  * raw 行区间 [117945, 118365]
@@ -71088,6 +71291,7 @@ LABEL_18:
   return j_D3DXMatrixMultiply(v79, v79, v88);
 }
 
+
 /* ===== [stained] sub_49DD70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49DD70
  * raw 行区间 [119091, 119195]
@@ -71199,6 +71403,7 @@ int Engine::sub_49DD70(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_49DFD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49DFD0
  * raw 行区间 [119198, 119260]
@@ -71267,6 +71472,7 @@ float * Engine::sub_49DFD0(float *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_49E170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E170
@@ -71337,6 +71543,7 @@ int __fastcall Engine::sub_49E170(float *a1)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_49E700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E700
@@ -71435,6 +71642,7 @@ LABEL_13:
   return 1;
 }
 
+
 /* ===== [stained] sub_49E980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E980
  * raw 行区间 [119586, 119603]
@@ -71458,6 +71666,7 @@ int Engine::sub_49E980(_DWORD *_this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_49ED60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49ED60
@@ -71489,6 +71698,7 @@ int Engine::sub_49ED60(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4)
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_49EF60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49EF60
@@ -71930,6 +72140,7 @@ LABEL_67:
   }
 }
 
+
 /* ===== [stained] sub_49F790  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49F790
  * raw 行区间 [120327, 120460]
@@ -72070,6 +72281,7 @@ int Engine::sub_49F790(int _this, int a2, char a3)
   }
 }
 
+
 /* ===== [stained] sub_49FB60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49FB60
  * raw 行区间 [120464, 120528]
@@ -72140,6 +72352,7 @@ LABEL_9:
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_49FCD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49FCD0
@@ -72372,6 +72585,7 @@ LABEL_19:
   }
 }
 
+
 /* ===== [stained] sub_4A0430  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A0430
  * raw 行区间 [120958, 121064]
@@ -72485,6 +72699,7 @@ LABEL_8:
   return 0;
 }
 
+
 /* ===== [stained] sub_4A0750  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A0750
  * raw 行区间 [121105, 121116]
@@ -72503,6 +72718,7 @@ void Engine::sub_4A0750(_DWORD *_this, int a2)
   }
 }
 
+
 /* ===== [stained] sub_4A1A60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1A60
  * raw 行区间 [121746, 121757]
@@ -72520,6 +72736,7 @@ void Engine::sub_4A1A60(_DWORD *_this, int a2)
     _this[a2 + 13953] = 0;
   }
 }
+
 
 /* ===== [stained] sub_4A1D50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1D50
@@ -72629,6 +72846,7 @@ int Engine::sub_4A1D50(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4A1E90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1E90
  * raw 行区间 [122130, 122157]
@@ -72662,6 +72880,7 @@ int Engine::sub_4A1E90(int _this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4A1F00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1F00
@@ -72753,6 +72972,7 @@ void Engine::sub_4A1F00(int _this, int a2)
   }
 }
 
+
 /* ===== [stained] sub_4A2050  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2050
  * raw 行区间 [122249, 122329]
@@ -72839,6 +73059,7 @@ void Engine::sub_4A2050(int _this, int a2, float a3)
     }
   }
 }
+
 
 /* ===== [stained] sub_4A2280  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2280
@@ -73016,6 +73237,7 @@ int Engine::sub_4A2280(int _this,
   }
 }
 
+
 /* ===== [stained] sub_4A2BA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2BA0
  * raw 行区间 [122809, 122834]
@@ -73047,6 +73269,7 @@ int Engine::sub_4A2BA0(int _this)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_4A2C10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2C10
@@ -73104,6 +73327,7 @@ LABEL_9:
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_4A2D50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2D50
@@ -73467,6 +73691,7 @@ LABEL_58:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A3590  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3590
  * raw 行区间 [123254, 123364]
@@ -73583,6 +73808,7 @@ int Engine::sub_4A3590(int _this,
   }
 }
 
+
 /* ===== [stained] sub_4A3890  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3890
  * raw 行区间 [123392, 123417]
@@ -73615,6 +73841,7 @@ int Engine::sub_4A3890(int _this, int a2, int a3)
   }
 }
 
+
 /* ===== [stained] sub_4A3910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3910
  * raw 行区间 [123420, 123443]
@@ -73644,6 +73871,7 @@ void Engine::sub_4A3910(int _this, int a2)
     *(_DWORD *)(_this + 46664) = -1;
   }
 }
+
 
 /* ===== [stained] sub_4A3980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3980
@@ -74068,6 +74296,7 @@ LABEL_62:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A42C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A42C0
  * raw 行区间 [123967, 124318]
@@ -74426,6 +74655,7 @@ LABEL_62:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A4880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4880
  * raw 行区间 [124328, 124569]
@@ -74674,6 +74904,7 @@ LABEL_15:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A4C70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4C70
  * raw 行区间 [124573, 124649]
@@ -74756,6 +74987,7 @@ LABEL_21:
   this->sub_4034C0( v12);
   return 0;
 }
+
 
 /* ===== [stained] sub_4A4DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4DC0
@@ -74928,6 +75160,7 @@ LABEL_18:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A50C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A50C0
  * raw 行区间 [124819, 124920]
@@ -75035,6 +75268,7 @@ LABEL_4:
   (*(void (__stdcall **)(unsigned int))(*(_DWORD *)a2 + 8))(a2);
   return 0;
 }
+
 
 /* ===== [stained] sub_4A5260  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A5260
@@ -75158,6 +75392,7 @@ LABEL_5:
     (*(void (__stdcall **)(int *))(*v8 + 8))(v8);
   return 0;
 }
+
 
 /* ===== [stained] sub_4A54A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A54A0
@@ -75533,6 +75768,7 @@ LABEL_20:
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_4A5A60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A5A60
@@ -75959,6 +76195,7 @@ LABEL_77:
     (*(void (__stdcall **)(int))(*(_DWORD *)v90 + 8))(v90);
   return 1;
 }
+
 
 /* ===== [stained] sub_4A62A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A62A0
@@ -76452,6 +76689,7 @@ LABEL_36:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A6C50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6C50
  * raw 行区间 [126360, 126390]
@@ -76488,6 +76726,7 @@ int Engine::sub_4A6C50(char *_this,
   return this->sub_4A62A0( a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, (int)v14, (int)v15, a12, a13, a14);
 }
 
+
 /* ===== [stained] sub_4A6D60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6D60
  * raw 行区间 [126416, 126428]
@@ -76506,6 +76745,7 @@ int Engine::sub_4A6D60(int *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4A6E70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6E70
@@ -76534,6 +76774,7 @@ char Engine::sub_4A6E70(int *_this, unsigned int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4A6EE0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6EE0
@@ -76637,6 +76878,7 @@ int Engine::sub_4A6EE0(int _this, int a2, int a3)
   return 0;
 }
 
+
 /* ===== [stained] sub_4A7170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7170
  * raw 行区间 [126622, 126625]
@@ -76647,6 +76889,7 @@ int Engine::sub_4A7170(void *_this, void *a2, int a3, int a4)
   return this->sub_4A2C10( (int)a2, a3, a4, 0);
 }
 
+
 /* ===== [stained] sub_4A7190  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7190
  * raw 行区间 [126628, 126631]
@@ -76656,6 +76899,7 @@ int Engine::sub_4A7190(void *_this, float a2, int *a3, int a4, int *a5)
 {
   return this->sub_4A2D50( a2, a3, a4, a5, 0, -1);
 }
+
 
 /* ===== [stained] sub_4A71B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A71B0
@@ -76671,6 +76915,7 @@ int Engine::sub_4A71B0(void *_this, int a2, int a3)
   v4 = (float)a2;
   return this->sub_4A3590( 0.0, 0.0, v4, 0.0, 0.0, v5, v4, v5, 0.0, 0.0, 1.0, 1.0, -1);
 }
+
 
 /* ===== [stained] sub_4A7210  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7210
@@ -77016,6 +77261,7 @@ LABEL_55:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A7990  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7990
  * raw 行区间 [126987, 127201]
@@ -77237,6 +77483,7 @@ LABEL_16:
   return 0;
 }
 
+
 /* ===== [stained] sub_4A7DA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7DA0
  * raw 行区间 [127205, 127413]
@@ -77452,6 +77699,7 @@ LABEL_26:
   return 1;
 }
 
+
 /* ===== [stained] sub_4A81E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A81E0
  * raw 行区间 [127481, 127677]
@@ -77655,6 +77903,7 @@ LABEL_50:
   return result;
 }
 
+
 /* ===== [stained] sub_4A8410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8410
  * raw 行区间 [127680, 127845]
@@ -77827,6 +78076,7 @@ LABEL_42:
   return result;
 }
 
+
 /* ===== [stained] sub_4A8620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8620
  * raw 行区间 [127848, 127898]
@@ -77884,6 +78134,7 @@ int Engine::sub_4A8620(int _this)
   return sub_4A1D50((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_4A8720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8720
  * raw 行区间 [127902, 127930]
@@ -77918,6 +78169,7 @@ int Engine::sub_4A8720(int *_this, int a2, int a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4A87A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A87A0
@@ -78123,6 +78375,7 @@ LABEL_33:
   return v48;
 }
 
+
 /* ===== [stained] sub_4A8AF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8AF0
  * raw 行区间 [128133, 128322]
@@ -78318,6 +78571,7 @@ LABEL_53:
   *a2 = a3;
   return result;
 }
+
 
 /* ===== [stained] sub_4A8DD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8DD0
@@ -78515,6 +78769,7 @@ LABEL_53:
   return result;
 }
 
+
 /* ===== [stained] sub_4A9020  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9020
  * raw 行区间 [128517, 128706]
@@ -78710,6 +78965,7 @@ LABEL_53:
   *a2 = a3;
   return result;
 }
+
 
 /* ===== [stained] sub_4A9270  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9270
@@ -78907,6 +79163,7 @@ LABEL_53:
   return result;
 }
 
+
 /* ===== [stained] sub_4A9730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9730
  * raw 行区间 [129004, 129073]
@@ -78982,6 +79239,7 @@ int Engine::sub_4A9730(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4A9AD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9AD0
@@ -79059,6 +79317,7 @@ int Engine::sub_4A9AD0(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
   return result;
 }
 
+
 /* ===== [stained] sub_4A9BB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9BB0
  * raw 行区间 [129272, 129280]
@@ -79073,6 +79332,7 @@ int Engine::sub_4A9BB0(int _this)
     return this->sub_4A8720( 0, 0);
   return result;
 }
+
 
 /* ===== [stained] sub_4A9EC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9EC0
@@ -79125,6 +79385,7 @@ int Engine::sub_4A9EC0(int _this, int a2, float *a3, int a4, int a5)
   }
 }
 
+
 /* ===== [stained] sub_4AA060  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AA060
  * raw 行区间 [129530, 129574]
@@ -79176,6 +79437,7 @@ int Engine::sub_4AA060(int _this, int a2, float *a3, int a4, int a5)
   }
 }
 
+
 /* ===== [stained] sub_4AAA50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAA50
  * raw 行区间 [130028, 130050]
@@ -79204,6 +79466,7 @@ int ** Engine::sub_4AAA50(int _this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4AAAF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAAF0
@@ -79234,6 +79497,7 @@ int ** Engine::sub_4AAAF0(int _this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4AAB80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAB80
  * raw 行区间 [130078, 130100]
@@ -79263,6 +79527,7 @@ int ** Engine::sub_4AAB80(int _this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4AACA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AACA0
  * raw 行区间 [130129, 130151]
@@ -79291,6 +79556,7 @@ int ** Engine::sub_4AACA0(int _this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4AAF90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAF90
@@ -79474,6 +79740,7 @@ int Engine::sub_4AAF90(int _this)
   v18 = -1;
   return _this;
 }
+
 
 /* ===== [stained] sub_4AB390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AB390
@@ -79688,6 +79955,7 @@ void Engine::sub_4AB390(int _this)
   sub_4034B0((_DWORD *)_this);
 }
 
+
 /* ===== [stained] sub_4AC0D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AC0D0
  * raw 行区间 [131146, 131265]
@@ -79813,6 +80081,7 @@ int Engine::sub_4AC0D0(int _this, int a2, int a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4AEEA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AEEA0
@@ -79943,6 +80212,7 @@ _BYTE * Engine::sub_4AEEA0(int _this, int a2, char a3)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4AF1C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF1C0
@@ -80138,6 +80408,7 @@ LABEL_33:
   qmemcpy(v28, v40, 0x3Cu);
 }
 
+
 /* ===== [stained] sub_4AF560  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF560
  * raw 行区间 [133651, 133701]
@@ -80194,6 +80465,7 @@ _BYTE * Engine::sub_4AF560(int _this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4AF6A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF6A0
@@ -80284,6 +80556,7 @@ LABEL_8:
   this->sub_4034C0( (const void *)(_this + 8));
 }
 
+
 /* ===== [stained] sub_4B06A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B06A0
  * raw 行区间 [134409, 134415]
@@ -80296,6 +80569,7 @@ void * Engine::sub_4B06A0(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B06D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B06D0
@@ -82603,6 +82877,7 @@ LABEL_482:
     *(_DWORD *)(_this + 46508) = 1;
 }
 
+
 /* ===== [stained] sub_4B4020  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4020
  * raw 行区间 [136736, 136739]
@@ -82612,6 +82887,7 @@ _BYTE * Engine::sub_4B4020(void *_this, int a2)
 {
   return this->sub_4AEEA0( a2, 0);
 }
+
 
 /* ===== [stained] sub_4B4040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4040
@@ -82843,6 +83119,7 @@ LABEL_55:
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4B4460  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4460
@@ -83167,6 +83444,7 @@ LABEL_77:
   return result;
 }
 
+
 /* ===== [stained] sub_4B4910  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4910
  * raw 行区间 [137288, 137429]
@@ -83314,6 +83592,7 @@ LABEL_18:
   sub_4B4040(_this);
   return 1;
 }
+
 
 /* ===== [stained] sub_4B4B90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4B90
@@ -83484,6 +83763,7 @@ LABEL_19:
   return v21;
 }
 
+
 /* ===== [stained] sub_4B4E60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4E60
  * raw 行区间 [137599, 137618]
@@ -83510,6 +83790,7 @@ _DWORD * Engine::sub_4B4E60(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_4B4F10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4F10
  * raw 行区间 [137622, 137626]
@@ -83520,6 +83801,7 @@ void Engine::sub_4B4F10(_DWORD *_this)
   *_this = &SE___vftable_;
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_4B5170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5170
@@ -83548,6 +83830,7 @@ int Engine::sub_4B5170(int _this, int a2, int a3, int a4)
   return result;
 }
 
+
 /* ===== [stained] sub_4B52C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B52C0
  * raw 行区间 [137805, 137811]
@@ -83560,6 +83843,7 @@ _DWORD * Engine::sub_4B52C0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B5620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5620
@@ -83576,6 +83860,7 @@ void Engine::sub_4B5620(void *_this)
   operator delete[](*((void **)_this + 5));
 }
 
+
 /* ===== [stained] sub_4B5A00  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5A00
  * raw 行区间 [138274, 138280]
@@ -83588,6 +83873,7 @@ void * Engine::sub_4B5A00(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B5AA0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5AA0
@@ -83615,6 +83901,7 @@ DWORD __stdcall Engine::sub_4B5AA0(volatile LONG *lpThreadParameter)
   }
   return 0;
 }
+
 
 /* ===== [stained] sub_4B5C50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5C50
@@ -83662,6 +83949,7 @@ int Engine::sub_4B5C50(int *_this)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_4B5CF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5CF0
@@ -83842,6 +84130,7 @@ int Engine::sub_4B5CF0(char *lpParameter, int a2, int a3, int a4)
   }
 }
 
+
 /* ===== [stained] sub_4B6020  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6020
  * raw 行区间 [138591, 138620]
@@ -83878,6 +84167,7 @@ LABEL_11:
   return sub_4B73E0(*(_DWORD *)(_this + 4 * a2 + 1620), a3);
 }
 
+
 /* ===== [stained] sub_4B60C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B60C0
  * raw 行区间 [138624, 138642]
@@ -83903,6 +84193,7 @@ int Engine::sub_4B60C0(int *_this, int a2)
   return sub_4B6B60(v4);
 }
 
+
 /* ===== [stained] sub_4B6130  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6130
  * raw 行区间 [138646, 138664]
@@ -83927,6 +84218,7 @@ int Engine::sub_4B6130(int *_this, int a2)
     return 0;
   return *(_DWORD *)(v4 + 9312);
 }
+
 
 /* ===== [stained] sub_4B6190  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6190
@@ -83955,6 +84247,7 @@ int Engine::sub_4B6190(int *_this, int a2)
   *(_DWORD *)(v4 + 9316) = 1;
   return sub_4B73E0(v4, v5);
 }
+
 
 /* ===== [stained] sub_4B6210  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6210
@@ -84005,6 +84298,7 @@ int Engine::sub_4B6210(int *_this, int a2, int a3)
   }
 }
 
+
 /* ===== [stained] sub_4B6390  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6390
  * raw 行区间 [138759, 138786]
@@ -84039,6 +84333,7 @@ int Engine::sub_4B6390(int *_this, volatile LONG *lpAddend)
   }
 }
 
+
 /* ===== [stained] sub_4B6550  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6550
  * raw 行区间 [138840, 138851]
@@ -84056,6 +84351,7 @@ HMODULE Engine::sub_4B6550(HMODULE *_this)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4B6570  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6570
@@ -84235,6 +84531,7 @@ LABEL_5:
   return 0;
 }
 
+
 /* ===== [stained] sub_4B68A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B68A0
  * raw 行区间 [139029, 139041]
@@ -84253,6 +84550,7 @@ int Engine::sub_4B68A0(int *_this, int a2)
   while ( v3 < 15 );
   return 1;
 }
+
 
 /* ===== [stained] sub_4B68E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B68E0
@@ -84276,6 +84574,7 @@ int Engine::sub_4B68E0(int *_this, int a2, int a3)
     return 0;
   }
 }
+
 
 /* ===== [stained] sub_4B6940  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6940
@@ -84309,6 +84608,7 @@ int Engine::sub_4B6940(int *_this, int a2, int a3)
   }
 }
 
+
 /* ===== [stained] sub_4B69B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B69B0
  * raw 行区间 [139093, 139110]
@@ -84333,6 +84633,7 @@ void Engine::sub_4B69B0(HMODULE *_this)
   sub_4B7790(_this);
 }
 
+
 /* ===== [stained] sub_4B6A30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6A30
  * raw 行区间 [139114, 139120]
@@ -84345,6 +84646,7 @@ HMODULE * Engine::sub_4B6A30(HMODULE *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B6A60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6A60
@@ -84378,6 +84680,7 @@ _DWORD * Engine::sub_4B6A60(_DWORD *_this, int a2, int a3, _DWORD *a4, int a5, i
   _this[2334] = a6;
   return _this;
 }
+
 
 /* ===== [stained] sub_4B6B60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6B60
@@ -84423,6 +84726,7 @@ int Engine::sub_4B6B60(int _this)
     return 1;
   }
 }
+
 
 /* ===== [stained] sub_4B6C30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6C30
@@ -84627,6 +84931,7 @@ LABEL_24:
   return 0;
 }
 
+
 /* ===== [stained] sub_4B70B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B70B0
  * raw 行区间 [139395, 139411]
@@ -84650,6 +84955,7 @@ int Engine::sub_4B70B0(int _this, int a2)
   return 0;
 }
 
+
 /* ===== [stained] sub_4B7110  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7110
  * raw 行区间 [139415, 139431]
@@ -84672,6 +84978,7 @@ int Engine::sub_4B7110(int _this, int a2)
   this->sub_4034C0( (const void *)(_this + 8));
   return 0;
 }
+
 
 /* ===== [stained] sub_4B7170  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7170
@@ -84698,6 +85005,7 @@ void Engine::sub_4B7170(int _this)
     }
   }
 }
+
 
 /* ===== [stained] sub_4B71C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B71C0
@@ -84800,6 +85108,7 @@ int Engine::sub_4B71C0(int _this, int a2)
   }
   return result;
 }
+
 
 /* ===== [stained] sub_4B73E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B73E0
@@ -84936,6 +85245,7 @@ LABEL_22:
   }
 }
 
+
 /* ===== [stained] sub_4B7680  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7680
  * raw 行区间 [139688, 139701]
@@ -84956,6 +85266,7 @@ void Engine::sub_4B7680(_DWORD *_this)
   sub_4B7790(_this);
 }
 
+
 /* ===== [stained] sub_4B7700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7700
  * raw 行区间 [139705, 139711]
@@ -84969,6 +85280,7 @@ _DWORD * Engine::sub_4B7700(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4B7730  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7730
  * raw 行区间 [139714, 139719]
@@ -84981,6 +85293,7 @@ _DWORD * Engine::sub_4B7730(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_4B7790  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7790
  * raw 行区间 [139723, 139727]
@@ -84991,6 +85304,7 @@ void Engine::sub_4B7790(_DWORD *_this)
   *_this = &SoundError___vftable_;
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_4B7970  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7970
@@ -85004,6 +85318,7 @@ _DWORD * Engine::sub_4B7970(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B7D60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7D60
@@ -85024,6 +85339,7 @@ _DWORD * Engine::sub_4B7D60(_DWORD *_this)
   _this[2685] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_4B7DF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7DF0
@@ -85047,6 +85363,7 @@ int Engine::sub_4B7DF0(char *_this,
   *(_DWORD *)&_this[12 * a2 + 8316] = 1;
   return this->sub_450BA0( a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
 }
+
 
 /* ===== [stained] sub_4B7F60  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7F60
@@ -85076,6 +85393,7 @@ int Engine::sub_4B7F60(int *_this,
   return this->sub_440FD0( a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18);
 }
 
+
 /* ===== [stained] sub_4B8230  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8230
  * raw 行区间 [140194, 140210]
@@ -85098,6 +85416,7 @@ int Engine::sub_4B8230(int *_this,
   return this->sub_43D500( a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
 }
 
+
 /* ===== [stained] sub_4B83E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B83E0
  * raw 行区间 [140273, 140278]
@@ -85109,6 +85428,7 @@ int Engine::sub_4B83E0(_DWORD *_this, int a2)
   this->sub_40BEB0( a2);
   return this->sub_43B5A0( a2);
 }
+
 
 /* ===== [stained] sub_4B8410  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8410
@@ -85125,6 +85445,7 @@ void Engine::sub_4B8410(void **_this)
   _this[2679] = 0;
   sub_44A890((int)_this);
 }
+
 
 /* ===== [stained] sub_4B8490  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8490
@@ -85151,6 +85472,7 @@ int Engine::sub_4B8490(_DWORD *_this, int a2, void *a3, int a4)
   return result;
 }
 
+
 /* ===== [stained] sub_4B8500  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8500
  * raw 行区间 [140315, 140321]
@@ -85164,6 +85486,7 @@ void ** Engine::sub_4B8500(void **_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4B85D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B85D0
  * raw 行区间 [140367, 140372]
@@ -85175,6 +85498,7 @@ int Engine::sub_4B85D0(_DWORD *_this, int a2)
   sub_478DB0(_this + 2677, &a2);
   return this->sub_43C4D0( a2);
 }
+
 
 /* ===== [stained] sub_4B8600  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8600
@@ -85201,6 +85525,7 @@ int Engine::sub_4B8600(_DWORD *_this, int a2, int a3, int a4, int a5)
   return sub_43C8D0((int)_this, v8, v5, a3, a4, v8);
 }
 
+
 /* ===== [stained] sub_4B86E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B86E0
  * raw 行区间 [140430, 140445]
@@ -85223,6 +85548,7 @@ void Engine::sub_4B86E0(int *_this, HINSTANCE hInstance)
   }
 }
 
+
 /* ===== [stained] sub_4B8880  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8880
  * raw 行区间 [140568, 140580]
@@ -85241,6 +85567,7 @@ _DWORD * Engine::sub_4B8880(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4B88C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B88C0
@@ -85266,6 +85593,7 @@ _DWORD * Engine::sub_4B88C0(_DWORD *_this)
   _this[267] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_4B8980  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8980
@@ -85306,6 +85634,7 @@ void Engine::sub_4B8980(_DWORD *_this)
   sub_4034B0(_this);
 }
 
+
 /* ===== [stained] sub_4B8C70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8C70
  * raw 行区间 [140781, 140798]
@@ -85330,6 +85659,7 @@ int Engine::sub_4B8C70(int *_this, int a2, void *a3, DWORD a4)
   }
 }
 
+
 /* ===== [stained] sub_4B8CD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8CD0
  * raw 行区间 [140802, 140808]
@@ -85342,6 +85672,7 @@ _DWORD * Engine::sub_4B8CD0(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4BB670  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB670
@@ -85361,6 +85692,7 @@ _DWORD * Engine::sub_4BB670(_DWORD *_this, int a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4BB6A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB6A0
  * raw 行区间 [142413, 142421]
@@ -85375,6 +85707,7 @@ unsigned int __stdcall Engine::sub_4BB6A0(int a1)
     return 1;
   return result;
 }
+
 
 /* ===== [stained] sub_4BB700  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB700
@@ -85404,6 +85737,7 @@ _DWORD * Engine::sub_4BB700(_DWORD *_this)
   return _this;
 }
 
+
 /* ===== [stained] sub_4BB7C0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB7C0
  * raw 行区间 [142469, 142473]
@@ -85414,6 +85748,7 @@ void Engine::sub_4BB7C0(_DWORD *_this)
   *_this = &Voice___vftable_;
   sub_4034B0(_this);
 }
+
 
 /* ===== [stained] sub_4BBAB0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBAB0
@@ -85514,6 +85849,7 @@ LABEL_30:
   return v9;
 }
 
+
 /* ===== [stained] sub_4BBC30  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBC30
  * raw 行区间 [142681, 142695]
@@ -85535,6 +85871,7 @@ int Engine::sub_4BBC30(int **_this, int a2, int a3)
   return sub_4B6210(_this[258], v5, a3);
 }
 
+
 /* ===== [stained] sub_4BBC90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBC90
  * raw 行区间 [142698, 142704]
@@ -85547,6 +85884,7 @@ _DWORD * Engine::sub_4BBC90(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4BBCC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBCC0
@@ -85573,6 +85911,7 @@ HMMIO Engine::sub_4BBCC0(int _this)
   return result;
 }
 
+
 /* ===== [stained] sub_4BBD10  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBD10
  * raw 行区间 [142728, 142737]
@@ -85588,6 +85927,7 @@ _DWORD * Engine::sub_4BBD10(_DWORD *_this)
   _this[258] = 0;
   return _this;
 }
+
 
 /* ===== [stained] sub_4BBDF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBDF0
@@ -85615,6 +85955,7 @@ HMMIO Engine::sub_4BBDF0(int *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4BBE80  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBE80
  * raw 行区间 [142801, 142807]
@@ -85627,6 +85968,7 @@ void Engine::sub_4BBE80(int _this)
   sub_455C60(*(int **)(_this + 9252), *(_DWORD *)(_this + 9256));
   sub_4034B0((_DWORD *)_this);
 }
+
 
 /* ===== [stained] sub_4BBEF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBEF0
@@ -85731,6 +86073,7 @@ LABEL_3:
   return *(_DWORD *)(_this + 1036);
 }
 
+
 /* ===== [stained] sub_4BC120  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BC120
  * raw 行区间 [142911, 142949]
@@ -85776,6 +86119,7 @@ int Engine::sub_4BC120(int _this)
   return 1;
 }
 
+
 /* ===== [stained] sub_4BC280  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BC280
  * raw 行区间 [142953, 142959]
@@ -85789,6 +86133,7 @@ void * Engine::sub_4BC280(void *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4C0C50  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C0C50
  * raw 行区间 [146798, 146803]
@@ -85800,6 +86145,7 @@ void Engine::sub_4C0C50(int *_this)
   nullsub_1(_this + 12);
   sub_4C07A0(_this + 5);
 }
+
 
 /* ===== [stained] sub_4C0DC0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C0DC0
@@ -85814,6 +86160,7 @@ int * Engine::sub_4C0DC0(int *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4C71B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C71B0
  * raw 行区间 [152016, 152022]
@@ -85827,6 +86174,7 @@ void Engine::sub_4C71B0(int *_this)
   sub_4BC350(_this);
 }
 
+
 /* ===== [stained] sub_4C8190  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C8190
  * raw 行区间 [152748, 152754]
@@ -85839,6 +86187,7 @@ int * Engine::sub_4C8190(int *_this, char a2)
     sub_4BC360((int)_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4CF330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4CF330
@@ -85880,6 +86229,7 @@ _DWORD * Engine::sub_4CF330(_DWORD *_this, _DWORD *a2)
   return result;
 }
 
+
 /* ===== [stained] sub_4CFC70  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4CFC70
  * raw 行区间 [159519, 159531]
@@ -85898,6 +86248,7 @@ HMODULE Engine::sub_4CFC70(int _this)
   }
   return sub_4D33E0();
 }
+
 
 /* ===== [stained] sub_4D02B0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D02B0
@@ -85941,6 +86292,7 @@ int __stdcall Engine::sub_4D02B0(LPCRITICAL_SECTION lpCriticalSection,
   return 0;
 }
 
+
 /* ===== [stained] sub_4D03F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D03F0
  * raw 行区间 [159879, 159884]
@@ -85952,6 +86304,7 @@ void Engine::sub_4D03F0(_DWORD *_this)
   (*(void (__stdcall **)(int))(*(_DWORD *)(_this[3] + 12) + 8))(_this[3] + 12);
   sub_4CF460(_this + 6);
 }
+
 
 /* ===== [stained] sub_4D05D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D05D0
@@ -85967,6 +86320,7 @@ int Engine::sub_4D05D0(_DWORD *_this)
   return (*(int (__stdcall **)(int))(*(_DWORD *)v1 + 8))(v1);
 }
 
+
 /* ===== [stained] sub_4D08D0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D08D0
  * raw 行区间 [160123, 160128]
@@ -85978,6 +86332,7 @@ HMODULE Engine::sub_4D08D0(void **_this)
   sub_4D3750(_this + 13);
   return sub_4D33E0();
 }
+
 
 /* ===== [stained] sub_4D1180  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D1180
@@ -85997,6 +86352,7 @@ HMODULE Engine::sub_4D1180(int _this)
   return sub_4D08D0((void **)_this);
 }
 
+
 /* ===== [stained] sub_4D1720  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D1720
  * raw 行区间 [160783, 160791]
@@ -86012,6 +86368,7 @@ void Engine::sub_4D1720(_DWORD *_this)
     sub_4D37B0(v1);
 }
 
+
 /* ===== [stained] sub_4D21E0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D21E0
  * raw 行区间 [161408, 161414]
@@ -86024,6 +86381,7 @@ int Engine::sub_4D21E0(int *_this)
   else
     return _this[19] == 0;
 }
+
 
 /* ===== [stained] sub_4D2330  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2330
@@ -86056,6 +86414,7 @@ void * Engine::sub_4D2330(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4D2380  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2380
  * raw 行区间 [161507, 161514]
@@ -86070,6 +86429,7 @@ HMODULE Engine::sub_4D2380(_DWORD *_this)
   return sub_4D1D80((int)_this);
 }
 
+
 /* ===== [stained] sub_4D2840  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2840
  * raw 行区间 [161730, 161736]
@@ -86082,6 +86442,7 @@ _DWORD * Engine::sub_4D2840(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4D2A90  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2A90
@@ -86096,6 +86457,7 @@ _DWORD * Engine::sub_4D2A90(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4D2EF0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2EF0
  * raw 行区间 [162001, 162007]
@@ -86109,6 +86471,7 @@ _DWORD * Engine::sub_4D2EF0(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4D3010  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D3010
  * raw 行区间 [162047, 162053]
@@ -86121,6 +86484,7 @@ _DWORD * Engine::sub_4D3010(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4D3240  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D3240
@@ -86210,6 +86574,7 @@ LABEL_19:
   return -2147024882;
 }
 
+
 /* ===== [stained] sub_4D4190  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D4190
  * raw 行区间 [162989, 163004]
@@ -86231,6 +86596,7 @@ int Engine::sub_4D4190(int _this)
   LeaveCriticalSection(v2);
   return 0;
 }
+
 
 /* ===== [stained] sub_4D4400  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D4400
@@ -86255,6 +86621,7 @@ int Engine::sub_4D4400(char *_this)
   LeaveCriticalSection(v2);
   return 0;
 }
+
 
 /* ===== [stained] sub_4D48F0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D48F0
@@ -86296,6 +86663,7 @@ int Engine::sub_4D48F0(_DWORD *_this)
   return result;
 }
 
+
 /* ===== [stained] sub_4D5580  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5580
  * raw 行区间 [163941, 163959]
@@ -86319,6 +86687,7 @@ int __stdcall Engine::sub_4D5580(LPCRITICAL_SECTION lpCriticalSection,
   }
   return sub_4D02B0(lpCriticalSection, v3, Src);
 }
+
 
 /* ===== [stained] sub_4D5620  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5620
@@ -86358,6 +86727,7 @@ HMODULE Engine::sub_4D5620(int _this)
   return sub_4CFC70(_this);
 }
 
+
 /* ===== [stained] sub_4D5F20  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5F20
  * raw 行区间 [164414, 164420]
@@ -86370,6 +86740,7 @@ void * Engine::sub_4D5F20(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4D5FD0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5FD0
@@ -86391,6 +86762,7 @@ _DWORD * Engine::sub_4D5FD0(_DWORD *_this, _DWORD *a2, int a3, _DWORD *a4, int a
   return _this;
 }
 
+
 /* ===== [stained] sub_4D6040  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D6040
  * raw 行区间 [164474, 164482]
@@ -86406,6 +86778,7 @@ HMODULE Engine::sub_4D6040(int _this)
   return sub_4D5620(_this);
 }
 
+
 /* ===== [stained] sub_4D6070  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D6070
  * raw 行区间 [164490, 164496]
@@ -86418,6 +86791,7 @@ void * Engine::sub_4D6070(void *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4D60A0  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D60A0
@@ -86432,6 +86806,7 @@ void * Engine::sub_4D60A0(void *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4E6FB6  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4E6FB6
  * raw 行区间 [181514, 181518]
@@ -86442,6 +86817,7 @@ void Engine::sub_4E6FB6(struct type_info *_this)
   *(_DWORD *)_this = &type_info___vftable_;
   type_info___Type_info_dtor(_this);
 }
+
 
 /* ===== [stained] sub_4E6FC6  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4E6FC6
@@ -86456,6 +86832,7 @@ struct type_info * Engine::sub_4E6FC6(struct type_info *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_4FA798  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4FA798
  * raw 行区间 [182102, 182108]
@@ -86468,6 +86845,7 @@ _DWORD * Engine::sub_4FA798(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+
 
 /* ===== [stained] sub_4FAE6F  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4FAE6F
@@ -86482,6 +86860,7 @@ _DWORD * Engine::sub_4FAE6F(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_50C298  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_50C298
  * raw 行区间 [183439, 183445]
@@ -86495,6 +86874,7 @@ _DWORD * Engine::sub_50C298(_DWORD *_this, char a2)
   return _this;
 }
 
+
 /* ===== [stained] sub_50F5D5  状态: UNKNOWN =====
  * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_50F5D5
  * raw 行区间 [183673, 183679]
@@ -86507,3 +86887,4 @@ _DWORD * Engine::sub_50F5D5(_DWORD *_this, char a2)
     operator delete(_this);
   return _this;
 }
+

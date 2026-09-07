@@ -31,6 +31,7 @@ const OP_TABLE = path.join(ROOT, 'docs-new', '03-engine', 'opcode-table.md');
 const OUT_MEMBERS = path.join(ROOT, 'engine-refined', 'engine-members.cpp');
 const OUT_INDEX = path.join(ROOT, 'engine-refined', 'member-index.json');
 const EM_HDR = path.join(__dirname, 'members-header.txt');
+const REG_PATH = path.join(ROOT, 'analysis-registry.json');   // 权威台账：已注册函数的 status 优先于 op-table
 
 // ---- Engine 字段模型（来自 engine/engine.hpp + scripts/re/retype.py，均为已确证偏移）----
 const ENGINE_TOP = {
@@ -209,14 +210,22 @@ for (const d of defs) {
   extracted.push({ sub: d.name, full, rawStart: start + 1, rawEnd: end + 1 });
 }
 
-// ---- 状态标签：把 opcode-table 的分析状态映射为 skill 状态（已核对->ANALYZED 等）----
+// ---- 状态标签：台账(analysis-registry.json)已注册函数的 status 优先，其次 opcode-table 状态映射 ----
 const STATUS_MAP = { '已核对': 'ANALYZED', '推测': 'STUB', '仅映射': 'UNKNOWN', '未解': 'UNKNOWN' };
+// 读台账 old(sub_XXX) -> status；台账里已 ANALYZED 的（读体核对过）覆盖 op-table 的「仅映射/推测」。
+let regStatus = {};
+try {
+  const reg = JSON.parse(fs.readFileSync(REG_PATH, 'utf8'));
+  for (const f of (reg.funcs || [])) if (f.old) regStatus[f.old] = f.status;
+} catch (e) { regStatus = {}; }
 function memberMarker(e) {
   const [sem, addr] = semName(e.sub);
   const op = opByHandler[e.sub] || null;
   const opTxt = op ? `op=${op.op}${op.name ? ' 指令名『' + op.name + '』' : ''}` : '';
   const statRaw = op ? op.status : '未解';
-  const stat = STATUS_MAP[statRaw] || 'UNKNOWN';
+  let stat = STATUS_MAP[statRaw] || 'UNKNOWN';
+  // 台账已确证 ANALYZED 的覆盖（如子代理读体的纯数值/字符串 ops，op-table 可能仍标「仅映射」）
+  if (regStatus[e.sub] === 'ANALYZED') stat = 'ANALYZED';
   const eng = sem ? `${sem}_${addr}` : e.sub;
   // `状态:` 行不携带 →name（避免 scan-status 在同行找不到）；把 `→ name` 放到下一行注释，
   // 使 .agents/.../scripts/scan-status.js 的「向下扫 6 行找 → name」能命中叶子名。
@@ -239,11 +248,16 @@ fs.writeFileSync(OUT_MEMBERS, out);
 const idx = extracted.map(e => {
   const [sem, addr] = semName(e.sub);
   const op = opByHandler[e.sub] || null;
+  const opStat = op ? op.status : '未解';
+  // 有效状态：台账已 ANALYZED 的覆盖 op-table（与 scan-status 标记一致）
+  let eff = STATUS_MAP[opStat] || 'UNKNOWN';
+  if (regStatus[e.sub] === 'ANALYZED') eff = 'ANALYZED';
   return {
     old: e.sub, new: memberBuildName(e.sub),
     sem: sem || null, addr,
     op: op ? op.op : null,
-    status: op ? op.status : 'UNKNOWN',
+    status: eff,                     // 有效分析状态（ANALYZED/STUB/UNKNOWN）
+    opTableStatus: opStat,           // opcode-table 原始状态（已核对/推测/仅映射/未解）
     lines: [e.rawStart, e.rawEnd],
     isOpHandler: !!op,
   };
