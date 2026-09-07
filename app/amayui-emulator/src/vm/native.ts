@@ -6,6 +6,7 @@
  *  由渲染器每帧 `present()` 合成整个场景图；渲染与 VM 指令解耦。
  *  约定：桥对渲染对象做**严格 flag 校验**——配置了未逐字段解码的 flag 位 → 抛 `UnknownFlagError`，绝不静默忽略。
  */
+import type { InputManager } from './input.js';
 
 /** 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 颜色动画。bit2(&4, sub_49BCC0 分支) 未逐字解码 ⇒ 拒绝。 */
 export const KNOWN_DRAW_ITEM_FLAGS = 0b011;
@@ -65,6 +66,8 @@ export interface MeshCreateSpec {
 
 export interface NativeBridge {
   log(msg: string): void;
+  /** 共享输入状态（Engine 构造时赋值；渲染器经它写 / VM 经它读）。 */
+  input?: InputManager;
   playSound?(id: number, volume: number): void;
   playBgm?(id: number): void;
   playVoice?(id: number): void;
@@ -89,6 +92,8 @@ export interface NativeBridge {
   setVertexColorAlpha?(handle: number, delay: number, count: number, state1: number): void;
   /** 0x203 set-draw-color-alpha：置 from 色（ARGB）。 */
   setDrawColorAlpha?(handle: number, from: number): void;
+  /** 0x1F7 texture-op：对图元应用纹理/颜色操作（op1=handle, op2=mode）。emulator 标记图元重渲染。 */
+  textureOp?(handle: number, mode: number): void;
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */
   setDrawColor?(handle: number, delay: number, count: number, to: number): void;
   /** 0x21C u00416270：置等待旗标位（0x400）。 */
@@ -163,6 +168,9 @@ export class StubNative implements NativeBridge {
   }
   setDrawColorAlpha(handle: number, from: number): void {
     this.log(`[native:stub] setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
+  }
+  textureOp(handle: number, mode: number): void {
+    this.log(`[native:stub] textureOp h=0x${handle.toString(16)} mode=${mode}`);
   }
   setDrawColor(handle: number, delay: number, count: number, to: number): void {
     this.log(`[native:stub] setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}`);

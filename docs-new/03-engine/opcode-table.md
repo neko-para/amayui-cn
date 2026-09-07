@@ -174,8 +174,8 @@
 | 0xC9 | 0 | u00415770 | sub_4198A0 | 仅映射 |  |
 | 0xCA | 0 | u004157A0 | sub_4198E0 | 仅映射 |  |
 | 0xCB | 1 | u00415800 | sub_42E8E0 | 仅映射 |  |
-| 0xCC | 2 | mouse_callback | sub_421980 | 仅映射 | 注册鼠标/键盘回调。未读体 |
-| 0xCD | 0 | get-input-type | sub_41ACD0 | 仅映射 | 取输入类型。未读体 |
+| 0xCC | 2 | mouse_callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、[6]=op1）。按下匹配时 get-input-type(0xCD) 跳到 `_this[107664]`。handler=sub_421980（raw .c 30317） |
+| 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（默认 200ms）节流，或 `(effect_flags&0x8000000)` 激活即推进；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827） |
 | 0xCE | 3 | u0041E0B0 | sub_4219E0 | 仅映射 |  |
 | 0xCF | 0 | u00416D40 | sub_41AE40 | 仅映射 |  |
 | 0xD0 | 1 | u00415830 | sub_42E910 | 仅映射 |  |
@@ -190,21 +190,21 @@
 | 0xD9 | 0 | u00415880 | sub_419970 | 已核对 | **清标志位**：`_this[174801]&=~0x1000`。handler=sub_419970（raw .c 25022） |
 | 0xDA | 6 | u004158B0 | sub_42EAE0 | 仅映射 |  |
 | 0xFA | 0 | u00415940 | sub_4199B0 | 仅映射 |  |
-| 0xFB | 2 | joy_callback | sub_421B80 | 仅映射 | 注册手柄回调。未读体 |
+| 0xFB | 2 | joy_callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
 | 0xFC | 0 | u004159F0 | sub_419A70 | 仅映射 |  |
 | 0xFD | 2 | u0041E2D0 | sub_421C10 | 仅映射 |  |
 | 0xFE | 1 | u0041E360 | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30046） |
 | 0xFF | 0 | u00415A10 | sub_419A90 | 仅映射 |  |
-| 0x100 | 0 | u00415A60 | sub_419AF0 | 仅映射 |  |
-| 0x101 | 0 | poll-input | sub_419CC0 | 已核对 | **读输入状态并重置**：读输入位掩码到 `_this[174802]` 后丢弃；清 `_this[174801]` 的 0x8000000 位，置 `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。handler=sub_419CC0（raw .c 24831）。旧 label `u00415BF0` |
+| 0x100 | 0 | u00415A60 | sub_419AF0 | 已核对 | **消息跳读/按键推进派发**：`v2=_this[174802]`(输入掩码)；非 0→从 `_this[cur+122287]` 起扫最低按下位（上限 `_this[517]`=SetKeyTotal），push 推进量、查 `_this[33*cur+107725+bit]`，==-1 回退否则跳 `4*登记值`；掩码 0→检查默认键 `_this[517]`。handler=sub_419AF0（raw .c 25011） |
+| 0x101 | 0 | poll-input | sub_419CC0 | 已核对 | **刷输入掩码并复位**：`sub_478090(_this+258,_this+174802)` 刷累计事件进掩码 → 清 `_this[174801]` 的 0x8000000 位 → `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。供同批 `check-bit`/位检查读，随即清零。handler=sub_419CC0（raw .c 25069）。旧 label `u00415BF0` |
 | 0x102 | 3 | u0041E3C0 | sub_421D00 | 仅映射 |  |
 | 0x103 | 1 | u0041E4A0 | sub_421DE0 | 仅映射 |  |
 | 0x104 | 0 | u00415C50 | sub_419D20 | 仅映射 |  |
 | 0x105 | 1 | u0041E4D0 | sub_421E20 | 仅映射 |  |
 | 0x106 | 1 | u00415E40 | sub_42ED90 | 仅映射 |  |
 | 0x107 | 2 | u0041E500 | sub_421E50 | 已核对 | **SetKey（按键绑定）**：读 op2=值、op1=键下标；`op1≤0x1F` 时写 `_this[551+op1]=op2`。handler=sub_421E50（raw .c 30114） |
-| 0x108 | 1 | u00415E70 | sub_42EDC0 | 仅映射 |  |
-| 0x109 | 2 | u00415EC0 | sub_42EE10 | 仅映射 |  |
+| 0x108 | 1 | u00415E70 | sub_42EDC0 | 已核对 | **读鼠标按钮值到 op1**：`sub_477220(_this+258,&v3)`（左=bit0/右=bit1，随 SM_SWAPBUTTON 互换）→ `sub_42B4B0(1,v3)`。handler=sub_42EDC0（raw .c 39047） |
+| 0x109 | 2 | u00415EC0 | sub_42EE10 | 已核对 | **读鼠标位置到 op1=X,op2=Y**：`sub_4771D0`(GetCursorPos+ScreenToClient) → `sub_498350`(坐标变换)+`sub_403500`(虚拟显示映射，用 `_this[699168/699172]` 分辨率) → 写 op1/op2。(-100000,-100000)=未初始化。handler=sub_42EE10（raw .c 39057） |
 | 0x10A | 2 | u0041E540 | sub_421EA0 | 仅映射 |  |
 | 0x10B | 2 | u0041E5A0 | sub_422070 | 已核对 | **SetKey（另一按键表）**：读 op2=键下标、op1=值；`op1≤0x1F` 时写 `_this[op2+1383]=op1`。handler=sub_422070（raw .c 30200） |
 | 0x10C | 2 | u0041E5E0 | sub_4220B0 | 已核对 | **SetKeyMulti**：读 op1=值、op2=键索引；`op1>0x1F` 抛 ShowMessage「set-keymulti 引数不正」，否则写 `_this[_this[op2+1690]+1434]=op1`。handler=sub_4220B0（raw .c 30213） |
@@ -322,7 +322,7 @@
 | 0x1F4 | 0 | u004160D0 | sub_41A090 | 已核对 | **帧计时(等待底盘)**：`_this[107438]` 已置→`++_this[107439]`(累加帧计数)；否则 `_this[107438]=1`+`timeGetTime()` 写 `_this[92333]/[92334]`。handler=sub_41A090（raw .c 25194） |
 | 0x1F5 | 0 | u00416120 | sub_41A0E0 | 已核对 | **帧倒计+派发(等待底盘)**：每帧递减 `_this[107439]`；到 0 清 `_this[107438]` 且 `_this[124350]==0` 时 `sub_40FB60()` 派发排队脚本(续跑)。handler=sub_41A0E0（raw .c 25215） |
 | 0x1F6 | 0 | u00416170 | sub_41A130 | 已核对 | **清图形对象链**：`sub_4AB7A0`。handler=sub_41A130（raw .c 24986） |
-| 0x1F7 | 2 | texture-op | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1/op2，按 op2 选调图形子系统 `sub_4AB950(_this+80708, op1)`（单参）或 `sub_4ABB60`（双参）。fire-and-forget。handler=sub_422BC0（raw .c 30717）。旧 label `u00420270` |
+| 0x1F7 | 2 | texture-op | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1/op2，按 op2 选调图形子系统 `sub_4AB950(_this+80708, op1)`（单参，mode≤1）或 `sub_4ABB60`（双参，mode>1）。fire-and-forget。handler=sub_422BC0（raw .c 30717）。emulator 映射到 `native.textureOp(handle,mode)`（标记图元重渲染）。旧 label `u00420270` |
 | 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=纹理槽、op2/3/4；先释放旧槽对象（`sub_488FB0`+vtable delete+置0），调 `sub_4A2C10(_this+80708, op1, op2, op3, op4)` 创建纹理；失败抛「CTexture エラー：テクスチャ作成に失敗」。fire-and-forget。handler=sub_422C20（raw .c 30739） |
 | 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 30769） |
 | 0x1FA | 1 | u00420480 | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 30822） |

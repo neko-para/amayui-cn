@@ -6,6 +6,7 @@
 import { Engine } from '../vm/engine.js';
 import { loadScriptData, stepOnce } from '../vm/interpreter.js';
 import { ScriptReset } from '../vm/ops.js';
+import { InputManager } from '../vm/input.js';
 import { IpcFileSource } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
 
@@ -14,7 +15,8 @@ import { PixiBackend, type RenderStatus } from './pixiBackend.js';
  * 这里 SAFETY 只作防"无门控死循环"（如 TITLE 轮询）的兜底，不是 present 的触发条件。
  */
 const SAFETY_PER_FRAME = 10000;
-const MAX_STEPS = 400000;
+/** 交互运行上限：进入 TITLE 后不再按步数截止，靠"脚本退出/重置/错误/关窗"收尾；此处仅作病态死循环兜底。 */
+const MAX_STEPS = 100_000_000;
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -22,9 +24,10 @@ function nextFrame(): Promise<void> {
 
 async function main(): Promise<void> {
   const status: RenderStatus = { scriptName: '…', ip: 0, steps: 0, log: [], trace: [] };
-  const native = await PixiBackend.create(status); // WebGL 渲染后端（PixiJS v8）
+  const input = new InputManager(); // 共享输入状态（渲染器写 / VM 读）
+  const native = await PixiBackend.create(status, input); // WebGL 渲染后端（PixiJS v8）
   const src = new IpcFileSource();
-  const e = new Engine(native);
+  const e = new Engine(native, input);
   e.fileSource = src;
 
   // 诊断落盘：统一走 status.trace（renderer 的 trace + PixiBackend #pushLog 都进这里），
@@ -80,9 +83,9 @@ async function main(): Promise<void> {
 
     let steps = 0;
     let reachedTitle = false;
-    let titleSteps = 0;
     let waiting = false;
     let err: unknown = null;
+    let lastInputLog = 0; // 节流：[input-state] 诊断打印
 
     outer: while (steps < MAX_STEPS) {
       // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
@@ -105,7 +108,6 @@ async function main(): Promise<void> {
           status.ip = f.ip;
           status.steps = ++steps;
           if (/^TITLE/i.test(name)) {
-            titleSteps++;
             if (!reachedTitle) {
               reachedTitle = true;
               native.log(`>> 到达 ${name}`);
@@ -114,9 +116,12 @@ async function main(): Promise<void> {
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
-            trace(
-              `step ${steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${status.scriptName}`,
-            );
+            // 到达 TITLE 后不再逐条打日志（否则交互运行会刷屏/日志爆炸）；只记关键事件。
+            if (!reachedTitle) {
+              trace(
+                `step ${steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${status.scriptName}`,
+              );
+            }
           } catch (caught) {
             if (caught instanceof ScriptReset) {
               native.log('exit-script teardown (reset)');
@@ -131,11 +136,22 @@ async function main(): Promise<void> {
           }
           if (e.waitFlags & 0x400) break; // 遇到门控（0x21C 置位），停这批
         }
-        if (titleSteps > 1200) break; // 已进入 TITLE 一段时间（含菜单轮询），停止
         // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
         if (native.needsRender()) native.present();
       }
 
+      // 诊断：节流打印 InputManager 实况 + draw-item 概览（排查 hover 高亮叠层是否渲染/回退）
+      const nowMs = performance.now();
+      if (nowMs - lastInputLog > 500) {
+        lastInputLog = nowMs;
+        const im = e.input;
+        const di = native.debugDrawItems?.();
+        trace(
+          `[input-state] hasCursor=${im.hasCursor ? 1 : 0} pos=(${im.readX()},${im.readY()}) ` +
+            `moved=${im.mouseMoved ? 1 : 0} edge=0x${im.mouseEdge.toString(16)} btn=${im.readButtons()} ` +
+            `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)} ${di ?? ''}`,
+        );
+      }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
       await nextFrame(); // 让渲染帧循环跑（present/时钟），再继续
     }

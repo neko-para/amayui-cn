@@ -53,6 +53,26 @@ app/amayui-emulator/
 - ✅ `image(id)` IPC → `resolveEntry(id)` → AGF 字节 → `decodeAgfRgba` → RGBA 给 renderer。
 - ⚠️ 沙箱/无头环境跑 Electron 需 `--no-sandbox`；GPU 进程只加 `--no-sandbox` 时不崩（WebGL 可用）。
 
+## 6b. 输入子系统（鼠标）
+
+- **`InputManager`**（`src/vm/input.ts`）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿、**移动标记（`mouseMoved`，供 hover 派发）**、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（`flush()`）。
+- **已实现 opcode**（`src/vm/ops.ts`）：`0x108`(读鼠标按钮→op1)、`0x109`(读鼠标位置→op1/op2)、`0xCC`(mouse_callback 注册)、`0xFB`(joy_callback 注册)、`0xCD`(get-input-type 派发：移动/点击皆派发，并**压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect)、`0x100`/`0xFF`/`0x101`(掩码派发/重置/刷清)。
+- **DOM 捕获**：`PixiBackend.create(status, input)` 监听 canvas `mousemove/mousedown/mouseup/mouseleave` 写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 显示 `mouse=(x,y) btn=L/R`。
+- 测试 `test/input.test.ts`（InputManager 单元 + TITLE hover/点击派发端到端，含 `0x12E` 悬停索引断言）。**语义见 `../03-engine/input-system.md` §11**。
+- `0x2FC`(读鼠标触点+坐标)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，引擎不写死) 已实现；**hover 高亮**随光标移动可工作且可回退。
+- **hover 高亮叠层回退**：标题的高亮叠层（`0x12c/0x12e/0x130/0x132/0x134`）经 `0x203 set-draw-color-alpha` 控制 alpha；修正了 `0x203` 的读参（**op3=alpha、op4=color → ARGB**，此前误把 op3 当整色），并让 `PixiBackend#itemAlpha` 在**无动画窗时也尊重显式设色的 alpha**（`colorSet`），从而叠层能淡入/淡出（hover 可回退）。
+- `0x1F7 texture-op` 已实现（映射 `native.textureOp(handle,mode)`，标记图元重渲染），不再走 `unhandled`。「unhandled」的 `0x1ff/0x341/0x345/0x34e/0x308/0x1f8` 是 M0「记录后放行」桩（boot/TITLE setup 的 L2D/模型/注册/造纹理 op），为跑到 TITLE 而未硬报错；如需严格可后续实现。
+- **交互运行**：进入 TITLE 后**不再按步数/`titleSteps` 自动截止**（脚本退出/重置/错误/关窗才收尾）；`MAX_STEPS` 仅作病态死循环兜底。TITLE 后**停止逐条步进日志**（避免交互运行日志爆炸），只记关键事件（`[input]`/`[input-state]`/错误/脚本切换）。
+
+### 诊断法（无法搜到 `op=0x12e` 时）
+在 `.tmp/amayui-emulator.log`：
+- 搜 `[input] move/down` → DOM 鼠标事件是否到达 `InputManager.setCursor`；
+- 搜 `[input-state] hasCursor=… moved=…` → VM 侧 InputManager 实况；
+- 若无 `[input]` 且 `hasCursor=0` → 鼠标事件没进 renderer（DOM/焦点问题）；
+- 若有 `[input]`/`moved=1` 却仍无 `op=0x12e` → 后续查 get-input-type 派发。
+- ⚠️ **点击选中菜单项**仍依赖菜单派发表 `0xA1/0xA2/0xA3`（当前安全桩）；`0x20C/0xB5/0x23D/0x32B`（图形/声音清理）为 no-op 桩。如需完整菜单交互另见 `../03-engine/input-system.md`。
+- ⚠️ **opcode 名称同步**：`src/opcodes.ts` 已把语义化名 `texture-op`/`float-mov`/`create-mesh`/`wait`/`poll-input` 等从 `u00xxxxxx` 别名改为语义名（对齐 `src/*.txt` 与 `../03-engine/opcode-table.md`）。
+
 ## 7. 命令
 
 ```bash
@@ -64,8 +84,9 @@ npm run electron:dev  # build + 启动 Electron 渲染壳
 
 ## 8. 待办/未解（属引擎方向）
 
-- 角色图层（标题左侧角色立绘来源未定位）；视频（TITLE.MTN，步骤 2）；Live2D（SO004A）；输入（菜单可选）。
-- 详见 `../03-engine/`（尤其 `resource-loading.md`、`rendering.md`）。
+- 角色图层（标题左侧角色立绘来源未定位）；视频（TITLE.MTN，步骤 2）；Live2D（SO004A）。
+- 输入：**输入子系统（鼠标位置/按钮/回调/派发/掩码）已实现**（见 §6b）；**标题菜单"内容选择"（UI 命中测试 `0x2FC` + 菜单派发表）仍属未解**，需消息/UI 子系统。
+- 详见 `../03-engine/`（尤其 `resource-loading.md`、`rendering.md`、`input-system.md`）。
 
 ## 9. 权威事实来源
 

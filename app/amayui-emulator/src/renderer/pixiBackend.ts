@@ -29,6 +29,7 @@ import {
   type MeshCreateSpec,
   type NativeBridge,
 } from '../vm/native.js';
+import type { InputManager } from '../vm/input.js';
 
 export interface RenderStatus {
   scriptName: string;
@@ -59,6 +60,7 @@ interface Item {
   from: number; // +96 (ARGB)
   to: number; // +100 (ARGB)
   anim?: AnimWindow; // +52 start / +56 delay / +76 count
+  colorSet?: boolean; // 是否被 set-draw-color-alpha/color 显式设过色（无动画时也尊重其 alpha）
 }
 
 interface MeshObj {
@@ -80,6 +82,8 @@ export class PixiBackend implements NativeBridge {
   private hud: Text;
   private status: RenderStatus;
   private unit: Texture;
+  /** 共享输入状态（renderer 写 / VM 读）。由 create 注入。 */
+  input?: InputManager;
   private imgCache = new Map<number, Texture>();
   private slotTex = new Map<number, Texture>(); // slot/layer -> Texture（set-texture 绑定）
   private pendingImg = new Set<number>();
@@ -98,12 +102,14 @@ export class PixiBackend implements NativeBridge {
 
   static async create(
     status: RenderStatus,
+    input?: InputManager,
     width = W,
     height = H,
     displayWidth = 1280,
     displayHeight = 720,
   ): Promise<PixiBackend> {
     const b = new PixiBackend(status);
+    b.input = input;
     b.app = new Application();
     await b.app.init({
       width,
@@ -126,7 +132,52 @@ export class PixiBackend implements NativeBridge {
     b.hud = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 13, fill: 0x7cfc00 } });
     b.hud.position.set(8, 8);
     b.stage.addChild(b.hud);
+    b.#attachMouseInput(b.app.canvas, input);
     return b;
+  }
+
+  /** 把鼠标事件映射到 InputManager（虚拟 1280×720 坐标；左=bit0、右=bit1）。
+   *  监听 window（而非仅 canvas），用 canvas 的 getBoundingClientRect 求局部坐标——更稳健，
+   *  避免 canvas 层事件不触发/坐标偏移的常见坑。 */
+  #attachMouseInput(canvas: HTMLCanvasElement, input?: InputManager): void {
+    if (!input) return;
+    const toVirtual = (clientX: number, clientY: number): [number, number] => {
+      const r = canvas.getBoundingClientRect();
+      const cw = r.width || W;
+      const ch = r.height || H;
+      return [Math.round(((clientX - r.left) / cw) * W), Math.round(((clientY - r.top) / ch) * H)];
+    };
+    // 诊断：是否收到 DOM 鼠标事件（节流，避免刷屏）
+    let lastMouseLog = 0;
+    const logMove = (label: string, x: number, y: number): void => {
+      const now = performance.now();
+      if (now - lastMouseLog > 300) {
+        lastMouseLog = now;
+        this.status.trace.push(`[input] ${label} (${x},${y}) hasCursor=${input!.hasCursor ? 1 : 0}`);
+      }
+    };
+    window.addEventListener('mousemove', (e) => {
+      const [x, y] = toVirtual(e.clientX, e.clientY);
+      input.setCursor(x, y, true);
+      logMove('move', x, y);
+    });
+    window.addEventListener('mouseleave', () => {
+      input.setCursor(-100000, -100000, false);
+      this.status.trace.push('[input] leave');
+    });
+    window.addEventListener('mousedown', (e) => {
+      const [x, y] = toVirtual(e.clientX, e.clientY);
+      input.setCursor(x, y, true);
+      if (e.button === 0) input.pressMouse(0); // 左
+      else if (e.button === 2) input.pressMouse(1); // 右
+      this.status.trace.push(`[input] down btn=${e.button} (${x},${y})`);
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) input.releaseMouse(0);
+      else if (e.button === 2) input.releaseMouse(1);
+    });
+    // 右键需阻止默认菜单，否则点击无法作为游戏输入
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   private constructor(status: RenderStatus) {
@@ -320,7 +371,17 @@ export class PixiBackend implements NativeBridge {
     }
     assertFlags('drawitem', it.handle, it.flags);
     it.from = from;
+    it.colorSet = true; // 显式设色：无动画时也按此色的 alpha 渲染（hover 高亮可回退）
+    // 清掉/重置动画窗：引擎 set-draw-color-alpha 是"设当前色"，若沿用旧 set-draw-color 的 to=opaque 动画窗，
+    // #itemAlpha 会一直在窗末返回 to（不透明），导致 hover 高亮无法回退。清除后即时按 from 的 alpha 渲染。
+    it.anim = undefined;
     this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
+  }
+
+  /** 0x1F7 texture-op：对图元应用纹理/颜色操作。emulator 标记图元重渲染（颜色态在 present 生效）。 */
+  textureOp(handle: number, mode: number): void {
+    this.#markDirty();
+    this.#pushLog(`textureOp h=0x${handle.toString(16)} mode=${mode}`);
   }
 
   setDrawColor(handle: number, delay: number, count: number, to: number): void {
@@ -379,6 +440,16 @@ export class PixiBackend implements NativeBridge {
     return this.sceneDirty || !this.sceneAnimationsDone() || (this.waitFlags & 0x400) !== 0;
   }
 
+  /** 诊断：导出 draw-item 实况（handle/layer/dst/alpha），用于排查 hover 高亮叠层是否渲染/回退。 */
+  debugDrawItems(): string {
+    const clock = this.clockMs;
+    const a = [...this.drawItems.values()]
+      .sort((x, y) => x.layer - y.layer || x.handle - y.handle)
+      .map((it) => `0x${it.handle.toString(16)}:L${it.layer}@(${it.dstX},${it.dstY})a${this.#itemAlpha(it, clock)}`)
+      .join(' ');
+    return `items={${a || '无'}}`;
+  }
+
   #markDirty(): void {
     this.sceneDirty = true;
   }
@@ -403,21 +474,27 @@ export class PixiBackend implements NativeBridge {
     return this.#lerpArgb(m.state0, m.state1, a);
   }
 
-  /** draw-item diffuse alpha：from→to 只插 alpha 字节（RGB 恒白，逐像素淡入）。返回 0..255。 */
+  /** draw-item diffuse alpha：from→to 只插 alpha 字节（RGB 恒白，逐像素淡入）。返回 0..255。
+   *  无动画窗时，若图元被 set-draw-color-alpha 显式设过色（colorSet），按其 from 色的 alpha 渲染
+   *  （避免 hover 高亮叠层永远停在默认不透明、无法回退）。 */
   #itemAlpha(it: Item, clock: number): number {
     assertFlags('drawitem', it.handle, it.flags);
-    if (!(it.flags & 2) || !it.anim) return 255;
-    const w = it.anim;
-    if (!w.started) {
-      w.start = clock;
-      w.started = true;
+    if (it.flags & 2 && it.anim) {
+      const w = it.anim;
+      if (!w.started) {
+        w.start = clock;
+        w.started = true;
+      }
+      if (clock >= w.start + w.delay + w.count) return (it.to >> 24) & 0xff;
+      if (clock <= w.start + w.delay) return (it.from >> 24) & 0xff;
+      const a = (clock - w.start - w.delay) / w.count;
+      const fa = (it.from >> 24) & 0xff;
+      const ta = (it.to >> 24) & 0xff;
+      return Math.round(fa + (ta - fa) * a);
     }
-    if (clock >= w.start + w.delay + w.count) return (it.to >> 24) & 0xff;
-    if (clock <= w.start + w.delay) return (it.from >> 24) & 0xff;
-    const a = (clock - w.start - w.delay) / w.count;
-    const fa = (it.from >> 24) & 0xff;
-    const ta = (it.to >> 24) & 0xff;
-    return Math.round(fa + (ta - fa) * a);
+    // 无动画窗：尊重显式设色的 alpha；默认不透明。
+    if (it.colorSet) return (it.from >> 24) & 0xff;
+    return 255;
   }
 
   #lerpArgb(a: number, b: number, t: number): number {
@@ -506,10 +583,15 @@ export class PixiBackend implements NativeBridge {
   // ---- HUD ---- //
 
   drawHud(): void {
+    const im = this.input;
+    const mouse = im
+      ? `mouse=(${im.hasCursor ? `${im.x},${im.y}` : 'off'}) btn=${im.buttons & 1 ? 'L' : ''}${im.buttons & 2 ? 'R' : ''}`
+      : 'mouse=—';
     this.hud.text =
       `script=${this.status.scriptName}  ip=${this.status.ip}  step=${this.status.steps}  draws=${this.drawCount}\n` +
       `clock=${Math.round(this.clockMs)}ms  items=${this.drawItems.size}  meshes=${this.meshes.size}  wait=0x${this.waitFlags.toString(16)}\n` +
-      this.status.log.map((s) => `  ${s}`).join('\n');
+      `${mouse}` +
+      (this.status.log.length ? `\n${this.status.log.map((s) => `  ${s}`).join('\n')}` : '');
   }
 
   #onSceneChange(_handle: number): void {

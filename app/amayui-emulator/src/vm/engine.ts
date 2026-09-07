@@ -2,6 +2,7 @@
 import type { ScriptBinary } from '../script/bin.js';
 import type { FileSource } from '../arch/fileSource.js';
 import type { NativeBridge } from './native.js';
+import { InputManager } from './input.js';
 import type { Ref } from './ref.js';
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
@@ -58,6 +59,9 @@ export class Engine {
   native: NativeBridge;
   fileSource: FileSource | null = null;
 
+  /** 输入状态（mouse/joy 位置、按钮、按下沿、回调跳转目标）。渲染器与 VM 共享同一实例。 */
+  input: InputManager;
+
   // 控制流目标深度寄存器（-1/-10/-11 哨兵）
   callRet = -1;
   callLink = -1;
@@ -71,8 +75,11 @@ export class Engine {
   /** effect_flags 的等待位（如 0x21C 置 0x400）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
   waitFlags = 0;
 
-  constructor(native: NativeBridge) {
+  constructor(native: NativeBridge, input?: InputManager) {
     this.native = native;
+    this.input = input ?? new InputManager();
+    // 共享给 native（渲染器经 native.input 写鼠标事件）
+    native.input = this.input;
     for (let i = 0; i < 40; i++) this.frames.push(new Frame());
   }
 

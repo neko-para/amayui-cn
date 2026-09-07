@@ -442,10 +442,12 @@ const op_set_draw_color: OpHandler = (c) => {
   c.native.setDrawColor?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
 };
 const op_set_draw_color_alpha: OpHandler = (c) => {
-  // 0x203：op1=handle, op2=blend(+48), op3=from(+96 无色 alpha 的高位；这里取 RGB)。
+  // 0x203 (sub_4232C0)：op1=handle, op2=blend(+48), op3=alpha(clamp/回退), op4=color(回退) → ARGB。
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const from = readIntOperand(c.e, c.frame, c.instr, 3);
-  c.native.setDrawColorAlpha?.(handle, from & 0xffffff);
+  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
+  const color = readIntOperand(c.e, c.frame, c.instr, 4);
+  const argb = ((alpha & 0xff) << 24) | (color & 0xffffff);
+  c.native.setDrawColorAlpha?.(handle, argb);
 };
 const op_release_texture: OpHandler = (c) => {
   // 0x1FA：op1=layer。
@@ -480,6 +482,154 @@ const op_set_texture: OpHandler = (c) => {
   const imgid = readIntOperand(c.e, c.frame, c.instr, 1);
   const slot = readIntOperand(c.e, c.frame, c.instr, 2);
   c.native.bindTexture?.(imgid, slot);
+};
+
+/** 0x1F7 texture-op (sub_422BC0)：纹理/图形子系统方法。op1=handle、op2=mode；mode≤1 单参，mode>1 双参。 */
+const op_texture_op: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const mode = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.textureOp?.(handle, mode);
+};
+
+// ---- 鼠标/输入子系统 opcodes（已读 handler 体；语义见 ../docs-new/03-engine/input-system.md）----
+
+/** 0x108 (u00415E70, sub_42EDC0)：`op1 = 鼠标按钮值`。bit0=左、bit1=右（sub_477220 约定）。 */
+const op_read_mouse_buttons: OpHandler = (c) => {
+  const b = c.e.input.readButtons();
+  writeIntOperand(c.e, c.frame, c.instr, 1, b);
+};
+
+/** 0x109 (u00415EC0, sub_42EE10)：`op1=X, op2=Y`（虚拟坐标；未初始化/出窗 = -100000）。 */
+const op_read_mouse_pos: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.readX());
+  writeIntOperand(c.e, c.frame, c.instr, 2, c.e.input.readY());
+};
+
+/** 0xCC (mouse_callback, sub_421980)：注册鼠标跳转目标。op2=label。 */
+const op_mouse_callback: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const target = operandArg(c.instr, 2).raw; // label 值（与 jmp/call 同尺度）
+  c.e.input.mouseSlot = slot;
+  c.e.input.mouseJump = target;
+};
+
+/** 0xFB (joy_callback, sub_421B80)：注册手柄跳转目标 op2。op1∈[0,32)。 */
+const op_joy_callback: OpHandler = (c) => {
+  const btn = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (btn < 0 || btn >= 32) throw new Error(`joy_callback: 按钮 ${btn} 越界 [0,32)`);
+  const target = operandArg(c.instr, 2).raw;
+  c.e.input.joyJump[btn] = target;
+};
+
+/** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
+const op_input_reset: OpHandler = (c) => {
+  // 引擎：_this[174802]=0; sub_4780D0(键盘+鼠标)；emulator 简化为按当前按住态重建掩码
+  c.e.input.flush();
+};
+
+/** 0x100 (u00415A60, sub_419AF0)：消息跳读/按键推进派发。扫掩码最低位、按注册表跳转。 */
+const op_input_dispatch: OpHandler = (c) => {
+  const mask = c.e.input.flush();
+  if (mask === 0) return; // 无输入，落回
+  let b = 0;
+  while (((mask >> b) & 1) === 0) b++;
+  // 鼠标位（4/5）→ 鼠标目标；否则按 joy 表（掩码位 = 4 + buttonIndex，故用 b-4）
+  const t =
+    (b === 4 || b === 5) && c.e.input.mouseJump !== -1
+      ? c.e.input.mouseJump
+      : c.e.input.joyJump[b - 4] ?? -1;
+  if (t === -1 || t === 0xffffffff) return;
+  const p = labelPos(c.frame, t);
+  if (p !== null) {
+    c.e.input.consumeEdges();
+    c.jump(p);
+  }
+};
+
+/** 0x101 (poll-input, sub_419CC0)：刷掩码后复位（清待处理输入）。 */
+const op_poll_input: OpHandler = (c) => {
+  c.e.input.flush();
+  c.e.input.consumeEdges();
+};
+
+/** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进 + hover"门。
+ * 有挂起鼠标活动（按下沿或位置变化）且注册过鼠标目标 → 派发（压返回地址 + 跳到目标，handler 的 ret 回到循环）。
+ * 有手把按下沿 + 注册过目标 → 派发。否则吞掉活动、落回下一指令。 */
+const op_get_input_type: OpHandler = (c) => {
+  const input = c.e.input;
+  input.flush(); // 更新掩码（供观测/后续）
+  const dispatch = (raw: number): boolean => {
+    const p = labelPos(c.frame, raw);
+    if (p === null) return false;
+    input.consumeEdges();
+    c.frame.retStack.push(c.frame.ip + 1); // 压返回地址：handler 的 ret 回到循环下一条
+    c.jump(p);
+    return true;
+  };
+  // 鼠标活动（移动/按下）+ 注册过鼠标目标 -> 跳（hover / 点击）
+  if ((input.mouseEdge !== 0 || input.mouseMoved) && input.mouseJump !== -1 && input.mouseJump !== 0xffffffff) {
+    if (dispatch(input.mouseJump)) return;
+  }
+  // 手把按下沿 + 注册过目标 -> 跳
+  const jt = input.pickJoyTarget();
+  if (jt !== null) {
+    if (dispatch(jt)) return;
+  }
+  // 无已注册目标：吞掉活动（无对应处理），落回下一指令
+  input.consumeEdges();
+};
+
+/**
+ * 0x2FC (u0041B? , sub_431BA0)：读鼠标触点 + 虚拟坐标。
+ * 引擎：sub_477980(_this+258,&Point,&a3,&a4) → 有触点则写 op1=1、op2=虚屏X、op3=虚屏Y、op4=a3(触点flags)、op5=a4；无触点写 op1=0。
+ * emulator：hasCursor 视为触点存在；op1=存在?1:0、op2/op3=虚拟坐标、op4=按钮态、op5=0。
+ * TITLE 紧随 `jcc (op1) … label_00000500`：有鼠标才会走"聚焦/选中"分支。
+ */
+const op_get_mouse_state: OpHandler = (c) => {
+  const im = c.e.input;
+  if (!im.hasCursor) {
+    writeIntOperand(c.e, c.frame, c.instr, 1, 0); // 无触点
+    return;
+  }
+  writeIntOperand(c.e, c.frame, c.instr, 1, 1); // 触点存在
+  writeIntOperand(c.e, c.frame, c.instr, 2, im.readX());
+  writeIntOperand(c.e, c.frame, c.instr, 3, im.readY());
+  writeIntOperand(c.e, c.frame, c.instr, 4, im.readButtons()); // 触点 flags ≈ 按钮态
+  writeIntOperand(c.e, c.frame, c.instr, 5, 0);
+};
+
+/**
+ * 0x12E (u0041E940, sub_42F230)：鼠标悬停命中（point-in-rect），**几何完全来自脚本数据**。
+ * 引擎：op2=margin 数组、op3=x、op4=y、op5=size 盒数组（每项 4 值 dx0/dx1/dy0/dy1）、op6=base X 数组、op7=base Y 数组、op8=count。
+ * 逐项判定：`dx0 <= (x - baseX[i]) <= dx1 && dy0 <= (y - baseY[i]) <= dy1` → 命中项 i（写回 op1），否则 -1。
+ * 实例（TITLE `u0041E940(local3f5)(local1)(local3f0)(local3f1)(localcd)(local5)(local69)(local0)`）：
+ *   baseX=local5[i]、baseY=local69[i]、size=local cd/d1/d5/d9/dd（每项 [0,0x9c,0,0x9c]）、count=local0=5。
+ * 说明：不在此模拟/写死任何按钮坐标；命中矩形完全由脚本的数据数组决定。
+ */
+const op_hover_hittest: OpHandler = (c) => {
+  const x = readIntOperand(c.e, c.frame, c.instr, 3);
+  const y = readIntOperand(c.e, c.frame, c.instr, 4);
+  const count = readIntOperand(c.e, c.frame, c.instr, 8);
+  const sizeRef = refFromOperand(c.e, c.frame, c.instr, 5); // size 盒数组
+  const bxRef = refFromOperand(c.e, c.frame, c.instr, 6); // base X 数组
+  const byRef = refFromOperand(c.e, c.frame, c.instr, 7); // base Y 数组
+  let idx = -1;
+  for (let i = 0; i < count; i++) {
+    const r = i * 4;
+    const dx0 = readRef(c.e, c.frame, refAt(sizeRef, r + 0));
+    const dx1 = readRef(c.e, c.frame, refAt(sizeRef, r + 1));
+    const dy0 = readRef(c.e, c.frame, refAt(sizeRef, r + 2));
+    const dy1 = readRef(c.e, c.frame, refAt(sizeRef, r + 3));
+    const bx = readRef(c.e, c.frame, refAt(bxRef, i));
+    const by = readRef(c.e, c.frame, refAt(byRef, i));
+    const px = x - bx;
+    const py = y - by;
+    if (px >= dx0 && px <= dx1 && py >= dy0 && py <= dy1) {
+      idx = i;
+      break;
+    }
+  }
+  writeIntOperand(c.e, c.frame, c.instr, 1, idx);
 };
 
 /** 已实现的最小 VM 指令表。 */
@@ -536,6 +686,17 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x1a8, op_dev_ukn],
   [0x2, op_exit],
   [0x9, op_exit_script],
+  // ---- 鼠标/输入子系统（读操作数/跳转/注册目标；语义见 docs-new/03-engine/input-system.md）----
+  [0x108, op_read_mouse_buttons],
+  [0x109, op_read_mouse_pos],
+  [0xcc, op_mouse_callback],
+  [0xfb, op_joy_callback],
+  [0xff, op_input_reset],
+  [0x100, op_input_dispatch],
+  [0x101, op_poll_input],
+  [0x2fc, op_get_mouse_state],
+  [0xcd, op_get_input_type],
+  [0x12e, op_hover_hittest], // u0041E940 悬停命中（mouse hover highlight）
 ]);
 
 /** 子系统 opcode -> NativeBridge 桩（记录后放行，不阻塞 VM）。 */
@@ -566,7 +727,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x205, stubSubsystem], // 纹理/文本 op（sub_4233E0）
   [0x207, stubSubsystem], // 纹理 op（sub_423480）
   [0x208, stubSubsystem], // 图形子系统方法（sub_49ED60(_this+80708, op1,…)）
-  [0x1f7, stubSubsystem], // texture 相关（sub_422BC0，读 op1/2）
+  [0x1f7, op_texture_op], // texture-op（sub_422BC0，读 op1/2）→ native.textureOp（标记图元重渲染）
   [0x1f8, stubSubsystem], // create-texture（sub_422C20，造纹理对象；LOGO 场景用到）
   [0x1fa, op_release_texture], // release-texture（LOGO 场景用到）
   [0x1fb, op_draw_texture], // draw-texture → configureDrawItem（readIntOperand 解析 handle）
@@ -574,7 +735,6 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x20f, op_play_movie], // play-movie（LOGO.MPG 视频句柄）
   [0x21c, op_set_wait_flag], // u00416270 → 置 0x400 等待旗标
   [0x1a5, stubSubsystem],
-  [0xcd, stubSubsystem],
   [0xc8, stubSubsystem],
   [0x6e, stubSubsystem],
   [0x6f, stubSubsystem],
@@ -655,10 +815,7 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x24e, op_engine_internal], // _this[92340]=op1（引擎字段）
   [0x21c, op_engine_internal], // _this[174801]|=0x400（旗标；无 VM 可见写）
   [0x21e, op_engine_internal], // sub_4AA180(_this+80708)（L2D/图形子系统方法）
-  [0x101, op_engine_internal], // 重置引擎态（_this[174801]&=~0x8000000; [122367]=1; [122370]=0）
-  [0x109, op_engine_internal], // 图形/输入子系统 op（点/区域，读多操作数+浮点；sub_42EE10）
-  [0xfb, op_engine_internal], // joy_callback：_this[33*cur+107725+op1]=op2（输入回调注册；M0 无输入不触发）
-  [0xcc, op_engine_internal], // mouse_callback：输入回调注册（M0 无输入不触发）
+
   [0x1f4, op_engine_internal], // 引擎计数器（_this[107438]/[107439]）
   [0x1f5, op_engine_internal], // 读引擎字段（_this[429756]/[429752]/[497400]）
   [0x1f6, op_engine_internal], // sub_4AB7A0(_this+80708)（L2D/图形子系统方法）
@@ -693,4 +850,13 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x1a3, op_engine_internal], // string-lookup-set：写回操作数1（此处立即数退化），M1 细化
   [0x1a2, op_engine_internal], // 写内部字符串查找表 _this+5452（非可见 VM 态），M1 细化
   [0x1a9, op_engine_internal], // 写内部字符串查找表 _this+5472（非可见 VM 态），M1 细化
+  // 鼠标点击路径安全桩：图形提交 / 悬停位置计算（emulator 暂不渲染/不算，no-op 不崩）
+  [0x20c, op_engine_internal], // u00416200 时间戳+present（sub_41A1A0；无界面 no-op；TITLE 点击 handler 入口）
+  [0xb5, op_engine_internal], // u0041D050 声音通道控制（sub_420B40；无界面 no-op；TITLE 音效用）
+  // 菜单派发表（uninitialized 菜单下点击退化路径；纯跳转表 no-op 不崩）
+  [0xa1, op_engine_internal], // u00427C00（sub_433A40）菜单状态初始化（no-op）
+  [0xa2, op_engine_internal], // u00427FD0（sub_434F10）间接跳转表设置（no-op）
+  [0xa3, op_engine_internal], // u004244D0（sub_429830）菜单当前项设置（no-op）
+  [0x23d, op_engine_internal], // u004162F0 释放纹理槽 42..999（sub_41A300；emulator 无界面 no-op）
+  [0x32b, op_engine_internal], // u0043AAD0（sub_41A4A0；no-op）
 ]);
