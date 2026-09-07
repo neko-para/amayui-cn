@@ -138,8 +138,8 @@ void Engine::op_concat_433710(_DWORD *_this)
 /* ===== [stained] sub_433820  状态: PARTIAL =====
  * Engine 成员函数  → op_toString_433820
  * raw 行区间 [41990, 42010]; op=0x1C8 指令名『toString』
- * 分析结论（已读体）: op1(SSO) = sprintf("%d", op2)  (int -> decimal string); via sub_408050 + sub_433310; 操作数类型=string(SSO)/int; 操作数=[1:string(SSO)/dest, 2:int/src]; arity=5; evidence=v2=readInt(2); sub_408050(Buffer,256,"%d",v2); ... sub_433310(1,(int)v3); decEnc=false; pure=true
- * ⚠ 未分析被调: sub_408050, sub_40C210, sub_433310（未命名/未分析）；分析后方可标已分析
+ * 分析结论（已读体）: op1(SSO) = sprintf("%d", op2)  (int -> decimal string); via StringFormat + sub_433310; 操作数类型=string(SSO)/int; 操作数=[1:string(SSO)/dest, 2:int/src]; arity=5; evidence=v2=readInt(2); StringFormat(Buffer,256,"%d",v2); ... sub_433310(1,(int)v3); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_40C210, sub_433310（未命名/未分析）；分析后方可标已分析（StringFormat 原 sub_408050 已分析）
  */
 void Engine::op_toString_433820(_DWORD *_this)
 {
@@ -151,7 +151,7 @@ void Engine::op_toString_433820(_DWORD *_this)
 
   this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(Buffer, 256, "%d", v2);
+  StringFormat(Buffer, 256, "%d", v2);
   v4 = 15;
   v3[4] = 0;
   LOBYTE(v3[0]) = 0;

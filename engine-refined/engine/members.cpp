@@ -2405,7 +2405,7 @@ int Engine::sub_4083B0(int _this)
   {
     v4 = sub_454FA0((_DWORD *)(_this + 680092), result);
     v3 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-    sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v3, v4);
+    StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v3, v4);
     pExceptionObject[1] = 65543;
     pExceptionObject[0] = this->message_buf;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -2437,7 +2437,7 @@ int Engine::sub_408440(int _this, int ArgList)
     sub_455C60((int *)v3, v4);
     v6 = (char *)(this->message_buf);
     v7 = sub_454FA0(v3, ArgList);
-    sub_408050(v6, 1024, "画像ファイル %s の読み込みに失敗しました", v7);
+    StringFormat(v6, 1024, "画像ファイル %s の読み込みに失敗しました", v7);
     pExceptionObject[0] = (int)v6;
     pExceptionObject[1] = 65543;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -2609,7 +2609,7 @@ BOOL Engine::sub_408A40(_DWORD *_this, char *a2, unsigned int a3)
   if ( strcmp(a2, byte_51EA3C) )
     sub_407FD0(a2, a3, (int)asc_51D6DC);
   sub_407FD0(a2, a3, (int)DirPath);
-  sub_408050(FileName, 256, "%s\\SAVE.DAT", a2);
+  StringFormat(FileName, 256, "%s\\SAVE.DAT", a2);
   FileA = CreateFileA(FileName, 0, 0, 0, 3u, 0x80u, 0);
   if ( FileA != (HANDLE)-1 )
     return CloseHandle(FileA);
@@ -2793,7 +2793,7 @@ void Engine::sub_408F10(int _this)
         {
           v11 = sub_454FA0((_DWORD *)(_this + 680092), v9);
           v10 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-          sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v10, v11);
+          StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v10, v11);
           pExceptionObject[1] = 65543;
           pExceptionObject[0] = this->message_buf;
           _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -3332,7 +3332,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
     v13 = sub_40A480(v20);
     v12 = (v19[95782] - v19[95781]) >> 2;
     v7 = sub_454FA0(v20 + 170023, v19[95796]);
-    sub_408050(
+    StringFormat(
       Buffer,
       1024,
       "\n\nデバック情報：\nFILE=%s ADDRESS=%X LINE=%d COMMAND=%s(%d) DEPTH=%d\n",
@@ -3353,7 +3353,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
   v23 = (unsigned __int16)a4;
   if ( (unsigned __int16)a4 == 1 )
   {
-    sub_408050(
+    StringFormat(
       v5,
       strlen(ArgList) + 1024,
       "[続行不可能なエラー]\n"
@@ -3369,7 +3369,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
   }
   if ( v8 == 4 )
   {
-    sub_408050(v5, strlen(ArgList) + 1024, "%s%s", ArgList, Buffer);
+    StringFormat(v5, strlen(ArgList) + 1024, "%s%s", ArgList, Buffer);
     MessageBoxA(hWnd, v5, asc_51EDE0, 0x40u);
     v4 = 4;
     v22 = 4;
@@ -3377,7 +3377,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
   }
   if ( v8 == 5 )
   {
-    sub_408050(
+    StringFormat(
       v5,
       strlen(ArgList) + 1024,
       "%s%s\n"
@@ -3395,7 +3395,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
   }
   if ( v8 == 3 )
   {
-    sub_408050(
+    StringFormat(
       v5,
       strlen(ArgList) + 1024,
       "%s%s\n"
@@ -3413,7 +3413,7 @@ int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
   }
   if ( v8 == 7 )
   {
-    sub_408050(
+    StringFormat(
       v5,
       strlen(ArgList) + 1024,
       "%s%s\n"
@@ -3567,7 +3567,7 @@ HANDLE Engine::sub_40AAE0(int _this)
   sub_454700(v27);
   v33 = 1;
   this->sub_408A40( ArgList, 0x100u);
-  sub_408050(Buffer, 256, "%s\\$$SAVE.DAT", ArgList);
+  StringFormat(Buffer, 256, "%s\\$$SAVE.DAT", ArgList);
   if ( sub_454770((int)v27, Buffer) )
   {
     v2 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSetSaveversion);
@@ -3622,11 +3622,11 @@ HANDLE Engine::sub_40AAE0(int _this)
     sub_454710(v27);
     sub_454700(v26);
     LOBYTE(v33) = 2;
-    sub_408050(ExistingFileName, 256, "%s\\SAVE.DAT", ArgList);
+    StringFormat(ExistingFileName, 256, "%s\\SAVE.DAT", ArgList);
     if ( sub_454730((int)v26, ExistingFileName) )
     {
       sub_454710(v26);
-      sub_408050(FileName, 256, "%s\\SAVE.BAK", ArgList);
+      StringFormat(FileName, 256, "%s\\SAVE.BAK", ArgList);
       DeleteFileA(FileName);
       v9 = MoveFileA;
       MoveFileA(ExistingFileName, FileName);
@@ -3643,7 +3643,7 @@ HANDLE Engine::sub_40AAE0(int _this)
   {
     v9 = MoveFileA;
   }
-  sub_408050(Buffer, 256, "%s\\$$RT.DAT", ArgList);
+  StringFormat(Buffer, 256, "%s\\$$RT.DAT", ArgList);
   if ( sub_454770((int)v27, Buffer) )
   {
     v10 = (void *)sub_454900(v27);
@@ -3651,11 +3651,11 @@ HANDLE Engine::sub_40AAE0(int _this)
     sub_454710(v27);
     sub_454700(v26);
     LOBYTE(v33) = 3;
-    sub_408050(ExistingFileName, 256, "%s\\RT.DAT", ArgList);
+    StringFormat(ExistingFileName, 256, "%s\\RT.DAT", ArgList);
     if ( sub_454730((int)v26, ExistingFileName) )
     {
       sub_454710(v26);
-      sub_408050(FileName, 256, "%s\\RT.BAK", ArgList);
+      StringFormat(FileName, 256, "%s\\RT.BAK", ArgList);
       DeleteFileA(FileName);
       v9(ExistingFileName, FileName);
     }
@@ -3713,7 +3713,7 @@ HANDLE Engine::sub_40AEE0(int _this)
   v35 = 0;
   v28 = 1;
   this->sub_408A40( ArgList, 0x100u);
-  sub_408050(Buffer, 256, "%s\\SAVE.DAT", ArgList);
+  StringFormat(Buffer, 256, "%s\\SAVE.DAT", ArgList);
   v25 = 0;
   v24 = operator new[](0x400000u);
   memset(v30, 0, sizeof(v30));
@@ -3723,7 +3723,7 @@ HANDLE Engine::sub_40AEE0(int _this)
       goto LABEL_23;
 LABEL_5:
     v28 = 0;
-    sub_408050(Buffer, 256, "%s\\SAVE.BAK", ArgList);
+    StringFormat(Buffer, 256, "%s\\SAVE.BAK", ArgList);
   }
   v27 = *(_DWORD *)(_this + 681128);
   v26 = operator new[](0x400000u);
@@ -3790,8 +3790,8 @@ LABEL_5:
   sub_454710(v22);
   if ( v28 )
   {
-    sub_408050(ExistingFileName, 256, "%s\\SAVE.DAT", ArgList);
-    sub_408050(NewFileName, 256, "%s\\SAVE.BAK", ArgList);
+    StringFormat(ExistingFileName, 256, "%s\\SAVE.DAT", ArgList);
+    StringFormat(NewFileName, 256, "%s\\SAVE.BAK", ArgList);
     CopyFileA(ExistingFileName, NewFileName, 0);
   }
 LABEL_23:
@@ -3834,7 +3834,7 @@ LABEL_23:
     }
   }
   operator delete[](v12);
-  sub_408050(Buffer, 256, "%s\\RT.DAT", ArgList);
+  StringFormat(Buffer, 256, "%s\\RT.DAT", ArgList);
   if ( sub_454730((int)v22, Buffer) )
   {
     v19 = (void *)sub_454900(v22);
@@ -5834,11 +5834,11 @@ int __fastcall Engine::loadScriptFrame_40ED40(int a1, int a2, void *a3, int a4)
       {
         *(_DWORD *)ArgList = *(_DWORD *)Str1;
         v50 = 0;
-        sub_408050(v47, 256, "VerCheck[%s]/[%s]", ArgList, (const char *)(a1 + 382688));
+        StringFormat(v47, 256, "VerCheck[%s]/[%s]", ArgList, (const char *)(a1 + 382688));
         sub_4034E0((_DWORD **)a1);
         i = (int *)(a1 + 680092);
         v8 = sub_454FA0((_DWORD *)(a1 + 680092), a4);
-        sub_408050(
+        StringFormat(
           v47,
           256,
           "ARCGameEngineのバージョンが古すぎます．\n"
@@ -6037,7 +6037,7 @@ int __fastcall Engine::loadScriptFrame_40ED40(int a1, int a2, void *a3, int a4)
     v22 = Buffer[1];
     v21 = Buffer[0];
     v5 = sub_454FA0((_DWORD *)(a1 + 680092), a4);
-    sub_408050(
+    StringFormat(
       v47,
       256,
       "BINファイルが不正です．\n"
@@ -6187,7 +6187,7 @@ void Engine::dispatchQueuedScripts_40FB60(int _this)
           if ( !*(_DWORD *)(v6 + 383124) )
           {
             v7 = this->message_buf;
-            sub_408050(
+            StringFormat(
               (char *)(this->message_buf),
               1024,
               "この階層にはファイルが読み込まれていません．Depth=%d",
@@ -6710,7 +6710,7 @@ LABEL_48:
               Buffer = (char *)(a1 + 8);
               v32 = sub_454FA0((_DWORD *)(a1 + 680092), *(_DWORD *)(v31 + a1 + 518548));
               v33 = Buffer;
-              sub_408050(Buffer, 1024, "画像ファイル %s の読み込みに失敗しました", v32);
+              StringFormat(Buffer, 1024, "画像ファイル %s の読み込みに失敗しました", v32);
               pExceptionObject[0] = (int)v33;
               pExceptionObject[1] = 1;
               _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -6838,7 +6838,7 @@ LABEL_136:
         {
           sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
           v45 = sub_454FA0((_DWORD *)(a1 + 680092), *(_DWORD *)(v43 + 561880));
-          sub_408050((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v45);
+          StringFormat((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v45);
           sub_4034C0((int *)a1, (const void *)(a1 + 8));
         }
         sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
@@ -7026,7 +7026,7 @@ LABEL_136:
           {
             sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
             v74 = sub_454FA0((_DWORD *)(a1 + 680092), *v72);
-            sub_408050((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v74);
+            StringFormat((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v74);
             sub_4034C0((int *)a1, (const void *)(a1 + 8));
           }
           sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
@@ -7064,7 +7064,7 @@ LABEL_136:
           {
             sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
             v78 = sub_454FA0((_DWORD *)(a1 + 680092), *(_DWORD *)(v76 + 606092));
-            sub_408050((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v78);
+            StringFormat((char *)(a1 + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v78);
             sub_4034C0((int *)a1, (const void *)(a1 + 8));
           }
           sub_455C60((int *)(a1 + 680092), *(int *)ArgList);
@@ -7808,7 +7808,7 @@ LABEL_4:
                         {
                           v4 = 1000 * (rand() % 120);
                           v89 = v4 + v3();
-                          sub_408050((char *)(this->message_buf), 1024, aE_0);
+                          StringFormat((char *)(this->message_buf), 1024, aE_0);
                           v51 = 5;
                           v50 = this->message_buf;
                           v49 = *(_DWORD *)(_this + 387924);
@@ -8903,7 +8903,7 @@ LABEL_12:
               this->sub_408440( (int)v55);
               goto LABEL_67;
             }
-            sub_408050((char *)(this->message_buf), 1024, asc_51F5A0);
+            StringFormat((char *)(this->message_buf), 1024, asc_51F5A0);
             this->sub_4034C0( (const void *)(this->message_buf));
             sub_404C40((_DWORD *)(_this + 322832), 0);
 LABEL_66:
@@ -9134,7 +9134,7 @@ int Engine::sub_414AC0(int _this, int a2, LPCSTR lpFileName)
   {
     if ( strncmp(aS3ic, (const char *)(_this + 698904), 4u) && strncmp(aS4ic, (const char *)(_this + 698904), 4u) )
     {
-      sub_408050(v78, 256, asc_51F7F0);
+      StringFormat(v78, 256, asc_51F7F0);
       sub_4034E0((_DWORD **)_this);
       CloseHandle(v5);
       return 0;
@@ -9146,7 +9146,7 @@ int Engine::sub_414AC0(int _this, int a2, LPCSTR lpFileName)
   {
     if ( *v8 < *(v8 - 316220) )
     {
-      sub_408050(
+      StringFormat(
         v78,
         256,
         "初期化ファイルのバージョンが古すぎます．\n"
@@ -12688,7 +12688,7 @@ int Engine::sub_41AA50(_DWORD *_this)
   this->frames[this->cur_script].arity = 1;
   if ( !(*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 4))(_this + 174405, aSetEnablememfl) )
   {
-    sub_408050(Buffer, 256, aMemflip);
+    StringFormat(Buffer, 256, aMemflip);
     pExceptionObject[0] = (int)Buffer;
     pExceptionObject[1] = 65541;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -12748,7 +12748,7 @@ void Engine::sub_41AB80(int _this)
   {
     v7 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430712));
     v4 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-    sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v4, v7);
+    StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v4, v7);
     pExceptionObject = (char *)(this->message_buf);
     v9 = 65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -12815,7 +12815,7 @@ DWORD Engine::op_get_input_type_41ACD0(int _this)
       {
         v8 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430696));
         v7 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-        sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v8);
+        StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v8);
         pExceptionObject[1] = 65543;
         pExceptionObject[0] = this->message_buf;
         _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -12889,7 +12889,7 @@ DWORD Engine::sub_41AE40(int _this)
         {
           v20 = *(_DWORD *)(_this + 430700);
           v17 = (char *)(this->message_buf);
-          sub_408050(v17, 1024, "Depth が不正です %d != %d", v16, v20);
+          StringFormat(v17, 1024, "Depth が不正です %d != %d", v16, v20);
           pExceptionObject = v17;
           v22 = 65543;
           _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -12909,7 +12909,7 @@ DWORD Engine::sub_41AE40(int _this)
       {
         v18 = sub_454FA0((_DWORD *)(_this + 680092), v5);
         v7 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-        sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v18);
+        StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v18);
         v22 = 65543;
         pExceptionObject = (char *)(this->message_buf);
         _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -12950,7 +12950,7 @@ DWORD Engine::sub_41AE40(int _this)
         {
           v19 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430700));
           v12 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
-          sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v12, v19);
+          StringFormat((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v12, v19);
           v22 = 65543;
           pExceptionObject = (char *)(this->message_buf);
           _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -13150,7 +13150,7 @@ LABEL_3:
 LABEL_18:
       v7 = *(float *)(v10 + 4 * v9);
 LABEL_19:
-      sub_408050(dword_55C8E0, 1024, "%lf", v7);
+      StringFormat(dword_55C8E0, 1024, "%lf", v7);
       return (char *)sub_41A6C0(dword_55C8E0);
     case 11:
       v14 = &_this[30 * this->cur_script];
@@ -13301,7 +13301,7 @@ LABEL_13:
           v8 = **(float **)(this->frames[this->cur_script].local_float_ptr
                           + 4 * *(_DWORD *)(this->frames[this->cur_script].ip + 8 * pExceptionObject));
 LABEL_20:
-          sub_408050(dword_55CCF0, 1024, "%lf", v8);
+          StringFormat(dword_55CCF0, 1024, "%lf", v8);
           return dword_55CCF0;
         case 14:
           result = *(char **)(_this[30 * this->cur_script + 95794]
@@ -13611,7 +13611,7 @@ int Engine::callScript_41C6A0(int _this)
   if ( *(int *)(this->cur_script) >= 39 )
   {
     v2 = this->message_buf;
-    sub_408050((char *)(this->message_buf), 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
+    StringFormat((char *)(this->message_buf), 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
     pExceptionObject = v2;
     v11 = 65537;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -13691,7 +13691,7 @@ int Engine::sub_41C7C0(int _this)
   if ( v4 >= 40 )
   {
     v6 = (char *)(this->message_buf);
-    sub_408050(v6, 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
+    StringFormat(v6, 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
     v8 = v6;
     pExceptionObject = 65537;
     _CxxThrowException(&v8, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -13745,7 +13745,7 @@ int Engine::sub_41C900(int _this)
   dword_55D0F8 = v2;
   if ( v4 )
   {
-    sub_408050(
+    StringFormat(
       (char *)(this->message_buf),
       1024,
       "この階層にはファイルが読み込まれていません．Depth=%d",
@@ -14381,7 +14381,7 @@ void Engine::sub_41D6A0(int _this)
   this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefwpType01E);
+    StringFormat((char *)(this->message_buf), 1024, aComefwpType01E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14420,7 +14420,7 @@ void Engine::sub_41D780(int _this)
   this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefblType01E);
+    StringFormat((char *)(this->message_buf), 1024, aComefblType01E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14459,7 +14459,7 @@ void Engine::sub_41D860(int _this)
   this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefbl2Type01);
+    StringFormat((char *)(this->message_buf), 1024, aComefbl2Type01);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14498,7 +14498,7 @@ void Engine::sub_41D940(int _this)
   this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 2 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefskType02E);
+    StringFormat((char *)(this->message_buf), 1024, aComefskType02E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14537,7 +14537,7 @@ void Engine::sub_41DA20(int _this)
   this->frames[this->cur_script].arity = 11;
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 4 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefrbType04E);
+    StringFormat((char *)(this->message_buf), 1024, aComefrbType04E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14686,7 +14686,7 @@ void Engine::sub_41DBA0(int _this)
         v11 = v34;
         v10 = v34;
       }
-      sub_408050(
+      StringFormat(
         (char *)(this->message_buf),
         1024,
         "関数：ComEfCA エラー：ファイルの縦または横のサイズが不正です X = %d X2 = %d Y = %d Y2 = %d\r\n",
@@ -14760,7 +14760,7 @@ LABEL_22:
     else
     {
       v16 = sub_401A60((char *)v14);
-      sub_408050((char *)(this->message_buf), 1024, "関数：ComEfCA エラー：%s\r\n", v16);
+      StringFormat((char *)(this->message_buf), 1024, "関数：ComEfCA エラー：%s\r\n", v16);
       this->sub_4034D0( (const char *)(this->message_buf));
       (*(void (__thiscall **)(_DWORD *, int))*v14)(v14, 1);
       sub_455C60(v39, *(int *)v40);
@@ -14768,7 +14768,7 @@ LABEL_22:
   }
   else
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefca);
+    StringFormat((char *)(this->message_buf), 1024, aComefca);
     this->sub_4034D0( (const char *)(this->message_buf));
     sub_455C60(v39, *(int *)v40);
   }
@@ -14850,7 +14850,7 @@ void Engine::sub_41E0A0(int _this)
   this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 1 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComeflpType01E);
+    StringFormat((char *)(this->message_buf), 1024, aComeflpType01E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -14890,7 +14890,7 @@ void Engine::sub_41E180(int _this)
   this->frames[this->cur_script].arity = 11;
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 5 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aComefrlType05E);
+    StringFormat((char *)(this->message_buf), 1024, aComefrlType05E);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
@@ -16395,7 +16395,7 @@ void Engine::sub_41FF60(int _this)
     }
     else
     {
-      sub_408050((char *)(this->message_buf), 1024, aGetautomessp);
+      StringFormat((char *)(this->message_buf), 1024, aGetautomessp);
       this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
@@ -16424,7 +16424,7 @@ void Engine::sub_420000(int _this)
     }
     else
     {
-      sub_408050((char *)(this->message_buf), 1024, aSettb);
+      StringFormat((char *)(this->message_buf), 1024, aSettb);
       this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
@@ -17381,7 +17381,7 @@ void Engine::sub_421200(int _this)
   }
   else
   {
-    sub_408050((char *)(this->message_buf), 1024, aSetsoundmode);
+    StringFormat((char *)(this->message_buf), 1024, aSetsoundmode);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
@@ -18063,7 +18063,7 @@ void Engine::sub_422150(int _this)
   v3 = v2;
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aResetq);
+    StringFormat((char *)(this->message_buf), 1024, aResetq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18099,7 +18099,7 @@ void Engine::sub_422240(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aAddq);
+    StringFormat((char *)(this->message_buf), 1024, aAddq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18127,7 +18127,7 @@ void Engine::sub_4222B0(int _this)
   v3 = v2;
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aResetstack);
+    StringFormat((char *)(this->message_buf), 1024, aResetstack);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18158,7 +18158,7 @@ void Engine::sub_4223A0(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aPush);
+    StringFormat((char *)(this->message_buf), 1024, aPush);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18183,7 +18183,7 @@ void Engine::sub_422410(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aCgnumber);
+    StringFormat((char *)(this->message_buf), 1024, aCgnumber);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18402,7 +18402,7 @@ void Engine::sub_4224E0(int _this)
   }
   else
   {
-    sub_408050((char *)(this->message_buf), 1024, aCgnumber);
+    StringFormat((char *)(this->message_buf), 1024, aCgnumber);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
@@ -18421,7 +18421,7 @@ void Engine::sub_422860(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aRewindq);
+    StringFormat((char *)(this->message_buf), 1024, aRewindq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18444,7 +18444,7 @@ void Engine::sub_4228C0(int _this)
   this->frames[this->cur_script].arity = 3;
   if ( (unsigned int)this->readIntOperand_41BF50( 1) > 0x10 )
   {
-    sub_408050((char *)(this->message_buf), 1024, aGetmeswina);
+    StringFormat((char *)(this->message_buf), 1024, aGetmeswina);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -18538,7 +18538,7 @@ HMODULE Engine::sub_4229D0(int _this)
     LastError = GetLastError();
     v5 = this->readIntOperand_41BF50( 1);
     v6 = sub_454FA0((_DWORD *)(_this + 680092), v5);
-    sub_408050(Buffer, 256, "%sを読み込み出来ません．\r\n\r\nERRORCODE = %d", v6, LastError);
+    StringFormat(Buffer, 256, "%sを読み込み出来ません．\r\n\r\nERRORCODE = %d", v6, LastError);
     pExceptionObject[0] = (int)Buffer;
     pExceptionObject[1] = 65543;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -18572,7 +18572,7 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
   {
     LastError = GetLastError();
     v4 = this->sub_41B640( 2);
-    sub_408050(Buffer, 256, "%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d", v4, LastError);
+    StringFormat(Buffer, 256, "%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d", v4, LastError);
     v10 = 65543;
     pExceptionObject = Buffer;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -18582,7 +18582,7 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
   {
     v8 = GetLastError();
     v6 = this->sub_41B640( 3);
-    sub_408050(
+    StringFormat(
       (char *)(this->message_buf),
       1024,
       "%sの関数インデックスが不正です．0から99までを指定してください．\r\n"
@@ -18713,7 +18713,7 @@ int Engine::op_set_texture_422CB0(int _this)
     sub_455C60((int *)(_this + 680092), *(int *)ArgList);
     v9 = this->readIntOperand_41BF50( 1);
     v10 = sub_454FA0((_DWORD *)(_this + 680092), v9);
-    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
+    StringFormat((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
     hFile = (HANDLE)65543;
     pExceptionObject = this->message_buf;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -20517,7 +20517,7 @@ int Engine::sub_425310(int _this)
     sub_455C60((int *)(_this + 680092), *(int *)ArgList);
     v9 = this->readIntOperand_41BF50( 1);
     v10 = sub_454FA0((_DWORD *)(_this + 680092), v9);
-    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
+    StringFormat((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
     hFile = (HANDLE)65543;
     pExceptionObject = this->message_buf;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -22028,7 +22028,7 @@ int Engine::sub_426EB0(int _this)
     v6 = (_DWORD *)(_this + 680092);
     v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
-    sub_408050(v7, 1024, "メッシュファイル %s の読み込みに失敗しました", v8);
+    StringFormat(v7, 1024, "メッシュファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
     hFile = (HANDLE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -22607,7 +22607,7 @@ int Engine::sub_427BA0(int _this)
     v6 = (_DWORD *)(_this + 680092);
     v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
-    sub_408050(v7, 1024, "L2Dモデルファイル %s の読み込みに失敗しました", v8);
+    StringFormat(v7, 1024, "L2Dモデルファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
     hFile = (HANDLE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -22682,7 +22682,7 @@ int Engine::sub_427CF0(int _this)
     v6 = (_DWORD *)(_this + 680092);
     v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
-    sub_408050(v7, 1024, "L2Dテクスチャファイル %s の読み込みに失敗しました", v8);
+    StringFormat(v7, 1024, "L2Dテクスチャファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
     hFile = (HANDLE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -22905,7 +22905,7 @@ int Engine::sub_428200(int _this)
     v6 = (_DWORD *)(_this + 680092);
     v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
-    sub_408050(v7, 1024, "L2Dモーションファイル %s の読み込みに失敗しました", v8);
+    StringFormat(v7, 1024, "L2Dモーションファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
     hFile = (HANDLE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -23293,7 +23293,7 @@ int Engine::sub_429460(int _this)
     sub_455C60(v7, v3);
     v8 = this->readIntOperand_41BF50( 1);
     v9 = sub_454FA0((_DWORD *)(_this + 680092), v8);
-    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v9);
+    StringFormat((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v9);
     pExceptionObject[2] = this->message_buf;
     v15[0] = this->message_buf;
     v15[1] = 65543;
@@ -23507,7 +23507,7 @@ LABEL_40:
         case 10:
           v11 = *(float *)(this->frames[v4].local_float + 4 * *v8);
 LABEL_6:
-          sub_408050(dword_55D128, 1024, "%lf", v11);
+          StringFormat(dword_55D128, 1024, "%lf", v11);
           goto LABEL_7;
         case 11:
           v22 = *v8;
@@ -24747,7 +24747,7 @@ void Engine::sub_42D2F0(int _this)
     }
     else
     {
-      sub_408050((char *)(this->message_buf), 1024, aGetautomessp);
+      StringFormat((char *)(this->message_buf), 1024, aGetautomessp);
       this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
@@ -25050,7 +25050,7 @@ int Engine::sub_42D980(int _this)
   this->frames[this->cur_script].arity = 5;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   v3 = CreateFileA;
   FileA = CreateFileA(FileName, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
   if ( FileA != (HANDLE)-1 )
@@ -25099,7 +25099,7 @@ int Engine::sub_42DB10(_DWORD *_this)
   this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   this->sub_408A40( ArgList, 0x100u);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   FileA = CreateFileA(FileName, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
   if ( FileA == (HANDLE)-1 )
     return this->writeIntOperand_42B4B0( 1, 1);
@@ -25139,7 +25139,7 @@ int Engine::sub_42DC70(int _this)
   this->frames[this->cur_script].arity = 19;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   FileA = CreateFileA(FileName, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
   if ( FileA == (HANDLE)-1 )
     return this->writeIntOperand_42B4B0( 1, 1);
@@ -25181,7 +25181,7 @@ int Engine::sub_42DDE0(_DWORD *_this)
   this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   this->sub_408A40( ArgList, 0x100u);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   FileA = CreateFileA(FileName, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
   if ( FileA == (HANDLE)-1 )
     return this->writeIntOperand_42B4B0( 1, 1);
@@ -25219,11 +25219,11 @@ int Engine::sub_42DFC0(_DWORD *_this)
   this->frames[this->cur_script].arity = 5;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   v3 = DeleteFileA;
   v4 = !DeleteFileA(FileName);
   v5 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v5);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v5);
   if ( !v3(FileName) )
     v4 = 2;
   return this->writeIntOperand_42B4B0( 1, v4);
@@ -25250,15 +25250,15 @@ int Engine::sub_42E0A0(_DWORD *_this)
   this->frames[this->cur_script].arity = 7;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(ExistingFileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
+  StringFormat(ExistingFileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
   v3 = this->readIntOperand_41BF50( 3);
-  sub_408050(NewFileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v3);
+  StringFormat(NewFileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v3);
   v4 = CopyFileA;
   v5 = !CopyFileA(ExistingFileName, NewFileName, 0);
   v6 = this->readIntOperand_41BF50( 2);
-  sub_408050(ExistingFileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v6);
+  StringFormat(ExistingFileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v6);
   v7 = this->readIntOperand_41BF50( 3);
-  sub_408050(NewFileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v7);
+  StringFormat(NewFileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v7);
   if ( !v4(ExistingFileName, NewFileName, 0) )
     v5 = 2;
   return this->writeIntOperand_42B4B0( 1, v5);
@@ -25285,7 +25285,7 @@ int Engine::sub_42E1F0(_DWORD *_this)
   this->frames[this->cur_script].arity = 7;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v2);
   FileA = CreateFileA(FileName, 0x40000000u, 0, 0, 2u, 0x8000020u, 0);
   v4 = FileA;
   if ( FileA == (HANDLE)-1 )
@@ -25327,7 +25327,7 @@ int Engine::sub_42E320(int *_this)
   this->frames[this->cur_script].arity = 7;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
-  sub_408050(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v2);
+  StringFormat(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, v2);
   FileA = CreateFileA(FileName, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
   v4 = FileA;
   if ( FileA == (HANDLE)-1 )
@@ -25499,7 +25499,7 @@ LABEL_12:
     writeIntOperand_42B4B0(v3, 2, 0);
     return;
   }
-  sub_408050((char *)(this->message_buf), 1024, aGetsoundmode);
+  StringFormat((char *)(this->message_buf), 1024, aGetsoundmode);
   this->sub_4034D0( (const char *)(this->message_buf));
 }
 
@@ -26222,7 +26222,7 @@ void Engine::sub_42F810(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aGetq);
+    StringFormat((char *)(this->message_buf), 1024, aGetq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -26267,7 +26267,7 @@ void Engine::sub_42F990(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aPop);
+    StringFormat((char *)(this->message_buf), 1024, aPop);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -26309,7 +26309,7 @@ void Engine::sub_42FA20(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aAcquireq);
+    StringFormat((char *)(this->message_buf), 1024, aAcquireq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -26349,7 +26349,7 @@ void Engine::sub_42FAC0(int _this)
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(this->message_buf), 1024, aTotalq);
+    StringFormat((char *)(this->message_buf), 1024, aTotalq);
     this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
@@ -26567,7 +26567,7 @@ int Engine::sub_42FEF0(_DWORD *_this)
     LastError = GetLastError();
     v5 = this->readIntOperand_41BF50( 2);
     v6 = sub_454FA0(_this + 170023, v5);
-    sub_408050(Buffer, 256, "%sを読み込み出来ません．\r\n\r\nERRORCODE = %d", v6, LastError);
+    StringFormat(Buffer, 256, "%sを読み込み出来ません．\r\n\r\nERRORCODE = %d", v6, LastError);
     pExceptionObject = Buffer;
     hLibModule = (HMODULE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -26578,7 +26578,7 @@ int Engine::sub_42FEF0(_DWORD *_this)
   {
     v21 = GetLastError();
     v8 = this->sub_41B640( 3);
-    sub_408050(Buffer, 256, "%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d", v8, v21);
+    StringFormat(Buffer, 256, "%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d", v8, v21);
     pExceptionObject = Buffer;
     hLibModule = (HMODULE)65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -29145,7 +29145,7 @@ int Engine::sub_4344A0(char *_this)
   if ( v2 < 0 )
   {
     v4 = this->message_buf;
-    sub_408050(v4, 1024, "可変配列のインデックス %d は不正です", v2);
+    StringFormat(v4, 1024, "可変配列のインデックス %d は不正です", v2);
     pExceptionObject[0] = (int)v4;
     pExceptionObject[1] = 65541;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
@@ -29738,7 +29738,7 @@ int Engine::sub_435800(int _this)
   v8 = *(_DWORD *)(_this + 699204);
   v7 = *(_DWORD *)(_this + 429756);
   v5 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[v4].frame_arg);
-  sub_408050(
+  StringFormat(
     Text,
     1024,
     "デバック情報：\n"
@@ -43744,7 +43744,7 @@ int Engine::sub_455560(char *_this, int ArgList)
   if ( ArgList == -1 || (v2 = &_this[40 * ArgList], *((_DWORD *)v2 + 265) == -1) )
   {
     CurrentThreadId = GetCurrentThreadId();
-    sub_408050(
+    StringFormat(
       Buffer,
       256,
       "Lock:不正なファイルIDが指定されました．\r\nID = %d Thread=%d\r\n",
@@ -43779,7 +43779,7 @@ int Engine::sub_455620(char *_this, int ArgList)
   if ( ArgList == -1 || (v2 = &_this[40 * ArgList], v3 = (void *)*((_DWORD *)v2 + 265), v3 == (void *)-1) )
   {
     CurrentThreadId = GetCurrentThreadId();
-    sub_408050(
+    StringFormat(
       Buffer,
       256,
       "UnLock:不正なファイルIDが指定されました．\r\nID = %d Thread=%d\r\n",
@@ -43852,7 +43852,7 @@ LABEL_12:
         _this[v6[69] + 3082] = (int)v6;
         goto LABEL_12;
       }
-      sub_408050(v12, 256, "AAIファイルの読み込みに失敗しました． %s\r\n", FileName);
+      StringFormat(v12, 256, "AAIファイルの読み込みに失敗しました． %s\r\n", FileName);
       this->sub_4034C0( v12);
       if ( !v6 )
         goto LABEL_12;
@@ -43894,7 +43894,7 @@ int Engine::sub_455C60(int *_this, int ArgList)
   if ( ArgList == -1 || (v3 = &_this[10 * ArgList], v3[265] == -1) )
   {
     CurrentThreadId = GetCurrentThreadId();
-    sub_408050(
+    StringFormat(
       Buffer,
       256,
       "CloseFile:不正なファイルIDが指定されました．\r\nID = %d Thread=%d\r\n",
@@ -45985,9 +45985,9 @@ LABEL_18:
   *(_DWORD *)(_this + 218508) = lfWidth;
   *(_DWORD *)(_this + 218512) = lfHeight;
   qmemcpy(&v35, (const void *)(_this + 1232), sizeof(v35));
-  sub_408050(v35.lfFaceName, 32, aAgeExtend);
+  StringFormat(v35.lfFaceName, 32, aAgeExtend);
   qmemcpy(&v38, (const void *)(_this + 101972), sizeof(v38));
-  sub_408050(v38.lfFaceName, 32, aAgeExtend_0);
+  StringFormat(v38.lfFaceName, 32, aAgeExtend_0);
   if ( *(_DWORD *)(_this + 201680) )
   {
     this->sub_459A20( (int)&v35, v35.lfFaceName, *(_DWORD *)(_this + 201684), v40);
@@ -51867,7 +51867,7 @@ void Engine::sub_465390(int _this, int a2, int a3, int a4, char *Source)
   *(_DWORD *)(_this + 101980) = 2700;
   *(_DWORD *)(_this + 101984) = 2700;
   *(_DWORD *)(_this + 218584) = 8;
-  sub_408050((char *)(_this + 102000), 32, "@%s", Source);
+  StringFormat((char *)(_this + 102000), 32, "@%s", Source);
   qmemcpy((void *)(_this + 102032), (const void *)(_this + 1292), 0x3Cu);
   *(_DWORD *)(_this + 102040) = 2700;
   *(_DWORD *)(_this + 102044) = 2700;
@@ -51875,7 +51875,7 @@ void Engine::sub_465390(int _this, int a2, int a3, int a4, char *Source)
   sub_4327A0((unsigned int *)(_this + 200492), 2u);
   sub_40C210((int)v27, (void *)(_this + 102000), strlen((const char *)(_this + 102000)));
   sub_432860((unsigned int *)(_this + 200492), (const void **)v27);
-  sub_408050((char *)(_this + 102060), 32, "@%s", (const char *)(_this + 1320));
+  StringFormat((char *)(_this + 102060), 32, "@%s", (const char *)(_this + 1320));
   sub_40C210((int)v27, (void *)(_this + 102060), strlen((const char *)(_this + 102060)));
   sub_432860((unsigned int *)(_this + 200492), (const void **)v27);
   *(_DWORD *)(_this + 1360) = 0xFFFFFF;
@@ -56008,7 +56008,7 @@ LABEL_19:
       {
         if ( (signed int)*v24 < *(_DWORD *)(v30 + 36) )
         {
-          sub_408050(
+          StringFormat(
             (char *)(this->message_buf),
             1024,
             "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
@@ -56740,7 +56740,7 @@ LABEL_21:
       }
       else if ( (v27 & 2) != 0 )
       {
-        sub_408050(
+        StringFormat(
           (char *)(this->message_buf),
           1024,
           "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
@@ -64248,7 +64248,7 @@ int Engine::sub_4823B0(int _this)
          &v17,
          v15) < 0 )
   {
-    sub_408050((char *)(_this + 24), 1024, aGetcorrelatedt);
+    StringFormat((char *)(_this + 24), 1024, aGetcorrelatedt);
     sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
   }
   if ( (*(int (__stdcall **)(_DWORD, _DWORD, void **))(**(_DWORD **)(_this + 1516) + 24))(
@@ -64256,14 +64256,14 @@ int Engine::sub_4823B0(int _this)
          0,
          &v22) < 0 )
   {
-    sub_408050((char *)(_this + 24), 1024, aGetstateFailed);
+    StringFormat((char *)(_this + 24), 1024, aGetstateFailed);
     sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
   }
   if ( (*(int (__stdcall **)(_DWORD, LPCRITICAL_SECTION *))(**(_DWORD **)(_this + 1512) + 12))(
          *(_DWORD *)(_this + 1512),
          &lpCriticalSection) < 0 )
   {
-    sub_408050((char *)(_this + 24), 1024, aGetlockFailed);
+    StringFormat((char *)(_this + 24), 1024, aGetlockFailed);
     sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
   }
   v2(lpCriticalSection);
@@ -64273,7 +64273,7 @@ int Engine::sub_4823B0(int _this)
   v20 = 0i64;
   if ( (*(int (__stdcall **)(_DWORD, int *))(**(_DWORD **)(_this + 1512) + 20))(*(_DWORD *)(_this + 1512), &v24) < 0 )
   {
-    sub_408050((char *)(_this + 24), 1024, aGetcountFailed);
+    StringFormat((char *)(_this + 24), 1024, aGetcountFailed);
     sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
   }
   if ( v24 )
@@ -64288,7 +64288,7 @@ int Engine::sub_4823B0(int _this)
       }
       if ( (*(int (__stdcall **)(_DWORD, int *))(**(_DWORD **)(_this + 1512) + 16))(*(_DWORD *)(_this + 1512), &v25) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aPeekheadFailed);
+        StringFormat((char *)(_this + 24), 1024, aPeekheadFailed);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       if ( !v25 )
@@ -64297,12 +64297,12 @@ int Engine::sub_4823B0(int _this)
       v4 = hEvent[0];
       if ( (*(int (__stdcall **)(int, __int64 *))(*(_DWORD *)v25 + 140))(v25, &v21) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aGetsampletimeF);
+        StringFormat((char *)(_this + 24), 1024, aGetsampletimeF);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       if ( (*(int (__stdcall **)(int, __int64 *))(*(_DWORD *)v25 + 148))(v25, &v20) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aGetsampledurat);
+        StringFormat((char *)(_this + 24), 1024, aGetsampledurat);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       if ( v22 == (void *)1 )
@@ -64327,7 +64327,7 @@ int Engine::sub_4823B0(int _this)
       }
       if ( (*(int (__stdcall **)(_DWORD))(**(_DWORD **)(_this + 1512) + 24))(*(_DWORD *)(_this + 1512)) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aRemoveheadFail);
+        StringFormat((char *)(_this + 24), 1024, aRemoveheadFail);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       v5 = v25;
@@ -64339,7 +64339,7 @@ int Engine::sub_4823B0(int _this)
       SetEvent(v4);
       if ( (*(int (__stdcall **)(_DWORD, int *))(**(_DWORD **)(_this + 1512) + 20))(*(_DWORD *)(_this + 1512), &v24) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aGetcountFailed);
+        StringFormat((char *)(_this + 24), 1024, aGetcountFailed);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       if ( !v24 )
@@ -64367,7 +64367,7 @@ LABEL_39:
       this->sub_481780( v7);
       if ( (*(int (__stdcall **)(_DWORD))(**(_DWORD **)(_this + 1512) + 24))(*(_DWORD *)(_this + 1512)) < 0 )
       {
-        sub_408050((char *)(_this + 24), 1024, aRemoveSampleFa);
+        StringFormat((char *)(_this + 24), 1024, aRemoveSampleFa);
         sub_4034C0((int *)(_this + 16), (const void *)(_this + 24));
       }
       SetEvent(v4);
@@ -64885,14 +64885,14 @@ int Engine::sub_485880(char *_this, int ArgList)
   v20 = 0;
   if ( v4(ArgList, &v21) < 0 )
   {
-    sub_408050(_this + 24, 1024, aGettypeFailed);
+    StringFormat(_this + 24, 1024, aGettypeFailed);
     sub_4034C0((int *)_this + 4, _this + 24);
     return 0;
   }
   (*(void (__stdcall **)(int, int *))(*(_DWORD *)v3 + 140))(v3, &ArgList);
   if ( ArgList < 0 )
   {
-    sub_408050(_this + 24, 1024, "GetStatus failed. %x \r\n", ArgList);
+    StringFormat(_this + 24, 1024, "GetStatus failed. %x \r\n", ArgList);
     sub_4034C0((int *)_this + 4, _this + 24);
     return 0;
   }
@@ -64908,7 +64908,7 @@ int Engine::sub_485880(char *_this, int ArgList)
     case 'o':
       if ( (*(int (__stdcall **)(int, void *, int *))(*(_DWORD *)v3 + 28))(v3, &unk_52D89C, &v20) < 0 )
       {
-        sub_408050(_this + 24, 1024, aTopostatusFail);
+        StringFormat(_this + 24, 1024, aTopostatusFail);
         sub_4034C0((int *)_this + 4, _this + 24);
       }
       switch ( v20 )
@@ -64921,7 +64921,7 @@ int Engine::sub_485880(char *_this, int ArgList)
           v7 = unknown_libname_1(_this + 1472);
           if ( sub_4CF1CE(v5, &unk_52FBB8, &unk_527018, v7) < 0 )
           {
-            sub_408050(_this + 24, 1024, aGetVideodispla);
+            StringFormat(_this + 24, 1024, aGetVideodispla);
             sub_4034C0((int *)_this + 4, _this + 24);
           }
           v8 = (int (__stdcall ***)(_DWORD, void *, int))*v6;
@@ -64929,19 +64929,19 @@ int Engine::sub_485880(char *_this, int ArgList)
           v10 = unknown_libname_1(_this + 1512);
           if ( (*v9)(v8, &unk_527028, v10) < 0 )
           {
-            sub_408050(_this + 24, 1024, aSurfsharingFai);
+            StringFormat(_this + 24, 1024, aSurfsharingFai);
             sub_4034C0((int *)_this + 4, _this + 24);
           }
           v11 = *((_DWORD *)_this + 364);
           v12 = unknown_libname_1(_this + 1476);
           if ( sub_4CF1CE(v11, &unk_51D674, &unk_5274BC, v12) < 0 )
           {
-            sub_408050(_this + 24, 1024, aGetAudiovolume);
+            StringFormat(_this + 24, 1024, aGetAudiovolume);
             sub_4034C0((int *)_this + 4, _this + 24);
           }
           if ( (sub_480960((int)_this) & 0x80000000) != 0 )
           {
-            sub_408050(_this + 24, 1024, aSetvolumeFaile);
+            StringFormat(_this + 24, 1024, aSetvolumeFaile);
             sub_4034C0((int *)_this + 4, _this + 24);
           }
           *((_DWORD *)_this + 400) = 0;
@@ -65337,7 +65337,7 @@ BOOL Engine::sub_4866F0(int _this,
     v13 = Instance;
     v12 = aInitCocreatein;
 LABEL_3:
-    sub_408050((char *)(this->message_buf), 1024, v12, v13);
+    StringFormat((char *)(this->message_buf), 1024, v12, v13);
     this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
@@ -65428,7 +65428,7 @@ int Engine::sub_4869C0(int _this, int a2)
   {
     v4 = (const void *)(this->message_buf);
     v10 = sub_4867D0(v3);
-    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v10);
+    StringFormat((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v10);
 LABEL_3:
     this->sub_4034C0( v4);
     return 0;
@@ -65442,7 +65442,7 @@ LABEL_3:
   if ( v6 < 0 )
   {
     v7 = sub_4867D0(v6);
-    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v7);
+    StringFormat((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v7);
     this->sub_4034C0( (const void *)(this->message_buf));
   }
   v8 = (***(int (__stdcall ****)(_DWORD, void *, int))(_this + 1032))(*(_DWORD *)(_this + 1032), &unk_52FC18, _this + 1036);
@@ -65450,7 +65450,7 @@ LABEL_3:
   {
     v4 = (const void *)(this->message_buf);
     v11 = sub_4867D0(v8);
-    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：QueryInterfaceに失敗しました %s", v11);
+    StringFormat((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：QueryInterfaceに失敗しました %s", v11);
     goto LABEL_3;
   }
   v9 = (*(int (__stdcall **)(_DWORD, void *, int))(**(_DWORD **)(_this + 1036) + 16))(
@@ -65461,7 +65461,7 @@ LABEL_3:
   {
     v4 = (const void *)(this->message_buf);
     v12 = sub_4867D0(v9);
-    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：GetMediaStreamに失敗しました %s", v12);
+    StringFormat((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：GetMediaStreamに失敗しました %s", v12);
     goto LABEL_3;
   }
   return 1;
@@ -65496,7 +65496,7 @@ int Engine::sub_486AD0(int _this, int a2)
   {
     v5 = (const void *)(this->message_buf);
     v12 = sub_4867D0(v4);
-    sub_408050(
+    StringFormat(
       (char *)(this->message_buf),
       1024,
       "関数：CreateMediaSurface エラー：QueryInterfaceに失敗しました %s",
@@ -65513,7 +65513,7 @@ LABEL_3:
   {
     v5 = (const void *)(this->message_buf);
     v13 = sub_4867D0(v8);
-    sub_408050(
+    StringFormat(
       (char *)(this->message_buf),
       1024,
       "関数：CreateMediaSurface エラー：GetFormatに失敗しました %s",
@@ -65542,7 +65542,7 @@ LABEL_3:
     {
       v5 = (const void *)(this->message_buf);
       v15 = sub_4867D0(v10);
-      sub_408050(
+      StringFormat(
         (char *)(this->message_buf),
         1024,
         "関数：CreateMediaSurface エラー：CreateSampleに失敗しました %s",
@@ -65626,7 +65626,7 @@ int Engine::sub_486C20(int _this, char *a2, int a3)
   if ( *(_DWORD *)ArgList )
   {
     v10 = sub_4867D0(*(int *)ArgList);
-    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
+    StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
     this->sub_4034C0( (const void *)(this->message_buf));
     (*(void (__thiscall **)(_DWORD *, int))(*v9 + 12))(v9, 1);
     v11 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
@@ -65668,7 +65668,7 @@ int Engine::sub_486C20(int _this, char *a2, int a3)
         return 1;
       }
       v21 = sub_4867D0(v20);
-      sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v21);
+      StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v21);
       this->sub_4034C0( (const void *)(this->message_buf));
     }
 LABEL_13:
@@ -65677,7 +65677,7 @@ LABEL_13:
     return 0;
   }
   v14 = sub_4867D0(v13);
-  sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：GetFilterGraphに失敗しました． %s", v14);
+  StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：GetFilterGraphに失敗しました． %s", v14);
   this->sub_4034C0( (const void *)(this->message_buf));
   (*(void (__thiscall **)(_DWORD *, int))(*v9 + 12))(v9, 1);
   v15 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
@@ -65854,7 +65854,7 @@ int Engine::sub_487430(int _this, int a2, int a3, int a4)
     v14 = Instance;
     v13 = aInitIidIgraphb;
 LABEL_3:
-    sub_408050((char *)(this->message_buf), 1024, v13, v14);
+    StringFormat((char *)(this->message_buf), 1024, v13, v14);
     this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
@@ -65970,7 +65970,7 @@ int Engine::sub_487530(int _this, char *a2, int a3)
   if ( *(_DWORD *)ArgList )
   {
     v10 = sub_4867D0(*(int *)ArgList);
-    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
+    StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
     this->sub_4034C0( (const void *)(this->message_buf));
     (*(void (__thiscall **)(_DWORD *, int))(*v3 + 12))(v3, 1);
     v11 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
@@ -66012,7 +66012,7 @@ int Engine::sub_487530(int _this, char *a2, int a3)
   if ( v16 < 0 )
   {
     v17 = sub_4867D0(v16);
-    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v17);
+    StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v17);
     this->sub_4034C0( (const void *)(this->message_buf));
 LABEL_11:
     v25 = -1;
@@ -66186,7 +66186,7 @@ int Engine::sub_487C60(int _this, int a2)
     if ( v11 < 0 )
     {
       v12 = sub_487930(v11);
-      sub_408050(
+      StringFormat(
         (char *)(_this + 360),
         1024,
         "関数：DoRenderSample エラー：テクスチャのロックに失敗しました．%s\r\n",
@@ -66327,7 +66327,7 @@ int Engine::sub_487C60(int _this, int a2)
     if ( v32 < 0 )
     {
       v33 = sub_487930(v32);
-      sub_408050(
+      StringFormat(
         (char *)(_this + 360),
         1024,
         "関数：DoRenderSample エラー：テクスチャのアンロックに失敗しました．%s\r\n",
@@ -66508,7 +66508,7 @@ int Engine::sub_488A80(int _this, int a2)
     }
     else
     {
-      sub_408050(
+      StringFormat(
         (char *)(_this + 360),
         1024,
         "関数：SetMediaType エラー：サポート対象外のテクスチャフォーマットです． Format = 0x%x\r\n",
@@ -66522,7 +66522,7 @@ int Engine::sub_488A80(int _this, int a2)
   }
   else
   {
-    sub_408050((char *)(_this + 360), 1024, aSetmediatype);
+    StringFormat((char *)(_this + 360), 1024, aSetmediatype);
     sub_4034C0((int *)(_this + 352), (const void *)(_this + 360));
     return v8;
   }
@@ -66610,7 +66610,7 @@ int Engine::sub_488DC0(int _this, void *a2, int a3, char *Str)
       v15 = sub_4803B0(v14);
       if ( v15 < 0 )
       {
-        sub_408050(
+        StringFormat(
           (char *)(this->message_buf),
           1024,
           "関数：Init エラー：Media Foundationの初期化に失敗しましたエラーコード %x\r\n",
@@ -66635,7 +66635,7 @@ int Engine::sub_488DC0(int _this, void *a2, int a3, char *Str)
       v18 = Instance;
       v17 = aInitIidIgraphb_0;
 LABEL_10:
-      sub_408050((char *)(this->message_buf), 1024, v17, v18);
+      StringFormat((char *)(this->message_buf), 1024, v17, v18);
       this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
@@ -66893,7 +66893,7 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
                              v57);
       if ( *(int *)ArgList < 0 )
       {
-        sub_408050((char *)(this->message_buf), 1024, aOpenLoadmovie);
+        StringFormat((char *)(this->message_buf), 1024, aOpenLoadmovie);
         this->sub_4034C0( (const void *)(this->message_buf));
         LOBYTE(v75) = 1;
         if ( v64 )
@@ -66920,7 +66920,7 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
     if ( v8 < 0 || !v7 )
     {
       v37 = sub_488730(v8);
-      sub_408050(
+      StringFormat(
         (char *)(this->message_buf),
         1024,
         "関数：Open エラー：CMovieTextureの初期化に失敗しました． %s\r\n",
@@ -66972,7 +66972,7 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
     if ( v20 < 0 )
     {
       v21 = sub_488730(v20);
-      sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：AddFilterに失敗しました． %s\r\n", v21);
+      StringFormat((char *)(this->message_buf), 1024, "関数：Open エラー：AddFilterに失敗しました． %s\r\n", v21);
       this->sub_4034C0( (const void *)(this->message_buf));
       LOBYTE(v75) = 1;
       if ( v64 )
@@ -67039,7 +67039,7 @@ LABEL_47:
     if ( *(_DWORD *)ArgList )
     {
       v30 = sub_488730(*(int *)ArgList);
-      sub_408050(
+      StringFormat(
         (char *)(this->message_buf),
         1024,
         "関数：Open エラー：CStreamReaderの初期化に失敗しました． %s\r\n",
@@ -67071,7 +67071,7 @@ LABEL_47:
     if ( v35 < 0 )
     {
       v36 = sub_488730(v35);
-      sub_408050(
+      StringFormat(
         (char *)(this->message_buf),
         1024,
         "関数：Open エラー：QueryInterfaceに失敗しました． %s\r\n",

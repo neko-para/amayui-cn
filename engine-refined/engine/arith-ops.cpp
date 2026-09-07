@@ -292,11 +292,17 @@ int Engine::op_gte_42CA00(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42CA50  状态: PARTIAL =====
+/* ===== [x] sub_42CA50  →  op_random  状态: ANALYZED =====
  * Engine 成员函数  → op_random_42CA50
  * raw 行区间 [37715, 37737]; op=0x60 指令名『random』
- * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
- * ⚠ 未分析被调: sub_408050（未命名/未分析）；分析后方可标已分析
+ * 分析结论（已读体）: 自增本类计数器(counter)，>12 则归 0；dword_55D54C=rand()；
+ *   op2=readIntOperand_41BF50(2)（并存 dword_55D548）；若 op2==0：写 op1=0、用
+ *   StringFormat(原 sub_408050，已分析=安全有界 sprintf) 把 aRandom0 格式化进 message_buf，
+ *   并 _CxxThrowException(Command_ShowMessage_Exception)（VM 指令抛"显示消息"异常）；否则写
+ *   op1 = dword_55D54C % op2。操作数类型=int/int; 操作数=[1:int/dest, 2:int/divisor]; arity=5;
+ *   decEnc=false; pure=false。仅调用已建模操作数原语(readIntOperand_41BF50 / writeIntOperand_42B4B0)、
+ *   已分析 StringFormat、CRT rand、_CxxThrowException，无 `_this[K]` 数值偏移访问 → 可标 ANALYZED。
+ * 证据: engine/天结_unpacked.exe_utf8.c raw 37715；docs-new/03-engine/opcode-table.md 0x60
  */
 int Engine::op_random_42CA50(char *_this)
 {
@@ -314,7 +320,7 @@ int Engine::op_random_42CA50(char *_this)
   {
     this->writeIntOperand_42B4B0( 1, 0);
     v3 = this->message_buf;
-    sub_408050(v3, 1024, aRandom0);
+    StringFormat(v3, 1024, aRandom0);
     pExceptionObject[0] = (int)v3;
     pExceptionObject[1] = 65541;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);

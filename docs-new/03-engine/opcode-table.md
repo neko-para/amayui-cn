@@ -13,9 +13,9 @@
 >
 > **染色/成员化进展（2025-09）**：本表所列 handler 已按「明确已知 Engine 成员函数」染色并**抽取到 `engine-refined/engine/`**（`Engine::<name>` 成员形式，`_this`→`this->` 对字段/帧/成员调用已转换；由 `scripts/engine-refined/memberize.cjs` 无 libclang 生成，再经 `split-members.cjs` 按语义分类拆到 `engine-refined/engine/{arith,bit,float,str,memory}-ops.cpp` 与 `members.cpp`）。成员索引见 `engine-refined/member-index.json`。**纯数值/字符串/内存指令接口**（运算 `0x50-0x5F`、位 `0x135-0x13F`、浮点 `0x2D5-0x2E4`、字符串 `0x192/193/1C8/2C5/1A6/1A3`、数组/索引/lea `0x61/63/64/6C/12C/1B0/2D8`）已逐一读体、确认接口。
 >
-> **严格状态（2025-09 更新）**：函数仍含未建模的数值偏移字段访问（`_this[K]`/`_this+N`）或调用未分析函数的为 **`PARTIAL`**（如 `bit-set/reset/check-bit`、`fill-zero`、`string-lookup-set`、`random`），否则为 **`ANALYZED`**。**分析结论以 `engine-refined/engine/*.cpp` 函数上方的代码注释为准**；`analysis-registry.json`/`member-index.json`/`op-records.json` 仅为临时派生分析载体。
+> **严格状态（2025-09 更新）**：函数仍含未建模的数值偏移字段访问（`_this[K]`/`_this+N`）或调用未分析函数的为 **`PARTIAL`**（如 `bit-set/reset/check-bit`、`fill-zero`、`string-lookup-set`），否则为 **`ANALYZED`**（`random`/0x60 在析出共用格式化助手 `sub_408050`→`StringFormat`（安全有界 sprintf，现位于 engine-refined/utils.cpp）后已转入 ANALYZED）。**分析结论以 `engine-refined/engine/*.cpp` 函数上方的代码注释为准**；`analysis-registry.json`/`member-index.json`/`op-records.json` 仅为临时派生分析载体。
 >
-> **代码分区（每段只在一处，基线除外）**：`engine-refined/engine/{arith,bit,float,str,memory}-ops.cpp` = 已分类的纯数值/位/浮点/字符串/数组索引指令；`engine-refined/engine/members.cpp` = 其余 Engine 成员；`engine-refined/remaining-code.cpp` = 全部未提取代码（**已提取成员的函数定义区间已替换为空行**，行号与原始完全一致，便于映射回 `engine/天结_unpacked.exe_utf8.c`；由 `scripts/engine-refined/remaining.cjs` 生成）。原始基准 `engine/天结_unpacked.exe_utf8.c` 与 `engine-refined/天结_unpacked.exe_utf8.cpp`（逐字节副本，只读对照）保留全部代码。
+> **代码分区（每段只在一处，基线除外）**：`engine-refined/engine/{arith,bit,float,str,memory}-ops.cpp` = 已分类的纯数值/位/浮点/字符串/数组索引指令；`engine-refined/engine/members.cpp` = 其余 Engine 成员；`engine-refined/utils.cpp` = 通用工具自由函数（如 `StringFormat`（原 sub_408050，安全有界 sprintf），自 remaining-code.cpp 拆出）；`engine-refined/remaining-code.cpp` = 全部未提取代码（**已提取成员的函数定义区间已替换为空行**，行号与原始完全一致，便于映射回 `engine/天结_unpacked.exe_utf8.c`；由 `scripts/engine-refined/remaining.cjs` 生成）。原始基准 `engine/天结_unpacked.exe_utf8.c` 与 `engine-refined/天结_unpacked.exe_utf8.cpp`（逐字节副本，只读对照）保留全部代码。
 >
 > **参考**：`engine-refined/engine-members.cpp`、`engine-refined/member-index.json`、`analysis-registry.json`（dsw 台账）。
 
@@ -88,7 +88,7 @@
 | 0x5D | 3 | lte | sub_42C960 | 已核对 | `op1 = (op2 <= op3)` |
 | 0x5E | 3 | gr | sub_42C9B0 | 已核对 | `op1 = (op2 > op3)` |
 | 0x5F | 3 | gre | sub_42CA00 | 已核对 | `op1 = (op2 >= op3)` |
-| 0x60 | 2 | random | sub_42CA50 | 已核对 | `op1 = rand() % op2` |
+| 0x60 | 2 | random | sub_42CA50 | 已核对 | `op1 = rand() % op2`；handler=sub_42CA50（raw .c 37715；engine-refined/engine/arith-ops.cpp `Engine::op_random_42CA50`）。**已标注 ANALYZED**：读体后用 `StringFormat`（原 sub_408050，安全有界 sprintf）在 op2==0 时格式化 `aRandom0` 到 message_buf 并经 `_CxxThrowException` 抛 Command_ShowMessage；否则写 `op1=rand()%op2` |
 | 0x61 | 3 | lookup-array | sub_42CB00 | 已核对 | `op1 = &op2[op3]`（取数组元素**地址**写入 op1 指针槽：sub_42AEA0 取 op2 基址 → sub_418CC0 写 `基址+4*op3`；与 lea 同底座）。handler=sub_42CB00（raw .c 37742）。⚠️ 修正旧「取值」——实际存的是元素**地址**（AGE 指针操作数后续读取时自动解引用即成值） |
 | 0x62 | 3 |  | sub_42CB50 | 仅映射 |  |
 | 0x63 | 2 | lea | sub_42CBA0 | 已核对 | `op1 = &op2`（取 op2 的**内存地址**写入 op1 指针槽：`sub_42AEA0(this,2)` 取址 → `sub_418B90(this,1,addr)` 写指针/地址型操作数）。handler=sub_42CBA0（raw .c 37766） |

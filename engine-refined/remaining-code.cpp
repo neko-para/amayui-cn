@@ -214,7 +214,7 @@ int __thiscall sub_407ED0(_DWORD *_this);
 int __thiscall sub_407F20(_DWORD *_this, int a2);
 int __stdcall sub_407F60(_BYTE *a1, int a2, int a3);
 int __stdcall sub_407FD0(_BYTE *a1, unsigned int a2, int a3);
-int sub_408050(char *Buffer, int a2, char *Format, ...);
+int StringFormat(char *Buffer, int a2, char *Format, ...);
 double __thiscall sub_4080B0(int _this);
 double __thiscall sub_408130(int _this);
 int __thiscall sub_4081B0(int _this, double a2);
@@ -12925,37 +12925,37 @@ LABEL_9:
 }
 
 //----- (00408050) --------------------------------------------------------
-int sub_408050(char *Buffer, int a2, char *Format, ...)
-{
-  int result; // eax
-  unsigned int v4; // esi
-  int v5; // ebx
-  int v6; // eax
-  va_list va; // [esp+14h] [ebp+14h] BYREF
 
-  va_start(va, Format);
-  result = 0;
-  if ( a2 <= 0 )
-    result = -2147024809;
-  if ( result >= 0 )
-  {
-    v4 = a2 - 1;
-    v5 = 0;
-    v6 = _vsnprintf(Buffer, a2 - 1, Format, va);
-    if ( v6 < 0 || v6 > v4 )
-    {
-      Buffer[v4] = 0;
-      return -2147024774;
-    }
-    else if ( v6 == v4 )
-    {
-      Buffer[v4] = 0;
-      return 0;
-    }
-    return v5;
-  }
-  return result;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //----- (004080B0) --------------------------------------------------------
 
@@ -13303,11 +13303,11 @@ int __thiscall sub_408790(_DWORD *_this, int a2)
     v4 = (_BYTE *)(*(int (__thiscall **)(_DWORD *, char *))(_this[174405] + 8))(_this + 174405, aSystemSavebmpp);
     if ( *v4 )
     {
-      sub_408050(FileName, 256, "%s\\CG%6.6d.BMP", v4, *(_DWORD *)ArgList);
+      StringFormat(FileName, 256, "%s\\CG%6.6d.BMP", v4, *(_DWORD *)ArgList);
     }
     else
     {
-      sub_408050(FileName, 256, "CG%6.6d.BMP", *(_DWORD *)ArgList);
+      StringFormat(FileName, 256, "CG%6.6d.BMP", *(_DWORD *)ArgList);
       memset(VersionInformation, 0, sizeof(VersionInformation));
       VersionInformation[0] = 156;
       if ( v3((LPOSVERSIONINFOA)VersionInformation)
@@ -13345,7 +13345,7 @@ int __thiscall sub_408790(_DWORD *_this, int a2)
             FreeLibrary(v10);
           }
         }
-        sub_408050(FileName, 256, "%s\\CG%6.6d.BMP", pszPath, *(_DWORD *)ArgList);
+        StringFormat(FileName, 256, "%s\\CG%6.6d.BMP", pszPath, *(_DWORD *)ArgList);
       }
     }
     v12 = v2(FileName, 0, 0, 0, 3, 134217760, 0);
@@ -43003,7 +43003,7 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
   v3 = (_BYTE *)(*(int (__thiscall **)(int, char *))(*(_DWORD *)(a1 + 697620) + 8))(a1 + 697620, aSystemSavebmpp);
   if ( *v3 )
   {
-    sub_408050(FileName, 256, "%s\\REPORT", v3);
+    StringFormat(FileName, 256, "%s\\REPORT", v3);
   }
   else
   {
@@ -43045,7 +43045,7 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
           FreeLibrary(v10);
         }
       }
-      sub_408050(FileName, 256, "%s\\REPORT", pszPath);
+      StringFormat(FileName, 256, "%s\\REPORT", pszPath);
     }
   }
   v12 = CreateFileA;
@@ -43063,7 +43063,7 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
   }
   while ( 1 )
   {
-    sub_408050(PathName, 256, "%s\\%2.2d", FileName, dword_55D5B4);
+    StringFormat(PathName, 256, "%s\\%2.2d", FileName, dword_55D5B4);
     v16 = (int)v12(PathName, 0, 0, 0, 3, 128, 0);
     ++dword_55D5B4;
     if ( v16 == -1 )
@@ -43080,13 +43080,13 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
       {
         if ( i == 1 )
         {
-          sub_408050(Buffer, 256, "%s\\%2.2dBACK.BMP", PathName, 1);
-          sub_408050(v28, 256, "%s\\%2.2dBACKM.BMP", PathName, 1);
+          StringFormat(Buffer, 256, "%s\\%2.2dBACK.BMP", PathName, 1);
+          StringFormat(v28, 256, "%s\\%2.2dBACKM.BMP", PathName, 1);
         }
         else if ( i == 2 )
         {
-          sub_408050(Buffer, 256, "%s\\%2.2dBUFFER.BMP", PathName, 2);
-          sub_408050(v28, 256, "%s\\%2.2dBUFFERM.BMP", PathName, 2);
+          StringFormat(Buffer, 256, "%s\\%2.2dBUFFER.BMP", PathName, 2);
+          StringFormat(v28, 256, "%s\\%2.2dBUFFERM.BMP", PathName, 2);
         }
         else if ( (unsigned int)(i - 3) > 0xE )
         {
@@ -43094,41 +43094,41 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
           {
             if ( i == 30 )
             {
-              sub_408050(Buffer, 256, "%s\\%2.2dBACKUPSURFACE1.BMP", PathName, 30);
-              sub_408050(v28, 256, "%s\\%2.2dBACKUPSURFACE1M.BMP", PathName, 30);
+              StringFormat(Buffer, 256, "%s\\%2.2dBACKUPSURFACE1.BMP", PathName, 30);
+              StringFormat(v28, 256, "%s\\%2.2dBACKUPSURFACE1M.BMP", PathName, 30);
             }
             else if ( i == 31 )
             {
-              sub_408050(Buffer, 256, "%s\\%2.2dBACKUPSURFACE2.BMP", PathName, 31);
-              sub_408050(v28, 256, "%s\\%2.2dBACKUPSURFACE2M.BMP", PathName, 31);
+              StringFormat(Buffer, 256, "%s\\%2.2dBACKUPSURFACE2.BMP", PathName, 31);
+              StringFormat(v28, 256, "%s\\%2.2dBACKUPSURFACE2M.BMP", PathName, 31);
             }
             else if ( (unsigned int)(i - 42) > 0x31 )
             {
-              sub_408050(Buffer, 256, "%s\\%2.2d.BMP", PathName, i);
-              sub_408050(v28, 256, "%s\\%2.2dM.BMP", PathName, i);
+              StringFormat(Buffer, 256, "%s\\%2.2d.BMP", PathName, i);
+              StringFormat(v28, 256, "%s\\%2.2dM.BMP", PathName, i);
             }
             else
             {
-              sub_408050(Buffer, 256, "%s\\%2.2dSPEX%2.2d.BMP", PathName, i, i - 42);
-              sub_408050(v28, 256, "%s\\%2.2dSPEX%2.2dM.BMP", PathName, i, i - 42);
+              StringFormat(Buffer, 256, "%s\\%2.2dSPEX%2.2d.BMP", PathName, i, i - 42);
+              StringFormat(v28, 256, "%s\\%2.2dSPEX%2.2dM.BMP", PathName, i, i - 42);
             }
           }
           else
           {
-            sub_408050(Buffer, 256, "%s\\%2.2dVWIN%d.BMP", PathName, i, i - 20);
-            sub_408050(v28, 256, "%s\\%2.2dVWIN%dM.BMP", PathName, i, i - 20);
+            StringFormat(Buffer, 256, "%s\\%2.2dVWIN%d.BMP", PathName, i, i - 20);
+            StringFormat(v28, 256, "%s\\%2.2dVWIN%dM.BMP", PathName, i, i - 20);
           }
         }
         else
         {
-          sub_408050(Buffer, 256, "%s\\%2.2dSPRITE%X.BMP", PathName, i, i - 2);
-          sub_408050(v28, 256, "%s\\%2.2dSPRITE%XM.BMP", PathName, i, i - 2);
+          StringFormat(Buffer, 256, "%s\\%2.2dSPRITE%X.BMP", PathName, i, i - 2);
+          StringFormat(v28, 256, "%s\\%2.2dSPRITE%XM.BMP", PathName, i, i - 2);
         }
       }
       else
       {
-        sub_408050(Buffer, 256, "%s\\%2.2dFRONT.BMP", PathName, 0);
-        sub_408050(v28, 256, "%s\\%2.2dFRONTM.BMP", PathName, 0);
+        StringFormat(Buffer, 256, "%s\\%2.2dFRONT.BMP", PathName, 0);
+        StringFormat(v28, 256, "%s\\%2.2dFRONTM.BMP", PathName, 0);
       }
       if ( *(_DWORD *)(a1 + 4 * i + 8948) )
       {
@@ -43155,11 +43155,11 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
         {
           if ( j == 1 )
           {
-            sub_408050(Buffer, 256, "%s\\T%2.2dBACK.BMP", PathName, 1);
+            StringFormat(Buffer, 256, "%s\\T%2.2dBACK.BMP", PathName, 1);
           }
           else if ( j == 2 )
           {
-            sub_408050(Buffer, 256, "%s\\T%2.2dBUFFER.BMP", PathName, 2);
+            StringFormat(Buffer, 256, "%s\\T%2.2dBUFFER.BMP", PathName, 2);
           }
           else if ( (unsigned int)(j - 3) > 0xE )
           {
@@ -43167,42 +43167,42 @@ int __usercall sub_4350F0@<eax>(int a1@<ecx>, int a2@<ebx>)
             {
               if ( j == 30 )
               {
-                sub_408050(Buffer, 256, "%s\\T%2.2dBACKUPSURFACE1.BMP", PathName, 30);
+                StringFormat(Buffer, 256, "%s\\T%2.2dBACKUPSURFACE1.BMP", PathName, 30);
               }
               else if ( j == 31 )
               {
-                sub_408050(Buffer, 256, "%s\\T%2.2dBACKUPSURFACE2.BMP", PathName, 31);
+                StringFormat(Buffer, 256, "%s\\T%2.2dBACKUPSURFACE2.BMP", PathName, 31);
               }
               else if ( (unsigned int)(j - 42) > 0x31 )
               {
-                sub_408050(Buffer, 256, "%s\\T%2.2d.BMP", PathName, j);
+                StringFormat(Buffer, 256, "%s\\T%2.2d.BMP", PathName, j);
               }
               else
               {
-                sub_408050(Buffer, 256, "%s\\T%2.2dSPEX%2.2d.BMP", PathName, j, j - 42);
+                StringFormat(Buffer, 256, "%s\\T%2.2dSPEX%2.2d.BMP", PathName, j, j - 42);
               }
             }
             else
             {
-              sub_408050(Buffer, 256, "%s\\T%2.2dVWIN%d.BMP", PathName, j, j - 20);
+              StringFormat(Buffer, 256, "%s\\T%2.2dVWIN%d.BMP", PathName, j, j - 20);
             }
           }
           else
           {
-            sub_408050(Buffer, 256, "%s\\T%2.2dSPRITE%X.BMP", PathName, j, j - 2);
+            StringFormat(Buffer, 256, "%s\\T%2.2dSPRITE%X.BMP", PathName, j, j - 2);
           }
         }
         else
         {
-          sub_408050(Buffer, 256, "%s\\T%2.2dFRONT.BMP", PathName, 0);
+          StringFormat(Buffer, 256, "%s\\T%2.2dFRONT.BMP", PathName, 0);
         }
         sub_4A5260(v17 + 322832, Buffer, j);
       }
     }
   }
-  sub_408050(Buffer, 256, "%s\\VARIABLES0INT.TXT", PathName);
-  sub_408050(Buffer, 256, "%s\\VARIABLES2STRING.TXT", PathName);
-  return sub_408050(Buffer, 256, "%s\\FILES.TXT", PathName);
+  StringFormat(Buffer, 256, "%s\\VARIABLES0INT.TXT", PathName);
+  StringFormat(Buffer, 256, "%s\\VARIABLES2STRING.TXT", PathName);
+  return StringFormat(Buffer, 256, "%s\\FILES.TXT", PathName);
 }
 // 4350F0: could not find valid save-restore pair for ebx
 // 4351EB: conditional instruction was optimized away because edx.4!=0
@@ -67616,7 +67616,7 @@ int __thiscall sub_455420(_DWORD *_this, HANDLE hObject, int a3, int a4)
   {
     CloseHandle(hObject);
     GetLastError();
-    sub_408050(
+    StringFormat(
       Buffer,
       256,
       "%s を開くことが出来ません．\r\nファイルIDを取得出来ません．",
@@ -67707,7 +67707,7 @@ int __thiscall sub_4556E0(_DWORD *_this, int a2)
     do
     {
       if ( !*v6 )
-        result = sub_408050((char *)(v5 + _this[260]), 96, "%c:\\%s", a2 + 65, (const char *)(v5 + _this[260] + 96));
+        result = StringFormat((char *)(v5 + _this[260]), 96, "%c:\\%s", a2 + 65, (const char *)(v5 + _this[260] + 96));
       ++v6;
       ++v3;
       v5 += 256;
@@ -67813,7 +67813,7 @@ int __thiscall sub_4559C0(_DWORD *_this, void *a2, int ArgList, DWORD *a4)
     v14 = ArgList >> 24;
     if ( !v5 )
     {
-      sub_408050(
+      StringFormat(
         Buffer,
         256,
         "拡張ファイル情報ファイル %d は読み込まれていません．",
@@ -67826,7 +67826,7 @@ int __thiscall sub_4559C0(_DWORD *_this, void *a2, int ArgList, DWORD *a4)
     if ( hObject == (HANDLE)-1 )
     {
       v6 = sub_401500((_DWORD *)_this[v14 + 3082], ArgList & 0xFFFFFF);
-      sub_408050(Buffer, 256, "拡張ファイル %s を開くことが出来ません．%d", v6, ArgList & 0xFFFFFF);
+      StringFormat(Buffer, 256, "拡張ファイル %s を開くことが出来ません．%d", v6, ArgList & 0xFFFFFF);
       goto LABEL_6;
     }
     sub_454960(_this, ArgList);
@@ -67836,7 +67836,7 @@ int __thiscall sub_4559C0(_DWORD *_this, void *a2, int ArgList, DWORD *a4)
   {
     if ( ArgList >= _this[259] || ArgList < 0 )
     {
-      sub_408050(Buffer, 256, "ファイル番号 %d は不正な値です．", ArgList);
+      StringFormat(Buffer, 256, "ファイル番号 %d は不正な値です．", ArgList);
 LABEL_6:
       pExceptionObject = Buffer;
       v14 = 65543;
@@ -67862,7 +67862,7 @@ LABEL_6:
             v11 == (HANDLE)-1) )
       {
         LastError = GetLastError();
-        sub_408050(
+        StringFormat(
           Buffer,
           256,
           "%s を開くことが出来ません．\r\nERROR CODE = %d",
@@ -103571,7 +103571,7 @@ char *__stdcall sub_4867D0(int ArgList)
   if ( ArgList != -2147467261 )
   {
 LABEL_22:
-    sub_408050(dword_55DA80, 256, "予期せぬエラー %x", ArgList);
+    StringFormat(dword_55DA80, 256, "予期せぬエラー %x", ArgList);
     return dword_55DA80;
   }
   v1 = dword_55DA80;
@@ -104838,7 +104838,7 @@ int __thiscall sub_488070(_DWORD *_this, int a2, _BYTE *a3)
   {
     v10 = (const void *)(v4 + 360);
     v33 = sub_487930(v9);
-    sub_408050(
+    StringFormat(
       (char *)(v4 + 360),
       1024,
       "関数：SetMaskData エラー：マスクテクスチャのロックに失敗しました．%s\r\n",
@@ -104940,7 +104940,7 @@ LABEL_37:
   {
     v10 = (const void *)(v4 + 360);
     v34 = sub_487930(v32);
-    sub_408050(
+    StringFormat(
       (char *)(v4 + 360),
       1024,
       "関数：SetMaskData エラー：マスクテクスチャのアンロックに失敗しました．%s\r\n",
@@ -105247,7 +105247,7 @@ char *__stdcall sub_488730(int ArgList)
   if ( ArgList != -2147467261 )
   {
 LABEL_22:
-    sub_408050(dword_55DC80, 256, "予期せぬエラー %x", ArgList);
+    StringFormat(dword_55DC80, 256, "予期せぬエラー %x", ArgList);
     return dword_55DC80;
   }
   v1 = dword_55DC80;
@@ -110490,7 +110490,7 @@ errno_t __stdcall sub_490010(const char *ArgList, char *Destination)
   HKEY phkResult; // [esp+10h] [ebp-108h] BYREF
   CHAR SubKey[256]; // [esp+14h] [ebp-104h] BYREF
 
-  sub_408050(SubKey, 256, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\InstallShield_{%s}", ArgList);
+  StringFormat(SubKey, 256, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\InstallShield_{%s}", ArgList);
   if ( RegCreateKeyExA(HKEY_LOCAL_MACHINE, SubKey, 0, Class, 0, 0x20019u, 0, &phkResult, &dwDisposition) )
     return strcpy_s(Destination, 0x100u, a1000000);
   Type = 1;
@@ -110811,13 +110811,13 @@ int __thiscall sub_490590(_DWORD *_this, int a2)
     {
       if ( v3[5] >= 0x10u )
         v3 = (_DWORD *)*v3;
-      sub_408050(SubKey, 256, "Software\\%s\\%s", v3, Destination);
+      StringFormat(SubKey, 256, "Software\\%s\\%s", v3, Destination);
     }
     else
     {
       if ( v3[5] >= 0x10u )
         v3 = (_DWORD *)*v3;
-      sub_408050(SubKey, 256, "Software\\%s\\%s", v3, a2);
+      StringFormat(SubKey, 256, "Software\\%s\\%s", v3, a2);
     }
     if ( !RegCreateKeyExA(HKEY_CURRENT_USER, SubKey, 0, byte_51EA3C, 0, 0x20006u, 0, &phkResult, &dwDisposition) )
     {
@@ -111148,7 +111148,7 @@ int __stdcall sub_491060(void ***a1)
   v70 = 0;
   v71 = 0;
   v72 = 0;
-  sub_408050(SubKey, 256, aSoftwareMicros_1);
+  StringFormat(SubKey, 256, aSoftwareMicros_1);
   sub_40E660(a1, (void ***)&v5, *a1, a1[1]);
   if ( RegOpenKeyExA(HKEY_LOCAL_MACHINE, SubKey, 0, 0x20019u, &phkResult) )
     return 0;
@@ -111389,7 +111389,7 @@ char *__thiscall sub_491880(char *_this)
   v13 = 1;
   do
   {
-    sub_408050(Buffer, 256, "debug:DebugOutFlag%d", *(_DWORD *)ArgList);
+    StringFormat(Buffer, 256, "debug:DebugOutFlag%d", *(_DWORD *)ArgList);
     sub_434D00(v2, Buffer, &v13);
     ++*(_DWORD *)ArgList;
   }
@@ -111881,13 +111881,13 @@ int __thiscall sub_492CB0(unsigned int *_this, int a2)
   {
     if ( v3[5] >= 0x10u )
       v3 = (_DWORD *)*v3;
-    sub_408050(SubKey, 256, "Software\\%s\\%s", v3, Destination);
+    StringFormat(SubKey, 256, "Software\\%s\\%s", v3, Destination);
   }
   else
   {
     if ( v3[5] >= 0x10u )
       v3 = (_DWORD *)*v3;
-    sub_408050(SubKey, 256, "Software\\%s\\%s", v3, a2);
+    StringFormat(SubKey, 256, "Software\\%s\\%s", v3, a2);
   }
   if ( !RegOpenKeyExA(HKEY_CURRENT_USER, SubKey, 0, 0x20019u, &phkResult) )
   {
@@ -112123,10 +112123,10 @@ int __thiscall sub_492CB0(unsigned int *_this, int a2)
     }
     for ( j = 0; j < 11; ++j )
     {
-      sub_408050(Destination, 256, "DebugOutFlag%d", j);
+      StringFormat(Destination, 256, "DebugOutFlag%d", j);
       if ( sub_4957F0(v14, aDebug_0, Destination, &v24) )
       {
-        sub_408050(Destination, 256, "debug:DebugOutFlag%d", j);
+        StringFormat(Destination, 256, "debug:DebugOutFlag%d", j);
         v25 = v24;
         sub_434D00(_this + 1, Destination, &v25);
       }
@@ -112794,7 +112794,7 @@ LABEL_147:
                     v21 = (void **)v7;
                     if ( v12 )
                     {
-                      sub_408050(
+                      StringFormat(
                         Text,
                         256,
                         "初期化ファイルの中に不正なキー [%s]=[%s] があります",
@@ -141698,7 +141698,7 @@ HWND __usercall sub_4BA310@<eax>(int a1@<ebx>, HINSTANCE a2, HINSTANCE a3, int n
   *(_BYTE *)(v4 + 382689) = Destination[2];
   *(_BYTE *)(v4 + 382690) = Destination[3];
   *(_WORD *)(v4 + 382691) = (unsigned __int8)Destination[4];
-  sub_408050(WindowName, 256, "%s", (const char *)(dword_55E1BC + 698912));
+  StringFormat(WindowName, 256, "%s", (const char *)(dword_55E1BC + 698912));
   sub_4B8EF0(Source, 0x100u);
   strcpy_s((char *)(dword_55E1BC + 382696), 0x100u, Source);
   if ( ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
@@ -141847,7 +141847,7 @@ int sub_4BA6B0()
     v6 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(dword_55E1BC + 697620) + 4))(
            dword_55E1BC + 697620,
            aDisplayFullscr);
-    sub_408050(Text, 2048, asc_52DA08, v5, v6 != 32 ? 32 : 16);
+    StringFormat(Text, 2048, asc_52DA08, v5, v6 != 32 ? 32 : 16);
   }
   else
   {
@@ -141855,7 +141855,7 @@ int sub_4BA6B0()
     v4 = asc_52DE2C;
     if ( !v2 )
       v4 = asc_52DE1C;
-    sub_408050(
+    StringFormat(
       Text,
       2048,
       "前回プログラムが正常に終了しなかったこと検知しました．\r\n"
@@ -142110,7 +142110,7 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
   sub_40B3B0((_DWORD *)dword_55E1BC, FileName, 0x100u);
   if ( sub_401B40(v11, off_52DF9C, &MaxCount) )
   {
-    sub_408050(CommandLine, 256, "AGE.EXE %s", (const char *)hWnd + 4);
+    StringFormat(CommandLine, 256, "AGE.EXE %s", (const char *)hWnd + 4);
     Sleep(0x1F4u);
     v22 = DeleteFileA;
     DeleteFileA(NewFileName);
