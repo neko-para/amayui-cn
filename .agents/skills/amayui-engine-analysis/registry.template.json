@@ -1,0 +1,14 @@
+{
+  "_comment": "引擎分析台账；每次确证一个函数后，把其状态/证据/说明写进 funcs。字段：old=原始名；new=语义名；op=opcode(可空)；status=ANALYZED|PARTIAL|STUB|UNKNOWN；lines=[start,end] raw.c 行区间；evidence=证据(路径+行)；notes=一句话。",
+  "funcs": [
+    {
+      "old": "sub_419CC0",
+      "new": "poll_input",
+      "op": "0x101",
+      "status": "ANALYZED",
+      "lines": [25069, 25082],
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 25069; emulator src/vm/ops.ts op_poll_input",
+      "notes": "读设备态刷掩码→清 0x8000000→复位[174802]；供同批位检查读随即清零"
+    }
+  ]
+}
