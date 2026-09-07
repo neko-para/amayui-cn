@@ -12,10 +12,11 @@
   0x1C8 op_to_string (sub_433820)
  * ============================================================================= */
 
-/* ===== [stained] sub_42D110  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_halve_strlen_42D110
+/* ===== [stained] sub_42D110  状态: PARTIAL =====
+ * Engine 成员函数  → op_halve_strlen_42D110
  * raw 行区间 [37975, 37982]; op=0x1A6 指令名『halve-strlen』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = strlen(op2) >> 1  (halved byte length); 操作数类型=int/string(SSO); 操作数=[1:int/dest, 2:string(SSO)/src]; arity=5; evidence=v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1, v2>>1); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_41B640（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_halve_strlen_42D110(_DWORD *_this)
 {
@@ -27,10 +28,11 @@ int Engine::op_halve_strlen_42D110(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42DF40  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_string_lookup_set_42DF40
+/* ===== [stained] sub_42DF40  状态: PARTIAL =====
+ * Engine 成员函数  → op_string_lookup_set_42DF40
  * raw 行区间 [38443, 38459]; op=0x1A3 指令名『string-lookup-set』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: read op1 value, wsprintf "%c%8.8x", look up in engine global string table (_this+5452) via sub_428E00, write op1 = associated int; returns looked-up value (or 0); 操作数类型=int; 操作数=[1:int/dest/in]; arity=3; evidence=v2=sub_418A30(1); wsprintfA(v6,"%c%8.8x",3,v2); v3=sub_428E00(_this+5452,v6); if(v3)v4=*v3; else v4=0; writeIntOperand(1,v4); decEnc=false; pure=false
+ * ⚠ 未分析被调: sub_428E00；分析这些函数后方可标已分析
  */
 int Engine::op_string_lookup_set_42DF40(_DWORD *_this)
 {
@@ -42,7 +44,7 @@ int Engine::op_string_lookup_set_42DF40(_DWORD *_this)
   this->frames[this->cur_script].arity = 3;
   v2 = this->sub_418A30( 1);
   wsprintfA(v6, "%c%8.8x", 3, v2);
-  v3 = (int *)sub_428E00(_this + 5452, v6);
+  v3 = (int *)sub_428E00(this->string_table_base, v6);
   if ( v3 )
     v4 = *v3;
   else
@@ -51,10 +53,11 @@ int Engine::op_string_lookup_set_42DF40(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_430900  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_strlen_430900
+/* ===== [stained] sub_430900  状态: PARTIAL =====
+ * Engine 成员函数  → op_strlen_430900
  * raw 行区间 [40064, 40071]; op=0x2C5 指令名『strlen』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = strlen(op2)  (sub_41B640 reads SSO string); byte length; 操作数类型=int/string(SSO); 操作数=[1:int/dest, 2:string(SSO)/src]; arity=5; evidence=v2=strlen(sub_41B640(2)); return writeIntOperand_42B4B0(1,v2); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_41B640（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_strlen_430900(_DWORD *_this)
 {
@@ -66,10 +69,11 @@ int Engine::op_strlen_430900(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_433660  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_string_433660
+/* ===== [stained] sub_433660  状态: PARTIAL =====
+ * Engine 成员函数  → op_set_string_433660
  * raw 行区间 [41936, 41949]; op=0x192 指令名『set-string』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1(SSO) = op2(SSO); string copy via sub_42A420(read op2) + sub_433310(write op1); 操作数类型=string(SSO)/string(SSO); 操作数=[1:string(SSO)/dest, 2:string(SSO)/src]; arity=5; evidence=v2=sub_42A420(v3,2); sub_433310(1,(int)v2); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42A420, sub_433310（未命名/未分析）；分析后方可标已分析
  */
 void Engine::op_set_string_433660(_DWORD *_this)
 {
@@ -87,10 +91,11 @@ void Engine::op_set_string_433660(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_433710  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_concat_433710
+/* ===== [stained] sub_433710  状态: PARTIAL =====
+ * Engine 成员函数  → op_concat_433710
  * raw 行区间 [41952, 41987]; op=0x193 指令名『concat』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1(SSO) = op2(SSO) + op3(SSO); string concat via sub_42AA90 + sub_433310(write op1); 操作数类型=string(SSO)/string(SSO)/string(SSO); 操作数=[1:string(SSO)/dest, 2:string(SSO)/src, 3:string(SSO)/src]; arity=7; evidence=v2=sub_42A420(v5,3); v3=sub_42A420(v8,2); v4=sub_42AA90(v6,v3,v2); sub_433310(1,(int)v4); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42A420, sub_42AA90, sub_433310（未命名/未分析）；分析这些函数后方可标已分析
  */
 void Engine::op_concat_433710(_DWORD *_this)
 {
@@ -130,10 +135,11 @@ void Engine::op_concat_433710(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_433820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_toString_433820
+/* ===== [stained] sub_433820  状态: PARTIAL =====
+ * Engine 成员函数  → op_toString_433820
  * raw 行区间 [41990, 42010]; op=0x1C8 指令名『toString』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1(SSO) = sprintf("%d", op2)  (int -> decimal string); via sub_408050 + sub_433310; 操作数类型=string(SSO)/int; 操作数=[1:string(SSO)/dest, 2:int/src]; arity=5; evidence=v2=readInt(2); sub_408050(Buffer,256,"%d",v2); ... sub_433310(1,(int)v3); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_408050, sub_40C210, sub_433310（未命名/未分析）；分析后方可标已分析
  */
 void Engine::op_toString_433820(_DWORD *_this)
 {

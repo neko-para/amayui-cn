@@ -30542,7 +30542,7 @@ BOOL __usercall sub_421EA0@<eax>(int a1@<ecx>, int a2@<ebx>)
   int v14; // [esp+24h] [ebp-Ch] BYREF
   double v15; // [esp+28h] [ebp-8h]
 
-  *(_DWORD *)(a1 + 120 * *(_DWORD *)(a1 + 383104) + 383220) = 5;
+  a1->frames[a1->cur_script].arity = 5;
   Point.x = sub_41BF50((_DWORD *)a1, 1);
   Point.y = sub_41BF50((_DWORD *)a1, 2);
   sub_498350((_DWORD *)(a1 + 321572), &v14, &v13);
@@ -34019,7 +34019,7 @@ int *__usercall sub_426FC0@<eax>(_DWORD *a1@<ecx>, int a2@<ebx>, int a3@<edi>)
   float v9; // [esp+10h] [ebp-Ch]
   float v10; // [esp+14h] [ebp-8h]
 
-  a1[30 * a1[95776] + 95805] = 13;
+  a1->frames[a1->cur_script].arity = 13;
   v10 = sub_41C300(a1, 6);
   v9 = sub_41C300(a1, 5);
   v8 = sub_41C300(a1, 4);
@@ -90932,7 +90932,7 @@ int sub_4764B0()
 //----- (004764C0) --------------------------------------------------------
 BOOL sub_4764C0()
 {
-  return *(_DWORD *)(dword_55E1BC + 4 * *(_DWORD *)(dword_55E1BC + 383104) + 489488) != -1;
+  return *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 489488) != -1;
 }
 // 55E1BC: using guessed type int dword_55E1BC;
 
@@ -91121,8 +91121,8 @@ void __usercall sub_4766D0(int a1@<edi>, int a2@<esi>)
   {
     if ( (*(int (__thiscall **)(int *, char *))(v2[174405] + 4))(v2 + 174405, aMessageReadtex) )
     {
-      v3 = sub_48E870(v2 + 80107, v2[30 * v2[95776] + 95803], v2[30 * v2[95776] + 95798], v2[30 * v2[95776] + 95797]);
-      if ( sub_48F000(v2 + 80107, v2[30 * v2[95776] + 95796], v3) )
+      v3 = sub_48E870(v2 + 80107, v2[30 * v2->cur_script + 95803], v2[30 * v2->cur_script + 95798], v2[30 * v2->cur_script + 95797]);
+      if ( sub_48F000(v2 + 80107, v2->frames[v2->cur_script].frame_arg, v3) )
       {
         v2[174801] = v2[174801] & 0x77FFFFFF | 0x8000000;
         v2[122455] = 1;
@@ -91283,7 +91283,7 @@ int __thiscall sub_476970(_DWORD *_this, const char *a2)
 //----- (004769F0) --------------------------------------------------------
 int __stdcall sub_4769F0(const char *a1)
 {
-  return sub_476970(*(_DWORD **)(dword_55E1BC + 4 * *(_DWORD *)(dword_55E1BC + 383104) + 495964), a1);
+  return sub_476970(*(_DWORD **)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964), a1);
 }
 // 55E1BC: using guessed type int dword_55E1BC;
 
@@ -91292,7 +91292,7 @@ int sub_476A10()
 {
   int v0; // ecx
 
-  v0 = *(_DWORD *)(dword_55E1BC + 4 * *(_DWORD *)(dword_55E1BC + 383104) + 495964);
+  v0 = *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964);
   return (*(_DWORD *)(v0 + 28) - *(_DWORD *)(v0 + 24)) >> 3;
 }
 // 55E1BC: using guessed type int dword_55E1BC;
@@ -91302,7 +91302,7 @@ int __stdcall sub_476A30(int a1)
 {
   int v1; // ecx
 
-  v1 = *(_DWORD *)(dword_55E1BC + 4 * *(_DWORD *)(dword_55E1BC + 383104) + 495964);
+  v1 = *(_DWORD *)(dword_55E1BC + 4 * dword_55E1BC->cur_script + 495964);
   return *(_DWORD *)(v1 + 8) + *(_DWORD *)(*(_DWORD *)(v1 + 24) + 8 * a1);
 }
 // 55E1BC: using guessed type int dword_55E1BC;
@@ -114434,19 +114434,19 @@ void __thiscall sub_4976A0(void *_this, const char *lpBuffer)
   int v7; // [esp+8h] [ebp-8h]
   int v8; // [esp+Ch] [ebp-4h]
 
-  v3 = *(_DWORD *)(dword_55E1BC + 383104);
+  v3 = dword_55E1BC->cur_script;
   v7 = (int)_this;
   if ( *(_DWORD *)(dword_55E1BC + 4 * v3 + 497112) )
   {
     v8 = *(unsigned __int16 *)(*(_DWORD *)(*(_DWORD *)(dword_55E1BC + 4 * v3 + 497112) + 24)
                              + 2
-                             * ((*(_DWORD *)(dword_55E1BC + 120 * v3 + 383128)
-                               - *(_DWORD *)(dword_55E1BC + 120 * v3 + 383124)) >> 2));
+                             * ((dword_55E1BC->frames[dword_55E1BC->cur_script].ip
+                               - dword_55E1BC->frames[dword_55E1BC->cur_script].str_table) >> 2));
     v4 = (char *)operator new[](strlen(lpBuffer) + 1024);
     v5 = strlen(lpBuffer);
     v6 = sub_454FA0(
            (_DWORD *)(dword_55E1BC + 680092),
-           *(_DWORD *)(dword_55E1BC + 120 * *(_DWORD *)(dword_55E1BC + 383104) + 383184));
+           dword_55E1BC->frames[dword_55E1BC->cur_script].frame_arg);
     sprintf_s(v4, v5 + 1024, "(%s：%d行目) %s", v6, v8, lpBuffer);
     sub_497620(v7, v4);
     operator delete[](v4);

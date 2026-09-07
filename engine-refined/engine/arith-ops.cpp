@@ -23,9 +23,9 @@
  * ============================================================================= */
 
 /* ===== [stained] sub_42C5E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_add_42C5E0
+ * Engine 成员函数  → op_add_42C5E0
  * raw 行区间 [37525, 37534]; op=0x50 指令名『add』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 + op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_add> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_add_42C5E0(_DWORD *_this)
 {
@@ -40,9 +40,9 @@ int Engine::op_add_42C5E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C620  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sub_42C620
+ * Engine 成员函数  → op_sub_42C620
  * raw 行区间 [37537, 37546]; op=0x51 指令名『sub』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 - op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_sub> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_sub_42C620(_DWORD *_this)
 {
@@ -57,9 +57,9 @@ int Engine::op_sub_42C620(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C660  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mul_42C660
+ * Engine 成员函数  → op_mul_42C660
  * raw 行区间 [37549, 37558]; op=0x52 指令名『mul』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 * op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_mul> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_mul_42C660(_DWORD *_this)
 {
@@ -74,9 +74,9 @@ int Engine::op_mul_42C660(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C6A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_div_42C6A0
+ * Engine 成员函数  → op_div_42C6A0
  * raw 行区间 [37561, 37570]; op=0x53 指令名『div』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 / op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_div> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_div_42C6A0(_DWORD *_this)
 {
@@ -91,9 +91,9 @@ int Engine::op_div_42C6A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C6E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mod_42C6E0
+ * Engine 成员函数  → op_mod_42C6E0
  * raw 行区间 [37573, 37582]; op=0x54 指令名『mod』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 % op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_mod> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_mod_42C6E0(_DWORD *_this)
 {
@@ -108,9 +108,9 @@ int Engine::op_mod_42C6E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C720  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mov_42C720
+ * Engine 成员函数  → op_mov_42C720
  * raw 行区间 [37585, 37592]; op=0x55 指令名『mov』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2; 操作数类型=int/int; 操作数=[1:int/dest, 2:int/src]; arity=5; evidence=writeIntOperand_42B4B0(1, <op2 <op_mov> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_mov_42C720(_DWORD *_this)
 {
@@ -123,9 +123,9 @@ int Engine::op_mov_42C720(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C750  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_and_42C750
+ * Engine 成员函数  → op_and_42C750
  * raw 行区间 [37595, 37604]; op=0x56 指令名『and』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 & op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_and> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_and_42C750(_DWORD *_this)
 {
@@ -140,9 +140,9 @@ int Engine::op_and_42C750(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C790  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_or_42C790
+ * Engine 成员函数  → op_or_42C790
  * raw 行区间 [37607, 37616]; op=0x57 指令名『or』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 | op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_or> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_or_42C790(_DWORD *_this)
 {
@@ -157,9 +157,9 @@ int Engine::op_or_42C790(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C7D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sar_42C7D0
+ * Engine 成员函数  → op_sar_42C7D0
  * raw 行区间 [37619, 37628]; op=0x58 指令名『sar』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 >> op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_sar> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_sar_42C7D0(_DWORD *_this)
 {
@@ -174,9 +174,9 @@ int Engine::op_sar_42C7D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_shl_42C820
+ * Engine 成员函数  → op_shl_42C820
  * raw 行区间 [37631, 37640]; op=0x59 指令名『shl』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = op2 << op3; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_shl> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_shl_42C820(_DWORD *_this)
 {
@@ -191,9 +191,9 @@ int Engine::op_shl_42C820(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C870  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_eq_42C870
+ * Engine 成员函数  → op_eq_42C870
  * raw 行区间 [37643, 37652]; op=0x5A 指令名『eq』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 == op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_eq> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_eq_42C870(_DWORD *_this)
 {
@@ -208,9 +208,9 @@ int Engine::op_eq_42C870(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C8C0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_ne_42C8C0
+ * Engine 成员函数  → op_ne_42C8C0
  * raw 行区间 [37655, 37664]; op=0x5B 指令名『ne』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 != op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_ne> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_ne_42C8C0(_DWORD *_this)
 {
@@ -225,9 +225,9 @@ int Engine::op_ne_42C8C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C910  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lt_42C910
+ * Engine 成员函数  → op_lt_42C910
  * raw 行区间 [37667, 37676]; op=0x5C 指令名『lt』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 < op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_lt> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_lt_42C910(_DWORD *_this)
 {
@@ -242,9 +242,9 @@ int Engine::op_lt_42C910(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C960  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lte_42C960
+ * Engine 成员函数  → op_lte_42C960
  * raw 行区间 [37679, 37688]; op=0x5D 指令名『lte』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 <= op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_lte> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_lte_42C960(_DWORD *_this)
 {
@@ -259,9 +259,9 @@ int Engine::op_lte_42C960(_DWORD *_this)
 
 
 /* ===== [stained] sub_42C9B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_gt_42C9B0
+ * Engine 成员函数  → op_gt_42C9B0
  * raw 行区间 [37691, 37700]; op=0x5E 指令名『gr』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 > op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_gt> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_gt_42C9B0(_DWORD *_this)
 {
@@ -276,9 +276,9 @@ int Engine::op_gt_42C9B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CA00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_gte_42CA00
+ * Engine 成员函数  → op_gte_42CA00
  * raw 行区间 [37703, 37712]; op=0x5F 指令名『gre』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = (op2 >= op3) ? 1 : 0; 操作数类型=int/int/int; 操作数=[1:int/dest, 2:int/src, 3:int/src]; arity=7; evidence=writeIntOperand_42B4B0(1, <op2 <op_gte> op3>); readIntOperand of op2,op3; decEnc=true; pure=true
  */
 int Engine::op_gte_42CA00(_DWORD *_this)
 {
@@ -292,10 +292,11 @@ int Engine::op_gte_42CA00(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42CA50  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_random_42CA50
+/* ===== [stained] sub_42CA50  状态: PARTIAL =====
+ * Engine 成员函数  → op_random_42CA50
  * raw 行区间 [37715, 37737]; op=0x60 指令名『random』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
+ * ⚠ 未分析被调: sub_408050（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_random_42CA50(char *_this)
 {
@@ -303,16 +304,16 @@ int Engine::op_random_42CA50(char *_this)
   char *v3; // esi
   int pExceptionObject[2]; // [esp+4h] [ebp-8h] BYREF
 
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 5;
-  if ( (int)++*((_DWORD *)_this + 107724) > 12 )
-    *((_DWORD *)_this + 107724) = 0;
+  this->frames[this->cur_script].arity = 5;
+  if ( (int)++this->counter > 12 )
+    this->counter = 0;
   dword_55D54C = rand();
   v2 = this->readIntOperand_41BF50( 2);
   dword_55D548 = v2;
   if ( !v2 )
   {
     this->writeIntOperand_42B4B0( 1, 0);
-    v3 = _this + 8;
+    v3 = this->message_buf;
     sub_408050(v3, 1024, aRandom0);
     pExceptionObject[0] = (int)v3;
     pExceptionObject[1] = 65541;

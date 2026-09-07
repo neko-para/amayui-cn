@@ -34,7 +34,8 @@ if (!fs.existsSync(SRC)) {
   if (!fs.existsSync(SRC)) throw new Error('memberize.cjs 未能重建 engine-members.cpp');
 }
 
-const recs = JSON.parse(fs.readFileSync(REC, 'utf8')).ops || [];
+let recs = [];
+try { if (fs.existsSync(REC)) recs = JSON.parse(fs.readFileSync(REC, 'utf8')).ops || []; } catch (e) { recs = []; }
 
 // ---- 语义名前缀 -> 类别 ----
 function catOfName(name) {
@@ -81,13 +82,21 @@ for (let k = 0; k < marks.length; k++) {
   // end 定为下一个 marker 的前一行；函数体末尾的 '}' 在块内
   blocks.push({ handler: marks[k].handler, start, end });
 }
+// 兜底：op-records 已移除时，按成员标记里的「→ 语义名」分类（如 op_add_42C5E0 → arith）。
+const nameCat = {};
+for (const b of blocks) {
+  const m = new RegExp('\\[stained\\] ' + b.handler + '[\\s\\S]*?→\\s*([A-Za-z_][A-Za-z0-9_]*?)(?:_[0-9A-Fa-f]{6})?\\b').exec(lines.slice(b.start, b.end + 1).join('\n'));
+  const name = m ? m[1] : '';
+  const c = catOfName(name);
+  if (c) nameCat[b.handler] = c;
+}
 
 // ---- 按类别分组（保持原顺序；类内按原行序）----
 const buckets = { arith: [], bit: [], float: [], str: [], memory: [], members: [] };
 const opByHandler = {};
 for (const o of recs) opByHandler[o.handler] = o;
 for (const b of blocks) {
-  const cat = catByHandler[b.handler] || 'members';
+  const cat = catByHandler[b.handler] || nameCat[b.handler] || 'members';
   const op = opByHandler[b.handler];
   buckets[cat].push({ ...b, cat: cat, op });
 }

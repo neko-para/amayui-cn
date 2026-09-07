@@ -33,16 +33,25 @@ const OUT_INDEX = path.join(ROOT, 'engine-refined', 'member-index.json');
 const EM_HDR = path.join(__dirname, 'members-header.txt');
 const REG_PATH = path.join(ROOT, 'analysis-registry.json');   // 权威台账：已注册函数的 status 优先于 op-table
 
-// ---- Engine 字段模型（来自 engine/engine.hpp + scripts/re/retype.py，均为已确证偏移）----
-const ENGINE_TOP = {
+// ---- Engine 字段模型（字节偏移 -> 字段名；涵盖工程已确证 + 指令层新增字段，见 engine-refined/model/engine.hpp）----
+const ENGINE_BYTE = {
+  // 指令层明文引用的字段（来自 model/engine.hpp；头区散落字段带待确认）
+  0x0: 'vftable',                                    // ctor 设 &Command___vftable_
+  0x8: 'message_buf',                                  // _this + 8 (bit-set/random ShowMessage sprintf)
+  0x5530: 'string_table_base',                          // _this + 5452(_DWORD*) (string-lookup-set)
   0x5D800: 'global_int_base', 0x5D808: 'global_float_base', 0x5D810: 'global_string_base',
   0x5D818: 'global_ptr_base', 0x5D820: 'global_float_ptr_base',
+  0x5D860: 'script_state0', 0x5D864: 'script_state1', 0x5D868: 'script_state2',   // ctor 清零（待确认）
+  0x5D870: 'script_state3', 0x5D874: 'script_state4', 0x5D878: 'script_state5',
   0x5D880: 'cur_script', 0x5D884: 'call_ret', 0x5D888: 'call_link', 0x5D88C: 'call_flag',
-  0x5EC8C: 'key', 0xA509C: 'dispatch',
+  0x5EC8C: 'key', 0x5EC90: 'enc_zero',                  // _this[97060]
+  0x5EC94: 'kernel32_module', 0x5EC98: 'is_debugger_present',   // ctor 反调试初始化
+  0x69330: 'counter',                                   // _this[107724] / *((_DWORD*)_this + 107724)
+  0xA509C: 'dispatch',
 };
 const ENGINE_DWORD = {};           // dword 下标 -> field
-for (const off of Object.keys(ENGINE_TOP).map(Number))
-  if (off % 4 === 0) ENGINE_DWORD[off / 4] = ENGINE_TOP[off];
+for (const off of Object.keys(ENGINE_BYTE).map(Number))
+  if (off % 4 === 0) ENGINE_DWORD[off / 4] = ENGINE_BYTE[off];
 const FRAME_FIELD = {
   0x00:'str_table', 0x04:'ip', 0x20:'local_int', 0x24:'local_float', 0x28:'local_string',
   0x2C:'local_ptr', 0x30:'local_float_ptr', 0x38:'caller', 0x3C:'frame_arg',
@@ -154,6 +163,54 @@ function convFrameField(body) {
     return fld ? `this->frames[${cur}].${fld}` : m;
   });
 }
+// 根据签名确定 `_this` 基址标度：_DWORD*/int*/unsigned*/long* 为 4（DWORD）；char*/int/void*/_BYTE* 为 1（字节）。
+function _thisScale(sig) {
+  const m = /\b((?:_DWORD|unsigned\s+int|int|long|char|void|unsigned\s+__int8|_BYTE)\s*\*?)\s*_this\b/.exec(sig);
+  const t = (m ? m[1] : '').replace(/\s+/g, ' ');
+  if (/(_DWORD|unsigned int|int|long)\s*\*/.test(t)) return 4;       // 指向 4 字节的指针 → DWORD
+  return 1;                                                          // char*/int/void* → 字节
+}
+// 统一字段引用：把 `_this` 上的直接数值偏移访问改成 `this->field`（按 _this 标度 + 帧字段/解引用）。
+function convFields(body, scale) {
+  let out = body;
+  // 1) *((_DWORD*)_this + K)：强转 _DWORD*，K 为 dword 下标 → 字段值
+  out = out.replace(/\*\(\s*\(?\s*_DWORD\s*\*\)\s*_this\s*\+\s*(\d+)\s*\)/g, (m, k) => {
+    const f = ENGINE_DWORD[Number(k)]; return f ? `this->${f}` : m;
+  });
+  // 2) *(_DWORD*)(_this + N)：解引用 _this+N → 字段值（_this 原生标度）
+  out = out.replace(/\*\(\s*_DWORD\s*\*\)\s*\(\s*_this\s*\+\s*(\d+)\s*\)/g, (m, n) => {
+    const f = ENGINE_BYTE[Number(n) * scale]; return f ? `this->${f}` : m;
+  });
+  // 2b) 偏移 0 解引用（vftable）：*(_DWORD *)_this → this->vftable
+  out = out.replace(/\*\(\s*_DWORD\s*\*\)\s*_this\b(?!\s*\+)/g, 'this->vftable');
+  // 3) dword 下标 _this[K]（把内层 _this[95776]/_this[97060] 等先转成 this->field）
+  out = out.replace(/\b_this\[\s*(\d+)\s*\]/g, (m, k) => {
+    const f = scale === 4 ? ENGINE_DWORD[Number(k)] : ENGINE_BYTE[Number(k)];
+    return f ? `this->${f}` : m;
+  });
+  // 4) 裸 _this + N 作为字段基址（命中建模字段才改；避免破坏 5/6 的帧形式）
+  out = out.replace(/\b_this\s*\+\s*(\d+)(?!\s*\*)/g, (m, n) => {
+    const f = ENGINE_BYTE[Number(n) * scale]; return f ? `this->${f}` : m;
+  });
+  // 5) 帧字段（dword 下标形）：_this[30*<cur>+K]  → frames[cur].field
+  out = out.replace(/_this\[\s*30\s*\*\s*([^\]\s]+)\s*\+\s*(\d+)\s*\]/g, (m, cur, k) => {
+    const off = 4 * Number(k) - FRAMES_BASE; const f = FRAME_FIELD[off];
+    return f ? `this->frames[${cur}].${f}` : m;
+  });
+  // 5b) 帧字段（字节下标形，char*/int 基址）：_this[120*<cur>+K]  → frames[cur].field
+  out = out.replace(/_this\[\s*120\s*\*\s*([^\]\s]+)\s*\+\s*(\d+)\s*\]/g, (m, cur, k) => {
+    const off = Number(k) - FRAMES_BASE; const f = FRAME_FIELD[off];
+    return f ? `this->frames[${cur}].${f}` : m;
+  });
+  // 6) 帧字段（字节偏移形）：*(_DWORD*)(_this + 120*<cur> + <baseoff>)
+  out = out.replace(/\*\(\s*_DWORD\s*\*\)\s*\(\s*_this\s*\+\s*120\s*\*\s*([^)]+?)\s*\+\s*(\d+)\s*\)/g, (m, cur, baseoff) => {
+    const off = Number(baseoff) - FRAMES_BASE; const f = FRAME_FIELD[off];
+    return f ? `this->frames[${cur}].${f}` : m;
+  });
+  // 7) 清理无效/重复 cast：*(_DWORD *)&this-><field> → this-><field>（&-deref 相抵）
+  out = out.replace(/\*\(\s*_DWORD\s*\*\)\s*&\s*(this->[A-Za-z0-9_.\[\]]+)/g, '$1');
+  return out;
+}
 // 全局语义改名：裸 sub_<6hex> -> <sem>_<addr>（只命中独立 token，非 ::/成员前缀）
 function convSemName(body) {
   return body.replace(/\bsub_([0-9A-Fa-f]{6})\b/g, (m, a) => semRenameMap['sub_' + a.toUpperCase()] || m);
@@ -184,6 +241,39 @@ function convSignature(sig, sub) {
   return ret ? `${ret} Engine::${name}(${params})` : `Engine::${name}(${params})`;
 }
 
+// ---- 严格「已分析」判定：
+//   一个函数**只有**满足：① 已读体并对字段建模（无未转换的 `_this[K]`/`_this+N` 直接数值偏移访问）
+//   ② 只调用「已分析/已知原语」函数，才可标 ANALYZED；否则为 PARTIAL（需按流程建模字段/分析被调函数）。
+//   「已知原语」= only 操作数读写文档化基础层（docs/re/engine/05-操作数访问原语.md 列出的 sub_41BF50/41C300/42B4B0/42BA00）。
+//   其余 sub_42AEA0(operandAddress)/sub_418B90/sub_418CC0/sub_41B640/sub_42A420/sub_433310/sub_42AA90/sub_40C210/
+//   sub_408050/sub_418A30/sub_418AE0 等为**未分析/未文档化**的实现助手：调用它们的函数**不得**标 ANALYZED。
+const KNOWN_BASIS = new Set([
+  'sub_41BF50', 'sub_41C300', 'sub_42B4B0', 'sub_42BA00',  // readInt/readFloat/writeInt/writeFloat（文档化基准）
+]);
+// 读 op-records.json（已移除；若存在则用于把「操作数角色/evidence」写进标记，缺省不影响字段转换/染色）。
+const OP_REC_PATH = path.join(__dirname, 'op-records.json');
+let opRec = {};
+try {
+  if (fs.existsSync(OP_REC_PATH)) {
+    const rr = JSON.parse(fs.readFileSync(OP_REC_PATH, 'utf8'));
+    for (const o of (rr.ops || [])) if (o.handler) opRec[o.handler] = o;
+  }
+} catch (e) { opRec = {}; }
+// 判断「未转换的数值偏移字段访问」（用**转换后** body：已建模的 this->field 不算）。
+// 只要仍出现 `_this[...]` / `_this + <offset>`（含 `*(_DWORD*)_this + …`、`*((_DWORD*)_this + …`）这类
+// 直接以引擎对象为基址的偏移访问，即为「未建模字段」。
+function fieldUnclean(convBody) {
+  if (/\b_this\s*\[/.test(convBody)) return true;        // _this[ 任何下标
+  if (/\b_this\s*\+/.test(convBody)) return true;        // _this + offset（含子对象指针偏移）
+  if (/\bthis\s*\[/.test(convBody)) return true;         // this[ 未成员化
+  return false;
+}
+// 未知被调函数（用**原始** body：未改名者仍是 sub_<hex>；命中 KNOWN_BASIS/已记录 handler 不算）
+function unknownCallees(rawBody) {
+  const calls = new Set(rawBody.match(/sub_[0-9A-Fa-f]{6}(?=\s*\()/g) || []);
+  return [...calls].filter(c => !KNOWN_BASIS.has(c) && !(c in opRec));
+}
+
 // 逐成员做变换
 const extracted = [];
 const stats = { topField: 0, frameField: 0, memberCall: 0, semName: 0, memberRenamed: 0 };
@@ -196,10 +286,10 @@ for (const d of defs) {
   const bodyText = bodyLines;
   // 变换 body
   let b = bodyText;
+  const scale = d.name.startsWith('sub_') ? _thisScale(sigLines) : 4;   // 按 _this 形参类型定标度
   const beforeTop = b;
-  b = convTopField(b);
+  b = convFields(b, scale);
   if (b !== beforeTop) stats.topField++;
-  const beforeFr = b; b = convFrameField(b); if (b !== beforeFr) stats.frameField++;
   const beforeSem = b; b = convSemName(b); if (b !== beforeSem) stats.semName++;
   const beforeMC = b; b = convMemberCall(b); if (b !== beforeMC) stats.memberCall++;
   // body 前后的状态标记注释（若在函数之前有 /* ===== [x] ... ===== ）不动，这里只处理函数本身
@@ -207,7 +297,12 @@ for (const d of defs) {
   const newSig = convSignature(sigLines, d.name);
   if (newSig !== sigLines) stats.memberRenamed++;
   const full = `${newSig}\n{\n${b}\n}\n`;
-  extracted.push({ sub: d.name, full, rawStart: start + 1, rawEnd: end + 1 });
+  // 未转换字段的样例（用于 PARTIAL 注释提示）
+  const fSnip = (b.match(/_this\s*\[\s*\d+\s*\]|_this\s*\+\s*\d+/) || [null])[0];
+  extracted.push({
+    sub: d.name, full, rawStart: start + 1, rawEnd: end + 1,
+    fieldUnclean: fieldUnclean(b), unknownCallees: unknownCallees(bodyText), fieldSnippet: fSnip,
+  });
 }
 
 // ---- 状态标签：台账(analysis-registry.json)已注册函数的 status 优先，其次 opcode-table 状态映射 ----
@@ -218,21 +313,66 @@ try {
   const reg = JSON.parse(fs.readFileSync(REG_PATH, 'utf8'));
   for (const f of (reg.funcs || [])) if (f.old) regStatus[f.old] = f.status;
 } catch (e) { regStatus = {}; }
+// 严格状态：已读体(有 conclusion) + 字段干净 + 只调已知原语 → ANALYZED；否则有结论但遗留 → PARTIAL；无结论 → UNKNOWN。
+function computeStatus(e) {
+  const op = opByHandler[e.sub] || null;
+  const statRaw = op ? op.status : '未解';
+  let stat = STATUS_MAP[statRaw] || 'UNKNOWN';
+  if (regStatus[e.sub] === 'ANALYZED') stat = 'ANALYZED';
+  const readBody = !!(opRec[e.sub] && opRec[e.sub].effect);
+  const unknown = (e.unknownCallees || []).length;
+  if (readBody && (e.fieldUnclean || unknown)) return 'PARTIAL';
+  if (readBody) return 'ANALYZED';
+  if (stat === 'ANALYZED' && e.fieldUnclean) return 'PARTIAL';
+  if (stat === 'ANALYZED' && unknown) return 'PARTIAL';
+  return stat;
+}
 function memberMarker(e) {
   const [sem, addr] = semName(e.sub);
   const op = opByHandler[e.sub] || null;
   const opTxt = op ? `op=${op.op}${op.name ? ' 指令名『' + op.name + '』' : ''}` : '';
-  const statRaw = op ? op.status : '未解';
-  let stat = STATUS_MAP[statRaw] || 'UNKNOWN';
-  // 台账已确证 ANALYZED 的覆盖（如子代理读体的纯数值/字符串 ops，op-table 可能仍标「仅映射」）
-  if (regStatus[e.sub] === 'ANALYZED') stat = 'ANALYZED';
+  const stat = computeStatus(e);
   const eng = sem ? `${sem}_${addr}` : e.sub;
-  // `状态:` 行不携带 →name（避免 scan-status 在同行找不到）；把 `→ name` 放到下一行注释，
+  const rec = opRec[e.sub];
+  const readBody = !!(rec && rec.effect);
+  const hasLeftField = e.fieldUnclean === true;
+  const unknown = (e.unknownCallees || []).slice(0, 8);
+  // 分析结论 / 待办注释
+  let note;
+  if (readBody) {
+    const typ = (rec.operands || []).map(o => o[1]).join('/');
+    const base = `分析结论（已读体）: ${rec.effect}${typ ? `; 操作数类型=${typ}` : ''}; decEnc=${rec.decEnc}; pure=${rec.pure}`;
+    if (hasLeftField) {
+      note = base + '\n * ⚠ 未建模字段: 仍有 ' + (e.fieldSnippet || '_this[K]') +
+        ' 这类 _this[K] / _this+N 直接偏移；按流程「建模 engine.hpp 字段 → 改为 this->field」后方可标已分析';
+    } else if (unknown.length) {
+      note = base + '\n * ⚠ 未分析被调: ' + unknown.join(', ') + '；分析这些函数后方可标已分析';
+    } else {
+      note = base;
+    }
+  } else if (stat === 'PARTIAL') {
+    // 未在 op-records（无子代理读体结论）但 op-table 已核对；若严格门未通过则说明原因
+    if (hasLeftField) {
+      note = '逻辑已核对，但仍有未建模字段(' + (e.fieldSnippet || '_this[K]') +
+        ')；建模 engine.hpp 字段后方可标已分析';
+    } else if (unknown.length) {
+      note = '逻辑已核对，但仍有未分析被调(' + unknown.join(', ') + ')；分析后方可标已分析';
+    } else {
+      note = '逻辑已核对，但未满足“无未命名字段 + 无未分析被调”的完整分析条件';
+    }
+  } else if (stat === 'STUB') {
+    note = '桩/简化：未逆清完整语义（可按 STUB 处理）';
+  } else if (stat === 'UNKNOWN') {
+    note = '未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名';
+  } else {
+    note = '逻辑已核对（详见 docs-new/03-engine/opcode-table.md）';
+  }
+  // `状态:` 行不携带 →name（避免 scan-status 在同一行找不到）；把 `→ name` 放到下一行注释，
   // 使 .agents/.../scripts/scan-status.js 的「向下扫 6 行找 → name」能命中叶子名。
   return `/* ===== [stained] ${e.sub}  状态: ${stat} =====\n` +
-    ` * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → ${eng}\n` +
+    ` * Engine 成员函数  → ${eng}\n` +
     ` * raw 行区间 [${e.rawStart}, ${e.rawEnd}]${opTxt ? '; ' + opTxt : ''}\n` +
-    ` * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。\n */`;
+    ` * ${note}\n */`;
 }
 
 // ---- 排序：保持 raw 行序 ----
@@ -244,26 +384,7 @@ const out = hdr + '\n' +
   extracted.map(e => memberMarker(e) + '\n' + e.full).join('\n');
 fs.writeFileSync(OUT_MEMBERS, out);
 
-// ---- 写 member-index.json ----
-const idx = extracted.map(e => {
-  const [sem, addr] = semName(e.sub);
-  const op = opByHandler[e.sub] || null;
-  const opStat = op ? op.status : '未解';
-  // 有效状态：台账已 ANALYZED 的覆盖 op-table（与 scan-status 标记一致）
-  let eff = STATUS_MAP[opStat] || 'UNKNOWN';
-  if (regStatus[e.sub] === 'ANALYZED') eff = 'ANALYZED';
-  return {
-    old: e.sub, new: memberBuildName(e.sub),
-    sem: sem || null, addr,
-    op: op ? op.op : null,
-    status: eff,                     // 有效分析状态（ANALYZED/STUB/UNKNOWN）
-    opTableStatus: opStat,           // opcode-table 原始状态（已核对/推测/仅映射/未解）
-    lines: [e.rawStart, e.rawEnd],
-    isOpHandler: !!op,
-  };
-});
-fs.writeFileSync(OUT_INDEX, JSON.stringify({ _comment: 'Engine 成员函数索引（染色）', funcs: idx }, null, 2));
-
+// ---- member-index.json 已移除（结论以代码注释为准；不再生成该临时索引）----
 console.log(`[memberize] members extracted=${extracted.length}`);
 console.log(`[memberize] renamed=${stats.memberRenamed} topField=${stats.topField} frameField=${stats.frameField} semName=${stats.semName} memberCall=${stats.memberCall}`);
 console.log(`[memberize] wrote ${OUT_MEMBERS} (${out.length} bytes) + ${OUT_INDEX}`);

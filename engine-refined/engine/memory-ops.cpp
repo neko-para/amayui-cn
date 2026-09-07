@@ -13,10 +13,11 @@
   0x2D8 op_set_array_to (sub_430CF0)
  * ============================================================================= */
 
-/* ===== [stained] sub_42CB00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lookup_array_42CB00
+/* ===== [stained] sub_42CB00  状态: PARTIAL =====
+ * Engine 成员函数  → op_lookup_array_42CB00
  * raw 行区间 [37742, 37751]; op=0x61 指令名『lookup-array』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = &op2[op3]  (element address; index=readInt(op3), base=operandAddress(op2)); op1 written via sub_418CC0 type-tagged; 操作数类型=ptr/array/int; 操作数=[1:ptr/dest, 2:array/src(base), 3:int/index]; arity=7; evidence=v4=readIntOperand(3); v2=operandAddress(2); return sub_418CC0(1, v2, v4, -1, -1); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42AEA0, sub_418CC0（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_lookup_array_42CB00(_DWORD *_this)
 {
@@ -30,10 +31,11 @@ int Engine::op_lookup_array_42CB00(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42CBA0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lea_42CBA0
+/* ===== [stained] sub_42CBA0  状态: PARTIAL =====
+ * Engine 成员函数  → op_lea_42CBA0
  * raw 行区间 [37766, 37773]; op=0x63 指令名『lea』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = &op2 (address of operand 2), stored as pointer operand; 操作数类型=ptr/any; 操作数=[1:ptr/dest, 2:any/src-address]; arity=5; evidence=v2=operandAddress(2); return writePointerOperand_418B90(1, v2, -1, -1); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42AEA0, sub_418B90（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_lea_42CBA0(_DWORD *_this)
 {
@@ -45,10 +47,11 @@ int Engine::op_lea_42CBA0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42CBE0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_copy_local_array_42CBE0
+/* ===== [stained] sub_42CBE0  状态: PARTIAL =====
+ * Engine 成员函数  → op_copy_local_array_42CBE0
  * raw 行区间 [37776, 37801]; op=0x64 指令名『copy-local-array』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: copy local array: from frames[cur_script].str_table[idx] (count=*(str_table+4*idx)) into op1 array, each element dec/enc-transformed (ROL4(key^ROR4(v,7),21)); op1 array memory written; 操作数类型=array/int; 操作数=[1:array/dest, 2:int/index]; arity=5; evidence=v2=operandAddress(1); result=*(str_table+4*readInt(2)); do result=__ROL4__(key^__ROR4__(*(v2+v5),7),21); *v2++=result; while(--v6); decEnc=true; pure=true
+ * ⚠ 未分析被调: sub_42AEA0（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_copy_local_array_42CBE0(_DWORD *_this)
 {
@@ -78,10 +81,11 @@ int Engine::op_copy_local_array_42CBE0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42CE70  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_fill_zero_42CE70
+/* ===== [stained] sub_42CE70  状态: PARTIAL =====
+ * Engine 成员函数  → op_fill_zero_42CE70
  * raw 行区间 [37876, 37894]; op=0x6C 指令名『fill-zero』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: fill op1 array[0..op2-1] with the constant stored at engine global offset 388240 (_this[97060]); op1 array memory written; 操作数类型=array/int; 操作数=[1:array/dest, 2:int/count]; arity=5; evidence=v2=operandAddress(1); result=readInt(2); do *v2++=_this[97060]; while(--result); decEnc=false; pure=false
+ * ⚠ 未分析被调: sub_42AEA0（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_fill_zero_42CE70(_DWORD *_this)
 {
@@ -95,7 +99,7 @@ int Engine::op_fill_zero_42CE70(_DWORD *_this)
   {
     do
     {
-      *v2++ = _this[97060];
+      *v2++ = this->enc_zero;
       --result;
     }
     while ( result );
@@ -104,10 +108,11 @@ int Engine::op_fill_zero_42CE70(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42D150  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_memcpy_42D150
+/* ===== [stained] sub_42D150  状态: PARTIAL =====
+ * Engine 成员函数  → op_memcpy_42D150
  * raw 行区间 [37985, 37996]; op=0x1B0 指令名『memcpy』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: memcpy(dest=op2, src=op1, n=4*op3) — raw byte copy of op3 32-bit elements from op1 to op2; no dec/enc transform applied; 操作数类型=array/array/int; 操作数=[1:array/src, 2:array/dest, 3:int/count]; arity=7; evidence=v5=4*readInt(3); v4=operandAddress(1); v2=operandAddress(2); return memcpy(v2,v4,v5); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42AEA0（未命名/未分析）；分析后方可标已分析
  */
 void * Engine::op_memcpy_42D150(_DWORD *_this)
 {
@@ -123,10 +128,11 @@ void * Engine::op_memcpy_42D150(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42EFD0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_lookup_array_2d_42EFD0
+/* ===== [stained] sub_42EFD0  状态: PARTIAL =====
+ * Engine 成员函数  → op_lookup_array_2d_42EFD0
  * raw 行区间 [39137, 39150]; op=0x12C 指令名『lookup-array-2d』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: op1 = &op2[ op3*op4 + op5 ]  (2-D element address); op1 written type-tagged via sub_418CC0; 操作数类型=ptr/array/int/int/int; 操作数=[1:ptr/dest, 2:array/src(base), 3:int/row, 4:int/col-dim, 5:int/col]; arity=11; evidence=v2=readInt(4); v3=readInt(3)*v2; v6=v3+readInt(5); v4=operandAddress(2); return sub_418CC0(1,v4,v6,-1,-1); decEnc=false; pure=true
+ * ⚠ 未分析被调: sub_42AEA0, sub_418CC0（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_lookup_array_2d_42EFD0(_DWORD *_this)
 {
@@ -144,10 +150,11 @@ int Engine::op_lookup_array_2d_42EFD0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_430CF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_array_to_430CF0
+/* ===== [stained] sub_430CF0  状态: PARTIAL =====
+ * Engine 成员函数  → op_set_array_to_430CF0
  * raw 行区间 [40206, 40224]; op=0x2D8 指令名『set-array-to』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 分析结论（已读体）: fill op1 array[0..op3-1] with DEC-encoded value of op2 (memset32), where D(v)=ROL4(key^ROR4(v,7),21); op1 array memory written; 操作数类型=array/int/int; 操作数=[1:array/dest, 2:int/value, 3:int/count]; arity=7; evidence=v2=operandAddress(1); v5=__ROL4__(key^__ROR4__(readInt(2),7),21); result=readInt(3); memset32(v2,v5,result); decEnc=true; pure=true
+ * ⚠ 未分析被调: sub_42AEA0（未命名/未分析）；分析后方可标已分析
  */
 int Engine::op_set_array_to_430CF0(_DWORD *_this)
 {

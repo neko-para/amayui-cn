@@ -10,7 +10,8 @@
  *
  * 输入：
  *   - 原始反编译：engine/天结_unpacked.exe_utf8.c（行号权威基准）
- *   - 成员索引：engine-refined/member-index.json（每成员 lines=[rawStart,rawEnd] 1-based 函数定义区间）
+ *   - 成员函数行区间：改由 engine-refined/engine/*.cpp 的 `[stained]…raw 行区间 [s,e]` 标记解析
+ *     （原 member-index.json 已移除；结论以代码注释为准，不再依赖临时索引）。
  * 输出：
  *   - engine-refined/remaining-code.cpp（行数与原始一致；成员函数定义区间整行替换为空行）
  *
@@ -20,14 +21,24 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 const SRC = path.join(ROOT, 'engine', '天结_unpacked.exe_utf8.c');
-const INDEX = path.join(ROOT, 'engine-refined', 'member-index.json');
 const OUT = path.join(ROOT, 'engine-refined', 'remaining-code.cpp');
+const MEM_DIR = path.join(ROOT, 'engine-refined', 'engine');
+const MEM_FILES = ['arith-ops.cpp','bit-ops.cpp','float-ops.cpp','str-ops.cpp','memory-ops.cpp','members.cpp'];
 
 const lines = fs.readFileSync(SRC, 'utf8').split(/\r?\n/);
-const idx = JSON.parse(fs.readFileSync(INDEX, 'utf8')).funcs;
+
+// 从 engine/*.cpp 的 [stained] 标记解析成员函数 raw 行区间（1-based [s,e] 闭区间）
+const ranges = [];
+for (const mf of MEM_FILES) {
+  const p = path.join(MEM_DIR, mf);
+  if (!fs.existsSync(p)) continue;
+  const txt = fs.readFileSync(p, 'utf8');
+  for (const m of txt.matchAll(/\[stained\]\s*sub_[0-9A-Fa-f]{6}[\s\S]*?raw\s+行区间\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]/g)) {
+    ranges.push([Number(m[1]), Number(m[2])]);
+  }
+}
 
 // 收集要置空的 1-based 行区间（[start,end] 闭区间）
-const ranges = idx.map(f => f.lines).filter(r => Array.isArray(r) && r.length === 2 && r[0] > 0);
 let blanked = 0, blankedLines = 0;
 for (const [s, e] of ranges) {
   for (let ln = s - 1; ln < e; ln++) {     // 转 0-based

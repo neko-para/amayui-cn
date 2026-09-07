@@ -8,9 +8,9 @@
  * ============================================================================= */
 
 /* ===== [stained] sub_4015B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4015B0
+ * Engine 成员函数  → sub_4015B0
  * raw 行区间 [8064, 8070]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4015B0(void *_this, char a2)
 {
@@ -22,9 +22,9 @@ void * Engine::sub_4015B0(void *_this, char a2)
 
 
 /* ===== [stained] sub_4015F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4015F0
+ * Engine 成员函数  → sub_4015F0
  * raw 行区间 [8085, 8093]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4015F0(_DWORD *_this)
 {
@@ -38,9 +38,9 @@ void Engine::sub_4015F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_401A70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_401A70
+ * Engine 成员函数  → sub_401A70
  * raw 行区间 [8302, 8308]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_401A70(_DWORD *_this, char a2)
 {
@@ -52,9 +52,9 @@ _DWORD * Engine::sub_401A70(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_401C60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_401C60
+ * Engine 成员函数  → sub_401C60
  * raw 行区间 [8425, 8431]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_401C60(void *_this, char a2)
 {
@@ -66,9 +66,9 @@ void * Engine::sub_401C60(void *_this, char a2)
 
 
 /* ===== [stained] sub_402910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_402910
+ * Engine 成员函数  → sub_402910
  * raw 行区间 [8920, 8930]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_402910(void **_this)
 {
@@ -84,9 +84,9 @@ HMODULE Engine::sub_402910(void **_this)
 
 
 /* ===== [stained] sub_403140  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403140
+ * Engine 成员函数  → sub_403140
  * raw 行区间 [9259, 9269]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_403140(char *_this)
 {
@@ -102,9 +102,9 @@ HMODULE Engine::sub_403140(char *_this)
 
 
 /* ===== [stained] sub_403290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403290
+ * Engine 成员函数  → sub_403290
  * raw 行区间 [9320, 9323]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void ** Engine::sub_403290(void **_this, char a2)
 {
@@ -113,9 +113,9 @@ void ** Engine::sub_403290(void **_this, char a2)
 
 
 /* ===== [stained] sub_403380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403380
+ * Engine 成员函数  → sub_403380
  * raw 行区间 [9368, 9374]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void ** Engine::sub_403380(void **_this, char a2)
 {
@@ -127,9 +127,9 @@ void ** Engine::sub_403380(void **_this, char a2)
 
 
 /* ===== [stained] sub_403470  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403470
+ * Engine 成员函数  → sub_403470
  * raw 行区间 [9398, 9404]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_403470(char *_this, char a2)
 {
@@ -141,9 +141,9 @@ char * Engine::sub_403470(char *_this, char a2)
 
 
 /* ===== [stained] sub_4034A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034A0
+ * Engine 成员函数  → sub_4034A0
  * raw 行区间 [9407, 9415]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4034A0(_DWORD *_this)
 {
@@ -157,9 +157,9 @@ _DWORD * Engine::sub_4034A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4034B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034B0
+ * Engine 成员函数  → sub_4034B0
  * raw 行区间 [9420, 9423]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4034B0(_DWORD *_this)
 {
@@ -168,9 +168,9 @@ void Engine::sub_4034B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4034C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034C0
+ * Engine 成员函数  → sub_4034C0
  * raw 行区间 [9427, 9430]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4034C0(int *_this, const void *a2)
 {
@@ -179,9 +179,9 @@ void Engine::sub_4034C0(int *_this, const void *a2)
 
 
 /* ===== [stained] sub_4034D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034D0
+ * Engine 成员函数  → sub_4034D0
  * raw 行区间 [9433, 9436]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4034D0(void **_this, const char *a2)
 {
@@ -190,9 +190,9 @@ void Engine::sub_4034D0(void **_this, const char *a2)
 
 
 /* ===== [stained] sub_4034E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034E0
+ * Engine 成员函数  → sub_4034E0
  * raw 行区间 [9439, 9442]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4034E0(_DWORD **_this)
 {
@@ -201,9 +201,9 @@ int Engine::sub_4034E0(_DWORD **_this)
 
 
 /* ===== [stained] sub_4034F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4034F0
+ * Engine 成员函数  → sub_4034F0
  * raw 行区间 [9445, 9448]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4034F0(_DWORD **_this)
 {
@@ -212,9 +212,9 @@ int Engine::sub_4034F0(_DWORD **_this)
 
 
 /* ===== [stained] sub_403600  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403600
+ * Engine 成员函数  → sub_403600
  * raw 行区间 [9520, 9526]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_403600(_DWORD *_this, char a2)
 {
@@ -226,9 +226,9 @@ _DWORD * Engine::sub_403600(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_403660  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403660
+ * Engine 成员函数  → sub_403660
  * raw 行区间 [9539, 9550]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HLOCAL Engine::sub_403660(HLOCAL *_this)
 {
@@ -245,9 +245,9 @@ HLOCAL Engine::sub_403660(HLOCAL *_this)
 
 
 /* ===== [stained] sub_403680  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403680
+ * Engine 成员函数  → sub_403680
  * raw 行区间 [9553, 9561]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HLOCAL Engine::sub_403680(int _this, SIZE_T uBytes)
 {
@@ -261,9 +261,9 @@ HLOCAL Engine::sub_403680(int _this, SIZE_T uBytes)
 
 
 /* ===== [stained] sub_403700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403700
+ * Engine 成员函数  → sub_403700
  * raw 行区间 [9573, 9657]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_403700(int _this, HANDLE hFile)
 {
@@ -353,9 +353,9 @@ int Engine::sub_403700(int _this, HANDLE hFile)
 
 
 /* ===== [stained] sub_403AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AA0
+ * Engine 成员函数  → sub_403AA0
  * raw 行区间 [9715, 9719]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HLOCAL Engine::sub_403AA0(HLOCAL *_this)
 {
@@ -365,9 +365,9 @@ HLOCAL Engine::sub_403AA0(HLOCAL *_this)
 
 
 /* ===== [stained] sub_403AB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AB0
+ * Engine 成员函数  → sub_403AB0
  * raw 行区间 [9723, 9729]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HLOCAL * Engine::sub_403AB0(HLOCAL *_this, char a2)
 {
@@ -379,9 +379,9 @@ HLOCAL * Engine::sub_403AB0(HLOCAL *_this, char a2)
 
 
 /* ===== [stained] sub_403AE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403AE0
+ * Engine 成员函数  → sub_403AE0
  * raw 行区间 [9732, 9736]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_403AE0(_DWORD *_this)
 {
@@ -391,9 +391,9 @@ void Engine::sub_403AE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_403FF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_403FF0
+ * Engine 成员函数  → sub_403FF0
  * raw 行区间 [10003, 10009]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_403FF0(_DWORD *_this, char a2)
 {
@@ -405,9 +405,9 @@ _DWORD * Engine::sub_403FF0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_404150  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404150
+ * Engine 成员函数  → sub_404150
  * raw 行区间 [10066, 10075]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_404150(_DWORD *_this)
 {
@@ -422,9 +422,9 @@ _DWORD * Engine::sub_404150(_DWORD *_this)
 
 
 /* ===== [stained] sub_4041C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4041C0
+ * Engine 成员函数  → sub_4041C0
  * raw 行区间 [10079, 10118]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4041C0(int _this)
 {
@@ -456,8 +456,8 @@ int Engine::sub_4041C0(int _this)
     || (v7 = *(_DWORD *)(_this + 1296), v16[2] = 3, (v4 = v1(v7, 2068, 258, (DWORD_PTR)v16)) != 0) )
   {
     mciGetErrorStringA(v4, (LPSTR)(_this + 1040), 0x100u);
-    wsprintfA(_this + 8, "CD__Open_エラー：%s\r\n", (const char *)(_this + 1040));
-    this->sub_4034C0( (const void *)(_this + 8));
+    wsprintfA(this->message_buf, "CD__Open_エラー：%s\r\n", (const char *)(_this + 1040));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -469,9 +469,9 @@ int Engine::sub_4041C0(int _this)
 
 
 /* ===== [stained] sub_4042C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4042C0
+ * Engine 成员函数  → sub_4042C0
  * raw 行区间 [10122, 10141]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4042C0(int _this)
 {
@@ -482,8 +482,8 @@ int Engine::sub_4042C0(int _this)
   if ( v2 )
   {
     mciGetErrorStringA(v2, (LPSTR)(_this + 1040), 0x100u);
-    wsprintfA(_this + 8, "CD__Close_エラー：%s\r\n", (const char *)(_this + 1040));
-    this->sub_4034C0( (const void *)(_this + 8));
+    wsprintfA(this->message_buf, "CD__Close_エラー：%s\r\n", (const char *)(_this + 1040));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -496,9 +496,9 @@ int Engine::sub_4042C0(int _this)
 
 
 /* ===== [stained] sub_404340  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404340
+ * Engine 成员函数  → sub_404340
  * raw 行区间 [10145, 10189]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_404340(int _this, DWORD_PTR a2, int a3)
 {
@@ -533,8 +533,8 @@ LABEL_6:
       if ( !v6 )
         break;
       mciGetErrorStringA(v6, (LPSTR)(_this + 1040), 0x100u);
-      wsprintfA(_this + 8, "CD__Play_エラー：%s\r\n", (const char *)(_this + 1040));
-      this->sub_4034C0( (const void *)(_this + 8));
+      wsprintfA(this->message_buf, "CD__Play_エラー：%s\r\n", (const char *)(_this + 1040));
+      this->sub_4034C0( (const void *)(this->message_buf));
       result = sub_4041C0(_this);
       if ( !result )
         return result;
@@ -548,9 +548,9 @@ LABEL_6:
 
 
 /* ===== [stained] sub_404460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404460
+ * Engine 成员函数  → sub_404460
  * raw 行区间 [10193, 10205]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_404460(int _this)
 {
@@ -561,16 +561,16 @@ int Engine::sub_404460(int _this)
   if ( !v2 )
     return 1;
   mciGetErrorStringA(v2, (LPSTR)(_this + 1040), 0x100u);
-  wsprintfA(_this + 8, "CD__Stop_エラー：%s\r\n", (const char *)(_this + 1040));
-  this->sub_4034C0( (const void *)(_this + 8));
+  wsprintfA(this->message_buf, "CD__Stop_エラー：%s\r\n", (const char *)(_this + 1040));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_4044D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4044D0
+ * Engine 成员函数  → sub_4044D0
  * raw 行区间 [10209, 10237]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4044D0(int _this)
 {
@@ -597,16 +597,16 @@ int Engine::sub_4044D0(int _this)
   if ( !v4 )
     return 1;
   mciGetErrorStringA(v4, (LPSTR)(_this + 1040), 0x100u);
-  wsprintfA(_this + 8, "CD__Repeat_エラー：%s\r\n", (const char *)(_this + 1040));
-  this->sub_4034C0( (const void *)(_this + 8));
+  wsprintfA(this->message_buf, "CD__Repeat_エラー：%s\r\n", (const char *)(_this + 1040));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_404580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404580
+ * Engine 成员函数  → sub_404580
  * raw 行区间 [10241, 10257]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_404580(int _this, DWORD_PTR dwParam2)
 {
@@ -621,16 +621,16 @@ int Engine::sub_404580(int _this, DWORD_PTR dwParam2)
   if ( !v4 )
     return 1;
   mciGetErrorStringA(v4, (LPSTR)(_this + 1040), 0x100u);
-  wsprintfA(_this + 8, "CD__Pause_エラー：%s\r\n", (const char *)(_this + 1040));
-  this->sub_4034C0( (const void *)(_this + 8));
+  wsprintfA(this->message_buf, "CD__Pause_エラー：%s\r\n", (const char *)(_this + 1040));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_404780  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404780
+ * Engine 成员函数  → sub_404780
  * raw 行区间 [10356, 10365]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_404780(_DWORD *_this)
 {
@@ -645,9 +645,9 @@ void Engine::sub_404780(_DWORD *_this)
 
 
 /* ===== [stained] sub_4047F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4047F0
+ * Engine 成员函数  → sub_4047F0
  * raw 行区间 [10369, 10375]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4047F0(_DWORD *_this, char a2)
 {
@@ -659,9 +659,9 @@ _DWORD * Engine::sub_4047F0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_404CB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404CB0
+ * Engine 成员函数  → sub_404CB0
  * raw 行区间 [10584, 10598]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_404CB0(int **_this)
 {
@@ -681,9 +681,9 @@ int Engine::sub_404CB0(int **_this)
 
 
 /* ===== [stained] sub_404EC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404EC0
+ * Engine 成员函数  → sub_404EC0
  * raw 行区间 [10707, 10713]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_404EC0(_DWORD *_this)
 {
@@ -695,9 +695,9 @@ int Engine::sub_404EC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_404EE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_404EE0
+ * Engine 成员函数  → sub_404EE0
  * raw 行区间 [10716, 10739]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 LPSIZE Engine::sub_404EE0(int _this, LPSIZE psizl, unsigned __int16 a3)
 {
@@ -726,9 +726,9 @@ LPSIZE Engine::sub_404EE0(int _this, LPSIZE psizl, unsigned __int16 a3)
 
 
 /* ===== [stained] sub_4051A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4051A0
+ * Engine 成员函数  → sub_4051A0
  * raw 行区间 [10924, 10935]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4051A0(int *_this)
 {
@@ -745,9 +745,9 @@ void Engine::sub_4051A0(int *_this)
 
 
 /* ===== [stained] sub_4051E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4051E0
+ * Engine 成员函数  → sub_4051E0
  * raw 行区间 [10938, 10941]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4051E0(_DWORD *_this, int a2)
 {
@@ -756,9 +756,9 @@ int Engine::sub_4051E0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_405210  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405210
+ * Engine 成员函数  → sub_405210
  * raw 行区间 [10944, 10980]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 LONG Engine::sub_405210(LONG *_this)
 {
@@ -800,9 +800,9 @@ LONG Engine::sub_405210(LONG *_this)
 
 
 /* ===== [stained] sub_4052B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4052B0
+ * Engine 成员函数  → sub_4052B0
  * raw 行区间 [10985, 11013]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4052B0(char *_this)
 {
@@ -836,9 +836,9 @@ int Engine::sub_4052B0(char *_this)
 
 
 /* ===== [stained] sub_405330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405330
+ * Engine 成员函数  → sub_405330
  * raw 行区间 [11018, 11028]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405330(_DWORD *_this)
 {
@@ -854,9 +854,9 @@ int Engine::sub_405330(_DWORD *_this)
 
 
 /* ===== [stained] sub_405360  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405360
+ * Engine 成员函数  → sub_405360
  * raw 行区间 [11031, 11041]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405360(_DWORD *_this, int a2)
 {
@@ -872,9 +872,9 @@ int Engine::sub_405360(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4053C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4053C0
+ * Engine 成员函数  → sub_4053C0
  * raw 行区间 [11044, 11058]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4053C0(_DWORD *_this)
 {
@@ -894,9 +894,9 @@ void Engine::sub_4053C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_405410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405410
+ * Engine 成员函数  → sub_405410
  * raw 行区间 [11061, 11078]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405410(_DWORD *_this, int a2)
 {
@@ -919,9 +919,9 @@ int Engine::sub_405410(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_405460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405460
+ * Engine 成员函数  → sub_405460
  * raw 行区间 [11081, 11104]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_405460(_DWORD *_this, int a2)
 {
@@ -950,9 +950,9 @@ BOOL Engine::sub_405460(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4054D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4054D0
+ * Engine 成员函数  → sub_4054D0
  * raw 行区间 [11107, 11118]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4054D0(_DWORD *_this, int a2)
 {
@@ -969,9 +969,9 @@ int Engine::sub_4054D0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_405530  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405530
+ * Engine 成员函数  → sub_405530
  * raw 行区间 [11121, 11135]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405530(_DWORD *_this, int a2)
 {
@@ -991,9 +991,9 @@ int Engine::sub_405530(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_405580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405580
+ * Engine 成员函数  → sub_405580
  * raw 行区间 [11138, 11149]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405580(HWND *_this, LONG *a2, LONG *a3)
 {
@@ -1010,9 +1010,9 @@ int Engine::sub_405580(HWND *_this, LONG *a2, LONG *a3)
 
 
 /* ===== [stained] sub_4055F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4055F0
+ * Engine 成员函数  → sub_4055F0
  * raw 行区间 [11152, 11159]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4055F0(int _this, int a2)
 {
@@ -1025,9 +1025,9 @@ int Engine::sub_4055F0(int _this, int a2)
 
 
 /* ===== [stained] sub_405640  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptContextInit_405640
+ * Engine 成员函数  → scriptContextInit_405640
  * raw 行区间 [11168, 11194]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::scriptContextInit_405640(_DWORD *_this, int a2)
 {
@@ -1059,9 +1059,9 @@ _DWORD * Engine::scriptContextInit_405640(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4056F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4056F0
+ * Engine 成员函数  → sub_4056F0
  * raw 行区间 [11197, 11205]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4056F0(_DWORD *_this)
 {
@@ -1075,9 +1075,9 @@ void * Engine::sub_4056F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_405730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_405730
+ * Engine 成员函数  → sub_405730
  * raw 行区间 [11208, 11223]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_405730(_DWORD *_this, int a2, int a3)
 {
@@ -1098,9 +1098,9 @@ int Engine::sub_405730(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4057B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4057B0
+ * Engine 成员函数  → sub_4057B0
  * raw 行区间 [11226, 11513]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4057B0(int _this)
 {
@@ -1393,9 +1393,9 @@ LABEL_23:
 
 
 /* ===== [stained] sub_406050  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406050
+ * Engine 成员函数  → sub_406050
  * raw 行区间 [11517, 11592]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 LRESULT Engine::sub_406050(int _this)
 {
@@ -1476,9 +1476,9 @@ LRESULT Engine::sub_406050(int _this)
 
 
 /* ===== [stained] sub_406220  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406220
+ * Engine 成员函数  → sub_406220
  * raw 行区间 [11595, 11730]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406220(int _this)
 {
@@ -1619,9 +1619,9 @@ int Engine::sub_406220(int _this)
 
 
 /* ===== [stained] sub_4065F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4065F0
+ * Engine 成员函数  → sub_4065F0
  * raw 行区间 [11743, 11755]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4065F0(_DWORD *_this, HWND hWnd, LPCSTR lpText)
 {
@@ -1639,9 +1639,9 @@ int Engine::sub_4065F0(_DWORD *_this, HWND hWnd, LPCSTR lpText)
 
 
 /* ===== [stained] sub_406650  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406650
+ * Engine 成员函数  → sub_406650
  * raw 行区间 [11758, 11770]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406650(_DWORD *_this, HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
@@ -1659,9 +1659,9 @@ int Engine::sub_406650(_DWORD *_this, HWND hWnd, LPCSTR lpText, LPCSTR lpCaption
 
 
 /* ===== [stained] sub_406730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406730
+ * Engine 成员函数  → sub_406730
  * raw 行区间 [11798, 11984]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406730(int _this, HWND hWnd)
 {
@@ -1832,11 +1832,11 @@ int Engine::sub_406730(int _this, HWND hWnd)
     {
       CurrentThreadId = GetCurrentThreadId();
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "ARCGameEngineが起動しました．\r\nメインスレッドID:%d\r\n\r\n",
         CurrentThreadId);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       v23 = *(_DWORD *)(_this + 699172);
       v24 = *(_DWORD *)(_this + 699168);
       *(_DWORD *)(_this + 16104) = 0;
@@ -1853,9 +1853,9 @@ int Engine::sub_406730(int _this, HWND hWnd)
 
 
 /* ===== [stained] sub_406C70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406C70
+ * Engine 成员函数  → sub_406C70
  * raw 行区间 [11989, 12008]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406C70(_DWORD *_this, int a2, HWND hWnd)
 {
@@ -1880,9 +1880,9 @@ int Engine::sub_406C70(_DWORD *_this, int a2, HWND hWnd)
 
 
 /* ===== [stained] sub_406CE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406CE0
+ * Engine 成员函数  → sub_406CE0
  * raw 行区间 [12011, 12039]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406CE0(_DWORD *_this, HWND hWnd)
 {
@@ -1916,9 +1916,9 @@ LABEL_8:
 
 
 /* ===== [stained] sub_406DF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_406DF0
+ * Engine 成员函数  → sub_406DF0
  * raw 行区间 [12042, 12110]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_406DF0(int *_this, int a2, int a3)
 {
@@ -1992,9 +1992,9 @@ int Engine::sub_406DF0(int *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_407120  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_407120
+ * Engine 成员函数  → sub_407120
  * raw 行区间 [12113, 12140]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_407120(int _this)
 {
@@ -2027,9 +2027,9 @@ void Engine::sub_407120(int _this)
 
 
 /* ===== [stained] sub_4071D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4071D0
+ * Engine 成员函数  → sub_4071D0
  * raw 行区间 [12143, 12195]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4071D0(int *_this, int a2, int a3)
 {
@@ -2087,9 +2087,9 @@ int Engine::sub_4071D0(int *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4078E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4078E0
+ * Engine 成员函数  → sub_4078E0
  * raw 行区间 [12488, 12575]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_4078E0(int _this)
 {
@@ -2146,11 +2146,11 @@ char * Engine::sub_4078E0(int _this)
         else
         {
           sprintf_s(
-            (char *const)(_this + 8),
+            (char *const)(this->message_buf),
             0x400u,
             "関数：GetOSName エラー：子コンテナ取得に失敗しましたエラーコード %x\r\n",
             v6);
-          this->sub_4034C0( (const void *)(_this + 8));
+          this->sub_4034C0( (const void *)(this->message_buf));
           (*(void (__stdcall **)(LPVOID))(*(_DWORD *)ppv + 8))(ppv);
           v4 = v13;
         }
@@ -2164,27 +2164,27 @@ char * Engine::sub_4078E0(int _this)
       v9 = v3;
       v8 = aGetosnamePdxdi;
     }
-    sprintf_s((char *const)(_this + 8), 0x400u, v8, v9);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v8, v9);
+    this->sub_4034C0( (const void *)(this->message_buf));
     v4 = ppv;
 LABEL_15:
     (*(void (__stdcall **)(LPVOID))(*(_DWORD *)v4 + 8))(v4);
     return &byte_55C3A8;
   }
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：GetOSName エラー：IID_IDxDiagProviderの初期化に失敗しましたエラーコード %x\r\n",
     v2);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return &byte_55C3A8;
 }
 
 
 /* ===== [stained] sub_407B20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_407B20
+ * Engine 成员函数  → sub_407B20
  * raw 行区间 [12580, 12618]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_407B20(_DWORD *_this, int a2, BOOL a3)
 {
@@ -2228,9 +2228,9 @@ BOOL Engine::sub_407B20(_DWORD *_this, int a2, BOOL a3)
 
 
 /* ===== [stained] sub_4080B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4080B0
+ * Engine 成员函数  → sub_4080B0
  * raw 行区间 [12961, 12980]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 double Engine::sub_4080B0(int _this)
 {
@@ -2255,9 +2255,9 @@ double Engine::sub_4080B0(int _this)
 
 
 /* ===== [stained] sub_408130  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408130
+ * Engine 成员函数  → sub_408130
  * raw 行区间 [12985, 13004]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 double Engine::sub_408130(int _this)
 {
@@ -2282,9 +2282,9 @@ double Engine::sub_408130(int _this)
 
 
 /* ===== [stained] sub_4081B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4081B0
+ * Engine 成员函数  → sub_4081B0
  * raw 行区间 [13009, 13024]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4081B0(int _this, double a2)
 {
@@ -2305,9 +2305,9 @@ int Engine::sub_4081B0(int _this, double a2)
 
 
 /* ===== [stained] sub_408260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408260
+ * Engine 成员函数  → sub_408260
  * raw 行区间 [13049, 13058]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408260(int *_this, int a2)
 {
@@ -2322,9 +2322,9 @@ int Engine::sub_408260(int *_this, int a2)
 
 
 /* ===== [stained] sub_4082A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4082A0
+ * Engine 成员函数  → sub_4082A0
  * raw 行区间 [13061, 13070]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4082A0(int *_this, int a2)
 {
@@ -2339,9 +2339,9 @@ int Engine::sub_4082A0(int *_this, int a2)
 
 
 /* ===== [stained] sub_4082F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4082F0
+ * Engine 成员函数  → sub_4082F0
  * raw 行区间 [13073, 13090]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4082F0(_DWORD *_this)
 {
@@ -2364,9 +2364,9 @@ int Engine::sub_4082F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_408350  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408350
+ * Engine 成员函数  → sub_408350
  * raw 行区间 [13093, 13110]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408350(_DWORD *_this, int a2)
 {
@@ -2389,9 +2389,9 @@ int Engine::sub_408350(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4083B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4083B0
+ * Engine 成员函数  → sub_4083B0
  * raw 行区间 [13113, 13131]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4083B0(int _this)
 {
@@ -2401,13 +2401,13 @@ int Engine::sub_4083B0(int _this)
   int pExceptionObject[2]; // [esp+4h] [ebp-8h] BYREF
 
   result = *(_DWORD *)(_this + 51820);
-  if ( result != *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184) )
+  if ( result != this->frames[this->cur_script].frame_arg )
   {
     v4 = sub_454FA0((_DWORD *)(_this + 680092), result);
-    v3 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-    sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v3, v4);
+    v3 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+    sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v3, v4);
     pExceptionObject[1] = 65543;
-    pExceptionObject[0] = _this + 8;
+    pExceptionObject[0] = this->message_buf;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   return result;
@@ -2415,9 +2415,9 @@ int Engine::sub_4083B0(int _this)
 
 
 /* ===== [stained] sub_408440  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408440
+ * Engine 成员函数  → sub_408440
  * raw 行区间 [13134, 13158]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408440(int _this, int ArgList)
 {
@@ -2435,7 +2435,7 @@ int Engine::sub_408440(int _this, int ArgList)
   if ( sub_4A7210(_this + 322832, ArgList, v5, 0, 0) != 1 )
   {
     sub_455C60((int *)v3, v4);
-    v6 = (char *)(_this + 8);
+    v6 = (char *)(this->message_buf);
     v7 = sub_454FA0(v3, ArgList);
     sub_408050(v6, 1024, "画像ファイル %s の読み込みに失敗しました", v7);
     pExceptionObject[0] = (int)v6;
@@ -2447,9 +2447,9 @@ int Engine::sub_408440(int _this, int ArgList)
 
 
 /* ===== [stained] sub_408620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408620
+ * Engine 成员函数  → sub_408620
  * raw 行区间 [13238, 13277]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408620(int _this)
 {
@@ -2494,9 +2494,9 @@ int Engine::sub_408620(int _this)
 
 
 /* ===== [stained] sub_408A40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408A40
+ * Engine 成员函数  → sub_408A40
  * raw 行区间 [13390, 13509]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_408A40(_DWORD *_this, char *a2, unsigned int a3)
 {
@@ -2621,9 +2621,9 @@ BOOL Engine::sub_408A40(_DWORD *_this, char *a2, unsigned int a3)
 
 
 /* ===== [stained] sub_408CF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408CF0
+ * Engine 成员函数  → sub_408CF0
  * raw 行区间 [13515, 13543]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408CF0(int *_this, int a2)
 {
@@ -2657,9 +2657,9 @@ LABEL_6:
 
 
 /* ===== [stained] sub_408D90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408D90
+ * Engine 成员函数  → sub_408D90
  * raw 行区间 [13546, 13571]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408D90(int _this, int a2)
 {
@@ -2690,9 +2690,9 @@ int Engine::sub_408D90(int _this, int a2)
 
 
 /* ===== [stained] sub_408E20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408E20
+ * Engine 成员函数  → sub_408E20
  * raw 行区间 [13574, 13599]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408E20(int _this, int a2)
 {
@@ -2723,9 +2723,9 @@ int Engine::sub_408E20(int _this, int a2)
 
 
 /* ===== [stained] sub_408EB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408EB0
+ * Engine 成员函数  → sub_408EB0
  * raw 行区间 [13602, 13609]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_408EB0(int *_this, int a2)
 {
@@ -2738,9 +2738,9 @@ int Engine::sub_408EB0(int *_this, int a2)
 
 
 /* ===== [stained] sub_408F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_408F10
+ * Engine 成员函数  → sub_408F10
  * raw 行区间 [13612, 13684]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_408F10(int _this)
 {
@@ -2764,9 +2764,7 @@ void Engine::sub_408F10(int _this)
     *v2 = 0;
     if ( v3 != -1 )
     {
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                + 120 * *(_DWORD *)(_this + 383104)
-                                                                                + 383124)
+      this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                     + 4 * v3;
       *(_DWORD *)(_this + 699204) &= ~0x40u;
     }
@@ -2791,19 +2789,17 @@ void Engine::sub_408F10(int _this)
       if ( *(_DWORD *)(*(_DWORD *)(_this + 430672) + 4 * (v8 + 4 * v7) + 8) != -1 )
       {
         v9 = *(_DWORD *)(_this + 430708);
-        if ( *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184) != v9 )
+        if ( this->frames[this->cur_script].frame_arg != v9 )
         {
           v11 = sub_454FA0((_DWORD *)(_this + 680092), v9);
-          v10 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-          sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v10, v11);
+          v10 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+          sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v10, v11);
           pExceptionObject[1] = 65543;
-          pExceptionObject[0] = _this + 8;
+          pExceptionObject[0] = this->message_buf;
           _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
         }
         this->sub_405360( 0);
-        *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                  + 120 * *(_DWORD *)(_this + 383104)
-                                                                                  + 383124)
+        this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                       + 4
                                                                       * *(_DWORD *)(*(_DWORD *)(_this + 430672)
                                                                                   + 4
@@ -2818,9 +2814,9 @@ void Engine::sub_408F10(int _this)
 
 
 /* ===== [stained] sub_409290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409290
+ * Engine 成员函数  → sub_409290
  * raw 行区间 [13744, 13748]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_409290(int *_this, int a2)
 {
@@ -2830,9 +2826,9 @@ int Engine::sub_409290(int *_this, int a2)
 
 
 /* ===== [stained] sub_4092C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4092C0
+ * Engine 成员函数  → sub_4092C0
  * raw 行区间 [13751, 13820]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4092C0(_DWORD *_this, int a2)
 {
@@ -2907,9 +2903,9 @@ int Engine::sub_4092C0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_409400  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409400
+ * Engine 成员函数  → sub_409400
  * raw 行区间 [13823, 13968]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_409400(int _this)
 {
@@ -3060,9 +3056,9 @@ LABEL_40:
 
 
 /* ===== [stained] sub_409700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409700
+ * Engine 成员函数  → sub_409700
  * raw 行区间 [13971, 14052]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_409700(_DWORD *_this)
 {
@@ -3149,9 +3145,9 @@ int Engine::sub_409700(_DWORD *_this)
 
 
 /* ===== [stained] sub_4098E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4098E0
+ * Engine 成员函数  → sub_4098E0
  * raw 行区间 [14055, 14105]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4098E0(_DWORD *_this)
 {
@@ -3207,9 +3203,9 @@ int Engine::sub_4098E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_409EE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409EE0
+ * Engine 成员函数  → sub_409EE0
  * raw 行区间 [14329, 14339]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_409EE0(_DWORD *_this, char a2)
 {
@@ -3225,9 +3221,9 @@ _DWORD * Engine::sub_409EE0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_409F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409F10
+ * Engine 成员函数  → sub_409F10
  * raw 行区间 [14343, 14355]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_409F10(_DWORD *_this, char a2)
 {
@@ -3245,9 +3241,9 @@ _DWORD * Engine::sub_409F10(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_409F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_409F50
+ * Engine 成员函数  → sub_409F50
  * raw 行区间 [14359, 14371]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_409F50(_DWORD *_this, char a2)
 {
@@ -3265,9 +3261,9 @@ _DWORD * Engine::sub_409F50(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_40A480  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A480
+ * Engine 成员函数  → sub_40A480
  * raw 行区间 [14734, 14744]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40A480(_DWORD *_this)
 {
@@ -3283,9 +3279,9 @@ int Engine::sub_40A480(_DWORD *_this)
 
 
 /* ===== [stained] sub_40A4C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A4C0
+ * Engine 成员函数  → sub_40A4C0
  * raw 行区间 [14747, 14915]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40A4C0(int *_this, HWND a2, const CHAR *ArgList, int a4)
 {
@@ -3459,9 +3455,9 @@ LABEL_25:
 
 
 /* ===== [stained] sub_40A8A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40A8A0
+ * Engine 成员函数  → sub_40A8A0
  * raw 行区间 [14919, 14980]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40A8A0(int _this, int a2, int a3)
 {
@@ -3528,9 +3524,9 @@ int Engine::sub_40A8A0(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_40AAE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40AAE0
+ * Engine 成员函数  → sub_40AAE0
  * raw 行区间 [14984, 15121]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HANDLE Engine::sub_40AAE0(int _this)
 {
@@ -3673,9 +3669,9 @@ HANDLE Engine::sub_40AAE0(int _this)
 
 
 /* ===== [stained] sub_40AEE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40AEE0
+ * Engine 成员函数  → sub_40AEE0
  * raw 行区间 [15126, 15295]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HANDLE Engine::sub_40AEE0(int _this)
 {
@@ -3850,9 +3846,9 @@ LABEL_23:
 
 
 /* ===== [stained] sub_40B720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40B720
+ * Engine 成员函数  → sub_40B720
  * raw 行区间 [15470, 15635]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_40B720(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void *a5)
 {
@@ -3877,14 +3873,14 @@ _DWORD * Engine::sub_40B720(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void
   _DWORD *v24; // edx
   _DWORD *result; // eax
 
-  v6 = _this[2];
+  v6 = this->message_buf;
   if ( v6 >= (unsigned int)dword_581604 )
   {
     operator delete(a5);
     std___Xlength_error(aMapSetTTooLong);
   }
   v7 = a5;
-  _this[2] = v6 + 1;
+  this->message_buf = v6 + 1;
   *((_DWORD *)a5 + 1) = a4;
   v8 = (_DWORD *)_this[1];
   if ( a4 == v8 )
@@ -4023,9 +4019,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_40B930  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40B930
+ * Engine 成员函数  → sub_40B930
  * raw 行区间 [15639, 15835]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_40B930(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void *a5)
 {
@@ -4056,13 +4052,13 @@ _DWORD * Engine::sub_40B930(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void
   int v29; // ecx
   _DWORD *result; // eax
 
-  v5 = _this[2];
+  v5 = this->message_buf;
   if ( v5 >= 0x3FFFFFE )
   {
     operator delete(a5);
     std___Xlength_error(aMapSetTTooLong);
   }
-  _this[2] = v5 + 1;
+  this->message_buf = v5 + 1;
   v6 = a5;
   *((_DWORD *)a5 + 1) = a4;
   v7 = (_DWORD *)_this[1];
@@ -4227,9 +4223,9 @@ LABEL_50:
 
 
 /* ===== [stained] sub_40BD30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BD30
+ * Engine 成员函数  → sub_40BD30
  * raw 行区间 [15942, 16011]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40BD30(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 {
@@ -4304,9 +4300,9 @@ int Engine::sub_40BD30(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_40BEB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BEB0
+ * Engine 成员函数  → sub_40BEB0
  * raw 行区间 [16046, 16070]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40BEB0(_DWORD *_this, int a2)
 {
@@ -4336,9 +4332,9 @@ int Engine::sub_40BEB0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_40BF20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40BF20
+ * Engine 成员函数  → sub_40BF20
  * raw 行区间 [16073, 16087]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40BF20(_DWORD *_this, int a2, int a3, void *a4, int a5)
 {
@@ -4358,9 +4354,9 @@ int Engine::sub_40BF20(_DWORD *_this, int a2, int a3, void *a4, int a5)
 
 
 /* ===== [stained] sub_40C310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40C310
+ * Engine 成员函数  → sub_40C310
  * raw 行区间 [16343, 16412]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40C310(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 {
@@ -4435,9 +4431,9 @@ int Engine::sub_40C310(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_40CD10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40CD10
+ * Engine 成员函数  → sub_40CD10
  * raw 行区间 [16877, 17707]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40CD10(_DWORD *_this, void *a2, int a3, int a4)
 {
@@ -5273,9 +5269,9 @@ LABEL_164:
 
 
 /* ===== [stained] sub_40DF10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40DF10
+ * Engine 成员函数  → sub_40DF10
  * raw 行区间 [17933, 18181]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40DF10(int _this)
 {
@@ -5298,11 +5294,11 @@ int Engine::sub_40DF10(int _this)
   _DWORD *v18; // [esp+18h] [ebp-10h] BYREF
   int v19; // [esp+24h] [ebp-4h]
 
-  *(_DWORD *)(_this + 383108) = -1;
+  this->call_ret = -1;
   *(_DWORD *)(_this + 667852) = -1;
   *(_DWORD *)(_this + 383120) = 0;
   *(_DWORD *)(_this + 388216) = 0;
-  *(_DWORD *)(_this + 383104) = 0;
+  this->cur_script = 0;
   *(_DWORD *)(_this + 699204) = 0;
   *(_DWORD *)(_this + 489808) = 0;
   *(_DWORD *)(_this + 699248) = 1;
@@ -5529,9 +5525,9 @@ int Engine::sub_40DF10(int _this)
 
 
 /* ===== [stained] sub_40E8F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40E8F0
+ * Engine 成员函数  → sub_40E8F0
  * raw 行区间 [18358, 18379]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_40E8F0(void *_this)
 {
@@ -5553,14 +5549,14 @@ void Engine::sub_40E8F0(void *_this)
   }
   *((_DWORD *)_this + 6) = 0;
   *((_DWORD *)_this + 7) = 0;
-  *((_DWORD *)_this + 8) = 0;
+  *((_DWORD *)this->message_buf) = 0;
 }
 
 
 /* ===== [stained] sub_40E9A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40E9A0
+ * Engine 成员函数  → sub_40E9A0
  * raw 行区间 [18383, 18389]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_40E9A0(void *_this, char a2)
 {
@@ -5572,9 +5568,9 @@ void * Engine::sub_40E9A0(void *_this, char a2)
 
 
 /* ===== [stained] sub_40EA00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40EA00
+ * Engine 成员函数  → sub_40EA00
  * raw 行区间 [18398, 18574]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_40EA00(_DWORD *_this, void *a2)
 {
@@ -5756,9 +5752,9 @@ LABEL_27:
 
 
 /* ===== [stained] sub_40ED40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → loadScriptFrame_40ED40
+ * Engine 成员函数  → loadScriptFrame_40ED40
  * raw 行区间 [18577, 18874]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __fastcall Engine::loadScriptFrame_40ED40(int a1, int a2, void *a3, int a4)
 {
@@ -6061,9 +6057,9 @@ int __fastcall Engine::loadScriptFrame_40ED40(int a1, int a2, void *a3, int a4)
 
 
 /* ===== [stained] sub_40F750  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40F750
+ * Engine 成员函数  → sub_40F750
  * raw 行区间 [18877, 18951]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40F750(_DWORD *_this, int a2, int a3)
 {
@@ -6143,9 +6139,9 @@ int Engine::sub_40F750(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_40FB60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → dispatchQueuedScripts_40FB60
+ * Engine 成员函数  → dispatchQueuedScripts_40FB60
  * raw 行区间 [18954, 19016]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::dispatchQueuedScripts_40FB60(int _this)
 {
@@ -6171,28 +6167,28 @@ void Engine::dispatchQueuedScripts_40FB60(int _this)
         *(_DWORD *)(_this + 497396) = v3;
       if ( v2 )
       {
-        *(_DWORD *)(_this + 383112) = *(_DWORD *)(_this + 383104);
+        this->call_link = this->cur_script;
         v4 = *(_DWORD *)(_this + 699204);
         *(_DWORD *)(_this + 497400) = 1;
-        *(_DWORD *)(_this + 383108) = -10;
-        *(_DWORD *)(_this + 383116) = v4;
+        this->call_ret = -10;
+        this->call_flag = v4;
         *(_DWORD *)(_this + 699204) = 0;
         if ( v2 >= 0 )
         {
           v8 = *(void **)(_this + 387924);
-          *(_DWORD *)(_this + 383104) = 37;
+          this->cur_script = 37;
           this->loadScriptFrame_40ED40( v4, v8, v2);
         }
         else
         {
           v5 = -v2;
           v6 = _this + 120 * v5;
-          *(_DWORD *)(_this + 383104) = v5;
+          this->cur_script = v5;
           if ( !*(_DWORD *)(v6 + 383124) )
           {
-            v7 = _this + 8;
+            v7 = this->message_buf;
             sub_408050(
-              (char *)(_this + 8),
+              (char *)(this->message_buf),
               1024,
               "この階層にはファイルが読み込まれていません．Depth=%d",
               v5);
@@ -6201,10 +6197,8 @@ void Engine::dispatchQueuedScripts_40FB60(int _this)
             _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
           }
           *(_DWORD *)(v6 + 383180) = -10;
-          *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                    + 120 * *(_DWORD *)(_this + 383104)
-                                                                                    + 383124);
-          *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 0;
+          this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table;
+          this->frames[this->cur_script].arity = 0;
         }
       }
     }
@@ -6213,9 +6207,9 @@ void Engine::dispatchQueuedScripts_40FB60(int _this)
 
 
 /* ===== [stained] sub_40FC90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → queueScript_40FC90
+ * Engine 成员函数  → queueScript_40FC90
  * raw 行区间 [19019, 19027]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::queueScript_40FC90(_DWORD *_this, int a2)
 {
@@ -6229,9 +6223,9 @@ void Engine::queueScript_40FC90(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_40FDE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_40FDE0
+ * Engine 成员函数  → sub_40FDE0
  * raw 行区间 [19064, 19273]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_40FDE0(int _this)
 {
@@ -6446,9 +6440,9 @@ int Engine::sub_40FDE0(int _this)
 
 
 /* ===== [stained] sub_410160  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_410160
+ * Engine 成员函数  → sub_410160
  * raw 行区间 [19277, 19933]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __fastcall Engine::sub_410160(int a1, int a2, void *a3, int a4, int a5, int a6, int a7)
 {
@@ -7110,9 +7104,9 @@ LABEL_137:
 
 
 /* ===== [stained] sub_411560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411560
+ * Engine 成员函数  → sub_411560
  * raw 行区间 [19938, 19944]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_411560(_DWORD *_this, char *String2)
 {
@@ -7124,9 +7118,9 @@ void Engine::sub_411560(_DWORD *_this, char *String2)
 
 
 /* ===== [stained] sub_411590  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411590
+ * Engine 成员函数  → sub_411590
  * raw 行区间 [19947, 20093]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_411590(int _this)
 {
@@ -7190,18 +7184,16 @@ void Engine::sub_411590(int _this)
     {
       sub_4083B0(_this);
       *(_DWORD *)(_this
-                + 4 * (*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612) + (*(_DWORD *)(_this + 383104) << 8))
-                + 388772) = (*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128)
-                           - *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383124)) >> 2;
-      ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
+                + 4 * (*(_DWORD *)(_this + 4 * this->cur_script + 388612) + (this->cur_script << 8))
+                + 388772) = (this->frames[this->cur_script].ip
+                           - this->frames[this->cur_script].str_table) >> 2;
+      ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
       v12 = *(_DWORD *)(_this + 51848);
       if ( v12 < 0 || *(_DWORD *)(_this + 23008) <= v12 )
         v13 = -1;
       else
         v13 = *(_DWORD *)(_this + 4 * v12 + 23812);
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                + 120 * *(_DWORD *)(_this + 383104)
-                                                                                + 383124)
+      this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                     + 4 * v13;
       sub_409D40(_this + 429732, *(_DWORD *)(_this + 699204));
       *(_DWORD *)(_this + 699204) &= 0x7FEFFFFFu;
@@ -7255,13 +7247,11 @@ void Engine::sub_411590(int _this)
     {
       sub_4083B0(_this);
       *(_DWORD *)(_this
-                + 4 * (*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612) + (*(_DWORD *)(_this + 383104) << 8))
-                + 388772) = (*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128)
-                           - *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383124)) >> 2;
-      ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                + 120 * *(_DWORD *)(_this + 383104)
-                                                                                + 383124)
+                + 4 * (*(_DWORD *)(_this + 4 * this->cur_script + 388612) + (this->cur_script << 8))
+                + 388772) = (this->frames[this->cur_script].ip
+                           - this->frames[this->cur_script].str_table) >> 2;
+      ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
+      this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                     + 4 * v16;
       sub_409D40(_this + 429732, *(_DWORD *)(_this + 699204));
       *(_DWORD *)(_this + 699204) &= 0x7FEFFFFFu;
@@ -7278,9 +7268,9 @@ void Engine::sub_411590(int _this)
 
 
 /* ===== [stained] sub_411900  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411900
+ * Engine 成员函数  → sub_411900
  * raw 行区间 [20096, 20202]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_411900(int *_this)
 {
@@ -7392,9 +7382,9 @@ void Engine::sub_411900(int *_this)
 
 
 /* ===== [stained] sub_411BC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_411BC0
+ * Engine 成员函数  → sub_411BC0
  * raw 行区间 [20206, 20462]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_411BC0(int _this)
 {
@@ -7439,15 +7429,13 @@ void Engine::sub_411BC0(int _this)
       if ( !(*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSetControldisi) )
         sub_4051A0((int *)_this);
       sub_4053C0((_DWORD *)_this);
-      v4 = *(_DWORD *)(_this + 383104);
+      v4 = this->cur_script;
       *(_DWORD *)(_this + 699204) &= ~0x80000000;
-      *(_DWORD *)(_this + 4 * (*(_DWORD *)(_this + 4 * v4 + 388612) + (v4 << 8)) + 388772) = ((*(_DWORD *)(_this + 120 * v4 + 383128)
-                                                                                           - *(_DWORD *)(_this + 120 * v4 + 383124)) >> 2)
+      *(_DWORD *)(_this + 4 * (*(_DWORD *)(_this + 4 * v4 + 388612) + (v4 << 8)) + 388772) = ((this->frames[v4].ip
+                                                                                           - this->frames[v4].str_table) >> 2)
                                                                                          - 3;
-      ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                + 120 * *(_DWORD *)(_this + 383104)
-                                                                                + 383124)
+      ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
+      this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                     + 4 * v25;
       goto LABEL_68;
     }
@@ -7481,21 +7469,21 @@ void Engine::sub_411BC0(int _this)
     {
       sub_4083B0(_this);
       this->sub_405360( -3);
-      v27 = _this + 120 * *(_DWORD *)(_this + 383104);
+      v27 = _this + 120 * this->cur_script;
       *(_DWORD *)(v27 + 383128) = *(_DWORD *)(v27 + 383124) + 4 * sub_404E00((_DWORD *)(_this + 21976));
     }
     else
     {
       v13 = sub_48E870(
               (_DWORD *)(_this + 320428),
-              *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383212),
-              *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383192),
-              *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383188));
+              *(_DWORD *)(_this + 120 * this->cur_script + 383212),
+              *(_DWORD *)(_this + 120 * this->cur_script + 383192),
+              *(_DWORD *)(_this + 120 * this->cur_script + 383188));
       sub_48EB30(
         (void *)(_this + 320428),
-        *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184),
+        this->frames[this->cur_script].frame_arg,
         v13,
-        *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383188));
+        *(_DWORD *)(_this + 120 * this->cur_script + 383188));
     }
     if ( (*(_BYTE *)v2 & 0x40) != 0 )
     {
@@ -7519,9 +7507,7 @@ void Engine::sub_411BC0(int _this)
         {
           sub_4083B0(_this);
           this->sub_405360( -3);
-          *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                    + 120 * *(_DWORD *)(_this + 383104)
-                                                                                    + 383124)
+          this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                         + 4 * v9;
           v10 = *(int (__thiscall **)(int, char *))(*(_DWORD *)v5 + 4);
           *(_DWORD *)(_this + 699204) &= ~0x80000000;
@@ -7555,15 +7541,15 @@ LABEL_21:
     *v2 = 0;
     goto LABEL_44;
   }
-  v6 = *(_DWORD *)(_this + 383104);
+  v6 = this->cur_script;
   *v2 = 0;
   if ( *(_DWORD *)(_this + 4 * v6 + 489488) == -1 )
     return;
   *(_DWORD *)(_this + 489808) = *(_DWORD *)(_this + 699204) | 0x6000000;
   *(_DWORD *)(_this + 699204) = 0;
-  *(_DWORD *)(_this + 489812) = (*(_DWORD *)(_this + 120 * v6 + 383128) - *(_DWORD *)(_this + 120 * v6 + 383124)) >> 2;
-  *(_DWORD *)(_this + 430712) = *(_DWORD *)(_this + 120 * v6 + 383184);
-  *(_DWORD *)(_this + 120 * v6 + 383128) = *(_DWORD *)(_this + 120 * v6 + 383124)
+  *(_DWORD *)(_this + 489812) = (this->frames[v6].ip - this->frames[v6].str_table) >> 2;
+  *(_DWORD *)(_this + 430712) = this->frames[v6].frame_arg;
+  this->frames[v6].ip = this->frames[v6].str_table
                                         + 4 * *(_DWORD *)(_this + 4 * v6 + 489488);
 LABEL_44:
   if ( !*(_DWORD *)(_this + 388208) )
@@ -7626,14 +7612,14 @@ LABEL_63:
     sub_4051A0((int *)_this);
     v23 = sub_48E870(
             (_DWORD *)(_this + 320428),
-            *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383212),
-            *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383192),
-            *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383188));
+            *(_DWORD *)(_this + 120 * this->cur_script + 383212),
+            *(_DWORD *)(_this + 120 * this->cur_script + 383192),
+            *(_DWORD *)(_this + 120 * this->cur_script + 383188));
     sub_48EB30(
       (void *)(_this + 320428),
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184),
+      this->frames[this->cur_script].frame_arg,
       v23,
-      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383188));
+      *(_DWORD *)(_this + 120 * this->cur_script + 383188));
     if ( (*(_BYTE *)(_this + 699208) & 0x10) != 0 )
     {
       if ( *(_DWORD *)(_this + 51828) )
@@ -7643,7 +7629,7 @@ LABEL_63:
         {
           sub_4083B0(_this);
           this->sub_405360( -3);
-          v24 = _this + 120 * *(_DWORD *)(_this + 383104);
+          v24 = _this + 120 * this->cur_script;
           *(_DWORD *)(v24 + 383128) = *(_DWORD *)(v24 + 383124) + 4 * sub_404E00(v3);
 LABEL_68:
           v3[7466] = 0;
@@ -7656,9 +7642,9 @@ LABEL_68:
 
 
 /* ===== [stained] sub_412290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → interpreterMainLoop_412290
+ * Engine 成员函数  → interpreterMainLoop_412290
  * raw 行区间 [20465, 21230]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void  __noreturn Engine::interpreterMainLoop_412290(int _this)
 {
@@ -7822,9 +7808,9 @@ LABEL_4:
                         {
                           v4 = 1000 * (rand() % 120);
                           v89 = v4 + v3();
-                          sub_408050((char *)(_this + 8), 1024, aE_0);
+                          sub_408050((char *)(this->message_buf), 1024, aE_0);
                           v51 = 5;
-                          v50 = _this + 8;
+                          v50 = this->message_buf;
                           v49 = *(_DWORD *)(_this + 387924);
                           v98 = sub_4034F0((_DWORD **)_this);
                           if ( v98 == 1 )
@@ -7967,7 +7953,7 @@ LABEL_56:
                       v17 = *(_DWORD *)(_this + 699204);
                       if ( !v17 )
                       {
-                        v18 = **(_DWORD **)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128);
+                        v18 = **(_DWORD **)(_this + 120 * this->cur_script + 383128);
                         if ( v18 > 0x3FF )
                           goto LABEL_229;
                         goto LABEL_216;
@@ -8062,7 +8048,7 @@ LABEL_56:
                   {
                     *(_DWORD *)(_this + 699208) = 0;
                     *(_DWORD *)(_this + 699204) &= ~0x4000000u;
-                    v26 = *(_DWORD *)(_this + 383104);
+                    v26 = this->cur_script;
                     if ( *(_DWORD *)(_this + 4 * v26 + 489648) != -1 )
                     {
                       v27 = *(_DWORD *)(_this + 699204) | 0x2000000;
@@ -8073,7 +8059,7 @@ LABEL_56:
                       v28 = (_DWORD *)(_this + 120 * v26);
                       *(_DWORD *)(_this + 430712) = v28[95796];
                       v28[95782] = v28[95781] + 4 * *(_DWORD *)(_this + 4 * v26 + 489648);
-                      *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 0;
+                      this->frames[this->cur_script].arity = 0;
                     }
                   }
                 }
@@ -8407,16 +8393,14 @@ LABEL_186:
       else
       {
 LABEL_215:
-        v18 = **(_DWORD **)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128);
+        v18 = **(_DWORD **)(_this + 120 * this->cur_script + 383128);
         if ( v18 > 0x3FF )
 LABEL_229:
           sub_418E30(_this);
 LABEL_216:
         (*(void (__thiscall **)(int))(_this + 4 * v18 + 675996))(_this);
-        *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) += 4
-                                                                       * *(_DWORD *)(_this
-                                                                                   + 120 * *(_DWORD *)(_this + 383104)
-                                                                                   + 383220);
+        this->frames[this->cur_script].ip += 4
+                                                                       * this->frames[this->cur_script].arity;
       }
     }
     else
@@ -8429,9 +8413,9 @@ LABEL_216:
 
 
 /* ===== [stained] sub_413970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_413970
+ * Engine 成员函数  → sub_413970
  * raw 行区间 [21265, 21430]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_413970(int _this)
 {
@@ -8602,9 +8586,9 @@ void Engine::sub_413970(int _this)
 
 
 /* ===== [stained] sub_413DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_413DD0
+ * Engine 成员函数  → sub_413DD0
  * raw 行区间 [21438, 21867]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_413DD0(int _this, int a2)
 {
@@ -8919,8 +8903,8 @@ LABEL_12:
               this->sub_408440( (int)v55);
               goto LABEL_67;
             }
-            sub_408050((char *)(_this + 8), 1024, asc_51F5A0);
-            this->sub_4034C0( (const void *)(_this + 8));
+            sub_408050((char *)(this->message_buf), 1024, asc_51F5A0);
+            this->sub_4034C0( (const void *)(this->message_buf));
             sub_404C40((_DWORD *)(_this + 322832), 0);
 LABEL_66:
             sub_4A5470((_DWORD *)(_this + 322832), *(_DWORD *)(_this + 369520));
@@ -9039,9 +9023,9 @@ LABEL_74:
 
 
 /* ===== [stained] sub_414A90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_414A90
+ * Engine 成员函数  → sub_414A90
  * raw 行区间 [21922, 21928]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_414A90(void *_this, char a2)
 {
@@ -9053,9 +9037,9 @@ void * Engine::sub_414A90(void *_this, char a2)
 
 
 /* ===== [stained] sub_414AC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_414AC0
+ * Engine 成员函数  → sub_414AC0
  * raw 行区间 [21931, 22342]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_414AC0(int _this, int a2, LPCSTR lpFileName)
 {
@@ -9455,7 +9439,7 @@ LABEL_81:
       *(_DWORD *)(v52 - 32) = v62;
       *(_DWORD *)(v52 - 24) = v63;
       for ( i = 0; i < *(_DWORD *)(_this + 382952) + v53 + 1; ++i )
-        *(_DWORD *)(*(_DWORD *)(v52 - 16) + 4 * i) = *(_DWORD *)(_this + 388240);
+        *(_DWORD *)(*(_DWORD *)(v52 - 16) + 4 * i) = this->enc_zero;
       memset(*(void **)(v52 - 8), 0, 4 * (v53 + *(_DWORD *)(_this + 382956)) + 4);
       memset(*(void **)(v52 + 8), 0, 4 * (v53 + *(_DWORD *)(_this + 382964)) + 4);
       memset(*(void **)(v52 + 16), 0, 4 * (v53 + *(_DWORD *)(_this + 382968)) + 4);
@@ -9471,10 +9455,41 @@ LABEL_81:
 }
 
 
-/* ===== [stained] sub_415640  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → commandConstructor_415640
+/* ===== [stained] sub_415640  状态: PARTIAL =====
+ * Engine 成员函数  → commandConstructor_415640   （Engine 构造函数；_this==this，字节寻址）
  * raw 行区间 [22426, 23455]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ *
+ * 已确证的字段初始化：
+ *   - *( _DWORD*)_this = &Command___vftable_  → this->vftable (0x0)
+ *   - 383072/383076/383080/383088/383092/383096 清零  → this->script_state0..5 (0x5D860/64/68/70/74/78)（待确认）
+ *   - 388244/388248 反调试初始化                → this->kernel32_module(0x5EC94) / this->is_debugger_present(0x5EC98)
+ *   - this->enc_zero @0x5EC90 / this->key @0x5EC8C / this->counter @0x69330（随机 key/ENC(0)/计数器）
+ *   - this->global_float_base @0x5D808清零 global-int/float 数组（engine/engine.hpp 已建模）
+ *   - for(i=0..39) this->scriptContextInit_405640(i)  → 40 帧 frames[i] 初始化
+ *   - this->dispatch @0xA509C：memset32 默认 sub_418E30 + 逐 opcode 填 handler
+ *
+ * 子对象大偏移（保持 _this+N 原样，未建模；语义未确证、勿臆测字段名，供后续单独建模）：
+ *   +1032(0x408)→sub_477DD0            +7912(0x1EE8)→sub_4B7D60
+ *   +18664(0x48E8)→sub_4B5B50(RTL_CRITICAL_SECTION)  +20764(0x511C)→sub_4388C0
+ *   +21976(0x55D8)→sub_403F40(tagRECT) +51904(0xCAC0)→sub_403F40(tagRECT)
+ *   +81832(0x13FA8)→sub_476040         +82876(0x143BC)→sub_4B4E60  +84128(0x148A0)→sub_4BB700
+ *   +85296(0x14D30)→sub_464FD0         +320428(0x4E3AC)→sub_48FAF0 +321572(0x4E824)→sub_497810
+ *   +322832(0x4ED10)→sub_4AAF90        +429760(0x68EC0)→_eh_vector_constructor_iterator_(0x1C,32,sub_453A20,sub_453A50)
+ *   +430716(0x6927C)→sub_415460        +680092(0xA609C)→sub_454A20
+ *   +696548(0xAA0E4)→sub_4B88C0        +697620(0xAA514)→sub_491880
+ *   +697816(0xAA5D8)→sub_489970        +699252(0xAAB74)→_eh_vector_constructor_iterator_(0x1C,3,sub_407C50,sub_409DE0)
+ *   +81780(0x13F74) = 存入指向 +7912 子对象的指针
+ *
+ * 内联容器子对象初始化（非整对象构造，而是直接写 vtable/容量/缓冲；保留 _this+N，未建模）：
+ *   Stack_int_(0x429732, cap=256, buf=operator new[](0x400)) / Queue_CACHE_ALPHADATA(0x490044, cap=256, buf=operator new[](0x800))
+ *   Queue_int_(0x497372, cap=256, buf=operator new[](0x400)) 等，各含 vtable 指针 + 容量(256) + 缓冲指针 + 首尾索引。
+ *
+ * 大表填充（保持 _this+N 原样，未逐项建模）：
+ *   - 0x667864..0x671264：操作数默认值表（ctor 填 1/2；字段语义未建模）
+ *   - 0x676000..0x679396：opcode→handler dispatch 表（等价 engine/engine.hpp 的 this->dispatch[0x400] @0xA509C）
+ *   - 0x5EB94..0x5ECC8 区间散落的若干清零 dword（388244/388248 反调试字段已建模，其余未建模，保留 _this+N）
+ *
+ * 遗留：函数体仍含大量未建模 `_this+N`（大表 + 散落清零字段）且调用多个未分析 sub_XXX，故 PARTIAL（未达 ANALYZED）。
  */
 int Engine::commandConstructor_415640(int _this)
 {
@@ -9510,33 +9525,34 @@ int Engine::commandConstructor_415640(int _this)
   pExceptionObject[3] = _this;
   sub_4034A0((_DWORD *)_this);
   v30 = 0;
-  *(_DWORD *)_this = &Command___vftable_;
-  sub_477DD0((_DWORD *)(_this + 1032));
-  sub_4B7D60((_DWORD *)(_this + 7912));
-  sub_4B5B50((struct _RTL_CRITICAL_SECTION *)(_this + 18664));
-  sub_4388C0(_this + 20764);
-  sub_403F40((struct tagRECT *)(_this + 21976));
-  sub_403F40((struct tagRECT *)(_this + 51904));
-  sub_476040((_DWORD *)(_this + 81832));
-  sub_4B4E60((_DWORD *)(_this + 82876));
-  sub_4BB700((_DWORD *)(_this + 84128));
-  sub_464FD0(_this + 85296);
-  sub_48FAF0(_this + 320428);
-  sub_497810((_DWORD *)(_this + 321572));
-  sub_4AAF90(_this + 322832);
-  *(_DWORD *)(_this + 383072) = 0;
-  *(_DWORD *)(_this + 383076) = 0;
-  *(_DWORD *)(_this + 383080) = 0;
-  *(_DWORD *)(_this + 383088) = 0;
-  *(_DWORD *)(_this + 383092) = 0;
-  *(_DWORD *)(_this + 383096) = 0;
+  this->vftable = (uaddr)&Command___vftable_;   // *( _DWORD*)_this（0x0）
+  // ---- 子对象初始化（大偏移；传给各自 sub_XXX，未建模，语义待单独分析；完整列表见函数头注释）----
+  sub_477DD0((_DWORD *)(_this + 1032));    // 0x408  → sub_477DD0
+  sub_4B7D60((_DWORD *)(_this + 7912));    // 0x1EE8 → sub_4B7D60
+  sub_4B5B50((struct _RTL_CRITICAL_SECTION *)(_this + 18664)); // 0x48E8 → sub_4B5B50
+  sub_4388C0(_this + 20764);               // 0x511C → sub_4388C0
+  sub_403F40((struct tagRECT *)(_this + 21976)); // 0x55D8 → sub_403F40(tagRECT)
+  sub_403F40((struct tagRECT *)(_this + 51904)); // 0xCAC0 → sub_403F40(tagRECT)
+  sub_476040((_DWORD *)(_this + 81832));   // 0x13FA8 → sub_476040
+  sub_4B4E60((_DWORD *)(_this + 82876));   // 0x143BC → sub_4B4E60
+  sub_4BB700((_DWORD *)(_this + 84128));   // 0x148A0 → sub_4BB700
+  sub_464FD0(_this + 85296);               // 0x14D30 → sub_464FD0
+  sub_48FAF0(_this + 320428);              // 0x4E3AC → sub_48FAF0
+  sub_497810((_DWORD *)(_this + 321572));  // 0x4E824 → sub_497810
+  sub_4AAF90(_this + 322832);              // 0x4ED10 → sub_4AAF90
+  this->script_state0 = 0;   // *(_DWORD *)(_this + 383072)（0x5D860，待确认）
+  this->script_state1 = 0;   // *(_DWORD *)(_this + 383076)（0x5D864，待确认）
+  this->script_state2 = 0;   // *(_DWORD *)(_this + 383080)（0x5D868，待确认）
+  this->script_state3 = 0;   // *(_DWORD *)(_this + 383088)（0x5D870，待确认）
+  this->script_state4 = 0;   // *(_DWORD *)(_this + 383092)（0x5D874，待确认）
+  this->script_state5 = 0;   // *(_DWORD *)(_this + 383096)（0x5D878，待确认）
   *(_DWORD *)(_this + 429732) = &Stack_int____vftable_;
   *(_DWORD *)(_this + 429736) = 256;
   *(_DWORD *)(_this + 429740) = 256;
   *(_DWORD *)(_this + 429744) = operator new[](0x400u);
   *(_DWORD *)(_this + 429748) = -1;
   _eh_vector_constructor_iterator_(
-    (void *)(_this + 429760),
+    (void *)(_this + 429760),   // 0x68EC0 → vector-ctor(sub_453A20/sub_453A50)
     0x1Cu,
     32,
     (void (__thiscall *)(void *))sub_453A20,
@@ -9544,7 +9560,7 @@ int Engine::commandConstructor_415640(int _this)
   *(_DWORD *)(_this + 430672) = 0;
   *(_DWORD *)(_this + 430676) = 0;
   *(_DWORD *)(_this + 430680) = 0;
-  sub_415460((void ***)(_this + 430716));
+  sub_415460((void ***)(_this + 430716));   // 0x6927C → sub_415460
   *(_DWORD *)(_this + 489824) = 0;
   *(_DWORD *)(_this + 489828) = 0;
   *(_DWORD *)(_this + 489832) = 0;
@@ -9584,12 +9600,12 @@ int Engine::commandConstructor_415640(int _this)
   *(_DWORD *)(_this + 497380) = 0;
   *(_DWORD *)(_this + 497396) = 0;
   *(_DWORD *)(_this + 497384) = 0;
-  sub_454A20((unsigned int *)(_this + 680092));
-  sub_4B88C0((_DWORD *)(_this + 696548));
-  sub_491880((char *)(_this + 697620));
-  sub_489970((_DWORD *)(_this + 697816));
+  sub_454A20((unsigned int *)(_this + 680092));   // 0xA609C → sub_454A20
+  sub_4B88C0((_DWORD *)(_this + 696548));   // 0xAA0E4 → sub_4B88C0
+  sub_491880((char *)(_this + 697620));   // 0xAA514 → sub_491880
+  sub_489970((_DWORD *)(_this + 697816));   // 0xAA5D8 → sub_489970
   _eh_vector_constructor_iterator_(
-    (void *)(_this + 699252),
+    (void *)(_this + 699252),   // 0xAAB74 → vector-ctor(sub_407C50/sub_409DE0)
     0x1Cu,
     3,
     (void (__thiscall *)(void *))sub_407C50,
@@ -9606,7 +9622,7 @@ int Engine::commandConstructor_415640(int _this)
     v28 = (_DWORD *)v7;
   }
   while ( v6 );
-  *(_DWORD *)(_this + 388240) = sub_405620(v7);
+  this->enc_zero = sub_405620(v7);
   i = rand() << 16;
   v21 = (char *)(i + rand());
   i = rand() << 16;
@@ -9624,11 +9640,11 @@ int Engine::commandConstructor_415640(int _this)
   i = rand() << 16;
   v8 = rand();
   srand((unsigned int)&v21[v22 + v23 + v24 + v25 + v26 + v27 + i + v8]);
-  *(_DWORD *)(_this + 388248) = 0;
+  this->is_debugger_present = 0;   // *(_DWORD *)(_this + 388248)（0x5EC98）
   LibraryA = LoadLibraryA(aKernel32Dll);
-  *(_DWORD *)(_this + 388244) = LibraryA;
+  this->kernel32_module = (uaddr)LibraryA;   // *(_DWORD *)(_this + 388244)（0x5EC94）
   if ( LibraryA )
-    *(_DWORD *)(_this + 388248) = GetProcAddress(LibraryA, aIsdebuggerpres);
+    this->is_debugger_present = (uaddr)GetProcAddress(LibraryA, aIsdebuggerpres);
   *(_DWORD *)(_this + 489992) = 10000;
   *(_DWORD *)(_this + 489996) = 10000;
   *(_DWORD *)(_this + 490000) = 10000;
@@ -9667,7 +9683,7 @@ int Engine::commandConstructor_415640(int _this)
   *(_DWORD *)(_this + 490040) = 0;
   *(_DWORD *)(_this + 675984) = 0;
   *(_DWORD *)(_this + 675988) = 0;
-  v10 = (_DWORD *)(_this + 382984);
+  v10 = (_DWORD *)(this->global_float_base);
   v11 = 2;
   do
   {
@@ -9730,7 +9746,7 @@ int Engine::commandConstructor_415640(int _this)
   *(_DWORD *)(_this + 490072) = 0;
   memset((void *)(_this + 490076), 0, 0x190u);
   *(_DWORD *)(_this + 699208) = 0;
-  *(_DWORD *)(_this + 430896) = 0;
+  this->counter = 0;
   *(_DWORD *)(_this + 430844) = 2;
   *(_DWORD *)(_this + 430848) = 51;
   *(_DWORD *)(_this + 430852) = 27;
@@ -9770,9 +9786,10 @@ int Engine::commandConstructor_415640(int _this)
   memset((void *)(_this + 490476), 0, 0x800u);
   *(_DWORD *)(_this + 497324) = 0;
   *(_DWORD *)(_this + 497280) = 0;
-  *(_DWORD *)(_this + 81780) = _this + 7912;
+  *(_DWORD *)(_this + 81780) = _this + 7912;   // 0x13F74 = 指向 +7912(0x1EE8) 子对象的指针
   sub_40DF10(_this);
-  memset32((void *)(_this + 675996), (int)sub_418E30, 0x400u);
+  // ---- opcode→handler dispatch 表（0x676000..0x679396；等价 engine/engine.hpp 的 this->dispatch[0x400] @0xA509C）----
+  memset32((void *)(this->dispatch), (int)sub_418E30, 0x400u);
   *(_DWORD *)(_this + 676000) = sub_418E60;
   *(_DWORD *)(_this + 676004) = scriptReturn_41A820;
   *(_DWORD *)(_this + 676008) = callScript_41C6A0;
@@ -10318,7 +10335,8 @@ int Engine::commandConstructor_415640(int _this)
   *(_DWORD *)(_this + 679392) = sub_428320;
   v18 = v28;
   *(_DWORD *)(_this + 679396) = sub_4283B0;
-  *(_DWORD *)(_this + 388236) = v18;
+  this->key = v18;
+  // ---- 操作数默认值表（0x667864..0x671264；ctor 记为 memset(0,0x1000) 后把多组 dword 填 1/2；字段语义未建模，保留 _this+N）----
   memset((void *)(_this + 667864), 0, 0x1000u);
   *(_DWORD *)(_this + 667904) = 1;
   *(_DWORD *)(_this + 667908) = 1;
@@ -10509,9 +10527,9 @@ int Engine::commandConstructor_415640(int _this)
 
 
 /* ===== [stained] sub_417800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_417800
+ * Engine 成员函数  → sub_417800
  * raw 行区间 [23467, 23832]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __fastcall Engine::sub_417800(int a1, int a2, int a3, HWND a4)
 {
@@ -10882,9 +10900,9 @@ int __fastcall Engine::sub_417800(int a1, int a2, int a3, HWND a4)
 
 
 /* ===== [stained] sub_4182D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4182D0
+ * Engine 成员函数  → sub_4182D0
  * raw 行区间 [23887, 23908]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4182D0(int _this, int a2, int a3, int a4, int a5, int a6)
 {
@@ -10901,19 +10919,19 @@ void Engine::sub_4182D0(int _this, int a2, int a3, int a4, int a5, int a6)
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：SetClipRectTexture エラー：テクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_418340  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418340
+ * Engine 成员函数  → sub_418340
  * raw 行区间 [23911, 23947]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_418340(int _this, int a2, float a3, int a4, int a5)
 {
@@ -10944,20 +10962,20 @@ void Engine::sub_418340(int _this, int a2, float a3, int a4, int a5)
     else
     {
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：Set3DEffectSnow エラー：テクスチャが作成されていません． TEXTURE=%d\r\n",
         a5);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
   }
 }
 
 
 /* ===== [stained] sub_4183F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4183F0
+ * Engine 成员函数  → sub_4183F0
  * raw 行区间 [23951, 23975]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4183F0(int _this, int a2, int a3, int a4)
 {
@@ -10975,11 +10993,11 @@ int Engine::sub_4183F0(int _this, int a2, int a3, int a4)
     else
     {
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：Set3DEffectLeaf エラー：メッシュが作成されていません． MESH=%d\r\n",
         *(_DWORD *)(a3 + 4 * i));
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
   }
   return sub_453510(*(_DWORD ***)(_this + 50704));
@@ -10987,9 +11005,9 @@ int Engine::sub_4183F0(int _this, int a2, int a3, int a4)
 
 
 /* ===== [stained] sub_418520  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418520
+ * Engine 成员函数  → sub_418520
  * raw 行区间 [24011, 24033]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418520(_DWORD *_this, int a2, int a3)
 {
@@ -11017,9 +11035,9 @@ int Engine::sub_418520(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4185F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4185F0
+ * Engine 成员函数  → sub_4185F0
  * raw 行区间 [24058, 24082]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4185F0(int _this, int a2)
 {
@@ -11048,23 +11066,23 @@ void Engine::sub_4185F0(int _this, int a2)
 
 
 /* ===== [stained] sub_418940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418940
+ * Engine 成员函数  → sub_418940
  * raw 行区间 [24235, 24241]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_418940(_DWORD *_this)
 {
   int (*v2)(void); // eax
 
   v2 = (int (*)(void))_this[97062];
-  return v2 && v2() || !this->key || __ROL4__(_this[97060], 11) != this->key;
+  return v2 && v2() || !this->key || __ROL4__(this->enc_zero, 11) != this->key;
 }
 
 
 /* ===== [stained] sub_4189B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4189B0
+ * Engine 成员函数  → sub_4189B0
  * raw 行区间 [24254, 24271]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4189B0(_DWORD *_this, int pExceptionObject)
 {
@@ -11087,9 +11105,9 @@ int Engine::sub_4189B0(_DWORD *_this, int pExceptionObject)
 
 
 /* ===== [stained] sub_418A30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418A30
+ * Engine 成员函数  → sub_418A30
  * raw 行区间 [24274, 24292]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418A30(_DWORD *_this, int pExceptionObject)
 {
@@ -11113,9 +11131,9 @@ int Engine::sub_418A30(_DWORD *_this, int pExceptionObject)
 
 
 /* ===== [stained] sub_418AE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418AE0
+ * Engine 成员函数  → sub_418AE0
  * raw 行区间 [24296, 24320]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418AE0(_DWORD *_this, int pExceptionObject)
 {
@@ -11145,9 +11163,9 @@ int Engine::sub_418AE0(_DWORD *_this, int pExceptionObject)
 
 
 /* ===== [stained] sub_418B90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writePointerOperand_418B90
+ * Engine 成员函数  → writePointerOperand_418B90
  * raw 行区间 [24324, 24362]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::writePointerOperand_418B90(_DWORD *_this, int a2, int pExceptionObject, int a4, int a5)
 {
@@ -11191,9 +11209,9 @@ int Engine::writePointerOperand_418B90(_DWORD *_this, int a2, int pExceptionObje
 
 
 /* ===== [stained] sub_418CC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418CC0
+ * Engine 成员函数  → sub_418CC0
  * raw 行区间 [24366, 24404]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418CC0(_DWORD *_this, int a2, int a3, int pExceptionObject, int a5, int a6)
 {
@@ -11237,9 +11255,9 @@ int Engine::sub_418CC0(_DWORD *_this, int a2, int a3, int pExceptionObject, int 
 
 
 /* ===== [stained] sub_418E80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418E80
+ * Engine 成员函数  → sub_418E80
  * raw 行区间 [24429, 24433]; op=0xC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418E80(_DWORD *_this)
 {
@@ -11249,9 +11267,9 @@ int Engine::sub_418E80(_DWORD *_this)
 
 
 /* ===== [stained] sub_418EB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418EB0
+ * Engine 成员函数  → sub_418EB0
  * raw 行区间 [24436, 24443]; op=0x10
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418EB0(_DWORD *_this)
 {
@@ -11264,9 +11282,9 @@ int Engine::sub_418EB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_418ED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418ED0
+ * Engine 成员函数  → sub_418ED0
  * raw 行区间 [24446, 24459]; op=0x14
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418ED0(_DWORD *_this)
 {
@@ -11285,9 +11303,9 @@ int Engine::sub_418ED0(_DWORD *_this)
 
 
 /* ===== [stained] sub_418F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F10
+ * Engine 成员函数  → sub_418F10
  * raw 行区间 [24462, 24469]; op=0x65
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418F10(_DWORD *_this)
 {
@@ -11300,9 +11318,9 @@ int Engine::sub_418F10(_DWORD *_this)
 
 
 /* ===== [stained] sub_418F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F50
+ * Engine 成员函数  → sub_418F50
  * raw 行区间 [24472, 24476]; op=0x85
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_418F50(int *_this)
 {
@@ -11312,9 +11330,9 @@ unsigned int Engine::sub_418F50(int *_this)
 
 
 /* ===== [stained] sub_418F80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418F80
+ * Engine 成员函数  → sub_418F80
  * raw 行区间 [24479, 24488]; op=0x87
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HCURSOR Engine::sub_418F80(_DWORD *_this)
 {
@@ -11329,9 +11347,9 @@ HCURSOR Engine::sub_418F80(_DWORD *_this)
 
 
 /* ===== [stained] sub_418FC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_418FC0
+ * Engine 成员函数  → sub_418FC0
  * raw 行区间 [24491, 24529]; op=0x199
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_418FC0(_DWORD *_this)
 {
@@ -11374,10 +11392,10 @@ int Engine::sub_418FC0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4190E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4190E0
+/* ===== [stained] sub_4190E0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4190E0
  * raw 行区间 [24532, 24543]; op=0x19B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174801])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4190E0(_DWORD *_this)
 {
@@ -11393,10 +11411,10 @@ int Engine::sub_4190E0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_419120  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419120
+/* ===== [stained] sub_419120  状态: PARTIAL =====
+ * Engine 成员函数  → sub_419120
  * raw 行区间 [24546, 24576]; op=0x19C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[97051])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_419120(_DWORD *_this)
 {
@@ -11432,9 +11450,9 @@ int Engine::sub_419120(_DWORD *_this)
 
 
 /* ===== [stained] sub_4191B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_comment_4191B0
+ * Engine 成员函数  → op_comment_4191B0
  * raw 行区间 [24579, 24586]; op=0x1A7 指令名『comment』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
  */
 int Engine::op_comment_4191B0(_DWORD *_this)
 {
@@ -11446,10 +11464,10 @@ int Engine::op_comment_4191B0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4191D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4191D0
+/* ===== [stained] sub_4191D0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4191D0
  * raw 行区间 [24589, 24601]; op=0x93
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174801])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4191D0(_DWORD *_this)
 {
@@ -11467,9 +11485,9 @@ int Engine::sub_4191D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_419230  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419230
+ * Engine 成员函数  → sub_419230
  * raw 行区间 [24604, 24609]; op=0x94
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_419230(_DWORD *_this)
 {
@@ -11480,9 +11498,9 @@ void Engine::sub_419230(_DWORD *_this)
 
 
 /* ===== [stained] sub_419260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419260
+ * Engine 成员函数  → sub_419260
  * raw 行区间 [24612, 24624]; op=0x96
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419260(_DWORD *_this)
 {
@@ -11500,9 +11518,9 @@ int Engine::sub_419260(_DWORD *_this)
 
 
 /* ===== [stained] sub_4192C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4192C0
+ * Engine 成员函数  → sub_4192C0
  * raw 行区间 [24627, 24631]; op=0xAD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4192C0(_DWORD *_this)
 {
@@ -11511,10 +11529,10 @@ int Engine::sub_4192C0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4192F0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4192F0
+/* ===== [stained] sub_4192F0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4192F0
  * raw 行区间 [24634, 24773]; op=0xAE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[95780])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4192F0(_DWORD *_this)
 {
@@ -11659,9 +11677,9 @@ LABEL_26:
 
 
 /* ===== [stained] sub_419690  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_dev_ukn_419690
+ * Engine 成员函数  → op_dev_ukn_419690
  * raw 行区间 [24776, 24783]; op=0x1A8 指令名『dev_ukn』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
  */
 int Engine::op_dev_ukn_419690(_DWORD *_this)
 {
@@ -11674,9 +11692,9 @@ int Engine::op_dev_ukn_419690(_DWORD *_this)
 
 
 /* ===== [stained] sub_4196B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4196B0
+ * Engine 成员函数  → sub_4196B0
  * raw 行区间 [24786, 24803]; op=0xB3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4196B0(_DWORD *_this)
 {
@@ -11699,9 +11717,9 @@ _DWORD * Engine::sub_4196B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4196F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4196F0
+ * Engine 成员函数  → sub_4196F0
  * raw 行区间 [24806, 24814]; op=0x1AD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4196F0(_DWORD *_this)
 {
@@ -11715,9 +11733,9 @@ int Engine::sub_4196F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_419720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419720
+ * Engine 成员函数  → sub_419720
  * raw 行区间 [24817, 24829]; op=0xB8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419720(_DWORD *_this)
 {
@@ -11735,9 +11753,9 @@ int Engine::sub_419720(_DWORD *_this)
 
 
 /* ===== [stained] sub_419770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419770
+ * Engine 成员函数  → sub_419770
  * raw 行区间 [24832, 24842]; op=0xC1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419770(_DWORD *_this)
 {
@@ -11752,17 +11770,17 @@ int Engine::sub_419770(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4197A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4197A0
+/* ===== [stained] sub_4197A0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4197A0
  * raw 行区间 [24845, 24871]; op=0x1BC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 85160)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4197A0(int _this)
 {
   int i; // edi
   int result; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   if ( *(_DWORD *)(_this + 85160) )
   {
     for ( i = 0; i < 3; ++i )
@@ -11786,10 +11804,10 @@ int Engine::sub_4197A0(int _this)
 }
 
 
-/* ===== [stained] sub_419840  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419840
+/* ===== [stained] sub_419840  状态: PARTIAL =====
+ * Engine 成员函数  → sub_419840
  * raw 行区间 [24874, 24885]; op=0x1BF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[122504])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_419840(_DWORD *_this)
 {
@@ -11806,9 +11824,9 @@ int Engine::sub_419840(_DWORD *_this)
 
 
 /* ===== [stained] sub_419880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419880
+ * Engine 成员函数  → sub_419880
  * raw 行区间 [24888, 24896]; op=0x1D5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419880(_DWORD *_this)
 {
@@ -11822,9 +11840,9 @@ int Engine::sub_419880(_DWORD *_this)
 
 
 /* ===== [stained] sub_4198A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4198A0
+ * Engine 成员函数  → sub_4198A0
  * raw 行区间 [24899, 24908]; op=0xC9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD Engine::sub_4198A0(_DWORD *_this)
 {
@@ -11839,9 +11857,9 @@ DWORD Engine::sub_4198A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4198E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4198E0
+ * Engine 成员函数  → sub_4198E0
  * raw 行区间 [24911, 24928]; op=0xCA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD Engine::sub_4198E0(_DWORD *_this)
 {
@@ -11864,9 +11882,9 @@ DWORD Engine::sub_4198E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_419940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419940
+ * Engine 成员函数  → sub_419940
  * raw 行区间 [24932, 24936]; op=0xD1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD Engine::sub_419940(_DWORD *_this)
 {
@@ -11875,10 +11893,10 @@ DWORD Engine::sub_419940(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_419970  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419970
+/* ===== [stained] sub_419970  状态: PARTIAL =====
+ * Engine 成员函数  → sub_419970
  * raw 行区间 [24939, 24949]; op=0xD9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174801])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_419970(_DWORD *_this)
 {
@@ -11894,9 +11912,9 @@ int Engine::sub_419970(_DWORD *_this)
 
 
 /* ===== [stained] sub_4199B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4199B0
+ * Engine 成员函数  → sub_4199B0
  * raw 行区间 [24952, 24988]; op=0xFA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4199B0(int *_this)
 {
@@ -11938,9 +11956,9 @@ _DWORD * Engine::sub_4199B0(int *_this)
 
 
 /* ===== [stained] sub_419A70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419A70
+ * Engine 成员函数  → sub_419A70
  * raw 行区间 [24991, 24995]; op=0xFC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_419A70(_DWORD *_this)
 {
@@ -11950,9 +11968,9 @@ void * Engine::sub_419A70(_DWORD *_this)
 
 
 /* ===== [stained] sub_419A90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419A90
+ * Engine 成员函数  → sub_419A90
  * raw 行区间 [24998, 25009]; op=0xFF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419A90(int *_this)
 {
@@ -11968,10 +11986,10 @@ int Engine::sub_419A90(int *_this)
 }
 
 
-/* ===== [stained] sub_419AF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419AF0
+/* ===== [stained] sub_419AF0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_419AF0
  * raw 行区间 [25012, 25066]; op=0x100
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174802])；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_419AF0(_DWORD *_this)
 {
@@ -12030,10 +12048,10 @@ _DWORD * Engine::sub_419AF0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_419CC0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419CC0
+/* ===== [stained] sub_419CC0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_419CC0
  * raw 行区间 [25069, 25082]; op=0x101 指令名『poll-input』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 174802)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_419CC0(_DWORD *_this)
 {
@@ -12052,9 +12070,9 @@ _DWORD * Engine::sub_419CC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_419D20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_419D20
+ * Engine 成员函数  → sub_419D20
  * raw 行区间 [25085, 25164]; op=0x104
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_419D20(_DWORD *_this)
 {
@@ -12138,10 +12156,10 @@ LABEL_4:
 }
 
 
-/* ===== [stained] sub_41A000  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → dispatchScriptRequests_41A000
+/* ===== [stained] sub_41A000  状态: PARTIAL =====
+ * Engine 成员函数  → dispatchScriptRequests_41A000
  * raw 行区间 [25168, 25191]; op=0x143
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[124350])；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::dispatchScriptRequests_41A000(_DWORD *_this)
 {
@@ -12169,10 +12187,10 @@ void Engine::dispatchScriptRequests_41A000(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A090  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A090
+/* ===== [stained] sub_41A090  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A090
  * raw 行区间 [25194, 25212]; op=0x1F4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[107438])；建模 engine.hpp 字段后方可标已分析
  */
 DWORD Engine::sub_41A090(_DWORD *_this)
 {
@@ -12195,17 +12213,17 @@ DWORD Engine::sub_41A090(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A0E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A0E0
+/* ===== [stained] sub_41A0E0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A0E0
  * raw 行区间 [25215, 25236]; op=0x1F5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 429756)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41A0E0(int _this)
 {
   int v1; // eax
   bool v2; // zf
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   v1 = *(_DWORD *)(_this + 429756);
   if ( v1 <= 0 )
   {
@@ -12224,10 +12242,10 @@ void Engine::sub_41A0E0(int _this)
 }
 
 
-/* ===== [stained] sub_41A130  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A130
+/* ===== [stained] sub_41A130  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A130
  * raw 行区间 [25239, 25243]; op=0x1F6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41A130(_DWORD *_this)
 {
@@ -12237,9 +12255,9 @@ int Engine::sub_41A130(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A160  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A160
+ * Engine 成员函数  → sub_41A160
  * raw 行区间 [25246, 25256]; op=0x206
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void  __noreturn Engine::sub_41A160(_DWORD *_this)
 {
@@ -12255,9 +12273,9 @@ void  __noreturn Engine::sub_41A160(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A1A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A1A0
+ * Engine 成员函数  → sub_41A1A0
  * raw 行区间 [25259, 25274]; op=0x20C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41A1A0(_DWORD *_this)
 {
@@ -12277,10 +12295,10 @@ int Engine::sub_41A1A0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A200  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A200
+/* ===== [stained] sub_41A200  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A200
  * raw 行区间 [25277, 25287]; op=0x20E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[80684])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41A200(_DWORD *_this)
 {
@@ -12295,10 +12313,10 @@ int Engine::sub_41A200(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A260  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A260
+/* ===== [stained] sub_41A260  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A260
  * raw 行区间 [25290, 25298]; op=0x21C 指令名『wait』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174801])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41A260(_DWORD *_this)
 {
@@ -12312,9 +12330,9 @@ int Engine::sub_41A260(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A290
+ * Engine 成员函数  → sub_41A290
  * raw 行区间 [25301, 25305]; op=0x224
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41A290(_DWORD *_this)
 {
@@ -12324,9 +12342,9 @@ int Engine::sub_41A290(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A2C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A2C0
+ * Engine 成员函数  → sub_41A2C0
  * raw 行区间 [25308, 25317]; op=0x23C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD Engine::sub_41A2C0(_DWORD *_this)
 {
@@ -12340,10 +12358,10 @@ DWORD Engine::sub_41A2C0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A300  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A300
+/* ===== [stained] sub_41A300  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A300
  * raw 行区间 [25320, 25347]; op=0x23D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41A300(_DWORD *_this)
 {
@@ -12376,9 +12394,9 @@ int Engine::sub_41A300(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A370  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A370
+ * Engine 成员函数  → sub_41A370
  * raw 行区间 [25350, 25354]; op=0x244
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41A370(_DWORD *_this)
 {
@@ -12387,10 +12405,10 @@ int Engine::sub_41A370(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A3A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A3A0
+/* ===== [stained] sub_41A3A0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A3A0
  * raw 行区间 [25357, 25376]; op=0x259
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 86176)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_41A3A0(_DWORD *_this)
 {
@@ -12415,9 +12433,9 @@ _DWORD * Engine::sub_41A3A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A3F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A3F0
+ * Engine 成员函数  → sub_41A3F0
  * raw 行区间 [25379, 25383]; op=0x2C4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41A3F0(_DWORD *_this)
 {
@@ -12427,9 +12445,9 @@ int Engine::sub_41A3F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A420
+ * Engine 成员函数  → sub_41A420
  * raw 行区间 [25386, 25400]; op=0x304
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41A420(_DWORD *_this)
 {
@@ -12448,10 +12466,10 @@ int Engine::sub_41A420(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41A470  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A470
+/* ===== [stained] sub_41A470  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41A470
  * raw 行区间 [25403, 25407]; op=0x324
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[93384])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41A470(_DWORD *_this)
 {
@@ -12461,9 +12479,9 @@ int Engine::sub_41A470(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A4A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A4A0
+ * Engine 成员函数  → sub_41A4A0
  * raw 行区间 [25411, 25422]; op=0x32B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41A4A0(_DWORD *_this)
 {
@@ -12480,9 +12498,9 @@ void Engine::sub_41A4A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A4E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A4E0
+ * Engine 成员函数  → sub_41A4E0
  * raw 行区间 [25425, 25436]; op=0x343
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41A4E0(_DWORD *_this)
 {
@@ -12499,9 +12517,9 @@ void Engine::sub_41A4E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41A780  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41A780
+ * Engine 成员函数  → sub_41A780
  * raw 行区间 [25596, 25626]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const char * Engine::sub_41A780(_DWORD *_this, int pExceptionObject)
 {
@@ -12536,10 +12554,10 @@ const char * Engine::sub_41A780(_DWORD *_this, int pExceptionObject)
 }
 
 
-/* ===== [stained] sub_41A820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptReturn_41A820
+/* ===== [stained] sub_41A820  状态: PARTIAL =====
+ * Engine 成员函数  → scriptReturn_41A820
  * raw 行区间 [25629, 25701]; op=0x2 指令名『exit』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 697620)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::scriptReturn_41A820(int _this)
 {
@@ -12557,14 +12575,14 @@ void Engine::scriptReturn_41A820(int _this)
   int v13; // eax
   int pExceptionObject; // [esp+8h] [ebp-4h] BYREF
 
-  v2 = *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383180);
-  *(_DWORD *)(_this + 383108) = v2;
+  v2 = this->frames[this->cur_script].caller;
+  this->call_ret = v2;
   if ( v2 < 0 )
   {
     if ( v2 == -11 )
     {
       v3 = *(int (__thiscall **)(int))(*(_DWORD *)(_this + 697620) + 4);
-      *(_DWORD *)(_this + 383108) = -1;
+      this->call_ret = -1;
       v4 = v3(_this + 697620);
       v5 = (*(int (__thiscall **)(int, char *, int))(*(_DWORD *)(_this + 697620) + 4))(
              _this + 697620,
@@ -12575,10 +12593,10 @@ void Engine::scriptReturn_41A820(int _this)
     }
     if ( v2 == -10 )
     {
-      v6 = 15 * *(_DWORD *)(_this + 383112);
-      *(_DWORD *)(_this + 383104) = *(_DWORD *)(_this + 383112);
+      v6 = 15 * this->call_link;
+      this->cur_script = this->call_link;
       *(_DWORD *)(_this + 8 * v6 + 383220) = 0;
-      v7 = *(_DWORD *)(_this + 383116) | *(_DWORD *)(_this + 699204) & 0x4000;
+      v7 = this->call_flag | *(_DWORD *)(_this + 699204) & 0x4000;
       *(_DWORD *)(_this + 497400) = 0;
       *(_DWORD *)(_this + 699204) = v7 & 0xFFDFFFFF;
       v8 = *(_DWORD *)(_this + 497380);
@@ -12591,23 +12609,23 @@ LABEL_14:
     pExceptionObject = 2;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_Exit_Exception__);
   }
-  if ( v2 + 1 == *(_DWORD *)(_this + 383104) )
-    this->sub_40EA00( *(void **)(_this + 383104));
-  v10 = 15 * *(_DWORD *)(_this + 383108);
-  *(_DWORD *)(_this + 383104) = *(_DWORD *)(_this + 383108);
+  if ( v2 + 1 == this->cur_script )
+    this->sub_40EA00( *(void **)(this->cur_script));
+  v10 = 15 * this->call_ret;
+  this->cur_script = this->call_ret;
   if ( !*(_DWORD *)(_this + 8 * v10 + 383124) )
   {
     do
     {
-      v11 = *(_DWORD *)(_this + 383104);
+      v11 = this->cur_script;
       if ( v11 < 0 )
         break;
       v12 = v11 - 1;
-      *(_DWORD *)(_this + 383104) = v12;
+      this->cur_script = v12;
     }
-    while ( !*(_DWORD *)(_this + 120 * v12 + 383124) );
+    while ( !this->frames[v12].str_table );
   }
-  v13 = *(_DWORD *)(_this + 383104);
+  v13 = this->cur_script;
   if ( v13 < 0 )
     goto LABEL_14;
   if ( *(_DWORD *)(_this + 667852) > v13 )
@@ -12616,10 +12634,10 @@ LABEL_14:
 }
 
 
-/* ===== [stained] sub_41A9B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_ret_41A9B0
+/* ===== [stained] sub_41A9B0  状态: PARTIAL =====
+ * Engine 成员函数  → op_ret_41A9B0
  * raw 行区间 [25704, 25727]; op=0x5 指令名『ret』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[107437])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_ret_41A9B0(_DWORD *_this)
 {
@@ -12648,9 +12666,9 @@ int Engine::op_ret_41A9B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41AA50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AA50
+ * Engine 成员函数  → sub_41AA50
  * raw 行区间 [25730, 25776]; op=0x6D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41AA50(_DWORD *_this)
 {
@@ -12702,9 +12720,9 @@ int Engine::sub_41AA50(_DWORD *_this)
 
 
 /* ===== [stained] sub_41AB80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AB80
+ * Engine 成员函数  → sub_41AB80
  * raw 行区间 [25779, 25824]; op=0x7C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41AB80(int _this)
 {
@@ -12717,7 +12735,7 @@ void Engine::sub_41AB80(int _this)
   char *pExceptionObject; // [esp+4h] [ebp-8h] BYREF
   int v9; // [esp+8h] [ebp-4h]
 
-  v2 = 15 * *(_DWORD *)(_this + 383104);
+  v2 = 15 * this->cur_script;
   if ( (*(_DWORD *)(_this + 489808) & 0x2000000) == 0 )
   {
     *(_DWORD *)(_this + 8 * v2 + 383220) = 1;
@@ -12729,14 +12747,14 @@ void Engine::sub_41AB80(int _this)
   if ( v3[95796] != *(_DWORD *)(_this + 430712) )
   {
     v7 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430712));
-    v4 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-    sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v4, v7);
-    pExceptionObject = (char *)(_this + 8);
+    v4 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+    sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v4, v7);
+    pExceptionObject = (char *)(this->message_buf);
     v9 = 65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   v3[95782] = v3[95781] + 4 * *(_DWORD *)(_this + 489812);
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 0;
+  this->frames[this->cur_script].arity = 0;
   *(_DWORD *)(_this + 699204) = *(_DWORD *)(_this + 489808) & 0xFDFFFFFF;
   *(_DWORD *)(_this + 489808) = 0;
   *(_DWORD *)(_this + 81776) = -1;
@@ -12754,10 +12772,10 @@ void Engine::sub_41AB80(int _this)
 }
 
 
-/* ===== [stained] sub_41ACD0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_get_input_type_41ACD0
+/* ===== [stained] sub_41ACD0  状态: PARTIAL =====
+ * Engine 成员函数  → op_get_input_type_41ACD0
  * raw 行区间 [25827, 25876]; op=0xCD 指令名『get-input-type』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 429808)；建模 engine.hpp 字段后方可标已分析
  */
 DWORD Engine::op_get_input_type_41ACD0(int _this)
 {
@@ -12770,7 +12788,7 @@ DWORD Engine::op_get_input_type_41ACD0(int _this)
   char *v8; // [esp-4h] [ebp-10h]
   int pExceptionObject[2]; // [esp+4h] [ebp-8h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   result = timeGetTime();
   v3 = result - *(_DWORD *)(_this + 429808);
   dword_55C8C0 = result;
@@ -12778,33 +12796,33 @@ DWORD Engine::op_get_input_type_41ACD0(int _this)
   {
     *(_DWORD *)(_this + 429808) = result;
     *(_DWORD *)(_this
-              + 4 * (*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612) + (*(_DWORD *)(_this + 383104) << 8))
-              + 388772) = ((*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128)
-                          - *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383124)) >> 2)
+              + 4 * (*(_DWORD *)(_this + 4 * this->cur_script + 388612) + (this->cur_script << 8))
+              + 388772) = ((this->frames[this->cur_script].ip
+                          - this->frames[this->cur_script].str_table) >> 2)
                         + 1;
-    ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
+    ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
     v4 = *(_DWORD *)(_this + 430656);
     if ( v4 == -1 )
     {
-      v5 = *(_DWORD *)(_this + 383104);
+      v5 = this->cur_script;
       --*(_DWORD *)(_this + 4 * v5 + 388612);
       return _this + 4 * v5 + 388612;
     }
     else
     {
-      v6 = (_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104));
+      v6 = (_DWORD *)(_this + 120 * this->cur_script);
       if ( v6[95796] != *(_DWORD *)(_this + 430696) )
       {
         v8 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430696));
-        v7 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-        sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v7, v8);
+        v7 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+        sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v8);
         pExceptionObject[1] = 65543;
-        pExceptionObject[0] = _this + 8;
+        pExceptionObject[0] = this->message_buf;
         _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
       }
       v6[95782] = v6[95781] + 4 * v4;
-      result = *(_DWORD *)(_this + 383104);
-      *(_DWORD *)(_this + 120 * result + 383220) = 0;
+      result = this->cur_script;
+      this->frames[result].arity = 0;
     }
   }
   return result;
@@ -12812,9 +12830,9 @@ DWORD Engine::op_get_input_type_41ACD0(int _this)
 
 
 /* ===== [stained] sub_41AE40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41AE40
+ * Engine 成员函数  → sub_41AE40
  * raw 行区间 [25880, 26011]; op=0xCF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD Engine::sub_41AE40(int _this)
 {
@@ -12840,7 +12858,7 @@ DWORD Engine::sub_41AE40(int _this)
   char *pExceptionObject; // [esp+4h] [ebp-8h] BYREF
   int v22; // [esp+8h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   result = timeGetTime();
   v3 = result - *(_DWORD *)(_this + 429836);
   dword_55C8CC = result;
@@ -12849,55 +12867,55 @@ DWORD Engine::sub_41AE40(int _this)
   {
     *(_DWORD *)(_this + 429836) = result;
     *(_DWORD *)(_this
-              + 4 * (*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612) + (*(_DWORD *)(_this + 383104) << 8))
-              + 388772) = ((*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128)
-                          - *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383124)) >> 2)
+              + 4 * (*(_DWORD *)(_this + 4 * this->cur_script + 388612) + (this->cur_script << 8))
+              + 388772) = ((this->frames[this->cur_script].ip
+                          - this->frames[this->cur_script].str_table) >> 2)
                         + 1;
-    ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
+    ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
     if ( v3 < 2 * *(_DWORD *)(_this + 429840) )
     {
       v13 = *(_DWORD *)(_this + 430660);
       if ( v13 == -1 )
       {
-        v14 = *(_DWORD *)(_this + 383104);
+        v14 = this->cur_script;
         --*(_DWORD *)(_this + 4 * v14 + 388612);
         return _this + 4 * v14 + 388612;
       }
       else
       {
-        v15 = (_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104));
+        v15 = (_DWORD *)(_this + 120 * this->cur_script);
         v16 = v15[95796];
         if ( v16 != *(_DWORD *)(_this + 430700) )
         {
           v20 = *(_DWORD *)(_this + 430700);
-          v17 = (char *)(_this + 8);
+          v17 = (char *)(this->message_buf);
           sub_408050(v17, 1024, "Depth が不正です %d != %d", v16, v20);
           pExceptionObject = v17;
           v22 = 65543;
           _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
         }
         v15[95782] = v15[95781] + 4 * v13;
-        result = *(_DWORD *)(_this + 383104);
-        *(_DWORD *)(_this + 120 * result + 383220) = 0;
+        result = this->cur_script;
+        this->frames[result].arity = 0;
       }
     }
     else
     {
-      v4 = *(_DWORD *)(_this + 383104);
+      v4 = this->cur_script;
       v5 = *(_DWORD *)(_this + 430700);
       v6 = 1;
       dword_55C8C4 = 1;
-      if ( *(_DWORD *)(_this + 120 * v4 + 383184) != v5 )
+      if ( this->frames[v4].frame_arg != v5 )
       {
         v18 = sub_454FA0((_DWORD *)(_this + 680092), v5);
-        v7 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-        sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v7, v18);
+        v7 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+        sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v7, v18);
         v22 = 65543;
-        pExceptionObject = (char *)(_this + 8);
+        pExceptionObject = (char *)(this->message_buf);
         _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
       }
       *(_DWORD *)(_this + 4 * (*(_DWORD *)(_this + 4 * v4 + 388612) + (v4 << 8)) + 388772) = *(_DWORD *)(_this + 430660);
-      ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
+      ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
       v8 = *(_DWORD *)(_this + 429840);
       v9 = v3 - v8;
       dword_55C8C8 = v9;
@@ -12909,9 +12927,9 @@ DWORD Engine::sub_41AE40(int _this)
             break;
           *(_DWORD *)(_this
                     + 4
-                    * (*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612) + (*(_DWORD *)(_this + 383104) << 8))
+                    * (*(_DWORD *)(_this + 4 * this->cur_script + 388612) + (this->cur_script << 8))
                     + 388772) = *(_DWORD *)(_this + 430664);
-          ++*(_DWORD *)(_this + 4 * *(_DWORD *)(_this + 383104) + 388612);
+          ++*(_DWORD *)(_this + 4 * this->cur_script + 388612);
           v9 -= *(_DWORD *)(_this + 429840);
           ++v6;
         }
@@ -12922,27 +12940,25 @@ DWORD Engine::sub_41AE40(int _this)
       v10 = *(_DWORD *)(_this + 430664);
       if ( v10 == -1 )
       {
-        v11 = *(_DWORD *)(_this + 383104);
+        v11 = this->cur_script;
         *(_DWORD *)(_this + 4 * v11 + 388612) -= v6;
         return _this + 4 * v11 + 388612;
       }
       else
       {
-        if ( *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184) != *(_DWORD *)(_this + 430700) )
+        if ( this->frames[this->cur_script].frame_arg != *(_DWORD *)(_this + 430700) )
         {
           v19 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 430700));
-          v12 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
-          sub_408050((char *)(_this + 8), 1024, "Depth が不正です %s != %s", v12, v19);
+          v12 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[this->cur_script].frame_arg);
+          sub_408050((char *)(this->message_buf), 1024, "Depth が不正です %s != %s", v12, v19);
           v22 = 65543;
-          pExceptionObject = (char *)(_this + 8);
+          pExceptionObject = (char *)(this->message_buf);
           _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
         }
-        *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                                  + 120 * *(_DWORD *)(_this + 383104)
-                                                                                  + 383124)
+        this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table
                                                                       + 4 * v10;
-        result = *(_DWORD *)(_this + 383104);
-        *(_DWORD *)(_this + 120 * result + 383220) = 0;
+        result = this->cur_script;
+        this->frames[result].arity = 0;
       }
     }
   }
@@ -12951,16 +12967,16 @@ DWORD Engine::sub_41AE40(int _this)
 
 
 /* ===== [stained] sub_41B180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B180
+ * Engine 成员函数  → sub_41B180
  * raw 行区间 [26017, 26031]; op=0x243
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41B180(int _this)
 {
   int result; // eax
 
   result = 1;
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   if ( (*(_BYTE *)(_this + 369360) & 2) == 0 )
   {
     *(_DWORD *)(_this + 369344) = 1;
@@ -12973,9 +12989,9 @@ int Engine::sub_41B180(int _this)
 
 
 /* ===== [stained] sub_41B1C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B1C0
+ * Engine 成员函数  → sub_41B1C0
  * raw 行区间 [26034, 26102]; op=0x305
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41B1C0(int _this)
 {
@@ -12986,8 +13002,8 @@ int Engine::sub_41B1C0(int _this)
   int v6; // eax
   int v7; // [esp-Ch] [ebp-10h]
 
-  result = *(_DWORD *)(_this + 383104);
-  *(_DWORD *)(_this + 120 * result + 383220) = 1;
+  result = this->cur_script;
+  this->frames[result].arity = 1;
   if ( (*(_DWORD *)(_this + 489988) & 0x10001) == 65537 )
   {
     v3 = *(_DWORD *)(_this + 489484);
@@ -13000,10 +13016,10 @@ int Engine::sub_41B1C0(int _this)
     {
       v5 = sub_48E870(
              (_DWORD *)(_this + 320428),
-             *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383212),
-             *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383192),
-             *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383188));
-      if ( sub_48F000((_DWORD *)(_this + 320428), *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184), v5) )
+             *(_DWORD *)(_this + 120 * this->cur_script + 383212),
+             *(_DWORD *)(_this + 120 * this->cur_script + 383192),
+             *(_DWORD *)(_this + 120 * this->cur_script + 383188));
+      if ( sub_48F000((_DWORD *)(_this + 320428), this->frames[this->cur_script].frame_arg, v5) )
       {
         *(_DWORD *)(_this + 699204) |= 0x8000000u;
         *(_DWORD *)(_this + 489820) = 1;
@@ -13049,9 +13065,9 @@ LABEL_12:
 
 
 /* ===== [stained] sub_41B640  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B640
+ * Engine 成员函数  → sub_41B640
  * raw 行区间 [26249, 26360]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_41B640(_DWORD *_this, int pExceptionObject)
 {
@@ -13168,9 +13184,9 @@ LABEL_4:
 
 
 /* ===== [stained] sub_41B9B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41B9B0
+ * Engine 成员函数  → sub_41B9B0
  * raw 行区间 [26366, 26549]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_41B9B0(_DWORD *_this, int pExceptionObject)
 {
@@ -13359,9 +13375,9 @@ LABEL_37:
 
 
 /* ===== [stained] sub_41BF50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → readIntOperand_41BF50
+ * Engine 成员函数  → readIntOperand_41BF50
  * raw 行区间 [26555, 26651]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::readIntOperand_41BF50(_DWORD *_this, int pExceptionObject)
 {
@@ -13463,9 +13479,9 @@ LABEL_25:
 
 
 /* ===== [stained] sub_41C300  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → readFloatOperand_41C300
+ * Engine 成员函数  → readFloatOperand_41C300
  * raw 行区间 [26655, 26758]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 double Engine::readFloatOperand_41C300(_DWORD *_this, int pExceptionObject)
 {
@@ -13573,10 +13589,10 @@ LABEL_14:
 }
 
 
-/* ===== [stained] sub_41C6A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → callScript_41C6A0
+/* ===== [stained] sub_41C6A0  状态: PARTIAL =====
+ * Engine 成员函数  → callScript_41C6A0
  * raw 行区间 [26762, 26800]; op=0x3 指令名『call-script』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 120)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::callScript_41C6A0(int _this)
 {
@@ -13591,24 +13607,24 @@ int Engine::callScript_41C6A0(int _this)
   int pExceptionObject; // [esp+4h] [ebp-8h] BYREF
   int v11; // [esp+8h] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
-  if ( *(int *)(_this + 383104) >= 39 )
+  this->frames[this->cur_script].arity = 3;
+  if ( *(int *)(this->cur_script) >= 39 )
   {
-    v2 = _this + 8;
-    sub_408050((char *)(_this + 8), 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
+    v2 = this->message_buf;
+    sub_408050((char *)(this->message_buf), 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
     pExceptionObject = v2;
     v11 = 65537;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   v3 = this->readIntOperand_41BF50( 1);
-  v4 = (_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104));
+  v4 = (_DWORD *)(_this + 120 * this->cur_script);
   v9 = v3;
   v5 = (v4[95782] - v4[95781]) >> 2;
   v4[95804] = v5;
-  v6 = *(_DWORD *)(_this + 383104);
+  v6 = this->cur_script;
   v7 = *(void **)(_this + 387924);
-  *(_DWORD *)(_this + 383108) = v6;
-  *(_DWORD *)(_this + 383104) = v6 + 1;
+  this->call_ret = v6;
+  this->cur_script = v6 + 1;
   result = this->loadScriptFrame_40ED40( v5, v7, v9);
   if ( !result )
   {
@@ -13620,9 +13636,9 @@ int Engine::callScript_41C6A0(int _this)
 
 
 /* ===== [stained] sub_41C770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → scriptReturnEx_41C770
+ * Engine 成员函数  → scriptReturnEx_41C770
  * raw 行区间 [26803, 26819]; op=0x4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::scriptReturnEx_41C770(int _this)
 {
@@ -13631,7 +13647,7 @@ int Engine::scriptReturnEx_41C770(int _this)
   int result; // eax
   int pExceptionObject; // [esp+4h] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 383108) = *(_DWORD *)(_this + 383104) - 1;
+  this->call_ret = this->cur_script - 1;
   v2 = this->readIntOperand_41BF50( 1);
   result = this->loadScriptFrame_40ED40( v3, *(void **)(_this + 387924), v2);
   if ( !result )
@@ -13643,10 +13659,10 @@ int Engine::scriptReturnEx_41C770(int _this)
 }
 
 
-/* ===== [stained] sub_41C7C0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C7C0
+/* ===== [stained] sub_41C7C0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41C7C0
  * raw 行区间 [26823, 26863]; op=0x6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 388248)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41C7C0(int _this)
 {
@@ -13659,29 +13675,29 @@ int Engine::sub_41C7C0(int _this)
   char *v8; // [esp+8h] [ebp-8h] BYREF
   int pExceptionObject; // [esp+Ch] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = *(int (**)(void))(_this + 388248);
   if ( v2 && v2()
-    || !*(_DWORD *)(_this + 388236)
-    || (pExceptionObject = __ROL4__(*(_DWORD *)(_this + 388240), 11), pExceptionObject != *(_DWORD *)(_this + 388236)) )
+    || !this->key
+    || (pExceptionObject = __ROL4__(this->enc_zero, 11), pExceptionObject != this->key) )
   {
     pExceptionObject = 0;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_Exit_Exception__);
   }
   v3 = this->readIntOperand_41BF50( 1);
   v4 = this->readIntOperand_41BF50( 2);
-  *(_DWORD *)(_this + 383108) = *(_DWORD *)(_this + 383104);
-  *(_DWORD *)(_this + 383104) = v4;
+  this->call_ret = this->cur_script;
+  this->cur_script = v4;
   if ( v4 >= 40 )
   {
-    v6 = (char *)(_this + 8);
+    v6 = (char *)(this->message_buf);
     sub_408050(v6, 1024, "ファイルの階層が深すぎます．最大は%dです．", 40);
     v8 = v6;
     pExceptionObject = 65537;
     _CxxThrowException(&v8, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   result = this->loadScriptFrame_40ED40( v5, *(void **)(_this + 387924), v3);
-  *(_DWORD *)(_this + 383104) = *(_DWORD *)(_this + 383108);
+  this->cur_script = this->call_ret;
   if ( !result )
   {
     pExceptionObject = 2;
@@ -13692,9 +13708,9 @@ int Engine::sub_41C7C0(int _this)
 
 
 /* ===== [stained] sub_41C8D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C8D0
+ * Engine 成员函数  → sub_41C8D0
  * raw 行区间 [26867, 26874]; op=0x7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41C8D0(_DWORD *_this)
 {
@@ -13707,9 +13723,9 @@ void Engine::sub_41C8D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41C900  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C900
+ * Engine 成员函数  → sub_41C900
  * raw 行区间 [26877, 26913]; op=0x8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41C900(int _this)
 {
@@ -13720,40 +13736,38 @@ int Engine::sub_41C900(int _this)
   int result; // eax
   int pExceptionObject[2]; // [esp+4h] [ebp-8h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
-  *(_DWORD *)(_this + 383108) = *(_DWORD *)(_this + 383104);
+  this->frames[this->cur_script].arity = 3;
+  this->call_ret = this->cur_script;
   v2 = this->readIntOperand_41BF50( 1);
   v3 = _this + 120 * v2;
-  *(_DWORD *)(_this + 383104) = v2;
+  this->cur_script = v2;
   v4 = *(_DWORD *)(v3 + 383124) == 0;
   dword_55D0F8 = v2;
   if ( v4 )
   {
     sub_408050(
-      (char *)(_this + 8),
+      (char *)(this->message_buf),
       1024,
       "この階層にはファイルが読み込まれていません．Depth=%d",
       v2);
-    v5 = *(_DWORD *)(_this + 383108);
+    v5 = this->call_ret;
     pExceptionObject[1] = 65541;
-    *(_DWORD *)(_this + 383104) = v5;
-    pExceptionObject[0] = _this + 8;
+    this->cur_script = v5;
+    pExceptionObject[0] = this->message_buf;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
-  *(_DWORD *)(v3 + 383180) = *(_DWORD *)(_this + 383108);
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128) = *(_DWORD *)(_this
-                                                                            + 120 * *(_DWORD *)(_this + 383104)
-                                                                            + 383124);
-  result = *(_DWORD *)(_this + 383104);
-  *(_DWORD *)(_this + 120 * result + 383220) = 0;
+  *(_DWORD *)(v3 + 383180) = this->call_ret;
+  this->frames[this->cur_script].ip = this->frames[this->cur_script].str_table;
+  result = this->cur_script;
+  this->frames[result].arity = 0;
   return result;
 }
 
 
 /* ===== [stained] sub_41C9E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41C9E0
+ * Engine 成员函数  → sub_41C9E0
  * raw 行区间 [26917, 26958]; op=0xB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41C9E0(_DWORD *_this)
 {
@@ -13800,9 +13814,9 @@ int Engine::sub_41C9E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CAF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CAF0
+ * Engine 成员函数  → sub_41CAF0
  * raw 行区间 [26961, 26976]; op=0xD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CAF0(_DWORD *_this)
 {
@@ -13823,9 +13837,9 @@ int Engine::sub_41CAF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CB50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CB50
+ * Engine 成员函数  → sub_41CB50
  * raw 行区间 [26979, 27008]; op=0xE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CB50(_DWORD *_this)
 {
@@ -13860,9 +13874,9 @@ int Engine::sub_41CB50(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CC50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CC50
+ * Engine 成员函数  → sub_41CC50
  * raw 行区间 [27011, 27022]; op=0xF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CC50(_DWORD *_this)
 {
@@ -13879,9 +13893,9 @@ int Engine::sub_41CC50(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CC90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CC90
+ * Engine 成员函数  → sub_41CC90
  * raw 行区间 [27025, 27060]; op=0x11
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CC90(_DWORD *_this)
 {
@@ -13922,9 +13936,9 @@ int Engine::sub_41CC90(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CD60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CD60
+ * Engine 成员函数  → sub_41CD60
  * raw 行区间 [27063, 27074]; op=0x12
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CD60(_DWORD *_this)
 {
@@ -13941,9 +13955,9 @@ int Engine::sub_41CD60(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CDA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CDA0
+ * Engine 成员函数  → sub_41CDA0
  * raw 行区间 [27077, 27100]; op=0x15
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_41CDA0(_DWORD *_this)
 {
@@ -13972,9 +13986,9 @@ int * Engine::sub_41CDA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CE40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CE40
+ * Engine 成员函数  → sub_41CE40
  * raw 行区间 [27103, 27112]; op=0x16
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CE40(_DWORD *_this)
 {
@@ -13989,9 +14003,9 @@ int Engine::sub_41CE40(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CE80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CE80
+ * Engine 成员函数  → sub_41CE80
  * raw 行区间 [27115, 27126]; op=0x17
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CE80(_DWORD *_this)
 {
@@ -14008,9 +14022,9 @@ int Engine::sub_41CE80(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CED0
+ * Engine 成员函数  → sub_41CED0
  * raw 行区间 [27129, 27165]; op=0x1E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CED0(_DWORD *_this)
 {
@@ -14052,9 +14066,9 @@ int Engine::sub_41CED0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41CFB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41CFB0
+ * Engine 成员函数  → sub_41CFB0
  * raw 行区间 [27168, 27216]; op=0x1F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41CFB0(_DWORD *_this)
 {
@@ -14108,9 +14122,9 @@ int Engine::sub_41CFB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D0E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D0E0
+ * Engine 成员函数  → sub_41D0E0
  * raw 行区间 [27219, 27247]; op=0x20
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41D0E0(_DWORD *_this)
 {
@@ -14144,9 +14158,9 @@ int Engine::sub_41D0E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D180
+ * Engine 成员函数  → sub_41D180
  * raw 行区间 [27250, 27284]; op=0x21
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41D180(_DWORD *_this)
 {
@@ -14186,9 +14200,9 @@ int Engine::sub_41D180(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D290
+ * Engine 成员函数  → sub_41D290
  * raw 行区间 [27287, 27319]; op=0x22
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D290(_DWORD *_this)
 {
@@ -14226,9 +14240,9 @@ void Engine::sub_41D290(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D390
+ * Engine 成员函数  → sub_41D390
  * raw 行区间 [27322, 27356]; op=0x23
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D390(_DWORD *_this)
 {
@@ -14268,9 +14282,9 @@ void Engine::sub_41D390(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D490  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D490
+ * Engine 成员函数  → sub_41D490
  * raw 行区间 [27359, 27391]; op=0x24
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D490(_DWORD *_this)
 {
@@ -14308,9 +14322,9 @@ void Engine::sub_41D490(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D590  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D590
+ * Engine 成员函数  → sub_41D590
  * raw 行区间 [27394, 27430]; op=0x25
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D590(_DWORD *_this)
 {
@@ -14352,9 +14366,9 @@ void Engine::sub_41D590(_DWORD *_this)
 
 
 /* ===== [stained] sub_41D6A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D6A0
+ * Engine 成员函数  → sub_41D6A0
  * raw 行区间 [27433, 27464]; op=0x26
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D6A0(int _this)
 {
@@ -14364,11 +14378,11 @@ void Engine::sub_41D6A0(int _this)
   int v5; // [esp-8h] [ebp-Ch]
   int v6; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefwpType01E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefwpType01E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14391,9 +14405,9 @@ void Engine::sub_41D6A0(int _this)
 
 
 /* ===== [stained] sub_41D780  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D780
+ * Engine 成员函数  → sub_41D780
  * raw 行区间 [27467, 27498]; op=0x27
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D780(int _this)
 {
@@ -14403,11 +14417,11 @@ void Engine::sub_41D780(int _this)
   int v5; // [esp-8h] [ebp-Ch]
   int v6; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefblType01E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefblType01E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14430,9 +14444,9 @@ void Engine::sub_41D780(int _this)
 
 
 /* ===== [stained] sub_41D860  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D860
+ * Engine 成员函数  → sub_41D860
  * raw 行区间 [27501, 27532]; op=0x28
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D860(int _this)
 {
@@ -14442,11 +14456,11 @@ void Engine::sub_41D860(int _this)
   int v5; // [esp-8h] [ebp-Ch]
   int v6; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 4 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefbl2Type01);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefbl2Type01);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( this->readIntOperand_41BF50( 3) < 1 || (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14469,9 +14483,9 @@ void Engine::sub_41D860(int _this)
 
 
 /* ===== [stained] sub_41D940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41D940
+ * Engine 成员函数  → sub_41D940
  * raw 行区间 [27535, 27565]; op=0x2A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41D940(int _this)
 {
@@ -14481,11 +14495,11 @@ void Engine::sub_41D940(int _this)
   int v5; // [esp-Ch] [ebp-10h]
   void *v6; // [esp-8h] [ebp-Ch]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 2 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefskType02E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefskType02E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14507,9 +14521,9 @@ void Engine::sub_41D940(int _this)
 
 
 /* ===== [stained] sub_41DA20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DA20
+ * Engine 成员函数  → sub_41DA20
  * raw 行区间 [27568, 27601]; op=0x2B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41DA20(int _this)
 {
@@ -14520,11 +14534,11 @@ void Engine::sub_41DA20(int _this)
   int v6; // [esp-8h] [ebp-Ch]
   int v7; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 11;
+  this->frames[this->cur_script].arity = 11;
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 4 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefrbType04E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefrbType04E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14548,9 +14562,9 @@ void Engine::sub_41DA20(int _this)
 
 
 /* ===== [stained] sub_41DB00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DB00
+ * Engine 成员函数  → sub_41DB00
  * raw 行区间 [27604, 27630]; op=0x2C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41DB00(int *_this)
 {
@@ -14582,9 +14596,9 @@ int Engine::sub_41DB00(int *_this)
 
 
 /* ===== [stained] sub_41DBA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DBA0
+ * Engine 成员函数  → sub_41DBA0
  * raw 行区间 [27633, 27805]; op=0x2D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41DBA0(int _this)
 {
@@ -14631,7 +14645,7 @@ void Engine::sub_41DBA0(int _this)
   int v42; // [esp+58h] [ebp-10h] BYREF
   int v43; // [esp+64h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 25;
+  this->frames[this->cur_script].arity = 25;
   v25 = this->readIntOperand_41BF50( 5);
   v26 = this->readIntOperand_41BF50( 6);
   v27 = v25 + this->readIntOperand_41BF50( 7);
@@ -14673,14 +14687,14 @@ void Engine::sub_41DBA0(int _this)
         v10 = v34;
       }
       sub_408050(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         1024,
         "関数：ComEfCA エラー：ファイルの縦または横のサイズが不正です X = %d X2 = %d Y = %d Y2 = %d\r\n",
         *(_DWORD *)ArgList,
         v10,
         v42,
         v11);
-      this->sub_4034D0( (const char *)(_this + 8));
+      this->sub_4034D0( (const char *)(this->message_buf));
       return;
     }
   }
@@ -14746,25 +14760,25 @@ LABEL_22:
     else
     {
       v16 = sub_401A60((char *)v14);
-      sub_408050((char *)(_this + 8), 1024, "関数：ComEfCA エラー：%s\r\n", v16);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, "関数：ComEfCA エラー：%s\r\n", v16);
+      this->sub_4034D0( (const char *)(this->message_buf));
       (*(void (__thiscall **)(_DWORD *, int))*v14)(v14, 1);
       sub_455C60(v39, *(int *)v40);
     }
   }
   else
   {
-    sub_408050((char *)(_this + 8), 1024, aComefca);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefca);
+    this->sub_4034D0( (const char *)(this->message_buf));
     sub_455C60(v39, *(int *)v40);
   }
 }
 
 
 /* ===== [stained] sub_41DFA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41DFA0
+ * Engine 成员函数  → sub_41DFA0
  * raw 行区间 [27809, 27860]; op=0x2E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41DFA0(int _this)
 {
@@ -14784,7 +14798,7 @@ void Engine::sub_41DFA0(int _this)
   void *v15; // [esp+10h] [ebp-8h]
   int v16; // [esp+14h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 11;
+  this->frames[this->cur_script].arity = 11;
   v2 = this->readIntOperand_41BF50( 1);
   v3 = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, (DWORD *)&v14);
   v4 = sub_455560((char *)(_this + 680092), v3);
@@ -14821,9 +14835,9 @@ void Engine::sub_41DFA0(int _this)
 
 
 /* ===== [stained] sub_41E0A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E0A0
+ * Engine 成员函数  → sub_41E0A0
  * raw 行区间 [27863, 27894]; op=0x2F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41E0A0(int _this)
 {
@@ -14833,11 +14847,11 @@ void Engine::sub_41E0A0(int _this)
   int v5; // [esp-Ch] [ebp-10h]
   int v6; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   if ( this->readIntOperand_41BF50( 4) < 0 || this->readIntOperand_41BF50( 4) > 1 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComeflpType01E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComeflpType01E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14860,9 +14874,9 @@ void Engine::sub_41E0A0(int _this)
 
 
 /* ===== [stained] sub_41E180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E180
+ * Engine 成员函数  → sub_41E180
  * raw 行区间 [27897, 27930]; op=0x30
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41E180(int _this)
 {
@@ -14873,11 +14887,11 @@ void Engine::sub_41E180(int _this)
   int v6; // [esp-8h] [ebp-Ch]
   int v7; // [esp-4h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 11;
+  this->frames[this->cur_script].arity = 11;
   if ( this->readIntOperand_41BF50( 5) < 0 || this->readIntOperand_41BF50( 5) > 5 )
   {
-    sub_408050((char *)(_this + 8), 1024, aComefrlType05E);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aComefrlType05E);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else if ( (*(_DWORD *)(_this + 699204) & 0x8000000) != 0 )
   {
@@ -14901,9 +14915,9 @@ void Engine::sub_41E180(int _this)
 
 
 /* ===== [stained] sub_41E260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E260
+ * Engine 成员函数  → sub_41E260
  * raw 行区间 [27933, 27952]; op=0x31
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E260(_DWORD *_this)
 {
@@ -14928,9 +14942,9 @@ int Engine::sub_41E260(_DWORD *_this)
 
 
 /* ===== [stained] sub_41E2D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E2D0
+ * Engine 成员函数  → sub_41E2D0
  * raw 行区间 [27955, 28008]; op=0x32
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E2D0(int _this)
 {
@@ -14950,7 +14964,7 @@ int Engine::sub_41E2D0(int _this)
   int v16; // [esp+24h] [ebp-Ch]
   int v17; // [esp+28h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 21;
+  this->frames[this->cur_script].arity = 21;
   v10 = this->readIntOperand_41BF50( 3);
   v11 = this->readIntOperand_41BF50( 4);
   v12 = v10 + this->readIntOperand_41BF50( 5);
@@ -14989,9 +15003,9 @@ int Engine::sub_41E2D0(int _this)
 
 
 /* ===== [stained] sub_41E420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E420
+ * Engine 成员函数  → sub_41E420
  * raw 行区间 [28011, 28058]; op=0x33
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E420(int _this)
 {
@@ -15008,7 +15022,7 @@ int Engine::sub_41E420(int _this)
   int v13; // [esp+14h] [ebp-Ch]
   int v14; // [esp+18h] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 13;
+  this->frames[this->cur_script].arity = 13;
   v11 = this->readIntOperand_41BF50( 3);
   v12 = this->readIntOperand_41BF50( 4);
   v13 = v11 + this->readIntOperand_41BF50( 5);
@@ -15044,9 +15058,9 @@ int Engine::sub_41E420(int _this)
 
 
 /* ===== [stained] sub_41E540  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E540
+ * Engine 成员函数  → sub_41E540
  * raw 行区间 [28061, 28109]; op=0x34
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E540(_DWORD *_this)
 {
@@ -15100,9 +15114,9 @@ int Engine::sub_41E540(_DWORD *_this)
 
 
 /* ===== [stained] sub_41E670  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E670
+ * Engine 成员函数  → sub_41E670
  * raw 行区间 [28112, 28166]; op=0x35
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E670(int _this)
 {
@@ -15122,7 +15136,7 @@ int Engine::sub_41E670(int _this)
   int v16; // [esp+28h] [ebp-Ch]
   int v17; // [esp+2Ch] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 23;
+  this->frames[this->cur_script].arity = 23;
   v11 = this->readIntOperand_41BF50( 3);
   v12 = this->readIntOperand_41BF50( 4);
   v2 = v11 + this->readIntOperand_41BF50( 5);
@@ -15162,9 +15176,9 @@ int Engine::sub_41E670(int _this)
 
 
 /* ===== [stained] sub_41E7E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E7E0
+ * Engine 成员函数  → sub_41E7E0
  * raw 行区间 [28169, 28200]; op=0x36
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41E7E0(_DWORD *_this)
 {
@@ -15201,9 +15215,9 @@ void Engine::sub_41E7E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41E8C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41E8C0
+ * Engine 成员函数  → sub_41E8C0
  * raw 行区间 [28203, 28257]; op=0x37
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41E8C0(int _this)
 {
@@ -15223,7 +15237,7 @@ int Engine::sub_41E8C0(int _this)
   int v16; // [esp+28h] [ebp-Ch]
   int v17; // [esp+2Ch] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 23;
+  this->frames[this->cur_script].arity = 23;
   v11 = this->readIntOperand_41BF50( 3);
   v12 = this->readIntOperand_41BF50( 4);
   v2 = v11 + this->readIntOperand_41BF50( 5);
@@ -15263,9 +15277,9 @@ int Engine::sub_41E8C0(int _this)
 
 
 /* ===== [stained] sub_41EA30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41EA30
+ * Engine 成员函数  → sub_41EA30
  * raw 行区间 [28260, 28304]; op=0x38
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41EA30(_DWORD *_this)
 {
@@ -15315,9 +15329,9 @@ int Engine::sub_41EA30(_DWORD *_this)
 
 
 /* ===== [stained] sub_41EB20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_show_text_41EB20
+ * Engine 成员函数  → op_show_text_41EB20
  * raw 行区间 [28307, 28386]; op=0x6E 指令名『show-text』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::op_show_text_41EB20(_DWORD *_this)
 {
@@ -15402,9 +15416,9 @@ LABEL_11:
 
 
 /* ===== [stained] sub_41ECE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_end_text_line_41ECE0
+ * Engine 成员函数  → op_end_text_line_41ECE0
  * raw 行区间 [28389, 28398]; op=0x6F 指令名『end-text-line』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::op_end_text_line_41ECE0(_DWORD *_this)
 {
@@ -15418,10 +15432,10 @@ void Engine::op_end_text_line_41ECE0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41ED20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41ED20
+/* ===== [stained] sub_41ED20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41ED20
  * raw 行区间 [28401, 28416]; op=0x70
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41ED20(_DWORD *_this)
 {
@@ -15441,10 +15455,10 @@ int Engine::sub_41ED20(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41ED80  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41ED80
+/* ===== [stained] sub_41ED80  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41ED80
  * raw 行区间 [28419, 28462]; op=0x71
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41ED80(_DWORD *_this)
 {
@@ -15493,9 +15507,9 @@ int Engine::sub_41ED80(_DWORD *_this)
 
 
 /* ===== [stained] sub_41EEF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_wait_for_input_41EEF0
+ * Engine 成员函数  → op_wait_for_input_41EEF0
  * raw 行区间 [28465, 28598]; op=0x72 指令名『wait-for-input』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::op_wait_for_input_41EEF0(int *_this)
 {
@@ -15633,10 +15647,10 @@ LABEL_32:
 }
 
 
-/* ===== [stained] sub_41F250  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F250
+/* ===== [stained] sub_41F250  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F250
  * raw 行区间 [28601, 28639]; op=0x73
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 107650)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41F250(_DWORD *_this)
 {
@@ -15680,9 +15694,9 @@ int Engine::sub_41F250(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F320  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F320
+ * Engine 成员函数  → sub_41F320
  * raw 行区间 [28642, 28650]; op=0x74
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41F320(_DWORD *_this)
 {
@@ -15695,10 +15709,10 @@ int Engine::sub_41F320(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41F350  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F350
+/* ===== [stained] sub_41F350  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F350
  * raw 行区间 [28653, 28660]; op=0x75
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41F350(_DWORD *_this)
 {
@@ -15710,10 +15724,10 @@ void Engine::sub_41F350(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41F390  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F390
+/* ===== [stained] sub_41F390  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F390
  * raw 行区间 [28663, 28671]; op=0x76
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[21664])；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41F390(_DWORD *_this)
 {
@@ -15726,10 +15740,10 @@ void Engine::sub_41F390(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41F3F0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F3F0
+/* ===== [stained] sub_41F3F0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F3F0
  * raw 行区间 [28674, 28682]; op=0x77
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[21665])；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41F3F0(_DWORD *_this)
 {
@@ -15742,10 +15756,10 @@ void Engine::sub_41F3F0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41F450  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F450
+/* ===== [stained] sub_41F450  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F450
  * raw 行区间 [28685, 28693]; op=0x78
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41F450(_DWORD *_this)
 {
@@ -15758,10 +15772,10 @@ void Engine::sub_41F450(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41F490  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F490
+/* ===== [stained] sub_41F490  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41F490
  * raw 行区间 [28696, 28707]; op=0x79
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41F490(_DWORD *_this)
 {
@@ -15778,9 +15792,9 @@ int Engine::sub_41F490(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F4E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F4E0
+ * Engine 成员函数  → sub_41F4E0
  * raw 行区间 [28710, 28721]; op=0x7A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41F4E0(_DWORD *_this)
 {
@@ -15797,9 +15811,9 @@ int Engine::sub_41F4E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F530  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F530
+ * Engine 成员函数  → sub_41F530
  * raw 行区间 [28724, 28733]; op=0x7B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41F530(_DWORD *_this)
 {
@@ -15814,9 +15828,9 @@ int Engine::sub_41F530(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F580
+ * Engine 成员函数  → sub_41F580
  * raw 行区间 [28736, 28765]; op=0x7D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41F580(_DWORD *_this)
 {
@@ -15851,9 +15865,9 @@ int Engine::sub_41F580(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F630  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F630
+ * Engine 成员函数  → sub_41F630
  * raw 行区间 [28768, 28784]; op=0x7E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 LRESULT Engine::sub_41F630(int _this)
 {
@@ -15861,7 +15875,7 @@ LRESULT Engine::sub_41F630(int _this)
   bool v3; // zf
   int v4; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   result = this->readIntOperand_41BF50( 1) != 0 ? 1 : -1;
   v3 = *(_DWORD *)(_this + 671960) == 0;
   *(_DWORD *)(_this + 699244) = result;
@@ -15875,9 +15889,9 @@ LRESULT Engine::sub_41F630(int _this)
 
 
 /* ===== [stained] sub_41F690  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F690
+ * Engine 成员函数  → sub_41F690
  * raw 行区间 [28787, 28795]; op=0x80
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41F690(_DWORD *_this)
 {
@@ -15891,9 +15905,9 @@ int Engine::sub_41F690(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F6C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F6C0
+ * Engine 成员函数  → sub_41F6C0
  * raw 行区间 [28798, 28806]; op=0x81
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41F6C0(_DWORD *_this)
 {
@@ -15907,9 +15921,9 @@ void Engine::sub_41F6C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41F720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F720
+ * Engine 成员函数  → sub_41F720
  * raw 行区间 [28809, 28826]; op=0x82
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41F720(int **_this)
 {
@@ -15921,7 +15935,7 @@ void Engine::sub_41F720(int **_this)
   int **v7; // [esp-4h] [ebp-8h]
 
   v7 = _this + 21032;
-  this->frames[(_DWORD)this->cur_script].arity = (int *)11;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (int *)11;
   v6 = this->readIntOperand_41BF50( 5);
   v5 = this->readIntOperand_41BF50( 4);
   v4 = this->readIntOperand_41BF50( 3);
@@ -15932,9 +15946,9 @@ void Engine::sub_41F720(int **_this)
 
 
 /* ===== [stained] sub_41F790  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41F790
+ * Engine 成员函数  → sub_41F790
  * raw 行区间 [28829, 28942]; op=0x84
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41F790(_DWORD *_this)
 {
@@ -16053,9 +16067,9 @@ LABEL_15:
 
 
 /* ===== [stained] sub_41FA20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FA20
+ * Engine 成员函数  → sub_41FA20
  * raw 行区间 [28945, 28962]; op=0x86
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41FA20(int _this)
 {
@@ -16065,7 +16079,7 @@ int Engine::sub_41FA20(int _this)
   int ArgList; // [esp+Ch] [ebp-8h]
   int v6; // [esp+10h] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, (DWORD *)&v6);
   v3 = (void *)sub_455560((char *)(_this + 680092), ArgList);
@@ -16077,10 +16091,10 @@ int Engine::sub_41FA20(int _this)
 }
 
 
-/* ===== [stained] sub_41FAB0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FAB0
+/* ===== [stained] sub_41FAB0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41FAB0
  * raw 行区间 [28965, 28978]; op=0x88
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[1415])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41FAB0(_DWORD *_this)
 {
@@ -16099,9 +16113,9 @@ int Engine::sub_41FAB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FB00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FB00
+ * Engine 成员函数  → sub_41FB00
  * raw 行区间 [28981, 28994]; op=0x89
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41FB00(_DWORD *_this)
 {
@@ -16120,9 +16134,9 @@ void Engine::sub_41FB00(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FB50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FB50
+ * Engine 成员函数  → sub_41FB50
  * raw 行区间 [28997, 29018]; op=0x8A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41FB50(_DWORD *_this)
 {
@@ -16148,10 +16162,10 @@ void Engine::sub_41FB50(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41FBF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FBF0
+/* ===== [stained] sub_41FBF0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41FBF0
  * raw 行区间 [29021, 29029]; op=0x8B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[21669])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41FBF0(_DWORD *_this)
 {
@@ -16165,9 +16179,9 @@ int Engine::sub_41FBF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FC20  状态: STUB =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_display_furigana_41FC20
+ * Engine 成员函数  → op_display_furigana_41FC20
  * raw 行区间 [29032, 29113]; op=0x196 指令名『display-furigana』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 桩/简化：未逆清完整语义（可按 STUB 处理）
  */
 int Engine::op_display_furigana_41FC20(int _this)
 {
@@ -16191,7 +16205,7 @@ int Engine::op_display_furigana_41FC20(int _this)
   int v19; // [esp-4h] [ebp-410h]
   CHAR v20[1024]; // [esp+8h] [ebp-404h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->sub_41B640( 3);
   v3 = v20;
   v4 = 1024;
@@ -16253,10 +16267,10 @@ int Engine::op_display_furigana_41FC20(int _this)
 }
 
 
-/* ===== [stained] sub_41FDD0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FDD0
+/* ===== [stained] sub_41FDD0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41FDD0
  * raw 行区间 [29117, 29124]; op=0x197
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_41FDD0(_DWORD *_this)
 {
@@ -16269,9 +16283,9 @@ void Engine::sub_41FDD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FE10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FE10
+ * Engine 成员函数  → sub_41FE10
  * raw 行区间 [29127, 29138]; op=0x198
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41FE10(_DWORD *_this)
 {
@@ -16287,10 +16301,10 @@ int Engine::sub_41FE10(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_41FE60  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FE60
+/* ===== [stained] sub_41FE60  状态: PARTIAL =====
+ * Engine 成员函数  → sub_41FE60
  * raw 行区间 [29141, 29152]; op=0x1A4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[21671])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_41FE60(_DWORD *_this)
 {
@@ -16307,9 +16321,9 @@ int Engine::sub_41FE60(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FEA0
+ * Engine 成员函数  → sub_41FEA0
  * raw 行区间 [29155, 29163]; op=0x1B1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41FEA0(_DWORD *_this)
 {
@@ -16323,9 +16337,9 @@ int Engine::sub_41FEA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FED0
+ * Engine 成员函数  → sub_41FED0
  * raw 行区间 [29166, 29178]; op=0x1B5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_41FED0(_DWORD *_this)
 {
@@ -16343,9 +16357,9 @@ int Engine::sub_41FED0(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FF20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FF20
+ * Engine 成员函数  → sub_41FF20
  * raw 行区间 [29181, 29189]; op=0x1B7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_41FF20(_DWORD *_this)
 {
@@ -16359,9 +16373,9 @@ BOOL Engine::sub_41FF20(_DWORD *_this)
 
 
 /* ===== [stained] sub_41FF60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_41FF60
+ * Engine 成员函数  → sub_41FF60
  * raw 行区间 [29192, 29220]; op=0x1B9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_41FF60(int _this)
 {
@@ -16370,7 +16384,7 @@ void Engine::sub_41FF60(int _this)
   int v4; // ebx
   int v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -16381,8 +16395,8 @@ void Engine::sub_41FF60(int _this)
     }
     else
     {
-      sub_408050((char *)(_this + 8), 1024, aGetautomessp);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, aGetautomessp);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -16395,13 +16409,13 @@ void Engine::sub_41FF60(int _this)
 
 
 /* ===== [stained] sub_420000  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420000
+ * Engine 成员函数  → sub_420000
  * raw 行区间 [29223, 29242]; op=0x1BB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_420000(int _this)
 {
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -16410,8 +16424,8 @@ void Engine::sub_420000(int _this)
     }
     else
     {
-      sub_408050((char *)(_this + 8), 1024, aSettb);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, aSettb);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -16421,10 +16435,10 @@ void Engine::sub_420000(int _this)
 }
 
 
-/* ===== [stained] sub_420070  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420070
+/* ===== [stained] sub_420070  状态: PARTIAL =====
+ * Engine 成员函数  → sub_420070
  * raw 行区间 [29245, 29256]; op=0x1C1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_420070(_DWORD *_this)
 {
@@ -16441,9 +16455,9 @@ int Engine::sub_420070(_DWORD *_this)
 
 
 /* ===== [stained] sub_4200C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4200C0
+ * Engine 成员函数  → sub_4200C0
  * raw 行区间 [29259, 29272]; op=0x1C2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4200C0(_DWORD *_this)
 {
@@ -16462,9 +16476,9 @@ int Engine::sub_4200C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420110  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420110
+ * Engine 成员函数  → sub_420110
  * raw 行区间 [29275, 29288]; op=0x1C3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420110(_DWORD *_this)
 {
@@ -16483,9 +16497,9 @@ int Engine::sub_420110(_DWORD *_this)
 
 
 /* ===== [stained] sub_420160  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420160
+ * Engine 成员函数  → sub_420160
  * raw 行区间 [29291, 29312]; op=0x1C9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420160(int _this)
 {
@@ -16496,7 +16510,7 @@ int Engine::sub_420160(int _this)
   int v7; // [esp+18h] [ebp-8h]
   int v8; // [esp+1Ch] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v7 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v7, (DWORD *)&v8);
   v2 = (void *)sub_455560((char *)(_this + 680092), *(int *)ArgList);
@@ -16511,10 +16525,10 @@ int Engine::sub_420160(int _this)
 }
 
 
-/* ===== [stained] sub_420240  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420240
+/* ===== [stained] sub_420240  状态: PARTIAL =====
+ * Engine 成员函数  → sub_420240
  * raw 行区间 [29315, 29326]; op=0x1CA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 174405)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_420240(_DWORD *_this)
 {
@@ -16530,10 +16544,10 @@ int Engine::sub_420240(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_420280  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420280
+/* ===== [stained] sub_420280  状态: PARTIAL =====
+ * Engine 成员函数  → sub_420280
  * raw 行区间 [29329, 29351]; op=0x1CE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[107706])；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_420280(int *_this)
 {
@@ -16561,9 +16575,9 @@ void Engine::sub_420280(int *_this)
 
 
 /* ===== [stained] sub_420310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420310
+ * Engine 成员函数  → sub_420310
  * raw 行区间 [29354, 29371]; op=0x1D1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420310(int **_this)
 {
@@ -16575,7 +16589,7 @@ int Engine::sub_420310(int **_this)
   int **v8; // [esp-4h] [ebp-8h]
 
   v8 = _this + 21032;
-  this->frames[(_DWORD)this->cur_script].arity = (int *)11;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (int *)11;
   v7 = this->readIntOperand_41BF50( 5);
   v6 = this->readIntOperand_41BF50( 4);
   v5 = this->readIntOperand_41BF50( 3);
@@ -16586,9 +16600,9 @@ int Engine::sub_420310(int **_this)
 
 
 /* ===== [stained] sub_420380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420380
+ * Engine 成员函数  → sub_420380
  * raw 行区间 [29374, 29386]; op=0x1D2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_420380(int *_this)
 {
@@ -16606,9 +16620,9 @@ void Engine::sub_420380(int *_this)
 
 
 /* ===== [stained] sub_4203D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_jmp_4203D0
+ * Engine 成员函数  → op_jmp_4203D0
  * raw 行区间 [29389, 29402]; op=0x8C 指令名『jmp』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
  */
 int Engine::op_jmp_4203D0(_DWORD *_this)
 {
@@ -16627,9 +16641,9 @@ int Engine::op_jmp_4203D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420450  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420450
+ * Engine 成员函数  → sub_420450
  * raw 行区间 [29405, 29425]; op=0x8D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420450(_DWORD *_this)
 {
@@ -16655,9 +16669,9 @@ int Engine::sub_420450(_DWORD *_this)
 
 
 /* ===== [stained] sub_4204D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4204D0
+ * Engine 成员函数  → sub_4204D0
  * raw 行区间 [29428, 29449]; op=0x8E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4204D0(_DWORD *_this)
 {
@@ -16683,10 +16697,10 @@ int Engine::sub_4204D0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_420560  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_call_420560
+/* ===== [stained] sub_420560  状态: PARTIAL =====
+ * Engine 成员函数  → op_call_420560
  * raw 行区间 [29452, 29474]; op=0x8F 指令名『call』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_call_420560(_DWORD *_this)
 {
@@ -16714,9 +16728,9 @@ int Engine::op_call_420560(_DWORD *_this)
 
 
 /* ===== [stained] sub_420640  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420640
+ * Engine 成员函数  → sub_420640
  * raw 行区间 [29477, 29519]; op=0x90
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420640(_DWORD *_this)
 {
@@ -16764,9 +16778,9 @@ int Engine::sub_420640(_DWORD *_this)
 
 
 /* ===== [stained] sub_420740  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420740
+ * Engine 成员函数  → sub_420740
  * raw 行区间 [29522, 29543]; op=0x91
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420740(_DWORD *_this)
 {
@@ -16793,9 +16807,9 @@ int Engine::sub_420740(_DWORD *_this)
 
 
 /* ===== [stained] sub_4207D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4207D0
+ * Engine 成员函数  → sub_4207D0
  * raw 行区间 [29546, 29568]; op=0x92
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4207D0(_DWORD *_this)
 {
@@ -16823,9 +16837,9 @@ int Engine::sub_4207D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420870  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420870
+ * Engine 成员函数  → sub_420870
  * raw 行区间 [29571, 29593]; op=0x95
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420870(_DWORD *_this)
 {
@@ -16853,9 +16867,9 @@ int Engine::sub_420870(_DWORD *_this)
 
 
 /* ===== [stained] sub_420910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420910
+ * Engine 成员函数  → sub_420910
  * raw 行区间 [29596, 29612]; op=0x97
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_420910(_DWORD *_this)
 {
@@ -16877,9 +16891,9 @@ void Engine::sub_420910(_DWORD *_this)
 
 
 /* ===== [stained] sub_4209B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_jcc_4209B0
+ * Engine 成员函数  → op_jcc_4209B0
  * raw 行区间 [29615, 29639]; op=0xA0 指令名『jcc』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
  */
 int Engine::op_jcc_4209B0(_DWORD *_this)
 {
@@ -16909,9 +16923,9 @@ int Engine::op_jcc_4209B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420A50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420A50
+ * Engine 成员函数  → sub_420A50
  * raw 行区间 [29642, 29650]; op=0xB0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420A50(_DWORD *_this)
 {
@@ -16925,9 +16939,9 @@ int Engine::sub_420A50(_DWORD *_this)
 
 
 /* ===== [stained] sub_420A80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420A80
+ * Engine 成员函数  → sub_420A80
  * raw 行区间 [29653, 29661]; op=0xB1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420A80(_DWORD *_this)
 {
@@ -16941,9 +16955,9 @@ int Engine::sub_420A80(_DWORD *_this)
 
 
 /* ===== [stained] sub_420AB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420AB0
+ * Engine 成员函数  → sub_420AB0
  * raw 行区间 [29664, 29675]; op=0xB2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420AB0(_DWORD *_this)
 {
@@ -16960,9 +16974,9 @@ int Engine::sub_420AB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420B00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_sound_effect_420B00
+ * Engine 成员函数  → op_play_sound_effect_420B00
  * raw 行区间 [29678, 29687]; op=0xB4 指令名『play-sound-effect』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::op_play_sound_effect_420B00(_DWORD *_this)
 {
@@ -16977,9 +16991,9 @@ int Engine::op_play_sound_effect_420B00(_DWORD *_this)
 
 
 /* ===== [stained] sub_420B40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420B40
+ * Engine 成员函数  → sub_420B40
  * raw 行区间 [29690, 29697]; op=0xB5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420B40(_DWORD *_this)
 {
@@ -16991,10 +17005,10 @@ int Engine::sub_420B40(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_420B80  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420B80
+/* ===== [stained] sub_420B80  状态: PARTIAL =====
+ * Engine 成员函数  → sub_420B80
  * raw 行区间 [29700, 29707]; op=0xB6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 20719)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_420B80(_DWORD *_this)
 {
@@ -17007,9 +17021,9 @@ int Engine::sub_420B80(_DWORD *_this)
 
 
 /* ===== [stained] sub_420BC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420BC0
+ * Engine 成员函数  → sub_420BC0
  * raw 行区间 [29710, 29717]; op=0xBA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420BC0(_DWORD *_this)
 {
@@ -17022,9 +17036,9 @@ int Engine::sub_420BC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420C00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420C00
+ * Engine 成员函数  → sub_420C00
  * raw 行区间 [29720, 29734]; op=0xB7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420C00(_DWORD *_this)
 {
@@ -17044,9 +17058,9 @@ int Engine::sub_420C00(_DWORD *_this)
 
 
 /* ===== [stained] sub_420C60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420C60
+ * Engine 成员函数  → sub_420C60
  * raw 行区间 [29737, 29751]; op=0xB9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420C60(_DWORD *_this)
 {
@@ -17066,9 +17080,9 @@ int Engine::sub_420C60(_DWORD *_this)
 
 
 /* ===== [stained] sub_420CC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_bgm_420CC0
+ * Engine 成员函数  → op_play_bgm_420CC0
  * raw 行区间 [29754, 29780]; op=0xBF 指令名『play-bgm』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::op_play_bgm_420CC0(_DWORD *_this)
 {
@@ -17100,9 +17114,9 @@ int Engine::op_play_bgm_420CC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_420D90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420D90
+ * Engine 成员函数  → sub_420D90
  * raw 行区间 [29783, 29790]; op=0xBB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420D90(_DWORD *_this)
 {
@@ -17115,9 +17129,9 @@ int Engine::sub_420D90(_DWORD *_this)
 
 
 /* ===== [stained] sub_420DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420DC0
+ * Engine 成员函数  → sub_420DC0
  * raw 行区间 [29793, 29802]; op=0xBC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_420DC0(int *_this)
 {
@@ -17132,9 +17146,9 @@ unsigned int Engine::sub_420DC0(int *_this)
 
 
 /* ===== [stained] sub_420E00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420E00
+ * Engine 成员函数  → sub_420E00
  * raw 行区间 [29805, 29841]; op=0xC2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420E00(_DWORD *_this)
 {
@@ -17176,9 +17190,9 @@ int Engine::sub_420E00(_DWORD *_this)
 
 
 /* ===== [stained] sub_420F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_420F10
+ * Engine 成员函数  → sub_420F10
  * raw 行区间 [29844, 29859]; op=0xC3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_420F10(_DWORD *_this)
 {
@@ -17199,9 +17213,9 @@ int Engine::sub_420F10(_DWORD *_this)
 
 
 /* ===== [stained] sub_420F70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_play_voice_420F70
+ * Engine 成员函数  → op_play_voice_420F70
  * raw 行区间 [29862, 29912]; op=0xC4 指令名『play-voice』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::op_play_voice_420F70(int *_this)
 {
@@ -17257,9 +17271,9 @@ void Engine::op_play_voice_420F70(int *_this)
 
 
 /* ===== [stained] sub_421070  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421070
+ * Engine 成员函数  → sub_421070
  * raw 行区间 [29915, 29983]; op=0xC6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_421070(int _this)
 {
@@ -17279,7 +17293,7 @@ void Engine::sub_421070(int _this)
   int v15; // eax
   int v16; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -17317,8 +17331,8 @@ void Engine::sub_421070(int _this)
     }
     else
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aSetvolume);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aSetvolume);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -17333,9 +17347,9 @@ void Engine::sub_421070(int _this)
 
 
 /* ===== [stained] sub_421200  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421200
+ * Engine 成员函数  → sub_421200
  * raw 行区间 [29986, 30019]; op=0x1BA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_421200(int _this)
 {
@@ -17344,7 +17358,7 @@ void Engine::sub_421200(int _this)
   int v4; // eax
   int v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) == 1 )
   {
     v2 = this->readIntOperand_41BF50( 2);
@@ -17367,16 +17381,16 @@ void Engine::sub_421200(int _this)
   }
   else
   {
-    sub_408050((char *)(_this + 8), 1024, aSetsoundmode);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aSetsoundmode);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_4212C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4212C0
+ * Engine 成员函数  → sub_4212C0
  * raw 行区间 [30022, 30066]; op=0x1BD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4212C0(int *_this)
 {
@@ -17425,10 +17439,10 @@ void Engine::sub_4212C0(int *_this)
 }
 
 
-/* ===== [stained] sub_4213C0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4213C0
+/* ===== [stained] sub_4213C0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4213C0
  * raw 行区间 [30069, 30077]; op=0x1CF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[122504])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4213C0(_DWORD *_this)
 {
@@ -17442,9 +17456,9 @@ int Engine::sub_4213C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4213F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4213F0
+ * Engine 成员函数  → sub_4213F0
  * raw 行区间 [30080, 30100]; op=0x1D9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4213F0(_DWORD *_this)
 {
@@ -17470,9 +17484,9 @@ int Engine::sub_4213F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_421450  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421450
+ * Engine 成员函数  → sub_421450
  * raw 行区间 [30103, 30192]; op=0x1C0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421450(_DWORD *_this)
 {
@@ -17567,9 +17581,9 @@ int Engine::sub_421450(_DWORD *_this)
 
 
 /* ===== [stained] sub_421690  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421690
+ * Engine 成员函数  → sub_421690
  * raw 行区间 [30195, 30285]; op=0x1C6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421690(_DWORD *_this)
 {
@@ -17665,9 +17679,9 @@ int Engine::sub_421690(_DWORD *_this)
 
 
 /* ===== [stained] sub_4218D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_sleep_4218D0
+ * Engine 成员函数  → op_sleep_4218D0
  * raw 行区间 [30288, 30314]; op=0xC8 指令名『sleep』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::op_sleep_4218D0(_DWORD *_this)
 {
@@ -17677,7 +17691,7 @@ void Engine::op_sleep_4218D0(_DWORD *_this)
 
   this->frames[this->cur_script].arity = 3;
   v2 = (int (*)(void))_this[97062];
-  if ( v2 && v2() || !this->key || (pExceptionObject = __ROL4__(_this[97060], 11), pExceptionObject != this->key) )
+  if ( v2 && v2() || !this->key || (pExceptionObject = __ROL4__(this->enc_zero, 11), pExceptionObject != this->key) )
   {
     pExceptionObject = 0;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_Exit_Exception__);
@@ -17698,10 +17712,10 @@ void Engine::op_sleep_4218D0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_421980  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_mouse_callback_421980
+/* ===== [stained] sub_421980  状态: PARTIAL =====
+ * Engine 成员函数  → op_mouse_callback_421980
  * raw 行区间 [30317, 30326]; op=0xCC 指令名『mouse-callback』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[107664])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_mouse_callback_421980(_DWORD *_this)
 {
@@ -17716,9 +17730,9 @@ int Engine::op_mouse_callback_421980(_DWORD *_this)
 
 
 /* ===== [stained] sub_4219E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4219E0
+ * Engine 成员函数  → sub_4219E0
  * raw 行区间 [30329, 30339]; op=0xCE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4219E0(_DWORD *_this)
 {
@@ -17734,9 +17748,9 @@ int Engine::sub_4219E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_421A50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421A50
+ * Engine 成员函数  → sub_421A50
  * raw 行区间 [30342, 30356]; op=0xD2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421A50(_DWORD *_this)
 {
@@ -17756,9 +17770,9 @@ int Engine::sub_421A50(_DWORD *_this)
 
 
 /* ===== [stained] sub_421AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421AA0
+ * Engine 成员函数  → sub_421AA0
  * raw 行区间 [30359, 30371]; op=0xD8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421AA0(_DWORD *_this)
 {
@@ -17776,9 +17790,9 @@ int Engine::sub_421AA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_421AF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421AF0
+ * Engine 成员函数  → sub_421AF0
  * raw 行区间 [30374, 30397]; op=0xD7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421AF0(_DWORD *_this)
 {
@@ -17806,10 +17820,10 @@ int Engine::sub_421AF0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_421B80  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_joy_callback_421B80
+/* ===== [stained] sub_421B80  状态: PARTIAL =====
+ * Engine 成员函数  → op_joy_callback_421B80
  * raw 行区间 [30400, 30419]; op=0xFB 指令名『joy-callback』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_joy_callback_421B80(_DWORD *_this)
 {
@@ -17834,9 +17848,9 @@ int Engine::op_joy_callback_421B80(_DWORD *_this)
 
 
 /* ===== [stained] sub_421C10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421C10
+ * Engine 成员函数  → sub_421C10
  * raw 行区间 [30422, 30441]; op=0xFD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_421C10(_DWORD *_this)
 {
@@ -17860,10 +17874,10 @@ unsigned int Engine::sub_421C10(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_421CA0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421CA0
+/* ===== [stained] sub_421CA0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_421CA0
  * raw 行区间 [30444, 30459]; op=0xFE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[517])；建模 engine.hpp 字段后方可标已分析
  */
 unsigned int Engine::sub_421CA0(_DWORD *_this)
 {
@@ -17884,9 +17898,9 @@ unsigned int Engine::sub_421CA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_421D00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421D00
+ * Engine 成员函数  → sub_421D00
  * raw 行区间 [30462, 30488]; op=0x102
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421D00(_DWORD *_this)
 {
@@ -17918,9 +17932,9 @@ int Engine::sub_421D00(_DWORD *_this)
 
 
 /* ===== [stained] sub_421DE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421DE0
+ * Engine 成员函数  → sub_421DE0
  * raw 行区间 [30491, 30502]; op=0x103
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421DE0(_DWORD *_this)
 {
@@ -17937,9 +17951,9 @@ int Engine::sub_421DE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_421E20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421E20
+ * Engine 成员函数  → sub_421E20
  * raw 行区间 [30505, 30513]; op=0x105
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_421E20(_DWORD *_this)
 {
@@ -17952,10 +17966,10 @@ int Engine::sub_421E20(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_421E50  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_421E50
+/* ===== [stained] sub_421E50  状态: PARTIAL =====
+ * Engine 成员函数  → sub_421E50
  * raw 行区间 [30516, 30527]; op=0x107
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 unsigned int Engine::sub_421E50(_DWORD *_this)
 {
@@ -17971,10 +17985,10 @@ unsigned int Engine::sub_421E50(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422070  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422070
+/* ===== [stained] sub_422070  状态: PARTIAL =====
+ * Engine 成员函数  → sub_422070
  * raw 行区间 [30603, 30614]; op=0x10B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 unsigned int Engine::sub_422070(_DWORD *_this)
 {
@@ -17990,10 +18004,10 @@ unsigned int Engine::sub_422070(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4220B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4220B0
+/* ===== [stained] sub_4220B0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4220B0
  * raw 行区间 [30617, 30634]; op=0x10C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 unsigned int Engine::sub_4220B0(_DWORD *_this)
 {
@@ -18015,10 +18029,10 @@ unsigned int Engine::sub_4220B0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422120  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422120
+/* ===== [stained] sub_422120  状态: PARTIAL =====
+ * Engine 成员函数  → sub_422120
  * raw 行区间 [30637, 30645]; op=0x10F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[122369])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_422120(_DWORD *_this)
 {
@@ -18032,9 +18046,9 @@ int Engine::sub_422120(_DWORD *_this)
 
 
 /* ===== [stained] sub_422150  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422150
+ * Engine 成员函数  → sub_422150
  * raw 行区间 [30648, 30680]; op=0x132
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_422150(int _this)
 {
@@ -18044,13 +18058,13 @@ void Engine::sub_422150(int _this)
   _DWORD *v5; // eax
   int v6; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   v3 = v2;
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aResetq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aResetq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18072,21 +18086,21 @@ void Engine::sub_422150(int _this)
 
 
 /* ===== [stained] sub_422240  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422240
+ * Engine 成员函数  → sub_422240
  * raw 行区间 [30684, 30701]; op=0x133
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_422240(int _this)
 {
   unsigned int v2; // edi
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aAddq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aAddq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18097,9 +18111,9 @@ void Engine::sub_422240(int _this)
 
 
 /* ===== [stained] sub_4222B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4222B0
+ * Engine 成员函数  → sub_4222B0
  * raw 行区间 [30704, 30730]; op=0x137
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4222B0(int _this)
 {
@@ -18108,13 +18122,13 @@ void Engine::sub_4222B0(int _this)
   void (__thiscall ***v4)(_DWORD, int); // ecx
   _DWORD *v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   v3 = v2;
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aResetstack);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aResetstack);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18131,21 +18145,21 @@ void Engine::sub_4222B0(int _this)
 
 
 /* ===== [stained] sub_4223A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4223A0
+ * Engine 成员函数  → sub_4223A0
  * raw 行区间 [30733, 30750]; op=0x138
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4223A0(int _this)
 {
   unsigned int v2; // edi
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aPush);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aPush);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18156,21 +18170,21 @@ void Engine::sub_4223A0(int _this)
 
 
 /* ===== [stained] sub_422410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422410
+ * Engine 成员函数  → sub_422410
  * raw 行区间 [30753, 30776]; op=0x13A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_422410(int _this)
 {
   unsigned int v2; // edi
   _DWORD *v3; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 13;
+  this->frames[this->cur_script].arity = 13;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aCgnumber);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aCgnumber);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18187,9 +18201,9 @@ void Engine::sub_422410(int _this)
 
 
 /* ===== [stained] sub_4224E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4224E0
+ * Engine 成员函数  → sub_4224E0
  * raw 行区间 [30779, 30979]; op=0x13B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4224E0(int _this)
 {
@@ -18244,7 +18258,7 @@ void Engine::sub_4224E0(int _this)
   int v50; // [esp+2Ch] [ebp-8h]
   int v51; // [esp+30h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 15;
+  this->frames[this->cur_script].arity = 15;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 <= 0xA && (v3 = (int *)(_this + 28 * (v2 + 13869)), *v3) )
   {
@@ -18388,27 +18402,27 @@ void Engine::sub_4224E0(int _this)
   }
   else
   {
-    sub_408050((char *)(_this + 8), 1024, aCgnumber);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aCgnumber);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_422860  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422860
+ * Engine 成员函数  → sub_422860
  * raw 行区间 [30982, 30997]; op=0x13C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_422860(int _this)
 {
   unsigned int v2; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aRewindq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aRewindq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18418,20 +18432,20 @@ void Engine::sub_422860(int _this)
 
 
 /* ===== [stained] sub_4228C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4228C0
+ * Engine 成员函数  → sub_4228C0
  * raw 行区间 [31000, 31017]; op=0x141
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4228C0(int _this)
 {
   int v2; // ebx
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   if ( (unsigned int)this->readIntOperand_41BF50( 1) > 0x10 )
   {
-    sub_408050((char *)(_this + 8), 1024, aGetmeswina);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aGetmeswina);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -18443,9 +18457,9 @@ void Engine::sub_4228C0(int _this)
 
 
 /* ===== [stained] sub_422930  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422930
+ * Engine 成员函数  → sub_422930
  * raw 行区间 [31020, 31028]; op=0x142
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_422930(_DWORD *_this)
 {
@@ -18459,9 +18473,9 @@ int Engine::sub_422930(_DWORD *_this)
 
 
 /* ===== [stained] sub_422960  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422960
+ * Engine 成员函数  → sub_422960
  * raw 行区间 [31031, 31042]; op=0x146
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_422960(_DWORD *_this)
 {
@@ -18477,10 +18491,10 @@ int Engine::sub_422960(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4229A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4229A0
+/* ===== [stained] sub_4229A0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4229A0
  * raw 行区间 [31045, 31053]; op=0x149
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[97058])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4229A0(_DWORD *_this)
 {
@@ -18494,9 +18508,9 @@ int Engine::sub_4229A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4229D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4229D0
+ * Engine 成员函数  → sub_4229D0
  * raw 行区间 [31056, 31088]; op=0x14B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4229D0(int _this)
 {
@@ -18509,7 +18523,7 @@ HMODULE Engine::sub_4229D0(int _this)
   int pExceptionObject[2]; // [esp+8h] [ebp-10Ch] BYREF
   char Buffer[256]; // [esp+10h] [ebp-104h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   if ( *(_DWORD *)(_this + 490072) )
   {
     FreeLibrary(*(HMODULE *)(_this + 490072));
@@ -18534,9 +18548,9 @@ HMODULE Engine::sub_4229D0(int _this)
 
 
 /* ===== [stained] sub_422AB0  状态: STUB =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_agerc_export_422AB0
+ * Engine 成员函数  → op_set_agerc_export_422AB0
  * raw 行区间 [31091, 31135]; op=0x14C 指令名『set-agerc-export』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 桩/简化：未逆清完整语义（可按 STUB 处理）
  */
 unsigned int Engine::op_set_agerc_export_422AB0(int _this)
 {
@@ -18551,7 +18565,7 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
   int v10; // [esp+Ch] [ebp-108h]
   char Buffer[256]; // [esp+10h] [ebp-104h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->sub_41B640( 2);
   ProcAddress = GetProcAddress(*(HMODULE *)(_this + 490072), v2);
   if ( !ProcAddress )
@@ -18569,14 +18583,14 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
     v8 = GetLastError();
     v6 = this->sub_41B640( 3);
     sub_408050(
-      (char *)(_this + 8),
+      (char *)(this->message_buf),
       1024,
       "%sの関数インデックスが不正です．0から99までを指定してください．\r\n"
       "\r\n"
       "ERRORCODE = %d",
       v6,
       v8);
-    pExceptionObject = (char *)(_this + 8);
+    pExceptionObject = (char *)(this->message_buf);
     v10 = 65543;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
@@ -18585,10 +18599,10 @@ unsigned int Engine::op_set_agerc_export_422AB0(int _this)
 }
 
 
-/* ===== [stained] sub_422BC0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422BC0
+/* ===== [stained] sub_422BC0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_422BC0
  * raw 行区间 [31138, 31158]; op=0x1F7 指令名『texture-op』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int * Engine::sub_422BC0(_DWORD *_this)
 {
@@ -18613,10 +18627,10 @@ int * Engine::sub_422BC0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422C20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_create_texture_422C20
+/* ===== [stained] sub_422C20  状态: PARTIAL =====
+ * Engine 成员函数  → op_create_texture_422C20
  * raw 行区间 [31161, 31189]; op=0x1F8 指令名『create-texture』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_create_texture_422C20(_DWORD *_this)
 {
@@ -18649,10 +18663,10 @@ int Engine::op_create_texture_422C20(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422CB0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_texture_422CB0
+/* ===== [stained] sub_422CB0  状态: PARTIAL =====
+ * Engine 成员函数  → op_set_texture_422CB0
  * raw 行区间 [31192, 31243]; op=0x1F9 指令名『set-texture』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 4)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_set_texture_422CB0(int _this)
 {
@@ -18671,7 +18685,7 @@ int Engine::op_set_texture_422CB0(int _this)
   HANDLE hFile; // [esp+14h] [ebp-8h]
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = *(_DWORD **)(_this + 4 * v2 + 378688);
   if ( v3 )
@@ -18699,19 +18713,19 @@ int Engine::op_set_texture_422CB0(int _this)
     sub_455C60((int *)(_this + 680092), *(int *)ArgList);
     v9 = this->readIntOperand_41BF50( 1);
     v10 = sub_454FA0((_DWORD *)(_this + 680092), v9);
-    sub_408050((char *)(_this + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
+    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
     hFile = (HANDLE)65543;
-    pExceptionObject = _this + 8;
+    pExceptionObject = this->message_buf;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   return sub_455C60((int *)(_this + 680092), *(int *)ArgList);
 }
 
 
-/* ===== [stained] sub_422E00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422E00
+/* ===== [stained] sub_422E00  状态: PARTIAL =====
+ * Engine 成员函数  → sub_422E00
  * raw 行区间 [31246, 31268]; op=0x1FA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_422E00(_DWORD *_this)
 {
@@ -18738,10 +18752,10 @@ int Engine::sub_422E00(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422E70  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_draw_texture_422E70
+/* ===== [stained] sub_422E70  状态: PARTIAL =====
+ * Engine 成员函数  → op_draw_texture_422E70
  * raw 行区间 [31271, 31300]; op=0x1FB 指令名『draw-texture』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::op_draw_texture_422E70(_DWORD *_this)
 {
@@ -18776,9 +18790,9 @@ _DWORD * Engine::op_draw_texture_422E70(_DWORD *_this)
 
 
 /* ===== [stained] sub_422F80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422F80
+ * Engine 成员函数  → sub_422F80
  * raw 行区间 [31303, 31310]; op=0x1FC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_422F80(_DWORD *_this)
 {
@@ -18790,10 +18804,10 @@ float * Engine::sub_422F80(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_422FD0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_422FD0
+/* ===== [stained] sub_422FD0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_422FD0
  * raw 行区间 [31313, 31326]; op=0x1FD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_422FD0(_DWORD *_this)
 {
@@ -18812,9 +18826,9 @@ int Engine::sub_422FD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423060  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423060
+ * Engine 成员函数  → sub_423060
  * raw 行区间 [31330, 31345]; op=0x1FE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423060(_DWORD *_this)
 {
@@ -18835,9 +18849,9 @@ int Engine::sub_423060(_DWORD *_this)
 
 
 /* ===== [stained] sub_4230F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4230F0
+ * Engine 成员函数  → sub_4230F0
  * raw 行区间 [31348, 31361]; op=0x1FF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4230F0(_DWORD *_this)
 {
@@ -18856,15 +18870,15 @@ int Engine::sub_4230F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423170
+ * Engine 成员函数  → sub_423170
  * raw 行区间 [31364, 31379]; op=0x200
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_423170(int _this)
 {
   int v2; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = 1 << this->readIntOperand_41BF50( 1);
   if ( (v2 & (*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSetCreateobjec)) == v2 )
   {
@@ -18872,16 +18886,16 @@ void Engine::sub_423170(int _this)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aComsetdrawmode);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aComsetdrawmode);
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
 }
 
 
-/* ===== [stained] sub_4231F0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4231F0
+/* ===== [stained] sub_4231F0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4231F0
  * raw 行区间 [31382, 31416]; op=0x202
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4231F0(_DWORD *_this)
 {
@@ -18920,10 +18934,10 @@ int Engine::sub_4231F0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4232C0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4232C0
+/* ===== [stained] sub_4232C0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4232C0
  * raw 行区间 [31419, 31451]; op=0x203
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4232C0(_DWORD *_this)
 {
@@ -18961,9 +18975,9 @@ int Engine::sub_4232C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_draw_string_423390
+ * Engine 成员函数  → op_draw_string_423390
  * raw 行区间 [31454, 31467]; op=0x204 指令名『draw-string』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::op_draw_string_423390(_DWORD *_this)
 {
@@ -18982,9 +18996,9 @@ void Engine::op_draw_string_423390(_DWORD *_this)
 
 
 /* ===== [stained] sub_4233E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4233E0
+ * Engine 成员函数  → sub_4233E0
  * raw 行区间 [31470, 31491]; op=0x205
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4233E0(_DWORD *_this)
 {
@@ -19011,9 +19025,9 @@ void Engine::sub_4233E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423480  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423480
+ * Engine 成员函数  → sub_423480
  * raw 行区间 [31494, 31521]; op=0x207
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423480(_DWORD *_this)
 {
@@ -19046,9 +19060,9 @@ int Engine::sub_423480(_DWORD *_this)
 
 
 /* ===== [stained] sub_423580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423580
+ * Engine 成员函数  → sub_423580
  * raw 行区间 [31524, 31543]; op=0x209
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_423580(_DWORD *_this)
 {
@@ -19073,9 +19087,9 @@ void Engine::sub_423580(_DWORD *_this)
 
 
 /* ===== [stained] sub_423620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423620
+ * Engine 成员函数  → sub_423620
  * raw 行区间 [31546, 31566]; op=0x20A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_423620(int *_this)
 {
@@ -19100,10 +19114,10 @@ void Engine::sub_423620(int *_this)
 }
 
 
-/* ===== [stained] sub_423690  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423690
+/* ===== [stained] sub_423690  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423690
  * raw 行区间 [31569, 31592]; op=0x20B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_423690(int *_this)
 {
@@ -19132,9 +19146,9 @@ int Engine::sub_423690(int *_this)
 
 
 /* ===== [stained] sub_423770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423770
+ * Engine 成员函数  → sub_423770
  * raw 行区间 [31595, 31602]; op=0x20D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423770(_DWORD *_this)
 {
@@ -19146,10 +19160,10 @@ int Engine::sub_423770(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4237B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4237B0
+/* ===== [stained] sub_4237B0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4237B0
  * raw 行区间 [31605, 31670]; op=0x20F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 4)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4237B0(int _this)
 {
@@ -19171,7 +19185,7 @@ int Engine::sub_4237B0(int _this)
   void *v17; // [esp+14h] [ebp-10h]
   int v18; // [esp+20h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 2);
   if ( !*(_DWORD *)(_this + 4 * v2 + 378688) )
   {
@@ -19220,9 +19234,9 @@ int Engine::sub_4237B0(int _this)
 
 
 /* ===== [stained] sub_423980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423980
+ * Engine 成员函数  → sub_423980
  * raw 行区间 [31673, 31696]; op=0x210
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423980(int *_this)
 {
@@ -19251,9 +19265,9 @@ int Engine::sub_423980(int *_this)
 
 
 /* ===== [stained] sub_4239F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4239F0
+ * Engine 成员函数  → sub_4239F0
  * raw 行区间 [31699, 31739]; op=0x211
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4239F0(_DWORD *_this)
 {
@@ -19298,10 +19312,10 @@ int Engine::sub_4239F0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_423A30  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423A30
+/* ===== [stained] sub_423A30  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423A30
  * raw 行区间 [31742, 31755]; op=0x212
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_423A30(_DWORD *_this)
 {
@@ -19319,10 +19333,10 @@ int Engine::sub_423A30(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_423A80  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423A80
+/* ===== [stained] sub_423A80  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423A80
  * raw 行区间 [31758, 31776]; op=0x213
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_423A80(_DWORD *_this)
 {
@@ -19346,9 +19360,9 @@ int Engine::sub_423A80(_DWORD *_this)
 
 
 /* ===== [stained] sub_423AE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423AE0
+ * Engine 成员函数  → sub_423AE0
  * raw 行区间 [31779, 31788]; op=0x214
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_423AE0(int *_this)
 {
@@ -19362,10 +19376,10 @@ int * Engine::sub_423AE0(int *_this)
 }
 
 
-/* ===== [stained] sub_423B20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423B20
+/* ===== [stained] sub_423B20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423B20
  * raw 行区间 [31791, 31804]; op=0x217
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_423B20(_DWORD *_this)
 {
@@ -19384,9 +19398,9 @@ _DWORD * Engine::sub_423B20(_DWORD *_this)
 
 
 /* ===== [stained] sub_423BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423BA0
+ * Engine 成员函数  → sub_423BA0
  * raw 行区间 [31807, 31820]; op=0x219
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_423BA0(_DWORD *_this)
 {
@@ -19404,10 +19418,10 @@ _DWORD * Engine::sub_423BA0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_423C20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423C20
+/* ===== [stained] sub_423C20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423C20
  * raw 行区间 [31823, 31831]; op=0x21B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[166965])；建模 engine.hpp 字段后方可标已分析
  */
 BOOL Engine::sub_423C20(_DWORD *_this)
 {
@@ -19421,9 +19435,9 @@ BOOL Engine::sub_423C20(_DWORD *_this)
 
 
 /* ===== [stained] sub_423C60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423C60
+ * Engine 成员函数  → sub_423C60
  * raw 行区间 [31834, 31843]; op=0x21D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423C60(_DWORD *_this)
 {
@@ -19438,9 +19452,9 @@ int Engine::sub_423C60(_DWORD *_this)
 
 
 /* ===== [stained] sub_423CA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423CA0
+ * Engine 成员函数  → sub_423CA0
  * raw 行区间 [31846, 31863]; op=0x21E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_423CA0(_DWORD *_this)
 {
@@ -19463,9 +19477,9 @@ _BYTE * Engine::sub_423CA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423D40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423D40
+ * Engine 成员函数  → sub_423D40
  * raw 行区间 [31867, 31886]; op=0x21F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_423D40(_DWORD *_this)
 {
@@ -19490,9 +19504,9 @@ _BYTE * Engine::sub_423D40(_DWORD *_this)
 
 
 /* ===== [stained] sub_423DE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423DE0
+ * Engine 成员函数  → sub_423DE0
  * raw 行区间 [31889, 31906]; op=0x220
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_423DE0(_DWORD *_this)
 {
@@ -19515,9 +19529,9 @@ _BYTE * Engine::sub_423DE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423E70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423E70
+ * Engine 成员函数  → sub_423E70
  * raw 行区间 [31909, 31922]; op=0x221
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423E70(_DWORD *_this)
 {
@@ -19536,9 +19550,9 @@ int Engine::sub_423E70(_DWORD *_this)
 
 
 /* ===== [stained] sub_423EC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423EC0
+ * Engine 成员函数  → sub_423EC0
  * raw 行区间 [31925, 31934]; op=0x222
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_423EC0(_DWORD *_this)
 {
@@ -19553,9 +19567,9 @@ int Engine::sub_423EC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_423F00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423F00
+ * Engine 成员函数  → sub_423F00
  * raw 行区间 [31937, 31958]; op=0x223
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_423F00(_DWORD *_this)
 {
@@ -19582,9 +19596,9 @@ int * Engine::sub_423F00(_DWORD *_this)
 
 
 /* ===== [stained] sub_423F80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423F80
+ * Engine 成员函数  → sub_423F80
  * raw 行区间 [31961, 31981]; op=0x225
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_423F80(_DWORD *_this)
 {
@@ -19609,10 +19623,10 @@ int * Engine::sub_423F80(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_423FE0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_423FE0
+/* ===== [stained] sub_423FE0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_423FE0
  * raw 行区间 [31984, 32001]; op=0x229
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_423FE0(_DWORD *_this)
 {
@@ -19635,9 +19649,9 @@ int Engine::sub_423FE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_424080  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424080
+ * Engine 成员函数  → sub_424080
  * raw 行区间 [32004, 32015]; op=0x22A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424080(_DWORD *_this)
 {
@@ -19654,9 +19668,9 @@ int Engine::sub_424080(_DWORD *_this)
 
 
 /* ===== [stained] sub_424100  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424100
+ * Engine 成员函数  → sub_424100
  * raw 行区间 [32019, 32032]; op=0x22B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424100(_DWORD *_this)
 {
@@ -19675,9 +19689,9 @@ int Engine::sub_424100(_DWORD *_this)
 
 
 /* ===== [stained] sub_424180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424180
+ * Engine 成员函数  → sub_424180
  * raw 行区间 [32035, 32046]; op=0x22C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424180(_DWORD *_this)
 {
@@ -19694,9 +19708,9 @@ int Engine::sub_424180(_DWORD *_this)
 
 
 /* ===== [stained] sub_4241F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4241F0
+ * Engine 成员函数  → sub_4241F0
  * raw 行区间 [32049, 32064]; op=0x22D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4241F0(_DWORD *_this)
 {
@@ -19717,9 +19731,9 @@ int Engine::sub_4241F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_424290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424290
+ * Engine 成员函数  → sub_424290
  * raw 行区间 [32068, 32085]; op=0x22E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424290(_DWORD *_this)
 {
@@ -19742,9 +19756,9 @@ int Engine::sub_424290(_DWORD *_this)
 
 
 /* ===== [stained] sub_424330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424330
+ * Engine 成员函数  → sub_424330
  * raw 行区间 [32088, 32103]; op=0x22F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424330(_DWORD *_this)
 {
@@ -19765,9 +19779,9 @@ int Engine::sub_424330(_DWORD *_this)
 
 
 /* ===== [stained] sub_4243B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4243B0
+ * Engine 成员函数  → sub_4243B0
  * raw 行区间 [32106, 32113]; op=0x230
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4243B0(_DWORD *_this)
 {
@@ -19780,9 +19794,9 @@ int Engine::sub_4243B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4243F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4243F0
+ * Engine 成员函数  → sub_4243F0
  * raw 行区间 [32116, 32129]; op=0x231
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4243F0(_DWORD *_this)
 {
@@ -19801,9 +19815,9 @@ int Engine::sub_4243F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_424440  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424440
+ * Engine 成员函数  → sub_424440
  * raw 行区间 [32132, 32164]; op=0x232
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424440(_DWORD *_this)
 {
@@ -19841,9 +19855,9 @@ int Engine::sub_424440(_DWORD *_this)
 
 
 /* ===== [stained] sub_424510  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424510
+ * Engine 成员函数  → sub_424510
  * raw 行区间 [32167, 32182]; op=0x233
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424510(_DWORD *_this)
 {
@@ -19864,9 +19878,9 @@ int Engine::sub_424510(_DWORD *_this)
 
 
 /* ===== [stained] sub_4245B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4245B0
+ * Engine 成员函数  → sub_4245B0
  * raw 行区间 [32186, 32201]; op=0x234
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_4245B0(_DWORD *_this)
 {
@@ -19887,9 +19901,9 @@ float * Engine::sub_4245B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_424630  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424630
+ * Engine 成员函数  → sub_424630
  * raw 行区间 [32204, 32219]; op=0x235
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424630(_DWORD *_this)
 {
@@ -19910,9 +19924,9 @@ int Engine::sub_424630(_DWORD *_this)
 
 
 /* ===== [stained] sub_4246B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4246B0
+ * Engine 成员函数  → sub_4246B0
  * raw 行区间 [32222, 32288]; op=0x236
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4246B0(char *_this)
 {
@@ -19935,7 +19949,7 @@ int Engine::sub_4246B0(char *_this)
   int v18; // [esp+14h] [ebp-10h]
   int v19; // [esp+20h] [ebp-4h]
 
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 9;
+  this->frames[this->cur_script].arity = 9;
   v2 = this->readIntOperand_41BF50( 2);
   if ( !*(_DWORD *)&_this[4 * v2 + 378688] )
   {
@@ -19984,9 +19998,9 @@ int Engine::sub_4246B0(char *_this)
 
 
 /* ===== [stained] sub_424880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424880
+ * Engine 成员函数  → sub_424880
  * raw 行区间 [32291, 32300]; op=0x237
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424880(_DWORD *_this)
 {
@@ -20001,9 +20015,9 @@ int Engine::sub_424880(_DWORD *_this)
 
 
 /* ===== [stained] sub_4248C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4248C0
+ * Engine 成员函数  → sub_4248C0
  * raw 行区间 [32303, 32312]; op=0x238
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4248C0(_DWORD *_this)
 {
@@ -20018,9 +20032,9 @@ int Engine::sub_4248C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_424900  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424900
+ * Engine 成员函数  → sub_424900
  * raw 行区间 [32315, 32332]; op=0x239
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424900(_DWORD *_this)
 {
@@ -20043,9 +20057,9 @@ int Engine::sub_424900(_DWORD *_this)
 
 
 /* ===== [stained] sub_424970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424970
+ * Engine 成员函数  → sub_424970
  * raw 行区间 [32335, 32503]; op=0x23B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_424970(int _this)
 {
@@ -20093,7 +20107,7 @@ void Engine::sub_424970(int _this)
   int v43; // [esp+38h] [ebp-8h]
   int v44; // [esp+3Ch] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 15;
+  this->frames[this->cur_script].arity = 15;
   v2 = this->readIntOperand_41BF50( 2);
   if ( v2 <= 0xA && (v3 = (int *)(_this + 28 * (v2 + 13869)), *v3) )
   {
@@ -20212,16 +20226,16 @@ void Engine::sub_424970(int _this)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aCgnumber);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aCgnumber);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_424DA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424DA0
+ * Engine 成员函数  → sub_424DA0
  * raw 行区间 [32506, 32573]; op=0x240
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424DA0(char *_this)
 {
@@ -20243,7 +20257,7 @@ int Engine::sub_424DA0(char *_this)
   int v17; // [esp+1Ch] [ebp-10h]
   int v18; // [esp+28h] [ebp-4h]
 
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 9;
+  this->frames[this->cur_script].arity = 9;
   v2 = this->readIntOperand_41BF50( 2);
   if ( !*(_DWORD *)&_this[4 * v2 + 378688] )
   {
@@ -20294,9 +20308,9 @@ int Engine::sub_424DA0(char *_this)
 
 
 /* ===== [stained] sub_424FA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_424FA0
+ * Engine 成员函数  → sub_424FA0
  * raw 行区间 [32577, 32645]; op=0x241
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_424FA0(char *_this)
 {
@@ -20319,7 +20333,7 @@ int Engine::sub_424FA0(char *_this)
   int v18; // [esp+1Ch] [ebp-10h]
   int v19; // [esp+28h] [ebp-4h]
 
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 11;
+  this->frames[this->cur_script].arity = 11;
   v2 = this->readIntOperand_41BF50( 2);
   if ( !*(_DWORD *)&_this[4 * v2 + 378688] )
   {
@@ -20370,9 +20384,9 @@ int Engine::sub_424FA0(char *_this)
 
 
 /* ===== [stained] sub_4251A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4251A0
+ * Engine 成员函数  → sub_4251A0
  * raw 行区间 [32649, 32658]; op=0x242
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4251A0(_DWORD *_this)
 {
@@ -20387,9 +20401,9 @@ int Engine::sub_4251A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4251E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4251E0
+ * Engine 成员函数  → sub_4251E0
  * raw 行区间 [32661, 32676]; op=0x245
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4251E0(_DWORD *_this)
 {
@@ -20410,9 +20424,9 @@ int Engine::sub_4251E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425250  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425250
+ * Engine 成员函数  → sub_425250
  * raw 行区间 [32680, 32700]; op=0x246
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425250(_DWORD *_this)
 {
@@ -20438,9 +20452,9 @@ int Engine::sub_425250(_DWORD *_this)
 
 
 /* ===== [stained] sub_4252E0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4252E0
+ * Engine 成员函数  → sub_4252E0
  * raw 行区间 [32705, 32713]; op=0x248
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对（详见 docs-new/03-engine/opcode-table.md）
  */
 int Engine::sub_4252E0(_DWORD *_this)
 {
@@ -20454,9 +20468,9 @@ int Engine::sub_4252E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425310
+ * Engine 成员函数  → sub_425310
  * raw 行区间 [32717, 32768]; op=0x249
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425310(int _this)
 {
@@ -20475,7 +20489,7 @@ int Engine::sub_425310(int _this)
   HANDLE hFile; // [esp+14h] [ebp-8h]
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = *(_DWORD **)(_this + 4 * v2 + 378688);
   if ( v3 )
@@ -20503,9 +20517,9 @@ int Engine::sub_425310(int _this)
     sub_455C60((int *)(_this + 680092), *(int *)ArgList);
     v9 = this->readIntOperand_41BF50( 1);
     v10 = sub_454FA0((_DWORD *)(_this + 680092), v9);
-    sub_408050((char *)(_this + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
+    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v10);
     hFile = (HANDLE)65543;
-    pExceptionObject = _this + 8;
+    pExceptionObject = this->message_buf;
     _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
   return sub_455C60((int *)(_this + 680092), *(int *)ArgList);
@@ -20513,9 +20527,9 @@ int Engine::sub_425310(int _this)
 
 
 /* ===== [stained] sub_425460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425460
+ * Engine 成员函数  → sub_425460
  * raw 行区间 [32771, 32807]; op=0x24B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425460(_DWORD *_this)
 {
@@ -20557,9 +20571,9 @@ int Engine::sub_425460(_DWORD *_this)
 
 
 /* ===== [stained] sub_425530  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425530
+ * Engine 成员函数  → sub_425530
  * raw 行区间 [32811, 32837]; op=0x24C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425530(_DWORD *_this)
 {
@@ -20591,9 +20605,9 @@ int Engine::sub_425530(_DWORD *_this)
 
 
 /* ===== [stained] sub_4255E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4255E0
+ * Engine 成员函数  → sub_4255E0
  * raw 行区间 [32841, 32954]; op=0x24D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4255E0(char *_this)
 {
@@ -20629,7 +20643,7 @@ int * Engine::sub_4255E0(char *_this)
   double pExceptionObject; // [esp+28h] [ebp-14h] BYREF
   int v33; // [esp+38h] [ebp-4h]
 
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 25;
+  this->frames[this->cur_script].arity = 25;
   v2 = this->readIntOperand_41BF50( 2);
   if ( !*(_DWORD *)&_this[4 * v2 + 378688] )
   {
@@ -20712,9 +20726,9 @@ int * Engine::sub_4255E0(char *_this)
 
 
 /* ===== [stained] sub_4258C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4258C0
+ * Engine 成员函数  → sub_4258C0
  * raw 行区间 [32959, 32967]; op=0x24E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4258C0(_DWORD *_this)
 {
@@ -20728,9 +20742,9 @@ int Engine::sub_4258C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4258F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4258F0
+ * Engine 成员函数  → sub_4258F0
  * raw 行区间 [32970, 32995]; op=0x24F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4258F0(_DWORD *_this)
 {
@@ -20761,9 +20775,9 @@ void Engine::sub_4258F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425980
+ * Engine 成员函数  → sub_425980
  * raw 行区间 [32998, 33023]; op=0x250
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_425980(_DWORD *_this)
 {
@@ -20794,9 +20808,9 @@ int * Engine::sub_425980(_DWORD *_this)
 
 
 /* ===== [stained] sub_425A10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425A10
+ * Engine 成员函数  → sub_425A10
  * raw 行区间 [33026, 33055]; op=0x251
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_425A10(_DWORD *_this)
 {
@@ -20830,10 +20844,10 @@ int * Engine::sub_425A10(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_425AB0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425AB0
+/* ===== [stained] sub_425AB0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_425AB0
  * raw 行区间 [33058, 33066]; op=0x252
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[92323])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_425AB0(_DWORD *_this)
 {
@@ -20847,9 +20861,9 @@ int Engine::sub_425AB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425AE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425AE0
+ * Engine 成员函数  → sub_425AE0
  * raw 行区间 [33069, 33078]; op=0x253
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_425AE0(_DWORD *_this)
 {
@@ -20864,9 +20878,9 @@ _DWORD * Engine::sub_425AE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425B20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425B20
+ * Engine 成员函数  → sub_425B20
  * raw 行区间 [33081, 33096]; op=0x254
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425B20(_DWORD *_this)
 {
@@ -20887,9 +20901,9 @@ int Engine::sub_425B20(_DWORD *_this)
 
 
 /* ===== [stained] sub_425BC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425BC0
+ * Engine 成员函数  → sub_425BC0
  * raw 行区间 [33100, 33117]; op=0x255
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_425BC0(_DWORD *_this)
 {
@@ -20912,9 +20926,9 @@ _DWORD * Engine::sub_425BC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425C30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425C30
+ * Engine 成员函数  → sub_425C30
  * raw 行区间 [33120, 33135]; op=0x256
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425C30(_DWORD *_this)
 {
@@ -20935,9 +20949,9 @@ int Engine::sub_425C30(_DWORD *_this)
 
 
 /* ===== [stained] sub_425CA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425CA0
+ * Engine 成员函数  → sub_425CA0
  * raw 行区间 [33138, 33153]; op=0x257
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425CA0(_DWORD *_this)
 {
@@ -20958,9 +20972,9 @@ int Engine::sub_425CA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425D20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425D20
+ * Engine 成员函数  → sub_425D20
  * raw 行区间 [33156, 33185]; op=0x258
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_425D20(_DWORD *_this)
 {
@@ -20995,9 +21009,9 @@ _DWORD * Engine::sub_425D20(_DWORD *_this)
 
 
 /* ===== [stained] sub_425DB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425DB0
+ * Engine 成员函数  → sub_425DB0
  * raw 行区间 [33188, 33203]; op=0x25A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425DB0(_DWORD *_this)
 {
@@ -21017,10 +21031,10 @@ int Engine::sub_425DB0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_425E20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425E20
+/* ===== [stained] sub_425E20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_425E20
  * raw 行区间 [33206, 33221]; op=0x25B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[92379])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_425E20(_DWORD *_this)
 {
@@ -21041,9 +21055,9 @@ int Engine::sub_425E20(_DWORD *_this)
 
 
 /* ===== [stained] sub_425E70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425E70
+ * Engine 成员函数  → sub_425E70
  * raw 行区间 [33224, 33245]; op=0x25C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425E70(_DWORD *_this)
 {
@@ -21069,10 +21083,10 @@ int Engine::sub_425E70(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_425EF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425EF0
+/* ===== [stained] sub_425EF0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_425EF0
  * raw 行区间 [33248, 33266]; op=0x25D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_425EF0(_DWORD *_this)
 {
@@ -21096,9 +21110,9 @@ int Engine::sub_425EF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_425F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425F50
+ * Engine 成员函数  → sub_425F50
  * raw 行区间 [33269, 33288]; op=0x25E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_425F50(_DWORD *_this)
 {
@@ -21123,9 +21137,9 @@ _DWORD * Engine::sub_425F50(_DWORD *_this)
 
 
 /* ===== [stained] sub_425FF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_425FF0
+ * Engine 成员函数  → sub_425FF0
  * raw 行区间 [33291, 33308]; op=0x25F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_425FF0(_DWORD *_this)
 {
@@ -21147,10 +21161,10 @@ int Engine::sub_425FF0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426080  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426080
+/* ===== [stained] sub_426080  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426080
  * raw 行区间 [33311, 33328]; op=0x260
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[80105])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_426080(_DWORD *_this)
 {
@@ -21172,10 +21186,10 @@ int Engine::sub_426080(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4260F0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4260F0
+/* ===== [stained] sub_4260F0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4260F0
  * raw 行区间 [33331, 33339]; op=0x261
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[80101])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4260F0(_DWORD *_this)
 {
@@ -21189,9 +21203,9 @@ int Engine::sub_4260F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426120  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426120
+ * Engine 成员函数  → sub_426120
  * raw 行区间 [33342, 33382]; op=0x2BC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426120(_DWORD *_this)
 {
@@ -21236,10 +21250,10 @@ int Engine::sub_426120(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426200  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426200
+/* ===== [stained] sub_426200  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426200
  * raw 行区间 [33385, 33402]; op=0x2BD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_426200(_DWORD *_this)
 {
@@ -21262,9 +21276,9 @@ void Engine::sub_426200(_DWORD *_this)
 
 
 /* ===== [stained] sub_426260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426260
+ * Engine 成员函数  → sub_426260
  * raw 行区间 [33405, 33422]; op=0x2BE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_426260(_DWORD *_this)
 {
@@ -21287,9 +21301,9 @@ void Engine::sub_426260(_DWORD *_this)
 
 
 /* ===== [stained] sub_4262C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4262C0
+ * Engine 成员函数  → sub_4262C0
  * raw 行区间 [33425, 33436]; op=0x2BF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4262C0(_DWORD *_this)
 {
@@ -21306,9 +21320,9 @@ int Engine::sub_4262C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426310
+ * Engine 成员函数  → sub_426310
  * raw 行区间 [33439, 33450]; op=0x2C0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426310(_DWORD *_this)
 {
@@ -21325,9 +21339,9 @@ int Engine::sub_426310(_DWORD *_this)
 
 
 /* ===== [stained] sub_426360  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426360
+ * Engine 成员函数  → sub_426360
  * raw 行区间 [33453, 33461]; op=0x2CB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426360(_DWORD *_this)
 {
@@ -21341,9 +21355,9 @@ int Engine::sub_426360(_DWORD *_this)
 
 
 /* ===== [stained] sub_426390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426390
+ * Engine 成员函数  → sub_426390
  * raw 行区间 [33464, 33475]; op=0x2CD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426390(_DWORD *_this)
 {
@@ -21360,9 +21374,9 @@ int Engine::sub_426390(_DWORD *_this)
 
 
 /* ===== [stained] sub_4263D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4263D0
+ * Engine 成员函数  → sub_4263D0
  * raw 行区间 [33478, 33495]; op=0x2CF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4263D0(_DWORD *_this)
 {
@@ -21385,21 +21399,21 @@ int Engine::sub_4263D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426420
+ * Engine 成员函数  → sub_426420
  * raw 行区间 [33498, 33521]; op=0x2DA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_426420(int _this)
 {
   unsigned int v2; // edi
   _DWORD *v3; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 17;
+  this->frames[this->cur_script].arity = 17;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aCgnumber);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aCgnumber);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -21415,10 +21429,10 @@ void Engine::sub_426420(int _this)
 }
 
 
-/* ===== [stained] sub_426500  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426500
+/* ===== [stained] sub_426500  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426500
  * raw 行区间 [33524, 33532]; op=0x2DB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_426500(_DWORD *_this)
 {
@@ -21432,9 +21446,9 @@ void Engine::sub_426500(_DWORD *_this)
 
 
 /* ===== [stained] sub_426540  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426540
+ * Engine 成员函数  → sub_426540
  * raw 行区间 [33535, 33563]; op=0x2E7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_426540(int _this)
 {
@@ -21443,7 +21457,7 @@ void Engine::sub_426540(int _this)
   int v4; // ebx
   int v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -21454,8 +21468,8 @@ void Engine::sub_426540(int _this)
     }
     else
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aGetautomespi);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aGetautomespi);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -21468,9 +21482,9 @@ void Engine::sub_426540(int _this)
 
 
 /* ===== [stained] sub_4265E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4265E0
+ * Engine 成员函数  → sub_4265E0
  * raw 行区间 [33566, 33577]; op=0x2E8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4265E0(_DWORD *_this)
 {
@@ -21487,9 +21501,9 @@ int Engine::sub_4265E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426620
+ * Engine 成员函数  → sub_426620
  * raw 行区间 [33580, 33588]; op=0x2E9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426620(_DWORD *_this)
 {
@@ -21502,10 +21516,10 @@ int Engine::sub_426620(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426650  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426650
+/* ===== [stained] sub_426650  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426650
  * raw 行区间 [33591, 33603]; op=0x2EE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[174405])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_426650(_DWORD *_this)
 {
@@ -21523,9 +21537,9 @@ int Engine::sub_426650(_DWORD *_this)
 
 
 /* ===== [stained] sub_4266A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4266A0
+ * Engine 成员函数  → sub_4266A0
  * raw 行区间 [33606, 33658]; op=0x2F4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4266A0(int *_this)
 {
@@ -21583,9 +21597,9 @@ void Engine::sub_4266A0(int *_this)
 
 
 /* ===== [stained] sub_4267D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4267D0
+ * Engine 成员函数  → sub_4267D0
  * raw 行区间 [33661, 33674]; op=0x2F5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4267D0(_DWORD *_this)
 {
@@ -21603,17 +21617,17 @@ int Engine::sub_4267D0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426820  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426820
+/* ===== [stained] sub_426820  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426820
  * raw 行区间 [33677, 33692]; op=0x2F6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[95776])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_426820(int **_this)
 {
   int v2; // edi
   int result; // eax
 
-  this->frames[(_DWORD)this->cur_script].arity = (int *)3;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (int *)3;
   v2 = this->readIntOperand_41BF50( 1);
   sub_4BB9F0(_this + 21032, v2);
   _this[v2 + 21315] = 0;
@@ -21627,9 +21641,9 @@ int Engine::sub_426820(int **_this)
 
 
 /* ===== [stained] sub_426890  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426890
+ * Engine 成员函数  → sub_426890
  * raw 行区间 [33695, 33703]; op=0x2F7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426890(_DWORD *_this)
 {
@@ -21642,10 +21656,10 @@ int Engine::sub_426890(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4268D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4268D0
+/* ===== [stained] sub_4268D0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4268D0
  * raw 行区间 [33706, 33715]; op=0x2F8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 4666)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4268D0(int *_this)
 {
@@ -21660,9 +21674,9 @@ int Engine::sub_4268D0(int *_this)
 
 
 /* ===== [stained] sub_426910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426910
+ * Engine 成员函数  → sub_426910
  * raw 行区间 [33718, 33726]; op=0x2FA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426910(_DWORD *_this)
 {
@@ -21676,9 +21690,9 @@ int Engine::sub_426910(_DWORD *_this)
 
 
 /* ===== [stained] sub_426940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426940
+ * Engine 成员函数  → sub_426940
  * raw 行区间 [33729, 33740]; op=0x2FF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426940(_DWORD *_this)
 {
@@ -21695,9 +21709,9 @@ int Engine::sub_426940(_DWORD *_this)
 
 
 /* ===== [stained] sub_426990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426990
+ * Engine 成员函数  → sub_426990
  * raw 行区间 [33743, 33754]; op=0x300
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426990(_DWORD *_this)
 {
@@ -21714,9 +21728,9 @@ int Engine::sub_426990(_DWORD *_this)
 
 
 /* ===== [stained] sub_4269F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4269F0
+ * Engine 成员函数  → sub_4269F0
  * raw 行区间 [33757, 33765]; op=0x301
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4269F0(_DWORD *_this)
 {
@@ -21730,15 +21744,15 @@ int * Engine::sub_4269F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426A30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426A30
+ * Engine 成员函数  → sub_426A30
  * raw 行区间 [33768, 33777]; op=0x302
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426A30(int _this)
 {
   int v2; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)(_this + 4 * v2 + 85272) = 0x10000;
   *(_DWORD *)(_this + 4 * v2 + 85284) = this->readIntOperand_41BF50( 2);
@@ -21746,10 +21760,10 @@ int Engine::sub_426A30(int _this)
 }
 
 
-/* ===== [stained] sub_426A90  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426A90
+/* ===== [stained] sub_426A90  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426A90
  * raw 行区间 [33780, 33791]; op=0x303
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_426A90(_DWORD *_this)
 {
@@ -21766,9 +21780,9 @@ int Engine::sub_426A90(_DWORD *_this)
 
 
 /* ===== [stained] sub_426AE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426AE0
+ * Engine 成员函数  → sub_426AE0
  * raw 行区间 [33794, 33805]; op=0x307
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426AE0(_DWORD *_this)
 {
@@ -21784,10 +21798,10 @@ int Engine::sub_426AE0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426B20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426B20
+/* ===== [stained] sub_426B20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426B20
  * raw 行区间 [33808, 33815]; op=0x308
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[96981])；建模 engine.hpp 字段后方可标已分析
  */
 BOOL Engine::sub_426B20(_DWORD *_this)
 {
@@ -21799,10 +21813,10 @@ BOOL Engine::sub_426B20(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426B60  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426B60
+/* ===== [stained] sub_426B60  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426B60
  * raw 行区间 [33819, 33836]; op=0x30A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 unsigned int Engine::sub_426B60(_DWORD *_this)
 {
@@ -21825,9 +21839,9 @@ unsigned int Engine::sub_426B60(_DWORD *_this)
 
 
 /* ===== [stained] sub_426BD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426BD0
+ * Engine 成员函数  → sub_426BD0
  * raw 行区间 [33839, 33850]; op=0x321
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_426BD0(_DWORD *_this)
 {
@@ -21843,10 +21857,10 @@ int * Engine::sub_426BD0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426C20  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426C20
+/* ===== [stained] sub_426C20  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426C20
  * raw 行区间 [33853, 33885]; op=0x322
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_426C20(_DWORD *_this)
 {
@@ -21883,10 +21897,10 @@ void Engine::sub_426C20(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_426CF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426CF0
+/* ===== [stained] sub_426CF0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_426CF0
  * raw 行区间 [33888, 33922]; op=0x323
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int * Engine::sub_426CF0(_DWORD *_this)
 {
@@ -21926,9 +21940,9 @@ int * Engine::sub_426CF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426DC0
+ * Engine 成员函数  → sub_426DC0
  * raw 行区间 [33925, 33938]; op=0x325
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426DC0(_DWORD *_this)
 {
@@ -21947,9 +21961,9 @@ int Engine::sub_426DC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_426E10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426E10
+ * Engine 成员函数  → sub_426E10
  * raw 行区间 [33941, 33954]; op=0x326
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_426E10(_DWORD *_this)
 {
@@ -21968,24 +21982,24 @@ void Engine::sub_426E10(_DWORD *_this)
 
 
 /* ===== [stained] sub_426E70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426E70
+ * Engine 成员函数  → sub_426E70
  * raw 行区间 [33957, 33964]; op=0x327
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_426E70(int _this)
 {
   int v2; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   return sub_453280(*(_DWORD **)(_this + 373536), v2);
 }
 
 
 /* ===== [stained] sub_426EB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426EB0
+ * Engine 成员函数  → sub_426EB0
  * raw 行区间 [33967, 34000]; op=0x329
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_426EB0(int _this)
 {
@@ -22001,7 +22015,7 @@ int Engine::sub_426EB0(int _this)
   SIZE_T dwBytes; // [esp+14h] [ebp-8h] BYREF
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, &dwBytes);
   hFile = (HANDLE)sub_455560((char *)(_this + 680092), *(int *)ArgList);
@@ -22012,7 +22026,7 @@ int Engine::sub_426EB0(int _this)
   {
     sub_455C60(v5, *(int *)ArgList);
     v6 = (_DWORD *)(_this + 680092);
-    v7 = (char *)(_this + 8);
+    v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
     sub_408050(v7, 1024, "メッシュファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
@@ -22024,9 +22038,9 @@ int Engine::sub_426EB0(int _this)
 
 
 /* ===== [stained] sub_426F80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_426F80
+ * Engine 成员函数  → sub_426F80
  * raw 行区间 [34003, 34010]; op=0x32A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_426F80(_DWORD *_this)
 {
@@ -22039,9 +22053,9 @@ void Engine::sub_426F80(_DWORD *_this)
 
 
 /* ===== [stained] sub_427040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427040
+ * Engine 成员函数  → sub_427040
  * raw 行区间 [34033, 34054]; op=0x32D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427040(_DWORD *_this)
 {
@@ -22068,9 +22082,9 @@ int Engine::sub_427040(_DWORD *_this)
 
 
 /* ===== [stained] sub_427110  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427110
+ * Engine 成员函数  → sub_427110
  * raw 行区间 [34058, 34113]; op=0x32E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427110(_DWORD *_this)
 {
@@ -22130,10 +22144,10 @@ int Engine::sub_427110(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4272B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4272B0
+/* ===== [stained] sub_4272B0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4272B0
  * raw 行区间 [34117, 34124]; op=0x32F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_4272B0(_DWORD *_this)
 {
@@ -22146,9 +22160,9 @@ int Engine::sub_4272B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4272F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4272F0
+ * Engine 成员函数  → sub_4272F0
  * raw 行区间 [34127, 34136]; op=0x330
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4272F0(_DWORD *_this)
 {
@@ -22163,9 +22177,9 @@ int Engine::sub_4272F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427330
+ * Engine 成员函数  → sub_427330
  * raw 行区间 [34139, 34152]; op=0x331
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427330(_DWORD *_this)
 {
@@ -22184,9 +22198,9 @@ int Engine::sub_427330(_DWORD *_this)
 
 
 /* ===== [stained] sub_427380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427380
+ * Engine 成员函数  → sub_427380
  * raw 行区间 [34155, 34187]; op=0x332
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427380(_DWORD *_this)
 {
@@ -22224,9 +22238,9 @@ int Engine::sub_427380(_DWORD *_this)
 
 
 /* ===== [stained] sub_427450  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427450
+ * Engine 成员函数  → sub_427450
  * raw 行区间 [34190, 34224]; op=0x333
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427450(_DWORD *_this)
 {
@@ -22266,9 +22280,9 @@ int Engine::sub_427450(_DWORD *_this)
 
 
 /* ===== [stained] sub_427520  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427520
+ * Engine 成员函数  → sub_427520
  * raw 行区间 [34227, 34234]; op=0x334
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_427520(_DWORD *_this)
 {
@@ -22281,9 +22295,9 @@ float * Engine::sub_427520(_DWORD *_this)
 
 
 /* ===== [stained] sub_427560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427560
+ * Engine 成员函数  → sub_427560
  * raw 行区间 [34237, 34250]; op=0x335
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427560(_DWORD *_this)
 {
@@ -22302,9 +22316,9 @@ int Engine::sub_427560(_DWORD *_this)
 
 
 /* ===== [stained] sub_4275F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4275F0
+ * Engine 成员函数  → sub_4275F0
  * raw 行区间 [34254, 34269]; op=0x336
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4275F0(_DWORD *_this)
 {
@@ -22325,9 +22339,9 @@ int Engine::sub_4275F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427680  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427680
+ * Engine 成员函数  → sub_427680
  * raw 行区间 [34272, 34285]; op=0x337
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427680(_DWORD *_this)
 {
@@ -22346,9 +22360,9 @@ int Engine::sub_427680(_DWORD *_this)
 
 
 /* ===== [stained] sub_427700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427700
+ * Engine 成员函数  → sub_427700
  * raw 行区间 [34288, 34305]; op=0x338
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_427700(_DWORD *_this)
 {
@@ -22371,9 +22385,9 @@ _BYTE * Engine::sub_427700(_DWORD *_this)
 
 
 /* ===== [stained] sub_4277A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4277A0
+ * Engine 成员函数  → sub_4277A0
  * raw 行区间 [34309, 34328]; op=0x339
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_4277A0(_DWORD *_this)
 {
@@ -22398,9 +22412,9 @@ _BYTE * Engine::sub_4277A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427840
+ * Engine 成员函数  → sub_427840
  * raw 行区间 [34331, 34348]; op=0x33A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_427840(_DWORD *_this)
 {
@@ -22423,9 +22437,9 @@ _BYTE * Engine::sub_427840(_DWORD *_this)
 
 
 /* ===== [stained] sub_4278D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4278D0
+ * Engine 成员函数  → sub_4278D0
  * raw 行区间 [34351, 34364]; op=0x33B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4278D0(_DWORD *_this)
 {
@@ -22444,9 +22458,9 @@ _DWORD * Engine::sub_4278D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427950  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427950
+ * Engine 成员函数  → sub_427950
  * raw 行区间 [34367, 34376]; op=0x33C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427950(_DWORD *_this)
 {
@@ -22461,9 +22475,9 @@ int Engine::sub_427950(_DWORD *_this)
 
 
 /* ===== [stained] sub_4279B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4279B0
+ * Engine 成员函数  → sub_4279B0
  * raw 行区间 [34380, 34391]; op=0x33D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4279B0(_DWORD *_this)
 {
@@ -22480,9 +22494,9 @@ int * Engine::sub_4279B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427A00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427A00
+ * Engine 成员函数  → sub_427A00
  * raw 行区间 [34394, 34409]; op=0x33E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427A00(_DWORD *_this)
 {
@@ -22503,9 +22517,9 @@ int Engine::sub_427A00(_DWORD *_this)
 
 
 /* ===== [stained] sub_427A90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427A90
+ * Engine 成员函数  → sub_427A90
  * raw 行区间 [34412, 34448]; op=0x33F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427A90(_DWORD *_this)
 {
@@ -22547,9 +22561,9 @@ int Engine::sub_427A90(_DWORD *_this)
 
 
 /* ===== [stained] sub_427B60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427B60
+ * Engine 成员函数  → sub_427B60
  * raw 行区间 [34451, 34458]; op=0x340
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427B60(_DWORD *_this)
 {
@@ -22562,9 +22576,9 @@ int Engine::sub_427B60(_DWORD *_this)
 
 
 /* ===== [stained] sub_427BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427BA0
+ * Engine 成员函数  → sub_427BA0
  * raw 行区间 [34461, 34494]; op=0x341
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427BA0(int _this)
 {
@@ -22580,7 +22594,7 @@ int Engine::sub_427BA0(int _this)
   SIZE_T dwBytes; // [esp+14h] [ebp-8h] BYREF
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, &dwBytes);
   hFile = (HANDLE)sub_455560((char *)(_this + 680092), *(int *)ArgList);
@@ -22591,7 +22605,7 @@ int Engine::sub_427BA0(int _this)
   {
     sub_455C60(v5, *(int *)ArgList);
     v6 = (_DWORD *)(_this + 680092);
-    v7 = (char *)(_this + 8);
+    v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
     sub_408050(v7, 1024, "L2Dモデルファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
@@ -22603,9 +22617,9 @@ int Engine::sub_427BA0(int _this)
 
 
 /* ===== [stained] sub_427C70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427C70
+ * Engine 成员函数  → sub_427C70
  * raw 行区间 [34497, 34504]; op=0x342
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_427C70(_DWORD *_this)
 {
@@ -22618,9 +22632,9 @@ void Engine::sub_427C70(_DWORD *_this)
 
 
 /* ===== [stained] sub_427CB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427CB0
+ * Engine 成员函数  → sub_427CB0
  * raw 行区间 [34507, 34516]; op=0x344
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427CB0(_DWORD *_this)
 {
@@ -22635,9 +22649,9 @@ int Engine::sub_427CB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427CF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427CF0
+ * Engine 成员函数  → sub_427CF0
  * raw 行区间 [34519, 34554]; op=0x345
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427CF0(int _this)
 {
@@ -22654,7 +22668,7 @@ int Engine::sub_427CF0(int _this)
   SIZE_T dwBytes; // [esp+14h] [ebp-8h] BYREF
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, &dwBytes);
   hFile = (HANDLE)sub_455560((char *)(_this + 680092), *(int *)ArgList);
@@ -22666,7 +22680,7 @@ int Engine::sub_427CF0(int _this)
   {
     sub_455C60(v5, *(int *)ArgList);
     v6 = (_DWORD *)(_this + 680092);
-    v7 = (char *)(_this + 8);
+    v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
     sub_408050(v7, 1024, "L2Dテクスチャファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
@@ -22678,9 +22692,9 @@ int Engine::sub_427CF0(int _this)
 
 
 /* ===== [stained] sub_427DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427DD0
+ * Engine 成员函数  → sub_427DD0
  * raw 行区间 [34557, 34564]; op=0x346
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_427DD0(_DWORD *_this)
 {
@@ -22693,9 +22707,9 @@ float * Engine::sub_427DD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427E10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427E10
+ * Engine 成员函数  → sub_427E10
  * raw 行区间 [34567, 34580]; op=0x347
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427E10(_DWORD *_this)
 {
@@ -22714,9 +22728,9 @@ int Engine::sub_427E10(_DWORD *_this)
 
 
 /* ===== [stained] sub_427EA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427EA0
+ * Engine 成员函数  → sub_427EA0
  * raw 行区间 [34584, 34599]; op=0x348
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427EA0(_DWORD *_this)
 {
@@ -22737,9 +22751,9 @@ int Engine::sub_427EA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_427F30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427F30
+ * Engine 成员函数  → sub_427F30
  * raw 行区间 [34602, 34615]; op=0x349
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_427F30(_DWORD *_this)
 {
@@ -22758,9 +22772,9 @@ int Engine::sub_427F30(_DWORD *_this)
 
 
 /* ===== [stained] sub_427FB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_427FB0
+ * Engine 成员函数  → sub_427FB0
  * raw 行区间 [34618, 34631]; op=0x34A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_427FB0(_DWORD *_this)
 {
@@ -22779,9 +22793,9 @@ _DWORD * Engine::sub_427FB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_428030  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428030
+ * Engine 成员函数  → sub_428030
  * raw 行区间 [34634, 34651]; op=0x34B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_428030(_DWORD *_this)
 {
@@ -22804,9 +22818,9 @@ _BYTE * Engine::sub_428030(_DWORD *_this)
 
 
 /* ===== [stained] sub_4280D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4280D0
+ * Engine 成员函数  → sub_4280D0
  * raw 行区间 [34655, 34674]; op=0x34C
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_4280D0(_DWORD *_this)
 {
@@ -22831,9 +22845,9 @@ _BYTE * Engine::sub_4280D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_428170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428170
+ * Engine 成员函数  → sub_428170
  * raw 行区间 [34677, 34694]; op=0x34D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_428170(_DWORD *_this)
 {
@@ -22856,9 +22870,9 @@ _BYTE * Engine::sub_428170(_DWORD *_this)
 
 
 /* ===== [stained] sub_428200  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428200
+ * Engine 成员函数  → sub_428200
  * raw 行区间 [34697, 34734]; op=0x34E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_428200(int _this)
 {
@@ -22876,7 +22890,7 @@ int Engine::sub_428200(int _this)
   SIZE_T dwBytes; // [esp+14h] [ebp-8h] BYREF
   char ArgList[4]; // [esp+18h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 9;
+  this->frames[this->cur_script].arity = 9;
   v2 = this->readIntOperand_41BF50( 1);
   *(_DWORD *)ArgList = sub_4559C0((_DWORD *)(_this + 680092), *(void **)(_this + 387924), v2, &dwBytes);
   hFile = (HANDLE)sub_455560((char *)(_this + 680092), *(int *)ArgList);
@@ -22889,7 +22903,7 @@ int Engine::sub_428200(int _this)
   {
     sub_455C60(v5, *(int *)ArgList);
     v6 = (_DWORD *)(_this + 680092);
-    v7 = (char *)(_this + 8);
+    v7 = (char *)(this->message_buf);
     v8 = sub_454FA0(v6, v2);
     sub_408050(v7, 1024, "L2Dモーションファイル %s の読み込みに失敗しました", v8);
     pExceptionObject = v7;
@@ -22901,24 +22915,24 @@ int Engine::sub_428200(int _this)
 
 
 /* ===== [stained] sub_4282E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4282E0
+ * Engine 成员函数  → sub_4282E0
  * raw 行区间 [34737, 34744]; op=0x350
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4282E0(int _this)
 {
   int v2; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = this->readIntOperand_41BF50( 1);
   return sub_4A1AA0((char **)(_this + 322832), v2);
 }
 
 
 /* ===== [stained] sub_428320  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428320
+ * Engine 成员函数  → sub_428320
  * raw 行区间 [34747, 34776]; op=0x351
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_428320(int _this)
 {
@@ -22928,7 +22942,7 @@ void Engine::sub_428320(int _this)
   float v5; // [esp+8h] [ebp-8h]
   int v6; // [esp+Ch] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 3);
   v6 = v2;
   if ( v2 <= 255 )
@@ -22953,9 +22967,9 @@ LABEL_6:
 
 
 /* ===== [stained] sub_4283B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4283B0
+ * Engine 成员函数  → sub_4283B0
  * raw 行区间 [34780, 34791]; op=0x352
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4283B0(_DWORD *_this)
 {
@@ -22972,9 +22986,9 @@ int Engine::sub_4283B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_428400  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428400
+ * Engine 成员函数  → sub_428400
  * raw 行区间 [34794, 34821]; op=0x34F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_428400(int _this)
 {
@@ -22985,7 +22999,7 @@ int Engine::sub_428400(int _this)
   float v7; // [esp+20h] [ebp-8h]
   float v8; // [esp+24h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   if ( v2 < 0 )
   {
@@ -23007,9 +23021,9 @@ int Engine::sub_428400(int _this)
 
 
 /* ===== [stained] sub_428990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428990
+ * Engine 成员函数  → sub_428990
  * raw 行区间 [35125, 35168]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_428990(_DWORD *_this, _BYTE *a2)
 {
@@ -23057,10 +23071,10 @@ int Engine::sub_428990(_DWORD *_this, _BYTE *a2)
 }
 
 
-/* ===== [stained] sub_428A60  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_exit_script_428A60
+/* ===== [stained] sub_428A60  状态: PARTIAL =====
+ * Engine 成员函数  → op_exit_script_428A60
  * raw 行区间 [35171, 35319]; op=0x9 指令名『exit-script』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 676732)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::op_exit_script_428A60(int _this)
 {
@@ -23104,13 +23118,13 @@ int Engine::op_exit_script_428A60(int _this)
   v3 = ((*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSetEnablememfl) != 0) + 1;
   if ( v3 > 0 )
   {
-    v4 = _this + 382984;
-    v32 = _this + 382984;
+    v4 = this->global_float_base;
+    v32 = this->global_float_base;
     pExceptionObject = v3;
     do
     {
       for ( j = 0; j < *(_DWORD *)(_this + 382952) + 1; ++j )
-        *(_DWORD *)(*(_DWORD *)(v4 - 8) + 4 * j) = *(_DWORD *)(_this + 388240);
+        *(_DWORD *)(*(_DWORD *)(v4 - 8) + 4 * j) = this->enc_zero;
       memset(*(void **)v4, 0, 4 * *(_DWORD *)(_this + 382956) + 4);
       v6 = *(_DWORD *)(_this + 382960) + 1;
       v31 = 0;
@@ -23213,26 +23227,26 @@ int Engine::op_exit_script_428A60(int _this)
 }
 
 
-/* ===== [stained] sub_428DB0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_428DB0
+/* ===== [stained] sub_428DB0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_428DB0
  * raw 行区间 [35323, 35331]; op=0x1B4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 497344)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_428DB0(int _this)
 {
   _DWORD *v1; // esi
 
   v1 = (_DWORD *)(_this + 497344);
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 1;
+  this->frames[this->cur_script].arity = 1;
   sub_4034F0((_DWORD **)_this);
   return sub_40B420(v1, 0, 0xFFFFFFFF);
 }
 
 
 /* ===== [stained] sub_429460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_429460
+ * Engine 成员函数  → sub_429460
  * raw 行区间 [35687, 35739]; op=0xA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_429460(int _this)
 {
@@ -23255,11 +23269,11 @@ int Engine::sub_429460(int _this)
 
   v18[210] = (int)&v14;
   v18[1] = _this;
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = *(int (**)(void))(_this + 388248);
   if ( v2 && v2()
-    || !*(_DWORD *)(_this + 388236)
-    || (v17 = *(_DWORD *)(_this + 388240), v17 = __ROL4__(v17, 11), v17 != *(_DWORD *)(_this + 388236)) )
+    || !this->key
+    || (v17 = this->enc_zero, v17 = __ROL4__(v17, 11), v17 != this->key) )
   {
     pExceptionObject[0] = 0;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_Exit_Exception__);
@@ -23279,9 +23293,9 @@ int Engine::sub_429460(int _this)
     sub_455C60(v7, v3);
     v8 = this->readIntOperand_41BF50( 1);
     v9 = sub_454FA0((_DWORD *)(_this + 680092), v8);
-    sub_408050((char *)(_this + 8), 1024, "画像ファイル %s の読み込みに失敗しました", v9);
-    pExceptionObject[2] = _this + 8;
-    v15[0] = _this + 8;
+    sub_408050((char *)(this->message_buf), 1024, "画像ファイル %s の読み込みに失敗しました", v9);
+    pExceptionObject[2] = this->message_buf;
+    v15[0] = this->message_buf;
     v15[1] = 65543;
     _CxxThrowException(v15, &_TI1_AVCommand_ShowMessage_Exception__);
   }
@@ -23290,9 +23304,9 @@ int Engine::sub_429460(int _this)
 
 
 /* ===== [stained] sub_429830  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_429830
+ * Engine 成员函数  → sub_429830
  * raw 行区间 [35742, 35758]; op=0xA3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_429830(_DWORD *_this)
 {
@@ -23314,9 +23328,9 @@ int Engine::sub_429830(_DWORD *_this)
 
 
 /* ===== [stained] sub_42A420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42A420
+ * Engine 成员函数  → sub_42A420
  * raw 行区间 [36318, 36544]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_42A420(_DWORD *_this, _DWORD *a2, int pExceptionObject)
 {
@@ -23547,10 +23561,10 @@ LABEL_9:
 }
 
 
-/* ===== [stained] sub_42A9B0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42A9B0
+/* ===== [stained] sub_42A9B0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_42A9B0
  * raw 行区间 [36551, 36558]; op=0x1B2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 124336)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_42A9B0(_DWORD *_this)
 {
@@ -23562,10 +23576,10 @@ _DWORD * Engine::sub_42A9B0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42AA00  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42AA00
+/* ===== [stained] sub_42AA00  状态: PARTIAL =====
+ * Engine 成员函数  → sub_42AA00
  * raw 行区间 [36561, 36565]; op=0x1B3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 124336)；建模 engine.hpp 字段后方可标已分析
  */
 _DWORD * Engine::sub_42AA00(_DWORD *_this)
 {
@@ -23575,9 +23589,9 @@ _DWORD * Engine::sub_42AA00(_DWORD *_this)
 
 
 /* ===== [stained] sub_42AC40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42AC40
+ * Engine 成员函数  → sub_42AC40
  * raw 行区间 [36668, 36685]; op=0xD3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42AC40(_DWORD *_this)
 {
@@ -23600,9 +23614,9 @@ int Engine::sub_42AC40(_DWORD *_this)
 
 
 /* ===== [stained] sub_42ACC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42ACC0
+ * Engine 成员函数  → sub_42ACC0
  * raw 行区间 [36689, 36727]; op=0xD5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42ACC0(int _this)
 {
@@ -23611,7 +23625,7 @@ int Engine::sub_42ACC0(int _this)
   int result; // eax
   int v5; // [esp+4h] [ebp-4h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 0;
+  this->frames[this->cur_script].arity = 0;
   if ( !*(_DWORD *)(_this + 430692) )
   {
     v2 = (_DWORD *)(_this + 699208);
@@ -23622,8 +23636,8 @@ int Engine::sub_42ACC0(int _this)
       *(_DWORD *)(_this + 7792) = 1;
     *v2 = 0;
     *(_DWORD *)(_this + 430668) = this->readIntOperand_41BF50( 1);
-    v3 = 15 * *(_DWORD *)(_this + 383104);
-    *(_DWORD *)(_this + 430704) = *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184);
+    v3 = 15 * this->cur_script;
+    *(_DWORD *)(_this + 430704) = this->frames[this->cur_script].frame_arg;
     *(_DWORD *)(_this + 430708) = *(_DWORD *)(_this + 8 * v3 + 383184);
     sub_453A90((_DWORD *)(_this + 429928));
     sub_42A180(
@@ -23638,17 +23652,17 @@ int Engine::sub_42ACC0(int _this)
   }
   else
   {
-    result = *(_DWORD *)(_this + 383104);
-    *(_DWORD *)(_this + 120 * result + 383220) = 3;
+    result = this->cur_script;
+    this->frames[result].arity = 3;
   }
   return result;
 }
 
 
 /* ===== [stained] sub_42AEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → operandAddress_42AEA0
+ * Engine 成员函数  → operandAddress_42AEA0
  * raw 行区间 [36757, 36961]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::operandAddress_42AEA0(_DWORD *_this, int a2)
 {
@@ -23858,9 +23872,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_42B4B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writeIntOperand_42B4B0
+ * Engine 成员函数  → writeIntOperand_42B4B0
  * raw 行区间 [36965, 37126]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::writeIntOperand_42B4B0(int _this, int pExceptionObject, int a3)
 {
@@ -23880,7 +23894,7 @@ int Engine::writeIntOperand_42B4B0(int _this, int pExceptionObject, int a3)
   int *v17; // [esp+1Ch] [ebp-10h]
   int v18; // [esp+28h] [ebp-4h]
 
-  v4 = (int *)(8 * pExceptionObject + *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128));
+  v4 = (int *)(8 * pExceptionObject + this->frames[this->cur_script].ip);
   dword_55D534 = (int)v4;
   v5 = *(v4 - 1);
   if ( v5 > 32771 )
@@ -23888,13 +23902,13 @@ int Engine::writeIntOperand_42B4B0(int _this, int pExceptionObject, int a3)
     if ( v5 != 32777 )
     {
 LABEL_22:
-      pExceptionObject = *(_DWORD *)(*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383128)
+      pExceptionObject = *(_DWORD *)(this->frames[this->cur_script].ip
                                    + 8 * pExceptionObject
                                    - 4);
       _CxxThrowException(&pExceptionObject, &_TI1_AVCommand_Type_Exception__);
     }
-    v11 = *(_DWORD *)(*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383156) + 4 * *v4);
-    v15 = *(void **)(_this + 388236);
+    v11 = *(_DWORD *)(this->frames[this->cur_script].local_int + 4 * *v4);
+    v15 = *(void **)(this->key);
     v16 = __ROR4__((unsigned int)v15 ^ __ROL4__(v11, 11), 25);
     v9 = (int *)v16;
     if ( !v16 )
@@ -23914,17 +23928,17 @@ LABEL_22:
         v9 = 0;
       }
       v18 = -1;
-      v15 = *(void **)(_this + 388236);
+      v15 = *(void **)(this->key);
       v17 = (int *)__ROL4__((unsigned int)v15 ^ __ROR4__(v9, 7), 21);
-      *(_DWORD *)(*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383156) + 4 * *(_DWORD *)dword_55D534) = v17;
-      v13 = *(_DWORD **)(_this + 120 * *(_DWORD *)(_this + 383104) + 383236);
+      *(_DWORD *)(this->frames[this->cur_script].local_int + 4 * *(_DWORD *)dword_55D534) = v17;
+      v13 = *(_DWORD **)(_this + 120 * this->cur_script + 383236);
       v14 = *(_DWORD *)dword_55D534;
       v15 = v9;
       sub_45D240(v13, &v14);
     }
     if ( ((v9[1] - *v9) & 0xFFFFFFFC) == 0 )
       goto LABEL_17;
-    v15 = *(void **)(_this + 388236);
+    v15 = *(void **)(this->key);
     a3 = __ROL4__((unsigned int)v15 ^ __ROR4__(a3, 7), 21);
     result = *v9;
     if ( !((v9[1] - *v9) >> 2) )
@@ -23938,40 +23952,40 @@ LABEL_22:
       switch ( v5 )
       {
         case 3:
-          v16 = *(_DWORD *)(_this + 388236);
+          v16 = this->key;
           a3 = __ROL4__(v16 ^ __ROR4__(a3, 7), 21);
-          result = *(_DWORD *)(_this + 382976);
+          result = this->global_int_base;
           *(_DWORD *)(result + 4 * *(_DWORD *)dword_55D534) = a3;
           return result;
         case 4:
           v7 = *v4;
-          result = *(_DWORD *)(_this + 382984);
+          result = this->global_float_base;
           *(float *)(result + 4 * v7) = (float)a3;
           return result;
         case 6:
-          dword_55D530 = *(_DWORD *)(*(_DWORD *)(_this + 383000) + 4 * *v4);
-          result = __ROL4__(*(_DWORD *)(_this + 388236) ^ __ROR4__(a3, 7), 21);
+          dword_55D530 = *(_DWORD *)(this->global_ptr_base + 4 * *v4);
+          result = __ROL4__(this->key ^ __ROR4__(a3, 7), 21);
           a3 = result;
           *(_DWORD *)dword_55D530 = result;
           return result;
         case 7:
-          result = *(_DWORD *)(*(_DWORD *)(_this + 383008) + 4 * *v4);
+          result = *(_DWORD *)(this->global_float_ptr_base + 4 * *v4);
           dword_55D52C = result;
           *(float *)result = (float)a3;
           return result;
         case 9:
-          v16 = *(_DWORD *)(_this + 388236);
+          v16 = this->key;
           a3 = __ROL4__(v16 ^ __ROR4__(a3, 7), 21);
           result = *(_DWORD *)dword_55D534;
-          *(_DWORD *)(*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383156) + 4 * *(_DWORD *)dword_55D534) = a3;
+          *(_DWORD *)(this->frames[this->cur_script].local_int + 4 * *(_DWORD *)dword_55D534) = a3;
           return result;
         case 10:
           result = *v4;
-          *(float *)(*(_DWORD *)(_this + 120 * (*(_DWORD *)(_this + 383104) + 3193)) + 4 * result) = (float)a3;
+          *(float *)(*(_DWORD *)(_this + 120 * (this->cur_script + 3193)) + 4 * result) = (float)a3;
           return result;
         case 12:
-          dword_55D530 = *(_DWORD *)(*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383168) + 4 * *v4);
-          result = __ROL4__(*(_DWORD *)(_this + 388236) ^ __ROR4__(a3, 7), 21);
+          dword_55D530 = *(_DWORD *)(this->frames[this->cur_script].local_ptr + 4 * *v4);
+          result = __ROL4__(this->key ^ __ROR4__(a3, 7), 21);
           a3 = result;
           *(_DWORD *)dword_55D530 = result;
           return result;
@@ -23979,8 +23993,8 @@ LABEL_22:
           goto LABEL_22;
       }
     }
-    v8 = *(_DWORD *)(_this + 388236);
-    v17 = *(int **)(*(_DWORD *)(_this + 382976) + 4 * *v4);
+    v8 = this->key;
+    v17 = *(int **)(this->global_int_base + 4 * *v4);
     v16 = v8;
     v17 = (int *)__ROR4__(v8 ^ __ROL4__(v17, 11), 25);
     v9 = v17;
@@ -24001,9 +24015,9 @@ LABEL_22:
         v9 = 0;
       }
       v18 = -1;
-      v15 = *(void **)(_this + 388236);
+      v15 = *(void **)(this->key);
       v16 = __ROL4__((unsigned int)v15 ^ __ROR4__(v9, 7), 21);
-      *(_DWORD *)(*(_DWORD *)(_this + 382976) + 4 * *(_DWORD *)dword_55D534) = v16;
+      *(_DWORD *)(this->global_int_base + 4 * *(_DWORD *)dword_55D534) = v16;
       v14 = *(_DWORD *)dword_55D534;
       v15 = v9;
       sub_45D240((_DWORD *)(_this + 383072), &v14);
@@ -24011,11 +24025,11 @@ LABEL_22:
     if ( ((v9[1] - *v9) & 0xFFFFFFFC) == 0 )
     {
 LABEL_17:
-      v15 = *(void **)(_this + 388236);
+      v15 = *(void **)(this->key);
       a3 = __ROL4__((unsigned int)v15 ^ __ROR4__(a3, 7), 21);
       return (int)sub_40C780(v9, &a3);
     }
-    v15 = *(void **)(_this + 388236);
+    v15 = *(void **)(this->key);
     a3 = __ROL4__((unsigned int)v15 ^ __ROR4__(a3, 7), 21);
     result = *v9;
     if ( !((v9[1] - *v9) >> 2) )
@@ -24027,9 +24041,9 @@ LABEL_17:
 
 
 /* ===== [stained] sub_42BA00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → writeFloatOperand_42BA00
+ * Engine 成员函数  → writeFloatOperand_42BA00
  * raw 行区间 [37132, 37295]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::writeFloatOperand_42BA00(_DWORD *_this, int pExceptionObject, float a3)
 {
@@ -24198,9 +24212,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_42BF60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42BF60
+ * Engine 成员函数  → sub_42BF60
  * raw 行区间 [37301, 37505]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42BF60(_DWORD *_this, int a2)
 {
@@ -24410,9 +24424,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_42C570  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42C570
+ * Engine 成员函数  → sub_42C570
  * raw 行区间 [37509, 37522]; op=0x13
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42C570(_DWORD *_this)
 {
@@ -24431,9 +24445,9 @@ int Engine::sub_42C570(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CB50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CB50
+ * Engine 成员函数  → sub_42CB50
  * raw 行区间 [37754, 37763]; op=0x62
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CB50(_DWORD *_this)
 {
@@ -24448,9 +24462,9 @@ int Engine::sub_42CB50(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CC90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CC90
+ * Engine 成员函数  → sub_42CC90
  * raw 行区间 [37804, 37813]; op=0x66
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CC90(_DWORD *_this)
 {
@@ -24465,9 +24479,9 @@ int Engine::sub_42CC90(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CCE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CCE0
+ * Engine 成员函数  → sub_42CCE0
  * raw 行区间 [37816, 37825]; op=0x67
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CCE0(_DWORD *_this)
 {
@@ -24482,9 +24496,9 @@ int Engine::sub_42CCE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CD30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CD30
+ * Engine 成员函数  → sub_42CD30
  * raw 行区间 [37828, 37837]; op=0x68
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CD30(_DWORD *_this)
 {
@@ -24499,9 +24513,9 @@ int Engine::sub_42CD30(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CD80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CD80
+ * Engine 成员函数  → sub_42CD80
  * raw 行区间 [37840, 37849]; op=0x69
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CD80(_DWORD *_this)
 {
@@ -24516,9 +24530,9 @@ int Engine::sub_42CD80(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CDD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CDD0
+ * Engine 成员函数  → sub_42CDD0
  * raw 行区间 [37852, 37861]; op=0x6A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CDD0(_DWORD *_this)
 {
@@ -24533,9 +24547,9 @@ int Engine::sub_42CDD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CE20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CE20
+ * Engine 成员函数  → sub_42CE20
  * raw 行区间 [37864, 37873]; op=0x6B
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CE20(_DWORD *_this)
 {
@@ -24550,9 +24564,9 @@ int Engine::sub_42CE20(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CEC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CEC0
+ * Engine 成员函数  → sub_42CEC0
  * raw 行区间 [37897, 37906]; op=0x191
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42CEC0(_DWORD *_this)
 {
@@ -24567,9 +24581,9 @@ int Engine::sub_42CEC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42CF10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42CF10
+ * Engine 成员函数  → sub_42CF10
  * raw 行区间 [37909, 37939]; op=0x194
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42CF10(_DWORD *_this)
 {
@@ -24605,9 +24619,9 @@ void Engine::sub_42CF10(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D010  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D010
+ * Engine 成员函数  → sub_42D010
  * raw 行区间 [37942, 37972]; op=0x195
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42D010(_DWORD *_this)
 {
@@ -24643,9 +24657,9 @@ void Engine::sub_42D010(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D1A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D1A0
+ * Engine 成员函数  → sub_42D1A0
  * raw 行区间 [37999, 38008]; op=0x1CD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D1A0(_DWORD *_this)
 {
@@ -24660,9 +24674,9 @@ int Engine::sub_42D1A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D1F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D1F0
+ * Engine 成员函数  → sub_42D1F0
  * raw 行区间 [38011, 38015]; op=0x7F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D1F0(int *_this)
 {
@@ -24672,9 +24686,9 @@ int Engine::sub_42D1F0(int *_this)
 
 
 /* ===== [stained] sub_42D220  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D220
+ * Engine 成员函数  → sub_42D220
  * raw 行区间 [38018, 38028]; op=0x83
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D220(_DWORD *_this)
 {
@@ -24690,9 +24704,9 @@ int Engine::sub_42D220(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D290
+ * Engine 成员函数  → sub_42D290
  * raw 行区间 [38031, 38035]; op=0x19A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D290(_DWORD *_this)
 {
@@ -24702,9 +24716,9 @@ int Engine::sub_42D290(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D2C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D2C0
+ * Engine 成员函数  → sub_42D2C0
  * raw 行区间 [38038, 38042]; op=0x1B6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D2C0(_DWORD *_this)
 {
@@ -24714,16 +24728,16 @@ int Engine::sub_42D2C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D2F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D2F0
+ * Engine 成员函数  → sub_42D2F0
  * raw 行区间 [38045, 38069]; op=0x1B8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42D2F0(int _this)
 {
   int v2; // eax
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -24733,8 +24747,8 @@ void Engine::sub_42D2F0(int _this)
     }
     else
     {
-      sub_408050((char *)(_this + 8), 1024, aGetautomessp);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, aGetautomessp);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -24746,9 +24760,9 @@ void Engine::sub_42D2F0(int _this)
 
 
 /* ===== [stained] sub_42D390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D390
+ * Engine 成员函数  → sub_42D390
  * raw 行区间 [38072, 38079]; op=0x1C7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D390(_DWORD *_this)
 {
@@ -24761,9 +24775,9 @@ int Engine::sub_42D390(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D3D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D3D0
+ * Engine 成员函数  → sub_42D3D0
  * raw 行区间 [38082, 38089]; op=0x1CB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D3D0(_DWORD *_this)
 {
@@ -24776,9 +24790,9 @@ int Engine::sub_42D3D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D410
+ * Engine 成员函数  → sub_42D410
  * raw 行区间 [38092, 38096]; op=0x1CC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D410(_DWORD *_this)
 {
@@ -24788,9 +24802,9 @@ int Engine::sub_42D410(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D440  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D440
+ * Engine 成员函数  → sub_42D440
  * raw 行区间 [38099, 38110]; op=0x1D0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D440(_DWORD *_this)
 {
@@ -24807,9 +24821,9 @@ int Engine::sub_42D440(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D4A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D4A0
+ * Engine 成员函数  → sub_42D4A0
  * raw 行区间 [38113, 38128]; op=0x1D3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D4A0(_DWORD *_this)
 {
@@ -24830,9 +24844,9 @@ int Engine::sub_42D4A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D510  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D510
+ * Engine 成员函数  → sub_42D510
  * raw 行区间 [38131, 38145]; op=0x1D4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D510(_DWORD *_this)
 {
@@ -24852,9 +24866,9 @@ int Engine::sub_42D510(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D580
+ * Engine 成员函数  → sub_42D580
  * raw 行区间 [38148, 38174]; op=0xAA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D580(int _this)
 {
@@ -24865,7 +24879,7 @@ int Engine::sub_42D580(int _this)
   int v7; // eax
   int v8; // edi
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = sub_454FA0((_DWORD *)(_this + 680092), v2);
   FileA = CreateFileA(v3, 0x40000000u, 0, 0, 2u, 0x8000020u, 0);
@@ -24886,9 +24900,9 @@ int Engine::sub_42D580(int _this)
 
 
 /* ===== [stained] sub_42D650  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D650
+ * Engine 成员函数  → sub_42D650
  * raw 行区间 [38177, 38200]; op=0xAB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D650(_DWORD *_this)
 {
@@ -24917,9 +24931,9 @@ int Engine::sub_42D650(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D700
+ * Engine 成员函数  → sub_42D700
  * raw 行区间 [38203, 38239]; op=0xAC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D700(int _this)
 {
@@ -24935,7 +24949,7 @@ int Engine::sub_42D700(int _this)
   unsigned __int16 v12; // [esp+11Ch] [ebp-14h]
   int v13; // [esp+120h] [ebp-10h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 19;
+  this->frames[this->cur_script].arity = 19;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = sub_454FA0((_DWORD *)(_this + 680092), v2);
   FileA = CreateFileA(v3, 0x80000000, 0, 0, 3u, 0x8000020u, 0);
@@ -24961,9 +24975,9 @@ int Engine::sub_42D700(int _this)
 
 
 /* ===== [stained] sub_42D830  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D830
+ * Engine 成员函数  → sub_42D830
  * raw 行区间 [38243, 38264]; op=0x190
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D830(_DWORD *_this)
 {
@@ -24990,9 +25004,9 @@ int Engine::sub_42D830(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D8E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D8E0
+ * Engine 成员函数  → sub_42D8E0
  * raw 行区间 [38267, 38285]; op=0x19D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D8E0(_DWORD *_this)
 {
@@ -25016,9 +25030,9 @@ int Engine::sub_42D8E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42D980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42D980
+ * Engine 成员函数  → sub_42D980
  * raw 行区间 [38288, 38331]; op=0x19E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42D980(int _this)
 {
@@ -25033,7 +25047,7 @@ int Engine::sub_42D980(int _this)
   char ArgList[256]; // [esp+130h] [ebp-204h] BYREF
   CHAR FileName[256]; // [esp+230h] [ebp-104h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
   sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
@@ -25067,9 +25081,9 @@ int Engine::sub_42D980(int _this)
 
 
 /* ===== [stained] sub_42DB10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DB10
+ * Engine 成员函数  → sub_42DB10
  * raw 行区间 [38335, 38363]; op=0x19F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42DB10(_DWORD *_this)
 {
@@ -25103,9 +25117,9 @@ int Engine::sub_42DB10(_DWORD *_this)
 
 
 /* ===== [stained] sub_42DC70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DC70
+ * Engine 成员函数  → sub_42DC70
  * raw 行区间 [38366, 38404]; op=0x1A0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42DC70(int _this)
 {
@@ -25122,7 +25136,7 @@ int Engine::sub_42DC70(int _this)
   char ArgList[256]; // [esp+12Ch] [ebp-204h] BYREF
   CHAR FileName[256]; // [esp+22Ch] [ebp-104h] BYREF
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 19;
+  this->frames[this->cur_script].arity = 19;
   this->sub_408A40( ArgList, 0x100u);
   v2 = this->readIntOperand_41BF50( 2);
   sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, v2);
@@ -25149,9 +25163,9 @@ int Engine::sub_42DC70(int _this)
 
 
 /* ===== [stained] sub_42DDE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DDE0
+ * Engine 成员函数  → sub_42DDE0
  * raw 行区间 [38408, 38440]; op=0x1A1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42DDE0(_DWORD *_this)
 {
@@ -25189,9 +25203,9 @@ int Engine::sub_42DDE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42DFC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42DFC0
+ * Engine 成员函数  → sub_42DFC0
  * raw 行区间 [38463, 38483]; op=0x1AB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42DFC0(_DWORD *_this)
 {
@@ -25217,9 +25231,9 @@ int Engine::sub_42DFC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E0A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E0A0
+ * Engine 成员函数  → sub_42E0A0
  * raw 行区间 [38486, 38513]; op=0x1AC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E0A0(_DWORD *_this)
 {
@@ -25252,9 +25266,9 @@ int Engine::sub_42E0A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E1F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E1F0
+ * Engine 成员函数  → sub_42E1F0
  * raw 行区间 [38516, 38550]; op=0x1AE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E1F0(_DWORD *_this)
 {
@@ -25294,9 +25308,9 @@ int Engine::sub_42E1F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E320  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E320
+ * Engine 成员函数  → sub_42E320
  * raw 行区间 [38553, 38594]; op=0x1AF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E320(int *_this)
 {
@@ -25343,9 +25357,9 @@ int Engine::sub_42E320(int *_this)
 
 
 /* ===== [stained] sub_42E460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E460
+ * Engine 成员函数  → sub_42E460
  * raw 行区间 [38597, 38606]; op=0xBD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E460(_DWORD *_this)
 {
@@ -25360,9 +25374,9 @@ int Engine::sub_42E460(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E4D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E4D0
+ * Engine 成员函数  → sub_42E4D0
  * raw 行区间 [38609, 38616]; op=0xBE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E4D0(_DWORD *_this)
 {
@@ -25375,9 +25389,9 @@ int Engine::sub_42E4D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E510  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E510
+ * Engine 成员函数  → sub_42E510
  * raw 行区间 [38619, 38623]; op=0xC0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E510(_DWORD *_this)
 {
@@ -25387,9 +25401,9 @@ int Engine::sub_42E510(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E540  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E540
+ * Engine 成员函数  → sub_42E540
  * raw 行区间 [38626, 38668]; op=0xC5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42E540(int _this)
 {
@@ -25399,7 +25413,7 @@ void Engine::sub_42E540(int _this)
   int v5; // eax
   int v6; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -25424,8 +25438,8 @@ void Engine::sub_42E540(int _this)
     }
     else
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aGetvolume);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aGetvolume);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -25437,9 +25451,9 @@ void Engine::sub_42E540(int _this)
 
 
 /* ===== [stained] sub_42E670  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E670
+ * Engine 成员函数  → sub_42E670
  * raw 行区间 [38671, 38717]; op=0xC7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42E670(int _this)
 {
@@ -25448,7 +25462,7 @@ void Engine::sub_42E670(int _this)
   int v4; // eax
   int v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) == 1 )
   {
     v2 = (*(int (__thiscall **)(int, char *))(*(_DWORD *)(_this + 697620) + 4))(_this + 697620, aSoundMusic);
@@ -25485,22 +25499,22 @@ LABEL_12:
     writeIntOperand_42B4B0(v3, 2, 0);
     return;
   }
-  sub_408050((char *)(_this + 8), 1024, aGetsoundmode);
-  this->sub_4034D0( (const char *)(_this + 8));
+  sub_408050((char *)(this->message_buf), 1024, aGetsoundmode);
+  this->sub_4034D0( (const char *)(this->message_buf));
 }
 
 
 /* ===== [stained] sub_42E770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E770
+ * Engine 成员函数  → sub_42E770
  * raw 行区间 [38720, 38729]; op=0x1BE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E770(int _this)
 {
   int v2; // eax
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = sub_4B6130(*(int **)(_this + 83908), v2);
   return this->writeIntOperand_42B4B0( 1, v3 != 0);
@@ -25508,16 +25522,16 @@ int Engine::sub_42E770(int _this)
 
 
 /* ===== [stained] sub_42E7C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E7C0
+ * Engine 成员函数  → sub_42E7C0
  * raw 行区间 [38732, 38741]; op=0x1D6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E7C0(int _this)
 {
   int v2; // eax
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 2);
   v3 = sub_48A140(*(_DWORD **)(_this + 698900), v2);
   return this->writeIntOperand_42B4B0( 1, v3);
@@ -25525,9 +25539,9 @@ int Engine::sub_42E7C0(int _this)
 
 
 /* ===== [stained] sub_42E800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E800
+ * Engine 成员函数  → sub_42E800
  * raw 行区间 [38744, 38755]; op=0x1D7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E800(int _this)
 {
@@ -25535,7 +25549,7 @@ int Engine::sub_42E800(int _this)
   int v3; // eax
   int v4; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = **(_DWORD **)(_this + 698900);
   v3 = this->readIntOperand_41BF50( 2);
   v4 = (*(int (__thiscall **)(_DWORD, int))(v2 + 44))(*(_DWORD *)(_this + 698900), v3);
@@ -25544,9 +25558,9 @@ int Engine::sub_42E800(int _this)
 
 
 /* ===== [stained] sub_42E850  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E850
+ * Engine 成员函数  → sub_42E850
  * raw 行区间 [38758, 38771]; op=0x1D8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E850(int _this)
 {
@@ -25555,7 +25569,7 @@ int Engine::sub_42E850(int _this)
   int v4; // eax
   int v6; // [esp-4h] [ebp-Ch]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = **(_DWORD **)(_this + 698900);
   v6 = this->readIntOperand_41BF50( 3);
   v3 = this->readIntOperand_41BF50( 2);
@@ -25565,24 +25579,24 @@ int Engine::sub_42E850(int _this)
 
 
 /* ===== [stained] sub_42E8A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E8A0
+ * Engine 成员函数  → sub_42E8A0
  * raw 行区间 [38774, 38781]; op=0x1C4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E8A0(int _this)
 {
   int v2; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 3;
+  this->frames[this->cur_script].arity = 3;
   v2 = sub_404CB0((int **)(_this + 84128));
   return this->writeIntOperand_42B4B0( 1, v2 != 0);
 }
 
 
 /* ===== [stained] sub_42E8E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E8E0
+ * Engine 成员函数  → sub_42E8E0
  * raw 行区间 [38784, 38788]; op=0xCB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E8E0(_DWORD *_this)
 {
@@ -25592,9 +25606,9 @@ int Engine::sub_42E8E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E910
+ * Engine 成员函数  → sub_42E910
  * raw 行区间 [38791, 38798]; op=0xD0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E910(_DWORD *_this)
 {
@@ -25607,9 +25621,9 @@ int Engine::sub_42E910(_DWORD *_this)
 
 
 /* ===== [stained] sub_42E940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42E940
+ * Engine 成员函数  → sub_42E940
  * raw 行区间 [38801, 38905]; op=0xD4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42E940(_DWORD *_this)
 {
@@ -25719,9 +25733,9 @@ LABEL_30:
 
 
 /* ===== [stained] sub_42EAE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EAE0
+ * Engine 成员函数  → sub_42EAE0
  * raw 行区间 [38908, 38920]; op=0xDA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42EAE0(_DWORD *_this)
 {
@@ -25739,9 +25753,9 @@ int Engine::sub_42EAE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42EB80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EB80
+ * Engine 成员函数  → sub_42EB80
  * raw 行区间 [38923, 39037]; op=0xD6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42EB80(_DWORD *_this)
 {
@@ -25861,9 +25875,9 @@ LABEL_31:
 
 
 /* ===== [stained] sub_42ED90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42ED90
+ * Engine 成员函数  → sub_42ED90
  * raw 行区间 [39040, 39044]; op=0x106
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42ED90(int *_this)
 {
@@ -25872,10 +25886,10 @@ int Engine::sub_42ED90(int *_this)
 }
 
 
-/* ===== [stained] sub_42EDC0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EDC0
+/* ===== [stained] sub_42EDC0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_42EDC0
  * raw 行区间 [39047, 39055]; op=0x108
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 258)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_42EDC0(_DWORD *_this)
 {
@@ -25888,10 +25902,10 @@ int Engine::sub_42EDC0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_42EE10  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EE10
+/* ===== [stained] sub_42EE10  状态: PARTIAL =====
+ * Engine 成员函数  → sub_42EE10
  * raw 行区间 [39058, 39110]; op=0x109
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 258)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_42EE10(_DWORD *_this)
 {
@@ -25949,9 +25963,9 @@ int Engine::sub_42EE10(_DWORD *_this)
 
 
 /* ===== [stained] sub_42EF50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EF50
+ * Engine 成员函数  → sub_42EF50
  * raw 行区间 [39114, 39122]; op=0x10D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42EF50(_DWORD *_this)
 {
@@ -25965,9 +25979,9 @@ int Engine::sub_42EF50(_DWORD *_this)
 
 
 /* ===== [stained] sub_42EF90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42EF90
+ * Engine 成员函数  → sub_42EF90
  * raw 行区间 [39125, 39134]; op=0x10E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42EF90(_DWORD *_this)
 {
@@ -25982,9 +25996,9 @@ int Engine::sub_42EF90(_DWORD *_this)
 
 
 /* ===== [stained] sub_42F040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F040
+ * Engine 成员函数  → sub_42F040
  * raw 行区间 [39153, 39192]; op=0x12D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42F040(_DWORD *_this)
 {
@@ -26028,9 +26042,9 @@ int Engine::sub_42F040(_DWORD *_this)
 
 
 /* ===== [stained] sub_42F230  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F230
+ * Engine 成员函数  → sub_42F230
  * raw 行区间 [39199, 39252]; op=0x12E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42F230(_DWORD *_this)
 {
@@ -26089,9 +26103,9 @@ int Engine::sub_42F230(_DWORD *_this)
 
 
 /* ===== [stained] sub_42F560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F560
+ * Engine 成员函数  → sub_42F560
  * raw 行区间 [39269, 39335]; op=0x12F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42F560(_DWORD *_this)
 {
@@ -26162,10 +26176,10 @@ LABEL_6:
 }
 
 
-/* ===== [stained] sub_42F7A0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F7A0
+/* ===== [stained] sub_42F7A0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_42F7A0
  * raw 行区间 [39343, 39347]; op=0x130
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[96983])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_42F7A0(_DWORD *_this)
 {
@@ -26175,9 +26189,9 @@ int Engine::sub_42F7A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42F7D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F7D0
+ * Engine 成员函数  → sub_42F7D0
  * raw 行区间 [39350, 39357]; op=0x131
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42F7D0(_DWORD *_this)
 {
@@ -26190,9 +26204,9 @@ int Engine::sub_42F7D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42F810  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F810
+ * Engine 成员函数  → sub_42F810
  * raw 行区间 [39360, 39398]; op=0x134
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42F810(int _this)
 {
@@ -26204,12 +26218,12 @@ void Engine::sub_42F810(int _this)
   int v7; // ecx
   int v8; // [esp+8h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aGetq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aGetq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -26236,9 +26250,9 @@ void Engine::sub_42F810(int _this)
 
 
 /* ===== [stained] sub_42F990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42F990
+ * Engine 成员函数  → sub_42F990
  * raw 行区间 [39446, 39480]; op=0x139
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42F990(int _this)
 {
@@ -26249,12 +26263,12 @@ void Engine::sub_42F990(int _this)
   int v6; // eax
   int v7; // [esp+8h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aPop);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aPop);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -26278,9 +26292,9 @@ void Engine::sub_42F990(int _this)
 
 
 /* ===== [stained] sub_42FA20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FA20
+ * Engine 成员函数  → sub_42FA20
  * raw 行区间 [39484, 39518]; op=0x13D
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42FA20(int _this)
 {
@@ -26291,12 +26305,12 @@ void Engine::sub_42FA20(int _this)
   int v6; // eax
   int v7; // [esp+8h] [ebp-4h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aAcquireq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aAcquireq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -26320,9 +26334,9 @@ void Engine::sub_42FA20(int _this)
 
 
 /* ===== [stained] sub_42FAC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FAC0
+ * Engine 成员函数  → sub_42FAC0
  * raw 行区间 [39522, 39546]; op=0x13E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42FAC0(int _this)
 {
@@ -26331,12 +26345,12 @@ void Engine::sub_42FAC0(int _this)
   int v4; // ecx
   int v5; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   v2 = this->readIntOperand_41BF50( 1);
   if ( v2 > 0xA )
   {
-    sub_408050((char *)(_this + 8), 1024, aTotalq);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, aTotalq);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   else
   {
@@ -26352,9 +26366,9 @@ void Engine::sub_42FAC0(int _this)
 
 
 /* ===== [stained] sub_42FBC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FBC0
+ * Engine 成员函数  → sub_42FBC0
  * raw 行区间 [39571, 39638]; op=0x140
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42FBC0(_DWORD *_this)
 {
@@ -26427,9 +26441,9 @@ int Engine::sub_42FBC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42FCF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FCF0
+ * Engine 成员函数  → sub_42FCF0
  * raw 行区间 [39644, 39653]; op=0x145
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42FCF0(_DWORD *_this)
 {
@@ -26444,9 +26458,9 @@ int Engine::sub_42FCF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42FD60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FD60
+ * Engine 成员函数  → sub_42FD60
  * raw 行区间 [39656, 39702]; op=0x147
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_42FD60(int *_this)
 {
@@ -26498,9 +26512,9 @@ void Engine::sub_42FD60(int *_this)
 
 
 /* ===== [stained] sub_42FEC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FEC0
+ * Engine 成员函数  → sub_42FEC0
  * raw 行区间 [39705, 39709]; op=0x148
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42FEC0(_DWORD *_this)
 {
@@ -26510,9 +26524,9 @@ int Engine::sub_42FEC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_42FEF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_42FEF0
+ * Engine 成员函数  → sub_42FEF0
  * raw 行区间 [39712, 39806]; op=0x14A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_42FEF0(_DWORD *_this)
 {
@@ -26612,9 +26626,9 @@ int Engine::sub_42FEF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430170  状态: STUB =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_call_agerc_export_430170
+ * Engine 成员函数  → op_call_agerc_export_430170
  * raw 行区间 [39810, 39855]; op=0x14D 指令名『call-agerc-export』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 桩/简化：未逆清完整语义（可按 STUB 处理）
  */
 int Engine::op_call_agerc_export_430170(_DWORD *_this)
 {
@@ -26665,9 +26679,9 @@ int Engine::op_call_agerc_export_430170(_DWORD *_this)
 
 
 /* ===== [stained] sub_4302B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4302B0
+ * Engine 成员函数  → sub_4302B0
  * raw 行区间 [39859, 39863]; op=0x201
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4302B0(_DWORD *_this)
 {
@@ -26677,9 +26691,9 @@ int Engine::sub_4302B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4302E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4302E0
+ * Engine 成员函数  → sub_4302E0
  * raw 行区间 [39866, 39877]; op=0x208
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4302E0(_DWORD *_this)
 {
@@ -26695,10 +26709,10 @@ int Engine::sub_4302E0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_430340  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430340
+/* ===== [stained] sub_430340  状态: PARTIAL =====
+ * Engine 成员函数  → sub_430340
  * raw 行区间 [39880, 39889]; op=0x215
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 80708)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_430340(_DWORD *_this)
 {
@@ -26712,10 +26726,10 @@ int Engine::sub_430340(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_430380  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430380
+/* ===== [stained] sub_430380  状态: PARTIAL =====
+ * Engine 成员函数  → sub_430380
  * raw 行区间 [39892, 39899]; op=0x216
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this[K])；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_430380(_DWORD *_this)
 {
@@ -26728,9 +26742,9 @@ int Engine::sub_430380(_DWORD *_this)
 
 
 /* ===== [stained] sub_4303C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4303C0
+ * Engine 成员函数  → sub_4303C0
  * raw 行区间 [39902, 39913]; op=0x218
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4303C0(_DWORD *_this)
 {
@@ -26747,9 +26761,9 @@ int Engine::sub_4303C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430450  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430450
+ * Engine 成员函数  → sub_430450
  * raw 行区间 [39916, 39927]; op=0x21A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430450(_DWORD *_this)
 {
@@ -26766,9 +26780,9 @@ int Engine::sub_430450(_DWORD *_this)
 
 
 /* ===== [stained] sub_4304E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4304E0
+ * Engine 成员函数  → sub_4304E0
  * raw 行区间 [39930, 39949]; op=0x226
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4304E0(_DWORD *_this)
 {
@@ -26793,9 +26807,9 @@ int Engine::sub_4304E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4305A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4305A0
+ * Engine 成员函数  → sub_4305A0
  * raw 行区间 [39953, 39970]; op=0x227
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4305A0(_DWORD *_this)
 {
@@ -26818,9 +26832,9 @@ int Engine::sub_4305A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430650  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430650
+ * Engine 成员函数  → sub_430650
  * raw 行区间 [39973, 39988]; op=0x228
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430650(_DWORD *_this)
 {
@@ -26841,9 +26855,9 @@ int Engine::sub_430650(_DWORD *_this)
 
 
 /* ===== [stained] sub_4306F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4306F0
+ * Engine 成员函数  → sub_4306F0
  * raw 行区间 [39991, 40001]; op=0x23A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4306F0(_DWORD *_this)
 {
@@ -26859,9 +26873,9 @@ int Engine::sub_4306F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430750  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430750
+ * Engine 成员函数  → sub_430750
  * raw 行区间 [40004, 40015]; op=0x23E
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430750(_DWORD *_this)
 {
@@ -26878,9 +26892,9 @@ int Engine::sub_430750(_DWORD *_this)
 
 
 /* ===== [stained] sub_4307B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4307B0
+ * Engine 成员函数  → sub_4307B0
  * raw 行区间 [40019, 40030]; op=0x23F
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4307B0(_DWORD *_this)
 {
@@ -26897,9 +26911,9 @@ int Engine::sub_4307B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430810  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430810
+ * Engine 成员函数  → sub_430810
  * raw 行区间 [40034, 40038]; op=0x247
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430810(_DWORD *_this)
 {
@@ -26909,9 +26923,9 @@ int Engine::sub_430810(_DWORD *_this)
 
 
 /* ===== [stained] sub_430840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430840
+ * Engine 成员函数  → sub_430840
  * raw 行区间 [40041, 40047]; op=0x24A
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430840(_DWORD *_this)
 {
@@ -26923,9 +26937,9 @@ int Engine::sub_430840(_DWORD *_this)
 
 
 /* ===== [stained] sub_430890  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430890
+ * Engine 成员函数  → sub_430890
  * raw 行区间 [40050, 40061]; op=0x2C3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430890(_DWORD *_this)
 {
@@ -26942,9 +26956,9 @@ int Engine::sub_430890(_DWORD *_this)
 
 
 /* ===== [stained] sub_430940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430940
+ * Engine 成员函数  → sub_430940
  * raw 行区间 [40074, 40084]; op=0x2C6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430940(_DWORD *_this)
 {
@@ -26960,9 +26974,9 @@ int Engine::sub_430940(_DWORD *_this)
 
 
 /* ===== [stained] sub_430990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430990
+ * Engine 成员函数  → sub_430990
  * raw 行区间 [40087, 40098]; op=0x2CA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430990(_DWORD *_this)
 {
@@ -26979,9 +26993,9 @@ int Engine::sub_430990(_DWORD *_this)
 
 
 /* ===== [stained] sub_4309E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4309E0
+ * Engine 成员函数  → sub_4309E0
  * raw 行区间 [40101, 40108]; op=0x2CC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4309E0(_DWORD *_this)
 {
@@ -26994,9 +27008,9 @@ int Engine::sub_4309E0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430A20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430A20
+ * Engine 成员函数  → sub_430A20
  * raw 行区间 [40111, 40115]; op=0x2CE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430A20(_DWORD *_this)
 {
@@ -27006,9 +27020,9 @@ int Engine::sub_430A20(_DWORD *_this)
 
 
 /* ===== [stained] sub_430A50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430A50
+ * Engine 成员函数  → sub_430A50
  * raw 行区间 [40118, 40126]; op=0x2D0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430A50(_DWORD *_this)
 {
@@ -27022,9 +27036,9 @@ int Engine::sub_430A50(_DWORD *_this)
 
 
 /* ===== [stained] sub_430AB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430AB0
+ * Engine 成员函数  → sub_430AB0
  * raw 行区间 [40129, 40137]; op=0x2D1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430AB0(_DWORD *_this)
 {
@@ -27038,9 +27052,9 @@ int Engine::sub_430AB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430B10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430B10
+ * Engine 成员函数  → sub_430B10
  * raw 行区间 [40140, 40148]; op=0x2D2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430B10(_DWORD *_this)
 {
@@ -27054,9 +27068,9 @@ int Engine::sub_430B10(_DWORD *_this)
 
 
 /* ===== [stained] sub_430B70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430B70
+ * Engine 成员函数  → sub_430B70
  * raw 行区间 [40151, 40159]; op=0x2D3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430B70(_DWORD *_this)
 {
@@ -27070,9 +27084,9 @@ int Engine::sub_430B70(_DWORD *_this)
 
 
 /* ===== [stained] sub_430BD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430BD0
+ * Engine 成员函数  → sub_430BD0
  * raw 行区间 [40162, 40173]; op=0x2D4
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430BD0(_DWORD *_this)
 {
@@ -27089,9 +27103,9 @@ int Engine::sub_430BD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_430D60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430D60
+ * Engine 成员函数  → sub_430D60
  * raw 行区间 [40227, 40237]; op=0x2D9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430D60(_DWORD *_this)
 {
@@ -27107,9 +27121,9 @@ int Engine::sub_430D60(_DWORD *_this)
 
 
 /* ===== [stained] sub_430DB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430DB0
+ * Engine 成员函数  → sub_430DB0
  * raw 行区间 [40240, 40249]; op=0x2DC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_430DB0(_DWORD *_this)
 {
@@ -27123,10 +27137,10 @@ int Engine::sub_430DB0(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_430DF0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_430DF0
+/* ===== [stained] sub_430DF0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_430DF0
  * raw 行区间 [40252, 40261]; op=0x2DE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 int Engine::sub_430DF0(_DWORD *_this)
 {
@@ -27141,9 +27155,9 @@ int Engine::sub_430DF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4310D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4310D0
+ * Engine 成员函数  → sub_4310D0
  * raw 行区间 [40342, 40350]; op=0x2E5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4310D0(_DWORD *_this)
 {
@@ -27157,16 +27171,16 @@ int Engine::sub_4310D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_431110  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431110
+ * Engine 成员函数  → sub_431110
  * raw 行区间 [40353, 40377]; op=0x2E6
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_431110(int _this)
 {
   int v2; // eax
   int v3; // eax
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 5;
+  this->frames[this->cur_script].arity = 5;
   if ( this->readIntOperand_41BF50( 1) )
   {
     if ( this->readIntOperand_41BF50( 1) == 1 )
@@ -27176,8 +27190,8 @@ void Engine::sub_431110(int _this)
     }
     else
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aGetautomespi);
-      this->sub_4034D0( (const char *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aGetautomespi);
+      this->sub_4034D0( (const char *)(this->message_buf));
     }
   }
   else
@@ -27189,9 +27203,9 @@ void Engine::sub_431110(int _this)
 
 
 /* ===== [stained] sub_4311B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4311B0
+ * Engine 成员函数  → sub_4311B0
  * raw 行区间 [40380, 40387]; op=0x2EA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4311B0(_DWORD *_this)
 {
@@ -27204,9 +27218,9 @@ int Engine::sub_4311B0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4311F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4311F0
+ * Engine 成员函数  → sub_4311F0
  * raw 行区间 [40390, 40399]; op=0x2EC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4311F0(_DWORD *_this)
 {
@@ -27221,9 +27235,9 @@ int Engine::sub_4311F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_431230  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431230
+ * Engine 成员函数  → sub_431230
  * raw 行区间 [40402, 40409]; op=0x2ED
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431230(_DWORD *_this)
 {
@@ -27236,9 +27250,9 @@ int Engine::sub_431230(_DWORD *_this)
 
 
 /* ===== [stained] sub_431270  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431270
+ * Engine 成员函数  → sub_431270
  * raw 行区间 [40412, 40520]; op=0x2EF
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431270(void **_this)
 {
@@ -27272,7 +27286,7 @@ int Engine::sub_431270(void **_this)
   int v30; // [esp+58h] [ebp-8h]
   int v31; // [esp+5Ch] [ebp-4h]
 
-  this->frames[(_DWORD)this->cur_script].arity = (void *)23;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (void *)23;
   v2 = 3;
   hrgnDst = 0;
   hrgnSrc2 = 0;
@@ -27310,12 +27324,12 @@ int Engine::sub_431270(void **_this)
       do
       {
         v31 = *v12;
-        v26 = (unsigned int)this->key;
+        v26 = (unsigned int)_this[97059];
         v31 = __ROR4__(v26 ^ __ROL4__(v31, 11), 25);
         v13 = v29;
         v9[v8].x = v31 + v25;
         v30 = *v13;
-        v26 = (unsigned int)this->key;
+        v26 = (unsigned int)_this[97059];
         v30 = __ROR4__(v26 ^ __ROL4__(v30, 11), 25);
         ++v29;
         v9[v8++].y = v30 + v24;
@@ -27352,9 +27366,9 @@ int Engine::sub_431270(void **_this)
 
 
 /* ===== [stained] sub_431460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431460
+ * Engine 成员函数  → sub_431460
  * raw 行区间 [40523, 40597]; op=0x2F0
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431460(void **_this)
 {
@@ -27377,7 +27391,7 @@ int Engine::sub_431460(void **_this)
   int v19; // [esp+2Ch] [ebp-1Ch]
   RECT rect; // [esp+34h] [ebp-14h] BYREF
 
-  this->frames[(_DWORD)this->cur_script].arity = (void *)19;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (void *)19;
   v2 = (_DWORD *)this->operandAddress_42AEA0( 2);
   v13 = this->readIntOperand_41BF50( 3);
   v15 = this->readIntOperand_41BF50( 4);
@@ -27386,11 +27400,11 @@ int Engine::sub_431460(void **_this)
   cPoint = this->readIntOperand_41BF50( 7);
   v14 = this->readIntOperand_41BF50( 8);
   v16 = this->readIntOperand_41BF50( 9);
-  rect.left = v13 + __ROR4__((unsigned int)this->key ^ __ROL4__(*v2, 11), 25);
-  v4 = (unsigned int)this->key;
+  rect.left = v13 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(*v2, 11), 25);
+  v4 = (unsigned int)_this[97059];
   rect.right = v13 + __ROR4__(v4 ^ __ROL4__(v2[1], 11), 25);
   rect.top = v15 + __ROR4__(v4 ^ __ROL4__(v2[2], 11), 25);
-  rect.bottom = v15 + __ROR4__((unsigned int)this->key ^ __ROL4__(v2[3], 11), 25);
+  rect.bottom = v15 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(v2[3], 11), 25);
   ho = CreateEllipticRgnIndirect(&rect);
   if ( ho )
   {
@@ -27402,9 +27416,9 @@ int Engine::sub_431460(void **_this)
       v19 = v18 - (_DWORD)v3;
       do
       {
-        v6[v8].x = v14 + __ROR4__((unsigned int)this->key ^ __ROL4__(*v3, 11), 25);
+        v6[v8].x = v14 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(*v3, 11), 25);
         v7 = cPoint;
-        v6[v8++].y = v16 + __ROR4__((unsigned int)this->key ^ __ROL4__(*(_DWORD *)((char *)v3++ + v19), 11), 25);
+        v6[v8++].y = v16 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(*(_DWORD *)((char *)v3++ + v19), 11), 25);
       }
       while ( v8 < cPoint );
     }
@@ -27434,9 +27448,9 @@ int Engine::sub_431460(void **_this)
 
 
 /* ===== [stained] sub_4316E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4316E0
+ * Engine 成员函数  → sub_4316E0
  * raw 行区间 [40600, 40685]; op=0x2F1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4316E0(void **_this)
 {
@@ -27465,7 +27479,7 @@ int Engine::sub_4316E0(void **_this)
   int v25; // [esp+3Ch] [ebp-18h]
   RECT rect; // [esp+40h] [ebp-14h] BYREF
 
-  this->frames[(_DWORD)this->cur_script].arity = (void *)15;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (void *)15;
   v2 = 3;
   hrgnDst = 0;
   hrgnSrc2 = 0;
@@ -27484,16 +27498,16 @@ int Engine::sub_4316E0(void **_this)
   while ( 1 )
   {
     v6 = (int *)v18[v5];
-    v7 = (int)this->key;
+    v7 = (int)_this[97059];
     v23 = *v6;
     v25 = v7;
     v23 = __ROR4__(v7 ^ __ROL4__(v23, 11), 25);
     v8 = v18[v5 + 2];
     rect.left = v8 + v23;
     v22 = v6[1];
-    v25 = (int)this->key;
+    v25 = (int)_this[97059];
     v22 = __ROR4__(v25 ^ __ROL4__(v22, 11), 25);
-    v9 = (int)this->key;
+    v9 = (int)_this[97059];
     rect.right = v22 + v8;
     v21 = v6[2];
     v25 = v9;
@@ -27501,7 +27515,7 @@ int Engine::sub_4316E0(void **_this)
     v10 = v18[v5 + 4];
     rect.top = v10 + v21;
     v11 = v6[3];
-    v25 = (int)this->key;
+    v25 = (int)_this[97059];
     v24 = __ROR4__(v25 ^ __ROL4__(v11, 11), 25);
     rect.bottom = v24 + v10;
     v12 = v4(&rect);
@@ -27527,9 +27541,9 @@ int Engine::sub_4316E0(void **_this)
 
 
 /* ===== [stained] sub_4318A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4318A0
+ * Engine 成员函数  → sub_4318A0
  * raw 行区间 [40688, 40721]; op=0x2F2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4318A0(void **_this)
 {
@@ -27542,16 +27556,16 @@ int Engine::sub_4318A0(void **_this)
   int y; // [esp+10h] [ebp-20h]
   RECT rect; // [esp+1Ch] [ebp-14h] BYREF
 
-  this->frames[(_DWORD)this->cur_script].arity = (void *)13;
+  _this[30 * (_DWORD)_this[95776] + 95805] = (void *)13;
   x = this->readIntOperand_41BF50( 2);
   y = this->readIntOperand_41BF50( 3);
   v2 = (_DWORD *)this->operandAddress_42AEA0( 4);
   v3 = this->readIntOperand_41BF50( 5);
   v4 = this->readIntOperand_41BF50( 6);
-  rect.left = v3 + __ROR4__((unsigned int)this->key ^ __ROL4__(*v2, 11), 25);
-  rect.right = v3 + __ROR4__((unsigned int)this->key ^ __ROL4__(v2[1], 11), 25);
-  rect.top = v4 + __ROR4__((unsigned int)this->key ^ __ROL4__(v2[2], 11), 25);
-  rect.bottom = v4 + __ROR4__((unsigned int)this->key ^ __ROL4__(v2[3], 11), 25);
+  rect.left = v3 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(*v2, 11), 25);
+  rect.right = v3 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(v2[1], 11), 25);
+  rect.top = v4 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(v2[2], 11), 25);
+  rect.bottom = v4 + __ROR4__((unsigned int)_this[97059] ^ __ROL4__(v2[3], 11), 25);
   v5 = CreateEllipticRgnIndirect(&rect);
   if ( v5 )
   {
@@ -27568,9 +27582,9 @@ int Engine::sub_4318A0(void **_this)
 
 
 /* ===== [stained] sub_431A10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431A10
+ * Engine 成员函数  → sub_431A10
  * raw 行区间 [40724, 40741]; op=0x2F3
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431A10(_DWORD *_this)
 {
@@ -27593,9 +27607,9 @@ int Engine::sub_431A10(_DWORD *_this)
 
 
 /* ===== [stained] sub_431AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431AA0
+ * Engine 成员函数  → sub_431AA0
  * raw 行区间 [40744, 40763]; op=0x2F9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431AA0(_DWORD *_this)
 {
@@ -27620,9 +27634,9 @@ int Engine::sub_431AA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_431B60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431B60
+ * Engine 成员函数  → sub_431B60
  * raw 行区间 [40766, 40773]; op=0x2FB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431B60(_DWORD *_this)
 {
@@ -27635,9 +27649,9 @@ int Engine::sub_431B60(_DWORD *_this)
 
 
 /* ===== [stained] sub_431BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431BA0
+ * Engine 成员函数  → sub_431BA0
  * raw 行区间 [40776, 40826]; op=0x2FC
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431BA0(_DWORD *_this)
 {
@@ -27693,9 +27707,9 @@ int Engine::sub_431BA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_431CF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431CF0
+ * Engine 成员函数  → sub_431CF0
  * raw 行区间 [40830, 40944]; op=0x2FD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_431CF0(_DWORD *_this)
 {
@@ -27815,9 +27829,9 @@ void Engine::sub_431CF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_431FC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_431FC0
+ * Engine 成员函数  → sub_431FC0
  * raw 行区间 [40948, 40955]; op=0x306
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_431FC0(_DWORD *_this)
 {
@@ -27830,9 +27844,9 @@ int Engine::sub_431FC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_432000  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432000
+ * Engine 成员函数  → sub_432000
  * raw 行区间 [40958, 41008]; op=0x309
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_432000(_DWORD *_this)
 {
@@ -27887,10 +27901,10 @@ int Engine::sub_432000(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_432150  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432150
+/* ===== [stained] sub_432150  状态: PARTIAL =====
+ * Engine 成员函数  → sub_432150
  * raw 行区间 [41012, 41078]; op=0x320 指令名『create-mesh』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 322832)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_432150(int _this)
 {
@@ -27914,7 +27928,7 @@ void Engine::sub_432150(int _this)
   _DWORD *v19; // [esp+28h] [ebp-Ch]
   int v20; // [esp+2Ch] [ebp-8h]
 
-  *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220) = 21;
+  this->frames[this->cur_script].arity = 21;
   v2 = this->readIntOperand_41BF50( 9);
   v3 = v2;
   if ( v2 > 0 )
@@ -27935,9 +27949,9 @@ void Engine::sub_432150(int _this)
     {
       *(float *)((char *)v6 + (_DWORD)v5) = 1.0;
       *(_DWORD *)((char *)v6 + (_DWORD)v15) = __ROR4__(
-                                                *(_DWORD *)(_this + 388236) ^ __ROL4__(*(_DWORD *)((char *)v6 + v16), 11),
+                                                this->key ^ __ROL4__(*(_DWORD *)((char *)v6 + v16), 11),
                                                 25) & 0xFFFFFF | (__ROR4__(
-                                                                    *(_DWORD *)(_this + 388236) ^ __ROL4__(*v6, 11),
+                                                                    this->key ^ __ROL4__(*v6, 11),
                                                                     25) << 24);
       ++v6;
       if ( !--v7 )
@@ -27955,16 +27969,16 @@ void Engine::sub_432150(int _this)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, "頂点数%dは不正です．\r\n", v2);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, "頂点数%dは不正です．\r\n", v2);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_432300  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432300
+ * Engine 成员函数  → sub_432300
  * raw 行区间 [41081, 41113]; op=0x328
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_432300(_DWORD *_this)
 {
@@ -28002,9 +28016,9 @@ void Engine::sub_432300(_DWORD *_this)
 
 
 /* ===== [stained] sub_4328F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4328F0
+ * Engine 成员函数  → sub_4328F0
  * raw 行区间 [41345, 41565]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4328F0(int _this, char *Source)
 {
@@ -28049,11 +28063,11 @@ void Engine::sub_4328F0(int _this, char *Source)
   if ( this->sub_428990( Source) < 0 && strcmp(Source, aAgeExtend) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "警告：[%s]は選択可能フォントの一覧に含まれていません。\r\n",
       Source);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   v3 = *(_DWORD *)(_this + 201684);
   *(_DWORD *)(_this + 1236) = v3 / -2;
@@ -28230,9 +28244,9 @@ LABEL_44:
 
 
 /* ===== [stained] sub_432DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_432DD0
+ * Engine 成员函数  → sub_432DD0
  * raw 行区间 [41569, 41798]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_432DD0(int _this, char *Source)
 {
@@ -28281,11 +28295,11 @@ void Engine::sub_432DD0(int _this, char *Source)
   if ( this->sub_428990( Source) < 0 && strcmp(Source, aAgeExtend) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "警告：[%s]は選択可能フォントの一覧に含まれていません。\r\n",
       Source);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   v4 = *(_DWORD *)(_this + 218584);
   *(_DWORD *)(_this + 1296) = v4 / -2;
@@ -28466,10 +28480,10 @@ LABEL_46:
 }
 
 
-/* ===== [stained] sub_433290  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → op_set_font_433290
+/* ===== [stained] sub_433290  状态: PARTIAL =====
+ * Engine 成员函数  → op_set_font_433290
  * raw 行区间 [41802, 41809]; op=0x1A5 指令名『set-font』
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::op_set_font_433290(_DWORD *_this)
 {
@@ -28481,10 +28495,10 @@ void Engine::op_set_font_433290(_DWORD *_this)
 }
 
 
-/* ===== [stained] sub_4332D0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4332D0
+/* ===== [stained] sub_4332D0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_4332D0
  * raw 行区间 [41812, 41819]; op=0x2FE
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 21324)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_4332D0(_DWORD *_this)
 {
@@ -28497,9 +28511,9 @@ void Engine::sub_4332D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_433310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433310
+ * Engine 成员函数  → sub_433310
  * raw 行区间 [41822, 41932]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const void ** Engine::sub_433310(_DWORD *_this, int a2, int a3)
 {
@@ -28615,9 +28629,9 @@ LABEL_24:
 
 
 /* ===== [stained] sub_433930  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433930
+ * Engine 成员函数  → sub_433930
  * raw 行区间 [42013, 42043]; op=0x1C5
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_433930(_DWORD *_this)
 {
@@ -28653,9 +28667,9 @@ void Engine::sub_433930(_DWORD *_this)
 
 
 /* ===== [stained] sub_433A40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433A40
+ * Engine 成员函数  → sub_433A40
  * raw 行区间 [42046, 42050]; op=0xA1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const void ** Engine::sub_433A40(_DWORD *_this)
 {
@@ -28665,9 +28679,9 @@ const void ** Engine::sub_433A40(_DWORD *_this)
 
 
 /* ===== [stained] sub_433A70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433A70
+ * Engine 成员函数  → sub_433A70
  * raw 行区间 [42053, 42062]; op=0x1AA
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const void ** Engine::sub_433A70(_DWORD *_this)
 {
@@ -28682,9 +28696,9 @@ const void ** Engine::sub_433A70(_DWORD *_this)
 
 
 /* ===== [stained] sub_433AB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433AB0
+ * Engine 成员函数  → sub_433AB0
  * raw 行区间 [42065, 42153]; op=0x144
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_433AB0(_DWORD *_this)
 {
@@ -28778,9 +28792,9 @@ void Engine::sub_433AB0(_DWORD *_this)
 
 
 /* ===== [stained] sub_433CE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433CE0
+ * Engine 成员函数  → sub_433CE0
  * raw 行区间 [42159, 42177]; op=0x2C1
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_433CE0(_DWORD *_this)
 {
@@ -28804,9 +28818,9 @@ void Engine::sub_433CE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_433DE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433DE0
+ * Engine 成员函数  → sub_433DE0
  * raw 行区间 [42180, 42257]; op=0x2C2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_433DE0(_DWORD *_this)
 {
@@ -28889,9 +28903,9 @@ void Engine::sub_433DE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_433FD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_433FD0
+ * Engine 成员函数  → sub_433FD0
  * raw 行区间 [42260, 42376]; op=0x2C7
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_433FD0(int *_this)
 {
@@ -29013,9 +29027,9 @@ LABEL_27:
 
 
 /* ===== [stained] sub_434260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434260
+ * Engine 成员函数  → sub_434260
  * raw 行区间 [42379, 42457]; op=0x2C8
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_434260(_DWORD *_this)
 {
@@ -29099,9 +29113,9 @@ void Engine::sub_434260(_DWORD *_this)
 
 
 /* ===== [stained] sub_4344A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4344A0
+ * Engine 成员函数  → sub_4344A0
  * raw 行区间 [42460, 42539]; op=0x2C9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4344A0(char *_this)
 {
@@ -29124,19 +29138,19 @@ int Engine::sub_4344A0(char *_this)
 
   v17 = &v11;
   v16 = _this;
-  *(_DWORD *)&_this[120 * *((_DWORD *)_this + 95776) + 383220] = 7;
+  this->frames[this->cur_script].arity = 7;
   v2 = this->readIntOperand_41BF50( 3);
   v3 = v2;
   *(_DWORD *)ArgList = v2;
   if ( v2 < 0 )
   {
-    v4 = _this + 8;
+    v4 = this->message_buf;
     sub_408050(v4, 1024, "可変配列のインデックス %d は不正です", v2);
     pExceptionObject[0] = (int)v4;
     pExceptionObject[1] = 65541;
     _CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__);
   }
-  v5 = (int)&_this[120 * *((_DWORD *)_this + 95776) + 383128];
+  v5 = (int)&this->frames[this->cur_script].ip;
   switch ( *(_DWORD *)(*(_DWORD *)v5 + 12) )
   {
     case 0x8003:
@@ -29170,7 +29184,7 @@ int Engine::sub_4344A0(char *_this)
   do
   {
     v16 = 0;
-    v13 = *((_DWORD *)_this + 97059);
+    v13 = this->key;
     v16 = (char *)__ROL4__(v13 ^ __ROR4__(0, 7), 21);
     if ( (v6[1] - *v6) >> 2 <= (unsigned int)v7 )
       goto LABEL_9;
@@ -29186,9 +29200,9 @@ LABEL_9:
 
 
 /* ===== [stained] sub_434720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434720
+ * Engine 成员函数  → sub_434720
  * raw 行区间 [42542, 42572]; op=0x2DD
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_434720(_DWORD *_this)
 {
@@ -29224,9 +29238,9 @@ void Engine::sub_434720(_DWORD *_this)
 
 
 /* ===== [stained] sub_434830  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434830
+ * Engine 成员函数  → sub_434830
  * raw 行区间 [42575, 42593]; op=0x2EB
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_434830(_DWORD *_this)
 {
@@ -29250,9 +29264,9 @@ void Engine::sub_434830(_DWORD *_this)
 
 
 /* ===== [stained] sub_434F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434F10
+ * Engine 成员函数  → sub_434F10
  * raw 行区间 [42908, 42917]; op=0xA2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_434F10(unsigned int *_this)
 {
@@ -29266,10 +29280,10 @@ void Engine::sub_434F10(unsigned int *_this)
 }
 
 
-/* ===== [stained] sub_434F60  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434F60
+/* ===== [stained] sub_434F60  状态: PARTIAL =====
+ * Engine 成员函数  → sub_434F60
  * raw 行区间 [42920, 42931]; op=0x1A2
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未分析被调(sub_434D00)；分析后方可标已分析
  */
 void Engine::sub_434F60(unsigned int *_this)
 {
@@ -29281,14 +29295,14 @@ void Engine::sub_434F60(unsigned int *_this)
   v3 = this->readIntOperand_41BF50( 1);
   v2 = this->sub_418A30( 1);
   wsprintfA(Src, "%c%8.8x", 3, v2);
-  sub_434D00(_this + 5452, Src, &v3);
+  sub_434D00(this->string_table_base, Src, &v3);
 }
 
 
-/* ===== [stained] sub_434FE0  状态: ANALYZED =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_434FE0
+/* ===== [stained] sub_434FE0  状态: PARTIAL =====
+ * Engine 成员函数  → sub_434FE0
  * raw 行区间 [42935, 42952]; op=0x1A9
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 逻辑已核对，但仍有未建模字段(_this + 5472)；建模 engine.hpp 字段后方可标已分析
  */
 void Engine::sub_434FE0(unsigned int *_this)
 {
@@ -29311,9 +29325,9 @@ void Engine::sub_434FE0(unsigned int *_this)
 
 
 /* ===== [stained] sub_435800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_435800
+ * Engine 成员函数  → sub_435800
  * raw 行区间 [43212, 43651]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_435800(int _this)
 {
@@ -29708,11 +29722,11 @@ int Engine::sub_435800(int _this)
     --v15;
   }
   while ( v15 );
-  v4 = *(_DWORD *)(_this + 383104);
+  v4 = this->cur_script;
   if ( *(_DWORD *)(_this + 4 * v4 + 497112) )
     v16 = *(unsigned __int16 *)(*(_DWORD *)(*(_DWORD *)(_this + 4 * v4 + 497112) + 24)
                               + 2
-                              * ((*(_DWORD *)(_this + 120 * v4 + 383128) - *(_DWORD *)(_this + 120 * v4 + 383124)) >> 2));
+                              * ((this->frames[v4].ip - this->frames[v4].str_table) >> 2));
   else
     v16 = -1;
   v14 = dword_55DD84 / 1024 + dword_55DD88 / 1024;
@@ -29723,7 +29737,7 @@ int Engine::sub_435800(int _this)
   v9 = *(_DWORD *)(_this + 699208);
   v8 = *(_DWORD *)(_this + 699204);
   v7 = *(_DWORD *)(_this + 429756);
-  v5 = sub_454FA0((_DWORD *)(_this + 680092), *(_DWORD *)(_this + 120 * v4 + 383184));
+  v5 = sub_454FA0((_DWORD *)(_this + 680092), this->frames[v4].frame_arg);
   sub_408050(
     Text,
     1024,
@@ -29758,9 +29772,9 @@ int Engine::sub_435800(int _this)
 
 
 /* ===== [stained] sub_436380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436380
+ * Engine 成员函数  → sub_436380
  * raw 行区间 [43654, 43715]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_436380(int _this, int a2)
 {
@@ -29772,13 +29786,13 @@ int Engine::sub_436380(int _this, int a2)
 
   if ( a2 )
   {
-    v3 = *(_DWORD *)(_this + 383104);
+    v3 = this->cur_script;
     *(_DWORD *)(_this + 497324) = 1;
     *(_DWORD *)(_this + 497332) = v3;
     if ( *(_DWORD *)(_this + 4 * v3 + 497112) )
       v4 = *(unsigned __int16 *)(*(_DWORD *)(*(_DWORD *)(_this + 4 * v3 + 497112) + 24)
                                + 2
-                               * ((*(_DWORD *)(_this + 120 * v3 + 383128) - *(_DWORD *)(_this + 120 * v3 + 383124)) >> 2));
+                               * ((this->frames[v3].ip - this->frames[v3].str_table) >> 2));
     else
       v4 = -1;
     v5 = v4 - 10;
@@ -29792,9 +29806,9 @@ int Engine::sub_436380(int _this, int a2)
     }
   }
   this->loadScriptFrame_40ED40(
-    15 * *(_DWORD *)(_this + 383104),
+    15 * this->cur_script,
     *(void **)(_this + 387924),
-    *(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383184));
+    this->frames[this->cur_script].frame_arg);
   *(_DWORD *)(_this + 699204) = 0;
   sub_4056F0((_DWORD *)_this);
   sub_478090((_DWORD *)(_this + 1032), (_DWORD *)(_this + 699208));
@@ -29826,9 +29840,9 @@ int Engine::sub_436380(int _this, int a2)
 
 
 /* ===== [stained] sub_436500  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436500
+ * Engine 成员函数  → sub_436500
  * raw 行区间 [43730, 43737]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_436500(_DWORD *_this)
 {
@@ -29841,9 +29855,9 @@ void Engine::sub_436500(_DWORD *_this)
 
 
 /* ===== [stained] sub_436B90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436B90
+ * Engine 成员函数  → sub_436B90
  * raw 行区间 [44118, 44124]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_436B90(_DWORD *_this, char a2)
 {
@@ -29855,15 +29869,15 @@ _DWORD * Engine::sub_436B90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_436DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436DC0
+ * Engine 成员函数  → sub_436DC0
  * raw 行区间 [44299, 44307]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_436DC0(void *_this)
 {
   void *v2; // [esp-4h] [ebp-8h]
 
-  v2 = (void *)*((_DWORD *)_this + 2);
+  v2 = (void *)this->message_buf;
   *(_DWORD *)_this = &Crypt___vftable_;
   operator delete[](v2);
   operator delete[](*((void **)_this + 3));
@@ -29871,9 +29885,9 @@ void Engine::sub_436DC0(void *_this)
 
 
 /* ===== [stained] sub_436F90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436F90
+ * Engine 成员函数  → sub_436F90
  * raw 行区间 [44404, 44410]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_436F90(void *_this, char a2)
 {
@@ -29885,9 +29899,9 @@ void * Engine::sub_436F90(void *_this, char a2)
 
 
 /* ===== [stained] sub_436FC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_436FC0
+ * Engine 成员函数  → sub_436FC0
  * raw 行区间 [44413, 44416]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_436FC0(_DWORD *_this)
 {
@@ -29896,9 +29910,9 @@ void Engine::sub_436FC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_437150  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437150
+ * Engine 成员函数  → sub_437150
  * raw 行区间 [44525, 44531]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_437150(_DWORD *_this, char a2)
 {
@@ -29910,9 +29924,9 @@ _DWORD * Engine::sub_437150(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_437440  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437440
+ * Engine 成员函数  → sub_437440
  * raw 行区间 [44671, 44682]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_437440(_DWORD *_this)
 {
@@ -29929,9 +29943,9 @@ int Engine::sub_437440(_DWORD *_this)
 
 
 /* ===== [stained] sub_437480  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437480
+ * Engine 成员函数  → sub_437480
  * raw 行区间 [44685, 44851]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __int8 *a5, int a6, int a7, int a8)
 {
@@ -29993,8 +30007,8 @@ int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __
   v43 = -1;
   if ( !v13 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aSavedataPcrc);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aSavedataPcrc);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v14 = sub_436D50(v13, 4 * a6 - 8, a5 + 8);
@@ -30014,8 +30028,8 @@ int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __
     v21 = sub_436F60(v17, a6);
     if ( !v21 )
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aSavedataCryptd);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aSavedataCryptd);
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v17 )
         (*(void (__thiscall **)(_DWORD *, int))*v17)(v17, 1);
       return 0;
@@ -30041,8 +30055,8 @@ int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __
     v20 = sub_436F60(v17, Size + 12);
     if ( !v20 )
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aSavedataCryptd);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aSavedataCryptd);
+      this->sub_4034C0( (const void *)(this->message_buf));
       goto LABEL_33;
     }
     *v20 = v34;
@@ -30084,11 +30098,11 @@ int Engine::sub_437480(int _this, void *a2, int *a3, const char *a4, unsigned __
   {
     LastError = GetLastError();
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：SaveData エラー：書き込みエラーです．保存できません． ERRORCODE = %d \r\n",
       LastError);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     operator delete(v33);
 LABEL_33:
     if ( v17 )
@@ -30103,9 +30117,9 @@ LABEL_33:
 
 
 /* ===== [stained] sub_437980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_437980
+ * Engine 成员函数  → sub_437980
  * raw 行区间 [44855, 45091]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_437980(int *_this, HANDLE hFile, int a3, const char *a4, void **a5, int a6, int a7, int a8)
 {
@@ -30159,13 +30173,13 @@ int Engine::sub_437980(int *_this, HANDLE hFile, int a3, const char *a4, void **
     strcpy_s(Destination, 5u, aS3sd);
   if ( Buffer[0] != *(_DWORD *)Destination )
   {
-    v10 = _this + 2;
+    v10 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddata_3);
     goto LABEL_59;
   }
   if ( strcmp((const char *)&Buffer[2], a4) )
   {
-    v10 = _this + 2;
+    v10 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddata);
 LABEL_59:
     this->sub_4034C0( v10);
@@ -30174,7 +30188,7 @@ LABEL_59:
   v11 = Buffer[72];
   if ( (Buffer[71] != a7 || Buffer[72] != a8) && (Buffer[71] != 2 || a7 != 2) )
   {
-    v10 = _this + 2;
+    v10 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddata_2);
     goto LABEL_59;
   }
@@ -30183,7 +30197,7 @@ LABEL_59:
   if ( !v9(hFile, &v36, 20, &NumberOfBytesRead, 0) || NumberOfBytesRead != 20 )
   {
 LABEL_58:
-    v10 = _this + 2;
+    v10 = this->message_buf;
     LastError = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -30194,7 +30208,7 @@ LABEL_58:
   }
   if ( 2 * a6 < v36 )
   {
-    v10 = _this + 2;
+    v10 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddata_0);
     goto LABEL_59;
   }
@@ -30207,7 +30221,7 @@ LABEL_58:
   v43 = -1;
   if ( !v13 )
   {
-    v10 = _this + 2;
+    v10 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddataPcrypt);
     goto LABEL_59;
   }
@@ -30217,7 +30231,7 @@ LABEL_58:
   {
     v28 = aLoaddataCryptd;
 LABEL_23:
-    v15 = _this + 2;
+    v15 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, v28);
 LABEL_24:
     this->sub_4034C0( v15);
@@ -30226,7 +30240,7 @@ LABEL_24:
   }
   if ( !ReadFile(hFile, v14, 4 * v36, &NumberOfBytesRead, 0) || NumberOfBytesRead != 4 * v36 )
   {
-    v15 = _this + 2;
+    v15 = this->message_buf;
     v26 = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -30251,7 +30265,7 @@ LABEL_24:
   if ( v37 != v18 )
   {
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc11);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
 LABEL_34:
     (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
     operator delete(v17);
@@ -30261,7 +30275,7 @@ LABEL_34:
   if ( v38 != v19 )
   {
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc12);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
     operator delete(v17);
     return 0;
@@ -30269,7 +30283,7 @@ LABEL_34:
   if ( sub_436E90((int)v13, v39, v40) != 1 )
   {
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddata_1);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
     operator delete(v17);
     return 0;
@@ -30290,14 +30304,14 @@ LABEL_34:
         return v36 / 2 - 2;
       }
       sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc22);
-      this->sub_4034C0( _this + 2);
+      this->sub_4034C0( this->message_buf);
       (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
       operator delete(v17);
     }
     else
     {
       sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc21);
-      this->sub_4034C0( _this + 2);
+      this->sub_4034C0( this->message_buf);
       (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
       operator delete(v17);
     }
@@ -30321,7 +30335,7 @@ LABEL_34:
   if ( *(_DWORD *)v31 != v23 )
   {
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc21);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     operator delete[](v31);
     goto LABEL_34;
   }
@@ -30329,7 +30343,7 @@ LABEL_34:
   if ( *((_DWORD *)v31 + 1) != v24 )
   {
     sprintf_s((char *const)_this + 8, 0x400u, aLoaddataCrc22);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     operator delete[](v31);
     (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
     operator delete(v17);
@@ -30347,9 +30361,9 @@ LABEL_34:
 
 
 /* ===== [stained] sub_438120  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438120
+ * Engine 成员函数  → sub_438120
  * raw 行区间 [45106, 45149]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_438120(int *_this, HANDLE hFile, int a3, const char *a4, int *a5)
 {
@@ -30373,18 +30387,18 @@ int Engine::sub_438120(int *_this, HANDLE hFile, int a3, const char *a4, int *a5
         qmemcpy(a5, Buffer, 0x124u);
         return 1;
       }
-      v6 = _this + 2;
+      v6 = this->message_buf;
       sprintf_s((char *const)_this + 8, 0x400u, aReadheader);
     }
     else
     {
-      v6 = _this + 2;
+      v6 = this->message_buf;
       sprintf_s((char *const)_this + 8, 0x400u, aReadheader_0);
     }
   }
   else
   {
-    v6 = _this + 2;
+    v6 = this->message_buf;
     LastError = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -30398,9 +30412,9 @@ int Engine::sub_438120(int *_this, HANDLE hFile, int a3, const char *a4, int *a5
 
 
 /* ===== [stained] sub_438650  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438650
+ * Engine 成员函数  → sub_438650
  * raw 行区间 [45357, 45390]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_438650(_DWORD *_this)
 {
@@ -30439,9 +30453,9 @@ int Engine::sub_438650(_DWORD *_this)
 
 
 /* ===== [stained] sub_438720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438720
+ * Engine 成员函数  → sub_438720
  * raw 行区间 [45394, 45400]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_438720(_DWORD *_this, char a2)
 {
@@ -30453,9 +30467,9 @@ _DWORD * Engine::sub_438720(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_438750  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438750
+ * Engine 成员函数  → sub_438750
  * raw 行区间 [45403, 45409]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_438750(_DWORD *_this)
 {
@@ -30467,9 +30481,9 @@ void Engine::sub_438750(_DWORD *_this)
 
 
 /* ===== [stained] sub_4387C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4387C0
+ * Engine 成员函数  → sub_4387C0
  * raw 行区间 [45413, 45419]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4387C0(_DWORD *_this, char a2)
 {
@@ -30481,9 +30495,9 @@ _DWORD * Engine::sub_4387C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4388C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4388C0
+ * Engine 成员函数  → sub_4388C0
  * raw 行区间 [45462, 45470]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4388C0(int _this)
 {
@@ -30497,9 +30511,9 @@ int Engine::sub_4388C0(int _this)
 
 
 /* ===== [stained] sub_438940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438940
+ * Engine 成员函数  → sub_438940
  * raw 行区间 [45474, 45618]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_438940(int _this,
         HANDLE hFile,
@@ -30648,9 +30662,9 @@ int Engine::sub_438940(int _this,
 
 
 /* ===== [stained] sub_438C30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438C30
+ * Engine 成员函数  → sub_438C30
  * raw 行区间 [45633, 45643]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_438C30(_DWORD *_this)
 {
@@ -30666,9 +30680,9 @@ BOOL Engine::sub_438C30(_DWORD *_this)
 
 
 /* ===== [stained] sub_438D90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_438D90
+ * Engine 成员函数  → sub_438D90
  * raw 行区间 [45690, 45696]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_438D90(_DWORD *_this, char a2)
 {
@@ -30680,9 +30694,9 @@ _DWORD * Engine::sub_438D90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_43A5C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A5C0
+ * Engine 成员函数  → sub_43A5C0
  * raw 行区间 [46562, 46570]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_43A5C0(_DWORD *_this, int a2, int a3)
 {
@@ -30696,9 +30710,9 @@ _DWORD * Engine::sub_43A5C0(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_43A630  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A630
+ * Engine 成员函数  → sub_43A630
  * raw 行区间 [46574, 46598]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_43A630(int _this)
 {
@@ -30728,9 +30742,9 @@ void Engine::sub_43A630(int _this)
 
 
 /* ===== [stained] sub_43A710  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43A710
+ * Engine 成员函数  → sub_43A710
  * raw 行区间 [46602, 46608]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_43A710(void *_this, char a2)
 {
@@ -30742,9 +30756,9 @@ void * Engine::sub_43A710(void *_this, char a2)
 
 
 /* ===== [stained] sub_43AA80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AA80
+ * Engine 成员函数  → sub_43AA80
  * raw 行区间 [46813, 46868]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_43AA80(_DWORD *_this)
 {
@@ -30805,9 +30819,9 @@ _DWORD * Engine::sub_43AA80(_DWORD *_this)
 
 
 /* ===== [stained] sub_43AE30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AE30
+ * Engine 成员函数  → sub_43AE30
  * raw 行区间 [47006, 47043]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43AE30(int *_this)
 {
@@ -30821,7 +30835,7 @@ int Engine::sub_43AE30(int *_this)
   _this[1001] = (int)LibraryA;
   if ( !LibraryA )
   {
-    v3 = _this + 2;
+    v3 = this->message_buf;
     LastError = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -30836,7 +30850,7 @@ LABEL_3:
   _this[1002] = (int)ProcAddress;
   if ( !ProcAddress )
   {
-    v3 = _this + 2;
+    v3 = this->message_buf;
     v7 = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -30850,9 +30864,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_43AEB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43AEB0
+ * Engine 成员函数  → sub_43AEB0
  * raw 行区间 [47046, 47065]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43AEB0(_DWORD *_this, HWND hWnd)
 {
@@ -30877,9 +30891,9 @@ int Engine::sub_43AEB0(_DWORD *_this, HWND hWnd)
 
 
 /* ===== [stained] sub_43B070  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B070
+ * Engine 成员函数  → sub_43B070
  * raw 行区间 [47137, 47157]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B070(int _this, int a2, int a3)
 {
@@ -30897,17 +30911,17 @@ int Engine::sub_43B070(int _this, int a2, int a3)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdsetcolorSurf);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdsetcolorSurf);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_43B0E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B0E0
+ * Engine 成员函数  → sub_43B0E0
  * raw 行区间 [47160, 47180]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B0E0(int _this, int a2, int a3)
 {
@@ -30924,24 +30938,24 @@ int Engine::sub_43B0E0(int _this, int a2, int a3)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdsetcolorSurf);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdsetcolorSurf);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_43B1A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B1A0
+ * Engine 成员函数  → sub_43B1A0
  * raw 行区间 [47183, 47210]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B1A0(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4, _DWORD *a5)
 {
   if ( a2 > 0x63 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddGetSurfaceSize エラー：不正なsurface %d \r\n", a2);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddGetSurfaceSize エラー：不正なsurface %d \r\n", a2);
+    this->sub_4034C0( (const void *)(this->message_buf));
     *a3 = 0;
     *a4 = 0;
     *a5 = 0;
@@ -30967,9 +30981,9 @@ int Engine::sub_43B1A0(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4, _DWOR
 
 
 /* ===== [stained] sub_43B260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B260
+ * Engine 成员函数  → sub_43B260
  * raw 行区间 [47213, 47303]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B260(int _this, int a2, int a3)
 {
@@ -30990,8 +31004,8 @@ int Engine::sub_43B260(int _this, int a2, int a3)
   {
     v15 = aDdsetrbginfoSr;
 LABEL_3:
-    sprintf_s((char *const)(_this + 8), 0x400u, v15);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v15);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   if ( *(_DWORD *)(_this + 1560) )
@@ -31065,9 +31079,9 @@ LABEL_16:
 
 
 /* ===== [stained] sub_43B460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B460
+ * Engine 成员函数  → sub_43B460
  * raw 行区间 [47306, 47323]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B460(int _this, int a2, int a3)
 {
@@ -31080,19 +31094,19 @@ int Engine::sub_43B460(int _this, int a2, int a3)
   if ( !v4 )
     return 1;
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：GetDC エラー：サーフェスに対してのロックに失敗しました． %d\r\n",
     a2);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43B4C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B4C0
+ * Engine 成员函数  → sub_43B4C0
  * raw 行区间 [47326, 47344]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_43B4C0(int _this, int a2, _DWORD *a3)
 {
@@ -31105,20 +31119,20 @@ void Engine::sub_43B4C0(int _this, int a2, _DWORD *a3)
   if ( v4 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ReleaseDC エラー：サーフェスに対してのアンロックに失敗しました． SURFACE=%d ERRORCODE=%d\r\n",
       a2,
       v4);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_43B520  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B520
+ * Engine 成员函数  → sub_43B520
  * raw 行区间 [47347, 47368]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B520(int _this)
 {
@@ -31130,24 +31144,24 @@ int Engine::sub_43B520(int _this)
   v2 = *(_DWORD *)(_this + 1032);
   if ( !v2 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aFliptogdisurfa);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aFliptogdisurfa);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v4 = (*(int (__stdcall **)(_DWORD))(*(_DWORD *)v2 + 40))(*(_DWORD *)(_this + 1032));
   *(_DWORD *)(_this + 1536) = v4;
   if ( !v4 )
     return 1;
-  sprintf_s((char *const)(_this + 8), 0x400u, "関数：FlipToGDISurface エラー ERRORCODE=%X\r\n", v4);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, "関数：FlipToGDISurface エラー ERRORCODE=%X\r\n", v4);
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43B5A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B5A0
+ * Engine 成员函数  → sub_43B5A0
  * raw 行区间 [47371, 47384]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43B5A0(_DWORD *_this, int a2)
 {
@@ -31166,9 +31180,9 @@ int Engine::sub_43B5A0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_43B5F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B5F0
+ * Engine 成员函数  → sub_43B5F0
  * raw 行区间 [47387, 47574]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_43B5F0(int _this, char *a2, char *Src, _DWORD *a4, _DWORD *a5, int a6, int a7, int a8)
 {
@@ -31361,9 +31375,9 @@ LABEL_8:
 
 
 /* ===== [stained] sub_43B9D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43B9D0
+ * Engine 成员函数  → sub_43B9D0
  * raw 行区间 [47634, 47819]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_43B9D0(_DWORD *_this)
 {
@@ -31554,9 +31568,9 @@ LABEL_62:
 
 
 /* ===== [stained] sub_43BF20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43BF20
+ * Engine 成员函数  → sub_43BF20
  * raw 行区间 [47839, 48015]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43BF20(int _this, int a2, void *a3)
 {
@@ -31643,11 +31657,11 @@ int Engine::sub_43BF20(int _this, int a2, void *a3)
       {
         v13 = sub_43B9D0((_DWORD *)_this);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：ddCaptureScreen エラー：サーフェスに対しての初期化に失敗しました．[%s]\r\n",
           v13);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
         (*(void (__thiscall **)(_DWORD *, int))*v5)(v5, 1);
         return 0;
       }
@@ -31713,8 +31727,8 @@ int Engine::sub_43BF20(int _this, int a2, void *a3)
         else
         {
           v24 = sub_403960((char *)v5);
-          sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddCaptureScreen エラー：%s\r\n", v24);
-          this->sub_4034C0( (const void *)(_this + 8));
+          sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddCaptureScreen エラー：%s\r\n", v24);
+          this->sub_4034C0( (const void *)(this->message_buf));
           (*(void (__thiscall **)(_DWORD *, int))*v5)(v5, 1);
           return 0;
         }
@@ -31722,25 +31736,25 @@ int Engine::sub_43BF20(int _this, int a2, void *a3)
     }
     else
     {
-      sprintf_s((char *const)(_this + 8), 0x400u, aDdcapturescree_0);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aDdcapturescree_0);
+      this->sub_4034C0( (const void *)(this->message_buf));
       (*(void (__thiscall **)(_DWORD *, int))*v5)(v5, 1);
       return 0;
     }
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdcapturescree);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdcapturescree);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_43C380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C380
+ * Engine 成员函数  → sub_43C380
  * raw 行区间 [48018, 48071]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43C380(int _this, int a2)
 {
@@ -31759,11 +31773,11 @@ int Engine::sub_43C380(int _this, int a2)
     {
       v6 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：DirectDrawオブジェクトのインスタンス化に失敗しました．[%s]\r\n",
         v6);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     else
@@ -31774,11 +31788,11 @@ int Engine::sub_43C380(int _this, int a2)
       {
         v8 = sub_43B9D0((_DWORD *)_this);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：ddCSurface エラー：IDirectDraw2の作成に失敗しました．[%s]\r\n",
           v8);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
         (*(void (__stdcall **)(int))(*(_DWORD *)a2 + 8))(a2);
         return 0;
       }
@@ -31791,17 +31805,17 @@ int Engine::sub_43C380(int _this, int a2)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdcsurfaceDdra);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdcsurfaceDdra);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_43C470  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C470
+ * Engine 成员函数  → sub_43C470
  * raw 行区间 [48074, 48097]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43C470(int _this)
 {
@@ -31820,19 +31834,19 @@ int Engine::sub_43C470(int _this)
     return 1;
   v3 = sub_43B9D0((_DWORD *)_this);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：ddCSurface エラー：ビデオモードの列挙に失敗しました．[%s]\r\n",
     v3);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43C4D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43C4D0
+ * Engine 成员函数  → sub_43C4D0
  * raw 行区间 [48100, 48227]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43C4D0(int _this, int a2)
 {
@@ -31861,8 +31875,8 @@ int Engine::sub_43C4D0(int _this, int a2)
   {
     v12 = aDdmovesurfacet;
 LABEL_23:
-    sprintf_s((char *const)(_this + 8), 0x400u, v12);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v12);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   if ( (unsigned int)a2 < 2 )
@@ -31918,11 +31932,11 @@ LABEL_14:
     {
       v8 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：IDirectDrawSurface3の作成に失敗しました．[%s]\r\n",
         v8);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       (*(void (__stdcall **)(int))(*(_DWORD *)v15 + 8))(v15);
       return 0;
     }
@@ -31944,8 +31958,8 @@ LABEL_14:
     if ( v9 )
     {
       v10 = sub_43B9D0((_DWORD *)_this);
-      sprintf_s((char *const)(_this + 8), 0x400u, aDdmovetovideom, v10);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sprintf_s((char *const)(this->message_buf), 0x400u, aDdmovetovideom, v10);
+      this->sub_4034C0( (const void *)(this->message_buf));
       (*(void (__stdcall **)(int))(*(_DWORD *)v14 + 8))(v14);
       return 0;
     }
@@ -31965,9 +31979,9 @@ LABEL_14:
 
 
 /* ===== [stained] sub_43CBD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43CBD0
+ * Engine 成员函数  → sub_43CBD0
  * raw 行区间 [48377, 48677]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43CBD0(char *_this, int a2, int a3)
 {
@@ -32265,7 +32279,7 @@ int Engine::sub_43CBD0(char *_this, int a2, int a3)
   }
   else
   {
-    sprintf_s(_this + 8, 0x400u, aDdcpysurface);
+    sprintf_s(this->message_buf, 0x400u, aDdcpysurface);
     sub_4034C0((int *)v3, v3 + 8);
     return 0;
   }
@@ -32273,9 +32287,9 @@ int Engine::sub_43CBD0(char *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_43D500  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43D500
+ * Engine 成员函数  → sub_43D500
  * raw 行区间 [48680, 48905]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43D500(int *_this,
         int a2,
@@ -32344,7 +32358,7 @@ int Engine::sub_43D500(int *_this,
   {
     v34 = aDdcpyspritesur;
 LABEL_3:
-    v16 = _this + 2;
+    v16 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, v34);
 LABEL_4:
     this->sub_4034C0( v16);
@@ -32357,7 +32371,7 @@ LABEL_4:
   }
   if ( !_this[a7 + 259] )
   {
-    v16 = _this + 2;
+    v16 = this->message_buf;
     sprintf_s(
       (char *const)_this + 8,
       0x400u,
@@ -32367,7 +32381,7 @@ LABEL_4:
   }
   if ( !_this[a2 + 259] )
   {
-    v16 = _this + 2;
+    v16 = this->message_buf;
     sprintf_s(
       (char *const)_this + 8,
       0x400u,
@@ -32478,7 +32492,7 @@ LABEL_4:
     }
     if ( v32 != -2005532242 && v32 != -2005532132 )
     {
-      v16 = _this + 2;
+      v16 = this->message_buf;
       v33 = sub_43B9D0(_this);
       sprintf_s(
         (char *const)_this + 8,
@@ -32505,9 +32519,9 @@ LABEL_4:
 
 
 /* ===== [stained] sub_43D870  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43D870
+ * Engine 成员函数  → sub_43D870
  * raw 行区间 [48908, 49103]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43D870(int _this,
         unsigned int a2,
@@ -32556,21 +32570,21 @@ int Engine::sub_43D870(int _this,
   if ( a5 > 0x63 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：不正なsrcsurface %d\r\n",
       a5);
-    v30 = (const void *)(_this + 8);
+    v30 = (const void *)(this->message_buf);
     goto LABEL_44;
   }
   if ( a2 > 0x63 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：不正なdestsurface %d\r\n",
       a2);
-    v30 = (const void *)(_this + 8);
+    v30 = (const void *)(this->message_buf);
 LABEL_44:
     this->sub_4034C0( v30);
     return 0;
@@ -32579,22 +32593,22 @@ LABEL_44:
   {
     v12 = sub_43B830(a5);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー元のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v12);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
   {
     v13 = sub_43B830(a2);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー先のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v13);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   v14 = (_DWORD *)(_this + 36 * a2);
@@ -32676,7 +32690,7 @@ LABEL_44:
     {
       v25 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCpySpriteSurfaceFast エラー：サーフェスへのコピーに失敗しました．\r\n"
         "SRCRECT L%d T%d R%d B%d DSTRECT L%d T%d\r\n"
@@ -32690,7 +32704,7 @@ LABEL_44:
         v11,
         v32,
         v25);
-      v30 = (const void *)(_this + 8);
+      v30 = (const void *)(this->message_buf);
       goto LABEL_44;
     }
   }
@@ -32707,9 +32721,9 @@ LABEL_44:
 
 
 /* ===== [stained] sub_43DBA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DBA0
+ * Engine 成员函数  → sub_43DBA0
  * raw 行区间 [49106, 49201]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43DBA0(int _this, int a2, int a3, int a4, int a5)
 {
@@ -32790,7 +32804,7 @@ int Engine::sub_43DBA0(int _this, int a2, int a3, int a4, int a5)
   }
   v22 = sub_43B9D0((_DWORD *)_this);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：ddCpyBackupToFront エラー：サーフェスへのコピーに失敗しました．\r\n"
     "SRCRECT L%d T%d R%d B%d DSTRECT L%d T%d\r\n"
@@ -32804,15 +32818,15 @@ int Engine::sub_43DBA0(int _this, int a2, int a3, int a4, int a5)
     30,
     0,
     v22);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43DD20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DD20
+ * Engine 成员函数  → sub_43DD20
  * raw 行区间 [49205, 49341]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43DD20(int _this,
         int a2,
@@ -32873,8 +32887,8 @@ int Engine::sub_43DD20(int _this,
   {
     v22 = aDdcpyspritesur_10;
 LABEL_3:
-    sprintf_s((char *const)(_this + 8), 0x400u, v22);
-    v23 = (const void *)(_this + 8);
+    sprintf_s((char *const)(this->message_buf), 0x400u, v22);
+    v23 = (const void *)(this->message_buf);
 LABEL_4:
     this->sub_4034C0( v23);
     return 0;
@@ -32924,7 +32938,7 @@ LABEL_4:
     {
       v21 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddMirrorCpySpriteSurface エラー：サーフェスへのコピーに失敗しました．\r\n"
         "SRCRECT L%d T%d R%d B%d DSTRECT L%d T%d R%d B%d \r\n"
@@ -32940,7 +32954,7 @@ LABEL_4:
         v15,
         v28,
         v21);
-      v23 = (const void *)(_this + 8);
+      v23 = (const void *)(this->message_buf);
       goto LABEL_4;
     }
     v13 = v28;
@@ -32953,9 +32967,9 @@ LABEL_4:
 
 
 /* ===== [stained] sub_43DF20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43DF20
+ * Engine 成员函数  → sub_43DF20
  * raw 行区间 [49344, 49515]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
 {
@@ -32994,19 +33008,19 @@ int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
   v26 = 0;
   if ( a2 > 0x63 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdmirrorsurfac_1);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdmirrorsurfac_1);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
   {
     v5 = sub_43B830(a2);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddMirrorSurface エラー：サーフェイスに画像が読み込まれていません [%s]\r\n",
       v5);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   if ( *(_DWORD *)(_this + 8060) && !a2 && *(_DWORD *)(_this + 8072) == 1 )
@@ -33047,7 +33061,7 @@ int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
     }
     v19 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddMirrorSurface エラー：サーフェスへのコピーに失敗しました．\r\n"
       "SRCRECT L%d T%d R%d B%d DSTRECT L%d T%d R%d B%d \r\n"
@@ -33063,7 +33077,7 @@ int Engine::sub_43DF20(int _this, unsigned int a2, int a3)
       32,
       v3,
       v19);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
 LABEL_12:
@@ -33132,9 +33146,9 @@ LABEL_12:
 
 
 /* ===== [stained] sub_43E260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E260
+ * Engine 成员函数  → sub_43E260
  * raw 行区间 [49518, 49702]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43E260(int _this, unsigned int a2, int a3, int a4, __int64 a5, int a6)
 {
@@ -33175,8 +33189,8 @@ int Engine::sub_43E260(int _this, unsigned int a2, int a3, int a4, __int64 a5, i
   v32 = 0;
   if ( a2 > 0x63 )
   {
-    v28 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdfillsurfaceS_0);
+    v28 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdfillsurfaceS_0);
     goto LABEL_44;
   }
   if ( *(_DWORD *)(_this + 4 * a2 + 1036) )
@@ -33238,10 +33252,10 @@ int Engine::sub_43E260(int _this, unsigned int a2, int a3, int a4, __int64 a5, i
         if ( !v18 )
           goto LABEL_25;
       }
-      v28 = (const void *)(_this + 8);
+      v28 = (const void *)(this->message_buf);
       v29 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCpySpriteSurface エラー：Blt (Fill)RECT L%d T%d R%d B%d [%s]\r\n",
         v33,
@@ -33305,28 +33319,28 @@ LABEL_25:
       if ( !v27 )
         return 1;
     }
-    v28 = (const void *)(_this + 8);
+    v28 = (const void *)(this->message_buf);
     v30 = sub_43B9D0((_DWORD *)_this);
-    sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddCpySpriteSurface エラー：Blt (Fill) [%s]\r\n", v30);
+    sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddCpySpriteSurface エラー：Blt (Fill) [%s]\r\n", v30);
 LABEL_44:
     this->sub_4034C0( v28);
     return 0;
   }
   v9 = sub_43B830(a2);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：ddFillSurface エラー：サーフェイスに画像が読み込まれていません [%s]\r\n",
     v9);
-  this->sub_4034D0( (const char *)(_this + 8));
+  this->sub_4034D0( (const char *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43E550  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E550
+ * Engine 成员函数  → sub_43E550
  * raw 行区间 [49705, 49741]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
 {
@@ -33337,8 +33351,8 @@ int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
   *a3 = 108;
   if ( !a2 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aGetsurfacepoin);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aGetsurfacepoin);
+    this->sub_4034D0( (const char *)(this->message_buf));
   }
   if ( !*(_DWORD *)(_this + 4032) && !a2 )
     return 0;
@@ -33353,12 +33367,12 @@ int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
   {
     v5 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GetSurfacePointer エラー：サーフェスに対してのロックに失敗しました． SURFACE=%d %s\r\n",
       a2,
       v5);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( !a2 && *(_DWORD *)(_this + 1536) == -2005532237 )
       *(_DWORD *)(_this + 4032) = 0;
     return 0;
@@ -33368,9 +33382,9 @@ int Engine::sub_43E550(int _this, int a2, _DWORD *a3)
 
 
 /* ===== [stained] sub_43E620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E620
+ * Engine 成员函数  → sub_43E620
  * raw 行区间 [49744, 49764]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_43E620(int _this, int a2)
 {
@@ -33385,20 +33399,20 @@ void Engine::sub_43E620(int _this, int a2)
   {
     v4 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：UnLockSurface エラー：サーフェスに対してのアンロックに失敗しました． SURFACE=%d %s\r\n",
       a2,
       v4);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
 }
 
 
 /* ===== [stained] sub_43E680  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E680
+ * Engine 成员函数  → sub_43E680
  * raw 行区间 [49767, 49858]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43E680(int _this, int a2, int a3)
 {
@@ -33425,8 +33439,8 @@ int Engine::sub_43E680(int _this, int a2, int a3)
   *(_DWORD *)(_this + 4016) = v4 + 1;
   if ( (!v6 || a2) && *(_DWORD *)(_this + 1032) )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, "Backup... Force =%d IsUseBackupSurface = %d\r\n", a2, a3);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, "Backup... Force =%d IsUseBackupSurface = %d\r\n", a2, a3);
+    this->sub_4034C0( (const void *)(this->message_buf));
     for ( i = 0; i < 100; ++i )
     {
       v8 = i;
@@ -33494,9 +33508,9 @@ int Engine::sub_43E680(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_43E950  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E950
+ * Engine 成员函数  → sub_43E950
  * raw 行区间 [49892, 49924]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43E950(int _this)
 {
@@ -33523,19 +33537,19 @@ int Engine::sub_43E950(int _this)
     return 1;
   v4 = sub_43B9D0((_DWORD *)_this);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：ddChangeSurface エラー：サーフェイスの切り替えに失敗しました．[%s]\r\n",
     v4);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_43E9F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_43E9F0
+ * Engine 成员函数  → sub_43E9F0
  * raw 行区间 [49927, 50114]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
 {
@@ -33580,8 +33594,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
   v24 = 1;
   if ( (unsigned int)a2 < 3 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdreadbmp_0);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdreadbmp_0);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v34 = 0;
@@ -33603,8 +33617,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
       if ( !sub_403700((int)v7, hFile) )
       {
         v9 = sub_403960(v7);
-        sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v9);
-        this->sub_4034C0( (const void *)(_this + 8));
+        sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v9);
+        this->sub_4034C0( (const void *)(this->message_buf));
         (**(void (__thiscall ***)(char *, int))v7)(v7, 1);
         return 0;
       }
@@ -33616,8 +33630,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
       v10 = *((_DWORD *)v7 + 2);
       if ( v10 < 1 || v10 > 2 || *((_DWORD *)v7 + 3) )
       {
-        sprintf_s((char *const)(_this + 8), 0x400u, aDdreadbmp);
-        this->sub_4034C0( (const void *)(_this + 8));
+        sprintf_s((char *const)(this->message_buf), 0x400u, aDdreadbmp);
+        this->sub_4034C0( (const void *)(this->message_buf));
         (**(void (__thiscall ***)(char *, int))v7)(v7, 1);
         return 0;
       }
@@ -33656,8 +33670,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
       *((_DWORD *)v7 + 271) = v14;
       if ( !v14 )
       {
-        sprintf_s((char *const)(_this + 8), 0x400u, aDdreadbmpImage);
-        this->sub_4034C0( (const void *)(_this + 8));
+        sprintf_s((char *const)(this->message_buf), 0x400u, aDdreadbmpImage);
+        this->sub_4034C0( (const void *)(this->message_buf));
         (**(void (__thiscall ***)(char *, int))v7)(v7, 1);
         if ( v13 )
           (*(void (__thiscall **)(_DWORD *, int))*v13)(v13, 1);
@@ -33700,8 +33714,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
             || (v34 = 47, !sub_4016C0(*(_DWORD *)(_this + 4 * v5 + 4056), hFile)) )
           {
             v18 = sub_401A60(*(char **)(_this + 4 * v5 + 4056));
-            sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v18);
-            this->sub_4034D0( (const char *)(_this + 8));
+            sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v18);
+            this->sub_4034D0( (const char *)(this->message_buf));
             v19 = *(void (__thiscall ****)(_DWORD, int))(_this + 4 * v5 + 4056);
             if ( v19 )
               (**v19)(v19, 1);
@@ -33718,8 +33732,8 @@ int Engine::sub_43E9F0(int _this, void *a2, void *a3, int a4)
     goto LABEL_7;
   }
   v8 = sub_403960(v7);
-  sprintf_s((char *const)(_this + 8), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v8);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ddReadBmp エラー：%s\r\n", v8);
+  this->sub_4034C0( (const void *)(this->message_buf));
   if ( v7 )
 LABEL_7:
     (**(void (__thiscall ***)(char *, int))v7)(v7, 1);
@@ -33728,9 +33742,9 @@ LABEL_7:
 
 
 /* ===== [stained] sub_4404B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4404B0
+ * Engine 成员函数  → sub_4404B0
  * raw 行区间 [50117, 50405]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4404B0(int _this, HWND hWnd, char a3)
 {
@@ -33795,10 +33809,10 @@ int Engine::sub_4404B0(int _this, HWND hWnd, char a3)
   *(_DWORD *)(_this + 1536) = v5;
   if ( v5 )
   {
-    v6 = (const void *)(_this + 8);
+    v6 = (const void *)(this->message_buf);
     v27 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCSurface エラー：制御レベルの設定に失敗しました．[%s]\r\n",
       v27);
@@ -33818,10 +33832,10 @@ LABEL_8:
     *(_DWORD *)(_this + 1536) = v8;
     if ( v8 )
     {
-      v6 = (const void *)(_this + 8);
+      v6 = (const void *)(this->message_buf);
       v28 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：ビデオモードの設定に失敗しました．[%s]\r\n",
         v28);
@@ -33858,10 +33872,10 @@ LABEL_8:
   *(_DWORD *)(_this + 1536) = v11;
   if ( v11 )
   {
-    v6 = (const void *)(_this + 8);
+    v6 = (const void *)(this->message_buf);
     v29 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCSurface エラー：基本サーフェスの作成の失敗しました．[%s]\r\n",
       v29);
@@ -33874,19 +33888,19 @@ LABEL_8:
   {
     v14 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCSurface エラー：IDirectDrawSurface3の作成に失敗しました．[%s]\r\n",
       v14);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     (*(void (__stdcall **)(int))(*(_DWORD *)v36 + 8))(v36);
     return 0;
   }
   (*(void (__stdcall **)(int))(*(_DWORD *)v36 + 8))(v36);
   if ( !this->sub_43B260( (int)hWnd, 0) )
   {
-    v6 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdcsurfaceDdge);
+    v6 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdcsurfaceDdge);
     goto LABEL_8;
   }
   v15 = *(_DWORD *)(_this + 8088);
@@ -33904,8 +33918,8 @@ LABEL_8:
   {
     if ( !sub_43C8D0(_this, (int)hWnd, 1, *(_DWORD *)(_this + 8088), *(_DWORD *)(_this + 8092), 2) )
     {
-      v6 = (const void *)(_this + 8);
-      sprintf_s((char *const)(_this + 8), 0x400u, aDdcsurface);
+      v6 = (const void *)(this->message_buf);
+      sprintf_s((char *const)(this->message_buf), 0x400u, aDdcsurface);
       goto LABEL_8;
     }
   }
@@ -33917,8 +33931,8 @@ LABEL_8:
     *(_DWORD *)(_this + 1536) = v18;
     if ( v18 )
     {
-      v6 = (const void *)(_this + 8);
-      sprintf_s((char *const)(_this + 8), 0x400u, aDdcsurface_0);
+      v6 = (const void *)(this->message_buf);
+      sprintf_s((char *const)(this->message_buf), 0x400u, aDdcsurface_0);
       goto LABEL_8;
     }
     v19 = *(_DWORD *)(_this + 8092);
@@ -33936,8 +33950,8 @@ LABEL_8:
   }
   if ( !sub_43C8D0(_this, (int)hWnd, 2, *(_DWORD *)(_this + 8088), *(_DWORD *)(_this + 8092), 0) )
   {
-    v6 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, aDdcsurface_1);
+    v6 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDdcsurface_1);
     goto LABEL_8;
   }
   if ( v37 )
@@ -33950,10 +33964,10 @@ LABEL_8:
     *(_DWORD *)(_this + 1536) = v22;
     if ( v22 )
     {
-      v6 = (const void *)(_this + 8);
+      v6 = (const void *)(this->message_buf);
       v32 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：クリッパーの作成に失敗しました．%s\r\n",
         v32);
@@ -33963,10 +33977,10 @@ LABEL_8:
     *(_DWORD *)(_this + 1536) = v23;
     if ( v23 )
     {
-      v6 = (const void *)(_this + 8);
+      v6 = (const void *)(this->message_buf);
       v33 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：クリッパーのハンドル設定に失敗しました．%s\r\n",
         v33);
@@ -33976,10 +33990,10 @@ LABEL_8:
     *(_DWORD *)(_this + 1536) = v24;
     if ( v24 )
     {
-      v6 = (const void *)(_this + 8);
+      v6 = (const void *)(this->message_buf);
       v34 = sub_43B9D0((_DWORD *)_this);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ddCSurface エラー：クリッパーの設定に失敗しました．%s\r\n",
         v34);
@@ -34023,9 +34037,9 @@ LABEL_8:
 
 
 /* ===== [stained] sub_440A20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440A20
+ * Engine 成员函数  → sub_440A20
  * raw 行区间 [50408, 50523]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
 {
@@ -34060,7 +34074,7 @@ BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
   (*(void (__stdcall **)(int, int *, int *, int *))(*(_DWORD *)v8 + 92))(v8, &v17, &v19, &v18);
   CurrentThreadId = GetCurrentThreadId();
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "ARCGameEngineが起動しました．\r\n"
     "全VRAM容量 %dbyte 空きVRAM容量は%dbyte です．\r\n"
@@ -34069,7 +34083,7 @@ BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
     v19,
     v18,
     CurrentThreadId);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   memset(v21, 0, sizeof(v21));
   v10 = *(_DWORD *)(_this + 1032);
   v21[0] = 108;
@@ -34079,11 +34093,11 @@ BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
   {
     v12 = sub_43B9D0((_DWORD *)_this);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCSurface エラー：ビデオモードの取得に失敗しました．[%s]\r\n",
       v12);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v14 = v21[21];
@@ -34146,9 +34160,9 @@ BOOL Engine::sub_440A20(int _this, HWND a2, int a3, int a4, int a5, int a6)
 
 
 /* ===== [stained] sub_440C90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440C90
+ * Engine 成员函数  → sub_440C90
  * raw 行区间 [50526, 50590]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_440C90(int _this, int a2, int a3)
 {
@@ -34163,8 +34177,8 @@ int Engine::sub_440C90(int _this, int a2, int a3)
   {
     v8 = aDdcpyspritesur_13;
 LABEL_3:
-    v4 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, v8);
+    v4 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, v8);
 LABEL_4:
     this->sub_4034C0( v4);
     return 0;
@@ -34178,19 +34192,19 @@ LABEL_4:
   {
     v6 = sub_43B830(a3);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー元のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v6);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
   {
-    v4 = (const void *)(_this + 8);
+    v4 = (const void *)(this->message_buf);
     v7 = sub_43B830(a2);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ddCpySpriteSurfaceFast エラー：コピー先のサーフェイスに画像が読み込まれていません [%s]\r\n",
       v7);
@@ -34217,9 +34231,9 @@ LABEL_4:
 
 
 /* ===== [stained] sub_440DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440DD0
+ * Engine 成员函数  → sub_440DD0
  * raw 行区间 [50593, 50677]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_440DD0(int _this, int a2, int a3, int a4, int a5)
 {
@@ -34260,11 +34274,11 @@ int Engine::sub_440DD0(int _this, int a2, int a3, int a4, int a5)
           {
             v12 = sub_43B9D0((_DWORD *)_this);
             sprintf_s(
-              (char *const)(_this + 8),
+              (char *const)(this->message_buf),
               0x400u,
               "関数：ddRestoreSurface エラー：サーフェスの復元に失敗しました．%s\r\n",
               v12);
-            this->sub_4034C0( (const void *)(_this + 8));
+            this->sub_4034C0( (const void *)(this->message_buf));
           }
         }
         if ( !i && !*(_DWORD *)(_this + 8064) )
@@ -34308,9 +34322,9 @@ int Engine::sub_440DD0(int _this, int a2, int a3, int a4, int a5)
 
 
 /* ===== [stained] sub_440FD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_440FD0
+ * Engine 成员函数  → sub_440FD0
  * raw 行区间 [50680, 50739]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_440FD0(int *_this,
         int a2,
@@ -34374,9 +34388,9 @@ int Engine::sub_440FD0(int *_this,
 
 
 /* ===== [stained] sub_441060  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441060
+ * Engine 成员函数  → sub_441060
  * raw 行区间 [50742, 50900]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_441060(int _this, signed int a2, int a3)
 {
@@ -34536,9 +34550,9 @@ int Engine::sub_441060(int _this, signed int a2, int a3)
 
 
 /* ===== [stained] sub_441410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441410
+ * Engine 成员函数  → sub_441410
  * raw 行区间 [50904, 51269]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_441410(int _this, unsigned int a2, unsigned int a3, int a4, void *a5, int a6)
 {
@@ -34681,7 +34695,7 @@ int Engine::sub_441410(int _this, unsigned int a2, unsigned int a3, int a4, void
         if ( v30 != v29 || v32 != v31 )
         {
           sprintf_s(
-            (char *const)(_this + 8),
+            (char *const)(this->message_buf),
             0x400u,
             "関数：SetFade エラー：STOS SRCとDSTのテクスチャのサイズが異なります．SRC=%d W=%d H=%d DST=%d W=%d H=%d\r\n",
             *(_DWORD *)(_this + 8128),
@@ -34690,7 +34704,7 @@ int Engine::sub_441410(int _this, unsigned int a2, unsigned int a3, int a4, void
             *(_DWORD *)(_this + 8132),
             v29,
             v31);
-          this->sub_4034C0( (const void *)(_this + 8));
+          this->sub_4034C0( (const void *)(this->message_buf));
         }
         sub_4A6D60(*(int **)(_this + 8112));
         sub_49DFD0(*(float **)(_this + 8112));
@@ -34798,9 +34812,9 @@ LABEL_28:
         this->sub_43B1A0( a3, &v29, &v31, &v28);
         if ( v30 != v29 || v32 != v31 )
         {
-          v11 = _this + 8;
+          v11 = this->message_buf;
           sprintf_s(
-            (char *const)(_this + 8),
+            (char *const)(this->message_buf),
             0x400u,
             "関数：SetFade エラー：STOS SRCとDSTのサーフェイスのサイズが異なります．SRC=%d W=%d H=%d DST=%d W=%d H=%d\r\n",
             *(_DWORD *)(_this + 8128),
@@ -34809,7 +34823,7 @@ LABEL_28:
             *(_DWORD *)(_this + 8132),
             v29,
             v31);
-          this->sub_4034C0( (const void *)(_this + 8));
+          this->sub_4034C0( (const void *)(this->message_buf));
         }
 LABEL_33:
         sub_43C8D0(_this, v11, 32, *(_DWORD *)(_this + 8216), *(_DWORD *)(_this + 8220), 0);
@@ -34874,16 +34888,16 @@ LABEL_34:
         if ( !v17 )
         {
           v19 = sub_401A60(v18);
-          sprintf_s((char *const)(_this + 8), 0x400u, "関数：SetFade エラー：%s\r\n", v19);
-          this->sub_4034C0( (const void *)(_this + 8));
+          sprintf_s((char *const)(this->message_buf), 0x400u, "関数：SetFade エラー：%s\r\n", v19);
+          this->sub_4034C0( (const void *)(this->message_buf));
           pExceptionObject = 1;
           _CxxThrowException(&pExceptionObject, &_TI1_AVGeneric_Exception__);
         }
         if ( !sub_4016C0((int)v18, v16) )
         {
           v20 = sub_401A60(*(char **)(_this + 8296));
-          sprintf_s((char *const)(_this + 8), 0x400u, "関数：SetFade エラー：%s\r\n", v20);
-          this->sub_4034C0( (const void *)(_this + 8));
+          sprintf_s((char *const)(this->message_buf), 0x400u, "関数：SetFade エラー：%s\r\n", v20);
+          this->sub_4034C0( (const void *)(this->message_buf));
           v25 = 1;
           _CxxThrowException(&v25, &_TI1_AVGeneric_Exception__);
         }
@@ -34902,9 +34916,9 @@ LABEL_34:
 
 
 /* ===== [stained] sub_441E10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_441E10
+ * Engine 成员函数  → sub_441E10
  * raw 行区间 [51273, 52620]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_441E10(int _this, int a2)
 {
@@ -36240,9 +36254,9 @@ LABEL_29:
 
 
 /* ===== [stained] sub_443B20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_443B20
+ * Engine 成员函数  → sub_443B20
  * raw 行区间 [52624, 52986]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_443B20(int _this, float a2, float a3, int a4)
 {
@@ -36565,8 +36579,8 @@ LABEL_68:
 LABEL_81:
           v38 = aSetlinefadeE_2;
 LABEL_103:
-          sprintf_s((char *const)(_this + 8), 0x400u, v38);
-          this->sub_4034C0( (const void *)(_this + 8));
+          sprintf_s((char *const)(this->message_buf), 0x400u, v38);
+          this->sub_4034C0( (const void *)(this->message_buf));
           result = 0;
         }
         else
@@ -36608,9 +36622,9 @@ LABEL_102:
 
 
 /* ===== [stained] sub_444350  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_444350
+ * Engine 成员函数  → sub_444350
  * raw 行区间 [52990, 54245]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_444350(int _this, int a2)
 {
@@ -37853,9 +37867,9 @@ LABEL_146:
 
 
 /* ===== [stained] sub_445D70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_445D70
+ * Engine 成员函数  → sub_445D70
  * raw 行区间 [54249, 54630]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_445D70(int _this, unsigned int a2, int a3, int a4, int a5)
 {
@@ -37945,8 +37959,8 @@ int Engine::sub_445D70(int _this, unsigned int a2, int a3, int a4, int a5)
   {
     v68 = aSetrandomfadeE_1;
 LABEL_73:
-    sprintf_s((char *const)(_this + 8), 0x400u, v68);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v68);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   *(_DWORD *)(_this + 8208) = 0;
@@ -38103,8 +38117,8 @@ LABEL_43:
         result = 1;
         break;
       default:
-        sprintf_s((char *const)(_this + 8), 0x400u, aSetrandomfade);
-        this->sub_4034C0( (const void *)(_this + 8));
+        sprintf_s((char *const)(this->message_buf), 0x400u, aSetrandomfade);
+        this->sub_4034C0( (const void *)(this->message_buf));
         sub_4A6D00(*(_DWORD **)(_this + 8112));
         return 0;
     }
@@ -38240,9 +38254,9 @@ LABEL_71:
 
 
 /* ===== [stained] sub_4469A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4469A0
+ * Engine 成员函数  → sub_4469A0
  * raw 行区间 [54634, 54732]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4469A0(_DWORD *_this, unsigned int a2, unsigned int a3, int a4, int a5, int a6, int a7)
 {
@@ -38346,9 +38360,9 @@ int Engine::sub_4469A0(_DWORD *_this, unsigned int a2, unsigned int a3, int a4, 
 
 
 /* ===== [stained] sub_446C20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_446C20
+ * Engine 成员函数  → sub_446C20
  * raw 行区间 [54735, 54862]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_446C20(int *_this, int a2, int a3, int a4, int a5, int a6, int a7)
 {
@@ -38481,9 +38495,9 @@ LABEL_21:
 
 
 /* ===== [stained] sub_446EC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_446EC0
+ * Engine 成员函数  → sub_446EC0
  * raw 行区间 [54865, 54945]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_446EC0(int _this)
 {
@@ -38568,9 +38582,9 @@ int Engine::sub_446EC0(int _this)
 
 
 /* ===== [stained] sub_447810  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_447810
+ * Engine 成员函数  → sub_447810
  * raw 行区间 [55215, 57338]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_447810(_DWORD *_this, int a2)
 {
@@ -40690,9 +40704,9 @@ LABEL_53:
 
 
 /* ===== [stained] sub_44A7F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44A7F0
+ * Engine 成员函数  → sub_44A7F0
  * raw 行区间 [57595, 57611]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_44A7F0(_DWORD *_this)
 {
@@ -40714,9 +40728,9 @@ _DWORD * Engine::sub_44A7F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_44E320  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44E320
+ * Engine 成员函数  → sub_44E320
  * raw 行区间 [61219, 61477]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_44E320(int _this, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11)
 {
@@ -40781,8 +40795,8 @@ int Engine::sub_44E320(int _this, int a2, int a3, int a4, int a5, int a6, int a7
     v37 = a7;
     v35 = aGrtomSurfaceD;
 LABEL_3:
-    sprintf_s((char *const)(_this + 8), 0x400u, v35, v37);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v35, v37);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
@@ -40980,9 +40994,9 @@ LABEL_12:
 
 
 /* ===== [stained] sub_44F360  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_44F360
+ * Engine 成员函数  → sub_44F360
  * raw 行区间 [62161, 62392]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_44F360(int _this, int a2, int *a3, int a4, int *a5)
 {
@@ -41219,9 +41233,9 @@ void Engine::sub_44F360(int _this, int a2, int *a3, int a4, int *a5)
 
 
 /* ===== [stained] sub_450700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450700
+ * Engine 成员函数  → sub_450700
  * raw 行区间 [63383, 63396]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_450700(int _this, unsigned int a2, int a3, int a4, __int64 a5, unsigned __int8 *a6)
 {
@@ -41239,9 +41253,9 @@ int Engine::sub_450700(int _this, unsigned int a2, int a3, int a4, __int64 a5, u
 
 
 /* ===== [stained] sub_450B70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450B70
+ * Engine 成员函数  → sub_450B70
  * raw 行区间 [63720, 63726]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_450B70(void *_this, char a2)
 {
@@ -41253,9 +41267,9 @@ void * Engine::sub_450B70(void *_this, char a2)
 
 
 /* ===== [stained] sub_450BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450BA0
+ * Engine 成员函数  → sub_450BA0
  * raw 行区间 [63729, 63885]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_450BA0(char *_this,
         int a2,
@@ -41390,7 +41404,7 @@ int Engine::sub_450BA0(char *_this,
           (*(void (__thiscall **)(char *, int, int, int, int))(*(_DWORD *)_this + 20))(_this, a3, a4, a5, a6);
         return 1;
       }
-      v17 = _this + 8;
+      v17 = this->message_buf;
       v26 = sub_43B830(a2);
       sprintf_s(
         v17,
@@ -41400,7 +41414,7 @@ int Engine::sub_450BA0(char *_this,
     }
     else
     {
-      v17 = _this + 8;
+      v17 = this->message_buf;
       v25 = sub_43B830(a7);
       sprintf_s(
         v17,
@@ -41416,9 +41430,9 @@ int Engine::sub_450BA0(char *_this,
 
 
 /* ===== [stained] sub_450F20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_450F20
+ * Engine 成员函数  → sub_450F20
  * raw 行区间 [63891, 64032]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_450F20(int _this,
         int a2,
@@ -41533,10 +41547,10 @@ int Engine::sub_450F20(int _this,
             (*(void (__thiscall **)(int, int, int, int, int))(*(_DWORD *)_this + 20))(_this, a3, a4, a5, a6);
           return 1;
         }
-        v18 = (const void *)(_this + 8);
+        v18 = (const void *)(this->message_buf);
         v25 = sub_43B830(a2);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：GrtoT エラー：転送先の画像が読み込まれていません [%s]\r\n",
           v25);
@@ -41550,10 +41564,10 @@ LABEL_5:
     {
       v23 = a7;
     }
-    v18 = (const void *)(_this + 8);
+    v18 = (const void *)(this->message_buf);
     v24 = sub_43B830(v23);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoT エラー：転送元の画像が読み込まれていません [%s]\r\n",
       v24);
@@ -41564,9 +41578,9 @@ LABEL_5:
 
 
 /* ===== [stained] sub_4512C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4512C0
+ * Engine 成员函数  → sub_4512C0
  * raw 行区间 [64038, 64172]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4512C0(int _this,
         int a2,
@@ -41609,31 +41623,31 @@ int Engine::sub_4512C0(int _this,
   if ( !*(_DWORD *)(_this + 4 * a8 + 1036) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoA エラー：転送元の画像が読み込まれていませんSURFACE = %d\r\n",
       a8);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a13 + 1036) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoA エラー：転送元の画像が読み込まれていませんSURFACE = %d\r\n",
       a13);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a3 + 1036) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoA エラー：転送先の画像が読み込まれていませんSURFACE = %d\r\n",
       a3);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( *(_DWORD *)(_this + 8060) )
@@ -41655,8 +41669,8 @@ int Engine::sub_4512C0(int _this,
     v23 = a9;
     v22 = aGrtoaDDDD;
 LABEL_16:
-    sprintf_s((char *const)(_this + 8), 0x400u, v22, v23, v24, v25, v26);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v22, v23, v24, v25, v26);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( (a4 | a5 | (*(_DWORD *)(_this + 36 * v17 + 4456) - a6) | (*(_DWORD *)(_this + 36 * v17 + 4460) - a7)) < 0 )
@@ -41705,9 +41719,9 @@ LABEL_16:
 
 
 /* ===== [stained] sub_4515C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4515C0
+ * Engine 成员函数  → sub_4515C0
  * raw 行区间 [64178, 64345]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4515C0(int _this,
         int a2,
@@ -41763,19 +41777,19 @@ int Engine::sub_4515C0(int _this,
   {
     v28 = a13;
 LABEL_45:
-    v20 = (char *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, "関数：GrtoA エラー：不正なsrcsurface %d\r\n", v28);
+    v20 = (char *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, "関数：GrtoA エラー：不正なsrcsurface %d\r\n", v28);
     goto LABEL_46;
   }
   if ( a3 > 0x63 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, "関数：GrtoA エラー：不正なdestsurface %d\r\n", a3);
-    v27 = (char *)(_this + 8);
+    sprintf_s((char *const)(this->message_buf), 0x400u, "関数：GrtoA エラー：不正なdestsurface %d\r\n", a3);
+    v27 = (char *)(this->message_buf);
     goto LABEL_47;
   }
   if ( !*(_DWORD *)(_this + 4 * a8 + 1036) )
   {
-    v20 = (char *)(_this + 8);
+    v20 = (char *)(this->message_buf);
     v25 = sub_43B830(a8);
     sprintf_s(
       v20,
@@ -41788,7 +41802,7 @@ LABEL_46:
   }
   if ( !*(_DWORD *)(_this + 4 * a13 + 1036) )
   {
-    v20 = (char *)(_this + 8);
+    v20 = (char *)(this->message_buf);
     v26 = sub_43B830(a13);
     sprintf_s(
       v20,
@@ -41801,11 +41815,11 @@ LABEL_46:
   {
     v21 = sub_43B830(a3);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoA エラー：転送先の画像が読み込まれていません [%s]\r\n",
       v21);
-    v27 = (char *)(_this + 8);
+    v27 = (char *)(this->message_buf);
 LABEL_47:
     this->sub_4034C0( v27);
     return 1;
@@ -41879,9 +41893,9 @@ LABEL_47:
 
 
 /* ===== [stained] sub_4519A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4519A0
+ * Engine 成员函数  → sub_4519A0
  * raw 行区间 [64351, 64499]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4519A0(int _this,
         int a2,
@@ -41937,11 +41951,11 @@ int Engine::sub_4519A0(int _this,
 LABEL_3:
     v22 = sub_43B830(v27);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoAT エラー：転送元の画像が読み込まれていません [%s]\r\n",
       v22);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a13 + 1036) )
@@ -42023,20 +42037,20 @@ LABEL_3:
   {
     v23 = sub_43B830(a3);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoAT エラー：転送先の画像が読み込まれていません [%s]\r\n",
       v23);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   return 1;
 }
 
 
 /* ===== [stained] sub_451D40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_451D40
+ * Engine 成员函数  → sub_451D40
  * raw 行区间 [64505, 64646]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_451D40(int _this,
         int a2,
@@ -42151,10 +42165,10 @@ int Engine::sub_451D40(int _this,
             (*(void (__thiscall **)(int, int, int, int, int))(*(_DWORD *)_this + 20))(_this, a3, a4, a5, a6);
           return 1;
         }
-        v18 = (const void *)(_this + 8);
+        v18 = (const void *)(this->message_buf);
         v25 = sub_43B830(a2);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：GrtoP エラー：転送先の画像が読み込まれていません [%s]\r\n",
           v25);
@@ -42168,10 +42182,10 @@ LABEL_5:
     {
       v23 = a7;
     }
-    v18 = (const void *)(_this + 8);
+    v18 = (const void *)(this->message_buf);
     v24 = sub_43B830(v23);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoP エラー：転送元の画像が読み込まれていません [%s]\r\n",
       v24);
@@ -42182,9 +42196,9 @@ LABEL_5:
 
 
 /* ===== [stained] sub_4520E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4520E0
+ * Engine 成员函数  → sub_4520E0
  * raw 行区间 [64652, 64743]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4520E0(int _this, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11)
 {
@@ -42203,11 +42217,11 @@ int Engine::sub_4520E0(int _this, int a2, int a3, int a4, int a5, int a6, int a7
   if ( !*(_DWORD *)(_this + 4 * a7 + 1036) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoAL エラー：転送元の画像が読み込まれていませんSURFACE = %d\r\n",
       a7);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
@@ -42215,8 +42229,8 @@ int Engine::sub_4520E0(int _this, int a2, int a3, int a4, int a5, int a6, int a7
     v17 = a2;
     v16 = aGrtoalSurfaceD_0;
 LABEL_5:
-    sprintf_s((char *const)(_this + 8), 0x400u, v16, v17);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v16, v17);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( a7 == a2 )
@@ -42254,36 +42268,36 @@ LABEL_5:
     else
     {
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：GrtoAL エラー：転送先の座標が不正です (%d,%d)-(%d,%d)\r\n",
         a3,
         a4,
         a5,
         a6);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
   }
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoAL エラー：転送元の座標が不正です (%d,%d)-(%d,%d)\r\n",
       a8,
       a9,
       a10,
       a11);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   return 1;
 }
 
 
 /* ===== [stained] sub_452330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452330
+ * Engine 成员函数  → sub_452330
  * raw 行区间 [64748, 64864]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_452330(int _this,
         int ArgList,
@@ -42358,27 +42372,27 @@ int Engine::sub_452330(int _this,
             else
             {
               sprintf_s(
-                (char *const)(_this + 8),
+                (char *const)(this->message_buf),
                 0x400u,
                 "関数：GrtoMZ エラー：転送先の座標が不正です (%d,%d)-(%d,%d)\r\n",
                 a3,
                 a4,
                 a5,
                 a6);
-              this->sub_4034C0( (const void *)(_this + 8));
+              this->sub_4034C0( (const void *)(this->message_buf));
             }
           }
           else
           {
             sprintf_s(
-              (char *const)(_this + 8),
+              (char *const)(this->message_buf),
               0x400u,
               "関数：GrtoMZ エラー：転送元の座標が不正です (%d,%d)-(%d,%d)\r\n",
               a8,
               a9,
               a10,
               a11);
-            this->sub_4034C0( (const void *)(_this + 8));
+            this->sub_4034C0( (const void *)(this->message_buf));
           }
           return 1;
         }
@@ -42397,16 +42411,16 @@ int Engine::sub_452330(int _this,
     v18 = a7;
     v17 = aGrtomzSurfaceD;
   }
-  sprintf_s((char *const)(_this + 8), 0x400u, v17, v18);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, v17, v18);
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 1;
 }
 
 
 /* ===== [stained] sub_452600  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452600
+ * Engine 成员函数  → sub_452600
  * raw 行区间 [64871, 65007]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_452600(int _this,
         int a2,
@@ -42444,8 +42458,8 @@ int Engine::sub_452600(int _this,
     v20 = a7;
     v19 = aGrtomgSurfaceD;
 LABEL_3:
-    sprintf_s((char *const)(_this + 8), 0x400u, v19, v20);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v19, v20);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 1;
   }
   if ( !*(_DWORD *)(_this + 4 * a2 + 1036) )
@@ -42520,36 +42534,36 @@ LABEL_3:
     else
     {
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：GrtoMG エラー：転送先の座標が不正です (%d,%d)-(%d,%d)\r\n",
         a3,
         a4,
         a5,
         a6);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
   }
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoMG エラー：転送元の座標が不正です (%d,%d)-(%d,%d)\r\n",
       a8,
       a9,
       a10,
       a11);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   return 1;
 }
 
 
 /* ===== [stained] sub_452940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_452940
+ * Engine 成员函数  → sub_452940
  * raw 行区间 [65012, 65241]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_452940(int _this,
         int a2,
@@ -42616,11 +42630,11 @@ int Engine::sub_452940(int _this,
   {
     v17 = sub_43B830(a5);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoR エラー：転送元の画像が読み込まれていません [%s]\r\n",
       v17);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   else if ( *(_DWORD *)(_this + 4 * a2 + 1036) )
   {
@@ -42772,20 +42786,20 @@ int Engine::sub_452940(int _this,
   {
     v18 = sub_43B830(a2);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GrtoR エラー：転送先の画像が読み込まれていません [%s]\r\n",
       v18);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   return 1;
 }
 
 
 /* ===== [stained] sub_453070  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453070
+ * Engine 成员函数  → sub_453070
  * raw 行区间 [65321, 65333]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_453070(void *_this)
 {
@@ -42803,9 +42817,9 @@ int Engine::sub_453070(void *_this)
 
 
 /* ===== [stained] sub_453080  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453080
+ * Engine 成员函数  → sub_453080
  * raw 行区间 [65337, 65343]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_453080(void *_this, char a2)
 {
@@ -42817,9 +42831,9 @@ void * Engine::sub_453080(void *_this, char a2)
 
 
 /* ===== [stained] sub_4530B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4530B0
+ * Engine 成员函数  → sub_4530B0
  * raw 行区间 [65346, 65363]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4530B0(_DWORD *_this, int a2)
 {
@@ -42842,9 +42856,9 @@ _DWORD * Engine::sub_4530B0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_453150  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453150
+ * Engine 成员函数  → sub_453150
  * raw 行区间 [65367, 65394]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_453150(_DWORD *_this)
 {
@@ -42877,9 +42891,9 @@ int Engine::sub_453150(_DWORD *_this)
 
 
 /* ===== [stained] sub_4537A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4537A0
+ * Engine 成员函数  → sub_4537A0
  * raw 行区间 [65918, 65923]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4537A0(_DWORD *_this)
 {
@@ -42890,9 +42904,9 @@ void Engine::sub_4537A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_453800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453800
+ * Engine 成员函数  → sub_453800
  * raw 行区间 [65927, 65933]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_453800(_DWORD *_this, char a2)
 {
@@ -42904,9 +42918,9 @@ _DWORD * Engine::sub_453800(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_453A50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453A50
+ * Engine 成员函数  → sub_453A50
  * raw 行区间 [66094, 66097]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_453A50(_DWORD *_this)
 {
@@ -42915,9 +42929,9 @@ void Engine::sub_453A50(_DWORD *_this)
 
 
 /* ===== [stained] sub_453C10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453C10
+ * Engine 成员函数  → sub_453C10
  * raw 行区间 [66240, 66246]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_453C10(_DWORD *_this, char a2)
 {
@@ -42929,9 +42943,9 @@ _DWORD * Engine::sub_453C10(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_453E20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453E20
+ * Engine 成员函数  → sub_453E20
  * raw 行区间 [66360, 66365]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void __cdecl Engine::sub_453E20(void *a1, int a2, int a3, int a4, int a5, unsigned int a6)
 {
@@ -42942,9 +42956,9 @@ void __cdecl Engine::sub_453E20(void *a1, int a2, int a3, int a4, int a5, unsign
 
 
 /* ===== [stained] sub_453EA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453EA0
+ * Engine 成员函数  → sub_453EA0
  * raw 行区间 [66369, 66374]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void __cdecl Engine::sub_453EA0(void *a1, int a2, int a3, int a4, int a5, unsigned int a6)
 {
@@ -42955,9 +42969,9 @@ void __cdecl Engine::sub_453EA0(void *a1, int a2, int a3, int a4, int a5, unsign
 
 
 /* ===== [stained] sub_453F20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453F20
+ * Engine 成员函数  → sub_453F20
  * raw 行区间 [66378, 66383]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void __cdecl Engine::sub_453F20(void *a1, int a2, int a3, int a4, int a5, unsigned int a6)
 {
@@ -42968,9 +42982,9 @@ void __cdecl Engine::sub_453F20(void *a1, int a2, int a3, int a4, int a5, unsign
 
 
 /* ===== [stained] sub_453FA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_453FA0
+ * Engine 成员函数  → sub_453FA0
  * raw 行区间 [66387, 66910]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void **__cdecl Engine::sub_453FA0(void **a1,
         void **a2,
@@ -43498,9 +43512,9 @@ LABEL_126:
 
 
 /* ===== [stained] sub_454710  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454710
+ * Engine 成员函数  → sub_454710
  * raw 行区间 [66934, 66945]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HANDLE Engine::sub_454710(HANDLE *_this)
 {
@@ -43517,9 +43531,9 @@ HANDLE Engine::sub_454710(HANDLE *_this)
 
 
 /* ===== [stained] sub_454730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454730
+ * Engine 成员函数  → sub_454730
  * raw 行区间 [66948, 66956]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_454730(int _this, LPCSTR lpFileName)
 {
@@ -43533,9 +43547,9 @@ BOOL Engine::sub_454730(int _this, LPCSTR lpFileName)
 
 
 /* ===== [stained] sub_454770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454770
+ * Engine 成员函数  → sub_454770
  * raw 行区间 [66959, 66967]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_454770(int _this, LPCSTR lpFileName)
 {
@@ -43549,9 +43563,9 @@ BOOL Engine::sub_454770(int _this, LPCSTR lpFileName)
 
 
 /* ===== [stained] sub_4547B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4547B0
+ * Engine 成员函数  → sub_4547B0
  * raw 行区间 [66970, 66981]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4547B0(int _this, LPCSTR lpFileName)
 {
@@ -43568,9 +43582,9 @@ int Engine::sub_4547B0(int _this, LPCSTR lpFileName)
 
 
 /* ===== [stained] sub_454920  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454920
+ * Engine 成员函数  → sub_454920
  * raw 行区间 [67042, 67046]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HANDLE Engine::sub_454920(HANDLE *_this)
 {
@@ -43580,9 +43594,9 @@ HANDLE Engine::sub_454920(HANDLE *_this)
 
 
 /* ===== [stained] sub_454930  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454930
+ * Engine 成员函数  → sub_454930
  * raw 行区间 [67050, 67056]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HANDLE * Engine::sub_454930(HANDLE *_this, char a2)
 {
@@ -43594,9 +43608,9 @@ HANDLE * Engine::sub_454930(HANDLE *_this, char a2)
 
 
 /* ===== [stained] sub_454A20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_454A20
+ * Engine 成员函数  → sub_454A20
  * raw 行区间 [67097, 67182]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int * Engine::sub_454A20(unsigned int *_this)
 {
@@ -43687,9 +43701,9 @@ unsigned int * Engine::sub_454A20(unsigned int *_this)
 
 
 /* ===== [stained] sub_4553A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4553A0
+ * Engine 成员函数  → sub_4553A0
  * raw 行区间 [67577, 67596]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4553A0(_DWORD *_this)
 {
@@ -43714,9 +43728,9 @@ void Engine::sub_4553A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_455560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455560
+ * Engine 成员函数  → sub_455560
  * raw 行区间 [67635, 67663]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455560(char *_this, int ArgList)
 {
@@ -43750,9 +43764,9 @@ int Engine::sub_455560(char *_this, int ArgList)
 
 
 /* ===== [stained] sub_455620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455620
+ * Engine 成员函数  → sub_455620
  * raw 行区间 [67666, 67691]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455620(char *_this, int ArgList)
 {
@@ -43783,9 +43797,9 @@ int Engine::sub_455620(char *_this, int ArgList)
 
 
 /* ===== [stained] sub_455750  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455750
+ * Engine 成员函数  → sub_455750
  * raw 行区间 [67721, 67783]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455750(int *_this, const char *a2)
 {
@@ -43853,9 +43867,9 @@ LABEL_13:
 
 
 /* ===== [stained] sub_455990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455990
+ * Engine 成员函数  → sub_455990
  * raw 行区间 [67786, 67792]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_455990(_DWORD *_this, char a2)
 {
@@ -43867,9 +43881,9 @@ _DWORD * Engine::sub_455990(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_455C60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455C60
+ * Engine 成员函数  → sub_455C60
  * raw 行区间 [67889, 67916]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455C60(int *_this, int ArgList)
 {
@@ -43902,9 +43916,9 @@ int Engine::sub_455C60(int *_this, int ArgList)
 
 
 /* ===== [stained] sub_455D20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455D20
+ * Engine 成员函数  → sub_455D20
  * raw 行区间 [67919, 67942]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_455D20(_DWORD *_this)
 {
@@ -43933,9 +43947,9 @@ _DWORD * Engine::sub_455D20(_DWORD *_this)
 
 
 /* ===== [stained] sub_455DB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455DB0
+ * Engine 成员函数  → sub_455DB0
  * raw 行区间 [67945, 67964]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455DB0(int _this, int a2, HGDIOBJ h)
 {
@@ -43960,9 +43974,9 @@ int Engine::sub_455DB0(int _this, int a2, HGDIOBJ h)
 
 
 /* ===== [stained] sub_455E00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455E00
+ * Engine 成员函数  → sub_455E00
  * raw 行区间 [67967, 67980]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_455E00(int _this)
 {
@@ -43981,9 +43995,9 @@ void Engine::sub_455E00(int _this)
 
 
 /* ===== [stained] sub_455E40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455E40
+ * Engine 成员函数  → sub_455E40
  * raw 行区间 [67983, 68008]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_455E40(int _this, int a2)
 {
@@ -44014,9 +44028,9 @@ int Engine::sub_455E40(int _this, int a2)
 
 
 /* ===== [stained] sub_455ED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_455ED0
+ * Engine 成员函数  → sub_455ED0
  * raw 行区间 [68011, 68131]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_455ED0(int _this,
         int a2,
@@ -44141,9 +44155,9 @@ void Engine::sub_455ED0(int _this,
 
 
 /* ===== [stained] sub_4561E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4561E0
+ * Engine 成员函数  → sub_4561E0
  * raw 行区间 [68136, 68230]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4561E0(int _this, int a2, CHAR *lpString, int x, int y)
 {
@@ -44242,9 +44256,9 @@ void Engine::sub_4561E0(int _this, int a2, CHAR *lpString, int x, int y)
 
 
 /* ===== [stained] sub_456630  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456630
+ * Engine 成员函数  → sub_456630
  * raw 行区间 [68421, 68466]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_456630(int *_this, int a2, int a3)
 {
@@ -44295,9 +44309,9 @@ int Engine::sub_456630(int *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_456710  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456710
+ * Engine 成员函数  → sub_456710
  * raw 行区间 [68470, 68495]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_456710(int _this, int a2, char *a3, int a4, int a5)
 {
@@ -44328,9 +44342,9 @@ void Engine::sub_456710(int _this, int a2, char *a3, int a4, int a5)
 
 
 /* ===== [stained] sub_456820  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456820
+ * Engine 成员函数  → sub_456820
  * raw 行区间 [68498, 68643]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_456820(int _this,
         int a2,
@@ -44479,9 +44493,9 @@ LABEL_30:
 
 
 /* ===== [stained] sub_456B80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456B80
+ * Engine 成员函数  → sub_456B80
  * raw 行区间 [68647, 68675]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_456B80(int _this, unsigned int a2, char *a3, int a4, char *a5)
 {
@@ -44515,9 +44529,9 @@ int Engine::sub_456B80(int _this, unsigned int a2, char *a3, int a4, char *a5)
 
 
 /* ===== [stained] sub_456C90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456C90
+ * Engine 成员函数  → sub_456C90
  * raw 行区间 [68678, 68722]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_456C90(int _this, int a2, struct tagTEXTMETRICA *a3, int a4)
 {
@@ -44567,9 +44581,9 @@ int Engine::sub_456C90(int _this, int a2, struct tagTEXTMETRICA *a3, int a4)
 
 
 /* ===== [stained] sub_456DF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456DF0
+ * Engine 成员函数  → sub_456DF0
  * raw 行区间 [68726, 68760]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_456DF0(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRICA *a4, int a5, int a6)
 {
@@ -44609,9 +44623,9 @@ int Engine::sub_456DF0(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRI
 
 
 /* ===== [stained] sub_456F40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_456F40
+ * Engine 成员函数  → sub_456F40
  * raw 行区间 [68764, 68798]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_456F40(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRICA *a4, int a5, int a6)
 {
@@ -44651,9 +44665,9 @@ int Engine::sub_456F40(int _this, HFONT *a2, LOGFONTA *lplf, struct tagTEXTMETRI
 
 
 /* ===== [stained] sub_457940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_457940
+ * Engine 成员函数  → sub_457940
  * raw 行区间 [69323, 69326]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_457940(HGDIOBJ *_this, int a2)
 {
@@ -44662,9 +44676,9 @@ int Engine::sub_457940(HGDIOBJ *_this, int a2)
 
 
 /* ===== [stained] sub_457CE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_457CE0
+ * Engine 成员函数  → sub_457CE0
  * raw 行区间 [69505, 69664]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_457CE0(int *_this, void *a2)
 {
@@ -44829,9 +44843,9 @@ int Engine::sub_457CE0(int *_this, void *a2)
 
 
 /* ===== [stained] sub_4581F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4581F0
+ * Engine 成员函数  → sub_4581F0
  * raw 行区间 [69720, 69940]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4581F0(int _this, unsigned __int16 a2, LOGFONTA *a3, int a4, _DWORD *a5)
 {
@@ -45057,9 +45071,9 @@ LABEL_33:
 
 
 /* ===== [stained] sub_4587D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4587D0
+ * Engine 成员函数  → sub_4587D0
  * raw 行区间 [69947, 70019]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4587D0(int _this, unsigned __int16 a2, int a3, LONG a4, int a5)
 {
@@ -45137,9 +45151,9 @@ LABEL_10:
 
 
 /* ===== [stained] sub_458A30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_458A30
+ * Engine 成员函数  → sub_458A30
  * raw 行区间 [70023, 70063]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HGDIOBJ Engine::sub_458A30(int _this,
         char a2,
@@ -45184,9 +45198,9 @@ HGDIOBJ Engine::sub_458A30(int _this,
 
 
 /* ===== [stained] sub_458AD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_458AD0
+ * Engine 成员函数  → sub_458AD0
  * raw 行区间 [70066, 70299]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_458AD0(int _this, unsigned __int16 a2, LOGFONTA *a3, int a4, _DWORD *a5)
 {
@@ -45425,9 +45439,9 @@ LABEL_36:
 
 
 /* ===== [stained] sub_4590C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4590C0
+ * Engine 成员函数  → sub_4590C0
  * raw 行区间 [70306, 70398]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4590C0(int _this, unsigned __int16 a2, int a3, LONG a4, int a5)
 {
@@ -45525,9 +45539,9 @@ LABEL_13:
 
 
 /* ===== [stained] sub_459330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459330
+ * Engine 成员函数  → sub_459330
  * raw 行区间 [70402, 70442]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HGDIOBJ Engine::sub_459330(int _this,
         char a2,
@@ -45572,9 +45586,9 @@ HGDIOBJ Engine::sub_459330(int _this,
 
 
 /* ===== [stained] sub_459770  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459770
+ * Engine 成员函数  → sub_459770
  * raw 行区间 [70575, 70627]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_459770(_DWORD *_this, int a2, int a3)
 {
@@ -45632,9 +45646,9 @@ int Engine::sub_459770(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_459A20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459A20
+ * Engine 成员函数  → sub_459A20
  * raw 行区间 [70727, 70803]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_459A20(_DWORD *_this, int a2, char *Source, int a4, _DWORD *a5)
 {
@@ -45716,9 +45730,9 @@ LABEL_12:
 
 
 /* ===== [stained] sub_459C50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459C50
+ * Engine 成员函数  → sub_459C50
  * raw 行区间 [70807, 70897]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_459C50(_DWORD *_this, int a2, char *Source, int a4, _DWORD *a5)
 {
@@ -45814,9 +45828,9 @@ LABEL_14:
 
 
 /* ===== [stained] sub_459F40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_459F40
+ * Engine 成员函数  → sub_459F40
  * raw 行区间 [70941, 71188]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_459F40(int _this)
 {
@@ -46066,9 +46080,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_45A6E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45A6E0
+ * Engine 成员函数  → sub_45A6E0
  * raw 行区间 [71193, 71273]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45A6E0(int _this)
 {
@@ -46154,9 +46168,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_45A940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45A940
+ * Engine 成员函数  → sub_45A940
  * raw 行区间 [71296, 71474]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45A940(int *_this, int a2, int a3, _DWORD *a4)
 {
@@ -46340,9 +46354,9 @@ void Engine::sub_45A940(int *_this, int a2, int a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_45BC70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45BC70
+ * Engine 成员函数  → sub_45BC70
  * raw 行区间 [72095, 72110]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45BC70(_DWORD *_this, int a2, int a3)
 {
@@ -46363,9 +46377,9 @@ void Engine::sub_45BC70(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_45BCD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45BCD0
+ * Engine 成员函数  → sub_45BCD0
  * raw 行区间 [72113, 72169]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_45BCD0(_DWORD *_this, char *a2)
 {
@@ -46427,9 +46441,9 @@ int Engine::sub_45BCD0(_DWORD *_this, char *a2)
 
 
 /* ===== [stained] sub_45C610  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45C610
+ * Engine 成员函数  → sub_45C610
  * raw 行区间 [72493, 72537]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45C610(int _this,
         void *a2,
@@ -46478,9 +46492,9 @@ void Engine::sub_45C610(int _this,
 
 
 /* ===== [stained] sub_45C6E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45C6E0
+ * Engine 成员函数  → sub_45C6E0
  * raw 行区间 [72540, 72545]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45C6E0(const void **_this, void *a2, int a3, int a4, int a5, int a6, unsigned int a7, int a8)
 {
@@ -46491,9 +46505,9 @@ void Engine::sub_45C6E0(const void **_this, void *a2, int a3, int a4, int a5, in
 
 
 /* ===== [stained] sub_45D800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45D800
+ * Engine 成员函数  → sub_45D800
  * raw 行区间 [73204, 73207]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const void ** Engine::sub_45D800(void *_this, int a2, int a3, const void **a4)
 {
@@ -46502,9 +46516,9 @@ const void ** Engine::sub_45D800(void *_this, int a2, int a3, const void **a4)
 
 
 /* ===== [stained] sub_45D890  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45D890
+ * Engine 成员函数  → sub_45D890
  * raw 行区间 [73248, 73266]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_45D890(void *_this, int a2, int a3)
 {
@@ -46528,9 +46542,9 @@ int Engine::sub_45D890(void *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_45DA10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DA10
+ * Engine 成员函数  → sub_45DA10
  * raw 行区间 [73352, 73377]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_45DA10(int *_this, _DWORD *a2, _DWORD *a3, int a4)
 {
@@ -46561,9 +46575,9 @@ _DWORD * Engine::sub_45DA10(int *_this, _DWORD *a2, _DWORD *a3, int a4)
 
 
 /* ===== [stained] sub_45DC70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DC70
+ * Engine 成员函数  → sub_45DC70
  * raw 行区间 [73447, 73478]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_45DC70(int *_this, char *a2)
 {
@@ -46577,7 +46591,7 @@ unsigned int Engine::sub_45DC70(int *_this, char *a2)
   v7 = &v5;
   if ( (unsigned int)a2 > 0x38E38E3 )
     std___Xlength_error(aVectorTTooLong);
-  result = (_this[2] - *_this) / 72;
+  result = (this->message_buf - *_this) / 72;
   if ( result < (unsigned int)a2 )
   {
     v6 = sub_4571C0(a2);
@@ -46591,7 +46605,7 @@ unsigned int Engine::sub_45DC70(int *_this, char *a2)
       operator delete((void *)*_this);
     }
     result = (unsigned int)v6;
-    _this[2] = (int)v6 + 72 * (_DWORD)a2;
+    this->message_buf = (int)v6 + 72 * (_DWORD)a2;
     _this[1] = result + 72 * v4;
     *_this = result;
   }
@@ -46600,9 +46614,9 @@ unsigned int Engine::sub_45DC70(int *_this, char *a2)
 
 
 /* ===== [stained] sub_45DED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DED0
+ * Engine 成员函数  → sub_45DED0
  * raw 行区间 [73575, 73598]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_45DED0(int *_this, int a2)
 {
@@ -46615,7 +46629,7 @@ unsigned int Engine::sub_45DED0(int *_this, int a2)
   if ( 59652323 - a2 < v2 )
     std___Xlength_error(aVectorTTooLong);
   v3 = (char *)(a2 + v2);
-  result = (_this[2] - *_this) / 72;
+  result = (this->message_buf - *_this) / 72;
   if ( (unsigned int)v3 > result )
   {
     if ( 59652323 - (result >> 1) >= result )
@@ -46631,9 +46645,9 @@ unsigned int Engine::sub_45DED0(int *_this, int a2)
 
 
 /* ===== [stained] sub_45DF50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45DF50
+ * Engine 成员函数  → sub_45DF50
  * raw 行区间 [73601, 73881]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45DF50(int _this)
 {
@@ -46919,9 +46933,9 @@ void Engine::sub_45DF50(int _this)
 
 
 /* ===== [stained] sub_45E730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E730
+ * Engine 成员函数  → sub_45E730
  * raw 行区间 [73963, 73984]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_45E730(int *_this, unsigned int a2)
 {
@@ -46948,9 +46962,9 @@ int Engine::sub_45E730(int *_this, unsigned int a2)
 
 
 /* ===== [stained] sub_45E7E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E7E0
+ * Engine 成员函数  → sub_45E7E0
  * raw 行区间 [73987, 74010]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 const void ** Engine::sub_45E7E0(int *_this, unsigned int a2)
 {
@@ -46961,7 +46975,7 @@ const void ** Engine::sub_45E7E0(int *_this, unsigned int a2)
   v3 = _this[1];
   if ( a2 >= v3 || *_this > a2 )
   {
-    if ( v3 == _this[2] )
+    if ( v3 == this->message_buf )
       this->sub_45DED0( 1);
     result = sub_45D3A0((int)(_this + 3), (const void **)_this[1], a2);
     _this[1] += 72;
@@ -46969,7 +46983,7 @@ const void ** Engine::sub_45E7E0(int *_this, unsigned int a2)
   else
   {
     v4 = (int)(a2 - *_this) / 72;
-    if ( v3 == _this[2] )
+    if ( v3 == this->message_buf )
       this->sub_45DED0( 1);
     result = sub_45C840((int)(_this + 3), (const void **)_this[1], *_this + 72 * v4);
     _this[1] += 72;
@@ -46979,9 +46993,9 @@ const void ** Engine::sub_45E7E0(int *_this, unsigned int a2)
 
 
 /* ===== [stained] sub_45E870  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45E870
+ * Engine 成员函数  → sub_45E870
  * raw 行区间 [74013, 74131]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45E870(int _this,
         int a2,
@@ -47104,9 +47118,9 @@ void Engine::sub_45E870(int _this,
 
 
 /* ===== [stained] sub_45EBB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EBB0
+ * Engine 成员函数  → sub_45EBB0
  * raw 行区间 [74174, 74180]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_45EBB0(void *_this, char a2)
 {
@@ -47118,9 +47132,9 @@ void * Engine::sub_45EBB0(void *_this, char a2)
 
 
 /* ===== [stained] sub_45EBE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EBE0
+ * Engine 成员函数  → sub_45EBE0
  * raw 行区间 [74183, 74194]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int Engine::sub_45EBE0(int *_this)
 {
@@ -47137,9 +47151,9 @@ unsigned int Engine::sub_45EBE0(int *_this)
 
 
 /* ===== [stained] sub_45EC60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EC60
+ * Engine 成员函数  → sub_45EC60
  * raw 行区间 [74197, 74282]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_45EC60(_DWORD *_this, int a2, int a3)
 {
@@ -47230,9 +47244,9 @@ int Engine::sub_45EC60(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_45EEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EEA0
+ * Engine 成员函数  → sub_45EEA0
  * raw 行区间 [74286, 74320]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45EEA0(int *_this, int a2, int a3, int a4, int a5, int a6)
 {
@@ -47272,9 +47286,9 @@ void Engine::sub_45EEA0(int *_this, int a2, int a3, int a4, int a5, int a6)
 
 
 /* ===== [stained] sub_45EFA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45EFA0
+ * Engine 成员函数  → sub_45EFA0
  * raw 行区间 [74323, 74357]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45EFA0(int *_this, int a2, int a3, int a4)
 {
@@ -47314,9 +47328,9 @@ void Engine::sub_45EFA0(int *_this, int a2, int a3, int a4)
 
 
 /* ===== [stained] sub_45F090  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F090
+ * Engine 成员函数  → sub_45F090
  * raw 行区间 [74360, 74400]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45F090(int *_this, int a2, int a3, int *a4, int a5, int a6, void *Src)
 {
@@ -47362,9 +47376,9 @@ void Engine::sub_45F090(int *_this, int a2, int a3, int *a4, int a5, int a6, voi
 
 
 /* ===== [stained] sub_45F1B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F1B0
+ * Engine 成员函数  → sub_45F1B0
  * raw 行区间 [74403, 74634]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_45F1B0(int *_this, HANDLE hFile)
 {
@@ -47601,9 +47615,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_45F6C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45F6C0
+ * Engine 成员函数  → sub_45F6C0
  * raw 行区间 [74638, 75116]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45F6C0(const void **_this, char *a2, char *a3, int a4, char a5)
 {
@@ -48087,9 +48101,9 @@ LABEL_118:
 
 
 /* ===== [stained] sub_45FF00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_45FF00
+ * Engine 成员函数  → sub_45FF00
  * raw 行区间 [75120, 76208]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_45FF00(int _this, int a2, _DWORD *a3)
 {
@@ -49180,9 +49194,9 @@ LABEL_238:
 
 
 /* ===== [stained] sub_461A10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_461A10
+ * Engine 成员函数  → sub_461A10
  * raw 行区间 [76214, 76508]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_461A10(int _this, int a2, const char *a3, int a4, int a5, int a6)
 {
@@ -49482,9 +49496,9 @@ LABEL_33:
 
 
 /* ===== [stained] sub_462040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_462040
+ * Engine 成员函数  → sub_462040
  * raw 行区间 [76512, 77495]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_462040(int _this, int a2, int a3, char a4, int a5, int a6, int **a7)
 {
@@ -50469,9 +50483,9 @@ LABEL_176:
 
 
 /* ===== [stained] sub_4634B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4634B0
+ * Engine 成员函数  → sub_4634B0
  * raw 行区间 [77500, 78712]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HGDIOBJ Engine::sub_4634B0(int _this, int a2, int a3, char a4, int a5, int a6, int **a7)
 {
@@ -51683,9 +51697,9 @@ LABEL_196:
 
 
 /* ===== [stained] sub_464FD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_464FD0
+ * Engine 成员函数  → sub_464FD0
  * raw 行区间 [78718, 78820]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_464FD0(int _this)
 {
@@ -51793,9 +51807,9 @@ int Engine::sub_464FD0(int _this)
 
 
 /* ===== [stained] sub_465390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465390
+ * Engine 成员函数  → sub_465390
  * raw 行区间 [78824, 78962]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_465390(int _this, int a2, int a3, int a4, char *Source)
 {
@@ -51939,9 +51953,9 @@ void Engine::sub_465390(int _this, int a2, int a3, int a4, char *Source)
 
 
 /* ===== [stained] sub_465840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465840
+ * Engine 成员函数  → sub_465840
  * raw 行区间 [78965, 79059]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_465840(int _this, int a2, int a3)
 {
@@ -52041,9 +52055,9 @@ void Engine::sub_465840(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_465A20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_465A20
+ * Engine 成员函数  → sub_465A20
  * raw 行区间 [79062, 79315]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_465A20(int _this, int a2, LPCSTR lpString, int a4, int a5, _DWORD *a6)
 {
@@ -52302,9 +52316,9 @@ LABEL_40:
 
 
 /* ===== [stained] sub_466000  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_466000
+ * Engine 成员函数  → sub_466000
  * raw 行区间 [79320, 80308]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_466000(int _this, int a2, int a3, char a4, int a5, int a6, int **a7)
 {
@@ -53295,9 +53309,9 @@ LABEL_188:
 
 
 /* ===== [stained] sub_4675A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4675A0
+ * Engine 成员函数  → sub_4675A0
  * raw 行区间 [80313, 81519]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4675A0(int _this, int a2, int a3, char a4, int a5, int a6, int **a7)
 {
@@ -54505,9 +54519,9 @@ LABEL_204:
 
 
 /* ===== [stained] sub_4691A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4691A0
+ * Engine 成员函数  → sub_4691A0
  * raw 行区间 [81524, 81527]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4691A0(int *_this, int a2, int a3, int *a4, int a5, void *Src)
 {
@@ -54516,9 +54530,9 @@ void Engine::sub_4691A0(int *_this, int a2, int a3, int *a4, int a5, void *Src)
 
 
 /* ===== [stained] sub_4691D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4691D0
+ * Engine 成员函数  → sub_4691D0
  * raw 行区间 [81530, 81554]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4691D0(int *_this, int a2, int a3)
 {
@@ -54548,9 +54562,9 @@ void Engine::sub_4691D0(int *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_469260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_469260
+ * Engine 成员函数  → sub_469260
  * raw 行区间 [81557, 82624]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_469260(int _this)
 {
@@ -55623,9 +55637,9 @@ LABEL_232:
 
 
 /* ===== [stained] sub_46AF90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46AF90
+ * Engine 成员函数  → sub_46AF90
  * raw 行区间 [82630, 82732]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46AF90(int _this, int a2, int a3)
 {
@@ -55733,9 +55747,9 @@ void Engine::sub_46AF90(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_46B100  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46B100
+ * Engine 成员函数  → sub_46B100
  * raw 行区间 [82735, 83360]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46B100(int _this, int a2, _BYTE *a3, char *a4, int a5)
 {
@@ -55995,11 +56009,11 @@ LABEL_19:
         if ( (signed int)*v24 < *(_DWORD *)(v30 + 36) )
         {
           sub_408050(
-            (char *)(_this + 8),
+            (char *)(this->message_buf),
             1024,
             "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
             *(const char **)ArgList);
-          this->sub_4034D0( (const char *)(_this + 8));
+          this->sub_4034D0( (const char *)(this->message_buf));
           break;
         }
       }
@@ -56364,9 +56378,9 @@ LABEL_19:
 
 
 /* ===== [stained] sub_46BE30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46BE30
+ * Engine 成员函数  → sub_46BE30
  * raw 行区间 [83364, 83995]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46BE30(int _this, int a2, char *a3, CHAR *a4, int a5)
 {
@@ -56727,11 +56741,11 @@ LABEL_21:
       else if ( (v27 & 2) != 0 )
       {
         sub_408050(
-          (char *)(_this + 8),
+          (char *)(this->message_buf),
           1024,
           "警告：文字がウインドウ内に収まりません\r\n[%s]\r\n",
           *(const char **)ArgList);
-        this->sub_4034D0( (const char *)(_this + 8));
+        this->sub_4034D0( (const char *)(this->message_buf));
         break;
       }
       v55 = *(_DWORD *)Src;
@@ -57001,9 +57015,9 @@ LABEL_93:
 
 
 /* ===== [stained] sub_46CBF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CBF0
+ * Engine 成员函数  → sub_46CBF0
  * raw 行区间 [83999, 84010]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46CBF0(_DWORD *_this, int a2, char *a3, CHAR *a4, int a5)
 {
@@ -57020,9 +57034,9 @@ int Engine::sub_46CBF0(_DWORD *_this, int a2, char *a3, CHAR *a4, int a5)
 
 
 /* ===== [stained] sub_46CC40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CC40
+ * Engine 成员函数  → sub_46CC40
  * raw 行区间 [84013, 84016]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46CC40(void *_this, int a2)
 {
@@ -57031,9 +57045,9 @@ void Engine::sub_46CC40(void *_this, int a2)
 
 
 /* ===== [stained] sub_46CC60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CC60
+ * Engine 成员函数  → sub_46CC60
  * raw 行区间 [84019, 84082]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_46CC60(_DWORD *_this, int a2, _DWORD *a3)
 {
@@ -57102,9 +57116,9 @@ _DWORD * Engine::sub_46CC60(_DWORD *_this, int a2, _DWORD *a3)
 
 
 /* ===== [stained] sub_46CE20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CE20
+ * Engine 成员函数  → sub_46CE20
  * raw 行区间 [84085, 84118]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_46CE20(int _this, _DWORD *a2, int a3)
 {
@@ -57127,11 +57141,11 @@ _DWORD * Engine::sub_46CE20(int _this, _DWORD *a2, int a3)
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：SetClipRectTexture エラー：テクスチャが作成されていません． TEXTURE=%d\r\n",
       a3);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     result = a2;
     *a2 = 0;
     a2[1] = 0;
@@ -57143,9 +57157,9 @@ _DWORD * Engine::sub_46CE20(int _this, _DWORD *a2, int a3)
 
 
 /* ===== [stained] sub_46CEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CEA0
+ * Engine 成员函数  → sub_46CEA0
  * raw 行区间 [84121, 84156]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46CEA0(const char *_this, int SubStr)
 {
@@ -57186,9 +57200,9 @@ int Engine::sub_46CEA0(const char *_this, int SubStr)
 
 
 /* ===== [stained] sub_46CF60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CF60
+ * Engine 成员函数  → sub_46CF60
  * raw 行区间 [84159, 84178]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46CF60(const char *_this, int SubStr)
 {
@@ -57213,9 +57227,9 @@ int Engine::sub_46CF60(const char *_this, int SubStr)
 
 
 /* ===== [stained] sub_46CFD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46CFD0
+ * Engine 成员函数  → sub_46CFD0
  * raw 行区间 [84181, 84273]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46CFD0(_DWORD *_this, _BYTE *a2, int a3, int *a4, int a5, int a6, int a7)
 {
@@ -57313,9 +57327,9 @@ int Engine::sub_46CFD0(_DWORD *_this, _BYTE *a2, int a3, int *a4, int a5, int a6
 
 
 /* ===== [stained] sub_46D9F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46D9F0
+ * Engine 成员函数  → sub_46D9F0
  * raw 行区间 [84818, 85028]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_46D9F0(_DWORD *_this, int a2, int a3, int *a4, int a5, int a6, int a7, int a8, unsigned int a9)
 {
@@ -57531,9 +57545,9 @@ int Engine::sub_46D9F0(_DWORD *_this, int a2, int a3, int *a4, int a5, int a6, i
 
 
 /* ===== [stained] sub_46DED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46DED0
+ * Engine 成员函数  → sub_46DED0
  * raw 行区间 [85032, 85244]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46DED0(int _this, int a2, int a3, int a4, int a5, int a6, char *Source)
 {
@@ -57751,9 +57765,9 @@ LABEL_31:
 
 
 /* ===== [stained] sub_46E3E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46E3E0
+ * Engine 成员函数  → sub_46E3E0
  * raw 行区间 [85249, 85668]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46E3E0(int _this, unsigned int a2, int a3, int a4, int a5, int a6, char *a7)
 {
@@ -58176,9 +58190,9 @@ LABEL_103:
 
 
 /* ===== [stained] sub_46ED70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46ED70
+ * Engine 成员函数  → sub_46ED70
  * raw 行区间 [85734, 85886]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46ED70(_DWORD *_this, int a2, int a3, int a4, int a5, int a6, char *Source)
 {
@@ -58336,9 +58350,9 @@ LABEL_14:
 
 
 /* ===== [stained] sub_46F190  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46F190
+ * Engine 成员函数  → sub_46F190
  * raw 行区间 [85891, 85930]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46F190(int *_this, int a2, int a3, int a4, int a5, int a6, char *Source, int a8)
 {
@@ -58383,9 +58397,9 @@ void Engine::sub_46F190(int *_this, int a2, int a3, int a4, int a5, int a6, char
 
 
 /* ===== [stained] sub_46F2D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46F2D0
+ * Engine 成员函数  → sub_46F2D0
  * raw 行区间 [85934, 86350]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46F2D0(int _this, int a2, int a3, int a4, int a5, int a6, void *a7)
 {
@@ -58805,9 +58819,9 @@ LABEL_100:
 
 
 /* ===== [stained] sub_46FA60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46FA60
+ * Engine 成员函数  → sub_46FA60
  * raw 行区间 [86359, 86404]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46FA60(int _this, int a2, int a3, int a4, int a5, int a6, char *Source, int a8)
 {
@@ -58858,9 +58872,9 @@ void Engine::sub_46FA60(int _this, int a2, int a3, int a4, int a5, int a6, char 
 
 
 /* ===== [stained] sub_46FB90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_46FB90
+ * Engine 成员函数  → sub_46FB90
  * raw 行区间 [86408, 87090]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_46FB90(int _this, int a2, int a3, int a4, int a5, int a6, char *Source, int a8)
 {
@@ -59548,9 +59562,9 @@ LABEL_112:
 
 
 /* ===== [stained] sub_471180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_471180
+ * Engine 成员函数  → sub_471180
  * raw 行区间 [87103, 87735]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_471180(int _this, int a2, int a3, int a4, int a5, int a6, char *a7, int a8)
 {
@@ -60185,9 +60199,9 @@ LABEL_58:
 
 
 /* ===== [stained] sub_471DF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_471DF0
+ * Engine 成员函数  → sub_471DF0
  * raw 行区间 [87747, 88467]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_471DF0(int _this, int a2, int a3, int a4, int a5, int a6, char *Source, int a8)
 {
@@ -60913,9 +60927,9 @@ LABEL_119:
 
 
 /* ===== [stained] sub_4734F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4734F0
+ * Engine 成员函数  → sub_4734F0
  * raw 行区间 [88479, 89098]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4734F0(int _this, unsigned int a2, int a3, char *a4, int a5, int a6, char *a7, int a8)
 {
@@ -61537,9 +61551,9 @@ LABEL_145:
 
 
 /* ===== [stained] sub_4742F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4742F0
+ * Engine 成员函数  → sub_4742F0
  * raw 行区间 [89109, 89154]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4742F0(int _this, int a2, int a3, int a4, int a5, int a6, char *Source, int a8, int a9)
 {
@@ -61590,9 +61604,9 @@ void Engine::sub_4742F0(int _this, int a2, int a3, int a4, int a5, int a6, char 
 
 
 /* ===== [stained] sub_474440  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474440
+ * Engine 成员函数  → sub_474440
  * raw 行区间 [89158, 89200]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_474440(int _this, int a2, int a3, char *a4, int a5, int a6, char *Source, int a8, int a9)
 {
@@ -61640,9 +61654,9 @@ void Engine::sub_474440(int _this, int a2, int a3, char *a4, int a5, int a6, cha
 
 
 /* ===== [stained] sub_4745A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4745A0
+ * Engine 成员函数  → sub_4745A0
  * raw 行区间 [89204, 89497]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4745A0(_DWORD *_this)
 {
@@ -61941,9 +61955,9 @@ void Engine::sub_4745A0(_DWORD *_this)
 
 
 /* ===== [stained] sub_474BD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474BD0
+ * Engine 成员函数  → sub_474BD0
  * raw 行区间 [89500, 89676]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_474BD0(int *_this, int a2, int a3, int a4, int a5, int a6, unsigned __int8 *a7)
 {
@@ -62125,9 +62139,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_474F60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_474F60
+ * Engine 成员函数  → sub_474F60
  * raw 行区间 [89681, 89952]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_474F60(int *_this, int a2, int a3, int a4, int a5, int a6, _BYTE *a7)
 {
@@ -62404,9 +62418,9 @@ LABEL_72:
 
 
 /* ===== [stained] sub_475450  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_475450
+ * Engine 成员函数  → sub_475450
  * raw 行区间 [89957, 90135]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_475450(int _this, int a2, int a3, int a4, int a5, int a6, unsigned __int8 *a7)
 {
@@ -62590,9 +62604,9 @@ LABEL_45:
 
 
 /* ===== [stained] sub_4757F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4757F0
+ * Engine 成员函数  → sub_4757F0
  * raw 行区间 [90140, 90422]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4757F0(int _this, int a2, int a3, int a4, int a5, int a6, unsigned __int8 *a7)
 {
@@ -62880,9 +62894,9 @@ LABEL_74:
 
 
 /* ===== [stained] sub_475F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_475F10
+ * Engine 成员函数  → sub_475F10
  * raw 行区间 [90532, 90568]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_475F10(void *_this)
 {
@@ -62924,9 +62938,9 @@ int Engine::sub_475F10(void *_this)
 
 
 /* ===== [stained] sub_476010  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476010
+ * Engine 成员函数  → sub_476010
  * raw 行区间 [90572, 90578]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_476010(void *_this, char a2)
 {
@@ -62938,9 +62952,9 @@ void * Engine::sub_476010(void *_this, char a2)
 
 
 /* ===== [stained] sub_476040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476040
+ * Engine 成员函数  → sub_476040
  * raw 行区间 [90581, 90589]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_476040(_DWORD *_this)
 {
@@ -62954,9 +62968,9 @@ _DWORD * Engine::sub_476040(_DWORD *_this)
 
 
 /* ===== [stained] sub_476100  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476100
+ * Engine 成员函数  → sub_476100
  * raw 行区间 [90612, 90617]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_476100(_DWORD *_this)
 {
@@ -62967,9 +62981,9 @@ void Engine::sub_476100(_DWORD *_this)
 
 
 /* ===== [stained] sub_476160  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476160
+ * Engine 成员函数  → sub_476160
  * raw 行区间 [90621, 90627]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_476160(_DWORD *_this, char a2)
 {
@@ -62981,9 +62995,9 @@ _DWORD * Engine::sub_476160(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_476220  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476220
+ * Engine 成员函数  → sub_476220
  * raw 行区间 [90670, 90673]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_476220(_DWORD *_this)
 {
@@ -62992,9 +63006,9 @@ void Engine::sub_476220(_DWORD *_this)
 
 
 /* ===== [stained] sub_476760  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476760
+ * Engine 成员函数  → sub_476760
  * raw 行区间 [91177, 91207]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_476760(int _this)
 {
@@ -63030,9 +63044,9 @@ int Engine::sub_476760(int _this)
 
 
 /* ===== [stained] sub_476920  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476920
+ * Engine 成员函数  → sub_476920
  * raw 行区间 [91235, 91241]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_476920(_DWORD *_this, char a2)
 {
@@ -63044,9 +63058,9 @@ _DWORD * Engine::sub_476920(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_476AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_476AA0
+ * Engine 成员函数  → sub_476AA0
  * raw 行区间 [91325, 91424]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_476AA0(_DWORD *_this)
 {
@@ -63151,9 +63165,9 @@ int Engine::sub_476AA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_477050  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477050
+ * Engine 成员函数  → sub_477050
  * raw 行区间 [91530, 91538]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_477050(void **_this)
 {
@@ -63167,9 +63181,9 @@ int Engine::sub_477050(void **_this)
 
 
 /* ===== [stained] sub_477DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477DD0
+ * Engine 成员函数  → sub_477DD0
  * raw 行区间 [92374, 92426]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_477DD0(_DWORD *_this)
 {
@@ -63227,9 +63241,9 @@ _DWORD * Engine::sub_477DD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_477FF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_477FF0
+ * Engine 成员函数  → sub_477FF0
  * raw 行区间 [92430, 92435]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_477FF0(void **_this)
 {
@@ -63240,9 +63254,9 @@ void Engine::sub_477FF0(void **_this)
 
 
 /* ===== [stained] sub_478100  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_478100
+ * Engine 成员函数  → sub_478100
  * raw 行区间 [92474, 92480]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void ** Engine::sub_478100(void **_this, char a2)
 {
@@ -63254,9 +63268,9 @@ void ** Engine::sub_478100(void **_this, char a2)
 
 
 /* ===== [stained] sub_478F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_478F50
+ * Engine 成员函数  → sub_478F50
  * raw 行区间 [93323, 93355]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_478F50(int _this,
         void *a2,
@@ -63293,9 +63307,9 @@ int Engine::sub_478F50(int _this,
 
 
 /* ===== [stained] sub_479010  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479010
+ * Engine 成员函数  → sub_479010
  * raw 行区间 [93358, 93383]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_479010(void *_this)
 {
@@ -63303,7 +63317,7 @@ void Engine::sub_479010(void *_this)
   int v3; // esi
 
   *(_DWORD *)_this = &Leaf___vftable_;
-  for ( i = 0; i < *((_DWORD *)_this + 2); ++i )
+  for ( i = 0; i < this->message_buf; ++i )
   {
     v3 = *(_DWORD *)(*((_DWORD *)_this + 39) + 4 * i);
     if ( v3 )
@@ -63326,9 +63340,9 @@ void Engine::sub_479010(void *_this)
 
 
 /* ===== [stained] sub_479200  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479200
+ * Engine 成员函数  → sub_479200
  * raw 行区间 [93458, 93464]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_479200(void *_this, char a2)
 {
@@ -63340,9 +63354,9 @@ void * Engine::sub_479200(void *_this, char a2)
 
 
 /* ===== [stained] sub_479290  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_479290
+ * Engine 成员函数  → sub_479290
  * raw 行区间 [93492, 93500]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __stdcall Engine::sub_479290(int a1, void *a2)
 {
@@ -63356,9 +63370,9 @@ int __stdcall Engine::sub_479290(int a1, void *a2)
 
 
 /* ===== [stained] sub_47A220  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47A220
+ * Engine 成员函数  → sub_47A220
  * raw 行区间 [94261, 94269]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __stdcall Engine::sub_47A220(int a1, void *a2)
 {
@@ -63372,9 +63386,9 @@ int __stdcall Engine::sub_47A220(int a1, void *a2)
 
 
 /* ===== [stained] sub_47AD40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47AD40
+ * Engine 成员函数  → sub_47AD40
  * raw 行区间 [94776, 94845]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_47AD40(int _this, HRESULT *a2)
 {
@@ -63449,9 +63463,9 @@ int Engine::sub_47AD40(int _this, HRESULT *a2)
 
 
 /* ===== [stained] sub_47AEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47AEA0
+ * Engine 成员函数  → sub_47AEA0
  * raw 行区间 [94851, 94908]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_47AEA0(char *_this)
 {
@@ -63514,9 +63528,9 @@ int Engine::sub_47AEA0(char *_this)
 
 
 /* ===== [stained] sub_47B100  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47B100
+ * Engine 成员函数  → sub_47B100
  * raw 行区间 [94974, 94980]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_47B100(char *_this, char a2)
 {
@@ -63528,9 +63542,9 @@ char * Engine::sub_47B100(char *_this, char a2)
 
 
 /* ===== [stained] sub_47BD70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BD70
+ * Engine 成员函数  → sub_47BD70
  * raw 行区间 [95543, 95614]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_47BD70(char *_this)
 {
@@ -63552,7 +63566,7 @@ char * Engine::sub_47BD70(char *_this)
   v2 = InitializeCriticalSectionAndSpinCount;
   *(_DWORD *)_this = &MFPresenter___vftable_;
   *((_DWORD *)_this + 1) = &MFPresenter___vftable_;
-  *((_DWORD *)_this + 2) = &MFPresenter___vftable_;
+  this->message_buf = &MFPresenter___vftable_;
   *((_DWORD *)_this + 3) = &MFPresenter___vftable_;
   *((_DWORD *)_this + 4) = &MFPresenter___vftable_;
   *((_DWORD *)_this + 5) = &MFPresenter___vftable_;
@@ -63607,9 +63621,9 @@ char * Engine::sub_47BD70(char *_this)
 
 
 /* ===== [stained] sub_47BF30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BF30
+ * Engine 成员函数  → sub_47BF30
  * raw 行区间 [95624, 95627]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_47BF30(char *_this, char a2)
 {
@@ -63618,9 +63632,9 @@ void * Engine::sub_47BF30(char *_this, char a2)
 
 
 /* ===== [stained] sub_47BF40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47BF40
+ * Engine 成员函数  → sub_47BF40
  * raw 行区间 [95630, 95669]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_47BF40(int _this)
 {
@@ -63665,16 +63679,16 @@ int Engine::sub_47BF40(int _this)
 
 
 /* ===== [stained] sub_47C0B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C0B0
+ * Engine 成员函数  → sub_47C0B0
  * raw 行区间 [95673, 95685]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_47C0B0(int _this, int a2)
 {
   sub_47BD70((char *)_this);
   *(_DWORD *)_this = &ATL__CComObject_MFPresenter____vftable_;
   *(_DWORD *)(_this + 4) = &ATL__CComObject_MFPresenter____vftable_;
-  *(_DWORD *)(_this + 8) = &ATL__CComObject_MFPresenter____vftable_;
+  this->message_buf = &ATL__CComObject_MFPresenter____vftable_;
   *(_DWORD *)(_this + 12) = &ATL__CComObject_MFPresenter____vftable_;
   *(_DWORD *)(_this + 16) = &ATL__CComObject_MFPresenter____vftable_;
   *(_DWORD *)(_this + 20) = &ATL__CComObject_MFPresenter____vftable_;
@@ -63685,9 +63699,9 @@ int Engine::sub_47C0B0(int _this, int a2)
 
 
 /* ===== [stained] sub_47C360  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C360
+ * Engine 成员函数  → sub_47C360
  * raw 行区间 [95832, 95835]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47C360(_DWORD *_this, char a2)
 {
@@ -63696,9 +63710,9 @@ _DWORD * Engine::sub_47C360(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47C3F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C3F0
+ * Engine 成员函数  → sub_47C3F0
  * raw 行区间 [95881, 95887]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_47C3F0(void *_this, char a2)
 {
@@ -63710,15 +63724,15 @@ void * Engine::sub_47C3F0(void *_this, char a2)
 
 
 /* ===== [stained] sub_47C420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C420
+ * Engine 成员函数  → sub_47C420
  * raw 行区间 [95890, 95903]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_47C420(_DWORD *_this)
 {
   *_this = &ATL__CComObject_MFPresenter____vftable_;
   _this[1] = &ATL__CComObject_MFPresenter____vftable_;
-  _this[2] = &ATL__CComObject_MFPresenter____vftable_;
+  this->message_buf = &ATL__CComObject_MFPresenter____vftable_;
   _this[3] = &ATL__CComObject_MFPresenter____vftable_;
   _this[4] = &ATL__CComObject_MFPresenter____vftable_;
   _this[5] = &ATL__CComObject_MFPresenter____vftable_;
@@ -63731,9 +63745,9 @@ int Engine::sub_47C420(_DWORD *_this)
 
 
 /* ===== [stained] sub_47C4C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47C4C0
+ * Engine 成员函数  → sub_47C4C0
  * raw 行区间 [95915, 95921]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47C4C0(_DWORD *_this, char a2)
 {
@@ -63745,9 +63759,9 @@ _DWORD * Engine::sub_47C4C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47CF90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47CF90
+ * Engine 成员函数  → sub_47CF90
  * raw 行区间 [96397, 96403]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47CF90(_DWORD *_this, char a2)
 {
@@ -63759,9 +63773,9 @@ _DWORD * Engine::sub_47CF90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47D790  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D790
+ * Engine 成员函数  → sub_47D790
  * raw 行区间 [96777, 96784]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47D790(_DWORD *_this, char a2)
 {
@@ -63774,9 +63788,9 @@ _DWORD * Engine::sub_47D790(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47D8C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D8C0
+ * Engine 成员函数  → sub_47D8C0
  * raw 行区间 [96836, 96843]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47D8C0(_DWORD *_this, char a2)
 {
@@ -63789,9 +63803,9 @@ _DWORD * Engine::sub_47D8C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47D9E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47D9E0
+ * Engine 成员函数  → sub_47D9E0
  * raw 行区间 [96889, 96896]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47D9E0(_DWORD *_this, char a2)
 {
@@ -63804,9 +63818,9 @@ _DWORD * Engine::sub_47D9E0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47DB00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DB00
+ * Engine 成员函数  → sub_47DB00
  * raw 行区间 [96942, 96949]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47DB00(_DWORD *_this, char a2)
 {
@@ -63819,9 +63833,9 @@ _DWORD * Engine::sub_47DB00(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47DC30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DC30
+ * Engine 成员函数  → sub_47DC30
  * raw 行区间 [97001, 97008]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47DC30(_DWORD *_this, char a2)
 {
@@ -63834,9 +63848,9 @@ _DWORD * Engine::sub_47DC30(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47DD50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DD50
+ * Engine 成员函数  → sub_47DD50
  * raw 行区间 [97054, 97061]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47DD50(_DWORD *_this, char a2)
 {
@@ -63849,9 +63863,9 @@ _DWORD * Engine::sub_47DD50(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47DE70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DE70
+ * Engine 成员函数  → sub_47DE70
  * raw 行区间 [97107, 97114]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47DE70(_DWORD *_this, char a2)
 {
@@ -63864,9 +63878,9 @@ _DWORD * Engine::sub_47DE70(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47DF90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47DF90
+ * Engine 成员函数  → sub_47DF90
  * raw 行区间 [97161, 97168]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47DF90(_DWORD *_this, char a2)
 {
@@ -63879,9 +63893,9 @@ _DWORD * Engine::sub_47DF90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47E660  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47E660
+ * Engine 成员函数  → sub_47E660
  * raw 行区间 [97450, 97455]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_47E660(void *_this, int a2)
 {
@@ -63892,9 +63906,9 @@ void Engine::sub_47E660(void *_this, int a2)
 
 
 /* ===== [stained] sub_47F950  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47F950
+ * Engine 成员函数  → sub_47F950
  * raw 行区间 [98282, 98288]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47F950(_DWORD *_this, char a2)
 {
@@ -63906,9 +63920,9 @@ _DWORD * Engine::sub_47F950(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47FB40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FB40
+ * Engine 成员函数  → sub_47FB40
  * raw 行区间 [98366, 98372]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47FB40(_DWORD *_this, char a2)
 {
@@ -63920,9 +63934,9 @@ _DWORD * Engine::sub_47FB40(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47FB70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FB70
+ * Engine 成员函数  → sub_47FB70
  * raw 行区间 [98376, 98382]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47FB70(_DWORD *_this, char a2)
 {
@@ -63934,9 +63948,9 @@ _DWORD * Engine::sub_47FB70(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_47FBB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_47FBB0
+ * Engine 成员函数  → sub_47FBB0
  * raw 行区间 [98393, 98399]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_47FBB0(_DWORD *_this, char a2)
 {
@@ -63948,9 +63962,9 @@ _DWORD * Engine::sub_47FBB0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4811E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4811E0
+ * Engine 成员函数  → sub_4811E0
  * raw 行区间 [99429, 99444]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4811E0(_DWORD *_this, char a2)
 {
@@ -63971,9 +63985,9 @@ _DWORD * Engine::sub_4811E0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_481780  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481780
+ * Engine 成员函数  → sub_481780
  * raw 行区间 [99692, 99749]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_481780(int _this, int a2)
 {
@@ -64036,9 +64050,9 @@ int Engine::sub_481780(int _this, int a2)
 
 
 /* ===== [stained] sub_481D10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481D10
+ * Engine 成员函数  → sub_481D10
  * raw 行区间 [99996, 100064]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char Engine::sub_481D10(_DWORD *_this, int a2)
 {
@@ -64112,9 +64126,9 @@ LABEL_7:
 
 
 /* ===== [stained] sub_481F90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_481F90
+ * Engine 成员函数  → sub_481F90
  * raw 行区间 [100181, 100208]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_481F90(_DWORD *_this)
 {
@@ -64147,9 +64161,9 @@ int Engine::sub_481F90(_DWORD *_this)
 
 
 /* ===== [stained] sub_4820B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4820B0
+ * Engine 成员函数  → sub_4820B0
  * raw 行区间 [100231, 100237]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4820B0(_DWORD *_this, char a2)
 {
@@ -64161,9 +64175,9 @@ _DWORD * Engine::sub_4820B0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4820F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4820F0
+ * Engine 成员函数  → sub_4820F0
  * raw 行区间 [100247, 100254]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4820F0(_DWORD *_this, char a2)
 {
@@ -64176,9 +64190,9 @@ _DWORD * Engine::sub_4820F0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_482350  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482350
+ * Engine 成员函数  → sub_482350
  * raw 行区间 [100365, 100371]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_482350(void *_this, char a2)
 {
@@ -64190,9 +64204,9 @@ void * Engine::sub_482350(void *_this, char a2)
 
 
 /* ===== [stained] sub_4823B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4823B0
+ * Engine 成员函数  → sub_4823B0
  * raw 行区间 [100374, 100552]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4823B0(int _this)
 {
@@ -64376,9 +64390,9 @@ LABEL_44:
 
 
 /* ===== [stained] sub_482A90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482A90
+ * Engine 成员函数  → sub_482A90
  * raw 行区间 [100764, 100770]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_482A90(void *_this, char a2)
 {
@@ -64390,9 +64404,9 @@ void * Engine::sub_482A90(void *_this, char a2)
 
 
 /* ===== [stained] sub_482AC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_482AC0
+ * Engine 成员函数  → sub_482AC0
  * raw 行区间 [100773, 100779]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_482AC0(void *_this, char a2)
 {
@@ -64404,9 +64418,9 @@ void * Engine::sub_482AC0(void *_this, char a2)
 
 
 /* ===== [stained] sub_483040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483040
+ * Engine 成员函数  → sub_483040
  * raw 行区间 [101028, 101038]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_483040(_DWORD *_this, char a2)
 {
@@ -64422,9 +64436,9 @@ _DWORD * Engine::sub_483040(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_483120  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483120
+ * Engine 成员函数  → sub_483120
  * raw 行区间 [101056, 101070]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_483120(_DWORD *_this)
 {
@@ -64444,9 +64458,9 @@ int Engine::sub_483120(_DWORD *_this)
 
 
 /* ===== [stained] sub_4831C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4831C0
+ * Engine 成员函数  → sub_4831C0
  * raw 行区间 [101075, 101081]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4831C0(_DWORD *_this, char a2)
 {
@@ -64458,9 +64472,9 @@ _DWORD * Engine::sub_4831C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_483A60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483A60
+ * Engine 成员函数  → sub_483A60
  * raw 行区间 [101447, 101453]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 bool __cdecl Engine::sub_483A60(int a1, _BYTE *a2)
 {
@@ -64472,9 +64486,9 @@ bool __cdecl Engine::sub_483A60(int a1, _BYTE *a2)
 
 
 /* ===== [stained] sub_483CD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483CD0
+ * Engine 成员函数  → sub_483CD0
  * raw 行区间 [101559, 101566]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_483CD0(_DWORD *_this)
 {
@@ -64487,9 +64501,9 @@ void Engine::sub_483CD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_483D50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483D50
+ * Engine 成员函数  → sub_483D50
  * raw 行区间 [101572, 101582]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_483D50(_DWORD *_this, char a2)
 {
@@ -64505,9 +64519,9 @@ _DWORD * Engine::sub_483D50(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_483ED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_483ED0
+ * Engine 成员函数  → sub_483ED0
  * raw 行区间 [101621, 101624]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_483ED0(char *_this, char a2)
 {
@@ -64516,9 +64530,9 @@ void * Engine::sub_483ED0(char *_this, char a2)
 
 
 /* ===== [stained] sub_4844D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4844D0
+ * Engine 成员函数  → sub_4844D0
  * raw 行区间 [101886, 101904]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4844D0(void *_this, char a2)
 {
@@ -64532,7 +64546,7 @@ void * Engine::sub_4844D0(void *_this, char a2)
   {
     operator delete[](*((void **)_this + 1));
     *((_DWORD *)_this + 1) = 0;
-    *((_DWORD *)_this + 2) = 0;
+    this->message_buf = 0;
     *((_DWORD *)_this + 3) = 0;
   }
   if ( (a2 & 1) != 0 )
@@ -64542,9 +64556,9 @@ void * Engine::sub_4844D0(void *_this, char a2)
 
 
 /* ===== [stained] sub_484740  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484740
+ * Engine 成员函数  → sub_484740
  * raw 行区间 [101985, 101988]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 bool __cdecl Engine::sub_484740(int a1, _BYTE *a2)
 {
@@ -64553,9 +64567,9 @@ bool __cdecl Engine::sub_484740(int a1, _BYTE *a2)
 
 
 /* ===== [stained] sub_484CD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484CD0
+ * Engine 成员函数  → sub_484CD0
  * raw 行区间 [102274, 102314]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_484CD0(int _this)
 {
@@ -64601,9 +64615,9 @@ void Engine::sub_484CD0(int _this)
 
 
 /* ===== [stained] sub_484E30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484E30
+ * Engine 成员函数  → sub_484E30
  * raw 行区间 [102323, 102329]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_484E30(void *_this, char a2)
 {
@@ -64615,9 +64629,9 @@ void * Engine::sub_484E30(void *_this, char a2)
 
 
 /* ===== [stained] sub_484FE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_484FE0
+ * Engine 成员函数  → sub_484FE0
  * raw 行区间 [102395, 102426]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_484FE0(_DWORD *_this)
 {
@@ -64654,9 +64668,9 @@ void Engine::sub_484FE0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4850C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4850C0
+ * Engine 成员函数  → sub_4850C0
  * raw 行区间 [102437, 102440]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4850C0(_DWORD *_this, char a2)
 {
@@ -64665,9 +64679,9 @@ _DWORD * Engine::sub_4850C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4853A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4853A0
+ * Engine 成员函数  → sub_4853A0
  * raw 行区间 [102623, 102629]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4853A0(_DWORD *_this, char a2)
 {
@@ -64679,9 +64693,9 @@ _DWORD * Engine::sub_4853A0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4853D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4853D0
+ * Engine 成员函数  → sub_4853D0
  * raw 行区间 [102632, 102683]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4853D0(char *_this)
 {
@@ -64738,9 +64752,9 @@ int Engine::sub_4853D0(char *_this)
 
 
 /* ===== [stained] sub_485610  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485610
+ * Engine 成员函数  → sub_485610
  * raw 行区间 [102710, 102713]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_485610(char *_this, char a2)
 {
@@ -64749,9 +64763,9 @@ char * Engine::sub_485610(char *_this, char a2)
 
 
 /* ===== [stained] sub_485620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485620
+ * Engine 成员函数  → sub_485620
  * raw 行区间 [102716, 102784]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_485620(int _this, int a2)
 {
@@ -64825,9 +64839,9 @@ int Engine::sub_485620(int _this, int a2)
 
 
 /* ===== [stained] sub_485850  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485850
+ * Engine 成员函数  → sub_485850
  * raw 行区间 [102793, 102799]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_485850(char *_this, char a2)
 {
@@ -64839,9 +64853,9 @@ char * Engine::sub_485850(char *_this, char a2)
 
 
 /* ===== [stained] sub_485880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485880
+ * Engine 成员函数  → sub_485880
  * raw 行区间 [102802, 102937]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_485880(char *_this, int ArgList)
 {
@@ -64982,9 +64996,9 @@ LABEL_24:
 
 
 /* ===== [stained] sub_485BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485BA0
+ * Engine 成员函数  → sub_485BA0
  * raw 行区间 [102946, 102996]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __stdcall Engine::sub_485BA0(int a1, int a2)
 {
@@ -65040,9 +65054,9 @@ LABEL_2:
 
 
 /* ===== [stained] sub_485D40  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485D40
+ * Engine 成员函数  → sub_485D40
  * raw 行区间 [102999, 103006]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_485D40(_DWORD *_this)
 {
@@ -65055,9 +65069,9 @@ _DWORD * Engine::sub_485D40(_DWORD *_this)
 
 
 /* ===== [stained] sub_485DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485DD0
+ * Engine 成员函数  → sub_485DD0
  * raw 行区间 [103017, 103024]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 MCIERROR Engine::sub_485DD0(_DWORD *_this)
 {
@@ -65070,9 +65084,9 @@ MCIERROR Engine::sub_485DD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_485DF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485DF0
+ * Engine 成员函数  → sub_485DF0
  * raw 行区间 [103027, 103035]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_485DF0(_DWORD *_this)
 {
@@ -65086,9 +65100,9 @@ int Engine::sub_485DF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_485E20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485E20
+ * Engine 成员函数  → sub_485E20
  * raw 行区间 [103038, 103044]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_485E20(_DWORD *_this)
 {
@@ -65100,9 +65114,9 @@ void Engine::sub_485E20(_DWORD *_this)
 
 
 /* ===== [stained] sub_485E90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485E90
+ * Engine 成员函数  → sub_485E90
  * raw 行区间 [103048, 103054]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_485E90(_DWORD *_this, char a2)
 {
@@ -65114,9 +65128,9 @@ _DWORD * Engine::sub_485E90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_485ED0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485ED0
+ * Engine 成员函数  → sub_485ED0
  * raw 行区间 [103064, 103070]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_485ED0(_DWORD *_this, char a2)
 {
@@ -65128,9 +65142,9 @@ _DWORD * Engine::sub_485ED0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_485FA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_485FA0
+ * Engine 成员函数  → sub_485FA0
  * raw 行区间 [103094, 103119]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_485FA0(_DWORD *_this)
 {
@@ -65161,9 +65175,9 @@ _DWORD * Engine::sub_485FA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_486110  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486110
+ * Engine 成员函数  → sub_486110
  * raw 行区间 [103166, 103183]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_486110(int **_this)
 {
@@ -65186,9 +65200,9 @@ int Engine::sub_486110(int **_this)
 
 
 /* ===== [stained] sub_486330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486330
+ * Engine 成员函数  → sub_486330
  * raw 行区间 [103262, 103300]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_486330(int **_this)
 {
@@ -65232,9 +65246,9 @@ int Engine::sub_486330(int **_this)
 
 
 /* ===== [stained] sub_4863C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4863C0
+ * Engine 成员函数  → sub_4863C0
  * raw 行区间 [103303, 103315]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4863C0(_DWORD **_this, int a2)
 {
@@ -65252,9 +65266,9 @@ int Engine::sub_4863C0(_DWORD **_this, int a2)
 
 
 /* ===== [stained] sub_4865B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4865B0
+ * Engine 成员函数  → sub_4865B0
  * raw 行区间 [103394, 103403]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_4865B0(char *_this, char a2)
 {
@@ -65269,9 +65283,9 @@ char * Engine::sub_4865B0(char *_this, char a2)
 
 
 /* ===== [stained] sub_486630  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486630
+ * Engine 成员函数  → sub_486630
  * raw 行区间 [103408, 103414]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_486630(char *_this, char a2)
 {
@@ -65283,9 +65297,9 @@ char * Engine::sub_486630(char *_this, char a2)
 
 
 /* ===== [stained] sub_486690  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486690
+ * Engine 成员函数  → sub_486690
  * raw 行区间 [103417, 103423]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_486690(int **_this)
 {
@@ -65297,9 +65311,9 @@ void Engine::sub_486690(int **_this)
 
 
 /* ===== [stained] sub_4866F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4866F0
+ * Engine 成员函数  → sub_4866F0
  * raw 行区间 [103427, 103478]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_4866F0(int _this,
         int (__stdcall ***a2)(_DWORD, void *, int),
@@ -65323,8 +65337,8 @@ BOOL Engine::sub_4866F0(int _this,
     v13 = Instance;
     v12 = aInitCocreatein;
 LABEL_3:
-    sub_408050((char *)(_this + 8), 1024, v12, v13);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, v12, v13);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v8 = *v5;
@@ -65355,9 +65369,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_486970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486970
+ * Engine 成员函数  → sub_486970
  * raw 行区间 [103598, 103609]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_486970(int _this, int a2)
 {
@@ -65374,9 +65388,9 @@ int Engine::sub_486970(int _this, int a2)
 
 
 /* ===== [stained] sub_486990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486990
+ * Engine 成员函数  → sub_486990
  * raw 行区间 [103612, 103618]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_486990(int **_this, char a2)
 {
@@ -65388,9 +65402,9 @@ int ** Engine::sub_486990(int **_this, char a2)
 
 
 /* ===== [stained] sub_4869C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4869C0
+ * Engine 成员函数  → sub_4869C0
  * raw 行区间 [103621, 103680]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4869C0(int _this, int a2)
 {
@@ -65412,9 +65426,9 @@ int Engine::sub_4869C0(int _this, int a2)
          0);
   if ( v3 < 0 )
   {
-    v4 = (const void *)(_this + 8);
+    v4 = (const void *)(this->message_buf);
     v10 = sub_4867D0(v3);
-    sub_408050((char *)(_this + 8), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v10);
+    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v10);
 LABEL_3:
     this->sub_4034C0( v4);
     return 0;
@@ -65428,15 +65442,15 @@ LABEL_3:
   if ( v6 < 0 )
   {
     v7 = sub_4867D0(v6);
-    sub_408050((char *)(_this + 8), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v7);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：AddMediaStreamに失敗しました %s", v7);
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   v8 = (***(int (__stdcall ****)(_DWORD, void *, int))(_this + 1032))(*(_DWORD *)(_this + 1032), &unk_52FC18, _this + 1036);
   if ( v8 < 0 )
   {
-    v4 = (const void *)(_this + 8);
+    v4 = (const void *)(this->message_buf);
     v11 = sub_4867D0(v8);
-    sub_408050((char *)(_this + 8), 1024, "関数：CreateMedia エラー：QueryInterfaceに失敗しました %s", v11);
+    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：QueryInterfaceに失敗しました %s", v11);
     goto LABEL_3;
   }
   v9 = (*(int (__stdcall **)(_DWORD, void *, int))(**(_DWORD **)(_this + 1036) + 16))(
@@ -65445,9 +65459,9 @@ LABEL_3:
          _this + 1040);
   if ( v9 < 0 )
   {
-    v4 = (const void *)(_this + 8);
+    v4 = (const void *)(this->message_buf);
     v12 = sub_4867D0(v9);
-    sub_408050((char *)(_this + 8), 1024, "関数：CreateMedia エラー：GetMediaStreamに失敗しました %s", v12);
+    sub_408050((char *)(this->message_buf), 1024, "関数：CreateMedia エラー：GetMediaStreamに失敗しました %s", v12);
     goto LABEL_3;
   }
   return 1;
@@ -65455,9 +65469,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_486AD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486AD0
+ * Engine 成员函数  → sub_486AD0
  * raw 行区间 [103683, 103762]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_486AD0(int _this, int a2)
 {
@@ -65480,10 +65494,10 @@ int Engine::sub_486AD0(int _this, int a2)
   v4 = (***(int (__stdcall ****)(_DWORD, void *, int))(_this + 1040))(*(_DWORD *)(_this + 1040), &unk_52FC08, _this + 1044);
   if ( v4 < 0 )
   {
-    v5 = (const void *)(_this + 8);
+    v5 = (const void *)(this->message_buf);
     v12 = sub_4867D0(v4);
     sub_408050(
-      (char *)(_this + 8),
+      (char *)(this->message_buf),
       1024,
       "関数：CreateMediaSurface エラー：QueryInterfaceに失敗しました %s",
       v12);
@@ -65497,10 +65511,10 @@ LABEL_3:
   v8 = (*(int (__stdcall **)(int, int *, _DWORD, _DWORD, _DWORD))(*(_DWORD *)v7 + 36))(v7, v16, 0, 0, 0);
   if ( v8 < 0 )
   {
-    v5 = (const void *)(_this + 8);
+    v5 = (const void *)(this->message_buf);
     v13 = sub_4867D0(v8);
     sub_408050(
-      (char *)(_this + 8),
+      (char *)(this->message_buf),
       1024,
       "関数：CreateMediaSurface エラー：GetFormatに失敗しました %s",
       v13);
@@ -65526,10 +65540,10 @@ LABEL_3:
             _this + 1048);
     if ( v10 < 0 )
     {
-      v5 = (const void *)(_this + 8);
+      v5 = (const void *)(this->message_buf);
       v15 = sub_4867D0(v10);
       sub_408050(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         1024,
         "関数：CreateMediaSurface エラー：CreateSampleに失敗しました %s",
         v15);
@@ -65542,9 +65556,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_486C20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486C20
+ * Engine 成员函数  → sub_486C20
  * raw 行区间 [103765, 103892]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_486C20(int _this, char *a2, int a3)
 {
@@ -65612,8 +65626,8 @@ int Engine::sub_486C20(int _this, char *a2, int a3)
   if ( *(_DWORD *)ArgList )
   {
     v10 = sub_4867D0(*(int *)ArgList);
-    sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
+    this->sub_4034C0( (const void *)(this->message_buf));
     (*(void (__thiscall **)(_DWORD *, int))(*v9 + 12))(v9, 1);
     v11 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
     if ( v11 )
@@ -65654,8 +65668,8 @@ int Engine::sub_486C20(int _this, char *a2, int a3)
         return 1;
       }
       v21 = sub_4867D0(v20);
-      sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v21);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v21);
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
 LABEL_13:
     v27 = -1;
@@ -65663,8 +65677,8 @@ LABEL_13:
     return 0;
   }
   v14 = sub_4867D0(v13);
-  sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：GetFilterGraphに失敗しました． %s", v14);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：GetFilterGraphに失敗しました． %s", v14);
+  this->sub_4034C0( (const void *)(this->message_buf));
   (*(void (__thiscall **)(_DWORD *, int))(*v9 + 12))(v9, 1);
   v15 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
   if ( v15 )
@@ -65677,9 +65691,9 @@ LABEL_13:
 
 
 /* ===== [stained] sub_486F70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_486F70
+ * Engine 成员函数  → sub_486F70
  * raw 行区间 [103903, 103918]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_486F70(_DWORD *_this)
 {
@@ -65700,9 +65714,9 @@ _DWORD * Engine::sub_486F70(_DWORD *_this)
 
 
 /* ===== [stained] sub_487010  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487010
+ * Engine 成员函数  → sub_487010
  * raw 行区间 [103922, 103943]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_487010(int **_this)
 {
@@ -65729,9 +65743,9 @@ int Engine::sub_487010(int **_this)
 
 
 /* ===== [stained] sub_4872D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4872D0
+ * Engine 成员函数  → sub_4872D0
  * raw 行区间 [104040, 104103]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4872D0(int **_this)
 {
@@ -65800,9 +65814,9 @@ int Engine::sub_4872D0(int **_this)
 
 
 /* ===== [stained] sub_4873D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4873D0
+ * Engine 成员函数  → sub_4873D0
  * raw 行区间 [104112, 104120]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4873D0(int **_this)
 {
@@ -65816,9 +65830,9 @@ void Engine::sub_4873D0(int **_this)
 
 
 /* ===== [stained] sub_487430  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487430
+ * Engine 成员函数  → sub_487430
  * raw 行区间 [104125, 104180]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_487430(int _this, int a2, int a3, int a4)
 {
@@ -65840,8 +65854,8 @@ int Engine::sub_487430(int _this, int a2, int a3, int a4)
     v14 = Instance;
     v13 = aInitIidIgraphb;
 LABEL_3:
-    sub_408050((char *)(_this + 8), 1024, v13, v14);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, v13, v14);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v8 = (int (__stdcall ***)(_DWORD, void *, int))*v5;
@@ -65879,9 +65893,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_487530  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487530
+ * Engine 成员函数  → sub_487530
  * raw 行区间 [104183, 104312]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_487530(int _this, char *a2, int a3)
 {
@@ -65956,8 +65970,8 @@ int Engine::sub_487530(int _this, char *a2, int a3)
   if ( *(_DWORD *)ArgList )
   {
     v10 = sub_4867D0(*(int *)ArgList);
-    sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：CStreamReaderに失敗しました． %s", v10);
+    this->sub_4034C0( (const void *)(this->message_buf));
     (*(void (__thiscall **)(_DWORD *, int))(*v3 + 12))(v3, 1);
     v11 = *(void (__thiscall ****)(_DWORD, int))(_this + 1072);
     if ( v11 )
@@ -65998,8 +66012,8 @@ int Engine::sub_487530(int _this, char *a2, int a3)
   if ( v16 < 0 )
   {
     v17 = sub_4867D0(v16);
-    sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v17);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：QueryInterfaceに失敗しました． %s", v17);
+    this->sub_4034C0( (const void *)(this->message_buf));
 LABEL_11:
     v25 = -1;
     sub_4D3750(v23);
@@ -66016,9 +66030,9 @@ LABEL_11:
 
 
 /* ===== [stained] sub_487880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487880
+ * Engine 成员函数  → sub_487880
  * raw 行区间 [104326, 104332]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_487880(int **_this, char a2)
 {
@@ -66030,9 +66044,9 @@ int ** Engine::sub_487880(int **_this, char a2)
 
 
 /* ===== [stained] sub_487A80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487A80
+ * Engine 成员函数  → sub_487A80
  * raw 行区间 [104432, 104441]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char * Engine::sub_487A80(_DWORD *_this, char *Str)
 {
@@ -66047,9 +66061,9 @@ char * Engine::sub_487A80(_DWORD *_this, char *Str)
 
 
 /* ===== [stained] sub_487AD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487AD0
+ * Engine 成员函数  → sub_487AD0
  * raw 行区间 [104444, 104465]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_487AD0(int _this)
 {
@@ -66076,9 +66090,9 @@ HMODULE Engine::sub_487AD0(int _this)
 
 
 /* ===== [stained] sub_487C60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_487C60
+ * Engine 成员函数  → sub_487C60
  * raw 行区间 [104522, 104769]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_487C60(int _this, int a2)
 {
@@ -66331,9 +66345,9 @@ int Engine::sub_487C60(int _this, int a2)
 
 
 /* ===== [stained] sub_488420  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488420
+ * Engine 成员函数  → sub_488420
  * raw 行区间 [104990, 105023]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_488420(int _this)
 {
@@ -66372,9 +66386,9 @@ LABEL_10:
 
 
 /* ===== [stained] sub_488950  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488950
+ * Engine 成员函数  → sub_488950
  * raw 行区间 [105306, 105329]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_488950(_DWORD *_this, _DWORD *a2, _DWORD *a3)
 {
@@ -66403,9 +66417,9 @@ _DWORD * Engine::sub_488950(_DWORD *_this, _DWORD *a2, _DWORD *a3)
 
 
 /* ===== [stained] sub_488A50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488A50
+ * Engine 成员函数  → sub_488A50
  * raw 行区间 [105339, 105345]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_488A50(void *_this, char a2)
 {
@@ -66417,9 +66431,9 @@ void * Engine::sub_488A50(void *_this, char a2)
 
 
 /* ===== [stained] sub_488A80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488A80
+ * Engine 成员函数  → sub_488A80
  * raw 行区间 [105348, 105439]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_488A80(int _this, int a2)
 {
@@ -66516,9 +66530,9 @@ int Engine::sub_488A80(int _this, int a2)
 
 
 /* ===== [stained] sub_488CA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488CA0
+ * Engine 成员函数  → sub_488CA0
  * raw 行区间 [105443, 105473]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_488CA0(_DWORD *_this)
 {
@@ -66554,9 +66568,9 @@ void Engine::sub_488CA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_488DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_488DC0
+ * Engine 成员函数  → sub_488DC0
  * raw 行区间 [105477, 105568]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_488DC0(int _this, void *a2, int a3, char *Str)
 {
@@ -66597,11 +66611,11 @@ int Engine::sub_488DC0(int _this, void *a2, int a3, char *Str)
       if ( v15 < 0 )
       {
         sub_408050(
-          (char *)(_this + 8),
+          (char *)(this->message_buf),
           1024,
           "関数：Init エラー：Media Foundationの初期化に失敗しましたエラーコード %x\r\n",
           v15);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
         v16 = *(_DWORD *)(_this + 1080);
         if ( v16 )
         {
@@ -66621,8 +66635,8 @@ int Engine::sub_488DC0(int _this, void *a2, int a3, char *Str)
       v18 = Instance;
       v17 = aInitIidIgraphb_0;
 LABEL_10:
-      sub_408050((char *)(_this + 8), 1024, v17, v18);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, v17, v18);
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     *(_DWORD *)(_this + 1088) = 1;
@@ -66653,9 +66667,9 @@ LABEL_10:
 
 
 /* ===== [stained] sub_489040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489040
+ * Engine 成员函数  → sub_489040
  * raw 行区间 [105608, 105674]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_489040(_DWORD *_this)
 {
@@ -66727,9 +66741,9 @@ _DWORD * Engine::sub_489040(_DWORD *_this)
 
 
 /* ===== [stained] sub_489200  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489200
+ * Engine 成员函数  → sub_489200
  * raw 行区间 [105678, 105684]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_489200(_DWORD *_this, char a2)
 {
@@ -66741,9 +66755,9 @@ _DWORD * Engine::sub_489200(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_489230  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489230
+ * Engine 成员函数  → sub_489230
  * raw 行区间 [105687, 106026]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_489230(int _this, char *a2, int a3, int a4)
 {
@@ -66879,8 +66893,8 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
                              v57);
       if ( *(int *)ArgList < 0 )
       {
-        sub_408050((char *)(_this + 8), 1024, aOpenLoadmovie);
-        this->sub_4034C0( (const void *)(_this + 8));
+        sub_408050((char *)(this->message_buf), 1024, aOpenLoadmovie);
+        this->sub_4034C0( (const void *)(this->message_buf));
         LOBYTE(v75) = 1;
         if ( v64 )
           (*(void (__stdcall **)(int))(*(_DWORD *)v64 + 8))(v64);
@@ -66907,11 +66921,11 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
     {
       v37 = sub_488730(v8);
       sub_408050(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         1024,
         "関数：Open エラー：CMovieTextureの初期化に失敗しました． %s\r\n",
         v37);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       LOBYTE(v75) = 1;
       if ( v64 )
         (*(void (__stdcall **)(int))(*(_DWORD *)v64 + 8))(v64);
@@ -66958,8 +66972,8 @@ int Engine::sub_489230(int _this, char *a2, int a3, int a4)
     if ( v20 < 0 )
     {
       v21 = sub_488730(v20);
-      sub_408050((char *)(_this + 8), 1024, "関数：Open エラー：AddFilterに失敗しました． %s\r\n", v21);
-      this->sub_4034C0( (const void *)(_this + 8));
+      sub_408050((char *)(this->message_buf), 1024, "関数：Open エラー：AddFilterに失敗しました． %s\r\n", v21);
+      this->sub_4034C0( (const void *)(this->message_buf));
       LOBYTE(v75) = 1;
       if ( v64 )
         (*(void (__stdcall **)(int))(*(_DWORD *)v64 + 8))(v64);
@@ -67026,11 +67040,11 @@ LABEL_47:
     {
       v30 = sub_488730(*(int *)ArgList);
       sub_408050(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         1024,
         "関数：Open エラー：CStreamReaderの初期化に失敗しました． %s\r\n",
         v30);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       (*(void (__thiscall **)(_DWORD *, int))(*v26 + 12))(v26, 1);
       v31 = *(void (__thiscall ****)(_DWORD, int))(_this + 1108);
       if ( v31 )
@@ -67058,11 +67072,11 @@ LABEL_47:
     {
       v36 = sub_488730(v35);
       sub_408050(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         1024,
         "関数：Open エラー：QueryInterfaceに失敗しました． %s\r\n",
         v36);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
 LABEL_32:
       LOBYTE(v75) = 3;
       sub_4D3750(v68);
@@ -67088,9 +67102,9 @@ LABEL_32:
 
 
 /* ===== [stained] sub_489910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489910
+ * Engine 成员函数  → sub_489910
  * raw 行区间 [106066, 106073]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_489910(_DWORD *_this, char a2)
 {
@@ -67103,9 +67117,9 @@ _DWORD * Engine::sub_489910(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_489970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489970
+ * Engine 成员函数  → sub_489970
  * raw 行区间 [106077, 106136]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_489970(_DWORD *_this)
 {
@@ -67170,9 +67184,9 @@ _DWORD * Engine::sub_489970(_DWORD *_this)
 
 
 /* ===== [stained] sub_489AF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489AF0
+ * Engine 成员函数  → sub_489AF0
  * raw 行区间 [106141, 106168]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_489AF0(_DWORD *_this)
 {
@@ -67205,9 +67219,9 @@ int Engine::sub_489AF0(_DWORD *_this)
 
 
 /* ===== [stained] sub_489F20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489F20
+ * Engine 成员函数  → sub_489F20
  * raw 行区间 [106344, 106349]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_489F20(_DWORD *_this)
 {
@@ -67218,9 +67232,9 @@ void Engine::sub_489F20(_DWORD *_this)
 
 
 /* ===== [stained] sub_489FF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_489FF0
+ * Engine 成员函数  → sub_489FF0
  * raw 行区间 [106375, 106381]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_489FF0(_DWORD *_this, char a2)
 {
@@ -67232,9 +67246,9 @@ _DWORD * Engine::sub_489FF0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48A830  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48A830
+ * Engine 成员函数  → sub_48A830
  * raw 行区间 [106790, 106805]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48A830(_DWORD *_this)
 {
@@ -67255,9 +67269,9 @@ _DWORD * Engine::sub_48A830(_DWORD *_this)
 
 
 /* ===== [stained] sub_48A8D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48A8D0
+ * Engine 成员函数  → sub_48A8D0
  * raw 行区间 [106809, 106831]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48A8D0(int _this)
 {
@@ -67285,9 +67299,9 @@ void Engine::sub_48A8D0(int _this)
 
 
 /* ===== [stained] sub_48AA30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48AA30
+ * Engine 成员函数  → sub_48AA30
  * raw 行区间 [106857, 106863]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48AA30(void *_this, char a2)
 {
@@ -67299,9 +67313,9 @@ void * Engine::sub_48AA30(void *_this, char a2)
 
 
 /* ===== [stained] sub_48AB20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48AB20
+ * Engine 成员函数  → sub_48AB20
  * raw 行区间 [106917, 106930]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48AB20(_DWORD *_this, int a2, int a3)
 {
@@ -67320,9 +67334,9 @@ _DWORD * Engine::sub_48AB20(_DWORD *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_48ABD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48ABD0
+ * Engine 成员函数  → sub_48ABD0
  * raw 行区间 [106945, 106967]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48ABD0(int *_this)
 {
@@ -67343,16 +67357,16 @@ void Engine::sub_48ABD0(int *_this)
         "関数：OnReset エラー：テクスチャの再生成に失敗しました．TEXTURE=%d %s\r\n",
         _this[258],
         v4);
-      this->sub_4034C0( _this + 2);
+      this->sub_4034C0( this->message_buf);
     }
   }
 }
 
 
 /* ===== [stained] sub_48ADD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48ADD0
+ * Engine 成员函数  → sub_48ADD0
  * raw 行区间 [107047, 107067]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48ADD0(_DWORD *_this)
 {
@@ -67378,9 +67392,9 @@ int Engine::sub_48ADD0(_DWORD *_this)
 
 
 /* ===== [stained] sub_48C790  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C790
+ * Engine 成员函数  → sub_48C790
  * raw 行区间 [108036, 108061]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48C790(int _this)
 {
@@ -67411,9 +67425,9 @@ void Engine::sub_48C790(int _this)
 
 
 /* ===== [stained] sub_48C840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C840
+ * Engine 成员函数  → sub_48C840
  * raw 行区间 [108065, 108071]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48C840(void *_this, char a2)
 {
@@ -67425,9 +67439,9 @@ void * Engine::sub_48C840(void *_this, char a2)
 
 
 /* ===== [stained] sub_48C870  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C870
+ * Engine 成员函数  → sub_48C870
  * raw 行区间 [108074, 108084]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48C870(_DWORD *_this)
 {
@@ -67443,9 +67457,9 @@ _DWORD * Engine::sub_48C870(_DWORD *_this)
 
 
 /* ===== [stained] sub_48C900  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C900
+ * Engine 成员函数  → sub_48C900
  * raw 行区间 [108100, 108104]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48C900(_DWORD *_this)
 {
@@ -67455,9 +67469,9 @@ void Engine::sub_48C900(_DWORD *_this)
 
 
 /* ===== [stained] sub_48C950  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48C950
+ * Engine 成员函数  → sub_48C950
  * raw 行区间 [108108, 108256]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48C950(int _this, HANDLE hFile, int a3)
 {
@@ -67611,9 +67625,9 @@ LABEL_22:
 
 
 /* ===== [stained] sub_48CD80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CD80
+ * Engine 成员函数  → sub_48CD80
  * raw 行区间 [108261, 108269]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48CD80(int _this)
 {
@@ -67627,9 +67641,9 @@ int Engine::sub_48CD80(int _this)
 
 
 /* ===== [stained] sub_48CDD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CDD0
+ * Engine 成员函数  → sub_48CDD0
  * raw 行区间 [108272, 108278]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48CDD0(_DWORD *_this, char a2)
 {
@@ -67641,9 +67655,9 @@ _DWORD * Engine::sub_48CDD0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48CE00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CE00
+ * Engine 成员函数  → sub_48CE00
  * raw 行区间 [108281, 108308]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48CE00(int _this, char *NumberOfBytesRead, int ArgList)
 {
@@ -67676,9 +67690,9 @@ int Engine::sub_48CE00(int _this, char *NumberOfBytesRead, int ArgList)
 
 
 /* ===== [stained] sub_48CEC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CEC0
+ * Engine 成员函数  → sub_48CEC0
  * raw 行区间 [108311, 108314]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48CEC0(_DWORD *_this)
 {
@@ -67687,9 +67701,9 @@ void Engine::sub_48CEC0(_DWORD *_this)
 
 
 /* ===== [stained] sub_48CF10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CF10
+ * Engine 成员函数  → sub_48CF10
  * raw 行区间 [108317, 108323]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48CF10(_DWORD *_this, char a2)
 {
@@ -67701,9 +67715,9 @@ _DWORD * Engine::sub_48CF10(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48CF70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48CF70
+ * Engine 成员函数  → sub_48CF70
  * raw 行区间 [108326, 108484]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48CF70(int _this, char *a2, int ArgList)
 {
@@ -67867,9 +67881,9 @@ LABEL_22:
 
 
 /* ===== [stained] sub_48D3E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D3E0
+ * Engine 成员函数  → sub_48D3E0
  * raw 行区间 [108489, 108505]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48D3E0(int _this)
 {
@@ -67891,9 +67905,9 @@ int Engine::sub_48D3E0(int _this)
 
 
 /* ===== [stained] sub_48D460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D460
+ * Engine 成员函数  → sub_48D460
  * raw 行区间 [108508, 108519]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48D460(_DWORD *_this)
 {
@@ -67910,9 +67924,9 @@ _DWORD * Engine::sub_48D460(_DWORD *_this)
 
 
 /* ===== [stained] sub_48D590  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D590
+ * Engine 成员函数  → sub_48D590
  * raw 行区间 [108551, 108558]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48D590(int _this)
 {
@@ -67925,9 +67939,9 @@ void Engine::sub_48D590(int _this)
 
 
 /* ===== [stained] sub_48D940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D940
+ * Engine 成员函数  → sub_48D940
  * raw 行区间 [108562, 108568]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48D940(void *_this, char a2)
 {
@@ -67939,9 +67953,9 @@ void * Engine::sub_48D940(void *_this, char a2)
 
 
 /* ===== [stained] sub_48D970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D970
+ * Engine 成员函数  → sub_48D970
  * raw 行区间 [108571, 108578]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48D970(_DWORD *_this)
 {
@@ -67954,9 +67968,9 @@ _DWORD * Engine::sub_48D970(_DWORD *_this)
 
 
 /* ===== [stained] sub_48D9D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48D9D0
+ * Engine 成员函数  → sub_48D9D0
  * raw 行区间 [108582, 108586]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48D9D0(_DWORD *_this)
 {
@@ -67966,9 +67980,9 @@ void Engine::sub_48D9D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_48DB50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48DB50
+ * Engine 成员函数  → sub_48DB50
  * raw 行区间 [108685, 108691]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48DB50(_DWORD *_this, char a2)
 {
@@ -67980,9 +67994,9 @@ _DWORD * Engine::sub_48DB50(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48E220  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E220
+ * Engine 成员函数  → sub_48E220
  * raw 行区间 [108981, 108989]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48E220(void *_this)
 {
@@ -67990,15 +68004,15 @@ void Engine::sub_48E220(void *_this)
 
   v2 = 0;
   for ( *(_DWORD *)_this = &Rain___vftable_; v2 < *((_DWORD *)_this + 3); ++v2 )
-    operator delete(*(void **)(*((_DWORD *)_this + 2) + 4 * v2));
+    operator delete(*(void **)(this->message_buf + 4 * v2));
   operator delete[](*((void **)_this + 2));
 }
 
 
 /* ===== [stained] sub_48E5D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E5D0
+ * Engine 成员函数  → sub_48E5D0
  * raw 行区间 [109297, 109303]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48E5D0(void *_this, char a2)
 {
@@ -68010,9 +68024,9 @@ void * Engine::sub_48E5D0(void *_this, char a2)
 
 
 /* ===== [stained] sub_48E720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E720
+ * Engine 成员函数  → sub_48E720
  * raw 行区间 [109371, 109383]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48E720(void *_this)
 {
@@ -68030,9 +68044,9 @@ int Engine::sub_48E720(void *_this)
 
 
 /* ===== [stained] sub_48E840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48E840
+ * Engine 成员函数  → sub_48E840
  * raw 行区间 [109431, 109437]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48E840(void *_this, char a2)
 {
@@ -68044,9 +68058,9 @@ void * Engine::sub_48E840(void *_this, char a2)
 
 
 /* ===== [stained] sub_48EA60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48EA60
+ * Engine 成员函数  → sub_48EA60
  * raw 行区间 [109531, 109543]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48EA60(_DWORD *_this, char a2)
 {
@@ -68064,9 +68078,9 @@ _DWORD * Engine::sub_48EA60(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48EB60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48EB60
+ * Engine 成员函数  → sub_48EB60
  * raw 行区间 [109585, 109689]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48EB60(int _this, void *a2, int *a3, char *Source, int a5, int a6)
 {
@@ -68165,20 +68179,20 @@ LABEL_13:
 LABEL_12:
     LastError = GetLastError();
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：SaveData エラー：書き込みエラーです．保存できません． ERRORCODE = %d \r\n",
       LastError);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_48F480  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F480
+ * Engine 成员函数  → sub_48F480
  * raw 行区间 [109972, 109993]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48F480(void *_this)
 {
@@ -68200,14 +68214,14 @@ void Engine::sub_48F480(void *_this)
   }
   *((_DWORD *)_this + 6) = 0;
   *((_DWORD *)_this + 7) = 0;
-  *((_DWORD *)_this + 8) = 0;
+  *((_DWORD *)this->message_buf) = 0;
 }
 
 
 /* ===== [stained] sub_48F530  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F530
+ * Engine 成员函数  → sub_48F530
  * raw 行区间 [109997, 110003]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_48F530(void *_this, char a2)
 {
@@ -68219,9 +68233,9 @@ void * Engine::sub_48F530(void *_this, char a2)
 
 
 /* ===== [stained] sub_48F560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F560
+ * Engine 成员函数  → sub_48F560
  * raw 行区间 [110006, 110043]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_48F560(_DWORD *_this)
 {
@@ -68264,9 +68278,9 @@ LABEL_8:
 
 
 /* ===== [stained] sub_48F650  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48F650
+ * Engine 成员函数  → sub_48F650
  * raw 行区间 [110048, 110054]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_48F650(_DWORD *_this, char a2)
 {
@@ -68278,9 +68292,9 @@ _DWORD * Engine::sub_48F650(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_48FAF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48FAF0
+ * Engine 成员函数  → sub_48FAF0
  * raw 行区间 [110280, 110295]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48FAF0(int _this)
 {
@@ -68301,9 +68315,9 @@ int Engine::sub_48FAF0(int _this)
 
 
 /* ===== [stained] sub_48FCE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_48FCE0
+ * Engine 成员函数  → sub_48FCE0
  * raw 行区间 [110354, 110453]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_48FCE0(int *_this, HANDLE hFile, int a3, const char *a4, int a5, int a6)
 {
@@ -68327,7 +68341,7 @@ int Engine::sub_48FCE0(int *_this, HANDLE hFile, int a3, const char *a4, int a5,
   memset(Buffer, 0, sizeof(Buffer));
   if ( !ReadFile(hFile, Buffer, 0x114u, &NumberOfBytesRead, 0) || NumberOfBytesRead != 276 )
   {
-    v15 = _this + 2;
+    v15 = this->message_buf;
     LastError = GetLastError();
     sprintf_s(
       (char *const)_this + 8,
@@ -68345,7 +68359,7 @@ int Engine::sub_48FCE0(int *_this, HANDLE hFile, int a3, const char *a4, int a5,
   {
     v18 = aLoaddata;
 LABEL_22:
-    v15 = _this + 2;
+    v15 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, v18);
 LABEL_23:
     this->sub_4034C0( v15);
@@ -68400,7 +68414,7 @@ LABEL_16:
       0x400u,
       "関数：LoadData エラー：読み込みエラーです． ERRORCODE = %d \r\n",
       v14);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     operator delete[](v7);
   }
   return 0;
@@ -68408,9 +68422,9 @@ LABEL_16:
 
 
 /* ===== [stained] sub_490F20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_490F20
+ * Engine 成员函数  → sub_490F20
  * raw 行区间 [110965, 110995]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_490F20(_DWORD *_this)
 {
@@ -68446,9 +68460,9 @@ void Engine::sub_490F20(_DWORD *_this)
 
 
 /* ===== [stained] sub_491030  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_491030
+ * Engine 成员函数  → sub_491030
  * raw 行区间 [110999, 111005]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_491030(_DWORD *_this, char a2)
 {
@@ -68460,9 +68474,9 @@ _DWORD * Engine::sub_491030(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_491800  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_491800
+ * Engine 成员函数  → sub_491800
  * raw 行区间 [111321, 111335]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_491800(unsigned int *_this,
         char *Src,
@@ -68481,9 +68495,9 @@ void Engine::sub_491800(unsigned int *_this,
 
 
 /* ===== [stained] sub_495610  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495610
+ * Engine 成员函数  → sub_495610
  * raw 行区间 [112856, 112974]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD *__cdecl Engine::sub_495610(_DWORD *a1,
         void *a2,
@@ -68606,9 +68620,9 @@ _DWORD *__cdecl Engine::sub_495610(_DWORD *a1,
 
 
 /* ===== [stained] sub_495F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495F50
+ * Engine 成员函数  → sub_495F50
  * raw 行区间 [113404, 113421]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_495F50(_DWORD *_this)
 {
@@ -68631,9 +68645,9 @@ int Engine::sub_495F50(_DWORD *_this)
 
 
 /* ===== [stained] sub_495FE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_495FE0
+ * Engine 成员函数  → sub_495FE0
  * raw 行区间 [113425, 113431]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_495FE0(_DWORD *_this, char a2)
 {
@@ -68645,9 +68659,9 @@ _DWORD * Engine::sub_495FE0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4975D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4975D0
+ * Engine 成员函数  → sub_4975D0
  * raw 行区间 [114394, 114398]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_4975D0(_DWORD *_this)
 {
@@ -68657,9 +68671,9 @@ BOOL Engine::sub_4975D0(_DWORD *_this)
 
 
 /* ===== [stained] sub_497670  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497670
+ * Engine 成员函数  → sub_497670
  * raw 行区间 [114419, 114425]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_497670(_DWORD *_this, char a2)
 {
@@ -68671,9 +68685,9 @@ _DWORD * Engine::sub_497670(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_497810  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497810
+ * Engine 成员函数  → sub_497810
  * raw 行区间 [114491, 114501]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_497810(_DWORD *_this)
 {
@@ -68689,9 +68703,9 @@ _DWORD * Engine::sub_497810(_DWORD *_this)
 
 
 /* ===== [stained] sub_497880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497880
+ * Engine 成员函数  → sub_497880
  * raw 行区间 [114505, 114799]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_497880(int _this, int a2, int a3)
 {
@@ -68991,9 +69005,9 @@ LABEL_13:
 
 
 /* ===== [stained] sub_497EE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497EE0
+ * Engine 成员函数  → sub_497EE0
  * raw 行区间 [114805, 114825]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_497EE0(int _this, int a2, int a3, int a4)
 {
@@ -69019,9 +69033,9 @@ int Engine::sub_497EE0(int _this, int a2, int a3, int a4)
 
 
 /* ===== [stained] sub_497F50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_497F50
+ * Engine 成员函数  → sub_497F50
  * raw 行区间 [114828, 114843]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_497F50(int _this)
 {
@@ -69042,9 +69056,9 @@ BOOL Engine::sub_497F50(int _this)
 
 
 /* ===== [stained] sub_498310  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498310
+ * Engine 成员函数  → sub_498310
  * raw 行区间 [114997, 115015]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498310(_DWORD *_this)
 {
@@ -69068,9 +69082,9 @@ int Engine::sub_498310(_DWORD *_this)
 
 
 /* ===== [stained] sub_4983E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4983E0
+ * Engine 成员函数  → sub_4983E0
  * raw 行区间 [115057, 115204]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4983E0(int _this, int *a2, int *a3, int a4)
 {
@@ -69096,8 +69110,8 @@ int Engine::sub_4983E0(int _this, int *a2, int *a3, int a4)
   v14 = 0x7FFFFFFF;
   if ( !*(_DWORD *)(_this + 1036) )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aNearlyratioscr);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aNearlyratioscr);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v13 = (double)*a3 / (double)*a2;
@@ -69119,13 +69133,13 @@ int Engine::sub_4983E0(int _this, int *a2, int *a3, int a4)
         v8 = v8 + dbl_51FB58;
       v12 = v7 / v8;
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "　　幅%5dpx、高さ%5dpx（比率16：%6.3f）：",
         v18,
         v19,
         v12 * dbl_51D7E8);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v18 < *a2 || v19 < *a3 )
       {
         v11 = asc_52A240;
@@ -69208,13 +69222,13 @@ LABEL_29:
 LABEL_38:
     *a2 = v17;
     *a3 = v16;
-    v9 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, "判定結果（幅%5dpx、高さ%5dpx）\r\n\r\n", *a2, v16);
+    v9 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, "判定結果（幅%5dpx、高さ%5dpx）\r\n\r\n", *a2, v16);
     v10 = 1;
     goto LABEL_39;
   }
-  v9 = (const void *)(_this + 8);
-  sprintf_s((char *const)(_this + 8), 0x400u, asc_52A1F8, *a2, *a3);
+  v9 = (const void *)(this->message_buf);
+  sprintf_s((char *const)(this->message_buf), 0x400u, asc_52A1F8, *a2, *a3);
   v10 = 0;
 LABEL_39:
   this->sub_4034C0( v9);
@@ -69223,9 +69237,9 @@ LABEL_39:
 
 
 /* ===== [stained] sub_4986C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4986C0
+ * Engine 成员函数  → sub_4986C0
  * raw 行区间 [115210, 115215]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4986C0(_DWORD *_this)
 {
@@ -69236,9 +69250,9 @@ void Engine::sub_4986C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_498720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498720
+ * Engine 成员函数  → sub_498720
  * raw 行区间 [115219, 115327]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498720(int _this, int a2)
 {
@@ -69295,8 +69309,8 @@ LABEL_12:
     *(_DWORD *)(_this + 1068) = 1;
   else
     *(_DWORD *)(_this + 1068) = 3;
-  sprintf_s((char *const)(_this + 8), 0x400u, "関数：ResetDevice 2．%d %d\r\n", *v6, *(_DWORD *)(_this + 1048));
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ResetDevice 2．%d %d\r\n", *v6, *(_DWORD *)(_this + 1048));
+  this->sub_4034C0( (const void *)(this->message_buf));
   v15 = 0;
   v7 = (*(int (__stdcall **)(_DWORD, int *))(**(_DWORD **)(_this + 1040) + 64))(*(_DWORD *)(_this + 1040), v6);
   if ( v7 == -2005530520 )
@@ -69314,11 +69328,11 @@ LABEL_12:
         {
           v10 = sub_49F770(v9);
           sprintf_s(
-            (char *const)(_this + 8),
+            (char *const)(this->message_buf),
             0x400u,
             "関数：ResetDevice エラー：プレゼンテーションパラメータの初期化に失敗しました．%s\r\n",
             v10);
-          this->sub_4034C0( (const void *)(_this + 8));
+          this->sub_4034C0( (const void *)(this->message_buf));
         }
         break;
       }
@@ -69352,9 +69366,9 @@ LABEL_12:
 
 
 /* ===== [stained] sub_498930  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498930
+ * Engine 成员函数  → sub_498930
  * raw 行区间 [115330, 115415]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498930(int _this)
 {
@@ -69404,8 +69418,8 @@ int Engine::sub_498930(int _this)
   *(_DWORD *)(_this + 1048) = v3;
   *(_DWORD *)(_this + 1044) = v2;
 LABEL_9:
-  sprintf_s((char *const)(_this + 8), 0x400u, "関数：ResetDevice 1．%d %d\r\n", *v4, *(_DWORD *)(_this + 1048));
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, "関数：ResetDevice 1．%d %d\r\n", *v4, *(_DWORD *)(_this + 1048));
+  this->sub_4034C0( (const void *)(this->message_buf));
   v7 = -2005530520;
   while ( v14 < 50 )
   {
@@ -69420,11 +69434,11 @@ LABEL_9:
       {
         v10 = sub_49F770(v9);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：ResetDevice エラー：プレゼンテーションパラメータの初期化に失敗しました．%s\r\n",
           v10);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
       }
       break;
     }
@@ -69445,9 +69459,9 @@ LABEL_9:
 
 
 /* ===== [stained] sub_498AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498AA0
+ * Engine 成员函数  → sub_498AA0
  * raw 行区间 [115418, 115452]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498AA0(int _this, int a2, int a3)
 {
@@ -69477,19 +69491,19 @@ int Engine::sub_498AA0(int _this, int a2, int a3)
   }
   v6 = sub_49F770(v4);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：PresentSub エラー：描画結果の転送に失敗しました．%s\r\n",
     v6);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_498B60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498B60
+ * Engine 成员函数  → sub_498B60
  * raw 行区间 [115455, 115478]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498B60(int _this)
 {
@@ -69508,19 +69522,19 @@ int Engine::sub_498B60(int _this)
     return 1;
   v3 = sub_49F770(v2);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：ClearTarget エラー：レンダリングターゲットのクリアに失敗しました．%s\r\n",
     v3);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_498BC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498BC0
+ * Engine 成员函数  → sub_498BC0
  * raw 行区间 [115481, 115514]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498BC0(int _this, int *a2, int *a3, int a4)
 {
@@ -69534,19 +69548,19 @@ int Engine::sub_498BC0(int _this, int *a2, int *a3, int a4)
     || (v7 = *(_DWORD *)(_this + 1136), v7 == v5) && *(_DWORD *)(_this + 1140) == v6 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "指定された解像度（%5d×%5d） 比率（16：%6.3f）\r\n",
       *a2,
       *a3,
       (double)*a3 / (double)*a2 * dbl_51D7E8);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "このPCで設定可能な解像度一覧（カラーモード・D3DFORMAT：%d）\r\n",
       *(_DWORD *)(a4 + 12));
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return this->sub_4983E0( a2, a3, *(_DWORD *)(a4 + 12));
   }
   else
@@ -69559,9 +69573,9 @@ int Engine::sub_498BC0(int _this, int *a2, int *a3, int a4)
 
 
 /* ===== [stained] sub_498C90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498C90
+ * Engine 成员函数  → sub_498C90
  * raw 行区间 [115518, 115524]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_498C90(_DWORD *_this, char a2)
 {
@@ -69573,9 +69587,9 @@ _DWORD * Engine::sub_498C90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_498CC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_498CC0
+ * Engine 成员函数  → sub_498CC0
  * raw 行区间 [115527, 115837]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_498CC0(int _this,
         int a2,
@@ -69635,8 +69649,8 @@ int Engine::sub_498CC0(int _this,
   *(_DWORD *)(_this + 1036) = v14;
   if ( !v14 )
   {
-    v15 = (const void *)(_this + 8);
-    sprintf_s((char *const)(_this + 8), 0x400u, aInitializeDire);
+    v15 = (const void *)(this->message_buf);
+    sprintf_s((char *const)(this->message_buf), 0x400u, aInitializeDire);
 LABEL_68:
     this->sub_4034C0( v15);
     return -2147467259;
@@ -69645,10 +69659,10 @@ LABEL_68:
   if ( v16 )
   {
 LABEL_6:
-    v15 = (const void *)(_this + 8);
+    v15 = (const void *)(this->message_buf);
     v17 = sub_49F770(v16);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：Initialize エラー：ディスプレイモードの取得に失敗しました．%s\r\n",
       v17);
@@ -69840,27 +69854,27 @@ LABEL_58:
 LABEL_61:
     v36 = sub_49F770(v35);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：Initialize エラー：ダイアログ描画モードの設定に失敗しました．%s\r\n",
       v36);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     goto LABEL_62;
   }
   v35 = (*(int (__stdcall **)(int, int))(*(_DWORD *)v34 + 80))(v34, 1);
   if ( v35 )
     goto LABEL_61;
 LABEL_62:
-  v15 = (const void *)(_this + 8);
-  sprintf_s((char *const)(_this + 8), 0x400u, aDirect3d_2);
-  this->sub_4034C0( (const void *)(_this + 8));
+  v15 = (const void *)(this->message_buf);
+  sprintf_s((char *const)(this->message_buf), 0x400u, aDirect3d_2);
+  this->sub_4034C0( (const void *)(this->message_buf));
   (*(void (__stdcall **)(_DWORD, char *))(**(_DWORD **)(_this + 1040) + 28))(*(_DWORD *)(_this + 1040), v39);
-  sprintf_s((char *const)(_this + 8), 0x400u, "テクスチャ処理能力 MaxWidth=%d MaxHeight=%d\r\n\r\n", v40, v41);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, "テクスチャ処理能力 MaxWidth=%d MaxHeight=%d\r\n\r\n", v40, v41);
+  this->sub_4034C0( (const void *)(this->message_buf));
   if ( v40 < a6 || v41 < a7 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：Initialize エラー：テクスチャ処理能力が不足しています．\r\n"
       "このゲームをプレイするには、幅%d、高さ%dのテクスチャ処理に対応したデバイスが必要です.",
@@ -69879,8 +69893,8 @@ LABEL_62:
   *(_DWORD *)(_this + 1124) = v37;
   if ( !v37 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aInitializeX8r8);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aInitializeX8r8);
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   sub_498B60(_this);
   *(_DWORD *)(_this + 1112) = 0;
@@ -69890,9 +69904,9 @@ LABEL_62:
 
 
 /* ===== [stained] sub_4997D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4997D0
+ * Engine 成员函数  → sub_4997D0
  * raw 行区间 [116076, 116084]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4997D0(void **_this)
 {
@@ -69906,9 +69920,9 @@ void Engine::sub_4997D0(void **_this)
 
 
 /* ===== [stained] sub_499840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_499840
+ * Engine 成员函数  → sub_499840
  * raw 行区间 [116088, 116094]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void ** Engine::sub_499840(void **_this, char a2)
 {
@@ -69920,9 +69934,9 @@ void ** Engine::sub_499840(void **_this, char a2)
 
 
 /* ===== [stained] sub_499BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_499BA0
+ * Engine 成员函数  → sub_499BA0
  * raw 行区间 [116325, 116331]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_499BA0(_DWORD *_this)
 {
@@ -69934,9 +69948,9 @@ BOOL Engine::sub_499BA0(_DWORD *_this)
 
 
 /* ===== [stained] sub_49A300  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A300
+ * Engine 成员函数  → sub_49A300
  * raw 行区间 [116879, 117057]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49A300(_DWORD *_this, int a2)
 {
@@ -70120,9 +70134,9 @@ int Engine::sub_49A300(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_49A640  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A640
+ * Engine 成员函数  → sub_49A640
  * raw 行区间 [117060, 117077]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 BOOL Engine::sub_49A640(_DWORD *_this, int a2)
 {
@@ -70145,9 +70159,9 @@ BOOL Engine::sub_49A640(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_49A690  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49A690
+ * Engine 成员函数  → sub_49A690
  * raw 行区间 [117080, 117090]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49A690(_DWORD *_this)
 {
@@ -70163,9 +70177,9 @@ int Engine::sub_49A690(_DWORD *_this)
 
 
 /* ===== [stained] sub_49AA30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49AA30
+ * Engine 成员函数  → sub_49AA30
  * raw 行区间 [117240, 117934]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49AA30(int _this, float *a2, int a3, float a4, _DWORD *a5)
 {
@@ -70865,9 +70879,9 @@ LABEL_72:
 
 
 /* ===== [stained] sub_49BCC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49BCC0
+ * Engine 成员函数  → sub_49BCC0
  * raw 行区间 [117945, 118365]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49BCC0(_DWORD *_this, int a2, int a3, float a4, int a5)
 {
@@ -71293,9 +71307,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_49DD70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49DD70
+ * Engine 成员函数  → sub_49DD70
  * raw 行区间 [119091, 119195]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49DD70(int _this)
 {
@@ -71405,9 +71419,9 @@ int Engine::sub_49DD70(int _this)
 
 
 /* ===== [stained] sub_49DFD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49DFD0
+ * Engine 成员函数  → sub_49DFD0
  * raw 行区间 [119198, 119260]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 float * Engine::sub_49DFD0(float *_this)
 {
@@ -71475,9 +71489,9 @@ float * Engine::sub_49DFD0(float *_this)
 
 
 /* ===== [stained] sub_49E170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E170
+ * Engine 成员函数  → sub_49E170
  * raw 行区间 [119263, 119326]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __fastcall Engine::sub_49E170(float *a1)
 {
@@ -71546,9 +71560,9 @@ int __fastcall Engine::sub_49E170(float *a1)
 
 
 /* ===== [stained] sub_49E700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E700
+ * Engine 成员函数  → sub_49E700
  * raw 行区间 [119490, 119580]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49E700(int _this, int a2, int a3, unsigned int a4)
 {
@@ -71564,11 +71578,11 @@ int Engine::sub_49E700(int _this, int a2, int a3, unsigned int a4)
   if ( !*(_DWORD *)(_this + 4 * a2 + 50708) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：DrawModel エラー：描画元メッシュモデルが作成されていません． Mesh=%d\r\n",
       a2);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   v6 = *(_DWORD *)(*(_DWORD *)(_this + 1860) + 1040);
@@ -71644,9 +71658,9 @@ LABEL_13:
 
 
 /* ===== [stained] sub_49E980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49E980
+ * Engine 成员函数  → sub_49E980
  * raw 行区间 [119586, 119603]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49E980(_DWORD *_this, int a2)
 {
@@ -71669,16 +71683,16 @@ int Engine::sub_49E980(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_49ED60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49ED60
+ * Engine 成员函数  → sub_49ED60
  * raw 行区间 [119774, 119798]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49ED60(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4)
 {
   if ( a2 > 0x3E7 )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, "関数：GetTextureSize エラー：不正なtexture %d \r\n", a2);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, "関数：GetTextureSize エラー：不正なtexture %d \r\n", a2);
+    this->sub_4034C0( (const void *)(this->message_buf));
     *a3 = 0;
     *a4 = 0;
     return 0;
@@ -71701,9 +71715,9 @@ int Engine::sub_49ED60(int _this, unsigned int a2, _DWORD *a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_49EF60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49EF60
+ * Engine 成员函数  → sub_49EF60
  * raw 行区间 [119885, 120318]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49EF60(char *_this, const CHAR *a2, int *a3)
 {
@@ -71927,8 +71941,8 @@ LABEL_11:
       {
         v40 = aCapturesurface;
 LABEL_68:
-        sprintf_s(_this + 8, 0x400u, v40);
-        this->sub_4034C0( _this + 8);
+        sprintf_s(this->message_buf, 0x400u, v40);
+        this->sub_4034C0( this->message_buf);
         return 0;
       }
       v9 = v73[6];
@@ -72142,9 +72156,9 @@ LABEL_67:
 
 
 /* ===== [stained] sub_49F790  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49F790
+ * Engine 成员函数  → sub_49F790
  * raw 行区间 [120327, 120460]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49F790(int _this, int a2, char a3)
 {
@@ -72190,12 +72204,12 @@ int Engine::sub_49F790(int _this, int a2, char a3)
     {
       v9 = sub_49F770(v8);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：MirrorTexture エラー：処理対象テクスチャに対してのロックに失敗しました． TEXTURE=%d %s\r\n",
         a2,
         v9);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     else
@@ -72272,20 +72286,20 @@ int Engine::sub_49F790(int _this, int a2, char a3)
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：MirrorTexture エラー：処理対象のテクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_49FB60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49FB60
+ * Engine 成员函数  → sub_49FB60
  * raw 行区间 [120464, 120528]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49FB60(int _this, int a2, int a3, int a4, int a5)
 {
@@ -72334,11 +72348,11 @@ LABEL_9:
   {
     v11 = sub_49F770(v10);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CFrameTexture エラー：テクスチャ作成に失敗． %s\r\n",
       v11);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -72355,9 +72369,9 @@ LABEL_9:
 
 
 /* ===== [stained] sub_49FCD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_49FCD0
+ * Engine 成员函数  → sub_49FCD0
  * raw 行区间 [120546, 120770]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_49FCD0(int _this)
 {
@@ -72421,8 +72435,8 @@ int Engine::sub_49FCD0(int _this)
   {
     v22 = aRenderframe;
 LABEL_7:
-    sprintf_s((char *const)(_this + 8), 0x400u, v22);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v22);
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 42452) )
@@ -72569,11 +72583,11 @@ LABEL_7:
 LABEL_18:
     v21 = sub_49F770(v13);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：RenderFrame エラー：描画に失敗しました． %s\r\n",
       v21);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   else
@@ -72587,9 +72601,9 @@ LABEL_19:
 
 
 /* ===== [stained] sub_4A0430  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A0430
+ * Engine 成员函数  → sub_4A0430
  * raw 行区间 [120958, 121064]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A0430(int _this, int a2, _DWORD *a3, _DWORD *a4)
 {
@@ -72616,12 +72630,12 @@ int Engine::sub_4A0430(int _this, int a2, _DWORD *a3, _DWORD *a4)
     {
       v8 = sub_49F770(v7);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：GetTextureSurface エラー：テクスチャのサーフェイス取得に失敗しました．TEXTURE=%d %s\r\n",
         a2,
         v8);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( *a4 )
       {
         (*(void (__stdcall **)(_DWORD))(*(_DWORD *)*a4 + 8))(*a4);
@@ -72637,12 +72651,12 @@ int Engine::sub_4A0430(int _this, int a2, _DWORD *a3, _DWORD *a4)
   {
     v12 = sub_49F770(v11);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GetTextureSurface エラー：テクスチャのサーフェイス取得に失敗しました．TEXTURE=%d %s\r\n",
       a2,
       v12);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     goto LABEL_8;
   }
   (*(void (__stdcall **)(_DWORD, int *))(*(_DWORD *)*a3 + 48))(*a3, v18);
@@ -72660,11 +72674,11 @@ int Engine::sub_4A0430(int _this, int a2, _DWORD *a3, _DWORD *a4)
   {
     v14 = sub_49F770(v13);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GetTextureSurface エラー：データ取得用サーフェイスの作成に失敗しました．%s\r\n",
       v14);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     v15 = *a4;
     if ( !*a4 )
       goto LABEL_8;
@@ -72681,12 +72695,12 @@ LABEL_13:
     return 1;
   v17 = sub_49F770(v16);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：GetTextureSurface エラー：レンダリングターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
     a2,
     v17);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   v15 = *a4;
   if ( *a4 )
     goto LABEL_13;
@@ -72701,9 +72715,9 @@ LABEL_8:
 
 
 /* ===== [stained] sub_4A0750  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A0750
+ * Engine 成员函数  → sub_4A0750
  * raw 行区间 [121105, 121116]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4A0750(_DWORD *_this, int a2)
 {
@@ -72720,9 +72734,9 @@ void Engine::sub_4A0750(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4A1A60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1A60
+ * Engine 成员函数  → sub_4A1A60
  * raw 行区间 [121746, 121757]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4A1A60(_DWORD *_this, int a2)
 {
@@ -72739,9 +72753,9 @@ void Engine::sub_4A1A60(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4A1D50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1D50
+ * Engine 成员函数  → sub_4A1D50
  * raw 行区间 [122026, 122127]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A1D50(_DWORD *_this)
 {
@@ -72848,9 +72862,9 @@ int Engine::sub_4A1D50(_DWORD *_this)
 
 
 /* ===== [stained] sub_4A1E90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1E90
+ * Engine 成员函数  → sub_4A1E90
  * raw 行区间 [122130, 122157]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A1E90(int _this)
 {
@@ -72883,9 +72897,9 @@ int Engine::sub_4A1E90(int _this)
 
 
 /* ===== [stained] sub_4A1F00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A1F00
+ * Engine 成员函数  → sub_4A1F00
  * raw 行区间 [122162, 122245]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4A1F00(int _this, int a2)
 {
@@ -72920,11 +72934,11 @@ void Engine::sub_4A1F00(int _this, int a2)
     {
       v5 = sub_49F770(v4);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CalcVertexPos エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
         v5);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
     else
     {
@@ -72974,9 +72988,9 @@ void Engine::sub_4A1F00(int _this, int a2)
 
 
 /* ===== [stained] sub_4A2050  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2050
+ * Engine 成员函数  → sub_4A2050
  * raw 行区间 [122249, 122329]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4A2050(int _this, int a2, float a3)
 {
@@ -73008,11 +73022,11 @@ void Engine::sub_4A2050(int _this, int a2, float a3)
     {
       v6 = sub_49F770(v5);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CalcDiffuse エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
         v6);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
     else
     {
@@ -73062,9 +73076,9 @@ void Engine::sub_4A2050(int _this, int a2, float a3)
 
 
 /* ===== [stained] sub_4A2280  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2280
+ * Engine 成员函数  → sub_4A2280
  * raw 行区间 [122332, 122502]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A2280(int _this,
         int a2,
@@ -73117,11 +73131,11 @@ int Engine::sub_4A2280(int _this,
          0) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CVertexBuffer エラー：VertexBufferの作成に失敗しました． %s\r\n",
       v32);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -73131,11 +73145,11 @@ int Engine::sub_4A2280(int _this,
     {
       v17 = sub_49F770(v16);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CVertexBuffer エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
         v17);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v36 )
         (*(void (__stdcall **)(int))(*(_DWORD *)v36 + 8))(v36);
       return 0;
@@ -73239,9 +73253,9 @@ int Engine::sub_4A2280(int _this,
 
 
 /* ===== [stained] sub_4A2BA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2BA0
+ * Engine 成员函数  → sub_4A2BA0
  * raw 行区间 [122809, 122834]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A2BA0(int _this)
 {
@@ -73262,19 +73276,19 @@ int Engine::sub_4A2BA0(int _this)
     return 1;
   v5 = sub_49F770(v4);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：CSprite エラー：スプライト作成に失敗． %s\r\n",
     v5);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_4A2C10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2C10
+ * Engine 成员函数  → sub_4A2C10
  * raw 行区间 [122838, 122888]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A2C10(int _this, int a2, int a3, int a4, int a5)
 {
@@ -73319,20 +73333,20 @@ LABEL_9:
     return 1;
   v11 = sub_49F770(v10);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：CTexture エラー：テクスチャ作成に失敗． TEXTURE=%d %s\r\n",
     a2,
     v11);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_4A2D50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A2D50
+ * Engine 成员函数  → sub_4A2D50
  * raw 行区间 [122891, 123246]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A2D50(int _this, float a2, int *a3, int a4, int *a5, int a6, int a7)
 {
@@ -73400,17 +73414,17 @@ int Engine::sub_4A2D50(int _this, float a2, int *a3, int a4, int *a5, int a6, in
   if ( !v8 )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   if ( !*(_DWORD *)(_this + 42452) )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aDrawtexture);
-    this->sub_4034D0( (const char *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aDrawtexture);
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   v10 = *a3;
@@ -73679,12 +73693,12 @@ LABEL_58:
   {
     v35 = sub_49F770(v34);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：DrawTexture エラー：描画に失敗しました． TEXTURE=%d %s\r\n",
       v22,
       v35);
-    this->sub_4034D0( (const char *)(_this + 8));
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   (*(void (__stdcall **)(_DWORD))(**(_DWORD **)(_this + 42452) + 44))(*(_DWORD *)(_this + 42452));
@@ -73693,9 +73707,9 @@ LABEL_58:
 
 
 /* ===== [stained] sub_4A3590  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3590
+ * Engine 成员函数  → sub_4A3590
  * raw 行区间 [123254, 123364]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A3590(int _this,
         float a2,
@@ -73741,11 +73755,11 @@ int Engine::sub_4A3590(int _this,
     {
       v20 = sub_49F770(v19);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：DrawPrimitive エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
         v20);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     else
@@ -73799,20 +73813,20 @@ int Engine::sub_4A3590(int _this,
   else
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：DrawPrimitive エラー：VertexBufferの作成に失敗しました． %s\r\n",
       v22);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4A3890  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3890
+ * Engine 成员函数  → sub_4A3890
  * raw 行区间 [123392, 123417]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A3890(int _this, int a2, int a3)
 {
@@ -73826,12 +73840,12 @@ int Engine::sub_4A3890(int _this, int a2, int a3)
   {
     v6 = sub_49F770(v5);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：LockTexture エラー：テクスチャに対してのロックに失敗しました． TEXTURE=%d %s\r\n",
       a2,
       v6);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -73843,9 +73857,9 @@ int Engine::sub_4A3890(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_4A3910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3910
+ * Engine 成员函数  → sub_4A3910
  * raw 行区间 [123420, 123443]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4A3910(int _this, int a2)
 {
@@ -73859,12 +73873,12 @@ void Engine::sub_4A3910(int _this, int a2)
   {
     v5 = sub_49F770(v4);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：UnLockTexture エラー：テクスチャに対してのアンロックに失敗しました． TEXTURE=%d %s\r\n",
       a2,
       v5);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
   }
   else
   {
@@ -73874,9 +73888,9 @@ void Engine::sub_4A3910(int _this, int a2)
 
 
 /* ===== [stained] sub_4A3980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A3980
+ * Engine 成员函数  → sub_4A3980
  * raw 行区间 [123446, 123862]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A3980(int _this, int a2, int a3, int *a4, int *a5)
 {
@@ -73948,8 +73962,8 @@ int Engine::sub_4A3980(int _this, int a2, int a3, int *a4, int *a5)
     v54 = a2;
     v53 = aCopytextureTex;
 LABEL_3:
-    sprintf_s((char *const)(_this + 8), 0x400u, v53, v54);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, v53, v54);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v7 = *(_DWORD **)(_this + 4 * a3 + 42456);
@@ -74040,10 +74054,10 @@ LABEL_3:
     v29 = (*(int (__stdcall **)(int, _DWORD, int *))(*(_DWORD *)v28 + 72))(v28, 0, &v62);
     if ( v29 )
     {
-      v30 = (const void *)(_this + 8);
+      v30 = (const void *)(this->message_buf);
       v55 = sub_49F770(v29);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：コピー元テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
         a2,
@@ -74060,10 +74074,10 @@ LABEL_28:
     v33 = (*(int (__stdcall **)(int, _DWORD, int *))(*(_DWORD *)v32 + 72))(v32, 0, &v63);
     if ( v33 )
     {
-      v34 = (const void *)(_this + 8);
+      v34 = (const void *)(this->message_buf);
       v56 = sub_49F770(v33);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：コピー元テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
         a2,
@@ -74087,11 +74101,11 @@ LABEL_33:
     {
       v36 = sub_49F770(v35);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：データ取得用サーフェイスの作成に失敗しました．%s\r\n",
         v36);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v63 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v63 + 8))(v63);
@@ -74113,10 +74127,10 @@ LABEL_33:
     }
     if ( v38 )
     {
-      v30 = (const void *)(_this + 8);
+      v30 = (const void *)(this->message_buf);
       v57 = sub_49F770(v38);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：レンダリングターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
         a2,
@@ -74133,12 +74147,12 @@ LABEL_33:
     {
       v42 = sub_49F770(v41);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：コピー先テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
         a3,
         v42);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       v31 = v61;
 LABEL_29:
       if ( !v31 )
@@ -74152,10 +74166,10 @@ LABEL_30:
   v43 = (*(int (__stdcall **)(int *, _DWORD, int *))(v40 + 72))(v39, 0, &v63);
   if ( v43 )
   {
-    v34 = (const void *)(_this + 8);
+    v34 = (const void *)(this->message_buf);
     v58 = sub_49F770(v43);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CopyTexture エラー：コピー先テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
       a3,
@@ -74176,11 +74190,11 @@ LABEL_30:
   {
     v45 = sub_49F770(v44);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CopyTexture エラー：データ取得用サーフェイスの作成に失敗しました．%s\r\n",
       v45);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( v63 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v63 + 8))(v63);
@@ -74196,12 +74210,12 @@ LABEL_30:
   {
     v47 = sub_49F770(v46);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CopyTexture エラー：レンダリングターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
       a3,
       v47);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( v63 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v63 + 8))(v63);
@@ -74221,11 +74235,11 @@ LABEL_57:
   {
     v49 = sub_49F770(v48);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CopyTexture エラー：コピーに失敗しました．%s\r\n",
       v49);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( v63 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v63 + 8))(v63);
@@ -74251,11 +74265,11 @@ LABEL_57:
     {
       v52 = sub_49F770(v51);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyTexture エラー：レンダリングターゲットの更新に失敗しました．%s\r\n",
         v52);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v63 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v63 + 8))(v63);
@@ -74298,9 +74312,9 @@ LABEL_62:
 
 
 /* ===== [stained] sub_4A42C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A42C0
+ * Engine 成员函数  → sub_4A42C0
  * raw 行区间 [123967, 124318]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A42C0(int _this, int a2, int a3, int *a4, _DWORD *a5)
 {
@@ -74396,10 +74410,10 @@ int Engine::sub_4A42C0(int _this, int a2, int a3, int *a4, _DWORD *a5)
   v9 = (*(int (__stdcall **)(int, unsigned int *, _DWORD, _DWORD))(*(_DWORD *)v76 + 52))(v76, v54, 0, 0);
   if ( v9 )
   {
-    v10 = (const void *)(_this + 8);
+    v10 = (const void *)(this->message_buf);
     v51 = sub_49F770(v9);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ShrinkTexture エラー：描画元サーフェイスのロックに失敗しました．TEXTURE=%d %s\r\n",
       a2,
@@ -74413,10 +74427,10 @@ LABEL_4:
   v12 = (*(int (__stdcall **)(int, unsigned int *, _DWORD, _DWORD))(*(_DWORD *)v77 + 52))(v77, &v63, 0, 0);
   if ( v12 )
   {
-    v10 = (const void *)(_this + 8);
+    v10 = (const void *)(this->message_buf);
     v52 = sub_49F770(v12);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ShrinkTexture エラー：描画先サーフェイスのロックに失敗しました．TEXTURE=%d %s\r\n",
       a3,
@@ -74604,11 +74618,11 @@ LABEL_62:
     {
       v50 = sub_49F770(v49);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：ShrinkTexture エラー：レンダリングターゲットの更新に失敗しました．%s\r\n",
         v50);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v74 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v74 + 8))(v74);
@@ -74657,9 +74671,9 @@ LABEL_62:
 
 
 /* ===== [stained] sub_4A4880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4880
+ * Engine 成员函数  → sub_4A4880
  * raw 行区间 [124328, 124569]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A4880(int *_this, int a2, int a3, _DWORD *a4, _DWORD *a5)
 {
@@ -74707,7 +74721,7 @@ int Engine::sub_4A4880(int *_this, int a2, int a3, _DWORD *a4, _DWORD *a5)
     v34 = a2;
     v33 = aGetrendertarge;
 LABEL_3:
-    v6 = _this + 2;
+    v6 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, v33, v34);
 LABEL_4:
     this->sub_4034C0( v6);
@@ -74733,7 +74747,7 @@ LABEL_4:
       "関数：GetRenderTargetData エラー：コピー元テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
       a2,
       v11);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     if ( v43 )
       (*(void (__stdcall **)(int))(*(_DWORD *)v43 + 8))(v43);
     return 0;
@@ -74749,7 +74763,7 @@ LABEL_4:
       "関数：GetRenderTargetData エラー：コピー先テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
       a3,
       v14);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     if ( v43 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v43 + 8))(v43);
@@ -74779,7 +74793,7 @@ LABEL_15:
       0x400u,
       "関数：GetRenderTargetData エラー：テンプレートサーフェイスの作成に失敗しました．%s\r\n",
       v17);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     if ( v43 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v43 + 8))(v43);
@@ -74814,7 +74828,7 @@ LABEL_15:
       "関数：GetRenderTargetData エラー：レンダリングターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
       a2,
       v19);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     if ( v42 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v42 + 8))(v42);
@@ -74892,7 +74906,7 @@ LABEL_15:
   }
   if ( v32 )
   {
-    v6 = _this + 2;
+    v6 = this->message_buf;
     v35 = sub_49F770(v32);
     sprintf_s(
       (char *const)_this + 8,
@@ -74906,9 +74920,9 @@ LABEL_15:
 
 
 /* ===== [stained] sub_4A4C70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4C70
+ * Engine 成员函数  → sub_4A4C70
  * raw 行区间 [124573, 124649]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A4C70(int *_this, unsigned int a2, int *a3, int a4, int a5)
 {
@@ -74941,7 +74955,7 @@ int Engine::sub_4A4C70(int *_this, unsigned int a2, int *a3, int a4, int a5)
     v16 = a2;
     v15 = aFilltextureTex;
 LABEL_20:
-    v12 = _this + 2;
+    v12 = this->message_buf;
     sprintf_s((char *const)_this + 8, 0x400u, v15, v16);
     goto LABEL_21;
   }
@@ -74975,7 +74989,7 @@ LABEL_20:
   v11 = (*(int (__thiscall **)(int, int *, int, int))(*(_DWORD *)_this[a2 + 10614] + 24))(_this[a2 + 10614], v5, a4, a5);
   if ( !v11 )
     return 1;
-  v12 = _this + 2;
+  v12 = this->message_buf;
   v13 = sub_49F770(v11);
   sprintf_s(
     (char *const)_this + 8,
@@ -74990,9 +75004,9 @@ LABEL_21:
 
 
 /* ===== [stained] sub_4A4DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A4DC0
+ * Engine 成员函数  → sub_4A4DC0
  * raw 行区间 [124652, 124816]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A4DC0(int _this)
 {
@@ -75071,11 +75085,11 @@ int Engine::sub_4A4DC0(int _this)
       v18 = *(_DWORD *)(*(_DWORD *)(_this + 1860) + 1052);
       v27 = 0;
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：BackupBufferImage エラー：サポート対象外の画面フォーマットです． FORMAT=%d\r\n",
         v18);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       break;
   }
   v3 = *(_DWORD *)(_this + 1860);
@@ -75097,10 +75111,10 @@ int Engine::sub_4A4DC0(int _this)
   v9 = (*(int (__stdcall **)(void *, _DWORD, _DWORD, _DWORD, int *))(*(_DWORD *)v21 + 72))(v21, 0, 0, 0, &v25);
   if ( v9 )
   {
-    v10 = (const void *)(_this + 8);
+    v10 = (const void *)(this->message_buf);
     v19 = sub_49F770(v9);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：BackupBufferImage エラー：バックバッファ取得に失敗しました． %s\r\n",
       v19);
@@ -75116,10 +75130,10 @@ int Engine::sub_4A4DC0(int _this)
   v12 = (*(int (__stdcall **)(int, int *, int *, _DWORD))(*(_DWORD *)v25 + 52))(v25, v20, v28, 0);
   if ( v12 )
   {
-    v10 = (const void *)(_this + 8);
+    v10 = (const void *)(this->message_buf);
     sub_49F770(v12);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：BackupBufferImage エラー：サーフェイスのロックに失敗しました．\r\n");
 LABEL_18:
@@ -75162,9 +75176,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_4A50C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A50C0
+ * Engine 成员函数  → sub_4A50C0
  * raw 行区间 [124819, 124920]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A50C0(int _this, unsigned int a2)
 {
@@ -75195,11 +75209,11 @@ int Engine::sub_4A50C0(int _this, unsigned int a2)
     {
       v14 = sub_49F770(v13);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：SetTarget エラー：バックバッファ取得に失敗しました． %s\r\n",
         v14);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
     v15 = (*(int (__stdcall **)(int, _DWORD, unsigned int))(*(_DWORD *)v4 + 148))(v4, 0, a2);
     if ( !v15 )
@@ -75209,10 +75223,10 @@ int Engine::sub_4A50C0(int _this, unsigned int a2)
       *(_DWORD *)(_this + 46456) = -1;
       return 1;
     }
-    v11 = (const void *)(_this + 8);
+    v11 = (const void *)(this->message_buf);
     v18 = sub_49F770(v15);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ResetTarget エラー：レンダリングターゲット初期化に失敗しました．%s\r\n",
       v18);
@@ -75221,9 +75235,9 @@ int Engine::sub_4A50C0(int _this, unsigned int a2)
   {
     if ( !*(_DWORD *)(_this + 4 * a2 + 42456) )
     {
-      v5 = (const void *)(_this + 8);
+      v5 = (const void *)(this->message_buf);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：SetTargetTexture エラー：テクスチャが作成されていません． TEXTURE=%d\r\n",
         a2);
@@ -75237,10 +75251,10 @@ LABEL_4:
     v9 = (*(int (__stdcall **)(int, _DWORD, unsigned int *))(*(_DWORD *)v8 + 72))(v8, 0, &a2);
     if ( v9 )
     {
-      v5 = (const void *)(_this + 8);
+      v5 = (const void *)(this->message_buf);
       v16 = sub_49F770(v9);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：SetTarget エラー：レンダリングサーフェイスの取得に失敗しました．%s\r\n",
         v16);
@@ -75254,10 +75268,10 @@ LABEL_4:
       *(_DWORD *)(_this + 46456) = v2;
       return 1;
     }
-    v11 = (const void *)(_this + 8);
+    v11 = (const void *)(this->message_buf);
     v17 = sub_49F770(v10);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：SetTarget エラー：レンダリングターゲット設定に失敗しました．%s\r\n",
       v17);
@@ -75271,9 +75285,9 @@ LABEL_4:
 
 
 /* ===== [stained] sub_4A5260  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A5260
+ * Engine 成员函数  → sub_4A5260
  * raw 行区间 [124923, 125039]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A5260(int _this, const CHAR *a2, int a3)
 {
@@ -75301,11 +75315,11 @@ int Engine::sub_4A5260(int _this, const CHAR *a2, int a3)
   if ( !*(_DWORD *)(_this + 4 * a3 + 42456) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CaptureTexture エラー：テクスチャが作成されていません． TEXTURE=%d\r\n",
       a3);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v5 = (*(int (__thiscall **)(_DWORD))(**(_DWORD **)(_this + 4 * a3 + 42456) + 32))(*(_DWORD *)(_this + 4 * a3 + 42456));
@@ -75329,10 +75343,10 @@ int Engine::sub_4A5260(int _this, const CHAR *a2, int a3)
               0);
       if ( v11 )
       {
-        v12 = (const void *)(_this + 8);
+        v12 = (const void *)(this->message_buf);
         v15 = sub_49F770(v11);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：CaptureTexture エラー：バックアップ用サーフェイスの作成に失敗しました．TEXTURE=%d %s\r\n",
           a3,
@@ -75351,10 +75365,10 @@ LABEL_13:
       v13 = (*(int (__stdcall **)(int, int *, int *))(*(_DWORD *)v10 + 128))(v10, v18, v17);
       if ( v13 )
       {
-        v12 = (const void *)(_this + 8);
+        v12 = (const void *)(this->message_buf);
         v16 = sub_49F770(v13);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：CaptureTexture エラー：レンダーターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
           a3,
@@ -75380,11 +75394,11 @@ LABEL_13:
   }
   v7 = sub_49F770(v6);
   sprintf_s(
-    (char *const)(_this + 8),
+    (char *const)(this->message_buf),
     0x400u,
     "関数：CaptureTexture エラー：テクスチャサーフェイスの取得に失敗しました．%s\r\n",
     v7);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   v8 = v18;
   v9 = v18 == 0;
 LABEL_5:
@@ -75395,9 +75409,9 @@ LABEL_5:
 
 
 /* ===== [stained] sub_4A54A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A54A0
+ * Engine 成员函数  → sub_4A54A0
  * raw 行区间 [125048, 125417]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A54A0(char *_this,
         int a2,
@@ -75478,7 +75492,7 @@ int Engine::sub_4A54A0(char *_this,
   if ( !v13 )
   {
     sprintf_s(
-      _this + 8,
+      this->message_buf,
       0x400u,
       "関数：MosaicTexture エラー：転送元テクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
@@ -75771,9 +75785,9 @@ LABEL_20:
 
 
 /* ===== [stained] sub_4A5A60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A5A60
+ * Engine 成员函数  → sub_4A5A60
  * raw 行区间 [125423, 125842]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A5A60(char *_this, int a2, int a3, _DWORD *a4, _DWORD *a5, int a6, int a7, int a8, int a9)
 {
@@ -75873,7 +75887,7 @@ int Engine::sub_4A5A60(char *_this, int a2, int a3, _DWORD *a4, _DWORD *a5, int 
   if ( !*(_DWORD *)&_this[4 * a2 + 42456] )
   {
     sprintf_s(
-      _this + 8,
+      this->message_buf,
       0x400u,
       "関数：MonoToneTexture エラー：処理対象のテクスチャが作成されていません． TEXTURE=%d\r\n",
       a2);
@@ -75884,7 +75898,7 @@ int Engine::sub_4A5A60(char *_this, int a2, int a3, _DWORD *a4, _DWORD *a5, int 
   if ( !v11 )
   {
     sprintf_s(
-      _this + 8,
+      this->message_buf,
       0x400u,
       "関数：MonoToneTexture エラー：処理対象のテクスチャが作成されていません． TEXTURE=%d\r\n",
       a3);
@@ -76198,9 +76212,9 @@ LABEL_77:
 
 
 /* ===== [stained] sub_4A62A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A62A0
+ * Engine 成员函数  → sub_4A62A0
  * raw 行区间 [125863, 126349]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A62A0(char *_this,
         int a2,
@@ -76329,8 +76343,8 @@ int Engine::sub_4A62A0(char *_this,
     v61 = a2;
     v60 = aBlurtextureTex;
 LABEL_3:
-    sprintf_s(_this + 8, 0x400u, v60, v61);
-    this->sub_4034C0( _this + 8);
+    sprintf_s(this->message_buf, 0x400u, v60, v61);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
   v77 = *(_DWORD *)&_this[4 * *(_DWORD *)ArgList + 42456];
@@ -76682,18 +76696,18 @@ LABEL_36:
     return 1;
   }
   sub_4A1C50(
-    _this + 8,
+    this->message_buf,
     "関数：BlurTexture エラー：転送先と転送元が同じですtexture = %d\r\n",
     *(_DWORD *)ArgList);
-  this->sub_4034C0( _this + 8);
+  this->sub_4034C0( this->message_buf);
   return 1;
 }
 
 
 /* ===== [stained] sub_4A6C50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6C50
+ * Engine 成员函数  → sub_4A6C50
  * raw 行区间 [126360, 126390]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A6C50(char *_this,
         int a2,
@@ -76728,9 +76742,9 @@ int Engine::sub_4A6C50(char *_this,
 
 
 /* ===== [stained] sub_4A6D60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6D60
+ * Engine 成员函数  → sub_4A6D60
  * raw 行区间 [126416, 126428]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A6D60(int *_this)
 {
@@ -76748,9 +76762,9 @@ int Engine::sub_4A6D60(int *_this)
 
 
 /* ===== [stained] sub_4A6E70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6E70
+ * Engine 成员函数  → sub_4A6E70
  * raw 行区间 [126499, 126520]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 char Engine::sub_4A6E70(int *_this, unsigned int a2)
 {
@@ -76777,9 +76791,9 @@ char Engine::sub_4A6E70(int *_this, unsigned int a2)
 
 
 /* ===== [stained] sub_4A6EE0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A6EE0
+ * Engine 成员函数  → sub_4A6EE0
  * raw 行区间 [126523, 126618]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A6EE0(int _this, int a2, int a3)
 {
@@ -76880,9 +76894,9 @@ int Engine::sub_4A6EE0(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_4A7170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7170
+ * Engine 成员函数  → sub_4A7170
  * raw 行区间 [126622, 126625]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A7170(void *_this, void *a2, int a3, int a4)
 {
@@ -76891,9 +76905,9 @@ int Engine::sub_4A7170(void *_this, void *a2, int a3, int a4)
 
 
 /* ===== [stained] sub_4A7190  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7190
+ * Engine 成员函数  → sub_4A7190
  * raw 行区间 [126628, 126631]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A7190(void *_this, float a2, int *a3, int a4, int *a5)
 {
@@ -76902,9 +76916,9 @@ int Engine::sub_4A7190(void *_this, float a2, int *a3, int a4, int *a5)
 
 
 /* ===== [stained] sub_4A71B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A71B0
+ * Engine 成员函数  → sub_4A71B0
  * raw 行区间 [126634, 126642]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A71B0(void *_this, int a2, int a3)
 {
@@ -76918,9 +76932,9 @@ int Engine::sub_4A71B0(void *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4A7210  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7210
+ * Engine 成员函数  → sub_4A7210
  * raw 行区间 [126645, 126982]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A7210(int _this, int a2, HANDLE hFile, int a4, int a5)
 {
@@ -77116,8 +77130,8 @@ LABEL_42:
   v52 = v22;
   if ( !(*(int (__thiscall **)(_DWORD *, _DWORD *, float, int))(*v20 + 28))(v20, v5, COERCE_FLOAT(LODWORD(v49)), a4) )
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aReadframetex);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aReadframetex);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   v23 = *((float *)v5 + 7);
@@ -77156,10 +77170,10 @@ LABEL_53:
   v28 = (*(int (__thiscall **)(_DWORD *, float *, DWORD, int))(*v25 + 12))(v25, v52, v27, 1);
   if ( v28 )
   {
-    v29 = (const CHAR *)(_this + 8);
+    v29 = (const CHAR *)(this->message_buf);
     v42 = sub_49F770(v28);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ReadFrameTex エラー：外枠用テクスチャ作成に失敗． %s\r\n",
       v42);
@@ -77173,10 +77187,10 @@ LABEL_55:
   v32 = (*(int (__stdcall **)(int, _DWORD, int *))(*(_DWORD *)v31 + 72))(v31, 0, &v47);
   if ( v32 )
   {
-    v29 = (const CHAR *)(_this + 8);
+    v29 = (const CHAR *)(this->message_buf);
     v43 = sub_49F770(v32);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ReadFrameTex エラー：レンダリングサーフェイスの取得に失敗しました．%s\r\n",
       v43);
@@ -77190,11 +77204,11 @@ LABEL_55:
   {
     v34 = sub_49F770(v33);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ReadFrameTex エラー：レンダリングターゲット設定に失敗しました．%s\r\n",
       v34);
-    OutputDebugStringA((LPCSTR)(_this + 8));
+    OutputDebugStringA((LPCSTR)(this->message_buf));
     if ( v47 )
       (*(void (__stdcall **)(int))(*(_DWORD *)v47 + 8))(v47);
     return 0;
@@ -77245,10 +77259,10 @@ LABEL_55:
   v39 = v37(v20, v38, 0, v57, v58, -1);
   if ( v39 )
   {
-    v29 = (const CHAR *)(_this + 8);
+    v29 = (const CHAR *)(this->message_buf);
     v44 = sub_49F770(v39);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：ReadFrameTex エラー：描画に失敗しました． %s\r\n",
       v44);
@@ -77263,9 +77277,9 @@ LABEL_55:
 
 
 /* ===== [stained] sub_4A7990  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7990
+ * Engine 成员函数  → sub_4A7990
  * raw 行区间 [126987, 127201]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A7990(int _this, int a2, int a3, __int64 *a4, int *a5)
 {
@@ -77314,12 +77328,12 @@ int Engine::sub_4A7990(int _this, int a2, int a3, __int64 *a4, int *a5)
   {
     v9 = sub_49F770(v8);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：EnlargeTexture エラー：描画元サーフェイスのロックに失敗しました．TEXTURE=%d %s\r\n",
       a2,
       v9);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( v33 )
     {
       (*(void (__stdcall **)(int))(*(_DWORD *)v33 + 8))(v33);
@@ -77338,12 +77352,12 @@ LABEL_6:
     {
       v13 = sub_49F770(v12);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：EnlargeTexture エラー：描画先サーフェイスのロックに失敗しました．TEXTURE=%d %s\r\n",
         a3,
         v13);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( !v33 )
       {
 LABEL_17:
@@ -77440,11 +77454,11 @@ LABEL_16:
       {
         v25 = sub_49F770(v24);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：EnlargeTexture エラー：レンダリングターゲットの更新に失敗しました．%s\r\n",
           v25);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
         if ( !v33 )
           goto LABEL_17;
         goto LABEL_16;
@@ -77485,9 +77499,9 @@ LABEL_16:
 
 
 /* ===== [stained] sub_4A7DA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A7DA0
+ * Engine 成员函数  → sub_4A7DA0
  * raw 行区间 [127205, 127413]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A7DA0(int _this)
 {
@@ -77563,12 +77577,12 @@ int Engine::sub_4A7DA0(int _this)
     {
       v11 = sub_49F770(v10);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：RestoreBufferToTemp エラー：コピー先テクスチャのサーフェイスの取得に失敗しました．TEXTURE=%d %s\r\n",
         38,
         v11);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v31 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v31 + 8))(v31);
@@ -77595,10 +77609,10 @@ LABEL_30:
             0);
     if ( v12 )
     {
-      v13 = (const void *)(_this + 8);
+      v13 = (const void *)(this->message_buf);
       v23 = sub_49F770(v12);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：RestoreBufferToTemp エラー：データ取得用サーフェイスの作成に失敗しました．%s\r\n",
         v23);
@@ -77622,10 +77636,10 @@ LABEL_26:
             v30);
     if ( v14 )
     {
-      v13 = (const void *)(_this + 8);
+      v13 = (const void *)(this->message_buf);
       v15 = sub_49F770(v14);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：RestoreBufferToTemp エラー：レンダリングターゲットデータの取得に失敗しました．TEXTURE=%d %s\r\n",
         38,
@@ -77635,10 +77649,10 @@ LABEL_26:
     v16 = (*(int (__stdcall **)(int, int *, int *, _DWORD))(*(_DWORD *)v30 + 52))(v30, v25, v33, 0);
     if ( v16 )
     {
-      v13 = (const void *)(_this + 8);
+      v13 = (const void *)(this->message_buf);
       sub_49F770(v16);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：RestoreTexture エラー：サーフェイスのロックに失敗しました．\r\n");
       goto LABEL_26;
@@ -77670,10 +77684,10 @@ LABEL_26:
               0);
       if ( v20 )
       {
-        v13 = (const void *)(_this + 8);
+        v13 = (const void *)(this->message_buf);
         v24 = sub_49F770(v20);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：RestoreTexture エラー：レンダリングターゲットの更新に失敗しました．%s\r\n",
           v24);
@@ -77701,9 +77715,9 @@ LABEL_26:
 
 
 /* ===== [stained] sub_4A81E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A81E0
+ * Engine 成员函数  → sub_4A81E0
  * raw 行区间 [127481, 127677]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4A81E0(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void *a5)
 {
@@ -77734,13 +77748,13 @@ _DWORD * Engine::sub_4A81E0(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void
   int v29; // ecx
   _DWORD *result; // eax
 
-  v5 = _this[2];
+  v5 = this->message_buf;
   if ( v5 >= 0x28F5C27 )
   {
     operator delete(a5);
     std___Xlength_error(aMapSetTTooLong);
   }
-  _this[2] = v5 + 1;
+  this->message_buf = v5 + 1;
   v6 = a5;
   *((_DWORD *)a5 + 1) = a4;
   v7 = (_DWORD *)_this[1];
@@ -77905,9 +77919,9 @@ LABEL_50:
 
 
 /* ===== [stained] sub_4A8410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8410
+ * Engine 成员函数  → sub_4A8410
  * raw 行区间 [127680, 127845]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4A8410(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void *a5)
 {
@@ -77932,14 +77946,14 @@ _DWORD * Engine::sub_4A8410(_DWORD *_this, _DWORD *a2, char a3, _DWORD *a4, void
   _DWORD *v24; // edx
   _DWORD *result; // eax
 
-  v6 = _this[2];
+  v6 = this->message_buf;
   if ( v6 >= 0x71C71B )
   {
     operator delete(a5);
     std___Xlength_error(aMapSetTTooLong);
   }
   v7 = a5;
-  _this[2] = v6 + 1;
+  this->message_buf = v6 + 1;
   *((_DWORD *)a5 + 1) = a4;
   v8 = (_DWORD *)_this[1];
   if ( a4 == v8 )
@@ -78078,9 +78092,9 @@ LABEL_42:
 
 
 /* ===== [stained] sub_4A8620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8620
+ * Engine 成员函数  → sub_4A8620
  * raw 行区间 [127848, 127898]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A8620(int _this)
 {
@@ -78136,9 +78150,9 @@ int Engine::sub_4A8620(int _this)
 
 
 /* ===== [stained] sub_4A8720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8720
+ * Engine 成员函数  → sub_4A8720
  * raw 行区间 [127902, 127930]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A8720(int *_this, int a2, int a3)
 {
@@ -78172,9 +78186,9 @@ int Engine::sub_4A8720(int *_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4A87A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A87A0
+ * Engine 成员函数  → sub_4A87A0
  * raw 行区间 [127933, 128130]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A87A0(char *_this, int a2, int a3, int a4, int *a5)
 {
@@ -78237,8 +78251,8 @@ int Engine::sub_4A87A0(char *_this, int a2, int a3, int a4, int *a5)
     v50 = a2;
     v49 = aStretchtexture;
 LABEL_3:
-    sprintf_s(_this + 8, 0x400u, v49, v50);
-    this->sub_4034C0( _this + 8);
+    sprintf_s(this->message_buf, 0x400u, v49, v50);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
   v8 = *(_DWORD **)&_this[4 * a3 + 42456];
@@ -78377,9 +78391,9 @@ LABEL_33:
 
 
 /* ===== [stained] sub_4A8AF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8AF0
+ * Engine 成员函数  → sub_4A8AF0
  * raw 行区间 [128133, 128322]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4A8AF0(_DWORD *_this, int *a2, int a3)
 {
@@ -78564,9 +78578,9 @@ LABEL_53:
     *(_BYTE *)(v4 + 756) = 1;
   }
   operator delete(v18);
-  v16 = _this[2];
+  v16 = this->message_buf;
   if ( v16 )
-    _this[2] = v16 - 1;
+    this->message_buf = v16 - 1;
   result = a2;
   *a2 = a3;
   return result;
@@ -78574,9 +78588,9 @@ LABEL_53:
 
 
 /* ===== [stained] sub_4A8DD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A8DD0
+ * Engine 成员函数  → sub_4A8DD0
  * raw 行区间 [128325, 128514]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4A8DD0(_DWORD *_this, int *a2, int a3)
 {
@@ -78761,9 +78775,9 @@ LABEL_53:
     *(_BYTE *)(v4 + 112) = 1;
   }
   operator delete(v18);
-  v16 = _this[2];
+  v16 = this->message_buf;
   if ( v16 )
-    _this[2] = v16 - 1;
+    this->message_buf = v16 - 1;
   result = a2;
   *a2 = a3;
   return result;
@@ -78771,9 +78785,9 @@ LABEL_53:
 
 
 /* ===== [stained] sub_4A9020  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9020
+ * Engine 成员函数  → sub_4A9020
  * raw 行区间 [128517, 128706]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4A9020(_DWORD *_this, int *a2, int a3)
 {
@@ -78958,9 +78972,9 @@ LABEL_53:
     *(_BYTE *)(v4 + 76) = 1;
   }
   operator delete(v18);
-  v16 = _this[2];
+  v16 = this->message_buf;
   if ( v16 )
-    _this[2] = v16 - 1;
+    this->message_buf = v16 - 1;
   result = a2;
   *a2 = a3;
   return result;
@@ -78968,9 +78982,9 @@ LABEL_53:
 
 
 /* ===== [stained] sub_4A9270  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9270
+ * Engine 成员函数  → sub_4A9270
  * raw 行区间 [128709, 128898]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4A9270(_DWORD *_this, int *a2, int a3)
 {
@@ -79155,9 +79169,9 @@ LABEL_53:
     *(_BYTE *)(v4 + 588) = 1;
   }
   operator delete(v18);
-  v16 = _this[2];
+  v16 = this->message_buf;
   if ( v16 )
-    _this[2] = v16 - 1;
+    this->message_buf = v16 - 1;
   result = a2;
   *a2 = a3;
   return result;
@@ -79165,9 +79179,9 @@ LABEL_53:
 
 
 /* ===== [stained] sub_4A9730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9730
+ * Engine 成员函数  → sub_4A9730
  * raw 行区间 [129004, 129073]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A9730(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 {
@@ -79242,9 +79256,9 @@ int Engine::sub_4A9730(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_4A9AD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9AD0
+ * Engine 成员函数  → sub_4A9AD0
  * raw 行区间 [129200, 129269]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A9AD0(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 {
@@ -79319,9 +79333,9 @@ int Engine::sub_4A9AD0(_DWORD *_this, int a2, _DWORD *a3, _DWORD *a4)
 
 
 /* ===== [stained] sub_4A9BB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9BB0
+ * Engine 成员函数  → sub_4A9BB0
  * raw 行区间 [129272, 129280]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A9BB0(int _this)
 {
@@ -79335,9 +79349,9 @@ int Engine::sub_4A9BB0(int _this)
 
 
 /* ===== [stained] sub_4A9EC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4A9EC0
+ * Engine 成员函数  → sub_4A9EC0
  * raw 行区间 [129457, 129501]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4A9EC0(int _this, int a2, float *a3, int a4, int a5)
 {
@@ -79366,12 +79380,12 @@ int Engine::sub_4A9EC0(int _this, int a2, float *a3, int a4, int a5)
   {
     v8 = sub_49F770(v7);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GetLocalMatrixS エラー：マトリックスの分割に失敗しました． Order=%d %s\r\n",
       a2,
       v8);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -79387,9 +79401,9 @@ int Engine::sub_4A9EC0(int _this, int a2, float *a3, int a4, int a5)
 
 
 /* ===== [stained] sub_4AA060  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AA060
+ * Engine 成员函数  → sub_4AA060
  * raw 行区间 [129530, 129574]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4AA060(int _this, int a2, float *a3, int a4, int a5)
 {
@@ -79418,12 +79432,12 @@ int Engine::sub_4AA060(int _this, int a2, float *a3, int a4, int a5)
   {
     v8 = sub_49F770(v7);
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：GetLocalMatrixT エラー：マトリックスの分割に失敗しました． Order=%d %s\r\n",
       a2,
       v8);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -79439,9 +79453,9 @@ int Engine::sub_4AA060(int _this, int a2, float *a3, int a4, int a5)
 
 
 /* ===== [stained] sub_4AAA50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAA50
+ * Engine 成员函数  → sub_4AAA50
  * raw 行区间 [130028, 130050]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_4AAA50(int _this, int a2)
 {
@@ -79469,9 +79483,9 @@ int ** Engine::sub_4AAA50(int _this, int a2)
 
 
 /* ===== [stained] sub_4AAAF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAAF0
+ * Engine 成员函数  → sub_4AAAF0
  * raw 行区间 [130053, 130075]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_4AAAF0(int _this, int a2)
 {
@@ -79499,9 +79513,9 @@ int ** Engine::sub_4AAAF0(int _this, int a2)
 
 
 /* ===== [stained] sub_4AAB80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAB80
+ * Engine 成员函数  → sub_4AAB80
  * raw 行区间 [130078, 130100]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_4AAB80(int _this, int a2)
 {
@@ -79529,9 +79543,9 @@ int ** Engine::sub_4AAB80(int _this, int a2)
 
 
 /* ===== [stained] sub_4AACA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AACA0
+ * Engine 成员函数  → sub_4AACA0
  * raw 行区间 [130129, 130151]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int ** Engine::sub_4AACA0(int _this, int a2)
 {
@@ -79559,9 +79573,9 @@ int ** Engine::sub_4AACA0(int _this, int a2)
 
 
 /* ===== [stained] sub_4AAF90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AAF90
+ * Engine 成员函数  → sub_4AAF90
  * raw 行区间 [130287, 130463]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4AAF90(int _this)
 {
@@ -79743,9 +79757,9 @@ int Engine::sub_4AAF90(int _this)
 
 
 /* ===== [stained] sub_4AB390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AB390
+ * Engine 成员函数  → sub_4AB390
  * raw 行区间 [130471, 130677]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4AB390(int _this)
 {
@@ -79957,9 +79971,9 @@ void Engine::sub_4AB390(int _this)
 
 
 /* ===== [stained] sub_4AC0D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AC0D0
+ * Engine 成员函数  → sub_4AC0D0
  * raw 行区间 [131146, 131265]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4AC0D0(int _this, int a2, int a3)
 {
@@ -80001,11 +80015,11 @@ int Engine::sub_4AC0D0(int _this, int a2, int a3)
            0) )
     {
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyScene エラー：VertexBufferの作成に失敗しました． %s\r\n",
         v13);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     v6 = (*(int (__stdcall **)(int, _DWORD, _DWORD, int **, _DWORD))(*(_DWORD *)v18[1] + 44))(v18[1], 0, 0, &v17, 0);
@@ -80013,11 +80027,11 @@ int Engine::sub_4AC0D0(int _this, int a2, int a3)
     {
       v7 = sub_49F770(v6);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CopyScene エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
         v7);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v18[1] )
         (*(void (__stdcall **)(int))(*(_DWORD *)v18[1] + 8))(v18[1]);
       return 0;
@@ -80067,11 +80081,11 @@ int Engine::sub_4AC0D0(int _this, int a2, int a3)
   if ( v14 == *(int **)(_this + 1036) && v15 == *(int **)(_this + 1068) && v12 == *(int **)(_this + 1100) )
   {
     sprintf_s(
-      (char *const)(_this + 8),
+      (char *const)(this->message_buf),
       0x400u,
       "関数：CopyScene エラー：コピー元のシーンが存在しません． %d\r\n",
       a2);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -80084,9 +80098,9 @@ int Engine::sub_4AC0D0(int _this, int a2, int a3)
 
 
 /* ===== [stained] sub_4AEEA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AEEA0
+ * Engine 成员函数  → sub_4AEEA0
  * raw 行区间 [133327, 133450]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_4AEEA0(int _this, int a2, char a3)
 {
@@ -80177,12 +80191,12 @@ _BYTE * Engine::sub_4AEEA0(int _this, int a2, char a3)
           {
             v14 = sub_49F770(v13);
             sprintf_s(
-              (char *const)(_this + 8),
+              (char *const)(this->message_buf),
               0x400u,
               "関数：RenderScene エラー：マトリックスの分割に失敗しました．Order=%d (%s)\r\n",
               v12,
               v14);
-            this->sub_4034C0( (const void *)(_this + 8));
+            this->sub_4034C0( (const void *)(this->message_buf));
           }
           else
           {
@@ -80215,9 +80229,9 @@ _BYTE * Engine::sub_4AEEA0(int _this, int a2, char a3)
 
 
 /* ===== [stained] sub_4AF1C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF1C0
+ * Engine 成员函数  → sub_4AF1C0
  * raw 行区间 [133459, 133646]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4AF1C0(int _this, int a2)
 {
@@ -80320,11 +80334,11 @@ LABEL_13:
 LABEL_33:
         v23 = sub_49F770(v12);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：RenderPolygon エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
           v23);
-        this->sub_4034C0( (const void *)(_this + 8));
+        this->sub_4034C0( (const void *)(this->message_buf));
         if ( v38 )
           operator delete(v38);
         if ( v9 )
@@ -80410,9 +80424,9 @@ LABEL_33:
 
 
 /* ===== [stained] sub_4AF560  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF560
+ * Engine 成员函数  → sub_4AF560
  * raw 行区间 [133651, 133701]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_4AF560(int _this, int a2)
 {
@@ -80468,9 +80482,9 @@ _BYTE * Engine::sub_4AF560(int _this, int a2)
 
 
 /* ===== [stained] sub_4AF6A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4AF6A0
+ * Engine 成员函数  → sub_4AF6A0
  * raw 行区间 [133704, 133787]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4AF6A0(int _this,
         int a2,
@@ -80503,8 +80517,8 @@ void Engine::sub_4AF6A0(int _this,
     a11 = 0;
     a10 = 0;
     a8 = -1;
-    sprintf_s((char *const)(_this + 8), 0x400u, aSetblindwipe);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aSetblindwipe);
+    this->sub_4034C0( (const void *)(this->message_buf));
     goto LABEL_4;
   }
   if ( a8 <= 0xB )
@@ -80552,15 +80566,15 @@ LABEL_8:
     this->sub_4A2C10( a3, v13[260], v13[261], v14);
     goto LABEL_8;
   }
-  sprintf_s((char *const)(_this + 8), 0x400u, aSetblindwipe_0);
-  this->sub_4034C0( (const void *)(_this + 8));
+  sprintf_s((char *const)(this->message_buf), 0x400u, aSetblindwipe_0);
+  this->sub_4034C0( (const void *)(this->message_buf));
 }
 
 
 /* ===== [stained] sub_4B06A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B06A0
+ * Engine 成员函数  → sub_4B06A0
  * raw 行区间 [134409, 134415]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4B06A0(void *_this, char a2)
 {
@@ -80572,9 +80586,9 @@ void * Engine::sub_4B06A0(void *_this, char a2)
 
 
 /* ===== [stained] sub_4B06D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B06D0
+ * Engine 成员函数  → sub_4B06D0
  * raw 行区间 [134418, 136720]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B06D0(int _this)
 {
@@ -80992,11 +81006,11 @@ void Engine::sub_4B06D0(int _this)
 LABEL_8:
           v7 = sub_49F770(v6);
           sprintf_s(
-            (char *const)(_this + 8),
+            (char *const)(this->message_buf),
             0x400u,
             "関数：RenderEffect エラー：エフェクトインターフェイスの初期化に失敗しました． %s\r\n",
             v7);
-          this->sub_4034C0( (const void *)(_this + 8));
+          this->sub_4034C0( (const void *)(this->message_buf));
           return;
         }
       }
@@ -82879,9 +82893,9 @@ LABEL_482:
 
 
 /* ===== [stained] sub_4B4020  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4020
+ * Engine 成员函数  → sub_4B4020
  * raw 行区间 [136736, 136739]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _BYTE * Engine::sub_4B4020(void *_this, int a2)
 {
@@ -82890,9 +82904,9 @@ _BYTE * Engine::sub_4B4020(void *_this, int a2)
 
 
 /* ===== [stained] sub_4B4040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4040
+ * Engine 成员函数  → sub_4B4040
  * raw 行区间 [136742, 136966]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B4040(int _this)
 {
@@ -83122,9 +83136,9 @@ LABEL_55:
 
 
 /* ===== [stained] sub_4B4460  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4460
+ * Engine 成员函数  → sub_4B4460
  * raw 行区间 [136969, 137285]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B4460(int _this, int a2, int a3)
 {
@@ -83446,9 +83460,9 @@ LABEL_77:
 
 
 /* ===== [stained] sub_4B4910  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4910
+ * Engine 成员函数  → sub_4B4910
  * raw 行区间 [137288, 137429]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B4910(int _this)
 {
@@ -83514,10 +83528,10 @@ int Engine::sub_4B4910(int _this)
       v7 = (*(int (__stdcall **)(int, _DWORD, _DWORD, _DWORD, float *))(*(_DWORD *)v21 + 72))(v21, 0, 0, 0, &v23);
       if ( v7 )
       {
-        v8 = (const void *)(_this + 8);
+        v8 = (const void *)(this->message_buf);
         v17 = sub_49F770(v7);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：RestoreTexture エラー：バックバッファ取得に失敗しました． %s\r\n",
           v17);
@@ -83551,10 +83565,10 @@ LABEL_18:
               0);
       if ( v12 )
       {
-        v8 = (const void *)(_this + 8);
+        v8 = (const void *)(this->message_buf);
         sub_49F770(v12);
         sprintf_s(
-          (char *const)(_this + 8),
+          (char *const)(this->message_buf),
           0x400u,
           "関数：RestoreTexture エラー：サーフェイスのロックに失敗しました．\r\n");
         goto LABEL_18;
@@ -83595,9 +83609,9 @@ LABEL_18:
 
 
 /* ===== [stained] sub_4B4B90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4B90
+ * Engine 成员函数  → sub_4B4B90
  * raw 行区间 [137433, 137595]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B4B90(int _this, const CHAR *a2, int a3, int a4)
 {
@@ -83638,11 +83652,11 @@ int Engine::sub_4B4B90(int _this, const CHAR *a2, int a3, int a4)
     {
       v23 = sub_49F770(v22);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CaptureBuffer エラー：バックバッファ取得に失敗しました． %s\r\n",
         v23);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       v15 = (int)v28;
       goto LABEL_27;
     }
@@ -83680,11 +83694,11 @@ int Engine::sub_4B4B90(int _this, const CHAR *a2, int a3, int a4)
     {
       v12 = sub_49F770(v11);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CaptureBuffer エラー：レンダリングターゲットサーフェイス作成に失敗しました． %s\r\n",
         v12);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
       if ( v29 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v29 + 8))(v29);
@@ -83697,11 +83711,11 @@ int Engine::sub_4B4B90(int _this, const CHAR *a2, int a3, int a4)
     {
       v14 = sub_49F770(v13);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CaptureBuffer エラー：レンダリングターゲット設定に失敗しました．%s\r\n",
         v14);
-      OutputDebugStringA((LPCSTR)(_this + 8));
+      OutputDebugStringA((LPCSTR)(this->message_buf));
       v15 = v29;
 LABEL_27:
       v18 = v15 == 0;
@@ -83717,11 +83731,11 @@ LABEL_28:
     {
       v17 = sub_49F770(v16);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CaptureBuffer エラー：サーフェイス作成に失敗しました．%s\r\n",
         v17);
-      OutputDebugStringA((LPCSTR)(_this + 8));
+      OutputDebugStringA((LPCSTR)(this->message_buf));
       if ( v29 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v29 + 8))(v29);
@@ -83737,11 +83751,11 @@ LABEL_28:
     {
       v20 = sub_49F770(v19);
       sprintf_s(
-        (char *const)(_this + 8),
+        (char *const)(this->message_buf),
         0x400u,
         "関数：CaptureBuffer エラー：サーフェイスのコピーに失敗しました．%s\r\n",
         v20);
-      OutputDebugStringA((LPCSTR)(_this + 8));
+      OutputDebugStringA((LPCSTR)(this->message_buf));
       if ( v29 )
       {
         (*(void (__stdcall **)(int))(*(_DWORD *)v29 + 8))(v29);
@@ -83765,9 +83779,9 @@ LABEL_19:
 
 
 /* ===== [stained] sub_4B4E60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4E60
+ * Engine 成员函数  → sub_4B4E60
  * raw 行区间 [137599, 137618]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B4E60(_DWORD *_this)
 {
@@ -83792,9 +83806,9 @@ _DWORD * Engine::sub_4B4E60(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B4F10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B4F10
+ * Engine 成员函数  → sub_4B4F10
  * raw 行区间 [137622, 137626]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B4F10(_DWORD *_this)
 {
@@ -83804,9 +83818,9 @@ void Engine::sub_4B4F10(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B5170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5170
+ * Engine 成员函数  → sub_4B5170
  * raw 行区间 [137721, 137741]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B5170(int _this, int a2, int a3, int a4)
 {
@@ -83823,8 +83837,8 @@ int Engine::sub_4B5170(int _this, int a2, int a3, int a4)
   }
   else
   {
-    sprintf_s((char *const)(_this + 8), 0x400u, aSetdelaySound);
-    this->sub_4034C0( (const void *)(_this + 8));
+    sprintf_s((char *const)(this->message_buf), 0x400u, aSetdelaySound);
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   return result;
@@ -83832,9 +83846,9 @@ int Engine::sub_4B5170(int _this, int a2, int a3, int a4)
 
 
 /* ===== [stained] sub_4B52C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B52C0
+ * Engine 成员函数  → sub_4B52C0
  * raw 行区间 [137805, 137811]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B52C0(_DWORD *_this, char a2)
 {
@@ -83846,9 +83860,9 @@ _DWORD * Engine::sub_4B52C0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4B5620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5620
+ * Engine 成员函数  → sub_4B5620
  * raw 行区间 [137983, 137991]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B5620(void *_this)
 {
@@ -83862,9 +83876,9 @@ void Engine::sub_4B5620(void *_this)
 
 
 /* ===== [stained] sub_4B5A00  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5A00
+ * Engine 成员函数  → sub_4B5A00
  * raw 行区间 [138274, 138280]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4B5A00(void *_this, char a2)
 {
@@ -83876,9 +83890,9 @@ void * Engine::sub_4B5A00(void *_this, char a2)
 
 
 /* ===== [stained] sub_4B5AA0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5AA0
+ * Engine 成员函数  → sub_4B5AA0
  * raw 行区间 [138309, 138329]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 DWORD __stdcall Engine::sub_4B5AA0(volatile LONG *lpThreadParameter)
 {
@@ -83904,9 +83918,9 @@ DWORD __stdcall Engine::sub_4B5AA0(volatile LONG *lpThreadParameter)
 
 
 /* ===== [stained] sub_4B5C50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5C50
+ * Engine 成员函数  → sub_4B5C50
  * raw 行区间 [138371, 138411]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B5C50(int *_this)
 {
@@ -83931,10 +83945,10 @@ int Engine::sub_4B5C50(int *_this)
     {
       LastError = GetLastError();
       wsprintfA(
-        _this + 2,
+        this->message_buf,
         "関数：LoadDLL エラー：pDirectSoundCreateのアドレス設定に失敗しました ERRORCODE = %d\r\n",
         LastError);
-      this->sub_4034C0( _this + 2);
+      this->sub_4034C0( this->message_buf);
       return 0;
     }
   }
@@ -83942,19 +83956,19 @@ int Engine::sub_4B5C50(int *_this)
   {
     v4 = GetLastError();
     wsprintfA(
-      _this + 2,
+      this->message_buf,
       "関数：LoadDLL エラー：DSOUND.DLLの呼び出しに失敗しました ERRORCODE = %d\r\n",
       v4);
-    this->sub_4034C0( _this + 2);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B5CF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B5CF0
+ * Engine 成员函数  → sub_4B5CF0
  * raw 行区间 [138415, 138587]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B5CF0(char *lpParameter, int a2, int a3, int a4)
 {
@@ -84132,9 +84146,9 @@ int Engine::sub_4B5CF0(char *lpParameter, int a2, int a3, int a4)
 
 
 /* ===== [stained] sub_4B6020  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6020
+ * Engine 成员函数  → sub_4B6020
  * raw 行区间 [138591, 138620]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6020(int _this, unsigned int a2, int a3)
 {
@@ -84155,8 +84169,8 @@ int Engine::sub_4B6020(int _this, unsigned int a2, int a3)
     v7 = a2;
     v6 = aDsplayD;
 LABEL_11:
-    wsprintfA(_this + 8, v6, v7);
-    this->sub_4034D0( (const char *)(_this + 8));
+    wsprintfA(this->message_buf, v6, v7);
+    this->sub_4034D0( (const char *)(this->message_buf));
     return 0;
   }
   if ( *(_DWORD *)(_this + 4 * a2 + 1440) )
@@ -84169,9 +84183,9 @@ LABEL_11:
 
 
 /* ===== [stained] sub_4B60C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B60C0
+ * Engine 成员函数  → sub_4B60C0
  * raw 行区间 [138624, 138642]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B60C0(int *_this, int a2)
 {
@@ -84181,8 +84195,8 @@ int Engine::sub_4B60C0(int *_this, int a2)
     return 1;
   if ( a2 >= 15 )
   {
-    wsprintfA(_this + 2, aDsstopSound);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDsstopSound);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
   if ( !_this[258] )
@@ -84195,9 +84209,9 @@ int Engine::sub_4B60C0(int *_this, int a2)
 
 
 /* ===== [stained] sub_4B6130  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6130
+ * Engine 成员函数  → sub_4B6130
  * raw 行区间 [138646, 138664]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6130(int *_this, int a2)
 {
@@ -84207,8 +84221,8 @@ int Engine::sub_4B6130(int *_this, int a2)
     return 0;
   if ( a2 >= 15 )
   {
-    wsprintfA(_this + 2, aDsisplayingSou);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDsisplayingSou);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
   if ( !_this[258] )
@@ -84221,9 +84235,9 @@ int Engine::sub_4B6130(int *_this, int a2)
 
 
 /* ===== [stained] sub_4B6190  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6190
+ * Engine 成员函数  → sub_4B6190
  * raw 行区间 [138668, 138689]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6190(int *_this, int a2)
 {
@@ -84234,8 +84248,8 @@ int Engine::sub_4B6190(int *_this, int a2)
     return 1;
   if ( a2 >= 15 )
   {
-    wsprintfA(_this + 2, aDsstopSound);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDsstopSound);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
   if ( !_this[258] )
@@ -84250,9 +84264,9 @@ int Engine::sub_4B6190(int *_this, int a2)
 
 
 /* ===== [stained] sub_4B6210  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6210
+ * Engine 成员函数  → sub_4B6210
  * raw 行区间 [138693, 138735]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6210(int *_this, int a2, int a3)
 {
@@ -84292,17 +84306,17 @@ int Engine::sub_4B6210(int *_this, int a2, int a3)
   }
   else
   {
-    wsprintfA(_this + 2, aDssetvolumeSou);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDssetvolumeSou);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B6390  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6390
+ * Engine 成员函数  → sub_4B6390
  * raw 行区间 [138759, 138786]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6390(int *_this, volatile LONG *lpAddend)
 {
@@ -84327,17 +84341,17 @@ int Engine::sub_4B6390(int *_this, volatile LONG *lpAddend)
   }
   else
   {
-    wsprintfA(_this + 2, aDsstopSound);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDsstopSound);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B6550  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6550
+ * Engine 成员函数  → sub_4B6550
  * raw 行区间 [138840, 138851]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4B6550(HMODULE *_this)
 {
@@ -84354,9 +84368,9 @@ HMODULE Engine::sub_4B6550(HMODULE *_this)
 
 
 /* ===== [stained] sub_4B6570  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6570
+ * Engine 成员函数  → sub_4B6570
  * raw 行区间 [138854, 139025]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6570(int *_this, volatile LONG *lpAddend, char *a3, int a4)
 {
@@ -84462,10 +84476,10 @@ LABEL_23:
               {
                 v23 = sub_4B77E0(v22);
                 wsprintfA(
-                  _this + 2,
+                  this->message_buf,
                   "ERROR dsCreateBuffer:プライマリのフォーマット設定に失敗しました．%s\r\n",
                   v23);
-                this->sub_4034C0( _this + 2);
+                this->sub_4034C0( this->message_buf);
               }
             }
             v24 = sub_4B71C0(_this[(_DWORD)lpAddend + 405], v20);
@@ -84480,8 +84494,8 @@ LABEL_23:
           }
           else
           {
-            wsprintfA(_this + 2, aErrorDscreateb_0);
-            this->sub_4034C0( _this + 2);
+            wsprintfA(this->message_buf, aErrorDscreateb_0);
+            this->sub_4034C0( this->message_buf);
             v27 = &_this[(_DWORD)lpAddend + 510];
           }
           InterlockedDecrement(v27);
@@ -84511,10 +84525,10 @@ LABEL_23:
         break;
       default:
         wsprintfA(
-          _this + 2,
+          this->message_buf,
           "ERROR dsCreateBuffer:このファイルは再生できません．HEADER = %s\r\n",
           (const char *)&Buffer);
-        this->sub_4034C0( _this + 2);
+        this->sub_4034C0( this->message_buf);
         InterlockedDecrement(&_this[(_DWORD)lpAddend + 510]);
         LeaveCriticalSection(lpCriticalSection);
 LABEL_32:
@@ -84526,16 +84540,16 @@ LABEL_32:
   }
   v25 = aDsreadsoundSou;
 LABEL_5:
-  wsprintfA(_this + 2, v25);
-  this->sub_4034C0( _this + 2);
+  wsprintfA(this->message_buf, v25);
+  this->sub_4034C0( this->message_buf);
   return 0;
 }
 
 
 /* ===== [stained] sub_4B68A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B68A0
+ * Engine 成员函数  → sub_4B68A0
  * raw 行区间 [139029, 139041]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B68A0(int *_this, int a2)
 {
@@ -84553,9 +84567,9 @@ int Engine::sub_4B68A0(int *_this, int a2)
 
 
 /* ===== [stained] sub_4B68E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B68E0
+ * Engine 成员函数  → sub_4B68E0
  * raw 行区间 [139044, 139060]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B68E0(int *_this, int a2, int a3)
 {
@@ -84569,17 +84583,17 @@ int Engine::sub_4B68E0(int *_this, int a2, int a3)
   }
   else
   {
-    wsprintfA(_this + 2, aDssetvolumeSou);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDssetvolumeSou);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B6940  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6940
+ * Engine 成员函数  → sub_4B6940
  * raw 行区间 [139064, 139089]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6940(int *_this, int a2, int a3)
 {
@@ -84602,17 +84616,17 @@ int Engine::sub_4B6940(int *_this, int a2, int a3)
   }
   else
   {
-    wsprintfA(_this + 2, aDssetvolumeSou);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aDssetvolumeSou);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B69B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B69B0
+ * Engine 成员函数  → sub_4B69B0
  * raw 行区间 [139093, 139110]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B69B0(HMODULE *_this)
 {
@@ -84635,9 +84649,9 @@ void Engine::sub_4B69B0(HMODULE *_this)
 
 
 /* ===== [stained] sub_4B6A30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6A30
+ * Engine 成员函数  → sub_4B6A30
  * raw 行区间 [139114, 139120]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE * Engine::sub_4B6A30(HMODULE *_this, char a2)
 {
@@ -84649,9 +84663,9 @@ HMODULE * Engine::sub_4B6A30(HMODULE *_this, char a2)
 
 
 /* ===== [stained] sub_4B6A60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6A60
+ * Engine 成员函数  → sub_4B6A60
  * raw 行区间 [139123, 139149]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B6A60(_DWORD *_this, int a2, int a3, _DWORD *a4, int a5, int a6)
 {
@@ -84683,9 +84697,9 @@ _DWORD * Engine::sub_4B6A60(_DWORD *_this, int a2, int a3, _DWORD *a4, int a5, i
 
 
 /* ===== [stained] sub_4B6B60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6B60
+ * Engine 成员函数  → sub_4B6B60
  * raw 行区间 [139153, 139191]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6B60(int _this)
 {
@@ -84706,8 +84720,8 @@ int Engine::sub_4B6B60(int _this)
   if ( v4 )
   {
     v5 = sub_4B77E0(v4);
-    wsprintfA(_this + 8, "ERROR dsbStop:停止に失敗しました %d %s\r\n", *(_DWORD *)(_this + 1096), v5);
-    this->sub_4034C0( (const void *)(_this + 8));
+    wsprintfA(this->message_buf, "ERROR dsbStop:停止に失敗しました %d %s\r\n", *(_DWORD *)(_this + 1096), v5);
+    this->sub_4034C0( (const void *)(this->message_buf));
     if ( v2 )
     {
       InterlockedIncrement(*(volatile LONG **)(_this + 9336));
@@ -84729,9 +84743,9 @@ int Engine::sub_4B6B60(int _this)
 
 
 /* ===== [stained] sub_4B6C30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B6C30
+ * Engine 成员函数  → sub_4B6C30
  * raw 行区间 [139195, 139391]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B6C30(int _this, int a2)
 {
@@ -84933,9 +84947,9 @@ LABEL_24:
 
 
 /* ===== [stained] sub_4B70B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B70B0
+ * Engine 成员函数  → sub_4B70B0
  * raw 行区间 [139395, 139411]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B70B0(int _this, int a2)
 {
@@ -84947,19 +84961,19 @@ int Engine::sub_4B70B0(int _this, int a2)
     return 1;
   v4 = sub_4B77E0(v3);
   wsprintfA(
-    _this + 8,
+    this->message_buf,
     "ERROR dsbSetVolume:ボリューム変更に失敗しました %d %s\r\n",
     *(_DWORD *)(_this + 1096),
     v4);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_4B7110  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7110
+ * Engine 成员函数  → sub_4B7110
  * raw 行区间 [139415, 139431]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B7110(int _this, int a2)
 {
@@ -84971,19 +84985,19 @@ int Engine::sub_4B7110(int _this, int a2)
     return 1;
   v4 = sub_4B77E0(v3);
   wsprintfA(
-    _this + 8,
+    this->message_buf,
     "ERROR dsbSetPan:左右相対ボリューム変更に失敗しました %d %s\r\n",
     *(_DWORD *)(_this + 1096),
     v4);
-  this->sub_4034C0( (const void *)(_this + 8));
+  this->sub_4034C0( (const void *)(this->message_buf));
   return 0;
 }
 
 
 /* ===== [stained] sub_4B7170  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7170
+ * Engine 成员函数  → sub_4B7170
  * raw 行区间 [139435, 139454]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B7170(int _this)
 {
@@ -85008,9 +85022,9 @@ void Engine::sub_4B7170(int _this)
 
 
 /* ===== [stained] sub_4B71C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B71C0
+ * Engine 成员函数  → sub_4B71C0
  * raw 行区间 [139457, 139552]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B71C0(int _this, int a2)
 {
@@ -85056,11 +85070,11 @@ int Engine::sub_4B71C0(int _this, int a2)
   {
     v6 = sub_4B77E0(v5);
     wsprintfA(
-      _this + 8,
+      this->message_buf,
       "ERROR dsbCreateBuffer:バッファの生成に失敗しました．%d %s\r\n",
       *(_DWORD *)(_this + 1096),
       v6);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     return 0;
   }
   else
@@ -85072,8 +85086,8 @@ int Engine::sub_4B71C0(int _this, int a2)
     if ( v8 )
     {
       v9 = sub_4B77E0(v8);
-      wsprintfA(_this + 8, "ERROR dsReadSound:QueryInterface %d %s\r\n", *(_DWORD *)(_this + 1096), v9);
-      this->sub_4034C0( (const void *)(_this + 8));
+      wsprintfA(this->message_buf, "ERROR dsReadSound:QueryInterface %d %s\r\n", *(_DWORD *)(_this + 1096), v9);
+      this->sub_4034C0( (const void *)(this->message_buf));
       return 0;
     }
     else
@@ -85093,8 +85107,8 @@ int Engine::sub_4B71C0(int _this, int a2)
       if ( v10 )
       {
         v11 = sub_4B77E0(v10);
-        wsprintfA(_this + 8, "ERROR dsReadSound:SetNotificationPositions %d %s\r\n", *(_DWORD *)(_this + 1096), v11);
-        this->sub_4034C0( (const void *)(_this + 8));
+        wsprintfA(this->message_buf, "ERROR dsReadSound:SetNotificationPositions %d %s\r\n", *(_DWORD *)(_this + 1096), v11);
+        this->sub_4034C0( (const void *)(this->message_buf));
         return 0;
       }
       else
@@ -85111,9 +85125,9 @@ int Engine::sub_4B71C0(int _this, int a2)
 
 
 /* ===== [stained] sub_4B73E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B73E0
+ * Engine 成员函数  → sub_4B73E0
  * raw 行区间 [139556, 139684]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B73E0(int _this, int a2)
 {
@@ -85150,8 +85164,8 @@ int Engine::sub_4B73E0(int _this, int a2)
     {
       v4 = sub_4B77E0(v3);
       v5 = (void (*)(int, const char *, ...))wsprintfA;
-      wsprintfA(_this + 8, "ERROR dsbPlay:頭出しに失敗しました．%d %s\r\n", *(_DWORD *)(_this + 1096), v4);
-      this->sub_4034C0( (const void *)(_this + 8));
+      wsprintfA(this->message_buf, "ERROR dsbPlay:頭出しに失敗しました．%d %s\r\n", *(_DWORD *)(_this + 1096), v4);
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
     else
     {
@@ -85183,11 +85197,11 @@ int Engine::sub_4B73E0(int _this, int a2)
     {
       v12 = sub_4B77E0(v11);
       sub_4A1C50(
-        (char *)(_this + 8),
+        (char *)(this->message_buf),
         "ERROR dsbPlay:頭出しに失敗しました．%d %s\r\n",
         *(_DWORD *)(_this + 1096),
         v12);
-      this->sub_4034C0( (const void *)(_this + 8));
+      this->sub_4034C0( (const void *)(this->message_buf));
     }
     v5 = (void (*)(int, const char *, ...))wsprintfA;
     *(_DWORD *)(_this + 9324) = 0;
@@ -85199,18 +85213,18 @@ int Engine::sub_4B73E0(int _this, int a2)
   {
     while ( 1 )
     {
-      v15 = (const void *)(_this + 8);
+      v15 = (const void *)(this->message_buf);
       if ( v14 != -2005401450 )
         break;
       v16 = sub_4B77E0(-2005401450);
-      v5(_this + 8, aErrorDsbplayDS_0, *(_DWORD *)(_this + 1096), v16);
-      this->sub_4034C0( (const void *)(_this + 8));
+      v5(this->message_buf, aErrorDsbplayDS_0, *(_DWORD *)(_this + 1096), v16);
+      this->sub_4034C0( (const void *)(this->message_buf));
       v17 = (*(int (__stdcall **)(_DWORD))(**(_DWORD **)(_this + 1036) + 80))(*(_DWORD *)(_this + 1036));
       if ( v17 )
       {
-        v15 = (const void *)(_this + 8);
+        v15 = (const void *)(this->message_buf);
         v19 = sub_4B77E0(v17);
-        v5(_this + 8, aErrorDsbplayDS_1, *(_DWORD *)(_this + 1096), v19);
+        v5(this->message_buf, aErrorDsbplayDS_1, *(_DWORD *)(_this + 1096), v19);
         goto LABEL_26;
       }
       v14 = (*(int (__stdcall **)(_DWORD, _DWORD, _DWORD, int))(**(_DWORD **)(_this + 1036) + 48))(
@@ -85247,9 +85261,9 @@ LABEL_22:
 
 
 /* ===== [stained] sub_4B7680  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7680
+ * Engine 成员函数  → sub_4B7680
  * raw 行区间 [139688, 139701]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B7680(_DWORD *_this)
 {
@@ -85268,9 +85282,9 @@ void Engine::sub_4B7680(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B7700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7700
+ * Engine 成员函数  → sub_4B7700
  * raw 行区间 [139705, 139711]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B7700(_DWORD *_this, char a2)
 {
@@ -85282,9 +85296,9 @@ _DWORD * Engine::sub_4B7700(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4B7730  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7730
+ * Engine 成员函数  → sub_4B7730
  * raw 行区间 [139714, 139719]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B7730(_DWORD *_this)
 {
@@ -85295,9 +85309,9 @@ _DWORD * Engine::sub_4B7730(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B7790  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7790
+ * Engine 成员函数  → sub_4B7790
  * raw 行区间 [139723, 139727]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B7790(_DWORD *_this)
 {
@@ -85307,9 +85321,9 @@ void Engine::sub_4B7790(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B7970  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7970
+ * Engine 成员函数  → sub_4B7970
  * raw 行区间 [139801, 139807]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B7970(_DWORD *_this, char a2)
 {
@@ -85321,9 +85335,9 @@ _DWORD * Engine::sub_4B7970(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4B7D60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7D60
+ * Engine 成员函数  → sub_4B7D60
  * raw 行区间 [139977, 139990]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B7D60(_DWORD *_this)
 {
@@ -85342,9 +85356,9 @@ _DWORD * Engine::sub_4B7D60(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B7DF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7DF0
+ * Engine 成员函数  → sub_4B7DF0
  * raw 行区间 [139994, 140011]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B7DF0(char *_this,
         int a2,
@@ -85366,9 +85380,9 @@ int Engine::sub_4B7DF0(char *_this,
 
 
 /* ===== [stained] sub_4B7F60  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B7F60
+ * Engine 成员函数  → sub_4B7F60
  * raw 行区间 [140062, 140084]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B7F60(int *_this,
         int a2,
@@ -85395,9 +85409,9 @@ int Engine::sub_4B7F60(int *_this,
 
 
 /* ===== [stained] sub_4B8230  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8230
+ * Engine 成员函数  → sub_4B8230
  * raw 行区间 [140194, 140210]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B8230(int *_this,
         int a2,
@@ -85418,9 +85432,9 @@ int Engine::sub_4B8230(int *_this,
 
 
 /* ===== [stained] sub_4B83E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B83E0
+ * Engine 成员函数  → sub_4B83E0
  * raw 行区间 [140273, 140278]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B83E0(_DWORD *_this, int a2)
 {
@@ -85431,9 +85445,9 @@ int Engine::sub_4B83E0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4B8410  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8410
+ * Engine 成员函数  → sub_4B8410
  * raw 行区间 [140281, 140290]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B8410(void **_this)
 {
@@ -85448,9 +85462,9 @@ void Engine::sub_4B8410(void **_this)
 
 
 /* ===== [stained] sub_4B8490  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8490
+ * Engine 成员函数  → sub_4B8490
  * raw 行区间 [140294, 140312]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B8490(_DWORD *_this, int a2, void *a3, int a4)
 {
@@ -85474,9 +85488,9 @@ int Engine::sub_4B8490(_DWORD *_this, int a2, void *a3, int a4)
 
 
 /* ===== [stained] sub_4B8500  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8500
+ * Engine 成员函数  → sub_4B8500
  * raw 行区间 [140315, 140321]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void ** Engine::sub_4B8500(void **_this, char a2)
 {
@@ -85488,9 +85502,9 @@ void ** Engine::sub_4B8500(void **_this, char a2)
 
 
 /* ===== [stained] sub_4B85D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B85D0
+ * Engine 成员函数  → sub_4B85D0
  * raw 行区间 [140367, 140372]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B85D0(_DWORD *_this, int a2)
 {
@@ -85501,9 +85515,9 @@ int Engine::sub_4B85D0(_DWORD *_this, int a2)
 
 
 /* ===== [stained] sub_4B8600  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8600
+ * Engine 成员函数  → sub_4B8600
  * raw 行区间 [140375, 140393]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B8600(_DWORD *_this, int a2, int a3, int a4, int a5)
 {
@@ -85527,9 +85541,9 @@ int Engine::sub_4B8600(_DWORD *_this, int a2, int a3, int a4, int a5)
 
 
 /* ===== [stained] sub_4B86E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B86E0
+ * Engine 成员函数  → sub_4B86E0
  * raw 行区间 [140430, 140445]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B86E0(int *_this, HINSTANCE hInstance)
 {
@@ -85543,16 +85557,16 @@ void Engine::sub_4B86E0(int *_this, HINSTANCE hInstance)
   }
   else
   {
-    wsprintfA(_this + 2, aSetnullcursor);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aSetnullcursor);
+    this->sub_4034C0( this->message_buf);
   }
 }
 
 
 /* ===== [stained] sub_4B8880  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8880
+ * Engine 成员函数  → sub_4B8880
  * raw 行区间 [140568, 140580]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B8880(_DWORD *_this, char a2)
 {
@@ -85570,9 +85584,9 @@ _DWORD * Engine::sub_4B8880(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4B88C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B88C0
+ * Engine 成员函数  → sub_4B88C0
  * raw 行区间 [140584, 140602]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B88C0(_DWORD *_this)
 {
@@ -85596,9 +85610,9 @@ _DWORD * Engine::sub_4B88C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B8980  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8980
+ * Engine 成员函数  → sub_4B8980
  * raw 行区间 [140607, 140639]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4B8980(_DWORD *_this)
 {
@@ -85636,9 +85650,9 @@ void Engine::sub_4B8980(_DWORD *_this)
 
 
 /* ===== [stained] sub_4B8C70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8C70
+ * Engine 成员函数  → sub_4B8C70
  * raw 行区间 [140781, 140798]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4B8C70(int *_this, int a2, void *a3, DWORD a4)
 {
@@ -85653,17 +85667,17 @@ int Engine::sub_4B8C70(int *_this, int a2, void *a3, DWORD a4)
   }
   else
   {
-    wsprintfA(_this + 2, aSetcursor);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, aSetcursor);
+    this->sub_4034C0( this->message_buf);
     return 0;
   }
 }
 
 
 /* ===== [stained] sub_4B8CD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4B8CD0
+ * Engine 成员函数  → sub_4B8CD0
  * raw 行区间 [140802, 140808]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4B8CD0(_DWORD *_this, char a2)
 {
@@ -85675,9 +85689,9 @@ _DWORD * Engine::sub_4B8CD0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4BB670  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB670
+ * Engine 成员函数  → sub_4BB670
  * raw 行区间 [142399, 142410]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4BB670(_DWORD *_this, int a2)
 {
@@ -85686,17 +85700,17 @@ _DWORD * Engine::sub_4BB670(_DWORD *_this, int a2)
   result = _this;
   _this[1] = 0;
   if ( a2 )
-    _this[2] = a2;
+    this->message_buf = a2;
   else
-    _this[2] = _this;
+    this->message_buf = _this;
   return result;
 }
 
 
 /* ===== [stained] sub_4BB6A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB6A0
+ * Engine 成员函数  → sub_4BB6A0
  * raw 行区间 [142413, 142421]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 unsigned int __stdcall Engine::sub_4BB6A0(int a1)
 {
@@ -85710,9 +85724,9 @@ unsigned int __stdcall Engine::sub_4BB6A0(int a1)
 
 
 /* ===== [stained] sub_4BB700  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB700
+ * Engine 成员函数  → sub_4BB700
  * raw 行区间 [142444, 142465]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4BB700(_DWORD *_this)
 {
@@ -85739,9 +85753,9 @@ _DWORD * Engine::sub_4BB700(_DWORD *_this)
 
 
 /* ===== [stained] sub_4BB7C0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BB7C0
+ * Engine 成员函数  → sub_4BB7C0
  * raw 行区间 [142469, 142473]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4BB7C0(_DWORD *_this)
 {
@@ -85751,9 +85765,9 @@ void Engine::sub_4BB7C0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4BBAB0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBAB0
+ * Engine 成员函数  → sub_4BBAB0
  * raw 行区间 [142586, 142678]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4BBAB0(int **_this, int *a2)
 {
@@ -85851,9 +85865,9 @@ LABEL_30:
 
 
 /* ===== [stained] sub_4BBC30  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBC30
+ * Engine 成员函数  → sub_4BBC30
  * raw 行区间 [142681, 142695]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4BBC30(int **_this, int a2, int a3)
 {
@@ -85873,9 +85887,9 @@ int Engine::sub_4BBC30(int **_this, int a2, int a3)
 
 
 /* ===== [stained] sub_4BBC90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBC90
+ * Engine 成员函数  → sub_4BBC90
  * raw 行区间 [142698, 142704]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4BBC90(_DWORD *_this, char a2)
 {
@@ -85887,9 +85901,9 @@ _DWORD * Engine::sub_4BBC90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4BBCC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBCC0
+ * Engine 成员函数  → sub_4BBCC0
  * raw 行区间 [142707, 142725]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMMIO Engine::sub_4BBCC0(int _this)
 {
@@ -85913,9 +85927,9 @@ HMMIO Engine::sub_4BBCC0(int _this)
 
 
 /* ===== [stained] sub_4BBD10  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBD10
+ * Engine 成员函数  → sub_4BBD10
  * raw 行区间 [142728, 142737]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4BBD10(_DWORD *_this)
 {
@@ -85930,9 +85944,9 @@ _DWORD * Engine::sub_4BBD10(_DWORD *_this)
 
 
 /* ===== [stained] sub_4BBDF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBDF0
+ * Engine 成员函数  → sub_4BBDF0
  * raw 行区间 [142778, 142797]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMMIO Engine::sub_4BBDF0(int *_this)
 {
@@ -85948,8 +85962,8 @@ HMMIO Engine::sub_4BBDF0(int *_this)
   if ( !result )
   {
     CurrentThreadId = GetCurrentThreadId();
-    wsprintfA(_this + 2, "エラー：Repeatに失敗しました Thread = %d", CurrentThreadId);
-    this->sub_4034C0( _this + 2);
+    wsprintfA(this->message_buf, "エラー：Repeatに失敗しました Thread = %d", CurrentThreadId);
+    this->sub_4034C0( this->message_buf);
     return sub_4BBCC0((int)_this);
   }
   return result;
@@ -85957,9 +85971,9 @@ HMMIO Engine::sub_4BBDF0(int *_this)
 
 
 /* ===== [stained] sub_4BBE80  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBE80
+ * Engine 成员函数  → sub_4BBE80
  * raw 行区间 [142801, 142807]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4BBE80(int _this)
 {
@@ -85971,9 +85985,9 @@ void Engine::sub_4BBE80(int _this)
 
 
 /* ===== [stained] sub_4BBEF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BBEF0
+ * Engine 成员函数  → sub_4BBEF0
  * raw 行区间 [142811, 142907]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4BBEF0(int _this, char *a2, int ArgList)
 {
@@ -86007,8 +86021,8 @@ int Engine::sub_4BBEF0(int _this, char *a2, int ArgList)
   *(_DWORD *)(_this + 1032) = v5;
   if ( !v5 )
   {
-    v6 = (const void *)(_this + 8);
-    wsprintfA(_this + 8, aReadheader_1);
+    v6 = (const void *)(this->message_buf);
+    wsprintfA(this->message_buf, aReadheader_1);
 LABEL_3:
     this->sub_4034C0( v6);
     sub_455C60(*(int **)(_this + 9252), *(_DWORD *)(_this + 9256));
@@ -86018,10 +86032,10 @@ LABEL_3:
   pmmcki.fccType = 1163280727;
   if ( mmioDescend(v5, &pmmcki, 0, 0x20u) == 265 )
   {
-    v6 = (const void *)(_this + 8);
+    v6 = (const void *)(this->message_buf);
     CurrentThreadId = GetCurrentThreadId();
     wsprintfA(
-      _this + 8,
+      this->message_buf,
       "関数：ReadHeader エラー：ファイルにwaveチャンクがありません Thread=%d\r\n",
       CurrentThreadId);
     goto LABEL_3;
@@ -86032,10 +86046,10 @@ LABEL_3:
   {
     v10 = GetCurrentThreadId();
     wsprintfA(
-      _this + 8,
+      this->message_buf,
       "関数：ReadHeader エラー：ファイルにfmt チャンクがありません Thread=%d\r\n",
       v10);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     sub_455C60(*(int **)(_this + 9252), *(_DWORD *)(_this + 9256));
     return 0;
   }
@@ -86045,8 +86059,8 @@ LABEL_3:
   v12 = mmioRead(*(HMMIO *)(_this + 1032), v11, cksize);
   if ( v12 != v20.cksize )
   {
-    wsprintfA(_this + 8, aReadheaderSoun);
-    this->sub_4034C0( (const void *)(_this + 8));
+    wsprintfA(this->message_buf, aReadheaderSoun);
+    this->sub_4034C0( (const void *)(this->message_buf));
     sub_455C60(*(int **)(_this + 9252), *(_DWORD *)(_this + 9256));
     return 0;
   }
@@ -86057,10 +86071,10 @@ LABEL_3:
   {
     v13 = GetCurrentThreadId();
     wsprintfA(
-      _this + 8,
+      this->message_buf,
       "関数：ReadHeader エラー：ファイルにdataチャンクがありません Thread=%d\r\n",
       v13);
-    this->sub_4034C0( (const void *)(_this + 8));
+    this->sub_4034C0( (const void *)(this->message_buf));
     sub_455C60(*(int **)(_this + 9252), *(_DWORD *)(_this + 9256));
     return 0;
   }
@@ -86075,9 +86089,9 @@ LABEL_3:
 
 
 /* ===== [stained] sub_4BC120  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BC120
+ * Engine 成员函数  → sub_4BC120
  * raw 行区间 [142911, 142949]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4BC120(int _this)
 {
@@ -86121,9 +86135,9 @@ int Engine::sub_4BC120(int _this)
 
 
 /* ===== [stained] sub_4BC280  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4BC280
+ * Engine 成员函数  → sub_4BC280
  * raw 行区间 [142953, 142959]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4BC280(void *_this, char a2)
 {
@@ -86135,9 +86149,9 @@ void * Engine::sub_4BC280(void *_this, char a2)
 
 
 /* ===== [stained] sub_4C0C50  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C0C50
+ * Engine 成员函数  → sub_4C0C50
  * raw 行区间 [146798, 146803]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4C0C50(int *_this)
 {
@@ -86148,9 +86162,9 @@ void Engine::sub_4C0C50(int *_this)
 
 
 /* ===== [stained] sub_4C0DC0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C0DC0
+ * Engine 成员函数  → sub_4C0DC0
  * raw 行区间 [146841, 146847]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4C0DC0(int *_this, char a2)
 {
@@ -86162,23 +86176,23 @@ int * Engine::sub_4C0DC0(int *_this, char a2)
 
 
 /* ===== [stained] sub_4C71B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C71B0
+ * Engine 成员函数  → sub_4C71B0
  * raw 行区间 [152016, 152022]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4C71B0(int *_this)
 {
   *_this = (int)&live2d__BReader___vftable_;
   sub_4C7030(_this + 19);
-  sub_4C0C50(_this + 2);
+  sub_4C0C50(this->message_buf);
   sub_4BC350(_this);
 }
 
 
 /* ===== [stained] sub_4C8190  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4C8190
+ * Engine 成员函数  → sub_4C8190
  * raw 行区间 [152748, 152754]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int * Engine::sub_4C8190(int *_this, char a2)
 {
@@ -86190,9 +86204,9 @@ int * Engine::sub_4C8190(int *_this, char a2)
 
 
 /* ===== [stained] sub_4CF330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4CF330
+ * Engine 成员函数  → sub_4CF330
  * raw 行区间 [159018, 159051]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4CF330(_DWORD *_this, _DWORD *a2)
 {
@@ -86223,7 +86237,7 @@ _DWORD * Engine::sub_4CF330(_DWORD *_this, _DWORD *a2)
       ++_this[4];
       _this[5] = a2;
     }
-    --_this[2];
+    --this->message_buf;
     return (_DWORD *)v5;
   }
   return result;
@@ -86231,9 +86245,9 @@ _DWORD * Engine::sub_4CF330(_DWORD *_this, _DWORD *a2)
 
 
 /* ===== [stained] sub_4CFC70  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4CFC70
+ * Engine 成员函数  → sub_4CFC70
  * raw 行区间 [159519, 159531]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4CFC70(int _this)
 {
@@ -86251,9 +86265,9 @@ HMODULE Engine::sub_4CFC70(int _this)
 
 
 /* ===== [stained] sub_4D02B0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D02B0
+ * Engine 成员函数  → sub_4D02B0
  * raw 行区间 [159818, 159854]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __stdcall Engine::sub_4D02B0(LPCRITICAL_SECTION lpCriticalSection,
         int (__stdcall ***a2)(_DWORD, void *, LONG *),
@@ -86294,9 +86308,9 @@ int __stdcall Engine::sub_4D02B0(LPCRITICAL_SECTION lpCriticalSection,
 
 
 /* ===== [stained] sub_4D03F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D03F0
+ * Engine 成员函数  → sub_4D03F0
  * raw 行区间 [159879, 159884]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4D03F0(_DWORD *_this)
 {
@@ -86307,24 +86321,24 @@ void Engine::sub_4D03F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4D05D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D05D0
+ * Engine 成员函数  → sub_4D05D0
  * raw 行区间 [159967, 159974]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D05D0(_DWORD *_this)
 {
   int v1; // eax
 
-  v1 = _this[2] + 12;
+  v1 = this->message_buf + 12;
   *_this = &CEnumMediaTypes___vftable_;
   return (*(int (__stdcall **)(int))(*(_DWORD *)v1 + 8))(v1);
 }
 
 
 /* ===== [stained] sub_4D08D0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D08D0
+ * Engine 成员函数  → sub_4D08D0
  * raw 行区间 [160123, 160128]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4D08D0(void **_this)
 {
@@ -86335,9 +86349,9 @@ HMODULE Engine::sub_4D08D0(void **_this)
 
 
 /* ===== [stained] sub_4D1180  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D1180
+ * Engine 成员函数  → sub_4D1180
  * raw 行区间 [160548, 160559]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4D1180(int _this)
 {
@@ -86354,9 +86368,9 @@ HMODULE Engine::sub_4D1180(int _this)
 
 
 /* ===== [stained] sub_4D1720  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D1720
+ * Engine 成员函数  → sub_4D1720
  * raw 行区间 [160783, 160791]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4D1720(_DWORD *_this)
 {
@@ -86370,9 +86384,9 @@ void Engine::sub_4D1720(_DWORD *_this)
 
 
 /* ===== [stained] sub_4D21E0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D21E0
+ * Engine 成员函数  → sub_4D21E0
  * raw 行区间 [161408, 161414]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D21E0(int *_this)
 {
@@ -86384,9 +86398,9 @@ int Engine::sub_4D21E0(int *_this)
 
 
 /* ===== [stained] sub_4D2330  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2330
+ * Engine 成员函数  → sub_4D2330
  * raw 行区间 [161480, 161504]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4D2330(_DWORD *_this)
 {
@@ -86416,9 +86430,9 @@ void * Engine::sub_4D2330(_DWORD *_this)
 
 
 /* ===== [stained] sub_4D2380  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2380
+ * Engine 成员函数  → sub_4D2380
  * raw 行区间 [161507, 161514]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4D2380(_DWORD *_this)
 {
@@ -86431,9 +86445,9 @@ HMODULE Engine::sub_4D2380(_DWORD *_this)
 
 
 /* ===== [stained] sub_4D2840  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2840
+ * Engine 成员函数  → sub_4D2840
  * raw 行区间 [161730, 161736]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4D2840(_DWORD *_this, char a2)
 {
@@ -86445,9 +86459,9 @@ _DWORD * Engine::sub_4D2840(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4D2A90  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2A90
+ * Engine 成员函数  → sub_4D2A90
  * raw 行区间 [161845, 161851]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4D2A90(_DWORD *_this, char a2)
 {
@@ -86459,9 +86473,9 @@ _DWORD * Engine::sub_4D2A90(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4D2EF0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D2EF0
+ * Engine 成员函数  → sub_4D2EF0
  * raw 行区间 [162001, 162007]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4D2EF0(_DWORD *_this, char a2)
 {
@@ -86473,9 +86487,9 @@ _DWORD * Engine::sub_4D2EF0(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4D3010  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D3010
+ * Engine 成员函数  → sub_4D3010
  * raw 行区间 [162047, 162053]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4D3010(_DWORD *_this, char a2)
 {
@@ -86487,9 +86501,9 @@ _DWORD * Engine::sub_4D3010(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4D3240  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D3240
+ * Engine 成员函数  → sub_4D3240
  * raw 行区间 [162159, 162240]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D3240(int _this)
 {
@@ -86576,9 +86590,9 @@ LABEL_19:
 
 
 /* ===== [stained] sub_4D4190  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D4190
+ * Engine 成员函数  → sub_4D4190
  * raw 行区间 [162989, 163004]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D4190(int _this)
 {
@@ -86599,9 +86613,9 @@ int Engine::sub_4D4190(int _this)
 
 
 /* ===== [stained] sub_4D4400  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D4400
+ * Engine 成员函数  → sub_4D4400
  * raw 行区间 [163089, 163106]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D4400(char *_this)
 {
@@ -86624,9 +86638,9 @@ int Engine::sub_4D4400(char *_this)
 
 
 /* ===== [stained] sub_4D48F0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D48F0
+ * Engine 成员函数  → sub_4D48F0
  * raw 行区间 [163317, 163350]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int Engine::sub_4D48F0(_DWORD *_this)
 {
@@ -86665,9 +86679,9 @@ int Engine::sub_4D48F0(_DWORD *_this)
 
 
 /* ===== [stained] sub_4D5580  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5580
+ * Engine 成员函数  → sub_4D5580
  * raw 行区间 [163941, 163959]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 int __stdcall Engine::sub_4D5580(LPCRITICAL_SECTION lpCriticalSection,
         int (__stdcall ***a2)(_DWORD, void *, LONG *),
@@ -86690,9 +86704,9 @@ int __stdcall Engine::sub_4D5580(LPCRITICAL_SECTION lpCriticalSection,
 
 
 /* ===== [stained] sub_4D5620  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5620
+ * Engine 成员函数  → sub_4D5620
  * raw 行区间 [163987, 164018]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4D5620(int _this)
 {
@@ -86729,9 +86743,9 @@ HMODULE Engine::sub_4D5620(int _this)
 
 
 /* ===== [stained] sub_4D5F20  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5F20
+ * Engine 成员函数  → sub_4D5F20
  * raw 行区间 [164414, 164420]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4D5F20(void *_this, char a2)
 {
@@ -86743,9 +86757,9 @@ void * Engine::sub_4D5F20(void *_this, char a2)
 
 
 /* ===== [stained] sub_4D5FD0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D5FD0
+ * Engine 成员函数  → sub_4D5FD0
  * raw 行区间 [164453, 164466]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4D5FD0(_DWORD *_this, _DWORD *a2, int a3, _DWORD *a4, int a5)
 {
@@ -86764,9 +86778,9 @@ _DWORD * Engine::sub_4D5FD0(_DWORD *_this, _DWORD *a2, int a3, _DWORD *a4, int a
 
 
 /* ===== [stained] sub_4D6040  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D6040
+ * Engine 成员函数  → sub_4D6040
  * raw 行区间 [164474, 164482]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 HMODULE Engine::sub_4D6040(int _this)
 {
@@ -86780,9 +86794,9 @@ HMODULE Engine::sub_4D6040(int _this)
 
 
 /* ===== [stained] sub_4D6070  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D6070
+ * Engine 成员函数  → sub_4D6070
  * raw 行区间 [164490, 164496]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4D6070(void *_this, char a2)
 {
@@ -86794,9 +86808,9 @@ void * Engine::sub_4D6070(void *_this, char a2)
 
 
 /* ===== [stained] sub_4D60A0  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4D60A0
+ * Engine 成员函数  → sub_4D60A0
  * raw 行区间 [164499, 164505]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void * Engine::sub_4D60A0(void *_this, char a2)
 {
@@ -86808,9 +86822,9 @@ void * Engine::sub_4D60A0(void *_this, char a2)
 
 
 /* ===== [stained] sub_4E6FB6  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4E6FB6
+ * Engine 成员函数  → sub_4E6FB6
  * raw 行区间 [181514, 181518]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 void Engine::sub_4E6FB6(struct type_info *_this)
 {
@@ -86820,9 +86834,9 @@ void Engine::sub_4E6FB6(struct type_info *_this)
 
 
 /* ===== [stained] sub_4E6FC6  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4E6FC6
+ * Engine 成员函数  → sub_4E6FC6
  * raw 行区间 [181522, 181528]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 struct type_info * Engine::sub_4E6FC6(struct type_info *_this, char a2)
 {
@@ -86834,9 +86848,9 @@ struct type_info * Engine::sub_4E6FC6(struct type_info *_this, char a2)
 
 
 /* ===== [stained] sub_4FA798  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4FA798
+ * Engine 成员函数  → sub_4FA798
  * raw 行区间 [182102, 182108]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4FA798(_DWORD *_this, char a2)
 {
@@ -86848,9 +86862,9 @@ _DWORD * Engine::sub_4FA798(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_4FAE6F  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_4FAE6F
+ * Engine 成员函数  → sub_4FAE6F
  * raw 行区间 [182137, 182143]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_4FAE6F(_DWORD *_this, char a2)
 {
@@ -86862,9 +86876,9 @@ _DWORD * Engine::sub_4FAE6F(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_50C298  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_50C298
+ * Engine 成员函数  → sub_50C298
  * raw 行区间 [183439, 183445]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_50C298(_DWORD *_this, char a2)
 {
@@ -86876,9 +86890,9 @@ _DWORD * Engine::sub_50C298(_DWORD *_this, char a2)
 
 
 /* ===== [stained] sub_50F5D5  状态: UNKNOWN =====
- * Engine 成员函数（染色依据 docs/re/engine/member_functions.detected.txt）  → sub_50F5D5
+ * Engine 成员函数  → sub_50F5D5
  * raw 行区间 [183673, 183679]
- * 已确证字段/帧访问改写为 this->；未确证 _this[...] 保留原样；体未读/未语义化函数仍未核对。
+ * 未读体/未语义化；`_this[...]` 未确证字段保留原样、未改名
  */
 _DWORD * Engine::sub_50F5D5(_DWORD *_this, char a2)
 {

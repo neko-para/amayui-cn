@@ -15,7 +15,7 @@ description: 系统分析《天結いキャッスルマイスター》引擎反�
 2. **精修产物（`.cpp`，C++ 风格）**：`engine-refined/` 下用**同名 `.cpp`** 保存精修结果
    （如 `天结_unpacked.exe_utf8.cpp`）。每完成一次业务分析就改这里——把 `sub_XXXXXX`
    改成语义名、加注释、圈定已解区，并打**函数级状态标记**。
-3. **机器可读台账**：`analysis-registry.json` 记录每个函数的 `状态 / raw行区间证据 / 说明`，
+3. **结论以代码注释为准**：每个函数的 `状态 / raw行区间证据 / 说明` 一律写入函数上方注释块，不依赖任何 JSON 台账。
    由脚本出报表，回答"哪些分析过、哪些未知、每函数哪些行已解"。
 4. **与文档联动**：`docs-new/03-engine/*`（如 `input-system.md`、`opcode-table.md`）
    里的 raw.c 行号引用，必须与 `engine-refined/*.cpp` 的标记一致，避免两套可信度不同的记录。
@@ -37,7 +37,7 @@ engine/
 └─ 天结_unpacked.exe_utf8.c        # 原始反编译（只读基准；git 提交后不再改）
 engine-refined/
 ├─ 天结_unpacked.exe_utf8.cpp      # 原始基准逐字节副本（只读对照，保持行号；git 提交后不再改）
-├─ engine/                         # 已提取的 Engine 成员函数（按 op-records 分类拆分；split-members.cjs 生成）
+├─ engine/                         # 已提取的 Engine 成员函数（按语义名分类拆分；split-members.cjs 生成）
 │  ├─ arith-ops.cpp                # 整数算术/逻辑/比较（add..random）
 │  ├─ bit-ops.cpp                  # 位操作（bit-set/reset/check-bit）
 │  ├─ float-ops.cpp                # 浮点（float-mov, int↔float, 比较）
@@ -45,17 +45,20 @@ engine-refined/
 │  ├─ memory-ops.cpp               # 数组/索引/取地址(lea)（lookup-array, lea, memcpy…）
 │  └─ members.cpp                  # 其余 Engine 成员函数（未分类/未分析/非纯）
 ├─ remaining-code.cpp              # 剩余代码（已提取成员函数定义区间替换为空行；行号与原始一致；remaining.cjs 生成）
-└─ member-index.json               # 成员染色索引（old/new/op/status/lines 机器可读）
-analysis-registry.json             # 机器可读台账（放仓库根或 engine-refined/ 下）
+├─ model/
+│  └─ engine.hpp                   # 指令层字段模型（仅含目前已拆分指令用到的字段，其余 padding；待迭代补全/核对）
+└─ engine/                         # 已提取的 Engine 成员（按类别拆分）
+   ├─ arith/bit/float/str/memory-ops.cpp  # 已分类的指令
+   └─ members.cpp                  # 其余成员
 .agents/skills/amayui-engine-analysis/
 ├─ SKILL.md                        # 本文档
 ├─ scripts/                        # 全部为 Node 脚本，跨 Win/macOS/Linux（用 `node` 运行）
 │  ├─ func-list.js                 # 解析 .c/.cpp 提取函数列表 + 行区间
 │  ├─ scan-status.js               # 扫精修 .cpp 的状态标记 → 按状态统计并列出
-│  ├─ func-table.js                # 函数列表 × 台账 → 汇总表（完成度/证据）
+│  ├─ func-table.js                # 函数列表 × 可声明台账 → 汇总表（完成度/证据）
 │  ├─ diff-refined.js              # 原始 .c vs 精修 .cpp → 已改函数/行统计（git 优先，缺则行数对比）
-│  └─ (scripts/engine-refined/ 里另有 memberize.cjs / split-members.cjs / remaining.cjs / integrate-records.cjs)
-└─ registry.template.json          # analysis-registry.json 模板
+│  └─ (scripts/engine-refined/ 里另有 memberize.cjs / split-members.cjs / remaining.cjs)
+└─ (registry.template.json 已弃用：分析结论一律以代码注释为准，不再维护 analysis-registry.json)
 
 > **代码分区（每段只出现在一处，基线除外）**：Engine 成员函数体只在 `engine-refined/engine/*.cpp`；
 > 其余代码（非成员函数、全局、声明/调用点）只在 `remaining-code.cpp`；原始基准保留全部对照。
@@ -70,7 +73,7 @@ analysis-registry.json             # 机器可读台账（放仓库根或 engine
 ```
 
 - **首次初始化**：`cp engine/天结_unpacked.exe_utf8.c engine-refined/天结_unpacked.exe_utf8.cpp`
-  （一次性，把原始照抄成 `.cpp` 精修起点）；建 `analysis-registry.json`（用 `registry.template.json`）。
+  （一次性，把原始照抄成 `.cpp` 精修起点）。**不再维护 `analysis-registry.json`**：分析结论一律沉淀在代码注释（函数上方状态标记）里。
 - 原始 `engine/` 与精修 `engine-refined/` 都是 git 管理的两个路径：`git diff engine engine-refined`
   即"改动即进度"。
 
@@ -89,13 +92,27 @@ _DWORD *__thiscall sub_419CC0(_DWORD *_this) { ... }
 ```
 
 状态标签（大写，供脚本 grep）：
-- `ANALYZED`（已核对：读了 handler 体确证，证据充分）。
-- `PARTIAL`（部分：部分逻辑确证、其余未明）。
+- `ANALYZED`（**真正完整分析**：读了 handler 体确证，且函数内**没有**未建模的 `_this[K]`/`_this+N` 直接数值偏移字段访问，**也不调用**未分析函数。满足才标，否则不得标）。
+- `PARTIAL`（部分：已读/部分确证，但仍有未建模字段访问，或仍调用未分析函数，需继续）。
 - `STUB`（桩/simplified：emulator 用安全桩/no-op 处理，未逆清完整语义）。
 - `UNKNOWN`（未读/未解；可不加，缺省即 UNKNOWN）。
 
+> **严格「已分析」判定（重要）**：一个函数只有在
+> ① 函数体内不再出现 `_this[<数字>]` / `_this + <数字>` 这类**直接数值偏移**的引擎字段访问（已建模成 `this->field`/`this->frames[cur].field`），
+> ② 且不调用任何**未分析/未建模**的函数（仅可调用已分析函数与文档化的操作数访问原语），
+> 才可标 `ANALYZED`。否则标 `PARTIAL`（并在注释里写明遗留的未建模字段/未分析被调）。
+> 分析一个未命名字段的流程（迭代直至达标）：
+>   $1 分析所有相关未命名字段，确认用途/用法；
+>   $2 在 `engine/engine.hpp` 的 `struct Engine` 里为未定义字段建模（命名 + 类型 + 偏移）；
+>   $3 修改代码，把该偏移访问改为对建模后字段的引用（`this->field`）；
+>   $4 迭代：直到目标函数没有直接数值偏移字段访问、也没有未分析函数的调用，才标 `ANALYZED`。
+
 **已确证结论直接改名**：`sub_419CC0 → poll_input`（C 里 `sub_419CC0` 的调用点同步改名），
 旧 `sub_*` 名保留为注释别名。跨构建交叉引用的 `u00xxxxxx`/AGE 助记符**不可靠**，勿当定论。
+
+> **结论以代码注释为准（架构约定）**：所有**分析结论**都写在函数上方的注释块里（语义、字段建模、证据、状态与未办事项）。
+> JSON（原 `analysis-registry.json` / `member-index.json` / `op-records.json`）**已移除**——它们只是临时派生载体，不是权威；
+> 现在无任何一个 JSON 承载分析结论，结论只存在于代码注释 + `model/engine.hpp` + `docs-new/03-engine/*`。代码是被分析的主体，而非 JSON 的渲染产物。
 
 ---
 
@@ -112,7 +129,11 @@ _DWORD *__thiscall sub_419CC0(_DWORD *_this) { ... }
 
 ---
 
-## 机器可读台账（analysis-registry.json）
+## 分析进度（无 JSON；结论在注释）
+
+> ⚠️ **不再维护 `analysis-registry.json` / `member-index.json` / `op-records.json`**（均已移除）。
+> 函数级状态/语义/证据一律以 `engine-refined/engine/*.cpp` 里每函数上方的 `[stained]` 状态注释块为准；
+> `scripts/engine-refined/device-ink` 里的脚本不再产出这些临时索引。需要「哪些已分析」时，用 `scan-status.js` 扫注释即可。
 
 ```json
 {
@@ -136,12 +157,13 @@ _DWORD *__thiscall sub_419CC0(_DWORD *_this) { ... }
 # 1) 解析原始 .c，列出所有函数及其行区间
 node .agents/skills/amayui-engine-analysis/scripts/func-list.js engine/天结_unpacked.exe_utf8.c
 
-# 2) 扫描精修副本(.cpp)的状态标记，按状态统计 + 列出
-node .agents/skills/amayui-engine-analysis/scripts/scan-status.js engine-refined/天结_unpacked.exe_utf8.cpp
+# 2) 扫描精修副本(.cpp)的状态标记，按状态统计 + 列出（状态标记在 engine-refined/engine/*.cpp 里）
+node .agents/skills/amayui-engine-analysis/scripts/scan-status.js engine-refined/engine/arith-ops.cpp
+node .agents/skills/amayui-engine-analysis/scripts/scan-status.js engine-refined/engine/members.cpp
 
-# 3) 函数列表 × 台账 → 汇总表（已改名 / 状态分布 / 证据缺失）
+# 3) 函数列表 × 可声明台账 → 汇总表（已改名 / 状态分布；台账 JSON 已弃用，传空 JSON 则统计 0 登记）
 node .agents/skills/amayui-engine-analysis/scripts/func-table.js \
-     engine/天结_unpacked.exe_utf8.c analysis-registry.json
+     engine/天结_unpacked.exe_utf8.c /dev/null
 
 # 4) 原始 vs 精修，统计已改函数/行（git diff --no-index 优先，缺则行数对比）
 node .agents/skills/amayui-engine-analysis/scripts/diff-refined.js
@@ -153,17 +175,19 @@ node .agents/skills/amayui-engine-analysis/scripts/diff-refined.js
 
 1. **定位**：从 `docs-new/03-engine/opcode-table.md`（opcode→handler）、`func-list.js`、
    或表达式/日志里定位到 `sub_XXXXXX`。
-2. **判定状态**：读 handler 体（读 `engine/…_utf8.c` 对应行区间）。能确证全部逻辑 → `ANALYZED`；
-   只确证一部分 → `PARTIAL`；emulator 里是桩 → `STUB`；没读 → 不加标记（默认 `UNKNOWN`）。
-3. **改精修**：在 `engine-refined/…_utf8.cpp` 里：
-   - 函数头部加状态注释块（含 raw.c 行号证据、一句话语义）；
+2. **判定状态**：读 handler 体（读 `engine/…_utf8.c` 对应行区间）。严格判定（见上「严格『已分析』判定」）：
+   已读体 + 无未建模 `_this[K]`/`_this+N` 字段访问 + 无未分析被调 → `ANALYZED`；
+   已读但仍有未建模字段/未分析被调 → `PARTIAL`；emulator 里是桩 → `STUB`；没读 → 不加标记（默认 `UNKNOWN`）。
+3. **改精修**：在 `engine-refined/engine/*.cpp`（或尚未分类的 `engine/` 成员）里：
+   - 函数头部加状态注释块（含 raw.c 行号证据、**语义结论**、遗留未建模字段/被调、状态）；
    - 确证后把函数改名语义名（C++ 风格，如 `pollInput`/`Engine::pollInput`），同步调用点，旧名留注释；
    - 函数内用 `/* [KNOWN] … */` / `??` 圈定已解/未解区；`_this`/this 语义按 C++ 整理。
    **不改 `engine/` 原始 `.c` 文件。**
-4. **更新台账**：`analysis-registry.json` 加/改该函数条目（状态、行区间、证据、说明）。
+4. **结论写进注释（权威）**：语义/字段建模/证据/状态均写入函数上方注释；**不再维护任何 JSON**（原 `analysis-registry.json` 等已移除）。
+   临时派生载体（可由注释重生成）。
 5. **同步文档**：若该结论已经在 `docs-new/03-engine/*` 有记录（如 `input-system.md`、
    `opcode-table.md`），确认文档里的 raw.c 行号引用与 `engine-refined/` 一致；缺则补写。
-6. **跑报表**：`scan-status.js` / `func-table.js` 复核，确认状态与台账一致；未解函数仍为 `UNKNOWN`。
+6. **跑报表**：`scan-status.js`（扫 `engine/*.cpp` 的状态标记）/ `func-table.js` 复核；未解函数仍为 `UNKNOWN`。
 
 ---
 
@@ -174,7 +198,7 @@ node .agents/skills/amayui-engine-analysis/scripts/diff-refined.js
 - **`推测` 不当定论**：仅凭 AGE 助记符/名字推断、未读 handler 体的，标 `PARTIAL`/`STUB`，
   并注明"未读体/仅凭名称"；`exit≠程序退出`、`ret≠跨脚本返回` 这类 AGE 陷阱例外要注明。
 - **不执行 git 提交**：只改文件；提交由用户决定。
-- **不重复记账**：`analysis-registry.json` 是唯一台账；脚本只读它出报表，不另开清单。
+- **不重复记账**：分析结论只在**代码注释**记一次；不再维护 `analysis-registry.json` 等 JSON，脚本只从注释出报表。
 
 ---
 
