@@ -116,18 +116,18 @@ gr (local-int a) (local-ptr 0) 0
 jcc (local-int a) ffffffff label_00000cc0
 and (local-int a) (global-int a9d6) 2
 jcc (local-int a) ffffffff label_00000940
-u00421E70 (local-int 9)
+i230 (local-int 9)
 jmp label_00000a20
 
 label_00000940
 lookup-array (local-ptr 1) (global-int 51101c) (local-int 1)
 jcc (local-ptr 1) ffffffff label_00000a20
-u00421160 (local-int 8) (local-int 9)
+i215 (local-int 8) (local-int 9)
 lt (local-int a) (local-int 8) 0
 jcc (local-int a) ffffffff label_00000a20
 lookup-array (local-ptr 1) (global-int 51101c) (local-int 1)
 lookup-array (local-ptr 0) (global-int 51101c) (local-int 1)
-u00421EA0 (local-int 9) 64 (local-ptr 1) (local-ptr 0)
+i231 (local-int 9) 64 (local-ptr 1) (local-ptr 0)
 
 label_00000a20
 lookup-array (local-ptr 1) (global-int 510439) (local-int 1)

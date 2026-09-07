@@ -69,6 +69,17 @@ function parseMakeDefs(text) {
   return entries;
 }
 
+/** isMeaningless: 判断某名称是否为「无助记符」的无意义十六进制（或占位标记）。
+ *  注意：裸十六进制名（如 340）只有在其十六进制值 == 该 opcode 时才视为无助记符；
+ *  像 `add` 这类恰好由十六进制字母组成、但 opcode 不等于其 hex 值的真助记符，不算无助记符。 */
+function isMeaningless(name, opcode) {
+  if (!name) return true;
+  if (/^u[0-9a-fA-F]+$/.test(name)) return true; // u+函数地址
+  if (/^[0-9a-fA-F]+$/.test(name)) return parseInt(name, 16) === opcode; // 裸 hex opcode 名
+  if (name === '（age-shared 未收录）') return true; // 无 age-shared 名
+  return false;
+}
+
 function main() {
   const docs = parseDocs(fs.readFileSync(DOC, 'utf8'));
   const defs = parseMakeDefs(fs.readFileSync(CXX, 'utf8'));
@@ -77,38 +88,36 @@ function main() {
   const seen = new Set();
 
   // 优先 docs 表（权威、完整）。对所有 docs 条目生成记录。
+  // name 仅记录真正的助记符；无助记符（u-地址/裸 hex/未收录/空）一律留空，
+  // 规范 `iXXX` 标签由 disassembler/reassembler 在编译期按 opcode 自动生成，不落 JSON。
   for (const [opcode, d] of docs) {
     const def = defs.get(opcode);
     const argc = d.argc !== null ? d.argc : (def ? def.argc : null);
-    const aliases = new Set();
-    let name = d.name;
-    // 若 make_defs 对该 opcode 有描述性/其它标签，优先作为输出名称（兼容 data/src 基线），
-    // 把 docs 名与 make_defs 名都收进 aliases。
-    if (def && def.label) {
-      aliases.add(def.label);
-      if (def.label !== d.name) name = def.label; // make_defs 标签作为可读主名
-    }
-    if (d.name) aliases.add(d.name);
-    // 去除与 name 相同的别名
-    aliases.delete(name);
+    const names = new Set();
+    if (d.name) names.add(d.name);
+    if (def && def.label) names.add(def.label);
+    // 主名：取第一个有助记符（有意义）的名；都没有则留空。
+    const name = [...names].find((n) => !isMeaningless(n, opcode)) || '';
     out.push({
       opcode,
       argc,
       name,
       handler: d.handler || '',
       status: d.status || '',
-      aliases: [...aliases].filter((a) => a && a !== '（age-shared 未收录）'),
+      aliases: [], // 不再保留 u-地址/hex 兼容
     });
     seen.add(opcode);
   }
 
-  // 若 make_defs 里有 docs 未列的 opcode（旧表独有），补上，name 用 make_defs 标签。
+  // 若 make_defs 里有 docs 未列的 opcode（旧表独有），补上；无助记符则留空。
   for (const [opcode, def] of defs) {
     if (seen.has(opcode)) continue;
+    let name = def.label;
+    if (isMeaningless(name, opcode) || !name) name = '';
     out.push({
       opcode,
       argc: def.argc,
-      name: def.label,
+      name,
       handler: '',
       status: '',
       aliases: [],

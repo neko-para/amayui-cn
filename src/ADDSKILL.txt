@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 6 1 1 5 1 1 }
 ====
 
-u004160D0
+i1f4
 mov (global-int 519afb) (global-int 519afb)
 lookup-array (local-ptr 0) (global-int 52ac6c) (global-int 519afb)
 jcc (local-ptr 0) ffffffff label_000000c8
@@ -57,7 +57,7 @@ jcc (local-int 3) ffffffff label_00000608
 lookup-array (local-ptr 0) (global-int a6fc2) (global-int 6c61b9)
 mov (local-ptr 0) 1
 lookup-array (local-ptr 0) (global-int a6fc2) (global-int 6c61b9)
-u00428010 (local-ptr 0)
+i1a2 (local-ptr 0)
 mov (global-int f8019) 0
 jmp label_000004cc
 
@@ -74,11 +74,11 @@ lookup-array (local-ptr 0) (global-int a6fc2) (local-ptr 1)
 mov (local-ptr 0) 1
 lookup-array-2d (local-ptr 1) (global-int 6c84e2) (global-int 6c61b9) 5 (global-int f8019)
 lookup-array (local-ptr 0) (global-int a6fc2) (local-ptr 1)
-u00428010 (local-ptr 0)
+i1a2 (local-ptr 0)
 
 label_000005fc
 jmp label_000004b0
 
 label_00000608
-u00416120
+i1f5
 exit

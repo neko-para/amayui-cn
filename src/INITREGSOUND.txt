@@ -3,23 +3,23 @@ signature = SYS4450
 local_vars = { 8 1 1 3 1 1 }
 ====
 
-u0041D5D0 0 2710
-u0041D5D0 1 1964
-u0041D5D0 2 1388
-u0041D5D0 3 2710
-u0041D850 1 1
-u0041D850 2 1
-u0041D850 3 1
+i0c6 0 2710
+i0c6 1 1964
+i0c6 2 1388
+i0c6 3 2710
+i1ba 1 1
+i1ba 2 1
+i1ba 3 1
 jcc (global-int 4fd8) ffffffff label_00000160
 mov (global-int 3f51) 0
 mov (global-int 4fd8) (global-int 4fd8)
 jcc (global-int a9da) ffffffff label_00000140
-u0041D080 9
+i0b6 9
 jmp label_00000160
 
 label_00000140
 play-sound-effect (global-int 4fd8) 9
-u0041D0B0 9
+i0ba 9
 
 label_00000160
 jcc (global-int 4fd7) ffffffff label_00000188
@@ -30,10 +30,10 @@ exit
 exit
 
 label_00000190
-2F6 2
+i2f6 2
 eq (local-int 0) (global-int a9d9) 0
 jcc (local-int 0) ffffffff label_0000057c
-2F8 2 0
+i2f8 2 0
 lt (local-int 0) (global-int 4fd6) 0
 jcc (local-int 0) ffffffff label_00000254
 mov (global-int 14acdb) 0
@@ -79,8 +79,8 @@ or (global-int 14acd9) (local-int 0) (local-int 6)
 eq (local-int 0) (global-int 14acd9) 0
 jcc (local-int 0) ffffffff label_0000057c
 lookup-array (local-ptr 0) (global-int a9e5) (global-int 14acda)
-2FF 2 (local-ptr 0)
-2F5 (global-int 4fd7) 3 12c 2
+i2ff 2 (local-ptr 0)
+i2f5 (global-int 4fd7) 3 12c 2
 
 label_0000057c
 ret

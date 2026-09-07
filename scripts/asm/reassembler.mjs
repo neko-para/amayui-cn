@@ -1,6 +1,6 @@
 // reassembler.mjs —— AGE 反汇编文本 → 字节码（对应 C++ reassembler.cpp）
 import {
-  instructionForLabel, getType, writeHeaderBytes,
+  instructionForToken, getType, writeHeaderBytes,
   utf16ToCp, CP_UTF16,
 } from './age-shared.mjs';
 import { loadOpcodeTable } from './age-shared.mjs';
@@ -106,7 +106,7 @@ export function assemble(text, tableInfo, codepage) {
       continue;
     }
 
-    const def = instructionForLabel(table, instrToken);
+    const def = instructionForToken(table, instrToken);
     if (!def) throw new Error(`Unknown instruction : ${instrToken} on line ${lineCount}`);
     if (def.argc === null) throw new Error(`Unknown argc for instruction ${instrToken}`);
 

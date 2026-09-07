@@ -28,12 +28,12 @@ and (local-int 8) (global-int a9d6) 4
 eq (local-int 9) (local-int 8) 0
 jcc (local-int 9) ffffffff label_00000238
 lookup-array-2d (local-ptr 0) (global-int f7a71) (local-int 0) 2 (local-int 1)
-u00421EA0 (local-ptr 0) c8 4 2
+i231 (local-ptr 0) c8 4 2
 jmp label_00000270
 
 label_00000238
 lookup-array-2d (local-ptr 0) (global-int f7a71) (local-int 0) 2 (local-int 1)
-u00421E70 (local-ptr 0)
+i230 (local-ptr 0)
 
 label_00000270
 jmp label_000000d0
@@ -66,12 +66,12 @@ lookup-array (local-ptr 2) (global-int 70521d) (local-int 7)
 div (local-int 9) (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 3) (global-int 70521d) (local-int 7)
 lookup-array (local-ptr 4) (global-int 704fc5) (local-int 7)
-u00421EA0 (local-ptr 0) (local-int 9) (local-ptr 3) (local-ptr 4)
+i231 (local-ptr 0) (local-int 9) (local-ptr 3) (local-ptr 4)
 jmp label_000004f0
 
 label_000004c8
 lookup-array (local-ptr 0) (global-int f7b39) (local-int 2)
-u00421E70 (local-ptr 0)
+i230 (local-ptr 0)
 
 label_000004f0
 jmp label_000002a8

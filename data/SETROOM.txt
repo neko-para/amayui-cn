@@ -44,10 +44,10 @@ mov (local-int f) (local-int 9)
 mov (local-int 10) (local-int a)
 mov (local-int 11) (local-int f)
 mov (local-int 12) (local-int 10)
-u0041EF00 0
+i132 0
 shl (local-int 13) (local-int 9) 10
 add (local-int 14) (local-int 13) (local-int a)
-u0041EFF0 0 (local-int 14)
+i133 0 (local-int 14)
 call label_00000aa8
 lookup-array (local-ptr 0) (global-int 58646) (global-int 58645)
 mov (local-ptr 0) (local-int f)
@@ -152,7 +152,7 @@ label_00000a9c
 jmp label_00001078
 
 label_00000aa8
-u0041F050 0 (local-int 2) (local-int 3)
+i134 0 (local-int 2) (local-int 3)
 jcc (local-int 2) ffffffff label_00000d38
 sar (local-int b) (local-int 3) 10
 and (local-int c) (local-int 3) ffff
@@ -236,7 +236,7 @@ ret
 label_00001028
 shl (local-int 13) (local-int d) 10
 add (local-int 14) (local-int 13) (local-int e)
-u0041EFF0 0 (local-int 14)
+i133 0 (local-int 14)
 ret
 
 label_00001078

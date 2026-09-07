@@ -639,14 +639,14 @@ mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
 call-script 2bf3
-u00422390 12c
+i238 12c
 wait
 create-texture 1 500 2d0 2
-u00420E10 1
-u00416250
-u00416200
+i20d 1
+i20e
+i20c
 sub (local-int f) 0 1
-u00420E10 (local-int f)
+i20d (local-int f)
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -665,16 +665,16 @@ mov (global-int 4fd5) (global-int 4fd3)
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_000032cc
 create-texture 2 500 2d0 2
-u00420E10 2
-u00416250
+i20d 2
+i20e
 
 label_000032cc
-u00416200
+i20c
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_00003358
 sub (local-int f) 0 1
-u00420E10 (local-int f)
-u00418B40 1 2 28
+i20d (local-int f)
+i025 1 2 28
 release-texture 2
 
 label_00003358
@@ -697,11 +697,11 @@ call-script 72
 
 label_00003498
 create-texture 1 500 2d0 2
-u00420E10 1
-u00416250
-u00416200
+i20d 1
+i20e
+i20c
 sub (local-int f) 0 1
-u00420E10 (local-int f)
+i20d (local-int f)
 texture-op 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
@@ -711,21 +711,21 @@ mov (global-int 4fd5) (global-int 4fd3)
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_000035dc
 create-texture 2 500 2d0 2
-u00420E10 2
-u00416250
+i20d 2
+i20e
 
 label_000035dc
-u00416200
+i20c
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_00003668
 sub (local-int f) 0 1
-u00420E10 (local-int f)
-u00418B40 1 2 28
+i20d (local-int f)
+i025 1 2 28
 release-texture 2
 
 label_00003668
 release-texture 1
-u00422390 12c
+i238 12c
 wait
 
 label_00003684
@@ -845,14 +845,14 @@ mov (global-int 519afa) 0
 mov (global-int f8c39) 320
 mov (global-int f8c3a) 1
 call-script 2bf3
-u00422390 12c
+i238 12c
 wait
 create-texture 1 500 2d0 2
-u00420E10 1
-u00416250
-u00416200
+i20d 1
+i20e
+i20c
 sub (local-int f) 0 1
-u00420E10 (local-int f)
+i20d (local-int f)
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -871,16 +871,16 @@ mov (global-int 4fd5) (global-int 4fd3)
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_000040c4
 create-texture 2 500 2d0 2
-u00420E10 2
-u00416250
+i20d 2
+i20e
 
 label_000040c4
-u00416200
+i20c
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_00004150
 sub (local-int f) 0 1
-u00420E10 (local-int f)
-u00418B40 1 2 28
+i20d (local-int f)
+i025 1 2 28
 release-texture 2
 
 label_00004150
@@ -913,11 +913,11 @@ call-script 72
 
 label_00004348
 create-texture 1 500 2d0 2
-u00420E10 1
-u00416250
-u00416200
+i20d 1
+i20e
+i20c
 sub (local-int f) 0 1
-u00420E10 (local-int f)
+i20d (local-int f)
 texture-op 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
@@ -927,21 +927,21 @@ mov (global-int 4fd5) (global-int 4fd3)
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_0000448c
 create-texture 2 500 2d0 2
-u00420E10 2
-u00416250
+i20d 2
+i20e
 
 label_0000448c
-u00416200
+i20c
 eq (local-int f) (global-int 139b) 0
 jcc (local-int f) ffffffff label_00004518
 sub (local-int f) 0 1
-u00420E10 (local-int f)
-u00418B40 1 2 28
+i20d (local-int f)
+i025 1 2 28
 release-texture 2
 
 label_00004518
 release-texture 1
-u00422390 12c
+i238 12c
 wait
 
 label_00004534

@@ -66,16 +66,16 @@ sub (local-int 2f) (local-int 29) 4
 draw-texture (local-int 2c) 384 0 (local-int 2d) 80 18 (local-int 2e) (local-int 2f)
 mul (local-int 2b) (local-int 0) 18
 add (local-int 2a) 3 (local-int 2b)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 2b) (global-int 3f36) d
 jcc (local-int 2b) ffffffff label_00000614
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_00000614
@@ -89,16 +89,16 @@ jmp label_00000a2c
 label_000006b4
 lookup-array-2d (local-string-ptr 0) (global-string 1e494) (local-int 4) 5 (local-int 5)
 draw-string 384 3 (local-int 2a) (local-string-ptr 0)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 2b) (global-int 3f36) 14
 jcc (local-int 2b) ffffffff label_000007b8
 set-font (global-string bbe)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 14
 
 label_000007b8
@@ -110,7 +110,7 @@ jmp label_000008d0
 
 label_0000084c
 lookup-array-2d (local-ptr 0) (global-int 6f7ca) (global-int 519af9) 1e (local-int 4)
-u00420A60 384 66 (local-int 2a) (local-ptr 0) 2 10000
+i205 384 66 (local-int 2a) (local-ptr 0) 2 10000
 draw-string 384 78 (local-int 2a) "T"
 
 label_000008d0

@@ -3,18 +3,18 @@ signature = SYS4450
 local_vars = { 15 1 1 3 1 1 }
 ====
 
-u0041B7B0 0
+i1bb 0
 mov (local-int 1) 1
 mov (local-int 4) 0
 
 label_00000070
 eq (local-int d) (local-int 1) 1
 jcc (local-int d) ffffffff label_0000018c
-u0041BA80 (local-int 5) (local-int 6) (local-int 4)
+i1d0 (local-int 5) (local-int 6) (local-int 4)
 gre (local-int d) (local-int 6) 0
 jcc (local-int d) ffffffff label_00000150
 sub (local-int d) 0 1
-u0041BB90 (local-int 1) (local-int 2) (local-int 5) (local-int 6) (local-int d)
+i1d3 (local-int 1) (local-int 2) (local-int 5) (local-int 6) (local-int d)
 jmp label_00000164
 
 label_00000150
@@ -28,7 +28,7 @@ label_0000018c
 gre (local-int d) (local-int 6) 0
 jcc (local-int d) ffffffff label_00000844
 mov (local-int 3) 0
-u0041BB90 (local-int 1) (local-int a) (local-int 5) (local-int 6) a
+i1d3 (local-int 1) (local-int a) (local-int 5) (local-int 6) a
 mov (local-int 0) 0
 jmp label_00000240
 
@@ -39,7 +39,7 @@ label_00000240
 lt (local-int d) (local-int 0) 2
 jcc (local-int d) ffffffff label_00000844
 add (local-int d) 4 (local-int 0)
-u0041BB90 (local-int 1) (local-int 9) (local-int 5) (local-int 6) (local-int d)
+i1d3 (local-int 1) (local-int 9) (local-int 5) (local-int 6) (local-int d)
 jcc (local-int 1) ffffffff label_00000838
 lt (local-int d) (local-int 9) 0
 jcc (local-int d) ffffffff label_00000348
@@ -93,31 +93,31 @@ dev_ukn
 eq (local-int d) (global-int 14acd9) 0
 jcc (local-int d) ffffffff label_00000838
 add (local-int d) 7 (local-int 0)
-u0041BB90 (local-int 1) (local-int c) (local-int 5) (local-int 6) (local-int d)
+i1d3 (local-int 1) (local-int c) (local-int 5) (local-int 6) (local-int d)
 eq (local-int d) (local-int 1) 0
 jcc (local-int d) ffffffff label_0000071c
-2F3 (local-int c) (local-int 7) (local-int 8) 1 (local-int 6) (local-int 0)
+i2f3 (local-int c) (local-int 7) (local-int 8) 1 (local-int 6) (local-int 0)
 
 label_0000071c
 gre (local-int d) (local-int c) 0
 jcc (local-int d) ffffffff label_00000838
 eq (local-int d) (local-int 3) 0
 jcc (local-int d) ffffffff label_000007e8
-2F6 0
-2F6 1
+i2f6 0
+i2f6 1
 eq (local-int d) (global-int 4fd7) 0
 jcc (local-int d) ffffffff label_000007e8
-2F6 2
+i2f6 2
 
 label_000007e8
 add (local-int 3) (local-int 3) 1
-2F8 (local-int 0) (local-int 8)
-2F4 (local-int c) (local-int 7) (local-int 0)
-u004156C0
+i2f8 (local-int 0) (local-int 8)
+i2f4 (local-int c) (local-int 7) (local-int 0)
+i1bf
 
 label_00000838
 jmp label_00000224
 
 label_00000844
-u0041B7B0 1
+i1bb 1
 exit

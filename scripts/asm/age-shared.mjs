@@ -158,6 +158,22 @@ export function instructionForLabel(table, label) {
   return table.byLabel.get(label) ?? null;
 }
 
+/** opcodeLabel: 指令的显示名 —— 有助记符用助记符；无助记符（name 为空）则按 opcode 生成规范 iXXX。 */
+export function opcodeLabel(def) {
+  if (def.name) return def.name;
+  return 'i' + (def.opcode >>> 0).toString(16).padStart(3, '0');
+}
+
+/** instructionForToken: 解析指令 token —— 先按助记符（name/aliases）查询；
+ *  否则若形如规范 `iXXX`（i + hex），则按 opcode 反查（编译期自动生成，不落 JSON）。 */
+export function instructionForToken(table, token) {
+  const found = table.byLabel.get(token);
+  if (found) return found;
+  const m = /^i([0-9a-fA-F]+)$/.exec(token);
+  if (m) return table.byOpcode.get(parseInt(m[1], 16)) ?? null;
+  return null;
+}
+
 export const isControlFlowOpcode = (op) =>
   [0x8C, 0x8F, 0xA0, 0xCC, 0xFB, 0xD4, 0x90, 0x7B].includes(op);
 

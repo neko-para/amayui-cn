@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { a 1 1 4 1 1 }
 ====
 
-u004160D0
+i1f4
 mov (local-int 1) (global-int f8c39)
 eq (local-int 5) (global-int b221) 0
 jcc (local-int 5) ffffffff label_000000ac
@@ -33,18 +33,18 @@ set-vertex-color 30d40 0 ff 0
 set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_0000027c
-u00422EA0 10001
+i24e 10001
 wait
 texture-op 30d40 1
 poll-input
 sub (local-int 5) 0 1
 set-texture 515c 48 (local-int 5)
 sub (local-int 5) 0 1
-u00422EB0 515e 52 (local-int 5)
+i249 515e 52 (local-int 5)
 sub (local-int 5) 0 1
-u00422EB0 515f 53 (local-int 5)
+i249 515f 53 (local-int 5)
 sub (local-int 5) 0 1
-u00422EB0 5160 54 (local-int 5)
+i249 5160 54 (local-int 5)
 sub (local-int 5) 0 1
 set-texture 5163 5c (local-int 5)
 sub (local-int 5) 0 1
@@ -62,7 +62,7 @@ draw-texture (local-int 5) 53 0 0 500 2d0 0 2d0
 add (local-int 5) 1d4c0 3
 draw-texture (local-int 5) 54 0 0 500 2d0 0 5a0
 call-script 515b
-u00417FC0 1c
+i008 1c
 ne (local-int 5) (local-int 0) (local-int 1)
 jcc (local-int 5) ffffffff label_0000071c
 add (local-int 5) 1d4c0 12c
@@ -72,7 +72,7 @@ lookup-array (local-ptr 2) (global-int 14cb57) (local-int 0)
 sub (local-int 7) (local-ptr 2) 50
 draw-texture (local-int 5) 12c 0 0 a0 a0 (local-int 6) (local-int 7)
 add (local-int 5) 1d4c0 12c
-u00421EA0 (local-int 5) c8 4 4
+i231 (local-int 5) c8 4 4
 
 label_0000071c
 add (local-int 5) 1d4c0 12d
@@ -82,7 +82,7 @@ lookup-array (local-ptr 2) (global-int 14cb57) (local-int 1)
 sub (local-int 7) (local-ptr 2) 50
 draw-texture (local-int 5) 12d 0 0 a0 a0 (local-int 6) (local-int 7)
 add (local-int 5) 1d4c0 12d
-u00421EA0 (local-int 5) c8 4 4
+i231 (local-int 5) c8 4 4
 add (local-int 5) 1d4c0 191
 lookup-array (local-ptr 1) (global-int 14caf3) (local-int 1)
 sub (local-int 6) (local-ptr 1) 5f
@@ -100,21 +100,21 @@ draw-texture (local-int 5) 48 452 5c 8c e4 e 1a4
 add (local-int 5) 1d4c0 834
 draw-texture (local-int 5) 48 294 29e 84 4c 12 1a8
 add (local-int 5) 1d4c0 834
-u004211E0 (local-int 5) 14 1aa 0
+i217 (local-int 5) 14 1aa 0
 lookup-array (local-ptr 0) (global-int 14caf3) (local-int 0)
 sub (global-int b1b9) (local-ptr 0) 280
 lookup-array (local-ptr 0) (global-int 14cb57) (local-int 0)
 sub (global-int b1ba) (local-ptr 0) 168
 call label_00001770
 add (local-int 5) 1d4c0 1
-u004219E0 (local-int 5) 7cf 0 0 0
+i229 (local-int 5) 7cf 0 0 0
 sub (local-int 5) 0 (global-int b1b9)
 sub (local-int 6) 0 (global-int b1ba)
-u00421BD0 (local-int 5) (local-int 6) 0
+i22c (local-int 5) (local-int 6) 0
 add (local-int 5) 1d4c0 834
 div (local-int 6) (global-int b1b9) a
 div (local-int 8) (global-int b1ba) a
-u00420770 (local-int 5) (local-int 6) (local-int 8) 0
+i1ff (local-int 5) (local-int 6) (local-int 8) 0
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -134,12 +134,12 @@ set-vertex-color 30d40 0 ff 0
 set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00000e00
-u00422EA0 10001
+i24e 10001
 wait
 texture-op 30d40 1
 poll-input
 play-sound-effect 285c 1
-u0041D050 1
+i0b5 1
 lookup-array (local-ptr 0) (global-int 14caf3) (local-int 1)
 sub (global-int b1b9) (local-ptr 0) 280
 lookup-array (local-ptr 0) (global-int 14cb57) (local-int 1)
@@ -147,11 +147,11 @@ sub (global-int b1ba) (local-ptr 0) 168
 call label_00001770
 sub (local-int 5) 0 (global-int b1b9)
 sub (local-int 6) 0 (global-int b1ba)
-u00421DD0 0 1f4 (local-int 5) (local-int 6) 0
+i22f 0 1f4 (local-int 5) (local-int 6) 0
 add (local-int 5) 1d4c0 834
 div (local-int 6) (global-int b1b9) a
 div (local-int 8) (global-int b1ba) a
-u004215D0 (local-int 5) 0 1f4 (local-int 6) (local-int 8) 0
+i220 (local-int 5) 0 1f4 (local-int 6) (local-int 8) 0
 add (local-int 5) 1d4c0 12d
 sub (local-int 6) 0 1
 set-draw-color (local-int 5) 1f4 1f4 ff (local-int 6)
@@ -176,11 +176,11 @@ sub (local-int 6) (local-ptr 1) b4
 lookup-array (local-ptr 2) (global-int 14cb57) (local-int 1)
 sub (local-int 7) (local-ptr 2) 96
 draw-texture (local-int 2) (local-int 5) 0 0 168 12c (local-int 6) (local-int 7)
-u004223C0 (local-int 2) 1f4 1f4 10 4 0
+i239 (local-int 2) 1f4 1f4 10 4 0
 jmp label_00001098
 
 label_00001250
-u00422390 bb8
+i238 bb8
 poll-input
 wait
 float-mov (global-float 9) 0
@@ -202,11 +202,11 @@ set-vertex-color 30d40 0 ff 0
 set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00001420
-u00422EA0 10001
+i24e 10001
 wait
 texture-op 30d40 1
 poll-input
-u004219E0 0 0 0 0 0
+i229 0 0 0 0 0
 texture-op 1d4c0 bb8
 release-texture 48
 release-texture 52
@@ -248,11 +248,11 @@ set-vertex-color 30d40 0 ff 0
 set-vertex-color-alpha 30d40 0 12c 0 0
 
 label_00001740
-u00422EA0 10001
+i24e 10001
 wait
 texture-op 30d40 1
 poll-input
-u00416120
+i1f5
 exit
 
 label_00001770

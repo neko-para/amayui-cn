@@ -3,11 +3,11 @@ signature = SYS4450
 local_vars = { 42d 1 2 8 1 4 }
 ====
 
-2F6 0
-2F6 1
+i2f6 0
+i2f6 1
 eq (local-int 422) (global-int 4fd7) 0
 jcc (local-int 422) ffffffff label_00000098
-2F6 2
+i2f6 2
 
 label_00000098
 copy-local-array (local-int 41a) [177 467 467 177]
@@ -65,7 +65,7 @@ mov (local-int 3f2) 0
 mov (local-int 3fd) 0
 mov (local-int 3f6) (local-int 3f8)
 mov (local-int 3f7) (local-int 3f8)
-u00415EC0 (local-int 3ef) (local-int 3f0)
+i109 (local-int 3ef) (local-int 3f0)
 call label_00000ce8
 
 label_000004f4
@@ -76,19 +76,19 @@ jmp label_000004f4
 
 label_0000052c
 call label_00000540
-u00416200
+i20c
 ret
 
 label_00000540
 add (local-int 3f3) (local-int 3f3) 1
-2FC (local-int 3fd) (local-int 3ed) (local-int 3ee) (local-int 3fe) (local-int 3ff)
+i2fc (local-int 3fd) (local-int 3ed) (local-int 3ee) (local-int 3fe) (local-int 3ff)
 jcc (local-int 3fd) ffffffff label_000005c4
 mov (local-int 3f1) 1
 jmp label_000005e4
 
 label_000005c4
-u00415EC0 (local-int 3ed) (local-int 3ee)
-u00415E70 (local-int 3f1)
+i109 (local-int 3ed) (local-int 3ee)
+i108 (local-int 3f1)
 
 label_000005e4
 ne (local-int 422) (local-int 3ef) (local-int 3ed)
@@ -102,7 +102,7 @@ jmp label_00000704
 
 label_000006a4
 sub (local-int 3f6) 0 1
-u0041E940 (local-int 3f6) (local-int 1) (local-int 3ed) (local-int 3ee) (local-int 5) (local-int 195) (local-int 1f9) (local-int 0)
+i12e (local-int 3f6) (local-int 1) (local-int 3ed) (local-int 3ee) (local-int 5) (local-int 195) (local-int 1f9) (local-int 0)
 
 label_00000704
 mov (local-int 3ef) (local-int 3ed)
@@ -117,7 +117,7 @@ lte (local-int 422) 0 (local-int 3f8)
 lt (local-int 423) (local-int 3f8) e
 and (local-int 424) (local-int 422) (local-int 423)
 jcc (local-int 424) ffffffff label_00000808
-u0041D050 2
+i0b5 2
 
 label_00000808
 call label_000038b0
@@ -177,8 +177,8 @@ label_00000c38
 eq (local-int 422) (local-int 3f2) 0
 jcc (local-int 422) ffffffff label_00000ce4
 mov (local-int 400) 0
-u00415A10
-u00415A60
+i0ff
+i100
 jcc (local-int 400) ffffffff label_00000cd0
 add (local-int 401) (local-int 401) 1
 jmp label_00000ce4
@@ -235,7 +235,7 @@ label_00000f90
 mov (local-int 3f8) (local-int 3fa)
 
 label_00000fa4
-u0041D050 2
+i0b5 2
 call label_000038b0
 ret
 
@@ -265,7 +265,7 @@ label_00001110
 mov (local-int 3f8) (local-int 3fa)
 
 label_00001124
-u0041D050 2
+i0b5 2
 call label_000038b0
 ret
 
@@ -295,7 +295,7 @@ label_00001290
 mov (local-int 3f8) (local-int 3fa)
 
 label_000012a4
-u0041D050 2
+i0b5 2
 call label_000038b0
 ret
 
@@ -325,7 +325,7 @@ label_00001410
 mov (local-int 3f8) (local-int 3fa)
 
 label_00001424
-u0041D050 2
+i0b5 2
 call label_000038b0
 ret
 
@@ -377,7 +377,7 @@ ret
 label_0000161c
 lt (local-int 422) (local-int 3f8) 0
 jcc (local-int 422) ffffffff label_000016e4
-u0041FB80 (local-int 407) (local-int 3ed) (local-int 3ee) (local-int 41a) (local-int 41e) 4
+i147 (local-int 407) (local-int 3ed) (local-int 3ee) (local-int 41a) (local-int 41e) 4
 eq (local-int 422) (local-int 407) 0
 jcc (local-int 422) ffffffff label_000016d4
 mov (local-int 3f5) 1
@@ -395,11 +395,11 @@ mov (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 mov (local-ptr 1) 2710
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-302 0 (local-ptr 1)
+i302 0 (local-ptr 1)
 jmp label_00001c54
 
 label_00001824
@@ -407,12 +407,12 @@ eq (local-int 422) (local-int 3f8) 1
 jcc (local-int 422) ffffffff label_0000190c
 lookup-array (local-ptr 1) (global-int 14bc7c) (global-int 14acda)
 jcc (local-ptr 1) ffffffff label_000018fc
-u0041DA10 10001
+i1cf 10001
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-2FF 0 (local-ptr 1)
+i2ff 0 (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 14bc7c) (global-int 14acda)
 play-voice (local-ptr 1)
-u004156C0
+i1bf
 
 label_000018fc
 ret
@@ -462,7 +462,7 @@ ret
 
 label_00001c54
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 call label_00002c48
 ret
 
@@ -570,7 +570,7 @@ shl (local-int 424) (local-int 417) 10
 lookup-array (local-ptr 3) (global-int adcd) (global-int 14acda)
 or (local-ptr 3) (local-int 422) (local-int 424)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 jmp label_000026c4
 
 label_00002430
@@ -582,7 +582,7 @@ shl (local-int 424) (local-int 417) 8
 lookup-array (local-ptr 3) (global-int adcd) (global-int 14acda)
 or (local-ptr 3) (local-int 422) (local-int 424)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 jmp label_000026c4
 
 label_00002528
@@ -593,7 +593,7 @@ and (local-int 422) (local-ptr 2) ffff00
 lookup-array (local-ptr 0) (global-int adcd) (global-int 14acda)
 or (local-ptr 0) (local-int 422) (local-int 417)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 jmp label_000026c4
 
 label_00002604
@@ -602,9 +602,9 @@ jcc (local-int 422) ffffffff label_000026c4
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 mov (local-ptr 1) (local-int 417)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-u00428010 (local-ptr 1)
+i1a2 (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-302 0 (local-ptr 1)
+i302 0 (local-ptr 1)
 
 label_000026c4
 ret
@@ -666,24 +666,24 @@ add (local-int 422) 2e630 12c
 texture-op (local-int 422) 64
 create-texture c7 180 c8 0
 mov (local-int 410) c8
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 422) (global-int 3f36) 2
 jcc (local-int 422) ffffffff label_00002dac
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00002dac
-u0041AC30 1c
+i075 1c
 call label_000042cc
 lookup-array-2d (local-string-ptr 0) (global-string 1116a) (global-int 14acda) 3 (local-int 413)
 draw-string c7 6 a6 (local-string-ptr 0)
@@ -741,37 +741,37 @@ sub (local-int 428) (local-int 410) 7
 draw-texture (local-int 423) c3 bf (local-int 426) 1c f (local-int 427) (local-int 428)
 mul (local-int 422) (local-int 404) 1e
 add (local-int 412) 2e (local-int 422)
-u0041AC30 14
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 14
+i076 ffffff
+i077 ffffff
 ne (local-int 422) (global-int 3f36) 9
 jcc (local-int 422) ffffffff label_00003538
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 9
 
 label_00003538
 lookup-array-2d (local-string-ptr 0) (global-string 4a14) (local-int 414) 64 (local-int 415)
 draw-string c7 5 (local-int 412) (local-string-ptr 0)
-u0041AC30 14
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 14
+i076 ffffff
+i077 ffffff
 ne (local-int 422) (global-int 3f36) 15
 jcc (local-int 422) ffffffff label_0000363c
 set-font (global-string bbe)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 15
 
 label_0000363c
 lookup-array-2d (local-ptr 1) (global-int 130e60) (local-int 414) c8 (local-int 415)
 div (local-int 423) (local-int 417) (local-ptr 1)
-u00420A60 c7 10e (local-int 412) (local-int 423) 5 10002
+i205 c7 10e (local-int 412) (local-int 423) 5 10002
 add (local-int 422) 2e630 168
 add (local-int 423) (local-int 422) (local-int 404)
 mul (local-int 424) (local-int 404) 1e
@@ -782,20 +782,20 @@ add (local-int 410) (local-int 410) 32
 jmp label_00002ea8
 
 label_000037b0
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 422) (global-int 3f36) 2
 jcc (local-int 422) ffffffff label_000038ac
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_000038ac
@@ -860,19 +860,19 @@ add (local-int 422) 2e630 191
 sub (local-int 423) (local-int 410) 9
 draw-texture (local-int 422) c1 450 143 22 10 186 (local-int 423)
 create-texture c8 3b4 5a 0
-u0041AC30 1e
-u0041AC60 ffffff
-u0041ACB0 0
+i075 1e
+i076 ffffff
+i077 0
 ne (local-int 422) (global-int 3f36) 8
 jcc (local-int 422) ffffffff label_00003fb8
 set-font (global-string bbf)
-u00423100 1
-u0041B510 8
-u0041B3D0 a
-u0041AD00 3
-u0041B580 1 1
-u00423126 2 2 2 2
-u00423127 1
+i2bd 1
+i197 8
+i08b a
+i078 3
+i1a4 1 1
+i260 2 2 2 2
+i261 1
 mov (global-int 3f36) 8
 
 label_00003fb8
@@ -884,20 +884,20 @@ mul (local-int 422) (local-int 415) 2
 add (local-int 423) (local-int 422) 1
 lookup-array-2d (local-string-ptr 2) (global-string 59b4) (local-int 414) c8 (local-int 423)
 draw-string c8 a 32 (local-string-ptr 2)
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 422) (global-int 3f36) 2
 jcc (local-int 422) ffffffff label_000041c4
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_000041c4
@@ -953,8 +953,8 @@ mov (global-int f807a) 0
 mov (global-int f807c) (global-int f807b)
 
 label_000044dc
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
+i076 (global-int f807b)
+i077 (global-int f807c)
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
 ret

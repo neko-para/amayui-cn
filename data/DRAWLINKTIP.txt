@@ -10,31 +10,31 @@ draw-texture (local-int d) 10 0 111 148 bb (local-int 0) (local-int 1)
 create-texture 385 148 a8 0
 add (local-int d) 1fbd0 65
 draw-texture (local-int d) 385 0 0 148 a8 (local-int 0) (local-int 1)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int d) (global-int 3f36) d
 jcc (local-int d) ffffffff label_0000020c
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_0000020c
 lookup-array (local-string-ptr 0) (global-string 1fc5e) (global-int 707ddd)
 draw-string 385 a a (local-string-ptr 0)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int d) (global-int 3f36) 14
 jcc (local-int d) ffffffff label_00000300
 set-font (global-string bbe)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 14
 
 label_00000300
@@ -43,13 +43,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_000004b8
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 0
 div (local-int e) (local-ptr 0) a
-u00420A60 385 16 69 (local-int e) 2 10000
+i205 385 16 69 (local-int e) 2 10000
 add (local-int d) 16 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) 16 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 0
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_000004b8
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 2
@@ -57,13 +57,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00000670
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 2
 div (local-int e) (local-ptr 0) a
-u00420A60 385 48 69 (local-int e) 2 10000
+i205 385 48 69 (local-int e) 2 10000
 add (local-int d) 48 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) 48 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 2
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_00000670
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 4
@@ -71,13 +71,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00000828
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 4
 div (local-int e) (local-ptr 0) a
-u00420A60 385 7a 69 (local-int e) 2 10000
+i205 385 7a 69 (local-int e) 2 10000
 add (local-int d) 7a 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) 7a 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 4
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_00000828
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d a
@@ -85,13 +85,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_000009e0
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d a
 div (local-int e) (local-ptr 0) a
-u00420A60 385 ac 69 (local-int e) 2 10000
+i205 385 ac 69 (local-int e) 2 10000
 add (local-int d) ac 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) ac 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d a
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_000009e0
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d b
@@ -99,13 +99,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00000b98
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d b
 div (local-int e) (local-ptr 0) a
-u00420A60 385 de 69 (local-int e) 2 10000
+i205 385 de 69 (local-int e) 2 10000
 add (local-int d) de 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) de 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d b
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_00000b98
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d c
@@ -113,13 +113,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00000d50
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d c
 div (local-int e) (local-ptr 0) a
-u00420A60 385 110 69 (local-int e) 2 10000
+i205 385 110 69 (local-int e) 2 10000
 add (local-int d) 110 12
 draw-string 385 (local-int d) 69 "."
 add (local-int d) 110 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d c
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 69 (local-int f) 1 10000
+i205 385 (local-int d) 69 (local-int f) 1 10000
 
 label_00000d50
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 1
@@ -127,13 +127,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00000f08
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 1
 div (local-int e) (local-ptr 0) a
-u00420A60 385 16 8d (local-int e) 2 10000
+i205 385 16 8d (local-int e) 2 10000
 add (local-int d) 16 12
 draw-string 385 (local-int d) 8d "."
 add (local-int d) 16 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 1
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8d (local-int f) 1 10000
+i205 385 (local-int d) 8d (local-int f) 1 10000
 
 label_00000f08
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 3
@@ -141,13 +141,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_000010c0
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 3
 div (local-int e) (local-ptr 0) a
-u00420A60 385 48 8d (local-int e) 2 10000
+i205 385 48 8d (local-int e) 2 10000
 add (local-int d) 48 12
 draw-string 385 (local-int d) 8d "."
 add (local-int d) 48 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 3
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8d (local-int f) 1 10000
+i205 385 (local-int d) 8d (local-int f) 1 10000
 
 label_000010c0
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 5
@@ -155,13 +155,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00001278
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 5
 div (local-int e) (local-ptr 0) a
-u00420A60 385 7a 8e (local-int e) 2 10000
+i205 385 7a 8e (local-int e) 2 10000
 add (local-int d) 7a 12
 draw-string 385 (local-int d) 8e "."
 add (local-int d) 7a 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 5
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8e (local-int f) 1 10000
+i205 385 (local-int d) 8e (local-int f) 1 10000
 
 label_00001278
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 6
@@ -169,13 +169,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_00001430
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 6
 div (local-int e) (local-ptr 0) a
-u00420A60 385 ac 8e (local-int e) 2 10000
+i205 385 ac 8e (local-int e) 2 10000
 add (local-int d) ac 12
 draw-string 385 (local-int d) 8e "."
 add (local-int d) ac 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 6
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8e (local-int f) 1 10000
+i205 385 (local-int d) 8e (local-int f) 1 10000
 
 label_00001430
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 7
@@ -183,13 +183,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_000015e8
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 7
 div (local-int e) (local-ptr 0) a
-u00420A60 385 de 8e (local-int e) 2 10000
+i205 385 de 8e (local-int e) 2 10000
 add (local-int d) de 12
 draw-string 385 (local-int d) 8e "."
 add (local-int d) de 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 7
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8e (local-int f) 1 10000
+i205 385 (local-int d) 8e (local-int f) 1 10000
 
 label_000015e8
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 8
@@ -197,13 +197,13 @@ gr (local-int e) (local-ptr 0) 0
 jcc (local-int e) ffffffff label_000017a0
 lookup-array-2d (local-ptr 0) (global-int 707dde) (global-int 707ddd) d 8
 div (local-int e) (local-ptr 0) a
-u00420A60 385 110 8e (local-int e) 2 10000
+i205 385 110 8e (local-int e) 2 10000
 add (local-int d) 110 12
 draw-string 385 (local-int d) 8e "."
 add (local-int d) 110 1b
 lookup-array-2d (local-ptr 1) (global-int 707dde) (global-int 707ddd) d 8
 mod (local-int f) (local-ptr 1) a
-u00420A60 385 (local-int d) 8e (local-int f) 1 10000
+i205 385 (local-int d) 8e (local-int f) 1 10000
 
 label_000017a0
 mov (local-int a) 0

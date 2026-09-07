@@ -45,7 +45,7 @@ jmp label_00000360
 label_00000314
 mov (local-int 4a) ac
 sub (local-int 4b) 0 1
-u00422EB0 3998 ac (local-int 4b)
+i249 3998 ac (local-int 4b)
 
 label_00000360
 lookup-array-2d (local-ptr 2) (global-int 62d72) (global-int 519af9) 3e8 32
@@ -78,7 +78,7 @@ lea (local-ptr 0) (local-ptr 2)
 lea (local-ptr 1) (global-int 5469ea)
 memcpy (local-ptr 0) (local-ptr 1) d
 call label_00000fbc
-u00416200
+i20c
 play-sound-effect 39aa 2
 mov (local-int 2) (global-int 708023)
 
@@ -103,11 +103,11 @@ mov (local-int a) (local-int 2)
 
 label_00000788
 jcc (local-int a) ffffffff label_00000f88
-u00425960
-u004266F0 21 (local-int a) label_0000125c label_0000125c
-u004266F0 21 5 label_000012e4 label_000012e4
-u004266F0 1 2 label_000012ec label_000012ec
-u004262C0 ffffffff
+i0d3
+i0d4 21 (local-int a) label_0000125c label_0000125c
+i0d4 21 5 label_000012e4 label_000012e4
+i0d4 1 2 label_000012ec label_000012ec
+i0d5 ffffffff
 lookup-array (local-ptr 3) (global-int 725b0) (global-int 546e02)
 eq (local-int 4b) (local-ptr 3) 64
 jcc (local-int 4b) ffffffff label_00000f88
@@ -190,7 +190,7 @@ jmp label_00000604
 
 label_00000f94
 call label_00001004
-u00422390 1f4
+i238 1f4
 wait
 jmp label_000012f0
 
@@ -220,14 +220,14 @@ jmp label_00001054
 
 label_00001184
 sub (local-int 4b) 0 1
-u004234E0 0 (local-int 4a) 294 445 10 14 2 (local-int 4b)
+i2da 0 (local-int 4a) 294 445 10 14 2 (local-int 4b)
 add (local-int 4b) 1fbd0 c8
 lookup-array (local-ptr 3) (global-int 725b0) (global-int 546e02)
-u00422460 (local-int 4b) 0 (local-ptr 3) 1e3 15e 3 0
+i23b (local-int 4b) 0 (local-ptr 3) 1e3 15e 3 0
 ret
 
 label_0000125c
-u0041D050 2
+i0b5 2
 sub (local-int 2) (local-int 2) 1
 lookup-array (local-ptr 2) (global-int 725b0) (global-int 546e02)
 lookup-array (local-ptr 3) (global-int 725b0) (global-int 546e02)
@@ -235,8 +235,8 @@ add (local-ptr 2) (local-ptr 3) 1
 call label_00001004
 
 label_000012e4
-u004162B0
-u00416200
+i23c
+i20c
 
 label_000012ec
 ret

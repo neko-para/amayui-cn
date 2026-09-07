@@ -17,7 +17,7 @@ mov (local-int 3f8) 1
 mov (local-int 3f2) 0
 mov (local-int 3fa) 0
 mov (local-int 3f4) 0
-u00415EC0 (local-int 3ef) (local-int 3f0)
+i109 (local-int 3ef) (local-int 3f0)
 call label_000006b8
 
 label_0000017c
@@ -34,14 +34,14 @@ ret
 
 label_000001ec
 add (local-int 3f3) (local-int 3f3) 1
-2FC (local-int 3fa) (local-int 3ed) (local-int 3ee) (local-int 3fb) (local-int 3fc)
+i2fc (local-int 3fa) (local-int 3ed) (local-int 3ee) (local-int 3fb) (local-int 3fc)
 jcc (local-int 3fa) ffffffff label_00000270
 mov (local-int 3f1) 1
 jmp label_00000290
 
 label_00000270
-u00415EC0 (local-int 3ed) (local-int 3ee)
-u00415E70 (local-int 3f1)
+i109 (local-int 3ed) (local-int 3ee)
+i108 (local-int 3f1)
 
 label_00000290
 ne (local-int 40e) (local-int 3ef) (local-int 3ed)
@@ -51,7 +51,7 @@ jcc (local-int 410) ffffffff label_000003c0
 sub (local-int 3f5) 0 1
 sub (local-int 40e) (local-int 3ed) (local-int 40c)
 sub (local-int 40f) (local-int 3ee) (local-int 40d)
-u0041E940 (local-int 3f5) (local-int 0) (local-int 40e) (local-int 40f) (local-int cc) (local-int 4) (local-int 68) (local-int 25c)
+i12e (local-int 3f5) (local-int 0) (local-int 40e) (local-int 40f) (local-int cc) (local-int 4) (local-int 68) (local-int 25c)
 mov (local-int 3ef) (local-int 3ed)
 mov (local-int 3f0) (local-int 3ee)
 
@@ -64,7 +64,7 @@ gre (local-int 40e) (local-int 3f7) 0
 lt (local-int 40f) (local-int 3f7) (local-int 25c)
 and (local-int 410) (local-int 40e) (local-int 40f)
 jcc (local-int 410) ffffffff label_0000049c
-u0041D050 2
+i0b5 2
 
 label_0000049c
 call label_0000104c
@@ -97,8 +97,8 @@ label_00000608
 eq (local-int 40e) (local-int 3f2) 0
 jcc (local-int 40e) ffffffff label_000006b4
 mov (local-int 3fd) 0
-u00415A10
-u00415A60
+i0ff
+i100
 jcc (local-int 3fd) ffffffff label_000006a0
 add (local-int 3fe) (local-int 3fe) 1
 jmp label_000006b4
@@ -148,7 +148,7 @@ label_000008fc
 ret
 
 label_00000900
-u0041D050 2
+i0b5 2
 call label_0000104c
 ret
 
@@ -175,7 +175,7 @@ label_00000a28
 mov (local-int 3f7) 0
 
 label_00000a3c
-u0041D050 2
+i0b5 2
 call label_0000104c
 ret
 
@@ -202,7 +202,7 @@ label_00000b74
 ret
 
 label_00000b78
-u0041D050 2
+i0b5 2
 call label_0000104c
 ret
 
@@ -231,7 +231,7 @@ ret
 
 label_00000c30
 play-sound-effect 39a4 1
-u0041D050 1
+i0b5 1
 mov (local-int 3f4) 1
 ret
 
@@ -244,7 +244,7 @@ ret
 
 label_00000cdc
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 sub (global-int f8dfe) (local-int 3f7) 1
 mov (local-int 3f4) 1
 ret
@@ -308,7 +308,7 @@ texture-op (local-int 40e) 1
 ret
 
 label_000012c0
-u00416200
+i20c
 ret
 
 label_000012c8

@@ -25,7 +25,7 @@ sub (local-int 2cd) 0 1
 mov (local-int 2c6) 0
 mov (local-int 2d1) 0
 mov (local-int 2c8) 0
-u00415EC0 (local-int 2c3) (local-int 2c4)
+i109 (local-int 2c3) (local-int 2c4)
 call label_0000076c
 
 label_0000022c
@@ -42,14 +42,14 @@ ret
 
 label_0000029c
 add (local-int 2c7) (local-int 2c7) 1
-2FC (local-int 2d1) (local-int 2c1) (local-int 2c2) (local-int 2d2) (local-int 2d3)
+i2fc (local-int 2d1) (local-int 2c1) (local-int 2c2) (local-int 2d2) (local-int 2d3)
 jcc (local-int 2d1) ffffffff label_00000320
 mov (local-int 2c5) 1
 jmp label_00000340
 
 label_00000320
-u00415EC0 (local-int 2c1) (local-int 2c2)
-u00415E70 (local-int 2c5)
+i109 (local-int 2c1) (local-int 2c2)
+i108 (local-int 2c5)
 
 label_00000340
 ne (local-int 2e3) (local-int 2c3) (local-int 2c1)
@@ -60,7 +60,7 @@ sub (local-int 2cd) 0 1
 sub (local-int 2c9) 0 1
 sub (local-int 2e3) (local-int 2c1) (local-int 2e1)
 sub (local-int 2e4) (local-int 2c2) (local-int 2e2)
-u0041E940 (local-int 2c9) (local-int 0) (local-int 2e3) (local-int 2e4) (local-int cc) (local-int 4) (local-int 68) (local-int 25c)
+i12e (local-int 2c9) (local-int 0) (local-int 2e3) (local-int 2e4) (local-int cc) (local-int 4) (local-int 68) (local-int 25c)
 mov (local-int 2c3) (local-int 2c1)
 mov (local-int 2c4) (local-int 2c2)
 
@@ -73,7 +73,7 @@ gre (local-int 2e3) (local-int 2cb) 0
 lt (local-int 2e4) (local-int 2cb) (local-int 25c)
 and (local-int 2e5) (local-int 2e3) (local-int 2e4)
 jcc (local-int 2e5) ffffffff label_00000568
-u0041D050 2
+i0b5 2
 
 label_00000568
 call label_00000f6c
@@ -108,8 +108,8 @@ eq (local-int 2e4) (local-int 2e3) 0
 jcc (local-int 2e4) ffffffff label_00000768
 eq (local-int 2e3) (local-int 2c6) 0
 jcc (local-int 2e3) ffffffff label_00000768
-u00415A10
-u00415A60
+i0ff
+i100
 
 label_00000768
 ret
@@ -161,7 +161,7 @@ ret
 
 label_00000990
 play-sound-effect 39a4 1
-u0041D050 1
+i0b5 1
 mov (local-int 2c8) 1
 ret
 
@@ -176,12 +176,12 @@ label_00000a3c
 eq (local-int 2e3) (local-int 2cb) 0
 jcc (local-int 2e3) ffffffff label_00000aa0
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 jmp label_00000adc
 
 label_00000aa0
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 sub (global-int f8dfe) (local-int 2cb) 1
 
 label_00000adc
@@ -203,13 +203,13 @@ lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
 jcc (local-ptr 0) ffffffff label_00000d40
 lookup-array (local-ptr 0) (global-int f7b39) (global-int 93487)
 add (local-int 2e4) 1d4c0 64
-u00421410 (local-ptr 0) (local-int 2e4)
+i21d (local-ptr 0) (local-int 2e4)
 add (local-int 2e3) 1d4c0 64
 sub (local-int 2e4) 0 424
 sub (local-int 2e5) (local-int 2e4) (global-int a2052)
 sub (local-int 2e6) 0 9b
 sub (local-int 2e7) (local-int 2e6) (global-int a2053)
-u00420770 (local-int 2e3) (local-int 2e5) (local-int 2e7) 0
+i1ff (local-int 2e3) (local-int 2e5) (local-int 2e7) 0
 
 label_00000d40
 add (local-int 2e3) 1d4c0 c8
@@ -269,7 +269,7 @@ texture-op (local-int 2e3) 1
 ret
 
 label_000012bc
-u00416200
+i20c
 ret
 
 label_000012c4

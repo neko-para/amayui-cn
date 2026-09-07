@@ -13,13 +13,13 @@ mov (global-int 510004) (local-ptr 0)
 label_000000d4
 mul (local-int d) 20 20
 copy-to-global (global-int 5abe2) (local-int d)
-u0041EF00 0
+i132 0
 shl (local-int d) (global-int 510003) 10
 add (local-int e) (local-int d) (global-int 510004)
-u0041EFF0 0 (local-int e)
+i133 0 (local-int e)
 
 label_0000015c
-u0041F050 0 (local-int 0) (local-int 1)
+i134 0 (local-int 0) (local-int 1)
 jcc (local-int 0) ffffffff label_000002e4
 sar (local-int 6) (local-int 1) 10
 and (local-int 7) (local-int 1) ffff
@@ -89,7 +89,7 @@ lookup-array-2d (local-ptr 0) (global-int 5abe2) (local-int 9) 20 (local-int 8)
 mov (local-ptr 0) (local-int a)
 shl (local-int d) (local-int 8) 10
 add (local-int e) (local-int d) (local-int 9)
-u0041EFF0 0 (local-int e)
+i133 0 (local-int e)
 ret
 
 label_000006f4

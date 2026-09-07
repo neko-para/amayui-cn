@@ -50,7 +50,7 @@ mov (local-ptr 0) (local-ptr 1)
 jmp label_000002a8
 
 label_00000370
-u0041ECB0 (local-int 26) (local-int 8a) (local-int ee) 64
+i12f (local-int 26) (local-int 8a) (local-int ee) 64
 mov (local-int 152) 0
 jmp label_000003d0
 
@@ -177,16 +177,16 @@ draw-texture (local-int 154) 10 14a 111 19d bb (local-int 2) (local-int 3)
 create-texture 384 19c cc 0
 add (local-int 154) 1fbd0 c9
 draw-texture (local-int 154) 384 0 0 19c a8 (local-int 2) (local-int 3)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 154) (global-int 3f36) d
 jcc (local-int 154) ffffffff label_00000ef0
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_00000ef0
@@ -195,8 +195,8 @@ draw-string 384 a a (local-string-ptr 0)
 jcc (global-int 519af8) ffffffff label_0000103c
 ne (local-int 154) (global-int 519af8) (local-int 23)
 jcc (local-int 154) ffffffff label_00000f9c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 
 label_00000f9c
 lookup-array (local-string-ptr 0) (global-string 1d4f4) (global-int 519af8)
@@ -207,227 +207,227 @@ sub (local-int 156) 73 (local-int 154)
 draw-string 384 (local-int 156) 8f (local-string 0)
 
 label_0000103c
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 154) (global-int 3f36) 14
 jcc (local-int 154) ffffffff label_000010f0
 set-font (global-string bbe)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 14
 
 label_000010f0
 gr (local-int 154) (global-int 519ae9) (local-int d)
 jcc (local-int 154) ffffffff label_0000114c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_0000119c
 
 label_0000114c
 lt (local-int 154) (global-int 519ae9) (local-int d)
 jcc (local-int 154) ffffffff label_0000119c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_0000119c
-u00420A60 384 1b 46 (global-int 519ae9) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 1b 46 (global-int 519ae9) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aeb) (local-int f)
 jcc (local-int 154) ffffffff label_00001244
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001294
 
 label_00001244
 lt (local-int 154) (global-int 519aeb) (local-int f)
 jcc (local-int 154) ffffffff label_00001294
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001294
-u00420A60 384 4d 46 (global-int 519aeb) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 4d 46 (global-int 519aeb) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aed) (local-int 11)
 jcc (local-int 154) ffffffff label_0000133c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_0000138c
 
 label_0000133c
 lt (local-int 154) (global-int 519aed) (local-int 11)
 jcc (local-int 154) ffffffff label_0000138c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_0000138c
-u00420A60 384 7f 46 (global-int 519aed) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 7f 46 (global-int 519aed) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af3) (local-int 17)
 jcc (local-int 154) ffffffff label_00001434
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001484
 
 label_00001434
 lt (local-int 154) (global-int 519af3) (local-int 17)
 jcc (local-int 154) ffffffff label_00001484
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001484
-u00420A60 384 b1 46 (global-int 519af3) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 b1 46 (global-int 519af3) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af4) (local-int 18)
 jcc (local-int 154) ffffffff label_0000152c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_0000157c
 
 label_0000152c
 lt (local-int 154) (global-int 519af4) (local-int 18)
 jcc (local-int 154) ffffffff label_0000157c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_0000157c
-u00420A60 384 e3 46 (global-int 519af4) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 e3 46 (global-int 519af4) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af5) (local-int 19)
 jcc (local-int 154) ffffffff label_00001624
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001674
 
 label_00001624
 lt (local-int 154) (global-int 519af5) (local-int 19)
 jcc (local-int 154) ffffffff label_00001674
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001674
-u00420A60 384 115 46 (global-int 519af5) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 115 46 (global-int 519af5) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aea) (local-int e)
 jcc (local-int 154) ffffffff label_0000171c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_0000176c
 
 label_0000171c
 lt (local-int 154) (global-int 519aea) (local-int e)
 jcc (local-int 154) ffffffff label_0000176c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_0000176c
-u00420A60 384 1b 6b (global-int 519aea) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 1b 6b (global-int 519aea) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aec) (local-int 10)
 jcc (local-int 154) ffffffff label_00001814
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001864
 
 label_00001814
 lt (local-int 154) (global-int 519aec) (local-int 10)
 jcc (local-int 154) ffffffff label_00001864
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001864
-u00420A60 384 4d 6b (global-int 519aec) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 4d 6b (global-int 519aec) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aee) (local-int 12)
 jcc (local-int 154) ffffffff label_0000190c
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_0000195c
 
 label_0000190c
 lt (local-int 154) (global-int 519aee) (local-int 12)
 jcc (local-int 154) ffffffff label_0000195c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_0000195c
-u00420A60 384 7f 6b (global-int 519aee) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 7f 6b (global-int 519aee) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519aef) (local-int 13)
 jcc (local-int 154) ffffffff label_00001a04
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001a54
 
 label_00001a04
 lt (local-int 154) (global-int 519aef) (local-int 13)
 jcc (local-int 154) ffffffff label_00001a54
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001a54
-u00420A60 384 b1 6b (global-int 519aef) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 b1 6b (global-int 519aef) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af0) (local-int 14)
 jcc (local-int 154) ffffffff label_00001afc
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001b4c
 
 label_00001afc
 lt (local-int 154) (global-int 519af0) (local-int 14)
 jcc (local-int 154) ffffffff label_00001b4c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001b4c
-u00420A60 384 e3 6b (global-int 519af0) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 e3 6b (global-int 519af0) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af1) (local-int 15)
 jcc (local-int 154) ffffffff label_00001bf4
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001c44
 
 label_00001bf4
 lt (local-int 154) (global-int 519af1) (local-int 15)
 jcc (local-int 154) ffffffff label_00001c44
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001c44
-u00420A60 384 115 6b (global-int 519af1) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 115 6b (global-int 519af1) 3 10000
+i076 ffffff
+i077 ffffff
 gr (local-int 154) (global-int 519af6) (local-int 22)
 jcc (local-int 154) ffffffff label_00001cec
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001d3c
 
 label_00001cec
 lt (local-int 154) (global-int 519af6) (local-int 22)
 jcc (local-int 154) ffffffff label_00001d3c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001d3c
-u00420A60 384 115 90 (global-int 519af6) 3 10000
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 115 90 (global-int 519af6) 3 10000
+i076 ffffff
+i077 ffffff
 mov (local-int 5) 1
 jmp label_00001dc4
 
@@ -444,8 +444,8 @@ lookup-array (local-ptr 1) (global-int 519ae1) (local-int 5)
 lookup-array (local-ptr 2) (local-int 1a) (local-int 5)
 gr (local-int 154) (local-ptr 1) (local-ptr 2)
 jcc (local-int 154) ffffffff label_00001ee4
-u0041AC60 30ffff
-u0041ACB0 30ffff
+i076 30ffff
+i077 30ffff
 jmp label_00001f6c
 
 label_00001ee4
@@ -453,14 +453,14 @@ lookup-array (local-ptr 1) (global-int 519ae1) (local-int 5)
 lookup-array (local-ptr 2) (local-int 1a) (local-int 5)
 lt (local-int 154) (local-ptr 1) (local-ptr 2)
 jcc (local-int 154) ffffffff label_00001f6c
-u0041AC60 ff3030
-u0041ACB0 ff3030
+i076 ff3030
+i077 ff3030
 
 label_00001f6c
 lookup-array (local-ptr 0) (global-int 519ae1) (local-int 5)
-u00420A60 384 16d (local-int 4) (local-ptr 0) 3 10008
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i205 384 16d (local-int 4) (local-ptr 0) 3 10008
+i076 ffffff
+i077 ffffff
 jmp label_00001da8
 
 label_00001fe0
@@ -472,10 +472,10 @@ eq (local-int 155) (local-ptr 3) 3
 or (local-int 157) (local-int 154) (local-int 155)
 jcc (local-int 157) ffffffff label_00002168
 lookup-array (local-ptr 0) (global-int 55d565) (global-int 546e03)
-u00420A60 384 e3 90 (local-ptr 0) 1 10000
+i205 384 e3 90 (local-ptr 0) 1 10000
 draw-string 384 ec 90 "-"
 lookup-array (local-ptr 0) (global-int 55e505) (global-int 546e03)
-u00420A60 384 f5 90 (local-ptr 0) 1 10000
+i205 384 f5 90 (local-ptr 0) 1 10000
 
 label_00002168
 add (local-int 154) 1fbd0 ca
@@ -592,7 +592,7 @@ draw-texture (local-int 154) 10 (local-int 155) 0 18 25 (local-int 15d) (local-i
 
 label_00002c34
 lookup-array (local-string-ptr 1) (global-string 19de0) (global-int 546e03)
-u00425580 (local-int 154) (local-string-ptr 1) ""
+i195 (local-int 154) (local-string-ptr 1) ""
 jcc (local-int 154) ffffffff label_00002e74
 add (local-int 154) 1fbd0 e8
 sub (local-int 156) (local-int 3) 23
@@ -600,16 +600,16 @@ draw-texture (local-int 154) 10 24e 0 19d 37 (local-int 2) (local-int 156)
 add (local-int 154) 1fbd0 e9
 sub (local-int 156) (local-int 3) 23
 draw-texture (local-int 154) 384 0 a8 19c 24 (local-int 2) (local-int 156)
-u0041AC30 12
-u0041AC60 402000
-u0041ACB0 402000
+i075 12
+i076 402000
+i077 402000
 ne (local-int 154) (global-int 3f36) b
 jcc (local-int 154) ffffffff label_00002e34
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) b
 
 label_00002e34

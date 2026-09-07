@@ -18,7 +18,7 @@ add (global-int 510050) 20 (local-int 40f)
 create-texture 4c (global-int 51004f) (global-int 510050) 0
 create-texture 4d (global-int 51004f) (global-int 510050) 0
 create-texture 4e (global-int 51004f) (global-int 510050) 0
-u00420D50 4c 0 0 (global-int 51004f) (global-int 510050) 80 0
+i20b 4c 0 0 (global-int 51004f) (global-int 510050) 80 0
 mov (local-int 8) 1
 jmp label_000001f0
 
@@ -164,13 +164,13 @@ mov (local-int 40e) bc00e4
 label_00000bb8
 add (local-int 40f) (local-int c) 2
 add (local-int 410) (local-int d) 2
-u00420D50 4c (local-int 40f) (local-int 410) 6 6 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 6 6 ff (local-int 40e)
 sub (local-int 40f) (local-int 8) 1
 sub (local-int 410) (local-int 7) 1
 lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 410)
 eq (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00000d04
-u00420D50 4c (local-int c) (local-int d) 2 2 ff (local-int 40e)
+i20b 4c (local-int c) (local-int d) 2 2 ff (local-int 40e)
 
 label_00000d04
 sub (local-int 40f) (local-int 8) 1
@@ -179,7 +179,7 @@ lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 4
 eq (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00000df8
 add (local-int 40f) (local-int c) 8
-u00420D50 4c (local-int 40f) (local-int d) 2 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int d) 2 2 ff (local-int 40e)
 
 label_00000df8
 add (local-int 40f) (local-int 8) 1
@@ -188,7 +188,7 @@ lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 4
 eq (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00000eec
 add (local-int 40f) (local-int d) 8
-u00420D50 4c (local-int c) (local-int 40f) 2 2 ff (local-int 40e)
+i20b 4c (local-int c) (local-int 40f) 2 2 ff (local-int 40e)
 
 label_00000eec
 add (local-int 40f) (local-int 8) 1
@@ -198,7 +198,7 @@ eq (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00000ffc
 add (local-int 40f) (local-int c) 8
 add (local-int 410) (local-int d) 8
-u00420D50 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
 
 label_00000ffc
 sub (local-int 40f) (local-int 8) 1
@@ -206,7 +206,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 40f) 20 (local-int 7
 eq (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_000010d4
 add (local-int 40f) (local-int c) 2
-u00420D50 4c (local-int 40f) (local-int d) 6 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int d) 6 2 ff (local-int 40e)
 
 label_000010d4
 add (local-int 40f) (local-int 8) 1
@@ -215,7 +215,7 @@ eq (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_000011c8
 add (local-int 40f) (local-int c) 2
 add (local-int 410) (local-int d) 8
-u00420D50 4c (local-int 40f) (local-int 410) 6 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 6 2 ff (local-int 40e)
 
 label_000011c8
 sub (local-int 40f) (local-int 7) 1
@@ -223,7 +223,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 8) 20 (local-int 40f
 eq (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_000012a0
 add (local-int 40f) (local-int d) 2
-u00420D50 4c (local-int c) (local-int 40f) 2 6 ff (local-int 40e)
+i20b 4c (local-int c) (local-int 40f) 2 6 ff (local-int 40e)
 
 label_000012a0
 add (local-int 40f) (local-int 7) 1
@@ -232,7 +232,7 @@ eq (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00001394
 add (local-int 40f) (local-int c) 8
 add (local-int 410) (local-int d) 2
-u00420D50 4c (local-int 40f) (local-int 410) 2 6 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 2 6 ff (local-int 40e)
 
 label_00001394
 sub (local-int 40f) (local-int 8) 1
@@ -243,7 +243,7 @@ lookup-array-2d (local-ptr 4) (global-int 581ff) (local-int 8) 20 (local-int 412
 ne (local-int 413) (local-ptr 4) (local-int 6)
 and (local-int 414) (local-int 411) (local-int 413)
 jcc (local-int 414) ffffffff label_000014e4
-u00420B00 49 4d 5ae 2ca 5 5 (local-int c) (local-int d)
+i207 49 4d 5ae 2ca 5 5 (local-int c) (local-int d)
 jmp label_00001764
 
 label_000014e4
@@ -251,7 +251,7 @@ sub (local-int 40f) (local-int 8) 1
 lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 40f) 20 (local-int 7)
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_000015b4
-u00420B00 49 4d 5ba 2ca 5 5 (local-int c) (local-int d)
+i207 49 4d 5ba 2ca 5 5 (local-int c) (local-int d)
 jmp label_00001764
 
 label_000015b4
@@ -259,7 +259,7 @@ sub (local-int 40f) (local-int 7) 1
 lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 8) 20 (local-int 40f)
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00001684
-u00420B00 49 4d 5ae 2d6 5 5 (local-int c) (local-int d)
+i207 49 4d 5ae 2d6 5 5 (local-int c) (local-int d)
 jmp label_00001764
 
 label_00001684
@@ -268,7 +268,7 @@ sub (local-int 410) (local-int 7) 1
 lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 410)
 ne (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00001764
-u00420B00 49 4d 5ae 2e4 5 5 (local-int c) (local-int d)
+i207 49 4d 5ae 2e4 5 5 (local-int c) (local-int d)
 
 label_00001764
 sub (local-int 40f) (local-int 8) 1
@@ -280,7 +280,7 @@ ne (local-int 413) (local-ptr 4) (local-int 6)
 and (local-int 414) (local-int 411) (local-int 413)
 jcc (local-int 414) ffffffff label_000018d0
 add (local-int 40f) (local-int c) 5
-u00420B00 49 4d 5c1 2ca 5 5 (local-int 40f) (local-int d)
+i207 49 4d 5c1 2ca 5 5 (local-int 40f) (local-int d)
 jmp label_00001ba4
 
 label_000018d0
@@ -289,7 +289,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 40f) 20 (local-int 7
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_000019bc
 add (local-int 40f) (local-int c) 5
-u00420B00 49 4d 5b5 2ca 5 5 (local-int 40f) (local-int d)
+i207 49 4d 5b5 2ca 5 5 (local-int 40f) (local-int d)
 jmp label_00001ba4
 
 label_000019bc
@@ -298,7 +298,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 8) 20 (local-int 40f
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00001aa8
 add (local-int 40f) (local-int c) 5
-u00420B00 49 4d 5c1 2d6 5 5 (local-int 40f) (local-int d)
+i207 49 4d 5c1 2d6 5 5 (local-int 40f) (local-int d)
 jmp label_00001ba4
 
 label_00001aa8
@@ -308,7 +308,7 @@ lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 4
 ne (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00001ba4
 add (local-int 40f) (local-int c) 5
-u00420B00 49 4d 5b5 2e4 5 5 (local-int 40f) (local-int d)
+i207 49 4d 5b5 2e4 5 5 (local-int 40f) (local-int d)
 
 label_00001ba4
 add (local-int 40f) (local-int 8) 1
@@ -320,7 +320,7 @@ ne (local-int 413) (local-ptr 4) (local-int 6)
 and (local-int 414) (local-int 411) (local-int 413)
 jcc (local-int 414) ffffffff label_00001d10
 add (local-int 40f) (local-int d) 5
-u00420B00 49 4d 5ae 2dd 5 5 (local-int c) (local-int 40f)
+i207 49 4d 5ae 2dd 5 5 (local-int c) (local-int 40f)
 jmp label_00001fe4
 
 label_00001d10
@@ -329,7 +329,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 40f) 20 (local-int 7
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00001dfc
 add (local-int 40f) (local-int d) 5
-u00420B00 49 4d 5ba 2dd 5 5 (local-int c) (local-int 40f)
+i207 49 4d 5ba 2dd 5 5 (local-int c) (local-int 40f)
 jmp label_00001fe4
 
 label_00001dfc
@@ -338,7 +338,7 @@ lookup-array-2d (local-ptr 3) (global-int 581ff) (local-int 8) 20 (local-int 40f
 ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00001ee8
 add (local-int 40f) (local-int d) 5
-u00420B00 49 4d 5ae 2d1 5 5 (local-int c) (local-int 40f)
+i207 49 4d 5ae 2d1 5 5 (local-int c) (local-int 40f)
 jmp label_00001fe4
 
 label_00001ee8
@@ -348,7 +348,7 @@ lookup-array-2d (local-ptr 2) (global-int 581ff) (local-int 40f) 20 (local-int 4
 ne (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00001fe4
 add (local-int 40f) (local-int d) 5
-u00420B00 49 4d 5bc 2e4 5 5 (local-int c) (local-int 40f)
+i207 49 4d 5bc 2e4 5 5 (local-int c) (local-int 40f)
 
 label_00001fe4
 add (local-int 40f) (local-int 8) 1
@@ -361,7 +361,7 @@ and (local-int 414) (local-int 411) (local-int 413)
 jcc (local-int 414) ffffffff label_0000216c
 add (local-int 40f) (local-int c) 5
 add (local-int 410) (local-int d) 5
-u00420B00 49 4d 5c1 2dd 5 5 (local-int 40f) (local-int 410)
+i207 49 4d 5c1 2dd 5 5 (local-int 40f) (local-int 410)
 jmp label_00002494
 
 label_0000216c
@@ -371,7 +371,7 @@ ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_00002274
 add (local-int 40f) (local-int c) 5
 add (local-int 410) (local-int d) 5
-u00420B00 49 4d 5b5 2dd 5 5 (local-int 40f) (local-int 410)
+i207 49 4d 5b5 2dd 5 5 (local-int 40f) (local-int 410)
 jmp label_00002494
 
 label_00002274
@@ -381,7 +381,7 @@ ne (local-int 411) (local-ptr 3) (local-int 6)
 jcc (local-int 411) ffffffff label_0000237c
 add (local-int 40f) (local-int c) 5
 add (local-int 410) (local-int d) 5
-u00420B00 49 4d 5c1 2d1 5 5 (local-int 40f) (local-int 410)
+i207 49 4d 5c1 2d1 5 5 (local-int 40f) (local-int 410)
 jmp label_00002494
 
 label_0000237c
@@ -392,7 +392,7 @@ ne (local-int 412) (local-ptr 2) (local-int 6)
 jcc (local-int 412) ffffffff label_00002494
 add (local-int 40f) (local-int c) 5
 add (local-int 410) (local-int d) 5
-u00420B00 49 4d 5c3 2e4 5 5 (local-int 40f) (local-int 410)
+i207 49 4d 5c3 2e4 5 5 (local-int 40f) (local-int 410)
 
 label_00002494
 mov (local-int 1) 0
@@ -444,9 +444,9 @@ mov (local-int 1) 1
 label_000028b8
 jcc (local-int 1) ffffffff label_0000298c
 add (local-int 40f) (local-int c) 4
-u00420D50 4c (local-int 40f) (local-int d) 2 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int d) 2 2 ff (local-int 40e)
 add (local-int 40f) (local-int c) 2
-u00420B00 49 4d 5b4 2ed 6 2 (local-int 40f) (local-int d)
+i207 49 4d 5b4 2ed 6 2 (local-int 40f) (local-int d)
 
 label_0000298c
 mov (local-int 1) 0
@@ -499,10 +499,10 @@ label_00002db0
 jcc (local-int 1) ffffffff label_00002ebc
 add (local-int 40f) (local-int c) 4
 add (local-int 410) (local-int d) 8
-u00420D50 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
 add (local-int 40f) (local-int c) 2
 add (local-int 410) (local-int d) 8
-u00420B00 49 4d 5b4 2eb 6 2 (local-int 40f) (local-int 410)
+i207 49 4d 5b4 2eb 6 2 (local-int 40f) (local-int 410)
 
 label_00002ebc
 mov (local-int 1) 0
@@ -554,9 +554,9 @@ mov (local-int 1) 1
 label_000032e0
 jcc (local-int 1) ffffffff label_000033b4
 add (local-int 40f) (local-int d) 4
-u00420D50 4c (local-int c) (local-int 40f) 2 2 ff (local-int 40e)
+i20b 4c (local-int c) (local-int 40f) 2 2 ff (local-int 40e)
 add (local-int 40f) (local-int d) 2
-u00420B00 49 4d 5b0 2eb 2 6 (local-int c) (local-int 40f)
+i207 49 4d 5b0 2eb 2 6 (local-int c) (local-int 40f)
 
 label_000033b4
 mov (local-int 1) 0
@@ -609,10 +609,10 @@ label_000037d8
 jcc (local-int 1) ffffffff label_000038e4
 add (local-int 40f) (local-int c) 8
 add (local-int 410) (local-int d) 4
-u00420D50 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
+i20b 4c (local-int 40f) (local-int 410) 2 2 ff (local-int 40e)
 add (local-int 40f) (local-int c) 8
 add (local-int 410) (local-int d) 2
-u00420B00 49 4d 5ae 2eb 2 6 (local-int 40f) (local-int 410)
+i207 49 4d 5ae 2eb 2 6 (local-int 40f) (local-int 410)
 
 label_000038e4
 jmp label_000004ec
@@ -647,7 +647,7 @@ add (local-int d) 8 (local-int 40f)
 lookup-array (local-ptr 3) (global-int 6f158) (local-int b)
 mul (local-int 40f) (local-ptr 3) 8
 add (local-int 411) 2ca (local-int 40f)
-u00420B00 49 4e 5ca (local-int 411) 6 6 (local-int c) (local-int d)
+i207 49 4e 5ca (local-int 411) 6 6 (local-int c) (local-int d)
 
 label_00003b90
 jmp label_0000391c

@@ -135,13 +135,13 @@ lookup-array-2d (local-ptr 0) (global-int 597df) (global-int 510004) 20 (global-
 mov (local-ptr 0) (local-int 4)
 lookup-array-2d (local-ptr 0) (global-int 5a3df) (global-int 510004) 20 (global-int 510003)
 mov (local-ptr 0) (local-int 5)
-u0041EF00 0
+i132 0
 shl (local-int 1095) (global-int 510003) 10
 add (local-int 1099) (local-int 1095) (global-int 510004)
-u0041EFF0 0 (local-int 1099)
+i133 0 (local-int 1099)
 
 label_00000ad4
-u0041F050 0 (local-int 0) (local-int 1)
+i134 0 (local-int 0) (local-int 1)
 jcc (local-int 0) ffffffff label_00000ccc
 sar (local-int 10) (local-int 1) 10
 and (local-int 11) (local-int 1) ffff
@@ -228,7 +228,7 @@ or (local-int 109a) (local-int 1095) (local-int 1097)
 jcc (local-int 109a) ffffffff label_00001264
 shl (local-int 1095) (local-int 12) 10
 add (local-int 1099) (local-int 1095) (local-int 13)
-u0041EFF0 0 (local-int 1099)
+i133 0 (local-int 1099)
 
 label_00001264
 ret

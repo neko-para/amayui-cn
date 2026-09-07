@@ -44,10 +44,10 @@ lookup-array (local-ptr 0) (global-int 14cedb) (local-int 4)
 jcc (local-ptr 0) ffffffff label_00000418
 lookup-array (local-ptr 0) (global-int 14d06b) (local-int 4)
 lookup-array (local-ptr 1) (global-int 14d0cf) (local-int 4)
-u004211E0 (local-int 3) (local-ptr 0) (local-ptr 1) 0
+i217 (local-int 3) (local-ptr 0) (local-ptr 1) 0
 lookup-array (local-ptr 0) (global-int 14cedb) (local-int 4)
 lookup-array (local-ptr 1) (global-int 14cedb) (local-int 4)
-u00420620 (local-int 3) (local-ptr 0) (local-ptr 1) 64
+i1fd (local-int 3) (local-ptr 0) (local-ptr 1) 64
 
 label_00000418
 lookup-array (local-ptr 0) (global-int 14ce13) (local-int 4)
@@ -86,7 +86,7 @@ lookup-array (local-ptr 2) (global-int 14ce13) (local-int 4)
 div (local-int 5) (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 3) (global-int 14ce13) (local-int 4)
 lookup-array (local-ptr 4) (global-int 14cd4b) (local-int 4)
-u00421EA0 (local-int 3) (local-int 5) (local-ptr 3) (local-ptr 4)
+i231 (local-int 3) (local-int 5) (local-ptr 3) (local-ptr 4)
 lookup-array (local-ptr 0) (global-int 14d1fb) (local-int 4)
 lookup-array (local-ptr 2) (global-int 14d133) (local-int 4)
 lookup-array (local-ptr 3) (global-int 14d06b) (local-int 4)
@@ -94,7 +94,7 @@ sub (local-int 7) (local-ptr 2) (local-ptr 3)
 lookup-array (local-ptr 5) (global-int 14d197) (local-int 4)
 lookup-array (local-ptr 6) (global-int 14d0cf) (local-int 4)
 sub (local-int 8) (local-ptr 5) (local-ptr 6)
-u004215D0 (local-int 3) (local-int 2) (local-ptr 0) (local-int 7) (local-int 8) 0
+i220 (local-int 3) (local-int 2) (local-ptr 0) (local-int 7) (local-int 8) 0
 lookup-array (local-ptr 1) (global-int 14d1fb) (local-int 4)
 add (local-int 5) (local-int 2) (local-ptr 1)
 lookup-array (local-ptr 2) (global-int 14c8ff) (local-int 0)
@@ -105,14 +105,14 @@ label_00000920
 lookup-array (local-ptr 0) (global-int 14ce77) (local-int 4)
 lookup-array (local-ptr 1) (global-int 14ce13) (local-int 4)
 lookup-array (local-ptr 2) (global-int 14cd4b) (local-int 4)
-u004223C0 (local-int 3) (local-int 2) (local-ptr 0) (local-ptr 1) (local-ptr 2) 0
+i239 (local-int 3) (local-int 2) (local-ptr 0) (local-ptr 1) (local-ptr 2) 0
 lookup-array (local-ptr 1) (global-int 14ce77) (local-int 4)
 add (local-int 5) (local-int 2) (local-ptr 1)
 lookup-array (local-ptr 2) (global-int 14c8ff) (local-int 0)
 mov (local-ptr 2) (local-int 5)
 
 label_00000a10
-u00422D60 (local-int 3) 1
+i242 (local-int 3) 1
 jmp label_00000b2c
 
 label_00000a30
@@ -121,7 +121,7 @@ lookup-array (local-ptr 2) (global-int 14ce13) (local-int 4)
 div (local-int 5) (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 3) (global-int 14ce13) (local-int 4)
 lookup-array (local-ptr 4) (global-int 14cd4b) (local-int 4)
-u00421EA0 (local-int 3) (local-int 5) (local-ptr 3) (local-ptr 4)
+i231 (local-int 3) (local-int 5) (local-ptr 3) (local-ptr 4)
 lookup-array (local-ptr 0) (global-int 14c8ff) (local-int 0)
 lookup-array (local-ptr 1) (global-int 14ce77) (local-int 4)
 mov (local-ptr 0) (local-ptr 1)

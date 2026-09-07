@@ -18,7 +18,7 @@ lookup-array (local-ptr 0) (local-int d) (local-int 0)
 add (local-ptr 0) 30d40 (local-int 0)
 lookup-array (local-ptr 0) (global-int f7b39) (local-int 0)
 lookup-array (local-ptr 1) (local-int d) (local-int 0)
-u00421410 (local-ptr 0) (local-ptr 1)
+i21d (local-ptr 0) (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f7b39) (local-int 0)
 texture-op (local-ptr 0) 1
 
@@ -87,7 +87,7 @@ mul (local-int 267) (local-int 266) 19
 mul (local-int 26a) 2 32
 sub (local-int b) (local-int 267) (local-int 26a)
 add (local-int 5) 12c (local-int c)
-u004211A0 (local-int 265) (local-int 5)
+i216 (local-int 265) (local-int 5)
 gr (local-int 266) (local-int 265) 0
 jcc (local-int 266) ffffffff label_00000aa8
 and (local-int 266) (global-int a9d6) 4
@@ -99,7 +99,7 @@ lookup-array (local-ptr 0) (local-int d) (local-int 0)
 jcc (local-ptr 0) ffffffff label_0000089c
 lookup-array (local-ptr 0) (local-int d) (local-int 0)
 lookup-array (local-ptr 1) (global-int f7b39) (local-int 0)
-u00421410 (local-ptr 0) (local-ptr 1)
+i21d (local-ptr 0) (local-ptr 1)
 jmp label_00000968
 
 label_0000089c
@@ -109,7 +109,7 @@ lookup-array (local-ptr 3) (global-int 70521d) (local-int c)
 div (local-int 267) (local-ptr 2) (local-ptr 3)
 lookup-array (local-ptr 4) (global-int 70521d) (local-int c)
 lookup-array (local-ptr 5) (global-int 704fc5) (local-int c)
-u00421EA0 (local-ptr 0) (local-int 267) (local-ptr 4) (local-ptr 5)
+i231 (local-ptr 0) (local-int 267) (local-ptr 4) (local-ptr 5)
 
 label_00000968
 lookup-array (local-ptr 0) (global-int f7b39) (local-int 0)

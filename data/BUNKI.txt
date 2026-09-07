@@ -6,27 +6,27 @@ local_vars = { a7 1 1 8 1 3 }
 or (global-int f8df9) (global-int f8df9) 10000
 eq (local-int 9f) (global-int 0) 1
 jcc (local-int 9f) ffffffff label_000000fc
-u004213E0 0
-308 0
+i21b 0
+i308 0
 comment "savems "
 comment (global-int f8078)
 comment " bunki"
 dev_ukn
 call label_00003ecc
-u0041B9F0 0
+i1ce 0
 mov (global-int f800b) 1
 
 label_000000fc
-u0041AC30 1c
-u0041AC60 ffffff
-u0041ACB0 333e52
+i075 1c
+i076 ffffff
+i077 333e52
 ne (local-int 9f) (global-int 3f36) 4
 jcc (local-int 9f) ffffffff label_000001b0
 set-font (global-string bbf)
-u00423100 1
-u0041AD00 3
-u0041B580 1 1
-u00423127 0
+i2bd 1
+i078 3
+i1a4 1 1
+i261 0
 mov (global-int 3f36) 4
 
 label_000001b0
@@ -43,7 +43,7 @@ label_00000238
 lt (local-int 9f) (local-int 5) (global-int f8c50)
 jcc (local-int 9f) ffffffff label_000002f8
 lookup-array (local-string-ptr 0) (global-string d5e) (local-int 5)
-u0042B5E0 (local-int 97) (local-string-ptr 0)
+i2c6 (local-int 97) (local-string-ptr 0)
 lt (local-int 9f) (local-int 9d) (local-int 97)
 jcc (local-int 9f) ffffffff label_000002ec
 mov (local-int 9d) (local-int 97)
@@ -57,7 +57,7 @@ jcc (local-int 9f) ffffffff label_00000344
 mov (local-int 9d) 14
 
 label_00000344
-u0042B5E0 (local-int 9e) (global-string e3a)
+i2c6 (local-int 9e) (global-string e3a)
 gr (local-int 9f) (local-int 9e) 14
 jcc (local-int 9f) ffffffff label_000003a4
 mov (local-int 9e) 14
@@ -136,7 +136,7 @@ mov (global-int 4) 0
 call-script 51c1
 
 label_00000978
-u00416200
+i20c
 mov (local-int 91) 0
 mov (local-int b) 0
 mov (local-int d) 0
@@ -151,12 +151,12 @@ jcc (local-int 9f) ffffffff label_00000ac4
 mov (local-int 7) 0
 mov (local-int 93) (local-int 0)
 mov (local-int 94) (local-int 1)
-u0041E540 (local-int 93) (local-int 94)
+i10a (local-int 93) (local-int 94)
 jmp label_00000af4
 
 label_00000ac4
 sub (local-int 7) 0 1
-u00415EC0 (local-int 93) (local-int 94)
+i109 (local-int 93) (local-int 94)
 
 label_00000af4
 get-input-type
@@ -173,7 +173,7 @@ ret
 label_00000b64
 add (local-int 92) (local-int 92) 1
 mov (local-int e) (local-int d)
-2FC (local-int d) (local-int 2) (local-int 3) (local-int f) (local-int 10)
+i2fc (local-int d) (local-int 2) (local-int 3) (local-int f) (local-int 10)
 jcc (local-int d) ffffffff label_00000c48
 mov (local-int 4) 1
 gre (local-int 9f) (local-int 7) 0
@@ -184,8 +184,8 @@ label_00000c3c
 jmp label_00000c68
 
 label_00000c48
-u00415EC0 (local-int 2) (local-int 3)
-u00415E70 (local-int 4)
+i109 (local-int 2) (local-int 3)
+i108 (local-int 4)
 
 label_00000c68
 and (local-int 9f) (local-int 4) 2
@@ -221,7 +221,7 @@ ne (local-int a0) (local-int 94) (local-int 3)
 or (local-int a1) (local-int 9f) (local-int a0)
 jcc (local-int a1) ffffffff label_00000f60
 sub (local-int 7) 0 1
-u0041E940 (local-int 7) (local-int 14) (local-int 2) (local-int 3) (local-int 40) (local-int 18) (local-int 2c) (local-int 90)
+i12e (local-int 7) (local-int 14) (local-int 2) (local-int 3) (local-int 40) (local-int 18) (local-int 2c) (local-int 90)
 mov (local-int 93) (local-int 2)
 mov (local-int 94) (local-int 3)
 
@@ -266,7 +266,7 @@ ne (local-int 9f) (local-int 7) (local-int 8)
 jcc (local-int 9f) ffffffff label_000012a8
 gre (local-int 9f) (local-int 7) 0
 jcc (local-int 9f) ffffffff label_00001274
-u0041D050 6
+i0b5 6
 
 label_00001274
 mov (local-int 8) (local-int 7)
@@ -278,8 +278,8 @@ and (local-int 9f) (local-int b) 3
 eq (local-int a0) (local-int 9f) 0
 jcc (local-int a0) ffffffff label_00001370
 mov (local-int 11) 0
-u00415A10
-u00415A60
+i0ff
+i100
 jcc (local-int 11) ffffffff label_0000135c
 add (local-int 12) (local-int 12) 1
 jmp label_00001370
@@ -354,7 +354,7 @@ label_0000174c
 sub (local-int 9) (local-int 9) 1
 
 label_00001768
-u0041D050 6
+i0b5 6
 call label_00003508
 ret
 
@@ -385,7 +385,7 @@ label_00001900
 add (local-int 9) (local-int 9) 1
 
 label_0000191c
-u0041D050 6
+i0b5 6
 call label_00003508
 ret
 
@@ -412,7 +412,7 @@ label_00001a44
 mov (local-int 9) 0
 
 label_00001a58
-u0041D050 6
+i0b5 6
 call label_00003508
 ret
 
@@ -441,7 +441,7 @@ label_00001bc8
 ret
 
 label_00001bcc
-u0041D050 6
+i0b5 6
 call label_00003508
 ret
 
@@ -521,16 +521,16 @@ call label_00003508
 ret
 
 label_00001f3c
-u0041AC30 1c
-u0041AC60 ffffff
-u0041ACB0 333e52
+i075 1c
+i076 ffffff
+i077 333e52
 ne (local-int 9f) (global-int 3f36) 4
 jcc (local-int 9f) ffffffff label_00001ff0
 set-font (global-string bbf)
-u00423100 1
-u0041AD00 3
-u0041B580 1 1
-u00423127 0
+i2bd 1
+i078 3
+i1a4 1 1
+i261 0
 mov (global-int 3f36) 4
 
 label_00001ff0
@@ -542,7 +542,7 @@ mov (local-int 9c) a
 mov (local-int 98) 1adb0
 call label_00003f2c
 mov (local-int 95) (global-int f807d)
-u00425580 (local-int 9f) (global-string e3a) ""
+i195 (local-int 9f) (global-string e3a) ""
 jcc (local-int 9f) ffffffff label_0000248c
 mul (local-int 9f) (local-int 9e) 1d
 add (local-int a0) a0 (local-int 9f)
@@ -556,11 +556,11 @@ add (local-int a0) (local-int 99) 50
 draw-texture (local-int 9f) f 50 0 1 2f (local-int a0) (local-int 9a)
 add (local-int 9f) (local-int 98) c8
 add (local-int a0) (local-int 99) 50
-u004211E0 (local-int 9f) (local-int a0) (local-int 9a) 0
+i217 (local-int 9f) (local-int a0) (local-int 9a) 0
 add (local-int 9f) (local-int 98) c8
 mul (local-int a0) 64 1d
 mul (local-int a1) (local-int a0) (local-int 9e)
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) (local-int 98) 12c
 add (local-int a0) (local-int 99) 50
 mul (local-int a1) 1d (local-int 9e)
@@ -598,11 +598,11 @@ add (local-int 9f) (local-int 98) c8
 set-draw-color-alpha (local-int 9f) 0 (local-int 95) 0
 add (local-int 9f) (local-int 98) c8
 add (local-int a0) (local-int 99) 50
-u004211E0 (local-int 9f) (local-int a0) (local-int 9a) 0
+i217 (local-int 9f) (local-int a0) (local-int 9a) 0
 add (local-int 9f) (local-int 98) c8
 mul (local-int a0) 1d (local-int 9d)
 mul (local-int a1) 64 (local-int a0)
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) (local-int 98) 12c
 add (local-int a0) (local-int 99) 50
 mul (local-int a1) 1d (local-int 9d)
@@ -621,11 +621,11 @@ add (local-int 9f) (local-int 98) 1f4
 set-draw-color-alpha (local-int 9f) 0 (local-int 95) (global-int a9db)
 add (local-int 9f) (local-int 98) 1f4
 add (local-int a0) (local-int 99) 50
-u004211E0 (local-int 9f) (local-int a0) (local-int 9a) 0
+i217 (local-int 9f) (local-int a0) (local-int 9a) 0
 add (local-int 9f) (local-int 98) 1f4
 mul (local-int a0) 1d (local-int 9d)
 mul (local-int a1) 64 (local-int a0)
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) (local-int 98) 258
 add (local-int a0) (local-int 99) 50
 mul (local-int a1) 1d (local-int 9d)
@@ -643,11 +643,11 @@ sub (local-int a1) (local-int 9a) 5
 draw-texture (local-int 9f) f 55 31 1 39 (local-int a0) (local-int a1)
 add (local-int 9f) (local-int 98) 578
 add (local-int a0) (local-int 99) 50
-u004211E0 (local-int 9f) (local-int a0) (local-int 9a) 0
+i217 (local-int 9f) (local-int a0) (local-int 9a) 0
 add (local-int 9f) (local-int 98) 578
 mul (local-int a0) 1d (local-int 9d)
 mul (local-int a1) 64 (local-int a0)
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) (local-int 98) 5dc
 add (local-int a0) (local-int 99) 50
 mul (local-int a1) 1d (local-int 9d)
@@ -661,7 +661,7 @@ add (local-int a2) (local-int 99) 50
 sub (local-int a3) (local-int a2) (local-int 9b)
 draw-texture (local-int 9f) 12 0 (local-int a1) 258 2f (local-int a3) (local-int 9a)
 lookup-array (local-string-ptr 0) (global-string d5e) (local-int 5)
-u0042B5E0 (local-int 97) (local-string-ptr 0)
+i2c6 (local-int 97) (local-string-ptr 0)
 gr (local-int 9f) (local-int 97) 14
 jcc (local-int 9f) ffffffff label_00002fe4
 mov (local-int 97) 14
@@ -680,16 +680,16 @@ add (local-int 98) (local-int 98) 1
 jmp label_000024c8
 
 label_00003110
-u0041AC30 8
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 8
+i076 ffffff
+i077 ffffff
 ne (local-int 9f) (global-int 3f36) 7
 jcc (local-int 9f) ffffffff label_000031c4
 set-font (global-string bbf)
-u00423100 1
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 1
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 7
 
 label_000031c4
@@ -758,11 +758,11 @@ add (local-int 9f) 1adb0 2bd
 lookup-array (local-ptr 3) (local-int 18) (local-int 9)
 add (local-int a0) (local-ptr 3) 50
 lookup-array (local-ptr 2) (local-int 2c) (local-int 9)
-u004211E0 (local-int 9f) (local-int a0) (local-ptr 2) 0
+i217 (local-int 9f) (local-int a0) (local-ptr 2) 0
 add (local-int 9f) 1adb0 2bd
 mul (local-int a0) 64 1d
 mul (local-int a1) (local-int a0) (local-int 9d)
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) 1adb0 2be
 lookup-array (local-ptr 3) (local-int 18) (local-int 9)
 add (local-int a0) (local-ptr 3) 50
@@ -787,7 +787,7 @@ call label_00004068
 mov (global-int f800c) 0
 
 label_00003a4c
-u00416200
+i20c
 ret
 
 label_00003a54
@@ -799,7 +799,7 @@ eq (local-int a2) (global-int f8c52) (local-ptr 5)
 and (local-int a4) (local-int a0) (local-int a2)
 jcc (local-int a4) ffffffff label_00003b44
 play-sound-effect 39a4 1
-u0041D050 1
+i0b5 1
 jmp label_00003bb8
 
 label_00003b44
@@ -807,7 +807,7 @@ and (local-int 9f) (global-int f8df9) 80
 eq (local-int a0) (local-int 9f) 0
 jcc (local-int a0) ffffffff label_00003bb8
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 
 label_00003bb8
 and (local-int 9f) (global-int f8df9) 40
@@ -817,34 +817,34 @@ and (local-int a2) (local-int a0) (local-int a1)
 jcc (local-int a2) ffffffff label_00003c90
 sub (local-int 9) 0 1
 call label_00003508
-u00416200
+i20c
 mov (global-int 4) 1
 call-script 51c1
 
 label_00003c90
 texture-op 1adb0 7d0
 release-texture 12
-u00416200
+i20c
 set-string (global-string e3a) ""
 mov (global-int f8c50) 0
 mov (global-int f8c67) 0
 sub (global-int f8df8) 0 1
 mov (global-int f8df9) 0
-u0041D080 6
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i0b6 6
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 9f) (global-int 3f36) 2
 jcc (local-int 9f) ffffffff label_00003e28
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00003e28
@@ -856,8 +856,8 @@ comment "loadms "
 comment (global-int f8078)
 comment " bunki"
 dev_ukn
-308 1
-u004213E0 1
+i308 1
+i21b 1
 mov (global-int f800b) 0
 
 label_00003ec4
@@ -867,7 +867,7 @@ exit
 label_00003ecc
 eq (local-int 9f) (global-int f8078) 0
 jcc (local-int 9f) ffffffff label_00003f08
-u00414E80
+i19b
 
 label_00003f08
 add (global-int f8078) (global-int f8078) 1
@@ -878,10 +878,10 @@ label_00003f2c
 mov (global-int f807d) (global-int a9df)
 eq (local-int 9f) (global-int 0) 1
 jcc (local-int 9f) ffffffff label_00004014
-u00421160 (global-int f801f) 18a9c
+i215 (global-int f801f) 18a9c
 gre (local-int 9f) (global-int f801f) 0
 jcc (local-int 9f) ffffffff label_00004008
-u004211A0 (global-int a9ba) (global-int f801f)
+i216 (global-int a9ba) (global-int f801f)
 jcc (global-int a9ba) ffffffff label_00004008
 mov (global-int f807d) (global-int a9e0)
 
@@ -908,7 +908,7 @@ label_00004094
 sub (global-int f8078) (global-int f8078) 1
 eq (local-int 9f) (global-int f8078) 0
 jcc (local-int 9f) ffffffff label_000040ec
-u00414EC0
+i19c
 
 label_000040ec
 ret
@@ -962,11 +962,11 @@ add (local-int 9f) 19708 1
 sub (local-int a0) 17e 1d
 draw-texture (local-int 9f) 11 (local-int a0) 62e 1d 2a 113 1f7
 add (local-int 9f) 19708 1
-u004211E0 (local-int 9f) 113 1f7 0
+i217 (local-int 9f) 113 1f7 0
 add (local-int 9f) 19708 1
 sub (local-int a0) (global-int 3f39) 5
 mul (local-int a1) (local-int a0) 64
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) 19708 2
 sub (local-int a0) (global-int 3f39) 5
 mul (local-int a1) (local-int a0) 1d
@@ -992,11 +992,11 @@ add (local-int 9f) 19708 4
 sub (local-int a0) 17e 1d
 draw-texture (local-int 9f) 11 (local-int a0) 5fc 1d 30 10e 205
 add (local-int 9f) 19708 4
-u004211E0 (local-int 9f) 10e 205 0
+i217 (local-int 9f) 10e 205 0
 add (local-int 9f) 19708 4
 sub (local-int a0) (global-int 3f39) 5
 mul (local-int a1) (local-int a0) 64
-u00420620 (local-int 9f) (local-int a1) 64 64
+i1fd (local-int 9f) (local-int a1) 64 64
 add (local-int 9f) 19708 5
 sub (local-int a0) (global-int 3f39) 5
 mul (local-int a1) (local-int a0) 1d
@@ -1027,12 +1027,12 @@ and (local-int 9f) (global-int 1397) (global-int 3f38)
 jcc (local-int 9f) ffffffff label_00004b74
 eq (local-int 9f) (global-int 0) 6
 jcc (local-int 9f) ffffffff label_00004b5c
-u00420CE0 8
+i20a 8
 jmp label_00004b74
 
 label_00004b5c
-u00420CE0 1
-u00420CE0 2
+i20a 1
+i20a 2
 
 label_00004b74
 ret

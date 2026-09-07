@@ -5,7 +5,7 @@ local_vars = { d9 1 1 5 1 1 }
 
 and (local-int d1) (global-int 5afe2) 1
 jcc (local-int d1) ffffffff label_000007e0
-u00417FC0 1f
+i008 1f
 call-script 5198  // SETMVWORK
 mov (local-int 36) 0
 mov (local-int 0) 1
@@ -67,7 +67,7 @@ jmp label_000000c0
 
 label_00000590
 jcc (local-int 36) ffffffff label_000007e0
-u0041ECB0 (local-int 37) (local-int 69) (local-int 9b) (local-int 36)
+i12f (local-int 37) (local-int 69) (local-int 9b) (local-int 36)
 mov (local-int cf) 0
 jmp label_0000060c
 
@@ -83,7 +83,7 @@ sar (global-int 51004d) (local-ptr 1) 10
 lookup-array (local-ptr 0) (local-int 37) (local-int cf)
 lookup-array (local-ptr 1) (local-int 4) (local-ptr 0)
 and (global-int 51004e) (local-ptr 1) ffff
-u00417FC0 1e
+i008 1e
 lookup-array-2d (local-ptr 1) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
 jcc (local-ptr 1) label_00000758 ffffffff
 jmp label_000005f0

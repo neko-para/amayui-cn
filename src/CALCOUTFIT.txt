@@ -38,7 +38,7 @@ label_0000025c
 jmp label_00000070
 
 label_00000268
-u0041ECB0 (local-int b) (global-int 6dafd7) (local-int 3f3) 3e8
+i12f (local-int b) (global-int 6dafd7) (local-int 3f3) 3e8
 sub (local-int 0) 3e8 1
 jmp label_000002d0
 
@@ -51,7 +51,7 @@ jcc (local-int 7db) ffffffff label_000003e8
 lookup-array (local-ptr 1) (local-int b) (local-int 0)
 mov (local-int 5) (local-ptr 1)
 lookup-array (local-string-ptr 0) (global-string 1e58e) (local-int 5)
-u00425580 (local-int 7db) (local-string-ptr 0) ""
+i195 (local-int 7db) (local-string-ptr 0) ""
 jcc (local-int 7db) ffffffff label_000003dc
 call label_000003ec
 jcc (local-int 4) ffffffff label_000003dc

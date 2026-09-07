@@ -19,30 +19,30 @@ label_00000178
 create-texture 384 148 a8 0
 add (local-int a) 1fbd0 1
 draw-texture (local-int a) 384 0 0 148 a8 (local-int 0) (local-int 1)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int a) (global-int 3f36) d
 jcc (local-int a) ffffffff label_000002b0
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_000002b0
 draw-string 384 a a (global-string 1fc9a)
-u0041AC30 12
-u0041AC60 0
-u0041ACB0 0
+i075 12
+i076 0
+i077 0
 ne (local-int a) (global-int 3f36) 12
 jcc (local-int a) ffffffff label_00000388
 set-font (global-string bbf)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 12
 
 label_00000388

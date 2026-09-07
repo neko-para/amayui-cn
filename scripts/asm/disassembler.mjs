@@ -2,7 +2,7 @@
 import {
   readHeader, instructionForOpCode, getTypeLabel,
   isControlFlowOpcode, isLabelArgument, cpToUtf16,
-  hex, labelHex, CP_932,
+  hex, labelHex, opcodeLabel, CP_932,
 } from './age-shared.mjs';
 import { loadOpcodeTable } from './age-shared.mjs';
 
@@ -101,7 +101,7 @@ function disassembleHeader(header) {
 }
 
 function disassembleInstruction(header, instr) {
-  let s = instr.def.name;
+  let s = opcodeLabel(instr.def);
   if (instr.args.length > 0) s += ' ';
   let x = 0;
   for (const arg of instr.args) {

@@ -60,7 +60,7 @@ copy-local-array (local-int 82) [82 a3 c4 e5 106 127 148 169 18a 1ab 1cc 1ed 20e
 copy-local-array (local-int 2c) [334 334 334 334 334 334 334 334 334 334 334 334 334 334]
 copy-local-array (local-int 90) [82 a3 c4 e5 106 127 148 169 18a 1ab 1cc 1ed 20e 22f]
 add (local-int 263) 5 (global-int 122730)
-u00415520
+i0b8
 call label_00001fac
 call label_00002760
 call label_00002ac4
@@ -68,10 +68,10 @@ call label_00002f5c
 mov (local-int 271) 5
 sub (local-int 270) 0 1
 call label_00002204
-u00421410 0 7d0
+i21d 0 7d0
 sub (local-int 283) 0 1
 set-draw-color 7d0 0 c8 0 (local-int 283)
-u00422EA0 10001
+i24e 10001
 wait
 poll-input
 texture-op 7d0 1
@@ -99,7 +99,7 @@ mov (local-int 273) 1
 mov (local-int 278) 0
 mov (local-int 26e) (local-int 270)
 mov (local-int 26f) (local-int 270)
-u00415EC0 (local-int 279) (local-int 27a)
+i109 (local-int 279) (local-int 27a)
 
 label_00000780
 get-input-type
@@ -120,14 +120,14 @@ ret
 
 label_00000844
 add (local-int 264) (local-int 264) 1
-2FC (local-int 274) (local-int 26b) (local-int 26c) (local-int 275) (local-int 276)
+i2fc (local-int 274) (local-int 26b) (local-int 26c) (local-int 275) (local-int 276)
 jcc (local-int 274) ffffffff label_000008c8
 mov (local-int 6) 1
 jmp label_000008e8
 
 label_000008c8
-u00415EC0 (local-int 26b) (local-int 26c)
-u00415E70 (local-int 6)
+i109 (local-int 26b) (local-int 26c)
+i108 (local-int 6)
 
 label_000008e8
 ne (local-int 283) (local-int 279) (local-int 26b)
@@ -135,7 +135,7 @@ ne (local-int 284) (local-int 27a) (local-int 26c)
 or (local-int 285) (local-int 283) (local-int 284)
 jcc (local-int 285) ffffffff label_000009e0
 sub (local-int 26e) 0 1
-u0041E940 (local-int 26e) (local-int 7) (local-int 26b) (local-int 26c) (local-int d3) (local-int b) (local-int 6f) (local-int 263)
+i12e (local-int 26e) (local-int 7) (local-int 26b) (local-int 26c) (local-int d3) (local-int b) (local-int 6f) (local-int 263)
 mov (local-int 279) (local-int 26b)
 mov (local-int 27a) (local-int 26c)
 
@@ -148,7 +148,7 @@ gre (local-int 283) (local-int 26e) 0
 lt (local-int 284) (local-int 270) (local-int 263)
 and (local-int 285) (local-int 283) (local-int 284)
 jcc (local-int 285) ffffffff label_00000abc
-u0041D050 2
+i0b5 2
 
 label_00000abc
 call label_000021dc
@@ -181,8 +181,8 @@ label_00000c28
 eq (local-int 283) (local-int 26d) 0
 jcc (local-int 283) ffffffff label_00000cd4
 mov (local-int 277) 0
-u00415A10
-u00415A60
+i0ff
+i100
 jcc (local-int 277) ffffffff label_00000cc0
 add (local-int 278) (local-int 278) 1
 jmp label_00000cd4
@@ -237,7 +237,7 @@ label_00000f10
 sub (local-int 270) (local-int 270) 1
 
 label_00000f2c
-u0041D050 2
+i0b5 2
 call label_000021dc
 ret
 
@@ -280,7 +280,7 @@ label_00001174
 add (local-int 270) (local-int 270) 1
 
 label_00001190
-u0041D050 2
+i0b5 2
 call label_000021dc
 ret
 
@@ -330,7 +330,7 @@ label_000013ec
 sub (local-int 270) (local-int 270) e
 
 label_00001408
-u0041D050 2
+i0b5 2
 call label_000021dc
 ret
 
@@ -387,7 +387,7 @@ label_000016e0
 ret
 
 label_000016e4
-u0041D050 2
+i0b5 2
 call label_000021dc
 ret
 
@@ -416,7 +416,7 @@ jmp label_0000179c
 
 label_0000179c
 play-sound-effect 39a4 1
-u0041D050 1
+i0b5 1
 mov (local-int 2) 1
 ret
 
@@ -431,13 +431,13 @@ jcc (local-int 283) ffffffff label_00001948
 lt (local-int 283) (local-int 280) 0
 jcc (local-int 283) ffffffff label_000018a4
 play-sound-effect 2e 1
-u0041D050 1
+i0b5 1
 ret
 
 label_000018a4
-u00415620 (local-int 5)
+i0c0 (local-int 5)
 jcc (local-int 5) ffffffff label_000018f8
-u00415650
+i0c1
 sub (local-int 282) 1 (local-int 282)
 jmp label_0000193c
 
@@ -455,11 +455,11 @@ jcc (local-int 283) ffffffff label_00001a00
 lt (local-int 283) (local-int 280) 0
 jcc (local-int 283) ffffffff label_000019dc
 play-sound-effect 2e 1
-u0041D050 1
+i0b5 1
 ret
 
 label_000019dc
-u00415520
+i0b8
 mov (local-int 282) 0
 jmp label_00001f90
 
@@ -531,7 +531,7 @@ label_00001dd0
 eq (local-int 283) (local-int 270) 4
 jcc (local-int 283) ffffffff label_00001e4c
 play-sound-effect 39a5 1
-u0041D050 1
+i0b5 1
 mov (local-int 2) 1
 ret
 jmp label_00001f90
@@ -544,12 +544,12 @@ lookup-array (local-ptr 2) (global-int 122731) (local-int 283)
 eq (local-int 284) (local-ptr 2) 0
 jcc (local-int 284) ffffffff label_00001f18
 play-sound-effect 2e 1
-u0041D050 1
+i0b5 1
 ret
 
 label_00001f18
 sub (local-int 280) (local-int 270) 5
-u00415520
+i0b8
 lookup-array (local-ptr 1) (global-int 122731) (local-int 280)
 lookup-array (local-ptr 0) (global-int 1226c0) (local-ptr 1)
 play-bgm (local-ptr 0)
@@ -561,7 +561,7 @@ call label_000021dc
 ret
 
 label_00001fac
-u004162F0
+i23d
 sub (local-int 283) 0 1
 set-texture 51c7 48 (local-int 283)
 sub (local-int 283) 0 1
@@ -569,18 +569,18 @@ set-texture 56 49 (local-int 283)
 sub (local-int 283) 0 1
 set-texture (global-int 122724) 52 (local-int 283)
 sub (local-int 283) 0 3
-u004234E0 1 48 33b 463 14 1c 2 (local-int 283)
+i2da 1 48 33b 463 14 1c 2 (local-int 283)
 sub (local-int 283) 0 3
-u004234E0 2 48 33b 496 e 16 2 (local-int 283)
+i2da 2 48 33b 496 e 16 2 (local-int 283)
 sub (local-int 283) 0 8
-u004234E0 3 48 33b 442 18 1f 2 (local-int 283)
+i2da 3 48 33b 442 18 1f 2 (local-int 283)
 sub (local-int 283) 0 8
-u004234E0 4 48 33b 421 18 1f 2 (local-int 283)
+i2da 4 48 33b 421 18 1f 2 (local-int 283)
 ret
 
 label_000021dc
 call label_00002204
-u00416200
+i20c
 mov (global-int f800c) 0
 ret
 
@@ -593,7 +593,7 @@ jcc (local-int 283) ffffffff label_0000275c
 mov (local-int 271) (local-int 270)
 eq (local-int 283) (local-int 270) 0
 jcc (local-int 283) ffffffff label_000023e0
-u00415620 (local-int 5)
+i0c0 (local-int 5)
 ne (local-int 283) (local-int 5) 0
 eq (local-int 284) (local-int 282) 0
 and (local-int 285) (local-int 283) (local-int 284)
@@ -648,7 +648,7 @@ label_0000275c
 ret
 
 label_00002760
-u00416170
+i1f6
 draw-texture 0 49 0 0 500 2d0 0 0
 draw-texture 834 48 0 0 500 36 0 3
 draw-texture 835 48 23a 447 ff 2c 1fd 8
@@ -657,10 +657,10 @@ draw-texture 83f 48 421 2b4 2e 13 1d2 2af
 draw-texture 840 48 481 2b4 10 11 23d 2b0
 draw-texture 841 48 451 2b4 2e 13 278 2af
 draw-texture 842 48 464 2c9 12 13 33e 2af
-u00422460 848 1 (global-int 12272f) 2e2 2a6 2 0
+i23b 848 1 (global-int 12272f) 2e2 2a6 2 0
 draw-texture 84c 48 417 463 14 1c 304 2a6
-u00422460 84d 1 (global-int 122730) 315 2a6 2 0
-u00422460 852 1 (global-int 12272e) 202 2a6 3 0
+i23b 84d 1 (global-int 122730) 315 2a6 2 0
+i23b 852 1 (global-int 12272e) 202 2a6 3 0
 draw-texture 898 48 1ea 4ea 49 49 4b3 284
 ret
 
@@ -716,7 +716,7 @@ ret
 
 label_00002f5c
 texture-op 6a4 64
-u00415620 (local-int 281)
+i0c0 (local-int 281)
 gre (local-int 283) (local-int 280) 0
 jcc (local-int 283) ffffffff label_00003230
 div (local-int 283) (local-int 280) e
@@ -760,16 +760,16 @@ draw-texture 6bb 48 421 1d2 42 25 2fb 263
 ret
 
 label_00003448
-u00421410 0 7d0
+i21d 0 7d0
 sub (local-int 283) 0 1
 set-draw-color 7d0 0 c8 ff (local-int 283)
 sub (local-int 283) 0 1
 set-draw-color-alpha 7d0 0 0 (local-int 283)
-u00422EA0 10001
+i24e 10001
 wait
 poll-input
-u00416170
-u004162F0
+i1f6
+i23d
 play-bgm 29
 eq (local-int 283) (local-int 270) 4
 jcc (local-int 283) ffffffff label_00003564

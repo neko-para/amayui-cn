@@ -35,14 +35,14 @@ lookup-array-2d (local-ptr 0) (global-int 10e3af) (local-int 3) 7d0 (local-int 5
 eq (local-int 7) (local-ptr 0) 0
 jcc (local-int 7) ffffffff label_000005c4
 lookup-array-2d (local-ptr 0) (global-int 107a0c) (local-int 0) 3 0
-u0041C680 (local-int 1) (local-ptr 0)
+i19d (local-int 1) (local-ptr 0)
 eq (local-int 6) (local-int 1) 0
 lookup-array (local-ptr 1) (global-int 10d7cc) (local-int 0)
 ne (local-int 7) (local-ptr 1) 0
 and (local-int 8) (local-int 6) (local-int 7)
 jcc (local-int 8) ffffffff label_000003f4
 lookup-array (local-ptr 0) (global-int 10d7cc) (local-int 0)
-u0041C680 (local-int 1) (local-ptr 0)
+i19d (local-int 1) (local-ptr 0)
 
 label_000003f4
 jcc (local-int 1) ffffffff label_000004ec
@@ -99,7 +99,7 @@ jcc (local-int 6) ffffffff label_000008a0
 lookup-array-2d (local-ptr 0) (global-int 122271) (local-int 3) 8 (local-int 4)
 jcc (local-ptr 0) ffffffff label_00000894
 lookup-array-2d (local-ptr 0) (global-int 122271) (local-int 3) 8 (local-int 4)
-u0041C680 (local-int 1) (local-ptr 0)
+i19d (local-int 1) (local-ptr 0)
 jcc (local-int 1) ffffffff label_00000878
 lookup-array-2d (local-ptr 0) (global-int 12251c) (local-int 3) 8 (local-int 4)
 mov (local-ptr 0) 1
@@ -136,7 +136,7 @@ jcc (local-int 6) ffffffff label_00000abc
 lookup-array (local-ptr 0) (global-int 12265c) (local-int 0)
 jcc (local-ptr 0) ffffffff label_00000ab0
 lookup-array (local-ptr 0) (global-int 12265c) (local-int 0)
-u0041C680 (local-int 1) (local-ptr 0)
+i19d (local-int 1) (local-ptr 0)
 jcc (local-int 1) ffffffff label_00000a94
 lookup-array (local-ptr 0) (global-int 122731) (global-int 122730)
 mov (local-ptr 0) (local-int 0)

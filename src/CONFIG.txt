@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 15 1 1 4 1 2 }
 ====
 
-u00415620 (local-int 2)
+i0c0 (local-int 2)
 mov (local-int a) (global-int a9d6)
 mov (local-int b) (global-int b1b6)
 eq (local-int c) (global-int 0) 1
@@ -19,11 +19,11 @@ mov (local-int 7) 0
 label_0000015c
 eq (local-int c) (local-int 8) 1
 jcc (local-int c) ffffffff label_00000278
-u0041BA80 (local-int 5) (local-int 6) (local-int 7)
+i1d0 (local-int 5) (local-int 6) (local-int 7)
 gre (local-int c) (local-int 6) 0
 jcc (local-int c) ffffffff label_0000023c
 sub (local-int c) 0 1
-u0041BB90 (local-int 8) (local-int 9) (local-int 5) (local-int 6) (local-int c)
+i1d3 (local-int 8) (local-int 9) (local-int 5) (local-int 6) (local-int c)
 jmp label_00000250
 
 label_0000023c
@@ -34,12 +34,12 @@ sub (local-int 7) (local-int 7) 1
 jmp label_0000015c
 
 label_00000278
-u0041A750 9 338 78 144 23a
-u0041AD30 9 6c 34
-u004210D0 9 2c114 1f4
-u0041FB10 0
-u0041B7B0 0
-u0041AF00 9
+i070 9 338 78 144 23a
+i079 9 6c 34
+i213 9 2c114 1f4
+i142 0
+i1bb 0
+i080 9
 mov (global-int f800b) 1
 mov (global-int 12721e) 0
 sub (global-int 12721f) 0 1
@@ -149,27 +149,27 @@ draw-texture (local-int c) c1 401 329 75 51 47c 279
 ret
 
 label_00000db4
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int c) (global-int 3f36) 2
 jcc (local-int c) ffffffff label_00000eb0
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00000eb0
 mov (global-int 14acda) 0
 call label_00001ae8
-300 9 1 3e8
-u0041A7B0 9
+i300 9 1 3e8
+i071 9
 /* 原文存档（对照用，不参与汇编）
 display-furigana 0 "天結" "あまゆ"
 show-text 0 "いキャッスルマイスターＳＡＭＰＬＥ"
@@ -177,43 +177,43 @@ show-text 0 "いキャッスルマイスターＳＡＭＰＬＥ"
 display-furigana 0 @"天结" @"天结"
 show-text 0 @"神缘ＳＡＭＰＬＥ"
 end-text-line 0
-u00414C60 (local-int 1)
+i07f (local-int 1)
 jcc (local-int 1) ffffffff label_00000f68
-301 9
+i301 9
 
 label_00000f68
 ret
 
 label_00000f6c
-2F6 0
-2F6 1
+i2f6 0
+i2f6 1
 eq (local-int c) (global-int 4fd7) 0
 jcc (local-int c) ffffffff label_00000fc8
-2F6 2
+i2f6 2
 
 label_00000fc8
-300 9 0 0
-u0041A7B0 9
+i300 9 0 0
+i071 9
 texture-op 1d4c0 bb8
 texture-op 2e630 3e8
 release-texture c0
 release-texture c1
 release-texture c2
 release-texture c3
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int c) (global-int 3f36) 2
 jcc (local-int c) ffffffff label_00001144
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00001144
@@ -262,11 +262,11 @@ eq (local-int c) (global-int 0) 1
 jcc (local-int c) ffffffff label_000014a8
 gre (local-int c) (global-int 3f37) 0
 jcc (local-int c) ffffffff label_000014a8
-u0041A7B0 2
+i071 2
 call label_00001d38
 
 label_000014a8
-u0041AF80 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)
+i082 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)
 
 label_000014d4
 call label_00001f3c
@@ -321,24 +321,24 @@ jcc (local-int e) ffffffff label_0000187c
 call-script 51d2  // RESETWORLDAN
 
 label_0000187c
-u00415620 (local-int 3)
+i0c0 (local-int 3)
 ne (local-int c) (local-int 3) (local-int 2)
 jcc (local-int c) ffffffff label_00001a14
 jcc (local-int 2) ffffffff label_00001a10
 play-bgm (local-int 2)
 jcc (global-int 3f52) ffffffff label_00001a04
 mul (local-int c) (global-int 3f52) 64
-u0041D2B0 (local-int c) 0
+i0c2 (local-int c) 0
 eq (local-int c) (global-int 3f52) 0
 eq (local-int d) (global-int 3f52) 64
 or (local-int e) (local-int c) (local-int d)
 jcc (local-int e) ffffffff label_000019d0
-u0041DA10 0
+i1cf 0
 mov (global-int 3f53) 0
 jmp label_000019f0
 
 label_000019d0
-u0041DA10 1
+i1cf 1
 mov (global-int 3f53) 1
 
 label_000019f0
@@ -348,20 +348,20 @@ label_00001a04
 jmp label_00001a14
 
 label_00001a10
-u00415520
+i0b8
 
 label_00001a14
-u0041FB10 1
-u0041B7B0 1
+i142 1
+i1bb 1
 sub (local-int c) 0 1
-u0041BB40 (local-int c) 0
+i1d2 (local-int c) 0
 eq (local-int c) (global-int 0) 6
 jcc (local-int c) ffffffff label_00001aac
-u0041AF00 8
+i080 8
 jmp label_00001ab8
 
 label_00001aac
-u0041AF00 1
+i080 1
 
 label_00001ab8
 mov (global-int f800b) 0
@@ -400,16 +400,16 @@ mov (global-int f807a) 0
 mov (global-int f807c) (global-int f807b)
 
 label_00001cf8
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
+i076 (global-int f807b)
+i077 (global-int f807c)
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
 ret
 exit
 
 label_00001d38
-u00414C60 (global-int f7ffc)
-u0041AC00 0
+i07f (global-int f7ffc)
+i074 0
 and (local-int c) (global-int a9e2) 1
 eq (local-int d) (local-int c) 1
 eq (local-int e) (global-int 3f3a) 0
@@ -433,10 +433,10 @@ set-string (global-string d5d) "？？？？"
 
 label_00001ee8
 halve-strlen (global-int 3f39) (global-string d5d)
-u0041AC30 1c
+i075 1c
 show-text 2 (global-string d5d)
-u0041AC30 1e
-u0041AC00 (global-int f7ffc)
+i075 1e
+i074 (global-int f7ffc)
 ret
 exit
 
@@ -488,11 +488,11 @@ add (local-int c) 19708 1
 sub (local-int d) 17e 1d
 draw-texture (local-int c) 11 (local-int d) 62e 1d 2a 113 1f7
 add (local-int c) 19708 1
-u004211E0 (local-int c) 113 1f7 0
+i217 (local-int c) 113 1f7 0
 add (local-int c) 19708 1
 sub (local-int d) (global-int 3f39) 5
 mul (local-int e) (local-int d) 64
-u00420620 (local-int c) (local-int e) 64 64
+i1fd (local-int c) (local-int e) 64 64
 add (local-int c) 19708 2
 sub (local-int d) (global-int 3f39) 5
 mul (local-int e) (local-int d) 1d
@@ -518,11 +518,11 @@ add (local-int c) 19708 4
 sub (local-int d) 17e 1d
 draw-texture (local-int c) 11 (local-int d) 5fc 1d 30 10e 205
 add (local-int c) 19708 4
-u004211E0 (local-int c) 10e 205 0
+i217 (local-int c) 10e 205 0
 add (local-int c) 19708 4
 sub (local-int d) (global-int 3f39) 5
 mul (local-int e) (local-int d) 64
-u00420620 (local-int c) (local-int e) 64 64
+i1fd (local-int c) (local-int e) 64 64
 add (local-int c) 19708 5
 sub (local-int d) (global-int 3f39) 5
 mul (local-int e) (local-int d) 1d
@@ -550,10 +550,10 @@ label_000028f4
 mov (global-int f807d) (global-int a9df)
 eq (local-int c) (global-int 0) 1
 jcc (local-int c) ffffffff label_000029dc
-u00421160 (global-int f801f) 18a9c
+i215 (global-int f801f) 18a9c
 gre (local-int c) (global-int f801f) 0
 jcc (local-int c) ffffffff label_000029d0
-u004211A0 (global-int a9ba) (global-int f801f)
+i216 (global-int a9ba) (global-int f801f)
 jcc (global-int a9ba) ffffffff label_000029d0
 mov (global-int f807d) (global-int a9e0)
 

@@ -11,11 +11,11 @@ add (local-int 11) (global-int 707ffa) d2
 add (local-int 12) (global-int 707ffb) 25a
 draw-texture (local-int 10) c2 125 39a fd 31 (local-int 11) (local-int 12)
 sub (local-int 10) 0 3
-u004234E0 0 c2 268 2dc 10 14 2 (local-int 10)
+i2da 0 c2 268 2dc 10 14 2 (local-int 10)
 add (local-int 10) (global-int 707ffe) b
 add (local-int 11) (global-int 707ffa) 15b
 add (local-int 12) (global-int 707ffb) 268
-u00422460 (local-int 10) 0 (global-int 6c4b68) (local-int 11) (local-int 12) 3 0
+i23b (local-int 10) 0 (global-int 6c4b68) (local-int 11) (local-int 12) 3 0
 add (local-int 10) (global-int 707ffe) e
 add (local-int 11) (global-int 707ffa) 182
 add (local-int 12) (global-int 707ffb) 268
@@ -24,29 +24,29 @@ add (local-int 10) (global-int 707ffe) f
 div (local-int 11) (global-int deb90) a
 add (local-int 12) (global-int 707ffa) 18f
 add (local-int 13) (global-int 707ffb) 268
-u00422460 (local-int 10) 0 (local-int 11) (local-int 12) (local-int 13) 3 4
+i23b (local-int 10) 0 (local-int 11) (local-int 12) (local-int 13) 3 4
 add (local-int 10) (global-int 707ffe) 14
 add (local-int 11) (global-int 707ffa) 8b
 add (local-int 12) (global-int 707ffb) 229
 draw-texture (local-int 10) c2 18c 2c2 b9 18 (local-int 11) (local-int 12)
 create-texture (global-int 707fff) 5a 18 0
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 10) (global-int 3f36) 14
 jcc (local-int 10) ffffffff label_000004f4
 set-font (global-string bbe)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) 14
 
 label_000004f4
 add (local-int 10) (global-int 6c4b69) 1
-u00420A60 (global-int 707fff) e 3 (local-int 10) 3 10000
+i205 (global-int 707fff) e 3 (local-int 10) 3 10000
 draw-string (global-int 707fff) 29 3 "/"
-u00420A60 (global-int 707fff) 32 3 (global-int 6c4b6a) 3 10004
+i205 (global-int 707fff) 32 3 (global-int 6c4b6a) 3 10004
 add (local-int 10) (global-int 707ffe) 15
 add (local-int 11) (global-int 707ffa) ba
 add (local-int 12) (global-int 707ffb) 22a
@@ -65,7 +65,7 @@ draw-texture (local-int 10) c2 eb 304 77 1f (local-int 11) (local-int 12)
 label_0000079c
 mov (local-int 8) (global-int 707fff)
 sub (local-int 10) 0 2
-u004234E0 0 c2 261 2c2 e 10 2 (local-int 10)
+i2da 0 c2 261 2c2 e 10 2 (local-int 10)
 mov (local-int 0) 0
 jmp label_0000084c
 
@@ -114,7 +114,7 @@ add (local-int 8) (local-int 8) 1
 lookup-array-2d (local-ptr 1) (global-int 523b24) (local-int d) 11 7
 sub (local-int 11) 0 1
 set-texture (local-ptr 1) (local-int 8) (local-int 11)
-u00420BF0 (local-int 8) (local-int 3) (local-int 4)
+i208 (local-int 8) (local-int 3) (local-int 4)
 div (local-int 3) (local-int 3) 2
 div (local-int 4) (local-int 4) 2
 
@@ -133,7 +133,7 @@ mul (local-int 11) (local-int 0) 3
 add (local-int 12) (local-int 10) (local-int 11)
 sub (local-int 13) (local-int b) d
 sub (local-int 14) (local-int c) 2
-u00422460 (local-int 12) 0 (local-int f) (local-int 13) (local-int 14) 3 2
+i23b (local-int 12) 0 (local-int f) (local-int 13) (local-int 14) 3 2
 jmp label_00000ea0
 
 label_00000e24

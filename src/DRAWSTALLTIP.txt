@@ -9,16 +9,16 @@ draw-texture 1fbd0 c2 3de 20 e4 49 (local-int 2) (local-int 3)
 create-texture 384 e4 20 0
 add (local-int 7) 1fbd0 1
 draw-texture (local-int 7) 384 0 0 e4 20 (local-int 2) (local-int 3)
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 7) (global-int 3f36) d
 jcc (local-int 7) ffffffff label_000001f0
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_000001f0

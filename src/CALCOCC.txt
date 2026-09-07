@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 3ac 1 1 a 1 1 }
 ====
 
-u004160D0
+i1f4
 mov (local-int d) 1
 jmp label_0000007c
 
@@ -293,7 +293,7 @@ jmp label_000012a8
 label_0000146c
 lt (local-int 3a1) (global-int 56d79) 0
 jcc (local-int 3a1) ffffffff label_00001674
-u0041ECB0 (local-int 396) (global-int 50ff9a) (local-int 39b) 5
+i12f (local-int 396) (global-int 50ff9a) (local-int 39b) 5
 sub (local-int 3a1) 0 (global-int 56d79)
 mov (local-int 1) (local-int 3a1)
 mov (local-int 3a0) 0
@@ -370,5 +370,5 @@ label_000019fc
 jmp label_00001924
 
 label_00001a08
-u00416120
+i1f5
 exit

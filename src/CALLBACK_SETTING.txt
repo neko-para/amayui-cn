@@ -16,13 +16,13 @@ mov (global-int f800c) 1
 exit
 
 label_000000f8
-u004160D0
+i1f4
 jcc (global-int 1397) ffffffff label_00000128
 call label_00000134
-u00416200
+i20c
 
 label_00000128
-u00416120
+i1f5
 exit
 exit
 
@@ -81,11 +81,11 @@ add (local-int 1) 19708 1
 sub (local-int 2) 17e 1d
 draw-texture (local-int 1) 11 (local-int 2) 62e 1d 2a 113 1f7
 add (local-int 1) 19708 1
-u004211E0 (local-int 1) 113 1f7 0
+i217 (local-int 1) 113 1f7 0
 add (local-int 1) 19708 1
 sub (local-int 2) (global-int 3f39) 5
 mul (local-int 3) (local-int 2) 64
-u00420620 (local-int 1) (local-int 3) 64 64
+i1fd (local-int 1) (local-int 3) 64 64
 add (local-int 1) 19708 2
 sub (local-int 2) (global-int 3f39) 5
 mul (local-int 3) (local-int 2) 1d
@@ -111,11 +111,11 @@ add (local-int 1) 19708 4
 sub (local-int 2) 17e 1d
 draw-texture (local-int 1) 11 (local-int 2) 5fc 1d 30 10e 205
 add (local-int 1) 19708 4
-u004211E0 (local-int 1) 10e 205 0
+i217 (local-int 1) 10e 205 0
 add (local-int 1) 19708 4
 sub (local-int 2) (global-int 3f39) 5
 mul (local-int 3) (local-int 2) 64
-u00420620 (local-int 1) (local-int 3) 64 64
+i1fd (local-int 1) (local-int 3) 64 64
 add (local-int 1) 19708 5
 sub (local-int 2) (global-int 3f39) 5
 mul (local-int 3) (local-int 2) 1d
@@ -146,12 +146,12 @@ and (local-int 1) (global-int 1397) (global-int 3f38)
 jcc (local-int 1) ffffffff label_00000be0
 eq (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_00000bc8
-u00420CE0 8
+i20a 8
 jmp label_00000be0
 
 label_00000bc8
-u00420CE0 1
-u00420CE0 2
+i20a 1
+i20a 2
 
 label_00000be0
 ret
@@ -161,10 +161,10 @@ label_00000be8
 mov (global-int f807d) (global-int a9df)
 eq (local-int 1) (global-int 0) 1
 jcc (local-int 1) ffffffff label_00000cd0
-u00421160 (global-int f801f) 18a9c
+i215 (global-int f801f) 18a9c
 gre (local-int 1) (global-int f801f) 0
 jcc (local-int 1) ffffffff label_00000cc4
-u004211A0 (global-int a9ba) (global-int f801f)
+i216 (global-int a9ba) (global-int f801f)
 jcc (global-int a9ba) ffffffff label_00000cc4
 mov (global-int f807d) (global-int a9e0)
 

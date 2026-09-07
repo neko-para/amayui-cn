@@ -192,7 +192,7 @@ eq (local-int 151) (global-int 1db9) 0
 and (local-int 152) (local-int 153) (local-int 151)
 jcc (local-int 152) ffffffff label_00001418
 play-sound-effect 50e4 0
-u0041D050 0
+i0b5 0
 mov (global-int 519afa) e
 mov (global-int f8c39) 4
 mov (global-int f8c3a) 8
@@ -232,7 +232,7 @@ eq (local-int 151) (global-int 1db9) 0
 and (local-int 152) (local-int 153) (local-int 151)
 jcc (local-int 152) ffffffff label_000016f0
 play-sound-effect 50e4 0
-u0041D050 0
+i0b5 0
 mov (global-int 519afa) 6
 mov (global-int f8c39) 6
 mov (global-int f8c3a) 1
@@ -272,7 +272,7 @@ eq (local-int 151) (global-int 1db9) 0
 and (local-int 152) (local-int 153) (local-int 151)
 jcc (local-int 152) ffffffff label_000019c8
 play-sound-effect 50e4 0
-u0041D050 0
+i0b5 0
 mov (global-int 519afa) 10
 mov (global-int f8c39) 6
 mov (global-int f8c3a) 5
@@ -1555,7 +1555,7 @@ exit
 label_00006ed4
 eq (local-int 14d) (global-int 2e65) 0
 jcc (local-int 14d) ffffffff label_0000708c
-u004160D0
+i1f4
 mov (local-int 2) 1
 jmp label_00006f4c
 
@@ -1580,7 +1580,7 @@ label_0000707c
 jmp label_00006f30
 
 label_00007088
-u00416120
+i1f5
 
 label_0000708c
 exit

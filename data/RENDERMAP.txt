@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 9 1 1 4 1 1 }
 ====
 
-u004160D0
+i1f4
 jcc (global-int 56940) ffffffff label_00000af8
 and (local-int 5) (global-int 56940) 1
 jcc (local-int 5) ffffffff label_00000308
@@ -95,7 +95,7 @@ add (local-int 5) ea60 (local-int 0)
 ne (local-int 6) (local-int 1) (local-int 5)
 jcc (local-int 6) ffffffff label_00000708
 add (local-int 5) ea60 (local-int 0)
-u00421410 (local-int 5) (local-int 1)
+i21d (local-int 5) (local-int 1)
 
 label_00000708
 set-draw-color (local-int 1) 0 c8 ff ffffff
@@ -147,26 +147,26 @@ call-script 510c
 eq (local-int 5) (global-int 4fd9) 0
 jcc (local-int 5) ffffffff label_00000af8
 call-script 3994
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 5) (global-int 3f36) 2
 jcc (local-int 5) ffffffff label_00000af8
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00000af8
 call-script 511a
 call-script 5117
-u00416200
+i20c
 mov (global-int 56940) 0
-u00416120
+i1f5
 exit

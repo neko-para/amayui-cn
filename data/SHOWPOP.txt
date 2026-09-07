@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { e 1 2 8 1 2 }
 ====
 
-u004160D0
+i1f4
 jcc (global-int f8075) label_0000162c ffffffff
 lte (local-int 6) (global-int 708021) 0
 jcc (local-int 6) label_0000162c ffffffff
@@ -101,20 +101,20 @@ toString (local-string 0) (global-int 708021)
 label_00000684
 strlen (local-int 0) (local-string 0)
 jcc (local-int 0) ffffffff label_000007d0
-u0041AC30 12
-u0041AC60 ffffff
-u0041ACB0 ffffff
+i075 12
+i076 ffffff
+i077 ffffff
 ne (local-int 6) (global-int 3f36) d
 jcc (local-int 6) ffffffff label_00000768
 set-font (global-string bbd)
-u00423100 0
-u0041AD00 1
-u0041B580 0 0
-u00423127 0
+i2bd 0
+i078 1
+i1a4 0 0
+i261 0
 mov (global-int 3f36) d
 
 label_00000768
-u0041AC30 18
+i075 18
 mul (local-int 6) (local-int 0) 6
 sub (local-int 7) e6 (local-int 6)
 draw-string e (local-int 7) 3e (local-string 0)
@@ -149,7 +149,7 @@ jcc (local-ptr 0) ffffffff label_00000c40
 lookup-array-2d (local-ptr 0) (global-int 523b24) (global-int 519afb) 11 8
 sub (local-int 7) 0 1
 set-texture (local-ptr 0) 2a (local-int 7)
-u00420BF0 2a (local-int 1) (local-int 2)
+i208 2a (local-int 1) (local-int 2)
 div (local-int 1) (local-int 1) 4
 div (local-int 2) (local-int 2) 4
 add (local-int 6) 2e248 2
@@ -159,7 +159,7 @@ sub (local-int 9) 1d8 (local-int 8)
 sub (local-int a) 190 (local-int 2)
 draw-texture (local-int 6) 2a 0 (local-int 7) (local-int 1) (local-int 2) (local-int 9) (local-int a)
 add (local-int 6) 2e248 2
-u00421EA0 (local-int 6) 12c 4 4
+i231 (local-int 6) 12c 4 4
 
 label_00000c40
 jmp label_00001170
@@ -184,9 +184,9 @@ lookup-array (local-ptr 4) (global-int 704e99) (global-int 708020)
 sub (local-int c) 190 (local-ptr 4)
 draw-texture (local-int 6) 2a 0 0 (local-ptr 1) (local-ptr 2) (local-int b) (local-int c)
 add (local-int 6) 2e248 2
-u004211E0 (local-int 6) 1d8 19a 0
+i217 (local-int 6) 1d8 19a 0
 add (local-int 6) 2e248 2
-u00420620 (local-int 6) 32 32 64
+i1fd (local-int 6) 32 32 64
 lookup-array (local-ptr 0) (global-int 70521d) (global-int 708020)
 jcc (local-ptr 0) ffffffff label_00001018
 add (local-int 6) 2e248 2
@@ -195,7 +195,7 @@ lookup-array (local-ptr 5) (global-int 70521d) (global-int 708020)
 div (local-int 7) (local-ptr 2) (local-ptr 5)
 lookup-array (local-ptr 3) (global-int 70521d) (global-int 708020)
 lookup-array (local-ptr 6) (global-int 704fc5) (global-int 708020)
-u00421EA0 (local-int 6) (local-int 7) (local-ptr 3) (local-ptr 6)
+i231 (local-int 6) (local-int 7) (local-ptr 3) (local-ptr 6)
 
 label_00001018
 jmp label_00001170
@@ -219,7 +219,7 @@ jcc (local-ptr 0) ffffffff label_0000139c
 lookup-array-2d (local-ptr 0) (global-int 523b24) (global-int 519afb) 11 8
 sub (local-int 7) 0 1
 set-texture (local-ptr 0) 3e (local-int 7)
-u00420BF0 3e (local-int 1) (local-int 2)
+i208 3e (local-int 1) (local-int 2)
 div (local-int 1) (local-int 1) 4
 div (local-int 2) (local-int 2) 4
 add (local-int 6) 2e248 3
@@ -228,7 +228,7 @@ sub (local-int 8) 328 (local-int 7)
 sub (local-int 9) 190 (local-int 2)
 draw-texture (local-int 6) 3e 0 0 (local-int 1) (local-int 2) (local-int 8) (local-int 9)
 add (local-int 6) 2e248 3
-u00421EA0 (local-int 6) 12c 4 4
+i231 (local-int 6) 12c 4 4
 
 label_0000139c
 mov (local-int 3) 0
@@ -241,9 +241,9 @@ label_000013d8
 lt (local-int 6) (local-int 3) 4
 jcc (local-int 6) ffffffff label_000014ac
 add (local-int 6) 2e248 (local-int 3)
-u00420770 (local-int 6) 3e8 0 0
+i1ff (local-int 6) 3e8 0 0
 add (local-int 6) 2e248 (local-int 3)
-u004215D0 (local-int 6) 0 c8 0 0 0
+i220 (local-int 6) 0 c8 0 0 0
 jmp label_000013bc
 
 label_000014ac
@@ -251,10 +251,10 @@ poll-input
 wait
 jcc (local-int 5) ffffffff label_000014f0
 play-sound-effect (local-int 5) 0
-u0041D050 0
+i0b5 0
 
 label_000014f0
-u00422390 7d0
+i238 7d0
 poll-input
 wait
 mov (local-int 3) 0
@@ -268,7 +268,7 @@ lt (local-int 6) (local-int 3) 4
 jcc (local-int 6) ffffffff label_000015f0
 add (local-int 6) 2e248 (local-int 3)
 sub (local-int 7) 0 3e8
-u004215D0 (local-int 6) 0 c8 (local-int 7) 0 0
+i220 (local-int 6) 0 c8 (local-int 7) 0 0
 jmp label_00001524
 
 label_000015f0
@@ -279,22 +279,22 @@ release-texture 2a
 release-texture 3e
 
 label_0000162c
-u0041AC30 1e
-u0041AC60 (global-int f807b)
-u0041ACB0 (global-int f807c)
+i075 1e
+i076 (global-int f807b)
+i077 (global-int f807c)
 ne (local-int 6) (global-int 3f36) 2
 jcc (local-int 6) ffffffff label_00001728
 set-font (global-string bbb)
-u00423100 1
-2FE (global-string bbc)
-u0041B510 a
-u0041B3D0 10
-u0041AD00 (global-int f8079)
-u0041B580 (global-int f807a) (global-int f807a)
-u00423126 2 0 2 2
-u00423127 1
+i2bd 1
+i2fe (global-string bbc)
+i197 a
+i08b 10
+i078 (global-int f8079)
+i1a4 (global-int f807a) (global-int f807a)
+i260 2 0 2 2
+i261 1
 mov (global-int 3f36) 2
 
 label_00001728
-u00416120
+i1f5
 exit
