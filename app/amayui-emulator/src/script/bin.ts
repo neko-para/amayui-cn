@@ -7,7 +7,7 @@
 import { ByteView } from '../util/bytes.js';
 import { OPCODE_TABLE as OPCODE_DEFS } from '../opcodes.js';
 
-/** opcode -> { name(argc 语义名), argc } 表（来自 age-shared.cpp make_defs()，548 条）。 */
+/** opcode -> { name(argc 语义名), argc } 表（直接由外部配置 scripts/asm/opcodes.json 派生，574 条）。 */
 const OPCODE_TABLE: Map<number, { name: string; argc: number }> = new Map(
   OPCODE_DEFS.map((e) => [e.opcode, { name: e.name, argc: e.argc }]),
 );

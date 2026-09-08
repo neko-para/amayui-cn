@@ -721,13 +721,13 @@
     "semantic_name": "op_get_input_type_41ACD0",
     "op": "0xCD",
     "status": "ANALYZED",
-    "purpose": "op get-input-type：消息/ADV 的『点击推进』门——按 时间节流(≥input_advance_throttle=200ms) 或 ADV 激活(effect_flags&0x8000000) 触发，把当前帧位置压入返回栈后 CALL 注册的鼠标跳转目标 label；未注册(_this[430656]==-1)则弹栈返回不跳。**非『返回输入类型』、也非鼠标移动/按下沿触发**",
+    "purpose": "op get-input-type：消息/ADV 的『点击推进』门——`if (input_advance_throttle <= (timeGetTime()-input_advance_time) || (effect_flags&0x8000000))` 才推进，把当前帧位置压入返回栈后 CALL 注册的鼠标跳转目标 label；未注册(_this[430656]==-1)则弹栈返回不跳。**非『返回输入类型』、也非鼠标移动/按下沿触发**",
     "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=1", "timeGetTime()-input_advance_time 与 input_advance_throttle 比较；或 effect_flags&0x8000000", "触发则刷新 input_advance_time，记录返回地址(388772+)并 ++_this[4*cur+388612]", "mouse_jump_target(_this[430656])==-1 → --388612 返回(不跳)", "否则 depth 校验后 ip = str_table + 4*label 跳转；清 arity=0"],
+    "sub_behaviors": ["设 frame.arity=1", "timeGetTime()-input_advance_time 与 input_advance_throttle 比较；或 effect_flags&0x8000000", "**核实：input_advance_throttle(_this[429812]) 全工程只在本函数读、从无任何写入 → bss 0 → `0<=elapsed` 恒真 → 引擎实际不节流，每次调用都推进**", "触发则刷新 input_advance_time，记录返回地址(388772+)并 ++_this[4*cur+388612]", "mouse_jump_target(_this[430656])==-1 → --388612 返回(不跳)", "否则 depth 校验后 ip = str_table + 4*label 跳转；清 arity=0"],
     "fields_used": ["this->input_advance_time", "this->input_advance_throttle", "this->effect_flags", "this->mouse_jump_target", "this->frames[cur].ip/arity"],
     "unmodeled": [],
     "evidence": "raw 25827-25876",
-    "notes": "⚠️ 修正：触发条件是【时间节流】或【ADV 激活】，**不是鼠标移动/按钮沿**；跳转目标由 0xCC(mouse-callback) 写入。emulator 若『有鼠标活动即触发』为错。返回栈压/弹由 _this[4*cur+388612]/[388772] 维护，等同 CALL；handler ret 回到此处推进后下一条"
+    "notes": "⚠️ 修正：触发条件是【时间节流】或【ADV 激活】，**不是鼠标移动/按钮沿**；跳转目标由 0xCC(mouse-callback) 写入。**再次修正：input_advance_throttle 字段从未写入=0（grep 全文件仅 raw 25842 读）→ 引擎无时间节流，恒推进**；emulator 旧 advanceThrottle=200 造成 ~200ms 输入迟滞，已改 0（对齐引擎）。emulator 若『有鼠标活动即触发』为错。返回栈压/弹由 _this[4*cur+388612]/[388772] 维护，等同 CALL；handler ret 回到此处推进后下一条"
   },
   {
     "addr": "0x421980",
@@ -869,5 +869,47 @@
     "unmodeled": ["sub_428E00(字符串哈希表查找) 内部"],
     "evidence": "raw 35742-35757",
     "notes": "TITLE：i0a3 (local3f7) 7df —— 据当前选中项(3f7) dispatch 到其 handler；无键则跳 0x7df"
+  },
+  {
+    "addr": "0x4218D0",
+    "raw_name": "sub_4218D0",
+    "semantic_name": "op_sleep_4218D0",
+    "op": "0xC8",
+    "status": "ANALYZED",
+    "purpose": "op sleep：睡眠/帧让步。非 ADV 激活（(effect_flags&0x8000000)==0）时，n<10 → Sleep(n) ms；n>=10 → `_this[174801]|=1` + sub_453A60(_this+107440, n) 设帧率节流（帧间隔=n ms，sub_453AF0 按 interval*frame_count-elapsed 决定 Sleep(剩余)）。ADV 激活则跳过。本质都暂停≈n ms",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设子系操作标记 = 3（_this[30*cur+95805]）", "非 ADV 激活时读 op1=n", "n<10 → Sleep(n) ms", "n>=10 → _this[174801]|=1 + sub_453A60(_this+107440, n) 帧率节流", "ADV 激活 → 跳过（不睡眠）"],
+    "fields_used": ["this->effect_flags", "this->_this+107440(帧率节流对象)", "this->_this[174801]"],
+    "unmodeled": ["sub_453A60/sub_453AF0 帧率节流对象的持久状态"],
+    "evidence": "raw 30288-30314",
+    "notes": "emulator：op_sleep 置 sleepUntil=nowMs+max(1,n)、waitFlags|=SLEEP_GATE；渲染帧循环每帧 present 到 nowMs>=sleepUntil 才放行（帧让步）。TITLE 菜单循环 `sleep 1`；消息/版本屏多用 `sleep 1f4`(500ms)"
+  },
+  {
+    "addr": "0x422BC0",
+    "raw_name": "sub_422BC0",
+    "semantic_name": "op_detach_texture_422BC0",
+    "op": "0x1F7",
+    "status": "ANALYZED",
+    "purpose": "op detach-texture：删单/区间图元。读 op1=handle、op2=count；count≤1 → sub_4AB950(_this+80708, handle) 删单；count>1 → sub_4ABB60(handle, count) 删 [handle, handle+count) 区间。**非『对纹理施加效果』——本质是 detach（把图元从渲染容器移除）**，故原名 texture-op 是误名",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设子系操作标记 = 5", "readIntOperand(op2)=count", "count≤1 → sub_4AB950(_this+80708, op1)：sub_459EA0 找 + sub_4A8AF0(sub_4A9020/sub_4A9270) std::map erase 删该 handle 单图元，置脏 _this[46508]=1", "count>1 → sub_4ABB60(_this+80708, op1, count)：4 容器 lower_bound(handle) 与 lower_bound(handle+count)，对 [begin,end) 逐结点 sub_4A8AF0(erase，经 sub_4AA1D0/sub_4AA330/sub_4AA3D0)，并销毁 +266/+267 每项 record(vtable 删[1]+operator delete[2]/[3]/[4])，置脏 _this[11627]=1 → 删 handle∈[handle,handle+count) 全部图元"],
+    "fields_used": ["this->draw_item_container(_this+258/[1032])", "this->mesh_container(_this+266/[1064])", "this->_this+270/[1080]", "this->_this+274/[1096]", "this->_this[11627]"],
+    "unmodeled": ["sub_4ABB60 的 4 容器内部结构"],
+    "evidence": "raw 31137-31158 (sub_422BC0), 130778-130838 (sub_4AB950), 130841-131137 (sub_4ABB60), 129598/129763 (sub_4AA1D0/sub_4AA3D0), 128132 (sub_4A8AF0)",
+    "notes": "⚠️ 命名修正：原 `texture-op` 是误名。emulator 命名 detachTexture(handle,count)：count≤1 删单、count>1 删 [handle,handle+count) 区间 drawItems+meshes。TITLE hover 回退用 `detach-texture <old_normal> 1` 删旧 normal 图元。与 release-texture(0x1FA) 不同：release 销毁纹理资源对象；detach 只从渲染列表摘图元、不动纹理资源"
+  },
+  {
+    "addr": "0x422E00",
+    "raw_name": "sub_422E00",
+    "semantic_name": "op_release_texture_422E00",
+    "op": "0x1FA",
+    "status": "ANALYZED",
+    "purpose": "op release-texture：释放纹理槽资源。读 op1=slot；销毁 _this[slot+94672] 纹理对象(sub_488FB0+vtable delete+置0)，再 sub_49E980(_this+80708, slot) 释放该槽纹理状态([5*slot+466]=-1)",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=slot", "_this[slot+94672] 非空 → sub_488FB0 释放 + vtable delete + _this[slot+94672]=0", "sub_49E980(_this+80708, slot) 释放槽(纹理索引=-1)"],
+    "fields_used": ["this->_this[slot+94672](纹理对象)", "this->_this+80708(纹理子系统)", "this->_this[5*slot+466](槽纹理索引)"],
+    "unmodeled": ["sub_488FB0/sub_49E980 内部"],
+    "evidence": "raw 31245-31268",
+    "notes": "与 detach-texture(0x1F7) 区别：release-texture **销毁纹理资源**（槽内存对象），影响引用该槽的所有图元；detach-texture 只是把指定 handle(range) 的**图元**从渲染容器移除、纹理资源仍在"
   }
 ]

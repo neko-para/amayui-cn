@@ -65,7 +65,7 @@ async function main(): Promise<void> {
   trace('=== amayui emulator boot ===');
 
   for (const imgid of [0x5245, 0x5246, 0x5272, 0x5273]) {
-    trace(`[preload] imgid=0x${imgid.toString(16)}`);
+    // preloadImage 内部已 pushLog `image <imgid> -> <file> (WxH)`，无需再 trace 一条重复的 [preload]
     await native.preloadImage(imgid);
   }
 
@@ -82,7 +82,9 @@ async function main(): Promise<void> {
     native.startFrameLoop(); // 渲染帧循环：每帧 present + HUD（推进时钟、合成场景图）
 
     let steps = 0;
-    let reachedTitle = false;
+    let reachedTitle = false; // 打过一个「>> 到达 <TITLE 脚本名>」标记（一次性）
+    let interactive = false; // 已注册用户输入(mouse-callback 0xCC) → 交互态：逐条 step 降为节流
+    let lastStepLog = 0; // 节流：交互态下 step trace 的最小间隔(ms)
     let waiting = false;
     let sleeping = false;
     let err: unknown = null;
@@ -96,7 +98,6 @@ async function main(): Promise<void> {
         if (native.sceneAnimationsDone()) {
           e.waitFlags &= ~0x400;
           waiting = false;
-          native.log('gate 0x400 cleared (scene anims done)');
           trace('=== gate 0x400 cleared (scene anims done) ===');
         } else {
           if (!waiting) trace(`=== gate 0x400 WAIT (scene anims pending) steps=${steps} ===`);
@@ -108,7 +109,6 @@ async function main(): Promise<void> {
         if (e.nowMs >= e.sleepUntil) {
           e.waitFlags &= ~SLEEP_GATE;
           sleeping = false;
-          native.log(`gate sleep cleared (t=${Math.round(e.nowMs)}ms)`);
           trace(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
         } else {
           if (!sleeping) trace(`=== gate sleep WAIT (until ${Math.round(e.sleepUntil)}ms) steps=${steps} ===`);
@@ -131,21 +131,25 @@ async function main(): Promise<void> {
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
-            // 到达 TITLE 后不再逐条打日志（否则交互运行会刷屏/日志爆炸）；只记关键事件。
-            if (!reachedTitle) {
+            // step trace 策略：boot/非交互态逐条记；一旦注册用户输入(mouse-callback 0xCC)进入交互态，
+            // 交互循环每帧刷步 → 改为节流打印（≥100ms 一条）避免日志爆炸。
+            // 之前用 /^TITLE/i.test(name) 硬编码「到达 TITLE 后杀步」，现改为通用的「已注册用户输入」判定。
+            if (t.opcode === 0xcc) interactive = true;
+            const stepNow = performance.now();
+            if (!interactive || stepNow - lastStepLog >= 100) {
+              lastStepLog = stepNow;
               trace(
                 `step ${steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${status.scriptName}`,
               );
             }
           } catch (caught) {
             if (caught instanceof ScriptReset) {
-              native.log('exit-script teardown (reset)');
-              trace('=== exit-script teardown (reset) ===');
+              // native.log 已同时进 HUD+文件；不再另加一条 trace（避免同事件双行）。
+              native.log('=== exit-script teardown (reset) ===');
               break outer;
             }
             err = caught;
-            native.log(`stop: ${(caught as Error).message}`);
-            trace(`[error] ${(caught as Error).message}`);
+            native.log(`[error] ${(caught as Error).message}`);
             flushBatch();
             break outer;
           }
@@ -155,16 +159,17 @@ async function main(): Promise<void> {
         if (native.needsRender()) native.present();
       }
 
-      // 诊断：节流打印 InputManager 实况 + draw-item 概览（排查 hover 高亮叠层是否渲染/回退）
+      // 诊断：节流打印 InputManager 实况（只报输入态，不再叠加 draw-item 概览——
+      //   `[present ...] items={...}` 已每 500ms 报场景 item 摘要，避免同列表重复刷）。
+      // 若要按 handle/坐标细看 hover 叠层，可临时调 native.debugDrawItems() 在此拼入。
       const nowMs = performance.now();
       if (nowMs - lastInputLog > 500) {
         lastInputLog = nowMs;
         const im = e.input;
-        const di = native.debugDrawItems?.();
         trace(
           `[input-state] hasCursor=${im.hasCursor ? 1 : 0} pos=(${im.readX()},${im.readY()}) ` +
             `moved=${im.mouseMoved ? 1 : 0} edge=0x${im.mouseEdge.toString(16)} btn=${im.readButtons()} ` +
-            `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)} ${di ?? ''}`,
+            `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)}`,
         );
       }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）

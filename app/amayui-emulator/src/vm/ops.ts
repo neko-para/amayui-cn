@@ -751,12 +751,10 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
  * 不触碰解释器可见状态。对"到 TITLE 路径"良性；M1 再按需补成精确语义。
  * 注意：`string-lookup-set`(0x1a3) 本为 VM 核心（写回操作数 1），此处实例为立即数退化且其后为常量 jcc，暂列插桩，M1 细化。
  */
-const op_engine_internal: OpHandler = (c) => {
-  c.log(
-    `[engine-internal] 0x${c.instr.opcode.toString(16)} ${c.instr.name} ${c.instr.args
-      .map((a) => (a.type === 2 ? `"${a.str}"` : `0x${a.raw.toString(16)}`))
-      .join(' ')}`,
-  );
+const op_engine_internal: OpHandler = () => {
+  // 纯 no-op 插桩跳过：不写 VM 状态、不控制流。**不再自打日志**——renderer 的 step trace 已逐条报
+  // kind=engine-internal（且带 opcode）；自打 `[engine-internal] ...` 会造成每 op 双行，并在交互脚本
+  // （0x20c 每帧一次）下刷屏。需要逐 op 细节看 renderer 的 step trace 即可。
 };
 
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
