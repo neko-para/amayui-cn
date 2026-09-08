@@ -104,57 +104,30 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 
 ---
 
-## 6. 已确认的字段模型（`fields.json` 为唯一事实来源；下表为固化摘要，如有出入以 `fields.json` 为准）
+## 6. 数据层视图（字段/函数清单以 JSON 为准，本技能不复制）
 
-### 全局
-- `engine`（原 `dword_55E1BC`，`Engine*`）—— 全局游戏/Engine 对象基址；访问用字节偏移。
+> 字段/偏移的**权威清单**在 `analysis/fields.json`（唯一增长处），**本技能不再复制字段表**。
+> 查看/维护：`scripts/report.js`（按 `scope`/`status` 分组打印），`scripts/sort-fields.js`（排序）；新增/复核直接写 `fields.json`。
 
-### `Engine`（只列本工程用到的）
-| 字节偏移 | 字段 | 类型 | 含义 |
-|---|---|---|---|
-| 0x00 | vftable | uaddr | Engine vtable |
-| 0x08 | message_buf | char[0x400] | ShowMessage sprintf 目标 |
-| 0x5D800 | pool_int | uaddr | 引擎作用域 int 池（operand type 3，`tentative`） |
-| 0x5D808 | pool_float | uaddr | 引擎作用域 float 池（type 4，`tentative`） |
-| 0x5D810 | pool_string | uaddr | 引擎作用域 string 池（type 5，步长 28=SSO，`tentative`） |
-| 0x5D818 | pool_int_ref | uaddr | 引擎作用域 int 引用池（type 6，元素为指针，`tentative`） |
-| 0x5D820 | pool_float_ref | uaddr | 引擎作用域 float 引用池（type 7，`tentative`） |
-| 0x5D828 | pool_string_ref | uaddr | 引擎作用域 string 引用池（type 8，步长 28，`tentative`） |
-| 0x5D880 | cur_script | uint32_t | 当前脚本帧深度 (this[95776]) |
-| 0x5D884 | call_ret | uint32_t | 跨脚本返回目标 (this[95777]) |
-| 0x5D894 | frames[40] | ScriptContext[40] | 每脚本帧数组（帧距 0x78=120） |
-| 0x5EC8C | key | uint32_t | DEC/ENC 密钥 (this[97059]) |
-| 0x5EC90 | enc_zero | uint32_t | ENC(0) 常量槽 (this[97060]) |
-| 0x69330 | counter | uint32_t | random 帧计数器 (this[107724]) |
+- **`scope` 分组**：`Engine` / `ScriptContext` / `global`（`global.engine` = 全局 Engine 对象基址，0x55E1BC）。
+- **`status` 约定**：`confirmed`（确证）| `tentative`（偏移由 raw 证实、语义待复核）。
+- **`offset` = 字节偏移**（同 `engine/engine.hpp` 约定）；`stride` = 数组步长（如 `frames[40]` 0x78、string 池 28）。
+- 引用：`analysis/fields.json`（字段/偏移）、`analysis/functions.json`（函数结论）、`scripts/report.js`（报表）、`scripts/sort-fields.js`（排序）。
 
-### `ScriptContext`（0x78=120）
-| 字节偏移 | 字段 | 类型 |
-|---|---|---|
-| 0x00 | str_table | uaddr |
-| 0x04 | ip | uaddr |
-| 0x08 | local_int_count | uint32_t |
-| 0x0C | local_float_count | uint32_t |
-| 0x10 | local_string_count | uint32_t |
-| 0x14 | local_ptr_count | uint32_t |
-| 0x18 | local_float_ptr_count | uint32_t |
-| 0x20 | local_int | uaddr（基址指针） |
-| 0x24 | local_float | uaddr |
-| 0x28 | local_string | uaddr |
-| 0x2C | local_ptr | uaddr |
-| 0x30 | local_float_ptr | uaddr |
-| 0x34 | local_string_ptr | uaddr（type 14，步长 28，`tentative`） |
-| 0x38 | caller | uint32_t |
-| 0x3C | frame_arg | uint32_t |
-| 0x60 | arity | uint32_t（指令长度，含 opcode） |
-| 0x70 | array_container | uaddr |
-
-### 操作数模型（operand，ADR-011 带标记引用）
+### 操作数模型（operand，ADR-011 带标记引用）—— "为什么有这些字段"的语义，非字段表
+字段名/偏移以 `fields.json` 为准，这里只给语义映射：
 - 操作数编码：`frame.ip + 8*idx` 处为值，`-4` 处为**类型 tag**。
-- **type tag → 池**：`3/4/5`=引擎 int/float/string 池（`pool_int/float/string`，stride 4/4/28）；`6/7/8`=引擎 int/float/string **引用**池（`pool_*_ref`，穿引）；`9/10/11`=本帧 int/float/string 池（`local_int/float/string`）；`12/13/14`=本帧 int/float/string 引用池（`local_ptr/float_ptr/string_ptr`）；`0/1/2`=立即数（int/float/字符串字面量）；`0x8003/0x8009`=数组批量。
-- **DEC / ENC（去混淆）**：`DEC(x)=ror32(key ^ rol32(x,11), 25)`；`ENC(x)=rol32(key ^ ror32(x,7), 21)`；`key=this->key(0x5EC8C)`，`ENC(0)=this->enc_zero(0x5EC90)`。
-- 读/写原语（已入 `functions.json`）：`readIntOperand_41BF50`、`readFloatOperand_41C300`、`writeIntOperand_42B4B0`、`writeFloatOperand_42BA00`、`operandAddress_42AEA0`、`writePointerOperand_418B90`、`writePointerElement_418CC0`、`readStringOperand_41B640`。
+- **type tag → 池**：
+  - `3/4/5` = 引擎 int/float/string **值**池（`pool_int/float/string`，stride 4/4/28）
+  - `6/7/8` = 引擎 int/float/string **引用**池（`pool_int_ref/float_ref/string_ref`，穿引取值）
+  - `9/10/11` = 本帧 int/float/string **值**池（`local_int/float/string`）
+  - `12/13/14` = 本帧 int/float/string **引用**池（`local_ptr/float_ptr/string_ptr`）
+  - `0/1/2` = 立即数（int/float/字符串字面量）；`0x8003/0x8009` = 数组批量
+- **池 `base` ↔ `count` 配对**：引擎池 `pool_*`（0x5D800 区）与 `pool_*_count`（base+4，memflip 双缓冲交换，raw 25753-25774）；帧池 `local_*`（frame+0x20..0x34）与 `local_*_count`（frame+0x08..0x1C）。
+- **DEC / ENC（去混淆）**：`DEC(x)=ror32(key ^ rol32(x,11),25)`；`ENC(x)=rol32(key ^ ror32(x,7),21)`；`key`、`enc_zero` 见 `fields.json`。
+- 读/写原语（结论在 `functions.json`）：`readIntOperand_41BF50`、`readFloatOperand_41C300`、`writeIntOperand_42B4B0`、`writeFloatOperand_42BA00`、`operandAddress_42AEA0`、`writePointerOperand_418B90`、`writePointerElement_418CC0`、`readStringOperand_41B640`。
 
-> 未建模（`tentative`，待确认）：`_this + 0xA609C` 字符串表（=0x5D894+? 需复核）、`_this + 387924` FileSource、`frames[cur] + 0x40..0x54` 返回栈、`_this + 4*cur + 388612/489488/489648`。本表 `pool_*` 族语义为**推断**（偏移已由 raw 证实），需后续复核后再转 `confirmed`。
+> 未建模（`tentative`，待确认）：`_this + 0xA609C` 字符串表（= `frames` 区 + ? 需复核）、`_this + 387924` FileSource、`frames[cur] + 0x40..0x54` 返回栈、`_this + 4*cur + 388612/489488/489648`。`pool_*` 族语义为**推断**（偏移已由 raw 证实），待复核后转 `confirmed`。
 
 ---
 
