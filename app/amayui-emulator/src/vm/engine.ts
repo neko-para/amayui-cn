@@ -78,6 +78,9 @@ export class Engine {
   /** effect_flags 的等待位（如 0x21C 置 0x400；0xC8 sleep 置 SLEEP_GATE）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
   waitFlags = 0;
 
+  /** 菜单派发表（引擎 `_this+107679` 的字符串哈希表，0xA2 登记 key→label、0xA3 查表跳转）。key=菜单项序号字符串，value=目标 label(指令 index)。 */
+  menuMap = new Map<string, number>();
+
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;
 

@@ -118,8 +118,20 @@ app.whenReady().then(() => {
   console.log(`[main] diagnostic log -> ${LOG_PATH}`);
   // 控制窗：重启主窗口渲染流程
   ipcMain.on('control-restart', () => {
-    if (win && !win.isDestroyed()) win.webContents.reload();
-    console.log('[main] control: restart requested -> reload renderer');
+    if (win && !win.isDestroyed()) {
+      // 主窗口还在：reload 渲染器 → 重新走完整 boot
+      win.webContents.reload();
+      console.log('[main] control: restart -> reload renderer');
+    } else {
+      // 主窗口已关闭/不存在（控制窗仍开）：重新创建主窗口（boot 重新跑）
+      createWindow();
+      console.log('[main] control: restart -> recreate main window');
+    }
+  });
+  // abort(0x1)/程序退出：渲染窗请求关闭主窗口
+  ipcMain.on('close-window', () => {
+    if (win && !win.isDestroyed()) win.close();
+    console.log('[main] abort -> close main window');
   });
   // 控制窗：设置是否打印全量指令 → 转发给渲染窗（renderer 监听 onTraceAll）
   ipcMain.on('control-set-trace-all', (_e, enabled: boolean) => {

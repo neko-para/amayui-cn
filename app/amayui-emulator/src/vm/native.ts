@@ -80,6 +80,10 @@ export interface NativeBridge {
   stringResourceId?(s: string): number;
   getInputType?(): number;
   sleep?(ms: number): void;
+  /** 0xA1 (sub_433A40)：菜单派发表复位。 */
+  menuReset?(): void;
+  /** 0xA2 (sub_434F10)：登记菜单项 key→label。 */
+  menuBind?(key: string, value: number): void;
   unhandled?(opcode: number, name: string): void;
 
   // ---- Plan A：类型化渲染配置（严格 flag 校验） ----
@@ -142,6 +146,12 @@ export class StubNative implements NativeBridge {
   }
   getInputType(): number {
     return 0;
+  }
+  menuReset(): void {
+    this.log('[native:stub] menuReset (0xA1)');
+  }
+  menuBind(key: string, value: number): void {
+    this.log(`[native:stub] menuBind key"${key}"=0x${value.toString(16)}`);
   }
   sleep(ms: number): void {
     this.log(`[native:stub] sleep ${ms}`);

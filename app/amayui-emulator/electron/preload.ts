@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('api', {
   // ---- 控制窗（ControlWindow）相关 IPC ----
   /** 控制窗→主：重启主窗口渲染流程。 */
   controlRestart: () => ipcRenderer.send('control-restart'),
+  /** 渲染窗→主：abort(0x1)/程序退出 → 关闭主窗口。 */
+  closeWindow: () => ipcRenderer.send('close-window'),
   /** 控制窗→主：设置是否打印全量指令。 */
   controlSetTraceAll: (enabled: boolean) => ipcRenderer.send('control-set-trace-all', enabled),
   /** 主→控制窗：状态更新。 */

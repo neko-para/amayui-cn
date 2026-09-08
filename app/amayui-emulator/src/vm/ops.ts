@@ -241,6 +241,12 @@ const op_ret: OpHandler = (c) => {
   // 栈空：同脚本函数调用栈为空 → 不跳，落到下一指令（引擎里 arity=1 前进 1 dword）
 };
 
+/** 0x1 abort (sub_418E60)：程序中止。引擎 `_CxxThrowException(&1, Command_Exit)`——立即退出整个程序。
+ *  emulator：抛 `ExitScript`（程序退出信号），渲染器捕获后关闭主窗口；headless(run.ts) 捕获后停执行。 */
+const op_abort: OpHandler = () => {
+  throw new ExitScript();
+};
+
 // ---- exit (0x2)：跨脚本返回调用层（cur=frame.caller；顶层无调用层才程序退出） ----
 const op_exit: OpHandler = (c) => {
   const caller = c.frame.caller;
@@ -479,6 +485,33 @@ const op_sleep: OpHandler = (c) => {
   c.e.waitFlags |= SLEEP_GATE;
   c.native.sleep?.(n);
 };
+
+/** 0xA1 (sub_433A40)：菜单派发表复位。`sub_415530(_this+107679, 0xFFF)` 清空菜单字符串哈希表(容量 0xFFF)。 */
+const op_menu_reset: OpHandler = (c) => {
+  c.e.menuMap.clear();
+  c.native.menuReset?.();
+};
+
+/** 0xA2 (sub_434F10)：登记菜单项 key→label。读 op1(键)+op2(值=目标 label) → `sub_434D00(_this+107679, key, &value)` 插入哈希表。
+ *  引擎以字符串(sub_41B640)读 key；TITLE 用菜单项序号(-1/0/1/2/3/4)为键 → emulator 取 op1 的 **DEC 值**再字符串化（不能用
+ *  readStringOperand，其对 local-int 会返回局部下标，是既有 bug）。 */
+const op_menu_bind: OpHandler = (c) => {
+  const key = String(readIntOperand(c.e, c.frame, c.instr, 1));
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.e.menuMap.set(key, value);
+  c.native.menuBind?.(key, value);
+};
+
+/** 0xA3 (sub_429830)：按 key 查表派发。`sub_428E00(_this+107679, key)` 查；命中 `ip=str_table+4*值`(跳转)，未命中 `ip=str_table+4*op2`(回退 label)。等效 jmp 到目标指令。 */
+const op_menu_dispatch: OpHandler = (c) => {
+  const key = String(readIntOperand(c.e, c.frame, c.instr, 1));
+  const fallback = readIntOperand(c.e, c.frame, c.instr, 2);
+  const target = c.e.menuMap.get(key) ?? fallback;
+  const p = labelPos(c.frame, target);
+  if (p === null) return;
+  c.jump(p);
+};
+
 const op_draw_texture: OpHandler = (c) => {
   // 0x1FB draw-texture：op1=handle、op2=layer、op3-6=源矩形、op7/8=目标位置。
   // 必须用 readIntOperand 解析 handle（(local-int 0) 等 ref 才能得 0x30d41，而非 raw=0）。
@@ -687,8 +720,13 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x3, op_call_script],
   [0x1a7, op_comment],
   [0x1a8, op_dev_ukn],
+  [0x1, op_abort],
   [0x2, op_exit],
   [0x9, op_exit_script],
+  // ---- 菜单派发（0xA1 复位 / 0xA2 登记 key→label / 0xA3 查表跳转）----
+  [0xa1, op_menu_reset],
+  [0xa2, op_menu_bind],
+  [0xa3, op_menu_dispatch],
   // ---- 鼠标/输入子系统（读操作数/跳转/注册目标；语义见 docs-new/03-engine/input-system.md）----
   [0x108, op_read_mouse_buttons],
   [0x109, op_read_mouse_pos],
@@ -853,11 +891,7 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x1a9, op_engine_internal], // 写内部字符串查找表 _this+5472（非可见 VM 态），M1 细化
   // 鼠标点击路径安全桩：图形提交 / 悬停位置计算（emulator 暂不渲染/不算，no-op 不崩）
   [0x20c, op_engine_internal], // u00416200 时间戳+present（sub_41A1A0；无界面 no-op；TITLE 点击 handler 入口）
-  [0xb5, op_engine_internal], // u0041D050 声音通道控制（sub_420B40；无界面 no-op；TITLE 音效用）
-  // 菜单派发表（uninitialized 菜单下点击退化路径；纯跳转表 no-op 不崩）
-  [0xa1, op_engine_internal], // u00427C00（sub_433A40）菜单状态初始化（no-op）
-  [0xa2, op_engine_internal], // u00427FD0（sub_434F10）间接跳转表设置（no-op）
-  [0xa3, op_engine_internal], // u004244D0（sub_429830）菜单当前项设置（no-op）
+  [0xb5, op_engine_internal], // u0041D050 声音通道控制（sub_420B40 → sub_4B5020/4B6020 声音设备通道；**声音相关，无 VM/渲染效果 → 忽略 no-op**）
   [0x23d, op_engine_internal], // u004162F0 释放纹理槽 42..999（sub_41A300；emulator 无界面 no-op）
   [0x32b, op_engine_internal], // u0043AAD0（sub_41A4A0；no-op）
 ]);

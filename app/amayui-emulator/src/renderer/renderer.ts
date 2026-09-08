@@ -5,7 +5,7 @@
  */
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { loadScriptData, stepOnce } from '../vm/interpreter.js';
-import { ScriptReset } from '../vm/ops.js';
+import { ScriptReset, ExitScript } from '../vm/ops.js';
 import { InputManager } from '../vm/input.js';
 import { IpcFileSource } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
@@ -163,6 +163,14 @@ async function main(): Promise<void> {
             if (caught instanceof ScriptReset) {
               // native.log 已同时进 HUD+文件；不再另加一条 trace（避免同事件双行）。
               native.log('=== exit-script teardown (reset) ===');
+              break outer;
+            }
+            if (caught instanceof ExitScript) {
+              // abort(0x1)/程序退出：关闭主窗口（0x2 顶层 program-exit 亦走此）。
+              native.log('=== abort/program exit -> close window ===');
+              trace('=== abort/program exit ===');
+              flushBatch();
+              window.api?.closeWindow?.();
               break outer;
             }
             err = caught;

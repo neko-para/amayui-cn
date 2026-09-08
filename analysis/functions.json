@@ -911,5 +911,33 @@
     "unmodeled": ["sub_488FB0/sub_49E980 内部"],
     "evidence": "raw 31245-31268",
     "notes": "与 detach-texture(0x1F7) 区别：release-texture **销毁纹理资源**（槽内存对象），影响引用该槽的所有图元；detach-texture 只是把指定 handle(range) 的**图元**从渲染容器移除、纹理资源仍在"
+  },
+  {
+    "addr": "0x420B40",
+    "raw_name": "sub_420B40",
+    "semantic_name": "op_sound_channel_420B40",
+    "op": "0xB5",
+    "status": "ANALYZED",
+    "purpose": "op 0xB5：声音通道控制。读 op1=通道号 → sub_4B5020(_this+20719, op1, 0) →（声音设备存在时）sub_4B6020(设备, op1, 0)：通道号 >0xE 或通道未分配则报错/返回；否则 sub_4B73E0(通道, 0) 控制该声音通道。**纯声音侧，无 VM/渲染效果**",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=通道号", "sub_4B5020(_this+20719, op1, 0) 转发到声音设备", "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"],
+    "fields_used": ["this->_this+20719(声音系统)", "this->_this[4*op1+1620](声音通道)", "this->_this[4*op1+1440]"],
+    "unmodeled": ["sub_4B6020/sub_4B73E0 内部"],
+    "evidence": "raw 29689-29697 (sub_420B40), 137660-137670 (sub_4B5020), 138590-138615 (sub_4B6020)",
+    "notes": "（用户指令：**声音相关指令，忽略**）emulator 无声音输出，0xB5 保持 engine-internal no-op；不影响高亮/回退/渲染。与 0xB4 play-sound-effect / 0xB6 同族"
+  },
+  {
+    "addr": "0x418E60",
+    "raw_name": "sub_418E60",
+    "semantic_name": "op_abort_418E60",
+    "op": "0x1",
+    "status": "ANALYZED",
+    "purpose": "op 0x1 abort：程序中止。`_CxxThrowException(&1, Command_Exit)` —— 立即退出整个程序（非返回调用层）。无参数、无返回值（noreturn）",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["无读操作数", "直接 _CxxThrowException(Command_Exit) 抛出程序退出异常(noreturn)"],
+    "fields_used": [],
+    "unmodeled": [],
+    "evidence": "raw 24418-24425",
+    "notes": "emulator：`op_abort` → 抛 `ExitScript`（程序退出信号）；渲染窗捕获后经 IPC `close-window` 关闭主窗口，headless(run.ts) 捕获后停执行。与 0x2 exit（顶层无调用层时也程序退出）区分：abort 无条件中止"
   }
 ]

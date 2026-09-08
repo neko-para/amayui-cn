@@ -23,7 +23,7 @@
 
 | opcode | argc | 名称（age-shared） | 引擎位置（handler） | 分析状态 | 已知语义 |
 |---|---|---|---|---|---|
-| 0x1 | 0 | abort | sub_418E60 | 已核对 | **抛 Exit 异常(程序退出)**：`_CxxThrowException(Command_Exit)`。handler=sub_418E60（raw .c 25682） |
+| 0x1 | 0 | abort | sub_418E60 | 已核对 | **程序中止**：`_CxxThrowException(&1, Command_Exit)` —— 立即退出整个程序。handler=sub_418E60（raw .c 25682）。emulator：`op_abort` → 抛 `ExitScript`（程序退出信号）；渲染窗捕获后经 IPC `close-window` 关闭主窗口，headless(run.ts) 捕获后停执行 |
 | 0x2 | 0 | exit | sub_41A820 | 已核对 | 跨脚本**返回调用层**（`cur=frame.caller`；顶层 caller<0 才程序退出）。handler=sub_41A820（raw .c 25629） |
 | 0x3 | 1 | call-script | sub_41C6A0 | 已核对 | 读 operand1=目标脚本索引 → 压帧（cur++）+ 装载新脚本帧。handler=sub_41C6A0（raw .c 26762） |
 | 0x4 | 2 |  | sub_41C770 | 仅映射 |  |
@@ -145,9 +145,9 @@
 | 0x96 | 0 |  | sub_419260 | 仅映射 |  |
 | 0x97 | 5 |  | sub_420910 | 仅映射 |  |
 | 0xA0 | 3 | jcc | sub_4209B0 | 已核对 | **两目标条件跳转**（仅 3 个操作数）：`op1=条件`（非 0 为真）；`op1≠0`→跳 `op2`（若 `op2==0xFFFFFFFF` 则落下句）；`op1==0`→跳 `op3`（若 `op3==0xFFFFFFFF` 则落下句）。 |
-| 0xA1 | 0 |  | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046） |
-| 0xA2 | 2 |  | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908） |
-| 0xA3 | 2 |  | sub_429830 | 已核对 | **按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742） |
+| 0xA1 | 0 |  | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046）。emulator：`op_menu_reset` → `engine.menuMap.clear()` |
+| 0xA2 | 2 |  | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind` key=String(DEC(op1))、value=DEC(op2) → `menuMap.set(key,value)`（**注意**：引擎 sub_41B640 读 string；TITLE 用菜单项序号(-1/0/1/2/3/4)为键，emulator 取 op1 的 DEC 值字符串化） |
+| 0xA3 | 2 |  | sub_429830 | 已核对 | **按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742）。emulator：`op_menu_dispatch` key=String(DEC(op1))，target=menuMap.get(key) ?? DEC(op2)，`labelPos(target)` 命中则 `jump` |
 | 0xAA | 2 |  | sub_42D580 | 仅映射 |  |
 | 0xAB | 2 |  | sub_42D650 | 仅映射 |  |
 | 0xAC | 9 |  | sub_42D700 | 仅映射 |  |
@@ -159,7 +159,7 @@
 | 0xB2 | 2 |  | sub_420AB0 | 仅映射 |  |
 | 0xB3 | 0 |  | sub_4196B0 | 仅映射 |  |
 | 0xB4 | 2 | play-sound-effect | sub_420B00 | 仅映射 | 播放音效。未读体 |
-| 0xB5 | 1 |  | sub_420B40 | 仅映射 |  |
+| 0xB5 | 1 |  | sub_420B40 | 已核对 | **声音通道控制**：读 op1=通道号 → `sub_4B5020(_this+20719, op1, 0)` →（设备在时）`sub_4B6020(设备, op1, 0)`：通道>0xE 或未分配→报错/返回；否则 `sub_4B73E0(通道,0)`。**纯声音侧、无 VM/渲染效果**。handler=sub_420B40（raw .c 29689）。emulator：**声音相关→忽略 no-op**（与 0xB4/0xB6 同族，TITLE 音效） |
 | 0xB6 | 1 |  | sub_420B80 | 已核对 | **声音通道**：`sub_4B5050(_this+20719, op1)`(播/控音效)。handler=sub_420B80（raw .c 29327） |
 | 0xB7 | 1 |  | sub_420C00 | 仅映射 |  |
 | 0xB8 | 0 |  | sub_419720 | 仅映射 |  |

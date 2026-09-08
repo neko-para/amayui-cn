@@ -5,7 +5,7 @@ import { NodeFileSource } from './arch/nodeFileSource.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
-import { ScriptReset } from './vm/ops.js';
+import { ScriptReset, ExitScript } from './vm/ops.js';
 import { OPCODE_TABLE } from './script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -69,6 +69,10 @@ async function main() {
     } catch (err) {
       if (err instanceof ScriptReset) {
         console.log('\n[reset] exit-script(0x9) 全量清栈/重置（回到干净根态）');
+        break;
+      }
+      if (err instanceof ExitScript) {
+        console.log('\n[abort] abort(0x1)/程序退出');
         break;
       }
       if (err instanceof NotImplementedOp) {
