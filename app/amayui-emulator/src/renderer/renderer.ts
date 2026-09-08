@@ -87,11 +87,11 @@ async function main(): Promise<void> {
     });
 
     let steps = 0;
-    let reachedTitle = false; // 打过一个「>> 到达 <TITLE 脚本名>」标记（一次性）
     // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
     let traceAll = false;
     // 已忽略(engine-internal/插桩跳过)指令：按 opcode 去重，name + 出现次数（供控制窗展示 + 首个打印一次）。
     let ignored = new Map<number, { name: string; count: number }>();
+    const ignoredList = () => [...ignored].map(([opcode, v]) => ({ opcode, name: v.name }));
     let lastStepLog = 0; // 节流：traceAll 全量打印时 step trace 的最小间隔(ms)
     let waiting = false;
     let sleeping = false;
@@ -131,12 +131,6 @@ async function main(): Promise<void> {
           status.scriptName = name;
           status.ip = f.ip;
           status.steps = ++steps;
-          if (/^TITLE/i.test(name)) {
-            if (!reachedTitle) {
-              reachedTitle = true;
-              native.log(`>> 到达 ${name}`);
-            }
-          }
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
@@ -146,7 +140,7 @@ async function main(): Promise<void> {
               if (g) g.count++;
               else {
                 ignored.set(t.opcode, { name: t.name, count: 1 });
-                trace(`[ignored] 0x${t.opcode.toString(16)} ${t.name}`);
+                trace(`[ignored] ${t.name}`); // name 已是助记符（语义名或 iXXX），无需再补 opcode 数字
               }
             }
             // 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印上面的「已忽略」信息。
@@ -174,7 +168,10 @@ async function main(): Promise<void> {
               break outer;
             }
             err = caught;
-            native.log(`[error] ${(caught as Error).message}`);
+            const emsg = (caught as Error).message;
+            native.log(`[error] ${emsg}`);
+            // 硬错误（如「xxx 指令未实现」）：立即上报控制窗展示，然后停
+            window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: ignoredList(), traceAll, error: emsg });
             flushBatch();
             break outer;
           }
@@ -200,25 +197,21 @@ async function main(): Promise<void> {
       // 节流向控制窗上报状态（当前 BIN + 已忽略指令 + traceAll 开关）
       if (nowMs - lastStatusSend > 500) {
         lastStatusSend = nowMs;
-        window.api?.sendRendererStatus?.({
-          bin: status.scriptName,
-          ignored: [...ignored].map(([opcode, v]) => ({ opcode, name: v.name })),
-          traceAll,
-        });
+        window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: ignoredList(), traceAll });
       }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
       await nextFrame(); // 让渲染帧循环跑（present/时钟），再继续
     }
-    trace(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps} reachedTitle=${reachedTitle}`);
+    trace(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
     flushBatch();
     native.drawHud();
-    console.log(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps} reachedTitle=${reachedTitle}`);
+    console.log(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
     if (err) console.error(`[boot] ${(err as Error).message}`);
   } catch (caught) {
     const msg = `boot error: ${(caught as Error).message}`;
     native.log(msg);
-    native.drawHud();
     console.error(`[boot] ${msg}`);
+    window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: [], traceAll: false, error: msg });
   }
 }
 

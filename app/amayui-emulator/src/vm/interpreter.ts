@@ -9,10 +9,10 @@ export class NotImplementedOp extends Error {
   constructor(
     public readonly opcode: number,
     public readonly name: string,
-    public readonly scriptSig: string,
+    public readonly scriptName: string,
     public readonly byteOffset: number,
   ) {
-    super(`unimplemented opcode 0x${opcode.toString(16)} (${name}) in script ${scriptSig} @ 0x${byteOffset.toString(16)}`);
+    super(`unimplemented opcode 0x${opcode.toString(16)} (${name}) in script ${scriptName} @ 0x${byteOffset.toString(16)}`);
   }
 }
 
@@ -43,7 +43,8 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
         ? 'engine-internal'
         : 'unimplemented';
   if (!handler) {
-    throw new NotImplementedOp(instr.opcode, instr.name, frame.script.signature, instr.byteOffset);
+    // 用 frame.name（文件名，如 CONFIG.BIN）而非 script.signature（"SYS4450"）作为显示名——前者才是用户可读的脚本名。
+    throw new NotImplementedOp(instr.opcode, instr.name, frame.name, instr.byteOffset);
   }
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
   await handler(ctx);
@@ -57,7 +58,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   } else {
     curFrame.ip = next;
   }
-  return { opcode: instr.opcode, name: instr.name, ip: frame.ip, byteOffset: instr.byteOffset, handlerKind, script: frame.script.signature };
+  return { opcode: instr.opcode, name: instr.name, ip: frame.ip, byteOffset: instr.byteOffset, handlerKind, script: frame.name };
 }
 
 export interface RunResult {

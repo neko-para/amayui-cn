@@ -52,7 +52,7 @@ function createWindow(): void {
 /** 控制窗：启动即打开的小窗，提供重启/日志开关/状态展示（见 docs 控制窗设计）。 */
 function createControlWindow(): void {
   controlWin = new BrowserWindow({
-    width: 400,
+    width: 500,
     height: 600,
     title: 'amayui-emulator 控制',
     backgroundColor: '#1e1e1e',

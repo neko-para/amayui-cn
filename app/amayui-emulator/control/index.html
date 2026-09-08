@@ -18,6 +18,8 @@
       #btnTraceAll.on { background: #2d5f2d; border-color: #4a9a4a; }
       .ignored-list { max-height: 260px; overflow: auto; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-family: ui-monospace, monospace; font-size: 12px; background: #161616; }
       .ignored-list div { padding: 1px 0; }
+      .error { display: none; color: #ff6b6b; background: #3a1414; border: 1px solid #7a2e2e; border-radius: 4px; padding: 6px 8px; font-size: 12px; word-break: break-all; }
+      .error.show { display: block; }
     </style>
   </head>
   <body>
@@ -29,6 +31,7 @@
       <button id="btnTraceAll" class="toggle">启用指令日志：关（仅未知）</button>
     </div>
     <div class="row"><span class="label">当前 BIN</span><span class="value" id="bin">…</span></div>
+    <div class="row"><div class="error" id="error"></div></div>
     <div class="row">
       <span class="label">已忽略指令（去重）</span><span class="value" id="ignoredCount">(…)</span>
     </div>

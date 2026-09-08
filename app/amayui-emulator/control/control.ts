@@ -10,7 +10,7 @@ declare global {
     api: {
       controlRestart(): void;
       controlSetTraceAll(enabled: boolean): void;
-      onControlStatus(cb: (s: { bin: string; ignored: { opcode: number; name: string }[]; traceAll: boolean }) => void): void;
+      onControlStatus(cb: (s: { bin: string; ignored: { opcode: number; name: string }[]; traceAll: boolean; error?: string }) => void): void;
     };
   }
 }
@@ -22,6 +22,7 @@ function el<T extends HTMLElement>(id: string): T {
 const binEl = el<HTMLSpanElement>('bin');
 const ignoredCountEl = el<HTMLSpanElement>('ignoredCount');
 const ignoredBox = el<HTMLDivElement>('ignored');
+const errorBox = el<HTMLDivElement>('error');
 const btnTraceAll = el<HTMLButtonElement>('btnTraceAll');
 
 let traceAll = false;
@@ -38,10 +39,21 @@ function renderIgnored(ignored: { opcode: number; name: string }[]): void {
     ignoredBox.textContent = '（暂无已忽略指令）';
     return;
   }
+  // 只显示助记符（name 已是语义名或 iXXX 数值），不再额外打印 opcode 数字。
   for (const it of ignored) {
     const d = document.createElement('div');
-    d.textContent = `0x${it.opcode.toString(16)}  ${it.name}`;
+    d.textContent = it.name;
     ignoredBox.appendChild(d);
+  }
+}
+
+function renderError(msg?: string): void {
+  if (msg) {
+    errorBox.textContent = `⚠️ ${msg}`;
+    errorBox.classList.add('show');
+  } else {
+    errorBox.textContent = '';
+    errorBox.classList.remove('show');
   }
 }
 
@@ -60,7 +72,9 @@ window.api.onControlStatus((s) => {
   traceAll = !!s.traceAll;
   updateTraceBtn();
   renderIgnored(s.ignored ?? []);
+  renderError(s.error);
 });
 
 updateTraceBtn();
 renderIgnored([]);
+renderError(undefined);

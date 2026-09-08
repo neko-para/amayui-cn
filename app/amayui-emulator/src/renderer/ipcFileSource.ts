@@ -35,6 +35,8 @@ export interface ControlStatus {
   bin: string;
   ignored: { opcode: number; name: string }[];
   traceAll: boolean;
+  /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
+  error?: string;
 }
 
 export class IpcFileSource implements FileSource {
