@@ -3,7 +3,7 @@
  * Plan A：渲染帧循环（Pixi ticker）独立跑 present（推进时钟、合成场景图），VM 在其间按"门控"推进——
  *         无门控时每帧跑一批指令（引擎在无门控时快速跑到门控）；遇 0x400 动画等待则停住，由渲染循环放行。
  */
-import { Engine } from '../vm/engine.js';
+import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { loadScriptData, stepOnce } from '../vm/interpreter.js';
 import { ScriptReset } from '../vm/ops.js';
 import { InputManager } from '../vm/input.js';
@@ -84,6 +84,7 @@ async function main(): Promise<void> {
     let steps = 0;
     let reachedTitle = false;
     let waiting = false;
+    let sleeping = false;
     let err: unknown = null;
     let lastInputLog = 0; // 节流：[input-state] 诊断打印
 
@@ -102,6 +103,18 @@ async function main(): Promise<void> {
           waiting = true;
         }
         native.present(); // 动画播放（每帧）
+      } else if (e.waitFlags & SLEEP_GATE) {
+        // sleep(0xC8) 门：持续 present 直到 nowMs >= sleepUntil 才放行（引擎帧让步 Sleep(n)ms / 帧率节流 n ms）。
+        if (e.nowMs >= e.sleepUntil) {
+          e.waitFlags &= ~SLEEP_GATE;
+          sleeping = false;
+          native.log(`gate sleep cleared (t=${Math.round(e.nowMs)}ms)`);
+          trace(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
+        } else {
+          if (!sleeping) trace(`=== gate sleep WAIT (until ${Math.round(e.sleepUntil)}ms) steps=${steps} ===`);
+          sleeping = true;
+        }
+        native.present();
       } else {
         for (let k = 0; k < SAFETY_PER_FRAME; k++) {
           const f = e.curScript();
@@ -136,7 +149,7 @@ async function main(): Promise<void> {
             flushBatch();
             break outer;
           }
-          if (e.waitFlags & 0x400) break; // 遇到门控（0x21C 置位），停这批
+          if (e.waitFlags & (0x400 | SLEEP_GATE)) break; // 遇到门控（0x21C 置 0x400 / 0xC8 sleep 置 SLEEP_GATE），停这批
         }
         // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
         if (native.needsRender()) native.present();

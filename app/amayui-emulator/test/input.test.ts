@@ -8,7 +8,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InputManager } from '../src/vm/input.js';
 import { StubNative } from '../src/vm/native.js';
-import { Engine } from '../src/vm/engine.js';
+import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
@@ -110,8 +110,9 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   // 几何完全来自脚本数据（local5/local69/local cd），此处按数据推的点落在第 0 项内。
   input.setCursor(1102 + 0x40, 294 + 0x40, true);
   assert.equal(input.hasPending(), true, '移入应标记待处理输入活动（供 hover/边沿观测）');
-  // 引擎 0xCD：`now - lastAdvance >= advanceThrottle(200) || advActive` 才推进。headless 无渲染时钟，注入 nowMs 过闸。
-  e.nowMs = 200; // now(200) - lastAdvance(0) >= throttle(200) → 推进
+  // 引擎 0xCD：`now - lastAdvance >= advanceThrottle || advActive` 才推进。但引擎 `_this[429812]` 从未写入=0，故条件恒真（无节流，始终推进）。
+  // headless 无渲染时钟，注入 nowMs 过闸（throttle=0 → 任意 nowMs 都推进）。
+  e.nowMs = 200; // now(200) - lastAdvance(0) >= throttle(0) → 推进
   const t = await stepSafe();
   assert.equal(t.opcode, 0xcd, '应步进到 get-input-type');
   assert.equal(e.curScript().ip, targetPos, `get-input-type 时间节流派发应跳到目标 (0x${targetLabel.toString(16)})`);
@@ -133,6 +134,26 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   // hover 索引（local 3f5，0x12E 结果）——几何来自脚本数据，光标落在第 0 项内应为 0
   const hoverIdx = dec(e.key, e.curScript().locals.int.get(0x3f5) ?? 0);
   assert.equal(hoverIdx, 0, `0x12E 悬停命中应给出第 0 项 (got ${hoverIdx})`);
+
+  // sleep(0xC8)：步进到 sleep 指令，验证置 SLEEP_GATE + sleepUntil（引擎帧让步；renderer 到点放行）
+  guard = 0;
+  let sleptAt = -1;
+  while (guard++ < 2000) {
+    const instr2 = script.instructions[e.curScript().ip];
+    if (!instr2) break;
+    if (instr2.opcode === 0xc8) { sleptAt = e.curScript().ip; break; }
+    await stepSafe();
+    if (e.cur !== cur0) break;
+  }
+  assert.notEqual(sleptAt, -1, 'TITLE 循环应含 sleep(0xC8) 指令');
+  await stepSafe(); // 执行 sleep
+  assert.equal(e.waitFlags & SLEEP_GATE, SLEEP_GATE, 'sleep 应置 SLEEP_GATE');
+  assert.ok(e.sleepUntil > 0, 'sleep 应设 sleepUntil(ms)');
+  // 模拟 renderer 到点放行：nowMs >= sleepUntil 后清 SLEEP_GATE
+  e.nowMs = e.sleepUntil + 1;
+  assert.ok(e.nowMs >= e.sleepUntil, 'nowMs 越过 sleepUntil');
+  e.waitFlags &= ~SLEEP_GATE;
+  assert.equal(e.waitFlags & SLEEP_GATE, 0, 'SLEEP_GATE 应被清（放行）');
 
   await src.dispose?.();
 });

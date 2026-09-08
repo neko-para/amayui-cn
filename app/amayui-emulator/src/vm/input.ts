@@ -52,8 +52,10 @@ export class InputManager {
   // --- get-input-type(0xCD) 节流态（引擎 _this[429808]/[429812]）---
   /** 上次推进时刻（ms）。0xCD 据此判节流。 */
   lastAdvance = 0;
-  /** 节流间隔（ms，默认 200；引擎 _this[429812]）。0=每次指令都推进。 */
-  advanceThrottle = 200;
+  /** 节流间隔（ms；引擎 `_this[429812]`）。**核实：该字段全工程只在 0xCD(raw 25842) 读、从无写入 → bss 初值 0**，
+   *  故引擎 `_this[429812] <= (now-lastAdvance)` 恒真 → **get-input-type 实际不节流（每次调用都推进）**。
+   *  emulator 旧值 200 会引入 ~200ms 输入迟滞，与引擎不一致 → 置 0。 */
+  advanceThrottle = 0;
   /** 触点标识（0x2FC 的 op5，引擎触摸项 dwID）。为 1 表示"有触点"。 */
   touchId = 0;
 
@@ -170,6 +172,7 @@ export class InputManager {
    * get-input-type(0xCD) 的推进门（引擎 sub_41ACD0 语义）：
    * `if (now - lastAdvance >= advanceThrottle || advActive)` → 刷新 lastAdvance，返回注册的 mouseJump 目标；
    * 否则返回 null（不推进）。
+   * 引擎 `_this[429812]`(throttle) 从未写入 = 0 → 条件恒真 → **始终推进**；advActive(0x8000000) 只是 OR 兜底（实际恒真）。
    * **不读取/不消费 mouse/joy 按下沿或 mouseMoved**——触发只由时间节流或 ADV 激活决定（与鼠标是否移动/按下无关）。
    * 未注册鼠标目标(==-1/0xFFFFFFFF) → 返回 null（引擎：弹返回栈、原地不跳）。
    */

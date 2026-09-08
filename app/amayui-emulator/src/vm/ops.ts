@@ -9,6 +9,7 @@ import { asI32, atoi } from './bits.js';
 import { refAt, readRef, writeRef } from './ref.js';
 import { parseScriptBytes } from '../script/bin.js';
 import type { Frame } from './engine.js';
+import { SLEEP_GATE } from './engine.js';
 
 /** 把 label 值(dword index)解析为指令下标；找不到返回 null。 */
 function labelPos(frame: Frame, raw: number): number | null {
@@ -464,6 +465,20 @@ const op_set_wait_flag: OpHandler = (c) => {
   c.native.setWaitFlag?.(0x400);
   c.e.waitFlags |= 0x400;
 };
+
+/** 0xC8 sleep (sub_4218D0)：睡眠/帧让步。op1=n。
+ * 引擎（raw .c 30288）：非 ADV 激活（(effect_flags&0x8000000)==0）时，n<10 → `Sleep(n)` ms；n>=10 →
+ *   `sub_453A60(_this+107440, n)` 设帧率节流（`_this[6]=n` 帧间隔= n ms，sub_453AF0 按 `interval*frame_count - elapsed`
+ *   决定 Sleep(剩余)）——两者本质都是 **暂停 ≈ n ms**。ADV 激活则 sleep 跳过。
+ * emulator：置 `sleepUntil = nowMs + max(1, n)`、置 `waitFlags |= SLEEP_GATE`；渲染帧循环每帧 present 直到
+ *   nowMs >= sleepUntil 才放行（对齐引擎帧让步，避免脚本空转）。 */
+const op_sleep: OpHandler = (c) => {
+  if (c.e.advActive) return; // 引擎：消息/ADV 激活时 sleep 跳过
+  const n = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.sleepUntil = c.e.nowMs + Math.max(1, n);
+  c.e.waitFlags |= SLEEP_GATE;
+  c.native.sleep?.(n);
+};
 const op_draw_texture: OpHandler = (c) => {
   // 0x1FB draw-texture：op1=handle、op2=layer、op3-6=源矩形、op7/8=目标位置。
   // 必须用 readIntOperand 解析 handle（(local-int 0) 等 ref 才能得 0x30d41，而非 raw=0）。
@@ -554,6 +569,8 @@ const op_poll_input: OpHandler = (c) => {
 
 /** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进"门。
  * 引擎：`if (now - lastAdvance >= throttle || adv_active)` 才推进（throttle=_this[429812]，adv_active=effect_flags&0x8000000）。
+ * **核实：`_this[429812]` 全工程无写入 → bss 0 → 条件恒真 → 引擎 get-input-type 实际不节流（始终推进）**；
+ *   emulator 旧 200ms 节流会引入 ~200ms 输入迟滞，故 advanceThrottle=0（见 input.ts）。
  * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
  * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */
 const op_get_input_type: OpHandler = (c) => {
@@ -721,7 +738,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x20f, op_play_movie], // play-movie（LOGO.MPG 视频句柄）
   [0x21c, op_set_wait_flag], // u00416270 → 置 0x400 等待旗标
   [0x1a5, stubSubsystem],
-  [0xc8, stubSubsystem],
+  [0xc8, op_sleep], // sleep（sub_4218D0，读 op1=n；置 SLEEP_GATE 帧让步）
   [0x6e, stubSubsystem],
   [0x6f, stubSubsystem],
   [0x72, stubSubsystem],

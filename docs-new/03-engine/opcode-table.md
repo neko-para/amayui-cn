@@ -178,12 +178,12 @@
 | 0xC5 | 2 |  | sub_42E540 | 仅映射 |  |
 | 0xC6 | 2 |  | sub_421070 | 仅映射 |  |
 | 0xC7 | 2 |  | sub_42E670 | 仅映射 |  |
-| 0xC8 | 1 | sleep | sub_4218D0 | 仅映射 | 睡眠/延时。未读体 |
+| 0xC8 | 1 | sleep | sub_4218D0 | 已核对 | **睡眠/帧让步**：读 op1=n。非 ADV 激活（`(effect_flags&0x8000000)==0`）时，n<10 → `Sleep(n)` ms；n>=10 → `sub_453A60(_this+107440,n)` 设帧率节流（`_this[6]=n` 帧间隔=n ms，`sub_453AF0` 按 `interval*frame_count-elapsed` 决定 Sleep(剩余)）——本质都**暂停≈n ms**；ADV 激活则跳过。handler=sub_4218D0（raw .c 30288）。emulator：`op_sleep` 置 `sleepUntil=nowMs+max(1,n)`、`waitFlags|=SLEEP_GATE`，渲染帧循环每帧 present 到点放行（帧让步；TITLE 菜单 `sleep 1`）。 |
 | 0xC9 | 0 |  | sub_4198A0 | 仅映射 |  |
 | 0xCA | 0 |  | sub_4198E0 | 仅映射 |  |
 | 0xCB | 1 |  | sub_42E8E0 | 仅映射 |  |
 | 0xCC | 2 | mouse-callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、[6]=op1）。按下匹配时 get-input-type(0xCD) 跳到 `_this[107664]`。handler=sub_421980（raw .c 30317） |
-| 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（默认 200ms）节流，或 `(effect_flags&0x8000000)` 激活即推进；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827） |
+| 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（节流间隔，**全工程无写入 → bss 0 → 实际不节流**，或 `(effect_flags&0x8000000)` 激活即推进）；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827）。emulator `advanceThrottle=0`（对齐引擎无节流） |
 | 0xCE | 3 |  | sub_4219E0 | 仅映射 |  |
 | 0xCF | 0 |  | sub_41AE40 | 仅映射 |  |
 | 0xD0 | 1 |  | sub_42E910 | 仅映射 |  |

@@ -5,6 +5,9 @@ import type { NativeBridge } from './native.js';
 import { InputManager } from './input.js';
 import type { Ref } from './ref.js';
 
+/** waitFlags 中的 sleep(0xC8) 门旗标（与 0x400 动画等待门并存）。 */
+export const SLEEP_GATE = 0x20000000;
+
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
   int = new Map<number, number>(); // 存 ENC 位模式
@@ -72,8 +75,11 @@ export class Engine {
   // SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。
   engineValues = new Map<number, number>([[96983, 1]]);
 
-  /** effect_flags 的等待位（如 0x21C 置 0x400）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
+  /** effect_flags 的等待位（如 0x21C 置 0x400；0xC8 sleep 置 SLEEP_GATE）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
   waitFlags = 0;
+
+  /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
+  sleepUntil = 0;
 
   /** 墙钟毫秒（= 引擎 timeGetTime()）；由渲染帧循环(renderer)或测试注入。0xCD(get-input-type) 节流用。 */
   nowMs = 0;
