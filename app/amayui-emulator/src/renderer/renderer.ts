@@ -88,6 +88,8 @@ async function main(): Promise<void> {
     let lastInputLog = 0; // 节流：[input-state] 诊断打印
 
     outer: while (steps < MAX_STEPS) {
+      // 引擎 timeGetTime()（墙钟 ms）：0xCD(get-input-type) 节流 / mesh/文字动画用
+      e.nowMs = performance.now();
       // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
       if (e.waitFlags & 0x400) {
         if (native.sceneAnimationsDone()) {

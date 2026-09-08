@@ -59,8 +59,7 @@ interface Item {
   flags: number; // 仅 bit0 存在 | bit1 颜色动画（&2）；其余位 assertFlags 拒绝
   from: number; // +96 (ARGB)
   to: number; // +100 (ARGB)
-  anim?: AnimWindow; // +52 start / +56 delay / +76 count
-  colorSet?: boolean; // 是否被 set-draw-color-alpha/color 显式设过色（无动画时也尊重其 alpha）
+  anim?: AnimWindow; // +52 start / +56 delay / +76 count；动画完成时冻结（from=to, anim 清空）
 }
 
 interface MeshObj {
@@ -370,11 +369,8 @@ export class PixiBackend implements NativeBridge {
       return;
     }
     assertFlags('drawitem', it.handle, it.flags);
-    it.from = from;
-    it.colorSet = true; // 显式设色：无动画时也按此色的 alpha 渲染（hover 高亮可回退）
-    // 清掉/重置动画窗：引擎 set-draw-color-alpha 是"设当前色"，若沿用旧 set-draw-color 的 to=opaque 动画窗，
-    // #itemAlpha 会一直在窗末返回 to（不透明），导致 hover 高亮无法回退。清除后即时按 from 的 alpha 渲染。
-    it.anim = undefined;
+    it.from = from; // 引擎 item+96 = from（当前工作色）。**不清动画窗**：set-draw-color(0x202) 定义的 from→to 窗与此处 from 共用；
+    // 动画完成时 #itemAlpha 会冻结 from=to 并清 anim，之后本 op 设的 from（如 hover 高亮）即时生效、可回退。
     this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
   }
 
@@ -474,10 +470,10 @@ export class PixiBackend implements NativeBridge {
     return this.#lerpArgb(m.state0, m.state1, a);
   }
 
-  /** draw-item diffuse alpha：from→to 只插 alpha 字节（RGB 恒白，逐像素淡入）。返回 0..255。
-   *  无动画窗时，若图元被 set-draw-color-alpha 显式设过色（colorSet），按其 from 色的 alpha 渲染
-   *  （避免 hover 高亮叠层永远停在默认不透明、无法回退）。 */
-  #itemAlpha(it: Item, clock: number): number {
+  /** draw-item diffuse 颜色（full ARGB）：from→to 逐通道插值（引擎 per-frame 颜色动画；RGB×α 调制纹理）。返回 0..0xFFFFFFFF。
+   *  - 窗内：from→to 全通道插值；**窗末：from=to 并清 anim**（冻结在 to）——此后 set-draw-color-alpha 设的 from 即时生效、可回退（hover）。
+   *  - 无激活动画窗：直接返回当前 from（item+96）；set-draw-color-alpha 可随时改（hover 高亮/回退）。 */
+  #itemColor(it: Item, clock: number): number {
     assertFlags('drawitem', it.handle, it.flags);
     if (it.flags & 2 && it.anim) {
       const w = it.anim;
@@ -485,16 +481,22 @@ export class PixiBackend implements NativeBridge {
         w.start = clock;
         w.started = true;
       }
-      if (clock >= w.start + w.delay + w.count) return (it.to >> 24) & 0xff;
-      if (clock <= w.start + w.delay) return (it.from >> 24) & 0xff;
+      if (clock >= w.start + w.delay + w.count) {
+        it.from = it.to; // 冻结：从=to（引擎动画完成时 item+96=item+100）
+        it.anim = undefined;
+        return it.to >>> 0;
+      }
+      if (clock <= w.start + w.delay) return (it.from >>> 0);
       const a = (clock - w.start - w.delay) / w.count;
-      const fa = (it.from >> 24) & 0xff;
-      const ta = (it.to >> 24) & 0xff;
-      return Math.round(fa + (ta - fa) * a);
+      return this.#lerpArgb(it.from, it.to, a);
     }
-    // 无动画窗：尊重显式设色的 alpha；默认不透明。
-    if (it.colorSet) return (it.from >> 24) & 0xff;
-    return 255;
+    // 无激活动画：当前工作色（item+96）；set-draw-color-alpha 可随时改（hover 高亮/回退）
+    return (it.from >>> 0);
+  }
+
+  /** draw-item diffuse alpha（0..255）：取 #itemColor 的 alpha 字节。 */
+  #itemAlpha(it: Item, clock: number): number {
+    return (this.#itemColor(it, clock) >> 24) & 0xff;
   }
 
   #lerpArgb(a: number, b: number, t: number): number {
@@ -540,12 +542,14 @@ export class PixiBackend implements NativeBridge {
     // 1) draw-items（图像）：按 layer 升序、再 handle 升序。
     const items = [...this.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     for (const it of items) {
-      const alpha = this.#itemAlpha(it, clock);
+      const color = this.#itemColor(it, clock);
+      const alpha = (color >> 24) & 0xff;
       if (alpha <= 0) continue; // 全透明跳过
       const tex = this.slotTex.get(it.layer);
       const spr = tex ? this.#cropSprite(tex, it) : this.#placeholder(it);
       spr.position.set(it.dstX, it.dstY);
-      spr.alpha = alpha / 255; // 逐像素 alpha 淡入
+      spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
+      spr.alpha = alpha / 255; // diffuse alpha 淡入
       this.drawRoot.addChild(spr);
     }
 

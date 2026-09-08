@@ -10,7 +10,7 @@ const root = process.argv[2] || '.';
 const FILE = path.join(root, 'analysis', 'fields.json');
 
 // scope 分组顺序（决定跨作用域的先后）；组内按字节偏移升序。
-const SCOPE_ORDER = ['Engine', 'ScriptContext', 'global'];
+const SCOPE_ORDER = ['Engine', 'ScriptContext', 'MeshEntry', 'DrawItem', 'global'];
 
 function parseOffset(o) {
   // offset 为 16 进制字节偏移（"0x5D880" / "0x34"）；个别缺省值按 0 处理。

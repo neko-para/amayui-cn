@@ -1,7 +1,7 @@
 /** 鼠标/输入子系统测试。
- *  1) InputManager 单元（位置/按钮/按下沿/移动/flush/consume/派发目标）。
- *  2) TITLE 端到端：登记 mouse_callback -> get-input-type 注入鼠标移动/点击 -> 派发到鼠标 handler 且不崩。
- *  语义依据 docs-new/03-engine/input-system.md（0x108/0x109/0xCC/0xFB/0xCD/0x12E 等）。 */
+ *  1) InputManager 单元（位置/按钮/按下沿/移动/flush/consume/派发目标/get-input-type 节流门）。
+ *  2) TITLE 端到端：登记 mouse_callback -> get-input-type（时间节流）派发到鼠标 handler 且不崩。
+ *  语义依据 docs-new/03-engine/input-system.md（0x108/0x109/0xCC/0xFB/0xCD/0x12E 等，0xCD 为时间节流/ADV 激活触发）。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as path from 'node:path';
@@ -59,8 +59,8 @@ test('InputManager: 光标位置 / 按钮 / 按下沿 / 移动 / flush / 派发�
   assert.equal(im.hasPending(), false);
 });
 
-// ---- TITLE 端到端：派发（hover + 点击）----
-test('TITLE: mouse_callback 登记 -> get-input-type 移动/点击 -> 派发到鼠标 handler 不崩', async () => {
+// ---- TITLE 端到端：派发（时间节流 get-input-type + hover 命中）----
+test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠标 handler 不崩', async () => {
   const src = new NodeFileSource({ rawDir: RAW_DIR });
   const input = new InputManager();
   const e = new Engine(new StubNative(), input);
@@ -106,14 +106,17 @@ test('TITLE: mouse_callback 登记 -> get-input-type 移动/点击 -> 派发到�
     assert.ok(++guard < 20000, '未在 20000 步内遇到 get-input-type');
   }
 
-  // 注入鼠标移动（hover）：cursor 移到主菜单第 1 项按钮内（base=local5[0]/local69[0]=1102/294，尺寸 0x9c）。
+  // 注入光标位置（供 hover 命中 & 0x12E 判定；0xCD 派发不再依赖鼠标移动/按下，改为时间节流）。
   // 几何完全来自脚本数据（local5/local69/local cd），此处按数据推的点落在第 0 项内。
   input.setCursor(1102 + 0x40, 294 + 0x40, true);
-  assert.equal(input.hasPending(), true, '移动后应有待处理输入活动');
+  assert.equal(input.hasPending(), true, '移入应标记待处理输入活动（供 hover/边沿观测）');
+  // 引擎 0xCD：`now - lastAdvance >= advanceThrottle(200) || advActive` 才推进。headless 无渲染时钟，注入 nowMs 过闸。
+  e.nowMs = 200; // now(200) - lastAdvance(0) >= throttle(200) → 推进
   const t = await stepSafe();
   assert.equal(t.opcode, 0xcd, '应步进到 get-input-type');
-  assert.equal(e.curScript().ip, targetPos, `get-input-type 移动派发应跳到目标 (0x${targetLabel.toString(16)})`);
-  assert.equal(input.hasPending(), false, '派发后应消费移动/点击活动');
+  assert.equal(e.curScript().ip, targetPos, `get-input-type 时间节流派发应跳到目标 (0x${targetLabel.toString(16)})`);
+  // 0xCD 不消费鼠标/手把边沿（引擎：触发由时间节流/ADV 激活决定，与鼠标活动无关）
+  assert.equal(input.hasPending(), true, '0xCD 不应消费鼠标/手把边沿（hasPending 保持）');
 
   // 派发后继续步进一小段：hover handler（读位置+0x12E+重绘）应跑完并回循环，不抛未实现错误，且不离开 TITLE
   const cur0 = e.cur;

@@ -75,6 +75,11 @@ export class Engine {
   /** effect_flags 的等待位（如 0x21C 置 0x400）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
   waitFlags = 0;
 
+  /** 墙钟毫秒（= 引擎 timeGetTime()）；由渲染帧循环(renderer)或测试注入。0xCD(get-input-type) 节流用。 */
+  nowMs = 0;
+  /** ADV/消息激活态（= 引擎 effect_flags 的 0x8000000 位）。0xCD 在此位置位时可无条件推进。 */
+  advActive = false;
+
   constructor(native: NativeBridge, input?: InputManager) {
     this.native = native;
     this.input = input ?? new InputManager();

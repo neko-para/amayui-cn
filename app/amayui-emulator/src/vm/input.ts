@@ -49,6 +49,14 @@ export class InputManager {
   // --- 输入位掩码（poll-input/0x100 读；由 flush() 生成）---
   inputMask = 0;
 
+  // --- get-input-type(0xCD) 节流态（引擎 _this[429808]/[429812]）---
+  /** 上次推进时刻（ms）。0xCD 据此判节流。 */
+  lastAdvance = 0;
+  /** 节流间隔（ms，默认 200；引擎 _this[429812]）。0=每次指令都推进。 */
+  advanceThrottle = 200;
+  /** 触点标识（0x2FC 的 op5，引擎触摸项 dwID）。为 1 表示"有触点"。 */
+  touchId = 0;
+
   // ---------- 渲染器入口 ----------
 
   /** 更新光标位置（虚拟坐标）。valid=false 表示出窗/未初始化。位置变化即置 mouseMoved（供 hover 派发）。 */
@@ -60,10 +68,12 @@ export class InputManager {
       this.x = x;
       this.y = y;
       this.hasCursor = true;
+      this.touchId = 1; // 触点存在（0x2FC op5）
     } else {
       this.x = -100000;
       this.y = -100000;
       this.hasCursor = false;
+      this.touchId = 0;
     }
   }
 
@@ -154,5 +164,21 @@ export class InputManager {
     let b = 0;
     while (((mask >> b) & 1) === 0) b++;
     return b;
+  }
+
+  /**
+   * get-input-type(0xCD) 的推进门（引擎 sub_41ACD0 语义）：
+   * `if (now - lastAdvance >= advanceThrottle || advActive)` → 刷新 lastAdvance，返回注册的 mouseJump 目标；
+   * 否则返回 null（不推进）。
+   * **不读取/不消费 mouse/joy 按下沿或 mouseMoved**——触发只由时间节流或 ADV 激活决定（与鼠标是否移动/按下无关）。
+   * 未注册鼠标目标(==-1/0xFFFFFFFF) → 返回 null（引擎：弹返回栈、原地不跳）。
+   */
+  getInputType(now: number, advActive: boolean): number | null {
+    if (now - this.lastAdvance >= this.advanceThrottle || advActive) {
+      this.lastAdvance = now;
+      const t = this.mouseJump;
+      return (t === -1 || t === 0xffffffff) ? null : t;
+    }
+    return null;
   }
 }

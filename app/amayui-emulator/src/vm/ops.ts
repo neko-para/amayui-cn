@@ -552,50 +552,36 @@ const op_poll_input: OpHandler = (c) => {
   c.e.input.consumeEdges();
 };
 
-/** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进 + hover"门。
- * 有挂起鼠标活动（按下沿或位置变化）且注册过鼠标目标 → 派发（压返回地址 + 跳到目标，handler 的 ret 回到循环）。
- * 有手把按下沿 + 注册过目标 → 派发。否则吞掉活动、落回下一指令。 */
+/** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进"门。
+ * 引擎：`if (now - lastAdvance >= throttle || adv_active)` 才推进（throttle=_this[429812]，adv_active=effect_flags&0x8000000）。
+ * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
+ * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */
 const op_get_input_type: OpHandler = (c) => {
   const input = c.e.input;
-  input.flush(); // 更新掩码（供观测/后续）
-  const dispatch = (raw: number): boolean => {
-    const p = labelPos(c.frame, raw);
-    if (p === null) return false;
-    input.consumeEdges();
-    c.frame.retStack.push(c.frame.ip + 1); // 压返回地址：handler 的 ret 回到循环下一条
-    c.jump(p);
-    return true;
-  };
-  // 鼠标活动（移动/按下）+ 注册过鼠标目标 -> 跳（hover / 点击）
-  if ((input.mouseEdge !== 0 || input.mouseMoved) && input.mouseJump !== -1 && input.mouseJump !== 0xffffffff) {
-    if (dispatch(input.mouseJump)) return;
-  }
-  // 手把按下沿 + 注册过目标 -> 跳
-  const jt = input.pickJoyTarget();
-  if (jt !== null) {
-    if (dispatch(jt)) return;
-  }
-  // 无已注册目标：吞掉活动（无对应处理），落回下一指令
-  input.consumeEdges();
+  const target = input.getInputType(c.e.nowMs, c.e.advActive);
+  if (target === null) return; // 未到节流/未激活/未注册 → 不推进（也不动鼠标/手把边沿）
+  const p = labelPos(c.frame, target);
+  if (p === null) return;
+  c.frame.retStack.push(c.frame.ip + 1); // 压返回地址：handler 的 ret 回到循环下一条
+  c.jump(p);
 };
 
 /**
- * 0x2FC (u0041B? , sub_431BA0)：读鼠标触点 + 虚拟坐标。
- * 引擎：sub_477980(_this+258,&Point,&a3,&a4) → 有触点则写 op1=1、op2=虚屏X、op3=虚屏Y、op4=a3(触点flags)、op5=a4；无触点写 op1=0。
- * emulator：hasCursor 视为触点存在；op1=存在?1:0、op2/op3=虚拟坐标、op4=按钮态、op5=0。
- * TITLE 紧随 `jcc (op1) … label_00000500`：有鼠标才会走"聚焦/选中"分支。
- */
+ * 0x2FC (sub_431BA0)：读**触摸/手势触点** + 虚拟坐标。
+ * 引擎：sub_477980(_this+258,&Point,&a3,&a4) 从**触摸/手势缓冲**取触点（非 GetCursorPos）→ 有触点写 op1=1、op2=虚屏X、op3=虚屏Y、
+ *   op4=触点旗标(v9[4]=dwFlags)、op5=触点项[3](v9[3]=dwID)；**无触点写 op1=0**，handler 随即落回 i109/i108 读**光标**。
+ * emulator：只建模【鼠标光标】，**没有触摸/手势触点缓冲**；故**恒 op1=0（无触点）**——坐标/按钮由 label_0000047c 里的 i109/i108
+ * （读光标位置/按钮）提供，从而不误把光标当"触点按下"（引擎桌面鼠标下 0x2FC 返回 0）。 */
 const op_get_mouse_state: OpHandler = (c) => {
   const im = c.e.input;
-  if (!im.hasCursor) {
-    writeIntOperand(c.e, c.frame, c.instr, 1, 0); // 无触点
-    return;
-  }
-  writeIntOperand(c.e, c.frame, c.instr, 1, 1); // 触点存在
+  im.touchId = 0; // 无触点（dwID=0）
+  // 无触点：仅写 op1=0。坐标/按钮由后续 i109(光标X/Y) + i108(按钮) 提供（TITLE label_0000047c 的 no-touch 分支）。
+  // 注意：不要把「光标存在」当「触点存在」——那会误置 local 3f2=1(左键恒按下)，破坏 hover 高亮/回退。
+  writeIntOperand(c.e, c.frame, c.instr, 1, 0);
   writeIntOperand(c.e, c.frame, c.instr, 2, im.readX());
   writeIntOperand(c.e, c.frame, c.instr, 3, im.readY());
-  writeIntOperand(c.e, c.frame, c.instr, 4, im.readButtons()); // 触点 flags ≈ 按钮态
-  writeIntOperand(c.e, c.frame, c.instr, 5, 0);
+  writeIntOperand(c.e, c.frame, c.instr, 4, 0); // 无触点旗标
+  writeIntOperand(c.e, c.frame, c.instr, 5, 0); // 无触点 dwID
 };
 
 /**

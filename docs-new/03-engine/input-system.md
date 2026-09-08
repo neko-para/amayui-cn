@@ -252,9 +252,9 @@ _this[30*cur + 95805] = 0;
 - **已实现的输入 opcode**（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/注册/跳转均真实生效）：
   - `0x108` 读鼠标按钮值→op1；`0x109` 读鼠标位置 X/Y→op1/op2（-100000=未初始化）。
   - `0xCC` mouse-callback：记 `input.mouseSlot=op1`、`input.mouseJump=op2`；`0xFB` joy-callback：记 `input.joyJump[btn]=op2`（校验 0..31）。
-  - `0xCD` get-input-type：有挂起鼠标活动（**移动** 或 按下沿）且注册过 `mouseJump` → **压返回地址**并派发跳到该 label（hover/点击；handler 的 `ret` 回到循环下一条）；否则扫手把沿、有注册目标则跳；都没有则吞活动落回。
+  - `0xCD` get-input-type：**已修复为引擎语义**（见 §7b）：**时间节流(≥200ms)或 ADV 激活(effect_flags&0x8000000)触发**→压返回地址 CALL 注册的 `mouseJump`；**不读/不消费鼠标移动或按下沿**；未注册目标则原地不跳。emulator 用 `InputManager.getInputType(nowMs, advActive)` + 引擎 `nowMs`（渲染帧注入 `performance.now()`）实现。
   - `0x12E` (u0041E940) 悬停命中：point-in-rect，**几何完全读取自脚本数据数组**（op5=size 盒数组逐项 4 值、op6=base X 数组、op7=base Y 数组、op8=count；判定 `dx0≤x-baseX[i]≤dx1 && dy0≤y-baseY[i]≤dy1`）。TITLE 实例用 `local cd/d1/d5/d9/dd`（size）+ `local 5`/`local 69`（base X/Y）+ `local 0`=count=5；**不在引擎里写死/模拟任何按钮坐标**。
-  - `0x2FC` (sub_431BA0) 读鼠标触点 + 虚拟坐标：有触点写 `op1=1`、`op2=X`、`op3=Y`、`op4≈按钮态`、`op5=0`；无触点写 `op1=0`。TITLE 紧随 `jcc(op1) … label_00000500` 据此走"聚焦/选中"分支。
+  - `0x2FC` (sub_431BA0) 读触摸/触点：**已修复为引擎语义**：从**触摸/手势缓冲**(`_this+6780`,count `_this[6776]`, 40B/项) 取触点(非 GetCursorPos)，有触点写 `op1=1`、`op2=X`、`op3=Y`、**`op4=触点旗标(v9[4]=dwFlags)`、`op5=触点项[3](v9[3]=dwID)`（触点存在时非 0）**；无触点写 `op1=0`。emulator 以 `hasCursor` 代触点、`touchId` 作 op5。TITLE 紧随 `jcc(op1) … label_00000500` 据此走"聚焦/选中"分支。
   - `0x100` / `0xFF` / `0x101`：掩码派发扫描 / 重置重刷 / 刷后清零。
 - **DOM 鼠标捕获**（`PixiBackend.create(status, input)`）：监听 canvas 的 `mousemove`/`mousedown`/`mouseup`/`mouseleave`，映射到虚拟坐标并写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 顶部显示 `mouse=(x,y) btn=L/R`。
 - **测试**：`test/input.test.ts` 覆盖 InputManager 单元 + TITLE 端到端（登记 mouse-callback → 首条 get-input-type → 注入**鼠标移动**/点击 → 派发跳到目标，hover handler 跑完回循环且不离开 TITLE）。
