@@ -79,16 +79,25 @@ async function main(): Promise<void> {
     }
     status.scriptName = boot.name;
     loadScriptData(e, boot.data, boot.name);
-    native.startFrameLoop(); // 渲染帧循环：每帧 present + HUD（推进时钟、合成场景图）
+    native.startFrameLoop(); // 渲染帧循环：每帧 present（推进时钟、合成场景图）。HUD 已移除，诊断信息在控制窗。
+
+    // 控制窗：「启用指令日志」开关 → 设 traceAll（true=打印全量指令，false=只打印「已忽略」指令）。
+    window.api?.onTraceAll?.((enabled) => {
+      traceAll = enabled;
+    });
 
     let steps = 0;
     let reachedTitle = false; // 打过一个「>> 到达 <TITLE 脚本名>」标记（一次性）
-    let interactive = false; // 已注册用户输入(mouse-callback 0xCC) → 交互态：逐条 step 降为节流
-    let lastStepLog = 0; // 节流：交互态下 step trace 的最小间隔(ms)
+    // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
+    let traceAll = false;
+    // 已忽略(engine-internal/插桩跳过)指令：按 opcode 去重，name + 出现次数（供控制窗展示 + 首个打印一次）。
+    let ignored = new Map<number, { name: string; count: number }>();
+    let lastStepLog = 0; // 节流：traceAll 全量打印时 step trace 的最小间隔(ms)
     let waiting = false;
     let sleeping = false;
     let err: unknown = null;
     let lastInputLog = 0; // 节流：[input-state] 诊断打印
+    let lastStatusSend = 0; // 节流：向控制窗上报状态的间隔(ms)
 
     outer: while (steps < MAX_STEPS) {
       // 引擎 timeGetTime()（墙钟 ms）：0xCD(get-input-type) 节流 / mesh/文字动画用
@@ -131,16 +140,24 @@ async function main(): Promise<void> {
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
-            // step trace 策略：boot/非交互态逐条记；一旦注册用户输入(mouse-callback 0xCC)进入交互态，
-            // 交互循环每帧刷步 → 改为节流打印（≥100ms 一条）避免日志爆炸。
-            // 之前用 /^TITLE/i.test(name) 硬编码「到达 TITLE 后杀步」，现改为通用的「已注册用户输入」判定。
-            if (t.opcode === 0xcc) interactive = true;
-            const stepNow = performance.now();
-            if (!interactive || stepNow - lastStepLog >= 100) {
-              lastStepLog = stepNow;
-              trace(
-                `step ${steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${status.scriptName}`,
-              );
+            // 记录「已忽略/插桩跳过」(engine-internal) 指令：打印首个 + 计数（去重 by opcode）。
+            if (t.handlerKind === 'engine-internal') {
+              const g = ignored.get(t.opcode);
+              if (g) g.count++;
+              else {
+                ignored.set(t.opcode, { name: t.name, count: 1 });
+                trace(`[ignored] 0x${t.opcode.toString(16)} ${t.name}`);
+              }
+            }
+            // 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印上面的「已忽略」信息。
+            if (traceAll) {
+              const stepNow = performance.now();
+              if (stepNow - lastStepLog >= 100) {
+                lastStepLog = stepNow;
+                trace(
+                  `step ${steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${status.scriptName}`,
+                );
+              }
             }
           } catch (caught) {
             if (caught instanceof ScriptReset) {
@@ -171,6 +188,15 @@ async function main(): Promise<void> {
             `moved=${im.mouseMoved ? 1 : 0} edge=0x${im.mouseEdge.toString(16)} btn=${im.readButtons()} ` +
             `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)}`,
         );
+      }
+      // 节流向控制窗上报状态（当前 BIN + 已忽略指令 + traceAll 开关）
+      if (nowMs - lastStatusSend > 500) {
+        lastStatusSend = nowMs;
+        window.api?.sendRendererStatus?.({
+          bin: status.scriptName,
+          ignored: [...ignored].map(([opcode, v]) => ({ opcode, name: v.name })),
+          traceAll,
+        });
       }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
       await nextFrame(); // 让渲染帧循环跑（present/时钟），再继续

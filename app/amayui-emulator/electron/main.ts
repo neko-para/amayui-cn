@@ -24,6 +24,7 @@ const fileSource = new NodeFileSource({ rawDir: RAW_DIR });
 const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
 
 let win: BrowserWindow | null = null;
+let controlWin: BrowserWindow | null = null;
 
 function createWindow(): void {
   win = new BrowserWindow({
@@ -45,6 +46,26 @@ function createWindow(): void {
   win.setContentSize(1280, 720);
   win.on('closed', () => {
     win = null;
+  });
+}
+
+/** 控制窗：启动即打开的小窗，提供重启/日志开关/状态展示（见 docs 控制窗设计）。 */
+function createControlWindow(): void {
+  controlWin = new BrowserWindow({
+    width: 400,
+    height: 600,
+    title: 'amayui-emulator 控制',
+    backgroundColor: '#1e1e1e',
+    resizable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  controlWin.loadFile(path.join(__dirname, '..', 'control', 'index.html'));
+  controlWin.on('closed', () => {
+    controlWin = null;
   });
 }
 
@@ -95,7 +116,22 @@ app.whenReady().then(() => {
     e.returnValue = 'ok';
   });
   console.log(`[main] diagnostic log -> ${LOG_PATH}`);
+  // 控制窗：重启主窗口渲染流程
+  ipcMain.on('control-restart', () => {
+    if (win && !win.isDestroyed()) win.webContents.reload();
+    console.log('[main] control: restart requested -> reload renderer');
+  });
+  // 控制窗：设置是否打印全量指令 → 转发给渲染窗（renderer 监听 onTraceAll）
+  ipcMain.on('control-set-trace-all', (_e, enabled: boolean) => {
+    if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-all', enabled);
+    console.log(`[main] control: traceAll=${enabled}`);
+  });
+  // 渲染窗 → 主 → 控制窗：状态上报（当前 BIN + 已忽略指令 + traceAll）
+  ipcMain.on('renderer-status', (_e, s: unknown) => {
+    if (controlWin && !controlWin.isDestroyed()) controlWin.webContents.send('control-status', s);
+  });
   createWindow();
+  createControlWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

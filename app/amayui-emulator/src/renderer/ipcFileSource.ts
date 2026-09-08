@@ -13,8 +13,26 @@ declare global {
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       logLine(text: string): void;
       logLineSync(text: string): string;
+      // ---- 控制窗（ControlWindow）相关 ----
+      /** 控制窗→主：重启主窗口渲染流程（reload 渲染器 → 重新走完整 boot）。 */
+      controlRestart(): void;
+      /** 控制窗→主：设置是否打印全量指令（true=全量，false=仅未知/已忽略）。 */
+      controlSetTraceAll(enabled: boolean): void;
+      /** 主→控制窗：收到渲染器上报的状态（当前 BIN + 已忽略指令 + traceAll）。 */
+      onControlStatus(cb: (s: ControlStatus) => void): void;
+      /** 主→渲染窗：traceAll 切换通知（控制窗改的，转发给渲染器）。 */
+      onTraceAll(cb: (enabled: boolean) => void): void;
+      /** 渲染窗→主：上报状态，供主进程转发给控制窗。 */
+      sendRendererStatus(s: ControlStatus): void;
     };
   }
+}
+
+/** 渲染器上报给控制窗的状态。ignored = 目前遇到的「已忽略/插桩跳过」指令（去重）。 */
+export interface ControlStatus {
+  bin: string;
+  ignored: { opcode: number; name: string }[];
+  traceAll: boolean;
 }
 
 export class IpcFileSource implements FileSource {

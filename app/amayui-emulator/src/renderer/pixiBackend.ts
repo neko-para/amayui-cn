@@ -18,7 +18,6 @@ import {
   Graphics,
   Rectangle,
   Sprite,
-  Text,
   Texture,
   type ContainerChild,
 } from 'pixi.js';
@@ -78,7 +77,6 @@ export class PixiBackend implements NativeBridge {
   private app: Application;
   private stage: Container<ContainerChild>;
   private drawRoot: Container<ContainerChild>; // 场景绘制（每次 present 重建）
-  private hud: Text;
   private status: RenderStatus;
   private unit: Texture;
   /** 共享输入状态（renderer 写 / VM 读）。由 create 注入。 */
@@ -128,9 +126,7 @@ export class PixiBackend implements NativeBridge {
     b.drawRoot.label = 'drawRoot';
     b.stage.addChild(b.drawRoot);
     b.unit = Texture.WHITE;
-    b.hud = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 13, fill: 0x7cfc00 } });
-    b.hud.position.set(8, 8);
-    b.stage.addChild(b.hud);
+    // 左上角 HUD 日志已移除：诊断信息转移到独立控制窗（ControlWindow）。
     b.#attachMouseInput(b.app.canvas, input);
     return b;
   }
@@ -185,7 +181,6 @@ export class PixiBackend implements NativeBridge {
     this.stage = null as unknown as Container<ContainerChild>;
     this.drawRoot = null as unknown as Container<ContainerChild>;
     this.unit = null as unknown as Texture;
-    this.hud = null as unknown as Text;
   }
 
   #pushLog(msg: string): void {
@@ -535,7 +530,7 @@ export class PixiBackend implements NativeBridge {
     if (this.frameStarted) return;
     this.frameStarted = true;
     this.wallStart = performance.now();
-    this.app.ticker.add(() => this.drawHud());
+    // HUD 已移除（诊断信息移至控制窗）；不再用 ticker 每帧 drawHud。
   }
 
   present(): void {
@@ -603,17 +598,10 @@ export class PixiBackend implements NativeBridge {
   }
 
   // ---- HUD ---- //
+  // 左上角画布 HUD 日志已移除：诊断信息（脚本名/已忽略指令/日志开关）移到独立控制窗（ControlWindow）。
 
   drawHud(): void {
-    const im = this.input;
-    const mouse = im
-      ? `mouse=(${im.hasCursor ? `${im.x},${im.y}` : 'off'}) btn=${im.buttons & 1 ? 'L' : ''}${im.buttons & 2 ? 'R' : ''}`
-      : 'mouse=—';
-    this.hud.text =
-      `script=${this.status.scriptName}  ip=${this.status.ip}  step=${this.status.steps}  draws=${this.drawCount}\n` +
-      `clock=${Math.round(this.clockMs)}ms  items=${this.drawItems.size}  meshes=${this.meshes.size}  wait=0x${this.waitFlags.toString(16)}\n` +
-      `${mouse}` +
-      (this.status.log.length ? `\n${this.status.log.map((s) => `  ${s}`).join('\n')}` : '');
+    // no-op：保留方法签名以兼容 renderer.ts 的 `native.drawHud()`（只留 no-op，不再在画布上渲染日志）。
   }
 
   #onSceneChange(_handle: number): void {

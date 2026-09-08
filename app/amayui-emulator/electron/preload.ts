@@ -15,4 +15,15 @@ contextBridge.exposeInMainWorld('api', {
   logLine: (text: string) => ipcRenderer.send('log-line', text),
   /** 诊断日志：同步追加（关窗前保证落盘，阻塞直至主进程写完）。 */
   logLineSync: (text: string) => ipcRenderer.sendSync('log-line-sync', text),
+  // ---- 控制窗（ControlWindow）相关 IPC ----
+  /** 控制窗→主：重启主窗口渲染流程。 */
+  controlRestart: () => ipcRenderer.send('control-restart'),
+  /** 控制窗→主：设置是否打印全量指令。 */
+  controlSetTraceAll: (enabled: boolean) => ipcRenderer.send('control-set-trace-all', enabled),
+  /** 主→控制窗：状态更新。 */
+  onControlStatus: (cb: (s: unknown) => void) => ipcRenderer.on('control-status', (_e, s) => cb(s)),
+  /** 主→渲染窗：traceAll 切换通知。 */
+  onTraceAll: (cb: (enabled: boolean) => void) => ipcRenderer.on('renderer-set-trace-all', (_e, v) => cb(v)),
+  /** 渲染窗→主：上报状态（供主进程转发给控制窗）。 */
+  sendRendererStatus: (s: unknown) => ipcRenderer.send('renderer-status', s),
 });
