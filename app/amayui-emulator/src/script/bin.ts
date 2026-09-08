@@ -142,6 +142,9 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
         return [];
       case 0x7b:
         return [0];
+      case 0xa2:
+      case 0xa3:
+        return [1]; // 菜单派发：menu-bind / menu-dispatch 的第 2 操作数是 label
       default:
         return [];
     }

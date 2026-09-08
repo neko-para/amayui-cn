@@ -145,9 +145,9 @@
 | 0x96 | 0 |  | sub_419260 | 仅映射 |  |
 | 0x97 | 5 |  | sub_420910 | 仅映射 |  |
 | 0xA0 | 3 | jcc | sub_4209B0 | 已核对 | **两目标条件跳转**（仅 3 个操作数）：`op1=条件`（非 0 为真）；`op1≠0`→跳 `op2`（若 `op2==0xFFFFFFFF` 则落下句）；`op1==0`→跳 `op3`（若 `op3==0xFFFFFFFF` 则落下句）。 |
-| 0xA1 | 0 |  | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046）。emulator：`op_menu_reset` → `engine.menuMap.clear()` |
-| 0xA2 | 2 |  | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind` key=String(DEC(op1))、value=DEC(op2) → `menuMap.set(key,value)`（**注意**：引擎 sub_41B640 读 string；TITLE 用菜单项序号(-1/0/1/2/3/4)为键，emulator 取 op1 的 DEC 值字符串化） |
-| 0xA3 | 2 |  | sub_429830 | 已核对 | **按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742）。emulator：`op_menu_dispatch` key=String(DEC(op1))，target=menuMap.get(key) ?? DEC(op2)，`labelPos(target)` 命中则 `jump` |
+| 0xA1 | 0 | menu-reset | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046）。emulator：`op_menu_reset` → `engine.menuMap.clear()` |
+| 0xA2 | 2 | menu-bind | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind` key=String(DEC(op1))、value=DEC(op2) → `menuMap.set(key,value)`（**注意**：引擎 sub_41B640 读 string；TITLE 用菜单项序号(-1/0/1/2/3/4)为键，emulator 取 op1 的 DEC 值字符串化） |
+| 0xA3 | 2 | menu-dispatch | sub_429830 | 已核对 | **按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742）。emulator：`op_menu_dispatch` key=String(DEC(op1))，target=menuMap.get(key) ?? DEC(op2)，`labelPos(target)` 命中则 `jump` |
 | 0xAA | 2 |  | sub_42D580 | 仅映射 |  |
 | 0xAB | 2 |  | sub_42D650 | 仅映射 |  |
 | 0xAC | 9 |  | sub_42D700 | 仅映射 |  |
@@ -309,7 +309,7 @@
 | 0x1C5 | 4 |  | sub_433930 | 仅映射 |  |
 | 0x1C6 | 2 |  | sub_421690 | 仅映射 |  |
 | 0x1C7 | 1 |  | sub_42D390 | 仅映射 |  |
-| 0x1C8 | 2 | toString | sub_433820 | 已核对 | **toString**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990），纯 |
+| 0x1C8 | 2 | to-string | sub_433820 | 已核对 | **to-string**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990），纯。**助记符改名 to-string**（原 toString 与 JS/Object 原型 key 冲突，曾反汇编成 `function toString() { [native code] }`） |
 | 0x1C9 | 3 |  | sub_420160 | 仅映射 |  |
 | 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 28961） |
 | 0x1CB | 1 |  | sub_42D3D0 | 仅映射 |  |

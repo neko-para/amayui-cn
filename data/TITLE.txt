@@ -303,16 +303,20 @@ ret
 
 label_000010b8
 mov (local-int 408) 0
-i0a1
+menu-reset
 sub (local-int 40d) 0 1
-i0a2 (local-int 40d) 44f
-i0a2 0 452
-i0a2 1 481
-i0a2 2 4a3
-i0a2 3 52d
-i0a2 4 540
-i0a3 (local-int 3f7) 7df
+menu-bind (local-int 40d) label_00001178
+menu-bind 0 label_00001184
+menu-bind 1 label_00001240
+menu-bind 2 label_000012c8
+menu-bind 3 label_000014f0
+menu-bind 4 label_0000153c
+menu-dispatch (local-int 3f7) label_00001fb8
+
+label_00001178
 jmp label_00001fb8
+
+label_00001184
 play-sound-effect 32 1
 i0b5 1
 call label_00003874
@@ -328,6 +332,8 @@ mov (local-int 3fc) 1
 
 label_00001234
 jmp label_00001fb8
+
+label_00001240
 play-sound-effect 32 1
 i0b5 1
 mov (global-int 3f50) 1
@@ -336,6 +342,8 @@ call-script 33
 mov (global-int 3f50) 0
 mov (local-int 3fc) 2
 jmp label_00001fb8
+
+label_000012c8
 play-sound-effect 32 1
 i0b5 1
 float-mov (global-float 9) 0
@@ -364,11 +372,15 @@ poll-input
 call label_0000384c
 call-script 526c
 jmp label_00001fb8
+
+label_000014f0
 play-sound-effect 32 1
 i0b5 1
 call-script 34
 mov (local-int 3fc) 3
 jmp label_00001fb8
+
+label_0000153c
 play-sound-effect 32 1
 i0b5 1
 call-script 37
@@ -440,17 +452,19 @@ mouse-callback 10 label_00000460
 gre (local-int 40d) (global-int f8c52) 0
 jcc (local-int 40d) ffffffff label_00001fac
 call-script 51e4
-i0a1
-i0a2 0 712
-i0a2 1 712
-i0a2 a 73d
-i0a2 b 75b
-i0a2 14 779
-i0a2 1e 789
-i0a2 1f 799
-i0a2 28 7a9
-i0a2 29 7c1
-i0a3 (global-int f8c52) 7dc
+menu-reset
+menu-bind 0 label_00001c84
+menu-bind 1 label_00001c84
+menu-bind a label_00001d30
+menu-bind b label_00001da8
+menu-bind 14 label_00001e20
+menu-bind 1e label_00001e60
+menu-bind 1f label_00001ea0
+menu-bind 28 label_00001ee0
+menu-bind 29 label_00001f40
+menu-dispatch (global-int f8c52) label_00001fac
+
+label_00001c84
 mov (global-int 0) 1
 mov (global-int 708ad6) 1
 mov (global-int 3f3c) 0
@@ -460,36 +474,50 @@ i140 (global-int 1394) "BIN" "SC????.BIN" (global-int 1394)
 i1a2 (global-int 1394)
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001d30
 mov (global-int 0) 1
 sub (global-int 708ad6) 0 1
 mov (global-int 3f3c) 0
 mov (global-int 1394) 4f97
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001da8
 mov (global-int 0) 1
 sub (global-int 708ad6) 0 1
 mov (global-int 3f3c) 0
 mov (global-int 1394) 4f98
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001e20
 mov (global-int 0) 3
 call-script 526d
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001e60
 mov (global-int 0) 4
 call-script 526e
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001ea0
 mov (global-int 0) 4
 call-script 526f
 mov (local-int 3fc) 1
 jmp label_00001fac
+
+label_00001ee0
 mov (global-int 708ad7) 1
 call-script 5270
 call-script 511f
 mov (global-int 708ad7) 0
 mov (local-int 3fc) 3
 jmp label_00001fac
+
+label_00001f40
 mov (global-int 708ad7) 2
 call-script 5270
 call-script 5271

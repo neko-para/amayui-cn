@@ -8340,49 +8340,49 @@ mov (local-ptr 3) 1
 
 label_00024c6c
 call label_00038e70
-i0a1
-i0a2 1 93e2
-i0a2 2 94ea
-i0a2 3 94ea
-i0a2 4 94ea
-i0a2 5 95b4
-i0a2 1a 95b4
-i0a2 6 9600
-i0a2 7 96bc
-i0a2 8 990e
-i0a2 a 9b37
-i0a2 b 9b37
-i0a2 c 9b37
-i0a2 d 9b37
-i0a2 e 9b37
-i0a2 f 9d3b
-i0a2 10 9d3b
-i0a2 11 9d79
-i0a2 12 9d79
-i0a2 13 9d79
-i0a2 14 9d79
-i0a2 15 9d79
-i0a2 16 9d79
-i0a2 17 9d79
-i0a2 18 9d79
-i0a2 19 9d79
-i0a2 23 9d79
-i0a2 24 9d79
-i0a2 25 9d79
-i0a2 1c 9e61
-i0a2 21 9e61
-i0a2 1d a492
-i0a2 1f a49d
-i0a2 20 a49d
-i0a2 29 a55f
-i0a2 2a a55f
-i0a2 2b a55f
-i0a2 2c a55f
-i0a2 2d a699
-i0a2 2e a699
-i0a2 2f a699
-i0a2 30 a699
-i0a3 (local-int 3001) a74f
+menu-reset
+menu-bind 1 label_00024fc4
+menu-bind 2 label_000253e4
+menu-bind 3 label_000253e4
+menu-bind 4 label_000253e4
+menu-bind 5 label_0002570c
+menu-bind 1a label_0002570c
+menu-bind 6 label_0002583c
+menu-bind 7 label_00025b2c
+menu-bind 8 label_00026474
+menu-bind a label_00026d18
+menu-bind b label_00026d18
+menu-bind c label_00026d18
+menu-bind d label_00026d18
+menu-bind e label_00026d18
+menu-bind f label_00027528
+menu-bind 10 label_00027528
+menu-bind 11 label_00027620
+menu-bind 12 label_00027620
+menu-bind 13 label_00027620
+menu-bind 14 label_00027620
+menu-bind 15 label_00027620
+menu-bind 16 label_00027620
+menu-bind 17 label_00027620
+menu-bind 18 label_00027620
+menu-bind 19 label_00027620
+menu-bind 23 label_00027620
+menu-bind 24 label_00027620
+menu-bind 25 label_00027620
+menu-bind 1c label_000279c0
+menu-bind 21 label_000279c0
+menu-bind 1d label_00029284
+menu-bind 1f label_000292b0
+menu-bind 20 label_000292b0
+menu-bind 29 label_000295b8
+menu-bind 2a label_000295b8
+menu-bind 2b label_000295b8
+menu-bind 2c label_000295b8
+menu-bind 2d label_00029aa0
+menu-bind 2e label_00029aa0
+menu-bind 2f label_00029aa0
+menu-bind 30 label_00029aa0
+menu-dispatch (local-int 3001) label_00029d78
 jcc (global-int 51004a) ffffffff label_00024fe4
 ret
 
@@ -10254,11 +10254,11 @@ set-string (local-string 0) "敵を捕獲しました。|捕获了敌人。"
 
 label_0002d05c
 concat (local-string 0) (local-string 0) "（"
-function toString() { [native code] } (local-string 1) (global-int 6c477e)
+to-string (local-string 1) (global-int 6c477e)
 concat (local-string 0) (local-string 0) (local-string 1)
 concat (local-string 0) (local-string 0) "/"
 div (local-int 819f) (global-int deb90) a
-function toString() { [native code] } (local-string 1) (local-int 819f)
+to-string (local-string 1) (local-int 819f)
 concat (local-string 0) (local-string 0) (local-string 1)
 concat (local-string 0) (local-string 0) "）"
 lookup-array (local-string-ptr 2) (global-string e3b) (global-int f8dfc)

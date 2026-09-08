@@ -175,7 +175,7 @@ export function instructionForToken(table, token) {
 }
 
 export const isControlFlowOpcode = (op) =>
-  [0x8C, 0x8F, 0xA0, 0xCC, 0xFB, 0xD4, 0x90, 0x7B].includes(op);
+  [0x8C, 0x8F, 0xA0, 0xCC, 0xFB, 0xD4, 0x90, 0x7B, 0xA2, 0xA3].includes(op);
 
 export const isArrayOpcode = (op) => op === 0x64;
 
@@ -188,6 +188,8 @@ export function isLabelArgument(instr, x) {
   if (opcode === 0xD4 && x >= 2 && raw !== 0xFFFFFFFF) return true;
   if (opcode === 0x90 && x >= 4 && raw !== 0xFFFFFFFF) return true;
   if (opcode === 0x7B && raw !== 0xFFFFFFFF) return true;
+  // 菜单派发：menu-bind(op2=目标 label) / menu-dispatch(op2=回退 label) 的第 2 个操作数是 label。
+  if ((opcode === 0xA2 || opcode === 0xA3) && x === 1 && raw !== 0xFFFFFFFF) return true;
   return false;
 }
 

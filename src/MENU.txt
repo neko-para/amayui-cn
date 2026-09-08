@@ -39,17 +39,17 @@ label_00000290
 mov (global-int 546e00) 1
 
 label_000002a4
-i0a1
-i0a2 0 cd
-i0a2 1 d3
-i0a2 2 de
-i0a2 3 ee
-i0a2 4 fe
-i0a2 5 11c
-i0a2 6 219
-i0a2 7 29f
-i0a2 8 2aa
-i0a3 (global-int f801a) 2b5
+menu-reset
+menu-bind 0 label_00000370
+menu-bind 1 label_00000388
+menu-bind 2 label_000003b4
+menu-bind 3 label_000003f4
+menu-bind 4 label_00000434
+menu-bind 5 label_000004ac
+menu-bind 6 label_000008a0
+menu-bind 7 label_00000ab8
+menu-bind 8 label_00000ae4
+menu-dispatch (global-int f801a) label_00000b10
 call-script 5111  // FELLOW
 jmp label_00000b10
 call-script 35  // INFO

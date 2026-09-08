@@ -824,10 +824,10 @@ add (local-int 0) (local-int 0) 1
 label_00003ee8
 lt (local-int fff) (local-int 0) 6
 jcc (local-int fff) ffffffff label_00004204
-i0a1
-i0a2 0 fc9
-i0a2 2 ff5
-i0a3 (local-int 0) 102b
+menu-reset
+menu-bind 0 label_00003f60
+menu-bind 2 label_00004010
+menu-dispatch (local-int 0) label_000040e8
 eq (local-int fff) (global-int 92894) (global-int 61c72)
 jcc (local-int fff) ffffffff label_00003fb8
 mov (local-int d) 0

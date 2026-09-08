@@ -611,20 +611,22 @@ gr (local-int c2c) (global-int 56d63) 0
 jcc (local-int c2c) ffffffff label_00002988
 lookup-array (local-ptr 0) (local-int 421) (local-int 420)
 ne (local-ptr 0) (global-int 51004a) 0
-i0a1
-i0a2 1 994
-i0a2 2 994
-i0a2 3 994
-i0a2 4 994
-i0a2 1d 9e4
-i0a2 6 9fa
-i0a2 a a10
-i0a2 b a10
-i0a2 c a10
-i0a2 d a10
-i0a2 e a10
+menu-reset
+menu-bind 1 label_0000268c
+menu-bind 2 label_0000268c
+menu-bind 3 label_0000268c
+menu-bind 4 label_0000268c
+menu-bind 1d label_000027cc
+menu-bind 6 label_00002824
+menu-bind a label_0000287c
+menu-bind b label_0000287c
+menu-bind c label_0000287c
+menu-bind d label_0000287c
+menu-bind e label_0000287c
 lookup-array (local-ptr 0) (global-int 50ffd1) (global-int 56d63)
-i0a3 (local-ptr 0) a47
+menu-dispatch (local-ptr 0) label_00002958
+
+label_0000268c
 and (local-int c2c) (global-int b237) 2
 eq (local-int c2d) (local-int c2c) 2
 lookup-array-2d (local-ptr 3) (global-int 6f1ee) (global-int 61c72) 1e 1b
@@ -639,14 +641,20 @@ lookup-array (local-ptr 0) (local-int 41c) (local-int 420)
 mov (local-ptr 0) 1
 add (local-int 420) (local-int 420) 1
 jmp label_00002988
+
+label_000027cc
 lookup-array (local-ptr 0) (local-int 41c) (local-int 420)
 mov (local-ptr 0) 2
 add (local-int 420) (local-int 420) 1
 jmp label_00002988
+
+label_00002824
 lookup-array (local-ptr 0) (local-int 41c) (local-int 420)
 mov (local-ptr 0) 3
 add (local-int 420) (local-int 420) 1
 jmp label_00002988
+
+label_0000287c
 lookup-array-2d (local-ptr 0) (global-int 4a5f0) (global-int b222) 32 (global-int 56d63)
 jcc (local-ptr 0) ffffffff label_00002900
 lookup-array (local-ptr 0) (local-int 41c) (local-int 420)
@@ -660,6 +668,8 @@ mov (local-ptr 0) 5
 label_00002930
 add (local-int 420) (local-int 420) 1
 jmp label_00002988
+
+label_00002958
 lookup-array (local-ptr 0) (local-int 421) (local-int 420)
 mov (local-ptr 0) 0
 

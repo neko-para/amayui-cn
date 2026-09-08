@@ -259,24 +259,34 @@ sub (local-int 84) 0 1
 label_000011b4
 eq (local-int 4a9) (local-int 489) 0
 jcc (local-int 4a9) ffffffff label_00001340
-i0a1
-i0a2 0 48b
-i0a2 3 491
-i0a2 4 49c
-i0a2 5 4a7
-i0a2 6 4b4
-i0a3 (local-int 86) 4c1
+menu-reset
+menu-bind 0 label_00001268
+menu-bind 3 label_00001280
+menu-bind 4 label_000012ac
+menu-bind 5 label_000012d8
+menu-bind 6 label_0000130c
+menu-dispatch (local-int 86) label_00001340
+
+label_00001268
 jmp label_0000338c
 jmp label_00001340
+
+label_00001280
 mov (local-int 48e) 4
 jmp label_00003798
 jmp label_00001340
+
+label_000012ac
 mov (local-int 48e) 1
 jmp label_00003798
 jmp label_00001340
+
+label_000012d8
 sub (local-int 48e) 0 1
 jmp label_00003798
 jmp label_00001340
+
+label_0000130c
 sub (local-int 48e) 0 4
 jmp label_00003798
 jmp label_00001340
@@ -611,21 +621,29 @@ call label_0000576c
 ret
 
 label_00002594
-i0a1
-i0a2 3 970
-i0a2 4 97d
-i0a2 5 98a
-i0a2 6 995
-i0a3 (local-int 88) 9a0
+menu-reset
+menu-bind 3 label_000025fc
+menu-bind 4 label_00002630
+menu-bind 5 label_00002664
+menu-bind 6 label_00002690
+menu-dispatch (local-int 88) label_000026bc
+
+label_000025fc
 sub (local-int 48e) 0 4
 jmp label_00003798
 jmp label_000026bc
+
+label_00002630
 sub (local-int 48e) 0 1
 jmp label_00003798
 jmp label_000026bc
+
+label_00002664
 mov (local-int 48e) 1
 jmp label_00003798
 jmp label_000026bc
+
+label_00002690
 mov (local-int 48e) 4
 jmp label_00003798
 jmp label_000026bc
