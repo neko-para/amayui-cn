@@ -21,7 +21,7 @@
 ### 1.1 消息窗对象（台词显示子系统）
 
 - **「消息系统」= AGE/System4 的台词/文本信息窗（メッセージウィンドウ）子系统**：位于 `this + 0x534C`（byte 21324）的一个大对象，负责剧情/系统文本的展示与渲染（几何、字体、文本度量、消息条目）。
-- 证据（`engine/engine.cpp`）：
+- 证据（`engine/天结_unpacked.exe_utf8.c`）：
   - `show-text`(0x6E, `sub_41EB20`) 直接调 `(_this+0x534C)->sub_46BE30(消息id, 文本串, 0, _this[97055])` 送台词。
   - `end-text-line`(0x6F) / `wait-for-input`(0x72) 同样打在该对象。
   - 配置 opcode（boot→TITLE 必然执行）：`0x70`→`sub_45D660(_this+0x534C,…)` 设窗几何；`0x71`→`sub_45EC60`/`sub_48F000` 显示消息；`0x75–0x78`→写 `_this[21664..21667]` 等字段；`0x1A5`(`sub_4328F0`)/`0x2FE`(`sub_432DD0`)/`0x2BD`/`0x2DB`→设/重建字体；`0x1C1`/`0x1CA`/`0x197`/`0x2EE`/`0x303`→消息/自动消息/布局。

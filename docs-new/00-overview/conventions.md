@@ -14,7 +14,7 @@ E:\Games\Eushully\天結\
 ├── patch\      可分发补丁（BIN/、AGF/、AGERC.DLL、Amayui-CN_cnjp.ttf、说明、CHANGELOG）
 ├── plugins\    DSH 工具插件（htmlcard / uimap）
 ├── output\     提取/调用图产物（callgraph*.html/.gv/.json、*.csv）
-├── engine\     反编译 C（engine.cpp/hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h）
+├── engine\     反编译 C（engine.hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h）
 ├── app\        三子工程（amayui-emulator / amayui-inspector / amayui-toolkit）
 ├── docs-new\   ★ 本文档体系：唯一新来源
 ├── data\src 之外：manifest（install-manifest.json、raw-manifest.json）

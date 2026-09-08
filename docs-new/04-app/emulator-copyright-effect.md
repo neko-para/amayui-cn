@@ -44,7 +44,7 @@
 
 ---
 
-## 2. 引擎真实渲染模型（现场确认，engine.cpp）
+## 2. 引擎真实渲染模型（现场确认，engine/天结_unpacked.exe_utf8.c）
 
 ### 2.1 配置 / 渲染解耦
 - **配置**（指令）：`draw-texture`(0x1fb)、`set-texture`(0x1f9)、`create-mesh`(0x320)、`set-vertex-color(-alpha)`(0x322/0x323)、`set-draw-color(-alpha)`(0x202/0x203) **只改对象字段**（`sub_4ACE50`/`sub_4AD0C0`/`sub_4ACF60`/`sub_4AE2C0`/`sub_4AE330`），不立即出像素。

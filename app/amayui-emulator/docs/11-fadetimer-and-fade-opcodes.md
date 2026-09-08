@@ -2,7 +2,7 @@
 
 > 状态：**结构已确认**（逆向）。记录 AGE/Eushully 引擎的淡入淡出（フェード）实现：
 > 一个**步进计时器类 `FadeTimer`** + 一**族 fade opcode**（`SetFade`/`SetLineFade`/`SetRandomFade`）。
-> 依据：`engine/engine.cpp` 的 `sub_453A20..sub_453C10`（FadeTimer 类）、`sub_41D180..sub_41EA30`（fade opcode handler）、
+> 依据：`engine/天结_unpacked.exe_utf8.c` 的 `sub_453A20..sub_453C10`（FadeTimer 类）、`sub_41D180..sub_41EA30`（fade opcode handler）、
 > `sub_441060/sub_441410`（fade 绘制）、`docs/re/engine/06`（opcode→handler 表）。
 
 ---

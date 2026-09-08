@@ -11,7 +11,7 @@
 
 ### 1.1 引擎如何在解释器层启动（✅ 已确认，2026-xx 研究解开）
 
-`engine/engine.cpp` 约 140720–140809（WinMain 内，装载后进入主循环）：
+`engine/天结_unpacked.exe_utf8.c` 约 140720–140809（WinMain 内，装载后进入主循环）：
 ```
 loadScriptFrame_40ED40(dword_55E1BC, v52, hWnd, 0)  == 1   // 装载首个脚本帧 (raw .c 142341)
   └─> dword_55E1BC->interpreterMainLoop_412290()          // 进入解释器主循环(__noreturn)
@@ -119,7 +119,7 @@ u0043AA20 u0043AA40 u0043AA50 u0043AA60 u0043AAD0 u0043AB11
 依据 `docs/re/engine/06`：每个 opcode 在本引擎都有 handler 地址（`sub_XXXXXX`）。判定方法：
 
 1. 用 `docs/re/engine/06-opcode到handler映射表.md` 把 `uXXXX`（age-shared 名）→ 本引擎 `sub_XXXXXX`；
-2. 读 `engine/engine.cpp` 中该 handler 体，判断其**副作用**：
+2. 读 `engine/天结_unpacked.exe_utf8.c` 中该 handler 体，判断其**副作用**：
    - **只读写 VM 状态**（全局/局部 int/float/string/ptr、帧、IP、cur）→ **VM 核心**。
    - **调到子系统/系统调用**（绘制/音频/字体/窗口/回调注册/文件/registry）→ **子系统**，可 stub。
    - **同时涉两/不清** → 标「待深挖」。

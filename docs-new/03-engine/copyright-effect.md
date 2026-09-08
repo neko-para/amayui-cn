@@ -1,7 +1,7 @@
 # 版权页「frame 效果」机制记录（LOGO.txt — 已收敛）
 
 > 本文档是 `src/LOGO.txt` 版权页（大理石+文字整屏页）"出现→等待→淡出→切影片"效果的**权威机制记录**。
-> 反编译源 `engine/engine.cpp`（Hex-Rays，模块基址 0x400000，引擎单例 `this`，字节偏移）。所有结论经实机改脚本/逐帧验证。
+> 反编译源 `engine/天结_unpacked.exe_utf8.c`（Hex-Rays，模块基址 0x400000，引擎单例 `this`，字节偏移）。所有结论经实机改脚本/逐帧验证。
 
 ---
 
@@ -125,7 +125,7 @@ if (flags&2) {                     // bit1 门控
 
 ---
 
-## 6. 关键代码索引（engine.cpp）
+## 6. 关键代码索引（engine/天结_unpacked.exe_utf8.c）
 
 | 概念 | 函数/行 |
 |---|---|

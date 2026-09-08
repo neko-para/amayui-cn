@@ -1,6 +1,6 @@
 # amayui-emulator
 
-用 **TypeScript + Electron** 重写《天結いキャッスルマイスター》的 AGE 引擎 VM（解释器），把 `engine/engine.cpp` 的逻辑以干净的 TS 语义实现，替换原 Win32 调用为 H5 / IPC，从而获得**更好的可调试性、可观测性、可插件化，并实现跨平台**。
+用 **TypeScript + Electron** 重写《天結いキャッスルマイスター》的 AGE 引擎 VM（解释器），把 `engine/天结_unpacked.exe_utf8.c` 的逻辑以干净的 TS 语义实现，替换原 Win32 调用为 H5 / IPC，从而获得**更好的可调试性、可观测性、可插件化，并实现跨平台**。
 
 > 本目录是**该重写工程的根**：`docs/` 记录方案/背景/决策，`src/`（新建）放实现代码。
 
@@ -68,7 +68,7 @@ app/amayui-emulator/
 - 逆向文档：[`docs/re/engine/`](../../../docs/re/engine/)（15 篇）
 - opcode→handler 全量表：[`docs/re/engine/06-opcode到handler映射表.md`](../../../docs/re/engine/06-opcode到handler映射表.md)
 - `this` 对象模型：[`engine/engine.hpp`](../../../engine/engine.hpp)
-- 重定型成员化视图（语义参考）：[`engine/engine.cpp`](../../../engine/engine.cpp)
+- ~~重定型成员化视图（语义参考）~~：**已废弃**（原 `engine/engine.cpp`，`retarget.py` 生成；libclang/AST 改写已放弃，改用数据层 `analysis/*.json` + 原始基准 `engine/天结_unpacked.exe_utf8.c`）
 - 脚本反汇编：[`src/*.txt`](../../../src/)；松散字节码 BIN：[`raw/`](../../../raw/)；ALF 提取：[`raw-parts/`](../../../raw-parts/)
 
 ---

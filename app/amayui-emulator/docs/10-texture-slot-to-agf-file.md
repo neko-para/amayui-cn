@@ -1,7 +1,7 @@
 # 10 纹理 slot 与 AGF 文件名的对应关系（实证）
 
 > 状态：**结论明确**。回答「纹理 slot 到底对到哪个 AGF 文件」。
-> 依据：`src/LOGO.txt`、`src/TITLE.txt`、`src/SYSTEM4.txt` 等脚本；`engine/engine.cpp`
+> 依据：`src/LOGO.txt`、`src/TITLE.txt`、`src/SYSTEM4.txt` 等脚本；`engine/天结_unpacked.exe_utf8.c`
 > 的 `sub_422CB0`(set-texture)、`sub_4A3800`、`sub_4559C0`、`sub_422E70`(draw-texture)；
 > 模拟器 `dist/arch/nodeFileSource.js` 的 `resolveEntry` 实测。
 

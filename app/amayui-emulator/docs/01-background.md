@@ -21,7 +21,7 @@
 | 资产 | 路径 | 用途 |
 |---|---|---|
 | 反编译源码（权威语义参考） | [`engine/天结_unpacked.exe_utf8.c`](../../../engine/天结_unpacked.exe_utf8.c) | Hex-Rays 全量 C（字节寻址），约 5.2MB |
-| 重定型成员化视图（语义命名） | [`engine/engine.cpp`](../../../engine/engine.cpp) | retarget.py 生成：成员函数化 + 字段标记 + 语义名，约 18 万行 / 5.2MB |
+| ~~重定型成员化视图（语义命名）~~ | ⚠️ **已废弃**：原 `engine/engine.cpp`（`retarget.py` 生成成员函数化视图）——libclang/AST 文本改写已放弃；改以数据层 `analysis/*.json` + 原始基准 `_utf8.c` 为准 |
 | `this` 对象模型（已确认偏移） | [`engine/engine.hpp`](../../../engine/engine.hpp) | `struct Engine` + `ScriptContext frames[40]` + static_assert 锁定偏移 |
 | opcode→handler 全量表 | [`docs/re/engine/06-opcode到handler映射表.md`](../../../docs/re/engine/06-opcode到handler映射表.md) | 544 条具名/实现 handler + 回退默认清单 |
 | 权威逆向文档 | [`docs/re/engine/`](../../../docs/re/engine/) | 加壳/架构/opcode 分发/操作数访问/脚本上下文/拆壳 等 15 篇 |
@@ -30,7 +30,7 @@
 | 脚本容器索引 | [`raw/SYS4INI.BIN`](../../../raw/SYS4INI.BIN) | `call-script <index>` 的 index→文件 映射来源 |
 | 运行时在位读取器（Oracle 工具） | [`app/amayui-inspector/`](../../../app/amayui-inspector/) | C#/WPF，读运行中引擎的 `this`/全局表/帧栈（Windows only） |
 
-> ⚠️ **重要**：`engine/engine.cpp` 是**反编译产物，不是干净规范**。主循环 `interpreterMainLoop_412290` 一个函数就有上百个局部变量（v2…v61），**语义上真实、阅读上糟糕**。它只能当「语义参考」，不能当「要照抄的源码」。我们的目标是**用 TS 干净重写语义**，不是翻译这 18 万行。
+> ⚠️ **重要**：`engine/天结_unpacked.exe_utf8.c` 是**反编译产物，不是干净规范**。主循环 `interpreterMainLoop_412290` 一个函数就有上百个局部变量（v2…v61），**语义上真实、阅读上糟糕**。它只能当「语义参考」，不能当「要照抄的源码」。我们的目标是**用 TS 干净重写语义**，不是翻译这 18 万行。
 
 ---
 

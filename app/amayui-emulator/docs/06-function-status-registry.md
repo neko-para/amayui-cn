@@ -1,6 +1,6 @@
 # 06 · 函数级状态追踪注册表（Function Status Registry）
 
-> **依据 ADR-010（强制约束）**：原引擎 `engine/engine.cpp` 里**每个函数/成员**在重写版中都必须有状态记录；「确认忽略」必须附证据 + 复核，证明确实应被忽略。
+> **依据 ADR-010（强制约束）**：原引擎 `engine/天结_unpacked.exe_utf8.c` 里**每个函数/成员**在重写版中都必须有状态记录；「确认忽略」必须附证据 + 复核，证明确实应被忽略。
 > 本表是**人类可读**载体；机器可读版为 `app/amayui-emulator/inventory/functions.json`（待 M0 建立，两者须一致）。
 > 覆盖全集 = `docs/re/engine/10` / `11` 的成员清单（≈1239 个 `sub_*`）+ `docs/re/engine/06` 的 544 条 opcode→handler 映射。
 

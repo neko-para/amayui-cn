@@ -1,5 +1,8 @@
 # 引擎分析（docs/re/engine）
 
+> ⚠️ **已废弃（deprecated）**：本目录是旧的「重定型 / 成员函数化」静态分析路线（`engine/engine.cpp` 重定型、libclang/AST 文本改写），**已被数据驱动方案取代**。
+> 分析结论现以 `analysis/fields.json` + `analysis/functions.json`（数据层）为唯一事实来源，原始只读基准 `engine/天结_unpacked.exe_utf8.c`；本目录各篇仅作历史参考，不再更新。
+>
 > **分析对象**：AGE 引擎二进制本体及其反汇编。
 > - 加壳版：`raw/AGE.EXE`（1,007,104 B，ASProtect）；`raw/天结.exe`（同壳 + 汉化 overlay）。
 > - 已脱壳干净版：`raw/天结_unpacked.exe`（1,746,944 B）—— **分析主对象**。
@@ -22,12 +25,12 @@
 | [`08-脚本上下文与调用栈.md`](./08-脚本上下文与调用栈.md) | **每脚本帧（`ScriptContext frames[40]`）与 `call-script` 叠加**：帧布局/`local_xxx`（局部池基址）、脚本头 `local_vars` 声明、callde/return 的压栈弹栈（`sub_41C6A0`/`sub_41C770`/`sub_40ED40`）、调用栈链接字段（`0x5D884/0x5D888`） |
 | [`09-clang解析与重定型基座.md`](./09-clang解析与重定型基座.md) | **无 IDA 用 libclang 解析 Hex-Rays 输出**：`engine/hxclang_prelude.h`（Win32/CRT/`std::` 桩）+ `scripts/re/hexrays_prep.py`（`this`→`_this`）+ C++ 模式调用；剩余诊断分类与为何不阻塞 AST 重写 |
 | [`10-成员函数识别.md`](./10-成员函数识别.md) | **识别操作 Engine 的成员函数**：高偏移定位基准 + 调用图双向传播（`detect_members.py`）；清单 `member_functions.detected.txt`（1239 个） |
-| [`11-重定型管线与产物.md`](./11-重定型管线与产物.md) | **一键从 `_utf8.c` 生成成员化/语义化版**：`retarget.py`（签名替换 + 字段标记 + 调用点 `this->` + 语义命名）、`semantic_names.json` 替换表、产物 `engine/engine.cpp` |
+| [`11-重定型管线与产物.md`](./11-重定型管线与产物.md) | ⚠️ **已废弃**：一键从 `_utf8.c` 生成成员化/语义化版（`retarget.py` → `engine/engine.cpp`），已被数据层方案取代 |
 | [`12-拆壳可行性评估.md`](./12-拆壳可行性评估.md) | 脱壳/重打包的可行性评估（ASProtect 特征、IAT 重建、run+dump 等方案权衡） |
 
 > **复原产物**：[`engine/engine.hpp`](../../../engine/engine.hpp) —— 把上表已确认的偏移（`this+0x5D800..` 全局 variant 数组基址、`this+0x5EC8C` key、`this+0xA509C` dispatch 表、`0x5D894` 处 `frames[40]`、`0x5D880/0x5D884/0x5D888` 调用栈字段）落成一个 `struct Engine` 的 C++ 布局，未知区一律 char 数组占位；含 `DEC`/`ENC`、`frames`/`script(cur)` 与读写访问器（配合 `07` 文档的 `this` 定位方案使用）。
 >
-> **一键重定型版**：`scripts/re/retarget.py` 从 `engine/天结_unpacked.exe_utf8.c` 直接生成 `engine/engine.cpp`（成员函数化 + 语义命名 + 字段标记 + 调用点 `this->`），详见 [`11-重定型管线与产物.md`](./11-重定型管线与产物.md)。
+> ~~**一键重定型版**~~：`scripts/re/retarget.py` 从 `engine/天结_unpacked.exe_utf8.c` 直接生成 `engine/engine.cpp`（成员函数化 + 语义命名 + 字段标记 + 调用点 `this->`），详见 [`11-重定型管线与产物.md`](./11-重定型管线与产物.md)。**⚠️ 已废弃**（不生成镜像/不做 AST 文本改写）。
 
 ## 核心结论速览
 

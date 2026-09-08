@@ -45,7 +45,7 @@
 │   ├─ images\  README+FONT.md+阴刻文字.md+SO0xx.md（9 图） → UI 图片汉化详情
 │   ├─ AGERC对话框汉化.md / font-build.md    → 汉化边角详文（转入 translation/README 参考）
 │   └─ translate\  keywords-*(48)+prob-*(249)+零散 5（302 篇）→ 待合并去重（后续）
-├─ engine\   engine.cpp/hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h
+├─ engine\   engine.hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h
 ├─ app\
 │   ├─ amayui-emulator\  README + docs\（01,02,03,04,06,07,08,09,10,11）
 │   ├─ amayui-inspector\ README + docs\技术方案.md

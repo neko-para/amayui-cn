@@ -2,7 +2,7 @@
 
 > 状态：**分析完成**。本文件记录对 AGE 引擎「归档/资源 读取」与「纹理映射数据模型」的实证结论，
 > 以及模拟器当前已实现的对应代码。用于后续接「真实标题图像渲染」。
-> 依据：`engine/engine.cpp`、`engine/engine.hpp`、`scripts/agf/format.js`、`src/script/alf.ts`、
+> 依据：`engine/天结_unpacked.exe_utf8.c`、`engine/engine.hpp`、`scripts/agf/format.js`、`src/script/alf.ts`、
 > `tools/alf/unpack_alf/unpack_alf.cpp`、调用图脚本 `.tmp/callgraph.mjs` 产出。
 
 ---

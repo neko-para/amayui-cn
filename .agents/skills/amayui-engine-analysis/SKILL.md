@@ -85,9 +85,12 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 
 ---
 
-## 4. 渲染层
+## 4. 渲染层（纯数据报表 / 数据工具）
 只做**纯数据报表**（读 `analysis/fields.json` + `functions.json`）：哪些函数分析了 / 状态分布 / 字段清单 / 每函数用途与未解项。
 **永不改写反编译文本，也不依赖任何反编译器/特定工具。**
+
+- `scripts/report.js`：报表生成器（读两个 data 文件，打印进度 / 状态分布 / 字段清单）。
+- `scripts/sort-fields.js`：字段排序器（按 `scope` + 字节偏移排 `fields.json`，作用域间留空行分组）。
 
 ---
 
@@ -101,16 +104,22 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 
 ---
 
-## 6. 已确认的字段模型（种子，可直接写进 `fields.json`）
+## 6. 已确认的字段模型（`fields.json` 为唯一事实来源；下表为固化摘要，如有出入以 `fields.json` 为准）
 
 ### 全局
 - `engine`（原 `dword_55E1BC`，`Engine*`）—— 全局游戏/Engine 对象基址；访问用字节偏移。
 
-### `Engine`（0xB0000，只列本工程用到的）
+### `Engine`（只列本工程用到的）
 | 字节偏移 | 字段 | 类型 | 含义 |
 |---|---|---|---|
 | 0x00 | vftable | uaddr | Engine vtable |
 | 0x08 | message_buf | char[0x400] | ShowMessage sprintf 目标 |
+| 0x5D800 | pool_int | uaddr | 引擎作用域 int 池（operand type 3，`tentative`） |
+| 0x5D808 | pool_float | uaddr | 引擎作用域 float 池（type 4，`tentative`） |
+| 0x5D810 | pool_string | uaddr | 引擎作用域 string 池（type 5，步长 28=SSO，`tentative`） |
+| 0x5D818 | pool_int_ref | uaddr | 引擎作用域 int 引用池（type 6，元素为指针，`tentative`） |
+| 0x5D820 | pool_float_ref | uaddr | 引擎作用域 float 引用池（type 7，`tentative`） |
+| 0x5D828 | pool_string_ref | uaddr | 引擎作用域 string 引用池（type 8，步长 28，`tentative`） |
 | 0x5D880 | cur_script | uint32_t | 当前脚本帧深度 (this[95776]) |
 | 0x5D884 | call_ret | uint32_t | 跨脚本返回目标 (this[95777]) |
 | 0x5D894 | frames[40] | ScriptContext[40] | 每脚本帧数组（帧距 0x78=120） |
@@ -133,12 +142,19 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 | 0x28 | local_string | uaddr |
 | 0x2C | local_ptr | uaddr |
 | 0x30 | local_float_ptr | uaddr |
+| 0x34 | local_string_ptr | uaddr（type 14，步长 28，`tentative`） |
 | 0x38 | caller | uint32_t |
 | 0x3C | frame_arg | uint32_t |
-| 0x60 | arity | uint32_t |
+| 0x60 | arity | uint32_t（指令长度，含 opcode） |
 | 0x70 | array_container | uaddr |
 
-> 未建模（`tentative`，待确认）：`_this + 0xA609C` 字符串表（=0x5D894+? 需复核）、`_this + 387924` FileSource、`frames[cur] + 0x40..0x54` 返回栈、`_this + 4*cur + 388612/489488/489648`。
+### 操作数模型（operand，ADR-011 带标记引用）
+- 操作数编码：`frame.ip + 8*idx` 处为值，`-4` 处为**类型 tag**。
+- **type tag → 池**：`3/4/5`=引擎 int/float/string 池（`pool_int/float/string`，stride 4/4/28）；`6/7/8`=引擎 int/float/string **引用**池（`pool_*_ref`，穿引）；`9/10/11`=本帧 int/float/string 池（`local_int/float/string`）；`12/13/14`=本帧 int/float/string 引用池（`local_ptr/float_ptr/string_ptr`）；`0/1/2`=立即数（int/float/字符串字面量）；`0x8003/0x8009`=数组批量。
+- **DEC / ENC（去混淆）**：`DEC(x)=ror32(key ^ rol32(x,11), 25)`；`ENC(x)=rol32(key ^ ror32(x,7), 21)`；`key=this->key(0x5EC8C)`，`ENC(0)=this->enc_zero(0x5EC90)`。
+- 读/写原语（已入 `functions.json`）：`readIntOperand_41BF50`、`readFloatOperand_41C300`、`writeIntOperand_42B4B0`、`writeFloatOperand_42BA00`、`operandAddress_42AEA0`、`writePointerOperand_418B90`、`writePointerElement_418CC0`、`readStringOperand_41B640`。
+
+> 未建模（`tentative`，待确认）：`_this + 0xA609C` 字符串表（=0x5D894+? 需复核）、`_this + 387924` FileSource、`frames[cur] + 0x40..0x54` 返回栈、`_this + 4*cur + 388612/489488/489648`。本表 `pool_*` 族语义为**推断**（偏移已由 raw 证实），需后续复核后再转 `confirmed`。
 
 ---
 

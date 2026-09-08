@@ -1,5 +1,8 @@
 # 引擎分析（docs/engine）· 权威 README
 
+> ⚠️ **已废弃（deprecated）**：本文件是**旧的「引擎分析」权威 README**，其重定型管线（`engine/engine.cpp`、libclang/AST 文本改写）已被**数据驱动方案**取代。
+> 现行权威口径见 **`docs-new/03-engine/*`**（`opcode-table.md`/`operands.md`/`vm-opcodes.md`/`runtime-memory.md` 等）+ 数据层 **`analysis/fields.json`**、**`analysis/functions.json`**；原始只读基准 `engine/天结_unpacked.exe_utf8.c`。以下内容仅作历史参考。
+>
 > **地位**：这是「**游戏引擎分析**」方向的**新版权威 README**，收敛并取代旧散篇
 > （`docs/re/engine/*`、`docs/re/README.md` 中属于引擎的部分、`app/amayui-emulator/docs/*`）。
 > 旧散篇**保留为详细参考**，本文件用相对链接指向它们；两者口径不一致时，**以本文件 + `docs/re/README.md` 地址表为准**。
@@ -15,7 +18,7 @@
 | `engine/天结_unpacked.exe_utf8.c` | Hex-Rays 全量反编译 C（**主力**，UTF-8） |
 | `engine/天结_unpacked.exe_utf8.lst` | IDA 清单（含数据区） |
 | `engine/engine.hpp` | `this` 对象模型：把已确认偏移落成 `struct Engine` C++ 布局（未知区 char 占位） |
-| `engine/engine.cpp` | 由 `scripts/re/retarget.py` 从 `_utf8.c` 一键生成的**成员化/语义化版**（语义参考） |
+| ~~`engine/engine.cpp`~~ | ⚠️ **已废弃**：`scripts/re/retarget.py` 重定型管线产物（libclang/AST 文本改写已放弃） |
 | `docs/re/engine/*` | 旧散篇（15 篇 + README + `member_functions.detected.txt`），本方向的详细出处 |
 
 > ⚠️ 原始 `engine/天结_unpacked.exe.c` 为 Shift-JIS、`.lst` 为 Shift-JIS+GBK 混编，`read` 工具读不了；
@@ -26,8 +29,8 @@
 ### 2.1 引擎本体与反汇编管线
 - ✅ 引擎是**通用 AGE/System4 解释器**，本身**不含任何「单位/掉落字段」语义**；字段语义全在 src 字节码（业务层，见 docs/data）。
 - ✅ 加壳判定：`AGE.EXE`/`天结.exe` 为 ASProtect；`天结_unpacked.exe` 为干净脱壳版（OEP/段落/导入已重建）。
-- ✅ 反汇编→重定型管线：`scripts/re/hexrays_prep.py`（`this`→`_this` 预处理）→ `scripts/re/retarget.py`
-  （签名替换 + 字段标记 + 调用点 `this->` + 语义命名，`semantic_names.json`）→ `engine/engine.cpp`。
+- ⚠️ ~~反汇编→重定型管线~~（**已废弃**）：~~`scripts/re/hexrays_prep.py`（`this`→`_this` 预处理）→ `scripts/re/retarget.py`
+  （签名替换 + 字段标记 + 调用点 `this->` + 语义命名，`semantic_names.json`）→ `engine/engine.cpp`~~。
 - ✅ 成员函数识别：`scripts/re/detect_members.py`（高偏移定位基准 + 调用图双向传播），清单
   `docs/re/engine/member_functions.detected.txt`（1239 个）。🟡 部分成员识别边界仍需复核。
 

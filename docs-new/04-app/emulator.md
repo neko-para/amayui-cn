@@ -1,6 +1,6 @@
 # 04-app · amayui-emulator
 
-用 **TypeScript + Electron** 重写《天結いキャッスルマイスター》的 AGE 引擎 VM（解释器），把 `engine/engine.cpp` 的逻辑以干净 TS 语义实现，替换原 Win32 调用为 H5/IPC，获得**更好的可调试性、可观测性、可插件化与跨平台**。
+用 **TypeScript + Electron** 重写《天結いキャッスルマイスター》的 AGE 引擎 VM（解释器），把 `engine/天结_unpacked.exe_utf8.c` 的逻辑以干净 TS 语义实现，替换原 Win32 调用为 H5/IPC，获得**更好的可调试性、可观测性、可插件化与跨平台**。
 
 ## 1. 现状
 
@@ -90,5 +90,5 @@ npm run electron:dev  # build + 启动 Electron 渲染壳
 
 ## 9. 权威事实来源
 
-- 逆向结论：`../03-engine/`；`engine/engine.hpp`（`this` 模型）、`engine/engine.cpp`（语义参考）。
+- 逆向结论：`../03-engine/`；`engine/engine.hpp`（`this` 模型）、`engine/天结_unpacked.exe_utf8.c`（反编译源，唯一分析基准）。
 - 本工程不再引用旧的逆向散篇或进度文档（已并入上述）；里程碑/进度记录仅作工程内部留存，不作新来源。

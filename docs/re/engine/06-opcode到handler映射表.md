@@ -9,7 +9,7 @@
 > - **参数个数（argc）**：来自 age-shared 的 `argument_count`（单位 = 一个 typed arg = 8 字节；指令长度 = `4 + 8*argc`）。
 
 > **本文件的"指令语义"下列各标记（务必区分，避免把推测当定论）**：
-> - **【已核对】**：已在 `engine/天结_unpacked.exe_utf8.c`（或 `engine.cpp`）里**读到该 opcode 的 handler 体、确证其行为**。标注出处（如 `sub_XXXX（.c 行 N）`）。
+> - **【已核对】**：已在 `engine/天结_unpacked.exe_utf8.c` 里**读到该 opcode 的 handler 体、确证其行为**。标注出处（如 `sub_XXXX（.c 行 N）`）。
 > - **【推测】**：语义**仅由 age-shared 助记符名 / 命名约定 / 用法推断**，"handler 体尚未逐条读"；**可能失真**（AGE 的助记符有误导性，如 `exit`≠程序退出、`ret`≠跨脚本返回）。**不可当作定论**。
 > - **【未解】**：尚无任何语义表征（仅知其 opcode/handler 地址）。绝大多数 `uXXXX` 属此列。
 >
