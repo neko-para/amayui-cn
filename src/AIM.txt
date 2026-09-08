@@ -89,7 +89,7 @@ add (local-int 48) 1d4c0 a
 i251 30d40 e (local-int 48) 5a 64 280 d6 0 280 d6 64 1f4
 poll-input
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 release-texture e
 
 label_000006fc
@@ -274,7 +274,7 @@ label_00001104
 ret
 
 label_00001108
-texture-op 1d4c0 64
+detach-texture 1d4c0 64
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -489,6 +489,6 @@ mov (local-ptr 2) 1
 mov (global-int 5b8b0) 0
 
 label_00002314
-texture-op 1d4c0 64
+detach-texture 1d4c0 64
 release-texture 2a
 exit

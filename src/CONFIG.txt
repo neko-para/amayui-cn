@@ -74,7 +74,7 @@ set-texture 51cf c3 (local-int c)
 ret
 
 label_00000518
-texture-op 1d4c0 bb8
+detach-texture 1d4c0 bb8
 draw-texture 1d4c0 c0 0 0 500 2d0 0 0
 add (local-int c) 1d4c0 7d0
 draw-texture (local-int c) c1 0 12f 10e 2d0 0 0
@@ -194,8 +194,8 @@ i2f6 2
 label_00000fc8
 i300 9 0 0
 i071 9
-texture-op 1d4c0 bb8
-texture-op 2e630 3e8
+detach-texture 1d4c0 bb8
+detach-texture 2e630 3e8
 release-texture c0
 release-texture c1
 release-texture c2
@@ -441,8 +441,8 @@ ret
 exit
 
 label_00001f3c
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_000021d8
 call label_000028f4
 eq (local-int c) (global-int 0) 6
@@ -476,7 +476,7 @@ exit
 label_000021e0
 ne (local-int c) (global-int 0) 6
 jcc (local-int c) ffffffff label_000028ec
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_000028d8
 gre (local-int c) (global-int 3f37) 0
 jcc (local-int c) ffffffff label_000028cc

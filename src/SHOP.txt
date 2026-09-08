@@ -132,7 +132,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00000a10
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 mov (local-int 3f4) 0
 mov (local-int 3f2) 0
@@ -598,7 +598,7 @@ eq (local-int fe3d) (local-int 3f7) 2
 jcc (local-int fe3d) ffffffff label_000024a8
 play-sound-effect 39a5 1
 i0b5 1
-texture-op 190 640
+detach-texture 190 640
 mov (global-int 93465) 3
 call-script 5111  // FELLOW
 sub (local-int 3f7) 0 1
@@ -1281,7 +1281,7 @@ label_00004e58
 ret
 
 label_00004e5c
-texture-op 0 2bc
+detach-texture 0 2bc
 jcc (global-int 6c61b4) ffffffff label_00004edc
 draw-texture 0 4a 0 0 500 2d0 0 0
 jmp label_00004ff4
@@ -1343,7 +1343,7 @@ draw-texture 1a4 48 0 348 95 49 22 1a1
 ret
 
 label_000054ac
-texture-op 2bc c8
+detach-texture 2bc c8
 draw-texture 2bc 48 2a1 40 123 fe 3b6 18e
 mul (local-int fe3d) (local-int fe3b) 3d
 add (local-int fe3e) 140 (local-int fe3d)
@@ -1425,9 +1425,9 @@ i205 52 4 5e (local-int 40c) 8 10000
 ret
 
 label_00005c9c
-texture-op 3e8 c8
-texture-op 514 64
-texture-op 5dc c8
+detach-texture 3e8 c8
+detach-texture 514 64
+detach-texture 5dc c8
 draw-texture 3e8 48 0 40 29f 25e ce 2e
 draw-texture 3e9 48 0 2a0 289 64 d9 1e1
 draw-texture 3f2 48 24b 31b 22 13 eb ab
@@ -1743,15 +1743,15 @@ label_00007cc8
 ret
 
 label_00007ccc
-texture-op 1f4 1
-texture-op 4b0 6
-texture-op 578 1
+detach-texture 1f4 1
+detach-texture 4b0 6
+detach-texture 578 1
 mov (global-int 546e03) 0
 ret
 
 label_00007d20
-texture-op 9c4 1
-texture-op 1fbd0 3e8
+detach-texture 9c4 1
+detach-texture 1fbd0 3e8
 jcc (global-int 546e03) ffffffff label_00007f2c
 i008 1a
 create-texture 55 1ec 5c 0
@@ -1802,7 +1802,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00008128
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i1f6
 i23d

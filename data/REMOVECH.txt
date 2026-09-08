@@ -14,18 +14,18 @@ lookup-array (local-ptr 2) (global-int 56d74) (local-int 6)
 lookup-array (local-ptr 3) (global-int 56d74) (local-int 6)
 sub (local-ptr 2) (local-ptr 3) 1
 add (local-int b) ea60 (global-int 519af9)
-texture-op (local-int b) 1
+detach-texture (local-int b) 1
 eq (local-int b) (global-int 519af9) (global-int 61c72)
 jcc (local-int b) ffffffff label_000001e8
 add (local-int b) ea60 76c
-texture-op (local-int b) 1
+detach-texture (local-int b) 1
 jmp label_00000250
 
 label_000001e8
 add (local-int b) ea60 64
 mul (local-int c) (global-int 519af9) 1e
 add (local-int d) (local-int b) (local-int c)
-texture-op (local-int d) 1e
+detach-texture (local-int d) 1e
 
 label_00000250
 add (local-int b) 12c (global-int 519af9)

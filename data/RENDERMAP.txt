@@ -113,7 +113,7 @@ jcc (local-int 7) ffffffff label_00000874
 add (local-int 5) ea60 64
 mul (local-int 6) (local-int 0) 1e
 add (local-int 7) (local-int 5) (local-int 6)
-texture-op (local-int 7) 1e
+detach-texture (local-int 7) 1e
 set-draw-color (local-int 1) 0 c8 0 ffffff
 
 label_00000874

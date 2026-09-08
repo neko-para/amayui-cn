@@ -104,7 +104,7 @@ draw-texture 30d40 e 0 0 500 2d0 0 0
 add (local-int 3031) 1d4c0 14
 i251 30d40 e (local-int 3031) 3c 64 280 120 0 280 120 64 1f4
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 release-texture e
 jcc (local-int 1f61) ffffffff label_00000c04
 mov (local-int c) 0
@@ -517,7 +517,7 @@ label_00002680
 poll-input
 wait
 add (local-int 3031) 1d4c0 14
-texture-op (local-int 3031) 50
+detach-texture (local-int 3031) 50
 mov (local-int c) 0
 jmp label_000026f4
 

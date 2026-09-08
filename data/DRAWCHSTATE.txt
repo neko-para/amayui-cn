@@ -6,7 +6,7 @@ local_vars = { 32 1 1 6 1 1 }
 add (local-int 25) ea60 64
 mul (local-int 26) (global-int 519af9) 1e
 add (local-int 0) (local-int 25) (local-int 26)
-texture-op (local-int 0) 1e
+detach-texture (local-int 0) 1e
 lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
 and (local-int 25) (local-ptr 0) 20001
 eq (local-int 27) (local-int 25) 1

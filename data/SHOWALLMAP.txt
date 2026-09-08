@@ -35,7 +35,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_0000027c
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 sub (local-int 5) 0 1
 set-texture 515c 48 (local-int 5)
@@ -136,7 +136,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00000e00
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 play-sound-effect 285c 1
 i0b5 1
@@ -204,10 +204,10 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00001420
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i229 0 0 0 0 0
-texture-op 1d4c0 bb8
+detach-texture 1d4c0 bb8
 release-texture 48
 release-texture 52
 release-texture 53
@@ -250,7 +250,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00001740
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i1f5
 exit

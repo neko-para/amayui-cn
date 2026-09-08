@@ -116,7 +116,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_00000868
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 exit-script
 jmp label_00000b10
@@ -211,8 +211,8 @@ ret
 exit
 
 label_00000e0c
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_000010a8
 call label_00001110
 eq (local-int 6) (global-int 0) 6

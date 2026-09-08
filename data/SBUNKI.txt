@@ -591,7 +591,7 @@ ret
 
 label_00002ca8
 add (local-int 9e) 2e630 2bc
-texture-op (local-int 9e) 3
+detach-texture (local-int 9e) 3
 gre (local-int 9e) (local-int 9) 0
 lt (local-int 9f) (local-int 9) (global-int f8dfc)
 and (local-int a0) (local-int 9e) (local-int 9f)
@@ -662,7 +662,7 @@ mov (global-int 4) 1
 call-script 5255
 
 label_000032e8
-texture-op 2e630 7d0
+detach-texture 2e630 7d0
 release-texture 13
 i20c
 set-string (global-string f17) ""

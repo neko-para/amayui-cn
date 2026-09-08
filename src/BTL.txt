@@ -772,7 +772,7 @@ play-sound-effect 3996 3
 i2bf 3 0 190
 poll-input
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 release-texture 2b
 
 label_00003c68
@@ -1087,7 +1087,7 @@ sub (local-int fff) 0 1
 set-draw-color 2e248 3e8 12c 0 (local-int fff)
 i238 5dc
 wait
-texture-op 2e248 1
+detach-texture 2e248 1
 jmp label_000059cc
 
 label_000052bc
@@ -2221,7 +2221,7 @@ i23b (local-int fff) 4 (local-int fd9) 1b0 26a 3 0
 add (local-int fff) 13880 a3
 i23b (local-int fff) 4 (local-int fdc) 2bc 26a 3 0
 add (local-int fff) 13880 aa
-texture-op (local-int fff) 1e
+detach-texture (local-int fff) 1e
 mov (local-int d) 0
 jmp label_0000b79c
 
@@ -2464,7 +2464,7 @@ label_0000cca4
 add (local-int a) 13880 14
 
 label_0000ccc0
-texture-op (local-int a) a
+detach-texture (local-int a) a
 mul (local-int fff) (local-int fd8) 17
 sub (local-int 11) 280 (local-int fff)
 mov (local-int 12) 205
@@ -2576,7 +2576,7 @@ label_0000d59c
 add (local-int fff) (local-int 7f0) (local-int 7f1)
 mul (local-int 1001) (local-int fff) 2
 add (local-int 1000) 1 (local-int 1001)
-texture-op 13c68 (local-int 1000)
+detach-texture 13c68 (local-int 1000)
 ret
 
 label_0000d608
@@ -2893,7 +2893,7 @@ wait
 add (local-int fff) 13880 e
 mul (local-int 1001) (local-int d) a
 add (local-int 1000) (local-int fff) (local-int 1001)
-texture-op (local-int 1000) 2
+detach-texture (local-int 1000) 2
 release-texture 31
 i342 2
 jmp label_0000f5b4
@@ -2909,7 +2909,7 @@ sub (local-int 1001) 0 14
 i220 (local-int fff) 0 64 (local-int 1001) 0 0
 wait
 add (local-int fff) 13880 7
-texture-op (local-int fff) 1
+detach-texture (local-int fff) 1
 release-texture 31
 
 label_0000f5b4
@@ -2990,7 +2990,7 @@ i1ff (local-int fff) 0 0 (float 3f666666)
 label_0000fbc0
 poll-input
 wait
-texture-op (local-int a) 2
+detach-texture (local-int a) 2
 release-texture bf
 ret
 
@@ -3469,7 +3469,7 @@ jmp label_00011df0
 
 label_00011ff8
 add (local-int fff) 13880 32
-texture-op (local-int fff) f
+detach-texture (local-int fff) f
 release-texture 2b
 release-texture 2c
 release-texture 2d
@@ -3691,7 +3691,7 @@ set-draw-color (local-int a) 0 (local-int 7) 0 (local-int fff)
 jmp label_000131b0
 
 label_0001319c
-texture-op (local-int a) 1
+detach-texture (local-int a) 1
 
 label_000131b0
 eq (local-int fff) (local-int 101b) 0
@@ -3729,7 +3729,7 @@ label_00013470
 jmp label_00013490
 
 label_0001347c
-texture-op (local-int a) 8
+detach-texture (local-int a) 8
 
 label_00013490
 ret
@@ -3992,7 +3992,7 @@ jmp label_00014700
 label_000148a8
 poll-input
 wait
-texture-op 14050 3
+detach-texture 14050 3
 release-texture 2b
 ret
 
@@ -4252,7 +4252,7 @@ sub (local-int 1001) 0 1
 set-draw-color (local-int fff) 1f4 c8 0 (local-int 1001)
 poll-input
 wait
-texture-op 14050 3
+detach-texture 14050 3
 release-texture 2b
 ret
 
@@ -4440,7 +4440,7 @@ add (local-int fff) 14050 1
 sub (local-int 1001) 0 1
 set-draw-color (local-int fff) 0 c8 0 (local-int 1001)
 wait
-texture-op 14050 5
+detach-texture 14050 5
 release-texture 2b
 release-texture 2c
 release-texture 2d
@@ -4817,7 +4817,7 @@ i0d4 1 2 label_00013490 label_00013490
 i0d0 (local-int 1018)
 i0d5 ffffffff
 add (local-int fff) 13880 32
-texture-op (local-int fff) 7
+detach-texture (local-int fff) 7
 ret
 
 label_00018d9c
@@ -5050,7 +5050,7 @@ jmp label_00019fcc
 label_0001a090
 poll-input
 wait
-texture-op 13880 d2
+detach-texture 13880 d2
 release-texture c0
 release-texture c1
 release-texture c2

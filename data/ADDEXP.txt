@@ -200,7 +200,7 @@ ret
 
 label_00001004
 add (local-int 4b) 1fbd0 64
-texture-op (local-int 4b) c8
+detach-texture (local-int 4b) c8
 mov (local-int 0) 0
 jmp label_00001070
 
@@ -242,7 +242,7 @@ label_000012ec
 ret
 
 label_000012f0
-texture-op 1fbd0 12c
+detach-texture 1fbd0 12c
 release-texture ac
 
 label_00001310

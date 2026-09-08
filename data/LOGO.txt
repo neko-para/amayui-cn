@@ -44,12 +44,12 @@ add (local-int 0) 30d40 3
 set-vertex-color-alpha (local-int 0) 1194 1f4 ff 0
 poll-input
 wait
-texture-op 30d40 4
+detach-texture 30d40 4
 release-texture 2a
 release-texture 2b
 create-texture 2a 500 2d0 0
 draw-texture 30d40 2a 0 0 500 2d0 0 0
 play-movie 5247 2a 20004
 release-texture 2a
-texture-op 30d40 1
+detach-texture 30d40 1
 exit

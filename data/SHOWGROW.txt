@@ -79,7 +79,7 @@ set-draw-color (local-int 805) 64 64 ff (local-int 806)
 add (local-int 805) 2e248 1
 i21e (local-int 805) 3e8 c8 0 0 0
 wait
-texture-op 2e248 2
+detach-texture 2e248 2
 
 label_000006f8
 eq (local-int 805) (global-int 708022) 2
@@ -485,7 +485,7 @@ i24e 0
 poll-input
 
 label_0000291c
-texture-op 2e248 1f4
+detach-texture 2e248 1f4
 ne (local-int 805) (global-int 708022) 1
 jcc (local-int 805) ffffffff label_00002974
 release-texture ac

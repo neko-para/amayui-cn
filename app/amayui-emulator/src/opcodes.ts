@@ -308,7 +308,7 @@ export const OPCODE_TABLE: OpcodeDef[] = [
   { opcode: 0x1f4, name: "u004160D0", argc: 0x0 },
   { opcode: 0x1f5, name: "u00416120", argc: 0x0 },
   { opcode: 0x1f6, name: "u00416170", argc: 0x0 },
-  { opcode: 0x1f7, name: "texture-op", argc: 0x2 },
+  { opcode: 0x1f7, name: "detach-texture", argc: 0x2 },
   { opcode: 0x1f8, name: "create-texture", argc: 0x4 },
   { opcode: 0x1f9, name: "set-texture", argc: 0x3 },
   { opcode: 0x1fa, name: "release-texture", argc: 0x1 },

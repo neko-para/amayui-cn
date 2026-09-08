@@ -20,7 +20,7 @@ lookup-array (local-ptr 0) (global-int f7b39) (local-int 0)
 lookup-array (local-ptr 1) (local-int d) (local-int 0)
 i21d (local-ptr 0) (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f7b39) (local-int 0)
-texture-op (local-ptr 0) 1
+detach-texture (local-ptr 0) 1
 
 label_0000019c
 jmp label_0000005c
@@ -127,5 +127,5 @@ label_00000aa8
 jmp label_00000244
 
 label_00000ab4
-texture-op 30d40 (global-int 70154a)
+detach-texture 30d40 (global-int 70154a)
 exit

@@ -1041,9 +1041,9 @@ ret
 
 label_00004148
 add (local-int 950) 1d4c0 3e8
-texture-op (local-int 950) c8
+detach-texture (local-int 950) c8
 add (local-int 950) 1d4c0 514
-texture-op (local-int 950) c8
+detach-texture (local-int 950) c8
 add (local-int 950) 1d4c0 3e8
 draw-texture (local-int 950) c0 297 0 1d7 25e 1fe 42
 gre (local-int 950) (local-int 571) 1
@@ -1383,9 +1383,9 @@ ret
 
 label_00006098
 add (local-int 950) 1d4c0 5dc
-texture-op (local-int 950) c8
+detach-texture (local-int 950) c8
 add (local-int 950) 1d4c0 708
-texture-op (local-int 950) c8
+detach-texture (local-int 950) c8
 add (local-int 950) 1d4c0 5dc
 draw-texture (local-int 950) c0 470 0 10f 204 3d9 47
 mov (local-int 407) 0
@@ -1660,17 +1660,17 @@ ret
 
 label_0000786c
 add (local-int 950) 1d4c0 4b0
-texture-op (local-int 950) 1
+detach-texture (local-int 950) 1
 add (local-int 950) 1d4c0 6a4
-texture-op (local-int 950) 1
-texture-op 1fbd0 3e8
+detach-texture (local-int 950) 1
+detach-texture 1fbd0 3e8
 mov (global-int 703e2e) 0
 mov (global-int 707ddd) 0
 ret
 
 label_0000790c
 add (local-int 950) 1d4c0 7d0
-texture-op (local-int 950) 1f40
+detach-texture (local-int 950) 1f40
 mov (local-int 8fb) 0
 jcc (global-int 707ddd) ffffffff label_00007980
 bit-set (local-int 8fb) (global-int 707ddd)
@@ -1843,8 +1843,8 @@ label_000086b8
 mov (global-int 9358d) 0
 call-script 516e
 call-script 516f
-texture-op 1d4c0 2710
-texture-op 1fbd0 3e8
+detach-texture 1d4c0 2710
+detach-texture 1fbd0 3e8
 release-texture c0
 release-texture c1
 release-texture c2

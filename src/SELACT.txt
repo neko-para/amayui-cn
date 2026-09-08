@@ -756,7 +756,7 @@ i2da 4 49 642 362 11 17 2 (local-int fe8)
 ret
 
 label_00003008
-texture-op 1d4c0 3e8
+detach-texture 1d4c0 3e8
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -1097,7 +1097,7 @@ ret
 
 label_00005018
 add (local-int fe8) 1d4c0 a
-texture-op (local-int fe8) 3c
+detach-texture (local-int fe8) 3c
 mov (local-int 40a) (global-int 92894)
 mov (local-int 40b) (global-int 92895)
 lookup-array (local-ptr 2) (global-int 62156) (local-int 40a)
@@ -1812,13 +1812,13 @@ ret
 
 label_00008f6c
 add (local-int fe8) 1d4c0 78
-texture-op (local-int fe8) 2
+detach-texture (local-int fe8) 2
 add (local-int fe8) 1d4c0 190
-texture-op (local-int fe8) 6
+detach-texture (local-int fe8) 6
 add (local-int fe8) 1d4c0 258
-texture-op (local-int fe8) 1
+detach-texture (local-int fe8) 1
 add (local-int fe8) 1d4c0 3b6
-texture-op (local-int fe8) 1
+detach-texture (local-int fe8) 1
 gre (local-int fe8) (local-int 3f8) 0
 lt (local-int fe9) (local-int 3f8) (local-int 1)
 and (local-int fea) (local-int fe8) (local-int fe9)
@@ -1907,7 +1907,7 @@ lookup-array (local-ptr 2) (global-int 6f0f4) (global-int 92895)
 mov (local-ptr 1) (local-ptr 2)
 
 label_00009924
-texture-op 1d4c0 3e8
+detach-texture 1d4c0 3e8
 release-texture 2a
 release-texture 2b
 release-texture c0

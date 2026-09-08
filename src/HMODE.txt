@@ -64,7 +64,7 @@ set-draw-color 7d0 0 c8 0 (local-int 18f)
 i24e 10001
 wait
 poll-input
-texture-op 7d0 1
+detach-texture 7d0 1
 jmp label_000006a4
 
 label_000004c0
@@ -89,7 +89,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_0000067c
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 
 label_000006a4
@@ -801,7 +801,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00002edc
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 mov (global-int 0) 1
 i085
@@ -809,7 +809,7 @@ sub (global-int 708ad6) 0 1
 i1f4
 eq (local-int 18f) (global-int 3f90) 0
 jcc (local-int 18f) ffffffff label_000035a8
-texture-op 19258 1
+detach-texture 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
 mov (global-int 4fd3) 0
@@ -817,7 +817,7 @@ mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc (global-int 4fd9) ffffffff label_00003164
 sub (local-int 18f) 30d40 18a88
-texture-op 18a88 (local-int 18f)
+detach-texture 18a88 (local-int 18f)
 jcc (global-int 708ad6) ffffffff label_00003158
 jcc (global-int 708ada) ffffffff label_000030b4
 sub (local-int 18f) 0 1
@@ -946,7 +946,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00003930
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i1f4
 i21b 0
@@ -983,11 +983,11 @@ call label_00005d94
 call label_000064a8
 jcc (global-int 4fd9) ffffffff label_00003b64
 i1f4
-texture-op 109a0 1
+detach-texture 109a0 1
 release-texture 3
 i1f5
 sub (local-int 18f) 30d40 18a88
-texture-op 18a88 (local-int 18f)
+detach-texture 18a88 (local-int 18f)
 jmp label_00003b68
 
 label_00003b64
@@ -1085,7 +1085,7 @@ call label_00004440
 set-draw-color 30d40 0 190 0 ffffff
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 release-texture 2a
 i109 (local-int 150) (local-int 151)
 poll-input
@@ -1114,9 +1114,9 @@ mov (global-int f800c) 0
 ret
 
 label_00004440
-texture-op 44c 1
-texture-op 5dc 1
-texture-op 8fc 1
+detach-texture 44c 1
+detach-texture 5dc 1
+detach-texture 8fc 1
 gre (local-int 18f) (local-int 143) 0
 jcc (local-int 18f) ffffffff label_0000490c
 mov (local-int 144) (local-int 143)
@@ -1185,9 +1185,9 @@ draw-texture 898 48 1ea 4ea 49 49 4b3 284
 ret
 
 label_00004c74
-texture-op 3e8 64
-texture-op 4b0 12c
-texture-op 640 190
+detach-texture 3e8 64
+detach-texture 4b0 12c
+detach-texture 640 190
 draw-texture 4b0 48 0 e8 41f 1ff 73 67
 draw-texture 4ba 48 421 220 40 48 27 143
 draw-texture 4bb 48 463 220 40 48 49d 143
@@ -1360,8 +1360,8 @@ ret
 exit
 
 label_00005af0
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_00005d8c
 call label_00006614
 eq (local-int 18f) (global-int 0) 6
@@ -1395,7 +1395,7 @@ exit
 label_00005d94
 ne (local-int 18f) (global-int 0) 6
 jcc (local-int 18f) ffffffff label_000064a0
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_0000648c
 gre (local-int 18f) (global-int 3f37) 0
 jcc (local-int 18f) ffffffff label_00006480
@@ -1466,9 +1466,9 @@ ret
 exit
 
 label_000064a8
-texture-op 1976c 3
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 1976c 3
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 eq (local-int 18f) (global-int a9dc) 0
 jcc (local-int 18f) ffffffff label_00006578
 i2f6 0

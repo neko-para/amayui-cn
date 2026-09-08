@@ -61,7 +61,7 @@ app/amayui-emulator/
 - 测试 `test/input.test.ts`（InputManager 单元 + TITLE hover/点击派发端到端，含 `0x12E` 悬停索引断言）。**语义见 `../03-engine/input-system.md` §11**。
 - `0x2FC`(读鼠标触点+坐标)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，引擎不写死) 已实现；**hover 高亮**随光标移动可工作且可回退。
 - **hover 高亮叠层回退**：标题的高亮叠层（`0x12c/0x12e/0x130/0x132/0x134`）经 `0x203 set-draw-color-alpha` 控制 alpha；修正了 `0x203` 的读参（**op3=alpha、op4=color → ARGB**，此前误把 op3 当整色），并让 `PixiBackend#itemAlpha` 在**无动画窗时也尊重显式设色的 alpha**（`colorSet`），从而叠层能淡入/淡出（hover 可回退）。
-- `0x1F7 texture-op` 已实现（映射 `native.textureOp(handle,mode)`，标记图元重渲染），不再走 `unhandled`。「unhandled」的 `0x1ff/0x341/0x345/0x34e/0x308/0x1f8` 是 M0「记录后放行」桩（boot/TITLE setup 的 L2D/模型/注册/造纹理 op），为跑到 TITLE 而未硬报错；如需严格可后续实现。
+- `0x1F7 detach-texture` 已实现（映射 `native.detachTexture(handle,count)`，删单/区间图元：`count≤1` 删单 handle、`count>1` 删 `[handle,handle+count)` 区间），不再走 `unhandled`。「unhandled」的 `0x1ff/0x341/0x345/0x34e/0x308/0x1f8` 是 M0「记录后放行」桩（boot/TITLE setup 的 L2D/模型/注册/造纹理 op），为跑到 TITLE 而未硬报错；如需严格可后续实现。
 - **交互运行**：进入 TITLE 后**不再按步数/`titleSteps` 自动截止**（脚本退出/重置/错误/关窗才收尾）；`MAX_STEPS` 仅作病态死循环兜底。TITLE 后**停止逐条步进日志**（避免交互运行日志爆炸），只记关键事件（`[input]`/`[input-state]`/错误/脚本切换）。
 
 ### 诊断法（无法搜到 `op=0x12e` 时）
@@ -71,7 +71,7 @@ app/amayui-emulator/
 - 若无 `[input]` 且 `hasCursor=0` → 鼠标事件没进 renderer（DOM/焦点问题）；
 - 若有 `[input]`/`moved=1` 却仍无 `op=0x12e` → 后续查 get-input-type 派发。
 - ⚠️ **点击选中菜单项**仍依赖菜单派发表 `0xA1/0xA2/0xA3`（当前安全桩）；`0x20C/0xB5/0x23D/0x32B`（图形/声音清理）为 no-op 桩。如需完整菜单交互另见 `../03-engine/input-system.md`。
-- ⚠️ **opcode 名称同步**：`src/opcodes.ts` 已把语义化名 `texture-op`/`float-mov`/`create-mesh`/`wait`/`poll-input` 等从 `u00xxxxxx` 别名改为语义名（对齐 `src/*.txt` 与 `../03-engine/opcode-table.md`）。
+- ⚠️ **opcode 名称同步**：`src/opcodes.ts` 已把语义化名 `detach-texture`/`float-mov`/`create-mesh`/`wait`/`poll-input` 等从 `u00xxxxxx` 别名改为语义名（对齐 `src/*.txt` 与 `../03-engine/opcode-table.md`）。
 
 ## 7. 命令
 

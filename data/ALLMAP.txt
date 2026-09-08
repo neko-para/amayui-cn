@@ -293,7 +293,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_0000128c
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 
 label_000012b4
@@ -316,7 +316,7 @@ sub (local-int 566) 0 1
 set-texture 5159 e (local-int 566)
 draw-texture 2e630 e 0 0 500 1f 0 0
 i20c
-texture-op 2e630 1
+detach-texture 2e630 1
 string-lookup-set (global-int 1391)
 add (local-int 566) (global-int 1391) 1
 mod (global-int 1391) (local-int 566) a
@@ -1262,7 +1262,7 @@ label_00005634
 ret
 
 label_00005638
-texture-op 12c c8
+detach-texture 12c c8
 sub (local-int 566) 0 4
 i2da 0 48 198 353 12 16 2 (local-int 566)
 mov (local-int 283) 0
@@ -1336,8 +1336,8 @@ i008 1c
 ret
 
 label_00005cf8
-texture-op c8 1
-texture-op b54 1
+detach-texture c8 1
+detach-texture b54 1
 gre (local-int 566) (local-int 8) 1
 lt (local-int 567) (local-int 8) (local-int 28d)
 and (local-int 569) (local-int 566) (local-int 567)
@@ -1439,7 +1439,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00006564
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i229 0 0 0 0 0
 i1f6
@@ -1529,7 +1529,7 @@ create-texture e 140 b4 2
 i032 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-texture-op 30d40 1
+detach-texture 30d40 1
 i1ae (global-int 1396) (global-int f8019) e
 release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)

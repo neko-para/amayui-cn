@@ -50,14 +50,14 @@ OS 鼠标/键盘/手柄事件
 
 ### 已实现（输入链路通）
 - `src/vm/input.ts` `InputManager`：光标位置（虚拟 1280×720）、鼠标按钮(bit0/1)、按下沿、**移动标记 `mouseMoved`（hover 派发用）**、回调跳转目标(`mouseJump`/`joyJump[]`)、`flush()` 掩码。
-- opcodes（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/跳转真实生效）：`0x108`(读按钮)、`0x109`(读位置)、`0xCC`(mouse-callback)、`0xFB`(joy-callback)、`0xCD`(get-input-type：**鼠标移动/点击皆派发，并压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，不在引擎写死)、`0x2FC`(读鼠标触点+坐标)、`0x100/0xFF/0x101`、`0x1F7 texture-op`。
+- opcodes（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/跳转真实生效）：`0x108`(读按钮)、`0x109`(读位置)、`0xCC`(mouse-callback)、`0xFB`(joy-callback)、`0xCD`(get-input-type：**鼠标移动/点击皆派发，并压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，不在引擎写死)、`0x2FC`(读鼠标触点+坐标)、`0x100/0xFF/0x101`、`0x1F7 detach-texture`。
 - DOM 捕获：`PixiBackend#attachMouseInput` 监听 **window** `mousemove/mousedown/mouseup/contextmenu`，用 `canvas.getBoundingClientRect()` 求虚拟坐标写入 `InputManager`。
 - 交互运行（`renderer.ts`）：进入 TITLE 后**不再按 `titleSteps`/低 `MAX_STEPS` 自动截止**（脚本退出/重置/错误/关窗才收尾）；TITLE 后**停逐条步进日志**（只记 `[input]`/`[input-state]`/错误/切换）。`MAX_STEPS=1e8` 兜底。
 - 诊断：日志里有 `[input] move/down`（DOM 事件）、`[input-state] hasCursor/pos/moved/edge/btn/mouseJump + items={…}`（VM 侧输入 + draw-item 实况，含 handle/layer/dst/alpha，按绘制顺序）。
 
 ### **尚未解决：hover 高亮不显示/不回落**（当前会话记录，待续）
 - 现象：鼠标悬停标题菜单时高亮**不出现**或**出现后不回落**。
-- 标题高亮机制（`TITLE label_00003340` 红绘）：叠层 handle `0x12c/12e/130/132/134`、正文 handle `0x12d/12f/131/133/135`（两两同位置，来自 local5/local69）。红绘用 `set-draw-color-alpha`(0x203) 设**叠层** alpha：选中项→`0xff ffffff`(不透明，高亮)，非选中→`0x0 ffffff`(透明)；并 `texture-op`/`draw-texture` 正（正文）。
+- 标题高亮机制（`TITLE label_00003340` 红绘）：叠层 handle `0x12c/12e/130/132/134`、正文 handle `0x12d/12f/131/133/135`（两两同位置，来自 local5/local69）。红绘用 `set-draw-color-alpha`(0x203) 设**叠层** alpha：选中项→`0xff ffffff`(不透明，高亮)，非选中→`0x0 ffffff`(透明)；并 `detach-texture`/`draw-texture` 正（正文）。
 - 诊断数据（`[input-state] items={...}`，光标不悬停时）：**`0x12c..0x135` 全部 `a255`（不透明）**，且顺序 `0x12c` 在 `0x12d` 之前（= 叠层画在正文**下方**）。
 - 已修（但未解决）：
   1. `0x203` 读参修正：`op3=alpha, op4=color → ARGB`（此前误把 op3 当整色）。
@@ -74,4 +74,4 @@ OS 鼠标/键盘/手柄事件
 
 - **版权页 frame 效果**：时间=`timeGetTime()` 墙钟 ms；背景(2a)=mesh#1 vertex-color(CalcDiffuse)、文字(2b)=draw-item diffuse-alpha（两组正交、逐像素相乘）；淡出=mesh#2 盖黑→硬切 movie；`wait`(0x21C) 置 0x400 等待门。→ `docs-new/03-engine/copyright-effect.md`。
 - **Emulator 实现**：引擎式 present（跑到门控、`needsRender` 驱动）、场景图、严格 flag（未知位抛错）、文件日志。→ `docs-new/04-app/emulator-copyright-effect.md`。
-- **opcode 命名**：效果指令已语义化（`create-mesh`/`set-vertex-color(-alpha)`/`set-draw-color(-alpha)`/`draw-texture`/`set-texture`/`create-texture`/`release-texture`/`play-movie`/`wait`/`float-mov`/`poll-input`/`texture-op`），旧 `u00xxxxxx` 为别名；src/data 已批量替换。→ `opcode-table.md`。
+- **opcode 命名**：效果指令已语义化（`create-mesh`/`set-vertex-color(-alpha)`/`set-draw-color(-alpha)`/`draw-texture`/`set-texture`/`create-texture`/`release-texture`/`play-movie`/`wait`/`float-mov`/`poll-input`/`detach-texture`），旧 `u00xxxxxx` 为别名；src/data 已批量替换。→ `opcode-table.md`。

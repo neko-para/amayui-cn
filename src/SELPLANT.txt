@@ -1105,11 +1105,11 @@ ret
 
 label_00004480
 add (local-int 20f7) 1d4c0 3e8
-texture-op (local-int 20f7) c8
+detach-texture (local-int 20f7) c8
 add (local-int 20f7) 1d4c0 514
-texture-op (local-int 20f7) 64
+detach-texture (local-int 20f7) 64
 add (local-int 20f7) 1d4c0 5dc
-texture-op (local-int 20f7) c8
+detach-texture (local-int 20f7) c8
 add (local-int 20f7) 1d4c0 3e8
 draw-texture (local-int 20f7) c0 0 0 24a 25e 230 42
 add (local-int 20f7) 1d4c0 3e9
@@ -1409,16 +1409,16 @@ ret
 
 label_000060e8
 add (local-int 20f7) 1d4c0 4b0
-texture-op (local-int 20f7) 3
+detach-texture (local-int 20f7) 3
 add (local-int 20f7) 1d4c0 578
-texture-op (local-int 20f7) 1
-texture-op 1fbd0 3e8
+detach-texture (local-int 20f7) 1
+detach-texture 1fbd0 3e8
 mov (global-int 703e2e) 0
 ret
 
 label_00006174
 add (local-int 20f7) 1d4c0 9c4
-texture-op (local-int 20f7) 1
+detach-texture (local-int 20f7) 1
 jcc (global-int 703e2e) ffffffff label_00006398
 create-texture c5 1ec 5c 0
 add (local-int 20f7) 1d4c0 9c4
@@ -1447,7 +1447,7 @@ ret
 
 label_000063b0
 add (local-int 20f7) 1d4c0 7d0
-texture-op (local-int 20f7) 1f40
+detach-texture (local-int 20f7) 1f40
 lookup-array (local-ptr 3) (global-int 70154b) (global-int 701549)
 mov (local-int 2eb) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 7017a3) (global-int 701549)
@@ -1672,8 +1672,8 @@ i20c
 ret
 
 label_00007650
-texture-op 1d4c0 2710
-texture-op 1fbd0 3e8
+detach-texture 1d4c0 2710
+detach-texture 1fbd0 3e8
 release-texture c0
 release-texture c1
 release-texture c2

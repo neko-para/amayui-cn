@@ -6,7 +6,7 @@ local_vars = { b 1 1 6 1 1 }
 add (local-int 6) ea60 1db0
 mul (local-int 7) (global-int 519af9) 6
 add (local-int 0) (local-int 6) (local-int 7)
-texture-op (local-int 0) 6
+detach-texture (local-int 0) 6
 lookup-array (local-ptr 0) (global-int 6202a) (global-int 519af9)
 and (local-int 6) (local-ptr 0) 1
 jcc (local-int 6) ffffffff label_00000c40

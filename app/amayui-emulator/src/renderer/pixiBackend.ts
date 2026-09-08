@@ -374,10 +374,28 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
   }
 
-  /** 0x1F7 texture-op：对图元应用纹理/颜色操作。emulator 标记图元重渲染（颜色态在 present 生效）。 */
-  textureOp(handle: number, mode: number): void {
+  /** 0x1F7 detach-texture (sub_422BC0)：删单/区间图元。读 op1=handle、op2=count；按 count 分派：
+   *  - count ≤ 1 → sub_4AB950(_this+80708, handle)：**移除该 handle 单图元**（`sub_459EA0` 找 + `sub_4A8AF0`/`4A9020`/`4A9270` std::map erase，置脏 `[46508]=1`）。
+   *    TITLE 的 hover 回退（label_00003340 part1）就用 `detach-texture <old_normal> 1` 移除上一步 hover 画出的 normal 图元，
+   *    让该按钮回退到 highlight（配合 part1 的 set-draw-color-alpha highlight→opaque）。emulator 先前是 no-op，故 normal 残留 → "始终 hover"。
+   *  - count > 1 → sub_4ABB60(_this+80708, handle, count)：**按 handle 区间批量移除** —— 在 4 个有序容器上 lower_bound `handle` 与 `handle+count`，
+   *    对 `[begin,end)` 每个结点调用 `sub_4A8AF0`（std::map erase，经 sub_4AA1D0/4AA330/4AA3D0 逐结点删），并销毁 +266/+267 容器的每项 record
+   *    （vtable 调用 delete `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `[11627]=1`。→ **删除 handle∈[handle, handle+count) 的全部绘制项/网格**。
+   *    SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4），用于批量清掉一段特效/网格（非崩溃路径，需实现 range-remove）。 */
+  detachTexture(handle: number, count: number): void {
     this.#markDirty();
-    this.#pushLog(`textureOp h=0x${handle.toString(16)} mode=${mode}`);
+    if (count <= 1) {
+      const removedDi = this.drawItems.delete(handle);
+      const removedMesh = this.meshes.delete(handle);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${removedDi ? 1 : 0}, meshes=${removedMesh ? 1 : 0})`);
+    } else {
+      // sub_4ABB60：删除 handle∈[handle, handle+count) 的绘制项/网格（对应引擎对该区间逐结点 std::map erase）。
+      const hi = handle + count;
+      let delDi = 0, delMesh = 0;
+      for (const k of [...this.drawItems.keys()]) if (k >= handle && k < hi) { this.drawItems.delete(k); delDi++; }
+      for (const k of [...this.meshes.keys()]) if (k >= handle && k < hi) { this.meshes.delete(k); delMesh++; }
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${hi.toString(16)}) (drawItems=${delDi}, meshes=${delMesh})`);
+    }
   }
 
   setDrawColor(handle: number, delay: number, count: number, to: number): void {

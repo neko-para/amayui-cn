@@ -13,7 +13,7 @@ mov (global-int 3f36) 0
 sub (local-int 1) 0 1
 i20d (local-int 1)
 i20e
-texture-op 1adb0 7d0
+detach-texture 1adb0 7d0
 i324
 i2fa 0
 mov (global-int 3f36) 0
@@ -247,8 +247,8 @@ ret
 exit
 
 label_00000fa4
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_00001240
 call label_0000195c
 eq (local-int 1) (global-int 0) 6
@@ -282,7 +282,7 @@ exit
 label_00001248
 ne (local-int 1) (global-int 0) 6
 jcc (local-int 1) ffffffff label_00001954
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_00001940
 gre (local-int 1) (global-int 3f37) 0
 jcc (local-int 1) ffffffff label_00001934

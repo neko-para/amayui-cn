@@ -826,5 +826,48 @@
     "unmodeled": ["触摸缓冲(_this+6780)/_this[6776] 填充来源", "sub_477980 触点筛选(&4/&0x10)"],
     "evidence": "raw 40776-40826",
     "notes": "⚠️ 修正：op4=触点/按钮旗标(v9[4])、op5=项[3](v9[3])，**非 0**；数据源是触摸/手势缓冲(WM_TOUCH/GetGestureInfo)，不是 GetCursorPos。emulator 若按『GetCursorPos+op5=0』为错"
+  },
+
+  {
+    "addr": "0x433A40",
+    "raw_name": "sub_433A40",
+    "semantic_name": "op_menu_reset_433A40",
+    "op": "0xA1",
+    "status": "ANALYZED",
+    "purpose": "op 0xA1：复位菜单派发对象（sub_415530(_this+107679, 0xFFF)）——清空 @_this+107679 的「菜单项 key→label」字符串哈希表",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 frame.arity=1", "sub_415530(_this+107679, 0xFFF) 清表"],
+    "fields_used": ["this->_this+107679(菜单派发表)"],
+    "unmodeled": [],
+    "evidence": "raw 42046-42050",
+    "notes": "与 0xA2(写表)/0xA3(查表派发) 构成菜单选择状态机；0xFFF 为表容量/上限参数"
+  },
+  {
+    "addr": "0x434F10",
+    "raw_name": "sub_434F10",
+    "semantic_name": "op_menu_bind_434F10",
+    "op": "0xA2",
+    "status": "ANALYZED",
+    "purpose": "op 0xA2：登记「菜单项 key→label」（读 op1=字符串键(sub_41B640) + op2=值(sub_41BF50) → sub_434D00(_this+107679, key, &value) 插入字符串哈希表）",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 frame.arity=5", "readStringOperand(op1) 取键", "readIntOperand(op2) 取值", "sub_434D00(_this+107679, key, &value) 插入"],
+    "fields_used": ["this->_this+107679(菜单派发表)"],
+    "unmodeled": ["sub_434D00(字符串哈希表插入) 内部"],
+    "evidence": "raw 42908-42917",
+    "notes": "TITLE：i0a2 (local40d)44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540（键=菜单项序号；emulator 用 numeric 值作 key）"
+  },
+  {
+    "addr": "0x429830",
+    "raw_name": "sub_429830",
+    "semantic_name": "op_menu_dispatch_429830",
+    "op": "0xA3",
+    "status": "ANALYZED",
+    "purpose": "op 0xA3：按 key 查表派发（读 op1=字符串键(sub_41B640) → sub_428E00(_this+107679, key) 查；命中 ip=str_table+4*值 跳转，未命中跳 op2 回退 label）",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 frame.arity=5", "readStringOperand(op1) 取键", "sub_428E00(_this+107679, key) 查表", "命中→ip=str_table+4*值；未命中→ip=str_table+4*readIntOperand(op2)", "置 frame.arity=0"],
+    "fields_used": ["this->_this+107679(菜单派发表)", "this->frames[cur].ip/arity"],
+    "unmodeled": ["sub_428E00(字符串哈希表查找) 内部"],
+    "evidence": "raw 35742-35757",
+    "notes": "TITLE：i0a3 (local3f7) 7df —— 据当前选中项(3f7) dispatch 到其 handler；无键则跳 0x7df"
   }
 ]

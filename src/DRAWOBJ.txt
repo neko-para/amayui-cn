@@ -3,7 +3,7 @@ signature = SYS4450
 local_vars = { 1a 1 1 9 1 1 }
 ====
 
-texture-op 3aca 32
+detach-texture 3aca 32
 mov (local-int 2) 1
 jmp label_0000008c
 
@@ -102,7 +102,7 @@ call label_0000089c
 jmp label_0000088c
 
 label_00000878
-texture-op (local-int 9) 1
+detach-texture (local-int 9) 1
 
 label_0000088c
 jmp label_000006dc

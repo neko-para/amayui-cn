@@ -484,11 +484,11 @@ const op_set_texture: OpHandler = (c) => {
   c.native.bindTexture?.(imgid, slot);
 };
 
-/** 0x1F7 texture-op (sub_422BC0)：纹理/图形子系统方法。op1=handle、op2=mode；mode≤1 单参，mode>1 双参。 */
-const op_texture_op: OpHandler = (c) => {
+/** 0x1F7 detach-texture (sub_422BC0)：纹理/图形子系统方法。op1=handle、op2=count；count≤1 单参(删单)，count>1 双参(删 [handle,handle+count))。 */
+const op_detach_texture: OpHandler = (c) => {
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const mode = readIntOperand(c.e, c.frame, c.instr, 2);
-  c.native.textureOp?.(handle, mode);
+  const count = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.detachTexture?.(handle, count);
 };
 
 // ---- 鼠标/输入子系统 opcodes（已读 handler 体；语义见 ../docs-new/03-engine/input-system.md）----
@@ -713,7 +713,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x205, stubSubsystem], // 纹理/文本 op（sub_4233E0）
   [0x207, stubSubsystem], // 纹理 op（sub_423480）
   [0x208, stubSubsystem], // 图形子系统方法（sub_49ED60(_this+80708, op1,…)）
-  [0x1f7, op_texture_op], // texture-op（sub_422BC0，读 op1/2）→ native.textureOp（标记图元重渲染）
+  [0x1f7, op_detach_texture], // detach-texture（sub_422BC0，读 op1/2）→ native.detachTexture（删单/区间）
   [0x1f8, stubSubsystem], // create-texture（sub_422C20，造纹理对象；LOGO 场景用到）
   [0x1fa, op_release_texture], // release-texture（LOGO 场景用到）
   [0x1fb, op_draw_texture], // draw-texture → configureDrawItem（readIntOperand 解析 handle）

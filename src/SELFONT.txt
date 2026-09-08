@@ -586,7 +586,7 @@ call label_00003034
 ret
 
 label_00002340
-texture-op 2e630 64
+detach-texture 2e630 64
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -679,7 +679,7 @@ ret
 
 label_00002b18
 add (local-int 41b) 2e630 64
-texture-op (local-int 41b) 14
+detach-texture (local-int 41b) 14
 jcc (local-int 414) ffffffff label_00003030
 add (local-int 41b) 2e630 64
 add (local-int 41c) (local-int 419) ec
@@ -758,10 +758,10 @@ ret
 
 label_00003284
 add (local-int 41b) 2e630 32
-texture-op (local-int 41b) 1
+detach-texture (local-int 41b) 1
 ret
 
 label_000032b8
-texture-op 2e630 c8
+detach-texture 2e630 c8
 release-texture c6
 exit

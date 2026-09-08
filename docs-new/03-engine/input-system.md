@@ -259,7 +259,7 @@ _this[30*cur + 95805] = 0;
 - **DOM 鼠标捕获**（`PixiBackend.create(status, input)`）：监听 canvas 的 `mousemove`/`mousedown`/`mouseup`/`mouseleave`，映射到虚拟坐标并写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 顶部显示 `mouse=(x,y) btn=L/R`。
 - **测试**：`test/input.test.ts` 覆盖 InputManager 单元 + TITLE 端到端（登记 mouse-callback → 首条 get-input-type → 注入**鼠标移动**/点击 → 派发跳到目标，hover handler 跑完回循环且不离开 TITLE）。
 
-> ⚠️ **hover 高亮可随光标移动并可回退**：`0x2FC` 取鼠标（op1=触点?1:0、op2/3=坐标）、`0x12E` 按脚本数据命中、`texture-op`(0x1F7) 标记图元重渲染；`0x203 set-draw-color-alpha` 按引擎读 **op3=alpha、op4=color → ARGB**（修正此前误把 op3 当整色），`PixiBackend` 在无动画窗时也尊重显式设色的 alpha（`colorSet`，供 hover 叠层淡入/淡出）。
+> ⚠️ **hover 高亮可随光标移动并可回退**：`0x2FC` 取鼠标（op1=触点?1:0、op2/3=坐标）、`0x12E` 按脚本数据命中、`detach-texture`(0x1F7) **删单/区间图元**（hover 回退删除旧 normal）；`0x203 set-draw-color-alpha` 按引擎读 **op3=alpha、op4=color → ARGB**（修正此前误把 op3 当整色），`PixiBackend` 在无动画窗时也尊重显式设色的 alpha（`colorSet`，供 hover 叠层淡入/淡出）。
 > ⚠️ 剩余：`0xA1/0xA2/0xA3`（菜单派发表）与 `0x20C/0xB5/0x23D/0x32B`（图形/声音清理）仍是**安全桩**（no-op）。**点击选中菜单项**仍需完整菜单派发（`0xA1/0xA2/0xA3`）子系统。**未初始化菜单**（无 SYSTEM4）时点击可能退化进入 GAMESTART/游戏启动路径。
 
 - 引擎侧 `getInputType()` 仍在 `StubNative`/`PixiBackend`/`canvasNative` 保留（恒 0，已不被 `0xCD` 路由，兼容遗留）。
@@ -295,3 +295,90 @@ _this[30*cur + 95805] = 0;
 | 0x13F | check-bit | sub_42FB40 | `op1 = ((1<<op3) & op2)!=0`（位检查） |
 | 0x135/0x136 | bit-set/bit-reset | sub_42F8B0/sub_42F920 | `op1\|=/\&= ~(1<<op2)` |
 | 0x2FC | （UI 命中） | sub_431BA0 | 用鼠标坐标判定 UI 命中项 |
+
+## 14. 菜单派发与「hover 无法回退」的逆向分析（TITLE.txt）
+
+> 本节是在「假设 TITLE.txt 逻辑正确」前提下，对 0xA1~0xA3（菜单派发）与 hover 回退链的 engine 核对结论。**先记录结论，不做 emulator 实现。**
+
+### 14.1 菜单派发子系统 `0xA1/0xA2/0xA3`（本文件已读体确认）
+
+引擎用 `_this+107679` 一张 **字符串哈希表** 承载「菜单项 key → handler label」：
+
+| op | handler | raw.c | 语义 |
+|---|---|---|---|
+| `0xA1` | sub_433A40 | 42046 | `sub_415530(_this+107679, 0xFFF)` —— **复位**菜单对象（清表；0xFFF=容量/上限） |
+| `0xA2` | sub_434F10 | 42908 | 读 `op1(字符串键,sub_41B640)` + `op2(值,sub_41BF50)` → `sub_434D00(_this+107679, key, &value)` —— **登记 key→label** |
+| `0xA3` | sub_429830 | 35742 | `sub_428E00(_this+107679, key)` 查表：命中 `ip=str_table+4*值` 跳转；未命中跳 `op2`(回退 label) |
+
+TITLE 出现两处：`label_000010b8`（**左键点击**：`i0a1 → i0a2(-1)→44f、0→452、1→481、2→4a3、3→52d、4→540 → i0a3(local3f7)→7df`，L304-315）与 L443-453（另一菜单态，同样 `i0a1+i0a2+i0a3`）。
+
+> 由 `0xA2`/`0xA3` 定义可知：**key 是关键**。TITLE 用菜单项序号(-1/0/1/2/3/4)作 key；引擎以字符串（`sub_41B640`）读 key，故 emulator 需取 op1 的 DEC 值再字符串化，而不能用 `readStringOperand`（其对 local-int 会返回局部下标，是 emulator 既有 bug）。
+
+### 14.2 「hover 无法回退」的逆向溯源（结论：脚本固有不回退，非 0xA1~0xA3）
+
+hover 路径（`label_0000039c → label_00000460(mouse handler) → label_0000047c → label_00000778 → label_00003340`）**不含** 0xA1~0xA3。
+
+- **恢复（de-highlight）逻辑** = `label_00003340` part 2（L749-788）：`set-draw-color-alpha <btn> 0 0 ffffff`（highlight→透明）+ `draw-texture <btn+1> 4 502 …`（画 normal 覆盖）。
+- **触发器**（`call label_00003340`）：① 鼠标 hover 索引**变化**（`label_0000047c` L117-126：`3f5 != 3f6` 且 `3f5 > 0` → `3f6=3f7=3f5; call label_00003340`）；② 手柄（键盘导航）分支；③ 菜单进入 `label_00000184` L38（`(3f7)=-1`，guard 不满足→不恢复）。
+- **为什么回退不了**：鼠标触发里 `L125 mov (3f7)(3f5)` 把 **(3f7)=新 hover**，`label_00003340` part 2 只对 **(3f7)** 恢复。因此鼠标从 b1→b2 时，part 2 只恢复 **b2**（新），**b1（旧 hover）从不被传入 part 2** —— b1 的 highlight 仍停留在上一轮 part 1 置的不透明，**没有任何指令去恢复它**。鼠标移出（`3f5=-1`）时 `3f5>0`/`0<-1<5` 均不成立，part 2 完全不执行 → 旧项永不回退。
+
+> 即：TITLE 的「恢复」只作用于**当前 (3f7)**，而鼠标路径把 (3f7) 强制为新 hover；**旧 hover 在脚本里从无恢复指令**。这与 `0xB5`(音效)、`0xA1~0xA3`(点击派发) 均无因果。
+
+### 14.3 已核对但 emulator 未建模/简化的 hover 路径指令（供后续按此实现）
+
+| 指令 | engine | 结论 |
+|---|---|---|
+| `0x12E` | sub_42F230(39199) | **DEC 编码有向矩形**命中：读 `op2=S`(4×DEC 偏移) + `op5=P`(每索引 16B DEC) + `op6/op7=基准` + `op8=count`；判定 `dx∈[DEC(P0)-S1, DEC(P1)-S0]`, `dy∈[DEC(P2)-S3, DEC(P3)-S2]`；从 `op1+1` 起扫，命中返回索引否则 -1。对本 TITLE 数据等价于 AABB `[0,0x9c]x[0,0x9c]`（`(local 1)`=ENC(0)→DEC=0 → S=0；数组带 DEC 往返一致）→ **emulator 的 AABB 简化目前正确** |
+| `0x2FC` | sub_431BA0(40776) | 读**触摸/手势缓冲**（`_this+6780`,count `_this[6776]`,40B/项）：有触点写 `op1=1,op2=X,op3=Y,op4=触点旗标(v9[4]),op5=触点项[3](v9[3]=dwID)`；**无触点写 op1=0** → handler 落回 `i109`/`i108` 读光标。emulator 若把「光标存在」当「触点存在」为错（会误置 `local 3f2=1` 左键恒按） |
+| `0xB5` | sub_420B40(29690) | `arity=3`；`sub_4B5020(_this+20719, op1, 0)` —— **声音通道控制**（与 0xB4 play-sound-effect/0xB6 同族）。hover 移动音效，**不影响高亮/回退** |
+| `0x20C` | sub_41A1A0 | 时间戳+present（帧同步）；无界面 no-op |
+| `0x1F7` | sub_422BC0 | 纹理子系统方法（`sub_4AB950`/`sub_4ABB60`）；**不清/不重置 item 颜色** |
+
+### 14.4 渲染管线「自然重绘/清理」结论（**原结论被 §14.5/§14.6 修正**）
+
+> 前面两轮的结论（§14.4 旧文本「不存在会重置高亮色的重绘/清理」；以及中途一度以为的「每帧清空绘制项表」）**均不成立**。真实机制见 §14.5/§14.6：引擎的绘制项容器**持久**，hover 回退靠 `detach-texture count=1` **按 handle 移除图元**，而非每帧清空。
+
+### 14.5 `sub_403EF0` = 绘制子系统整体复位（非每帧；场景切换/消息用）
+
+```c
+int __thiscall sub_403EF0(_DWORD *_this) {
+  _this[258] = 0;    // 清空绘制项容器（draw-item/mesh map 首字段 → 空表）
+  _this[959] = -1;   // 复位「当前控件」→ 无；_this[7468]=-1（新控件）/7466=0（改变旗标）等
+  ...（960/7464/7467/7468 复位）
+}
+```
+
+- 调用点：`sub_403EF0(a1+51904)` + `sub_403EF0(a1+21976)` 两容器一起（19467/19560/19688/19914、35274），位于 `sub_410160`（19276，消息/模式处理，`switch case 0/10/20`）与 `sub_428A60` 附近。
+- 语义：**整表清空 + 复位控件轨道** —— 用于**场景/模式切换**（旧的绘制项整体作废），**并非每帧执行**。**引擎的 draw-item 容器在帧间持久**，脚本用 `draw-texture`(add) 与 `detach-texture count=1`(remove) 增量维护。
+- `sub_403E70`（9917）：控件 enter/leave 轨道跟踪器（`[959]`=当前、`[7468]`=新、`[7466]`=改变旗标），返回 `_this[old+359]`(leave 槽)/`_this[new+259]`(enter 槽)。这是系统级控件 UI 的 enter/leave 派发框架；**TITLE 菜单本身的 hover 高亮并不走它**，TITLE 用下面 §14.6 的脚本自维护。
+
+### 14.6 「hover 回退」的真实机制（src/TITLE.txt + engine 双确认）
+
+**TITLE 的 hover 高亮是脚本自维护的「滚动两态（3f8=旧 / 3f7=新）」机制，回退由 `detach-texture <old_normal> 1` 移除图元实现。**
+
+`label_00003340`（L736-789）：
+- **part1（读 3f8 = 上一轮 hover）** L738-747：guard `0<3f8<5` → `set-draw-color-alpha (0x12c+2·3f8) 0 ff ffffff`（旧项 highlight→**opaque**）+ `detach-texture (0x12d+2·3f8) 1`（**移除旧项 normal 图元**）→ **旧按钮回退为 highlight**。
+- **part2（读 3f7 = 当前 hover）** L750-787：guard `0<3f7<5` → `set-draw-color-alpha (0x12c+2·3f7) 0 0 ffffff`（新项 highlight→**透明**）+ `draw-texture (0x12d+2·3f7) 4 502 …`（**画新项 normal 覆盖**）→ **新按钮显示为 normal**。
+- **滚动延续**：part2 尾部 `mov (3f8)(3f7)`（L754）把 3f8 记为本轮新 hover，于是**下一次** hover 变化时,part1 的 3f8 = 刚刚的旧按钮 → 被回退。鼠标路径（`label_0000047c` L117-126）设 `3f6=3f7=3f5`（新），**不改 3f8**；3f8 延续上一轮 `mov(3f8)(3f7)` 的值。⇒ **上一轮（旧）按钮一定被回退**。
+
+**engine 侧对应：`detach-texture … 1`（`sub_422BC0` `count≤1`）→ `sub_4AB950(_this+80708, handle)`：`sub_459EA0(find)` + `sub_4A8AF0(erase)` = 把 handle 从 draw-item/mesh 容器里移除。** （关于 `count>1` 的语义与 emulator 处理，见 §14.8。）
+
+**（关键）引擎绘制项容器持久**：`draw-texture`(add) + `detach-texture count=1`(remove) 增量维护；不存在「每帧清空」。
+
+**⇒ emulator 的 bug 与修复：** `pixiBackend.detachTexture` 先前是 **no-op**，导致 `detach-texture <old_normal> 1` **不移除**上一轮 hover 画出的 normal 图元 → 旧按钮一直显示 normal → 「hover 过后始终 hover」。已按 `sub_4AB950` 语义改为：`count≤1` 时 `drawItems.delete(handle)` + `meshes.delete(handle)`（移除图元）。`count>1`＝`sub_4ABB60` **按 handle 区间批量移除**（见 §14.8），emulator 同样实现区间删除。`input.test.ts` 通过；`xval.test.ts` 的失败是**既有** opcode 别名（bin `u00415EC0` vs txt `i109`）不匹配,与本修复无关。
+
+### 14.8 `detach-texture` count≠0（count>1）的区间移除研究（SYSTEM4/LOGO/TITLE 开机命中）
+
+**问题**：`0x1F7 detach-texture`（`sub_422BC0`）在 `count>1` 时走 `sub_4ABB60(_this+80708, handle, count)`。SYSTEM4/LOGO/TITLE 开机有大量 `detach-texture <h> <count>` 调用（count＝`2/3/4/6/0x19/0x64/0x12c/0x1f4`，如 `19640 2`、`19834 19`、`19708 6`、`1976c 3`、`19a28 1f4`、`1a9c8 64`、`30d40 4`、TITLE `64 12c`）。若 `count>1` 抛错，则 **LOGO→TITLE 开机即崩**。
+
+**研究结论**（raw .c 分别读过 `sub_422BC0`(31137)/`sub_4ABB60`(130841)/`sub_4AA1D0`(129598)/`sub_4AA3D0`(129763)/`sub_4A8AF0`(128132)）：
+- `sub_422BC0`：`op2≤1`→`sub_4AB950(_this+80708, op1)`（**按 handle 移除**）；`op2>1`→`sub_4ABB60(_this+80708, op1, op2)`。
+- **容器对齐确认**：`sub_4AB950` 里 `_this+1032`(字节偏移) 与 `sub_4ABB60` 里 `_this[258]`(DWORD 下标) 的字节地址相同（258×4=1032）→ 两者操作**同一组容器**（`byte 1032`=draw-item、`1064`=网格+每项 record、`1080`/`1096`=附属列表）。
+- `sub_4ABB60(handle, count)`：对 4 个容器各做 `begin=lower_bound(handle)`、`end=lower_bound(handle+count)`；若 `[begin,end)` 非空，则逐结点调 **`sub_4A8AF0`（std::map erase）**（经 `sub_4AA1D0`/`sub_4AA330`/`sub_4AA3D0`），并销毁 `+266/+267` 容器每项 record（vtable 调 delete `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `_this[11627]=1`。
+- `sub_4A8AF0`（128132）确认是 **std::map::erase**（结点重连 + `std___X_out_of_range` 守卫）。
+
+**⇒ 语义与 emulator 处理**：`count>1` 就是**按 handle 区间批量移除**——删掉 handle∈`[handle, handle+count)` 的全部绘制项/网格（引擎对 4 个容器该区间逐结点 erase；区间内无对应项时循环体不执行，等价 no-op）。因此不能当「无渲染改动」忽略：它会让一段特效/网格消失。emulator `detachTexture` 对 `count>1` **删 `[handle, handle+count)` 区间的 drawItems+meshes**（非 no-op、非抛错）。`count≤1` 的「移除单图元」是 TITLE hover 回退所依赖的语义。
+
+### 14.7 未打通缺口
+
+菜单点击链在 `0xA1~0xA3` 之后还会命中**未实现的 `0x80`（u0041AF00, sub_41F690）** 等指令（诊断：点击后 cur 变化前在 `@0x280` 处 `unimplemented opcode 0x80`）。「点击选中」要真正走通需继续补这些后续 opcode。

@@ -610,7 +610,7 @@ label_000026c4
 ret
 
 label_000026c8
-texture-op 2e630 c8
+detach-texture 2e630 c8
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -663,7 +663,7 @@ ret
 
 label_00002c48
 add (local-int 422) 2e630 12c
-texture-op (local-int 422) 64
+detach-texture (local-int 422) 64
 create-texture c7 180 c8 0
 mov (local-int 410) c8
 i075 1e
@@ -909,13 +909,13 @@ ret
 
 label_00004228
 add (local-int 422) 2e630 c8
-texture-op (local-int 422) 1
+detach-texture (local-int 422) 1
 add (local-int 422) 2e630 190
-texture-op (local-int 422) 3
+detach-texture (local-int 422) 3
 ret
 
 label_0000428c
-texture-op 2e630 1f4
+detach-texture 2e630 1f4
 release-texture c6
 release-texture c7
 release-texture c8

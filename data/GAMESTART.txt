@@ -1137,7 +1137,7 @@ label_000044f8
 ret
 
 label_000044fc
-texture-op 640 1e
+detach-texture 640 1e
 mov (local-int 405) 0
 mov (local-int 40f) 87
 mov (local-int 406) 1
@@ -1210,8 +1210,8 @@ label_000049cc
 ret
 
 label_000049d0
-texture-op 44c 1
-texture-op 578 2
+detach-texture 44c 1
+detach-texture 578 2
 mov (global-int 132dc8) 0
 mov (global-int 132dc9) 0
 gre (local-int 4d6) (local-int 3f7) 0
@@ -1327,7 +1327,7 @@ set-vertex-color-alpha 30d40 0 5dc 0 0
 label_00005294
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i071 9
 i1bb 1
@@ -1353,7 +1353,7 @@ i1bb 1
 sub (local-int 4d6) 0 1
 i1d2 (local-int 4d6) 0
 i080 1
-texture-op 3e8 3e8
+detach-texture 3e8 3e8
 release-texture c0
 release-texture c1
 exit

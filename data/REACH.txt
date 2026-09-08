@@ -208,7 +208,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00001020
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 mov (local-int 3f4) 0
 mov (local-int 3f2) 0
@@ -976,7 +976,7 @@ poll-input
 wait
 call label_00007ccc
 add (local-int 12be) 1d4c0 898
-texture-op (local-int 12be) (local-int 4e8)
+detach-texture (local-int 12be) (local-int 4e8)
 add (local-int 12be) 1d4c0 834
 add (local-int 12bf) 1d4c0 898
 i21d (local-int 12be) (local-int 12bf)
@@ -987,7 +987,7 @@ eq (local-int 12be) (local-int 481) 0
 eq (local-int 12bf) (local-int 482) 1
 and (local-int 12c0) (local-int 12be) (local-int 12bf)
 jcc (local-int 12c0) ffffffff label_00004560
-texture-op 1fbd0 12c
+detach-texture 1fbd0 12c
 add (local-int 12be) 1d4c0 7d0
 draw-texture (local-int 12be) c3 0 0 500 2d0 0 0
 add (local-int 12be) 1d4c0 7d0
@@ -1094,9 +1094,9 @@ set-draw-color (local-int 12be) 0 c8 0 (local-int 12bf)
 poll-input
 wait
 add (local-int 12be) 1d4c0 7d0
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 898
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 jmp label_00004a08
 
 label_00004830
@@ -1105,7 +1105,7 @@ eq (local-int 12bf) (local-int 482) 1
 and (local-int 12c0) (local-int 12be) (local-int 12bf)
 jcc (local-int 12c0) ffffffff label_00004a08
 add (local-int 12be) 1d4c0 7d0
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 mov (local-int 401) 0
 jmp label_0000490c
 
@@ -1125,7 +1125,7 @@ label_000049d0
 poll-input
 wait
 add (local-int 12be) 1d4c0 898
-texture-op (local-int 12be) (local-int 4e8)
+detach-texture (local-int 12be) (local-int 4e8)
 
 label_00004a08
 mov (local-int 482) (local-int 481)
@@ -1948,9 +1948,9 @@ ret
 
 label_00007ccc
 add (local-int 12be) 1d4c0 64
-texture-op (local-int 12be) 190
+detach-texture (local-int 12be) 190
 add (local-int 12be) 1d4c0 834
-texture-op (local-int 12be) 64
+detach-texture (local-int 12be) 64
 mov (local-int 401) 0
 jmp label_00007d68
 
@@ -2077,11 +2077,11 @@ ret
 
 label_00008ad8
 add (local-int 12be) 1d4c0 3e8
-texture-op (local-int 12be) c8
+detach-texture (local-int 12be) c8
 add (local-int 12be) 1d4c0 514
-texture-op (local-int 12be) 64
+detach-texture (local-int 12be) 64
 add (local-int 12be) 1d4c0 5dc
-texture-op (local-int 12be) c8
+detach-texture (local-int 12be) c8
 eq (local-int 12be) (local-int 481) 0
 jcc (local-int 12be) ffffffff label_00008ba4
 ret
@@ -2272,9 +2272,9 @@ ret
 
 label_00009a84
 add (local-int 12be) 1d4c0 1f4
-texture-op (local-int 12be) 64
+detach-texture (local-int 12be) 64
 add (local-int 12be) 1d4c0 2bc
-texture-op (local-int 12be) 12c
+detach-texture (local-int 12be) 12c
 ne (local-int 12be) (local-int 481) 1
 jcc (local-int 12be) ffffffff label_00009b20
 ret
@@ -2289,9 +2289,9 @@ ret
 
 label_00009b88
 add (global-int 707ffe) 1d4c0 bb8
-texture-op (global-int 707ffe) c8
+detach-texture (global-int 707ffe) c8
 add (local-int 12be) (global-int 707ffe) 12c
-texture-op (local-int 12be) 1f4
+detach-texture (local-int 12be) 1f4
 ne (local-int 12be) (local-int 481) 2
 jcc (local-int 12be) ffffffff label_00009c24
 ret
@@ -2478,18 +2478,18 @@ ret
 
 label_0000ac04
 add (local-int 12be) 1d4c0 12c
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 258
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 4b0
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 578
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 a28
-texture-op (local-int 12be) 1
+detach-texture (local-int 12be) 1
 add (local-int 12be) 1d4c0 c80
-texture-op (local-int 12be) 1
-texture-op 1fbd0 12c
+detach-texture (local-int 12be) 1
+detach-texture 1fbd0 12c
 ret
 
 label_0000ad3c
@@ -2516,7 +2516,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_0000af18
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 i1f6
 i23d

@@ -18,9 +18,9 @@ add (local-int 13b2) 11558 12f
 i21d (local-int 13b2) (local-int 13b0)
 
 label_00000178
-texture-op 11558 1f4
+detach-texture 11558 1f4
 add (local-int 13b2) 11558 258
-texture-op (local-int 13b2) 64
+detach-texture (local-int 13b2) 64
 ne (local-int 13b2) (global-int b22b) 2
 lookup-array (local-ptr 0) (global-int 6202a) (global-int b225)
 and (local-int 13b3) (local-ptr 0) 1
@@ -517,7 +517,7 @@ i2da 0 49 642 37b f 14 2 (local-int 13b2)
 label_00003474
 gre (local-int 13b2) (local-int 13b0) 0
 jcc (local-int 13b2) ffffffff label_000034c0
-texture-op (local-int 13b0) 1
+detach-texture (local-int 13b0) 1
 
 label_000034c0
 add (local-int 13b2) 11558 136

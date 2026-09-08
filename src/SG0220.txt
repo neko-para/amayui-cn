@@ -669,7 +669,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_000026bc
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 exit-script
 jmp label_00002950
@@ -1116,8 +1116,8 @@ exit
 exit
 
 label_00003e00
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_0000409c
 call label_00006b48
 eq (local-int 0) (global-int 0) 6
@@ -1222,7 +1222,7 @@ create-texture e 140 b4 2
 i032 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-texture-op 30d40 1
+detach-texture 30d40 1
 i1ae (global-int 1396) (global-int f8019) e
 release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
@@ -1446,7 +1446,7 @@ mov (global-int 13ad) 0
 mov (global-int f7ffb) 0
 
 label_000054d0
-texture-op 197d0 1
+detach-texture 197d0 1
 call label_00006d44
 mov (global-int f8047) 1
 ret
@@ -1514,7 +1514,7 @@ gre (local-int 0) (global-int f801f) 0
 jcc (local-int 0) ffffffff label_00005900
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 i215 (global-int f8c39) (local-ptr 1)
 ne (local-int 0) (global-int f801f) (global-int f8c39)
@@ -1533,7 +1533,7 @@ sub (local-int 2) 0 1
 set-draw-color-alpha (local-ptr 1) 0 (local-int 1) (local-int 2)
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 2
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 release-texture (global-int f801f)
 
 label_00005a54
@@ -1566,7 +1566,7 @@ label_00005c1c
 jcc (global-int f8048) ffffffff label_00005fd4
 and (local-int 0) (global-int f8048) 1
 jcc (local-int 0) ffffffff label_00005c9c
-texture-op 19578 2
+detach-texture 19578 2
 release-texture 1
 release-texture a
 
@@ -1574,7 +1574,7 @@ label_00005c9c
 and (local-int 0) (global-int f8048) 2
 jcc (local-int 0) ffffffff label_00005d88
 add (local-int 0) 19258 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 release-texture b
 eq (local-int 0) (global-int f8068) 1
 jcc (local-int 0) ffffffff label_00005d88
@@ -1597,7 +1597,7 @@ lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 jcc (local-ptr 1) ffffffff label_00005fa0
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 lookup-array-2d (local-ptr 1) (global-int 3f54) (global-int f801d) 3 2
 release-texture (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f805d) (global-int f801d)
@@ -1637,7 +1637,7 @@ exit
 label_000060b4
 ne (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_000067c0
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_000067ac
 gre (local-int 0) (global-int 3f37) 0
 jcc (local-int 0) ffffffff label_000067a0
@@ -1823,9 +1823,9 @@ ret
 exit
 
 label_00006d44
-texture-op 1976c 3
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 1976c 3
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 eq (local-int 0) (global-int a9dc) 0
 jcc (local-int 0) ffffffff label_00006e14
 i2f6 0
@@ -1839,8 +1839,8 @@ ret
 exit
 
 label_00006e1c
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 and (local-int 0) (global-int 1397) (global-int 3f38)
 jcc (local-int 0) ffffffff label_00006ee4
 eq (local-int 0) (global-int 0) 6

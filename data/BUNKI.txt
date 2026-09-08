@@ -735,9 +735,9 @@ ret
 
 label_00003508
 add (local-int 9f) 1adb0 2bc
-texture-op (local-int 9f) 3
+detach-texture (local-int 9f) 3
 add (local-int 9f) 1adb0 76c
-texture-op (local-int 9f) 1
+detach-texture (local-int 9f) 1
 gre (local-int 9f) (local-int 9) 0
 lt (local-int a0) (local-int 9) (local-int 90)
 and (local-int a1) (local-int 9f) (local-int a0)
@@ -822,7 +822,7 @@ mov (global-int 4) 1
 call-script 51c1
 
 label_00003c90
-texture-op 1adb0 7d0
+detach-texture 1adb0 7d0
 release-texture 12
 i20c
 set-string (global-string e3a) ""
@@ -915,8 +915,8 @@ ret
 exit
 
 label_000040f4
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_00004390
 call label_00003f2c
 eq (local-int 9f) (global-int 0) 6
@@ -950,7 +950,7 @@ exit
 label_00004398
 ne (local-int 9f) (global-int 0) 6
 jcc (local-int 9f) ffffffff label_00004aa4
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_00004a90
 gre (local-int 9f) (global-int 3f37) 0
 jcc (local-int 9f) ffffffff label_00004a84
@@ -1021,8 +1021,8 @@ ret
 exit
 
 label_00004aac
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 and (local-int 9f) (global-int 1397) (global-int 3f38)
 jcc (local-int 9f) ffffffff label_00004b74
 eq (local-int 9f) (global-int 0) 6

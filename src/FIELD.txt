@@ -1173,7 +1173,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_00005244
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 
 label_0000526c
@@ -3266,7 +3266,7 @@ mov (global-int 519af9) (global-int b225)
 add (local-int 819f) ea60 64
 mul (local-int 81a2) (global-int 519af9) 1e
 add (local-int 81a0) (local-int 819f) (local-int 81a2)
-texture-op (local-int 81a0) 1e
+detach-texture (local-int 81a0) 1e
 fill-zero (local-int 80e9) 3
 lookup-array (local-ptr 4) (global-int 6f0f4) (local-int 3012)
 lookup-array (local-ptr 3) (global-int 6d9652) (local-ptr 4)
@@ -3693,7 +3693,7 @@ i239 (local-int 819f) 0 1f4 f 5 1
 i24e 10001
 wait
 sub (local-int 819f) ea60 7d0
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 poll-input
 
 label_0000f25c
@@ -6074,7 +6074,7 @@ lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0001a29c
 add (local-int 819f) ea60 76c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 61c72)
@@ -6129,7 +6129,7 @@ lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0001a690
 add (local-int 819f) ea60 76c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 61c72)
@@ -6183,7 +6183,7 @@ lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0001aa40
 add (local-int 819f) ea60 76c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 61c72)
@@ -6597,7 +6597,7 @@ lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_0001ca00
 add (local-int 819f) ea60 76c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 61c72)
@@ -7247,7 +7247,7 @@ poll-input
 i24e 10001
 wait
 add (local-int 819f) ea60 1b58
-texture-op (local-int 819f) 3e8
+detach-texture (local-int 819f) 3e8
 release-texture 2a
 lookup-array (local-ptr 6) (global-int 6f0f4) (global-int 61c72)
 lookup-array (local-ptr 4) (global-int 6c715a) (local-ptr 6)
@@ -7614,7 +7614,7 @@ lookup-array (local-ptr 4) (global-int 6202a) (global-int 61c72)
 and (local-int 819f) (local-ptr 4) 1
 jcc (local-int 819f) ffffffff label_00021874
 add (local-int 819f) ea60 76c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 lookup-array (local-ptr 4) (global-int 6f1bc) (global-int 61c72)
 lookup-array-2d (local-ptr 3) (global-int 25c00) (global-int b222) 64 (local-ptr 4)
 lookup-array (local-ptr 6) (global-int 6f18a) (global-int 61c72)
@@ -9419,7 +9419,7 @@ call-script 3994  // DRAWCHP
 and (local-int 819f) (global-int a9d6) 10000
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_00029a88
-texture-op 11d28 1
+detach-texture 11d28 1
 draw-texture 11d28 a7 0 0 100 180 24d 0
 set-draw-color-alpha 11d28 1 ff ffffff
 i239 11d28 0 320 10 8 0
@@ -12082,7 +12082,7 @@ set-draw-color (local-int 819f) 0 c8 0 0
 label_000353b0
 i24e 10001
 wait
-texture-op 10d88 2
+detach-texture 10d88 2
 release-texture 2a
 poll-input
 i10d (local-int 2fcd)
@@ -12669,7 +12669,7 @@ i220 (local-int 819f) 0 c8 (local-int 81a2) 0 0
 i24e 10001
 wait
 add (local-int 819f) 1d4c0 a
-texture-op (local-int 819f) 2
+detach-texture (local-int 819f) 2
 poll-input
 ret
 
@@ -12832,7 +12832,7 @@ jcc (local-int 81a2) ffffffff label_00039288
 bit-set (local-int 8199) 2
 play-sound-effect 5127 0
 i0b5 0
-texture-op 1d4c0 2
+detach-texture 1d4c0 2
 draw-texture 1d4c0 49 0 799 500 32 0 14f
 i217 1d4c0 280 168 0
 i1fd 1d4c0 64 0 64
@@ -12884,9 +12884,9 @@ call label_00039c9c
 ret
 
 label_00039310
-texture-op 11940 64
+detach-texture 11940 64
 add (local-int 819f) 11940 c8
-texture-op (local-int 819f) 64
+detach-texture (local-int 819f) 64
 mov (local-int 2fcf) 0
 jmp label_00039390
 
@@ -12996,7 +12996,7 @@ mov (local-int 1003) (global-int 510050)
 jmp label_00039f88
 
 label_00039f60
-texture-op 11170 c8
+detach-texture 11170 c8
 mov (local-int 1000) 7d0
 
 label_00039f88
@@ -13004,7 +13004,7 @@ and (local-int 819f) (global-int 56941) 100
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_0003a30c
 add (local-int 819f) 11170 a
-texture-op (local-int 819f) 14
+detach-texture (local-int 819f) 14
 jcc (global-int b22b) ffffffff label_0003a30c
 mov (local-int 300e) 1
 jmp label_0003a064
@@ -13077,7 +13077,7 @@ ret
 
 label_0003a6a8
 add (local-int 819f) 11170 c8
-texture-op (local-int 819f) 3
+detach-texture (local-int 819f) 3
 ret
 
 label_0003a6dc
@@ -13347,8 +13347,8 @@ ret
 label_0003c194
 sub (local-int 80e6) ea60 bb8
 add (local-int 80e7) ea60 7d0
-texture-op (local-int 80e6) 3e8
-texture-op (local-int 80e7) bb8
+detach-texture (local-int 80e6) 3e8
+detach-texture (local-int 80e7) bb8
 ret
 
 label_0003c1f8
@@ -13709,7 +13709,7 @@ poll-input
 i24e 10001
 wait
 add (local-int 819f) ea60 1d4c
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 release-texture 2a
 ret
 i20c
@@ -13880,7 +13880,7 @@ wait
 
 label_0003f04c
 add (local-int 819f) ea60 1d4c
-texture-op (local-int 819f) 190
+detach-texture (local-int 819f) 190
 release-texture 2a
 ret
 i20c
@@ -13937,7 +13937,7 @@ jmp label_0003f15c
 label_0003f53c
 poll-input
 wait
-texture-op 30d40 5
+detach-texture 30d40 5
 
 label_0003f558
 ret
@@ -14272,20 +14272,20 @@ ret
 label_00041580
 mov (local-int 2fb7) 0
 sub (local-int 819f) ea60 7d0
-texture-op (local-int 819f) 7d0
+detach-texture (local-int 819f) 7d0
 add (local-int 819f) ea60 1b58
-texture-op (local-int 819f) 4
+detach-texture (local-int 819f) 4
 add (local-int 819f) ea60 1db0
-texture-op (local-int 819f) 12c
+detach-texture (local-int 819f) 12c
 add (local-int 819f) 11170 32
-texture-op (local-int 819f) 8
+detach-texture (local-int 819f) 8
 add (local-int 819f) 11558 1f4
-texture-op (local-int 819f) 6
+detach-texture (local-int 819f) 6
 add (local-int 819f) 11940 64
-texture-op (local-int 819f) 1
+detach-texture (local-int 819f) 1
 sub (local-int 819f) 12110 1f4
-texture-op (local-int 819f) 190
-texture-op 1fbd0 12c
+detach-texture (local-int 819f) 190
+detach-texture 1fbd0 12c
 ret
 
 label_000416fc
@@ -14305,7 +14305,7 @@ and (local-int 81a2) (global-int b1b6) 10
 eq (local-int 81a0) (local-int 81a2) 10
 or (local-int 81a3) (local-int 819f) (local-int 81a0)
 jcc (local-int 81a3) ffffffff label_00041854
-texture-op 12110 1
+detach-texture 12110 1
 jmp label_00041898
 
 label_00041854
@@ -14332,7 +14332,7 @@ set-draw-color-alpha 30d40 0 80 (local-int 819f)
 jmp label_00041a5c
 
 label_00041a48
-texture-op 30d40 1
+detach-texture 30d40 1
 
 label_00041a5c
 i20c
@@ -14471,7 +14471,7 @@ set-draw-color 11558 0 c8 0 (local-int 819f)
 poll-input
 wait
 sub (local-int 819f) 12110 11170
-texture-op 11170 (local-int 819f)
+detach-texture 11170 (local-int 819f)
 ret
 
 label_000424ec
@@ -14722,7 +14722,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_00043728
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 jmp label_00043dcc
 
@@ -14748,7 +14748,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_00043918
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 mov (global-int 519af9) 1
 jmp label_0004397c

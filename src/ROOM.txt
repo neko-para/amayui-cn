@@ -86,7 +86,7 @@ set-draw-color 1f4 0 c8 0 (local-int 12a)
 i24e 10001
 wait
 poll-input
-texture-op 1f4 1
+detach-texture 1f4 1
 jmp label_0000077c
 
 label_00000598
@@ -111,7 +111,7 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 label_00000754
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 
 label_0000077c
@@ -448,7 +448,7 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 label_00001a08
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 call label_00002904
 mov (local-int 112) 4
@@ -536,8 +536,8 @@ mov (global-int f800c) 0
 ret
 
 label_00001f78
-texture-op c8 1
-texture-op 2bc 1
+detach-texture c8 1
+detach-texture 2bc 1
 gre (local-int 12a) (local-int 106) 0
 lt (local-int 12b) (local-int 106) (local-int fb)
 and (local-int 12c) (local-int 12a) (local-int 12b)
@@ -635,7 +635,7 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00002acc
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 exit-script
 exit

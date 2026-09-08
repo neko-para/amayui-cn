@@ -823,9 +823,9 @@ ret
 
 label_00003238
 add (local-int be9) 1d4c0 1004
-texture-op (local-int be9) c8
+detach-texture (local-int be9) c8
 add (local-int be9) 1d4c0 1130
-texture-op (local-int be9) 1
+detach-texture (local-int be9) 1
 add (local-int be9) 1d4c0 1068
 draw-texture (local-int be9) c2 0 39a 123 fe 3b6 18e
 sub (local-int be9) 0 3
@@ -862,9 +862,9 @@ ret
 
 label_00003774
 add (global-int 707ffe) 1d4c0 1388
-texture-op (global-int 707ffe) c8
+detach-texture (global-int 707ffe) c8
 add (local-int be9) (global-int 707ffe) 12c
-texture-op (local-int be9) 1f4
+detach-texture (local-int be9) 1f4
 mov (global-int 707ffa) (local-int 40f)
 mov (global-int 707ffb) (local-int 410)
 mov (global-int 707fff) 38e
@@ -957,16 +957,16 @@ ret
 
 label_00003fd8
 add (local-int be9) 1d4c0 10cc
-texture-op (local-int be9) 1
+detach-texture (local-int be9) 1
 add (local-int be9) 1d4c0 1450
-texture-op (local-int be9) 1
-texture-op 1fbd0 12c
+detach-texture (local-int be9) 1
+detach-texture 1fbd0 12c
 ret
 
 label_00004050
 add (local-int be9) 1d4c0 fa0
-texture-op (local-int be9) 7d0
-texture-op 1fbd0 12c
+detach-texture (local-int be9) 7d0
+detach-texture 1fbd0 12c
 mov (local-int 400) 0
 jmp label_000040d0
 

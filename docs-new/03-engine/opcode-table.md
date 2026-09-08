@@ -9,7 +9,7 @@
 > - **操作数编号**：语义列用 **op1 / op2 / op3…（1-based）= 该指令的第 1 / 第 2 / 第 3… 个参数**（等价 args[0]/args[1]/args[2]…），**不含 opcode**，个数与 `argc` 一致。
 > ⚠️ AGE 助记符不可靠（`exit`≠程序退出，是跨脚本返回；`ret`≠跨脚本返回，是同脚本子程序返回）。凡`推测`/未读体一律不可当定论。
 >
-> **效果相关指令已语义化命名**（版权页/淡入淡出等）：`create-mesh`(0x320)、`set-vertex-color`(0x322)、`set-vertex-color-alpha`(0x323)、`set-draw-color`(0x202)、`set-draw-color-alpha`(0x203)、`draw-texture`(0x1FB)、`set-texture`(0x1F9)、`create-texture`(0x1F8)、`release-texture`(0x1FA)、`play-movie`(0x20F)、`wait`(0x21C)、`float-mov`(0x2D5)、`poll-input`(0x101)、`texture-op`(0x1F7)。旧的 `u00xxxxxx` 保留为**别名**（汇编器同时接受），源脚本已批量替换为主标签。这些的完整机制见 `./copyright-effect.md`。
+> **效果相关指令已语义化命名**（版权页/淡入淡出等）：`create-mesh`(0x320)、`set-vertex-color`(0x322)、`set-vertex-color-alpha`(0x323)、`set-draw-color`(0x202)、`set-draw-color-alpha`(0x203)、`draw-texture`(0x1FB)、`set-texture`(0x1F9)、`create-texture`(0x1F8)、`release-texture`(0x1FA)、`play-movie`(0x20F)、`wait`(0x21C)、`float-mov`(0x2D5)、`poll-input`(0x101)、`detach-texture`(0x1F7)。旧的 `u00xxxxxx` 保留为**别名**（汇编器同时接受），源脚本已批量替换为主标签。这些的完整机制见 `./copyright-effect.md`。
 >
 > **算术/字符串/内存指令接口（2025-09 确证）**：本表所列纯数值/字符串/内存指令均已**逐一读体、确认接口**，结论写入数据层 `analysis/functions.json`（`ANALYZED`/`PARTIAL` + `purpose`/`sub_behaviors`/`fields_used`/`evidence`）与 `analysis/fields.json`（操作数池基址 `pool_int/float/string/…`、`local_*`）。类别：运算 `0x50-0x5F`、位 `0x135-0x13F`、浮点 `0x2D5-0x2E4`、字符串 `0x192/193/1C8/2C5/1A6/1A3`、数组/索引/lea `0x61/63/64/6C/12C/1B0/2D8`。
 >
@@ -145,9 +145,9 @@
 | 0x96 | 0 |  | sub_419260 | 仅映射 |  |
 | 0x97 | 5 |  | sub_420910 | 仅映射 |  |
 | 0xA0 | 3 | jcc | sub_4209B0 | 已核对 | **两目标条件跳转**（仅 3 个操作数）：`op1=条件`（非 0 为真）；`op1≠0`→跳 `op2`（若 `op2==0xFFFFFFFF` 则落下句）；`op1==0`→跳 `op3`（若 `op3==0xFFFFFFFF` 则落下句）。 |
-| 0xA1 | 0 |  | sub_433A40 | 仅映射 |  |
-| 0xA2 | 2 |  | sub_434F10 | 仅映射 |  |
-| 0xA3 | 2 |  | sub_429830 | 仅映射 |  |
+| 0xA1 | 0 |  | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046） |
+| 0xA2 | 2 |  | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908） |
+| 0xA3 | 2 |  | sub_429830 | 已核对 | **按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742） |
 | 0xAA | 2 |  | sub_42D580 | 仅映射 |  |
 | 0xAB | 2 |  | sub_42D650 | 仅映射 |  |
 | 0xAC | 9 |  | sub_42D700 | 仅映射 |  |
@@ -330,7 +330,7 @@
 | 0x1F4 | 0 |  | sub_41A090 | 已核对 | **帧计时(等待底盘)**：`_this[107438]` 已置→`++_this[107439]`(累加帧计数)；否则 `_this[107438]=1`+`timeGetTime()` 写 `_this[92333]/[92334]`。handler=sub_41A090（raw .c 25194） |
 | 0x1F5 | 0 |  | sub_41A0E0 | 已核对 | **帧倒计+派发(等待底盘)**：每帧递减 `_this[107439]`；到 0 清 `_this[107438]` 且 `_this[124350]==0` 时 `sub_40FB60()` 派发排队脚本(续跑)。handler=sub_41A0E0（raw .c 25215） |
 | 0x1F6 | 0 |  | sub_41A130 | 已核对 | **清图形对象链**：`sub_4AB7A0`。handler=sub_41A130（raw .c 24986） |
-| 0x1F7 | 2 | texture-op | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1/op2，按 op2 选调图形子系统 `sub_4AB950(_this+80708, op1)`（单参，mode≤1）或 `sub_4ABB60`（双参，mode>1）。fire-and-forget。handler=sub_422BC0（raw .c 30717）。emulator 映射到 `native.textureOp(handle,mode)`（标记图元重渲染）。旧 label `u00420270` |
+| 0x1F7 | 2 | detach-texture | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1=handle、op2=count，按 count 分派图形子系统（同一套容器：`sub_4AB950` 的 `_this+1032`(字节) 与 `sub_4ABB60` 的 `_this[258]`(DWORD 下标) 都是 byte 1032 = 同一 draw-item 容器）。`count≤1`→`sub_4AB950(handle)`：**移除该 handle 单图元**（`sub_459EA0` 找 + `sub_4A8AF0` std::map erase，置脏 `[46508]=1`；TITLE hover 回退用它删旧 normal）。`count>1`→`sub_4ABB60(handle,count)`：**按 handle 区间批量移除**——4 个容器 lower_bound `handle` 与 `handle+count`，对 `[begin,end)` 逐结点 `sub_4A8AF0`(erase，经 `sub_4AA1D0`/`sub_4AA330`/`sub_4AA3D0`)，并销毁 `+266/+267` 容器每项 record（vtable 删 `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `[11627]=1`。→ **删 handle∈[handle,handle+count) 的全部绘制项/网格**。SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4，批量清特效段）。handler=sub_422BC0（raw .c 30717）。emulator：count≤1→`detachTexture` 删单；count>1→`detachTexture` 删 `[handle,handle+count)` 区间。旧 label `u00420270` |
 | 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=纹理槽、op2/3/4；先释放旧槽对象（`sub_488FB0`+vtable delete+置0），调 `sub_4A2C10(_this+80708, op1, op2, op3, op4)` 创建纹理；失败抛「CTexture エラー：テクスチャ作成に失敗」。fire-and-forget。handler=sub_422C20（raw .c 30739） |
 | 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 30769） |
 | 0x1FA | 1 |  | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 30822） |

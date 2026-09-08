@@ -669,7 +669,7 @@ set-vertex-color-alpha 30d40 0 1f4 0 0
 label_000026bc
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 exit-script
 jmp label_00002950
@@ -1024,7 +1024,7 @@ mov (global-int 0) 1
 i1f4
 eq (local-int 0) (global-int 3f90) 0
 jcc (local-int 0) ffffffff label_00003f7c
-texture-op 19258 1
+detach-texture 19258 1
 mov (global-int 4fd1) 0
 mov (global-int 4fd2) 0
 mov (global-int 4fd3) 0
@@ -1032,7 +1032,7 @@ mov (global-int 4fd4) (global-int 4fd2)
 mov (global-int 4fd5) (global-int 4fd3)
 jcc (global-int 4fd9) ffffffff label_00003b38
 sub (local-int 0) 30d40 18a88
-texture-op 18a88 (local-int 0)
+detach-texture 18a88 (local-int 0)
 jcc (global-int 708ad6) ffffffff label_00003b2c
 jcc (global-int 708ada) ffffffff label_00003a88
 sub (local-int 0) 0 1
@@ -1172,11 +1172,11 @@ call label_000a8cc0
 call label_000a9670
 jcc (global-int 4fd9) ffffffff label_00004308
 i1f4
-texture-op 109a0 1
+detach-texture 109a0 1
 release-texture 3
 i1f5
 sub (local-int 0) 30d40 18a88
-texture-op 18a88 (local-int 0)
+detach-texture 18a88 (local-int 0)
 jmp label_0000430c
 
 label_00004308
@@ -2142,7 +2142,7 @@ mov (global-int f8047) 1
 set-draw-color (global-int f802d) 0 708 ff ffffff
 mov (global-int f8047) 1
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -2189,7 +2189,7 @@ label_00008388
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f802d) a
+detach-texture (global-int f802d) a
 release-texture (global-int 3f72)
 release-texture (global-int 3f73)
 release-texture (global-int 3f74)
@@ -2723,7 +2723,7 @@ label_0000a228
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -2731,7 +2731,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -3069,7 +3069,7 @@ label_0000b6d8
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -4189,7 +4189,7 @@ call label_000aa4ac
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -4197,7 +4197,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -4531,7 +4531,7 @@ label_000109a8
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -6727,7 +6727,7 @@ jmp label_00018d84
 label_00018f8c
 add (local-int 1) 3 1
 lookup-array (local-ptr 1) (global-int f8023) (local-int 1)
-texture-op (local-ptr 1) a
+detach-texture (local-ptr 1) a
 add (local-int 0) 3 1
 lookup-array-2d (local-ptr 0) (global-int 3f54) (local-int 0) 3 0
 release-texture (local-ptr 0)
@@ -7518,7 +7518,7 @@ jmp label_0001c250
 label_0001c458
 add (local-int 1) 3 1
 lookup-array (local-ptr 1) (global-int f8023) (local-int 1)
-texture-op (local-ptr 1) a
+detach-texture (local-ptr 1) a
 add (local-int 0) 3 1
 lookup-array-2d (local-ptr 0) (global-int 3f54) (local-int 0) 3 0
 release-texture (local-ptr 0)
@@ -8553,7 +8553,7 @@ jmp label_000205d4
 label_000207dc
 add (local-int 1) 3 1
 lookup-array (local-ptr 1) (global-int f8023) (local-int 1)
-texture-op (local-ptr 1) a
+detach-texture (local-ptr 1) a
 add (local-int 0) 3 1
 lookup-array-2d (local-ptr 0) (global-int 3f54) (local-int 0) 3 0
 release-texture (local-ptr 0)
@@ -9269,7 +9269,7 @@ mov (global-int f8047) 1
 set-draw-color (global-int f8025) 0 c8 0 ffffff
 mov (global-int f8047) 1
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -11046,7 +11046,7 @@ label_00029a84
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -11054,7 +11054,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -13929,7 +13929,7 @@ label_00033a68
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -13937,7 +13937,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -17913,7 +17913,7 @@ label_00041c60
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -21909,7 +21909,7 @@ mov (global-int f803f) 2d0
 i219 (global-int f8026) (global-int f803b) (global-int f803c) (global-int f803d)
 i217 (global-int f8026) (global-int f803e) (global-int f803f) (global-int f8040)
 i1ff (global-int f8026) 0 0 0
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -24628,7 +24628,7 @@ label_0005a1cc
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -24636,7 +24636,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -25664,7 +25664,7 @@ label_0005df4c
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -26469,7 +26469,7 @@ label_00060c88
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -26477,7 +26477,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -33647,7 +33647,7 @@ label_0007a5c8
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -33655,7 +33655,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -33663,7 +33663,7 @@ mov (global-int 3f94) 0
 mov (global-int 3fa8) 0
 mov (global-int 3fd0) 0
 mov (global-int 400c) 0
-texture-op (global-int f8027) a
+detach-texture (global-int f8027) a
 release-texture (global-int 3f60)
 release-texture (global-int 3f61)
 release-texture (global-int 3f62)
@@ -34761,7 +34761,7 @@ mov (global-int f8047) 1
 set-draw-color (global-int f8026) 0 c8 0 ffffff
 mov (global-int f8047) 1
 call label_000a8118
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -34974,7 +34974,7 @@ mov (global-int f8047) 1
 set-draw-color (global-int f802d) 0 708 ff ffffff
 mov (global-int f8047) 1
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -35640,7 +35640,7 @@ label_00081a94
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f802d) a
+detach-texture (global-int f802d) a
 release-texture (global-int 3f72)
 release-texture (global-int 3f73)
 release-texture (global-int 3f74)
@@ -36463,7 +36463,7 @@ call label_000a775c
 set-draw-color (global-int f802d) 0 3e8 0 0
 mov (global-int f8047) 1
 call label_000a8118
-texture-op (global-int f802d) a
+detach-texture (global-int f802d) a
 release-texture (global-int 3f72)
 release-texture (global-int 3f73)
 release-texture (global-int 3f74)
@@ -38708,7 +38708,7 @@ label_0008c7b4
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -38716,7 +38716,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8023) a
+detach-texture (global-int f8023) a
 release-texture (global-int 3f54)
 release-texture (global-int 3f55)
 release-texture (global-int 3f56)
@@ -41722,7 +41722,7 @@ label_000974d4
 mov (global-int f8047) 1
 i1f5
 call label_000a8118
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -41730,7 +41730,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -46135,8 +46135,8 @@ ret
 exit
 
 label_000a6a0c
-texture-op 19640 2
-texture-op 19834 19
+detach-texture 19640 2
+detach-texture 19834 19
 jcc (global-int 1397) ffffffff label_000a6ca8
 call label_000ab648
 eq (local-int 0) (global-int 0) 6
@@ -46241,7 +46241,7 @@ create-texture e 140 b4 2
 i032 2 e 0 0 500 2d0 0 0 140 b4
 release-texture 2
 release-texture 2a
-texture-op 30d40 1
+detach-texture 30d40 1
 i1ae (global-int 1396) (global-int f8019) e
 release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
@@ -46465,7 +46465,7 @@ mov (global-int 13ad) 0
 mov (global-int f7ffb) 0
 
 label_000a80dc
-texture-op 197d0 1
+detach-texture 197d0 1
 call label_000a9670
 mov (global-int f8047) 1
 ret
@@ -46533,7 +46533,7 @@ gre (local-int 0) (global-int f801f) 0
 jcc (local-int 0) ffffffff label_000a850c
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 i215 (global-int f8c39) (local-ptr 1)
 ne (local-int 0) (global-int f801f) (global-int f8c39)
@@ -46552,7 +46552,7 @@ sub (local-int 2) 0 1
 set-draw-color-alpha (local-ptr 1) 0 (local-int 1) (local-int 2)
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 2
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 release-texture (global-int f801f)
 
 label_000a8660
@@ -46585,7 +46585,7 @@ label_000a8828
 jcc (global-int f8048) ffffffff label_000a8be0
 and (local-int 0) (global-int f8048) 1
 jcc (local-int 0) ffffffff label_000a88a8
-texture-op 19578 2
+detach-texture 19578 2
 release-texture 1
 release-texture a
 
@@ -46593,7 +46593,7 @@ label_000a88a8
 and (local-int 0) (global-int f8048) 2
 jcc (local-int 0) ffffffff label_000a8994
 add (local-int 0) 19258 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 release-texture b
 eq (local-int 0) (global-int f8068) 1
 jcc (local-int 0) ffffffff label_000a8994
@@ -46616,7 +46616,7 @@ lookup-array (local-ptr 1) (global-int f8023) (global-int f801d)
 jcc (local-ptr 1) ffffffff label_000a8bac
 lookup-array (local-ptr 0) (global-int f8023) (global-int f801d)
 add (local-int 0) (local-ptr 0) 1
-texture-op (local-int 0) 1
+detach-texture (local-int 0) 1
 lookup-array-2d (local-ptr 1) (global-int 3f54) (global-int f801d) 3 2
 release-texture (local-ptr 1)
 lookup-array (local-ptr 0) (global-int f805d) (global-int f801d)
@@ -46656,7 +46656,7 @@ exit
 label_000a8cc0
 ne (local-int 0) (global-int 0) 6
 jcc (local-int 0) ffffffff label_000a93cc
-texture-op 19708 6
+detach-texture 19708 6
 jcc (global-int 1397) ffffffff label_000a93b8
 gre (local-int 0) (global-int 3f37) 0
 jcc (local-int 0) ffffffff label_000a93ac
@@ -46764,9 +46764,9 @@ ret
 exit
 
 label_000a9670
-texture-op 1976c 3
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 1976c 3
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 eq (local-int 0) (global-int a9dc) 0
 jcc (local-int 0) ffffffff label_000a9740
 i2f6 0
@@ -47130,7 +47130,7 @@ ret
 exit
 
 label_000ab068
-texture-op (global-int f8023) a
+detach-texture (global-int f8023) a
 release-texture (global-int 3f54)
 release-texture (global-int 3f55)
 release-texture (global-int 3f56)
@@ -47138,7 +47138,7 @@ mov (global-int 3f91) 0
 mov (global-int 3fa5) 0
 mov (global-int 3fcd) 0
 mov (global-int 4009) 0
-texture-op (global-int f8024) a
+detach-texture (global-int f8024) a
 release-texture (global-int 3f57)
 release-texture (global-int 3f58)
 release-texture (global-int 3f59)
@@ -47146,7 +47146,7 @@ mov (global-int 3f92) 0
 mov (global-int 3fa6) 0
 mov (global-int 3fce) 0
 mov (global-int 400a) 0
-texture-op (global-int f8025) a
+detach-texture (global-int f8025) a
 release-texture (global-int 3f5a)
 release-texture (global-int 3f5b)
 release-texture (global-int 3f5c)
@@ -47154,7 +47154,7 @@ mov (global-int 3f93) 0
 mov (global-int 3fa7) 0
 mov (global-int 3fcf) 0
 mov (global-int 400b) 0
-texture-op (global-int f8026) a
+detach-texture (global-int f8026) a
 release-texture (global-int 3f5d)
 release-texture (global-int 3f5e)
 release-texture (global-int 3f5f)
@@ -47162,7 +47162,7 @@ mov (global-int 3f94) 0
 mov (global-int 3fa8) 0
 mov (global-int 3fd0) 0
 mov (global-int 400c) 0
-texture-op (global-int f8027) a
+detach-texture (global-int f8027) a
 release-texture (global-int 3f60)
 release-texture (global-int 3f61)
 release-texture (global-int 3f62)
@@ -47170,7 +47170,7 @@ mov (global-int 3f95) 0
 mov (global-int 3fa9) 0
 mov (global-int 3fd1) 0
 mov (global-int 400d) 0
-texture-op (global-int f8028) a
+detach-texture (global-int f8028) a
 release-texture (global-int 3f63)
 release-texture (global-int 3f64)
 release-texture (global-int 3f65)
@@ -47178,7 +47178,7 @@ mov (global-int 3f96) 0
 mov (global-int 3faa) 0
 mov (global-int 3fd2) 0
 mov (global-int 400e) 0
-texture-op (global-int f8029) a
+detach-texture (global-int f8029) a
 release-texture (global-int 3f66)
 release-texture (global-int 3f67)
 release-texture (global-int 3f68)
@@ -47186,7 +47186,7 @@ mov (global-int 3f97) 0
 mov (global-int 3fab) 0
 mov (global-int 3fd3) 0
 mov (global-int 400f) 0
-texture-op (global-int f802a) a
+detach-texture (global-int f802a) a
 release-texture (global-int 3f69)
 release-texture (global-int 3f6a)
 release-texture (global-int 3f6b)
@@ -47194,7 +47194,7 @@ mov (global-int 3f98) 0
 mov (global-int 3fac) 0
 mov (global-int 3fd4) 0
 mov (global-int 4010) 0
-texture-op (global-int f802b) a
+detach-texture (global-int f802b) a
 release-texture (global-int 3f6c)
 release-texture (global-int 3f6d)
 release-texture (global-int 3f6e)
@@ -47202,7 +47202,7 @@ mov (global-int 3f99) 0
 mov (global-int 3fad) 0
 mov (global-int 3fd5) 0
 mov (global-int 4011) 0
-texture-op (global-int f802c) a
+detach-texture (global-int f802c) a
 release-texture (global-int 3f6f)
 release-texture (global-int 3f70)
 release-texture (global-int 3f71)
@@ -47210,7 +47210,7 @@ mov (global-int 3f9a) 0
 mov (global-int 3fae) 0
 mov (global-int 3fd6) 0
 mov (global-int 4012) 0
-texture-op (global-int f802d) a
+detach-texture (global-int f802d) a
 release-texture (global-int 3f72)
 release-texture (global-int 3f73)
 release-texture (global-int 3f74)
@@ -47265,8 +47265,8 @@ ret
 exit
 
 label_000ab844
-texture-op 19a28 1f4
-texture-op 1a9c8 64
+detach-texture 19a28 1f4
+detach-texture 1a9c8 64
 and (local-int 0) (global-int 1397) (global-int 3f38)
 jcc (local-int 0) ffffffff label_000ab90c
 eq (local-int 0) (global-int 0) 6

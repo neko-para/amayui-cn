@@ -713,7 +713,7 @@ label_00002ae8
 ret
 
 label_00002aec
-texture-op 1d4c0 c8
+detach-texture 1d4c0 c8
 float-mov (global-float 9) 0
 float-mov (global-float a) 500
 float-mov (global-float b) 0
@@ -746,7 +746,7 @@ ret
 
 label_00002f1c
 add (local-int 245) 1d4c0 32
-texture-op (local-int 245) 96
+detach-texture (local-int 245) 96
 i19a (global-int f7ff5)
 i1cb (global-int f7ff6)
 i1b6 (global-int f7ff7)
@@ -912,9 +912,9 @@ ret
 
 label_00003aec
 add (local-int 245) 1d4c0 64
-texture-op (local-int 245) 1
+detach-texture (local-int 245) 1
 add (local-int 245) 1d4c0 9f
-texture-op (local-int 245) 1
+detach-texture (local-int 245) 1
 gre (local-int 245) (local-int 7) 0
 lt (local-int 246) (local-int 7) 3
 and (local-int 247) (local-int 245) (local-int 246)
@@ -1128,7 +1128,7 @@ ret
 
 label_00004e14
 call-script 46  // DRAWCHARM
-texture-op 1d4c0 12c
+detach-texture 1d4c0 12c
 eq (local-int 245) (global-int 0) 1
 eq (local-int 246) (global-int 0) 6
 or (local-int 247) (local-int 245) (local-int 246)

@@ -44,7 +44,7 @@ jmp label_000000f0
 label_000002e8
 poll-input
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 jcc (local-int 315e) ffffffff label_0000126c
 eq (local-int 31c6) (global-int 701544) 0
 jcc (local-int 31c6) ffffffff label_00000788
@@ -693,7 +693,7 @@ set-texture 5134 2c (local-int 31c6)
 ret
 
 label_000027dc
-texture-op 2e630 64
+detach-texture 2e630 64
 create-texture 2a 1e0 d8 0
 draw-texture 2e630 49 2a1 c1 1e1 16f 18f e7
 eq (local-int 31c6) (global-int 701544) 0
@@ -914,7 +914,7 @@ ret
 
 label_00003bc4
 add (local-int 31c6) 2e630 64
-texture-op (local-int 31c6) 1
+detach-texture (local-int 31c6) 1
 ret
 
 label_00003bf8
@@ -967,7 +967,7 @@ jmp label_00003df0
 label_00003eb4
 poll-input
 wait
-texture-op 2e630 65
+detach-texture 2e630 65
 release-texture 2a
 eq (local-int 31c6) (global-int b226) 0
 jcc (local-int 31c6) ffffffff label_00003f20

@@ -696,7 +696,7 @@ set-texture 39a8 c1 (local-int 451)
 ret
 
 label_00002c90
-texture-op 1d4c0 3e8
+detach-texture 1d4c0 3e8
 create-mesh 1d4c0 (local-float 0) (local-float a) (local-float 14) (local-int 43c) (local-int 446) (local-float 1e) (local-float 28) a 0
 set-vertex-color 1d4c0 0 c0 0
 jcc (local-int 411) ffffffff label_00003844
@@ -952,10 +952,10 @@ ret
 
 label_000042a4
 add (local-int 451) 1d4c0 258
-texture-op (local-int 451) 1
+detach-texture (local-int 451) 1
 add (local-int 451) 1d4c0 3b6
-texture-op (local-int 451) 1
-texture-op 1fbd0 12c
+detach-texture (local-int 451) 1
+detach-texture 1fbd0 12c
 gre (local-int 451) (local-int 3f7) 0
 lt (local-int 452) (local-int 3f7) (local-int 0)
 and (local-int 453) (local-int 451) (local-int 452)
@@ -1046,8 +1046,8 @@ label_00004aac
 ret
 
 label_00004ab0
-texture-op 1d4c0 3e8
-texture-op 1fbd0 12c
+detach-texture 1d4c0 3e8
+detach-texture 1fbd0 12c
 release-texture b6
 release-texture c0
 release-texture c1

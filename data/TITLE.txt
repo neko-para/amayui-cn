@@ -359,7 +359,7 @@ set-vertex-color-alpha 30d40 0 c8 0 0
 label_000014a4
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 call label_0000384c
 call-script 526c
@@ -729,12 +729,12 @@ set-vertex-color-alpha 30d40 0 12c 0 0
 label_00003314
 i24e 10001
 wait
-texture-op 30d40 1
+detach-texture 30d40 1
 poll-input
 ret
 
 label_00003340
-texture-op 96 1
+detach-texture 96 1
 gre (local-int 40d) (local-int 3f8) 0
 lt (local-int 40e) (local-int 3f8) 5
 and (local-int 40f) (local-int 40d) (local-int 40e)
@@ -744,7 +744,7 @@ add (local-int 40e) 12c (local-int 40d)
 set-draw-color-alpha (local-int 40e) 0 ff ffffff
 mul (local-int 40d) (local-int 3f8) 2
 add (local-int 40e) 12d (local-int 40d)
-texture-op (local-int 40e) 1
+detach-texture (local-int 40e) 1
 
 label_0000346c
 gre (local-int 40d) (local-int 3f7) 0
@@ -801,7 +801,7 @@ i32b
 ret
 
 label_00003874
-texture-op 64 12c
+detach-texture 64 12c
 ret
 
 label_0000388c
