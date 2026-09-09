@@ -1335,6 +1335,92 @@
     "unmodeled": [],
     "evidence": "raw 33706-33715",
     "notes": "声音通道音量"
+  },
+  {
+    "addr": "0x42FEC0",
+    "raw_name": "sub_42FEC0",
+    "semantic_name": "readGlobalSlot_42FEC0",
+    "op": "0x148",
+    "status": "ANALYZED",
+    "purpose": "读引擎全局时间阈值槽 _this[97058] 写回 op1（get）",
+    "sub_behaviors": ["设 frame.arity=3", "writeIntOperand(1, _this[97058])"],
+    "fields_used": ["this->global_slot_97058"],
+    "unmodeled": [],
+    "evidence": "raw 39705-39708",
+    "notes": "0x149 的读侧；opcode-table 原标“仅映射”，实为已核对"
+  },
+  {
+    "addr": "0x4229A0",
+    "raw_name": "sub_4229A0",
+    "semantic_name": "writeGlobalSlot_4229A0",
+    "op": "0x149",
+    "status": "ANALYZED",
+    "purpose": "把 op1 值写入引擎全局时间阈值槽 _this[97058]（set）",
+    "sub_behaviors": ["设 frame.arity=3", "_this[97058]=readIntOperand(op1)"],
+    "fields_used": ["this->global_slot_97058"],
+    "unmodeled": [],
+    "evidence": "raw 31045-31051",
+    "notes": "0x148 的写侧；SYSTEM4 line12 i149 3e8=1000"
+  },
+  {
+    "addr": "0x453870",
+    "raw_name": "sub_453870",
+    "semantic_name": "getAgercInterface3_453870",
+    "status": "ANALYZED",
+    "purpose": "返回 _this[3]（AGERC 接口表第 4 字段 = _ShowDialog@12），是 dword_55E1B4 的来源",
+    "sub_behaviors": ["return _this[3]"],
+    "fields_used": ["AGERC 接口表 v63[3]"],
+    "unmodeled": [],
+    "evidence": "raw 65953-65955；WinMain 141984",
+    "notes": ""
+  },
+  {
+    "addr": "0x477080",
+    "raw_name": "sub_477080",
+    "semantic_name": "setInputActive_477080",
+    "status": "ANALYZED",
+    "purpose": "设置输入子系统“激活”开关 _this[1688]=(a2==0)；sub_4770A0/sub_477100 据此决定是否读 GetAsyncKeyState",
+    "sub_behaviors": ["_this[1688]=(a2==0)"],
+    "fields_used": ["input._this[1688]"],
+    "unmodeled": [],
+    "evidence": "raw 91541-91548",
+    "notes": "WM_ACTIVATE 用 wParam==0 启用/失焦停用；触发链用 1 停用"
+  },
+  {
+    "addr": "0x48E730",
+    "raw_name": "sub_48E730",
+    "semantic_name": "initAgercInterface_48E730",
+    "status": "ANALYZED",
+    "purpose": "WinMain 里 LoadLibraryA(\"AGERC.DLL\") + GetProcAddress 解析 _GetInstance@0/_ShowDialog@12/_OperateMenu@16 存入 v63[2]/[3]/[4]；失败弹 MessageBox",
+    "sub_behaviors": ["LoadLibraryA(\"AGERC.DLL\")", "GetProcAddress _GetInstance@0", "GetProcAddress _ShowDialog@12", "GetProcAddress _OperateMenu@16"],
+    "fields_used": ["AGERC.DLL 接口表 v63[2..4]"],
+    "unmodeled": [],
+    "evidence": "raw 109387-109426",
+    "notes": "dword_55E1B4=ShowDialog@12、dword_55E1B8=OperateMenu@16"
+  },
+  {
+    "addr": "0x408620",
+    "raw_name": "sub_408620",
+    "semantic_name": "showSystemDialog_408620",
+    "status": "PARTIAL",
+    "purpose": "若 (engine+699204 & 0x400000)==0（尚未显示），调 ShowDialog(4, 主窗, 0) 新建系统对话框、窗句柄存 _this+387928，按主窗矩形定位(GetWindowRect/MoveWindow)，并置 engine+699204|=0x400000",
+    "sub_behaviors": ["检查 0x400000 标记", "sub_406050(engine)", "dword_55E1B4(4,主窗,0) 弹框", "GetWindowRect 比对+摆位", "engine+699204|=0x400000"],
+    "fields_used": ["engine+699204 效果位", "engine+387924 主窗", "engine+387928 对话框句柄"],
+    "unmodeled": ["具体弹哪种对话框/菜单", "sub_406050 细节"],
+    "evidence": "raw 13238-13278",
+    "notes": "被 sub_4B9240 / WM_SYSKEYUP(Alt) 触发；ShowDialog 命令码 4"
+  },
+  {
+    "addr": "0x4B9240",
+    "raw_name": "sub_4B9240",
+    "semantic_name": "cursorTopMenuTimer_4B9240",
+    "status": "PARTIAL",
+    "purpose": "WM_TIMER 回调（100ms）：读 _this[97058] 阈值，若 timeGetTime()-dword_55E1D8 超阈值 且 左右鼠标键都未按(GetAsyncKeyState 1/2) 且 引擎非锁定(671960) 且 ShowDialog(-1,hWnd,0)==0，则 sub_477080(input,1) 停输入 + sub_408620() 弹系统对话框 + dword_55E1D8=0 + KillTimer。属“光标贴顶/Alt→弹对话框”触发链。",
+    "sub_behaviors": ["读 _this[97058] 阈值", "GetAsyncKeyState(1)/(2) 查鼠标按键", "dword_55E1B4(-1,hWnd,0) 门", "sub_477080(input,1) 停输入", "sub_408620() 弹对话框", "dword_55E1D8=0", "KillTimer(hWnd,1)"],
+    "fields_used": ["engine+388232(_this[97058])", "dword_55E1D8 时间戳", "engine+671960 锁定态", "engine+1032+1688 输入激活位"],
+    "unmodeled": ["dword_55E1B4(ShowDialog) -1 命令语义", "sub_408620 具体弹哪种对话框"],
+    "evidence": "raw 141032-141069",
+    "notes": "与 WM_MOUSEMOVE(0x200)/WM_SYSKEYUP(0x104,Alt) 同一触发族；_this[97058] 为去抖时长"
   }
 
 ]
