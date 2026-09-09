@@ -1,3 +1,8 @@
+---
+name: amayui-mnemonic-rename
+description: 指令助记符（mnemonic）改名流程：把某个 opcode 的助记符从旧名改成新名，并保证文档真源（docs-new/03-engine/opcode-table.md 的「名称」列）、指令集 JSON（scripts/asm/opcodes.json，由 build-opcodes.js 生成）、emulator 实现（app/amayui-emulator/src/vm/ops.ts）、src/data 脚本四者端到端一致——先改文档 → build-opcodes.js 生成 JSON → 改 ops.ts 实现名 → rename-mnemonics.mjs 机械替换 → 重建+测试。当用户要求重命名某 opcode/指令助记符、或批量同步改名引用时使用。
+---
+
 # amayui-mnemonic-rename — 指令助记符（mnemonic）改名流程
 
 > 目标：把某个 opcode 的助记符从一个名字改成另一个名字，并保证**文档、指令集 JSON、emulator 实现、src/data 脚本**四者端到端一致。

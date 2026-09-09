@@ -226,6 +226,19 @@ const op_load_string: OpHandler = (c) => {
   writeStringOperand(c.e, c.frame, c.instr, 1, str);
 };
 
+// ---- 引擎全局时间阈值槽 `_this[97058]`（0x148 读 / 0x149 写，get/set 对；见 analysis/sub_42FEC0/sub_4229A0）----
+// 引擎里该槽被 sub_4B9240 用作「光标贴顶/Alt→弹系统对话框」的去抖时长；
+// **emulator 暂无对应逻辑使用此值**，仅为让 0x148/0x149 可执行（原 0x148 未映射会抛 NotImplementedOp）而建模为固定变量读写。
+/** 0x149 (sub_4229A0)：`op1 → _this[97058]`（写）。 */
+const op_write_global_slot: OpHandler = (c) => {
+  c.e.globalSlot97058 = readIntOperand(c.e, c.frame, c.instr, 1);
+};
+
+/** 0x148 (sub_42FEC0)：`op1 = _this[97058]`（读）。 */
+const op_read_global_slot: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.globalSlot97058);
+};
+
 // ---- 控制流 ----
 const op_jmp: OpHandler = (c) => {
   const a = operandArg(c.instr, 1);
@@ -397,6 +410,7 @@ const op_exit_script: OpHandler = (c) => {
   c.e.callFlag = 0;
   c.e.effectFlags = 0;
   c.e.advFields.clear();
+  c.e.globalSlot97058 = 0;
   throw new ScriptReset();
 };
 
@@ -800,6 +814,8 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x1a3, op_load_int], // load-int：查表写回 op1（VM 可见）
   [0x1a9, op_save_string], // save-string：字符串→字符串表登记（`_this+5472`）
   [0x1aa, op_load_string], // load-string：查表写回 op1 字符串（VM 可见）
+  [0x148, op_read_global_slot], // read `_this[97058]` → op1（暂无用，仅建模）
+  [0x149, op_write_global_slot], // write op1 → `_this[97058]`（暂无用，仅建模）
   [0x2d8, op_set_array_to],
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],
@@ -973,7 +989,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x2dd, op_engine_internal], // 字符串
   [0x2eb, op_engine_internal], // 配置/字符串
   // 数据字段 / 版本 / 脚本控制
-  [0x149, op_engine_internal], // 数据
   [0x21b, op_engine_internal], // 数据
   [0x24e, op_engine_internal], // 配置
   [0xae, op_engine_internal], // 版本/存档

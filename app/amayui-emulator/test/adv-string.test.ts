@@ -48,8 +48,7 @@ test('save-int(0x1A2)/load-int(0x1A3)：0x1A2 登记 → 0x1A3 查表写回 op1�
   assert.equal(readIntOperand(e, f, instr(0x1a3, [gin(8)]), 1), 0, '0x1A3 未命中应写 0');
 });
 
-test('save/load-int 真实用法：0x1A3 读 → 改 → 0x1A2 写回，跨周期持久（SC5450 计数循环）', () => {
-  const native = new StubNative(() => {});
+test('save/load-int 真实用法：0x1A3 读 → 改 → 0x1A2 写回，跨周期持久（SC5450 计数循环）', () => {  const native = new StubNative(() => {});
   const e = new Engine(native);
   const f = new Frame();
   const step = (op: number, args: BinArg[]) => makeCtx(e, f, instr(op, args), native, () => {});
@@ -123,4 +122,23 @@ test('save-string(0x1A9) / load-string(0x1AA)：str→str 表（global-string �
   assert.equal(e.stringTable.get(sk5(5)), 'world', '0x1A9 local-string-ptr 应按所指串池下标登记');
   OPS.get(0x1aa)!(step(0x1aa, [lsp(0)]));
   assert.equal(get(lsp(0)), 'world', '0x1AA local-string-ptr 应取回登记串');
+});
+
+test('0x148/0x149：读写引擎固定变量 _this[97058]（暂无用，仅建模）', () => {
+  const native = new StubNative(() => {});
+  const e = new Engine(native);
+  const f = new Frame();
+  const step = (op: number, args: BinArg[]) => makeCtx(e, f, instr(op, args), native, () => {});
+
+  // 默认 0
+  assert.equal(e.globalSlot97058, 0, '初始应为 0');
+  OPS.get(0x148)!(step(0x148, [gin(30)]));
+  assert.equal(readIntOperand(e, f, instr(0x148, [gin(30)]), 1), 0, '0x148 缺省读 0');
+
+  // op1 = global-int 30 置 42 → 0x149 写 field；0x148 读回
+  e.globals.int.set(30, enc(0, 42));
+  OPS.get(0x149)!(step(0x149, [gin(30)]));
+  assert.equal(e.globalSlot97058, 42, '0x149 应把 op1 写入固定变量');
+  OPS.get(0x148)!(step(0x148, [gin(30)]));
+  assert.equal(readIntOperand(e, f, instr(0x148, [gin(30)]), 1), 42, '0x148 应读回 42');
 });

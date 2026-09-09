@@ -1,3 +1,8 @@
+---
+name: amayui-engine-analysis
+description: 数据驱动的引擎反编译分析：读懂并归类《天結いキャッスルマイスター》的 Hex-Rays 反编译（engine/天结_unpacked.exe_utf8.c，约 18 万行），把每个函数（sub_XXXXXX）与字段/偏移的分析结论沉淀为稳定、工具无关的数据层（analysis/fields.json + analysis/functions.json），并用 scripts/report.js 做查询与增删改、scripts/sort-fields.js 排序。当用户要求分析某条指令/函数逻辑、检查某字段偏移（如 +166965）的引用、或把反编译结论写入数据层时使用。
+---
+
 # amayui-engine-analysis — 数据驱动的引擎反编译分析（fields.json + functions.json）
 
 > 定位：读懂并归类《天結いキャッスルマイスター》引擎的 Hex-Rays 反编译（`engine/天结_unpacked.exe_utf8.c`，约 18 万行），
