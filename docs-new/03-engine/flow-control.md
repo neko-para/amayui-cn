@@ -250,7 +250,7 @@ void sub_41A000(_DWORD *_this) {
 - **派发挂起脚本/事件请求**：置派发中标志(`_this[124350]`) → 遍历 256 个请求寄存器槽(`_this+173106`) ，非零槽以 `slot<<24` `queueScript`(`sub_40FC90`) → 清标志、帧ip+=4 → `dispatchQueuedScripts`(`sub_40FB60`) 真正弹出派发。 `[未建模]`：emulator `0x143` → `op_engine_internal`(no-op)。
 - **完整派发链**：`request_register(0xA90C8)` → `queueScript(40FC90)` 入队 `dispatch_queue(Queue_int@0x796DC)`（`sub_409E10` 入队）→ `dispatchQueuedScripts(40FB60)` 弹出：保存 `cur→_this[383112]`、`effect_flags→_this[383116]`、`call_ret=-10`、`effect_flags=0`；**正请求(资源id≥0) → `cur=37` 预占帧装载脚本**；**负请求 → `cur=-v2` 恢复某帧**。预占脚本跑完 `exit(0x2)` 的 `-10` 哨兵 → 恢复 `cur/effect_flags` 并继续派发。 `[已确认]`（data layer：`dispatch_queue`/`dispatch_in_progress`/`request_register`/`dispatch_saved_cur`/`dispatch_saved_effect_flags`、`sub_40FB60`/`sub_40FC90`/`sub_409E10`）。
 - **★ 消耗侧语义**：i143 **不是生产侧**，是派发**消耗/触发**侧。它先置 `dispatch_in_progress`，故循环内的 `queueScript` 只入队不派发；随后 `sub_40FB60` **一次只派发一条**（正请求装入帧 37），其余经 **`-10` 哨兵链**逐条顺次派发（每条任务 exit → -10 分支 `read<write` 时再 `sub_40FB60`）——**不是一次性把全部装入帧 37**。且 i143 **不清**请求寄存器槽（只读）。
-- **★ 与 frames 高位/抢占执行的关系**：派发把脚本装进**帧 37**（正请求）或恢复帧 `-v2`（负请求）——帧 37 属 frames 30–39 高位区。**opcode 0x6（`sub_41C7C0`, load-script-into-frame）会直接「抢占」把脚本装进指定帧（备份/恢复 `cur`）**，SYSTEM4 帧布局初始化用；这正是「指令直接抢占加载执行」的机制，与 i143 的预占帧派发同源。 `[已确认]`（`sub_41C7C0`）。
+- **★ 与 frames 高位/抢占执行的关系**：派发把脚本装进**帧 37**（正请求）或恢复帧 `-v2`（负请求）——帧 37 属 frames 30–39 高位区。**opcode 0x6（`sub_41C7C0`, load-frame）会直接「抢占」把脚本装进指定帧（备份/恢复 `cur`）**，SYSTEM4 帧布局初始化用；这正是「指令直接抢占加载执行」的机制，与 i143 的预占帧派发同源。 `[已确认]`（`sub_41C7C0`）。
 - **★ 预加载帧的「调用点」= opcode 0x8（`sub_41C900`, `call-frame <帧号>`, 曾名 `i008`）**：把 `cur` 切到预加载帧（要求已预装），设 caller=调用帧，跑完 `exit` 返回。SYSTEM4 `load-frame`(0x6) 预装的 `DRAWTOOLTIP(26)/DRAWORN(28)/ATSEEK(29)/SETROUTE(30)/MVSEEK(31)` 正是由游戏脚本 `call-frame 1a/1c/1d/1e/1f` 启动（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。即**预装帧的直接启动路径是 `call-frame`，而非负派发**；负派发(恢复帧)是另一条"抢占/延迟"路径。
 - **★ SYSTEM4 load-frame(0x6) 预装清单**（`src/SYSTEM4.txt` 113–117，均预装不进执行、按需启动）：`0x5106`=DRAWTOOLTIP.BIN→帧26(0x1A)、`0x525A`=DRAWORN.BIN→帧28(0x1C)、`0x525B`=ATSEEK.BIN→帧29(0x1D)、`0x525C`=SETROUTE.BIN→帧30(0x1E)、`0x525D`=MVSEEK.BIN→帧31(0x1F)。这些为游戏过程“随取随用”的行为/战术脚本（提示绘制/装饰绘制/寻路/设路线/移动寻路），**由游戏脚本 `call-frame <帧号>` 直接启动**（负派发是另一条抢占/延迟路径）。
 - **联动**：与主循环 `sub_412290` 的 `0x4000000`（跳转/call 待处理，也走 `sub_40FB60`）+ `exit(0x2)` 的 `-10` 哨兵 + `exit-script` 清 `_this[124350]` 强相关。 `[部分]`。
@@ -375,13 +375,14 @@ call-script 5264  // TITLE
 - 帧内槽：`caller`(383180)、`arg`(383184)、`instr-buf`(383124)、`ip/opcode`(383128)、`state`(383220)、`valid`(383120?)。
 - 每帧**独立数组**：返回栈 `count(388612)`/`data(388772,256槽)`、返回地址槽 `489488/489648`。
 
-### 11.2 四类"调用"
+### 11.2 五类"调用 / 延续"
 | 方式 | opcode | 机制 | 返回 |
 |---|---|---|---|
 | call-script | 0x3 | 压 `cur+1`、加载新脚本（跨脚本嵌套；深度门39） | `exit(0x2)` |
 | call | 0x8F | 同脚本子程序：压返回地址到每帧返回栈、跳 label | `ret(0x5)` |
 | call-frame | 0x8 | 切到**预加载帧**（固定帧号，要求已预装） | `exit(0x2)` |
-| load-into-frame | 0x6 | 预装脚本进指定帧（备份/恢复 cur，**不执行**） | —— |
+| load-frame | 0x6 | 预装脚本进指定帧（备份/恢复 cur，**不执行**） | —— |
+| **wait→协程续点** | 0x72/0xFA → 0x7C | **单帧**：`sub_411BC0`(负ef转接) 保存 `ip→489812`/`ef→489808`/`深度→430712` 并跳 `4*cur+489488` 续点；处理完 **`local-ret`(0x7C)** 恢复 | `local-ret`=**"续点 ret"** |
 
 ### 11.3 三类"返回"
 | 方式 | opcode | 机制 |

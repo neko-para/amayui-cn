@@ -1669,7 +1669,7 @@
   {
     "addr": "0x41AB80",
     "raw_name": "sub_41AB80",
-    "semantic_name": "op_nested_return_41AB80",
+    "semantic_name": "op_local_ret_41AB80",
     "op": "0x7C",
     "status": "ANALYZED",
     "purpose": "op 0x7C：返回嵌套调用/恢复调用方帧（**非单纯 dispatch-check**）。要求 _this[489808]&0x2000000 置位(在嵌套调用中)否则抛 EndHWl；校验当前帧[95796]==_this[430712](深度)否则抛 Depth が不正；恢复当前帧.ip=帧起始+4*_this[489812]、帧状态=0、effect_flags=_this[489808]&0xFDFFFFFF、清 489808/81776/81768/51848/51840；若 _this[387940] 置位则清之，且 dispatch_queue 恰有 1 个(read<write && write-read==1)时 sub_40FB60 一次性派发。",
@@ -1678,7 +1678,21 @@
     "fields_used": ["this->_this[489808](保存ef+0x2000000)", "this->_this[489812](返回ip)", "this->_this[430712](保存深度)", "this->dispatch_queue(0x796DC)"],
     "unmodeled": ["387940 置位方", "0x4000000 设置路径细节"],
     "evidence": "raw 25779-25824 (sub_41AB80)",
-    "notes": "★是主循环 0x4000000(jump/call-pending) 的配对方：该块存 489808/489812/430712 并切进被调脚本，0x7C 恢复。曾误标为 dispatch-check，实为嵌套返回+一次性派发。opcode-table 0x7C 原仅映射。"
+    "notes": "★已改名 local-ret（曾 i07c/曾误标 dispatch-check）。单帧\"续点 ret\"——主循环 0x4000000(jump/call-pending) 与 sub_411BC0(负ef) 置 489808/489812/430712，本 op 恢复。opcode-table 0x7C 已核对。emulator 未映射(NotImplementedOp)。"
+  },
+  {
+    "addr": "0x4199B0",
+    "raw_name": "sub_4199B0",
+    "semantic_name": "op_poll_msg_advance_4199B0",
+    "op": "0xFA",
+    "status": "ANALYZED",
+    "purpose": "op 0xFA：输入/消息推进（input+ADV 状态机，属输入子系统，与 0x72 wait-for-input/0x101 poll-input/0xCD get-input-type 同类）。清 _this[97054]；sub_4780D0 读输入状态；若 (v5&0x40)==0 则清 _this[174801]&~0x8000000(退出 ADV)、遍历 3 个回调槽(122505 区)经 sub_4BB840 处理并清空；若仍非 ADV 则 sub_478090 flush 输入→_this[174802]、置负 ef(_this[174801]|=0x80000000)并清输入掩码——即空闲时触发 sub_411BC0 空等待派发（其后 local-ret/0x7C 收尾）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读输入状态 sub_4780D0", "(v5&0x40)==0 则清 ADV/处理 3 回调槽", "非 ADV 则 flush→输入掩码、置负 ef", "置负 ef 触发空闲等待派发"],
+    "fields_used": ["this->effect_flags(0xAAB44)", "this->_this[174802](输入掩码)", "this->_this[122505 区](消息回调槽)"],
+    "unmodeled": ["122505 回调槽/ sub_4BB840 语义"],
+    "evidence": "raw 24952-24988 (sub_4199B0)",
+    "notes": "与 0x72/0xFA→sub_411BC0→local-ret(0x7C) 组成「输入驱动单帧协程」（wait→事件→续点 ret）。opcode-table 0xFA 原仅映射。"
   }
 
 ]

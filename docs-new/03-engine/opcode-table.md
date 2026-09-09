@@ -117,7 +117,7 @@
 | 0x79 | 3 |  | sub_41F490 | 已核对 | **消息项位置/尺寸参数**：读 op1..op3 调 `sub_4563A0(_this+21324, op1, op2, op3)`，把选中子项 `+28/+32` 两字段分别写 op3/op2。fire-and-forget。handler=sub_41F490（raw .c 28369） |
 | 0x7A | 3 |  | sub_41F4E0 | 仅映射 |  |
 | 0x7B | 2 |  | sub_41F530 | 仅映射 |  |
-| 0x7C | 0 |  | sub_41AB80 | 已核对 | **返回嵌套调用/恢复调用方帧**（主循环 `0x4000000` jump/call-pending 的配对方；助记符仍 `i07c`，未命名）：要求 `_this[489808]&0x2000000` 置位（否则抛 EndHWl）；校验当前帧[95796]==`_this[430712]`（深度，否则抛「Depth が不正」）；恢复当前帧 `ip=帧起始+4*_this[489812]`、状态=0、`effect_flags=_this[489808]&0xFDFFFFFF`、清 `489808/81776/81768/51848/51840`；若 `_this[387940]` 置位则清之，且 `dispatch_queue` 恰有 1 个（`read<write && write-read==1`）时 `sub_40FB60` 一次性派发。handler=sub_41AB80（raw .c 25779）。**曾仅映射** |
+| 0x7C | 0 | local-ret | sub_41AB80 | 已核对 | **local-ret**（曾名 `i07c`；单帧"续点 ret"——wait→事件→恢复的协程返回，主循环 `0x4000000` jump/call-pending 的配对方）：要求 `_this[489808]&0x2000000` 置位（否则抛 EndHWl）；校验当前帧[95796]==`_this[430712]`（深度，否则抛「Depth が不正」）；恢复当前帧 `ip=帧起始+4*_this[489812]`、状态=0、`effect_flags=_this[489808]&0xFDFFFFFF`、清 `489808/81776/81768/51848/51840`；若 `_this[387940]` 置位则清之，且 `dispatch_queue` 恰有 1 个（`read<write && write-read==1`）时 `sub_40FB60` 一次性派发。handler=sub_41AB80（raw .c 25779）。**曾仅映射** |
 | 0x7D | 2 |  | sub_41F580 | 仅映射 |  |
 | 0x7E | 1 |  | sub_41F630 | 仅映射 |  |
 | 0x7F | 1 |  | sub_42D1F0 | 仅映射 |  |
