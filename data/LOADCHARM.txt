@@ -13,7 +13,7 @@ label_00000078
 lt (local-int 1) (local-int 0) 9
 jcc (local-int 1) ffffffff label_000000e4
 lookup-array (local-ptr 0) (global-int 13b0) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jmp label_0000005c
 
 label_000000e4

@@ -16,6 +16,8 @@ export class LocalPools {
   /** 指针池存 Ref|0（0=空引用），见 ADR-011 / docs/07。 */
   ptr = new Map<number, Ref | 0>();
   floatPtr = new Map<number, Ref | 0>();
+  /** 字符串引用池（引擎 `_this[30*cur+95794]`，type 14 local-string-ptr）。 */
+  strPtr = new Map<number, Ref | 0>();
 }
 
 /** 每脚本帧（120 字节 / 0x78 的语义重建模），对应 ScriptContext。 */
@@ -49,6 +51,8 @@ export class GlobalArrays {
   /** 指针池存 Ref|0（0=空引用），见 ADR-011 / docs/07。 */
   ptr = new Map<number, Ref | 0>();
   floatPtr = new Map<number, Ref | 0>();
+  /** 字符串引用池（引擎 `_this[95754]`，type 8 global-string-ptr）。 */
+  strPtr = new Map<number, Ref | 0>();
 }
 
 /** 引擎对象：解释器/Command 的 `this` 语义重建模。 */
@@ -85,6 +89,9 @@ export class Engine {
 
   /** 引擎 `_this+5452` 字符串→整型哈希表（0x1A2 登记 key→value；0x1A3 查表写回 op1）。key = "\x03"+hex8(索引)。 */
   stringIndexTable = new Map<string, number>();
+
+  /** 引擎 `_this+5472` 字符串→字符串哈希表（0x1A9 save-string 登记 key→str；0x1AA load-string 查表写回 op1）。key = "\x05"+hex8(字符串索引)。 */
+  stringTable = new Map<string, string>();
 
   /** ADV/消息状态机字段（稀疏 `_this[K]`：1415 / 97050 / 97051 / 122368 / 122370 / 122455 / 122496 / 124331）。 */
   advFields = new Map<number, number>();

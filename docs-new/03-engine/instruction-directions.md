@@ -1,6 +1,6 @@
 # 03-engine · 指令功能方向分类（功能簇）
 
-> 记录审计指令（`iXXXX` = opcode `0xXXXX`；`string-lookup-set` = opcode 0x1A3）的**功能方向分类**。
+> 记录审计指令（`iXXXX` = opcode `0xXXXX`；`load-int` = opcode 0x1A3）的**功能方向分类**。
 > 方向是**粗粒度归类**（声音/渲染/消息UI/输入/字符串/数据/脚本控制…），用于快速定位指令集群，非 opcode 语义全集（语义见 `./opcode-table.md`，字段/函数结论以 `analysis/*.json` 为准）。
 > 判定依据：读 `engine/天结_unpacked.exe_utf8.c` 对应对应 handler 体（含本次新读的 8 条原`仅映射`）。凡 handler 未读体的按 opcode-table.md 现有映射定归类。
 
@@ -65,9 +65,9 @@
 ## 5. 字符串 / 查表（5）
 | 指令 | opcode | 方向 | handler | 语义 |
 |---|---|---|---|---|
-| `string-lookup-set` | 0x1A3 | 字符串/查表 | sub_42DF40 | 字符串→索引查表写回 op1（`sub_428E00` 全局字符串表查询） |
-| `i1a2` | 0x1A2 | 字符串/哈希表 | sub_434F60 | 写「字符串→整型哈希表」（键 `"%c%8.8x",3,idx`） |
-| `i1a9` | 0x1A9 | 字符串/哈希表 | sub_434FE0 | 写字符串哈希表（键 `"%c%8.8x",5,val`） |
+| `load-int` | 0x1A3 | 字符串/查表 | sub_42DF40 | 字符串→索引查表写回 op1（`sub_428E00` 全局字符串表查询） |
+| `save-int` | 0x1A2 | 字符串/哈希表 | sub_434F60 | 写「字符串→整型哈希表」（键 `"%c%8.8x",3,idx`） |
+| `save-string` | 0x1A9 | 字符串/哈希表 | sub_434FE0 | 写字符串哈希表（键 `"%c%8.8x",5,val`） |
 | `i2c7` | 0x2C7 | 字符串处理 | sub_433FD0 | 读 op2 字符串 + op3/op4 做 strlen/拼接类处理 |
 | `i2eb` | 0x2EB | 配置/字符串 | sub_434830 | 读 `set:GameVersion` 配置值写字符串 op1 |
 

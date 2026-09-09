@@ -1,5 +1,5 @@
-/** string-lookup-set(0x1A3) + ADV/消息激活态(0x8000000) 单元测试。
- *  语义依据：opcode-table.md 0x1A2(sub_434F60)/0x1A3(sub_42DF40)（`_this+5452` 表）、0x071/0x088/0x19B/0x19C（effect_flags 0x8000000）。 */
+/** save/load-int(0x1A2/0x1A3) + save/load-string(0x1A9/0x1AA) + ADV/消息激活态(0x8000000) 单元测试。
+ *  语义依据：opcode-table.md 0x1A2(sub_434F60)/0x1A3(sub_42DF40)（`_this+5452` 表）、0x1A9(sub_434FE0)/0x1AA(sub_433A70)（`_this+5472` 表）、0x071/0x088/0x19B/0x19C（effect_flags 0x8000000）。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Engine, Frame } from '../src/vm/engine.js';
@@ -7,7 +7,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/native.js';
 import { enc } from '../src/vm/bits.js';
-import { readIntOperand } from '../src/vm/operand.js';
+import { readIntOperand, readStringOperand } from '../src/vm/operand.js';
 import type { BinInstruction, BinArg } from '../src/script/bin.js';
 
 function instr(opcode: number, args: BinArg[]): BinInstruction {
@@ -17,10 +17,15 @@ function instr(opcode: number, args: BinArg[]): BinInstruction {
 const im = (raw: number): BinArg => ({ type: 0x0, raw });
 /** 全局 int 操作数（可写的值槽）。 */
 const gin = (raw: number): BinArg => ({ type: 0x3, raw });
+/** 全局 string 操作数。 */
+const gs = (raw: number): BinArg => ({ type: 0x5, raw });
+/** 局部 string 指针操作数（type 0xe = 14）。 */
+const lsp = (raw: number): BinArg => ({ type: 0xe, raw });
 /** 复制引擎 wsprintfA("%c%8.8x", 3, idx) 的查询键。 */
 const sk = (idx: number): string => '\x03' + ((idx >>> 0).toString(16).padStart(8, '0'));
+const sk5 = (idx: number): string => '\x05' + ((idx >>> 0).toString(16).padStart(8, '0'));
 
-test('string-lookup-set (0x1A3)：0x1A2 登记 → 0x1A3 查表写回 op1；未命中写 0', () => {
+test('save-int(0x1A2)/load-int(0x1A3)：0x1A2 登记 → 0x1A3 查表写回 op1；未命中写 0', () => {
   const native = new StubNative(() => {});
   const e = new Engine(native);
   const f = new Frame();
@@ -43,7 +48,7 @@ test('string-lookup-set (0x1A3)：0x1A2 登记 → 0x1A3 查表写回 op1；未�
   assert.equal(readIntOperand(e, f, instr(0x1a3, [gin(8)]), 1), 0, '0x1A3 未命中应写 0');
 });
 
-test('string-lookup-set 真实用法：0x1A3 读 → 改 → 0x1A2 写回，跨周期持久（SC5450 计数循环）', () => {
+test('save/load-int 真实用法：0x1A3 读 → 改 → 0x1A2 写回，跨周期持久（SC5450 计数循环）', () => {
   const native = new StubNative(() => {});
   const e = new Engine(native);
   const f = new Frame();
@@ -90,4 +95,32 @@ test('advActive(0x8000000)：由 0x071/0x088/0x19B/0x19C 置/清', () => {
   // 0x088 消息模式 op1=0 → 清 ADV
   OPS.get(0x088)!(step(0x088, [im(0)]));
   assert.equal(e.advActive, false, '0x088 置 0 清 ADV');
+});
+
+test('save-string(0x1A9) / load-string(0x1AA)：str→str 表（global-string 与 local-string-ptr 8/14）', () => {
+  const native = new StubNative(() => {});
+  const e = new Engine(native);
+  const f = new Frame();
+  const step = (op: number, args: BinArg[]) => makeCtx(e, f, instr(op, args), native, () => {});
+  const get = (a: BinArg) => readStringOperand(e, f, instr(0x1aa, [a]), 1);
+
+  // global-string 20 置 "hello"
+  e.globals.str.set(20, 'hello');
+  // save-string：登记 stringTable[key5(20)] = "hello"
+  OPS.get(0x1a9)!(step(0x1a9, [gs(20)]));
+  assert.equal(e.stringTable.get(sk5(20)), 'hello', '0x1A9 应把字符串登记到 sk5(20)');
+  // load-string 同槽取回
+  OPS.get(0x1aa)!(step(0x1aa, [gs(20)]));
+  assert.equal(get(gs(20)), 'hello', '0x1AA 应取回登记串');
+  // 未命中槽 → 写空串
+  OPS.get(0x1aa)!(step(0x1aa, [gs(21)]));
+  assert.equal(get(gs(21)), '', '0x1AA 未命中应写空串');
+
+  // local-string-ptr 0 →（局部串池 5，存 "world"）
+  f.locals.strPtr.set(0, { scope: 'local', kind: 'str', index: 5, stride: 28 });
+  f.locals.str.set(5, 'world');
+  OPS.get(0x1a9)!(step(0x1a9, [lsp(0)]));
+  assert.equal(e.stringTable.get(sk5(5)), 'world', '0x1A9 local-string-ptr 应按所指串池下标登记');
+  OPS.get(0x1aa)!(step(0x1aa, [lsp(0)]));
+  assert.equal(get(lsp(0)), 'world', '0x1AA local-string-ptr 应取回登记串');
 });

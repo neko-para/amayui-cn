@@ -7,35 +7,35 @@ i2de (local-int 0) (global-string bbb)
 lt (local-int 1) (local-int 0) 0
 jcc (local-int 1) ffffffff label_000000a8
 set-string (global-string bbb) "ＭＳ 明朝"
-i1a9 (global-string bbb)
+save-string (global-string bbb)
 
 label_000000a8
 i2de (local-int 0) (global-string bbc)
 lt (local-int 1) (local-int 0) 0
 jcc (local-int 1) ffffffff label_00000114
 set-string (global-string bbc) "ＭＳ ゴシック"
-i1a9 (global-string bbc)
+save-string (global-string bbc)
 
 label_00000114
 i2de (local-int 0) (global-string bbd)
 lt (local-int 1) (local-int 0) 0
 jcc (local-int 1) ffffffff label_00000180
 set-string (global-string bbd) "ＭＳ ゴシック"
-i1a9 (global-string bbd)
+save-string (global-string bbd)
 
 label_00000180
 i2de (local-int 0) (global-string bbf)
 lt (local-int 1) (local-int 0) 0
 jcc (local-int 1) ffffffff label_000001ec
 set-string (global-string bbf) "ＭＳ 明朝"
-i1a9 (global-string bbf)
+save-string (global-string bbf)
 
 label_000001ec
 i2de (local-int 0) (global-string bbe)
 lt (local-int 1) (local-int 0) 0
 jcc (local-int 1) ffffffff label_00000258
 set-string (global-string bbe) "ＭＳ ゴシック"
-i1a9 (global-string bbe)
+save-string (global-string bbe)
 
 label_00000258
 call label_0000028c

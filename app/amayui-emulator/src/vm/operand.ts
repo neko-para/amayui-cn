@@ -22,16 +22,25 @@ const TYPE_GLOBAL_FLOAT = 0x4;
 const TYPE_GLOBAL_STRING = 0x5;
 const TYPE_GLOBAL_PTR = 0x6;
 const TYPE_GLOBAL_FLOAT_PTR = 0x7;
+const TYPE_GLOBAL_STRING_PTR = 0x8;
 const TYPE_LOCAL_INT = 0x9;
 const TYPE_LOCAL_FLOAT = 0xa;
 const TYPE_LOCAL_STRING2 = 0xb;
 const TYPE_LOCAL_PTR = 0xc;
 const TYPE_LOCAL_FLOAT_PTR = 0xd;
+const TYPE_LOCAL_STRING_PTR = 0xe;
 const TYPE_GLOBAL_INT_ARRAY = 0x8003;
 const TYPE_LOCAL_INT_ARRAY = 0x8009;
 
 function isPtrType(t: number): boolean {
-  return t === TYPE_GLOBAL_PTR || t === TYPE_GLOBAL_FLOAT_PTR || t === TYPE_LOCAL_PTR || t === TYPE_LOCAL_FLOAT_PTR;
+  return (
+    t === TYPE_GLOBAL_PTR ||
+    t === TYPE_GLOBAL_FLOAT_PTR ||
+    t === TYPE_GLOBAL_STRING_PTR ||
+    t === TYPE_LOCAL_PTR ||
+    t === TYPE_LOCAL_FLOAT_PTR ||
+    t === TYPE_LOCAL_STRING_PTR
+  );
 }
 
 export function operandArg(instr: BinInstruction, n: number) {
@@ -46,6 +55,36 @@ function readRefSlot(pool: Map<number, Ref | 0>, index: number): Ref {
   if (v === undefined || v === 0) throw new Error(`空/未初始化引用被取址：指针池槽 ${index}`);
   if (!isRef(v)) throw new Error(`指针池槽 ${index} 存的不是 Ref（${String(v)}）`);
   return v;
+}
+
+/** 取字符串池（按 Ref 的 scope）；kind 须为 'str'。 */
+function strPoolFor(e: Engine, frame: Frame, ref: Ref): Map<number, string> {
+  if (ref.kind !== 'str') throw new Error(`字符串解引用坏 kind ${ref.kind}`);
+  return ref.scope === 'global' ? e.globals.str : frame.locals.str;
+}
+
+/** 读一个字符串 Ref 所指的字符串（解引用；指针族递归一次，str 取池值）。 */
+function readStringRef(e: Engine, frame: Frame, ref: Ref): string {
+  if (ref.kind === 'ptr' || ref.kind === 'fptr') {
+    const inner = strPtrForRef(e, frame, ref);
+    return readStringRef(e, frame, inner);
+  }
+  return String(strPoolFor(e, frame, ref).get(ref.index) ?? '');
+}
+
+/** 指针族再取一次 Ref（string ref 的 strPtr 池）。 */
+function strPtrForRef(e: Engine, frame: Frame, ref: Ref): Ref {
+  const pool = ref.scope === 'global' ? e.globals.strPtr : frame.locals.strPtr;
+  return readRefSlot(pool, ref.index);
+}
+
+/** 写穿一个字符串 Ref（写字符串池）。 */
+function writeStringRef(e: Engine, frame: Frame, ref: Ref, s: string): void {
+  if (ref.kind === 'ptr' || ref.kind === 'fptr') {
+    writeStringRef(e, frame, strPtrForRef(e, frame, ref), s);
+    return;
+  }
+  strPoolFor(e, frame, ref).set(ref.index, s);
 }
 
 /**
@@ -65,8 +104,10 @@ export function refFromOperand(e: Engine, frame: Frame, instr: BinInstruction, n
     case TYPE_LOCAL_STRING2: return { scope: 'local', kind: 'str', index: a.raw, stride: STRIDE_STR };
     case TYPE_GLOBAL_PTR: return readRefSlot(e.globals.ptr, a.raw);
     case TYPE_GLOBAL_FLOAT_PTR: return readRefSlot(e.globals.floatPtr, a.raw);
+    case TYPE_GLOBAL_STRING_PTR: return readRefSlot(e.globals.strPtr, a.raw);
     case TYPE_LOCAL_PTR: return readRefSlot(frame.locals.ptr, a.raw);
     case TYPE_LOCAL_FLOAT_PTR: return readRefSlot(frame.locals.floatPtr, a.raw);
+    case TYPE_LOCAL_STRING_PTR: return readRefSlot(frame.locals.strPtr, a.raw);
     default:
       throw new Error(`refFromOperand: unsupported operand type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }
@@ -78,8 +119,10 @@ export function setRefOperand(e: Engine, frame: Frame, instr: BinInstruction, n:
   switch (a.type) {
     case TYPE_GLOBAL_PTR: e.globals.ptr.set(a.raw, ref); return;
     case TYPE_GLOBAL_FLOAT_PTR: e.globals.floatPtr.set(a.raw, ref); return;
+    case TYPE_GLOBAL_STRING_PTR: e.globals.strPtr.set(a.raw, ref); return;
     case TYPE_LOCAL_PTR: frame.locals.ptr.set(a.raw, ref); return;
     case TYPE_LOCAL_FLOAT_PTR: frame.locals.floatPtr.set(a.raw, ref); return;
+    case TYPE_LOCAL_STRING_PTR: frame.locals.strPtr.set(a.raw, ref); return;
     default:
       throw new Error(`setRefOperand: dest 非指针型 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }
@@ -94,6 +137,10 @@ export function readStringOperand(e: Engine, frame: Frame, instr: BinInstruction
       return a.str ?? String(frame.locals.str.get(a.raw) ?? '');
     case TYPE_GLOBAL_STRING:
       return e.globals.str.get(a.raw) ?? '';
+    case TYPE_GLOBAL_STRING_PTR:
+      return readStringRef(e, frame, readRefSlot(e.globals.strPtr, a.raw));
+    case TYPE_LOCAL_STRING_PTR:
+      return readStringRef(e, frame, readRefSlot(frame.locals.strPtr, a.raw));
     case TYPE_IMMEDIATE_INT:
     case TYPE_IMMEDIATE_FLOAT:
     default:
@@ -113,6 +160,12 @@ export function writeStringOperand(e: Engine, frame: Frame, instr: BinInstructio
     case TYPE_GLOBAL_STRING: e.globals.str.set(a.raw, s); return;
     case TYPE_LOCAL_STRING:
     case TYPE_LOCAL_STRING2: frame.locals.str.set(a.raw, s); return;
+    case TYPE_GLOBAL_STRING_PTR:
+      writeStringRef(e, frame, readRefSlot(e.globals.strPtr, a.raw), s);
+      return;
+    case TYPE_LOCAL_STRING_PTR:
+      writeStringRef(e, frame, readRefSlot(frame.locals.strPtr, a.raw), s);
+      return;
     default: throw new Error(`writeStringOperand: dest 非字符串型 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }
 }
@@ -188,16 +241,41 @@ export function readIndexOperand(e: Engine, frame: Frame, instr: BinInstruction,
   const a = operandArg(instr, n);
   switch (a.type) {
     case TYPE_GLOBAL_INT:
+    case TYPE_LOCAL_INT:
       return a.raw; // 全局池下标（槽号），非存量值
     case TYPE_GLOBAL_PTR:
       return readRefSlot(e.globals.ptr, a.raw).index; // 指针所指全局池元素下标
     case TYPE_LOCAL_PTR:
       return readRefSlot(frame.locals.ptr, a.raw).index; // 局部指针所指数（全局池）元素下标
+    case TYPE_GLOBAL_STRING_PTR:
+      return readRefSlot(e.globals.strPtr, a.raw).index; // 字符串指针所指字符串池下标
+    case TYPE_LOCAL_STRING_PTR:
+      return readRefSlot(frame.locals.strPtr, a.raw).index;
     case TYPE_IMMEDIATE_INT:
     case TYPE_IMMEDIATE_FLOAT:
       return a.raw | 0; // 立即数退化：字面值即索引
     default:
       throw new Error(`readIndexOperand: unsupported type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
+  }
+}
+
+/**
+ * 读第 n 个操作数的**字符串索引**（引擎 sub_418AE0 语义，save-string / load-string 的查询键）。
+ *  global/local-string 返回字符串池下标（a.raw）；字符串指针(8/14)返回所指字符串池下标。
+ */
+export function readStringIndexOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): number {
+  const a = operandArg(instr, n);
+  switch (a.type) {
+    case TYPE_GLOBAL_STRING:
+    case TYPE_LOCAL_STRING:
+    case TYPE_LOCAL_STRING2:
+      return a.raw;
+    case TYPE_GLOBAL_STRING_PTR:
+      return readRefSlot(e.globals.strPtr, a.raw).index;
+    case TYPE_LOCAL_STRING_PTR:
+      return readRefSlot(frame.locals.strPtr, a.raw).index;
+    default:
+      throw new Error(`readStringIndexOperand: unsupported type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }
 }
 

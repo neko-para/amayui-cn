@@ -517,10 +517,10 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) b
 jcc (local-int 0) ffffffff label_00001d10
 i1f4
-string-lookup-set (global-int 1390)
+load-int (global-int 1390)
 add (local-int 0) (global-int 1390) 1
 mod (global-int 1390) (local-int 0) a
-i1a2 (global-int 1390)
+save-int (global-int 1390)
 add (global-int f8019) 3de (global-int 1390)
 call label_00005484
 play-sound-effect 32 1
@@ -534,13 +534,13 @@ lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)
 eq (local-int 0) (local-ptr 0) c
 jcc (local-int 0) ffffffff label_00002078
 i1f4
-string-lookup-set (global-int 1390)
+load-int (global-int 1390)
 add (global-int f8019) 3de (global-int 1390)
 i1a0 (global-int f7ffd) (global-int f8019) (global-int f7ffe) (global-int f7ffe) (global-int f7ffe) (global-int f7ffe) (global-int f7ffe) (global-int f7ffe) (global-int f7ffe)
 eq (local-int 0) (global-int f7ffd) 0
 jcc (local-int 0) ffffffff label_00001fc4
 lookup-array (local-ptr 1) (global-int fa6) (global-int f8019)
-string-lookup-set (local-ptr 1)
+load-int (local-ptr 1)
 mov (global-int f8000) 0
 jmp label_00001e78
 
@@ -1005,11 +1005,11 @@ jcc (global-int 708ad6) ffffffff label_00003814
 exit
 
 label_00003814
-string-lookup-set (global-int a9bc)
+load-int (global-int a9bc)
 bit-set (global-int a9bc) 0
-i1a2 (global-int a9bc)
+save-int (global-int a9bc)
 add (global-int a9bd) (global-int a9bd) 1
-string-lookup-set (global-int a9be)
+load-int (global-int a9be)
 call label_00005f30
 call label_00007ba8
 mov (global-int 1399) 0
@@ -1099,8 +1099,8 @@ set-draw-color 1adb0 0 12c ff ffffff
 i238 2bc
 i24e 10003
 wait
-i1a2 (global-int 7087f5)
-i1a2 (global-int a9bd)
+save-int (global-int 7087f5)
+save-int (global-int a9bd)
 mov (local-int 7) 0
 jmp label_00003e80
 
@@ -1111,11 +1111,11 @@ label_00003e80
 lt (local-int 0) (local-int 7) 64
 jcc (local-int 0) ffffffff label_00004424
 lookup-array (local-ptr 1) (global-int 7254c) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 725b0) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 73870) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 mov (local-int 8) 0
 jmp label_00003f6c
 
@@ -1126,7 +1126,7 @@ label_00003f6c
 lt (local-int 0) (local-int 8) 8
 jcc (local-int 0) ffffffff label_00003fe8
 lookup-array-2d (local-ptr 1) (global-int 72614) (local-int 7) 8 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00003f50
 
 label_00003fe8
@@ -1140,11 +1140,11 @@ label_00004024
 lt (local-int 0) (local-int 8) d
 jcc (local-int 0) ffffffff label_00004110
 lookup-array-2d (local-ptr 1) (global-int 72934) (local-int 7) d (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array-2d (local-ptr 1) (global-int 72e48) (local-int 7) d (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array-2d (local-ptr 1) (global-int 7335c) (local-int 7) d (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004008
 
 label_00004110
@@ -1158,7 +1158,7 @@ label_0000414c
 lt (local-int 0) (local-int 8) 8
 jcc (local-int 0) ffffffff label_000041c8
 lookup-array-2d (local-ptr 1) (global-int 738d4) (local-int 7) 8 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004130
 
 label_000041c8
@@ -1172,7 +1172,7 @@ label_00004204
 lt (local-int 0) (local-int 8) 3e8
 jcc (local-int 0) ffffffff label_00004280
 lookup-array-2d (local-ptr 1) (global-int 73bf4) (local-int 7) 3e8 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000041e8
 
 label_00004280
@@ -1186,7 +1186,7 @@ label_000042bc
 lt (local-int 0) (local-int 8) 64
 jcc (local-int 0) ffffffff label_00004338
 lookup-array-2d (local-ptr 1) (global-int dc47f) (local-int 7) 64 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000042a0
 
 label_00004338
@@ -1200,12 +1200,12 @@ label_00004374
 lt (local-int 0) (local-int 8) 14
 jcc (local-int 0) ffffffff label_000043f0
 lookup-array-2d (local-ptr 1) (global-int 8c294) (local-int 7) 14 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004358
 
 label_000043f0
 lookup-array (local-string-ptr 0) (global-string bf8) (local-int 7)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 jmp label_00003e64
 
 label_00004424
@@ -1219,11 +1219,11 @@ label_00004460
 lt (local-int 0) (local-int 7) 64
 jcc (local-int 0) ffffffff label_0000468c
 lookup-array (local-ptr 1) (global-int 71d7c) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 721c8) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 72358) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 mov (local-int 8) 0
 jmp label_0000454c
 
@@ -1234,7 +1234,7 @@ label_0000454c
 lt (local-int 0) (local-int 8) 4
 jcc (local-int 0) ffffffff label_000045c8
 lookup-array-2d (local-ptr 1) (global-int 71fd4) (local-int 7) 4 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004530
 
 label_000045c8
@@ -1248,16 +1248,16 @@ label_00004604
 lt (local-int 0) (local-int 8) 5
 jcc (local-int 0) ffffffff label_00004680
 lookup-array-2d (local-ptr 1) (global-int 71de0) (local-int 7) 5 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000045e8
 
 label_00004680
 jmp label_00004444
 
 label_0000468c
-i1a2 (global-int 8ca65)
-i1a2 (global-int a40e1)
-i1a2 (global-int a40e0)
+save-int (global-int 8ca65)
+save-int (global-int a40e1)
+save-int (global-int a40e0)
 mov (local-int 7) 0
 jmp label_000046ec
 
@@ -1268,9 +1268,9 @@ label_000046ec
 lt (local-int 0) (local-int 7) 3e8
 jcc (local-int 0) ffffffff label_00004780
 lookup-array (local-ptr 1) (global-int 91cdb) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 920c3) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000046d0
 
 label_00004780
@@ -1284,11 +1284,11 @@ label_000047bc
 lt (local-int 0) (local-int 7) fa0
 jcc (local-int 0) ffffffff label_00004878
 lookup-array (local-ptr 1) (global-int 8cebb) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 8edfb) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 90d3b) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000047a0
 
 label_00004878
@@ -1302,9 +1302,9 @@ label_000048b4
 lt (local-int 0) (local-int 7) 12c
 jcc (local-int 0) ffffffff label_00004948
 lookup-array (local-ptr 1) (global-int a3140) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a3528) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004898
 
 label_00004948
@@ -1318,7 +1318,7 @@ label_00004984
 lt (local-int 0) (local-int 7) 3e8
 jcc (local-int 0) ffffffff label_000049f0
 lookup-array (local-ptr 1) (global-int 8caca) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004968
 
 label_000049f0
@@ -1332,7 +1332,7 @@ label_00004a2c
 lt (local-int 0) (local-int 7) 9
 jcc (local-int 0) ffffffff label_00004b50
 lookup-array (local-ptr 1) (global-int 9358e) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 mov (local-int 8) 0
 jmp label_00004ac8
 
@@ -1343,22 +1343,22 @@ label_00004ac8
 lt (local-int 0) (local-int 8) 258
 jcc (local-int 0) ffffffff label_00004b44
 lookup-array-2d (local-ptr 1) (global-int 935f2) (local-int 7) 258 (local-int 8)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004aac
 
 label_00004b44
 jmp label_00004a10
 
 label_00004b50
-i1a2 (global-int 93476)
-i1a2 (global-int 93475)
-i1a2 (global-int deb90)
-i1a2 (global-int deb91)
-i1a2 (global-int deb92)
-i1a2 (global-int deb93)
-i1a2 (global-int f7fed)
-i1a2 (global-int f7fee)
-i1a2 (global-int 93486)
+save-int (global-int 93476)
+save-int (global-int 93475)
+save-int (global-int deb90)
+save-int (global-int deb91)
+save-int (global-int deb92)
+save-int (global-int deb93)
+save-int (global-int f7fed)
+save-int (global-int f7fee)
+save-int (global-int 93486)
 mov (local-int 7) 0
 jmp label_00004bf8
 
@@ -1369,7 +1369,7 @@ label_00004bf8
 lt (local-int 0) (local-int 7) 2
 jcc (local-int 0) ffffffff label_00004c64
 lookup-array (local-ptr 1) (global-int 93477) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004bdc
 
 label_00004c64
@@ -1383,7 +1383,7 @@ label_00004ca0
 lt (local-int 0) (local-int 7) 3
 jcc (local-int 0) ffffffff label_00004d0c
 lookup-array (local-ptr 1) (global-int eafe2) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004c84
 
 label_00004d0c
@@ -1397,7 +1397,7 @@ label_00004d48
 lt (local-int 0) (local-int 7) 8
 jcc (local-int 0) ffffffff label_00004db4
 lookup-array (local-ptr 1) (global-int 9346d) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004d2c
 
 label_00004db4
@@ -1411,7 +1411,7 @@ label_00004df0
 lt (local-int 0) (local-int 7) d
 jcc (local-int 0) ffffffff label_00004e5c
 lookup-array (local-ptr 1) (global-int 93479) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004dd4
 
 label_00004e5c
@@ -1425,12 +1425,12 @@ label_00004e98
 lt (local-int 0) (local-int 7) 1e
 jcc (local-int 0) ffffffff label_00004f04
 lookup-array (local-ptr 1) (global-int 934a6) (local-int 7)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00004e7c
 
 label_00004f04
 bit-set (global-int a9be) 0
-i1a2 (global-int a9be)
+save-int (global-int a9be)
 set-draw-color 1adb0 0 12c 0 ffffff
 i24e 10003
 wait
@@ -1469,7 +1469,7 @@ label_00005170
 lookup-array (local-ptr 1) (global-int 8ca66) (global-int 546e02)
 mov (local-ptr 1) 1
 lookup-array (local-ptr 1) (global-int 8ca66) (global-int 546e02)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 
 label_000051c8
 jmp label_00004fa0
@@ -1592,35 +1592,35 @@ release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
 set-string (local-string-ptr 0) ""
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string 3e8) (global-int f8019)
 set-string (local-string-ptr 0) (global-string bb8)
 lookup-array (local-string-ptr 0) (global-string 3e8) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string 7d0) (global-int f8019)
 set-string (local-string-ptr 0) (global-string bb9)
 lookup-array (local-string-ptr 0) (global-string 7d0) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-ptr 1) (global-int bbe) (global-int f8019)
 mov (local-ptr 1) (global-int a9bd)
 lookup-array (local-ptr 1) (global-int bbe) (global-int f8019)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int fa6) (global-int f8019)
 mov (local-ptr 1) (global-int 7087f5)
 lookup-array (local-ptr 1) (global-int fa6) (global-int f8019)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 6) (global-int f8019)
 mov (local-ptr 1) (global-int a40e1)
 lookup-array (local-ptr 1) (global-int 6) (global-int f8019)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 3ee) (global-int f8019)
 mov (local-ptr 1) (global-int 8ca64)
 lookup-array (local-ptr 1) (global-int 3ee) (global-int f8019)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 7d6) (global-int f8019)
 mov (local-ptr 1) (global-int 8ca65)
 lookup-array (local-ptr 1) (global-int 7d6) (global-int f8019)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 
 label_00005d94
 ret

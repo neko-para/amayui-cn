@@ -4,7 +4,7 @@
  *  其余控制流/子系统语义在 M1/M2 逐步补齐。
  */
 import type { OpHandler, StepCtx } from './step.js';
-import { readIntOperand, writeIntOperand, operandArg, refFromOperand, setRefOperand, readStringOperand, writeStringOperand, readFloatOperand, writeFloatOperand, readIndexOperand } from './operand.js';
+import { readIntOperand, writeIntOperand, operandArg, refFromOperand, setRefOperand, readStringOperand, writeStringOperand, readFloatOperand, writeFloatOperand, readIndexOperand, readStringIndexOperand } from './operand.js';
 import { asI32, atoi } from './bits.js';
 import { refAt, readRef, writeRef } from './ref.js';
 import { parseScriptBytes } from '../script/bin.js';
@@ -191,25 +191,39 @@ const op_concat: OpHandler = (c) => {
   writeStringOperand(c.e, c.frame, c.instr, 1, a + b);
 };
 
-// ---- 字符串→整型哈希表（引擎 `_this+5452`；0x1A2 登记 / 0x1A3 查表，见 opcode-table.md）----
+// ---- 字符串表族（save/load-int=str→int 表 `_this+5452`；save/load-string=str→str 表 `_this+5472`；见 opcode-table.md）----
 
-/** 组查询键：引擎 `wsprintfA("%c%8.8x", 3, idx)`。 */
-function stringTableKey(idx: number): string {
-  return '\x03' + ((idx >>> 0).toString(16).padStart(8, '0'));
+/** 组查询键：引擎 `wsprintfA("%c%8.8x", 哨兵, idx)`。int 表哨兵=3；string 表哨兵=5。 */
+function stringTableKey(sentinel: number, idx: number): string {
+  return String.fromCharCode(sentinel) + ((idx >>> 0).toString(16).padStart(8, '0'));
 }
 
-/** 0x1A2 (sub_434F60)：把 op1 的值登记到引擎 `_this+5452` 字符串→整型表，键 = stringTableKey(op1 原始索引)。 */
-const op_string_bind: OpHandler = (c) => {
+/** 0x1A2 save-int (sub_434F60)：把 op1 的值登记到引擎 `_this+5452` 字符串→整型表，键 = stringTableKey(3, op1 索引)。 */
+const op_save_int: OpHandler = (c) => {
   const value = readIntOperand(c.e, c.frame, c.instr, 1);
-  const key = stringTableKey(readIndexOperand(c.e, c.frame, c.instr, 1));
+  const key = stringTableKey(3, readIndexOperand(c.e, c.frame, c.instr, 1));
   c.e.stringIndexTable.set(key, value);
 };
 
-/** 0x1A3 (sub_42DF40) string-lookup-set：按 op1 原始索引查 `_this+5452` 表，命中取 *v3、未命中取 0，写回 op1（VM 可见）。 */
-const op_string_lookup_set: OpHandler = (c) => {
-  const key = stringTableKey(readIndexOperand(c.e, c.frame, c.instr, 1));
+/** 0x1A3 load-int (sub_42DF40)：按 op1 索引查 `_this+5452` 表，命中取 *v3、未命中取 0，写回 op1（VM 可见）。 */
+const op_load_int: OpHandler = (c) => {
+  const key = stringTableKey(3, readIndexOperand(c.e, c.frame, c.instr, 1));
   const value = c.e.stringIndexTable.get(key) ?? 0;
   writeIntOperand(c.e, c.frame, c.instr, 1, value);
+};
+
+/** 0x1A9 save-string (sub_434FE0)：把 op1 的字符串登记到引擎 `_this+5472` 字符串→字符串表，键 = stringTableKey(5, op1 字符串索引)。 */
+const op_save_string: OpHandler = (c) => {
+  const str = readStringOperand(c.e, c.frame, c.instr, 1);
+  const key = stringTableKey(5, readStringIndexOperand(c.e, c.frame, c.instr, 1));
+  c.e.stringTable.set(key, str);
+};
+
+/** 0x1AA load-string (sub_433A70)：按 op1 字符串索引查 `_this+5472` 表，命中取字符串、未命中取空串，写回 op1（VM 可见）。 */
+const op_load_string: OpHandler = (c) => {
+  const key = stringTableKey(5, readStringIndexOperand(c.e, c.frame, c.instr, 1));
+  const str = c.e.stringTable.get(key) ?? '';
+  writeStringOperand(c.e, c.frame, c.instr, 1, str);
 };
 
 // ---- 控制流 ----
@@ -375,6 +389,8 @@ const op_exit_script: OpHandler = (c) => {
   c.e.globals.str.clear();
   c.e.globals.ptr.clear();
   c.e.globals.floatPtr.clear();
+  c.e.globals.strPtr.clear();
+  c.e.stringTable.clear();
   c.e.cur = 0;
   c.e.callRet = -1;
   c.e.callLink = -1;
@@ -780,8 +796,10 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x2ec, op_atoi],
   [0x192, op_set_string],
   [0x193, op_concat],
-  [0x1a2, op_string_bind], // 字符串→整型表登记（`_this+5452`）
-  [0x1a3, op_string_lookup_set], // string-lookup-set：查表写回 op1（VM 可见）
+  [0x1a2, op_save_int], // save-int：字符串→整型表登记（`_this+5452`）
+  [0x1a3, op_load_int], // load-int：查表写回 op1（VM 可见）
+  [0x1a9, op_save_string], // save-string：字符串→字符串表登记（`_this+5472`）
+  [0x1aa, op_load_string], // load-string：查表写回 op1 字符串（VM 可见）
   [0x2d8, op_set_array_to],
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],
@@ -949,7 +967,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x10f, op_engine_internal], // 输入
   [0x30a, op_engine_internal], // 输入
   // 字符串 / 查表
-  [0x1a9, op_engine_internal], // 字符串
   [0x2c7, op_engine_internal], // 字符串
   [0x2c8, op_engine_internal], // 字符串
   [0x2c9, op_engine_internal], // 字符串

@@ -269,15 +269,15 @@
 | 0x19F | 2 | u0041C860 | sub_42DB10 |
 | 0x1A0 | 9 | u0041C9B0 | sub_42DC70 |
 | 0x1A1 | 2 | u0041CB40 | sub_42DDE0 |
-| 0x1A2 | 1 | u00428010 | sub_434F60 |
-| 0x1A3 | 1 | string-lookup-set | sub_42DF40 |
+| 0x1A2 | 1 | save-int | sub_434F60 |
+| 0x1A3 | 1 | load-int | sub_42DF40 |
 | 0x1A4 | 2 | u0041B580 | sub_41FE60 |
 | 0x1A5 | 1 | set-font | sub_433290 |
 | 0x1A6 | 2 | halve-strlen | sub_42D110 |
 | 0x1A7 | 1 | comment | sub_4191B0 |
 | 0x1A8 | 0 | dev_ukn | sub_419690 |
-| 0x1A9 | 1 | u00428090 | sub_434FE0 |
-| 0x1AA | 1 | u00425920 | sub_433A70 |
+| 0x1A9 | 1 | save-string | sub_434FE0 |
+| 0x1AA | 1 | load-string | sub_433A70 |
 | 0x1AB | 2 | u0041CCA0 | sub_42DFC0 |
 | 0x1AC | 3 | u0041CD80 | sub_42E0A0 |
 | 0x1AD | 0 | u004154F0 | sub_4196F0 |
@@ -665,8 +665,8 @@
 | 0x25D | u00423123 | sub_425EF0（.c 32811） | 消息部件 `_this[result+21585]+276/280` |
 | 0x2DB | u004235C0 | sub_426500（.c 33073） | `_this[71744]=op1`; `sub_459F40()` |
 | 0x303 | 303 | sub_426A90（.c 33314） | 消息系统 `sub_456600(_this+21324,…)` |
-| 0x1A2 | u00428010 | sub_434F60（.c 42215） | 写内部字符串查找表 `_this+5452` |
-| 0x1A9 | u00428090 | sub_434FE0（.c 42229） | 写内部字符串查找表 `_this+5472` |
+| 0x1A2 | save-int | sub_434F60（.c 42215） | 写内部字符串查找表 `_this+5452` |
+| 0x1A9 | save-string | sub_434FE0（.c 42229） | 写内部字符串查找表 `_this+5472` |
 
 > ⚠️ 诚实边界：上表**handler 行为已读体核对**，但"归类为引擎内部/子系统、对 VM 可见状态无影响"这一**判断本身是工作假设**——因为 `_this[offset]` 的长偏移字段语义尚未逐一定义到语义名。若后续发现某 offset 实为全局/脚本字段，需**升级为 VM 核心**改精确实现。这是 ADR-010 的高危信号提醒。
 

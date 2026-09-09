@@ -15,9 +15,9 @@ label_000000a8
 lt (local-int 1) (local-int 0) 3e8
 jcc (local-int 1) ffffffff label_0000022c
 lookup-array (local-ptr 0) (global-int 3b4e) (local-int 0)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int a9e5) (local-int 0)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 14a8f1) (local-int 0)
 jcc (local-ptr 0) ffffffff label_000001c0
 lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
@@ -31,7 +31,7 @@ sub (local-ptr 0) 0 1
 
 label_000001f8
 lookup-array (local-ptr 0) (global-int adcd) (local-int 0)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 jmp label_0000008c
 
 label_0000022c

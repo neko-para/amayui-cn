@@ -393,7 +393,7 @@ label_00001558
 lt (local-int 113) (local-int 0) 2710
 jcc (local-int 113) ffffffff label_000015c4
 lookup-array (local-ptr 0) (global-int a44ca) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jmp label_0000153c
 
 label_000015c4
@@ -407,7 +407,7 @@ label_00001600
 lt (local-int 113) (local-int 0) 3e8
 jcc (local-int 113) ffffffff label_0000166c
 lookup-array (local-ptr 0) (global-int e9b7a) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jmp label_000015e4
 
 label_0000166c
@@ -447,7 +447,7 @@ jcc (local-int 114) ffffffff label_000019a0
 lookup-array-2d (local-ptr 0) (global-int 1331ef) (local-int 0) 3c (local-int 1)
 sub (local-int 100) (local-ptr 0) 1
 lookup-array (local-ptr 0) (global-int a44ca) (local-int 100)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 708025) (local-int 0)
 lookup-array (local-ptr 1) (global-int 708025) (local-int 0)
 lookup-array (local-ptr 2) (global-int a44ca) (local-int 100)
@@ -509,7 +509,7 @@ jcc (local-int 114) ffffffff label_00001da8
 lookup-array-2d (local-ptr 0) (global-int 143f78) (local-int 0) 15 (local-int 1)
 sub (local-int 100) (local-ptr 0) 1
 lookup-array (local-ptr 0) (global-int a44ca) (local-int 100)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 70840d) (local-int 0)
 lookup-array (local-ptr 1) (global-int 70840d) (local-int 0)
 lookup-array (local-ptr 2) (global-int a44ca) (local-int 100)
@@ -524,7 +524,7 @@ jcc (local-ptr 0) ffffffff label_00001ed4
 lookup-array-2d (local-ptr 0) (global-int 142420) (local-int 0) 7 0
 mov (local-int 100) (local-ptr 0)
 lookup-array (local-ptr 0) (global-int a40e2) (local-int 100)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 70840d) (local-int 0)
 lookup-array (local-ptr 1) (global-int 70840d) (local-int 0)
 lookup-array (local-ptr 2) (global-int a40e2) (local-int 100)
@@ -559,7 +559,7 @@ jcc (local-int 113) ffffffff label_00002138
 lookup-array (local-ptr 0) (global-int 529ccc) (local-int 0)
 jcc (local-ptr 0) ffffffff label_0000212c
 lookup-array (local-ptr 0) (global-int a6bda) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jcc (global-int 708ad8) ffffffff label_000020bc
 lookup-array (local-ptr 0) (global-int a6bda) (local-int 0)
 mov (local-ptr 0) 1
@@ -588,7 +588,7 @@ jcc (local-int 113) ffffffff label_000022d4
 lookup-array (local-ptr 0) (global-int 55b625) (local-int 0)
 jcc (local-ptr 0) ffffffff label_000022c8
 lookup-array (local-ptr 0) (global-int 8de5b) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jcc (global-int 708ad8) ffffffff label_00002258
 lookup-array (local-ptr 0) (global-int 8de5b) (local-int 0)
 mov (local-ptr 0) 1
@@ -618,7 +618,7 @@ lookup-array (local-string-ptr 0) (global-string 1e58e) (local-int 0)
 i195 (local-int 113) (local-string-ptr 0) ""
 jcc (local-int 113) ffffffff label_00002480
 lookup-array (local-ptr 0) (global-int e746a) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jcc (global-int 708ad8) ffffffff label_00002410
 lookup-array (local-ptr 0) (global-int e746a) (local-int 0)
 mov (local-ptr 0) 1
@@ -647,7 +647,7 @@ jcc (local-int 113) ffffffff label_00002628
 lookup-array (local-ptr 0) (global-int 703f5d) (local-int 0)
 jcc (local-ptr 0) ffffffff label_0000261c
 lookup-array (local-ptr 0) (global-int a3910) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jcc (global-int 708ad8) ffffffff label_000025ac
 lookup-array (local-ptr 0) (global-int a3910) (local-int 0)
 mov (local-ptr 0) 1
@@ -676,7 +676,7 @@ jcc (local-int 113) ffffffff label_000027c4
 lookup-array (local-ptr 0) (global-int 6c792a) (local-int 0)
 jcc (local-ptr 0) ffffffff label_000027b8
 lookup-array (local-ptr 0) (global-int a6fc2) (local-int 0)
-string-lookup-set (local-ptr 0)
+load-int (local-ptr 0)
 jcc (global-int 708ad8) ffffffff label_00002748
 lookup-array (local-ptr 0) (global-int a6fc2) (local-int 0)
 mov (local-ptr 0) 1

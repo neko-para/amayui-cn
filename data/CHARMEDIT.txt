@@ -436,7 +436,7 @@ jcc (local-int 245) ffffffff label_00001aa8
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 3)
 mov (local-ptr 1) 0
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 3)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000019f0
 
 label_00001aa8
@@ -491,10 +491,10 @@ lookup-array (local-ptr 1) (global-int 13b0) (local-int 246)
 mov (local-ptr 1) (local-int 23f)
 sub (local-int 246) (local-int 7) 3
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 246)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 sub (local-int 246) (local-int 9) 3
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 246)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_00002020
 
 label_00001e88
@@ -517,7 +517,7 @@ jcc (local-int 245) ffffffff label_00002014
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 3)
 mov (local-ptr 1) 0
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 3)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 mov (local-int 3) 9
 
 label_00002014
@@ -540,7 +540,7 @@ lookup-array (local-ptr 1) (global-int 13b0) (local-int 246)
 mov (local-ptr 1) (local-int 215)
 sub (local-int 246) (local-int 7) 3
 lookup-array (local-ptr 1) (global-int 13b0) (local-int 246)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 
 label_00002184
 sub (local-int 215) 0 1

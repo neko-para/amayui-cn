@@ -395,9 +395,9 @@ mov (local-ptr 1) (local-ptr 2)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 mov (local-ptr 1) 2710
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 i302 0 (local-ptr 1)
 jmp label_00001c54
@@ -515,7 +515,7 @@ lookup-array (local-ptr 1) (global-int 14b4ac) (global-int 14acda)
 jcc (local-ptr 1) ffffffff label_000020a4
 lookup-array (local-ptr 2) (global-int 14b4ac) (global-int 14acda)
 lookup-array (local-ptr 1) (global-int a40e2) (local-ptr 2)
-string-lookup-set (local-ptr 1)
+load-int (local-ptr 1)
 lookup-array (local-ptr 2) (global-int 14b4ac) (global-int 14acda)
 lookup-array (local-ptr 1) (global-int a40e2) (local-ptr 2)
 sub (local-int 413) 1 (local-ptr 1)
@@ -570,7 +570,7 @@ shl (local-int 424) (local-int 417) 10
 lookup-array (local-ptr 3) (global-int adcd) (global-int 14acda)
 or (local-ptr 3) (local-int 422) (local-int 424)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000026c4
 
 label_00002430
@@ -582,7 +582,7 @@ shl (local-int 424) (local-int 417) 8
 lookup-array (local-ptr 3) (global-int adcd) (global-int 14acda)
 or (local-ptr 3) (local-int 422) (local-int 424)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000026c4
 
 label_00002528
@@ -593,7 +593,7 @@ and (local-int 422) (local-ptr 2) ffff00
 lookup-array (local-ptr 0) (global-int adcd) (global-int 14acda)
 or (local-ptr 0) (local-int 422) (local-int 417)
 lookup-array (local-ptr 1) (global-int adcd) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 jmp label_000026c4
 
 label_00002604
@@ -602,7 +602,7 @@ jcc (local-int 422) ffffffff label_000026c4
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 mov (local-ptr 1) (local-int 417)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 lookup-array (local-ptr 1) (global-int a9e5) (global-int 14acda)
 i302 0 (local-ptr 1)
 

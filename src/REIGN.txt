@@ -425,10 +425,10 @@ set-texture 5159 e (local-int 1de7)
 draw-texture 2e630 e 0 0 500 1f 0 0
 i20c
 detach-texture 2e630 1
-string-lookup-set (global-int 1391)
+load-int (global-int 1391)
 add (local-int 1de7) (global-int 1391) 1
 mod (global-int 1391) (local-int 1de7) a
-i1a2 (global-int 1391)
+save-int (global-int 1391)
 add (global-int f8019) 3d4 (global-int 1391)
 call label_0000f7a4
 
@@ -3458,35 +3458,35 @@ release-texture e
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
 set-string (local-string-ptr 0) ""
 lookup-array (local-string-ptr 0) (global-string 0) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string 3e8) (global-int f8019)
 set-string (local-string-ptr 0) (global-string bb8)
 lookup-array (local-string-ptr 0) (global-string 3e8) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-string-ptr 0) (global-string 7d0) (global-int f8019)
 set-string (local-string-ptr 0) (global-string bb9)
 lookup-array (local-string-ptr 0) (global-string 7d0) (global-int f8019)
-i1a9 (local-string-ptr 0)
+save-string (local-string-ptr 0)
 lookup-array (local-ptr 0) (global-int bbe) (global-int f8019)
 mov (local-ptr 0) (global-int a9bd)
 lookup-array (local-ptr 0) (global-int bbe) (global-int f8019)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int fa6) (global-int f8019)
 mov (local-ptr 0) (global-int 7087f5)
 lookup-array (local-ptr 0) (global-int fa6) (global-int f8019)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 6) (global-int f8019)
 mov (local-ptr 0) (global-int a40e1)
 lookup-array (local-ptr 0) (global-int 6) (global-int f8019)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 3ee) (global-int f8019)
 mov (local-ptr 0) (global-int 8ca64)
 lookup-array (local-ptr 0) (global-int 3ee) (global-int f8019)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 7d6) (global-int f8019)
 mov (local-ptr 0) (global-int 8ca65)
 lookup-array (local-ptr 0) (global-int 7d6) (global-int f8019)
-i1a2 (local-ptr 0)
+save-int (local-ptr 0)
 
 label_000100b4
 ret

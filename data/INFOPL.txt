@@ -561,7 +561,7 @@ mov (local-int b8b) (local-ptr 1)
 lookup-array (local-ptr 1) (global-int 703f5d) (local-int b8b)
 jcc (local-ptr 1) ffffffff label_000020cc
 lookup-array (local-ptr 1) (global-int e8bda) (local-int b8b)
-string-lookup-set (local-ptr 1)
+load-int (local-ptr 1)
 lookup-array (local-ptr 1) (local-int a56) (local-int b82)
 mov (local-ptr 1) (local-int b8b)
 add (local-int b82) (local-int b82) 1
@@ -1192,7 +1192,7 @@ jcc (local-int ba2) ffffffff label_00005970
 lookup-array (local-ptr 1) (global-int e8bda) (local-int b8b)
 mov (local-ptr 1) 1
 lookup-array (local-ptr 1) (global-int e8bda) (local-int b8b)
-i1a2 (local-ptr 1)
+save-int (local-ptr 1)
 add (local-int b9e) 1d4c0 960
 add (local-int b9f) (local-int b9e) (local-int 7ef)
 detach-texture (local-int b9f) 1

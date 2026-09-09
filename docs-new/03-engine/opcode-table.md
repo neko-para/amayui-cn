@@ -272,15 +272,15 @@
 | 0x19F | 2 |  | sub_42DB10 | 仅映射 |  |
 | 0x1A0 | 9 |  | sub_42DC70 | 仅映射 |  |
 | 0x1A1 | 2 |  | sub_42DDE0 | 仅映射 |  |
-| 0x1A2 | 1 |  | sub_434F60 | 已核对 | **写引擎字符串→整型哈希表**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42140） |
-| 0x1A3 | 1 | string-lookup-set | sub_42DF40 | 已核对 | **string-lookup-set**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 37793） |
+| 0x1A2 | 1 | save-int | sub_434F60 | 已核对 | **save-int**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42140） |
+| 0x1A3 | 1 | load-int | sub_42DF40 | 已核对 | **load-int**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 37793）。**曾名 `string-lookup-set`** |
 | 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 28797） |
 | 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41043） |
 | 0x1A6 | 2 | halve-strlen | sub_42D110 | 已核对 | **halve-strlen**：`op1 = strlen(op2) >> 1`（`sub_41B640(2)` 读 op2 → `strlen` → `writeIntOperand_42B4B0(1, len>>1)`）。handler=sub_42D110（raw .c 37975），纯 |
 | 0x1A7 | 1 | comment | sub_4191B0 | 已核对 | nop（dev 注释，无副作用） |
 | 0x1A8 | 0 | dev_ukn | sub_419690 | 已核对 | nop（dev 未知指令，通常空实现） |
-| 0x1A9 | 1 |  | sub_434FE0 | 已核对 | **写字符串哈希表**：`sub_42A420` 读 op1 字符串、`sub_418AE0(1)` 读值，键 `"%c%8.8x",5,val`，`sub_434E00(key, str)` 插入/更新（table 满 `sub_434AF0` 扩容）。handler=sub_434FE0（raw .c 42154） |
-| 0x1AA | 1 |  | sub_433A70 | 仅映射 |  |
+| 0x1A9 | 1 | save-string | sub_434FE0 | 已核对 | **save-string**：`sub_42A420` 读 op1 字符串、`sub_418AE0(1)` 读值（字符串索引），键 `"%c%8.8x",5,val`，`sub_434E00(key, str)` 插入/更新（table 满 `sub_434AF0` 扩容）。handler=sub_434FE0（raw .c 42154） |
+| 0x1AA | 1 | load-string | sub_433A70 | 已核对 | **load-string**：`sub_418AE0(1)` 读 op1 字符串索引 → `sub_429390(_this+5191, 5, idx)`（键 `"%c%8.8x",5,idx`，查 `_this+5472`，未命中返静态默认 `dword_55D0FC`）→ `sub_433310(1, 结果串)` 写回 op1 的字符串。（写操作数故 VM 可见）handler=sub_433A70（raw .c 42053）。**0x1A9 的读侧** |
 | 0x1AB | 2 |  | sub_42DFC0 | 仅映射 |  |
 | 0x1AC | 3 |  | sub_42E0A0 | 仅映射 |  |
 | 0x1AD | 0 |  | sub_4196F0 | 仅映射 |  |

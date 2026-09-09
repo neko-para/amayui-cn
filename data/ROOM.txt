@@ -5,7 +5,7 @@ local_vars = { 12e 1 1 3 1 1 }
 
 mov (global-int f8009) 1
 mov (local-int 129) 1
-string-lookup-set (global-int a9bc)
+load-int (global-int a9bc)
 jcc (global-int a9bc) ffffffff label_00000354
 mov (local-int 0) 0
 jmp label_000000c8

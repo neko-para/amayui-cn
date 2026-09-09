@@ -1711,7 +1711,7 @@ label_00007440
 eq (local-int 57c3) (local-int 57ba) 2
 jcc (local-int 57c3) ffffffff label_000074ac
 sub (global-int a9ce) 1 (local-int 57bb)
-i1a2 (global-int a9ce)
+save-int (global-int a9ce)
 jmp label_00007618
 
 label_000074ac
@@ -1725,21 +1725,21 @@ label_00007520
 bit-reset (global-int a9cd) 0
 
 label_00007534
-i1a2 (global-int a9cd)
+save-int (global-int a9cd)
 jmp label_00007618
 
 label_0000754c
 eq (local-int 57c3) (local-int 57ba) 4
 jcc (local-int 57c3) ffffffff label_000075b8
 sub (global-int a9d5) 1 (local-int 57bb)
-i1a2 (global-int a9d5)
+save-int (global-int a9d5)
 jmp label_00007618
 
 label_000075b8
 eq (local-int 57c3) (local-int 57ba) 5
 jcc (local-int 57c3) ffffffff label_00007618
 sub (global-int a9d0) 1 (local-int 57bb)
-i1a2 (global-int a9d0)
+save-int (global-int a9d0)
 
 label_00007618
 jmp label_00008bcc
@@ -1759,7 +1759,7 @@ sub (local-int 57c3) (local-int 57ba) 1
 bit-set (global-int b1b6) (local-int 57c3)
 
 label_0000771c
-i1a2 (global-int b1b6)
+save-int (global-int b1b6)
 jmp label_000077c8
 
 label_00007734
@@ -1773,7 +1773,7 @@ sub (local-int 57c3) (local-int 57ba) 7
 bit-set (global-int a9e4) (local-int 57c3)
 
 label_000077bc
-i1a2 (global-int a9e4)
+save-int (global-int a9e4)
 
 label_000077c8
 jmp label_00008bcc
@@ -1791,7 +1791,7 @@ label_00007880
 bit-set (global-int a9d6) 10
 
 label_00007894
-i1a2 (global-int a9d6)
+save-int (global-int a9d6)
 jmp label_00007978
 
 label_000078ac
@@ -1807,7 +1807,7 @@ sub (local-int 57c3) (local-int 57ba) 2
 bit-set (global-int a9d6) (local-int 57c3)
 
 label_0000796c
-i1a2 (global-int a9d6)
+save-int (global-int a9d6)
 
 label_00007978
 jmp label_00008bcc
@@ -1825,7 +1825,7 @@ label_00007a30
 bit-reset (global-int a9cb) 0
 
 label_00007a44
-i1a2 (global-int a9cb)
+save-int (global-int a9cb)
 jmp label_00007cd0
 
 label_00007a5c
@@ -1839,7 +1839,7 @@ label_00007ad0
 bit-reset (global-int a9cb) 1
 
 label_00007ae4
-i1a2 (global-int a9cb)
+save-int (global-int a9cb)
 jmp label_00007cd0
 
 label_00007afc
@@ -1853,7 +1853,7 @@ label_00007b70
 bit-reset (global-int a9cc) 0
 
 label_00007b84
-i1a2 (global-int a9cc)
+save-int (global-int a9cc)
 jmp label_00007cd0
 
 label_00007b9c
@@ -1867,7 +1867,7 @@ label_00007c10
 bit-reset (global-int a9cc) 1
 
 label_00007c24
-i1a2 (global-int a9cc)
+save-int (global-int a9cc)
 jmp label_00007cd0
 
 label_00007c3c
@@ -1881,7 +1881,7 @@ label_00007cb0
 bit-reset (global-int a9cc) 2
 
 label_00007cc4
-i1a2 (global-int a9cc)
+save-int (global-int a9cc)
 
 label_00007cd0
 jmp label_00008bcc
@@ -1899,7 +1899,7 @@ label_00007d88
 bit-reset (global-int a9e2) 0
 
 label_00007d9c
-i1a2 (global-int a9e2)
+save-int (global-int a9e2)
 jmp label_000080e0
 
 label_00007db4
@@ -1936,7 +1936,7 @@ label_00007f0c
 eq (local-int 57c3) (local-int 57ba) 5
 jcc (local-int 57c3) ffffffff label_00007f84
 mov (global-int a9de) (local-int 57bb)
-i1a2 (global-int a9de)
+save-int (global-int a9de)
 mov (local-int 57c2) 1
 jmp label_000080e0
 
@@ -1951,7 +1951,7 @@ label_00007ff8
 bit-reset (global-int a9dd) 0
 
 label_0000800c
-i1a2 (global-int a9dd)
+save-int (global-int a9dd)
 mov (local-int 57c2) 1
 jmp label_000080e0
 
@@ -1966,7 +1966,7 @@ label_000080ac
 bit-reset (global-int a9dd) 1
 
 label_000080c0
-i1a2 (global-int a9dd)
+save-int (global-int a9dd)
 mov (local-int 57c2) 1
 
 label_000080e0
@@ -2069,14 +2069,14 @@ jcc (local-int 57c3) ffffffff label_00008700
 eq (local-int 57c3) (local-int 57ba) 1
 jcc (local-int 57c3) ffffffff label_00008694
 mov (global-int a9dc) (local-int 57bb)
-i1a2 (global-int a9dc)
+save-int (global-int a9dc)
 jmp label_000086f4
 
 label_00008694
 eq (local-int 57c3) (local-int 57ba) 2
 jcc (local-int 57c3) ffffffff label_000086f4
 sub (global-int a9d4) 1 (local-int 57bb)
-i1a2 (global-int a9d4)
+save-int (global-int a9d4)
 
 label_000086f4
 jmp label_00008bcc
@@ -2087,7 +2087,7 @@ jcc (local-int 57c3) ffffffff label_000088d0
 eq (local-int 57c3) (local-int 57ba) 1
 jcc (local-int 57c3) ffffffff label_0000883c
 sub (global-int a9da) 1 (local-int 57bb)
-i1a2 (global-int a9da)
+save-int (global-int a9da)
 jcc (global-int 4fd8) ffffffff label_00008830
 mov (global-int 3f51) 0
 mov (global-int 4fd8) (global-int 4fd8)
@@ -2106,7 +2106,7 @@ label_0000883c
 eq (local-int 57c3) (local-int 57ba) 2
 jcc (local-int 57c3) ffffffff label_000088c4
 sub (global-int a9d9) 1 (local-int 57bb)
-i1a2 (global-int a9d9)
+save-int (global-int a9d9)
 jcc (global-int 4fd7) ffffffff label_000088c4
 call label_0000d8a4
 
@@ -2156,7 +2156,7 @@ label_00008ad4
 bit-reset (global-int a9e3) 0
 
 label_00008ae8
-i1a2 (global-int a9e3)
+save-int (global-int a9e3)
 jmp label_00008bcc
 
 label_00008b00
@@ -2172,7 +2172,7 @@ sub (local-int 57c3) (local-int 57ba) 4
 bit-set (global-int a9d2) (local-int 57c3)
 
 label_00008bc0
-i1a2 (global-int a9d2)
+save-int (global-int a9d2)
 
 label_00008bcc
 ret
@@ -2324,14 +2324,14 @@ jcc (local-int 57c3) ffffffff label_00009770
 eq (local-int 57c3) (local-int 57ba) 1
 jcc (local-int 57c3) ffffffff label_000094d8
 mov (global-int a9df) (local-int 57bc)
-i1a2 (global-int a9df)
+save-int (global-int a9df)
 jmp label_00009764
 
 label_000094d8
 eq (local-int 57c3) (local-int 57ba) 2
 jcc (local-int 57c3) ffffffff label_0000953c
 mov (global-int a9e0) (local-int 57bc)
-i1a2 (global-int a9e0)
+save-int (global-int a9e0)
 jmp label_00009764
 
 label_0000953c
@@ -2340,7 +2340,7 @@ jcc (local-int 57c3) ffffffff label_000095e0
 shl (local-int 57c3) (local-int 57bc) 10
 and (local-int 57c4) (global-int a9db) ffff
 or (global-int a9db) (local-int 57c3) (local-int 57c4)
-i1a2 (global-int a9db)
+save-int (global-int a9db)
 jmp label_00009764
 
 label_000095e0
@@ -2349,7 +2349,7 @@ jcc (local-int 57c3) ffffffff label_00009684
 shl (local-int 57c3) (local-int 57bc) 8
 and (local-int 57c4) (global-int a9db) ff00ff
 or (global-int a9db) (local-int 57c3) (local-int 57c4)
-i1a2 (global-int a9db)
+save-int (global-int a9db)
 jmp label_00009764
 
 label_00009684
@@ -2357,14 +2357,14 @@ eq (local-int 57c3) (local-int 57ba) 5
 jcc (local-int 57c3) ffffffff label_0000970c
 and (local-int 57c3) (global-int a9db) ffff00
 or (global-int a9db) (local-int 57bc) (local-int 57c3)
-i1a2 (global-int a9db)
+save-int (global-int a9db)
 jmp label_00009764
 
 label_0000970c
 eq (local-int 57c3) (local-int 57ba) 6
 jcc (local-int 57c3) ffffffff label_00009764
 mov (global-int a9e1) (local-int 57bc)
-i1a2 (global-int a9e1)
+save-int (global-int a9e1)
 
 label_00009764
 jmp label_000097d8
@@ -2419,28 +2419,28 @@ jcc (local-int 57c3) ffffffff label_00009c34
 eq (local-int 57c3) (local-int 57ba) 1
 jcc (local-int 57c3) ffffffff label_00009a74
 set-string (global-string bbd) (local-string 0)
-i1a9 (global-string bbd)
+save-string (global-string bbd)
 jmp label_00009c20
 
 label_00009a74
 eq (local-int 57c3) (local-int 57ba) 2
 jcc (local-int 57c3) ffffffff label_00009ad8
 set-string (global-string bbe) (local-string 0)
-i1a9 (global-string bbe)
+save-string (global-string bbe)
 jmp label_00009c20
 
 label_00009ad8
 eq (local-int 57c3) (local-int 57ba) 3
 jcc (local-int 57c3) ffffffff label_00009b3c
 set-string (global-string bbf) (local-string 0)
-i1a9 (global-string bbf)
+save-string (global-string bbf)
 jmp label_00009c20
 
 label_00009b3c
 eq (local-int 57c3) (local-int 57ba) 4
 jcc (local-int 57c3) ffffffff label_00009bb4
 set-string (global-string bbc) (local-string 0)
-i1a9 (global-string bbc)
+save-string (global-string bbc)
 mov (local-int 57c2) 1
 jmp label_00009c20
 
@@ -2448,7 +2448,7 @@ label_00009bb4
 eq (local-int 57c3) (local-int 57ba) 5
 jcc (local-int 57c3) ffffffff label_00009c20
 set-string (global-string bbb) (local-string 0)
-i1a9 (global-string bbb)
+save-string (global-string bbb)
 mov (local-int 57c2) 1
 
 label_00009c20
