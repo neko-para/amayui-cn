@@ -2444,7 +2444,7 @@ lt (local-int 12be) (local-int 404) 5
 jcc (local-int 12be) ffffffff label_0000a9f0
 lookup-array-2d (local-ptr 3) (global-int 6205c) (global-int 519af9) 5 (local-int 404)
 mov (global-int 546e03) (local-ptr 3)
-i008 1a
+call-frame 1a
 jmp label_0000aa2c
 
 label_0000a9f0

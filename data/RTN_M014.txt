@@ -8,7 +8,7 @@ mov (global-int 510003) (local-ptr 0)
 lookup-array (local-ptr 0) (global-int 6f1bc) (global-int 61c72)
 mov (global-int 510004) (local-ptr 0)
 mov (global-int 510005) 1
-i008 1f
+call-frame 1f
 mov (local-int 78a) 0
 lookup-array-2d (local-ptr 0) (global-int 597df) (global-int 510004) 20 (global-int 510003)
 lookup-array-2d (local-ptr 1) (global-int 1e955a) (global-int 1d0eb8) 32 (global-int 1d0eb9)
@@ -60,7 +60,7 @@ sar (global-int 510003) (local-ptr 0) 10
 lookup-array (local-ptr 0) (local-int 406) (local-int 1217)
 and (global-int 510004) (local-ptr 0) ffff
 mov (global-int 510005) 1
-i008 1f
+call-frame 1f
 mov (local-int 402) 1
 jmp label_00000518
 
@@ -117,7 +117,7 @@ label_00000828
 jmp label_000006a8
 
 label_00000834
-i008 1f
+call-frame 1f
 mov (local-int 78a) 0
 lookup-array (local-ptr 0) (global-int 6f18a) (global-int 61c72)
 mov (local-int 401) (local-ptr 0)
@@ -189,7 +189,7 @@ lookup-array-2d (local-ptr 0) (local-int 0) (global-int 51004e) 20 (global-int 5
 lookup-array-2d (local-ptr 1) (local-int 0) (local-int 402) 20 (local-int 401)
 eq (local-int 121c) (local-ptr 0) (local-ptr 1)
 jcc (local-int 121c) label_00000e38 ffffffff
-i008 1e
+call-frame 1e
 lookup-array-2d (local-ptr 0) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
 jcc (local-ptr 0) label_00000e38 ffffffff
 jmp label_00000c40

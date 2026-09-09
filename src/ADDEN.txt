@@ -93,7 +93,7 @@ mov (global-int 510003) (local-int 0)
 mov (global-int 510004) (local-int 1)
 mov (local-int 2) (global-int 61c72)
 mov (global-int 61c72) (global-int 519af9)
-i008 1f
+call-frame 1f
 mov (global-int 61c72) (local-int 2)
 mov (local-int 2) 1
 jmp label_00000798
@@ -182,7 +182,7 @@ label_00000cec
 jmp label_00000a44
 
 label_00000cf8
-i008 1f
+call-frame 1f
 eq (local-int 9cf) (local-int 9ce) 0
 jcc (local-int 9cf) ffffffff label_00000d54
 call-script 50e7  // REMOVECH

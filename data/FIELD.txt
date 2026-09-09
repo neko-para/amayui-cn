@@ -4321,8 +4321,8 @@ lookup-array (local-ptr 3) (global-int 6f1bc) (global-int 61c72)
 mov (local-int 2ff9) (local-ptr 3)
 lookup-array-2d (local-ptr 3) (local-int 65f2) (local-int 2ff9) 20 (local-int 2ff8)
 bit-set (local-ptr 3) 0
-i008 1f
-i008 1d
+call-frame 1f
+call-frame 1d
 mov (local-int 2ff9) 1
 jmp label_00012318
 
@@ -5136,7 +5136,7 @@ gr (local-int 81a2) (global-int 5abdf) (local-ptr 3)
 jcc (local-int 81a2) ffffffff label_000160f4
 mov (global-int 51004d) (local-int 2ff8)
 mov (global-int 51004e) (local-int 2ff9)
-i008 1e
+call-frame 1e
 
 label_000160f4
 jmp label_00016134
@@ -5144,7 +5144,7 @@ jmp label_00016134
 label_00016100
 mov (global-int 51004d) (local-int 2ff8)
 mov (global-int 51004e) (local-int 2ff9)
-i008 1e
+call-frame 1e
 
 label_00016134
 ret
@@ -9233,7 +9233,7 @@ lookup-array (local-ptr 3) (global-int 6f18a) (global-int 61c72)
 mov (global-int 510003) (local-ptr 3)
 lookup-array (local-ptr 3) (global-int 6f1bc) (global-int 61c72)
 mov (global-int 510004) (local-ptr 3)
-i008 1f
+call-frame 1f
 mov (local-int 3007) 1
 jmp label_00028b74
 
@@ -9789,7 +9789,7 @@ call-script 39a7
 jmp label_0002b018
 
 label_0002afcc
-i008 1d
+call-frame 1d
 lookup-array-2d (local-ptr 3) (global-int 5abe2) (global-int 6f341d) 20 (global-int 6f341c)
 mov (global-int 6f2465) (local-ptr 3)
 

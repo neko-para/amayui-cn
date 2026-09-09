@@ -347,9 +347,9 @@ const op_call_script: OpHandler = async (c) => {
 };
 
 /**
- * 0x6 (u00417E80)：**预装脚本 op1 到指定帧 op2**（SYSTEM4 的帧布局初始化；handler 体会保存/恢复 cur）。
+ * 0x6 (load-frame，曾名 i006/u00417E80)：**预装脚本 op1 到指定帧 op2**（SYSTEM4 的帧布局初始化；handler 体会保存/恢复 cur）。
  *  handler：`v3=op1(idx); v4=op2(frame); save cur; cur=v4; sub_40ED40(...); restore cur;`
- *  ⇒ 效果 = 把脚本索引 op1 解析并装入 frame[op2]（cur 不变，供后续切换）。
+ *  ⇒ 效果 = 把脚本索引 op1 解析并装入 frame[op2]（cur 不变，供后续切换，配合 0x8 call-frame 启动）。
  */
 const op_load_into_frame: OpHandler = async (c) => {
   const scriptIdx = readIntOperand(c.e, c.frame, c.instr, 1);
@@ -841,7 +841,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],
   [0x8c, op_jmp],
-  [0x6, op_load_into_frame],
+  [0x6, op_load_into_frame], // load-frame (0x6)：预装脚本进指定帧（不执行；配合 0x8 call-frame 启动）
   [0x8f, op_call],
   [0xa0, op_jcc],
   [0x5, op_ret],

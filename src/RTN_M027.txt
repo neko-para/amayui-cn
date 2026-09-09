@@ -9,7 +9,7 @@ lookup-array-2d (local-ptr 0) (global-int 1f58aa) (global-int 1d0eb8) 32 (global
 mov (local-int 2) (local-ptr 0)
 and (local-int d1) (global-int 5afe2) 1
 jcc (local-int d1) ffffffff label_00000724
-i008 1f
+call-frame 1f
 call-script 5198  // SETMVWORK
 mov (local-int 37) 0
 mov (local-int 0) 1
@@ -72,7 +72,7 @@ sar (global-int 51004d) (local-ptr 0) 10
 lookup-array (local-ptr 1) (local-int 38) (local-int d0)
 lookup-array (local-ptr 0) (local-int 5) (local-ptr 1)
 and (global-int 51004e) (local-ptr 0) ffff
-i008 1e
+call-frame 1e
 lookup-array-2d (local-ptr 0) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
 jcc (local-ptr 0) label_0000069c ffffffff
 jmp label_00000534

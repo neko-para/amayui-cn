@@ -303,7 +303,7 @@ label_000015a8
 call label_00001600
 eq (local-int e01) (global-int 0) 2
 jcc (local-int e01) ffffffff label_000015f8
-i008 1c
+call-frame 1c
 
 label_000015f8
 i20c
@@ -3643,7 +3643,7 @@ gre (local-int e01) (global-int 93465) 3
 jcc (local-int e01) ffffffff label_00010f10
 add (global-int 707ffa) (local-int 536) 60
 add (global-int 707ffb) (local-int 537) 3
-i008 1a
+call-frame 1a
 
 label_00010f10
 jmp label_00010fd4
@@ -3711,7 +3711,7 @@ lt (local-int e01) (local-int 52f) 5
 jcc (local-int e01) ffffffff label_00011510
 lookup-array-2d (local-ptr 3) (global-int 6205c) (global-int 519af9) 5 (local-int 52f)
 mov (global-int 546e03) (local-ptr 3)
-i008 1a
+call-frame 1a
 mov (global-int 546e03) 0
 jmp label_0001154c
 

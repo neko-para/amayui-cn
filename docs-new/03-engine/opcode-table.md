@@ -29,9 +29,9 @@
 | 0x3 | 1 | call-script | sub_41C6A0 | 已核对 | 读 operand1=目标脚本索引 → 压帧（cur++）+ 装载新脚本帧。handler=sub_41C6A0（raw .c 26762） |
 | 0x4 | 2 |  | sub_41C770 | 仅映射 |  |
 | 0x5 | 0 | ret | sub_41A9B0 | 已核对 | **同脚本**子程序返回（弹每帧返回栈 `256*cur+97193`；栈空 no-op）。handler=sub_41A9B0（raw .c 25704） |
-| 0x6 | 2 |  | sub_41C7C0 | 已核对 | **load-script-into-frame**：`op1=目标脚本索引, op2=帧编号`。备份/恢复 `cur`（`_this[383104]`↔`_this[383108]`），把脚本 `op1` 解析并装入帧 `op2`（`loadScriptFrame_40ED40`）；`op2≥40` 抛 ShowMessage「ファイルの階層が深すぎます．最大は%dです．」、装载失败抛 Exit。SYSTEM4 帧布局初始化用。handler=sub_41C7C0（raw .c 26549） |
+| 0x6 | 2 | load-frame | sub_41C7C0 | 已核对 | **load-frame**（曾名 `i006`，即 load-script-into-frame）：`op1=目标脚本索引, op2=帧编号`。备份/恢复 `cur`（`_this[383104]`↔`_this[383108]`），把脚本 `op1` 解析并装入帧 `op2`（`loadScriptFrame_40ED40`）；`op2≥40` 抛 ShowMessage「ファイルの階層が深すぎます．最大は%dです．」、装载失败抛 Exit。SYSTEM4 帧布局初始化（预装）用。handler=sub_41C7C0（raw .c 26549） |
 | 0x7 | 1 |  | sub_41C8D0 | 仅映射 |  |
-| 0x8 | 1 |  | sub_41C900 | 仅映射 |  |
+| 0x8 | 1 | call-frame | sub_41C900 | 已核对 | **调用/切换到预加载帧**：`op1=帧号`。save `cur→call_ret`；`cur=op1`（readIntOperand）；要求该帧已预装（`*(frame+383124)!=0`）否则抛「この階層にはファイルが読み込まれていません」(ShowMessage)；设目标帧 `caller=call_ret`、`ip=帧起始`、状态槽=0；返回新 cur。被调帧跑完 `exit(0x2)` 依其 caller 返回调用帧。SYSTEM4 `load-frame`(0x6) 预装的帧（DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK↔帧26/28/29/30/31）由游戏脚本 `call-frame <帧号>`(0x8, 曾名 `i008`) 启动。handler=sub_41C900（raw .c 26876）。**曾仅映射** |
 | 0x9 | 0 | exit-script | sub_428A60 | 已核对 | **全量 teardown**：清 40 帧 + 重置全局数组 → 回根态。handler=sub_428A60（raw .c 35171） |
 | 0xA | 2 |  | sub_429460 | 仅映射 |  |
 | 0xB | 11 |  | sub_41C9E0 | 仅映射 |  |
@@ -117,7 +117,7 @@
 | 0x79 | 3 |  | sub_41F490 | 已核对 | **消息项位置/尺寸参数**：读 op1..op3 调 `sub_4563A0(_this+21324, op1, op2, op3)`，把选中子项 `+28/+32` 两字段分别写 op3/op2。fire-and-forget。handler=sub_41F490（raw .c 28369） |
 | 0x7A | 3 |  | sub_41F4E0 | 仅映射 |  |
 | 0x7B | 2 |  | sub_41F530 | 仅映射 |  |
-| 0x7C | 0 |  | sub_41AB80 | 仅映射 |  |
+| 0x7C | 0 |  | sub_41AB80 | 已核对 | **返回嵌套调用/恢复调用方帧**（主循环 `0x4000000` jump/call-pending 的配对方；助记符仍 `i07c`，未命名）：要求 `_this[489808]&0x2000000` 置位（否则抛 EndHWl）；校验当前帧[95796]==`_this[430712]`（深度，否则抛「Depth が不正」）；恢复当前帧 `ip=帧起始+4*_this[489812]`、状态=0、`effect_flags=_this[489808]&0xFDFFFFFF`、清 `489808/81776/81768/51848/51840`；若 `_this[387940]` 置位则清之，且 `dispatch_queue` 恰有 1 个（`read<write && write-read==1`）时 `sub_40FB60` 一次性派发。handler=sub_41AB80（raw .c 25779）。**曾仅映射** |
 | 0x7D | 2 |  | sub_41F580 | 仅映射 |  |
 | 0x7E | 1 |  | sub_41F630 | 仅映射 |  |
 | 0x7F | 1 |  | sub_42D1F0 | 仅映射 |  |

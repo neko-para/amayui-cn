@@ -22,8 +22,9 @@
   - `frame+0x74`(383220)=**指令长度/状态槽**（`_this[120*cur+383220]`：0=空闲、1=ret、3=call-script/跳转中、7=jcc）。
   - `_this[120*cur+383220]` 同时被主循环 `LABEL_216` 当推进量（`ip += 4 * this`）。
 - **同脚本返回栈**：每帧 256 槽，计数数组基址 `byte 388612`（` _this[cur+97153]`，40×4=160B，`sub_40DF10` memset 0xA0），数据数组基址 `byte 1024*cur + 388772`（` _this[256*cur+97193+top]`）。
-- **effect_flags 保存栈**：全局，base `_this[107436]`(byte 429744) / top `_this[107437]`(byte 429748)。
+- **消息回调 effect_flags 保存栈**：`Stack_int` 对象 @ byte `429732`=`0x68EA4`，base `_this[107436]`(byte `429744`=`0x68EB0`) / top `_this[107437]`(byte `429748`=`0x68EB4`)。压入=`sub_409D40`、弹出=`sub_41A520`/ret 内联；压入方 `sub_411590`（`effect_flags&0x100000` 消息回调派发）。
 - **挂起请求队列**：`_this + 173106`（`_DWORD*` 下标 → 实际 byte 692424，256 槽）；`_this[124350]`(byte 497400)=派发中重入标志。
+- **「调用预加载帧」= opcode 0x8 (`sub_41C900`, `call-frame <帧号>`, 曾名 `i008`)**：save `cur→call_ret`；`cur=帧号`；要求帧已预装（`*(frame+383124)!=0`）否则抛「ファイルが読み込まれていません」；设目标帧 `caller=call_ret`、`ip=帧起始`。被调帧跑完 `exit(0x2)` 依其 caller 返回调用帧。这与 `call-script`(压 cur+1) 不同——`call-frame` 切到**已预装的固定帧**。SYSTEM4 `load-frame`(0x6, 曾名 `i006`) 预装的帧由 `call-frame` 启动。
 
 ---
 
@@ -131,9 +132,10 @@ int sub_41A9B0(_DWORD *_this) {
 ```
 
 ### 语义 / 状态
-- **同脚本子程序返回**：弹每帧返回栈；命中则回跳（`帧ip=帧基+4*目标`），并**恢复 `effect_flags`（从全局保存栈 `_this[107436/107437]`）**；栈空则 no-op。 `[已实现]`：emulator `op_ret` pop `retStack` → `jump(top)`，栈空 no-op。
-- **emulator 缺口**：未做 `effect_flags` 保存栈的弹回（引擎的 `call`(0x8F) 压帧时也压 `effect_flags`；emulator `op_call` 只压 `ip+1`）。 `[未建模]`。
-- **关键字段**：`effect_flags`(0xAAB44)、`_this[107436/107437]`、每帧返回栈（`byte 388612`/`1024*cur+388772`）。返回栈区 `[字段未知]`（`sub_40DF10` 曾 memset 388612 0xA0）。
+- **同脚本子程序返回**：弹每帧返回栈（`byte 388612` 计数 + `1024*cur+388772` 数据）；命中则回跳（`帧ip=帧基+4*目标`），并**恢复 `effect_flags`（从消息回调保存栈 `Stack_int@0x68EA4`，base=`_this[107436]`=0x68EB0、top=`_this[107437]`=0x68EB4）**；栈空则 no-op。 `[已实现]`：emulator `op_ret` pop `retStack` → `jump(top)`，栈空 no-op。
+- **★ 已解出 flag 逻辑（此前 gap）**：effect_flags 保存栈**不是** `call`(0x8F) 压入（`call` 只压每帧返回栈）。**压入方 = `sub_409D40(_this+429732, effect_flags)`，在 `sub_411590`（主循环 `effect_flags&0x100000` 触发的消息/文本回调派发器）进入文本回调前压入，并 `effect_flags&=0x7FEFFFFF`**；回调脚本执行 `ret(0x5)` 时弹回恢复。即 `ret` 的 flag 恢复与**消息回调**配对（0x100000 = 文本回调进行中标记）。同类：`sub_41F790`(opcode 0x84) 也操作同一 `Stack_int`。 `[已确认]`（data layer：`msg_cb_flag_stack_base/top`、`sub_409D40`、`sub_41A520`、`sub_411590`、`sub_41F790`）。
+  > 🔒 **记录背景（待后续实现再改）**：本 flag 逻辑属「消息/文本回调系统」(ADV/文字窗子系统)。当前 emulator 不实现该系统，故**仅记录，不修改**；待后续实现消息/文本回调 / `sub_411590`-等价路径时，再补 emulator 的 `msgCbFlagStack`（`op_call_script` 或等价路径压入、`op_ret` 弹出）。
+- **emulator 缺口**：`op_ret` 未做该 `Stack_int` 的弹回（仅在消息回调场景触发；如需对齐可加 `msgCbFlagStack` 建模，并在 `op_call_script`/`sub_411590` 等价路径压入）。 `[未建模]`。
 
 ---
 
@@ -245,9 +247,14 @@ void sub_41A000(_DWORD *_this) {
 ```
 
 ### 语义 / 状态
-- **派发挂起脚本/事件请求**：置防重入标志 → 遍历 256 个请求槽，非零者以 `slot<<24` 排队（`sub_40FC90`）→ 清标志、帧ip+=4 → `sub_40FB60` 真正派发。 `[未建模]`：emulator `0x143` 映射为 `op_engine_internal`（纯 no-op），未实现派发逻辑。
-- **联动**：与主循环 `sub_412290` 的 `0x4000000`（跳转/call 待处理，`sub_40FB60` 派发）+ `exit(0x2)` 的 `-10` 哨兵（也调 `sub_40FB60`）+ `_this[124350]`（`exit-script` 里清 0）强相关。 `[未建模]`。
-- **关键字段**：`_this[124350]`(byte 497400)、请求队列 `_this+173106`，均 `[字段未知/未建模]`。
+- **派发挂起脚本/事件请求**：置派发中标志(`_this[124350]`) → 遍历 256 个请求寄存器槽(`_this+173106`) ，非零槽以 `slot<<24` `queueScript`(`sub_40FC90`) → 清标志、帧ip+=4 → `dispatchQueuedScripts`(`sub_40FB60`) 真正弹出派发。 `[未建模]`：emulator `0x143` → `op_engine_internal`(no-op)。
+- **完整派发链**：`request_register(0xA90C8)` → `queueScript(40FC90)` 入队 `dispatch_queue(Queue_int@0x796DC)`（`sub_409E10` 入队）→ `dispatchQueuedScripts(40FB60)` 弹出：保存 `cur→_this[383112]`、`effect_flags→_this[383116]`、`call_ret=-10`、`effect_flags=0`；**正请求(资源id≥0) → `cur=37` 预占帧装载脚本**；**负请求 → `cur=-v2` 恢复某帧**。预占脚本跑完 `exit(0x2)` 的 `-10` 哨兵 → 恢复 `cur/effect_flags` 并继续派发。 `[已确认]`（data layer：`dispatch_queue`/`dispatch_in_progress`/`request_register`/`dispatch_saved_cur`/`dispatch_saved_effect_flags`、`sub_40FB60`/`sub_40FC90`/`sub_409E10`）。
+- **★ 消耗侧语义**：i143 **不是生产侧**，是派发**消耗/触发**侧。它先置 `dispatch_in_progress`，故循环内的 `queueScript` 只入队不派发；随后 `sub_40FB60` **一次只派发一条**（正请求装入帧 37），其余经 **`-10` 哨兵链**逐条顺次派发（每条任务 exit → -10 分支 `read<write` 时再 `sub_40FB60`）——**不是一次性把全部装入帧 37**。且 i143 **不清**请求寄存器槽（只读）。
+- **★ 与 frames 高位/抢占执行的关系**：派发把脚本装进**帧 37**（正请求）或恢复帧 `-v2`（负请求）——帧 37 属 frames 30–39 高位区。**opcode 0x6（`sub_41C7C0`, load-script-into-frame）会直接「抢占」把脚本装进指定帧（备份/恢复 `cur`）**，SYSTEM4 帧布局初始化用；这正是「指令直接抢占加载执行」的机制，与 i143 的预占帧派发同源。 `[已确认]`（`sub_41C7C0`）。
+- **★ 预加载帧的「调用点」= opcode 0x8（`sub_41C900`, `call-frame <帧号>`, 曾名 `i008`）**：把 `cur` 切到预加载帧（要求已预装），设 caller=调用帧，跑完 `exit` 返回。SYSTEM4 `load-frame`(0x6) 预装的 `DRAWTOOLTIP(26)/DRAWORN(28)/ATSEEK(29)/SETROUTE(30)/MVSEEK(31)` 正是由游戏脚本 `call-frame 1a/1c/1d/1e/1f` 启动（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。即**预装帧的直接启动路径是 `call-frame`，而非负派发**；负派发(恢复帧)是另一条"抢占/延迟"路径。
+- **★ SYSTEM4 load-frame(0x6) 预装清单**（`src/SYSTEM4.txt` 113–117，均预装不进执行、按需启动）：`0x5106`=DRAWTOOLTIP.BIN→帧26(0x1A)、`0x525A`=DRAWORN.BIN→帧28(0x1C)、`0x525B`=ATSEEK.BIN→帧29(0x1D)、`0x525C`=SETROUTE.BIN→帧30(0x1E)、`0x525D`=MVSEEK.BIN→帧31(0x1F)。这些为游戏过程“随取随用”的行为/战术脚本（提示绘制/装饰绘制/寻路/设路线/移动寻路），**由游戏脚本 `call-frame <帧号>` 直接启动**（负派发是另一条抢占/延迟路径）。
+- **联动**：与主循环 `sub_412290` 的 `0x4000000`（跳转/call 待处理，也走 `sub_40FB60`）+ `exit(0x2)` 的 `-10` 哨兵 + `exit-script` 清 `_this[124350]` 强相关。 `[部分]`。
+- **关键字段**：`dispatch_in_progress`(0x796F8)、`dispatch_queue`(0x796DC)、`request_register`(0xA90C4 基址，槽1=0xA90C8)、`dispatch_saved_cur/effect_flags`(0x5D888/0x5D88C)。
 
 ---
 
@@ -257,7 +264,7 @@ void sub_41A000(_DWORD *_this) {
 |---|---|---|---|---|
 | `exit` 0x2 | sub_41A820 | 跨帧返回调用层；`caller<0` 有 `-10/-11` 哨兵 | `op_exit`（caller>=0 回退；否则抛 ExitScript） | **未区分 -10/-11**（续跑/存档处理） |
 | `call-script` 0x3 | sub_41C6A0 | 深度门 39 + 存返回长 + 压帧 + 装载 | `op_call_script`（深度门 39、ip+1、loadScriptIntoFrame） | `sub_40ED40` 完整装载未复刻（局部池/校验） |
-| `ret` 0x5 | sub_41A9B0 | 弹每帧返回栈 + **恢复 effect_flags** | `op_ret`（pop retStack→jump；栈空 no-op） | **未恢复 effect_flags** 保存栈 |
+| `ret` 0x5 | sub_41A9B0 | 弹每帧返回栈 + **恢复 effect_flags** | `op_ret`（pop retStack→jump；栈空 no-op） | 压入方已解出（`sub_411590`/`sub_409D40` 消息回调栈）；emulator 仍未实现该弹回 |
 | `exit-script` 0x9 | sub_428A60 | 全量 teardown + `sub_40DF10` 复位 + `_this[387932]=0` + 重载根脚本 0 | `op_exit_script`（**已修正**） | 已对齐：重置+`+96983=0`+`readScript(0)` 重载根并 `jump(0)` 继续（不再停在 reset）→ GAMEOVER 回标题 |
 | `jmp` 0x8C | sub_4203D0 | 无条件跳；op1==-1 落下 | `op_jmp`（**已修正**） | 已对齐：`readIntOperand` 取 op1 + `-1 落下`（原对 +0xFFFFFFFF 抛错） |
 | `jcc` 0xA0 | sub_4209B0 | 两目标条件跳 | `op_jcc`（**已修正**） | 已对齐：分支目标(2/3)经 `readIntOperand` + `-1 落下`（原用立即数 `args[i].raw`） |
@@ -275,7 +282,7 @@ void sub_41A000(_DWORD *_this) {
 |---|---|---|
 | `exit` 0x2 | `op_exit`（caller>=0 回退；否则抛 ExitScript） | **正常路径正确**；仅缺 `-10/-11` 哨兵（引擎内部存档/续跑用，非脚本常规路径） |
 | `call-script` 0x3 | `op_call_script`（深度门 39、ip+1、loadScriptIntoFrame） | **正确**（抽象等价） |
-| `ret` 0x5 | `op_ret`（pop retStack→jump；栈空 no-op） | **主逻辑正确**；缺 `effect_flags` 保存栈恢复 |
+| `ret` 0x5 | `op_ret`（pop retStack→jump；栈空 no-op） | **主逻辑正确**；flag 恢复已解出压入方（消息回调 `Stack_int`），emulator 未实现该弹回 |
 | `exit-script` 0x9 | `op_exit_script` | **已修正**：改为「置 `+96983`=0 + 重载根脚本 0 并继续」（不再停在 reset）→ 支撑 GAMEOVER 回标题 |
 | `jmp` 0x8C | `op_jmp` | **原错误**：对 `+0xFFFFFFFF` 抛错（引擎是落下）→ 已修 |
 | `jcc` 0xA0 | `op_jcc` | **原部分不精确**：分支目标用立即数 → 已改 `readIntOperand` |
@@ -322,7 +329,7 @@ const op_exit_script: OpHandler = async (c) => {
 
 ### 9.3 未改动项（需后续决策）
 - **`i143` 派发（仍未实现）**：已定位其真源——`sub_41A000` 遍历**请求寄存器**`_this + 173106`（`_DWORD*` → byte 692424，256 槽），对每非零槽 `queueScript(slot<<24)`（`sub_40FC90`）；`sub_40FC90` 经 `sub_409E10(_this+124343, a2)`（byte 497372）写入**派发队列**，`sub_40FB60`（byte 队列下标 497380/497384/497376，进程标志 `_this[124350]`=byte 497400）弹出并派发（正请求 loading 到 frame 37、负请求走 `-10` 哨兵）。**写入请求寄存器/派发队列的调用点尚未全部定位**（`sub_40FC90` 被 `sub_41A000`/line19943/20976 等调用），故暂不贸然实现；实现时建议与 `exit(0x2)` `-10` 哨兵、主循环 `0x4000000` 一并处理。
-- **`ret` 的 effect_flags 恢复**：引擎 `sub_41A9B0` 从 `_this[107436/107437]` 弹回 `effect_flags`；但其「压入方」尚需确证（`call` 0x8F 只压返回地址），不贸然建模。
+- **`ret` 的 effect_flags 恢复（压入方已确证）**：`Stack_int@0x68EA4`（base 0x68EB0 / top 0x68EB4），压入方 = `sub_409D40`（在 `sub_411590` 消息回调派发、`effect_flags&0x100000` 时压入并 `&=0x7FEFFFFF`），`ret(0x5)` 弹回。**emulator 仍未实现**该弹回（`op_ret` 只弹 `retStack`）；仅在消息回调场景触发，若要完整复刻需在 `op_call_script`/消息回调等价路径建模该 Stack_int。
 - **`exit` 的 -10/-11**：应视为「续跑重置 / 存档版本」而非程序退出；需在明确 save/continue 子系统后再细化。
 
 ---
@@ -358,3 +365,52 @@ call-script 5264  // TITLE
 - `docs-new/03-engine/opcode-table.md`：0x2/0x3/0x5/0x9/0x8C/0xA0/0x130/0x143。
 - `docs-new/03-engine/engine-reset-mainloop.md`：`sub_40DF10`（被 `exit-script` 调用）与 `sub_412290`（主循环，`0x4000000`/`0x2400` 与派发/推进联动）。
 - emulator：`app/amayui-emulator/src/vm/ops.ts`（含 `op_exit_script` 修正）、`test/exit-script.test.ts`。
+
+---
+
+## 11. 流程控制体系建模（总览 + 分析/未分析清单）
+
+### 11.1 帧模型（"地址空间"）
+- `frames[40]`（每帧 120 字节/0x78）；`cur`=当前帧；`call_ret`=暂存"返回目标"。
+- 帧内槽：`caller`(383180)、`arg`(383184)、`instr-buf`(383124)、`ip/opcode`(383128)、`state`(383220)、`valid`(383120?)。
+- 每帧**独立数组**：返回栈 `count(388612)`/`data(388772,256槽)`、返回地址槽 `489488/489648`。
+
+### 11.2 四类"调用"
+| 方式 | opcode | 机制 | 返回 |
+|---|---|---|---|
+| call-script | 0x3 | 压 `cur+1`、加载新脚本（跨脚本嵌套；深度门39） | `exit(0x2)` |
+| call | 0x8F | 同脚本子程序：压返回地址到每帧返回栈、跳 label | `ret(0x5)` |
+| call-frame | 0x8 | 切到**预加载帧**（固定帧号，要求已预装） | `exit(0x2)` |
+| load-into-frame | 0x6 | 预装脚本进指定帧（备份/恢复 cur，**不执行**） | —— |
+
+### 11.3 三类"返回"
+| 方式 | opcode | 机制 |
+|---|---|---|
+| exit | 0x2 | 跨脚本返回 `cur=caller`；哨兵 **-10**(派发恢复)/**-11**(存档版本)/其它负(程序退出) |
+| ret | 0x5 | 同脚本返回：弹每帧返回栈→跳；恢复 msg-callback `effect_flags` 栈 |
+| exit-script | 0x9 | 全量 teardown + `sub_40DF10` 复位 + 置 `_this[96983]=0` + 重载根脚本0 |
+
+### 11.4 跳转
+- `jmp`(0x8C)=无条件（-1 落下）；`jcc`(0xA0)=两目标条件跳；`menu-dispatch`(0xA3)=key→label 哈希跳；**输入派发**(0xCC/0xFB/0xCD/0x100/0x101)=输入→回调目标。
+
+### 11.5 异步/延迟派发
+- `i143`(0x143)=**消费侧**：扫 `request_register(0xA90C4 基址)`→`queueScript(40FC90)` 入 `dispatch_queue(0x796DC)`→`dispatchQueuedScripts(40FB60)` 弹出一条（正→帧37装载 / 负→恢复帧）。`-10` 哨兵链逐条派发；`0x1F5`(帧倒计)/`0x7C`(嵌套返回+一次性派发)/`exit -10`/`queueScript` 均为派发触发点。
+
+### 11.6 预装帧协作
+- SYSTEM4 `load-frame`(0x6) 预装 `DRAWTOOLTIP(26)/DRAWORN(28)/ATSEEK(29)/SETROUTE(30)/MVSEEK(31)` → 游戏脚本 `call-frame <帧号>`(0x8) 调用 → 跑完 `exit` 返回调用帧。**`0xAE` 是「存档续档」机制**（读存档版本、续档回到存档时活跃脚本帧、或载入对应场景脚本），**与预装帧无关**。
+
+### 11.7 分析状态 / 未分析清单
+| 项 | 状态 | 缺口 |
+|---|---|---|
+| exit(0x2)/call-script(0x3)/ret(0x5)/exit-script(0x9)/jmp(0x8C)/jcc(0xA0)/call-frame(0x8)/i143(0x143) | 已读体确证 | —— |
+| call(0x8F) | 已读体确证（本表新增，入数据层） | 返回地址编码 `((ip-start)>>2+3)` 精确语义 |
+| 0xAE(版本分支) | 已读体（**已定性=存档续档**） | 目标帧=存档时活跃场景脚本帧（快照 `_this[140457]/[151210]/[129624]` 首字段，由 `sub_40CD10` 一族存档时写入）；**与预装帧 26/28–31 无关**；快照写入方/存档流程未全展开 |
+| `sub_40EA00`(release frame) | **未建模** | 帧释放/复用生命周期 |
+| `sub_410160`(save-version load, 置 -11) | **未建模** | save-version 装载体 |
+| `0x14C`(set-agerc-export)/`0x14D`(call-agerc-export) | **推测/未读体** | 是否改变控制流 |
+| `0x88`(消息模式) | 未读体 | 与消息/ADV 联动 |
+| `request_register`(0xA90C4 基址，槽1=0xA90C8) 生产侧 | **未定位（结论定）** | 全引擎仅 2 处**读**引用（`i143` 扫槽1..255、`sub_476730` 探测槽 a1）；**无字面写入方**、构造/复位不 init → 生产侧走计算基址或外部/vtable(AGERC)路径，**静态不可定位**。`sub_476730` 无 C 内调用者（__stdcall，疑 vtable/导出）。`_this[3601+slot]` 属资源/文件访问，非本寄存器 |
+| 负派发生产侧（主循环 `-v29`, `_this[430796]`） | **未定位** | `_this[430796]` 仅 reset 为 -1，无其它写入 → 疑非负请求来源 |
+| `sub_41C7C0`(0x6) 预装载校验（`388236/388240`） | 未解 | 脚本 key/版本校验语义 |
+| 帧 `arg`(383184)/帧设置细节（`sub_40ED40` 内） | 部分 | 局部池/`argc` 重建 |
+| emulator 侧缺口 | 部分 | **`0x8`(call-frame)、`0x8F`(call)、`0xAE`、`i143` 派发、`0x6` 预装** 未实现（NotImplementedOp/engine-internal） |

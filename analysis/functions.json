@@ -39,7 +39,7 @@
     "fields_used": ["this->cur_script", "this->frames[cur_script].arity"],
     "unmodeled": ["_this[107437]/[107436](返回值栈)", "frame[95781]/[95782]", "_this+97153"],
     "evidence": "raw 25704-25727",
-    "notes": "emulator op_ret 已实现(pop retStack→jump，栈空 no-op)；但 emulator 未做 effect_flags 保存栈的弹回(引擎在 call 时压 effect_flags、ret 弹回)——M1 需补。"
+    "notes": "★已解出 flag 逻辑（此前 gap）：ret 弹的是「消息/文本回调 effect_flags 保存栈」——Stack_int @ byte 429732=0x68EA4（base=_this[107436]=0x68EB0、top=_this[107437]=0x68EB4）。压入方 = sub_409D40(_this+429732, effect_flags)，在 sub_411590（主循环 effect_flags&0x100000 触发的消息文本回调派发器）进入回调前压入并 effect_flags&=0x7FEFFFFF；回调脚本执行 ret(0x5) 时弹回恢复。故 ret 的 flag 恢复与「消息回调」配对，**并非**与 call(0x8F) 子程序配对（call 只压 per-frame 返回栈 388772）。同类：sub_41F790(0x84) 也操作该栈。emulator op_ret 只弹 retStack、未恢复 effect_flags(该 Stack_int)——如需对齐可加 msgCbFlagStack。[字段已入 fields.json：msg_cb_flag_stack_base/top]"
   },
   {
     "addr": "0x41C6A0",
@@ -67,7 +67,7 @@
     "fields_used": ["this->cur_script", "this->call_ret", "this->enc_zero"],
     "unmodeled": ["_this+388248(校验函数指针)", "+388236(key)", "+388240(enc_zero)", "+387924", "+383108"],
     "evidence": "raw 26823-26863",
-    "notes": "前导 DEC 校验 doc 未提；语义名赋的，原始名 sub_41C7C0"
+    "notes": "★SYSTEM4 预装清单（i006 写帧布局）：0x5106=DRAWTOOLTIP.BIN→帧26(0x1A)、0x525A=DRAWORN.BIN→帧28(0x1C)、0x525B=ATSEEK.BIN→帧29(0x1D)、0x525C=SETROUTE.BIN→帧30(0x1E)、0x525D=MVSEEK.BIN→帧31(0x1F)。这几个是游戏过程“按需启动”的行为/战术脚本（提示绘制/装饰绘制/寻路/设路线/移动寻路），预装不进执行；后续由负派发请求(恢复帧)或 0xAE 启动。"
   },
   {
     "addr": "0x428A60",
@@ -1516,7 +1516,7 @@
     "fields_used": ["this->dispatch_in_progress(_this[124350]=byte 497400)", "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"],
     "unmodeled": ["请求槽队列确切断面/成员", "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"],
     "evidence": "raw 25168-25191 (sub_41A000)",
-    "notes": "emulator 0x143 映射为 op_engine_internal(纯 no-op)，未实现派发逻辑→需补：至少建模 排队+派发 信号(0x143 与 0x4000000 主循环跳转/0x2 的 -10 哨兵联动)。注意 raw .c 文档行的 24928 是旧引用，真实定义 25168。"
+    "notes": "★语义澄清（消耗侧）：i143 是「派发消耗/触发侧」，非生产侧。先置 dispatch_in_progress(_this[124350])=1 → 扫请求寄存器(0xA90C8)非零槽逐条 queueScript(sub_40FC90)（因置位故只入 dispatch_queue@0x796DC，不立即派发）→ 清标志、帧ip+=4 → dispatchQueuedScripts(sub_40FB60) 一次只派发一条（正请求 cur=37 预占帧装载、负请求 cur=-v2 恢复）。其余任务经「-10 哨兵链」(exit 0x2 的 call_ret=-10 在 sub_41A820 里恢复 cur/ef 并 read<write 时再 sub_40FB60) 逐条顺次派发——不是一次把全部装入帧37。i143 不清寄存器槽(只读)，重跑且槽仍置位会重复入队；生产侧写入方尚未定位。"
   },
   {
     "addr": "0x42F7A0",
@@ -1531,6 +1531,154 @@
     "unmodeled": [],
     "evidence": "raw 39343-39347 (sub_42F7A0)",
     "notes": "emulator：0x130 → NATIVE_OPS op_get_engine_value，读 engineValues.get(96983)??0；构造默认 1，exit-script 置 0（本条已实现）。"
+  },
+  {
+    "addr": "0x409D40",
+    "raw_name": "sub_409D40",
+    "semantic_name": "intStackPush_409D40",
+    "status": "ANALYZED",
+    "purpose": "可增长 int 栈/向量压入（Queue_int/Stack_int 的 push）。对象@传入 this：+4=容量、+8=增量、+12=基址、+16=顶下标；不足则扩容 operator new[](4*(cap+inc)) + memcpy + delete 旧；返回 ++top 并 base[top]=a2。消息回调栈(_this+429732)用它压 effect_flags。",
+    "signature_override": { "param0": "this(intStack*)" },
+    "sub_behaviors": ["读顶/容量", "空间不足扩容(4*(cap+inc))+拷迁", "top++ 并 base[top]=a2"],
+    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)"],
+    "unmodeled": [],
+    "evidence": "raw 14245-14265 (sub_409D40)",
+    "notes": "被 sub_411590(20022/20082) 压 effect_flags、sub_41F790 复用；30748 压的是另一 Stack_int(388292 数组)。"
+  },
+  {
+    "addr": "0x41A520",
+    "raw_name": "sub_41A520",
+    "semantic_name": "intStackPop_41A520",
+    "status": "ANALYZED",
+    "purpose": "int 栈弹出：读 _this[4]=top；top<0 返回 0；*a2=base[top]（_this[3]）、top--、返回 1。sub_41F790(0x84) 用它弹消息回调 flag 栈。",
+    "signature_override": { "param0": "this(intStack*)" },
+    "sub_behaviors": ["读 top", "top>=0 则 *a2=base[top]、top--、返回1"],
+    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)"],
+    "unmodeled": [],
+    "evidence": "raw 25439-25449 (sub_41A520)",
+    "notes": "与 sub_409D40 配对的 pop。emulator 无对应（op_ret 内联弹 retStack）。"
+  },
+  {
+    "addr": "0x411590",
+    "raw_name": "sub_411590",
+    "semantic_name": "msgCallbackDispatch_411590",
+    "status": "PARTIAL",
+    "purpose": "消息/文本回调派发器（主循环 sub_412290 在 effect_flags&0x100000 时调用）。处理回调队列(_this+699260)，进入文本回调前：sub_409D40(_this+429732, effect_flags) 压栈保存当前 effect_flags、effect_flags&=0x7FEFFFFF、设帧 ip 到回调，sub_411560 派发（sub_455000 查回调表 + sub_40FC90 queueScript）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["遍历回调队列(_this+699260)", "进入回调前压 effect_flags 到 Stack_int(0x68EA4)", "effect_flags&=0x7FEFFFFF", "设帧ip到回调目标", "sub_411560 派发回调"],
+    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)", "this->effect_flags(0xAAB44)", "this->_this+699260(回调队列)"],
+    "unmodeled": ["回调队列 _this+699260 语义", "sub_455000 回调注册表"],
+    "evidence": "raw 19947-20093 (sub_411590)",
+    "notes": "ret(0x5) 弹回其压入的 effect_flags；0x100000 位是文本回调进行中标记。🔒 记录背景（待实现消息/文本回调系统时再改 emulator）：本函数/flag 栈属 ADV/文字窗子系统，当前不实现。"
+  },
+  {
+    "addr": "0x41F790",
+    "raw_name": "sub_41F790",
+    "semantic_name": "op_text_callback_state_41F790",
+    "op": "0x84",
+    "status": "PARTIAL",
+    "purpose": "op 0x84：消息/文本回调状态机（_this[122454] 状态、effect_flags 0x100000）。按 op1(<0/0/>0) 与 _this[122454] 决定：显示消息(sub_459770)、设/清 0x100000、必要时 push/pop Stack_int(0x68EA4) 保存/恢复 effect_flags(0xFFEFFFFF 清 0x100000)，并 sub_411560 派发回调。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读调用状态 _this[122454]", "读 op1 分支", "保存/恢复 Stack_int(0x68EA4) 的 effect_flags", "sub_411560 派发回调"],
+    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)", "this->effect_flags(0xAAB44)", "this->_this[122454]"],
+    "unmodeled": ["_this[122454] 状态机细节", "sub_459770 语义"],
+    "evidence": "raw 28829-28942 (sub_41F790)",
+    "notes": "opcode-table 0x84 原仅映射；与 ret(0x5) 共用消息回调 flag 栈。🔒 记录背景（待实现消息/文本回调系统时再改 emulator）。"
+  },
+  {
+    "addr": "0x40FB60",
+    "raw_name": "sub_40FB60",
+    "semantic_name": "dispatchQueuedScripts_40FB60",
+    "status": "ANALYZED",
+    "purpose": "从脚本派发队列(Queue_int@0x796DC=497372)弹出一个请求并派发。若 429752 门开 & 读下标<写下标：v2=queue[读]; 读下标++; v2!=0 时：保存 cur→_this[383112]、effect_flags→_this[383116]、置 in-dispatch 标志(497400)=1、call_ret=-10、effect_flags=0；v2>=0(正请求=脚本资源id)则 cur=37 并 loadScriptFrame(script) 到「预占帧37」；v2<0(负请求)则 cur=-v2 恢复某帧(其 caller=-10、ip=prev、state=0)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["弹队列 v2", "保存 cur/effect_flags + call_ret=-10 + effect_flags=0", "v2>=0 → cur=37 预占帧装载脚本", "v2<0 → cur=-v2 恢复帧"],
+    "fields_used": ["this->dispatch_queue(0x796DC)", "this->dispatch_in_progress(0x796F8)", "this->_this[383112](保存cur)", "this->_this[383116](保存effect_flags)", "this->cur_script"],
+    "unmodeled": ["429752 门语义", "queueScript 请求id编码(slot<<24)"],
+    "evidence": "raw 18954-19016 (sub_40FB60)",
+    "notes": "与 i143/queueScript/exit(-10哨兵) 联动；预占帧37。正请求装载/负请求恢复 = 抢占执行机制。emulator 未实现(仅 op_engine_internal)。"
+  },
+  {
+    "addr": "0x40FC90",
+    "raw_name": "sub_40FC90",
+    "semantic_name": "queueScript_40FC90",
+    "status": "ANALYZED",
+    "purpose": "把脚本请求 a2 入派发队列(sub_409E10@0x796DC)；若不在派发中(_this[124350]==0)则立即 sub_40FB60 派发。a2==-1 不排队。i143 扫描请求寄存器后以 slot<<24 调它。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["a2!= -1 则 sub_409E10 入队", "!_this[124350] 则 sub_40FB60 派发"],
+    "fields_used": ["this->dispatch_queue(0x796DC)", "this->dispatch_in_progress(0x796F8)"],
+    "unmodeled": [],
+    "evidence": "raw 19019-19027 (sub_40FC90)",
+    "notes": "被 sub_41A000(i143)/sub_411590(消息回调)/主循环等调用。"
+  },
+  {
+    "addr": "0x409E10",
+    "raw_name": "sub_409E10",
+    "semantic_name": "queueEnqueue_409E10",
+    "status": "ANALYZED",
+    "purpose": "Queue_int 入队：_this 为队列对象(+0 vftable,+4 base,+8 读,+12 写,+24 max)。把 a2 追加到队尾，必要时扩容。脚本派发队列@0x796DC(497372)用它接收 queueScript 请求。",
+    "signature_override": { "param0": "this(Queue_int*)" },
+    "sub_behaviors": ["读队列状态", "必要时扩容", "队尾写入 a2"],
+    "fields_used": ["this->dispatch_queue(0x796DC)"],
+    "unmodeled": [],
+    "evidence": "raw 14281-14290 (sub_409E10)",
+    "notes": "被 sub_40FC90 入队；队列对象@0x796DC(497372)。"
+  },
+  {
+    "addr": "0x41C900",
+    "raw_name": "sub_41C900",
+    "semantic_name": "op_call_frame_41C900",
+    "op": "0x8",
+    "status": "ANALYZED",
+    "purpose": "op i008：调用/切换到「预加载帧」op1。save cur→call_ret；cur=readIntOperand(1)(目标帧)；要求该帧已预装(*(frame+383124)!=0)否则抛 ShowMessage(文件没读入,Depth)；设目标帧.caller=call_ret、ip=帧起始、状态槽=0；返回新cur。→ 被调帧跑完 exit(0x2) 依其 caller 返回调用帧。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["save cur→call_ret", "cur=op1(帧号)", "检查帧已预装(383124!=0)", "设目标帧.caller=call_ret", "ip=帧起始、状态槽=0"],
+    "fields_used": ["this->cur_script", "this->frames[cur].caller(383180)", "this->frames[cur].ip(383128)", "this->frames[cur].script_buf(383124)"],
+    "unmodeled": [],
+    "evidence": "raw 26876-26913 (sub_41C900)",
+    "notes": "★预加载帧的调用点：SYSTEM4 i006 把 DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK 预装进帧 26/28/29/30/31；游戏脚本用 i008 <帧号> 直接切过去执行（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。opcode-table 0x8 原仅映射，现定为帧切换调用。"
+  },
+  {
+    "addr": "0x420560",
+    "raw_name": "sub_420560",
+    "semantic_name": "op_call_420560",
+    "op": "0x8F",
+    "status": "ANALYZED",
+    "purpose": "op call：同脚本子程序调用。帧状态槽=3；把当前指令长推断的返回地址((ip-start)>>2 + 3)压入每帧返回栈(256*cur+97193+stackTop++)；若 op1==-1 则弹回(no-op)；否则跳 label：帧ip=帧基+4*op1。配对 ret(0x5)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["帧状态槽=3", "压返回地址到每帧返回栈", "op1==-1 则弹回", "否则 帧ip=帧基+4*op1"],
+    "fields_used": ["this->frames[cur].ret_stack(388772)", "this->frames[cur].ip(383128)"],
+    "unmodeled": ["返回地址编码((ip-start)>>2+3)精确语义"],
+    "evidence": "raw 29452-29474 (sub_420560)",
+    "notes": "与 ret(0x5) 配对；调用方不压 msg_cb_flag_stack(那是消息回调 sub_411590 压的)。opcode-table 0x8F 已核对。"
+  },
+  {
+    "addr": "0x4192F0",
+    "raw_name": "sub_4192F0",
+    "semantic_name": "op_version_branch_4192F0",
+    "op": "0xAE",
+    "status": "PARTIAL",
+    "purpose": "op 0xAE：存档版本分支。经 _this+174405 对象读 set:SaveVersion(1/2/3/20) 与 set:SaveVersion_0；按版本重算当前帧 ip(_this[30*cur+95782/95803/95804])、设状态槽；版本2/3 时若 cur==_this[140457]/[151210] 则切换 cur(=目标帧)、否则 cur=cur+1 并 sub_40F750 装载；版本20 类似(_this[129624])。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读存档版本 set:SaveVersion", "按版本重算帧ip/状态槽", "切 cur 到目标帧(140457/151210/129624)", "否则 cur+1 并 sub_40F750 装载"],
+    "fields_used": ["this->_this[140457/151210](版本2/3目标帧)", "this->cur_script", "this->_this+174405(配置对象)"],
+    "unmodeled": ["版本->目标帧/装载映射细节", "_this[140457/151210/129624] 写入方"],
+    "evidence": "raw 24634-24773 (sub_4192F0)",
+    "notes": "★已定性：是「存档续档」机制，**不是**预装帧启动路径。读 set:SaveVersion(1/2/3)+set:SaveVersion_0(20)；若 cur==快照帧(_this[140457]/[151210]/[129624] 首字段=存档时活跃帧号) 则切 cur 续档；否则 cur=cur+1 并 sub_40F750→loadScriptFrame 载入对应场景脚本(按 261/263*cur+… 跳转表定 ip)。快照结构由 sub_40CD10 一族在存档时写入(memset 0xA804/0xF624)，目标帧=存档时活跃场景脚本帧，非预装帧(26/28-31, 那是 i008 启动的)。_this[95780]=门、_this[97054]=续档标志、_this[95777]=call_ret。"
+  },
+  {
+    "addr": "0x41AB80",
+    "raw_name": "sub_41AB80",
+    "semantic_name": "op_nested_return_41AB80",
+    "op": "0x7C",
+    "status": "ANALYZED",
+    "purpose": "op 0x7C：返回嵌套调用/恢复调用方帧（**非单纯 dispatch-check**）。要求 _this[489808]&0x2000000 置位(在嵌套调用中)否则抛 EndHWl；校验当前帧[95796]==_this[430712](深度)否则抛 Depth が不正；恢复当前帧.ip=帧起始+4*_this[489812]、帧状态=0、effect_flags=_this[489808]&0xFDFFFFFF、清 489808/81776/81768/51848/51840；若 _this[387940] 置位则清之，且 dispatch_queue 恰有 1 个(read<write && write-read==1)时 sub_40FB60 一次性派发。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["门 489808&0x2000000", "校验帧[95796]==430712", "恢复帧ip/effect_flags/清状态", "清 489808/81776/81768/51848/51840", "恰1个排队则 sub_40FB60 一次性派发"],
+    "fields_used": ["this->_this[489808](保存ef+0x2000000)", "this->_this[489812](返回ip)", "this->_this[430712](保存深度)", "this->dispatch_queue(0x796DC)"],
+    "unmodeled": ["387940 置位方", "0x4000000 设置路径细节"],
+    "evidence": "raw 25779-25824 (sub_41AB80)",
+    "notes": "★是主循环 0x4000000(jump/call-pending) 的配对方：该块存 489808/489812/430712 并切进被调脚本，0x7C 恢复。曾误标为 dispatch-check，实为嵌套返回+一次性派发。opcode-table 0x7C 原仅映射。"
   }
 
 ]

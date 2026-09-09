@@ -5,7 +5,7 @@ local_vars = { d7 1 1 4 1 1 }
 
 and (local-int d4) (global-int 5afe2) 1
 jcc (local-int d4) ffffffff label_00000908
-i008 1f
+call-frame 1f
 mov (local-int 35) 0
 mov (local-int 0) 1
 jmp label_000000d0
@@ -109,7 +109,7 @@ sar (global-int 51004d) (local-ptr 1) 10
 lookup-array (local-ptr 0) (local-int 36) (local-int ce)
 lookup-array (local-ptr 1) (local-int 3) (local-ptr 0)
 and (global-int 51004e) (local-ptr 1) ffff
-i008 1e
+call-frame 1e
 lookup-array-2d (local-ptr 1) (global-int 59fdf) (global-int 51004e) 20 (global-int 51004d)
 jcc (local-ptr 1) label_00000880 ffffffff
 jmp label_00000718
