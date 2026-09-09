@@ -4,11 +4,11 @@
  *  其余控制流/子系统语义在 M1/M2 逐步补齐。
  */
 import type { OpHandler, StepCtx } from './step.js';
-import { readIntOperand, writeIntOperand, operandArg, refFromOperand, setRefOperand, readStringOperand, writeStringOperand, readFloatOperand, writeFloatOperand } from './operand.js';
+import { readIntOperand, writeIntOperand, operandArg, refFromOperand, setRefOperand, readStringOperand, writeStringOperand, readFloatOperand, writeFloatOperand, readIndexOperand } from './operand.js';
 import { asI32, atoi } from './bits.js';
 import { refAt, readRef, writeRef } from './ref.js';
 import { parseScriptBytes } from '../script/bin.js';
-import type { Frame } from './engine.js';
+import type { Engine, Frame } from './engine.js';
 import { SLEEP_GATE } from './engine.js';
 
 /** 把 label 值(dword index)解析为指令下标；找不到返回 null。 */
@@ -191,6 +191,27 @@ const op_concat: OpHandler = (c) => {
   writeStringOperand(c.e, c.frame, c.instr, 1, a + b);
 };
 
+// ---- 字符串→整型哈希表（引擎 `_this+5452`；0x1A2 登记 / 0x1A3 查表，见 opcode-table.md）----
+
+/** 组查询键：引擎 `wsprintfA("%c%8.8x", 3, idx)`。 */
+function stringTableKey(idx: number): string {
+  return '\x03' + ((idx >>> 0).toString(16).padStart(8, '0'));
+}
+
+/** 0x1A2 (sub_434F60)：把 op1 的值登记到引擎 `_this+5452` 字符串→整型表，键 = stringTableKey(op1 原始索引)。 */
+const op_string_bind: OpHandler = (c) => {
+  const value = readIntOperand(c.e, c.frame, c.instr, 1);
+  const key = stringTableKey(readIndexOperand(c.e, c.frame, c.instr, 1));
+  c.e.stringIndexTable.set(key, value);
+};
+
+/** 0x1A3 (sub_42DF40) string-lookup-set：按 op1 原始索引查 `_this+5452` 表，命中取 *v3、未命中取 0，写回 op1（VM 可见）。 */
+const op_string_lookup_set: OpHandler = (c) => {
+  const key = stringTableKey(readIndexOperand(c.e, c.frame, c.instr, 1));
+  const value = c.e.stringIndexTable.get(key) ?? 0;
+  writeIntOperand(c.e, c.frame, c.instr, 1, value);
+};
+
 // ---- 控制流 ----
 const op_jmp: OpHandler = (c) => {
   const a = operandArg(c.instr, 1);
@@ -358,6 +379,8 @@ const op_exit_script: OpHandler = (c) => {
   c.e.callRet = -1;
   c.e.callLink = -1;
   c.e.callFlag = 0;
+  c.e.effectFlags = 0;
+  c.e.advFields.clear();
   throw new ScriptReset();
 };
 
@@ -668,6 +691,54 @@ const op_hover_hittest: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, idx);
 };
 
+// ---- ADV/消息激活态（引擎 effect_flags 的 0x8000000 位；见 opcode-table.md 0x071/0x088/0x19B/0x19C）----
+const ADV_FLAG = 0x8000000;
+const setAdv = (e: Engine) => void (e.effectFlags |= ADV_FLAG);
+const clearAdv = (e: Engine) => void (e.effectFlags &= ~ADV_FLAG);
+const advField = (e: Engine, k: number): number => e.advFields.get(k) ?? 0;
+
+/** 0x071 (sub_41ED80) 显示消息/推进文本：进入消息态 → 置 ADV 激活。引擎在"渲染成功"时才置位；emulator 无界面渲染，简化为"显示即 ADV 激活"。 */
+const op_message_show: OpHandler = (c) => {
+  readIntOperand(c.e, c.frame, c.instr, 1); // 消息文本/索引（emulator 不渲染）
+  setAdv(c.e);
+  c.e.advFields.set(122455, 1);
+  c.e.advFields.set(122496, 0);
+};
+
+/** 0x088 (sub_41FAB0) 消息显示/跳读模式：写 `_this[1415]`+全局 `_this[97050]`；非零设 122368，零清 ADV 激活。 */
+const op_message_mode: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.advFields.set(1415, v);
+  c.e.advFields.set(97050, v);
+  if (v !== 0) c.e.advFields.set(122368, 1);
+  else clearAdv(c.e);
+};
+
+/** 0x19C (sub_419120) 进入消息/ADV：按 97050 / 122455 / 124331 条件置/清 ADV 激活。 */
+const op_adv_enter: OpHandler = (c) => {
+  c.e.advFields.set(97051, 1);
+  c.e.advFields.set(122370, 0);
+  if (advField(c.e, 97050) !== 0) {
+    c.e.advFields.set(1415, 1);
+  } else if (advField(c.e, 122455) === 0) {
+    if (advField(c.e, 124331) === 0) {
+      c.e.advFields.set(1415, 0);
+      clearAdv(c.e);
+    }
+    return;
+  }
+  setAdv(c.e);
+  c.e.advFields.set(122368, 1);
+};
+
+/** 0x19B (sub_4190E0) 退出消息/ADV：清 ADV 激活并复位字段。 */
+const op_adv_exit: OpHandler = (c) => {
+  clearAdv(c.e);
+  c.e.advFields.set(1415, 0);
+  c.e.advFields.set(97051, 0);
+  c.e.advFields.set(122370, 0);
+};
+
 /** 已实现的最小 VM 指令表。 */
 export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x50, op_add],
@@ -709,6 +780,8 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x2ec, op_atoi],
   [0x192, op_set_string],
   [0x193, op_concat],
+  [0x1a2, op_string_bind], // 字符串→整型表登记（`_this+5452`）
+  [0x1a3, op_string_lookup_set], // string-lookup-set：查表写回 op1（VM 可见）
   [0x2d8, op_set_array_to],
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],
@@ -738,56 +811,59 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x2fc, op_get_mouse_state],
   [0xcd, op_get_input_type],
   [0x12e, op_hover_hittest], // u0041E940 悬停命中（mouse hover highlight）
+  // ---- ADV/消息激活态（置/清 effect_flags 0x8000000）----
+  [0x19c, op_adv_enter],
+  [0x19b, op_adv_exit],
+  [0x071, op_message_show],
+  [0x088, op_message_mode],
 ]);
 
-/** 子系统 opcode -> NativeBridge 桩（记录后放行，不阻塞 VM）。 */
+/** 子系统 opcode -> NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */
 export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
-  [0xb4, stubSubsystem],
-  [0xbf, stubSubsystem],
-  [0xc4, stubSubsystem],
-  [0x2de, op_string_resource_id],
-  [0x106, op_get_engine_value],
-  [0x130, op_get_engine_value], // _this[96983] -> op1（配置 getter，默认 0）
-  [0x131, op_get_engine_value], // 子系统 vtable(_this+174405) -> op1（默认 0）
-  [0x201, op_get_engine_value], // _this[166964] -> op1（配置 getter，默认 0）
-  [0x2dc, op_get_engine_value], // (_this[71741]-_this[71740])>>5 -> op1（数组容量 getter，默认 0）
-  [0x308, stubSubsystem], // sub_407B20(registry, _this[96981], op1)，结果丢弃（子系统/图形副作用）
-  [0x341, stubSubsystem], // L2D 模型文件加载（sub_4559C0/…/sub_4A1860；失败弹"L2Dモデルファイル…読み込みに失敗"。无界面 stub）
-  [0x345, stubSubsystem], // 图形模型文件加载（sub_427CF0，同 0x341 模式）
-  [0x34e, stubSubsystem], // 图形模型文件加载（sub_428200，同 0x341 模式）
-  [0x320, op_mesh_create], // 顶点缓冲/几何设置（sub_4ADFE0）→ 建 mesh 到场景图
-  [0x322, op_set_vertex_color], // set-vertex-color → mesh state0
-  [0x323, op_set_vertex_color_alpha], // set-vertex-color-alpha → mesh 动画窗
-  [0x1fc, stubSubsystem], // 纹理/图形子系统方法（sub_4AC470(_this+80708, op1)）
-  [0x1fd, stubSubsystem], // 纹理变换 op（读浮点）
-  [0x1fe, stubSubsystem], // 纹理变换 op（读 4 浮点）
-  [0x1ff, stubSubsystem], // 纹理变换 op（读浮点）
-  [0x202, op_set_draw_color], // set-draw-color（sub_4231F0 → 字体/图形颜色动画窗）
-  [0x203, op_set_draw_color_alpha], // set-draw-color-alpha（sub_4232C0）
-  [0x204, stubSubsystem], // draw-string（读 op3 字符串绘制；无界面 stub）
-  [0x205, stubSubsystem], // 纹理/文本 op（sub_4233E0）
-  [0x207, stubSubsystem], // 纹理 op（sub_423480）
-  [0x208, stubSubsystem], // 图形子系统方法（sub_49ED60(_this+80708, op1,…)）
-  [0x1f7, op_detach_texture], // detach-texture（sub_422BC0，读 op1/2）→ native.detachTexture（删单/区间）
-  [0x1f8, stubSubsystem], // create-texture（sub_422C20，造纹理对象；LOGO 场景用到）
-  [0x1fa, op_release_texture], // release-texture（LOGO 场景用到）
-  [0x1fb, op_draw_texture], // draw-texture → configureDrawItem（readIntOperand 解析 handle）
-  [0x1f9, op_set_texture], // set-texture → bindTexture
-  [0x20f, op_play_movie], // play-movie（LOGO.MPG 视频句柄）
-  [0x21c, op_set_wait_flag], // u00416270 → 置 0x400 等待旗标
-  [0x1a5, stubSubsystem],
-  [0xc8, op_sleep], // sleep（sub_4218D0，读 op1=n；置 SLEEP_GATE 帧让步）
-  [0x6e, stubSubsystem],
-  [0x6f, stubSubsystem],
-  [0x72, stubSubsystem],
+  [0xb4, stubSubsystem], // → native.playSound
+  [0xbf, stubSubsystem], // → native.playBgm
+  [0xc4, stubSubsystem], // → native.playVoice
+  [0x2de, op_string_resource_id], // 字符串→索引；StubNative 返回 -1
+  [0x106, op_get_engine_value], // 配置 getter ▶ op1
+  [0x130, op_get_engine_value], // `_this[96983]` ▶ op1（SYSTEM4 用）
+  [0x131, op_get_engine_value], // 子系统 ▶ op1
+  [0x201, op_get_engine_value], // 配置 getter ▶ op1
+  [0x2dc, op_get_engine_value], // 数组容量 getter ▶ op1
+  [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
+  [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
+  [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
+  [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）
+  [0x320, op_mesh_create], // → native.createMesh（顶点缓冲/几何）
+  [0x322, op_set_vertex_color], // → native.setVertexColor（mesh state0）
+  [0x323, op_set_vertex_color_alpha], // → native.setVertexColorAlpha（动画窗）
+  [0x1fc, stubSubsystem], // 纹理/图形子系统方法
+  [0x1fd, stubSubsystem], // 缩放/纹理变换 op
+  [0x1fe, stubSubsystem], // 纹理变换 op（4 浮点）
+  [0x1ff, stubSubsystem], // 纹理变换 op
+  [0x202, op_set_draw_color], // → native.setDrawColor（delay/count/to）
+  [0x203, op_set_draw_color_alpha], // → native.setDrawColorAlpha（from）
+  [0x204, stubSubsystem], // draw-string（无界面 stub）
+  [0x205, stubSubsystem], // 纹理/文本 op
+  [0x207, stubSubsystem], // 纹理 op
+  [0x208, stubSubsystem], // 图形子系统方法
+  [0x1f7, op_detach_texture], // → native.detachTexture（删单/区间）
+  [0x1f8, stubSubsystem], // create-texture（LOGO 场景）
+  [0x1fa, op_release_texture], // → native.releaseTexture
+  [0x1fb, op_draw_texture], // → native.configureDrawItem
+  [0x1f9, op_set_texture], // → native.bindTexture
+  [0x20f, op_play_movie], // → native.playMovie
+  [0x21c, op_set_wait_flag], // → native.setWaitFlag（0x400 等待门）
+  [0x1a5, stubSubsystem], // set-font
+  [0xc8, op_sleep], // → native.sleep + SLEEP_GATE 帧让步
+  [0x6e, stubSubsystem], // show-text
+  [0x6f, stubSubsystem], // end-text-line
+  [0x72, stubSubsystem], // wait-for-input
 ]);
 
 /**
- * 引擎内部/子系统操作（不读/写 VM 的全局数组、脚本帧、IP、cur；不影响控制流）—— 插桩跳过。
- * 依据 ADR-010：逐条读 handler 体确认（见 docs/06 §2.2）。这些是 AGE 的消息/窗口/配置系统
- * 对 `_this + 21324` / `_this + 174405` 对象的调用、或 `_this[offset] = operand` 的引擎字段 setter，
- * 不触碰解释器可见状态。对"到 TITLE 路径"良性；M1 再按需补成精确语义。
- * 注意：`string-lookup-set`(0x1a3) 本为 VM 核心（写回操作数 1），此处实例为立即数退化且其后为常量 jcc，暂列插桩，M1 细化。
+ * 引擎内部/子系统操作：不读/写 VM 可见态（全局数组、脚本帧、IP、cur）、不影响控制流 —— emulator 插桩跳过。
+ * 语义见 `docs-new/03-engine/opcode-table.md`（本表不再重复引擎 handler/偏移等细节，避免与数据层漂移）。
+ * 对"到 TITLE 路径"良性；M1 再按需补成精确语义。
  */
 const op_engine_internal: OpHandler = () => {
   // 纯 no-op 插桩跳过：不写 VM 状态、不控制流。**不再自打日志**——renderer 的 step trace 已逐条报
@@ -796,102 +872,100 @@ const op_engine_internal: OpHandler = () => {
 };
 
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
-  [0x2f6, op_engine_internal], // SYSTEM4: 引擎内部按索引初始化 3 槽
-  [0x76, op_engine_internal], // 消息窗字段 _this[21664]=BYTE交换(op1) + sub_459F40(_this+21324)（颜色/文本字段）
-  [0x77, op_engine_internal], // 同上，_this[21665]（另一消息窗字段）
-  [0x74, op_engine_internal], // _this[21668]=op1（消息窗字段）
-  [0x75, op_engine_internal], // sub_4185F0(_this+21324, op1)（消息系统方法）
-  [0x7a, op_engine_internal], // sub_45A910(_this+21324, op1,op2,op3)（消息系统方法）
-  [0x7b, op_engine_internal], // _this[cur+122372]=op1; _this[cur+122412]=op2（每帧引擎寄存器）
-  [0x1a4, op_engine_internal], // _this[21671]=op2; _this[21670]=op1（消息窗字段）
-  [0x1b5, op_engine_internal], // _this[21668]=op1 + vtable+12(_this+174405,"message",op1)
-  [0x1bb, op_engine_internal], // config setter（_this+388220；无效值弹 ShowMessage 异常=子系统）
-  [0x1c9, op_engine_internal], // 子系统对象方法 sub_4559C0/sub_455560(_this+680092)
-  [0x1cb, op_engine_internal], // _this[107706]=op1; flag + sub_453A90(_this+107650)
-  [0x1ce, op_engine_internal], // 同上（0x1CB 同 handler）
-  [0x2ee, op_engine_internal], // _this[80106]=op1 + vtable+12(_this+174405,"message",op1)
-  [0xfe, op_engine_internal], // _this[517]=op1（set-keytotal；>0x1F 弹 ShowMessage 异常=子系统）
-  [0x10b, op_engine_internal], // _this[op2+1383]=op1（按键绑定数组，>0x1F 不写）
-  [0x10c, op_engine_internal], // _this[.*]=op2（set-keymulti；>0x1F 弹异常）
-  [0x107, op_engine_internal], // _this[op1+551]=op2（按键绑定数组，>0x1F 不写）
-  [0x10f, op_engine_internal], // _this[122369]=op1（引擎字段）
-  [0x30a, op_engine_internal], // _this[op2+1969]=op1（set-geskey；>0x1F / >7 弹异常=子系统）
-  [0x25a, op_engine_internal], // _this[92379]=1;[92380]=op1 + sub_4A5470(_this+80708)
-  [0x25b, op_engine_internal], // _this[92379]=2;[92381]=op1 + sub_408440
-  [0x25c, op_engine_internal], // 读多操作数设消息窗配置字段（sub_425E70）
-  [0x25e, op_engine_internal], // 颜色字节交换后设消息窗字段（sub_425F50）
-  [0x25f, op_engine_internal], // 同上（sub_425FF0）
-  [0x260, op_engine_internal], // _this[80105/80104/80102]=…（消息窗配置字段）
-  [0x245, op_engine_internal], // sub_4081B0(_this[op1+94672], op2/dbl)（子系统对象方法）
-  [0x246, op_engine_internal], // sub_…(_this[op1+94672], op2)（子系统对象方法）
-  [0x248, op_engine_internal], // dword_55052C=op1（静态配置文件）
-  [0x249, op_engine_internal], // vtable 调用 _this[op1+94672]（子系统对象方法）
-  [0x143, op_engine_internal], // 遍历 _this+173106 表，对每个非零项 sub_40FC90(_this, i<<24)=注册 APPEND 集合（0xNN000000）；fileSource 已自解析此类索引
-  [0x2bd, op_engine_internal], // (v1=_this+21324) op1 非0: v1+218516/1248=700（消息窗字段）
-  [0x2be, op_engine_internal], // op1 非0: v1+218588/1308=700（消息窗字段）
-  [0x2bf, op_engine_internal], // sub_4B5170(_this+20719, op1,op2,op3)（子系统对象方法）
-  [0x2c0, op_engine_internal], // sub_4BBA40(_this+21032, …,0)（子系统对象方法）
-  [0x2fe, op_engine_internal], // sub_432DD0(_this+21324, op1字符串)（消息/设置子系统方法）
-  [0x340, op_engine_internal], // sub_49A2D0(_this+80708, op1)（L2D/图形子系统方法）
-  [0x342, op_engine_internal], // sub_4A1A60(_this+80708, op1)（L2D/图形子系统方法）
-  [0x344, op_engine_internal], // sub_4AFBF0(_this+80708, op1, op2)（L2D/图形子系统方法）
-  [0x346, op_engine_internal], // sub_4AFC40(_this+80708, op1)（L2D/图形子系统方法）
-  [0x349, op_engine_internal], // sub_4AFF80(_this+80708, op1, 浮点…)（L2D/图形子系统方法）
-  [0x352, op_engine_internal], // sub_4A1AC0(_this+80708, op1, op2, op3)（L2D/图形子系统方法）
-  [0x321, op_engine_internal], // sub_4AE280(_this+80708, op1, op2, op3)（L2D/图形子系统方法）
-  [0x322, op_engine_internal], // 读 op 操作数设图形子系统（sub_426C20）
-  [0x323, op_engine_internal], // 同上（sub_426CF0）
-  [0x325, op_engine_internal], // _this[93384]+1244=op2（图形配置字段）
-  [0x326, op_engine_internal], // 读 op（含浮点）设图形子系统（sub_426E10）
-  [0x2da, op_engine_internal], // CG 编号 setter（op1>0xA 弹异常=子系统）
-  [0x2eb, op_engine_internal], // vtable+8(…,"SetGameVersion") 取版本串建内部串（设置/消息子系统）
-  [0x2e8, op_engine_internal], // vtable+12(…,"MessageAutomes_1", op1)（消息/设置子系统方法）
-  [0x2dd, op_engine_internal], // 字符串子系统 op（sub_434720 建内部串）
-  [0x2c7, op_engine_internal], // 字符串子系统 op（sub_433FD0 字节处理）
-  [0x2c8, op_engine_internal], // 字符串子系统 op（sub_434260）
-  [0x2c9, op_engine_internal], // 字符串解析 op（sub_4344A0）
-  [0x23b, op_engine_internal], // 图形层变换 setter（_this[13869+layer] 结构，读 op1/3/6/7；graphics 子系统）
-  [0x24e, op_engine_internal], // _this[92340]=op1（引擎字段）
-  [0x21c, op_engine_internal], // _this[174801]|=0x400（旗标；无 VM 可见写）
-  [0x21e, op_engine_internal], // sub_4AA180(_this+80708)（L2D/图形子系统方法）
-
-  [0x1f4, op_engine_internal], // 引擎计数器（_this[107438]/[107439]）
-  [0x1f5, op_engine_internal], // 读引擎字段（_this[429756]/[429752]/[497400]）
-  [0x1f6, op_engine_internal], // sub_4AB7A0(_this+80708)（L2D/图形子系统方法）
-  [0x197, op_engine_internal], // sub_418680(_this+21324, op1)（消息/设置子系统方法）
-  [0x198, op_engine_internal], // sub_456400(_this+21324, op1,op2,op3)（消息/设置子系统方法）
-  [0x8b, op_engine_internal], // _this[21669]=op1（消息窗字段）
-  [0x261, op_engine_internal], // _this[80101]=op1（引擎字段）
-  [0x2e7, op_engine_internal], // 条件配置 setter（sub_426540）
-  [0x2e9, op_engine_internal], // _this[122464]=op1（引擎字段）
-  [0xae, op_engine_internal], // save-version 兼容：_this[95780]==0 时 no-op；有存档版本时才按版本推进 IP（新开局=no-op）
-  [0xad, op_engine_internal], // sub_4380F0(_this+5191)（子系统，结果丢弃）
-  [0xaf, op_engine_internal], // 返回 cur、设 arity（对解释器 no-op）
-  [0x2f8, op_engine_internal], // sub_4B6940(v2+12, v4)（子系统对象方法）
-  [0x149, op_engine_internal], // _this[97058] = operand (config)
-  [0x88, op_engine_internal], // _this[1415]/[97050] + flag (config)
-  [0x21b, op_engine_internal], // _this[166965] = (operand!=0)
-  [0x1ca, op_engine_internal], // config set-message-read-texture
-  [0x252, op_engine_internal], // _this[92323] = operand
-  [0x324, op_engine_internal], // sub_453530(_this[93384])
-  [0x32f, op_engine_internal], // sub_49A150(_this+80708)
-  [0x70, op_engine_internal], // 消息系统 sub_45D660(_this+21324,...)
-  [0x71, op_engine_internal], // 消息系统 + 缓冲拷贝
-  [0x73, op_engine_internal], // 消息系统 sub_41F250
-  [0x78, op_engine_internal], // _this[21667]=op; v1->sub_459F40()
-  [0x79, op_engine_internal], // 消息系统 sub_4563A0(_this+21324,...)
-  [0x1c1, op_engine_internal], // 消息系统 sub_4563D0(_this+21324,...)
-  [0x212, op_engine_internal], // 消息部件 _this[result+21585] 字段
-  [0x213, op_engine_internal], // 消息部件 _this[result+21585] 字段
-  [0x25d, op_engine_internal], // 消息部件 _this[result+21585]+276/280
-  [0x2db, op_engine_internal], // _this[71744]=op; sub_459F40()
-  [0x303, op_engine_internal], // 消息系统 sub_456600(_this+21324,...)
-  [0x1a3, op_engine_internal], // string-lookup-set：写回操作数1（此处立即数退化），M1 细化
-  [0x1a2, op_engine_internal], // 写内部字符串查找表 _this+5452（非可见 VM 态），M1 细化
-  [0x1a9, op_engine_internal], // 写内部字符串查找表 _this+5472（非可见 VM 态），M1 细化
-  // 鼠标点击路径安全桩：图形提交 / 悬停位置计算（emulator 暂不渲染/不算，no-op 不崩）
-  [0x20c, op_engine_internal], // u00416200 时间戳+present（sub_41A1A0；无界面 no-op；TITLE 点击 handler 入口）
-  [0xb5, op_engine_internal], // u0041D050 声音通道控制（sub_420B40 → sub_4B5020/4B6020 声音设备通道；**声音相关，无 VM/渲染效果 → 忽略 no-op**）
-  [0x23d, op_engine_internal], // u004162F0 释放纹理槽 42..999（sub_41A300；emulator 无界面 no-op）
-  [0x32b, op_engine_internal], // u0043AAD0（sub_41A4A0；no-op）
+  // 声音（引擎内部/子系统；语义见 opcode-table.md）
+  [0x2f6, op_engine_internal], // 声音
+  [0x2f8, op_engine_internal], // 声音
+  [0xb5, op_engine_internal], // 声音
+  // 渲染 / 图形 / 图像（emulator 无界面 → no-op；语义见 opcode-table.md）
+  [0x32f, op_engine_internal], // 渲染
+  [0x25b, op_engine_internal], // 渲染
+  [0x248, op_engine_internal], // 渲染
+  [0x352, op_engine_internal], // 渲染
+  [0x1f6, op_engine_internal], // 渲染
+  [0x344, op_engine_internal], // 渲染
+  [0x23b, op_engine_internal], // 渲染
+  [0x20c, op_engine_internal], // 渲染
+  [0x340, op_engine_internal], // 渲染
+  [0x342, op_engine_internal], // 渲染
+  [0x346, op_engine_internal], // 渲染
+  [0x349, op_engine_internal], // 渲染
+  [0x321, op_engine_internal], // 渲染
+  [0x325, op_engine_internal], // 渲染
+  [0x326, op_engine_internal], // 渲染
+  [0x21e, op_engine_internal], // 渲染
+  [0x1f4, op_engine_internal], // 渲染
+  [0x1f5, op_engine_internal], // 渲染
+  [0x2da, op_engine_internal], // 数据/资源
+  // 消息窗 / UI / 文本 / 字体（emulator 无界面 → no-op；语义见 opcode-table.md）
+  [0x76, op_engine_internal], // 消息/UI
+  [0x77, op_engine_internal], // 消息/UI
+  [0x74, op_engine_internal], // 消息/UI
+  [0x75, op_engine_internal], // 消息/UI
+  [0x7a, op_engine_internal], // 消息/UI
+  [0x7b, op_engine_internal], // 消息/UI
+  [0x1a4, op_engine_internal], // 消息/UI
+  [0x1b5, op_engine_internal], // 消息/UI
+  [0x1bb, op_engine_internal], // 消息/UI
+  [0x1c9, op_engine_internal], // 消息/UI
+  [0x1cb, op_engine_internal], // 消息/UI
+  [0x1ce, op_engine_internal], // 消息/UI
+  [0x2ee, op_engine_internal], // 消息/UI
+  [0x25a, op_engine_internal], // 消息/UI
+  [0x25c, op_engine_internal], // 消息/UI
+  [0x25e, op_engine_internal], // 消息/UI
+  [0x25f, op_engine_internal], // 消息/UI
+  [0x260, op_engine_internal], // 消息/UI
+  [0x245, op_engine_internal], // 消息/UI
+  [0x246, op_engine_internal], // 消息/UI
+  [0x249, op_engine_internal], // 消息/UI
+  [0x2bd, op_engine_internal], // 消息/UI
+  [0x2be, op_engine_internal], // 消息/UI
+  [0x2bf, op_engine_internal], // 消息/UI
+  [0x2c0, op_engine_internal], // 消息/UI
+  [0x2fe, op_engine_internal], // 消息/UI
+  [0x2e8, op_engine_internal], // 消息/UI
+  [0x197, op_engine_internal], // 消息/UI
+  [0x198, op_engine_internal], // 消息/UI
+  [0x70, op_engine_internal], // 消息/UI
+  [0x73, op_engine_internal], // 消息/UI
+  [0x78, op_engine_internal], // 消息/UI
+  [0x79, op_engine_internal], // 消息/UI
+  [0x1c1, op_engine_internal], // 消息/UI
+  [0x212, op_engine_internal], // 消息/UI
+  [0x213, op_engine_internal], // 消息/UI
+  [0x25d, op_engine_internal], // 消息/UI
+  [0x2db, op_engine_internal], // 消息/UI
+  [0x303, op_engine_internal], // 消息/UI
+  [0x8b, op_engine_internal], // 消息/UI
+  [0x261, op_engine_internal], // 消息/UI
+  [0x1ca, op_engine_internal], // 消息/UI
+  [0x252, op_engine_internal], // 消息/UI
+  [0x324, op_engine_internal], // 消息/UI
+  // 输入（按键绑定等；语义见 opcode-table.md）
+  [0xfe, op_engine_internal], // 输入
+  [0x10c, op_engine_internal], // 输入
+  [0x107, op_engine_internal], // 输入
+  [0x10b, op_engine_internal], // 输入
+  [0x10f, op_engine_internal], // 输入
+  [0x30a, op_engine_internal], // 输入
+  // 字符串 / 查表
+  [0x1a9, op_engine_internal], // 字符串
+  [0x2c7, op_engine_internal], // 字符串
+  [0x2c8, op_engine_internal], // 字符串
+  [0x2c9, op_engine_internal], // 字符串
+  [0x2dd, op_engine_internal], // 字符串
+  [0x2eb, op_engine_internal], // 配置/字符串
+  // 数据字段 / 版本 / 脚本控制
+  [0x149, op_engine_internal], // 数据
+  [0x21b, op_engine_internal], // 数据
+  [0x24e, op_engine_internal], // 配置
+  [0xae, op_engine_internal], // 版本/存档
+  [0xad, op_engine_internal], // 数据
+  [0xaf, op_engine_internal], // 数据
+  [0x143, op_engine_internal], // 脚本控制
+  [0x2e9, op_engine_internal], // 数据
+  [0x2e7, op_engine_internal], // 配置
+  // 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩）
+  [0x23d, op_engine_internal], // 释放纹理槽
+  [0x32b, op_engine_internal], // 图形
 ]);

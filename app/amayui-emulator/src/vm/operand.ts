@@ -174,6 +174,33 @@ export function readIntOperand(e: Engine, frame: Frame, instr: BinInstruction, n
   }
 }
 
+/**
+ * 读第 n 个操作数的**原始索引**（引擎 sub_418A30 的 readIndexOperand 语义），
+ * 供 string-lookup-set 族（0x1A2 登记 / 0x1A3 查表）用作查询键。
+ *  - 这个"索引"永远落在**全局池**的下标空间：引擎 sub_418A30 用 `_this[95744]`(全局 int 池基址) 做基准，
+ *    因此 `global-int N` 给出全局槽号 N；指针（global/local-ptr）给出"所指元素在全局池的下标"。
+ *  - `local-int` 不在这个键空间里：引擎 sub_418A30 只认 type 3(global int)/6(global ptr)/12(local ptr)，
+ *    对 `local-int`(9) 会抛 Type_Exception —— 局部变量与全局变量是不同的 identity，**不是同一个键**。
+ *    局部指针能参与是因为它指向的是全局池元素。
+ *  - 立即数：emulator 宽容退回字面值（引擎对立即数本应抛 Type 异常）。
+ */
+export function readIndexOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): number {
+  const a = operandArg(instr, n);
+  switch (a.type) {
+    case TYPE_GLOBAL_INT:
+      return a.raw; // 全局池下标（槽号），非存量值
+    case TYPE_GLOBAL_PTR:
+      return readRefSlot(e.globals.ptr, a.raw).index; // 指针所指全局池元素下标
+    case TYPE_LOCAL_PTR:
+      return readRefSlot(frame.locals.ptr, a.raw).index; // 局部指针所指数（全局池）元素下标
+    case TYPE_IMMEDIATE_INT:
+    case TYPE_IMMEDIATE_FLOAT:
+      return a.raw | 0; // 立即数退化：字面值即索引
+    default:
+      throw new Error(`readIndexOperand: unsupported type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
+  }
+}
+
 /** 写第 n 个操作数（int 槽过 ENC；指针型 = 写穿到所指处）。 */
 export function writeIntOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number, value: number): void {
   const a = operandArg(instr, n);

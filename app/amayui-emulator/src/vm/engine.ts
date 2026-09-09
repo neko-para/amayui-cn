@@ -75,19 +75,38 @@ export class Engine {
   // SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。
   engineValues = new Map<number, number>([[96983, 1]]);
 
-  /** effect_flags 的等待位（如 0x21C 置 0x400；0xC8 sleep 置 SLEEP_GATE）。脚本推进在这些位被"门控"暂停，由渲染帧循环+动画完成度放行（Plan A）。 */
-  waitFlags = 0;
+  /** 引擎 `_this[174801]` effect_flags 位掩码：
+   *  0x400 = 动画等待门（0x21C wait）、0x20000000 = sleep(0xC8) 门、0x8000000 = ADV/消息激活。
+   *  `waitFlags` 是它的旧别名；`advActive` 是 0x8000000 位的推导（见下方 getter）。 */
+  effectFlags = 0;
 
   /** 菜单派发表（引擎 `_this+107679` 的字符串哈希表，0xA2 登记 key→label、0xA3 查表跳转）。key=菜单项序号字符串，value=目标 label(指令 index)。 */
   menuMap = new Map<string, number>();
+
+  /** 引擎 `_this+5452` 字符串→整型哈希表（0x1A2 登记 key→value；0x1A3 查表写回 op1）。key = "\x03"+hex8(索引)。 */
+  stringIndexTable = new Map<string, number>();
+
+  /** ADV/消息状态机字段（稀疏 `_this[K]`：1415 / 97050 / 97051 / 122368 / 122370 / 122455 / 122496 / 124331）。 */
+  advFields = new Map<number, number>();
 
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;
 
   /** 墙钟毫秒（= 引擎 timeGetTime()）；由渲染帧循环(renderer)或测试注入。0xCD(get-input-type) 节流用。 */
   nowMs = 0;
+
+  /** effect_flags 的旧别名（读写都落到 effectFlags）。 */
+  get waitFlags(): number {
+    return this.effectFlags;
+  }
+  set waitFlags(v: number) {
+    this.effectFlags = v;
+  }
+
   /** ADV/消息激活态（= 引擎 effect_flags 的 0x8000000 位）。0xCD 在此位置位时可无条件推进。 */
-  advActive = false;
+  get advActive(): boolean {
+    return (this.effectFlags & 0x8000000) !== 0;
+  }
 
   constructor(native: NativeBridge, input?: InputManager) {
     this.native = native;
