@@ -248,8 +248,8 @@
 | 0x145 | 1 |  | sub_42FCF0 | 仅映射 |  |
 | 0x146 | 1 |  | sub_422960 | 仅映射 |  |
 | 0x147 | 6 |  | sub_42FD60 | 仅映射 |  |
-| 0x148 | 1 |  | sub_42FEC0 | 已核对 | **读全局时间阈值槽**：`sub_42B4B0(1, _this[97058])` 把引擎全局槽 `_this[97058]` 写回 op1（get；0x149 的读侧）。语义：`op1 = _this[97058]`（该槽为时间去抖阈值，见 `analysis/fields.json` `global_slot_97058`）。handler=sub_42FEC0（raw .c 39705）。**曾仅映射，已读体确证** |
-| 0x149 | 1 |  | sub_4229A0 | 已核对 | **写全局时间阈值槽**：读 op1 写 `_this[97058]`（全局槽，紧邻 key `_this[97059]`/`ENC(0)` `_this[97060]`；`0x148` 读、`sub_4B9240` 当作时间去抖阈值用，SYSTEM4 设 1000）。handler=sub_4229A0（raw .c 30629） |
+| 0x148 | 1 |  | sub_42FEC0 | 已核对 | **读全局时间阈值槽**：`sub_42B4B0(1, _this[97058])` 把引擎全局槽 `_this[97058]`（byte 388232，见 `analysis/fields.json` `global_slot_97058`）写回 op1（**get**；与 0x149 构成 get/set 对）。该槽是「光标贴屏幕顶边缘 / 松开 Alt → 弹系统对话框」的去抖时长：`sub_4B9240`(WM_TIMER) 读它并与 `timeGetTime()-dword_55E1D8` 比较，超时才弹框。handler=sub_42FEC0（raw .c 39705）。**曾仅映射，已读体确证** |
+| 0x149 | 1 |  | sub_4229A0 | 已核对 | **写全局时间阈值槽**：读 op1 写 `_this[97058]`（byte 388232，紧邻 DEC/ENC 机制的 key `_this[97059]`/`enc_zero` `_this[97060]`；与 0x148 构成 get/set 对）。作用：设置「光标贴顶/Alt→弹系统对话框」的去抖时长（`sub_4B9240` 读、SYSTEM4 `i149 3e8`=1000ms）。handler=sub_4229A0（raw .c 30629） |
 | 0x14A | 7 |  | sub_42FEF0 | 仅映射 |  |
 | 0x14B | 1 |  | sub_4229D0 | 仅映射 |  |
 | 0x14C | 2 | set-agerc-export | sub_422AB0 | 推测 | 绑定 agerc 导出。未读体 |

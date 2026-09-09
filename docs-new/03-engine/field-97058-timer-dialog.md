@@ -121,7 +121,7 @@ v63[4] = GetProcAddress(h,"_OperateMenu@16");  // → dword_55E1B8
 ## 7. 结论与边界
 - **`_this[97058]` 的真实用途**：不是挂机 AFK 超时，而是“光标贴顶/Alt → 弹系统对话框”的**去抖时长**。所以 SYSTEM4 设一次 1000ms 是合理的（全局默认去抖），并非“太短”。
 - **`0x148`/`0x149`**：对 `_this[97058]` 的 get/set 指令对。`0x148` 在 `opcode-table.md` 原标“仅映射”，已确证为读侧→升级“已核对”。
-- **emulator 现状**：`0x149` 在 `ENGINE_INTERNAL_OPS`（no-op）；`0x148` 未映射（潜在 `NotImplementedOp`）。`0x149`/`0x148` 若要实现，可建模为对引擎字段 `_this[97058]` 的 get/set（`sub_408620` 依赖的 AGERC `ShowDialog` 是 native 子系统钩子，emulator 可 no-op/记录）。
+- **emulator 现状**：`0x148`（`op_read_global_slot`）/ `0x149`（`op_write_global_slot`）已实现为对 `Engine.globalSlot97058`（`_this[97058]`）的 **get/set**（读→op1 / op1→写），并从 `ENGINE_INTERNAL_OPS`/未映射移入 `OPS`；注释明确该值**当前 emulator 无对应逻辑使用（暂无用，仅建模）**。（`sub_408620` 依赖的 AGERC `ShowDialog` 是 native 子系统钩子，emulator 记录/no-op。）
 
 ## 8. 参考
 - `analysis/fields.json`：`global_slot_97058`（0x5EC88）。
