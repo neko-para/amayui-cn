@@ -48,10 +48,10 @@ docs-new/
 │   └── extraction.md         ← 数据提取口径（toolkit metadata）
 ├── 03-engine/                ← 游戏引擎分析
 │   ├── unpacking.md          ← AGE 引擎加壳拆壳 + 重定型管线
-│   ├── vm-opcodes.md         ← 解释器主循环 / opcode 分发 / handler 表
-│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（544+30 条）**
-│   ├── operands.md           ← 操作数原语 / DEC·ENC / 指针模型
-│   ├── runtime-memory.md     ← this 对象布局 / 脚本帧 / 调用栈（引擎内部）
+│   ├── vm-opcodes.md         ← (已归档) 解释器主循环/分发概览；语义看 opcode-table.md + 数据层
+│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（544+30 条，真源）**
+│   ├── operands.md           ← (瘦身) 操作数速记(DEC/ENC/指针模型)；原语以 data 层 functions.json 为准
+│   ├── runtime-memory.md     ← (瘦身) this 布局说明 + 消息窗对象叙事；字段以 data 层 fields.json 为准
 │   ├── resource-loading.md   ← 统一文件 id 空间 / 启动链 / 纹理·AGF 映射
 │   └── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
 └── 04-app/                   ← app 工具

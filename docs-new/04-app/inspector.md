@@ -56,5 +56,5 @@ dotnet ... -n AGE --sig ... --fullglobal
 
 ## 6. 交叉引用
 
-- `this` 布局/脚位帧见 `../03-engine/runtime-memory.md`；opcode 见 `../03-engine/vm-opcodes.md`；数据域（掉落等）见 `../02-data/drops.md`。
+- `this` 布局/脚本帧见 `../03-engine/runtime-memory.md`；opcode 见 `../03-engine/opcode-table.md`（真源），分发概览见 `../03-engine/vm-opcodes.md`（已归档）；数据域（掉落等）见 `../02-data/drops.md`。
 - 本工具读取的 `this`/DEC/key 均为**引擎内部**；读取业务数据（掉落）属「进程内实测读取」的确切证据，故可在该处交叉引用。
