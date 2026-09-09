@@ -85,12 +85,30 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 
 ---
 
-## 4. 渲染层（纯数据报表 / 数据工具）
-只做**纯数据报表**（读 `analysis/fields.json` + `functions.json`）：哪些函数分析了 / 状态分布 / 字段清单 / 每函数用途与未解项。
-**永不改写反编译文本，也不依赖任何反编译器/特定工具。**
+## 4. 数据层工具（查询 + 增删改；不改写反编译文本）
+只做**纯数据读写**（`analysis/fields.json` + `functions.json`）：哪些函数分析了 / 状态分布 / 字段清单 / 每函数用途与未解项，并可**新增 / 修改 / 删除**记录。
+**永不改写反编译文本，也不依赖任何反编译器/特定工具；结论只写入数据层（唯一增长处）。**
 
-- `scripts/report.js`：报表生成器（读两个 data 文件，打印进度 / 状态分布 / 字段清单）。
-- `scripts/sort-fields.js`：字段排序器（按 `scope` + 字节偏移排 `fields.json`，作用域间留空行分组）。
+### `scripts/report.js` —— 查询 + 增删改（读写合一）
+- **查询（只读）**：
+  - `node report.js --summary`：只打统计（字段/函数数、状态/作用域/opcode 分布）。
+  - `node report.js --index [--sort addr|op|status|sem] [--group status|op]`：紧凑函数索引（一行一条，便于快速扫）。
+  - `node report.js --find <子串>`：按 addr/raw_name/semantic_name/op/purpose 模糊查。
+  - `node report.js --addr <0x..> | --op <0x..>`：精查单个函数（附 purpose）。
+  - `node report.js --field`：字段清单；`node report.js`（无参）= 完整报表（向后兼容）。
+- **写入（增删改）**：
+  - `node report.js --func-add  '<json>'`：新增函数（json 或 `k=v …`；需 `addr`）。
+  - `node report.js --func-edit <addr> --set k=v [--set …]`：改某函数字段（外科手术式单块编辑，**不翻新其它条目**）。
+  - `node report.js --func-rm   <addr>`：删某函数。
+  - `node report.js --field-add '<json>' | --field-edit <offset> --set k=v … | --field-rm <offset>`：字段增删改（写后按 scope+offset 重排，保留分组空行）。
+- **root**：缺省 `.`；可用 `--root <dir>` 或第一个位置参数指定（例如对临时副本操作可 `--root /tmp/rj`）。
+- `--set` 的无引号值按布尔/数字自动解析，其余为字符串；数组/对象值请用 json 形式。
+
+### `scripts/sort-fields.js`
+字段排序器：按 `scope` + 字节偏移排 `fields.json`，作用域间留空行分组（`report.js --field-add/edit/rm` 内部会复用同格式，故无需另跑）。
+
+### 建议的读取姿势（AI/人）
+数据层是**存储**，直接读原始 `functions.json` 冗长。先 `report.js --index --sort addr` 导航，`--find/--addr/--op` 精查，`--summary` 看进度；新增/修改结论用 `--func-add/--func-edit`。
 
 ---
 
@@ -107,7 +125,7 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 ## 6. 数据层视图（字段/函数清单以 JSON 为准，本技能不复制）
 
 > 字段/偏移的**权威清单**在 `analysis/fields.json`（唯一增长处），**本技能不再复制字段表**。
-> 查看/维护：`scripts/report.js`（按 `scope`/`status` 分组打印），`scripts/sort-fields.js`（排序）；新增/复核直接写 `fields.json`。
+> 查看/维护：`scripts/report.js`（`--index/--find/--addr/--op` 查询；`--func-add/--func-edit/--func-rm`、`--field-*` 增删改），`scripts/sort-fields.js`（字段排序）；**新增/复核请用报告工具，勿手改 JSON**（便于保格式、零翻新）。
 
 - **`scope` 分组**：`Engine` / `ScriptContext` / `global`（`global.engine` = 全局 Engine 对象基址，0x55E1BC）。
 - **`status` 约定**：`confirmed`（确证）| `tentative`（偏移由 raw 证实、语义待复核）。
