@@ -224,7 +224,7 @@
 | 0x12D | 7 |  | sub_42F040 | 仅映射 |  |
 | 0x12E | 8 |  | sub_42F230 | 仅映射 |  |
 | 0x12F | 4 |  | sub_42F560 | 仅映射 |  |
-| 0x130 | 1 |  | sub_42F7A0 | 已核对 | **配置 getter**：`op1 = _this[96983]`（写回操作数 1；SYSTEM4 第 146 行据此判断是否 `call-script LOGO`）。handler=sub_42F7A0（raw .c 38662） |
+| 0x130 | 1 | load-show-logo | sub_42F7A0 | 已核对 | **LOGO/版权页开关 getter**（曾名 `i130`）：`op1 = _this[96983]`（写回操作数 1；SYSTEM4 第 146 行据此判断是否 `call-script LOGO`）。构造=1 播版权页、exit-script(0x9) 置 0 → GAMEOVER 回标题不再播。handler=sub_42F7A0（raw .c 38662） |
 | 0x131 | 1 |  | sub_42F7D0 | 仅映射 |  |
 | 0x132 | 1 |  | sub_422150 | 仅映射 |  |
 | 0x133 | 2 |  | sub_422240 | 仅映射 |  |

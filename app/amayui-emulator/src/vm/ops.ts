@@ -241,9 +241,11 @@ const op_read_global_slot: OpHandler = (c) => {
 
 // ---- 控制流 ----
 const op_jmp: OpHandler = (c) => {
-  const a = operandArg(c.instr, 1);
-  const p = labelPos(c.frame, a.raw);
-  if (p === null) throw new Error(`jmp: unknown label 0x${a.raw.toString(16)}`);
+  // 引擎 sub_4203D0：op1 经 readIntOperand 取值；op1==-1(0xFFFFFFFF) = 不跳（落下句），非错误。
+  const t = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (t === -1) return;
+  const p = labelPos(c.frame, t);
+  if (p === null) throw new Error(`jmp: unknown label 0x${(t >>> 0).toString(16)}`);
   c.jump(p);
 };
 
@@ -262,22 +264,28 @@ const op_call: OpHandler = (c) => {
 
 const op_jcc: OpHandler = (c) => {
   const cond = readIntOperand(c.e, c.frame, c.instr, 1);
-  const aTrue = c.instr.args[1];
-  const aFalse = c.instr.args[2];
-  // 语义（docs/re/src/02）：cond!=0 → 跳 A（A==0xFFFFFFFF 则不跳，落到下句）；cond==0 → 跳 B（B==0xFFFFFFFF 则不跳）。
+  // 引擎 sub_4209B0：分支目标(2/3)也经 readIntOperand 取值（可为变量 label；-1=落下句）。
+  const branchLab = (n: number): number | null => {
+    const t = readIntOperand(c.e, c.frame, c.instr, n);
+    return t === -1 ? null : t;
+  };
   if (cond !== 0) {
-    if (aTrue && aTrue.raw !== 0xffffffff) {
-      const p = labelPos(c.frame, aTrue.raw);
-      if (p === null) throw new Error(`jcc: unknown true label 0x${aTrue.raw.toString(16)}`);
+    const t = branchLab(2);
+    if (t !== null) {
+      const p = labelPos(c.frame, t);
+      if (p === null) throw new Error(`jcc: unknown true label 0x${(t >>> 0).toString(16)}`);
       c.jump(p);
     }
-    // A==0xFFFFFFFF：真分支不跳 → 落到下一句（不设 jump）
-  } else if (aFalse && aFalse.raw !== 0xffffffff) {
-    const p = labelPos(c.frame, aFalse.raw);
-    if (p === null) throw new Error(`jcc: unknown false label 0x${aFalse.raw.toString(16)}`);
-    c.jump(p);
+    // t==null：真分支不跳 → 落到下一句（不设 jump）
+  } else {
+    const t = branchLab(3);
+    if (t !== null) {
+      const p = labelPos(c.frame, t);
+      if (p === null) throw new Error(`jcc: unknown false label 0x${(t >>> 0).toString(16)}`);
+      c.jump(p);
+    }
+    // t==null：假分支不跳 → 落到下一句
   }
-  // 双 0xFFFFFFFF / 假分支 0xFFFFFFFF：fallthrough
 };
 
 // ---- ret (0x5)：同脚本子程序返回（弹返回栈跳回；空则 no-op 落到下一指令） ----
@@ -386,8 +394,12 @@ export class ScriptReset extends Error {
   }
 }
 
-/** exit-script (0x9)：清空全部 40 帧 + 重置全局数组（整体 teardown，回到干净初始态，供上层回到根/菜单）。 */
-const op_exit_script: OpHandler = (c) => {
+/** exit-script (0x9)：全量 teardown → 置 `_this[96983]`(byte 387932)=0 → 重载根脚本 INDEX0 并继续。
+ *  引擎 sub_428A60 语义：释放 40 帧 + 清全局内存池 + 引擎整体复位(sub_40DF10) + `_this[387932]=0` +
+ *  `sub_40ED40(0,…)` 重载根脚本 0 并继续。GAMEOVER 依赖它回到标题界面。
+ *  ★ `+96983` 置 0 是「回标题后不再重播 LOGO/版权页」的关键：SYSTEM4 `load-show-logo(0x130) → jcc → call-script LOGO`，
+ *    而 `load-show-logo` 读 `_this[96983]`（构造=1 播放，exit-script=0 跳过）。 */
+const op_exit_script: OpHandler = async (c) => {
   for (const f of c.e.frames) {
     f.script = null;
     f.ip = 0;
@@ -411,7 +423,16 @@ const op_exit_script: OpHandler = (c) => {
   c.e.effectFlags = 0;
   c.e.advFields.clear();
   c.e.globalSlot97058 = 0;
-  throw new ScriptReset();
+  // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
+  c.e.engineValues.set(96983, 0);
+  // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。
+  if (!c.e.fileSource) throw new ExitScript();
+  const boot = await c.e.fileSource.readScript(0);
+  if (!boot) throw new ExitScript();
+  const script = parseScriptBytes(boot.data);
+  loadScriptIntoFrame(c.e.frames[0]!, script, boot.name);
+  c.e.cur = 0;
+  c.jump(0); // 控制流重定位到新根帧 ip=0，继续跑（而非停在 reset）
 };
 
 // 系统调用 opcode -> 走 NativeBridge（记录即可，无界面）。后续按需逐个转真。
@@ -426,7 +447,7 @@ const op_string_resource_id: OpHandler = (c) => {
 
 /** 0x106 等：引擎配置 getter（读 _this[字段] 写 op1）。各 opcode 读不同字段，此处按 opcode 读取建模值。 */
 const op_get_engine_value: OpHandler = (c) => {
-  // 仅 0x130 已知读 _this[96983]（engine.cpp sub_42F7A0=38664；构造函数默认置 1，见 Engine.engineValues）。
+  // 仅 0x130(load-show-logo) 已知读 _this[96983]（engine.cpp sub_42F7A0=38664；构造函数默认置 1，见 Engine.engineValues）。
   // SYSTEM4 据此决定是否执行 `call-script LOGO`（开场版权/背景 = SO006+SO005）。其余 getter 无界面态保持 0。
   let v = 0;
   if (c.instr.opcode === 0x130) v = c.e.engineValues.get(96983) ?? 0;
@@ -859,7 +880,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0xc4, stubSubsystem], // → native.playVoice
   [0x2de, op_string_resource_id], // 字符串→索引；StubNative 返回 -1
   [0x106, op_get_engine_value], // 配置 getter ▶ op1
-  [0x130, op_get_engine_value], // `_this[96983]` ▶ op1（SYSTEM4 用）
+  [0x130, op_get_engine_value], // load-show-logo：`_this[96983]` ▶ op1（SYSTEM4 用，决定是否播 LOGO）
   [0x131, op_get_engine_value], // 子系统 ▶ op1
   [0x201, op_get_engine_value], // 配置 getter ▶ op1
   [0x2dc, op_get_engine_value], // 数组容量 getter ▶ op1

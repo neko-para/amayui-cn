@@ -18,14 +18,14 @@
     "raw_name": "sub_41A820",
     "semantic_name": "scriptReturn_41A820",
     "op": "0x2",
-    "status": "PARTIAL",
-    "purpose": "op exit：跨脚本返回调用层（cur=frame.caller；顶层 caller<0 才程序退出）",
+    "status": "ANALYZED",
+    "purpose": "op exit：跨脚本返回调用层。读当前帧返回槽(120*cur+383180=frame+0x4C)→call_ret(_this[383108])。目标>=0：cur=call_ret 并沿帧向上找有效层回退，置帧槽[383216]=-1。目标==-11：存档版本处理(sub_40F750/setSaveVersion)。目标==-10：自 _this[383112] 恢复 cur、置部分标志、必要时 sub_40FB60 派发排队脚本。其它负值：抛 Command_Exit(程序退出)。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["读 frame.caller", "caller<0 的 -11(存档版本)/-10(续跑重置)哨兵", "弹空帧回溯", "置 frame[383216]=-1"],
     "fields_used": ["this->frames[cur_script].caller", "this->call_ret", "this->cur_script", "this->call_flag", "this->call_link"],
-    "unmodeled": ["_this+697620(调试/窗口子对象)", "+383220/+699204/+497400/+497380/384/+667852/+383216"],
-    "evidence": "raw 25629-25701",
-    "notes": "caller<0 的两个哨兵(-10/-11)是 doc 未覆盖的隐藏逻辑；语义名赋的，原始名 sub_41A820"
+    "unmodeled": ["_this+697620(调试/窗口子对象)", "+383112/+383116/+383124/+383216(帧槽)", "+667852", "+497380/497384/497400", "sub_40EA00/sub_40F750/sub_40FB60(被调)"],
+    "evidence": "raw 25629-25701 (sub_41A820)",
+    "notes": "caller<0 的两个哨兵(-10/-11)是 doc 未覆盖的隐藏逻辑：-11=存档版本(setSaveVersion/sub_40F750)、-10=续跑重置(自 _this[383112] 恢复 cur + 必要时 sub_40FB60 派发排队脚本)。emulator op_exit 对 caller<0 一律抛 ExitScript，未区分 -10/-11。"
   },
   {
     "addr": "0x41A9B0",
@@ -33,13 +33,13 @@
     "semantic_name": "op_ret_41A9B0",
     "op": "0x5",
     "status": "PARTIAL",
-    "purpose": "op ret：同脚本子程序返回（弹每帧返回栈 256*cur+97193；栈空 no-op）",
+    "purpose": "op ret：同脚本子程序返回。帧状态槽[95805]=1；--_this[cur+97153](每帧返回栈顶指针，基址 byte 388612+4*cur)；v2=_this[256*cur+97193+stackTop](弹返回地址，每帧 256 槽，基址 byte 1024*cur+388772)；若 v2!=-1：帧ip=_this[120*cur+95781]+4*v2、清帧状态槽=0，并从全局 effect_flags 保存栈(_this[107436]/[107437])弹回 _this[174801]=effect_flags；栈空(v2==-1)则 no-op 落下一句。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["--返回栈顶", "读返回地址 frame[95781]+4*v2", "弹返回值栈->_this[174801]"],
     "fields_used": ["this->cur_script", "this->frames[cur_script].arity"],
     "unmodeled": ["_this[107437]/[107436](返回值栈)", "frame[95781]/[95782]", "_this+97153"],
     "evidence": "raw 25704-25727",
-    "notes": "返回地址计算与返回值弹栈语义未完全确证；语义名赋的，原始名 sub_41A9B0"
+    "notes": "emulator op_ret 已实现(pop retStack→jump，栈空 no-op)；但 emulator 未做 effect_flags 保存栈的弹回(引擎在 call 时压 effect_flags、ret 弹回)——M1 需补。"
   },
   {
     "addr": "0x41C6A0",
@@ -47,13 +47,13 @@
     "semantic_name": "callScript_41C6A0",
     "op": "0x3",
     "status": "PARTIAL",
-    "purpose": "op call-script：读 operand1=目标脚本索引 → 压帧(cur++) + 装载新脚本帧",
+    "purpose": "op call-script：读 operand1=目标脚本索引，压帧调用。先置帧 arity/状态槽[120*cur+383216]=3；深度门：cur>=39 抛 文件层级太深(ShowMessage) 异常；读 op1；v5=(frame[95782]-frame[95781])>>2=当前指令长(触达字节/4)；存 frame[95804]=v5；call_ret=cur、cur=cur+1；sub_40ED40(脚本索引, v5, fileSource(_this+387924), op1) 装载新帧；失败抛 Exit。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["cur>=39 抛 ShowMessage 层级过深", "读 op1=目标脚本", "call_ret=cur; cur++", "loadScriptFrame_40ED40(event)"],
     "fields_used": ["this->cur_script", "this->call_ret", "this->frames[cur_script].arity"],
     "unmodeled": ["_this+120", "frame[95781]/[95782]/[95804]", "_this+387924(FileSource)", "_this+383108"],
     "evidence": "raw 26762-26800",
-    "notes": "loadScriptFrame_40ED40 是脚本装载核心，共用于 call-script/i006/exit-script；语义名赋的，原始名 sub_41C6A0"
+    "notes": "emulator op_call_script 已实现：深度门 39、frame.ip+=1(调用方前进)、callRet=caller、cur=caller+1、newFrame.caller=caller、经 fileSource.readScript+loadScriptIntoFrame。差：引擎用 v5(指令长) 作返回位置，emulator 用 ip+=1(指令下标)，抽象等价。"
   },
   {
     "addr": "0x41C7C0",
@@ -74,14 +74,14 @@
     "raw_name": "sub_428A60",
     "semantic_name": "op_exit_script_428A60",
     "op": "0x9",
-    "status": "PARTIAL",
-    "purpose": "op exit-script：全量 teardown（清 40 帧 + 重置全局数组 + 重载根脚本 0 → 回根态）",
+    "status": "ANALYZED",
+    "purpose": "op exit-script：全量 teardown→回根。调 (_this+676732) 回调；清 _this[387932]；sub_40EA00 释放全部 40 帧；清内存池(memflip 循环)；若 _this[699244]<0 SendMessage(0x1400)；sub_478090 flush 输入；★sub_40DF10 引擎整体复位；_this[667856]=config setDrawMode；sub_403EF0/sub_437440 释放对象；按 setCreateObject/setAutoFreeTex 配置复制窗口尺寸/释放纹理(sub_49E980×1000)；最后 sub_40ED40(0, _this+387924, 0) 重载根脚本 INDEX0，失败抛 Exit。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["fn@+676732 teardown", "清 40 帧 sub_40EA00", "重置全局数组", "负载根脚本 loadScriptFrame_40ED40(...,0)"],
     "fields_used": ["this->cur_script", "this->call_ret"],
     "unmodeled": ["+676732/+387932/+382952..382972/+699244/+667856/+387924/+388240", "sub_478090/sub_40DF10/sub_403EF0/sub_437440"],
     "evidence": "raw 35171-35319",
-    "notes": "真正的'回根态'是末尾 loadScriptFrame_40ED40(...,0) 重载根脚本；语义名赋的，原始名 sub_428A60"
+    "notes": "已修正 emulator：op_exit_script 现为 async，清 40 帧+全局+引擎态、置 _this[96983]=0(logo_enabled)、经 fileSource.readScript(0) 重载根脚本 SYSTEM4、cur=0、c.jump(0) 继续跑（不再抛 ScriptReset）。GAMEOVER → exit-script → 回标题 reboot 后 i130 读 0 → SYSTEM4 跳过 LOGO/版权页（见 docs-new/03-engine/flow-control.md §10、test/exit-script.test.ts）。"
   },
 
   {
@@ -1421,6 +1421,116 @@
     "unmodeled": ["dword_55E1B4(ShowDialog) -1 命令语义", "sub_408620 具体弹哪种对话框"],
     "evidence": "raw 141032-141069",
     "notes": "与 WM_MOUSEMOVE(0x200)/WM_SYSKEYUP(0x104,Alt) 同一触发族；_this[97058] 为去抖时长"
+  },
+  {
+    "addr": "0x423C20",
+    "raw_name": "sub_423C20",
+    "semantic_name": "op_set_engine_bool_flag_423C20",
+    "op": "0x21B",
+    "status": "ANALYZED",
+    "purpose": "op 0x21B：设置引擎布尔标志 _this[166965]=(op1!=0)。读 op1（readIntOperand_41BF50），非零则标志=1（TRUE）；并返回该布尔值作为 eax。与读取方 0x247/sub_430810 成对，构成脚本可读写的引擎级布尔寄存器。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["标记子系帧槽 _this[30*cur+95805]=3", "readIntOperand(op1)", "_this[166965]=(op1!=0)", "return (op1!=0)"],
+    "fields_used": ["this->engine_bool_flag(+0xA30D4)"],
+    "unmodeled": ["子系帧槽 _this[30*cur+95805] 具体语义（30 步长/95805 基址=byte 383220）"],
+    "evidence": "raw 31823-31831 (sub_423C20)",
+    "notes": "emulator：以 engineValues.set(166965, op1?1:0) 建模"
+  },
+  {
+    "addr": "0x430810",
+    "raw_name": "sub_430810",
+    "semantic_name": "op_get_engine_bool_flag_430810",
+    "op": "0x247",
+    "status": "ANALYZED",
+    "purpose": "op 0x247：读取引擎布尔标志 _this[166965]，以 (_this[166965]!=0) 写回操作数 1（writeIntOperand_42B4B0，值为 0/1）。与设置方 0x21B/sub_423C20 成对，构成脚本可读写的引擎级布尔寄存器。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["标记子系帧槽 _this[30*cur+95805]=3", "read engine_bool_flag(+0xA30D4)", "writeIntOperand(op1, flag!=0)"],
+    "fields_used": ["this->engine_bool_flag(+0xA30D4)"],
+    "unmodeled": ["子系帧槽 _this[30*cur+95805] 具体语义"],
+    "evidence": "raw 40034-40038 (sub_430810)",
+    "notes": "emulator：以 engineValues.get(166965)?1:0 建模"
+  },
+  {
+    "addr": "0x40DF10",
+    "raw_name": "sub_40DF10",
+    "semantic_name": "engineInitReset_40DF10",
+    "status": "PARTIAL",
+    "purpose": "引擎/状态初始化或重置：零化大量引擎字段（cur_script、draw-mode 字段 667856=comsetdrawmode、effect_flags 699204、引擎布尔标志 667860=+0xA30D4 等）。其中对 +0xA30D4 标志清零（raw 17982）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["清零 cur_script", "清零 draw-mode/_this+667856", "清零 effect_flags", "清 engine_bool_flag(+0xA30D4)=0"],
+    "fields_used": ["this->engine_bool_flag(+0xA30D4)", "this->cur_script", "this->effect_flags"],
+    "unmodeled": ["整个初始化体未逐字段建模（仅确认 +0xA30D4 清零点）"],
+    "evidence": "raw 17933-17982 (sub_40DF10 起始/清零区)",
+    "notes": "详见 docs-new/03-engine/engine-reset-mainloop.md Part A；引擎级整体复位（范围大于 op_exit_script）。"
+  },
+  {
+    "addr": "0x412290",
+    "raw_name": "sub_412290",
+    "semantic_name": "mainLoopFlow_412290",
+    "status": "PARTIAL",
+    "purpose": "主循环/游戏流程分发（__noreturn，raw 142347 以全局引擎 dword_55E1BC 调用）。其中 LABEL_56 处判定是否推进脚本：当 draw-mode 字段(_this+667856)==1 且 _this+675968==0 时，若 engine_bool_flag(+0xA30D4) 为真或 effect_flags&0x2400 非零 → v92=1 并做推进逻辑（交换帧高宽、sub_4B4040 等）。故 +0xA30D4 是其推进/门控条件之一。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读 draw-mode _this+667856==1", "读 engine_bool_flag(+0xA30D4) 作为推进门", "读 effect_flags&0x2400", "推进脚本帧交换/清绘制"],
+    "fields_used": ["this->engine_bool_flag(+0xA30D4)", "this->effect_flags"],
+    "unmodeled": ["整个主循环体未逐字段建模（仅确认 +0xA30D4 引用点 raw 20746）"],
+    "evidence": "raw 20465 (sub_412290), 20740-20758 (LABEL_56 flow 门含 20746 读标志), 142347 (调用点)",
+    "notes": "详见 docs-new/03-engine/engine-reset-mainloop.md Part B；effect_flags 位状态机约 24 位，emulator 仅实现 0x400/0x8000000/0x20000000。"
+  },
+  {
+    "addr": "0x4203D0",
+    "raw_name": "sub_4203D0",
+    "semantic_name": "op_jmp_4203D0",
+    "op": "0x8C",
+    "status": "ANALYZED",
+    "purpose": "op jmp：无条件跳到 operand1 的 label。读 op1（readIntOperand），若 op1!=-1(0xFFFFFFFF) 则帧 ip = 帧基 + 4*op1（绝对 label 定位），清帧状态槽=0；op1==0xFFFFFFFF 则不跳（落下）。不入返回栈。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读整数操作数1(label)", "op1!=0xFFFFFFFF 则 帧ip=帧基+4*op1", "清帧状态槽 95805=0"],
+    "fields_used": ["this->frames[cur_script].ip"],
+    "unmodeled": ["帧 ip/基槽 120*cur+383128/383124 精确语义"],
+    "evidence": "raw 29389-29402 (sub_4203D0)",
+    "notes": "已修正：op_jmp 现经 readIntOperand 取 op1，op1==-1(0xFFFFFFFF) 不跳(落下句)，op1!=0xFFFFFFFF 才 labelPos 定位。已在 emulator ops.ts 修 op_jmp（原对未知 label 抛错）。"
+  },
+  {
+    "addr": "0x4209B0",
+    "raw_name": "sub_4209B0",
+    "semantic_name": "op_jcc_4209B0",
+    "op": "0xA0",
+    "status": "ANALYZED",
+    "purpose": "op jcc：两目标条件跳转。op1=条件（readIntOperand，非0为真）：真→目标=op2（若 op2==0xFFFFFFFF 则落下）；假→目标=op3（若 op3==0xFFFFFFFF 则落下）。命中则帧ip=帧基+4*目标，清帧状态槽=0。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读整数操作数1(条件)", "条件真→读op2/假→读op3", "目标!=0xFFFFFFFF 则 帧ip=帧基+4*目标", "清帧状态槽 95805=0"],
+    "fields_used": ["this->frames[cur_script].ip"],
+    "unmodeled": ["帧 ip/基槽精确语义", "op2/op3 经 readIntOperand 取值(可为变量 label；emulator 用 args[1]/[2].raw 立即数)"],
+    "evidence": "raw 29615-29639 (sub_4209B0)",
+    "notes": "已修正：op_jcc 分支目标(2/3)现经 readIntOperand 取值(可为变量 label)，-1 落下句。已在 emulator ops.ts 修 op_jcc。"
+  },
+  {
+    "addr": "0x41A000",
+    "raw_name": "sub_41A000",
+    "semantic_name": "op_dispatch_script_requests_41A000",
+    "op": "0x143",
+    "status": "ANALYZED",
+    "purpose": "op i143：派发挂起脚本/事件请求（dispatchScriptRequests）。置 _this[124350]=1 防重入；遍历 256 个请求槽（_this+173106=DWORD下标→byte 692424），对每非零槽调用 sub_40FC90(_this, slot<<24) 排队；清 124350=0、帧状态槽 95805=0、帧ip+=4（1 dword）；sub_40FB60(_this) 派发已排队脚本。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["置派发重入标志 _this[124350]=1", "遍历 256 请求槽(非零→sub_40FC90(slot<<24))", "清重入标志/帧状态槽", "帧ip+=4", "sub_40FB60 派发排队脚本"],
+    "fields_used": ["this->dispatch_in_progress(_this[124350]=byte 497400)", "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"],
+    "unmodeled": ["请求槽队列确切断面/成员", "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"],
+    "evidence": "raw 25168-25191 (sub_41A000)",
+    "notes": "emulator 0x143 映射为 op_engine_internal(纯 no-op)，未实现派发逻辑→需补：至少建模 排队+派发 信号(0x143 与 0x4000000 主循环跳转/0x2 的 -10 哨兵联动)。注意 raw .c 文档行的 24928 是旧引用，真实定义 25168。"
+  },
+  {
+    "addr": "0x42F7A0",
+    "raw_name": "sub_42F7A0",
+    "semantic_name": "op_get_logo_enabled_42F7A0",
+    "op": "0x130",
+    "status": "ANALYZED",
+    "purpose": "op i130：读引擎 LOGO/版权页开关 _this[96983](byte 387932)，writeIntOperand(op1, _this[96983])。构造=1（SYSTEM4 `i130→jcc→call-script LOGO` 播放版权页）；exit-script(0x9) 置 0 → GAMEOVER 回标题 reboot 后 i130 读 0 → jcc 跳过 LOGO。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["标记帧状态槽 95805=3", "writeIntOperand(op1, _this[96983]=logo_enabled)"],
+    "fields_used": ["this->logo_enabled(+0x5EB5C=_this[96983])"],
+    "unmodeled": [],
+    "evidence": "raw 39343-39347 (sub_42F7A0)",
+    "notes": "emulator：0x130 → NATIVE_OPS op_get_engine_value，读 engineValues.get(96983)??0；构造默认 1，exit-script 置 0（本条已实现）。"
   }
 
 ]

@@ -20,9 +20,11 @@ import path from 'node:path';
 const argv = process.argv.slice(2);
 const pairs = [];
 let roots = ['src', 'data'];
+let curOld = null;
 for (let i = 0; i < argv.length; i++) {
-  if (argv[i] === '--from') pairs.push([argv[i + 1], argv[i + 2]]), (i += 2);
-  else if (argv[i] === '--roots') (roots = argv[i + 1].split(',').filter(Boolean)), (i += 1);
+  if (argv[i] === '--from') { curOld = argv[i + 1]; i += 1; }
+  else if (argv[i] === '--to') { if (curOld != null) pairs.push([curOld, argv[i + 1]]); curOld = null; i += 1; }
+  else if (argv[i] === '--roots') { roots = argv[i + 1].split(',').filter(Boolean); i += 1; }
 }
 if (pairs.length === 0) {
   console.error('用法: node scripts/rename-mnemonics.mjs --from <旧> --to <新> [--from <旧> --to <新> ...] [--roots src,data]');
