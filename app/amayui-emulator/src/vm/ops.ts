@@ -262,6 +262,24 @@ const op_call: OpHandler = (c) => {
   c.jump(p);
 };
 
+/** call-frame (0x8, 引擎 sub_41C900)：调用/切换到「已预装的固定帧」op1（SYSTEM4 i006/load-frame 预装，见 flow-control §11.2）。
+ *  备份调用方：调用方 ip += 1（返回后从下一条继续）、callRet=caller；目标帧 caller=caller、ip=0；cur=目标帧。
+ *  被调帧跑完 exit(0x2) 依其 caller 返回调用帧。 */
+const op_call_frame: OpHandler = (c) => {
+  const frameIdx = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (frameIdx < 0 || frameIdx >= 40) throw new Error(`call-frame: frame index ${frameIdx} 越界`);
+  const target = c.e.frames[frameIdx]!;
+  if (!target.script) throw new Error(`call-frame: frame ${frameIdx} 未预装脚本（需先 load-frame 0x6）`);
+  const caller = c.e.cur;
+  c.e.frames[caller]!.ip += 1;   // 调用方退回后从下一条继续（引擎以帧状态=3 使恢复时 ip+=4*3）
+  c.e.callRet = caller;
+  target.caller = caller;
+  target.frameArg = 0;
+  c.e.cur = frameIdx;
+  target.ip = 0;                 // 目标帧从起始执行
+  c.jump(-1);                    // 控制转到新帧（不再自动推进）
+};
+
 const op_jcc: OpHandler = (c) => {
   const cond = readIntOperand(c.e, c.frame, c.instr, 1);
   // 引擎 sub_4209B0：分支目标(2/3)也经 readIntOperand 取值（可为变量 label；-1=落下句）。
@@ -842,6 +860,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x1b0, op_memcpy],
   [0x8c, op_jmp],
   [0x6, op_load_into_frame], // load-frame (0x6)：预装脚本进指定帧（不执行；配合 0x8 call-frame 启动）
+  [0x8, op_call_frame], // call-frame (0x8)：调用/切换到已预装帧（配合 0x6 load-frame）
   [0x8f, op_call],
   [0xa0, op_jcc],
   [0x5, op_ret],

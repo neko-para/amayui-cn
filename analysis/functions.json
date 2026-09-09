@@ -1636,7 +1636,7 @@
     "fields_used": ["this->cur_script", "this->frames[cur].caller(383180)", "this->frames[cur].ip(383128)", "this->frames[cur].script_buf(383124)"],
     "unmodeled": [],
     "evidence": "raw 26876-26913 (sub_41C900)",
-    "notes": "★预加载帧的调用点：SYSTEM4 i006 把 DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK 预装进帧 26/28/29/30/31；游戏脚本用 i008 <帧号> 直接切过去执行（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。opcode-table 0x8 原仅映射，现定为帧切换调用。"
+    "notes": "★预加载帧的调用点：SYSTEM4 load-frame(0x6) 把 DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK 预装进帧 26/28/29/30/31；游戏脚本用 call-frame <帧号> 直接切过去执行（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。opcode-table 0x8 原仅映射，现定为帧切换调用。【emulator 已实现 op_call_frame(0x8)，test/call-frame.test.ts 覆盖 load-frame→call-frame→exit 往返】"
   },
   {
     "addr": "0x420560",

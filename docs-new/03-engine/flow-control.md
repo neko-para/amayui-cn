@@ -414,4 +414,4 @@ call-script 5264  // TITLE
 | 负派发生产侧（主循环 `-v29`, `_this[430796]`） | **未定位** | `_this[430796]` 仅 reset 为 -1，无其它写入 → 疑非负请求来源 |
 | `sub_41C7C0`(0x6) 预装载校验（`388236/388240`） | 未解 | 脚本 key/版本校验语义 |
 | 帧 `arg`(383184)/帧设置细节（`sub_40ED40` 内） | 部分 | 局部池/`argc` 重建 |
-| emulator 侧缺口 | 部分 | **`0x8`(call-frame)、`0x8F`(call)、`0xAE`、`i143` 派发、`0x6` 预装** 未实现（NotImplementedOp/engine-internal） |
+| emulator 侧缺口 | 部分 | **已实现**：`call-frame(0x8)`(op_call_frame，`test/call-frame.test.ts`)、`load-frame(0x6)`(op_load_into_frame)、`call(0x8F)`、`ret/exit/call-script/exit-script/jmp/jcc`。**仍未实现**：`local-ret(0x7C)`、`0xAE`(存档续档)、`i143` 派发——三者依赖 ADV/waits/存档/外部派发子系统，emulator 未建模，遇之抛 NotImplementedOp/engine-internal |
