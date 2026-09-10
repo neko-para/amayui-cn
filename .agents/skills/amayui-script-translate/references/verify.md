@@ -8,7 +8,13 @@
 cd E:\Games\Eushully\天結\scripts
 npm run assemble -- <SCRIPT>
 ```
-必须输出“骨架校验通过，回读验证 N/N 处译文”并写入 install 根 + DATA1。
+必须输出“骨架校验通过，回读验证 N/M 处译文”并写入 install 根 + DATA1。
+
+- `npm run` 只认同级 `package.json`：**工程根没有 `package.json`，必须在 `scripts` 目录执行**
+  （在根执行报 `ENOENT … Could not read package.json`）。
+- 回读验证若报 `N/M`（N<M）且进程以 exit 1 收尾，通常是反汇编**字形变体表**造成的假阴性
+  （如 現在→刕在、當→当、仝→丞、強→侔），未改动的脚本同样出现；此时应确认目标句已命中，
+  而非把它当作骨架/编码失败。
 
 ## 1.5 本地校验 + PENDING.md 登记（备用，仅当暂不 assemble）
 

@@ -7,7 +7,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 
 ## 概述
 
-本会话内**直接执行**单脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表、角色语气），最后校验——`npm run assemble -- <脚本>`（Node 版 age-asm 跨平台，任何平台均可）。若尚未构建 install 树/无法运行游戏验证，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。**批量场景**（一次处理多个脚本/大量同质任务、流程长、需稳定可续跑）可改用 `batch-task-runner` 技能，用 codex CLI 子进程顺次执行，见下节。
+本会话内**直接执行**单脚本翻译流程，不调用 codex CLI 子进程：逐页翻译 `src\<脚本>.txt`，遵循工程既有约定（翻译语法、注音策略、块注释存档、≤25 字折行、术语表、角色语气），最后校验——在 `scripts` 目录运行 `npm run assemble -- <脚本>`（`package.json` 位于 `scripts\`，工程根没有；根目录执行 `npm run` 会 ENOENT。Node 版 age-asm 跨平台，任何平台均可）。若尚未构建 install 树/无法运行游戏验证，改用本地校验并在项目根 `PENDING.md` 登记未编译条目。多个脚本可在本会话内依次处理（并行 = 每会话处理一个脚本，多开会话即可）。**批量场景**（一次处理多个脚本/大量同质任务、流程长、需稳定可续跑）可改用 `batch-task-runner` 技能，用 codex CLI 子进程顺次执行，见下节。
 
 ## 批量执行（可选；可借助 codex CLI）
 
@@ -99,7 +99,8 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
   保持自称/称呼、敬语层级、句尾语气、口头禅、拟声、译名一致；修正已有不一致时
   对照 `docs/prob-角色翻译不一致.md` 的定案口径。
 - 沉淀：prob-<脚本>.md（待定）+ keywords-<主题>.md（关键字表）→ docs/；同步 docs/README.md。
-- 记录：翻译完成后在任意平台 `npm run assemble -- <脚本>`（Node 版 age-asm 跨平台），
+- 记录：翻译完成后在 **`scripts` 目录**运行 `npm run assemble -- <脚本>`（`package.json` 在
+  `scripts\` 内，工程根没有、根目录执行会 ENOENT；Node 版 age-asm 跨平台），
   通过后改 PROGRESS.md、patch/patch.config.json 与 patch/CHANGELOG.md
   （变更条目添加到「开发中」版本节最上方）；若只做了本地校验尚未 assemble，
   则只写项目根 PENDING.md（已翻译未编译登记），待 assemble 通过后再登记这三处。

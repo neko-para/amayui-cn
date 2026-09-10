@@ -47,8 +47,13 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
    - 单行放得下的页最终应是一行 show-text + `// 页面结束`，无 end-text-line。
 5. **校验**
    - `node reflow-apply.js --check <脚本>`：0 差异（幂等）；
-   - `npm run assemble -- <脚本>`，必须通过（骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，
-     任何平台均可运行），产物写入 install 根 + DATA1；若尚未构建 install 树，按 translate 技能登记 PENDING.md。
+   - 在 **`scripts` 目录**运行 `npm run assemble -- <脚本>`（`package.json` 只存在于 `scripts\`，
+     工程根没有；在根执行 `npm run` 会 ENOENT 报 `Could not read package.json`），必须通过
+     （骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，任何平台均可运行），产物写入 install 根 + DATA1；
+     若尚未构建 install 树，按 translate 技能登记 PENDING.md；
+   - 注：回读验证偶报 `N/M 处译文`（N<M）并以 exit 1 收尾，多为**反汇编字形变体表**导致的
+     假阴性（与本次改动无关，未改动的脚本同样出现）；须确认目标句已在回读文件中命中，
+     不要把该告警当成骨架/编码失败。
 6. **记录**
    - 按 `references/conventions.md`「变更记录」节，在 `patch/CHANGELOG.md` 当前
      「开发中」版本节**最上方**添加条目（最新在前，不从下方追加）：
