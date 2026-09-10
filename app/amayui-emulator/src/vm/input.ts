@@ -2,7 +2,8 @@
  * 输入状态管理器（emulator 侧重建模引擎输入管理器 sub_477DD0 / _this+258 的可观测语义）。
  *
  * 职责：
- *  - 保存鼠标**位置**（虚拟 1280×720 坐标，0x109 读）、鼠标**按钮**（bit0=左/bit1=右，0x108 读）。
+ *  - 保存鼠标**位置**（虚拟 1280×720 坐标，0x109 读）、鼠标**按钮**（bit0=左/bit1=右，0x108 读）、
+ *    鼠标**滚轮增量**（引擎单位：上滚正/下滚负、一格 ±120；0x10D 读并清零）。
  *  - 记录"自上次消费以来**新按下**"的边沿（mouse/joy），供 get-input-type(0xCD)/0x100 派发跳转。
  *  - 保存 mouse_callback(0xCC)/joy_callback(0xFB) 注册的**跳转目标**（raw label dword 值）。
  *  - 维护输入**位掩码**（poll-input(0x101)/0x100 读）：鼠标→bit4/5、手把→bit(4+i)、键盘→bit0..6（本任务只登记）。
@@ -26,6 +27,17 @@ export class InputManager {
 
   /** 鼠标按钮（bit0=左、bit1=右）。0x108 读此值。 */
   buttons = 0;
+
+  /**
+   * **鼠标滚轮增量累加器**（对位引擎 `_this[1949]` / byte 0x1E74，见 analysis/fields.json 的
+   * `Engine 0x1E74 mouse_wheel_residual`）。0x10D 读它并**立即清零**（一次性消费）。
+   *
+   * 单位与方向（与引擎 WM_MOUSEWHEEL 的 `+= (short)HIWORD(wParam)` 对齐）：**一格 = ±120**（WHEEL_DELTA），
+   * **上滚为正、下滚为负**（脚本实证：src/$3$AGENCY.txt:548 `gr (local 2b4a) (local 403) 0` → 正=上滚翻上页）。
+   * 渲染器经 `addWheel()` 注入；**不用 consumeEdges() 清**——它是"读时消费"而非"按帧擦除"，
+   * 否则轮询期间未读就丢（引擎里只有 0x10D 与消息泵的 ADV 分支会清零）。
+   */
+  wheelDelta = 0;
 
   // --- 按下沿（自上次消费以来新按下）---
   /** 鼠标按钮按下沿（bit0=左、bit1=右）。get-input-type(0xCD)/0x100 依此派发。 */
@@ -96,6 +108,16 @@ export class InputManager {
     this.joyEdge.push(idx);
   }
 
+  /**
+   * 注入鼠标滚轮增量（渲染器 wheel 事件调用）。
+   * 约定：`delta` 用**引擎单位与方向**（上滚正 / 下滚负，一格 ±120）；DOM 的 `WheelEvent.deltaY` 是反的，
+   * 渲染器侧做 `-e.deltaY` 换算后再传进来。
+   */
+  addWheel(delta: number): void {
+    // |0 截断为 32 位（引擎累加器是 int32；正常滚一格 120，不会溢出）
+    this.wheelDelta = (this.wheelDelta + (delta | 0)) | 0;
+  }
+
   // ---------- VM 读取（0x108 / 0x109）----------
 
   readX(): number {
@@ -108,6 +130,16 @@ export class InputManager {
 
   readButtons(): number {
     return this.buttons;
+  }
+
+  /**
+   * **读并清零**滚轮增量（0x10D 语义 = 引擎 `v2 = _this[1949]; _this[1949] = 0;`）——一次性消费。
+   * 返回值：自上次读取以来累计的滚轮增量（0=期间无滚轮；上滚正 / 下滚负，一格 ±120）。
+   */
+  consumeWheelDelta(): number {
+    const v = this.wheelDelta;
+    this.wheelDelta = 0;
+    return v;
   }
 
   // ---------- 掩码 / 边沿 ----------

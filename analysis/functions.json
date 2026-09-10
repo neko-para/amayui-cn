@@ -6,10 +6,28 @@
     "op": "0x6",
     "status": "PARTIAL",
     "purpose": "构造并装载一个脚本帧（读脚本文件 → 解码 → 建帧局部池/返回栈）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["打开脚本文件(sub_4559C0/sub_455560)", "读头/校验版本", "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)", "迭代填 local_int[i]=enc_zero"],
-    "fields_used": ["this->cur_script", "this->frames[cur_script].local_int", "this->frames[cur_script].local_int_count", "this->enc_zero", "this->call_ret"],
-    "unmodeled": ["_this+0xA609C(字符串表)", "_this+387924(FileSource)", "frames[cur]+0x40..0x54(返回栈)", "_this+4*cur+388612/489488/489648"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "打开脚本文件(sub_4559C0/sub_455560)",
+      "读头/校验版本",
+      "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)",
+      "迭代填 local_int[i]=enc_zero"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->frames[cur_script].local_int",
+      "this->frames[cur_script].local_int_count",
+      "this->enc_zero",
+      "this->call_ret"
+    ],
+    "unmodeled": [
+      "_this+0xA609C(字符串表)",
+      "_this+387924(FileSource)",
+      "frames[cur]+0x40..0x54(返回栈)",
+      "_this+4*cur+388612/489488/489648"
+    ],
     "evidence": "raw 18577-18874",
     "notes": "首参在反编译里被处理成 int a1，实为 this(Engine*)；语义名是我们赋的，原始名 sub_40ED40"
   },
@@ -20,10 +38,29 @@
     "op": "0x2",
     "status": "ANALYZED",
     "purpose": "op exit：跨脚本返回调用层。读当前帧返回槽(120*cur+383180=frame+0x4C)→call_ret(_this[383108])。目标>=0：cur=call_ret 并沿帧向上找有效层回退，置帧槽[383216]=-1。目标==-11：存档版本处理(sub_40F750/setSaveVersion)。目标==-10：自 _this[383112] 恢复 cur、置部分标志、必要时 sub_40FB60 派发排队脚本。其它负值：抛 Command_Exit(程序退出)。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读 frame.caller", "caller<0 的 -11(存档版本)/-10(续跑重置)哨兵", "弹空帧回溯", "置 frame[383216]=-1"],
-    "fields_used": ["this->frames[cur_script].caller", "this->call_ret", "this->cur_script", "this->call_flag", "this->call_link"],
-    "unmodeled": ["_this+697620(调试/窗口子对象)", "+383112/+383116/+383124/+383216(帧槽)", "+667852", "+497380/497384/497400", "sub_40EA00/sub_40F750/sub_40FB60(被调)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读 frame.caller",
+      "caller<0 的 -11(存档版本)/-10(续跑重置)哨兵",
+      "弹空帧回溯",
+      "置 frame[383216]=-1"
+    ],
+    "fields_used": [
+      "this->frames[cur_script].caller",
+      "this->call_ret",
+      "this->cur_script",
+      "this->call_flag",
+      "this->call_link"
+    ],
+    "unmodeled": [
+      "_this+697620(调试/窗口子对象)",
+      "+383112/+383116/+383124/+383216(帧槽)",
+      "+667852",
+      "+497380/497384/497400",
+      "sub_40EA00/sub_40F750/sub_40FB60(被调)"
+    ],
     "evidence": "raw 25629-25701 (sub_41A820)",
     "notes": "caller<0 的两个哨兵(-10/-11)是 doc 未覆盖的隐藏逻辑：-11=存档版本(setSaveVersion/sub_40F750)、-10=续跑重置(自 _this[383112] 恢复 cur + 必要时 sub_40FB60 派发排队脚本)。emulator op_exit 对 caller<0 一律抛 ExitScript，未区分 -10/-11。"
   },
@@ -34,10 +71,23 @@
     "op": "0x5",
     "status": "PARTIAL",
     "purpose": "op ret：同脚本子程序返回。帧状态槽[95805]=1；--_this[cur+97153](每帧返回栈顶指针，基址 byte 388612+4*cur)；v2=_this[256*cur+97193+stackTop](弹返回地址，每帧 256 槽，基址 byte 1024*cur+388772)；若 v2!=-1：帧ip=_this[120*cur+95781]+4*v2、清帧状态槽=0，并从全局 effect_flags 保存栈(_this[107436]/[107437])弹回 _this[174801]=effect_flags；栈空(v2==-1)则 no-op 落下一句。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["--返回栈顶", "读返回地址 frame[95781]+4*v2", "弹返回值栈->_this[174801]"],
-    "fields_used": ["this->cur_script", "this->frames[cur_script].arity"],
-    "unmodeled": ["_this[107437]/[107436](返回值栈)", "frame[95781]/[95782]", "_this+97153"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "--返回栈顶",
+      "读返回地址 frame[95781]+4*v2",
+      "弹返回值栈->_this[174801]"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->frames[cur_script].arity"
+    ],
+    "unmodeled": [
+      "_this[107437]/[107436](返回值栈)",
+      "frame[95781]/[95782]",
+      "_this+97153"
+    ],
     "evidence": "raw 25704-25727",
     "notes": "★已解出 flag 逻辑（此前 gap）：ret 弹的是「消息/文本回调 effect_flags 保存栈」——Stack_int @ byte 429732=0x68EA4（base=_this[107436]=0x68EB0、top=_this[107437]=0x68EB4）。压入方 = sub_409D40(_this+429732, effect_flags)，在 sub_411590（主循环 effect_flags&0x100000 触发的消息文本回调派发器）进入回调前压入并 effect_flags&=0x7FEFFFFF；回调脚本执行 ret(0x5) 时弹回恢复。故 ret 的 flag 恢复与「消息回调」配对，**并非**与 call(0x8F) 子程序配对（call 只压 per-frame 返回栈 388772）。同类：sub_41F790(0x84) 也操作该栈。emulator op_ret 只弹 retStack、未恢复 effect_flags(该 Stack_int)——如需对齐可加 msgCbFlagStack。[字段已入 fields.json：msg_cb_flag_stack_base/top]"
   },
@@ -48,10 +98,26 @@
     "op": "0x3",
     "status": "PARTIAL",
     "purpose": "op call-script：读 operand1=目标脚本索引，压帧调用。先置帧 arity/状态槽[120*cur+383216]=3；深度门：cur>=39 抛 文件层级太深(ShowMessage) 异常；读 op1；v5=(frame[95782]-frame[95781])>>2=当前指令长(触达字节/4)；存 frame[95804]=v5；call_ret=cur、cur=cur+1；sub_40ED40(脚本索引, v5, fileSource(_this+387924), op1) 装载新帧；失败抛 Exit。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["cur>=39 抛 ShowMessage 层级过深", "读 op1=目标脚本", "call_ret=cur; cur++", "loadScriptFrame_40ED40(event)"],
-    "fields_used": ["this->cur_script", "this->call_ret", "this->frames[cur_script].arity"],
-    "unmodeled": ["_this+120", "frame[95781]/[95782]/[95804]", "_this+387924(FileSource)", "_this+383108"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "cur>=39 抛 ShowMessage 层级过深",
+      "读 op1=目标脚本",
+      "call_ret=cur; cur++",
+      "loadScriptFrame_40ED40(event)"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->call_ret",
+      "this->frames[cur_script].arity"
+    ],
+    "unmodeled": [
+      "_this+120",
+      "frame[95781]/[95782]/[95804]",
+      "_this+387924(FileSource)",
+      "_this+383108"
+    ],
     "evidence": "raw 26762-26800",
     "notes": "emulator op_call_script 已实现：深度门 39、frame.ip+=1(调用方前进)、callRet=caller、cur=caller+1、newFrame.caller=caller、经 fileSource.readScript+loadScriptIntoFrame。差：引擎用 v5(指令长) 作返回位置，emulator 用 ip+=1(指令下标)，抽象等价。"
   },
@@ -62,10 +128,27 @@
     "op": "0x6",
     "status": "PARTIAL",
     "purpose": "op i006：预装脚本 op1 到指定帧 op2（备份/恢复 cur）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["DEC 完整性校验(fn@+388248/ROL4(enc,11)!=key 抛 Exit)", "读 op1=脚本, op2=帧", "op2>=40 抛 ShowMessage", "loadScriptFrame_40ED40"],
-    "fields_used": ["this->cur_script", "this->call_ret", "this->enc_zero"],
-    "unmodeled": ["_this+388248(校验函数指针)", "+388236(key)", "+388240(enc_zero)", "+387924", "+383108"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "DEC 完整性校验(fn@+388248/ROL4(enc,11)!=key 抛 Exit)",
+      "读 op1=脚本, op2=帧",
+      "op2>=40 抛 ShowMessage",
+      "loadScriptFrame_40ED40"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->call_ret",
+      "this->enc_zero"
+    ],
+    "unmodeled": [
+      "_this+388248(校验函数指针)",
+      "+388236(key)",
+      "+388240(enc_zero)",
+      "+387924",
+      "+383108"
+    ],
     "evidence": "raw 26823-26863",
     "notes": "★SYSTEM4 预装清单（i006 写帧布局）：0x5106=DRAWTOOLTIP.BIN→帧26(0x1A)、0x525A=DRAWORN.BIN→帧28(0x1C)、0x525B=ATSEEK.BIN→帧29(0x1D)、0x525C=SETROUTE.BIN→帧30(0x1E)、0x525D=MVSEEK.BIN→帧31(0x1F)。这几个是游戏过程“按需启动”的行为/战术脚本（提示绘制/装饰绘制/寻路/设路线/移动寻路），预装不进执行；后续由负派发请求(恢复帧)或 0xAE 启动。"
   },
@@ -76,23 +159,48 @@
     "op": "0x9",
     "status": "ANALYZED",
     "purpose": "op exit-script：全量 teardown→回根。调 (_this+676732) 回调；清 _this[387932]；sub_40EA00 释放全部 40 帧；清内存池(memflip 循环)；若 _this[699244]<0 SendMessage(0x1400)；sub_478090 flush 输入；★sub_40DF10 引擎整体复位；_this[667856]=config setDrawMode；sub_403EF0/sub_437440 释放对象；按 setCreateObject/setAutoFreeTex 配置复制窗口尺寸/释放纹理(sub_49E980×1000)；最后 sub_40ED40(0, _this+387924, 0) 重载根脚本 INDEX0，失败抛 Exit。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["fn@+676732 teardown", "清 40 帧 sub_40EA00", "重置全局数组", "负载根脚本 loadScriptFrame_40ED40(...,0)"],
-    "fields_used": ["this->cur_script", "this->call_ret"],
-    "unmodeled": ["+676732/+387932/+382952..382972/+699244/+667856/+387924/+388240", "sub_478090/sub_40DF10/sub_403EF0/sub_437440"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "fn@+676732 teardown",
+      "清 40 帧 sub_40EA00",
+      "重置全局数组",
+      "负载根脚本 loadScriptFrame_40ED40(...,0)"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->call_ret"
+    ],
+    "unmodeled": [
+      "+676732/+387932/+382952..382972/+699244/+667856/+387924/+388240",
+      "sub_478090/sub_40DF10/sub_403EF0/sub_437440"
+    ],
     "evidence": "raw 35171-35319",
     "notes": "已修正 emulator：op_exit_script 现为 async，清 40 帧+全局+引擎态、置 _this[96983]=0(logo_enabled)、经 fileSource.readScript(0) 重载根脚本 SYSTEM4、cur=0、c.jump(0) 继续跑（不再抛 ScriptReset）。GAMEOVER → exit-script → 回标题 reboot 后 i130 读 0 → SYSTEM4 跳过 LOGO/版权页（见 docs-new/03-engine/flow-control.md §10、test/exit-script.test.ts）。"
   },
-
   {
     "addr": "0x41BF50",
     "raw_name": "sub_41BF50",
     "semantic_name": "readIntOperand_41BF50",
     "status": "ANALYZED",
     "purpose": "读整数操作数：按操作数类型 tag 分派（immediate 0/1、引擎池 3/4、引擎引用池 6、帧池 9/10、帧引用池 12、字符串项 2/5/11、数组批量 0x8003/0x8009），池中值经 DEC(key) 去混淆后返回",
-    "signature_override": { "param0": "this(Engine*)", "param1": "operand_index" },
-    "sub_behaviors": ["取操作数槽 8*idx + frame.ip(_this[30*cur+95782])", "解出类型 tag(槽-4)", "按 tag 分派读对应池元素并 DEC(key)", "未知名 tag 抛 Command_Type_Exception"],
-    "fields_used": ["this->frames[cur].ip", "this->pool_int/pool_float/pool_string/pool_int_ref/pool_float_ref/pool_string_ref", "this->frames[cur].local_int/local_float/local_string/local_ptr/local_float_ptr/local_string_ptr", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)",
+      "param1": "operand_index"
+    },
+    "sub_behaviors": [
+      "取操作数槽 8*idx + frame.ip(_this[30*cur+95782])",
+      "解出类型 tag(槽-4)",
+      "按 tag 分派读对应池元素并 DEC(key)",
+      "未知名 tag 抛 Command_Type_Exception"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->pool_int/pool_float/pool_string/pool_int_ref/pool_float_ref/pool_string_ref",
+      "this->frames[cur].local_int/local_float/local_string/local_ptr/local_float_ptr/local_string_ptr",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 26555-26651",
     "notes": "ADR-011 带标记引用读取底座；DEC(x)=ror32(key^rol32(x,11),25)。operandAddress_42AEA0 为其取址配对"
@@ -103,9 +211,21 @@
     "semantic_name": "readFloatOperand_41C300",
     "status": "ANALYZED",
     "purpose": "读浮点操作数：与 readIntOperand_41BF50 同构的 float 版分派（float 池 1/4/7/10/13、字符串项 atof 2/5/11、数组批量），返回 double",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "float 池读值（池引用穿引）", "字符串项 atof 解析", "未知名 tag 抛异常"],
-    "fields_used": ["this->frames[cur].ip", "this->pool_float/pool_float_ref", "this->frames[cur].local_float/local_float_ptr/local_string_ptr", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "float 池读值（池引用穿引）",
+      "字符串项 atof 解析",
+      "未知名 tag 抛异常"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->pool_float/pool_float_ref",
+      "this->frames[cur].local_float/local_float_ptr/local_string_ptr",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 26655-26758",
     "notes": "与 readIntOperand 共享 operand 槽表；语义名赋的，原始名 sub_41C300"
@@ -116,9 +236,24 @@
     "semantic_name": "writeIntOperand_42B4B0",
     "status": "ANALYZED",
     "purpose": "写整数到操作数槽：按类型 tag 分派（int/float/string 池、引用池穿引、数组批量 0x8003 经 vector），值以 ENC(key) 编码后写入",
-    "signature_override": { "param0": "this(Engine*)", "param1": "operand_index", "param2": "value" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "普通池元素写 ENC(value)", "引用池(6/12) 写通过指针到最终目标", "数组批量(0x8003/0x8009) 写 vector/扩容"],
-    "fields_used": ["this->frames[cur].ip", "this->pool_int/pool_int_ref", "this->frames[cur].local_int/local_ptr", "this->frames[cur].array_container", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)",
+      "param1": "operand_index",
+      "param2": "value"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "普通池元素写 ENC(value)",
+      "引用池(6/12) 写通过指针到最终目标",
+      "数组批量(0x8003/0x8009) 写 vector/扩容"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->pool_int/pool_int_ref",
+      "this->frames[cur].local_int/local_ptr",
+      "this->frames[cur].array_container",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 36965-37034",
     "notes": "ENC(x)=rol32(key^ror32(x,7),21) 为 DEC 逆运算；批量类型疑似触发 vector 扩容，未逐一细读"
@@ -129,9 +264,21 @@
     "semantic_name": "writeFloatOperand_42BA00",
     "status": "ANALYZED",
     "purpose": "写浮点到操作数槽：与 writeIntOperand_42B4B0 同构的 float 版写（float 池/引用池/字符串项），值按操作数类型分派写入",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "float 池写值", "引用池(7/13) 穿引写", "未知名 tag 抛异常"],
-    "fields_used": ["this->frames[cur].ip", "this->pool_float/pool_float_ref", "this->frames[cur].local_float/local_float_ptr", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "float 池写值",
+      "引用池(7/13) 穿引写",
+      "未知名 tag 抛异常"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->pool_float/pool_float_ref",
+      "this->frames[cur].local_float/local_float_ptr",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 37132-37156",
     "notes": "语义名赋的，原始名 sub_42BA00"
@@ -142,9 +289,21 @@
     "semantic_name": "operandAddress_42AEA0",
     "status": "ANALYZED",
     "purpose": "取操作数内存地址/指针：按类型 tag 返回池元素地址（int/float 池 +4*idx，string 池 +28*idx），引用池(6/7/8/12/13/14) 返回池中存储的指针",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "value 池返回 基址+4*idx / 基址+28*idx", "引用池返回 *池元素(指针)", "未知名 tag 抛异常"],
-    "fields_used": ["this->frames[cur].ip", "this->pool_*", "this->frames[cur].local_*", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "value 池返回 基址+4*idx / 基址+28*idx",
+      "引用池返回 *池元素(指针)",
+      "未知名 tag 抛异常"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->pool_*",
+      "this->frames[cur].local_*",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 36757-36816",
     "notes": "lea(0x63)/lookup-array(0x61)/memcpy(0x1B0)/lookup-array-2d(0x12C)/copy-local-array(0x64)/set-array-to(0x2D8) 的取址底座"
@@ -155,10 +314,25 @@
     "semantic_name": "readStringOperand_41B640",
     "status": "PARTIAL",
     "purpose": "读字符串操作数并返回 const char*：按类型 tag 分派（字符串字面量 case2 从 str_table 拷贝、case5/11 从 string 池取 SSO 对象、数字型转 str），供 strlen/concat 等字符串指令",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "case2: 从 str_table 按位取反拷贝字符串", "case5/11: 从 string 池(步长28) 取 SSO 字符串", "其它类型同 readInt/atof"],
-    "fields_used": ["this->frames[cur].ip", "this->frames[cur].str_table", "this->pool_string", "this->frames[cur].local_string", "this->key"],
-    "unmodeled": ["case0/1 等返回具体代表的转换细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "case2: 从 str_table 按位取反拷贝字符串",
+      "case5/11: 从 string 池(步长28) 取 SSO 字符串",
+      "其它类型同 readInt/atof"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->frames[cur].str_table",
+      "this->pool_string",
+      "this->frames[cur].local_string",
+      "this->key"
+    ],
+    "unmodeled": [
+      "case0/1 等返回具体代表的转换细节"
+    ],
     "evidence": "raw 26249-26293",
     "notes": "case2 按位取反(^ ~) 拷贝疑似字符串再解码；语义名赋的，原始名 sub_41B640"
   },
@@ -168,9 +342,19 @@
     "semantic_name": "writePointerOperand_418B90",
     "status": "ANALYZED",
     "purpose": "把值写入指针型操作数槽：限定类型(6/7/8/12/13/14)，把 pExceptionObject 写到对应池元素（引用池 = 存指针；值池 = 存目标值）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "case6/7/8(12/13/14): 写目标值到池元素", "未知名 tag 抛异常"],
-    "fields_used": ["this->frames[cur].ip", "this->frames[cur].local_ptr/local_float_ptr/local_string_ptr", "this->pool_int_ref/pool_float_ref/pool_string_ref"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "case6/7/8(12/13/14): 写目标值到池元素",
+      "未知名 tag 抛异常"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->frames[cur].local_ptr/local_float_ptr/local_string_ptr",
+      "this->pool_int_ref/pool_float_ref/pool_string_ref"
+    ],
     "unmodeled": [],
     "evidence": "raw 24324-24362",
     "notes": "lea(0x63) 用 operandAddress_42AEA0 取址后经此写入 op1 指针槽"
@@ -181,14 +365,23 @@
     "semantic_name": "writePointerElement_418CC0",
     "status": "ANALYZED",
     "purpose": "把 基址+偏移 写入指针型操作数槽（带下标偏移）：case6/7/12/13 写 base+4*off，case8/14 写 base+28*off（string 池步长）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取操作数槽+类型 tag 分派", "写 base+a3+4*off / base+a3+28*off 到池元素", "未知名 tag 抛异常"],
-    "fields_used": ["this->frames[cur].ip", "this->frames[cur].local_ptr/local_float_ptr/local_string_ptr", "this->pool_int_ref/pool_float_ref/pool_string_ref"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取操作数槽+类型 tag 分派",
+      "写 base+a3+4*off / base+a3+28*off 到池元素",
+      "未知名 tag 抛异常"
+    ],
+    "fields_used": [
+      "this->frames[cur].ip",
+      "this->frames[cur].local_ptr/local_float_ptr/local_string_ptr",
+      "this->pool_int_ref/pool_float_ref/pool_string_ref"
+    ],
     "unmodeled": [],
     "evidence": "raw 24366-24404",
     "notes": "lookup-array(0x61)/lookup-array-2d(0x12C) 用它把 元素地址 写入 op1"
   },
-
   {
     "addr": "0x42C5E0",
     "raw_name": "sub_42C5E0",
@@ -196,9 +389,18 @@
     "op": "0x50",
     "status": "ANALYZED",
     "purpose": "op add：op1 = op2 + op3（readIntOperand(op2/op3) → writeIntOperand(op1)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity 为指令长度", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2+op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity 为指令长度",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2+op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37525-37534",
     "notes": "纯整型三操作数；仅调 read/writeInt 原语"
@@ -210,9 +412,18 @@
     "op": "0x51",
     "status": "ANALYZED",
     "purpose": "op sub：op1 = op2 - op3",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2-op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2-op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37537-37546",
     "notes": ""
@@ -224,9 +435,18 @@
     "op": "0x52",
     "status": "ANALYZED",
     "purpose": "op mul：op1 = op2 * op3",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2*op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2*op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37549-37558",
     "notes": ""
@@ -238,9 +458,18 @@
     "op": "0x53",
     "status": "ANALYZED",
     "purpose": "op div：op1 = op2 / op3（整型除）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2/op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2/op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37561-37570",
     "notes": ""
@@ -252,9 +481,18 @@
     "op": "0x54",
     "status": "ANALYZED",
     "purpose": "op mod：op1 = op2 % op3",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2%op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2%op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37573-37582",
     "notes": ""
@@ -266,9 +504,17 @@
     "op": "0x55",
     "status": "ANALYZED",
     "purpose": "op mov：op1 = op2（单赋值）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op2)", "writeIntOperand(op1, op2)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37585-37592",
     "notes": "arity 值(5)与三操作数指令(7)不同，反映指令长度"
@@ -280,9 +526,18 @@
     "op": "0x56",
     "status": "ANALYZED",
     "purpose": "op and：op1 = op2 & op3",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2&op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2&op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37595-37604",
     "notes": ""
@@ -294,9 +549,18 @@
     "op": "0x57",
     "status": "ANALYZED",
     "purpose": "op or：op1 = op2 | op3",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2|op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2|op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37607-37616",
     "notes": ""
@@ -308,9 +572,18 @@
     "op": "0x58",
     "status": "ANALYZED",
     "purpose": "op sar：op1 = op2 >> op3（算术右移，op3 为 char 位量）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2>>op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2>>op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37619-37628",
     "notes": ""
@@ -322,9 +595,18 @@
     "op": "0x59",
     "status": "ANALYZED",
     "purpose": "op shl：op1 = op2 << op3（op3 为 char 位量）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2<<op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2<<op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37631-37640",
     "notes": ""
@@ -336,9 +618,18 @@
     "op": "0x5A",
     "status": "ANALYZED",
     "purpose": "op eq：op1 = (op2 == op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2==op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2==op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37643-37652",
     "notes": ""
@@ -350,9 +641,18 @@
     "op": "0x5B",
     "status": "ANALYZED",
     "purpose": "op ne：op1 = (op2 != op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2!=op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2!=op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37655-37664",
     "notes": ""
@@ -364,9 +664,18 @@
     "op": "0x5C",
     "status": "ANALYZED",
     "purpose": "op lt：op1 = (op2 < op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2<op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2<op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37667-37676",
     "notes": ""
@@ -378,9 +687,18 @@
     "op": "0x5D",
     "status": "ANALYZED",
     "purpose": "op lte：op1 = (op2 <= op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2<=op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2<=op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37679-37688",
     "notes": ""
@@ -392,9 +710,18 @@
     "op": "0x5E",
     "status": "ANALYZED",
     "purpose": "op gr：op1 = (op2 > op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2>op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2>op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37691-37700",
     "notes": ""
@@ -406,9 +733,18 @@
     "op": "0x5F",
     "status": "ANALYZED",
     "purpose": "op gre：op1 = (op2 >= op3)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "readIntOperand(op2)", "writeIntOperand(op1, op2>=op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "readIntOperand(op2)",
+      "writeIntOperand(op1, op2>=op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37703-37712",
     "notes": ""
@@ -420,14 +756,26 @@
     "op": "0x60",
     "status": "ANALYZED",
     "purpose": "op random：op1 = rand() % op2；op2==0 时经 StringFormat(sub_408050) 格式化 aRandom0 到 message_buf 并抛 Command_ShowMessage",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "++counter(_this[107724]) 超 12 归零", "rand() 存 dword_55D54C", "readIntOperand(op2)", "op2==0: sub_408050 格式化 aRandom0 抛 ShowMessage", "writeIntOperand(op1, rand()%op2)"],
-    "fields_used": ["this->frames[cur].arity", "this->counter", "this->message_buf"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "++counter(_this[107724]) 超 12 归零",
+      "rand() 存 dword_55D54C",
+      "readIntOperand(op2)",
+      "op2==0: sub_408050 格式化 aRandom0 抛 ShowMessage",
+      "writeIntOperand(op1, rand()%op2)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->counter",
+      "this->message_buf"
+    ],
     "unmodeled": [],
     "evidence": "raw 37715-37737",
     "notes": "唯一被调 sub_408050 = StringFormat（安全有界 sprintf，仅格式化消息，不写 VM 状态）→ 已转 ANALYZED"
   },
-
   {
     "addr": "0x42CB00",
     "raw_name": "sub_42CB00",
@@ -435,9 +783,18 @@
     "op": "0x61",
     "status": "ANALYZED",
     "purpose": "op lookup-array：op1 = &op2[op3]（operandAddress(op2) 取基址 → writePointerElement_418CC0 写 基址+4*op3 到 op1 指针槽）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "operandAddress(op2)", "writePointerElement_418CC0(op1, base, op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "operandAddress(op2)",
+      "writePointerElement_418CC0(op1, base, op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37742-37751",
     "notes": "存的是元素地址（AGE 指针操作数读时自动解引用成值）；与 lea 同底座"
@@ -449,9 +806,17 @@
     "op": "0x63",
     "status": "ANALYZED",
     "purpose": "op lea：op1 = &op2（operandAddress(op2) 取址 → writePointerOperand_418B90(op1, addr)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "operandAddress(op2)", "writePointerOperand_418B90(op1, addr)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "operandAddress(op2)",
+      "writePointerOperand_418B90(op1, addr)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37766-37773",
     "notes": ""
@@ -463,9 +828,22 @@
     "op": "0x64",
     "status": "ANALYZED",
     "purpose": "op copy-local-array：把 op2 索引的字面数组（count=str_table[4*op2]；源=str_table+4*op2+4；每项经 ENC(key) 编码后）拷入 op1 指向的数组（数组/地板填充底座）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "operandAddress(op1)", "readIntOperand(op2) 定位 str_table 字面数组", "count=str_table[4*op2]", "循环 ENC(源项) 写 op1++"],
-    "fields_used": ["this->frames[cur].str_table", "this->frames[cur].arity", "this->key", "this->pool_int_ref"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "operandAddress(op1)",
+      "readIntOperand(op2) 定位 str_table 字面数组",
+      "count=str_table[4*op2]",
+      "循环 ENC(源项) 写 op1++"
+    ],
+    "fields_used": [
+      "this->frames[cur].str_table",
+      "this->frames[cur].arity",
+      "this->key",
+      "this->pool_int_ref"
+    ],
     "unmodeled": [],
     "evidence": "raw 37776-37801",
     "notes": "源为 ENC 混淆字面值，写时按 ENC 变换写入；MPINIT 地板用"
@@ -477,9 +855,19 @@
     "op": "0x6C",
     "status": "ANALYZED",
     "purpose": "op fill-zero：op1 起的 count 个槽置 0（v2=operandAddress(op1); n=readIntOperand(op2); while(n>0) *v2++ = enc_zero）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "operandAddress(op1)", "readIntOperand(op2)", "循环写 _this[97060](ENC(0)) 到 op1 起 n 槽"],
-    "fields_used": ["this->frames[cur].arity", "this->enc_zero"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "operandAddress(op1)",
+      "readIntOperand(op2)",
+      "循环写 _this[97060](ENC(0)) 到 op1 起 n 槽"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->enc_zero"
+    ],
     "unmodeled": [],
     "evidence": "raw 37876-37894",
     "notes": "非 mov 值拷贝，实为 bulk 零初始化；_this[97060]=ENC(0)"
@@ -491,9 +879,19 @@
     "op": "0x12C",
     "status": "ANALYZED",
     "purpose": "op lookup-array-2d：把二维数组元素地址写入 op1（idx=op3*op4+op5；operandAddress(op2) 基址 → writePointerElement_418CC0(op1, base, idx)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3/op4/op5)", "idx=op3*op4+op5", "operandAddress(op2)", "writePointerElement_418CC0(op1, base, idx)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3/op4/op5)",
+      "idx=op3*op4+op5",
+      "operandAddress(op2)",
+      "writePointerElement_418CC0(op1, base, idx)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 39137-39150",
     "notes": "行×列宽+列 的元素索引"
@@ -505,9 +903,19 @@
     "op": "0x1B0",
     "status": "ANALYZED",
     "purpose": "op memcpy：memcpy(dest=op2, src=op1, n=4*op3)（operandAddress(op1/op2) 取基址；4*op3 为字节数）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op3)", "operandAddress(op1)", "operandAddress(op2)", "memcpy(op2, op1, 4*op3)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op3)",
+      "operandAddress(op1)",
+      "operandAddress(op2)",
+      "memcpy(op2, op1, 4*op3)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37985-37996",
     "notes": "纯内存拷贝；n 以元素数计，乘以 4 得字节数"
@@ -519,14 +927,25 @@
     "op": "0x2D8",
     "status": "ANALYZED",
     "purpose": "op set-array-to：op1 起 count 个槽填 op2 值（v2=operandAddress(op1); v5=ENC(op2); n=readIntOperand(op3); memset32(v2, v5, n)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "operandAddress(op1)", "readIntOperand(op2) 取 value", "v5=ENC(value)", "readIntOperand(op3) 取 count", "memset32(v2, v5, count)"],
-    "fields_used": ["this->frames[cur].arity", "this->key"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "operandAddress(op1)",
+      "readIntOperand(op2) 取 value",
+      "v5=ENC(value)",
+      "readIntOperand(op3) 取 count",
+      "memset32(v2, v5, count)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->key"
+    ],
     "unmodeled": [],
     "evidence": "raw 40206-40224",
     "notes": "脚本值 bulk 填充（对比 fill-zero 固定 0）；值为 ENC(value)"
   },
-
   {
     "addr": "0x433660",
     "raw_name": "sub_433660",
@@ -534,10 +953,20 @@
     "op": "0x192",
     "status": "PARTIAL",
     "purpose": "op set-string：op1 = op2（汉化核心指令：sub_42A420 读 op2 字符串对象 → sub_433310 写入 op1 串槽）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "sub_42A420(this, &buf, 2) 读 op2 字符串", "sub_433310(this, 1, buf) 写 op1"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["sub_42A420(读字符串 SSO)/sub_433310(写字符串槽)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "sub_42A420(this, &buf, 2) 读 op2 字符串",
+      "sub_433310(this, 1, buf) 写 op1"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "sub_42A420(读字符串 SSO)/sub_433310(写字符串槽)"
+    ],
     "evidence": "raw 41936-41949",
     "notes": "调用未分析 SSO 助手 → PARTIAL；读/写串助手需单独分析"
   },
@@ -548,10 +977,22 @@
     "op": "0x193",
     "status": "PARTIAL",
     "purpose": "op concat：op1 = op2 + op3（sub_42A420 读 op3/op2 → sub_42AA90 拼接（op2 在前）→ sub_433310 写 op1）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "sub_42A420 读 op3", "sub_42A420 读 op2", "sub_42AA90 拼接(op2 在前)", "sub_433310 写 op1"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["sub_42A420/sub_42AA90(拼接)/sub_433310"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "sub_42A420 读 op3",
+      "sub_42A420 读 op2",
+      "sub_42AA90 拼接(op2 在前)",
+      "sub_433310 写 op1"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "sub_42A420/sub_42AA90(拼接)/sub_433310"
+    ],
     "evidence": "raw 41952-41987",
     "notes": "调用未分析 SSO 助手 → PARTIAL；拼接顺序 op2 在前"
   },
@@ -562,10 +1003,22 @@
     "op": "0x1C8",
     "status": "PARTIAL",
     "purpose": "op toString：op1 = str(op2)（readIntOperand(2) → StringFormat %d → sub_40C210 组 SSO → sub_433310 写 op1）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readIntOperand(op2)", "sub_408050(Buffer, %d, value)", "sub_40C210 组 SSO 字符串", "sub_433310 写 op1"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["sub_40C210(SSO 组装)/sub_433310(写字符串槽)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readIntOperand(op2)",
+      "sub_408050(Buffer, %d, value)",
+      "sub_40C210 组 SSO 字符串",
+      "sub_433310 写 op1"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "sub_40C210(SSO 组装)/sub_433310(写字符串槽)"
+    ],
     "evidence": "raw 41990-42010",
     "notes": "调用未分析 SSO 助手 → PARTIAL"
   },
@@ -576,9 +1029,18 @@
     "op": "0x2C5",
     "status": "ANALYZED",
     "purpose": "op strlen：op1 = strlen(op2)（readStringOperand(2) → strlen → writeIntOperand(1)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readStringOperand(op2)", "strlen", "writeIntOperand(op1)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readStringOperand(op2)",
+      "strlen",
+      "writeIntOperand(op1)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 40064-40071",
     "notes": "纯字符串长度；readStringOperand 已分析"
@@ -590,9 +1052,18 @@
     "op": "0x1A6",
     "status": "ANALYZED",
     "purpose": "op halve-strlen：op1 = strlen(op2) >> 1（readStringOperand(2) → strlen → writeIntOperand(1, len>>1)）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "readStringOperand(op2)", "strlen", "writeIntOperand(op1, len>>1)"],
-    "fields_used": ["this->frames[cur].arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "readStringOperand(op2)",
+      "strlen",
+      "writeIntOperand(op1, len>>1)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 37975-37982",
     "notes": "纯"
@@ -605,23 +1076,50 @@
     "status": "PARTIAL",
     "category": "字符串/查表",
     "purpose": "op string-lookup-set：readIndexOperand_418A30(1) 读 op1 索引 → 键 \"%c%8.8x\",3,idx → sub_428E00 全局字符串表查询（命中取 *v3、未命中=0）→ writeIntOperand(1, val) 写回 op1",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "sub_418A30(1) 读 op1 索引", "wsprintfA 组查询键", "sub_428E00(_this+5452, key) 查表", "writeIntOperand(1, val)"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["sub_428E00(字符串表查询)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "sub_418A30(1) 读 op1 索引",
+      "wsprintfA 组查询键",
+      "sub_428E00(_this+5452, key) 查表",
+      "writeIntOperand(1, val)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "sub_428E00(字符串表查询)"
+    ],
     "evidence": "raw 38443-38459",
     "notes": "调用未分析 sub_428E00(全局字符串表) → PARTIAL；写回操作数故 VM 可见"
   },
-
   {
     "addr": "0x4A2050",
     "raw_name": "sub_4A2050",
     "semantic_name": "calcDiffuse_4A2050",
     "status": "ANALYZED",
     "purpose": "CalcDiffuse：mesh 顶点色动画的逐帧颜色调制——按 a3 对 逐字节通道线性插值 state0→state1 得 blend，再对每顶点基础色 逐通道×blend/0xFF 写回 VB 的 diffuse 槽",
-    "signature_override": { "param0": "this(Engine*)", "param1": "entry(MeshEntry*)", "param2": "a3(0..1)" },
-    "sub_behaviors": ["Lock VB(entry+4, vtable+44)", "blend=lerp4(state0(+52..55),state1(+56..59),a3) 每字节 A*1-G*2-R*3-B*4", "blend==0xFFFFFFFF(不透明白): 每顶点直拷基础色(entry+16→VB+16, stride 36) 快路径", "否则: 每顶点 diffuse 字节=基础色×blend/0xFF 写入 VB+16", "Unlock VB(vtable+48)"],
-    "fields_used": ["MeshEntry.vbuffer", "MeshEntry.base_color", "MeshEntry.vcount", "MeshEntry.state0", "MeshEntry.state1"],
+    "signature_override": {
+      "param0": "this(Engine*)",
+      "param1": "entry(MeshEntry*)",
+      "param2": "a3(0..1)"
+    },
+    "sub_behaviors": [
+      "Lock VB(entry+4, vtable+44)",
+      "blend=lerp4(state0(+52..55),state1(+56..59),a3) 每字节 A*1-G*2-R*3-B*4",
+      "blend==0xFFFFFFFF(不透明白): 每顶点直拷基础色(entry+16→VB+16, stride 36) 快路径",
+      "否则: 每顶点 diffuse 字节=基础色×blend/0xFF 写入 VB+16",
+      "Unlock VB(vtable+48)"
+    ],
+    "fields_used": [
+      "MeshEntry.vbuffer",
+      "MeshEntry.base_color",
+      "MeshEntry.vcount",
+      "MeshEntry.state0",
+      "MeshEntry.state1"
+    ],
     "evidence": "raw 122249-122329",
     "notes": "插值核心：v9/v18/v19/v14 为 A/R/G/B 通道 lerp；A1*a3+A0*(1-a3)。mesh 渲染色=基础色×插值态色（RGB×α 逐通道乘）"
   },
@@ -631,10 +1129,26 @@
     "semantic_name": "renderPolygonMesh_4AF1C0",
     "status": "PARTIAL",
     "purpose": "绘制一个 mesh（RenderPolygon）：读 mesh 表项，按 动画窗(win_start/win_delay/win_duration)+clock 求 a3，调用 calcDiffuse_4A2050，然后设顶点流/纹理/着色器提交 D3D 图元",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["mesh 表(_this+1064) sub_40DC30 查项", "if(flags&2){ win_start 锁存 clock; clock 在窗内且 !frozen: a3=(clock-start-delay)/duration, calcDiffuse(a3); 否则收尾: win_delay/dur=0,state0=state1,state1=-1,calcDiffuse(0) }", "置 _this[46508]/[46516] 脏/挂起旗标", "设顶点流/纹理并提交"],
-    "fields_used": ["this->mesh_container", "this->clock", "this->_this[46508]/[46516] 旗标", "MeshEntry.*"],
-    "unmodeled": ["_this+46456/_this+46676(图形上下文)", "D3D9 顶点流/着色器/图元提交细节", "sub_40DC30(sub_4AAD40 同族表操作)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "mesh 表(_this+1064) sub_40DC30 查项",
+      "if(flags&2){ win_start 锁存 clock; clock 在窗内且 !frozen: a3=(clock-start-delay)/duration, calcDiffuse(a3); 否则收尾: win_delay/dur=0,state0=state1,state1=-1,calcDiffuse(0) }",
+      "置 _this[46508]/[46516] 脏/挂起旗标",
+      "设顶点流/纹理并提交"
+    ],
+    "fields_used": [
+      "this->mesh_container",
+      "this->clock",
+      "this->_this[46508]/[46516] 旗标",
+      "MeshEntry.*"
+    ],
+    "unmodeled": [
+      "_this+46456/_this+46676(图形上下文)",
+      "D3D9 顶点流/着色器/图元提交细节",
+      "sub_40DC30(sub_4AAD40 同族表操作)"
+    ],
     "evidence": "raw 133459-133541(动画因子) / 133542-133622(绘制)",
     "notes": "与 calcDiffuse 联动的动画驱动力；D3D 提交部分未逐条建模 → PARTIAL"
   },
@@ -644,10 +1158,26 @@
     "semantic_name": "drawTexture_4A2D50",
     "status": "PARTIAL",
     "purpose": "绘制一张贴图矩形（DrawTexture）：根据源纹理尺寸裁剪目标矩形，做坐标变换，再把工作色(α)作为 diffuse 传给 D3D 绘制",
-    "signature_override": { "param0": "this(Engine*)", "param7": "diffuse(工作色/α)" },
-    "sub_behaviors": ["查纹理对象(_this+4*tid+42456) 校验已创建", "读目标矩形 a3 / 变换 a5", "按纹理边界(v8[263..266]) 裁剪 rect/uv", "坐标变换 sub_498350", "设 diffuse=a7 提交"],
-    "fields_used": ["this->_this[42452]/[42456](纹理槽)", "this->clock(经调用方)"],
-    "unmodeled": ["纹理对象 v8[263..266] 字段", "D3D 设备/着色器/UV-diffuse 设置", "a4/a5/a6 参数完整语义"],
+    "signature_override": {
+      "param0": "this(Engine*)",
+      "param7": "diffuse(工作色/α)"
+    },
+    "sub_behaviors": [
+      "查纹理对象(_this+4*tid+42456) 校验已创建",
+      "读目标矩形 a3 / 变换 a5",
+      "按纹理边界(v8[263..266]) 裁剪 rect/uv",
+      "坐标变换 sub_498350",
+      "设 diffuse=a7 提交"
+    ],
+    "fields_used": [
+      "this->_this[42452]/[42456](纹理槽)",
+      "this->clock(经调用方)"
+    ],
+    "unmodeled": [
+      "纹理对象 v8[263..266] 字段",
+      "D3D 设备/着色器/UV-diffuse 设置",
+      "a4/a5/a6 参数完整语义"
+    ],
     "evidence": "raw 122891-123020+",
     "notes": "纹理渲染底层；rect 裁剪 + diffuse(α) 调制；被 drawTextureItem_4AEEA0 调用，a7=绘制项工作色(item+96)"
   },
@@ -657,10 +1187,21 @@
     "semantic_name": "drawTextureItem_4AEEA0",
     "status": "PARTIAL",
     "purpose": "分发绘制一个纹理绘图项：读项几何/uv/工作色(±d)，调 drawTexture_4A2D50 把工作色当作 diffuse 提交（逐像素 α 调制）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读绘制项(+258 表) 的 rect/uv/layer/工作色", "调 drawTexture_4A2D50(..., diffuse=item+96)"],
-    "fields_used": ["this->draw_item_container", "DrawItem.*"],
-    "unmodeled": ["项字段完整布局", "D3D 提交细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读绘制项(+258 表) 的 rect/uv/layer/工作色",
+      "调 drawTexture_4A2D50(..., diffuse=item+96)"
+    ],
+    "fields_used": [
+      "this->draw_item_container",
+      "DrawItem.*"
+    ],
+    "unmodeled": [
+      "项字段完整布局",
+      "D3D 提交细节"
+    ],
     "evidence": "raw 133327-133458",
     "notes": "纹理层 diffuse 调制：from_color(0x00FFFFFF)→to_color(0xFFFFFFFF) 只变 α 字节 → 逐像素 α 淡入（字体/图层），非平面 RGB 染色"
   },
@@ -670,9 +1211,21 @@
     "semantic_name": "setDrawColorAlpha_4ACF60",
     "status": "ANALYZED",
     "purpose": "op set-draw-color-alpha(0x203) 的下层：给绘制项写 混合模式(item+48) 与 起始工作色(item+96=FROM)，置脏旗标",
-    "signature_override": { "param0": "this(Engine*)", "param3": "color(FROM)" },
-    "sub_behaviors": ["绘制项(_this+258) sub_4AAD40 定位", "item+48=blend(a3)", "item+96=FROM(a4)", "_this[11627]=1 脏"],
-    "fields_used": ["this->draw_item_container", "DrawItem.blend_mode", "DrawItem.from_color"],
+    "signature_override": {
+      "param0": "this(Engine*)",
+      "param3": "color(FROM)"
+    },
+    "sub_behaviors": [
+      "绘制项(_this+258) sub_4AAD40 定位",
+      "item+48=blend(a3)",
+      "item+96=FROM(a4)",
+      "_this[11627]=1 脏"
+    ],
+    "fields_used": [
+      "this->draw_item_container",
+      "DrawItem.blend_mode",
+      "DrawItem.from_color"
+    ],
     "evidence": "raw 131871-131883",
     "notes": "与 setDrawColor_4AD0C0 配合：FROM=item+96, TO=item+100，逐帧对 item+96 做 from→to 插值"
   },
@@ -682,9 +1235,25 @@
     "semantic_name": "setDrawColor_4AD0C0",
     "status": "ANALYZED",
     "purpose": "op set-draw-color(0x202) 的下层：给绘制项置 颜色动画（item|=2、+52 起点清零、+56 延迟、+76 时长、+100=TO），置脏旗标",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["item|=2 启用颜色动画", "item+52=0 (起点复位)", "item+56=delay(a3)", "item+76=count(a4)", "item+100=TO(a5)", "_this[11627]=1 / _this[11629]=1 脏"],
-    "fields_used": ["this->draw_item_container", "DrawItem.flags", "DrawItem.anim_start", "DrawItem.anim_delay", "DrawItem.anim_count", "DrawItem.to_color"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "item|=2 启用颜色动画",
+      "item+52=0 (起点复位)",
+      "item+56=delay(a3)",
+      "item+76=count(a4)",
+      "item+100=TO(a5)",
+      "_this[11627]=1 / _this[11629]=1 脏"
+    ],
+    "fields_used": [
+      "this->draw_item_container",
+      "DrawItem.flags",
+      "DrawItem.anim_start",
+      "DrawItem.anim_delay",
+      "DrawItem.anim_count",
+      "DrawItem.to_color"
+    ],
     "evidence": "raw 131957-131978",
     "notes": "LOGO 文字层 L34/L36：DELAY=0x12c=300、COUNT=0x12c=300、TO=0xFFFFFFFF(不透明白) → 文字逐像素 α 淡入窗 [start+300,start+600]ms"
   },
@@ -694,10 +1263,19 @@
     "semantic_name": "getDrawItemNode_4AAD40",
     "status": "PARTIAL",
     "purpose": "绘图项表(_this+258) 的节点查找/插入：按句柄找到/新建绘制项节点并返回（绘制项归并、颜色/α 设置的第一步）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["在 _this+258 表按句柄查找节点", "未命中则插入新节点"],
-    "fields_used": ["this->draw_item_container"],
-    "unmodeled": ["表节点懒初始化/树结构细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "在 _this+258 表按句柄查找节点",
+      "未命中则插入新节点"
+    ],
+    "fields_used": [
+      "this->draw_item_container"
+    ],
+    "unmodeled": [
+      "表节点懒初始化/树结构细节"
+    ],
     "evidence": "raw 130154(定义)；setDrawColor/Alpha 与 renderPolygonMesh 均经它定位项",
     "notes": "同族：mesh 表用 sub_40DC30(_this+266)；两者为绘制项/mesh 的持久场景图底座"
   },
@@ -708,14 +1286,25 @@
     "op": "0x1FB",
     "status": "PARTIAL",
     "purpose": "op draw-texture：读 8 个操作数(tex/layer/x/y/w/h/p/q)，组装目标矩形并调 drawItem 绘制(排队)，置 _this[11627] 脏标记",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity", "读 op1..op8", "SetRect((x,y,x+w,y+h))", "sub_4ACE50(_this+80708, tex, layer, x,y,x+w,y+h, p,q, 0)"],
-    "fields_used": ["this->frames[cur].arity", "this->message_buf"],
-    "unmodeled": ["sub_4ACE50 完整项字段"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity",
+      "读 op1..op8",
+      "SetRect((x,y,x+w,y+h))",
+      "sub_4ACE50(_this+80708, tex, layer, x,y,x+w,y+h, p,q, 0)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->message_buf"
+    ],
+    "unmodeled": [
+      "sub_4ACE50 完整项字段"
+    ],
     "evidence": "raw 31271-31302(opcode-table 已核对)",
     "notes": "p/q 读为 int 强转 float（scale/uv）；fire-and-forget 排队绘制"
   },
-
   {
     "addr": "0x41ACD0",
     "raw_name": "sub_41ACD0",
@@ -723,9 +1312,24 @@
     "op": "0xCD",
     "status": "ANALYZED",
     "purpose": "op get-input-type：消息/ADV 的『点击推进』门——`if (input_advance_throttle <= (timeGetTime()-input_advance_time) || (effect_flags&0x8000000))` 才推进，把当前帧位置压入返回栈后 CALL 注册的鼠标跳转目标 label；未注册(_this[430656]==-1)则弹栈返回不跳。**非『返回输入类型』、也非鼠标移动/按下沿触发**",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=1", "timeGetTime()-input_advance_time 与 input_advance_throttle 比较；或 effect_flags&0x8000000", "**核实：input_advance_throttle(_this[429812]) 全工程只在本函数读、从无任何写入 → bss 0 → `0<=elapsed` 恒真 → 引擎实际不节流，每次调用都推进**", "触发则刷新 input_advance_time，记录返回地址(388772+)并 ++_this[4*cur+388612]", "mouse_jump_target(_this[430656])==-1 → --388612 返回(不跳)", "否则 depth 校验后 ip = str_table + 4*label 跳转；清 arity=0"],
-    "fields_used": ["this->input_advance_time", "this->input_advance_throttle", "this->effect_flags", "this->mouse_jump_target", "this->frames[cur].ip/arity"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=1",
+      "timeGetTime()-input_advance_time 与 input_advance_throttle 比较；或 effect_flags&0x8000000",
+      "**核实：input_advance_throttle(_this[429812]) 全工程只在本函数读、从无任何写入 → bss 0 → `0<=elapsed` 恒真 → 引擎实际不节流，每次调用都推进**",
+      "触发则刷新 input_advance_time，记录返回地址(388772+)并 ++_this[4*cur+388612]",
+      "mouse_jump_target(_this[430656])==-1 → --388612 返回(不跳)",
+      "否则 depth 校验后 ip = str_table + 4*label 跳转；清 arity=0"
+    ],
+    "fields_used": [
+      "this->input_advance_time",
+      "this->input_advance_throttle",
+      "this->effect_flags",
+      "this->mouse_jump_target",
+      "this->frames[cur].ip/arity"
+    ],
     "unmodeled": [],
     "evidence": "raw 25827-25876",
     "notes": "⚠️ 修正：触发条件是【时间节流】或【ADV 激活】，**不是鼠标移动/按钮沿**；跳转目标由 0xCC(mouse-callback) 写入。**再次修正：input_advance_throttle 字段从未写入=0（grep 全文件仅 raw 25842 读）→ 引擎无时间节流，恒推进**；emulator 旧 advanceThrottle=200 造成 ~200ms 输入迟滞，已改 0（对齐引擎）。emulator 若『有鼠标活动即触发』为错。返回栈压/弹由 _this[4*cur+388612]/[388772] 维护，等同 CALL；handler ret 回到此处推进后下一条"
@@ -737,10 +1341,23 @@
     "op": "0xCC",
     "status": "PARTIAL",
     "purpose": "op mouse-callback：注册鼠标跳转目标——op2(label) 存入 mouse_jump_target(_this[430656])，op1(槽/率) 存入节流对象 _this+107447(_this[107453])；不是 hook 函数指针、不是回调",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=5", "mouse_jump_target = readIntOperand(op2)", "记录当前脚本 depth(_this+107674)", "readIntOperand(op1) → sub_453A60(_this+107447, v) 起节流计时器"],
-    "fields_used": ["this->mouse_jump_target", "this->frames[cur].arity", "this->_this[107674]"],
-    "unmodeled": ["_this+107447 节流对象内部字段"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=5",
+      "mouse_jump_target = readIntOperand(op2)",
+      "记录当前脚本 depth(_this+107674)",
+      "readIntOperand(op1) → sub_453A60(_this+107447, v) 起节流计时器"
+    ],
+    "fields_used": [
+      "this->mouse_jump_target",
+      "this->frames[cur].arity",
+      "this->_this[107674]"
+    ],
+    "unmodeled": [
+      "_this+107447 节流对象内部字段"
+    ],
     "evidence": "raw 30317-30337(opcode-table 已核对)",
     "notes": "仅记跳转目标 + 节流速率，不回调。TITLE：mouse-callback 10 label → 悬停/点击菜单处理"
   },
@@ -751,9 +1368,18 @@
     "op": "0xFB",
     "status": "ANALYZED",
     "purpose": "op joy-callback：注册手柄跳转目标——把手柄按钮 op1(0..31) 在 本脚本帧 的 _this[33*cur+107725+btn] 记为 label=op2；校验 op1∈[0,32) 越界抛 set-keyjump。不是 sub_453A60 节流（那是 0xCE）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=5", "op1∈[0,32) 校验(否则抛 ShowMessage set-keyjump)", "_this[33*cur+107725+op1] = op2"],
-    "fields_used": ["this->frames[cur].arity", "this->joy_callback_table"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=5",
+      "op1∈[0,32) 校验(否则抛 ShowMessage set-keyjump)",
+      "_this[33*cur+107725+op1] = op2"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->joy_callback_table"
+    ],
     "unmodeled": [],
     "evidence": "raw 30400-30420(opcode-table 已核对)",
     "notes": "⚠️ 勘误：0xFB 不做 sub_453A60(_this+107454)；那是 0xCE(sub_4219E0)。0xFB 只是把手柄 label 写进每脚本把手表"
@@ -765,10 +1391,23 @@
     "op": "0x101",
     "status": "PARTIAL",
     "purpose": "op poll-input：sub_478090 刷累计输入事件进掩码 → 清 effect_flags&0x8000000 → input_state_mask=0 → 置 _this[122367]=1/_this[122370]=0。供脚本『空耗一帧』并把挂起输入交给后续位检查",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=1", "sub_478090(input_manager, &input_state_mask) 刷挂起事件", "effect_flags &= ~0x8000000", "input_state_mask = 0", "_this[122367]=1; _this[122370]=0"],
-    "fields_used": ["this->input_state_mask", "this->effect_flags"],
-    "unmodeled": ["sub_478090 内部各设备轮询"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=1",
+      "sub_478090(input_manager, &input_state_mask) 刷挂起事件",
+      "effect_flags &= ~0x8000000",
+      "input_state_mask = 0",
+      "_this[122367]=1; _this[122370]=0"
+    ],
+    "fields_used": [
+      "this->input_state_mask",
+      "this->effect_flags"
+    ],
+    "unmodeled": [
+      "sub_478090 内部各设备轮询"
+    ],
     "evidence": "raw 25069-25090(opcode-table 已核对)",
     "notes": "刷掩码后即复位为 0；脚本层面主要是『清待处理输入 + 空耗一帧』"
   },
@@ -779,10 +1418,20 @@
     "op": "0x108",
     "status": "PARTIAL",
     "purpose": "op 0x108：读鼠标按钮值到 op1（sub_477220(input_manager,&v)，左=bit0/右=bit1，随 SM_SWAPBUTTON 互换）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=3", "sub_477220 读按钮态", "writeIntOperand(1, v)"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["sub_477220 按钮/互换细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=3",
+      "sub_477220 读按钮态",
+      "writeIntOperand(1, v)"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "sub_477220 按钮/互换细节"
+    ],
     "evidence": "raw 39047-39055",
     "notes": "与输入掩码的 bit4/5 约定不同：此指令把左/右放 bit0/1"
   },
@@ -793,10 +1442,22 @@
     "op": "0x109",
     "status": "PARTIAL",
     "purpose": "op 0x109：读鼠标位置到 op1=X/op2=Y（sub_4771D0 读客户区坐标 → sub_498350/sub_403500 虚拟显示映射；(-100000,-100000)=未初始化）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=5", "sub_4771D0 读鼠标客户区坐标", "未初始化(-100000,-100000) → op1=-100000,op2=y", "否则坐标变换+虚拟映射后写 op1=X,op2=Y"],
-    "fields_used": ["this->frames[cur].arity", "this->effect_flags"],
-    "unmodeled": ["sub_498350/sub_403500 映射细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=5",
+      "sub_4771D0 读鼠标客户区坐标",
+      "未初始化(-100000,-100000) → op1=-100000,op2=y",
+      "否则坐标变换+虚拟映射后写 op1=X,op2=Y"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity",
+      "this->effect_flags"
+    ],
+    "unmodeled": [
+      "sub_498350/sub_403500 映射细节"
+    ],
     "evidence": "raw 39058-39080+",
     "notes": "TITLE L39 用 (local 404)/(local 405)"
   },
@@ -807,10 +1468,24 @@
     "op": "0x100",
     "status": "PARTIAL",
     "purpose": "op 消息跳读派发：扫 input_state_mask 最低按下位，按该位在 本脚本节 _this[33*cur+107725+bit] 的 label 压返回地址跳转；未注册该键则弹栈返回；掩码=0 时走默认键(SetKeyTotal=_this[517]) 检查",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=1", "input_state_mask 非 0 则自扫描游标(_this[cur+122287]) 找最低置位", "压返回地址到每帧返回栈", "无注册键(_this[33*cur+107725+bit]==-1) 弹栈返回", "有则 ip=str_table+4*label 跳转"],
-    "fields_used": ["this->input_state_mask", "this->_this[517](SetKeyTotal)", "this->frames[cur].ip"],
-    "unmodeled": ["掩码=0 的默认键检查分支"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=1",
+      "input_state_mask 非 0 则自扫描游标(_this[cur+122287]) 找最低置位",
+      "压返回地址到每帧返回栈",
+      "无注册键(_this[33*cur+107725+bit]==-1) 弹栈返回",
+      "有则 ip=str_table+4*label 跳转"
+    ],
+    "fields_used": [
+      "this->input_state_mask",
+      "this->_this[517](SetKeyTotal)",
+      "this->frames[cur].ip"
+    ],
+    "unmodeled": [
+      "掩码=0 的默认键检查分支"
+    ],
     "evidence": "raw 25012-25050+",
     "notes": "与 0xFB(joy-callback) 登记的每脚本把手表衔接；SetKeyTotal 做扫描上限/默认键"
   },
@@ -821,14 +1496,25 @@
     "op": "0x2FC",
     "status": "PARTIAL",
     "purpose": "op 0x2FC：读 UI 触摸/触点——sub_477980 从触摸事件缓冲(_this+6780, count _this[6776], 40B/项) 取触点并 ScreenToClient；有触点写 op1=1,op2=X,op3=Y,op4=触点旗标(v9[4]),op5=项[3](v9[3])；无触点写 op1=0",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=11", "sub_477980(input_manager,&Point,&v18,&v17)", "无触点 → writeIntOperand(1,0)", "有触点 → 坐标变换+虚拟映射后写 op1=1,op2=X,op3=Y,op4=v18,op5=v17"],
-    "fields_used": ["this->frames[cur].arity"],
-    "unmodeled": ["触摸缓冲(_this+6780)/_this[6776] 填充来源", "sub_477980 触点筛选(&4/&0x10)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=11",
+      "sub_477980(input_manager,&Point,&v18,&v17)",
+      "无触点 → writeIntOperand(1,0)",
+      "有触点 → 坐标变换+虚拟映射后写 op1=1,op2=X,op3=Y,op4=v18,op5=v17"
+    ],
+    "fields_used": [
+      "this->frames[cur].arity"
+    ],
+    "unmodeled": [
+      "触摸缓冲(_this+6780)/_this[6776] 填充来源",
+      "sub_477980 触点筛选(&4/&0x10)"
+    ],
     "evidence": "raw 40776-40826",
     "notes": "⚠️ 修正：op4=触点/按钮旗标(v9[4])、op5=项[3](v9[3])，**非 0**；数据源是触摸/手势缓冲(WM_TOUCH/GetGestureInfo)，不是 GetCursorPos。emulator 若按『GetCursorPos+op5=0』为错"
   },
-
   {
     "addr": "0x433A40",
     "raw_name": "sub_433A40",
@@ -836,9 +1522,16 @@
     "op": "0xA1",
     "status": "ANALYZED",
     "purpose": "op 0xA1：复位菜单派发对象（sub_415530(_this+107679, 0xFFF)）——清空 @_this+107679 的「菜单项 key→label」字符串哈希表",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=1", "sub_415530(_this+107679, 0xFFF) 清表"],
-    "fields_used": ["this->_this+107679(菜单派发表)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=1",
+      "sub_415530(_this+107679, 0xFFF) 清表"
+    ],
+    "fields_used": [
+      "this->_this+107679(菜单派发表)"
+    ],
     "unmodeled": [],
     "evidence": "raw 42046-42050",
     "notes": "与 0xA2(写表)/0xA3(查表派发) 构成菜单选择状态机；0xFFF 为表容量/上限参数"
@@ -850,10 +1543,21 @@
     "op": "0xA2",
     "status": "ANALYZED",
     "purpose": "op 0xA2：登记「菜单项 key→label」（读 op1=字符串键(sub_41B640) + op2=值(sub_41BF50) → sub_434D00(_this+107679, key, &value) 插入字符串哈希表）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=5", "readStringOperand(op1) 取键", "readIntOperand(op2) 取值", "sub_434D00(_this+107679, key, &value) 插入"],
-    "fields_used": ["this->_this+107679(菜单派发表)"],
-    "unmodeled": ["sub_434D00(字符串哈希表插入) 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=5",
+      "readStringOperand(op1) 取键",
+      "readIntOperand(op2) 取值",
+      "sub_434D00(_this+107679, key, &value) 插入"
+    ],
+    "fields_used": [
+      "this->_this+107679(菜单派发表)"
+    ],
+    "unmodeled": [
+      "sub_434D00(字符串哈希表插入) 内部"
+    ],
     "evidence": "raw 42908-42917",
     "notes": "TITLE：i0a2 (local40d)44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540（键=菜单项序号；emulator 用 numeric 值作 key）"
   },
@@ -864,10 +1568,23 @@
     "op": "0xA3",
     "status": "ANALYZED",
     "purpose": "op 0xA3：按 key 查表派发（读 op1=字符串键(sub_41B640) → sub_428E00(_this+107679, key) 查；命中 ip=str_table+4*值 跳转，未命中跳 op2 回退 label）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设 frame.arity=5", "readStringOperand(op1) 取键", "sub_428E00(_this+107679, key) 查表", "命中→ip=str_table+4*值；未命中→ip=str_table+4*readIntOperand(op2)", "置 frame.arity=0"],
-    "fields_used": ["this->_this+107679(菜单派发表)", "this->frames[cur].ip/arity"],
-    "unmodeled": ["sub_428E00(字符串哈希表查找) 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 frame.arity=5",
+      "readStringOperand(op1) 取键",
+      "sub_428E00(_this+107679, key) 查表",
+      "命中→ip=str_table+4*值；未命中→ip=str_table+4*readIntOperand(op2)",
+      "置 frame.arity=0"
+    ],
+    "fields_used": [
+      "this->_this+107679(菜单派发表)",
+      "this->frames[cur].ip/arity"
+    ],
+    "unmodeled": [
+      "sub_428E00(字符串哈希表查找) 内部"
+    ],
     "evidence": "raw 35742-35757",
     "notes": "TITLE：i0a3 (local3f7) 7df —— 据当前选中项(3f7) dispatch 到其 handler；无键则跳 0x7df"
   },
@@ -878,10 +1595,24 @@
     "op": "0xC8",
     "status": "ANALYZED",
     "purpose": "op sleep：睡眠/帧让步。非 ADV 激活（(effect_flags&0x8000000)==0）时，n<10 → Sleep(n) ms；n>=10 → `_this[174801]|=1` + sub_453A60(_this+107440, n) 设帧率节流（帧间隔=n ms，sub_453AF0 按 interval*frame_count-elapsed 决定 Sleep(剩余)）。ADV 激活则跳过。本质都暂停≈n ms",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3（_this[30*cur+95805]）", "非 ADV 激活时读 op1=n", "n<10 → Sleep(n) ms", "n>=10 → _this[174801]|=1 + sub_453A60(_this+107440, n) 帧率节流", "ADV 激活 → 跳过（不睡眠）"],
-    "fields_used": ["this->effect_flags", "this->_this+107440(帧率节流对象)", "this->_this[174801]"],
-    "unmodeled": ["sub_453A60/sub_453AF0 帧率节流对象的持久状态"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 3（_this[30*cur+95805]）",
+      "非 ADV 激活时读 op1=n",
+      "n<10 → Sleep(n) ms",
+      "n>=10 → _this[174801]|=1 + sub_453A60(_this+107440, n) 帧率节流",
+      "ADV 激活 → 跳过（不睡眠）"
+    ],
+    "fields_used": [
+      "this->effect_flags",
+      "this->_this+107440(帧率节流对象)",
+      "this->_this[174801]"
+    ],
+    "unmodeled": [
+      "sub_453A60/sub_453AF0 帧率节流对象的持久状态"
+    ],
     "evidence": "raw 30288-30314",
     "notes": "emulator：op_sleep 置 sleepUntil=nowMs+max(1,n)、waitFlags|=SLEEP_GATE；渲染帧循环每帧 present 到 nowMs>=sleepUntil 才放行（帧让步）。TITLE 菜单循环 `sleep 1`；消息/版本屏多用 `sleep 1f4`(500ms)"
   },
@@ -892,10 +1623,25 @@
     "op": "0x1F7",
     "status": "ANALYZED",
     "purpose": "op detach-texture：删单/区间图元。读 op1=handle、op2=count；count≤1 → sub_4AB950(_this+80708, handle) 删单；count>1 → sub_4ABB60(handle, count) 删 [handle, handle+count) 区间。**非『对纹理施加效果』——本质是 detach（把图元从渲染容器移除）**，故原名 texture-op 是误名",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 5", "readIntOperand(op2)=count", "count≤1 → sub_4AB950(_this+80708, op1)：sub_459EA0 找 + sub_4A8AF0(sub_4A9020/sub_4A9270) std::map erase 删该 handle 单图元，置脏 _this[46508]=1", "count>1 → sub_4ABB60(_this+80708, op1, count)：4 容器 lower_bound(handle) 与 lower_bound(handle+count)，对 [begin,end) 逐结点 sub_4A8AF0(erase，经 sub_4AA1D0/sub_4AA330/sub_4AA3D0)，并销毁 +266/+267 每项 record(vtable 删[1]+operator delete[2]/[3]/[4])，置脏 _this[11627]=1 → 删 handle∈[handle,handle+count) 全部图元"],
-    "fields_used": ["this->draw_item_container(_this+258/[1032])", "this->mesh_container(_this+266/[1064])", "this->_this+270/[1080]", "this->_this+274/[1096]", "this->_this[11627]"],
-    "unmodeled": ["sub_4ABB60 的 4 容器内部结构"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 5",
+      "readIntOperand(op2)=count",
+      "count≤1 → sub_4AB950(_this+80708, op1)：sub_459EA0 找 + sub_4A8AF0(sub_4A9020/sub_4A9270) std::map erase 删该 handle 单图元，置脏 _this[46508]=1",
+      "count>1 → sub_4ABB60(_this+80708, op1, count)：4 容器 lower_bound(handle) 与 lower_bound(handle+count)，对 [begin,end) 逐结点 sub_4A8AF0(erase，经 sub_4AA1D0/sub_4AA330/sub_4AA3D0)，并销毁 +266/+267 每项 record(vtable 删[1]+operator delete[2]/[3]/[4])，置脏 _this[11627]=1 → 删 handle∈[handle,handle+count) 全部图元"
+    ],
+    "fields_used": [
+      "this->draw_item_container(_this+258/[1032])",
+      "this->mesh_container(_this+266/[1064])",
+      "this->_this+270/[1080]",
+      "this->_this+274/[1096]",
+      "this->_this[11627]"
+    ],
+    "unmodeled": [
+      "sub_4ABB60 的 4 容器内部结构"
+    ],
     "evidence": "raw 31137-31158 (sub_422BC0), 130778-130838 (sub_4AB950), 130841-131137 (sub_4ABB60), 129598/129763 (sub_4AA1D0/sub_4AA3D0), 128132 (sub_4A8AF0)",
     "notes": "⚠️ 命名修正：原 `texture-op` 是误名。emulator 命名 detachTexture(handle,count)：count≤1 删单、count>1 删 [handle,handle+count) 区间 drawItems+meshes。TITLE hover 回退用 `detach-texture <old_normal> 1` 删旧 normal 图元。与 release-texture(0x1FA) 不同：release 销毁纹理资源对象；detach 只从渲染列表摘图元、不动纹理资源"
   },
@@ -906,10 +1652,23 @@
     "op": "0x1FA",
     "status": "ANALYZED",
     "purpose": "op release-texture：释放纹理槽资源。读 op1=slot；销毁 _this[slot+94672] 纹理对象(sub_488FB0+vtable delete+置0)，再 sub_49E980(_this+80708, slot) 释放该槽纹理状态([5*slot+466]=-1)",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=slot", "_this[slot+94672] 非空 → sub_488FB0 释放 + vtable delete + _this[slot+94672]=0", "sub_49E980(_this+80708, slot) 释放槽(纹理索引=-1)"],
-    "fields_used": ["this->_this[slot+94672](纹理对象)", "this->_this+80708(纹理子系统)", "this->_this[5*slot+466](槽纹理索引)"],
-    "unmodeled": ["sub_488FB0/sub_49E980 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 3",
+      "readIntOperand(op1)=slot",
+      "_this[slot+94672] 非空 → sub_488FB0 释放 + vtable delete + _this[slot+94672]=0",
+      "sub_49E980(_this+80708, slot) 释放槽(纹理索引=-1)"
+    ],
+    "fields_used": [
+      "this->_this[slot+94672](纹理对象)",
+      "this->_this+80708(纹理子系统)",
+      "this->_this[5*slot+466](槽纹理索引)"
+    ],
+    "unmodeled": [
+      "sub_488FB0/sub_49E980 内部"
+    ],
     "evidence": "raw 31245-31268",
     "notes": "与 detach-texture(0x1F7) 区别：release-texture **销毁纹理资源**（槽内存对象），影响引用该槽的所有图元；detach-texture 只是把指定 handle(range) 的**图元**从渲染容器移除、纹理资源仍在"
   },
@@ -921,10 +1680,23 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0xB5：声音通道控制。读 op1=通道号 → sub_4B5020(_this+20719, op1, 0) →（声音设备存在时）sub_4B6020(设备, op1, 0)：通道号 >0xE 或通道未分配则报错/返回；否则 sub_4B73E0(通道, 0) 控制该声音通道。**纯声音侧，无 VM/渲染效果**",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=通道号", "sub_4B5020(_this+20719, op1, 0) 转发到声音设备", "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"],
-    "fields_used": ["this->_this+20719(声音系统)", "this->_this[4*op1+1620](声音通道)", "this->_this[4*op1+1440]"],
-    "unmodeled": ["sub_4B6020/sub_4B73E0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 3",
+      "readIntOperand(op1)=通道号",
+      "sub_4B5020(_this+20719, op1, 0) 转发到声音设备",
+      "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"
+    ],
+    "fields_used": [
+      "this->_this+20719(声音系统)",
+      "this->_this[4*op1+1620](声音通道)",
+      "this->_this[4*op1+1440]"
+    ],
+    "unmodeled": [
+      "sub_4B6020/sub_4B73E0 内部"
+    ],
     "evidence": "raw 29689-29697 (sub_420B40), 137660-137670 (sub_4B5020), 138590-138615 (sub_4B6020)",
     "notes": "（用户指令：**声音相关指令，忽略**）emulator 无声音输出，0xB5 保持 engine-internal no-op；不影响高亮/回退/渲染。与 0xB4 play-sound-effect / 0xB6 同族"
   },
@@ -935,8 +1707,13 @@
     "op": "0x1",
     "status": "ANALYZED",
     "purpose": "op 0x1 abort：程序中止。`_CxxThrowException(&1, Command_Exit)` —— 立即退出整个程序（非返回调用层）。无参数、无返回值（noreturn）",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["无读操作数", "直接 _CxxThrowException(Command_Exit) 抛出程序退出异常(noreturn)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "无读操作数",
+      "直接 _CxxThrowException(Command_Exit) 抛出程序退出异常(noreturn)"
+    ],
     "fields_used": [],
     "unmodeled": [],
     "evidence": "raw 24418-24425",
@@ -950,10 +1727,20 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0xC0：读引擎字段 `_this[174713]` 到 op1（`sub_42B4B0(_this, 1, _this[174713])` = writeIntOperand 写 op1）。174713 是**音乐/声音子系统**字段，由 0xC3(sub_420F10 `_this[174713]=op1`)写，与 174712/174715 及 `_this+174454` 音乐对象同用（sub_408CF0 保存/恢复它）。CONFIG.txt 用 `i0c0 (local-int 2)` 读系统值",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3", "writeIntOperand(1, _this[174713]) —— 读引擎字段写 op1"],
-    "fields_used": ["this->_this[174713](音乐/声音字段)", "this->_this+174454(音乐对象)"],
-    "unmodeled": ["174713 字段的精确语义（音乐系统内部）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 3",
+      "writeIntOperand(1, _this[174713]) —— 读引擎字段写 op1"
+    ],
+    "fields_used": [
+      "this->_this[174713](音乐/声音字段)",
+      "this->_this+174454(音乐对象)"
+    ],
+    "unmodeled": [
+      "174713 字段的精确语义（音乐系统内部）"
+    ],
     "evidence": "raw 38618-38622 (sub_42E510), 37000 附近 (sub_42B4B0 writeIntOperand), 29857 (0xC3/sub_420F10 写 174713)",
     "notes": "emulator：0xC0 是 getter → `writeIntOperand(1, engineValues.get(174713) ?? 0)`；配套 setter 0xC3 写 `engineValues.set(174713, op1)`。可据此让 CONFIG 流程越过 0xC0"
   },
@@ -964,10 +1751,20 @@
     "op": "0x80",
     "status": "ANALYZED",
     "purpose": "op 0x80：设消息窗口字段 `_this[21631] = op1`。读 op1 写入 `_this[21631]`（消息窗当前窗格/部件索引；读取点经 `_this[21631]` 及 `_this[21631+21585]` 取部件对象）。属 `_this+21324` 消息窗一族（0x81 设 `_this[21666]`、0x82 sub_466000 设窗格）。CONFIG.txt 用 `i080 9/8/1` 切换消息窗格",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1) → _this[21631] = op1"],
-    "fields_used": ["this->_this[21631](消息窗部件索引)", "this->_this+21324(消息窗对象)"],
-    "unmodeled": ["21631 读取点（_this[21631+21585] 部件对象）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设子系操作标记 = 3",
+      "readIntOperand(op1) → _this[21631] = op1"
+    ],
+    "fields_used": [
+      "this->_this[21631](消息窗部件索引)",
+      "this->_this+21324(消息窗对象)"
+    ],
+    "unmodeled": [
+      "21631 读取点（_this[21631+21585] 部件对象）"
+    ],
     "evidence": "raw 28786-28795 (sub_41F690), 25395/30096 (21631 读取点), 28797 (0x81/sub_41F6C0), 28808 (0x82/sub_41F720)",
     "notes": "emulator：属消息窗（UI 覆盖层）字段 setter，不影响场景/渲染 → 可 no-op（或 engineValues.set(21631, op1)）。CONFIG 越过 0x80 用 no-op 即可"
   },
@@ -977,10 +1774,26 @@
     "semantic_name": "cfg_music_toggle_408CF0",
     "status": "PARTIAL",
     "purpose": "音乐开/关例程：读配置注册表 sound:Music((_this[174405]+4)(get)) → 按 a2 赋值 v3±3 → (_this[174405]+12)(set) 写回；sub_489B50(_this+174454) 停 BGM，_this[174713]=保存值、_this[174712]=v4，sub_489F80(_this+174454,0,_this[174715]) 起播/恢复；sub_406DF0(_this,1,a2)。是 _this[174713](0xC0 读) 的\"真源\"。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["读注册表 sound:Music","±3 调整并写回","停/起 BGM(音乐对象+174454)","_this[174713]=保存 /_this[174712]=v4","sub_406DF0(1,a2)"],
-    "fields_used": ["this->config_registry(_this+697620)","this->music(_this+697816)","this->_this[174713]","this->_this[174712]","this->_this[174715]"],
-    "unmodeled": ["sub_489F80/sub_406DF0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读注册表 sound:Music",
+      "±3 调整并写回",
+      "停/起 BGM(音乐对象+174454)",
+      "_this[174713]=保存 /_this[174712]=v4",
+      "sub_406DF0(1,a2)"
+    ],
+    "fields_used": [
+      "this->config_registry(_this+697620)",
+      "this->music(_this+697816)",
+      "this->_this[174713]",
+      "this->_this[174712]",
+      "this->_this[174715]"
+    ],
+    "unmodeled": [
+      "sub_489F80/sub_406DF0 内部"
+    ],
     "evidence": "raw 13515-13543",
     "notes": "链：0xC0 → _this[174713] ← sub_408CF0 ← 配置注册表(\"sound:Music\") ← SYS4REG.INI"
   },
@@ -990,9 +1803,17 @@
     "semantic_name": "cfg_se_toggle_408D90",
     "status": "PARTIAL",
     "purpose": "SE(音效)开/关：读 _this[83920] 标志；开时对 _this[83908] 的 10 个通道 sub_4B60C0 依次处理，置/清 _this[83920]，(_this+697620 vtable+12) 写 \"sound:SE\"；sub_406DF0(_this,2,a2)。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->_this[83920]","this->_this[83908]","this->config_registry(sound:SE)"],
-    "unmodeled": ["sub_4B60C0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->_this[83920]",
+      "this->_this[83908]",
+      "this->config_registry(sound:SE)"
+    ],
+    "unmodeled": [
+      "sub_4B60C0 内部"
+    ],
     "evidence": "raw 13546-13571",
     "notes": ""
   },
@@ -1002,9 +1823,17 @@
     "semantic_name": "cfg_voice_toggle_408E20",
     "status": "PARTIAL",
     "purpose": "语音开/关：读 _this[85172]；开时对 _this[85160] 的 3 个通道(i+12) sub_4B60C0 处理，置/清 _this[85172]，(_this+697620 vtable+12) 写 \"sound:Voice\"；sub_406DF0(_this,3,a2)。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->_this[85172]","this->_this[85160]","this->config_registry(sound:Voice)"],
-    "unmodeled": ["sub_4B60C0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->_this[85172]",
+      "this->_this[85160]",
+      "this->config_registry(sound:Voice)"
+    ],
+    "unmodeled": [
+      "sub_4B60C0 内部"
+    ],
     "evidence": "raw 13574-13599",
     "notes": ""
   },
@@ -1014,9 +1843,16 @@
     "semantic_name": "cfg_setdependmovie_406DF0",
     "status": "PARTIAL",
     "purpose": "设依赖影片/配置联动：读 \"set:DependsMovie\"，对 _this[94672] 起的 1000 个影片对象按其 flag(0x10000..0x80000) 匹配 a2 者写 enable 字段；sub_4863C0/_4879E0 应用。sub_408CF0/sub_408D90/sub_408E20 收尾都调它。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->config_registry(set:DependsMovie)","this->_this+94672(影片对象表)"],
-    "unmodeled": ["sub_4863C0/sub_4879E0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->config_registry(set:DependsMovie)",
+      "this->_this+94672(影片对象表)"
+    ],
+    "unmodeled": [
+      "sub_4863C0/sub_4879E0 内部"
+    ],
     "evidence": "raw 12042-12110",
     "notes": ""
   },
@@ -1026,10 +1862,20 @@
     "semantic_name": "cfg_path_4900F0",
     "status": "PARTIAL",
     "purpose": "构建配置文件路径 [base]\\SYS4REG.INI（或 SYS3REG.INI）。base：set:UseAppDataFolder==1 → AppData(SHGetSpecialFolderPathA)，否则游戏/模块目录(byte_51EA3C)；文件名按 EXE 名 2 字符前缀匹配 _this+698904 选 SYS4 否则 SYS3；分隔符 asc_51D6DC；sub_407F60/sub_407FD0 拼接路径。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["取 base(AppData 或游戏目录)","选 SYS4REG.INI/SYS3REG.INI","sub_407F60/sub_407FD0 拼路径"],
-    "fields_used": ["this->config_registry(set:UseAppDataFolder/set:RegFilePath)"],
-    "unmodeled": ["sub_407F60/sub_407FD0(路径拼装)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取 base(AppData 或游戏目录)",
+      "选 SYS4REG.INI/SYS3REG.INI",
+      "sub_407F60/sub_407FD0 拼路径"
+    ],
+    "fields_used": [
+      "this->config_registry(set:UseAppDataFolder/set:RegFilePath)"
+    ],
+    "unmodeled": [
+      "sub_407F60/sub_407FD0(路径拼装)"
+    ],
     "evidence": "raw 110506-110619",
     "notes": "配置文件 = SYS4REG.INI/SYS3REG.INI（AppData 或游戏目录）"
   },
@@ -1039,9 +1885,16 @@
     "semantic_name": "cfg_registry_ctor_491880",
     "status": "PARTIAL",
     "purpose": "配置注册表(Reg)对象构造：*_this=&Reg___vftable_，用 sub_434D00 灌默认值（sound:Music=0、sound:Sound/Voice/SE/Movie/UseDirectSound=1、debug:*、system:Path 等；sub_434E00 写字符串表）。= 引擎构造器内 _this+697620 的初始化。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["设 vtable=Reg___vftable_","sub_434D00(sub_434E00) 灌默认键值"],
-    "unmodeled": ["sub_434D00/sub_434E00(字符串表插入) 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "设 vtable=Reg___vftable_",
+      "sub_434D00(sub_434E00) 灌默认键值"
+    ],
+    "unmodeled": [
+      "sub_434D00/sub_434E00(字符串表插入) 内部"
+    ],
     "evidence": "raw 111338-111765 (引擎 ctor raw 22536 调用)",
     "notes": "\"sound:Music\" 默认值=0；配置文件值随后叠盖"
   },
@@ -1051,10 +1904,24 @@
     "semantic_name": "cfg_load_492CB0",
     "status": "PARTIAL",
     "purpose": "配置加载器（文件→注册表）：sub_4900F0 取 SYS4REG.INI 路径 → sub_4963E0(v14,路径) 打开解析 → 逐 key sub_4957F0(int)/sub_495950(string) 读 section:key → sub_434D00(_this+1,\"section:key\",值) 叠盖默认值（sound/message/system/display/set 族）；set:SaveWinPos==1 时经 RegQueryValueExA 读 Windows 注册表 WinPosLeft/Top。",
-    "signature_override": {"param0":"this(Engine* = config_registry)"},
-    "sub_behaviors": ["sub_4900F0 取路径","sub_4963E0 解析 INI","sub_4957F0/sub_495950 读键","sub_434D00 写入注册表","RegQueryValueExA 读窗口位置"],
-    "fields_used": ["this->config_registry","this->config_registry+1(字符串表)"],
-    "unmodeled": ["sub_4963E0/sub_4957F0/sub_495950 内部","RegQueryValueExA 读法"],
+    "signature_override": {
+      "param0": "this(Engine* = config_registry)"
+    },
+    "sub_behaviors": [
+      "sub_4900F0 取路径",
+      "sub_4963E0 解析 INI",
+      "sub_4957F0/sub_495950 读键",
+      "sub_434D00 写入注册表",
+      "RegQueryValueExA 读窗口位置"
+    ],
+    "fields_used": [
+      "this->config_registry",
+      "this->config_registry+1(字符串表)"
+    ],
+    "unmodeled": [
+      "sub_4963E0/sub_4957F0/sub_495950 内部",
+      "RegQueryValueExA 读法"
+    ],
     "evidence": "raw 111846-112318 (sub_4957F0 merge @111988, sub_434D00 aSoundMusic @111996)",
     "notes": "声音配置键现读于此处：sound:Sound/Music/SE/Voice/Movie/UseDirectSound*/Volume0-4/MusicFade*"
   },
@@ -1064,8 +1931,12 @@
     "semantic_name": "cfg_parse_4963E0",
     "status": "PARTIAL",
     "purpose": "INI 配置文件解析器：sub_454730(v42,文件名) 打开 → sub_454840(v42,buf,256) 逐行读；\"[ 开头(0x5B) 视为分节头，sub_495610(...) 解析每条 entry → 存入 CfgRange(v14) 供 sub_4957F0/sub_495950 查询。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "unmodeled": ["sub_454730/sub_454840/sub_495610(文件/解析原语)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "unmodeled": [
+      "sub_454730/sub_454840/sub_495610(文件/解析原语)"
+    ],
     "evidence": "raw 113540-113700",
     "notes": "配置读取路径：SYS4REG.INI → sub_4963E0 解析 → sub_4957F0 读 → sub_434D00 写注册表"
   },
@@ -1075,9 +1946,18 @@
     "semantic_name": "cfg_getint_4957F0",
     "status": "ANALYZED",
     "purpose": "从解析后的配置(CfgRange)读整型值：拼键 \"section\"+asc_51D6DC+key（如 \"sound:Music\"）→ sub_428F10 查表 → atoi 取值写 *a4（未命中=0）。返回 1/0 表示命中与否。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["拼 section:key","sub_428F10 查表","atoi 取值","未命中置 0"],
-    "unmodeled": ["sub_428F10(字符串表查询)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "拼 section:key",
+      "sub_428F10 查表",
+      "atoi 取值",
+      "未命中置 0"
+    ],
+    "unmodeled": [
+      "sub_428F10(字符串表查询)"
+    ],
     "evidence": "raw 112977-113014",
     "notes": ""
   },
@@ -1087,9 +1967,17 @@
     "semantic_name": "cfg_getstr_495950",
     "status": "ANALYZED",
     "purpose": "从解析后的配置(CfgRange)读字符串值：拼 \"section:key\" → sub_428F10 查表 → strncpy_s 拷贝到 a4（SizeInBytes 限制），未命中置空。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["拼 section:key","查表","strncpy_s 拷串"],
-    "unmodeled": ["sub_428F10(字符串表查询)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "拼 section:key",
+      "查表",
+      "strncpy_s 拷串"
+    ],
+    "unmodeled": [
+      "sub_428F10(字符串表查询)"
+    ],
     "evidence": "raw 113017-113065",
     "notes": ""
   },
@@ -1099,8 +1987,12 @@
     "semantic_name": "cfg_save_495AD0",
     "status": "PARTIAL",
     "purpose": "把配置对象(CfgRange)序列化写入 lpFileName（SYS4REG.INI）。保存方向：注册表 → sub_496070/sub_496290 组 CfgRange → sub_495AD0 写文件（与 sub_492CB0 读取方向相反）。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "unmodeled": ["内部序列化细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "unmodeled": [
+      "内部序列化细节"
+    ],
     "evidence": "raw 113068-113403",
     "notes": "保存路径与读取同：SYS4REG.INI（AppData 或游戏目录）"
   },
@@ -1110,7 +2002,9 @@
     "semantic_name": "cfg_setint_496070",
     "status": "ANALYZED",
     "purpose": "向配置对象(CfgRange)设置整型值（section, key, Value）：插入/更新条目。是读方向的反向——注册表→CfgRange 用（保存前）。",
-    "signature_override": {"param0":"this(Engine*)"},
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
     "unmodeled": [],
     "evidence": "raw 113446 附近",
     "notes": ""
@@ -1121,8 +2015,13 @@
     "semantic_name": "snd_device_dispatch_4B5020",
     "status": "ANALYZED",
     "purpose": "音效管理对象分发到声音设备：_this[258](设备指针) 与 _this[261](已初始化) 都在时调 sub_4B6020(设备,a2,a3)，否则返回 1（无设备 no-op）。",
-    "signature_override": {"param0":"this(Sound* _this+82876)"},
-    "fields_used": ["_this[258](设备指针)","_this[261](已初始化)"],
+    "signature_override": {
+      "param0": "this(Sound* _this+82876)"
+    },
+    "fields_used": [
+      "_this[258](设备指针)",
+      "_this[261](已初始化)"
+    ],
     "unmodeled": [],
     "evidence": "raw 137661-137670",
     "notes": ""
@@ -1133,8 +2032,12 @@
     "semantic_name": "snd_release_channel_4B5050",
     "status": "ANALYZED",
     "purpose": "释放指定音效通道(lpAddend)：_this[258] 设备在则 sub_4B6390(设备,通道)，并清 _this[通道+303]/[通道+262]。",
-    "signature_override": {"param0":"this(Sound*)"},
-    "unmodeled": ["sub_4B6390 内部"],
+    "signature_override": {
+      "param0": "this(Sound*)"
+    },
+    "unmodeled": [
+      "sub_4B6390 内部"
+    ],
     "evidence": "raw 137673-137685",
     "notes": ""
   },
@@ -1144,9 +2047,17 @@
     "semantic_name": "snd_set_volume_4B6940",
     "status": "ANALYZED",
     "purpose": "设通道音量：a2<15 时钳制 a3 到 ±10000 写 _this[a2+375]，sub_4B6350 应用；越界报 \"dsSetVolume...\"。= 0x2F8 通道音量。",
-    "signature_override": {"param0":"this(Sound*)"},
-    "sub_behaviors": ["钳制 ±10000","_this[a2+375]=vol","sub_4B6350 应用"],
-    "unmodeled": ["sub_4B6350 内部"],
+    "signature_override": {
+      "param0": "this(Sound*)"
+    },
+    "sub_behaviors": [
+      "钳制 ±10000",
+      "_this[a2+375]=vol",
+      "sub_4B6350 应用"
+    ],
+    "unmodeled": [
+      "sub_4B6350 内部"
+    ],
     "evidence": "raw 139064-139089",
     "notes": "音量单位 ±10000(10^4)；0x2F8 sub_4268D0 调它"
   },
@@ -1156,8 +2067,13 @@
     "semantic_name": "snd_load_dsound_4B5C50",
     "status": "ANALYZED",
     "purpose": "动态加载 DirectSound：_this[344](已载) 在则直接返回；LoadLibraryA(\"DSOUND.DLL\")→_this[262]=HMODULE，GetProcAddress(\"DirectSoundCreate\")→_this[263]，失败 sprintf 报 \"DSOUND.DLL\" 错误。",
-    "signature_override": {"param0":"this(Sound*)"},
-    "sub_behaviors": ["LoadLibraryA(DSOUND.DLL)","GetProcAddress(DirectSoundCreate)"],
+    "signature_override": {
+      "param0": "this(Sound*)"
+    },
+    "sub_behaviors": [
+      "LoadLibraryA(DSOUND.DLL)",
+      "GetProcAddress(DirectSoundCreate)"
+    ],
     "unmodeled": [],
     "evidence": "raw 138371-138411",
     "notes": ""
@@ -1168,8 +2084,14 @@
     "semantic_name": "sound_ctor_4B69B0",
     "status": "ANALYZED",
     "purpose": "DirectSound Sound 对象构造：*_this=&Sound___vftable_，sub_4B6440/sub_4B6550 初始化，建 15 个通道临界区，sub_4B7790 建底层序列。= 引擎 ctor _this+18664。",
-    "signature_override": {"param0":"this(Sound*)"},
-    "sub_behaviors": ["设 vtable=Sound___vftable_","init 通道表","15 临界区"],
+    "signature_override": {
+      "param0": "this(Sound*)"
+    },
+    "sub_behaviors": [
+      "设 vtable=Sound___vftable_",
+      "init 通道表",
+      "15 临界区"
+    ],
     "unmodeled": [],
     "evidence": "raw 139093-139110 (引擎 ctor raw 21426)",
     "notes": ""
@@ -1180,9 +2102,17 @@
     "semantic_name": "music_play_489C20",
     "status": "ANALYZED",
     "purpose": "播放 BGM：a2(音乐id) 非 0 且与当前不同或 a3(槽)变时设 _this[261]/[259]、_this[264]=_this[265]=10000、_this[260]=0，经 _this[_this[258]+269] 驱动 vtable+8 play；a2==0 时 sub_489B50 停。= 0xBF play-bgm。",
-    "signature_override": {"param0":"this(Music* _this+697816)"},
-    "fields_used": ["_this[259](当前BGM id)","_this[261](槽/模式)","_this[264]/[265](音量)"],
-    "unmodeled": ["驱动对象 vtable play"],
+    "signature_override": {
+      "param0": "this(Music* _this+697816)"
+    },
+    "fields_used": [
+      "_this[259](当前BGM id)",
+      "_this[261](槽/模式)",
+      "_this[264]/[265](音量)"
+    ],
+    "unmodeled": [
+      "驱动对象 vtable play"
+    ],
     "evidence": "raw 106225-106253",
     "notes": ""
   },
@@ -1192,8 +2122,12 @@
     "semantic_name": "music_fade_489D10",
     "status": "ANALYZED",
     "purpose": "BGM 淡入淡出切换：_this[265]=a2、_this[263]=a3、_this[262]=0；经驱动 vtable(+40 状态/+24 取/[+20]/+8 play/+36 续) 做渐隐/回退。= 0xC2 音乐渐隐。",
-    "signature_override": {"param0":"this(Music*)"},
-    "unmodeled": ["驱动 vtable 方法"],
+    "signature_override": {
+      "param0": "this(Music*)"
+    },
+    "unmodeled": [
+      "驱动 vtable 方法"
+    ],
     "evidence": "raw 106270-106320",
     "notes": ""
   },
@@ -1203,8 +2137,12 @@
     "semantic_name": "music_setvol_489E50",
     "status": "ANALYZED",
     "purpose": "设 BGM 音量并渐隐：_this[262] += _this[263]*(a2+1)，钳 ≤100；调驱动 vtable+24 后 sub_489C00 应用；到 100 则 _this[264]=_this[265]，0 时 sub_489B50 停。音量 0..100 步进。",
-    "signature_override": {"param0":"this(Music*)"},
-    "unmodeled": ["驱动 vtable+24"],
+    "signature_override": {
+      "param0": "this(Music*)"
+    },
+    "unmodeled": [
+      "驱动 vtable+24"
+    ],
     "evidence": "raw 106323-106341",
     "notes": ""
   },
@@ -1214,8 +2152,12 @@
     "semantic_name": "music_play_slot_489F80",
     "status": "ANALYZED",
     "purpose": "播放音乐/语音（槽版本）：_this[261]=a3，a2 非 0 或当前非空则设 _this[259]=a2、_this[264]/[265]=10000、_this[260]=0，经驱动 vtable+8 play；空则 sub_489B50 停。",
-    "signature_override": {"param0":"this(Music*)"},
-    "unmodeled": ["驱动 vtable+8"],
+    "signature_override": {
+      "param0": "this(Music*)"
+    },
+    "unmodeled": [
+      "驱动 vtable+8"
+    ],
     "evidence": "raw 106353-106372",
     "notes": "sub_408CF0 用它恢复/起播 BGM"
   },
@@ -1225,8 +2167,12 @@
     "semantic_name": "music_stop_489B50",
     "status": "ANALYZED",
     "purpose": "停 BGM：_this[259]=0、_this[260]=0，经 _this[_this[258]+269] 驱动 vtable+4 stop。",
-    "signature_override": {"param0":"this(Music*)"},
-    "unmodeled": ["驱动 vtable+4"],
+    "signature_override": {
+      "param0": "this(Music*)"
+    },
+    "unmodeled": [
+      "驱动 vtable+4"
+    ],
     "evidence": "raw 106181-106189",
     "notes": ""
   },
@@ -1236,8 +2182,12 @@
     "semantic_name": "music_pause_489C00",
     "status": "ANALYZED",
     "purpose": "取音乐驱动状态并暂停/设态：经 _this[_this[258]+269] 驱动 vtable+28。",
-    "signature_override": {"param0":"this(Music*)"},
-    "unmodeled": ["驱动 vtable+28"],
+    "signature_override": {
+      "param0": "this(Music*)"
+    },
+    "unmodeled": [
+      "驱动 vtable+28"
+    ],
     "evidence": "raw 106216-106222",
     "notes": ""
   },
@@ -1249,9 +2199,15 @@
     "status": "PARTIAL",
     "category": "声音",
     "purpose": "op play-sound-effect：设 frame.arity=5，读 op2=通道指针/op1=音效id → sub_4B4F60(_this+20719, 通道, id) 预载/起播音效。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->sound_manager(_this+82876)"],
-    "unmodeled": ["sub_4B4F60 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->sound_manager(_this+82876)"
+    ],
+    "unmodeled": [
+      "sub_4B4F60 内部"
+    ],
     "evidence": "raw 29680-29687",
     "notes": "声音相关；emulator 可 no-op"
   },
@@ -1263,7 +2219,9 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0xB6 声音通道：读 op1=通道 → sub_4B5050(_this+20719, 通道)。",
-    "signature_override": {"param0":"this(Engine*)"},
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
     "unmodeled": [],
     "evidence": "raw 29700-29707",
     "notes": "声音相关"
@@ -1276,9 +2234,16 @@
     "status": "PARTIAL",
     "category": "声音",
     "purpose": "op play-bgm：清 _this[174801] bit0x200 并 sub_489E50(_this+174454,100)；读 op1=音乐id → sub_489C20(_this+174454, id, 1) 播 BGM；按 \"set:KeepMusicVoice\"/\"sound:MusicFadeOnVoicePlaying(Volume)\" 决定 sub_489C00 渐隐。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->music(_this+697816)","this->config_registry(set:KeepMusicVoice/sound:MusicFade*)"],
-    "unmodeled": ["sub_489C20/489C00 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->music(_this+697816)",
+      "this->config_registry(set:KeepMusicVoice/sound:MusicFade*)"
+    ],
+    "unmodeled": [
+      "sub_489C20/489C00 内部"
+    ],
     "evidence": "raw 29754-29780",
     "notes": "BGM 播放"
   },
@@ -1290,8 +2255,12 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0xC3：写引擎字段 _this[174713]=op1（音乐/声音子字段 setter）。清 _this[174801] bit0x200 并 sub_489E50(_this+174454,100)。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "sub_behaviors": ["_this[174713]=op1"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "_this[174713]=op1"
+    ],
     "unmodeled": [],
     "evidence": "raw 29844-29859",
     "notes": "与 0xC0 成对 get/set"
@@ -1304,8 +2273,12 @@
     "status": "PARTIAL",
     "category": "声音",
     "purpose": "op play-voice：读 op1=语音id、op2=槽 → 经音乐/声音对象播语音。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "unmodeled": ["内部语音路径"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "unmodeled": [
+      "内部语音路径"
+    ],
     "evidence": "raw 29861-29870 附近",
     "notes": "语音播放"
   },
@@ -1317,8 +2290,12 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0x2F6 声音通道管理：读 op1=通道 → sub_4BB9F0(_this+21032, 通道) 重置通道、清 _this[通道+21315/21318/122505/122508]；sub_404CB0(_this+21032) 找空闲通道存 _this[122501]。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "unmodeled": ["sub_4BB9F0/sub_404CB0 内部"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "unmodeled": [
+      "sub_4BB9F0/sub_404CB0 内部"
+    ],
     "evidence": "raw 33677-33692",
     "notes": "找空闲声音通道"
   },
@@ -1330,8 +2307,12 @@
     "status": "ANALYZED",
     "category": "声音",
     "purpose": "op 0x2F8 设声音通道音量：读 op2=音量、op1=通道 → sub_4B6940(_this+4666, op1+12, op2) 钳 ±10000 应用。",
-    "signature_override": {"param0":"this(Engine*)"},
-    "fields_used": ["this->sound_manager(SoundBase+4666 dword)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "fields_used": [
+      "this->sound_manager(SoundBase+4666 dword)"
+    ],
     "unmodeled": [],
     "evidence": "raw 33706-33715",
     "notes": "声音通道音量"
@@ -1343,8 +2324,13 @@
     "op": "0x148",
     "status": "ANALYZED",
     "purpose": "读引擎全局时间阈值槽 _this[97058] 写回 op1（get）",
-    "sub_behaviors": ["设 frame.arity=3", "writeIntOperand(1, _this[97058])"],
-    "fields_used": ["this->global_slot_97058"],
+    "sub_behaviors": [
+      "设 frame.arity=3",
+      "writeIntOperand(1, _this[97058])"
+    ],
+    "fields_used": [
+      "this->global_slot_97058"
+    ],
     "unmodeled": [],
     "evidence": "raw 39705-39708",
     "notes": "0x149 的读侧；opcode-table 原标“仅映射”，实为已核对"
@@ -1356,8 +2342,13 @@
     "op": "0x149",
     "status": "ANALYZED",
     "purpose": "把 op1 值写入引擎全局时间阈值槽 _this[97058]（set）",
-    "sub_behaviors": ["设 frame.arity=3", "_this[97058]=readIntOperand(op1)"],
-    "fields_used": ["this->global_slot_97058"],
+    "sub_behaviors": [
+      "设 frame.arity=3",
+      "_this[97058]=readIntOperand(op1)"
+    ],
+    "fields_used": [
+      "this->global_slot_97058"
+    ],
     "unmodeled": [],
     "evidence": "raw 31045-31051",
     "notes": "0x148 的写侧；SYSTEM4 line12 i149 3e8=1000"
@@ -1368,8 +2359,12 @@
     "semantic_name": "getAgercInterface3_453870",
     "status": "ANALYZED",
     "purpose": "返回 _this[3]（AGERC 接口表第 4 字段 = _ShowDialog@12），是 dword_55E1B4 的来源",
-    "sub_behaviors": ["return _this[3]"],
-    "fields_used": ["AGERC 接口表 v63[3]"],
+    "sub_behaviors": [
+      "return _this[3]"
+    ],
+    "fields_used": [
+      "AGERC 接口表 v63[3]"
+    ],
     "unmodeled": [],
     "evidence": "raw 65953-65955；WinMain 141984",
     "notes": ""
@@ -1380,8 +2375,12 @@
     "semantic_name": "setInputActive_477080",
     "status": "ANALYZED",
     "purpose": "设置输入子系统“激活”开关 _this[1688]=(a2==0)；sub_4770A0/sub_477100 据此决定是否读 GetAsyncKeyState",
-    "sub_behaviors": ["_this[1688]=(a2==0)"],
-    "fields_used": ["input._this[1688]"],
+    "sub_behaviors": [
+      "_this[1688]=(a2==0)"
+    ],
+    "fields_used": [
+      "input._this[1688]"
+    ],
     "unmodeled": [],
     "evidence": "raw 91541-91548",
     "notes": "WM_ACTIVATE 用 wParam==0 启用/失焦停用；触发链用 1 停用"
@@ -1392,8 +2391,15 @@
     "semantic_name": "initAgercInterface_48E730",
     "status": "ANALYZED",
     "purpose": "WinMain 里 LoadLibraryA(\"AGERC.DLL\") + GetProcAddress 解析 _GetInstance@0/_ShowDialog@12/_OperateMenu@16 存入 v63[2]/[3]/[4]；失败弹 MessageBox",
-    "sub_behaviors": ["LoadLibraryA(\"AGERC.DLL\")", "GetProcAddress _GetInstance@0", "GetProcAddress _ShowDialog@12", "GetProcAddress _OperateMenu@16"],
-    "fields_used": ["AGERC.DLL 接口表 v63[2..4]"],
+    "sub_behaviors": [
+      "LoadLibraryA(\"AGERC.DLL\")",
+      "GetProcAddress _GetInstance@0",
+      "GetProcAddress _ShowDialog@12",
+      "GetProcAddress _OperateMenu@16"
+    ],
+    "fields_used": [
+      "AGERC.DLL 接口表 v63[2..4]"
+    ],
     "unmodeled": [],
     "evidence": "raw 109387-109426",
     "notes": "dword_55E1B4=ShowDialog@12、dword_55E1B8=OperateMenu@16"
@@ -1404,9 +2410,22 @@
     "semantic_name": "showSystemDialog_408620",
     "status": "PARTIAL",
     "purpose": "若 (engine+699204 & 0x400000)==0（尚未显示），调 ShowDialog(4, 主窗, 0) 新建系统对话框、窗句柄存 _this+387928，按主窗矩形定位(GetWindowRect/MoveWindow)，并置 engine+699204|=0x400000",
-    "sub_behaviors": ["检查 0x400000 标记", "sub_406050(engine)", "dword_55E1B4(4,主窗,0) 弹框", "GetWindowRect 比对+摆位", "engine+699204|=0x400000"],
-    "fields_used": ["engine+699204 效果位", "engine+387924 主窗", "engine+387928 对话框句柄"],
-    "unmodeled": ["具体弹哪种对话框/菜单", "sub_406050 细节"],
+    "sub_behaviors": [
+      "检查 0x400000 标记",
+      "sub_406050(engine)",
+      "dword_55E1B4(4,主窗,0) 弹框",
+      "GetWindowRect 比对+摆位",
+      "engine+699204|=0x400000"
+    ],
+    "fields_used": [
+      "engine+699204 效果位",
+      "engine+387924 主窗",
+      "engine+387928 对话框句柄"
+    ],
+    "unmodeled": [
+      "具体弹哪种对话框/菜单",
+      "sub_406050 细节"
+    ],
     "evidence": "raw 13238-13278",
     "notes": "被 sub_4B9240 / WM_SYSKEYUP(Alt) 触发；ShowDialog 命令码 4"
   },
@@ -1416,9 +2435,25 @@
     "semantic_name": "cursorTopMenuTimer_4B9240",
     "status": "PARTIAL",
     "purpose": "WM_TIMER 回调（100ms）：读 _this[97058] 阈值，若 timeGetTime()-dword_55E1D8 超阈值 且 左右鼠标键都未按(GetAsyncKeyState 1/2) 且 引擎非锁定(671960) 且 ShowDialog(-1,hWnd,0)==0，则 sub_477080(input,1) 停输入 + sub_408620() 弹系统对话框 + dword_55E1D8=0 + KillTimer。属“光标贴顶/Alt→弹对话框”触发链。",
-    "sub_behaviors": ["读 _this[97058] 阈值", "GetAsyncKeyState(1)/(2) 查鼠标按键", "dword_55E1B4(-1,hWnd,0) 门", "sub_477080(input,1) 停输入", "sub_408620() 弹对话框", "dword_55E1D8=0", "KillTimer(hWnd,1)"],
-    "fields_used": ["engine+388232(_this[97058])", "dword_55E1D8 时间戳", "engine+671960 锁定态", "engine+1032+1688 输入激活位"],
-    "unmodeled": ["dword_55E1B4(ShowDialog) -1 命令语义", "sub_408620 具体弹哪种对话框"],
+    "sub_behaviors": [
+      "读 _this[97058] 阈值",
+      "GetAsyncKeyState(1)/(2) 查鼠标按键",
+      "dword_55E1B4(-1,hWnd,0) 门",
+      "sub_477080(input,1) 停输入",
+      "sub_408620() 弹对话框",
+      "dword_55E1D8=0",
+      "KillTimer(hWnd,1)"
+    ],
+    "fields_used": [
+      "engine+388232(_this[97058])",
+      "dword_55E1D8 时间戳",
+      "engine+671960 锁定态",
+      "engine+1032+1688 输入激活位"
+    ],
+    "unmodeled": [
+      "dword_55E1B4(ShowDialog) -1 命令语义",
+      "sub_408620 具体弹哪种对话框"
+    ],
     "evidence": "raw 141032-141069",
     "notes": "与 WM_MOUSEMOVE(0x200)/WM_SYSKEYUP(0x104,Alt) 同一触发族；_this[97058] 为去抖时长"
   },
@@ -1429,10 +2464,21 @@
     "op": "0x21B",
     "status": "ANALYZED",
     "purpose": "op 0x21B：设置引擎布尔标志 _this[166965]=(op1!=0)。读 op1（readIntOperand_41BF50），非零则标志=1（TRUE）；并返回该布尔值作为 eax。与读取方 0x247/sub_430810 成对，构成脚本可读写的引擎级布尔寄存器。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["标记子系帧槽 _this[30*cur+95805]=3", "readIntOperand(op1)", "_this[166965]=(op1!=0)", "return (op1!=0)"],
-    "fields_used": ["this->engine_bool_flag(+0xA30D4)"],
-    "unmodeled": ["子系帧槽 _this[30*cur+95805] 具体语义（30 步长/95805 基址=byte 383220）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "标记子系帧槽 _this[30*cur+95805]=3",
+      "readIntOperand(op1)",
+      "_this[166965]=(op1!=0)",
+      "return (op1!=0)"
+    ],
+    "fields_used": [
+      "this->engine_bool_flag(+0xA30D4)"
+    ],
+    "unmodeled": [
+      "子系帧槽 _this[30*cur+95805] 具体语义（30 步长/95805 基址=byte 383220）"
+    ],
     "evidence": "raw 31823-31831 (sub_423C20)",
     "notes": "emulator：以 engineValues.set(166965, op1?1:0) 建模"
   },
@@ -1443,10 +2489,20 @@
     "op": "0x247",
     "status": "ANALYZED",
     "purpose": "op 0x247：读取引擎布尔标志 _this[166965]，以 (_this[166965]!=0) 写回操作数 1（writeIntOperand_42B4B0，值为 0/1）。与设置方 0x21B/sub_423C20 成对，构成脚本可读写的引擎级布尔寄存器。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["标记子系帧槽 _this[30*cur+95805]=3", "read engine_bool_flag(+0xA30D4)", "writeIntOperand(op1, flag!=0)"],
-    "fields_used": ["this->engine_bool_flag(+0xA30D4)"],
-    "unmodeled": ["子系帧槽 _this[30*cur+95805] 具体语义"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "标记子系帧槽 _this[30*cur+95805]=3",
+      "read engine_bool_flag(+0xA30D4)",
+      "writeIntOperand(op1, flag!=0)"
+    ],
+    "fields_used": [
+      "this->engine_bool_flag(+0xA30D4)"
+    ],
+    "unmodeled": [
+      "子系帧槽 _this[30*cur+95805] 具体语义"
+    ],
     "evidence": "raw 40034-40038 (sub_430810)",
     "notes": "emulator：以 engineValues.get(166965)?1:0 建模"
   },
@@ -1456,10 +2512,23 @@
     "semantic_name": "engineInitReset_40DF10",
     "status": "PARTIAL",
     "purpose": "引擎/状态初始化或重置：零化大量引擎字段（cur_script、draw-mode 字段 667856=comsetdrawmode、effect_flags 699204、引擎布尔标志 667860=+0xA30D4 等）。其中对 +0xA30D4 标志清零（raw 17982）。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["清零 cur_script", "清零 draw-mode/_this+667856", "清零 effect_flags", "清 engine_bool_flag(+0xA30D4)=0"],
-    "fields_used": ["this->engine_bool_flag(+0xA30D4)", "this->cur_script", "this->effect_flags"],
-    "unmodeled": ["整个初始化体未逐字段建模（仅确认 +0xA30D4 清零点）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "清零 cur_script",
+      "清零 draw-mode/_this+667856",
+      "清零 effect_flags",
+      "清 engine_bool_flag(+0xA30D4)=0"
+    ],
+    "fields_used": [
+      "this->engine_bool_flag(+0xA30D4)",
+      "this->cur_script",
+      "this->effect_flags"
+    ],
+    "unmodeled": [
+      "整个初始化体未逐字段建模（仅确认 +0xA30D4 清零点）"
+    ],
     "evidence": "raw 17933-17982 (sub_40DF10 起始/清零区)",
     "notes": "详见 docs-new/03-engine/engine-reset-mainloop.md Part A；引擎级整体复位（范围大于 op_exit_script）。"
   },
@@ -1469,10 +2538,22 @@
     "semantic_name": "mainLoopFlow_412290",
     "status": "PARTIAL",
     "purpose": "主循环/游戏流程分发（__noreturn，raw 142347 以全局引擎 dword_55E1BC 调用）。其中 LABEL_56 处判定是否推进脚本：当 draw-mode 字段(_this+667856)==1 且 _this+675968==0 时，若 engine_bool_flag(+0xA30D4) 为真或 effect_flags&0x2400 非零 → v92=1 并做推进逻辑（交换帧高宽、sub_4B4040 等）。故 +0xA30D4 是其推进/门控条件之一。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读 draw-mode _this+667856==1", "读 engine_bool_flag(+0xA30D4) 作为推进门", "读 effect_flags&0x2400", "推进脚本帧交换/清绘制"],
-    "fields_used": ["this->engine_bool_flag(+0xA30D4)", "this->effect_flags"],
-    "unmodeled": ["整个主循环体未逐字段建模（仅确认 +0xA30D4 引用点 raw 20746）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读 draw-mode _this+667856==1",
+      "读 engine_bool_flag(+0xA30D4) 作为推进门",
+      "读 effect_flags&0x2400",
+      "推进脚本帧交换/清绘制"
+    ],
+    "fields_used": [
+      "this->engine_bool_flag(+0xA30D4)",
+      "this->effect_flags"
+    ],
+    "unmodeled": [
+      "整个主循环体未逐字段建模（仅确认 +0xA30D4 引用点 raw 20746）"
+    ],
     "evidence": "raw 20465 (sub_412290), 20740-20758 (LABEL_56 flow 门含 20746 读标志), 142347 (调用点)",
     "notes": "详见 docs-new/03-engine/engine-reset-mainloop.md Part B；effect_flags 位状态机约 24 位，emulator 仅实现 0x400/0x8000000/0x20000000。"
   },
@@ -1483,10 +2564,20 @@
     "op": "0x8C",
     "status": "ANALYZED",
     "purpose": "op jmp：无条件跳到 operand1 的 label。读 op1（readIntOperand），若 op1!=-1(0xFFFFFFFF) 则帧 ip = 帧基 + 4*op1（绝对 label 定位），清帧状态槽=0；op1==0xFFFFFFFF 则不跳（落下）。不入返回栈。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读整数操作数1(label)", "op1!=0xFFFFFFFF 则 帧ip=帧基+4*op1", "清帧状态槽 95805=0"],
-    "fields_used": ["this->frames[cur_script].ip"],
-    "unmodeled": ["帧 ip/基槽 120*cur+383128/383124 精确语义"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读整数操作数1(label)",
+      "op1!=0xFFFFFFFF 则 帧ip=帧基+4*op1",
+      "清帧状态槽 95805=0"
+    ],
+    "fields_used": [
+      "this->frames[cur_script].ip"
+    ],
+    "unmodeled": [
+      "帧 ip/基槽 120*cur+383128/383124 精确语义"
+    ],
     "evidence": "raw 29389-29402 (sub_4203D0)",
     "notes": "已修正：op_jmp 现经 readIntOperand 取 op1，op1==-1(0xFFFFFFFF) 不跳(落下句)，op1!=0xFFFFFFFF 才 labelPos 定位。已在 emulator ops.ts 修 op_jmp（原对未知 label 抛错）。"
   },
@@ -1497,10 +2588,22 @@
     "op": "0xA0",
     "status": "ANALYZED",
     "purpose": "op jcc：两目标条件跳转。op1=条件（readIntOperand，非0为真）：真→目标=op2（若 op2==0xFFFFFFFF 则落下）；假→目标=op3（若 op3==0xFFFFFFFF 则落下）。命中则帧ip=帧基+4*目标，清帧状态槽=0。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读整数操作数1(条件)", "条件真→读op2/假→读op3", "目标!=0xFFFFFFFF 则 帧ip=帧基+4*目标", "清帧状态槽 95805=0"],
-    "fields_used": ["this->frames[cur_script].ip"],
-    "unmodeled": ["帧 ip/基槽精确语义", "op2/op3 经 readIntOperand 取值(可为变量 label；emulator 用 args[1]/[2].raw 立即数)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读整数操作数1(条件)",
+      "条件真→读op2/假→读op3",
+      "目标!=0xFFFFFFFF 则 帧ip=帧基+4*目标",
+      "清帧状态槽 95805=0"
+    ],
+    "fields_used": [
+      "this->frames[cur_script].ip"
+    ],
+    "unmodeled": [
+      "帧 ip/基槽精确语义",
+      "op2/op3 经 readIntOperand 取值(可为变量 label；emulator 用 args[1]/[2].raw 立即数)"
+    ],
     "evidence": "raw 29615-29639 (sub_4209B0)",
     "notes": "已修正：op_jcc 分支目标(2/3)现经 readIntOperand 取值(可为变量 label)，-1 落下句。已在 emulator ops.ts 修 op_jcc。"
   },
@@ -1511,10 +2614,24 @@
     "op": "0x143",
     "status": "ANALYZED",
     "purpose": "op i143：派发挂起脚本/事件请求（dispatchScriptRequests）。置 _this[124350]=1 防重入；遍历 256 个请求槽（_this+173106=DWORD下标→byte 692424），对每非零槽调用 sub_40FC90(_this, slot<<24) 排队；清 124350=0、帧状态槽 95805=0、帧ip+=4（1 dword）；sub_40FB60(_this) 派发已排队脚本。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["置派发重入标志 _this[124350]=1", "遍历 256 请求槽(非零→sub_40FC90(slot<<24))", "清重入标志/帧状态槽", "帧ip+=4", "sub_40FB60 派发排队脚本"],
-    "fields_used": ["this->dispatch_in_progress(_this[124350]=byte 497400)", "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"],
-    "unmodeled": ["请求槽队列确切断面/成员", "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "置派发重入标志 _this[124350]=1",
+      "遍历 256 请求槽(非零→sub_40FC90(slot<<24))",
+      "清重入标志/帧状态槽",
+      "帧ip+=4",
+      "sub_40FB60 派发排队脚本"
+    ],
+    "fields_used": [
+      "this->dispatch_in_progress(_this[124350]=byte 497400)",
+      "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"
+    ],
+    "unmodeled": [
+      "请求槽队列确切断面/成员",
+      "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"
+    ],
     "evidence": "raw 25168-25191 (sub_41A000)",
     "notes": "★语义澄清（消耗侧）：i143 是「派发消耗/触发侧」，非生产侧。先置 dispatch_in_progress(_this[124350])=1 → 扫请求寄存器(0xA90C8)非零槽逐条 queueScript(sub_40FC90)（因置位故只入 dispatch_queue@0x796DC，不立即派发）→ 清标志、帧ip+=4 → dispatchQueuedScripts(sub_40FB60) 一次只派发一条（正请求 cur=37 预占帧装载、负请求 cur=-v2 恢复）。其余任务经「-10 哨兵链」(exit 0x2 的 call_ret=-10 在 sub_41A820 里恢复 cur/ef 并 read<write 时再 sub_40FB60) 逐条顺次派发——不是一次把全部装入帧37。i143 不清寄存器槽(只读)，重跑且槽仍置位会重复入队；生产侧写入方尚未定位。"
   },
@@ -1525,9 +2642,16 @@
     "op": "0x130",
     "status": "ANALYZED",
     "purpose": "op i130：读引擎 LOGO/版权页开关 _this[96983](byte 387932)，writeIntOperand(op1, _this[96983])。构造=1（SYSTEM4 `i130→jcc→call-script LOGO` 播放版权页）；exit-script(0x9) 置 0 → GAMEOVER 回标题 reboot 后 i130 读 0 → jcc 跳过 LOGO。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["标记帧状态槽 95805=3", "writeIntOperand(op1, _this[96983]=logo_enabled)"],
-    "fields_used": ["this->logo_enabled(+0x5EB5C=_this[96983])"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "标记帧状态槽 95805=3",
+      "writeIntOperand(op1, _this[96983]=logo_enabled)"
+    ],
+    "fields_used": [
+      "this->logo_enabled(+0x5EB5C=_this[96983])"
+    ],
     "unmodeled": [],
     "evidence": "raw 39343-39347 (sub_42F7A0)",
     "notes": "emulator：0x130 → NATIVE_OPS op_get_engine_value，读 engineValues.get(96983)??0；构造默认 1，exit-script 置 0（本条已实现）。"
@@ -1538,9 +2662,17 @@
     "semantic_name": "intStackPush_409D40",
     "status": "ANALYZED",
     "purpose": "可增长 int 栈/向量压入（Queue_int/Stack_int 的 push）。对象@传入 this：+4=容量、+8=增量、+12=基址、+16=顶下标；不足则扩容 operator new[](4*(cap+inc)) + memcpy + delete 旧；返回 ++top 并 base[top]=a2。消息回调栈(_this+429732)用它压 effect_flags。",
-    "signature_override": { "param0": "this(intStack*)" },
-    "sub_behaviors": ["读顶/容量", "空间不足扩容(4*(cap+inc))+拷迁", "top++ 并 base[top]=a2"],
-    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)"],
+    "signature_override": {
+      "param0": "this(intStack*)"
+    },
+    "sub_behaviors": [
+      "读顶/容量",
+      "空间不足扩容(4*(cap+inc))+拷迁",
+      "top++ 并 base[top]=a2"
+    ],
+    "fields_used": [
+      "this->msg_cb_flag_stack(0x68EA4)"
+    ],
     "unmodeled": [],
     "evidence": "raw 14245-14265 (sub_409D40)",
     "notes": "被 sub_411590(20022/20082) 压 effect_flags、sub_41F790 复用；30748 压的是另一 Stack_int(388292 数组)。"
@@ -1551,9 +2683,16 @@
     "semantic_name": "intStackPop_41A520",
     "status": "ANALYZED",
     "purpose": "int 栈弹出：读 _this[4]=top；top<0 返回 0；*a2=base[top]（_this[3]）、top--、返回 1。sub_41F790(0x84) 用它弹消息回调 flag 栈。",
-    "signature_override": { "param0": "this(intStack*)" },
-    "sub_behaviors": ["读 top", "top>=0 则 *a2=base[top]、top--、返回1"],
-    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)"],
+    "signature_override": {
+      "param0": "this(intStack*)"
+    },
+    "sub_behaviors": [
+      "读 top",
+      "top>=0 则 *a2=base[top]、top--、返回1"
+    ],
+    "fields_used": [
+      "this->msg_cb_flag_stack(0x68EA4)"
+    ],
     "unmodeled": [],
     "evidence": "raw 25439-25449 (sub_41A520)",
     "notes": "与 sub_409D40 配对的 pop。emulator 无对应（op_ret 内联弹 retStack）。"
@@ -1564,10 +2703,25 @@
     "semantic_name": "msgCallbackDispatch_411590",
     "status": "PARTIAL",
     "purpose": "消息/文本回调派发器（主循环 sub_412290 在 effect_flags&0x100000 时调用）。处理回调队列(_this+699260)，进入文本回调前：sub_409D40(_this+429732, effect_flags) 压栈保存当前 effect_flags、effect_flags&=0x7FEFFFFF、设帧 ip 到回调，sub_411560 派发（sub_455000 查回调表 + sub_40FC90 queueScript）。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["遍历回调队列(_this+699260)", "进入回调前压 effect_flags 到 Stack_int(0x68EA4)", "effect_flags&=0x7FEFFFFF", "设帧ip到回调目标", "sub_411560 派发回调"],
-    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)", "this->effect_flags(0xAAB44)", "this->_this+699260(回调队列)"],
-    "unmodeled": ["回调队列 _this+699260 语义", "sub_455000 回调注册表"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "遍历回调队列(_this+699260)",
+      "进入回调前压 effect_flags 到 Stack_int(0x68EA4)",
+      "effect_flags&=0x7FEFFFFF",
+      "设帧ip到回调目标",
+      "sub_411560 派发回调"
+    ],
+    "fields_used": [
+      "this->msg_cb_flag_stack(0x68EA4)",
+      "this->effect_flags(0xAAB44)",
+      "this->_this+699260(回调队列)"
+    ],
+    "unmodeled": [
+      "回调队列 _this+699260 语义",
+      "sub_455000 回调注册表"
+    ],
     "evidence": "raw 19947-20093 (sub_411590)",
     "notes": "ret(0x5) 弹回其压入的 effect_flags；0x100000 位是文本回调进行中标记。🔒 记录背景（待实现消息/文本回调系统时再改 emulator）：本函数/flag 栈属 ADV/文字窗子系统，当前不实现。"
   },
@@ -1578,10 +2732,24 @@
     "op": "0x84",
     "status": "PARTIAL",
     "purpose": "op 0x84：消息/文本回调状态机（_this[122454] 状态、effect_flags 0x100000）。按 op1(<0/0/>0) 与 _this[122454] 决定：显示消息(sub_459770)、设/清 0x100000、必要时 push/pop Stack_int(0x68EA4) 保存/恢复 effect_flags(0xFFEFFFFF 清 0x100000)，并 sub_411560 派发回调。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读调用状态 _this[122454]", "读 op1 分支", "保存/恢复 Stack_int(0x68EA4) 的 effect_flags", "sub_411560 派发回调"],
-    "fields_used": ["this->msg_cb_flag_stack(0x68EA4)", "this->effect_flags(0xAAB44)", "this->_this[122454]"],
-    "unmodeled": ["_this[122454] 状态机细节", "sub_459770 语义"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读调用状态 _this[122454]",
+      "读 op1 分支",
+      "保存/恢复 Stack_int(0x68EA4) 的 effect_flags",
+      "sub_411560 派发回调"
+    ],
+    "fields_used": [
+      "this->msg_cb_flag_stack(0x68EA4)",
+      "this->effect_flags(0xAAB44)",
+      "this->_this[122454]"
+    ],
+    "unmodeled": [
+      "_this[122454] 状态机细节",
+      "sub_459770 语义"
+    ],
     "evidence": "raw 28829-28942 (sub_41F790)",
     "notes": "opcode-table 0x84 原仅映射；与 ret(0x5) 共用消息回调 flag 栈。🔒 记录背景（待实现消息/文本回调系统时再改 emulator）。"
   },
@@ -1591,10 +2759,26 @@
     "semantic_name": "dispatchQueuedScripts_40FB60",
     "status": "ANALYZED",
     "purpose": "从脚本派发队列(Queue_int@0x796DC=497372)弹出一个请求并派发。若 429752 门开 & 读下标<写下标：v2=queue[读]; 读下标++; v2!=0 时：保存 cur→_this[383112]、effect_flags→_this[383116]、置 in-dispatch 标志(497400)=1、call_ret=-10、effect_flags=0；v2>=0(正请求=脚本资源id)则 cur=37 并 loadScriptFrame(script) 到「预占帧37」；v2<0(负请求)则 cur=-v2 恢复某帧(其 caller=-10、ip=prev、state=0)。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["弹队列 v2", "保存 cur/effect_flags + call_ret=-10 + effect_flags=0", "v2>=0 → cur=37 预占帧装载脚本", "v2<0 → cur=-v2 恢复帧"],
-    "fields_used": ["this->dispatch_queue(0x796DC)", "this->dispatch_in_progress(0x796F8)", "this->_this[383112](保存cur)", "this->_this[383116](保存effect_flags)", "this->cur_script"],
-    "unmodeled": ["429752 门语义", "queueScript 请求id编码(slot<<24)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "弹队列 v2",
+      "保存 cur/effect_flags + call_ret=-10 + effect_flags=0",
+      "v2>=0 → cur=37 预占帧装载脚本",
+      "v2<0 → cur=-v2 恢复帧"
+    ],
+    "fields_used": [
+      "this->dispatch_queue(0x796DC)",
+      "this->dispatch_in_progress(0x796F8)",
+      "this->_this[383112](保存cur)",
+      "this->_this[383116](保存effect_flags)",
+      "this->cur_script"
+    ],
+    "unmodeled": [
+      "429752 门语义",
+      "queueScript 请求id编码(slot<<24)"
+    ],
     "evidence": "raw 18954-19016 (sub_40FB60)",
     "notes": "与 i143/queueScript/exit(-10哨兵) 联动；预占帧37。正请求装载/负请求恢复 = 抢占执行机制。emulator 未实现(仅 op_engine_internal)。"
   },
@@ -1604,9 +2788,17 @@
     "semantic_name": "queueScript_40FC90",
     "status": "ANALYZED",
     "purpose": "把脚本请求 a2 入派发队列(sub_409E10@0x796DC)；若不在派发中(_this[124350]==0)则立即 sub_40FB60 派发。a2==-1 不排队。i143 扫描请求寄存器后以 slot<<24 调它。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["a2!= -1 则 sub_409E10 入队", "!_this[124350] 则 sub_40FB60 派发"],
-    "fields_used": ["this->dispatch_queue(0x796DC)", "this->dispatch_in_progress(0x796F8)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "a2!= -1 则 sub_409E10 入队",
+      "!_this[124350] 则 sub_40FB60 派发"
+    ],
+    "fields_used": [
+      "this->dispatch_queue(0x796DC)",
+      "this->dispatch_in_progress(0x796F8)"
+    ],
     "unmodeled": [],
     "evidence": "raw 19019-19027 (sub_40FC90)",
     "notes": "被 sub_41A000(i143)/sub_411590(消息回调)/主循环等调用。"
@@ -1617,9 +2809,17 @@
     "semantic_name": "queueEnqueue_409E10",
     "status": "ANALYZED",
     "purpose": "Queue_int 入队：_this 为队列对象(+0 vftable,+4 base,+8 读,+12 写,+24 max)。把 a2 追加到队尾，必要时扩容。脚本派发队列@0x796DC(497372)用它接收 queueScript 请求。",
-    "signature_override": { "param0": "this(Queue_int*)" },
-    "sub_behaviors": ["读队列状态", "必要时扩容", "队尾写入 a2"],
-    "fields_used": ["this->dispatch_queue(0x796DC)"],
+    "signature_override": {
+      "param0": "this(Queue_int*)"
+    },
+    "sub_behaviors": [
+      "读队列状态",
+      "必要时扩容",
+      "队尾写入 a2"
+    ],
+    "fields_used": [
+      "this->dispatch_queue(0x796DC)"
+    ],
     "unmodeled": [],
     "evidence": "raw 14281-14290 (sub_409E10)",
     "notes": "被 sub_40FC90 入队；队列对象@0x796DC(497372)。"
@@ -1631,9 +2831,22 @@
     "op": "0x8",
     "status": "ANALYZED",
     "purpose": "op i008：调用/切换到「预加载帧」op1。save cur→call_ret；cur=readIntOperand(1)(目标帧)；要求该帧已预装(*(frame+383124)!=0)否则抛 ShowMessage(文件没读入,Depth)；设目标帧.caller=call_ret、ip=帧起始、状态槽=0；返回新cur。→ 被调帧跑完 exit(0x2) 依其 caller 返回调用帧。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["save cur→call_ret", "cur=op1(帧号)", "检查帧已预装(383124!=0)", "设目标帧.caller=call_ret", "ip=帧起始、状态槽=0"],
-    "fields_used": ["this->cur_script", "this->frames[cur].caller(383180)", "this->frames[cur].ip(383128)", "this->frames[cur].script_buf(383124)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "save cur→call_ret",
+      "cur=op1(帧号)",
+      "检查帧已预装(383124!=0)",
+      "设目标帧.caller=call_ret",
+      "ip=帧起始、状态槽=0"
+    ],
+    "fields_used": [
+      "this->cur_script",
+      "this->frames[cur].caller(383180)",
+      "this->frames[cur].ip(383128)",
+      "this->frames[cur].script_buf(383124)"
+    ],
     "unmodeled": [],
     "evidence": "raw 26876-26913 (sub_41C900)",
     "notes": "★预加载帧的调用点：SYSTEM4 load-frame(0x6) 把 DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK 预装进帧 26/28/29/30/31；游戏脚本用 call-frame <帧号> 直接切过去执行（FIELD/ALLMAP/FELLOW/ALCHEMY/MOVERUIN/RTN_M002 等）。opcode-table 0x8 原仅映射，现定为帧切换调用。【emulator 已实现 op_call_frame(0x8)，test/call-frame.test.ts 覆盖 load-frame→call-frame→exit 往返】"
@@ -1645,10 +2858,22 @@
     "op": "0x8F",
     "status": "ANALYZED",
     "purpose": "op call：同脚本子程序调用。帧状态槽=3；把当前指令长推断的返回地址((ip-start)>>2 + 3)压入每帧返回栈(256*cur+97193+stackTop++)；若 op1==-1 则弹回(no-op)；否则跳 label：帧ip=帧基+4*op1。配对 ret(0x5)。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["帧状态槽=3", "压返回地址到每帧返回栈", "op1==-1 则弹回", "否则 帧ip=帧基+4*op1"],
-    "fields_used": ["this->frames[cur].ret_stack(388772)", "this->frames[cur].ip(383128)"],
-    "unmodeled": ["返回地址编码((ip-start)>>2+3)精确语义"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "帧状态槽=3",
+      "压返回地址到每帧返回栈",
+      "op1==-1 则弹回",
+      "否则 帧ip=帧基+4*op1"
+    ],
+    "fields_used": [
+      "this->frames[cur].ret_stack(388772)",
+      "this->frames[cur].ip(383128)"
+    ],
+    "unmodeled": [
+      "返回地址编码((ip-start)>>2+3)精确语义"
+    ],
     "evidence": "raw 29452-29474 (sub_420560)",
     "notes": "与 ret(0x5) 配对；调用方不压 msg_cb_flag_stack(那是消息回调 sub_411590 压的)。opcode-table 0x8F 已核对。"
   },
@@ -1659,10 +2884,24 @@
     "op": "0xAE",
     "status": "PARTIAL",
     "purpose": "op 0xAE：存档版本分支。经 _this+174405 对象读 set:SaveVersion(1/2/3/20) 与 set:SaveVersion_0；按版本重算当前帧 ip(_this[30*cur+95782/95803/95804])、设状态槽；版本2/3 时若 cur==_this[140457]/[151210] 则切换 cur(=目标帧)、否则 cur=cur+1 并 sub_40F750 装载；版本20 类似(_this[129624])。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读存档版本 set:SaveVersion", "按版本重算帧ip/状态槽", "切 cur 到目标帧(140457/151210/129624)", "否则 cur+1 并 sub_40F750 装载"],
-    "fields_used": ["this->_this[140457/151210](版本2/3目标帧)", "this->cur_script", "this->_this+174405(配置对象)"],
-    "unmodeled": ["版本->目标帧/装载映射细节", "_this[140457/151210/129624] 写入方"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读存档版本 set:SaveVersion",
+      "按版本重算帧ip/状态槽",
+      "切 cur 到目标帧(140457/151210/129624)",
+      "否则 cur+1 并 sub_40F750 装载"
+    ],
+    "fields_used": [
+      "this->_this[140457/151210](版本2/3目标帧)",
+      "this->cur_script",
+      "this->_this+174405(配置对象)"
+    ],
+    "unmodeled": [
+      "版本->目标帧/装载映射细节",
+      "_this[140457/151210/129624] 写入方"
+    ],
     "evidence": "raw 24634-24773 (sub_4192F0)",
     "notes": "★已定性：是「存档续档」机制，**不是**预装帧启动路径。读 set:SaveVersion(1/2/3)+set:SaveVersion_0(20)；若 cur==快照帧(_this[140457]/[151210]/[129624] 首字段=存档时活跃帧号) 则切 cur 续档；否则 cur=cur+1 并 sub_40F750→loadScriptFrame 载入对应场景脚本(按 261/263*cur+… 跳转表定 ip)。快照结构由 sub_40CD10 一族在存档时写入(memset 0xA804/0xF624)，目标帧=存档时活跃场景脚本帧，非预装帧(26/28-31, 那是 i008 启动的)。_this[95780]=门、_this[97054]=续档标志、_this[95777]=call_ret。"
   },
@@ -1673,10 +2912,26 @@
     "op": "0x7C",
     "status": "ANALYZED",
     "purpose": "op 0x7C：返回嵌套调用/恢复调用方帧（**非单纯 dispatch-check**）。要求 _this[489808]&0x2000000 置位(在嵌套调用中)否则抛 EndHWl；校验当前帧[95796]==_this[430712](深度)否则抛 Depth が不正；恢复当前帧.ip=帧起始+4*_this[489812]、帧状态=0、effect_flags=_this[489808]&0xFDFFFFFF、清 489808/81776/81768/51848/51840；若 _this[387940] 置位则清之，且 dispatch_queue 恰有 1 个(read<write && write-read==1)时 sub_40FB60 一次性派发。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["门 489808&0x2000000", "校验帧[95796]==430712", "恢复帧ip/effect_flags/清状态", "清 489808/81776/81768/51848/51840", "恰1个排队则 sub_40FB60 一次性派发"],
-    "fields_used": ["this->_this[489808](保存ef+0x2000000)", "this->_this[489812](返回ip)", "this->_this[430712](保存深度)", "this->dispatch_queue(0x796DC)"],
-    "unmodeled": ["387940 置位方", "0x4000000 设置路径细节"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "门 489808&0x2000000",
+      "校验帧[95796]==430712",
+      "恢复帧ip/effect_flags/清状态",
+      "清 489808/81776/81768/51848/51840",
+      "恰1个排队则 sub_40FB60 一次性派发"
+    ],
+    "fields_used": [
+      "this->_this[489808](保存ef+0x2000000)",
+      "this->_this[489812](返回ip)",
+      "this->_this[430712](保存深度)",
+      "this->dispatch_queue(0x796DC)"
+    ],
+    "unmodeled": [
+      "387940 置位方",
+      "0x4000000 设置路径细节"
+    ],
     "evidence": "raw 25779-25824 (sub_41AB80)",
     "notes": "★已改名 local-ret（曾 i07c/曾误标 dispatch-check）。单帧\"续点 ret\"——主循环 0x4000000(jump/call-pending) 与 sub_411BC0(负ef) 置 489808/489812/430712，本 op 恢复。opcode-table 0x7C 已核对。emulator 未映射(NotImplementedOp)。"
   },
@@ -1687,12 +2942,50 @@
     "op": "0xFA",
     "status": "ANALYZED",
     "purpose": "op 0xFA：输入/消息推进（input+ADV 状态机，属输入子系统，与 0x72 wait-for-input/0x101 poll-input/0xCD get-input-type 同类）。清 _this[97054]；sub_4780D0 读输入状态；若 (v5&0x40)==0 则清 _this[174801]&~0x8000000(退出 ADV)、遍历 3 个回调槽(122505 区)经 sub_4BB840 处理并清空；若仍非 ADV 则 sub_478090 flush 输入→_this[174802]、置负 ef(_this[174801]|=0x80000000)并清输入掩码——即空闲时触发 sub_411BC0 空等待派发（其后 local-ret/0x7C 收尾）。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读输入状态 sub_4780D0", "(v5&0x40)==0 则清 ADV/处理 3 回调槽", "非 ADV 则 flush→输入掩码、置负 ef", "置负 ef 触发空闲等待派发"],
-    "fields_used": ["this->effect_flags(0xAAB44)", "this->_this[174802](输入掩码)", "this->_this[122505 区](消息回调槽)"],
-    "unmodeled": ["122505 回调槽/ sub_4BB840 语义"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读输入状态 sub_4780D0",
+      "(v5&0x40)==0 则清 ADV/处理 3 回调槽",
+      "非 ADV 则 flush→输入掩码、置负 ef",
+      "置负 ef 触发空闲等待派发"
+    ],
+    "fields_used": [
+      "this->effect_flags(0xAAB44)",
+      "this->_this[174802](输入掩码)",
+      "this->_this[122505 区](消息回调槽)"
+    ],
+    "unmodeled": [
+      "122505 回调槽/ sub_4BB840 语义"
+    ],
     "evidence": "raw 24952-24988 (sub_4199B0)",
     "notes": "与 0x72/0xFA→sub_411BC0→local-ret(0x7C) 组成「输入驱动单帧协程」（wait→事件→续点 ret）。opcode-table 0xFA 原仅映射。"
+  },
+  {
+    "addr": "0x42EF50",
+    "raw_name": "sub_42EF50",
+    "semantic_name": "op_read_mouse_wheel_42EF50",
+    "op": "0x10D",
+    "status": "ANALYZED",
+    "purpose": "op 0x10D：**鼠标滚轮增量读取（一次性消费）**。读引擎累加器 mouse_wheel_residual(0x1E74) → **立即清零** → 把读到的值经 writeIntOperand 写 op1。参数：op1=目标（写 int）。op1 拿到的是自上次读取以来 WM_MOUSEWHEEL 的增量累计（原始滚轮单位：一格 ±120，可为负；方向上滚为正、下滚为负）。属输入读取簇，紧邻 0x108(读鼠标按钮)/0x109(读鼠标位置)。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "标记本帧操作数记数槽 _this[30*cur+95805]（=byte 0x5D8F4；值 3=1 个操作数）",
+      "v2 = mouse_wheel_residual(0x1E74)",
+      "mouse_wheel_residual = 0（清零 = 一次性消费）",
+      "sub_42B4B0(_this, 1, v2) = writeIntOperand 写 op1"
+    ],
+    "fields_used": [
+      "this->mouse_wheel_residual(0x1E74)",
+      "this->frames[cur] 的未建模槽 _this[30*cur+95805]（绝对 0x5D8F4）"
+    ],
+    "unmodeled": [
+      "帧槽 _this[30*cur+95805]（绝对 0x5D8F4）尚未建模：引擎里它是「本指令操作数记数」（值=2*argc+1），主循环据此按 arity 前进（raw 20165 `ip += 4 * 该值`），442 处 handler 写它（raw 24431-42943 区）；相对真帧基址 0x5D880 是 frame+0x74（**不是** local_int_count 的 +0x08）"
+    ],
+    "evidence": "raw 39114-39122 (sub_42EF50)；注册 raw 22990 (_this[677072]=sub_42EF50)",
+    "notes": "★脚本用法（40+ 菜单/列表脚本的固定模式）：进入菜单时 `i109 (local ef) (local f0)` 读鼠标位置、紧接着 `i10d (local 403)` 取走滚轮残量并丢弃，之后在主循环里反复 `i10d (local 403)` + `jcc (local 403) <翻页label>`——即『滚轮值≠0 → 滚页』。样例：src/$3$AGENCY.txt:258/283（初始化丢弃 + label_0000218c 翻页）、ALCHEMY/CGMODE/CGVIEWER/CONFIG1/CONFIG2/FIELD/FELLOW/HMODE/HISTORY/INFO*/ORGANIZE/REACH/REIGN/REWARD/SAVE/SELFONT/SELFORT/SELPLANT/SELSTAGE/SHOP/STALL 同型。⚠️与消息泵耦合：ADV 推进分支 raw 13938 读同一累加器且**仅 <0（滚轮向下）**才推进文本；脚本先 i10d 取走 ⇒ 累加器归零 ⇒ 泵侧不再推进（跳过/翻页优先）。emulator：**已实现**（src/vm/ops.ts op_read_mouse_wheel 注册 0x10D；src/vm/input.ts InputManager.wheelDelta + addWheel/consumeWheelDelta；渲染窗 pixiBackend wheel 事件按 -deltaY 注入）。测试 test/wheel.test.ts。"
   }
-
 ]

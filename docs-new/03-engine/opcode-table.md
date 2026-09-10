@@ -217,7 +217,7 @@
 | 0x10A | 2 |  | sub_421EA0 | 仅映射 |  |
 | 0x10B | 2 |  | sub_422070 | 已核对 | **SetKey（另一按键表）**：读 op2=键下标、op1=值；`op1≤0x1F` 时写 `_this[op2+1383]=op1`。handler=sub_422070（raw .c 30200） |
 | 0x10C | 2 |  | sub_4220B0 | 已核对 | **SetKeyMulti**：读 op1=值、op2=键索引；`op1>0x1F` 抛 ShowMessage「set-keymulti 引数不正」，否则写 `_this[_this[op2+1690]+1434]=op1`。handler=sub_4220B0（raw .c 30213） |
-| 0x10D | 1 |  | sub_42EF50 | 仅映射 |  |
+| 0x10D | 1 |  | sub_42EF50 | 已核对 | **读鼠标滚轮增量（一次性消费）**：`v2=mouse_wheel_residual(_this[1949]/+0x1E74)`；**随即清零**；`sub_42B4B0(1,v2)` 写 op1。值 = 自上次读取以来 WM_MOUSEWHEEL 的 `+= SHIWORD(wParam)` 累计（一格 ±120，上滚正/下滚负），清零点见 raw 141582 写入、raw 13938/21060 消息泵 ADV 推进门（仅 `<0` 即下滚才推进文本）。handler=sub_42EF50（raw .c 39114）。★脚本模式：菜单/列表进入时 `i10d (local 403)` 丢弃残量，主循环反复 `i10d (local 403)`+`jcc (local 403) <翻页label>` 实现滚轮翻页（AGENCY:258/283 等 40+ 脚本） |
 | 0x10E | 2 |  | sub_42EF90 | 仅映射 |  |
 | 0x10F | 1 |  | sub_422120 | 已核对 | **引擎控制字段**：读 op1 写 `_this[122369]`。handler=sub_422120（raw .c 30232） |
 | 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 已核对 | **lookup-array-2d**（二维数组元素地址）：`v6=op3*op4+op5`（行×列宽+列），`operandAddress_42AEA0(2)` 取 op2 基址，`sub_418CC0(1, base, v6, -1, -1)` 把 `base+4*v6` 写入 op1 指针槽。handler=sub_42EFD0（raw .c 38462） |

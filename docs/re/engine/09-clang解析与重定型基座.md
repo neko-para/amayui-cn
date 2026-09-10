@@ -87,7 +87,7 @@ clang -x c++ -fms-extensions -std=c++17 \
   - **v1 范围**：只改「常数下标的 Engine 顶层字段」（`global_int/float/string/ptr/float_ptr_base`、
       `cur_script`、`call_ret/call_link/call_flag`、`key`）。**未改**：帧内访问 `_this[30*cur+C]`→`frames[cur].field`、
       `char*`/`int` 基址的 `_this + 字节偏移` 形式、`sub_XXXX`→语义名、全局 `dword_*` 前向声明。
-- [ ] v2：帧内访问 `_this[30*cur+C]` → `_this->frames[cur].field`（`C*4-0x5D894` 命中 `FRAME_FIELD`）。
+- [ ] v2：帧内访问 `_this[30*cur+C]` → `_this->frames[cur].field`（`C*4-0x5D880` 命中 `FRAME_FIELD`；★帧基址是 0x5D880，早期文档用的 0x5D894 实为 frame0 的 `str_table` 槽 = 帧+0x14）。
 - [ ] v2：`_this + <byte>`（char*/int 基址）+ `*(_DWORD*)(_this+…)` → 字段；以及嵌套 `_this->frames` 链。
 - [ ] v3：`semantic_names.json` 驱动 `sub_XXXX`→语义名；全局 `dword_*/byte_*` 前向声明降噪。
 - [ ] 需要 `pip install clang`（Python 绑定；`/Library/Developer/CommandLineTools/usr/lib/libclang.dylib` 已存在）。

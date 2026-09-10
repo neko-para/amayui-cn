@@ -23,22 +23,30 @@ public static class EngineOffsets
     public const uint CallFlag = 0x5D88C;
 
     // ---- 脚本帧数组 ----
-    public const uint Frames = 0x5D894;          // 帧 0 基址（字节偏移）
+    public const uint Frames = 0x5D880;          // 帧 0 基址（字节偏移；★曾误记 0x5D894 —— 那只是 frame0 的 str_table 槽 = 帧+0x14）
     public const uint FrameStride = 0x78;        // 每帧 0x78 = 120 字节
     public const int FrameCount = 40;            // 0..39
 
-    // ---- 帧内字段偏移（相对帧基址 this+0x5D894+0x78*cur）----
-    public const uint FrameStrTable = 0x00;          // 字符串表基址
-    public const uint FrameIp = 0x04;                // 当前指令指针
-    public const uint FrameLocalInt = 0x20;
-    public const uint FrameLocalFloat = 0x24;
-    public const uint FrameLocalString = 0x28;
-    public const uint FrameLocalPtr = 0x2C;
-    public const uint FrameLocalFloatPtr = 0x30;
-    public const uint FrameCaller = 0x38;            // 返回链接
-    public const uint FrameArg = 0x3C;               // 本帧传入参数（call-script 时=脚本 id）
-    public const uint FrameArity = 0x60;             // 指令长度（dword，含 opcode）
-    public const uint FrameArrayContainer = 0x70;    // 每脚本数组容器
+    // ---- 帧内字段偏移（相对帧基址 this+0x5D880+0x78*cur）----
+    public const uint FrameStrTable = 0x14;          // 字符串表/脚本缓冲基址（loader: 120*cur+383124）
+    public const uint FrameIp = 0x18;                // 当前指令指针（loader: 120*cur+383128）
+    public const uint FrameLocalIntCount = 0x1C;     // 6 个局部池元素数
+    public const uint FrameLocalFloatCount = 0x20;
+    public const uint FrameLocalStringCount = 0x24;
+    public const uint FrameLocalPtrCount = 0x28;
+    public const uint FrameLocalFloatPtrCount = 0x2C;
+    public const uint FrameLocalStringPtrCount = 0x30;
+    public const uint FrameLocalInt = 0x34;
+    public const uint FrameLocalFloat = 0x38;
+    public const uint FrameLocalString = 0x3C;
+    public const uint FrameLocalPtr = 0x40;
+    public const uint FrameLocalFloatPtr = 0x44;
+    public const uint FrameLocalStringPtr = 0x48;    // operand type 14，元素 28 字节
+    public const uint FrameCaller = 0x4C;            // 返回链接
+    public const uint FrameArg = 0x50;               // 本帧传入参数（call-script 时=脚本 id）
+    public const uint FrameArity = 0x60;             // 指令长度（dword，含 opcode；loader 清零）
+    public const uint FrameOperandCount = 0x74;      // ★操作数记数槽：值=2*argc+1；主循环 ip += 4*本槽
+    public const uint FrameArrayContainer = 0x84;    // 每脚本数组容器
 
     // ---- opcode → handler 分发表 ----
     public const uint DispatchTable = 0x0A509C;      // 一维函数指针表

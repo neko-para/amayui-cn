@@ -27,7 +27,7 @@ AGE/System4 是 Eushully 自研引擎，**是通用解释器**，本身**不含�
 | 成员函数识别 | `scripts/re/detect_members.py` | 高偏移定位基准 + 调用图双向传播；清单 `member_functions.detected.txt`（1239 个） |
 | 一键重定型 | `scripts/re/retarget.py` | ⚠️ **已废弃**——签名替换 + 字段标记 + 调用点 `this->` + 语义命名（`semantic_names.json`）→ `engine/engine.cpp` |
 
-- `engine/engine.hpp` 把已确认偏移（`this+0x5D800` 全局数组、`this+0x5EC8C` key、`this+0xA509C` dispatch 表、`this+0x5D894` frames[40]、`this+0x5D880/4/8` 调用栈字段）落成 `struct Engine`。
+- `engine/engine.hpp` 把已确认偏移（`this+0x5D800` 全局数组、`this+0x5EC8C` key、`this+0xA509C` dispatch 表、`this+0x5D880` frames[40]（★曾误记 0x5D894）、`this+0x5D880/4/8/8C` 调用栈字段）落成 `struct Engine`。
 
 ## 3. 已确认/待确认
 

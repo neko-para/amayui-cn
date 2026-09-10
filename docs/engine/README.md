@@ -57,7 +57,7 @@
 | `this+0xA509C` | opcode→handler 函数指针表基址（下标=opcode，上限 0x400） |
 | `this+0x5D800` | 全局 variant 数组基址（`global_int_base`） |
 | `this+0x5EC8C` | `DEC/ENC` 的 key（DWORD 索引 `_this[97059]`） |
-| `this+0x5D894` | `frames[40]`（脚本帧，每脚本一帧） |
+| `this+0x5D880` | `frames[40]` 帧数组基址（帧距 0x78；★曾误记 0x5D894 —— `this+0x5D894` 只是 frame0 的 `str_table` 槽 = 帧+0x14） |
 | `this+0x5D880/5D884/5D888` | 调用栈链接字段（`callde/return` 压弹栈） |
 
 > 业务数据地址（如 `0x53e104` 掉落、`0x1d4f4` 技能名、`0x5697a` 随机池等）**不在本文件**，见 [`../data/README.md`](../data/README.md)。

@@ -89,12 +89,27 @@ static_assert(sizeof(SliceDescriptor) == 0x10, "SliceDescriptor must be 16 bytes
 // =============================================================================
 // 2. 每个脚本上下文的「页」（120 字节 / 0x78）
 // =============================================================================
-//  引擎按 `this[95776]=cur_script` 区分脚本上下文；每页 = 120 字节 = 0x78，
-//  页基址 = this + 0x5D894 + 0x78*cur_script。
-//  页内偏移（相对页基址）＝ 反编译绝对常量 − 0x5D894：
-//       0x00 字符串表   0x04 IP指针   0x20 local-int  0x24 local-float
-//       0x28 local-string 0x2C local-ptr 0x30 local-float-ptr
-//       0x38 caller(返回链接)  0x3C frame_arg  0x60 arity(长度?)  0x70 数组容器
+//  引擎按 `this[95776]=cur_script` 区分脚本上下文；每页 = 120 字节 = 0x78。
+//  ★帧基址（页 0 起点）= `this + 0x5D880`（= 4×95776，即 cur_script 槽所在）。
+//    ——**不是** 0x5D894：0x5D894 只是 frame0 的 **str_table 槽**（= 帧基址 + 0x14）。
+//    判据：引擎帧算术与帧内字节偏移必须同原点，而两者在**同一函数**内互换使用
+//      （sub_409700 raw 13991：`v4 = &_this[30*cur]` 之后既有 `v4[95781]`（str_table，+0x14）
+//        又有 `*(_DWORD *)(result_with_30cur + 383124)`（同一处，字节式））；
+//      `30*cur`（dword，30 dwords = 120 字节）= `120*cur`（字节）⇒ 帧基址 = 383104 = 0x5D880。
+//    另一条独立判据：主循环取 opcode 于 `_this[30*cur + 95782]`（= 字节 383128 = 帧+0x18 = ip），
+//      按 `ip += 4 * _this[30*cur + 95805]`（= 帧+0x74 操作数记数）推进；而 loader 显式写
+//      `120*cur + 383128`（ip）、`120*cur + 383220`（操作数记数清零）——两者只有 0x5D880 原点吻合。
+//  页内偏移（相对上述帧基址 0x5D880）＝ 反编译绝对常量 − 0x5D880；
+//    ★下表是「以 0x5D894 为参考零点」的旧标注（= 真偏移 − 0x14），两者相差 0x14：
+//       旧 +0x00 字符串表   旧 +0x04 IP指针   旧 +0x20 local-int  旧 +0x24 local-float
+//       旧 +0x28 local-string 旧 +0x2C local-ptr 旧 +0x30 local-float-ptr
+//       旧 +0x38 caller   旧 +0x3C frame_arg  旧 +0x60 arity  旧 +0x70 数组容器
+//    ▼真偏移（权威，同 analysis/fields.json 的 ScriptContext 记录；绝对地址列见注释）
+//       +0x14 str_table   +0x18 ip        +0x1C..+0x30 6 个池 count
+//       +0x34..+0x48 6+1 个池基址（int/float/string/ptr/float_ptr/string_ptr）
+//       +0x4C caller      +0x50 frame_arg +0x54..+0x5C 未标定
+//       +0x60 arity       +0x6C/+0x70 返还点下标槽   +0x74 **操作数记数**（主循环据此推进 ip）
+//       +0x84 array_container（std::vector）
 //
 //  ★ local_xxx 与脚本头 `local_vars = { ... }` 的关系（推测，未逐一坐实）：
 //     脚本 BIN 头（BinaryInformation）里有 `local_vars = { f 1 1 6 1 2 }` 这类声明，反汇编器把它命名成
@@ -187,7 +202,8 @@ struct Engine {
     char     _reserved_5D890[0x04];              // 0x5D890 .. 0x5D894
 
     // ---- 每脚本帧数组（40 帧，0..39；`cur_script` 选中当前帧）----
-    ScriptContext frames[40];                    // 0x5D894 .. 0x5EB54
+    ScriptContext frames[40];                    // 0x5D894 .. 0x5EB54（本结构体自用的下标零点；★引擎真实的帧基址 = 0x5D880，
+                                                 //   见上方「页内偏移」说明：0x5D894 = frame0 的 str_table 槽 = 真帧+0x14）
     char _reserved_5EB54[0x138];                 // 0x5EB54 .. 0x5EC8C
 
     // ---- 解混淆 key ----

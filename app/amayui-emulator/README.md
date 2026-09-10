@@ -31,6 +31,32 @@
 
 ---
 
+## 输入指令（鼠标/滚轮）
+
+引擎把输入状态放在 `this + 258` 的输入管理器里，脚本用一族 opcode 读出来。emulator 用 `InputManager`
+（`src/vm/input.ts`）重建这些可观测语义，渲染窗（`PixiBackend.#attachMouseInput`）负责注入：
+
+| opcode | 引擎 handler | emulator | 语义 |
+|---|---|---|---|
+| `0x108` | `sub_42EDC0` | `[已实现]` | `op1 = 鼠标按钮值`（bit0=左/bit1=右）；渲染窗 `mousedown/mouseup` 注入 |
+| `0x109` | `sub_42EE10` | `[已实现]` | `op1=X, op2=Y`（虚拟 1280×720 坐标；出窗=-100000）；渲染窗 `mousemove/mouseleave` 注入 |
+| `0x10D` | `sub_42EF50` | `[已实现]` | **读鼠标滚轮增量并清零**（一次性消费）→ `op1`；渲染窗 `wheel` 注入 |
+| `0xCC` / `0xFB` | `sub_421980` / `sub_421B80` | `[已实现]` | 注册 mouse/joy 跳转目标（供 0xCD/0x100 派发） |
+| `0x100` / `0x101` / `0xCD` / `0x2FC` | … | `[已实现]` | 输入掩码/派发/推进门/触摸（无触摸恒 0） |
+
+**`0x10D`（滚轮）要点**（分析见 `analysis/functions.json` 的 `op_read_mouse_wheel_42EF50`）：
+
+- 引擎体：`v2 = _this[1949]`（累加器 byte **0x1E74**）→ **立即清零** → `writeIntOperand(op1, v2)`。
+- 累加器只在 `WM_MOUSEWHEEL` 里 `+= (short)HIWORD(wParam)` 增长 ⇒ 单位 = 原始滚轮单位（**一格 ±120**）。
+- **方向：上滚为正、下滚为负**（脚本实证 `src/$3$AGENCY.txt:548` `gr (local 403) 0` → 上滚翻上页）。
+- 渲染窗 `wheel` 事件按 `-e.deltaY` 换算后 `input.addWheel()`（DOM 的 deltaY 下滚为正，与引擎相反）。
+- **不随 `consumeEdges()` 擦除**：它是"读时消费"而非"按帧擦除"，否则轮询期间未读就丢
+  （引擎里只有 `0x10D` 与消息泵的 ADV 推进分支会清它）。
+- 脚本用法（40+ 菜单/列表）：进入时 `i10d` 丢弃残量 → 主循环 `i10d (local 403)` + `jcc (local 403) <翻页label>`。
+- 测试：`test/wheel.test.ts`（读后清零 / 累加 / 负方向 / 不被 consumeEdges 清）。
+
+---
+
 ## 控制窗（ControlWindow）
 
 一个独立小窗（`control/`，与主窗口同 preload），用于在不重启的前提下操纵正在跑的 VM：
@@ -114,7 +140,7 @@ app/amayui-emulator/
 
 （实施者在此勾选，`docs/03` 同源。每次完成一里程碑更新。）
 - [x] M0 代码骨架 + BIN 读取器 —— 已完成：异步 FileSource 代理 + SYS4450 解析 + 最小解释器步进（解析 vs `src/*.txt` 逐条一致测试全绿）
-- [ ] M1 VM 核心解释器 —— **进行中**：文件策略改为只依赖 `raw/`（松散优先，否则 ALF 切片）；SYSTEM4 初始化段已越过并进入 call-script 链；新增「引擎内部/子系统 → 插桩跳过」（~24 opcode 已读体归类）
+- [ ] M1 VM 核心解释器 —— **进行中**：文件策略改为只依赖 `raw/`（松散优先，否则 ALF 切片）；SYSTEM4 初始化段已越过并进入 call-script 链；新增「引擎内部/子系统 → 插桩跳过」（~24 opcode 已读体归类）；输入簇已接真值（`0x108` 按钮 / `0x109` 位置 / `0x10D` 滚轮增量 等）
 - [ ] M2 启动链 opcode 清点/分类
 - [ ] M3 无界面跑到 TITLE（第一里程碑）
 - [ ] M4 差分验证

@@ -22,7 +22,7 @@ internal static class Program
         // ---- 0) DEC 往返自校验 ----
         bool rt = Dec.RoundTripOk(0x4197761F);
         Console.WriteLine($"[self-check] DEC(ENC(x))==x  ⇒ {(rt ? "OK" : "FAIL")}");
-        Console.WriteLine($"[self-check] offsets: int={0x5D800:X} float={0x5D808:X} str={0x5D810:X} ptr={0x5D818:X} fptr={0x5D820:X} key={0x5EC8C:X} frames={0x5D894:X} stride={0x78:X} dispatch={0x0A509C:X}");
+        Console.WriteLine($"[self-check] offsets: int={EngineOffsets.GlobalIntBase:X} float={EngineOffsets.GlobalFloatBase:X} str={EngineOffsets.GlobalStringBase:X} ptr={EngineOffsets.GlobalPtrBase:X} fptr={EngineOffsets.GlobalFloatPtrBase:X} key={EngineOffsets.Key:X} frames={EngineOffsets.Frames:X} stride={EngineOffsets.FrameStride:X} dispatch={EngineOffsets.DispatchTable:X}");
 
         if (opt.NoProcess)
         {

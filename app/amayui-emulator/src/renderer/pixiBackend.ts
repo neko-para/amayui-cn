@@ -131,7 +131,7 @@ export class PixiBackend implements NativeBridge {
     return b;
   }
 
-  /** 把鼠标事件映射到 InputManager（虚拟 1280×720 坐标；左=bit0、右=bit1）。
+  /** 把鼠标事件映射到 InputManager（虚拟 1280×720 坐标；左=bit0、右=bit1；滚轮 → wheelDelta）。
    *  监听 window（而非仅 canvas），用 canvas 的 getBoundingClientRect 求局部坐标——更稳健，
    *  避免 canvas 层事件不触发/坐标偏移的常见坑。 */
   #attachMouseInput(canvas: HTMLCanvasElement, input?: InputManager): void {
@@ -171,6 +171,27 @@ export class PixiBackend implements NativeBridge {
       if (e.button === 0) input.releaseMouse(0);
       else if (e.button === 2) input.releaseMouse(1);
     });
+    // 滚轮：喂给 InputManager.wheelDelta（0x10D 读并清零）。
+    // 方向/单位对齐引擎 WM_MOUSEWHEEL 的 `+= (short)HIWORD(wParam)`：**每格 ±120、上滚正**；
+    // 而 DOM WheelEvent.deltaY 在"下滚"时为正 → 取负。
+    let lastWheelLog = 0;
+    window.addEventListener(
+      'wheel',
+      (e) => {
+        const [x, y] = toVirtual(e.clientX, e.clientY);
+        input.setCursor(x, y, true);
+        const d = -e.deltaY;
+        input.addWheel(d);
+        const now = performance.now();
+        if (now - lastWheelLog > 200) {
+          lastWheelLog = now;
+          this.status.trace.push(
+            `[input] wheel raw=${e.deltaY} -> ${d} sum=${input.wheelDelta} (${x},${y})`,
+          );
+        }
+      },
+      { passive: true },
+    );
     // 右键需阻止默认菜单，否则点击无法作为游戏输入
     window.addEventListener('contextmenu', (e) => e.preventDefault());
   }

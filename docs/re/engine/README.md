@@ -28,7 +28,7 @@
 | [`11-重定型管线与产物.md`](./11-重定型管线与产物.md) | ⚠️ **已废弃**：一键从 `_utf8.c` 生成成员化/语义化版（`retarget.py` → `engine/engine.cpp`），已被数据层方案取代 |
 | [`12-拆壳可行性评估.md`](./12-拆壳可行性评估.md) | 脱壳/重打包的可行性评估（ASProtect 特征、IAT 重建、run+dump 等方案权衡） |
 
-> **复原产物**：[`engine/engine.hpp`](../../../engine/engine.hpp) —— 把上表已确认的偏移（`this+0x5D800..` 全局 variant 数组基址、`this+0x5EC8C` key、`this+0xA509C` dispatch 表、`0x5D894` 处 `frames[40]`、`0x5D880/0x5D884/0x5D888` 调用栈字段）落成一个 `struct Engine` 的 C++ 布局，未知区一律 char 数组占位；含 `DEC`/`ENC`、`frames`/`script(cur)` 与读写访问器（配合 `07` 文档的 `this` 定位方案使用）。
+> **复原产物**：[`engine/engine.hpp`](../../../engine/engine.hpp) —— 把上表已确认的偏移（`this+0x5D800..` 全局 variant 数组基址、`this+0x5EC8C` key、`this+0xA509C` dispatch 表、`this+0x5D880` 处 `frames[40]`（★曾误记 0x5D894）、`0x5D880/0x5D884/0x5D888` 调用栈字段）落成一个 `struct Engine` 的 C++ 布局，未知区一律 char 数组占位；含 `DEC`/`ENC`、`frames`/`script(cur)` 与读写访问器（配合 `07` 文档的 `this` 定位方案使用）。
 >
 > ~~**一键重定型版**~~：`scripts/re/retarget.py` 从 `engine/天结_unpacked.exe_utf8.c` 直接生成 `engine/engine.cpp`（成员函数化 + 语义命名 + 字段标记 + 调用点 `this->`），详见 [`11-重定型管线与产物.md`](./11-重定型管线与产物.md)。**⚠️ 已废弃**（不生成镜像/不做 AST 文本改写）。
 

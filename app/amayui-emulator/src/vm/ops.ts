@@ -645,6 +645,23 @@ const op_read_mouse_pos: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 2, c.e.input.readY());
 };
 
+/**
+ * 0x10D (sub_42EF50)：**读鼠标滚轮增量（一次性消费）** → `op1`。
+ * 引擎体（raw 39114-39122，本工程分析见 analysis/functions.json 的 op_read_mouse_wheel_42EF50）：
+ *   `_this[30*cur+95805]=3;  v2 = _this[1949];  _this[1949] = 0;  writeIntOperand(1, v2);`
+ * 即：取 `mouse_wheel_residual`(0x1E74) → **立即清零** → 写 op1。
+ * 值语义：自上次读取以来 WM_MOUSEWHEEL 的增量累计（引擎单位：一格 ±120，**上滚正/下滚负**）。
+ * 脚本用法（40+ 菜单/列表）：进入时 `i10d` 丢弃残量，主循环反复 `i10d` + `jcc (local) <翻页label>`
+ *   → 非 0 即翻页；`gr (local 403) 0` 区分上/下滚（src/$3$AGENCY.txt:258/283/548）。
+ * ⚠️与消息泵耦合：引擎的 ADV 推进分支（raw 13938）读同一累加器且**仅 <0（下滚）**才推进文本；
+ *   脚本先 i10d 取走 ⇒ 累加器归零 ⇒ 泵侧不再推进（"脚本优先接管滚轮"）。
+ *   emulator 的 0xCD get-input-type 走的是「时间节流/ADV 激活」而非滚轮值（见 input.getInputType 注释），
+ *   故此处不做泵侧联动；若日后要让滚轮推进 ADV 文本，应在那里按 `<0` 消费。
+ */
+const op_read_mouse_wheel: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeWheelDelta());
+};
+
 /** 0xCC (mouse_callback, sub_421980)：注册鼠标跳转目标。op2=label。 */
 const op_mouse_callback: OpHandler = (c) => {
   const slot = readIntOperand(c.e, c.frame, c.instr, 1);
@@ -877,6 +894,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   // ---- 鼠标/输入子系统（读操作数/跳转/注册目标；语义见 docs-new/03-engine/input-system.md）----
   [0x108, op_read_mouse_buttons],
   [0x109, op_read_mouse_pos],
+  [0x10d, op_read_mouse_wheel], // 读鼠标滚轮增量（一次性消费）→ op1
   [0xcc, op_mouse_callback],
   [0xfb, op_joy_callback],
   [0xff, op_input_reset],

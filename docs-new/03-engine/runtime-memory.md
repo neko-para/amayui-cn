@@ -20,7 +20,7 @@
 
 ## 2. 脚本帧 / 调用栈（字段真源见数据层）
 
-每脚本一帧（`frames[40]`，帧基址 `0x5D894` 区，步长 0x78/0x1E）；`call-script` 压帧、`exit`/`ret` 弹回，涉及 `cur_script`(0x5D880)、`call_ret`(0x5D884)、帧内 `caller`/返回栈、`engine_bool_flag`(0xA30D4) 等。字段偏移与语义一律见 `analysis/fields.json`（`Engine`/`ScriptContext` 作用域）；跨帧流程见 `./flow-control.md`。
+每脚本一帧（`frames[40]`，**帧基址 `0x5D880`**、步长 0x78；★曾误记 0x5D894 —— 那只是 frame0 的 `str_table` 槽 = 帧+0x14）；`call-script` 压帧、`exit`/`ret` 弹回，涉及 `cur_script`(0x5D880)、`call_ret`(0x5D884)、帧内 `caller`(帧+0x4C)/返回栈、`engine_bool_flag`(0xA30D4) 等。字段偏移与语义一律见 `analysis/fields.json`（`Engine`/`ScriptContext` 作用域）；跨帧流程见 `./flow-control.md`。
 
 ## 3. 定位 `this`
 

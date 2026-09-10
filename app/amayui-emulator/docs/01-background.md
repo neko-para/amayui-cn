@@ -75,11 +75,11 @@ key    = *(this + 0x5EC8C)                       // per-instance，构造时写�
 - TS 里 `number` 是 double，必须用 `|0`（int32）、`>>>`（逻辑右移）、`Math.imul`、手写 ROL/ROR 来保证 32 位语义。**不要用裸 `<<`/`>>`/`+` 对位模式运算**。
 
 ### 3.5 脚本上下文与调用栈
-- 引擎为每个脚本上下文准备 **40 个固定帧**（`0..39`），每帧 120 字节（`0x78`），基址 `this + 0x5D894 + 0x78*cur`。
+- 引擎为每个脚本上下文准备 **40 个固定帧**（`0..39`），每帧 120 字节（`0x78`），帧基址 `this + 0x5D880 + 0x78*cur`（★曾误记 0x5D894；0x5D894 只是 frame0 的 `str_table` 槽 = 帧+0x14）。
 - `cur_script`（`this[95776]`,`0x5D880`）= 当前帧深度（active 帧指针）。
 - `call_ret`(`0x5D884`)、`call_link`(`0x5D888`)、`call_flag`(`0x5D88C`)= 控制流目标深度寄存器（存帧下标或 `-1/-10/-11` 哨兵）。
-- `frames[cur].caller`（页 `+0x38`）是持久的帧内回链；嵌套 call-script = 切换 `cur`，被挂起帧的 IP/局部变量/字符串表一直保留。
-- 帧内字段：`str_table(+0x00)`、`ip(+0x04)`、`local_int(+0x20)`、`local_float(+0x24)`、`local_string(+0x28)`、`local_ptr(+0x2C)`、`local_float_ptr(+0x30)`、`caller(+0x38)`、`frame_arg(+0x3C)`、`arity(+0x60)`、`array_container(+0x70)`。
+- `frames[cur].caller`（帧 `+0x4C`）是持久的帧内回链；嵌套 call-script = 切换 `cur`，被挂起帧的 IP/局部变量/字符串表一直保留。
+- 帧内字段（帧相对）：`str_table(+0x14)`、`ip(+0x18)`、`local_int(+0x34)`、`local_float(+0x38)`、`local_string(+0x3C)`、`local_ptr(+0x40)`、`local_float_ptr(+0x44)`、`local_string_ptr(+0x48)`、`caller(+0x4C)`、`frame_arg(+0x50)`、`arity(+0x60)`、操作数记数(`+0x74`，主循环据此推进 ip)、`array_container(+0x84)`；6 个池 count 在 `+0x1C..+0x30`。
 
 ### 3.6 全局 variant 数组（基址在 `this` 里，间接指针）
 | 字段 | 偏移 | 说明 |
