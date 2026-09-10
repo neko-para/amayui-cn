@@ -22,6 +22,8 @@ const fileSource = new NodeFileSource({ rawDir: RAW_DIR });
 
 /** 诊断日志文件（renderer 经 'log-line' IPC 追加到此处）。 */
 const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
+/** 结构化指令轨迹（renderer 经 'append-trace-line' IPC 追加 JSON 行；见控制窗「定向 trace」）。 */
+const TRACE_PATH = path.join(REPO_ROOT, '.tmp', 'scene-trace.jsonl');
 
 let win: BrowserWindow | null = null;
 let controlWin: BrowserWindow | null = null;
@@ -157,6 +159,19 @@ app.whenReady().then(() => {
   ipcMain.on('control-set-trace-all', (_e, enabled: boolean) => {
     if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-all', enabled);
     console.log(`[main] control: traceAll=${enabled}`);
+  });
+  // 控制窗：设置定向 trace 白名单（opcode 列表；空 = 不过滤）→ 转发给渲染窗
+  ipcMain.on('control-set-trace-filter', (_e, ops: number[]) => {
+    if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-filter', ops);
+    console.log(`[main] control: traceFilter=${ops.length ? ops.map((o) => '0x' + o.toString(16)).join(',') : '（空=全部）'}`);
+  });
+  // 渲染窗：把一条结构化 trace（JSON 行）追加到 .tmp/scene-trace.jsonl（用于"场景执行报告"）
+  ipcMain.on('append-trace-line', (_e, line: string) => {
+    try {
+      fs.appendFileSync(TRACE_PATH, line + '\n');
+    } catch (err) {
+      console.error(`[append-trace-line] ${(err as Error).message}`);
+    }
   });
   // 控制窗：「作为桩函数跳过」→ 转发给渲染窗（renderer 登记用户桩 + 从暂停点继续）。
   // 渲染窗此刻应正停在该未知指令上；如已不在该状态，渲染器会自行忽略并记一条日志。

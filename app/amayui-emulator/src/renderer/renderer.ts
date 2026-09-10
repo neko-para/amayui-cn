@@ -7,6 +7,7 @@ import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from '../vm/interpreter.js';
 import { ScriptReset, ExitScript } from '../vm/ops.js';
 import { InputManager } from '../vm/input.js';
+import { DropRecorder, withNativeTap } from '../vm/nativeTap.js';
 import { IpcFileSource, type ControlStatus } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
@@ -26,8 +27,11 @@ function nextFrame(): Promise<void> {
 async function main(): Promise<void> {
   const status: RenderStatus = { scriptName: '…', ip: 0, steps: 0, log: [], trace: [] };
   const input = new InputManager(); // 共享输入状态（渲染器写 / VM 读）
-  const native = await PixiBackend.create(status, input); // WebGL 渲染后端（PixiJS v8）
+  const pixi = await PixiBackend.create(status, input); // WebGL 渲染后端（PixiJS v8）
   const src = new IpcFileSource();
+  // ★闸门 A：把"宿主没实现的 native 调用"从静默 no-op 变成可数事件（归因到当前 opcode）。
+  const drops = new DropRecorder(() => e.currentOpcode);
+  const native = withNativeTap(pixi as object, drops) as PixiBackend;
   const e = new Engine(native, input);
   e.fileSource = src;
 
@@ -105,9 +109,15 @@ async function main(): Promise<void> {
 
     // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
     let traceAll = false;
+    // ★定向 trace 白名单（空 = 不过滤）：控制窗填 opcode 列表 → 只把这些指令写进 scene-trace.jsonl。
+    let traceFilter = new Set<number>();
     // 控制窗：「启用指令日志」开关 → 设 traceAll（true=打印全量指令，false=只打印「已忽略」指令）。
     window.api?.onTraceAll?.((enabled) => {
       traceAll = enabled;
+    });
+    window.api?.onTraceFilter?.((ops) => {
+      traceFilter = new Set(ops);
+      trace(`[trace] 定向 trace 白名单=${ops.length ? ops.map((o) => '0x' + o.toString(16)).join(',') : '（空=全部）'}`);
     });
 
     let steps = 0;
@@ -119,6 +129,12 @@ async function main(): Promise<void> {
     // 已被用户「作为桩函数跳过」的未知指令：opcode -> {name,count}（登记后每次执行计数）。
     let skipped = new Map<number, { name: string; count: number }>();
     const skippedList = () => [...skipped].map(([opcode, v]) => ({ opcode, name: v.name, count: v.count }));
+    /**
+     * ★闸门 B 汇总：被当作 no-op 跳过、却收到**非平凡实参**的 opcode（`StepTrace.gap`）。
+     * 语义 = "脚本真的传了参数想做点什么，而我没做"（区别于"这条 op 在本场景只是空转"）。
+     */
+    let gaps = new Map<number, { name: string; count: number; sample: string[] }>();
+    const gapsList = () => [...gaps].map(([opcode, v]) => ({ opcode, name: v.name, count: v.count, sample: v.sample }));
     /**
      * 暂停点：解释器停在一条「未实现 opcode」上等用户在控制窗点「作为桩函数跳过」。
      * 注意 stepOnce 抛 NotImplementedOp 时**尚未消费任何操作数、也未推进 ip**，因此登记桩函数后
@@ -143,7 +159,10 @@ async function main(): Promise<void> {
         ignored: ignoredList(),
         internal: internalList(),
         skipped: skippedList(),
+        gaps: gapsList(),
+        dropped: drops.list(),
         traceAll,
+        traceFilter: [...traceFilter].map((o) => `0x${o.toString(16)}`),
         error: errorOverride ?? autoError,
         pendingUnknown: pausedOp ?? undefined,
       });
@@ -220,6 +239,31 @@ async function main(): Promise<void> {
             } else if (t.handlerKind === 'user-stub') {
               const g = skipped.get(t.opcode);
               if (g) g.count++;
+            }
+            // ★闸门 B：能力缺口计数（被忽略但收到实参）。
+            if (t.gap) {
+              const g = gaps.get(t.opcode);
+              if (g) { g.count++; g.sample = t.gap.operands; }
+              else {
+                gaps.set(t.opcode, { name: t.name, count: 1, sample: t.gap.operands });
+                trace(`[gap] ${t.name} 被忽略但收到实参：${t.gap.operands.join(' ')}`);
+              }
+            }
+            // ★场景执行报告：结构化 JSONL（定向 trace 白名单为空时记全部）。
+            if (window.api?.appendTraceLine && (traceFilter.size === 0 || traceFilter.has(t.opcode))) {
+              window.api.appendTraceLine(
+                JSON.stringify({
+                  step: steps,
+                  script: t.script,
+                  ip: t.ip,
+                  op: `0x${t.opcode.toString(16)}`,
+                  name: t.name,
+                  kind: t.handlerKind,
+                  noop: t.noop,
+                  operands: t.operands,
+                  ...(t.gap ? { gap: true } : {}),
+                }),
+              );
             }
             // 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印上面的「已忽略」信息。
             if (traceAll) {

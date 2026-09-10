@@ -22,6 +22,8 @@ declare global {
       closeWindow(): void;
       /** 控制窗→主：设置是否打印全量指令（true=全量，false=仅未知/已忽略）。 */
       controlSetTraceAll(enabled: boolean): void;
+      /** 控制窗→主：设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
+      controlSetTraceFilter(ops: number[]): void;
       /** 控制窗→主→渲染窗：把某个未知 opcode 登记为 no-op 桩函数并继续执行（见 Engine.unknownOpStubs）。 */
       controlSkipOp(opcode: number): void;
       /** 主→控制窗：某未知 opcode 已被登记为桩函数（用于把控制窗的"待处理"块收掉）。 */
@@ -30,10 +32,14 @@ declare global {
       onControlStatus(cb: (s: ControlStatus) => void): void;
       /** 主→渲染窗：traceAll 切换通知（控制窗改的，转发给渲染器）。 */
       onTraceAll(cb: (enabled: boolean) => void): void;
+      /** 主→渲染窗：定向 trace 白名单变更通知。 */
+      onTraceFilter(cb: (ops: number[]) => void): void;
       /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
       onControlSkipOp(cb: (opcode: number) => void): void;
       /** 渲染窗→主：上报状态，供主进程转发给控制窗。 */
       sendRendererStatus(s: ControlStatus): void;
+      /** 渲染窗→主：把一条**结构化 trace**（JSON 行）追加到 `.tmp/scene-trace.jsonl`。 */
+      appendTraceLine(line: string): void;
     };
   }
 }
@@ -45,7 +51,19 @@ export interface ControlStatus {
   ignored: { opcode: number; name: string }[];
   /** 已插桩但有专门处理：消息窗/声音/数组排序/字段写入等（按引擎语义执行，只是不产出可渲染输出）。 */
   internal: { opcode: number; name: string }[];
+  /**
+   * **★ 闸门 B：能力缺口** —— 被当作 no-op 跳过、却收到了**非平凡实参**的 opcode。
+   * 即"脚本真的传了参数想做点什么，而我没做"（与"本场景空转"区分开）。
+   */
+  gaps?: { opcode: number; name: string; count: number; sample: string[] }[];
+  /**
+   * **★ 闸门 A：意图被丢弃** —— 脚本经 opcode 调用了一个**宿主没实现**的 native 方法
+   * （`?.` 静默 no-op）。每条都说明"缺了它会有什么无报错的表现"。
+   */
+  dropped?: { method: string; count: number; sample: string; opcodes: string[]; why: string }[];
   traceAll: boolean;
+  /** 定向 trace 白名单（空 = 全部）；十六进制字符串，如 `0x1fb`。 */
+  traceFilter?: string[];
   /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
   error?: string;
   /** 当前**停在未知指令**等待处理（控制窗据此显示「作为桩函数跳过」按钮）；已放行/未暂停时不填。 */

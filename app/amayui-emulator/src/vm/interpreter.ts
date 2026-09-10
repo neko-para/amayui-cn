@@ -1,9 +1,10 @@
 /** 解释器主循环（每步 await，以支持异步文件代理的 call-script）。 */
-import type { Engine } from './engine.js';
+import type { Engine, Frame } from './engine.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, INTERNAL_WITH_HANDLER, ExitScript, ScriptReset, loadScriptIntoFrame } from './ops.js';
+import { readIntOperand, readFloatOperand } from './operand.js';
 import { makeCtx } from './step.js';
 import type { OpHandler } from './step.js';
-import { parseScriptBytes } from '../script/bin.js';
+import { parseScriptBytes, type BinInstruction } from '../script/bin.js';
 
 /** 未实现 opcode 硬报错（ADR-005）。带上足够多的定位信息，供控制窗展示 + 「作为桩函数跳过」后从同一条指令重试。 */
 export class NotImplementedOp extends Error {
@@ -38,6 +39,17 @@ export interface StepTrace {
    */
   noop: boolean;
   script: string;
+  /** 本指令操作数的可读形式（`[0x3#41, 0x9#2, 0x0#8]`；`#` 后为已解码值/旁注）。供场景执行报告与缺口归因。 */
+  operands: string[];
+  /**
+   * **闸门 B：能力缺口**。仅当本条指令**被当作 no-op 跳过**（`noop===true` 或 `user-stub`）
+   * 但**收到了非平凡实参**时才有值 —— 即"脚本真的传了参数想做点什么，而我没做"。
+   *
+   * 判据（`significantOperands`）：立即数 |v|>1；池里的 int/float 解码值 |v|>1；
+   * 任何指针/字符串/数组操作数（说明脚本传了真实对象）。
+   * 只用它降噪：像 `i32f 0`（关灯索引 0）这类"空转"调用不会进缺口清单。
+   */
+  gap?: { operands: string[] };
 }
 
 /**
@@ -66,6 +78,81 @@ function resolveHandler(
  */
 const op_user_stub: OpHandler = () => {};
 
+/** 操作数类型 → 可读标签（只用于报告/归因，不参与语义）。 */
+function operandTag(t: number): string {
+  switch (t) {
+    case 0: return 'imm-int';
+    case 1: return 'imm-float';
+    case 2: return 'imm-str';
+    case 3: return 'g-int';
+    case 4: return 'g-float';
+    case 5: return 'g-str';
+    case 6: return 'g-int*';
+    case 7: return 'g-float*';
+    case 8: return 'g-str*';
+    case 9: return 'l-int';
+    case 0xa: return 'l-float';
+    case 0xb: return 'l-str';
+    case 0xc: return 'l-int*';
+    case 0xd: return 'l-float*';
+    case 0xe: return 'l-str*';
+    case 0x8003: return 'g-int[]';
+    case 0x8009: return 'l-int[]';
+    default: return `t${t.toString(16)}`;
+  }
+}
+
+/**
+ * 把操作数格式化成可读字符串：`0x3#41`（= 全局 int 池槽 0x41，`#` 后是解码值）。
+ * **绝不抛错、绝不改状态**：取值失败只写下标。用于场景执行报告与缺口归因。
+ */
+export function formatOperands(e: Engine, frame: Frame, instr: BinInstruction): string[] {
+  return instr.args.map((a, i) => {
+    const label = `${operandTag(a.type)}#${a.raw}`;
+    // 只对"值型"操作数解出真实值（指针型需解引用，风险高且对归因无必要）
+    if (a.type === 0 || a.type === 3 || a.type === 9) {
+      try {
+        return `${operandTag(a.type)}#${readIntOperand(e, frame, instr, i + 1)}`;
+      } catch {
+        return label;
+      }
+    }
+    if (a.type === 4 || a.type === 0xa) {
+      try {
+        const f = readFloatOperand(e, frame, instr, i + 1);
+        return `${operandTag(a.type)}#${Number.isInteger(f) ? f : f.toFixed(3)}`;
+      } catch {
+        return label;
+      }
+    }
+    return label;
+  });
+}
+
+/** 操作数是否"非平凡"（脚本真的传了实参，而不是空转）。见 `StepTrace.gap` 的判据说明。 */
+export function significantOperands(e: Engine, frame: Frame, instr: BinInstruction): boolean {
+  for (let i = 0; i < instr.args.length; i++) {
+    const a = instr.args[i]!;
+    // 指针 / 字符串 / 数组：脚本传了真实对象或串 ⇒ 一定有意义
+    if (a.type >= 6 && a.type <= 8) return true;
+    if (a.type >= 0xc && a.type <= 0xe) return true;
+    if (a.type === 2 || a.type === 5 || a.type === 0xb) return true;
+    if (a.type === 0x8003 || a.type === 0x8009) return true;
+    // 值型：|v| > 1 才算"传了参数"（0/1 通常是开关的默认位）
+    if (a.type === 0) {
+      if (Math.abs(a.raw | 0) > 1) return true;
+      continue;
+    }
+    try {
+      const v = a.type === 3 || a.type === 9 ? readIntOperand(e, frame, instr, i + 1) : readFloatOperand(e, frame, instr, i + 1);
+      if (Math.abs(v) > 1) return true;
+    } catch {
+      /* 取不到值 ⇒ 不算显著（避免把解码失败误报成缺口） */
+    }
+  }
+  return false;
+}
+
 /** 单步执行当前帧一条指令，返回执行情况。 */
 export async function stepOnce(e: Engine): Promise<StepTrace> {
   const frame = e.curScript();
@@ -82,6 +169,11 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     // 用 frame.name（文件名，如 CONFIG.BIN）而非 script.signature（"SYS4450"）作为显示名——前者才是用户可读的脚本名。
     throw new NotImplementedOp(instr.opcode, instr.name, frame.name, instr.byteOffset, frame.ip);
   }
+  // 操作数可读形式 + 缺口判据都在 handler 执行**之前**取（handler 可能改写操作数）。
+  const operands = formatOperands(e, frame, instr);
+  const isNoopPath = handlerKind === 'user-stub' || (handlerKind === 'engine-internal' && noop);
+  const gap = isNoopPath && significantOperands(e, frame, instr) ? { operands } : undefined;
+  e.currentOpcode = op; // 供 NativeTap（闸门 A）把"意图被丢弃"归因到指令
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
   await handler(ctx);
   // 注意：handler 可能改了 cur（call-script / ret），因此用"当前帧"来推进，而非 handler 前的 frame。
@@ -94,7 +186,17 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   } else {
     curFrame.ip = next;
   }
-  return { opcode: instr.opcode, name: instr.name, ip: frame.ip, byteOffset: instr.byteOffset, handlerKind, noop, script: frame.name };
+  return {
+    opcode: instr.opcode,
+    name: instr.name,
+    ip: frame.ip,
+    byteOffset: instr.byteOffset,
+    handlerKind,
+    noop,
+    script: frame.name,
+    operands,
+    ...(gap ? { gap } : {}),
+  };
 }
 
 export interface RunResult {

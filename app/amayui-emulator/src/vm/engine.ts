@@ -129,6 +129,13 @@ export class Engine {
    */
   unknownOpStubs = new Map<number, number>();
 
+  /**
+   * **当前正在执行的 opcode**（由 `stepOnce` 在调用 handler 前写入）。
+   * 用途：让不持有指令上下文的层（如 `NativeTap` 闸门 A）把"意图被丢弃"归因到具体指令。
+   * 0 = 不在指令上下文中。
+   */
+  currentOpcode = 0;
+
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;
 

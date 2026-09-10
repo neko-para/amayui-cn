@@ -189,8 +189,12 @@ export interface DrawItemConfig {
 const ZERO_WIN = (): AnimWin => ({ delay: 0, dur: 0, set: false });
 
 /**
- * 新建一个 draw-item（等价引擎元素构造函数 `sub_49A300`：`+52/+56/+76` 与颜色槽清 0，
- * `flags` 由 `sub_4ACE50` 置 bit0）。
+ * 新建一个 draw-item（等价引擎元素构造函数 `sub_49A300`）。
+ *
+ * ★`sub_49A300` **把 `flags` 清 0**（raw 116899 `*(_DWORD *)a2 = 0;`）⇒ **bit0 未置 = 尚不可绘制**。
+ * bit0 只由 `0x1FB` draw-texture（`sub_4ACE50` raw 131826 `|= 1u`）置上。
+ * 这个区别很重要：任何"缺失即建项"的 setter（引擎 `sub_4AAA50`）建出的项都是 flags=0，
+ * 渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361），所以这种项**不会出画**。
  */
 export function makeItem(cfg: DrawItemConfig): Item {
   return {
@@ -225,8 +229,13 @@ export function makeItem(cfg: DrawItemConfig): Item {
     fbHold: -1,
     dstX: cfg.dstX,
     dstY: cfg.dstY,
-    flags: 1, // bit0 = 已创建（`sub_4ACE50` raw 131826 `|=1`）
+    flags: 0, // ★没有任何位 —— bit0 由 draw-texture(0x1FB) 置
   };
+}
+
+/** 引擎 `sub_4AAA50` 的等价物：为 setter 建一个"缺失即建"的默认项（`flags = 0` ⇒ 尚不可绘制）。 */
+export function makeDefaultItem(handle: number, layer = handle): Item {
+  return makeItem({ handle, layer, tex: 0, srcX: 0, srcY: 0, srcW: 0, srcH: 0, dstX: 0, dstY: 0 });
 }
 
 /** 新建一个 mesh（等价 `0x320` create-mesh 的建项）。 */
@@ -549,6 +558,17 @@ export function applyDrawPos(it: Item, x: number, y: number, z: number): void {
   it.posX = x;
   it.posY = y;
   it.posZ = z;
+}
+
+/**
+ * `0x1FF`（`sub_4230F0` → `sub_4AC750`）：**DrawItem 的像素平移**（立即生效、无动画窗）。
+ * 引擎写 `+0x68 = 1`（用世界矩阵）与 `+0x16C`（平移 **work** 矩阵）⇒ 这里把 work/target 都设为该值；
+ * `itemTranslation` 在无窗时返回 target，故写入即生效。
+ */
+export function applyDrawTranslation(it: Item, x: number, y: number, z: number): void {
+  it.useWorld = true;
+  it.transWork = { x, y, z };
+  it.transTarget = { x, y, z };
 }
 
 /** `0x322`（`sub_4AE280`）：mesh 顶点色 state0。 */

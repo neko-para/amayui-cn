@@ -29,37 +29,37 @@ import {
 import type { InputManager } from '../vm/input.js';
 import {
   advanceWindows,
-  applyDrawColor,
-  applyDrawColorAlpha,
-  applyDrawPivot,
-  applyDrawPos,
-  applyFlipbook,
-  applyMeshVertexColor,
-  applyMeshVertexColorAlpha,
-  applyRotationAnim,
-  applyScaleAnim,
-  applyTranslationAnim,
   calcDiffuse,
-  cgDigitItems,
   itemColor,
   itemRotationRad,
   itemScale,
   itemSrcRect,
   itemTranslation,
-  makeItem,
-  makeMesh,
-  meshWindowDone,
-  windowDone,
   type DrawItemConfig,
   type Item,
   type MeshObj,
   type Vec3,
-  W_COLOR,
-  W_FLIPBOOK,
-  W_ROT,
-  W_SCALE,
-  W_TRANS,
 } from './drawItem.js';
+import {
+  newSceneState,
+  scAnimationsDone,
+  scClearDrawContainer,
+  scConfigureDrawItem,
+  scCreateMesh,
+  scDetachTexture,
+  scDrawCgNumber,
+  scSetDrawColor,
+  scSetDrawColorAlpha,
+  scSetDrawPivot,
+  scSetDrawPos,
+  scSetFlipbook,
+  scSetRotationAnim,
+  scSetScaleAnim,
+  scSetTranslationAnim,
+  scSetVertexColor,
+  scSetVertexColorAlpha,
+  type SceneState,
+} from './sceneModel.js';
 
 export type { Item, MeshObj, Vec3 };
 
@@ -88,21 +88,22 @@ export class PixiBackend implements NativeBridge {
   private slotTex = new Map<number, Texture>(); // slot/layer -> Texture（set-texture 绑定）
   /** slot → imgid（`set-texture` 建立的绑定；`create-texture` 刷新缓存时要用它重取图像）。 */
   private slotImgid = new Map<number, number>();
-  /**
-   * handle → 绘制项**位置覆盖**（`0x219` sub_4ACEE0 写 DrawItem`+36/+40/+44` = `Item.posX/posY/posZ`）。
-   * 仅当脚本**先变换后画**（item 尚未建）时暂存于此，`configureDrawItem` 建项时消费；引擎里
-   * `sub_4ACF20/sub_4ACEE0` 都先 `sub_4AAA50` 保证 key 存在（不存在就建默认项），故这条路径等价。
-   */
-  private posOverride = new Map<number, { x: number; y: number; z: number }>();
-  /** handle → pivot 覆盖（`0x217` sub_4ACF20 写 DrawItem`+24/+28/+32`），同上。 */
-  private pivotOverride = new Map<number, { x: number; y: number; z: number }>();
   private pendingImg = new Set<number>();
   private lastScript = '';
   private drawCount = 0;
 
-  // Plan A：持久场景图
-  private drawItems = new Map<number, Item>();
-  private meshes = new Map<number, MeshObj>();
+  /**
+   * **场景模型**（与 `HeadlessScene` 共用 `sceneModel.ts` 的同一份语义）：
+   * 建/删项、5 个窗、"缺失即建项"、bit0 门控都在那边实现，本类只负责画到 Pixi。
+   * 这样"报告说对、画面不对"这类最难查的漂移就不可能发生。
+   */
+  private scene = newSceneState();
+  private get drawItems(): Map<number, Item> {
+    return this.scene.drawItems;
+  }
+  private get meshes(): Map<number, MeshObj> {
+    return this.scene.meshes;
+  }
   private waitFlags = 0; // effect_flags 中的等待位（0x400 等）——由 setWaitFlag 置
   private clockMs = 0; // 渲染帧时钟（ms，等价 this[46500]）
   private wallStart = 0; // 帧循环起点（performance.now），时钟 = now - wallStart（墙钟，保证推进）
@@ -300,39 +301,9 @@ export class PixiBackend implements NativeBridge {
   configureDrawItem(cfg: DrawItemConfig): void {
     this.#onSceneChange(cfg.handle);
     this.#markDirty();
-    // 模型构造集中在 `drawItem.ts`（可测试的"引擎数据模型"层）
-    const it = this.drawItems.get(cfg.handle) ?? makeItem(cfg);
-
-    it.layer = cfg.layer;
-    it.tex = cfg.tex; // ★纹理槽号（draw-texture 的 op2）—— present 取纹理用它，不用 layer
-    it.srcX = cfg.srcX;
-    it.srcY = cfg.srcY;
-    it.srcW = cfg.srcW;
-    it.srcH = cfg.srcH;
-    it.dstX = cfg.dstX;
-    it.dstY = cfg.dstY;
-    it.flags |= 1; // bit0 = 存在
-    // 先变换后画：把暂存的 pivot/位置覆盖补进来（引擎 sub_4AAA50 的"缺项即建"等价语义）
-    const pv = this.pivotOverride.get(cfg.handle);
-    if (pv) {
-      it.pivotX = pv.x;
-      it.pivotY = pv.y;
-      it.pivotZ = pv.z;
-      this.pivotOverride.delete(cfg.handle);
-    }
-    const po = this.posOverride.get(cfg.handle);
-    if (po) {
-      it.posX = po.x;
-      it.posY = po.y;
-      it.posZ = po.z;
-      this.posOverride.delete(cfg.handle);
-    } else if (!this.drawItems.has(cfg.handle)) {
-      it.posX = cfg.dstX; // 引擎 +0x24：未由 0x219 写入时退回 draw-texture 的 op7/8
-      it.posY = cfg.dstY;
-      it.posZ = 0;
-    }
+    // 语义（建/覆盖 + 置 bit0 + 覆盖描画位置）在共享模型层；两侧（此处与 HeadlessScene）只有一份。
+    const it = scConfigureDrawItem(this.scene, cfg);
     assertFlags('drawitem', it.handle, it.flags);
-    this.drawItems.set(cfg.handle, it);
     this.#pushLog(`configureDrawItem h=0x${cfg.handle.toString(16)} layer=${cfg.layer} (${cfg.srcX},${cfg.srcY},${cfg.srcW}x${cfg.srcH})`);
   }
 
@@ -355,10 +326,8 @@ export class PixiBackend implements NativeBridge {
   createMesh(spec: MeshCreateSpec): void {
     this.#onSceneChange(spec.handle);
     this.#markDirty();
-    const m = this.meshes.get(spec.handle) ?? makeMesh(spec.handle, spec.layer);
-    m.flags |= 1; // bit0 = 存在
+    const m = scCreateMesh(this.scene, spec.handle, spec.layer);
     assertFlags('mesh', m.handle, m.flags);
-    this.meshes.set(spec.handle, m);
     this.#pushLog(`createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
   }
 
@@ -431,24 +400,9 @@ export class PixiBackend implements NativeBridge {
    * 前导零跳过，除非 `flags & 1`（补零）或是个位那一轮。
    */
   drawCgNumber(id: number, rec: readonly number[], value: number, x: number, y: number, digits: number, flags: number): void {
-    // ① 先删 [id, id+digits) 区间（引擎 sub_4ABB60 同时删 DrawItem 与 MeshEntry）
-    this.detachTexture(id, digits);
-    // ② 几何全部由纯模型层算（`drawItem.ts` 的 cgDigitItems，可单元测试）
-    const items = cgDigitItems(id, rec, value, x, y, digits, flags);
-    for (const it of items) {
-      this.configureDrawItem({
-        handle: it.handle,
-        layer: it.handle,
-        tex: it.tex,
-        srcX: it.srcX,
-        srcY: it.srcY,
-        srcW: it.srcW,
-        srcH: it.srcH,
-        dstX: it.dstX,
-        dstY: it.dstY,
-      });
-    }
-    this.#pushLog(`drawCgNumber id=0x${id.toString(16)} value=${value} digits=${digits} flags=${flags} → 建 ${items.length} 项（槽 ${rec[0] ?? 0}）`);
+    // 删区间 + 逐位建项都由共享模型层做（`sceneModel.ts` 的 scDrawCgNumber）
+    const created = scDrawCgNumber(this.scene, id, rec, value, x, y, digits, flags);
+    this.#pushLog(`drawCgNumber id=0x${id.toString(16)} value=${value} digits=${digits} flags=${flags} → 建 ${created} 项（槽 ${rec[0] ?? 0}）`);
   }
 
   /**
@@ -458,13 +412,8 @@ export class PixiBackend implements NativeBridge {
    */
   setDrawPos(handle: number, x: number, y: number, z: number): void {
     this.#markDirty();
-    const it = this.drawItems.get(handle);
-    if (it) {
-      applyDrawPos(it, x, y, z);
-    } else {
-      this.posOverride.set(handle, { x, y, z });
-    }
-    this.#pushLog(`setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
+    const o = scSetDrawPos(this.scene, handle, x, y, z);
+    this.#pushLog(`setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
   /**
@@ -474,13 +423,8 @@ export class PixiBackend implements NativeBridge {
    */
   setDrawPivot(handle: number, x: number, y: number, z: number): void {
     this.#markDirty();
-    const it = this.drawItems.get(handle);
-    if (it) {
-      applyDrawPivot(it, x, y, z);
-    } else {
-      this.pivotOverride.set(handle, { x, y, z });
-    }
-    this.#pushLog(`setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})`);
+    const o = scSetDrawPivot(this.scene, handle, x, y, z);
+    this.#pushLog(`setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
   /**
@@ -491,14 +435,10 @@ export class PixiBackend implements NativeBridge {
    */
   setScaleAnim(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void {
     this.#markDirty();
+    const o = scSetScaleAnim(this.scene, handle, delay, dur, sx, sy, sz);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(`setScaleAnim: item 0x${handle.toString(16)} 不存在（引擎 sub_4AAA50 会补建默认项，此处忽略）`);
-      return;
-    }
-    assertFlags('drawitem', it.handle, it.flags);
-    applyScaleAnim(it, delay, dur, sx, sy, sz);
-    this.#pushLog(`setScaleAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} s=(${sx},${sy},${sz})`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setScaleAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} s=(${sx},${sy},${sz})${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
   /**
@@ -509,14 +449,10 @@ export class PixiBackend implements NativeBridge {
    */
   setRotationAnim(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void {
     this.#markDirty();
+    const o = scSetRotationAnim(this.scene, handle, delay, dur, ax, ay, az, deg);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(`setRotationAnim: item 0x${handle.toString(16)} 不存在（忽略）`);
-      return;
-    }
-    assertFlags('drawitem', it.handle, it.flags);
-    applyRotationAnim(it, delay, dur, ax, ay, az, deg);
-    this.#pushLog(`setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
   /**
@@ -526,14 +462,10 @@ export class PixiBackend implements NativeBridge {
    */
   setTranslationAnim(handle: number, delay: number, dur: number, x: number, y: number, z: number): void {
     this.#markDirty();
+    const o = scSetTranslationAnim(this.scene, handle, delay, dur, x, y, z);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(`setTranslationAnim: item 0x${handle.toString(16)} 不存在（忽略）`);
-      return;
-    }
-    assertFlags('drawitem', it.handle, it.flags);
-    applyTranslationAnim(it, delay, dur, x, y, z);
-    this.#pushLog(`setTranslationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} t=(${x},${y},${z})`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setTranslationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} t=(${x},${y},${z})${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
   /**
@@ -544,57 +476,36 @@ export class PixiBackend implements NativeBridge {
    */
   setFlipbook(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void {
     this.#markDirty();
+    const o = scSetFlipbook(this.scene, handle, delay, dur, frames, cols, flags);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(`setFlipbook: item 0x${handle.toString(16)} 不存在（忽略）`);
-      return;
-    }
-    assertFlags('drawitem', it.handle, it.flags);
-    applyFlipbook(it, delay, dur, frames, cols, flags);
-    this.#pushLog(`setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
+  /** `0x322`（`sub_4AE2C0`）：mesh 顶点色 state0。★引擎 `sub_4AAB80` 缺失即建项、无门控。 */
   setVertexColor(handle: number, state0: number): void {
     this.#markDirty();
+    const o = scSetVertexColor(this.scene, handle, state0);
     const m = this.meshes.get(handle);
-    if (!m) {
-      this.#pushLog(
-        `setVertexColor: mesh 0x${handle.toString(16)} 不存在（现有 mesh: ${[...this.meshes.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
-      );
-      return;
-    }
-    applyMeshVertexColor(m, state0);
-    assertFlags('mesh', m.handle, m.flags);
-    this.#pushLog(`setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}`);
+    if (m) assertFlags('mesh', m.handle, m.flags);
+    this.#pushLog(`setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
+  /** `0x323`（`sub_4AE330`）：mesh 顶点色动画窗。★缺失即建项、无门控。 */
   setVertexColorAlpha(handle: number, delay: number, count: number, state1: number): void {
     this.#markDirty();
+    const o = scSetVertexColorAlpha(this.scene, handle, delay, count, state1);
     const m = this.meshes.get(handle);
-    if (!m) {
-      this.#pushLog(
-        `setVertexColorAlpha: mesh 0x${handle.toString(16)} 不存在（现有 mesh: ${[...this.meshes.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
-      );
-      return;
-    }
-    applyMeshVertexColorAlpha(m, delay, count, state1);
-    assertFlags('mesh', m.handle, m.flags);
-    this.#pushLog(`setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}`);
+    if (m) assertFlags('mesh', m.handle, m.flags);
+    this.#pushLog(`setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
   setDrawColorAlpha(handle: number, from: number): void {
     this.#markDirty();
+    const o = scSetDrawColorAlpha(this.scene, handle, from);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(
-        `setDrawColorAlpha: item 0x${handle.toString(16)} 不存在（现有 item: ${[...this.drawItems.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
-      );
-      return;
-    }
-    applyDrawColorAlpha(it, from);
-    assertFlags('drawitem', it.handle, it.flags); // 引擎 item+96 = from（当前工作色）。**不清动画窗**：set-draw-color(0x202) 定义的 from→to 窗与此处 from 共用；
-    // 动画完成时 #itemColor 会冻结 from=to 并清动画位，之后本 op 设的 from（如 hover 高亮）即时生效、可回退。
-    this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
   /** 0x1F7 detach-texture (sub_422BC0)：删单/区间图元。读 op1=handle、op2=count；按 count 分派：
@@ -607,32 +518,24 @@ export class PixiBackend implements NativeBridge {
    *    SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4），用于批量清掉一段特效/网格（非崩溃路径，需实现 range-remove）。 */
   detachTexture(handle: number, count: number): void {
     this.#markDirty();
+    const r = scDetachTexture(this.scene, handle, count);
     if (count <= 1) {
-      const removedDi = this.drawItems.delete(handle);
-      const removedMesh = this.meshes.delete(handle);
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${removedDi ? 1 : 0}, meshes=${removedMesh ? 1 : 0})`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes})`);
     } else {
-      // sub_4ABB60：删除 handle∈[handle, handle+count) 的绘制项/网格（对应引擎对该区间逐结点 std::map erase）。
-      const hi = handle + count;
-      let delDi = 0, delMesh = 0;
-      for (const k of [...this.drawItems.keys()]) if (k >= handle && k < hi) { this.drawItems.delete(k); delDi++; }
-      for (const k of [...this.meshes.keys()]) if (k >= handle && k < hi) { this.meshes.delete(k); delMesh++; }
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${hi.toString(16)}) (drawItems=${delDi}, meshes=${delMesh})`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes})`);
     }
   }
 
+  /**
+   * `0x202` set-draw-color（`sub_4AD0C0`）：`sub_4AAA50` 建项 → **门控 `flags & 1`** →
+   * `|=2`/`+0x34=0`/`+0x38`/`+0x4C`/`+0x64`。★项不存在时只建空项，本 op 不生效（引擎构造器 flags=0）。
+   */
   setDrawColor(handle: number, delay: number, count: number, to: number): void {
     this.#markDirty();
+    const o = scSetDrawColor(this.scene, handle, delay, count, to);
     const it = this.drawItems.get(handle);
-    if (!it) {
-      this.#pushLog(
-        `setDrawColor: item 0x${handle.toString(16)} 不存在（现有 item: ${[...this.drawItems.keys()].map((h) => '0x' + h.toString(16)).join(',') || '无'}）`,
-      );
-      return;
-    }
-    applyDrawColor(it, delay, count, to);
-    assertFlags('drawitem', it.handle, it.flags);
-    this.#pushLog(`setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}`);
+    if (it) assertFlags('drawitem', it.handle, it.flags);
+    this.#pushLog(`setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
   setWaitFlag(mask: number): void {
@@ -657,14 +560,12 @@ export class PixiBackend implements NativeBridge {
    * 引擎里它扫描绘制容器逐项 delete；emulator 的等价语义 = 清空 `drawItems` + `meshes`，
    * **保留纹理槽绑定**（`slotTex` 不动 —— 引擎这里只释放图元/网格对象，不动纹理资源）。
    */
+  /** `0x1F6`（sub_41A130）：整批释放绘制项/网格（保留纹理槽）→ 共享模型层 `scClearDrawContainer`。 */
   clearDrawContainer(): void {
-    const n = this.drawItems.size;
-    const m = this.meshes.size;
-    this.drawItems.clear();
-    this.meshes.clear();
+    const r = scClearDrawContainer(this.scene);
     this.drawCount = 0;
     this.#markDirty();
-    this.#pushLog(`clearDrawContainer: 释放 drawItems=${n} meshes=${m}（保留纹理槽）`);
+    this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes}（保留纹理槽）`);
   }
 
   /** `0x20C`（sub_41A1A0 → `sub_4B4040(_this+80708)`）：帧刷新。emulator 的渲染帧循环自行 present，这里只标脏。 */
@@ -674,15 +575,9 @@ export class PixiBackend implements NativeBridge {
 
   // ---- 动画求值（每帧 present 调用） ---- //
 
-  /** mesh + draw-item 是否都已完成动画（供 0x400 门控放行判断）。 */
+  /** 场景是否还有动画在跑（供 0x400 门控放行判断）。 */
   sceneAnimationsDone(): boolean {
-    for (const m of this.meshes.values()) {
-      if (m.flags & 2 && !meshWindowDone(m, this.clockMs)) return false;
-    }
-    for (const it of this.drawItems.values()) {
-      if (it.flags & 2 && !windowDone(it, W_COLOR, this.clockMs)) return false;
-    }
-    return true;
+    return scAnimationsDone(this.scene, this.clockMs);
   }
 
   /** 场景"脏"：有配置类 op 改动过场景（present 的触发条件之一）。 */
@@ -778,6 +673,10 @@ export class PixiBackend implements NativeBridge {
     // 1) draw-items（图像）：按 layer 升序、再 handle 升序。
     const items = [...this.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     for (const it of items) {
+      // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
+      //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
+      //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
+      if ((it.flags & 1) === 0) continue;
       const color = itemColor(it, clock);
       const alpha = (color >> 24) & 0xff;
       if (alpha <= 0) continue; // 全透明跳过

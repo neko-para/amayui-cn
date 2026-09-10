@@ -9,6 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "run": "tsx src/run.ts",
     "test": "tsx --test test/*.test.ts",
+    "report": "tsx src/report.ts",
+    "check:dead-writes": "tsx src/tools/deadWrites.ts",
     "build:electron": "node build-electron.mjs",
     "electron": "electron .",
     "electron:dev": "npm run build:electron && electron ."

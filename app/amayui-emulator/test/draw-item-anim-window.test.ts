@@ -34,6 +34,7 @@ import {
   makeItem,
   type Item,
 } from '../src/renderer/drawItem.js';
+import { HeadlessScene } from '../src/renderer/headlessScene.js';
 
 /** 一个绘制项：handle=100、槽=7、源 16×16 @(32,48)、目标 (400,300)。 */
 function newItem(): Item {
@@ -185,11 +186,47 @@ test('0x217 / 0x219 是**两个不同的 float 三元组**：pivot 与描画位�
   assert.deepEqual([it.posX, it.posY, it.posZ], [111, 222, 0], '描画位置不被 pivot 覆盖');
 });
 
-test('makeItem：纹理槽取 draw-texture 的 op2，描画位置初值 = draw-texture 的 op7/op8', () => {
+test('makeItem：纹理槽取 draw-texture 的 op2；flags=0（引擎构造器不置 bit0）', () => {
   const it = newItem();
   assert.equal(it.tex, 7, '纹理槽号来自 op2（不是 handle）');
   assert.equal(it.handle, 100);
   assert.deepEqual([it.posX, it.posY], [400, 300], '未由 0x219 写入时退回 op7/op8');
-  assert.equal(it.flags, 1, 'bit0 = 已创建（sub_4ACE50 raw 131826）');
+  // ★引擎 `sub_49A300` raw 116899 `*(_DWORD *)a2 = 0;` ⇒ flags 清 0；bit0 只由 draw-texture(0x1FB) 置。
+  assert.equal(it.flags, 0, 'bit0 未置 = 尚不可绘制（渲染门 `(*elem & 1) != 0`）');
   assert.equal(it.from, 0xffffffff);
+});
+
+test('★"缺失即建项"：setter 对不存在的 handle 会建出 flags=0 的空项（引擎 sub_4AAA50）', () => {
+  const b = new HeadlessScene();
+  // 0x203 无门控 ⇒ 建项 + 写 FROM
+  b.setDrawColorAlpha(0x200, 0x00ffffff);
+  const it = b.scene.drawItems.get(0x200) as unknown as { flags: number; from: number };
+  assert.ok(it, '应建出项（而不是丢弃写入）');
+  assert.equal(it.flags, 0, '空项 flags=0 ⇒ 不可绘制');
+  assert.equal(it.from >>> 0, 0x00ffffff, '0x203 无门控 ⇒ FROM 必须写进去');
+
+  // 0x202 有 flags&1 门控 ⇒ 只建项、不配颜色窗
+  b.setDrawColor(0x201, 100, 200, 0xffffffff);
+  const it2 = b.scene.drawItems.get(0x201) as unknown as { flags: number; wins: { set: boolean }[] };
+  assert.ok(it2, '0x202 也应建项');
+  assert.equal(it2.flags & 2, 0, '被 bit0 门控挡住 ⇒ 动画位未置');
+  assert.equal(it2.wins[0]!.set, false, '窗未配置');
+
+  // 先设色后画：draw-texture 只补 bit0/纹理，**不吞掉**之前写的 FROM
+  b.configureDrawItem({ handle: 0x200, layer: 0x200, tex: 42, srcX: 0, srcY: 0, srcW: 8, srcH: 8, dstX: 1, dstY: 2 });
+  const it3 = b.scene.drawItems.get(0x200) as unknown as { flags: number; from: number; tex: number };
+  assert.equal(it3.flags & 1, 1, 'draw-texture 置 bit0 ⇒ 变为可绘制');
+  assert.equal(it3.tex, 42);
+  assert.equal(it3.from >>> 0, 0x00ffffff, '★之前 0x203 写的 FROM 必须保留（这是"先设色后画"能成立的原因）');
+});
+
+test('0x1FB 会覆盖描画位置（引擎 sub_4ACE50 写 +36/+40/+44）；0x219 在其后则赢', () => {
+  const b = new HeadlessScene();
+  b.setDrawPos(0x300, 11, 22, 0); // 先写位置（会建空项）
+  b.configureDrawItem({ handle: 0x300, layer: 0x300, tex: 5, srcX: 0, srcY: 0, srcW: 4, srcH: 4, dstX: 77, dstY: 88 });
+  let it = b.scene.drawItems.get(0x300) as unknown as { posX: number; posY: number };
+  assert.deepEqual([it.posX, it.posY], [77, 88], 'draw-texture 覆盖位置（引擎同函数写 +36/+40/+44）');
+  b.setDrawPos(0x300, 99, 111, 0);
+  it = b.scene.drawItems.get(0x300) as unknown as { posX: number; posY: number };
+  assert.deepEqual([it.posX, it.posY], [99, 111], '之后 0x219 写的位置生效');
 });

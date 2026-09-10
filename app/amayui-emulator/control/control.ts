@@ -15,6 +15,8 @@ declare global {
     api: {
       controlRestart(): void;
       controlSetTraceAll(enabled: boolean): void;
+      /** 设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
+      controlSetTraceFilter(ops: number[]): void;
       /** 把某个未知 opcode 作为桩函数跳过并继续执行。 */
       controlSkipOp(opcode: number): void;
       /** 某未知 opcode 已被登记为桩函数（收掉「待处理」块）。 */
@@ -35,11 +37,19 @@ const internalCountEl = el<HTMLSpanElement>('internalCount');
 const internalBox = el<HTMLDivElement>('internal');
 const skippedCountEl = el<HTMLSpanElement>('skippedCount');
 const skippedBox = el<HTMLDivElement>('skipped');
+const gapsCountEl = el<HTMLSpanElement>('gapsCount');
+const gapsBox = el<HTMLDivElement>('gaps');
+const droppedCountEl = el<HTMLSpanElement>('droppedCount');
+const droppedBox = el<HTMLDivElement>('dropped');
+const traceFilterInput = el<HTMLInputElement>('traceFilter');
+const btnTraceApply = el<HTMLButtonElement>('btnTraceApply');
 const errorBox = el<HTMLDivElement>('error');
 const btnTraceAll = el<HTMLButtonElement>('btnTraceAll');
 const btnCopySkipped = el<HTMLButtonElement>('btnCopySkipped');
 const btnCopyIgnored = el<HTMLButtonElement>('btnCopyIgnored');
 const btnCopyInternal = el<HTMLButtonElement>('btnCopyInternal');
+const btnCopyGaps = el<HTMLButtonElement>('btnCopyGaps');
+const btnCopyDropped = el<HTMLButtonElement>('btnCopyDropped');
 const unknownBlock = el<HTMLDivElement>('unknownBlock');
 const unknownInfo = el<HTMLDivElement>('unknownInfo');
 const unknownHint = el<HTMLDivElement>('unknownHint');
@@ -48,10 +58,22 @@ const btnSkipUnknown = el<HTMLButtonElement>('btnSkipUnknown');
 let traceAll = false;
 /** 当前等待处理的未知指令（= 渲染窗上报的 pendingUnknown；null 表示没有）。 */
 let pending: ControlStatus['pendingUnknown'] | null = null;
-/** 两个清单的最新内容（供「复制全部」用；清单每 0.5s 重刷，直接划选很难操作）。 */
+/** 各清单的最新内容（供「复制全部」用；清单每 0.5s 重刷，直接划选很难操作）。 */
 let skippedItems: NonNullable<ControlStatus['skipped']> = [];
 let ignoredItems: ControlStatus['ignored'] = [];
 let internalItems: ControlStatus['internal'] = [];
+let gapItems: NonNullable<ControlStatus['gaps']> = [];
+let droppedItems: NonNullable<ControlStatus['dropped']> = [];
+
+/** 把输入框里的 opcode 列表解析成 number[]（接受 `1fb` / `0x1fb`，逗号或空格分隔）。 */
+function parseOpList(s: string): number[] {
+  return s
+    .split(/[\s,]+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => Number(x.toLowerCase().startsWith('0x') ? x : `0x${x}`))
+    .filter((n) => Number.isFinite(n) && n >= 0);
+}
 
 /** 复制文本到剪贴板；失败时回退到临时 textarea + execCommand。返回是否成功。 */
 async function copyText(text: string): Promise<boolean> {
@@ -170,6 +192,48 @@ function renderUnknown(): void {
   btnSkipUnknown.textContent = `作为桩函数跳过：0x${p.opcode.toString(16)} ${p.name}`;
 }
 
+/**
+ * ★闸门 A 清单：**意图被丢弃** —— 脚本调用了一个宿主没实现的 native 方法（`?.` 静默 no-op）。
+ * 每条显示：方法名 ×次数、触发它的 opcode、以及"缺了它会有什么无报错的表现"。
+ */
+function renderDropped(list: ControlStatus['dropped'] | undefined): void {
+  const items = list ?? [];
+  droppedItems = items;
+  droppedCountEl.textContent = `(${items.length} 种)`;
+  droppedBox.textContent = '';
+  if (items.length === 0) {
+    droppedBox.textContent = '（暂无：宿主没有丢弃任何 native 意图）';
+    return;
+  }
+  for (const it of items) {
+    const d = document.createElement('div');
+    d.textContent = `${it.method} ×${it.count} ← ${it.opcodes.join(',')}｜${it.why}`;
+    d.title = `最近实参：${it.sample}`;
+    droppedBox.appendChild(d);
+  }
+}
+
+/**
+ * ★闸门 B 清单：**能力缺口** —— 这条指令被当作 no-op 跳过，但脚本给它传了**非平凡实参**，
+ * 即"脚本真的想做点什么，而我没做"。样例操作数挂在 title 上（避免刷屏）。
+ */
+function renderGaps(list: ControlStatus['gaps'] | undefined): void {
+  const items = list ?? [];
+  gapItems = items;
+  gapsCountEl.textContent = `(${items.length} 种)`;
+  gapsBox.textContent = '';
+  if (items.length === 0) {
+    gapsBox.textContent = '（暂无：被忽略的指令都没有收到实参）';
+    return;
+  }
+  for (const it of items) {
+    const d = document.createElement('div');
+    d.textContent = `${it.name} ×${it.count}`;
+    d.title = `最近实参：${it.sample.join(' ')}`;
+    gapsBox.appendChild(d);
+  }
+}
+
 function renderError(msg?: string): void {
   if (msg) {
     errorBox.textContent = `⚠️ ${msg}`;
@@ -190,10 +254,26 @@ btnTraceAll.addEventListener('click', () => {
   updateTraceBtn();
 });
 
-// 两个清单每 0.5s 重刷（无法稳定划选）→ 提供「复制全部」，一行一条、只含助记符。
+// 各清单每 0.5s 重刷（无法稳定划选）→ 提供「复制全部」，一行一条、只含助记符。
 wireCopyButton(btnCopySkipped, () => skippedItems.map((it) => `${it.name} ×${it.count}`), '复制全部');
 wireCopyButton(btnCopyIgnored, () => ignoredItems.map((it) => it.name), '复制全部');
 wireCopyButton(btnCopyInternal, () => internalItems.map((it) => it.name), '复制全部');
+wireCopyButton(btnCopyGaps, () => gapItems.map((it) => `${it.name} ×${it.count}｜${it.sample.join(' ')}`), '复制全部');
+wireCopyButton(
+  btnCopyDropped,
+  () => droppedItems.map((it) => `${it.method} ×${it.count} ← ${it.opcodes.join(',')}｜${it.why}`),
+  '复制全部',
+);
+
+// 定向 trace：把白名单发给渲染窗（空 = 全部）。渲染窗把它写成 .tmp/scene-trace.jsonl。
+btnTraceApply.addEventListener('click', () => {
+  const ops = parseOpList(traceFilterInput.value);
+  window.api.controlSetTraceFilter(ops);
+  btnTraceApply.textContent = ops.length ? `已应用 ${ops.length} 条` : '已清空（记全部）';
+  window.setTimeout(() => {
+    btnTraceApply.textContent = '应用';
+  }, 1500);
+});
 
 btnSkipUnknown.addEventListener('click', () => {
   if (!pending) return;
@@ -216,9 +296,14 @@ window.api.onControlStatus((s) => {
   binEl.textContent = s.bin || '…';
   traceAll = !!s.traceAll;
   updateTraceBtn();
+  if (document.activeElement !== traceFilterInput && s.traceFilter) {
+    traceFilterInput.value = s.traceFilter.join(','); // 渲染窗回读（正在输入时不同步，免得打断打字）
+  }
   renderIgnored(s.ignored ?? []);
   renderInternal(s.internal);
   renderSkipped(s.skipped);
+  renderGaps(s.gaps);
+  renderDropped(s.dropped);
   pending = s.pendingUnknown ?? null;
   renderUnknown();
   renderError(s.error);
@@ -228,5 +313,7 @@ updateTraceBtn();
 renderIgnored([]);
 renderInternal([]);
 renderSkipped([]);
+renderGaps([]);
+renderDropped([]);
 renderUnknown();
 renderError(undefined);

@@ -1,0 +1,10 @@
+{
+  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但当前没有任何渲染消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。",
+  "known": ["Item.blend", "Item.pivotZ", "Item.posZ", "Item.useWorld"],
+  "reason": {
+    "Item.blend": "引擎 DrawItem+0x30 = 混合模式（0x203 的 op2）。`applyDrawColorAlpha` 会写它，但 PixiBackend 未消费 ⇒ **混合模式不生效**（已知能力缺口，见 analysis/engine-capabilities.json 的 drawitem.mix-mode）。修法：按 +0x30 映射到 PIXI.BLEND_MODES。",
+    "Item.pivotZ": "DrawItem+0x20 是 pivot 的 z 分量。2D 精灵渲染只用 pivotX/pivotY（引擎里 z 参与世界矩阵，2D 路径恒 0）。",
+    "Item.posZ": "DrawItem+0x2C 是描画位置的 z。2D 渲染只用 x/y（同上）。",
+    "Item.useWorld": "DrawItem+0x68『用世界矩阵』标志。0x1FF 置 1，但 emulator 用 transWork/transTarget 直接表达平移 ⇒ 标志本身没有消费者（语义已被等价字段承载，属冗余字段）。"
+  }
+}

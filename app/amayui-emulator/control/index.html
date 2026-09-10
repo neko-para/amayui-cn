@@ -33,6 +33,10 @@
       #btnSkipUnknown:hover:not(:disabled) { background: #856a16; }
       /* 清单右上角的「复制全部」（清单每 0.5s 重刷，直接划选很难，故给按钮） */
       button.mini { padding: 2px 8px; font-size: 11px; margin: 0 0 0 8px; }
+      input[type=text] {
+        background: #161616; color: #ddd; border: 1px solid #555; border-radius: 4px;
+        padding: 4px 6px; font-family: ui-monospace, monospace; font-size: 12px; width: 220px;
+      }
     </style>
   </head>
   <body>
@@ -43,6 +47,11 @@
     <div class="row">
       <button id="btnTraceAll" class="toggle">启用指令日志：关（仅未知）</button>
     </div>
+    <div class="row">
+      <span class="label">定向 trace（只记这些 opcode，逗号分隔；空=全部）</span>
+      <input id="traceFilter" type="text" placeholder="例如 1fb,202,203,208,23b" />
+      <button id="btnTraceApply" class="mini">应用</button>
+    </div>
     <div class="row"><span class="label">当前 BIN</span><span class="value" id="bin">…</span></div>
     <div class="row"><div class="error" id="error"></div></div>
     <div class="row unknown" id="unknownBlock" hidden>
@@ -51,6 +60,16 @@
       <div class="hint" id="unknownHint"></div>
       <button id="btnSkipUnknown">作为桩函数跳过并继续</button>
     </div>
+    <div class="row row-head">
+      <span class="label">★ 意图被丢弃（宿主未实现的 native 调用，闸门 A）</span><span class="value" id="droppedCount">(…)</span>
+      <button id="btnCopyDropped" class="mini">复制全部</button>
+    </div>
+    <div class="row ignored-list" id="dropped"></div>
+    <div class="row row-head">
+      <span class="label">★ 能力缺口（被忽略但收到实参，闸门 B）</span><span class="value" id="gapsCount">(…)</span>
+      <button id="btnCopyGaps" class="mini">复制全部</button>
+    </div>
+    <div class="row ignored-list" id="gaps"></div>
     <div class="row row-head">
       <span class="label">已跳过指令（作为桩函数，去重）</span><span class="value" id="skippedCount">(…)</span>
       <button id="btnCopySkipped" class="mini">复制全部</button>

@@ -1,0 +1,1724 @@
+{
+  "_doc": "引擎「常态能力」台账（第二层：引擎自己的逐帧流程与各子系统持续行为）。这些能力无法靠枚举 opcode 发现，缺失时不会报错、只会表现不对，因此单列一张可核对清单。数据来自 .tmp/capabilities-enum.md 的四组机械枚举（帧入口 / 时钟读者 / 门与标志读者 / 惰性创建），每条都带 raw 行号；`emulator` 块是本工程的现状判定。",
+  "statusEnum": {
+    "modeled-verified": "已建模且有守卫（E2/E3）",
+    "modeled-unverified": "已建模但只有静态结论（E1）或缺少守卫",
+    "partial": "只实现了一部分（缺口写在该条 note）",
+    "absent": "引擎有、emulator 完全没有",
+    "n/a-known": "与本 2D 精灵 + 消息窗重写无关（必须写 why）"
+  },
+  "evidenceEnum": {
+    "E0": "未读体",
+    "E1": "已读体（静态 + raw 行号）",
+    "E2": "合成指令单测",
+    "E3": "真实脚本的场景级断言（快照/不变量）",
+    "E4": "与真机对照（截图或内部状态 dump）"
+  },
+  "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
+  "counts": {
+    "total": 65,
+    "modeled-verified": 3,
+    "modeled-unverified": 6,
+    "partial": 10,
+    "absent": 22,
+    "n/a-known": 24,
+    "needsAttention": 38
+  },
+  "entries": [
+    {
+      "id": "frame-pump-sound-channels",
+      "subsystem": "声音",
+      "name": "每帧声音通道老化",
+      "trigger": "主循环每轮内层必然执行（不受 effect_flags 门控）；`Engine+82876+302` 非零时才有可观察效果",
+      "engine": {
+        "fns": [
+          "sub_412290",
+          "sub_4B5230"
+        ],
+        "raw": "20643-20645"
+      },
+      "reads": [
+        "Engine+82876",
+        "Engine+369332"
+      ],
+      "whySilent": "通道槽为空时循环体只做 `if (*(v5-10))` 判定即跳过，没有断言或日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "无声音子系统：每帧通道老化不做（声音整体未实现）"
+      }
+    },
+    {
+      "id": "frame-pump-input-refresh",
+      "subsystem": "输入",
+      "name": "每帧输入态刷新",
+      "trigger": "帧泵内每轮执行 `sub_4BBAB0`",
+      "engine": {
+        "fns": [
+          "sub_4BBAB0",
+          "sub_412290"
+        ],
+        "raw": "142586-142650"
+      },
+      "reads": [
+        "Engine+84128",
+        "Engine+369332"
+      ],
+      "whySilent": "输入设备缺失时函数返回 0，主循环只是不进后续处理分支",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "test/input.test.ts",
+        "note": "输入态由 InputManager 在 DOM 事件里刷新，不是引擎的每帧轮询；等价性未逐项核对"
+      }
+    },
+    {
+      "id": "frame-pump-music-fade",
+      "subsystem": "声音",
+      "name": "每帧 BGM 淡出推进",
+      "trigger": "`Engine+698852` 非零且配置 `sound:MusicFade` 打开",
+      "engine": {
+        "fns": [
+          "sub_407120",
+          "sub_412290"
+        ],
+        "raw": "12113-12140"
+      },
+      "reads": [
+        "Engine+698852",
+        "Engine+699204",
+        "Engine+490016",
+        "Engine+697620"
+      ],
+      "whySilent": "门不满足时函数体整段跳过，仅 return",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "无声音子系统"
+      }
+    },
+    {
+      "id": "frame-render-gate-mainloop",
+      "subsystem": "帧循环",
+      "name": "主循环帧提交门控",
+      "trigger": "`Engine+667856==1` 且（`Engine+667860`≠0 或 effect_flags&0x2400）且 effect_flags&0x1000000==0 且 !v93 且(Scene 有脏或对象命中)",
+      "engine": {
+        "fns": [
+          "sub_412290",
+          "sub_40BE10"
+        ],
+        "raw": "20740-20760"
+      },
+      "reads": [
+        "Engine+667856",
+        "Engine+667860",
+        "Engine+699204",
+        "Engine+369332",
+        "Scene+46508"
+      ],
+      "whySilent": "门不满足时整条 `sub_4B4040` 调用被跳过，画面保持上一帧且无任何诊断输出",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "",
+        "note": "PixiBackend.present 由渲染循环调用；引擎是\"跑到门控止\"，emulator 按批推进（SAFETY_PER_FRAME）——结构不同、语义未逐项对齐"
+      }
+    },
+    {
+      "id": "scene-frame-commit",
+      "subsystem": "渲染",
+      "name": "Scene 逐帧提交（四路归并 + 绘制）",
+      "trigger": "主循环帧提交门放开，或脚本执行 opcode 0x20C，或其它子系统直调",
+      "engine": {
+        "fns": [
+          "sub_4B4040",
+          "sub_4B06D0"
+        ],
+        "raw": "136742-136966"
+      },
+      "reads": [
+        "Scene+46508",
+        "Scene+46516",
+        "Scene+46512",
+        "Scene+46500",
+        "Scene+1860",
+        "Scene+46456",
+        "Scene+46676",
+        "Scene+1056"
+      ],
+      "whySilent": "脏标志为 0 或 `Scene+1056==0` 时内部各分支自然不成立，函数正常返回，无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/draw-item-slot-coverage.test.ts",
+        "note": "只实现四路归并里的两路（DrawItem + MeshEntry 黑罩）；两张 572B 节点表完全没建模 ⇒ 特效/精灵层缺失"
+      }
+    },
+    {
+      "id": "scene-beginscene-recursion-gate",
+      "subsystem": "渲染",
+      "name": "BeginScene/EndScene 递归门",
+      "trigger": "每帧 `sub_4B4040` 入口调用 `sub_497F50`；`renderer+1112` 已非零时仅递增嵌套计数",
+      "engine": {
+        "fns": [
+          "sub_497F50",
+          "sub_497F90"
+        ],
+        "raw": "114828-114874"
+      },
+      "reads": [
+        "Scene+1860",
+        "renderer+1112",
+        "renderer+1116",
+        "renderer+278",
+        "renderer+279",
+        "renderer+280"
+      ],
+      "whySilent": "device 的 BeginScene 失败时只返回负值 ⇒ `sub_4B4040` 直接 return，不报错也不画",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: emulator 的 present 是\"清空 drawRoot 后重建\"，结构上不存在嵌套 BeginScene，无需该递归门"
+      }
+    },
+    {
+      "id": "scene-frame-texture-gate-46672",
+      "subsystem": "3D",
+      "name": "帧纹理（离屏表面）指针门",
+      "trigger": "`Scene+46672 == 0` 且进入 `sub_49FCD0`（3D 帧渲染）；写者 `sub_49FB60`(120463-120529) / `sub_4A6EE0`(126522-126620)",
+      "engine": {
+        "fns": [
+          "sub_49FCD0",
+          "sub_49FB60",
+          "sub_4A6EE0"
+        ],
+        "raw": "120545-120772"
+      },
+      "reads": [
+        "Scene+46672",
+        "Scene+46676",
+        "Scene+1860"
+      ],
+      "whySilent": "为 0 时 `sub_49FCD0` 走 sprintf_s 报错并返回 0 —— **这条会报错**，是该组里少数非静默项",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 离屏帧纹理，2D 精灵路径不需要；未建模 3D"
+      }
+    },
+    {
+      "id": "scene-framebuffer-offset-compensate-46696",
+      "subsystem": "渲染",
+      "name": "双缓冲显示偏移补偿开关",
+      "trigger": "`Scene+46696` 非零时进入 `sub_4A2D50` 的偏移补偿分支",
+      "engine": {
+        "fns": [
+          "sub_4A2D50"
+        ],
+        "raw": "122890-123252"
+      },
+      "reads": [
+        "Scene+46696",
+        "Scene+1860"
+      ],
+      "whySilent": "为 0 时不扩张绘制矩形，画面在双缓冲模式下会有 1 像素级偏移，无任何日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 双缓冲显示偏移补偿，属 D3D 呈现细节"
+      }
+    },
+    {
+      "id": "scene-capture-target-flag-46680",
+      "subsystem": "渲染",
+      "name": "Capture 目标为主/后缓冲（38 号）标记",
+      "trigger": "`sub_4A4C70` 捕获路径且目标槽 == 38（raw 124962）；另一写点 raw 137590",
+      "engine": {
+        "fns": [
+          "sub_4A4C70",
+          "sub_4B4B90"
+        ],
+        "raw": "124572-124650"
+      },
+      "reads": [
+        "Scene+46680"
+      ],
+      "whySilent": "标志为 0 时只是按普通纹理拷贝；本文件内未见读点，消费侧在外部",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: D3D 后缓冲捕获目标，属呈现细节"
+      }
+    },
+    {
+      "id": "scene-render-3d-frame-request-46700",
+      "subsystem": "3D",
+      "name": "请求显式渲染一帧 3D",
+      "trigger": "`Scene+46700` 非零且（脚本深度 <0 或 ==38），在 `sub_4B06D0` 收尾处",
+      "engine": {
+        "fns": [
+          "sub_4B06D0",
+          "sub_49FCD0"
+        ],
+        "raw": "134417-136734"
+      },
+      "reads": [
+        "Scene+46700",
+        "Scene+46456"
+      ],
+      "whySilent": "为 0 时该分支不执行；本文件内无写点（构造清零簇也不含它），写者在脚本/命令层",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 未建模"
+      }
+    },
+    {
+      "id": "scene-3d-effect-level-writer",
+      "subsystem": "3D",
+      "name": "3D 效果等级的初始化决策",
+      "trigger": "`sub_4A6EE0` 被调用（Engine 初始化 raw 11941 传 Scene）",
+      "engine": {
+        "fns": [
+          "sub_4A6EE0"
+        ],
+        "raw": "126522-126620"
+      },
+      "reads": [
+        "Scene+46668",
+        "Scene+42456",
+        "Scene+1860"
+      ],
+      "whySilent": "按 D3D 版本能力（0xFFFF0100/0xFFFF0200）自动落 0/1/2 档；档位低只是少画特效，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 效果档（0/1/2）决策，3D 未建模"
+      }
+    },
+    {
+      "id": "scene-dirty-flag-lifecycle",
+      "subsystem": "帧循环",
+      "name": "Scene+46508 「本帧需要重画」脏标志",
+      "trigger": "任一矩阵/变换/显示列表被改动时置 1（117146/117214/130792/130823/130829/130836/131262/133540/133773）；帧头清 0",
+      "engine": {
+        "fns": [
+          "sub_4B4040",
+          "sub_4B4460",
+          "sub_40BE10",
+          "sub_4AF1C0",
+          "sub_49AA30",
+          "sub_49A770",
+          "sub_49A8E0",
+          "sub_4AB950"
+        ],
+        "raw": "117129-137035"
+      },
+      "reads": [
+        "Scene+46508"
+      ],
+      "whySilent": "标志为 0 时只是少刷一帧，`sub_40BE10` 走别的条件（D3D 设备/map/内容/Live2D），无断言",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 有 sceneDirty（标脏 → present 消费后清）；引擎是 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置，生命周期更复杂"
+      }
+    },
+    {
+      "id": "scene-freeze-flag",
+      "subsystem": "帧循环",
+      "name": "Scene+46512 动画强制冻结",
+      "trigger": "`sub_407EA0`（ADV/0x400 分支）置 1，或转场类型为负值",
+      "engine": {
+        "fns": [
+          "sub_407EA0",
+          "sub_49AA30",
+          "sub_4AF1C0",
+          "sub_4B06D0"
+        ],
+        "raw": "12788-12801"
+      },
+      "reads": [
+        "Scene+46512",
+        "Scene+46528"
+      ],
+      "whySilent": "冻结只让插值短路到终态，代码路径完全合法，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★未建模 Scene+46512「动画强制冻结」：引擎在转场/截图等场景会冻住所有动画窗，emulator 会继续播 ⇒ 表现差异"
+      }
+    },
+    {
+      "id": "scene-pending-flag-0x400-gate",
+      "subsystem": "转场",
+      "name": "Scene+46516 转场/等待在途标志（0x400 卫门值）",
+      "trigger": "转场进行中或动画窗未结束时置 1；帧头清 0，帧尾按状态回置",
+      "engine": {
+        "fns": [
+          "sub_4B4040",
+          "sub_407E20",
+          "sub_4B06D0"
+        ],
+        "raw": "136793-136841"
+      },
+      "reads": [
+        "Scene+46516",
+        "Scene+46500",
+        "Scene+46512"
+      ],
+      "whySilent": "标志恒为非零时只是永远不清转场表、0x400 门不开，引擎不认为这是错误",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E3",
+        "guard": "test/scene-report.test.ts",
+        "note": "emulator 用 scAnimationsDone()（按各窗相位）推导放行，未建模 46516 本身，也没用 Engine+369344 的\"强制重绘请求\"⇒ 判据比引擎粗"
+      }
+    },
+    {
+      "id": "scene-flag-46528-bits",
+      "subsystem": "帧循环",
+      "name": "Scene+46528 bit1/bit2 冻结豁免",
+      "trigger": "bit1 非零 ⇒ 拒绝 `sub_407EA0` 置冻结；bit2 非零 ⇒ `sub_49AA30` 忽略已置的冻结",
+      "engine": {
+        "fns": [
+          "sub_407EA0",
+          "sub_49AA30"
+        ],
+        "raw": "12793-12793"
+      },
+      "reads": [
+        "Scene+46528"
+      ],
+      "whySilent": "只影响一个 if 分支的取舍，两种取值都是正常路径",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "冻结豁免位（bit1 阻止置冻结 / bit2 忽略已置冻结）随 46512 一起未建模"
+      }
+    },
+    {
+      "id": "scene-norender-mode",
+      "subsystem": "渲染",
+      "name": "Engine+167990 无渲染/隐藏窗口模式",
+      "trigger": "启动参数（WinMain raw 142044 配套置 effect_flags|0x80000）或脚本经 raw 40114 读取该值；本文件内无写入点",
+      "engine": {
+        "fns": [
+          "sub_41A1A0",
+          "sub_412290",
+          "sub_405530",
+          "sub_4065F0",
+          "sub_406650",
+          "sub_40A4C0",
+          "sub_430A20"
+        ],
+        "raw": "11120-40120"
+      },
+      "reads": [
+        "Engine+167990"
+      ],
+      "whySilent": "19 处门全是 `if (!_this[167990])`：非零时跳过「消息框前后隐藏/恢复窗口」「窗口尺寸同步」，脚本继续跑，完全无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "test/engine-config.test.ts",
+        "note": "★语义冲突待复核：emulator 把 display:ScreenMode 绑到 167990（当\"显示模式\"读），而引擎里它是「无渲染/隐藏窗口模式」（19 处门 + 经 raw 40114 暴露给脚本）⇒ 绑定可能错位"
+      }
+    },
+    {
+      "id": "3d-effect-level-gate",
+      "subsystem": "3D",
+      "name": "Scene+46668 3D 特效等级",
+      "trigger": "`>= 1` 才执行 3D 雪花并创建 effect 200/201；`>= 2` 用资源 201；`> 1` 才惰性创建 effect 203",
+      "engine": {
+        "fns": [
+          "sub_418340",
+          "sub_4B06D0"
+        ],
+        "raw": "23917-23935"
+      },
+      "reads": [
+        "Scene+46668",
+        "Scene+42456",
+        "Scene+46492",
+        "Scene+46496",
+        "Scene+46480"
+      ],
+      "whySilent": "等级不足时 `if` 直接跳过，不产生任何日志；只有纹理槽为空才走 sprintf_s 错误路径",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 特效等级门（46668），3D 未建模"
+      }
+    },
+    {
+      "id": "scene-render-freeze-46676",
+      "subsystem": "渲染",
+      "name": "Scene+46676 3D/文字渲染冻结总闸",
+      "trigger": "外部（脚本/命令层）把该字段置非零；本文件内 105 处引用全部是读、**零写入**",
+      "engine": {
+        "fns": [
+          "sub_49AA30",
+          "sub_49FCD0",
+          "sub_4A1F00",
+          "sub_4A2D50",
+          "sub_4A7DA0",
+          "sub_4AEEA0",
+          "sub_4AF1C0",
+          "sub_4B06D0",
+          "sub_4B4040",
+          "sub_4B4460",
+          "sub_4B4910",
+          "sub_4B4B90"
+        ],
+        "raw": "117239-137597"
+      },
+      "reads": [
+        "Scene+46676"
+      ],
+      "whySilent": "非零时 `sub_49FCD0` 整帧直接 `return 1`、相机矩阵/抖动/缩放补偿全部跳过 —— 合法路径、无报错，只是 3D 世界被冻结在最后一帧",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★引擎里 105 读 / 0 写的\"渲染冻结总闸\"（含 2D 与文字路径）⇒ emulator 无对应开关，相关表现差异无从解释"
+      }
+    },
+    {
+      "id": "engine-main-window-hwnd",
+      "subsystem": "渲染",
+      "name": "Engine+387924 主窗口 HWND（旧名 FileSource）",
+      "trigger": "WinMain 创建窗口后写入（raw 142221）；退出/析构时置 0（20588 / 20783 / 22583）",
+      "engine": {
+        "fns": [
+          "sub_4BA310"
+        ],
+        "raw": "142206-142221"
+      },
+      "reads": [
+        "Engine+387924",
+        "Engine+96981"
+      ],
+      "whySilent": "为 0 时部分路径（`sub_488DC0` / `sub_4559C0`）走失败分支并可能 `_CxxThrowException` —— **非静默**，是该组里的例外",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 引擎把 HWND 当 D3D 资源来源与消息框/显示模式句柄；emulator 的窗口由 Electron 提供，不需要这个字段"
+      }
+    },
+    {
+      "id": "filesource-script-load",
+      "subsystem": "资源",
+      "name": "脚本装载把主窗口 HWND 当资源来源传入",
+      "trigger": "`sub_40FB60` 派发正数请求（载入新脚本）",
+      "engine": {
+        "fns": [
+          "sub_40FB60",
+          "sub_40ED40"
+        ],
+        "raw": "18984-18989"
+      },
+      "reads": [
+        "Engine+387924",
+        "Engine+383104"
+      ],
+      "whySilent": "正常路径完全不输出；只有该句柄为空（退出流程）才会走 `sub_4034F0` 错误分支",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "test/boot.test.ts",
+        "note": "why: 脚本装载用 NodeFileSource 直读 raw/，不需要\"把 HWND 当资源来源\"这条路径"
+      }
+    },
+    {
+      "id": "scene-draw-total-gate-1056",
+      "subsystem": "渲染",
+      "name": "Scene+1056 主绘制总门",
+      "trigger": "`sub_4B06D0` 入口；为 0 时整帧绘制直接 return",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "134814-134818"
+      },
+      "reads": [
+        "Scene+1056",
+        "Scene+46456"
+      ],
+      "whySilent": "只是一个 `if (v2) return;`，没有日志或错误码",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★Scene+1056 == 0 时 sub_4B06D0 第一行就 return ⇒ 整帧绘制消失。emulator 没有这个总门（总是画）"
+      }
+    },
+    {
+      "id": "clock-write-clock-freeze",
+      "subsystem": "帧循环",
+      "name": "每帧时钟写入与时钟冻结门",
+      "trigger": "主循环每帧写 `Engine+369332`；opcode 0x20C / `sub_41A090` / `sub_41A2C0` 也写；`Engine+107438` 非零时只递增 107439",
+      "engine": {
+        "fns": [
+          "sub_412290",
+          "sub_41A090",
+          "sub_41A2C0",
+          "sub_41A1A0"
+        ],
+        "raw": "20750-20751"
+      },
+      "reads": [
+        "Engine+369332",
+        "Engine+369336",
+        "Engine+107438"
+      ],
+      "whySilent": "时钟停走时动画只是静止，所有基于时间的比较都合法",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/ops-cg-digit-clock.test.ts",
+        "note": "emulator 有时钟写入（0x20C/0x23C → engineValues 92333/92334）+ 0x1F4 停靠锁门控；但没有\"时钟冻结\"概念（present 用墙钟 performance.now）"
+      }
+    },
+    {
+      "id": "clock-read-drawitem-5-windows",
+      "subsystem": "渲染",
+      "name": "DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV）",
+      "trigger": "绘制项记录 `a2[0]` bit1 置位（某个 setDrawColor* opcode 打开动画）",
+      "engine": {
+        "fns": [
+          "sub_49AA30"
+        ],
+        "raw": "117239-117934"
+      },
+      "reads": [
+        "Scene+46500",
+        "Scene+46512",
+        "Scene+46528"
+      ],
+      "whySilent": "位未置时整段 if 跳过，绘制项按静态值画，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/draw-item-anim-window.test.ts",
+        "note": "本轮最扎实的一项：5 窗 + 共享起点 + 窗末收尾 + flipbook→源矩形 + 引擎整数插值式，全部有单元测试与场景快照断言。★报告里的函数归属（元素3/sub_4A230）已更正为 sub_49AA30@133389（DrawItem 渲染器调用）"
+      }
+    },
+    {
+      "id": "clock-read-meshentry-color-window",
+      "subsystem": "渲染",
+      "name": "MeshEntry 颜色/α 动画窗",
+      "trigger": "MeshEntry `flags & 2`（颜色动画挂起）且 `flags & 1`（可见）",
+      "engine": {
+        "fns": [
+          "sub_4AF1C0",
+          "sub_4A2050"
+        ],
+        "raw": "133459-133646"
+      },
+      "reads": [
+        "Scene+46500",
+        "Scene+46512",
+        "Scene+46508",
+        "Scene+46516"
+      ],
+      "whySilent": "颜色窗不活动时只做一次顶点缓冲 Unlock 回写，逐通道 lerp 全跳过",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "mesh 颜色窗实现了（CalcDiffuse 浮点式），但 ① mesh 渲染是整屏黑罩（顶点几何未建模）② 元素2 的色槽偏移（+36/+52/+56）与窗口字段归属仍需复核（sub_4AE2C0 同时写两处色槽 ⇒ 现模型的 state0/state1 映射可疑）"
+      }
+    },
+    {
+      "id": "clock-read-transition-window",
+      "subsystem": "转场",
+      "name": "转场窗口进度与扫描带绘制",
+      "trigger": "过渡表 `Scene+1048` 存在记录且 `Scene+46512` 为 0",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "134856-136321"
+      },
+      "reads": [
+        "Scene+46500",
+        "Scene+46512",
+        "Scene+46516"
+      ],
+      "whySilent": "窗口超时后把记录 `[3]` 清 0 并 `sub_49E170` 收尾，正常流程无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★转场表（Scene+1048）完全未建模 ⇒ 各类 wipe/淡入淡出过场不显示"
+      }
+    },
+    {
+      "id": "render-range-clip-by-index",
+      "subsystem": "渲染",
+      "name": "按索引区间的绘制范围裁剪",
+      "trigger": "绘制项 key（`v384[5]`）落在 `[Scene+1112, Scene+1112+Scene+1116)` 之外",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "134872-134882"
+      },
+      "reads": [
+        "Scene+1112",
+        "Scene+1116"
+      ],
+      "whySilent": "裁剪只是不给该项渲染，表项保留到下帧，无断言",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "按索引区间的绘制范围裁剪未建模"
+      }
+    },
+    {
+      "id": "render-merge-two-pass-reorder",
+      "subsystem": "渲染",
+      "name": "四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置",
+      "trigger": "每帧 `sub_4B06D0` 被调用；四张 map 内 key 落在时间/序窗外的项被打 `|0x10000` 留下",
+      "engine": {
+        "fns": [
+          "sub_4B06D0",
+          "sub_4B0360",
+          "sub_4AAD40",
+          "sub_40DC30",
+          "sub_4AAEC0"
+        ],
+        "raw": "136361-136718"
+      },
+      "reads": [
+        "Scene+1032",
+        "Scene+1064",
+        "Scene+1080",
+        "Scene+1096",
+        "Scene+46500"
+      ],
+      "whySilent": "回置标记只是让项保留，帧末 `Scene+46508` 归 0 时下一帧重来，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/draw-item-slot-coverage.test.ts",
+        "note": "按 layer 排序绘制等价于归并顺序，但没有 |0x10000「绘制中」标志回置与两趟重排"
+      }
+    },
+    {
+      "id": "render-3d-layer-dual-commit",
+      "subsystem": "3D",
+      "name": "3D 层对偶逐帧提交",
+      "trigger": "其它子系统直接调用（本文件未见主循环调用点）",
+      "engine": {
+        "fns": [
+          "sub_4B4460"
+        ],
+        "raw": "136969-137427"
+      },
+      "reads": [
+        "Scene+46508",
+        "Scene+46516",
+        "Scene+46512",
+        "Scene+1860",
+        "Scene+46456"
+      ],
+      "whySilent": "与 `sub_4B4040` 同型的静默门控（脏标志/递归门），门不满足即正常返回",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 层对偶提交，3D 未建模"
+      }
+    },
+    {
+      "id": "render-endscene-and-2d-stack",
+      "subsystem": "渲染",
+      "name": "2D 矩阵栈 Begin/End 配对与 EndScene",
+      "trigger": "每帧 `sub_4B4040` 调 `sub_49DFD0` 与 `sub_49E170` 成对；嵌套计数归零才真正压/弹栈",
+      "engine": {
+        "fns": [
+          "sub_49DFD0",
+          "sub_49E170",
+          "sub_497F90"
+        ],
+        "raw": "119198-119326"
+      },
+      "reads": [
+        "Scene+10612",
+        "Scene+10514",
+        "Scene+10562",
+        "Scene+1860",
+        "renderer+1116",
+        "renderer+1112"
+      ],
+      "whySilent": "计数不归零时只是不做 memcpy，状态残留到下一帧但无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 2D 矩阵栈与 EndScene 由 Pixi 场景图承担"
+      }
+    },
+    {
+      "id": "transition-table-flush",
+      "subsystem": "转场",
+      "name": "转场表帧尾收尾（sub_4A9BE0）",
+      "trigger": "`Scene+46516 == 0` 时每帧帧尾清空 `Scene+1048`",
+      "engine": {
+        "fns": [
+          "sub_4A9BE0",
+          "sub_4AA180"
+        ],
+        "raw": "129283-129302"
+      },
+      "reads": [
+        "Scene+1048",
+        "Scene+46516"
+      ],
+      "whySilent": "`46516` 恒非零时表永不清空，转场只是重复执行，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★转场表帧尾收尾（sub_4A9BE0）未建模；与 scene-pending-flag 共同决定\"转场是否清空\""
+      }
+    },
+    {
+      "id": "lazy-effect-200-201-release",
+      "subsystem": "3D",
+      "name": "2D/3D effect 槽（46480 起 5 槽）的批量释放",
+      "trigger": "Scene 清理 `sub_4AB390` 执行时",
+      "engine": {
+        "fns": [
+          "sub_4AB390"
+        ],
+        "raw": "130533-130545"
+      },
+      "reads": [
+        "Scene+46480"
+      ],
+      "whySilent": "槽为空时跳过 Release；正常释放无输出。这是与 46492/46496 的唯一差别（后两者无释放）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D effect 槽释放，3D 未建模"
+      }
+    },
+    {
+      "id": "renderer-state-reset-each-frame",
+      "subsystem": "渲染",
+      "name": "渲染态重置（sub_498B60）",
+      "trigger": "`Scene+46460` bit0 非零时在 `sub_4B4040` 帧头调用（另有 12 处调用点）",
+      "engine": {
+        "fns": [
+          "sub_498B60",
+          "sub_4B4040"
+        ],
+        "raw": "115455-115520"
+      },
+      "reads": [
+        "Scene+46460",
+        "Scene+1860"
+      ],
+      "whySilent": "纯状态复位，无返回值检查也无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: D3D 设备渲染态（fvf/stream/light）重置，Pixi 无对应层"
+      }
+    },
+    {
+      "id": "audio-device-init",
+      "subsystem": "声音",
+      "name": "DirectSound 设备/对象重建",
+      "trigger": "引擎 ctor（raw 21426 → `sub_4B69B0(Engine+18664)`）；`sub_4B5C50`(138380) 惰性 `LoadLibrary(\"DSOUND.DLL\")`",
+      "engine": {
+        "fns": [
+          "sub_4B69B0",
+          "sub_4B5C50",
+          "sub_4B6940"
+        ],
+        "raw": "138380-139100"
+      },
+      "reads": [
+        "Engine+18664"
+      ],
+      "whySilent": "DSOUND.DLL 缺失时 `DirectSoundCreate` 取不到，所有播放调用变成空操作，无报错",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "无声音子系统（当前范围外；但属\"引擎有、emulator 完全没有\"的明确缺口）"
+      }
+    },
+    {
+      "id": "movie-object-lifecycle",
+      "subsystem": "帧循环",
+      "name": "电影对象帧内生命周期",
+      "trigger": "`effect_flags & 0x2000` 且 `Engine+378684` 非零；播完或收到 0x10 输入时删除",
+      "engine": {
+        "fns": [
+          "sub_412290"
+        ],
+        "raw": "20896-20917"
+      },
+      "reads": [
+        "Engine+699204",
+        "Engine+378684",
+        "Engine+699208"
+      ],
+      "whySilent": "对象为空时只清 0x2000 位并跳转 `LABEL_126`，不报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "影片播放未实现（0x20F 只记录）"
+      }
+    },
+    {
+      "id": "scene-drawtable-flush-and-dirty",
+      "subsystem": "渲染",
+      "name": "清空绘制节点并置脏（opcode 侧）",
+      "trigger": "脚本调用对应 opcode（`sub_41A130` → `sub_4AB7A0`）",
+      "engine": {
+        "fns": [
+          "sub_4AB7A0",
+          "sub_41A130"
+        ],
+        "raw": "130680-130775"
+      },
+      "reads": [
+        "Scene+1032",
+        "Scene+1064",
+        "Scene+1080",
+        "Scene+1096",
+        "Scene+46508"
+      ],
+      "whySilent": "map 为空时循环体不执行，仅置脏标志；无输出",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "test/scene-report.test.ts",
+        "note": "opcode 侧 0x1F6/0x1F7 的整批/区间删除已实现（scClearDrawContainer/scDetachTexture），但没有专门单测"
+      }
+    },
+    {
+      "id": "script-queue-dispatch",
+      "subsystem": "帧循环",
+      "name": "脚本派发队列出队",
+      "trigger": "`Engine+497380 < Engine+497384`（队列有货）且 `Engine+497400==0`（未在派发中）",
+      "engine": {
+        "fns": [
+          "sub_40FB60",
+          "sub_40FC90",
+          "sub_41A000"
+        ],
+        "raw": "18954-19016"
+      },
+      "reads": [
+        "Engine+497380",
+        "Engine+497384",
+        "Engine+497376",
+        "Engine+497400",
+        "Engine+387924"
+      ],
+      "whySilent": "队列空时整个函数体被外层 if 挡住，静默返回",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★引擎的脚本派发队列（sub_40FB60，由帧末/unlock/0x143 驱动）未建模 ⇒ 依赖\"延迟派发\"的流程在 emulator 里不会发生（0x143 是 no-op）"
+      }
+    },
+    {
+      "id": "script-frame-refresh-opcode-20c",
+      "subsystem": "帧循环",
+      "name": "opcode 0x20C 脚本帧刷新并提交",
+      "trigger": "脚本执行到 0x20C",
+      "engine": {
+        "fns": [
+          "sub_41A1A0",
+          "sub_4B4040"
+        ],
+        "raw": "25259-25274"
+      },
+      "reads": [
+        "Engine+107438",
+        "Engine+369332",
+        "Engine+167990"
+      ],
+      "whySilent": "内部 `sub_4B4040` 若因渲染门返回则什么都不做，opcode 已正常记账",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/engine-config.test.ts",
+        "note": "0x20C 刷时钟 + native.frameTick；present 由渲染循环负责"
+      }
+    },
+    {
+      "id": "live2d-slot-probe",
+      "subsystem": "Live2D",
+      "name": "Live2D 10 槽探测（强制重画理由之一）",
+      "trigger": "`Scene+55812..55848` 任一非零",
+      "engine": {
+        "fns": [
+          "sub_4A1AF0",
+          "sub_40BE10"
+        ],
+        "raw": "121778-121790"
+      },
+      "reads": [
+        "Scene+55812",
+        "Scene+55848"
+      ],
+      "whySilent": "全为 0 时返回 0，只是少一条重画理由，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "Live2D 未建模（10 槽）"
+      }
+    },
+    {
+      "id": "vertex-buffer-lock-scale",
+      "subsystem": "渲染",
+      "name": "顶点缓冲 Lock/Unlock + 视口缩放改写",
+      "trigger": "`Scene+46676 == 0` 且脚本深度非 38/负值时才改写顶点",
+      "engine": {
+        "fns": [
+          "sub_4AF1C0",
+          "sub_4A1F00",
+          "sub_4A2050"
+        ],
+        "raw": "133571-133612"
+      },
+      "reads": [
+        "Scene+46676",
+        "Scene+1860",
+        "Scene+46456"
+      ],
+      "whySilent": "Lock 成功但 vcount<=0 时循环体不执行；仅 Lock 失败才 sprintf_s + `sub_4034C0`",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 只能画成整屏色块，顶点几何全丢"
+      }
+    },
+    {
+      "id": "world-matrix-identity-refresh",
+      "subsystem": "3D",
+      "name": "每帧世界/投影矩阵复位与链乘",
+      "trigger": "每帧 `sub_4A1E90` 与逐项 `sub_4AEEA0`/`sub_4AEDD0` 调用",
+      "engine": {
+        "fns": [
+          "sub_4A1E90",
+          "sub_4AEEA0",
+          "sub_49AA30"
+        ],
+        "raw": "122130-122157"
+      },
+      "reads": [
+        "Scene+1116",
+        "Scene+46600",
+        "Scene+46536",
+        "Scene+46660"
+      ],
+      "whySilent": "矩阵数值错误不会抛异常，只是坐标不对（纯表现问题）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/draw-item-anim-window.test.ts",
+        "note": "scale/rot/trans 用 Vec3/{axis,deg} 等价建模并接入 Pixi；但没有 4×4 世界矩阵链与投影矩阵复位"
+      }
+    },
+    {
+      "id": "sprite-2d-draw-layer",
+      "subsystem": "渲染",
+      "name": "无脚本/标题态额外 2D 层绘制",
+      "trigger": "`Scene+46700` 非零且（脚本深度 <0 或 ==38）",
+      "engine": {
+        "fns": [
+          "sub_49FCD0",
+          "sub_4B4040"
+        ],
+        "raw": "136832-136833"
+      },
+      "reads": [
+        "Scene+46700",
+        "Scene+46456"
+      ],
+      "whySilent": "字段为 0 时该分支不执行，正常进下一步",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "无脚本/标题态的额外 2D 层未建模"
+      }
+    },
+    {
+      "id": "scene-slot-release-1000",
+      "subsystem": "渲染",
+      "name": "1000 个场景对象槽的逐帧老化释放",
+      "trigger": "`Engine+675972` 非零（存在需刷新对象）",
+      "engine": {
+        "fns": [
+          "sub_412290",
+          "sub_488550",
+          "sub_4A4C70"
+        ],
+        "raw": "20660-20738"
+      },
+      "reads": [
+        "Engine+675972",
+        "Engine+378688",
+        "Engine+429752",
+        "Engine+699204"
+      ],
+      "whySilent": "槽为 0 时直接 `++i` 继续，没有任何错误路径",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 的 drawItems/meshes 是 Map（无 1000 槽上限与逐帧老化释放）；纹理槽表按需建，未做老化"
+      }
+    },
+    {
+      "id": "lazy-effect-200-201",
+      "subsystem": "3D",
+      "name": "惰性创建 2D/3D effect（资源 200/201）",
+      "trigger": "`Scene+46480 == 0` 且 `Scene+46668 >= 1`（`>=2` 用资源 201，否则 200）",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "134820-134848"
+      },
+      "reads": [
+        "Scene+46480",
+        "Scene+46668",
+        "Scene+1056",
+        "Scene+1860"
+      ],
+      "whySilent": "创建失败会 `sprintf_s(Scene+8)+sub_4034C0` 报错框；成功则静默继续",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D effect 惰性创建，3D 未建模"
+      }
+    },
+    {
+      "id": "lazy-3d-effect-203",
+      "subsystem": "3D",
+      "name": "惰性创建 3D effect（资源 203）",
+      "trigger": "`Scene+46668 > 1` 且 `Scene+46492 == 0`",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "134850-134855"
+      },
+      "reads": [
+        "Scene+46668",
+        "Scene+46492"
+      ],
+      "whySilent": "创建失败走 `LABEL_8` 错误分支；成功则继续，不影响流程。**退出时该槽无 Release（泄漏）**",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 同上"
+      }
+    },
+    {
+      "id": "lazy-3d-effect-202-snow",
+      "subsystem": "3D",
+      "name": "惰性创建 3D effect（资源 202，雪花）",
+      "trigger": "`Scene+46668 >= 1` 且目标纹理槽非空且 `Scene+46496 == 0`",
+      "engine": {
+        "fns": [
+          "sub_418340"
+        ],
+        "raw": "23917-23935"
+      },
+      "reads": [
+        "Scene+46668",
+        "Scene+46496",
+        "Scene+42456"
+      ],
+      "whySilent": "纹理槽为空才 sprintf_s 报错；effect 创建失败时把 0 传给 `sub_453330`，只是不画",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 同上（0x326 已按 no-op 处理并注释）"
+      }
+    },
+    {
+      "id": "lazy-sprite-recreate",
+      "subsystem": "渲染",
+      "name": "CSprite 释放后重建",
+      "trigger": "任何需要 sprite 的绘制路径进入 `sub_4A2BA0`（如 `sub_4A6EE0` 建 mesh 管理器后 raw 126546）",
+      "engine": {
+        "fns": [
+          "sub_4A2BA0"
+        ],
+        "raw": "122810-122834"
+      },
+      "reads": [
+        "Scene+42452",
+        "Scene+1860"
+      ],
+      "whySilent": "失败才 sprintf_s「関数：CSprite エラー…」+ `sub_4034C0`；成功静默",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: CSprite 释放后重建由 Pixi 每帧重建 drawRoot 天然覆盖"
+      }
+    },
+    {
+      "id": "lazy-d3d9-device-init",
+      "subsystem": "渲染",
+      "name": "D3D9 对象与设备的释放-重建",
+      "trigger": "Renderer::Initialize（分辨率/显示模式变更、`sub_498B60` 触发）",
+      "engine": {
+        "fns": [
+          "sub_498B30"
+        ],
+        "raw": "115565-115674"
+      },
+      "reads": [
+        "renderer+1036",
+        "renderer+1040",
+        "renderer+1100",
+        "renderer+1104"
+      ],
+      "whySilent": "失败会 sprintf_s + `sub_4034C0` 并返回 −2147467259；成功静默",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: D3D9 对象/设备的释放-重建由 WebGL/Pixi 承担"
+      }
+    },
+    {
+      "id": "lazy-texture-slot",
+      "subsystem": "资源",
+      "name": "CTexture 槽（1000）释放-重建",
+      "trigger": "纹理加载路径进入 `sub_4A2C10(Scene, idx, …)`",
+      "engine": {
+        "fns": [
+          "sub_4A2C10",
+          "sub_43A5C0",
+          "sub_48AB20"
+        ],
+        "raw": "122837-122870"
+      },
+      "reads": [
+        "Scene+42456",
+        "Scene+1864"
+      ],
+      "whySilent": "旧槽为空时跳过 Release 直接重建；失败仅置空槽，后续绘制项静默不画",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E2",
+        "guard": "test/texture-slot-resolve.test.ts",
+        "note": "槽表 + set-texture 绑定 + create-texture 刷新已实现；程序化纹理内容未生成（记入 headless 缺口）"
+      }
+    },
+    {
+      "id": "lazy-mesh-slot",
+      "subsystem": "3D",
+      "name": "mesh 槽（1000）释放-重建 + 惰性分配器单例",
+      "trigger": "模型载入路径进入 `sub_4A0640`；`Scene+50704` 管理器由 `sub_4A6EE0` eager 建",
+      "engine": {
+        "fns": [
+          "sub_4A0640",
+          "sub_47A0E0",
+          "sub_47A140",
+          "sub_4A6EE0"
+        ],
+        "raw": "121066-121102"
+      },
+      "reads": [
+        "Scene+50708",
+        "Scene+50704",
+        "Scene+1860"
+      ],
+      "whySilent": "旧槽为空时跳过释放；`ReadFile` 失败只 return 0，调用方按失败处理，不报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: D3DX 网格槽，3D 未建模"
+      }
+    },
+    {
+      "id": "lazy-mesh-alloc-hierarchy-singleton",
+      "subsystem": "3D",
+      "name": "D3DX 网格加载分配器单例",
+      "trigger": "`sub_47A0E0` 首次被调用（任何 mesh 载入）",
+      "engine": {
+        "fns": [
+          "sub_47A0E0"
+        ],
+        "raw": "94209-94227"
+      },
+      "reads": [
+        "dword_55DA04",
+        "dword_55DA00",
+        "dword_55D9FC"
+      ],
+      "whySilent": "单例为空时新建 4 字节 vftable 对象；失败只是置 0，后续 LoadMesh 失败但不报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 同上"
+      }
+    },
+    {
+      "id": "lazy-live2d-slot",
+      "subsystem": "Live2D",
+      "name": "Live2D 槽（10）释放-重建",
+      "trigger": "Live2D 模型载入路径进入 `sub_4A1860(Scene, …, slotIdx, …)`",
+      "engine": {
+        "fns": [
+          "sub_4A1860",
+          "sub_478270"
+        ],
+        "raw": "121665-121695"
+      },
+      "reads": [
+        "Scene+55812",
+        "Scene+1860"
+      ],
+      "whySilent": "旧槽为空时跳过释放；`ReadFile` 失败只 return 0，无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "Live2D 未建模"
+      }
+    },
+    {
+      "id": "lazy-vram-query-32",
+      "subsystem": "资源",
+      "name": "显存容量查询惰性缓存（32 位）",
+      "trigger": "首次调用 `sub_497FE0`（`Engine+1128 == 0`）",
+      "engine": {
+        "fns": [
+          "sub_497FE0"
+        ],
+        "raw": "114877-114991"
+      },
+      "reads": [
+        "Engine+1128",
+        "Engine+8"
+      ],
+      "whySilent": "CoCreateInstance/枚举失败时 sprintf_s + `sub_4034C0` 后返回 0，调用方按 0 继续；从不释放",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 显存容量查询缓存，Pixi/WebGL 无对应"
+      }
+    },
+    {
+      "id": "lazy-vram-query-64",
+      "subsystem": "资源",
+      "name": "显存容量查询惰性缓存（64 位 QWORD）",
+      "trigger": "首次调用（`Engine+675984 == 0`，GetTotalVRAM64 同构实现）",
+      "engine": {
+        "fns": [
+          "sub_497FE0"
+        ],
+        "raw": "12363-12430"
+      },
+      "reads": [
+        "Engine+675984"
+      ],
+      "whySilent": "同 32 位版本；失败返回 0，从不释放",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 同上"
+      }
+    },
+    {
+      "id": "lazy-movie-object",
+      "subsystem": "帧循环",
+      "name": "电影对象按显示模式创建",
+      "trigger": "`config(setCreateObject) & 1` 且目标对象非空（显示模式变更时，非严格按需）",
+      "engine": {
+        "fns": [
+          "sub_414940",
+          "sub_486F70",
+          "sub_485FA0"
+        ],
+        "raw": "21786-21837"
+      },
+      "reads": [
+        "Engine+697620",
+        "Engine+378684"
+      ],
+      "whySilent": "条件不满足则不建，主循环 0x2000 分支只清标志位，不报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "影片未实现"
+      }
+    },
+    {
+      "id": "lazy-movie-dll",
+      "subsystem": "资源",
+      "name": "电影解码 DLL 重载与函数指针惰性解析",
+      "trigger": "`sub_4229D0` 被调用；`Engine+490072` 已加载则先 `FreeLibrary`",
+      "engine": {
+        "fns": [
+          "sub_4229D0",
+          "sub_422AB0"
+        ],
+        "raw": "31056-31110"
+      },
+      "reads": [
+        "Engine+490072"
+      ],
+      "whySilent": "LoadLibrary 失败时 `GetLastError` + `_CxxThrowException(Command_ShowMessage)` ⇒ **会报错**",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "影片未实现"
+      }
+    },
+    {
+      "id": "lazy-movie-texture-slot",
+      "subsystem": "资源",
+      "name": "电影纹理槽（每索引）惰性创建",
+      "trigger": "`Engine+378688+4*i` 槽为空且该槽被指定为影片纹理",
+      "engine": {
+        "fns": [
+          "sub_489040"
+        ],
+        "raw": "31627-31630"
+      },
+      "reads": [
+        "Engine+378688"
+      ],
+      "whySilent": "多个调用点（32245 / 32528 / 32600 / 32877）共享同型守卫；失败按空槽处理，无日志",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "影片未实现"
+      }
+    },
+    {
+      "id": "lazy-gdi-font-set",
+      "subsystem": "消息窗",
+      "name": "GDI 字体句柄组释放-重建",
+      "trigger": "字体变更或消息窗子系统重建（`sub_40DF10` 复位区）",
+      "engine": {
+        "fns": [
+          "sub_465390"
+        ],
+        "raw": "71144-71187"
+      },
+      "reads": [
+        "Engine+85296",
+        "Engine+1084",
+        "Engine+1100",
+        "Engine+218624",
+        "Engine+235068"
+      ],
+      "whySilent": "旧句柄为空时跳过 `DeleteObject`；`CreateFontIndirectA` 失败返回 0，`SelectObject` 静默退化",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★消息窗文本渲染（GDI 字体 + 自绘位图）完全未建模 ⇒ 文字不显示"
+      }
+    },
+    {
+      "id": "lazy-script-operand-hashmap-node",
+      "subsystem": "资源",
+      "name": "脚本 VM 操作数 HashMap 节点惰性分配",
+      "trigger": "脚本求值首次写入某操作数/数组槽",
+      "engine": {
+        "fns": [
+          "writeIntOperand_42B4B0",
+          "writePointerOperand_418B90"
+        ],
+        "raw": "36830-37477"
+      },
+      "reads": [
+        "Engine+378688",
+        "Engine+365288"
+      ],
+      "whySilent": "分配失败走 bad_alloc 抛出；正常路径静默。未见显式释放点（`[推测]` 随帧释放）",
+      "confidence": "tentative",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "test/xval.test.ts",
+        "note": "等价物是 JS Map（globals/frames 各池 + menuMap），不需要引擎的手写 HashMap"
+      }
+    },
+    {
+      "id": "lazy-transition-map-node",
+      "subsystem": "转场",
+      "name": "过渡表节点惰性插入（表头 eager）",
+      "trigger": "首次写入某个过渡 key（`sub_4AA190`/`sub_4AAE10` 在 map 中找不到该 key）",
+      "engine": {
+        "fns": [
+          "sub_4AA190",
+          "sub_4AAE10",
+          "sub_4A95D0"
+        ],
+        "raw": "129586-129596"
+      },
+      "reads": [
+        "Scene+1048",
+        "Scene+1052"
+      ],
+      "whySilent": "map 内分配失败会走 bad_alloc 抛出；正常路径完全静默",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "转场表未建模"
+      }
+    },
+    {
+      "id": "lazy-drawitem-map-node",
+      "subsystem": "渲染",
+      "name": "DrawItem 表节点惰性插入（表头 eager 130312）",
+      "trigger": "任意绘制 opcode 首次触碰某个句柄 key",
+      "engine": {
+        "fns": [
+          "sub_4AAD40",
+          "sub_4A95D0"
+        ],
+        "raw": "130154-130195"
+      },
+      "reads": [
+        "Scene+1032",
+        "Scene+1036"
+      ],
+      "whySilent": "不存在时插入全 0 值再返回，调用方按 bit0=0 判定跳过",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/draw-item-anim-window.test.ts",
+        "note": "缺失即建项（sub_4AAA50 等价：scEnsureItem）+ 构造器 flags=0 已确证并测试"
+      }
+    },
+    {
+      "id": "lazy-mesh-map-node",
+      "subsystem": "3D",
+      "name": "MeshEntry 表节点惰性插入（表头 eager 130348）",
+      "trigger": "任意 mesh opcode 首次触碰某个句柄 key",
+      "engine": {
+        "fns": [
+          "sub_40DC30"
+        ],
+        "raw": "17764-17806"
+      },
+      "reads": [
+        "Scene+1064",
+        "Scene+1068"
+      ],
+      "whySilent": "以 `memset(v11,0,60)` 建初值后插入，调用方按 bit0=0 跳过",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "",
+        "note": "mesh 侧的缺失即建项（sub_4AAB80 等价：scSetVertexColor 走 scCreateMesh）已实现，但无专门测试"
+      }
+    },
+    {
+      "id": "lazy-572b-node-map",
+      "subsystem": "渲染",
+      "name": "572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384）",
+      "trigger": "任意精灵/特效 opcode 首次触碰某个 key",
+      "engine": {
+        "fns": [
+          "sub_4AAEC0",
+          "sub_4A9D70"
+        ],
+        "raw": "129394-129427"
+      },
+      "reads": [
+        "Scene+1080",
+        "Scene+1084",
+        "Scene+1096",
+        "Scene+1100"
+      ],
+      "whySilent": "默认全 0 记录，调用方按 `*result & 1` 判定未激活",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★572B 节点表（精灵/特效/立绘）未建模"
+      }
+    },
+    {
+      "id": "lazy-scene-effect-release-gap",
+      "subsystem": "3D",
+      "name": "Scene+46492 / +46496 两张 effect 的释放缺口",
+      "trigger": "程序退出走 `sub_4AB390`（Scene 清理）时",
+      "engine": {
+        "fns": [
+          "sub_4AB390"
+        ],
+        "raw": "130419-130420"
+      },
+      "reads": [
+        "Scene+46492",
+        "Scene+46496"
+      ],
+      "whySilent": "只把两个槽置 0、不调 Release ⇒ 泄漏但**完全无报错**；对照 `Scene+46480`（130533-130545）有正确 Release",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 这是引擎自身的资源释放缺口（退出前泄漏），复刻它没有意义"
+      }
+    },
+    {
+      "id": "bullet-dirty-from-freeze-or-pending",
+      "subsystem": "帧循环",
+      "name": "冻结/pending 强制延续刷帧",
+      "trigger": "`*(_QWORD*)(Scene+46512)` 非零（冻结或 pending 任一）",
+      "engine": {
+        "fns": [
+          "sub_4B06D0"
+        ],
+        "raw": "136718-136719"
+      },
+      "reads": [
+        "Scene+46512",
+        "Scene+46516",
+        "Scene+46508"
+      ],
+      "whySilent": "只是把脏标志置 1 让下一帧继续画，无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 的 needsRender() = dirty || !animationsDone || waitFlags&0x400，方向一致；但没有 (46512|46516) 的粘滞语义"
+      }
+    },
+    {
+      "id": "chained-3d-layer-commit",
+      "subsystem": "3D",
+      "name": "3D 场景层四路归并与扫描带绘制",
+      "trigger": "`sub_4B0360` 在 `sub_4B06D0` 的 6 个调用点（135610/135796/136001/136091/136307/136575/136647）被选中",
+      "engine": {
+        "fns": [
+          "sub_4B0360"
+        ],
+        "raw": "134277-134407"
+      },
+      "reads": [
+        "Scene+46500",
+        "Scene+46512",
+        "Scene+46516"
+      ],
+      "whySilent": "只在归并选中 572B 节点时才执行；不选中则整段不跑，无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "guard": "",
+        "note": "why: 3D 场景层归并，3D 未建模"
+      }
+    }
+  ]
+}
