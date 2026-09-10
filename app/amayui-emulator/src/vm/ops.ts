@@ -5,11 +5,12 @@
  */
 import type { OpHandler, StepCtx } from './step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand, setRefOperand, readStringOperand, writeStringOperand, readFloatOperand, writeFloatOperand, readIndexOperand, readStringIndexOperand } from './operand.js';
-import { asI32, atoi } from './bits.js';
+import { asI32, atoi, dec, enc } from './bits.js';
 import { refAt, readRef, writeRef } from './ref.js';
 import { parseScriptBytes } from '../script/bin.js';
 import type { Engine, Frame } from './engine.js';
 import { SLEEP_GATE } from './engine.js';
+import { cfgInt } from '../engineConfig.js';
 
 /** 把 label 值(dword index)解析为指令下标；找不到返回 null。 */
 function labelPos(frame: Frame, raw: number): number | null {
@@ -463,13 +464,255 @@ const op_string_resource_id: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, id);
 };
 
-/** 0x106 等：引擎配置 getter（读 _this[字段] 写 op1）。各 opcode 读不同字段，此处按 opcode 读取建模值。 */
+/** 0x106/0x130/0x131/0x201/0x2DC 等：引擎配置 getter（读 `_this[字段]` 写 op1）。 */
 const op_get_engine_value: OpHandler = (c) => {
-  // 仅 0x130(load-show-logo) 已知读 _this[96983]（engine.cpp sub_42F7A0=38664；构造函数默认置 1，见 Engine.engineValues）。
-  // SYSTEM4 据此决定是否执行 `call-script LOGO`（开场版权/背景 = SO006+SO005）。其余 getter 无界面态保持 0。
   let v = 0;
-  if (c.instr.opcode === 0x130) v = c.e.engineValues.get(96983) ?? 0;
+  if (c.instr.opcode === 0x130) {
+    // 0x130(load-show-logo)：读 `_this[96983]`（构造=1 播版权页；exit-script 置 0）。
+    //   SYSTEM4 据此决定是否 `call-script LOGO`。
+    v = c.e.engineValues.get(96983) ?? 0;
+  } else if (c.instr.opcode === 0x131) {
+    // 0x131（sub_42F7D0，raw 39355）：**直接读配置注册表** `message:MesWinAlpha` 写 op1
+    //   （`v2 = GetConfig(_this[174405], "message:MesWinAlpha")`）。emulator 用启动加载的 SYS4REG.INI 取值。
+    v = c.e.config ? cfgInt(c.e.config, 'message:meswinalpha', 0) : (c.e.engineValues.get(21668) ?? 0);
+  } else {
+    // 其余 getter（0x106/0x201/0x2DC…）：对应引擎字段尚未逐一定位 → 保持 0（与旧行为一致）。
+    v = 0;
+  }
   writeIntOperand(c.e, c.frame, c.instr, 1, v);
+};
+
+/**
+ * 0xC0（sub_42E510, raw 38618）：读引擎音乐字段 `_this[174713]` → op1
+ *   （`sub_42B4B0(_this, 1, _this[174713])`）。该字段由启动时 `sound:Music` 填充（raw 23678-23681），
+ *   写回侧是 0xC3（sub_420F10）。CONFIG.txt 用 `i0c0 (local-int 2)` 读系统值。
+ */
+const op_get_music_field: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(174713) ?? 0);
+};
+
+/**
+ * 0x2CE（sub_430A20, raw 40111）：`op1 = (_this[167990] != 0)` —— 显示模式/屏幕态 getter。
+ *   该字段由启动时 `display:ScreenMode` 填充（raw 11980 `... = GetConfig(aDisplayScreenm) != 0`；raw 21660 处可翻转）。
+ *   CONFIG1.txt:1459/1702 读它，且 **1702 的结果立刻被 `ne` 消费** → 当 no-op 跳过会让分支走错。
+ */
+const op_get_screen_mode: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(167990) ?? 0) !== 0 ? 1 : 0);
+};
+
+/**
+ * **「消息窗/消息渲染」与「声音」子系统的引擎内部指令 → 显式 no-op**（默认插桩，无需用户逐条跳过）。
+ *
+ * 判定依据 = 逐条读 handler 体（`engine/天结_unpacked.exe_utf8.c`）：体内只出现 `readIntOperand`
+ *   + 对 `_this[引擎字段]` 的赋值/文本区写入，**既不 `writeIntOperand` 回写操作数，也不改 `ip`/`cur`**。
+ * 这类操作 emulator 无对应子系统，效果不可观测 → 与 `ENGINE_INTERNAL_OPS` 同一取舍，但**单列并写明依据**，
+ * 避免日后被当成"漏实现"。设置界面（CONFIG2/CONFIG1）实测出现次数最多的一批就在其中。
+ *
+ * 逐条依据：
+ *  - `0x7F`(sub_42D1F0, raw 38011)   `op1 = _this[21668]`（消息窗 α；键 `message:MesWinAlpha`）
+ *  - `0x80`(sub_41F690, raw 28787)   `_this[21631] = op1`（消息窗部件索引 **setter**：读 op1 写字段）
+ *  - `0xC5`(sub_42E540, raw 38626)   读 op1 选键（`sound:Volume1..4`）→ `GetConfig` → 写 op2（音量显示；声音子系统）
+ *  - `0x196`(sub_41FC20, raw 29032)  display-furigana：读 op1/op2/op3 写消息文本区（`WideCharToMultiByte` 组串）
+ *  - `0x300`(sub_426990, raw 33743)  `_this[v2+122466] = op2 | (_this[..] & 0x10000)`、`_this[v2+122476] = op3`（消息窗对象表）
+ *  - `0x301`(sub_4269F0, raw 33757)  `_this[v2+122486] = 0` + `sub_404F80(_this+21324, v2)`（清消息窗对象项）
+ */
+const op_msg_ui_internal: OpHandler = () => {
+  // 有意为空：见上方逐条依据（消息窗/文本子系统状态写入，无 VM 可见副作用）。
+};
+
+/**
+ * **消息窗（メッセージウィンドウ）一族 —— 真实现（写/读引擎字段）**。
+ *
+ * 引擎里这些 handler 就是"读操作数 → 写 `_this[字段]` / 读字段 → 写 op1"，语义可完全建模；
+ * emulator 只是**不渲染**消息窗，所以看不到画面效果，但这属于"已实现"而不是"插桩跳过"。
+ * 字段（DWORD 下标）：
+ *  - `_this[21631]`（0x151FC）：消息窗当前窗格/部件索引 ← 0x80 setter；
+ *  - `_this[21668]`（0x15290）：消息窗 α（键 `message:MesWinAlpha`，启动由 SYS4REG.INI 填充）← 0x7F getter；
+ *  - `_this[122466 + v]`（0x77988 区）：消息窗对象**旗标**（op2 按位或，保留 bit16）、`_this[122476 + v]`：同项的值；
+ *  - `_this[122486 + v]`（0x779D8 区）：消息窗对象项（0x301 清零后调 `sub_404F80(_this+21324, v)` 重算布局——
+ *    该布局子系统 emulator 未建模，故只保留字段清零这一步）。
+ */
+const op_set_msgwin_part: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(21631, v);
+};
+const op_get_msgwin_alpha: OpHandler = (c) => {
+  // 引擎：`op1 = _this[21668]`（该字段启动时由 `message:MesWinAlpha` 填充）
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(21668) ?? 0);
+};
+const op_msgwin_slot_flags: OpHandler = (c) => {
+  // 引擎：`v2 = readIntOperand(1)`（对象项下标）；`_this[v2+122466] = readIntOperand(2) | _this[v2+122466] & 0x10000`；
+  //       `_this[v2+122476] = readIntOperand(3)`
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const flags = readIntOperand(c.e, c.frame, c.instr, 2);
+  const value = readIntOperand(c.e, c.frame, c.instr, 3);
+  const slot = v + 122466;
+  c.e.engineValues.set(slot, (flags | ((c.e.engineValues.get(slot) ?? 0) & 0x10000)) | 0);
+  c.e.engineValues.set(v + 122476, value);
+};
+const op_msgwin_slot_clear: OpHandler = (c) => {
+  // 引擎：`v2 = readIntOperand(1)`；`_this[v2+122486] = 0`；`sub_404F80(_this+21324, v2)`（消息窗布局重算，未建模 → no-op）
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(v + 122486, 0);
+};
+
+/**
+ * **`ENGINE_FIELD_STORE` 一族：读操作数 → 写「可建模的引擎字段」**（真实现）。
+ *
+ * 这些 handler 在引擎里就是 `_this[字段] = readIntOperand(n)`（个别是 `op2` 覆盖、或多字段），
+ * **不回写操作数、不改控制流**，因此 emulator 可以把字段值原样存进 `Engine.engineValues`：
+ *  - 语义完整（同族的 getter opcode 能读回一致的值，如 `0x21B`↔`0x247`）；
+ *  - 只是这些字段在 emulator 里不驱动任何渲染/声音输出。
+ * 早前为"跑到 TITLE"把它们统一当 no-op 插桩；现按引擎语义补齐字段写入。
+ *
+ * 规格：`{ 操作数序号(1-based) → [目标字段] }`；`transform` 可选（如布尔化、位组装）。
+ */
+interface FieldStoreSpec {
+  /** 操作数序号 → 目标 `_this[K]` 字段。 */
+  map: Record<number, number>;
+  /** 取到的值变换（默认原样）。 */
+  transform?: (v: number) => number;
+}
+const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldStoreSpec>([
+  // ---- 消息窗（メッセージウィンドウ）属性/几何 ----
+  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 引擎按字节重排组装（BGR）
+  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }],
+  [0x78, { map: { 1: 21667 } }],
+  [0x8b, { map: { 1: 21669 } }],
+  [0x1a4, { map: { 1: 21670, 2: 21671 } }], // 引擎：_this[21671]=op2；_this[21670]=op1
+  [0x252, { map: { 1: 92323 } }], // 消息系统配置
+  [0x261, { map: { 1: 80101 } }], // 消息窗配置
+  [0x2ee, { map: { 1: 80106 } }], // 消息派发
+  [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
+  // ---- 数据/配置/标志 ----
+  [0x21b, { map: { 1: 166965 }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
+  [0x24e, { map: { 1: 92340 } }],
+  [0x10f, { map: { 1: 122369 } }],
+  // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
+  [0xfe, { map: { 1: 517 } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存）
+  [0x107, { map: { 2: -1 } }], // SetKey：_this[op1+551]=op2 —— 字段随 op1 变，见下方专用 handler
+]);
+
+/** `0x107`（SetKey）：`_this[op1 + 551] = op2`（op1=键位 ≤0x1F）。 */
+const op_set_key: OpHandler = (c) => {
+  const key = readIntOperand(c.e, c.frame, c.instr, 1);
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  if (key <= 0x1f) c.e.engineValues.set(key + 551, value);
+};
+
+/** `0x10B`（SetKey 另一表）：`_this[op2 + 1383] = op1`（op1=值 ≤0x1F）。 */
+const op_set_key2: OpHandler = (c) => {
+  const value = readIntOperand(c.e, c.frame, c.instr, 1);
+  const key = readIntOperand(c.e, c.frame, c.instr, 2);
+  if (value <= 0x1f) c.e.engineValues.set(key + 1383, value);
+};
+
+/** `ENGINE_FIELD_STORE` 的统一 handler。 */
+const op_engine_field_store: OpHandler = (c) => {
+  const spec = ENGINE_FIELD_STORE.get(c.instr.opcode);
+  if (!spec) return;
+  for (const [nStr, field] of Object.entries(spec.map)) {
+    if (field < 0) continue; // 动态字段由专用 handler 处理
+    const v = readIntOperand(c.e, c.frame, c.instr, Number(nStr));
+    c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
+  }
+};
+
+/** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
+const op_get_engine_bool: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(166965) ?? 0) !== 0 ? 1 : 0);
+};
+
+/**
+ * **`0x12F`（sub_42F560, raw 39269-39335）：三个数组地址上的「索引插入排序 + 并行搬运 + 末尾重编码」**
+ * —— 确切语义（读完整 handler 体，并逐句复刻验证过）：
+ *   - `op1/op2/op3` 经 `sub_42AEA0`（= operandAddress）取**三个数组基址**：A / B / C；`op4` = 元素个数 `n`；
+ *   - `*A = 0`；
+ *   - **插入排序**（`dword_55D59C` 从 1 到 n-1）：`while (DEC(A[j]) + DEC(C[j]) > DEC(A[i]) + DEC(C[i])) { A[j+1] = A[j]; j-- }`，
+ *     收尾 `A[j+1] = i` —— 即把「索引」按 **(DEC(A[k]) + DEC(C[k])) 升序** 重排后写回 A（实测数据得 `[2,0,1,3,4]`）。
+ *     ★比较里的 `A[i]`：`i` 是**正在被填的位置**，其现存元素就是上一轮搬进来的值（raw 里 `dword_55D5A8[4*v4]`，
+ *       `v4` 在循环内被写/读），故不是"用 A 的原始值比较"。
+ *   - `B`（op2）在本 handler 内**只作为基址被传入、未被使用**（`dword_55D5A4` 只在 raw 39300 出现一次且与 A 同索引；
+ *     实际参与比较/搬运的是 A 与 C）。emulator 照此只读 A/C。
+ *   - 末尾：对 A 的每个元素原地重编码 `A[i] = ENC(DEC(A[i]))`（raw 39329-39331）——因为数组存量是 ENC、
+ *     比较要 DEC，这一步净效果为**恒等**，但为与引擎逐句一致仍照做。
+ *   ★数组访存一律 **DEC 读入 / ENC 写出**（与引擎成对做的一样），这样 DEC 回读得到的就是排序后的索引。
+ *   实测用例：`CONFIG2.txt:1044 i12f (local 800) (global 14b894) (local be8) 3e8`（n=1000）、
+ *   `CONFIG1.txt:1178 i12f (local 7ff) (local 179f) (local 273f) (local 561f)`。
+ */
+const op_sort_index_arrays: OpHandler = (c) => {
+  const { e, frame } = c;
+  const a = refFromOperand(e, frame, c.instr, 1); // A：值/索引数组
+  refFromOperand(e, frame, c.instr, 2); // B：辅助表（被 A 间接索引）
+  const cc = refFromOperand(e, frame, c.instr, 3); // C：键数组（与 A 同索引）
+  const n = readIntOperand(e, frame, c.instr, 4);
+  if (n <= 0) return;
+  // 取有符号值的辅助：数组里存的是 **ENC 位模式**，引擎比较用的是 **DEC 后的 int32** 视角
+  // （raw 39300-39307 的 `__ROR4__(key ^ __ROL4__(x,11), 25)` = DEC(x)）
+  const A = (i: number): number => asI32(dec(e.key, readRef(e, frame, refAt(a, i)) >>> 0));
+  const C = (i: number): number => asI32(dec(e.key, readRef(e, frame, refAt(cc, i)) >>> 0));
+
+  writeRef(e, frame, refAt(a, 0), enc(e.key, 0)); // *A = 0（引擎写 ENC(0)，即 DEC 回读为 0）
+  for (let i = 1; i < n; i++) {
+    let j = i - 1;
+    // 引擎原始判据：DEC(A[j]) + DEC(C[j]) > DEC(A[i]) + DEC(C[i])
+    while (j >= 0 && A(j) + C(j) > A(i) + C(i)) {
+      writeRef(e, frame, refAt(a, j + 1), enc(e.key, A(j))); // A[j+1] = A[j]（写回时编码）
+      j--;
+    }
+    writeRef(e, frame, refAt(a, j + 1), enc(e.key, i));
+  }
+  // 末尾"原地重编码"：raw 是 A[i] = ENC(DEC(A[i])) —— 净效果为恒等，此处直接照做以保持与引擎逐句一致
+  for (let i = 0; i < n; i++) {
+    writeRef(e, frame, refAt(a, i), enc(e.key, A(i)));
+  }
+};
+
+/**
+ * **`0x306`（sub_431FC0, raw 40948）：`op1 = GetConfig("system:EffectSkipOnClick")`**
+ * —— 纯配置 getter（「点击跳过特效」开关，构造默认 1、配置文件可覆盖为 0）。
+ * 修掉先前误用 `ENGINE_INTERNAL_OPS` 里 no-op 的问题：那样会让本指令**不写 op1**。
+ */
+const op_get_effect_skip: OpHandler = (c) => {
+  const v = c.e.config ? cfgInt(c.e.config, 'system:effectskiponclick', 1) : 1;
+  writeIntOperand(c.e, c.frame, c.instr, 1, v);
+};
+
+/**
+ * **`0x142`（sub_422930, raw 31020）：`_this[174812] = op1`** —— **脚本向引擎写一个全局开关**。
+ *
+ * 字段语义（`_this[174812]` = 字节 `0xAAB70` = 699248）——**全工程引用只有 4 处**，可完整定性：
+ *  - **写**：只有本 handler（`_this[174812] = op1`，raw 31026）；
+ *  - **初始化**：引擎构造 `sub_415640`（raw 22591）与复位 `sub_40DF10`（raw 17961）都置 **1**；
+ *  - **读**：只有 `sub_4765C0() { return _this[699248] != 0; }`（raw 91057-91061）——**一个导出给脚本的
+ *    布尔查询（引擎内零调用）**，即"脚本可读、脚本可写"的**引擎运行开关**。
+ *  - 同族邻居：`sub_4765E0` 读 `effect_flags(699204)` 的 bit26、`sub_476600` 读 `(int)effect_flags < 0`
+ *    （= ADV/跳读态），即 `sub_4765xxx` 是一族 Engine 状态查询，本字段是其中的一个通用 flag。
+ *
+ * 脚本用法（`src/CONFIG.txt`）：
+ *  - `L40 i142 0`：在设置页开场（刚布好消息窗 `i070/i079/i213`、`i080 9` 切到第 9 窗格）之后置 **0**；
+ *  - `L354 i142 1`：在设置页收尾（`i1bb` 恢复、`i080 8` 回第 8 窗格）之前置回 **1**。
+ *  ⇒ 即**进设置页时"挂起"、离开时"恢复"**的状态开关（构造/复位默认 1 = 正常）。
+ *
+ * emulator 建模：写入 `Engine.engineValues`（稀疏字段表），语义与引擎一致；当前无脚本经 opcode 读回它，
+ * 故它不会改变 emulator 的输出，但**必须写**（否则上游若加 getter，值会漂）。
+ */
+const op_set_engine_flag_174812: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(174812, v);
+};
+
+/**
+ * `0x217`（sub_423B20, raw 31791）：**对象变换** —— 读 op1=handle、op2/op3/op4 三个 float，
+ * 调 `sub_4ACF20(_this+80708, handle, f2, f3, f4)` 设置该绘制项/网格的变换（引擎的绘制容器与我们同构）。
+ * emulator 目前不建模「对象变换」→ 转发给 native（当前为记录式 no-op），非"纯数值操作"。
+ */
+const op_set_object_transform: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const a = readFloatOperand(c.e, c.frame, c.instr, 2);
+  const b = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const d = readFloatOperand(c.e, c.frame, c.instr, 4);
+  c.native.setObjectTransform?.(handle, a, b, d);
 };
 
 const stubSubsystem: OpHandler = (c) => {
@@ -884,6 +1127,28 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x3, op_call_script],
   [0x1a7, op_comment],
   [0x1a8, op_dev_ukn],
+  // ---- 消息窗（メッセージウィンドウ）一族：真实现（读写引擎字段；emulator 不渲染消息窗）----
+  [0x7f, op_get_msgwin_alpha], // op1 = _this[21668]（消息窗 α）
+  [0x80, op_set_msgwin_part], // _this[21631] = op1（窗格/部件索引 setter）
+  [0x300, op_msgwin_slot_flags], // _this[v+122466] 旗标 / _this[v+122476] 值
+  [0x301, op_msgwin_slot_clear], // _this[v+122486] = 0（+ 布局重算未建模）
+  // ---- 「读操作数 → 写引擎字段」一族（真实现；规格见 ENGINE_FIELD_STORE）----
+  [0x76, op_engine_field_store], // _this[21664]
+  [0x77, op_engine_field_store], // _this[21665]
+  [0x78, op_engine_field_store], // _this[21667]
+  [0x8b, op_engine_field_store], // _this[21669]
+  [0x1a4, op_engine_field_store], // _this[21670]/[21671]
+  [0x252, op_engine_field_store], // _this[92323]
+  [0x261, op_engine_field_store], // _this[80101]
+  [0x2ee, op_engine_field_store], // _this[80106]
+  [0x2db, op_engine_field_store], // _this[71744]
+  [0x21b, op_engine_field_store], // _this[166965] = (op1!=0)（配套 getter 0x247）
+  [0x247, op_get_engine_bool], // op1 = (_this[166965] != 0)
+  [0x24e, op_engine_field_store], // _this[92340]
+  [0x10f, op_engine_field_store], // _this[122369]
+  [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
+  [0x107, op_set_key], // _this[op1+551] = op2
+  [0x10b, op_set_key2], // _this[op2+1383] = op1
   [0x1, op_abort],
   [0x2, op_exit],
   [0x9, op_exit_script],
@@ -918,9 +1183,13 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x2de, op_string_resource_id], // 字符串→索引；StubNative 返回 -1
   [0x106, op_get_engine_value], // 配置 getter ▶ op1
   [0x130, op_get_engine_value], // load-show-logo：`_this[96983]` ▶ op1（SYSTEM4 用，决定是否播 LOGO）
-  [0x131, op_get_engine_value], // 子系统 ▶ op1
+  [0x131, op_get_engine_value], // 配置 getter（`message:MesWinAlpha`）▶ op1
   [0x201, op_get_engine_value], // 配置 getter ▶ op1
   [0x2dc, op_get_engine_value], // 数组容量 getter ▶ op1
+  [0xc0, op_get_music_field], // 音乐字段 `_this[174713]`（由 sound:Music 填充）▶ op1
+  [0x2ce, op_get_screen_mode], // 显示模式 `_this[167990]!=0`（由 display:ScreenMode 填充）▶ op1
+  [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）
+  [0x217, op_set_object_transform], // 对象变换 → native.setObjectTransform（记录式）
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
   [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
   [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
@@ -963,20 +1232,31 @@ const op_engine_internal: OpHandler = () => {
   // （0x20c 每帧一次）下刷屏。需要逐 op 细节看 renderer 的 step trace 即可。
 };
 
+/**
+ * `ENGINE_INTERNAL_OPS` 中**带专门 handler（非纯 no-op）**的 opcode。
+ *
+ * 这张表里的条目分两类，语义不同，日志/控制窗要分开显示：
+ *  - **纯 no-op 插桩**（`op_engine_internal`）：只有"不做任何事"这一个语义，属真·忽略；
+ *  - **专门处理**（`op_msg_ui_internal` 等）：已按引擎语义读操作数/写状态，只是**不产生 emulator 可渲染的输出**
+ *    （消息文本区、声音…）。
+ * → `StepTrace.noop` 据此区分，避免把"已执行但无输出"误报成"被忽略"。
+ *
+ * ★注意：**能完整建模的 opcode 一律注册在 `OPS`（真实现）**，不放这里 —— 例如消息窗字段读写
+ *   （0x7F/0x80/0x300/0x301）、数组排序（0x12F）、引擎开关（0x142）。这里只留"引擎有副作用但
+ *   emulator 无对应子系统可承接"的少数几条。
+ */
+export const INTERNAL_WITH_HANDLER: ReadonlySet<number> = new Set<number>([
+  0xc5, // 声音音量显示（读 sound:VolumeN，无声音子系统）
+  0x142, // _this[174812] = op1（真实现：脚本可控引擎开关）
+  0x12f, // 三数组插入排序 + 重编码（真实现）
+  0x196, // display-furigana（文本渲染未建模）
+]);
+
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
-  // 声音（引擎内部/子系统；语义见 opcode-table.md）
-  [0x2f6, op_engine_internal], // 声音
-  [0x2f8, op_engine_internal], // 声音
-  [0xb5, op_engine_internal], // 声音
-  // 渲染 / 图形 / 图像（emulator 无界面 → no-op；语义见 opcode-table.md）
-  [0x32f, op_engine_internal], // 渲染
-  [0x25b, op_engine_internal], // 渲染
-  [0x248, op_engine_internal], // 渲染
-  [0x352, op_engine_internal], // 渲染
-  [0x1f6, op_engine_internal], // 渲染
-  [0x344, op_engine_internal], // 渲染
-  [0x23b, op_engine_internal], // 渲染
-  [0x20c, op_engine_internal], // 渲染
+  // ============ 声音 子系统 ============
+  [0xb5, op_engine_internal], // 声音通道控制（→ sub_4B5020/sub_4B6020）
+  // ============ 渲染 / 图形 / 图像 / 纹理（emulator 无界面；只动 `_this+80708` 绘制容器等内部态） ============
+  [0x20c, op_engine_internal], // 时间戳+present（帧同步；无操作数）
   [0x340, op_engine_internal], // 渲染
   [0x342, op_engine_internal], // 渲染
   [0x346, op_engine_internal], // 渲染
@@ -987,75 +1267,80 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x21e, op_engine_internal], // 渲染
   [0x1f4, op_engine_internal], // 渲染
   [0x1f5, op_engine_internal], // 渲染
-  [0x2da, op_engine_internal], // 数据/资源
-  // 消息窗 / UI / 文本 / 字体（emulator 无界面 → no-op；语义见 opcode-table.md）
-  [0x76, op_engine_internal], // 消息/UI
-  [0x77, op_engine_internal], // 消息/UI
-  [0x74, op_engine_internal], // 消息/UI
-  [0x75, op_engine_internal], // 消息/UI
-  [0x7a, op_engine_internal], // 消息/UI
-  [0x7b, op_engine_internal], // 消息/UI
-  [0x1a4, op_engine_internal], // 消息/UI
-  [0x1b5, op_engine_internal], // 消息/UI
-  [0x1bb, op_engine_internal], // 消息/UI
-  [0x1c9, op_engine_internal], // 消息/UI
-  [0x1cb, op_engine_internal], // 消息/UI
-  [0x1ce, op_engine_internal], // 消息/UI
-  [0x2ee, op_engine_internal], // 消息/UI
-  [0x25a, op_engine_internal], // 消息/UI
-  [0x25c, op_engine_internal], // 消息/UI
-  [0x25e, op_engine_internal], // 消息/UI
-  [0x25f, op_engine_internal], // 消息/UI
-  [0x260, op_engine_internal], // 消息/UI
+  // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
+  // 分组依据：handler 体只读操作数、写 `_this[消息窗族字段]`（0x151fc/0x152xx 区、`_this+21324` 文本子系统），
+  // **不回写操作数、不改控制流**。其中「字段可建模」的已升级为真实现（见 OPS 的 ENGINE_FIELD_STORE 一族与
+  // op_get_msgwin_alpha/op_set_msgwin_part/op_msgwin_slot_*），此处只留**宿主无对应子系统**的那些。
+  [0x74, op_engine_internal], // 消息窗
+  [0x75, op_engine_internal], // → sub_4185F0(_this+21324, op1)（文本子系统方法）
+  [0x79, op_engine_internal], // 消息项（sub_41F4E0/sub_4563A0）
+  [0x7a, op_engine_internal], // 消息窗
+  [0x7b, op_engine_internal], // 消息窗
+  [0x70, op_engine_internal], // 消息窗布局（op1..op5 → sub_45D660）
+  [0x73, op_engine_internal], // 消息窗布局（10 操作数 → sub_453AD0）
+  [0x197, op_engine_internal], // 消息/布局（sub_418680）
+  [0x198, op_engine_internal], // 消息/布局
+  [0x1b5, op_engine_internal], // 消息窗
+  [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
+  [0x1c1, op_engine_internal], // 消息/UI（sub_4563D0）
+  [0x1c9, op_engine_internal], // 消息窗
+  [0x1ca, op_engine_internal], // SetConfig("message:ReadTextSkip", op1)（写配置注册表）
+  [0x1cb, op_engine_internal], // 消息窗
+  [0x1ce, op_engine_internal], // 消息窗
+  [0x212, op_engine_internal], // 消息窗对象（sub_423A30）
+  [0x213, op_engine_internal], // 消息窗对象（sub_423A80）
   [0x245, op_engine_internal], // 消息/UI
   [0x246, op_engine_internal], // 消息/UI
   [0x249, op_engine_internal], // 消息/UI
-  [0x2bd, op_engine_internal], // 消息/UI
-  [0x2be, op_engine_internal], // 消息/UI
-  [0x2bf, op_engine_internal], // 消息/UI
-  [0x2c0, op_engine_internal], // 消息/UI
-  [0x2fe, op_engine_internal], // 消息/UI
+  [0x25a, op_engine_internal], // 消息/UI
+  [0x25c, op_engine_internal], // 消息/UI
+  [0x25d, op_engine_internal], // 消息列表对象（sub_425EF0/425F50）
+  [0x25e, op_engine_internal], // 消息/UI
+  [0x25f, op_engine_internal], // 消息/UI
+  [0x260, op_engine_internal], // 消息窗配置（_this[80102..80104]）
+  [0x2bd, op_engine_internal], // 文本/字体（op1 真值 → 文本子系统 +218516/+1248 = 700）
+  [0x2be, op_engine_internal], // 文本/字体
+  [0x2bf, op_engine_internal], // 文本/字体
+  [0x2c0, op_engine_internal], // 文本/字体
   [0x2e8, op_engine_internal], // 消息/UI
-  [0x197, op_engine_internal], // 消息/UI
-  [0x198, op_engine_internal], // 消息/UI
-  [0x70, op_engine_internal], // 消息/UI
-  [0x73, op_engine_internal], // 消息/UI
-  [0x78, op_engine_internal], // 消息/UI
-  [0x79, op_engine_internal], // 消息/UI
-  [0x1c1, op_engine_internal], // 消息/UI
-  [0x212, op_engine_internal], // 消息/UI
-  [0x213, op_engine_internal], // 消息/UI
-  [0x25d, op_engine_internal], // 消息/UI
-  [0x2db, op_engine_internal], // 消息/UI
-  [0x303, op_engine_internal], // 消息/UI
-  [0x8b, op_engine_internal], // 消息/UI
-  [0x261, op_engine_internal], // 消息/UI
-  [0x1ca, op_engine_internal], // 消息/UI
-  [0x252, op_engine_internal], // 消息/UI
-  [0x324, op_engine_internal], // 消息/UI
-  // 输入（按键绑定等；语义见 opcode-table.md）
-  [0xfe, op_engine_internal], // 输入
-  [0x10c, op_engine_internal], // 输入
-  [0x107, op_engine_internal], // 输入
-  [0x10b, op_engine_internal], // 输入
-  [0x10f, op_engine_internal], // 输入
-  [0x30a, op_engine_internal], // 输入
-  // 字符串 / 查表
-  [0x2c7, op_engine_internal], // 字符串
+  [0x2fe, op_engine_internal], // 字体（sub_4332D0：读字符串操作数）
+  [0x303, op_engine_internal], // 消息/UI 对象（sub_456600）
+  [0x324, op_engine_internal], // sub_453530(_this[93384])：计时/文本刷新（无操作数）
+  [0x2f6, op_engine_internal], // 清消息回调槽 _this[v2+122505/122508] + _this[122501]（消息文本回调）
+  // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
+  [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
+  [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
+  // ============ 字符串 / 查表 / 配置 ============
+  [0x2c7, op_engine_internal], // 字符串处理（sub_433FD0）
   [0x2c8, op_engine_internal], // 字符串
   [0x2c9, op_engine_internal], // 字符串
   [0x2dd, op_engine_internal], // 字符串
-  [0x2eb, op_engine_internal], // 配置/字符串
-  // 数据字段 / 版本 / 脚本控制
-  [0x21b, op_engine_internal], // 数据
-  [0x24e, op_engine_internal], // 配置
-  [0xae, op_engine_internal], // 版本/存档
+  [0x2eb, op_engine_internal], // 配置/字符串：GetConfig("set:GameVersion") → sub_40C210 拼串
+  // ============ 数据字段 / 版本 / 脚本控制 ============
   [0xad, op_engine_internal], // 数据
+  [0xae, op_engine_internal], // 版本/存档：读 set:SaveVersion1/2 分支续档（sub_4192F0）
   [0xaf, op_engine_internal], // 数据
-  [0x143, op_engine_internal], // 脚本控制
-  [0x2e9, op_engine_internal], // 数据
-  [0x2e7, op_engine_internal], // 配置
-  // 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩）
+  [0x143, op_engine_internal], // 脚本控制：扫 256 请求槽 → queueScript → dispatchQueuedScripts（见 docs）
+  // ============ 渲染 / 图形 / 图像 / 纹理 ============
+  [0x32f, op_engine_internal], // → sub_49A150(_this+80708, op1)（绘制容器：设图元）
+  [0x248, op_engine_internal], // 渲染/配置（sub_425310）
+  [0x352, op_engine_internal], // → sub_4A1AC0（网格/顶点）
+  [0x344, op_engine_internal], // → sub_4AFBF0（纹理）
+  [0x23b, op_engine_internal], // 渲染/绘制（sub_424970）
+  [0x25b, op_engine_internal], // 图像资源加载：_this[92379]/[92381] + sub_408440
+  [0x1f6, op_engine_internal], // → sub_4AB7A0(_this+80708)：清/重置绘制容器（场景切换用）
+  // ============ 数据 / 资源登记 ============
+  [0x2da, op_engine_internal], // CG/资源登记（sub_4034D0/sub_426420）
+  // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============
   [0x23d, op_engine_internal], // 释放纹理槽
   [0x32b, op_engine_internal], // 图形
+  // ============ 声音 ============
+  [0x2f8, op_engine_internal], // → sub_4B6940(_this+4666, op1+12, op2)（声音通道/音量）
+  // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统，按引擎语义"读操作数/写状态"但无输出 ----
+  //  (0x7F/0x80/0x300/0x301 已升级为真实现，注册在 OPS；这里只留确实未建模的两条)
+  [0x196, op_msg_ui_internal], // display-furigana（注音）：写消息文本区（文本渲染未建模）
+  [0xc5, op_msg_ui_internal], // 读 op1 选 sound:Volume1..4 → GetConfig → 写 op2（音量显示；无声音子系统）
+  // ---- 其余「纯数值操作」（读操作数写引擎字段，无 VM 可见副作用）----
+  [0x142, op_set_engine_flag_174812], // _this[174812] = op1（脚本可控的引擎运行开关；构造/复位默认 1）
+  [0x12f, op_sort_index_arrays], // 三数组：按 (DEC(A)+DEC(C)) 升序重排索引写 A，末尾 A 原地 ENC 重编码
 ]);

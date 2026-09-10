@@ -10,6 +10,8 @@ declare global {
     api: {
       readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
       readFile(path: string): Promise<number[]>;
+      /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
+      readConfigIni(): Promise<{ path: string; text: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       logLine(text: string): void;
       logLineSync(text: string): string;
@@ -39,7 +41,10 @@ declare global {
 /** 渲染器上报给控制窗的状态。ignored = 目前遇到的「已忽略/插桩跳过」指令（去重）。 */
 export interface ControlStatus {
   bin: string;
+  /** 真·忽略：纯 no-op 插桩（`op_engine_internal`，本机无对应子系统，不做任何事）。 */
   ignored: { opcode: number; name: string }[];
+  /** 已插桩但有专门处理：消息窗/声音/数组排序/字段写入等（按引擎语义执行，只是不产出可渲染输出）。 */
+  internal: { opcode: number; name: string }[];
   traceAll: boolean;
   /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
   error?: string;

@@ -9,6 +9,7 @@ import { ScriptReset, ExitScript } from '../vm/ops.js';
 import { InputManager } from '../vm/input.js';
 import { IpcFileSource, type ControlStatus } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
+import { parseIni, applyConfigToEngine } from '../engineConfig.js';
 
 /**
  * 一帧内最多推进的指令数（安全上限）：引擎是"一条一条跑到门控止"，无每帧指令上限。
@@ -64,6 +65,27 @@ async function main(): Promise<void> {
   // 启动标记：确认日志通道/起点。
   trace('=== amayui emulator boot ===');
 
+  // ---- 启动加载引擎配置 SYS4REG.INI → 填充引擎字段（对齐引擎 sub_492CB0 装载 + 启动灌字段）----
+  // 目的：让读配置类 opcode（0xC0 sound:Music / 0x131 message:MesWinAlpha / 0x2CE display:ScreenMode…）
+  //       拿到与真实存档一致的取值，而不是一律 0。
+  try {
+    const ini = await window.api?.readConfigIni?.();
+    if (ini) {
+      const cfg = parseIni(ini.text);
+      e.config = cfg;
+      const applied = applyConfigToEngine(cfg, e.engineValues);
+      trace(
+        `[config] ${ini.path} 分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个；` +
+          `写入引擎字段 ${applied.length} 个：` +
+          applied.map((a) => `_this[${a.field}]=${a.value}(${a.key})`).join(' '),
+      );
+    } else {
+      trace('[config] 未找到 SYS4REG.INI（引擎字段用默认值）');
+    }
+  } catch (err) {
+    trace(`[config] 加载失败：${(err as Error).message}`);
+  }
+
   for (const imgid of [0x5245, 0x5246, 0x5272, 0x5273]) {
     // preloadImage 内部已 pushLog `image <imgid> -> <file> (WxH)`，无需再 trace 一条重复的 [preload]
     await native.preloadImage(imgid);
@@ -89,9 +111,11 @@ async function main(): Promise<void> {
     });
 
     let steps = 0;
-    // 已忽略(engine-internal/插桩跳过)指令：按 opcode 去重，name + 出现次数（供控制窗展示 + 首个打印一次）。
+    // 真·忽略（纯 no-op 插桩）/ 已插桩但有专门处理：各按 opcode 去重，name + 出现次数。
     let ignored = new Map<number, { name: string; count: number }>();
     const ignoredList = () => [...ignored].map(([opcode, v]) => ({ opcode, name: v.name }));
+    let internal = new Map<number, { name: string; count: number }>();
+    const internalList = () => [...internal].map(([opcode, v]) => ({ opcode, name: v.name }));
     // 已被用户「作为桩函数跳过」的未知指令：opcode -> {name,count}（登记后每次执行计数）。
     let skipped = new Map<number, { name: string; count: number }>();
     const skippedList = () => [...skipped].map(([opcode, v]) => ({ opcode, name: v.name, count: v.count }));
@@ -117,6 +141,7 @@ async function main(): Promise<void> {
       window.api?.sendRendererStatus?.({
         bin: status.scriptName,
         ignored: ignoredList(),
+        internal: internalList(),
         skipped: skippedList(),
         traceAll,
         error: errorOverride ?? autoError,
@@ -181,13 +206,16 @@ async function main(): Promise<void> {
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
-            // 记录「已忽略/插桩跳过」(engine-internal) 与「用户跳过的未知指令」(user-stub) 指令：打印首个 + 计数。
+            // 记录 engine-internal 两类：纯 no-op 插桩 → ignored；有专门 handler → internal。
+            // user-stub（用户跳过的未知指令）单独计在 skipped。
             if (t.handlerKind === 'engine-internal') {
-              const g = ignored.get(t.opcode);
+              const map = t.noop ? ignored : internal;
+              const tag = t.noop ? 'ignored' : 'internal';
+              const g = map.get(t.opcode);
               if (g) g.count++;
               else {
-                ignored.set(t.opcode, { name: t.name, count: 1 });
-                trace(`[ignored] ${t.name}`); // name 已是助记符（语义名或 iXXX），无需再补 opcode 数字
+                map.set(t.opcode, { name: t.name, count: 1 });
+                trace(`[${tag}] ${t.name}`); // name 已是助记符（语义名或 iXXX），无需再补 opcode 数字
               }
             } else if (t.handlerKind === 'user-stub') {
               const g = skipped.get(t.opcode);
@@ -284,6 +312,7 @@ async function main(): Promise<void> {
     window.api?.sendRendererStatus?.({
       bin: status.scriptName,
       ignored: [],
+      internal: [],
       skipped: [],
       traceAll: false,
       error: msg,

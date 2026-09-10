@@ -100,6 +100,12 @@ export interface NativeBridge {
   detachTexture?(handle: number, count: number): void;
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */
   setDrawColor?(handle: number, delay: number, count: number, to: number): void;
+  /**
+   * 0x217（sub_423B20, raw 31791）：对象变换 `sub_4ACF20(_this+80708, handle, f2, f3, f4)`。
+   * 引擎里它把 handle 对应绘制项/网格的高度/宽度/角度（3 个 float）写进绘制容器；emulator 暂不建模
+   * （只记录），故设置界面里大量 0x217 不会影响已画出的图元。
+   */
+  setObjectTransform?(handle: number, height: number, width: number, angle: number): void;
   /** 0x21C u00416270：置等待旗标位（0x400）。 */
   setWaitFlag?(mask: number): void;
   /** 0x1FA release-texture：释放某 layer。 */
@@ -193,5 +199,8 @@ export class StubNative implements NativeBridge {
   }
   playMovie(id: number): void {
     this.log(`[native:stub] playMovie id=0x${id.toString(16)}`);
+  }
+  setObjectTransform(handle: number, height: number, width: number, angle: number): void {
+    this.log(`[native:stub] setObjectTransform h=0x${handle.toString(16)} h=${height} w=${width} a=${angle}`);
   }
 }

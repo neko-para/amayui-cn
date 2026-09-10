@@ -625,14 +625,23 @@ export class PixiBackend implements NativeBridge {
     // no-op：保留方法签名以兼容 renderer.ts 的 `native.drawHud()`（只留 no-op，不再在画布上渲染日志）。
   }
 
+  /**
+   * 场景切换钩子（`draw-texture` 0x1FB / `create-mesh` 0x320 每次配置绘制项时被调用）。
+   *
+   * ★**曾经的实现问题（2025 修正）**：原先在这里做
+   *     `if (status.scriptName !== lastScript) { drawItems.clear(); meshes.clear(); … }`
+   *   —— 但脚本名在**每次 `call-script` / 帧切换**时都会变（CONFIG.BIN → CONFIG2.BIN → CONFIG1.BIN、
+   *   以及 `call-frame` 预装帧），于是**每次进出子脚本都会把整批绘制项抹掉**。表现为：
+   *   进入设置界面（CONFIG2/CONFIG1）后，先前渲染好的**背景整批消失**，只剩当前脚本重画的零星几项。
+   *
+   * 引擎实际语义（raw）：绘制项存在 `_this+80708` 的容器里，**脚本装载/切换不清空该容器**；
+   *   清空只由显式指令完成——`detach-texture`(0x1F7 `sub_422BC0`：删单/删 `[handle,handle+count)`)、
+   *   `release-texture`(0x1FA) 等。因此这里**不再做任何跨脚本清空**：`lastScript` 仅保留作诊断，
+   *   场景内容完全由脚本的 detach/draw 指令驱动（emulator 缺的正是这些指令的实现，而不是"切换时清场"）。
+   */
   #onSceneChange(_handle: number): void {
-    if (this.status.scriptName !== this.lastScript) {
-      this.lastScript = this.status.scriptName;
-      this.drawItems.clear();
-      this.meshes.clear();
-      this.waitFlags = 0;
-      this.#markDirty(); // 场景切换需触发一次 present（引擎：新场景要渲染）
-      this.drawCount = 0;
-    }
+    this.lastScript = this.status.scriptName;
+    // 仅「需要重绘」：不 clear、不动 waitFlags（避免误清引擎仍在用的图元/门控）。
+    this.#markDirty();
   }
 }

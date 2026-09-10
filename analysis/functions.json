@@ -2987,5 +2987,48 @@
     ],
     "evidence": "raw 39114-39122 (sub_42EF50)；注册 raw 22990 (_this[677072]=sub_42EF50)",
     "notes": "★脚本用法（40+ 菜单/列表脚本的固定模式）：进入菜单时 `read-mouse-pos (local ef) (local f0)` 读鼠标位置、紧接着 `read-mouse-wheel (local 403)` 取走滚轮残量并丢弃，之后在主循环里反复 `read-mouse-wheel (local 403)` + `jcc (local 403) <翻页label>`——即『滚轮值≠0 → 滚页』。样例：src/$3$AGENCY.txt:258/283（初始化丢弃 + label_0000218c 翻页）、ALCHEMY/CGMODE/CGVIEWER/CONFIG1/CONFIG2/FIELD/FELLOW/HMODE/HISTORY/INFO*/ORGANIZE/REACH/REIGN/REWARD/SAVE/SELFONT/SELFORT/SELPLANT/SELSTAGE/SHOP/STALL 同型。⚠️与消息泵耦合：ADV 推进分支 raw 13938 读同一累加器且**仅 <0（滚轮向下）**才推进文本；脚本先 read-mouse-wheel 取走 ⇒ 累加器归零 ⇒ 泵侧不再推进（跳过/翻页优先）。emulator：**已实现**（src/vm/ops.ts op_read_mouse_wheel 注册 0x10D；src/vm/input.ts InputManager.wheelDelta + addWheel/consumeWheelDelta；渲染窗 pixiBackend wheel 事件按 -deltaY 注入）。测试 test/wheel.test.ts。"
+  },
+  {
+    "addr": "0x422930",
+    "raw_name": "sub_422930",
+    "semantic_name": "op_set_engine_flag_422930",
+    "op": "0x142",
+    "status": "ANALYZED",
+    "purpose": "op 0x142：`_this[174812] = readIntOperand(op1)` —— 脚本写引擎运行开关（字段 0xAAB70，构造/复位默认 1；唯一读者 sub_4765C0）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["readIntOperand(1)", "_this[174812] = 该值", "返回该值"],
+    "fields_used": ["this->script_engine_flag_174812(0xAAB70)"],
+    "unmodeled": [],
+    "evidence": "raw 31020-31027 (sub_422930)",
+    "notes": "CONFIG.txt:40 `i142 0`（进设置页挂起）/ :354 `i142 1`（离开恢复）。emulator：写 Engine.engineValues.set(174812, v)（op_set_engine_flag_174812）。"
+  },
+  {
+    "addr": "0x431FC0",
+    "raw_name": "sub_431FC0",
+    "semantic_name": "op_get_effect_skip_431FC0",
+    "op": "0x306",
+    "status": "ANALYZED",
+    "purpose": "op 0x306：`op1 = GetConfig(\"system:EffectSkipOnClick\")` —— 纯配置 getter（点击跳过特效开关）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读配置注册表 system:EffectSkipOnClick（sub_4957F0 口径）", "writeIntOperand(1, 值)"],
+    "fields_used": ["this->config_registry(_this[174405])"],
+    "unmodeled": [],
+    "evidence": "raw 40948-40951 (sub_431FC0)",
+    "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按引擎构造默认 1。"
+  },
+  {
+    "addr": "0x42F560",
+    "raw_name": "sub_42F560",
+    "semantic_name": "op_sort_index_arrays_42F560",
+    "op": "0x12F",
+    "status": "ANALYZED",
+    "purpose": "op 0x12F：三个数组地址上的「索引插入排序 + 原地重编码」。op1/op2/op3 经 sub_42AEA0(operandAddress) 取数组基址 A/B/C，op4=元素数 n；`*A=0`；对 i=1..n-1 做插入排序 `while (DEC(A[j])+DEC(C[j]) > DEC(A[i])+DEC(C[i])) { A[j+1]=A[j]; j-- }` 然后 `A[j+1]=i`——即按 (DEC(A[k])+DEC(C[k])) 升序把索引重排写回 A（比较里的 A[i] 是当前位置现存元素 = 上一轮搬进来的值）；末尾 `A[i]=ENC(DEC(A[i]))`（净恒等）。B 只作基址传入、未被使用。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["取 A/B/C 三个数组地址 + n = readIntOperand(4)", "*A = 0", "插入排序：按 DEC(A[k])+DEC(C[k]) 升序把索引重排写回 A（A[j+1]=A[j]；A[j+1]=i）", "末尾 A[i] = ENC(DEC(A[i]))（原地重编码，净恒等）"],
+    "fields_used": ["this->key（DEC/ENC）"],
+    "unmodeled": ["B 数组（op2）在本 handler 中未被使用（仅传入基址）"],
+    "evidence": "raw 39269-39335 (sub_42F560)",
+    "notes": "实测：CONFIG2.txt:1044 `i12f (local 800) (global 14b894) (local be8) 3e8`（n=1000）、CONFIG1.txt:1178 `i12f (local 7ff) (local 179f) (local 273f) (local 561f)`。emulator 已实现 op_sort_index_arrays（DEC 读入 / ENC 写出）；test/ops-142-12f-306.test.ts 以 [2,0,1,3,4] 逐句复刻验证。"
   }
+
 ]

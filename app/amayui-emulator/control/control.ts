@@ -31,12 +31,15 @@ function el<T extends HTMLElement>(id: string): T {
 const binEl = el<HTMLSpanElement>('bin');
 const ignoredCountEl = el<HTMLSpanElement>('ignoredCount');
 const ignoredBox = el<HTMLDivElement>('ignored');
+const internalCountEl = el<HTMLSpanElement>('internalCount');
+const internalBox = el<HTMLDivElement>('internal');
 const skippedCountEl = el<HTMLSpanElement>('skippedCount');
 const skippedBox = el<HTMLDivElement>('skipped');
 const errorBox = el<HTMLDivElement>('error');
 const btnTraceAll = el<HTMLButtonElement>('btnTraceAll');
 const btnCopySkipped = el<HTMLButtonElement>('btnCopySkipped');
 const btnCopyIgnored = el<HTMLButtonElement>('btnCopyIgnored');
+const btnCopyInternal = el<HTMLButtonElement>('btnCopyInternal');
 const unknownBlock = el<HTMLDivElement>('unknownBlock');
 const unknownInfo = el<HTMLDivElement>('unknownInfo');
 const unknownHint = el<HTMLDivElement>('unknownHint');
@@ -48,6 +51,7 @@ let pending: ControlStatus['pendingUnknown'] | null = null;
 /** 两个清单的最新内容（供「复制全部」用；清单每 0.5s 重刷，直接划选很难操作）。 */
 let skippedItems: NonNullable<ControlStatus['skipped']> = [];
 let ignoredItems: ControlStatus['ignored'] = [];
+let internalItems: ControlStatus['internal'] = [];
 
 /** 复制文本到剪贴板；失败时回退到临时 textarea + execCommand。返回是否成功。 */
 async function copyText(text: string): Promise<boolean> {
@@ -101,14 +105,31 @@ function renderIgnored(ignored: { opcode: number; name: string }[]): void {
   ignoredCountEl.textContent = `(${ignored.length} 个)`;
   ignoredBox.textContent = '';
   if (ignored.length === 0) {
-    ignoredBox.textContent = '（暂无已忽略指令）';
+    ignoredBox.textContent = '（暂无）';
     return;
   }
-  // 与「已跳过」一致：只显示助记符（name 已是语义名或 iXXX 数值），不列指令码数值。
+  // 只显示助记符（name 已是语义名或 iXXX 数值），不列指令码数值。
   for (const it of ignored) {
     const d = document.createElement('div');
     d.textContent = it.name;
     ignoredBox.appendChild(d);
+  }
+}
+
+/** 已插桩但有专门处理（消息窗/声音/数组排序/字段写入…）：按引擎语义执行，只是不产出可渲染输出。 */
+function renderInternal(list: ControlStatus['internal'] | undefined): void {
+  const items = list ?? [];
+  internalItems = items;
+  internalCountEl.textContent = `(${items.length} 个)`;
+  internalBox.textContent = '';
+  if (items.length === 0) {
+    internalBox.textContent = '（暂无）';
+    return;
+  }
+  for (const it of items) {
+    const d = document.createElement('div');
+    d.textContent = it.name;
+    internalBox.appendChild(d);
   }
 }
 
@@ -172,6 +193,7 @@ btnTraceAll.addEventListener('click', () => {
 // 两个清单每 0.5s 重刷（无法稳定划选）→ 提供「复制全部」，一行一条、只含助记符。
 wireCopyButton(btnCopySkipped, () => skippedItems.map((it) => `${it.name} ×${it.count}`), '复制全部');
 wireCopyButton(btnCopyIgnored, () => ignoredItems.map((it) => it.name), '复制全部');
+wireCopyButton(btnCopyInternal, () => internalItems.map((it) => it.name), '复制全部');
 
 btnSkipUnknown.addEventListener('click', () => {
   if (!pending) return;
@@ -195,6 +217,7 @@ window.api.onControlStatus((s) => {
   traceAll = !!s.traceAll;
   updateTraceBtn();
   renderIgnored(s.ignored ?? []);
+  renderInternal(s.internal);
   renderSkipped(s.skipped);
   pending = s.pendingUnknown ?? null;
   renderUnknown();
@@ -203,6 +226,7 @@ window.api.onControlStatus((s) => {
 
 updateTraceBtn();
 renderIgnored([]);
+renderInternal([]);
 renderSkipped([]);
 renderUnknown();
 renderError(undefined);

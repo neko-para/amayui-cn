@@ -89,6 +89,26 @@ app.whenReady().then(() => {
     const b = await fileSource.readFile(p);
     return Array.from(b);
   });
+  // 读引擎配置文件 SYS4REG.INI 文本（启动时填充引擎字段用；见 src/engineConfig.ts）。
+  // 查找顺序：app/amayui-emulator/SYS4REG.INI（随工程放的副本）→ 仓库根 SYS4REG.INI → 游戏目录（raw 的上一级）。
+  ipcMain.handle('read-config-ini', async () => {
+    const cands = [
+      path.join(REPO_ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI'),
+      path.join(REPO_ROOT, 'SYS4REG.INI'),
+      path.join(REPO_ROOT, '..', 'SYS4REG.INI'),
+    ];
+    for (const p of cands) {
+      try {
+        const text = fs.readFileSync(p, 'utf8');
+        console.log(`[main] config ini -> ${p} (${text.length} bytes)`);
+        return { path: p, text };
+      } catch {
+        /* 尝试下一个候选 */
+      }
+    }
+    console.log('[main] config ini: 未找到 SYS4REG.INI（引擎字段用默认值）');
+    return null;
+  });
   // 按统一资源 id 取一张图像：resolveEntry(id) -> AGF 字节 -> 解码成 top-down RGBA
   ipcMain.handle('image', async (_e, id: number) => {
     const r = await fileSource.readById(id);

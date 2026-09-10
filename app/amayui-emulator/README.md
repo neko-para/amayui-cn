@@ -42,6 +42,57 @@
 | `0x109` | `sub_42EE10` | `[已实现]` | `read-mouse-pos`：`op1=X, op2=Y`（虚拟 1280×720 坐标；出窗=-100000）；渲染窗 `mousemove/mouseleave` 注入 |
 | `0x10D` | `sub_42EF50` | `[已实现]` | `read-mouse-wheel`：**读鼠标滚轮增量并清零**（一次性消费）→ `op1`；渲染窗 `wheel` 注入 |
 | `0xCC` / `0xFB` | `sub_421980` / `sub_421B80` | `[已实现]` | 注册 mouse/joy 跳转目标（供 0xCD/0x100 派发） |
+
+### 引擎配置（SYS4REG.INI）→ 引擎字段
+
+引擎启动时读 `SYS4REG.INI`（`sub_4900F0` 定路径 / `sub_4963E0` 解析 / `sub_4957F0` 按 `"section:key"` 取值），
+把值**灌进引擎字段**（raw 23649-23745），脚本再用 opcode 读这些字段。emulator 现按同样顺序做：
+
+- **加载**：`src/engineConfig.ts` 的 `parseIni()` + `CONFIG_FIELD_BINDINGS` + `applyConfigToEngine()`；
+  渲染窗 boot 时经 IPC `read-config-ini` 读 `app/amayui-emulator/SYS4REG.INI`（找不到则依次试仓库根 / 游戏目录），
+  写入 `Engine.engineValues`，并把解析结果存 `Engine.config`。
+- **已绑定字段**（键 → `_this[K]`）：`sound:Music`→174713（0xC0 读）、`display:ScreenMode`→167990（0x2CE 读，布尔化）、
+  `message:MesWinAlpha`→21668（0x7F / 0x131 读）、`message:MessageSpeed`→86672、`message:MessageFade`→320424、
+  `message:RMouseEvent`→5536、`sound:Sound`→699240、`sound:SE`→83920、`sound:Voice`→85172。
+- **相关 opcode**：`0xC0`(音乐字段)/`0x131`(直接读 `message:MesWinAlpha`)/`0x2CE`(显示模式) 已实现（此前 0xC0 未映射、
+  0x131 当配置 getter 读 0、0x2CE 未映射）。
+- 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述三条 opcode 取值）。
+
+### 默认插桩：消息窗/消息渲染 与 声音子系统
+
+> **2025 再分类**：早期为"跑到 TITLE"把 **49 条** opcode 统一塞进 `ENGINE_INTERNAL_OPS` 当 no-op。
+> 现已逐条读 handler 体重新分类（`ENGINE_INTERNAL_OPS` 内按子系统分组、每条带一行依据注释）：
+>
+> - **升级为真实现（15 条）**：handler 体是"读操作数 → 写引擎字段"，字段可建模 ⇒ 走 `OPS` 的
+>   `ENGINE_FIELD_STORE` 规格表（`0x76`/`0x77` 字节重排、`0x78`、`0x8B`、`0x1A4`、`0x252`、`0x261`、`0x2EE`、
+>   `0x2DB`、`0x21B`、`0x24E`、`0x10F`）+ 专用 handler（`0xFE` SetKeyTotal、`0x107`/`0x10B` 按键表）；
+>   并补上配套 getter **`0x247`**（`op1 = (_this[166965]!=0)`，与 `0x21B` 成对，可往返验证）。
+> - **留在真·忽略（34 条）**：handler 体只是调**宿主没有的子系统**（`_this+80708` 绘制容器、`_this+21324`
+>   文本子系统、声音设备、计时器）或写无人读取的字段 ⇒ 无 VM 可见副作用、emulator 无输出。
+>   按子系统分组：渲染/图形/纹理（`0x32F`/`0x248`/`0x352`/`0x344`/`0x23B`/`0x25B`/`0x1F6`…）、
+>   消息窗/文本/字体（`0x70`/`0x73`/`0x75`/`0x79`/`0x74`/`0x7A`/`0x7B`/`0x197`/`0x1BB`/`0x1C1`…）、
+>   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C7`/`0x2EB`）、数据/版本/脚本控制（`0xAE`/`0x143`）、声音（`0xB5`/`0x2F8`）。
+>
+> 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
+> `test/engine-field-store.test.ts`。
+
+设置界面（CONFIG2/CONFIG1）实测涉及的一批 opcode，按「读 handler 体」判定为**只写引擎内部字段、无操作数回写、无控制流**，
+已进 `ENGINE_INTERNAL_OPS`（默认插桩，**不再需要用户逐条点「作为桩函数跳过」**）：
+
+| opcode | handler | 归入 | 依据（handler 体） |
+|---|---|---|---|
+### 设置界面相关 opcode 的实现状态（三档）
+
+| 档 | 含义 | opcode | 说明 |
+|---|---|---|---|
+| **已实现**（`OPS`） | 按引擎语义完整实现 | `0x7F` `0x80` `0x300` `0x301`（消息窗字段读写）、`0xC0`/`0x131`（配置 getter）、`0x2CE`（显示模式）、`0x306`（`system:EffectSkipOnClick`）、`0x217`（对象变换→native） | 只是**不产出可渲染/可听输出**（消息窗不渲染、无声音子系统），语义本身是完整的 |
+| **已专门处理**（`ENGINE_INTERNAL_OPS` + `INTERNAL_WITH_HANDLER`，`noop=false`） | 语义已实现，宿主缺子系统 | `0x12F`（三数组索引排序 + ENC 重编码，**完整实现**）、`0x142`（写 `_this[174812]` 引擎开关，**完整实现**）、`0x196`（display-furigana，文本渲染未建模）、`0xC5`（音量显示，无声音子系统） | 前两条只是"没有画面输出"，不是没实现 |
+| **真·忽略**（`noop=true`） | 纯 no-op 插桩 | `op_engine_internal` 的 80+ 条（如 `0x20C`/`0x23D`） | 引擎内部状态写入，emulator 无观测点 |
+
+实测：从 `CONFIG2.BIN` 路线跑 20 万步，**需要人工桩跳过的 opcode = 0 种**。
+
+> **日志/控制窗口径**：`StepTrace.noop` 区分第二、三档；控制窗分栏显示
+> 「已跳过（user-stub）/ 已插桩·有专门处理 / 真·忽略」。`OPS` 里的第一档不在任何"忽略"栏出现。
 | `0x100` / `0x101` / `0xCD` / `0x2FC` | … | `[已实现]` | 输入掩码/派发/推进门/触摸（无触摸恒 0） |
 
 **`0x10D`（滚轮）要点**（分析见 `analysis/functions.json` 的 `op_read_mouse_wheel_42EF50`）：
@@ -66,7 +117,7 @@
 | **重启** | reload 主窗口渲染器 → 重跑完整 boot（清掉所有「已跳过」桩） |
 | **启用指令日志** | 切渲染窗的逐条 trace（`traceAll`）：关=只记「已忽略/未知」，开=全量（节流 ≥100ms） |
 | **⏸ 遇到不认识的指令 → 作为桩函数跳过并继续** | 见下 |
-| 已跳过 / 已忽略 清单 | 「已跳过」= 用户点按钮登记的运行时桩；「已忽略」= `ENGINE_INTERNAL_OPS` 静态插桩。两个清单都**只列助记符**（不列 `0x…` 指令码数值），且各带 **「复制全部」** 按钮——清单每 0.5s 重刷、直接划选很难，点按钮即按「一行一条」复制到剪贴板（`navigator.clipboard`，失败回退 `execCommand`） |
+| 已跳过 / 已忽略 清单 | 控制窗把插桩结果分成**三栏**：**已跳过**= 用户点按钮登记的运行时桩（`user-stub`）；**已插桩·有专门处理**= 该 opcode 有专门 handler（消息窗/声音/数组排序/字段写入…，按引擎语义执行但**不产出可渲染输出**，`StepTrace.noop=false`）；**真·忽略**= 纯 no-op 插桩（`op_engine_internal`，`noop=true`）。三栏都**只列助记符**（不含 `0x…` 指令码数值），各带 **「复制全部」**（`navigator.clipboard`，失败回退 `execCommand`）。★这样"已实现但不画东西"不会再被误读成"被忽略" |
 
 ### 未知指令 → 桩跳过（可恢复的硬停）
 

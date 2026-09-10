@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('api', {
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
   /** 读任意文件原始字节（number[]）。 */
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+  /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
+  readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
   /** 诊断日志：追加一行到主进程的 .tmp/amayui-emulator.log（异步批量）。 */

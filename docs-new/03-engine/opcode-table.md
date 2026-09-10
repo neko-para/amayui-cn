@@ -223,7 +223,7 @@
 | 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 已核对 | **lookup-array-2d**（二维数组元素地址）：`v6=op3*op4+op5`（行×列宽+列），`operandAddress_42AEA0(2)` 取 op2 基址，`sub_418CC0(1, base, v6, -1, -1)` 把 `base+4*v6` 写入 op1 指针槽。handler=sub_42EFD0（raw .c 38462） |
 | 0x12D | 7 |  | sub_42F040 | 仅映射 |  |
 | 0x12E | 8 |  | sub_42F230 | 仅映射 |  |
-| 0x12F | 4 |  | sub_42F560 | 仅映射 |  |
+| 0x12F | 4 |  | sub_42F560 | 已核对 | **索引插入排序 + 原地重编码**：op1/op2/op3 经 `sub_42AEA0`（operandAddress）取三个数组基址 A/B/C，op4=元素数 n；`*A=0`；对 i=1..n-1 `while (DEC(A[j])+DEC(C[j]) > DEC(A[i])+DEC(C[i])) { A[j+1]=A[j]; j-- }` 再 `A[j+1]=i` —— 按 **(DEC(A[k])+DEC(C[k])) 升序**把索引重排写回 A（比较里的 A[i] 是"当前位置现存元素"＝上一轮搬进来的值）；末尾 `A[i]=ENC(DEC(A[i]))`（净恒等）。**B(op2) 只作基址传入、未被使用**。handler=sub_42F560（raw 39269-39335）。实测用例：CONFIG2.txt:1044（n=1000）、CONFIG1.txt:1178 |
 | 0x130 | 1 | load-show-logo | sub_42F7A0 | 已核对 | **LOGO/版权页开关 getter**（曾名 `i130`）：`op1 = _this[96983]`（写回操作数 1；SYSTEM4 第 146 行据此判断是否 `call-script LOGO`）。构造=1 播版权页、exit-script(0x9) 置 0 → GAMEOVER 回标题不再播。handler=sub_42F7A0（raw .c 38662） |
 | 0x131 | 1 |  | sub_42F7D0 | 仅映射 |  |
 | 0x132 | 1 |  | sub_422150 | 仅映射 |  |
@@ -242,7 +242,7 @@
 | 0x13F | 3 | check-bit | sub_42FB40 | 已核对 | `op1 = ((1<<op3) & op2) != 0`（op3=bit 位，op2=待测值，>0x1F 报错 `getbit`）。handler=sub_42FB40（raw .c 39549） |
 | 0x140 | 4 |  | sub_42FBC0 | 仅映射 |  |
 | 0x141 | 1 |  | sub_4228C0 | 仅映射 |  |
-| 0x142 | 1 |  | sub_422930 | 仅映射 |  |
+| 0x142 | 1 |  | sub_422930 | 已核对 | **脚本写引擎运行开关**：`_this[174812] = readIntOperand(op1)`（字段=字节 `0xAAB70`）。构造 `sub_415640`(raw 22591)/复位 `sub_40DF10`(raw 17961) 都置 **1**；唯一读者是导出查询 `sub_4765C0(){ return _this[699248]!=0; }`(raw 91057，引擎内零调用)。脚本：`CONFIG.txt:40 i142 0` 进设置页挂起、`:354 i142 1` 离开恢复。handler=sub_422930（raw 31020） |
 | 0x143 | 0 |  | sub_41A000 | 已核对 | **派发挂起脚本/事件请求**（dispatchScriptRequests）：置 `_this[124350]=1`，遍历 `_this+173106` 队列对每非零槽 `queueScript_40FC90(slot<<24)` 排队，`dispatchQueuedScripts_40FB60()` 派发；置 `_this[124350]=0`、`_this[30*cur+95805]=0`、`frames[cur].ip+=4`。handler=sub_41A000（raw .c 24928） |
 | 0x144 | 2 |  | sub_433AB0 | 仅映射 |  |
 | 0x145 | 1 |  | sub_42FCF0 | 仅映射 |  |
@@ -512,7 +512,7 @@
 | 0x303 | 3 |  | sub_426A90 | 已核对 | **UI/消息对象字段**：读 op1/op2/op3 调 `sub_456600(_this+21324, op1, op2, op3)`，对选中对象写 `+288=op2`、`+292=op3`。handler=sub_426A90（raw .c 33256） |
 | 0x304 | 0 |  | sub_41A420 | 仅映射 |  |
 | 0x305 | 0 |  | sub_41B1C0 | 仅映射 |  |
-| 0x306 | 1 |  | sub_431FC0 | 仅映射 |  |
+| 0x306 | 1 |  | sub_431FC0 | 已核对 | **纯配置 getter**：`op1 = GetConfig("system:EffectSkipOnClick")`（点击跳过特效开关；构造默认 1、配置文件可覆盖）。handler=sub_431FC0（raw 40948） |
 | 0x307 | 1 |  | sub_426AE0 | 仅映射 |  |
 | 0x308 | 1 |  | sub_426B20 | 已核对 | **输入触摸注册**：读 op1，调全局输入管理器 `sub_407B20(_this[96981], op1)`（LoadLibrary+GetProcAddress 注册/注销触摸），置 `_this[1954]`。handler=sub_426B20（raw .c 33282） |
 | 0x309 | - |   | sub_432000 | 仅映射 |  |
