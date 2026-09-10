@@ -328,27 +328,27 @@
 | 0x1D7 | 2 |  | sub_42E800 | 仅映射 |  |
 | 0x1D8 | 3 |  | sub_42E850 | 仅映射 |  |
 | 0x1D9 | 2 |  | sub_4213F0 | 仅映射 |  |
-| 0x1F4 | 0 |  | sub_41A090 | 已核对 | **帧计时(等待底盘)**：`_this[107438]` 已置→`++_this[107439]`(累加帧计数)；否则 `_this[107438]=1`+`timeGetTime()` 写 `_this[92333]/[92334]`。handler=sub_41A090（raw .c 25194） |
-| 0x1F5 | 0 |  | sub_41A0E0 | 已核对 | **帧倒计+派发(等待底盘)**：每帧递减 `_this[107439]`；到 0 清 `_this[107438]` 且 `_this[124350]==0` 时 `sub_40FB60()` 派发排队脚本(续跑)。handler=sub_41A0E0（raw .c 25215） |
-| 0x1F6 | 0 |  | sub_41A130 | 已核对 | **清图形对象链**：`sub_4AB7A0`。handler=sub_41A130（raw .c 24986） |
+| 0x1F4 | 0 |  | sub_41A090 | 已核对 | **进入"停靠(dock)"锁**：`_this[107438]`(字节 429752)=停靠标志、`_this[107439]`(429756)=**深度 LockDepth**（引擎 debug 打印 "LockDepth" 自证，raw 43619）。首次进入才采样时钟（`92334=92333`、`92333=timeGetTime()`），此后只 `++深度`。**不阻塞、无 Sleep**；脚本 66510 处 i1f4 = 每帧轮询点。handler=sub_41A090（raw 25194） |
+| 0x1F5 | 0 |  | sub_41A0E0 | 已核对 | **退出"停靠"锁**：`v1=_this[429756]`(LockDepth) >0 则 `--深度`；否则若 `_this[429752]` 置位 → 清标志，且 `_this[497400]`(==124350 dispatch_in_progress) 为 0 时 `sub_40FB60` 派发脚本队列（停靠期间只积累、解锁瞬间放行）。**不阻塞、无 Sleep**。handler=sub_41A0E0（raw 25214） |
+| 0x1F6 | 0 |  | sub_41A130 | 已核对 | **清空绘制容器全部 4 张表**（`sub_4AB7A0(Scene)`；Scene = `_this[80708]`，字节 322832）+ 复位脏标志。这是引擎里**唯一**的整批清场；脚本侧删除只经 0x1F7/0x1FA。handler=sub_41A130（raw 25239） |
 | 0x1F7 | 2 | detach-texture | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1=handle、op2=count，按 count 分派图形子系统（同一套容器：`sub_4AB950` 的 `_this+1032`(字节) 与 `sub_4ABB60` 的 `_this[258]`(DWORD 下标) 都是 byte 1032 = 同一 draw-item 容器）。`count≤1`→`sub_4AB950(handle)`：**移除该 handle 单图元**（`sub_459EA0` 找 + `sub_4A8AF0` std::map erase，置脏 `[46508]=1`；TITLE hover 回退用它删旧 normal）。`count>1`→`sub_4ABB60(handle,count)`：**按 handle 区间批量移除**——4 个容器 lower_bound `handle` 与 `handle+count`，对 `[begin,end)` 逐结点 `sub_4A8AF0`(erase，经 `sub_4AA1D0`/`sub_4AA330`/`sub_4AA3D0`)，并销毁 `+266/+267` 容器每项 record（vtable 删 `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `[11627]=1`。→ **删 handle∈[handle,handle+count) 的全部绘制项/网格**。SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4，批量清特效段）。handler=sub_422BC0（raw .c 30717）。emulator：count≤1→`detachTexture` 删单；count>1→`detachTexture` 删 `[handle,handle+count)` 区间。旧 label `u00420270` |
-| 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=纹理槽、op2/3/4；先释放旧槽对象（`sub_488FB0`+vtable delete+置0），调 `sub_4A2C10(_this+80708, op1, op2, op3, op4)` 创建纹理；失败抛「CTexture エラー：テクスチャ作成に失敗」。fire-and-forget。handler=sub_422C20（raw .c 30739） |
+| 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=槽、op2/3/4 → 先释放**该槽的 movie 播放器对象**（`_this[slot+94672]` = pool[13964+slot]，`sub_488FB0`+delete+置 0），再 `sub_4A2C10(Scene, slot, w, h, mode)` 建程序化纹理（`operator new(0x450)`+`sub_48AB20`）；失败抛「CTexture エラー：テクスチャ作成に失敗．TEXTURE=%d」。handler=sub_422C20（raw 31161） |
 | 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 30769） |
 | 0x1FA | 1 |  | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 30822） |
-| 0x1FB | 8 | draw-texture | sub_422E70 | 已核对 | **draw-texture**（fire-and-forget 排队）：`op1=tex, op2=layer, op3=x, op4=y, op5=w, op6=h, op7=p, op8=q`。目标矩形 `(op3, op4, op3+op5, op4+op6)`（SetRect），p/q `(float)` 强转；`sub_4ACE50(_this+80708, tex, layer, x, y, x+w, y+h, p, q, 0.0)` 排绘制（置 `_this[11627]=1` 脏标记）。handler=sub_422E70（raw .c 30846） |
+| 0x1FB | 8 | draw-texture | sub_422E70 | 已核对 | **draw-texture**：**op1 = 图元 handle（= Scene map 的 key，同时是层序，越小越先画）**、**op2 = 纹理槽号**（存 DrawItem`+4`，渲染时 `Scene+4*slot+42456` 取 `CTexture*`）、op3/op4 = 源 x/y、op5/op6 = 源 w/h、op7/op8 目标位置。★**源矩形在元素里存成 left/top/right/bottom**：handler 先 `SetRect(&rc, op3, op4, op3+op5, op4+op6)`（raw 31287-31293）再 `sub_4ACE50(Scene, handle, slot, rc.left, rc.top, rc.right, rc.bottom, op7, op8, 0)`（raw 31299）→ 元素 `v13[2..5]` = `+8/+0xC/+0x10/+0x14`；所以**元素内"源宽" = `+0x10 − +8`**（flipbook 的格子尺寸就取这个，raw 117798）。Arity=17。handler=sub_422E70（raw 31271）。★2025 修正：op1 是 handle/key、op2 是纹理槽（旧文档把二者写反）；元素内部**不存 layer** |
 | 0x1FC | 1 |  | sub_422F80 | 仅映射 |  |
 | 0x1FD | 4 |  | sub_422FD0 | 已核对 | **缩放变换**：`sub_4AC5F0` 设 3D 缩放矩阵(D3DXMatrixScaling/256 格除)。handler=sub_422FD0（raw .c 30886） |
 | 0x1FE | 5 |  | sub_423060 | 仅映射 |  |
-| 0x1FF | 4 |  | sub_4230F0 | 仅映射 |  |
+| 0x1FF | 4 |  | sub_4230F0 | 已核对 | **DrawItem 像素平移**：`op1`=DrawItem id、`op2/op3/op4`=float x/y/z（**像素单位**，无 /100、无 /256）→ `sub_4AC750(Scene, id, x, y, z)`：`sub_4AAA50` 保证项存在 → DrawItem`+0x68 = 1`（**用世界矩阵**）→ `D3DXMatrixTranslation(元素+0x16C, x,y,z)` 写**平移 work 矩阵**，**立即生效、无动画窗**（与 0x220 写 target + 开窗不同）→ 置脏 `[11627]=1`。★对照 0x1FD：**平移用像素、缩放用百分数**（0x1FD 的 op2..op4 经 `/dbl_5201F0`）。handler=sub_4230F0（raw .c 31348） |
 | 0x200 | 1 |  | sub_423170 | 仅映射 |  |
 | 0x201 | 1 |  | sub_4302B0 | 仅映射 |  |
-| 0x202 | 5 |  | sub_4231F0 | 已核对 | **set-draw-color**：读 op4=alpha（>255 clamp 255，<0 取当前色 `sub_4ADD60>>24`）、op5=color（<0 取当前色）、op2/op3 参数、op1=图元；组装 ARGB → `sub_4AD0C0(_this+80708, op1, op2, op3, argb)`。handler=sub_4231F0（raw .c 30951） |
-| 0x203 | 4 |  | sub_4232C0 | 已核对 | **set-draw-color-alpha**：读 op3=alpha（clamp/回退）、op4=color（回退），组装 ARGB → `sub_4ACF60(_this+80708, op1, op2, argb)`。handler=sub_4232C0（raw .c 30987） |
+| 0x202 | 5 | set-draw-color | sub_4231F0 | 已核对 | **set-draw-color**：读 op4=alpha（>255 clamp 255，<0 取当前色 `sub_4ADD60>>24`）、op5=color（<0 取当前色）、op2/op3 参数、op1=图元；组装 ARGB（`(color&0xFFFFFF) | ((alpha&0xFF)<<24)`）→ `sub_4AD0C0(Scene, handle, delay, dur, argb)`。引擎写入（raw 131957-131981）：**门控 `flags & 1`（元素必须已创建）** → `flags |= 2`（颜色动画启用）、`+0x34 = 0`（**全项共享的动画起点，此处清 0 表示"下一帧锁存"**）、`+0x38 = delay`、`+0x4C = dur`、`+0x64 = TO 色`；并置脏 `_this[11627]=1` 与图形池挂起 `_this[11629]=1`。**注意它不写 `+0x60`（工作色/FROM）** —— FROM 由 0x203 写。handler=sub_4231F0（raw .c 30951） | ★**逐帧求值器（2026 复核确证）**：在 `sub_49AA30` 内 raw 117434-117483 —— 由 DrawItem 渲染器 `sub_4AEEA0` 在 raw 133389 以 `a2 = 该 DrawItem` 调用（第 4 参 `COERCE_FLOAT(&v25)` 是**颜色变量的地址**，函数内 `v117 = a4`，插值结果写回 `*v117`），随后 raw 133443 把该值作 diffuse 交 `sub_4A2D50`。公式：`we = clock − start − delay`、`left = dur − we`、`ch = (left·from + we·to)/dur`（**整数截断**，通道序 B/G/R/A）；窗末 `+0x60 ← +0x64`、`+0x64 = NaN`、`+0x38/+0x4C` 清 0 并置 pending `Scene+46516`（raw 117844）。局部副本 raw 133447 `qmemcpy(元素, v26, 0x2E4)` **写回元素**。
+| 0x203 | 4 | set-draw-color-alpha | sub_4232C0 | 已核对 | **set-draw-color-alpha**：读 op3=alpha（clamp/回退）、op4=color（回退），组装 ARGB → `sub_4ACF60(Scene, handle, op2, argb)`。引擎写入（raw 131871-131883）：`+0x30 = op2`（**混合模式**，0=默认）、`+0x60 = FROM 色（当前工作色）`；只置脏 `_this[11627]=1`（**不置挂起位、不清动画窗**）⇒ 可随时改工作色做 hover 高亮/回退，且正在跑的 0x202 窗会从新的 FROM 继续插值。handler=sub_4232C0（raw .c 30987） | ★该 FROM 就是颜色窗的插值起点：`sub_49AA30` 在窗内用 `(left·FROM + we·TO)/dur` 逐帧算 diffuse（raw 117470 写回调用方指针），所以 **0x203 可在窗内任意时刻改 FROM 并立即参与插值**。
 | 0x204 | 4 | draw-string | sub_423390 | 仅映射 | 绘制字符串。未读体 |
-| 0x205 | 6 |  | sub_4233E0 | 仅映射 |  |
+| 0x205 | 6 |  | sub_4233E0 | 已核对 | **消息子系统的 GDI 数字文本绘制**：`op1`=目标纹理槽、`op2`=x（in/out，`sub_4072F0` 会更新）、`op3`=y、`op4`=数值、`op5`=字段宽（字符数）、`op6`=格式标志（bit0x10000 全角、bit1 居中、bit2 左对齐、bit3 正数带 `+`）→ `sub_4072F0(_this, …, &x, 数值, 宽, 标志)` 把数值格式化成字符串，再 `sub_456710(_this+21324, 槽, 串, x, y)`（`GetTextMetricsA` 后写进 `*(Engine+21324+1040)+4*op1+42456` 的 1000 槽纹理表）。**旧注「仅映射」为误**。handler=sub_4233E0（raw .c 31470） |
 | 0x206 | 7 |  | sub_41A160 | 仅映射 |  |
-| 0x207 | 8 |  | sub_423480 | 仅映射 |  |
-| 0x208 | 3 |  | sub_4302E0 | 仅映射 |  |
+| 0x207 | 8 |  | sub_423480 | 已核对 | **纹理槽 → 纹理槽 的 StretchRect 拷贝**：`op1`=**源槽**、`op2`=**目标槽**（由错误串「コピー元/コピー先」判定，raw 5148-5149 + 123511/123520）；矩形语义是 **(x, y, w, h)**（内部 `R=x+w`、`B=y+h`，源与目标共用同一 w/h，raw 31506-31517）——★与 0x1FB 的「op3-6 源裁剪 / op7/8 目标位置」**不同构**。emulator 无 D3D 表面拷贝模型 → 真·忽略。handler=sub_423480（raw .c 31494） |
+| 0x208 | 3 |  | sub_4302E0 | 已核对 | **纹理尺寸 getter（会写回脚本操作数）**：`op1`=纹理槽（合法 0..999）→ `sub_49ED60(Scene, slot, &w, &h)` 读该槽 `CTexture+1040`（宽）/`+1044`（高）→ 分别 **写回 op2 / op3**（`sub_42B4B0`）。★漏实现会让脚本拿到未初始化的宽高并引发**脚本层逻辑错误**（不只是画面问题）；槽越界/未创建时引擎写 0/0 且只记日志（`sub_4034C0`），**不改控制流**。handler=sub_4302E0（raw .c 39866；`sub_49ED60` raw 119774） |
 | 0x209 | 5 |  | sub_423580 | 仅映射 |  |
 | 0x20A | 1 |  | sub_423620 | 仅映射 |  |
 | 0x20B | 7 |  | sub_423690 | 已核对 | **纯色+α 填充(渐变/压黑覆盖原语)**：读 op1=纹理、op2..op5=矩形(op4=op2+宽,op5=op3+高)、op6=α(>255 钳 255)、op7=颜色；`sub_4A4C70` 走纹素 vtable(+24) 填充。handler=sub_423690（raw .c 31569） |
@@ -363,16 +363,16 @@
 | 0x214 | 2 |  | sub_423AE0 | 仅映射 |  |
 | 0x215 | 2 |  | sub_430340 | 已核对 | **图形状态 getter**。handler=sub_430340（raw .c 39337） |
 | 0x216 | 2 |  | sub_430380 | 已核对 | **纹理元数据 getter**：`_this[5*op2+81174]`。handler=sub_430380（raw .c 39351） |
-| 0x217 | 4 |  | sub_423B20 | 已核对 | **对象变换**：`sub_4ACF20` 设对象变换。handler=sub_423B20（raw .c 31101） |
+| 0x217 | 4 |  | sub_423B20 | 已核对 | **绘制项「旋转/缩放中心 pivot」**：读 op1=handle、op2/3/4=3 float → DrawItem`+24/+28/+32`；绘制期 `sub_49AA30` 读 a2[6..8]，先 `T(-pivot)` 后 `T(+pivot)` 夹住动画矩阵 ⇒ 世界旋转/缩放绕该点，**不改位置**。handler=sub_423B20 → sub_4ACF20（raw 131857） |
 | 0x218 | 4 |  | sub_4303C0 | 仅映射 |  |
-| 0x219 | 4 |  | sub_423BA0 | 仅映射 |  |
+| 0x219 | 4 |  | sub_423BA0 | 已核对 | **绘制项「描画位置 (x,y,z)」**：读 op1=handle、op2/3/4=3 float → DrawItem`+36/+40/+44`；绘制期 `sub_4AEEA0` 读 `&v26[9]` 交 `CTexture::Draw`（vtable+20）。★与 0x217 的 pivot 是**两个不同三元组**。handler=sub_423BA0 → sub_4ACEE0（raw 131843） |
 | 0x21A | 4 |  | sub_430450 | 仅映射 |  |
 | 0x21B | 1 |  | sub_423C20 | 已核对 | **引擎布尔标志**：读 op1，写 `_this[166965]=(op1!=0)`（成对读取方 sub_430810 回写操作数 1）。handler=sub_423C20（raw .c 31375） |
 | 0x21C | 0 | wait | sub_41A260 | 已核对 | **每脚本引擎状态槽→0x400 动画等待**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`（版权页/淡入淡出的"等几秒"等待门）。handler=sub_41A260（raw .c 25043）。旧 label `u00416270` |
 | 0x21D | 2 |  | sub_423C60 | 仅映射 |  |
-| 0x21E | 6 |  | sub_423CA0 | 仅映射 |  |
-| 0x21F | 7 |  | sub_423D40 | 仅映射 |  |
-| 0x220 | 6 |  | sub_423DE0 | 仅映射 |  |
+| 0x21E | 6 |  | sub_423CA0 | 已核对 | **缩放动画窗（DrawItem 窗1）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = sx/sy/sz`（`sub_41C300(...) / dbl_5201F0`，**÷256**）→ `sub_4AD170(Scene, handle, delay, dur, sx, sy, sz)`（raw 31846-31862）。引擎写入（raw 131984-132018）：门控 `flags & 1` → `|= 2`、`+0x34 = 0`（共享起点）、`+0x3C = delay`、`+0x50 = dur`、`+0x68(+104) = 1`、`D3DXMatrixScaling(元素+0xAC, sx,sy,sz)`（**目标**缩放矩阵；工作矩阵在 `+0x6C`）→ 置 `[11627]=1`、`[11629]=1`。★`dur` 是插值分母（ms）。handler=sub_423CA0（raw .c 31846） |
+| 0x21F | 7 |  | sub_423D40 | 已核对 | **旋转动画窗（DrawItem 窗2）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = 旋转轴 (x,y,z)`、`op7 = 角（度）` → `sub_4AD250(...)`（raw 31867-31885）。引擎写入（raw 132022-132075）：`|= 2`、`+0x34 = 0`、`+0x40 = delay`、`+0x54 = dur`、`+0x68 = 1`、轴存 `+0x1F8/+0x1FC/+0x200`、止角存 `+0x208`（起角在 `+0x204`），并 `D3DXMatrixRotationAxis(元素+0x12C, axis, θ·π/180)`（**目标**旋转矩阵）。度数→弧度换算常量 `dbl_526C98/dbl_5263F0`。handler=sub_423D40（raw .c 31867） |
+| 0x220 | 6 |  | sub_423DE0 | 已核对 | **平移动画窗（DrawItem 窗3）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = 位移 (x,y,z)`（★**不除 256**，与 0x21E 不同）→ `sub_4AD3C0(...)`（raw 31889-31905）。引擎写入（raw 132081-132114）：`|= 2`、`+0x34 = 0`、`+0x44 = delay`、`+0x58 = dur`、`+0x68 = 1`、`D3DXMatrixTranslation(元素+0x1AC, x,y,z)`（**目标**平移矩阵）。handler=sub_423DE0（raw .c 31889） |
 | 0x221 | 4 |  | sub_423E70 | 仅映射 |  |
 | 0x222 | 2 |  | sub_423EC0 | 仅映射 |  |
 | 0x223 | 8 |  | sub_423F00 | 仅映射 |  |
@@ -397,11 +397,11 @@
 | 0x236 | 4 |  | sub_4246B0 | 仅映射 |  |
 | 0x237 | 2 |  | sub_424880 | 仅映射 |  |
 | 0x238 | 1 |  | sub_4248C0 | 仅映射 |  |
-| 0x239 | 6 |  | sub_424900 | 仅映射 |  |
+| 0x239 | 6 |  | sub_424900 | 已核对 | **flipbook 动画窗（DrawItem 窗4）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4=总帧数`、`op5=每行列数`、`op6=标志` → `sub_4AD4A0(Scene, handle, delay, dur, frames, cols, flags)`（raw 32314-32331）。引擎写入（raw 132119-132145）：`|= 2`、`+0x34 = 0`、`+0x48 = delay`、`+0x5C = dur`、`+0x238 = frames`、`+0x23C = cols`、`+0x234 = flags`（**bit0 = 窗末保持末帧**）。★逐帧求值改的是**源矩形**而非 UV（raw 117797-117831）：`frame = frames·(clock−start−delay)/dur`、`col = frame % cols`、`row = frame / cols`，源矩形偏移 `(col·srcW, row·srcH)`；窗末 `flags&1` ⇒ 停在 `frames−1` 帧，否则复位到 draw-texture 给的源矩形。handler=sub_424900（raw .c 32315） |
 | 0x23A | 2 |  | sub_4306F0 | 仅映射 |  |
-| 0x23B | 7 |  | sub_424970 | 已核对 | **批量绘制/清图元**：读 op1..op7，`sub_4ABB60(_this+322832,op1,op6)` 区间清 + `sub_4ACE50(...,op1,...)` 排绘制（按子项计数/对齐/坐标循环）。handler=sub_424970（raw .c 32335）。方向：渲染/绘制 |
-| 0x23C | 0 |  | sub_41A2C0 | 仅映射 |  |
-| 0x23D | 0 |  | sub_41A300 | 已核对 | **释放纹理槽**：释放 42..999。handler=sub_41A300（raw .c 25099） |
+| 0x23B | 7 |  | sub_424970 | 已核对 | **按 CG 数字条画数值**：`op1`=起始 DrawItem id、`op2`=CG 数字条记录号（0..0xA）、`op3`=数值、`op4/op5`=x/y 偏移、`op6`=位数、`op7`=对齐/补零标志（bit0 补前导零、bit1 居中、bit2 左对齐）。先 `sub_4ABB60(Scene, op1, op6)` **同时删 DrawItem(`Scene+1032`) 与 MeshEntry(`Scene+1064`) 的 `[op1, op1+op6)` 区间**（raw 130875/130909/130912-130971），再逐位 `sub_4ACE50(Scene, id, 记录[0], 源矩形, x, y, 0)` 建 DrawItem。记录 `rec`（Engine+388332+28*n）几何：`[0]` 纹理槽 / `[1]` x0 / `[2]` y0 / `[3]` 单字宽 / `[4]` 字高 / `[5]` 字内空隙 / `[6]` 字距；字源矩形 x = `rec[1] + (rec[3]+rec[5])·(value%10)`、右 = `+rec[3]`；y = `rec[2]`、下 = `+rec[4]`。三种 x（`k` 从 `op6−1` 递减到 0，同时 `value%=10` 取位 ⇒ **id = 个位、id+1 = 十位…自右向左**）：居中 `k·adv − adv·(last−数位+1)/2 + op4`、左对齐 `(数位−1−… )·adv + op4`、否则右对齐 `k·adv + op4`（`adv = rec[3]+rec[6]`）；前导零跳过，除非 `op7 & 1` 或是最高位那一轮。记录号非法或 `rec[0]==0` → 仅日志「CG番号…」。handler=sub_424970（raw .c 32335） |
+| 0x23C | 0 |  | sub_41A2C0 | 已核对 | **帧毫秒时钟**（名字像空操作，其实是 `timeGetTime`）：`_this[92334] = _this[92333]; _this[92333] = timeGetTime();`（字节 369336 / 369332）。同一对字段在主循环里以同样两条赋值维护（raw 20750-20751，紧跟 `sub_4B4040` 渲染调用前），而 0x20C（`sub_41A1A0`）做同样的事**并追加渲染**（raw 25259）⇒ **0x23C = 只刷时钟、不渲染**。★与 0x1F4（停靠锁）不同：0x1F4 只在**未锁定**时刷时钟，0x23C 无条件刷（raw 25312-25315）。handler=sub_41A2C0（raw .c 25308） |
+| 0x23D | 0 |  | sub_41A300 | 已核对 | **销毁 movie/纹理槽 42..999**（958 次）：对 `Engine+4*(94714+k)`（CMovieToTexture 族）调 `sub_488FB0`+vtable[0](obj,1) 析构，并对 Scene 调 `sub_49E980(Scene,i)` 卸槽 ⇒ 引用这些槽的图元不再绘制。handler=sub_41A300（raw 25320）。（旧注"停靠标志/纹理槽释放"为误） |
 | 0x23E | 2 |  | sub_430750 | 仅映射 |  |
 | 0x23F | 2 |  | sub_4307B0 | 仅映射 |  |
 | 0x240 | 4 |  | sub_424DA0 | 仅映射 |  |
@@ -429,9 +429,9 @@
 | 0x256 | 5 |  | sub_425C30 | 仅映射 |  |
 | 0x257 | 5 |  | sub_425CA0 | 仅映射 |  |
 | 0x258 | 2 |  | sub_425D20 | 仅映射 |  |
-| 0x259 | 0 |  | sub_41A3A0 | 已核对 | **清纹理元数据**：清纹理槽元数据数组。handler=sub_41A3A0（raw .c 25127） |
+| 0x259 | 0 |  | sub_41A3A0 | 已核对 | **清两张 1000×2 组 5-DWORD 槽记录表**（`Engine+86176` 起、步长 5 dword；主/影 +81176/+86176），每项写 +8/+12，共 4000 dword=16KB，**只清记录、不 delete 对象**。handler=sub_41A3A0（raw 25357）。（旧注"纹理槽释放"为误） |
 | 0x25A | 1 |  | sub_425DB0 | 仅映射 |  |
-| 0x25B | 1 |  | sub_425E20 | 已核对 | **图像资源加载（消息态）**：读 op1，置 `_this[92379]=2`、`_this[92381]=op1`；标志 `_this[167990]==0` 时调 `sub_408440` 加载图像（失败抛「画像ファイル %s…」）。handler=sub_425E20（raw .c 32713） |
+| 0x25B | 1 |  | sub_425E20 | 已核对 | **图像资源加载（消息态）**：读 op1，置**模式** `_this[92379]=2`（1=影片 / 2=图像，同族 0x25A 用 92379=1 + 92380）、**图像 id** `_this[92381]=op1`；`_this[167990]==0`（全局「无渲染模式」开关）时调 `sub_408440` 加载（`sub_4A7210` ReadFrameTex → 渲染进固定帧纹理 `Scene+42452`），失败**抛 `Command_ShowMessage_Exception`「画像ファイル %s の読み込みに失敗しました」**（影响控制流）。★`sub_4A7210` 从不使用图像 id ⇒ `[推测]` op1 只用于消息态记录。emulator：真实现字段写入（92381=op1），不做图像解码（消息窗自绘）。handler=sub_425E20（raw .c 33206） |
 | 0x25C | 8 |  | sub_425E70 | 仅映射 |  |
 | 0x25D | 3 |  | sub_425EF0 | 已核对 | **消息列表对象字段**：读 op1/op2/op3；`_this[op1+21585]` 对象非空写 `+276=op2`、`+280=op3`。handler=sub_425EF0（raw .c 32753） |
 | 0x25E | 5 |  | sub_425F50 | 仅映射 |  |
@@ -468,7 +468,7 @@
 | 0x2D7 | 2 |  | sub_430CB0 | 仅映射 |  |
 | 0x2D8 | 3 | set-array-to | sub_430CF0 | 已核对 | `op1 起 count 个槽填 op2 值`（**脚本值 bulk 填充**；对比 copy-to-global 固定 0）：`v2=&op1; v5=ENC(op2); n=op3; memset32(v2,v5,n)`。handler=sub_430CF0（raw .c 40206） |
 | 0x2D9 | 2 |  | sub_430D60 | 仅映射 |  |
-| 0x2DA | 8 |  | sub_426420 | 已核对 | **CG 资源登记**：读 op1（CG番号，>0xA 抛「CG番号…」）；写 `_this+28*(op1+13869)` 及 `_this+28*op1+[97084..97089]` 共 8 字段（28 字节记录表）。handler=sub_426420（raw .c 33497）。方向：数据/资源登记 |
+| 0x2DA | 8 |  | sub_426420 | 已核对 | **CG 数字条记录登记**：`op1`=CG 番号（合法 0..0xA，越界只记日志不抛）+ `op2..op8` = **7 个 int** → 写进 `Engine+388332+28*cgno` 的 28 字节记录（`28*(n+13869)` 与 `4*97084+28*n` 是同一地址）。字段语义由消费方 0x23B 反推：`+0` 纹理槽 / `+4` x0 / `+8` y0 / `+12` 单字宽 / `+16` 字高 / `+20` 字内空隙 / `+24` 字距。★**是 7 个 dword（28 字节）**，旧文档「共 8 字段」把手写操作数 op1（编号）也算进去了。纯数据登记：不碰 Scene / 不置脏 / 不影响控制流。handler=sub_426420（raw .c 33498） |
 | 0x2DB | 1 |  | sub_426500 | 已核对 | **文本对象字段+字体重建**：读 op1 写 `_this[71744]`，调 `sub_459F40()` 重建字体。handler=sub_426500（raw .c 33015） |
 | 0x2DC | 1 |  | sub_430DB0 | 仅映射 |  |
 | 0x2DD | 2 |  | sub_434720 | 仅映射 |  |
@@ -518,21 +518,21 @@
 | 0x309 | - |   | sub_432000 | 仅映射 |  |
 | 0x30A | 2 |  | sub_426B60 | 已核对 | **SetGesKey**：读 op1=值、op2=索引；`op1>0x1F` 或 `op2>7` 抛 ShowMessage「SetGesKey」，否则写 `_this[op2+1969]=op1`。handler=sub_426B60（raw .c 33292） |
 | 0x320 | 10 | create-mesh | sub_432150 | 已核对 | **顶点网格配置**：读 op1/9/10 及多操作数；`op9>0` 时申请缓冲、用 key `_this[388236]`（ROL11^XOR^ROR25）解码顶点，`sub_4ADFE0(_this+322832, obj, …)` 配置网格（顶点+索引+材质）；`op9≤0` 报「頂点数%dは不正です．」。fire-and-forget。handler=sub_432150（raw .c 40262）。旧 label `u0043AA20` |
-| 0x321 | 3 |  | sub_426BD0 | 仅映射 |  |
+| 0x321 | 3 |  | sub_426BD0 | 已核对 | **3D 网格元素属性写 setter**：`sub_4AE280` 把 `elem[op2+7] = op3`（op2 是字段选择子）→ 改 **3D 网格元素**（`Scene+1064` 表）的属性块（`+28 + 4·op2`）。★**本 op 原样写入、无 clamp 也无回退**（raw 33839-33850）；旧文档把它写成「op3<0 时回退取 `sub_4AE3C0(Scene,op1)>>24`」是**错的** —— 该回退逻辑属 **0x322（sub_426C20）/0x323（sub_426CF0）**（raw 33865-33884、33901-33917）。emulator：真·忽略（3D 网格属性无对应模型）。 |
 | 0x322 | 4 |  | sub_426C20 | 已核对 | **set-vertex-color**：读 op1=网格id、op2/3/4；op3/op4 作颜色分量（clamp/回退），组装 32 位色 → `sub_4AE2C0(_this+80708, op1, op2, color)` 写网格顶点色。handler=sub_426C20（raw .c 33324） |
 | 0x323 | 5 |  | sub_426CF0 | 已核对 | **set-vertex-color-alpha**：读 op1=网格id、op2/3/4/5；组装色（含 alpha）→ `sub_4AE330(_this+80708, op1, op2, op3, color)` 写网格顶点色+alpha。handler=sub_426CF0（raw .c 33358） |
 | 0x324 | 0 |  | sub_41A470 | 已核对 | **消息/文本子系统方法**：取 `_this[93384]` 对象指针调外部弱符号 `sub_453530`（本文件无实现；fire-and-forget）。handler=sub_41A470（raw .c 25148） |
 | 0x325 | 2 |  | sub_426DC0 | 仅映射 |  |
-| 0x326 | 4 |  | sub_426E10 | 仅映射 |  |
+| 0x326 | 4 |  | sub_426E10 | 已核对 | **3D 特效雪花**：`sub_418340` 惰性建共享 `ID3DXEffect`（资源 ID 202，`Scene+46496`）并经 `sub_453330` 下发 (网格 op1, 参数 op3 浮点, op4, 纹理 op2)；**不做任何 RGBA 运算、不写元素色槽**。handler=sub_426E10（raw 33937） |
 | 0x327 | 1 |  | sub_426E70 | 仅映射 |  |
 | 0x328 | 3 |  | sub_432300 | 仅映射 |  |
 | 0x329 | 2 |  | sub_426EB0 | 仅映射 |  |
 | 0x32A | 1 |  | sub_426F80 | 仅映射 |  |
-| 0x32B | 0 |  | sub_41A4A0 | 仅映射 |  |
+| 0x32B | 0 |  | sub_41A4A0 | 已核对 | **清 D3DX 网格层级槽表**（`Scene+50708` 区 1000 槽）：经 `sub_4A0750 → sub_479A50` + delete 逐项释放（与 0x23D、0x259 均不同族）。handler=sub_41A4A0（raw 25411）。TITLE.txt:800 与 0x1F6/0x23D 组成收尾序列 |
 | 0x32C | 6 |  | sub_426FC0 | 仅映射 |  |
 | 0x32D | 2 |  | sub_427040 | 仅映射 |  |
 | 0x32E | 11 |  | sub_427110 | 仅映射 |  |
-| 0x32F | 1 |  | sub_4272B0 | 已核对 | **网格项清除**：读 op1 调 `sub_49A150(_this+80708, op1)` 清 `_this[op1+13677]=0` 并 vtable+212 方法触发图形副作用。handler=sub_4272B0（raw .c 33579） |
+| 0x32F | 1 |  | sub_4272B0 | 已核对 | **D3D 灯光开关**：读 op1=**灯光索引 0..9** → `light_enabled[idx]=0`（Scene+54708+4·idx）+ 设备 vtable+212 = `IDirect3DDevice9::LightEnable(idx,FALSE)`；同族 `sub_49A080`=SetLight（vtable+204）。★op1 **不是**纹理槽/图元 id（旧注「网格项清除」为误）；★**无任何范围检查**（raw 116743 直接 `Scene+54708+4*op1`，越界即破坏 Scene 相邻数据）。handler=sub_4272B0（raw 34117） |
 | 0x330 | 2 |  | sub_4272F0 | 仅映射 |  |
 | 0x331 | - |   | sub_427330 | 仅映射 |  |
 | 0x332 | 4 |  | sub_427380 | 仅映射 |  |
@@ -549,25 +549,25 @@
 | 0x33D | 3 |  | sub_4279B0 | 仅映射 |  |
 | 0x33E | 5 |  | sub_427A00 | 仅映射 |  |
 | 0x33F | 3 |  | sub_427A90 | 仅映射 |  |
-| 0x340 | 1 |  | sub_427B60 | 仅映射 |  |
+| 0x340 | 1 |  | sub_427B60 | 已核对 | **渲染状态下发**：写状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22，设备在 raw 122124 重放）。handler=sub_427B60 → sub_49A2D0（raw 116790） |
 | 0x341 | 2 |  | sub_427BA0 | 仅映射 |  |
-| 0x342 | 1 |  | sub_427C70 | 仅映射 |  |
+| 0x342 | 1 |  | sub_427C70 | 已核对 | **销毁 Live2D 模型实例槽**：`objects[op1]`（`Scene+55812`+4·op1，**10 槽**）非空则 `sub_4785E0` 析构 + `operator delete` + 置 0。handler=sub_427C70 → sub_4A1A60（raw 121745）。（旧称"释放图形资源槽"为误） |
 | 0x343 | - |   | sub_41A4E0 | 仅映射 |  |
-| 0x344 | 2 |  | sub_427CB0 | 已核对 | **纹理变换**：读 op1/op2 调 `sub_4AFBF0(_this+80708, op1, op2)`（图形/纹理子系统）。handler=sub_427CB0（raw .c 34506）。方向：渲染/纹理 |
+| 0x344 | 2 |  | sub_427CB0 | 已核对 | **纹理槽变换记录**：读 op1=key、op2 → `sub_4AFBF0(Scene, op1, op2)`：在 `Scene+1096` 表建记录、记录[0]|=1、记录[1]=op2，并置脏 `Scene+46508`；记录[1] 用于索引 L2D 层。handler=sub_427CB0（raw 34507） |
 | 0x345 | 3 |  | sub_427CF0 | 仅映射 |  |
-| 0x346 | - |   | sub_427DD0 | 仅映射 |  |
-| 0x347 | - |   | sub_427E10 | 仅映射 |  |
-| 0x348 | - |   | sub_427EA0 | 仅映射 |  |
-| 0x349 | 4 |  | sub_427F30 | 仅映射 |  |
-| 0x34A | - |   | sub_427FB0 | 仅映射 |  |
-| 0x34B | - |   | sub_428030 | 仅映射 |  |
-| 0x34C | - |   | sub_4280D0 | 仅映射 |  |
-| 0x34D | 6 |  | sub_428170 | 仅映射 |  |
-| 0x34E | 4 |  | sub_428200 | 仅映射 |  |
+| 0x346 | 1 |  | sub_427DD0 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：把全部变换复位为单位阵、+76 = 0；handler=sub_427DD0，raw .c 34557） |
+| 0x347 | 4 |  | sub_427E10 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**缩放**，参数为**百分数 /100**；handler=sub_427E10，raw .c 34567） |
+| 0x348 | 5 |  | sub_427EA0 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：缩放 + 一个额外汇总参数；handler=sub_427EA0，raw .c 34584） |
+| 0x349 | 4 |  | sub_427F30 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**平移，像素单位（无缩放）**；handler=sub_427F30，raw .c 34602） |
+| 0x34A | 4 |  | sub_427FB0 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：写 +8/+12/+16 基础平移偏移；handler=sub_427FB0，raw .c 34618） |
+| 0x34B | 6 |  | sub_428030 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**缩放目标矩阵**（百分数 /100）+ 窗1 delay/dur = +32/+52，**置 pending**；handler=sub_428030，raw .c 34634） |
+| 0x34C | 7 |  | sub_4280D0 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**旋转目标矩阵** + 轴/角（度）+ 窗2 delay/dur = +36/+56，**置 pending**；handler=sub_4280D0，raw .c 34655） |
+| 0x34D | 6 |  | sub_428170 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**平移目标矩阵**（像素）+ 窗3 delay/dur = +40/+60，**置 pending**；handler=sub_428170，raw .c 34677） |
+| 0x34E | 4 |  | sub_428200 | 已核对 | **Scene+1096 的 572 字节「变换 / Live2D 立绘节点」setter**（与 DrawItem/MeshEntry/纹理槽都不同）：`op1` = map key（图元 id）；元素内：`+0` flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）、**`+4` Live2D 模型槽 0..9**（`Scene+4*slot+55812`）、`+8/12/16` 基础平移偏移、`+24` 动画计数、4 个窗 delay/dur 在 `+28/+48`（颜色）、`+32/+52`（缩放）、`+36/+56`（旋转）、`+40/+60`（平移）、`+68` 颜色（RGBA）、`+76` 启用手工变换矩阵、缩放 work/target `+80/+144`、旋转 `+208/+272`（轴 `+464/+476`，角 `+488/+492` 度）、平移 work/target `+336/+400`、`+508` 第 4 个矩阵。**消费方 `sub_4B0360` 只在 `元素+4` 指向的 Live2D 槽真有模型时才出画**（raw 134310-134346）⇒ 整套属 Live2D/3D 立绘演出；只置脏 `Scene+46508`（0x34B/34C/34D 另置 pending `Scene+46516`）。（本条：**Live2D motion 加载**；可 no-op 但**实现不得抛异常**——引擎读文件失败会抛异常影响控制流；handler=sub_428200，raw .c 34697） |
 | 0x34F | - |   | sub_428400 | 仅映射 |  |
 | 0x350 | - |   | sub_4282E0 | 仅映射 |  |
 | 0x351 | - |   | sub_428320 | 仅映射 |  |
-| 0x352 | 3 |  | sub_4283B0 | 已核对 | **图形子系统**：读 op1/op2/op3 调 `sub_4A1AC0(_this+80708, op1, op2, op3)`。handler=sub_4283B0（raw .c 34779）。方向：渲染/图形 |
+| 0x352 | 3 |  | sub_4283B0 | 已核对 | **Live2D 槽参数设置**：读 op1=槽号(0..9)、op2、op3 → `sub_4A1AC0(Scene,…)`：`objects[op1]` 按 op2 选 `sub_478540`（置**待纹理 ID**：+24/+28）或 `sub_478560`（置**待动作 ID**：+25/+32）。handler=sub_4283B0（raw 34780） |
 
 ---
 

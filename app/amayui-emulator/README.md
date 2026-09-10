@@ -58,6 +58,8 @@
   0x131 当配置 getter 读 0、0x2CE 未映射）。
 - 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述三条 opcode 取值）。
 
+### 设置界面相关 opcode 的实现状态（三档）
+
 ### 默认插桩：消息窗/消息渲染 与 声音子系统
 
 > **2025 再分类**：早期为"跑到 TITLE"把 **49 条** opcode 统一塞进 `ENGINE_INTERNAL_OPS` 当 no-op。
@@ -81,7 +83,178 @@
 
 | opcode | handler | 归入 | 依据（handler 体） |
 |---|---|---|---|
-### 设置界面相关 opcode 的实现状态（三档）
+### 渲染模型（引擎侧实证结论 → emulator 建模）
+
+> 2025 由 6 个并行分析员逐个子系统读 `engine/天结_unpacked.exe_utf8.c` 得出（报告在 `.tmp/re-*.md`）。
+> **结论已逐条独立复核**（派发表反查 + 脚本三方互证），并纠正多处旧口径。
+
+**1. 绘制容器 = `Scene` 类**（不是裸 map）：`_this[80708]`（`_this` 是 `_DWORD*` ⇒ **字节 322832**）内嵌一个
+`Scene` 对象（vtable `Scene___vftable_`，ctor `sub_4AAF90`），内含 **5 个并排的 MSVC `std::map<uint32_t,T>`**：
+`+1032` 图元表（740B = **DrawItem**）、`+1048` 转场表（96B）、`+1064` 网格表（60B = **MeshEntry**）、
+`+1080`/`+1096` 精灵/就地结构（572B）。
+**节点 key = 图元 id，同时就是层序**（越小越先画）；**元素内部不存 layer**。
+`Scene+1860` = 渲染器（+1040 = `IDirect3DDevice9*`、+1100/1104 = 屏幕宽高）；`Scene+42456` = **1000 槽 `CTexture*` 表**；
+`Scene+55812` = **10 槽 Live2D 模型对象**。
+
+**2. `draw-texture`(0x1FB) 的操作数语义（旧实现写反 —— "背景消失"的直接原因之一）**：
+
+```
+op1 = 图元 handle（= Scene map key = 层序）                              ← 旧实现当成"纹理槽" ❌
+op2 = 纹理槽号（存 DrawItem+4；渲染时 Scene+4*slot+42456 取 CTexture*）  ← 旧实现当成"layer" ❌
+op3/4 = 源 x/y；op5/6 = 源 w/h；op7/8 = 目标 x/y
+```
+
+`present()` 又用 `it.layer` 查纹理槽表 → 两错叠加 ⇒ **几乎所有图元取不到纹理，退化成占位色块**。
+两处已修（`op_draw_texture` 与 `PixiBackend.resolveItemTexture`；回归测试 `test/texture-slot-resolve.test.ts`）。
+
+**3. 同族指令的更正后语义**：
+
+| opcode | handler | 实证语义 |
+|---|---|---|
+| `0x1F6` | sub_41A130 | 清空**全部 4 张表**（唯一整体清场）+ 复位脏标志 → `native.clearDrawContainer` |
+| `0x1F7` | sub_422BC0 | `op1`=**key(层序)**、`op2`=count：erase 该 key 区间（不碰 +1048 表） |
+| `0x217` | sub_423B20 | 写 DrawItem`+24/+28/+32` = **旋转/缩放中心 pivot**（绘制期 `T(-pivot)→动画矩阵→T(+pivot)`，**不改位置**） |
+| `0x219` | sub_423BA0 | 写 DrawItem`+36/+40/+44` = **描画位置 (x,y,z)**（原被误记为 0x21E） |
+| `0x21E` | sub_423CA0 | **缩放动画窗**：`op2`=delay、`op3`=dur、`op4/5/6`=sx/sy/sz（**÷256**）→ DrawItem`+0x3C/+0x50/+0xAC` |
+| `0x21F` | sub_423D40 | **旋转动画窗**：`op2`=delay、`op3`=dur、`op4/5/6`=轴、`op7`=角（度）→ `+0x40/+0x54/+0x12C/+0x1F8..0x208` |
+| `0x220` | sub_423DE0 | **平移动画窗**：`op2`=delay、`op3`=dur、`op4/5/6`=位移（**不除 256**）→ `+0x44/+0x58/+0x1AC` |
+| `0x239` | sub_424900 | **flipbook 动画窗**：`op2`=delay、`op3`=dur、`op4`=帧数、`op5`=列数、`op6`=标志 → `+0x48/+0x5C/+0x238/+0x23C/+0x234`（改**源矩形**） |
+| `0x32F` | sub_4272B0 | **D3D 灯光开关** `LightEnable(idx,FALSE)`（idx=0..9；**不是**网格/图元清除） |
+| `0x342` | sub_427C70 | **销毁 Live2D 实例槽**（`Scene+55812` 10 槽；析构+delete+置 0） |
+| `0x352` | sub_4283B0 | **Live2D 槽参数**：按 op2 置**待纹理 ID**(+24/+28) 或**待动作 ID**(+25/+32) |
+| `0x344` | sub_427CB0 | 在 1096 表建记录、置 bit0；`记录[1]` 索引 L2D 层 |
+| `0x23D` | sub_41A300 | **销毁 movie/纹理槽 42..999**（958 次；会让引用这些槽的图元不再绘制） |
+| `0x259` | sub_41A3A0 | 只清 1000×2 组 5-DWORD 记录表的 +8/+12（**不 delete**；旧文档当"纹理槽释放"是错的） |
+| `0x32B` | sub_41A4A0 | 清 **D3DX 网格层级槽表**（`Scene+50708` 区 1000 槽，逐项 delete） |
+| `0x321` | sub_426BD0 | **3D 网格元素属性写 setter**（`sub_4AE280`，`elem[op2+7]=op3`；**不是**颜色动画求值器） |
+| `0x326` | sub_426E10 | 3D 特效雪花：惰性建共享 `ID3DXEffect`（资源 202）下发参数；**不做 RGBA 运算** |
+| `0x1F4`/`0x1F5` | sub_41A090 / sub_41A0E0 | **停靠(dock)锁**：标志 `_this[107438]`(字节 429752) + **深度 LockDepth** `_this[107439]`(429756)；`0x1F4` 深度++（首次采样时钟）、`0x1F5` 深度--归零则解锁并派发脚本队列。**都不阻塞、无 Sleep**；脚本里 66510 处 `i1f4` = 每帧轮询点 |
+| `0x20C` | sub_41A1A0 | 每帧刷时钟 + `sub_4B4040(Scene)`（命令/动效泵：Clear→BeginScene→四路归并按 key 绘制→EndScene→Present） |
+
+**4. DrawItem 数据模型 + 5 个动画窗（2025 实现，见 `src/renderer/drawItem.ts`）**：
+
+DrawItem = `Scene+1032` 的 map 值，**740 字节**；元素内偏移 = f32 下标 × 4：
+
+| 偏移 | 字段 | 写入者 |
+|---|---|---|
+| `+0` | flags：bit0 已创建 / bit1 动画启用 / bit2 额外渲染分支 | `draw-texture` / 各窗 setter |
+| `+4` | **纹理槽号**（`draw-texture` 的 op2） | `0x1FB` |
+| `+8/+0xC/+0x10/+0x14` | **源矩形 left/top/right/bottom**（脚本给 x,y,w,h；handler 先 `SetRect(x, y, x+w, y+h)`；⇒ 元素内源宽 = `+0x10 − +8`） | `0x1FB` |
+| `+0x18/+0x1C/+0x20` | pivot | `0x217` |
+| `+0x24/+0x28/+0x2C` | 描画位置 | `0x219` |
+| `+0x30` | 混合模式 | `0x203` |
+| `+0x34` | **动画起点（全项共享一个）**；任一 setter 写 0 ⇒ 驱动首帧锁存 `Scene+46500` | 5 个窗 setter |
+| `+0x38/+0x4C` | 窗0（颜色/α）delay / dur | `0x202` |
+| `+0x3C/+0x50` | 窗1（缩放）delay / dur | `0x21E` |
+| `+0x40/+0x54` | 窗2（旋转）delay / dur | `0x21F` |
+| `+0x44/+0x58` | 窗3（平移）delay / dur | `0x220` |
+| `+0x48/+0x5C` | 窗4（flipbook）delay / dur | `0x239` |
+| `+0x60/+0x64` | 颜色 FROM（工作色）/ TO | `0x203` / `0x202` |
+| `+0x6C / +0xAC` | 缩放矩阵 work / target（`D3DXMatrixScaling`） | `0x21E` |
+| `+0xEC / +0x12C` | 旋转矩阵 work / target（`D3DXMatrixRotationAxis`；轴/角在 `+0x1EC..0x208`） | `0x21F` |
+| `+0x16C / +0x1AC` | 平移矩阵 work / target（`D3DXMatrixTranslation`） | `0x220` |
+| `+0x234/+0x238/+0x23C` | flipbook 标志（bit0=保持末帧）/ 总帧数 / 每行列数 | `0x239` |
+
+**窗语义（引擎 raw 证据）**：
+- **起点共享**：5 个 setter 全部写 `+0x34 = 0`（raw 131970/132002/132047/132099/132134），驱动首帧
+  `if (!a2[13]) a2[13] = *(float*)(Scene+46500)` 锁存（raw 117437-117438）⇒ 起点是**全项一个**，不是每窗一个。
+- **相位**：`clock < start+delay` 保持 work；窗内 `t = (clock − start − delay) / dur`（线性、无 clamp）；
+  `clock ≥ start+delay+dur` ⇒ **一次性收尾** `work ← target`（缩放 raw 117496、旋转 117550、平移 117646、flipbook 117831）。
+- **`dur = 0` 但"配置过"** 与 **"从未配置"** 必须区分：前者当帧即收尾（实机改 COUNT=1 → 瞬现）。
+- **`delay`/`dur` 单位 = 毫秒**（直接与 `timeGetTime()` 时钟比较）。
+- **flipbook 改的是源矩形、不是 UV**：`frame = frames·t`、`col = frame % cols`、`row = frame / cols`，
+  源矩形偏移 `(col·srcW, row·srcH)`（raw 117797-117804）；窗末 `flags & 1` ⇒ 停在 `frames−1` 帧，否则复位。
+- **颜色窗的逐帧求值器（2026 复核确证：存在）**——上一轮 `.tmp/re-color-transform.md` §2.3 的"找不到求值器"结论**是错的**，
+  原因是把代码归属搞错了。实证链条：
+
+  ```
+  sub_4AEEA0（DrawItem 渲染器，raw 133326-133450）
+    133363  qmemcpy(v26, 元素, 740)                        // 元素 → 局部副本
+    133375  v6 = v26[24]                                   // +0x60 = FROM（工作色）
+    133389  sub_49AA30(_this, v26, Scene+46536, &v25, v22) // ★ 传"颜色变量的地址"
+              └─ 117374  v117 = a4                          // a4 即 &v25
+              └─ 117437  if (!a2[13]) a2[13] = clock        // 首帧锁存共享起点
+              └─ 117461-117479  we/left 整数 lerp → 写回 *v117
+              └─ 117449-117457  窗末：a2[24] ← a2[25](TO)、a2[25] = NaN、delay/dur 清 0
+              └─ 117844  置 pending Scene+46516（动画在跑时）
+    133443  sub_4A2D50(..., v25)                           // ★ 求值结果作 diffuse 交纹理绘制
+    133447  qmemcpy(元素, v26, 0x2E4)                      // ★ 局部副本**整体写回元素**
+  ```
+
+  ⇒ ① 求值器在 **`sub_49AA30`** 里（raw 117434-117483），调用点就是 DrawItem 渲染器，**不是**"元素3/`sub_4A230`"；
+  ② `a4` 是"指向调用方颜色变量的指针"，插值结果**只写调用方局部、不回写 `+0x60`** ⇒ 窗内每帧都从同一对 `FROM/TO` 重算；
+  ③ `sub_49AA30` 的局部副本**会写回元素**（raw 133447，740 字节）⇒ "窗末冻结 / delay·dur 清 0 / flipbook 源矩形结果"都持久化。
+
+- **插值公式是整数截断，不是四舍五入**（raw 117466-117479）：
+  `we = clock − start − delay`、`left = start + dur − (clock − delay) = dur − we`、
+  `ch = (left·from_ch + we·to_ch) / dur`（整数除法，通道序 B/G/R/A）。
+  例：`from=0x00, to=0xFF, dur=2, we=1` ⇒ **127**（四舍五入会得 128）。
+  ★与 **mesh（元素2）** 的 `CalcDiffuse`（`sub_4A2050` raw 122287-122294）**不是同一条公式**：
+  后者是浮点式 `ch = (int)(state1·t + state0·(1−t))` + "四通道全 255 ⇒ 直接拷基础色"快路。
+  emulator 两处分别实现为 `lerpArgbWindow` / `lerpArgbFloat`。
+
+> **回归测试**：`test/draw-item-anim-window.test.ts`（10 例）锁死上面每条（共享起点 / delay 保持 work /
+> 窗内插值 / 窗末收尾 / `dur=0` 区分 / flipbook 帧→源矩形 / 保持末帧 vs 复位 / pivot≠描画位置）。
+> 纯模型在 `src/renderer/drawItem.ts`，**不依赖 Pixi/DOM**，因此可被 Node 测试直接驱动。
+
+> **数据层同步**：`analysis/functions.json` 已写入 `sub_4AD170`/`sub_4AD250`/`sub_4AD3C0`/`sub_4AD4A0`
+> （4 个窗 setter）、`sub_4ACE50`（draw-texture 建项）、`sub_49AA30`（逐帧驱动）、`sub_4AEEA0`（改判 ANALYZED）；
+> `analysis/fields.json` 的 DrawItem `0x34`/`0x38`/`0x4C` 已转 `confirmed`。
+> ⚠️ 窗 delay/dur 的其余偏移（`0x3C/0x40/0x44/0x48/0x50/0x54/0x58/0x5C`）**与 `ScriptContext` 同偏移**，
+> 而 `scripts/report.js` 的字段唯一键是**偏移**（不含 scope）⇒ 无法经工具写入；这些偏移的权威说明在本表与
+> `functions.json` 各条的 `fields_used` 里（均带 raw 行号）。
+
+### 渲染/图形/帧循环 一族（2025 实现）
+
+早期这批也统一当 no-op。逐条读 handler 体后（raw 25194-25430、34117-34780、32705、31807 等）：
+
+| opcode | handler | 实现 | 依据 |
+|---|---|---|---|
+| `0x1F4` | sub_41A090 | **真实现** | 帧计时：`_this[107438]` 已置→`++_this[107439]`；否则置 1 并刷 `_this[92333]/[92334]` 时钟。**脚本的"帧循环"就是反复调它**（全工程 66510 处）——它不等待，只记时间/计帧 |
+| `0x1F5` | sub_41A0E0 | **真实现** | 帧倒计：`_this[429756]` 递减到 0 → 清停靠标志 `_this[429752]=0`（随后的脚本队列派发 `sub_40FB60` 未建模 → no-op） |
+| `0x20C` | sub_41A1A0 | **真实现** | 每帧刷时钟 + `sub_4B4040(_this+80708)` 帧刷新 → `native.frameTick()`（emulator 渲染循环自行 present） |
+| `0x23D` / `0x32B` | sub_41A300 / sub_41A4A0 | **真实现** | 设置"停靠/挂起"标志 `_this[122497]=1`（与 `_this[429752]` 同族） |
+| `0x248` | sub_4252E0 | **真实现** | `dword_55052C = op1`（渲染配置全局槽） |
+| `0x219` | sub_423BA0 | **真实现** | 绘制项**描画位置**：3 个 float → `sub_4ACEE0(_this+80708, handle, f2,f3,f4)` → DrawItem`+36/+40/+44` → `native.setDrawPos` |
+| `0x21E` | sub_423CA0 | **真实现** | 缩放动画窗（窗1）：`sub_4AD170` 写 `+0x3C`/`+0x50`/目标矩阵 `+0xAC` → `native.setScaleAnim` |
+| `0x21F` | sub_423D40 | **真实现** | 旋转动画窗（窗2）：`sub_4AD250` 写 `+0x40`/`+0x54`/轴角/目标矩阵 `+0x12C` → `native.setRotationAnim` |
+| `0x220` | sub_423DE0 | **真实现** | 平移动画窗（窗3）：`sub_4AD3C0` 写 `+0x44`/`+0x58`/目标矩阵 `+0x1AC` → `native.setTranslationAnim` |
+| `0x239` | sub_424900 | **真实现** | flipbook 动画窗（窗4）：`sub_4AD4A0` 写 `+0x48`/`+0x5C`/帧数/列数/标志 → `native.setFlipbook` |
+| `0x32F` | sub_4272B0 | **真实现** | **D3D 灯光开关** `LightEnable(op1, FALSE)`（idx 0..9）→ `native.setLight`。★旧注"网格项清除"是**误** |
+| `0x342` | sub_427C70 | **真实现** | 释放图形资源槽：`sub_4A1A60`（`operator delete` 该槽对象并置 0）→ `native.releaseTexture` |
+| `0x344` | sub_427CB0 | **真实现** | 纹理槽变换：`sub_4AFBF0(_this+80708, op1, op2)`（`_this+274` map 项 `\|=1`、`[+4]=op2`）→ `native.setTextureTransform` |
+| `0x352` | sub_4283B0 | **真实现** | 图形子系统：`sub_4A1AC0(_this+80708, op1,op2,op3)` → `native.gfxSubsystem` |
+| `0x1F6` | sub_41A130 | **真实现** | **整批释放绘制项/网格** `sub_4AB7A0(_this+80708)` → `native.clearDrawContainer()`（清 `drawItems`+`meshes`，**保留纹理槽**）。★这是引擎里**唯一合法的整批清场**，与"换脚本就清"无关 |
+| `0x1FF` | sub_4230F0 | **真实现** | **DrawItem 像素平移**：`sub_4AC750(Scene, id, x,y,z)` 置 `+0x68=1`（用世界矩阵）+ `D3DXMatrixTranslation(+0x16C)` 写平移 **work** 矩阵，**立即生效无窗** → `native.setDrawTranslation`。★平移用**像素**、0x1FD 缩放用**百分数** |
+| `0x208` | sub_4302E0 | **真实现** | **纹理尺寸 getter（会写回脚本操作数！）**：`sub_49ED60(Scene, 槽, &w, &h)` 读 `CTexture+1040/+1044` → **写回 op2/op3**。漏实现会让脚本拿到未初始化宽高 ⇒ **脚本层逻辑错误**（不只是画面问题）→ `native.getTextureSize` |
+| `0x23B` | sub_424970 | **真实现** | **按 CG 数字条画数值**：先 `sub_4ABB60` 删 DrawItem+MeshEntry 的 `[op1, op1+op6)`，再按记录逐位 `sub_4ACE50` 建 DrawItem（三种对齐 / 补零 / id=个位自右向左）→ `native.drawCgNumber` |
+| `0x23C` | sub_41A2C0 | **真实现** | **帧毫秒时钟**（名字像空操作，实为 `timeGetTime`）：`_this[92334]=_this[92333]; _this[92333]=now` ⇒ 0x20C 的"只刷时钟不渲染"版 |
+| `0x2DA` | sub_426420 | **真实现** | **CG 数字条记录登记**：`op2..op8`（7 个 int）→ `Engine+388332+28*op1`（28 字节记录）。★文档旧写"8 字段"是把手写 op1 也算进去了 |
+| `0x25B` | sub_425E20 | **真实现** | 消息态图像：`_this[92381]=op1`（模式 `92379` 由同族 0x25A 置 1=影片/2=图像）；不做图像解码（消息窗自绘） |
+| `0x346`–`0x34E` | sub_427DD0…sub_428200 | 真·忽略 | **`Scene+1096` 的 572 字节「变换 / Live2D 立绘节点」族**：元素 `+4` 指向 Live2D 槽（`Scene+4*slot+55812`），消费方 `sub_4B0360` **只有该槽真有模型时才出画** ⇒ 无模型时天然无输出；0x34E 读文件失败会抛异常，emulator 走 no-op（不抛）。**不是 DrawItem** |
+| `0x321` `0x325` `0x326` `0x207` | — | 真·忽略 | MeshEntry 属性块、消息对象字段、3D 雪花 `ID3DXEffect`（自带 `Scene+46668>=1` 门槛）、纹理槽 StretchRect 拷贝 —— **emulator 无对应模型**（分类依据见 `docs-new/03-engine/opcode-table.md` 对应行） |
+| `0x340` | sub_427B60 | **真实现** | 渲染状态下发：写 `Scene+13948`（默认 3）+ 设备 vtable+228 发 `(22, op1)` → `native.setRenderState` |
+| `0x34E` | sub_428200 | **专门处理**（`native` 桩） | Live2D motion 加载（同族 0x346–0x34D 是 `engine-internal` no-op）；引擎读文件失败会抛异常，emulator 明确走**不抛**的桩 |
+
+> **口径更正（2026 复核）**：`Scene+46516` 不是"**颜色**动画 pending"，而是**通用**的「仍有动画 / 目标变换插值待处理」
+> （0x34B/0x34C/0x34D 的目标矩阵 setter 也置它，raw 134174/134231/134271；渲染路径 raw 136840 以它作"还需继续演算"判据）。
+> emulator 里对应的是 `PixiBackend.needsRender()` / `sceneAnimationsDone()`（用各窗相位判断），语义一致但更细。
+
+**实测命中**（跑 20 万步）：
+
+```
+[SYSTEM4 启动链] 渲染族命中：0x20c×2505 0x32f×5 0x23b×3 0x25b×1 0x248×1 0x352×1 0x1f6×1 0x344×1 0x2da×1
+[TITLE]         渲染族命中：0x20c 若干 + 0x23b×3（CG 数字条画数值，id=0x6f/0x70/0x72）
+[CONFIG2]       渲染族命中：0x20c×5115
+[CONFIG1]       渲染族命中：0x20c×4379
+```
+
+> **端到端回归**：`test/draw-item-slot-coverage.test.ts` 跑到 TITLE 后统计——绘制项 12 个、已绑定纹理槽 7 个、
+> **槽解析覆盖率 100%**（12/12）。这条测试正是为"op1/op2 写反 → 背景消失只剩色块"那类**静默**故障设的闸。
+
+⇒ 设置界面路线上**只有 `0x20C`（每帧刷新）**会执行，**没有任何"清场"类渲染指令**——这进一步排除了
+"某条渲染指令把背景清掉"的可能（背景消失只能来自渲染器自身的清空逻辑，见 `pixiBackend` 的说明）。
+
 
 | 档 | 含义 | opcode | 说明 |
 |---|---|---|---|

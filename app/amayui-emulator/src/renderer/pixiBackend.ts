@@ -23,12 +23,45 @@ import {
 } from 'pixi.js';
 import {
   assertFlags,
-  UnknownFlagError,
-  type DrawItemConfig,
   type MeshCreateSpec,
   type NativeBridge,
 } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
+import {
+  advanceWindows,
+  applyDrawColor,
+  applyDrawColorAlpha,
+  applyDrawPivot,
+  applyDrawPos,
+  applyFlipbook,
+  applyMeshVertexColor,
+  applyMeshVertexColorAlpha,
+  applyRotationAnim,
+  applyScaleAnim,
+  applyTranslationAnim,
+  calcDiffuse,
+  cgDigitItems,
+  itemColor,
+  itemRotationRad,
+  itemScale,
+  itemSrcRect,
+  itemTranslation,
+  makeItem,
+  makeMesh,
+  meshWindowDone,
+  windowDone,
+  type DrawItemConfig,
+  type Item,
+  type MeshObj,
+  type Vec3,
+  W_COLOR,
+  W_FLIPBOOK,
+  W_ROT,
+  W_SCALE,
+  W_TRANS,
+} from './drawItem.js';
+
+export type { Item, MeshObj, Vec3 };
 
 export interface RenderStatus {
   scriptName: string;
@@ -39,36 +72,6 @@ export interface RenderStatus {
   trace: string[];
 }
 
-interface AnimWindow {
-  delay: number;
-  count: number;
-  start: number;
-  started: boolean;
-}
-
-interface Item {
-  handle: number;
-  layer: number;
-  srcX: number;
-  srcY: number;
-  srcW: number;
-  srcH: number;
-  dstX: number;
-  dstY: number;
-  flags: number; // 仅 bit0 存在 | bit1 颜色动画（&2）；其余位 assertFlags 拒绝
-  from: number; // +96 (ARGB)
-  to: number; // +100 (ARGB)
-  anim?: AnimWindow; // +52 start / +56 delay / +76 count；动画完成时冻结（from=to, anim 清空）
-}
-
-interface MeshObj {
-  handle: number;
-  layer: number;
-  flags: number; // 仅 bit0 存在 | bit1 颜色动画
-  state0: number;
-  state1: number;
-  anim?: AnimWindow; // +10 start / +11 delay / +12 count
-}
 
 const W = 1280;
 const H = 720;
@@ -83,6 +86,16 @@ export class PixiBackend implements NativeBridge {
   input?: InputManager;
   private imgCache = new Map<number, Texture>();
   private slotTex = new Map<number, Texture>(); // slot/layer -> Texture（set-texture 绑定）
+  /** slot → imgid（`set-texture` 建立的绑定；`create-texture` 刷新缓存时要用它重取图像）。 */
+  private slotImgid = new Map<number, number>();
+  /**
+   * handle → 绘制项**位置覆盖**（`0x219` sub_4ACEE0 写 DrawItem`+36/+40/+44` = `Item.posX/posY/posZ`）。
+   * 仅当脚本**先变换后画**（item 尚未建）时暂存于此，`configureDrawItem` 建项时消费；引擎里
+   * `sub_4ACF20/sub_4ACEE0` 都先 `sub_4AAA50` 保证 key 存在（不存在就建默认项），故这条路径等价。
+   */
+  private posOverride = new Map<number, { x: number; y: number; z: number }>();
+  /** handle → pivot 覆盖（`0x217` sub_4ACF20 写 DrawItem`+24/+28/+32`），同上。 */
+  private pivotOverride = new Map<number, { x: number; y: number; z: number }>();
   private pendingImg = new Set<number>();
   private lastScript = '';
   private drawCount = 0;
@@ -287,20 +300,11 @@ export class PixiBackend implements NativeBridge {
   configureDrawItem(cfg: DrawItemConfig): void {
     this.#onSceneChange(cfg.handle);
     this.#markDirty();
-    const it = this.drawItems.get(cfg.handle) ?? {
-      handle: cfg.handle,
-      layer: cfg.layer,
-      srcX: cfg.srcX,
-      srcY: cfg.srcY,
-      srcW: cfg.srcW,
-      srcH: cfg.srcH,
-      dstX: cfg.dstX,
-      dstY: cfg.dstY,
-      flags: 0,
-      from: 0xffffffff,
-      to: 0xffffffff,
-    };
+    // 模型构造集中在 `drawItem.ts`（可测试的"引擎数据模型"层）
+    const it = this.drawItems.get(cfg.handle) ?? makeItem(cfg);
+
     it.layer = cfg.layer;
+    it.tex = cfg.tex; // ★纹理槽号（draw-texture 的 op2）—— present 取纹理用它，不用 layer
     it.srcX = cfg.srcX;
     it.srcY = cfg.srcY;
     it.srcW = cfg.srcW;
@@ -308,6 +312,25 @@ export class PixiBackend implements NativeBridge {
     it.dstX = cfg.dstX;
     it.dstY = cfg.dstY;
     it.flags |= 1; // bit0 = 存在
+    // 先变换后画：把暂存的 pivot/位置覆盖补进来（引擎 sub_4AAA50 的"缺项即建"等价语义）
+    const pv = this.pivotOverride.get(cfg.handle);
+    if (pv) {
+      it.pivotX = pv.x;
+      it.pivotY = pv.y;
+      it.pivotZ = pv.z;
+      this.pivotOverride.delete(cfg.handle);
+    }
+    const po = this.posOverride.get(cfg.handle);
+    if (po) {
+      it.posX = po.x;
+      it.posY = po.y;
+      it.posZ = po.z;
+      this.posOverride.delete(cfg.handle);
+    } else if (!this.drawItems.has(cfg.handle)) {
+      it.posX = cfg.dstX; // 引擎 +0x24：未由 0x219 写入时退回 draw-texture 的 op7/8
+      it.posY = cfg.dstY;
+      it.posZ = 0;
+    }
     assertFlags('drawitem', it.handle, it.flags);
     this.drawItems.set(cfg.handle, it);
     this.#pushLog(`configureDrawItem h=0x${cfg.handle.toString(16)} layer=${cfg.layer} (${cfg.srcX},${cfg.srcY},${cfg.srcW}x${cfg.srcH})`);
@@ -315,6 +338,7 @@ export class PixiBackend implements NativeBridge {
 
   bindTexture(imgid: number, slot: number): void {
     this.#markDirty();
+    this.slotImgid.set(slot, imgid); // 记录绑定，供 create-texture 刷新缓存时重取
     this.#pushLog(`bindTexture imgid=0x${imgid.toString(16)} slot=${slot}`);
     const tex = this.imgCache.get(imgid);
     if (tex) {
@@ -331,18 +355,203 @@ export class PixiBackend implements NativeBridge {
   createMesh(spec: MeshCreateSpec): void {
     this.#onSceneChange(spec.handle);
     this.#markDirty();
-    const m = this.meshes.get(spec.handle) ?? {
-      handle: spec.handle,
-      layer: spec.layer,
-      flags: 0,
-      state0: 0xffffffff,
-      state1: 0,
-      anim: undefined,
-    };
+    const m = this.meshes.get(spec.handle) ?? makeMesh(spec.handle, spec.layer);
     m.flags |= 1; // bit0 = 存在
     assertFlags('mesh', m.handle, m.flags);
     this.meshes.set(spec.handle, m);
     this.#pushLog(`createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
+  }
+
+  /**
+   * `0x1F8` create-texture（sub_422C20 → `sub_4A2C10(_this+80708, slot, w, h, mode)`）：
+   * 引擎先释放该槽旧纹理对象、再**新建**一张（脚本给尺寸/模式 ⇒ 程序化/空白纹理，非文件图像）。
+   * emulator 建模：**该槽的图像缓存失效后重取**——若该槽此前由 `set-texture` 绑定过文件图像，
+   * 保持绑定语义并刷新缓存；若是全新程序化纹理，则只记录（程序化纹理生成未建模）。
+   */
+  createTexture(slot: number, w: number, h: number, mode: number): void {
+    this.#markDirty();
+    const bound = this.slotImgid.get(slot);
+    if (bound !== undefined) {
+      const tex = this.imgCache.get(bound);
+      if (tex) this.slotTex.set(slot, tex);
+    }
+    this.#pushLog(
+      `createTexture slot=${slot} ${w}x${h} mode=${mode}` +
+        (bound !== undefined ? ` (沿用已绑定 imgid=0x${bound.toString(16)})` : ' (程序化纹理未建模)'),
+    );
+  }
+
+  /** `0x1FD`（sub_422FD0 → `sub_4AC5F0`）：3D 缩放变换（D3DXMatrixScaling，输入按 256 格除）。emulator 记录。 */
+  setScale(handle: number, sx: number, sy: number, sz: number): void {
+    this.#markDirty();
+    this.#pushLog(`setScale h=0x${handle.toString(16)} (${sx},${sy},${sz})`);
+  }
+
+  /**
+   * `0x1FF`（sub_4230F0 → `sub_4AC750`）：**DrawItem 的像素平移**（立即生效、无动画窗）。
+   * 引擎写 `+0x68 = 1`（用世界矩阵）与 `+0x16C`（平移 **work** 矩阵）⇒ emulator 直接把 work/target 都设为该值
+   * （`itemTranslation` 在无窗时返回 target，故写入即生效，`present()` 会把它叠加到描画位置）。
+   */
+  setDrawTranslation(handle: number, x: number, y: number, z: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(`setDrawTranslation: item 0x${handle.toString(16)} 不存在（引擎 sub_4AAA50 会补建，此处忽略）`);
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    it.useWorld = true;
+    it.transWork = { x, y, z };
+    it.transTarget = { x, y, z };
+    this.#pushLog(`setDrawTranslation h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+
+  /**
+   * `0x208`（sub_4302E0 → `sub_49ED60`）：**纹理尺寸查询**（getter）。
+   * 引擎读该槽 `CTexture` 的 `+1040`（宽）/`+1044`（高）；槽越界或未创建 → 0/0。
+   * emulator：槽 → imgid → 已载入纹理的原始尺寸；未载入时返回 0/0（与引擎"槽为空"同口径），
+   * 并把待定尺寸**记入 `pendingTexSize`**，使图像异步载入后下一次查询能拿到真实值。
+   */
+  getTextureSize(slot: number): { w: number; h: number } {
+    const tex = this.slotTex.get(slot);
+    if (tex) return { w: tex.source.width, h: tex.source.height };
+    const imgid = this.slotImgid.get(slot);
+    if (imgid !== undefined) void this.preloadImage(imgid); // 首次查询触发载入
+    this.#pushLog(`getTextureSize slot=${slot} → 0x0（纹理尚未载入${imgid === undefined ? '；该槽未绑定' : `，imgid=0x${imgid.toString(16)}`}）`);
+    return { w: 0, h: 0 };
+  }
+
+  /**
+   * `0x23B`（sub_424970）：**按 CG 数字条画数值**。
+   * 忠实复刻引擎几何（raw 32381-32503）：先按 `[id, id+digits)` 删 DrawItem/Mesh，再逐位建 DrawItem。
+   * 记录 `rec`：`[0]` 纹理槽、`[1]` x0、`[2]` y0、`[3]` 单字宽、`[4]` 字高、`[5]` 字内空隙、`[6]` 字距。
+   * 三种对齐（`flags`）：bit1 居中 `x = k·adv − adv·(last−数位+1)/2 + op4`；
+   * bit2 左对齐 `x = (数位−1)·adv + op4`（逐位递减）；否则右对齐 `x = k·adv + op4`。
+   * `k` 从 `last = digits−1` 递减到 0，同时 `value %= 10` 取位 ⇒ **id = 个位、id+1 = 十位…（自右向左）**；
+   * 前导零跳过，除非 `flags & 1`（补零）或是个位那一轮。
+   */
+  drawCgNumber(id: number, rec: readonly number[], value: number, x: number, y: number, digits: number, flags: number): void {
+    // ① 先删 [id, id+digits) 区间（引擎 sub_4ABB60 同时删 DrawItem 与 MeshEntry）
+    this.detachTexture(id, digits);
+    // ② 几何全部由纯模型层算（`drawItem.ts` 的 cgDigitItems，可单元测试）
+    const items = cgDigitItems(id, rec, value, x, y, digits, flags);
+    for (const it of items) {
+      this.configureDrawItem({
+        handle: it.handle,
+        layer: it.handle,
+        tex: it.tex,
+        srcX: it.srcX,
+        srcY: it.srcY,
+        srcW: it.srcW,
+        srcH: it.srcH,
+        dstX: it.dstX,
+        dstY: it.dstY,
+      });
+    }
+    this.#pushLog(`drawCgNumber id=0x${id.toString(16)} value=${value} digits=${digits} flags=${flags} → 建 ${items.length} 项（槽 ${rec[0] ?? 0}）`);
+  }
+
+  /**
+   * `0x219`（sub_423BA0 → `sub_4ACEE0`）：写绘制项的**描画位置**（DrawItem`+36/+40/+44`，三个 float）。
+   * 引擎绘制期读它（`&v26[9]`）交给 `CTexture::Draw`；emulator 写进 item 的 `posX/posY/posZ`，`present()` 优先采用。
+   * 若 item 尚不存在（脚本先变换后画），记进 `posOverride` 待 `configureDrawItem` 消费。
+   */
+  setDrawPos(handle: number, x: number, y: number, z: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (it) {
+      applyDrawPos(it, x, y, z);
+    } else {
+      this.posOverride.set(handle, { x, y, z });
+    }
+    this.#pushLog(`setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+
+  /**
+   * `0x217`（sub_423B20 → `sub_4ACF20`）：写绘制项的**旋转/缩放中心 pivot**（DrawItem`+24/+28/+32`）。
+   * 与 0x219 逐行同构、只是写入下标不同（6/7/8 vs 9/10/11）。绘制期 `sub_49AA30` 用
+   * `T(-pivot) → 动画矩阵 → T(+pivot)` 夹住动画矩阵，故它**只改基准点、不改位置**。
+   */
+  setDrawPivot(handle: number, x: number, y: number, z: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (it) {
+      applyDrawPivot(it, x, y, z);
+    } else {
+      this.pivotOverride.set(handle, { x, y, z });
+    }
+    this.#pushLog(`setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+
+  /**
+   * `0x21E`（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**。
+   * 引擎：`op1`=handle、`op2`=delay→`+0x3C`、`op3`=dur→`+0x50`、`op4/5/6`=sx/sy/sz（**÷256**，
+   * `sub_41C300(...) / dbl_5201F0`）→ 置 `flags |= 2`、写 `+0x34 = 0`、`+0x68(+104) = 1`、
+   * `D3DXMatrixScaling(元素+0xAC, sx, sy, sz)`（**目标矩阵**；工作矩阵在 `+0x6C`，窗末 `work ← target`）。
+   */
+  setScaleAnim(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(`setScaleAnim: item 0x${handle.toString(16)} 不存在（引擎 sub_4AAA50 会补建默认项，此处忽略）`);
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    applyScaleAnim(it, delay, dur, sx, sy, sz);
+    this.#pushLog(`setScaleAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} s=(${sx},${sy},${sz})`);
+  }
+
+  /**
+   * `0x21F`（sub_423D40 → `sub_4AD250`）：**旋转动画窗（窗2）**。
+   * 引擎：`op1`=handle、`op2`=delay→`+0x40`、`op3`=dur→`+0x54`、`op4/5/6`=轴 (x,y,z)、`op7`=角（**度**，
+   * 内部 `* dbl_526C98 / dbl_5263F0` 换算为弧度）→ `D3DXMatrixRotationAxis(元素+0x12C, axis, θ)`，
+   * 并把轴/角同时存 `+0x1F8..0x208`（目标）。
+   */
+  setRotationAnim(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(`setRotationAnim: item 0x${handle.toString(16)} 不存在（忽略）`);
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    applyRotationAnim(it, delay, dur, ax, ay, az, deg);
+    this.#pushLog(`setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}`);
+  }
+
+  /**
+   * `0x220`（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**。
+   * 引擎：`op1`=handle、`op2`=delay→`+0x44`、`op3`=dur→`+0x58`、`op4/5/6`=位移 (x,y,z)（**不除 256**）
+   * → `D3DXMatrixTranslation(元素+0x1AC, x, y, z)`。
+   */
+  setTranslationAnim(handle: number, delay: number, dur: number, x: number, y: number, z: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(`setTranslationAnim: item 0x${handle.toString(16)} 不存在（忽略）`);
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    applyTranslationAnim(it, delay, dur, x, y, z);
+    this.#pushLog(`setTranslationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} t=(${x},${y},${z})`);
+  }
+
+  /**
+   * `0x239`（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。
+   * 引擎：`op1`=handle、`op2`=delay→`+0x48`、`op3`=dur→`+0x5C`、`op4`=总帧数→`+0x238`、
+   * `op5`=每行列数→`+0x23C`、`op6`=标志→`+0x234`（bit0 = **窗末保持末帧**）。
+   * 逐帧把帧序号换算成**源矩形**偏移（不是 UV）——见 `#itemSrcRect`。
+   */
+  setFlipbook(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void {
+    this.#markDirty();
+    const it = this.drawItems.get(handle);
+    if (!it) {
+      this.#pushLog(`setFlipbook: item 0x${handle.toString(16)} 不存在（忽略）`);
+      return;
+    }
+    assertFlags('drawitem', it.handle, it.flags);
+    applyFlipbook(it, delay, dur, frames, cols, flags);
+    this.#pushLog(`setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}`);
   }
 
   setVertexColor(handle: number, state0: number): void {
@@ -354,8 +563,8 @@ export class PixiBackend implements NativeBridge {
       );
       return;
     }
+    applyMeshVertexColor(m, state0);
     assertFlags('mesh', m.handle, m.flags);
-    m.state0 = state0;
     this.#pushLog(`setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}`);
   }
 
@@ -368,10 +577,8 @@ export class PixiBackend implements NativeBridge {
       );
       return;
     }
-    m.flags |= 2; // bit1 = 颜色动画
+    applyMeshVertexColorAlpha(m, delay, count, state1);
     assertFlags('mesh', m.handle, m.flags);
-    m.state1 = state1;
-    m.anim = { delay, count, start: 0, started: false };
     this.#pushLog(`setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}`);
   }
 
@@ -384,9 +591,9 @@ export class PixiBackend implements NativeBridge {
       );
       return;
     }
-    assertFlags('drawitem', it.handle, it.flags);
-    it.from = from; // 引擎 item+96 = from（当前工作色）。**不清动画窗**：set-draw-color(0x202) 定义的 from→to 窗与此处 from 共用；
-    // 动画完成时 #itemAlpha 会冻结 from=to 并清 anim，之后本 op 设的 from（如 hover 高亮）即时生效、可回退。
+    applyDrawColorAlpha(it, from);
+    assertFlags('drawitem', it.handle, it.flags); // 引擎 item+96 = from（当前工作色）。**不清动画窗**：set-draw-color(0x202) 定义的 from→to 窗与此处 from 共用；
+    // 动画完成时 #itemColor 会冻结 from=to 并清动画位，之后本 op 设的 from（如 hover 高亮）即时生效、可回退。
     this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
   }
 
@@ -423,10 +630,8 @@ export class PixiBackend implements NativeBridge {
       );
       return;
     }
-    it.flags |= 2; // bit1 = 颜色动画
+    applyDrawColor(it, delay, count, to);
     assertFlags('drawitem', it.handle, it.flags);
-    it.to = to;
-    it.anim = { delay, count, start: 0, started: false };
     this.#pushLog(`setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}`);
   }
 
@@ -447,15 +652,35 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`playMovie id=0x${id.toString(16)}`);
   }
 
+  /**
+   * `0x1F6`（sub_41A130 → `sub_4AB7A0(_this+80708)`）：**整批释放绘制项/网格**。
+   * 引擎里它扫描绘制容器逐项 delete；emulator 的等价语义 = 清空 `drawItems` + `meshes`，
+   * **保留纹理槽绑定**（`slotTex` 不动 —— 引擎这里只释放图元/网格对象，不动纹理资源）。
+   */
+  clearDrawContainer(): void {
+    const n = this.drawItems.size;
+    const m = this.meshes.size;
+    this.drawItems.clear();
+    this.meshes.clear();
+    this.drawCount = 0;
+    this.#markDirty();
+    this.#pushLog(`clearDrawContainer: 释放 drawItems=${n} meshes=${m}（保留纹理槽）`);
+  }
+
+  /** `0x20C`（sub_41A1A0 → `sub_4B4040(_this+80708)`）：帧刷新。emulator 的渲染帧循环自行 present，这里只标脏。 */
+  frameTick(): void {
+    this.#markDirty();
+  }
+
   // ---- 动画求值（每帧 present 调用） ---- //
 
-  /** mesh+draw-item 全部是否已完成动画（供 0x400 门控放行判断）。 */
+  /** mesh + draw-item 是否都已完成动画（供 0x400 门控放行判断）。 */
   sceneAnimationsDone(): boolean {
-    for (const it of this.drawItems.values()) {
-      if (it.flags & 2 && it.anim && !this.#windowDone(it.anim, this.clockMs)) return false;
-    }
     for (const m of this.meshes.values()) {
-      if (m.flags & 2 && m.anim && !this.#windowDone(m.anim, this.clockMs)) return false;
+      if (m.flags & 2 && !meshWindowDone(m, this.clockMs)) return false;
+    }
+    for (const it of this.drawItems.values()) {
+      if (it.flags & 2 && !windowDone(it, W_COLOR, this.clockMs)) return false;
     }
     return true;
   }
@@ -480,66 +705,40 @@ export class PixiBackend implements NativeBridge {
     return `items={${a || '无'}}`;
   }
 
+  /**
+   * 诊断：导出某绘制项**求值后**的渲染状态（先推进动画窗，再取各窗结果）。
+   * 控制窗与回归测试用它观察引擎的 5 窗语义（颜色/缩放/旋转/平移/flipbook + 源矩形）。
+   */
+  debugItemState(handle: number): {
+    color: number;
+    scale: Vec3;
+    rotRad: number;
+    trans: Vec3;
+    src: { x: number; y: number; w: number; h: number };
+    /** 动画位仍在（`flags & 2`）——即"还有窗没走完"。 */
+    pending: boolean;
+  } | null {
+    const it = this.drawItems.get(handle);
+    if (!it) return null;
+    const clock = this.clockMs;
+    advanceWindows(it, clock); // 先推进窗（窗末 work ← target），再取各窗结果
+    return {
+      color: itemColor(it, clock),
+      scale: itemScale(it, clock),
+      rotRad: itemRotationRad(it, clock),
+      trans: itemTranslation(it, clock),
+      src: itemSrcRect(it, clock),
+      pending: (it.flags & 2) !== 0,
+    };
+  }
+
   #markDirty(): void {
     this.sceneDirty = true;
   }
 
-  #windowDone(w: AnimWindow, clock: number): boolean {
-    if (!w.started) return false; // 尚未开播，视为未完成
-    return clock >= w.start + w.delay + w.count;
-  }
-
-  /** mesh 顶点色 CalcDiffuse：state0↔state1 逐字节 lerp（黑覆盖层的 alpha）。 */
-  #calcDiffuse(m: MeshObj, clock: number): number {
-    assertFlags('mesh', m.handle, m.flags);
-    if (!(m.flags & 2) || !m.anim || m.anim.count <= 0) return m.state1;
-    const w = m.anim;
-    if (!w.started) {
-      w.start = clock;
-      w.started = true;
-    }
-    if (clock >= w.start + w.delay + w.count) return m.state1;
-    if (clock <= w.start + w.delay) return m.state0;
-    const a = (clock - w.start - w.delay) / w.count;
-    return this.#lerpArgb(m.state0, m.state1, a);
-  }
-
-  /** draw-item diffuse 颜色（full ARGB）：from→to 逐通道插值（引擎 per-frame 颜色动画；RGB×α 调制纹理）。返回 0..0xFFFFFFFF。
-   *  - 窗内：from→to 全通道插值；**窗末：from=to 并清 anim**（冻结在 to）——此后 set-draw-color-alpha 设的 from 即时生效、可回退（hover）。
-   *  - 无激活动画窗：直接返回当前 from（item+96）；set-draw-color-alpha 可随时改（hover 高亮/回退）。 */
-  #itemColor(it: Item, clock: number): number {
-    assertFlags('drawitem', it.handle, it.flags);
-    if (it.flags & 2 && it.anim) {
-      const w = it.anim;
-      if (!w.started) {
-        w.start = clock;
-        w.started = true;
-      }
-      if (clock >= w.start + w.delay + w.count) {
-        it.from = it.to; // 冻结：从=to（引擎动画完成时 item+96=item+100）
-        it.anim = undefined;
-        return it.to >>> 0;
-      }
-      if (clock <= w.start + w.delay) return (it.from >>> 0);
-      const a = (clock - w.start - w.delay) / w.count;
-      return this.#lerpArgb(it.from, it.to, a);
-    }
-    // 无激活动画：当前工作色（item+96）；set-draw-color-alpha 可随时改（hover 高亮/回退）
-    return (it.from >>> 0);
-  }
-
-  /** draw-item diffuse alpha（0..255）：取 #itemColor 的 alpha 字节。 */
+  /** draw-item diffuse alpha（0..255）：取 `itemColor` 的 alpha 字节。 */
   #itemAlpha(it: Item, clock: number): number {
-    return (this.#itemColor(it, clock) >> 24) & 0xff;
-  }
-
-  #lerpArgb(a: number, b: number, t: number): number {
-    const ch = (shift: number) => {
-      const av = (a >> shift) & 0xff;
-      const bv = (b >> shift) & 0xff;
-      return Math.round(av + (bv - av) * t);
-    };
-    return (ch(24) << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0);
+    return (itemColor(it, clock) >>> 24) & 0xff;
   }
 
   // ---- 每帧渲染 ---- //
@@ -559,6 +758,9 @@ export class PixiBackend implements NativeBridge {
     const clock = this.clockMs;
     this.drawRoot.removeChildren();
 
+    // 0) 逐帧驱动：推进所有 draw-item 的 5 个动画窗（窗末 work ← target；全窗结束清动画位）。
+    for (const it of this.drawItems.values()) advanceWindows(it, clock);
+
     // 节流诊断：每 ~500ms 记一次 scene 合成状态（看动画推进 + 是否有 item/mesh/纹理）。
     if (clock - this.lastSummary >= 500) {
       this.lastSummary = clock;
@@ -566,7 +768,7 @@ export class PixiBackend implements NativeBridge {
         .map((it) => `${it.layer}:a${this.#itemAlpha(it, clock)}`)
         .join(' ');
       const meshInfo = [...this.meshes.values()]
-        .map((m) => `${(m.handle & 0xf).toString(16)}:a${(this.#calcDiffuse(m, clock) >> 24) & 0xff}`)
+        .map((m) => `${(m.handle & 0xf).toString(16)}:a${(calcDiffuse(m, clock) >> 24) & 0xff}`)
         .join(' ');
       this.#pushLog(
         `[present ${Math.round(clock)}ms] items={${itemInfo || '无'}} meshes={${meshInfo || '无'}} slotTex=${this.slotTex.size} wait=0x${this.waitFlags.toString(16)}`,
@@ -576,12 +778,30 @@ export class PixiBackend implements NativeBridge {
     // 1) draw-items（图像）：按 layer 升序、再 handle 升序。
     const items = [...this.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     for (const it of items) {
-      const color = this.#itemColor(it, clock);
+      const color = itemColor(it, clock);
       const alpha = (color >> 24) & 0xff;
       if (alpha <= 0) continue; // 全透明跳过
-      const tex = this.slotTex.get(it.layer);
-      const spr = tex ? this.#cropSprite(tex, it) : this.#placeholder(it);
-      spr.position.set(it.dstX, it.dstY);
+      // ★纹理解析：**槽号 = DrawItem`+4`**（`draw-texture` 的 op2；见 op_draw_texture）。
+      //   `it.layer`/`it.handle` 是绘制层序（op1 = Scene map key），**不是槽号** —— 早前这里误用
+      //   `slotTex.get(it.layer)`，于是除"层号恰好等于某个已绑定槽"的极少数项外，全部取不到纹理
+      //   → 退化成 #placeholder 色块（表现为"背景消失、只剩零星几个方块"）。槽→imgid 由 set-texture 建立。
+      const { tex, imgid } = this.resolveItemTexture(it);
+      const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
+      const spr = tex ? this.#cropSprite(tex, rect) : this.#placeholder(it);
+      if (!tex && imgid === undefined) {
+        this.#pushLog(`[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`);
+      }
+      // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8），
+      // 再叠加平移动画窗（窗3）的偏移（引擎把平移矩阵乘进世界矩阵）。
+      const tr = itemTranslation(it, clock);
+      spr.position.set(it.posX + tr.x, it.posY + tr.y);
+      // pivot（`0x217` 写 DrawItem`+24/+28/+32`）：引擎 `sub_49AA30` 以 `T(-pivot) → 动画矩阵 → T(+pivot)`
+      // 夹住动画矩阵 ⇒ pivot 是旋转/缩放的基准点。Pixi 的 pivot 以纹理左上角为原点，故直接换算。
+      if (it.pivotX !== 0 || it.pivotY !== 0) spr.pivot.set(it.pivotX, it.pivotY);
+      const sc = itemScale(it, clock);
+      if (sc.x !== 1 || sc.y !== 1) spr.scale.set(sc.x, sc.y);
+      const rot = itemRotationRad(it, clock);
+      if (rot !== 0) spr.rotation = rot;
       spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
       spr.alpha = alpha / 255; // diffuse alpha 淡入
       this.drawRoot.addChild(spr);
@@ -590,7 +810,7 @@ export class PixiBackend implements NativeBridge {
     // 2) meshes（顶点色黑覆盖层）：按 handle 升序，叠在图之上。
     const meshes = [...this.meshes.values()].sort((a, b) => a.handle - b.handle);
     for (const m of meshes) {
-      const diffuse = this.#calcDiffuse(m, clock);
+      const diffuse = calcDiffuse(m, clock);
       const a = (diffuse >> 24) & 0xff;
       if (a <= 0) continue;
       const ov = new Sprite(this.unit);
@@ -604,8 +824,22 @@ export class PixiBackend implements NativeBridge {
     this.sceneDirty = false; // present 已消费本次"脏"标记
   }
 
-  #cropSprite(tex: Texture, it: Item): Sprite {
-    const frame = new Rectangle(it.srcX, it.srcY, it.srcW, it.srcH);
+  /**
+   * **绘制项 → 纹理**：`draw-texture` 的 **op2** 是纹理槽（存进 `Item.tex`），
+   * 而 `handle` 是 Scene map 的 key（= 层序）、`layer` 与之同值。
+   * 槽→imgid 由 `set-texture` 建立（`slotImgid`），槽→Texture 由 `bindTexture` 载入（`slotTex`）。
+   * 返回 `{ tex }` 命中；未绑定/未载入时 `{ imgid }`（imgid=undefined 表示该槽从未绑定）。
+   * **抽成方法便于回归测试**（历史 bug：曾误用 `it.layer` 当槽号）。
+   */
+  resolveItemTexture(it: Item): { tex?: Texture; imgid?: number } {
+    const slot = it.tex ?? 0;
+    const imgid = this.slotImgid.get(slot);
+    const tex = this.slotTex.get(slot);
+    return { tex, imgid };
+  }
+
+  #cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): Sprite {
+    const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
     const cropped = new Texture({ source: tex.source, frame });
     return new Sprite(cropped);
   }

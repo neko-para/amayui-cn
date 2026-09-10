@@ -1185,25 +1185,14 @@
     "addr": "0x4AEEA0",
     "raw_name": "sub_4AEEA0",
     "semantic_name": "drawTextureItem_4AEEA0",
-    "status": "PARTIAL",
-    "purpose": "分发绘制一个纹理绘图项：读项几何/uv/工作色(±d)，调 drawTexture_4A2D50 把工作色当作 diffuse 提交（逐像素 α 调制）",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "读绘制项(+258 表) 的 rect/uv/layer/工作色",
-      "调 drawTexture_4A2D50(..., diffuse=item+96)"
-    ],
-    "fields_used": [
-      "this->draw_item_container",
-      "DrawItem.*"
-    ],
-    "unmodeled": [
-      "项字段完整布局",
-      "D3D 提交细节"
-    ],
-    "evidence": "raw 133327-133458",
-    "notes": "纹理层 diffuse 调制：from_color(0x00FFFFFF)→to_color(0xFFFFFFFF) 只变 α 字节 → 逐像素 α 淡入（字体/图层），非平面 RGB 染色"
+    "status": "ANALYZED",
+    "purpose": "绘制一个 DrawItem：把元素 qmemcpy 进局部副本 v26 → 用 +8/+0xC/+0x10/+0x14 的源矩形（left/top/right/bottom）与 +0x60 的工作色(full ARGB, 作 diffuse) 调 sub_49AA30 做动画驱动/矩阵合成 → sub_4A2D50 提交 CTexture::Draw(vtable+20)",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读绘制项(+258 表) 的 rect/uv/layer/工作色", "调 drawTexture_4A2D50(..., diffuse=item+96)"],
+    "fields_used": ["this->draw_item_container", "DrawItem.*"],
+    "unmodeled": ["项字段完整布局", "D3D 提交细节"],
+    "evidence": "raw 133326-133449（关键行 133363/133375/133377-133388/133389/133397）",
+    "notes": "★实测（2026 复核）：它对颜色窗求值是完整的 —— raw 133375 读 +0x60 到 v25 → 133389 传 &v25 给 sub_49AA30（求值器写回 v25）→ 133443 把 v25 作 a7 diffuse 交 sub_4A2D50 → 133447 qmemcpy 把 740 字节局部副本写回元素。上一版此处写的「只读 +0x60、无逐帧求值器」是错的。"
   },
   {
     "addr": "0x4ACF60",
@@ -2995,9 +2984,17 @@
     "op": "0x142",
     "status": "ANALYZED",
     "purpose": "op 0x142：`_this[174812] = readIntOperand(op1)` —— 脚本写引擎运行开关（字段 0xAAB70，构造/复位默认 1；唯一读者 sub_4765C0）。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["readIntOperand(1)", "_this[174812] = 该值", "返回该值"],
-    "fields_used": ["this->script_engine_flag_174812(0xAAB70)"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "readIntOperand(1)",
+      "_this[174812] = 该值",
+      "返回该值"
+    ],
+    "fields_used": [
+      "this->script_engine_flag_174812(0xAAB70)"
+    ],
     "unmodeled": [],
     "evidence": "raw 31020-31027 (sub_422930)",
     "notes": "CONFIG.txt:40 `i142 0`（进设置页挂起）/ :354 `i142 1`（离开恢复）。emulator：写 Engine.engineValues.set(174812, v)（op_set_engine_flag_174812）。"
@@ -3009,9 +3006,16 @@
     "op": "0x306",
     "status": "ANALYZED",
     "purpose": "op 0x306：`op1 = GetConfig(\"system:EffectSkipOnClick\")` —— 纯配置 getter（点击跳过特效开关）。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读配置注册表 system:EffectSkipOnClick（sub_4957F0 口径）", "writeIntOperand(1, 值)"],
-    "fields_used": ["this->config_registry(_this[174405])"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "读配置注册表 system:EffectSkipOnClick（sub_4957F0 口径）",
+      "writeIntOperand(1, 值)"
+    ],
+    "fields_used": [
+      "this->config_registry(_this[174405])"
+    ],
     "unmodeled": [],
     "evidence": "raw 40948-40951 (sub_431FC0)",
     "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按引擎构造默认 1。"
@@ -3023,12 +3027,434 @@
     "op": "0x12F",
     "status": "ANALYZED",
     "purpose": "op 0x12F：三个数组地址上的「索引插入排序 + 原地重编码」。op1/op2/op3 经 sub_42AEA0(operandAddress) 取数组基址 A/B/C，op4=元素数 n；`*A=0`；对 i=1..n-1 做插入排序 `while (DEC(A[j])+DEC(C[j]) > DEC(A[i])+DEC(C[i])) { A[j+1]=A[j]; j-- }` 然后 `A[j+1]=i`——即按 (DEC(A[k])+DEC(C[k])) 升序把索引重排写回 A（比较里的 A[i] 是当前位置现存元素 = 上一轮搬进来的值）；末尾 `A[i]=ENC(DEC(A[i]))`（净恒等）。B 只作基址传入、未被使用。",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["取 A/B/C 三个数组地址 + n = readIntOperand(4)", "*A = 0", "插入排序：按 DEC(A[k])+DEC(C[k]) 升序把索引重排写回 A（A[j+1]=A[j]；A[j+1]=i）", "末尾 A[i] = ENC(DEC(A[i]))（原地重编码，净恒等）"],
-    "fields_used": ["this->key（DEC/ENC）"],
-    "unmodeled": ["B 数组（op2）在本 handler 中未被使用（仅传入基址）"],
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "取 A/B/C 三个数组地址 + n = readIntOperand(4)",
+      "*A = 0",
+      "插入排序：按 DEC(A[k])+DEC(C[k]) 升序把索引重排写回 A（A[j+1]=A[j]；A[j+1]=i）",
+      "末尾 A[i] = ENC(DEC(A[i]))（原地重编码，净恒等）"
+    ],
+    "fields_used": [
+      "this->key（DEC/ENC）"
+    ],
+    "unmodeled": [
+      "B 数组（op2）在本 handler 中未被使用（仅传入基址）"
+    ],
     "evidence": "raw 39269-39335 (sub_42F560)",
     "notes": "实测：CONFIG2.txt:1044 `i12f (local 800) (global 14b894) (local be8) 3e8`（n=1000）、CONFIG1.txt:1178 `i12f (local 7ff) (local 179f) (local 273f) (local 561f)`。emulator 已实现 op_sort_index_arrays（DEC 读入 / ENC 写出）；test/ops-142-12f-306.test.ts 以 [2,0,1,3,4] 逐句复刻验证。"
+  },
+  {
+    "addr": "0x4ACEE0",
+    "raw_name": "sub_4ACEE0",
+    "semantic_name": "drawItemSetPosition_4ACEE0",
+    "op": "0x219",
+    "status": "ANALYZED",
+    "purpose": "op 0x219（handler sub_423BA0）：写绘制项「描画位置 (x,y,z)」。读 op1=图元 handle、op2/3/4=3 个 float → 在 Scene 的元素1（DrawItem）+36/+40/+44 写这 3 个 float；绘制期由 sub_4AEEA0 读 `&v26[9]` 交 CTexture::Draw（vtable+20）。emulator：native.setObjectTransform 记录并在 present 采用。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "sub_4AAA50(Scene, handle) 找/建元素",
+      "result[9..11] = f2,f3,f4（DrawItem+36/+40/+44）",
+      "置脏 Scene+46508"
+    ],
+    "fields_used": [
+      "Scene->drawItems[handle]"
+    ],
+    "unmodeled": [
+      "绘制期 CTexture::Draw 的 order 归一化分支（order∈[20,30)）"
+    ],
+    "evidence": "raw 131843-131856 (sub_4ACEE0)、raw 31807-31820 (op 0x219 handler sub_423BA0)、raw 133443 (sub_4AEEA0 读 &v26[9])",
+    "notes": "★归属修正：handler 是 sub_423BA0（注册偏移 678144 ⇒ opcode 0x219），旧注把它写成 0x21E。"
+  },
+  {
+    "addr": "0x4ACF20",
+    "raw_name": "sub_4ACF20",
+    "semantic_name": "drawItemSetPivot_4ACF20",
+    "op": "0x217",
+    "status": "ANALYZED",
+    "purpose": "op 0x217（handler sub_423B20）：写绘制项「旋转/缩放中心 pivot」。读 op1=handle、op2/3/4=3 float → DrawItem+24/+28/+32；绘制期 sub_49AA30 读 a2[6..8]，先 T(-pivot) 后 T(+pivot) 夹住动画矩阵 ⇒ 世界的旋转/缩放绕该点，**不改位置**。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "与 sub_4ACEE0 体内逐行相同，仅写 result[6..8]（pivot）",
+      "置脏 Scene+46508"
+    ],
+    "fields_used": [
+      "Scene->drawItems[handle]"
+    ],
+    "unmodeled": [
+      "T(-pivot)/T(+pivot) 与动画矩阵的精确合成顺序（Hex-Rays 局部变量复用，标推测）"
+    ],
+    "evidence": "raw 131857-131870 (sub_4ACF20)、raw 31791-31805 (handler sub_423B20)、raw 117368-117371 / 117425-117429 / 117932-117933",
+    "notes": "pivot 与 position 是 DrawItem 内两个不同的三元组（+24..+32 vs +36..+44），别混。"
+  },
+  {
+    "addr": "0x49A150",
+    "raw_name": "sub_49A150",
+    "semantic_name": "lightEnable_49A150",
+    "op": "0x32F",
+    "status": "ANALYZED",
+    "purpose": "op 0x32F（handler sub_4272B0）：**D3D 灯光开关**。读 op1=灯光索引 0..9 → light_enabled[idx]=0（Scene+54708+4·idx）+ 设备 vtable+212 = IDirect3DDevice9::LightEnable(idx, FALSE)。同族 sub_49A080 = SetLight（vtable+204，填 0x68 字节 D3DLIGHT9）。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "light_enabled[idx] = 0",
+      "IDirect3DDevice9::LightEnable(idx, FALSE)（vtable+212）"
+    ],
+    "fields_used": [
+      "Scene->light_enabled[10]（Scene+54708）",
+      "Scene->lights[10]（D3DLIGHT9，Scene+54748）"
+    ],
+    "unmodeled": [
+      "灯光对最终画面的影响（emulator 无灯光模型）"
+    ],
+    "evidence": "raw 116741-116748 (sub_49A150)、raw 34117-34121 (handler sub_4272B0)、raw 116726-116736 (sub_49A080=SetLight)",
+    "notes": "★重大修正：旧文档把它写成「网格项清除」。op1 是**灯光索引**，不是纹理槽/图元 id。emulator：native.setLight（记录）。"
+  },
+  {
+    "addr": "0x41A090",
+    "raw_name": "sub_41A090",
+    "semantic_name": "op_dock_lock_41A090",
+    "op": "0x1F4",
+    "status": "ANALYZED",
+    "purpose": "op 0x1F4：**进入\"停靠(dock)\"锁**。`_this[107438]`（字节 429752）=停靠标志、`_this[107439]`（429756）=**深度 LockDepth**（引擎 debug 打印 \"LockDepth\" 自证）。首次进入：置标志 + `92334=92333`、`92333=timeGetTime()`（时钟采样）；此后只 `++深度`。**不阻塞、无 Sleep**（全函数体无 Sleep 调用）；脚本里 66510 处 i1f4 = 每帧轮询/帧刻度点。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "if(_this[107438]) ++_this[107439]",
+      "else { _this[107438]=1; 采样时钟 92333/92334 }"
+    ],
+    "fields_used": [
+      "Engine->dock_flag(429752)",
+      "Engine->dock_depth(429756)",
+      "Engine->clock_cur(92333)",
+      "Engine->clock_prev(92334)"
+    ],
+    "unmodeled": [],
+    "evidence": "raw 25194-25212 (sub_41A090)、raw 43619/43629 (debug 打印 \"LockDepth\")",
+    "notes": "emulator：op_frame_tick 按停靠锁语义实现（旧实现误按\"帧计数/倒计\"）。"
+  },
+  {
+    "addr": "0x41A0E0",
+    "raw_name": "sub_41A0E0",
+    "semantic_name": "op_dock_unlock_41A0E0",
+    "op": "0x1F5",
+    "status": "ANALYZED",
+    "purpose": "op 0x1F5：**退出\"停靠\"锁**。`v1=_this[429756]`（LockDepth）：>0 则 `--深度`；否则若 `_this[429752]`（停靠标志）置位 → 清标志，且 `_this[497400]`(==124350，dispatch_in_progress) 为 0 时调 `sub_40FB60` 派发脚本队列。停靠期间队列只积累、解锁瞬间放行。**不阻塞、无 Sleep**。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "深度>0 → --深度",
+      "深度归零且停靠标志置位 → 清标志 + （非派发中）sub_40FB60 派发队列"
+    ],
+    "fields_used": [
+      "Engine->dock_depth(429756)",
+      "Engine->dock_flag(429752)",
+      "Engine->dispatch_in_progress(497400/124350)"
+    ],
+    "unmodeled": [
+      "sub_40FB60 脚本队列派发（emulator 未建模）"
+    ],
+    "evidence": "raw 25214-25236 (sub_41A0E0)、raw 18966/19025 (sub_40FB60 入口门 !429752)",
+    "notes": "emulator：op_frame_countdown 按\"深度递减 + 归零解锁\"实现。"
+  },
+  {
+    "addr": "0x41A300",
+    "raw_name": "sub_41A300",
+    "semantic_name": "op_release_movie_slots_41A300",
+    "op": "0x23D",
+    "status": "ANALYZED",
+    "purpose": "op 0x23D：**销毁 movie/纹理槽 42..999**（958 次）。对 `Engine+4*(94714+k)`（CMovieToTexture 族）调 `sub_488FB0` + vtable[0](obj,1) 析构，并对 Scene 调 `sub_49E980(Scene, i)` 卸对应槽。⇒ 会让引用这些槽的图元不再绘制。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "i=42..999：释放 movie 对象 + 卸载 Scene 槽"
+    ],
+    "fields_used": [
+      "Engine+378856 区（CMovieToTexture 族）",
+      "Scene 槽记录"
+    ],
+    "unmodeled": [
+      "sub_49E980 的槽记录复位细节"
+    ],
+    "evidence": "raw 25320-25355 (sub_41A300)、raw 25411-25430 (sub_41A4A0)",
+    "notes": "★修正：旧文档把 0x23D 标成\"停靠标志/纹理槽释放\"；实际是 movie+槽释放，**不碰**停靠标志。emulator：native.releaseMovieSlots（记录）。"
+  },
+  {
+    "addr": "0x41A3A0",
+    "raw_name": "sub_41A3A0",
+    "semantic_name": "op_clear_slot_records_41A3A0",
+    "op": "0x259",
+    "status": "ANALYZED",
+    "purpose": "op 0x259：清两张 1000×2 组 5-DWORD 记录表（`Engine+86176` 起、步长 5 dword；主/影数组 +81176/+86176），每项写 +8/+12，共 4000 dword = 16 KB。**只清记录、不 delete 对象**。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "1000 次循环：主/影数组的每项 +8/+12 清零"
+    ],
+    "fields_used": [
+      "Engine+81176 / +86176（槽记录主/影）"
+    ],
+    "unmodeled": [
+      "这些记录项的确切用途（imgid/flagA/flagB/blank 语义由 re-texture.md 给出）"
+    ],
+    "evidence": "raw 25357-25390 (sub_41A3A0)",
+    "notes": "★修正：旧文档把它当\"纹理槽释放\"；它只清记录。emulator：native.clearSlotRecords（记录）。"
+  },
+  {
+    "addr": "0x41A4A0",
+    "raw_name": "sub_41A4A0",
+    "semantic_name": "op_clear_mesh_slots_41A4A0",
+    "op": "0x32B",
+    "status": "ANALYZED",
+    "purpose": "op 0x32B：**清 D3DX 网格层级槽表**（Scene+50708 区，1000 槽）。经 `sub_4A0750 → sub_479A50` + delete 逐项释放（与 0x23D、0x259 都不同族）。",
+    "signature_override": {
+      "param0": "this(Engine*)"
+    },
+    "sub_behaviors": [
+      "遍历 1000 个网格层级槽：sub_479A50 释放 + delete"
+    ],
+    "fields_used": [
+      "Scene+50708 网格层级槽表"
+    ],
+    "unmodeled": [
+      "sub_479A50 内部"
+    ],
+    "evidence": "raw 25411-25430 (sub_41A4A0)",
+    "notes": "emulator：native.clearMeshSlots（记录）。TITLE.txt:800 用一次（与 0x1F6/0x23D 组成收尾序列）。"
+  },
+  {
+    "addr": "0x4A1A60",
+    "raw_name": "sub_4A1A60",
+    "semantic_name": "destroyL2DSlot_4A1A60",
+    "op": "0x342",
+    "status": "ANALYZED",
+    "purpose": "op 0x342（handler sub_427C70）：**销毁 Live2D 模型实例槽**。`v3 = objects[op1]`（Scene+55812+4·op1，**10 槽**），非空则 `sub_4785E0`（槽对象析构：释放纹理/子对象）+ `operator delete` + 置 0。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "objects[op1] 非空 → sub_4785E0 析构 + delete + 置 0"
+    ],
+    "fields_used": [
+      "Scene->l2d_objects[10]（Scene+55812）"
+    ],
+    "unmodeled": [
+      "Live2DModelD3D 的 76 字节结构与 vtable 用途（[推测] 0x52E4FC）"
+    ],
+    "evidence": "raw 121745-121760 (sub_4A1A60)、raw 34491-34496 (handler sub_427C70)、raw 121784-121787（10 槽上限）",
+    "notes": "★修正：旧称\"释放图形资源槽\"；实为 Live2D 实例槽（与纹理槽体系无关）。emulator：native.destroyL2DSlot。"
+  },
+  {
+    "addr": "0x4A1AC0",
+    "raw_name": "sub_4A1AC0",
+    "semantic_name": "l2dSlotSet_4A1AC0",
+    "op": "0x352",
+    "status": "ANALYZED",
+    "purpose": "op 0x352（handler sub_4283B0）：**Live2D 槽参数设置**。`v4 = objects[op1]`（Scene+55812，10 槽），按 op2 选 `sub_478540`（置**待纹理 ID**：标志 +24、值 +28）或 `sub_478560`（置**待动作 ID**：标志 +25、值 +32）。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "objects[op1]（按 op2 分支）",
+      "sub_478540 → pending_texture(flag+24/val+28)",
+      "sub_478560 → pending_motion(flag+25/val+32)"
+    ],
+    "fields_used": [
+      "Scene->l2d_objects[10]"
+    ],
+    "unmodeled": [
+      "Live2D 槽对象的 pending 标志被谁消费（sub_4B06D0→sub_4B0360 按索引读取后 sub_4783D0 提交绘制）"
+    ],
+    "evidence": "raw 121766-121775 (sub_4A1AC0)、raw 92677-92702 (sub_478540/560)、raw 34780-34786 (handler sub_4283B0)",
+    "notes": "★修正：旧称\"图形子系统\"。emulator：native.l2dSlotSet（记录）。"
+  },
+  {
+    "addr": "0x49A2D0",
+    "raw_name": "sub_49A2D0",
+    "semantic_name": "setRenderState_49A2D0",
+    "op": "0x340",
+    "status": "PARTIAL",
+    "purpose": "op 0x340（handler sub_427B60）：**渲染状态下发**。写渲染状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22）；设备在 raw 122124 处重放。",
+    "signature_override": {
+      "param0": "this(Scene*)"
+    },
+    "sub_behaviors": [
+      "Scene+13948 = op1（或默认 3）",
+      "设备 vtable+228(22, op1)"
+    ],
+    "fields_used": [
+      "Scene+13948（渲染状态槽）"
+    ],
+    "unmodeled": [
+      "状态 #22 对应哪个 D3DRENDERSTATETYPE（未定论）"
+    ],
+    "evidence": "raw 116790-116800 (sub_49A2D0)、raw 34457-34464 (handler sub_427B60)、raw 122124（设备重放）",
+    "notes": "emulator：native.setRenderState(22, v)（记录）。"
+  },
+  {
+    "addr": "0x4AD170",
+    "raw_name": "sub_4AD170",
+    "semantic_name": "drawItemScaleWindow_4AD170",
+    "op": "0x21E",
+    "status": "ANALYZED",
+    "purpose": "设置 DrawItem 的缩放动画窗（窗1）：门控 flags&1 → flags|=2、+0x34=0（共享动画起点清 0=下帧锁存）、+0x3C=delay、+0x50=dur、+0x68(+104)=1、D3DXMatrixScaling(元素+0xAC, sx,sy,sz) 写目标缩放矩阵；置脏 _this[11627]=1 与图形池挂起 _this[11629]=1",
+    "sub_behaviors": ["sub_4AAA50 保证 map key 存在", "门控 (*elem & 1) != 0", "置 bit1=颜色/变换动画启用", "写共享动画起点 +0x34=0", "写 delay +0x3C / dur +0x50", "写 +104=1（该元素已配置变换）", "D3DXMatrixScaling 写目标矩阵 +0xAC", "置脏 [11627]=1、挂起 [11629]=1"],
+    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x3C win1_delay", "Scene+0x50 win1_dur", "Scene+0x6C work_scale_matrix", "Scene+0xAC target_scale_matrix"],
+    "evidence": "raw 131984-132018；handler sub_423CA0 raw 31846-31863",
+    "notes": "sx/sy/sz 由 handler 先 /dbl_5201F0(256.0)；工作矩阵在 +0x6C，窗末 sub_49AA30 内 qmemcpy(a2+27,a2+43,0x40) 做 work←target（写的是局部副本）"
+  },
+  {
+    "addr": "0x4AD250",
+    "raw_name": "sub_4AD250",
+    "semantic_name": "drawItemRotationWindow_4AD250",
+    "op": "0x21F",
+    "status": "ANALYZED",
+    "purpose": "设置 DrawItem 的旋转动画窗（窗2）：flags|=2、+0x34=0、+0x40=delay、+0x54=dur、+0x68=1、轴存 +0x1F8/+0x1FC/+0x200、止角存 +0x208、D3DXMatrixRotationAxis(元素+0x12C, axis, deg*π/180) 写目标旋转矩阵",
+    "sub_behaviors": ["门控 flags&1", "置 bit1", "清共享起点 +0x34", "写 delay +0x40 / dur +0x54", "写目标轴 +0x1F8..+0x200 与止角 +0x208", "D3DXMatrixRotationAxis 写目标矩阵 +0x12C", "置脏 [11627]、挂起 [11629]"],
+    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x40 win2_delay", "Scene+0x54 win2_dur", "Scene+0xEC work_rot_matrix", "Scene+0x12C target_rot_matrix", "Scene+0x1F8 rot_axis_to", "Scene+0x204 rot_angle_from", "Scene+0x208 rot_angle_to"],
+    "evidence": "raw 132022-132075；handler sub_423D40 raw 31867-31886",
+    "notes": "度数→弧度常量 dbl_526C98/dbl_5263F0；起角在 +0x204（绘制期由驱动写入/读取，raw 117610）"
+  },
+  {
+    "addr": "0x4AD3C0",
+    "raw_name": "sub_4AD3C0",
+    "semantic_name": "drawItemTranslationWindow_4AD3C0",
+    "op": "0x220",
+    "status": "ANALYZED",
+    "purpose": "设置 DrawItem 的平移动画窗（窗3）：flags|=2、+0x34=0、+0x44=delay、+0x58=dur、+0x68=1、D3DXMatrixTranslation(元素+0x1AC, x,y,z) 写目标平移矩阵（位移**不除 256**）",
+    "sub_behaviors": ["门控 flags&1", "置 bit1", "清共享起点 +0x34", "写 delay +0x44 / dur +0x58", "D3DXMatrixTranslation 写目标矩阵 +0x1AC", "置脏 [11627]、挂起 [11629]"],
+    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x44 win3_delay", "Scene+0x58 win3_dur", "Scene+0x16C work_trans_matrix", "Scene+0x1AC target_trans_matrix"],
+    "evidence": "raw 132081-132114；handler sub_423DE0 raw 31889-31906",
+    "notes": "与 0x21E 唯一差别：位移不做 /256 缩放"
+  },
+  {
+    "addr": "0x4AD4A0",
+    "raw_name": "sub_4AD4A0",
+    "semantic_name": "drawItemFlipbookWindow_4AD4A0",
+    "op": "0x239",
+    "status": "ANALYZED",
+    "purpose": "设置 DrawItem 的 flipbook 动画窗（窗4）：flags|=2、+0x34=0、+0x48=delay、+0x5C=dur、+0x238=总帧数、+0x23C=每行列数、+0x234=标志(bit0=窗末保持末帧)；逐帧把帧序号换算成**源矩形偏移**",
+    "sub_behaviors": ["门控 flags&1", "置 bit1", "清共享起点 +0x34", "写 delay +0x48 / dur +0x5C", "写 frames +0x238 / cols +0x23C / flags +0x234", "置脏 [11627]、挂起 [11629]"],
+    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x48 win4_delay", "Scene+0x5C win4_dur", "Scene+0x234 flipbook_flags", "Scene+0x238 flipbook_frames", "Scene+0x23C flipbook_cols"],
+    "evidence": "raw 132119-132145；handler sub_424900 raw 32314-32332；求值 raw 117777-117831",
+    "notes": "求值帧号 frame = frames*(clock-start-delay)/dur，col=frame%cols、row=frame/cols，源矩形 += (col*srcW, row*srcH)（srcW=+0x10-+8）；窗末 flags&1 ⇒ 停在 frames-1 帧，否则复位"
+  },
+  {
+    "addr": "0x4ACE50",
+    "raw_name": "sub_4ACE50",
+    "semantic_name": "drawItemCreate_4ACE50",
+    "op": "0x1FB",
+    "status": "ANALYZED",
+    "purpose": "draw-texture 的建项/配置：保证 map key 存在 → 置 flags|=1（bit0 已创建）→ +4=纹理槽号、+8..+0x14=源矩形(left/top/right/bottom)、+0x24/+0x28/+0x2C=描画位置 → 置脏 [11627]=1",
+    "sub_behaviors": ["sub_4AAA50 保证 key 存在", "flags |= 1", "写 +4 纹理槽", "写 +8/+0xC/+0x10/+0x14 源矩形", "写 +0x24/+0x28/+0x2C 描画位置", "置脏 [11627]=1"],
+    "fields_used": ["Scene+0x00 flags(item)", "Scene+0x04 texture_slot(item)", "Scene+0x08 src_rect(item)", "Scene+0x24 draw_pos(item)"],
+    "evidence": "raw 131816-131840；handler sub_422E70 raw 31271-31300",
+    "notes": "handler 先用 SetRect(&rc, op3, op4, op3+op5, op4+op6) 把脚本的 (x,y,w,h) 变成 (left,top,right,bottom)，再传 rc.left/top/right/bottom；故**元素内源宽 = +0x10 - +8**，flipbook 取格子尺寸即用此式（raw 117798）"
+  },
+  {
+    "addr": "0x49AA30",
+    "raw_name": "sub_49AA30",
+    "semantic_name": "driveDrawItemAnimWindows_49AA30",
+    "status": "ANALYZED",
+    "purpose": "DrawItem 的逐帧动画驱动（颜色/缩放/旋转/平移/flipbook 五窗）：按共享起点 +0x34 与各窗 delay/dur 把颜色整数插值写回调用方颜色变量、把矩阵 work 向 target 插值；窗末一次性收尾；有窗在跑时置 pending Scene+46516，全部结束清 flags bit1 与 +0x34",
+    "sub_behaviors": ["读共享起点 a2[13]，为 0 时锁存当前时钟 (Scene+46500)", "窗5 flipbook：frame=frames*(clock-start-delay)/dur，col/row → 源矩形偏移，写回 a2[2..5]", "窗1/2/3 颜色与矩阵插值（窗末 qmemcpy work←target）", "全部窗结束：flags &= ~2、+0x34=0"],
+    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x38..+0x5C win_delay_dur(item)", "Scene+0x60 color_from(item)", "Scene+0x64 color_to(item)", "Scene+0x6C work_scale_matrix", "Scene+0xAC target_scale_matrix", "Scene+0xEC work_rot_matrix", "Scene+0x12C target_rot_matrix", "Scene+0x16C work_trans_matrix", "Scene+0x1AC target_trans_matrix", "Scene+0x234 flipbook_flags", "Scene+0x238 flipbook_frames", "Scene+0x23C flipbook_cols", "clock"],
+    "evidence": "raw 117240-117942（a2 为元素局部副本，由 sub_4AEEA0 raw 133363 qmemcpy 拷入）",
+    "notes": "★调用点 raw 133389 来自 DrawItem 渲染器 sub_4AEEA0（a2 = DrawItem），故颜色窗求值器确实作用于 DrawItem —— 推翻 .tmp/re-color-transform.md §2.3「元素1 没有逐帧求值器」与其「元素3 内联 sub_4A230」的归属。第 4 参 a4 是调用方颜色变量地址（COERCE_FLOAT(&v25)），函数内 v117 = a4（raw 117374），插值结果写回 *(DWORD*)LODWORD(v117)（raw 117470）、窗末写 v23=TO（raw 117457）。颜色公式 = 整数截断 (left*from + we*to)/dur，通道序 B/G/R/A（raw 117466-117479）。a2 虽是局部副本，但调用方 raw 133447 qmemcpy(元素, v26, 0x2E4=740) **整体写回元素** ⇒ 窗末冻结/delay·dur 清 0/flipbook 源矩形结果都持久化，不会逐帧累加。"
+  },
+  {
+    "addr": "0x49ED60",
+    "raw_name": "sub_49ED60",
+    "semantic_name": "getTextureSize_49ED60",
+    "op": "0x208",
+    "status": "ANALYZED",
+    "purpose": "读纹理槽的 CTexture 原始宽高：槽>0x3E7 时只记日志并写 0/0；否则读 Scene+4*slot+42456 的 CTexture 的 +1040（宽）/+1044（高）写入出参",
+    "sub_behaviors": ["范围检查 slot<=999", "取 Scene+4*slot+42456 的 CTexture", "读 CTexture+1040/+1044", "槽为空则写 0/0"],
+    "fields_used": ["Scene+42456 texture_slot_table"],
+    "evidence": "raw 119774-119798；handler sub_4302E0 raw 39866-39877",
+    "notes": "★这是 getter：handler 用 sub_42B4B0 把 w/h **写回脚本操作数 op2/op3**；漏实现会造成脚本层逻辑错误而非仅画面问题。+1040/+1044 是原始尺寸，与 0x207 用的 +1052..+1064（当前 surface 可拷贝区）是不同字段"
+  },
+  {
+    "addr": "0x426420",
+    "raw_name": "sub_426420",
+    "semantic_name": "setCgDigitRecord_426420",
+    "op": "0x2DA",
+    "status": "ANALYZED",
+    "purpose": "登记 CG 数字条记录：op1=CG 番号(0..0xA，越界仅日志) → 把 op2..op8 共 7 个 int 写进 Engine+388332+28*cgno 的 28 字节记录",
+    "sub_behaviors": ["范围检查 cgno<=0xA", "写记录 +0=op2（纹理槽）", "写 +4..+24 = op3..op8"],
+    "fields_used": ["Engine+388332 cg_digit_records(28B stride)"],
+    "evidence": "raw 33498-33521；两种等价写法 28*(n+13869) 与 4*97084+28*n",
+    "notes": "共 7 个 dword（28 字节），不是 8 字段；字段语义由 0x23B 消费侧反推：[0]纹理槽 [1]x0 [2]y0 [3]单字宽 [4]字高 [5]字内空隙 [6]字距"
+  },
+  {
+    "addr": "0x4AC750",
+    "raw_name": "sub_4AC750",
+    "semantic_name": "drawItemSetTranslationWork_4AC750",
+    "op": "0x1FF",
+    "status": "ANALYZED",
+    "purpose": "写 DrawItem 的像素平移（立即生效）：+0x68=1（用世界矩阵）+ D3DXMatrixTranslation(元素+0x16C, x,y,z) 写平移 work 矩阵；置脏",
+    "sub_behaviors": ["sub_4AAA50 保证项存在", "置 +0x68 = 1", "D3DXMatrixTranslation 写 +0x16C（work）", "置脏 [11627]=1"],
+    "fields_used": ["Scene+0x68 use_world(item)", "Scene+0x16C work_trans_matrix"],
+    "evidence": "raw 131404-131423；handler sub_4230F0 raw 31348-31361",
+    "notes": "★与 0x220（写 +0x1AC target 并开动画窗）不同：本条无窗、立即生效。平移是像素单位、不除 256；对照 0x1FD 的缩放是百分数"
+  },
+  {
+    "addr": "0x424970",
+    "raw_name": "sub_424970",
+    "semantic_name": "drawCgNumber_424970",
+    "op": "0x23B",
+    "status": "ANALYZED",
+    "purpose": "按 CG 数字条画数值：查 Engine+388332+28*op2 的记录 → sub_4ABB60 删 DrawItem+MeshEntry 的 [op1, op1+op6) → 逐位 sub_4ACE50 建 DrawItem（源矩形按数字取字形、x 按三档对齐）",
+    "sub_behaviors": ["查 CG 数字条记录（cgno<=0xA 且 rec[0]!=0）", "sub_4ABB60(Scene, op1, op6) 删 DrawItem 与 MeshEntry 区间", "按 value%10 取字形源矩形 x = rec[1]+(rec[3]+rec[5])*digit", "三档对齐：bit1 居中 / bit2 左对齐 / 否则右对齐，x 基址为 op4", "逐位建 DrawItem（id 从 op1 递增；id=个位、自右向左）", "前导零跳过，除非 op7&1 或是最高位那一轮"],
+    "fields_used": ["Engine+388332 cg_digit_records", "Scene+1032 draw_item_container", "Scene+1064 mesh_container", "Scene+0x04 texture_slot(item)", "Scene+0x08 src_rect(item)", "Scene+0x24 draw_pos(item)"],
+    "evidence": "raw 32335-32503；帧字数 raw 32381 = 15 ⇒ argc 7",
+    "notes": "记录号非法或 rec[0]==0 → 只打日志「CG番号…」。删区间同时覆盖 DrawItem 与 MeshEntry（raw 130875/130909/130912-130971）"
+  },
+  {
+    "addr": "0x41A2C0",
+    "raw_name": "sub_41A2C0",
+    "semantic_name": "frameClock_41A2C0",
+    "op": "0x23C",
+    "status": "ANALYZED",
+    "purpose": "帧毫秒时钟：_this[92334]=_this[92333]; _this[92333]=timeGetTime()（字节 369336/369332）；无操作数、无渲染",
+    "sub_behaviors": ["timeGetTime()", "上一帧时刻 ← 当前时刻", "当前时刻 ← 新值"],
+    "fields_used": ["Engine+369332 clock", "Engine+369336 prev_clock"],
+    "evidence": "raw 25308-25317",
+    "notes": "主循环同址维护同一对字段（raw 20750-20751，紧跟 sub_4B4040 之前）；0x20C(sub_41A1A0) 做同样的事并追加渲染 ⇒ 0x23C = 只刷时钟。与 0x1F4 不同：0x1F4 仅在未锁定(107438)时刷"
+  },
+  {
+    "addr": "0x425E20",
+    "raw_name": "sub_425E20",
+    "semantic_name": "showMessageImage_425E20",
+    "op": "0x25B",
+    "status": "ANALYZED",
+    "purpose": "消息态图像：_this[92379]=2（模式：1=影片/2=图像）、_this[92381]=op1（图像 id）；_this[167990]==0（无渲染模式开关）时 sub_408440 解码加载进帧纹理 Scene+42452，失败抛 Command_ShowMessage_Exception",
+    "sub_behaviors": ["写模式 92379=2", "写图像 id 92381=op1", "读全局无渲染开关 167990", "sub_408440 → sub_4A7210 ReadFrameTex 把文件解码进帧纹理", "失败抛「画像ファイル %s の読み込みに失敗しました」"],
+    "fields_used": ["Engine+369516 media_mode", "Engine+369524 media_image_id", "Engine+671960 no_render_mode", "Scene+42452 frame_texture"],
+    "evidence": "raw 33206-33221；sub_408440 raw 13134-13158；sub_4A7210 raw 126701-126982",
+    "notes": "兄弟 0x25A(sub_425DB0) 用同一组字段置模式=1+影片 id 92380。★sub_4A7210 从不使用图像 id ⇒ op1 只用于消息态记录。写文件失败会抛异常（影响控制流）"
+  },
+  {
+    "addr": "0x41A1A0",
+    "raw_name": "sub_41A1A0",
+    "semantic_name": "framePresent_41A1A0",
+    "op": "0x20C",
+    "status": "ANALYZED",
+    "purpose": "每帧刷新：未锁定时刷时钟（92334←92333、92333←now），随后调 sub_4B4040(Scene) 走完整渲染提交",
+    "sub_behaviors": ["门控 107438（停靠锁）", "刷时钟 92333/92334", "sub_4B4040(Scene) 渲染提交"],
+    "fields_used": ["Engine+369332 clock", "Engine+369336 prev_clock", "Scene+46508 dirty"],
+    "evidence": "raw 25259 区（handler sub_41A1A0）",
+    "notes": "与 0x23C 的差别：0x23C 只刷时钟、0x20C 追加渲染"
   }
 
 ]

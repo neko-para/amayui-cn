@@ -584,6 +584,7 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   [0x261, { map: { 1: 80101 } }], // 消息窗配置
   [0x2ee, { map: { 1: 80106 } }], // 消息派发
   [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
+  [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由同族 0x25A 置 1=影片）
   // ---- 数据/配置/标志 ----
   [0x21b, { map: { 1: 166965 }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
   [0x24e, { map: { 1: 92340 } }],
@@ -621,6 +622,340 @@ const op_engine_field_store: OpHandler = (c) => {
 /** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
 const op_get_engine_bool: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(166965) ?? 0) !== 0 ? 1 : 0);
+};
+
+/**
+ * **渲染/帧循环一族（真实现，状态建模）** —— 逐条读 handler 体（raw 25194-25236 / 34507 等）：
+ *
+ * - `0x1F4`（sub_41A090, raw 25194）：**帧计时**。`if (_this[107438]) ++_this[107439]`（累加帧计数）
+ *   `else { _this[107438]=1; _this[92334]=_this[92333]; _this[92333]=timeGetTime(); }`
+ *   —— 脚本的"帧循环"就是 **反复 i1F4 轮询**（全工程 66510 处），它本身**不是等待**，只是记时间/计帧。
+ * - `0x1F5`（sub_41A0E0, raw 25214）：**帧倒计**。`v1=_this[429756]; if (v1<=0) { if (_this[429752]) { park=0; if(!dispatch_in_progress) sub_40FB60(); } } else _this[429756]=v1-1;`
+ *   —— 计到 0 时清"停靠"标志，并在非派发中时派发排队脚本（`sub_40FB60` = emulator 未建模的脚本队列 → no-op）。
+ * - `0x261`/`0x2DB`… 同族见 `ENGINE_FIELD_STORE`；`0x20C`（sub_41A1A0, raw 25259）**每帧**刷时钟 +
+ *   调绘制容器的 `sub_4B4040`（帧刷新）——emulator 的渲染帧循环已自行 present，故 `sub_4B4040` 无需复刻。
+ */
+const op_frame_tick: OpHandler = (c) => {
+  const e = c.e;
+  if (!e.engineValues.get(107438)) {
+    e.engineValues.set(107438, 1);
+    e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
+    e.engineValues.set(92333, e.nowMs | 0);
+  } else {
+    e.engineValues.set(107439, (e.engineValues.get(107439) ?? 0) + 1);
+  }
+};
+
+/** `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清停靠标志（`_this[429752]=0`）；派发脚本队列（未建模 → no-op）。 */
+const op_frame_countdown: OpHandler = (c) => {
+  const e = c.e;
+  const left = e.engineValues.get(429756) ?? 0;
+  if (left > 0) {
+    e.engineValues.set(429756, left - 1);
+  } else {
+    e.engineValues.set(429752, 0);
+  }
+};
+
+/** `0x20C`（sub_41A1A0, raw 25259）：每帧刷时钟 + `sub_4B4040(_this+80708)`（帧刷新）。 */
+const op_frame_present: OpHandler = (c) => {
+  const e = c.e;
+  if (!e.engineValues.get(107438)) {
+    e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
+    e.engineValues.set(92333, e.nowMs | 0);
+  }
+  c.native.frameTick?.();
+};
+
+/**
+ * **`0x23C`（sub_41A2C0, raw 25308，argc=0）：帧毫秒时钟**（名字像空操作，其实是 `timeGetTime`）。
+ * 引擎：`_this[92334] = _this[92333]; _this[92333] = timeGetTime();`（字节 369336 / 369332）。
+ * 同一对字段在主循环里以同样两条赋值维护（raw 20750-20751，紧跟 `sub_4B4040` 渲染调用前），
+ * 而 `0x20C` 做同样的事**并追加渲染**（raw 25259）。⇒ 0x23C = 「只刷时钟、不渲染」。
+ * ★与 `0x1F4`（停靠锁）不同：0x1F4 只在**未锁定**时刷时钟，0x23C 无条件刷（raw 25312-25315）。
+ */
+const op_frame_clock: OpHandler = (c) => {
+  const e = c.e;
+  e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
+  e.engineValues.set(92333, e.nowMs | 0);
+};
+
+/**
+ * **`0x208`（sub_4302E0 → `sub_49ED60`, raw 39866）：纹理尺寸 getter（写回脚本操作数）**。
+ * 引擎：`op1` = 纹理槽（合法 0..999）→ `sub_49ED60(Scene, slot, &w, &h)` 读该槽 `CTexture` 的
+ * `+1040`（宽）/`+1044`（高）→ 分别 **写回 op2 / op3**（`sub_42B4B0`）。
+ * ★这是一个**会写脚本操作数**的查询指令：漏实现会让脚本拿到未初始化的宽高并引发**脚本层逻辑错误**
+ *   （不只是画面问题）；槽越界/未创建时引擎写 0/0 并只记日志（不改控制流）。
+ */
+const op_get_texture_size: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const size = slot <= 999 ? c.native.getTextureSize?.(slot) : undefined;
+  writeIntOperand(c.e, c.frame, c.instr, 2, size?.w ?? 0);
+  writeIntOperand(c.e, c.frame, c.instr, 3, size?.h ?? 0);
+};
+
+/**
+ * **`0x2DA`（sub_426420, raw 33498，argc=8）：CG 数字条记录登记**。
+ * 引擎：`op1` = CG 番号（合法 0..0xA，越界只记日志）→ 把 `op2..op8`（**7 个 int**）写进
+ * `Engine+388332+28*cgno` 的 28 字节记录（两种写法 `28*(n+13869)` 与 `4*97084+28*n` 等价）。
+ * 字段语义由消费方 `0x23B` 反推：`+0` 纹理槽 / `+4` x0 / `+8` y0 / `+12` 单字宽 /
+ * `+16` 字高 / `+20` 字内空隙 / `+24` 字距。**纯数据登记**，不碰 Scene、不置脏。
+ */
+const op_set_cg_digit_record: OpHandler = (c) => {
+  const n = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (n < 0 || n > 0xa) return; // 引擎：越界仅日志
+  const rec: number[] = [];
+  for (let k = 2; k <= 8; k++) rec.push(readIntOperand(c.e, c.frame, c.instr, k));
+  c.e.cgDigits.set(n, rec);
+};
+
+/**
+ * **`0x23B`（sub_424970, raw 32335，argc=7）：按 CG 数字条画数值**。
+ * 引擎：`op1` = 起始 DrawItem id、`op2` = CG 数字条记录号、`op3` = 数值、`op4/op5` = x/y 偏移、
+ * `op6` = 位数、`op7` = 对齐/补零标志（bit0 补前导零、bit1 居中、bit2 左对齐）。
+ * 先 `sub_4ABB60(Scene, op1, op6)` **删 DrawItem + MeshEntry 的 `[op1, op1+op6)` 区间**，
+ * 再逐位 `sub_4ACE50` 建 DrawItem（几何见 `drawCgNumber`）。
+ * ★记录号以 `round(rec[0]) != 0` 为存在判据，否则只打日志「CG番号…」。
+ */
+const op_draw_cg_number: OpHandler = (c) => {
+  const id = readIntOperand(c.e, c.frame, c.instr, 1);
+  const n = readIntOperand(c.e, c.frame, c.instr, 2);
+  const value = readIntOperand(c.e, c.frame, c.instr, 3);
+  const x = readIntOperand(c.e, c.frame, c.instr, 4);
+  const y = readIntOperand(c.e, c.frame, c.instr, 5);
+  const digits = readIntOperand(c.e, c.frame, c.instr, 6);
+  const flags = readIntOperand(c.e, c.frame, c.instr, 7);
+  if (n < 0 || n > 0xa) return;
+  const rec = c.e.cgDigits.get(n);
+  if (!rec || !rec[0]) return; // 引擎：未登记的 CG 数字条 → 只打日志
+  c.native.drawCgNumber?.(id, rec, value, x, y, digits, flags);
+};
+
+/**
+ * `0x32F`（sub_4272B0, raw 34117）：**D3D 灯光开关**（原判为"网格项清除"是错的）。
+ * 引擎：读 op1 = **灯光索引 0..9** → `sub_49A150(Scene, idx)`：
+ * `light_enabled[idx] = 0`（Scene+54708+4·idx）+ 设备 vtable+212 = `LightEnable(idx, FALSE)`。
+ * 同族 `sub_49A080` = `SetLight`（vtable+204，填 0x68 字节 D3DLIGHT9）。
+ * emulator 无灯光模型 → 记录式转发（不影响 2D 图元绘制）。
+ */
+const op_light_enable: OpHandler = (c) => {
+  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.setLight?.(idx, false);
+};
+
+/**
+ * `0x342`（sub_427C70, raw 34491）：**销毁 Live2D 模型实例槽**（不是"释放图形资源槽"）。
+ * 引擎：读 op1 → `sub_4A1A60(Scene, op1)`：`v3 = objects[op1]`（Scene+55812+4·op1，10 槽），
+ * 非空则 `sub_4785E0`（槽对象析构：释放纹理/子对象）+ `operator delete` + 置 0。
+ */
+const op_destroy_l2d_slot: OpHandler = (c) => {
+  const slotIdx = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.destroyL2DSlot?.(slotIdx);
+};
+
+/**
+ * `0x352`（sub_4283B0, raw 34780）：**Live2D 槽参数设置**（原判为"图形子系统"过泛）。
+ * 引擎：读 op1=槽号(0..9)、op2、op3 → `sub_4A1AC0(Scene, op1, op2, op3)`：
+ * `v4 = objects[op1]`，按 op2 选 `sub_478540`（置**待纹理 ID**：标志 +24、值 +28）
+ * 或 `sub_478560`（置**待动作 ID**：标志 +25、值 +32）。
+ */
+const op_l2d_slot_set: OpHandler = (c) => {
+  const slotIdx = readIntOperand(c.e, c.frame, c.instr, 1);
+  const sel = readIntOperand(c.e, c.frame, c.instr, 2);
+  const value = readIntOperand(c.e, c.frame, c.instr, 3);
+  c.native.l2dSlotSet?.(slotIdx, sel, value);
+};
+
+/**
+ * `0x23D`（sub_41A300, raw 25320）：**销毁 movie/纹理槽 42..999**（958 次循环）。
+ * 对 `Engine+4*(94714+k)`（CMovieToTexture 族）调 `sub_488FB0` + vtable[0](obj,1) 析构，
+ * 并对 Scene 调 `sub_49E980(Scene, i)` 卸对应网格/纹理槽。
+ * ⇒ **会让引用这些槽的图元不再绘制**（是"合法的整批释放"，不是停靠标志）。
+ */
+const op_release_movie_slots: OpHandler = (c) => {
+  c.native.releaseMovieSlots?.();
+};
+
+/**
+ * `0x32B`（sub_41A4A0, raw 25411）：**清 D3DX 网格层级槽表**（Scene+50708 区，1000 槽）。
+ * 引擎经 `sub_4A0750 → sub_479A50` + delete 逐项释放（与 0x23D、0x259 都不同族）。
+ */
+const op_clear_mesh_slots: OpHandler = (c) => {
+  c.native.clearMeshSlots?.();
+};
+
+/** `0x248`（sub_4252E0, raw 32705）：`dword_55052C = op1`（渲染配置全局）。 */
+const op_set_render_cfg_248: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(-248, v); // 负键：专用全局槽（非 _this 字段），避免与引擎字段号冲突
+};
+
+/**
+ * **`0x219`（sub_423BA0, raw 31807）：写绘制项的「描画位置 (x,y,z)」**。
+ * 引擎：`f2/f3/f4 = readFloatOperand(2/3/4)`、`handle = readIntOperand(1)` →
+ * `sub_4ACEE0(Scene, handle, f2, f3, f4)`：在元素 1（DrawItem）里写 `result[9..11]` =
+ * **DrawItem+36/+40/+44 = 描画位置**。绘制期由 `sub_4AEEA0` 读 `&v26[9]` 交 `CTexture::Draw`。
+ * ★原实现把它记成 0x21E 且注释写"变换槽"，已按**派发表反查**修正（`sub_423BA0` 注册偏差 678144 ⇒ 0x219）。
+ * emulator：转发 `native.setDrawPivot`（渲染器写 DrawItem 的 pivot，供 present 用）。
+ */
+const op_set_draw_pos: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const x = readFloatOperand(c.e, c.frame, c.instr, 2);
+  const y = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const z = readFloatOperand(c.e, c.frame, c.instr, 4);
+  c.native.setDrawPos?.(handle, x, y, z);
+};
+
+/**
+ * **`0x21E`（sub_423CA0, raw 31846，argc=6）：缩放动画窗（窗1）**。
+ * 引擎：`op1`=handle、`op2`=delay、`op3`=dur、`op4/5/6`=sx/sy/sz（`sub_41C300(...) / dbl_5201F0`，**÷256**）
+ * → `sub_4AD170(Scene, handle, delay, dur, sx, sy, sz)`：`|=2`、`+52=0`、`+60=delay`、`+80=dur`、`+104=1`、
+ * `D3DXMatrixScaling(元素+0xAC, sx, sy, sz)`（目标矩阵）。窗末 `work(+0x6C) ← target(+0xAC)`。
+ */
+const op_set_scale_matrix: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 4) / 256; // dbl_5201F0 = 256.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 5) / 256;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 6) / 256;
+  c.native.setScaleAnim?.(handle, delay, dur, sx, sy, sz);
+};
+
+/**
+ * **`0x21F`（sub_423D40, raw 31867，argc=7）：旋转动画窗（窗2）**。
+ * 引擎：`op1`=handle、`op2`=delay、`op3`=dur、`op4/5/6`=旋转轴 (x,y,z)、`op7`=角（**度**）
+ * → `sub_4AD250(Scene, handle, delay, dur, ax, ay, az, deg)`：`+64=delay`、`+84=dur`、`+104=1`、
+ * 轴/角存目标 `+0x1F8..0x208`、`D3DXMatrixRotationAxis(元素+0x12C, axis, deg·π/180)`。
+ */
+const op_set_rotation_anim: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
+  const ax = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const ay = readFloatOperand(c.e, c.frame, c.instr, 5);
+  const az = readFloatOperand(c.e, c.frame, c.instr, 6);
+  const deg = readFloatOperand(c.e, c.frame, c.instr, 7);
+  c.native.setRotationAnim?.(handle, delay, dur, ax, ay, az, deg);
+};
+
+/**
+ * **`0x220`（sub_423DE0, raw 31889，argc=6）：平移动画窗（窗3）**。
+ * 引擎：`op1`=handle、`op2`=delay、`op3`=dur、`op4/5/6`=位移 (x,y,z)（**不除 256**，与 0x21E 不同）
+ * → `sub_4AD3C0`：`+68=delay`、`+88=dur`、`+104=1`、`D3DXMatrixTranslation(元素+0x1AC, x, y, z)`。
+ */
+const op_set_translation_anim: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
+  const x = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const y = readFloatOperand(c.e, c.frame, c.instr, 5);
+  const z = readFloatOperand(c.e, c.frame, c.instr, 6);
+  c.native.setTranslationAnim?.(handle, delay, dur, x, y, z);
+};
+
+/**
+ * **`0x239`（sub_424900, raw 32315，argc=6）：flipbook 动画窗（窗4）**。
+ * 引擎：`op1`=handle、`op2`=delay(`+0x48`)、`op3`=dur(`+0x5C`)、`op4`=总帧数(`+0x238`)、
+ * `op5`=每行列数(`+0x23C`)、`op6`=标志(`+0x234`，bit0 = 窗末**保持末帧**)
+ * → `sub_4AD4A0`。逐帧把帧序号写成**源矩形**偏移（引擎 raw 117797-117831），不是 UV。
+ */
+const op_set_flipbook: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
+  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
+  const frames = readIntOperand(c.e, c.frame, c.instr, 4);
+  const cols = readIntOperand(c.e, c.frame, c.instr, 5);
+  const flags = readIntOperand(c.e, c.frame, c.instr, 6);
+  c.native.setFlipbook?.(handle, delay, dur, frames, cols, flags);
+};
+/**
+ * **`0x259`（sub_41A3A0, raw 25357）：清两张 1000×2 组 5-DWORD 记录表**（`Engine+86176` 起、步长 5 dword，
+ * 每项写 +8/+12；对应主/影数组 `+81176`/`+86176`），共 4000 dword = 16 KB。**只清记录、不 delete 对象**
+ * （旧文档把它当"纹理槽释放"是错的；真正销毁 42..999 的是 `0x23D`）。
+ */
+const op_clear_slot_records: OpHandler = (c) => {
+  c.native.clearSlotRecords?.();
+};
+
+/**
+ * **`0x340`（sub_427B60 → `sub_49A2D0`, raw 34457）：渲染状态下发**。
+ * 引擎：写渲染状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22）。
+ */
+const op_set_render_state: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.setRenderState?.(22, v);
+};
+
+
+
+/** `0x344`（sub_427CB0, raw 34507）：**纹理槽变换**：读 op1/op2 → `sub_4AFBF0(_this+80708, op1, op2)`
+ *  （`_this+274` 的 map：置 `|=1` 与 `[+4]=op2`）。emulator 无该 map → 记录式转发。 */
+const op_set_texture_transform: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.setTextureTransform?.(handle, value);
+};
+
+/**
+ * `0x1F8` create-texture（sub_422C20, raw 31161）：读 op1=槽、op2/op3/op4（w/h/mode）；
+ * 引擎**先释放该槽旧纹理对象**（`_this[slot+94672]`：`sub_488FB0` + vtable delete + 置 0），
+ * 再 `sub_4A2C10(_this+80708, slot, w, h, mode)` 新建 ⇒ 程序化/空白纹理（非文件图像）。
+ * emulator：转发 `native.createTexture`（渲染器侧刷新该槽图像缓存）。
+ */
+const op_create_texture: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const w = readIntOperand(c.e, c.frame, c.instr, 2);
+  const h = readIntOperand(c.e, c.frame, c.instr, 3);
+  const mode = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.createTexture?.(slot, w, h, mode);
+};
+
+/** `0x1FD`（sub_422FD0, raw 30886）：**缩放变换**：读 op1=handle、op2/3/4 → `sub_4AC5F0`
+ *  （设 3D 缩放矩阵，输入按 256 格除）。emulator 记录式转发（缩放矩阵未建模）。 */
+const op_set_scale: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const sx = readIntOperand(c.e, c.frame, c.instr, 2);
+  const sy = readIntOperand(c.e, c.frame, c.instr, 3);
+  const sz = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.setScale?.(handle, sx, sy, sz);
+};
+
+/**
+ * **`0x1FF`（sub_4230F0 → `sub_4AC750`, raw 31348，argc=4）：DrawItem 的像素平移**。
+ * 引擎：`op1` = DrawItem id、`op2/op3/op4` = float 平移 x/y/z（**像素单位**，无 /100、无 /256）→
+ * `sub_4AAA50` 保证项存在 → `DrawItem+0x68 = 1`（**用世界矩阵**）→
+ * `D3DXMatrixTranslation(元素+0x16C, x, y, z)` 写**平移 work 矩阵**（与 `0x220` 的窗版写 target 不同：
+ * 这条**立即生效、无动画窗**）。置脏 `Scene+46508`。
+ * ★与 `0x1FD` 对照：**平移用像素、缩放用百分数**（0x1FD 的 op2..op4 经 `/dbl_5201F0`）。
+ */
+const op_set_draw_translation: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const x = readFloatOperand(c.e, c.frame, c.instr, 2);
+  const y = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const z = readFloatOperand(c.e, c.frame, c.instr, 4);
+  c.native.setDrawTranslation?.(handle, x, y, z);
+};
+
+/**
+ * **`0x352`（sub_4283B0, raw 34780）：图形子系统**：读 op1/op2/op3 → `sub_4A1AC0(_this+80708, op1, op2, op3)`；
+ * 目标里 `v4 = _this[a2+13953]`（某图形对象槽），按 a3 选 `sub_478560/sub_478540`（对该对象设参数）。
+ * emulator 无该类对象 → 记录式转发。
+ */
+const op_gfx_subsystem: OpHandler = (c) => {
+  const a2 = readIntOperand(c.e, c.frame, c.instr, 1);
+  const a3 = readIntOperand(c.e, c.frame, c.instr, 2);
+  const a4 = readIntOperand(c.e, c.frame, c.instr, 3);
+  c.native.gfxSubsystem?.(a2, a3, a4);
+};
+
+/**
+ * **`0x1F6`（sub_41A130, raw 25239）：清/重置绘制容器** `sub_4AB7A0(_this+80708)`。
+ * 引擎里这是**唯一**会整批释放绘制项/网格的指令（扫描容器并 delete）；emulator 的等价语义 = 清空
+ * `drawItems` + `meshes`（**保留纹理槽**）。★注意：这才是"合法的整批清场"，与"换脚本就清"无关。
+ */
+const op_clear_draw_container: OpHandler = (c) => {
+  c.native.clearDrawContainer?.();
 };
 
 /**
@@ -703,16 +1038,18 @@ const op_set_engine_flag_174812: OpHandler = (c) => {
 };
 
 /**
- * `0x217`（sub_423B20, raw 31791）：**对象变换** —— 读 op1=handle、op2/op3/op4 三个 float，
- * 调 `sub_4ACF20(_this+80708, handle, f2, f3, f4)` 设置该绘制项/网格的变换（引擎的绘制容器与我们同构）。
- * emulator 目前不建模「对象变换」→ 转发给 native（当前为记录式 no-op），非"纯数值操作"。
+ * `0x217`（sub_423B20, raw 31791）：**对象变换 pivot** —— 读 op1=handle、op2/op3/op4 三个 float，
+ * 调 `sub_4ACF20(_this+80708, handle, f2, f3, f4)`：`sub_4AAA50` 保证 key 存在 → `map[key]` →
+ * 写元素下标 `6/7/8` = DrawItem`+24/+28/+32` = **回転/拡大縮小の中心（pivot）**，并置脏 `_this[11627]=1`。
+ * 绘制期 `sub_49AA30` 用 `T(-pivot) → 动画矩阵 → T(+pivot)` 把它夹在动画矩阵外侧 ⇒ 只改基准点、不改位置。
+ * ★与 `0x219`（sub_4ACEE0，写 `+36/+40/+44` = 描画位置）是**两个不同的 float 三元组**，不可混用同一 native 方法。
  */
 const op_set_object_transform: OpHandler = (c) => {
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
   const a = readFloatOperand(c.e, c.frame, c.instr, 2);
   const b = readFloatOperand(c.e, c.frame, c.instr, 3);
   const d = readFloatOperand(c.e, c.frame, c.instr, 4);
-  c.native.setObjectTransform?.(handle, a, b, d);
+  c.native.setDrawPivot?.(handle, a, b, d);
 };
 
 const stubSubsystem: OpHandler = (c) => {
@@ -848,22 +1185,30 @@ const op_menu_dispatch: OpHandler = (c) => {
 };
 
 const op_draw_texture: OpHandler = (c) => {
-  // 0x1FB draw-texture：op1=handle、op2=layer、op3-6=源矩形、op7/8=目标位置。
-  // 必须用 readIntOperand 解析 handle（(local-int 0) 等 ref 才能得 0x30d41，而非 raw=0）。
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const layer = readIntOperand(c.e, c.frame, c.instr, 2);
+  // `0x1FB`（sub_422E70）draw-texture：**op1 = 图元 handle（= Scene map 的 key，同时就是层序，越小越先画）**、
+  // **op2 = 纹理槽号**、op3/4 = 源 x/y、op5/6 = 源 w/h、op7/8 = 目标 x/y。
+  //
+  // ★2025 重大修正（两位独立分析员核对 `Scene` 模型 + 脚本三方互证，见 .tmp/re-draw-container.md / re-texture.md）：
+  //   - DrawItem 的 `+4` 存**纹理槽号**（= op2），渲染时用 `Scene+4*slot+42456` 取 `CTexture*`；
+  //   - **层序 = map key = op1**，元素内部**不存 layer**。
+  //   旧实现在这里把两者**写反了**（把 op1 当槽、op2 当层）→ present() 按"层号"取纹理全部落空 →
+  //   退化成占位色块。这是"背景消失、只剩零星方块"的第二半原因（第一半是 present 里用 layer 查槽表）。
+  const layer = readIntOperand(c.e, c.frame, c.instr, 1); // 图元 handle / 层序键
+  const slot = readIntOperand(c.e, c.frame, c.instr, 2); // 纹理槽号
   const srcX = readIntOperand(c.e, c.frame, c.instr, 3);
   const srcY = readIntOperand(c.e, c.frame, c.instr, 4);
   const srcW = readIntOperand(c.e, c.frame, c.instr, 5);
   const srcH = readIntOperand(c.e, c.frame, c.instr, 6);
   const dstX = readIntOperand(c.e, c.frame, c.instr, 7);
   const dstY = readIntOperand(c.e, c.frame, c.instr, 8);
-  c.native.configureDrawItem?.({ handle, layer, srcX, srcY, srcW, srcH, dstX, dstY, tex: handle });
+  if (!c.e.texSlots.has(slot)) c.e.texSlots.set(slot, 0);
+  c.native.configureDrawItem?.({ handle: layer, layer, tex: slot, srcX, srcY, srcW, srcH, dstX, dstY });
 };
 const op_set_texture: OpHandler = (c) => {
-  // 0x1F9 set-texture：op1=imgid、op2=slot。
+  // `0x1F9`（sub_422CB0）set-texture：op1=imgid、op2=槽（引擎：载入文件纹理并写槽记录 `[5*slot+466]=imgid`）。
   const imgid = readIntOperand(c.e, c.frame, c.instr, 1);
   const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.e.texSlots.set(slot, imgid);
   c.native.bindTexture?.(imgid, slot);
 };
 
@@ -1142,6 +1487,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x261, op_engine_field_store], // _this[80101]
   [0x2ee, op_engine_field_store], // _this[80106]
   [0x2db, op_engine_field_store], // _this[71744]
+  [0x25b, op_engine_field_store], // 消息态图像：_this[92381] = op1（模式位 92379 由同族 0x25A 置 1=影片/2=图像）
   [0x21b, op_engine_field_store], // _this[166965] = (op1!=0)（配套 getter 0x247）
   [0x247, op_get_engine_bool], // op1 = (_this[166965] != 0)
   [0x24e, op_engine_field_store], // _this[92340]
@@ -1149,6 +1495,32 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
   [0x107, op_set_key], // _this[op1+551] = op2
   [0x10b, op_set_key2], // _this[op2+1383] = op1
+  // ---- 渲染/图形/帧循环一族（真实现：状态建模 + native 转发）----
+  [0x1f4, op_frame_tick], // 帧计时（+帧计数 / 刷时钟）
+  [0x1f5, op_frame_countdown], // 帧倒计 → 清停靠标志（脚本队列派发未建模）
+  [0x20c, op_frame_present], // 每帧刷时钟 + native.frameTick()
+  [0x23d, op_release_movie_slots], // 销毁 movie/纹理槽 42..999
+  [0x32b, op_clear_mesh_slots], // 清 D3DX 网格层级槽表
+  [0x248, op_set_render_cfg_248], // dword_55052C = op1（渲染配置全局）
+  [0x219, op_set_draw_pos], // 描画位置 (x,y,z) → native（DrawItem+36/+40/+44）
+  [0x21e, op_set_scale_matrix], // 缩放动画窗（窗1；sx/sy/sz ÷256）→ native.setScaleAnim
+  [0x21f, op_set_rotation_anim], // 旋转动画窗（窗2；轴+角度）→ native.setRotationAnim
+  [0x220, op_set_translation_anim], // 平移动画窗（窗3）→ native.setTranslationAnim
+  [0x239, op_set_flipbook], // flipbook 动画窗（窗4；帧数/列数/标志）→ native.setFlipbook
+  [0x32f, op_light_enable], // D3D 灯光开关（LightEnable）
+  [0x342, op_destroy_l2d_slot], // 销毁 Live2D 模型实例槽
+  [0x344, op_set_texture_transform], // 纹理槽变换 → native.setTextureTransform
+  [0x259, op_clear_slot_records], // 清两张 1000×2 记录表（不 delete）
+  [0x340, op_set_render_state], // 渲染状态下发（设备 vtable+228）
+  [0x352, op_l2d_slot_set], // Live2D 槽参数（待纹理 ID / 待动作 ID）
+  [0x1f6, op_clear_draw_container], // 整批释放绘制项/网格 → native.clearDrawContainer
+  [0x1f8, op_create_texture], // 创建程序化纹理（释放旧槽对象）→ native.createTexture
+  [0x1fd, op_set_scale], // 3D 缩放变换（百分数）→ native.setScale
+  [0x1ff, op_set_draw_translation], // DrawItem 像素平移（+0x68 用世界矩阵 / +0x16C work 矩阵）→ native
+  [0x208, op_get_texture_size], // 纹理尺寸 getter（写回 op2/op3）→ native.getTextureSize
+  [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
+  [0x2da, op_set_cg_digit_record], // CG 数字条记录登记（Engine+388332+28*n 的 7 dword）
+  [0x23b, op_draw_cg_number], // 按 CG 数字条画数值（删 [id,id+digits) 后逐位建 DrawItem）
   [0x1, op_abort],
   [0x2, op_exit],
   [0x9, op_exit_script],
@@ -1189,7 +1561,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0xc0, op_get_music_field], // 音乐字段 `_this[174713]`（由 sound:Music 填充）▶ op1
   [0x2ce, op_get_screen_mode], // 显示模式 `_this[167990]!=0`（由 display:ScreenMode 填充）▶ op1
   [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）
-  [0x217, op_set_object_transform], // 对象变换 → native.setObjectTransform（记录式）
+  [0x217, op_set_object_transform], // 对象变换 pivot → native.setDrawPivot（DrawItem+24/+28/+32）
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
   [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
   [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
@@ -1198,17 +1570,13 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x322, op_set_vertex_color], // → native.setVertexColor（mesh state0）
   [0x323, op_set_vertex_color_alpha], // → native.setVertexColorAlpha（动画窗）
   [0x1fc, stubSubsystem], // 纹理/图形子系统方法
-  [0x1fd, stubSubsystem], // 缩放/纹理变换 op
   [0x1fe, stubSubsystem], // 纹理变换 op（4 浮点）
-  [0x1ff, stubSubsystem], // 纹理变换 op
   [0x202, op_set_draw_color], // → native.setDrawColor（delay/count/to）
   [0x203, op_set_draw_color_alpha], // → native.setDrawColorAlpha（from）
   [0x204, stubSubsystem], // draw-string（无界面 stub）
   [0x205, stubSubsystem], // 纹理/文本 op
   [0x207, stubSubsystem], // 纹理 op
-  [0x208, stubSubsystem], // 图形子系统方法
   [0x1f7, op_detach_texture], // → native.detachTexture（删单/区间）
-  [0x1f8, stubSubsystem], // create-texture（LOGO 场景）
   [0x1fa, op_release_texture], // → native.releaseTexture
   [0x1fb, op_draw_texture], // → native.configureDrawItem
   [0x1f9, op_set_texture], // → native.bindTexture
@@ -1255,18 +1623,28 @@ export const INTERNAL_WITH_HANDLER: ReadonlySet<number> = new Set<number>([
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   // ============ 声音 子系统 ============
   [0xb5, op_engine_internal], // 声音通道控制（→ sub_4B5020/sub_4B6020）
-  // ============ 渲染 / 图形 / 图像 / 纹理（emulator 无界面；只动 `_this+80708` 绘制容器等内部态） ============
-  [0x20c, op_engine_internal], // 时间戳+present（帧同步；无操作数）
-  [0x340, op_engine_internal], // 渲染
-  [0x342, op_engine_internal], // 渲染
-  [0x346, op_engine_internal], // 渲染
-  [0x349, op_engine_internal], // 渲染
-  [0x321, op_engine_internal], // 渲染
-  [0x325, op_engine_internal], // 渲染
-  [0x326, op_engine_internal], // 渲染
-  [0x21e, op_engine_internal], // 渲染
-  [0x1f4, op_engine_internal], // 渲染
-  [0x1f5, op_engine_internal], // 渲染
+  // ============ 渲染 / 图形 / 图像 / 纹理（emulator 无界面） ============
+  // 说明：能落到 emulator 场景模型（drawItems/meshes/纹理槽）或引擎字段的已升级为真实现 —— 见 OPS：
+  //   0x1F4 帧计时 / 0x1F5 帧倒计 / 0x20C 帧刷新 / 0x23C 帧时钟 / 0x23D·0x32B 停靠标志 / 0x248 渲染配置 /
+  //   0x1F6 整批清绘制容器 / 0x1F7 删区间 / 0x1F8 建纹理 / 0x1F9 绑定 / 0x1FA 释放 / 0x1FB 画图元 /
+  //   0x1FF 图元平移 / 0x202·0x203 颜色 / 0x208 纹理尺寸 getter / 0x217 pivot / 0x219 描画位置 /
+  //   0x21E·0x21F·0x220·0x239 四个动画窗 / 0x23B CG 数字条 / 0x2DA CG 记录 / 0x25B 消息态图像 /
+  //   0x32F 灯光 / 0x340 渲染状态 / 0x342 Live2D 槽 / 0x344 纹理槽变换 / 0x352 图形子系统。
+  // 此处只留**emulator 无对应模型**的 —— `0x346`–`0x34E` 是 `Scene+1096` 的 572 字节
+  // 「变换 / Live2D 立绘节点」setter 族（元素 `+4` 指向 Live2D 槽，消费方 `sub_4B0360` 只在
+  // 该槽真有模型时才出画）⇒ 无模型时天然无输出，no-op 安全；`0x34E` 读文件失败会抛异常，
+  // 这里按"不抛"处理（见 `.tmp/re-misc-gfx.md` §1）。
+  [0x346, op_engine_internal], // 复位全部变换为单位阵 → sub_427DD0
+  [0x347, op_engine_internal], // 缩放（百分数 /100）→ sub_427E10
+  [0x348, op_engine_internal], // 缩放 + 汇总参数 → sub_427EA0
+  [0x349, op_engine_internal], // 平移（像素）→ sub_427F30
+  [0x34a, op_engine_internal], // 基础平移偏移 +8/+12/+16 → sub_427FB0
+  [0x34b, op_engine_internal], // 缩放目标矩阵 + 窗1 → sub_428030（置 pending Scene+46516）
+  [0x34c, op_engine_internal], // 旋转目标矩阵 + 轴角 + 窗2 → sub_4280D0（置 pending）
+  [0x34d, op_engine_internal], // 平移目标矩阵 + 窗3 → sub_428170（置 pending）
+  [0x321, op_engine_internal], // MeshEntry 属性块 `+28+4·op2` → sub_426BD0（原样写入，无 clamp/回退）
+  [0x326, op_engine_internal], // 3D 雪花 ID3DXEffect（自带 `Scene+46668>=1` 门槛）→ sub_426E10
+  [0x325, op_engine_internal], // 消息对象字段 +1240/+1244 → sub_426DC0
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
   // 分组依据：handler 体只读操作数、写 `_this[消息窗族字段]`（0x151fc/0x152xx 区、`_this+21324` 文本子系统），
   // **不回写操作数、不改控制流**。其中「字段可建模」的已升级为真实现（见 OPS 的 ENGINE_FIELD_STORE 一族与
@@ -1322,18 +1700,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0xaf, op_engine_internal], // 数据
   [0x143, op_engine_internal], // 脚本控制：扫 256 请求槽 → queueScript → dispatchQueuedScripts（见 docs）
   // ============ 渲染 / 图形 / 图像 / 纹理 ============
-  [0x32f, op_engine_internal], // → sub_49A150(_this+80708, op1)（绘制容器：设图元）
-  [0x248, op_engine_internal], // 渲染/配置（sub_425310）
-  [0x352, op_engine_internal], // → sub_4A1AC0（网格/顶点）
-  [0x344, op_engine_internal], // → sub_4AFBF0（纹理）
-  [0x23b, op_engine_internal], // 渲染/绘制（sub_424970）
-  [0x25b, op_engine_internal], // 图像资源加载：_this[92379]/[92381] + sub_408440
-  [0x1f6, op_engine_internal], // → sub_4AB7A0(_this+80708)：清/重置绘制容器（场景切换用）
   // ============ 数据 / 资源登记 ============
-  [0x2da, op_engine_internal], // CG/资源登记（sub_4034D0/sub_426420）
   // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============
-  [0x23d, op_engine_internal], // 释放纹理槽
-  [0x32b, op_engine_internal], // 图形
   // ============ 声音 ============
   [0x2f8, op_engine_internal], // → sub_4B6940(_this+4666, op1+12, op2)（声音通道/音量）
   // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统，按引擎语义"读操作数/写状态"但无输出 ----

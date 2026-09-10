@@ -71,10 +71,51 @@ export interface NativeBridge {
   playSound?(id: number, volume: number): void;
   playBgm?(id: number): void;
   playVoice?(id: number): void;
-  /** 保留旧 raw 兼容名（内部已改为配置 draw-item，不立即出像素） */
+  /** 0x1FB draw-texture（sub_422E70）：8 操作数 `[slot, layer, srcX, srcY, srcW, srcH, dstX, dstY]`。
+   *  ★与 `configureDrawItem` 的关系：draw-texture 是"**按纹理槽绘制**"；`op_draw_texture` 解析操作数后
+   *  经本方法转发（默认实现即转 `configureDrawItem`）。宿主可覆写本方法做"槽→实际图像"的额外解析。 */
   drawTexture?(args: number[]): void;
-  /** 保留旧 raw 兼容名（内部改为绑定 slot→imgid） */
+  /** 0x1F9 set-texture（sub_422CB0）：`[imgid, slot, color]` —— 引擎里**唯一的槽↔图像绑定**。
+   *  ★与 `bindTexture` 的关系：本方法默认转发 `bindTexture(imgid, slot)`。 */
   setTexture?(args: number[]): void;
+  /** 0x1F8 create-texture：`[slot, w, h, mode]` —— 释放该槽旧纹理对象并**新建**一张（程序化纹理）。
+   *  emulator 建模为"该槽的图像缓存失效并重取"（见 PixiBackend）。 */
+  createTexture?(slot: number, w: number, h: number, mode: number): void;
+  /** 0x1FD（sub_422FD0）：3D 缩放变换（`sub_4AC5F0` 设缩放矩阵，百分数）。 */
+  setScale?(handle: number, sx: number, sy: number, sz: number): void;
+  /**
+   * 0x1FF（sub_4230F0 → `sub_4AC750`）：**DrawItem 的像素平移**（op2/op3/op4 = x/y/z float，像素单位）。
+   * 引擎：`DrawItem+0x68 = 1`（用世界矩阵）+ `D3DXMatrixTranslation(元素+0x16C, x,y,z)` 写**平移 work 矩阵**，
+   * **立即生效、无动画窗**（与 0x220 写 target + 开窗不同）。对照：**平移用像素、缩放用百分数**。
+   */
+  setDrawTranslation?(handle: number, x: number, y: number, z: number): void;
+  /**
+   * 0x208（sub_4302E0 → `sub_49ED60`）：**纹理尺寸查询**，返回该槽纹理的原始宽高。
+   * 引擎读 `CTexture+1040/+1044`；槽越界/未创建时返回 0/0（引擎只记日志、不改控制流）。
+   * ★这是 getter：调用方会把结果**写回脚本操作数 2/3**，漏掉会造成脚本层逻辑错误。
+   */
+  getTextureSize?(slot: number): { w: number; h: number };
+  /**
+   * 0x23B（sub_424970）：**按 CG 数字条画数值**。
+   * 实现方负责：先删 DrawItem/Mesh 的 `[id, id+digits)` 区间，再按记录逐位建 DrawItem。
+   * `rec` = 7 dword（[0] 纹理槽 / [1] x0 / [2] y0 / [3] 单字宽 / [4] 字高 / [5] 字内空隙 / [6] 字距）；
+   * `flags` bit0 = 补前导零、bit1 = 居中、bit2 = 左对齐。
+   */
+  drawCgNumber?(id: number, rec: readonly number[], value: number, x: number, y: number, digits: number, flags: number): void;
+  /** 0x32F（sub_4272B0 → `sub_49A150`）：**D3D 灯光开关** `LightEnable(idx, on)`（idx=0..9；同族 sub_49A080=SetLight）。 */
+  setLight?(idx: number, on: boolean): void;
+  /** 0x342（sub_427C70 → `sub_4A1A60`）：**销毁 Live2D 模型实例槽**（Scene+55812 的 10 槽，析构 + delete + 置 0）。 */
+  destroyL2DSlot?(slot: number): void;
+  /** 0x352（sub_4283B0 → `sub_4A1AC0`）：Live2D 槽参数——按 `sel` 置**待纹理 ID**(+24/+28) 或**待动作 ID**(+25/+32)。 */
+  l2dSlotSet?(slot: number, sel: number, value: number): void;
+  /** 0x23D（sub_41A300）：**销毁 movie/纹理槽 42..999**（CMovieToTexture 族析构 + Scene 卸槽）。 */
+  releaseMovieSlots?(): void;
+  /** 0x32B（sub_41A4A0）：**清 D3DX 网格层级槽表**（Scene+50708 区 1000 槽，逐项 delete）。 */
+  clearMeshSlots?(): void;
+  /** 0x259（sub_41A3A0）：清两张 1000×2 组 5-DWORD 记录表（只清记录、不 delete 对象）。 */
+  clearSlotRecords?(): void;
+  /** 0x340（sub_427B60 → `sub_49A2D0`）：下发渲染状态（设备 vtable+228，状态 #22）。 */
+  setRenderState?(state: number, value: number): void;
   setFont?(args: number[]): void;
   setString?(s: string): void;
   stringResourceId?(s: string): number;
@@ -101,11 +142,36 @@ export interface NativeBridge {
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */
   setDrawColor?(handle: number, delay: number, count: number, to: number): void;
   /**
-   * 0x217（sub_423B20, raw 31791）：对象变换 `sub_4ACF20(_this+80708, handle, f2, f3, f4)`。
-   * 引擎里它把 handle 对应绘制项/网格的高度/宽度/角度（3 个 float）写进绘制容器；emulator 暂不建模
-   * （只记录），故设置界面里大量 0x217 不会影响已画出的图元。
+   * 0x217（sub_423B20, raw 31791）：**对象变换 pivot** `sub_4ACF20(_this+80708, handle, f2, f3, f4)`。
+   * 引擎：`sub_4AAA50` 保证 key 存在 → `map[key]` → 写元素下标 `6/7/8` = DrawItem`+24/+28/+32`
+   * = **回転/拡大縮小の中心（pivot）**；`sub_49AA30` 绘制期用 `T(-pivot) → 动画矩阵 → T(+pivot)` 夹住。
    */
-  setObjectTransform?(handle: number, height: number, width: number, angle: number): void;
+  setDrawPivot?(handle: number, x: number, y: number, z: number): void;
+  /**
+   * 0x219（sub_423BA0, raw 31807）：**描画位置** `sub_4ACEE0(_this+80708, handle, f2, f3, f4)`。
+   * 引擎：与 `sub_4ACF20` 逐行同构，唯写元素下标 `9/10/11` = DrawItem`+36/+40/+44` = 描画位置 (x,y,z)；
+   * 绘制期 `sub_4AEEA0` 把 `&v26[9]` 作第 5 参交 `sub_4A2D50` → `CTexture::Draw`。
+   */
+  setDrawPos?(handle: number, x: number, y: number, z: number): void;
+  /**
+   * 0x21E（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**。op2=delay、op3=dur、op4/5/6=sx/sy/sz（÷256）。
+   * 引擎写 DrawItem`+0x3C` delay / `+0x50` dur / `+0xAC` 目标缩放矩阵，窗末 `work(+)0x6C ← target`。
+   */
+  setScaleAnim?(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void;
+  /** 0x21F（sub_423D40 → `sub_4AD250`）：**旋转动画窗（窗2）**。op2=delay、op3=dur、op4/5/6=轴、op7=角（度）。 */
+  setRotationAnim?(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void;
+  /** 0x220（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**。op2=delay、op3=dur、op4/5/6=位移（不除 256）。 */
+  setTranslationAnim?(handle: number, delay: number, dur: number, x: number, y: number, z: number): void;
+  /** 0x239（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。op2=delay、op3=dur、op4=总帧数、op5=列数、op6=标志(bit0=保持末帧)。 */
+  setFlipbook?(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void;
+  /** 0x344（sub_427CB0）：纹理槽变换 `sub_4AFBF0(_this+80708, handle, value)`（置 map 项 `|=1`、`[+4]=value`）。 */
+  setTextureTransform?(handle: number, value: number): void;
+  /** 0x352（sub_4283B0）：图形子系统 `sub_4A1AC0(_this+80708, op1, op2, op3)`（按 op2 选 sub_478560/sub_478540）。 */
+  gfxSubsystem?(a2: number, a3: number, a4: number): void;
+  /** 0x1F6（sub_41A130）：`sub_4AB7A0(_this+80708)` —— 整批释放绘制项/网格（保留纹理槽）。 */
+  clearDrawContainer?(): void;
+  /** 0x20C（sub_41A1A0）：每帧 `sub_4B4040(_this+80708)`（帧刷新；emulator 渲染循环自行 present，可选）。 */
+  frameTick?(): void;
   /** 0x21C u00416270：置等待旗标位（0x400）。 */
   setWaitFlag?(mask: number): void;
   /** 0x1FA release-texture：释放某 layer。 */
@@ -135,10 +201,50 @@ export class StubNative implements NativeBridge {
     this.log(`[native:stub] play-voice id=0x${id.toString(16)}`);
   }
   drawTexture(args: number[]): void {
-    this.log(`[native:stub] draw-texture [${args.map((a) => '0x' + a.toString(16)).join(', ')}]`);
+    // 默认实现：把 draw-texture 的 8 操作数解释为绘制项配置（与 op_draw_texture 同一语义）
+    const [slot = 0, layer = 0, x = 0, y = 0, w = 0, h = 0, p = 0, q = 0] = args;
+    this.log(`[native:stub] draw-texture slot=${slot} layer=${layer} src=(${x},${y},${w}x${h}) dst=(${p},${q})`);
   }
   setTexture(args: number[]): void {
-    this.log(`[native:stub] set-texture [${args.map((a) => '0x' + a.toString(16)).join(', ')}]`);
+    const [imgid = 0, slot = 0] = args;
+    this.log(`[native:stub] set-texture imgid=0x${imgid.toString(16)} slot=${slot}`);
+  }
+  createTexture(slot: number, w: number, h: number, mode: number): void {
+    this.log(`[native:stub] createTexture slot=${slot} ${w}x${h} mode=${mode}`);
+  }
+  setScale(handle: number, sx: number, sy: number, sz: number): void {
+    this.log(`[native:stub] setScale h=0x${handle.toString(16)} (${sx},${sy},${sz})`);
+  }
+  setDrawTranslation(handle: number, x: number, y: number, z: number): void {
+    this.log(`[native:stub] setDrawTranslation h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+  getTextureSize(slot: number): { w: number; h: number } {
+    this.log(`[native:stub] getTextureSize slot=${slot}`);
+    return { w: 0, h: 0 };
+  }
+  drawCgNumber(id: number, rec: readonly number[], value: number, x: number, y: number, digits: number, flags: number): void {
+    this.log(`[native:stub] drawCgNumber id=0x${id.toString(16)} rec=[${rec.join(',')}] value=${value} (${x},${y}) digits=${digits} flags=${flags}`);
+  }
+  setLight(idx: number, on: boolean): void {
+    this.log(`[native:stub] setLight idx=${idx} on=${on}`);
+  }
+  destroyL2DSlot(slot: number): void {
+    this.log(`[native:stub] destroyL2DSlot slot=${slot}`);
+  }
+  l2dSlotSet(slot: number, sel: number, value: number): void {
+    this.log(`[native:stub] l2dSlotSet slot=${slot} sel=${sel} v=${value}`);
+  }
+  releaseMovieSlots(): void {
+    this.log('[native:stub] releaseMovieSlots (42..999)');
+  }
+  clearMeshSlots(): void {
+    this.log('[native:stub] clearMeshSlots');
+  }
+  clearSlotRecords(): void {
+    this.log('[native:stub] clearSlotRecords (1000x2 记录表)');
+  }
+  setRenderState(state: number, value: number): void {
+    this.log(`[native:stub] setRenderState #${state} = ${value}`);
   }
   setFont(args: number[]): void {
     this.log(`[native:stub] set-font [${args.map((a) => '0x' + a.toString(16)).join(', ')}]`);
@@ -200,7 +306,34 @@ export class StubNative implements NativeBridge {
   playMovie(id: number): void {
     this.log(`[native:stub] playMovie id=0x${id.toString(16)}`);
   }
-  setObjectTransform(handle: number, height: number, width: number, angle: number): void {
-    this.log(`[native:stub] setObjectTransform h=0x${handle.toString(16)} h=${height} w=${width} a=${angle}`);
+  setDrawPivot(handle: number, x: number, y: number, z: number): void {
+    this.log(`[native:stub] setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+  setDrawPos(handle: number, x: number, y: number, z: number): void {
+    this.log(`[native:stub] setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
+  }
+  setScaleAnim(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void {
+    this.log(`[native:stub] setScaleAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} s=(${sx},${sy},${sz})`);
+  }
+  setRotationAnim(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void {
+    this.log(`[native:stub] setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}`);
+  }
+  setTranslationAnim(handle: number, delay: number, dur: number, x: number, y: number, z: number): void {
+    this.log(`[native:stub] setTranslationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} t=(${x},${y},${z})`);
+  }
+  setFlipbook(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void {
+    this.log(`[native:stub] setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}`);
+  }
+  setTextureTransform(handle: number, value: number): void {
+    this.log(`[native:stub] setTextureTransform h=0x${handle.toString(16)} v=${value}`);
+  }
+  gfxSubsystem(a2: number, a3: number, a4: number): void {
+    this.log(`[native:stub] gfxSubsystem op1=${a2} op2=${a3} op3=${a4}`);
+  }
+  clearDrawContainer(): void {
+    this.log('[native:stub] clearDrawContainer');
+  }
+  frameTick(): void {
+    /* 每帧调用，stub 不记日志（避免刷屏） */
   }
 }

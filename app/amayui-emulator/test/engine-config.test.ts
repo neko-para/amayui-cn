@@ -218,11 +218,20 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（真实现 
     [0xc5, 2, 'engine-internal', false], // 声音音量显示（专门 handler，无声音子系统）
     [0x196, 3, 'engine-internal', false], // display-furigana（专门 handler，文本渲染未建模）
     [0x306, 1, 'native', false], // system:EffectSkipOnClick getter
-    [0x217, 4, 'native', false], // 对象变换 → native.setObjectTransform
+    [0x217, 4, 'native', false], // 对象变换 pivot → native.setDrawPivot
     [0x2ce, 1, 'native', false], // display:ScreenMode getter（上一轮已实现）
+    [0x20c, 0, 'implemented', false], // 帧刷新（真实现：刷时钟 + native.frameTick）
+    [0x1f4, 0, 'implemented', false], // 帧计时（真实现：帧计数/时钟寄存器）
+    [0x1f6, 0, 'implemented', false], // 整批清绘制容器 → native.clearDrawContainer
+    [0x1ff, 4, 'implemented', false], // DrawItem 像素平移（+0x68 / +0x16C work 矩阵）→ native.setDrawTranslation
+    [0x208, 3, 'implemented', false], // 纹理尺寸 getter：写回 op2/op3 → native.getTextureSize
+    [0x23b, 7, 'implemented', false], // 按 CG 数字条画数值 → native.drawCgNumber
+    [0x23c, 0, 'implemented', false], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
+    [0x2da, 8, 'implemented', false], // CG 数字条记录登记（7 dword/条）
+    [0x25b, 1, 'implemented', false], // 消息态图像：_this[92381] = op1（真实现字段写入）
     // 真·纯 no-op 插桩（控制窗显示在「真·忽略」栏）
-    [0x20c, 0, 'engine-internal', true],
-    [0x23d, 1, 'engine-internal', true],
+    [0x346, 0, 'engine-internal', true],
+    [0x349, 4, 'engine-internal', true],
   ];
   for (const [opcode, argc, kind, noop] of cases) {
     const e = new Engine(new StubNative(() => {}));

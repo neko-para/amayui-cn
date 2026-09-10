@@ -84,6 +84,19 @@ export class Engine {
   /** 启动加载的 SYS4REG.INI 解析结果（未加载时 null）。供 opcode 直接读键（如 0x131 读 `message:MesWinAlpha`）。 */
   config: import('../engineConfig.js').EngineConfig | null = null;
 
+  /**
+   * **纹理槽表**：`槽号 → imgid`（由 `set-texture`(0x1F9) 建立，`release-texture`(0x1FA) 清除）。
+   * `draw-texture`(0x1FB) 的 op1 是这个槽号，渲染器据此把槽解析成实际图像资源。
+   */
+  texSlots = new Map<number, number>();
+
+  /**
+   * **CG 数字条记录表**（引擎 `Engine+388332+28*cgno`，11 条 × 28 字节）。
+   * `0x2DA` 登记（op2..op8 = 7 个 dword），`0x23B` 消费：用 CG 图当数字字模画数值。
+   * 字段序：`[0]` 纹理槽 / `[1]` x0 / `[2]` y0 / `[3]` 单字宽 / `[4]` 字高 / `[5]` 字内空隙 / `[6]` 字距。
+   */
+  cgDigits = new Map<number, number[]>();
+
   /** 引擎 `_this[174801]` effect_flags 位掩码：
    *  0x400 = 动画等待门（0x21C wait）、0x20000000 = sleep(0xC8) 门、0x8000000 = ADV/消息激活。
    *  `waitFlags` 是它的旧别名；`advActive` 是 0x8000000 位的推导（见下方 getter）。 */
