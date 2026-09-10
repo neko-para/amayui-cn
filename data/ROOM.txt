@@ -70,7 +70,7 @@ mov (local-int 107) 1
 
 label_00000454
 sub (local-int 106) 0 1
-i109 (local-int 10e) (local-int 10f)
+read-mouse-pos (local-int 10e) (local-int 10f)
 
 label_00000484
 mov (local-int 103) (local-int 106)
@@ -163,8 +163,8 @@ mov (local-int 6) 1
 jmp label_00000aac
 
 label_00000a8c
-i109 (local-int 101) (local-int 102)
-i108 (local-int 6)
+read-mouse-pos (local-int 101) (local-int 102)
+read-mouse-button (local-int 6)
 
 label_00000aac
 ne (local-int 12a) (local-int 10e) (local-int 101)

@@ -169,8 +169,8 @@ mov (local-int 1) 1
 jmp label_00000fc4
 
 label_00000fa4
-i109 (local-int 7) (local-int 8)
-i108 (local-int 1)
+read-mouse-pos (local-int 7) (local-int 8)
+read-mouse-button (local-int 1)
 
 label_00000fc4
 and (local-int d) (local-int 1) 2

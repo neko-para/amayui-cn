@@ -8,6 +8,8 @@
       body { font-family: system-ui, sans-serif; background: #1e1e1e; color: #ddd; margin: 0; padding: 12px; }
       h1 { font-size: 15px; margin: 0 0 12px; color: #eee; }
       .row { margin: 8px 0; }
+      .row-head { display: flex; align-items: center; }
+      .row-head .mini { margin-left: auto; }
       .label { color: #8a8a8a; font-size: 12px; margin-right: 6px; }
       .value { color: #7cfc00; font-family: ui-monospace, monospace; }
       button {
@@ -29,6 +31,8 @@
       .unknown .hint { color: #b9a86a; font-size: 11px; margin: 6px 0 8px; }
       #btnSkipUnknown { background: #6b5410; border-color: #a8842a; color: #fff3cf; font-weight: 600; }
       #btnSkipUnknown:hover:not(:disabled) { background: #856a16; }
+      /* 清单右上角的「复制全部」（清单每 0.5s 重刷，直接划选很难，故给按钮） */
+      button.mini { padding: 2px 8px; font-size: 11px; margin: 0 0 0 8px; }
     </style>
   </head>
   <body>
@@ -47,12 +51,14 @@
       <div class="hint" id="unknownHint"></div>
       <button id="btnSkipUnknown">作为桩函数跳过并继续</button>
     </div>
-    <div class="row">
+    <div class="row row-head">
       <span class="label">已跳过指令（作为桩函数，去重）</span><span class="value" id="skippedCount">(…)</span>
+      <button id="btnCopySkipped" class="mini">复制全部</button>
     </div>
     <div class="row ignored-list" id="skipped"></div>
-    <div class="row">
+    <div class="row row-head">
       <span class="label">已忽略指令（去重）</span><span class="value" id="ignoredCount">(…)</span>
+      <button id="btnCopyIgnored" class="mini">复制全部</button>
     </div>
     <div class="row ignored-list" id="ignored"></div>
     <script src="./control.js"></script>

@@ -107,7 +107,7 @@ sub (local-int 3f7) 0 1
 sub (local-int 3f8) 0 1
 mov (local-int 3f9) 0
 play-sound-effect 39a3 2
-i109 (local-int 3f0) (local-int 3f1)
+read-mouse-pos (local-int 3f0) (local-int 3f1)
 call label_00000d50
 
 label_00000834
@@ -132,8 +132,8 @@ mov (local-int 3f2) 1
 jmp label_00000978
 
 label_00000958
-i109 (local-int 3ee) (local-int 3ef)
-i108 (local-int 3f2)
+read-mouse-pos (local-int 3ee) (local-int 3ef)
+read-mouse-button (local-int 3f2)
 
 label_00000978
 ne (local-int fe8) (local-int 3f0) (local-int 3ee)

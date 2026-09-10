@@ -36,7 +36,7 @@ sub (local-int 3f5) 0 1
 sub (local-int 3f6) 0 1
 sub (local-int 3f7) 0 1
 call label_00003340
-i109 (local-int 404) (local-int 405)
+read-mouse-pos (local-int 404) (local-int 405)
 joy-callback 0 label_000008ec
 joy-callback 1 label_00000d6c
 joy-callback 2 label_00000a6c
@@ -76,8 +76,8 @@ mov (local-int 3f2) 1
 jmp label_00000520
 
 label_00000500
-i109 (local-int 3f0) (local-int 3f1)
-i108 (local-int 3f2)
+read-mouse-pos (local-int 3f0) (local-int 3f1)
+read-mouse-button (local-int 3f2)
 
 label_00000520
 and (local-int 40d) (local-int 3f2) 2

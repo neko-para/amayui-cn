@@ -67,7 +67,7 @@ mov (local-int 7da) 0
 mov (local-int 7e5) 0
 mov (local-int 7e4) 1
 mov (local-int 7e9) 0
-i109 (local-int 7d7) (local-int 7d8)
+read-mouse-pos (local-int 7d7) (local-int 7d8)
 
 label_00000528
 get-input-type
@@ -91,8 +91,8 @@ mov (local-int 7d9) 1
 jmp label_00000674
 
 label_00000654
-i109 (local-int 7d5) (local-int 7d6)
-i108 (local-int 7d9)
+read-mouse-pos (local-int 7d5) (local-int 7d6)
+read-mouse-button (local-int 7d9)
 
 label_00000674
 ne (local-int 13c0) (local-int 7d7) (local-int 7d5)
@@ -202,7 +202,7 @@ label_00000dec
 mod (local-int 13c0) (local-int 7db) 6
 eq (local-int 13c1) (local-int 13c0) 0
 jcc (local-int 13c1) ffffffff label_00000e84
-i10d (local-int 7ea)
+read-mouse-wheel (local-int 7ea)
 ne (local-int 13c0) (local-int 7ea) 0
 jcc (local-int 13c0) label_00001ac0 ffffffff
 

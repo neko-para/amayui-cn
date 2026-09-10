@@ -121,7 +121,7 @@ mov (local-int 4a4) 1
 call label_00003cd0
 call label_00003d0c
 call label_000014c4
-i109 (local-int 7f) (local-int 80)
+read-mouse-pos (local-int 7f) (local-int 80)
 
 label_000008e0
 get-input-type
@@ -150,8 +150,8 @@ mov (local-int 81) 1
 jmp label_00000a20
 
 label_00000a00
-i109 (local-int 7d) (local-int 7e)
-i108 (local-int 81)
+read-mouse-pos (local-int 7d) (local-int 7e)
+read-mouse-button (local-int 81)
 
 label_00000a20
 ne (local-int 4a9) (local-int 7f) (local-int 7d)
@@ -292,7 +292,7 @@ gr (local-int 4a9) (local-int 489) 0
 jcc (local-int 4a9) label_00003444 label_000028d0
 
 label_000013d0
-i10d (local-int 90)
+read-mouse-wheel (local-int 90)
 ne (local-int 4a9) (local-int 90) 0
 jcc (local-int 4a9) label_000027bc ffffffff
 eq (local-int 4a9) (local-int 82) 0
@@ -313,7 +313,7 @@ ret
 label_000014c4
 mov (local-int 8a) 1
 mov (local-int 8f) 0
-i10d (local-int 90)
+read-mouse-wheel (local-int 90)
 joy-callback 0 label_00001614
 joy-callback 1 label_00001c70
 joy-callback 2 label_00001f0c
@@ -949,7 +949,7 @@ i0d4 10 1 label_00003a8c label_00003a8c
 i0d4 1 2 label_00003a74 label_00003a74
 i0d5 ffffffff
 ret
-i10d (local-int 90)
+read-mouse-wheel (local-int 90)
 ret
 
 label_00003a74

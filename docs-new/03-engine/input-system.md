@@ -329,7 +329,7 @@ hover 路径（`label_0000039c → label_00000460(mouse handler) → label_00000
 | 指令 | engine | 结论 |
 |---|---|---|
 | `0x12E` | sub_42F230(39199) | **DEC 编码有向矩形**命中：读 `op2=S`(4×DEC 偏移) + `op5=P`(每索引 16B DEC) + `op6/op7=基准` + `op8=count`；判定 `dx∈[DEC(P0)-S1, DEC(P1)-S0]`, `dy∈[DEC(P2)-S3, DEC(P3)-S2]`；从 `op1+1` 起扫，命中返回索引否则 -1。对本 TITLE 数据等价于 AABB `[0,0x9c]x[0,0x9c]`（`(local 1)`=ENC(0)→DEC=0 → S=0；数组带 DEC 往返一致）→ **emulator 的 AABB 简化目前正确** |
-| `0x2FC` | sub_431BA0(40776) | 读**触摸/手势缓冲**（`_this+6780`,count `_this[6776]`,40B/项）：有触点写 `op1=1,op2=X,op3=Y,op4=触点旗标(v9[4]),op5=触点项[3](v9[3]=dwID)`；**无触点写 op1=0** → handler 落回 `i109`/`i108` 读光标。emulator 若把「光标存在」当「触点存在」为错（会误置 `local 3f2=1` 左键恒按） |
+| `0x2FC` | sub_431BA0(40776) | 读**触摸/手势缓冲**（`_this+6780`,count `_this[6776]`,40B/项）：有触点写 `op1=1,op2=X,op3=Y,op4=触点旗标(v9[4]),op5=触点项[3](v9[3]=dwID)`；**无触点写 op1=0** → handler 落回 `read-mouse-pos`/`read-mouse-button` 读光标。emulator 若把「光标存在」当「触点存在」为错（会误置 `local 3f2=1` 左键恒按） |
 | `0xB5` | sub_420B40(29690) | `arity=3`；`sub_4B5020(_this+20719, op1, 0)` —— **声音通道控制**（与 0xB4 play-sound-effect/0xB6 同族）。hover 移动音效，**不影响高亮/回退** |
 | `0x20C` | sub_41A1A0 | 时间戳+present（帧同步）；无界面 no-op |
 | `0x1F7` | sub_422BC0 | 纹理子系统方法（`sub_4AB950`/`sub_4ABB60`）；**不清/不重置 item 颜色** |

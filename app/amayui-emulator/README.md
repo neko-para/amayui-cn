@@ -38,9 +38,9 @@
 
 | opcode | 引擎 handler | emulator | 语义 |
 |---|---|---|---|
-| `0x108` | `sub_42EDC0` | `[已实现]` | `op1 = 鼠标按钮值`（bit0=左/bit1=右）；渲染窗 `mousedown/mouseup` 注入 |
-| `0x109` | `sub_42EE10` | `[已实现]` | `op1=X, op2=Y`（虚拟 1280×720 坐标；出窗=-100000）；渲染窗 `mousemove/mouseleave` 注入 |
-| `0x10D` | `sub_42EF50` | `[已实现]` | **读鼠标滚轮增量并清零**（一次性消费）→ `op1`；渲染窗 `wheel` 注入 |
+| `0x108` | `sub_42EDC0` | `[已实现]` | `read-mouse-button`：`op1 = 鼠标按钮值`（bit0=左/bit1=右）；渲染窗 `mousedown/mouseup` 注入 |
+| `0x109` | `sub_42EE10` | `[已实现]` | `read-mouse-pos`：`op1=X, op2=Y`（虚拟 1280×720 坐标；出窗=-100000）；渲染窗 `mousemove/mouseleave` 注入 |
+| `0x10D` | `sub_42EF50` | `[已实现]` | `read-mouse-wheel`：**读鼠标滚轮增量并清零**（一次性消费）→ `op1`；渲染窗 `wheel` 注入 |
 | `0xCC` / `0xFB` | `sub_421980` / `sub_421B80` | `[已实现]` | 注册 mouse/joy 跳转目标（供 0xCD/0x100 派发） |
 | `0x100` / `0x101` / `0xCD` / `0x2FC` | … | `[已实现]` | 输入掩码/派发/推进门/触摸（无触摸恒 0） |
 
@@ -52,7 +52,7 @@
 - 渲染窗 `wheel` 事件按 `-e.deltaY` 换算后 `input.addWheel()`（DOM 的 deltaY 下滚为正，与引擎相反）。
 - **不随 `consumeEdges()` 擦除**：它是"读时消费"而非"按帧擦除"，否则轮询期间未读就丢
   （引擎里只有 `0x10D` 与消息泵的 ADV 推进分支会清它）。
-- 脚本用法（40+ 菜单/列表）：进入时 `i10d` 丢弃残量 → 主循环 `i10d (local 403)` + `jcc (local 403) <翻页label>`。
+- 脚本用法（40+ 菜单/列表）：进入时 `read-mouse-wheel` 丢弃残量 → 主循环 `read-mouse-wheel (local 403)` + `jcc (local 403) <翻页label>`。
 - 测试：`test/wheel.test.ts`（读后清零 / 累加 / 负方向 / 不被 consumeEdges 清）。
 
 ---
@@ -66,7 +66,7 @@
 | **重启** | reload 主窗口渲染器 → 重跑完整 boot（清掉所有「已跳过」桩） |
 | **启用指令日志** | 切渲染窗的逐条 trace（`traceAll`）：关=只记「已忽略/未知」，开=全量（节流 ≥100ms） |
 | **⏸ 遇到不认识的指令 → 作为桩函数跳过并继续** | 见下 |
-| 已跳过 / 已忽略 清单 | 「已跳过」= 用户点按钮登记的运行时桩；「已忽略」= `ENGINE_INTERNAL_OPS` 静态插桩 |
+| 已跳过 / 已忽略 清单 | 「已跳过」= 用户点按钮登记的运行时桩；「已忽略」= `ENGINE_INTERNAL_OPS` 静态插桩。两个清单都**只列助记符**（不列 `0x…` 指令码数值），且各带 **「复制全部」** 按钮——清单每 0.5s 重刷、直接划选很难，点按钮即按「一行一条」复制到剪贴板（`navigator.clipboard`，失败回退 `execCommand`） |
 
 ### 未知指令 → 桩跳过（可恢复的硬停）
 

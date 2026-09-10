@@ -136,7 +136,7 @@ jmp label_000009a4
 
 label_00000974
 sub (local-int 7) 0 1
-i109 (local-int 92) (local-int 93)
+read-mouse-pos (local-int 92) (local-int 93)
 
 label_000009a4
 get-input-type
@@ -164,8 +164,8 @@ label_00000aec
 jmp label_00000b18
 
 label_00000af8
-i109 (local-int 2) (local-int 3)
-i108 (local-int 4)
+read-mouse-pos (local-int 2) (local-int 3)
+read-mouse-button (local-int 4)
 
 label_00000b18
 and (local-int 9e) (local-int 4) 2

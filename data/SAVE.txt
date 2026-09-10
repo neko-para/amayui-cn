@@ -200,8 +200,8 @@ mov (local-int 7) 0
 mov (local-int 9) 0
 mov (local-int 8) 1
 mov (local-int d) 0
-i109 (local-int 21f) (local-int 220)
-i10d (local-int 14)
+read-mouse-pos (local-int 21f) (local-int 220)
+read-mouse-wheel (local-int 14)
 i2e5 (local-int 15)
 joy-callback 0 label_0000163c
 joy-callback 1 label_00001b10
@@ -245,8 +245,8 @@ mov (local-int 13) 1
 jmp label_000011c4
 
 label_000011a4
-i109 (local-int 21d) (local-int 21e)
-i108 (local-int 13)
+read-mouse-pos (local-int 21d) (local-int 21e)
+read-mouse-button (local-int 13)
 
 label_000011c4
 and (local-int 21c6) (local-int 13) 2
@@ -299,7 +299,7 @@ label_000014e8
 mod (local-int 21c6) (local-int 210) 6
 eq (local-int 21c7) (local-int 21c6) 0
 jcc (local-int 21c7) ffffffff label_0000158c
-i10d (local-int 14)
+read-mouse-wheel (local-int 14)
 jcc (local-int 14) label_000020ac ffffffff
 i2e5 (local-int 15)
 jcc (local-int 15) label_00001f7c ffffffff
@@ -567,7 +567,7 @@ set-string (local-string-ptr 0) (local-string 0)
 sub (local-int 0) 0 1
 sub (local-int 1) 0 1
 sub (local-int 2) 0 1
-i109 (local-int 21f) (local-int 220)
+read-mouse-pos (local-int 21f) (local-int 220)
 call label_00008438
 call label_0000a474
 jmp label_00002d08

@@ -17,7 +17,7 @@ mov (local-int 3f8) 1
 mov (local-int 3f2) 0
 mov (local-int 3fa) 0
 mov (local-int 3f4) 0
-i109 (local-int 3ef) (local-int 3f0)
+read-mouse-pos (local-int 3ef) (local-int 3f0)
 call label_000006b8
 
 label_0000017c
@@ -40,8 +40,8 @@ mov (local-int 3f1) 1
 jmp label_00000290
 
 label_00000270
-i109 (local-int 3ed) (local-int 3ee)
-i108 (local-int 3f1)
+read-mouse-pos (local-int 3ed) (local-int 3ee)
+read-mouse-button (local-int 3f1)
 
 label_00000290
 ne (local-int 40e) (local-int 3ef) (local-int 3ed)

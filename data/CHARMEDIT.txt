@@ -89,7 +89,7 @@ sub (local-int 7) 0 1
 sub (local-int 215) 0 1
 mov (local-int 21f) 0
 mov (local-int 8) 0
-i109 (local-int 13) (local-int 14)
+read-mouse-pos (local-int 13) (local-int 14)
 call label_00000f04
 
 label_0000070c
@@ -118,8 +118,8 @@ mov (local-int 2) 1
 jmp label_00000868
 
 label_00000848
-i109 (local-int 0) (local-int 1)
-i108 (local-int 2)
+read-mouse-pos (local-int 0) (local-int 1)
+read-mouse-button (local-int 2)
 
 label_00000868
 ne (local-int 245) (local-int 13) (local-int 0)

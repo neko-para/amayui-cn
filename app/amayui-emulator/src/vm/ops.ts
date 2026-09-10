@@ -633,28 +633,28 @@ const op_detach_texture: OpHandler = (c) => {
 
 // ---- 鼠标/输入子系统 opcodes（已读 handler 体；语义见 ../docs-new/03-engine/input-system.md）----
 
-/** 0x108 (u00415E70, sub_42EDC0)：`op1 = 鼠标按钮值`。bit0=左、bit1=右（sub_477220 约定）。 */
-const op_read_mouse_buttons: OpHandler = (c) => {
+/** `read-mouse-button` (0x108, sub_42EDC0)：`op1 = 鼠标按钮值`。bit0=左、bit1=右（sub_477220 约定）。 */
+const op_read_mouse_button: OpHandler = (c) => {
   const b = c.e.input.readButtons();
   writeIntOperand(c.e, c.frame, c.instr, 1, b);
 };
 
-/** 0x109 (u00415EC0, sub_42EE10)：`op1=X, op2=Y`（虚拟坐标；未初始化/出窗 = -100000）。 */
+/** `read-mouse-pos` (0x109, sub_42EE10)：`op1=X, op2=Y`（虚拟坐标；未初始化/出窗 = -100000）。 */
 const op_read_mouse_pos: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.readX());
   writeIntOperand(c.e, c.frame, c.instr, 2, c.e.input.readY());
 };
 
 /**
- * 0x10D (sub_42EF50)：**读鼠标滚轮增量（一次性消费）** → `op1`。
+ * `read-mouse-wheel` (0x10D, sub_42EF50)：**读鼠标滚轮增量（一次性消费）** → `op1`。
  * 引擎体（raw 39114-39122，本工程分析见 analysis/functions.json 的 op_read_mouse_wheel_42EF50）：
  *   `_this[30*cur+95805]=3;  v2 = _this[1949];  _this[1949] = 0;  writeIntOperand(1, v2);`
  * 即：取 `mouse_wheel_residual`(0x1E74) → **立即清零** → 写 op1。
  * 值语义：自上次读取以来 WM_MOUSEWHEEL 的增量累计（引擎单位：一格 ±120，**上滚正/下滚负**）。
- * 脚本用法（40+ 菜单/列表）：进入时 `i10d` 丢弃残量，主循环反复 `i10d` + `jcc (local) <翻页label>`
+ * 脚本用法（40+ 菜单/列表）：进入时 `read-mouse-wheel` 丢弃残量，主循环反复 `read-mouse-wheel` + `jcc (local) <翻页label>`
  *   → 非 0 即翻页；`gr (local 403) 0` 区分上/下滚（src/$3$AGENCY.txt:258/283/548）。
  * ⚠️与消息泵耦合：引擎的 ADV 推进分支（raw 13938）读同一累加器且**仅 <0（下滚）**才推进文本；
- *   脚本先 i10d 取走 ⇒ 累加器归零 ⇒ 泵侧不再推进（"脚本优先接管滚轮"）。
+ *   脚本先 read-mouse-wheel 取走 ⇒ 累加器归零 ⇒ 泵侧不再推进（"脚本优先接管滚轮"）。
  *   emulator 的 0xCD get-input-type 走的是「时间节流/ADV 激活」而非滚轮值（见 input.getInputType 注释），
  *   故此处不做泵侧联动；若日后要让滚轮推进 ADV 文本，应在那里按 `<0` 消费。
  */
@@ -662,7 +662,7 @@ const op_read_mouse_wheel: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeWheelDelta());
 };
 
-/** 0xCC (mouse_callback, sub_421980)：注册鼠标跳转目标。op2=label。 */
+/** `mouse-callback` (0xCC, sub_421980)：注册鼠标跳转目标。op2=label。 */
 const op_mouse_callback: OpHandler = (c) => {
   const slot = readIntOperand(c.e, c.frame, c.instr, 1);
   const target = operandArg(c.instr, 2).raw; // label 值（与 jmp/call 同尺度）
@@ -728,13 +728,13 @@ const op_get_input_type: OpHandler = (c) => {
 /**
  * 0x2FC (sub_431BA0)：读**触摸/手势触点** + 虚拟坐标。
  * 引擎：sub_477980(_this+258,&Point,&a3,&a4) 从**触摸/手势缓冲**取触点（非 GetCursorPos）→ 有触点写 op1=1、op2=虚屏X、op3=虚屏Y、
- *   op4=触点旗标(v9[4]=dwFlags)、op5=触点项[3](v9[3]=dwID)；**无触点写 op1=0**，handler 随即落回 i109/i108 读**光标**。
- * emulator：只建模【鼠标光标】，**没有触摸/手势触点缓冲**；故**恒 op1=0（无触点）**——坐标/按钮由 label_0000047c 里的 i109/i108
+ *   op4=触点旗标(v9[4]=dwFlags)、op5=触点项[3](v9[3]=dwID)；**无触点写 op1=0**，handler 随即落回 read-mouse-pos/read-mouse-button 读**光标**。
+ * emulator：只建模【鼠标光标】，**没有触摸/手势触点缓冲**；故**恒 op1=0（无触点）**——坐标/按钮由 label_0000047c 里的 read-mouse-pos/read-mouse-button
  * （读光标位置/按钮）提供，从而不误把光标当"触点按下"（引擎桌面鼠标下 0x2FC 返回 0）。 */
 const op_get_mouse_state: OpHandler = (c) => {
   const im = c.e.input;
   im.touchId = 0; // 无触点（dwID=0）
-  // 无触点：仅写 op1=0。坐标/按钮由后续 i109(光标X/Y) + i108(按钮) 提供（TITLE label_0000047c 的 no-touch 分支）。
+  // 无触点：仅写 op1=0。坐标/按钮由后续 read-mouse-pos(光标X/Y) + read-mouse-button(按钮) 提供（TITLE label_0000047c 的 no-touch 分支）。
   // 注意：不要把「光标存在」当「触点存在」——那会误置 local 3f2=1(左键恒按下)，破坏 hover 高亮/回退。
   writeIntOperand(c.e, c.frame, c.instr, 1, 0);
   writeIntOperand(c.e, c.frame, c.instr, 2, im.readX());
@@ -892,9 +892,9 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0xa2, op_menu_bind],
   [0xa3, op_menu_dispatch],
   // ---- 鼠标/输入子系统（读操作数/跳转/注册目标；语义见 docs-new/03-engine/input-system.md）----
-  [0x108, op_read_mouse_buttons],
-  [0x109, op_read_mouse_pos],
-  [0x10d, op_read_mouse_wheel], // 读鼠标滚轮增量（一次性消费）→ op1
+  [0x108, op_read_mouse_button], // read-mouse-button：读鼠标按钮值 → op1
+  [0x109, op_read_mouse_pos], // read-mouse-pos：读鼠标位置 → op1=X, op2=Y
+  [0x10d, op_read_mouse_wheel], // read-mouse-wheel：读鼠标滚轮增量（一次性消费）→ op1
   [0xcc, op_mouse_callback],
   [0xfb, op_joy_callback],
   [0xff, op_input_reset],

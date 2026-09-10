@@ -485,8 +485,8 @@ mov (local-int 2c5) 1
 jmp label_00002234
 
 label_00002214
-i109 (local-int 2c1) (local-int 2c2)
-i108 (local-int 2c5)
+read-mouse-pos (local-int 2c1) (local-int 2c2)
+read-mouse-button (local-int 2c5)
 
 label_00002234
 ne (local-int 1de7) (local-int 2d4) 2
@@ -723,7 +723,7 @@ jcc (local-int 1dee) ffffffff label_000035c4
 jmp label_00007084
 
 label_000035c4
-i10d (local-int 2dd)
+read-mouse-wheel (local-int 2dd)
 ne (local-int 1de7) (local-int 2dd) 0
 jcc (local-int 1de7) label_000039ec ffffffff
 eq (local-int 1de7) (local-int 2c6) 0
@@ -739,8 +739,8 @@ play-sound-effect 39a3 2
 mov (local-int 2cc) (local-int 2ce)
 mov (local-int 2cd) (local-int 2ce)
 mov (local-int 2d2) 1
-i109 (local-int 2c1) (local-int 2c2)
-i10d (local-int 2dd)
+read-mouse-pos (local-int 2c1) (local-int 2c2)
+read-mouse-wheel (local-int 2dd)
 joy-callback 0 label_000037d8
 joy-callback 1 label_000038e4
 joy-callback 2 label_0000384c

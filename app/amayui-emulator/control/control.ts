@@ -35,6 +35,8 @@ const skippedCountEl = el<HTMLSpanElement>('skippedCount');
 const skippedBox = el<HTMLDivElement>('skipped');
 const errorBox = el<HTMLDivElement>('error');
 const btnTraceAll = el<HTMLButtonElement>('btnTraceAll');
+const btnCopySkipped = el<HTMLButtonElement>('btnCopySkipped');
+const btnCopyIgnored = el<HTMLButtonElement>('btnCopyIgnored');
 const unknownBlock = el<HTMLDivElement>('unknownBlock');
 const unknownInfo = el<HTMLDivElement>('unknownInfo');
 const unknownHint = el<HTMLDivElement>('unknownHint');
@@ -43,6 +45,51 @@ const btnSkipUnknown = el<HTMLButtonElement>('btnSkipUnknown');
 let traceAll = false;
 /** 当前等待处理的未知指令（= 渲染窗上报的 pendingUnknown；null 表示没有）。 */
 let pending: ControlStatus['pendingUnknown'] | null = null;
+/** 两个清单的最新内容（供「复制全部」用；清单每 0.5s 重刷，直接划选很难操作）。 */
+let skippedItems: NonNullable<ControlStatus['skipped']> = [];
+let ignoredItems: ControlStatus['ignored'] = [];
+
+/** 复制文本到剪贴板；失败时回退到临时 textarea + execCommand。返回是否成功。 */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** 「复制全部」：把清单按一行一条复制（只名字，不含指令码数值）。点后按钮短暂显示结果。 */
+function wireCopyButton(btn: HTMLButtonElement, lines: () => string[], label: string): void {
+  let timer = 0;
+  btn.addEventListener('click', () => {
+    const items = lines();
+    const done = (msg: string): void => {
+      btn.textContent = msg;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        btn.textContent = label;
+      }, 1500);
+    };
+    if (items.length === 0) {
+      done('（空）');
+      return;
+    }
+    void copyText(items.join('\n')).then((ok) => done(ok ? `已复制 ${items.length} 条` : '复制失败'));
+  });
+}
 
 function updateTraceBtn(): void {
   btnTraceAll.textContent = `启用指令日志：${traceAll ? '开（全量）' : '关（仅未知）'}`;
@@ -50,13 +97,14 @@ function updateTraceBtn(): void {
 }
 
 function renderIgnored(ignored: { opcode: number; name: string }[]): void {
+  ignoredItems = ignored;
   ignoredCountEl.textContent = `(${ignored.length} 个)`;
   ignoredBox.textContent = '';
   if (ignored.length === 0) {
     ignoredBox.textContent = '（暂无已忽略指令）';
     return;
   }
-  // 只显示助记符（name 已是语义名或 iXXX 数值），不再额外打印 opcode 数字。
+  // 与「已跳过」一致：只显示助记符（name 已是语义名或 iXXX 数值），不列指令码数值。
   for (const it of ignored) {
     const d = document.createElement('div');
     d.textContent = it.name;
@@ -64,18 +112,20 @@ function renderIgnored(ignored: { opcode: number; name: string }[]): void {
   }
 }
 
-/** 已跳过的未知指令（用户在按钮上点过、已登记为 no-op 桩）。 */
+/** 已跳过的未知指令（用户在按钮上点过、已登记为 no-op 桩）。只显示助记符 + 执行次数。 */
 function renderSkipped(list: ControlStatus['skipped'] | undefined): void {
   const items = list ?? [];
+  skippedItems = items;
   skippedCountEl.textContent = `(${items.length} 个)`;
   skippedBox.textContent = '';
   if (items.length === 0) {
     skippedBox.textContent = '（暂无已跳过指令）';
     return;
   }
+  // 不再显示 `0x…` 指令码数值（与「已忽略」清单一致，便于直接复制助记符）。
   for (const it of items) {
     const d = document.createElement('div');
-    d.textContent = `0x${it.opcode.toString(16)} ${it.name} ×${it.count}`;
+    d.textContent = `${it.name} ×${it.count}`;
     skippedBox.appendChild(d);
   }
 }
@@ -118,6 +168,10 @@ btnTraceAll.addEventListener('click', () => {
   window.api.controlSetTraceAll(traceAll);
   updateTraceBtn();
 });
+
+// 两个清单每 0.5s 重刷（无法稳定划选）→ 提供「复制全部」，一行一条、只含助记符。
+wireCopyButton(btnCopySkipped, () => skippedItems.map((it) => `${it.name} ×${it.count}`), '复制全部');
+wireCopyButton(btnCopyIgnored, () => ignoredItems.map((it) => it.name), '复制全部');
 
 btnSkipUnknown.addEventListener('click', () => {
   if (!pending) return;

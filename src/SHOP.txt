@@ -163,8 +163,8 @@ mov (local-int 3f1) 1
 jmp label_00000bec
 
 label_00000bcc
-i109 (local-int 3ed) (local-int 3ee)
-i108 (local-int 3f1)
+read-mouse-pos (local-int 3ed) (local-int 3ee)
+read-mouse-button (local-int 3f1)
 
 label_00000bec
 ne (local-int fe3d) (local-int 3ef) (local-int 3ed)
@@ -243,7 +243,7 @@ jcc (local-int fe3e) ffffffff label_00001164
 i2e5 (local-int 404)
 ne (local-int fe3d) (local-int 404) 0
 jcc (local-int fe3d) label_000020d4 ffffffff
-i10d (local-int 403)
+read-mouse-wheel (local-int 403)
 jcc (local-int 403) label_0000209c ffffffff
 
 label_00001164
@@ -267,8 +267,8 @@ mov (local-int 3fd) 1
 mov (local-int 402) 0
 sub (local-int 3f5) 0 1
 sub (local-int 3f6) 0 1
-i109 (local-int 3ef) (local-int 3f0)
-i10d (local-int 403)
+read-mouse-pos (local-int 3ef) (local-int 3f0)
+read-mouse-wheel (local-int 403)
 i2e5 (local-int 404)
 joy-callback 0 label_000013bc
 joy-callback 1 label_00001ae8

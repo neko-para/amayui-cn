@@ -1303,8 +1303,8 @@ mov (local-int 2fb1) 1
 jmp label_00005a4c
 
 label_00005a2c
-i109 (local-int 2fad) (local-int 2fae)
-i108 (local-int 2fb1)
+read-mouse-pos (local-int 2fad) (local-int 2fae)
+read-mouse-button (local-int 2fb1)
 
 label_00005a4c
 eq (local-int 819f) (local-int 2fc1) 1
@@ -1479,7 +1479,7 @@ label_00006708
 mod (local-int 819f) (local-int 2fb6) 2
 eq (local-int 81a2) (local-int 819f) 0
 jcc (local-int 81a2) ffffffff label_000067a0
-i10d (local-int 2fcd)
+read-mouse-wheel (local-int 2fcd)
 ne (local-int 819f) (local-int 2fcd) 0
 jcc (local-int 819f) label_000092dc ffffffff
 
@@ -1506,8 +1506,8 @@ mov (local-int 2fc0) 0
 mov (local-int 2fb2) 0
 mov (local-int 2fc1) 0
 mov (local-int 2fcb) 0
-i109 (local-int 2fad) (local-int 2fae)
-i10d (local-int 2fcd)
+read-mouse-pos (local-int 2fad) (local-int 2fae)
+read-mouse-wheel (local-int 2fcd)
 joy-callback 0 label_00006a04
 joy-callback 1 label_00006d60
 joy-callback 2 label_000070bc
@@ -2479,7 +2479,7 @@ jcc (local-int 81a0) ffffffff label_0000a2fc
 i0b5 2
 
 label_0000a2fc
-i10d (local-int 2fcd)
+read-mouse-wheel (local-int 2fcd)
 ret
 
 label_0000a30c
@@ -12113,7 +12113,7 @@ wait
 detach-texture 10d88 2
 release-texture 2a
 poll-input
-i10d (local-int 2fcd)
+read-mouse-wheel (local-int 2fcd)
 ret
 
 label_000353f4

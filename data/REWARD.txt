@@ -303,7 +303,7 @@ mov (local-int 26a) 0
 sub (local-int 265) 0 1
 sub (local-int 266) 0 1
 sub (local-int 267) 0 1
-i109 (local-int 25f) (local-int 260)
+read-mouse-pos (local-int 25f) (local-int 260)
 call label_000018f0
 
 label_00001394
@@ -325,8 +325,8 @@ mov (local-int 261) 1
 jmp label_00001484
 
 label_00001464
-i109 (local-int 25d) (local-int 25e)
-i108 (local-int 261)
+read-mouse-pos (local-int 25d) (local-int 25e)
+read-mouse-button (local-int 261)
 
 label_00001484
 ne (local-int 31c6) (local-int 25f) (local-int 25d)
@@ -380,7 +380,7 @@ label_000017c4
 mod (local-int 31c6) (local-int 263) 2
 eq (local-int 31c7) (local-int 31c6) 0
 jcc (local-int 31c7) ffffffff label_00001840
-i10d (local-int 26f)
+read-mouse-wheel (local-int 26f)
 jcc (local-int 26f) label_00001f50 ffffffff
 
 label_00001840
@@ -403,7 +403,7 @@ label_000018f0
 play-sound-effect 39a3 2
 mov (local-int 269) 1
 mov (local-int 26e) 0
-i10d (local-int 26f)
+read-mouse-wheel (local-int 26f)
 joy-callback 0 label_00001a54
 joy-callback 1 label_00001cec
 joy-callback 2 label_00001a54

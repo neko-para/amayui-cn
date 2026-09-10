@@ -93,8 +93,8 @@ mov (local-int 2) 1
 jmp label_00000624
 
 label_00000604
-i109 (local-int 0) (local-int 1)
-i108 (local-int 2)
+read-mouse-pos (local-int 0) (local-int 1)
+read-mouse-button (local-int 2)
 
 label_00000624
 and (local-int 37) (local-int 2) 2

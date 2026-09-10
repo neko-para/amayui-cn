@@ -710,7 +710,7 @@ ret
 
 label_00002954
 mov (global-int f8005) 1
-i109 (global-int 139f) (global-int 13a0)
+read-mouse-pos (global-int 139f) (global-int 13a0)
 eq (local-int 0) (global-int f7ffb) 2
 jcc (local-int 0) ffffffff label_000029c4
 ret
@@ -733,7 +733,7 @@ ret
 
 label_00002a70
 mov (global-int f8005) 1
-i109 (global-int 139f) (global-int 13a0)
+read-mouse-pos (global-int 139f) (global-int 13a0)
 gre (local-int 0) (global-int f7ffb) 2
 lt (local-int 1) (global-int f7ffb) d
 and (local-int 2) (local-int 0) (local-int 1)
@@ -750,7 +750,7 @@ ret
 
 label_00002b3c
 mov (global-int f8005) 1
-i109 (global-int 139f) (global-int 13a0)
+read-mouse-pos (global-int 139f) (global-int 13a0)
 eq (local-int 0) (global-int f7ffb) 3
 jcc (local-int 0) ffffffff label_00002bac
 ret
@@ -768,7 +768,7 @@ label_00002c3c
 ret
 
 label_00002c40
-i109 (global-int 139f) (global-int 13a0)
+read-mouse-pos (global-int 139f) (global-int 13a0)
 gre (local-int 0) (global-int f7ffb) 2
 lt (local-int 1) (global-int f7ffb) d
 and (local-int 2) (local-int 0) (local-int 1)

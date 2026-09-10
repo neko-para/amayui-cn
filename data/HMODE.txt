@@ -116,8 +116,8 @@ mov (local-int 14f) 0
 mov (local-int 141) (local-int 143)
 mov (local-int 142) (local-int 143)
 mov (local-int 145) (local-int 143)
-i109 (local-int 150) (local-int 151)
-i10d (local-int 148)
+read-mouse-pos (local-int 150) (local-int 151)
+read-mouse-wheel (local-int 148)
 
 label_00000890
 get-input-type
@@ -140,8 +140,8 @@ mov (local-int 5) 1
 jmp label_000009d0
 
 label_000009b0
-i109 (local-int 13e) (local-int 13f)
-i108 (local-int 5)
+read-mouse-pos (local-int 13e) (local-int 13f)
+read-mouse-button (local-int 5)
 
 label_000009d0
 ne (local-int 18f) (local-int 150) (local-int 13e)
@@ -196,7 +196,7 @@ label_00000d2c
 mod (local-int 18f) (local-int 137) 2
 eq (local-int 190) (local-int 18f) 0
 jcc (local-int 190) ffffffff label_00000da8
-i10d (local-int 148)
+read-mouse-wheel (local-int 148)
 jcc (local-int 148) label_00002270 ffffffff
 
 label_00000da8
@@ -1087,7 +1087,7 @@ i24e 10001
 wait
 detach-texture 30d40 1
 release-texture 2a
-i109 (local-int 150) (local-int 151)
+read-mouse-pos (local-int 150) (local-int 151)
 poll-input
 ret
 

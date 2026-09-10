@@ -97,7 +97,7 @@ mov (local-int 7) 0
 mov (local-int 5) 0
 mov (local-int 9) 0
 play-sound-effect 39a3 2
-i109 (local-int 2) (local-int 3)
+read-mouse-pos (local-int 2) (local-int 3)
 call label_00000a54
 
 label_0000076c
@@ -119,8 +119,8 @@ mov (local-int 4) 1
 jmp label_0000085c
 
 label_0000083c
-i109 (local-int 0) (local-int 1)
-i108 (local-int 4)
+read-mouse-pos (local-int 0) (local-int 1)
+read-mouse-button (local-int 4)
 
 label_0000085c
 and (local-int 48) (local-int 4) 2

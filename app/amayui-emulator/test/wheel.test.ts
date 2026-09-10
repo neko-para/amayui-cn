@@ -24,11 +24,11 @@ const HEADER_LEN = 0x3c;
 /** operand arg type 0x9 = local-int（operand.ts 未导出该常量，此处按类型值直接构造）。 */
 const T_LOCAL_INT = 0x9;
 
-/** 造一个最小 v4 脚本：一条指令 `i10d <local-int slot>`（每条指令 = opcode 4 字节 + 1 操作数 8 字节）。 */
+/** 造一个最小 v4 脚本：一条指令 `read-mouse-wheel <local-int slot>`（opcode 4 字节 + 1 操作数 8 字节）。 */
 function wheelScript(slot: number): ScriptBinary {
   const instr: BinInstruction = {
     opcode: 0x10d,
-    name: 'i10d',
+    name: 'read-mouse-wheel',
     argc: 1,
     args: [{ type: T_LOCAL_INT, raw: slot }],
     byteOffset: HEADER_LEN,
@@ -119,7 +119,7 @@ function oneInstr(opcode: number, args: { type: number; raw: number }[]): Script
     instructions: [
       {
         opcode,
-        name: `i${opcode.toString(16)}`,
+        name: opcode === 0x108 ? 'read-mouse-button' : opcode === 0x109 ? 'read-mouse-pos' : 'read-mouse-wheel',
         argc: args.length,
         args: args.map((a) => ({ type: a.type, raw: a.raw })),
         byteOffset: HEADER_LEN,

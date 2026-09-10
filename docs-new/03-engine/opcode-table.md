@@ -212,12 +212,12 @@
 | 0x105 | 1 |  | sub_421E20 | 仅映射 |  |
 | 0x106 | 1 |  | sub_42ED90 | 仅映射 |  |
 | 0x107 | 2 |  | sub_421E50 | 已核对 | **SetKey（按键绑定）**：读 op2=值、op1=键下标；`op1≤0x1F` 时写 `_this[551+op1]=op2`。handler=sub_421E50（raw .c 30114） |
-| 0x108 | 1 |  | sub_42EDC0 | 已核对 | **读鼠标按钮值到 op1**：`sub_477220(_this+258,&v3)`（左=bit0/右=bit1，随 SM_SWAPBUTTON 互换）→ `sub_42B4B0(1,v3)`。handler=sub_42EDC0（raw .c 39047） |
-| 0x109 | 2 |  | sub_42EE10 | 已核对 | **读鼠标位置到 op1=X,op2=Y**：`sub_4771D0`(GetCursorPos+ScreenToClient) → `sub_498350`(坐标变换)+`sub_403500`(虚拟显示映射，用 `_this[699168/699172]` 分辨率) → 写 op1/op2。(-100000,-100000)=未初始化。handler=sub_42EE10（raw .c 39057） |
+| 0x108 | 1 | read-mouse-button | sub_42EDC0 | 已核对 | **读鼠标按钮值到 op1**（曾名 `i108`）：`sub_477220(_this+258,&v3)`（左=bit0/右=bit1，随 SM_SWAPBUTTON 互换）→ `sub_42B4B0(1,v3)`。handler=sub_42EDC0（raw .c 39047） |
+| 0x109 | 2 | read-mouse-pos | sub_42EE10 | 已核对 | **读鼠标位置到 op1=X,op2=Y**（曾名 `i109`）：`sub_4771D0`(GetCursorPos+ScreenToClient) → `sub_498350`(坐标变换)+`sub_403500`(虚拟显示映射，用 `_this[699168/699172]` 分辨率) → 写 op1/op2。(-100000,-100000)=未初始化。handler=sub_42EE10（raw .c 39057） |
 | 0x10A | 2 |  | sub_421EA0 | 仅映射 |  |
 | 0x10B | 2 |  | sub_422070 | 已核对 | **SetKey（另一按键表）**：读 op2=键下标、op1=值；`op1≤0x1F` 时写 `_this[op2+1383]=op1`。handler=sub_422070（raw .c 30200） |
 | 0x10C | 2 |  | sub_4220B0 | 已核对 | **SetKeyMulti**：读 op1=值、op2=键索引；`op1>0x1F` 抛 ShowMessage「set-keymulti 引数不正」，否则写 `_this[_this[op2+1690]+1434]=op1`。handler=sub_4220B0（raw .c 30213） |
-| 0x10D | 1 |  | sub_42EF50 | 已核对 | **读鼠标滚轮增量（一次性消费）**：`v2=mouse_wheel_residual(_this[1949]/+0x1E74)`；**随即清零**；`sub_42B4B0(1,v2)` 写 op1。值 = 自上次读取以来 WM_MOUSEWHEEL 的 `+= SHIWORD(wParam)` 累计（一格 ±120，上滚正/下滚负），清零点见 raw 141582 写入、raw 13938/21060 消息泵 ADV 推进门（仅 `<0` 即下滚才推进文本）。handler=sub_42EF50（raw .c 39114）。★脚本模式：菜单/列表进入时 `i10d (local 403)` 丢弃残量，主循环反复 `i10d (local 403)`+`jcc (local 403) <翻页label>` 实现滚轮翻页（AGENCY:258/283 等 40+ 脚本） |
+| 0x10D | 1 | read-mouse-wheel | sub_42EF50 | 已核对 | **读鼠标滚轮增量（一次性消费）**（曾名 `i10d`）：`v2=mouse_wheel_residual(_this[1949]/+0x1E74)`；**随即清零**；`sub_42B4B0(1,v2)` 写 op1。值 = 自上次读取以来 WM_MOUSEWHEEL 的 `+= SHIWORD(wParam)` 累计（一格 ±120，上滚正/下滚负），清零点见 raw 141582 写入、raw 13938/21060 消息泵 ADV 推进门（仅 `<0` 即下滚才推进文本）。handler=sub_42EF50（raw .c 39114）。★脚本模式：菜单/列表进入时 `read-mouse-wheel (local 403)` 丢弃残量，主循环反复 `read-mouse-wheel (local 403)`+`jcc (local 403) <翻页label>` 实现滚轮翻页（AGENCY:258/283 等 40+ 脚本） |
 | 0x10E | 2 |  | sub_42EF90 | 仅映射 |  |
 | 0x10F | 1 |  | sub_422120 | 已核对 | **引擎控制字段**：读 op1 写 `_this[122369]`。handler=sub_422120（raw .c 30232） |
 | 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 已核对 | **lookup-array-2d**（二维数组元素地址）：`v6=op3*op4+op5`（行×列宽+列），`operandAddress_42AEA0(2)` 取 op2 基址，`sub_418CC0(1, base, v6, -1, -1)` 把 `base+4*v6` 写入 op1 指针槽。handler=sub_42EFD0（raw .c 38462） |

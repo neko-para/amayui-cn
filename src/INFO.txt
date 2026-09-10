@@ -75,7 +75,7 @@ mov (local-int 105) 0
 mov (local-int 109) 0
 mov (local-int 108) 1
 mov (local-int 10d) 0
-i109 (local-int 10e) (local-int 10f)
+read-mouse-pos (local-int 10e) (local-int 10f)
 
 label_000005c0
 get-input-type
@@ -99,8 +99,8 @@ mov (local-int 6) 1
 jmp label_0000070c
 
 label_000006ec
-i109 (local-int 101) (local-int 102)
-i108 (local-int 6)
+read-mouse-pos (local-int 101) (local-int 102)
+read-mouse-button (local-int 6)
 
 label_0000070c
 ne (local-int 113) (local-int 10e) (local-int 101)
