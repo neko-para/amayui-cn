@@ -19,6 +19,8 @@
       button:hover { background: #444; }
       button:disabled { opacity: .55; cursor: default; }
       #btnTraceAll.on { background: #2d5f2d; border-color: #4a9a4a; }
+      #btnForceClose { background: #5a2020; border-color: #a34545; }
+      #btnForceClose:hover { background: #6f2828; }
       .ignored-list { max-height: 200px; overflow: auto; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-family: ui-monospace, monospace; font-size: 12px; background: #161616; }
       .ignored-list div { padding: 1px 0; }
       .error { display: none; color: #ff6b6b; background: #3a1414; border: 1px solid #7a2e2e; border-radius: 4px; padding: 6px 8px; font-size: 12px; word-break: break-all; }
@@ -42,11 +44,14 @@
   <body>
     <h1>amayui-emulator 控制</h1>
     <div class="row">
-      <button id="btnRestart">重启</button><span class="label">重启主窗口整个流程</span>
+      <button id="btnRestart">重启</button>
+      <button id="btnForceClose">强制关闭（主进程）</button>
+      <span class="label">渲染窗卡住时用这个</span>
     </div>
     <div class="row">
       <button id="btnTraceAll" class="toggle">启用指令日志：关（仅未知）</button>
     </div>
+    <div class="row"><span class="label">性能</span><span class="value" id="perf">…</span></div>
     <div class="row">
       <span class="label">定向 trace（只记这些 opcode，逗号分隔；空=全部）</span>
       <input id="traceFilter" type="text" placeholder="例如 1fb,202,203,208,23b" />

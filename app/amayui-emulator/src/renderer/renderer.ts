@@ -109,8 +109,19 @@ async function main(): Promise<void> {
 
     // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
     let traceAll = false;
-    // ★定向 trace 白名单（空 = 不过滤）：控制窗填 opcode 列表 → 只把这些指令写进 scene-trace.jsonl。
+    // ★定向 trace 白名单（空 = 不记 JSONL）：控制窗填 opcode 列表 → 只把这些指令写进 scene-trace.jsonl。
     let traceFilter = new Set<number>();
+    /** 本会话已写出的 JSONL 行数（遥测用：发现"日志把主进程打满"）。 */
+    let jsonlLines = 0;
+    /** JSONL 发送缓冲（分批，避免逐条 IPC 把主进程打满）。 */
+    const jsonlBuf: string[] = [];
+    const flushJsonl = (): void => {
+      if (jsonlBuf.length > 0 && window.api?.appendTraceLine) {
+        window.api.appendTraceLine(jsonlBuf.join('\n'));
+        jsonlLines += jsonlBuf.length;
+        jsonlBuf.length = 0;
+      }
+    };
     // 控制窗：「启用指令日志」开关 → 设 traceAll（true=打印全量指令，false=只打印「已忽略」指令）。
     window.api?.onTraceAll?.((enabled) => {
       traceAll = enabled;
@@ -147,6 +158,19 @@ async function main(): Promise<void> {
     let err: unknown = null;
     let lastInputLog = 0; // 节流：[input-state] 诊断打印
     let lastStatusSend = 0; // 节流：向控制窗上报状态的间隔(ms)
+    /** ★遥测：当前卡在哪个门 + 它从何时开始 + 已写出的 trace 行数 + present 次数。 */
+    let gate = '';
+    let gateSince = performance.now();
+    const setGate = (g: string): void => {
+      if (g !== gate) {
+        gate = g;
+        gateSince = performance.now();
+      }
+    };
+    let frames = 0;
+    let perfSteps = 0;
+    let perfMs = performance.now();
+    let stepsPerSec = 0;
 
     /** 统一上报状态给控制窗（节流轮询与「遇到错误立即上报」都走这里，保证 pendingUnknown 与 error 同源）。 */
     const notifyStatus = (errorOverride?: string): void => {
@@ -163,6 +187,13 @@ async function main(): Promise<void> {
         dropped: drops.list(),
         traceAll,
         traceFilter: [...traceFilter].map((o) => `0x${o.toString(16)}`),
+        perf: {
+          stepsPerSec: Math.round(stepsPerSec),
+          gate,
+          gateMs: gate ? Math.round(performance.now() - gateSince) : 0,
+          jsonlLines,
+          frames,
+        },
         error: errorOverride ?? autoError,
         pendingUnknown: pausedOp ?? undefined,
       });
@@ -191,6 +222,7 @@ async function main(): Promise<void> {
       e.nowMs = performance.now();
       // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
       if (e.waitFlags & 0x400) {
+        setGate('0x400');
         if (native.sceneAnimationsDone()) {
           e.waitFlags &= ~0x400;
           waiting = false;
@@ -200,7 +232,9 @@ async function main(): Promise<void> {
           waiting = true;
         }
         native.present(); // 动画播放（每帧）
+        frames++;
       } else if (e.waitFlags & SLEEP_GATE) {
+        setGate('sleep');
         // sleep(0xC8) 门：持续 present 直到 nowMs >= sleepUntil 才放行（引擎帧让步 Sleep(n)ms / 帧率节流 n ms）。
         if (e.nowMs >= e.sleepUntil) {
           e.waitFlags &= ~SLEEP_GATE;
@@ -211,11 +245,16 @@ async function main(): Promise<void> {
           sleeping = true;
         }
         native.present();
+        frames++;
       } else if (pausedOp) {
+        setGate('paused');
         // 暂停态：VM 停在未知指令，等控制窗点「作为桩函数跳过」（或「重启」）。
         // 这里仍然 present（画面/时钟继续），只是不再推进 VM——保持窗口有响应。
         native.present();
+        frames++;
       } else {
+        setGate('');
+
         for (let k = 0; k < SAFETY_PER_FRAME; k++) {
           const f = e.curScript();
           const name = f.name || status.scriptName;
@@ -249,9 +288,11 @@ async function main(): Promise<void> {
                 trace(`[gap] ${t.name} 被忽略但收到实参：${t.gap.operands.join(' ')}`);
               }
             }
-            // ★场景执行报告：结构化 JSONL（定向 trace 白名单为空时记全部）。
-            if (window.api?.appendTraceLine && (traceFilter.size === 0 || traceFilter.has(t.opcode))) {
-              window.api.appendTraceLine(
+            // ★定向 trace → JSONL：**默认关闭**。逐条写 JSONL 每条都要一次 IPC + 主进程写盘，
+            //   代价极高（实测曾把主进程的同步写盘打满：一次会话写出 109MB、连窗口都关不掉）。
+            //   因此只在控制窗**显式设置了 opcode 白名单**时才记，且分批发送（≤200 行/次）。
+            if (window.api?.appendTraceLine && traceFilter.size > 0 && traceFilter.has(t.opcode)) {
+              jsonlBuf.push(
                 JSON.stringify({
                   step: steps,
                   script: t.script,
@@ -264,6 +305,10 @@ async function main(): Promise<void> {
                   ...(t.gap ? { gap: true } : {}),
                 }),
               );
+              if (jsonlBuf.length >= 200) {
+                window.api.appendTraceLine(jsonlBuf.join('\n'));
+                jsonlBuf.length = 0;
+              }
             }
             // 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印上面的「已忽略」信息。
             if (traceAll) {
@@ -334,12 +379,16 @@ async function main(): Promise<void> {
             `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)}`,
         );
       }
-      // 节流向控制窗上报状态（当前 BIN + 已忽略/已跳过指令 + traceAll + 暂停点）
+      // 节流向控制窗上报状态（当前 BIN + 已忽略/已跳过指令 + traceAll + 暂停点 + 遥测）
       if (nowMs - lastStatusSend > 500) {
+        stepsPerSec = ((steps - perfSteps) * 1000) / Math.max(1, nowMs - perfMs);
+        perfSteps = steps;
+        perfMs = nowMs;
         lastStatusSend = nowMs;
         notifyStatus();
       }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
+      flushJsonl(); // 定向 trace 也按帧末批量发送
       // 让渲染帧循环跑（present/时钟），再继续；暂停态下同样在此让出（不空转），等待控制窗的 skip 请求。
       await nextFrame();
     }

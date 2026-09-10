@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('api', {
   controlSetTraceAll: (enabled: boolean) => ipcRenderer.send('control-set-trace-all', enabled),
   /** 控制窗→主：设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
   controlSetTraceFilter: (ops: number[]) => ipcRenderer.send('control-set-trace-filter', ops),
+  /** 控制窗→主：强制关闭（主进程侧销毁窗口并退出；渲染窗卡住时的兜底）。 */
+  controlForceClose: () => ipcRenderer.send('control-force-close'),
   /** 控制窗→主：把某个未知 opcode 作为桩函数跳过并继续执行。 */
   controlSkipOp: (opcode: number) => ipcRenderer.send('control-skip-op', opcode),
   /** 主→控制窗：某未知 opcode 已被登记为桩函数。 */

@@ -588,6 +588,7 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   // ---- 数据/配置/标志 ----
   [0x21b, { map: { 1: 166965 }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
   [0x24e, { map: { 1: 92340 } }],
+  [0x1cf, { map: { 1: 122504 } }], // 消息跳读态（引擎 sub_4213C0：_this[122504] = op1）
   [0x10f, { map: { 1: 122369 } }],
   // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
   [0xfe, { map: { 1: 517 } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存）
@@ -1491,6 +1492,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x21b, op_engine_field_store], // _this[166965] = (op1!=0)（配套 getter 0x247）
   [0x247, op_get_engine_bool], // op1 = (_this[166965] != 0)
   [0x24e, op_engine_field_store], // _this[92340]
+  [0x1cf, op_engine_field_store], // **消息跳读态**：`_this[122504] = op1`（sub_4213C0 raw 30069）
   [0x10f, op_engine_field_store], // _this[122369]
   [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
   [0x107, op_set_key], // _this[op1+551] = op2
@@ -1563,6 +1565,13 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）
   [0x217, op_set_object_transform], // 对象变换 pivot → native.setDrawPivot（DrawItem+24/+28/+32）
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
+  /**
+   * `0x14B`（sub_4229D0, raw 31056）：**运行时插件/DLL 加载** —— 先 `FreeLibrary(_this+490072)` 释放旧句柄，
+   * 用 `sub_454FA0(_this+680092, op1)` 从字符串表取库名，再 `LoadLibraryA(name)` 存入 `_this+490072`；
+   * 失败则 `GetLastError` + 抛异常。SAVE.BIN 会走到这条。
+   * emulator 不加载原生库 ⇒ 记录式桩（**不抛异常**）；后续对该库的调用若有，会落到各自 opcode 的桩上。
+   */
+  [0x14b, stubSubsystem], // 运行时 DLL 加载（不加载原生库）
   [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
   [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
   [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）

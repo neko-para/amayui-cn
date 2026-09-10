@@ -25,6 +25,23 @@ const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
 /** 结构化指令轨迹（renderer 经 'append-trace-line' IPC 追加 JSON 行；见控制窗「定向 trace」）。 */
 const TRACE_PATH = path.join(REPO_ROOT, '.tmp', 'scene-trace.jsonl');
 
+/**
+ * **异步写盘**：`fs.appendFileSync` 会阻塞主进程事件循环 —— 一旦 renderer 高频发日志/轨迹，
+ * 主进程就被同步写盘打满，**连窗口关闭（主进程动作）都做不了**（实测一次会话写出 109MB 后整窗无响应）。
+ * 因此异步路径改走 WriteStream（非阻塞）；只有关窗前的 `log-line-sync` 保留同步（必须保证落盘）。
+ */
+function openAppender(p: string): { write: (text: string) => void } {
+  try {
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    const s = fs.createWriteStream(p, { flags: 'a' });
+    s.on('error', (err) => console.error(`[append] ${p}: ${err.message}`));
+    return { write: (text: string) => void s.write(text.endsWith('\n') ? text : text + '\n') };
+  } catch (err) {
+    console.error(`[append] 打开失败 ${p}: ${(err as Error).message}`);
+    return { write: () => {} };
+  }
+}
+
 let win: BrowserWindow | null = null;
 let controlWin: BrowserWindow | null = null;
 
@@ -120,13 +137,11 @@ app.whenReady().then(() => {
     // Buffer 经 structured clone 到 renderer 变 Uint8Array
     return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
-  // 诊断日志：追加到 .tmp/amayui-emulator.log（异步批量）
+  // 诊断日志：追加到 .tmp/amayui-emulator.log（**异步流，不阻塞主进程**）
+  const logAppender = openAppender(LOG_PATH);
+  const traceAppender = openAppender(TRACE_PATH);
   ipcMain.on('log-line', (_e, line: string) => {
-    try {
-      fs.appendFileSync(LOG_PATH, line + '\n');
-    } catch (err) {
-      console.error(`[log-line] ${(err as Error).message}`);
-    }
+    logAppender.write(line);
   });
   // 诊断日志：同步最终落盘（renderer 关窗前调用，保证不丢尾）
   ipcMain.on('log-line-sync', (e, line: string) => {
@@ -155,6 +170,21 @@ app.whenReady().then(() => {
     if (win && !win.isDestroyed()) win.close();
     console.log('[main] abort -> close main window');
   });
+  /**
+   * 控制窗：**强制关闭**（主进程侧 destroy + quit）。
+   * 为什么需要：渲染窗可能被高频 IPC / 超长指令批 / 忙等门控拖住，此时连系统关闭按钮都可能迟迟不响应；
+   * 本处理器只在主进程执行、不依赖渲染窗，是"卡住也一定能收场"的兜底。
+   */
+  ipcMain.on('control-force-close', () => {
+    console.log('[main] control: FORCE CLOSE');
+    try {
+      if (win && !win.isDestroyed()) win.destroy();
+      if (controlWin && !controlWin.isDestroyed()) controlWin.destroy();
+    } catch (err) {
+      console.error(`[force-close] ${(err as Error).message}`);
+    }
+    app.exit(0);
+  });
   // 控制窗：设置是否打印全量指令 → 转发给渲染窗（renderer 监听 onTraceAll）
   ipcMain.on('control-set-trace-all', (_e, enabled: boolean) => {
     if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-all', enabled);
@@ -165,13 +195,9 @@ app.whenReady().then(() => {
     if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-filter', ops);
     console.log(`[main] control: traceFilter=${ops.length ? ops.map((o) => '0x' + o.toString(16)).join(',') : '（空=全部）'}`);
   });
-  // 渲染窗：把一条结构化 trace（JSON 行）追加到 .tmp/scene-trace.jsonl（用于"场景执行报告"）
-  ipcMain.on('append-trace-line', (_e, line: string) => {
-    try {
-      fs.appendFileSync(TRACE_PATH, line + '\n');
-    } catch (err) {
-      console.error(`[append-trace-line] ${(err as Error).message}`);
-    }
+  // 渲染窗：把一批结构化 trace（每行一个 JSON）追加到 .tmp/scene-trace.jsonl（**异步流**）
+  ipcMain.on('append-trace-line', (_e, text: string) => {
+    traceAppender.write(text);
   });
   // 控制窗：「作为桩函数跳过」→ 转发给渲染窗（renderer 登记用户桩 + 从暂停点继续）。
   // 渲染窗此刻应正停在该未知指令上；如已不在该状态，渲染器会自行忽略并记一条日志。

@@ -17,6 +17,8 @@ declare global {
       controlSetTraceAll(enabled: boolean): void;
       /** 设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
       controlSetTraceFilter(ops: number[]): void;
+      /** 强制关闭（主进程侧销毁窗口并退出）——渲染窗卡住时的唯一出路。 */
+      controlForceClose(): void;
       /** 把某个未知 opcode 作为桩函数跳过并继续执行。 */
       controlSkipOp(opcode: number): void;
       /** 某未知 opcode 已被登记为桩函数（收掉「待处理」块）。 */
@@ -43,6 +45,7 @@ const droppedCountEl = el<HTMLSpanElement>('droppedCount');
 const droppedBox = el<HTMLDivElement>('dropped');
 const traceFilterInput = el<HTMLInputElement>('traceFilter');
 const btnTraceApply = el<HTMLButtonElement>('btnTraceApply');
+const perfEl = el<HTMLSpanElement>('perf');
 const errorBox = el<HTMLDivElement>('error');
 const btnTraceAll = el<HTMLButtonElement>('btnTraceAll');
 const btnCopySkipped = el<HTMLButtonElement>('btnCopySkipped');
@@ -234,6 +237,26 @@ function renderGaps(list: ControlStatus['gaps'] | undefined): void {
   }
 }
 
+/**
+ * ★性能/门控遥测 —— 回答"到底是慢还是坏"：
+ *  - `指令/秒` 明显偏低（正常 30–60 万）⇒ 有东西在拖 VM（历史上是逐条 JSONL 的 IPC 洪泛）；
+ *  - `门` 长时间不变 ⇒ **卡住**（`0x400` 动画等待 / `sleep` / `paused` 未知指令待跳过），不是慢；
+ *  - `JSONL` 猛涨 ⇒ 定向 trace 开着且命中过多（会拖慢主进程写盘）。
+ */
+function renderPerf(p: NonNullable<ControlStatus['perf']> | undefined): void {
+  if (!p) {
+    perfEl.textContent = '…';
+    return;
+  }
+  const gate = p.gate ? `门=${p.gate}(${(p.gateMs / 1000).toFixed(1)}s)` : '门=无';
+  perfEl.textContent =
+    `${p.stepsPerSec.toLocaleString()} 指令/秒  ${gate}  帧=${p.frames}` +
+    (p.jsonlLines > 0 ? `  JSONL=${p.jsonlLines.toLocaleString()} 行` : '');
+  const stuck = p.gate !== '' && p.gateMs > 3000;
+  perfEl.style.color = stuck ? '#ff9d5c' : '#7cfc00';
+  perfEl.title = stuck ? '门控持续 >3s：如果画面也没动，就是卡住（不是慢）' : '';
+}
+
 function renderError(msg?: string): void {
   if (msg) {
     errorBox.textContent = `⚠️ ${msg}`;
@@ -246,6 +269,11 @@ function renderError(msg?: string): void {
 
 el<HTMLButtonElement>('btnRestart').addEventListener('click', () => {
   window.api.controlRestart();
+});
+
+el<HTMLButtonElement>('btnForceClose').addEventListener('click', () => {
+  // 主进程侧销毁窗口并退出：即使渲染窗被高频 IPC / 长指令批拖住也能收场。
+  window.api.controlForceClose();
 });
 
 btnTraceAll.addEventListener('click', () => {
@@ -304,6 +332,7 @@ window.api.onControlStatus((s) => {
   renderSkipped(s.skipped);
   renderGaps(s.gaps);
   renderDropped(s.dropped);
+  renderPerf(s.perf);
   pending = s.pendingUnknown ?? null;
   renderUnknown();
   renderError(s.error);
@@ -315,5 +344,6 @@ renderInternal([]);
 renderSkipped([]);
 renderGaps([]);
 renderDropped([]);
+renderPerf(undefined);
 renderUnknown();
 renderError(undefined);

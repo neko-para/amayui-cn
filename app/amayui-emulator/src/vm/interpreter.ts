@@ -39,8 +39,14 @@ export interface StepTrace {
    */
   noop: boolean;
   script: string;
-  /** 本指令操作数的可读形式（`[0x3#41, 0x9#2, 0x0#8]`；`#` 后为已解码值/旁注）。供场景执行报告与缺口归因。 */
-  operands: string[];
+  /**
+   * 本指令操作数的可读形式（`0x3#41`；`#` 后为已解码值/旁注）。供场景执行报告与缺口归因。
+   *
+   * ★**惰性求值**：格式化要逐操作数读池，对"每步都算"是纯浪费（一次会话可达数十万步）。
+   * 因此只有真正用到它（写 JSONL / 打印缺口）时才计算。注意：读取发生在 handler **之后**，
+   * 若 handler 改写过操作数，这里看到的是改后的值（对追踪而言可接受）。
+   */
+  readonly operands: string[];
   /**
    * **闸门 B：能力缺口**。仅当本条指令**被当作 no-op 跳过**（`noop===true` 或 `user-stub`）
    * 但**收到了非平凡实参**时才有值 —— 即"脚本真的传了参数想做点什么，而我没做"。
@@ -170,9 +176,14 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     throw new NotImplementedOp(instr.opcode, instr.name, frame.name, instr.byteOffset, frame.ip);
   }
   // 操作数可读形式 + 缺口判据都在 handler 执行**之前**取（handler 可能改写操作数）。
-  const operands = formatOperands(e, frame, instr);
+  // ★缺口判据只在"被当作 no-op 跳过"的指令上做（少数），不拖累主路径。
   const isNoopPath = handlerKind === 'user-stub' || (handlerKind === 'engine-internal' && noop);
-  const gap = isNoopPath && significantOperands(e, frame, instr) ? { operands } : undefined;
+  let operands: string[] | null = null;
+  let gap: { operands: string[] } | undefined;
+  if (isNoopPath && significantOperands(e, frame, instr)) {
+    operands = formatOperands(e, frame, instr);
+    gap = { operands };
+  }
   e.currentOpcode = op; // 供 NativeTap（闸门 A）把"意图被丢弃"归因到指令
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
   await handler(ctx);
@@ -186,7 +197,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   } else {
     curFrame.ip = next;
   }
-  return {
+  const trace: StepTrace = {
     opcode: instr.opcode,
     name: instr.name,
     ip: frame.ip,
@@ -194,9 +205,13 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     handlerKind,
     noop,
     script: frame.name,
-    operands,
+    get operands(): string[] {
+      if (operands === null) operands = formatOperands(e, frame, instr);
+      return operands;
+    },
     ...(gap ? { gap } : {}),
   };
+  return trace;
 }
 
 export interface RunResult {

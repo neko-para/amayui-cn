@@ -29,6 +29,19 @@ export class InputManager {
   buttons = 0;
 
   /**
+   * **按下"至少被读一次"的保持位**（bit0=左、bit1=右）。
+   *
+   * 为什么需要：脚本的点击检测是**轮询式**的（TITLE `label_0000047c`：先看按住置 `3fb` 标记，
+   * 再在松开后派发菜单）。引擎按 60fps 轮询真实 Windows 按钮态，一次几十毫秒的点击必然跨若干帧。
+   * 但 emulator 的一轮 VM 批可以一次跑上万条指令，**浏览器的 down+up 可能落在同一次轮询之间**：
+   * 于是"按住"从未被观察到 ⇒ `3fb` 不置位 ⇒ 菜单永不派发（表现为"点了没反应"）。
+   *
+   * 本字段把"按下"保持到**被读到一次为止**（读时消费，与滚轮的 `consumeWheelDelta` 同思路），
+   * 从而让快速点击等价于"引擎在某一帧看到按下" —— 这是保真性措施，不是新语义。
+   */
+  private pressLatch = 0;
+
+  /**
    * **鼠标滚轮增量累加器**（对位引擎 `_this[1949]` / byte 0x1E74，见 analysis/fields.json 的
    * `Engine 0x1E74 mouse_wheel_residual`）。0x10D 读它并**立即清零**（一次性消费）。
    *
@@ -91,10 +104,11 @@ export class InputManager {
     }
   }
 
-  /** 鼠标按钮按下。bit：0=左、1=右。记录按钮态 + 按下沿。 */
+  /** 鼠标按钮按下。bit：0=左、1=右。记录按钮态 + 按下沿 + "至少被读一次"保持位。 */
   pressMouse(bit: 0 | 1): void {
     this.buttons |= 1 << bit;
     this.mouseEdge |= 1 << bit;
+    this.pressLatch |= 1 << bit;
   }
 
   /** 鼠标按钮松开。bit：0=左、1=右。只清按钮态（边沿一旦被消费就无影响）。 */
@@ -128,8 +142,15 @@ export class InputManager {
     return this.hasCursor ? this.y : -100000;
   }
 
+  /**
+   * 读鼠标按钮（0x108 语义）。**含"按下至少被读一次"的保持位**（读时消费，见 `pressLatch`）：
+   * 保证"down+up 落在同一次 VM 轮询之间"的快速点击不会被整次丢弃 ——
+   * 脚本会先读到"按下"（置自己的 debounce 标记），下一次读再看到"已松开"（触发菜单）。
+   */
   readButtons(): number {
-    return this.buttons;
+    const v = this.buttons | this.pressLatch;
+    this.pressLatch = 0;
+    return v;
   }
 
   /**

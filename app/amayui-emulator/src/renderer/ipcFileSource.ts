@@ -24,6 +24,11 @@ declare global {
       controlSetTraceAll(enabled: boolean): void;
       /** 控制窗→主：设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
       controlSetTraceFilter(ops: number[]): void;
+      /**
+       * 控制窗→主：**强制关闭**（销毁全部窗口并退出）。
+       * 主进程侧实现 ⇒ 即使渲染窗被高频 IPC/长循环拖住也能收场（本轮排查中"连窗口都关不掉"的兜底）。
+       */
+      controlForceClose(): void;
       /** 控制窗→主→渲染窗：把某个未知 opcode 登记为 no-op 桩函数并继续执行（见 Engine.unknownOpStubs）。 */
       controlSkipOp(opcode: number): void;
       /** 主→控制窗：某未知 opcode 已被登记为桩函数（用于把控制窗的"待处理"块收掉）。 */
@@ -64,6 +69,15 @@ export interface ControlStatus {
   traceAll: boolean;
   /** 定向 trace 白名单（空 = 全部）；十六进制字符串，如 `0x1fb`。 */
   traceFilter?: string[];
+  /**
+   * **★性能/门控遥测**（回答"到底是慢还是坏"）：
+   *  - `stepsPerSec`：最近一个上报窗口内的指令执行速度（VM 本身很快：实测 30–60 万步/秒）；
+   *  - `gate`：当前卡在哪个门（`0x400` 动画等待 / `sleep` / `paused` 未知指令 / 空 = 正常推进）；
+   *  - `gateMs`：本门已持续多久（长时间不变即可判定为"卡住"而不是"慢"）；
+   *  - `jsonlLines`：本会话写出的定向 trace 行数（用于发现"日志把主进程打满"这类问题）；
+   *  - `frame`：present 次数（渲染帧数）。
+   */
+  perf?: { stepsPerSec: number; gate: string; gateMs: number; jsonlLines: number; frames: number };
   /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
   error?: string;
   /** 当前**停在未知指令**等待处理（控制窗据此显示「作为桩函数跳过」按钮）；已放行/未暂停时不填。 */
