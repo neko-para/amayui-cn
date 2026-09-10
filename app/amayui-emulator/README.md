@@ -31,6 +31,42 @@
 
 ---
 
+## 控制窗（ControlWindow）
+
+一个独立小窗（`control/`，与主窗口同 preload），用于在不重启的前提下操纵正在跑的 VM：
+
+| 控件 | 作用 |
+|---|---|
+| **重启** | reload 主窗口渲染器 → 重跑完整 boot（清掉所有「已跳过」桩） |
+| **启用指令日志** | 切渲染窗的逐条 trace（`traceAll`）：关=只记「已忽略/未知」，开=全量（节流 ≥100ms） |
+| **⏸ 遇到不认识的指令 → 作为桩函数跳过并继续** | 见下 |
+| 已跳过 / 已忽略 清单 | 「已跳过」= 用户点按钮登记的运行时桩；「已忽略」= `ENGINE_INTERNAL_OPS` 静态插桩 |
+
+### 未知指令 → 桩跳过（可恢复的硬停）
+
+原行为：`stepOnce` 遇到四处表（`OPS` / `NATIVE_OPS` / `ENGINE_INTERNAL_OPS` / 用户桩集）都查不到的 opcode 直接抛
+`NotImplementedOp`，渲染循环 `break outer` **彻底停住**，只能改代码重启。
+
+现行为（见 `src/vm/interpreter.ts` + `src/renderer/renderer.ts` + `control/control.ts`）：
+
+1. `stepOnce` **查表/抛错阶段不修改任何 VM 状态**（不读操作数、不推进 `ip`）—— 这是恢复的前提。
+2. 渲染窗捕获 `NotImplementedOp` → 记下暂停点 `pausedOp`（opcode/助记符/脚本/byteOffset/ip）→ 上报控制窗 →
+   `break` 本批指令（**不再 break 外层**）：外层循环继续每帧 `present()` 与状态上报，VM 停住但与控制窗保持通信。
+3. 控制窗显示「⏸ 遇到不认识的指令，已停住」块 + 按钮「作为桩函数跳过：0x… xxx」。
+4. 点按钮 → `controlSkipOp(opcode)` → main 转发 `renderer-skip-op` → 渲染窗执行
+   `e.unknownOpStubs.set(opcode, …)` 并清空 `pausedOp` → 下一批对**同一条指令**重试 `stepOnce`，
+   此时 `resolveHandler` 兜底命中用户桩（`handlerKind='user-stub'`，纯 no-op，`ip` 正常 +1）→ **原地继续执行**。
+5. 其余错误（非未知 opcode）仍走原硬停路径（上报 + 停止）。
+
+> **语义代价（务必清楚）**：用户桩是**无副作用 no-op**，不读操作数、不写操作数、不做跳转。若被跳过的 opcode
+> 原本会写 `op1` 或产生条件跳转，后续状态会与真引擎不符（`op1` 保留旧值、跳转不发生）——这是「先跑通链路」
+> 的取舍，**不是实现**。已跳过的 opcode 会列在控制窗「已跳过指令」清单里，随时可回补精确语义。
+
+用户桩登记在 `Engine.unknownOpStubs`（per-instance，不污染 `ops.ts` 静态表），因此已知 opcode 永不被遮蔽：
+解析顺序恒为 静态实现 → native → engine-internal → **用户桩兜底**（测试见 `test/skip-unknown.test.ts`）。
+
+---
+
 ## 一句话架构
 
 ```
@@ -52,7 +88,8 @@
 ```
 app/amayui-emulator/
 ├─ docs/            # 背景/ADR/计划/启动链分析/函数注册表/渲染后端
-├─ electron/        # Electron 壳：main.ts(主进程+文件IPC) / preload.ts(contextBridge)
+├─ control/         # 控制窗：control.ts + index.html（重启/日志开关/未知指令桩跳过/状态）
+├─ electron/        # Electron 壳：main.ts(主进程+文件IPC+控制窗) / preload.ts(contextBridge)
 ├─ src/
 │  ├─ arch/         # FileSource 抽象 + Node 实现（异步文件代理）
 │  ├─ renderer/     # IpcFileSource + PixiBackend(PixiJS v8 WebGL 渲染后端) + renderer.ts(入口)

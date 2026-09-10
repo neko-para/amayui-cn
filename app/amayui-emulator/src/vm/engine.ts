@@ -101,6 +101,16 @@ export class Engine {
   /** ADV/消息状态机字段（稀疏 `_this[K]`：1415 / 97050 / 97051 / 122368 / 122370 / 122455 / 122496 / 124331）。 */
   advFields = new Map<number, number>();
 
+  /**
+   * **用户登记的「未知指令桩函数」**：opcode -> 桩句柄（当前恒为 no-op，无返回值；句柄留着以便将来区分/替换）。
+   * 语义 = 运行时热插拔的 ENGINE_INTERNAL_OPS（见 interpreter.stepOnce 的查找顺序）：
+   *  - 解释器遇到「四处（OPS/NATIVE_OPS/ENGINE_INTERNAL_OPS/本表）都查不到」的 opcode 会抛 NotImplementedOp 并停下；
+   *  - 控制窗点「作为桩函数跳过」→ 调用方 `unknownOpStubs.set(opcode, fn)` → **从同一条指令重试**即被当作桩放行；
+   *  - 只影响本 Engine 实例，不改写 ops.ts 的静态表（可反复重启、可逐条增量跳过）。
+   * 见控制窗 control.ts + renderer.ts 的暂停/恢复流程。
+   */
+  unknownOpStubs = new Map<number, number>();
+
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;
 

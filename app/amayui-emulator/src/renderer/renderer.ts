@@ -4,10 +4,10 @@
  *         无门控时每帧跑一批指令（引擎在无门控时快速跑到门控）；遇 0x400 动画等待则停住，由渲染循环放行。
  */
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
-import { loadScriptData, stepOnce } from '../vm/interpreter.js';
+import { loadScriptData, stepOnce, NotImplementedOp } from '../vm/interpreter.js';
 import { ScriptReset, ExitScript } from '../vm/ops.js';
 import { InputManager } from '../vm/input.js';
-import { IpcFileSource } from './ipcFileSource.js';
+import { IpcFileSource, type ControlStatus } from './ipcFileSource.js';
 import { PixiBackend, type RenderStatus } from './pixiBackend.js';
 
 /**
@@ -81,23 +81,66 @@ async function main(): Promise<void> {
     loadScriptData(e, boot.data, boot.name);
     native.startFrameLoop(); // 渲染帧循环：每帧 present（推进时钟、合成场景图）。HUD 已移除，诊断信息在控制窗。
 
+    // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
+    let traceAll = false;
     // 控制窗：「启用指令日志」开关 → 设 traceAll（true=打印全量指令，false=只打印「已忽略」指令）。
     window.api?.onTraceAll?.((enabled) => {
       traceAll = enabled;
     });
 
     let steps = 0;
-    // 指令日志开关（控制窗可切）：false=只记「已忽略/未知」指令；true=记全量指令。
-    let traceAll = false;
     // 已忽略(engine-internal/插桩跳过)指令：按 opcode 去重，name + 出现次数（供控制窗展示 + 首个打印一次）。
     let ignored = new Map<number, { name: string; count: number }>();
     const ignoredList = () => [...ignored].map(([opcode, v]) => ({ opcode, name: v.name }));
+    // 已被用户「作为桩函数跳过」的未知指令：opcode -> {name,count}（登记后每次执行计数）。
+    let skipped = new Map<number, { name: string; count: number }>();
+    const skippedList = () => [...skipped].map(([opcode, v]) => ({ opcode, name: v.name, count: v.count }));
+    /**
+     * 暂停点：解释器停在一条「未实现 opcode」上等用户在控制窗点「作为桩函数跳过」。
+     * 注意 stepOnce 抛 NotImplementedOp 时**尚未消费任何操作数、也未推进 ip**，因此登记桩函数后
+     * 直接对同一条指令重试即可继续（无需回滚 VM 状态）。
+     */
+    let pausedOp: ControlStatus['pendingUnknown'] | null = null;
     let lastStepLog = 0; // 节流：traceAll 全量打印时 step trace 的最小间隔(ms)
     let waiting = false;
     let sleeping = false;
     let err: unknown = null;
     let lastInputLog = 0; // 节流：[input-state] 诊断打印
     let lastStatusSend = 0; // 节流：向控制窗上报状态的间隔(ms)
+
+    /** 统一上报状态给控制窗（节流轮询与「遇到错误立即上报」都走这里，保证 pendingUnknown 与 error 同源）。 */
+    const notifyStatus = (errorOverride?: string): void => {
+      // 暂停中且没有更具体的错误文本时，用一句可读提示（控制窗的按钮/清单同时给出精确位置）。
+      const autoError = pausedOp
+        ? `停在未知指令 0x${pausedOp.opcode.toString(16)} (${pausedOp.name}) @ ${pausedOp.script}`
+        : undefined;
+      window.api?.sendRendererStatus?.({
+        bin: status.scriptName,
+        ignored: ignoredList(),
+        skipped: skippedList(),
+        traceAll,
+        error: errorOverride ?? autoError,
+        pendingUnknown: pausedOp ?? undefined,
+      });
+    };
+
+    // 控制窗：点了「作为桩函数跳过」→ 把该 opcode 登记为用户桩（no-op）并从暂停点继续跑。
+    window.api?.onControlSkipOp?.((opcode) => {
+      if (pausedOp && pausedOp.opcode === opcode) {
+        // 登记用户桩：stepOnce 会在静态表都查不到时兜底用它（kind=user-stub），ip 正常 +1 → 从同一条指令恢复。
+        e.unknownOpStubs.set(opcode, 1);
+        skipped.set(opcode, { name: pausedOp.name, count: 0 });
+        trace(`=== skip-as-stub 0x${opcode.toString(16)} (${pausedOp.name}) in ${pausedOp.script} @ ip=${pausedOp.instrIndex} -> resume ===`);
+        native.log(`[skip] 0x${opcode.toString(16)} (${pausedOp.name}) 已作为桩函数跳过，继续执行`);
+        pausedOp = null;
+        err = null;
+        status.ip = e.curScript().ip;
+        notifyStatus();
+        flushBatch();
+      } else {
+        trace(`[skip] 忽略无效请求 opcode=0x${opcode.toString(16)}（当前未停在未知指令）`);
+      }
+    });
 
     outer: while (steps < MAX_STEPS) {
       // 引擎 timeGetTime()（墙钟 ms）：0xCD(get-input-type) 节流 / mesh/文字动画用
@@ -124,6 +167,10 @@ async function main(): Promise<void> {
           sleeping = true;
         }
         native.present();
+      } else if (pausedOp) {
+        // 暂停态：VM 停在未知指令，等控制窗点「作为桩函数跳过」（或「重启」）。
+        // 这里仍然 present（画面/时钟继续），只是不再推进 VM——保持窗口有响应。
+        native.present();
       } else {
         for (let k = 0; k < SAFETY_PER_FRAME; k++) {
           const f = e.curScript();
@@ -134,7 +181,7 @@ async function main(): Promise<void> {
           if (!f.script || f.ip >= f.script.instructions.length) break;
           try {
             const t = await stepOnce(e);
-            // 记录「已忽略/插桩跳过」(engine-internal) 指令：打印首个 + 计数（去重 by opcode）。
+            // 记录「已忽略/插桩跳过」(engine-internal) 与「用户跳过的未知指令」(user-stub) 指令：打印首个 + 计数。
             if (t.handlerKind === 'engine-internal') {
               const g = ignored.get(t.opcode);
               if (g) g.count++;
@@ -142,6 +189,9 @@ async function main(): Promise<void> {
                 ignored.set(t.opcode, { name: t.name, count: 1 });
                 trace(`[ignored] ${t.name}`); // name 已是助记符（语义名或 iXXX），无需再补 opcode 数字
               }
+            } else if (t.handlerKind === 'user-stub') {
+              const g = skipped.get(t.opcode);
+              if (g) g.count++;
             }
             // 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印上面的「已忽略」信息。
             if (traceAll) {
@@ -167,11 +217,28 @@ async function main(): Promise<void> {
               window.api?.closeWindow?.();
               break outer;
             }
+            if (caught instanceof NotImplementedOp) {
+              // 可恢复的硬停：stepOnce 未消费操作数、未推进 ip ⇒ 记下暂停点，
+              // 等控制窗点「作为桩函数跳过」（→ onControlSkipOp 登记 e.unknownOpStubs）后从**同一条指令**重试。
+              err = caught;
+              pausedOp = {
+                opcode: caught.opcode,
+                name: caught.name,
+                script: caught.scriptName,
+                byteOffset: caught.byteOffset,
+                instrIndex: caught.instrIndex,
+              };
+              native.log(`[pause] ${caught.message} —— 等待控制窗「作为桩函数跳过」`);
+              trace(`=== PAUSE unknown opcode 0x${caught.opcode.toString(16)} (${caught.name}) ${caught.scriptName}@ip=${caught.instrIndex} ===`);
+              notifyStatus(caught.message);
+              flushBatch();
+              break; // 退出本批指令，保留暂停态（外层循环继续 present / 收 skip 请求）
+            }
             err = caught;
             const emsg = (caught as Error).message;
             native.log(`[error] ${emsg}`);
-            // 硬错误（如「xxx 指令未实现」）：立即上报控制窗展示，然后停
-            window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: ignoredList(), traceAll, error: emsg });
+            // 其它硬错误（非「未知指令」）：立即上报控制窗展示，然后停
+            notifyStatus(emsg);
             flushBatch();
             break outer;
           }
@@ -194,24 +261,32 @@ async function main(): Promise<void> {
             `mouseJump=0x${im.mouseJump.toString(16)} mouseSlot=0x${im.mouseSlot.toString(16)}`,
         );
       }
-      // 节流向控制窗上报状态（当前 BIN + 已忽略指令 + traceAll 开关）
+      // 节流向控制窗上报状态（当前 BIN + 已忽略/已跳过指令 + traceAll + 暂停点）
       if (nowMs - lastStatusSend > 500) {
         lastStatusSend = nowMs;
-        window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: ignoredList(), traceAll });
+        notifyStatus();
       }
       flushBatch(); // 每帧末落盘一次（批量，避免逐行 IPC）
-      await nextFrame(); // 让渲染帧循环跑（present/时钟），再继续
+      // 让渲染帧循环跑（present/时钟），再继续；暂停态下同样在此让出（不空转），等待控制窗的 skip 请求。
+      await nextFrame();
     }
     trace(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
     flushBatch();
     native.drawHud();
+    notifyStatus(); // 收尾上报：把最终态（含仍暂停的未知指令）给控制窗
     console.log(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
     if (err) console.error(`[boot] ${(err as Error).message}`);
   } catch (caught) {
     const msg = `boot error: ${(caught as Error).message}`;
     native.log(msg);
     console.error(`[boot] ${msg}`);
-    window.api?.sendRendererStatus?.({ bin: status.scriptName, ignored: [], traceAll: false, error: msg });
+    window.api?.sendRendererStatus?.({
+      bin: status.scriptName,
+      ignored: [],
+      skipped: [],
+      traceAll: false,
+      error: msg,
+    });
   }
 }
 

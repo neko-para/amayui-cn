@@ -22,10 +22,16 @@ contextBridge.exposeInMainWorld('api', {
   closeWindow: () => ipcRenderer.send('close-window'),
   /** 控制窗→主：设置是否打印全量指令。 */
   controlSetTraceAll: (enabled: boolean) => ipcRenderer.send('control-set-trace-all', enabled),
+  /** 控制窗→主：把某个未知 opcode 作为桩函数跳过并继续执行。 */
+  controlSkipOp: (opcode: number) => ipcRenderer.send('control-skip-op', opcode),
+  /** 主→控制窗：某未知 opcode 已被登记为桩函数。 */
+  onControlOpSkip: (cb: (opcode: number) => void) => ipcRenderer.on('control-op-skip-request', (_e, opcode) => cb(opcode)),
   /** 主→控制窗：状态更新。 */
   onControlStatus: (cb: (s: unknown) => void) => ipcRenderer.on('control-status', (_e, s) => cb(s)),
   /** 主→渲染窗：traceAll 切换通知。 */
   onTraceAll: (cb: (enabled: boolean) => void) => ipcRenderer.on('renderer-set-trace-all', (_e, v) => cb(v)),
+  /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
+  onControlSkipOp: (cb: (opcode: number) => void) => ipcRenderer.on('renderer-skip-op', (_e, opcode) => cb(opcode)),
   /** 渲染窗→主：上报状态（供主进程转发给控制窗）。 */
   sendRendererStatus: (s: unknown) => ipcRenderer.send('renderer-status', s),
 });

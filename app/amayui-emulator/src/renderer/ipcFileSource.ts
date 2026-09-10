@@ -20,10 +20,16 @@ declare global {
       closeWindow(): void;
       /** 控制窗→主：设置是否打印全量指令（true=全量，false=仅未知/已忽略）。 */
       controlSetTraceAll(enabled: boolean): void;
+      /** 控制窗→主→渲染窗：把某个未知 opcode 登记为 no-op 桩函数并继续执行（见 Engine.unknownOpStubs）。 */
+      controlSkipOp(opcode: number): void;
+      /** 主→控制窗：某未知 opcode 已被登记为桩函数（用于把控制窗的"待处理"块收掉）。 */
+      onControlOpSkip(cb: (opcode: number) => void): void;
       /** 主→控制窗：收到渲染器上报的状态（当前 BIN + 已忽略指令 + traceAll）。 */
       onControlStatus(cb: (s: ControlStatus) => void): void;
       /** 主→渲染窗：traceAll 切换通知（控制窗改的，转发给渲染器）。 */
       onTraceAll(cb: (enabled: boolean) => void): void;
+      /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
+      onControlSkipOp(cb: (opcode: number) => void): void;
       /** 渲染窗→主：上报状态，供主进程转发给控制窗。 */
       sendRendererStatus(s: ControlStatus): void;
     };
@@ -37,6 +43,16 @@ export interface ControlStatus {
   traceAll: boolean;
   /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
   error?: string;
+  /** 当前**停在未知指令**等待处理（控制窗据此显示「作为桩函数跳过」按钮）；已放行/未暂停时不填。 */
+  pendingUnknown?: {
+    opcode: number;
+    name: string;
+    script: string;
+    byteOffset: number;
+    instrIndex: number;
+  };
+  /** 已被用户当作桩函数跳过的 opcode（去重，含各自被执行的次数）。 */
+  skipped: { opcode: number; name: string; count: number }[];
 }
 
 export class IpcFileSource implements FileSource {

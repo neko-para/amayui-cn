@@ -15,11 +15,20 @@
         padding: 6px 12px; font-size: 13px; cursor: pointer; margin-right: 8px;
       }
       button:hover { background: #444; }
+      button:disabled { opacity: .55; cursor: default; }
       #btnTraceAll.on { background: #2d5f2d; border-color: #4a9a4a; }
-      .ignored-list { max-height: 260px; overflow: auto; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-family: ui-monospace, monospace; font-size: 12px; background: #161616; }
+      .ignored-list { max-height: 200px; overflow: auto; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-family: ui-monospace, monospace; font-size: 12px; background: #161616; }
       .ignored-list div { padding: 1px 0; }
       .error { display: none; color: #ff6b6b; background: #3a1414; border: 1px solid #7a2e2e; border-radius: 4px; padding: 6px 8px; font-size: 12px; word-break: break-all; }
       .error.show { display: block; }
+      /* 未知指令：可跳过（作为桩函数）——暂停时高亮显示 */
+      .unknown { border: 1px solid #8a6d1f; background: #2b2410; border-radius: 4px; padding: 8px; }
+      .unknown[hidden] { display: none; }
+      .unknown .title { color: #ffcf5c; font-size: 13px; margin-bottom: 6px; }
+      .unknown .info { font-family: ui-monospace, monospace; font-size: 12px; color: #ffe9a8; word-break: break-all; }
+      .unknown .hint { color: #b9a86a; font-size: 11px; margin: 6px 0 8px; }
+      #btnSkipUnknown { background: #6b5410; border-color: #a8842a; color: #fff3cf; font-weight: 600; }
+      #btnSkipUnknown:hover:not(:disabled) { background: #856a16; }
     </style>
   </head>
   <body>
@@ -32,6 +41,16 @@
     </div>
     <div class="row"><span class="label">当前 BIN</span><span class="value" id="bin">…</span></div>
     <div class="row"><div class="error" id="error"></div></div>
+    <div class="row unknown" id="unknownBlock" hidden>
+      <div class="title">⏸ 遇到不认识的指令，已停住</div>
+      <div class="info" id="unknownInfo">…</div>
+      <div class="hint" id="unknownHint"></div>
+      <button id="btnSkipUnknown">作为桩函数跳过并继续</button>
+    </div>
+    <div class="row">
+      <span class="label">已跳过指令（作为桩函数，去重）</span><span class="value" id="skippedCount">(…)</span>
+    </div>
+    <div class="row ignored-list" id="skipped"></div>
     <div class="row">
       <span class="label">已忽略指令（去重）</span><span class="value" id="ignoredCount">(…)</span>
     </div>

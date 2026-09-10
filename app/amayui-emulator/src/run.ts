@@ -52,9 +52,9 @@ async function main() {
     try {
       const trace = await stepOnce(e);
       executed++;
-      if (trace.handlerKind === 'engine-internal' || trace.handlerKind === 'native') {
+      if (trace.handlerKind === 'engine-internal' || trace.handlerKind === 'native' || trace.handlerKind === 'user-stub') {
         cfg++;
-        continue; // 引擎内部/子系统：插桩跳过，不逐条打印（cfg 计数）
+        continue; // 引擎内部/子系统/用户登记的桩：跳过，不逐条打印（cfg 计数）
       }
       if (trace.opcode === 0x3) {
         // call-script：打印目标（加载新脚本后当前帧已是新脚本）

@@ -53,7 +53,7 @@ function createWindow(): void {
 function createControlWindow(): void {
   controlWin = new BrowserWindow({
     width: 500,
-    height: 600,
+    height: 720, // 容纳「未知指令 → 作为桩函数跳过」块 + 已跳过/已忽略两个清单
     title: 'amayui-emulator 控制',
     backgroundColor: '#1e1e1e',
     resizable: true,
@@ -138,7 +138,17 @@ app.whenReady().then(() => {
     if (win && !win.isDestroyed()) win.webContents.send('renderer-set-trace-all', enabled);
     console.log(`[main] control: traceAll=${enabled}`);
   });
-  // 渲染窗 → 主 → 控制窗：状态上报（当前 BIN + 已忽略指令 + traceAll）
+  // 控制窗：「作为桩函数跳过」→ 转发给渲染窗（renderer 登记用户桩 + 从暂停点继续）。
+  // 渲染窗此刻应正停在该未知指令上；如已不在该状态，渲染器会自行忽略并记一条日志。
+  ipcMain.on('control-skip-op', (_e, opcode: number) => {
+    if (win && !win.isDestroyed()) win.webContents.send('renderer-skip-op', opcode);
+    console.log(`[main] control: skip-as-stub opcode=0x${Number(opcode).toString(16)}`);
+  });
+  // 渲染窗 → 主 → 控制窗：某未知 opcode 已登记为桩函数（控制窗据此收掉「待处理」块）。
+  ipcMain.on('renderer-op-skip-request', (_e, opcode: number) => {
+    if (controlWin && !controlWin.isDestroyed()) controlWin.webContents.send('control-op-skip-request', opcode);
+  });
+  // 渲染窗 → 主 → 控制窗：状态上报（当前 BIN + 已忽略/已跳过指令 + traceAll + 暂停点）
   ipcMain.on('renderer-status', (_e, s: unknown) => {
     if (controlWin && !controlWin.isDestroyed()) controlWin.webContents.send('control-status', s);
   });
