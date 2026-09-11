@@ -358,6 +358,25 @@ npm run report -- --steps 200000 --ops 1fb,202,203,208,23b   # 只看渲染族
 宿主是 `HeadlessScene`（无 Pixi/Electron），它与真实渲染后端**共用同一份语义**（见下），所以报告里的模型状态
 就是渲染器看到的状态。测试 `test/scene-report.test.ts`。
 
+### 链路指令盘点（`npm run op:inventory`）
+
+`report.ts` 只看**单个脚本**；要回答「**从启动到某个界面，这条路上哪些指令没完全实现**」，
+得跟着真实链路（`SYSTEM4 → … → TITLE → 点 CONFIG → CONFIG1`）逐条记：
+
+```bash
+npm run op:inventory
+# 表 1：执行到的 opcode → handler 来源（implemented/native/engine-internal）+ 次数 + 脚本 + 实参样例
+#       （`native` **不等于**"没实现"：0x1FB draw-texture 是真实现，0x204 draw-string 是纯记录桩）
+# 表 2：宿主未实现 ⇒ 调用被丢弃（闸门 A：NativeBridge 方法被调但宿主没有）
+# 表 3：图像渲染 / 文字输出相关、且未完全实现的指令（按 opcode-table 家族归类 + 一句话定性）
+```
+
+实现要点：`runConfig1Chain({ onStep, recordDrops })` —— 盘点回调与 `withNativeTap` 都**默认关**，
+所以既有测试/工具不为盘点付代价（数十万条指令的链路，多一次回调就是实打实的开销）。
+
+2026 用它查出的典型缺口：`0x1FD` 被登记成"已实现"、实际只把参数转发给宿主而渲染端只记一行日志
+（CONFIG1 滚动条拇指的中段就是这么丢的）；`0x204 draw-string` 的 9 次调用**整体丢弃**（CONFIG1 右侧说明条画不出来）。
+
 ### 共享场景模型（消除"两份语义"）
 
 `src/renderer/sceneModel.ts` 持有全部"纯数据"变更（建/删项、5 个窗、"缺失即建项"、bit0 门控、CG 数字条几何、

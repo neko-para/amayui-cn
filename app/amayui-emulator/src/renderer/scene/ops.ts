@@ -17,6 +17,7 @@ import {
   applyDrawColorAlpha,
   applyDrawPivot,
   applyDrawPos,
+  applyDrawScale,
   applyDrawTranslation,
   applyFlipbook,
   applyMeshVertexColor,
@@ -143,6 +144,17 @@ export function scSetDrawPivot(s: SceneState, handle: number, x: number, y: numb
 export function scSetDrawTranslation(s: SceneState, handle: number, x: number, y: number, z: number): SetterOutcome {
   const { item, created } = scEnsureItem(s, handle);
   applyDrawTranslation(item, x, y, z);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x1FD` 立即缩放（`sub_4AC5F0`：建项 → **无门控** → `+0x68=1` + 缩放 **work** 矩阵）。
+ * ★缺了它不会报错，只会让"靠缩放撑开的中段贴片"退回源尺寸（1px ⇒ 看不见）：
+ *   CONFIG1 右侧滚动条拇指 = 上盖(27×23) + **中段(27×1，靠本条放大到 y=209)** + 下盖(27×24)。
+ */
+export function scSetScale(s: SceneState, handle: number, sx: number, sy: number, sz: number): SetterOutcome {
+  const { item, created } = scEnsureItem(s, handle);
+  applyDrawScale(item, sx, sy, sz);
   return created ? 'created-applied' : 'applied';
 }
 

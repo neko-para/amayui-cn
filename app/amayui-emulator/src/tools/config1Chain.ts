@@ -15,9 +15,11 @@ import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
-import { loadScriptData, stepOnce, NotImplementedOp } from '../vm/interpreter.js';
+import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../vm/ops.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
+import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
+import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
 import { dec } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
@@ -37,6 +39,36 @@ export interface CoverInfo {
   dst: { x: number; y: number };
   size: { w: number; h: number };
   color: string;
+}
+
+/** 滚动条拇指的一段（上盖 / 中段 / 下盖）。 */
+export interface ThumbSeg {
+  handle: number;
+  dstX: number;
+  dstY: number;
+  srcW: number;
+  srcH: number;
+  /** 求值后的缩放（`itemScale`：无窗时 = 目标矩阵）。 */
+  scaleX: number;
+  scaleY: number;
+  /** pivot 相对项原点的局部量（`itemPivotLocal`：pivot == 描画位置时为 0）。 */
+  pivotRelX: number;
+  pivotRelY: number;
+}
+
+/**
+ * **CONFIG1 右侧滚动条拇指**的三段式几何（`0x1FD` 立即缩放的活证据）。
+ *
+ * 脚本（`src/CONFIG1.txt:2934-2971`，handle = `0x1d4c0 + 0x76c…0x778`）：
+ * 上盖 `27×23` → **中段 `27×1`（源只有 1px，靠 `i1fd <obj> 100 <h*100> 100` 放大）** → 下盖 `27×24`。
+ * 若 `0x1FD` 未落到渲染（或 pivot 坐标系用错），中段会退回 1px 并被挪出画面 ⇒ **只剩上下两段**。
+ */
+export interface ScrollThumb {
+  /** 脚本里的 handle 基址（`0x1d4c0`）。 */
+  base: number;
+  top: ThumbSeg;
+  middle: ThumbSeg;
+  bottom: ThumbSeg;
 }
 
 export interface ChainResult {
@@ -63,6 +95,10 @@ export interface ChainResult {
    * 因此序列里应当看到 `<全部>` → `0`（清场）→ 重新递增。
    */
   gateLoop: { enabled: boolean; autoHideMs: number; shown: number[] } | null;
+  /** CONFIG1 右侧滚动条拇指的三段式几何（见 `ScrollThumb`）；没跑到那段时 null。 */
+  scrollThumb: ScrollThumb | null;
+  /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
+  drops?: DroppedIntent[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
   trace: string[];
 }
@@ -70,13 +106,25 @@ export interface ChainResult {
 export interface ChainOptions {
   /** 只跑这么多次 `stepOnce`（保底，默认不限）。 */
   maxFrames?: number;
+  /**
+   * 每条被执行指令的回调（盘点用，见 `src/tools/opInventory.ts`）。
+   * 默认关 —— 单次链路有数十万条指令，留一个 no-op 调用也要花时间。
+   */
+  onStep?: (t: StepTrace) => void;
+  /** 用 `withNativeTap` 记录"脚本想调、宿主没实现"的方法（默认关；开了才付 Proxy 的代价）。 */
+  recordDrops?: boolean;
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
   const src = new NodeFileSource({ rawDir: RAW });
   const input = new InputManager();
-  const native = new HeadlessScene({});
-  const e = new Engine(native, input);
+  const scene = new HeadlessScene({});
+  // 归因用：DropRecorder 需要"当前 opcode"，而 Engine 在 native 之后才建 ⇒ 用可变持有者打破循环。
+  let engineRef: Engine | null = null;
+  const drops = new DropRecorder(() => engineRef?.currentOpcode ?? 0);
+  const e = new Engine(opt.recordDrops ? withNativeTap(scene, drops) : scene, input);
+  const native = scene;
+  engineRef = e;
   e.fileSource = src;
   e.config = parseIni(fs.readFileSync(INI, 'utf8'));
   applyConfigToEngine(e.config, e.engineValues);
@@ -92,6 +140,11 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   let coveredBy: CoverInfo[] = [];
   const trace: string[] = [];
   const maxFrames = opt.maxFrames ?? Number.POSITIVE_INFINITY;
+  /** 单步 + 可选的盘点回调（`onStep` 关闭时与直接 `stepOnce` 等价）。 */
+  const stepAll = async (): Promise<void> => {
+    const t = await stepOnce(e);
+    opt.onStep?.(t);
+  };
   const sampleNow = (): void => {
     const f = native.scene.msgWins.get(9);
     // ★`0x300` 闸门会让样例"贴出 → 停留 op3 ms → 消失 → 再来一遍"**循环**：
@@ -145,7 +198,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
       else if (e.advActive) {
         e.serviceAdv();
         try {
-          await stepOnce(e);
+          await stepAll();
         } catch {
           /* ADV 分支的异常按"本帧无进展"处理 */
         }
@@ -154,7 +207,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
           const f = e.curScript();
           if (!f.script || f.ip >= f.script.instructions.length) return i;
           try {
-            await stepOnce(e);
+            await stepAll();
           } catch (err) {
             if (err instanceof ExitScript || err instanceof ScriptReset) return i;
             if (err instanceof NotImplementedOp) {
@@ -206,6 +259,9 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   }
   const gateLoop = { enabled: gate?.enabled === true, autoHideMs: gate?.autoHideMs ?? 0, shown: shownSeq };
 
+  // ★滚动条拇指（`0x1FD` 的回归不变量）：三段式几何必须首尾相接。
+  const scrollThumb = collectScrollThumb(e, native);
+
   const m = e.msgwin;
   const out = {
     script: e.curScript().name,
@@ -219,10 +275,39 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     coveredBy,
     itemCounts: { drawItems: native.scene.drawItems.size, drawable: [...native.scene.drawItems.values()].filter((i) => (i.flags & 1) !== 0).length },
     gateLoop,
+    scrollThumb,
+    ...(opt.recordDrops ? { drops: drops.list() } : {}),
     trace,
   };
   await src.dispose?.();
   return out;
+}
+
+/** 取滚动条拇指三段（`CONFIG1.txt:2934-2971` 的 handle 布局：`0x1d4c0 + 0x76c / 0x776 / 0x777 / 0x778`）。 */
+function collectScrollThumb(e: Engine, native: HeadlessScene): ScrollThumb | null {
+  const base = 0x1d4c0;
+  const seg = (off: number): ThumbSeg | null => {
+    const it = native.scene.drawItems.get(base + off);
+    if (!it) return null;
+    const sc = itemScale(it, e.nowMs);
+    const pv = itemPivotLocal(it);
+    return {
+      handle: it.handle,
+      dstX: it.posX,
+      dstY: it.posY,
+      srcW: it.srcW,
+      srcH: it.srcH,
+      scaleX: sc.x,
+      scaleY: sc.y,
+      pivotRelX: pv.x,
+      pivotRelY: pv.y,
+    };
+  };
+  const top = seg(0x776);
+  const middle = seg(0x777);
+  const bottom = seg(0x778);
+  if (!top || !middle || !bottom) return null;
+  return { base, top, middle, bottom };
 }
 
 function uninplementedPush(list: string[], err: NotImplementedOp): void {

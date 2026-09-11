@@ -5,9 +5,9 @@
  * 渲染与 VM 指令解耦。因此这里全部是「读操作数 → 写渲染器里的对象」的转发。
  *
  * 四个动画窗（引擎 DrawItem 的 `+48..+88` 窗槽，见 docs/08）：
- *  - 窗1 `0x21E` 缩放（sx/sy/sz **÷256**）／窗2 `0x21F` 旋转（轴+角，**度**）
- *  - 窗3 `0x220` 平移（**不除 256**）／窗4 `0x239` flipbook（帧数/列数/标志，bit0=保持末帧）
- * ★ `0x21E` 的 /256 与 `0x220` 的不除，是指令级的既有差异，切勿"统一"。
+ *  - 窗1 `0x21E` 缩放（sx/sy/sz **÷100**）／窗2 `0x21F` 旋转（轴+角，**度**）
+ *  - 窗3 `0x220` 平移（**不除**，像素）／窗4 `0x239` flipbook（帧数/列数/标志，bit0=保持末帧）
+ * ★ 缩放的除数 100（`dbl_5201F0`）与平移到像素、旋转到度的差异，都是指令级的既有差异，切勿"统一"。
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, readFloatOperand } from '../operand.js';
@@ -31,17 +31,19 @@ const op_set_draw_pos: OpHandler = (c) => {
 
 /**
  * **`0x21E`（sub_423CA0, raw 31846，argc=6）：缩放动画窗（窗1）**。
- * 引擎：`op1`=handle、`op2`=delay、`op3`=dur、`op4/5/6`=sx/sy/sz（`sub_41C300(...) / dbl_5201F0`，**÷256**）
+ * 引擎：`op1`=handle、`op2`=delay、`op3`=dur、`op4/5/6`=sx/sy/sz（`sub_41C300(...) / dbl_5201F0`，
+ * **÷100** —— `dbl_5201F0 = 100.0`，raw 4430；脚本里 `64` 就是 100%）
  * → `sub_4AD170(Scene, handle, delay, dur, sx, sy, sz)`：`|=2`、`+52=0`、`+60=delay`、`+80=dur`、`+104=1`、
  * `D3DXMatrixScaling(元素+0xAC, sx, sy, sz)`（目标矩阵）。窗末 `work(+0x6C) ← target(+0xAC)`。
+ * ★订正：早前 emulator 按 **÷256** 实现（并把 `dbl_5201F0` 误记为 256.0），导致所有缩放窗幅度差 2.56 倍。
  */
 const op_set_scale_matrix: OpHandler = (c) => {
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
   const delay = readIntOperand(c.e, c.frame, c.instr, 2);
   const dur = readIntOperand(c.e, c.frame, c.instr, 3);
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 4) / 256; // dbl_5201F0 = 256.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 5) / 256;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 6) / 256;
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 4) / 100; // dbl_5201F0 = 100.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 6) / 100;
   c.native.setScaleAnim?.(handle, delay, dur, sx, sy, sz);
 };
 
@@ -93,13 +95,21 @@ const op_set_flipbook: OpHandler = (c) => {
   c.native.setFlipbook?.(handle, delay, dur, frames, cols, flags);
 };
 
-/** `0x1FD`（sub_422FD0, raw 30886）：**缩放变换**：读 op1=handle、op2/3/4 → `sub_4AC5F0`
- *  （设 3D 缩放矩阵，输入按 256 格除）。emulator 记录式转发（缩放矩阵未建模）。 */
+/**
+ * **`0x1FD`（sub_422FD0, raw 31313）：立即缩放**（无动画窗）。
+ * 引擎：`op1`=handle、`op2/3/4` = sx/sy/sz（`sub_41C300(...) / dbl_5201F0`，**÷100**
+ * —— `dbl_5201F0 = 100.0`，raw 4430；脚本里 `64`=100% 即 1.0）→ `sub_4AC5F0`：
+ * `+0x68 = 1`（用世界矩阵）+ `D3DXMatrixScaling(元素+0x6C, …)`（缩放 **work** 矩阵）+ 置脏。
+ *
+ * ★**不是"记录式转发"**：`0x1FD` 是引擎里唯一的"立刻设定缩放"指令（`0x21E` 走动画窗）。
+ * 缺了它不会报错，只会让"1px 贴片靠缩放撑开"的九宫格/三段式控件失去中段
+ * （实测 CONFIG1 右侧滚动条拇指：上盖 27×23 + 中段 27×1 放大到 209 + 下盖 27×24）。
+ */
 const op_set_scale: OpHandler = (c) => {
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const sx = readIntOperand(c.e, c.frame, c.instr, 2);
-  const sy = readIntOperand(c.e, c.frame, c.instr, 3);
-  const sz = readIntOperand(c.e, c.frame, c.instr, 4);
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 2) / 100; // dbl_5201F0 = 100.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 3) / 100;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
   c.native.setScale?.(handle, sx, sy, sz);
 };
 

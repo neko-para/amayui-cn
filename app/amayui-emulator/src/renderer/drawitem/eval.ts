@@ -39,6 +39,23 @@ export function itemScale(it: Item, clock: number): Vec3 {
   return it.scaleTarget;
 }
 
+/**
+ * **pivot 的局部坐标**（引擎 `sub_49AA30` raw 117425-117429 与 117932-117933）。
+ *
+ * 引擎的世界矩阵是 `T(-pivot) · S · R · Tt · T(+pivot)`，而顶点四边形本身已经建在**描画位置**上
+ * （`sub_4A2D50` 把 `&v26[9]` = DrawItem`+36/+40/+44` 交给纹理绘制）⇒ 合成结果等价于
+ * 「项放在 `pos`，然后绕**绝对坐标 pivot** 缩放/旋转」：
+ *   `v' = S·(v − pivot) + pivot`（v = pos + 局部偏移）⇒ 局部偏移 `u` 满足 `u' = pos + S·(u − (pivot − pos))`。
+ *
+ * Pixi 的 `sprite.pivot` 是**相对纹理左上角（=项原点）**的局部量，且语义为"该局部点落在 `position` 上"，
+ * 与上式完全同构 ⇒ 必须传 `pivot − pos`。直接把绝对值当局部量会**把项平移掉**：
+ * 实测 CONFIG1 滚动条拇指的 `0x217` 参数就是 `(dstX, dstY, 0)`（绝对坐标），
+ * 旧写法（直接用 pivot）等于把 27×209 的中段贴片丢到屏幕左上角、再叠一次拉伸。
+ */
+export function itemPivotLocal(it: Item): Vec3 {
+  return { x: it.pivotX - it.posX, y: it.pivotY - it.posY, z: it.pivotZ - it.posZ };
+}
+
 /** 旋转（窗2 / `0x21F`）：延迟期保持 `rotWork`，窗内轴与角分别插值（引擎 raw 117587-117620 插值后 `D3DXMatrixRotationAxis`）。 */
 export function itemRotationRad(it: Item, clock: number): number {
   let deg = it.rotTarget.deg;

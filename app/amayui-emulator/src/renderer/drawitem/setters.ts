@@ -34,15 +34,22 @@ export function applyDrawColor(it: Item, delay: number, dur: number, to: number)
   it.to = to >>> 0;
 }
 
-/** `0x21E`（`sub_4AD170`）：置 `+0x3C` delay、`+0x50` dur、`+0xAC` 目标缩放（sx/sy/sz 已 ÷256）。 */
+/**
+ * `0x21E`（`sub_4AD170`）：置 `+0x3C` delay、`+0x50` dur、`+0xAC` 目标缩放（sx/sy/sz 已 ÷100）、
+ * `+0x68 = 1`（用世界矩阵，raw 132009）。
+ */
 export function applyScaleAnim(it: Item, delay: number, dur: number, sx: number, sy: number, sz: number): void {
   it.flags |= 2;
+  it.useWorld = true; // raw 132009
   it.animStart = 0;
   it.wins[W_SCALE] = { delay, dur, set: true };
   it.scaleTarget = { x: sx, y: sy, z: sz };
 }
 
-/** `0x21F`（`sub_4AD250`）：置 `+0x40` delay、`+0x54` dur、`+0x1F8..0x208` 目标轴/角（度）。 */
+/**
+ * `0x21F`（`sub_4AD250`）：置 `+0x40` delay、`+0x54` dur、`+0x1F8..0x208` 目标轴/角（度）、
+ * `+0x68 = 1`（raw 132053）。
+ */
 export function applyRotationAnim(
   it: Item,
   delay: number,
@@ -53,12 +60,16 @@ export function applyRotationAnim(
   deg: number,
 ): void {
   it.flags |= 2;
+  it.useWorld = true; // raw 132053
   it.animStart = 0;
   it.wins[W_ROT] = { delay, dur, set: true };
   it.rotTarget = { axis: { x: ax, y: ay, z: az }, deg };
 }
 
-/** `0x220`（`sub_4AD3C0`）：置 `+0x44` delay、`+0x58` dur、`+0x1AC` 目标平移（不除 256）。 */
+/**
+ * `0x220`（`sub_4AD3C0`）：置 `+0x44` delay、`+0x58` dur、`+0x1AC` 目标平移（**不除**，像素）、
+ * `+0x68 = 1`（raw 132106）。
+ */
 export function applyTranslationAnim(
   it: Item,
   delay: number,
@@ -68,6 +79,7 @@ export function applyTranslationAnim(
   z: number,
 ): void {
   it.flags |= 2;
+  it.useWorld = true; // raw 132106
   it.animStart = 0;
   it.wins[W_TRANS] = { delay, dur, set: true };
   it.transTarget = { x, y, z };
@@ -113,6 +125,21 @@ export function applyDrawTranslation(it: Item, x: number, y: number, z: number):
   it.useWorld = true;
   it.transWork = { x, y, z };
   it.transTarget = { x, y, z };
+}
+
+/**
+ * `0x1FD`（`sub_422FD0` → `sub_4AC5F0`）：**立即缩放**（无动画窗）——
+ * 引擎写 `+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 **work** 矩阵，raw 131342-131349），
+ * **不动** `+0xAC`（目标矩阵）也不开窗。除数 100（`dbl_5201F0`，raw 4430）在 handler 里做。
+ *
+ * ★与 `0x1FF`（像素平移）**同一取舍**：引擎渲染期用的是 work 矩阵，而 emulator 的
+ *   `itemScale` 在"无窗"时返回 `scaleTarget` ⇒ 这里把 work/target 都写成该值，否则
+ *   "立即生效"不成立（滚动条拇指的中段拉伸就是这么丢的：只写 work ⇒ 求值仍返回 1,1,1）。
+ */
+export function applyDrawScale(it: Item, sx: number, sy: number, sz: number): void {
+  it.useWorld = true;
+  it.scaleWork = { x: sx, y: sy, z: sz };
+  it.scaleTarget = { x: sx, y: sy, z: sz };
 }
 
 /** `0x322`（`sub_4AE280`）：mesh 顶点色 state0。 */

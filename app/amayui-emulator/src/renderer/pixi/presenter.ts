@@ -14,6 +14,7 @@ import {
   advanceWindows,
   calcDiffuse,
   itemColor,
+  itemPivotLocal,
   itemRotationRad,
   itemScale,
   itemSrcRect,
@@ -88,17 +89,30 @@ export class ScenePresenter {
       if (!tex && imgid === undefined) {
         this.log(`[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`);
       }
-      // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8），
-      // 再叠加平移动画窗（窗3）的偏移（引擎把平移矩阵乘进世界矩阵）。
-      const tr = itemTranslation(it, clock);
-      spr.position.set(it.posX + tr.x, it.posY + tr.y);
-      // pivot（`0x217` 写 DrawItem`+24/+28/+32`）：引擎 `sub_49AA30` 以 `T(-pivot) → 动画矩阵 → T(+pivot)`
-      // 夹住动画矩阵 ⇒ pivot 是旋转/缩放的基准点。Pixi 的 pivot 以纹理左上角为原点，故直接换算。
-      if (it.pivotX !== 0 || it.pivotY !== 0) spr.pivot.set(it.pivotX, it.pivotY);
-      const sc = itemScale(it, clock);
-      if (sc.x !== 1 || sc.y !== 1) spr.scale.set(sc.x, sc.y);
-      const rot = itemRotationRad(it, clock);
-      if (rot !== 0) spr.rotation = rot;
+      // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
+      //
+      // ★**世界矩阵门**（引擎 `sub_4A2D50` raw 123055）：`if (Scene+46532) 乘上该项的世界矩阵`，
+      //   而 `Scene+46532 ← DrawItem+0x68`（raw 133391）。`+0x68` 只由变换类指令置位
+      //   （`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220`；`0x201` 颜色的 `0x202` 不置）。
+      //   ⇒ 未置位的项走**纯 2D 路径**：只有描画位置 + 源矩形尺寸，pivot/缩放/旋转/平移**一律不参与**。
+      //   漏掉这个门就会把"从没设过 pivot"的项按 pivot=(0,0) 反算成 `-pos`，把项推出画面
+      //   （CONFIG1 滚动条的上/下盖正好是这种项）。
+      if (it.useWorld) {
+        // pivot（`0x217` 写 DrawItem`+24/+28/+32`）：引擎 `sub_49AA30` 以 `T(-pivot) → 动画矩阵 → T(+pivot)`
+        // 夹住动画矩阵，而四边形已建在描画位置上 ⇒ 等价于「放在 pos，并绕**绝对坐标 pivot** 缩放/旋转」。
+        // Pixi 的 pivot 是**相对项原点**的局部量 ⇒ 取 `pivot − pos`（见 `itemPivotLocal`）。
+        const pv = itemPivotLocal(it);
+        if (pv.x !== 0 || pv.y !== 0) spr.pivot.set(pv.x, pv.y);
+        const sc = itemScale(it, clock);
+        if (sc.x !== 1 || sc.y !== 1) spr.scale.set(sc.x, sc.y);
+        const rot = itemRotationRad(it, clock);
+        if (rot !== 0) spr.rotation = rot;
+        // 平移动画窗（窗3）的偏移（引擎把平移矩阵乘进世界矩阵）。
+        const tr = itemTranslation(it, clock);
+        spr.position.set(it.posX + tr.x, it.posY + tr.y);
+      } else {
+        spr.position.set(it.posX, it.posY);
+      }
       spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
       spr.alpha = alpha / 255; // diffuse alpha 淡入
       this.drawRoot.addChild(spr);

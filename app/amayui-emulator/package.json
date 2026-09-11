@@ -16,7 +16,8 @@
     "build:electron": "node build-electron.mjs",
     "electron": "electron .",
     "electron:dev": "npm run build:electron && electron .",
-    "diag:text": "tsx src/tools/diagText.ts"
+    "diag:text": "tsx src/tools/diagText.ts",
+    "op:inventory": "tsx src/tools/opInventory.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 88,
-    "modeled-verified": 10,
+    "total": 89,
+    "modeled-verified": 11,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2470,6 +2470,42 @@
         "evidence": "E2",
         "guard": "test/texture-frame-barrier.test.ts",
         "note": "emulator 的 `set-texture` 走 renderer→主进程 IPC（`window.api.image` + AGF 解码）是**异步**的，因此新增**纹理帧屏障**：`TextureCache` 记录在途载入（`#inflight`/`pendingCount`），`NativeBridge.texturesIdle()`（PixiBackend 转发 `waitIdle`，500ms 兜底）在每帧合成（present）前等待，语义等价于引擎的同步加载。headless 宿主无纹理 ⇒ 不实现该钩子，直接放行。"
+      }
+    },
+    {
+      "id": "drawitem-world-matrix-composition",
+      "subsystem": "渲染",
+      "name": "DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门",
+      "trigger": "项的 `+0x68` 置位（= 任一变换类指令写过它：0x1FD / 0x1FF / 0x21E / 0x21F / 0x220）；未置位的项走纯 2D 路径",
+      "engine": {
+        "fns": [
+          "sub_49AA30",
+          "sub_4A2D50",
+          "sub_4AC5F0"
+        ],
+        "raw": "117425-117934"
+      },
+      "reads": [
+        "DrawItem+0x18",
+        "DrawItem+0x1C",
+        "DrawItem+0x20",
+        "DrawItem+0x24",
+        "DrawItem+0x28",
+        "DrawItem+0x2C",
+        "DrawItem+0x68",
+        "DrawItem+0x6C",
+        "DrawItem+0xEC",
+        "DrawItem+0x16C",
+        "Scene+46532",
+        "Scene+46536"
+      ],
+      "whySilent": "★缺了不报错、只是画错位置与大小：世界矩阵 = `T(-pivot) · 缩放 · 旋转 · 平移 · T(+pivot)`，而四边形已建在描画位置上 ⇒ 等价于『放在 pos、绕绝对坐标 pivot 缩放/旋转』。漏掉 work 缩放 ⇒ 靠 1px 贴片撑开的九宫格/三段式控件只剩首尾两段（CONFIG1 滚动条拇指中段消失）；漏掉 `+0x68` 门 ⇒ 从未设过 pivot 的项被按 pivot=(0,0) 反算成 `-pos`（整项被推出画面）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/draw-item-scale.test.ts",
+        "note": "2026 修正三处：(1) 0x1FD 由『记录式转发』改为真实现（写 work+target 并置 useWorld —— emulator 无窗时求值读 target，只写 work 不生效）；(2) pivot 由绝对值改为 pivot − pos 的局部量（raw 117428/117932）；(3) presenter 增加 +0x68 世界矩阵门（raw 123055 读 Scene+46532，而 Scene+46532 ← DrawItem+0x68，raw 133391）。0x21E 的除数同时由 ÷256 订正为 ÷100（dbl_5201F0 = 100.0，raw 4430）。活证据（E3）：CONFIG1 滚动条拇指 27×23 / 27×1→209 / 27×24 首尾相接，见 test/config1-chain.test.ts 的『滚动条拇指』用例。"
       }
     }
   ]

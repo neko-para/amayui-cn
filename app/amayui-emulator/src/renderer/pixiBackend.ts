@@ -44,6 +44,7 @@ import {
   scSetDrawTranslation,
   scSetFlipbook,
   scSetRotationAnim,
+  scSetScale,
   scSetScaleAnim,
   scSetTranslationAnim,
   scSetVertexColor,
@@ -222,10 +223,16 @@ export class PixiBackend implements NativeBridge {
     this.textures.create(slot, w, h, mode);
   }
 
-  /** `0x1FD`（sub_422FD0 → `sub_4AC5F0`）：3D 缩放变换（输入按 256 格除）。emulator 只记录。 */
+  /**
+   * `0x1FD`（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（输入按 **100** 格除，`dbl_5201F0 = 100.0`）。
+   * 走共享模型层 `scSetScale`（"缺失即建项"，引擎 `sub_4AAA50` 语义）。
+   * ★这不是"记录式转发"：缺了它，靠缩放撑开的中段贴片会退回源尺寸（CONFIG1 滚动条拇指中段丢失）。
+   */
   setScale(handle: number, sx: number, sy: number, sz: number): void {
     this.#markDirty();
-    this.#pushLog(`setScale h=0x${handle.toString(16)} (${sx},${sy},${sz})`);
+    const o = scSetScale(this.scene, handle, sx, sy, sz);
+    this.#assertItem(handle);
+    this.#pushLog(`setScale h=0x${handle.toString(16)} (${sx},${sy},${sz})${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
   /**
@@ -271,7 +278,7 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
-  /** `0x21E`（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**，sx/sy/sz 已 ÷256。 */
+  /** `0x21E`（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**，sx/sy/sz 已 ÷100。 */
   setScaleAnim(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void {
     this.#markDirty();
     const o = scSetScaleAnim(this.scene, handle, delay, dur, sx, sy, sz);
@@ -287,7 +294,7 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
-  /** `0x220`（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**（不除 256）。 */
+  /** `0x220`（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**（不除，像素）。 */
   setTranslationAnim(handle: number, delay: number, dur: number, x: number, y: number, z: number): void {
     this.#markDirty();
     const o = scSetTranslationAnim(this.scene, handle, delay, dur, x, y, z);

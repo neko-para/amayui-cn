@@ -4883,6 +4883,31 @@
     "unmodeled": ["sub_4A3800 内部解码细节", "sub_488FB0 的释放语义"],
     "evidence": "raw 31191-31230",
     "notes": "★这条的**同步性**是版面一致性的前提：引擎在同一指令内完成 读文件+解码+装槽 ⇒ 一帧之内「绑定 + 绘制」不会错位。重写侧若把加载做成异步（如 Electron renderer 走 IPC），必须补帧屏障（见 emulator 的 TextureCache.waitIdle / native.texturesIdle）。"
+  },
+  {
+    "addr": "0x422FD0",
+    "raw_name": "sub_422FD0",
+    "semantic_name": "op_set_item_scale_422FD0",
+    "op": "0x1FD",
+    "status": "ANALYZED",
+    "purpose": "立即缩放：op1=handle、op2/3/4 = sx/sy/sz（读 float 后 ÷dbl_5201F0）→ sub_4AC5F0 写该绘制项的缩放 work 矩阵（无动画窗）",
+    "sub_behaviors": ["把当前帧状态槽写 9（_this[30*cur+95805]）", "读 op2/op3/op4 为 float 并各 ÷ dbl_5201F0", "读 op1 为 handle", "调 sub_4AC5F0(Scene, handle, sx, sy, sz)"],
+    "fields_used": ["Engine[30*cur+95805]"],
+    "unmodeled": [],
+    "evidence": "raw 31313-31326",
+    "notes": "除数 dbl_5201F0 = 100.0（raw 4430）⇒ 脚本里的 64 = 100% = 1.0。早前 emulator 把这条记成『3D 缩放、按 256 除、记录式转发』，三处都错；实际它是 2D 绘制项的唯一『立即缩放』指令（0x21E 才是动画窗版）。"
+  },
+  {
+    "addr": "0x4AC5F0",
+    "raw_name": "sub_4AC5F0",
+    "semantic_name": "drawItemSetScaleWork_4AC5F0",
+    "status": "ANALYZED",
+    "purpose": "立即写一个绘制项的缩放 work 矩阵：sub_4AAA50 保证项存在 → +0x68 = 1（用世界矩阵）→ D3DXMatrixScaling(元素+0x6C, sx,sy,sz) → 置脏 Scene[11627]",
+    "sub_behaviors": ["sub_4AAA50(_this, handle) 缺失即建项（flags=0）", "sub_4AAD40 取元素指针并把 +104(0x68) 写 1", "sub_4AAD40 再取指针并 D3DXMatrixScaling(元素+108(0x6C))", "_this[11627] = 1 置脏"],
+    "fields_used": ["DrawItem+0x68", "DrawItem+0x6C", "Scene+46508"],
+    "unmodeled": [],
+    "evidence": "raw 131333-131352",
+    "notes": "与 0x1FF(sub_4AC750) 逐行同构（只有矩阵偏移不同：缩放 0x6C / 平移 0x16C）；两者都写 work 矩阵并置 +0x68=1。work 矩阵就是渲染期真正使用的那一份（sub_49AA30 raw 117431 qmemcpy 自 a2+27 = 字节 108）。"
   }
 
 ]

@@ -108,3 +108,36 @@ test('★CONFIG 消息预览的 0x300 闸门：贴出 → 停留 1000ms → 清�
     `清场后应重新贴出（循环演示），实际序列 ${seq.join(',')}`,
   );
 });
+
+/**
+ * ★2026 实测反馈的回归闸：「CONFIG1 **右侧滚动条的中间部分没有渲染出来，只有上下两部分**，
+ * 但滚动条功能正常」。
+ *
+ * 引擎侧（`src/CONFIG1.txt:2934-2971`）：拇指是**三段式**拼出来的 ——
+ *   上盖 `27×23` → 中段 **`27×1`**（`draw-texture` 只给 1px 源高，随后
+ *   `i217 <obj> <dstX> <dstY> 0` 设 pivot + `i1fd <obj> 64 <h·64> 64` 纵向放大到 `h`）→ 下盖 `27×24`。
+ *
+ * ⇒ 只要 `0x1FD`（立即缩放）没落到渲染，中段就退回 1px 高（看不见），
+ *   而**拖动/滚轮逻辑完全正常**（几何量都写在脚本局部变量里）—— 正是该症状。
+ * 本用例断言三段**首尾相接**：这是"中段真的被撑开了"的不变量，比断言具体像素值稳。
+ */
+test('★CONFIG1 滚动条拇指：上盖 / 中段(0x1FD 撑开) / 下盖 首尾相接', async () => {
+  const r = await chain();
+  const t = r.scrollThumb;
+  assert.ok(t, 'CONFIG1 帧里应能取到滚动条拇指三段（handle = 0x1d4c0 + 0x776/0x777/0x778）');
+  assert.equal(t!.top.handle + 2, t!.bottom.handle, '三段 handle 连续（上盖 +0、中段 +1、下盖 +2）');
+  assert.deepEqual([t!.top.srcW, t!.middle.srcW, t!.bottom.srcW], [27, 27, 27], '同宽 27');
+  assert.equal(t!.middle.srcH, 1, '★中段的源只有 1px 高 —— 不靠 0x1FD 撑开就看不见');
+  assert.ok(t!.middle.scaleY > 1, `中段必须被 0x1FD 纵向放大，实际 scaleY=${t!.middle.scaleY}`);
+  assert.equal(t!.top.scaleY, 1, '上/下盖没有 0x1FD（也不该被世界矩阵影响）');
+  assert.equal(t!.bottom.scaleY, 1, '上/下盖没有 0x1FD');
+  // 首尾相接：上盖底边 = 中段顶边；中段底边（含缩放）= 下盖顶边
+  assert.equal(t!.top.dstY + t!.top.srcH, t!.middle.dstY, '上盖底边应接上中段顶边');
+  assert.equal(
+    t!.middle.dstY + t!.middle.srcH * t!.middle.scaleY,
+    t!.bottom.dstY,
+    '中段（放大后）底边应接下盖顶边 —— 断开即说明缩放或 pivot 又错了',
+  );
+  // pivot 与描画位置同坐标空间（`i217 <obj> <dstX> <dstY> 0`）⇒ Pixi 相对量必须为 0
+  assert.deepEqual([t!.middle.pivotRelX, t!.middle.pivotRelY], [0, 0], '中段 pivot == 描画位置 ⇒ 以左上角为基准拉伸');
+});

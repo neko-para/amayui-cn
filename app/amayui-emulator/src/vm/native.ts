@@ -82,7 +82,8 @@ export interface NativeBridge {
   /** 0x1F8 create-texture：`[slot, w, h, mode]` —— 释放该槽旧纹理对象并**新建**一张（程序化纹理）。
    *  emulator 建模为"该槽的图像缓存失效并重取"（见 PixiBackend）。 */
   createTexture?(slot: number, w: number, h: number, mode: number): void;
-  /** 0x1FD（sub_422FD0）：3D 缩放变换（`sub_4AC5F0` 设缩放矩阵，百分数）。 */
+  /** 0x1FD（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（无动画窗）。op2/3/4 = sx/sy/sz（**÷100**，`dbl_5201F0`）。
+   *  引擎写 `DrawItem+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 work 矩阵）。 */
   setScale?(handle: number, sx: number, sy: number, sz: number): void;
   /**
    * 0x1FF（sub_4230F0 → `sub_4AC750`）：**DrawItem 的像素平移**（op2/op3/op4 = x/y/z float，像素单位）。
@@ -174,13 +175,13 @@ export interface NativeBridge {
    */
   setDrawPos?(handle: number, x: number, y: number, z: number): void;
   /**
-   * 0x21E（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**。op2=delay、op3=dur、op4/5/6=sx/sy/sz（÷256）。
+   * 0x21E（sub_423CA0 → `sub_4AD170`）：**缩放动画窗（窗1）**。op2=delay、op3=dur、op4/5/6=sx/sy/sz（**÷100**）。
    * 引擎写 DrawItem`+0x3C` delay / `+0x50` dur / `+0xAC` 目标缩放矩阵，窗末 `work(+)0x6C ← target`。
    */
   setScaleAnim?(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void;
   /** 0x21F（sub_423D40 → `sub_4AD250`）：**旋转动画窗（窗2）**。op2=delay、op3=dur、op4/5/6=轴、op7=角（度）。 */
   setRotationAnim?(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void;
-  /** 0x220（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**。op2=delay、op3=dur、op4/5/6=位移（不除 256）。 */
+  /** 0x220（sub_423DE0 → `sub_4AD3C0`）：**平移动画窗（窗3）**。op2=delay、op3=dur、op4/5/6=位移（**不除**，像素）。 */
   setTranslationAnim?(handle: number, delay: number, dur: number, x: number, y: number, z: number): void;
   /** 0x239（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。op2=delay、op3=dur、op4=总帧数、op5=列数、op6=标志(bit0=保持末帧)。 */
   setFlipbook?(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void;

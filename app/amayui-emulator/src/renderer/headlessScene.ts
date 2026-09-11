@@ -26,6 +26,7 @@ import {
   scSetDrawTranslation,
   scSetFlipbook,
   scSetRotationAnim,
+  scSetScale,
   scSetScaleAnim,
   scSetTranslationAnim,
   scSetVertexColor,
@@ -178,6 +179,11 @@ export class HeadlessScene implements NativeBridge {
 
   setDrawTranslation(handle: number, x: number, y: number, z: number): void {
     scSetDrawTranslation(this.scene, handle, x, y, z);
+  }
+
+  /** `0x1FD` 立即缩放（走共享语义 ⇒ 报告与画面不会漂移）。 */
+  setScale(handle: number, sx: number, sy: number, sz: number): void {
+    scSetScale(this.scene, handle, sx, sy, sz);
   }
 
   setDrawColor(handle: number, delay: number, dur: number, to: number): void {
