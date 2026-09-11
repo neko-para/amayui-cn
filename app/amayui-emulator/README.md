@@ -28,6 +28,7 @@
 | [`docs/09-data-model-and-reading-logic.md`](./docs/09-data-model-and-reading-logic.md) | **数据模型与读取逻辑**：本体 SYS4INI + 5 个 APPEND.AAI 统一文件 id 空间合并；引擎读取函数链；初始化调用链；纹理 id→图像 id 映射机制；标题图像来源(LOGO.txt) |
 | [`docs/10-texture-slot-to-agf-file.md`](./docs/10-texture-slot-to-agf-file.md) | **纹理 slot ↔ AGF 文件**：`set-texture <imgid> <slot>` 是唯一绑定，`[5*slot+466]=imgid`，imgid→resolveEntry→文件名；并与 draw-texture 的 tex 句柄区分 |
 | [`docs/11-fadetimer-and-fade-opcodes.md`](./docs/11-fadetimer-and-fade-opcodes.md) | **淡入淡出实现**：FadeTimer 步进计时器结构 + fade opcode 家族 0x20–0x38（SetFade/SetLineFade/SetRandomFade） |
+| [`docs/12-adv-text-rendering.md`](./docs/12-adv-text-rendering.md) | **ADV/消息窗文本渲染选型（ADR）**：引擎侧文本管线（每窗离屏表面 → 逐行显现 → 合成）、5 个候选方案的逐能力对比、结论「纯排版模型 + Pixi 内 canvas2D 光栅化」、分阶段落地与验收 |
 
 ---
 
@@ -51,12 +52,16 @@
 - **加载**：`src/engineConfig.ts` 的 `parseIni()` + `CONFIG_FIELD_BINDINGS` + `applyConfigToEngine()`；
   渲染窗 boot 时经 IPC `read-config-ini` 读 `app/amayui-emulator/SYS4REG.INI`（找不到则依次试仓库根 / 游戏目录），
   写入 `Engine.engineValues`，并把解析结果存 `Engine.config`。
-- **已绑定字段**（键 → `_this[K]`）：`sound:Music`→174713（0xC0 读）、`display:ScreenMode`→167990（0x2CE 读，布尔化）、
-  `message:MesWinAlpha`→21668（0x7F / 0x131 读）、`message:MessageSpeed`→86672、`message:MessageFade`→320424、
-  `message:RMouseEvent`→5536、`sound:Sound`→699240、`sound:SE`→83920、`sound:Voice`→85172。
-- **相关 opcode**：`0xC0`(音乐字段)/`0x131`(直接读 `message:MesWinAlpha`)/`0x2CE`(显示模式) 已实现（此前 0xC0 未映射、
-  0x131 当配置 getter 读 0、0x2CE 未映射）。
-- 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述三条 opcode 取值）。
+- **已绑定字段**（键 → `_this[K]`，**K 一律是 dword 下标**＝handler 里的同一空间）：
+  `sound:Music`→174713（0xC0 读；⚠raw 的配置写入目标是下标 174810，待音频专项对齐）、
+  `display:ScreenMode`→167990（0x2CE 读，布尔化）、`message:MessageSpeed`→**21668**（＝`Font+1376`；op 0x74 写、0x7F 读）、
+  `message:MessageFade`→**80106**（＝`Font+235128`；op 0x2EE 写）、`message:RMouseEvent`→1384、
+  `sound:Sound`→174810、`sound:SE`→20980、`sound:Voice`→21293。
+- ★`message:MesWinAlpha` **不在绑定表里**：引擎从不把它灌进持久字段，只由 `0x131`（sub_42F7D0 直读配置）
+  / `0x141`（sub_4228C0 直写配置，`op1>0x10` 报错）按名存取。历史误绑到 21668 曾与 MessageSpeed 互相覆盖。
+- **相关 opcode**：`0xC0`(音乐字段)/`0x131`(直读 `message:MesWinAlpha`)/`0x141`(直写同名键)/`0x7F`(读 MessageSpeed)
+  /`0x2CE`(显示模式) 已实现。
+- 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述 opcode 取值与 0x141↔0x131 往返）。
 
 ### 设置界面相关 opcode 的实现状态
 
@@ -200,9 +205,9 @@ DrawItem = `Scene+1032` 的 map 值，**740 字节**；元素内偏移 = f32 下
 > **数据层同步**：`analysis/functions.json` 已写入 `sub_4AD170`/`sub_4AD250`/`sub_4AD3C0`/`sub_4AD4A0`
 > （4 个窗 setter）、`sub_4ACE50`（draw-texture 建项）、`sub_49AA30`（逐帧驱动）、`sub_4AEEA0`（改判 ANALYZED）；
 > `analysis/fields.json` 的 DrawItem `0x34`/`0x38`/`0x4C` 已转 `confirmed`。
-> ⚠️ 窗 delay/dur 的其余偏移（`0x3C/0x40/0x44/0x48/0x50/0x54/0x58/0x5C`）**与 `ScriptContext` 同偏移**，
-> 而 `scripts/report.js` 的字段唯一键是**偏移**（不含 scope）⇒ 无法经工具写入；这些偏移的权威说明在本表与
-> `functions.json` 各条的 `fields_used` 里（均带 raw 行号）。
+> ✅ 窗 delay/dur 的其余偏移（`0x3C/0x40/0x44/0x48/0x50/0x54/0x58/0x5C`）与 `ScriptContext` 同偏移，
+> 但 `scripts/report.js` 的字段唯一键已改为 **`scope + offset`**（定位键可写 `DrawItem/0x3C`，裸 `0x3C` 命中多条时会报错并列出候选），
+> 因此不同 scope 的同偏移字段可以并存入库 —— `Font`（65 条）/ `FontVWindow`（38 条）就是这样补进去的。
 
 ### 渲染/图形/帧循环 一族（2025 实现）
 

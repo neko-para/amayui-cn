@@ -219,6 +219,7 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.advFields.clear();
   c.e.globalSlot97058 = 0;
   c.e.msgwin.reset();
+  c.e.native.msgWinClearAll?.(); // 文本图层也要清（引擎：换脚本即整块清 0，见 sub_40DF10）
   c.e.routes.reset();
   // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
   c.e.engineValues.set(96983, 0);

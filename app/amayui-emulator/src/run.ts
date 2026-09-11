@@ -49,6 +49,12 @@ async function main() {
       console.log(`  ip ${frame.ip} 越界, 停止`);
       break;
     }
+    // ★逐字显现：无界面时按固定步进推进（引擎每帧一步）—— 显现未完不放行等待门。
+    if (e.textRevealing) {
+      e.serviceTextReveal(e.nowMs);
+      e.nowMs += 16; // 固定步进（headless 用假时钟）
+      continue;
+    }
     // ★等待推进门：CLI 无输入源 ⇒ 确定性自动放行（计数），否则剧本一旦进入"等玩家点击"就永不前进。
     if (e.awaitingAdvance) {
       advanceWaits++;

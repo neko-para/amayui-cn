@@ -6,6 +6,7 @@ import { InputManager } from './input.js';
 import { MsgWindow } from './msgwin.js';
 import { RouteTable } from './route.js';
 import { cfgInt } from '../engineConfig.js';
+import { styleOfWin as msgWinStyleFor } from './handlers/msgwin.js';
 import type { Ref } from './ref.js';
 
 /** waitFlags 中的 sleep(0xC8) 门旗标（与 0x400 动画等待门并存）。 */
@@ -90,7 +91,8 @@ export class Engine {
    *  构造函数/初始化（engine.cpp 22404，字节偏移 387932 = _this[96983]）把 96983 置 1；另一处重置（34632）清 0。
    *  SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。
    *  ★**启动时由 SYS4REG.INI 填充**：见 `src/engineConfig.ts` 的 `CONFIG_FIELD_BINDINGS`（如 174713←sound:Music、
-   *    167990←display:ScreenMode、21668←message:MesWinAlpha），renderer 在 boot 前调用 applyConfigToEngine。 */
+   *    167990←display:ScreenMode、21668←message:MessageSpeed、80106←message:MessageFade），
+   *    renderer 在 boot 前调用 applyConfigToEngine。`field` 一律是 dword 下标（= handler 的 `_this[K]` 空间）。 */
   engineValues = new Map<number, number>([[96983, 1]]);
 
   /** 启动加载的 SYS4REG.INI 解析结果（未加载时 null）。供 opcode 直接读键（如 0x131 读 `message:MesWinAlpha`）。 */
@@ -248,6 +250,33 @@ export class Engine {
       this.effectFlags &= ~ADV_ACTIVE;
     }
     return (this.effectFlags & ADV_ACTIVE) !== 0;
+  }
+
+  /**
+   * **逐字显现服务**（引擎 `sub_409400` raw 13780-13970 的等价物）。
+   *
+   * 引擎：每帧对每个"正在显示"的窗调一次 `sub_45BE20(font, win)`（推进一步），
+   * 在 GDI 路径下用 `Sleep(Engine+86672 = message:MessageSpeed)` 控制节拍。
+   * 重写侧：`MsgWindow.tickReveal` 按毫秒推进游标，并把**有变化的窗**重新发布给宿主
+   * （宿主只画前 N 个字形）。
+   *
+   * 返回 `true` = 仍有窗在显现中（调用方应把它当作"这一页还没显示完"）。
+   */
+  serviceTextReveal(nowMs: number): boolean {
+    const speed = this.engineValues.get(21668) ?? (this.config ? cfgInt(this.config, 'message:messagespeed', 0) : 0);
+    const dirty = this.msgwin.tickReveal(nowMs, speed);
+    for (const win of dirty) this.native.msgWinSync?.(win, {
+      style: msgWinStyleFor(this, win),
+      segments: this.msgwin.slot(win).segments,
+      revealed: this.msgwin.revealedOf(win),
+    });
+    if (dirty.length > 0) this.msgwin.showing = this.msgwin.isRevealing() ? 1 : 0;
+    return this.msgwin.isRevealing();
+  }
+
+  /** 是否有窗还在逐字显现（引擎 `effect_flags & 0x40000000` 的等价判定）。 */
+  get textRevealing(): boolean {
+    return this.msgwin.isRevealing();
   }
 
   /**

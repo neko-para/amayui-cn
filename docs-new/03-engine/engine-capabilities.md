@@ -13,10 +13,10 @@
 |---|---|---|
 | `modeled-verified` | 6 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 19 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 22 | 引擎有、emulator 完全没有 |
-| `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **78** | 需要关注（非 n/a 且非已核验）= **48** |
+| `partial` | 21 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 26 | 引擎有、emulator 完全没有 |
+| `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
+| **合计** | **85** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
@@ -25,8 +25,8 @@
 | 3D | 15 | 1 |
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
-| 帧循环 | 11 | 8 |
-| 消息窗 | 12 | 10 |
+| 帧循环 | 12 | 9 |
+| 消息窗 | 18 | 15 |
 | 渲染 | 22 | 11 |
 | 资源 | 7 | 2 |
 | 转场 | 4 | 4 |
@@ -92,7 +92,7 @@
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
 | `lazy-movie-dll` | 资源 | 电影解码 DLL 重载与函数指针惰性解析 | ❌ 缺失 | E0 |
 | `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | ❌ 缺失 | E0 |
-| `lazy-gdi-font-set` | 消息窗 | GDI 字体句柄组释放-重建 | ❌ 缺失 | E0 |
+| `lazy-gdi-font-set` | 消息窗 | 消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4） | ❌ 缺失 | E0 |
 | `lazy-script-operand-hashmap-node` | 资源 | 脚本 VM 操作数 HashMap 节点惰性分配 | 🟡 已建模未核验 | E1 · `test/xval.test.ts` |
 | `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ❌ 缺失 | E0 |
 | `lazy-drawitem-map-node` | 渲染 | DrawItem 表节点惰性插入（表头 eager 130312） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
@@ -104,16 +104,23 @@
 | `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-text-object` | 消息窗 | 文本对象（Engine+21324）的槽模型与写入 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-text-object` | 消息窗 | 文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
 | `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
+| `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
+| `text-reveal-pump-409400` | 帧循环 | 逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | ❌ 缺失 | E0 |
+| `msgwin-line-fade-window` | 消息窗 | 行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
+| `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |
+| `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
+| `text-font-rebuild-cascade` | 消息窗 | 字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0） | ❌ 缺失 | E0 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -371,12 +378,12 @@
 
 ### `lazy-gdi-font-set`（absent）
 
-- **能力**：GDI 字体句柄组释放-重建
+- **能力**：消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4）
 - **触发**：字体变更或消息窗子系统重建（`sub_40DF10` 复位区）
-- **缺失时为什么静默**：旧句柄为空时跳过 `DeleteObject`；`CreateFontIndirectA` 失败返回 0，`SelectObject` 静默退化
-- **引擎**：sub_465390 @ raw 71144-71187
-- **读的字段**：Engine+85296, Engine+1084, Engine+1100, Engine+218624, Engine+235068
-- **emulator 现状**：★消息窗文本渲染（GDI 字体 + 自绘位图）完全未建模 ⇒ 文字不显示
+- **缺失时为什么静默**：字体句柄为 0 时 GDI SelectObject 静默退化；面名为空（Font+1260 首字节 0）则 sub_459F40 直接 return ⇒ 句柄全 0、文字用系统默认字体画出来，全程无错误输出
+- **引擎**：sub_465390, sub_459F40, sub_45A6E0, sub_456C90 @ raw 70940-71273
+- **读的字段**：Font+1084, Font+1096, Font+1100, Font+1232, Font+1292, Font+201684, Font+218584, Font+101972, Font+102032, Font+201788, Font+235068..+235104
+- **emulator 现状**：缺失：字体系（面名/字号/粗体/竖排模板 → HFONT）完全未建模。改用浏览器字体后仍需保留「面名→内嵌字族」映射与 0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB 的参数面。
 
 ### `lazy-transition-map-node`（absent）
 
@@ -421,16 +428,16 @@
 - **缺失时为什么静默**：查表未命中/越界统一返回 0，调用方据此认为「已显示完」并清 ADV —— 全是合法路径，无日志
 - **引擎**：sub_48F000, sub_48E870, sub_48FFB0, sub_41ED80, sub_41EEF0 @ raw 109440-110481
 - **读的字段**：Engine+80107, Engine+80107+285, Engine+174405(config)
-- **emulator 现状**：部分：`message:ReadTextSkip` 门已实现（含 0x1CA 的运行期覆盖），「是否还在显示」改为「文本刚写入 ⇒ 本帧显示中，下一帧由 serviceAdv 收尾」。仍未建模：引擎真正的逐字显示推进（`sub_48E870`/`sub_48F000` 的分段表 + 字体度量）。
+- **emulator 现状**：部分：ReadTextSkip 门已实现（含 0x1CA 运行期覆盖）。仍未建模引擎真正的逐字/逐行推进泵 —— 见 text-reveal-pump-409400（sub_409400 + sub_45BE20 + message:MessageSpeed）；本条目只覆盖「是否已显示完」的判定，miss 时统一返回 0 属合法路径。
 
 ### `msgwin-text-object`（partial）
 
-- **能力**：文本对象（Engine+21324）的槽模型与写入
+- **能力**：文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队
 - **触发**：0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元
 - **缺失时为什么静默**：文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）
-- **引擎**：sub_45EC60, sub_46BE30, sub_46CBF0 @ raw 74197-74281
-- **读的字段**：Engine+21324, Engine+260, Engine+261, Engine+307, Engine+667856, Engine+339
-- **emulator 现状**：部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：`sub_45EC60` 的槽布局重置与 GDI 文本渲染。
+- **引擎**：sub_45EC60, sub_46BE30, sub_46CBF0, sub_45D660, sub_456430 @ raw 74196-74282
+- **读的字段**：Engine+85296(文本对象; dword 写法 Engine[21324]), Font+1044(10 窗口), Font+1228(默认窗), Font+1032/+1036/+1040, Engine+667856
+- **emulator 现状**：部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节）。
 
 ### `msgwin-object-table`（partial）
 
@@ -461,12 +468,12 @@
 
 ### `msgwin-attr-font-opcodes`（partial）
 
-- **能力**：文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集**
+- **能力**：文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集**
 - **触发**：脚本设置字体/文本属性时调用；0x196 display-furigana 在消息文本里插注音；0xC5 读音量配置写操作数
-- **缺失时为什么静默**：多为纯属性写入（如 0x2BD 写文本对象 +218516/+1248 = 700 或 0）或字符串转发；0xC5 引擎会**回写 op2**，被跳过时操作数保留旧值 —— 都属合法路径，无断言
-- **引擎**：sub_426200, sub_426260, sub_4262C0, sub_426310, sub_4332D0, sub_426500, sub_425DB0, sub_41FC20, sub_42E540 @ raw 29032-41818
-- **读的字段**：Engine+21324, Engine+92381, Engine+92379, Engine+86672
-- **emulator 现状**：部分：`0x196 display-furigana` 已实现（记录注音对）；`0x2BD/0x2BE/0x2BF/0x2C0/0x2FE/0x25A/0xC5` 仍是 no-op（字体/属性转发到 GDI 子系统）。其中 `0xC5` 引擎会回写 op2 ⇒ 应并入闸门 B 缺口。
+- **缺失时为什么静默**：多是"改模板字段 + 重建句柄"的纯属性写入：不实现则参数保持默认（白字/黑投影/24px），画面还能看，只是**失去脚本指定的观感与阅读体验**。0x1C5/0xC5 一类会回写操作数，被跳过时脚本读到旧值。
+- **引擎**：sub_41F350, sub_41F390, sub_41F3F0, sub_41F450, sub_41F6C0, sub_41FBF0, sub_41FE60, sub_41FDD0, sub_433290, sub_426200, sub_426260, sub_426500, sub_4332D0, sub_41FC20, sub_455ED0 @ raw 28652-29163
+- **读的字段**：Font+1360/+1364/+1368/+1372/+1380/+1384/+1388/+1392(颜色与描边), Font+1232/+1248/+1260(主字体), Font+1292/+1308/+1320(注音字体), Font+218516/+218588(字重), Font+201684/+218584(字号), Font+235108(竖排)
+- **emulator 现状**：部分：0x196 display-furigana 已实现（记录注音对）。仍为 no-op 且**属 P0（阅读体验）**：0x75 字号 / 0x76 填充色 / 0x77 描边色 / 0x78 描边档位 / 0x1A4 描边偏移 / 0x8B 第三色 / 0x197 注音字号 / 0x2BD/0x2BE 加粗 / 0x1A5/0x2FE 面名。★描边四档（0 无 / 1 单向投影 / 2 1-4 强度副本 / 3 多向描边，默认 1）必须逐档复刻观感（canvas 等价实现见 app/amayui-emulator/docs/12-adv-text-rendering.md §5.3）；字体内部配置（AA/度量/缓存）按用户口径只记录字段。
 
 ### `adv-advance-route-table`（partial）
 
@@ -485,3 +492,57 @@
 - **引擎**：sub_41EB20, sub_41ED80, sub_41EEF0, sub_411900, sub_411BC0, sub_409400, sub_42E540, sub_42E670, sub_4309E0, sub_431110, sub_4311B0, sub_42D2F0 @ raw 20096-40386
 - **读的字段**：Engine+697620, Engine+174405, Engine+86672
 - **emulator 现状**：清单与逐键分支见 `docs-new/03-engine/message-config-gates.md`。要点：(a) `message:ReadTextSkip=0` ⇒ 0x6E/0x71/0x72 不置 ADV（emulator 已按门实现）；(b) `message:MesWinAlpha=8` ⇒ 每段文本 8ms 节流（已实现）；(c) `set:CancelMesSkipOnClick`/`set:WheelKeyUp|Down`/`set:ReDrawTextOnKey`/`set:ControlDisibleCursor` 在随包 INI **缺失** ⇒ 对应分支当前走不到（三态机已实现但休眠，滚轮/重绘未建模）；(d) `message:AutoMessage*` 自动播放未建模。★纪律：读到门就照门实现；走不到的分支必须登记；配置回读类指令一律不得当 no-op。
+
+### `text-layout-wrap-ruby`（absent）
+
+- **能力**：文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30）
+- **触发**：0x6E show-text / 0x196 display-furigana / 0x7D 每次入队时
+- **缺失时为什么静默**：排版产出的只是一串记录与源矩形；不排版不报错，只表现为「文字不出现」「位置不对」。更隐蔽的是：断行规则与引擎不一致时，行数/每行字数与脚本可观测的 0x83(当前行)、0x1C5/0x2C2(读回已显示文本)、0x2F3(行坐标) 全部对不上 —— 静默错误会从像素层渗到 VM 层。
+- **引擎**：sub_46BE30, sub_45E870, sub_475CF0, sub_4572A0, sub_45D120 @ raw 83363-83997
+- **读的字段**：FontVWindow+36/+40(右/下边界), FontVWindow+44/+48(24B 行记录), FontVWindow+208(120B 文本记录), Font+201684(字号), Font+1236(字宽), Font+218592/+218596(缩放)
+- **emulator 现状**：缺口：逐字 GetTextExtentPoint32A 量宽、右/下边界硬断、注音配对（24B 记录 +0 种类 / +20 组 ID）与按比例缩短都未建模。★引擎的等宽网格（lfWidth = 字高/2 ⇒ 全角 1em / 半角 0.5em）使排版可退化为纯算术，不需要浏览器度量。★引擎**无**禁则、**无** 0x0A 换行处理。
+
+### `text-reveal-pump-409400`（partial）
+
+- **能力**：逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍
+- **触发**：effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时
+- **缺失时为什么静默**：它是"每帧替脚本推进文字"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。
+- **引擎**：sub_409400, sub_45BE20, sub_453AF0, sub_453B60, sub_45A940, sub_4051A0 @ raw 13780-13970
+- **读的字段**：Engine+86672(= Font+1376 = message:MessageSpeed), Engine+699204(effect_flags), FontVWindow+132(当前行), FontVWindow+92/+96(网格列数), Font+235128(= message:MessageFade)
+- **emulator 现状**：已建模 S4：MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf + Engine.serviceTextReveal；节拍 = max(message:MessageSpeed ／ 一帧)。0x71/0x72 启动、0x1CE 收尾、MessageSpeed=0 或跳读 ⇒ 一次排空。★有意偏离：引擎 sub_45BE20 一步推**一行**（24B 行矩形；D3D 建 DrawItem id=行号+win+104；GDI 逐行 blit）而宿主按“前 N 个字形”渲染 ⇒ 这里把“一帧一步”映射成一帧一个**字**（逐字可见）；引擎真正的逐字只有网格那条路（effect_flags&0x40000000 + sub_453AF0(Engine+430600) + sub_45A940；节拍来自 0x73 op10；脚本侧仅 i073 27 处）。缺口：逐行贴出的行淡入色窗（MessageSpeed×MessageFade/100）未接；MessageFade 未消费。
+
+### `msgwin-offscreen-surface-lifecycle`（absent）
+
+- **能力**：每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出
+- **触发**：0x70 设窗几何时重建；0x71 开始时填底色；显现阶段逐行/逐字贴出
+- **缺失时为什么静默**：表面生命周期错位不会报错：少重建 ⇒ 几何仍按旧尺寸（文字位置/换行全偏）；少清底 ⇒ 上一页文字叠在下面；少 ReleaseDC ⇒ 表面被 GDI 锁住、后端读不到像素（画面停留在旧内容）。
+- **引擎**：sub_45D660, sub_43C8D0, sub_43B070, sub_43D870, sub_43B460, sub_43B4C0, sub_45BE20 @ raw 73132-73193
+- **读的字段**：FontVWindow+20/+24(w/h), FontVWindow+12/+16(屏幕偏移), FontVWindow+4(目标表面=0), Font+1032(dd 模块), Font+1104(surface DC), Font+1400(已锁表面号)
+- **emulator 现状**：缺口：emulator 无"每窗离屏表面"概念，也没有 DC 取/还配对。重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」，因此需要等价的"窗口内容整体重画"时机（文本变化 / 显现游标变化 / 几何变化 / 清场）。
+
+### `msgwin-line-fade-window`（partial）
+
+- **能力**：行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms
+- **触发**：D3D 路径下 sub_45BE20 为每行建 DrawItem 之后
+- **缺失时为什么静默**：不设色窗只会让文字"瞬现"而不是淡入 —— 无错误、无日志，只是少了动画。★引擎没有"把文字颜色朝背景插值"的代码（GDI TextOutA 无 alpha），淡入只能靠 DrawItem alpha 或离屏表面整体贴出。
+- **引擎**：sub_45BE20, sub_4AD0C0, sub_4ACF60 @ raw 72338-72348
+- **读的字段**：Font+1376(= message:MessageSpeed), Font+235128(= message:MessageFade), DrawItem+52/+56/+76/+100
+- **emulator 现状**：部分：DrawItem 颜色动画窗（含整数截断插值、共享起点、窗末收尾）已建模并有守卫；缺的是把它接到消息窗行上（按 MessageSpeed×MessageFade/100 设时长）。
+
+### `msgwin-backlog-cursor`（absent）
+
+- **能力**：已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770
+- **触发**：0x71/0x70 登记一页；滚轮（输入位 0x8/0x2）与 0x84 移动光标
+- **缺失时为什么静默**：页表不建则回看与滚轮完全无反应；更关键的是 0x84「翻到底」时本应置 effect_flags |= 0x100000 并弹保存栈让脚本继续 —— 页表为空则这个"到达末尾"永远不发生，脚本会停在自旋里（表现为卡住，而不是报错）。
+- **引擎**：sub_459770, sub_45EFA0, sub_45EBE0, sub_45EC60, sub_45D660 @ raw 70575-70627
+- **读的字段**：Font+3380/+3384(8B 页表), Font+3364(72B 回看项), Font+859/+860(末项/当前光标)
+- **emulator 现状**：缺口：无回看页表与光标。CONFIG1 链路上不触发，但真实剧本的滚轮回看与 0x84 依赖它。
+
+### `text-font-rebuild-cascade`（absent）
+
+- **能力**：字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0）
+- **触发**：任一字号/面名/字重/度量模式指令；或子系统 Initialize
+- **缺失时为什么静默**：★`sub_459F40` 入口守卫 `if (!Font+1260) return`：面名为空 ⇒ **整个重建不发生**，句柄保持 0，GDI 用系统默认字体把字画出来，全程无错误。同理 `0x2BD`（加粗）只改模板里的 lfWeight 并触发重建，不重建则"加粗"这一档完全无效。旧口径把 sub_459F40 说成"文本重排"、把 0x2BD 说成"调 sub_459F40"，均不成立（它不在派发表里）。
+- **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
+- **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
+- **emulator 现状**：缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 "@" 前缀）。

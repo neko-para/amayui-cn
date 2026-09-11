@@ -33,6 +33,7 @@ import {
   windowDone,
 } from '../drawItem.js';
 import type { SceneState } from './state.js';
+import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
 
 /**
  * `0x1FB` draw-texture：建/覆盖一个 DrawItem（等价引擎 `sub_4ACE50`），并置 bit0（可绘制）。
@@ -97,6 +98,10 @@ export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes
   const meshes = s.meshes.size;
   s.drawItems.clear();
   s.meshes.clear();
+  // ★文本窗也要清：引擎 D3D 路径下正文行**就是** Scene 的 DrawItem（id = 行号 + win+104），
+  //   `sub_4AB7A0` 清整张 DrawItem 表时它们一起没；GDI 路径下会被重画的画面盖掉。
+  //   漏掉这一步的症状：**回到标题/主界面后，上一页的消息文字又画在主界面之上**（2026 实测）。
+  scMsgWinClearAll(s);
   return { drawItems, meshes };
 }
 
@@ -255,4 +260,34 @@ export function scAnimationsDone(s: SceneState, clock: number): boolean {
   for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return false;
   for (const it of s.drawItems.values()) if (it.flags & 2 && !windowDone(it, 0, clock)) return false;
   return true;
+}
+// ---------------------------------------------------------------------------
+// 消息窗文本（引擎「每窗一张离屏表面 + 逐行显现」的等价物）
+// ---------------------------------------------------------------------------
+
+/**
+ * **同步一个消息窗的文本内容**（引擎 `0x6E`/`0x6F`/`0x71`/`0x196` + 各属性指令的最后一步）。
+ *
+ * 排版在这里做（而不是宿主里）：排版规则是**引擎语义**（等宽网格 / 边界硬断 / 注音配对 /
+ * 竖排 / 对齐），必须两个宿主完全一致，否则又会出现"报告说 3 行、画面画 2 行"的漂移。
+ * 光栅化才是宿主的事（`pixi` 画进纹理，`headless` 只留数据进快照）。
+ *
+ * 返回排版结果，便于调用方诊断/断言。
+ */
+export function scMsgWinSync(s: SceneState, win: number, input: MsgWinInput): TextFrame {
+  const frame = layoutWindow(win, input);
+  s.msgWins.set(win, frame);
+  s.msgRev.set(win, (s.msgRev.get(win) ?? 0) + 1);
+  return frame;
+}
+
+/** 清空一个消息窗（引擎 `0x85` 清行队列 / `0x301` 删绘制项区间 / `0x71` 开始新一段）。 */
+export function scMsgWinClear(s: SceneState, win: number): void {
+  s.msgWins.delete(win);
+  s.msgRev.set(win, (s.msgRev.get(win) ?? 0) + 1);
+}
+
+/** 全部清空（引擎 `op_exit_script` 的 `msgwin.reset()` 语义）。 */
+export function scMsgWinClearAll(s: SceneState): void {
+  for (const win of [...s.msgWins.keys()]) scMsgWinClear(s, win);
 }

@@ -57,11 +57,12 @@ test('applyConfigToEngine：按绑定写入引擎字段（含 display:ScreenMode
 
   assert.equal(get(174713), 2, 'sound:Music=2 → _this[174713]（0xC0 读）');
   assert.equal(get(167990), 1, 'display:ScreenMode=1 → _this[167990]（0x2CE 读，布尔化）');
-  assert.equal(get(21668), 8, 'message:MesWinAlpha=8 → _this[21668]（0x7F 读）');
-  assert.equal(get(86672), 5, 'message:MessageSpeed=5');
-  assert.equal(get(320424), 250, 'message:MessageFade=250');
-  assert.equal(get(83920), 1, 'sound:SE=1');
-  assert.equal(get(85172), 1, 'sound:Voice=1');
+  // ★message:MesWinAlpha **不进任何字段**（引擎只由 0x131/0x141 按名直读直写配置）。
+  //   21668×4 = 86672 = Font+1376 = message:MessageSpeed ⇒ 历史误绑会让 MesWinAlpha=8 顶掉 MessageSpeed=5。
+  assert.equal(get(21668), 5, 'message:MessageSpeed=5 → _this[21668]（0x7F 读）；不得被 MesWinAlpha 覆盖');
+  assert.equal(get(80106), 250, 'message:MessageFade=250 → _this[80106]（0x2EE 写）');
+  assert.equal(get(20980), 1, 'sound:SE=1（下标 20980 = raw 字节 83920）');
+  assert.equal(get(21293), 1, 'sound:Voice=1（下标 21293 = raw 字节 85172）');
   assert.equal(get(96983), 1, '无关字段不受影响（LOGO 开关）');
   assert.ok(applied.length >= 8, `应写入至少 8 个字段（实际 ${applied.length}）`);
 
@@ -142,10 +143,29 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不�
   assert.notEqual(t.handlerKind, 'unimplemented');
   assert.equal(read(1), 2);
 
-  // 0x131 → 直接读配置 message:MesWinAlpha = 8
+  // 0x131 → **直接读配置** message:MesWinAlpha = 8（不读任何 Engine 字段）
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 2), 'TEST.BIN');
   await stepOnce(e);
   assert.equal(read(2), 8);
+
+  // 0x141 → 直写配置 message:MesWinAlpha（>0x10 时报错不写）。0x131 应读回刚写的值。
+  const setLocal = (slot: number, v: number): void => void e.curScript().locals.int.set(slot, enc(e.key, v));
+  setLocal(9, 9);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  await stepOnce(e);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x131, 10), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(10), 9, '0x141 写配置后 0x131 应读回 9');
+  setLocal(9, 0x11);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  await stepOnce(e);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x131, 11), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(11), 9, 'op1 > 0x10 ⇒ 报错不写，配置保持原值');
+  // 复位成 INI 里的 8，避免影响后续断言
+  setLocal(9, 8);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  await stepOnce(e);
 
   // 0x2CE → _this[167990]!=0 → 1
   loadScriptIntoFrame(e.curScript(), oneOp(0x2ce, 3), 'TEST.BIN');
@@ -177,7 +197,7 @@ test('消息窗字段一族（0x80 setter / 0x7F getter / 0x300 / 0x301）：真
   await stepOnce(e);
   assert.equal(e.engineValues.get(21631), 9, '0x80 应把 op1(=9) 写进消息窗部件索引');
 
-  // 0x7F：op1 = _this[21668]（消息窗 α，由 message:MesWinAlpha 填充）
+  // 0x7F：op1 = _this[21668] = message:MessageSpeed（★不是消息窗 α）
   e.engineValues.set(21668, 8);
   loadScriptIntoFrame(e.curScript(), nOp(0x7f, [7]), 'TEST.BIN');
   await stepOnce(e);
@@ -211,7 +231,7 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
   // 分类规则：能完整建模（哪怕不产出画面）⇒ 'implemented'；经 NativeBridge 落宿主 ⇒ 'native'；
   //           引擎内部且 emulator 无事可做 ⇒ 'engine-internal'（纯 no-op）。
   const cases: [number, number, string][] = [
-    [0x7f, 1, 'implemented'], // 消息窗 α 读数（真实现：读 engineValues[21668]）
+    [0x7f, 1, 'implemented'], // 消息速度读数（真实现：读 engineValues[21668] = message:MessageSpeed）
     [0x80, 1, 'implemented'], // 消息窗部件索引 setter（真实现：写 engineValues[21631]）
     [0x300, 3, 'implemented'], // 消息窗对象旗标/值（真实现：写 engineValues[122466+v]/[122476+v]）
     [0x301, 1, 'implemented'], // 清消息窗对象项（真实现：写 engineValues[122486+v]=0）

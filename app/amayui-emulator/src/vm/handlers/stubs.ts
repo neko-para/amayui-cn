@@ -35,9 +35,6 @@ const stubSubsystem: OpHandler = (c) => {
     case 0x1f9:
       c.native.setTexture?.(args);
       break;
-    case 0x1a5:
-      c.native.setFont?.(args);
-      break;
     case 0xcd:
       c.native.getInputType?.();
       break;
@@ -86,21 +83,40 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x326, op_engine_internal], // 3D 雪花 ID3DXEffect（自带 `Scene+46668>=1` 门槛）→ sub_426E10
   [0x325, op_engine_internal], // 消息对象字段 +1240/+1244 → sub_426DC0
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
-  // 分组依据：handler 体只读操作数、写 `_this[消息窗族字段]`（0x151fc/0x152xx 区、`_this+21324` 文本子系统），
-  // **不回写操作数、不改控制流**。其中「字段可建模」的已升级为真实现（见 OPS 的 ENGINE_FIELD_STORE 一族与
-  // op_get_msgwin_alpha/op_set_msgwin_part/op_msgwin_slot_*），此处只留**宿主无对应子系统**的那些。
-  [0x74, op_engine_internal], // 消息窗
-  [0x75, op_engine_internal], // → sub_4185F0(_this+21324, op1)（文本子系统方法）
-  [0x79, op_engine_internal], // 消息项（sub_41F4E0/sub_4563A0）
+  // 这里的每条都**确认过 handler 体不写 VM 可见态**（不回写操作数、不改 ip/cur）。
+  // 「字段/状态可建模」的都在 `msgwin.ts` 的 `MSGWIN_OPS`（OPS 表，engine-first）：
+  //   0x70 几何 / 0x74 消息速度(仅字段) / 0x75 主字号 / 0x79 文字起点 / 0x197 注音字号 /
+  //   0x198 窗位置 / 0x1A5 主面名 / 0x1B5 消息速度(字段+注册表) / 0x1C1 换行边界 /
+  //   0x260 竖排矩形 / 0x2BD·0x2BE 加粗 / 0x2E8 自动翻页选项 / 0x2FE 注音面名 / 0x303 对齐
+  // —— 三张表**必须两两不相交**（`test/registry-tables.test.ts` 守着），否则真实现会被 no-op 掩盖。
+  //
+  // ★`0x1D2`（sub_420380）—— **「文本项属性记录表」家族的写入端**，本表里唯一"引擎其实做了事"的一条：
+  //   引擎体：`if (!Engine[97055]) sub_45EFA0(Font, 0, op1, op2)` ⇒ 往 **`Font+3364` 的 72B/条
+  //   记录向量**里 push 一条 `{win = 默认窗, +20 = op2, +24 = op1, +28 = 0, +32 = 0, flags = 0x20000000
+  //   (| 1 = 组首)}`（push 实现 sub_45E7E0 raw 73986：传入指针落在向量内则**按索引插入**，否则尾插）。
+  //   它**不回写操作数、不改 ip/cur**，从 VM 视角不可观测 ⇒ 归 engine-internal（宿主没有这张表的消费者）。
+  //
+  //   ⚠**同一家族的读取端仍未实现，故意保持"命中即硬报错"**（它们**会回写操作数**，绝不能当 no-op）：
+  //     · `0x1D3 <o1> <o2> <o3> <o4> <o5>`（sub_42D4A0 → sub_457960 raw 69329）：从下标 `o4` 起扫
+  //       `flags & 0x20000000 && +24 == o5` 的记录，取 `+20` ⇒ 写回 `o1 = 找到?1:0`、`o2 = 值`，
+  //       遇到"下一条是组首（bit0）"即停。
+  //     · `0x1D4 <o1> <o2> <o3> <o4>`（sub_42D510 → sub_457A20 raw 69367）：扫 `flags & 0x40000000
+  //       && +32 == 0`，取 `+20/+24/+28`（缺省 -1/-1/0）⇒ 写回 `o1/o2`。
+  //     · `0x1D0 <o1> <o2> <o3>`（sub_42D440 → sub_459860 raw 38099）：读**回看页索引表**
+  //       （`Font+3380`，8B/条 `{槽号, 回看下标}`）⇒ 写回 `o1/o2`。
+  //     · `0x2F3 <o1> <o2> <o3> <o4> <o5> <o6>`（sub_431A10 → sub_457A20 raw 40724）：扫
+  //       `flags & 0x40000000 && +32 == o6`，取 `+20/+24/+28` ⇒ 写回 `o1/o2/o3`（`o5` = 起始下标）。
+  //       ★订正：早前把这条的语义记在 `0xAA` 上；`0xAA`（sub_42D580 raw 38148）其实是**写文件/保存族**
+  //       （`CreateFileA` + `sub_40CD10`，读 op2、写 op1），与记录表无关。
+  //   证据：`src/CONFIG.txt:26-38`（CONFIG 屏的配置项枚举循环：`i1d0` 取一段 → `i1d3` 查键 `-1` 的哨兵
+  //   记录 → 递减下标回环）、`src/CONFIG.txt:357`（`i1d2 (-1) 0` 压哨兵）——2026 实测用户在 CONFIG.BIN
+  //   命中 `0x1D2` 被暂停（`.tmp/amayui-emulator.log:2215`）。
+  //   ⇒ **实现这张表时必须把 0x1D2 一起搬进 OPS**（写入端与读取端同进同出，否则表的语义仍然缺一半）。
+  [0x1d2, op_engine_internal], // 文本项属性记录表：push（宿主无消费者；读取端见上方说明）
   [0x7a, op_engine_internal], // 消息窗
   [0x7b, op_engine_internal], // 消息窗
-  [0x70, op_engine_internal], // 消息窗布局（op1..op5 → sub_45D660）
   [0x73, op_engine_internal], // 消息窗布局（10 操作数 → sub_453AD0）
-  [0x197, op_engine_internal], // 消息/布局（sub_418680）
-  [0x198, op_engine_internal], // 消息/布局
-  [0x1b5, op_engine_internal], // 消息窗
   [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
-  [0x1c1, op_engine_internal], // 消息/UI（sub_4563D0）
   [0x1c9, op_engine_internal], // 消息窗
   [0x1cb, op_engine_internal], // 消息窗
   [0x1ce, op_engine_internal], // 消息窗
@@ -111,14 +127,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x25c, op_engine_internal], // 消息/UI
   [0x25e, op_engine_internal], // 消息/UI
   [0x25f, op_engine_internal], // 消息/UI
-  [0x260, op_engine_internal], // 消息窗配置（_this[80102..80104]）
-  [0x2bd, op_engine_internal], // 文本/字体（op1 真值 → 文本子系统 +218516/+1248 = 700）
-  [0x2be, op_engine_internal], // 文本/字体
   [0x2bf, op_engine_internal], // 文本/字体
   [0x2c0, op_engine_internal], // 文本/字体
-  [0x2e8, op_engine_internal], // 消息/UI
-  [0x2fe, op_engine_internal], // 字体（sub_4332D0：读字符串操作数）
-  [0x303, op_engine_internal], // 消息/UI 对象（sub_456600）
   [0x324, op_engine_internal], // sub_453530(_this[93384])：计时/文本刷新（无操作数）
   [0x2f6, op_engine_internal], // 清消息回调槽 _this[v2+122505/122508] + _this[122501]（消息文本回调）
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
@@ -168,6 +178,5 @@ export const STUB_NATIVE_OPS: OpTable = [
   [0x204, stubSubsystem], // draw-string（无界面 stub）
   [0x205, stubSubsystem], // 纹理/文本 op
   [0x207, stubSubsystem], // 纹理 op
-  [0x1a5, stubSubsystem], // set-font
 ];
 

@@ -6,7 +6,7 @@
  *  - 解析：`sub_4963E0` 打开逐行读（`[` 开头=分节），`sub_4957F0/sub_495950` 按 `"section:key"` 取值。
  *  - 装载后**灌进引擎字段**（raw 23649-23745 + 各 opcode handler），脚本再用 opcode 读这些字段：
  *      0xC0  `sub_42E510`  → `_this[174713]` ← `sound:Music`（写回侧 0xC3 `sub_420F10`）
- *      0x131 `sub_42F7D0`  → 直接读 `message:MesWinAlpha`（配置注册表 get）
+ *      0x131 `sub_42F7D0`  → **直读配置** `message:MesWinAlpha`（不落任何字段；写回侧 0x141 `sub_4228C0` 直写配置）
  *      0x2CE `sub_430A20`  → `_this[167990]` ← `display:ScreenMode`（raw 11980 `... = GetConfig(aDisplayScreenm) != 0`）
  *      0x11D `sub_42F810`  → 读 `display:ForceScreen`
  *  - 本模块只做「解析 INI + 给字段赋值」；**emulator 无声音/显示子系统**，故声音类键只建模取值供脚本读，
@@ -78,16 +78,35 @@ export interface ConfigFieldBinding {
   note: string;
 }
 
+/**
+ * 配置键 → 引擎字段。
+ *
+ * ★**`field` 一律是 dword 下标**（与 opcode handler 里的 `_this[K]` 同一空间），
+ *   不是 raw 里的字节偏移。凡在 raw 中看到的是 `*(_DWORD *)(a1 + N)`（字节寻址），
+ *   换算成字段下标必须 `N / 4`。历史上本表混用了两种写法，导致「写入的字段」与
+ *   「handler 读的字段」对不上（`engineValues` 按数字键取，取不到就静默得到 0）。
+ */
 export const CONFIG_FIELD_BINDINGS: ConfigFieldBinding[] = [
-  { key: 'sound:music', field: 174713, note: '0xC0 getter / 0xC3 setter 读写的音乐字段（raw 23678、38618）' },
+  // ⚠待专项复核：raw 23676-23678 把 sound:Music 写进**字节 699240**（= 下标 174810，
+  //   见 raw 13223/13229 的 `v1[174810]`）；而 0xC0(`sub_42E510`) 读的是 `_this[174713]`，
+  //   后者是**运行期音乐状态**（raw 13521/13531/29857 读写）。这里保留 174713 以维持 0xC0 的
+  //   既有取值，但两处语义需要在音频子系统专项里对齐（属**非渲染**范围）。
+  { key: 'sound:music', field: 174713, note: '0xC0 getter / 0xC3 setter 读写的音乐字段（raw 38618/38622）；⚠raw 的配置写入目标是字节 699240=下标 174810，待专项复核' },
   { key: 'display:screenmode', field: 167990, map: (v) => (v !== 0 ? 1 : 0), note: '0x2CE 显示模式 getter（raw 11980 `= GetConfig(display:ScreenMode) != 0`）' },
-  { key: 'message:messagespeed', field: 86672, note: '消息速度 ms（raw 23736-23738）' },
-  { key: 'message:messagefade', field: 320424, note: '消息淡入 ms（raw 23739-23741）' },
-  { key: 'message:rmouseevent', field: 5536, note: '右键行为（0/1→键位+1，2→31；raw 23722-23735）' },
-  { key: 'message:meswinalpha', field: 21668, note: '消息窗 α（0x7F getter raw 39355 直接读该键，故字段取同值）' },
-  { key: 'sound:sound', field: 699240, note: '声音总开关（raw 23678-23681 传入声音对象构造）' },
-  { key: 'sound:se', field: 83920, note: 'SE 开关（raw 23689-23691 布尔化）' },
-  { key: 'sound:voice', field: 85172, note: '语音开关（raw 23693-23695 布尔化）' },
+  // ★文本路径：21668×4 = 86672 = Font+1376。op 0x74 写、0x7F 读（i07f 全工程 210 处）；
+  //   既是逐字显现的 Sleep 节拍（raw 13954），又是淡入定时器间隔（raw 28382/28763）。
+  { key: 'message:messagespeed', field: 21668, note: '消息速度 ms（raw 23736-23738 写字节 86672 ⇒ 下标 21668 = Font+1376）；op 0x74 写 / 0x7F 读' },
+  // ★文本路径：80106×4 = 320424 = Font+235128。op 0x2EE 写（raw 33600 `_this[80106] = op1`）。
+  { key: 'message:messagefade', field: 80106, note: '消息淡入 ms（raw 23739-23741 写字节 320424 ⇒ 下标 80106 = Font+235128）；op 0x2EE 写、行 alpha 动画窗时长因子（MessageSpeed×MessageFade/100）' },
+  { key: 'message:rmouseevent', field: 1384, note: '右键行为（0/1→键位+1，2→31；raw 23722-23735 写字节 5536 ⇒ 下标 1384）' },
+  // ★`message:MesWinAlpha` **不在这里**：引擎从不把它灌进持久字段，
+  //   只由 0x131（sub_42F7D0 直读配置）/ 0x141（sub_4228C0 直写配置）按名存取。
+  //   历史错误：曾绑到字段 21668，而 21668 正是 message:MessageSpeed 的字段
+  //   ⇒ 两个键互相覆盖（随包 INI 里 MesWinAlpha=8 会把 MessageSpeed 的 5 顶掉），
+  //   并且 0x7F（i07f 全工程 210 处）会读到错误的消息速度。
+  { key: 'sound:sound', field: 174810, note: '声音总开关（raw 23676-23678 写字节 699240 ⇒ 下标 174810）' },
+  { key: 'sound:se', field: 20980, note: 'SE 开关（raw 23689-23691 写字节 83920 ⇒ 下标 20980，布尔化）' },
+  { key: 'sound:voice', field: 21293, note: '语音开关（raw 23693-23695 写字节 85172 ⇒ 下标 21293，布尔化）' },
 ];
 
 /** 把配置写入 `Engine.engineValues`（幂等：同键重复调用覆盖）。返回实际写入的 `[字段, 值]` 列表。 */

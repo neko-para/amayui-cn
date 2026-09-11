@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 78,
+    "total": 85,
     "modeled-verified": 6,
     "modeled-unverified": 7,
-    "partial": 19,
-    "absent": 22,
-    "n/a-known": 24,
-    "needsAttention": 48
+    "partial": 21,
+    "absent": 26,
+    "n/a-known": 25,
+    "needsAttention": 54
   },
   "entries": [
     {
@@ -1495,28 +1495,37 @@
     {
       "id": "lazy-gdi-font-set",
       "subsystem": "消息窗",
-      "name": "GDI 字体句柄组释放-重建",
+      "name": "消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4）",
       "trigger": "字体变更或消息窗子系统重建（`sub_40DF10` 复位区）",
       "engine": {
         "fns": [
-          "sub_465390"
+          "sub_465390",
+          "sub_459F40",
+          "sub_45A6E0",
+          "sub_456C90"
         ],
-        "raw": "71144-71187"
+        "raw": "70940-71273"
       },
       "reads": [
-        "Engine+85296",
-        "Engine+1084",
-        "Engine+1100",
-        "Engine+218624",
-        "Engine+235068"
+        "Font+1084",
+        "Font+1096",
+        "Font+1100",
+        "Font+1232",
+        "Font+1292",
+        "Font+201684",
+        "Font+218584",
+        "Font+101972",
+        "Font+102032",
+        "Font+201788",
+        "Font+235068..+235104"
       ],
-      "whySilent": "旧句柄为空时跳过 `DeleteObject`；`CreateFontIndirectA` 失败返回 0，`SelectObject` 静默退化",
+      "whySilent": "字体句柄为 0 时 GDI SelectObject 静默退化；面名为空（Font+1260 首字节 0）则 sub_459F40 直接 return ⇒ 句柄全 0、文字用系统默认字体画出来，全程无错误输出",
       "confidence": "confirmed",
       "emulator": {
         "status": "absent",
         "evidence": "E0",
         "guard": "",
-        "note": "★消息窗文本渲染（GDI 字体 + 自绘位图）完全未建模 ⇒ 文字不显示"
+        "note": "缺失：字体系（面名/字号/粗体/竖排模板 → HFONT）完全未建模。改用浏览器字体后仍需保留「面名→内嵌字族」映射与 0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB 的参数面。"
       }
     },
     {
@@ -1814,29 +1823,30 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "部分：`message:ReadTextSkip` 门已实现（含 0x1CA 的运行期覆盖），「是否还在显示」改为「文本刚写入 ⇒ 本帧显示中，下一帧由 serviceAdv 收尾」。仍未建模：引擎真正的逐字显示推进（`sub_48E870`/`sub_48F000` 的分段表 + 字体度量）。"
+        "note": "部分：ReadTextSkip 门已实现（含 0x1CA 运行期覆盖）。仍未建模引擎真正的逐字/逐行推进泵 —— 见 text-reveal-pump-409400（sub_409400 + sub_45BE20 + message:MessageSpeed）；本条目只覆盖「是否已显示完」的判定，miss 时统一返回 0 属合法路径。"
       }
     },
     {
       "id": "msgwin-text-object",
       "subsystem": "消息窗",
-      "name": "文本对象（Engine+21324）的槽模型与写入",
+      "name": "文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队",
       "trigger": "0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元",
       "engine": {
         "fns": [
           "sub_45EC60",
           "sub_46BE30",
-          "sub_46CBF0"
+          "sub_46CBF0",
+          "sub_45D660",
+          "sub_456430"
         ],
-        "raw": "74197-74281"
+        "raw": "74196-74282"
       },
       "reads": [
-        "Engine+21324",
-        "Engine+260",
-        "Engine+261",
-        "Engine+307",
-        "Engine+667856",
-        "Engine+339"
+        "Engine+85296(文本对象; dword 写法 Engine[21324])",
+        "Font+1044(10 窗口)",
+        "Font+1228(默认窗)",
+        "Font+1032/+1036/+1040",
+        "Engine+667856"
       ],
       "whySilent": "文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）",
       "confidence": "confirmed",
@@ -1844,7 +1854,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：`sub_45EC60` 的槽布局重置与 GDI 文本渲染。"
+        "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节）。"
       }
     },
     {
@@ -1999,35 +2009,43 @@
     {
       "id": "msgwin-attr-font-opcodes",
       "subsystem": "消息窗",
-      "name": "文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集**",
+      "name": "文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集**",
       "trigger": "脚本设置字体/文本属性时调用；0x196 display-furigana 在消息文本里插注音；0xC5 读音量配置写操作数",
       "engine": {
         "fns": [
+          "sub_41F350",
+          "sub_41F390",
+          "sub_41F3F0",
+          "sub_41F450",
+          "sub_41F6C0",
+          "sub_41FBF0",
+          "sub_41FE60",
+          "sub_41FDD0",
+          "sub_433290",
           "sub_426200",
           "sub_426260",
-          "sub_4262C0",
-          "sub_426310",
-          "sub_4332D0",
           "sub_426500",
-          "sub_425DB0",
+          "sub_4332D0",
           "sub_41FC20",
-          "sub_42E540"
+          "sub_455ED0"
         ],
-        "raw": "29032-41818"
+        "raw": "28652-29163"
       },
       "reads": [
-        "Engine+21324",
-        "Engine+92381",
-        "Engine+92379",
-        "Engine+86672"
+        "Font+1360/+1364/+1368/+1372/+1380/+1384/+1388/+1392(颜色与描边)",
+        "Font+1232/+1248/+1260(主字体)",
+        "Font+1292/+1308/+1320(注音字体)",
+        "Font+218516/+218588(字重)",
+        "Font+201684/+218584(字号)",
+        "Font+235108(竖排)"
       ],
-      "whySilent": "多为纯属性写入（如 0x2BD 写文本对象 +218516/+1248 = 700 或 0）或字符串转发；0xC5 引擎会**回写 op2**，被跳过时操作数保留旧值 —— 都属合法路径，无断言",
+      "whySilent": "多是\"改模板字段 + 重建句柄\"的纯属性写入：不实现则参数保持默认（白字/黑投影/24px），画面还能看，只是**失去脚本指定的观感与阅读体验**。0x1C5/0xC5 一类会回写操作数，被跳过时脚本读到旧值。",
       "confidence": "confirmed",
       "emulator": {
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "部分：`0x196 display-furigana` 已实现（记录注音对）；`0x2BD/0x2BE/0x2BF/0x2C0/0x2FE/0x25A/0xC5` 仍是 no-op（字体/属性转发到 GDI 子系统）。其中 `0xC5` 引擎会回写 op2 ⇒ 应并入闸门 B 缺口。"
+        "note": "部分：0x196 display-furigana 已实现（记录注音对）。仍为 no-op 且**属 P0（阅读体验）**：0x75 字号 / 0x76 填充色 / 0x77 描边色 / 0x78 描边档位 / 0x1A4 描边偏移 / 0x8B 第三色 / 0x197 注音字号 / 0x2BD/0x2BE 加粗 / 0x1A5/0x2FE 面名。★描边四档（0 无 / 1 单向投影 / 2 1-4 强度副本 / 3 多向描边，默认 1）必须逐档复刻观感（canvas 等价实现见 app/amayui-emulator/docs/12-adv-text-rendering.md §5.3）；字体内部配置（AA/度量/缓存）按用户口径只记录字段。"
       }
     },
     {
@@ -2126,6 +2144,225 @@
         "evidence": "E2",
         "guard": "test/config-read.test.ts",
         "note": "7 条全部实现并注册进 `OPS`（`src/vm/handlers/config-read.ts`）。此前 `0x194` 根本未注册（命中即硬报错），其余 6 条走 no-op。CONFIG1 链路因此有 7 处静默/硬错误，现已消除；`test/config1-chain.test.ts` 锁住「CONFIG1 路径零未实现 opcode」。"
+      }
+    },
+    {
+      "id": "text-layout-wrap-ruby",
+      "subsystem": "消息窗",
+      "name": "文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30）",
+      "trigger": "0x6E show-text / 0x196 display-furigana / 0x7D 每次入队时",
+      "engine": {
+        "fns": [
+          "sub_46BE30",
+          "sub_45E870",
+          "sub_475CF0",
+          "sub_4572A0",
+          "sub_45D120"
+        ],
+        "raw": "83363-83997"
+      },
+      "reads": [
+        "FontVWindow+36/+40(右/下边界)",
+        "FontVWindow+44/+48(24B 行记录)",
+        "FontVWindow+208(120B 文本记录)",
+        "Font+201684(字号)",
+        "Font+1236(字宽)",
+        "Font+218592/+218596(缩放)"
+      ],
+      "whySilent": "排版产出的只是一串记录与源矩形；不排版不报错，只表现为「文字不出现」「位置不对」。更隐蔽的是：断行规则与引擎不一致时，行数/每行字数与脚本可观测的 0x83(当前行)、0x1C5/0x2C2(读回已显示文本)、0x2F3(行坐标) 全部对不上 —— 静默错误会从像素层渗到 VM 层。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "note": "缺口：逐字 GetTextExtentPoint32A 量宽、右/下边界硬断、注音配对（24B 记录 +0 种类 / +20 组 ID）与按比例缩短都未建模。★引擎的等宽网格（lfWidth = 字高/2 ⇒ 全角 1em / 半角 0.5em）使排版可退化为纯算术，不需要浏览器度量。★引擎**无**禁则、**无** 0x0A 换行处理。"
+      },
+      "note": [
+        "缺口已补一半：等宽网格 / 边界硬断 / 注音配对 / 对齐已实现（src/text/layout.ts + test/text-layout.test.ts，13 例）。★两条易错点已钉住：①**排版恒为横向** —— 排版例程 sub_46BE30 不读 Font+235108（0x261），该标志只改绘制期源矩形；②**display-furigana 的 op2 是正文的一部分**（引擎 sub_46BE30(obj",
+        "part",
+        "op2",
+        "op3",
+        "flag)），只记注音不追加 op2 的症状是\"汉字丢失\"。仍未建模：120B 文本记录、win+208 记录向量、逐字 reveal 的分段边界。"
+      ]
+    },
+    {
+      "id": "text-reveal-pump-409400",
+      "subsystem": "帧循环",
+      "name": "逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍",
+      "trigger": "effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时",
+      "engine": {
+        "fns": [
+          "sub_409400",
+          "sub_45BE20",
+          "sub_453AF0",
+          "sub_453B60",
+          "sub_45A940",
+          "sub_4051A0"
+        ],
+        "raw": "13780-13970"
+      },
+      "reads": [
+        "Engine+86672(= Font+1376 = message:MessageSpeed)",
+        "Engine+699204(effect_flags)",
+        "FontVWindow+132(当前行)",
+        "FontVWindow+92/+96(网格列数)",
+        "Font+235128(= message:MessageFade)"
+      ],
+      "whySilent": "它是\"每帧替脚本推进文字\"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "note": "已建模 S4：MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf + Engine.serviceTextReveal；节拍 = max(message:MessageSpeed ／ 一帧)。0x71/0x72 启动、0x1CE 收尾、MessageSpeed=0 或跳读 ⇒ 一次排空。★有意偏离：引擎 sub_45BE20 一步推**一行**（24B 行矩形；D3D 建 DrawItem id=行号+win+104；GDI 逐行 blit）而宿主按“前 N 个字形”渲染 ⇒ 这里把“一帧一步”映射成一帧一个**字**（逐字可见）；引擎真正的逐字只有网格那条路（effect_flags&0x40000000 + sub_453AF0(Engine+430600) + sub_45A940；节拍来自 0x73 op10；脚本侧仅 i073 27 处）。缺口：逐行贴出的行淡入色窗（MessageSpeed×MessageFade/100）未接；MessageFade 未消费。",
+        "guard": "test/adv-msgwin.test.ts"
+      }
+    },
+    {
+      "id": "msgwin-offscreen-surface-lifecycle",
+      "subsystem": "消息窗",
+      "name": "每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出",
+      "trigger": "0x70 设窗几何时重建；0x71 开始时填底色；显现阶段逐行/逐字贴出",
+      "engine": {
+        "fns": [
+          "sub_45D660",
+          "sub_43C8D0",
+          "sub_43B070",
+          "sub_43D870",
+          "sub_43B460",
+          "sub_43B4C0",
+          "sub_45BE20"
+        ],
+        "raw": "73132-73193"
+      },
+      "reads": [
+        "FontVWindow+20/+24(w/h)",
+        "FontVWindow+12/+16(屏幕偏移)",
+        "FontVWindow+4(目标表面=0)",
+        "Font+1032(dd 模块)",
+        "Font+1104(surface DC)",
+        "Font+1400(已锁表面号)"
+      ],
+      "whySilent": "表面生命周期错位不会报错：少重建 ⇒ 几何仍按旧尺寸（文字位置/换行全偏）；少清底 ⇒ 上一页文字叠在下面；少 ReleaseDC ⇒ 表面被 GDI 锁住、后端读不到像素（画面停留在旧内容）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "note": "缺口：emulator 无\"每窗离屏表面\"概念，也没有 DC 取/还配对。重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」，因此需要等价的\"窗口内容整体重画\"时机（文本变化 / 显现游标变化 / 几何变化 / 清场）。"
+      }
+    },
+    {
+      "id": "msgwin-line-fade-window",
+      "subsystem": "消息窗",
+      "name": "行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms",
+      "trigger": "D3D 路径下 sub_45BE20 为每行建 DrawItem 之后",
+      "engine": {
+        "fns": [
+          "sub_45BE20",
+          "sub_4AD0C0",
+          "sub_4ACF60"
+        ],
+        "raw": "72338-72348"
+      },
+      "reads": [
+        "Font+1376(= message:MessageSpeed)",
+        "Font+235128(= message:MessageFade)",
+        "DrawItem+52/+56/+76/+100"
+      ],
+      "whySilent": "不设色窗只会让文字\"瞬现\"而不是淡入 —— 无错误、无日志，只是少了动画。★引擎没有\"把文字颜色朝背景插值\"的代码（GDI TextOutA 无 alpha），淡入只能靠 DrawItem alpha 或离屏表面整体贴出。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/draw-item-anim-window.test.ts",
+        "note": "部分：DrawItem 颜色动画窗（含整数截断插值、共享起点、窗末收尾）已建模并有守卫；缺的是把它接到消息窗行上（按 MessageSpeed×MessageFade/100 设时长）。"
+      }
+    },
+    {
+      "id": "msgwin-backlog-cursor",
+      "subsystem": "消息窗",
+      "name": "已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770",
+      "trigger": "0x71/0x70 登记一页；滚轮（输入位 0x8/0x2）与 0x84 移动光标",
+      "engine": {
+        "fns": [
+          "sub_459770",
+          "sub_45EFA0",
+          "sub_45EBE0",
+          "sub_45EC60",
+          "sub_45D660"
+        ],
+        "raw": "70575-70627"
+      },
+      "reads": [
+        "Font+3380/+3384(8B 页表)",
+        "Font+3364(72B 回看项)",
+        "Font+859/+860(末项/当前光标)"
+      ],
+      "whySilent": "页表不建则回看与滚轮完全无反应；更关键的是 0x84「翻到底」时本应置 effect_flags |= 0x100000 并弹保存栈让脚本继续 —— 页表为空则这个\"到达末尾\"永远不发生，脚本会停在自旋里（表现为卡住，而不是报错）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "note": "缺口：无回看页表与光标。CONFIG1 链路上不触发，但真实剧本的滚轮回看与 0x84 依赖它。"
+      }
+    },
+    {
+      "id": "text-drawmode-fork",
+      "subsystem": "消息窗",
+      "name": "set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline",
+      "trigger": "启动读 set:DrawMode；运行期由 opcode 0x200(ComSetDrawMode) 改写",
+      "engine": {
+        "fns": [
+          "sub_455ED0",
+          "sub_456820",
+          "sub_471180",
+          "sub_46F2D0",
+          "sub_417800",
+          "sub_423170"
+        ],
+        "raw": "68010-68131"
+      },
+      "reads": [
+        "Engine+667856(= Engine[166964])",
+        "set:DrawMode",
+        "set:CreateObject"
+      ],
+      "whySilent": "两条路径的差别只有\"整串 vs 逐字\"与描边实现（GDI 四对角重画 / D3DX 圆环扫描），最终画面等价；没有任何 opcode 能读回 DrawMode。选错不报错，只是描边质感与是否支持逐字变换不同。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "note": "why: 两条路径在脚本可观测面上等价（无 opcode 读回 166964，也无脚本使用 0x200），本重写只实现一条等价路径（canvas2D 光栅化 + 真描边）。DrawMode 字段仍照配置读取，因为 0x73(sub_41F250 raw 28631) 与 0x2BD 一族会按它分叉到不同的绘制子函数。"
+      }
+    },
+    {
+      "id": "text-font-rebuild-cascade",
+      "subsystem": "消息窗",
+      "name": "字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0）",
+      "trigger": "任一字号/面名/字重/度量模式指令；或子系统 Initialize",
+      "engine": {
+        "fns": [
+          "sub_459F40",
+          "sub_45A6E0",
+          "sub_4185F0",
+          "sub_418680",
+          "sub_4328F0",
+          "sub_432DD0",
+          "sub_428990"
+        ],
+        "raw": "70940-71273"
+      },
+      "reads": [
+        "Font+1232/+1236/+1248/+1260(主模板)",
+        "Font+1292/+1296/+1308/+1320(注音模板)",
+        "Font+201684(主字号)",
+        "Font+218584(注音字号)",
+        "Font+201664(字体名白名单)"
+      ],
+      "whySilent": "★`sub_459F40` 入口守卫 `if (!Font+1260) return`：面名为空 ⇒ **整个重建不发生**，句柄保持 0，GDI 用系统默认字体把字画出来，全程无错误。同理 `0x2BD`（加粗）只改模板里的 lfWeight 并触发重建，不重建则\"加粗\"这一档完全无效。旧口径把 sub_459F40 说成\"文本重排\"、把 0x2BD 说成\"调 sub_459F40\"，均不成立（它不在派发表里）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "note": "缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 \"@\" 前缀）。"
       }
     }
   ]

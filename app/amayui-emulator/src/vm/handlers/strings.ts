@@ -75,13 +75,11 @@ const op_load_string: OpHandler = (c) => {
 
 // 系统调用 opcode -> 走 NativeBridge（记录即可，无界面）。后续按需逐个转真。
 
-/** 0x2DE (u0042BAC0)：`op1 = system.stringResourceId(op2 字符串)`（设置/消息子系统查找，-1=未找到）。
- *  读 op2 字符串 + 写 op1 结果，故虽为核心流程但值来自子系统；按 native 路由（StubNative 返回 -1）。 */
-const op_string_resource_id: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  const id = c.native.stringResourceId?.(s) ?? -1;
-  writeIntOperand(c.e, c.frame, c.instr, 1, id);
-};
+/** ★注意：`0x2DE` **不是**字符串资源 id 查询，而是**字体名→字体表下标**（见 `handlers/msgwin.ts`）：
+ *  引擎 `sub_430DF0`（raw 40251-40261）→ `sub_428990(textobj, 串)` 在 `Font+201664` 的字体名向量里
+ *  线性查名并返回下标/-1。原实现按助记符猜成 `stringResourceId`，会让 `$1$CHECKCONFIG` 的
+ *  "保存的字体名是否还装着"判定永远拿到 -1 ⇒ 每次启动都把默认面名写回去。
+ *  `NativeBridge.stringResourceId` 保留（未来若有真正的资源 id 指令再用）。 */
 
 /** 字符串处理 / 字符串表（真实现）。 */
 export const STRING_OPS: OpTable = [
@@ -96,8 +94,6 @@ export const STRING_OPS: OpTable = [
   [0x1aa, op_load_string], // load-string：查表写回 op1 字符串（VM 可见）
 ];
 
-/** 字符串 → 资源 id（子系统查询；StubNative 返回 -1）。 */
-export const STRING_NATIVE_OPS: OpTable = [
-  [0x2de, op_string_resource_id], // 字符串→索引；StubNative 返回 -1
-];
+/** 字符串 → 资源 id（子系统查询；StubNative 返回 -1）—— 当前**无 opcode 使用**（原 0x2DE 映射是错的）。 */
+export const STRING_NATIVE_OPS: OpTable = [];
 

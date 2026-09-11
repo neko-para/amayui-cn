@@ -11,6 +11,8 @@
  * 与引擎 DWORD 下标空间隔离。
  */
 import type { OpHandler } from '../step.js';
+import type { Engine } from '../engine.js';
+import { emitAllWins } from './msgwin.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
@@ -34,9 +36,11 @@ const op_get_engine_value: OpHandler = (c) => {
     //   SYSTEM4 据此决定是否 `call-script LOGO`。
     v = c.e.engineValues.get(96983) ?? 0;
   } else if (c.instr.opcode === 0x131) {
-    // 0x131（sub_42F7D0，raw 39355）：**直接读配置注册表** `message:MesWinAlpha` 写 op1
-    //   （`v2 = GetConfig(_this[174405], "message:MesWinAlpha")`）。emulator 用启动加载的 SYS4REG.INI 取值。
-    v = c.e.config ? cfgInt(c.e.config, 'message:meswinalpha', 0) : (c.e.engineValues.get(21668) ?? 0);
+    // 0x131（sub_42F7D0，raw 39350-39356）：**直接读配置注册表** `message:MesWinAlpha` 写 op1
+    //   （`v2 = GetConfig(_this[174405], "message:MesWinAlpha")`）。
+    //   ★它**不读任何 Engine 字段** —— 不要回退到 `engineValues`，那里没有这个键的值
+    //   （历史上曾把 21668 当成"消息窗 α"，而 21668×4 = 86672 = Font+1376 = message:MessageSpeed）。
+    v = c.e.config ? cfgInt(c.e.config, 'message:meswinalpha', 0) : 0;
   } else {
     // 其余 getter（0x106/0x201/0x2DC…）：对应引擎字段尚未逐一定位 → 保持 0（与旧行为一致）。
     v = 0;
@@ -78,16 +82,22 @@ interface FieldStoreSpec {
   map: Record<number, number>;
   /** 取到的值变换（默认原样）。 */
   transform?: (v: number) => number;
+  /**
+   * 字段写入之后的**副作用钩子**。用于"该字段同时是文本渲染样式来源"的那些指令
+   * （`0x76`/`0x77`/`0x78`/`0x8b`/`0x1a4`/`0x261`）：字段值照写（保持既有口径），
+   * 再让消息窗把新样式发布给渲染层。
+   */
+  after?: (e: Engine) => void;
 }
 const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldStoreSpec>([
   // ---- 消息窗（メッセージウィンドウ）属性/几何 ----
-  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 引擎按字节重排组装（BGR）
-  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }],
-  [0x78, { map: { 1: 21667 } }],
-  [0x8b, { map: { 1: 21669 } }],
-  [0x1a4, { map: { 1: 21670, 2: 21671 } }], // 引擎：_this[21671]=op2；_this[21670]=op1
+  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff), after: emitAllWins }], // 填充色（BGR→RGB）；★发布给文本样式
+  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff), after: emitAllWins }], // 描边色；★发布
+  [0x78, { map: { 1: 21667 }, after: emitAllWins }], // 描边档位；★发布
+  [0x8b, { map: { 1: 21669 }, after: emitAllWins }], // 第三色；★发布
+  [0x1a4, { map: { 1: 21670, 2: 21671 }, after: emitAllWins }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)；★发布
   [0x252, { map: { 1: 92323 } }], // 消息系统配置
-  [0x261, { map: { 1: 80101 } }], // 消息窗配置
+  [0x261, { map: { 1: 80101 }, after: emitAllWins }], // 竖排标志（Font+235108）；★发布
   [0x2ee, { map: { 1: 80106 } }], // 消息派发
   [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
   [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由同族 0x25A 置 1=影片）
@@ -124,6 +134,7 @@ const op_engine_field_store: OpHandler = (c) => {
     const v = readIntOperand(c.e, c.frame, c.instr, Number(nStr));
     c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
   }
+  spec.after?.(c.e);
 };
 
 /** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
@@ -160,6 +171,18 @@ const op_get_effect_skip: OpHandler = (c) => {
  * emulator 建模：写入 `Engine.engineValues`（稀疏字段表），语义与引擎一致；当前无脚本经 opcode 读回它，
  * 故它不会改变 emulator 的输出，但**必须写**（否则上游若加 getter，值会漂）。
  */
+/**
+ * `0x141`（sub_4228C0 raw 30998-31016）：**SetMesWinAlpha** —— `op1 > 0x10` 时报错，
+ * 否则 `SetConfig("message:MesWinAlpha", op1)`（**直写配置注册表，不进任何持久字段**）。
+ * 与 `0x131`（直读同名键）配对；`src/*.txt` 中两者均 0 次使用，但属同一「配置直读直写族」，不得当 no-op。
+ */
+const op_set_meswin_alpha: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (v > 0x10) return; // 引擎：op1 > 0x10 ⇒ 报错并返回（不写配置）
+  if (!c.e.config) c.e.config = { values: new Map(), sections: [] };
+  c.e.config.values.set('message:meswinalpha', v);
+};
+
 export const op_set_engine_flag_174812: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
   c.e.engineValues.set(174812, v);
@@ -202,5 +225,6 @@ export const ENGINE_FIELD_NATIVE_OPS: OpTable = [
   [0xc0, op_get_music_field], // 音乐字段 `_this[174713]`（由 sound:Music 填充）▶ op1
   [0x2ce, op_get_screen_mode], // 显示模式 `_this[167990]!=0`（由 display:ScreenMode 填充）▶ op1
   [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）
+  [0x141, op_set_meswin_alpha], // SetConfig message:MesWinAlpha（op1 > 0x10 报错；0x131 的写入端）
 ];
 

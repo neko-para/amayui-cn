@@ -202,22 +202,42 @@ if (isWrite) {
     writeJson(FUNCS, lines.join('\n'));
   }
 
+  // ---- 字段唯一键 = `scope + offset`（不含 scope 的旧条目退化为 offset） ----
+  // 动机：不同 scope 的字段可以有相同字节偏移（如 `Engine`/`Font`/`FontVWindow`/`ScriptContext`/`DrawItem`
+  // 都从各自对象头起算）。旧实现只按 offset 去重 ⇒ 无法记录 FontVWindow/DrawItem 这类相对偏移的字段字典。
+  // 兼容：定位键支持 `Scope/0xNNN`（精确）与 `0xNNN`（按 offset 匹配；命中多条时报错并列出候选）。
+  const fieldKey = (e) => `${e.scope || ''}/${e.offset}`;
+  const findFields = (f, target) => {
+    if (target.includes('/')) { const e = f.find((x) => fieldKey(x) === target); return e ? [e] : []; }
+    return f.filter((x) => x.offset === target);
+  };
   if (opt['field-add']) {
     const f = load(FIELDS); if (!f) process.exit(1);
     const obj = opt['field-add'].startsWith('{') ? JSON.parse(opt['field-add']) : parseKv(opt['field-add'].split(/\s+/));
-    if (f.some((e) => e.offset === obj.offset)) { console.log(`[err] 已存在 offset ${obj.offset}`); process.exit(1); }
+    if (f.some((e) => fieldKey(e) === fieldKey(obj))) { console.log(`[err] 已存在字段 ${fieldKey(obj)}`); process.exit(1); }
     f.push(obj); writeJson(FIELDS, serializeFields(f));
   }
   if (opt['field-edit']) {
     const target = opt['field-edit']; const f = load(FIELDS); if (!f) process.exit(1);
-    const e = f.find((x) => x.offset === target);
-    if (!e) { console.log(`[err] 未找到 offset ${target}`); process.exit(1); }
-    Object.assign(e, parseKv(opt.set)); writeJson(FIELDS, serializeFields(f));
+    const hits = findFields(f, target);
+    if (hits.length === 0) { console.log(`[err] 未找到字段 ${target}`); process.exit(1); }
+    if (hits.length > 1) {
+      console.log(`[err] ${target} 命中 ${hits.length} 条（请用 Scope/${target} 指明 scope）：`);
+      hits.forEach((e) => console.log(`      ${fieldKey(e)}  ${e.name || ''}`));
+      process.exit(1);
+    }
+    Object.assign(hits[0], parseKv(opt.set)); writeJson(FIELDS, serializeFields(f));
   }
   if (opt['field-rm']) {
     const target = opt['field-rm']; let f = load(FIELDS); if (!f) process.exit(1);
-    const n = f.length; f = f.filter((x) => x.offset !== target);
-    if (f.length === n) { console.log(`[err] 未找到 offset ${target}`); process.exit(1); }
+    const hits = findFields(f, target);
+    if (hits.length === 0) { console.log(`[err] 未找到字段 ${target}`); process.exit(1); }
+    if (hits.length > 1) {
+      console.log(`[err] ${target} 命中 ${hits.length} 条（请用 Scope/${target} 指明 scope）：`);
+      hits.forEach((e) => console.log(`      ${fieldKey(e)}  ${e.name || ''}`));
+      process.exit(1);
+    }
+    f = f.filter((x) => x !== hits[0]);
     writeJson(FIELDS, serializeFields(f));
   }
   process.exit(0);

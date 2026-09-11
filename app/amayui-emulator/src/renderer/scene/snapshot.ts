@@ -46,6 +46,40 @@ export interface SnapshotMesh {
   pending: boolean;
 }
 
+/** 一个消息窗的文本快照（「报告里能看见文字」正是本轮要解决的可见性问题）。 */
+export interface SnapshotMsgWin {
+  win: number;
+  /** 屏幕位置与尺寸（引擎 `win+12/+16/+20/+24`）。 */
+  rect: { x: number; y: number; w: number; h: number };
+  vertical: boolean;
+  align: number;
+  mainSize: number;
+  rubySize: number;
+  /** 主字体填充色 / 描边色（`#rrggbb`，引擎 `Font+1360`/`+1364`）。 */
+  mainFill: string;
+  mainOutline: string;
+  /** 主/注音字体**面名**（已解析到内置字族；对照引擎 `0x1A5`/`0x2FE` 的结果）。 */
+  mainFamily: string;
+  rubyFamily: string;
+  /** 主字体字重（400/700）。 */
+  mainWeight: number;
+  outlineMode: number;
+  outlineDx: number;
+  outlineDy: number;
+  /** 底色（`null` = 不填）。 */
+  background: string | null;
+  /**
+   * 文本在场景里的层序（= 引擎 `win+104`，op `0x213`；`0` = 未设过 ⇒ 渲染层回退平面号 `20+win`）。
+   * ★它决定"文字会不会被 UI 盖住"（CONFIG1 = 180500，普通 2D 图元是 100 量级）。
+   */
+  itemId: number;
+  /** 已排版的行/列。 */
+  lines: { text: string; width: number; glyphs: number; ruby: number }[];
+  glyphCount: number;
+  /** ★本帧实际画出的字形数（逐字显现游标；无显现状态时 = `glyphCount`）。 */
+  revealed: number;
+}
+
 export interface SceneSnapshot {
   clock: number;
   counts: {
@@ -61,6 +95,8 @@ export interface SceneSnapshot {
   };
   drawItems: SnapshotItem[];
   meshes: SnapshotMesh[];
+  /** 消息窗文本（按窗索引排序）。 */
+  msgWins: SnapshotMsgWin[];
 }
 
 const hex8 = (v: number): string => '#' + (v >>> 0).toString(16).padStart(8, '0');
@@ -113,6 +149,29 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
     },
     drawItems,
     meshes,
+    msgWins: [...s.msgWins.values()]
+      .sort((a, b) => a.win - b.win)
+      .map((f) => ({
+        win: f.win,
+        rect: { x: f.style.x, y: f.style.y, w: f.style.w, h: f.style.h },
+        vertical: f.style.vertical,
+        align: f.style.align,
+        mainSize: f.style.main.size,
+        rubySize: f.style.ruby.size,
+        mainFill: f.style.main.fill,
+        mainOutline: f.style.main.outline,
+        mainFamily: f.style.main.family,
+        rubyFamily: f.style.ruby.family,
+        mainWeight: f.style.main.weight,
+        outlineMode: f.style.outlineMode,
+        outlineDx: f.style.outlineDx,
+        outlineDy: f.style.outlineDy,
+        background: f.style.background,
+        itemId: f.style.itemId,
+        lines: f.lines.map((l) => ({ text: l.text, width: l.width, glyphs: l.glyphs.length, ruby: l.ruby.length })),
+        glyphCount: f.glyphCount,
+        revealed: f.revealed,
+      })),
   };
 }
 
@@ -145,6 +204,18 @@ export function snapshotToText(snap: SceneSnapshot): string {
   }
   for (const m of snap.meshes) {
     L.push(`mesh 0x${m.handle.toString(16)} layer=${m.layer} state0=${m.state0} state1=${m.state1} diffuse=${m.diffuse} flags=0x${m.flags.toString(16)}${m.pending ? ' P' : ''}`);
+  }
+  // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
+  for (const w of snap.msgWins) {
+    const dir = w.vertical ? '横排(vFlag=1)' : '横排';
+    L.push(
+      `text win=${w.win} rect=(${w.rect.x},${w.rect.y},${w.rect.w},${w.rect.h}) ${dir} align=${w.align}` +
+        ` layer=${w.itemId || '-'} main=${w.mainSize}px ruby=${w.rubySize}px outline=${w.outlineMode}` +
+        ` bg=${w.background ?? '-'} 行=${w.lines.length} 字=${w.glyphCount} 已显示=${w.revealed}`,
+    );
+    for (const [i, l] of w.lines.entries()) {
+      L.push(`  [${i}] w=${l.width} 字=${l.glyphs} 注音=${l.ruby} | ${l.text}`);
+    }
   }
   return L.join('\n') + '\n';
 }

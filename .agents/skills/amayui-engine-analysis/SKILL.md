@@ -188,7 +188,9 @@ docs-new/03-engine/engine-capabilities.md  # 台账的人可读渲染产物（�
   - `node report.js --func-add  '<json>'`：新增函数（json 或 `k=v …`；需 `addr`）。
   - `node report.js --func-edit <addr> --set k=v [--set …]`：改某函数字段（外科手术式单块编辑，**不翻新其它条目**）。
   - `node report.js --func-rm   <addr>`：删某函数。
-  - `node report.js --field-add '<json>' | --field-edit <offset> --set k=v … | --field-rm <offset>`：字段增删改（写后按 scope+offset 重排，保留分组空行）。
+  - `node report.js --field-add '<json>' | --field-edit <键> --set k=v … | --field-rm <键>`：字段增删改（写后按 scope+offset 重排，保留分组空行）。
+    **键 = `scope + offset`**：不同 scope 可以有相同字节偏移（`Engine`/`Font`/`FontVWindow`/`ScriptContext`/`DrawItem` 各自从对象头起算），
+    所以定位键写成 `DrawItem/0x3C`、`FontVWindow/0x15150` 即可并存；裸 `0x3C` 命中多条时会报错并列出候选（旧行为是静默取第一条）。
 - **root**：缺省 `.`；可用 `--root <dir>` 或第一个位置参数指定（例如对临时副本操作可 `--root /tmp/rj`）。
 - `--set` 的无引号值按布尔/数字自动解析，其余为字符串；数组/对象值请用 json 形式。
 

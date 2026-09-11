@@ -30,6 +30,9 @@ import {
   newSceneState,
   scAnimationsDone,
   scClearDrawContainer,
+  scMsgWinClear,
+  scMsgWinClearAll,
+  scMsgWinSync,
   scConfigureDrawItem,
   scCreateMesh,
   scDetachTexture,
@@ -50,6 +53,8 @@ import {
 import { setupPixiStage } from './pixi/appSetup.js';
 import { attachMouseInput } from './pixi/inputAttach.js';
 import { ScenePresenter } from './pixi/presenter.js';
+import { TextLayer } from './pixi/textLayer.js';
+import type { MsgWinInput } from '../text/layout.js';
 import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
 import type { RenderStatus } from './renderStatus.js';
@@ -71,6 +76,8 @@ export class PixiBackend implements NativeBridge {
   private readonly textures: TextureCache;
   /** 每帧合成器（Pixi 对象在 `create()` 里就绪后装配）。 */
   private presenter!: ScenePresenter;
+  /** 消息窗文本图层（每窗一张光栅化纹理；层序 20+win）。 */
+  private textLayer!: TextLayer;
 
   /**
    * **场景模型**（与 `HeadlessScene` 共用 `sceneModel.ts` 的同一份语义）：
@@ -102,6 +109,9 @@ export class PixiBackend implements NativeBridge {
     b.drawRoot = stage.drawRoot;
     b.unit = stage.unit;
     b.presenter = new ScenePresenter(b.drawRoot, b.textures, b.unit, (m) => b.#pushLog(m));
+    // 内置字族按需加载（TextLayer 在光栅化前调 ensureFont）；加载完成会 bump
+    // fontVersion()，TextLayer 据此重画一次用 fallback 画出来的文本。
+    b.textLayer = new TextLayer((m) => b.#pushLog(m));
     attachMouseInput(b.app.canvas, input, (line) => b.status.trace.push(line));
     return b;
   }
@@ -355,10 +365,30 @@ export class PixiBackend implements NativeBridge {
    * `0x1F6`（sub_41A130 → `sub_4AB7A0(_this+80708)`）：**整批释放绘制项/网格**。
    * 等价语义 = 清空 `drawItems` + `meshes`，**保留纹理槽绑定**（引擎这里只释放图元/网格对象）。
    */
+  // ---- 消息窗文本 ----
+
+  /** 引擎「每窗一张离屏表面」的等价物：排版在共享层做，这里只标脏（纹理在 present 时重建）。 */
+  msgWinSync(win: number, input: MsgWinInput): void {
+    const f = scMsgWinSync(this.scene, win, input);
+    this.#pushLog(`[msgwin] win=${win} ${f.lines.length} 行 ${f.glyphCount} 字 ${f.style.vertical ? '竖排' : '横排'} ${f.style.main.size}px`);
+    this.#markDirty();
+  }
+
+  msgWinClear(win: number): void {
+    scMsgWinClear(this.scene, win);
+    this.#markDirty();
+  }
+
+  msgWinClearAll(): void {
+    scMsgWinClearAll(this.scene);
+    this.#markDirty();
+  }
+
   clearDrawContainer(): void {
+    const wins = this.scene.msgWins.size;
     const r = scClearDrawContainer(this.scene);
     this.#markDirty();
-    this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes}（保留纹理槽）`);
+    this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} 文本窗=${wins}→0（保留纹理槽）`);
   }
 
   /** `0x20C`（sub_41A1A0 → `sub_4B4040(_this+80708)`）：帧刷新。渲染循环自行 present，这里只标脏。 */
@@ -388,7 +418,9 @@ export class PixiBackend implements NativeBridge {
   /** 合成一帧（时钟 = 墙钟，单调推进）。 */
   present(): void {
     this.clockMs = performance.now() - this.wallStart;
-    this.presenter.present(this.scene, this.clockMs, this.waitFlags);
+    // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
+    const textSprites = this.textLayer.sync(this.scene);
+    this.presenter.present(this.scene, this.clockMs, this.waitFlags, textSprites);
     this.sceneDirty = false; // present 已消费本次"脏"标记
   }
 

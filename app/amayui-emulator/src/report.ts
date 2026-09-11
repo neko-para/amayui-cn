@@ -153,6 +153,14 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
     // ★帧循环服务（与 renderer session 同构，见 src/vm/engine.ts 的 serviceAdv/serviceAdvanceWait）：
     //  1) 等待推进门：headless 无输入源 ⇒ 确定性放行 1 帧（计数），期间不派发指令；
     //  2) ADV 分支：先跑每帧服务（输入泵 + 「未显示完」判定，可能清掉 ADV 位）。
+    // ★逐字显现：按确定性时钟推进（与 renderer session 的 `text-reveal` 分支同构）
+    if (e.textRevealing) {
+      e.serviceTextReveal(clock);
+      frames++;
+      clock += frameMs;
+      headless.advance(clock);
+      continue;
+    }
     if (e.awaitingAdvance) {
       advanceWaits++;
       e.forceAdvance(); // 走热点路由：跳到该热点的 label（与真实点击同一路径）

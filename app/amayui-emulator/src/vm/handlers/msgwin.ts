@@ -26,10 +26,96 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
 import { ADV_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
+import { defaultWinStyle, layoutWindow, type MsgWinStyle } from '../../text/layout.js';
+import { fontListIndex, resolveFace } from '../../text/fontSet.js';
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
 const clearAdv = (e: Engine): void => void (e.effectFlags &= ~ADV_ACTIVE);
+
+/**
+ * 写引擎配置注册表（`SetConfig` 的等价物）：`Engine.config.values` 就是注册表。
+ *
+ * 为什么要写它：`0x1B5/0x1B9/0x2E7/0x2E8/0x2CD/0x141` 这类指令的全部作用就是"把值持久化进配置"，
+ * 漏掉则"设置界面改了但下次启动又变回去"。数值本身同时也写进引擎字段（各 handler 自己负责）。
+ */
+export function setConfigValue(e: Engine, key: string, value: number): void {
+  if (!e.config) e.config = { values: new Map(), sections: [] };
+  e.config.values.set(key.toLowerCase(), value);
+}
+
+// ---------------------------------------------------------------------------
+// 文本渲染状态 → 渲染层（引擎「每窗一张离屏表面」的等价物）
+// ---------------------------------------------------------------------------
+
+/**
+ * 把引擎字段里的**全局**样式（颜色/描边）读成 `#rrggbb`。
+ *
+ * `0x76`/`0x77` 的 handler 在引擎里把 COLORREF(BGR) 翻成 RGB 后存入 `_this[21664]/[21665]`
+ * （raw 28669/28680），emulator 的 `ENGINE_FIELD_STORE` 做了同样的重排 ⇒ 这里直接读即可。
+ */
+const hex6 = (rgb: number): string => '#' + (rgb & 0xffffff).toString(16).padStart(6, '0');
+
+/** 由「全局样式 + 该窗几何 + 该窗文本」组装排版输入（引擎 `Font` + `FontVWindow` 的快照）。 */
+export function styleOfWin(e: Engine, win: number): MsgWinStyle {
+  const m = e.msgwin;
+  const g = m.geom(win);
+  const v = (k: number, d: number): number => e.engineValues.get(k) ?? d;
+  const base = defaultWinStyle();
+  const resolvedMain = resolveFace(m.font.mainFace);
+  const resolvedRuby = resolveFace(m.font.rubyFace);
+  return {
+    x: g.x,
+    y: g.y,
+    w: g.w,
+    h: g.h,
+    originX: g.originX,
+    originY: g.originY,
+    wrapRight: g.wrapRight,
+    wrapBottom: g.wrapBottom,
+    // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）
+    vertical: (v(80101, m.font.vertical ? 1 : 0) & 1) !== 0,
+    align: g.align,
+    alignWidth: g.alignWidth,
+    outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
+    outlineDx: v(21670, base.outlineDx),
+    outlineDy: v(21671, base.outlineDy),
+    main: {
+      family: resolvedMain.family,
+      size: m.font.mainSize,
+      weight: m.font.mainBold ? 700 : 400,
+      fill: hex6(v(21664, 0xffffff)),
+      outline: hex6(v(21665, 0x000000)),
+    },
+    ruby: {
+      family: resolvedRuby.family,
+      size: m.font.rubySize,
+      weight: m.font.rubyBold ? 700 : 400,
+      // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
+      fill: hex6(v(21664, 0xffffff)),
+      outline: hex6(v(21665, 0x000000)),
+    },
+    background: g.background,
+    // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）
+    itemId: m.object(win).f104,
+  };
+}
+
+/** 发布一个窗（文本或样式变化后调用；排版在共享层做，宿主只光栅化）。 */
+export function emitWin(e: Engine, win: number): void {
+  const w = e.msgwin.resolveWin(win);
+  e.native.msgWinSync?.(w, {
+    style: styleOfWin(e, w),
+    segments: e.msgwin.slot(w).segments,
+    revealed: e.msgwin.revealedOf(w), // -1 = 全部显示
+  });
+}
+
+/** 发布全部"已知"窗口（全局样式变化时用 —— 字号/颜色/描边/竖排都是全局的）。 */
+export function emitAllWins(e: Engine): void {
+  const wins = new Set<number>([...e.msgwin.slots.keys(), ...e.msgwin.wins.keys(), e.msgwin.defaultWin]);
+  for (const w of wins) emitWin(e, w);
+}
 
 /** `message:ReadTextSkip` 当前取值：运行期覆盖（0x1CA 写入）优先，否则用启动配置，缺省 0。 */
 export function readTextSkipOf(e: Engine): number {
@@ -38,9 +124,18 @@ export function readTextSkipOf(e: Engine): number {
   return e.config ? cfgInt(e.config, 'message:readtextskip', 0) : 0;
 }
 
-/** `message:MesWinAlpha`（分段淡入 ms；0 = 不分段节流）。 */
-function mesWinAlphaOf(e: Engine): number {
-  return e.config ? cfgInt(e.config, 'message:meswinalpha', 0) : 0;
+/**
+ * `message:MessageSpeed`（ms；= `Font+1376` = `Engine[21668]`）—— **消息推进节拍**。
+ *
+ * 引擎（`sub_41EB20` raw 28361-28382）：`if (!_this[21668] || (effect_flags & 0x8000000))` ⇒ 走
+ * **同步排空**（`sub_46CBF0`）；否则入队 + 置 `0x20000000` + `sub_453A60(Engine+430572, 该值)`。
+ * 同一字段在 `sub_409400` 里还是逐字显现的 `Sleep()` 值（raw 13954）。
+ *
+ * ★历史错误：这里曾读 `message:MesWinAlpha`。引擎的 `Engine[21668]` 其实是 **MessageSpeed**
+ * （raw 23736-23738 把 `message:MessageSpeed` 灌进 `Engine+86672`）；`MesWinAlpha` 从不进字段。
+ */
+function messageSpeedOf(e: Engine): number {
+  return e.engineValues.get(21668) ?? (e.config ? cfgInt(e.config, 'message:messagespeed', 0) : 0);
 }
 
 /**
@@ -80,13 +175,17 @@ const op_show_text: OpHandler = (c) => {
   }
   m.appendText(slot, text);
   m.flags &= ~0x10000;
+  // 新内容入队 ⇒ 该窗的显现游标作废（引擎 `0x71` 会 idx=0 重头显示）
+  e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
+  emitWin(e, slot);
   // 引擎 sub_41EB20：`sub_48F000` 非 0（仍在显示）才置 ADV，否则清 122455（并保持 ADV 清除）
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
-  // 引擎（MesWinAlpha 非 0 分支）：每段文本之间按 α 毫秒淡入 ⇒ 帧让步（与 SLEEP_GATE 同义）
-  const alpha = mesWinAlphaOf(e);
-  if (alpha > 0) {
-    e.sleepUntil = e.nowMs + Math.max(1, alpha);
+  // 引擎（`Engine[21668]` = message:MessageSpeed 非 0 分支）：每段文本之间按该毫秒数节流
+  //   ⇒ 帧让步（与 SLEEP_GATE 同义）。为 0 时引擎走同步排空（此处即"无节流"）。
+  const speed = messageSpeedOf(e);
+  if (speed > 0) {
+    e.sleepUntil = e.nowMs + Math.max(1, speed);
     e.effectFlags |= SLEEP_GATE;
   }
 };
@@ -94,7 +193,9 @@ const op_show_text: OpHandler = (c) => {
 /** `0x6F end-text-line`（sub_41ECE0 raw 28389-28397）：结束当前行。 */
 const op_end_text_line: OpHandler = (c) => {
   const e = c.e;
-  e.msgwin.endLine(readIntOperand(e, c.frame, c.instr, 1));
+  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  e.msgwin.endLine(slot);
+  emitWin(e, slot);
 };
 
 /**
@@ -111,10 +212,18 @@ const op_end_text_line: OpHandler = (c) => {
  */
 const op_message_show: OpHandler = (c) => {
   const e = c.e;
-  e.msgwin.lastArg = readIntOperand(e, c.frame, c.instr, 1); // 消息窗槽号（1/2/7/8/9…）
+  const slot = readIntOperand(e, c.frame, c.instr, 1); // 窗索引（0 ⇒ 默认窗；1/2/7/8/9…）
+  e.msgwin.lastArg = slot;
   e.msgwin.alt = 0;
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
+  // 引擎 `sub_41ED80` raw 28361-28382：非跳读路径下入队 + `sub_453A60(Engine+430572, MessageSpeed)`
+  // ⇒ **从这里开始逐字显现**（跳读/自动模式下走同步排空，即一次显示完）。
+  const w = e.msgwin.resolveWin(slot);
+  const total = layoutWindow(w, { style: styleOfWin(e, w), segments: e.msgwin.slot(w).segments }).glyphCount;
+  if (e.msgwin.skipping !== 0 || e.msgwin.skipMode !== 0) e.msgwin.finishReveal(w);
+  else e.msgwin.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
+  emitWin(e, slot);
 };
 
 /**
@@ -127,6 +236,20 @@ const op_wait_for_input: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
   m.lastArg = readIntOperand(e, c.frame, c.instr, 1);
+  // 引擎 `sub_41EEF0` LABEL_17：ADV 未激活时 `Engine[107705] = slot+92`（本页字形数）、
+  //   `effect_flags |= 0x80000000`（等待门）**同时**启动显现节拍（`sub_453A90`）。
+  //   ⇒ 这里同样：启动（或沿用）本窗的逐字显现；显现由帧循环的 `text-reveal` 分支优先推进
+  //   （`RendererSession.run` 把它放在等待门分支**之前**）。
+  const w = m.resolveWin(m.lastArg);
+  if (!m.isRevealing(w)) {
+    const total = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments }).glyphCount;
+    if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
+    else m.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
+  }
+  if (m.isRevealing(w)) {
+    e.awaitingAdvance = true; // 门已置，但显现未完 ⇒ 由帧循环的 text-reveal 分支继续推进
+    return;
+  }
   if (advanceReveal(e)) return; // 仍在显示中 ⇒ 不挂起（引擎在 LABEL_17 之前就 return）
   clearAdv(e);
   // 引擎：`if (!122496 && !(mask & 0x40))` —— 0x40 = 「跳读中」（Engine[1415] 合成）
@@ -162,6 +285,8 @@ const op_display_furigana: OpHandler = (c) => {
   const e = c.e;
   const slot = readIntOperand(e, c.frame, c.instr, 1);
   e.msgwin.addRuby(slot, readStringOperand(e, c.frame, c.instr, 2), readStringOperand(e, c.frame, c.instr, 3));
+  e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
+  emitWin(e, slot);
 };
 
 /**
@@ -257,19 +382,224 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
   o.f280 = readIntOperand(e, c.frame, c.instr, 3);
 };
 
-// ---- 以下为既有实现（引擎里是"读操作数 → 写 `_this[字段]`"，保持不变）----
+// ---------------------------------------------------------------------------
+// P0 参数面（描边 / 颜色 / 字号 / 几何 / 竖排）—— 直接决定阅读体验
+// ---------------------------------------------------------------------------
 
-/** `0x80`（sub_41F690）：`_this[21631] = op1`（消息窗当前窗格/部件索引）。 */
-const op_set_msgwin_part: OpHandler = (c) => {
-  c.e.engineValues.set(21631, readIntOperand(c.e, c.frame, c.instr, 1));
+/** `0x70 <win> <w> <h> <x> <y>`（sub_41ED20 → sub_45D660 raw 73132-73193）：窗口几何。 */
+const op_window_geometry: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const w = readIntOperand(e, c.frame, c.instr, 2);
+  const h = readIntOperand(e, c.frame, c.instr, 3);
+  const x = readIntOperand(e, c.frame, c.instr, 4);
+  const y = readIntOperand(e, c.frame, c.instr, 5);
+  const g = e.msgwin.geom(win);
+  g.w = w;
+  g.h = h;
+  g.x = x;
+  g.y = y;
+  // 引擎同函数把 w/h 也写进换行边界 win+36/+40（raw 73162-73163）；底色随表面重建设置
+  g.wrapRight = w;
+  g.wrapBottom = h;
+  emitAllWins(e);
+};
+
+/** `0x198 <win> <x> <y>`（sub_41FE10 → sub_456400 raw 68263-68279）：窗口屏幕位置。 */
+const op_window_pos: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const g = e.msgwin.geom(win);
+  g.x = readIntOperand(e, c.frame, c.instr, 2);
+  g.y = readIntOperand(e, c.frame, c.instr, 3);
+  emitWin(e, win);
+};
+
+/** `0x1C1 <win> <right> <bottom>`（sub_420070 → sub_4563D0 raw 68248-68261）：换行边界。 */
+const op_window_wrap: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const g = e.msgwin.geom(win);
+  g.wrapRight = readIntOperand(e, c.frame, c.instr, 2);
+  g.wrapBottom = readIntOperand(e, c.frame, c.instr, 3);
+  emitWin(e, win);
+};
+
+/** `0x79 <win> <x> <y>`（sub_41F490 → sub_4563A0 raw 68233-68246）：文字起点。 */
+const op_text_origin: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const g = e.msgwin.geom(win);
+  g.originX = readIntOperand(e, c.frame, c.instr, 2);
+  g.originY = readIntOperand(e, c.frame, c.instr, 3);
+  emitWin(e, win);
+};
+
+/** `0x303 <win> <mode> <width>`（sub_426A90 → sub_456600 raw 68405-68418）：对齐模式 + 行宽。 */
+const op_align: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const g = e.msgwin.geom(win);
+  const mode = readIntOperand(e, c.frame, c.instr, 2);
+  g.align = (mode === 1 ? 1 : mode === 2 ? 2 : 0) as 0 | 1 | 2;
+  g.alignWidth = readIntOperand(e, c.frame, c.instr, 3);
+  emitWin(e, win);
+};
+
+/** `0x80 <win>`（sub_41F690 raw 28786-28796）：设默认窗（`Font+1228`）。 */
+const op_set_default_window: OpHandler = (c) => {
+  const e = c.e;
+  const win = readIntOperand(e, c.frame, c.instr, 1);
+  e.engineValues.set(21631, win);
+  e.msgwin.defaultWin = win;
 };
 
 /**
- * `0x7F`（sub_42D1F0 raw 39355）：`op1 = _this[21668]`（消息窗 α）。
- * ★该**字段**在启动时由 `message:MesWinAlpha` 灌入（见 `engineConfig.ts` 的 CONFIG_FIELD_BINDINGS），
- * 所以这里读字段而不是直接读配置表 —— 与 `0x131`（直读配置注册表）不同。
+ * `0x2DE`（sub_430DF0 raw 40251-40261）：**字体名 → 可选字体表下标**（查不到 -1）写回 op1。
+ *
+ * 引擎：`sub_428990(textobj, 串)` 在 `Font+201664` 的 32B/条 向量里线性查名（**查前剥 `'@'`**，
+ * raw 35149）。脚本只用它的**符号**：`$1$CHECKCONFIG.txt:6-11` 里 `i2de` 得到 `<0` 就把默认面名
+ * 写回并保存。★原实现按助记符猜成 `stringResourceId` ⇒ 永远 -1 ⇒ 每次启动覆盖用户的字体选择。
  */
-const op_get_msgwin_alpha: OpHandler = (c) => {
+const op_font_name_to_index: OpHandler = (c) => {
+  const name = readStringOperand(c.e, c.frame, c.instr, 2);
+  writeIntOperand(c.e, c.frame, c.instr, 1, fontListIndex(name));
+};
+
+/**
+ * `0x1B5 <ms>`（sub_41FED0 raw 29165-29178）：**设消息速度** ——
+ * `Font+1376`（= `Engine[21668]`）**且**写配置注册表 `message:MessageSpeed`。
+ *
+ * ★与 `0x74` 的区别：`0x74` 只写字段（脚本用它做"这一段立即显示"：`i074 0`）；
+ * `0x1B5` 还会持久化到配置。**CONFIG1/CONFIG2 的速度滑条走的正是这条**
+ * （`CONFIG1.txt:2286-2287`：`sub 7f2 = 100 - 滑条值` → `i1b5 7f2`，滑条范围 1..99）。
+ *
+ * ★`$1$INITREGMES.txt:6` 用 `i1b5 19`（= **25ms/字**）设消息注册表的默认值
+ * —— 这才是引擎脚本自己认的默认速度（随包 INI 的 `MessageSpeed=5` 只写字段、不进注册表）。
+ */
+const op_set_message_speed: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(21668, v);
+  setConfigValue(c.e, 'message:messagespeed', v);
+};
+
+/**
+ * `0x74 <ms>`（sub_41F320 raw 28642-28651）：**设消息速度 —— 仅字段**。
+ *
+ * 引擎体只有两行：`_this[21668] = read(1)`（对比 `0x1B5` 还多一次 `SetConfig`）⇒ **不持久化**。
+ * 脚本用这一对做「这段/这一帧立即出字」：`i07f f7ffc`（读现值存档）→ `i074 0`（0 = 立即显示）
+ * → …绘制杂项消息… → `i074 f7ffc`（还原）。全库 206 处 `i074 0`，全部成对还原
+ * （例：`$1$SC0330.txt:18674-18702`）。
+ *
+ * ★原实现把 `0x74` 当 no-op ⇒ 「立即显示」失效、逐字速度被这段文本拉长；同时 `i07f` 存下的
+ * 值会被后续 `0x1B5` 改写而还原不回去。
+ */
+const op_set_message_speed_field: OpHandler = (c) => {
+  c.e.engineValues.set(21668, readIntOperand(c.e, c.frame, c.instr, 1));
+};
+
+/** `0x1B9 <idx> <ms>`（sub_41FF60 raw 29191-29220）：`message:AutoMessageTime{idx}`（自动翻页基础时长）。 */
+const op_set_auto_message_time: OpHandler = (c) => {
+  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+  setConfigValue(c.e, `message:automessagetime${idx === 1 ? 1 : 0}`, readIntOperand(c.e, c.frame, c.instr, 2));
+};
+
+/** `0x2E7 <idx> <ms>`（sub_426540 raw 33534-...）：`message:AutoMessagePitch{idx}`（自动翻页每行附加时长）。 */
+const op_set_auto_message_pitch: OpHandler = (c) => {
+  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+  setConfigValue(c.e, `message:automessagepitch${idx === 1 ? 1 : 0}`, readIntOperand(c.e, c.frame, c.instr, 2));
+};
+
+/** `0x2E8 <v>`（sub_4265E0 raw 33565-33577）：`message:AutoMessageOption`。 */
+const op_set_auto_message_option: OpHandler = (c) => {
+  setConfigValue(c.e, 'message:automessageoption', readIntOperand(c.e, c.frame, c.instr, 1));
+};
+
+/** `0x2CD <v>`（sub_426390 raw 33463-33475）：`message:AdvanceMesOnWheel`（滚轮是否推进消息）。 */
+const op_set_advance_mes_on_wheel: OpHandler = (c) => {
+  setConfigValue(c.e, 'message:advancemesonwheel', readIntOperand(c.e, c.frame, c.instr, 1));
+};
+
+/** `0x75 <size>`（sub_41F350 → sub_4185F0 raw 24057-24082）：主字号（全局）。 */
+const op_set_main_size: OpHandler = (c) => {
+  const e = c.e;
+  const size = readIntOperand(e, c.frame, c.instr, 1);
+  e.engineValues.set(71745, size); // Font+201684 / 4
+  e.msgwin.font.mainSize = size;
+  emitAllWins(e);
+};
+
+/** `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。 */
+const op_set_ruby_size: OpHandler = (c) => {
+  const e = c.e;
+  const size = readIntOperand(e, c.frame, c.instr, 1);
+  e.engineValues.set(75970, size); // Font+218584 / 4
+  e.msgwin.font.rubySize = size;
+  emitAllWins(e);
+};
+
+/** `0x1A5 <name>`（sub_433290 → sub_4328F0 raw 41344-41565）：主字体面名（全局）。 */
+const op_set_main_face: OpHandler = (c) => {
+  const e = c.e;
+  const face = readStringOperand(e, c.frame, c.instr, 1);
+  e.msgwin.font.mainFace = face;
+  emitAllWins(e);
+};
+
+/** `0x2FE <name>`（sub_4332D0 → sub_432DD0 raw 41568-41798）：注音字体面名（全局）。 */
+const op_set_ruby_face: OpHandler = (c) => {
+  const e = c.e;
+  const face = readStringOperand(e, c.frame, c.instr, 1);
+  e.msgwin.font.rubyFace = face;
+  emitAllWins(e);
+};
+
+/** `0x2BD <flag>`（sub_426200 raw 33384-33402）：主字体加粗（`lfWeight` 700/0，全局）。 */
+const op_set_main_bold: OpHandler = (c) => {
+  const e = c.e;
+  const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
+  e.engineValues.set(75953, on ? 700 : 0); // Font+218516 / 4
+  e.msgwin.font.mainBold = on;
+  emitAllWins(e);
+};
+
+/** `0x2BE <flag>`（sub_426260 raw 33404-33422）：注音字体加粗（全局）。 */
+const op_set_ruby_bold: OpHandler = (c) => {
+  const e = c.e;
+  const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
+  e.engineValues.set(75971, on ? 700 : 0); // Font+218588 / 4
+  e.msgwin.font.rubyBold = on;
+  emitAllWins(e);
+};
+
+/**
+ * `0x260 <a> <b> <c> <d>`（sub_426080 raw 33310-33328）：竖排**源矩形修正**
+ * `Font+235112/235116/235120/235124 = op1/op2/op3/op4`。
+ * ★这正是报告 A 里"找不到写入点"的那四个字段的写入者。重写侧直接光栅化字形、
+ * 不经过离屏源矩形 ⇒ **只记录不消费**（见 ADR §7）。
+ */
+const op_vertical_rect_pad: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.defaultWin;
+  const g = e.msgwin.geom(win);
+  g.vPad = {
+    x: readIntOperand(e, c.frame, c.instr, 1),
+    dw: readIntOperand(e, c.frame, c.instr, 2),
+    y: readIntOperand(e, c.frame, c.instr, 3),
+    dh: readIntOperand(e, c.frame, c.instr, 4),
+  };
+};
+
+// ---- 以下为既有实现（引擎里是"读操作数 → 写 `_this[字段]`"，保持不变）----
+
+/**
+ * `0x7F`（sub_42D1F0 raw 38010-38016）：`op1 = _this[21668]` = **`message:MessageSpeed`**
+ * （= `Font+1376` = `Engine+86672`）。`i07f` 全工程 210 处。
+ *
+ * ★历史错误：旧注释写成"消息窗 α"。`message:MesWinAlpha` 是**另一个键**，只被 `0x131`/`0x141`
+ * 按名直读直写、**不落任何字段**（见 `engineConfig.ts` 的说明）。这里读字段是对的，不要改成读配置表。
+ */
+const op_get_message_speed: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(21668) ?? 0);
 };
 
@@ -290,6 +620,8 @@ const op_msgwin_slot_clear: OpHandler = (c) => {
   const v = readIntOperand(e, c.frame, c.instr, 1);
   e.engineValues.set(v + 122486, 0);
   e.msgwin.object(v).f132 = 0; // sub_404F80 的清 `+132` 那一步
+  // 引擎 sub_404F80 同时 sub_4ABB60 删该窗两段绘制项 ⇒ 重写侧清掉该窗文本
+  e.native.msgWinClear?.(v);
 };
 
 /** 消息窗 / ADV 指令族（全部为 `OPS`＝真实现）。 */
@@ -308,9 +640,29 @@ export const MSGWIN_OPS: OpTable = [
   [0x1ca, op_set_read_text_skip], // SetConfig message:ReadTextSkip
   // ---- 点击热点 / 路由表（决定「等待输入」如何结束）----
   [0x090, op_route_push],
+  // ---- P0 参数面：几何 / 字号 / 颜色 / 描边 / 竖排 ----
+  [0x70, op_window_geometry], // 窗几何 w/h/x/y + 换行边界初值
+  [0x074, op_set_message_speed_field], // ★设消息速度（仅字段；`i074 0` = 立即显示，用后还原）
+  [0x075, op_set_main_size], // 主字号（全局）
+  [0x197, op_set_ruby_size], // 注音字号（全局）
+  [0x198, op_window_pos], // 窗屏幕位置
+  [0x1a5, op_set_main_face], // 主字体面名（全局）
+  [0x1b5, op_set_message_speed], // ★设消息速度（字段 + 注册表；CONFIG 速度滑条走这条）
+  [0x1b9, op_set_auto_message_time], // message:AutoMessageTime{idx}
+  [0x2cd, op_set_advance_mes_on_wheel], // message:AdvanceMesOnWheel
+  [0x2e7, op_set_auto_message_pitch], // message:AutoMessagePitch{idx}
+  [0x2e8, op_set_auto_message_option], // message:AutoMessageOption
+  [0x1c1, op_window_wrap], // 换行边界
+  [0x260, op_vertical_rect_pad], // 竖排源矩形修正（只记录）
+  [0x2bd, op_set_main_bold], // 主字体加粗（全局）
+  [0x2be, op_set_ruby_bold], // 注音字体加粗（全局）
+  [0x2fe, op_set_ruby_face], // 注音字体面名（全局）
+  [0x2de, op_font_name_to_index], // 字体名 → 字体表下标（写回 op1；CHECKCONFIG 靠它的符号）
+  [0x303, op_align], // 对齐模式 + 行宽
+  [0x079, op_text_origin], // 文字起点
   // ---- 消息窗字段 / 对象表 ----
-  [0x7f, op_get_msgwin_alpha],
-  [0x80, op_set_msgwin_part],
+  [0x7f, op_get_message_speed], // 读 Engine[21668] = message:MessageSpeed（★不是消息窗 α）
+  [0x80, op_set_default_window], // 默认窗索引（0x6E/0x6F/0x196 的 op1=0 指它）
   [0x300, op_msgwin_slot_flags],
   [0x301, op_msgwin_slot_clear],
   [0x212, op_msgwin_obj_f100], // 对象 +100

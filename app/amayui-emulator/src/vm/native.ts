@@ -7,6 +7,7 @@
  *  约定：桥对渲染对象做**严格 flag 校验**——配置了未逐字段解码的 flag 位 → 抛 `UnknownFlagError`，绝不静默忽略。
  */
 import type { InputManager } from './input.js';
+import type { MsgWinInput } from '../text/layout.js';
 
 /** 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 颜色动画。bit2(&4, sub_49BCC0 分支) 未逐字解码 ⇒ 拒绝。 */
 export const KNOWN_DRAW_ITEM_FLAGS = 0b011;
@@ -126,6 +127,17 @@ export interface NativeBridge {
   /** 0xA2 (sub_434F10)：登记菜单项 key→label。 */
   menuBind?(key: string, value: number): void;
   unhandled?(opcode: number, name: string): void;
+
+  // ---- 消息窗文本（引擎「每窗一张离屏表面」的等价物）----
+  /**
+   * **同步一个消息窗的文本内容**（引擎 `0x6E`/`0x6F`/`0x71`/`0x196` 与各属性指令之后）。
+   * 宿主负责：排版在共享层 `scene/ops.ts` 里做（两宿主同一份语义），宿主只做光栅化/记录。
+   */
+  msgWinSync?(win: number, input: MsgWinInput): void;
+  /** 清空一个消息窗（引擎 `0x85` / `0x301` / `0x71` 开始新一段）。 */
+  msgWinClear?(win: number): void;
+  /** 全部清空（`op_exit_script` 的 `msgwin.reset()`）。 */
+  msgWinClearAll?(): void;
 
   // ---- Plan A：类型化渲染配置（严格 flag 校验） ----
   configureDrawItem?(cfg: DrawItemConfig): void;

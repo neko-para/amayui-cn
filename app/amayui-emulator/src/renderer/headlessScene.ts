@@ -30,6 +30,9 @@ import {
   scSetTranslationAnim,
   scSetVertexColor,
   scSetVertexColorAlpha,
+  scMsgWinClear,
+  scMsgWinClearAll,
+  scMsgWinSync,
   scSnapshot,
   snapshotToText,
   newSceneState,
@@ -38,6 +41,7 @@ import {
   type SceneState,
 } from './sceneModel.js';
 import type { DrawItemConfig, MeshCreateSpec, NativeBridge } from '../vm/native.js';
+import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
 
 export interface HeadlessOptions {
@@ -238,6 +242,21 @@ export class HeadlessScene implements NativeBridge {
 
   setWaitFlag(mask: number): void {
     this.waitFlags |= mask;
+  }
+
+  // ---- 消息窗文本（引擎「每窗一张离屏表面」的等价物）----
+  // headless 不做光栅化：排版结果直接进模型 ⇒ 报告/快照里能看见文字（这正是本轮要的可观测性）。
+
+  msgWinSync(win: number, input: MsgWinInput): void {
+    scMsgWinSync(this.scene, win, input);
+  }
+
+  msgWinClear(win: number): void {
+    scMsgWinClear(this.scene, win);
+  }
+
+  msgWinClearAll(): void {
+    scMsgWinClearAll(this.scene);
   }
 
   /** `0x20C`/`0x23C`：推进时钟并驱动所有动画窗（= `present()` 的"模型部分"）。 */

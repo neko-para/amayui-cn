@@ -171,11 +171,27 @@ export class RendererSession {
         this.#serviceAnimGate();
       } else if (e.waitFlags & SLEEP_GATE) {
         this.#serviceSleepGate();
+      } else if (e.textRevealing) {
+        // ★**逐字显现中**（引擎 `sub_409400`：每帧按 `message:MessageSpeed` 推进一步，
+        //   期间不派发脚本指令）。放在等待门**之前**：显现没完就不该被"等玩家推进"挡住。
+        this.#setGate('text-reveal');
+        const more = e.serviceTextReveal(e.nowMs);
+        if (!more) this.#traceLog.line('=== text reveal done ===');
+        if (native.needsRender()) native.present();
+        this.#frames++;
       } else if (e.awaitingAdvance) {
         // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
         // 一页消息已显示完，脚本**挂起**等玩家推进；此期间**不派发任何脚本指令**。
         // 这正是「等待输入态」在引擎里的真实行为（此前 emulator 会在这里空转 10000 条/帧）。
+        // ★玩家在显现期间点击 ⇒ **先把这一页显示完**（引擎 `sub_45A940(...,-2,0)`），本次点击被消费。
         this.#setGate('wait-input');
+        if (e.msgwin.isRevealing()) {
+          e.msgwin.finishReveal(e.msgwin.resolveWin(e.msgwin.lastArg));
+          e.serviceTextReveal(e.nowMs);
+          native.present();
+          this.#frames++;
+          continue outer;
+        }
         if (e.serviceAdvanceWait()) {
           this.#traceLog.line(
             `=== advance-wait cleared → ip=${e.curScript().ip} (page ${e.msgwin.pages}, 热点 ${e.routes.count} 项) steps=${this.#steps} ===`,

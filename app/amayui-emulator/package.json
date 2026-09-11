@@ -15,7 +15,8 @@
     "check:dead-writes": "tsx src/tools/deadWrites.ts",
     "build:electron": "node build-electron.mjs",
     "electron": "electron .",
-    "electron:dev": "npm run build:electron && electron ."
+    "electron:dev": "npm run build:electron && electron .",
+    "diag:text": "tsx src/tools/diagText.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

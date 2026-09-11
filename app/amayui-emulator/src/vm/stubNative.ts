@@ -9,6 +9,7 @@
  * `src/renderer/headlessScene.ts`（Node 报告，共用 sceneModel 语义）。
  */
 import type { DrawItemConfig, MeshCreateSpec, NativeBridge } from './native.js';
+import type { MsgWinInput } from '../text/layout.js';
 
 /** 无界面桩实现：全部记录 + 返回默认，绝不触发真实渲染/音频/输入。 */
 export class StubNative implements NativeBridge {
@@ -158,6 +159,17 @@ export class StubNative implements NativeBridge {
   }
   clearDrawContainer(): void {
     this.log('[native:stub] clearDrawContainer');
+  }
+  msgWinSync(win: number, input: MsgWinInput): void {
+    // 桩不渲染，但把「收到文本」记下来 —— 否则"脚本显示了消息"这件事在无界面运行里完全不可见。
+    const text = input.segments.map((x) => x.text).join('');
+    this.log(`[native:stub] msgWinSync win=${win} segs=${input.segments.length} text="${text.slice(0, 40)}"`);
+  }
+  msgWinClear(win: number): void {
+    this.log(`[native:stub] msgWinClear win=${win}`);
+  }
+  msgWinClearAll(): void {
+    this.log('[native:stub] msgWinClearAll');
   }
   frameTick(): void {
     /* 每帧调用，stub 不记日志（避免刷屏） */

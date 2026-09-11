@@ -16,6 +16,11 @@ declare global {
       /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
       readConfigIni(): Promise<{ path: string; text: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
+      /**
+       * 读内置字体文件字节（`res/fonts/` 下的相对路径；渲染进程用 `FontFace` 注册）。
+       * 走 IPC 而不是相对 URL：渲染页在 `dist/renderer/` 下，`file://` + CSP 下加载仓外资源不可靠。
+       */
+      font(file: string): Promise<Uint8Array | null>;
       logLine(text: string): void;
       logLineSync(text: string): string;
       // ---- 控制窗（ControlWindow）相关 ----

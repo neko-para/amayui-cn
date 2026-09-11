@@ -38,8 +38,19 @@ export class ScenePresenter {
     private readonly log: (msg: string) => void,
   ) {}
 
-  /** 返回本帧实际加入场景图的 draw-item 数（诊断）。 */
-  present(scene: SceneState, clock: number, waitFlags: number): number {
+  /**
+   * 返回本帧实际加入场景图的 draw-item 数（诊断）。
+   *
+   * `textSprites` = 消息窗文本的精灵（层序 = `20+win`，与引擎平面号一致）。
+   * **文本与 draw-item 按同一个 layer 排序合并** —— 引擎里文本本来就是 DrawItem（D3D 路径）
+   * 或直接 blit 到表面 0（DD 路径），所以"文本永远最上层"是错的。
+   */
+  present(
+    scene: SceneState,
+    clock: number,
+    waitFlags: number,
+    textSprites: { win: number; layer: number; sprite: Sprite }[] = [],
+  ): number {
     this.drawRoot.removeChildren();
 
     // 0) 逐帧驱动：推进所有 draw-item 的 5 个动画窗（窗末 work ← target；全窗结束清动画位）。
@@ -47,10 +58,21 @@ export class ScenePresenter {
 
     this.#logSummary(scene, clock, waitFlags);
 
-    // 1) draw-items（图像）
+    // 1) draw-items（图像）+ 消息窗文本：按 layer 归并（同 layer 时 draw-item 在前）
     let drawn = 0;
     const items = [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
+    const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
+    let ti = 0;
+    const flushText = (upto: number): void => {
+      let t = texts[ti];
+      while (t && t.layer <= upto) {
+        this.drawRoot.addChild(t.sprite);
+        ti++;
+        t = texts[ti];
+      }
+    };
     for (const it of items) {
+      flushText(it.layer - 1); // 先把 layer 更小的文本插进去
       // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
       //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
       //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
@@ -81,7 +103,14 @@ export class ScenePresenter {
       spr.alpha = alpha / 255; // diffuse alpha 淡入
       this.drawRoot.addChild(spr);
       drawn++;
+      // 同 layer 的文本放在该项之后（引擎里文本是后建的 map 项）
+      const sameLayer = texts[ti];
+      if (sameLayer && sameLayer.layer === it.layer) {
+        this.drawRoot.addChild(sameLayer.sprite);
+        ti++;
+      }
     }
+    flushText(Number.MAX_SAFE_INTEGER); // 剩余文本（含 20+win 落在没有 draw-item 的层）
 
     // 2) meshes（顶点色黑覆盖层）：按 handle 升序，叠在图之上。
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);

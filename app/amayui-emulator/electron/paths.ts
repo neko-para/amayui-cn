@@ -15,6 +15,9 @@ export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 /** 游戏原始资源目录（松散 BIN / ALF 归档）。 */
 export const RAW_DIR = path.join(REPO_ROOT, 'raw');
 
+/** 内置字体目录（渲染进程经 IPC `font` 通道读取；见 src/text/fontSet.ts）。 */
+export const FONT_DIR = path.join(REPO_ROOT, 'res', 'fonts');
+
 /** 诊断日志文件（renderer 经 'log-line' IPC 追加到此处）。 */
 export const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
 /** 结构化指令轨迹（renderer 经 'append-trace-line' IPC 追加 JSON 行；见控制窗「定向 trace」）。 */

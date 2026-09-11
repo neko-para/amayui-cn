@@ -5,11 +5,12 @@
  * 图像在这里就地解码成 top-down RGBA 再交给渲染进程（Node 侧有 zlib/fs）。
  */
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { ipcMain } from 'electron';
 import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
-import { RAW_DIR, configIniCandidates } from '../paths.js';
+import { FONT_DIR, RAW_DIR, configIniCandidates } from '../paths.js';
 
 const fileSource = new NodeFileSource({ rawDir: RAW_DIR });
 
@@ -40,6 +41,26 @@ export function registerFileIpc(): void {
     }
     console.log('[main] config ini: 未找到 SYS4REG.INI（引擎字段用默认值）');
     return null;
+  });
+
+  // 读内置字体文件（`res/fonts/<file>`）。**白名单式**：拒绝任何含 `..` 或绝对路径的请求。
+  ipcMain.handle('font', async (_e, file: string) => {
+    if (typeof file !== 'string' || file.length === 0) return null;
+    const full = path.resolve(FONT_DIR, file);
+    if (!full.startsWith(FONT_DIR + path.sep)) {
+      console.log(`[main] font 拒绝越界路径: ${file}`);
+      return null;
+    }
+    try {
+      const buf = fs.readFileSync(full);
+      console.log(`[main] font -> ${file} (${(buf.length / 1024).toFixed(0)}KB)`);
+      // ★返回 Buffer 而不是 Array.from(buf)：CJK 字体 24MB，转成 number[] 会变成
+      //   数千万个 JS number（structured clone 极慢且吃内存）。Buffer 经 IPC 到达渲染进程即 Uint8Array。
+      return buf;
+    } catch (err) {
+      console.log(`[main] font 读取失败 ${file}: ${(err as Error).message}`);
+      return null;
+    }
   });
 
   // 按统一资源 id 取一张图像：resolveEntry(id) -> AGF 字节 -> 解码成 top-down RGBA
