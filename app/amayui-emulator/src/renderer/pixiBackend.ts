@@ -199,6 +199,16 @@ export class PixiBackend implements NativeBridge {
     this.textures.bind(imgid, slot);
   }
 
+  /**
+   * **纹理帧屏障**（`NativeBridge.texturesIdle`）：等本帧新绑定的图像载入完成。
+   * 引擎 `set-texture` 是同步读文件+解码，重写侧走 IPC 异步 ⇒ 不等就会"新文本压在旧背景上"。
+   */
+  async texturesIdle(): Promise<void> {
+    if (this.textures.pendingCount === 0) return;
+    await this.textures.waitIdle();
+    this.#markDirty();
+  }
+
   createMesh(spec: MeshCreateSpec): void {
     this.#markDirty();
     const m = scCreateMesh(this.scene, spec.handle, spec.layer);

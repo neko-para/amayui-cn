@@ -27,10 +27,11 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
-import { ADV_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
+import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import { defaultWinStyle, layoutWindow, type MsgWinStyle } from '../../text/layout.js';
 import { fontListIndex, resolveFace } from '../../text/fontSet.js';
+import { REVEAL_FRAME_MS } from '../msgwin.js';
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
@@ -249,20 +250,43 @@ const op_message_show: OpHandler = (c) => {
  *
  * 引擎：清显示态 → 清 `0x8000000` → 若 ADV 已清则消费输入边沿 + 付托文本 +
  * **置 `0x80000000`（等待推进门）**。
+ *
+ * ★尾段（raw 28539-28554，`LABEL_17`）还是**逐字显现的启动点**：
+ * ```
+ * Engine[122371] = 窗;
+ * sub_45A940(Font, 窗, -1, Engine+107705);   // 查询 ⇒ Engine[107705] = win+92（字格数）
+ * effect_flags |= 0x80000000;                // 等待门
+ * if (!(effect_flags & 0x40000000)) {        // 未在逐字模式 ⇒ 进入
+ *     effect_flags |= 0x40000000;
+ *     Engine[107704] = 0;                    // 游标归零
+ *     sub_453A90(Engine+430600);             // 重启节拍（周期 = 0x73 op10）
+ * }
+ * ```
+ * ⇒ 每次 `wait-for-input` 都**重新武装逐字**。文本内容与注音由 `show-text` 提前写入本窗。
  */
 const op_wait_for_input: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
   m.lastArg = readIntOperand(e, c.frame, c.instr, 1);
-  // 引擎 `sub_41EEF0` LABEL_17：ADV 未激活时 `Engine[107705] = slot+92`（本页字形数）、
-  //   `effect_flags |= 0x80000000`（等待门）**同时**启动显现节拍（`sub_453A90`）。
-  //   ⇒ 这里同样：启动（或沿用）本窗的逐字显现；显现由帧循环的 `text-reveal` 分支优先推进
-  //   （`RendererSession.run` 把它放在等待门分支**之前**）。
   const w = m.resolveWin(m.lastArg);
+  // 引擎 `sub_45A940(..., -1, Engine+107705)`：把该窗字格数写进模数槽（字格未设时 win+92 = 0）。
+  const grid = m.gridOf(w);
+  m.charTotal = grid ? grid.cells : 0;
+  e.engineValues.set(107705, m.charTotal);
   if (!m.isRevealing(w)) {
-    const total = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments }).glyphCount;
+    const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments });
+    const total = laid.glyphCount;
     if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
-    else m.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
+    else {
+      // ★两条节拍：字格页用 `0x73` op10（一次一格）；普通消息页用「行数 × max(MessageSpeed, 一帧)」
+      //   的预算（引擎一步 = 一行 ⇒ 整段时长 = 行数 × 节拍）。见 MsgWindow.RevealState 注释。
+      const tick = m.gridTickMs(w);
+      m.beginReveal(w, total, e.nowMs, messageSpeedOf(e), tick !== undefined ? { intervalMs: tick } : { lines: laid.lines.length });
+      m.charMode = total > 0;
+      m.charCursor = 0;
+      e.engineValues.set(107704, 0);
+      e.effectFlags |= CHAR_REVEAL_ACTIVE;
+    }
   }
   if (m.isRevealing(w)) {
     e.awaitingAdvance = true; // 门已置，但显现未完 ⇒ 由帧循环的 text-reveal 分支继续推进
@@ -306,6 +330,134 @@ const op_display_furigana: OpHandler = (c) => {
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
 };
+
+// ---------------------------------------------------------------------------
+// 字格逐字显现（0x73 字格 + 0x1CE 开关 + 0x20A 重画 + 0x304/0x305 文本块）
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x73 <win> <op2>…<op9> <ms>`（sub_41F250 raw 28601-28639，argc=10）：**设字格 + 逐字节拍**。
+ *
+ * 引擎：`v = read(10)` → `sub_453AD0(Engine+430600, v)`（逐字计时器周期 ms，0 ⇒ 1，raw 66142）；
+ * 其余 9 个操作数交给 `sub_456430`（raw 68282-68306）拷进窗对象 `win+60..99`：
+ * `{op4, op5, op6, op7+op5, op8+op6, op2, op3, 1, op9, op9}` —— 其中 `win+88 = 1` 是**逐字总门**，
+ * `win+92 = win+96 = op9` 是字格数/列数（引擎主循环的模数）。
+ * 另外 GDI 路径（`Engine[166964] == 0`）还会调一次 vtable(33, 2*op7, op8, 2) 建绘制容器。
+ *
+ * ★脚本侧只有 27 处（`NOVEL.txt:11/265`、`SN0000.txt` 各页、`SYSTEM4.txt:41`）—— 也就是**序章 /
+ * NOVEL / SYSTEM4 才走逐字**；普通 ADV 不开这道门（`sub_45A940` 直接返回）。
+ */
+const op_set_char_grid: OpHandler = (c) => {
+  const e = c.e;
+  const m = e.msgwin;
+  const rd = (n: number): number => readIntOperand(e, c.frame, c.instr, n);
+  const win = m.resolveWin(rd(1));
+  const tickMs = rd(10);
+  m.setCharGrid(win, {
+    textX: rd(2),
+    textY: rd(3),
+    srcSurface: rd(4),
+    originX: rd(5),
+    originY: rd(6),
+    cellW: rd(7),
+    cellH: rd(8),
+    cells: rd(9),
+    gate: true,
+    tickMs,
+  });
+  emitWin(e, win);
+};
+
+/**
+ * `0x1CE <v>`（sub_420280 raw 29329-29351）：**逐字显现开关**（并记录 `Engine[107706] = v`）。
+ *
+ * - `v != 0` ⇒ `effect_flags |= 0x40000000` + `Engine[107704] = 0` + `sub_453A90(Engine+430600)`
+ *   （重启节拍）；若本窗已有显现状态，这里把它的 `nextAt` 按字格节拍重置（等价于重启计时器）。
+ * - `v == 0` ⇒ 若 bit30 已置：`if (!(effect_flags & 0x100000)) sub_45A940(Font, 当前窗, -2, 0)`
+ *   （整段收尾）→ 清 bit30。
+ *
+ * ★全库只有 `i1ce 0`（0 处 `i1ce 非0`）—— 真正的逐字启动点是 `0x72`（见 `op_wait_for_input`）。
+ */
+const op_char_reveal_switch: OpHandler = (c) => {
+  const e = c.e;
+  const m = e.msgwin;
+  const v = readIntOperand(e, c.frame, c.instr, 1);
+  m.charModeArg = v;
+  e.engineValues.set(107706, v);
+  if (v !== 0) {
+    m.charMode = true;
+    m.charCursor = 0;
+    e.engineValues.set(107704, 0);
+    e.effectFlags |= CHAR_REVEAL_ACTIVE;
+    // `sub_453A90`：重启节拍 ⇒ 已有显现状态的下一次推进点按字格节拍（或预算）重排。
+    for (const [win, st] of m.reveal) {
+      if (!st.active) continue;
+      if (st.intervalMs !== undefined) st.nextAt = e.nowMs + st.intervalMs;
+      else {
+        st.lastAt = e.nowMs;
+        st.carry = 0;
+      }
+    }
+    return;
+  }
+  if ((e.effectFlags & CHAR_REVEAL_ACTIVE) !== 0) {
+    if ((e.effectFlags & 0x100000) === 0) {
+      for (const win of m.reveal.keys()) m.finishReveal(win);
+    }
+    e.endCharReveal();
+    e.serviceTextReveal(e.nowMs);
+  }
+};
+
+/**
+ * `0x20A <win>`（sub_423620 raw 31546-31566）：**按当前状态重排并重画该窗文本**。
+ *
+ * 引擎：`sub_45AD30(Font, win)`（重排该窗文本）+ 若 `(effect_flags|Engine[95779]) & 0x40000000`
+ * 则用**当前** `Engine[107704]` 调 `sub_45A940(Font, win, k, 0)` 重贴当前字格（游标不动）。
+ * 脚本侧 1011 处；★这条过去**未注册**（命中即 `NotImplementedOp` 硬报错）。
+ */
+const op_window_relayout: OpHandler = (c) => {
+  const e = c.e;
+  const m = e.msgwin;
+  const win = m.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  // 引擎在逐字模式下会在此用**当前** `Engine[107704]` 重贴同一格 ⇒ 游标不变、内容不变：
+  // 重写侧只需按当前游标重新发布一次（`emitWin` 走同一份 `revealedOf`）。
+  emitWin(e, win);
+};
+
+/**
+ * `0x304`（sub_41A420 raw 24610-24625，argc=0）：**文本块开始**。
+ * 引擎：`Engine[122497] = 1`（注音/内嵌模式位）→ 把当前消息窗对象的 `+296 = +132`
+ * （**保存当前行游标**）。`+296` 由 `0x305` 取回，是"文本块"的括号语义。
+ */
+const op_text_block_begin: OpHandler = (c) => {
+  const e = c.e;
+  const m = e.msgwin;
+  m.flags = 1; // Engine[122497] = 1（赋值，不是 |=）
+  const win = m.resolveWin(m.lastArg);
+  const st = m.reveal.get(win);
+  m.lineCursorSave.set(win, st ? st.shown : -1);
+};
+
+/**
+ * `0x305`（sub_41B1C0 raw 25096-25170，argc=0）：**文本块结束**。
+ * 引擎：`win+132 = win+296`（取回行游标）→ `message:ReadTextSkip`/ADV 判定 →
+ * `while (!sub_45BE20(Font, 窗))`（**把余下的行一次性贴出**）→ 必要时排空/清 ADV。
+ *
+ * 重写侧：`finishReveal`（= 整段显示完并 emit）就是"把余下的行贴出去"的等价物；
+ * 行游标的存取由 `0x304`/`0x305` 的 `lineCursorSave` 承担。
+ */
+const op_text_block_end: OpHandler = (c) => {
+  const e = c.e;
+  const m = e.msgwin;
+  const win = m.resolveWin(m.lastArg);
+  m.lineCursorSave.delete(win);
+  for (const w of m.reveal.keys()) m.finishReveal(w);
+  if (m.charMode) e.endCharReveal();
+  e.serviceTextReveal(e.nowMs);
+  emitWin(e, win);
+};
+
 
 /**
  * `0x88 message-mode`（sub_41FAB0 raw 28965-28977）：`1415 = 97050 = op1`；
@@ -628,11 +780,24 @@ const op_msgwin_slot_flags: OpHandler = (c) => {
   const flags = readIntOperand(e, c.frame, c.instr, 2);
   const value = readIntOperand(e, c.frame, c.instr, 3);
   const slot = v + 122466;
-  e.engineValues.set(slot, (flags | ((e.engineValues.get(slot) ?? 0) & 0x10000)) | 0);
+  const merged = (flags | ((e.engineValues.get(slot) ?? 0) & 0x10000)) | 0;
+  e.engineValues.set(slot, merged);
   e.engineValues.set(v + 122476, value);
+  // ★闸门状态（`sub_409400` 第一循环的消费端）：bit0 = 逐行贴出、bit16 = 已被泵接管、
+  //   op3 = 贴完后的延时清场 ms（`Engine[122476+win]`）。CONFIG 的消息预览靠它做**循环演示**。
+  const g = e.msgwin.gateOf(v);
+  g.enabled = (merged & 1) !== 0;
+  g.pumping = (merged & 0x10000) !== 0;
+  g.autoHideMs = value;
 };
 
-/** `0x301`（sub_4269F0）：`_this[122486+v] = 0`；引擎随后调 `sub_404F80` 重算布局（未建模）。 */
+/**
+ * `0x301`（sub_4269F0 → sub_404F80 raw 10741-10763）：清 `win+132`（显现游标）+ 删两段绘制项。
+ *
+ * ★`sub_404F80` **不清文本记录**，只把游标归零 ⇒ 闸门（`0x300`）开着时，下一次泵调用会
+ * 从第一行重新贴出（这正是 CONFIG 预览"消失后重来"的那一步）。故这里在清视图的同时把
+ * 显现状态重新武装到 0。
+ */
 const op_msgwin_slot_clear: OpHandler = (c) => {
   const e = c.e;
   const v = readIntOperand(e, c.frame, c.instr, 1);
@@ -640,6 +805,15 @@ const op_msgwin_slot_clear: OpHandler = (c) => {
   e.msgwin.object(v).f132 = 0; // sub_404F80 的清 `+132` 那一步
   // 引擎 sub_404F80 同时 sub_4ABB60 删该窗两段绘制项 ⇒ 重写侧清掉该窗文本
   e.native.msgWinClear?.(v);
+  const g = e.msgwin.gateOf(v);
+  g.doneAt = null;
+  if (g.enabled) {
+    const laid = layoutWindow(v, { style: styleOfWin(e, v), segments: e.msgwin.slot(v).segments });
+    if (laid.glyphCount > 0) {
+      e.msgwin.beginReveal(v, laid.glyphCount, e.nowMs, messageSpeedOf(e), { lines: laid.lines.length });
+      emitWin(e, v);
+    }
+  }
 };
 
 /** 消息窗 / ADV 指令族（全部为 `OPS`＝真实现）。 */
@@ -656,6 +830,12 @@ export const MSGWIN_OPS: OpTable = [
   [0x19c, op_adv_enter],
   [0x19b, op_adv_exit],
   [0x1ca, op_set_read_text_skip], // SetConfig message:ReadTextSkip
+  // ---- 字格逐字显现（序章 SN0000 / NOVEL / SYSTEM4）----
+  [0x73, op_set_char_grid], // ★字格 + 逐字节拍（0x73 op10 → sub_453AD0；win+88 总门）
+  [0x1ce, op_char_reveal_switch], // 逐字开关（v≠0 置 bit30+游标归零；v=0 收尾）
+  [0x20a, op_window_relayout], // ★按当前状态重排并重画该窗（过去未注册 ⇒ 命中即硬报错）
+  [0x304, op_text_block_begin], // ★文本块开始（Engine[122497]=1 + 保存行游标）
+  [0x305, op_text_block_end], // ★文本块结束（取回游标 + 把余下的行一次性贴出）
   // ---- 点击热点 / 路由表（决定「等待输入」如何结束）----
   [0x090, op_route_push],
   // ---- P0 参数面：几何 / 字号 / 颜色 / 描边 / 竖排 ----

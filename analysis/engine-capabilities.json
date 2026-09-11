@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 86,
-    "modeled-verified": 6,
+    "total": 88,
+    "modeled-verified": 10,
     "modeled-unverified": 7,
-    "partial": 22,
+    "partial": 20,
     "absent": 26,
     "n/a-known": 25,
-    "needsAttention": 55
+    "needsAttention": 53
   },
   "entries": [
     {
@@ -1764,7 +1764,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。"
+        "note": "已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。★同族的 **bit30（0x40000000，逐字模式）** 与 bit31（等待门）已建模：0x72 每次武装（游标 Engine[107704] 清零）、0x1CE/点击推进收尾，见 msgwin-char-reveal-grid。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。"
       }
     },
     {
@@ -2210,9 +2210,9 @@
       "whySilent": "它是\"每帧替脚本推进文字\"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
-        "evidence": "E2",
-        "note": "已建模 S4：MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf + Engine.serviceTextReveal；节拍 = max(message:MessageSpeed ／ 一帧)。0x71/0x72 启动、0x1CE 收尾、MessageSpeed=0 或跳读 ⇒ 一次排空。★有意偏离：引擎 sub_45BE20 一步推**一行**（24B 行矩形；D3D 建 DrawItem id=行号+win+104；GDI 逐行 blit）而宿主按“前 N 个字形”渲染 ⇒ 这里把“一帧一步”映射成一帧一个**字**（逐字可见）；引擎真正的逐字只有网格那条路（effect_flags&0x40000000 + sub_453AF0(Engine+430600) + sub_45A940；节拍来自 0x73 op10；脚本侧仅 i073 27 处）。缺口：逐行贴出的行淡入色窗（MessageSpeed×MessageFade/100）未接；MessageFade 未消费。",
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★**速度定律**（2026-09 修正）：引擎一步 = **一行**、节拍 = message:MessageSpeed、节拍门 sub_453B60 把下限压在一帧 ⇒ **整段时长 = 行数 × max(MessageSpeed／一帧)**；MessageSpeed **越大越慢**，随包值 5 时一行一帧内出完（很快），0 = 同步排空（立即全显）。重写侧一步 = 一个**字**（逐字可见）但用「预算」推进（budgetMs = 行数 × max(speed／一帧)，carry 保分数余量）⇒ 总时长与引擎一致。旧实现把 MessageSpeed 当**每字**间隔 ⇒ 同一设置下比引擎慢“每行字数”倍（19 字一行 ≈ 慢 19 倍）。字格页（i073）另走 0x73 op10 的固定步长（一次一格）。缺口：行淡入色窗（MessageSpeed × MessageFade ／ 100）未接；MessageFade 未消费。E2 守卫 test/adv-msgwin.test.ts（速度定律 + 点击先补完）；E3 test/config1-chain.test.ts（真实 CONFIG1 链路 + 0x300 闸门循环序列）。",
         "guard": "test/adv-msgwin.test.ts"
       }
     },
@@ -2368,7 +2368,7 @@
     {
       "id": "msgwin-window-reveal-gate-300",
       "subsystem": "消息窗",
-      "name": "每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765）",
+      "name": "每窗「逐行贴出」闸门 + 贴出完成后的延时清场循环（Engine[122466+win] bit0/bit16、Engine[122476+win]；op 0x300 = sub_426990）",
       "trigger": "脚本 0x300 <win> <flags> <ms> 置位/清位（sub_426990 raw 33743-33754）；由帧循环 sub_409400 的窗循环（raw 13838-13888）每帧消费",
       "engine": {
         "fns": [
@@ -2393,9 +2393,83 @@
       "whySilent": "全是纯数值位/字段：缺了它不会报错，只表现为「样例文案不逐行出现」「CONFIG 样例永远留在画面上不清场」或「贴出被当成一次性排空」——两种取值都是合法路径，脚本侧读不到差别。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
-        "evidence": "E1",
-        "note": "0x300/0x301 只把两个字段写进 engineValues（0x301 另清渲染层该窗文本），**没有消费者**：逐行贴出改由 beginReveal/tickReveal 在 0x71/0x72 启动（有意偏离，见 text-reveal-pump-409400），而「贴出完成后再等 Engine[122476+win] ms 自动清场」完全未建模 —— 缺口：CONFIG 样例文案的自动消失、以及 MessageSpeed==0 时按窗一次性排空的分支。"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "note": "已实现（2026-09）：0x300 写闸门位（bit0）／接管位（bit16）／停留 ms，Engine.serviceWinReveal 逐帧消费（= sub_409400 第一循环）：从 win+132 起逐帧贴出一字 → 整段贴完后记完成时刻 → 过 Engine[122476+win] ms 调 native.msgWinClear（= sub_404F80 清绘制项）并把显现游标归零（闸门位仍为 1）⇒ **下一帧从头再贴一遍，无限循环**（CONFIG 消息预览即此）。0x301 顺带按 sub_404F80 语义把游标归零重贴；关闸（i300 win 0 0）时排空余下并清 bit16/延时。★闸门窗**不算**「显现中」（MsgWindow.isRevealing 过滤）：引擎在同一帧照常派发脚本指令（raw 21179 goto LABEL_215），否则 CONFIG 屏会被挂起。★闸门窗的**可见性也完全由泵决定**：revealedOf 在闸门开着而泵尚未贴出时返回 0（不是 -1）——否则 show-text 写完就整段直接出现，表现为「进设置时 ADV 文案先于背景出现」（2026 实测）。守卫：test/char-reveal.test.ts（闸门循环／关闸／贴出前不可见）+ test/config1-chain.test.ts（真实 CONFIG1 链路的循环序列）。",
+        "guard": "test/char-reveal.test.ts"
+      }
+    },
+    {
+      "id": "msgwin-char-reveal-grid",
+      "subsystem": "消息窗",
+      "name": "字格逐字显现（引擎逐字渲染的真实机制）：0x73 设字格与节拍 → 0x72 武装 → 主循环每节拍贴出第 k 格（raw 20887-20895 + sub_45A940）",
+      "trigger": "脚本 i073（字格+节拍，全库 27 处：NOVEL/SN0000/SYSTEM4）→ 每次 0x72 wait-for-input 武装（置 bit30、游标清零、重启节拍）→ 帧循环按 Engine+430600 计时器每步贴一格 → 点击推进或 0x1CE 0 收尾",
+      "engine": {
+        "fns": [
+          "sub_41F250",
+          "sub_456430",
+          "sub_453AD0",
+          "sub_453AF0",
+          "sub_453A90",
+          "sub_45A940",
+          "sub_41EEF0",
+          "sub_420280",
+          "sub_423620",
+          "sub_41A420",
+          "sub_41B1C0",
+          "sub_45AD30",
+          "sub_45BE20"
+        ],
+        "raw": "20887-20895"
+      },
+      "reads": [
+        "Engine+699204(bit30 = 逐字模式)",
+        "Engine+107704(逐字游标 k)",
+        "Engine+107705(模数 = 字格数 win+92)",
+        "Engine+107706(0x1CE op1 副本)",
+        "Engine+430600(逐字节拍计时器)",
+        "Engine+122371(当前消息窗)",
+        "FontVWindow+60..+99(0x73 写的字格块)",
+        "FontVWindow+296/+132(0x304/0x305 行游标)",
+        "FontVWindow+104/+108/+276/+280(绘制项区间)"
+      ],
+      "whySilent": "整条链是纯数据 + 计时器：0x73 只在窗对象里写 40 字节字格、0x72 只置两个位与一个整数、主循环只是按节拍多贴一格。缺任何一环都不会报错、脚本也读不到差别，只表现为「文字不逐字出现（一次性全出）」「字数停在第一节拍」「字格门未开时每帧空转调用什么也不做」—— 全是合法路径。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/char-reveal.test.ts",
+        "note": "已实现：0x73 写真格（gate/cells/tickMs）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 帧循环按 0x73 op10 节拍推进 + 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号（保存/取回行游标并把余下的行贴出）。★有意偏离：引擎的循环模数是 win+92（= 0x73 op9，字格/每行字数；NOVEL/SN0000 = 8/10），emulator 的显现单位是页面字符，故上界用本页字形数（否则序章每页只会循环贴出前 8 格）；引擎的 GDI 暂存面 blit 编排（sub_43D870 两段）不复刻，宿主按自己的排版模型画前 N 个字形。"
+      }
+    },
+    {
+      "id": "gfx-texture-load-sync",
+      "subsystem": "资源",
+      "name": "纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位",
+      "trigger": "脚本 `set-texture <imgid> <slot> <color>`（0x1F9）执行时；其后的 `draw-texture` 同帧/后续帧都依赖它已就绪",
+      "engine": {
+        "fns": [
+          "sub_422CB0",
+          "sub_4559C0",
+          "sub_455560",
+          "sub_4A3800",
+          "sub_455C60"
+        ],
+        "raw": "31191-31230"
+      },
+      "reads": [
+        "Engine+680092(FileSource)",
+        "Engine+4*slot+378688(纹理槽对象)",
+        "Engine+322832(Scene)",
+        "Engine+387924(当前归档/扩展信息)"
+      ],
+      "whySilent": "加载是同步的，所以引擎里不存在这个失败模式；而重写侧一旦改成异步（IPC/线程），缺失「帧屏障」不会报错，只表现为**时序错位**：新一屏的文本/图元已经画上来、而它下面的背景还没切换（背景缺帧或残留上一屏）—— 纯视觉、无日志、脚本读不到差别。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/texture-frame-barrier.test.ts",
+        "note": "emulator 的 `set-texture` 走 renderer→主进程 IPC（`window.api.image` + AGF 解码）是**异步**的，因此新增**纹理帧屏障**：`TextureCache` 记录在途载入（`#inflight`/`pendingCount`），`NativeBridge.texturesIdle()`（PixiBackend 转发 `waitIdle`，500ms 兜底）在每帧合成（present）前等待，语义等价于引擎的同步加载。headless 宿主无纹理 ⇒ 不实现该钩子，直接放行。"
       }
     }
   ]

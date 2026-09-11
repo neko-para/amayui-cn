@@ -18,7 +18,8 @@ export class TextureCache {
   readonly slotTex = new Map<number, Texture>();
   readonly #slotImgid = new Map<number, number>();
   readonly #imgCache = new Map<number, Texture>();
-  readonly #pending = new Set<number>();
+  /** 在途载入（imgid → promise）——`waitIdle` 的帧屏障就等它。 */
+  readonly #inflight = new Map<number, Promise<void>>();
 
   constructor(private readonly log: (msg: string) => void) {}
 
@@ -27,30 +28,67 @@ export class TextureCache {
     return this.slotTex.size;
   }
 
+  /** 仍在载入的图像数（帧屏障用，见 `waitIdle`）。 */
+  get pendingCount(): number {
+    return this.#inflight.size;
+  }
+
+  /**
+   * **等待所有在途图像载入完成**（帧屏障）。
+   *
+   * 引擎的 `set-texture`(0x1F9) 是**同步**的：`sub_422CB0` 内直接走
+   * `sub_4559C0`（CreateFile/ReadFile 读 AGF）+ 解码，指令返回时图像已在内存里
+   * ⇒ 同一帧"绑定 + 画"必然一致。
+   * 重写侧走 `window.api.image()`（IPC + 主进程解码）是**异步**的，若不在这里补齐，
+   * 就会出现「新一屏的文本已经画上来、背景还没切换（旧背景/空白）」的时序错位（2026 实测：
+   * 首次从主界面进设置时 ADV 样例文案先出现，CONFIG 背景晚几帧）。
+   *
+   * @param timeoutMs 兜底上限（载入异常时不至于把帧循环挂死）
+   */
+  async waitIdle(timeoutMs = 500): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (this.#inflight.size > 0) {
+      const left = deadline - Date.now();
+      if (left <= 0) {
+        this.log(`texturesIdle 超时（仍有 ${this.#inflight.size} 张在载入）→ 本帧先合成`);
+        return;
+      }
+      await Promise.race([
+        Promise.allSettled([...this.#inflight.values()]),
+        new Promise((resolve) => setTimeout(resolve, left)),
+      ]);
+    }
+  }
+
   /** `slot → imgid`（未绑定返回 undefined）。 */
   imgidOf(slot: number): number | undefined {
     return this.#slotImgid.get(slot);
   }
 
   /**
-   * 按 imgid 预载图像（幂等：已在缓存或已在途则直接返回）。
+   * 按 imgid 预载图像（幂等：已在缓存或已在途则直接返回同一个 promise）。
    * 失败只记日志——引擎在取不到图时也只是画不出来，不改变控制流。
    */
   async preloadImage(imgid: number): Promise<void> {
-    if (this.#imgCache.has(imgid) || this.#pending.has(imgid)) return;
-    this.#pending.add(imgid);
-    try {
-      const r = await window.api.image(imgid);
-      if (r) {
-        const tex = await rgbaToTexture(r.width, r.height, r.data);
-        this.#imgCache.set(imgid, tex);
-        this.log(`image ${imgid.toString(16)} -> ${r.name} (${r.width}x${r.height})`);
+    if (this.#imgCache.has(imgid)) return;
+    const inflight = this.#inflight.get(imgid);
+    if (inflight) return inflight;
+    const task = (async () => {
+      try {
+        const r = await window.api.image(imgid);
+        if (r) {
+          const tex = await rgbaToTexture(r.width, r.height, r.data);
+          this.#imgCache.set(imgid, tex);
+          this.log(`image ${imgid.toString(16)} -> ${r.name} (${r.width}x${r.height})`);
+        }
+      } catch (err) {
+        this.log(`image ${imgid.toString(16)} fail: ${(err as Error).message}`);
+      } finally {
+        this.#inflight.delete(imgid);
       }
-    } catch (err) {
-      this.log(`image ${imgid.toString(16)} fail: ${(err as Error).message}`);
-    } finally {
-      this.#pending.delete(imgid);
-    }
+    })();
+    this.#inflight.set(imgid, task);
+    return task;
   }
 
   /** `0x1F9` set-texture：建立 `slot → imgid` 绑定；纹理未载入则异步补上 `slot → Texture`。 */

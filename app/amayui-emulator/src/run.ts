@@ -55,6 +55,8 @@ async function main() {
       e.nowMs += 16; // 固定步进（headless 用假时钟）
       continue;
     }
+    // ★`0x300` 每窗「逐行贴出」闸门（不阻塞脚本，引擎主循环每帧都跑）
+    e.serviceWinReveal(e.nowMs);
     // ★等待推进门：CLI 无输入源 ⇒ 确定性自动放行（计数），否则剧本一旦进入"等玩家点击"就永不前进。
     if (e.awaitingAdvance) {
       advanceWaits++;

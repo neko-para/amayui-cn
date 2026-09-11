@@ -166,18 +166,24 @@ export class RendererSession {
     outer: while (this.#steps < MAX_STEPS) {
       // 引擎 timeGetTime()（墙钟 ms）：0xCD(get-input-type) 节流 / mesh/文字动画用
       e.nowMs = performance.now();
+      // ★`0x300` 每窗「逐行贴出」闸门（引擎 `sub_409400` 第一循环）：主循环**每帧**都跑，
+      //   且**不阻塞脚本**（raw 21179 `goto LABEL_215` 照样派发 1 条指令）——
+      //   CONFIG 的消息预览就是靠它"贴出 → 停留 op3 ms → 消失 → 再来一遍"循环演示。
+      e.serviceWinReveal(e.nowMs);
       if (e.waitFlags & 0x400) {
         // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
         this.#serviceAnimGate();
+        await this.#present(); // 动画播放（每帧）
       } else if (e.waitFlags & SLEEP_GATE) {
         this.#serviceSleepGate();
+        await this.#present();
       } else if (e.textRevealing) {
         // ★**逐字显现中**（引擎 `sub_409400`：每帧按 `message:MessageSpeed` 推进一步，
         //   期间不派发脚本指令）。放在等待门**之前**：显现没完就不该被"等玩家推进"挡住。
         this.#setGate('text-reveal');
         const more = e.serviceTextReveal(e.nowMs);
         if (!more) this.#traceLog.line('=== text reveal done ===');
-        if (native.needsRender()) native.present();
+        if (native.needsRender()) await this.#present();
         this.#frames++;
       } else if (e.awaitingAdvance) {
         // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
@@ -188,7 +194,7 @@ export class RendererSession {
         if (e.msgwin.isRevealing()) {
           e.msgwin.finishReveal(e.msgwin.resolveWin(e.msgwin.lastArg));
           e.serviceTextReveal(e.nowMs);
-          native.present();
+          await this.#present();
           this.#frames++;
           continue outer;
         }
@@ -197,28 +203,28 @@ export class RendererSession {
             `=== advance-wait cleared → ip=${e.curScript().ip} (page ${e.msgwin.pages}, 热点 ${e.routes.count} 项) steps=${this.#steps} ===`,
           );
         }
-        native.present();
+        await this.#present();
         this.#frames++;
       } else if (this.#pausedOp) {
         this.#setGate('paused');
         // 暂停态：VM 停在未知指令，等控制窗点「作为桩函数跳过」（或「重启」）。
         // 这里仍然 present（画面/时钟继续），只是不再推进 VM——保持窗口有响应。
-        native.present();
+        await this.#present();
         this.#frames++;
       } else if (e.advActive) {
         // ★**ADV 分支**（引擎 `sub_411900`）：消息逐字显示中每帧**恰好派发 1 条**指令，
         // 并跑输入泵 + 「取消消息键」三态机 + 「未显示完」判定（后者负责清掉 ADV 位）。
         this.#setGate('adv');
         const stillAdv = e.serviceAdv();
-        this.#stepOnceTraced();
+        await this.#stepOnceTraced();
         if (!stillAdv) this.#traceLog.line('=== ADV cleared (reveal done) ===');
-        if (native.needsRender()) native.present();
+        if (native.needsRender()) await this.#present();
         this.#frames++;
       } else {
         this.#setGate('');
         if (await this.#runInstructionBatch()) break outer;
         // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
-        if (native.needsRender()) native.present();
+        if (native.needsRender()) await this.#present();
       }
 
       this.#reportDiagnostics();
@@ -235,6 +241,19 @@ export class RendererSession {
     if (this.#err) console.error(`[boot] ${(this.#err as Error).message}`);
   }
 
+  /**
+   * **合成一帧**：先等本帧新绑定的图像到位（纹理帧屏障），再 present。
+   *
+   * 引擎 `set-texture`(0x1F9) 是**同步**读文件 + 解码（`sub_422CB0` → `sub_4559C0`）⇒ 同一帧
+   * "绑定 + 画"必然一致；renderer 侧走 `window.api.image()` 的 IPC 异步加载，若不在这里补齐，
+   * 就会出现「新一屏的文本已经出现、背景还没切换」的时序错位（2026 实测：首次从主界面进设置时
+   * ADV 样例文案先出现，CONFIG 背景晚几帧）。headless 宿主没有纹理 ⇒ `texturesIdle` 未实现，直接放行。
+   */
+  async #present(): Promise<void> {
+    if (this.#native.texturesIdle) await this.#native.texturesIdle();
+    this.#native.present();
+  }
+
   /** 0x400 动画等待门：场景动画跑完即放行。 */
   #serviceAnimGate(): void {
     this.#setGate('0x400');
@@ -246,7 +265,6 @@ export class RendererSession {
       if (!this.#waiting) this.#traceLog.line(`=== gate 0x400 WAIT (scene anims pending) steps=${this.#steps} ===`);
       this.#waiting = true;
     }
-    this.#native.present(); // 动画播放（每帧）
     this.#frames++;
   }
 
@@ -264,7 +282,6 @@ export class RendererSession {
       }
       this.#sleeping = true;
     }
-    this.#native.present();
     this.#frames++;
   }
 

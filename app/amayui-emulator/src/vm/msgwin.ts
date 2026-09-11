@@ -93,7 +93,98 @@ export interface RevealState {
   active: boolean;
   /** 下一次推进的墙钟毫秒（`active` 时有效）。 */
   nextAt: number;
+  /**
+   * 本窗的推进节拍覆盖值（ms）—— **字格路径专用**（`0x73` op10 → `sub_453AD0(Engine+430600)`）。
+   * 引擎在那条路上一步 = 一个**字格**、节拍 = op10 ms。缺省时走 `budgetMs` 预算模式。
+   */
+  intervalMs?: number;
+  /**
+   * 整段显现的**时间预算** ms（普通消息路径）：
+   * `行数 × max(message:MessageSpeed, 一帧)`。
+   *
+   * 引擎的一步 = **一行**（`sub_45BE20`，`sub_409400` 每帧一步 + `Sleep(MessageSpeed)`）
+   * ⇒ 整段耗时 = 行数 × 节拍。重写侧的一步是**一个字**（逐字可见），但**总时长与引擎一致**
+   * —— `tickRevealWin` 按 `total / budgetMs` 的速率连续推进（见 `REVEAL_FRAME_MS` 的历史教训）。
+   */
+  budgetMs?: number;
+  /** 预算模式的分数余量（避免每帧取整把速度丢掉）。 */
+  carry?: number;
+  /** 预算模式的上次推进时刻。 */
+  lastAt?: number;
 }
+
+/**
+ * **每窗「逐行贴出」闸门**（引擎 `Engine[122466+win]` / `Engine[122476+win]` / `Engine[122486+win]`）。
+ *
+ * 引擎侧（`sub_409400` 的**第一个**窗口循环，raw 13838-13888；开店 = op `0x300` = `sub_426990`）：
+ * ```c
+ * v3 = Engine + 489864 + 4*win;                 // 该窗的闸门槽（win+局部位移）
+ * if (*v3) Engine[489860] = 1;                  // 有窗在贴出 ⇒ 主循环跳过其它每帧服务
+ * if ((*v3 & 1) == 0) { if (!(*v3 & 0x10000)) skip;
+ *     while (!sub_45BE20(Font, win));           // 收尾：余下的行一次排空
+ *     *v3 = 0; v3[10] = 0; v3[20] = 0; }        // 清闸门/延时/完成时刻
+ * else {
+ *     *v3 |= 0x10000;                           // 标记"已被泵接管"
+ *     if (MessageSpeed) {
+ *         if (sub_453B60(Engine+430572) < 0) return;   // 节拍未到 ⇒ 本帧整帧返回
+ *         if (sub_45BE20(Font, win)) {                 // 返回真 = 全部贴完
+ *             if (!v3[20]) v3[20] = timeGetTime();     // 记完成时刻
+ *             else if (now - v3[20] >= v3[10]) {       // 到点 ⇒ 清绘制项（画面上的字消失）
+ *                 v3[20] = 0;
+ *                 sub_404F80(Font, win);               // ★win+132 = 0 ⇒ 下一帧从第一行重新贴出
+ *             } } }
+ *     else do result = sub_45BE20(Font, win); while (!result);   // MessageSpeed==0 ⇒ 一次排空
+ * }
+ * ```
+ * ★`sub_404F80` 只清绘制项并把 `win+132` 归零，**闸门位仍为 1** ⇒ 下一帧又从第一行贴出
+ * ⇒ **整段文本"逐行贴出 → 停留 op3 ms → 消失 → 再来一遍"，无限循环**。
+ * `CONFIG.txt:171 i300 9 1 3e8`（设置界面的消息显示预览）就是靠它做成循环演示的。
+ */
+export interface WinRevealGate {
+  /** `Engine[122466+win]` bit0：逐行贴出闸门（`0x300` op2 写）。 */
+  enabled: boolean;
+  /** `Engine[122466+win]` bit16：本窗已被泵接管（引擎 `*v3 |= 0x10000`）。 */
+  pumping: boolean;
+  /** `Engine[122476+win]`：贴完后的延时清场 ms（`0x300` op3 写；0 = 立刻清）。 */
+  autoHideMs: number;
+  /** `Engine[122486+win]`：贴完时刻（timeGetTime；`null` = 尚未记）。 */
+  doneAt: number | null;
+}
+
+/**
+ * **一个字格块**（引擎 `0x73` → `sub_456430` 写进窗对象的 `win+60..99`，40 字节）。
+ *
+ * 引擎侧（`sub_41F250` raw 28618-28630 + `sub_456430` raw 68282-68306）：
+ * `i073 <win> <op2> <op3> <op4> <op5> <op6> <op7> <op8> <op9> <ms>` 把
+ * `[op4, op5, op6, op7+op5, op8+op6, op2, op3, 1, op9, op9]` 拷进 `win+60`，
+ * 并 `sub_453AD0(Engine+430600, ms)` 设逐字节拍 —— 于是：
+ *  - `win+88 = 1` = **逐字总门**（`sub_45A940` 开头 `if (!win+88) return`）；
+ *  - `win+92 = win+96 = op9` = 字格数/列数（引擎主循环用它当循环模数）；
+ *  - 字格尺寸 = `(op7, op8)`、格原点 = `(op5, op6)`、目标偏移 = `(op2, op3)`。
+ */
+export interface CharGrid {
+  /** `win+80` ← `0x73` op2（目标 x 偏移）。 */
+  textX: number;
+  /** `win+84` ← op3（目标 y 偏移）。 */
+  textY: number;
+  /** `win+60` ← op4（单元 blit 的**源表面**号）。 */
+  srcSurface: number;
+  /** `win+64` ← op5（字格原点 x）。 */
+  originX: number;
+  /** `win+68` ← op6（字格原点 y）。 */
+  originY: number;
+  /** `win+72-win+64` ← op7（字格宽）。 */
+  cellW: number;
+  /** `win+76-win+68` ← op8（字格高）。 */
+  cellH: number;
+  /** `win+92` = `win+96` ← op9（字格数；引擎主循环的模数）。 */
+  cells: number;
+  /** `win+88` = 1（逐字总门；为假时 `sub_45A940` 直接返回）。 */
+  gate: boolean;
+  /** `0x73` op10 → `sub_453AD0(Engine+430600)`：一格一字的节拍 ms（0 ⇒ 1，raw 66142）。 */
+  tickMs: number;
+}
+
 
 /**
  * 引擎"一帧"的节拍下限（60Hz 基准）。
@@ -113,17 +204,25 @@ export interface RevealState {
  *    节拍由 `0x73` 的 op10（`sub_453AD0(Engine+430600, ms)`）给，且总门 `win+88`（网格）必须开。
  *    脚本侧只有 `i073`（全库 27 处）会开它 ⇒ 普通 ADV 不走逐字。
  *
- * ## emulator 的取舍（**有意偏离**，不是等价复刻）
- * 宿主把整窗光栅化成一张画布、按"显示前 N 个字形"渲染，所以最接近引擎的映射是
- * **一次推进一个字**：既保留引擎"每帧只走一步 + `MessageSpeed` 节拍"的节奏，
- * 又让逐字过程可见（这正是本工程要的阅读体验；引擎的逐行贴出在重写侧会表现为"整页瞬间出现"）。
+ * ## emulator 的取舍（**步长偏离，时长对齐**）
+ * 宿主把整窗光栅化成一张画布、按"显示前 N 个字形"渲染：引擎一步 = **一行**，重写侧一步 =
+ * **一个字**（逐字可见）。为了**不让总时长变慢**，普通消息路径用「预算」推进
+ * （`RevealState.budgetMs = 行数 × max(message:MessageSpeed, 一帧)`）：整段耗时与引擎一致，
+ * 一帧内能走几个字就走几个字（速率 = `total / budgetMs`，`carry` 保存分数余量）。
  *
- * ## 为什么必须把"一帧"写成时间下限
+ * 于是速度旋钮的语义与引擎一致：**`MessageSpeed` = 每行的毫秒数，越大越慢、0 = 立即全显**。
+ *
+ * ## 为什么"一帧"是节拍下限
  * 会话循环里 `present()` 是同步调用（`pixiBackend.present` 不等 vsync），一帧之内可以空转
- * 很多轮 `serviceTextReveal`。若按"每次调用推一个字"，`MessageSpeed=5` 会在一帧内把整页显示完。
+ * 很多轮 `serviceTextReveal`。引擎的节拍门 `sub_453B60` 同样把下限压在一帧（`Sleep` 之后仍
+ * 每帧只走一步）⇒ 每行的耗时 = `max(MessageSpeed, 一帧)` ⇒ 整段 = `行数 × max(...)`。
  *
- * ★历史错误：曾按"跨过的 tick 数一次补齐"（`ticks = floor((now-nextAt)/speed)+1`）——
- * 那让 `MessageSpeed=5` 变成约 **200 字/秒**（≈ 一帧显示完），正是 2026 反馈"文字出得太快"的根因。
+ * ★历史错误（两个方向都踩过，别再改回去）：
+ *  1. 曾按"跨过的 tick 数一次补齐"、且把 `MessageSpeed` 当**每字**间隔
+ *     （`ticks = floor((now-nextAt)/speed)+1`，5ms/字 ≈ 200 字/秒）⇒ 文字**出得太快**；
+ *  2. 改成"一帧只推一个字"后，单位从"行"变成了"字"却没补回时长 ⇒ 同一 `MessageSpeed` 下
+ *     整段耗时变成引擎的"每行字数"倍（19 字一行 ⇒ 慢约 19 倍），2026-09 实测反馈"变慢了"。
+ *  正确的模型 = 上面第 2 条的单位 + 第 1 条的时长：**步长是一个字，时长等于行数 × 节拍**。
  */
 export const REVEAL_FRAME_MS = 1000 / 60;
 
@@ -261,16 +360,36 @@ export class MsgWindow {
   readonly reveal = new Map<number, RevealState>();
 
   /**
-   * 开始逐字显现（引擎 `0x72`/`0x71` 在 `sub_409400` 里启动，`0x1CE` 也能启动）。
+   * 开始逐字显现。
+   *
+   * @param opts.intervalMs 固定步长（字格页用 `0x73` 的 op10：一次一格）
+   * @param opts.lines      本页**行数**；给了就按引擎时长算预算
+   *                        （`budgetMs = 行数 × max(MessageSpeed, 一帧)`，见 `RevealState.budgetMs`）
    *
    * `speedMs <= 0` ⇒ **立即显示完**（引擎：`if (!Engine[21668])` 走同步排空 `sub_46CBF0`）。
    * 首个字形也要等**一个节拍**（引擎 `sub_453A60` 把 `steps` 置 1 ⇒ 第一次检查就等满 `period`）。
    */
-  beginReveal(win: number, total: number, nowMs: number, speedMs: number): RevealState {
-    const st: RevealState =
-      speedMs <= 0
-        ? { shown: total, total, active: false, nextAt: 0 }
-        : { shown: 0, total, active: total > 0, nextAt: nowMs + revealInterval(speedMs) };
+  beginReveal(
+    win: number,
+    total: number,
+    nowMs: number,
+    speedMs: number,
+    opts: { intervalMs?: number; lines?: number } = {},
+  ): RevealState {
+    const gridTick = opts.intervalMs;
+    const instant = speedMs <= 0 && gridTick === undefined;
+    const st: RevealState = instant
+      ? { shown: total, total, active: false, nextAt: 0 }
+      : {
+          shown: 0,
+          total,
+          active: total > 0,
+          nextAt: nowMs + (gridTick ?? revealInterval(speedMs)),
+          ...(gridTick !== undefined ? { intervalMs: gridTick } : {}),
+          ...(gridTick === undefined
+            ? { budgetMs: revealInterval(speedMs) * Math.max(1, opts.lines ?? 1), carry: 0, lastAt: nowMs }
+            : {}),
+        };
     this.reveal.set(win, st);
     return st;
   }
@@ -287,44 +406,148 @@ export class MsgWindow {
   /**
    * 按时间推进所有窗的显现游标。返回**本帧有变化的窗**（宿主据此重画）。
    *
-   * ★**一次调用最多推进一个字**（引擎一帧只调一次 `sub_45BE20` ⇒ 一帧只走一步；引擎那一步是
-   * "一行"，这里刻意改成"一个字"以便逐字可见 —— 推导与取舍见 `REVEAL_FRAME_MS`），
-   * 且**不跨节拍补齐**。`speedMs <= 0` 时才一次性显示完（引擎的同步排空分支 `sub_46CBF0`）。
+   * 两条节拍模型（见 `RevealState`）：
+   *  - **字格路径**（`intervalMs`，引擎 `sub_453AF0(Engine+430600)` + `sub_45A940`）：一次一格；
+   *  - **普通消息路径**（`budgetMs`）：引擎一步 = 一行、节拍 = `message:MessageSpeed`
+   *    ⇒ 整段时长 = 行数 × 节拍。重写侧一步 = 一个字，但**总时长与引擎一致**：
+   *    按 `total / budgetMs` 的速率连续推进（`carry` 保存分数余量）。
+   * `speedMs <= 0` 时才一次性显示完（引擎的同步排空分支 `sub_46CBF0`）。
    */
   tickReveal(nowMs: number, speedMs: number): number[] {
     const dirty: number[] = [];
-    const interval = revealInterval(speedMs);
-    for (const [win, st] of this.reveal) {
-      if (!st.active) continue;
-      if (speedMs <= 0) {
-        st.shown = st.total;
-        st.active = false;
-        dirty.push(win);
-        continue;
-      }
-      if (nowMs < st.nextAt) continue;
-      st.shown += 1; // 引擎 `sub_45BE20`：游标 v17 → v19 = v17 + 1
-      st.nextAt = nowMs + interval;
-      if (st.shown >= st.total) {
-        st.shown = st.total;
-        st.active = false;
-      }
-      dirty.push(win);
+    for (const win of this.reveal.keys()) {
+      if (this.tickRevealWin(win, nowMs, speedMs)) dirty.push(win);
     }
     return dirty;
   }
 
-  /** 该窗是否还在逐字显现中。 */
+  /**
+   * 推进**单个**窗的显现游标（`tickReveal` 的单窗版；`0x300` 闸门泵也用它）。
+   * 返回是否推进了（宿主据此重画该窗）。
+   */
+  tickRevealWin(win: number, nowMs: number, speedMs: number): boolean {
+    const st = this.reveal.get(win);
+    if (!st || !st.active) return false;
+    // ① 字格路径：固定步长，一次一格（引擎 `sub_45A940(Font, win, k, 0)` + `sub_453AF0` 节拍门）
+    if (st.intervalMs !== undefined) {
+      if (nowMs < st.nextAt) return false;
+      st.shown += 1;
+      st.nextAt = nowMs + st.intervalMs;
+      if (st.shown >= st.total) {
+        st.shown = st.total;
+        st.active = false;
+      }
+      return true;
+    }
+    // ② 普通消息路径：按"引擎整段时长"的预算连续推进（一步一个字，但总时长 = 行数 × 节拍）
+    if (speedMs <= 0) {
+      st.shown = st.total;
+      st.active = false;
+      return true;
+    }
+    const budget = Math.max(1, st.budgetMs ?? revealInterval(speedMs));
+    const last = st.lastAt ?? nowMs;
+    const elapsed = nowMs - last;
+    if (elapsed <= 0) return false;
+    const acc = (st.carry ?? 0) + (elapsed * st.total) / budget;
+    const step = Math.floor(acc);
+    st.carry = acc - step;
+    st.lastAt = nowMs;
+    if (step <= 0) return false;
+    st.shown = Math.min(st.total, st.shown + step);
+    if (st.shown >= st.total) st.active = false;
+    return true;
+  }
+
+  /**
+   * 该窗是否还在逐字显现中。
+   *
+   * ★**`0x300` 闸门路径上的窗不算**：那条路是"每窗逐行贴出 + 定时清场重来"的循环演示
+   * （`sub_409400` 第一循环），引擎在同一帧里照常派发脚本指令（raw 21179 `goto LABEL_215`）
+   * ⇒ 若把它算作"显现中"，CONFIG 屏会被挂起、设置界面失去响应。
+   */
   isRevealing(win?: number): boolean {
-    if (win !== undefined) return this.reveal.get(win)?.active === true;
-    for (const st of this.reveal.values()) if (st.active) return true;
+    if (win !== undefined) return this.reveal.get(win)?.active === true && !this.isGatePumped(win);
+    for (const [w, st] of this.reveal) if (st.active && !this.isGatePumped(w)) return true;
     return false;
   }
 
-  /** 该窗当前应画出的字形数（无显现状态 ⇒ -1 = 全部）。 */
+  /**
+   * 该窗当前应画出的字形数（无显现状态 ⇒ -1 = 全部）。
+   *
+   * ★**闸门窗例外**（`0x300` 每窗逐行贴出）：引擎的可见性完全由泵的 `sub_45BE20` 决定
+   * （`win+132` 从 0 开始，`i071` 刚清过场 ⇒ **一行都还没贴**）。故闸门开着时，未武装/未推进
+   * 一律返回 **0** 而不是 -1 —— 否则 `show-text` 写完就会"整段直接出现"，
+   * 表现为「进设置时 ADV 文案先于背景出现」（2026 实测）。
+   */
   revealedOf(win: number): number {
     const st = this.reveal.get(win);
+    if (this.isGatePumped(win)) return st ? st.shown : 0;
     return st ? st.shown : -1;
+  }
+
+  // ---- 字格逐字显现（引擎 `0x73`/`sub_45A940`/主循环 raw 20887-20895）----
+
+  /** 每窗的字格块（引擎窗对象的 `win+60..99`；`0x73` 写、`sub_45A940` 读）。 */
+  readonly grids = new Map<number, CharGrid>();
+
+  /** 每窗「逐行贴出」闸门（引擎 `Engine[122466+win]` 区；`0x300` 写、`sub_409400` 消费）。 */
+  readonly gates = new Map<number, WinRevealGate>();
+
+  /** 取（必要时新建）某窗的闸门槽。 */
+  gateOf(win: number): WinRevealGate {
+    let g = this.gates.get(win);
+    if (!g) {
+      g = { enabled: false, pumping: false, autoHideMs: 0, doneAt: null };
+      this.gates.set(win, g);
+    }
+    return g;
+  }
+
+  /** 该窗是否在 `0x300` 闸门路径上（引擎 `*v3 & 1`）。 */
+  isGatePumped(win: number): boolean {
+    return this.gates.get(win)?.enabled === true;
+  }
+
+  /**
+   * 逐字显现模式（引擎 `effect_flags & 0x40000000`）。
+   *
+   * 引擎置位点：`0x1CE op1≠0`（raw 29337）与 **`0x72`**（raw 28551，每次 `wait-for-input` 都置，
+   * 并把游标清零）；清位点：`0x1CE op1=0`（raw 29348）、点击推进（raw 20029）、
+   * `sub_411900`/`sub_409400` 的收尾分支（raw 10933/13738/20089/20282）。
+   */
+  charMode = false;
+
+  /** 引擎 `Engine[107706]`：`0x1CE` 的 op1 副本。 */
+  charModeArg = 0;
+
+  /** 引擎 `Engine[107704]`：下一个要贴出的字格下标。 */
+  charCursor = 0;
+
+  /** 引擎 `Engine[107705]`：循环模数（= `0x72` 查询回来的 `win+92`）。 */
+  charTotal = 0;
+
+  /** `0x304` 保存的「当前行游标」（引擎 `win+296 ← win+132`；`0x305` 取回）。 */
+  readonly lineCursorSave = new Map<number, number>();
+
+  /** `0x73`：写该窗字格块（引擎 `sub_456430`，raw 68282-68306）。 */
+  setCharGrid(win: number, grid: CharGrid): void {
+    this.grids.set(win, grid);
+  }
+
+  /** 取该窗字格（无 = 引擎 `win+88 == 0` ⇒ `sub_45A940` 什么也不做）。 */
+  gridOf(win: number): CharGrid | undefined {
+    return this.grids.get(win);
+  }
+
+  /**
+   * 该窗的逐字节拍（ms）：有字格用 `0x73` op10，否则 `undefined`（= 用 `message:MessageSpeed`）。
+   * 引擎 `sub_453AD0` 对 0 值取 1（raw 66142-66143）。
+   */
+  gridTickMs(win: number): number | undefined {
+    const g = this.grids.get(win);
+    if (!g) return undefined;
+    return g.tickMs > 0 ? g.tickMs : 1;
   }
 
   // ---- 文本渲染状态（引擎 `Font` + 10 个 `FontVWindow`）----
@@ -470,5 +693,13 @@ export class MsgWindow {
     this.wins.clear();
     this.font = defaultFontStyle();
     this.reveal.clear();
+    // 字格 / 逐字模式（引擎 `sub_40DF10` 整块清 0 的那部分）
+    this.grids.clear();
+    this.gates.clear();
+    this.lineCursorSave.clear();
+    this.charMode = false;
+    this.charModeArg = 0;
+    this.charCursor = 0;
+    this.charTotal = 0;
   }
 }

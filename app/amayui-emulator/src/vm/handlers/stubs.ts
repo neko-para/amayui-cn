@@ -115,11 +115,12 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x1d2, op_engine_internal], // 文本项属性记录表：push（宿主无消费者；读取端见上方说明）
   [0x7a, op_engine_internal], // 消息窗
   [0x7b, op_engine_internal], // 消息窗
-  [0x73, op_engine_internal], // 消息窗布局（10 操作数 → sub_453AD0）
+  // ★`0x73`（字格+逐字节拍）与 `0x1CE`（逐字开关）已升为 `MSGWIN_OPS` 真实现 ——
+  //   它们写的是窗对象的 `win+60..99` 字格块与 `effect_flags & 0x40000000`，
+  //   是逐字显现的**可观测状态**（引擎主循环 raw 20887-20895 每帧消费），不能当 no-op。
   [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
   [0x1c9, op_engine_internal], // 消息窗
   [0x1cb, op_engine_internal], // 消息窗
-  [0x1ce, op_engine_internal], // 消息窗
   [0x245, op_engine_internal], // 消息/UI
   [0x246, op_engine_internal], // 消息/UI
   [0x249, op_engine_internal], // 消息/UI

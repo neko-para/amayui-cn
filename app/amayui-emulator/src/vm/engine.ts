@@ -7,6 +7,7 @@ import { MsgWindow } from './msgwin.js';
 import { RouteTable } from './route.js';
 import { cfgInt } from '../engineConfig.js';
 import { styleOfWin as msgWinStyleFor } from './handlers/msgwin.js';
+import { layoutWindow } from '../text/layout.js';
 import type { Ref } from './ref.js';
 
 /** waitFlags 中的 sleep(0xC8) 门旗标（与 0x400 动画等待门并存）。 */
@@ -20,6 +21,18 @@ export const ADVANCE_GATE = 0x80000000;
 
 /** `effect_flags` 的 **0x8000000 = 消息逐字显示中**（ADV 激活）。 */
 export const ADV_ACTIVE = 0x8000000;
+
+/**
+ * `effect_flags` 的 **0x40000000 = 逐字显现模式**（引擎主循环 raw 20887-20895 的 `v25 & 0x40000000`）。
+ *
+ * 置位：`0x72 wait-for-input` 每次（raw 28551，同时把 `Engine[107704]` 游标清零）、`0x1CE op1≠0`（raw 29337）。
+ * 清位：`0x1CE op1=0`（raw 29348）、点击推进（raw 20029，先 `sub_45A940(...,-2,0)` 收尾）、
+ * `sub_411900`/`sub_409400` 的收尾分支。
+ *
+ * 引擎的每帧动作只在这位置位时才发生：`sub_453AF0(Engine+430600)`（节拍门，周期 = `0x73` op10）
+ * ⇒ `sub_45A940(Font, 当前窗, Engine[107704], 0)`（贴出第 k 个字格）⇒ `k = (k+1) % Engine[107705]`。
+ */
+export const CHAR_REVEAL_ACTIVE = 0x40000000;
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
@@ -265,13 +278,116 @@ export class Engine {
   serviceTextReveal(nowMs: number): boolean {
     const speed = this.engineValues.get(21668) ?? (this.config ? cfgInt(this.config, 'message:messagespeed', 0) : 0);
     const dirty = this.msgwin.tickReveal(nowMs, speed);
-    for (const win of dirty) this.native.msgWinSync?.(win, {
+    for (const win of dirty) this.#publishReveal(win);
+    if (dirty.length > 0) {
+      this.msgwin.showing = this.msgwin.isRevealing() ? 1 : 0;
+      // ★引擎每帧只做两件事（raw 20892-20893）：贴出第 k 个字格 → `Engine[107704] = (k+1) % Engine[107705]`。
+      //   模数槽由 `0x72` 的 `-1` 查询写入（= 字格数 `win+92`）；字格未设时（=0）退化为单调递增。
+      if (this.msgwin.charMode) {
+        const t = this.msgwin.charTotal;
+        this.msgwin.charCursor = t > 0 ? (this.msgwin.charCursor + 1) % t : this.msgwin.charCursor + 1;
+        this.engineValues.set(107704, this.msgwin.charCursor);
+      }
+    }
+    const more = this.msgwin.isRevealing();
+    if (this.msgwin.charMode && !more) this.endCharReveal();
+    return more;
+  }
+
+  /** 把一个窗的显现进度发布给宿主（`MsgWinInput.revealed`）。 */
+  #publishReveal(win: number): void {
+    this.native.msgWinSync?.(win, {
       style: msgWinStyleFor(this, win),
       segments: this.msgwin.slot(win).segments,
       revealed: this.msgwin.revealedOf(win),
     });
-    if (dirty.length > 0) this.msgwin.showing = this.msgwin.isRevealing() ? 1 : 0;
-    return this.msgwin.isRevealing();
+  }
+
+  /**
+   * **每窗「逐行贴出」闸门泵**（引擎 `sub_409400` 的第一个窗口循环，raw 13838-13888）。
+   *
+   * 这条不是"逐字"，而是**消息窗的循环演示**：`0x300 <win> <flags> <ms>` 把闸门位（bit0）与
+   * 延时 `ms` 写进该窗槽后，引擎每帧：
+   *  1. 从 `win+132`（当前行游标）贴出一行（节拍 = `message:MessageSpeed` 的计时器）；
+   *  2. 全部贴完后记下完成时刻；
+   *  3. 过 `ms` 毫秒后 `sub_404F80` 清绘制项并把 `win+132` 归零 —— **闸门位仍为 1**；
+   *  4. 于是下一帧又从第一行贴出 ⇒ **贴出 → 停留 → 消失 → 再贴出，无限循环**。
+   *
+   * `CONFIG.txt:171 i300 9 1 3e8`（设置界面的消息显示预览）就是它：每 1 秒重演一遍。
+   * ★与逐字模式不同，**脚本在同一帧照常推进**（raw 21179 `goto LABEL_215` 仍派发 1 条指令），
+   * 所以 `isRevealing()` 把闸门窗排除在外（否则 CONFIG 屏会被挂起）。
+   *
+   * @returns 是否仍有闸门窗在贴出（= 引擎 `Engine[489860] == 1`）
+   */
+  serviceWinReveal(nowMs: number): boolean {
+    const speed = this.engineValues.get(21668) ?? (this.config ? cfgInt(this.config, 'message:messagespeed', 0) : 0);
+    let active = false;
+    for (const [win, g] of this.msgwin.gates) {
+      if (!g.enabled) {
+        // 关闸（`i300 win 0 0`）：把余下的行排空 + 清接管位/延时/完成时刻（raw 13845-13854）
+        if (!g.pumping) continue;
+        this.msgwin.finishReveal(win);
+        g.pumping = false;
+        g.autoHideMs = 0;
+        g.doneAt = 0;
+        // 引擎 `*v3 = 0`：连 bit16 一起清掉（字段即事实）
+        this.engineValues.set(122466 + win, 0);
+        this.#publishReveal(win);
+        continue;
+      }
+      active = true;
+      g.pumping = true;
+      // 引擎 `*v3 = result | 0x10000`：把"已被泵接管"写回字段（0x300 的 handler 会保留它）
+      this.engineValues.set(122466 + win, (this.engineValues.get(122466 + win) ?? 0) | 0x10000);
+      const laid = layoutWindow(win, {
+        style: msgWinStyleFor(this, win),
+        segments: this.msgwin.slot(win).segments,
+      });
+      const total = laid.glyphCount;
+      if (total <= 0) continue;
+      if (speed <= 0) {
+        // `MessageSpeed == 0` ⇒ 一次排空（raw 13878-13883）
+        const st = this.msgwin.reveal.get(win);
+        if (!st || st.shown < st.total) {
+          this.msgwin.beginReveal(win, total, nowMs, 0);
+          this.#publishReveal(win);
+        }
+        continue;
+      }
+      let st = this.msgwin.reveal.get(win);
+      if (!st || st.total !== total) {
+        // 首次（或文本变化）：引擎从 `win+132`（清场后为 0）开始逐行贴出。
+        // 时长 = 行数 × max(MessageSpeed, 一帧)（引擎一步 = 一行 + Sleep(MessageSpeed)）。
+        this.msgwin.beginReveal(win, total, nowMs, speed, { lines: laid.lines.length });
+        this.#publishReveal(win);
+        continue;
+      }
+      if (this.msgwin.tickRevealWin(win, nowMs, speed)) this.#publishReveal(win);
+      if (st.active || st.shown < st.total) continue;
+      // 全部贴完（引擎 `sub_45BE20` 返回真）
+      if (g.doneAt === null) {
+        g.doneAt = nowMs; // LABEL_16：记完成时刻
+      } else if (nowMs - g.doneAt >= g.autoHideMs) {
+        g.doneAt = null; // 引擎 `v3[20] = 0`
+        this.native.msgWinClear?.(win); // `sub_404F80`：删绘制项（画面上的字消失）
+        // ★`win+132 = 0` ⇒ 下一帧从头再贴一遍（循环演示的关键）
+        this.msgwin.beginReveal(win, total, nowMs, speed, { lines: laid.lines.length });
+        this.#publishReveal(win);
+      }
+    }
+    return active;
+  }
+
+  /**
+   * 逐字显现收尾：把该窗余下的字全部贴出并退出逐字模式。
+   *
+   * 引擎对应动作（raw 20025-20030 点击推进 / raw 29344-29349 `0x1CE 0`）：
+   * `if (!(effect_flags & 0x100000)) sub_45A940(Font, 窗, -2, 0);` → `effect_flags &= ~0x40000000`
+   * （`-2` 分支把整段文本一次性 blit 出去，见 `sub_45A940` raw 71435-71471）。
+   */
+  endCharReveal(): void {
+    this.msgwin.charMode = false;
+    this.effectFlags &= ~CHAR_REVEAL_ACTIVE;
   }
 
   /** 是否有窗还在逐字显现（引擎 `effect_flags & 0x40000000` 的等价判定）。 */
@@ -293,6 +409,14 @@ export class Engine {
     const mask = im.flush();
     const pressed = (im.mouseEdge & 0b11) !== 0 || im.joyEdge.length > 0 || im.wheelDelta !== 0;
     if (!pressed) return false;
+
+    // ★引擎 raw 20025-20030：推进前先把逐字显现**收尾**（`sub_45A940(...,-2,0)`）并清 bit30，
+    //   除非「快速/跳读」位（`effect_flags & 0x100000`）已置（那种情况下不补画）。
+    if (this.msgwin.charMode && (this.effectFlags & 0x100000) === 0) {
+      for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
+      this.endCharReveal();
+      this.serviceTextReveal(this.nowMs);
+    }
 
     // 引擎路径：`sub_403D70(queue, mask)`（键命中）优先，其次 `sub_403E70(queue)`（游标命中）。
     let target = this.routes.pickByKey(mask);
@@ -322,6 +446,12 @@ export class Engine {
    */
   forceAdvance(): number | null {
     if (!this.awaitingAdvance) return null;
+    // 与真实点击同一语义（引擎 raw 20025-20030）：先把逐字显现收尾（整段贴出）再放行。
+    if (this.msgwin.charMode && (this.effectFlags & 0x100000) === 0) {
+      for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
+      this.endCharReveal();
+      this.serviceTextReveal(this.nowMs);
+    }
     this.awaitingAdvance = false;
     const first = this.routes.entries[0];
     if (first && this.jumpToLabel(first.labelKey)) return first.labelKey;

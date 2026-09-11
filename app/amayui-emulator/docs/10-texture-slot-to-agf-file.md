@@ -173,10 +173,30 @@ draw-texture <tex> <layer> <srcX> <srcY> <srcW> <srcH> <dstX> <dstY>
 
 ---
 
+## 4.3 ★加载的**同步性**与纹理帧屏障（2026-09，实测时序错位的修法）
+
+引擎的 `set-texture`(`sub_422CB0` raw 31191-31230) 是**同步**的：同一指令内
+`sub_4559C0`（CreateFile/ReadFile 读 AGF）→ `sub_4A3800`（解码 + 装进 CTexture 槽）→ `sub_455C60`（关闭），
+失败还会抛 `Command_ShowMessage`（`画像ファイル %s の読み込みに失敗しました`）
+⇒ **指令返回时槽里已经有像素**，同一帧「绑定 + 绘制」不可能错位。
+
+emulator 侧走 `window.api.image()`（renderer → 主进程 IPC + AGF 解码）是**异步**的，
+若不补齐就会出现时序错位（2026 实测：**首次从主界面进设置时，ADV 样例文案先出现、CONFIG 背景晚几帧**）。
+因此新增**纹理帧屏障**：
+
+- `TextureCache` 记录在途载入（`#inflight` / `pendingCount`），`waitIdle(timeoutMs=500)` 等它们结束；
+- `NativeBridge.texturesIdle?()`（`PixiBackend` 转发 `waitIdle`）由会话在**每帧合成（present）之前**等待；
+- headless 宿主无纹理 ⇒ 不实现该钩子（直接放行，测试确定性不受影响）；
+- 超时兜底 500ms，保证载入异常不会把帧循环挂死。
+
+守卫：`test/texture-frame-barrier.test.ts`（bind 登记在途 / 热路径直接放行 / 失败也放行）。
+
+---
+
 ## 5. 相关代码位置
 
 - 模拟器解析：`src/arch/nodeFileSource.ts`（`resolveEntry`）+ `src/script/alf.ts`（`resolveFileEntry`）。
-- 当前渲染占位：`src/renderer/pixiBackend.ts` 的 `drawTexture`（现在按纹理号着色，未用真实图）、`setTexture`（只打日志）。
+- 纹理缓存与帧屏障：`src/renderer/pixi/textureCache.ts`（`bind` / `preloadImage` / `waitIdle`）+ `src/renderer/pixiBackend.ts`（`texturesIdle`）。
 
 ## 6. 待确认 / 遗留
 

@@ -54,6 +54,15 @@ export interface ChainResult {
   coveredBy: CoverInfo[];
   /** 采样那一刻的绘制项总数 / 可绘制数（诊断）。 */
   itemCounts: { drawItems: number; drawable: number };
+  /**
+   * `0x300` 消息预览的**循环演示**证据（`CONFIG.txt:171 i300 9 1 3e8`）：
+   * 该窗闸门状态 + 之后若干帧的"已显示字数"序列。
+   *
+   * 引擎语义（`sub_409400` 第一循环 raw 13838-13888）：整段贴出 → 记完成时刻 → 过 op3 ms
+   * 清绘制项并把 `win+132` 归零（**闸门位仍为 1**）⇒ 下一帧从头再贴一遍，**无限循环**。
+   * 因此序列里应当看到 `<全部>` → `0`（清场）→ 重新递增。
+   */
+  gateLoop: { enabled: boolean; autoHideMs: number; shown: number[] } | null;
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
   trace: string[];
 }
@@ -85,7 +94,10 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   const maxFrames = opt.maxFrames ?? Number.POSITIVE_INFINITY;
   const sampleNow = (): void => {
     const f = native.scene.msgWins.get(9);
-    if (f && f.glyphCount > 0) {
+    // ★`0x300` 闸门会让样例"贴出 → 停留 op3 ms → 消失 → 再来一遍"**循环**：
+    //   只在**整段贴出**的那一帧采样，否则采到的是循环中途（revealed=0）的态。
+    const fullyShown = f ? f.revealed < 0 || f.revealed >= f.glyphCount : false;
+    if (f && f.glyphCount > 0 && (fullyShown || !sampleWin)) {
       sampleWin = native.snapshot().msgWins.find((w) => w.win === 9) ?? sampleWin;
       // 快照文本也要在"窗口还有内容"的那一刻取（CONFIG1 紧接着有条件的 `i301 9` 清场）
       sampleText = native.snapshotText();
@@ -123,6 +135,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     for (let i = 0; i < cap; i++) {
       if (until?.()) return i;
       e.nowMs = clock;
+      // ★`0x300` 每窗「逐行贴出」闸门（CONFIG 消息预览的循环演示）——引擎主循环每帧都跑
+      e.serviceWinReveal(e.nowMs);
       if (e.waitFlags & 0x400) e.waitFlags &= ~0x400;
       else if (e.waitFlags & SLEEP_GATE) {
         if (clock >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
@@ -177,6 +191,20 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   assert.ok(onConfig1(), `应进入 CONFIG1，实际 ${e.curScript().name}`);
   // CONFIG1 里继续跑到"ADV 样例窗口"被执行（文本槽被写入）
   await run(4000, () => e.msgwin.slots.size > 0);
+  // ★`CONFIG.txt:171 i300 9 1 3e8` 让这个样例窗走闸门泵：先跑到整段贴出（采样才有意义），
+  //   再跑一段观察**循环**（贴出 → 停留 1000ms → 清场 → 重新贴出）。
+  await run(600, () => {
+    const r = e.msgwin.revealedOf(9);
+    return r < 0 || r >= 19;
+  });
+  const gate = e.msgwin.gates.get(9);
+  const shownSeq: number[] = [];
+  for (let i = 0; i < 90; i++) {
+    await run(1);
+    const r = e.msgwin.revealedOf(9);
+    shownSeq.push(r < 0 ? 19 : r);
+  }
+  const gateLoop = { enabled: gate?.enabled === true, autoHideMs: gate?.autoHideMs ?? 0, shown: shownSeq };
 
   const m = e.msgwin;
   const out = {
@@ -190,6 +218,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     snapshotText: sampleText,
     coveredBy,
     itemCounts: { drawItems: native.scene.drawItems.size, drawable: [...native.scene.drawItems.values()].filter((i) => (i.flags & 1) !== 0).length },
+    gateLoop,
     trace,
   };
   await src.dispose?.();

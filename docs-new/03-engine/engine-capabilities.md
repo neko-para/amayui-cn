@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 6 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 10 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 22 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 20 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **86** | 需要关注（非 n/a 且非已核验）= **55** |
+| **合计** | **88** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -25,10 +25,10 @@
 | 3D | 15 | 1 |
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
-| 帧循环 | 12 | 9 |
-| 消息窗 | 19 | 16 |
+| 帧循环 | 12 | 8 |
+| 消息窗 | 20 | 15 |
 | 渲染 | 22 | 11 |
-| 资源 | 7 | 2 |
+| 资源 | 8 | 2 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -115,13 +115,15 @@
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 | `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
-| `text-reveal-pump-409400` | 帧循环 | 逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `text-reveal-pump-409400` | 帧循环 | 逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍 | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
 | `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | ❌ 缺失 | E0 |
 | `msgwin-line-fade-window` | 消息窗 | 行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
 | `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |
 | `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
 | `text-font-rebuild-cascade` | 消息窗 | 字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0） | ❌ 缺失 | E0 |
-| `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765） | 🟠 部分 | E1 |
+| `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」闸门 + 贴出完成后的延时清场循环（Engine[122466+win] bit0/bit16、Engine[122476+win]；op 0x300 = sub_426990） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
+| `msgwin-char-reveal-grid` | 消息窗 | 字格逐字显现（引擎逐字渲染的真实机制）：0x73 设字格与节拍 → 0x72 武装 → 主循环每节拍贴出第 k 格（raw 20887-20895 + sub_45A940） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
+| `gfx-texture-load-sync` | 资源 | 纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位 | ✅ 已核验 | E2 · `test/texture-frame-barrier.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -420,7 +422,7 @@
 - **缺失时为什么静默**：位被置住时主循环只是改走 ADV 分支（每帧派发 1 条指令 + 输入泵），没有断言/日志；位被清时也只是回到普通分支 —— 两种取值都是合法路径
 - **引擎**：sub_41ED80, sub_41EEF0, sub_41EB20, sub_41FAB0, sub_4190E0, sub_419120, sub_411900, sub_4199B0, sub_419CC0 @ raw 24532-28977
 - **读的字段**：Engine+699204, Engine+122455, Engine+122496, Engine+1415, Engine+97050, Engine+97051, Engine+122368, Engine+122370
-- **emulator 现状**：已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。
+- **emulator 现状**：已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。★同族的 **bit30（0x40000000，逐字模式）** 与 bit31（等待门）已建模：0x72 每次武装（游标 Engine[107704] 清零）、0x1CE/点击推进收尾，见 msgwin-char-reveal-grid。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。
 
 ### `adv-text-reveal-progress`（partial）
 
@@ -503,15 +505,6 @@
 - **读的字段**：FontVWindow+36/+40(右/下边界), FontVWindow+44/+48(24B 行记录), FontVWindow+208(120B 文本记录), Font+201684(字号), Font+1236(字宽), Font+218592/+218596(缩放)
 - **emulator 现状**：缺口：逐字 GetTextExtentPoint32A 量宽、右/下边界硬断、注音配对（24B 记录 +0 种类 / +20 组 ID）与按比例缩短都未建模。★引擎的等宽网格（lfWidth = 字高/2 ⇒ 全角 1em / 半角 0.5em）使排版可退化为纯算术，不需要浏览器度量。★引擎**无**禁则、**无** 0x0A 换行处理。
 
-### `text-reveal-pump-409400`（partial）
-
-- **能力**：逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍
-- **触发**：effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时
-- **缺失时为什么静默**：它是"每帧替脚本推进文字"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。
-- **引擎**：sub_409400, sub_45BE20, sub_453AF0, sub_453B60, sub_45A940, sub_4051A0 @ raw 13780-13970
-- **读的字段**：Engine+86672(= Font+1376 = message:MessageSpeed), Engine+699204(effect_flags), FontVWindow+132(当前行), FontVWindow+92/+96(网格列数), Font+235128(= message:MessageFade)
-- **emulator 现状**：已建模 S4：MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf + Engine.serviceTextReveal；节拍 = max(message:MessageSpeed ／ 一帧)。0x71/0x72 启动、0x1CE 收尾、MessageSpeed=0 或跳读 ⇒ 一次排空。★有意偏离：引擎 sub_45BE20 一步推**一行**（24B 行矩形；D3D 建 DrawItem id=行号+win+104；GDI 逐行 blit）而宿主按“前 N 个字形”渲染 ⇒ 这里把“一帧一步”映射成一帧一个**字**（逐字可见）；引擎真正的逐字只有网格那条路（effect_flags&0x40000000 + sub_453AF0(Engine+430600) + sub_45A940；节拍来自 0x73 op10；脚本侧仅 i073 27 处）。缺口：逐行贴出的行淡入色窗（MessageSpeed×MessageFade/100）未接；MessageFade 未消费。
-
 ### `msgwin-offscreen-surface-lifecycle`（absent）
 
 - **能力**：每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出
@@ -547,12 +540,3 @@
 - **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
 - **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
 - **emulator 现状**：缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 "@" 前缀）。
-
-### `msgwin-window-reveal-gate-300`（partial）
-
-- **能力**：每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765）
-- **触发**：脚本 0x300 <win> <flags> <ms> 置位/清位（sub_426990 raw 33743-33754）；由帧循环 sub_409400 的窗循环（raw 13838-13888）每帧消费
-- **缺失时为什么静默**：全是纯数值位/字段：缺了它不会报错，只表现为「样例文案不逐行出现」「CONFIG 样例永远留在画面上不清场」或「贴出被当成一次性排空」——两种取值都是合法路径，脚本侧读不到差别。
-- **引擎**：sub_426990, sub_409400, sub_45BE20, sub_404F80, sub_4269F0 @ raw 13780-13970
-- **读的字段**：Engine+122465(有窗在贴出), Engine+122466+win(★bit0=逐行贴出开关; bit16=已被泵接管), Engine+122476+win(贴出完成后延时清场的 ms), Engine+122486+win(内部:贴出完成时刻 timeGetTime), Engine+86672(=message:MessageSpeed), Engine+699204(bit 0x20000000), FontVWindow+132(当前行), FontVWindow+104/+108/+276/+280(绘制项区间)
-- **emulator 现状**：0x300/0x301 只把两个字段写进 engineValues（0x301 另清渲染层该窗文本），**没有消费者**：逐行贴出改由 beginReveal/tickReveal 在 0x71/0x72 启动（有意偏离，见 text-reveal-pump-409400），而「贴出完成后再等 Engine[122476+win] ms 自动清场」完全未建模 —— 缺口：CONFIG 样例文案的自动消失、以及 MessageSpeed==0 时按窗一次性排空的分支。

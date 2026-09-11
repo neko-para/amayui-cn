@@ -81,3 +81,30 @@ test('★文本不会被图元盖住：层序取引擎的 DrawItem id 起点（0
   assert.ok(w.itemId > 1000, '层序必须高于普通 2D 图元（key 100 量级）');
   assert.deepEqual(r.coveredBy, [], '有层序更高且与文本框相交的图元 ⇒ 文字会被盖住');
 });
+
+/**
+ * ★2026 实测反馈的回归闸：「CONFIG1 打开后样例文案似乎只逐字展示了一次，实际会不断循环」。
+ *
+ * 引擎侧：`CONFIG.txt:171 i300 9 1 3e8` 把 win 9 的**逐行贴出闸门**打开（bit0）+ 延时 1000ms 写进
+ * `Engine[122476+9]`；`sub_409400` 的第一循环（raw 13838-13888）于是每帧从 `win+132` 贴出一行，
+ * 整段贴完后记完成时刻，过 `op3` ms 调 `sub_404F80`（清绘制项 + `win+132 = 0`）——
+ * **闸门位仍是 1** ⇒ 下一帧又从头贴一遍，**无限循环**（设置界面的"消息显示预览"）。
+ */
+test('★CONFIG 消息预览的 0x300 闸门：贴出 → 停留 1000ms → 清场 → 重新贴出（不断循环）', async () => {
+  const r = await chain();
+  const g = r.gateLoop;
+  assert.ok(g, '应采到闸门状态与循环序列');
+  assert.equal(g!.enabled, true, 'i300 9 1 3e8 ⇒ 闸门 bit0 = 1');
+  assert.equal(g!.autoHideMs, 0x3e8, '停留时长 = op3 = 1000ms');
+  const seq = g!.shown;
+  const full = Math.max(...seq);
+  assert.equal(full, 19, `观察窗内应看完整段贴出（19 字），实际序列 ${seq.join(',')}`);
+  const firstFull = seq.indexOf(19);
+  const afterFull = seq.slice(firstFull);
+  const firstZero = afterFull.indexOf(0);
+  assert.ok(firstZero > 0, `整段贴出后应出现清场（revealed=0），实际序列 ${seq.join(',')}`);
+  assert.ok(
+    Math.max(...afterFull.slice(firstZero)) > 0,
+    `清场后应重新贴出（循环演示），实际序列 ${seq.join(',')}`,
+  );
+});

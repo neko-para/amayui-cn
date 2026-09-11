@@ -142,6 +142,14 @@ export interface NativeBridge {
   // ---- Plan A：类型化渲染配置（严格 flag 校验） ----
   configureDrawItem?(cfg: DrawItemConfig): void;
   bindTexture?(imgid: number, slot: number): void;
+  /**
+   * **纹理帧屏障**：等本帧新绑定的图像载入完成（可选实现）。
+   *
+   * 引擎 `set-texture`(0x1F9 → `sub_422CB0`) 是**同步**读文件 + 解码 ⇒ 同一帧"绑定 + 画"必然一致；
+   * renderer 侧走 IPC 异步，宿主必须在合成前补齐，否则会出现「新一屏文本已画上来、背景还没切换」
+   * 的时序错位。headless 宿主无纹理 ⇒ 不实现（返回 undefined 即跳过）。
+   */
+  texturesIdle?(): Promise<void>;
   createMesh?(spec: MeshCreateSpec): void;
   /** 0x322 set-vertex-color：置 state0（ARGB）。 */
   setVertexColor?(handle: number, state0: number): void;

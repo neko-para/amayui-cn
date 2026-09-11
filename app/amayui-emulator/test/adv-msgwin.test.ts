@@ -25,6 +25,9 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { dec } from '../src/vm/bits.js';
+import { revealInterval } from '../src/vm/msgwin.js';
+import { layoutWindow } from '../src/text/layout.js';
+import { styleOfWin } from '../src/vm/handlers/msgwin.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 
 const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
@@ -291,83 +294,93 @@ test('0x301 清对象项时同时清布局标志 +132（sub_404F80 的那一步�
   assert.equal(e.engineValues.get(2 + 122486), 0);
 });
 
-test('★逐字显现：一帧一步（不跨节拍补齐）+ 点击先补完这一页（引擎 sub_409400 / 0x72）', () => {
-  const { e, step } = mk();
-  e.engineValues.set(21668, 10); // message:MessageSpeed = 10ms/字形（< 一帧 ⇒ 由帧节拍决定）
-  step(0x80, [im(9)]);
-  step(0x71, [im(9)]); // ★0x71 = 开始一段新消息（清该窗文本记录）—— 真实剧本的页序
-  step(0x6e, [im(0), str('あいうえお')]); // 5 字
-  step(0x72, [im(9)]); // 呈现 ⇒ 开始逐字显现
-  const st = e.msgwin.reveal.get(9);
-  assert.ok(st, '0x72 应启动显现');
-  assert.equal(st.total, 5);
-  assert.equal(st.shown, 0, '起始 0 字');
-  assert.equal(e.textRevealing, true);
-
-  // 节拍 = max(MessageSpeed, REVEAL_FRAME_MS) = max(10, 16.7) = 16.7ms
+/**
+ * ★速度定律（2026-09 修正）：
+ *   引擎的一步 = **一行**（`sub_45BE20`），节拍 = `message:MessageSpeed`，
+ *   且节拍门 `sub_453B60` 把下限压在一帧 ⇒ **整段耗时 = 行数 × max(MessageSpeed, 一帧)**。
+ *   重写侧一步 = 一个**字**（逐字可见），但按预算连续推进 ⇒ 总时长与引擎一致。
+ *   ⇒ 旋钮语义：`MessageSpeed` **越大越慢**，`5` 时很快（一行一帧内出完），`0` = 立即全显。
+ */
+test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 立即；总时长 = 行数 × max(speed, 一帧)', () => {
   const FRAME = 1000 / 60;
-  e.serviceTextReveal(0);
-  assert.equal(e.msgwin.revealedOf(9), 0, '未到节拍点不推进');
-  e.serviceTextReveal(10);
-  assert.equal(e.msgwin.revealedOf(9), 0, '已过 MessageSpeed 但还没到一帧 ⇒ 仍不推进（引擎每帧只走一步）');
-  e.serviceTextReveal(FRAME);
-  assert.equal(e.msgwin.revealedOf(9), 1);
-  e.serviceTextReveal(FRAME + 5);
-  assert.equal(e.msgwin.revealedOf(9), 1, '离 nextAt 还差 11.7ms ⇒ 原地');
-  e.serviceTextReveal(2 * FRAME + 1);
-  assert.equal(e.msgwin.revealedOf(9), 2);
 
-  // ★**不补齐**：距 nextAt 过了 10 帧也只走一个字。
-  //   引擎 `sub_453B60` 只回答"这一帧该不该走"（`period*steps - elapsed >= 0` ⇒ 整帧返回），
-  //   从不返回"该补几步"；`sub_45BE20` 每次调用也只把游标 +1。补齐会让速度 = elapsed/speed
-  //   （`MessageSpeed=5` ⇒ ~200 字/秒），而引擎实际 ≈ `max(speed, 一帧)` ≈ 60 字/秒。
-  e.serviceTextReveal(2 * FRAME + 1 + 10 * FRAME);
-  assert.equal(e.msgwin.revealedOf(9), 3, '跨了 10 帧也只推 1 个字');
-  let t = 2 * FRAME + 1 + 10 * FRAME;
-  for (let i = 0; i < 10 && e.textRevealing; i++) {
-    t += FRAME;
-    e.serviceTextReveal(t);
-  }
-  assert.equal(e.msgwin.revealedOf(9), 5, '按帧推进到全部');
-  assert.equal(e.textRevealing, false, '显完应收起');
+  /** 造一个 1 行 5 字的页并启动显现，返回引擎。 */
+  const page = (speed: number): Engine => {
+    const { e, step } = mk();
+    e.engineValues.set(21668, speed);
+    step(0x80, [im(9)]);
+    step(0x71, [im(9)]);
+    step(0x6e, [im(0), str('あいうえお')]); // 5 字、1 行
+    step(0x72, [im(9)]);
+    return e;
+  };
+  /** 用固定帧时钟推进直到显完，返回用掉的帧数。 */
+  const framesToFinish = (e: Engine, cap = 200): number => {
+    let t = 0;
+    for (let i = 1; i <= cap; i++) {
+      t += FRAME;
+      e.serviceTextReveal(t);
+      if (!e.textRevealing) return i;
+    }
+    return cap;
+  };
 
-  // MessageSpeed 大于一帧时，MessageSpeed 才是节拍（滑条慢端有效）
-  const { e: eSlow, step: stepSlow } = mk();
-  eSlow.engineValues.set(21668, 100);
-  stepSlow(0x80, [im(9)]);
-  stepSlow(0x6e, [im(0), str('あいう')]);
-  stepSlow(0x72, [im(9)]);
-  eSlow.serviceTextReveal(FRAME);
-  assert.equal(eSlow.msgwin.revealedOf(9), 0, '100ms 节拍：过一帧不动');
-  eSlow.serviceTextReveal(100);
-  assert.equal(eSlow.msgwin.revealedOf(9), 1);
-  eSlow.serviceTextReveal(150);
-  assert.equal(eSlow.msgwin.revealedOf(9), 1, '还差 50ms ⇒ 不动');
-  eSlow.serviceTextReveal(200);
-  assert.equal(eSlow.msgwin.revealedOf(9), 2);
+  // ① MessageSpeed=5（随包 SYS4REG.INI 的值）：1 行 ⇒ 一帧内整行出完（引擎也是"一行一帧"）
+  const eFast = page(5);
+  eFast.serviceTextReveal(FRAME);
+  assert.equal(eFast.msgwin.revealedOf(9), 5, 'MessageSpeed=5 ⇒ 一帧内整行显示完（原版就是这么快）');
+  assert.equal(eFast.textRevealing, false);
 
-  // 0x72：**置等待门的同时启动显现**（引擎 LABEL_17）；门不阻塞显现 ——
-  //   帧循环把 `text-reveal` 分支放在等待门分支之前（见 RendererSession.run）。
-  const { e: e2, step: step2 } = mk();
-  e2.engineValues.set(21668, 10);
-  step2(0x80, [im(9)]);
-  step2(0x6e, [im(0), str('あいうえお')]);
-  step2(0x72, [im(9)]);
-  assert.equal(e2.textRevealing, true, '0x72 应启动逐字显现');
-  assert.equal(e2.awaitingAdvance, true, '0x72 同时置等待门（引擎 LABEL_17 两件事一起做）');
-  assert.equal(e2.msgwin.revealedOf(9), 0, '起始 0 字');
-  for (let t2 = 0; t2 <= 10 * FRAME; t2 += FRAME) e2.serviceTextReveal(t2);
-  assert.equal(e2.msgwin.revealedOf(9), 5, '显现推进到全部');
-  assert.equal(e2.awaitingAdvance, true, '显现完仍保持等待门（还要等玩家点一下）');
+  // ② 越大越慢：100ms 的整段时长 ≈ 100ms（本条 1 行）⇒ 约 6 帧；25ms ⇒ 约 2 帧
+  const eMid = page(25);
+  const midFrames = framesToFinish(eMid);
+  const eSlow = page(100);
+  const slowFrames = framesToFinish(eSlow);
+  assert.ok(slowFrames > midFrames, `越大越慢：100ms(${slowFrames} 帧) 应慢于 25ms(${midFrames} 帧)`);
+  // 100ms 一行 ⇒ 每帧推进 ≈ 5 × 16.7/100 ≈ 0.83 字 ⇒ 逐字可见
+  const eSlow2 = page(100);
+  eSlow2.serviceTextReveal(FRAME);
+  assert.equal(eSlow2.msgwin.revealedOf(9), 0, '100ms：第一帧还不到一个字（0.83 字，留到下一帧）');
+  eSlow2.serviceTextReveal(2 * FRAME);
+  assert.equal(eSlow2.msgwin.revealedOf(9), 1, '100ms：第二帧出第 1 个字');
+  assert.equal(eSlow2.textRevealing, true);
 
-  // MessageSpeed = 0 ⇒ 一次性显示完（引擎走同步排空 sub_46CBF0）
-  const { e: e3, step: step3 } = mk();
-  e3.engineValues.set(21668, 0);
-  step3(0x80, [im(9)]);
-  step3(0x6e, [im(0), str('あいうえお')]);
-  step3(0x72, [im(9)]);
-  assert.equal(e3.msgwin.revealedOf(9), 5, 'MessageSpeed=0 ⇒ 立即显示完');
-  assert.equal(e3.textRevealing, false);
+  // ③ MessageSpeed = 0 ⇒ 一次性显示完（引擎走同步排空 sub_46CBF0）
+  const e0 = page(0);
+  assert.equal(e0.msgwin.revealedOf(9), 5, 'MessageSpeed=0 ⇒ 立即显示完');
+  assert.equal(e0.textRevealing, false);
+
+  // ④ 多行页：总时长 = 行数 × 节拍（引擎每帧补一行）
+  const { e: eLines, step: stepLines } = mk();
+  eLines.engineValues.set(21668, 5);
+  stepLines(0x80, [im(9)]);
+  stepLines(0x71, [im(9)]);
+  stepLines(0x70, [im(9), im(60), im(720), im(0), im(0)]); // 窄窗 ⇒ 5 字要折成多行
+  stepLines(0x6e, [im(0), str('あいうえお')]);
+  stepLines(0x72, [im(9)]);
+  const st = eLines.msgwin.reveal.get(9)!;
+  const laid = layoutWindow(9, { style: styleOfWin(eLines, 9), segments: eLines.msgwin.slot(9).segments });
+  assert.ok(laid.lines.length > 1, `窄窗应折成多行（实际 ${laid.lines.length} 行）`);
+  assert.equal(
+    st.budgetMs,
+    revealInterval(5) * laid.lines.length,
+    `预算 = 行数(${laid.lines.length}) × max(speed, 一帧)`,
+  );
+  assert.equal(laid.glyphCount, 5);
+
+  // ⑤ 点击先补完这一页（引擎 raw 20025-20030），再放行
+  const { e: eClick, step: stepClick } = mk();
+  eClick.engineValues.set(21668, 100);
+  stepClick(0x80, [im(9)]);
+  stepClick(0x6e, [im(0), str('あいうえお')]);
+  stepClick(0x72, [im(9)]);
+  eClick.serviceTextReveal(2 * FRAME);
+  assert.ok(eClick.msgwin.revealedOf(9) < 5, '慢速下应还在逐字');
+  eClick.input.setCursor(10, 10);
+  eClick.input.pressMouse(0);
+  assert.equal(eClick.serviceAdvanceWait(), true, '点击应放行等待门');
+  assert.equal(eClick.msgwin.revealedOf(9), 5, '放行前先补完整段');
+  assert.equal(eClick.awaitingAdvance, false);
 });
 
 test('★0x1B5 设消息速度（字段 + 注册表）：CONFIG 速度滑条走这条，不是 0x74', () => {

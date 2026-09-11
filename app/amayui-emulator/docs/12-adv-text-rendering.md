@@ -318,8 +318,10 @@ function raster(snap: TextStyleSnap, revealed: number, res: number): ICanvas
 | **S1 纯模型** | ✅ | `src/text/layout.ts`（等宽网格 / 边界硬断 / 注音配对 / 竖排换列 / 对齐 / 显现游标）、`src/text/fontSet.ts`（面名映射 + 剥 `@` 前缀）<br>`test/text-layout.test.ts`（13 例） |
 | **S2 光栅化 + 上屏** | ✅ | `src/renderer/text/raster.ts`（描边四档）、`src/renderer/text/fontLoader.ts`（经 IPC 读 `res/fonts` → `FontFace`）、`src/renderer/pixi/textLayer.ts`（按内容版本号重建纹理、层序 `20+win`）<br>合成器 `present(scene, clock, waitFlags, textSprites)` 把文本与 draw-item **按同一 layer 归并**（"文本永远最上层"是错的） |
 | **S3 参数面（P0）** | ✅ | `handlers/msgwin.ts` 新增 `0x70/0x75/0x79/0x80/0x197/0x198/0x1A5/0x1C1/0x260/0x2BD/0x2BE/0x2FE/0x303`；`0x76/0x77/0x78/0x8B/0x1A4/0x261` 由 `ENGINE_FIELD_STORE` 写字段后经 `after` 钩子发布样式 |
-| **S4 逐字显现** | ✅ | `MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf`（节拍 = `max(message:MessageSpeed, 一帧)`，**一次调用只推一个字、不跨节拍补齐**）+ `Engine.serviceTextReveal` + `MsgWinInput.revealed` → `TextFrame.revealed` → `TextLayer` 只画前 N 个字形。<br>★`0x71` = **开始一段新消息**（`sub_45EC60`：清该窗文本记录 + 复位显现游标，`MsgWindow.beginNewMessage`）；显现启动点 = `0x72`（LABEL_17：置等待门**同时**启动节拍）。跳读/自动模式与 `MessageSpeed=0` ⇒ 一次显示完。<br>`test/adv-msgwin.test.ts` 锁节拍/门/跳读三种情形 + `0x71` 清场回归（见事故复盘 5、6） |
-| **S4b 行淡入色窗** | ⏳ 待做 | DrawItem 颜色动画窗已建模，但未按 `MessageSpeed×MessageFade/100` 接到文本行上 |
+| **S4 逐字显现** | ✅ | `MsgWindow.beginReveal/finishReveal/tickReveal/tickRevealWin` + `Engine.serviceTextReveal` + `MsgWinInput.revealed` → `TextFrame.revealed` → `TextLayer` 只画前 N 个字形。<br>★**速度定律**：引擎一步 = **一行**、节拍 = `message:MessageSpeed`、节拍门 `sub_453B60` 把下限压在一帧 ⇒ **整段时长 = 行数 × max(MessageSpeed, 一帧)**；**MessageSpeed 越大越慢**（随包 5 = 一行一帧内出完；0 = 立即全显）。重写侧一步 = 一个**字**（逐字可见）但按「预算」推进（`budgetMs = 行数 × max(speed, 一帧)` + `carry`）⇒ 总时长与引擎一致。<br>★`0x71` = **开始一段新消息**（`sub_45EC60`：清该窗文本记录 + 复位显现游标，`MsgWindow.beginNewMessage`）；显现启动点 = `0x72`（LABEL_17：置等待门**同时**启动节拍）。跳读/自动模式与 `MessageSpeed=0` ⇒ 一次显示完。<br>`test/adv-msgwin.test.ts` 锁**速度定律**/门/跳读 + `0x71` 清场回归（见事故复盘 5、6） |
+| **S4a 字格逐字（引擎真机制）** | ✅ | `0x73`（`MsgWindow.setCharGrid`：字格 + `win+88` 总门 + op10 节拍）、`0x1CE`（逐字开关：置 `effect_flags & 0x40000000` + `Engine[107704]=0`；v=0 收尾）、`0x72` 尾段武装（`Engine[107704]/[107705]`）、`0x20A`（重排重画，游标不动）、`0x304`/`0x305`（文本块括号）、`Engine.serviceTextReveal` 每步推一格 + `Engine.endCharReveal`、点击推进先收尾。<br>字格页（`i073`，全库 27 处 = 序章 SN0000 / NOVEL / SYSTEM4）节拍改用 `0x73` op10（100ms/字）。<br>`test/char-reveal.test.ts`（9 例，含真实序章页序列 `i304→show-text→i305→i073→wait-for-input→点击→i071`） |
+| **S4b 0x300 每窗闸门（CONFIG 消息预览的循环）** | ✅ | `Engine.serviceWinReveal`（= `sub_409400` 第一循环 raw 13838-13888）：`0x300 <win> <flags> <ms>` 开闸（bit0）+ 停留 ms → 逐帧从 `win+132` 贴出一字 → 整段贴完后记完成时刻 → 过 `ms` 清绘制项（`native.msgWinClear`）并把游标归零（**闸门位仍为 1**）⇒ **贴出 → 停留 → 消失 → 重来**，无限循环；关闸（`i300 win 0 0`）排空余下并清 bit16/延时。`0x301` 顺带按 `sub_404F80` 语义把游标归零重贴。<br>★闸门窗**不算**「显现中」（`MsgWindow.isRevealing` 过滤）：引擎在同一帧照常派发脚本指令（raw 21179 `goto LABEL_215`），否则 CONFIG 屏会被挂起。<br>★闸门窗的**可见性完全由泵决定**：`revealedOf` 在闸门开着而泵尚未贴出时返回 **0**（不是 -1）——否则 `show-text` 写完就整段直接出现，表现为「进设置时 ADV 文案先于背景出现」（2026 实测）；背景侧的异步加载错位由**纹理帧屏障**兜住（见 `docs/10-texture-slot-to-agf-file.md` §4.3）。<br>`test/char-reveal.test.ts`（闸门循环/关闸/贴出前不可见）+ `test/config1-chain.test.ts`（真实 CONFIG1 链路：整段贴出 → 清场 0 → 重新递增） |
+| **S4c 行淡入色窗** | ⏳ 待做 | DrawItem 颜色动画窗已建模，但未按 `MessageSpeed×MessageFade/100` 接到文本行上 |
 | **S5 回写与布局参数** | ⏳ 待做 | `0x7F`/`0x2DE`/`0x74`/`0x1B5`/`0x1B9`/`0x2E7`/`0x2E8`/`0x2CD` 已实现；`0x83/0x1C5/0x2C2/0x2F3` 仍为 no-op（**不得当 no-op**，属静默错误） |
 | **S6 低优先级** | ⏳ 待做 | 回看页表（`0x84`/滚轮）与 **`Font+3364` 记录表读取端**（`0x1D0/0x1D3/0x1D4/0x2F3`，会回写操作数 ⇒ 必须真实现）；字体内部配置（R7b，仅登记字段） |
 
@@ -394,17 +396,23 @@ text win=9 rect=(324,570,824,120) 竖排 align=0 main=30px ruby=10px outline=3
 ⇒ 有效节拍 = `max(MessageSpeed, 一帧)`；`MessageSpeed=5` 时上限就是帧率。
 补齐写法把它变成 `MessageSpeed` ms/字（5ms ⇒ 200 字/秒），是它的 **约 3.3 倍**。
 
-**修法**（`src/vm/msgwin.ts`）：
-- 一次调用**最多推一个字**，`nextAt = now + max(speed, REVEAL_FRAME_MS)`；
-- `REVEAL_FRAME_MS = 1000/60` 必须显式写出来 —— 会话循环里的 `present()` 是同步调用
+**修法**（`src/vm/msgwin.ts`，2026-09 二次修正）：
+- 一步 = **一个字**（逐字可见），但按「预算」推进：`budgetMs = 行数 × max(MessageSpeed, 一帧)`，
+  速率 = `total / budgetMs`，`carry` 保存分数余量 ⇒ **整段时长与引擎一致**；
+- `REVEAL_FRAME_MS = 1000/60` 必须显式参与（节拍下限）：会话循环里的 `present()` 是同步调用
   （不等 vsync），一帧之内会空转很多轮 `serviceTextReveal`，没有这个下限就等于无限速；
-- 守卫：`test/adv-msgwin.test.ts` 断言"跨 10 帧也只推 1 个字"与"`MessageSpeed=100` 时 100ms 才是节拍"。
+- 守卫：`test/adv-msgwin.test.ts` 的「速度定律」用例（`MessageSpeed=5` 一行一帧出完、
+  `100` 明显更慢、`0` 立即全显、多行页 `budget = 行数 × 节拍`）。
 
-**★与引擎的有意偏离（必须写明）**：引擎的 `sub_45BE20` 推的是**一行**（24B 行矩形 ⇒ 一次贴一行，
-3 行的一页 ≈ 3 帧 ≈ 50ms，视觉上是"整页瞬间出现"）；真正的逐字只有网格模式那条路
-（`effect_flags & 0x40000000` + `sub_453AF0(Engine+430600)` + `sub_45A940`，节拍来自 `0x73` op10，
-且脚本侧仅 `i073` 27 处会开）。宿主把整窗光栅化、按"前 N 个字形"渲染，所以这里刻意把
-"一帧一步"映射成"一帧一个字"，以便逐字可见（见 `src/vm/msgwin.ts` 的 `REVEAL_FRAME_MS` 注释）。
+**★与引擎的偏离只剩"步长单位"**：引擎的 `sub_45BE20` 推的是**一行**（24B 行矩形 ⇒ 一次贴一行），
+重写侧为了逐字可见改成**一个字**；但**时长对齐**（见上）。引擎真正的逐字（网格模式）
+另一条路也已实现：`effect_flags & 0x40000000` + `sub_453AF0(Engine+430600)` + `sub_45A940`，
+节拍来自 `0x73` op10，脚本侧 `i073` 27 处（见 §9 的 S4a 行）。
+
+**★同一处踩过的两个坑（别再改回去）**：
+1. 曾把 `MessageSpeed` 当**每字**间隔并"跨节拍补齐"（5ms/字 ≈ 200 字/秒）⇒ 文字出得太快；
+2. 改成"一帧只推一个字"后单位从行变成字、却没补回时长 ⇒ 同一 `MessageSpeed` 下整段耗时
+   变成引擎的"每行字数"倍（19 字一行 ⇒ 慢约 19 倍），2026-09 实测反馈"变慢了"。
 
 ### 事故复盘 6：「回到主界面后文字又画在主界面之上」
 

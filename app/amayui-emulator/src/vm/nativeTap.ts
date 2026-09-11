@@ -196,6 +196,7 @@ const BRIDGE_METHODS = [
   'sleep',
   'startFrameLoop',
   'stringResourceId',
+  'texturesIdle',
   'unhandled',
 ] as const;
 

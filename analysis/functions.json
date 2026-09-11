@@ -3472,12 +3472,12 @@
     "semantic_name": "op_wait_for_input_41EEF0",
     "op": "0x72",
     "status": "PARTIAL",
-    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 与 0x71 同构地按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽。",
-    "sub_behaviors": ["sub_4780D0(Engine+258,&mask)；mask |= 0x40 if Engine+1415", "未显示完（!122455 && !(mask&0x40)）⇒ 清 0x8000000 + 冲 3 个消息槽 sub_4BB840(Engine+21032, i, slot, ..., +122505 区)", "仍激活 ⇒ 再刷一次输入并置 effect_flags |= 0x80000000（bit31），清输入掩码"],
+    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 与 0x71 同构地按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽；★末尾 LABEL_17（raw 28539-28554）还是**逐字渲染的启动点**：Engine[122371] = 窗 → sub_45A940(Font, 窗, -1, Engine+107705) 查询（把 win+92 写进模数槽）→ 置 bit31 等待门 → 若 bit30 未置则置 0x40000000 + Engine[107704] = 0 + sub_453A90(Engine+430600) 重启节拍。",
+    "sub_behaviors": "[\"sub_4780D0(Engine+258,&mask)；mask |= 0x40 if Engine+1415\",\"未显示完（!122455 && !(mask&0x40)）⇒ 清 0x8000000 + 冲 3 个消息槽 sub_4BB840(Engine+21032, i, slot, ..., +122505 区)\",\"仍激活 ⇒ 再刷一次输入并置 effect_flags |= 0x80000000（bit31），清输入掩码\",\"★LABEL_17：Engine[122371] = 窗（当前消息窗）+ Engine[107705] = win+92（sub_45A940 的 -1 查询 = 字格数/模数）\",\"★LABEL_17：若 effect_flags & 0x40000000 == 0 ⇒ |= 0x40000000（逐字模式）+ Engine[107704] = 0（游标归零）+ sub_453A90(Engine+430600)（重启节拍）—— 即每次 wait-for-input 都重新武装逐字\"]",
     "fields_used": ["Engine+699204", "Engine+122455", "Engine+122496", "Engine+1415", "Engine+97050", "Engine+174405(config)", "Engine+122505 区(3 槽)"],
-    "unmodeled": ["同 0x71：文本对象与消息槽区未建模", "sub_4780D0/sub_4BB840/sub_48E870/sub_48F000"],
+    "unmodeled": "[\"同 0x71：文本对象与消息槽区未建模\",\"sub_4780D0/sub_4BB840/sub_48E870/sub_48F000\",\"Engine+21032（消息回调容器）\"]",
     "evidence": "raw 28482-28600",
-    "notes": "0x72 与 0x71 共用同一套「ReadTextSkip 门 + 分段查表 + ADV 置位」骨架，区别在输入掩码与消息槽交付。"
+    "notes": "0x72 与 0x71 共用同一套「ReadTextSkip 门 + 分段查表 + ADV 置位」骨架，区别在输入掩码、消息槽交付与末尾的逐字启动（LABEL_17）。★逐字渲染的真正入口在这里，不是 0x73（0x73 只设字格与节拍）。"
   },
   {
     "addr": "0x41EB20",
@@ -3983,13 +3983,13 @@
     "addr": "0x45A940",
     "raw_name": "sub_45A940",
     "semantic_name": "text_reveal_step_grid_45A940",
-    "status": "PARTIAL",
-    "purpose": "**网格版**单字显现：a3=-1 ⇒ 查询（*a4 = win+92，即每行字符上限）；a3=-2 ⇒ 收尾（sub_4AB950 发布该窗纹理）；否则按 col=a3%win+96 / row=a3/win+96 与字格 win+64..+76 算源矩形，D3D 路径 sub_4ACE50 / dd 路径在 sub_454F60 族里 blit。**总门 = win+88（只由 0x73/0x2BC 置 1）**",
-    "sub_behaviors": ["a3==-1 查询 *a4 = win+92", "a3==-2 sub_4AB950 发布纹理", "a3>=0 按网格算源矩形并出图", "win+88==0 ⇒ 整个函数无副作用"],
-    "fields_used": ["FontVWindow+88/+92/+96/+64..+76", "FontVWindow+8/+4", "Font+1040"],
-    "unmodeled": ["win+88 之外的置 1 路径（若有）"],
+    "status": "ANALYZED",
+    "purpose": "**字格版单字显现**（逐字渲染的执行者）：总门 win+88（0x73/0x2BC 写 1）为 0 时整个函数无副作用；a3=-1 ⇒ 查询 *a4 = win+92（字格数，0x72 取走当模数）并把整段一次性贴出；a3=-2 ⇒ 收尾（把整段贴出；D3D 走 sub_4AB950 发布纹理）；a3>=0 ⇒ 取第 k 格：col = k % win+96、row = k / win+96，源矩形 = (col*(win+72-win+64)+win+64, row*(win+76-win+68)+win+68) 与格尺寸 (win+72-win+64, win+76-win+68)，目标 = 最后一条 24B 行记录 + win+80/win+84；D3D 走 sub_4ACE50 建 DrawItem（id = win+100），GDI 走 ddCpySpriteSurfaceFast(sub_43D870) 两段 blit。",
+    "sub_behaviors": "[\"win+88==0 ⇒ 直接返回（普通 ADV 不走逐字的原因）\",\"a3==-1 ⇒ *a4 = win+92（字格数）+ 整段贴出（0x72 的查询路径）\",\"a3==-2 ⇒ 整段收尾（点击推进 / 0x1CE 0 走这条）\",\"a3>=0 ⇒ 单格 blit：col=k%win+96、row=k/win+96、格尺寸 (win+72-win+64, win+76-win+68)\",\"D3D 路径（Engine+667856==1）⇒ sub_4ACE50 建 DrawItem，id 基址 win+100；Engine+348==1 时 sub_4572A0/sub_4AC750 做对齐平移\",\"GDI 路径 ⇒ sub_43D870(ddCpySpriteSurfaceFast) 把格贴进暂存面再把 (op7,0)-(2*op7,op8) 区贴到 win+80/84+末行记录 处\"]",
+    "fields_used": "[\"FontVWindow+88(总门)\",\"FontVWindow+92/+96(= 0x73 op9：字格数/列数)\",\"FontVWindow+64/+68/+72/+76(格原点与格尺寸)\",\"FontVWindow+80/+84(0x73 op2/op3：目标偏移)\",\"FontVWindow+60(0x73 op4：源表面)\",\"FontVWindow+100(DrawItem id 基址)\",\"FontVWindow+44/+48(24B 行记录向量：目标取末条记录)\",\"Engine+667856(DrawMode)\",\"Engine+348(对齐开关)\"]",
+    "unmodeled": "[\"D3D 的 sub_4ACE50/sub_4AC750/sub_4AB950 参数细节\",\"GDI 的暂存面 0x21（33）语义\",\"Engine+339 > 2 分支\"]",
     "evidence": "raw 71296-71474",
-    "notes": "★win+88 只由 0x73/0x2BC 置 1 ⇒ 网格版只在 NOVEL/SN0000/SYSTEM4 生效（i073 全工程 27 处）"
+    "notes": "★关键结论：主循环（raw 20892-20893）用 `Engine[107704]` 当游标、`Engine[107705]`（= win+92 = 0x73 op9）当**模数**逐步调用本函数 ⇒ 引擎的逐字循环步进的是**字格**，模数是字格数（NOVEL/SN0000 的 op9 = 8/10 是\"每行字数\"）。★`win+88` 只由 `0x73`（sub_456430）与 `0x2BC`（sub_4564A0，脚本 0 次使用）置 1。"
   },
   {
     "addr": "0x409400",
@@ -4001,7 +4001,7 @@
     "fields_used": ["Engine+86672", "Engine+699204", "Engine+699208", "Engine+489484", "Engine+122464", "Engine+388212"],
     "unmodeled": ["sub_4780D0/sub_478090（输入泵）", "Engine+7796/12957 等键位字段"],
     "evidence": "raw 13780-13970",
-    "notes": "★这是\"逐字显示\"的真正每帧驱动，属第二层能力（枚举 opcode 看不出来）"
+    "notes": "★逐字/逐行显现泵（第二层能力）。**速度定律**（raw 13857-13964）：一步 = 一行（sub_45BE20）、节拍 = Engine+86672（message:MessageSpeed，GDI 路径直接 Sleep 它）、节拍门 sub_453B60 把每步下限压在一帧 ⇒ 整段时长 = 行数 × max(MessageSpeed, 一帧)；MessageSpeed=0 ⇒ do{}while(!sub_45BE20()) 一次排空。字格路径（effect_flags & 0x40000000）另有 sub_453AF0 + sub_45A940 的一次一格循环（节拍 = 0x73 op10）。"
   },
   {
     "addr": "0x4090F0",
@@ -4501,11 +4501,12 @@
     "semantic_name": "op_msgwin_slot_flags_426990",
     "op": "0x300",
     "status": "ANALYZED",
-    "purpose": "消息槽标志/取值：读 op1=槽、op2=标志、op3=值；Engine[槽+122466] = op2 | (旧值 & 0x10000)（保留 bit16），Engine[槽+122476] = op3",
+    "purpose": "消息槽闸门/取值：读 op1=槽、op2=标志、op3=值；Engine[槽+122466] = op2 | (旧值 & 0x10000)（保留 bit16 = 「已被逐行贴出泵接管」），Engine[槽+122476] = op3（贴出完成后的停留 ms）。这两组字段是 sub_409400 第一个窗口循环的**输入**：bit0 = 逐行贴出闸门、bit16 = 已接管、+122476 = 自动清场延时。",
     "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读 op1/op2/op3", "写 Engine[op1+122466]（保留 bit16）", "写 Engine[op1+122476]"],
+    "sub_behaviors": "[\"读 op1/op2/op3\",\"写 Engine[op1+122466]（= op2，保留 bit16）\",\"写 Engine[op1+122476] = op3（贴完后停留 ms）\",\"CONFIG.txt:171 `i300 9 1 3e8` = 打开窗 9 的逐行贴出并 1000ms 后清场（消息显示预览的循环演示）；CONFIG.txt:195 `i300 9 0 0` = 关闸\"]",
     "fields_used": ["Engine+489864(= 122466*4)", "Engine+489904"],
-    "evidence": "raw 33743-33757"
+    "evidence": "raw 33743-33757",
+    "notes": "★消费端在 sub_409400 第一循环（raw 13838-13888）：闸门开着时每帧从 win+132 贴出一行，整段贴完后记时刻、过 +122476 ms 调 sub_404F80 清绘制项并把 win+132 归零 —— **闸门位仍为 1** ⇒ 下一帧重新贴一遍（无限循环）。"
   },
   {
     "addr": "0x4269F0",
@@ -4517,7 +4518,8 @@
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["读 op1=槽", "Engine[op1+122486] = 0", "sub_404F80(Font, op1)", "sub_4ABB60(Scene, +104, +108) 与 (+276, +280)"],
     "fields_used": ["Engine+489944", "FontVWindow+132", "FontVWindow+104", "FontVWindow+108", "FontVWindow+276", "FontVWindow+280"],
-    "evidence": "raw 33759-33766；sub_404F80 raw 10741-10763"
+    "evidence": "raw 33759-33766；sub_404F80 raw 10741-10763",
+    "notes": "★`sub_404F80` **不清文本记录**，只把显现游标 win+132 归零并删绘制项 ⇒ 闸门（0x300）开着时下一次泵调用从第一行重新贴出（这正是 CONFIG 预览\"消失后重来\"的那一步）。"
   },
   {
     "addr": "0x42D440",
@@ -4783,6 +4785,104 @@
     "fields_used": ["Engine+680092(资源表)", "Engine+387924(主窗口)", "Engine+322832(Live2D 管理器)"],
     "unmodeled": ["sub_4A1970 内部"],
     "evidence": "raw 34519-34548"
+  },
+  {
+    "addr": "0x420280",
+    "raw_name": "sub_420280",
+    "semantic_name": "op_char_reveal_switch_420280",
+    "op": "0x1CE",
+    "status": "ANALYZED",
+    "purpose": "逐字显现开关：读 op1 两次（同一操作数）→ Engine[107706] = op1；op1≠0 ⇒ effect_flags |= 0x40000000 + Engine[107704] = 0（游标归零）+ sub_453A90(Engine+430600)（重启节拍）；op1=0 ⇒ 若 bit30 已置则（且 effect_flags & 0x100000 == 0 时）sub_45A940(Font, Engine[122371], -2, 0) 整段收尾，然后清 bit30。",
+    "sub_behaviors": ["Engine[107706] = op1（模式参数副本）", "op1≠0：置 0x40000000、Engine[107704] = 0、重启 Engine+430600 计时器", "op1=0：k==-2 收尾（把整段文本贴出）+ 清 0x40000000", "effect_flags & 0x100000（快速/跳读）置位时跳过收尾贴出"],
+    "fields_used": ["Engine+699204(effect_flags)", "Engine+107704(逐字游标)", "Engine+107706(模式参数)", "Engine+430600(逐字节拍计时器)", "Engine+122371(当前消息窗)"],
+    "unmodeled": ["Engine+100000(0x100000)位的确切语义（快速/跳读）"],
+    "evidence": "raw 29329-29351",
+    "notes": "★全库只有 i1ce 0（0 处 i1ce 非0）—— 真正的逐字启动点是 0x72 的 LABEL_17（raw 28551）。"
+  },
+  {
+    "addr": "0x423620",
+    "raw_name": "sub_423620",
+    "semantic_name": "op_window_relayout_423620",
+    "op": "0x20A",
+    "status": "ANALYZED",
+    "purpose": "按当前状态重排并重画消息窗：sub_45AD30(Font, op1) 重排该窗文本；随后取 (Engine[124350] ? Engine[95779] : effect_flags) 判 0x40000000，若在逐字模式则用**当前** Engine[107704] 再调一次 sub_45A940(Font, op1, k, 0) 重贴当前字格（游标不动）。",
+    "sub_behaviors": ["sub_45AD30(Font, win) 重排该窗文本（行记录/120B 记录重算）", "若逐字模式（bit30 via Engine[95779]/effect_flags）⇒ sub_45A940(Font, win, Engine[107704], 0) 重贴当前格"],
+    "fields_used": ["Engine+85296(文本对象)", "Engine+699204(effect_flags)", "Engine+95779", "Engine+124350", "Engine+107704(逐字游标)"],
+    "unmodeled": ["sub_45AD30 的重排细节（行记录重算）"],
+    "evidence": "raw 31546-31566",
+    "notes": "脚本侧 1011 处；emulator 里这条过去**未注册**（命中即 NotImplementedOp 硬报错）。"
+  },
+  {
+    "addr": "0x41A420",
+    "raw_name": "sub_41A420",
+    "semantic_name": "op_text_block_begin_41A420",
+    "op": "0x304",
+    "status": "ANALYZED",
+    "purpose": "文本块开始（argc=0）：Engine[122497] = 1（注音/内嵌模式位，赋值）→ 取当前消息窗对象（Engine[122371] 或默认窗 Engine[21631]）并把 +296 = +132（**保存当前行游标**）。",
+    "sub_behaviors": ["Engine[122497] = 1（0x6E 之后走 sub_46BE30 的注音/内嵌分支）", "win 对象 +296 ← +132（保存行游标）"],
+    "fields_used": ["Engine+122497", "Engine+122371", "Engine+21631", "FontVWindow+132/+296"],
+    "unmodeled": ["+296 的其他读者（0x305 取回）"],
+    "evidence": "raw 24610-24625",
+    "notes": "与 0x305 成对：序章 SN0000 每页 `i304 → show-text… → i305 → i073 → wait-for-input`。"
+  },
+  {
+    "addr": "0x41B1C0",
+    "raw_name": "sub_41B1C0",
+    "semantic_name": "op_text_block_end_41B1C0",
+    "op": "0x305",
+    "status": "PARTIAL",
+    "purpose": "文本块结束（argc=0）：取当前窗对象 → win+132 = win+296（**取回行游标**）→ message:ReadTextSkip 门 + sub_48E870/sub_48F000 判 ADV（置 0x8000000 或清 122455）→ 若 MessageSpeed 非 0 且 ADV 未置则入队 + 置 0x20000000 + sub_453A60(Engine+430572, ms)；否则 `while (!sub_45BE20(Font, 窗))`（**把余下的行一次性贴出**）→ 收尾清 0x20000000 / 或 D3D 路径的 sub_453B60 分支。",
+    "sub_behaviors": ["win+132 = win+296（取回 0x304 保存的游标）", "ReadTextSkip 门 + sub_48F000 ⇒ 置 0x8000000 / 清 122455", "MessageSpeed 非 0 且非 ADV ⇒ 0x20000000 + sub_453A60 定时；否则 while(!sub_45BE20) 排空所有行", "Engine+489988（0x10001 掩码）控制是否走上面那段"],
+    "fields_used": ["Engine+383104(frames)", "Engine+489988", "Engine+489484(当前消息窗)", "Engine+86524(默认窗)", "Engine+86672(MessageSpeed)", "Engine+699204(effect_flags)", "Engine+697620(配置)", "FontVWindow+132/+296"],
+    "unmodeled": ["sub_45BE20 的行 blit 细节（见 sub_45BE20 条目）", "Engine+369344/+369352 等 D3D 收尾字段"],
+    "evidence": "raw 25096-25170",
+    "notes": "与 0x304 成对；语句级作用 = 把这一页的文本整段排空并贴出（emulator 侧对应 finishReveal）。"
+  },
+  {
+    "addr": "0x453AD0",
+    "raw_name": "sub_453AD0",
+    "semantic_name": "timer_set_period_453AD0",
+    "status": "ANALYZED",
+    "purpose": "设节拍计时器周期：`_this[6] = (a2 ? a2 : 1)`（0 取 1）。逐字渲染里由 0x73 op10 调用（Engine+430600）。",
+    "sub_behaviors": ["周期 0 归一到 1ms"],
+    "fields_used": ["Timer+24(period)"],
+    "evidence": "raw 66137-66146",
+    "notes": "与 sub_453AF0（阻塞式步进）/sub_453B60（非阻塞询问）/sub_453A90（重启）同族，共 4 个计时器实例（Engine+430572 消息速度 / +430600 逐字 / +107545 自动翻页）。"
+  },
+  {
+    "addr": "0x453AF0",
+    "raw_name": "sub_453AF0",
+    "semantic_name": "timer_step_blocking_453AF0",
+    "status": "ANALYZED",
+    "purpose": "**阻塞式**节拍步进（逐字显现用）：暂停位（_this[4]）置位 ⇒ -1；否则算 elapsed = timeGetTime()-start；若 period*steps - elapsed >= 5 ⇒ -1（还没到点）；若差值 > 0 则 Sleep(差值) 补到点；然后 result = elapsed/period - steps（跨过的步数）、steps = elapsed/period + 1 ⇒ 返回 >= 0 表示「该走一步」。",
+    "sub_behaviors": ["暂停位 ⇒ -1", "未到点（>=5ms）⇒ -1（调用方这一帧不推进）", "差 1..4ms ⇒ Sleep 补齐后推进", "steps 直接跳到 elapsed/period + 1（**不补步**：调用方每帧仍只走一步）"],
+    "fields_used": ["Timer+4(暂停)", "Timer+8(steps)", "Timer+24(period)", "Timer+16(累计 elapsed)"],
+    "evidence": "raw 66149-66186",
+    "notes": "★这就是逐字的节拍门（主循环 raw 20889）；与 sub_453B60（非阻塞版，用于逐行贴出）区别只在是否 Sleep。"
+  },
+  {
+    "addr": "0x453A90",
+    "raw_name": "sub_453A90",
+    "semantic_name": "timer_restart_453A90",
+    "status": "ANALYZED",
+    "purpose": "重启节拍计时器（清零 steps + 记录起点时间）：逐字模式启动时由 0x72/0x1CE 调用（Engine+430600），消息速度/自动翻页用同族函数重启各自实例。",
+    "sub_behaviors": ["steps = 0 且以 timeGetTime() 为起点"],
+    "fields_used": ["Timer"],
+    "evidence": "raw 66100-66136",
+    "notes": "0x72 raw 28553 与 0x1CE raw 29339 都调它 ⇒ 每次武装逐字都会重置节拍相位。"
+  },
+  {
+    "addr": "0x422CB0",
+    "raw_name": "sub_422CB0",
+    "semantic_name": "op_set_texture_422CB0",
+    "op": "0x1F9",
+    "status": "ANALYZED",
+    "purpose": "set-texture <imgid> <slot> <color>：先释放该槽已有对象（sub_488FB0 + 虚析构）→ sub_4559C0(FileSource, imgid, &size) **同步打开图像文件** → sub_455560 取文件句柄 → sub_4A3800(Scene, imgid, hFile, slot, COLORREF, 0) **同步解码并装进 CTexture 槽** → sub_455C60 关闭。失败抛 Command_ShowMessage（画像ファイル %s の読み込みに失敗しました）。",
+    "sub_behaviors": ["释放目标槽旧对象", "sub_4559C0：CreateFile/ReadFile 读图像文件（同步）", "sub_4A3800：解码并装入槽（同步；失败抛 ShowMessage）", "op3 = 颜色：v6 < 0 ⇒ 0；否则 COLORREF(BGR) 重排为 RGB", "整条指令返回时槽里已经有像素 ⇒ **同帧 draw-texture 必然画得出来**"],
+    "fields_used": ["Engine+680092(FileSource)", "Engine+387924", "Engine+4*slot+378688(槽对象表)", "Engine+322832(Scene)", "Engine+8(错误缓冲)"],
+    "unmodeled": ["sub_4A3800 内部解码细节", "sub_488FB0 的释放语义"],
+    "evidence": "raw 31191-31230",
+    "notes": "★这条的**同步性**是版面一致性的前提：引擎在同一指令内完成 读文件+解码+装槽 ⇒ 一帧之内「绑定 + 绘制」不会错位。重写侧若把加载做成异步（如 Electron renderer 走 IPC），必须补帧屏障（见 emulator 的 TextureCache.waitIdle / native.texturesIdle）。"
   }
 
 ]
