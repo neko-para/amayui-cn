@@ -215,12 +215,22 @@ function raster(snap: TextStyleSnap, revealed: number, res: number): ICanvas
 
 ### 5.4 字体（必须显式解决）
 
+> ★**2026-09 修正（实施现状以 `src/text/fontSet.ts` 为准）**：汉化随包字体**只有**
+> `Amayui-CN_cnjp.ttf`（`patch/patch.config.json` 的字体条目也只同步这一个），且汉化说明要求把
+> **全部**字体分类（説明文 / パラメータ文字/数字 / ＡＤＶルビ / ＡＤＶメッセージ）都设为 `Amayui CN`
+> ⇒ **所有引擎面名一律渲染为 `Amayui CN`**。旧 WenQuanYi 线（`MSGothic_WenQuanYi_cnjp.ttf`，
+> 族名伪装成 `MS Gothic`）已废弃，**不再是任何面名的落地字族**
+> —— 历史错误：`メイリオ` 被映射到它，ADV 正文实际用 WenQuanYi 渲染
+> （日志实证 `[font] MS Gothic#400 ← MSGothic_WenQuanYi_cnjp.ttf（4880KB）`）。
+
 | 引擎侧 | emulator 映射 |
 |---|---|
 | `message:Font`（随包 = `Amayui CN`） | 内嵌 `res/fonts/Amayui-CN_cnjp.ttf`（汉化版） |
-| `ＭＳ ゴシック` / `MS Gothic` | Sarasa Gothic SC（`res/fonts/SarasaGothicSC/`） |
-| `ＭＳ 明朝` / `MS Mincho` | Mincho/Serif CJK（缺则回退 Sarasa Gothic 并**记录一次告警**） |
-| `メイリオ` / `Meiryo` | Sarasa Gothic SC |
+| `メイリオ` / `Meiryo`（`bbb`/`bbf` = 消息窗主字体） | `Amayui CN`（`res/fonts/Amayui-CN_cnjp.ttf`） |
+| `ＭＳ ゴシック` / `MS Gothic`（`bbc`/`bbe`，含注音面） | `Amayui CN` |
+| `游ゴシック` / `Yu Gothic`（`bbd`） | `Amayui CN` |
+| `ＭＳ 明朝` / `MS Mincho` | `Amayui CN`（随包无 Mincho 面） |
+| 其它未知面名 | 回退默认字族 `Amayui CN` 并**记录一次告警** |
 
 - 引擎的字体名白名单来自 `EnumFontFamilies`（raw 74146-74171，`Font+201664`），
   `0x1A5`/`0x2FE` 会对不在表内的名字打警告（raw 41385/41613）。emulator 的"表"就是上面的映射表；
@@ -237,7 +247,7 @@ function raster(snap: TextStyleSnap, revealed: number, res: number): ICanvas
 | **S1 纯模型** | `layout.ts` + `fontSet.ts` 的映射表；`msgwin` 增加 `textStyle` 快照字段 | 单测：等宽推进 / 边界断行 / 注音居中 / 竖排换列 / 对齐 / 显现游标；`npm run report` 的 txt 快照里出现每窗文本与游标 |
 | **S2 光栅化 + 上屏** | `raster.ts` + `textLayer.ts`；描边四档（§5.3 表）+ 层序 `20+win` | 目视：CONFIG1 样例窗（窗 9，824×120 @ (324,570)，竖排，字号 30，粗体，白字 + 描边，注音 10px）显示正确 |
 | **S3 参数面（P0：观感）** | `0x70/0x75/0x76/0x77/0x78/0x79/0x80/0x8B/0x1A4/0x197/0x198/0x1A5/0x1C1/0x261/0x2BD/0x2FE` —— **其中描边/颜色/字号是阅读体验，必须逐档可配** | 每个 opcode 一条 E2 断言 + 一条 CONFIG1/真实脚本的 E3 场景断言；描边四档各一张截图对照 |
-| **S4 显现与淡入** | `0x1CE/0x20A` + 行级显现 + `MessageSpeed` 节拍 + 行 alpha 动画窗（复用现有 draw-item 色窗） | 状态机测试：`0x71`→逐行→`0x72` 挂起→点击推进；时长 = `Speed*Fade/100` |
+| **S4 显现与淡入** | `0x1CE/0x20A` + 行级显现 + `MessageSpeed` 节拍 + 行 alpha 动画窗（复用现有 draw-item 色窗） | 状态机测试：`0x71`（清场/开始新消息）→写文本→`0x72` 挂起→点击推进；时长 = `Speed*Fade/100` |
 | **S5 回写与布局参数** | `0x7F/0x83/0x1C5/0x2C2/0x2F3/0x2DE`（**不得当 no-op**）+ `0x303` 对齐 | 每条断言"操作数被写入且值来自模型" |
 | **S6 低优先级** | 回看页表（`0x84`/滚轮）、字体内部配置（R7b）| 按需；字段已在数据层登记 |
 
@@ -308,7 +318,7 @@ function raster(snap: TextStyleSnap, revealed: number, res: number): ICanvas
 | **S1 纯模型** | ✅ | `src/text/layout.ts`（等宽网格 / 边界硬断 / 注音配对 / 竖排换列 / 对齐 / 显现游标）、`src/text/fontSet.ts`（面名映射 + 剥 `@` 前缀）<br>`test/text-layout.test.ts`（13 例） |
 | **S2 光栅化 + 上屏** | ✅ | `src/renderer/text/raster.ts`（描边四档）、`src/renderer/text/fontLoader.ts`（经 IPC 读 `res/fonts` → `FontFace`）、`src/renderer/pixi/textLayer.ts`（按内容版本号重建纹理、层序 `20+win`）<br>合成器 `present(scene, clock, waitFlags, textSprites)` 把文本与 draw-item **按同一 layer 归并**（"文本永远最上层"是错的） |
 | **S3 参数面（P0）** | ✅ | `handlers/msgwin.ts` 新增 `0x70/0x75/0x79/0x80/0x197/0x198/0x1A5/0x1C1/0x260/0x2BD/0x2BE/0x2FE/0x303`；`0x76/0x77/0x78/0x8B/0x1A4/0x261` 由 `ENGINE_FIELD_STORE` 写字段后经 `after` 钩子发布样式 |
-| **S4 逐字显现** | ✅ | `MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf`（节拍 = `max(message:MessageSpeed, 一帧)`，**一次调用只推一个字、不跨节拍补齐**）+ `Engine.serviceTextReveal` + `MsgWinInput.revealed` → `TextFrame.revealed` → `TextLayer` 只画前 N 个字形。<br>启动点与引擎一致：`0x71`（呈现）与 `0x72`（LABEL_17：置等待门**同时**启动节拍）。跳读/自动模式与 `MessageSpeed=0` ⇒ 一次显示完。<br>`test/adv-msgwin.test.ts` 锁节拍/门/跳读三种情形（见事故复盘 5） |
+| **S4 逐字显现** | ✅ | `MsgWindow.beginReveal/finishReveal/tickReveal/revealedOf`（节拍 = `max(message:MessageSpeed, 一帧)`，**一次调用只推一个字、不跨节拍补齐**）+ `Engine.serviceTextReveal` + `MsgWinInput.revealed` → `TextFrame.revealed` → `TextLayer` 只画前 N 个字形。<br>★`0x71` = **开始一段新消息**（`sub_45EC60`：清该窗文本记录 + 复位显现游标，`MsgWindow.beginNewMessage`）；显现启动点 = `0x72`（LABEL_17：置等待门**同时**启动节拍）。跳读/自动模式与 `MessageSpeed=0` ⇒ 一次显示完。<br>`test/adv-msgwin.test.ts` 锁节拍/门/跳读三种情形 + `0x71` 清场回归（见事故复盘 5、6） |
 | **S4b 行淡入色窗** | ⏳ 待做 | DrawItem 颜色动画窗已建模，但未按 `MessageSpeed×MessageFade/100` 接到文本行上 |
 | **S5 回写与布局参数** | ⏳ 待做 | `0x7F`/`0x2DE`/`0x74`/`0x1B5`/`0x1B9`/`0x2E7`/`0x2E8`/`0x2CD` 已实现；`0x83/0x1C5/0x2C2/0x2F3` 仍为 no-op（**不得当 no-op**，属静默错误） |
 | **S6 低优先级** | ⏳ 待做 | 回看页表（`0x84`/滚轮）与 **`Font+3364` 记录表读取端**（`0x1D0/0x1D3/0x1D4/0x2F3`，会回写操作数 ⇒ 必须真实现）；字体内部配置（R7b，仅登记字段） |
@@ -438,7 +448,7 @@ text win=9 rect=(324,570,824,120) 竖排 align=0 main=30px ruby=10px outline=3
 
 ```
 字号/字重     : main=30px weight=700 ruby=10px
-字族          : main="Sarasa Gothic SC" ruby="Sarasa Gothic SC"
+字族          : main="Sarasa Gothic SC" ruby="Sarasa Gothic SC"   ← 事故当时；现已改为 "Amayui CN"（见 §5.4 修正）
 颜色          : 填充 #ffffff / 描边 #000000
 描边档位/偏移 : mode=3 dx=1 dy=1
 ```
@@ -448,8 +458,8 @@ text win=9 rect=(324,570,824,120) 竖排 align=0 main=30px ruby=10px outline=3
 - `fill=#ffffff / outline=#000000` 来自 `f807b=0xffffff / f807c=0`（CONFIG1.txt:3197-3198）。
 
 ⇒ **数值都是脚本给的**，不是实现拍的。观感偏重主要来自**字族映射**：
-引擎侧主字体是 `set-font bbb` = `"メイリオ"`（`$1$INITCONFIG0.txt:18`），我们把它映射到
-**Sarasa Gothic SC**，其 Bold 明显比 メイリオ 粗。
+引擎侧主字体是 `set-font bbb` = `"メイリオ"`（`$1$INITCONFIG0.txt:18`），事故当时把它映射到
+**Sarasa Gothic SC**（Bold 明显比 メイリオ 粗）。★该映射已在 §5.4 修正为 `Amayui CN`。
 
 同时把描边**改成引擎的机制**（原来是 canvas `strokeText`）：
 `strokeText` 的描边沿轮廓**居中**（内外各半）⇒ 视觉更粗、还把字面吃掉一半；

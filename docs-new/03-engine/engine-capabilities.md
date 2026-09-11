@@ -13,10 +13,10 @@
 |---|---|---|
 | `modeled-verified` | 6 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 21 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 22 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **85** | 需要关注（非 n/a 且非已核验）= **54** |
+| **合计** | **86** | 需要关注（非 n/a 且非已核验）= **55** |
 
 ## 按子系统
 
@@ -26,7 +26,7 @@
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
 | 帧循环 | 12 | 9 |
-| 消息窗 | 18 | 15 |
+| 消息窗 | 19 | 16 |
 | 渲染 | 22 | 11 |
 | 资源 | 7 | 2 |
 | 转场 | 4 | 4 |
@@ -121,6 +121,7 @@
 | `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |
 | `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
 | `text-font-rebuild-cascade` | 消息窗 | 字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0） | ❌ 缺失 | E0 |
+| `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765） | 🟠 部分 | E1 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -433,11 +434,11 @@
 ### `msgwin-text-object`（partial）
 
 - **能力**：文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队
-- **触发**：0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元
+- **触发**：0x71 经 sub_45EC60(Font、slot、Engine+97055) **开始一段新消息**（清该窗文本记录向量 + 复位显现游标 + 清该窗表面）；0x6E/0x196/0x7D 经 sub_46BE30/sub_46CBF0 往该窗铺排文本；0x72 只判显示态并挂起。
 - **缺失时为什么静默**：文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）
 - **引擎**：sub_45EC60, sub_46BE30, sub_46CBF0, sub_45D660, sub_456430 @ raw 74196-74282
 - **读的字段**：Engine+85296(文本对象; dword 写法 Engine[21324]), Font+1044(10 窗口), Font+1228(默认窗), Font+1032/+1036/+1040, Engine+667856
-- **emulator 现状**：部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节）。
+- **emulator 现状**：部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）、消息窗对象表（0x212/0x213/0x25D）与 **0x71 的清场语义**（MsgWindow.beginNewMessage；漏掉它会让上一屏文案残留并在下次 0x71 被当新消息重新逐字显现 —— 2026 实测 CONFIG 进/出设置重放与两行）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面、D3D 路径的纹理清底。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节），且把 sub_45EC60 说成 0x6E/0x71/0x72 共用（实际只有 0x71 调它）。
 
 ### `msgwin-object-table`（partial）
 
@@ -546,3 +547,12 @@
 - **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
 - **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
 - **emulator 现状**：缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 "@" 前缀）。
+
+### `msgwin-window-reveal-gate-300`（partial）
+
+- **能力**：每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765）
+- **触发**：脚本 0x300 <win> <flags> <ms> 置位/清位（sub_426990 raw 33743-33754）；由帧循环 sub_409400 的窗循环（raw 13838-13888）每帧消费
+- **缺失时为什么静默**：全是纯数值位/字段：缺了它不会报错，只表现为「样例文案不逐行出现」「CONFIG 样例永远留在画面上不清场」或「贴出被当成一次性排空」——两种取值都是合法路径，脚本侧读不到差别。
+- **引擎**：sub_426990, sub_409400, sub_45BE20, sub_404F80, sub_4269F0 @ raw 13780-13970
+- **读的字段**：Engine+122465(有窗在贴出), Engine+122466+win(★bit0=逐行贴出开关; bit16=已被泵接管), Engine+122476+win(贴出完成后延时清场的 ms), Engine+122486+win(内部:贴出完成时刻 timeGetTime), Engine+86672(=message:MessageSpeed), Engine+699204(bit 0x20000000), FontVWindow+132(当前行), FontVWindow+104/+108/+276/+280(绘制项区间)
+- **emulator 现状**：0x300/0x301 只把两个字段写进 engineValues（0x301 另清渲染层该窗文本），**没有消费者**：逐行贴出改由 beginReveal/tickReveal 在 0x71/0x72 启动（有意偏离，见 text-reveal-pump-409400），而「贴出完成后再等 Engine[122476+win] ms 自动清场」完全未建模 —— 缺口：CONFIG 样例文案的自动消失、以及 MessageSpeed==0 时按窗一次性排空的分支。

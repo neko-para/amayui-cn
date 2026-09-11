@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 85,
+    "total": 86,
     "modeled-verified": 6,
     "modeled-unverified": 7,
-    "partial": 21,
+    "partial": 22,
     "absent": 26,
     "n/a-known": 25,
-    "needsAttention": 54
+    "needsAttention": 55
   },
   "entries": [
     {
@@ -1830,7 +1830,7 @@
       "id": "msgwin-text-object",
       "subsystem": "消息窗",
       "name": "文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队",
-      "trigger": "0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元",
+      "trigger": "0x71 经 sub_45EC60(Font、slot、Engine+97055) **开始一段新消息**（清该窗文本记录向量 + 复位显现游标 + 清该窗表面）；0x6E/0x196/0x7D 经 sub_46BE30/sub_46CBF0 往该窗铺排文本；0x72 只判显示态并挂起。",
       "engine": {
         "fns": [
           "sub_45EC60",
@@ -1854,7 +1854,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节）。"
+        "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）、消息窗对象表（0x212/0x213/0x25D）与 **0x71 的清场语义**（MsgWindow.beginNewMessage；漏掉它会让上一屏文案残留并在下次 0x71 被当新消息重新逐字显现 —— 2026 实测 CONFIG 进/出设置重放与两行）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面、D3D 路径的纹理清底。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节），且把 sub_45EC60 说成 0x6E/0x71/0x72 共用（实际只有 0x71 调它）。"
       }
     },
     {
@@ -2363,6 +2363,39 @@
         "status": "absent",
         "evidence": "E0",
         "note": "缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 \"@\" 前缀）。"
+      }
+    },
+    {
+      "id": "msgwin-window-reveal-gate-300",
+      "subsystem": "消息窗",
+      "name": "每窗「逐行贴出」开关（Engine[122466+win] bit0、op 0x300 = sub_426990 raw 33743-33754）与贴出完成后的延时自动清场（Engine[122476+win]；清场走 0x301 = sub_4269F0 raw 33756-33765）",
+      "trigger": "脚本 0x300 <win> <flags> <ms> 置位/清位（sub_426990 raw 33743-33754）；由帧循环 sub_409400 的窗循环（raw 13838-13888）每帧消费",
+      "engine": {
+        "fns": [
+          "sub_426990",
+          "sub_409400",
+          "sub_45BE20",
+          "sub_404F80",
+          "sub_4269F0"
+        ],
+        "raw": "13780-13970"
+      },
+      "reads": [
+        "Engine+122465(有窗在贴出)",
+        "Engine+122466+win(★bit0=逐行贴出开关; bit16=已被泵接管)",
+        "Engine+122476+win(贴出完成后延时清场的 ms)",
+        "Engine+122486+win(内部:贴出完成时刻 timeGetTime)",
+        "Engine+86672(=message:MessageSpeed)",
+        "Engine+699204(bit 0x20000000)",
+        "FontVWindow+132(当前行)",
+        "FontVWindow+104/+108/+276/+280(绘制项区间)"
+      ],
+      "whySilent": "全是纯数值位/字段：缺了它不会报错，只表现为「样例文案不逐行出现」「CONFIG 样例永远留在画面上不清场」或「贴出被当成一次性排空」——两种取值都是合法路径，脚本侧读不到差别。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "note": "0x300/0x301 只把两个字段写进 engineValues（0x301 另清渲染层该窗文本），**没有消费者**：逐行贴出改由 beginReveal/tickReveal 在 0x71/0x72 启动（有意偏离，见 text-reveal-pump-409400），而「贴出完成后再等 Engine[122476+win] ms 自动清场」完全未建模 —— 缺口：CONFIG 样例文案的自动消失、以及 MessageSpeed==0 时按窗一次性排空的分支。"
       }
     }
   ]

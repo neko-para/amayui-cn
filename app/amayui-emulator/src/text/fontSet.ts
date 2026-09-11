@@ -8,14 +8,29 @@
  *
  * 重写侧：白名单 = 下面这张表；所有字族都由 `loadFonts()` 从 `res/fonts/` 内置注册，
  * 不依赖操作系统字体（跨平台一致性）。缺字族时回退到默认字族并**只记一次日志**。
+ *
+ * ## ★字体政策（2026-09 修正）：一切文本面 → `Amayui CN`
+ * 汉化随包字体**只有** `Amayui-CN_cnjp.ttf`（Sarasa Gothic SC 基底 + cnjp 字形替换 +
+ * 唯一族名 `Amayui CN`；`patch/patch.config.json` 的字体条目也只同步这一个文件）。
+ * 汉化说明（`patch/README-测试版说明.md` 第 8 步）要求玩家把**全部**字体分类
+ * （説明文 / パラメータ文字/数字 / ＡＤＶルビ / ＡＤＶメッセージ）都设为 `Amayui CN`
+ * —— 也就是引擎侧无论拿到 `メイリオ`、`ＭＳ ゴシック`、`游ゴシック` 还是 `ＭＳ 明朝`，
+ * 实际渲染的都是 `Amayui CN`。
+ *
+ * 因此 `FACE_MAP` 把**所有**日文面名都指向 `Amayui CN`，并**彻底摘掉**旧 WenQuanYi 线：
+ * `MSGothic_WenQuanYi_cnjp.ttf`（族名伪装成 `MS Gothic`）属已废弃基底
+ * （见 `docs/font-build.md` §8「基底更新：WenQuanYi → SarasaGothicSC」、
+ * `docs-new/00-overview/authority.md`），**不再作为任何面名的落地字族** ——
+ * 历史错误：`メイリオ`（`$1$INITCONFIG0.txt:18` 设给 `bbb`，即消息窗主字体）被映射到
+ * `MS Gothic`，于是 ADV 正文实际用 WenQuanYi 渲染（日志实证
+ * `[font] MS Gothic#400 ← MSGothic_WenQuanYi_cnjp.ttf（4880KB）`）。
  */
 
 /**
  * 一个内置字族：`family` = 注册进 `document.fonts` 的名字，`file` = `res/fonts/` 下的相对路径。
  *
  * ★`files` 的键是**该文件自己声明的字重**（读 TTF 的 name 表确认过），不是"我们想让它扮演的字重"：
- *  - 汉化随包的 `Amayui-CN_cnjp.ttf`（family 名就叫 `Amayui CN`）与
- *    `MSGothic_WenQuanYi_cnjp.ttf`（family 名 `MS Gothic`、full name `ＭＳ ゴシック`）**只有 Regular**；
+ *  - 汉化随包的 `Amayui-CN_cnjp.ttf`（family 名就叫 `Amayui CN`）**只有 Regular**；
  *  - 把 Regular 文件**注册成 700** 会让浏览器认为"这就是粗体面"、于是**不再合成加粗**
  *    ⇒ 脚本要的 `lfWeight=700` 完全失效；反之只注册 400，浏览器会**合成**加粗（与 GDI 对无粗体面的处理一致，也更轻）。
  *  - Sarasa 有真的 Bold 面（`-Bold.ttf`），所以它按 700 注册。
@@ -32,14 +47,9 @@ export const FONT_DIR = 'res/fonts';
 export const BUILTIN_FAMILIES: BuiltinFamily[] = [
   {
     // 汉化随包字体：TTF 的 family 名就是 `Amayui CN`（只有一个 Regular 面）。
+    // ★所有引擎面名都落到这里（见文件头「字体政策」）—— 包括主面 `bbb=メイリオ` 与注音面 `bbc=ＭＳ ゴシック`。
     family: 'Amayui CN',
     files: { 400: 'Amayui-CN_cnjp.ttf' },
-  },
-  {
-    // 汉化随包字体：TTF 的 family 名是 `MS Gothic`（full name `ＭＳ ゴシック`），只有一个 Regular 面。
-    // 这就是引擎里 `ＭＳ ゴシック` / `MS Gothic` 该用的那个 —— 不是 Sarasa。
-    family: 'MS Gothic',
-    files: { 400: 'MSGothic_WenQuanYi_cnjp.ttf' },
   },
   {
     // 工程既有的 UI 文字渲染字体（docs/images/FONT.md）；有真 Bold 面。
@@ -54,20 +64,26 @@ export const BUILTIN_FAMILIES: BuiltinFamily[] = [
 /**
  * 引擎面名 → 内置字族。键一律**大写、去空格**后比较。
  *
- * 取值依据**汉化随包的字体**（TTF 自报的 family 名）：`Amayui CN` 与 `MS Gothic` 各自都有对应文件；
- * 引擎侧的 `メイリオ`（`$1$INITCONFIG0.txt:18` 设给 `bbb`，也就是消息窗主字体）在随包里没有对应文件，
- * 回退到汉化默认的 `Amayui CN`；`ＭＳ 明朝` 没有 Mincho 面，回退到 `MS Gothic` 的替代字体。
+ * ★取值依据**汉化随包字体只有 `Amayui CN` 这一个**（`patch/patch.config.json` 只同步
+ * `res/fonts/Amayui-CN_cnjp.ttf`），且汉化说明要求把所有字体分类都设为 `Amayui CN`
+ * ⇒ 引擎侧的这些日文面名在汉化环境里**都渲染成 Amayui CN**，映射到别的字族就是错。
+ * （旧 WenQuanYi 线的 `MSGothic_WenQuanYi_cnjp.ttf` 已废弃，不再有对应字族。）
+ *
+ * 参考（引擎侧事实）：`$1$INITCONFIG0.txt:18-27` 把 `bbb/bbf=メイリオ`、`bbc/bbe=ＭＳ ゴシック`、
+ * `bbd=游ゴシック` 写进全局字符串，脚本用 `set-font`(0x1A5)/`i2fe`(0x2FE) 取用；
+ * `0x1A5` 的 handler（`sub_4328F0` raw 41385-41400）对**不在可选字体表内**的名字只打警告、
+ * 仍然把名字写进 `Font+1260` ⇒ 名字本身不决定渲染器，落到哪个内置字族才是重写侧的事。
  */
 const FACE_MAP: Record<string, string> = {
   // 引擎默认的注音面（`sub_465390` raw 78875 硬编码 "ＭＳ ゴシック"）与 CONFIG 的可选面。
-  ＭＳゴシック: 'MS Gothic',
-  MSGOTHIC: 'MS Gothic',
-  ＭＳ明朝: 'MS Gothic', // 无 Mincho 面 ⇒ 回退到随包的 MS Gothic 替代字体
-  MSMINCHO: 'MS Gothic',
-  メイリオ: 'MS Gothic', // 无 Meiryo 面 ⇒ 回退到随包的 MS Gothic 替代字体（同为哥特/无衬线角色）
-  MEIRYO: 'MS Gothic',
-  游ゴシック: 'MS Gothic', // 同上（Yu Gothic，哥特角色）
-  YUGOTHIC: 'MS Gothic',
+  ＭＳゴシック: 'Amayui CN',
+  MSGOTHIC: 'Amayui CN',
+  ＭＳ明朝: 'Amayui CN', // 随包无 Mincho 面 ⇒ 同渲染为 Amayui CN
+  MSMINCHO: 'Amayui CN',
+  メイリオ: 'Amayui CN', // ★消息窗主字体（bbb/bbf）—— 历史上被误映射到 WenQuanYi 的 `MS Gothic`
+  MEIRYO: 'Amayui CN',
+  游ゴシック: 'Amayui CN', // 同上（Yu Gothic）
+  YUGOTHIC: 'Amayui CN',
   AMAYUICN: 'Amayui CN',
   'AMAYUI CN': 'Amayui CN',
   SARASAGOTHICSC: 'Sarasa Gothic SC',
@@ -131,6 +147,8 @@ export function fontFileList(): { family: string; weight: 400 | 700; file: strin
  * （`$1$CHECKCONFIG.txt:6-11`：`i2de` 得到 <0 就写回默认面名并保存）。
  *
  * 重写侧的表 = 我们真正支持的面名（引擎名 + 内置字族名）。顺序固定，便于脚本做 `lookup-array`。
+ * ★表里的日文面名**只是"引擎装得到这个名字"的等价物**（供 CHECKCONFIG 的 `i2de` 判正负）：
+ *   它们经 `FACE_MAP` 全部渲染为 `Amayui CN`（汉化环境即如此，见文件头「字体政策」）。
  * ★`sub_428990` 查表前会把查询串开头的 `'@'` 去掉（raw 35149 `&a2[*a2 == 64]`），这里同样处理。
  */
 export const ENGINE_FONT_LIST: readonly string[] = [

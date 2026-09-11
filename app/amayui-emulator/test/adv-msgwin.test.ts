@@ -295,10 +295,11 @@ test('★逐字显现：一帧一步（不跨节拍补齐）+ 点击先补完这
   const { e, step } = mk();
   e.engineValues.set(21668, 10); // message:MessageSpeed = 10ms/字形（< 一帧 ⇒ 由帧节拍决定）
   step(0x80, [im(9)]);
+  step(0x71, [im(9)]); // ★0x71 = 开始一段新消息（清该窗文本记录）—— 真实剧本的页序
   step(0x6e, [im(0), str('あいうえお')]); // 5 字
-  step(0x71, [im(9)]); // 呈现 ⇒ 开始逐字显现
+  step(0x72, [im(9)]); // 呈现 ⇒ 开始逐字显现
   const st = e.msgwin.reveal.get(9);
-  assert.ok(st, '0x71 应启动显现');
+  assert.ok(st, '0x72 应启动显现');
   assert.equal(st.total, 5);
   assert.equal(st.shown, 0, '起始 0 字');
   assert.equal(e.textRevealing, true);
@@ -335,7 +336,7 @@ test('★逐字显现：一帧一步（不跨节拍补齐）+ 点击先补完这
   eSlow.engineValues.set(21668, 100);
   stepSlow(0x80, [im(9)]);
   stepSlow(0x6e, [im(0), str('あいう')]);
-  stepSlow(0x71, [im(9)]);
+  stepSlow(0x72, [im(9)]);
   eSlow.serviceTextReveal(FRAME);
   assert.equal(eSlow.msgwin.revealedOf(9), 0, '100ms 节拍：过一帧不动');
   eSlow.serviceTextReveal(100);
@@ -364,7 +365,7 @@ test('★逐字显现：一帧一步（不跨节拍补齐）+ 点击先补完这
   e3.engineValues.set(21668, 0);
   step3(0x80, [im(9)]);
   step3(0x6e, [im(0), str('あいうえお')]);
-  step3(0x71, [im(9)]);
+  step3(0x72, [im(9)]);
   assert.equal(e3.msgwin.revealedOf(9), 5, 'MessageSpeed=0 ⇒ 立即显示完');
   assert.equal(e3.textRevealing, false);
 });
@@ -378,7 +379,7 @@ test('★0x1B5 设消息速度（字段 + 注册表）：CONFIG 速度滑条走�
   // 显现节拍读的就是这个字段
   step(0x80, [im(9)]);
   step(0x6e, [im(0), str('あいう')]);
-  step(0x71, [im(9)]);
+  step(0x72, [im(9)]);
   assert.equal(e.msgwin.reveal.get(9)?.nextAt, 25, '节拍 = 25ms（刚设的值）');
 
   // 0x74 只写字段、**不**写注册表（脚本拿它做"这一段立即显示"）
@@ -398,12 +399,53 @@ test('★0x1F6 清绘制容器：文本窗必须一起清（否则回主界面�
     h!(makeCtx(e, f, instr(op, args), native, () => {}));
   };
   step(0x80, [im(9)]);
+  step(0x71, [im(9)]); // ★真实页序：先 0x71 清场，再写文本
   step(0x6e, [im(0), str('メッセージ')]);
-  step(0x71, [im(9)]);
-  assert.ok(native.scene.msgWins.has(9), '先有文本窗');
+  assert.equal(native.scene.msgWins.get(9)?.glyphCount, 5, '先有文本窗');
   step(0x1f6, []); // clearDrawContainer
   assert.equal(native.scene.msgWins.size, 0, '0x1F6 必须连文本窗一起清');
   assert.doesNotMatch(native.snapshotText(), /text win=9/, '清场后快照里也不该再有该窗');
+});
+
+/**
+ * ★2026 实测症状的回归闸（`CONFIG.BIN` 进/出设置）：
+ *   「首次进入设置文案直接显示；退出后在主界面逐字显示；再次进入显示两行；再退出两行逐字显示」。
+ *
+ * 根因：`0x71`（`sub_45EC60`）**没有清空该窗的文本记录** ⇒ 上一屏的样例文案留在槽里，
+ * 退出时的 `i071 9` 把它当新消息 **从 0 开始逐字显现**（`[text] win=9 … 已显示=1`），
+ * 再次进入时又追加一行（`2 行 38 字`）。
+ * 修复后：每次 `0x71` 都清空 ⇒ 退出无残留、再进仍是 1 行。
+ */
+test('★0x71 开始一段新消息：清该窗文本记录（CONFIG 进出设置不得累积行数/不得重放旧文案）', () => {
+  const { e, step } = mk();
+  e.engineValues.set(21668, 25); // message:MessageSpeed（$1$INITREGMES `i1b5 19` = 25ms）
+  /** CONFIG.txt:171-179 的样例文案块：i300 9 1 3e8 → i071 9 → 注音+正文+断行。 */
+  const sampleBlock = (): void => {
+    step(0x300, [im(9), im(1), im(0x3e8)]);
+    step(0x71, [im(9)]);
+    step(0x196, [im(0), str('天结'), str('天结')]);
+    step(0x6e, [im(0), str('神缘ＳＡＭＰＬＥ')]);
+    step(0x6f, [im(0)]);
+  };
+  step(0x80, [im(9)]); // CONFIG.txt:42 `i080 9`
+  sampleBlock(); // 首次进入设置
+  assert.equal(e.msgwin.slot(9).segments.length, 1, '首次进入：样例 1 行');
+  assert.equal(e.msgwin.isRevealing(9), false, '样例文案直接显示（无显现状态）');
+
+  // 退出设置：CONFIG.txt label_00000f6c 的 `i300 9 0 0` + `i071 9`
+  step(0x300, [im(9), im(0), im(0)]);
+  step(0x71, [im(9)]);
+  assert.deepEqual(e.msgwin.slot(9).segments, [], '退出时必须清空窗 9（否则旧文案在主界面重放）');
+  assert.equal(e.msgwin.isRevealing(9), false, '清空后不得留下显现状态');
+  assert.equal(e.textRevealing, false);
+
+  sampleBlock(); // 再次进入设置
+  assert.equal(e.msgwin.slot(9).segments.length, 1, '再次进入仍是 1 行（历史错误：残留 + 新行 = 2 行）');
+  assert.equal(e.msgwin.textOf(0), '天结神缘ＳＡＭＰＬＥ');
+
+  // 再退出：同样不得残留
+  step(0x71, [im(9)]);
+  assert.deepEqual(e.msgwin.slot(9).segments, []);
 });
 
 test('★0x1D2（文本项属性记录表 push）：已注册、不抛错、不回写操作数', () => {

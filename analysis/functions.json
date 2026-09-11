@@ -3459,12 +3459,12 @@
     "semantic_name": "op_message_show_41ED80",
     "op": "0x71",
     "status": "PARTIAL",
-    "purpose": "显示一段消息文本：把 op1 经 sub_45EC60(Engine+85296(文本对象; dword 写法 Engine[21324]), v2, Engine+97055) 写进文本对象槽 → 记返还点 frame.state_6C=(ip-str_table)>>2 → 复制两片工作区（+4355←+4055 0x4B0；+86174←+81174 0x4E20）→ sub_48FFB0(Engine+80107) 冲消息窗文本队列。",
-    "sub_behaviors": ["★ADV 位置位**有配置门**：仅当 GetConfig(\"message:ReadTextSkip\") 为真时才调 sub_48E870/sub_48F000 判定，非 0 ⇒ effect_flags |= 0x8000000 且 122455=1、122496=0", "配置门为假 ⇒ 只写 122496=0，且若 122455 已置则清 0（**不置 ADV**）", "返还点写入 frame.state_6C（call-script/call-frame 的续跑下标槽）"],
+    "purpose": "开始一段新消息并判定显示态：op1 = 窗号 → sub_45EC60(Font = Engine+85296 字节, 窗, Engine+97055) **先清空该窗已铺排的文本记录**（win+208 的 120B/条向量经 sub_45E570(...,0) 截断为 0、显现游标 win+132=0）→ 记返还点 frame.state_6C=(ip-str_table)>>2 → 复制两片工作区（+4355←+4055 0x4B0；+86174←+81174 0x4E20）→ sub_48FFB0(Engine+80107) 冲既读 DB 队列 → 按 message:ReadTextSkip 门判 ADV。",
+    "sub_behaviors": "[\"★第 1 步 sub_45EC60 = 「开始一段新消息」＝清空该窗文本记录 + 复位显现游标（raw 74277-74281），不是「呈现已入队文本」—— 剧本语料印证：ADV 页末的 i071 8 / i071 2+i071 1 模板（各 30227 处）就是「下一页开始前清窗」，且 i071 之前从不紧跟文本指令（90713 处里 30239 紧邻 i071、30231 紧邻 jcc）\",\"★ADV 位置位有配置门：仅当 GetConfig(message:ReadTextSkip) 为真时才调 sub_48E870/sub_48F000 判定，非 0 ⇒ effect_flags |= 0x8000000 且 122455=1、122496=0\",\"配置门为假 ⇒ 只写 122496=0，且若 122455 已置则清 0（不置 ADV）\",\"返还点写入 frame.state_6C（call-script/call-frame 的续跑下标槽）\"]",
     "fields_used": ["Engine+699204(effect_flags)", "Engine+122455", "Engine+122496", "Engine+97055", "Engine+85296(文本对象; = Engine[21324])", "Engine+80107(消息窗文本渲染对象)", "Engine+174405(config)", "frames[cur].state_6C", "frames[cur].unk_58", "frames[cur].unk_5C", "frames[cur].frame_arg"],
     "unmodeled": ["Engine+97055、+4355/+4055 与 +86174/+81174 两片工作区的语义未定", "sub_45EC60/sub_48FFB0/sub_48E870/sub_48F000 已另立条目，但其下游（sub_48FBB0 等）未分析"],
     "evidence": "raw 28419-28473",
-    "notes": "★与 emulator 的偏差：emulator 的 op_message_show 无条件置 0x8000000 且永不清除；引擎这里置位受 message:ReadTextSkip 门控，且清位在 sub_411900/sub_41EEF0/sub_41FAB0/sub_4190E0 等处。"
+    "notes": "★2026-09 复核：0x71 的语义 = 「开始一段新消息」（先清窗再判显示态）；旧注「显示一段消息文本」易被读成「呈现已入队文本」。文本内容由随后的 0x6E(show-text) 写入（CONFIG.txt:171-179 / CONFIG1.txt:2916-2932 即此顺序）。"
   },
   {
     "addr": "0x41EEF0",
@@ -3537,11 +3537,11 @@
     "semantic_name": "text_window_begin_message_45EC60",
     "status": "ANALYZED",
     "purpose": "op 0x71 的转发 = 开始一段新文本：清 win+208 记录向量、win+132=0、win+284=1、win+296=0；往 win+44 push 一条 24B 行记录；dd 路径下 Font+1356==1 时对窗口私有表面 ddFillSurface 填底色；删旧 DrawItem 区间 (win+104,win+108)/(win+276,win+280)；a3>=0 时登记回看页表",
-    "sub_behaviors": "[\"a2==0 ⇒ 用 Font+1228 默认窗（★不是 Engine[307] 字节偏移；Font 基址 = Engine+85296，+1228 即 Engine[21631]）\",\"清 win+208 的 120B 记录向量 + push 首条 24B 行记录\",\"sub_4ABB60 删两段绘制项（仅 DrawMode==1 分支）\",\"a3>=0：sub_45D240 push {窗,回看条数} 到 Font+3380，Font[859]=Font[860]=末项，win+849=1\"]",
+    "sub_behaviors": "[\"a2==0 ⇒ 用 Font+1228 默认窗（★不是 Engine[307] 字节偏移；Font 基址 = Engine+85296，+1228 即 Engine[21631]）\",\"★清 win+208 的 120B 记录向量（sub_45D930 先 erase 同区间，再 sub_45E570(win+208, 0) 截断为 0；元素尺寸见 raw 73896 的 v4/120）—— 这就是「窗里已铺排的文本被清空」，也是 0x71 的实质语义\",\"往 win+44 push 首条 24B 行记录；win+132=0（显现游标复位）、win+284=1、win+296=0\",\"D3D 路径（DrawMode==1）：LockTexture + memset 把该窗纹理清底（raw 74248-74256）；dd 路径：sub_43E260 填底色\",\"sub_4ABB60 删两段绘制项（仅 DrawMode==1 分支）\",\"a3>=0：sub_45D240 push {窗,回看条数} 到 Font+3380，Font[859]=Font[860]=末项，win+849=1\"]",
     "fields_used": "[\"FontVWindow+44/+132/+208/+284/+296/+104/+276/+849\",\"Font+1228/+845/+846/+859/+860/+1040\"]",
     "unmodeled": "[\"sub_43E260 清区参数\",\"sub_48FFB0/sub_48E870（既读 DB）\"]",
     "evidence": "raw 74196-74282",
-    "notes": "★纠正两处旧口径：①Font 在 Engine+85296 字节（旧文写 Engine+85296(文本对象; dword 写法 Engine[21324]) 字节，错 4 倍）；②它不是\"写文本\"而是\"开始一段新文本并呈现\"，文本内容由之前的 sub_46BE30/sub_466000 铺排好"
+    "notes": "★纠正三处旧口径：①Font 在 Engine+85296 字节（旧文写 Engine+85296(文本对象) 又标 dword 写法 Engine[21324]，易混）；②它不是「写文本」而是「开始一段新消息」（清记录 + 复位游标 + 清表面），文本由之后的 sub_46BE30/sub_46CBF0 依 show-text 铺排；③「清 win+208 记录向量」是 120B/条的**文本**记录（不是 24B 行记录），即槽里的正文被清空。"
   },
   {
     "addr": "0x48F000",

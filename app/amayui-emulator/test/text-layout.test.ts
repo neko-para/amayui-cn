@@ -187,21 +187,26 @@ test('逐字显现游标：按跨行累计的字形序号决定每行画几个',
 
 test('面名映射：剥竖排 "@" 前缀 + 未知面名回退并标记', () => {
   assert.equal(normalizeFace('@ＭＳ ゴシック'), 'ＭＳゴシック');
-  // ★映射目标 = 汉化随包字体（TTF 自报 family 名：`Amayui CN` / `MS Gothic`），不是 Sarasa
-  assert.equal(resolveFace('ＭＳ ゴシック').family, 'MS Gothic');
-  assert.equal(resolveFace('@ＭＳ ゴシック').family, 'MS Gothic');
+  // ★映射目标 = 汉化随包字体（`patch/patch.config.json` 只同步 `Amayui-CN_cnjp.ttf`，
+  //   TTF 自报 family 名 = `Amayui CN`）；旧 WenQuanYi 线（族名伪装成 `MS Gothic`）已废弃，
+  //   不再作为任何面名的落地字族（见 fontSet.ts 文件头「字体政策」）。
+  assert.equal(resolveFace('ＭＳ ゴシック').family, 'Amayui CN');
+  assert.equal(resolveFace('@ＭＳ ゴシック').family, 'Amayui CN');
   assert.equal(resolveFace('Amayui CN').family, 'Amayui CN');
-  // 随包没有 Meiryo/Mincho/Yu Gothic 面 ⇒ 一律回退到随包的 MS Gothic 替代字体（同为哥特角色）
-  assert.equal(resolveFace('メイリオ').family, 'MS Gothic');
-  assert.equal(resolveFace('ＭＳ 明朝').family, 'MS Gothic');
+  // ★消息窗主面 `bbb = メイリオ`（$1$INITCONFIG0.txt:18）：汉化环境渲染为 Amayui CN
+  //   —— 历史错误是映射到 `MS Gothic`（WenQuanYi，日志：`[font] MS Gothic#400 ← MSGothic_WenQuanYi_cnjp.ttf`）
+  assert.equal(resolveFace('メイリオ').family, 'Amayui CN');
+  assert.equal(resolveFace('ＭＳ 明朝').family, 'Amayui CN');
+  assert.equal(resolveFace('游ゴシック').family, 'Amayui CN');
   const unk = resolveFace('存在しないフォント');
+  assert.equal(unk.family, 'Amayui CN', '未知面名回退到默认字族（= Amayui CN）');
   assert.equal(unk.unknown, true);
 });
 
 test('★字重解析：只有 Regular 面的字族请求 700 时按 400 注册（让浏览器合成加粗）', () => {
   // 注册成 700 会让浏览器以为"这就是粗体面" ⇒ 脚本的 i2bd 1 完全失效（字重看起来不变）
   assert.deepEqual(fontFaceFor('Amayui CN', 700), { file: 'Amayui-CN_cnjp.ttf', weight: 400 });
-  assert.deepEqual(fontFaceFor('MS Gothic', 700), { file: 'MSGothic_WenQuanYi_cnjp.ttf', weight: 400 });
+  assert.equal(fontFaceFor('MS Gothic', 700), null, '旧 WenQuanYi 字族已摘除（不再有落地文件）');
   // Sarasa 有真 Bold 面 ⇒ 请求 700 就用 Bold 文件
   assert.deepEqual(fontFaceFor('Sarasa Gothic SC', 700), {
     file: 'SarasaGothicSC/SarasaGothicSC-Bold.ttf',

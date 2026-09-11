@@ -13,6 +13,9 @@
  *   emulator 无文本渲染 ⇒ 逐字显示视为**立即完成** ⇒ **不置 ADV**。这是修掉"位卡死"的关键。
  * - `0x72` 清完 ADV 后置 `effect_flags |= 0x80000000`（**等待推进门**）；主循环在该位下
  *   每帧只调 `sub_411BC0` + `Sleep(2)`，**不派发脚本指令** ⇒ 脚本真正挂起。
+ * - `0x71` 是**"开始一段新消息"**（`sub_45EC60`）：清该窗文本记录向量 + 复位显现游标，
+ *   然后才判 ADV。**漏掉清空 ⇒ 上一屏文案残留并在下次 `0x71` 被当新消息重新逐字显现**
+ *   （2026 实测：「首次进设置直接显示 / 退出后主界面逐字显示 / 再进设置两行」）。
  * - ADV 位的**每帧**清除者 `sub_411900` 与等待门的推进者 `sub_411BC0` 属帧循环（第二层），
  *   由宿主（renderer session / headless 驱动）调用 `Engine.serviceAdvanceWait()`。
  *
@@ -200,29 +203,44 @@ const op_end_text_line: OpHandler = (c) => {
 
 /**
  * `0x71 message-show`（sub_41ED80 raw 28419-28473，**argc=1**）：`op1` = **消息窗槽号**。
- * 引擎：`v2 = read(op1)` → `sub_45EC60(文本对象, v2, 97055)`（清该槽布局/图元，准备显示）→
- * 记返还点 `frame.state_6C` → 复制两片工作区 → `sub_48FFB0` 冲消息窗队列 → 判定 ADV。
  *
- * ★修正：原实现**无条件**置 `0x8000000` 且永不清除，且把 op1 当字符串（实际是槽号、无第二操作数）。
- * 引擎只在上面的 `advanceReveal` 判为「仍在逐字显示」时才置位，且该路径受
- * `message:ReadTextSkip` 门控（随包 INI 默认 0）。文本内容由 `show-text`(0x6E) 写入本指令的槽。
+ * 引擎顺序（raw 28425-28431）：
+ *  1. `sub_45EC60(文本对象, v2, 97055)` = **开始一段新消息**：把该窗的文本记录向量
+ *     （`win+208` 120B/条）截断为 0、显现游标 `win+132 = 0`、`win+284 = 1`、`win+296 = 0`，
+ *     并清该窗离屏表面（D3D memset / dd 填底色）；
+ *  2. 记返还点 `frame.state_6C` → 复制两片工作区 → `sub_48FFB0` 冲消息窗队列；
+ *  3. 判 ADV（`message:ReadTextSkip` 门 + `sub_48F000`），不满足则清 `122455`。
  *
- * 不建模：`sub_45EC60` 的清槽布局/图元（无渲染）与 `frame.state_6C` 返还点槽（emulator 用
- * `ctx.jump`/`retStack` 承担控制流）。
+ * ★**1 不能漏**：漏掉就表现为「上一屏文案残留」——残留文本在本次 `0x71` 被当成新消息重新显现
+ * （2026 实测：退出设置后主界面逐字冒出一行、再进设置变成两行）。文本内容由 `show-text`(0x6E)
+ * 在**本指令之后**写入本窗的槽（`CONFIG.txt:171-179`、`CONFIG1.txt:2916-2932` 即此顺序）。
+ *
+ * ★历史误解：本指令曾被当成"呈现已入队文本"（因此 emulator 旧实现不在它这里清槽，
+ * 测试也用 `show-text → 0x71` 的顺序）。剧本语料不支持这个读法：`0x71` 前面从来不是
+ * 文本指令（90713 处里 30239 处紧邻另一条 `0x71`、30231 处紧邻 `jcc`），而是页末/切场清屏；
+ * 真正的"入队后显示"由 `0x6E` 自己完成（`sub_46BE30` 同步排版 + `sub_46CBF0` 排空）。
+ *
+ * 不建模：DD 表面的填底（无渲染）与 `frame.state_6C` 返还点槽（emulator 用 `ctx.jump`/`retStack`）。
  */
 const op_message_show: OpHandler = (c) => {
   const e = c.e;
+  const m = e.msgwin;
   const slot = readIntOperand(e, c.frame, c.instr, 1); // 窗索引（0 ⇒ 默认窗；1/2/7/8/9…）
-  e.msgwin.lastArg = slot;
-  e.msgwin.alt = 0;
+  m.lastArg = slot;
+  m.alt = 0;
+  const w = m.resolveWin(slot);
+  // ★开始一段新消息：清该窗文本记录 + 复位显现游标（引擎 sub_45EC60，raw 74277-74281）
+  m.beginNewMessage(w);
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
   // 引擎 `sub_41ED80` raw 28361-28382：非跳读路径下入队 + `sub_453A60(Engine+430572, MessageSpeed)`
   // ⇒ **从这里开始逐字显现**（跳读/自动模式下走同步排空，即一次显示完）。
-  const w = e.msgwin.resolveWin(slot);
-  const total = layoutWindow(w, { style: styleOfWin(e, w), segments: e.msgwin.slot(w).segments }).glyphCount;
-  if (e.msgwin.skipping !== 0 || e.msgwin.skipMode !== 0) e.msgwin.finishReveal(w);
-  else e.msgwin.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
+  // 清空后 total 通常为 0（新文本随后由 0x6E 写入）⇒ 不留显现状态
+  // （本模型「无状态 = 全部显示」，避免后续 emit 把随后写入的文本画成 0 字）。
+  const total = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments }).glyphCount;
+  if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
+  else if (total > 0) m.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
+  else m.reveal.delete(w);
   emitWin(e, slot);
 };
 
