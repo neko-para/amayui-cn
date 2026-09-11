@@ -1,96 +1,14 @@
 /**
- * Renderer 侧文件访问实现（FileSource）。
- * 真实字节在 Electron 主进程读取；这里只做 IPC 转发（见 electron/main.ts 的 read-script/read-file）。
+ * Renderer 侧文件访问实现（`FileSource`）。
+ *
+ * 真实字节在 Electron 主进程读取；这里只做 IPC 转发（见 `electron/main.ts` 的 read-script/read-file）。
  * 这是 ADR「跨平台 + 可观测」的隔离点：VM 代码零改动，只需换 FileSource 实现。
+ *
+ * IPC 契约与跨窗 DTO 见 `./ipcProtocol.ts`（那里负责 `Window.api` 的全局声明）。
  */
 import type { FileSource, ScriptBytes } from '../arch/fileSource.js';
 
-declare global {
-  interface Window {
-    api: {
-      readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
-      readFile(path: string): Promise<number[]>;
-      /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
-      readConfigIni(): Promise<{ path: string; text: string } | null>;
-      image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
-      logLine(text: string): void;
-      logLineSync(text: string): string;
-      // ---- 控制窗（ControlWindow）相关 ----
-      /** 控制窗→主：重启主窗口渲染流程（reload 渲染器 → 重新走完整 boot）。 */
-      controlRestart(): void;
-      /** 渲染窗→主：abort(0x1)/程序退出 → 关闭主窗口。 */
-      closeWindow(): void;
-      /** 控制窗→主：设置是否打印全量指令（true=全量，false=仅未知/已忽略）。 */
-      controlSetTraceAll(enabled: boolean): void;
-      /** 控制窗→主：设置定向 trace 白名单（opcode 列表；空 = 不过滤）。 */
-      controlSetTraceFilter(ops: number[]): void;
-      /**
-       * 控制窗→主：**强制关闭**（销毁全部窗口并退出）。
-       * 主进程侧实现 ⇒ 即使渲染窗被高频 IPC/长循环拖住也能收场（本轮排查中"连窗口都关不掉"的兜底）。
-       */
-      controlForceClose(): void;
-      /** 控制窗→主→渲染窗：把某个未知 opcode 登记为 no-op 桩函数并继续执行（见 Engine.unknownOpStubs）。 */
-      controlSkipOp(opcode: number): void;
-      /** 主→控制窗：某未知 opcode 已被登记为桩函数（用于把控制窗的"待处理"块收掉）。 */
-      onControlOpSkip(cb: (opcode: number) => void): void;
-      /** 主→控制窗：收到渲染器上报的状态（当前 BIN + 已忽略指令 + traceAll）。 */
-      onControlStatus(cb: (s: ControlStatus) => void): void;
-      /** 主→渲染窗：traceAll 切换通知（控制窗改的，转发给渲染器）。 */
-      onTraceAll(cb: (enabled: boolean) => void): void;
-      /** 主→渲染窗：定向 trace 白名单变更通知。 */
-      onTraceFilter(cb: (ops: number[]) => void): void;
-      /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
-      onControlSkipOp(cb: (opcode: number) => void): void;
-      /** 渲染窗→主：上报状态，供主进程转发给控制窗。 */
-      sendRendererStatus(s: ControlStatus): void;
-      /** 渲染窗→主：把一条**结构化 trace**（JSON 行）追加到 `.tmp/scene-trace.jsonl`。 */
-      appendTraceLine(line: string): void;
-    };
-  }
-}
-
-/** 渲染器上报给控制窗的状态。ignored = 目前遇到的「已忽略/插桩跳过」指令（去重）。 */
-export interface ControlStatus {
-  bin: string;
-  /** 真·忽略：纯 no-op 插桩（`op_engine_internal`，本机无对应子系统，不做任何事）。 */
-  ignored: { opcode: number; name: string }[];
-  /** 已插桩但有专门处理：消息窗/声音/数组排序/字段写入等（按引擎语义执行，只是不产出可渲染输出）。 */
-  internal: { opcode: number; name: string }[];
-  /**
-   * **★ 闸门 B：能力缺口** —— 被当作 no-op 跳过、却收到了**非平凡实参**的 opcode。
-   * 即"脚本真的传了参数想做点什么，而我没做"（与"本场景空转"区分开）。
-   */
-  gaps?: { opcode: number; name: string; count: number; sample: string[] }[];
-  /**
-   * **★ 闸门 A：意图被丢弃** —— 脚本经 opcode 调用了一个**宿主没实现**的 native 方法
-   * （`?.` 静默 no-op）。每条都说明"缺了它会有什么无报错的表现"。
-   */
-  dropped?: { method: string; count: number; sample: string; opcodes: string[]; why: string }[];
-  traceAll: boolean;
-  /** 定向 trace 白名单（空 = 全部）；十六进制字符串，如 `0x1fb`。 */
-  traceFilter?: string[];
-  /**
-   * **★性能/门控遥测**（回答"到底是慢还是坏"）：
-   *  - `stepsPerSec`：最近一个上报窗口内的指令执行速度（VM 本身很快：实测 30–60 万步/秒）；
-   *  - `gate`：当前卡在哪个门（`0x400` 动画等待 / `sleep` / `paused` 未知指令 / 空 = 正常推进）；
-   *  - `gateMs`：本门已持续多久（长时间不变即可判定为"卡住"而不是"慢"）；
-   *  - `jsonlLines`：本会话写出的定向 trace 行数（用于发现"日志把主进程打满"这类问题）；
-   *  - `frame`：present 次数（渲染帧数）。
-   */
-  perf?: { stepsPerSec: number; gate: string; gateMs: number; jsonlLines: number; frames: number };
-  /** 硬错误（如「xxx 指令未实现」）；无错误时不填。 */
-  error?: string;
-  /** 当前**停在未知指令**等待处理（控制窗据此显示「作为桩函数跳过」按钮）；已放行/未暂停时不填。 */
-  pendingUnknown?: {
-    opcode: number;
-    name: string;
-    script: string;
-    byteOffset: number;
-    instrIndex: number;
-  };
-  /** 已被用户当作桩函数跳过的 opcode（去重，含各自被执行的次数）。 */
-  skipped: { opcode: number; name: string; count: number }[];
-}
+export type { ControlStatus } from './ipcProtocol.js';
 
 export class IpcFileSource implements FileSource {
   async readFile(p: string): Promise<Uint8Array> {

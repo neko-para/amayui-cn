@@ -493,13 +493,14 @@ npm run report -- --steps 200000 --ops 1fb,202,203,208,23b   # 只看渲染族
 ## 一句话架构
 
 ```
-[主进程]  NativeBridge 壳（文件/归档/未来渲染+音频真实现，经 IPC）
-   ▲ IPC
-[渲染进程] 解释器核心 (纯 TS)
-   - Engine / ScriptContext 对象
-   - dispatch[opcode] 分发表（可注入 = 插件点）
+[主进程]  资源 + 生命周期（electron/）：文件/归档/AGF 解码经 IPC；窗口与控制面
+   ▲ IPC（契约见 src/renderer/ipcProtocol.ts）
+[渲染进程] 解释器核心（纯 TS，src/vm/）
+   - Engine / Frame / 按类型分池的全局·局部变量（ADR-003）
+   - opcode 注册表三张：OPS(implemented) / NATIVE_OPS(native) / ENGINE_INTERNAL_OPS(engine-internal)
+     · 实现按引擎子系统拆在 src/vm/handlers/*（ops.ts 只做再导出）
    - 读写原语 (readInt/Float, writeInt/Float, DEC/ENC)
-   - NativeBridge 调用（当前==stub）
+   - NativeBridge 调用 → Pixi 渲染后端 / 无界面桩
 ```
 
 - **文件访问全部走异步代理 `FileSource`**（`src/arch/fileSource.ts` 接口；宿主用 `NodeFileSource`，将来 renderer 换 `IpcFileSource`）。
@@ -508,20 +509,47 @@ npm run report -- --steps 200000 --ops 1fb,202,203,208,23b   # 只看渲染族
 
 ## 目录结构
 
+> **2026 重构**：原先若干"什么都往里塞"的大文件已按**引擎子系统**与**职责**拆开
+> （`vm/ops.ts` 1723 行 → `vm/handlers/*`；`renderer.ts` 的 388 行 `main()` → `renderer/app/*`；
+> `pixiBackend.ts` → `renderer/pixi/*`；`drawItem.ts`/`sceneModel.ts` → `renderer/drawitem|scene/*`）。
+> 对外 import 路径保持不变（原文件退化为再导出 barrel），因此测试与调用点零改动。
+> 拆分原则：**一个模块 = 一个引擎子系统或一个明确职责**，"某 opcode 归哪里"只有一处可查。
+
 ```
 app/amayui-emulator/
 ├─ docs/            # 背景/ADR/计划/启动链分析/函数注册表/渲染后端
-├─ control/         # 控制窗：control.ts + index.html（重启/日志开关/未知指令桩跳过/状态）
-├─ electron/        # Electron 壳：main.ts(主进程+文件IPC+控制窗) / preload.ts(contextBridge)
+├─ control/         # 控制窗：control.ts(状态+IPC) / dom.ts(句柄表) / listView.ts(通用清单) / clipboard.ts
+├─ electron/        # Electron 壳：main.ts(仅生命周期装配) / paths / logging / windows / ipc/{files,control} / preload
 ├─ src/
 │  ├─ arch/         # FileSource 抽象 + Node 实现（异步文件代理）
-│  ├─ renderer/     # IpcFileSource + PixiBackend(PixiJS v8 WebGL 渲染后端) + renderer.ts(入口)
-│  ├─ script/       # lzss / alf(索引) / bin(SYS4450 解析) / opcodes 表
+│  ├─ renderer/     # 宿主与渲染
+│  │  ├─ renderer.ts        # 入口（装配 → 注册控制指令 → 跑主循环）
+│  │  ├─ app/               # boot / configBoot / session(门控主循环) / telemetry / traceLog / jsonlWriter
+│  │  ├─ drawitem/          # 模型层：model / animWindow / colorMath / eval / setters / cgDigit
+│  │  ├─ scene/             # 共享场景语义：state / ops(所有 sc*) / snapshot
+│  │  ├─ pixi/              # Pixi 后端实现：appSetup / inputAttach / textureCache / presenter
+│  │  ├─ pixiBackend.ts     # NativeBridge 实现（场景语义一律委托 scene/ops）
+│  │  ├─ headlessScene.ts   # 无渲染宿主（报告/快照回归），与 Pixi 共用 scene/ops
+│  │  ├─ ipcProtocol.ts     # 跨窗协议：window.api 声明 + ControlStatus DTO
+│  │  ├─ renderStatus.ts / viewport.ts / ipcFileSource.ts / index.html
+│  ├─ script/       # lzss / alf(索引) / bin(SYS4450 解析)
 │  ├─ util/         # 字节读取
-│  └─ vm/           # engine / operand(DEC·ENC) / ops / interpreter / native(stub)
-├─ test/            # xval(解析vs文本) + boot(管线级)
-└─ package.json     # npm run = 启动；npm test = 测试；electron:dev = 构建+渲染壳
+│  ├─ tools/        # 死写检测（闸门 C，ratchet）
+│  ├─ opcodes.ts    # opcode→{name,argc}（由 scripts/asm/opcodes.json 派生）
+│  ├─ engineConfig.ts / run.ts / report.ts
+│  └─ vm/           # VM 核心
+│     ├─ engine / interpreter / operand / ref / bits / step / input
+│     ├─ native.ts（NativeBridge 契约） / stubNative.ts（无界面桩）
+│     ├─ nativeTap.ts（闸门 A：意图被丢弃可数）
+│     ├─ ops.ts     # **稳定入口**：再导出三张注册表
+│     └─ handlers/  # 按子系统拆的 opcode 实现 + index.ts 拼装注册表
+├─ test/            # 单元 + 管线级（xval / boot / scene-report / 死写 ratchet）
+└─ package.json     # run / test / report / typecheck / verify / dev:electron
 ```
+
+**构建产物分离**：`npm run build`（tsc，类型检查 + 声明）输出到 `dist/tsc/`；
+`npm run build:electron`（esbuild，打包 IIFE/CJS）输出 `dist/renderer|control|electron`。
+两者不再争抢同一个 `dist/renderer/renderer.js`（历史上 tsc 会把 IIFE 包覆盖成 ESM，页面直接白屏）。
 
 ## 权威事实来源（本工程其它目录）
 

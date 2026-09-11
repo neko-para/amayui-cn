@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "dist",
+    "outDir": "dist/tsc",  // 与 build-electron 的产物分离：后者才产出 dist/renderer/renderer.js（IIFE）
     "rootDir": "src",
     "declaration": false,
     "sourceMap": true,

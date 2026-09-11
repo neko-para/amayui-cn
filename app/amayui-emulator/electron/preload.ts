@@ -1,10 +1,15 @@
 /**
  * Preload：把主进程的 IPC 能力以受限 API 暴露给 renderer（contextIsolation）。
- * 只暴露两个只读文件访问原语，不暴露 ipcRenderer 本体。
+ *
+ * 不暴露 `ipcRenderer` 本体；API 面 = `src/renderer/ipcProtocol.ts` 里声明的 `Window.api`。
+ * ★注意：两个窗口（游戏窗 + 控制窗）**共用这一份 preload**，所以 API 面是并集、不做最小权限拆分；
+ * 若要按窗口收窄，需要拆成两份 preload 并在 `windows.ts` 里分别指定。
  */
 import { contextBridge, ipcRenderer } from 'electron';
+import type { ControlStatus } from '../src/renderer/ipcProtocol.js';
 
 contextBridge.exposeInMainWorld('api', {
+  // ---- 资源读取（渲染窗）----
   /** 按 call-script 索引读一个脚本（返回 {index,name,data:number[]} | null）。 */
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
   /** 读任意文件原始字节（number[]）。 */
@@ -13,11 +18,16 @@ contextBridge.exposeInMainWorld('api', {
   readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
-  /** 诊断日志：追加一行到主进程的 .tmp/amayui-emulator.log（异步批量）。 */
+
+  // ---- 诊断落盘 ----
+  /** 诊断日志：追加一批到主进程的 .tmp/amayui-emulator.log（异步，不阻塞主进程）。 */
   logLine: (text: string) => ipcRenderer.send('log-line', text),
   /** 诊断日志：同步追加（关窗前保证落盘，阻塞直至主进程写完）。 */
   logLineSync: (text: string) => ipcRenderer.sendSync('log-line-sync', text),
-  // ---- 控制窗（ControlWindow）相关 IPC ----
+  /** 渲染窗→主：追加结构化 trace（JSON 行）到 .tmp/scene-trace.jsonl。 */
+  appendTraceLine: (line: string) => ipcRenderer.send('append-trace-line', line),
+
+  // ---- 控制面 ----
   /** 控制窗→主：重启主窗口渲染流程。 */
   controlRestart: () => ipcRenderer.send('control-restart'),
   /** 渲染窗→主：abort(0x1)/程序退出 → 关闭主窗口。 */
@@ -30,18 +40,25 @@ contextBridge.exposeInMainWorld('api', {
   controlForceClose: () => ipcRenderer.send('control-force-close'),
   /** 控制窗→主：把某个未知 opcode 作为桩函数跳过并继续执行。 */
   controlSkipOp: (opcode: number) => ipcRenderer.send('control-skip-op', opcode),
-  /** 主→控制窗：某未知 opcode 已被登记为桩函数。 */
-  onControlOpSkip: (cb: (opcode: number) => void) => ipcRenderer.on('control-op-skip-request', (_e, opcode) => cb(opcode)),
-  /** 主→控制窗：状态更新。 */
-  onControlStatus: (cb: (s: unknown) => void) => ipcRenderer.on('control-status', (_e, s) => cb(s)),
-  /** 主→渲染窗：traceAll 切换通知。 */
-  onTraceAll: (cb: (enabled: boolean) => void) => ipcRenderer.on('renderer-set-trace-all', (_e, v) => cb(v)),
-  /** 主→渲染窗：定向 trace 白名单变更通知。 */
-  onTraceFilter: (cb: (ops: number[]) => void) => ipcRenderer.on('renderer-set-trace-filter', (_e, ops) => cb(ops)),
-  /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
-  onControlSkipOp: (cb: (opcode: number) => void) => ipcRenderer.on('renderer-skip-op', (_e, opcode) => cb(opcode)),
   /** 渲染窗→主：上报状态（供主进程转发给控制窗）。 */
-  sendRendererStatus: (s: unknown) => ipcRenderer.send('renderer-status', s),
-  /** 渲染窗→主：追加一条结构化 trace（JSON 行）到 .tmp/scene-trace.jsonl。 */
-  appendTraceLine: (line: string) => ipcRenderer.send('append-trace-line', line),
+  sendRendererStatus: (s: ControlStatus) => ipcRenderer.send('renderer-status', s),
+
+  // ---- 主 → 窗口 的推送 ----
+  /**
+   * 主→控制窗：状态更新。返回**取消订阅函数**（重新注册不会叠加监听）。
+   */
+  onControlStatus: (cb: (s: ControlStatus) => void) => subscribe('control-status', cb),
+  /** 主→渲染窗：traceAll 切换通知。返回取消订阅函数。 */
+  onTraceAll: (cb: (enabled: boolean) => void) => subscribe('renderer-set-trace-all', cb),
+  /** 主→渲染窗：定向 trace 白名单变更通知。返回取消订阅函数。 */
+  onTraceFilter: (cb: (ops: number[]) => void) => subscribe('renderer-set-trace-filter', cb),
+  /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。返回取消订阅函数。 */
+  onControlSkipOp: (cb: (opcode: number) => void) => subscribe('renderer-skip-op', cb),
 });
+
+/** 订阅一个主→窗口频道；返回取消订阅函数（避免重复注册时重复触发）。 */
+function subscribe<T>(channel: string, cb: (value: T) => void): () => void {
+  const listener = (_e: Electron.IpcRendererEvent, value: T): void => cb(value);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.off(channel, listener);
+}

@@ -42,11 +42,23 @@ export interface DeadWriteReport {
   files: string[];
 }
 
-/** 只扫这几个（模型 + 全部消费者）；模型字段的语义在这里闭环。 */
+/** 模型接口（`Item`/`MeshObj`）的声明所在文件 —— 字段清单从这里取。 */
+export const MODEL_FILE = 'src/renderer/drawitem/model.ts';
+
+/** 只扫这几个（模型层 + 全部消费者）；模型字段的语义在这里闭环。 */
 const DEFAULT_SCAN = [
-  'src/renderer/drawItem.ts',
-  'src/renderer/sceneModel.ts',
+  MODEL_FILE,
+  'src/renderer/drawitem/animWindow.ts',
+  'src/renderer/drawitem/colorMath.ts',
+  'src/renderer/drawitem/eval.ts',
+  'src/renderer/drawitem/setters.ts',
+  'src/renderer/drawitem/cgDigit.ts',
+  'src/renderer/scene/state.ts',
+  'src/renderer/scene/ops.ts',
+  'src/renderer/scene/snapshot.ts',
   'src/renderer/pixiBackend.ts',
+  'src/renderer/pixi/presenter.ts',
+  'src/renderer/pixi/textureCache.ts',
   'src/renderer/headlessScene.ts',
 ];
 
@@ -137,7 +149,7 @@ export function findDeadWrites(rootDir: string, files: string[] = DEFAULT_SCAN):
     const p = path.join(rootDir, f);
     if (fs.existsSync(p)) sources.set(f, fs.readFileSync(p, 'utf8'));
   }
-  const model = sources.get('src/renderer/drawItem.ts') ?? '';
+  const model = sources.get(MODEL_FILE) ?? '';
   // 剔除诊断函数：它们读字段只为报告，不算"渲染消费"
   const all = stripFunctions([...sources.values()].join('\n'), DIAGNOSTIC_FNS);
   const report: DeadWriteReport = { alive: [], dead: [], files: [...sources.keys()] };

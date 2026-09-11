@@ -1,6 +1,9 @@
 # 08 渲染后端选型评估
 
-> 状态：**评估完成，Canvas 2D 已作为起始后端接入**（见 `src/renderer/canvasNative.ts`）。
+> 状态：**评估完成，PixiJS v8（WebGL）已作为现役后端接入**（见 `src/renderer/pixiBackend.ts` +
+> 共享场景层 `src/renderer/sceneModel.ts`）。早期用于跑通链路的 Canvas 2D 后端
+> （原 `src/renderer/canvasNative.ts`）已被取代并删除——它没有任何调用方，却会被编译产出，
+> 还带着一份与现役后端不一致的 `RenderStatus` 声明。需要回看可从 git 历史取。
 > 目标：为 AGE 引擎重写的**渲染子系统**（`_this + 80708` 的 graphics 对象，opcode 0x1F7–0x208）
 > 选择渲染技术，并把「VM draw 调用 → 屏幕上像素」的因果链接到 Electron。
 
