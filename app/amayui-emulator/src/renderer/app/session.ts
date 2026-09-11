@@ -23,8 +23,12 @@ import type { TraceLog } from './traceLog.js';
 import type { BootedApp } from './boot.js';
 
 /**
- * 一帧内最多推进的指令数（安全上限）：引擎是"一条一条跑到门控止"，无每帧指令上限。
- * 这里 SAFETY 只作防"无门控死循环"（如 TITLE 轮询）的兜底，不是 present 的触发条件。
+ * 一帧内最多推进的指令数 —— **仅作病态死循环兜底**，不是引擎语义。
+ *
+ * 引擎没有"每帧 N 条"的概念：它的每帧要么派发**恰好 1 条**（普通路径 / ADV 分支），要么
+ * 完全不派发（等待门，见 `Engine.awaitingAdvance`）。正常脚本每条消息/每个帧边界都会踩到门
+ * （`0x1F4`/`0x20C`/`0x23C`、`sleep`、`wait-for-input`），所以这个上限通常远吃不满；
+ * 一旦吃满，说明存在**没有门的轮询循环**，此时应当查门而不是靠这个数字兜。
  */
 const SAFETY_PER_FRAME = 10000;
 /** 交互运行上限：进入 TITLE 后不再按步数截止，靠"脚本退出/重置/错误/关窗"收尾；此处仅作病态死循环兜底。 */
@@ -167,11 +171,32 @@ export class RendererSession {
         this.#serviceAnimGate();
       } else if (e.waitFlags & SLEEP_GATE) {
         this.#serviceSleepGate();
+      } else if (e.awaitingAdvance) {
+        // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
+        // 一页消息已显示完，脚本**挂起**等玩家推进；此期间**不派发任何脚本指令**。
+        // 这正是「等待输入态」在引擎里的真实行为（此前 emulator 会在这里空转 10000 条/帧）。
+        this.#setGate('wait-input');
+        if (e.serviceAdvanceWait()) {
+          this.#traceLog.line(
+            `=== advance-wait cleared → ip=${e.curScript().ip} (page ${e.msgwin.pages}, 热点 ${e.routes.count} 项) steps=${this.#steps} ===`,
+          );
+        }
+        native.present();
+        this.#frames++;
       } else if (this.#pausedOp) {
         this.#setGate('paused');
         // 暂停态：VM 停在未知指令，等控制窗点「作为桩函数跳过」（或「重启」）。
         // 这里仍然 present（画面/时钟继续），只是不再推进 VM——保持窗口有响应。
         native.present();
+        this.#frames++;
+      } else if (e.advActive) {
+        // ★**ADV 分支**（引擎 `sub_411900`）：消息逐字显示中每帧**恰好派发 1 条**指令，
+        // 并跑输入泵 + 「取消消息键」三态机 + 「未显示完」判定（后者负责清掉 ADV 位）。
+        this.#setGate('adv');
+        const stillAdv = e.serviceAdv();
+        this.#stepOnceTraced();
+        if (!stillAdv) this.#traceLog.line('=== ADV cleared (reveal done) ===');
+        if (native.needsRender()) native.present();
         this.#frames++;
       } else {
         this.#setGate('');
@@ -227,6 +252,25 @@ export class RendererSession {
     this.#frames++;
   }
 
+  /** 推进一条指令并记账（`sub_411900` 的 ADV 分支用）。 */
+  async #stepOnceTraced(): Promise<void> {
+    const e = this.#e;
+    const status = this.#status;
+    const f = e.curScript();
+    status.scriptName = f.name || status.scriptName;
+    status.ip = f.ip;
+    status.steps = ++this.#steps;
+    if (!f.script || f.ip >= f.script.instructions.length) return;
+    try {
+      const t = await stepOnce(e);
+      for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
+      this.#writeJsonlIfFiltered(t);
+      this.#traceStepIfEnabled(t);
+    } catch (caught) {
+      this.#handleStepError(caught);
+    }
+  }
+
   /** 推进一批指令；返回 true = 需要终止整个会话（重置/退出/硬错误）。 */
   async #runInstructionBatch(): Promise<boolean> {
     const e = this.#e;
@@ -247,7 +291,8 @@ export class RendererSession {
         const stop = this.#handleStepError(caught);
         if (stop !== null) return stop;
       }
-      if (e.waitFlags & (0x400 | SLEEP_GATE)) break; // 遇到门控（0x21C 置 0x400 / 0xC8 sleep 置 SLEEP_GATE），停这批
+      // 遇到门控就停这批：0x400 动画等待 / sleep / **等待推进门**（0x72 wait-for-input 置的 bit31）
+      if (e.waitFlags & (0x400 | SLEEP_GATE) || e.awaitingAdvance) break;
     }
     return false;
   }

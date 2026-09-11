@@ -167,7 +167,7 @@ export const op_set_engine_flag_174812: OpHandler = (c) => {
 
 /** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */
 export const ENGINE_FIELD_OPS: OpTable = [
-  // 注：消息窗字段读写（0x7F/0x80/0x300/0x301）见 msgwin.ts —— 同属"引擎字段"，但族谱独立。
+  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
   // ---- 「读操作数 → 写引擎字段」一族（真实现；规格见 ENGINE_FIELD_STORE）----
   [0x76, op_engine_field_store], // _this[21664]
   [0x77, op_engine_field_store], // _this[21665]

@@ -18,6 +18,7 @@ import { ARITHMETIC_OPS } from './arithmetic.js';
 import { MEMORY_OPS } from './memory.js';
 import { STRING_OPS, STRING_NATIVE_OPS } from './strings.js';
 import { ENGINE_FIELD_OPS, ENGINE_FIELD_NATIVE_OPS } from './engine-fields.js';
+import { CONFIG_READ_OPS } from './config-read.js';
 import { CONTROL_OPS } from './control.js';
 import { MSGWIN_OPS } from './msgwin.js';
 import { FRAME_OPS, FRAME_NATIVE_OPS } from './frame.js';
@@ -27,7 +28,6 @@ import { GFX_ITEM_OPS, GFX_ITEM_NATIVE_OPS } from './gfx-item.js';
 import { GFX_MISC_OPS, GFX_MISC_NATIVE_OPS } from './gfx-misc.js';
 import { MENU_OPS } from './menu.js';
 import { INPUT_OPS } from './input.js';
-import { ADV_OPS } from './adv.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -36,6 +36,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...MEMORY_OPS,
   ...STRING_OPS,
   ...ENGINE_FIELD_OPS,
+  ...CONFIG_READ_OPS,
   ...CONTROL_OPS,
   ...MSGWIN_OPS,
   ...FRAME_OPS,
@@ -45,7 +46,6 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...GFX_MISC_OPS,
   ...MENU_OPS,
   ...INPUT_OPS,
-  ...ADV_OPS,
 ]);
 
 /** 子系统 opcode → NativeBridge（`native`）。 */

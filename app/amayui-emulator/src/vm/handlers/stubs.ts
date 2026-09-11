@@ -102,17 +102,13 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
   [0x1c1, op_engine_internal], // 消息/UI（sub_4563D0）
   [0x1c9, op_engine_internal], // 消息窗
-  [0x1ca, op_engine_internal], // SetConfig("message:ReadTextSkip", op1)（写配置注册表）
   [0x1cb, op_engine_internal], // 消息窗
   [0x1ce, op_engine_internal], // 消息窗
-  [0x212, op_engine_internal], // 消息窗对象（sub_423A30）
-  [0x213, op_engine_internal], // 消息窗对象（sub_423A80）
   [0x245, op_engine_internal], // 消息/UI
   [0x246, op_engine_internal], // 消息/UI
   [0x249, op_engine_internal], // 消息/UI
   [0x25a, op_engine_internal], // 消息/UI
   [0x25c, op_engine_internal], // 消息/UI
-  [0x25d, op_engine_internal], // 消息列表对象（sub_425EF0/425F50）
   [0x25e, op_engine_internal], // 消息/UI
   [0x25f, op_engine_internal], // 消息/UI
   [0x260, op_engine_internal], // 消息窗配置（_this[80102..80104]）
@@ -147,10 +143,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统 ----
   // 判定依据 = 逐条读 handler 体：体内只出现对 `_this[引擎字段]` 的赋值/文本区写入，
   // **既不回写操作数、也不改 ip/cur**，故对 emulator 不可观测（与其余插桩同一取舍）。
-  // 这两条**确实未实现**（0xC5 引擎还会回写 op2），因此照旧受闸门 B 监督：
-  // 脚本若给它们传了非平凡实参，会出现在控制窗的「能力缺口」栏。
-  [0x196, op_engine_internal], // display-furigana：写消息文本区（文本渲染未建模）
-  [0xc5, op_engine_internal], // 读 op1 选 sound:Volume1..4 → GetConfig → 写 op2（音量显示；无声音子系统）
+  // 这一条**确实未实现**（引擎还会回写 op2），因此照旧受闸门 B 监督：
+  // 脚本若给它传了非平凡实参，会出现在控制窗的「能力缺口」栏。
 ]);
 
 /** 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */
@@ -175,8 +169,5 @@ export const STUB_NATIVE_OPS: OpTable = [
   [0x205, stubSubsystem], // 纹理/文本 op
   [0x207, stubSubsystem], // 纹理 op
   [0x1a5, stubSubsystem], // set-font
-  [0x6e, stubSubsystem], // show-text
-  [0x6f, stubSubsystem], // end-text-line
-  [0x72, stubSubsystem], // wait-for-input
 ];
 

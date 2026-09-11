@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 3 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 6 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 12 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 26 | 引擎有、emulator 完全没有 |
+| `partial` | 19 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 22 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **72** | 需要关注（非 n/a 且非已核验）= **45** |
+| **合计** | **78** | 需要关注（非 n/a 且非已核验）= **48** |
 
 ## 按子系统
 
@@ -25,8 +25,8 @@
 | 3D | 15 | 1 |
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
-| 帧循环 | 11 | 9 |
-| 消息窗 | 6 | 6 |
+| 帧循环 | 11 | 8 |
+| 消息窗 | 12 | 10 |
 | 渲染 | 22 | 11 |
 | 资源 | 7 | 2 |
 | 转场 | 4 | 4 |
@@ -101,13 +101,19 @@
 | `lazy-scene-effect-release-gap` | 3D | Scene+46492 / +46496 两张 effect 的释放缺口 | ➖ n/a | E1 |
 | `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | 🟠 部分 | E1 |
 | `chained-3d-layer-commit` | 3D | 3D 场景层四路归并与扫描带绘制 | ➖ n/a | E1 |
-| `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E1 |
-| `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ❌ 缺失 | E0 |
-| `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | ❌ 缺失 | E0 |
-| `msgwin-text-object` | 消息窗 | 文本对象（Engine+21324）的槽模型与写入 | ❌ 缺失 | E0 |
+| `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-text-object` | 消息窗 | 文本对象（Engine+21324）的槽模型与写入 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
-| `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E1 |
-| `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | ❌ 缺失 | E0 |
+| `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
+| `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -406,34 +412,25 @@
 - **缺失时为什么静默**：位被置住时主循环只是改走 ADV 分支（每帧派发 1 条指令 + 输入泵），没有断言/日志；位被清时也只是回到普通分支 —— 两种取值都是合法路径
 - **引擎**：sub_41ED80, sub_41EEF0, sub_41EB20, sub_41FAB0, sub_4190E0, sub_419120, sub_411900, sub_4199B0, sub_419CC0 @ raw 24532-28977
 - **读的字段**：Engine+699204, Engine+122455, Engine+122496, Engine+1415, Engine+97050, Engine+97051, Engine+122368, Engine+122370
-- **emulator 现状**：★emulator 的 op_message_show(0x71) **无条件**置 0x8000000 且**从不自行清除**，而引擎要求：(a) 置位受 message:ReadTextSkip 门控，(b) 由 0x19B/0x88/0xFA/0x72 等**脚本侧**清除、或由 sub_411900 在「未显示完判定」为假时清除。位永久置住会让 0xC8 sleep 被整条跳过（引擎语义），实测把 TITLE 空转循环从 1239 步/秒放大到 598000 步/秒
+- **emulator 现状**：已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。
 
-### `adv-perframe-dispatch`（absent）
-
-- **能力**：ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵
-- **触发**：主循环最外层 `effect_flags & 0x8000000` 分支命中时，每轮调用 sub_411900
-- **缺失时为什么静默**：ADV 分支与普通分支都执行「一条指令」，只是多了输入泵与状态判定；少了它脚本仍然推进，只是每帧变成每批、且 ADV 位永不清 ⇒ 无报错
-- **引擎**：sub_411900, sub_412290 @ raw 20096-20233
-- **读的字段**：Engine+699204, frames[cur].ip, frames[cur].operand_count, Engine+122368, Engine+12957, Engine+12962, Engine+5494
-- **emulator 现状**：★emulator 没有 ADV 每帧处理：它把 ADV 位当作「跳过 sleep 的标志」并在普通批次里跑指令，而引擎是**每帧恰好 1 条指令 + 输入泵 + 位判定**。这正是 TITLE 空转循环失控（每 rAF 批 10000 条）的直接原因
-
-### `adv-text-reveal-progress`（absent）
+### `adv-text-reveal-progress`（partial）
 
 - **能力**：消息文本显示进度判定（ReadTextSkip 门 + 分段表查表）
 - **触发**：0x6E/0x71/0x72 每次调用；仅当 GetConfig("message:ReadTextSkip") 为真才走该分支
 - **缺失时为什么静默**：查表未命中/越界统一返回 0，调用方据此认为「已显示完」并清 ADV —— 全是合法路径，无日志
 - **引擎**：sub_48F000, sub_48E870, sub_48FFB0, sub_41ED80, sub_41EEF0 @ raw 109440-110481
 - **读的字段**：Engine+80107, Engine+80107+285, Engine+174405(config)
-- **emulator 现状**：★emulator 没有文本进度模型：既没有 message:ReadTextSkip 门，也没有「显示完没有」的判定，于是只能把 ADV 当成「显示后一直有效」的常驻状态
+- **emulator 现状**：部分：`message:ReadTextSkip` 门已实现（含 0x1CA 的运行期覆盖），「是否还在显示」改为「文本刚写入 ⇒ 本帧显示中，下一帧由 serviceAdv 收尾」。仍未建模：引擎真正的逐字显示推进（`sub_48E870`/`sub_48F000` 的分段表 + 字体度量）。
 
-### `msgwin-text-object`（absent）
+### `msgwin-text-object`（partial）
 
 - **能力**：文本对象（Engine+21324）的槽模型与写入
 - **触发**：0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元
 - **缺失时为什么静默**：文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）
 - **引擎**：sub_45EC60, sub_46BE30, sub_46CBF0 @ raw 74197-74281
 - **读的字段**：Engine+21324, Engine+260, Engine+261, Engine+307, Engine+667856, Engine+339
-- **emulator 现状**：★emulator 无文本对象 ⇒ 消息文本无处存放、无法判定「显示完」；这是 ADV 状态机无法忠实复刻的根因。功能面最小集：槽表 + 文本内容 + 进度字段 + 「是否显示完」的查询
+- **emulator 现状**：部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：`sub_45EC60` 的槽布局重置与 GDI 文本渲染。
 
 ### `msgwin-object-table`（partial）
 
@@ -442,13 +439,49 @@
 - **缺失时为什么静默**：对象表槽为空时各 handler 只做 `if (obj)` 判定即返回；布局重算只是从容器里移除区间 —— 没有对象就什么都不发生，无日志无报错
 - **引擎**：sub_423A30, sub_423A80, sub_426990, sub_4269F0, sub_404F80 @ raw 31742-33789
 - **读的字段**：Engine+21585, Engine+122466, Engine+122476, Engine+122486, Engine+1040(绘制容器)
-- **emulator 现状**：emulator 只把 0x300/0x301 落到 engineValues[122466+v]/[122476+v]/[122486+v] 的**整数**上，没有对象表与布局重算（0x212/0x213 未实现）；故「消息窗部件位置/尺寸」语义缺失。功能面最小集：对象表（索引→对象）+ 每对象的图元区间字段 + 布局重算调用点
+- **emulator 现状**：部分：对象表与三条写指令（0x212→+100、0x213→+104/+108、0x25D→+276/+280）已建模并有测试；0x301 顺带清 +132。仍未建模：`sub_404F80` 的布局重算（移除图元区间）与对象内部其它字段。
 
-### `msgwin-cancel-key-state`（absent）
+### `msgwin-cancel-key-state`（partial）
 
 - **能力**：「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关
 - **触发**：sub_411900 每帧：输入掩码 0x10（取消键按下沿）驱动 122370 在 0→1→2 之间迁移
 - **缺失时为什么静默**：三态机每个取值都是合法分支；到 2 才清 ADV 并 SetConfig("message:ReadTextSkip", 0)，中间态无任何日志
 - **引擎**：sub_411900 @ raw 20096-20160
 - **读的字段**：Engine+122370, Engine+174802, Engine+174405(config)
-- **emulator 现状**：★emulator 完全没有这个状态机，也就没有「取消消息键」把消息收掉、把 ReadTextSkip 复位的行为 ⇒ ADV 位失去一个清除点
+- **emulator 现状**：已实现三态机本体（`Engine.serviceAdv()` 内，掩码 bit4 = 鼠标左键驱动 122370: 0→1→2，到 2 时清 ADV + 复位 ReadTextSkip）。但引擎门控在 `GetConfig("set:CancelMessageKey")`，随包 SYS4REG.INI **没有该键** ⇒ 与引擎一致地处于休眠（cfgInt 缺省 0）。
+
+### `msgwin-text-method-opcodes`（partial）
+
+- **能力**：文本子系统方法转发指令族（约 25 条）—— 属**指令集**
+- **触发**：脚本布置消息窗时逐条调用；每条只读 N 个操作数并转发到文本对象 Engine+21324 的一个方法
+- **缺失时为什么静默**：这些 handler 体只有「读操作数 → 调文本对象方法」，没有回写操作数、不改 ip；emulator 把它们当 no-op 跳过时，脚本拿到的是「已执行」的状态，控制流正常，只是消息窗永远没有内容/几何 —— 无日志无报错
+- **引擎**：sub_41ED20, sub_41F250, sub_41F350, sub_41F490, sub_425EF0, sub_426200, sub_4332D0, sub_456430, sub_45D660, sub_4563A0, sub_4185F0, sub_432DD0 @ raw 28401-41818
+- **读的字段**：Engine+21324, Engine+21585, Engine+166964, Engine+430600
+- **emulator 现状**：部分：消息窗对象表三条（0x212/0x213/0x25D）已实现；其余约 22 条纯转发器（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1BB/0x1C1/0x1C9/0x1CE/0x324…）仍是 no-op —— 它们转发到不存在的文本布局子系统，**不假装实现**。
+
+### `msgwin-attr-font-opcodes`（partial）
+
+- **能力**：文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集**
+- **触发**：脚本设置字体/文本属性时调用；0x196 display-furigana 在消息文本里插注音；0xC5 读音量配置写操作数
+- **缺失时为什么静默**：多为纯属性写入（如 0x2BD 写文本对象 +218516/+1248 = 700 或 0）或字符串转发；0xC5 引擎会**回写 op2**，被跳过时操作数保留旧值 —— 都属合法路径，无断言
+- **引擎**：sub_426200, sub_426260, sub_4262C0, sub_426310, sub_4332D0, sub_426500, sub_425DB0, sub_41FC20, sub_42E540 @ raw 29032-41818
+- **读的字段**：Engine+21324, Engine+92381, Engine+92379, Engine+86672
+- **emulator 现状**：部分：`0x196 display-furigana` 已实现（记录注音对）；`0x2BD/0x2BE/0x2BF/0x2C0/0x2FE/0x25A/0xC5` 仍是 no-op（字体/属性转发到 GDI 子系统）。其中 `0xC5` 引擎会回写 op2 ⇒ 应并入闸门 B 缺口。
+
+### `adv-advance-route-table`（partial）
+
+- **能力**：点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据
+- **触发**：`0x090` 登记热点项（消息场景常见 `i090 0 0 500 2d0 …` 全屏热点）；`wait-for-input` 挂起后每帧 `sub_411BC0` 做命中测试/键命中
+- **缺失时为什么静默**：表为空或游标 -1 时 `sub_403E70`/`sub_403D70` 都返回 -1，调用方只是「继续等下一帧」，无日志无错误码；只有表满时 `0x090` 才抛 ShowMessage
+- **引擎**：sub_420640, sub_403B30, sub_403C50, sub_403D70, sub_403E70, sub_411BC0, sub_411900 @ raw 9740-29518
+- **读的字段**：Engine+21976(表基址 0x55D8), Engine+29872(游标), Engine+29864(推进标志)
+- **emulator 现状**：已实现：`RouteTable`（入队 `0x090`、坐标命中 `hitTest`、键命中 `pickByKey`、label 重定位 `Engine.jumpToLabel`）与等待门集成；真实脚本 SC0000 登记 6 个热点且不再硬报错。未实现：引擎 `[7466]/[959]` 的游标去重锁存（emulator 改为「本帧有推进输入」才推进，避免鼠标悬停即自动翻页）、`sub_403500` 的坐标变换、`[7361+i]` 键位绑定的写入方。
+
+### `msgwin-config-gates`（partial）
+
+- **能力**：消息/ADV 路径上的配置门与「当前走不到的分支」
+- **触发**：各 handler 体内的 `GetConfig("…")`；随包 SYS4REG.INI 的取值决定走哪一支
+- **缺失时为什么静默**：配置门是普通 if：取值为假时对应分支整段不执行，没有日志也没有错误码；更隐蔽的是**配置回读类指令被当 no-op 时脚本读到旧值**（不报错、只算错）
+- **引擎**：sub_41EB20, sub_41ED80, sub_41EEF0, sub_411900, sub_411BC0, sub_409400, sub_42E540, sub_42E670, sub_4309E0, sub_431110, sub_4311B0, sub_42D2F0 @ raw 20096-40386
+- **读的字段**：Engine+697620, Engine+174405, Engine+86672
+- **emulator 现状**：清单与逐键分支见 `docs-new/03-engine/message-config-gates.md`。要点：(a) `message:ReadTextSkip=0` ⇒ 0x6E/0x71/0x72 不置 ADV（emulator 已按门实现）；(b) `message:MesWinAlpha=8` ⇒ 每段文本 8ms 节流（已实现）；(c) `set:CancelMesSkipOnClick`/`set:WheelKeyUp|Down`/`set:ReDrawTextOnKey`/`set:ControlDisibleCursor` 在随包 INI **缺失** ⇒ 对应分支当前走不到（三态机已实现但休眠，滚轮/重绘未建模）；(d) `message:AutoMessage*` 自动播放未建模。★纪律：读到门就照门实现；走不到的分支必须登记；配置回读类指令一律不得当 no-op。

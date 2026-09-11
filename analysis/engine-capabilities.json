@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 72,
-    "modeled-verified": 3,
+    "total": 78,
+    "modeled-verified": 6,
     "modeled-unverified": 7,
-    "partial": 12,
-    "absent": 26,
+    "partial": 19,
+    "absent": 22,
     "n/a-known": 24,
-    "needsAttention": 45
+    "needsAttention": 48
   },
   "entries": [
     {
@@ -1753,9 +1753,9 @@
       "confidence": "confirmed",
       "emulator": {
         "status": "partial",
-        "evidence": "E1",
-        "guard": "",
-        "note": "★emulator 的 op_message_show(0x71) **无条件**置 0x8000000 且**从不自行清除**，而引擎要求：(a) 置位受 message:ReadTextSkip 门控，(b) 由 0x19B/0x88/0xFA/0x72 等**脚本侧**清除、或由 sub_411900 在「未显示完判定」为假时清除。位永久置住会让 0xC8 sleep 被整条跳过（引擎语义），实测把 TITLE 空转循环从 1239 步/秒放大到 598000 步/秒"
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。"
       }
     },
     {
@@ -1782,10 +1782,10 @@
       "whySilent": "ADV 分支与普通分支都执行「一条指令」，只是多了输入泵与状态判定；少了它脚本仍然推进，只是每帧变成每批、且 ADV 位永不清 ⇒ 无报错",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★emulator 没有 ADV 每帧处理：它把 ADV 位当作「跳过 sleep 的标志」并在普通批次里跑指令，而引擎是**每帧恰好 1 条指令 + 输入泵 + 位判定**。这正是 TITLE 空转循环失控（每 rAF 批 10000 条）的直接原因"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已实现：`Engine.serviceAdv()`（= `sub_411900` 的输入泵 + 「未显示完」判定 + ADV 清除）与 renderer session 的 `adv` 门分支（每帧恰好 1 条指令）；headless 侧（report/run）同构处理。"
       }
     },
     {
@@ -1811,10 +1811,10 @@
       "whySilent": "查表未命中/越界统一返回 0，调用方据此认为「已显示完」并清 ADV —— 全是合法路径，无日志",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★emulator 没有文本进度模型：既没有 message:ReadTextSkip 门，也没有「显示完没有」的判定，于是只能把 ADV 当成「显示后一直有效」的常驻状态"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "部分：`message:ReadTextSkip` 门已实现（含 0x1CA 的运行期覆盖），「是否还在显示」改为「文本刚写入 ⇒ 本帧显示中，下一帧由 serviceAdv 收尾」。仍未建模：引擎真正的逐字显示推进（`sub_48E870`/`sub_48F000` 的分段表 + 字体度量）。"
       }
     },
     {
@@ -1841,10 +1841,10 @@
       "whySilent": "文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★emulator 无文本对象 ⇒ 消息文本无处存放、无法判定「显示完」；这是 ADV 状态机无法忠实复刻的根因。功能面最小集：槽表 + 文本内容 + 进度字段 + 「是否显示完」的查询"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）与消息窗对象表（0x212/0x213/0x25D）。仍未建模：`sub_45EC60` 的槽布局重置与 GDI 文本渲染。"
       }
     },
     {
@@ -1871,7 +1871,7 @@
         "status": "modeled-unverified",
         "evidence": "E1",
         "guard": "test/input.test.ts",
-        "note": "emulator 有 InputManager.flush()/consumeEdges()（等价 sub_4780D0/0x100/0x101），但**没有按帧驱动**：它只在指令里读，而不是每帧刷；且缺少「跳读中」掩码位 0x40（=Engine+1415）的合成"
+        "note": "已部分实现：`Engine.serviceAdv()` 每帧 `input.flush()`（= `sub_4780D0`）；「跳读中」掩码位 0x40 由 `msgwin.skipMirror`(1415) 合成。仍未建模：引擎经 `sub_403E70` 的文本队列推进与 `set:WheelKeyUp/Down` 键绑定。"
       }
     },
     {
@@ -1900,9 +1900,9 @@
       "confidence": "confirmed",
       "emulator": {
         "status": "partial",
-        "evidence": "E1",
-        "guard": "",
-        "note": "emulator 只把 0x300/0x301 落到 engineValues[122466+v]/[122476+v]/[122486+v] 的**整数**上，没有对象表与布局重算（0x212/0x213 未实现）；故「消息窗部件位置/尺寸」语义缺失。功能面最小集：对象表（索引→对象）+ 每对象的图元区间字段 + 布局重算调用点"
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "部分：对象表与三条写指令（0x212→+100、0x213→+104/+108、0x25D→+276/+280）已建模并有测试；0x301 顺带清 +132。仍未建模：`sub_404F80` 的布局重算（移除图元区间）与对象内部其它字段。"
       }
     },
     {
@@ -1924,10 +1924,208 @@
       "whySilent": "三态机每个取值都是合法分支；到 2 才清 ADV 并 SetConfig(\"message:ReadTextSkip\", 0)，中间态无任何日志",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★emulator 完全没有这个状态机，也就没有「取消消息键」把消息收掉、把 ReadTextSkip 复位的行为 ⇒ ADV 位失去一个清除点"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已实现三态机本体（`Engine.serviceAdv()` 内，掩码 bit4 = 鼠标左键驱动 122370: 0→1→2，到 2 时清 ADV + 复位 ReadTextSkip）。但引擎门控在 `GetConfig(\"set:CancelMessageKey\")`，随包 SYS4REG.INI **没有该键** ⇒ 与引擎一致地处于休眠（cfgInt 缺省 0）。"
+      }
+    },
+    {
+      "id": "adv-advance-opcodes",
+      "subsystem": "消息窗",
+      "name": "ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为",
+      "trigger": "脚本在消息文本前后调用；0x72 是「等待推进」主循环门，0xFA 是收消息时的快速推进，0x1CA 设置 ReadTextSkip 开关",
+      "engine": {
+        "fns": [
+          "sub_41EB20",
+          "sub_41EEF0",
+          "sub_4199B0",
+          "sub_420240"
+        ],
+        "raw": "24952-29325"
+      },
+      "reads": [
+        "Engine+699204",
+        "Engine+122455",
+        "Engine+122496",
+        "Engine+174405(config)"
+      ],
+      "whySilent": "这四条在 emulator 侧分别被当成 stub / 未注册 / no-op：执行它们不会报错（stub 只记日志、no-op 什么都不做），脚本继续往下走 ⇒ 表现是「消息不等待、不推进、ReadTextSkip 切不了」",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已实现 0x6E/0x6F/0x72/0xFA/0x1CA（全部注册进 OPS，`0xFA` 不再硬报错）；其中 `0x72` 置 bit31 等待门，`0xFA` 收尾入等待门。测试锁住四条的行为。"
+      }
+    },
+    {
+      "id": "msgwin-text-method-opcodes",
+      "subsystem": "消息窗",
+      "name": "文本子系统方法转发指令族（约 25 条）—— 属**指令集**",
+      "trigger": "脚本布置消息窗时逐条调用；每条只读 N 个操作数并转发到文本对象 Engine+21324 的一个方法",
+      "engine": {
+        "fns": [
+          "sub_41ED20",
+          "sub_41F250",
+          "sub_41F350",
+          "sub_41F490",
+          "sub_425EF0",
+          "sub_426200",
+          "sub_4332D0",
+          "sub_456430",
+          "sub_45D660",
+          "sub_4563A0",
+          "sub_4185F0",
+          "sub_432DD0"
+        ],
+        "raw": "28401-41818"
+      },
+      "reads": [
+        "Engine+21324",
+        "Engine+21585",
+        "Engine+166964",
+        "Engine+430600"
+      ],
+      "whySilent": "这些 handler 体只有「读操作数 → 调文本对象方法」，没有回写操作数、不改 ip；emulator 把它们当 no-op 跳过时，脚本拿到的是「已执行」的状态，控制流正常，只是消息窗永远没有内容/几何 —— 无日志无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "部分：消息窗对象表三条（0x212/0x213/0x25D）已实现；其余约 22 条纯转发器（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1BB/0x1C1/0x1C9/0x1CE/0x324…）仍是 no-op —— 它们转发到不存在的文本布局子系统，**不假装实现**。"
+      }
+    },
+    {
+      "id": "msgwin-attr-font-opcodes",
+      "subsystem": "消息窗",
+      "name": "文本属性 / 字体 / 注音指令族（0x2BD..0x2C0、0x2FE、0x2DB、0x25A、0x196、0xC5）—— 属**指令集**",
+      "trigger": "脚本设置字体/文本属性时调用；0x196 display-furigana 在消息文本里插注音；0xC5 读音量配置写操作数",
+      "engine": {
+        "fns": [
+          "sub_426200",
+          "sub_426260",
+          "sub_4262C0",
+          "sub_426310",
+          "sub_4332D0",
+          "sub_426500",
+          "sub_425DB0",
+          "sub_41FC20",
+          "sub_42E540"
+        ],
+        "raw": "29032-41818"
+      },
+      "reads": [
+        "Engine+21324",
+        "Engine+92381",
+        "Engine+92379",
+        "Engine+86672"
+      ],
+      "whySilent": "多为纯属性写入（如 0x2BD 写文本对象 +218516/+1248 = 700 或 0）或字符串转发；0xC5 引擎会**回写 op2**，被跳过时操作数保留旧值 —— 都属合法路径，无断言",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "部分：`0x196 display-furigana` 已实现（记录注音对）；`0x2BD/0x2BE/0x2BF/0x2C0/0x2FE/0x25A/0xC5` 仍是 no-op（字体/属性转发到 GDI 子系统）。其中 `0xC5` 引擎会回写 op2 ⇒ 应并入闸门 B 缺口。"
+      }
+    },
+    {
+      "id": "adv-advance-route-table",
+      "subsystem": "消息窗",
+      "name": "点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据",
+      "trigger": "`0x090` 登记热点项（消息场景常见 `i090 0 0 500 2d0 …` 全屏热点）；`wait-for-input` 挂起后每帧 `sub_411BC0` 做命中测试/键命中",
+      "engine": {
+        "fns": [
+          "sub_420640",
+          "sub_403B30",
+          "sub_403C50",
+          "sub_403D70",
+          "sub_403E70",
+          "sub_411BC0",
+          "sub_411900"
+        ],
+        "raw": "9740-29518"
+      },
+      "reads": [
+        "Engine+21976(表基址 0x55D8)",
+        "Engine+29872(游标)",
+        "Engine+29864(推进标志)"
+      ],
+      "whySilent": "表为空或游标 -1 时 `sub_403E70`/`sub_403D70` 都返回 -1，调用方只是「继续等下一帧」，无日志无错误码；只有表满时 `0x090` 才抛 ShowMessage",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已实现：`RouteTable`（入队 `0x090`、坐标命中 `hitTest`、键命中 `pickByKey`、label 重定位 `Engine.jumpToLabel`）与等待门集成；真实脚本 SC0000 登记 6 个热点且不再硬报错。未实现：引擎 `[7466]/[959]` 的游标去重锁存（emulator 改为「本帧有推进输入」才推进，避免鼠标悬停即自动翻页）、`sub_403500` 的坐标变换、`[7361+i]` 键位绑定的写入方。"
+      }
+    },
+    {
+      "id": "msgwin-config-gates",
+      "subsystem": "消息窗",
+      "name": "消息/ADV 路径上的配置门与「当前走不到的分支」",
+      "trigger": "各 handler 体内的 `GetConfig(\"…\")`；随包 SYS4REG.INI 的取值决定走哪一支",
+      "engine": {
+        "fns": [
+          "sub_41EB20",
+          "sub_41ED80",
+          "sub_41EEF0",
+          "sub_411900",
+          "sub_411BC0",
+          "sub_409400",
+          "sub_42E540",
+          "sub_42E670",
+          "sub_4309E0",
+          "sub_431110",
+          "sub_4311B0",
+          "sub_42D2F0"
+        ],
+        "raw": "20096-40386"
+      },
+      "reads": [
+        "Engine+697620",
+        "Engine+174405",
+        "Engine+86672"
+      ],
+      "whySilent": "配置门是普通 if：取值为假时对应分支整段不执行，没有日志也没有错误码；更隐蔽的是**配置回读类指令被当 no-op 时脚本读到旧值**（不报错、只算错）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E3",
+        "guard": "test/config1-chain.test.ts",
+        "note": "清单与逐键分支见 `docs-new/03-engine/message-config-gates.md`。要点：(a) `message:ReadTextSkip=0` ⇒ 0x6E/0x71/0x72 不置 ADV（emulator 已按门实现）；(b) `message:MesWinAlpha=8` ⇒ 每段文本 8ms 节流（已实现）；(c) `set:CancelMesSkipOnClick`/`set:WheelKeyUp|Down`/`set:ReDrawTextOnKey`/`set:ControlDisibleCursor` 在随包 INI **缺失** ⇒ 对应分支当前走不到（三态机已实现但休眠，滚轮/重绘未建模）；(d) `message:AutoMessage*` 自动播放未建模。★纪律：读到门就照门实现；走不到的分支必须登记；配置回读类指令一律不得当 no-op。"
+      }
+    },
+    {
+      "id": "msgwin-config-read-opcodes",
+      "subsystem": "消息窗",
+      "name": "配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集**",
+      "trigger": "设置界面（CONFIG1）打开时逐项回读当前取值；结果存进 local 供显示与分支使用",
+      "engine": {
+        "fns": [
+          "sub_42E540",
+          "sub_42E670",
+          "sub_42D2F0",
+          "sub_4309E0",
+          "sub_431110",
+          "sub_4311B0",
+          "sub_42CF10",
+          "sub_401540"
+        ],
+        "raw": "37909-40386"
+      },
+      "reads": [
+        "Engine+697620",
+        "Engine+174405"
+      ],
+      "whySilent": "这 7 条的**唯一副作用就是回写操作数**（`sub_42B4B0`）。当 no-op 跳过时脚本不报错、只读到**旧值** ⇒ 设置界面显示与后续分支都是错的（闸门 B 的典型）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/config-read.test.ts",
+        "note": "7 条全部实现并注册进 `OPS`（`src/vm/handlers/config-read.ts`）。此前 `0x194` 根本未注册（命中即硬报错），其余 6 条走 no-op。CONFIG1 链路因此有 7 处静默/硬错误，现已消除；`test/config1-chain.test.ts` 锁住「CONFIG1 路径零未实现 opcode」。"
       }
     }
   ]

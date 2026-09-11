@@ -218,6 +218,8 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.effectFlags = 0;
   c.e.advFields.clear();
   c.e.globalSlot97058 = 0;
+  c.e.msgwin.reset();
+  c.e.routes.reset();
   // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
   c.e.engineValues.set(96983, 0);
   // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。

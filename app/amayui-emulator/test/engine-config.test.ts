@@ -217,9 +217,25 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
     [0x301, 1, 'implemented'], // 清消息窗对象项（真实现：写 engineValues[122486+v]=0）
     [0x142, 1, 'implemented'], // 写引擎开关 _this[174812]（真实现：写 engineValues[174812]）
     [0x12f, 4, 'implemented'], // 三数组插入排序 + 重编码（真实现：读/写数组元素）
-    [0xc5, 2, 'engine-internal'], // 声音音量显示（引擎会回写 op2，本机无声音子系统 ⇒ 纯 no-op 跳过）
-    [0x196, 3, 'engine-internal'], // display-furigana（文本渲染未建模 ⇒ 纯 no-op 跳过）
-    [0x306, 1, 'native'], // system:EffectSkipOnClick getter
+    // 2026 升级为真实现（ADV/消息窗状态机，见 src/vm/handlers/msgwin.ts）：
+  [0x6e, 2, 'implemented'], // show-text：追加文本 + 分段节流
+  [0x6f, 1, 'implemented'], // end-text-line
+  [0x72, 1, 'implemented'], // wait-for-input：置等待推进门（bit31）
+  [0xfa, 0, 'implemented'], // poll-msg-advance（★此前未注册 ⇒ 命中即硬报错）
+  [0x1ca, 1, 'implemented'], // SetConfig message:ReadTextSkip
+  [0x212, 2, 'implemented'], // 消息窗对象 +100
+  [0x213, 3, 'implemented'], // 消息窗对象 +104/+108
+  [0x25d, 3, 'implemented'], // 消息窗对象 +276/+280
+  [0x196, 3, 'implemented'], // display-furigana：记录注音
+  // 配置读取族（读配置键 → 写回脚本操作数；CONFIG1 路径上的静默错误源头）：
+  [0xc5, 2, 'implemented'], // sound:Volume0..4 → op2
+  [0xc7, 2, 'implemented'], // sound:Music/SE/Voice/Movie → op2
+  [0x1b8, 2, 'implemented'], // message:AutoMessageTime0/1 → op2
+  [0x2cc, 1, 'implemented'], // message:AdvanceMesOnWheel → op1
+  [0x2e6, 2, 'implemented'], // message:AutoMessagePitch0/1 → op2
+  [0x2ea, 1, 'implemented'], // message:AutoMessageOption → op1
+  [0x194, 3, 'implemented'], // 字符串相等判定 → op1
+      [0x306, 1, 'native'], // system:EffectSkipOnClick getter
     [0x217, 4, 'native'], // 对象变换 pivot → native.setDrawPivot
     [0x2ce, 1, 'native'], // display:ScreenMode getter（上一轮已实现）
     [0x20c, 0, 'implemented'], // 帧刷新（真实现：刷时钟 + native.frameTick）

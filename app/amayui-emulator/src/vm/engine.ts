@@ -3,10 +3,22 @@ import type { ScriptBinary } from '../script/bin.js';
 import type { FileSource } from '../arch/fileSource.js';
 import type { NativeBridge } from './native.js';
 import { InputManager } from './input.js';
+import { MsgWindow } from './msgwin.js';
+import { RouteTable } from './route.js';
+import { cfgInt } from '../engineConfig.js';
 import type { Ref } from './ref.js';
 
 /** waitFlags 中的 sleep(0xC8) 门旗标（与 0x400 动画等待门并存）。 */
 export const SLEEP_GATE = 0x20000000;
+
+/**
+ * `effect_flags` 的 **bit31 = 等待推进门**（引擎主循环 `v35 < 0` 分支：`sub_411BC0` + `Sleep(2)`）。
+ * 由 `0x72 wait-for-input` 置位；玩家推进时由每帧处理清除。**置位期间脚本完全不推进**。
+ */
+export const ADVANCE_GATE = 0x80000000;
+
+/** `effect_flags` 的 **0x8000000 = 消息逐字显示中**（ADV 激活）。 */
+export const ADV_ACTIVE = 0x8000000;
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
@@ -120,6 +132,19 @@ export class Engine {
   advFields = new Map<number, number>();
 
   /**
+   * **消息窗状态模型**（文本槽 + 消息窗对象表 + ADV/等待字段）。
+   * 见 `./msgwin.ts` 顶部注释：ADV 是跨指令的持续状态，必须整体建模，不能散在 engineValues 里。
+   */
+  msgwin = new MsgWindow();
+
+  /**
+   * **点击热点 / 路由表**（引擎 `Engine+0x55D8`）。
+   * `0x090` 登记热点（矩形 + 三个 label），`wait-for-input` 挂起后由它决定"玩家点了哪里 → 跳到哪个 label"。
+   * 见 `./route.ts` 顶部注释。
+   */
+  routes = new RouteTable();
+
+  /**
    * **用户登记的「未知指令桩函数」**：opcode -> 桩句柄（当前恒为 no-op，无返回值；句柄留着以便将来区分/替换）。
    * 语义 = 运行时热插拔的 ENGINE_INTERNAL_OPS（见 interpreter.stepOnce 的查找顺序）：
    *  - 解释器遇到「四处（OPS/NATIVE_OPS/ENGINE_INTERNAL_OPS/本表）都查不到」的 opcode 会抛 NotImplementedOp 并停下；
@@ -152,7 +177,19 @@ export class Engine {
 
   /** ADV/消息激活态（= 引擎 effect_flags 的 0x8000000 位）。0xCD 在此位置位时可无条件推进。 */
   get advActive(): boolean {
-    return (this.effectFlags & 0x8000000) !== 0;
+    return (this.effectFlags & ADV_ACTIVE) !== 0;
+  }
+
+  /**
+   * **等待推进门**（`effect_flags` bit31）：`wait-for-input` 已结束一页，脚本挂起等玩家推进。
+   * 引擎主循环在此状态下**每帧只做 `sub_411BC0` + `Sleep(2)`，不派发任何脚本指令**。
+   */
+  get awaitingAdvance(): boolean {
+    return (this.effectFlags & ADVANCE_GATE) !== 0;
+  }
+  set awaitingAdvance(v: boolean) {
+    if (v) this.effectFlags |= ADVANCE_GATE;
+    else this.effectFlags &= ~ADVANCE_GATE;
   }
 
   constructor(native: NativeBridge, input?: InputManager) {
@@ -165,5 +202,109 @@ export class Engine {
 
   curScript(): Frame {
     return this.frames[this.cur]!;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 帧循环服务（引擎主循环在 effect_flags 各分支里做的事；由宿主每帧调用）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * **ADV 每帧服务**（引擎 `sub_411900` raw 20096-20233 的等价物）。
+   *
+   * 引擎在 `effect_flags & 0x8000000` 分支里每帧做四件事：
+   *  1. 刷输入掩码（`sub_4780D0`/`sub_477280`），并在「跳读中」时合成掩码位 `0x40`；
+   *  2. 跑「取消消息键」三态机（`122370`: 0→1→2，松开时清 ADV + 复位 `ReadTextSkip`）；
+   *  3. **未显示完判定**：`!122455 && !122496 && !(mask & 0x40)` ⇒ 清 `0x8000000`；
+   *  4. 之后**派发恰好 1 条**脚本指令（`_this[opcode+168999]`）—— 由调用方执行。
+   *
+   * 返回 `true` = 本帧应派发 1 条指令（等价于引擎该分支的行为）。
+   */
+  serviceAdv(): boolean {
+    const im = this.input;
+    const m = this.msgwin;
+    const mask = im.flush();
+    const skipBit = m.skipMirror !== 0;
+
+    // 取消消息键三态机（引擎门控：GetConfig("set:CancelMessageKey")）
+    if (this.config && cfgInt(this.config, 'set:cancelmessagekey', 0) !== 0) {
+      const bit = 0x10; // 掩码 bit4 = 鼠标左键
+      if ((mask & bit) !== 0) {
+        const was1 = m.cancelStage === 1;
+        if (was1) m.cancelStage = 2;
+      } else if (m.cancelStage === 2) {
+        m.cancelStage = 0;
+        this.effectFlags &= ~ADV_ACTIVE;
+        m.skipMirror = 0;
+        m.skipMode = 0;
+        m.readTextSkip = 0;
+      } else {
+        m.cancelStage = 1;
+      }
+    }
+
+    // 「显示完」收尾：非跳读模式下逐字显示视为**一帧内完成**（emulator 无逐字渲染）。
+    if (m.showing !== 0 && m.skipMode === 0) m.showing = 0;
+    if (!m.showing && !m.alt && !skipBit) {
+      this.effectFlags &= ~ADV_ACTIVE;
+    }
+    return (this.effectFlags & ADV_ACTIVE) !== 0;
+  }
+
+  /**
+   * **等待推进门服务**（引擎 `sub_411BC0` raw 20206-20461 的等价物）。
+   *
+   * 引擎在 `effect_flags < 0`（bit31）时每帧只做：刷输入 → 命中测试/键命中 → 取该热点的 label →
+   * `ip = label` 并**清 bit31** + `Sleep(2)`。**不派发脚本指令。**
+   *
+   * 返回 `true` = 本帧玩家推进了（并已重定位 `ip`）。
+   */
+  serviceAdvanceWait(): boolean {
+    if (!this.awaitingAdvance) return false;
+    const im = this.input;
+    const mask = im.flush();
+    const pressed = (im.mouseEdge & 0b11) !== 0 || im.joyEdge.length > 0 || im.wheelDelta !== 0;
+    if (!pressed) return false;
+
+    // 引擎路径：`sub_403D70(queue, mask)`（键命中）优先，其次 `sub_403E70(queue)`（游标命中）。
+    let target = this.routes.pickByKey(mask);
+    if (target === -1 && this.routes.count > 0) {
+      // `sub_403C50`：按鼠标坐标设游标（引擎在鼠标事件路径里调它；这里每帧按当前位置重算）
+      if (im.hasCursor) this.routes.hitTest(im.readX(), im.readY());
+      const hit = this.routes.current();
+      if (hit) target = hit.labelKey;
+    }
+
+    im.consumeEdges();
+    im.consumeWheelDelta();
+    this.awaitingAdvance = false;
+    if (target !== -1 && target !== 0xffffffff) {
+      // 引擎：`ip = str_table + 4 * label` —— 即跳到该 label
+      this.jumpToLabel(target);
+      return true;
+    }
+    // 表为空（无热点登记）时回退：仅解除等待门，由脚本自己决定后续（近似，见台账 adv-advance-route-table）
+    return true;
+  }
+
+  /**
+   * **headless 确定性放行**：无输入源时（`report.ts` / `run.ts`）把等待门当作"玩家立刻点了"，
+   * 若已登记热点则跳到第一个热点的 labelC（与真实点击同一路径），否则只解除门。
+   * 返回跳转到的 label（`null` = 未跳转）。**仅 headless 使用**；renderer 走 `serviceAdvanceWait()`。
+   */
+  forceAdvance(): number | null {
+    if (!this.awaitingAdvance) return null;
+    this.awaitingAdvance = false;
+    const first = this.routes.entries[0];
+    if (first && this.jumpToLabel(first.labelKey)) return first.labelKey;
+    return null;
+  }
+
+  /** 把当前帧的 `ip` 重定位到某个 label 值（引擎 `ip = str_table + 4*label`）。 */
+  jumpToLabel(label: number): boolean {
+    const f = this.curScript();
+    const p = f.labelMap.get(label);
+    if (p === undefined) return false;
+    f.ip = p;
+    return true;
   }
 }

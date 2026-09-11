@@ -31,6 +31,7 @@ async function main() {
   const maxSteps = Number(process.env.STEPS ?? 0);
   let executed = 0;
   let cfg = 0;
+  let advanceWaits = 0;
   let lastSig = '';
   const markScript = () => {
     const f = e.curScript();
@@ -47,6 +48,12 @@ async function main() {
     if (!instr) {
       console.log(`  ip ${frame.ip} 越界, 停止`);
       break;
+    }
+    // ★等待推进门：CLI 无输入源 ⇒ 确定性自动放行（计数），否则剧本一旦进入"等玩家点击"就永不前进。
+    if (e.awaitingAdvance) {
+      advanceWaits++;
+      if (e.forceAdvance() !== null) markScript();
+      continue;
     }
     const labelName = OPCODE_TABLE.has(instr.opcode) ? OPCODE_TABLE.get(instr.opcode)!.name : `0x${instr.opcode.toString(16)}`;
     try {
@@ -84,7 +91,7 @@ async function main() {
     }
   }
 
-  console.log(`\n[done] 共执行 ${executed} 条指令（其中引擎内部/子系统 ${cfg} 条已插桩跳过）。cur=${e.cur} caller=${e.curScript().caller}`);
+  console.log(`\n[done] 共执行 ${executed} 条指令（其中引擎内部/子系统 ${cfg} 条已插桩跳过；等待推进门自动放行 ${advanceWaits} 次）。cur=${e.cur} caller=${e.curScript().caller}`);
   await src.dispose?.();
 }
 

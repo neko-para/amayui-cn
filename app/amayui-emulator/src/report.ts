@@ -65,6 +65,12 @@ export interface SceneReport {
     frames: number;
     stopReason: string;
     opFilter: string[];
+    /**
+     * **等待推进门自动放行次数**（headless 无输入源）。
+     * 引擎在 `wait-for-input` 后会挂起等玩家推进；报告里改为"确定性自动推进"（每次等待放行 1 帧），
+     * 否则脚本永不前进、报告会跑飞。该计数 = 剧本里被跳过的"等玩家点击"次数。
+     */
+    advanceWaits: number;
   };
   /** opcode → { name, count }（十六进制 key，升序）。 */
   opCounts: Record<string, { name: string; count: number }>;
@@ -135,6 +141,7 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
   let clock = 0;
   let stopReason = 'steps-limit';
   let stepsThisFrame = 0;
+  let advanceWaits = 0;
 
   while (steps < opt.steps) {
     const f = e.curScript();
@@ -143,6 +150,19 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
       break;
     }
     e.nowMs = clock;
+    // ★帧循环服务（与 renderer session 同构，见 src/vm/engine.ts 的 serviceAdv/serviceAdvanceWait）：
+    //  1) 等待推进门：headless 无输入源 ⇒ 确定性放行 1 帧（计数），期间不派发指令；
+    //  2) ADV 分支：先跑每帧服务（输入泵 + 「未显示完」判定，可能清掉 ADV 位）。
+    if (e.awaitingAdvance) {
+      advanceWaits++;
+      e.forceAdvance(); // 走热点路由：跳到该热点的 label（与真实点击同一路径）
+      frames++;
+      clock += frameMs;
+      headless.advance(clock);
+      continue;
+    }
+    const advFrame = e.advActive;
+    if (advFrame) e.serviceAdv();
     let t: StepTrace;
     try {
       t = await stepOnce(e);
@@ -179,8 +199,9 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
       );
     }
 
-    // 帧边界：推进虚拟时钟 + 驱动一次场景窗（确定性）
-    if (FRAME_OPS.has(t.opcode)) {
+    // 帧边界：推进虚拟时钟 + 驱动一次场景窗（确定性）。
+    // ADV 分支下引擎是"每帧恰好 1 条"，因此该分支的每条指令都算一帧。
+    if (FRAME_OPS.has(t.opcode) || advFrame) {
       frames++;
       stepsThisFrame = 0;
       clock += frameMs;
@@ -203,6 +224,7 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
       frames,
       stopReason,
       opFilter: opFilter ? [...opFilter].map((o) => `0x${o.toString(16)}`) : [],
+      advanceWaits,
     },
     opCounts: Object.fromEntries(
       [...opCounts].sort((a, b) => a[0] - b[0]).map(([op, v]) => [`0x${op.toString(16)}`, v]),
@@ -237,6 +259,7 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
 export function summarizeReport(r: SceneReport): string {
   const L: string[] = [];
   L.push(`脚本 ${r.meta.script}：执行 ${r.meta.steps} 条指令 / ${r.meta.frames} 帧 / 时钟 ${r.meta.clockMs}ms（${r.meta.stopReason}）`);
+  if (r.meta.advanceWaits > 0) L.push(`等待推进门自动放行 ${r.meta.advanceWaits} 次（headless 无输入源 ⇒ 确定性放行）`);
   L.push(`命中 opcode ${Object.keys(r.opCounts).length} 种；模型：drawItems=${r.snapshot.counts.drawItems} meshes=${r.snapshot.counts.meshes} 可见=${r.snapshot.counts.visibleItems} 播放中=${r.snapshot.counts.pendingItems}`);
   L.push(`纹理槽绑定 ${r.slots.length} 个；CG 数字条记录 ${r.cgDigits.length} 条`);
   L.push(`★ 能力缺口（被忽略但收到实参）${r.gaps.length} 种：` + (r.gaps.slice(0, 12).map((g) => `${g.name}×${g.count}`).join(' ') || '无'));

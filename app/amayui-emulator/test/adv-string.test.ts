@@ -69,7 +69,18 @@ test('save/load-int 真实用法：0x1A3 读 → 改 → 0x1A2 写回，跨周�
   assert.equal(read(8), 3, '0x1A3 下轮起按 sk(8) 取回 3');
 });
 
-test('advActive(0x8000000)：由 0x071/0x088/0x19B/0x19C 置/清', () => {
+/**
+ * ADV 位的置/清 —— **2026 修正**：`0x071` 不再无条件置位。
+ *
+ * 引擎 `sub_41ED80`(0x71) / `sub_41EB20`(0x6E) / `sub_41EEF0`(0x72) 置 `0x8000000` 的唯一条件是
+ * 「这段文本还在逐字显示」(`sub_48F000` 返回非 0)，且该分支受 `GetConfig("message:ReadTextSkip")`
+ * 门控（随包 SYS4REG.INI 里 = 0）。emulator 无文本渲染 ⇒ 逐字显示立即完成 ⇒ **不置 ADV**；
+ * 只有 `97050`（跳读/自动模式）非 0 时才按引擎 LABEL_10 保留显示态。
+ *
+ * 旧行为"显示即置位且永不清除"会让 `0xC8 sleep` 被永久跳过 —— 实测把 TITLE 空转循环
+ * 从 1239 步/秒放大到 598000 步/秒。
+ */
+test('advActive(0x8000000)：由 0x088/0x19B/0x19C 置/清，且 0x071 不再无条件置位', () => {
   const native = new StubNative(() => {});
   const e = new Engine(native);
   const f = new Frame();
@@ -79,18 +90,21 @@ test('advActive(0x8000000)：由 0x071/0x088/0x19B/0x19C 置/清', () => {
   // 0x19C 进入（无消息字段 97050/122455/124331=0）→ 清位（仍是未激活）
   OPS.get(0x19c)!(step(0x19c, []));
   assert.equal(e.advActive, false);
-  // 0x088 消息模式 op1=1 → 置 97050=1；adv 仍未激活（仅设 122368）
+  // 0x071 显示消息（默认配置 ReadTextSkip=0、无跳读模式）→ **不置 ADV**（修正点）
+  OPS.get(0x071)!(step(0x071, [im(0), { type: 2, raw: 0, str: 'x' } as never]));
+  assert.equal(e.advActive, false, '0x071 在非逐字显示路径下不置 ADV（引擎受 message:ReadTextSkip 门控）');
+  // 0x088 消息模式 op1=1 → 置 97050=1（跳读/自动模式）；adv 仍未激活（仅设 122368）
   OPS.get(0x088)!(step(0x088, [im(1)]));
   assert.equal(e.advActive, false);
+  // 自动模式下 0x071 保留显示态 ⇒ 置 ADV（引擎 LABEL_10）
+  OPS.get(0x071)!(step(0x071, [im(0), { type: 2, raw: 0, str: 'y' } as never]));
+  assert.equal(e.advActive, true, '跳读/自动模式下 0x071 保留显示态并置 ADV');
   // 0x19C 再进入 → 97050=1 → 置 ADV
   OPS.get(0x19c)!(step(0x19c, []));
   assert.equal(e.advActive, true, '97050=1 时 0x19C 置 ADV');
   // 0x19B 退出 → 清 ADV
   OPS.get(0x19b)!(step(0x19b, []));
   assert.equal(e.advActive, false);
-  // 0x071 显示消息 → 置 ADV
-  OPS.get(0x071)!(step(0x071, [im(0)]));
-  assert.equal(e.advActive, true, '0x071 显示消息置 ADV');
   // 0x088 消息模式 op1=0 → 清 ADV
   OPS.get(0x088)!(step(0x088, [im(0)]));
   assert.equal(e.advActive, false, '0x088 置 0 清 ADV');
