@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 65,
+    "total": 72,
     "modeled-verified": 3,
-    "modeled-unverified": 6,
-    "partial": 10,
-    "absent": 22,
+    "modeled-unverified": 7,
+    "partial": 12,
+    "absent": 26,
     "n/a-known": 24,
-    "needsAttention": 38
+    "needsAttention": 45
   },
   "entries": [
     {
@@ -1718,6 +1718,216 @@
         "evidence": "E1",
         "guard": "",
         "note": "why: 3D 场景层归并，3D 未建模"
+      }
+    },
+    {
+      "id": "adv-flag-lifecycle",
+      "subsystem": "消息窗",
+      "name": "ADV 激活位（effect_flags 0x8000000）的设置与清除",
+      "trigger": "置位：0x6E/0x71/0x72（受 GetConfig(\"message:ReadTextSkip\") 门控）、0x19C 条件式、0x305、sub_436380；清除：sub_411900 每帧判定、0x19B、0x88(op1=0)、0xFA、0x101、0x72、0x19C 条件式",
+      "engine": {
+        "fns": [
+          "sub_41ED80",
+          "sub_41EEF0",
+          "sub_41EB20",
+          "sub_41FAB0",
+          "sub_4190E0",
+          "sub_419120",
+          "sub_411900",
+          "sub_4199B0",
+          "sub_419CC0"
+        ],
+        "raw": "24532-28977"
+      },
+      "reads": [
+        "Engine+699204",
+        "Engine+122455",
+        "Engine+122496",
+        "Engine+1415",
+        "Engine+97050",
+        "Engine+97051",
+        "Engine+122368",
+        "Engine+122370"
+      ],
+      "whySilent": "位被置住时主循环只是改走 ADV 分支（每帧派发 1 条指令 + 输入泵），没有断言/日志；位被清时也只是回到普通分支 —— 两种取值都是合法路径",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "★emulator 的 op_message_show(0x71) **无条件**置 0x8000000 且**从不自行清除**，而引擎要求：(a) 置位受 message:ReadTextSkip 门控，(b) 由 0x19B/0x88/0xFA/0x72 等**脚本侧**清除、或由 sub_411900 在「未显示完判定」为假时清除。位永久置住会让 0xC8 sleep 被整条跳过（引擎语义），实测把 TITLE 空转循环从 1239 步/秒放大到 598000 步/秒"
+      }
+    },
+    {
+      "id": "adv-perframe-dispatch",
+      "subsystem": "帧循环",
+      "name": "ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵",
+      "trigger": "主循环最外层 `effect_flags & 0x8000000` 分支命中时，每轮调用 sub_411900",
+      "engine": {
+        "fns": [
+          "sub_411900",
+          "sub_412290"
+        ],
+        "raw": "20096-20233"
+      },
+      "reads": [
+        "Engine+699204",
+        "frames[cur].ip",
+        "frames[cur].operand_count",
+        "Engine+122368",
+        "Engine+12957",
+        "Engine+12962",
+        "Engine+5494"
+      ],
+      "whySilent": "ADV 分支与普通分支都执行「一条指令」，只是多了输入泵与状态判定；少了它脚本仍然推进，只是每帧变成每批、且 ADV 位永不清 ⇒ 无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★emulator 没有 ADV 每帧处理：它把 ADV 位当作「跳过 sleep 的标志」并在普通批次里跑指令，而引擎是**每帧恰好 1 条指令 + 输入泵 + 位判定**。这正是 TITLE 空转循环失控（每 rAF 批 10000 条）的直接原因"
+      }
+    },
+    {
+      "id": "adv-text-reveal-progress",
+      "subsystem": "消息窗",
+      "name": "消息文本显示进度判定（ReadTextSkip 门 + 分段表查表）",
+      "trigger": "0x6E/0x71/0x72 每次调用；仅当 GetConfig(\"message:ReadTextSkip\") 为真才走该分支",
+      "engine": {
+        "fns": [
+          "sub_48F000",
+          "sub_48E870",
+          "sub_48FFB0",
+          "sub_41ED80",
+          "sub_41EEF0"
+        ],
+        "raw": "109440-110481"
+      },
+      "reads": [
+        "Engine+80107",
+        "Engine+80107+285",
+        "Engine+174405(config)"
+      ],
+      "whySilent": "查表未命中/越界统一返回 0，调用方据此认为「已显示完」并清 ADV —— 全是合法路径，无日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★emulator 没有文本进度模型：既没有 message:ReadTextSkip 门，也没有「显示完没有」的判定，于是只能把 ADV 当成「显示后一直有效」的常驻状态"
+      }
+    },
+    {
+      "id": "msgwin-text-object",
+      "subsystem": "消息窗",
+      "name": "文本对象（Engine+21324）的槽模型与写入",
+      "trigger": "0x6E/0x71/0x72 经 sub_45EC60(Engine+21324, slot, ...) 写入；draw-mode(Engine+667856)==1 时同步清该槽旧图元",
+      "engine": {
+        "fns": [
+          "sub_45EC60",
+          "sub_46BE30",
+          "sub_46CBF0"
+        ],
+        "raw": "74197-74281"
+      },
+      "reads": [
+        "Engine+21324",
+        "Engine+260",
+        "Engine+261",
+        "Engine+307",
+        "Engine+667856",
+        "Engine+339"
+      ],
+      "whySilent": "文本槽是纯数据结构：写入只改字段、清图元只调容器接口；没有可渲染输出也不会报错（脚本继续跑到下一条消息）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★emulator 无文本对象 ⇒ 消息文本无处存放、无法判定「显示完」；这是 ADV 状态机无法忠实复刻的根因。功能面最小集：槽表 + 文本内容 + 进度字段 + 「是否显示完」的查询"
+      }
+    },
+    {
+      "id": "adv-input-pump-perframe",
+      "subsystem": "输入",
+      "name": "ADV 每帧输入泵与「跳读中」掩码位",
+      "trigger": "sub_411900（ADV 分支）与 0xFA/0x72 内每次都调 sub_4780D0/sub_477280",
+      "engine": {
+        "fns": [
+          "sub_411900",
+          "sub_4199B0",
+          "sub_41EEF0"
+        ],
+        "raw": "20096-28547"
+      },
+      "reads": [
+        "Engine+150",
+        "Engine+174802",
+        "Engine+1415"
+      ],
+      "whySilent": "输入掩码为空时各分支自然跳过；无设备时返回 0 —— 合法路径、无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "test/input.test.ts",
+        "note": "emulator 有 InputManager.flush()/consumeEdges()（等价 sub_4780D0/0x100/0x101），但**没有按帧驱动**：它只在指令里读，而不是每帧刷；且缺少「跳读中」掩码位 0x40（=Engine+1415）的合成"
+      }
+    },
+    {
+      "id": "msgwin-object-table",
+      "subsystem": "消息窗",
+      "name": "消息窗对象表与布局重算（Engine[21585+idx]）",
+      "trigger": "0x212/0x213 按索引写对象字段；0x300/0x301 写旗标/值并触发 sub_404F80 布局重算；每帧绘制由 Scene 侧消费这些对象的图元区间",
+      "engine": {
+        "fns": [
+          "sub_423A30",
+          "sub_423A80",
+          "sub_426990",
+          "sub_4269F0",
+          "sub_404F80"
+        ],
+        "raw": "31742-33789"
+      },
+      "reads": [
+        "Engine+21585",
+        "Engine+122466",
+        "Engine+122476",
+        "Engine+122486",
+        "Engine+1040(绘制容器)"
+      ],
+      "whySilent": "对象表槽为空时各 handler 只做 `if (obj)` 判定即返回；布局重算只是从容器里移除区间 —— 没有对象就什么都不发生，无日志无报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 只把 0x300/0x301 落到 engineValues[122466+v]/[122476+v]/[122486+v] 的**整数**上，没有对象表与布局重算（0x212/0x213 未实现）；故「消息窗部件位置/尺寸」语义缺失。功能面最小集：对象表（索引→对象）+ 每对象的图元区间字段 + 布局重算调用点"
+      }
+    },
+    {
+      "id": "msgwin-cancel-key-state",
+      "subsystem": "消息窗",
+      "name": "「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关",
+      "trigger": "sub_411900 每帧：输入掩码 0x10（取消键按下沿）驱动 122370 在 0→1→2 之间迁移",
+      "engine": {
+        "fns": [
+          "sub_411900"
+        ],
+        "raw": "20096-20160"
+      },
+      "reads": [
+        "Engine+122370",
+        "Engine+174802",
+        "Engine+174405(config)"
+      ],
+      "whySilent": "三态机每个取值都是合法分支；到 2 才清 ADV 并 SetConfig(\"message:ReadTextSkip\", 0)，中间态无任何日志",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E0",
+        "guard": "",
+        "note": "★emulator 完全没有这个状态机，也就没有「取消消息键」把消息收掉、把 ReadTextSkip 复位的行为 ⇒ ADV 位失去一个清除点"
       }
     }
   ]

@@ -1,13 +1,23 @@
 ---
 name: amayui-engine-analysis
-description: 数据驱动的引擎反编译分析：读懂并归类《天結いキャッスルマイスター》的 Hex-Rays 反编译（engine/天结_unpacked.exe_utf8.c，约 18 万行），把每个函数（sub_XXXXXX）与字段/偏移的分析结论沉淀为稳定、工具无关的数据层（analysis/fields.json + analysis/functions.json），并用 scripts/report.js 做查询与增删改、scripts/sort-fields.js 排序。当用户要求分析某条指令/函数逻辑、检查某字段偏移（如 +166965）的引用、或把反编译结论写入数据层时使用。
+description: 数据驱动的引擎反编译分析：读懂并归类《天結いキャッスルマイスター》的 Hex-Rays 反编译（engine/天结_unpacked.exe_utf8.c，约 18 万行），把分析结论沉淀为稳定、工具无关的**两层数据层**——第一层 analysis/functions.json + analysis/fields.json（函数/字段「是什么」），第二层 analysis/engine-capabilities.json（引擎的**常态能力**：逐帧流程/门控标志/惰性创建/转场/资源生命周期，枚举 opcode 看不出来、缺失时不报错只表现不对）。用 scripts/report.js 与 scripts/capabilities.js 查询增删改、scripts/sort-fields.js 排序、scripts/build-capabilities.mjs 渲染人可读台账。当用户要求分析某条指令/函数逻辑、检查某字段偏移的引用、盘点某个子系统的功能面（需要哪些持续行为）、或把反编译结论写入数据层时使用。
 ---
 
-# amayui-engine-analysis — 数据驱动的引擎反编译分析（fields.json + functions.json）
+# amayui-engine-analysis — 数据驱动的引擎反编译分析（两层数据层：函数/字段 + 常态能力）
 
 > 定位：读懂并归类《天結いキャッスルマイスター》引擎的 Hex-Rays 反编译（`engine/天结_unpacked.exe_utf8.c`，约 18 万行），
 > 把分析结论沉淀为**稳定、可增长、工具无关的数据**，而不是会漂移的手工镜像/文本改写。
-> **核心思想：分析只回答「这个函数/字段是什么」；结论存进数据层（唯一会增长的地方）；渲染层可从数据随时再生成。**
+> **核心思想：分析只回答「这个函数/字段是什么」与「引擎有哪些持续行为」；结论存进数据层（唯一会增长的地方）；渲染层可从数据随时再生成。**
+>
+> **两层数据层**（分层的理由：这是两类根本不同的东西，混在一起必然漏掉第二类）：
+>
+> | 层 | 文件 | 回答的问题 | 怎么发现 |
+> |---|---|---|---|
+> | 一 | `analysis/functions.json` + `fields.json` | 这个 `sub_XXXXXX` / 偏移**是什么** | 顺着 opcode 表 / 字段引用**枚举**就能找到 |
+> | 二 | `analysis/engine-capabilities.json` | 引擎有哪些**持续行为**（逐帧流程 / 门控标志 / 惰性创建 / 转场 / 资源生命周期） | **枚举不出来** —— 它们不是任何一条 opcode，而是"引擎自己在后台一直做的事" |
+>
+> 第二层的存在理由（教训）：版权页文字不淡入，查了很久才发现缺的是**逐帧颜色插值** —— 那不是一个没实现的 opcode，
+> 而是引擎帧循环里的一段常态行为。这类缺失**不报错、只表现不对**，所以必须有可核对清单。
 > 本技能不做逐字节等价复刻（那是 decomp.me 匹配式复刻的目标）；目标是把巨大的 `sub_XXXXXX` 读懂 + 归类。
 
 ---
@@ -24,9 +34,21 @@ description: 数据驱动的引擎反编译分析：读懂并归类《天結い�
 ## 1. 目录 / 输入 / 工具
 ```
 engine/天结_unpacked.exe_utf8.c        # 只读反编译基准（唯一信息源；不修改）
-analysis/fields.json                   # 数据层：字段/偏移模型（唯一会增长）
-analysis/functions.json                # 数据层：函数结论（用途/状态/签名覆盖）
+analysis/fields.json                   # 数据层·第一层：字段/偏移模型（唯一会增长）
+analysis/functions.json                # 数据层·第一层：函数结论（用途/状态/签名覆盖）
+analysis/engine-capabilities.json      # 数据层·第二层：常态能力台账（持续行为 + emulator 现状判定）
+docs-new/03-engine/engine-capabilities.md  # 台账的人可读渲染产物（由 scripts/build-capabilities.mjs 生成，勿手改）
 ```
+
+工具（`<skill>/scripts/` 下；`build-capabilities.mjs` 在**仓库根** `scripts/` 下）：
+
+| 工具 | 作用 |
+|---|---|
+| `scripts/report.js` | 第一层：查询 + 增删改（`--summary/--index/--find/--addr/--op/--field`、`--func-add/edit/rm`、`--field-add/edit/rm`） |
+| `scripts/sort-fields.js` | 第一层：`fields.json` 按 scope+偏移重排 |
+| `scripts/capabilities.js` | **第二层：查询 + 增删改 + 离线自检**（`--summary/--index/--attention/--find/--id/--validate`、`--add/edit/rm`） |
+| `../../scripts/build-capabilities.mjs` | **第二层：把台账渲染成 md**（改完 JSON 必须重跑，否则守卫测试会因 md 不同步而失败） |
+
 - 原始 dump 目录只读；分析结论一律在 `analysis/*.json`，**不在反编译源码里写注释**。
 - 反编译源码是**输入/视图**；数据层是**事实来源**。
 - **emulator（`app/amayui-emulator/…`）是产物，不是信息源**：分析时**禁止读取/参考**任何 emulator 内容；分析结果**后续**用以实现/更新 emulator（方向：**分析 → emulator**，绝不复用）。
@@ -70,7 +92,50 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 }
 ```
 
-### 2.3 严格状态判定（写进 functions.json 的 status）
+### 2.3 `analysis/engine-capabilities.json` —— **常态能力台账（第二层）**
+
+回答「引擎有哪些**持续行为**」。对象（顶层 `_doc` / `statusEnum` / `evidenceEnum` / `generatedFrom` / `counts` / `entries`）：
+
+```jsonc
+{
+  "id": "adv-flag-lifecycle",            // kebab-case，全局唯一
+  "subsystem": "消息窗",                  // 渲染/3D/帧循环/声音/资源/转场/输入/消息窗/Live2D
+  "name": "ADV 激活位（effect_flags 0x8000000）的设置与清除",
+  "trigger": "何时发生（含"门不开就不发生"的条件）",
+  "engine": { "fns": ["sub_41ED80", "sub_41EEF0"], "raw": "28419-28543" },
+  "reads": ["Engine+699204", "Engine+122455"],   // 读/写的字段（可空）
+  "whySilent": "★缺失时为什么**不报错、只表现不对**（没有它这条就不该进台账）",
+  "confidence": "confirmed",              // confirmed | tentative
+  "emulator": {
+    "status": "partial",                  // 见 statusEnum
+    "evidence": "E1",                     // 见 evidenceEnum（E0–E4）
+    "guard": "test/xxx.test.ts",          // 声称 E2/E3 时**必须**给，且文件真实存在
+    "note": "本工程现状 + 缺口；n/a-known 必须在开头写 `why:`"
+  }
+}
+```
+
+**status 枚举**（`emulator.status`，写进 JSON 的 `statusEnum`）：
+
+| 值 | 含义 |
+|---|---|
+| `modeled-verified` | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 只实现了一部分（缺口写在该条 `note`） |
+| `absent` | 引擎有、emulator 完全没有 |
+| `n/a-known` | 与本重写范围无关（**必须写 `why:`**） |
+
+**evidence 等级**（`emulator.evidence`）：`E0` 未读体 / `E1` 已读体（静态 + raw 行号） / `E2` 合成指令单测 / `E3` 真实脚本的场景级断言（快照/不变量） / `E4` 与真机对照（截图或状态 dump）。
+
+**三条硬约束**（`test/capability-ledger.test.ts` 会强制，`capabilities.js --validate` 可离线自检）：
+1. 声称 **E2/E3 就必须给 `guard`**，且该测试文件真实存在（防止"声称有守卫"变成空话）；
+2. `n/a-known` **必须**在 `note` 里写 `why:`（**不许用 n/a 掩盖缺口**）；
+3. 每条都要有 `whySilent`（"缺失时为什么静默" —— 这是台账存在的理由本身）。
+
+> `counts` 由工具自动重算，**不要手改**；改完 JSON 必须 `node scripts/build-capabilities.mjs` 重生成 md，
+> 否则守卫测试的"md 与数据层同步"一项会失败。
+
+### 2.4 严格状态判定（写进 functions.json 的 status）
 - **ANALYZED**：读了 handler 体确证，且体内**无未建模数值偏移**（`_this[K]`/`_this+N` 已映射成语义字段）、**无未分析被调**。
 - **PARTIAL**：已读体，但仍有未建模偏移或未分析被调（在 `unmodeled` 里写明）。
 - **STUB**：桩/simplified（no-op / 安全桩）。
@@ -78,7 +143,20 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 
 ---
 
-## 3. 分析流程（每次分析一个函数）
+## 3. 分析流程
+
+### 3.0 先分层：这条结论该进第一层还是第二层？
+分析任何东西之前先问一句：**我要回答的是"它是什么"，还是"引擎一直在做什么"？**
+
+| 情形 | 去向 |
+|---|---|
+| 一个 `sub_XXXXXX` 的语义 / 一条 opcode 的 handler / 一个偏移的归属 | 第一层（`functions.json` / `fields.json`） |
+| 一个**子系统需要哪些持续行为**才能工作；某个标志的**生命周期**；某个每帧步骤；某个惰性创建/转场/资源老化 | 第二层（`engine-capabilities.json`） |
+| 一个子系统（如消息窗）的**功能面盘点** | **两层都要写**：逐 opcode 的 handler 结论进第一层；它依赖的持续行为（帧循环、状态位、文本子系统）进第二层 |
+
+判定口诀：**"如果把所有 opcode 都实现对了，这个行为还会不会缺？"** 会缺 ⇒ 它属于第二层。
+
+### 3.1 每次分析一个函数
 1. **定位**：从 `docs-new/03-engine/opcode-table.md` 或 func-list 里定位 `sub_XXXXXX`。
 2. **先查 `fields.json`**：把函数体内的偏移**按表解码**（`0x5d880→cur_script`、`0x78 步长→帧下标`、`0x5d8b4→local_int`）。表里没有的偏移，先标 `tentative`，分析确证后再改 `confirmed`。
 3. **读 raw handler 体**，理解语义（子行为：它先做什么、分支、调用什么）。
@@ -86,7 +164,12 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 5. **写回数据**（**只在一处增长**）：
    - 新增/复核字段 → `fields.json`（带 `evidence` + `status`）。
    - 函数结论 → `functions.json`（`purpose`/`status`/`signature_override`/`sub_behaviors`/`unmodeled`/`evidence`）。
-6. **可选渲染**（见 §4）。
+   - 若发现的是**持续行为 / 标志生命周期 / 每帧步骤** → 按 §2.3 追加一条 `engine-capabilities.json` 条目
+     （用 `capabilities.js --add`），并给出 `whySilent` 与 `emulator` 判定。
+6. **渲染 + 自检**：
+   - 第一层无需渲染；
+   - 第二层改完必须 `node scripts/build-capabilities.mjs`，再 `capabilities.js --validate`；
+   - 收尾跑一次 `npx tsx --test test/capability-ledger.test.ts`（在 `app/amayui-emulator` 下）。
 
 ---
 
@@ -112,13 +195,32 @@ analysis/functions.json                # 数据层：函数结论（用途/状�
 ### `scripts/sort-fields.js`
 字段排序器：按 `scope` + 字节偏移排 `fields.json`，作用域间留空行分组（`report.js --field-add/edit/rm` 内部会复用同格式，故无需另跑）。
 
+### `scripts/capabilities.js` —— 第二层台账（查询 + 增删改 + 自检）
+- **查询**：`--summary`（状态/证据/子系统分布）· `--index [--subsystem X] [--status S] [--evidence E]` ·
+  `--attention`（只看"需要关注"：非 n/a 且非已核验）· `--find <子串>` · `--id <id>`（精查单条）· `--validate`（离线自检）。
+- **写入**：`--add '<json>'` · `--edit <id> --set k=v [--set …]` · `--rm <id>`。
+  `--set` 支持**点路径**：`emulator.status=partial`、`engine.raw=28419-28543`、`engine.fns=a,b`、`reads=Engine+699204,Engine+122455`。
+  写入后自动重算 `counts`。
+- **渲染**（仓库根）：`node scripts/build-capabilities.mjs` → `docs-new/03-engine/engine-capabilities.md`（**勿手改 md**）。
+- **收尾必跑**：`cd app/amayui-emulator && npx tsx --test test/capability-ledger.test.ts`。
+
 ### 建议的读取姿势（AI/人）
-数据层是**存储**，直接读原始 `functions.json` 冗长。先 `report.js --index --sort addr` 导航，`--find/--addr/--op` 精查，`--summary` 看进度；新增/修改结论用 `--func-add/--func-edit`。
+数据层是**存储**，直接读原始 JSON 冗长。
+- 第一层：先 `report.js --index --sort addr` 导航，`--find/--addr/--op` 精查，`--summary` 看进度；新增/修改用 `--func-add/--func-edit`。
+- 第二层：先 `capabilities.js --attention` 看缺口，`--subsystem 消息窗` 收窄到某个子系统，`--id` 精查；
+  新增/修改用 `--add/--edit`，改完 `build-capabilities.mjs` + `--validate`。
+- **盘点某个子系统的功能面**时：两层一起看 —— `report.js --find <子系统名>` 找相关 handler，
+  `capabilities.js --subsystem <子系统>` 找相关持续行为。
 
 ---
 
 ## 5. 硬性约定
-- **原始 `engine/…_utf8.c` 只读**；结论只在 `analysis/*.json`。
+- **原始 `engine/…_utf8.c` 只读**；结论只在 `analysis/*.json`（两层）。
+- **常态能力不得只在脑子里**：任何"引擎每帧/持续做某事"的发现，必须落成 `engine-capabilities.json` 条目，
+  并写清 `whySilent` —— 否则下次遇到症状又要从零研究（这正是第二层存在的理由）。
+- **不许用 `n/a-known` 掩盖缺口**：必须写 `why:`，且 `capabilities.js --validate` / 守卫测试会拒收。
+- **不许空口声称守卫**：`evidence` 写 E2/E3 就必须给出真实存在的 `guard` 测试文件。
+- **md 是产物**：`docs-new/03-engine/engine-capabilities.md` 由 `scripts/build-capabilities.mjs` 生成，**勿手改**。
 - **不写镜像 / 不写 libclang/AST 文本改写**；渲染只做纯数据报表，不依赖任何反编译器/特定工具。
 - **结论带证据**：`evidence` 以 raw 行区间为主。
 - **AGE 助记符不可靠**（`exit`≠程序退出、`ret`≠跨脚本返回），以**读反编译体为准**；**严禁读取/参考 emulator**（产物，非信息源）；凡 `推测`/未读体一律标 `partial`。
