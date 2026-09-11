@@ -71,22 +71,17 @@
     </div>
     <div class="row ignored-list" id="dropped"></div>
     <div class="row row-head">
-      <span class="label">★ 能力缺口（被忽略但收到实参，闸门 B）</span><span class="value" id="gapsCount">(…)</span>
+      <span class="label">★ 能力缺口（被跳过但收到实参，闸门 B）</span><span class="value" id="gapsCount">(…)</span>
       <button id="btnCopyGaps" class="mini">复制全部</button>
     </div>
     <div class="row ignored-list" id="gaps"></div>
     <div class="row row-head">
-      <span class="label">已跳过指令（作为桩函数，去重）</span><span class="value" id="skippedCount">(…)</span>
+      <span class="label">已跳过指令（作为桩函数，未收到实参）</span><span class="value" id="skippedCount">(…)</span>
       <button id="btnCopySkipped" class="mini">复制全部</button>
     </div>
     <div class="row ignored-list" id="skipped"></div>
     <div class="row row-head">
-      <span class="label">已插桩·语义已实现（宿主无对应输出）</span><span class="value" id="internalCount">(…)</span>
-      <button id="btnCopyInternal" class="mini">复制全部</button>
-    </div>
-    <div class="row ignored-list" id="internal"></div>
-    <div class="row row-head">
-      <span class="label">真·忽略（纯 no-op 插桩）</span><span class="value" id="ignoredCount">(…)</span>
+      <span class="label">真·忽略（no-op 插桩，未收到实参）</span><span class="value" id="ignoredCount">(…)</span>
       <button id="btnCopyIgnored" class="mini">复制全部</button>
     </div>
     <div class="row ignored-list" id="ignored"></div>

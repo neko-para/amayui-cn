@@ -161,7 +161,7 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不�
 
 /**
  * 设置界面（CONFIG2/CONFIG1）实测涉及的一批 opcode：分类 + 覆盖。
- * 分类依据（逐条读 handler 体，见 ops.ts 的 op_msg_ui_internal / op_set_input_field / op_array_addr_op 注释）：
+ * 分类依据（逐条读 handler 体，见 src/vm/handlers/ 各模块的注释）：
  *  - 消息窗/消息渲染/文本 子系统（0x7F/0x80/0x196/0x300/0x301）与 声音子系统（0xC5）→ 进 ENGINE_INTERNAL_OPS 默认插桩；
  *  - 其余「纯数值操作」（0x142 写 `_this[174812]`、0x12F 数组地址+循环）→ 进 ENGINE_INTERNAL_OPS，但用显式 handler；
  *  - 0x306 配置 getter、0x217 对象变换 → 各自 handler（NATIVE_OPS）。
@@ -205,35 +205,37 @@ test('消息窗字段一族（0x80 setter / 0x7F getter / 0x300 / 0x301）：真
   assert.equal(e.engineValues.get(4 + 122486), 0, '0x301 应把该项清零');
 });
 
-test('设置界面涉及的 opcode：分类正确 + 步进不抛错（真实现 / 专门处理 / 纯 no-op 三档）', async () => {
+test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemented / native / engine-internal）', async () => {
   const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
-  // [opcode, argc, 期望 handlerKind, 期望 noop(纯 no-op 插桩)]
-  const cases: [number, number, string, boolean][] = [
-    [0x7f, 1, 'implemented', false], // 消息窗 α 读数（真实现：读 engineValues[21668]）
-    [0x80, 1, 'implemented', false], // 消息窗部件索引 setter（真实现：写 engineValues[21631]）
-    [0x300, 3, 'implemented', false], // 消息窗对象旗标/值（真实现：写 engineValues[122466+v]/[122476+v]）
-    [0x301, 1, 'implemented', false], // 清消息窗对象项（真实现：写 engineValues[122486+v]=0）
-    [0x142, 1, 'engine-internal', false], // 写引擎开关 _this[174812]（专门 handler）
-    [0x12f, 4, 'engine-internal', false], // 三数组插入排序 + 重编码（专门 handler）
-    [0xc5, 2, 'engine-internal', false], // 声音音量显示（专门 handler，无声音子系统）
-    [0x196, 3, 'engine-internal', false], // display-furigana（专门 handler，文本渲染未建模）
-    [0x306, 1, 'native', false], // system:EffectSkipOnClick getter
-    [0x217, 4, 'native', false], // 对象变换 pivot → native.setDrawPivot
-    [0x2ce, 1, 'native', false], // display:ScreenMode getter（上一轮已实现）
-    [0x20c, 0, 'implemented', false], // 帧刷新（真实现：刷时钟 + native.frameTick）
-    [0x1f4, 0, 'implemented', false], // 帧计时（真实现：帧计数/时钟寄存器）
-    [0x1f6, 0, 'implemented', false], // 整批清绘制容器 → native.clearDrawContainer
-    [0x1ff, 4, 'implemented', false], // DrawItem 像素平移（+0x68 / +0x16C work 矩阵）→ native.setDrawTranslation
-    [0x208, 3, 'implemented', false], // 纹理尺寸 getter：写回 op2/op3 → native.getTextureSize
-    [0x23b, 7, 'implemented', false], // 按 CG 数字条画数值 → native.drawCgNumber
-    [0x23c, 0, 'implemented', false], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
-    [0x2da, 8, 'implemented', false], // CG 数字条记录登记（7 dword/条）
-    [0x25b, 1, 'implemented', false], // 消息态图像：_this[92381] = op1（真实现字段写入）
-    // 真·纯 no-op 插桩（控制窗显示在「真·忽略」栏）
-    [0x346, 0, 'engine-internal', true],
-    [0x349, 4, 'engine-internal', true],
+  // [opcode, argc, 期望 handlerKind]
+  // 分类规则：能完整建模（哪怕不产出画面）⇒ 'implemented'；经 NativeBridge 落宿主 ⇒ 'native'；
+  //           引擎内部且 emulator 无事可做 ⇒ 'engine-internal'（纯 no-op）。
+  const cases: [number, number, string][] = [
+    [0x7f, 1, 'implemented'], // 消息窗 α 读数（真实现：读 engineValues[21668]）
+    [0x80, 1, 'implemented'], // 消息窗部件索引 setter（真实现：写 engineValues[21631]）
+    [0x300, 3, 'implemented'], // 消息窗对象旗标/值（真实现：写 engineValues[122466+v]/[122476+v]）
+    [0x301, 1, 'implemented'], // 清消息窗对象项（真实现：写 engineValues[122486+v]=0）
+    [0x142, 1, 'implemented'], // 写引擎开关 _this[174812]（真实现：写 engineValues[174812]）
+    [0x12f, 4, 'implemented'], // 三数组插入排序 + 重编码（真实现：读/写数组元素）
+    [0xc5, 2, 'engine-internal'], // 声音音量显示（引擎会回写 op2，本机无声音子系统 ⇒ 纯 no-op 跳过）
+    [0x196, 3, 'engine-internal'], // display-furigana（文本渲染未建模 ⇒ 纯 no-op 跳过）
+    [0x306, 1, 'native'], // system:EffectSkipOnClick getter
+    [0x217, 4, 'native'], // 对象变换 pivot → native.setDrawPivot
+    [0x2ce, 1, 'native'], // display:ScreenMode getter（上一轮已实现）
+    [0x20c, 0, 'implemented'], // 帧刷新（真实现：刷时钟 + native.frameTick）
+    [0x1f4, 0, 'implemented'], // 帧计时（真实现：帧计数/时钟寄存器）
+    [0x1f6, 0, 'implemented'], // 整批清绘制容器 → native.clearDrawContainer
+    [0x1ff, 4, 'implemented'], // DrawItem 像素平移（+0x68 / +0x16C work 矩阵）→ native.setDrawTranslation
+    [0x208, 3, 'implemented'], // 纹理尺寸 getter：写回 op2/op3 → native.getTextureSize
+    [0x23b, 7, 'implemented'], // 按 CG 数字条画数值 → native.drawCgNumber
+    [0x23c, 0, 'implemented'], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
+    [0x2da, 8, 'implemented'], // CG 数字条记录登记（7 dword/条）
+    [0x25b, 1, 'implemented'], // 消息态图像：_this[92381] = op1（真实现字段写入）
+    // 纯 no-op 插桩（控制窗「真·忽略」栏）
+    [0x346, 0, 'engine-internal'],
+    [0x349, 4, 'engine-internal'],
   ];
-  for (const [opcode, argc, kind, noop] of cases) {
+  for (const [opcode, argc, kind] of cases) {
     const e = new Engine(new StubNative(() => {}));
     e.config = cfg;
     applyConfigToEngine(cfg, e.engineValues);
@@ -266,7 +268,6 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（真实现 
     const t = await stepOnce(e); // 不抛即通过（关键：不再需要人工点「跳过」）
     assert.equal(t.opcode, opcode, `0x${opcode.toString(16)} 应被 stepOnce 执行`);
     assert.equal(t.handlerKind, kind, `0x${opcode.toString(16)} 的 handlerKind`);
-    assert.equal(t.noop, noop, `0x${opcode.toString(16)} 的 noop 标志（true=纯 no-op 插桩 → 控制窗「真·忽略」栏）`);
     assert.equal(e.curScript().ip, 1, `0x${opcode.toString(16)} 应正常推进 ip`);
   }
 });

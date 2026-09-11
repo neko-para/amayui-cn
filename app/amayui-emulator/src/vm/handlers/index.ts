@@ -19,7 +19,7 @@ import { MEMORY_OPS } from './memory.js';
 import { STRING_OPS, STRING_NATIVE_OPS } from './strings.js';
 import { ENGINE_FIELD_OPS, ENGINE_FIELD_NATIVE_OPS } from './engine-fields.js';
 import { CONTROL_OPS } from './control.js';
-import { MSGWIN_OPS, MSGWIN_INTERNAL_OPS } from './msgwin.js';
+import { MSGWIN_OPS } from './msgwin.js';
 import { FRAME_OPS, FRAME_NATIVE_OPS } from './frame.js';
 import { GFX_CG_OPS } from './gfx-cg.js';
 import { GFX_TEXTURE_OPS, GFX_TEXTURE_NATIVE_OPS } from './gfx-texture.js';
@@ -59,7 +59,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...STUB_NATIVE_OPS,
 ]);
 
-export { ENGINE_INTERNAL_OPS, INTERNAL_WITH_HANDLER } from './stubs.js';
+export { ENGINE_INTERNAL_OPS } from './stubs.js';
 export { ExitScript, ScriptReset, loadScriptIntoFrame } from './control.js';
 
 /** 便于测试/工具遍历：三张表的名字（与 handlerKind 一致）。 */

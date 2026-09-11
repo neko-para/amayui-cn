@@ -172,7 +172,6 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
           op: hex,
           name: t.name,
           kind: t.handlerKind,
-          noop: t.noop,
           operands: t.operands,
           ...(t.gap ? { gap: true } : {}),
           clock,

@@ -100,7 +100,6 @@ export class RendererSession {
     window.api?.sendRendererStatus?.({
       bin: this.#status.scriptName,
       ignored: this.#telemetry.ignoredList(),
-      internal: this.#telemetry.internalList(),
       skipped: this.#telemetry.skippedList(),
       gaps: this.#telemetry.gapsList(),
       dropped: this.#drops.list(),
@@ -268,7 +267,6 @@ export class RendererSession {
         op: `0x${t.opcode.toString(16)}`,
         name: t.name,
         kind: t.handlerKind,
-        noop: t.noop,
         operands: t.operands,
         ...(t.gap ? { gap: true } : {}),
       }),

@@ -66,6 +66,8 @@ export interface SkippedEntry extends OpcodeStat {
 export interface GapEntry extends OpcodeStat {
   count: number;
   sample: string[];
+  /** 它原本属于哪张表（在缺口行上标注来源）。 */
+  source: 'ignored' | 'skipped';
 }
 
 /** ★闸门 A：脚本调用了宿主**没实现**的 native 方法（`?.` 静默 no-op）。 */
@@ -105,10 +107,12 @@ export interface PendingUnknown {
 /** 渲染器上报给控制窗的状态。 */
 export interface ControlStatus {
   bin: string;
-  /** 真·忽略：纯 no-op 插桩（`op_engine_internal`，本机无对应子系统，不做任何事）。 */
+  /**
+   * 真·忽略：引擎内部 no-op 插桩，且**本场景没收到实参**（即"空转"）。
+   * 收到实参的那些会被提到 `gaps`（闸门 B），因此这三张表互斥、不会重复列出同一条指令。
+   */
   ignored: OpcodeStat[];
-  /** 已插桩但有专门处理：消息窗/声音/数组排序/字段写入等（按引擎语义执行，只是不产出可渲染输出）。 */
-  internal: OpcodeStat[];
+  /** ★闸门 B：被跳过且收到非平凡实参（最该看的一档）。 */
   gaps?: GapEntry[];
   dropped?: DroppedIntentEntry[];
   traceAll: boolean;

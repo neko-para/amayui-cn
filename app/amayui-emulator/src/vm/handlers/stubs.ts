@@ -1,18 +1,19 @@
 /**
  * 「引擎内部 / 宿主无对应子系统」的 opcode —— 显式记录并跳过（ADR-005 的插桩分支）。
  *
- * 两类，语义不同，控制窗据此分开显示：
- *  - **纯 no-op 插桩**（`op_engine_internal`）：只有"不做任何事"这一个语义，属真·忽略；
- *  - **专门处理**（`INTERNAL_WITH_HANDLER`）：已按引擎语义读操作数/写状态，只是**不产生 emulator
- *    可渲染的输出**（消息文本区、声音…）。
+ * ## 只有一类：`op_engine_internal`（纯 no-op）
+ * 表里**每一条都不读操作数、不写 VM 可见状态、不改控制流**。
  *
- * ★注意：**能完整建模的 opcode 一律注册在 `OPS`（真实现）**，不放这里。这里只留"引擎有副作用
- *   但 emulator 无对应子系统可承接"的那些。
+ * 历史上这里分过「纯 no-op」与「专门处理（已按引擎语义读操作数写状态）」两档，但那一档是
+ * **结构性空**的：只要 handler 真的写了操作数或引擎字段，它就该注册进 `OPS`（`implemented`）
+ * —— 例如消息窗字段读写（0x7F/0x80/0x300/0x301）、三数组排序（0x12F）、引擎开关（0x142）；
+ * 剩下的只有"什么都不做"。因此那一档连同 `StepTrace.noop` 标志、控制窗里恒空的
+ * 「已插桩·语义已实现」栏一起删除。
+ *
+ * ★判据（ADR-010 §10.2）：标为可忽略必须**读 handler 体**确认其对 VM 态
+ *   （全局/局部 int·float·string·ptr、帧、IP、cur）无读写；每条右侧注释给出依据。
  */
 import type { OpHandler } from '../step.js';
-import { op_msg_ui_internal } from './msgwin.js';
-import { op_set_engine_flag_174812 } from './engine-fields.js';
-import { op_sort_index_arrays } from './memory.js';
 import type { OpTable } from './shared.js';
 
 const stubSubsystem: OpHandler = (c) => {
@@ -58,26 +59,6 @@ const op_engine_internal: OpHandler = () => {
   // kind=engine-internal（且带 opcode）；自打 `[engine-internal] ...` 会造成每 op 双行，并在交互脚本
   // （0x20c 每帧一次）下刷屏。需要逐 op 细节看 renderer 的 step trace 即可。
 };
-
-/**
- * `ENGINE_INTERNAL_OPS` 中**带专门 handler（非纯 no-op）**的 opcode。
- *
- * 这张表里的条目分两类，语义不同，日志/控制窗要分开显示：
- *  - **纯 no-op 插桩**（`op_engine_internal`）：只有"不做任何事"这一个语义，属真·忽略；
- *  - **专门处理**（`op_msg_ui_internal` 等）：已按引擎语义读操作数/写状态，只是**不产生 emulator 可渲染的输出**
- *    （消息文本区、声音…）。
- * → `StepTrace.noop` 据此区分，避免把"已执行但无输出"误报成"被忽略"。
- *
- * ★注意：**能完整建模的 opcode 一律注册在 `OPS`（真实现）**，不放这里 —— 例如消息窗字段读写
- *   （0x7F/0x80/0x300/0x301）、数组排序（0x12F）、引擎开关（0x142）。这里只留"引擎有副作用但
- *   emulator 无对应子系统可承接"的少数几条。
- */
-export const INTERNAL_WITH_HANDLER: ReadonlySet<number> = new Set<number>([
-  0xc5, // 声音音量显示（读 sound:VolumeN，无声音子系统）
-  0x142, // _this[174812] = op1（真实现：脚本可控引擎开关）
-  0x12f, // 三数组插入排序 + 重编码（真实现）
-  0x196, // display-furigana（文本渲染未建模）
-]);
 
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   // ============ 声音 子系统 ============
@@ -163,13 +144,13 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============
   // ============ 声音 ============
   [0x2f8, op_engine_internal], // → sub_4B6940(_this+4666, op1+12, op2)（声音通道/音量）
-  // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统，按引擎语义"读操作数/写状态"但无输出 ----
-  //  (0x7F/0x80/0x300/0x301 已升级为真实现，注册在 OPS；这里只留确实未建模的两条)
-  [0x196, op_msg_ui_internal], // display-furigana（注音）：写消息文本区（文本渲染未建模）
-  [0xc5, op_msg_ui_internal], // 读 op1 选 sound:Volume1..4 → GetConfig → 写 op2（音量显示；无声音子系统）
-  // ---- 其余「纯数值操作」（读操作数写引擎字段，无 VM 可见副作用）----
-  [0x142, op_set_engine_flag_174812], // _this[174812] = op1（脚本可控的引擎运行开关；构造/复位默认 1）
-  [0x12f, op_sort_index_arrays], // 三数组：按 (DEC(A)+DEC(C)) 升序重排索引写 A，末尾 A 原地 ENC 重编码
+  // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统 ----
+  // 判定依据 = 逐条读 handler 体：体内只出现对 `_this[引擎字段]` 的赋值/文本区写入，
+  // **既不回写操作数、也不改 ip/cur**，故对 emulator 不可观测（与其余插桩同一取舍）。
+  // 这两条**确实未实现**（0xC5 引擎还会回写 op2），因此照旧受闸门 B 监督：
+  // 脚本若给它们传了非平凡实参，会出现在控制窗的「能力缺口」栏。
+  [0x196, op_engine_internal], // display-furigana：写消息文本区（文本渲染未建模）
+  [0xc5, op_engine_internal], // 读 op1 选 sound:Volume1..4 → GetConfig → 写 op2（音量显示；无声音子系统）
 ]);
 
 /** 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */

@@ -1,6 +1,6 @@
 /** 解释器主循环（每步 await，以支持异步文件代理的 call-script）。 */
 import type { Engine, Frame } from './engine.js';
-import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, INTERNAL_WITH_HANDLER, ExitScript, ScriptReset, loadScriptIntoFrame } from './ops.js';
+import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, ExitScript, ScriptReset, loadScriptIntoFrame } from './ops.js';
 import { readIntOperand, readFloatOperand } from './operand.js';
 import { makeCtx } from './step.js';
 import type { OpHandler } from './step.js';
@@ -30,14 +30,6 @@ export interface StepTrace {
    * 后登记的运行时 no-op 桩**（见 Engine.unknownOpStubs）；unimplemented 理论上不再由 stepOnce 返回（直接抛错）。
    */
   handlerKind: 'implemented' | 'native' | 'engine-internal' | 'user-stub' | 'unimplemented';
-  /**
-   * 仅对 `handlerKind==='engine-internal'` 有意义：
-   *  - `true`  = **纯 no-op 插桩**（`op_engine_internal`，真·忽略，不做任何事）；
-   *  - `false` = 该 opcode 有**专门 handler**（`INTERNAL_WITH_HANDLER`：消息窗/声音/数组排序/字段写入…，
-   *              已按引擎语义读操作数或写状态，只是不产出 emulator 可渲染的输出）。
-   * 供控制窗把"已实现但不产出"与"真忽略"分开显示。
-   */
-  noop: boolean;
   script: string;
   /**
    * 本指令操作数的可读形式（`0x3#41`；`#` 后为已解码值/旁注）。供场景执行报告与缺口归因。
@@ -62,19 +54,17 @@ export interface StepTrace {
  * 解析当前指令的 handler 及其来源。查找顺序：
  *   静态实现表 → native 桩表 → 引擎内部插桩表 → **用户运行时登记的未知指令桩**（Engine.unknownOpStubs）。
  * 用户桩只作最后兜底，不会遮蔽任何已知实现；查不到则返回 null（由 stepOnce 抛 NotImplementedOp）。
+ *
+ * 注：`engine-internal` 表里**全部是纯 no-op**（见 `handlers/stubs.ts`），因此不再有"noop"标志——
+ * 一个 handler 只要真的写了操作数/引擎字段，它就应该在 `OPS` 里。
  */
-function resolveHandler(
-  e: Engine,
-  op: number,
-): { handler: OpHandler | undefined; kind: StepTrace['handlerKind']; noop: boolean } {
-  if (OPS.has(op)) return { handler: OPS.get(op), kind: 'implemented', noop: false };
-  if (NATIVE_OPS.has(op)) return { handler: NATIVE_OPS.get(op), kind: 'native', noop: false };
-  if (ENGINE_INTERNAL_OPS.has(op)) {
-    return { handler: ENGINE_INTERNAL_OPS.get(op), kind: 'engine-internal', noop: !INTERNAL_WITH_HANDLER.has(op) };
-  }
+function resolveHandler(e: Engine, op: number): { handler: OpHandler | undefined; kind: StepTrace['handlerKind'] } {
+  if (OPS.has(op)) return { handler: OPS.get(op), kind: 'implemented' };
+  if (NATIVE_OPS.has(op)) return { handler: NATIVE_OPS.get(op), kind: 'native' };
+  if (ENGINE_INTERNAL_OPS.has(op)) return { handler: ENGINE_INTERNAL_OPS.get(op), kind: 'engine-internal' };
   // 用户桩句柄目前恒为 no-op（表值只表示"已跳过"），这里统一映射到同一个 no-op handler。
-  if (e.unknownOpStubs.has(op)) return { handler: op_user_stub, kind: 'user-stub', noop: true };
-  return { handler: undefined, kind: 'unimplemented', noop: false };
+  if (e.unknownOpStubs.has(op)) return { handler: op_user_stub, kind: 'user-stub' };
+  return { handler: undefined, kind: 'unimplemented' };
 }
 
 /**
@@ -168,7 +158,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     throw new Error(`ip ${frame.ip} out of range in script (${frame.script.instructions.length} instr)`);
   }
   const op = instr.opcode;
-  const { handler, kind: handlerKind, noop } = resolveHandler(e, op);
+  const { handler, kind: handlerKind } = resolveHandler(e, op);
   if (!handler) {
     // 措辞与 throw 分开：**本函数查表/抛错阶段不修改任何 VM 状态**（未读操作数、未推进 ip），
     // 因此调用方在登记用户桩后可以对**同一条指令**直接重试 stepOnce（见 renderer 的暂停/恢复流程）。
@@ -177,7 +167,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   }
   // 操作数可读形式 + 缺口判据都在 handler 执行**之前**取（handler 可能改写操作数）。
   // ★缺口判据只在"被当作 no-op 跳过"的指令上做（少数），不拖累主路径。
-  const isNoopPath = handlerKind === 'user-stub' || (handlerKind === 'engine-internal' && noop);
+  const isNoopPath = handlerKind === 'user-stub' || handlerKind === 'engine-internal';
   let operands: string[] | null = null;
   let gap: { operands: string[] } | undefined;
   if (isNoopPath && significantOperands(e, frame, instr)) {
@@ -203,7 +193,6 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     ip: frame.ip,
     byteOffset: instr.byteOffset,
     handlerKind,
-    noop,
     script: frame.name,
     get operands(): string[] {
       if (operands === null) operands = formatOperands(e, frame, instr);

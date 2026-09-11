@@ -137,5 +137,6 @@ export const MEMORY_OPS: OpTable = [
   [0x2d8, op_set_array_to],
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],
+  [0x12f, op_sort_index_arrays], // 三数组：按 (DEC(A)+DEC(C)) 升序重排索引写 A，末尾 A 原地 ENC 重编码
 ];
 

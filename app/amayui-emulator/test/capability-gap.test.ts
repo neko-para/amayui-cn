@@ -1,7 +1,7 @@
 /**
  * **闸门 B 回归测试**：`StepTrace.gap`（能力缺口）—— 被当作 no-op 跳过、却收到**非平凡实参**的指令。
  *
- * 为什么要有它：现在的分类只有"真实现 / 已插桩 / 真·忽略"，其中"真·忽略"里混着两类完全不同的东西：
+ * 为什么要有它：「真·忽略」这一类里混着两类完全不同的东西：
  *  - **本场景空转**（`i32f 0`：关灯索引 0，引擎里也没什么可做的）→ 忽略它是**对的**；
  *  - **脚本真的想做点什么而我没做**（`i213 1 19a28 1f4`：给消息窗对象配参数）→ **这就是能力缺口**。
  * 不区分这两类，就没法从"忽略清单"里看出真正缺失的能力。
@@ -55,7 +55,6 @@ test('被忽略的 no-op 指令收到立即数实参 ⇒ 记能力缺口（gap�
   loadScriptIntoFrame(e.curScript(), script(0x346, [{ type: T_IMM, raw: 0x1f4 }]), 'TEST.BIN');
   const t = await stepOnce(e);
   assert.equal(t.handlerKind, 'engine-internal');
-  assert.equal(t.noop, true);
   assert.ok(t.gap, '收到实参 0x1f4（>1）⇒ 应记为能力缺口');
   assert.deepEqual(t.gap!.operands, ['imm-int#500'], '操作数旁注带解码值');
 });
@@ -71,7 +70,6 @@ test('被忽略的 no-op 指令只有 0/1 实参 ⇒ 视为空转，不记缺口
     'TEST.BIN',
   );
   const t = await stepOnce(e);
-  assert.equal(t.noop, true);
   assert.equal(t.gap, undefined, '0/1 是开关默认位，不算"传了参数"');
 });
 

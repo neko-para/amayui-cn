@@ -187,6 +187,7 @@ export const ENGINE_FIELD_OPS: OpTable = [
   [0x107, op_set_key], // _this[op1+551] = op2
   [0x10b, op_set_key2], // _this[op2+1383] = op1
   [0x247, op_get_engine_bool], // op1 = (_this[166965] != 0)
+  [0x142, op_set_engine_flag_174812], // _this[174812] = op1（脚本可控的引擎运行开关；构造/复位默认 1）
   [0x148, op_read_global_slot], // read `_this[97058]` → op1（暂无用，仅建模）
   [0x149, op_write_global_slot], // write op1 → `_this[97058]`（暂无用，仅建模）
 ];

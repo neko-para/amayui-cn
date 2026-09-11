@@ -35,16 +35,8 @@ function parseOpList(s: string): number[] {
 const ignoredView = new ListView<ControlStatus['ignored'][number]>({
   elements: lists.ignored,
   unit: '个',
-  emptyText: '（暂无）',
+  emptyText: '（暂无：被忽略的指令都收到了实参 → 见上面的「能力缺口」）',
   // 只显示助记符（name 已是语义名或 iXXX 数值），不列指令码数值。
-  rowOf: (it) => ({ text: it.name }),
-});
-
-/** 已插桩但有专门处理（消息窗/声音/数组排序/字段写入…）：按引擎语义执行，只是不产出可渲染输出。 */
-const internalView = new ListView<ControlStatus['internal'][number]>({
-  elements: lists.internal,
-  unit: '个',
-  emptyText: '（暂无）',
   rowOf: (it) => ({ text: it.name }),
 });
 
@@ -52,20 +44,24 @@ const internalView = new ListView<ControlStatus['internal'][number]>({
 const skippedView = new ListView<ControlStatus['skipped'][number]>({
   elements: lists.skipped,
   unit: '个',
-  emptyText: '（暂无已跳过指令）',
+  emptyText: '（暂无：已跳过且未收到实参的指令）',
   rowOf: (it) => ({ text: `${it.name} ×${it.count}` }),
 });
 
 /**
  * ★闸门 B 清单：**能力缺口** —— 这条指令被当作 no-op 跳过，但脚本给它传了**非平凡实参**，
- * 即"脚本真的想做点什么，而我没做"。样例操作数只放在 title 与复制文本里（避免刷屏）。
+ * 即"脚本真的想做点什么，而我没做"。
+ *
+ * ★它是「被跳过」集合里**唯一**会列出这些指令的地方：`真·忽略`/`已跳过指令` 两栏已把
+ * 进过本表的 opcode 排除掉（否则同一条会在面板上出现两遍）。因此行首标注来源 `[忽略]`/
+ * `[已跳过]`，信息不丢。样例操作数只放在 title 与复制文本里（避免刷屏）。
  */
 const gapsView = new ListView<NonNullable<ControlStatus['gaps']>[number]>({
   elements: lists.gaps,
   unit: '种',
-  emptyText: '（暂无：被忽略的指令都没有收到实参）',
+  emptyText: '（暂无：被跳过的指令都没有收到实参）',
   rowOf: (it) => ({
-    text: `${it.name} ×${it.count}`,
+    text: `${it.source === 'skipped' ? '[已跳过]' : '[忽略]'} ${it.name} ×${it.count}`,
     title: `最近实参：${it.sample.join(' ')}`,
     copy: `${it.name} ×${it.count}｜${it.sample.join(' ')}`,
   }),
@@ -185,7 +181,6 @@ window.api.onControlStatus((s) => {
     ui.traceFilter.value = s.traceFilter.join(','); // 渲染窗回读（正在输入时不同步，免得打断打字）
   }
   ignoredView.set(s.ignored);
-  internalView.set(s.internal);
   skippedView.set(s.skipped);
   gapsView.set(s.gaps);
   droppedView.set(s.dropped);
@@ -198,7 +193,6 @@ window.api.onControlStatus((s) => {
 // 初始态（渲染窗还没上报时也要有画面）。
 updateTraceBtn();
 ignoredView.set([]);
-internalView.set([]);
 skippedView.set([]);
 gapsView.set([]);
 droppedView.set([]);

@@ -45,11 +45,6 @@ export const lists = {
     box: el<HTMLDivElement>('ignored'),
     copyBtn: el<HTMLButtonElement>('btnCopyIgnored'),
   },
-  internal: {
-    countEl: el<HTMLSpanElement>('internalCount'),
-    box: el<HTMLDivElement>('internal'),
-    copyBtn: el<HTMLButtonElement>('btnCopyInternal'),
-  },
   skipped: {
     countEl: el<HTMLSpanElement>('skippedCount'),
     box: el<HTMLDivElement>('skipped'),

@@ -9,7 +9,7 @@
  * |---|---|---|
  * | `OPS` | `implemented` | VM 核心，精确实现 |
  * | `NATIVE_OPS` | `native` | 经 NativeBridge 落到宿主子系统 |
- * | `ENGINE_INTERNAL_OPS` | `engine-internal` | 引擎内部/无对应子系统 → 记录并跳过 |
+ * | `ENGINE_INTERNAL_OPS` | `engine-internal` | 引擎内部/无对应子系统 → 记录并跳过（全部为纯 no-op） |
  *
  * 未出现在任何表中 ⇒ 解释器硬报错（ADR-005）。
  * 分模块导览见 `./handlers/index.ts`（拼装）与各子系统模块头部注释。
@@ -19,7 +19,6 @@ export {
   OPS,
   NATIVE_OPS,
   ENGINE_INTERNAL_OPS,
-  INTERNAL_WITH_HANDLER,
   REGISTRY_NAMES,
   ExitScript,
   ScriptReset,
