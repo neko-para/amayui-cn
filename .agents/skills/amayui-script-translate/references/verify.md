@@ -12,9 +12,17 @@ npm run assemble -- <SCRIPT>
 
 - `npm run` 只认同级 `package.json`：**工程根没有 `package.json`，必须在 `scripts` 目录执行**
   （在根执行报 `ENOENT … Could not read package.json`）。
-- 回读验证若报 `N/M`（N<M）且进程以 exit 1 收尾，通常是反汇编**字形变体表**造成的假阴性
-  （如 現在→刕在、當→当、仝→丞、強→侔），未改动的脚本同样出现；此时应确认目标句已命中，
-  而非把它当作骨架/编码失败。
+- 回读验证必须为 `N/N`（进程 exit 0）。曾长期报 `N<M` 的“假阴性”：根因**不是字形变体表**，而是
+  `scripts/asm/age-shared.mjs` 的 `decodeCp932` 把 CP932 的 IBM 扩展汉字区（`0xFA40–0xFCFC`）
+  误并入游戏外字线性段（`0xF040–0xF9FC ↔ U+E000–U+E757`）——写入侧 `encodeCp932` 经 iconv 把简体
+  占位字（`res/subs_cn_jp.json`：现→刕=`0xFA84`、强→侔=`0xFA72`、敌→俉=`0xFA61`…）编到该区，
+  回读侧却解成 U+E758–E8DB，两侧自然不相等（全工程 256 脚本 / 3215 行受影响）。该 bug 已于
+  2026-09-12 修复；当时被当作“字形差异”的 `現在→刕在`、`強→侔`，正是这一处码位归属错误。
+- 该比较式（`mapToSjis(译文)` vs 回读文本）现在同时是**互逆性守门测试**：若再报 `N<M`，写临时脚本
+  遍历译文用字符（或全 BMP）定位 `decodeCp932(encodeCp932(ch)) !== ch` 的字符，判断其码位区间
+  （`0xFA–0xFC` 段须交 iconv，仅 `0xF0–0xF9` 走外字线性表）后修 `age-shared.mjs`——**不要**改成
+  比较 `decode(encode(x))` 绕过，那会掩盖真实的口径错误。已知残余仅 `¥`(`0x5C`)、`‾`(`0x7E`)
+  两个单字节别名（译文未使用），其余为 0。
 
 ## 1.5 本地校验 + PENDING.md 登记（备用，仅当暂不 assemble）
 

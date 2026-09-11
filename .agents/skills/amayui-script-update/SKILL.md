@@ -51,9 +51,11 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
      工程根没有；在根执行 `npm run` 会 ENOENT 报 `Could not read package.json`），必须通过
      （骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，任何平台均可运行），产物写入 install 根 + DATA1；
      若尚未构建 install 树，按 translate 技能登记 PENDING.md；
-   - 注：回读验证偶报 `N/M 处译文`（N<M）并以 exit 1 收尾，多为**反汇编字形变体表**导致的
-     假阴性（与本次改动无关，未改动的脚本同样出现）；须确认目标句已在回读文件中命中，
-     不要把该告警当成骨架/编码失败。
+   - 注：回读验证应为 `N/N`（exit 0）。历史上曾出现 `N<M` 假阴性，根因是 `decodeCp932` 把
+     CP932 的 IBM 扩展汉字区（0xFA40–0xFCFC，简体占位字所在）误并入游戏外字线性段，已于
+     2026-09-12 修复（外字区收窄为 0xF040–0xF9FC）。若今后再报 `N<M`，说明出现了
+     `decodeCp932(encodeCp932(ch)) !== ch` 的新字符，须定位其码位区间后修工具，
+     **不要**把校验改成比较 `decode(encode(x))` 绕过——那会掩盖真实的口径错误。
 6. **记录**
    - 按 `references/conventions.md`「变更记录」节，在 `patch/CHANGELOG.md` 当前
      「开发中」版本节**最上方**添加条目（最新在前，不从下方追加）：

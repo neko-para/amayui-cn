@@ -67,6 +67,11 @@ node scripts/asm/cli.js -e sjis -d raw out-text
    不需 `E:\Games\Eushully\wk` ASCII junction。
 4. **码页转换**：CP932 用 `iconv-lite`，并**手工实现游戏外字区** `0xF040–0xF9FC ↔ U+E000–U+E757`
    的线性映射（`iconv-lite` 对尾部 `0xF9FC` 等解码有误），确保含外字的原文往返无损。
+   **`0xFA40–0xFCFC` 不属外字区**，而是 CP932 的 IBM 扩展汉字区，必须交 `iconv-lite`：工程简体
+   占位字（`res/subs_cn_jp.json`：现→刕=`0xFA84`、强→侔=`0xFA72`、敌→俉=`0xFA61`…，由 cnjp 字体
+   按码位还原字形）正落在该区，写入侧经 iconv 编到此处；解码若把它并入上面的外字线性段，就与
+   写入侧不互逆（2026-09-12 前的 bug：回读验证对全工程 256 脚本 / 3215 行误报缺失，且反汇编输出
+   与运行时的 `TextDecoder('shift_jis')` 口径不一致）。
    CP936 沿用 C++ 对 `0x30FB/0xFA19/0x266A/0x246E` 的直接字节映射。
 5. **省略多线程**：原版用 `NUM_THREADS` 并行处理多文件；Node 版单线程逐文件，方便打印与排查。
 
@@ -76,3 +81,11 @@ node scripts/asm/cli.js -e sjis -d raw out-text
 - 对 `raw/SC0000.BIN` 反汇编→重汇编，产出**与原始 BIN 逐字节一致**（511688B）；
 - 对 20 个真实游戏 `.BIN` 批量往返，全部逐字节一致（唯一例外 `AGE.EXE__userdata.bin` 非 AGE 脚本）；
 - `-x SC0000.BIN` 输出 `equal`。
+- CP932 码位归属回归（2026-09-12）：`raw/SC0000.BIN` 反汇编仍与 `data/SC0000.txt` 逐字节一致、
+  `-x` 仍 `equal`（原始日文不含 `0xFA40–0xFCFC` 段字节）；对汉化产物 `install/SC2180.BIN` 反汇编时
+  该段显示为 CP932 汉字（刕/侔/俉 共 29 处）而非旧口径 PUA `U+E758–E8DB`（0 处），与 emulator
+  （`app/amayui-emulator/src/script/bin.ts` 的 `TextDecoder('shift_jis')`）读同一 BIN 的结果一致。
+- 复现互逆性检查：遍历 `decodeCp932(encodeCp932(ch)) !== ch`（`ch` 取全 BMP 或译文用字符）。
+  现状仅剩 2 个已知残余：`U+00A5 ¥`（`0x5C`）、`U+203E ‾`（`0x7E`）——单字节区的 ASCII 别名，
+  与 iconv/WHATWG 表差异同源，译文未使用；若今后译文真要用到，回读验证会报缺失，需先在
+  `scripts/lib/sjis-encode.js` 侧改写为全角形式或拒绝该字符。

@@ -71,7 +71,12 @@ export function utf16ToCp(cp, input) {
 // ---------------------------------------------------------------------------
 // CP932（Windows-31J）：标准 JIS X 0208 交由 iconv-lite；游戏外字（UDC / PUA）
 // 区域 0xF040–0xF9FC ↔ U+E000–U+E757 线性映射必须自行处理（iconv-lite 尾部有误）。
-// 0xFA40–0xFCFC 该作未使用，命中时按线性续延处理以保内部往返一致。
+//
+// 0xFA40–0xFCFC **不属于**外字区，而是 CP932 的 IBM 扩展汉字区：iconv-lite 已能正确
+// 编解码，且工程的简体占位字大量落在该区（res/subs_cn_jp.json：现→刕=0xFA84、
+// 强→侔=0xFA72、敌→俉=0xFA61 等，由 cnjp 字体按码位还原字形）。该区必须交 iconv；
+// 若并入上面的外字线性段，encodeCp932（iconv 编出 0xFAxx）与 decodeCp932（线性表读回
+// U+E7xx）即不互逆，回读验证会对全工程上千行译文误报缺失（见 disassembler 回读链）。
 // ---------------------------------------------------------------------------
 function cp932GaijiLeadTrail(offset) {
   const lead = 0xF0 + Math.floor(offset / 188);
@@ -95,7 +100,7 @@ export function decodeCp932(buf) {
     if (p + 1 < buf.length) {
       const t = buf[p + 1];
       const validTrail = (0x40 <= t && t <= 0x7E) || (0x80 <= t && t <= 0xFC);
-      if (validTrail && 0xF0 <= b && b <= 0xFC) {
+      if (validTrail && 0xF0 <= b && b <= 0xF9) {
         const offset = cp932GaijiIndex(b, t);
         out += String.fromCharCode(0xE000 + offset);
         p += 2;
