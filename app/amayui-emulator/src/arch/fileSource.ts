@@ -22,6 +22,15 @@ export interface FileSource {
    * 返回 null 表示无法解析/读不到。
    */
   readScript(index: number): Promise<ScriptBytes | null>;
+  /**
+   * **把整份 `SYS4REG.INI` 文本写回宿主自己的配置路径**（可选）。
+   *
+   * 调用方是 `Engine.onConfigChanged`（脚本用 `SetConfig` 族改了配置）。
+   * VM 只负责"什么时候该存 + 存什么文本"（`engineConfig.formatIni`），
+   * 写到哪里由宿主决定：Node 直写 `app/amayui-emulator/SYS4REG.INI`；Electron 经 IPC 交主进程。
+   * **不实现该方法 = 改了内存里的配置但不落盘**（测试/链路工具即如此）。
+   */
+  saveConfig?(text: string): Promise<void> | void;
   /** 释放资源（宿主关闭文件句柄等）。 */
   dispose?(): Promise<void>;
 }

@@ -12,6 +12,7 @@
  */
 import type { OpHandler } from '../step.js';
 import type { Engine } from '../engine.js';
+import { setConfigValue } from './msgwin.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
@@ -188,8 +189,7 @@ const op_get_effect_skip: OpHandler = (c) => {
 const op_set_meswin_alpha: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
   if (v > 0x10) return; // 引擎：op1 > 0x10 ⇒ 报错并返回（不写配置）
-  if (!c.e.config) c.e.config = { values: new Map(), sections: [] };
-  c.e.config.values.set('message:meswinalpha', v);
+  setConfigValue(c.e, 'message:meswinalpha', v); // 统一走 setConfigValue ⇒ 一样会通知落盘
 };
 
 export const op_set_engine_flag_174812: OpHandler = (c) => {

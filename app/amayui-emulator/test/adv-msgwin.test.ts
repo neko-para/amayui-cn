@@ -385,7 +385,7 @@ test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 �
 
 test('★0x1B5 设消息速度（字段 + 注册表）：CONFIG 速度滑条走这条，不是 0x74', () => {
   const { e, step } = mk();
-  e.config = { values: new Map([['message:messagespeed', 5]]), sections: [] };
+  e.config = { values: new Map([['message:messagespeed', 5]]), sections: [], order: new Map() };
   step(0x1b5, [im(25)]);
   assert.equal(e.engineValues.get(21668), 25, '写字段（= Font+1376）');
   assert.equal(e.config.values.get('message:messagespeed'), 25, '同时写配置注册表');

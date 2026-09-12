@@ -14,6 +14,9 @@ import { FONT_DIR, RESOURCE_DIR, configIniCandidates } from '../paths.js';
 
 const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR });
 
+/** `read-config-ini` 实际读到的那份 INI（`save-config-ini` 写回同一份）。 */
+let configIniPath: string | null = null;
+
 export function registerFileIpc(): void {
   // 读脚本（call-script 索引 -> 原始字节 + 文件名）
   ipcMain.handle('read-script', async (_e, index: number) => {
@@ -29,10 +32,12 @@ export function registerFileIpc(): void {
   });
 
   // 读引擎配置文件 SYS4REG.INI 文本（启动时填充引擎字段用；见 src/engineConfig.ts）。
+  // ★记下**实际读到的那一份**：写回时写同一个文件（避免"读 A 写 B"把配置写丢/写错地方）。
   ipcMain.handle('read-config-ini', async () => {
     for (const p of configIniCandidates()) {
       try {
         const text = fs.readFileSync(p, 'utf8');
+        configIniPath = p;
         console.log(`[main] config ini -> ${p} (${text.length} bytes)`);
         return { path: p, text };
       } catch {
@@ -41,6 +46,20 @@ export function registerFileIpc(): void {
     }
     console.log('[main] config ini: 未找到 SYS4REG.INI（引擎字段用默认值）');
     return null;
+  });
+
+  // 写回引擎配置（脚本用 SetConfig 族改了配置 ⇒ 渲染进程把整份 INI 文本发过来）。
+  // 安全：只允许写 `configIniCandidates()` 里的路径（不接任意路径，避免把 IPC 变成任意文件写）。
+  ipcMain.handle('save-config-ini', async (_e, text: string) => {
+    if (typeof text !== 'string' || text.length === 0) return null;
+    const target = configIniPath ?? configIniCandidates()[0]!;
+    if (!configIniCandidates().includes(target)) {
+      console.log(`[main] save-config-ini 拒绝非候选路径: ${target}`);
+      return null;
+    }
+    fs.writeFileSync(target, text, 'utf8');
+    console.log(`[main] config ini <- ${target} (${text.length} bytes)`);
+    return { path: target };
   });
 
   // 读内置字体文件（`res/fonts/<file>`）。**白名单式**：拒绝任何含 `..` 或绝对路径的请求。

@@ -48,10 +48,29 @@ const clearAdv = (e: Engine): void => void (e.effectFlags &= ~ADV_ACTIVE);
  *
  * 为什么要写它：`0x1B5/0x1B9/0x2E7/0x2E8/0x2CD/0x141` 这类指令的全部作用就是"把值持久化进配置"，
  * 漏掉则"设置界面改了但下次启动又变回去"。数值本身同时也写进引擎字段（各 handler 自己负责）。
+ *
+ * ★**落盘**：写完后通知宿主（`Engine.onConfigChanged`）—— Electron 走 IPC 写回
+ * `SYS4REG.INI`，headless 直接写文件；测试不注入该钩子 ⇒ 仓库配置不会被测试改动。
+ * 读回侧见 `config-read.ts`（`0x2E6`/`0x2EA`/`0x1B8`/`0xC5`/`0xC7`/`0x2CC` 等）。
  */
 export function setConfigValue(e: Engine, key: string, value: number): void {
-  if (!e.config) e.config = { values: new Map(), sections: [] };
-  e.config.values.set(key.toLowerCase(), value);
+  if (!e.config) {
+    e.config = { values: new Map(), sections: [], order: new Map() };
+  }
+  // 手工构造的配置（测试里 `{values, sections}`）可能没有 `order` ⇒ 补一个，别让"记键序"把写配置搞崩
+  if (!e.config.order) e.config.order = new Map();
+  const k = key.toLowerCase();
+  e.config.values.set(k, value);
+  // 记下分节/键序，保证回写时 INI 的排版不被重排（新键追加到该节末尾）
+  const [section = '', ...rest] = k.split(':');
+  const bare = rest.join(':');
+  if (section && !e.config.sections.includes(section)) e.config.sections.push(section);
+  const keys = e.config.order.get(section) ?? [];
+  if (bare && !keys.some((x) => x.toLowerCase() === bare)) {
+    keys.push(bare);
+    e.config.order.set(section, keys);
+  }
+  e.onConfigChanged?.(e.config);
 }
 
 // ---------------------------------------------------------------------------

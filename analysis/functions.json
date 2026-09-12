@@ -1839,20 +1839,13 @@
     "addr": "0x491880",
     "raw_name": "sub_491880",
     "semantic_name": "cfg_registry_ctor_491880",
-    "status": "PARTIAL",
+    "status": "ANALYZED",
     "purpose": "配置注册表(Reg)对象构造：*_this=&Reg___vftable_，用 sub_434D00 灌默认值（sound:Music=0、sound:Sound/Voice/SE/Movie/UseDirectSound=1、debug:*、system:Path 等；sub_434E00 写字符串表）。= 引擎构造器内 _this+697620 的初始化。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "设 vtable=Reg___vftable_",
-      "sub_434D00(sub_434E00) 灌默认键值"
-    ],
-    "unmodeled": [
-      "sub_434D00/sub_434E00(字符串表插入) 内部"
-    ],
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 vtable=Reg___vftable_", "sub_434D00(sub_434E00) 灌默认键值"],
+    "unmodeled": ["sub_434D00/sub_434E00(字符串表插入) 内部"],
     "evidence": "raw 111338-111765 (引擎 ctor raw 22536 调用)",
-    "notes": "\"sound:Music\" 默认值=0；配置文件值随后叠盖"
+    "notes": "配置注册表(Reg)对象构造：*_this=&Reg___vftable_，用 sub_434D00／sub_434E00 灌全部默认值（display／sound／message／system 各键，以及 set: 段的 GameVersion=「1.00」（raw 111627-111629 的 a100）／RegSubKey／Copyright／SaveVersion1·2／AntiFontVersion／RCVersion…）= 引擎构造器内 _this+697620 的初始化。★这份默认值就是引擎的「内建配置」：INI 里没写的键由它兜底（emulator 侧对应 DEFAULT_GAME_VERSION 等常量，见 engineConfig.ts）。"
   },
   {
     "addr": "0x492CB0",
@@ -4892,6 +4885,41 @@
     "unmodeled": ["Font+218520（GDI 表面复用标记）", "sub_471180 的描边细节", "sub_46F2D0 的逐字 GetGlyphOutline 路径"],
     "evidence": "raw 68470-68495",
     "notes": "★a5 参数是 Font+1236（= 0x75 写下的 -字号/2，raw 24068），不是颜色：颜色/描边在 Font+1360/+1364/+1372。y 的语义是文本顶部（另一模式下再加 Font+201712 - ascent）。"
+  },
+  {
+    "addr": "0x433FD0",
+    "raw_name": "sub_433FD0",
+    "semantic_name": "op_sb_substr_433FD0",
+    "op": "0x2C7",
+    "status": "ANALYZED",
+    "purpose": "SBSubstr：op1 = substr(op2, op3, op4)（op3/op4 是**字节**起点与长度；按 SJIS 全角边界修正后写回 op1 字符串）",
+    "sub_behaviors": ["读 op2 字符串、op3=起始字节、op4=字节长度（与 strlen 比较）", "越界或长度<=0 ⇒ 写空串（sub_433310(this,1,空)）", "起点落在全角字的第二个字节 ⇒ start++、len--（日志 aSbsubstr：切り出した文字列が全角文字の途中から…）", "最后一个被包含的字节是全角字的**首**字节 ⇒ len--（日志 aSbsubstr_0：…最終バイトを切り捨て…）", "sub_429F60 按（修正后起点，修正后长度）取子串 → sub_433310(this,1,串) 写 op1"],
+    "fields_used": ["Engine+8（调试串缓冲）", "aSbsubstr/aSbsubstr_0（两条警告文案 4457/4458）"],
+    "evidence": "raw 42259-42376",
+    "notes": "emulator：src/text/sjis.ts 的 sjisSubstr（纯函数：sjisBytes 建字节↔字符映射 + 两处修正 + warning）+ handlers/strings.ts 的 op_substr；守卫 test/config-version-substr.test.ts。真实用例 TITLE.txt:584/587/590（把 set:GameVersion 切成 1/2/4 字节三段）。"
+  },
+  {
+    "addr": "0x434830",
+    "raw_name": "sub_434830",
+    "semantic_name": "op_get_game_version_434830",
+    "op": "0x2EB",
+    "status": "ANALYZED",
+    "purpose": "读配置键 set:GameVersion（配置对象 vtable+8 的查询）→ 拷成 std::string → 写 op1 字符串",
+    "sub_behaviors": ["(*(_this[174405]+8))(_this+174405, aSetGameversion) 取串（键 \"set:GameVersion\"）", "sub_40C210 拷进临时 std::string", "sub_433310(this, 1, 串) 写 op1"],
+    "fields_used": ["Engine[174405]（配置对象指针）", "配置键 set:GameVersion"],
+    "evidence": "raw 42575-42593；键值来源：raw 111627-111629（引擎内建 a100=\"1.00\"）与 raw 112835-112851（set:VerRegPos 非空时用注册表 DisplayVersion 覆盖，见 sub_490010 缺省 \"1.00.0000\"）",
+    "notes": "TITLE.txt:583-592 取它切三段交给 0x2EC(atoi)+0x23B(CG 数字条) 画 Version X.YY.ZZZZ；这三条是 no-op 时屏幕上是占位值 0.00.0000（2026-09 实测截图 .tmp/stylecheck-0-title.png）。emulator：cfgStr(e.config, 'set:gameversion', DEFAULT_GAME_VERSION='1.00')，值写在 app/amayui-emulator/SYS4REG.INI 的 [set] 段；不做注册表查询。守卫 test/config-version-substr.test.ts。"
+  },
+  {
+    "addr": "0x490010",
+    "raw_name": "sub_490010",
+    "semantic_name": "install_display_version_490010",
+    "status": "ANALYZED",
+    "purpose": "查安装信息注册表 HKLM\\SOFTWARE\\...\\Uninstall\\InstallShield_{GUID} 的 DisplayVersion 写进 Destination；查不到写 a1000000=\"1.00.0000\"",
+    "sub_behaviors": ["按 GUID 拼 SubKey（Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\InstallShield_{%s}）", "RegCreateKeyExA 打开（失败 ⇒ \"1.00.0000\"）", "RegQueryValueExA(aDisplayversion)（失败 ⇒ \"1.00.0000\"）"],
+    "fields_used": ["HKEY_LOCAL_MACHINE", "a1000000（\"1.00.0000\"）", "aDisplayversion"],
+    "evidence": "raw 110485-110502；唯一调用点 raw 112838",
+    "notes": "调用点语义（raw 112835-112851）：INI 装载末尾，若 set:VerRegPos 非空 ⇒ 用它覆盖 set:GameVersion。emulator 不做注册表访问（跨平台；且本机这份是免安装拷贝 ⇒ 引擎也走不到这一步），版本值改由 INI 的 [set] GameVersion 指定。"
   }
 
 ]

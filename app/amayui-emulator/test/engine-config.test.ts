@@ -34,10 +34,10 @@ test('parseIni：分节 / 数字 / 字符串 / 空值 / 大小写不敏感', () 
   assert.equal(cfgStr(cfg, 'message:savebmppath'), '', '空值保留为空串');
 });
 
-test('真实 SYS4REG.INI：解析出 4 个分节与关键键', () => {
+test('真实 SYS4REG.INI：解析出 5 个分节与关键键', () => {
   assert.ok(fs.existsSync(INI), `应存在 ${INI}`);
   const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
-  assert.deepEqual(cfg.sections.sort(), ['display', 'message', 'sound', 'system']);
+  assert.deepEqual(cfg.sections.sort(), ['display', 'message', 'set', 'sound', 'system']);
   // 与文件内容逐项核对（见该 INI）
   assert.equal(cfgInt(cfg, 'display:screenmode'), 1);
   assert.equal(cfgInt(cfg, 'sound:music'), 2);
@@ -47,6 +47,10 @@ test('真实 SYS4REG.INI：解析出 4 个分节与关键键', () => {
   assert.equal(cfgStr(cfg, 'message:font'), 'Amayui CN');
   assert.equal(cfgInt(cfg, 'sound:voice'), 1);
   assert.equal(cfgInt(cfg, 'sound:se'), 1);
+  // `[set]`：引擎在 `set:VerRegPos` 非空时才用注册表 DisplayVersion 覆盖 GameVersion；
+  // 免安装拷贝没有 VerRegPos ⇒ TITLE 用这里写的值（见 0x2EB / test/config-version-substr.test.ts）。
+  assert.equal(cfgStr(cfg, 'set:gameversion'), '1.07.0019');
+  assert.equal(cfgStr(cfg, 'set:verregpos'), '');
 });
 
 test('applyConfigToEngine：按绑定写入引擎字段（含 display:ScreenMode 布尔化）', () => {

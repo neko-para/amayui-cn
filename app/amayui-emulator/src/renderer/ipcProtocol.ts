@@ -15,6 +15,12 @@ declare global {
       readFile(path: string): Promise<number[]>;
       /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
       readConfigIni(): Promise<{ path: string; text: string } | null>;
+      /**
+       * **写回**引擎配置 SYS4REG.INI（整份文本；主进程写到启动时实际读到的那份）。
+       * 由 `Engine.onConfigChanged` → `IpcFileSource.saveConfig` 调用；旧 preload 可能没有此通道
+       * （调用点用 `?.` 降级为"只改内存"）。
+       */
+      saveConfigIni?(text: string): Promise<{ path: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
        * 读内置字体文件字节（`res/fonts/` 下的相对路径；渲染进程用 `FontFace` 注册）。

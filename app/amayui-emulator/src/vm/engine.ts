@@ -128,6 +128,17 @@ export class Engine {
   config: import('../engineConfig.js').EngineConfig | null = null;
 
   /**
+   * **配置被脚本改写后的钩子**（宿主注入持久化；VM 只管"配置变了"这件事）。
+   *
+   * 引擎侧：`SetConfig` 类指令（`0x141`/`0x1B5`/`0x1B9`/`0x2CD`/`0x2E7`/`0x2E8`…）只改内存里的配置表，
+   * 真正落盘是引擎在退出时写 `SYS4REG.INI`。emulator 由宿主决定何时/怎么写：
+   *  - Electron：`renderer/app/configBoot.ts` → `window.api.saveConfigIni(格式化的 INI)` → 主进程写文件；
+   *  - headless（`src/run.ts`）：直接写随工程的那份 `app/amayui-emulator/SYS4REG.INI`；
+   *  - **测试/链路工具不注入** ⇒ 不会碰到仓库里的配置文件。
+   */
+  onConfigChanged?: (cfg: import('../engineConfig.js').EngineConfig) => void;
+
+  /**
    * **纹理槽表**：`槽号 → imgid`（由 `set-texture`(0x1F9) 建立，`release-texture`(0x1FA) 清除）。
    * `draw-texture`(0x1FB) 的 op1 是这个槽号，渲染器据此把槽解析成实际图像资源。
    */

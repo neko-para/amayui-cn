@@ -84,7 +84,23 @@ npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼�
   / `0x141`（sub_4228C0 直写配置，`op1>0x10` 报错）按名存取。历史误绑到 21668 曾与 MessageSpeed 互相覆盖。
 - **相关 opcode**：`0xC0`(音乐字段)/`0x131`(直读 `message:MesWinAlpha`)/`0x141`(直写同名键)/`0x7F`(读 MessageSpeed)
   /`0x2CE`(显示模式) 已实现。
-- 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述 opcode 取值与 0x141↔0x131 往返）。
+- **读配置回写操作数（整族）**：`test/config-read.ts` 的 `CFG_READ` 表 ——
+  `0xC5`(sound:Volume0..4)、`0xC7`(sound:Music/SE/Voice/Movie，布尔化)、`0x1B8`(message:AutoMessageTime0/1)、
+  `0x2CC`(AdvanceMesOnWheel)、**`0x2E6`(message:AutoMessagePitch0/1)**、`0x2EA`(AutoMessageOption)、
+  `0x194`(字符串相等)；另加 **`0x2EB`**：`GetConfig("set:GameVersion")` → **字符串操作数**（TITLE 的版本号）。
+- **写配置**：`0x141`/`0x1B5`/`0x1B9`/`0x2CD`/`0x2E7`/`0x2E8` … 全部经 `setConfigValue()` 写 `Engine.config`。
+  ★**落盘**：`Engine.onConfigChanged` → `FileSource.saveConfig(整份 INI 文本)` ——
+  Electron 走 IPC `save-config-ini`（写回**启动时实际读到的那份**，且只接受 `configIniCandidates()` 里的路径），
+  headless `npm run run` 直写 `app/amayui-emulator/SYS4REG.INI`（`--no-save-config` 可关）。
+  **测试/链路工具不注入该钩子** ⇒ 跑测试不会改动仓库里的配置文件。
+  序列化在 `engineConfig.formatIni()`（按 `sections`+`order` 还原，**只改一个值不会重排整个 INI**）。
+- **`[set]` 段与版本号**：引擎内建 `set:GameVersion = "1.00"`（raw 111627-111629 的 `a100`）；
+  INI 里写了就覆盖它；若 `set:VerRegPos` 非空，真引擎还会用注册表 `DisplayVersion` 再覆盖一次
+  （`sub_490010`，缺省 `"1.00.0000"`）。**emulator 不查注册表**（跨平台）⇒ 版本号由
+  `SYS4REG.INI` 的 `[set] GameVersion` 决定（现为 `1.07.0019` = `raw/补丁/修正补丁/amayui_107.exe` 的 FileVersion）。
+  TITLE 用它画 "Version X.YY.ZZZZ"：`0x2EB` 取值 → `0x2C7` 按**字节**切 1/2/4 段 → `0x2EC`(atoi) → `0x23B`(CG 数字条补零)。
+- 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述 opcode 取值与 0x141↔0x131 往返）、
+  `test/config-version-substr.test.ts`（0x2E6↔0x2E7 闭环、`formatIni` 往返不重排、SJIS 子串、**E3：TITLE 版本号 = 1.07.0019**）。
 
 ### 设置界面相关 opcode 的实现状态
 
@@ -97,11 +113,13 @@ npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼�
 >   `ENGINE_FIELD_STORE` 规格表（`0x76`/`0x77` 字节重排、`0x78`、`0x8B`、`0x1A4`、`0x252`、`0x261`、`0x2EE`、
 >   `0x2DB`、`0x21B`、`0x24E`、`0x10F`）+ 专用 handler（`0xFE` SetKeyTotal、`0x107`/`0x10B` 按键表）；
 >   并补上配套 getter **`0x247`**（`op1 = (_this[166965]!=0)`，与 `0x21B` 成对，可往返验证）。
-> - **留在真·忽略（34 条）**：handler 体只是调**宿主没有的子系统**（`_this+80708` 绘制容器、`_this+21324`
+> - **留在真·忽略（32 条）**：handler 体只是调**宿主没有的子系统**（`_this+80708` 绘制容器、`_this+21324`
 >   文本子系统、声音设备、计时器）或写无人读取的字段 ⇒ 无 VM 可见副作用、emulator 无输出。
 >   按子系统分组：渲染/图形/纹理（`0x32F`/`0x248`/`0x352`/`0x344`/`0x23B`/`0x25B`/`0x1F6`…）、
 >   消息窗/文本/字体（`0x70`/`0x73`/`0x75`/`0x79`/`0x74`/`0x7A`/`0x7B`/`0x197`/`0x1BB`/`0x1C1`…）、
->   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C7`/`0x2EB`）、数据/版本/脚本控制（`0xAE`/`0x143`）、声音（`0xB5`/`0x2F8`）。
+>   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x143`）、声音（`0xB5`/`0x2F8`）。
+>   （`0x2C7` SBSubstr 与 `0x2EB` GetConfig(`set:GameVersion`) 2026-09 已**转真实现**：它们会回写操作数，
+>   当 no-op 时 TITLE 的版本号永远是占位值 `0.00.0000` —— 见 `handlers/strings.ts` / `handlers/config-read.ts`。）
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。
@@ -421,7 +439,14 @@ Sprite ⇒ 紧接着的一次 ticker 渲染去画已销毁的纹理 ⇒ **WebGL 
 npm run shot                    # 默认：CONFIG1 → 角色设定 → 回第 1 页
 npm run shot -- --tabs 5,3,4    # 指定要点哪些左侧分类（0..5）
 # 产物：.tmp/shot-*.png ；时序一律"等日志出现装载标记"，不睡固定秒数（机器忙时会误判成全黑）
+npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（分辨「慢」与「卡住」）
 ```
+
+> ★**截图工具必须关掉 Chromium 的后台节流**（`tools/shot.cjs` 顶部三行 `app.commandLine.appendSwitch`）：
+> 主进程是脚本自己、窗口不在前台时，`requestAnimationFrame` 会被降到极低频 ⇒ 渲染循环几乎不推进 ⇒
+> **启动链永远到不了 TITLE、截出来的全是黑图**（2026-09 实测：60s 内 VM 时钟只走到 1.8s，停在
+> LOGO 的 `0x400` 动画等待门）。这与"渲染崩了"的症状一模一样，但其实是工具环境问题 ——
+> `disable-renderer-backgrounding` / `disable-backgrounding-occluded-windows` / `disable-background-timer-throttling` 三条即可。
 
 ### 帧局部池：**一次载入 = 一次新调用**（`loadScriptIntoFrame` 会清池）
 

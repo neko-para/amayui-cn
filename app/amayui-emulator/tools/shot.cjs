@@ -19,6 +19,14 @@ const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
+// ★必须关掉"后台/被遮挡窗口"的节流：主进程是脚本自己（窗口不在前台）时，Chromium 会把
+//   requestAnimationFrame 降到极低频 ⇒ 渲染循环几乎不推进 ⇒ 启动链永远到不了 TITLE
+//   （实测：VM 时钟 60s 只走到 1.8s，截图全黑、`-> TITLE.BIN` 标记不出现，看起来像渲染崩了）。
+//   这也解释了同一份代码"有时能截到、有时全黑"。
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+
 require('../dist/electron/main.cjs'); // 真实主进程：建窗口 + 注册 IPC（脚本/图像/配置）
 
 const ROOT = path.resolve(__dirname, '..', '..', '..');

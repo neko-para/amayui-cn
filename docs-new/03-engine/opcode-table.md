@@ -449,7 +449,7 @@
 | 0x2C4 | 0 |  | sub_41A3F0 | 仅映射 |  |
 | 0x2C5 | 2 | strlen | sub_430900 | 已核对 | **strlen**：`op1 = strlen(op2)`（`sub_41B640(2)` 读 op2 字符串 → `strlen` → `writeIntOperand_42B4B0(1)`）。handler=sub_430900（raw .c 40064），纯 |
 | 0x2C6 | 2 |  | sub_430940 | 已核对 | **mbstrlen**：`setlocale(0, Locale)` 后 `op1 = _mbstrlen(串op2)`（多字节长度；与 `0x2C5` strlen 成对）。handler=sub_430940（raw .c 40074） |
-| 0x2C7 | 4 |  | sub_433FD0 | 已核对 | **字符串处理**：读 op2 字符串（sub_41B640）+ op3/op4（strlen/长度约束），在字符串对象上做长度/索引类处理并写 op1。handler=sub_433FD0（raw .c 42259）。方向：字符串/查表 |
+| 0x2C7 | 4 |  | sub_433FD0 | 已核对 | **SBSubstr（子串，SJIS 字节语义）**：`op1 = substr(op2, op3, op4)` —— **op3 是起始字节、op4 是字节长度**（与 `strlen` 比较，raw 42298-42299），并按全角边界修正：起点落在 2 字节字的**第二**字节 ⇒ `start++`/`len--`（日志 raw 4458）、最后一个被包含的字节是 2 字节字的**首**字节 ⇒ `len--`（raw 4457）；越界或 `op4<=0` ⇒ **写空串**；再 `sub_429F60` 取子串 → `sub_433310` 写 op1。handler=sub_433FD0（raw 42259-42376）。★`TITLE.txt:584/587/590` 用它切 `set:GameVersion` 的三段 |
 | 0x2C8 | 4 |  | sub_434260 | 仅映射 |  |
 | 0x2C9 | 3 |  | sub_4344A0 | 仅映射 |  |
 | 0x2CA | - |   | sub_430990 | 仅映射 |  |
@@ -480,12 +480,12 @@
 | 0x2E3 | 3 |  | sub_430FF0 | 仅映射 |  |
 | 0x2E4 | 3 |  | sub_431060 | 仅映射 |  |
 | 0x2E5 | 1 |  | sub_4310D0 | 仅映射 |  |
-| 0x2E6 | 2 |  | sub_431110 | 已核对 | **读配置写操作数**：op1=0 ⇒ `message:AutoMessagePitch0`、1 ⇒ `AutoMessagePitch1` → **写 op2**；其它值报错；handler=sub_431110（raw .c 40353-40376） |
-| 0x2E7 | 2 |  | sub_426540 | 已核对 | **设自动翻页每行附加时长**：读 op1=下标、op2=值；op1==1 ⇒ `SetConfig("message:AutoMessagePitch1", op2)`、0 ⇒ `…Pitch0`，其它值报错。`INITREGMES` 用 `i2e7 0 96` / `i2e7 1 96`（=150）；handler=sub_426540（raw .c 33534-33562） |
+| 0x2E6 | 2 |  | sub_431110 | 已核对 | **读配置写操作数**：op1=0 ⇒ `message:AutoMessagePitch0`、1 ⇒ `AutoMessagePitch1` → **写 op2**；其它值报错；handler=sub_431110（raw .c 40353-40376）。与 0x2E7 构成 set/get 对 |
+| 0x2E7 | 2 |  | sub_426540 | 已核对 | **设自动翻页每行附加时长**：读 op1=下标、op2=值；op1==1 ⇒ `SetConfig("message:AutoMessagePitch1", op2)`、0 ⇒ `…Pitch0`，其它值报错。`INITREGMES` 用 `i2e7 0 96` / `i2e7 1 96`（=150）；handler=sub_426540（raw .c 33534-33562）。★写的是**内存注册表**；落盘见 `engine-config-registry-persistence`（emulator：`NodeFileSource.saveConfig` / Electron IPC `save-config-ini`） |
 | 0x2E8 | 1 |  | sub_4265E0 | 已核对 | **SetConfig("message:AutoMessageOption", op1)**；handler=sub_4265E0（raw .c 33565-33577） |
 | 0x2E9 | 1 |  | sub_426620 | 仅映射 |  |
 | 0x2EA | 1 |  | sub_4311B0 | 已核对 | **读配置**：`op1 = GetConfig("message:AutoMessageOption")`；handler=sub_4311B0（raw .c 40380-40386） |
-| 0x2EB | 1 |  | sub_434830 | 已核对 | **配置/版本字符串读取**：读 `set:GameVersion`（`_this[174405]` vtable+8）→ 组装字符串写 op1（sub_433310）。handler=sub_434830（raw .c 42574）。方向：配置/字符串 |
+| 0x2EB | 1 |  | sub_434830 | 已核对 | **读配置字符串 `set:GameVersion` → op1**：走配置对象 vtable+8 的查询（raw 42583）→ `sub_40C210` 拷串 → `sub_433310(this,1,串)`。键值来源：引擎内建 `"1.00"`（raw 111627-111629）→ INI `[set] GameVersion` 覆盖（raw 112426-112433）→ 若 `set:VerRegPos` 非空再用注册表 `DisplayVersion` 覆盖（raw 112835-112851 + sub_490010，缺省 `"1.00.0000"`）。★`TITLE.txt:583` 取它画 "Version X.YY.ZZZZ"（经 0x2C7/0x2EC/0x23B）；不实现 ⇒ 屏幕上是占位值 `0.00.0000`（2026-09 实测）。handler=sub_434830（raw 42575-42593） |
 | 0x2EC | 2 |  | sub_4311F0 | 已核对 | **atoi**：`op1 = atoi(串op2)`（字符串→整数）。handler=sub_4311F0（raw .c 40390） |
 | 0x2ED | - |   | sub_431230 | 仅映射 |  |
 | 0x2EE | 1 |  | sub_426650 | 已核对 | **消息派发**：读 op1 写 `_this[80106]`，并经 `_this[174405]` 对象 vtable+12 以 `"message"`+op1 派发消息/自动消息。handler=sub_426650（raw .c 33078） |

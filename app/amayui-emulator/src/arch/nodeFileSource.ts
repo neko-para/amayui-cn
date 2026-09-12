@@ -14,6 +14,11 @@ import { parseSys4Index, parseAppendIndex, type Sys4Index, type Sys4FileEntry } 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
   resourceDir: string;
+  /**
+   * `SYS4REG.INI` 的**回写路径**（可选）。给了才实现 `FileSource.saveConfig`。
+   * ★默认不给 ⇒ 默认**不落盘**（测试/链路工具不会碰仓库里的配置文件）。
+   */
+  configPath?: string;
 }
 
 /** 扩展包数（与游戏一致：APPEND01..05）。 */
@@ -21,16 +26,29 @@ export const APPEND_COUNT = 5;
 
 export class NodeFileSource implements FileSource {
   #root: string;
+  #configPath: string | null;
   #base: Sys4Index | null = null;
   #appends: (Sys4Index | null)[] = [];
 
   constructor(opts: NodeFileSourceOptions) {
     this.#root = opts.resourceDir;
+    this.#configPath = opts.configPath ?? null;
   }
 
   /** 资源根（诊断/报告用：写清"这次的报告读的是哪套资源"）。 */
   get root(): string {
     return this.#root;
+  }
+
+  /** 配置回写目标（未配置时为 null）。 */
+  get configPath(): string | null {
+    return this.#configPath;
+  }
+
+  /** 把整份 INI 文本写回 `configPath`（未配置则什么也不做）。 */
+  async saveConfig(text: string): Promise<void> {
+    if (!this.#configPath) return;
+    await fs.writeFile(this.#configPath, text, 'utf8');
   }
 
   async readFile(p: string): Promise<Uint8Array> {

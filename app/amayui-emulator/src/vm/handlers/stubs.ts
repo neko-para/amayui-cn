@@ -136,11 +136,12 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
   // ============ 字符串 / 查表 / 配置 ============
-  [0x2c7, op_engine_internal], // 字符串处理（sub_433FD0）
+  // 0x2C7（SBSubstr）与 0x2EB（GetConfig("set:GameVersion") → 字符串）**已转真实现**：
+  //   见 handlers/strings.ts（0x2C7）与 handlers/config-read.ts（0x2EB）——它们会回写操作数，
+  //   当 no-op 会让 TITLE 的版本号永远是占位值、以及所有切片调用读到旧串。
   [0x2c8, op_engine_internal], // 字符串
   [0x2c9, op_engine_internal], // 字符串
   [0x2dd, op_engine_internal], // 字符串
-  [0x2eb, op_engine_internal], // 配置/字符串：GetConfig("set:GameVersion") → sub_40C210 拼串
   // ============ 数据字段 / 版本 / 脚本控制 ============
   [0xad, op_engine_internal], // 数据
   [0xae, op_engine_internal], // 版本/存档：读 set:SaveVersion1/2 分支续档（sub_4192F0）

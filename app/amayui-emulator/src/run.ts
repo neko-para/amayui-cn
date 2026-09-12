@@ -8,6 +8,8 @@ import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
 import { ScriptReset, ExitScript } from './vm/ops.js';
 import { OPCODE_TABLE } from './script/bin.js';
+import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
+import * as fs from 'node:fs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
@@ -15,10 +17,33 @@ const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/s
 const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 
 async function main() {
-  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
+  // ★配置回写：`--no-save-config` 可关；默认写随工程的 `app/amayui-emulator/SYS4REG.INI`
+  //   （与 Electron 侧同一个文件，见 electron/paths.ts 的 configIniCandidates）。
+  const saveConfig = !process.argv.includes('--no-save-config');
+  const configPath = path.join(REPO_ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
+  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR, ...(saveConfig ? { configPath } : {}) });
   const native = new StubNative(() => {}); // 安静：run.ts 自己打印结构化摘要
   const e = new Engine(native);
   e.fileSource = src;
+  if (saveConfig) {
+    e.onConfigChanged = (cfg) => {
+      void src.saveConfig?.(formatIni(cfg));
+    };
+  }
+
+  // 装载引擎配置（与 Electron 侧 `renderer/app/configBoot.ts` 同一份逻辑：读 INI → 灌引擎字段）。
+  // 有了它，`0x2EB`（set:GameVersion）与 `0x131/0x2E6/0xC5…` 这些"读配置"指令在无界面跑时也有真值。
+  try {
+    const cfg = parseIni(fs.readFileSync(configPath, 'utf8'));
+    e.config = cfg;
+    const applied = applyConfigToEngine(cfg, e.engineValues);
+    console.log(
+      `[config] ${configPath} 分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个` +
+        `（写入引擎字段 ${applied.length} 个；回写=${saveConfig ? '开' : '关'}）`,
+    );
+  } catch (err) {
+    console.log(`[config] 读 SYS4REG.INI 失败（沿用默认值）：${(err as Error).message}`);
+  }
 
   // 装载首脚本：index 0 = SYSTEM4.BIN（WinMain 的 a4=0，见 docs/04）
   const boot = await src.readScript(0);

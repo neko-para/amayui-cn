@@ -22,8 +22,8 @@
  * 因此本族指令是「设置界面 → 脚本回读」闭环的一半（另一半是 CONFIG1 的写入路径）。
  */
 import type { OpHandler, StepCtx } from '../step.js';
-import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
-import { cfgInt } from '../../engineConfig.js';
+import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
+import { cfgInt, cfgStr, DEFAULT_GAME_VERSION } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
 
 /** 读配置整数键（缺省 0，与引擎 `GetConfig` 缺省一致）。 */
@@ -88,6 +88,31 @@ const op_cfg_read: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, spec.operand, v);
 };
 
+/**
+ * `0x2EB`（`sub_434830` raw 42575-42593）：**读配置字符串写回 op1**。
+ *
+ * 引擎：`v = GetConfig("set:GameVersion")`（走配置对象 vtable+8 的查询，raw 42583）→
+ * `sub_40C210` 拷成 std::string → `sub_433310(this, 1, 串)` 写进 **op1**（字符串操作数）。
+ *
+ * 键值的来源（raw 111337-111644 的"配置缺省安装" + 112835-112851 的注册表覆盖）：
+ *  1. 引擎启动时把 `set:GameVersion` 置为内建常量 `a100 = "1.00"`（raw 111627-111629）；
+ *  2. 读 `SYS4REG.INI` 时 `[set]` 段的同名键会覆盖它（raw 112426-112433）；
+ *  3. 若 `set:VerRegPos` 非空，则再用它去查安装信息的 `DisplayVersion` 覆盖
+ *     （`sub_490010` raw 110485-110502，查不到退回 `"1.00.0000"`）。
+ *
+ * ★emulator 的取舍：不做注册表查询（跨平台、且本机这份是免安装拷贝 ⇒ 引擎也不会走到第 3 步），
+ *   **取值 = `SYS4REG.INI` 的 `[set] GameVersion`，缺省用引擎内建 `"1.00"`**。
+ *   `app/amayui-emulator/SYS4REG.INI` 里已显式写了 `GameVersion`（见该文件），
+ *   于是 TITLE 的 "Version X.YY.ZZZZ" 不再显示占位值。
+ *
+ * 真实用例：`TITLE.txt:583` `i2eb (local-string 0)` → 586/589/592 三处 `i2c7` 切片 + `i2ec`(atoi)
+ * + `i23b`(CG 数字条) 画成 "Version 1.07.0019"。
+ */
+const op_cfg_read_string: OpHandler = (c) => {
+  const ini = c.e.config ? cfgStr(c.e.config, 'set:gameversion', DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
+  writeStringOperand(c.e, c.frame, c.instr, 1, ini);
+};
+
 
 
 /**
@@ -110,8 +135,9 @@ const op_string_equal: OpHandler = (c) => {
   writeIntOperand(e, c.frame, c.instr, 1, a === b ? 1 : 0);
 };
 
-/** 配置读取指令族（`OPS`：读配置键 → 写回脚本操作数）+ 字符串相等判定。 */
+/** 配置读取指令族（`OPS`：读配置键 → 写回脚本操作数）+ 字符串相等判定 + `set:GameVersion` 字符串读。 */
 export const CONFIG_READ_OPS: OpTable = [
   ...Object.keys(CFG_READ).map((op) => [Number(op), op_cfg_read] as const),
   [0x194, op_string_equal],
+  [0x2eb, op_cfg_read_string],
 ];

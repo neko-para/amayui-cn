@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
   /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
   readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
+  /** 写回引擎配置 SYS4REG.INI（整份文本；写到 readConfigIni 实际返回的那份）。 */
+  saveConfigIni: (text: string) => ipcRenderer.invoke('save-config-ini', text),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
   /** 读内置字体文件字节（`res/fonts/` 下相对路径）。返回 null 表示不存在。 */

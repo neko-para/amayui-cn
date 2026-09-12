@@ -19,6 +19,11 @@ export interface EngineConfig {
   values: Map<string, number | string>;
   /** 诊断：解析到的分节名。 */
   sections: string[];
+  /**
+   * 分节 → 该节里键的**出现顺序**（键名保留原大小写）—— `formatIni` 回写时用它保持文件原样，
+   * 避免"改一个值就把整个 INI 重排"。
+   */
+  order: Map<string, string[]>;
 }
 
 /**
@@ -29,6 +34,7 @@ export interface EngineConfig {
 export function parseIni(text: string): EngineConfig {
   const values = new Map<string, number | string>();
   const sections: string[] = [];
+  const order = new Map<string, string[]>();
   let section = '';
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
@@ -45,8 +51,11 @@ export function parseIni(text: string): EngineConfig {
     if (!key) continue;
     // 纯十进制整数（含负号）→ number；其余（含空串）保留字符串
     values.set(`${section.toLowerCase()}:${key.toLowerCase()}`, /^-?\d+$/.test(val) ? parseInt(val, 10) : val);
+    const keys = order.get(section.toLowerCase()) ?? [];
+    keys.push(key);
+    order.set(section.toLowerCase(), keys);
   }
-  return { values, sections };
+  return { values, sections, order };
 }
 
 /** 取整数值；缺失返回 fallback。 */
@@ -61,6 +70,53 @@ export function cfgInt(cfg: EngineConfig, key: string, fallback = 0): number {
 export function cfgStr(cfg: EngineConfig, key: string, fallback = ''): string {
   const v = cfg.values.get(key.toLowerCase());
   return v === undefined ? fallback : String(v);
+}
+
+/**
+ * `set:GameVersion` 的**引擎内建缺省**（raw 111627-111629：`sub_40C210(v9, a100, 4)`，
+ * 而 `char a100[5] = "1.00"` ⇒ 4 个字符）。INI 的 `[set] GameVersion=` 会覆盖它；
+ * 真实安装若带 `set:VerRegPos`，引擎还会用注册表 `DisplayVersion` 覆盖（`sub_490010`，emulator 不做）。
+ *
+ * ★TITLE 把它切成 1/2/4 字节三段（`i2c7`）再 `i2ec`(atoi) + `i23b`(CG 数字条) 画 "Version X.YY.ZZZZ"；
+ *   缺失时第一段为空 ⇒ atoi("") = 0 ⇒ 屏幕上是占位值 "0.00.0000"（这正是实现 0x2EB 前实测到的画面）。
+ */
+export const DEFAULT_GAME_VERSION = '1.00';
+
+/**
+ * 把配置渲染回 `SYS4REG.INI` 文本（**回写**用；与 `parseIni` 往返一致）。
+ *
+ * 规则：按 `sections` 顺序输出分节（顺序 = 首次解析到的顺序，保证"只改一个值"时文件不会被打乱），
+ * 每节里按 `order` 记忆的键序输出 `key=value`；节内与整体都不写注释（引擎侧不保证读注释）。
+ * 解析时遇到但未登记的键也会原样保留（`order` 覆盖全部键）。
+ */
+export function formatIni(cfg: EngineConfig): string {
+  const lines: string[] = [];
+  const seen = new Set<string>();
+  const emit = (section: string, keys: string[]): void => {
+    const head = `[${section}]`;
+    const body: string[] = [];
+    for (const key of keys) {
+      const full = `${section.toLowerCase()}:${key.toLowerCase()}`;
+      if (seen.has(full)) continue;
+      seen.add(full);
+      body.push(`${key}=${cfg.values.get(full) ?? ''}`);
+    }
+    if (!body.length) return;
+    lines.push(head, ...body);
+  };
+  // 1) 已知分节（按解析顺序 + 键的插入顺序）
+  for (const s of cfg.sections) emit(s, cfg.order.get(s.toLowerCase()) ?? []);
+  // 2) 兜底：解析表里有、但分节列表没记到的键（如手写 INI 的怪分节）
+  const rest = new Map<string, string[]>();
+  for (const full of cfg.values.keys()) {
+    if (seen.has(full)) continue;
+    const [s = '', ...k] = full.split(':');
+    const arr = rest.get(s) ?? [];
+    arr.push(k.join(':'));
+    rest.set(s, arr);
+  }
+  for (const [s, keys] of rest) emit(s, keys);
+  return lines.join('\r\n') + '\r\n';
 }
 
 /**

@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 92,
-    "modeled-verified": 14,
+    "total": 93,
+    "modeled-verified": 15,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2596,6 +2596,36 @@
         "evidence": "E3",
         "guard": "test/text-style-snapshot.test.ts",
         "note": "模型：入队时把字体/颜色钉进 MsgSlot.fontStyle（FontStyleSnapshot）—— styleOfWin 对**几何**读实时窗字段、对字体/颜色/描边/竖排读快照；全局样式指令不再 emitAllWins（旧行为 = 缺陷根因）。E3 活证据：test/config1-chain.test.ts 的 previewProbe —— 切到角色设定页后 win 9 的颜色恒为入队色 #ffffff，而全局色已走过 #67bf4d → #b690ff（最后一行直绘色），两者不等。★与 text-font-rebuild-cascade 的分工：那条讲「0x75 一族的收尾 sub_459F40 重建 GDI 字体对象/字宽」，本条讲「重建 ≠ 重绘已排版的窗」。★未建模：同一页内「文本 → 改样式 → 再文本」在引擎里是每段各自用当时的样式（混色），本模型按「最后一次入队」统一；全库 87324 处入队里该形态出现 0 次。"
+      }
+    },
+    {
+      "id": "engine-config-registry-persistence",
+      "subsystem": "资源",
+      "name": "引擎配置注册表（SYS4REG.INI）：启动装载 → 脚本读写 → 写盘",
+      "trigger": "启动时读 INI（sub_491880 先灌内建默认、再按文件覆盖）并灌进引擎字段；脚本用读族（0xC5/0xC7/0x131/0x1B8/0x2CC/0x2E6/0x2EA/0x2EB）与写族（0x141/0x1B5/0x1B9/0x2CD/0x2E7/0x2E8）访问；引擎退出时把注册表写回文件",
+      "engine": {
+        "fns": [
+          "sub_491880",
+          "sub_434D00",
+          "sub_434E00",
+          "sub_490010",
+          "sub_431110",
+          "sub_434830"
+        ],
+        "raw": "111337-112851"
+      },
+      "reads": [
+        "Engine[174405]（配置对象指针）",
+        "SYS4REG.INI",
+        "注册表 DisplayVersion（仅当 set:VerRegPos 非空）"
+      ],
+      "whySilent": "读侧被当 no-op ⇒ 脚本读到 0/旧值：设置界面显示错、TITLE 的版本号显示成占位值 0.00.0000（三条指令全是桩时的实测画面）；写侧不落盘 ⇒ 玩家改了设置、下次启动又变回去。两种都不报错、不崩，只是「设置不生效」——正是闸门 B 针对的静默错误。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/config-version-substr.test.ts",
+        "note": "模型：engineConfig.ts 的 parseIni/formatIni（往返保持分节与键序）+ Engine.config 注册表 + setConfigValue 统一写入口（0x141 也走它）+ Engine.onConfigChanged → FileSource.saveConfig 落盘。落盘目标：Electron 经 IPC save-config-ini 写回**读到的同一份**（app/amayui-emulator/SYS4REG.INI）；headless（run.ts）直写同一文件；**测试/链路工具不注入钩子** ⇒ 不会改动仓库配置。E3 断言：0x2E7 写 / 0x2E6 读闭环、INI 往返不重排、TITLE 版本号数字条画出 1.07.0019。★不查注册表 DisplayVersion（跨平台 + 本机免安装拷贝 ⇒ 见 sub_490010 的 note），版本值由 INI 的 [set] GameVersion 指定。"
       }
     }
   ]

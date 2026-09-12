@@ -22,6 +22,16 @@ export class IpcFileSource implements FileSource {
     return { index: r.index, name: r.name, data: new Uint8Array(r.data) };
   }
 
+  /**
+   * 配置回写：整份 `SYS4REG.INI` 文本经 IPC 交主进程写盘（写到启动时**实际读到**的那份，
+   * 见 `electron/ipc/files.ts` 的 `read-config-ini`）。
+   *
+   * `window.api.saveConfigIni` 在旧 preload（未更新）时可能缺失 ⇒ 静默降级为"只改内存"。
+   */
+  async saveConfig(text: string): Promise<void> {
+    await window.api.saveConfigIni?.(text);
+  }
+
   async dispose(): Promise<void> {
     /* IPC 无句柄需清理，保持接口对齐。 */
   }

@@ -6,7 +6,7 @@
  *
  * 失败不致命：找不到/读不动 INI 时只记一行 trace，引擎字段沿用构造默认值。
  */
-import { applyConfigToEngine, parseIni } from '../../engineConfig.js';
+import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
 import type { Engine } from '../../vm/engine.js';
 
 export async function loadEngineConfig(e: Engine, trace: (line: string) => void): Promise<void> {
@@ -24,6 +24,29 @@ export async function loadEngineConfig(e: Engine, trace: (line: string) => void)
         `写入引擎字段 ${applied.length} 个：` +
         applied.map((a) => `_this[${a.field}]=${a.value}(${a.key})`).join(' '),
     );
+    // ★配置**回写**：脚本用 SetConfig 族（0x141/0x1B5/0x1B9/0x2CD/0x2E7/0x2E8…）改了配置后，
+    //   把整份 INI 交主进程写回同一个文件（引擎里这是退出时写盘；这里改为改一次写一次，1KB 文件无压力）。
+    //   合并同帧内的多次改动：只在没有在途写入时发一份最新的；写完若又改过就再发一次。
+    let inFlight = false;
+    let pending: string | null = null;
+    const flush = async (): Promise<void> => {
+      if (inFlight || pending === null) return;
+      const text = pending;
+      pending = null;
+      inFlight = true;
+      try {
+        await window.api?.saveConfigIni?.(text);
+      } catch (err) {
+        trace(`[config] 回写失败：${(err as Error).message}`);
+      } finally {
+        inFlight = false;
+        void flush();
+      }
+    };
+    e.onConfigChanged = (c) => {
+      pending = formatIni(c);
+      void flush();
+    };
   } catch (err) {
     trace(`[config] 加载失败：${(err as Error).message}`);
   }

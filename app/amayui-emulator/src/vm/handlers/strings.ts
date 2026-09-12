@@ -7,6 +7,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, readStringOperand, writeStringOperand, readIndexOperand, readStringIndexOperand } from '../operand.js';
 import { atoi } from '../bits.js';
+import { sjisSubstr } from '../../text/sjis.js';
 import type { OpTable } from './shared.js';
 
 const op_strlen: OpHandler = (c) => {
@@ -31,6 +32,25 @@ const op_concat: OpHandler = (c) => {
   const a = readStringOperand(c.e, c.frame, c.instr, 2);
   const b = readStringOperand(c.e, c.frame, c.instr, 3);
   writeStringOperand(c.e, c.frame, c.instr, 1, a + b);
+};
+
+/**
+ * `0x2C7` **SBSubstr**（`sub_433FD0` raw 42259-42376）：`string op1 = substr(串op2, op3, op4)`。
+ *
+ * ★op3/op4 是**字节**起点与**字节**长度（`strlen` 比较，raw 42298-42299），并按 SJIS 全角边界修正：
+ * 起点落在全角字中间 ⇒ 丢首字节；最后一个字节落在全角字首字节 ⇒ 丢末字节（raw 42319-42359，
+ * 两条警告串见 raw 4457/4458）。越界或 `op4 <= 0` ⇒ **写空串**。纯字节语义实现见 `text/sjis.ts`。
+ *
+ * 真实用例：`TITLE.txt:583-592` 取 `set:GameVersion` 的三段（1 / 2 / 4 字节）交给
+ * `0x2EC`(atoi) + `0x23B`(CG 数字条) 画成 "Version X.YY.ZZZZ"。
+ */
+const op_substr: OpHandler = (c) => {
+  const src = readStringOperand(c.e, c.frame, c.instr, 2);
+  const start = readIntOperand(c.e, c.frame, c.instr, 3);
+  const len = readIntOperand(c.e, c.frame, c.instr, 4);
+  // 引擎的两种"切在全角中间"警告（raw 42331/42346）只进调试日志，不改语义 ⇒ 这里只取文本；
+  // 修正逻辑本身在 `sjisSubstr` 里（纯函数，可单测，见 test/sjis-substr.test.ts）。
+  writeStringOperand(c.e, c.frame, c.instr, 1, sjisSubstr(src, start, len).text);
 };
 
 // ---- 字符串表族（save/load-int=str→int 表 `_this+5452`；save/load-string=str→str 表 `_this+5472`；见 opcode-table.md）----
@@ -85,6 +105,7 @@ const op_load_string: OpHandler = (c) => {
 export const STRING_OPS: OpTable = [
   [0x2c5, op_strlen],
   [0x2c6, op_strlen],
+  [0x2c7, op_substr], // SBSubstr：字节起点/长度 + SJIS 全角边界修正
   [0x2ec, op_atoi],
   [0x192, op_set_string],
   [0x193, op_concat],

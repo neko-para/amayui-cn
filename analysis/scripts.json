@@ -5,11 +5,14 @@
     "partial": "只读了用到的部分（layout 里逐条列出的就是读过的范围）",
     "stub": "只登记『它是谁 / 谁调它』，正文未读"
   },
-  "generatedFrom": ["src/*.txt", "engine/天结_unpacked.exe_utf8.c"],
+  "generatedFrom": [
+    "src/*.txt",
+    "engine/天结_unpacked.exe_utf8.c"
+  ],
   "counts": {
-    "total": 6,
+    "total": 7,
     "analyzed": 2,
-    "partial": 4,
+    "partial": 5,
     "stub": 0
   },
   "entries": [
@@ -20,18 +23,54 @@
       "role": "「OPTION（设置）」的常驻父脚本：左侧分类切换（按当前分类 call-script CONFIG1 / CONFIG2）、消息显示预览（0x300 逐行贴出闸门 + ADV 样例窗）、底部按钮与返回。",
       "entry": "TITLE 菜单点「CONFIG」→ call-script 进来；它自己**不退出**，而是按全局 `12721e`（当前分类）反复 call-script CONFIG1/CONFIG2（第 53/57 行）——所以『切分类』在脚本层面的实现是**子脚本退出后被这里重新调起**。",
       "layout": [
-        { "anchor": "call-script 51cc  // CONFIG1", "lines": "44-58", "what": "按全局 12721e 二选一：53 行 call CONFIG2、57 行 call CONFIG1（切分类 = 子脚本退出后在这里重新调起）" },
-        { "anchor": "i070 9 338 78 144 23a", "lines": "30-40", "what": "ADV 样例预览窗几何：窗 9 = 824×120 @ (324,570)" },
-        { "anchor": "i213 9 2c114 1f4", "lines": "38-40", "what": "正文行层序起点 = 0x2c114 = 180500（文本必须画在普通 UI 图元之上）" },
-        { "anchor": "i300 9 1 3e8", "lines": "150-172", "what": "全局文本样式（i075 1e=30px / i076·i077 颜色 / i2bd 1 加粗 / i197 a 注音 10px / i261 1 竖排标志）+ 打开窗 9 的贴出闸门并设 1000ms 停留" },
-        { "anchor": "show-text 0 @\"神缘ＳＡＭＰＬＥ\"", "lines": "173-183", "what": "ADV 样例文案（原文 174-175 + 汉化 177-178 两行对照）+ 182 行 i301 9 收尾" },
-        { "anchor": "i300 9 0 0", "lines": "190-200", "what": "离开设置前关掉窗 9 的闸门（恢复常规消息行为）" }
+        {
+          "anchor": "call-script 51cc  // CONFIG1",
+          "lines": "44-58",
+          "what": "按全局 12721e 二选一：53 行 call CONFIG2、57 行 call CONFIG1（切分类 = 子脚本退出后在这里重新调起）"
+        },
+        {
+          "anchor": "i070 9 338 78 144 23a",
+          "lines": "30-40",
+          "what": "ADV 样例预览窗几何：窗 9 = 824×120 @ (324,570)"
+        },
+        {
+          "anchor": "i213 9 2c114 1f4",
+          "lines": "38-40",
+          "what": "正文行层序起点 = 0x2c114 = 180500（文本必须画在普通 UI 图元之上）"
+        },
+        {
+          "anchor": "i300 9 1 3e8",
+          "lines": "150-172",
+          "what": "全局文本样式（i075 1e=30px / i076·i077 颜色 / i2bd 1 加粗 / i197 a 注音 10px / i261 1 竖排标志）+ 打开窗 9 的贴出闸门并设 1000ms 停留"
+        },
+        {
+          "anchor": "show-text 0 @\"神缘ＳＡＭＰＬＥ\"",
+          "lines": "173-183",
+          "what": "ADV 样例文案（原文 174-175 + 汉化 177-178 两行对照）+ 182 行 i301 9 收尾"
+        },
+        {
+          "anchor": "i300 9 0 0",
+          "lines": "190-200",
+          "what": "离开设置前关掉窗 9 的闸门（恢复常规消息行为）"
+        }
       ],
       "slots": [
-        { "key": "global 12721e", "what": "当前分类索引（跨子脚本、跨退出重入保留）" },
-        { "key": "global 12721f", "what": "上次高亮的左侧元素（重进时恢复光标）" },
-        { "key": "win 9", "what": "ADV 样例预览窗（几何 / 样式 / 闸门都作用于它）" },
-        { "key": "Engine[122466+9] / [122476+9]", "what": "窗 9 的闸门位（bit0）+ 停留毫秒（= i300 的 op2/op3）" }
+        {
+          "key": "global 12721e",
+          "what": "当前分类索引（跨子脚本、跨退出重入保留）"
+        },
+        {
+          "key": "global 12721f",
+          "what": "上次高亮的左侧元素（重进时恢复光标）"
+        },
+        {
+          "key": "win 9",
+          "what": "ADV 样例预览窗（几何 / 样式 / 闸门都作用于它）"
+        },
+        {
+          "key": "Engine[122466+9] / [122476+9]",
+          "what": "窗 9 的闸门位（bit0）+ 停留毫秒（= i300 的 op2/op3）"
+        }
       ],
       "invariants": [
         "闸门开启期间由 sub_409400 每帧贴出一行；整段贴完后停留 op3 ms 清场并把 win+132 归零，**闸门位仍为 1** ⇒ 无限循环演示（设置界面的消息显示预览）"
@@ -43,11 +82,26 @@
       ],
       "gaps": [],
       "links": {
-        "capabilities": ["msgwin-window-reveal-gate-300", "text-reveal-pump-409400", "adv-perframe-dispatch", "script-frame-local-pool-lifecycle", "text-style-scope-queue-time"],
-        "functions": ["0x426990", "0x46BE30"],
-        "docs": ["docs-new/03-engine/message-config-gates.md", "docs-new/03-engine/adv-text-rendering.md"]
+        "capabilities": [
+          "msgwin-window-reveal-gate-300",
+          "text-reveal-pump-409400",
+          "adv-perframe-dispatch",
+          "script-frame-local-pool-lifecycle",
+          "text-style-scope-queue-time"
+        ],
+        "functions": [
+          "0x426990",
+          "0x46BE30"
+        ],
+        "docs": [
+          "docs-new/03-engine/message-config-gates.md",
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
       },
-      "guards": ["test/config1-chain.test.ts", "test/text-style-snapshot.test.ts"],
+      "guards": [
+        "test/config1-chain.test.ts",
+        "test/text-style-snapshot.test.ts"
+      ],
       "status": "analyzed",
       "evidence": "src/CONFIG.txt:30-40 / 44-58 / 150-183 / 190-200；闸门语义见 analysis/functions.json 的 sub_426990 与台账 msgwin-window-reveal-gate-300",
       "notes": "未读：底部按钮（初始化本页/全部/返回）的具体分支与 0x142/0x2ce 一族的用法。"
@@ -59,30 +113,107 @@
       "role": "设置界面的**分类页主体**（本地化后的「系统设定」等页）：左侧分类列表 + 中部设置行（背景带 / 数值贴片 / 帮助图标 / 按 kind 的控件族）+ 右侧滚动条 + 行文本直绘。",
       "entry": "CONFIG.BIN 在 `12721e == 4` 时 call-script 51cc；主循环入口 label_00001168 注册 joy/mouse 回调；退出走 label_0000d860（detach-texture 121000 区间 + exit）。跨脚本状态只在全局 `12721e`/`12721f`。",
       "layout": [
-        { "anchor": "label_00001168", "lines": "254-300", "what": "主循环入口：注册 joy-callback 0xa 个 + mouse-callback，初始读鼠标位置/滚轮" },
-        { "anchor": "label_00002cec", "lines": "705-749", "what": "滚动一步（键盘/滚轮）：把 5620 夹在 [0,5624]，再按 106+(428−拇指高)·5620/5624 重算拇指顶 3f6，并触发左列重绘" },
-        { "anchor": "label_000032e0", "lines": "796-812", "what": "切分类：12721e = 高亮项；置 7dd=1 ⇒ 退出脚本 ⇒ CONFIG.BIN 重新 call-script（重入）" },
-        { "anchor": "label_000045e0", "lines": "1070-1083", "what": "鼠标点击分发：5625 = 高亮项；== 9 走滚动条拖拽（label_0000cab8），否则按分类/行处理" },
-        { "anchor": "label_00004734", "lines": "1099-1134", "what": "命中行的数值改动：由鼠标 x 与 325[]/130e60[] 表反算新值并写回配置" },
-        { "anchor": "label_00004a78", "lines": "1136-1174", "what": "重建当前分类的可见项表：36df[count] = (type<<16)|value；主键 179f[count] = (type序<<16)|value序" },
-        { "anchor": "i12f (local-int 7ff)", "lines": "1176-1228", "what": "i12f 排序（A=7ff 索引 / B=179f 主键 / C=273f 次键）→ 467f[i] = 36df[7ff[i]]；再算 5622 行数 / 5623 拇指高 / 5624 最大起点 / 3f6 拇指顶" },
-        { "anchor": "label_00009d80", "lines": "2488-2740", "what": "行绘制循环：背景带 0x3e8+i / 数值贴片 0x3fc+i（源 Y=(type−1)·31）/ 帮助图标 0x410+i / 按 kind 画 0x514·0x528·0x5dc·0x5f0 控件族；行文本由 0x204 直绘进槽 196 再按行裁贴（0x1fb 槽 196，源 Y=行×40）" },
-        { "anchor": "label_0000c698", "lines": "2934-2971", "what": "滚动条三段式拇指：轨道 → 上盖(27×23) → 中段(27×1，靠 0x1fd 纵向放大) → 下盖(27×24)；pivot（0x217）取的是**描画位置本身**" },
-        { "anchor": "label_0000cab8", "lines": "2976-2990", "what": "拖动拇指：按鼠标 y 反算 5620（并 clamp 到 5624）" },
-        { "anchor": "label_0000d860", "lines": "3132-3138", "what": "退出：detach-texture 121000 区间（0x3e8 个）+ exit" }
+        {
+          "anchor": "label_00001168",
+          "lines": "254-300",
+          "what": "主循环入口：注册 joy-callback 0xa 个 + mouse-callback，初始读鼠标位置/滚轮"
+        },
+        {
+          "anchor": "label_00002cec",
+          "lines": "705-749",
+          "what": "滚动一步（键盘/滚轮）：把 5620 夹在 [0,5624]，再按 106+(428−拇指高)·5620/5624 重算拇指顶 3f6，并触发左列重绘"
+        },
+        {
+          "anchor": "label_000032e0",
+          "lines": "796-812",
+          "what": "切分类：12721e = 高亮项；置 7dd=1 ⇒ 退出脚本 ⇒ CONFIG.BIN 重新 call-script（重入）"
+        },
+        {
+          "anchor": "label_000045e0",
+          "lines": "1070-1083",
+          "what": "鼠标点击分发：5625 = 高亮项；== 9 走滚动条拖拽（label_0000cab8），否则按分类/行处理"
+        },
+        {
+          "anchor": "label_00004734",
+          "lines": "1099-1134",
+          "what": "命中行的数值改动：由鼠标 x 与 325[]/130e60[] 表反算新值并写回配置"
+        },
+        {
+          "anchor": "label_00004a78",
+          "lines": "1136-1174",
+          "what": "重建当前分类的可见项表：36df[count] = (type<<16)|value；主键 179f[count] = (type序<<16)|value序"
+        },
+        {
+          "anchor": "i12f (local-int 7ff)",
+          "lines": "1176-1228",
+          "what": "i12f 排序（A=7ff 索引 / B=179f 主键 / C=273f 次键）→ 467f[i] = 36df[7ff[i]]；再算 5622 行数 / 5623 拇指高 / 5624 最大起点 / 3f6 拇指顶"
+        },
+        {
+          "anchor": "label_00009d80",
+          "lines": "2488-2740",
+          "what": "行绘制循环：背景带 0x3e8+i / 数值贴片 0x3fc+i（源 Y=(type−1)·31）/ 帮助图标 0x410+i / 按 kind 画 0x514·0x528·0x5dc·0x5f0 控件族；行文本由 0x204 直绘进槽 196 再按行裁贴（0x1fb 槽 196，源 Y=行×40）"
+        },
+        {
+          "anchor": "label_0000c698",
+          "lines": "2934-2971",
+          "what": "滚动条三段式拇指：轨道 → 上盖(27×23) → 中段(27×1，靠 0x1fd 纵向放大) → 下盖(27×24)；pivot（0x217）取的是**描画位置本身**"
+        },
+        {
+          "anchor": "label_0000cab8",
+          "lines": "2976-2990",
+          "what": "拖动拇指：按鼠标 y 反算 5620（并 clamp 到 5624）"
+        },
+        {
+          "anchor": "label_0000d860",
+          "lines": "3132-3138",
+          "what": "退出：detach-texture 121000 区间（0x3e8 个）+ exit"
+        }
       ],
       "slots": [
-        { "key": "local 561f", "what": "当前分类的可见项数" },
-        { "key": "local 5620", "what": "滚动起点（首个可见项在描述符表里的下标）" },
-        { "key": "local 5622", "what": "每页行数（项数 ≤ 9 时为项数，否则 9）" },
-        { "key": "local 5623", "what": "滚动条拇指高 = 428·9/项数，下限 0x2f=47" },
-        { "key": "local 5624", "what": "最大滚动起点 = max(0, 项数−9)；为 0 时不画滚动条" },
-        { "key": "local 3f6", "what": "滚动条拇指顶 y = 106 + (428−拇指高)·5620/5624（轨道 106..534）" },
-        { "key": "local 7e0 / 5625", "what": "高亮元素 / 按下元素（0..5 = 左侧分类，9 = 滚动条）" },
-        { "key": "local 7ff / 179f / 273f", "what": "i12f 的 A（索引）/ B（主键）/ C（次键）三个数组" },
-        { "key": "local 36df → 467f", "what": "源描述符表 → 排序后的描述符表（467f[i] = 36df[7ff[i]]）" },
-        { "key": "local 3e8 / 3fc / 410 / 514 / 528 / 5dc / 5f0 / 76c / 776..778", "what": "0x1d4c0 基址下的图元 handle 家族：行背景 / 数值贴片 / 帮助图标 / 控件两族 / 滚动条（轨道 + 拇指三段）" },
-        { "key": "global 12721e / 12721f", "what": "当前分类 / 上次高亮（与 CONFIG/CONFIG2 共享）" }
+        {
+          "key": "local 561f",
+          "what": "当前分类的可见项数"
+        },
+        {
+          "key": "local 5620",
+          "what": "滚动起点（首个可见项在描述符表里的下标）"
+        },
+        {
+          "key": "local 5622",
+          "what": "每页行数（项数 ≤ 9 时为项数，否则 9）"
+        },
+        {
+          "key": "local 5623",
+          "what": "滚动条拇指高 = 428·9/项数，下限 0x2f=47"
+        },
+        {
+          "key": "local 5624",
+          "what": "最大滚动起点 = max(0, 项数−9)；为 0 时不画滚动条"
+        },
+        {
+          "key": "local 3f6",
+          "what": "滚动条拇指顶 y = 106 + (428−拇指高)·5620/5624（轨道 106..534）"
+        },
+        {
+          "key": "local 7e0 / 5625",
+          "what": "高亮元素 / 按下元素（0..5 = 左侧分类，9 = 滚动条）"
+        },
+        {
+          "key": "local 7ff / 179f / 273f",
+          "what": "i12f 的 A（索引）/ B（主键）/ C（次键）三个数组"
+        },
+        {
+          "key": "local 36df → 467f",
+          "what": "源描述符表 → 排序后的描述符表（467f[i] = 36df[7ff[i]]）"
+        },
+        {
+          "key": "local 3e8 / 3fc / 410 / 514 / 528 / 5dc / 5f0 / 76c / 776..778",
+          "what": "0x1d4c0 基址下的图元 handle 家族：行背景 / 数值贴片 / 帮助图标 / 控件两族 / 滚动条（轨道 + 拇指三段）"
+        },
+        {
+          "key": "global 12721e / 12721f",
+          "what": "当前分类 / 上次高亮（与 CONFIG/CONFIG2 共享）"
+        }
       ],
       "invariants": [
         "0 ≤ local5620 ≤ local5624（滚动起点不得越界）",
@@ -107,10 +238,27 @@
           "msgwin-window-reveal-gate-300",
           "text-style-scope-queue-time"
         ],
-        "functions": ["0x42F560", "0x422FD0", "0x423390", "0x4AC5F0", "0x4ACF20", "0x4ACEE0", "0x46BE30"],
-        "docs": ["docs-new/03-engine/opcode-table.md", "docs-new/03-engine/message-config-gates.md", "docs-new/03-engine/adv-text-rendering.md"]
+        "functions": [
+          "0x42F560",
+          "0x422FD0",
+          "0x423390",
+          "0x4AC5F0",
+          "0x4ACF20",
+          "0x4ACEE0",
+          "0x46BE30"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md",
+          "docs-new/03-engine/message-config-gates.md",
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
       },
-      "guards": ["test/config1-chain.test.ts", "test/draw-string.test.ts", "test/draw-item-scale.test.ts", "test/text-style-snapshot.test.ts"],
+      "guards": [
+        "test/config1-chain.test.ts",
+        "test/draw-string.test.ts",
+        "test/draw-item-scale.test.ts",
+        "test/text-style-snapshot.test.ts"
+      ],
       "status": "analyzed",
       "evidence": "src/CONFIG1.txt 的区间见 layout；运行期断言见 test/config1-chain.test.ts 的 sort12f / configRows / scrollThumb / slotText 四项",
       "notes": "未读：左列重绘 label_000050f0 的细节、详情/说明区的绘制分支、底部按钮与 0x1b5 一族的配置回写路径。"
@@ -122,22 +270,71 @@
       "role": "设置界面的**「角色设定」页**（左侧第 5 个分类）：9 个角色位（CV 名牌 + 説明文字）+ 詳細変更/on/OFF/▶ 控件 + 左侧分类 + 滚动条。",
       "entry": "CONFIG.BIN 在 `12721e != 4` 时 call-script 51cb；与 CONFIG1 同样是『退出后由父脚本重新调起』，共用全局 `12721e`/`12721f` 与同一套 handle 基址 0x1d4c0。",
       "layout": [
-        { "anchor": "i12f (local-int 800) (global-int 14b894) (local-int be8) 3e8", "lines": "1040-1050", "what": "可见项表排序：A=800（索引）/ B=全局 14b894（主键）/ C=be8（次键），n=0x3e8=1000（规模比 CONFIG1 的 15 大得多）" },
-        { "anchor": "add (local-int 193d) 1d4c0 3e8", "lines": "1210-1300", "what": "行图元族（与 CONFIG1 同一基址）：0x3e8 行背景带 / 0x5dc·0x514 数值控件 / 0x528·0x5f0 第二组控件" },
-        { "anchor": "set-texture (local-ptr 1) (local-int 193f) (local-int 1940)", "lines": "1240-1250", "what": "角色位贴片绑定：运行期 = 槽 182..190 ← CV0004B..CV0012B.AGF（256×40，共 9 位）" },
-        { "anchor": "draw-string c4 6 (local-int 7fe)", "lines": "1320-1330", "what": "行文本直绘进槽 196（x=6、行距 40）——运行期日志形如 drawString slot=196 (6,6) \"喚醒了女神的鍛梁師\"" },
-        { "anchor": "draw-string c5 a a \"ＣＶ：\"", "lines": "1500-1512", "what": "槽 197（create-texture 948×90）上的 CV 说明区：三行文本" },
-        { "anchor": "add (local-int 193d) 1d4c0 898", "lines": "1460-1470", "what": "详情面板图元族 0x898（本页特有）" },
-        { "anchor": "label_00007178", "lines": "1652-1687", "what": "★**逐行名色的来源**：按开关位 a9dd 从 `adcd[14acda]`（14acda = 当前行下标/选中项）取色写 f807b/f807c，再 `i076/i077/i078/i1a4` 应用（= 全局样式字段只有一套 ⇒ 谁最后写谁值）" }
+        {
+          "anchor": "i12f (local-int 800) (global-int 14b894) (local-int be8) 3e8",
+          "lines": "1040-1050",
+          "what": "可见项表排序：A=800（索引）/ B=全局 14b894（主键）/ C=be8（次键），n=0x3e8=1000（规模比 CONFIG1 的 15 大得多）"
+        },
+        {
+          "anchor": "add (local-int 193d) 1d4c0 3e8",
+          "lines": "1210-1300",
+          "what": "行图元族（与 CONFIG1 同一基址）：0x3e8 行背景带 / 0x5dc·0x514 数值控件 / 0x528·0x5f0 第二组控件"
+        },
+        {
+          "anchor": "set-texture (local-ptr 1) (local-int 193f) (local-int 1940)",
+          "lines": "1240-1250",
+          "what": "角色位贴片绑定：运行期 = 槽 182..190 ← CV0004B..CV0012B.AGF（256×40，共 9 位）"
+        },
+        {
+          "anchor": "draw-string c4 6 (local-int 7fe)",
+          "lines": "1320-1330",
+          "what": "行文本直绘进槽 196（x=6、行距 40）——运行期日志形如 drawString slot=196 (6,6) \"喚醒了女神的鍛梁師\""
+        },
+        {
+          "anchor": "draw-string c5 a a \"ＣＶ：\"",
+          "lines": "1500-1512",
+          "what": "槽 197（create-texture 948×90）上的 CV 说明区：三行文本"
+        },
+        {
+          "anchor": "add (local-int 193d) 1d4c0 898",
+          "lines": "1460-1470",
+          "what": "详情面板图元族 0x898（本页特有）"
+        },
+        {
+          "anchor": "label_00007178",
+          "lines": "1652-1687",
+          "what": "★**逐行名色的来源**：按开关位 a9dd 从 `adcd[14acda]`（14acda = 当前行下标/选中项）取色写 f807b/f807c，再 `i076/i077/i078/i1a4` 应用（= 全局样式字段只有一套 ⇒ 谁最后写谁值）"
+        }
       ],
       "slots": [
-        { "key": "local 193d", "what": "行下标（图元 handle = 0x1d4c0 + 家族偏移 + 193d）" },
-        { "key": "local 193f / 1940", "what": "set-texture 的 imgid / 目标槽号" },
-        { "key": "local 800 / be8", "what": "i12f 的索引数组 / 次键数组" },
-        { "key": "global 14b894", "what": "i12f 的主键数组（全局，非本脚本局部）" },
-        { "key": "global 14acda", "what": "当前行下标（= i2ff/i2f5 的选中项；`label_00007178` 用它索引颜色表 adcd）" },
-        { "key": "global f807b / f807c / f8079 / f807a", "what": "→ i076 填充色 / i077 描边色 / i078 描边档位 / i1a4 描边偏移 的中转（按行设置）" },
-        { "key": "表 adcd[] / a9dd（位 1=描边色 位 2=填充色）", "what": "逐行颜色表 + 「该项是否启用自定义色」的开关位" }
+        {
+          "key": "local 193d",
+          "what": "行下标（图元 handle = 0x1d4c0 + 家族偏移 + 193d）"
+        },
+        {
+          "key": "local 193f / 1940",
+          "what": "set-texture 的 imgid / 目标槽号"
+        },
+        {
+          "key": "local 800 / be8",
+          "what": "i12f 的索引数组 / 次键数组"
+        },
+        {
+          "key": "global 14b894",
+          "what": "i12f 的主键数组（全局，非本脚本局部）"
+        },
+        {
+          "key": "global 14acda",
+          "what": "当前行下标（= i2ff/i2f5 的选中项；`label_00007178` 用它索引颜色表 adcd）"
+        },
+        {
+          "key": "global f807b / f807c / f8079 / f807a",
+          "what": "→ i076 填充色 / i077 描边色 / i078 描边档位 / i1a4 描边偏移 的中转（按行设置）"
+        },
+        {
+          "key": "表 adcd[] / a9dd（位 1=描边色 位 2=填充色）",
+          "what": "逐行颜色表 + 「该项是否启用自定义色」的开关位"
+        }
       ],
       "invariants": [
         "与 CONFIG1 共用 handle 基址 0x1d4c0 ⇒ 图元家族必须按**子区间**辨别（3e8/5dc/514/898 等）",
@@ -153,11 +350,26 @@
         "0x205 未实现；9 个 CV 名牌（CV000xB.AGF）在 emulator 里渲染成**黑色剪影**（疑似 AGF 调色板/通道解码问题）"
       ],
       "links": {
-        "capabilities": ["script-frame-local-pool-lifecycle", "gdi-direct-text-to-slot", "text-style-scope-queue-time"],
-        "functions": ["0x42F560", "0x423390", "0x422CB0", "0x46BE30", "0x459F40"],
-        "docs": ["docs-new/03-engine/opcode-table.md", "docs-new/03-engine/adv-text-rendering.md"]
+        "capabilities": [
+          "script-frame-local-pool-lifecycle",
+          "gdi-direct-text-to-slot",
+          "text-style-scope-queue-time"
+        ],
+        "functions": [
+          "0x42F560",
+          "0x423390",
+          "0x422CB0",
+          "0x46BE30",
+          "0x459F40"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md",
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
       },
-      "guards": ["test/text-style-snapshot.test.ts"],
+      "guards": [
+        "test/text-style-snapshot.test.ts"
+      ],
       "status": "partial",
       "evidence": "src/CONFIG2.txt 的区间见 layout；运行期证据：`npm run shot`（默认就切到本页）的 .tmp/shot-2-tab4.png；样式作用域的 E3 断言见 test/text-style-snapshot.test.ts 的 previewProbe（win 9 恒为入队色 #ffffff，全局色末值 #b690ff）",
       "notes": "尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。"
@@ -169,12 +381,25 @@
       "role": "剧情脚本（本篇章节）：大量角色立绘的变换/表情/位置调整 + 文本推进。",
       "entry": "由章节调度 call-script；本脚本只登记与『立绘变换惯用法』相关的片段。",
       "layout": [
-        { "anchor": "i21a (global-int f8025)", "lines": "2007-2017", "what": "立绘变换惯用法：i21a 读回描画位置 → i218 读回 pivot → 两者加**同一 Δ** → i219 / i217 写回 → i1ff 0 0 0 平移归零。★这说明 pivot 与描画位置**同处一个坐标空间**（不是「相对项的局部量」）" }
+        {
+          "anchor": "i21a (global-int f8025)",
+          "lines": "2007-2017",
+          "what": "立绘变换惯用法：i21a 读回描画位置 → i218 读回 pivot → 两者加**同一 Δ** → i219 / i217 写回 → i1ff 0 0 0 平移归零。★这说明 pivot 与描画位置**同处一个坐标空间**（不是「相对项的局部量」）"
+        }
       ],
       "slots": [
-        { "key": "global f8025 / f8026", "what": "两个立绘绘制项的 handle" },
-        { "key": "global f803b..f803d", "what": "描画位置（i21a 读 / i219 写）" },
-        { "key": "global f803e..f8040", "what": "pivot（i218 读 / i217 写）" }
+        {
+          "key": "global f8025 / f8026",
+          "what": "两个立绘绘制项的 handle"
+        },
+        {
+          "key": "global f803b..f803d",
+          "what": "描画位置（i21a 读 / i219 写）"
+        },
+        {
+          "key": "global f803e..f8040",
+          "what": "pivot（i218 读 / i217 写）"
+        }
       ],
       "invariants": [
         "同一个立绘项：pivot 与描画位置同步平移同一 Δ ⇒ 视觉锚点不变"
@@ -182,11 +407,21 @@
       "gotchas": [
         "`0x218`（pivot getter）/ `0x21A`（描画位置 getter）在 emulator **未注册** ⇒ 命中即硬报错；剧情路径大量使用这个惯用法（全库 i217 有 3353 处）"
       ],
-      "gaps": ["0x218 / 0x21A 未实现（会阻塞剧情脚本路径）"],
+      "gaps": [
+        "0x218 / 0x21A 未实现（会阻塞剧情脚本路径）"
+      ],
       "links": {
-        "capabilities": ["drawitem-world-matrix-composition"],
-        "functions": ["0x4ACF20", "0x4ACEE0", "0x4AC5F0"],
-        "docs": ["docs-new/03-engine/opcode-table.md"]
+        "capabilities": [
+          "drawitem-world-matrix-composition"
+        ],
+        "functions": [
+          "0x4ACF20",
+          "0x4ACEE0",
+          "0x4AC5F0"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md"
+        ]
       },
       "guards": [],
       "status": "partial",
@@ -200,12 +435,27 @@
       "role": "引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。",
       "entry": "启动时由引擎直接装载 index 0（`loadScriptData`）；本脚本自己再 call-script 其它脚本。",
       "layout": [
-        { "anchor": "i071 8", "lines": "28-42", "what": "启动即逐个 i071 1..8（清/开 8 个消息窗）" },
-        { "anchor": "i073 1 37a 6e c 0 0 23 23 a 64", "lines": "40-44", "what": "窗 1 的字格设置（0x73 的 10 个操作数：格尺寸/格数/节拍 0x64=100ms）——引擎『逐字显现』的入口" },
-        { "anchor": "i075 1e", "lines": "120-130", "what": "全局主字号 30（0x75）" }
+        {
+          "anchor": "i071 8",
+          "lines": "28-42",
+          "what": "启动即逐个 i071 1..8（清/开 8 个消息窗）"
+        },
+        {
+          "anchor": "i073 1 37a 6e c 0 0 23 23 a 64",
+          "lines": "40-44",
+          "what": "窗 1 的字格设置（0x73 的 10 个操作数：格尺寸/格数/节拍 0x64=100ms）——引擎『逐字显现』的入口"
+        },
+        {
+          "anchor": "i075 1e",
+          "lines": "120-130",
+          "what": "全局主字号 30（0x75）"
+        }
       ],
       "slots": [
-        { "key": "win 1..8", "what": "启动阶段批量清场的消息窗" }
+        {
+          "key": "win 1..8",
+          "what": "启动阶段批量清场的消息窗"
+        }
       ],
       "invariants": [],
       "gotchas": [
@@ -213,9 +463,17 @@
       ],
       "gaps": [],
       "links": {
-        "capabilities": ["msgwin-char-reveal-grid", "adv-perframe-dispatch"],
-        "functions": ["0x41F250", "0x45A940"],
-        "docs": ["docs-new/03-engine/adv-text-rendering.md"]
+        "capabilities": [
+          "msgwin-char-reveal-grid",
+          "adv-perframe-dispatch"
+        ],
+        "functions": [
+          "0x41F250",
+          "0x45A940"
+        ],
+        "docs": [
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
       },
       "guards": [],
       "status": "partial",
@@ -229,11 +487,22 @@
       "role": "序章脚本（含引擎『字格逐字显现』的真实用例）。",
       "entry": "由本篇流程 call-script；页与页之间用 i304/i305（文本块）与 wait-for-input 分段。",
       "layout": [
-        { "anchor": "i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64", "lines": "1075-1085", "what": "序章页的字格：窗 8、格 56×56（0x38）、8 格、节拍 100ms（0x64）" },
-        { "anchor": "i1ce 0", "lines": "575-580", "what": "逐字开关收尾（0x1ce 0）" }
+        {
+          "anchor": "i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64",
+          "lines": "1075-1085",
+          "what": "序章页的字格：窗 8、格 56×56（0x38）、8 格、节拍 100ms（0x64）"
+        },
+        {
+          "anchor": "i1ce 0",
+          "lines": "575-580",
+          "what": "逐字开关收尾（0x1ce 0）"
+        }
       ],
       "slots": [
-        { "key": "win 8", "what": "序章正文窗（字格逐字的目标窗）" }
+        {
+          "key": "win 8",
+          "what": "序章正文窗（字格逐字的目标窗）"
+        }
       ],
       "invariants": [
         "页序列：i304（文本块开始）→ show-text → i305（文本块结束）→ i073（设字格）→ wait-for-input → 点击 → i071（清场）"
@@ -241,14 +510,103 @@
       "gotchas": [],
       "gaps": [],
       "links": {
-        "capabilities": ["msgwin-char-reveal-grid", "text-reveal-pump-409400"],
-        "functions": ["0x41F250", "0x45A940", "0x45BE20"],
-        "docs": ["docs-new/03-engine/adv-text-rendering.md"]
+        "capabilities": [
+          "msgwin-char-reveal-grid",
+          "text-reveal-pump-409400"
+        ],
+        "functions": [
+          "0x41F250",
+          "0x45A940",
+          "0x45BE20"
+        ],
+        "docs": [
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
       },
-      "guards": ["test/char-reveal.test.ts"],
+      "guards": [
+        "test/char-reveal.test.ts"
+      ],
       "status": "partial",
       "evidence": "src/SN0000.txt:1075-1085 / 575-580；页序列断言见 test/char-reveal.test.ts 的『真实序章页序列（SN0000…）』",
       "notes": "只登记了字格/逐字相关片段；序章剧情本身未读。"
+    },
+    {
+      "id": "TITLE",
+      "file": "src/TITLE.txt",
+      "bin": "TITLE.BIN",
+      "role": "标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 + **版本号显示**（「Version X.YY.ZZZZ」）。",
+      "entry": "由启动链 call-script（LOGO 之后）进入；`i12e` 登记菜单命中区，点击经 `0x308/0x309` 命中项 → `0xa2/0xa3` 菜单派发表跳转（见 scripts 的 TITLE 菜单与 QUIT 路径）。",
+      "layout": [
+        {
+          "anchor": "i2eb (local-string 0)",
+          "lines": "579-596",
+          "what": "★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7)"
+        },
+        {
+          "anchor": "i2c7 (local-string 1) (local-string 0) 2 2",
+          "lines": "587-589",
+          "what": "第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」）"
+        },
+        {
+          "anchor": "i2c7 (local-string 1) (local-string 0) 5 4",
+          "lines": "590-592",
+          "what": "第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local-string 0 / 1",
+          "what": "版本串（来自 0x2EB）与它的切片（来自 0x2C7）"
+        },
+        {
+          "key": "local-int 3ed",
+          "what": "切片经 0x2EC(atoi) 后的数值（交给 0x23B 画数字）"
+        },
+        {
+          "key": "local-int 40d",
+          "what": "CG 数字条记录 0 的**字距**（= 0−3 = −3；见 582 行的 `sub (local-int 40d) 0 3`）"
+        },
+        {
+          "key": "CG 数字条记录 0",
+          "what": "纹理槽 4 / x0=0x54c / y0=0x32b / 字宽 0xc / 字高 0xf / 字内空隙 2（`i2da` 登记）"
+        },
+        {
+          "key": "菜单命中槽 3f7 / 3f3…",
+          "what": "`i12e` 命中区扫描结果与点击派发（见 TITLE 菜单相关测试）"
+        }
+      ],
+      "invariants": [
+        "版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）"
+      ],
+      "gotchas": [
+        "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
+        "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）"
+      ],
+      "gaps": [
+        "菜单命中/派发（`i12e`/`0xa2`/`0xa3`）与背景演出未逐段读（layout 列出的只是版本号这一段）"
+      ],
+      "links": {
+        "capabilities": [
+          "engine-config-registry-persistence"
+        ],
+        "functions": [
+          "0x434830",
+          "0x433FD0",
+          "0x4311F0",
+          "0x424970",
+          "0x426420"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md"
+        ]
+      },
+      "guards": [
+        "test/config-version-substr.test.ts",
+        "test/title-exit.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png",
+      "notes": "只登记了版本号显示段；菜单/背景/演出未读。"
     }
   ]
 }
