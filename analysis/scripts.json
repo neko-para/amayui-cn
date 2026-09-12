@@ -10,8 +10,8 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 7,
-    "analyzed": 2,
+    "total": 11,
+    "analyzed": 6,
     "partial": 5,
     "stub": 0
   },
@@ -167,6 +167,11 @@
           "anchor": "label_0000d860",
           "lines": "3132-3138",
           "what": "退出：detach-texture 121000 区间（0x3e8 个）+ exit"
+        },
+        {
+          "anchor": "call-script 51d3  // INITCONFIG0",
+          "lines": "872-908",
+          "what": "「初始化本页」路径：按当前分类（12721e）分别 `call-script 51d3/51d4/51d5/51d7/51d9`（= INITCONFIG0..5，把该页设置写回默认并 save-int 登记），随后 INITREGINPUT(51da) + CHECKCONFIG(51db) 收尾（940-944 是「初始化全部」路径）"
         }
       ],
       "slots": [
@@ -213,6 +218,10 @@
         {
           "key": "global 12721e / 12721f",
           "what": "当前分类 / 上次高亮（与 CONFIG/CONFIG2 共享）"
+        },
+        {
+          "key": "call-script 51d3..51d9",
+          "what": "六页默认值脚本（INITCONFIG0..5）的脚本 id"
         }
       ],
       "invariants": [
@@ -225,7 +234,8 @@
         "**切分类 = 退出 + 重入**（7dd=1 → exit → CONFIG.BIN 再 call-script）⇒ 帧局部池必须重建，否则 local5620 从上一页泄漏、拇指顶算到轨道外（实测：滚动条溢出轨道）",
         "i12f 的比较键是 B[A[j]]+C[A[j]]（用 A 里存的**索引**查 B/C），不是按位置比 A/C；且数组访存的 DEC/ENC 只能一层",
         "0x204 直绘进槽 196 时必须先有 0x1f8 create-texture 建出的表面（引擎三个门：槽对象存在/可锁定/串非空）",
-        "★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效"
+        "★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效",
+        "★「初始化本页」= 调用 INITCONFIG*（写默认值 + 登记），不是\"重画界面\"：误当无害重载会把玩家在该页的设置清掉"
       ],
       "gaps": [
         "数值型行的**数字文本**走 0x205（GDI 数字绘制）——emulator 未实现（当前只画得出文本型的行值）"
@@ -236,7 +246,8 @@
           "gdi-direct-text-to-slot",
           "script-frame-local-pool-lifecycle",
           "msgwin-window-reveal-gate-300",
-          "text-style-scope-queue-time"
+          "text-style-scope-queue-time",
+          "save-data-tables-persistence"
         ],
         "functions": [
           "0x42F560",
@@ -245,7 +256,9 @@
           "0x4AC5F0",
           "0x4ACF20",
           "0x4ACEE0",
-          "0x46BE30"
+          "0x46BE30",
+          "0x434F60",
+          "0x42DF40"
         ],
         "docs": [
           "docs-new/03-engine/opcode-table.md",
@@ -449,35 +462,58 @@
           "anchor": "i075 1e",
           "lines": "120-130",
           "what": "全局主字号 30（0x75）"
+        },
+        {
+          "anchor": "load-int (global-int 5)",
+          "lines": "71-84",
+          "what": "★配置装载分支：`load-int (global 5)` 读 SAVE.DAT 里的「已初始化」标志 —— 有 ⇒ 73 行 `call-script 5258 LOADCONFIG`（load-int/load-string 把用户设置读回 global）+ 74 行 LOADCHARM；没有 ⇒ 78 行 `call-script 51dc INITCONFIG`（写默认值 + save-int/save-string 登记）+ 79 行 INITCHARM + 80/81 行 `mov (global 5) 1` + `save-int (global 5)`；两条路径都汇到 84 行 `call-script 51db CHECKCONFIG`（校验字体名，装不上就回退默认并重新 save-string）"
         }
       ],
       "slots": [
         {
           "key": "win 1..8",
           "what": "启动阶段批量清场的消息窗"
+        },
+        {
+          "key": "global 5",
+          "what": "「已初始化」标志（save-int 持久化在 SAVE.DAT；= SYSTEM4 的两条分支判据）"
         }
       ],
-      "invariants": [],
+      "invariants": [
+        "有 SAVE.DAT 且表里有 `global 5 = 1` ⇒ 必走 LOADCONFIG；否则必走 INITCONFIG（两者互斥，见 test/save-data.test.ts 的真语料断言）"
+      ],
       "gotchas": [
-        "全库只有 27 处 `i073`（SYSTEM4.txt:41、NOVEL.txt:11/265、SN0000 各页）⇒ 只有序章/NOVEL/SYSTEM4 走引擎的『字格逐字』路径"
+        "全库只有 27 处 `i073`（SYSTEM4.txt:41、NOVEL.txt:11/265、SN0000 各页）⇒ 只有序章/NOVEL/SYSTEM4 走引擎的『字格逐字』路径",
+        "★顺序是「先 LOADCONFIG 再 INITCONFIG 分支」而不是都跑：INITCONFIG 会把选项**写回默认值**，跑错分支的后果是「玩家设置每次启动都被重置」且不报错",
+        "SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG"
       ],
       "gaps": [],
       "links": {
         "capabilities": [
           "msgwin-char-reveal-grid",
-          "adv-perframe-dispatch"
+          "adv-perframe-dispatch",
+          "save-data-tables-persistence",
+          "engine-config-registry-persistence"
         ],
         "functions": [
           "0x41F250",
-          "0x45A940"
+          "0x45A940",
+          "0x40AEE0",
+          "0x40AAE0",
+          "0x434F60",
+          "0x434FE0",
+          "0x42DF40",
+          "0x433A70"
         ],
         "docs": [
           "docs-new/03-engine/adv-text-rendering.md"
         ]
       },
-      "guards": [],
+      "guards": [
+        "test/save-data.test.ts"
+      ],
       "status": "partial",
-      "evidence": "src/SYSTEM4.txt:28-44 / 120-130；0x73 语义见台账 msgwin-char-reveal-grid",
+      "evidence": "src/SYSTEM4.txt:40-44 / 71-90 / 120-130；0x73 语义见台账 msgwin-char-reveal-grid；配置装载分支的 E3 断言见 test/save-data.test.ts",
       "notes": "只登记了启动段与字格入口；初始化字段/INIT 调用链未逐段读。"
     },
     {
@@ -607,6 +643,262 @@
       "status": "partial",
       "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png",
       "notes": "只登记了版本号显示段；菜单/背景/演出未读。"
+    },
+    {
+      "id": "INITCONFIG",
+      "file": "src/INITCONFIG.txt",
+      "bin": "INITCONFIG.BIN",
+      "role": "「配置默认值」的分发脚本：按顺序调用 INITCONFIG0..5（系统/游戏/ADV/声音/角色色/操作 六页各一份）。",
+      "entry": "SYSTEM4 首次启动分支 `call-script 51dc`（SYSTEM4.txt:78）；CONFIG1/CONFIG2 的「初始化本页」也调它（CONFIG1.txt:940、CONFIG2.txt:855）。",
+      "layout": [
+        {
+          "anchor": "call-script 51d3  // INITCONFIG0",
+          "lines": "5-12",
+          "what": "依次 call-script INITCONFIG0(51d3)/1(51d4)/2(51d5)/3(51d7)/4(51df)/5(51d9)，各自写该页默认值并 save-int 登记"
+        }
+      ],
+      "slots": [
+        {
+          "key": "call-script 51d3..51d9/51df",
+          "what": "六页默认值脚本的脚本 id（与 src/INITCONFIG*.txt 对应）"
+        }
+      ],
+      "invariants": [
+        "本脚本**只写默认值**：调用它 = 该页设置回到初始状态（所以只能出现在「首次启动」或玩家点「初始化」时）"
+      ],
+      "gotchas": [
+        "它是 SET 而不是 LOAD —— 与 LOADCONFIG 混用会把玩家设置清掉"
+      ],
+      "gaps": [],
+      "links": {
+        "capabilities": [
+          "save-data-tables-persistence"
+        ],
+        "functions": [
+          "0x434F60",
+          "0x434FE0"
+        ],
+        "docs": [
+          "docs-new/03-engine/save-data.md"
+        ]
+      },
+      "guards": [
+        "test/save-data.test.ts"
+      ],
+      "status": "analyzed",
+      "evidence": "src/INITCONFIG.txt（全文 12 行）；分支判据见 src/SYSTEM4.txt:71-81；E3 见 test/save-data.test.ts",
+      "notes": "六页默认值脚本各自的内容见 INITCONFIG0 条目与 src/INITCONFIG1..5.txt。"
+    },
+    {
+      "id": "INITCONFIG0",
+      "file": "src/INITCONFIG0.txt",
+      "bin": "INITCONFIG0.BIN",
+      "role": "「系统设定」页的**默认值 + 登记**：把 a9cb..a9d5（窗口显示/自动保存/光标自动移动/覆盖存档备注/Live2D 等）与字体名串 bbb..bbf 写成默认值，并逐个 `save-int`/`save-string` 登记进 SAVE.DAT 的表。",
+      "entry": "由 INITCONFIG（51dc）在首次启动或「初始化本页」时 call-script（SYSTEM4.txt:78 / CONFIG1.txt:940）。",
+      "layout": [
+        {
+          "anchor": "save-int (global-int a9ce)",
+          "lines": "1-17",
+          "what": "6 个开关的默认值：a9ce=0、a9cd=1、a9d5=0、a9d0=0、a9cb=3、a9cc=0x1f；每个都紧跟一次 save-int 登记（这就是\"设置存哪\"的答案）"
+        },
+        {
+          "anchor": "save-string (global-string bbb)",
+          "lines": "18-27",
+          "what": "5 个字体面默认值：bbb/bbf=メイリオ、bbc/bbe=ＭＳ ゴシック、bbd=游ゴシック，各自 save-string 登记"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global a9cb..a9d5",
+          "what": "系统/游戏页的开关（具体语义由 CONFIG1 的取值表 1281c0 与处理分支决定）"
+        },
+        {
+          "key": "global-string bbb / bbc / bbd / bbe / bbf",
+          "what": "消息窗主字体/注音字体/参数字体/… 的面名（CHECKCONFIG 会校验它们是否装得上"
+        }
+      ],
+      "invariants": [
+        "每一处 `mov (global …) 默认` 后面必跟一次 `save-int`/`save-string`（否则该设置不会进 SAVE.DAT，下次启动就丢）"
+      ],
+      "gotchas": [
+        "★这些默认值就是\"玩家没改过\"时 SAVE.DAT 里的内容；对照真存档可以判断哪些项被玩家改过（例：本机 b1b6=2 就不是默认值 0）",
+        "字体面名会被 CHECKCONFIG 二次校验：装不上就回退并重新 save-string"
+      ],
+      "gaps": [],
+      "links": {
+        "capabilities": [
+          "save-data-tables-persistence"
+        ],
+        "functions": [
+          "0x434F60",
+          "0x434FE0"
+        ],
+        "docs": [
+          "docs-new/03-engine/save-data.md"
+        ]
+      },
+      "guards": [
+        "test/save-data.test.ts"
+      ],
+      "status": "analyzed",
+      "evidence": "src/INITCONFIG0.txt（全文 28 行）；与真存档对照见 test/save-data.test.ts 的 E4（global 5/a9ce/a9cd/a9d5/a9d0/a9cb/a9cc）",
+      "notes": "INITCONFIG1..5 同构（各自页面）；INITCONFIG4 额外用 fill-zero/set-array-to 铺 0x3e8 条数组并逐条 save-int。"
+    },
+    {
+      "id": "LOADCONFIG",
+      "file": "src/LOADCONFIG.txt",
+      "bin": "LOADCONFIG.BIN",
+      "role": "**把 SAVE.DAT 里的用户设置读回全局**：29 个 `load-int (global …)` / `load-string (global-string …)` + 1000 条数组（3b4e / a9e5 / adcd）逐项 load-int。",
+      "entry": "SYSTEM4 的「已初始化」分支 `call-script 5258`（SYSTEM4.txt:73）。",
+      "layout": [
+        {
+          "anchor": "load-int (global-int a9ce)",
+          "lines": "5-11",
+          "what": "系统页开关：a9ce / a9cd / a9d5 / a9d0 / a9cb / a9cc"
+        },
+        {
+          "anchor": "load-int (global-int b1b6)",
+          "lines": "12-15",
+          "what": "游戏页开关：b1b6 / a9e4 / 139b / a9d6"
+        },
+        {
+          "anchor": "load-string (global-string bbd)",
+          "lines": "16-20",
+          "what": "字体面名：bbd / bbe / bbf / bbb / bbc（与 INITCONFIG0 的 save-string 一一对应）"
+        },
+        {
+          "anchor": "load-int (global-int a9de)",
+          "lines": "21-43",
+          "what": "ADV/声音/操作页开关：a9de / a9dd / a9db / a9df / a9e0 / a9e1 / a9e2 / a9dc / a9d4 / a9da / a9d9 / a9e3 / a9d2"
+        },
+        {
+          "anchor": "load-int (local-ptr 0)",
+          "lines": "44-52",
+          "what": "★1000 条数组的批量恢复：`lookup-array (local-ptr 0) (global-int 3b4e) (local-int 0)` → `load-int (local-ptr 0)`；a9e5 与 adcd（角色配色表）同样处理"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 3b4e / a9e5 / adcd",
+          "what": "三个 0x3e8 长的数组（解锁标志 / 角色相关 / 逐角色配色），逐条 load-int"
+        },
+        {
+          "key": "global a9ce…a9e4 等",
+          "what": "各页开关（与 INITCONFIG* 的 save-int 对应）"
+        }
+      ],
+      "invariants": [
+        "本脚本只 `load-*`（读表写回全局），绝不 save-*：因此\"启动时设置被重置\"必然是走了 INITCONFIG 分支而不是这里"
+      ],
+      "gotchas": [
+        "★数组用**指针形式** load-int（`lookup-array (local-ptr 0) …` → `load-int (local-ptr 0)`）：`load-int` 的索引来自操作数解析器，指针/直接槽都能用",
+        "它跑在 `CHECKCONFIG` **之前**（SYSTEM4.txt:73 → 84）：字体名先恢复、再校验是否装得上"
+      ],
+      "gaps": [],
+      "links": {
+        "capabilities": [
+          "save-data-tables-persistence"
+        ],
+        "functions": [
+          "0x42DF40",
+          "0x433A70"
+        ],
+        "docs": [
+          "docs-new/03-engine/save-data.md"
+        ]
+      },
+      "guards": [
+        "test/save-data.test.ts"
+      ],
+      "status": "analyzed",
+      "evidence": "src/LOADCONFIG.txt（全文 41 行）；E3 真语料断言（有存档 ⇒ 走本脚本且 global a9ce 恢复为存档值）见 test/save-data.test.ts",
+      "notes": "数组的语义（3b4e 解锁位 / adcd 配色）未逐个读；本条目只登记\"装载机制\"这一层。"
+    },
+    {
+      "id": "CHECKCONFIG",
+      "file": "src/CHECKCONFIG.txt",
+      "bin": "CHECKCONFIG.BIN",
+      "role": "**设置的自检与修复**：校验 5 个字体面名是否还装得上（`0x2DE` 字体名→下标），装不上就回退默认并重新 `save-string`；末尾按 a9dd/a9de 组合出文本颜色/描边并应用（0x76/0x77/0x78/0x1A4）。",
+      "entry": "SYSTEM4 两条分支汇合后的 `call-script 51db`（SYSTEM4.txt:84）；CONFIG1/CONFIG2 装载/初始化后也调用（CONFIG1.txt:907/944、CONFIG2.txt:859）。",
+      "layout": [
+        {
+          "anchor": "i2de (local-int 0) (global-string bbb)",
+          "lines": "5-12",
+          "what": "bbb 校验：0x2DE 字体名→下标；< 0 ⇒ 回退「ＭＳ 明朝」并 save-string"
+        },
+        {
+          "anchor": "i2de (local-int 0) (global-string bbc)",
+          "lines": "13-19",
+          "what": "bbc 同上（回退「ＭＳ ゴシック」）"
+        },
+        {
+          "anchor": "i2de (local-int 0) (global-string bbd)",
+          "lines": "20-26",
+          "what": "bbd 同上（回退「ＭＳ ゴシック」）"
+        },
+        {
+          "anchor": "i2de (local-int 0) (global-string bbf)",
+          "lines": "27-33",
+          "what": "bbf 同上（回退「ＭＳ 明朝」）"
+        },
+        {
+          "anchor": "i2de (local-int 0) (global-string bbe)",
+          "lines": "34-39",
+          "what": "bbe 同上（回退「ＭＳ ゴシック」）"
+        },
+        {
+          "anchor": "label_00000258",
+          "lines": "40-51",
+          "what": "收尾：call label_0000028c（派生文本色/描边）+ mov (global 3f36) 0 + i2ee fa + exit"
+        },
+        {
+          "anchor": "lookup-array (local-ptr 0) (global-int adcd) (global-int 14acda)",
+          "lines": "52-82",
+          "what": "按 a9dd 位 1/2 从角色配色表 adcd[当前项] 取描边色/填充色 → 写 f807c/f807b；按 a9de 选描边档位（3/1）与偏移（1/0）；最后 i076/i077/i078/i1a4 应用"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global a9dd / a9de",
+          "what": "「按角色变更描边色/文字色」的开关位 + 描边档位选择"
+        },
+        {
+          "key": "global a9dc",
+          "what": "另一个开关位（真存档里 = 1）"
+        },
+        {
+          "key": "global f807b / f807c / f8079 / f807a",
+          "what": "→ i076 填充色 / i077 描边色 / i078 描边档位 / i1a4 偏移 的中转"
+        }
+      ],
+      "invariants": [
+        "存档里的字体名若在本机装不上，启动后必然被改成默认串（并重新 save-string）—— 真语料断言见 test/save-data.test.ts 的 E3",
+        "全局文本样式（i076/i077/i078/i1a4）是**全局**的：本脚本只负责把它推到与当前设置一致（作用域见引擎台账 text-style-scope-queue-time）"
+      ],
+      "gotchas": [
+        "`i2de`(0x2DE) 是**字体名→字体表下标**（不是字符串资源 id）：映射错会让所有字体判定恒为 -1 ⇒ 每次启动都回退默认面名"
+      ],
+      "gaps": [],
+      "links": {
+        "capabilities": [
+          "save-data-tables-persistence",
+          "text-style-scope-queue-time"
+        ],
+        "functions": [
+          "0x430DF0",
+          "0x423390"
+        ],
+        "docs": [
+          "docs-new/03-engine/save-data.md",
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
+      },
+      "guards": [
+        "test/save-data.test.ts"
+      ],
+      "status": "analyzed",
+      "evidence": "src/CHECKCONFIG.txt（全文 57 行）；E3：test/save-data.test.ts 的「真语料启动链」断言 bbc 被回退为「ＭＳ ゴシック」",
+      "notes": "本条目聚焦\"设置自检\"；颜色派生的细节与 CONFIG2 的 label_00007178 同源（在 CONFIG2 条目里有登记）。"
     }
   ]
 }

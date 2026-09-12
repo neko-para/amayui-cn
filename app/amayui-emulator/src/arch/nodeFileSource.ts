@@ -10,6 +10,8 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { FileSource, ScriptBytes } from './fileSource.js';
 import { parseSys4Index, parseAppendIndex, type Sys4Index, type Sys4FileEntry } from '../script/alf.js';
+import { isEngineSave } from '../vm/saveData.js';
+import { parseIni } from '../engineConfig.js';
 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
@@ -19,6 +21,11 @@ export interface NodeFileSourceOptions {
    * ★默认不给 ⇒ 默认**不落盘**（测试/链路工具不会碰仓库里的配置文件）。
    */
   configPath?: string;
+  /**
+   * `SAVE.DAT` 的路径（可选）。给了才实现 `readSaveData`/`writeSaveData`（脚本 `save-int`/`save-string` 表的持久化）。
+   * ★默认不给 ⇒ 不读写存档（测试不会碰仓库里的存档）。
+   */
+  saveDataPath?: string;
 }
 
 /** 扩展包数（与游戏一致：APPEND01..05）。 */
@@ -27,12 +34,14 @@ export const APPEND_COUNT = 5;
 export class NodeFileSource implements FileSource {
   #root: string;
   #configPath: string | null;
+  #saveDataPath: string | null;
   #base: Sys4Index | null = null;
   #appends: (Sys4Index | null)[] = [];
 
   constructor(opts: NodeFileSourceOptions) {
     this.#root = opts.resourceDir;
     this.#configPath = opts.configPath ?? null;
+    this.#saveDataPath = opts.saveDataPath ?? null;
   }
 
   /** 资源根（诊断/报告用：写清"这次的报告读的是哪套资源"）。 */
@@ -45,10 +54,84 @@ export class NodeFileSource implements FileSource {
     return this.#configPath;
   }
 
-  /** 把整份 INI 文本写回 `configPath`（未配置则什么也不做）。 */
+  /** 存档路径（未配置时为 null）。 */
+  get saveDataPath(): string | null {
+    return this.#saveDataPath;
+  }
+
+  /**
+   * 把整份 INI 文本写回 `configPath`（未配置则什么也不做）。
+   *
+   * ★**防丢键棘轮**：写之前比对磁盘上的那份，若新文本的 `section:key` 条目数**少于**现有文件，
+   * 就拒绝落盘并告警 —— 这挡住"配置还没装载就被写回"（那时内存里只有一两个键，
+   * 一写就会把整个 INI 抹成两行）。宁可少写一次，也不静默丢设置。
+   */
   async saveConfig(text: string): Promise<void> {
     if (!this.#configPath) return;
+    const count = (t: string): number => parseIni(t).values.size;
+    try {
+      const prev = await fs.readFile(this.#configPath, 'utf8');
+      if (count(text) < count(prev)) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[config] 拒绝回写 ${this.#configPath}：新文本只有 ${count(text)} 个键，磁盘上有 ${count(prev)} 个` +
+            '（疑似配置尚未装载就写回）—— 原文件保持不变',
+        );
+        return;
+      }
+    } catch {
+      /* 原文件不存在：直接写 */
+    }
     await fs.writeFile(this.#configPath, text, 'utf8');
+  }
+
+  /** 读 `SAVE.DAT`（未配置路径或文件不存在 ⇒ null）。**优先本工程自己的存档**（`.amayui`）。 */
+  async readSaveData(): Promise<Uint8Array | null> {
+    if (!this.#saveDataPath) return null;
+    for (const p of [this.#oursPath(), this.#saveDataPath]) {
+      try {
+        const b = await fs.readFile(p);
+        return new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+      } catch {
+        /* 试下一个 */
+      }
+    }
+    return null;
+  }
+
+  /** 本工程自己的存档路径（与引擎的 `SAVE.DAT` 并列，避免覆盖玩家的真存档）。 */
+  #oursPath(): string {
+    return `${this.#saveDataPath}.amayui`;
+  }
+
+  /**
+   * 写 `SAVE.DAT`。
+   *
+   * 规则（安全优先）：
+   *  - 目标不存在，或已存在且**是本工程格式**（`format = 0`）⇒ 写 `SAVE.DAT`（先写 `$$SAVE.DAT` 再改名，与引擎同口径）；
+   *  - 目标是**引擎写的存档**（加密/压缩格式，或魔数不符）⇒ **不碰它**，改写 `<SAVE.DAT>.amayui`
+   *    （读取时优先用后者，所以"继承玩家真存档 + 之后的改动落到我们自己的文件"两件事同时成立）。
+   */
+  async writeSaveData(data: Uint8Array): Promise<void> {
+    if (!this.#saveDataPath) return;
+    const target = this.#saveDataPath;
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    let writeTo = target;
+    try {
+      const prev = await fs.readFile(target);
+      if (isEngineSave(prev)) {
+        writeTo = this.#oursPath();
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[save] ${target} 是引擎格式存档（加密/压缩）⇒ 不覆盖它；本工程的设置写到 ${writeTo}`,
+        );
+      }
+    } catch {
+      /* 原文件不存在：直接写 */
+    }
+    const tmp = path.join(path.dirname(writeTo), '$$SAVE.DAT');
+    await fs.writeFile(tmp, data);
+    await fs.rename(tmp, writeTo);
   }
 
   async readFile(p: string): Promise<Uint8Array> {

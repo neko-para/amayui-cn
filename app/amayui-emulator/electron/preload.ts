@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('api', {
   readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
   /** 写回引擎配置 SYS4REG.INI（整份文本；写到 readConfigIni 实际返回的那份）。 */
   saveConfigIni: (text: string) => ipcRenderer.invoke('save-config-ini', text),
+  /** 读存档 SAVE.DAT（`save-int`/`save-string` 表的持久化载体）。 */
+  readSaveData: () => ipcRenderer.invoke('read-save-data'),
+  /** 写存档 SAVE.DAT（整份字节；主进程侧对引擎格式先备份）。 */
+  writeSaveData: (data: Uint8Array) => ipcRenderer.invoke('write-save-data', data),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
   /** 读内置字体文件字节（`res/fonts/` 下相对路径）。返回 null 表示不存在。 */

@@ -4920,6 +4920,176 @@
     "fields_used": ["HKEY_LOCAL_MACHINE", "a1000000（\"1.00.0000\"）", "aDisplayversion"],
     "evidence": "raw 110485-110502；唯一调用点 raw 112838",
     "notes": "调用点语义（raw 112835-112851）：INI 装载末尾，若 set:VerRegPos 非空 ⇒ 用它覆盖 set:GameVersion。emulator 不做注册表访问（跨平台；且本机这份是免安装拷贝 ⇒ 引擎也走不到这一步），版本值改由 INI 的 [set] GameVersion 指定。"
+  },
+  {
+    "addr": "0x40AAE0",
+    "raw_name": "sub_40AAE0",
+    "semantic_name": "save_system_data_40AAE0",
+    "status": "ANALYZED",
+    "purpose": "写系统存档：SAVE.DAT（SaveData 两张表 + 0x400 原始块）与 RT.DAT（ADV/文本状态）；先写 $$*.DAT 再改名并保留 .BAK",
+    "sub_behaviors": ["拼 %s\\$$SAVE.DAT / %s\\$$RT.DAT", "按 set:SaveVersion1/2 决定是否带新格式的额外块", "sub_438320 组装 SAVE.DAT 载荷 / sub_48EB60 写 RT.DAT", "成功后旧文件改名 .BAK、新文件改名就位"],
+    "fields_used": ["Engine+20764（Data 对象）", "Engine+680092", "Engine+693464/693468", "Engine+382688"],
+    "evidence": "raw 14984-15121；调用点 raw 17687（存档槽保存后）与 raw 141189（WM_CLOSE，受 set:NoSaveDat 门控）",
+    "notes": "emulator：SAVE.DAT 由 src/vm/saveData.ts 的 encodeSaveData 写（明文 format 0）；RT.DAT（ADV 回看）未建模。"
+  },
+  {
+    "addr": "0x40AEE0",
+    "raw_name": "sub_40AEE0",
+    "semantic_name": "load_system_data_40AEE0",
+    "status": "ANALYZED",
+    "purpose": "读系统存档：SAVE.DAT（失败退回 SAVE.BAK）+ RT.DAT，把两张表灌回引擎（启动时调用，早于脚本）",
+    "sub_behaviors": ["依次试 SAVE.DAT / SAVE.BAK", "sub_438940 解析载荷", "format≥2.10 时对 int 块逐元素 sub_499650 还原", "sub_404A70 写回 SaveData 表", "sub_48FCE0 读 RT.DAT"],
+    "fields_used": ["Engine+681128（int 块长）", "Engine+693468（0x400 块）", "set:SaveVersion1/2"],
+    "evidence": "raw 15126-15295；调用点 raw 142107（WinMain）",
+    "notes": "emulator：decodeSaveData + Engine.applySaveDataTables；必须在脚本前装载（否则 SYSTEM4.txt:71 的 load-int (global 5) 读到 0 ⇒ 走 INITCONFIG）。"
+  },
+  {
+    "addr": "0x438320",
+    "raw_name": "sub_438320",
+    "semantic_name": "save_serialize_tables_438320",
+    "status": "ANALYZED",
+    "purpose": "把 SaveData 的表序列化成载荷：[count][int 块] + [count][12B 键 + u32 值] + [count][键\\0值\\0] + 额外块",
+    "sub_behaviors": ["写 int 块计数与内容", "写 str→int 记录（16 字节/条）", "写 str→str 记录（变长键值对）", "版本≥3.10 追加 a9/a10/a11 三块", "末尾 0 终止"],
+    "fields_used": ["Data+262/263/267/271（str→int）", "Data+282/283/287/291（str→str）"],
+    "evidence": "raw 45178-45354",
+    "notes": "emulator：src/vm/saveData.ts 的 buildPayload 与之同构（int 块留空）。"
+  },
+  {
+    "addr": "0x438940",
+    "raw_name": "sub_438940",
+    "semantic_name": "save_deserialize_tables_438940",
+    "status": "ANALYZED",
+    "purpose": "解析载荷（sub_438320 的逆）：读 int 块、16 字节记录表、字符串记录表，逐条写回引擎",
+    "sub_behaviors": ["sub_438120 读头校验", "sub_437980 解密/解压", "[count][int 块] → *a7/*a8", "[count][16B 记录] → sub_434D00", "[count][字符串对] → sub_434E00"],
+    "fields_used": ["Data+1044（str→int 哈希表）", "Data+1124（str→str 哈希表）"],
+    "evidence": "raw 45474-45593",
+    "notes": "emulator：saveData.parseTables（同结构，int 块按计数跳过）。"
+  },
+  {
+    "addr": "0x437480",
+    "raw_name": "sub_437480",
+    "semantic_name": "save_container_write_437480",
+    "status": "ANALYZED",
+    "purpose": "写存档容器：292B 头（魔数/引擎版本/标题/SYSTEMTIME/尺寸/格式）+ 20B 块（载荷 dword 数 + 两个 CRC + Crypt 两个 key）+ 载荷",
+    "sub_behaviors": ["rand() 生成 Crypt key1/key2", "sub_436DE0 加密", "a7<2 直存、a7≥2 用 sub_4367B0 压缩", "sub_436D50/sub_436D00 两个 CRC（对密文）", "WriteFile 292 + 20 + payload"],
+    "fields_used": ["Engine+382688（版本串 \"460B\" → 头 +4）"],
+    "evidence": "raw 44685-44851",
+    "notes": "emulator：encodeSaveData 写同样的头/块布局（format=0 明文，不加密不压缩）。"
+  },
+  {
+    "addr": "0x437980",
+    "raw_name": "sub_437980",
+    "semantic_name": "save_container_read_437980",
+    "status": "ANALYZED",
+    "purpose": "读存档容器：校验魔数/标题/版本 → 读 20B 块 → 校验载荷 CRC → Crypt 解密（format≥2 再 LZSS 解压）→ 返回主体",
+    "sub_behaviors": ["ReadFile(292) + 魔数/标题/版本校验", "ReadFile(20) → [n, crc1, crc2, key1, key2]", "CRC 校验（对密文）", "sub_436E90 解密", "a7≥2 时 sub_436A80 解压 + 内部 CRC 校验"],
+    "fields_used": ["Engine+21968/21972（存档版本）"],
+    "evidence": "raw 44855-45091",
+    "notes": "★CRC（两种）与 Crypt 已在 emulator 逐字实现，并被真存档（format=3）验证通过：test/save-data.test.ts 的 E4。"
+  },
+  {
+    "addr": "0x436DE0",
+    "raw_name": "sub_436DE0",
+    "semantic_name": "crypt_encrypt_436DE0",
+    "status": "ANALYZED",
+    "purpose": "Crypt 加密：每个输入 dword 用 key1 异或后按 key2 拆成两个乘法结果（8 字节输出），每轮 key1 += 0x0B0B0B0B、key2 += 0x0B02",
+    "sub_behaviors": ["v = key1 ^ in[i]", "out[2i] = key2*(v>>>16)", "out[2i+1] = key2*(v & 0xffff)", "key1/key2 递增"],
+    "fields_used": ["Crypt+4/8/12（长度/输入/输出）"],
+    "evidence": "raw 44311-44345",
+    "notes": "emulator：saveData.cryptDecrypt 是它的逆；加密侧只在测试里手写（用于构造引擎格式样本）。"
+  },
+  {
+    "addr": "0x436E90",
+    "raw_name": "sub_436E90",
+    "semantic_name": "crypt_decrypt_436E90",
+    "status": "ANALYZED",
+    "purpose": "Crypt 解密：8 字节一组还原成 1 个 dword（先整除 key2，再拼高低位并异或 key1）；除不尽 ⇒ 失败",
+    "sub_behaviors": ["v11 = (in[2i]/key2)<<16", "v10 = in[2i+1]/key2", "out[i] = key1 ^ (v10+v11)", "整除失败 ⇒ 返回 0"],
+    "fields_used": ["Crypt+4/8/12"],
+    "evidence": "raw 44348-44390",
+    "notes": "★key1/key2 就写在文件头 20 字节块里 ⇒ 是混淆而非加密；emulator：saveData.cryptDecrypt。"
+  },
+  {
+    "addr": "0x436A80",
+    "raw_name": "sub_436A80",
+    "semantic_name": "lzss_decompress_436A80",
+    "status": "ANALYZED",
+    "purpose": "AGE LZSS 解压（Okumura LZSS，N=4096/F=18/THRESHOLD=2）：存档 format≥2 的载荷压缩就是它",
+    "sub_behaviors": ["每 8 项一个 flag 字节（LSB 先用）", "flag=1 ⇒ 字面量，flag=0 ⇒ 12 位位置 + 4 位长度", "环形缓冲 text_buf(N+F-1) 回绕"],
+    "fields_used": [],
+    "evidence": "raw 45064（调用点）；算法同 scripts/alf/lzss.mjs（ALF 解包工具）",
+    "notes": "emulator：src/vm/lzss.ts（逐行同语义）；对真存档解压后两种 CRC 均通过 ⇒ 算法确证。"
+  },
+  {
+    "addr": "0x499650",
+    "raw_name": "sub_499650",
+    "semantic_name": "modexp_499650",
+    "status": "ANALYZED",
+    "purpose": "模幂 value^key mod modulus（32 轮平方-乘）：存档里 int 块的逐元素混淆/还原",
+    "sub_behaviors": ["按 key 每 bit 平方并选择性相乘", "每步对 modulus 取模"],
+    "fields_used": [],
+    "evidence": "raw 116004-116024",
+    "notes": "emulator 未实现（配置值不在 int 块，而在 16 字节记录表里 ⇒ 不影响设置继承）。"
+  },
+  {
+    "addr": "0x434F60",
+    "raw_name": "sub_434F60",
+    "semantic_name": "op_save_int_434F60",
+    "op": "0x1A2",
+    "status": "ANALYZED",
+    "purpose": "save-int：把 op1 的值登记进 Font+5452 的 str→int 表，键 = wsprintf(\"%c%8.8x\", 3, op1 索引)",
+    "sub_behaviors": ["v3 = readIntOperand(1)", "v2 = readIndexOperand(1)", "wsprintf 键", "sub_434D00 写表"],
+    "fields_used": ["Font+5452（str→int 表）"],
+    "evidence": "raw 42920-42932",
+    "notes": "★设置界面的开关就靠它持久化（INITCONFIG* 逐个 save-int (global a9ce) 等）；emulator：op_save_int + onSaveDataChanged 落盘。"
+  },
+  {
+    "addr": "0x434FE0",
+    "raw_name": "sub_434FE0",
+    "semantic_name": "op_save_string_434FE0",
+    "op": "0x1A9",
+    "status": "ANALYZED",
+    "purpose": "save-string：把 op1 的字符串登记进 Font+5472 的 str→str 表，键 = wsprintf(\"%c%8.8x\", 5, op1 索引)",
+    "sub_behaviors": ["v2 = readStringOperand(1)", "v3 = readStringIndexOperand(1)", "wsprintf 键", "sub_434E00 写表"],
+    "fields_used": ["Font+5472（str→str 表）"],
+    "evidence": "raw 42938-42957",
+    "notes": "emulator：op_save_string（字体名等字符串设置的持久化）。"
+  },
+  {
+    "addr": "0x433A70",
+    "raw_name": "sub_433A70",
+    "semantic_name": "op_load_string_433A70",
+    "op": "0x1AA",
+    "status": "ANALYZED",
+    "purpose": "load-string：按 op1 索引查 Font+5472 表，命中取值、未命中取空串，写回 op1",
+    "sub_behaviors": ["readStringIndexOperand(1)", "wsprintf(5, idx)", "查表", "writeStringOperand(1, s)"],
+    "fields_used": ["Font+5472"],
+    "evidence": "raw 42449-42490（opcode 表所在区间）",
+    "notes": "emulator：op_load_string。"
+  },
+  {
+    "addr": "0x42DDE0",
+    "raw_name": "sub_42DDE0",
+    "semantic_name": "op_save_slot_42DDE0",
+    "op": "0x1A1",
+    "status": "ANALYZED",
+    "purpose": "存档到槽位：读 op2=槽号 → 建 SAVE%02d.DAT → sub_410160 写整个游戏状态 → 写完后把引擎 int 池重新 ENC 混淆",
+    "sub_behaviors": ["CreateFileA(\"%s\\SAVE%2.2d.DAT\")", "set:SaveVersion1/2 决定格式", "sub_410160(this, ver2, file, ver1, \"set:SaveVersion2\", 1, 1)", "对 _this[95744] 起的 pool_int 逐项 ENC"],
+    "fields_used": ["Engine[95738]（pool_int 计数）", "Engine[95744]（pool_int）", "Engine[97059]（ENC key）"],
+    "evidence": "raw 38407-38440",
+    "notes": "emulator **未实现**（存档槽菜单未接）；但引擎在写槽之后会顺带 sub_40AAE0 写系统存档（raw 17687）⇒ 系统级设置也因此落盘。"
+  },
+  {
+    "addr": "0x430DF0",
+    "raw_name": "sub_430DF0",
+    "semantic_name": "op_font_name_to_index_430DF0",
+    "op": "0x2DE",
+    "status": "ANALYZED",
+    "purpose": "字体名→字体表下标：读 op2 字符串 → sub_428990(Font, 串) 在字体名向量里线性查名 → 写回 op1（未命中 = -1）",
+    "sub_behaviors": ["v2 = readStringOperand(2)", "v3 = sub_428990(Font, v2)", "writeIntOperand(1, v3)"],
+    "fields_used": ["Font+201664（字体名向量）"],
+    "evidence": "raw 40251-40261",
+    "notes": "CHECKCONFIG 用它判断「存下来的字体名现在还装不装得上」；实现错（当成字符串资源 id）会让判定恒 -1 ⇒ 每次启动都回退默认面名（emulator 历史错误，见 handlers/msgwin.ts 的注释）。"
   }
 
 ]

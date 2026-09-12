@@ -2,7 +2,8 @@
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
-import { resolveResourceDir } from './arch/resourceDir.js';
+import { resolveResourceDir, resolveSaveDataPath } from './arch/resourceDir.js';
+import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
@@ -20,8 +21,14 @@ async function main() {
   // ★配置回写：`--no-save-config` 可关；默认写随工程的 `app/amayui-emulator/SYS4REG.INI`
   //   （与 Electron 侧同一个文件，见 electron/paths.ts 的 configIniCandidates）。
   const saveConfig = !process.argv.includes('--no-save-config');
+  const saveData = !process.argv.includes('--no-save-data');
   const configPath = path.join(REPO_ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
-  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR, ...(saveConfig ? { configPath } : {}) });
+  const saveDataPath = resolveSaveDataPath(REPO_ROOT);
+  const src = new NodeFileSource({
+    resourceDir: RESOURCE_DIR,
+    ...(saveConfig ? { configPath } : {}),
+    ...(saveData ? { saveDataPath } : {}),
+  });
   const native = new StubNative(() => {}); // 安静：run.ts 自己打印结构化摘要
   const e = new Engine(native);
   e.fileSource = src;
@@ -43,6 +50,29 @@ async function main() {
     );
   } catch (err) {
     console.log(`[config] 读 SYS4REG.INI 失败（沿用默认值）：${(err as Error).message}`);
+  }
+
+  // 装载 SAVE.DAT（`save-int`/`save-string` 表）—— 必须在装载脚本之前：
+  // `SYSTEM4.txt:71` 的 `load-int (global 5)` 决定走 LOADCONFIG（恢复设置）还是 INITCONFIG（写默认值）。
+  if (saveData) {
+    const bytes = await src.readSaveData();
+    if (!bytes) {
+      console.log('[save] 无 SAVE.DAT（首次启动：走 INITCONFIG 默认值分支）');
+    } else {
+      const r = decodeSaveData(bytes);
+      if (r.ok) {
+        e.applySaveDataTables(r.data.tables);
+        console.log(
+          `[save] ${saveDataPath} 「${r.data.title}」format=${r.data.format}：` +
+            `${r.data.tables.ints.size} 个 int / ${r.data.tables.strings.size} 个 string ⇒ 走 LOADCONFIG 分支`,
+        );
+      } else {
+        console.log(`[save] 无法解析 SAVE.DAT（${r.reason}）⇒ 当作首次启动`);
+      }
+    }
+    e.onSaveDataChanged = () => {
+      void src.writeSaveData?.(encodeSaveData({ tables: e.saveDataTables() }));
+    };
   }
 
   // 装载首脚本：index 0 = SYSTEM4.BIN（WinMain 的 a4=0，见 docs/04）

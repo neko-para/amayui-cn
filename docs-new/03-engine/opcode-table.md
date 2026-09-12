@@ -271,9 +271,9 @@
 | 0x19E | 2 |  | sub_42D980 | 仅映射 |  |
 | 0x19F | 2 |  | sub_42DB10 | 仅映射 |  |
 | 0x1A0 | 9 |  | sub_42DC70 | 仅映射 |  |
-| 0x1A1 | 2 |  | sub_42DDE0 | 仅映射 |  |
-| 0x1A2 | 1 | save-int | sub_434F60 | 已核对 | **save-int**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42140） |
-| 0x1A3 | 1 | load-int | sub_42DF40 | 已核对 | **load-int**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 37793）。**曾名 `string-lookup-set`** |
+| 0x1A1 | 2 |  | sub_42DDE0 | 已核对 | **存档到槽位**：读 op2=槽号 → `CreateFileA("%s\\SAVE%2.2d.DAT")` → `sub_410160(this, SaveVersion2, file, SaveVersion1, "set:SaveVersion2", 1, 1)` 写整个游戏状态；写完把 `_this[95744]`（= `pool_int`）起的 `_this[95738]+1` 个 dword 重新 **ENC** 混淆（raw 38433-38438）。写成功后引擎还会 `sub_40AAE0` 顺带刷新系统存档（raw 17687）。handler=sub_42DDE0（raw .c 38407-38440）。★emulator 未实现（存档槽菜单未接） |
+| 0x1A2 | 1 | save-int | sub_434F60 | 已核对 | **save-int**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42920）。★**设置界面的开关就是靠它持久化**：`INITCONFIG0..5` 逐个 `save-int (global a9ce)`，引擎再把这张表写进 `SAVE.DAT`（见 [`save-data.md`](./save-data.md)） |
+| 0x1A3 | 1 | load-int | sub_42DF40 | 已核对 | **load-int**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 38442）。★`LOADCONFIG` 用 29 次 load-int/load-string 把 `SAVE.DAT` 里的用户设置读回全局（见 [`save-data.md`](./save-data.md)） |
 | 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 28797） |
 | 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41043） |
 | 0x1A6 | 2 | halve-strlen | sub_42D110 | 已核对 | **halve-strlen**：`op1 = strlen(op2) >> 1`（`sub_41B640(2)` 读 op2 → `strlen` → `writeIntOperand_42B4B0(1, len>>1)`）。handler=sub_42D110（raw .c 37975），纯 |

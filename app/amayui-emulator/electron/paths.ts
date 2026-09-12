@@ -5,7 +5,7 @@
  * 原先散在 IPC 处理器里，改一处布局要在处理器之间找。集中后只有这一处需要维护。
  */
 import * as path from 'node:path';
-import { resolveResourceDir } from '../src/arch/resourceDir.js';
+import { resolveResourceDir, resolveSaveDataPath } from '../src/arch/resourceDir.js';
 
 /**
  * 仓库根。运行时 `__dirname` = `<repo>/app/amayui-emulator/dist/electron`，
@@ -18,6 +18,13 @@ export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
  * 可用 `AMAYUI_RESOURCE_DIR` 覆盖（对比原版：`AMAYUI_RESOURCE_DIR=raw`）。见 `src/arch/resourceDir.ts`。
  */
 export const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
+
+/**
+ * `SAVE.DAT` 路径：默认随工程 `app/amayui-emulator/SAVE/SAVE.DAT`；`AMAYUI_SAVE_DIR` 可覆盖
+ * （见 `src/arch/resourceDir.ts` 的 `resolveSaveDataPath`）。脚本 `save-int`/`save-string`
+ * 登记的两张表就落在这里 —— 设置界面的开关靠它跨会话保留。
+ */
+export const SAVE_DATA_PATH = resolveSaveDataPath(REPO_ROOT);
 
 /** 内置字体目录（渲染进程经 IPC `font` 通道读取；见 src/text/fontSet.ts）。 */
 export const FONT_DIR = path.join(REPO_ROOT, 'res', 'fonts');

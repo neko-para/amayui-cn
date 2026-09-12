@@ -65,6 +65,8 @@ const op_save_int: OpHandler = (c) => {
   const value = readIntOperand(c.e, c.frame, c.instr, 1);
   const key = stringTableKey(3, readIndexOperand(c.e, c.frame, c.instr, 1));
   c.e.stringIndexTable.set(key, value);
+  // 表变了 ⇒ 通知宿主把两张表落盘（`SAVE.DAT`；引擎在关窗/存档槽保存时写，见 saveData.ts）
+  c.e.onSaveDataChanged?.();
 };
 
 /** 0x1A3 load-int (sub_42DF40)：按 op1 索引查 `_this+5452` 表，命中取 *v3、未命中取 0，写回 op1（VM 可见）。 */
@@ -79,6 +81,7 @@ const op_save_string: OpHandler = (c) => {
   const str = readStringOperand(c.e, c.frame, c.instr, 1);
   const key = stringTableKey(5, readStringIndexOperand(c.e, c.frame, c.instr, 1));
   c.e.stringTable.set(key, str);
+  c.e.onSaveDataChanged?.();
 };
 
 /** 0x1AA load-string (sub_433A70)：按 op1 字符串索引查 `_this+5472` 表，命中取字符串、未命中取空串，写回 op1（VM 可见）。 */

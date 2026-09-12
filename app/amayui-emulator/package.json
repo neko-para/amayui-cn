@@ -18,6 +18,7 @@
     "electron:dev": "npm run build:electron && electron .",
     "shot": "npm run build:electron && electron tools/shot.cjs",
     "boot:time": "node tools/boottime.cjs",
+    "save:dump": "tsx src/tools/saveDump.ts",
     "diag:text": "tsx src/tools/diagText.ts",
     "op:inventory": "tsx src/tools/opInventory.ts"
   },

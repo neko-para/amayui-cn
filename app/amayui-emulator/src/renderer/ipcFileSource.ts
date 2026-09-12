@@ -32,6 +32,17 @@ export class IpcFileSource implements FileSource {
     await window.api.saveConfigIni?.(text);
   }
 
+  /** 读 `SAVE.DAT`（主进程从存档目录读；不存在返回 null）。 */
+  async readSaveData(): Promise<Uint8Array | null> {
+    const r = await window.api.readSaveData?.();
+    return r ? new Uint8Array(r) : null;
+  }
+
+  /** 写 `SAVE.DAT`（主进程写盘；见 `electron/ipc/files.ts` 的 `write-save-data`）。 */
+  async writeSaveData(data: Uint8Array): Promise<void> {
+    await window.api.writeSaveData?.(data);
+  }
+
   async dispose(): Promise<void> {
     /* IPC 无句柄需清理，保持接口对齐。 */
   }

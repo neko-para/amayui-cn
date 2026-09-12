@@ -24,6 +24,7 @@
 | `2934-2971` | `label_0000c698` | 滚动条三段式拇指：轨道 → 上盖(27×23) → 中段(27×1，靠 0x1fd 纵向放大) → 下盖(27×24)；pivot（0x217）取的是**描画位置本身** |
 | `2976-2990` | `label_0000cab8` | 拖动拇指：按鼠标 y 反算 5620（并 clamp 到 5624） |
 | `3132-3138` | `label_0000d860` | 退出：detach-texture 121000 区间（0x3e8 个）+ exit |
+| `872-908` | `call-script 51d3  // INITCONFIG0` | 「初始化本页」路径：按当前分类（12721e）分别 `call-script 51d3/51d4/51d5/51d7/51d9`（= INITCONFIG0..5，把该页设置写回默认并 save-int 登记），随后 INITREGINPUT(51da) + CHECKCONFIG(51db) 收尾（940-944 是「初始化全部」路径） |
 
 ## 关键槽 / 局部量
 
@@ -40,6 +41,7 @@
 | `local 36df → 467f` | 源描述符表 → 排序后的描述符表（467f[i] = 36df[7ff[i]]） |
 | `local 3e8 / 3fc / 410 / 514 / 528 / 5dc / 5f0 / 76c / 776..778` | 0x1d4c0 基址下的图元 handle 家族：行背景 / 数值贴片 / 帮助图标 / 控件两族 / 滚动条（轨道 + 拇指三段） |
 | `global 12721e / 12721f` | 当前分类 / 上次高亮（与 CONFIG/CONFIG2 共享） |
+| `call-script 51d3..51d9` | 六页默认值脚本（INITCONFIG0..5）的脚本 id |
 
 ## 不变量（拿它做回归断言）
 
@@ -54,6 +56,7 @@
 - i12f 的比较键是 B[A[j]]+C[A[j]]（用 A 里存的**索引**查 B/C），不是按位置比 A/C；且数组访存的 DEC/ENC 只能一层
 - 0x204 直绘进槽 196 时必须先有 0x1f8 create-texture 建出的表面（引擎三个门：槽对象存在/可锁定/串非空）
 - ★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效
+- ★「初始化本页」= 调用 INITCONFIG*（写默认值 + 登记），不是"重画界面"：误当无害重载会把玩家在该页的设置清掉
 
 ## 缺口
 
@@ -66,6 +69,7 @@
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`msgwin-window-reveal-gate-300`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`save-data-tables-persistence`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x42F560`（见 `analysis/functions.json`）
 - 函数结论：`0x422FD0`（见 `analysis/functions.json`）
 - 函数结论：`0x423390`（见 `analysis/functions.json`）
@@ -73,6 +77,8 @@
 - 函数结论：`0x4ACF20`（见 `analysis/functions.json`）
 - 函数结论：`0x4ACEE0`（见 `analysis/functions.json`）
 - 函数结论：`0x46BE30`（见 `analysis/functions.json`）
+- 函数结论：`0x434F60`（见 `analysis/functions.json`）
+- 函数结论：`0x42DF40`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/opcode-table.md`
 - 主题文档：`docs-new/03-engine/message-config-gates.md`
 - 主题文档：`docs-new/03-engine/adv-text-rendering.md`

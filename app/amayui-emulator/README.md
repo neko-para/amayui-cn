@@ -102,6 +102,41 @@ npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼�
 - 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述 opcode 取值与 0x141↔0x131 往返）、
   `test/config-version-substr.test.ts`（0x2E6↔0x2E7 闭环、`formatIni` 往返不重排、SJIS 子串、**E3：TITLE 版本号 = 1.07.0019**）。
 
+### ★设置界面那些开关存哪：`SAVE.DAT`（不是 SYS4REG.INI）
+
+`SYS4REG.INI` 只装**引擎级**配置（display/sound/message/system/set）。设置界面里的开关
+（窗口显示 / 自动保存 / Live2D / ADV 特效 / 字体…）是**脚本自己**用两张字符串键表存的：
+
+```text
+INITCONFIG0..5   mov (global-int a9ce) 0  +  save-int (global-int a9ce)     ← 首次启动：默认值 + 登记
+LOADCONFIG       load-int (global-int a9ce) …                               ← 之后每次启动：读回
+CHECKCONFIG      i2de 字体名→下标（装不上 ⇒ 回退默认并重新 save-string）
+SYSTEM4.txt:71   load-int (global-int 5)  ← 判据：SAVE.DAT 里有「已初始化」标志就走 LOADCONFIG，否则 INITCONFIG
+```
+
+引擎把这两张表（`Font+5452` str→int / `Font+5472` str→str）序列化进 `SAVE.DAT`
+（写 `sub_40AAE0`→`sub_438320`→`sub_437480`；读 `sub_40AEE0`→`sub_438940`；关窗或存档槽保存时写）。
+emulator 已把整条链路接通，**并且能读引擎格式的真存档**（`Crypt` + AGE `LZSS` + 双 CRC 全部逐字实现）：
+
+| 能力 | 落点 |
+|---|---|
+| 表的读写（`0x1A2/0x1A3/0x1A9/0x1AA`） | `handlers/strings.ts`（写表时通知 `Engine.onSaveDataChanged`） |
+| 容器/表结构/双 CRC | `src/vm/saveData.ts` + `src/vm/crc32.ts`（引擎两种 CRC 都实现） |
+| 引擎格式解密的两个变换 | `saveData.cryptDecrypt`（`sub_436E90`）+ `src/vm/lzss.ts`（`sub_436A80`） |
+| 启动装载（脚本之前） | `renderer/app/configBoot.ts` 的 `loadSaveData()` / `run.ts` 的同名段 |
+| 写盘路径 | Electron IPC `read/write-save-data`；Node `NodeFileSource.saveDataPath` |
+| **不覆盖真存档** | 目标是引擎格式时改写 `<SAVE.DAT>.amayui`，读取优先它 |
+
+- 默认存档目录 `app/amayui-emulator/SAVE/`（随工程）；`AMAYUI_SAVE_DIR` 可指向真游戏存档目录
+  （`%LOCALAPPDATA%\Eushully\<game>\SAVE`）以**继承玩家的真实设置**（那次启动会走 LOADCONFIG 分支，
+  日志 `[save] … ⇒ 脚本将走 LOADCONFIG 分支` 可自证）。
+- 守卫：`test/save-data.test.ts`（两种格式往返 + Crypt/LZSS/CRC 单元 + **E3 真语料两条分支** + **E4 真存档解码**）。
+  完整格式与实证见 `docs-new/03-engine/save-data.md`；**看某个存档里到底存了什么**：
+  `npm run save:dump`（默认看仓库内 `SAVE/SAVE.DAT`，也可 `npm run save:dump -- <文件>` 或
+  `AMAYUI_SAVE_DIR=<真游戏 SAVE 目录> npm run save:dump` 看真存档）。
+- ★`SYS4REG.INI` 回写带**防丢键棘轮**：新文本的键数少于磁盘现有文件时拒绝落盘（防止"配置未装载就写回"
+  把整个 INI 抹成两行）。
+
 ### 设置界面相关 opcode 的实现状态
 
 ### 默认插桩：消息窗/消息渲染 与 声音子系统

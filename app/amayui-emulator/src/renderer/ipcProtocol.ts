@@ -21,6 +21,10 @@ declare global {
        * （调用点用 `?.` 降级为"只改内存"）。
        */
       saveConfigIni?(text: string): Promise<{ path: string } | null>;
+      /** 读 `SAVE.DAT` 原始字节（没有该文件返回 null）。`save-int`/`save-string` 表的持久化载体。 */
+      readSaveData?(): Promise<Uint8Array | number[] | null>;
+      /** 写 `SAVE.DAT`（整份字节）；主进程侧做"引擎格式先备份"的保护。 */
+      writeSaveData?(data: Uint8Array): Promise<{ path: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
        * 读内置字体文件字节（`res/fonts/` 下的相对路径；渲染进程用 `FontFace` 注册）。

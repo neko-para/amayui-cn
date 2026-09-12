@@ -139,6 +139,32 @@ export class Engine {
   onConfigChanged?: (cfg: import('../engineConfig.js').EngineConfig) => void;
 
   /**
+   * **脚本 `save-int`/`save-string`（`0x1A2`/`0x1A9`）写表后的钩子** ⇒ 宿主把两张表落盘成 `SAVE.DAT`。
+   *
+   * 为什么设置界面靠它：选项值不在 `SYS4REG.INI` 里，而是 `INITCONFIG*` 用 `save-int (global a9ce)` 登记、
+   * `LOADCONFIG` 用 `load-int (global a9ce)` 读回；引擎把这两张表序列化进 `SAVE.DAT`
+   * （`sub_40AAE0` → `sub_438320` → `sub_437480`；装载 `sub_40AEE0` → `sub_438940`）。
+   * 详见 `src/vm/saveData.ts` 与 `analysis/engine-capabilities.json` 的 `save-data-tables-persistence`。
+   */
+  onSaveDataChanged?: () => void;
+
+  /** 导出两张持久化表（宿主写 `SAVE.DAT` 用）。 */
+  saveDataTables(): import('./saveData.js').SaveDataTables {
+    return { ints: new Map(this.stringIndexTable), strings: new Map(this.stringTable) };
+  }
+
+  /**
+   * 装入 `SAVE.DAT` 里读出的两张表（**覆盖**当前内容）。
+   *
+   * 装载时机 = 脚本跑之前（引擎在 WinMain 里 `sub_40AEE0`，见 raw 142107）：
+   * `SYSTEM4.txt:71` 的 `load-int (global 5)`（"已初始化"标志）随即就能读到 1 ⇒ 走 LOADCONFIG 分支。
+   */
+  applySaveDataTables(t: import('./saveData.js').SaveDataTables): void {
+    this.stringIndexTable = new Map(t.ints);
+    this.stringTable = new Map(t.strings);
+  }
+
+  /**
    * **纹理槽表**：`槽号 → imgid`（由 `set-texture`(0x1F9) 建立，`release-texture`(0x1FA) 清除）。
    * `draw-texture`(0x1FB) 的 op1 是这个槽号，渲染器据此把槽解析成实际图像资源。
    */

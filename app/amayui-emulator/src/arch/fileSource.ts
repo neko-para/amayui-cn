@@ -31,6 +31,15 @@ export interface FileSource {
    * **不实现该方法 = 改了内存里的配置但不落盘**（测试/链路工具即如此）。
    */
   saveConfig?(text: string): Promise<void> | void;
+  /** 读 `SAVE.DAT` 原始字节（没有该文件返回 null）。 */
+  readSaveData?(): Promise<Uint8Array | null>;
+  /**
+   * 写 `SAVE.DAT`（整份字节；由 `saveData.encodeSaveData` 序列化）。
+   *
+   * 调用方是 `Engine.onSaveDataChanged`（脚本 `save-int`/`save-string` 改了表）。
+   * 与 `saveConfig` 同样：**不实现 = 不落盘**（测试默认如此，避免改动仓库里的存档）。
+   */
+  writeSaveData?(data: Uint8Array): Promise<void> | void;
   /** 释放资源（宿主关闭文件句柄等）。 */
   dispose?(): Promise<void>;
 }
