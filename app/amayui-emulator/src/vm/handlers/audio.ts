@@ -73,6 +73,26 @@ const op_se_stop: OpHandlerLike = (c) => {
   emit(c, { kind: 'se-stop', ch: readIntOperand(c.e, c.frame, c.instr, 1) });
 };
 
+/**
+ * `0xB8`（`sub_419720` raw 24817-24829，**0 操作数**）：**停止 BGM**。
+ *
+ * ```c
+ * _this[帧状态槽] = 1;
+ * if ((_this[174801] & 0x200) != 0) { _this[174801] &= ~0x200; sub_489E50(Music, 100); } // 推进淡出
+ * return sub_489B50(Music);                                                              // 停
+ * ```
+ * 与 `0xBC`（BGM 开关/模式）不同：它**不动 `sound:Music` 配置**，只停当前正在播的曲子。
+ * 语料用途：`MMODE`（BGM 鉴赏）进界面时先停掉 ROOM 的背景音乐（`MMODE.txt:63`），
+ * 试听切换时也各停一次（`:462`/`:552`）。
+ */
+const op_bgm_stop: OpHandlerLike = (c) => {
+  if ((c.e.effectFlags & 0x200) !== 0) {
+    c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200
+    emit(c, { kind: 'bgm-fade', value: 0, step: 100 }); // 引擎：sub_489E50(Music, 100) 推进淡出
+  }
+  emit(c, { kind: 'bgm-stop' });
+};
+
 /** `0x2BF`：延迟播 SE —— op1 = 通道、op2 = 循环标志、op3 = 延迟毫秒（引擎武装 + 每帧 `sub_4B5230`）。 */
 const op_se_delay: OpHandlerLike = (c) => {
   emit(c, {
@@ -86,9 +106,14 @@ const op_se_delay: OpHandlerLike = (c) => {
 /**
  * `bgm-play` 意图：曲号解析成功时带上 `res`（表命中），否则**不带该键**
  * （`AudioIntent.res` 是可选字段 —— 发 `res: undefined` 会让 `deepEqual` 断言与"未命中"难以区分）。
+ *
+ * ★同时把命中的统一文件 id 记成「已使用」（引擎 `sub_48DB80` 解析曲号时就 `sub_4559C0` 打开了文件
+ * ⇒ `sub_454960` 写 FileDB 的已使用表）—— 这正是「回想 → BGM 鉴赏」里曲子被解锁的唯一途径（见
+ * `handlers/resource-usage.ts` 的 `0x19D`）。
  */
 function bgmPlayIntent(c: StepCtx, bgm: number, loop: boolean): AudioIntent {
   const res = resolveBgmResource(c.e, bgm);
+  if (res && 'id' in res) c.e.markFileUsed(res.id);
   return res ? { kind: 'bgm-play', bgm, loop, res } : { kind: 'bgm-play', bgm, loop };
 }
 
@@ -102,10 +127,14 @@ const op_bgm_slot: OpHandlerLike = (c) => {
  * `0xBF` play-bgm：与 0xB7 同为"播 BGM（循环）"，但引擎还会先清 `effect_flags` bit 0x200 并推进淡出，
  * 再按两个配置决定"语音在播时是否让路"：`set:KeepMusicVoice` 与 `sound:MusicFadeOnVoicePlaying`。
  * 这里把两个配置作为**策略**下发给宿主（宿主按策略压低 BGM，见 `audioEngine.ts` 的说明）。
+ *
+ * ★引擎还有第三个判据（raw 29773）：`!_this[122503]`（**跳读态**，由 `0x1BF` 置位）。
+ * 跳读态在时**不做**"给语音让路"的暂停 ⇒ 这里把 `fadeOnVoice` 一并按它收敛，让宿主行为与真机一致。
  */
 const op_play_bgm: OpHandlerLike = (c) => {
   const keep = cfgBool(c, 'set:keepmusicvoice', false);
-  const fadeOnVoice = cfgBool(c, 'sound:musicfadeonvoiceplaying', false);
+  const skipRead = (c.e.engineValues.get(122503) ?? 0) !== 0;
+  const fadeOnVoice = cfgBool(c, 'sound:musicfadeonvoiceplaying', false) && !skipRead;
   emit(c, { kind: 'policy', keepMusicVoice: keep, fadeOnVoice });
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200 并 sub_489E50(Music,100)（推进淡出）
@@ -247,6 +276,7 @@ export const AUDIO_OPS: OpTable = [
   [0xb5, op_se_play],
   [0xba, op_se_play],
   [0xb6, op_se_stop],
+  [0xb8, op_bgm_stop],
   [0x2bf, op_se_delay],
   [0xb7, op_bgm_slot],
   [0xb9, op_bgm_slot],

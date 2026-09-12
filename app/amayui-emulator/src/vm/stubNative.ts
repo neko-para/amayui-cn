@@ -134,6 +134,12 @@ export class StubNative implements NativeBridge {
   setDrawColor(handle: number, delay: number, count: number, to: number): void {
     this.log(`[native:stub] setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}`);
   }
+
+  /** `0x21D` CopyScene：headless 桩没有场景模型 ⇒ 只记一行、返回 true（不当作"源不存在"）。 */
+  copyScene(srcHandle: number, dstHandle: number): boolean {
+    this.log(`[native:stub] copyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}`);
+    return true;
+  }
   setWaitFlag(mask: number): void {
     this.log(`[native:stub] setWaitFlag 0x${mask.toString(16)}`);
   }

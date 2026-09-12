@@ -146,6 +146,7 @@ export type AudioIntent =
   | { kind: 'voice-factor-prepare'; ch: number; value: number }
   | { kind: 'voice-factor-apply'; ch: number; value: number }
   | { kind: 'bgm-play'; bgm: number; loop: boolean; res?: AudioResource }
+  | { kind: 'bgm-stop' }
   | { kind: 'bgm-mode'; mode: number }
   | { kind: 'bgm-fade'; value: number; step: number }
   | { kind: 'enable'; target: AudioBus; on: boolean }
@@ -265,6 +266,7 @@ export class AudioEngine {
       case 'voice-factor-prepare': this.voiceFactorPrepare(intent.ch, intent.value); break;
       case 'voice-factor-apply': this.voiceFactorApply(intent.ch, intent.value); break;
       case 'bgm-play': this.bgmPlay(intent.bgm, intent.loop, intent.res); break;
+      case 'bgm-stop': this.bgmStop(); break;
       case 'bgm-mode': this.bgmMode(intent.mode); break;
       case 'bgm-fade': this.bgmFadeTo(intent.value, intent.step); break;
       case 'enable': this.setEnabled(intent.target, intent.on); break;
@@ -461,6 +463,15 @@ export class AudioEngine {
     this.#bgm.mode = mode;
     this.#enabled.bgm = mode !== 0;
     if (mode === 0) this.#stopBgm();
+  }
+
+  /**
+   * `0xB8`：**停 BGM**（引擎 `sub_419720` → `sub_489B50`）。
+   * 与 `bgmMode(0)` 的区别：不动 `sound:Music` 开关、不改模式，只停当前这首
+   * （BGM 鉴赏进界面/换曲试听时用）。
+   */
+  bgmStop(): void {
+    this.#stopBgm();
   }
 
   /** `0xC2`：把 BGM 淡变到 `value`（0..10000），每帧推进 `step`（引擎 `sub_489D10`/`sub_489E50`）。 */

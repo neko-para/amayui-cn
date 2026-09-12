@@ -17,6 +17,7 @@ import { parseSys4Index, parseSys4MusicTables, parseAppendPack, type Sys4Index, 
 import { OverlayDir, type OverlaySide } from './overlay.js';
 import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
+import { unionUsedFileIds } from '../vm/saveData.js';
 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
@@ -113,6 +114,30 @@ export class NodeFileSource implements FileSource {
   async readSaveData(): Promise<Uint8Array | null> {
     const hit = await this.readSystemFile(SAVE_DAT_REL);
     return hit ? hit.data : null;
+  }
+
+  /**
+   * 读**两侧** `SAVE.DAT` 的「已使用文件」标志并取并集（鉴赏/解锁进度；见 `saveData.unionUsedFileIds`）。
+   *
+   * 与 `readSaveData` 的区别：那个只取"优先级最高的那一份"（overlay → base）。鉴赏进度是**单调集合**
+   * （引擎只会往表里加、从不删），所以两侧取并更稳：本工程的 overlay 副本可能由旧版本写过（缺 flag 块，
+   * 2026-09 之前的 bug）或落后于真游戏那份。都不存在 ⇒ null。
+   */
+  async readSaveFlags(): Promise<number[] | null> {
+    if (!this.#overlay) return null;
+    const bufs: Uint8Array[] = [];
+    for (const p of [this.#overlay.overlayFile(SAVE_DAT_REL), this.#overlay.baseFile(SAVE_DAT_REL)]) {
+      try {
+        const b = await fs.readFile(p);
+        bufs.push(new Uint8Array(b.buffer, b.byteOffset, b.byteLength));
+      } catch {
+        /* 该侧没有 */
+      }
+    }
+    if (bufs.length === 0) return null;
+    const { ids, layouts } = unionUsedFileIds(bufs);
+    this.#log(`[save] 已使用文件（两侧并集）：${ids.length} 个（${layouts.join(' + ')}）`);
+    return ids;
   }
 
   /**

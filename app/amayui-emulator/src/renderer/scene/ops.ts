@@ -26,6 +26,8 @@ import {
   applyScaleAnim,
   applyTranslationAnim,
   cgDigitItems,
+  cloneItem,
+  cloneMesh,
   makeDefaultItem,
   makeItem,
   makeMesh,
@@ -93,8 +95,30 @@ export function scDetachTexture(s: SceneState, handle: number, count: number): {
   return { drawItems, meshes };
 }
 
-/** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */
-export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {
+/**
+ * **`0x21D` CopyScene**（引擎 `sub_4AC0D0` raw 131146-131265，错误串「関数：CopyScene エラー」）：
+ * 把源绘图项（+ 网格）整份复制到目标 handle。
+ *
+ * 引擎逐字：三张 map（drawItems=Scene+1032 / meshes=+1064 / +1096）各自
+ * `find(src)` → 命中则 `ensure(dst)` + `qmemcpy(dst, src+4, 0x2E4|0x3C|0x23C)`（浅拷贝整块）
+ * ⇒ **同一份数据被挂在两个 handle 上**，此后对 dst 的 setter 只改 dst 这一份。
+ * 三张 map 全都没命中 ⇒ 打错误串「コピー元のシーンが存在しません．%d」并返回 0（不静默）。
+ *
+ * 语料用途：脚本把引擎预置的「全屏过渡幕布」（handle 0）复制成一个临时 handle
+ * （`ROOM.txt:83/391` → `i21d 0 1f4`、`MMODE.txt:71/763` → `i21d 0 7d0`），随后用
+ * `set-draw-color`/`set-draw-color-alpha` 只动那一份来做淡入淡出；ADV 里也用它把 CG 图元
+ * 复制成缩放绘制用的临时项（`$1$SC0330.txt:17564` → `i21d 18a9c 30d40`）。
+ */
+export function scCopyItem(s: SceneState, srcHandle: number, dstHandle: number): { copied: boolean; drawItem: boolean; mesh: boolean } {
+  const srcItem = s.drawItems.get(srcHandle);
+  const srcMesh = s.meshes.get(srcHandle);
+  if (!srcItem && !srcMesh) return { copied: false, drawItem: false, mesh: false };
+  if (srcItem) s.drawItems.set(dstHandle, cloneItem(srcItem, dstHandle));
+  if (srcMesh) s.meshes.set(dstHandle, cloneMesh(srcMesh, dstHandle));
+  return { copied: true, drawItem: !!srcItem, mesh: !!srcMesh };
+}
+
+/** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {
   const drawItems = s.drawItems.size;
   const meshes = s.meshes.size;
   s.drawItems.clear();

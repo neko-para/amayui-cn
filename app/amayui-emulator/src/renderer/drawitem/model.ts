@@ -187,3 +187,32 @@ export function makeDefaultItem(handle: number, layer = handle): Item {
 export function makeMesh(handle: number, layer: number): MeshObj {
   return { handle, layer, flags: 1, state0: 0xffffffff, state1: 0, anim: undefined };
 }
+
+/**
+ * **深拷贝一个 draw-item**（`0x21D` CopyScene 用）。
+ *
+ * 引擎 `sub_4AC0D0` 对元素做的是 `qmemcpy(dst, src+4, 0x2E4)` = **按位浅拷贝整块 740 字节**：
+ * 标量、5 个动画窗、三个矩阵、颜色全都复制成**独立的一份**（此后改 dst 不影响 src）。
+ * emulator 的 `Item` 里 `wins`/`scale*`/`rot*`/`trans*` 是引用类型 ⇒ 必须逐个复制，
+ * 否则两个 handle 会共享同一批窗/矩阵（与引擎不同）。
+ * `handle`/`layer` 取**目标** handle（emulator 里 handle = map key，用于排序与诊断）。
+ */
+export function cloneItem(it: Item, dstHandle: number): Item {
+  return {
+    ...it,
+    handle: dstHandle,
+    layer: dstHandle,
+    wins: it.wins.map((w) => ({ ...w })),
+    scaleWork: { ...it.scaleWork },
+    scaleTarget: { ...it.scaleTarget },
+    rotWork: { axis: { ...it.rotWork.axis }, deg: it.rotWork.deg },
+    rotTarget: { axis: { ...it.rotTarget.axis }, deg: it.rotTarget.deg },
+    transWork: { ...it.transWork },
+    transTarget: { ...it.transTarget },
+  };
+}
+
+/** 深拷贝一个 mesh（`0x21D` CopyScene 用；语义同 `cloneItem`）。 */
+export function cloneMesh(m: MeshObj, dstHandle: number): MeshObj {
+  return { ...m, handle: dstHandle, layer: dstHandle, anim: m.anim ? { ...m.anim } : undefined };
+}

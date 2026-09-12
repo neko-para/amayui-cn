@@ -68,16 +68,24 @@ async function main() {
       const r = decodeSaveData(hit.data);
       if (r.ok) {
         e.applySaveDataTables(r.data.tables);
+        // ★鉴赏/解锁进度（FileDB 的「已使用文件」表）：两侧并集（overlay 那份可能是旧版本写的空块）
+        const merged = await src.readSaveFlags();
+        const flags = merged && merged.length > 0 ? merged : [...r.data.usage.usedFileIds];
+        e.setUsedFileIds(flags);
         console.log(
           `[save] ${hit.path}（${hit.side}）「${r.data.title}」format=${r.data.format}：` +
-            `${r.data.tables.ints.size} 个 int / ${r.data.tables.strings.size} 个 string ⇒ 走 LOADCONFIG 分支`,
+            `${r.data.tables.ints.size} 个 int / ${r.data.tables.strings.size} 个 string / ` +
+            `已使用文件 ${flags.length} 个［本文件 ${r.data.usage.layout}:${r.data.usage.usedFileIds.size}` +
+            `${merged ? ` / 并集 ${merged.length}` : ''}］⇒ 走 LOADCONFIG 分支`,
         );
       } else {
         console.log(`[save] 无法解析 ${hit.path}（${r.reason}）⇒ 当作首次启动`);
       }
     }
     e.onSaveDataChanged = () => {
-      void src.writeSaveData?.(encodeSaveData({ tables: e.saveDataTables() }));
+      void src.writeSaveData?.(
+        encodeSaveData({ tables: e.saveDataTables(), usedFileIds: e.usedFileIds }),
+      );
     };
   }
 

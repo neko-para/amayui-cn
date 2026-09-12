@@ -71,7 +71,10 @@ export async function loadEngineConfig(e: Engine, trace: (line: string) => void)
       }
     };
     e.onSaveDataChanged = () => {
-      savePending = encodeSaveData({ tables: e.saveDataTables() });
+      // ★连同「已使用文件」标志一起写回（引擎的 SAVE.DAT 同一份 payload 里就有这块：
+      //   `sub_40AAE0` → `sub_404B20`/`sub_404BF0` → `sub_438320` 的 a7/a9）——
+      //   少写它会在第一次配置改动时把玩家的鉴赏进度覆盖掉。
+      savePending = encodeSaveData({ tables: e.saveDataTables(), usedFileIds: e.usedFileIds });
       void flushSave();
     };
   } catch (err) {
@@ -98,9 +101,17 @@ export async function loadSaveData(e: Engine, trace: (line: string) => void): Pr
       return;
     }
     e.applySaveDataTables(r.data.tables);
+    // ★「已使用文件」标志（FileDB 的鉴赏/解锁表）：引擎在装载 SAVE.DAT 时一并还原（raw 15202-15238）
+    //   ⇒ 回想界面的「回収数/回収率」与 BGM 鑑賞列表跨会话保留（不是每个存档槽各自一份）。
+    //   优先用 `readSaveFlags()`（主进程把 overlay 与 base **两侧取并集**）；没有该 API 时退回本文件里的那份。
+    const merged = await e.fileSource?.readSaveFlags?.();
+    const flags = merged && merged.length > 0 ? merged : [...r.data.usage.usedFileIds];
+    e.setUsedFileIds(flags);
     trace(
       `[save] ${r.data.title}（format=${r.data.format}，${r.data.tables.ints.size} 个 int / ` +
-        `${r.data.tables.strings.size} 个 string）⇒ 脚本将走 LOADCONFIG 分支`,
+        `${r.data.tables.strings.size} 个 string，已使用文件 ${flags.length} 个` +
+        `［本文件 ${r.data.usage.layout}:${r.data.usage.usedFileIds.size}${merged ? ` / 并集 ${merged.length}` : ''}］）` +
+        '⇒ 脚本将走 LOADCONFIG 分支',
     );
   } catch (err) {
     trace(`[save] 装载失败：${(err as Error).message}`);

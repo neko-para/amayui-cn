@@ -54,6 +54,11 @@ export class IpcFileSource implements FileSource {
     await window.api.writeSaveData?.(data);
   }
 
+  /** 「已使用文件」标志（主进程把 overlay 与 base 两侧取并集；见 `read-save-flags`）。 */
+  async readSaveFlags(): Promise<number[] | null> {
+    return (await window.api.readSaveFlags?.()) ?? null;
+  }
+
   async dispose(): Promise<void> {
     /* IPC 无句柄需清理，保持接口对齐。 */
   }

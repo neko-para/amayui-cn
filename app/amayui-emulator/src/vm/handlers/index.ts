@@ -30,6 +30,7 @@ import { MENU_OPS } from './menu.js';
 import { INPUT_OPS } from './input.js';
 import { AUDIO_OPS } from './audio.js';
 import { MUSIC_TABLE_OPS } from './music-table.js';
+import { RESOURCE_USAGE_OPS } from './resource-usage.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -49,6 +50,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...MENU_OPS,
   ...INPUT_OPS,
   ...MUSIC_TABLE_OPS, // 0x1D6/0x1D7/0x1D8：音乐表（写 op1，纯 VM 状态）
+  ...RESOURCE_USAGE_OPS, // 0x19D：已使用文件查询（回想/CG/BGM 鉴赏的解锁判定，写 op1）
 ]);
 
 /** 子系统 opcode → NativeBridge（`native`）。 */

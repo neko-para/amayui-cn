@@ -181,6 +181,7 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
 | `0xB5` | `i0b5` | **起播 SE 通道（播一次）** | `sub_420B40` → `sub_4B5020(SE, ch, 0)` | **2155** |
 | `0xB6` | `i0b6` | **停止/释放 SE 通道** | `sub_420B80` → `sub_4B5050(SE, ch)` | **1732** |
 | `0xB7` | `i0b7` | 在 BGM 当前槽播曲（循环） | `sub_420C00` → `sub_489F80(Music, id, 1)` | 30 |
+| `0xB8` | `i0b8` | **停 BGM**（清 `effect_flags` bit0x200 + 推进淡出 + `sub_489B50`；**不动** `sound:Music`） | `sub_419720` | 3（`MMODE.txt:63/462/552`，BGM 鑑賞） |
 | `0xB9` | `i0b9` | 在 BGM 当前槽播曲（不循环） | `sub_420C60` → `sub_489F80(Music, id, 0)` | 1（`GAMEOVER.txt:51 i0b9 20`） |
 | `0xBA` | `i0ba` | **起播 SE 通道（循环）** | `sub_420BC0` → `sub_4B5020(SE, ch, 1)` | 154 |
 | `0xBB` | `i0bb` | **SE 总开关** | `sub_420D90` → `sub_408D90` | 0 |
@@ -210,6 +211,8 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
 
 > 计数为 2026-09 全库 `^<助记符> ` 行匹配（`play-sound-effect` 2170、`play-bgm` 790、`play-voice` 14088）。
 > ★可见**语音族（`0x2F4`..`0x2FF`）使用量极大**（`0x2F6` 8.7 万处），而 SE/BGM 族只有千级 —— 因为 ADV 每个语音页都要"复位通道 + 设音量"。
+> ★BGM 的**解锁**（哪几首能在「BGM 鑑賞」里听到曲名）不在这张表里：它由引擎的「已使用文件」表 + `0x19D` 决定，见
+> [`gallery-and-unlock-flags.md`](./gallery-and-unlock-flags.md)。
 
 ## 8. 语料惯用法（读脚本时能直接认出的模式）
 

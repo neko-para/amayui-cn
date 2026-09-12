@@ -164,7 +164,7 @@
 | 0xB5 | 1 |  | sub_420B40 | 已核对 | **SE 通道起播（播一次）**：读 op1=通道 → `sub_4B5020(Engine+20719, 通道, 0)` →（设备在 且 `SE[261]`=`sound:SE` 开关开）`sub_4B6020(设备, 通道, 0)` → 先应用待定 seek、释放在播的循环缓冲、`sub_4B73E0(缓冲, 0)`。★第 3 参就是 SoundBuffer 的**循环标志**（`+9296`，raw 139322：非 0 循环、0 播完补静音）⇒ 0xB5 播一次、0xBA 循环。通道 >0xE 报 `dsPlaySound(%d)`、通道未绑缓冲报 `dsPlay(%d)`。**纯声音侧**。全库 **2155** 处（惯用法 `play-sound-effect 2e 1` + `i0b5 1`，`SP2563.txt:409-410`）。handler=sub_420B40（raw .c 29689-29697）。emulator：`op_engine_internal` 空操作。★别与 0x5B `ne` 混（助记符缺失 ⇒ 反汇编显示 `i0b5`，2026-09 曾把 `i0b5 1` 读成 `i05b`） |
 | 0xB6 | 1 |  | sub_420B80 | 已核对 | **SE 通道停止/释放**：`sub_4B5050(SE, 通道)` → `sub_4B6390(设备, 通道)`（临界区 + 引用计数 + 释放缓冲）并清 `SE[303+通道]`/`SE[262+通道]`。全库 **1732** 处（ADV 场景收尾）。handler=sub_420B80（raw .c 29699-29707） |
 | 0xB7 | 1 |  | sub_420C00 | 已核对 | **BGM 当前槽起播（循环=1）**：清 `Engine[174801]` bit 0x200 + `sub_489E50(Engine+174454,100)`（推进淡出）→ `sub_489F80(Music, op1, 1)`；`i0b7 0` = 停止/清当前曲。★**op1 = 曲号**（不是统一文件 id）：引擎 `MusicBase` 查「曲号 → 文件 id」表（`sub_48DB80` raw 108738：索引 = 曲号 − 2），本作等价于 `BGM%03d.OGG`（脚本侧 `MUINIT.txt` 的 A/B 两表逐条吻合；`play-bgm 1f` = 曲号 31 = `BGM031.OGG`）。全库 30 处（`CONFIG1.txt:2465 i0b7 29` = 设置界面里预览 BGM）。handler=sub_420C00（raw .c 29719-29734） |
-| 0xB8 | 0 |  | sub_419720 | 仅映射 |  |
+| 0xB8 | 0 |  | sub_419720 | 已核对 | **停 BGM**（0 操作数）：清 `effect_flags` bit0x200（在则 `sub_489E50(Music,100)` 推进淡出）→ `sub_489B50(Music)` 停播；**不动 `sound:Music` 配置**（与 0xBC 的"关模式"不同）。语料：`MMODE.txt:63/462/552`（BGM 鉴赏进界面/换曲试听先停上一首）。handler=sub_419720（raw 24817-24829）；emulator：`NATIVE_OPS` 的 `bgm-stop` |
 | 0xB9 | 1 |  | sub_420C60 | 已核对 | **BGM 当前槽起播（循环=0）**：同 0xB7 的淡出清理，但 `sub_489F80(Music, op1, 0)`（不循环）。op1 同为**曲号**（→ `BGM%03d.OGG`）。全库 1 处（`GAMEOVER.txt:51 i0b9 20`）。handler=sub_420C60（raw .c 29736-29751） |
 | 0xBA | 1 |  | sub_420BC0 | 已核对 | **SE 通道起播（循环）**：同 0xB5，但 `sub_4B5020(SE, 通道, 1)` ⇒ 循环标志 1。全库 154 处（环境音/持续音）。handler=sub_420BC0（raw .c 29709-29717） |
 | 0xBB | 1 |  | sub_420D90 | 已核对 | **SE 总开关**：读 op1 → `sub_408D90`（raw 13545）：与配置 `sound:SE` 现值比较（相同则不动）→ 关时把设备 0..9 通道全 `sub_4B60C0` 停掉并写 0，开时写 1；再 `sub_406DF0(_this,2,op1)`。全库 0 处。handler=sub_420D90（raw .c 29782-29790） |
@@ -268,7 +268,7 @@
 | 0x19A | 1 |  | sub_42D290 | 仅映射 |  |
 | 0x19B | 0 |  | sub_4190E0 | 已核对 | **退出消息/ADV**：清 `_this[174801]&~0x8000000`、`_this[1415]=0`。handler=sub_4190E0（raw .c 25031） |
 | 0x19C | 0 |  | sub_419120 | 已核对 | **进入消息/ADV**：`_this[97051]=1`、`_this[174801]|=0x8000000`、`_this[122368]=1`。handler=sub_419120（raw .c 25076） |
-| 0x19D | 2 |  | sub_42D8E0 | 仅映射 |  |
+| 0x19D | 2 |  | sub_42D8E0 | 已核对 | **已使用文件查询**：`op1 ← sub_4181F0(FileDB, op2)` = 「统一文件 id op2 是否**已被打开过**」(0/1)。`sub_4181F0`（raw 23838）读 `FileDB+1052`（本体）/ `FileDB+14404+4*包号`（扩展包）这张按 id 索引的哈希表，判据 `(u16)槽值 == (u16)(28569*id − 20304)`；写这张表的**只有** `sub_4559C0`（按 id 打开文件，raw 67832/67882 两处调 `sub_454960`）⇒ 语义 = 「该文件曾被打过」。★高字节 ≠ 0（扩展包资源）且 `set:SaveVersion1 < 3`（或 `==3` 且 `SaveVersion2 < 10`）⇒ 恒 0。**用途**：`SETMEMOIR.BIN` 靠它把「已播放过的 BGM / 看过的 CG / 看过的场景」标成已收集（回想界面 4 个按钮的 `回収数`/`回収率` 与 BGM 鉴赏列表都由它决定）——跳过它会让列表整片空白。见 `docs-new/03-engine/gallery-and-unlock-flags.md`。handler=sub_42D8E0（raw 38267-38285）；emulator：`OPS` 的 `op_file_used_query` |
 | 0x19E | 2 |  | sub_42D980 | 仅映射 |  |
 | 0x19F | 2 |  | sub_42DB10 | 仅映射 |  |
 | 0x1A0 | 9 |  | sub_42DC70 | 仅映射 |  |
@@ -302,7 +302,7 @@
 | 0x1BC | 0 |  | sub_4197A0 | 已核对 | **清理声音/消息字段**。handler=sub_4197A0（raw .c 25002） |
 | 0x1BD | 1 |  | sub_4212C0 | 已核对 | **play-voice（通道 0，循环位=1）**：同 0xC4 的寄存/起播/登记三件套，但循环标志传 1（`Engine[122508]=1`、`sub_4BB840(Voice,0,op1,1,Engine[5053])`（第 5 参 = pan）、`sub_45EEA0(…,1,0,pan)`），且 `Engine[21315]` 状态位的清 0 条件是 `(v&0x10000)||(v&1)`。全库 0 处。handler=sub_4212C0（raw .c 30021-30066） |
 | 0x1BE | 2 |  | sub_42E770 | 仅映射 |  |
-| 0x1BF | 0 |  | sub_419840 | 已核对 | **跳读态置**：按跳读态置 `_this[122503]=1`。handler=sub_419840（raw .c 25015） |
+| 0x1BF | 0 |  | sub_419840 | 已核对 | **跳读态置**（0 操作数）：`if (122504 & 0x10000) 122504 = 0; if ((122504 & 1) == 0) 122503 = 1;` —— `122504` 由 0x1CF 写入（消息跳读态），`122503` 的**唯一读者是 `0xBF` play-bgm**（raw 29773）：`set:KeepMusicVoice && sound:MusicFadeOnVoicePlaying && !122503` ⇒ 暂停 BGM 给语音让路（= 快进/跳读时不要压低音乐）。★不是脚本全局槽（`global-int 122503` 是另一个地址）。handler=sub_419840（raw 24874-24885）；emulator：`OPS` 的 `op_set_skip_read_state` |
 | 0x1C0 | 1 |  | sub_421450 | 仅映射 |  |
 | 0x1C1 | 3 |  | sub_420070 | 已核对 | **消息/UI 子系统方法**：读 op1..op3 调 `sub_4563D0(_this+21324, op1, op2, op3)`。fire-and-forget。handler=sub_420070（raw .c 28895） |
 | 0x1C2 | 2 |  | sub_4200C0 | 仅映射 |  |
@@ -370,7 +370,7 @@
 | 0x21A | 4 |  | sub_430450 | 仅映射 |  |
 | 0x21B | 1 |  | sub_423C20 | 已核对 | **引擎布尔标志**：读 op1，写 `_this[166965]=(op1!=0)`（成对读取方 sub_430810 回写操作数 1）。handler=sub_423C20（raw .c 31375） |
 | 0x21C | 0 | wait | sub_41A260 | 已核对 | **每脚本引擎状态槽→0x400 动画等待**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`（版权页/淡入淡出的"等几秒"等待门）。handler=sub_41A260（raw .c 25043）。旧 label `u00416270` |
-| 0x21D | 2 |  | sub_423C60 | 仅映射 |  |
+| 0x21D | 2 |  | sub_423C60 | 已核对 | **CopyScene**：`op1` = 源 handle、`op2` = 目标 handle（取值顺序先 op2 后 op1）→ `sub_4AC0D0(Scene, op1, op2)`（raw 131146）= 把源绘图项（+同 key 的网格）**整块复制**到目标 handle（引擎 `qmemcpy` 0x2E4/0x3C/0x23C；三张 map 都没命中 ⇒ 打「関数：CopyScene エラー：コピー元のシーンが存在しません」串并返回 0）。语料：`ROOM.txt:83/391`、`MMODE.txt:71/763`（把预置的全屏过渡幕布 handle 0 复制成临时项 `0x1f4`/`0x7d0` 再单独改色做淡入淡出）、`$1$SC0330.txt:17564`（复制 CG 图元做缩放绘制）。handler=sub_423C60（raw 31834-31843）；emulator：`scene/ops.ts` 的 `scCopyItem` + `OPS` 的 `op_copy_scene` |
 | 0x21E | 6 |  | sub_423CA0 | 已核对 | **缩放动画窗（DrawItem 窗1）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = sx/sy/sz`（`sub_41C300(...) / dbl_5201F0`，**÷100** —— `dbl_5201F0 = 100.0`（raw 4430），脚本里 `64` = 100%）→ `sub_4AD170(Scene, handle, delay, dur, sx, sy, sz)`（raw 31846-31862）。引擎写入（raw 131984-132018）：门控 `flags & 1` → `|= 2`、`+0x34 = 0`（共享起点）、`+0x3C = delay`、`+0x50 = dur`、`+0x68(+104) = 1`、`D3DXMatrixScaling(元素+0xAC, sx,sy,sz)`（**目标**缩放矩阵；工作矩阵在 `+0x6C`）→ 置 `[11627]=1`、`[11629]=1`。★`dur` 是插值分母（ms）。★订正：旧文档写 `÷256`（把 `dbl_5201F0` 误记为 256.0）——它是 **100.0**，`0x12c`=300 ⇒ 3.0 倍。handler=sub_423CA0（raw .c 31846） |
 | 0x21F | 7 |  | sub_423D40 | 已核对 | **旋转动画窗（DrawItem 窗2）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = 旋转轴 (x,y,z)`、`op7 = 角（度）` → `sub_4AD250(...)`（raw 31867-31885）。引擎写入（raw 132022-132075）：`|= 2`、`+0x34 = 0`、`+0x40 = delay`、`+0x54 = dur`、`+0x68 = 1`、轴存 `+0x1F8/+0x1FC/+0x200`、止角存 `+0x208`（起角在 `+0x204`），并 `D3DXMatrixRotationAxis(元素+0x12C, axis, θ·π/180)`（**目标**旋转矩阵）。度数→弧度换算常量 `dbl_526C98/dbl_5263F0`。handler=sub_423D40（raw .c 31867） |
 | 0x220 | 6 |  | sub_423DE0 | 已核对 | **平移动画窗（DrawItem 窗3）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = 位移 (x,y,z)`（★**不除 256**，与 0x21E 不同）→ `sub_4AD3C0(...)`（raw 31889-31905）。引擎写入（raw 132081-132114）：`|= 2`、`+0x34 = 0`、`+0x44 = delay`、`+0x58 = dur`、`+0x68 = 1`、`D3DXMatrixTranslation(元素+0x1AC, x,y,z)`（**目标**平移矩阵）。handler=sub_423DE0（raw .c 31889） |

@@ -176,6 +176,7 @@ const BRIDGE_METHODS = [
   'releaseTexture',
   'setDrawColor',
   'setDrawColorAlpha',
+  'copyScene',
   'setDrawPivot',
   'setDrawPos',
   'setDrawTranslation',

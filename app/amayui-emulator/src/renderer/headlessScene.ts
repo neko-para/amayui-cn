@@ -21,6 +21,7 @@ import {
   scDrawCgNumber,
   scSetDrawColor,
   scSetDrawColorAlpha,
+  scCopyItem,
   scSetDrawPivot,
   scDrawString,
   scCreateTextureReset,
@@ -203,6 +204,16 @@ export class HeadlessScene implements NativeBridge {
 
   setDrawColor(handle: number, delay: number, dur: number, to: number): void {
     this.outcome(scSetDrawColor(this.scene, handle, delay, dur, to), 'setDrawColor', `handle=0x${handle.toString(16)}`);
+  }
+
+  /** `0x21D` CopyScene：源项（+网格）整份复制到目标 handle。源不存在 ⇒ false（引擎打错误串）。 */
+  copyScene(srcHandle: number, dstHandle: number): boolean {
+    const r = scCopyItem(this.scene, srcHandle, dstHandle);
+    this.log(
+      `[scene] CopyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}` +
+        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh}）` : '【源不存在】'),
+    );
+    return r.copied;
   }
 
   setDrawColorAlpha(handle: number, from: number, blend = 0): void {

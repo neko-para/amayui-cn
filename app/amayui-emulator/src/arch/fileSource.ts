@@ -62,6 +62,14 @@ export interface FileSource {
   /** 读 `SAVE.DAT` 原始字节（没有该文件返回 null）。 */
   readSaveData?(): Promise<Uint8Array | null>;
   /**
+   * 读**「已使用文件」标志**（`SAVE.DAT` 里的鉴赏/解锁块；返回统一文件 id 数组）。
+   *
+   * 与 `readSaveData` 分开的理由：那份只取"优先级最高的文件"（overlay → base），而标志是**单调集合**，
+   * 实现应当把两侧并起来（见 `NodeFileSource.readSaveFlags`）⇒ 不因 overlay 里的旧副本而丢玩家进度。
+   * 不实现 = 只用 `readSaveData` 那一份里的标志。
+   */
+  readSaveFlags?(): Promise<number[] | null>;
+  /**
    * 写 `SAVE.DAT`（整份字节；由 `saveData.encodeSaveData` 序列化）。
    *
    * 调用方是 `Engine.onSaveDataChanged`（脚本 `save-int`/`save-string` 改了表）。

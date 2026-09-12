@@ -197,9 +197,29 @@ export const op_set_engine_flag_174812: OpHandler = (c) => {
   c.e.engineValues.set(174812, v);
 };
 
+/**
+ * **`0x1BF`（`sub_419840` raw 24874-24885）：跳读态置**（0 操作数，不写任何操作数）。
+ *
+ * ```c
+ * if ((_this[122504] & 0x10000) != 0) _this[122504] = 0;   // 清掉"某模式"位（整字段归零）
+ * if ((_this[122504] & 1) == 0)        _this[122503] = 1;  // 不是"通常消息模式" ⇒ 进入跳读态
+ * ```
+ * `122504` 由 `0x1CF`（`sub_4213C0`）写入（本文件的 `ENGINE_FIELD_STORE` 已建模）；`122503` 的
+ * **唯一读者是 `play-bgm`**（`sub_420CC0` raw 29769-29777）：`set:KeepMusicVoice && sound:MusicFadeOnVoicePlaying
+ * && !_this[122503]` ⇒ 暂停 BGM 给语音让路 —— 即「快进/跳读时不要把 BGM 压下去」。
+ *
+ * 为什么不能当 no-op：它**改引擎状态**（且会清 `122504` 的 bit16），下游 `play-bgm` 的分支据此分叉；
+ * 跳过它会让"快进时的 BGM 让路"行为与真机相反（语音一来 BGM 就被暂停）。
+ */
+const op_set_skip_read_state: OpHandler = (c) => {
+  const e = c.e;
+  const state = e.engineValues.get(122504) ?? 0;
+  if ((state & 0x10000) !== 0) e.engineValues.set(122504, 0);
+  if (((e.engineValues.get(122504) ?? 0) & 1) === 0) e.engineValues.set(122503, 1);
+};
+
 /** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */
-export const ENGINE_FIELD_OPS: OpTable = [
-  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
+export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
   // ---- 「读操作数 → 写引擎字段」一族（真实现；规格见 ENGINE_FIELD_STORE）----
   [0x76, op_engine_field_store], // _this[21664]
   [0x77, op_engine_field_store], // _this[21665]
@@ -214,6 +234,7 @@ export const ENGINE_FIELD_OPS: OpTable = [
   [0x21b, op_engine_field_store], // _this[166965] = (op1!=0)（配套 getter 0x247）
   [0x24e, op_engine_field_store], // _this[92340]
   [0x1cf, op_engine_field_store], // **消息跳读态**：`_this[122504] = op1`（sub_4213C0 raw 30069）
+  [0x1bf, op_set_skip_read_state], // **跳读态置**：按 122504 置 `_this[122503]`（sub_419840 raw 24874）
   [0x10f, op_engine_field_store], // _this[122369]
   [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
   [0x107, op_set_key], // _this[op1+551] = op2

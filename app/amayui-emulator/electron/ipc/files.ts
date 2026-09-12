@@ -15,6 +15,7 @@ import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
 import { parseIni } from '../../src/engineConfig.js';
+import { unionUsedFileIds } from '../../src/vm/saveData.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
 import { FONT_DIR, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
@@ -105,6 +106,27 @@ export function registerFileIpc(): void {
     const target = await systemFiles.write(SAVE_DAT_REL, Buffer.from(data));
     console.log(`[main] save data <- ${target} (${data.length} bytes)`);
     return { path: target };
+  });
+
+  /**
+   * 「已使用文件」标志（`SAVE.DAT` 开头的 int 块 = FileDB 的鉴赏/解锁表）：**两侧取并集**。
+   *
+   * 与 `read-save-data` 的区别：那个只返回优先级最高的那一份；标志是**单调集合**（引擎只会加、不会删），
+   * 而 overlay 那份可能是旧版本写的（缺 flag 块）或落后于真游戏那份 ⇒ 并集才不丢玩家的回想进度。
+   */
+  ipcMain.handle('read-save-flags', async () => {
+    const bufs: Buffer[] = [];
+    for (const p of [systemFiles.overlayFile(SAVE_DAT_REL), systemFiles.baseFile(SAVE_DAT_REL)]) {
+      try {
+        bufs.push(fs.readFileSync(p));
+      } catch {
+        /* 该侧没有 */
+      }
+    }
+    if (bufs.length === 0) return null;
+    const { ids, layouts } = unionUsedFileIds(bufs.map((b) => new Uint8Array(b)));
+    console.log(`[main] save flags -> ${ids.length} 个（${layouts.join(' + ')}）`);
+    return ids;
   });
 
   // 读内置字体文件（`res/fonts/<file>`）。**白名单式**：拒绝任何含 `..` 或绝对路径的请求。

@@ -197,6 +197,25 @@ const op_set_draw_color_alpha: OpHandler = (c) => {
 };
 
 /**
+ * **`0x21D` CopyScene**（`sub_423C60` raw 31834-31843）：`op1` = 源 handle、`op2` = 目标 handle
+ * （引擎取值顺序：先 op2 后 op1，随后 `sub_4AC0D0(Scene, op1, op2)`）。
+ *
+ * 引擎把源绘图项（以及同 key 的网格）**整块复制**到目标 handle；两张都找不到 ⇒ 打错误串
+ * 「関数：CopyScene エラー：コピー元のシーンが存在しません．%d」并返回 0。
+ * 语料用途：把预置的「全屏过渡幕布」（handle 0）复制成临时 handle 再单独改色做淡入淡出
+ * （`ROOM.txt:83/391`、`MMODE.txt:71/763`），ADV 里也用它复制 CG 图元做缩放绘制。
+ */
+const op_copy_scene: OpHandler = (c) => {
+  const src = readIntOperand(c.e, c.frame, c.instr, 1);
+  const dst = readIntOperand(c.e, c.frame, c.instr, 2);
+  const r = c.native.copyScene?.(src, dst);
+  if (r === false) {
+    // 引擎打错误串（可见日志），emulator 同样留痕、不静默。
+    c.log(`  [CopyScene] 复制源不存在：src=0x${src.toString(16)} dst=0x${dst.toString(16)}（引擎「コピー元のシーンが存在しません」）`);
+  }
+};
+
+/**
  * 绘制项位置/变换/颜色/几何。
  *
  * ★两张表的分界**不是**"有没有转发 native"（这些全都转发），而是**注册在哪个 handler 表**：
@@ -212,6 +231,7 @@ export const GFX_ITEM_OPS: OpTable = [
   [0x1f6, op_clear_draw_container], // 整批释放绘制项/网格 → native.clearDrawContainer
   [0x1fd, op_set_scale], // 3D 缩放变换（百分数）→ native.setScale
   [0x1ff, op_set_draw_translation], // DrawItem 像素平移（+0x68 用世界矩阵 / +0x16C work 矩阵）→ native
+  [0x21d, op_copy_scene], // CopyScene（源项 → 目标 handle 整份复制）→ native.copyScene
 ];
 
 /** 绘制项的 native 路由表（`handlerKind === 'native'`）。 */

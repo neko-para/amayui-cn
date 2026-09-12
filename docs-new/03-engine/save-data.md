@@ -105,11 +105,41 @@ trailerDwords × u32                           ← 尾部块（3.10+ 放 a9/a10/
   （`sub_40CD10` 内 raw 17687 → `sub_40AAE0`）；装载：启动（raw 142107）。
   写的都是 `$$SAVE.DAT` → 改名，旧文件留 `SAVE.BAK`。
 
+### 3.5 ★payload 开头的 int 块 = 「已使用文件」标志（= 回想/鉴赏进度）
+
+> 2026-09 订正：这块**不是**"存档槽用的 int 块"，而是 `FileDB`（`Engine+680092`）的
+> **「已使用文件」表** —— 回想界面四个按钮的 `回収数/回収率`、BGM 鑑賞列表里哪几首显示曲名，全由它决定。
+> 完整机制见 [`gallery-and-unlock-flags.md`](./gallery-and-unlock-flags.md)。
+
+装载侧 `sub_40AEE0` raw 15202-15238（写侧 `sub_40AAE0` raw 15034-15074 把 `sub_404B20`/`sub_404BF0`
+拿到的块交给 `sub_438320`）：
+
+```text
+块 A（payload 开头，dword 数 = intCount）：
+  SaveVersion1>2（或 ==2 且 SaveVersion2>=10）：[key1 ^ 0x87912345][key2][槽值 × N]
+                                                槽下标 = 统一文件 id（本体 0..N-1），非 0 = 该文件被打开过
+  旧版本：                                      [槽值 × N]（无头，值 = 明文哈希）
+块 B（payload 尾部，仅 3.10+ 写；下标是"跨包线性下标"）：
+  [256 dword：每包文件数][u32 块B dword 数][块B][u32 0 终止]
+  块B = [key^0x87912345][key2][槽值 × M]，装载时用那张 256 项表把线性下标 j 换算成 (包号<<24)|包内编号
+```
+
+- **判据是"槽值非 0"**（值本身只是防改档哈希 `87912345*id − 1330597712`，低 16 位 ≡ `28569*id − 20304`；
+  新格式再经 `sub_499650` 模幂混淆）⇒ emulator **不需要**实现模幂还原，只需"非 0 即已使用"。
+- **布局判定**：引擎用**配置里的** `set:SaveVersion1/2` 决定有没有那 2 dword 头，而同一组版本号也决定头的
+  `format ≥ 3` ⇒ 读侧用 `format ≥ 3` 判别（本机真存档正是 `format=3` + 头两块 dword，实测相符）。
+- 真机实测（2026-09，本机 `SAVE\SAVE.DAT`，161,584 B）：`format=3`、`intCount=21111`（= 本体 21109 个文件 + 2 头）、
+  **`已使用文件 = 11106` 个** ⇒ 回想界面 `CG 797/1269、シーン 14/23、BGM 31/36`（BGM 缺 `0x15/0x16/0x1d` 三首 +
+  两张 OP/ED 影片 id）。
+
 ## 4. `RT.DAT` 是什么
 
 同一个写入器顺带写的"续玩"文件（`sub_48EB60` / 读 `sub_48FCE0`），对象是 `Engine+320428`
 （消息/ADV 文本状态区）：魔数 `S3RT`、其余容器结构与 `SAVE.DAT` 相同。
 **emulator 未建模**（ADV 回看/文本状态未建模）。
+
+> ★**`RT.DAT` 不是鉴赏/解锁进度的载体**（2026-09 核查）：那份进度是**同一个 `SAVE.DAT`** 的
+> payload 开头那一块（§3.5），装载时由 `sub_40AEE0` 写进 `FileDB`。`RT.DAT` 里只有 ADV 续玩状态。
 
 ## 5. 真存档验证（E4）
 
@@ -145,9 +175,11 @@ SAVE.DAT (160,640 B) format=3
 | 启动装载 → `load-int`/`load-string`（⇒ 走 LOADCONFIG 分支，设置跨会话保留） | ✅ E3 真语料断言 |
 | 读**引擎格式**（format 1..3：Crypt + LZSS + 表） | ✅ 真存档 E4 通过 |
 | 引擎载荷的 `trailerDwords`（字符串记录区起点 = `strCount` + 8） | ✅ 已实现 + 结构自校验（`parseTables(…, engineLayout)`），回归见 `test/save-data.test.ts` |
+| **`SAVE.DAT` 的「已使用文件」块**（payload 开头的 int 块 = 回想/鉴赏进度） | ✅ 已解（`SaveDataUsage`：槽值非 0 = 已使用；`format≥3` 判新布局）；两侧并集见 `NodeFileSource.readSaveFlags`；守卫 `test/gallery-bgm-list.test.ts` 的 E4 |
 | 不写坏真存档：**overlay 层**（读 overlay→base，写只写 overlay） | ✅ `src/arch/systemPaths.ts` + `src/arch/overlay.ts`，守卫 `test/overlay.test.ts`；Electron 主进程与 Node 侧共用同一份实现 |
 | `SYS4REG.INI` 回写的防丢键棘轮 | ✅ 新文本键数少于**当前生效的那份**（overlay 优先，否则真游戏）时拒绝写 |
-| int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（配置值不在该块） |
+| int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（也不需要：鉴赏进度只要"槽值非 0"） |
+| 扩展包 flag 块（§3.5 的块 B：跨包线性下标 + 256 项换算表） | ❌ 未解（基础版 BGM/CG 全是本体 id ⇒ 不影响本机实测；布局已记在 §3.5） |
 | `RT.DAT`（ADV 回看状态） | ❌ 未建模 |
 | 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ❌ 未实现（菜单未接） |
 

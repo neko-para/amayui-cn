@@ -159,6 +159,45 @@ export class Engine {
   musicTable: import('../script/alf.js').MusicTables & { groups: number[][] } = { other: [], base: [], groups: [] };
 
   /**
+   * **「已使用文件」标志集**（引擎 `FileDB` 的每包一张哈希表：`FileDB+1052`（本体）与
+   * `FileDB+14404+4*包号`（扩展包）；2026-09 读体落地）。
+   *
+   * - **写**：引擎在 `sub_4559C0`（按统一 id 打开文件）里调 `sub_454960(FileDB, id)` 写入该 id 的
+   *   确定性哈希 `87912345*id - 1330597712`（低 16 位 ≡ `28569*id - 20304`）⇒ **任何被打开过的文件
+   *   都会留痕**（脚本、图像、音频都一样）。
+   * - **读**：`sub_4181F0(FileDB, id)` 把该槽读回来与同一个哈希比对 ⇒ 0/1；指令 `0x19D` 就是它
+   *   （`op1 ← 该 id 是否已被打开过`）。
+   * - **为什么这决定「回想 → BGM 鉴赏」的曲目表**：`$3$SETMEMOIR`（每进一次回想都跑）用 `0x19D`
+   *   逐条问 `12265c[i]`（BGM 的统一文件 id，由 `MUINIT.BIN` 填）⇒ 解锁的曲目下标写进 `122731`、
+   *   数量写 `12272f`；`MMODE`（BGM 鉴赏）只画这些下标。**少实现 0x19D ⇒ 整个列表 0 条**（实测：
+   *   36 条曲目、0 条解锁、百分比 0）。
+   * - 引擎把这张表持久化在 `$$SAVE.DAT`（`sub_40AAE0` 装载 / `sub_404A70` 写回，带随机密钥校验头）——
+   *   emulator 目前只做会话内（不读 `$$SAVE.DAT`，缺口写在文档里）。
+   */
+  usedFileIds = new Set<number>();
+
+  /** 标记「统一文件 id 已被打开」（引擎 `sub_454960`；见 `usedFileIds`）。 */
+  markFileUsed(id: number): void {
+    if (id > 0) this.usedFileIds.add(id);
+  }
+
+  /** `0x19D` 的查询（引擎 `sub_4181F0`）：该统一文件 id 是否已被打开过。 */
+  isFileUsed(id: number): boolean {
+    return this.usedFileIds.has(id);
+  }
+
+  /**
+   * **从 `SAVE.DAT` 恢复「已使用文件」标志**（引擎 `sub_40AEE0` raw 15202-15238 → `sub_404A70`）。
+   *
+   * 引擎在 `WinMain` 里装载 `SAVE.DAT` 时，把 payload 开头那块整块还原进 FileDB 的标志表 ⇒
+   * **鉴赏/解锁进度是跨会话、跨存档的**（不是每个存档槽各自一份）。emulator 由宿主在装载存档后调用。
+   */
+  setUsedFileIds(ids: Iterable<number>): void {
+    this.usedFileIds = new Set<number>();
+    for (const id of ids) this.markFileUsed(id);
+  }
+
+  /**
    * **配置被脚本改写后的钩子**（宿主注入持久化；VM 只管"配置变了"这件事）。
    *
    * 引擎侧：`SetConfig` 类指令（`0x141`/`0x1B5`/`0x1B9`/`0x2CD`/`0x2E7`/`0x2E8`…）只改内存里的配置表，

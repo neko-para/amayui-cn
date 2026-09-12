@@ -8,6 +8,7 @@
  * 用法（**先 `npm run build:electron`**，因为本脚本复用主进程产物 `dist/electron/main.cjs`）：
  *   npm run shot                     # 默认路径：TITLE → CONFIG → CONFIG1 → 角色设定 → 回第 1 页
  *   npm run shot -- --tabs 9 8       # 只点指定的左侧分类序号（0..5），按给出的顺序
+ *   npm run shot -- --gallery        # 回想 → BGM 鉴赏（第三个按钮）：验证曲目列表能列出来
  *   npm run shot -- --name mycase    # 产物前缀（默认 shot）
  *
  * 产物：`<仓库根>/.tmp/<name>-<步骤>.png`（每步一张）+ 主进程 stdout。
@@ -46,6 +47,13 @@ const TABS = (argOf('tabs', '4')) // 默认：先看角色设定（曾经黑屏�
 
 /** TITLE 菜单「CONFIG」项命中点（与 src/tools/config1Chain.ts 的 CONFIG_XY 一致）。 */
 const CONFIG_XY = [807, 621];
+/**
+ * TITLE 菜单「回想（ROOM）」与 ROOM 里第三个按钮「BGM 鑑賞（MMODE）」的命中点。
+ * 由命中区扫描得到（`.tmp/menuScan.mts`，20px 网格取质心；同一方法给出的 CONFIG 质心
+ * = (814,618)，与上面已知可用的 CONFIG_XY 一致 ⇒ 该方法可信）。
+ */
+const ROOM_XY = [956, 577];
+const MMODE_XY = [1018, 450];
 /** 左侧分类列表第 i 项的中心（贴片画在 (24, 106+50i)，190×26）。 */
 const tabXY = (i) => [120, 106 + 50 * i];
 
@@ -100,6 +108,24 @@ async function shot(win, step) {
   console.log(`[shot] TITLE=${okTitle}`);
   await sleep(4000);
   await shot(win, '0-title');
+
+  // ---- --gallery：回想 → BGM 鉴赏（第三个按钮）。验证 0x19D/0x1BF/0x21D/0xB8 那一族的可见效果 ----
+  if (argv.includes('--gallery')) {
+    await click(win, ROOM_XY);
+    const okRoom = await waitLog('-> ROOM.BIN', 30000);
+    console.log(`[shot] ROOM=${okRoom}`);
+    await sleep(3000);
+    await shot(win, '4-room');
+    await click(win, MMODE_XY);
+    const okMmode = await waitLog('-> MMODE.BIN', 30000);
+    console.log(`[shot] MMODE=${okMmode}`);
+    await sleep(4000);
+    await shot(win, '5-bgm-list');
+    console.log('[shot] 完成（gallery）');
+    app.quit();
+    return;
+  }
+
   await click(win, CONFIG_XY);
   const okConfig = await waitLog('-> CONFIG1.BIN', 30000);
   console.log(`[shot] CONFIG1=${okConfig}`);

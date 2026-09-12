@@ -43,6 +43,7 @@ import {
   scCreateTextureReset,
   scSetDrawColor,
   scSetDrawColorAlpha,
+  scCopyItem,
   scSetDrawPivot,
   scSetDrawPos,
   scSetDrawTranslation,
@@ -396,6 +397,20 @@ export class PixiBackend implements NativeBridge {
     this.waitFlags |= mask;
     this.#markDirty();
     this.#pushLog(`setWaitFlag 0x${mask.toString(16)} (~0x${(this.waitFlags & mask).toString(16)})`);
+  }
+
+  /**
+   * `0x21D` CopyScene（`sub_4AC0D0`）：源绘图项 + 网格整份复制到目标 handle，并标脏重绘。
+   * 源不存在 ⇒ 返回 false（引擎打「コピー元のシーンが存在しません．%d」错误串）。
+   */
+  copyScene(srcHandle: number, dstHandle: number): boolean {
+    const r = scCopyItem(this.scene, srcHandle, dstHandle);
+    this.#markDirty();
+    this.#pushLog(
+      `CopyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}` +
+        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh}）` : '【源不存在】'),
+    );
+    return r.copied;
   }
 
   releaseTexture(layer: number): void {

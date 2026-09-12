@@ -149,6 +149,7 @@ emulator 已把整条链路接通，**并且能读引擎格式的真存档**（`
 | 写盘路径 | Electron IPC `read/write-save-data`；Node `NodeFileSource.writeSaveData`（两侧同一份 overlay 实现） |
 | **不覆盖真存档** | 写永远只落 overlay ⇒ 真游戏目录（几十个存档槽 + 真配置）一个字节都不会被改 |
 | 载荷表结构 | `saveData.parseTables(…, engineLayout)`：引擎的字符串记录区从 `strCount` 之后 **8** 字节起（中间 4 字节 = `trailerDwords` = 记录区字节数/4 + 1）；少跳 4 字节不报错，只会**静默丢掉最后一条记录**（真存档里恰是字体键 `bbf`），见 `docs-new/03-engine/save-data.md` §3 |
+| **回想/鉴赏进度**（`SAVE.DAT` 开头的 int 块 = FileDB「已使用文件」表） | `saveData.SaveDataUsage`（`format≥3` 判新布局；判据「槽值非 0」）；启动时 `NodeFileSource.readSaveFlags()` / 主进程 `read-save-flags` 把 overlay 与 base **取并集**（进度是单调集合 ⇒ 老 overlay 也不会丢进度）；写回时一并带上。真机实测 `BGM 31/36`，见 `docs-new/03-engine/gallery-and-unlock-flags.md` |
 
 **overlay 目录布局**（`AMAYUI_SYSTEM_DIR` / `AMAYUI_OVERLAY_DIR` 可覆盖）：
 
@@ -216,7 +217,13 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   它们作用在 `Engine[698900]` = `Music[271]` = **PCM 播放器**的两张曲号表（`+1304` 扁平表 = 曲号 − 2 → 文件 id；
 >   `+1320` 分组表 = 扩展包曲子），并且**都会回写 op1**。当初按 no-op 的理由是"结果写进没人读的 `global 70801e`"
 >   —— 但**写全局表本身就是副作用**，而且这张表就是 `play-bgm` 的曲号解析（`sub_48DB80`）读的表。
->   守卫 `test/music-table.test.ts` + `test/append-packs.test.ts` 的 E3 段。）
+>   守卫 `test/music-table.test.ts` + `test/append-packs.test.ts` 的 E3 段。
+>   **回想/鉴赏路径上的四条也已转真实现**（2026-09）：`0x19D`（`handlers/resource-usage.ts`，
+>   「该统一文件 id 是否已被打开过」—— 它是回想四个按钮的 `回収数/回収率` 与 BGM 鑑賞列表的**唯一数据源**，
+>   跳过它会让列表整片空白）、`0x1BF`（跳读态）、`0x21D`（`Scene::CopyScene`，过渡幕布复制）、
+>   `0xB8`（停 BGM，走音频族 `{kind:'bgm-stop'}`）。守卫 `test/gallery-bgm-list.test.ts`；
+>   真机出图 `npm run shot -- --gallery`（`.tmp/gallery-5-bgm-list.png`）。语义见
+>   `docs-new/03-engine/gallery-and-unlock-flags.md`。）
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。

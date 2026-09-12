@@ -13,10 +13,10 @@
 |---|---|---|
 | `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 21 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 22 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 23 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **98** | 需要关注（非 n/a 且非已核验）= **51** |
+| **合计** | **99** | 需要关注（非 n/a 且非已核验）= **52** |
 
 ## 按子系统
 
@@ -28,7 +28,7 @@
 | 帧循环 | 13 | 8 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
-| 资源 | 11 | 2 |
+| 资源 | 12 | 3 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -134,6 +134,7 @@
 | `audio-module-topology-and-volume-routing` | 声音 | 音频三模块拓扑与音量路由（设备 / SE / Voice / Music） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `voice-request-deferral-and-adv-gate` | 声音 | ADV 激活期间的语音寄存与冲刷（文本↔语音联动） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `music-number-table-lifecycle` | 声音 | BGM 曲号表（PCM 扁平表 + 分组表）的装载、增长与解析 | ✅ 已核验 | E3 · `test/music-table.test.ts` |
+| `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -532,3 +533,12 @@
 - **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
 - **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
 - **emulator 现状**：缺口：字号/面名/字重参数面完全没接（0x75/0x197/0x2BD/0x2BE/0x1A5/0x2FE/0x2DB 目前是 no-op）。浏览器方案下等价物 = 排版的 fontSnap（family/size/weight）+ 注音字号，并需保留「面名白名单 → 内嵌字族」映射（含剥掉竖排用的 "@" 前缀）。
+
+### `gallery-unlock-file-used-flags`（partial）
+
+- **能力**：回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度
+- **触发**：打点：**任何按统一 id 打开文件的时刻**（`sub_4559C0` → `sub_454960`）—— 载图（`0x1F9` set-texture）、放 BGM（`sub_48DB80` 曲号解析里就打开了文件）、装载脚本（call-script / `i143` 派发）都算。查询：`0x19D`（`sub_42D8E0` → `sub_4181F0`）；消费：进入回想（TITLE「回想」→ `ROOM.BIN` 里 `call-script 524c SETMEMOIR`）时逐条问 CG 表 / 场景表 / BGM 表，把已收集的下标写进 `122731`（BGM）/`10e3af`（CG），并算 `回収数`/`回収率`（`12272f`/`12272e`、`10e3ad`/`10e3ac`）。
+- **缺失时为什么静默**：★缺了**不报错、只表现不对**：`sub_4181F0` 对"表不存在/哈希不符"一律返回 0（= 「没收集」），`0x19D` 于是把 op1 写 0 —— 于是 `SETMEMOIR` 把每一项都当未收集 ⇒ 回想界面四个按钮全 `回収数 0 / 回収率 0%`、**BGM 鉴赏列表整片 UNKNOWN/空白**。而引擎/脚本都不会为此打任何日志或异常（2026-09 用户实测：进 BGM 鉴赏只看到空列表）。反向静默：进度只存在 `$$SAVE.DAT` 里，不读它就"每次启动都从零开始攒"，而画面上看不出任何异常。
+- **引擎**：sub_4559C0, sub_454960, sub_404A70, sub_4181F0, sub_42D8E0, sub_40AAE0, sub_404B20 @ raw 23838-23856
+- **读的字段**：FileDB+1052（本体「已使用」表）/ +14404+4*包号（扩展包表）, FileDB+13368 / +15432+4*包号（防篡改副本，密钥由 ctor 的 srand 抽签）, global 12265c[1..64]（BGM 统一文件 id，MUINIT 填）, global 1226c0[1..64]（BGM 曲号）+ global-string 3629[1..64]（曲名）, global 122731[1..n]（已收集的 BGM 下标）/ 12272f（数量）/ 12272e（收集率）, global 10e3af / 10e3ad / 10e3ac（CG 收集表与收集率）、122271 / 12251c / 122519（场景回想）, $$SAVE.DAT（整表的持久化载体；装载 sub_40AAE0，头 sub_404B20）
+- **emulator 现状**：实现（2026-09）：`Engine.usedFileIds`（键 = **完整统一 id**，天然分"包"）+ `markFileUsed()`，打点三处 —— ① `0x1F9` set-texture（载图，= CG/场景收集）；② `play-bgm` 的曲号解析命中（= BGM 收集，引擎在 `sub_48DB80` 里就打开了文件）；③ 脚本装载（call-script / `i143`，与引擎同口径，无害）。`0x19D` 转真实现（`handlers/resource-usage.ts`），含扩展包资源的版本门。E3 守卫：`test/gallery-bgm-list.test.ts` —— 真实语料启动到 TITLE（其间 `play-bgm 1f` 解锁标题曲）→ 直接调 `SETMEMOIR`（0x524c）→ 断言 `122730 = 36`、`12272f ≥ 1`、`122731[1] = 2`（= 曲号表下标 2 = 文件 id 0x17 = BGM031.OGG）、`12272e = 2`；同一条路径上"不得再有未知指令"（修好前是 `0x19D×1`）。E4：`npm run shot -- --gallery`（回想 → BGM 鑑賞）出图 —— 界面显示 `回収率 5%`/`回収数 2/36 曲`，两条已收集曲目显示曲名（标题曲＋ROOM 的 BGM）、其余为 `UNKNOWN`（`.tmp/gallery-5-bgm-list.png`；回想界面同图见 `.tmp/gallery-4-room.png`）。★2026-09 补齐（持久化）：该进度**存在 `SAVE.DAT`**（`payload` 开头的 int 块 = FileDB 的「已使用文件」表；写 `sub_40AAE0` → `sub_438320` 的 a7/a8，装载 `sub_40AEE0` raw 15202-15238 → `sub_404A70`），**不是** `RT.DAT`（那是 ADV 续玩状态）。`saveData.ts` 现在解/写这块（`SaveDataUsage`，判据「槽值非 0」，`format≥3` 判新布局），启动时 `NodeFileSource.readSaveFlags()` / 主进程 `read-save-flags` 把 overlay 与 base **取并集**（进度是单调集合）⇒ 继承玩家真存档进度。★E4 实测（本机 `SAVE\SAVE.DAT` 161,584 B / format=3 / `intCount=21111` ⇒ 已使用文件 **11106**）：`npm run shot -- --gallery` 出图 `CG 797/1269、シーン 14/23、BGM **31/36**（回収率 86%）`，BGM 列表 31 首显示曲名、5 条 UNKNOWN（缺 0x15/0x16/0x1d 三首 + 两张 OP/ED 影片 id）—— `.tmp/gallery-save-*.png`。★残留缺口：① **扩展包 flag 块**（payload 尾部：跨包线性下标 + 256 项每包文件数表）未解 —— 布局已记在 `docs-new/03-engine/save-data.md` §3.5，基础版 BGM/CG 全是本体 id ⇒ 不影响本机实测；② `sub_499650` 的模幂还原未实现（不需要：只要「槽值非 0」）；③ 2026-09 之前的本工程 overlay `SAVE.DAT` 不写这块（会遮住真存档进度）⇒ 已用「两侧并集」兜住。

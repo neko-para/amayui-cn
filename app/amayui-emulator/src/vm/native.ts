@@ -198,6 +198,12 @@ export interface NativeBridge {
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */
   setDrawColor?(handle: number, delay: number, count: number, to: number): void;
   /**
+   * **0x21D CopyScene**（`sub_423C60` → `sub_4AC0D0` raw 131146）：把源绘图项（+同 key 的网格）
+   * 整块复制到另一个 handle。找不到源 ⇒ 返回 `false`（引擎打「コピー元のシーンが存在しません」串）。
+   * 语料：`ROOM`/`MMODE`/`CGMODE`/`HMODE` 把预置的「全屏过渡幕布」复制成临时项做淡入淡出。
+   */
+  copyScene?(srcHandle: number, dstHandle: number): boolean;
+  /**
    * 0x217（sub_423B20, raw 31791）：**对象变换 pivot** `sub_4ACF20(_this+80708, handle, f2, f3, f4)`。
    * 引擎：`sub_4AAA50` 保证 key 存在 → `map[key]` → 写元素下标 `6/7/8` = DrawItem`+24/+28/+32`
    * = **回転/拡大縮小の中心（pivot）**；`sub_49AA30` 绘制期用 `T(-pivot) → 动画矩阵 → T(+pivot)` 夹住。

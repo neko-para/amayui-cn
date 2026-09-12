@@ -30,6 +30,11 @@ declare global {
       readSaveData?(): Promise<Uint8Array | number[] | null>;
       /** 写 `SAVE.DAT`（整份字节）；主进程**只写 overlay**，真存档永不被覆盖。 */
       writeSaveData?(data: Uint8Array): Promise<{ path: string } | null>;
+      /**
+       * **「已使用文件」标志**（`SAVE.DAT` 开头的 int 块 = FileDB 的鉴赏/解锁表；统一文件 id 数组）。
+       * 主进程把 overlay 与 base **两侧取并集**（进度是单调集合 ⇒ 不因 overlay 里的旧副本丢进度）。
+       */
+      readSaveFlags?(): Promise<number[] | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
        * **按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节**

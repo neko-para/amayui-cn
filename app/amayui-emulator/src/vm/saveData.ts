@@ -56,6 +56,33 @@ export interface SaveDataTables {
   strings: Map<string, string>;
 }
 
+/**
+ * **`SAVE.DAT` 里那块「已使用文件」标志**（= 引擎 `FileDB` 的标志表；2026-09 读体确证）。
+ *
+ * 引擎装载路径 `sub_40AEE0` raw 15202-15238：`sub_438940` 把 payload 开头的 int 块原样交回，
+ * 然后逐槽还原成 FileDB 的「已使用文件」表：
+ * ```c
+ * if (SaveVersion1 > 2 || (== 2 && SaveVersion2 >= 10)) {      // 新布局
+ *   key1 = block[0] ^ 0x87912345; key2 = block[1];              // 2 dword 头（防篡改密钥）
+ *   for (i = 0; i < count - 2; i++) if (block[2+i]) sub_404A70(FileDB, i, sub_499650(block[2+i], key1, key2));
+ * } else {                                                     // 旧布局（无头、值为明文哈希）
+ *   for (i = 0; i < count; i++)     if (block[i])   sub_404A70(FileDB, i, (u16)block[i]);
+ * }
+ * ```
+ * ⇒ **槽位下标 = 统一文件 id**（本体），值非 0 就表示"这个文件被打开过"（值本身只是防改档哈希）。
+ * 我们只需要"是否非 0"，所以不必实现 `sub_499650` 的模幂还原。
+ *
+ * 扩展包 id 在**另一块**（payload 尾部，随 3.10+ 一起写；下标是"跨包线性下标"，
+ * 装载时用尾部那张 256 项的每包文件数表换算回 `包号<<24|包内编号`）。本工程暂只解本体块
+ * （基础版 36 首 BGM / 1269 张 CG 全是本体 id ⇒ 足够；扩展包内容见文档缺口）。
+ */
+export interface SaveDataUsage {
+  /** 统一文件 id（本体 0..fileCount-1）。 */
+  usedFileIds: Set<number>;
+  /** 块布局判定：`engine-new`（2 dword 头 + 混淆值）/ `engine-old`（无头）/ `emulator`（本工程写：2 dword 头 + 明文值）。 */
+  layout: 'engine-new' | 'engine-old' | 'emulator';
+}
+
 export interface SaveDataHeader {
   magic: string;
   engineVersion: string;
@@ -72,6 +99,8 @@ export interface SaveDataHeader {
 
 export interface SaveDataDecoded extends SaveDataHeader {
   tables: SaveDataTables;
+  /** 「已使用文件」标志（FileDB 的鉴赏/解锁表；见 `SaveDataUsage`）。 */
+  usage: SaveDataUsage;
 }
 
 export type SaveDataParseResult =
@@ -117,7 +146,7 @@ function readCString(bytes: Uint8Array, at: number): { text: string; next: numbe
  * （= 记录区字节数/4 + 1，引擎用它在读侧定位尾部块）。少这 4 字节不丢信息、也不影响引擎语义，
  * 但读侧必须用 `parseTables(..., engineLayout: false)` 走本工程布局——见 `parsePayload`。
  */
-function buildPayload(t: SaveDataTables): Uint8Array {
+function buildPayload(t: SaveDataTables, used?: Iterable<number>): Uint8Array {
   const ints = [...t.ints.entries()];
   const strs = [...t.strings.entries()];
   const parts: Uint8Array[] = [];
@@ -127,7 +156,23 @@ function buildPayload(t: SaveDataTables): Uint8Array {
     new DataView(b.buffer).setUint32(0, v >>> 0, true);
     return b;
   };
-  push(u32(0));
+  // ---- 「已使用文件」块（= 引擎 payload 开头的 int 块；2 dword 头 + 槽值，槽下标 = 统一文件 id）----
+  // 只写**本体** id（高字节 0）：扩展包 id 在引擎的**另一块**（payload 尾部，随 3.10+ 一起写，
+  // 下标是跨包线性下标 + 一张 256 项换算表）——本工程暂不写那一块（见 SaveDataUsage 的说明）。
+  const usedArr = used
+    ? [...used].filter((id) => Number.isInteger(id) && id > 0 && (id & 0xff000000) === 0)
+    : [];
+  const maxId = usedArr.length ? Math.max(...usedArr) : -1;
+  const flagCount = maxId + 1;
+  push(u32(flagCount > 0 ? flagCount + 2 : 2)); // 新布局：含 2 dword 头
+  push(u32(0)); // 头 dword0（引擎写 key^0x87912345；本工程明文用 0）
+  push(u32(0)); // 头 dword1（引擎写 key2）
+  {
+    const flags = new Uint8Array(4 * flagCount);
+    const fv = new DataView(flags.buffer);
+    for (const id of usedArr) if (id >= 0 && id < flagCount) fv.setUint32(4 * id, 1, true);
+    push(flags);
+  }
   push(u32(ints.length));
   for (const [key, value] of ints) {
     const rec = new Uint8Array(KEY_BYTES + 4);
@@ -155,12 +200,18 @@ function buildPayload(t: SaveDataTables): Uint8Array {
 }
 
 /** 解析**本工程格式**的明文主体（`buildPayload` 写的布局：无 `trailerDwords`，见其文档）。 */
-function parsePayload(bytes: Uint8Array): SaveDataTables | { error: string } {
+function parsePayload(bytes: Uint8Array): { tables: SaveDataTables; usage: SaveDataUsage } | { error: string } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let at = 0;
   const need = (n: number): boolean => at + n <= bytes.length;
   if (!need(4)) return { error: 'payload 太短（缺 int 块计数）' };
-  at += 4; // intBlockCount（本工程恒 0）
+  const flagDwords = view.getUint32(at, true);
+  at += 4;
+  if (!need(4 * flagDwords)) return { error: 'payload 太短（int 块越界）' };
+  // 本工程布局恒为「2 dword 头 + 槽值」（头恒 0；槽下标 = 统一文件 id，非 0 = 已使用）
+  const usedFileIds = new Set<number>();
+  for (let i = 2; i < flagDwords; i++) if (view.getUint32(at + 4 * i, true) !== 0) usedFileIds.add(i - 2);
+  at += 4 * flagDwords;
   if (!need(4)) return { error: 'payload 太短（缺 int 记录数）' };
   const recCount = view.getUint32(at, true);
   at += 4;
@@ -184,7 +235,7 @@ function parsePayload(bytes: Uint8Array): SaveDataTables | { error: string } {
     strings.set(k.text, v.text);
     at = v.next;
   }
-  return { ints, strings } as SaveDataTables;
+  return { tables: { ints, strings }, usage: { usedFileIds, layout: 'emulator' } };
 }
 
 /**
@@ -195,6 +246,8 @@ function parsePayload(bytes: Uint8Array): SaveDataTables | { error: string } {
  */
 export function encodeSaveData(input: {
   tables: SaveDataTables;
+  /** 「已使用文件」标志（统一文件 id；鉴赏/解锁进度）——随存档一起持久化。 */
+  usedFileIds?: Iterable<number>;
   title?: string;
   engineVersion?: string;
   /** 存盘时刻（引擎写 SYSTEMTIME(local)；这里允许注入便于测试）。 */
@@ -203,7 +256,7 @@ export function encodeSaveData(input: {
 }): Uint8Array {
   const title = input.title ?? 'AmayuiEmulator';
   const engineVersion = input.engineVersion ?? SAVE_ENGINE_VERSION;
-  const body = buildPayload(input.tables);
+  const body = buildPayload(input.tables, input.usedFileIds);
   const crc1 = crc32MsbFirst(body);
   const crc2 = crc32(body);
   const now = input.now ?? new Date();
@@ -347,7 +400,8 @@ function engineKey(bytes: Uint8Array, at: number): string {
 /**
  * 解析序列化主体（引擎 `sub_438940` 的结构；与我们的 `buildPayload` 只差 `trailerDwords` 那 4 字节）：
  * ```text
- * u32 intCount ; intCount × u32            ← 存档槽用的"int 块"（引擎 ≥2.10 逐元素模幂混淆 ⇒ 本模块跳过）
+ * u32 intCount ; intCount × u32            ← ★FileDB「已使用文件」标志块（见 `SaveDataUsage`）：
+ *                                             ≥3 格式 = `[key^0x87912345][key2][槽值…]`（槽下标 = 统一文件 id）
  * u32 recCount ; recCount × { key[12]; u32 }   ← ★str→int 表（配置值就在这里）
  * u32 strCount
  * u32 trailerDwords                        ← ★引擎专有：= 记录区字节数/4 + 1（`sub_438320` 写 `v16[1] = v46 + 1`）
@@ -363,13 +417,30 @@ function engineKey(bytes: Uint8Array, at: number): string {
  * 因此这里顺带用 `trailerDwords` 做**结构自校验**：读满 `strCount` 条之后，记录区字节数必须落在
  * `4 × (trailerDwords - 1)` 之内（引擎按 dword 对齐，尾部最多补 3 字节零）——对不上就如实报错。
  */
-function parseTables(data: Uint8Array, shiftJis: boolean, engineLayout: boolean): SaveDataTables | { error: string } {
+function parseTables(
+  data: Uint8Array,
+  shiftJis: boolean,
+  engineLayout: boolean,
+  format: number,
+): { tables: SaveDataTables; usage: SaveDataUsage } | { error: string } {
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
   let at = 0;
   const need = (n: number): boolean => at + n <= data.length;
   if (!need(4)) return { error: '缺 int 块计数' };
   const intCount = dv.getUint32(at, true);
   at += 4;
+  if (!need(4 * intCount)) return { error: 'int 块越界' };
+  /**
+   * ★块布局判定（见 `SaveDataUsage`）：引擎 `sub_40AEE0` 用**配置里的** `set:SaveVersion1/2`
+   * 决定要不要跳过 2 dword 头（>2.10 才有头），而同一组版本号也决定头的 `format ≥ 3`
+   * （`docs-new/03-engine/save-data.md` §3：「≥3 = 再带额外块 + int 块模幂」）⇒ 用 `format ≥ 3` 判别。
+   */
+  const newStyle = engineLayout && format >= 3;
+  const start = newStyle ? 2 : 0;
+  const usedFileIds = new Set<number>();
+  for (let i = start; i < intCount; i++) {
+    if (dv.getUint32(at + 4 * i, true) !== 0) usedFileIds.add(i - start);
+  }
   at += 4 * intCount;
   if (!need(4)) return { error: '缺记录表计数（int 块越界）' };
   const recCount = dv.getUint32(at, true);
@@ -413,7 +484,26 @@ function parseTables(data: Uint8Array, shiftJis: boolean, engineLayout: boolean)
       return { error: `字符串表与尾部块长度不符（记录区 ${actual} 字节，尾部块声明 ${declared} 字节）` };
     }
   }
-  return { ints, strings };
+  return { tables: { ints, strings }, usage: { usedFileIds, layout: newStyle ? 'engine-new' : 'engine-old' } };
+}
+
+/**
+ * **把多份 `SAVE.DAT` 的「已使用文件」标志并起来**（引擎的鉴赏进度是**单调集合**：只会增、不会减）。
+ *
+ * 为什么需要：本工程的 overlay 目录里那份是本工程写的副本，可能
+ * ① 由旧版本写的（那时没写 flag 块）、或 ② 落后于真游戏那份（玩家后来又用真机玩了）。
+ * 取并集后，"先玩真机再开本工程" 与 "本工程写过 overlay" 两种顺序都不会丢进度。
+ */
+export function unionUsedFileIds(buffers: Iterable<Uint8Array>): { ids: number[]; layouts: string[] } {
+  const ids = new Set<number>();
+  const layouts: string[] = [];
+  for (const b of buffers) {
+    const r = decodeSaveData(b);
+    if (!r.ok) continue;
+    layouts.push(`${r.data.usage.layout}:${r.data.usage.usedFileIds.size}`);
+    for (const id of r.data.usage.usedFileIds) ids.add(id);
+  }
+  return { ids: [...ids].sort((a, b) => a - b), layouts };
 }
 
 /** payload 内的两个 CRC dword（引擎/本工程都在主体前留 8 字节）。 */
@@ -426,9 +516,11 @@ function verifyBodyCrc(body: Uint8Array, crc1: number, crc2: number): boolean {
 /**
  * 解析 `SAVE.DAT`：**本工程明文格式（format 0）与引擎格式（1..3）都读**。
  *
- * - 引擎格式：头 → `Crypt` 解密 →（format ≥ 2）LZSS 解压 → 表结构；`int 块`跳过（模幂混淆；
- *   配置值不在那里，而在 str→int 记录表里，见 `INITCONFIG*` 的 `save-int (global …)`）。
- * - 我们的格式：头 → 明文 payload → 表结构（并逐项校验 payload 内的两个 CRC）。
+ * - 引擎格式：头 → `Crypt` 解密 →（format ≥ 2）LZSS 解压 → 表结构；
+ *   ★**开头的 int 块不是"存档槽的块"，而是 `FileDB` 的「已使用文件」标志表**（鉴赏/解锁进度）——
+ *   见 `SaveDataUsage` 与 `docs-new/03-engine/gallery-and-unlock-flags.md`。
+ *   配置值不在那里，而在 str→int 记录表里（`INITCONFIG*` 的 `save-int (global …)`）。
+ * - 我们的格式：头 → 明文 payload → 表结构 + 同一块标志（并逐项校验 payload 内的两个 CRC）。
  */
 export function decodeSaveData(bytes: Uint8Array): SaveDataParseResult {
   const header = readSaveHeader(bytes);
@@ -451,14 +543,14 @@ export function decodeSaveData(bytes: Uint8Array): SaveDataParseResult {
     }
     void crc1File;
     void crc2File;
-    const tables = parsePayload(payload.subarray(8));
-    if ('error' in tables) return { ok: false, reason: tables.error, header };
-    return { ok: true, data: { ...header, tables } };
+    const parsed = parsePayload(payload.subarray(8));
+    if ('error' in parsed) return { ok: false, reason: parsed.error, header };
+    return { ok: true, data: { ...header, tables: parsed.tables, usage: parsed.usage } };
   }
 
   const ex = extractEnginePayload(bytes, header);
   if ('error' in ex) return { ok: false, reason: ex.error, header };
-  const tables = parseTables(ex.data, true, true);
-  if ('error' in tables) return { ok: false, reason: `引擎 payload 解析失败：${tables.error}`, header };
-  return { ok: true, data: { ...header, tables } };
+  const parsed = parseTables(ex.data, true, true, header.format);
+  if ('error' in parsed) return { ok: false, reason: `引擎 payload 解析失败：${parsed.error}`, header };
+  return { ok: true, data: { ...header, tables: parsed.tables, usage: parsed.usage } };
 }

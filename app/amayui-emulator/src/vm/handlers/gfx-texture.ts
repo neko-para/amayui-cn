@@ -73,10 +73,13 @@ const op_draw_texture: OpHandler = (c) => {
   c.native.configureDrawItem?.({ handle: layer, layer, tex: slot, srcX, srcY, srcW, srcH, dstX, dstY });
 };
 const op_set_texture: OpHandler = (c) => {
-  // `0x1F9`（sub_422CB0）set-texture：op1=imgid、op2=槽（引擎：载入文件纹理并写槽记录 `[5*slot+466]=imgid`）。
+  // `0x1F9`（sub_422CB0）set-texture：op1=imgid、op2=槽、op3=color（引擎：载入文件纹理并写槽记录 `[5*slot+466]=imgid`）。
   const imgid = readIntOperand(c.e, c.frame, c.instr, 1);
   const slot = readIntOperand(c.e, c.frame, c.instr, 2);
   c.e.texSlots.set(slot, imgid);
+  // ★引擎在这里 `sub_4559C0` 按 id 打开图像文件 ⇒ 写 FileDB 的「已使用」表（`sub_454960`）。
+  //   这正是「回想的 CG 鉴赏」判定某张 CG 是否解锁的途径（见 handlers/resource-usage.ts 的 0x19D）。
+  c.e.markFileUsed(imgid);
   c.native.bindTexture?.(imgid, slot);
 };
 

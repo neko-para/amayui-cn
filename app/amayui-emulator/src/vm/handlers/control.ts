@@ -132,6 +132,9 @@ const op_call_script: OpHandler = async (c) => {
   if (!c.e.fileSource) throw new Error('call-script: no FileSource');
   const src = await c.e.fileSource.readScript(target); // async 文件代理
   if (!src) throw new Error(`call-script: cannot load script index 0x${target.toString(16)}`);
+  // ★引擎装载脚本也走 `sub_4559C0`（按统一 id 打开文件）⇒ 记「已使用」（`sub_454960`）。
+  //   见 handlers/resource-usage.ts 的 0x19D（回想/CG/BGM 鉴赏的解锁判定读的就是这张表）。
+  c.e.markFileUsed(target);
   let script: import('../../script/bin.js').ScriptBinary;
   try {
     script = parseScriptBytes(src.data);
@@ -191,6 +194,7 @@ async function dispatchNextRequest(c: StepCtx): Promise<void> {
   // ★包未装载 ⇒ readScript 抛 MissingAppendPackError（引擎「拡張ファイル情報ファイル %d は…」异常）
   const src = await e.fileSource.readScript(id);
   if (!src) throw new Error(`i143: cannot load script 0x${id.toString(16)}`);
+  e.markFileUsed(id); // 引擎同样走 sub_4559C0（见 handlers/resource-usage.ts）
   e.scriptRequests.shift();
   const frame = e.frames[DISPATCH_FRAME]!;
   const script = parseScriptBytes(src.data);
