@@ -103,6 +103,39 @@ else  // 完成/收尾
 - ✅ 无界面光栅验证：真实 VM 到 TITLE 产出与真实标题菜单布局吻合（logo+散布按钮+版权+背景）。
 - 机制权威记录见 `./copyright-effect.md`；实现模型/改动文件/验证见 `../04-app/emulator-copyright-effect.md`。
 
+## 4.5 draw-item 的世界矩阵：pivot 是**绝对坐标**，位置必须跟着它走（2026-09 订正）
+
+引擎侧（`sub_49AA30` raw 117425-117429，行向量序）：
+
+```text
+M = T(-pivot) · S · R · Tt · T(+pivot)        ⇒  v' = S·R·(v − pivot) + t + pivot
+```
+
+- `pivot` 由 `0x217`（`sub_4ACF20`）**原样**写进 DrawItem`+24/+28/+32`；新建项由 `sub_49A300` 置 **0**
+  ⇒ 它是**绝对坐标**（`0x219` 写的描画位置 `+36/+40/+44` 是另一个 float 三元组）。
+- `DrawItem+0x68`（`useWorld`）只由变换类指令（`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220`）置位；
+  未置位的项走**纯 2D**：只有描画位置 + 源矩形，pivot/缩放/旋转/平移一律不参与。
+- Pixi 的语义是 `screen(l) = position + S·R·(l − sprite.pivot)`，要与上式逐项相等必须**同时**取：
+
+```text
+sprite.position = pivot + t          sprite.pivot = pivot − pos
+```
+
+⚠️**只改 `sprite.pivot` 而位置仍用 `pos` 是错的**（只有 `pivot == pos` 时才恰好等价，所以长期没暴露）。
+实测症状（2026-09 用户）：设置界面「打开字体选择器 → 右键退出 → 再滚动」时，右侧滚动条的**中段**
+（唯一带 `0x1FD` 缩放的段）漂到列表中间。原因链：
+
+1. `CONFIG1.txt:1045` 打开选择器前把脚本全局 `707ffa/707ffb`（弹窗原点，`0x348/0x78+0x32·n`）置位，
+   而**没有任何脚本把它复位**（全语料无 `mov (global-int 707ffa) 0`）；
+2. 滚动条中段的 pivot 被算成 `707ffa + 32e`（`CONFIG1.txt:2960`、`CONFIG2.txt:1424`），
+   描画位置却是 `32e` ⇒ `pivot − pos = 0x348 = 840`；
+3. 渲染侧位置写成 `pos` ⇒ 中段整体**左移 840px**（scaleX = 1）⇒ 一条灰条横在列表上。
+
+修法：`itemRenderPlacement`（`src/renderer/drawitem/eval.ts`）同时给出
+`position = pivot + t` 与 `pivot = pivot − pos`，`presenter.ts` 只用它；守卫
+`test/config1-chain.test.ts`（真语料跑完整序列，断言中段**渲染出来的**左边缘回到轨道 x）。
+上/下盖没有变换指令 ⇒ 纯 2D 路径，不受影响（这正是"只有中段漂"的原因）。
+
 ## 5. 交叉引用
 
 - 纹理 slot↔AGF 映射见 `./resource-loading.md`；渲染壳工程见 `../04-app/emulator.md`。

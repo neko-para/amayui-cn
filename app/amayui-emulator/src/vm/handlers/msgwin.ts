@@ -26,7 +26,7 @@
  * 文本内容按槽保存（足够让 `wait-for-input` 的挂起/推进成立）。
  */
 import type { OpHandler } from '../step.js';
-import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
+import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import {
@@ -36,7 +36,7 @@ import {
   type FontStyleSnapshot,
   type MsgWinStyle,
 } from '../../text/layout.js';
-import { fontListIndex, resolveFace } from '../../text/fontSet.js';
+import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
 import type { OpTable } from './shared.js';
 
@@ -361,7 +361,7 @@ const op_wait_for_input: OpHandler = (c) => {
       // ★两条节拍：字格页用 `0x73` op10（一次一格）；普通消息页用「行数 × max(MessageSpeed, 一帧)」
       //   的预算（引擎一步 = 一行 ⇒ 整段时长 = 行数 × 节拍）。见 MsgWindow.RevealState 注释。
       const tick = m.gridTickMs(w);
-      m.beginReveal(w, total, e.nowMs, messageSpeedOf(e), tick !== undefined ? { intervalMs: tick } : { lines: laid.lines.length });
+      m.beginReveal(w, total, e.nowMs, messageSpeedOf(e), tick !== undefined ? { intervalMs: tick } : {});
       m.charMode = total > 0;
       m.charCursor = 0;
       e.engineValues.set(107704, 0);
@@ -721,6 +721,37 @@ const op_font_name_to_index: OpHandler = (c) => {
 };
 
 /**
+ * `0x2DC`（sub_430DB0 raw 40239-40249）：**可选字体数量** → op1。
+ *
+ * 引擎：`v = (Font[71741] - Font[71740]) >> 5`（`Font+201664` 那张 **32B/条** 的字体名向量长度，
+ * 由 `EnumFontFamilies` 填充）；**空表返回 -1**（不是 0！`if (!v1) v1 = -1`）。
+ * emulator 侧的表 = `ENGINE_FONT_LIST`（与 0x2DE/0x2DD 同一张表，三者必须一致）。
+ *
+ * ★为什么必须实现：`$1$SELFONT.txt:34` 用它做**分页与滚动条**（每页 9 项：`:43/:49` 的 `9`），
+ * 而 `:35` 是 `eq count 0 ⇒ exit`。原实现走通用配置 getter ⇒ 恒 0 ⇒ 字体选择器**直接退出、
+ * 中间不出现列表**；更糟的是 `:78` 会用 `count` 做**除数**（`div 413 = 41b / count`）⇒ 除零，
+ * 于是滚动条几何被写成 Infinity/NaN 而**漂到左边**（用户实测）。
+ */
+const op_font_list_count: OpHandler = (c) => {
+  const n = ENGINE_FONT_LIST.length;
+  writeIntOperand(c.e, c.frame, c.instr, 1, n > 0 ? n : -1);
+};
+
+/**
+ * `0x2DD <str-out> <idx>`（sub_434720 raw 42541-42575）：**字体表第 idx 项的名字** → op1（字符串）。
+ *
+ * 引擎：`v2 = read(2)`（下标）；越界（`<0` 或 `>= count`）⇒ 写**空串**（`byte_51EA3C`），
+ * 否则把第 v2 条 32B `std::string` 拷进 op1。脚本用法（`$1$SELFONT.txt:567/:644`）：
+ * `i2dd (local-string 0) (local-int 41b)` → `set-font (local-string 0)` → `draw-string …`（逐行画候选字体名），
+ * 以及 `:567` 把选中项写进 `global-string d5d` 当当前值。
+ */
+const op_font_list_name: OpHandler = (c) => {
+  const idx = readIntOperand(c.e, c.frame, c.instr, 2);
+  const name = idx >= 0 && idx < ENGINE_FONT_LIST.length ? ENGINE_FONT_LIST[idx]! : '';
+  writeStringOperand(c.e, c.frame, c.instr, 1, name);
+};
+
+/**
  * `0x1B5 <ms>`（sub_41FED0 raw 29165-29178）：**设消息速度** ——
  * `Font+1376`（= `Engine[21668]`）**且**写配置注册表 `message:MessageSpeed`。
  *
@@ -896,7 +927,7 @@ const op_msgwin_slot_clear: OpHandler = (c) => {
   if (g.enabled) {
     const laid = layoutWindow(v, { style: styleOfWin(e, v), segments: e.msgwin.slot(v).segments });
     if (laid.glyphCount > 0) {
-      e.msgwin.beginReveal(v, laid.glyphCount, e.nowMs, messageSpeedOf(e), { lines: laid.lines.length });
+      e.msgwin.beginReveal(v, laid.glyphCount, e.nowMs, messageSpeedOf(e));
       emitWin(e, v);
     }
   }
@@ -981,6 +1012,8 @@ export const MSGWIN_OPS: OpTable = [
   [0x2be, op_set_ruby_bold], // 注音字体加粗（全局）
   [0x2fe, op_set_ruby_face], // 注音字体面名（全局）
   [0x2de, op_font_name_to_index], // 字体名 → 字体表下标（写回 op1；CHECKCONFIG 靠它的符号）
+  [0x2dc, op_font_list_count], // 可选字体数量（写回 op1；SELFONT 分页/滚动条的分母）
+  [0x2dd, op_font_list_name], // 可选字体第 idx 项的名字（写回 op1 字符串；SELFONT 逐行画候选）
   [0x303, op_align], // 对齐模式 + 行宽
   [0x079, op_text_origin], // 文字起点
   // ---- 消息窗字段 / 对象表 ----

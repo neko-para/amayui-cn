@@ -10,7 +10,8 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseIni, cfgInt, cfgStr, applyConfigToEngine, CONFIG_FIELD_BINDINGS } from '../src/engineConfig.js';
+import { parseIni, cfgInt, cfgStr, applyConfigToEngine, CONFIG_FIELD_BINDINGS, DEFAULT_GAME_VERSION } from '../src/engineConfig.js';
+import { INI_FILE, resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { StubNative } from '../src/vm/native.js';
 import { Engine } from '../src/vm/engine.js';
 import { stepOnce } from '../src/vm/interpreter.js';
@@ -20,7 +21,34 @@ import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const INI = path.join(ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
+/**
+ * 玩家数据的 base 那侧：**真游戏的** `SYS4REG.INI`（`%LOCALAPPDATA%\Eushully\<game>\`）。
+ * 本工程已不再往仓库里放 INI 副本 —— 读的是系统存档目录（overlay → base，见 `src/arch/systemPaths.ts`）。
+ */
+const INI = path.join(resolveSystemPaths(ROOT).baseDir, INI_FILE);
+const HAS_REAL_INI = fs.existsSync(INI);
+/** 没装游戏时（CI/别的机器）用一份形状相同的最小 INI，让"灌字段"这类断言仍然有意义。 */
+const FALLBACK_INI = [
+  '[display]',
+  'ScreenMode=1',
+  'FullScreenBit=32',
+  '[sound]',
+  'Music=2',
+  'Voice=1',
+  'SE=1',
+  '[message]',
+  'Font=Amayui CN',
+  'MesWinAlpha=8',
+  'MessageSpeed=5',
+  'MessageFade=250',
+  '[system]',
+  'UseMMX=1',
+  '',
+].join('\r\n');
+/** 当前生效的 INI 文本（真游戏那份优先）。 */
+function iniText(): string {
+  return HAS_REAL_INI ? fs.readFileSync(INI, 'utf8') : FALLBACK_INI;
+}
 
 test('parseIni：分节 / 数字 / 字符串 / 空值 / 大小写不敏感', () => {
   const cfg = parseIni(
@@ -34,11 +62,15 @@ test('parseIni：分节 / 数字 / 字符串 / 空值 / 大小写不敏感', () 
   assert.equal(cfgStr(cfg, 'message:savebmppath'), '', '空值保留为空串');
 });
 
-test('真实 SYS4REG.INI：解析出 5 个分节与关键键', () => {
-  assert.ok(fs.existsSync(INI), `应存在 ${INI}`);
-  const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
-  assert.deepEqual(cfg.sections.sort(), ['display', 'message', 'set', 'sound', 'system']);
-  // 与文件内容逐项核对（见该 INI）
+test('真实 SYS4REG.INI（真游戏 base 那侧）：解析出关键键（本工程不再持有仓库副本）', (t) => {
+  if (!HAS_REAL_INI) {
+    t.skip(`本机没有真游戏 ${INI}`);
+    return;
+  }
+  const cfg = parseIni(iniText());
+  // 真游戏这份是**引擎自己写的**：只有 display/sound/message/system 四节；
+  // `[set]` 那节由引擎退出时按配置注册表写，本作安装没有 ⇒ 版本号走 emulator 缺省（见下）。
+  assert.deepEqual([...cfg.sections].sort(), ['display', 'message', 'sound', 'system']);
   assert.equal(cfgInt(cfg, 'display:screenmode'), 1);
   assert.equal(cfgInt(cfg, 'sound:music'), 2);
   assert.equal(cfgInt(cfg, 'message:meswinalpha'), 8);
@@ -47,14 +79,13 @@ test('真实 SYS4REG.INI：解析出 5 个分节与关键键', () => {
   assert.equal(cfgStr(cfg, 'message:font'), 'Amayui CN');
   assert.equal(cfgInt(cfg, 'sound:voice'), 1);
   assert.equal(cfgInt(cfg, 'sound:se'), 1);
-  // `[set]`：引擎在 `set:VerRegPos` 非空时才用注册表 DisplayVersion 覆盖 GameVersion；
-  // 免安装拷贝没有 VerRegPos ⇒ TITLE 用这里写的值（见 0x2EB / test/config-version-substr.test.ts）。
-  assert.equal(cfgStr(cfg, 'set:gameversion'), '1.07.0019');
-  assert.equal(cfgStr(cfg, 'set:verregpos'), '');
+  // `[set] GameVersion` 不在真 INI 里 ⇒ 取 emulator 缺省（= 被模拟的 amayui_107.exe 的 FileVersion）。
+  assert.equal(cfgStr(cfg, 'set:gameversion', DEFAULT_GAME_VERSION), '1.07.0019');
+  assert.equal(cfgStr(cfg, 'set:verregpos', ''), '', '没有 VerRegPos ⇒ 不会去查注册表 DisplayVersion');
 });
 
 test('applyConfigToEngine：按绑定写入引擎字段（含 display:ScreenMode 布尔化）', () => {
-  const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
+  const cfg = parseIni(iniText());
   const values = new Map<number, number>([[96983, 1]]); // 构造默认
   const applied = applyConfigToEngine(cfg, values);
   const get = (f: number): number | undefined => values.get(f);
@@ -135,7 +166,7 @@ function nOp(opcode: number, slots: number[], types?: number[]): ScriptBinary {
 }
 
 test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不再是 0 / no-op）', async () => {
-  const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
+  const cfg = parseIni(iniText());
   const e = new Engine(new StubNative(() => {}));
   e.config = cfg;
   applyConfigToEngine(cfg, e.engineValues);
@@ -233,7 +264,7 @@ test('消息窗字段一族（0x80 setter / 0x7F getter / 0x300 / 0x301）：真
 });
 
 test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemented / native / engine-internal）', async () => {
-  const cfg = parseIni(fs.readFileSync(INI, 'utf8'));
+  const cfg = parseIni(iniText());
   // [opcode, argc, 期望 handlerKind]
   // 分类规则：能完整建模（哪怕不产出画面）⇒ 'implemented'；经 NativeBridge 落宿主 ⇒ 'native'；
   //           引擎内部且 emulator 无事可做 ⇒ 'engine-internal'（纯 no-op）。
@@ -314,3 +345,4 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
     assert.equal(e.curScript().ip, 1, `0x${opcode.toString(16)} 应正常推进 ip`);
   }
 });
+

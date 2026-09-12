@@ -145,23 +145,26 @@ SAVE.DAT (160,640 B) format=3
 | 启动装载 → `load-int`/`load-string`（⇒ 走 LOADCONFIG 分支，设置跨会话保留） | ✅ E3 真语料断言 |
 | 读**引擎格式**（format 1..3：Crypt + LZSS + 表） | ✅ 真存档 E4 通过 |
 | 引擎载荷的 `trailerDwords`（字符串记录区起点 = `strCount` + 8） | ✅ 已实现 + 结构自校验（`parseTables(…, engineLayout)`），回归见 `test/save-data.test.ts` |
-| 覆盖真存档的保护 | ✅ 目标是引擎存档时改写 `<SAVE.DAT>.amayui`，读取优先 `.amayui` |
-| `SYS4REG.INI` 回写的防丢键棘轮 | ✅ 新文本键数少于磁盘时拒绝写 |
+| 不写坏真存档：**overlay 层**（读 overlay→base，写只写 overlay） | ✅ `src/arch/systemPaths.ts` + `src/arch/overlay.ts`，守卫 `test/overlay.test.ts`；Electron 主进程与 Node 侧共用同一份实现 |
+| `SYS4REG.INI` 回写的防丢键棘轮 | ✅ 新文本键数少于**当前生效的那份**（overlay 优先，否则真游戏）时拒绝写 |
 | int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（配置值不在该块） |
 | `RT.DAT`（ADV 回看状态） | ❌ 未建模 |
 | 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ❌ 未实现（菜单未接） |
 
-**怎么用它继承玩家设置**：把 `AMAYUI_SAVE_DIR` 指向真游戏存档目录
-（`%LOCALAPPDATA%\Eushully\<game>\SAVE`）—— emulator 会读那份 `SAVE.DAT`（引擎格式）并走
-LOADCONFIG 分支；之后它自己的改动写到同目录的 `SAVE.DAT.amayui`，**不碰**原文件。
-（默认目录是随工程的 `app/amayui-emulator/SAVE/`，不污染真游戏。）
+**玩家数据怎么落地（overlay）**——引擎的"系统存档目录"里既有存档也有配置，emulator 对它的**一切访问**走同一层：
 
-⚠**`.amayui` 会盖住引擎存档**（读取优先它）。所以解码器修好后，**上一次用错解码器跑出来的
-`.amayui` 仍会把错的设置喂回来**（`bbf = ＭＳ 明朝` 就是这么留下来的）：换解码器/换版本后若怀疑设置
-不对，把 `<SAVE.DAT>.amayui` 改名或删掉，让它重新从引擎存档继承一次。
+```text
+base    = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター\          ← 真游戏（只读）：SYS4REG.INI、SAVE\SAVE.DAT、存档槽…
+overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overlay\  ← 本工程（同级目录，结构镜像）
+读：overlay\<rel> 有就用它，否则 base\<rel>      写：只写 overlay\<rel>（先写 .$$tmp 再改名）
+```
 
-**看存档内容**：`npm run save:dump`（仓库内那份）· `npm run save:dump -- <文件>`（指定文件）·
-`AMAYUI_SAVE_DIR=<真游戏 SAVE 目录> npm run save:dump`（真存档：会列出 §5 的那批配置键）。
+- 于是**不需要"另存成别的文件名"这种 hack**（旧实现写 `<SAVE.DAT>.amayui`、读时优先它）：继承玩家设置与
+  "绝不写坏真存档/存档槽"由目录布局本身保证；把 `.overlay\` 整个删掉即彻底复原。
+  覆盖用环境变量：`AMAYUI_SYSTEM_DIR`（base）、`AMAYUI_OVERLAY_DIR`（overlay）。
+- ⚠若换过解码器/版本后发现设置不对，删掉 `.overlay\` 再启动，让它重新从真游戏继承一次。
+- **看存档内容**：`npm run save:dump`（取系统存档目录的 `SAVE\SAVE.DAT`，按 overlay → base 命中并打印是哪一侧；
+  可 `npm run save:dump -- <文件>` 指定某个存档槽）。
 
 ## 7. 相关
 

@@ -279,7 +279,7 @@ test('★0x300 关闸（i300 win 0 0）：把余下的行排空并清闸门/延�
 test('★闸门窗在泵贴出前不得可见：revealedOf = 0（不是 -1），贴出后才出现', () => {
   const native = new HeadlessScene({});
   const { e, step } = mk(native);
-  e.engineValues.set(21668, 100); // 100ms/行 ⇒ 不会一帧出完，便于观察
+  e.engineValues.set(21668, 100); // 100ms/**字**（引擎一步 = 一个字，见 msgwin.ts 的 RevealState.budgetMs）
   step(0x80, [im(9)]);
   step(0x300, [im(9), im(1), im(1000)]); // CONFIG.txt:171 开闸
   step(0x71, [im(9)]); // 开始一段新消息（清窗）
@@ -289,13 +289,14 @@ test('★闸门窗在泵贴出前不得可见：revealedOf = 0（不是 -1），
   const f0 = native.scene.msgWins.get(9);
   assert.equal(f0?.revealed, 0, '渲染模型里也必须是 0 字');
 
-  // 泵推进后才逐字出现
+  // 泵推进后才逐字出现：5 字 × 100ms/字 ⇒ 第一个字要等满一个节拍（约 6 帧）
   let t = 0;
-  for (let i = 0; i < 3; i++) {
+  let frames = 0;
+  for (; frames < 12 && (e.msgwin.revealedOf(9) ?? 0) === 0; frames++) {
     t += 1000 / 60;
     e.serviceWinReveal(t);
   }
-  assert.ok((e.msgwin.revealedOf(9) ?? 0) > 0, '泵推进后应开始逐字出现');
+  assert.ok((e.msgwin.revealedOf(9) ?? 0) > 0, `泵推进后应开始逐字出现（泵了 ${frames} 帧）`);
   assert.ok(native.scene.msgWins.get(9)!.revealed > 0);
 });
 

@@ -1634,27 +1634,13 @@
     "semantic_name": "op_sound_channel_420B40",
     "op": "0xB5",
     "status": "ANALYZED",
-    "category": "声音",
     "purpose": "op 0xB5：声音通道控制。读 op1=通道号 → sub_4B5020(_this+20719, op1, 0) →（声音设备存在时）sub_4B6020(设备, op1, 0)：通道号 >0xE 或通道未分配则报错/返回；否则 sub_4B73E0(通道, 0) 控制该声音通道。**纯声音侧，无 VM/渲染效果**",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "设子系操作标记 = 3",
-      "readIntOperand(op1)=通道号",
-      "sub_4B5020(_this+20719, op1, 0) 转发到声音设备",
-      "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"
-    ],
-    "fields_used": [
-      "this->_this+20719(声音系统)",
-      "this->_this[4*op1+1620](声音通道)",
-      "this->_this[4*op1+1440]"
-    ],
-    "unmodeled": [
-      "sub_4B6020/sub_4B73E0 内部"
-    ],
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=通道号", "sub_4B5020(_this+20719, op1, 0) 转发到声音设备", "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"],
+    "fields_used": ["this->_this+20719(声音系统)", "this->_this[4*op1+1620](声音通道)", "this->_this[4*op1+1440]"],
+    "unmodeled": ["sub_4B6020/sub_4B73E0 内部"],
     "evidence": "raw 29689-29697 (sub_420B40), 137660-137670 (sub_4B5020), 138590-138615 (sub_4B6020)",
-    "notes": "（用户指令：**声音相关指令，忽略**）emulator 无声音输出，0xB5 保持 engine-internal no-op；不影响高亮/回退/渲染。与 0xB4 play-sound-effect / 0xB6 同族"
+    "notes": "★别与 0x5B ne 混：本指令助记符缺失 ⇒ 反汇编/控制面板显示为 i0b5，2026-09 用户实测读成 0x05B（ne，已实现）而以为「已实现指令被当缺口」。用法实证：$1$SELFONT.txt:38 i0b5 1（选中字体时的确认音）、CONFIG2.txt 11 处（ADV 设定页的反馈音）。emulator：声音子系统未建模 ⇒ stubs.ts 的 engine-internal no-op；控制面板现每行都带 0x0b5 指令码以免混读。"
   },
   {
     "addr": "0x418E60",
@@ -3024,22 +3010,13 @@
     "semantic_name": "drawItemSetPivot_4ACF20",
     "op": "0x217",
     "status": "ANALYZED",
-    "purpose": "op 0x217（handler sub_423B20）：写绘制项「旋转/缩放中心 pivot」。读 op1=handle、op2/3/4=3 float → DrawItem+24/+28/+32；绘制期 sub_49AA30 读 a2[6..8]，先 T(-pivot) 后 T(+pivot) 夹住动画矩阵 ⇒ 世界的旋转/缩放绕该点，**不改位置**。",
-    "signature_override": {
-      "param0": "this(Scene*)"
-    },
-    "sub_behaviors": [
-      "与 sub_4ACEE0 体内逐行相同，仅写 result[6..8]（pivot）",
-      "置脏 Scene+46508"
-    ],
-    "fields_used": [
-      "Scene->drawItems[handle]"
-    ],
-    "unmodeled": [
-      "T(-pivot)/T(+pivot) 与动画矩阵的精确合成顺序（Hex-Rays 局部变量复用，标推测）"
-    ],
+    "purpose": "op 0x217（handler sub_423B20）：写绘制项「旋转/缩放中心 pivot」。读 op1=handle、op2/3/4=3 float → DrawItem+24/+28/+32（**原样**，新建项默认 0 —— sub_49A300）；绘制期 sub_49AA30 以行向量序 T(-pivot)·S·R·Tt·T(+pivot) 夹住动画矩阵 ⇒ v = S·R·(v − pivot) + t + pivot。",
+    "signature_override": { "param0": "this(Scene*)" },
+    "sub_behaviors": ["与 sub_4ACEE0 体内逐行相同，仅写 result[6..8]（pivot）", "置脏 Scene+46508"],
+    "fields_used": ["Scene->drawItems[handle]"],
+    "unmodeled": ["T(-pivot)/T(+pivot) 与动画矩阵的精确合成顺序（Hex-Rays 局部变量复用，标推测）"],
     "evidence": "raw 131857-131870 (sub_4ACF20)、raw 31791-31805 (handler sub_423B20)、raw 117368-117371 / 117425-117429 / 117932-117933",
-    "notes": "pivot 与 position 是 DrawItem 内两个不同的三元组（+24..+32 vs +36..+44），别混。"
+    "notes": "★pivot 是**绝对坐标**（与 0x219 写的描画位置 +36/+40/+44 是两个不同的 float 三元组）；因此渲染侧必须同时满足 sprite.position = pivot + t 与 sprite.pivot = pivot − pos（Pixi 语义），只改后者、位置仍用 pos 时仅当 pivot == pos 才等价。实测（2026-09）：CONFIG1 滚动条中段的 pivot 是 707ffa + 32e（弹窗原点 + 轨道 x，707ffa 由 CONFIG1.txt:1045 置位且全语料无人复位）而位置是 32e ⇒ 只写 pivot−pos 的旧实现让中段左移 840px（用户实测「打开字体选择器→右键退出→滚动，滚动条中段漂到左边」）。见 docs-new/03-engine/rendering.md §4.5。"
   },
   {
     "addr": "0x49A150",
@@ -3925,13 +3902,14 @@
   {
     "addr": "0x45BE20",
     "raw_name": "sub_45BE20",
-    "semantic_name": "text_reveal_step_line_45BE20",
+    "semantic_name": "text_reveal_step_char_45BE20",
     "status": "ANALYZED",
-    "purpose": "★显现泵：**一次推进一行**，返回非 0 = 全部显示完。D3D 路径给下一行建 DrawItem（sub_4ACE50）并按 win+288 平移、按 MessageSpeed×MessageFade/100 设色窗时长；dd 路径把该行从窗口私有表面 blit 到 win+4（=表面 0），并在记录 +0（注音标记）非 0 时连注音一起贴",
+    "purpose": "★显现泵：一次推进一个字（不是一行！），返回非 0 = 全部显示完。游标 = win+132（引擎镜像到 _this[1396]）；D3D 路径给这一个字建 DrawItem（sub_4ACE50）并按 win+288 平移、按 MessageSpeed×MessageFade/100 设色窗时长；dd 路径把这一个字从窗口私有表面 blit 到 win+4（=表面 0）",
     "sub_behaviors": ["行号 = win+132；>= 行数-1 ⇒ 返回 1", "D3D：sub_4ACE50(id = 行号 + win+104, 平面 = win+20, 源矩形 = 24B 记录) + sub_4ACF60 颜色 + sub_4AD0C0 色窗", "dd：sub_43D870(dest = win+4, src = win+20, 源矩形)", "do{}while(记录[+0]) ⇒ 注音与本文同批贴出", "win+112==1 时改走 sub_45B2B0"],
     "fields_used": ["FontVWindow+132/+104/+276/+4/+12/+16/+20/+112", "Font+1376/+235128/+1396/+1384/+1388/+1372"],
     "unmodeled": ["win+224..+276 注音布局块 (sub_457280 读)", "sub_45B2B0 分支"],
-    "evidence": "raw 72172-72457"
+    "evidence": "raw 72172-72457",
+    "notes": "★2026-09 订正：24B 记录表（win+44/48）是逐字 push 的 —— sub_46BE30 的逐字循环里 String 只装一个字（raw 83582 String[0]=v24、83586 双字节分支），83601 用它量宽判换行，83918 在本轮末尾 push 一条 24B 记录（120B 文本记录 sub_45E870 才是按换行 push 的）。因此节拍 message:MessageSpeed = 每字毫秒，整段耗时 = 字数 × 节拍。emulator 曾按「行数 × 节拍」算预算 ⇒ 快 ~14×、设置里的显示速度滑条几乎没效果（用户实测）；现按字形数算（src/vm/msgwin.ts 的 RevealState.budgetMs）。"
   },
   {
     "addr": "0x45AD30",
@@ -4705,10 +4683,10 @@
   {
     "addr": "0x430DB0",
     "raw_name": "sub_430DB0",
-    "semantic_name": "op_array_count_430DB0",
+    "semantic_name": "op_font_list_count_430DB0",
     "op": "0x2DC",
     "status": "ANALYZED",
-    "purpose": "数组条数 getter：v1 = (Engine[71741] - Engine[71740]) >> 5（32B/条）；条数为 0 时写 -1",
+    "purpose": "可选字体数量 → op1：v1 = (Font[71741] - Font[71740]) >> 5（Font+201664 的 32B/条字体名向量长度，由 EnumFontFamilies 填充）；空表写 -1（绝不写 0）",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["(end - begin) >> 5", "0 ⇒ -1", "writeIntOperand(op1)"],
     "fields_used": ["Engine+286960", "Engine+286964"],
@@ -5090,6 +5068,28 @@
     "fields_used": ["Font+201664（字体名向量）"],
     "evidence": "raw 40251-40261",
     "notes": "CHECKCONFIG 用它判断「存下来的字体名现在还装不装得上」；实现错（当成字符串资源 id）会让判定恒 -1 ⇒ 每次启动都回退默认面名（emulator 历史错误，见 handlers/msgwin.ts 的注释）。"
+  },
+  {
+    "addr": "0x434720",
+    "raw_name": "sub_434720",
+    "semantic_name": "op_font_list_name_434720",
+    "op": "0x2DD",
+    "status": "ANALYZED",
+    "purpose": "字体表第 op2 项的名字 → op1（字符串）：v2 = read(2)（下标）；越界（<0 或 >= count）⇒ 写空串（byte_51EA3C），否则把 Font+201664 + 32*v2 那条 std::string 拷进 op1（sub_433310(_this,1,串)）",
+    "sub_behaviors": ["读 op2 为下标", "越界写空串", "否则拷第 idx 条面名到 op1（字符串操作数）", "_this[30*win+95805] = 5"],
+    "fields_used": ["Font+71740/71741（32B/条字体名向量 begin/end）"],
+    "evidence": "raw 42541-42575",
+    "notes": "脚本：$1$SELFONT.txt:567/:644 用它逐行画候选字体名（:644 → set-font → draw-string）；:567 把选中项写进 global-string d5d。emulator：handlers/msgwin.ts 的 op_font_list_name（ENGINE_FONT_LIST，与 0x2DC/0x2DE 同一张表）。"
+  },
+  {
+    "addr": "0x49A300",
+    "raw_name": "sub_49A300",
+    "semantic_name": "drawItemCtor_49A300",
+    "status": "ANALYZED",
+    "purpose": "DrawItem 构造：清零 740 字节记录 —— 其中 +24/+28/+32（pivot）、+36/+40/+44（描画位置）都置 0，五个动画窗与缩放/旋转/平移 work/target 置默认（scale=1、rot=0、trans=0）。",
+    "sub_behaviors": ["+24/+28/+32 pivot = 0（⇒ 未设 pivot 的缩放项绕屏幕原点）", "+36/+40/+44 描画位置 = 0", "+8 源矩形 SetRect(0,0,0,0)", "五窗 delay/dur/work/target 初始化（缩放 1、旋转 0、平移 0）"],
+    "evidence": "raw 116878-117000",
+    "notes": "★pivot 默认 0（不是描画位置）⇒ 渲染侧若把位置写成 pos 而不是 pivot，未设 pivot 的缩放项会算错；修法见 docs-new/03-engine/rendering.md §4.5 与 src/renderer/drawitem/eval.ts 的 itemRenderPlacement。emulator：src/renderer/drawitem/model.ts 的 makeItem/makeDefaultItem。"
   }
 
 ]

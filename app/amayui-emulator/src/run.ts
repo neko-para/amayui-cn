@@ -2,7 +2,9 @@
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
-import { resolveResourceDir, resolveSaveDataPath } from './arch/resourceDir.js';
+import { resolveResourceDir } from './arch/resourceDir.js';
+import { OverlayDir } from './arch/overlay.js';
+import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/systemPaths.js';
 import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
@@ -10,7 +12,6 @@ import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js'
 import { ScriptReset, ExitScript } from './vm/ops.js';
 import { OPCODE_TABLE } from './script/bin.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
-import * as fs from 'node:fs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
@@ -18,16 +19,18 @@ const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/s
 const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 
 async function main() {
-  // ★配置回写：`--no-save-config` 可关；默认写随工程的 `app/amayui-emulator/SYS4REG.INI`
-  //   （与 Electron 侧同一个文件，见 electron/paths.ts 的 configIniCandidates）。
+  // ★玩家数据（`SYS4REG.INI` / `SAVE\SAVE.DAT`）走「系统存档目录 + overlay」：
+  //   读 overlay → base（真游戏），写只写 overlay ⇒ 能继承真游戏设置，又不会写坏它。
+  //   `--no-save-config` / `--no-save-data` 可关回写（关掉后完全不写盘）。
   const saveConfig = !process.argv.includes('--no-save-config');
   const saveData = !process.argv.includes('--no-save-data');
-  const configPath = path.join(REPO_ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
-  const saveDataPath = resolveSaveDataPath(REPO_ROOT);
+  const system = resolveSystemPaths(REPO_ROOT);
+  const overlay = new OverlayDir(system);
+  console.log(`[overlay] ${describeSystemPaths(system)}`);
   const src = new NodeFileSource({
     resourceDir: RESOURCE_DIR,
-    ...(saveConfig ? { configPath } : {}),
-    ...(saveData ? { saveDataPath } : {}),
+    ...(saveConfig || saveData ? { system } : {}),
+    log: (m) => console.log(`[overlay] ${m}`),
   });
   const native = new StubNative(() => {}); // 安静：run.ts 自己打印结构化摘要
   const e = new Engine(native);
@@ -40,34 +43,36 @@ async function main() {
 
   // 装载引擎配置（与 Electron 侧 `renderer/app/configBoot.ts` 同一份逻辑：读 INI → 灌引擎字段）。
   // 有了它，`0x2EB`（set:GameVersion）与 `0x131/0x2E6/0xC5…` 这些"读配置"指令在无界面跑时也有真值。
-  try {
-    const cfg = parseIni(fs.readFileSync(configPath, 'utf8'));
+  const ini = await src.readConfig();
+  if (ini) {
+    const cfg = parseIni(ini.text);
     e.config = cfg;
     const applied = applyConfigToEngine(cfg, e.engineValues);
     console.log(
-      `[config] ${configPath} 分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个` +
+      `[config] ${ini.path}（${ini.side}）分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个` +
         `（写入引擎字段 ${applied.length} 个；回写=${saveConfig ? '开' : '关'}）`,
     );
-  } catch (err) {
-    console.log(`[config] 读 SYS4REG.INI 失败（沿用默认值）：${(err as Error).message}`);
+  } else {
+    console.log('[config] overlay/base 都没有 SYS4REG.INI（引擎字段用默认值）');
   }
 
   // 装载 SAVE.DAT（`save-int`/`save-string` 表）—— 必须在装载脚本之前：
   // `SYSTEM4.txt:71` 的 `load-int (global 5)` 决定走 LOADCONFIG（恢复设置）还是 INITCONFIG（写默认值）。
   if (saveData) {
-    const bytes = await src.readSaveData();
-    if (!bytes) {
-      console.log('[save] 无 SAVE.DAT（首次启动：走 INITCONFIG 默认值分支）');
+    const hit = await src.readSystemFile(SAVE_DAT_REL);
+    if (!hit) {
+      console.log(`[save] ${overlay.overlayFile(SAVE_DAT_REL)} / ${overlay.baseFile(SAVE_DAT_REL)} 都不存在` +
+        '（首次启动：走 INITCONFIG 默认值分支）');
     } else {
-      const r = decodeSaveData(bytes);
+      const r = decodeSaveData(hit.data);
       if (r.ok) {
         e.applySaveDataTables(r.data.tables);
         console.log(
-          `[save] ${saveDataPath} 「${r.data.title}」format=${r.data.format}：` +
+          `[save] ${hit.path}（${hit.side}）「${r.data.title}」format=${r.data.format}：` +
             `${r.data.tables.ints.size} 个 int / ${r.data.tables.strings.size} 个 string ⇒ 走 LOADCONFIG 分支`,
         );
       } else {
-        console.log(`[save] 无法解析 SAVE.DAT（${r.reason}）⇒ 当作首次启动`);
+        console.log(`[save] 无法解析 ${hit.path}（${r.reason}）⇒ 当作首次启动`);
       }
     }
     e.onSaveDataChanged = () => {

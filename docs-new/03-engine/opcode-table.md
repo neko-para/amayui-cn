@@ -160,7 +160,7 @@
 | 0xB2 | 2 |  | sub_420AB0 | 仅映射 |  |
 | 0xB3 | 0 |  | sub_4196B0 | 仅映射 |  |
 | 0xB4 | 2 | play-sound-effect | sub_420B00 | 已核对 | **play-sound-effect**：帧 arity=5；读 op1=音效 id、op2=通道指针 → `sub_4B4F60(Engine+20719, 通道, id)` 预载/起播音效。**PARTIAL**（`sub_4B4F60` 未分析）；handler=sub_420B00（raw .c 29680-29687） |
-| 0xB5 | 1 |  | sub_420B40 | 已核对 | **声音通道控制**：读 op1=通道号 → `sub_4B5020(_this+20719, op1, 0)` →（设备在时）`sub_4B6020(设备, op1, 0)`：通道>0xE 或未分配→报错/返回；否则 `sub_4B73E0(通道,0)`。**纯声音侧、无 VM/渲染效果**。handler=sub_420B40（raw .c 29689）。emulator：**声音相关→忽略 no-op**（与 0xB4/0xB6 同族，TITLE 音效） |
+| 0xB5 | 1 |  | sub_420B40 | 已核对 | **声音通道控制**：读 op1=通道号 → `sub_4B5020(_this+20719, op1, 0)` →（设备在时）`sub_4B6020(设备, op1, 0)`：通道>0xE 或未分配→报错/返回；否则 `sub_4B73E0(通道,0)`。**纯声音侧、无 VM/渲染效果**。handler=sub_420B40（raw .c 29689）。emulator：**声音相关→忽略 no-op**（与 0xB4/0xB6 同族）。★**别与 0x5B `ne` 混**：本指令助记符缺失 ⇒ 反汇编/控制面板显示为 `i0b5`，2026-09 用户实测把它读成 `0x05B`（`ne`，已实现）而以为"已实现指令被当缺口"。用法实证：`SELFONT.txt:38 i0b5 1`（选中字体时播确认音）、`CONFIG2.txt` 11 处（ADV 设定页的反馈音） |
 | 0xB6 | 1 |  | sub_420B80 | 已核对 | **声音通道**：`sub_4B5050(_this+20719, op1)`(播/控音效)。handler=sub_420B80（raw .c 29327） |
 | 0xB7 | 1 |  | sub_420C00 | 仅映射 |  |
 | 0xB8 | 0 |  | sub_419720 | 仅映射 |  |
@@ -470,8 +470,8 @@
 | 0x2D9 | 2 |  | sub_430D60 | 仅映射 |  |
 | 0x2DA | 8 |  | sub_426420 | 已核对 | **CG 数字条记录登记**：`op1`=CG 番号（合法 0..0xA，越界只记日志不抛）+ `op2..op8` = **7 个 int** → 写进 `Engine+388332+28*cgno` 的 28 字节记录（`28*(n+13869)` 与 `4*97084+28*n` 是同一地址）。字段语义由消费方 0x23B 反推：`+0` 纹理槽 / `+4` x0 / `+8` y0 / `+12` 单字宽 / `+16` 字高 / `+20` 字内空隙 / `+24` 字距。★**是 7 个 dword（28 字节）**，旧文档「共 8 字段」把手写操作数 op1（编号）也算进去了。纯数据登记：不碰 Scene / 不置脏 / 不影响控制流。handler=sub_426420（raw .c 33498） |
 | 0x2DB | 1 |  | sub_426500 | 已核对 | **文本对象字段+字体重建**：读 op1 写 `_this[71744]`，调 `sub_459F40()` 重建字体。handler=sub_426500（raw .c 33015） |
-| 0x2DC | 1 |  | sub_430DB0 | 已核对 | **数组条数 getter**：`v1 = (Engine[71741] - Engine[71740]) >> 5`（32B/条，0 ⇒ -1）⇒ `op1 = v1`。handler=sub_430DB0（raw .c 40240） |
-| 0x2DD | 2 |  | sub_434720 | 仅映射 |  |
+| 0x2DC | 1 |  | sub_430DB0 | 已核对 | **可选字体数量 → op1**：`v1 = (Font[71741] - Font[71740]) >> 5`（`Font+201664` 的 **32B/条**字体名向量长度，由 `EnumFontFamilies` 填充；**空表 ⇒ -1，绝不返回 0**）⇒ `op1 = v1`。脚本 `$1$SELFONT.txt:34` 用它做分页（每页 9 项）与滚动条分母（`:78 div` 拿它当**除数**）⇒ 返回 0 会让字体选择器直接退出并除零。handler=sub_430DB0（raw .c 40239-40249）。emulator：`op_font_list_count`（`ENGINE_FONT_LIST`，与 0x2DD/0x2DE 同一张表） |
+| 0x2DD | 2 |  | sub_434720 | 已核对 | **字体表第 op2 项的名字 → op1（字符串）**：`v2 = read(2)`；越界（`<0` 或 `>= count`）⇒ 写**空串**（`byte_51EA3C`），否则把 `Font+201664 + 32*v2` 那条 `std::string` 拷进 op1（`sub_433310(_this,1,串)`）。脚本 `$1$SELFONT.txt:567/:644` 用它逐行画候选字体名（`:644` → `set-font` → `draw-string`）。handler=sub_434720（raw .c 42541-42575）。emulator：`op_font_list_name` |
 | 0x2DE | 2 |  | sub_430DF0 | 已核对 | **字符串→索引查表**：`sub_41B640(2)` 读 op2 字符串 → `sub_428990(_this[50416] 表)` 查找（跳过前导 `@`，未命中=-1）→ `writeIntOperand_42B4B0(1, idx)` 写回 op1。handler=sub_430DF0（raw .c 39525） |
 | 0x2DF | 3 |  | sub_430E30 | 仅映射 |  |
 | 0x2E0 | 3 |  | sub_430EA0 | 仅映射 |  |
@@ -607,3 +607,4 @@
 | 0x398 | 3 |  | Amayui 2 |
 | 0x399 | 7 |  | Tenmei no Conquista |
 | 0x39B | 5 |  | Amayui 2 |
+

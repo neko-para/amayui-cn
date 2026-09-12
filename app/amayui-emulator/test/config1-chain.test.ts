@@ -19,6 +19,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG_XY, runConfig1Chain, type ChainResult } from '../src/tools/config1Chain.js';
+import { itemRenderPlacement, makeItem } from '../src/renderer/drawItem.js';
 
 /** 链路很重（数百万条指令）⇒ 所有用例共享同一次运行结果。 */
 let cached: Promise<ChainResult> | null = null;
@@ -157,6 +158,69 @@ test('★CONFIG1 滚动条拇指：上盖 / 中段(0x1FD 撑开) / 下盖 首尾
   );
   // pivot 与描画位置同坐标空间（`i217 <obj> <dstX> <dstY> 0`）⇒ Pixi 相对量必须为 0
   assert.deepEqual([t!.middle.pivotRelX, t!.middle.pivotRelY], [0, 0], '中段 pivot == 描画位置 ⇒ 以左上角为基准拉伸');
+});
+
+/**
+ * ★2026-09 实测反馈：「**打开字体选择框 → 右键退出 → 再滚动列表**，滚动条中间 scale 出来的区域
+ * 会漂到左边」。
+ *
+ * 根因链（全部可在本链路里观测）：
+ *  1. `CONFIG1.txt:1045` 在打开字体选择器（`call-script 51dd`）前把脚本全局 `707ffa/707ffb`
+ *     （**弹窗原点**，`CONFIG1.txt:1046-1048` 按行号算）置成 `0x348/0x78+0x32·n`，**从不复位**；
+ *  2. 滚动条中段的 `0x217` pivot 被算成 `707ffa + 32e`（`CONFIG1.txt:2960`、`CONFIG2.txt:1424`），
+ *     而它的**描画位置**是 `32e` ⇒ `pivot ≠ pos`（本例实测 pivotRel = 0x348 = 840）；
+ *  3. 引擎把 pivot **原样**存进 DrawItem`+24/+28/+32`（`sub_4ACF20`，新建项默认 0 —— `sub_49A300`），
+ *     渲染是 `v' = S·R·(v − pivot) + t + pivot`。Pixi 侧必须**同时**取
+ *     `position = pivot`、`pivot = pivot − pos`；只改后者而位置用 `pos` 时，中段会整体平移
+ *     `pivot − pos`（scaleX = 1 ⇒ 左移 840px）—— 这正是用户看到的"漂到左边"。
+ *
+ * 断言口径：**渲染出来的左边缘**（用渲染器同一份映射 `itemRenderPlacement` 算）必须与上/下盖的
+ * `dstX` 一致。修前会差 `pivotRel`（840），修后为 0。
+ */
+test('★字体选择器开关过之后滚动：拇指中段的**渲染位置**不得漂移（pivot ≠ pos 的映射回归）', async () => {
+  const r = await runConfig1Chain({ fontPickerProbe: true, fontPickerCloseThenScroll: true });
+  const fp = r.fontPicker;
+  assert.ok(fp?.opened, '应先打开字体选择器（$1$SELFONT）');
+  assert.ok((fp?.names.length ?? 0) >= 9, `选择器应列出候选面名（实际 ${fp?.names.length}）`);
+  assert.equal(fp?.scriptAfterClose, 'CONFIG1.BIN', '右键退出后应回到 CONFIG1');
+  const origin = fp?.popupOrigin;
+  assert.ok(origin && origin.x !== 0, `弹窗原点 707ffa 应仍是脚本留下的非零值（实际 ${JSON.stringify(origin)}）`);
+
+  const t = fp?.afterCloseScroll;
+  assert.ok(t, '关闭选择器并滚动后应能取到拇指三段');
+  assert.equal(t!.middle.pivotRelX, origin!.x, '★中段 pivot 被算成「弹窗原点 + 轨道 x」⇒ pivotRel = 弹窗原点（本回归的前提）');
+
+  // 渲染器同一份映射：走世界矩阵的段 = `position = pivot (+t)`、`pivotLocal = pivot − pos`；
+  // 不走世界矩阵的段是纯 2D（`position = pos`，pivot/scale/rot/trans 一律不参与）。
+  const renderedLeft = (seg: NonNullable<typeof t>['top']): number => {
+    if (!seg.useWorld) return seg.dstX;
+    const it = makeItem({
+      handle: 1,
+      layer: 1,
+      tex: 0,
+      srcX: 0,
+      srcY: 0,
+      srcW: seg.srcW,
+      srcH: seg.srcH,
+      dstX: seg.dstX,
+      dstY: seg.dstY,
+    });
+    it.pivotX = seg.dstX + seg.pivotRelX;
+    it.pivotY = seg.dstY + seg.pivotRelY;
+    it.scaleTarget = { x: seg.scaleX, y: seg.scaleY, z: 1 };
+    const pl = itemRenderPlacement(it, 0);
+    return pl.position.x + pl.scale.x * (0 - pl.pivot.x);
+  };
+  assert.equal(t!.top.useWorld, false, '上/下盖没有变换指令 ⇒ 纯 2D 路径');
+  assert.equal(t!.middle.useWorld, true, '中段有 `0x1FD` ⇒ 走世界矩阵');
+  assert.equal(renderedLeft(t!.top), t!.top.dstX, '上盖（纯 2D）渲染位置 = dstX（回归基准）');
+  assert.equal(
+    renderedLeft(t!.middle),
+    t!.middle.dstX,
+    `★中段渲染左边缘必须回到轨道 x（实际 ${renderedLeft(t!.middle)} vs ${t!.middle.dstX}）` +
+      '—— 修前会左移 pivotRel（= 弹窗原点）',
+  );
+  assert.equal(renderedLeft(t!.middle), t!.top.dstX, '三段必须同列');
 });
 
 /**

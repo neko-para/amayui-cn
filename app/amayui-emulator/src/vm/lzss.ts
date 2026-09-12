@@ -3,7 +3,8 @@
  *
  * 为什么在 emulator 里也有一份：`SAVE.DAT` 在 `format >= 2` 时 payload 是
  * **Crypt 加密 + 本 LZSS 压缩**（引擎 `sub_4364E0`/`sub_436A80`；装载路径 raw 45051-45064）。
- * 要在 emulator 里读玩家的真存档（`AMAYUI_SAVE_DIR` 指向真游戏存档目录）就得解压这一段。
+ * 要在 emulator 里读玩家的真存档（系统存档目录 `%LOCALAPPDATA%\Eushully\<game>\SAVE\SAVE.DAT`，
+ * 见 `src/arch/systemPaths.ts` 的 overlay 层）就得解压这一段。
  *
  * 与 `scripts/alf/lzss.mjs`（ALF 解包工具，同一算法）的关系：那份是工具链的 Node 版，
  * 这份是 emulator 内部依赖，语义逐行相同（环形缓冲 `text_buf`、每 8 项一个 flag 字节、

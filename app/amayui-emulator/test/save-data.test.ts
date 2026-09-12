@@ -354,33 +354,40 @@ test('save-string / load-string：字符串表同样往返（字体名）', () =
   assert.equal(e2.globals.str.get(0xbbb), 'メイリオ');
 });
 
-test('NodeFileSource：写盘走 $$SAVE.DAT → SAVE.DAT，且二次读取优先本工程存档', async () => {
+test('NodeFileSource：写盘走 .$$tmp → overlay\\SAVE\\SAVE.DAT，且二次读取优先 overlay', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'amayui-save-'));
-  const target = path.join(dir, 'SAVE.DAT');
+  const baseDir = path.join(dir, 'game');
+  const overlayDir = path.join(dir, 'game.overlay');
+  const target = path.join(overlayDir, 'SAVE', 'SAVE.DAT');
   try {
-    const src = new NodeFileSource({ resourceDir: path.join(REPO, 'install'), saveDataPath: target });
-    assert.equal(await src.readSaveData(), null, '一开始没有存档');
+    const src = new NodeFileSource({
+      resourceDir: path.join(REPO, 'install'),
+      system: { baseDir, overlayDir },
+    });
+    assert.equal(await src.readSaveData(), null, '一开始哪一侧都没有存档');
     const bytes = encodeSaveData({ tables: sampleTables() });
     await src.writeSaveData(bytes);
-    assert.ok(fs.existsSync(target), '应写到 SAVE.DAT');
-    assert.ok(!fs.existsSync(path.join(dir, '$$SAVE.DAT')), '临时文件应已改名');
+    assert.ok(fs.existsSync(target), '应写到 overlay 的 SAVE.DAT');
+    assert.ok(!fs.existsSync(`${target}.$$tmp`), '临时文件应已改名');
     const back = await src.readSaveData();
     assert.ok(back);
     const r = decodeSaveData(back!);
     assert.equal(r.ok, true);
     if (r.ok) assert.equal(r.data.tables.ints.get('\x030000a9ce'), 2);
 
-    // 引擎格式的 SAVE.DAT 存在时：读优先 .amayui，写不碰原文件
+    // base（真游戏）那份是引擎格式：读时继承它，写时**一个字节都不动**
     const engineFile = makeEngineSave(sampleTables());
-    fs.writeFileSync(target, engineFile);
+    const baseTarget = path.join(baseDir, 'SAVE', 'SAVE.DAT');
+    fs.mkdirSync(path.dirname(baseTarget), { recursive: true });
+    fs.writeFileSync(baseTarget, engineFile);
     const ours = encodeSaveData({ tables: { ints: new Map([['\x03000000ff', 9]]), strings: new Map() } });
     await src.writeSaveData(ours);
-    assert.equal(fs.readFileSync(target).length, engineFile.length, '★绝不覆盖引擎存档');
-    assert.ok(fs.existsSync(`${target}.amayui`), '本工程的状态写进 .amayui');
+    assert.equal(fs.readFileSync(baseTarget).length, engineFile.length, '★绝不覆盖真存档');
+    assert.deepEqual([...fs.readFileSync(baseTarget)], [...engineFile], '★真存档字节不变');
     const preferred = await src.readSaveData();
     const pr = decodeSaveData(preferred!);
     assert.equal(pr.ok, true);
-    if (pr.ok) assert.equal(pr.data.tables.ints.get('\x03000000ff'), 9, '读取应优先 .amayui');
+    if (pr.ok) assert.equal(pr.data.tables.ints.get('\x03000000ff'), 9, '读取应优先 overlay');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

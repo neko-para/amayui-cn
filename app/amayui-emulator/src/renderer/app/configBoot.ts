@@ -21,7 +21,7 @@ export async function loadEngineConfig(e: Engine, trace: (line: string) => void)
     e.config = cfg;
     const applied = applyConfigToEngine(cfg, e.engineValues);
     trace(
-      `[config] ${ini.path} 分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个；` +
+      `[config] ${ini.path}（${ini.side}）分节=[${cfg.sections.join(',')}] 键=${cfg.values.size} 个；` +
         `写入引擎字段 ${applied.length} 个：` +
         applied.map((a) => `_this[${a.field}]=${a.value}(${a.key})`).join(' '),
     );

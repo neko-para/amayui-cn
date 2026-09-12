@@ -14,11 +14,8 @@ import {
   advanceWindows,
   calcDiffuse,
   itemColor,
-  itemPivotLocal,
-  itemRotationRad,
-  itemScale,
+  itemRenderPlacement,
   itemSrcRect,
-  itemTranslation,
   type Item,
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
@@ -98,18 +95,18 @@ export class ScenePresenter {
       //   漏掉这个门就会把"从没设过 pivot"的项按 pivot=(0,0) 反算成 `-pos`，把项推出画面
       //   （CONFIG1 滚动条的上/下盖正好是这种项）。
       if (it.useWorld) {
-        // pivot（`0x217` 写 DrawItem`+24/+28/+32`）：引擎 `sub_49AA30` 以 `T(-pivot) → 动画矩阵 → T(+pivot)`
-        // 夹住动画矩阵，而四边形已建在描画位置上 ⇒ 等价于「放在 pos，并绕**绝对坐标 pivot** 缩放/旋转」。
-        // Pixi 的 pivot 是**相对项原点**的局部量 ⇒ 取 `pivot − pos`（见 `itemPivotLocal`）。
-        const pv = itemPivotLocal(it);
-        if (pv.x !== 0 || pv.y !== 0) spr.pivot.set(pv.x, pv.y);
-        const sc = itemScale(it, clock);
-        if (sc.x !== 1 || sc.y !== 1) spr.scale.set(sc.x, sc.y);
-        const rot = itemRotationRad(it, clock);
-        if (rot !== 0) spr.rotation = rot;
-        // 平移动画窗（窗3）的偏移（引擎把平移矩阵乘进世界矩阵）。
-        const tr = itemTranslation(it, clock);
-        spr.position.set(it.posX + tr.x, it.posY + tr.y);
+        // 世界矩阵（`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220` 置位）：引擎 `sub_49AA30` 行向量序
+        // `T(-pivot)·S·R·Tt·T(+pivot)` 作用在"已建在描画位置上"的四边形 ⇒
+        // `v' = S·R·(v − pivot) + t + pivot`，其中 `pivot` 由 `0x217` **原样**写入（绝对值）。
+        // Pixi 的 `screen(l) = position + S·R·(l − sprite.pivot)` 要与它逐项相等，必须
+        // **同时**取 `position = pivot + t`、`sprite.pivot = pivot − pos`（见 `itemRenderPlacement`）。
+        // ★历史上这里位置用的是 `pos`：只有 `pivot == pos` 时才等价 ⇒ 一旦脚本给出偏离 pos 的
+        //   绝对 pivot（`CONFIG1` 滚动条中段的 `707ffa + 32e`），缩放项就整体平移 `(pivot − pos)`。
+        const pl = itemRenderPlacement(it, clock);
+        spr.pivot.set(pl.pivot.x, pl.pivot.y);
+        spr.scale.set(pl.scale.x, pl.scale.y);
+        spr.rotation = pl.rotRad;
+        spr.position.set(pl.position.x, pl.position.y);
       } else {
         spr.position.set(it.posX, it.posY);
       }

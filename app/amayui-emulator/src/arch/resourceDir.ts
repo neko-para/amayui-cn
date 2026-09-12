@@ -36,27 +36,7 @@ export function resolveResourceDir(repoRoot: string, env: NodeJS.ProcessEnv = pr
   return path.join(repoRoot, DEFAULT_RESOURCE_DIR_NAME);
 }
 
-/** 默认存档目录（仓库根下，随工程的 `SAVE/`）。 */
-export const DEFAULT_SAVE_DIR_NAME = path.join('app', 'amayui-emulator', 'SAVE');
-
-/** 覆盖用环境变量名（指向真游戏的存档目录即可"继承"玩家的设置，注意本工程会写明文格式）。 */
-export const SAVE_DIR_ENV = 'AMAYUI_SAVE_DIR';
-
-/**
- * 解析 `SAVE.DAT` 的完整路径。
- *
- * 默认 `app/amayui-emulator/SAVE/SAVE.DAT`（**随工程**，这样"改了设置 → 关掉 → 再开还在"
- * 可复现、也不会污染真游戏目录）。`AMAYUI_SAVE_DIR` 可指向任意目录（含真游戏的
- * `%LOCALAPPDATA%\Eushully\<game>\SAVE`）—— 但请留意：真存档是引擎加密格式，
- * 本工程**认不出**时会先备份成 `SAVE.DAT.engine.bak` 再写自己的格式（见 `NodeFileSource.writeSaveData`）。
- */
-export function resolveSaveDataPath(repoRoot: string, env: NodeJS.ProcessEnv = process.env): string {
-  const override = env[SAVE_DIR_ENV];
-  const dir =
-    override && override.trim().length > 0
-      ? path.isAbsolute(override)
-        ? override
-        : path.join(repoRoot, override)
-      : path.join(repoRoot, DEFAULT_SAVE_DIR_NAME);
-  return path.join(dir, 'SAVE.DAT');
-}
+// ★玩家数据（`SYS4REG.INI` / `SAVE\SAVE.DAT`）**不在**这里解析：它们走系统存档目录 + overlay，
+//   见 `systemPaths.ts`（base/overlay 的唯一解析点）与 `overlay.ts`（读 overlay→base、写只写 overlay）。
+//   旧实现把"随工程的 app/amayui-emulator/SAVE/SAVE.DAT"当默认值，既会把仓库当存档区、
+//   又会用 `SAVE.DAT.amayui` 后缀去规避覆盖真存档 —— 已废弃。

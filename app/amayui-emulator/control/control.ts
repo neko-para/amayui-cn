@@ -32,12 +32,23 @@ function parseOpList(s: string): number[] {
 
 // ---- 五张清单（渲染格式只有这一处；复制文本与显示文本同源）----
 
+/**
+ * 指令码的规范写法（**所有清单行都以它开头**）。
+ *
+ * ★为什么必须带 opcode：助记符在缺名时是 `i0b5` 这种"i + 三位十六进制"，极易与
+ * 别的 opcode 混读 —— 2026-09 用户实测就把 `0x0B5`（`i0b5`，DsPlaySound 音轨）看成了
+ * `0x05B`（`ne`，已实现），于是以为"已实现的指令被当成缺口"。带上 `0x0b5` 后不可能再混。
+ */
+function opHex(opcode: number): string {
+  return `0x${opcode.toString(16).padStart(3, '0')}`;
+}
+
 const ignoredView = new ListView<ControlStatus['ignored'][number]>({
   elements: lists.ignored,
   unit: '个',
   emptyText: '（暂无：被忽略的指令都收到了实参 → 见上面的「能力缺口」）',
-  // 只显示助记符（name 已是语义名或 iXXX 数值），不列指令码数值。
-  rowOf: (it) => ({ text: it.name }),
+  // 行首列指令码（见 opHex 的说明），随后是助记符（语义名或 iXXX 数值）。
+  rowOf: (it) => ({ text: `${opHex(it.opcode)} ${it.name}` }),
 });
 
 /** 已跳过的未知指令（用户在按钮上点过、已登记为 no-op 桩）。只显示助记符 + 执行次数。 */
@@ -45,7 +56,7 @@ const skippedView = new ListView<ControlStatus['skipped'][number]>({
   elements: lists.skipped,
   unit: '个',
   emptyText: '（暂无：已跳过且未收到实参的指令）',
-  rowOf: (it) => ({ text: `${it.name} ×${it.count}` }),
+  rowOf: (it) => ({ text: `${opHex(it.opcode)} ${it.name} ×${it.count}` }),
 });
 
 /**
@@ -61,9 +72,9 @@ const gapsView = new ListView<NonNullable<ControlStatus['gaps']>[number]>({
   unit: '种',
   emptyText: '（暂无：被跳过的指令都没有收到实参）',
   rowOf: (it) => ({
-    text: `${it.source === 'skipped' ? '[已跳过]' : '[忽略]'} ${it.name} ×${it.count}`,
+    text: `${it.source === 'skipped' ? '[已跳过]' : '[忽略]'} ${opHex(it.opcode)} ${it.name} ×${it.count}`,
     title: `最近实参：${it.sample.join(' ')}`,
-    copy: `${it.name} ×${it.count}｜${it.sample.join(' ')}`,
+    copy: `${opHex(it.opcode)} ${it.name} ×${it.count}｜${it.sample.join(' ')}`,
   }),
 });
 

@@ -13,17 +13,17 @@ declare global {
     api: {
       readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
       readFile(path: string): Promise<number[]>;
-      /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
-      readConfigIni(): Promise<{ path: string; text: string } | null>;
+      /** 读引擎配置 SYS4REG.INI 文本（overlay → 真游戏那份；都没有返回 null）。 */
+      readConfigIni(): Promise<{ path: string; text: string; side: 'overlay' | 'base' } | null>;
       /**
-       * **写回**引擎配置 SYS4REG.INI（整份文本；主进程写到启动时实际读到的那份）。
+       * **写回**引擎配置 SYS4REG.INI（整份文本；主进程**只写 overlay**，真游戏那份不动）。
        * 由 `Engine.onConfigChanged` → `IpcFileSource.saveConfig` 调用；旧 preload 可能没有此通道
        * （调用点用 `?.` 降级为"只改内存"）。
        */
       saveConfigIni?(text: string): Promise<{ path: string } | null>;
-      /** 读 `SAVE.DAT` 原始字节（没有该文件返回 null）。`save-int`/`save-string` 表的持久化载体。 */
+      /** 读 `SAVE.DAT` 原始字节（overlay → base；都没有返回 null）。`save-int`/`save-string` 表的持久化载体。 */
       readSaveData?(): Promise<Uint8Array | number[] | null>;
-      /** 写 `SAVE.DAT`（整份字节）；主进程侧做"引擎格式先备份"的保护。 */
+      /** 写 `SAVE.DAT`（整份字节）；主进程**只写 overlay**，真存档永不被覆盖。 */
       writeSaveData?(data: Uint8Array): Promise<{ path: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**

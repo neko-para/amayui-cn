@@ -73,7 +73,9 @@ npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼�
 把值**灌进引擎字段**（raw 23649-23745），脚本再用 opcode 读这些字段。emulator 现按同样顺序做：
 
 - **加载**：`src/engineConfig.ts` 的 `parseIni()` + `CONFIG_FIELD_BINDINGS` + `applyConfigToEngine()`；
-  渲染窗 boot 时经 IPC `read-config-ini` 读 `app/amayui-emulator/SYS4REG.INI`（找不到则依次试仓库根 / 游戏目录），
+  渲染窗 boot 时经 IPC `read-config-ini` 读**当前生效的那份** —— 系统存档目录 + overlay：
+  先 `%LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overlay\SYS4REG.INI`，没有则读真游戏那份
+  `…\天結いキャッスルマイスター\SYS4REG.INI`（见 `src/arch/systemPaths.ts` / `overlay.ts`，下文「设置界面那些开关存哪」）。
   写入 `Engine.engineValues`，并把解析结果存 `Engine.config`。
 - **已绑定字段**（键 → `_this[K]`，**K 一律是 dword 下标**＝handler 里的同一空间）：
   `sound:Music`→174713（0xC0 读；⚠raw 的配置写入目标是下标 174810，待音频专项对齐）、
@@ -90,15 +92,17 @@ npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼�
   `0x194`(字符串相等)；另加 **`0x2EB`**：`GetConfig("set:GameVersion")` → **字符串操作数**（TITLE 的版本号）。
 - **写配置**：`0x141`/`0x1B5`/`0x1B9`/`0x2CD`/`0x2E7`/`0x2E8` … 全部经 `setConfigValue()` 写 `Engine.config`。
   ★**落盘**：`Engine.onConfigChanged` → `FileSource.saveConfig(整份 INI 文本)` ——
-  Electron 走 IPC `save-config-ini`（写回**启动时实际读到的那份**，且只接受 `configIniCandidates()` 里的路径），
-  headless `npm run run` 直写 `app/amayui-emulator/SYS4REG.INI`（`--no-save-config` 可关）。
-  **测试/链路工具不注入该钩子** ⇒ 跑测试不会改动仓库里的配置文件。
+  Electron 走 IPC `save-config-ini`，headless `npm run run` 直调 `NodeFileSource.saveConfig`；
+  两者都**只写 overlay** 的 `SYS4REG.INI`（真游戏那份一个字节都不动），且带防丢键棘轮（见下）。
+  `--no-save-config` 可关回写。**测试/链路工具不注入该钩子** ⇒ 跑测试不会写任何玩家数据。
   序列化在 `engineConfig.formatIni()`（按 `sections`+`order` 还原，**只改一个值不会重排整个 INI**）。
 - **`[set]` 段与版本号**：引擎内建 `set:GameVersion = "1.00"`（raw 111627-111629 的 `a100`）；
   INI 里写了就覆盖它；若 `set:VerRegPos` 非空，真引擎还会用注册表 `DisplayVersion` 再覆盖一次
-  （`sub_490010`，缺省 `"1.00.0000"`）。**emulator 不查注册表**（跨平台）⇒ 版本号由
-  `SYS4REG.INI` 的 `[set] GameVersion` 决定（现为 `1.07.0019` = `raw/补丁/修正补丁/amayui_107.exe` 的 FileVersion）。
+  （`sub_490010`，缺省 `"1.00.0000"`）。**emulator 不查注册表**（跨平台，且本机这份 `VerRegPos` 为空）
+  ⇒ 版本号 = `ENGINE_BUILTIN_GAME_VERSION` 被 INI 覆盖；**真游戏 INI 里没有 `[set]` 节**（那节由引擎退出时写），
+  所以实际取 `DEFAULT_GAME_VERSION = 1.07.0019`（= `raw/补丁/修正补丁/amayui_107.exe` 的 FileVersion）。
   TITLE 用它画 "Version X.YY.ZZZZ"：`0x2EB` 取值 → `0x2C7` 按**字节**切 1/2/4 段 → `0x2EC`(atoi) → `0x23B`(CG 数字条补零)。
+  想改成别的版本号：在 overlay 的 `SYS4REG.INI` 里写 `[set] GameVersion=…`。
 - 测试：`test/engine-config.test.ts`（解析 / 真实 INI 关键键 / 字段绑定 / 上述 opcode 取值与 0x141↔0x131 往返）、
   `test/config-version-substr.test.ts`（0x2E6↔0x2E7 闭环、`formatIni` 往返不重排、SJIS 子串、**E3：TITLE 版本号 = 1.07.0019**）。
 
@@ -114,6 +118,22 @@ CHECKCONFIG      i2de 字体名→下标（装不上 ⇒ 回退默认并重新 s
 SYSTEM4.txt:71   load-int (global-int 5)  ← 判据：SAVE.DAT 里有「已初始化」标志就走 LOADCONFIG，否则 INITCONFIG
 ```
 
+### ★ADV 文字速度（`message:MessageSpeed`）= **每字毫秒**
+
+设置界面「显示速度」滑条 → `CONFIG1.txt:2286` `i1b5 (100 - 滑条值)` → `0x1B5` 写
+`Font+1376`（= `Engine[21668]`）**且**写配置 `message:MessageSpeed`；显现泵 `sub_409400` 每
+`max(该值, 一帧)` ms 调一次 `sub_45BE20` 推**一个字**（`win+44` 的 24B 记录表是逐字 push 的，
+见 `docs-new/03-engine/adv-text-rendering.md` §3.3.1）⇒ **整段耗时 = 字数 × 该值**。
+
+- emulator 侧：`msgwin.ts` 的 `RevealState.budgetMs = 字形数 × max(speed, 一帧)`，
+  `tickRevealWin` 按 `total / budgetMs` 连续推进（`carry` 保分数余量）⇒ 等价"一字一拍"；
+  `0` ⇒ 立即全显（引擎同步排空分支）。
+- ★2026-09 修：预算曾按**行数**算（把 24B 记录当成行记录）⇒ 整段快了"每行字数"倍（~14×），
+  1..99ms/字 被压成 ~50..300ms/页 ⇒ 用户实测"文字出现的速度几乎没有变"。修后实测：
+  42 字页 1ms ⇒ 0.7s（被帧率地板住）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。
+  守卫：`test/adv-msgwin.test.ts` 的速度定律 + `test/option-font-speed-menu.test.ts`。
+- 脚本还会用 `i07f`(读) / `i074`(只写字段) 做"这一段立即显示"（`i074 0` … 还原），见 `0x74`/`0x1B5` 的差别。
+
 引擎把这两张表（`Font+5452` str→int / `Font+5472` str→str）序列化进 `SAVE.DAT`
 （写 `sub_40AAE0`→`sub_438320`→`sub_437480`；读 `sub_40AEE0`→`sub_438940`；关窗或存档槽保存时写）。
 emulator 已把整条链路接通，**并且能读引擎格式的真存档**（`Crypt` + AGE `LZSS` + 双 CRC 全部逐字实现）：
@@ -124,23 +144,54 @@ emulator 已把整条链路接通，**并且能读引擎格式的真存档**（`
 | 容器/表结构/双 CRC | `src/vm/saveData.ts` + `src/vm/crc32.ts`（引擎两种 CRC 都实现） |
 | 引擎格式解密的两个变换 | `saveData.cryptDecrypt`（`sub_436E90`）+ `src/vm/lzss.ts`（`sub_436A80`） |
 | 启动装载（脚本之前） | `renderer/app/configBoot.ts` 的 `loadSaveData()` / `run.ts` 的同名段 |
-| 写盘路径 | Electron IPC `read/write-save-data`；Node `NodeFileSource.saveDataPath` |
-| **不覆盖真存档** | 目标是引擎格式时改写 `<SAVE.DAT>.amayui`，读取优先它 |
+| 玩家数据落在哪 | **overlay 层**：`src/arch/systemPaths.ts`（base/overlay 解析）+ `src/arch/overlay.ts`（读 overlay→base、写只写 overlay） |
+| 写盘路径 | Electron IPC `read/write-save-data`；Node `NodeFileSource.writeSaveData`（两侧同一份 overlay 实现） |
+| **不覆盖真存档** | 写永远只落 overlay ⇒ 真游戏目录（几十个存档槽 + 真配置）一个字节都不会被改 |
 | 载荷表结构 | `saveData.parseTables(…, engineLayout)`：引擎的字符串记录区从 `strCount` 之后 **8** 字节起（中间 4 字节 = `trailerDwords` = 记录区字节数/4 + 1）；少跳 4 字节不报错，只会**静默丢掉最后一条记录**（真存档里恰是字体键 `bbf`），见 `docs-new/03-engine/save-data.md` §3 |
 
-- 默认存档目录 `app/amayui-emulator/SAVE/`（随工程）；`AMAYUI_SAVE_DIR` 可指向真游戏存档目录
-  （`%LOCALAPPDATA%\Eushully\<game>\SAVE`）以**继承玩家的真实设置**（那次启动会走 LOADCONFIG 分支，
-  日志 `[save] … ⇒ 脚本将走 LOADCONFIG 分支` 可自证）。
-- ⚠**换了存档解码器/版本之后**，旧的 `<SAVE.DAT>.amayui` 仍会（因为读取优先）把关前那份错的设置喂回来；
-  怀疑设置不对时把 `.amayui` 改名/删掉，让它重新从引擎存档继承一次。
-- 守卫：`test/save-data.test.ts`（两种格式往返 + Crypt/LZSS/CRC 单元 + **E3 真语料两条分支** + **E4 真存档解码**）。
+**overlay 目录布局**（`AMAYUI_SYSTEM_DIR` / `AMAYUI_OVERLAY_DIR` 可覆盖）：
+
+```text
+base    = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター\            ← 真游戏：SYS4REG.INI + SAVE\SAVE.DAT（只读）
+overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overlay\    ← 本工程：结构镜像（同级目录）
+读：overlay\<rel> 有就用它，否则读 base\<rel>      写：只写 overlay\<rel>
+```
+
+- 于是**不需要任何"另存一份"的后缀 hack**（旧实现写 `<SAVE.DAT>.amayui`）：
+  继承玩家设置与"绝不写坏真存档"由目录布局本身保证；删掉 `.overlay\` 即彻底复原。
+- 于是 emulator 启动时读到的是**真游戏那份** `SYS4REG.INI`（display/sound/message/system 53 个键）
+  与真存档（5409 int / 245 string）⇒ 日志里会写清命中哪一侧：
+  `[main] config ini -> …\天結いキャッスルマイスター\SYS4REG.INI (base, 953 bytes)`、
+  `[save] …（base）… ⇒ 走 LOADCONFIG 分支`。之后任何改动都写进 overlay。
+- ⚠若换过解码器/版本后发现设置不对，把 `….overlay\` 整个删掉再启动，重新从真游戏继承一次。
+- 守卫：`test/save-data.test.ts`（两种格式往返 + Crypt/LZSS/CRC 单元 + **E3 真语料两条分支** + **E4 真存档解码**）
+  与 `test/overlay.test.ts`（读回落、写只写 overlay、base 字节不变、路径守卫、目录解析）。
   完整格式与实证见 `docs-new/03-engine/save-data.md`；**看某个存档里到底存了什么**：
-  `npm run save:dump`（默认看仓库内 `SAVE/SAVE.DAT`，也可 `npm run save:dump -- <文件>` 或
-  `AMAYUI_SAVE_DIR=<真游戏 SAVE 目录> npm run save:dump` 看真存档）。
-- ★`SYS4REG.INI` 回写带**防丢键棘轮**：新文本的键数少于磁盘现有文件时拒绝落盘（防止"配置未装载就写回"
-  把整个 INI 抹成两行）。
+  `npm run save:dump`（默认取系统存档目录的 `SAVE\SAVE.DAT`，按 overlay → base 命中并打印是哪一侧；
+  也可 `npm run save:dump -- <文件>` 指定某个存档槽）。
+- ★`SYS4REG.INI` 回写带**防丢键棘轮**：新文本的键数少于**当前生效的那份**（overlay 优先，否则真游戏那份）时
+  拒绝落盘（防止"配置未装载就写回"把整份 INI 抹成两行）。
 
 ### 设置界面相关 opcode 的实现状态
+
+| opcode | 作用 | 状态 |
+|---|---|---|
+| `0x2DC` | **可选字体数量 → op1**（`Font+201664` 的 32B/条向量长度；空表 ⇒ **-1**） | ✅ `op_font_list_count`（`ENGINE_FONT_LIST`） |
+| `0x2DD` | **字体表第 op2 项的名字 → op1 字符串**（越界 ⇒ 空串） | ✅ `op_font_list_name` |
+| `0x2DE` | 字体名 → 下标（查不到 -1；CHECKCONFIG 靠符号判断"还装着吗"） | ✅ `op_font_name_to_index` |
+| `0x1B5` | 设 `message:MessageSpeed`（每字毫秒）+ 落盘 | ✅（滑条走它，见上节） |
+| `0x74` / `0x7F` | 只写字段 / 读字段（"这段立即显示"的成对用法） | ✅ |
+| `0xA1`/`0xA2`/`0xA3` | 菜单表复位 / 登记 key→label / 查表跳转 | ✅ 纯 VM 状态（`Engine.menuMap`），**不经宿主** |
+
+★**字体选择器（`$1$SELFONT.txt`）**：`:34 i2dc` 取数量 → `:35 count==0 ⇒ exit` → 每页 9 项
+（`:43/:49` 的 `9`）用 `:78 div … count` 算滚动条；`:567/:644 i2dd` 逐行取候选名 →
+`set-font` → `draw-string`。**`0x2DC` 返回 0 会让选择器直接退出、并在 `:78` 处除零**
+（滚动条几何变成 Infinity/NaN ⇒ 用户看到的"滚动条中间段漂到左边、中间没有列表"）。
+三条指令共用 `ENGINE_FONT_LIST`（含汉化面名 `Amayui CN`），守卫 `test/option-font-speed-menu.test.ts`。
+
+★**菜单指令的"假缺口"**：`menuBind`/`menuReset` 曾是 `NativeBridge` 上的宿主方法，而宿主（PixiBackend）
+没有任何菜单子系统 ⇒ 每次 `0xA1/0xA2` 都被闸门 A 记成"意图被丢弃"，控制面板显示"没有实现"。
+现已在 `menu.ts` 里就地完成（表 = `Engine.menuMap`），宿主方法与其 `WHY` 文案一并删除。
 
 ### 默认插桩：消息窗/消息渲染 与 声音子系统
 
@@ -650,7 +701,7 @@ node scripts/build-scripts.mjs                                               # �
 | **⏸ 遇到不认识的指令 → 作为桩函数跳过并继续** | 见下 |
 | **★ 意图被丢弃（闸门 A）** | 宿主未实现的 native 调用（`?.` 静默 no-op）：方法名 ×次数 + 归因 opcode + "缺了它会怎样" |
 | **★ 能力缺口（闸门 B）** | 被跳过、却收到**非平凡实参**的指令（= 脚本真想做事而我没做），行首标来源 `[忽略]`/`[已跳过]`，悬停看最近实参 |
-| 已跳过 / 真·忽略 清单 | 控制窗把"被跳过"的指令分成**互斥的两栏**：**已跳过**= 用户点按钮登记的运行时桩（`user-stub`）；**真·忽略**= 纯 no-op 插桩（`op_engine_internal`）。★收到非平凡实参的那些会被**提升到「能力缺口」栏**，并从这两栏移除 —— 否则同一条指令会在面板上出现两次（实测 21 条"真·忽略"里有 16 条与"能力缺口"重复）。各栏都**只列助记符**（不含 `0x…` 指令码数值），各带 **「复制全部」** |
+| 已跳过 / 真·忽略 清单 | 控制窗把"被跳过"的指令分成**互斥的两栏**：**已跳过**= 用户点按钮登记的运行时桩（`user-stub`）；**真·忽略**= 纯 no-op 插桩（`op_engine_internal`）。★收到非平凡实参的那些会被**提升到「能力缺口」栏**，并从这两栏移除 —— 否则同一条指令会在面板上出现两次（实测 21 条"真·忽略"里有 16 条与"能力缺口"重复）。各栏每行都写成 **`0x0b5 i0b5 ×12`**（指令码 + 助记符），各带 **「复制全部」**。★**行首的 `0x…` 不能省**：缺名指令的助记符是 `i0b5` 这种"i + 三位十六进制"，2026-09 用户实测把它读成 `0x05B`（`ne`，其实已实现）而误以为"已实现指令被当成缺口" |
 
 ### 未知指令 → 桩跳过（可恢复的硬停）
 

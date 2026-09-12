@@ -141,7 +141,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   当 no-op 会让 TITLE 的版本号永远是占位值、以及所有切片调用读到旧串。
   [0x2c8, op_engine_internal], // 字符串
   [0x2c9, op_engine_internal], // 字符串
-  [0x2dd, op_engine_internal], // 字符串
+  // 0x2DD（字体表第 idx 项的名字）**已转真实现**：见 handlers/msgwin.ts 的 op_font_list_name
+  //   —— 它回写 op1 字符串，是字体选择器逐行画候选名的数据源；当 no-op ⇒ 列表整片空白。
   // ============ 数据字段 / 版本 / 脚本控制 ============
   [0xad, op_engine_internal], // 数据
   [0xae, op_engine_internal], // 版本/存档：读 set:SaveVersion1/2 分支续档（sub_4192F0）

@@ -230,7 +230,8 @@ export const ENGINE_FIELD_NATIVE_OPS: OpTable = [
   [0x130, op_get_engine_value], // load-show-logo：`_this[96983]` ▶ op1（SYSTEM4 用，决定是否播 LOGO）
   [0x131, op_get_engine_value], // 配置 getter（`message:MesWinAlpha`）▶ op1
   [0x201, op_get_engine_value], // 配置 getter ▶ op1
-  [0x2dc, op_get_engine_value], // 数组容量 getter ▶ op1
+  // 注：`0x2DC`（可选字体数量）**不在这里** —— 它不是配置 getter，而是字体表规模，
+  //     与 0x2DD/0x2DE 同族，见 msgwin.ts 的 op_font_list_count（原为通用 getter ⇒ 恒 0 ⇒ 字体选择器退化为除零）。
   [0xc0, op_get_music_field], // 音乐字段 `_this[174713]`（由 sound:Music 填充）▶ op1
   [0x2ce, op_get_screen_mode], // 显示模式 `_this[167990]!=0`（由 display:ScreenMode 填充）▶ op1
   [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）

@@ -101,8 +101,9 @@ const op_cfg_read: OpHandler = (c) => {
  *     （`sub_490010` raw 110485-110502，查不到退回 `"1.00.0000"`）。
  *
  * ★emulator 的取舍：不做注册表查询（跨平台、且本机这份是免安装拷贝 ⇒ 引擎也不会走到第 3 步），
- *   **取值 = `SYS4REG.INI` 的 `[set] GameVersion`，缺省用引擎内建 `"1.00"`**。
- *   `app/amayui-emulator/SYS4REG.INI` 里已显式写了 `GameVersion`（见该文件），
+ *   **取值 = 当前生效的 `SYS4REG.INI`（overlay → 真游戏那份）的 `[set] GameVersion`**，
+ *   缺省用 `DEFAULT_GAME_VERSION`（= 被模拟的 `amayui_107.exe` 的 FileVersion `1.07.0019`；
+ *   引擎内建其实是 `1.00`，而真游戏 INI 没有 `[set]` 节 —— 详见 `engineConfig.ts` 的说明）。
  *   于是 TITLE 的 "Version X.YY.ZZZZ" 不再显示占位值。
  *
  * 真实用例：`TITLE.txt:583` `i2eb (local-string 0)` → 586/589/592 三处 `i2c7` 切片 + `i2ec`(atoi)

@@ -13,14 +13,14 @@
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 11** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 12** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `analyzed` | 6 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
+| `analyzed` | 7 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
 | `partial` | 5 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 0 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **11** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **12** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -37,6 +37,7 @@
 | [`INITCONFIG0`](./INITCONFIG0.md) | `INITCONFIG0.BIN` | 「系统设定」页的**默认值 + 登记**：把 a9cb..a9d5（窗口显示/自动保存/光标自动移动/覆盖存档备注/Live2D 等）与字体名串 bbb..… | 2 | 2 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`LOADCONFIG`](./LOADCONFIG.md) | `LOADCONFIG.BIN` | **把 SAVE.DAT 里的用户设置读回全局**：29 个 `load-int (global …)` / `load-string (global-st… | 5 | 2 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`SC0330`](./SC0330.md) | `$1$SC0330.BIN` | 剧情脚本（本篇章节）：大量角色立绘的变换/表情/位置调整 + 文本推进。 | 1 | 3 | 🟠 部分 | — |
+| [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
 | [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 2 | 1 | 🟠 部分 | `test/char-reveal.test.ts` |
 | [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 4 | 2 | 🟠 部分 | `test/save-data.test.ts` |
 | [`TITLE`](./TITLE.md) | `TITLE.BIN` | 标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 … | 3 | 5 | 🟠 部分 | `test/config-version-substr.test.ts` `test/title-exit.test.ts` |

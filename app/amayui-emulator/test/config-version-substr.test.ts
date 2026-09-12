@@ -13,7 +13,8 @@
  * ```
  * 三条全是 no-op 时屏幕上就是占位值 **"0.00.0000"**（实测截图 `.tmp/stylecheck-0-title.png`）；
  * 而 `0x2E7`/`0x2E6` 是"设置界面改 auto-message pitch → 脚本回读"的闭环，
- * 它写的是**内存里的配置表**，落盘要靠 `Engine.onConfigChanged` → `FileSource.saveConfig`。
+ * 它写的是**内存里的配置表**，落盘要靠 `Engine.onConfigChanged` → `FileSource.saveConfig`
+ * （写到系统存档目录的 overlay，见 `src/arch/systemPaths.ts`）。
  *
  * 断言分四层：
  *  1. 纯函数：SJIS 字节切分 + 全角边界修正（`text/sjis.ts`）；
@@ -34,16 +35,28 @@ import { dec } from '../src/vm/bits.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
+import { INI_FILE, resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { InputManager } from '../src/vm/input.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../src/vm/ops.js';
-import { applyConfigToEngine, DEFAULT_GAME_VERSION, formatIni, parseIni } from '../src/engineConfig.js';
+import { applyConfigToEngine, DEFAULT_GAME_VERSION, ENGINE_BUILTIN_GAME_VERSION, formatIni, parseIni } from '../src/engineConfig.js';
 import { sjisSubstr } from '../src/text/sjis.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
-const INI_PATH = path.join(REPO, 'app', 'amayui-emulator', 'SYS4REG.INI');
+/** 系统存档目录 + overlay（玩家数据的唯一来源；见 src/arch/systemPaths.ts）。 */
+const SYSTEM = resolveSystemPaths(REPO);
+/** 真游戏的 `SYS4REG.INI`（base 那侧）。本机有；没有时测试退化到"空配置 + 引擎/emulator 缺省"。 */
+const REAL_INI = path.join(SYSTEM.baseDir, INI_FILE);
+/** 当前生效的 INI 文本（overlay 优先、否则真游戏那份）。 */
+function effectiveIniText(): string {
+  try {
+    return fs.readFileSync(REAL_INI, 'utf8');
+  } catch {
+    return '';
+  }
+}
 
 const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const lit = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg; // 字符串字面量
@@ -133,17 +146,20 @@ test('★0x2EB + 0x2C7 + 0x2EC：从配置取出真实版本号并切成 TITLE �
   assert.equal(take(5, 4), 19, '第三段 "0019"（按 4 位补零画 → "0019"）');
 });
 
-test('0x2EB：INI 没有 [set] GameVersion 时用**引擎内建缺省**（raw a100 = "1.00"）', () => {
+test('0x2EB：INI 没有 [set] GameVersion 时用 emulator 缺省（= 被模拟 exe 的 FileVersion）', () => {
   const { step, str } = mk('[message]\r\nMessageSpeed=5\r\n');
   step(0x2eb, [locStr(0)]);
-  assert.equal(DEFAULT_GAME_VERSION, '1.00', '内建缺省 = 引擎启动时写入的常量');
-  assert.equal(str(0), '1.00');
-  // 未加载配置（null）时同样回退到内建缺省，而不是空串
+  // 引擎内建其实是 "1.00"（raw a100），但真游戏 INI 没有 `[set]` 节 ⇒ 直接用内建会让 TITLE 画 1.00；
+  // 这里用的是"被模拟的那份 exe（修正补丁 amayui_107.exe = 1.07.0019）"的版本串。见 engineConfig.ts。
+  assert.equal(ENGINE_BUILTIN_GAME_VERSION, '1.00', '引擎内建常量本身不变');
+  assert.equal(DEFAULT_GAME_VERSION, '1.07.0019', 'emulator 缺省 = 被模拟 exe 的 FileVersion');
+  assert.equal(str(0), '1.07.0019');
+  // 未加载配置（null）时同样回退到该缺省，而不是空串
   const bare = mk().e;
   const f = new Frame();
   const h = OPS.get(0x2eb)!;
   h(makeCtx(bare, f, instr(0x2eb, [locStr(0)]), bare.native, () => {}));
-  assert.equal(f.locals.str.get(0), '1.00');
+  assert.equal(f.locals.str.get(0), '1.07.0019');
 });
 
 test('0x2C7：越界切片写空串（不是旧值、不是抛错）', () => {
@@ -187,7 +203,12 @@ test('配置写会通知宿主（onConfigChanged）—— 这是"落盘"的唯�
 });
 
 test('formatIni：往返不丢键、不改分节/键顺序（只改一个值时 INI 不该被重排）', () => {
-  const original = fs.readFileSync(INI_PATH, 'utf8');
+  const base = effectiveIniText();
+  // 真游戏的 INI **没有** `[set]` 节（那节由引擎退出时按配置注册表写）⇒ 这里补上，
+  // 专门验证"额外/未知分节也会原样保留、不被重排"。
+  const original = /\[set\]/i.test(base)
+    ? base
+    : `${base}\r\n[set]\r\nGameVersion=1.07.0019\r\nVerRegPos=\r\n`;
   const cfg = parseIni(original);
   const back = formatIni(cfg);
   const again = parseIni(back);
@@ -196,34 +217,39 @@ test('formatIni：往返不丢键、不改分节/键顺序（只改一个值时 
   const seq = (c: ReturnType<typeof parseIni>): string[] =>
     c.sections.flatMap((s) => (c.order.get(s.toLowerCase()) ?? []).map((k) => `${s}:${k.toLowerCase()}`));
   assert.deepEqual(seq(again), seq(cfg), '键出现顺序一致');
-  assert.match(back, /\[set\]\r?\nGameVersion=1\.07\.0019/, '仓库 INI 的版本键原样保留');
+  assert.match(back, /\[set\]\r?\nGameVersion=1\.07\.0019/, '[set] 段与其中的键原样保留');
   assert.match(back, /\[message\]/, '分节头保留');
 });
 
-test('NodeFileSource.saveConfig：只有显式给了 configPath 才写盘（测试默认不碰仓库配置）', async () => {
-  const tmp = path.join(os.tmpdir(), `amayui-cfg-${process.pid}-${Date.now()}.ini`);
+test('NodeFileSource：没给 system 时**完全不落盘**（测试/链路工具不碰玩家数据）', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `amayui-nosys-${process.pid}-`));
+  const base = path.join(dir, 'base');
+  const overlay = path.join(dir, 'overlay');
   try {
-    const src = new NodeFileSource({ resourceDir: path.join(REPO, 'install'), configPath: tmp });
-    await src.saveConfig('a=1\r\n');
-    assert.equal(fs.readFileSync(tmp, 'utf8'), 'a=1\r\n');
-    // 未给 configPath ⇒ saveConfig 是 no-op（不抛、也不写别处）
-    const ro = new NodeFileSource({ resourceDir: path.join(REPO, 'install') });
-    assert.equal(ro.configPath, null);
-    await ro.saveConfig('b=2\r\n');
-    assert.equal(fs.readFileSync(tmp, 'utf8'), 'a=1\r\n', '未配置路径的实例不该写任何文件');
+    fs.mkdirSync(base, { recursive: true });
+    fs.writeFileSync(path.join(base, INI_FILE), '[message]\r\nMesWinAlpha=8\r\n');
+    const src = new NodeFileSource({ resourceDir: path.join(REPO, 'install') });
+    assert.equal(src.overlay, null, '未配置 system ⇒ 没有 overlay 层');
+    assert.equal(await src.readConfig(), null, '不读玩家数据');
+    assert.equal(await src.readSaveData(), null, '不读玩家存档');
+    await src.saveConfig('a=1\r\n'); // no-op
+    await src.writeSaveData(new Uint8Array([1, 2, 3])); // no-op
+    assert.equal(fs.readdirSync(base).length, 1, 'base 里只有原来那个 INI');
+    assert.equal(fs.existsSync(overlay), false, 'overlay 目录都不该被创建');
   } finally {
-    fs.rmSync(tmp, { force: true });
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('applyConfigToEngine 不受 formatIni 影响：往返后仍能灌字段', () => {
-  const cfg = parseIni(fs.readFileSync(INI_PATH, 'utf8'));
+  const text = effectiveIniText();
+  const cfg = parseIni(text);
   const values = new Map<number, number>();
   const a = applyConfigToEngine(cfg, values);
   const values2 = new Map<number, number>();
   const b = applyConfigToEngine(parseIni(formatIni(cfg)), values2);
   assert.deepEqual(b, a, '往返后写入的字段集合一致');
-  assert.ok(a.length >= 5, `至少应绑上几个键（实际 ${a.length}）`);
+  if (text.length > 0) assert.ok(a.length >= 5, `至少应绑上几个键（实际 ${a.length}）`);
 });
 
 // ---------------------------------------------------------------------------
@@ -240,8 +266,10 @@ test('★E3：启动链跑到 TITLE 后，版本号数字条画的是 1/0/7/0/0/
   const scene = new HeadlessScene({});
   const e = new Engine(scene, new InputManager());
   e.fileSource = src;
-  // 与两个宿主同口径：启动时读 SYS4REG.INI 灌引擎字段（0x2EB 取的就是这份配置）
-  const cfg = parseIni(fs.readFileSync(INI_PATH, 'utf8'));
+  // 与两个宿主同口径：启动时读当前生效的 SYS4REG.INI 灌引擎字段（0x2EB 取的就是这份配置）。
+  // ★真游戏那份**没有 `[set]` 节** ⇒ 走到 `DEFAULT_GAME_VERSION`（= 被模拟的 amayui_107.exe 的
+  //   FileVersion 1.07.0019）—— 这条断言同时守着"版本号别退回 1.00"。
+  const cfg = parseIni(effectiveIniText());
   e.config = cfg;
   applyConfigToEngine(cfg, e.engineValues);
   loadScriptData(e, boot.data, boot.name);

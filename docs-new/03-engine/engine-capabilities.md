@@ -115,7 +115,7 @@
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 | `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
-| `text-reveal-pump-409400` | 帧循环 | 逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍 | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
+| `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
 | `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | ❌ 缺失 | E0 |
 | `msgwin-line-fade-window` | 消息窗 | 行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
 | `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |

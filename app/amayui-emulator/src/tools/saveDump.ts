@@ -2,9 +2,10 @@
  * **存档查看器**：读一份 `SAVE.DAT`（引擎格式或本工程格式都能读），打印头、表规模与
  * `INITCONFIG*` 那批配置键（`save-int (global …)` 的持久化结果）。
  *
- *   node src/tools/saveDump.ts                          # 仓库内 app/amayui-emulator/SAVE/SAVE.DAT
- *   node src/tools/saveDump.ts <文件>                    # 指定文件（如真游戏存档）
- *   AMAYUI_SAVE_DIR=<真游戏 SAVE 目录> node src/tools/saveDump.ts
+ *   node src/tools/saveDump.ts                          # 系统存档目录的 SAVE\SAVE.DAT（overlay → base）
+ *   node src/tools/saveDump.ts <文件>                    # 指定文件（如某个存档槽）
+ *   AMAYUI_SYSTEM_DIR=<game 目录> node src/tools/saveDump.ts   # 换一套系统存档目录
+ *   AMAYUI_OVERLAY_DIR=<目录>    node src/tools/saveDump.ts   # 换 overlay 目录
  *
  * 为什么需要它：设置界面的开关**不在 SYS4REG.INI**，而是脚本 `save-int`/`save-string` 登记、
  * 引擎序列化进 `SAVE.DAT`（见 `docs-new/03-engine/save-data.md`）。
@@ -13,7 +14,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveSaveDataPath } from '../arch/resourceDir.js';
+import { OverlayDir } from '../arch/overlay.js';
+import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from '../arch/systemPaths.js';
 import { decodeSaveData, readSaveHeader } from '../vm/saveData.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -49,16 +51,26 @@ const CONFIG_GLOBALS: [number, string][] = [
 ];
 const FONT_GLOBALS = [0xbbb, 0xbbc, 0xbbd, 0xbbe, 0xbbf];
 
-function main(): void {
+async function main(): Promise<void> {
   const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
-  const file = arg ?? resolveSaveDataPath(REPO);
+  const system = resolveSystemPaths(REPO);
+  const overlay = new OverlayDir(system);
+  // 默认：系统存档目录下的 `SAVE\SAVE.DAT`，按 overlay → base 取（并打印实际命中的是哪一份）
+  const hit = arg ? { path: arg, side: 'arg' as const } : await overlay.locate(SAVE_DAT_REL);
+  if (!hit) {
+    console.error(`[err] overlay/base 都没有 ${SAVE_DAT_REL}`);
+    console.error(`      ${describeSystemPaths(system)}`);
+    process.exit(1);
+  }
+  const file = hit.path;
   if (!fs.existsSync(file)) {
     console.error(`[err] 没有这个文件：${file}`);
     process.exit(1);
   }
   const bytes = new Uint8Array(fs.readFileSync(file));
   const header = readSaveHeader(bytes);
-  console.log(`文件：${file}（${bytes.length} 字节）`);
+  console.log(`overlay：${describeSystemPaths(system)}`);
+  console.log(`文件：${file}（${hit.side}，${bytes.length} 字节）`);
   console.log(`头：${JSON.stringify(header)}`);
   const r = decodeSaveData(bytes);
   if (!r.ok) {
@@ -91,4 +103,7 @@ function main(): void {
   }
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error(`[err] ${(err as Error).message}`);
+  process.exit(3);
+});

@@ -80,7 +80,20 @@ export function cfgStr(cfg: EngineConfig, key: string, fallback = ''): string {
  * ★TITLE 把它切成 1/2/4 字节三段（`i2c7`）再 `i2ec`(atoi) + `i23b`(CG 数字条) 画 "Version X.YY.ZZZZ"；
  *   缺失时第一段为空 ⇒ atoi("") = 0 ⇒ 屏幕上是占位值 "0.00.0000"（这正是实现 0x2EB 前实测到的画面）。
  */
-export const DEFAULT_GAME_VERSION = '1.00';
+export const ENGINE_BUILTIN_GAME_VERSION = '1.00';
+
+/**
+ * emulator 实际呈现的版本串（`0x2EB` 读 `set:GameVersion` 时的缺省）。
+ *
+ * 为什么不是引擎内建的 `1.00`：真游戏的 `SYS4REG.INI`（`%LOCALAPPDATA%\Eushully\<game>\`）里
+ * **没有 `[set]` 节**（那节由引擎退出时按配置注册表写，本作安装没写），照引擎口径会退回 `1.00`，
+ * 而 TITLE 会把版本号画在标题画面上 —— 与"我们模拟的是哪份 exe"不符。
+ * 取值 = **被模拟的那份 exe 的 FileVersion**：汉化/修正补丁 `补丁\修正补丁\amayui_107.exe` = `1.07.0019`
+ * （日版原始 `天结_unpacked.exe` 是 `4.60B`；`1.07.0019` 与旧仓库副本 `SYS4REG.INI` 里那个值一致）。
+ *
+ * 想换：在 overlay 的 `SYS4REG.INI` 里写 `[set] GameVersion=…`（真游戏那份不动）。
+ */
+export const DEFAULT_GAME_VERSION = '1.07.0019';
 
 /**
  * 把配置渲染回 `SYS4REG.INI` 文本（**回写**用；与 `parseIni` 往返一致）。

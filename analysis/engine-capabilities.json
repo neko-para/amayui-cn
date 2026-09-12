@@ -637,7 +637,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/draw-item-anim-window.test.ts",
-        "note": "本轮最扎实的一项：5 窗 + 共享起点 + 窗末收尾 + flipbook→源矩形 + 引擎整数插值式，全部有单元测试与场景快照断言。★报告里的函数归属（元素3/sub_4A230）已更正为 sub_49AA30@133389（DrawItem 渲染器调用）"
+        "note": "本轮最扎实的一项：5 窗 + 共享起点 + 窗末收尾 + flipbook→源矩形 + 引擎整数插值式，全部有单元测试与场景快照断言。★报告里的函数归属（元素3/sub_4A230）已更正为 sub_49AA30@133389（DrawItem 渲染器调用）。★**世界矩阵的 pivot 语义（2026-09 订正）**：pivot 由 0x217 原样写 DrawItem+24/+28/+32（新建项默认 0，见 sub_49A300），渲染是 v = S·R·(v − pivot) + t + pivot；Pixi 侧必须**同时**取 sprite.position = pivot + t 与 sprite.pivot = pivot − pos（src/renderer/drawitem/eval.ts 的 itemRenderPlacement，presenter.ts 只用它）。只把 pivot−pos 交给 sprite.pivot 而位置仍用 pos 时，仅 pivot == pos 才等价 —— 实测「打开字体选择器 → 右键退出 → 滚动列表」时滚动条中段左移 840px（CONFIG1.txt:2960 的 pivot = 707ffa + 32e，而 707ffa 被 CONFIG1.txt:1045 置位后无人复位）。守卫 test/config1-chain.test.ts。"
       }
     },
     {
@@ -2187,7 +2187,7 @@
     {
       "id": "text-reveal-pump-409400",
       "subsystem": "帧循环",
-      "name": "逐字/逐行显现泵：sub_409400 自旋 + sub_45BE20 一次一行 + message:MessageSpeed 节拍",
+      "name": "逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒）",
       "trigger": "effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时",
       "engine": {
         "fns": [
@@ -2201,19 +2201,20 @@
         "raw": "13780-13970"
       },
       "reads": [
-        "Engine+86672(= Font+1376 = message:MessageSpeed)",
-        "Engine+699204(effect_flags)",
-        "FontVWindow+132(当前行)",
-        "FontVWindow+92/+96(网格列数)",
-        "Font+235128(= message:MessageFade)"
+        "Engine+86672（= Font+1376 = message:MessageSpeed）",
+        "Engine+699204（effect_flags）",
+        "FontVWindow+132（已显现到的**字**游标）",
+        "FontVWindow+44/48（24B 字记录向量 begin/end）",
+        "FontVWindow+92/+96（网格列数）",
+        "Font+235128（= message:MessageFade）"
       ],
       "whySilent": "它是\"每帧替脚本推进文字\"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。",
       "confidence": "confirmed",
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E3",
-        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★**速度定律**（2026-09 修正）：引擎一步 = **一行**、节拍 = message:MessageSpeed、节拍门 sub_453B60 把下限压在一帧 ⇒ **整段时长 = 行数 × max(MessageSpeed／一帧)**；MessageSpeed **越大越慢**，随包值 5 时一行一帧内出完（很快），0 = 同步排空（立即全显）。重写侧一步 = 一个**字**（逐字可见）但用「预算」推进（budgetMs = 行数 × max(speed／一帧)，carry 保分数余量）⇒ 总时长与引擎一致。旧实现把 MessageSpeed 当**每字**间隔 ⇒ 同一设置下比引擎慢“每行字数”倍（19 字一行 ≈ 慢 19 倍）。字格页（i073）另走 0x73 op10 的固定步长（一次一格）。缺口：行淡入色窗（MessageSpeed × MessageFade ／ 100）未接；MessageFade 未消费。E2 守卫 test/adv-msgwin.test.ts（速度定律 + 点击先补完）；E3 test/config1-chain.test.ts（真实 CONFIG1 链路 + 0x300 闸门循环序列）。",
-        "guard": "test/adv-msgwin.test.ts"
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。"
       }
     },
     {
@@ -2625,7 +2626,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/config-version-substr.test.ts",
-        "note": "模型：engineConfig.ts 的 parseIni/formatIni（往返保持分节与键序）+ Engine.config 注册表 + setConfigValue 统一写入口（0x141 也走它）+ Engine.onConfigChanged → FileSource.saveConfig 落盘。落盘目标：Electron 经 IPC save-config-ini 写回**读到的同一份**（app/amayui-emulator/SYS4REG.INI）；headless（run.ts）直写同一文件；**测试/链路工具不注入钩子** ⇒ 不会改动仓库配置。E3 断言：0x2E7 写 / 0x2E6 读闭环、INI 往返不重排、TITLE 版本号数字条画出 1.07.0019。★不查注册表 DisplayVersion（跨平台 + 本机免安装拷贝 ⇒ 见 sub_490010 的 note），版本值由 INI 的 [set] GameVersion 指定。"
+        "note": "模型：engineConfig.ts 的 parseIni/formatIni（往返保持分节与键序）+ Engine.config 注册表 + setConfigValue 统一写入口（0x141 也走它）+ Engine.onConfigChanged → FileSource.saveConfig 落盘。落盘/装载都走 **overlay 层**（src/arch/systemPaths.ts + src/arch/overlay.ts）：读 %LOCALAPPDATA%\\Eushully\\天結いキャッスルマイスター.overlay\\SYS4REG.INI → 真游戏那份 …\\天結いキャッスルマイスター\\SYS4REG.INI（本机 53 个键、display/sound/message/system 四节），写**只写 overlay**（真游戏那份一个字节都不动）；Electron 主进程与 Node（run.ts）共用同一份实现 ⇒ 不会两侧行为漂移；**测试/链路工具不注入钩子** ⇒ 不写玩家数据。E3 断言：0x2E7 写 / 0x2E6 读闭环、INI 往返不重排、TITLE 版本号数字条画出 1.07.0019。★不查注册表 DisplayVersion（跨平台 + 本机该 INI 的 set:VerRegPos 为空）；真游戏 INI **没有 [set] 节** ⇒ 版本号取 DEFAULT_GAME_VERSION（= 被模拟的修正补丁 amayui_107.exe 的 FileVersion 1.07.0019，引擎内建其实是 1.00）。"
       }
     },
     {
@@ -2659,7 +2660,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/save-data.test.ts",
-        "note": "实现：src/vm/saveData.ts（头 + 20 字节块 + 表结构；两种 CRC 按引擎 sub_436D50/sub_436D00 逐字实现）+ src/vm/crc32.ts + src/vm/lzss.ts（AGE LZSS）+ Engine.onSaveDataChanged → FileSource.writeSaveData。**引擎格式也能读**（format 1..3：Crypt 解密 sub_436E90 + format≥2 时 LZSS 解压），所以把 AMAYUI_SAVE_DIR 指向真游戏存档目录即可继承玩家设置；写盘只写本工程明文格式（format 0），目标若是引擎存档则改写 <SAVE.DAT>.amayui，绝不覆盖真存档。E3 两条分支都在真语料上验证：有存档 ⇒ LOADCONFIG（值恢复）；无存档 ⇒ INITCONFIG（默认值 + global 5 = 1 登记）；E4 用真存档（format=3）验证解码。★引擎载荷的字符串记录区从 strCount 之后 **8** 字节起（中间 4 字节 = trailerDwords = 记录区字节数/4 + 1，sub_438940 raw 45564-45566）：曾经只跳 4 字节 ⇒ 第 1 条读成乱码、**最后一条静默丢失**（真存档里正是字体键 bbf ⇒ CONFIG 第 3 行回退默认字体）；现已按引擎布局读并用记录区长度自校验（不符即如实报错）。★未做：int 块的逐元素模幂混淆（sub_499650，配置值不在那里，故不影响设置继承）。"
+        "note": "实现：src/vm/saveData.ts（头 + 20 字节块 + 表结构；两种 CRC 按引擎 sub_436D50/sub_436D00 逐字实现）+ src/vm/crc32.ts + src/vm/lzss.ts（AGE LZSS）+ Engine.onSaveDataChanged → FileSource.writeSaveData。**玩家数据落在 overlay 层**（src/arch/systemPaths.ts + src/arch/overlay.ts）：base = 真游戏的系统存档目录（%LOCALAPPDATA%\\Eushully\\天結いキャッスルマイスター，含 SYS4REG.INI 与 SAVE\\ 下几十个存档槽），overlay = 同级的 ….overlay\\，**读 overlay → base、写只写 overlay** ⇒ 既能继承玩家真存档（引擎加密格式也能读：Crypt 解密 + format≥2 LZSS），又**永不覆盖真存档**（不再需要 <SAVE.DAT>.amayui 那套后缀规避）；Electron 主进程与 Node 侧共用同一份 overlay 实现。E3 两条分支都在真语料上验证：有存档 ⇒ LOADCONFIG（值恢复）；无存档 ⇒ INITCONFIG（默认值 + global 5 = 1 登记）；E4 用真存档（format=3）验证解码。★引擎载荷的字符串记录区从 strCount 之后 **8** 字节起（中间 4 字节 = trailerDwords = 记录区字节数/4 + 1，sub_438940 raw 45564-45566）：曾经只跳 4 字节 ⇒ 第 1 条读成乱码、**最后一条静默丢失**（真存档里正是字体键 bbf ⇒ CONFIG 第 3 行回退默认字体）；现已按引擎布局读并用记录区长度自校验（不符即如实报错）。★未做：int 块的逐元素模幂混淆（sub_499650，配置值不在那里）、存档槽 SAVEnn.DAT / RT.DAT（overlay 已就位，接上即可）。"
       }
     }
   ]

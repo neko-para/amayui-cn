@@ -86,12 +86,6 @@ export class StubNative implements NativeBridge {
   getInputType(): number {
     return 0;
   }
-  menuReset(): void {
-    this.log('[native:stub] menuReset (0xA1)');
-  }
-  menuBind(key: string, value: number): void {
-    this.log(`[native:stub] menuBind key"${key}"=0x${value.toString(16)}`);
-  }
   sleep(ms: number): void {
     this.log(`[native:stub] sleep ${ms}`);
   }

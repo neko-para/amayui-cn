@@ -411,7 +411,7 @@ export class Engine {
       if (!st || st.total !== total) {
         // 首次（或文本变化）：引擎从 `win+132`（清场后为 0）开始逐行贴出。
         // 时长 = 行数 × max(MessageSpeed, 一帧)（引擎一步 = 一行 + Sleep(MessageSpeed)）。
-        this.msgwin.beginReveal(win, total, nowMs, speed, { lines: laid.lines.length });
+        this.msgwin.beginReveal(win, total, nowMs, speed);
         this.#publishReveal(win);
         continue;
       }
@@ -424,7 +424,7 @@ export class Engine {
         g.doneAt = null; // 引擎 `v3[20] = 0`
         this.native.msgWinClear?.(win); // `sub_404F80`：删绘制项（画面上的字消失）
         // ★`win+132 = 0` ⇒ 下一帧从头再贴一遍（循环演示的关键）
-        this.msgwin.beginReveal(win, total, nowMs, speed, { lines: laid.lines.length });
+        this.msgwin.beginReveal(win, total, nowMs, speed);
         this.#publishReveal(win);
       }
     }
@@ -520,3 +520,4 @@ export class Engine {
     return true;
   }
 }
+

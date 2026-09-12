@@ -147,10 +147,8 @@ export interface NativeBridge {
   stringResourceId?(s: string): number;
   getInputType?(): number;
   sleep?(ms: number): void;
-  /** 0xA1 (sub_433A40)：菜单派发表复位。 */
-  menuReset?(): void;
-  /** 0xA2 (sub_434F10)：登记菜单项 key→label。 */
-  menuBind?(key: string, value: number): void;
+  // ★菜单派发（0xA1/0xA2/0xA3）**没有**宿主方法：表是 VM 状态（`Engine.menuMap`），
+  //   查表跳转在同文件的 handlers/menu.ts 里完成 —— 见那里的说明（曾因多余的桥方法产生"假缺口"）。
   unhandled?(opcode: number, name: string): void;
 
   // ---- 消息窗文本（引擎「每窗一张离屏表面」的等价物）----

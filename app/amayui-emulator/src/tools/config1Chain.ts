@@ -14,6 +14,8 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { resolveResourceDir } from '../arch/resourceDir.js';
+import { OverlayDir } from '../arch/overlay.js';
+import { INI_FILE, resolveSystemPaths } from '../arch/systemPaths.js';
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
@@ -32,7 +34,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
 /** 资源根 = `install/`（汉化版）；`AMAYUI_RESOURCE_DIR=raw` 可切回原版。 */
 const RESOURCE_DIR = resolveResourceDir(ROOT);
-const INI = path.join(ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
+/** 玩家数据（`SYS4REG.INI`）：系统存档目录 + overlay（读 overlay → 真游戏那份）。 */
+const SYSTEM = resolveSystemPaths(ROOT);
+const SYSTEM_FILES = new OverlayDir(SYSTEM);
+
+/** 取当前生效的 `SYS4REG.INI` 文本（overlay 优先；两边都没有 ⇒ 空串 ⇒ 引擎字段用缺省）。 */
+function effectiveIniText(): string {
+  const hit = SYSTEM_FILES.readTextSync(INI_FILE);
+  return hit ? hit.text : '';
+}
 
 /** TITLE 菜单「CONFIG」项的命中点（由 i12e 的 baseX/baseY 数组算出：第 3 项 rect [729,885]×[543,699]）。 */
 export const CONFIG_XY: [number, number] = [807, 621];
@@ -58,6 +68,12 @@ export interface CoverInfo {
   /** pivot 相对项原点的局部量（`itemPivotLocal`：pivot == 描画位置时为 0）。 */
   pivotRelX: number;
   pivotRelY: number;
+  /**
+   * 该段是否走**世界矩阵**路径（`DrawItem+0x68` = `useWorld`；只由 `0x1FD`/`0x1FF`/`0x21E`/
+   * `0x21F`/`0x220` 置位）。未置位的段是纯 2D 项：只有描画位置 + 源矩形，`pivot/scale/rot/trans`
+   * **一律不参与**（渲染器 `presenter.ts` 里的同一判据）。
+   */
+  useWorld: boolean;
 }
 
 /**
@@ -175,6 +191,8 @@ export interface ChainResult {
   scrollSteps?: ScrollStep[];
   /** 「角色名颜色溢到 ADV 样例窗」回归探针的结果（仅 `previewProbe: true` 时给出）。 */
   previewStyle?: PreviewStyleProbe;
+  /** 字体选择器探针结果（仅 `fontPickerProbe: true` 时给出）。 */
+  fontPicker?: FontPickerProbe;
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
   drops?: DroppedIntent[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
@@ -227,6 +245,30 @@ export interface ChainOptions {
    * 已排版的 ADV 样例窗（win 9）就会被染成**最后一个可见行**的颜色（用户实测）。
    */
   previewProbe?: boolean;
+  /**
+   * **字体选择器探针**（默认关）：跑完 CONFIG1 后，把光标移到第一行字体项的「变更」按钮并点击
+   * ⇒ 打开 `$1$SELFONT`（`CONFIG1.txt:1049 call-script 51dd`）⇒ 采两份滚动条几何 + 列表里画出的面名。
+   *
+   * 用途（2026-09 用户实测）：**先滚动主列表、再点开字体设置**时，选择器自己那条滚动条的
+   * **中段**（`0x1FD` 拉伸出来的 1px 源）会漂到屏幕左边。修前/修后都能用本探针复现与回归：
+   * 不变量 = 三段的 `dstX` 必须一致（同一列）、且都在轨道内。
+   */
+  fontPickerProbe?: boolean;
+  /** 字体选择器探针前**先把主列表滚到底**（复现"先滚动再打开"的那条路径）。 */
+  fontPickerScrollFirst?: boolean;
+  /**
+   * 打开选择器**之后**再滚几次滚轮（用户实测的触发条件之一）。给了就额外采一份 `afterWheel` 快照。
+   */
+  fontPickerWheelAfter?: number;
+  /**
+   * **用户实测的完整复现路径**：打开选择器 → **右键退出**回设置页 → 再滚主列表。
+   *
+   * 根因（2026-09）：`CONFIG1.txt:1045` 在打开选择器前把脚本全局 `707ffa`（弹窗原点 x）置成 348
+   * 且**从不复位**；而滚动条中段的 `0x217` pivot 被算成 `707ffa + 32e`（`CONFIG1.txt:2960`、
+   * `CONFIG2.txt:1424`），描画位置却是 `32e` ⇒ pivot ≠ pos。渲染侧若把位置写成 `pos` 而不是
+   * `pivot`，被 `0x1FD` 拉伸的中段就整体左移 `707ffa`（用户实测「中段漂到左边」）。
+   */
+  fontPickerCloseThenScroll?: boolean;
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
@@ -240,7 +282,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   const native = scene;
   engineRef = e;
   e.fileSource = src;
-  e.config = parseIni(fs.readFileSync(INI, 'utf8'));
+  e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
@@ -451,6 +493,80 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     };
   }
 
+  // ★字体选择器探针（默认关）：先（可选）滚主列表 → 点第一行字体项的「变更」→ 开 `$1$SELFONT`
+  //   → 采两份滚动条几何。用户实测：**先滚动再打开**时选择器的中段（`0x1FD` 拉伸条）会漂到左边。
+  let fontPicker: FontPickerProbe | undefined;
+  let pickerOpenY = 0;
+  if (opt.fontPickerProbe) {
+    if (opt.fontPickerScrollFirst) {
+      for (let i = 0; i < 8; i++) {
+        input.addWheel(-120); // 下滚一格 = −120（与引擎 WM_MOUSEWHEEL 同口径）
+        await run(30);
+      }
+    }
+    // 系统设定页里**字体行**的判据：数值贴片的源矩形 `srcY = 217`（开关行是 0）——见本文件的
+    // collectConfigRows。滚动后行位置会变，所以按当前几何找，而不是写死 y。
+    const rows = collectConfigRows(native);
+    const fontRow = rows.find((r) => r.value.srcY === 217);
+    const clickY = fontRow ? fontRow.value.dstY + 15 : 370;
+    pickerOpenY = clickY;
+    input.setCursor(1113, clickY);
+    await run(60);
+    input.pressMouse(0);
+    await run(120);
+    input.releaseMouse(0);
+    // 选择器里每帧重画列表 ⇒ 边跑边收候选面名（槽 198 = `draw-string c6 …`）
+    const names = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      await run(1);
+      for (const s of native.scene.slotText.get(198) ?? []) names.add(s.text);
+    }
+    const handles: FontPickerProbe['handles'] = [];
+    for (const it of native.scene.drawItems.values()) {
+      if (it.handle < 0x2e630 || it.handle >= 0x2e630 + 0x100) continue;
+      const sc = itemScale(it, e.nowMs);
+      handles.push({
+        handle: `0x${it.handle.toString(16)}`,
+        dstX: it.posX,
+        dstY: it.posY,
+        srcW: it.srcW,
+        srcH: it.srcH,
+        scaleX: sc.x,
+        scaleY: sc.y,
+      });
+    }
+    fontPicker = {
+      scrolled: opt.fontPickerScrollFirst === true,
+      list: collectScrollThumb(e, native),
+      picker: collectThumbAt(e, native, 0x2e630, [0x6e, 0x6f, 0x70]),
+      names: [...names],
+      handles: handles.sort((a, b) => a.handle.localeCompare(b.handle)),
+      clickY: pickerOpenY,
+      opened: e.curScript().name.startsWith('SELFONT'),
+    };
+
+    // ★用户实测路径：右键退出选择器 → 回设置页 → 再滚主列表（此时 `707ffa` 仍是 348）
+    if (opt.fontPickerCloseThenScroll) {
+      input.setCursor(650, 300);
+      await run(30);
+      input.pressMouse(1); // 右键 = 取消（引擎 bit1）
+      await run(120);
+      input.releaseMouse(1);
+      await run(900, () => e.curScript().name.startsWith('CONFIG1'));
+      for (let i = 0; i < 3; i++) {
+        input.addWheel(-120);
+        await run(40);
+      }
+      await run(300);
+      fontPicker.afterCloseScroll = collectScrollThumb(e, native);
+      fontPicker.scriptAfterClose = e.curScript().name;
+      fontPicker.popupOrigin = {
+        x: dec(e.key, e.globals.int.get(0x707ffa) ?? 0),
+        y: dec(e.key, e.globals.int.get(0x707ffb) ?? 0),
+      };
+    }
+  }
+
   // ★滚动条拇指（`0x1FD` 的回归不变量）：三段式几何必须首尾相接。
   const scrollThumb = collectScrollThumb(e, native);
   // ★设置列表的可见行（`0x12F` 排序正确性的回归不变量）+ 直绘进槽的文本（`0x204`）
@@ -482,6 +598,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     slotText,
     sort12f,
     ...(opt.scrollProbe ? { scrollSteps } : {}),
+    ...(fontPicker ? { fontPicker } : {}),
     ...(opt.previewProbe && previewStyle ? { previewStyle } : {}),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
     trace,
@@ -511,6 +628,64 @@ function captureSort12f(e: Engine, instr: BinInstruction): Sort12fDump | null {
 }
 
 /** 取滚动条拇指三段（`CONFIG1.txt:2934-2971` 的 handle 布局：`0x1d4c0 + 0x76c / 0x776 / 0x777 / 0x778`）。 */
+/** 字体选择器（`$1$SELFONT`）探针结果（`fontPickerProbe: true`）。 */
+export interface FontPickerProbe {
+  /** 打开选择器之前是否先滚过主列表（含滚动后的主列表拇指，用于对照）。 */
+  scrolled: boolean;
+  /** 主列表拇指（base `0x1d4c0`；选择器打开后仍应留在轨道里）。 */
+  list: ScrollThumb | null;
+  /** 选择器自己的拇指（base `0x2e630` + `0x6e/0x6f/0x70`：顶 / **中(0x1FD 拉伸)** / 底）。 */
+  picker: ScrollThumb | null;
+  /** 列表里画出的候选面名（`0x2DD` → `set-font` → `draw-string c6 …`）。 */
+  names: string[];
+  /** 选择器基址区间（`0x2e630 .. +0x100`）内实际存在的图元（诊断：确认三段用的到底是哪几个 handle）。 */
+  handles: { handle: string; dstX: number; dstY: number; srcW: number; srcH: number; scaleX: number; scaleY: number }[];
+  /** 点「变更」用的 y（按当时几何找到的字体行）。 */
+  clickY: number;
+  /** 点击后当前脚本是否真的是 `SELFONT`（选择器开没开）。 */
+  opened: boolean;
+  /** **右键退出选择器、再滚主列表之后**的主列表拇指（`fontPickerCloseThenScroll` 时才有）。 */
+  afterCloseScroll?: ScrollThumb | null;
+  /** 关掉选择器之后的脚本名（应回到 CONFIG1）。 */
+  scriptAfterClose?: string;
+  /** 探查时刻的"弹窗原点" `global 707ffa/707ffb`（脚本从不复位它 ⇒ 会一直是 348/78）。 */
+  popupOrigin?: { x: number; y: number };
+}
+
+/**
+ * 取「三段式滚动条」的几何（`CONFIG1` 与 `SELFONT` 用的是同一套画法，只是 handle 基址不同）。
+ *
+ * @param base   handle 基址（CONFIG1 = `0x1d4c0`，选择器 = `0x2e630`）
+ * @param offs   顶/中/底三段的 handle 偏移
+ */
+function collectThumbAt(e: Engine, native: HeadlessScene, base: number, offs: [number, number, number]): ScrollThumb | null {
+  const seg = (off: number): ThumbSeg | null => {
+    const it = native.scene.drawItems.get(base + off);
+    if (!it) return null;
+    const sc = itemScale(it, e.nowMs);
+    const pv = itemPivotLocal(it);
+    return {
+      handle: it.handle,
+      dstX: it.posX,
+      dstY: it.posY,
+      srcW: it.srcW,
+      srcH: it.srcH,
+      scaleX: sc.x,
+      scaleY: sc.y,
+      pivotRelX: pv.x,
+
+      pivotRelY: pv.y,
+
+      useWorld: it.useWorld,
+    };
+  };
+  const top = seg(offs[0]);
+  const middle = seg(offs[1]);
+  const bottom = seg(offs[2]);
+  if (!top || !middle || !bottom) return null;
+  return { base, top, middle, bottom };
+}
+
 function collectScrollThumb(e: Engine, native: HeadlessScene): ScrollThumb | null {
   const base = 0x1d4c0;
   const seg = (off: number): ThumbSeg | null => {
@@ -527,7 +702,10 @@ function collectScrollThumb(e: Engine, native: HeadlessScene): ScrollThumb | nul
       scaleX: sc.x,
       scaleY: sc.y,
       pivotRelX: pv.x,
+
       pivotRelY: pv.y,
+
+      useWorld: it.useWorld,
     };
   };
   const top = seg(0x776);
@@ -563,4 +741,5 @@ function collectConfigRows(native: HeadlessScene): ConfigRow[] {
 function uninplementedPush(list: string[], err: NotImplementedOp): void {
   list.push(`0x${err.opcode.toString(16)} ${err.name} @${err.scriptName}`);
 }
+
 

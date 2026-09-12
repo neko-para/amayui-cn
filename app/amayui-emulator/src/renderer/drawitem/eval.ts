@@ -42,18 +42,43 @@ export function itemScale(it: Item, clock: number): Vec3 {
 /**
  * **pivot 的局部坐标**（引擎 `sub_49AA30` raw 117425-117429 与 117932-117933）。
  *
- * 引擎的世界矩阵是 `T(-pivot) · S · R · Tt · T(+pivot)`，而顶点四边形本身已经建在**描画位置**上
- * （`sub_4A2D50` 把 `&v26[9]` = DrawItem`+36/+40/+44` 交给纹理绘制）⇒ 合成结果等价于
- * 「项放在 `pos`，然后绕**绝对坐标 pivot** 缩放/旋转」：
- *   `v' = S·(v − pivot) + pivot`（v = pos + 局部偏移）⇒ 局部偏移 `u` 满足 `u' = pos + S·(u − (pivot − pos))`。
+ * 引擎的世界矩阵按行向量序是 `T(-pivot)·S·R·Tt·T(+pivot)`，作用在**已建在描画位置上**的四边形上
+ * ⇒ 合成结果 = `v' = S·R·(v − pivot) + t + pivot`（`v = pos + 局部偏移`）。
+ * `pivot` 由 `0x217` **原样**写入 DrawItem`+24/+28/+32`（`sub_4ACF20`，新建项由 `sub_49A300`
+ * 置 **0**），所以它是**绝对坐标**，不是局部量。
  *
- * Pixi 的 `sprite.pivot` 是**相对纹理左上角（=项原点）**的局部量，且语义为"该局部点落在 `position` 上"，
- * 与上式完全同构 ⇒ 必须传 `pivot − pos`。直接把绝对值当局部量会**把项平移掉**：
- * 实测 CONFIG1 滚动条拇指的 `0x217` 参数就是 `(dstX, dstY, 0)`（绝对坐标），
- * 旧写法（直接用 pivot）等于把 27×209 的中段贴片丢到屏幕左上角、再叠一次拉伸。
+ * Pixi 的语义是 `screen(l) = position + S·R·(l − sprite.pivot)`。要与上式逐项相等必须**同时**满足：
+ * ```text
+ * sprite.position = pivot + t          sprite.pivot = pivot − pos
+ * ```
+ * ⇒ 本函数给 `sprite.pivot`，位置走 `itemPivotPosition`。**两个必须成对使用**：
+ * 只改 pivot 而位置仍用 `pos` 的话，只有 `pivot == pos` 时才等价（大多数项恰好如此，所以长期没暴露），
+ * 一旦脚本给出偏离 `pos` 的绝对 pivot，缩放项就会整体平移 `(pivot − pos)` —— 2026-09 实测：
+ * `CONFIG1` 滚动条中段的 pivot 是 `707ffa + 32e`（弹窗原点 + 轨道 x）而描画位置是 `32e`
+ * ⇒ 打开过字体选择器（`707ffa` 被置 348 且脚本从不复位）之后一滚动，那条被 `0x1FD` 拉伸的中段
+ * 就整体左移 348px（用户实测「滚动条中间 scale 出的区域漂到左边」）。
  */
 export function itemPivotLocal(it: Item): Vec3 {
   return { x: it.pivotX - it.posX, y: it.pivotY - it.posY, z: it.pivotZ - it.posZ };
+}
+
+/** `sprite.position` = **pivot**（+ 平移动画偏移）；与 `itemPivotLocal` 成对使用（见其说明）。 */
+export function itemPivotPosition(it: Item, clock: number): Vec3 {
+  const t = itemTranslation(it, clock);
+  return { x: it.pivotX + t.x, y: it.pivotY + t.y, z: it.pivotZ + t.z };
+}
+
+/** 该帧的完整渲染位姿（Pixi 语义）；两个宿主/测试共用同一份映射。 */
+export function itemRenderPlacement(
+  it: Item,
+  clock: number,
+): { position: Vec3; pivot: Vec3; scale: Vec3; rotRad: number } {
+  return {
+    position: itemPivotPosition(it, clock),
+    pivot: itemPivotLocal(it),
+    scale: itemScale(it, clock),
+    rotRad: itemRotationRad(it, clock),
+  };
 }
 
 /** 旋转（窗2 / `0x21F`）：延迟期保持 `rotWork`，窗内轴与角分别插值（引擎 raw 117587-117620 插值后 `D3DXMatrixRotationAxis`）。 */
@@ -139,3 +164,4 @@ export function calcDiffuse(m: MeshObj, clock: number): number {
   m.flags &= ~2;
   return m.state1;
 }
+

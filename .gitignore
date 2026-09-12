@@ -37,7 +37,8 @@ res/fonts/SarasaGothicJ
 
 /PENDING.patch
 
-# emulator 的运行时状态：存档（脚本 save-int/save-string 表的持久化，见 docs-new/03-engine/save-data.md）
-# 与诊断日志/轨迹都在 .tmp 或这里；不进版本库（每人/每次运行的设置不同）
-/app/amayui-emulator/SAVE/
+# emulator 的运行时状态（诊断日志/轨迹）在 .tmp 下，不进版本库。
+# ★玩家数据（SYS4REG.INI / SAVE.DAT）**不在仓库里**：走系统存档目录 + overlay
+#   （%LOCALAPPDATA%\Eushully\<game>\ 与同级的 <game>.overlay\，见 src/arch/systemPaths.ts），
+#   所以这里不再需要忽略 app/amayui-emulator/SAVE/。
 /app/amayui-emulator/.tmp/

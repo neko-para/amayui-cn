@@ -58,8 +58,6 @@ const WHY: Record<string, string> = {
   setString: '字符串写入：不实现 ⇒ 文本内容不更新，无报错',
   stringResourceId: '字符串→资源 id：不实现 ⇒ 返回 -1 ⇒ 取不到图/串，无报错',
   getInputType: '输入类型查询：不实现 ⇒ 恒 0（可能走错输入分支）',
-  menuBind: '菜单项登记：不实现 ⇒ 菜单查表失败 ⇒ 跳转到回退 label',
-  menuReset: '菜单表复位：不实现 ⇒ 菜单项跨场景残留',
   unhandled: '未处理上报：不实现 ⇒ 未知指令不再进控制窗',
   present: '帧合成：不实现 ⇒ 画面永不刷新',
   frameTick: '帧刷新泵：不实现 ⇒ 动画/转场不推进',
@@ -164,8 +162,6 @@ const BRIDGE_METHODS = [
   'gfxSubsystem',
   'l2dSlotSet',
   'log',
-  'menuBind',
-  'menuReset',
   'msgWinClear',
   'msgWinClearAll',
   'msgWinSync',
@@ -241,3 +237,4 @@ export function withNativeTap<T extends object>(inner: T, rec: DropRecorder): T 
     },
   });
 }
+

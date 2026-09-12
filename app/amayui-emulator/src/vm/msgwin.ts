@@ -111,12 +111,17 @@ export interface RevealState {
    */
   intervalMs?: number;
   /**
-   * 整段显现的**时间预算** ms（普通消息路径）：
-   * `行数 × max(message:MessageSpeed, 一帧)`。
+   * 整段显现的**时间预算** ms（普通消息路径）：`字形数 × max(message:MessageSpeed, 一帧)`。
    *
-   * 引擎的一步 = **一行**（`sub_45BE20`，`sub_409400` 每帧一步 + `Sleep(MessageSpeed)`）
-   * ⇒ 整段耗时 = 行数 × 节拍。重写侧的一步是**一个字**（逐字可见），但**总时长与引擎一致**
-   * —— `tickRevealWin` 按 `total / budgetMs` 的速率连续推进（见 `REVEAL_FRAME_MS` 的历史教训）。
+   * 引擎的一步 = **一个字**（`sub_45BE20` 每次调用只推一个 24B 记录，见 `docs-new/03-engine/
+   * adv-text-rendering.md` §3.3：记录向量 `win+44` 是**逐字** push 的 —— `sub_455ED0(…, String, …)`
+   * 画一个字、紧接着 `sub_45D120(win+44, rec)` 压一条记录，`rec[0]` 仅注音记录为 1）
+   * ⇒ 整段耗时 = **字数 × 节拍**，节拍 = `Sleep(MessageSpeed)`（GDI 路径 raw 13954）
+   * / `sub_453B60` 定时器周期（D3D 路径 raw 13958）。
+   *
+   * ★历史错误（2026-09 修）：这里曾按"一步 = 一行"算成 `行数 × 节拍`（把 24B 记录当成行记录），
+   * 于是整段快了约"每行字数"倍（~14×），**设置里的「显示速度」滑条几乎看不出效果**
+   * （1..99ms/字 被压成 50..300ms/页）—— 用户实测"文字出现的速度几乎没有变"。
    */
   budgetMs?: number;
   /** 预算模式的分数余量（避免每帧取整把速度丢掉）。 */
@@ -375,18 +380,18 @@ export class MsgWindow {
    * 开始逐字显现。
    *
    * @param opts.intervalMs 固定步长（字格页用 `0x73` 的 op10：一次一格）
-   * @param opts.lines      本页**行数**；给了就按引擎时长算预算
-   *                        （`budgetMs = 行数 × max(MessageSpeed, 一帧)`，见 `RevealState.budgetMs`）
    *
    * `speedMs <= 0` ⇒ **立即显示完**（引擎：`if (!Engine[21668])` 走同步排空 `sub_46CBF0`）。
    * 首个字形也要等**一个节拍**（引擎 `sub_453A60` 把 `steps` 置 1 ⇒ 第一次检查就等满 `period`）。
+   *
+   * 普通路径的预算 = `字形数 × max(speedMs, 一帧)`（引擎一步 = 一个字，见 `RevealState.budgetMs`）。
    */
   beginReveal(
     win: number,
     total: number,
     nowMs: number,
     speedMs: number,
-    opts: { intervalMs?: number; lines?: number } = {},
+    opts: { intervalMs?: number } = {},
   ): RevealState {
     const gridTick = opts.intervalMs;
     const instant = speedMs <= 0 && gridTick === undefined;
@@ -399,7 +404,7 @@ export class MsgWindow {
           nextAt: nowMs + (gridTick ?? revealInterval(speedMs)),
           ...(gridTick !== undefined ? { intervalMs: gridTick } : {}),
           ...(gridTick === undefined
-            ? { budgetMs: revealInterval(speedMs) * Math.max(1, opts.lines ?? 1), carry: 0, lastAt: nowMs }
+            ? { budgetMs: revealInterval(speedMs) * Math.max(1, total), carry: 0, lastAt: nowMs }
             : {}),
         };
     this.reveal.set(win, st);
@@ -420,9 +425,9 @@ export class MsgWindow {
    *
    * 两条节拍模型（见 `RevealState`）：
    *  - **字格路径**（`intervalMs`，引擎 `sub_453AF0(Engine+430600)` + `sub_45A940`）：一次一格；
-   *  - **普通消息路径**（`budgetMs`）：引擎一步 = 一行、节拍 = `message:MessageSpeed`
-   *    ⇒ 整段时长 = 行数 × 节拍。重写侧一步 = 一个字，但**总时长与引擎一致**：
-   *    按 `total / budgetMs` 的速率连续推进（`carry` 保存分数余量）。
+   *  - **普通消息路径**（`budgetMs`）：引擎一步 = **一个字**、节拍 = `message:MessageSpeed`
+   *    ⇒ 整段时长 = 字数 × 节拍。重写侧按 `total / budgetMs` 的速率连续推进（`carry` 保存分数余量），
+   *    而 `budgetMs = 字数 × max(speed, 一帧)` ⇒ 等价于"一个字一个节拍"。
    * `speedMs <= 0` 时才一次性显示完（引擎的同步排空分支 `sub_46CBF0`）。
    */
   tickReveal(nowMs: number, speedMs: number): number[] {

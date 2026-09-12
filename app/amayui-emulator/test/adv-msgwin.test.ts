@@ -295,13 +295,18 @@ test('0x301 清对象项时同时清布局标志 +132（sub_404F80 的那一步�
 });
 
 /**
- * ★速度定律（2026-09 修正）：
- *   引擎的一步 = **一行**（`sub_45BE20`），节拍 = `message:MessageSpeed`，
- *   且节拍门 `sub_453B60` 把下限压在一帧 ⇒ **整段耗时 = 行数 × max(MessageSpeed, 一帧)**。
- *   重写侧一步 = 一个**字**（逐字可见），但按预算连续推进 ⇒ 总时长与引擎一致。
- *   ⇒ 旋钮语义：`MessageSpeed` **越大越慢**，`5` 时很快（一行一帧内出完），`0` = 立即全显。
+ * ★速度定律（2026-09 二次修正 —— 上一次把"一步"误当成**一行**）：
+ *   引擎的一步 = **一个字**：`sub_45BE20` 每次调用只推一个 24B 记录，而那个向量是**逐字** push 的
+ *   （`sub_46BE30` 里 `sub_455ED0(…, String, …)` 画一个字、紧接着 `sub_45D120(win+44, rec)`；
+ *   `rec[0]` 只有注音记录为 1 ⇒ `while (rec[0])` 那层循环只是把注音跟在本字后面一起贴）。
+ *   节拍 = `message:MessageSpeed`（GDI 路径 `Sleep(MessageSpeed)` raw 13954；D3D 路径 `sub_453B60`），
+ *   且节拍门把下限压在一帧 ⇒ **整段耗时 = 字数 × max(MessageSpeed, 一帧)**。
+ *   ⇒ 旋钮语义：`MessageSpeed` = **每字毫秒**，越大越慢；`0` = 立即全显。
+ *
+ *   （旧实现按"行数 × 节拍"算预算 ⇒ 整段快了"每行字数"倍，设置里的「显示速度」滑条几乎看不出效果
+ *    —— 用户实测"文字出现的速度几乎没有变"。见 `test/option-font-speed-menu.test.ts`。）
  */
-test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 立即；总时长 = 行数 × max(speed, 一帧)', () => {
+test('★逐字显现速度定律：MessageSpeed = **每字**毫秒（总时长 = 字数 × max(speed, 一帧)）', () => {
   const FRAME = 1000 / 60;
 
   /** 造一个 1 行 5 字的页并启动显现，返回引擎。 */
@@ -325,24 +330,26 @@ test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 �
     return cap;
   };
 
-  // ① MessageSpeed=5（随包 SYS4REG.INI 的值）：1 行 ⇒ 一帧内整行出完（引擎也是"一行一帧"）
+  // ① MessageSpeed=5（随包 SYS4REG.INI 的值）⇒ 一个字最多一帧（引擎的 Sleep(5) 同样被帧率地板住）
   const eFast = page(5);
   eFast.serviceTextReveal(FRAME);
-  assert.equal(eFast.msgwin.revealedOf(9), 5, 'MessageSpeed=5 ⇒ 一帧内整行显示完（原版就是这么快）');
-  assert.equal(eFast.textRevealing, false);
+  assert.equal(eFast.msgwin.revealedOf(9), 1, 'MessageSpeed=5 ⇒ 一帧一个字（不是"一帧整行"）');
+  assert.equal(eFast.textRevealing, true);
+  const fastFrames = framesToFinish(eFast);
+  assert.ok(fastFrames >= 3 && fastFrames <= 6, `5 字 × max(5ms, 一帧) ≈ 5 帧（实际 ${fastFrames}）`);
 
-  // ② 越大越慢：100ms 的整段时长 ≈ 100ms（本条 1 行）⇒ 约 6 帧；25ms ⇒ 约 2 帧
+  // ② 越大越慢：5 字 × 25ms = 125ms（≈8 帧）；5 字 × 100ms = 500ms（≈30 帧）
   const eMid = page(25);
   const midFrames = framesToFinish(eMid);
   const eSlow = page(100);
   const slowFrames = framesToFinish(eSlow);
-  assert.ok(slowFrames > midFrames, `越大越慢：100ms(${slowFrames} 帧) 应慢于 25ms(${midFrames} 帧)`);
-  // 100ms 一行 ⇒ 每帧推进 ≈ 5 × 16.7/100 ≈ 0.83 字 ⇒ 逐字可见
+  assert.ok(slowFrames > midFrames * 3, `越大越慢：100ms(${slowFrames} 帧) 应远慢于 25ms(${midFrames} 帧)`);
+  // 100ms/字 ⇒ 第一个字要等满 100ms（约第 6 帧）
   const eSlow2 = page(100);
   eSlow2.serviceTextReveal(FRAME);
-  assert.equal(eSlow2.msgwin.revealedOf(9), 0, '100ms：第一帧还不到一个字（0.83 字，留到下一帧）');
-  eSlow2.serviceTextReveal(2 * FRAME);
-  assert.equal(eSlow2.msgwin.revealedOf(9), 1, '100ms：第二帧出第 1 个字');
+  assert.equal(eSlow2.msgwin.revealedOf(9), 0, '100ms/字：第一帧还不到一个字');
+  eSlow2.serviceTextReveal(6 * FRAME);
+  assert.equal(eSlow2.msgwin.revealedOf(9), 1, '100ms/字：第 6 帧出第 1 个字');
   assert.equal(eSlow2.textRevealing, true);
 
   // ③ MessageSpeed = 0 ⇒ 一次性显示完（引擎走同步排空 sub_46CBF0）
@@ -350,7 +357,7 @@ test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 �
   assert.equal(e0.msgwin.revealedOf(9), 5, 'MessageSpeed=0 ⇒ 立即显示完');
   assert.equal(e0.textRevealing, false);
 
-  // ④ 多行页：总时长 = 行数 × 节拍（引擎每帧补一行）
+  // ④ 预算 = **字数** × 节拍（与折成几行无关）
   const { e: eLines, step: stepLines } = mk();
   eLines.engineValues.set(21668, 5);
   stepLines(0x80, [im(9)]);
@@ -363,8 +370,8 @@ test('★逐字显现速度定律：MessageSpeed 越大越慢，=5 很快、=0 �
   assert.ok(laid.lines.length > 1, `窄窗应折成多行（实际 ${laid.lines.length} 行）`);
   assert.equal(
     st.budgetMs,
-    revealInterval(5) * laid.lines.length,
-    `预算 = 行数(${laid.lines.length}) × max(speed, 一帧)`,
+    revealInterval(5) * laid.glyphCount,
+    `预算 = 字数(${laid.glyphCount}) × max(speed, 一帧)（行数 ${laid.lines.length} 不参与）`,
   );
   assert.equal(laid.glyphCount, 5);
 
