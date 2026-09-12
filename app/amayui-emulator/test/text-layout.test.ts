@@ -15,7 +15,7 @@ import {
   visibleInLine,
   type MsgWinInput,
 } from '../src/text/layout.js';
-import { fontFaceFor, normalizeFace, resolveFace } from '../src/text/fontSet.js';
+import { fontFaceFor, fontFileList, normalizeFace, resolveFace } from '../src/text/fontSet.js';
 
 const input = (over: {
   text: string;
@@ -187,7 +187,7 @@ test('逐字显现游标：按跨行累计的字形序号决定每行画几个',
 
 test('面名映射：剥竖排 "@" 前缀 + 未知面名回退并标记', () => {
   assert.equal(normalizeFace('@ＭＳ ゴシック'), 'ＭＳゴシック');
-  // ★映射目标 = 汉化随包字体（`patch/patch.config.json` 只同步 `Amayui-CN_cnjp.ttf`，
+  // ★映射目标 = 汉化随包字体（`patch/patch.config.json` 同步 `Amayui-CN_cnjp.ttf` 与其 Bold 面，
   //   TTF 自报 family 名 = `Amayui CN`）；旧 WenQuanYi 线（族名伪装成 `MS Gothic`）已废弃，
   //   不再作为任何面名的落地字族（见 fontSet.ts 文件头「字体政策」）。
   assert.equal(resolveFace('ＭＳ ゴシック').family, 'Amayui CN');
@@ -203,11 +203,12 @@ test('面名映射：剥竖排 "@" 前缀 + 未知面名回退并标记', () => 
   assert.equal(unk.unknown, true);
 });
 
-test('★字重解析：只有 Regular 面的字族请求 700 时按 400 注册（让浏览器合成加粗）', () => {
-  // 注册成 700 会让浏览器以为"这就是粗体面" ⇒ 脚本的 i2bd 1 完全失效（字重看起来不变）
-  assert.deepEqual(fontFaceFor('Amayui CN', 700), { file: 'Amayui-CN_cnjp.ttf', weight: 400 });
+test('★字重解析：有真 Bold 面就用它（700 按 700 注册）；没有则退回 Regular 的 400 面', () => {
+  // `Amayui CN` 2026-09 起有真 Bold 面（docs/font-build.md §8.7）⇒ 请求 700 = 真粗体，不再靠浏览器合成
+  assert.deepEqual(fontFaceFor('Amayui CN', 700), { file: 'Amayui-CN_cnjp-Bold.ttf', weight: 700 });
+  assert.deepEqual(fontFaceFor('Amayui CN', 400), { file: 'Amayui-CN_cnjp.ttf', weight: 400 });
   assert.equal(fontFaceFor('MS Gothic', 700), null, '旧 WenQuanYi 字族已摘除（不再有落地文件）');
-  // Sarasa 有真 Bold 面 ⇒ 请求 700 就用 Bold 文件
+  // Sarasa 也有真 Bold 面
   assert.deepEqual(fontFaceFor('Sarasa Gothic SC', 700), {
     file: 'SarasaGothicSC/SarasaGothicSC-Bold.ttf',
     weight: 700,
@@ -217,4 +218,29 @@ test('★字重解析：只有 Regular 面的字族请求 700 时按 400 注册�
     weight: 400,
   });
   assert.equal(fontFaceFor('存在しない', 400), null);
+});
+
+test('★字重解析：绝不能把同一个 Regular 文件同时登记成 400 与 700（= 加粗静默失效）', () => {
+  // 这条是"曾经踩过的坑"的棘轮：`fontFileList()` 旧实现用 `files[w] ?? files[400]` 把 Amayui CN 的
+  // Regular 同时列成 400/700 ⇒ 注册成 700 的那一面会被浏览器当成"这就是粗体"，`i2bd 1` 完全没效果。
+  const byFamily = new Map<string, { weight: number; file: string }[]>();
+  for (const f of fontFileList()) {
+    const list = byFamily.get(f.family) ?? [];
+    list.push({ weight: f.weight, file: f.file });
+    byFamily.set(f.family, list);
+  }
+  for (const [family, list] of byFamily) {
+    const filesByWeight = new Map(list.map((x) => [x.weight, x.file]));
+    if (filesByWeight.size === 1) continue; // 单面族（合法：只有 Regular，请求 700 时由宿主决定）
+    assert.notEqual(
+      filesByWeight.get(400),
+      filesByWeight.get(700),
+      `${family}: 400 与 700 指向同一个文件 ⇒ 粗体不会有任何视觉差别`,
+    );
+  }
+  // 当前工程的两个族都应当是"真双面"
+  assert.deepEqual(
+    byFamily.get('Amayui CN')?.map((x) => x.file).sort(),
+    ['Amayui-CN_cnjp-Bold.ttf', 'Amayui-CN_cnjp.ttf'],
+  );
 });

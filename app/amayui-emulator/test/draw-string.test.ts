@@ -24,7 +24,7 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { drawStringGlyphs, advance } from '../src/text/layout.js';
-import { TextureCache } from '../src/renderer/pixi/textureCache.js';
+import { TextureCache, canvasPixelSize } from '../src/renderer/pixi/textureCache.js';
 import type { DrawStringStyle, NativeBridge } from '../src/vm/native.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
@@ -206,4 +206,24 @@ test('★纹理槽：没先 create-texture 的槽上直绘 = 不画（引擎 raw
     logs.some((l) => l.includes('没有 create-texture')),
     `应记一条"被忽略"的日志，实际：${logs.join(' | ')}`,
   );
+});
+
+/**
+ * ★**程序化槽画布必须按 DPR 取物理尺寸**（2026-09 用户实测"非 ADV 窗口的字整体像粗体"的根因）。
+ *
+ * 直绘文本（`0x204 draw-string` → `0x1F8 create-texture` 的表面）曾按 **1×** 建画布，
+ * 而消息窗文本（`rasterFrame`）按 DPR 光栅化 + `resolution: res`。两条路径的纹理进的是同一个
+ * Pixi 舞台（logical 1280×720 @ resolution=DPR）⇒ 1× 的那张会被**放大 DPR 倍**显示：
+ * 笔画发虚、边缘糊开，观感比消息窗文本粗一档。修法 = 槽画布同样 `ceil(逻辑×DPR)` 并把
+ * `resolution` 告诉 Pixi（`cropSprite` 的 frame 本来就是逻辑坐标，Pixi 会按 resolution 折回）。
+ *
+ * 断言口径与 `text/raster.ts` 的 `rasterFrame` 完全一致（都是 `ceil(w*res)`）——两条路径不许再分叉。
+ */
+test('★程序化槽画布尺寸 = ceil(逻辑 × DPR)（与消息窗 rasterFrame 同口径）', () => {
+  assert.deepEqual(canvasPixelSize(628, 360, 1), { cw: 628, ch: 360 }, 'DPR=1 时不变');
+  assert.deepEqual(canvasPixelSize(628, 360, 1.25), { cw: 785, ch: 450 }, 'CONFIG1 的 628×360 槽在 1.25× 下的物理尺寸');
+  assert.deepEqual(canvasPixelSize(628, 360, 2), { cw: 1256, ch: 720 }, 'DPR 上限 2');
+  assert.deepEqual(canvasPixelSize(0, 0, 1.25), { cw: 1, ch: 1 }, '空尺寸不产生 0 宽画布');
+  // 与消息窗路径同一条公式：日志里 615×115 的窗纹理 = 逻辑 492×92 @1.25
+  assert.deepEqual(canvasPixelSize(492, 92, 1.25), { cw: 615, ch: 115 }, '与 [text] 纹理尺寸口径一致');
 });

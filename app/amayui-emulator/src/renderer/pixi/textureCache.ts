@@ -43,8 +43,23 @@ export class DestroyQueue {
 interface CanvasSlot {
   canvas: HTMLCanvasElement;
   tex: Texture;
+  /** 逻辑尺寸（= 引擎的 surface 尺寸；`size()` 与绘制坐标都用它）。 */
   w: number;
   h: number;
+  /** 光栅化用的设备像素比（画布物理尺寸 = 逻辑 × res；DPR 变化要重建）。 */
+  res: number;
+}
+
+/**
+ * 程序化槽画布的**物理像素**尺寸（`create-texture` 的逻辑尺寸 × DPR）。
+ *
+ * ★与消息窗路径（`text/raster.ts` 的 `rasterFrame`，同样 `ceil(w*res)`）**必须一致**：
+ * 两条路径的纹理都会交给同一个 Pixi 舞台（logical 1280×720 @ resolution=DPR）。
+ * 若这里按 1×建画布，纹理就会被**放大 DPR 倍**显示 ⇒ 直绘文本整体发虚、笔画看着变粗，
+ * 而消息窗文本（按 DPR 光栅化 + `resolution: res`）是清晰的 —— 同一屏上两种"字重观感"。
+ */
+export function canvasPixelSize(w: number, h: number, res: number): { cw: number; ch: number } {
+  return { cw: Math.max(1, Math.ceil(w * res)), ch: Math.max(1, Math.ceil(h * res)) };
 }
 
 export class TextureCache {
@@ -60,6 +75,11 @@ export class TextureCache {
   readonly #pendingDestroy = new DestroyQueue();
 
   constructor(private readonly log: (msg: string) => void) {}
+
+  /** 光栅化用的设备像素比（与消息窗路径同一口径：上限 2，非浏览器环境为 1）。 */
+  static #dpr(): number {
+    return typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+  }
 
   /** 待销毁纹理数（诊断/单测用）。 */
   get pendingDestroyCount(): number {
@@ -178,6 +198,10 @@ export class TextureCache {
    *
    * ★**尺寸不变时复用画布**（只清空 + 重传）：引擎的语义是"新建空表面"，用同一张画布清零后
    * 像素结果完全一致，但避免了每页重建时的纹理销毁/新建（以及随之而来的销毁时序问题，见 `collectGarbage`）。
+   *
+   * ★**画布按 DPR 光栅化**（`canvasPixelSize` + `CanvasSource.resolution = res`）：文本直绘路径曾按 1× 建画布，
+   * 于是整张纹理在 Pixi 舞台上被放大 DPR 倍显示 ⇒ 直绘文本发虚、笔画看着比消息窗文本粗
+   * （用户实测："非 ADV 窗口的文字整体像是粗体"）。两条路径现在同口径。
    */
   create(slot: number, w: number, h: number, mode: number): void {
     const bound = this.#slotImgid.get(slot);
@@ -187,31 +211,38 @@ export class TextureCache {
     }
     const cw = Math.max(1, w | 0);
     const ch = Math.max(1, h | 0);
+    const res = TextureCache.#dpr();
     const old = this.#canvasSlots.get(slot);
-    if (old && old.w === cw && old.h === ch && typeof document !== 'undefined' && w > 0 && h > 0) {
-      // 同尺寸 ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）
-      old.canvas.getContext('2d')?.clearRect(0, 0, cw, ch);
+    if (old && old.w === cw && old.h === ch && old.res === res && typeof document !== 'undefined' && w > 0 && h > 0) {
+      // 同尺寸同 DPR ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）。清空要用物理尺寸。
+      const ctx = old.canvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, old.canvas.width, old.canvas.height);
+      }
       old.tex.source.update();
       this.slotTex.set(slot, old.tex);
-      this.log(`createTexture slot=${slot} ${w}x${h} mode=${mode} (复用空白表面：清空)`);
+      this.log(`createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x (复用空白表面：清空)`);
       return;
     }
-    // 尺寸变了（或首次）⇒ 换一张画布；旧纹理**延迟到 present 之后**再销毁（见 collectGarbage）
+    // 尺寸/DPR 变了（或首次）⇒ 换一张画布；旧纹理**延迟到 present 之后**再销毁（见 collectGarbage）
     if (old) {
       this.slotTex.delete(slot);
       this.#pendingDestroy.push(old.tex);
       this.#canvasSlots.delete(slot);
     }
     if (typeof document !== 'undefined' && w > 0 && h > 0) {
+      const { cw: pw, ch: ph } = canvasPixelSize(cw, ch, res);
       const canvas = document.createElement('canvas');
-      canvas.width = cw;
-      canvas.height = ch; // 全透明（引擎新表面未初始化 ⇒ 不遮挡下层素材）
-      const tex = new Texture({ source: new CanvasSource({ resource: canvas }) });
-      this.#canvasSlots.set(slot, { canvas, tex, w: cw, h: ch });
+      canvas.width = pw;
+      canvas.height = ph; // 全透明（引擎新表面未初始化 ⇒ 不遮挡下层素材）
+      // ★resolution: res —— 画布物理尺寸是 逻辑×res，不告诉 Pixi 就会被按 1:1 逻辑像素显示（放大/偏移）
+      const tex = new Texture({ source: new CanvasSource({ resource: canvas, resolution: res }) });
+      this.#canvasSlots.set(slot, { canvas, tex, w: cw, h: ch, res });
       this.slotTex.set(slot, tex);
     }
     this.log(
-      `createTexture slot=${slot} ${w}x${h} mode=${mode}` +
+      `createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x` +
         (bound !== undefined ? ` (沿用已绑定 imgid=0x${bound.toString(16)})` : ' (新建空白表面)'),
     );
   }
@@ -231,6 +262,8 @@ export class TextureCache {
     }
     const ctx = cs.canvas.getContext('2d');
     if (!ctx) return;
+    // ★画布是物理像素（逻辑×res）⇒ 先把坐标系缩到逻辑尺寸，之后一切坐标/字号都按逻辑值给
+    ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0);
     ctx.font = `${style.weight} ${style.size}px "${style.family}"`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
@@ -241,8 +274,11 @@ export class TextureCache {
       ctx.fillText(g.ch, g.x, g.y);
     }
     ctx.globalAlpha = 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // 交还单位变换（同一 ctx 后续可能被别的路径用）
     cs.tex.source.update(); // 通知 Pixi 重新上传这张 canvas
-    this.log(`drawString slot=${slot} (${x},${y}) ${JSON.stringify(text)}`);
+    this.log(
+      `drawString slot=${slot} (${x},${y}) @${cs.res}x w=${style.weight} ${JSON.stringify(text)}`,
+    );
   }
 
   /**

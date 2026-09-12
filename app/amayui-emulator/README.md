@@ -592,6 +592,51 @@ npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（�
 守卫：`test/text-style-snapshot.test.ts`（单测 + E3 真实语料探针 `runConfig1Chain({previewProbe:true})`：
 切到角色设定页后 win 9 的颜色恒为入队色 `#ffffff`，而全局色已走过 `#67bf4d → #b690ff`）。
 
+### ★程序化纹理槽的直绘文本：画布必须按 DPR 光栅化（2026-09 用户实测「非 ADV 窗口的字整体像粗体」）
+
+症状：非 ADV 窗口（设置界面的设置行/值、存档列表、HUD…）的文字看起来**整体比消息窗文本粗一档**，
+而脚本给这些文本的字重其实是 **400**（探针实测：`CONFIG1` 的 13 次 `0x204 draw-string` 全是 `weight=400`、
+`mode=1 dx=0 dy=0`）—— 也就是说**不是**加粗，是**糊**。
+
+根因：两条文本路径的**光栅化分辨率不一致**（同一块 Pixi 舞台 = logical 1280×720 @ `resolution=DPR`）：
+- 消息窗（`rasterFrame`）：建 `ceil(逻辑×DPR)` 的画布 + `CanvasSource({resolution: res})` ⇒ 清晰；
+- `0x204 draw-string`（直绘进 `0x1F8 create-texture` 的表面）：画布按**逻辑尺寸**建、`resolution` 默认 1
+  ⇒ 纹理被**放大 DPR 倍**显示 ⇒ 笔画边缘糊开、观感变粗。
+
+实测（`npm run shot`，DPR=1.25，取「窗口显示」四字的白游程均值）：**4.12px → 3.37px**
+（同一字体 25px 由 PIL/FreeType 直接渲染 = 3.19px；`628×360` 的槽现在建 **785×450** 画布）。
+日志两条路径现在都带 `@1.25x` 标记（`createTexture … @1.25x` / `drawString … @1.25x w=400`）。
+
+修法（`src/renderer/pixi/textureCache.ts`）：`create()` 用 `canvasPixelSize(w,h,res)`（与 `rasterFrame` 同为 `ceil`）、
+`CanvasSource` 带 `resolution: res`、`drawString()` 先 `ctx.setTransform(res,…)`、画布复用判定加 `res` 比较。
+`cropSprite` 的 frame 本来就是**逻辑**坐标（Pixi 按 `source.resolution` 折回逻辑尺寸）⇒ 无需改动。
+守卫：`test/draw-string.test.ts` 的 `canvasPixelSize` 口径断言（含「与消息窗 615×115 同公式」一条）。
+
+### ★加粗策略：`i2bd/i2be`（`Font+218516`）→ **真 Bold 面**（2026-09 已落地，选 A）
+
+引擎：`0x2BD`（`sub_426200` raw 33384-33402）把 `Font+218516`/`+1248` 写成 **700/0** 并 `sub_459F40` 重建 GDI 字体；
+`Font+1248` 初值 **0**（= Regular，`sub_465390` raw 78854）。全语料 `i2bd 1` **904 处**、`i2bd 0` **144 处**
+（`CONFIG.txt:158/209`、`CONFIG1.txt:2901/3030/3059`、`CONFIG2.txt` 5 处、`$n$SC*/SG*` 大量）。
+
+**做法**：给 `Amayui CN` 补一面**真 Bold**（`res/fonts/Amayui-CN_cnjp-Bold.ttf`，SarasaGothicSC-Bold
+基底 + 同款 cnjp 替换 + name/OS2 定制，步骤与实测数据见 `docs/font-build.md` **§8.7**），
+`fontSet.ts` 的 `Amayui CN` 登记 `{400: 常规面, 700: Bold 面}` ⇒ `fontFaceFor(…, 700)` 用 Bold 文件并按
+**700** 注册，浏览器**不再合成**加粗。旧方案（只有 Regular ⇒ 让浏览器合成）与它写在注释里的
+WenQuanYi 时代理由都已作废；`fontFileList()` 也改成"只列真面"（旧实现用 `files[w] ?? files[400]`
+把同一份 Regular 同时说成 400/700，与 `fontFaceFor` 口径矛盾）。
+
+证据（`npm run shot`，DPR=1.25）：
+- 日志两张面都加载真文件、**没有**合成提示：`[font] Amayui CN#700 ← Amayui-CN_cnjp-Bold.ttf（23416KB）` +
+  `[font] Amayui CN#400 ← Amayui-CN_cnjp.ttf（23568KB）`；
+- `CONFIG1` 页 ADV 样例窗（探针实测 `weight=700`）白游程中位/均值 = **5.0 / 6.96**，
+  与 PIL 用真 Bold 面在 37px（= 30 CSS px × 1.25）下的 **4.0 / 6.61** 同一档；
+  而 30px Regular 只有 **2.0 / 3.19** ⇒ 确实是"真粗体"而不是回到常规字重；
+- 目视：`.tmp/bold-real-sample2.png`（干净的 Sarasa Bold，不再是糊开的合成粗体）。
+
+守卫：`test/font-bold-face.test.ts`（族名配对 `Amayui CN`+`Bold`、`usWeightClass=700`/`fsSelection.BOLD`、
+932 码页声明、全字库外接框面积 +4.8% 证明不是"改名版 Regular"）+
+`test/text-layout.test.ts`（700 走 Bold 文件；**不许把同一文件同时登记成 400 与 700**）。
+
 ### 症状驱动的定位流程
 
 ```

@@ -57,7 +57,8 @@ python scripts/font_CN_JP.py res/fonts/MSGothic_WenQuanYi.ttf
 
 | 文件 | 族名 | 外字 U+E000–E010 | 用途 |
 |---|---|---|---|
-| `Amayui-CN_cnjp.ttf` | Amayui CN | **无**（实测确认） | 当前方案：注册/分发，游戏内字体分类指向它；**基底 SarasaGothicSC（2026-08 起，23 MB）** |
+| `Amayui-CN_cnjp.ttf` | Amayui CN（Regular） | **无**（实测确认） | 当前方案：注册/分发，游戏内字体分类指向它；**基底 SarasaGothicSC（2026-08 起，23 MB）** |
+| `Amayui-CN_cnjp-Bold.ttf` | Amayui CN（Bold） | 无 | **同族粗体面**（2026-09 起）：脚本 `i2bd/i2be`（`lfWeight=700`）的落地文件；基底 SarasaGothicSC-**Bold**，构建步骤见 §8.7 |
 | `SarasaGothicSC/SarasaGothicSC-Regular_cnjp.ttf` | Sarasa Gothic SC | 无 | 中间产物（未改族名版） |
 | `AGE-Extend_cnjp.ttf` | AGE Extend（伪装） | 有 | 旧“文件覆盖 AGE-EXTEND.TTF”方案遗留，弃用 |
 | `MSGothic_WenQuanYi_cnjp.ttf` 等 | ＭＳ ゴシック / WenQuanYi | 无 | 基底/中间产物（旧 WenQuanYi 线） |
@@ -138,21 +139,73 @@ python scripts/font_CN_JP.py res/fonts/SarasaGothicSC/SarasaGothicSC-Regular.ttf
    **修复**：`ulCodePageRange1/2` 对齐旧版（WenQuanYi）`0x603E019F / 0xDFD70000`。
    安装后若仍不生效：完全退出游戏 + 重启 `FontCache` 服务（或重启电脑）再测；
 3. 替换方向：字典 `res/subs_cn_jp.json` 键=简体、值=日文写法，脚本 `Reverse=True` 互换后
-   `cmap[日文写法] = cmap[简体]`（产物中「説」渲染为「说」形状，方向正确）。
+   `cmap[日文写法] = cmap[简体]`（产物中「説」渲染为「说」形状，方向正确）；
+4. **`font_CN_JP.py` 在 GBK 控制台会中途崩掉**（`UnicodeEncodeError: 'gbk' codec can't encode character '\u30fb'`
+   —— 它会把"平台/编码不存在"的**字符本身**打进 `print`）。跑之前先设 UTF-8：
+   `$env:PYTHONUTF8='1'; $env:PYTHONIOENCODING='utf-8'`（或 `PYTHONUTF8=1 python …`）。
+   崩在 print 上时输出文件**没有**生成，别误以为"跑完了没产物"。
 
 ### 8.6 产物与备份
 
 | 文件 | 说明 |
 |---|---|
-| `res/fonts/Amayui-CN_cnjp.ttf` | **当前分发字体**（Sarasa SC 基底，23 MB，族名 Amayui CN，含 932 码页声明） |
+| `res/fonts/Amayui-CN_cnjp.ttf` | **当前分发字体·Regular**（Sarasa SC 基底，23 MB，族名 Amayui CN，含 932 码页声明） |
+| `res/fonts/Amayui-CN_cnjp-Bold.ttf` | **当前分发字体·Bold**（2026-09，Sarasa SC **Bold** 基底，23 MB，族名同为 Amayui CN、子族名 Bold，含 932 码页声明） |
 | `res/fonts/SarasaGothicSC/SarasaGothicSC-Regular_cnjp.ttf` | 中间产物（未改族名版） |
+| `res/fonts/SarasaGothicSC/SarasaGothicSC-Bold_cnjp.ttf` | 中间产物（Bold 面未改族名版） |
 | `.tmp/font-backup/Amayui-CN_cnjp.ttf.wenquanyi.bak` | 旧版（WenQuanYi 基底，可回退） |
 | `.tmp/font-backup/Amayui-CN_cnjp.ttf.sarasa-nocp.bak` | 无 932 码页声明的坏版本（仅留档） |
 
 安装：复制到 `%LOCALAPPDATA%\Microsoft\Windows\Fonts\`（永久）或 `npm run register-font`（会话级）；
-需重启游戏 + 刷新 FontCache 生效。
+**两面都要装**（系统按族名 + Regular/Bold 配对）。需重启游戏 + 刷新 FontCache 生效。
 
-### 8.7 后续计划（优先级：低，暂不处理）
+### 8.7 Bold 面构建（2026-09-12 实测）
+
+动机：脚本 `i2bd/i2be`（`0x2BD`/`0x2BE` → `Font+218516`/`+1248` = 700/0 后 `sub_459F40` 重建 GDI 字体）
+在**只有 Regular 面**的字族上**画不出粗体**（GDI 找不到 Bold 面就退回 Regular）；重写侧（浏览器）
+虽然会"合成加粗"，但那是把字形糊开的近似，观感比真 Bold 重且脏。补一面真 Bold 之后，
+真机与模拟器都变成"真粗体"。
+
+```bash
+# 0) 先设 UTF-8（否则 §8.5.4：脚本会在 print 上崩，产物不生成）
+$env:PYTHONUTF8='1'; $env:PYTHONIOENCODING='utf-8'
+
+# 1) 标准 cnjp 构建（cmap 替换，与 Regular 面同一份字典）
+python scripts/font_CN_JP.py res/fonts/SarasaGothicSC/SarasaGothicSC-Bold.ttf
+#    → res/fonts/SarasaGothicSC/SarasaGothicSC-Bold_cnjp.ttf（22.9 MB，48741 glyphs）
+
+# 2) name 表 + OS/2（脚本 .tmp/build_amayui_bold.py，仓库外留档；做法同 §8.3 的第 2/3 步）
+#    name：1/16='Amayui CN'、2/17='Bold'、3/4='Amayui CN Bold'、6='Amayui-CN-Bold'
+#          ★族名必须与 Regular **完全相同**，靠 subfamily 区分，GDI/CSS 才配得成同族两面
+#    OS/2：ulCodePageRange1/2 = 0x603E019F / 0xDFD70000（补 Shift-JIS 932，同 §8.5.2）
+#    → res/fonts/Amayui-CN_cnjp-Bold.ttf
+```
+
+验证（实测数值，`lib/` 侧无依赖：fontTools + PIL 即可复现）：
+
+| 检查 | 结果 |
+|---|---|
+| name 1/2/16/17 | `Amayui CN` / `Bold`（族名与 Regular 相同、子族名区分） |
+| OS/2 | `usWeightClass=700`、`fsSelection=0xa0`（BOLD）、`ulCodePageRange1=0x603E019F`（932 位 = 1） |
+| cmap 替换 | 「説/说」「為/为」「這/这」「時/时」「対/对」两面都 `cmap[日文写法]==cmap[简体]` |
+| 非替换字符 | 随机 300 码位与基底**字形名完全一致**（0 处差异） |
+| 真的是粗体 | 同字串墨量 Bold/Regular = **1.56×**（20px 421→656、30px 935→1474）；全字库外接框面积 +4.8% |
+| 头表 | `head.glyphCount=48741`（与 Regular 同基底）、`macStyle.BOLD=1` |
+
+消费方（改字体后必须一起确认）：
+
+- `app/amayui-emulator/src/text/fontSet.ts`：`BUILTIN_FAMILIES` 的 `Amayui CN` 登记 **两个面**
+  （`{400: Amayui-CN_cnjp.ttf, 700: Amayui-CN_cnjp-Bold.ttf}`）⇒ `fontFaceFor('Amayui CN', 700)`
+  返回 Bold 文件并按 700 注册（浏览器不再合成）；`fontFileList()` 只列真面。
+- `patch/patch.config.json`：新增 `res/fonts/Amayui-CN_cnjp-Bold.ttf → Amayui-CN_cnjp-Bold.ttf`；
+  `patch/README-测试版说明.md` 第 6 步要求**两份都安装**。
+- 守卫：`app/amayui-emulator/test/font-bold-face.test.ts`（族名配对 / 700+BOLD / 932 码页 / 外接框更大）
+  与 `test/text-layout.test.ts`（字重解析；含"同一文件不许同时登记成 400 与 700"的棘轮）。
+
+> ⚠️ 行为变化：分发这两份字体后，**真机**上原先"加粗无效"的文本会真的变粗（这正是本节的目的）；
+> 若某处脚本用 `i2bd 1` 只是历史遗留，视觉上会比以前重 —— 需要时按场景改脚本或改映射。
+
+### 8.8 后续计划（优先级：低，暂不处理）
 
 - **和制汉字字形提取**：字典未覆盖的日文特有汉字（如 働・峠・辻・畑）在 SC 基底中可能缺失或
   用简体字形；后续从 `SarasaGothicJ-Regular.ttf` 按码位提取字形替换进产物。

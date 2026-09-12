@@ -10,12 +10,13 @@
  * 不依赖操作系统字体（跨平台一致性）。缺字族时回退到默认字族并**只记一次日志**。
  *
  * ## ★字体政策（2026-09 修正）：一切文本面 → `Amayui CN`
- * 汉化随包字体**只有** `Amayui-CN_cnjp.ttf`（Sarasa Gothic SC 基底 + cnjp 字形替换 +
- * 唯一族名 `Amayui CN`；`patch/patch.config.json` 的字体条目也只同步这一个文件）。
+ * 汉化随包字体是 `Amayui CN` 族的两面：`Amayui-CN_cnjp.ttf`（Regular）+ `Amayui-CN_cnjp-Bold.ttf`（Bold，
+ * Sarasa Gothic SC Bold 基底 + 同款 cnjp 替换；构建步骤见 `docs/font-build.md` §8.7）；
+ * `patch/patch.config.json` 的字体条目同步这两个文件。
  * 汉化说明（`patch/README-测试版说明.md` 第 8 步）要求玩家把**全部**字体分类
  * （説明文 / パラメータ文字/数字 / ＡＤＶルビ / ＡＤＶメッセージ）都设为 `Amayui CN`
  * —— 也就是引擎侧无论拿到 `メイリオ`、`ＭＳ ゴシック`、`游ゴシック` 还是 `ＭＳ 明朝`，
- * 实际渲染的都是 `Amayui CN`。
+ * 实际渲染的都是 `Amayui CN` 族（按 `lfWeight` 在 Regular/Bold 两面之间选）。
  *
  * 因此 `FACE_MAP` 把**所有**日文面名都指向 `Amayui CN`，并**彻底摘掉**旧 WenQuanYi 线：
  * `MSGothic_WenQuanYi_cnjp.ttf`（族名伪装成 `MS Gothic`）属已废弃基底
@@ -29,11 +30,13 @@
 /**
  * 一个内置字族：`family` = 注册进 `document.fonts` 的名字，`file` = `res/fonts/` 下的相对路径。
  *
- * ★`files` 的键是**该文件自己声明的字重**（读 TTF 的 name 表确认过），不是"我们想让它扮演的字重"：
- *  - 汉化随包的 `Amayui-CN_cnjp.ttf`（family 名就叫 `Amayui CN`）**只有 Regular**；
- *  - 把 Regular 文件**注册成 700** 会让浏览器认为"这就是粗体面"、于是**不再合成加粗**
- *    ⇒ 脚本要的 `lfWeight=700` 完全失效；反之只注册 400，浏览器会**合成**加粗（与 GDI 对无粗体面的处理一致，也更轻）。
- *  - Sarasa 有真的 Bold 面（`-Bold.ttf`），所以它按 700 注册。
+ * ★`files` 的键是**该文件自己声明的字重**（读 TTF 的 name / OS/2 表确认过），不是"我们想让它扮演的字重"：
+ *  - 理想情况：一族有 Regular(400) 与 Bold(700) **两个真面**（`Amayui CN`、`Sarasa Gothic SC` 都是如此）；
+ *  - 只有 Regular 的族：**不要**把同一个文件既登记成 400 又登记成 700 —— 那等于告诉浏览器
+ *    "这就是粗体面"，于是浏览器**不再合成** ⇒ 脚本要的 `lfWeight=700` 完全失效（静默没效果）；
+ *    反之只登记 400、让请求 700 时落到"无粗体面"（浏览器合成加粗，或按宿主策略忽略）才是可解释的行为。
+ *    ★`Amayui CN` 曾经就是"只有 Regular"⇒ 靠浏览器合成；2026-09 起按 `docs/font-build.md` §8.7
+ *    补了真 Bold 面（`Amayui-CN_cnjp-Bold.ttf`），合成路径不再被走到。
  */
 export interface BuiltinFamily {
   family: string;
@@ -46,10 +49,11 @@ export const FONT_DIR = 'res/fonts';
 /** 内置字族表（`res/fonts/` 下确实存在的文件）。 */
 export const BUILTIN_FAMILIES: BuiltinFamily[] = [
   {
-    // 汉化随包字体：TTF 的 family 名就是 `Amayui CN`（只有一个 Regular 面）。
+    // 汉化随包字体：TTF 的 family 名就是 `Amayui CN`，**Regular + Bold 两面**
+    // （Bold = SarasaGothicSC-Bold 基底 + 同款 cnjp 替换 + OS/2 码页补齐，见 docs/font-build.md §8.7）。
     // ★所有引擎面名都落到这里（见文件头「字体政策」）—— 包括主面 `bbb=メイリオ` 与注音面 `bbc=ＭＳ ゴシック`。
     family: 'Amayui CN',
-    files: { 400: 'Amayui-CN_cnjp.ttf' },
+    files: { 400: 'Amayui-CN_cnjp.ttf', 700: 'Amayui-CN_cnjp-Bold.ttf' },
   },
   {
     // 工程既有的 UI 文字渲染字体（docs/images/FONT.md）；有真 Bold 面。
@@ -64,8 +68,8 @@ export const BUILTIN_FAMILIES: BuiltinFamily[] = [
 /**
  * 引擎面名 → 内置字族。键一律**大写、去空格**后比较。
  *
- * ★取值依据**汉化随包字体只有 `Amayui CN` 这一个**（`patch/patch.config.json` 只同步
- * `res/fonts/Amayui-CN_cnjp.ttf`），且汉化说明要求把所有字体分类都设为 `Amayui CN`
+ * ★取值依据**汉化随包字体就是 `Amayui CN` 一族**（`patch/patch.config.json` 同步它的 Regular+Bold
+ * 两个文件），且汉化说明要求把所有字体分类都设为 `Amayui CN`
  * ⇒ 引擎侧的这些日文面名在汉化环境里**都渲染成 Amayui CN**，映射到别的字族就是错。
  * （旧 WenQuanYi 线的 `MSGothic_WenQuanYi_cnjp.ttf` 已废弃，不再有对应字族。）
  *
@@ -115,9 +119,13 @@ export function resolveFace(engineFace: string): FaceResolution {
 /**
  * 解析"请求某个字重时该注册哪个文件、按什么字重注册"（按需加载用）。
  *
- * ★返回的 `weight` 是**文件自己声明的字重**：请求 700 但该字族只有 Regular 时，
- * 返回 `{ file: regular, weight: 400 }` —— 注册成 400 才能让浏览器**合成**加粗；
- * 注册成 700 会让浏览器以为"这就是粗体面"而跳过合成（那样 `i2bd 1` 就白设了）。
+ * 三条分支（都要能解释得通，别让"加粗静默失效"再次发生）：
+ *  1. 请求 700 且该族**有真 Bold 面** ⇒ 用 Bold 文件、按 **700** 注册（真粗体，浏览器不再合成）；
+ *     当前 `Amayui CN`（`docs/font-build.md` §8.7）与 `Sarasa Gothic SC` 都属于这一类；
+ *  2. 请求 700 但该族**只有 Regular** ⇒ 返回 `{ file: regular, weight: 400 }`：注册成 400，
+ *     让宿主（浏览器）走"无粗体面"路径（合成加粗或忽略），**绝不**把 Regular 登记成 700
+ *     —— 那等于宣称"这就是粗体"，会让 `i2bd 1` 静默无效；
+ *  3. 请求 400 ⇒ Regular 文件、按 400 注册。
  */
 export function fontFaceFor(family: string, reqWeight: 400 | 700): { file: string; weight: 400 | 700 } | null {
   const f = BUILTIN_FAMILIES.find((x) => x.family === family);
@@ -127,12 +135,18 @@ export function fontFaceFor(family: string, reqWeight: 400 | 700): { file: strin
   return file ? { file, weight: 400 } : null;
 }
 
-/** 列出全部需要预载的 `(family, file)`（诊断/预热用）。 */
+/**
+ * 列出全部需要预载的 `(family, file)`（诊断/预热用）。
+ *
+ * ★只列**真面**：一族声明的 400/700 各一条。不要用 `files[w] ?? files[400]` 去"补"缺失的字重
+ * —— 那会把同一个 Regular 文件同时说成 400 与 700，与 `fontFaceFor` 的口径矛盾
+ * （旧实现就是这样，属于同一族的"加粗静默失效"隐患）。
+ */
 export function fontFileList(): { family: string; weight: 400 | 700; file: string }[] {
   const out: { family: string; weight: 400 | 700; file: string }[] = [];
   for (const f of BUILTIN_FAMILIES) {
     for (const w of [400, 700] as const) {
-      const file = f.files[w] ?? f.files[400];
+      const file = f.files[w];
       if (file) out.push({ family: f.family, weight: w, file });
     }
   }
