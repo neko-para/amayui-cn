@@ -145,7 +145,7 @@ export type AudioIntent =
   | { kind: 'voice-flag'; ch: number }
   | { kind: 'voice-factor-prepare'; ch: number; value: number }
   | { kind: 'voice-factor-apply'; ch: number; value: number }
-  | { kind: 'bgm-play'; bgm: number; loop: boolean }
+  | { kind: 'bgm-play'; bgm: number; loop: boolean; res?: AudioResource }
   | { kind: 'bgm-mode'; mode: number }
   | { kind: 'bgm-fade'; value: number; step: number }
   | { kind: 'enable'; target: AudioBus; on: boolean }
@@ -264,7 +264,7 @@ export class AudioEngine {
       case 'voice-flag': this.voiceFlag(intent.ch); break;
       case 'voice-factor-prepare': this.voiceFactorPrepare(intent.ch, intent.value); break;
       case 'voice-factor-apply': this.voiceFactorApply(intent.ch, intent.value); break;
-      case 'bgm-play': this.bgmPlay(intent.bgm, intent.loop); break;
+      case 'bgm-play': this.bgmPlay(intent.bgm, intent.loop, intent.res); break;
       case 'bgm-mode': this.bgmMode(intent.mode); break;
       case 'bgm-fade': this.bgmFadeTo(intent.value, intent.step); break;
       case 'enable': this.setEnabled(intent.target, intent.on); break;
@@ -409,12 +409,13 @@ export class AudioEngine {
   /**
    * `0xBF`/`0xB7`/`0xB9`：播 BGM。
    *
-   * ★`bgm` 是**曲号**（不是统一文件 id）：引擎 `MusicBase` 用一张「曲号 → 文件 id」表（`+1304`，
-   * 索引 = 曲号 − 2；`sub_48DB80` raw 108738），本作等价于文件名 `BGM%03d.OGG`。
-   * 先按名字取；**取不到再退回按统一 id 试一次**（老行为，只作兜底并留日志）。
+   * ★`bgm` 是**曲号**（不是统一文件 id）：引擎 `MusicBase`/PCM 用一张「曲号 → 文件 id」表
+   * （`+1304`，索引 = 曲号 − 2；`sub_48DB80` raw 108738），该表由宿主从 `SYS4INI` 尾部装载
+   * （`parseMusicTables`）、并由 `0x1D6`/`0x1D8` 在运行期追加 —— VM 侧已解析好时经 `res` 传进来。
+   * `res` 缺省时退回"按文件名 `BGM%03d.OGG` 取，再不行按统一 id 试一次"（见 `#loadBgmClip`）。
    * 同曲号同循环且已在播 ⇒ 不重启（引擎同 id 同 loop 直接返回）。
    */
-  bgmPlay(bgm: number, loop: boolean): void {
+  bgmPlay(bgm: number, loop: boolean, res?: AudioResource): void {
     if (!this.#enabled.bgm || this.#bgm.mode === 0) {
       this.#bgm.bgm = bgm;
       return;
@@ -424,16 +425,16 @@ export class AudioEngine {
     this.#bgm.bgm = bgm;
     this.#bgm.loop = loop;
     this.#bgm.fade = null;
-    const res: AudioResource = { name: bgmFileName(bgm) };
+    const key: AudioResource = res ?? { name: bgmFileName(bgm) };
     const opts = { loop, gain: this.#bgmGain(), pan: 0 };
-    const url = this.#host.streamUrl?.(res);
+    const url = this.#host.streamUrl?.(key);
     if (url && this.#host.playStream) {
       this.#bgm.clip = null;
-      this.#bgm.playback = this.#host.playStream(url, res, opts);
-      this.#log(`[audio] bgm#${bgm}(${bgmFileName(bgm)}) 流式起播 loop=${loop}`);
+      this.#bgm.playback = this.#host.playStream(url, key, opts);
+      this.#log(`[audio] bgm#${bgm}(${resLabel(key)}) 流式起播 loop=${loop}`);
       return;
     }
-    void this.#track(this.#loadBgmClip(res, bgm)).then((clip) => {
+    void this.#track(this.#loadBgmClip(key, bgm)).then((clip) => {
       if (!clip || this.#bgm.bgm !== bgm) return;
       this.#bgm.clip = clip;
       this.#bgm.playback = this.#host.play(clip, { ...opts, gain: this.#bgmGain() });
@@ -441,12 +442,18 @@ export class AudioEngine {
     });
   }
 
-  /** BGM 装载：先按 `BGM%03d.OGG` 取名，失败后退回「按统一 id」并留一行日志。 */
+  /**
+   * BGM 装载：给了 `res`（VM 按引擎表解析出来的统一 id）就用它；否则按 `BGM%03d.OGG` 取名，
+   * 再不行退回"按统一 id"。每一步失败都留一行日志（不静默）。
+   */
   async #loadBgmClip(res: AudioResource, bgm: number): Promise<AudioClip | null> {
-    const byName = await this.#ensureClip(res, bgm);
-    if (byName) return byName;
-    this.#log(`[audio] bgm#${bgm}：按文件名取不到 ⇒ 退回按统一 id=${bgm} 试一次（老行为兜底）`);
-    return await this.#ensureClip({ id: bgm }, bgm);
+    const first = await this.#ensureClip(res, bgm);
+    if (first) return first;
+    if ('name' in res) {
+      this.#log(`[audio] bgm#${bgm}：按文件名取不到 ⇒ 退回按统一 id=${bgm} 试一次（老行为兜底）`);
+      return await this.#ensureClip({ id: bgm }, bgm);
+    }
+    return null;
   }
 
   /** `0xBC`：BGM 开关/模式（op1-1：0 = 关，1/2 = 开）。引擎还会把 `sound:Music` ±3 写回。 */
@@ -798,6 +805,11 @@ export class AudioEngine {
 /** 缓存键（id 与 name 两种定位不能混）。 */
 function resKey(res: AudioResource): string {
   return 'id' in res ? `id:${res.id}` : `name:${res.name}`;
+}
+
+/** 资源定位 → 人读标签（日志/诊断）。 */
+export function resLabel(res: AudioResource): string {
+  return 'id' in res ? `id=${res.id}` : res.name;
 }
 
 /** 音量钳制（0..10000；引擎 `sub_4B68E0`/`sub_4B6210` 的输入域）。 */export function clampVolume(v: number): number {

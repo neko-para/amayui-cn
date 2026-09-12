@@ -207,14 +207,16 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   文本子系统、声音设备、计时器）或写无人读取的字段 ⇒ 无 VM 可见副作用、emulator 无输出。
 >   按子系统分组：渲染/图形/纹理（`0x32F`/`0x248`/`0x352`/`0x344`/`0x23B`/`0x25B`/`0x1F6`…）、
 >   消息窗/文本/字体（`0x70`/`0x73`/`0x75`/`0x79`/`0x74`/`0x7A`/`0x7B`/`0x197`/`0x1BB`/`0x1C1`…）、
->   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x1D6`/`0x1D7`/`0x1D8`）。**声音族 22 条已于 2026-09 全部转真实现**（`handlers/audio.ts` + `src/audio/audioEngine.ts` + Web Audio 宿主：SE/语音/BGM/音量/pan/延迟/ADV 语音寄存，见 `docs/13-audio-plan.md`）。
+>   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`）。**声音族 22 条已于 2026-09 全部转真实现**（`handlers/audio.ts` + `src/audio/audioEngine.ts` + Web Audio 宿主：SE/语音/BGM/音量/pan/延迟/ADV 语音寄存，见 `docs/13-audio-plan.md`）。
 >   （`0x2C7` SBSubstr 与 `0x2EB` GetConfig(`set:GameVersion`) 2026-09 已**转真实现**：它们会回写操作数，
 >   当 no-op 时 TITLE 的版本号永远是占位值 `0.00.0000` —— 见 `handlers/strings.ts` / `handlers/config-read.ts`。
 >   **`0x143`（`i143`）也已转真实现**：它派发扩展包的 `$n$AUTORUN`（见 `handlers/control.ts` 的
 >   `op_dispatch_script_requests`）—— 当 no-op 时 5 个扩展包一个都不会激活。
->   `0x1D6`/`0x1D7`/`0x1D8` 是**引擎数据管理器的方法调用**（`op1 ← Engine[698900].vtable[…](op2[,op3])`）：
->   全语料只有 `$3$AUTORUN.txt:67-68` 两处，结果分别写进被丢弃的 scratch 槽与**无人读取**的 `global 70801e`
->   ⇒ 暂按 no-op，由闸门 B（控制窗「能力缺口」）继续盯着。）
+>   **`0x1D6`/`0x1D7`/`0x1D8`（音乐表族）同样已转真实现**（`handlers/music-table.ts` 的 `MUSIC_TABLE_OPS`）：
+>   它们作用在 `Engine[698900]` = `Music[271]` = **PCM 播放器**的两张曲号表（`+1304` 扁平表 = 曲号 − 2 → 文件 id；
+>   `+1320` 分组表 = 扩展包曲子），并且**都会回写 op1**。当初按 no-op 的理由是"结果写进没人读的 `global 70801e`"
+>   —— 但**写全局表本身就是副作用**，而且这张表就是 `play-bgm` 的曲号解析（`sub_48DB80`）读的表。
+>   守卫 `test/music-table.test.ts` + `test/append-packs.test.ts` 的 E3 段。）
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。

@@ -39,6 +39,7 @@ import { ADV_ACTIVE } from '../engine.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
 import { VOLUME_MAX } from '../../audio/audioEngine.js';
 import { setConfigValue } from './msgwin.js';
+import { resolveBgmResource } from './music-table.js';
 import type { OpTable } from './shared.js';
 
 /** 发一条音频意图给宿主（宿主没实现 `audio` ⇒ 静默丢弃，由闸门 A 留痕）。 */
@@ -82,9 +83,19 @@ const op_se_delay: OpHandlerLike = (c) => {
   });
 };
 
+/**
+ * `bgm-play` 意图：曲号解析成功时带上 `res`（表命中），否则**不带该键**
+ * （`AudioIntent.res` 是可选字段 —— 发 `res: undefined` 会让 `deepEqual` 断言与"未命中"难以区分）。
+ */
+function bgmPlayIntent(c: StepCtx, bgm: number, loop: boolean): AudioIntent {
+  const res = resolveBgmResource(c.e, bgm);
+  return res ? { kind: 'bgm-play', bgm, loop, res } : { kind: 'bgm-play', bgm, loop };
+}
+
 /** `0xB7`（循环）/ `0xB9`（不循环）：在 BGM 当前槽播曲（引擎 `sub_489F80`）。 */
 const op_bgm_slot: OpHandlerLike = (c) => {
-  emit(c, { kind: 'bgm-play', bgm: readIntOperand(c.e, c.frame, c.instr, 1), loop: c.instr.opcode === 0xb7 });
+  const bgm = readIntOperand(c.e, c.frame, c.instr, 1);
+  emit(c, bgmPlayIntent(c, bgm, c.instr.opcode === 0xb7));
 };
 
 /**
@@ -100,7 +111,8 @@ const op_play_bgm: OpHandlerLike = (c) => {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200 并 sub_489E50(Music,100)（推进淡出）
     emit(c, { kind: 'bgm-fade', value: 0, step: 100 });
   }
-  emit(c, { kind: 'bgm-play', bgm: readIntOperand(c.e, c.frame, c.instr, 1), loop: true });
+  const bgm = readIntOperand(c.e, c.frame, c.instr, 1);
+  emit(c, bgmPlayIntent(c, bgm, true));
 };
 
 /** 读一个布尔配置（缺省 false；键统一小写，与 `parseIni` 的口径一致）。 */

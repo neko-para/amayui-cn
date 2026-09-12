@@ -58,6 +58,16 @@ export async function bootApp(): Promise<BootedApp | null> {
 
   await loadEngineConfig(e, (l) => traceLog.line(l));
 
+  // ★音乐表（SYS4INI 尾部）：`play-bgm` 的曲号解析 + 扩展包用 0x1D7/0x1D8 登记自己的曲子都靠它。
+  //   引擎侧由 SYS4INI 装载流程 `sub_48A0D0` 填进 PCM 对象；取不到就留空表（0x1D8 会返回 -1）。
+  try {
+    const music = await window.api?.musicTable?.();
+    if (music) e.musicTable = { other: music.other, base: music.base, groups: [] };
+    traceLog.line(`[music] 曲号表 ${e.musicTable.base.length} 条（other ${e.musicTable.other.length} 条）`);
+  } catch (err) {
+    traceLog.line(`[music] 曲号表取得失败：${(err as Error).message}`);
+  }
+
   // ★启动时把 SYS4REG.INI 里的声音设置灌进音频引擎（引擎 raw 23696-23721 的等价物）：
   //   音量/开关是玩家配置的一部分，脚本只在**改设置**时才发 0xC6 —— 漏掉这一步 ⇒ "每次启动都巨响"。
   for (const intent of audioBootIntents(e.config)) pixi.audio(intent);

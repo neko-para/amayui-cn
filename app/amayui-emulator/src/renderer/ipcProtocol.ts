@@ -44,6 +44,11 @@ declare global {
        */
       audioStreamBase?: string;
       /**
+       * **音乐表**（SYS4INI 尾部：曲号 → 文件 id）。VM 的 `0x1D6/0x1D7/0x1D8` 与 BGM 曲号解析用它；
+       * 返回 null = 索引里没有这张表（引擎侧只跳过一个 dword 的情形）。
+       */
+      musicTable?(): Promise<{ other: number[]; base: number[] } | null>;
+      /**
        * 读内置字体文件字节（`res/fonts/` 下的相对路径；渲染进程用 `FontFace` 注册）。
        * 走 IPC 而不是相对 URL：渲染页在 `dist/renderer/` 下，`file://` + CSP 下加载仓外资源不可靠。
        */

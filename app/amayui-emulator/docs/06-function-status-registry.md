@@ -90,6 +90,9 @@
 |---|---|---|---|---|
 | 0x2F6 | 2F6 | `sub_426820`(33677) | **native（音频族）** | **复位语音通道**（Voice 模块 @ `Engine+84128`）：`sub_4BB9F0(Voice,op1)` 停设备通道 `op1+12` + 清 `Engine[21315/21318/122505/122508+op1]`；末尾 `Engine[122501]=sub_404CB0(Voice)`。**不是**「消息回调槽」；全库 86687 处 ⇒ 音频层整体未实现（见 `docs-new/03-engine/sound-system.md` §4/§10） |
 | 0x2F8 | 2F8 | `sub_4268D0`(33705) | **native（音频族）** | **设语音通道 pan（左右平衡）**：op1(0..2) → 设备通道 `op1+12` → `sub_4B6940(Engine+18664, op1+12, op2)`（对称钳制 ±10000 → `sub_4B6350`→`sub_4B7110`=SetPan）；全库 14644 处、op2 恒为 0（回中央）；2026-09 起转真实现（`handlers/audio.ts`） |
+| 0x1D6 | 1D6 | `sub_42E7C0`(38731) | **rewritten** | **音乐表·追加扁平表**：`op1 ← sub_48A140(Engine[698900], op2)`——`Engine[698900]` = `Music[271]` = **PCM 播放器**（vtable 0x5291FC），op2 追加进 `PCM+1304` 的「曲号 − 2 → 文件 id」表，返回**新曲号**。全语料无调用点；2026-09 转真实现（`handlers/music-table.ts` 的 `MUSIC_TABLE_OPS`） |
+| 0x1D7 | 1D7 | `sub_42E800`(38743) | **rewritten** | **音乐表·确保组数**：vtable`+44` = `sub_48AA60`。`op2<0` ⇒ −1；组数 ≥ op2 ⇒ 把第 op2 组（1-based）截成只剩占位槽、返回 0；组数 < op2 ⇒ 扩到 op2 组（空组补 0）再重置最后一组、返回**新组数 − 1**。★唯一调用点 `$3$AUTORUN.txt:67`（曾按 no-op 处理 —— 错：写全局表本身就是副作用）；守卫 `test/music-table.test.ts` |
+| 0x1D8 | 1D8 | `sub_42E850`(38757) | **rewritten** | **音乐表·组内登记**：vtable`+60` = `sub_48A1B0`（op2 = 组号 1-based、op3 = 统一文件 id）。追加 ⇒ `(组号<<24)|(新长度−1)`；组内 >1 时从下标 **1** 起填第一个 0 槽 ⇒ 槽下标；组越界 ⇒ −1。★唯一调用点 `$3$AUTORUN.txt:68`（结果写进无人读取的 `global 70801e`，照样实现）；守卫 `test/music-table.test.ts` + `test/append-packs.test.ts` 的 E3 段 |
 | 0x149 | u0041FCE0 | `sub_4229A0`(30687) | ignored | `_this[97058]=op1`，config setter |
 | 0x88 | u0041B290 | `sub_41FAB0`(28686) | ignored | `_this[1415]/[97050]` + flag |
 | 0x21b | u004213E0 | `sub_423C20`(31433) | ignored | `_this[166965]=(op1!=0)` |

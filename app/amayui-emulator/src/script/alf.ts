@@ -106,12 +106,22 @@ export function parseSys4Toc(toc: Uint8Array): Sys4Index {
 
 /** 解析 SYS4INI.BIN 字节 -> 索引表（S4IC 压缩 / S4IN 直读）。 */
 export function parseSys4Index(indexBytes: Uint8Array): Sys4Index {
+  return parseSys4Toc(readSys4Toc(indexBytes));
+}
+
+/** 取 SYS4INI 的 **TOC 缓冲**（解压后；索引与尾部的音乐表都从它解析）。 */
+export function readSys4Toc(indexBytes: Uint8Array): Uint8Array {
   const magic = ascii4(indexBytes);
   const form = sectionForm(magic);
   if (form === null || magic[2] !== 'I') {
     throw new Error(`SYS4INI 魔数不认识：${JSON.stringify(magic)}（期望 S4IC/S4IN/S3IC/S3IN）`);
   }
-  return parseSys4Toc(readToc(indexBytes, SYS4_TOC_POS, form));
+  return readToc(indexBytes, SYS4_TOC_POS, form);
+}
+
+/** 解析 SYS4INI.BIN 字节 -> 音乐表（`readSys4Toc` + `parseMusicTables`）。 */
+export function parseSys4MusicTables(indexBytes: Uint8Array): MusicTables {
+  return parseMusicTables(readSys4Toc(indexBytes));
 }
 
 /**
@@ -151,4 +161,52 @@ export function resolveFileEntry(
   const pack = appendPacks[apn];
   if (apn >= 1 && pack && pos < pack.files.length) return pack.files[pos]!;
   return null;
+}
+
+/**
+ * **音乐表**（SYS4INI 尾部：FileDB TOC 之后的数据）。
+ *
+ * 引擎 `sub_45xxxx`（raw 21980-22145，SYS4INI 装载）读完 FileDB TOC 后：
+ * ```
+ * if (*cursor <= 0) ++cursor;                       // 第一张表为空 ⇒ 只跳一个 dword
+ * else { ++cursor; sub_48A0D0(obj270, &cursor); sub_48A0D0(PCM, &cursor); }
+ * ```
+ * `sub_48A0D0(obj, &cursor)`（raw 106419）= 读一个 count → `sub_43A4C0`(reserve) → **追加 count 个 dword**
+ * 到该对象的 `+1304` 扁平表（count ≤ 0 时只跳一个 dword）。
+ *
+ * ★重要性：**PCM 对象（`Engine[698900]` = Music[271]）的这张表就是「曲号 → 文件 id」表** ——
+ * `sub_48DB80`（raw 108738）用 `table[曲号 − 2]` 取文件 id 去 `sub_4559C0`。
+ * 实测 `install/SYS4INI.BIN` 的这张表 index 29 = 23 = `BGM031.OGG`，与 `play-bgm 1f`（曲号 31）吻合。
+ */
+export interface MusicTables {
+  /** `Engine[698896]`（非 PCM 的那个 MusicBase 对象）的扁平表。 */
+  other: number[];
+  /** `Engine[698900]`（PCM）的扁平表 = **曲号 − 2 → 统一文件 id**。 */
+  base: number[];
+}
+
+/** 解析 SYS4INI 尾部的两张音乐表（见 `MusicTables`；偏移算法与引擎逐句对齐）。 */
+export function parseMusicTables(toc: Uint8Array): MusicTables {
+  const dv = new DataView(toc.buffer, toc.byteOffset, toc.byteLength);
+  const i32 = (off: number): number => dv.getInt32(off, true); // count/值都是有符号 dword
+  const arcCount = dv.getUint32(0, true);
+  const filHdr = S4TOCARCHDR_SIZE + arcCount * ARCENTRY; // = 4 + arcCount*256
+  const filCount = dv.getUint32(filHdr, true);
+  let p = filHdr + S4TOCFILHDR_SIZE + filCount * FILENTRY;
+
+  const readTable = (): number[] => {
+    if (p + 4 > toc.length) return [];
+    const n = i32(p);
+    p += 4;
+    if (n <= 0) return []; // 引擎：count<=0 只跳一个 dword（空表）
+    const out: number[] = [];
+    for (let i = 0; i < n && p + 4 <= toc.length; i++, p += 4) out.push(i32(p));
+    return out;
+  };
+
+  if (p + 4 > toc.length) return { other: [], base: [] };
+  const first = i32(p);
+  p += 4; // 调用方的 `++v71`：先吞掉一个 dword
+  if (first <= 0) return { other: [], base: [] };
+  return { other: readTable(), base: readTable() };
 }

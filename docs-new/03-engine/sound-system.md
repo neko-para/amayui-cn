@@ -126,10 +126,27 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
 - **BGM 开关**：配置 `sound:Music`（`0xBC` → `sub_408CF0` raw 13515）：开/关时把 `sound:Music` 的值 **±3** 后写回、停当前 BGM、恢复曲 id 重播。
 - 用户音量：`sub_489B80`（由 `sound:Volume1` 路由，raw 13747）。
 - ★**曲号 ≠ 统一文件 id（2026-09 订正）**：`play-bgm`/`0xB7`/`0xB9`/`0xBF` 的操作数是**曲号**，
-  播放器 `PCM`（`MusicBase` 派生，`sub_48D970` raw 108571；走**设备通道 11**）用它查一张
+  播放器 `PCM`（`MusicBase` 派生，`sub_48D970` raw 108570-108578；走**设备通道 11**）用它查
   「曲号 → 文件 id」表：`sub_48DB80`（raw 108694）里 `v9 = 曲号 - 2`，再取 `*(table + 4*v9)`
-  （`table = PCM+1304`，`+1308` = 表尾）交给 `sub_4559C0` 取字节（raw 108738-108748）；
-  包内曲（高字节 = 包号）另走 `PCM+1320` 的嵌套表（raw 108711-108732）。
+  （`table = PCM+1304`，`+1308` = 表尾）交给 `sub_4559C0` 取字节（raw 108738-108748）。
+- **PCM 的两张表（2026-09 读体确证）**：`Engine[698900]` = `Music`（`Engine+697816`，ctor `sub_489970` raw 106127-106132）
+  的 `[271]` 槽 = **PCM 对象**（vtable `0x5291FC`，三份镜像槽位一致）：
+
+  | 字段 | 表 | 语义 |
+  |---|---|---|
+  | `PCM+1304`/`+1308` | 扁平表 `vector<int>` | **曲号 − 2 → 统一文件 id**（`sub_48DB80` raw 108738-108740） |
+  | `PCM+1320`/`+1324` | 分组表 `vector<vector<int>>` | 扩展包曲子：组号 **1-based**、**组内下标 0 是占位槽**，条目从下标 1 起 |
+
+  - 装载：索引装载末尾（raw 22143-22144）用 `sub_48A0D0` 从 **SYS4INI 尾部**读两张 count 前缀表，
+    第二张灌进 PCM 的 `+1304`（`+1320` 保持空 —— 分组表完全由扩展包在运行期建立）。
+  - 解析（vtable `+8` = `sub_48DB80`）：扁平曲号 `id = +1304[曲号 − 2]`；**包内曲号**（高字节非 0）
+    走分组表 —— 组 = `(id >> 24) − 1`（0-based）、下标 = **`id & 0xFFFFFF` 直接用**（要求 ≥ 1 且 < 组长、
+    槽非 0；`sub_48A080`/`sub_48A040` 同一口径：取条目与数条目都从下标 1 起算）。越界/占位槽一律
+    `return 0` = 「没有这首曲子」。
+  - 登记（0x1D6/0x1D7/0x1D8，见 §7）：`i1d6` 追加扁平表（返回**新曲号**）、`i1d7` 建/重置组
+    （`sub_48AA60`：组数不足就补齐并把每组补一个占位 0）、`i1d8` 把统一文件 id 记进组
+    （`sub_48A1B0`：追加 ⇒ `(组号<<24)|(新长度−1)`；组内 >1 时从下标 1 起填第一个 0 槽 ⇒ 返回槽下标）。
+    扩展包就是靠这三条把 `包号<<24|包内编号` 的文件 id 挂到某个曲号上。
   **本作这张表等价于文件名 `BGM%03d.OGG`** —— 语料侧数据 `src/MUINIT.txt` 里每条曲目就是
   `{A = 文件 id, B = 曲号, 曲名}`，其中 **33/36** 条满足 `FileDB[A].名字 == BGM<B>.OGG`
   （例外是 OP/ED 影片：`B=2/51/52` 指向 `OP.BIN`/`ED.BIN`/`ED2.BIN`）；34 个剧本实际用到的曲号
@@ -178,6 +195,9 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
 | `0xC6` | `i0c6` | **设音量**（op1 = 类别 0..4） | `sub_421070` | 0 |
 | `0xC7` | `i0c7` | 读开关 `sound:Music/SE/Voice/Movie` | `sub_42E670` | 0 |
 | `0x1BD` | `i1bd` | 播语音（通道 0，**循环**位 = 1） | `sub_4212C0` → `sub_4BB840(Voice,0,id,1,音量)` | 0 |
+| `0x1D6` | `i1d6` | **音乐表·追加扁平表**（op2 = 统一文件 id）：`op1 ← sub_48A140(PCM, op2)` = **新曲号**（= 元素个数 + 1） | `sub_42E7C0` → `sub_48A140` | 0（全语料无调用点） |
+| `0x1D7` | `i1d7` | **音乐表·确保组数**：建/重置第 op2 组（`op2<0` ⇒ −1；已有该组 ⇒ 截成只剩占位槽、返回 0；组数不足 ⇒ 补齐、返回新组数 − 1） | `sub_42E800` → vtable`+44` = `sub_48AA60` | 1（`$3$AUTORUN.txt:67`） |
+| `0x1D8` | `i1d8` | **音乐表·组内登记**（op2 = 组号、op3 = 值）：追加 ⇒ `(组号<<24)\|(新长度−1)`，填洞 ⇒ 槽下标，组越界 ⇒ −1 | `sub_42E850` → vtable`+60` = `sub_48A1B0` | 1（`$3$AUTORUN.txt:68`） |
 | `0x2BF` | `i2bf` | **延迟播 SE**（op2 = 循环、op3 = 毫秒） | `sub_4262C0` → `sub_4B5170(SE, ch, op2, op3)` | 30 |
 | `0x2C0` | `i2c0` | 语音通道 0 排队/延迟 | `sub_426310` → `sub_4BBA40(Voice, op1, op2, op3, 0)` | 0 |
 | `0x2F4` | `i2f4` | **播语音（bundle：id, 循环, 通道）+ 登记文本项记录** | `sub_4266A0` | 8 |
@@ -229,6 +249,12 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
   BGM 走 `amayui-audio://` 自定义协议 + `<audio>` 流式（Range）；延迟播/语音队列/BGM 淡变由渲染帧循环的
   `tick(nowMs, advActive)` 推进（对应 raw 20645/20646），ADV 位期间的语音寄存与冲刷也在其中（对应 raw 20146/24966）。
   守卫：`test/audio-engine.test.ts`、`test/audio-opcodes.test.ts`。
+- **音乐表族也已落地**（2026-09）：`0x1D6`/`0x1D7`/`0x1D8`（此前登记成 no-op）改为真实现
+  （`src/vm/handlers/music-table.ts` 的 `MUSIC_TABLE_OPS`）：宿主启动时把 SYS4INI 尾部的 `+1304` 表灌进
+  `Engine.musicTable.base`，扩展包 `$n$AUTORUN` 的 `i1d7`/`i1d8` 运行期增长 `groups`；
+  `resolveBgmResource` 复刻 `sub_48DB80` 的两条分支（曲号 − 2 / `groups[(id>>>24)−1][id & 0xFFFFFF]`），
+  拿不到才退回 `BGM%03d.OGG` 文件名兜底。守卫：`test/music-table.test.ts`（含真实 SYS4INI 与
+  `$3$AUTORUN` 演练）+ `test/append-packs.test.ts` 的 E3 段。第二层台账：`music-number-table-lifecycle`。
 - **仍未做**：① 「语音跟着文本走」所需的文本项记录表（`0x1D2` 仍 no-op）与 ADV 显示路径入队；② 设备丢失后的重建与
   SE 通道重载（`sub_4B5090`）；③ 影片音轨（`sound:Volume4`）；④ 音量曲线的 1:1 听感校准（现为线性增益，数学等价）。
 - 第二层台账 `audio-module-topology-and-volume-routing` / `voice-request-deferral-and-adv-gate` /

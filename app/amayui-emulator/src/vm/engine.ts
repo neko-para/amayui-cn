@@ -145,6 +145,20 @@ export class Engine {
   config: import('../engineConfig.js').EngineConfig | null = null;
 
   /**
+   * **音乐表**（引擎 `Music[271]`（PCM 对象）的 `+1304` / `+1320` 两个 vector；2026-09 落地）。
+   *
+   * - `flat`：**曲号 − 2 → 统一文件 id**（`sub_48DB80` raw 108738 用它解析 `play-bgm` 的操作数）；
+   *   启动时由宿主从 `SYS4INI` 尾部装载（`parseMusicTables`，与引擎 `sub_48A0D0` 同口径）；
+   * - `groups`：**包内音乐表**（1-based 组号 → 文件 id 列表；`sub_48DB80` 的包分支用
+   *   `组 = (id>>24)-1`、`下标 = id & 0xFFFFFF`（**直接取，不 −1**）；组内下标 0 是占位槽）。
+   *
+   * 谁改它：`0x1D6`（append 到 `flat`）、`0x1D7`（确保组数 ≥ op2 并把该组重置成只剩占位槽）、
+   * `0x1D8`（往某组登记/填洞）。
+   * 扩展包的 `$n$AUTORUN` 正是用后两条把自己的曲子登记进来的（`$3$AUTORUN.txt:67-68`）。
+   */
+  musicTable: import('../script/alf.js').MusicTables & { groups: number[][] } = { other: [], base: [], groups: [] };
+
+  /**
    * **配置被脚本改写后的钩子**（宿主注入持久化；VM 只管"配置变了"这件事）。
    *
    * 引擎侧：`SetConfig` 类指令（`0x141`/`0x1B5`/`0x1B9`/`0x2CD`/`0x2E7`/`0x2E8`…）只改内存里的配置表，

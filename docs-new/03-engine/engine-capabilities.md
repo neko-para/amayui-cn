@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 21 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 21 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 23 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **97** | 需要关注（非 n/a 且非已核验）= **51** |
+| **合计** | **98** | 需要关注（非 n/a 且非已核验）= **51** |
 
 ## 按子系统
 
@@ -24,7 +24,7 @@
 |---|---|---|
 | 3D | 15 | 1 |
 | Live2D | 2 | 2 |
-| 声音 | 5 | 1 |
+| 声音 | 6 | 1 |
 | 帧循环 | 13 | 8 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
@@ -133,6 +133,7 @@
 | `append-pack-discovery-and-activation` | 资源 | 扩展包（APPENDnn.AAI / APPENDnn.ALF）的发现、注册与激活 | ✅ 已核验 | E3 · `test/append-packs.test.ts` |
 | `audio-module-topology-and-volume-routing` | 声音 | 音频三模块拓扑与音量路由（设备 / SE / Voice / Music） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `voice-request-deferral-and-adv-gate` | 声音 | ADV 激活期间的语音寄存与冲刷（文本↔语音联动） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
+| `music-number-table-lifecycle` | 声音 | BGM 曲号表（PCM 扁平表 + 分组表）的装载、增长与解析 | ✅ 已核验 | E3 · `test/music-table.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

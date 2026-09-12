@@ -377,5 +377,14 @@ test('★真实语料：跑完 INIT2 的 i143 派发链后，5 包全激活、gl
       `第 ${n} 包应已安装：$n$AUTORUN 末尾的 bit-set ⇒ global 7087f5 bit${n}（mask=0x${mask.toString(16)}，steps=${steps}）`,
     );
   }
+  // ★`$3$AUTORUN.txt:67-68` 的音乐表登记：`i1d7 (global-int 1396) 1` + `i1d8 (global-int 70801e) 1 30003b2`
+  //   —— 这两条此前是 no-op；现在是真实现（写表 + 写 op1），所以这里顺带锁住真实派发链上的产物：
+  //   组 1 = [占位 0, 包 3 的 id]，global 70801e = (1<<24)|1。
+  assert.deepEqual(e.musicTable.groups, [[0, 0x30003b2]], '包 3 的 AUTORUN 应把自己的曲子登记进 PCM 组表');
+  assert.equal(
+    dec(e.key, e.globals.int.get(0x70801e) ?? 0),
+    0x1000001,
+    'i1d8 的返回值落进 global 70801e（无人读取，但写入本身必须发生）',
+  );
   await src.dispose();
 });

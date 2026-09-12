@@ -13,14 +13,14 @@
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 15** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 16** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 7 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 8 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 9 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 0 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **15** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **16** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -29,7 +29,8 @@
 
 | id | 脚本 | 是什么（摘要） | 段 | 槽 | 状态 | 守卫 |
 |---|---|---|---|---|---|---|
-| [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | — |
+| [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | `test/append-packs.test.ts` |
+| [`AUTORUN3`](./AUTORUN3.md) | `$3$AUTORUN.BIN` | **扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$… | 4 | 4 | 🟠 部分 | `test/music-table.test.ts` `test/append-packs.test.ts` |
 | [`CHECKCONFIG`](./CHECKCONFIG.md) | `CHECKCONFIG.BIN` | **设置的自检与修复**：校验 5 个字体面名是否还装得上（`0x2DE` 字体名→下标），装不上就回退默认并重新 `save-string`；末尾按 a9… | 7 | 3 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`CONFIG`](./CONFIG.md) | `CONFIG.BIN` | 「OPTION（设置）」的常驻父脚本：左侧分类切换（按当前分类 call-script CONFIG1 / CONFIG2）、消息显示预览（0x300 逐行… | 6 | 4 | ✅ 已分析 | `test/config1-chain.test.ts` `test/text-style-snapshot.test.ts` |
 | [`CONFIG1`](./CONFIG1.md) | `CONFIG1.BIN` | 设置界面的**分类页主体**（本地化后的「系统设定」等页）：左侧分类列表 + 中部设置行（背景带 / 数值贴片 / 帮助图标 / 按 kind 的控件族）+… | 12 | 12 | ✅ 已分析 | `test/config1-chain.test.ts` `test/draw-string.test.ts` `test/draw-item-scale.test.ts` `test/text-style-snapshot.test.ts` |

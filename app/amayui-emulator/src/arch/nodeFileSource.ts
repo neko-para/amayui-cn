@@ -13,7 +13,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { FileSource, ScriptBytes } from './fileSource.js';
 import { MissingAppendPackError } from './fileSource.js';
-import { parseSys4Index, parseAppendPack, type Sys4Index, type Sys4FileEntry } from '../script/alf.js';
+import { parseSys4Index, parseSys4MusicTables, parseAppendPack, type Sys4Index, type Sys4FileEntry, type MusicTables } from '../script/alf.js';
 import { OverlayDir, type OverlaySide } from './overlay.js';
 import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
@@ -55,6 +55,8 @@ export class NodeFileSource implements FileSource {
   #appendsLoaded = false;
   /** 文件名（小写）→ 条目；`readByName` 用（惰性建表，见 `#nameLookup`）。 */
   #nameIndex: Map<string, { entry: Sys4FileEntry; archives: string[] }> | null = null;
+  /** SYS4INI 尾部的音乐表（惰性装载；见 `musicTables`）。 */
+  #music: MusicTables | null = null;
   #log: (msg: string) => void;
 
   constructor(opts: NodeFileSourceOptions) {
@@ -321,8 +323,21 @@ export class NodeFileSource implements FileSource {
     return { name: entry.name, data, total };
   }
 
-  async readScript(index: number): Promise<ScriptBytes | null> {
-    const r = await this.resolveEntry(index);
+  /**
+   * **音乐表**（SYS4INI 尾部，`FileDB TOC` 之后）：`base[i] = 曲号 (i+2) 的统一文件 id`。
+   *
+   * 与引擎 `sub_48A0D0` 同口径解析（见 `parseMusicTables`）：装载 PCM 对象的 `+1304` 扁平表。
+   * 用途：① `0x1D6/0x1D7/0x1D8` 修改它；② `play-bgm` 的**曲号 → 文件 id** 解析（`sub_48DB80`）。
+   */
+  async musicTables(): Promise<MusicTables> {
+    if (!this.#music) {
+      const bytes = await this.readFile(path.join(this.#root, 'SYS4INI.BIN'));
+      this.#music = parseSys4MusicTables(bytes);
+    }
+    return this.#music;
+  }
+
+  async readScript(index: number): Promise<ScriptBytes | null> {    const r = await this.resolveEntry(index);
     if (!r) return null;
     const data = await this.#readEntry(r.entry, r.archives);
     if (!data) return null;

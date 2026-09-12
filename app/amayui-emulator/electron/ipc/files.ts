@@ -137,6 +137,9 @@ export function registerFileIpc(): void {
     return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
 
+  // 音乐表（SYS4INI 尾部：曲号 → 文件 id + 包内分组表）。VM 的 0x1D6/0x1D7/0x1D8 与 BGM 曲号解析用它。
+  ipcMain.handle('music-table', async () => await fileSource.musicTables());
+
   // 按统一资源 id（数字）或**文件名**（字符串）取一段音频的原始字节。
   //  - SE / 语音：剧本操作数就是统一文件 id（实测 `play-sound-effect 2e` → 46 = SE004.WAV）；
   //  - BGM：剧本操作数是**曲号**，等价于文件名 `BGM%03d.OGG`（见 docs-new/03-engine/sound-system.md §5）。

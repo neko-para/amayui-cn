@@ -89,6 +89,12 @@ async function main() {
   }
   // 启动时把声音设置灌进音频引擎（与 Electron 侧 `renderer/app/boot.ts` 同一步；这里只有记录式桩）
   for (const intent of audioBootIntents(e.config)) native.audio(intent);
+  // 音乐表（SYS4INI 尾部）：headless 直接用 NodeFileSource 读，语义与渲染侧一致
+  {
+    const music = await src.musicTables();
+    e.musicTable = { other: music.other, base: music.base, groups: [] };
+    console.log(`[music] 曲号表 ${e.musicTable.base.length} 条`);
+  }
   loadScriptData(e, boot.data, boot.name);
   console.log(`[boot] index 0 -> ${boot.name} (${e.curScript().script!.instructions.length} 条指令)`);
 

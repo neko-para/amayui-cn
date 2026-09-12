@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 15,
+    "total": 16,
     "analyzed": 7,
-    "partial": 8,
+    "partial": 9,
     "stub": 0
   },
   "entries": [
@@ -1097,11 +1097,13 @@
         "包 1 与包 2..5 的 AUTORUN 同构（同一套 39 张表 + 自己的 id 表 + `bit-set 7087f5 n`），差异只在包号与具体条目"
       ],
       "gaps": [
-        "emulator：0x143 未实现 ⇒ 本脚本永不执行（global 7087f5 恒 0、包内 INIT 表不装载）；扩展包的 id 分派本身已实现（readScript 支持 pack<<24|idx，上限 5）"
+        "包内曲/包内音效的**曲号登记**只在包 3 出现（见 AUTORUN3 的 i1d7/i1d8）；包 1 没有音乐表调用。",
+        "`$1$AUTORUN` 调用的 39 张 `$1$` 表本身未读（结构与本体同名表同构）。"
       ],
       "links": {
         "capabilities": [
-          "append-pack-discovery-and-activation"
+          "append-pack-discovery-and-activation",
+          "music-number-table-lifecycle"
         ],
         "functions": [
           "0x41A000",
@@ -1114,8 +1116,10 @@
       },
       "status": "partial",
       "evidence": "src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888",
-      "notes": "包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）；$1$AUTORUN 调用的 39 张 $1$ 表本身未读。",
-      "guards": []
+      "notes": "★2026-09 订正：emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段），原「0x143 未实现 ⇒ 本脚本永不执行」的缺口已消失。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。",
+      "guards": [
+        "test/append-packs.test.ts"
+      ]
     },
     {
       "id": "SP2563",
@@ -1174,6 +1178,90 @@
       "status": "partial",
       "evidence": "src/SP2563.txt:405-411（`play-sound-effect 2e 1` + `i0b5 1`）与 :17024-17033（`i2f6 2` + `i2f8 2 0`）；指令语义见 functions.json 的 0x420B00/0x420B40/0x426820/0x4268D0",
       "notes": "只登记「音频惯用法」两段；ADV 主流程与菜单分支未读。"
+    },
+    {
+      "id": "AUTORUN3",
+      "file": "src/$3$AUTORUN.txt",
+      "bin": "$3$AUTORUN.BIN",
+      "role": "**扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$SCINIT`…`$3$BTANINIT2`，39 张）、再把包 3 自己的脚本 id 表灌进 globals，最后 `bit-set (global-int 7087f5) 3` 置「包 3 已安装」。★**唯一一处调用音乐表指令**（`i1d7`/`i1d8`）。",
+      "entry": "★**没有任何脚本 call 它**（全语料 `call-script` 的立即数最大只到本体 id）——唯一入口是引擎的 `i143`（0x143）派发 `slot<<24`：本体 `INIT2.txt:140` 执行 i143 时，已装载的包各被排一个 `slot<<24` 请求，slot=3 ⇒ 0x3000000 = 本脚本（emulator 由此把帧 37 装成 `$n$AUTORUN.BIN`）。",
+      "layout": [
+        {
+          "anchor": "call-script 3000375",
+          "lines": "6-44",
+          "what": "包内数据表按与本体 INIT2 相同的顺序重跑一遍（`$3$SCINIT`…`$3$BTANINIT2`，共 39 条）⇒ 覆盖本体 INIT2 装好的那批 globals"
+        },
+        {
+          "anchor": "mov (global-int 708999) 300039c",
+          "lines": "45-66",
+          "what": "把包 3 的脚本 id 表灌进 globals（0x300039c..0x30003b1，含 `122507` = 0x30003b1 这类引擎侧槽）"
+        },
+        {
+          "anchor": "i1d7 (global-int 1396) 1",
+          "lines": "67-68",
+          "what": "★**音乐表登记**：`i1d7`（第一层 `0x42E800` → `sub_48AA60`）先建「组 1」（PCM 分组表初始为空 ⇒ 建出 `[占位 0]`、返回 0 写进 scratch global 1396）；`i1d8`（`0x42E850` → `sub_48A1B0`）再把包 3 的音乐文件 id `30003b2` 记进组 1，返回 `(1<<24)|1 = 0x1000001` 写进 global 70801e"
+        },
+        {
+          "anchor": "bit-set (global-int 7087f5) 3",
+          "lines": "69-70",
+          "what": "★置「已安装扩展包」掩码第 3 位（global 7087f5），然后 exit —— 存档界面 `SAVE.txt:885-888` 拿这个掩码与存档记录的安装状态比对"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 7087f5",
+          "what": "扩展包安装位掩码（bit n = 第 n 包装了）；各 `$n$AUTORUN` 各置自己那位"
+        },
+        {
+          "key": "global 70801e",
+          "what": "★`i1d8` 的返回值（packed 曲号 `0x1000001` = 组 1 的第 1 首）；**全语料无任何读取方**，但写入本身就是必须的副作用"
+        },
+        {
+          "key": "global 1396",
+          "what": "`i1d7` 的返回值（0 = 新组数 − 1）；这是被 `i140`/`i228`/`i19e` 反复覆写的 scratch 槽"
+        },
+        {
+          "key": "global 122507",
+          "what": "引擎侧槽（= 0x30003b1，与其它 `$n$` 包的同类槽成组）"
+        }
+      ],
+      "invariants": [
+        "`i1d7 <组号> 1` 必须早于 `i1d8 <组号> …` —— 组不存在时 `i1d8` 返回 −1（引擎 `sub_48A1B0` 的组越界分支）",
+        "本脚本执行完必须满足：`global 7087f5` 的第 3 位 = 1，且 PCM 分组表 = `[[0, 0x30003b2]]`"
+      ],
+      "gotchas": [
+        "★`i1d8` 的结果落进**无人读取**的 global 70801e —— 曾据此把 `0x1D6/0x1D7/0x1D8` 全判成 no-op。**错**：写全局表本身就是副作用，而且这一步真正改建的是 PCM 的分组表（`play-bgm` 的曲号解析 `sub_48DB80` 会读它）",
+        "包内曲号不是统一文件 id：`i1d8` 记进去的 `30003b2` 是**文件 id**（高字节 0x3 = 包 3），而它返回的 `0x1000001` 是**曲号句柄**（组 1 的下一首），两者用途不同",
+        "包 3 与包 1/2/4/5 的 AUTORUN 同构，唯一差异就是这三行音乐表调用（其余包没有）"
+      ],
+      "gaps": [
+        "只登记了 1 首包内曲（`30003b2`）；包内 OP/ED 影片曲不走这张表。",
+        "emulator 侧：`i1d7`/`i1d8` 已实现（`MUSIC_TABLE_OPS`），真实派发链的产物有断言（`test/append-packs.test.ts` 的 E3 段、`test/music-table.test.ts`）；但与真机的曲号表 dump 对照（E4）缺。"
+      ],
+      "links": {
+        "capabilities": [
+          "append-pack-discovery-and-activation",
+          "music-number-table-lifecycle"
+        ],
+        "functions": [
+          "0x42E800",
+          "0x42E850",
+          "0x48A1B0",
+          "0x48AA60",
+          "0x48DB80"
+        ],
+        "docs": [
+          "docs-new/03-engine/sound-system.md",
+          "docs-new/03-engine/opcode-table.md"
+        ]
+      },
+      "guards": [
+        "test/music-table.test.ts",
+        "test/append-packs.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/$3$AUTORUN.txt 全文 70 行实读（音乐表在 67-68、掩码在 69）；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；运行期断言 test/append-packs.test.ts（`groups = [[0, 0x30003b2]]`、`global 70801e = 0x1000001`）",
+      "notes": "结构与 AUTORUN1 完全同构（39 张 `$3$` 表 + id 表 + 掩码）；那 39 张 `$3$` 表本身未逐行读（与本体同名表同构）。★本条目存在的理由：全语料只有这里用 `i1d7`/`i1d8`，是「音乐表指令族」唯一的真实用例。"
     }
   ]
 }

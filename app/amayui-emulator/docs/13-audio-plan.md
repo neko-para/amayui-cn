@@ -22,10 +22,11 @@
 > | 音频引擎（宿主无关·可单测） | `src/audio/audioEngine.ts` | SE 10 通道 / 语音 3 通道 / BGM；音量×因子×主音量、pan、循环、延迟播、语音仲裁与队列、**ADV 位寄存与冲刷**、BGM 淡变与语音压低、按字节预算的 LRU 解码缓存 |
 > | 意图词汇表 | `src/audio/audioEngine.ts` 的 `AudioIntent` | VM 与宿主之间唯一的音频接口（19 种意图 + `tick`） |
 > | VM handler | `src/vm/handlers/audio.ts` | **22 条 opcode**：`0xB4/0xB5/0xB6/0xB7/0xB9/0xBA/0xBB/0xBC/0xBF/0xC2/0xC4/0xC6/0x1BD/0x2BF/0x2C0/0x2F4/0x2F5/0x2F6/0x2F7/0x2F8/0x2FF/0x302`（从 `ENGINE_INTERNAL_OPS`/`STUB_NATIVE_OPS` 移出，落在 `NATIVE_OPS`） |
+> | 音乐表族 | `src/vm/handlers/music-table.ts` | **3 条 opcode**：`0x1D6/0x1D7/0x1D8`（PCM 的两张曲号表：`i1d6` 追加扁平表、`i1d7` 建/重置组、`i1d8` 组内登记）+ `resolveBgmResource`（复刻 `sub_48DB80`：曲号 − 2 / `groups[(id>>>24)−1][id & 0xFFFFFF]`）；表在启动时从 SYS4INI 尾部装载（`NodeFileSource.musicTables()`） |
 > | 宿主 | `src/renderer/audio/webAudioHost.ts` | Web Audio：`decodeAudioData` 解码、`AudioBufferSourceNode`+`GainNode`+`StereoPannerNode` 播放；BGM 走 `amayui-audio://` `<audio>` 流式，**流式失败自动退化为解码** |
 > | 主进程 | `electron/ipc/files.ts` + `electron/main.ts` | `audio` IPC（SE/语音字节）、`amayui-audio://` 协议 + **Range**（BGM 流式）、`autoplay-policy=no-user-gesture-required` |
 > | 帧泵 | `src/renderer/app/session.ts` 的 `#present()` | 每帧发 `{kind:'tick', nowMs, advActive}`（对应引擎 raw 20645/20646 与 20146/24966） |
-> | 守卫 | `test/audio-engine.test.ts`（25 条）、`test/audio-opcodes.test.ts`（7 条） | 通道/音量/pan/循环/延迟/寄存冲刷/缓存/流式分支；操作数顺序与 ADV 分叉 |
+> | 守卫 | `test/audio-engine.test.ts`（27 条）、`test/audio-opcodes.test.ts`（8 条）、`test/audio-bgm-naming.test.ts`（4 条）、`test/music-table.test.ts`（10 条） | 通道/音量/pan/循环/延迟/寄存冲刷/缓存/流式分支；操作数顺序与 ADV 分叉；曲号解析与音乐表的返回值/表内容（含真实 SYS4INI 与 `$3$AUTORUN` 演练） |
 >
 > **仍未做**（都不影响"有声"）：
 > 1. 「**语音跟着文本走**」（S5）：文本项记录表（`Font+3364`，72B/条，`0x1D2` 仍 no-op）与 ADV 显示路径的入队（`sub_409E10`）；
@@ -49,7 +50,9 @@
 | 语音（少量 WAV） | `C####.WAV` | 33 | 8.0 MB | 60..12691 | `RIFF` PCM16 |
 
 - **id 就是索引下标**：`play-sound-effect 2e 1` → id 46 = `SE004.WAV` ✓；`play-bgm 12` → **曲号 18** = `BGM018.OGG`
-  ✓（★BGM 用的是**曲号**，不是文件 id：引擎 `MusicBase` 有「曲号 → 文件 id」表，本作等价于 `BGM%03d.OGG`；
+  ✓（★BGM 用的是**曲号**，不是文件 id：引擎 PCM 播放器有「曲号 → 文件 id」表，本作这张表就在
+  `install/SYS4INI.BIN` 尾部（实测 59 条，`base[29] = 23 = BGM031.OGG` ⇔ 曲号 0x1f）——
+  2026-09 起 emulator **直接读这张表**（`parseMusicTables` → `resolveBgmResource`），`BGM%03d.OGG` 只作兜底；
   见 `docs-new/03-engine/sound-system.md` §5。把曲号当 id 会静音错曲：曲号 31 曾是 id 31 = `BGM041.OGG`）；
   语音 id 来自脚本 global（`play-voice (global-int f8007)`），指向角色 `*.OGG`。
 - 扩展包一样：`APPEND01` 385 个音频、`APPEND03` 1019 个、`APPEND05` 546 个……抽样全是 `OggS`/`RIFF`（统一 id 高字节 = 包号，`$3$ROS0832.OGG` 等）。

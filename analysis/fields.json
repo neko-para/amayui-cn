@@ -42,7 +42,7 @@
   {"offset":"0xA30D4","type":"uint32_t","name":"engine_bool_flag","scope":"Engine","meaning":"引擎通用布尔标志（_this[166965]=byte 667860）：op 0x21B 写 (op1!=0)，op 0x247 读回 op1；init 清零；主循环 flow 门（LABEL_56，_this[166964]==1 时判定是否推进脚本）读取。","evidence":"raw 31829 (sub_423C20 写)、40037 (sub_430810 读)、17982 (sub_40DF10 清零)、20746 (sub_412290 flow 读)；667860=0xA30D4=166965*4","status":"confirmed"},
   {"offset":"0xA90C8","type":"uint32_t","name":"append_pack_table","scope":"Engine","meaning":"扩展包表（FileDB.packs）的 Engine 侧视图：基址 Engine+0xA90C4=692420=FileDB(680092)+0x3028、槽 n 在 0xA90C4+4*n（本处 0xA90C8 = 槽 1）。★写入方**已定位**：sub_455750 装载 <CWD>\\*.AAI 时写 FileDB[obj[69] + 3082]（obj[69] = AAI 头 @264 = 包号）—— 旧结论「无字面写入方、静态不可定位」是因为写入用 FileDB 计算基址而不是 Engine 字面偏移。读方：i143(sub_41A000) 扫槽 1..255、非零 ⇒ queueScript(slot<<24) 派发该包的 $slot$AUTORUN.BIN；sub_476730(a1) 查询「第 a1 包装了吗」；sub_4559C0/sub_454FA0/sub_455000 用它做本体/扩展包 id 空间分派。","evidence":"raw 67769 (写入 sub_455750)；raw 25177 (i143 遍历)；raw 91165 (sub_476730 查询)；raw 67137 (构造清零)","status":"confirmed"},
   {"offset":"0xAA514","type":"Reg(对象)","name":"config_registry","scope":"Engine","meaning":"配置文件注册表对象（Reg___vftable_；语义键→值，如 \"sound:Music\"）。vtable +4=get-int/+8=get-string/+12=set；_this[174405](DWORD)=本对象 vtable。引擎构造器 sub_491880 灌默认值，sub_492CB0 用配置文件叠盖。0xC0(读174713)/0xC3/sub_408CF0 经它取 sound:Music。= 字节偏移 697620","evidence":"engine ctor raw 22536 sub_491880(_this+697620)；sub_4900F0 raw 110506；sub_492CB0 raw 111846；sub_408CF0 (_this[174405]+4)(sound:Music)","status":"confirmed"},
-  {"offset":"0xAA5D8","type":"Music(对象)","name":"music","scope":"Engine","meaning":"BGM/音乐对象（Music___vftable_@0x528B70；NoMusic___vftable_ 兜底）。内部驱动对象集：_this[258] 选驱动下标、_this[+266]/[+269]/[+272] 为驱动槽；当前驱动经 vtable(+0 销毁/+4 stop/+8 play/+20 定位/+24 取状/+28 暂停/+36 续/+40 状态) 播放/停止/续播/取音量。_this[259]=当前BGM id、[261]=槽/模式、[262]=淡入计数(0..100)、[263]=滑移率、[264]/[265]=目标/回退音量。0xBF play-bgm / 0xC2 fade / 0xC3 用它。= 字节偏移 697816","evidence":"engine ctor raw 22537 sub_489970(_this+697816)；sub_408CF0 sub_489B50/sub_489F80(_this+174454)；sub_489C20-489F80 raw 106215-106372","status":"confirmed"},
+  {"offset":"0xAA5D8","type":"Music(对象)","name":"music","scope":"Engine","meaning":"BGM/音乐对象（Music___vftable_@0x528B70；NoMusic___vftable_ 兜底）。内部驱动对象集：_this[258] 选驱动下标、_this[+266]/[+269]/[+272] 为驱动槽；当前驱动经 vtable(+0 销毁/+4 stop/+8 play/+20 定位/+24 取状/+28 暂停/+36 续/+40 状态) 播放/停止/续播/取音量。_this[259]=当前BGM id、[261]=槽/模式、[262]=淡入计数(0..100)、[263]=滑移率、[264]/[265]=目标/回退音量。0xBF play-bgm / 0xC2 fade / 0xC3 用它。= 字节偏移 697816 ★它的 [271] 槽（= 字节 698900）是 **PCM 播放器**（ctor sub_48D970，vtable 0x5291FC）：曲号表在 PCM 对象里（扁平 +1304 / 分组 +1320，见本文件 scope=PCM 的条目）；[270] 槽是另一个 MusicBase 对象（ctor sub_485D40）。","evidence":"engine ctor raw 22537 sub_489970(_this+697816)；sub_408CF0 sub_489B50/sub_489F80(_this+174454)；sub_489C20-489F80 raw 106215-106372","status":"confirmed"},
   {"offset":"0xAA9E0","type":"uint32_t","name":"music_config_value","scope":"Engine","meaning":"音乐配置调整值（DWORD 下标 [174712]）。sub_408CF0 里读到的 sound:Music 经 ±3 偏移后的值 v4，写回配置注册表并存入本字段。","evidence":"sub_408CF0 raw 13527/13532 (_this[174712]=v4)","status":"tentative"},
   {"offset":"0xAA9E4","type":"uint32_t","name":"music_field","scope":"Engine","meaning":"音乐/声音子系统字段（DWORD 下标 [174713]）。0xC0 getter 读回 op1、0xC3 setter 写入；sub_408CF0 存/取它作音乐开关值。与 _this[174712]/[174715] 及 music 对象同用。CONFIG.txt 系统值读取入口。","evidence":"0xC0 sub_42E510 raw 38618-38622；0xC3 sub_420F10 raw 29856；sub_408CF0 raw 13521","status":"confirmed"},
   {"offset":"0xAA9EC","type":"uint32_t","name":"music_slot","scope":"Engine","meaning":"音乐槽/模式参数（DWORD 下标 [174715]）。sub_408CF0 的 sub_489F80(_this+174454, 0, _this[174715]) 恢复/起播 BGM 时用。","evidence":"sub_408CF0 raw 13533 sub_489F80(_this+174454,0,_this[174715])","status":"tentative"},
@@ -51,7 +51,6 @@
   {"offset":"0xAAB44","type":"uint32_t","name":"effect_flags","scope":"Engine","meaning":"主引擎效果/输入分发旗标（_this[174801]=byte 699204）：0x8000000=消息/ADV 激活、0x400=动画等待门、0x2000=movie、0x40/0x10=消息跳读/取消","evidence":"op_get_input_type 25842 &0x8000000；各处读_this[174801]","status":"confirmed"},
   {"offset":"0xAAB48","type":"uint32_t","name":"input_state_mask","scope":"Engine","meaning":"输入状态位掩码（_this[174802]=byte 699208）；每位=一个输入态；poll-input/0x100/帧循环刷后读","evidence":"op_poll_input_419CC0 复位；op_dispatch_msg_skip_419AF0 读最低位","status":"confirmed"},
   {"offset":"0xAAB70","type":"uint32_t","name":"script_engine_flag_174812","scope":"Engine","meaning":"脚本可读写的引擎运行开关（DWORD 下标 [174812]）。构造 sub_415640 raw 22591 与复位 sub_40DF10 raw 17961 均置 **1**；写方只有 opcode 0x142（sub_422930 raw 31026 `_this[174812]=op1`）；读者只有导出查询 sub_4765C0（raw 91057-91061 `return _this[699248]!=0;`，引擎内零调用）。脚本用法：CONFIG.txt `i142 0` 在进设置页（布好消息窗 i070/i079/i213 + i080 9 之后）置 0、`i142 1` 在收尾（i1bb 恢复 + i080 8 之前）置回 1 ⇒ 进设置页「挂起」、离开「恢复」的状态开关。同族 getter：sub_4765E0(effect_flags bit26)、sub_476600(effect_flags<0=ADV/跳读态)。","evidence":"raw 22591(构造置1)、17961(复位置1)、31020-31027(op 0x142 写)、91057-91061(sub_4765C0 读)","status":"confirmed"},
-
   {"offset":"0x14","type":"uaddr","name":"str_table","scope":"ScriptContext","meaning":"脚本缓冲/字符串表基址（_this[30*cur+95781]）。loader 写入 `this + 120*cur + 383124`（0x5D894）——即帧+0x14，**不是帧+0x00**。★注意 `this+0x5D894` 常被误当成帧基址，实为本槽。","evidence":"raw 18641 GlobalAlloc→+383124、18847 ip=+383124+header；sub_409700 raw 13991 `v4[95781]`","status":"confirmed"},
   {"offset":"0x18","type":"uaddr","name":"ip","scope":"ScriptContext","meaning":"当前指令指针（_this[30*cur+95782]）。主循环从它解引用取 opcode（raw 20161）、按 arity 推进（raw 20165）；loader 置 +383128 = 383124+header。","evidence":"raw 13991-13993（v4[95782]=str_table+4*…，与 v4[95781] 相邻）、18640?/18847（+383128）、20161/20165/20196","status":"confirmed"},
   {"offset":"0x1C","type":"uint32_t","name":"local_int_count","scope":"ScriptContext","meaning":"本帧 local-int 池元素数（loader 写 +383132）","evidence":"loadScriptFrame_40ED40 raw 18712 (+383132=v41)","status":"confirmed"},
@@ -79,7 +78,6 @@
   {"offset":"0x74","type":"uint32_t","name":"operand_count","scope":"ScriptContext","meaning":"**本指令操作数记数槽**（_this[30*cur+95805]，绝对 0x5D8F4）。值 = `2*argc+1`（=指令 dword 长度）；主循环 `ip += 4 * 本槽`（raw 20165）按指令长度前进；442 处 opcode handler 在入口写它（raw 24431-42943 区）。★曾因帧基址误记 0x5D894 而把本槽当成 `arity`（0x5D8F4 = 帧+0x74，不是帧+0x60）。","evidence":"raw 20165（ip 推进）、18848（loader 清零 `120*cur+383220`=本槽）、sub_42EF50 raw 39118 等 442 处","status":"confirmed"},
   {"offset":"0x78","type":"uint32_t","name":"unk_78","scope":"ScriptContext","meaning":"未标定（_this[30*cur+95809]；writeIntOperand 的数组分支用它作数组容器对象指针）","evidence":"raw 36956/37186/37500（`v22 = (_DWORD *)_this[30*cur+95809]`）","status":"tentative"},
   {"offset":"0x84","type":"std::vector<[8-byte elem]>","name":"array_container","scope":"ScriptContext","meaning":"本帧数组容器 = std::vector（begin/end/capacity 三指针）；元素 8 字节（2 DWORD，如 {id, ptr}，元素类型未定），用于数组型操作数(0x8003/0x8009) bulk 写","evidence":"loader +383236（0x5D904=帧+0x84）；writeIntOperand push(sub_45D240,_this[1]+=8)；迭代 (end-begin)>>3；`std::out_of_range`(18507) + 向量析构(18510-18519)","status":"confirmed"},
-
   {"offset":"0x00","type":"uint32_t","name":"flags","scope":"MeshEntry","meaning":"mesh 条目标志（bit0=可见，bit1=颜色动画挂起）","evidence":"sub_4AF1C0 133502 &1 / 133505 v40[0]&2","status":"confirmed"},
   {"offset":"0x04","type":"uaddr","name":"vbuffer","scope":"MeshEntry","meaning":"D3D 顶点缓冲（vtable+44 Lock / +48 Unlock；CalcDiffuse 写 diffuse 槽）","evidence":"calcDiffuse_4A2050 122269/122326 用 a2+4","status":"confirmed"},
   {"offset":"0x10","type":"uaddr","name":"base_color","scope":"MeshEntry","meaning":"逐顶点基础颜色数组（DWORD ARGB/顶点；diffuse 调制源）","evidence":"calcDiffuse 122302/122316 用 a2+16","status":"confirmed"},
@@ -89,7 +87,6 @@
   {"offset":"0x30","type":"uint32_t","name":"win_duration","scope":"MeshEntry","meaning":"动画时长（ms，如 0x1f4=500；CalcDiffuse 的 a3 分母）","evidence":"sub_4AF1C0 133516-133526 v40[12]","status":"tentative"},
   {"offset":"0x34","type":"uint32_t","name":"state0","scope":"MeshEntry","meaning":"颜色动画起点颜色（ARGB；a2+52..55）","evidence":"calcDiffuse 逐通道 lerp 用 a2+52..55；sub_4AF1C0 v40[13]","status":"confirmed"},
   {"offset":"0x38","type":"uint32_t","name":"state1","scope":"MeshEntry","meaning":"颜色动画终点颜色（ARGB；a2+56..59；收尾时 state0←state1）","evidence":"calcDiffuse 用 a2+56..59；sub_4AF1C0 v40[14]","status":"confirmed"},
-
   {"offset":"0x00","type":"uint32_t","name":"flags","scope":"DrawItem","meaning":"绘制项标志（bit0=存在，bit1=颜色/α 动画启用）","evidence":"setDrawColor_4AD0C0 131969 *v7|=2","status":"confirmed"},
   {"offset":"0x30","type":"uint32_t","name":"blend_mode","scope":"DrawItem","meaning":"混合模式（0=默认）","evidence":"setDrawColorAlpha_4ACF60 131878 item+48=a3","status":"confirmed"},
   {"offset":"0x34","type":"uint32_t","name":"anim_start","scope":"DrawItem","meaning":"颜色动画起点（0 时锁存当前 clock）","evidence":"setDrawColor_4AD0C0 131970 item+52=0","status":"tentative"},
@@ -97,32 +94,38 @@
   {"offset":"0x4C","type":"uint32_t","name":"anim_count","scope":"DrawItem","meaning":"动画时长（ms，如 0x12c=300）","evidence":"setDrawColor_4AD0C0 131974 item+76=a4","status":"tentative"},
   {"offset":"0x60","type":"uint32_t","name":"from_color","scope":"DrawItem","meaning":"动画起始工作色（ARGB；如 0x00FFFFFF 透明白；逐帧写入 item+96 供绘制 diffuse）","evidence":"setDrawColorAlpha_4ACF60 131880 item+96=a4","status":"confirmed"},
   {"offset":"0x64","type":"uint32_t","name":"to_color","scope":"DrawItem","meaning":"动画终止工作色（ARGB；如 0xFFFFFFFF 不透明白）","evidence":"setDrawColor_4AD0C0 131976 item+100=a5","status":"confirmed"},
-
   {"offset":"0x55E1BC","type":"Engine*","name":"engine","scope":"global","meaning":"全局游戏/Engine 对象基址（原 dword_55E1BC；访问按字节偏移）","evidence":"global.cpp；全引擎用 engine + 字节偏移","status":"confirmed"},
-
   {"offset":"0x004","type":"int32_t","name":"arc_count","scope":"AAIFileDB","meaning":"包内归档条数（官方 5 个包都是 1：APPEND0n.ALF）","evidence":"实测 install/APPEND0n.AAI；raw 7924-7933","status":"confirmed"},
   {"offset":"0x008","type":"int32_t","name":"file_count","scope":"AAIFileDB","meaning":"包内文件条数（678 / 261 / 1689 / 425 / 918）","evidence":"实测 install/APPEND0n.AAI；raw 7934-7952","status":"confirmed"},
   {"offset":"0x00C","type":"uaddr","name":"header","scope":"AAIFileDB","meaning":"268 字节 AAI 头原样副本：@0 魔数(S3AI/S4AI/S3AC/S4AC) @4 版本 3 字节 @8 版本串(strcmp 与 SYS4INI 相等) @264 包号","evidence":"raw 7882 (sub_454800 读 0x10C)；raw 7883-7898 (魔数门 + 版本串比对)","status":"confirmed"},
   {"offset":"0x114","type":"int32_t","name":"pack_number","scope":"AAIFileDB","meaning":"★包号 = 头 @264（位于头副本区内 ⇒ 不需要单独字段）；sub_455750 直接读它决定写入 FileDB.packs 的哪一槽","evidence":"raw 67769 (_this[v6[69] + 3082])；实测 @264 = 1..5","status":"confirmed"},
   {"offset":"0x118","type":"uaddr","name":"archive_paths","scope":"AAIFileDB","meaning":"包内归档路径表（256 字节/条）；官方包 = APPEND0n.ALF","evidence":"raw 7929-7932；raw 7987","status":"confirmed"},
   {"offset":"0x11C","type":"uaddr","name":"files","scope":"AAIFileDB","meaning":"包内文件项表（80 字节/条 = name[64] + archiveIndex@64 + fileIndex@68 + offset@72 + length@76）；名字形如 $n$NAME","evidence":"raw 7940-7955；raw 7977-7996","status":"confirmed"},
-
   {"offset":"0x408","type":"int32_t","name":"arc_count","scope":"FileDB","meaning":"归档路径条数（TOC 第一段计数）；每条的路径串 256 字节","evidence":"raw 67272-67282 (sub_454D30)；raw 67837-67846 (sub_4559C0 越界检查)","status":"confirmed"},
+  {"offset":"0x408","type":"void*","name":"pcm_load_context","scope":"PCM","meaning":"PCM 的载入上下文（MusicBase 基类字段 [258]，ctor sub_48A830 清 0）。sub_48DB80 把它当 sub_4559C0(PCM[335], PCM[258], 文件id, &out) 的第 2 参 —— 具体语义未确证（疑为资源装载用的名字/池上下文）。","evidence":"sub_48A830 raw 106800；sub_48DB80 raw 108730/108744","status":"tentative"},
   {"offset":"0x40C","type":"int32_t","name":"file_count","scope":"FileDB","meaning":"文件项条数 = 本体 id 上限（id < 本值 走本体、否则看高字节）","evidence":"raw 67283-67286；raw 67837","status":"confirmed"},
+  {"offset":"0x40C","type":"uint32_t","name":"pcm_loop_flag","scope":"PCM","meaning":"本次播放的循环/模式标志：sub_48DB80 在起播前写入（= 第 3 参），随后作为 sub_4B6020(设备, 11, 标志) 的第 3 参下发（0 = 一次、1 = 循环）。","evidence":"sub_48DB80 raw 108726/108741 写、raw 108752 读","status":"confirmed"},
   {"offset":"0x410","type":"uaddr","name":"archive_paths","scope":"FileDB","meaning":"归档路径表（256 字节/条、GlobalAlloc(64, arc_count<<8)）；既是 DATA*.ALF 也是搜索目录用的路径串","evidence":"raw 67279-67280；raw 67854 (archive_paths + 256*项@64)","status":"confirmed"},
   {"offset":"0x414","type":"uaddr","name":"files","scope":"FileDB","meaning":"文件项表（80 字节/条 = name[64] + archiveIndex@64 + fileIndex@68 + offset@72 + length@76）；offset 初值 -1 = 无归档副本、只能松散读","evidence":"raw 67290-67340；raw 67845-67876","status":"confirmed"},
   {"offset":"0x418","type":"uaddr","name":"file_cache_a","scope":"FileDB","meaning":"4*(rand+file_count) 的 VirtualAlloc+VirtualLock 缓存 A（+1052 = 基址 + 4*rand 的头部偏移）；用途未定","evidence":"raw 67344-67357","status":"tentative"},
   {"offset":"0x424","type":"uaddr","name":"handle_slots","scope":"FileDB","meaning":"打开句柄槽表：256 槽 × 40 字节（+0 句柄 / +4 游标 / +8 锁标志 / +12 长度 / +16 临界区）","stride":"0x28","evidence":"raw 67609-67631 (sub_455420 轮转登记)；raw 67124-67136 (构造清槽)","status":"confirmed"},
+  {"offset":"0x510","type":"int32_t","name":"music_base_cursor","scope":"PCM","meaning":"MusicBase 基类的内部游标（ctor 置 −1、与其后的 +0x514 置 0 成对）。语义未确证 —— 此处仅登记 ctor 事实，避免下次把它误当曲号表用。","evidence":"sub_48A830 raw 106802-106803","status":"tentative"},
+  {"offset":"0x518","type":"std::vector<int>","name":"music_flat_ids","scope":"PCM","meaning":"**曲号表（扁平）**：下标 = 曲号 − 2，值 = 统一文件 id。装载时由 sub_48A0D0 从 SYS4INI 尾部读入（实测 59 条，base[29]=23=BGM031.OGG ⇔ 曲号 0x1f）；运行期 0x1D6（sub_48A140）在尾部追加扩展包的 id。","evidence":"sub_48A0D0 raw 106434-106441；sub_48A140 raw 106453；sub_48DB80 raw 108739","status":"confirmed"},
+  {"offset":"0x51C","type":"int*","name":"music_flat_ids_end","scope":"PCM","meaning":"曲号表尾指针（begin=+0x518，end=+0x51C，capacity=+0x520）：sub_48A020 用 (end−begin)>>2 数条目。","evidence":"sub_48A140 raw 106455；sub_48A0D0 raw 106435","status":"confirmed"},
+  {"offset":"0x520","type":"int*","name":"music_flat_ids_cap","scope":"PCM","meaning":"曲号表容量尾（std::vector 的 _M_end_of_storage）；sub_43A4C0 预留、sub_48A7D0 增长。","evidence":"sub_48A7D0 raw 106775；sub_43A4C0（预留）","status":"confirmed"},
+  {"offset":"0x528","type":"std::vector<std::vector<int>>","name":"music_groups","scope":"PCM","meaning":"**分组表**：扩展包曲子。组号 1-based（= 元素下标 + 1，sub_48A020 返回值比元素数多 1）；**组内下标 0 是占位槽**，条目从下标 1 起（sub_48A040 返回「长度 − 1」）。初始为空，由扩展包 $n$AUTORUN 的 0x1D7/0x1D8 建立。","evidence":"sub_48A830 raw 106797（ctor 清 0）；sub_48AA60 raw 106881；sub_48A1B0 raw 106480-106482","status":"confirmed"},
+  {"offset":"0x52C","type":"int*","name":"music_groups_end","scope":"PCM","meaning":"分组表尾指针（每组 16 字节 = vector<int>）：组数 = (end − begin) >> 4，访问器再加 1（sub_48A020）。","evidence":"sub_48A020 raw 106386；sub_48AA60 raw 106882","status":"confirmed"},
+  {"offset":"0x530","type":"int*","name":"music_groups_cap","scope":"PCM","meaning":"分组表容量尾；sub_48A9B0 负责扩容（并给新组的 vector 置空），sub_48A7D0/sub_48A520 是它的两段实现。","evidence":"sub_48A9B0 raw 106835-106854","status":"confirmed"},
+  {"offset":"0x538","type":"SoundDevice*","name":"pcm_device","scope":"PCM","meaning":"声音设备（DirectSound 封装）：sub_48DB80 用 sub_4B6570(设备, 11, 播放槽, 句柄) 在**通道 11** 起播、sub_4B6020(设备, 11, 循环标志)。为 NULL（设备创建失败/未初始化）时 sub_48DB80 直接返回 1（不播）。","evidence":"sub_48D970 raw 108575 清 0；sub_48DB80 raw 108709/108751","status":"confirmed"},
+  {"offset":"0x53C","type":"void*","name":"pcm_play_slot","scope":"PCM","meaning":"PCM 的播放槽/文件句柄管理对象：sub_4559C0(PCM[335], PCM[258], 文件id, &out) 的第 1 参（载入 BGM 资源），随后交给 sub_4B6570 起播。","evidence":"sub_48D970 raw 108576 清 0；sub_48DB80 raw 108729/108751","status":"confirmed"},
   {"offset":"0x2C24","type":"int32_t","name":"handle_cursor","scope":"FileDB","meaning":"句柄槽轮转游标（0..255；满表 ⇒ 抛「ファイルIDを取得出来ません」）","evidence":"raw 67607-67615","status":"confirmed"},
   {"offset":"0x2C28","type":"uaddr","name":"archive_found_flags","scope":"FileDB","meaning":"256 个 dword：归档路径是否在磁盘上存在（sub_4550B0 探测、sub_4556E0 对未命中的路径补 <盘符>:\\ 前缀再试）","evidence":"raw 67138 (构造 memset)；raw 67459-67479；raw 67701-67716","status":"confirmed"},
   {"offset":"0x3028","type":"uaddr","name":"packs","scope":"FileDB","meaning":"★扩展包表：256 槽的 AAIFileDB 指针（槽 n = AAI 头 @264 的包号 n）；装载方 sub_455750、查询方 sub_476730、遍历派发方 i143(sub_41A000)、id 分派方 sub_4559C0/sub_454FA0/sub_455000","stride":"4","evidence":"raw 67769 (写入)；raw 67137 (构造清零)；raw 67219-67229 (析构释放)；raw 67812 (读取)","status":"confirmed"},
   {"offset":"0x3434","type":"uaddr","name":"file_cache_b","scope":"FileDB","meaning":"第二张 4*(rand+file_count) 缓存（+13368 = 基址 + 4*rand）；用途未定","evidence":"raw 67358-67371","status":"tentative"},
-
   {"offset":"0x150F4","type":"uaddr[10]","name":"slot_ruby_band_desc","scope":"Font","meaning":"per-slot 注音带描述符指针表（i=20+win 时 964+4*20=1044 即窗口表）；项 +8=源表面 / +12=x / +16=y；★全库无写入点","evidence":"raw 68060/68080/68532/89182","status":"tentative"},
   {"offset":"0x15138","type":"uaddr","name":"dd_module","scope":"Font","meaning":"DirectDraw 模块（surfaces[] 在 dd+1036+4*i）","evidence":"raw 78851","status":"confirmed"},
   {"offset":"0x1513C","type":"uaddr","name":"renderer","scope":"Font","meaning":"Renderer（显示信息）","evidence":"raw 78856","status":"confirmed"},
   {"offset":"0x15140","type":"uaddr","name":"scene","scope":"Font","meaning":"Scene（= Engine+322832 = Engine[80708]，DrawItem 表）","evidence":"raw 78857; 86019; 130306","status":"confirmed"},
-
   {"offset":"0x15148","type":"int32_t","name":"target_surface","scope":"FontVWindow","stride":"0x12C","meaning":"目标表面 id（构造置 0，★全 raw 无第二处写入 ⇒ 恒 = dd 表面 0 基本サーフェス）","evidence":"raw 90444; 72429","status":"confirmed"},
   {"offset":"0x1514C","type":"int32_t","name":"outline_src_surface","scope":"FontVWindow","stride":"0x12C","meaning":"描边/阴影用源表面 id（构造置 2）","evidence":"raw 90445; 86403/89152","status":"confirmed"},
   {"offset":"0x15150","type":"int32_t","name":"screen_x","scope":"FontVWindow","stride":"0x12C","meaning":"窗口屏幕 x 偏移（op 0x70 的 op4）","evidence":"raw 73154","status":"confirmed"},
@@ -132,24 +135,16 @@
   {"offset":"0x15160","type":"int32_t","name":"text_origin_x","scope":"FontVWindow","stride":"0x12C","meaning":"文字起点 x（op 0x79 → sub_4563A0）","evidence":"raw 68243-68244","status":"confirmed"},
   {"offset":"0x15164","type":"int32_t","name":"text_origin_y","scope":"FontVWindow","stride":"0x12C","meaning":"文字起点 y（op 0x79）","evidence":"raw 68243-68244","status":"confirmed"},
   {"offset":"0x15168","type":"int32_t","name":"wrap_right","scope":"FontVWindow","stride":"0x12C","meaning":"换行判据：右边界（x > 本值 ⇒ 换行；op 0x70/0x1A4/0x1C1 写）","evidence":"raw 73162; 90431","status":"confirmed"},
-
   {"offset":"0x1516C","type":"uaddr","name":"hfont_main","scope":"Font","meaning":"主 HFONT = CreateFontIndirectA(Font+1232)","evidence":"raw 71171","status":"confirmed"},
-
   {"offset":"0x1516C","type":"int32_t","name":"wrap_bottom","scope":"FontVWindow","stride":"0x12C","meaning":"换行判据：下边界（y > 本值 ⇒ 报「收不下」并停）","evidence":"raw 73163; 90432","status":"confirmed"},
-
   {"offset":"0x15170","type":"uaddr","name":"hgdiobj_surface_dc_old","scope":"Font","meaning":"+1104（surface DC）上原有 HGDIOBJ（配对恢复）","evidence":"raw 67960/67976","status":"confirmed"},
-
   {"offset":"0x15170","type":"uaddr","name":"line_records_begin","scope":"FontVWindow","stride":"0x12C","meaning":"vector<24B 行记录> begin（行数 = (+48-+44)/24 - 1；记录 = {+0 种类 0 本文/1 ルビ, +4..+16 源矩形, +20 组 ID}）","evidence":"raw 74269/74272; 83918","status":"confirmed"},
-
   {"offset":"0x15174","type":"uaddr","name":"hgdiobj_measure_ic_old","scope":"Font","meaning":"+1108（测量 IC）上原有 HGDIOBJ","evidence":"raw 71187","status":"confirmed"},
-
   {"offset":"0x15174","type":"uaddr","name":"line_records_end","scope":"FontVWindow","stride":"0x12C","meaning":"同上 end","evidence":"raw 74269/74272","status":"confirmed"},
-
   {"offset":"0x15178","type":"uaddr","name":"hfont_ruby","scope":"Font","meaning":"注音（小号半宽）HFONT = CreateFontIndirectA(Font+1292)，高 8 / 宽 4 / 面 ＭＳ ゴシック","evidence":"raw 71229-71230","status":"confirmed"},
   {"offset":"0x1517C","type":"uaddr","name":"hfont_main_aspect","scope":"Font","meaning":"主字体按纵横比缩放的副本","evidence":"raw 71172","status":"confirmed"},
   {"offset":"0x15180","type":"uaddr","name":"hdc_surface","scope":"Font","meaning":"dd surface DC（IDirectDrawSurface7::GetDC, vtable+68）；仅 Font+1352==0 时取","evidence":"raw 67957-67961; 47310","status":"confirmed"},
   {"offset":"0x15184","type":"uaddr","name":"hdc_measure_ic","scope":"Font","meaning":"CreateICA(\"DISPLAY\") 测量用 IC（GetTextMetricsA / GetTextExtentPoint32A / GetGlyphOutline）","evidence":"raw 78757","status":"confirmed"},
-
   {"offset":"0x15184","type":"int32_t","name":"cell_x0","scope":"FontVWindow","stride":"0x12C","meaning":"reveal 字格 x0（op 0x73 的 op5）","evidence":"raw 68296; 71392","status":"confirmed"},
   {"offset":"0x15188","type":"int32_t","name":"cell_y0","scope":"FontVWindow","stride":"0x12C","meaning":"reveal 字格 y0（op 0x73 的 op6）","evidence":"raw 68296; 71392","status":"confirmed"},
   {"offset":"0x1518C","type":"int32_t","name":"cell_x1","scope":"FontVWindow","stride":"0x12C","meaning":"reveal 字格 x1（= op5 + op7）","evidence":"raw 68297; 71393","status":"confirmed"},
@@ -161,46 +156,33 @@
   {"offset":"0x151AC","type":"int32_t","name":"line_item_id","scope":"FontVWindow","stride":"0x12C","meaning":"正文行 DrawItem id 起点（id = 行号 + 本值；op 0x213）","evidence":"raw 31771-31774; 71633","status":"confirmed"},
   {"offset":"0x151B0","type":"int32_t","name":"line_item_count","scope":"FontVWindow","stride":"0x12C","meaning":"正文行 DrawItem 个数（op 0x213）","evidence":"raw 31771-31774","status":"confirmed"},
   {"offset":"0x151B4","type":"int32_t","name":"alt_render_mode","scope":"FontVWindow","stride":"0x12C","meaning":"模式位：==1 ⇒ 走 sub_45B2B0","evidence":"raw 72223-72224","status":"confirmed"},
-
   {"offset":"0x151C0","type":"tagTEXTMETRICA","name":"tm_ruby","scope":"Font","meaning":"注音字体 TEXTMETRICA","evidence":"raw 71232","status":"confirmed"},
-
   {"offset":"0x151C0","type":"int32_t","name":"scaled_w","scope":"FontVWindow","stride":"0x12C","meaning":"缩放后宽（D3D 路径；op 0x70 写）","evidence":"raw 73170-73171","status":"confirmed"},
-
   {"offset":"0x151C4","type":"int32_t","name":"tm_ascent_ruby","scope":"Font","meaning":"注音字体 tmAscent（D3DX 路径基线修正）","evidence":"raw 68041/71232","status":"confirmed"},
-
   {"offset":"0x151C4","type":"int32_t","name":"scaled_h","scope":"FontVWindow","stride":"0x12C","meaning":"缩放后高","evidence":"raw 73170-73171","status":"confirmed"},
   {"offset":"0x151C8","type":"int32_t","name":"cur_line","scope":"FontVWindow","stride":"0x12C","meaning":"当前已排版/已显现行号（sub_45AD30 读、sub_45BE20 递增、sub_404F80 清零）","evidence":"raw 71533; 72225; 10752","status":"confirmed"},
-
   {"offset":"0x151FC","type":"int32_t","name":"default_window","scope":"Font","meaning":"默认消息窗索引（初值 1）；win 参数为 0 时取它","evidence":"raw 78899; 73150/74223","status":"confirmed"},
   {"offset":"0x15200","type":"LOGFONTA","name":"logfont_main","scope":"Font","meaning":"主字体模板（+1236=lfWidth / +1248=lfWeight / +1260=lfFaceName）","evidence":"raw 78859-78862","status":"confirmed"},
   {"offset":"0x15204","type":"int32_t","name":"lf_width_main","scope":"Font","meaning":"主字体 lfWidth（= -字号/2 = -12；GDI 对 DBCS 按半角解释 ⇒ 全角 1em / 半角 0.5em）","evidence":"raw 24068; 68065/68070","status":"confirmed"},
   {"offset":"0x15210","type":"int32_t","name":"lf_weight_main","scope":"Font","meaning":"主字体 lfWeight（0 或 700；op 0x2BD）","evidence":"raw 71171; 33393","status":"confirmed"},
   {"offset":"0x15214","type":"int32_t","name":"font_flag_1252","scope":"Font","meaning":"Initialize 置 0x1000000（语义未展开）","evidence":"raw 78866","status":"tentative"},
   {"offset":"0x1521C","type":"char[32]","name":"face_name_main","scope":"Font","meaning":"主字体面名（配置 message:Font）；为空则 sub_459F40 直接 return ⇒ 字体重建不发生","evidence":"raw 70984/78868","status":"confirmed"},
-
   {"offset":"0x15224","type":"int32_t[13]","name":"ruby_layout_block","scope":"FontVWindow","stride":"0x12C","meaning":"注音布局块 13 dword（op 0x25C → sub_456510）","evidence":"raw 68370; 72394","status":"confirmed"},
-
   {"offset":"0x1523C","type":"LOGFONTA","name":"logfont_ruby","scope":"Font","meaning":"注音字体模板（+1296=lfWidth / +1308=lfWeight / +1320=face）","evidence":"raw 78873-78875","status":"confirmed"},
   {"offset":"0x15240","type":"int32_t","name":"lf_width_ruby","scope":"Font","meaning":"注音字体 lfWidth（= -注音字号/2 = -4）","evidence":"raw 24109; 71237","status":"confirmed"},
-
   {"offset":"0x15244","type":"int32_t","name":"alt_color_a","scope":"FontVWindow","stride":"0x12C","meaning":"窗色/参 A（op 0x25E 的 op2）","evidence":"raw 68384","status":"confirmed"},
   {"offset":"0x15248","type":"int32_t","name":"alt_color_b","scope":"FontVWindow","stride":"0x12C","meaning":"窗色/参 B（op 0x25E 的 op3）","evidence":"raw 68385","status":"confirmed"},
-
   {"offset":"0x1524C","type":"int32_t","name":"lf_weight_ruby","scope":"Font","meaning":"注音字体 lfWeight（op 0x2BE）","evidence":"raw 71229; 33413","status":"confirmed"},
-
   {"offset":"0x1524C","type":"int32_t","name":"alt_color_c","scope":"FontVWindow","stride":"0x12C","meaning":"窗色 C（op 0x25F 的 op2）","evidence":"raw 68400","status":"confirmed"},
   {"offset":"0x15250","type":"int32_t","name":"alt_color_d","scope":"FontVWindow","stride":"0x12C","meaning":"窗色 D（op 0x25F 的 op4）","evidence":"raw 68401","status":"confirmed"},
   {"offset":"0x15254","type":"int32_t","name":"alt_color_e","scope":"FontVWindow","stride":"0x12C","meaning":"窗色 E（op 0x25E 的打包色）","evidence":"raw 68386","status":"confirmed"},
-
   {"offset":"0x15258","type":"char[32]","name":"face_name_ruby","scope":"Font","meaning":"注音字体面名（op 0x2FE）","evidence":"raw 41628","status":"confirmed"},
-
   {"offset":"0x15258","type":"int32_t","name":"ruby_item_id","scope":"FontVWindow","stride":"0x12C","meaning":"注音/装饰字 DrawItem id 起点（id = i + 本值；op 0x25D）","evidence":"raw 33262-33263; 72394","status":"confirmed"},
   {"offset":"0x1525C","type":"int32_t","name":"ruby_item_count","scope":"FontVWindow","stride":"0x12C","meaning":"注音 DrawItem 个数（op 0x25D）","evidence":"raw 33262-33263","status":"confirmed"},
   {"offset":"0x15260","type":"int32_t","name":"showing","scope":"FontVWindow","stride":"0x12C","meaning":"显示开始时置 1（sub_45EC60）","evidence":"raw 74242; 90488","status":"confirmed"},
   {"offset":"0x15264","type":"int32_t","name":"align_mode","scope":"FontVWindow","stride":"0x12C","meaning":"对齐模式 0=左 / 1=中 / 2=右（op 0x303）","evidence":"raw 68415; 68940-68949","status":"confirmed"},
   {"offset":"0x15268","type":"int32_t","name":"align_width","scope":"FontVWindow","stride":"0x12C","meaning":"对齐用行宽上限（op 0x303 的 op3）","evidence":"raw 68416; 68942","status":"confirmed"},
   {"offset":"0x1526C","type":"int32_t","name":"total_lines","scope":"FontVWindow","stride":"0x12C","meaning":"本段文本总行数","evidence":"raw 90488; 26052","status":"confirmed"},
-
   {"offset":"0x15278","type":"int32_t","name":"aa_enabled","scope":"Font","meaning":"抗锯齿开关（set:EnableAntiFont 为真时取 message:UseAntiFont）；≠0 ⇒ 不取 surface DC、走软件贴字","evidence":"raw 22413; 23649-23655; 67953","status":"confirmed"},
   {"offset":"0x1527C","type":"int32_t","name":"text_draw_mode","scope":"Font","meaning":"文本绘制模式：==1 走 sub_474BD0/sub_474F60/sub_4757F0；>=3 的注音底带分支在成品不可达（唯一写入 raw 78779 =1）","evidence":"raw 78779; 68058","status":"confirmed"},
   {"offset":"0x15280","type":"COLORREF","name":"color_fill","scope":"Font","meaning":"填充色（初值 0xFFFFFF；op 0x76 写、字节序翻转）","evidence":"raw 78891; 28669","status":"confirmed"},

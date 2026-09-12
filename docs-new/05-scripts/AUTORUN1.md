@@ -36,17 +36,20 @@
 
 ## 缺口
 
-- emulator：0x143 未实现 ⇒ 本脚本永不执行（global 7087f5 恒 0、包内 INIT 表不装载）；扩展包的 id 分派本身已实现（readScript 支持 pack<<24|idx，上限 5）
+- 包内曲/包内音效的**曲号登记**只在包 3 出现（见 AUTORUN3 的 i1d7/i1d8）；包 1 没有音乐表调用。
+- `$1$AUTORUN` 调用的 39 张 `$1$` 表本身未读（结构与本体同名表同构）。
 
 ## 相关
 
 - 引擎常态能力：`append-pack-discovery-and-activation`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`music-number-table-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x41A000`（见 `analysis/functions.json`）
 - 函数结论：`0x455750`（见 `analysis/functions.json`）
 - 函数结论：`0x4559C0`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/resource-loading.md`
+- 守卫测试：`app/amayui-emulator/test/append-packs.test.ts`
 
 ## 证据与备注
 
 - 证据：src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888
-- 备注：包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）；$1$AUTORUN 调用的 39 张 $1$ 表本身未读。
+- 备注：★2026-09 订正：emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段），原「0x143 未实现 ⇒ 本脚本永不执行」的缺口已消失。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。

@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('api', {
    * ★id 放在**路径**段：纯数字主机名会被 URL 解析器当成 IPv4（`//31` → `0.0.0.31`）。
    */
   audioStreamBase: 'amayui-audio://audio/',
+  /** 音乐表（SYS4INI 尾部：曲号 → 文件 id）；VM 的 0x1D6/0x1D7/0x1D8 与 BGM 解析用它。 */
+  musicTable: () => ipcRenderer.invoke('music-table'),
   /** 读内置字体文件字节（`res/fonts/` 下相对路径）。返回 null 表示不存在。 */
   font: (file: string) => ipcRenderer.invoke('font', file),
 

@@ -29,6 +29,7 @@ import { GFX_MISC_OPS, GFX_MISC_NATIVE_OPS } from './gfx-misc.js';
 import { MENU_OPS } from './menu.js';
 import { INPUT_OPS } from './input.js';
 import { AUDIO_OPS } from './audio.js';
+import { MUSIC_TABLE_OPS } from './music-table.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -47,6 +48,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...GFX_MISC_OPS,
   ...MENU_OPS,
   ...INPUT_OPS,
+  ...MUSIC_TABLE_OPS, // 0x1D6/0x1D7/0x1D8：音乐表（写 op1，纯 VM 状态）
 ]);
 
 /** 子系统 opcode → NativeBridge（`native`）。 */
