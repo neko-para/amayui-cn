@@ -149,22 +149,25 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不�
   assert.equal(read(2), 8);
 
   // 0x141 → 直写配置 message:MesWinAlpha（>0x10 时报错不写）。0x131 应读回刚写的值。
+  //
+  // ★顺序很重要：`loadScriptIntoFrame` 会**重建该帧的局部池**（= 引擎 `sub_40ED40` 载入时"建池 + enc_zero"，
+  //   见 control.ts 的说明）⇒ 给脚本准备操作数必须在**载入之后**（真实调用方也只能经全局池/引擎字段传值）。
   const setLocal = (slot: number, v: number): void => void e.curScript().locals.int.set(slot, enc(e.key, v));
-  setLocal(9, 9);
   loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  setLocal(9, 9);
   await stepOnce(e);
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 10), 'TEST.BIN');
   await stepOnce(e);
   assert.equal(read(10), 9, '0x141 写配置后 0x131 应读回 9');
-  setLocal(9, 0x11);
   loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  setLocal(9, 0x11);
   await stepOnce(e);
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 11), 'TEST.BIN');
   await stepOnce(e);
   assert.equal(read(11), 9, 'op1 > 0x10 ⇒ 报错不写，配置保持原值');
   // 复位成 INI 里的 8，避免影响后续断言
-  setLocal(9, 8);
   loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
+  setLocal(9, 8);
   await stepOnce(e);
 
   // 0x2CE → _this[167990]!=0 → 1

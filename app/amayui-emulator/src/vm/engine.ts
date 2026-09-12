@@ -44,6 +44,22 @@ export class LocalPools {
   floatPtr = new Map<number, Ref | 0>();
   /** 字符串引用池（引擎 `_this[30*cur+95794]`，type 14 local-string-ptr）。 */
   strPtr = new Map<number, Ref | 0>();
+
+  /**
+   * 清空全部局部池 —— 等价于引擎**载入脚本时"建局部池 + 填 `enc_zero`"**（`sub_40ED40`）。
+   *
+   * ★这是**每次脚本载入**都要做的事（见 `loadScriptIntoFrame` 的说明）：
+   * 帧槽会被复用（退出脚本后被 `call-script` 再次调回来最典型），
+   * 不清池就会把**上一次调用的局部量泄漏进新一次调用**。
+   */
+  clear(): void {
+    this.int.clear();
+    this.float.clear();
+    this.str.clear();
+    this.ptr.clear();
+    this.floatPtr.clear();
+    this.strPtr.clear();
+  }
 }
 
 /** 每脚本帧（120 字节 / 0x78 的语义重建模），对应 ScriptContext。 */

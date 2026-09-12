@@ -6,30 +6,12 @@
     "op": "0x6",
     "status": "PARTIAL",
     "purpose": "构造并装载一个脚本帧（读脚本文件 → 解码 → 建帧局部池/返回栈）",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "打开脚本文件(sub_4559C0/sub_455560)",
-      "读头/校验版本",
-      "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)",
-      "迭代填 local_int[i]=enc_zero"
-    ],
-    "fields_used": [
-      "this->cur_script",
-      "this->frames[cur_script].local_int",
-      "this->frames[cur_script].local_int_count",
-      "this->enc_zero",
-      "this->call_ret"
-    ],
-    "unmodeled": [
-      "_this+0xA609C(字符串表)",
-      "_this+387924(FileSource)",
-      "frames[cur]+0x40..0x54(返回栈)",
-      "_this+4*cur+388612/489488/489648"
-    ],
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["打开脚本文件(sub_4559C0/sub_455560)", "读头/校验版本", "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)", "迭代填 local_int[i]=enc_zero"],
+    "fields_used": ["this->cur_script", "this->frames[cur_script].local_int", "this->frames[cur_script].local_int_count", "this->enc_zero", "this->call_ret"],
+    "unmodeled": ["_this+0xA609C(字符串表)", "_this+387924(FileSource)", "frames[cur]+0x40..0x54(返回栈)", "_this+4*cur+388612/489488/489648"],
     "evidence": "raw 18577-18874",
-    "notes": "首参在反编译里被处理成 int a1，实为 this(Engine*)；语义名是我们赋的，原始名 sub_40ED40"
+    "notes": "★载入 = 一次新调用：本函数读脚本后**建局部池并把 local_int 填 enc_zero**（local_float/string 同）⇒ 帧槽被复用时（脚本 exit 后被 call-script 再次调回来最典型）看不见上一次的局部量。emulator 侧对应 loadScriptIntoFrame 的 frame.locals.clear()（见 app/amayui-emulator/src/vm/handlers/control.ts）。漏掉它会静默泄漏：CONFIG1 切分类后滚动起点 local5620 从上一页漏过来 ⇒ 滚动条溢出轨道（2026 实测）。全局池不经本函数，故跨脚本状态（如上次选的分类 12721e）照旧保留。"
   },
   {
     "addr": "0x41A820",

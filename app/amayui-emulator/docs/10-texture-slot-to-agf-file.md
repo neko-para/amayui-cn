@@ -221,6 +221,36 @@ draw-texture … 196 0 (30i) 628 30 …     # 每行裁 628×30 贴到列表行�
 
 ---
 
+## 4.5 ★纹理的**销毁时机**：别在舞台还引用它的时候销毁（2026 黑屏事故）
+
+症状：**切到「角色设定」页后整屏只剩 Pixi 的背景色**（`0x0a0d16`），VM 照跑、日志里没有任何异常，
+切回别的页也不再恢复。
+
+根因（`TextureCache.create` / `release`）：Pixi 的 ticker **每帧自己 `app.render()`**，
+而我们的 `present()` 只在 **VM 跑完一批指令之后**才重建舞台 ⇒ 存在这个窗口：
+
+```
+VM: create-texture / release-texture  → 当场 texture.destroy(true)
+                                        ↑ 舞台上仍挂着上一帧引用它的 Sprite
+紧接着 ticker 的一次 render → 去画一个已销毁的纹理 ⇒ WebGL 批次状态损坏、此后画不出任何东西
+（异常发生在 ticker 回调里、不在我们的调用栈上 ⇒ 日志空白，"指令还在跑、画面全黑"）
+```
+
+修法（两条）：
+
+1. **同尺寸的 `create-texture` 复用画布**：`clearRect` + `source.update()`。
+   引擎语义是"新建空表面"，像素结果完全一致，但从根上少一次销毁/新建；
+2. 换尺寸 / `release-texture` 时把旧纹理推进 **`DestroyQueue`**，由 `present()` **之后**的
+   `TextureCache.collectGarbage()` 统一销毁 —— 那一刻舞台已经换成新纹理，销毁是安全的。
+
+另外给渲染进程加了"野异常"落盘（`[renderer-error]` / `[renderer-rejection]`）：
+ticker 回调里的异常从此也能在 `.tmp/amayui-emulator.log` 里看到，不再隐身。
+
+守卫：`test/texture-lifecycle.test.ts`（队列语义：push 不销毁 / flush 传 `destroy(true)` / 幂等）+
+**E4 目视回归** `npm run shot`（主进程合成鼠标事件走一遍真实链路并截图，自动提示"几乎全黑"）。
+
+---
+
 ## 5. 相关代码位置
 
 - 模拟器解析：`src/arch/nodeFileSource.ts`（`resolveEntry`）+ `src/script/alf.ts`（`resolveFileEntry`）。

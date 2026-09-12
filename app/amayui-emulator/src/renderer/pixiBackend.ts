@@ -448,6 +448,10 @@ export class PixiBackend implements NativeBridge {
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);
     this.presenter.present(this.scene, this.clockMs, this.waitFlags, textSprites);
+    // ★舞台已换成新纹理 ⇒ 现在才是销毁旧纹理的安全时刻（否则 ticker 会去画已销毁的纹理 →
+    //   WebGL 批次损坏 → 整屏只剩背景色，且此后不再恢复；见 TextureCache.collectGarbage 的说明）
+    const gc = this.textures.collectGarbage();
+    if (gc > 0) this.#pushLog(`[texture] 延迟销毁旧纹理 ${gc} 张`);
     this.sceneDirty = false; // present 已消费本次"脏"标记
   }
 

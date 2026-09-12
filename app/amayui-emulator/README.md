@@ -400,6 +400,41 @@ npm run op:inventory
 2026 用它查出的典型缺口：`0x1FD` 被登记成"已实现"、实际只把参数转发给宿主而渲染端只记一行日志
 （CONFIG1 滚动条拇指的中段就是这么丢的）；`0x204 draw-string` 的 9 次调用**整体丢弃**（CONFIG1 右侧说明条画不出来）。
 
+### 纹理的销毁时机：**别在舞台还引用它的时候销毁**（2026 黑屏事故）
+
+Pixi 的 ticker 每帧自己 `app.render()`，而 `present()` 只在 **VM 跑完一批指令之后**才重建舞台。
+于是 `create-texture`/`release-texture` 里**当场** `texture.destroy(true)` 时，舞台上仍挂着上一帧引用它的
+Sprite ⇒ 紧接着的一次 ticker 渲染去画已销毁的纹理 ⇒ **WebGL 批次损坏、此后画不出任何东西**：
+现象是「切到某页后整屏只剩背景色，VM 照跑、日志空白」（异常在 ticker 回调里，不在我们的调用栈上）。
+
+修法：同尺寸 `create-texture` **复用画布**（清空 + `source.update()`）；换尺寸/`release-texture` 的旧纹理
+进 `DestroyQueue`，由 `present()` **之后**的 `collectGarbage()` 统一销毁。
+另外渲染进程现在会把 `window.onerror`/`unhandledrejection` 写进日志（`[renderer-error]`）。
+守卫：`test/texture-lifecycle.test.ts` + E4 目视回归 `npm run shot`。
+
+### 自动截图（`npm run shot`）—— E4 目视回归
+
+模型对 ≠ 画面对。这条工具用**主进程合成鼠标事件**跑一遍真实链路（TITLE → CONFIG → 左侧各分类），
+再用 `capturePage()` 截图，并在"几乎全黑"时给显眼提示 —— 上面那次黑屏就是它抓到的：
+
+```bash
+npm run shot                    # 默认：CONFIG1 → 角色设定 → 回第 1 页
+npm run shot -- --tabs 5,3,4    # 指定要点哪些左侧分类（0..5）
+# 产物：.tmp/shot-*.png ；时序一律"等日志出现装载标记"，不睡固定秒数（机器忙时会误判成全黑）
+```
+
+### 帧局部池：**一次载入 = 一次新调用**（`loadScriptIntoFrame` 会清池）
+
+引擎 `sub_40ED40` 载入脚本时**重建局部池**（`local_int` 填 `enc_zero`），所以帧槽被复用
+（脚本 `exit` 之后又被调用方 `call-script` 调回来最典型）时看不见上一次的局部量；**全局池不清**
+（跨脚本状态，如"上次选的分类"）。emulator 侧落点是 `Frame.locals.clear()`（见 `handlers/control.ts` 长注释）。
+
+漏掉它的症状（2026 实测）：「设置界面第一页滚到底 → 切左侧分类」时 `CONFIG1` 重入，
+滚动起点 `local5620=6` 从上一页漏过来、而新一页最大起点只有 3
+⇒ 拇指顶 `106+(428−拇指高)·5620/5624 = 320`，**滚动条溢出轨道**。
+守卫：`test/call-frame.test.ts`（载入即重建 / 固定帧反复调用保留）+ `test/config1-chain.test.ts`
+的滚动探针（`npm run report` 风格的 E3：滚到底→切分类→再切回，四步的 `0 ≤ start ≤ maxStart` 与拇指都在轨道内）。
+
 ### 共享场景模型（消除"两份语义"）
 
 `src/renderer/sceneModel.ts` 持有全部"纯数据"变更（建/删项、5 个窗、"缺失即建项"、bit0 门控、CG 数字条几何、

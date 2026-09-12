@@ -76,6 +76,31 @@ export interface ScrollThumb {
 }
 
 /**
+ * **滚动条状态**（`CONFIG1` 的列表滚动：`CONFIG1.txt:1195-1225` 的页设置 + `:2934-2971` 的拇指绘制）。
+ *
+ * 几何（raw 实测）：轨道 y = 106..534（高 428）、拇指高 `thumbH`（= `local5623`）、
+ * 拇指顶 `thumbTop`（= `local3f6`）= `106 + (428 − thumbH) · start / maxStart`。
+ *
+ * ★不变量：`0 <= start <= maxStart` ⇒ `106 <= thumbTop` 且 `thumbTop + thumbH <= 534`。
+ * 破坏它就会看到**拇指溢出轨道**（2026 实测：第一页滚到底后切分类，`start` 从上一页漏过来）。
+ */
+export interface ScrollStep {
+  tag: string;
+  /** 当前分类的项数（`local561f`）。 */
+  itemCount: number;
+  /** 每页行数（`local5622`）。 */
+  rows: number;
+  /** 滚动起点（`local5620`）。 */
+  start: number;
+  /** 最大起点（`local5624`；0 = 不需要滚动条）。 */
+  maxStart: number;
+  /** 拇指高（`local5623`）。 */
+  thumbH: number;
+  /** 拇指顶（`local3f6`）。 */
+  thumbTop: number;
+}
+
+/**
  * `0x12F` 在真实脚本里的**输入/输出快照**（E3：可见行序 = 按 `B[x]+C[x]` 升序排出的索引序）。
  *
  * 为什么要在链路里抓它：`CONFIG1` 的列表顺序完全由这条指令决定，而它的两个历史错法
@@ -146,6 +171,8 @@ export interface ChainResult {
   slotText: { slot: number; count: number; sample: string; texts: string[] }[];
   /** 最近一次 `0x12F` 的输入/输出（列表顺序的正确性判据，见 `Sort12fDump`）。 */
   sort12f: Sort12fDump | null;
+  /** 滚动/切分类探针的逐步状态（仅 `scrollProbe: true` 时给出，见 `ScrollStep`）。 */
+  scrollSteps?: ScrollStep[];
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
   drops?: DroppedIntent[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
@@ -162,6 +189,12 @@ export interface ChainOptions {
   onStep?: (t: StepTrace) => void;
   /** 用 `withNativeTap` 记录"脚本想调、宿主没实现"的方法（默认关；开了才付 Proxy 的代价）。 */
   recordDrops?: boolean;
+  /**
+   * 跑完 CONFIG1 后额外做一遍**滚动/切分类**探针（默认关）：
+   * 记录初始态 → 滚轮滚到底 → 点左侧第 2 个分类 → 各记录一次滚动条状态。
+   * 这是"切页后拇指溢出轨道"的回归路径（见 `ScrollStep`）。
+   */
+  scrollProbe?: boolean;
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
@@ -313,6 +346,44 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   }
   const gateLoop = { enabled: gate?.enabled === true, autoHideMs: gate?.autoHideMs ?? 0, shown: shownSeq };
 
+  // ★滚动/切分类探针（默认关）：第一页滚到底 → 点左侧第 2 个分类 → 看滚动条是否还在轨道里。
+  //   这是"切页后拇指溢出轨道"的回归路径（根因：脚本载入没重建帧局部池 ⇒ 5620 从上一页漏过来）。
+  const scrollSteps: ScrollStep[] = [];
+  if (opt.scrollProbe) {
+    const snap = (tag: string): void => {
+      scrollSteps.push({
+        tag,
+        itemCount: dec(e.key, e.curScript().locals.int.get(0x561f) ?? 0),
+        rows: dec(e.key, e.curScript().locals.int.get(0x5622) ?? 0),
+        start: dec(e.key, e.curScript().locals.int.get(0x5620) ?? 0),
+        maxStart: dec(e.key, e.curScript().locals.int.get(0x5624) ?? 0),
+        thumbH: dec(e.key, e.curScript().locals.int.get(0x5623) ?? 0),
+        thumbTop: dec(e.key, e.curScript().locals.int.get(0x3f6) ?? 0),
+      });
+    };
+    snap('进入 CONFIG1');
+    for (let i = 0; i < 8; i++) {
+      input.addWheel(-120); // 下滚一格 = −120（与引擎 WM_MOUSEWHEEL 同口径）
+      await run(30);
+    }
+    snap('滚到底');
+    // 左侧分类列表第 2 项的中心（190×26 的贴片画在 (24, 106+50i)）
+    input.setCursor(120, 156);
+    await run(60);
+    input.pressMouse(0);
+    await run(120);
+    input.releaseMouse(0);
+    await run(600);
+    snap('切到第 2 个分类');
+    input.setCursor(120, 106); // 再切回第 1 个分类（项数多、且刚才滚到底过）
+    await run(60);
+    input.pressMouse(0);
+    await run(120);
+    input.releaseMouse(0);
+    await run(600);
+    snap('切回第 1 个分类');
+  }
+
   // ★滚动条拇指（`0x1FD` 的回归不变量）：三段式几何必须首尾相接。
   const scrollThumb = collectScrollThumb(e, native);
   // ★设置列表的可见行（`0x12F` 排序正确性的回归不变量）+ 直绘进槽的文本（`0x204`）
@@ -343,6 +414,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     configRows,
     slotText,
     sort12f,
+    ...(opt.scrollProbe ? { scrollSteps } : {}),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
     trace,
   };

@@ -16,6 +16,7 @@
     "build:electron": "node build-electron.mjs",
     "electron": "electron .",
     "electron:dev": "npm run build:electron && electron .",
+    "shot": "npm run build:electron && electron tools/shot.cjs",
     "diag:text": "tsx src/tools/diagText.ts",
     "op:inventory": "tsx src/tools/opInventory.ts"
   },

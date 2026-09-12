@@ -15,6 +15,30 @@ import type { Item } from '../drawItem.js';
 import type { DrawStringStyle } from '../../vm/native.js';
 import { drawStringGlyphs } from '../../text/layout.js';
 
+/**
+ * **延迟销毁队列**：纹理不能"说销毁就销毁" —— 见 `TextureCache.collectGarbage` 的说明。
+ * 抽成独立小类是为了能在 Node 里单测（传假对象即可，不需要 DOM/WebGL）。
+ */
+export class DestroyQueue {
+  #q: { destroy(destroySource?: boolean): void }[] = [];
+
+  push(tex: { destroy(destroySource?: boolean): void }): void {
+    this.#q.push(tex);
+  }
+
+  get size(): number {
+    return this.#q.length;
+  }
+
+  /** 真正销毁并清空；返回销毁个数（>0 时调用方可以记一条日志）。 */
+  flush(): number {
+    const n = this.#q.length;
+    for (const t of this.#q) t.destroy(true);
+    this.#q.length = 0;
+    return n;
+  }
+}
+
 /** 一个"程序化槽"（`0x1F8` create-texture 建的空白表面 + `0x204` 直绘上去的文本）。 */
 interface CanvasSlot {
   canvas: HTMLCanvasElement;
@@ -32,8 +56,31 @@ export class TextureCache {
   readonly #inflight = new Map<number, Promise<void>>();
   /** 程序化槽的画布（`0x1F8` 建、"`0x204` 画"）——与文件纹理分开存，因为要**就地改像素**。 */
   readonly #canvasSlots = new Map<number, CanvasSlot>();
+  /** 待销毁的旧纹理（`present()` 之后由 `collectGarbage` 统一销毁）。 */
+  readonly #pendingDestroy = new DestroyQueue();
 
   constructor(private readonly log: (msg: string) => void) {}
+
+  /** 待销毁纹理数（诊断/单测用）。 */
+  get pendingDestroyCount(): number {
+    return this.#pendingDestroy.size;
+  }
+
+  /**
+   * **统一销毁"这一帧已不再被舞台引用"的旧纹理**（由 `PixiBackend.present()` 在
+   * `presenter.present()` **之后**调用）。
+   *
+   * ★为什么必须延迟（2026 实测的**黑屏**事故）：
+   * Pixi 的 ticker 每帧自己 `app.render()`，而我们的 `present()` 只在 **VM 跑完一批指令之后**才重建舞台。
+   * 于是存在这个窗口：VM 里执行 `create-texture`/`release-texture` 时（旧纹理被 `destroy(true)`），
+   * **舞台上仍挂着上一帧那些引用它的 Sprite** ⇒ 紧接着的一次 ticker 渲染就去画一个已销毁的纹理
+   * ⇒ WebGL 批次状态损坏，**此后再也画不出任何东西**（现象：切到某页后整屏只剩背景色，
+   * 指令照跑、日志里也毫无异常 —— 因为异常发生在 ticker 的 render 里，不在我们的调用栈上）。
+   * 所以销毁必须挪到"舞台已经换成新纹理之后"（= present 之后）执行。
+   */
+  collectGarbage(): number {
+    return this.#pendingDestroy.flush();
+  }
 
   /** 已绑定纹理的槽数（诊断用）。 */
   get slotCount(): number {
@@ -128,6 +175,9 @@ export class TextureCache {
    *   ① `create-texture 196 628 360 0` → ② 逐行 `draw-string 196 …` → ③ 把该槽按行裁贴到行上。
    *   早前这里只记日志 ⇒ 该槽没有纹理 ⇒ 渲染器退回"1×1 白纹理占位" ⇒ **整条中间一片纯白**
    *   （用户实测："设置界面中间的项目的文字没有渲染，而是全是纯白色"）。
+   *
+   * ★**尺寸不变时复用画布**（只清空 + 重传）：引擎的语义是"新建空表面"，用同一张画布清零后
+   * 像素结果完全一致，但避免了每页重建时的纹理销毁/新建（以及随之而来的销毁时序问题，见 `collectGarbage`）。
    */
   create(slot: number, w: number, h: number, mode: number): void {
     const bound = this.#slotImgid.get(slot);
@@ -135,15 +185,23 @@ export class TextureCache {
       const tex = this.#imgCache.get(bound);
       if (tex) this.slotTex.set(slot, tex);
     }
-    // 引擎里 create-texture 会**丢掉旧对象**（含画在上面的直绘文本）⇒ 这里重建画布
-    const old = this.#canvasSlots.get(slot);
-    if (old) {
-      this.slotTex.delete(slot);
-      old.tex.destroy(true);
-      this.#canvasSlots.delete(slot);
-    }
     const cw = Math.max(1, w | 0);
     const ch = Math.max(1, h | 0);
+    const old = this.#canvasSlots.get(slot);
+    if (old && old.w === cw && old.h === ch && typeof document !== 'undefined' && w > 0 && h > 0) {
+      // 同尺寸 ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）
+      old.canvas.getContext('2d')?.clearRect(0, 0, cw, ch);
+      old.tex.source.update();
+      this.slotTex.set(slot, old.tex);
+      this.log(`createTexture slot=${slot} ${w}x${h} mode=${mode} (复用空白表面：清空)`);
+      return;
+    }
+    // 尺寸变了（或首次）⇒ 换一张画布；旧纹理**延迟到 present 之后**再销毁（见 collectGarbage）
+    if (old) {
+      this.slotTex.delete(slot);
+      this.#pendingDestroy.push(old.tex);
+      this.#canvasSlots.delete(slot);
+    }
     if (typeof document !== 'undefined' && w > 0 && h > 0) {
       const canvas = document.createElement('canvas');
       canvas.width = cw;
@@ -213,7 +271,7 @@ export class TextureCache {
     this.slotTex.delete(slot);
     const cs = this.#canvasSlots.get(slot);
     if (cs) {
-      cs.tex.destroy(true);
+      this.#pendingDestroy.push(cs.tex); // ★延迟销毁（舞台可能还挂着引用它的 Sprite）
       this.#canvasSlots.delete(slot);
     }
   }

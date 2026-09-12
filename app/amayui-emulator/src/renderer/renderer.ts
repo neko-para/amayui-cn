@@ -22,6 +22,22 @@ async function main(): Promise<void> {
   const app = await bootApp();
   if (!app) return; // 首个脚本装载失败：原因已进日志通道，安静收场
 
+  /**
+   * ★**把渲染进程里的"野异常"也写进日志**（2026 补）。
+   *
+   * 为什么需要：Pixi 的 `app.render()` 跑在它自己的 ticker 回调里、**不在我们的调用栈上** ——
+   * 那里抛出的异常既不会被 `#present()` 的调用方看到，也不会进控制窗；表现就是
+   * "画面整个不对/只剩背景色，但日志里什么都没有、VM 还在跑"。
+   * 实测那次黑屏（帧里去画一个已销毁的纹理 ⇒ WebGL 批次损坏）就是这么隐身的。
+   */
+  window.addEventListener('error', (ev) => {
+    app.native.log(`[renderer-error] ${ev.message} @ ${ev.filename}:${ev.lineno}:${ev.colno}`);
+  });
+  window.addEventListener('unhandledrejection', (ev) => {
+    const r = ev.reason as Error | undefined;
+    app.native.log(`[renderer-rejection] ${r?.message ?? String(ev.reason)}\n${r?.stack ?? ''}`);
+  });
+
   const session = new RendererSession(app);
   session.registerControlHandlers();
   try {

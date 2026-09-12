@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 90,
-    "modeled-verified": 12,
+    "total": 91,
+    "modeled-verified": 13,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2538,6 +2538,32 @@
         "evidence": "E2",
         "guard": "test/draw-string.test.ts",
         "note": "handler 只交出『位置 + 文本 + 全局样式快照』（与 msgWinSync 同一分工），宿主把字光栅化进该槽：Pixi 侧用 create-texture 给的空白 canvas 就地画字并 update 纹理；headless 侧把文本记进 scene.slotText（快照可断言）。字形推进与描边副本是纯函数 text/layout.drawStringGlyphs（可单测）。E3 活证据：CONFIG1 槽 196 上 14 条行文本，见 test/config1-chain.test.ts。"
+      }
+    },
+    {
+      "id": "script-frame-local-pool-lifecycle",
+      "subsystem": "帧循环",
+      "name": "脚本帧局部池的生命周期：每次载入重建（`sub_40ED40` 建池 + local_int 填 enc_zero）",
+      "trigger": "任何一次脚本载入：启动 index 0、call-script(0x3)、load-frame(0x6)、exit-script(0x9) 后重载根脚本",
+      "engine": {
+        "fns": [
+          "sub_40ED40"
+        ],
+        "raw": "18577-18874"
+      },
+      "reads": [
+        "ScriptContext.local_int",
+        "ScriptContext.local_int_count",
+        "ScriptContext.local_float/string",
+        "Engine.enc_zero"
+      ],
+      "whySilent": "★漏掉它不报错，只是**上一次调用的局部量会泄漏进新一次调用**：帧槽是复用的（脚本 exit 后被调用方再次 call-script 最典型 —— CONFIG1 的\"切左侧分类\"就是 置 7dd=1 → exit → CONFIG.BIN 重新调用）。实测症状：设置界面第一页滚到底（local5620=6）后切分类，新页最大起点只有 3 ⇒ 拇指顶 = 106+(428−拇指高)·5620/5624 算到 320，**滚动条溢出轨道**。同类泄漏还会让\"可见行序表/排序输入数组\"带上历史（顺序依赖历史）。与它相对：**全局池不清**（跨脚本状态，如\"上次选的分类\" 12721e 就必须留着）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/config1-chain.test.ts",
+        "note": "loadScriptIntoFrame 现在调用 frame.locals.clear()（六个局部池全清）+ strTable/arrayContainer 复位（见 handlers/control.ts 的长注释）；exit-script 的全量重置也一并清各帧局部池。E2 守卫 test/call-frame.test.ts 另锁两半：载入即重建 / 已预装帧被 call-frame 反复调用时局部量保留（引擎 sub_41C900 不重建池）。E3 是用户现场：滚到底→切分类→再切回，四步都满足 0≤start≤maxStart 且拇指落在轨道内。"
       }
     }
   ]

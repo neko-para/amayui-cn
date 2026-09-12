@@ -218,3 +218,45 @@ test('★CONFIG1 列表顺序：按 B[x]+C[x] 排序的索引序（与独立复�
   // 前 9 行的数值贴片源 Y 由描述符的 type 决定 ⇒ 至少每行都有效（顺序错时这里会先崩）
   for (const row of rows) assert.ok(row.value.srcY >= 0, `第 ${row.i} 行源 Y 应 ≥ 0`);
 });
+
+/**
+ * ★2026 实测反馈的回归闸：「**切换页面时，第一页滚到底，切到第二页滚动条会溢出范围**」。
+ *
+ * 根因不在滚动条本身（它的数学是对的）：`CONFIG1` 的"切左侧分类"是
+ * **置 `7dd=1` → 脚本 `exit` → CONFIG.BIN 重新 `call-script` 调回来**，
+ * 而重入时**帧槽被复用** ⇒ 一旦脚本载入没有重建帧局部池，
+ * 上一页的滚动起点 `local5620` 就会漏进新一页（新页最大起点更小）：
+ *
+ * ```
+ * 上一页滚到底 start=6；新一页 12 项 ⇒ maxStart=3
+ * 拇指顶 = 106 + (428 − 拇指高)·6/3 → 320  ← 轨道只有 106..534 ⇒ 拇指溢出轨道
+ * ```
+ *
+ * 本用例按用户的操作顺序复现（滚到底 → 切分类 → 再切回来），断言**每一步**都满足
+ * `0 ≤ start ≤ maxStart` 且拇指完整落在轨道内（106..534）。
+ */
+test('★CONFIG1 滚动条：滚到底后切分类，滚动位置必须随新页重置（拇指不得溢出轨道）', async () => {
+  const r = await runConfig1Chain({ scrollProbe: true });
+  const steps = r.scrollSteps;
+  assert.ok(steps && steps.length >= 4, `应采到 4 个滚动状态，实际 ${JSON.stringify(steps)}`);
+  const TRACK_TOP = 106;
+  const TRACK_BOTTOM = 106 + 428;
+  for (const s of steps) {
+    assert.ok(s.start >= 0, `[${s.tag}] 滚动起点不得为负：${s.start}`);
+    assert.ok(s.start <= s.maxStart, `[${s.tag}] 滚动起点不得超过最大起点：${s.start} > ${s.maxStart}`);
+    if (s.maxStart === 0) continue; // 该页不需要滚动条（引擎也不画）
+    assert.ok(
+      s.thumbTop >= TRACK_TOP - 0.5 && s.thumbTop + s.thumbH <= TRACK_BOTTOM + 0.5,
+      `[${s.tag}] 拇指必须落在轨道内：top=${s.thumbTop} h=${s.thumbH}（轨道 ${TRACK_TOP}..${TRACK_BOTTOM}）`,
+    );
+  }
+  // 具体现场：第一页确实滚到了底，切页后回到顶部（否则就是"局部量泄漏"又回来了）
+  const [enter, bottom, switched] = steps!;
+  assert.equal(enter!.start, 0, '刚进入时应停在列表顶部');
+  assert.ok(bottom!.maxStart > 0 && bottom!.start === bottom!.maxStart, `第一页应能滚到底：${JSON.stringify(bottom)}`);
+  assert.equal(switched!.start, 0, `切到新分类后滚动位置应重置为 0（实际 ${switched!.start}）`);
+  assert.ok(
+    switched!.thumbTop + switched!.thumbH <= TRACK_BOTTOM + 0.5,
+    `切页后拇指不得溢出轨道：top=${switched!.thumbTop} h=${switched!.thumbH}`,
+  );
+});
