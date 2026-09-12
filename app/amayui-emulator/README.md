@@ -206,9 +206,14 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   文本子系统、声音设备、计时器）或写无人读取的字段 ⇒ 无 VM 可见副作用、emulator 无输出。
 >   按子系统分组：渲染/图形/纹理（`0x32F`/`0x248`/`0x352`/`0x344`/`0x23B`/`0x25B`/`0x1F6`…）、
 >   消息窗/文本/字体（`0x70`/`0x73`/`0x75`/`0x79`/`0x74`/`0x7A`/`0x7B`/`0x197`/`0x1BB`/`0x1C1`…）、
->   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x143`）、声音（`0xB5`/`0x2F8`）。
+>   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x1D6`/`0x1D7`/`0x1D8`）、声音（`0xB5`/`0x2F8`）。
 >   （`0x2C7` SBSubstr 与 `0x2EB` GetConfig(`set:GameVersion`) 2026-09 已**转真实现**：它们会回写操作数，
->   当 no-op 时 TITLE 的版本号永远是占位值 `0.00.0000` —— 见 `handlers/strings.ts` / `handlers/config-read.ts`。）
+>   当 no-op 时 TITLE 的版本号永远是占位值 `0.00.0000` —— 见 `handlers/strings.ts` / `handlers/config-read.ts`。
+>   **`0x143`（`i143`）也已转真实现**：它派发扩展包的 `$n$AUTORUN`（见 `handlers/control.ts` 的
+>   `op_dispatch_script_requests`）—— 当 no-op 时 5 个扩展包一个都不会激活。
+>   `0x1D6`/`0x1D7`/`0x1D8` 是**引擎数据管理器的方法调用**（`op1 ← Engine[698900].vtable[…](op2[,op3])`）：
+>   全语料只有 `$3$AUTORUN.txt:67-68` 两处，结果分别写进被丢弃的 scratch 槽与**无人读取**的 `global 70801e`
+>   ⇒ 暂按 no-op，由闸门 B（控制窗「能力缺口」）继续盯着。）
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。
@@ -651,7 +656,7 @@ npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（�
 | **门与标志读者** | 每个被每帧读的开关字节（脏 46508 / 冻结 46512 / pending 46516 / 无渲染 167990…）+ 谁清它 |
 | **惰性创建** | `if (!slot) 建` 形态的子系统对象（effect / 纹理槽 / mesh 槽 / L2D 槽 / 字体…）与释放点 |
 
-**当前体检（91 条）**：已核验 **13** / 已建模未核验 **7** / 部分 **20** / 缺失 **26** / n/a **25**
+**当前体检（95 条）**：已核验 **17** / 已建模未核验 **7** / 部分 **20** / 缺失 **26** / n/a **25**
 （n/a 必须写明 why，由 `test/capability-ledger.test.ts` 强制）。**需要关注 53 条** —— 这就是
 "看起来都实现了、效果却有 bug"的量化答案。其中与 2D 表现直接相关的高风险缺口举例：
 
@@ -659,7 +664,10 @@ npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（�
 - `scene-freeze-flag`(46512) / `scene-flag-46528-bits`：**动画强制冻结未建模** ⇒ 该冻的时候还在播；
 - `vertex-buffer-lock-scale`：**mesh 顶点几何未建模** ⇒ mesh 只能画成整屏色块；
 - `lazy-gdi-font-set`：**消息窗文本渲染未建模** ⇒ 文字不显示；
-- `script-queue-dispatch`：**脚本派发队列未建模** ⇒ 依赖"延迟派发"的流程不会发生（`0x143` 是 no-op）；
+- ~~`script-queue-dispatch`：**脚本派发队列未建模** ⇒ 依赖"延迟派发"的流程不会发生（`0x143` 是 no-op）；~~
+  **已转真实现（E3）**：`append-pack-discovery-and-activation` —— `0x143`（`i143`）现在按 `FileDB.packs` 槽序
+  派发每个已装载扩展包的 `$n$AUTORUN.BIN`（帧 37 + `-10` 哨兵链），见 `test/append-packs.test.ts`
+  （真实语料跑完 5 包的派发链 ⇒ `global 7087f5` 第 1..5 位置起；标题画面左下角 6 个 INSTALL 徽章即该掩码的可见效果）；
 - `scene-norender-mode`：**语义冲突待复核** —— 我们把 `display:ScreenMode` 绑到了 `167990`，
   而引擎里它是「无渲染/隐藏窗口模式」；
 - `lazy-572b-node-map` / `render-merge-two-pass-reorder`：**572B 节点表未建模** ⇒ 四路归并只有两路。

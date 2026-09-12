@@ -7,7 +7,7 @@
  * `ExitScript` / `ScriptReset` 是**解释器信号**（用异常穿越 handler 边界到 stepOnce 调用方），
  * 不是错误 —— 见 interpreter.run 的捕获。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Frame } from '../engine.js';
@@ -97,8 +97,14 @@ const op_abort: OpHandler = () => {
 };
 
 // ---- exit (0x2)：跨脚本返回调用层（cur=frame.caller；顶层无调用层才程序退出） ----
-const op_exit: OpHandler = (c) => {
+const op_exit: OpHandler = async (c) => {
   const caller = c.frame.caller;
+  if (caller === DISPATCH_SENTINEL) {
+    // ★引擎 `sub_41A820` 的 -10 分支（raw 25661-25673）：派发脚本跑完 —— 还原现场、继续派发下一条；
+    //   队列排空则回到派发发起者（INIT2）已经推进过的下一条指令。见 `dispatchNextRequest` 的说明。
+    await dispatchNextRequest(c);
+    return;
+  }
   if (caller >= 0) {
     c.e.cur = caller;
     c.e.callRet = caller;
@@ -138,6 +144,89 @@ const op_call_script: OpHandler = async (c) => {
   loadScriptIntoFrame(newFrame, script, src.name);
   c.log(`  [call-script] 0x${target.toString(16)} -> ${src.name} (${script.instructions.length} instr)`);
   c.jump(-1); // 控制到新帧
+};
+
+// ---------------------------------------------------------------------------
+// 脚本请求派发：0x143 (i143) —— 扩展包 $n$AUTORUN 的激活入口
+// ---------------------------------------------------------------------------
+
+/** 引擎的**派发帧**：`sub_40FB60` 把正请求脚本装进 `cur = 37`（raw 18987）。emulator 同样是 40 帧 ⇒ 帧 37 可用。 */
+const DISPATCH_FRAME = 37;
+/**
+ * **派发哨兵**：引擎 `exit`(0x2) 在 `frame.caller == -10` 时走「还原现场 + 继续派发」（raw 25661-25673）。
+ * 装载到帧 37 的派发脚本其 `caller` 恒为此值 ⇒ 它的 `exit` 回到派发链而不是"返回调用层"。
+ */
+const DISPATCH_SENTINEL = -10;
+
+/**
+ * 把队列里的下一条请求装载起来执行（引擎 `sub_40FB60`，raw 18954-19016）。
+ *
+ * 引擎语义（逐条对齐）：
+ *  - 弹出队首请求 `id`（正数 = 装载脚本）；
+ *  - `saved_cur/saved_flags = cur/effect_flags`（383112/383116），`dispatching = 1`（497400），
+ *    `cur = 37`，`sub_40ED40(this, …, id)` 装载并开始执行 —— **发起者（INIT2）被挂起**；
+ *  - 队列排空时由 `exit` 的 `-10` 分支还原 `cur/effect_flags`（raw 25663-25668）⇒ 发起者接着跑下一条指令。
+ *
+ * 调用方：`op_dispatch_script_requests`（首条）与 `op_exit` 的 `-10` 分支（后续各条）。
+ */
+async function dispatchNextRequest(c: StepCtx): Promise<void> {
+  const e = c.e;
+  if (e.scriptRequests.length === 0) {
+    // 队列排空：还原派发前的现场（引擎 383112/383116）⇒ 发起者（INIT2）在 ip 已推进处继续。
+    if (e.dispatchSavedCur >= 0) {
+      e.cur = e.dispatchSavedCur;
+      e.effectFlags = e.dispatchSavedFlags;
+      e.dispatchSavedCur = -1;
+      e.dispatching = false;
+    }
+    c.jump(-1); // 控制流已回到发起者，不要让 stepOnce 再推进它的 ip（i143 已手动 +1）
+    return;
+  }
+  if (e.dispatchSavedCur < 0) {
+    e.dispatchSavedCur = e.cur;
+    e.dispatchSavedFlags = e.effectFlags;
+  }
+  const id = e.scriptRequests[0]!;
+  if (!e.fileSource) throw new Error('i143: no FileSource');
+  // ★包未装载 ⇒ readScript 抛 MissingAppendPackError（引擎「拡張ファイル情報ファイル %d は…」异常）
+  const src = await e.fileSource.readScript(id);
+  if (!src) throw new Error(`i143: cannot load script 0x${id.toString(16)}`);
+  e.scriptRequests.shift();
+  const frame = e.frames[DISPATCH_FRAME]!;
+  const script = parseScriptBytes(src.data);
+  loadScriptIntoFrame(frame, script, src.name);
+  frame.caller = DISPATCH_SENTINEL;
+  frame.frameArg = 0;
+  e.dispatching = true;
+  e.cur = DISPATCH_FRAME;
+  frame.ip = 0;
+  c.log(`  [dispatch] 0x${id.toString(16)} -> ${src.name}（扩展包 ${id >>> 24} 的 $n$AUTORUN，帧 ${DISPATCH_FRAME}）`);
+  c.jump(-1); // 控制到派发帧
+}
+
+/**
+ * 0x143 (`i143`，引擎 sub_41A000 raw 25168-25191)：**派发已装载扩展包的 `$n$AUTORUN`**。
+ *
+ * 引擎：置 `dispatching`（防重入，使 queueScript 只入队）→ 遍历 `FileDB.packs` 槽 1..255，
+ * 对每个**非空槽**（该包已装载）`queueScript(slot<<24)` → 清 `dispatching` → `ip += 4`（1 条指令）→
+ * `sub_40FB60` 派发首条。
+ *
+ * 脚本侧唯一调用点 = `INIT2.txt:140`（在本体 40 张 INIT 之后、场景设置之前）⇒ 扩展包内容覆盖在本体之后。
+ * 包里没有 `*.AAI` ⇒ 槽全为 NULL ⇒ **静默跳过**（与引擎一致，不是错误）。
+ */
+const op_dispatch_script_requests: OpHandler = async (c) => {
+  const e = c.e;
+  // 引擎 `frames[cur].ip += 4`：本条指令只消费一个 dword，之后（派发链跑完）从下一条继续。
+  c.frame.ip += 1;
+  c.jump(-1);
+  if (!e.fileSource?.appendPackNumbers) return; // 宿主未提供扩展包表 ⇒ 视作「一个包都没装」
+  const packs = await e.fileSource.appendPackNumbers();
+  if (packs.length === 0) return;
+  e.dispatching = true; // 循环内只入队（与引擎 497400=1 同义）
+  // ★按包号升序入队：引擎遍历的是 `FileDB.packs` 槽 1..255（槽序 = 包号序），与宿主给的顺序无关。
+  for (const n of [...packs].sort((a, b) => a - b)) e.scriptRequests.push(n << 24); // 包号<<24 = 该包文件 #0
+  e.dispatching = false;
+  await dispatchNextRequest(c);
 };
 
 /**
@@ -239,6 +328,10 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.callLink = -1;
   c.e.callFlag = 0;
   c.e.effectFlags = 0;
+  // 引擎 exit-script 是整体复位（sub_428A60：释放 40 帧 + 清全局内存池 + 引擎复位）⇒ 派发队列与现场一并作废。
+  c.e.scriptRequests.length = 0;
+  c.e.dispatching = false;
+  c.e.dispatchSavedCur = -1;
   c.e.advFields.clear();
   c.e.globalSlot97058 = 0;
   c.e.msgwin.reset();
@@ -265,6 +358,7 @@ export const CONTROL_OPS: OpTable = [
   [0xa0, op_jcc],
   [0x5, op_ret],
   [0x3, op_call_script],
+  [0x143, op_dispatch_script_requests], // i143：派发已装载扩展包的 $n$AUTORUN（见上）
   [0x1a7, op_comment],
   [0x1a8, op_dev_ukn],
   [0x1, op_abort],

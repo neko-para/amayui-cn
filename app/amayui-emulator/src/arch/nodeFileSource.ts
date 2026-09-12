@@ -12,7 +12,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { FileSource, ScriptBytes } from './fileSource.js';
-import { parseSys4Index, parseAppendIndex, type Sys4Index, type Sys4FileEntry } from '../script/alf.js';
+import { MissingAppendPackError } from './fileSource.js';
+import { parseSys4Index, parseAppendPack, type Sys4Index, type Sys4FileEntry } from '../script/alf.js';
 import { OverlayDir, type OverlaySide } from './overlay.js';
 import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
@@ -29,18 +30,35 @@ export interface NodeFileSourceOptions {
   log?: (msg: string) => void;
 }
 
-/** 扩展包数（与游戏一致：APPEND01..05）。 */
+/**
+ * 扩展包：**扫描资源根下的 `*.AAI`，按文件头 @264 的包号注册**（= 引擎 `sub_455750`，raw 67721-67783）。
+ *
+ * 为什么不能像以前那样硬编码 `APPEND01..05.AAI`：
+ *  - 引擎用 `FindFirstFile("<CWD>\\*.AAI")` 扫目录，**放什么装什么**、包号取自**文件头**（不是文件名）
+ *    ⇒ 第 6 个包、改了名的包、或文件名与包号不一致的包，引擎全都认；
+ *  - 包号决定统一 id 的高字节（`pack<<24|idx`）与 `i143` 的派发顺序 ⇒ 认错包号 = 认错资源。
+ * 这里保留 `APPEND_COUNT` 作为**诊断用参考值**（官方发售 5 包），不再作为上限。
+ */
 export const APPEND_COUNT = 5;
+
+/** 包号合法范围：槽 0 与扩展包 id 空间无关（高字节 0 = 本体），槽 ≥256 引擎会越界写。 */
+const MAX_APPEND_PACK = 255;
 
 export class NodeFileSource implements FileSource {
   #root: string;
   #overlay: OverlayDir | null;
   #base: Sys4Index | null = null;
-  #appends: (Sys4Index | null)[] = [];
+  /** 包号 -> 包索引（引擎 `FileDB.packs` 非空槽）。 */
+  #packs = new Map<number, Sys4Index>();
+  /** 已装载的包号（升序）；`0x143` 按这个顺序派发 `$n$AUTORUN`。 */
+  #packNumbers: number[] = [];
+  #appendsLoaded = false;
+  #log: (msg: string) => void;
 
   constructor(opts: NodeFileSourceOptions) {
     this.#root = opts.resourceDir;
     this.#overlay = opts.system ? new OverlayDir(opts.system, { log: opts.log }) : null;
+    this.#log = opts.log ?? ((): void => {});
   }
 
   /** 资源根（诊断/报告用：写清"这次的报告读的是哪套资源"）。 */
@@ -114,20 +132,58 @@ export class NodeFileSource implements FileSource {
     return this.#base;
   }
 
-  /** 载入 5 个 APPEND 包索引（S4AC422 的 APPENDnn.AAI），填充 #appends[1..5]。 */
-  async #loadAppends(): Promise<(Sys4Index | null)[]> {
-    if (this.#appends.length) return this.#appends;
-    this.#appends = Array.from({ length: APPEND_COUNT + 1 }, () => null);
-    for (let n = 1; n <= APPEND_COUNT; n++) {
-      const p = path.join(this.#root, `APPEND0${n}.AAI`);
-      try {
-        const bytes = await this.readFile(p);
-        this.#appends[n] = parseAppendIndex(bytes);
-      } catch {
-        this.#appends[n] = null; // 无该扩展包
-      }
+  /**
+   * 扫描并装载扩展包（只做一次，惰性）。
+   *
+   * 与引擎逐条对齐：
+   *  - 扫的是**资源根**（引擎=`GetCurrentDirectoryA()`；两者都等于游戏安装目录），只认 `*.AAI`（大小写不敏感、
+   *    **不递归子目录** —— 引擎的搜索模式是 `<CWD>\*.AAI`）；
+   *  - 逐个 `parseAppendPack`：魔数门（S4AC/S4AI/S3AC/S3AI）+ 头 @264 的包号；
+   *  - 失败的包**只记一行日志、不抛**（引擎：`sprintf` + `sub_4034C0` 记录后释放对象，游戏照常启动）；
+   *  - 同包号覆盖（引擎直接赋值 ⇒ 后者覆盖、前者泄漏；我们保留后者并记一行日志）。
+   *
+   * 顺序：按文件名的确定性排序（引擎用 `FindFirstFile` 的目录顺序；包号才是语义，顺序只影响诊断信息）。
+   */
+  async #loadAppends(): Promise<void> {
+    if (this.#appendsLoaded) return;
+    this.#appendsLoaded = true;
+    let names: string[];
+    try {
+      names = (await fs.readdir(this.#root)).filter((n) => /\.aai$/i.test(n)).sort();
+    } catch (err) {
+      this.#log(`[append] 扫描 ${this.#root} 失败：${(err as Error).message}（按「没有扩展包」继续）`);
+      return;
     }
-    return this.#appends;
+    for (const name of names) {
+      let pack;
+      try {
+        pack = parseAppendPack(await this.readFile(path.join(this.#root, name)));
+      } catch (err) {
+        // 引擎：AAIファイルの読み込みに失敗しました． %s
+        this.#log(`[append] ${name} 装载失败（按未装载跳过）：${(err as Error).message}`);
+        continue;
+      }
+      if (pack.packNumber < 1 || pack.packNumber > MAX_APPEND_PACK) {
+        // 引擎会写 FileDB.packs[包号]（槽 0 无人读、槽 ≥256 越界写）⇒ 两种都等于"装了也访问不到"
+        this.#log(`[append] ${name} 包号 ${pack.packNumber} 不在 1..${MAX_APPEND_PACK}（引擎语义上不可达，跳过）`);
+        continue;
+      }
+      if (this.#packs.has(pack.packNumber)) {
+        this.#log(`[append] ${name} 包号 ${pack.packNumber} 重复 ⇒ 覆盖先装载的那个（引擎同行为）`);
+      }
+      this.#packs.set(pack.packNumber, pack.index);
+      this.#log(
+        `[append] ${name} -> pack#${pack.packNumber}（${pack.index.arcCount} 归档 ` +
+          `${pack.index.archives.join(',')} / ${pack.index.files.length} 文件）`,
+      );
+    }
+    this.#packNumbers = [...this.#packs.keys()].sort((a, b) => a - b);
+  }
+
+  /** 已装载的扩展包包号（升序）。 = 引擎 `FileDB.packs` 的非空槽，供 `0x143` 派发 `$n$AUTORUN`。 */
+  async appendPackNumbers(): Promise<number[]> {
+    await this.#loadAppends();
+    return [...this.#packNumbers];
   }
 
   /** 在资源根里按文件名找松散文件；找不到返回 null。 */
@@ -154,18 +210,24 @@ export class NodeFileSource implements FileSource {
     }
   }
 
-  /** 按统一文件 id（本体或 APPEND 包）解析出文件条目（含归档名 + offset/length），并带上其所属索引（决定用哪套归档）。 */
+  /**
+   * 按统一文件 id（本体或 APPEND 包）解析出文件条目（含归档名 + offset/length），并带上其所属索引（决定用哪套归档）。
+   *
+   * 与引擎 `sub_4559C0`（raw 67795-67886）逐条对齐：
+   *  - **判据是高字节是否为 0**（不是与 base 表长度比大小）：高字节 n ⇒ 包 n、低 24 位 = 包内编号；
+   *  - 包未装载 ⇒ **抛 `MissingAppendPackError`**（引擎抛可见异常，不是静默返回"没有"）；
+   *  - 包内编号越界 ⇒ null（引擎：「拡張ファイル %s を開くことが出来ません．」）。
+   */
   async resolveEntry(index: number): Promise<{ entry: Sys4FileEntry; archives: string[] } | null> {
     const base = await this.#loadBaseIndex();
-    const appends = await this.#loadAppends();
-    if (index < base.files.length) return { entry: base.files[index]!, archives: base.archives };
-    const apn = Math.floor(index / 0x1000000);
-    const pos = index - apn * 0x1000000;
-    const pack = appends[apn];
-    if (apn >= 1 && apn <= APPEND_COUNT && pack && pos < pack.files.length) {
-      return { entry: pack.files[pos]!, archives: pack.archives };
-    }
-    return null;
+    await this.#loadAppends();
+    if (index < 0) return null;
+    if ((index & 0xff000000) === 0) return base.files[index] ? { entry: base.files[index]!, archives: base.archives } : null;
+    const apn = (index >>> 24) & 0xff;
+    const pos = index & 0xffffff;
+    const pack = this.#packs.get(apn);
+    if (!pack) throw new MissingAppendPackError(apn, index);
+    return pos < pack.files.length ? { entry: pack.files[pos]!, archives: pack.archives } : null;
   }
 
   /** 按统一文件 id 读出原始字节（含文件名）。用于资源（如图像 AGF / 视频 MPG）读取。 */

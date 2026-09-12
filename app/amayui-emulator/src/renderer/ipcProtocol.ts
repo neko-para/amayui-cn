@@ -13,6 +13,11 @@ declare global {
     api: {
       readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
       readFile(path: string): Promise<number[]>;
+      /**
+       * **已装载的扩展包包号（升序）** —— 主进程扫资源根下的 `*.AAI`、按文件头 @264 的包号注册后的结果。
+       * 渲染侧的 `0x143`（`i143`）用它派发各包的 `$n$AUTORUN.BIN`；旧 preload 没有此通道时按「未装扩展包」降级。
+       */
+      appendPacks?(): Promise<number[]>;
       /** 读引擎配置 SYS4REG.INI 文本（overlay → 真游戏那份；都没有返回 null）。 */
       readConfigIni(): Promise<{ path: string; text: string; side: 'overlay' | 'base' } | null>;
       /**

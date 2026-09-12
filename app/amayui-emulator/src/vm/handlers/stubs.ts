@@ -147,7 +147,24 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0xad, op_engine_internal], // 数据
   [0xae, op_engine_internal], // 版本/存档：读 set:SaveVersion1/2 分支续档（sub_4192F0）
   [0xaf, op_engine_internal], // 数据
-  [0x143, op_engine_internal], // 脚本控制：扫 256 请求槽 → queueScript → dispatchQueuedScripts（见 docs）
+  // 0x143（i143）**已转真实现**：见 handlers/control.ts 的 op_dispatch_script_requests
+  //   —— 它派发已装载扩展包的 $n$AUTORUN（引擎遍历 FileDB.packs 槽 1..255），当 no-op 会让扩展包永不激活。
+  /**
+   * `0x1D6`/`0x1D7`/`0x1D8`（`sub_42E7C0` / `sub_42E800` / `sub_42E850`，raw 38727-38771）：
+   * **引擎数据管理器的方法调用** —— `op1 ← Engine[698900].vtable[+44|+60](op2[, op3])`（同族 0x1D6 走 `sub_48A140`）。
+   * `Engine[698900]` 那个对象在索引装载时被 `sub_48A0D0(obj, &toc)` 填过（raw 22144）、并和 FileDB 一起
+   * 交给 `sub_48DA90`（raw 14938）⇒ 是索引/名字数据的管理器；emulator 没有它的对应物。
+   *
+   * **为什么这里可以安全地当 no-op**（不是猜的，是按调用点核出来的）：全语料只出现 2 处，都在包 3 的
+   * `$3$AUTORUN.txt:67-68` —— `i1d7 (global-int 1396) 1`（结果写进 **scratch 全局 1396，随后被丢弃**，
+   * 该槽在 `$1$SC0330` 里正是被 i140/i228/i19e 反复覆写的临时槽）与
+   * `i1d8 (global-int 70801e) 1 30003b2`（结果写进 **70801e，全语料无任何读取方**）。
+   * ⇒ 不执行这两条不会改变任何**可观测**状态；但它**确实是未实现**（引擎会回写 op1），
+   * 故留在本表里受闸门 B 监督：控制窗会把它列进「能力缺口」。
+   */
+  [0x1d6, op_engine_internal], // 数据管理器方法调用（emulator 无管理器；全语料无调用点）
+  [0x1d7, op_engine_internal], // 数据管理器方法调用（$3$AUTORUN:67，结果入被丢弃的 scratch 槽）
+  [0x1d8, op_engine_internal], // 数据管理器方法调用（$3$AUTORUN:68，结果入无读取方的 global 70801e）
   // ============ 渲染 / 图形 / 图像 / 纹理 ============
   // ============ 数据 / 资源登记 ============
   // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============

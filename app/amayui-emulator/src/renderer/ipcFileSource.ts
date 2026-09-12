@@ -23,6 +23,17 @@ export class IpcFileSource implements FileSource {
   }
 
   /**
+   * 已装载的扩展包包号（主进程侧扫 `*.AAI` + 读文件头得到的）。
+   *
+   * ★缺失包号时的报错语义由**主进程**保证：`readScript` 走主进程的 `NodeFileSource.resolveEntry`，
+   * 包未装载会抛 `MissingAppendPackError`（消息即引擎原文），经 IPC 以 rejected promise 冒到渲染侧。
+   * 旧 preload 没有 `appendPacks` 时返回空数组 = 引擎「目录里没有 *.AAI」的静默行为。
+   */
+  async appendPackNumbers(): Promise<number[]> {
+    return (await window.api.appendPacks?.()) ?? [];
+  }
+
+  /**
    * 配置回写：整份 `SYS4REG.INI` 文本经 IPC 交主进程写盘（写到启动时**实际读到**的那份，
    * 见 `electron/ipc/files.ts` 的 `read-config-ini`）。
    *

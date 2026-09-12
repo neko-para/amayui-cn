@@ -19,7 +19,8 @@ import { parseIni } from '../../src/engineConfig.js';
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
 import { FONT_DIR, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
 
-const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR });
+// 主进程侧的资源读取；log 把「扩展包扫描/注册」等一次性诊断写进主进程日志（与 logSystemPaths 同风格）
+const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR, log: (m) => console.log(`[main] ${m}`) });
 
 /** 玩家数据的 overlay 层（`SYS4REG.INI` + `SAVE\SAVE.DAT`）。 */
 const systemFiles = new OverlayDir(SYSTEM_PATHS, { log: (m) => console.log(`[main] ${m}`) });
@@ -55,6 +56,10 @@ export function registerFileIpc(): void {
     const b = await fileSource.readFile(p);
     return Array.from(b);
   });
+
+  // 已装载的扩展包包号（升序）。渲染侧 0x143(i143) 用它派发各包的 $n$AUTORUN.BIN。
+  // 扫描+注册在 NodeFileSource 内完成（扫资源根 *.AAI、按文件头 @264 的包号），与引擎 sub_455750 同口径。
+  ipcMain.handle('append-packs', async () => await fileSource.appendPackNumbers());
 
   // 读引擎配置文件 SYS4REG.INI（启动时填充引擎字段用；见 src/engineConfig.ts）。
   // ★overlay 优先：有本工程写过的那份就用它，否则读真游戏那份（⇒ 继承玩家的显示/声音/文本设置）。

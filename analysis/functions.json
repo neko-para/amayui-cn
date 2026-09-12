@@ -2548,27 +2548,13 @@
     "semantic_name": "op_dispatch_script_requests_41A000",
     "op": "0x143",
     "status": "ANALYZED",
-    "purpose": "op i143：派发挂起脚本/事件请求（dispatchScriptRequests）。置 _this[124350]=1 防重入；遍历 256 个请求槽（_this+173106=DWORD下标→byte 692424），对每非零槽调用 sub_40FC90(_this, slot<<24) 排队；清 124350=0、帧状态槽 95805=0、帧ip+=4（1 dword）；sub_40FB60(_this) 派发已排队脚本。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "置派发重入标志 _this[124350]=1",
-      "遍历 256 请求槽(非零→sub_40FC90(slot<<24))",
-      "清重入标志/帧状态槽",
-      "帧ip+=4",
-      "sub_40FB60 派发排队脚本"
-    ],
-    "fields_used": [
-      "this->dispatch_in_progress(_this[124350]=byte 497400)",
-      "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"
-    ],
-    "unmodeled": [
-      "请求槽队列确切断面/成员",
-      "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"
-    ],
+    "purpose": "op i143：**派发扩展包的 $n$AUTORUN**（dispatchScriptRequests）。置 _this[124350]=1 防重入；遍历 **FileDB 扩展包表槽 1..255**（_this+173106 是 DWORD 下标 ⇒ 字节 692424 = FileDB(680092)+0x3028+4 = 槽 1）、对每个**非零槽**（= 该包已装载）调用 sub_40FC90(_this、slot<<24) 入队 —— slot<<24 正是该扩展包的第 0 个文件 = $slot$AUTORUN.BIN 的 id；随后清 124350=0、帧状态槽 95805=0、帧 ip+=4、sub_40FB60 派发首个排队脚本。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["置派发重入标志 _this[124350]=1", "遍历 256 请求槽(非零→sub_40FC90(slot<<24))", "清重入标志/帧状态槽", "帧ip+=4", "sub_40FB60 派发排队脚本"],
+    "fields_used": ["this->dispatch_in_progress(_this[124350]=byte 497400)", "this->request_queue(_this+173106=DWORD下标=byte 692424,256槽)"],
+    "unmodeled": ["请求槽队列确切断面/成员", "sub_40FC90(sub_40FC90=queueScript)/sub_40FB60(dispatchQueuedScripts) 体"],
     "evidence": "raw 25168-25191 (sub_41A000)",
-    "notes": "★语义澄清（消耗侧）：i143 是「派发消耗/触发侧」，非生产侧。先置 dispatch_in_progress(_this[124350])=1 → 扫请求寄存器(0xA90C8)非零槽逐条 queueScript(sub_40FC90)（因置位故只入 dispatch_queue@0x796DC，不立即派发）→ 清标志、帧ip+=4 → dispatchQueuedScripts(sub_40FB60) 一次只派发一条（正请求 cur=37 预占帧装载、负请求 cur=-v2 恢复）。其余任务经「-10 哨兵链」(exit 0x2 的 call_ret=-10 在 sub_41A820 里恢复 cur/ef 并 read<write 时再 sub_40FB60) 逐条顺次派发——不是一次把全部装入帧37。i143 不清寄存器槽(只读)，重跑且槽仍置位会重复入队；生产侧写入方尚未定位。"
+    "notes": "★这张表不是通用事件队列、而是 sub_455750 装载 *.AAI 时填的**扩展包表**（同一张表亦由 sub_476730 查询「第 n 包装了吗」）。证据链：脚本侧唯一调用点 = INIT2.txt:140 的 i143（紧跟 40 个本体 INIT 调用之后）；扩展包的 $n$AUTORUN 只能由本路径到达（全语料无任何 call-script 立即数落在 0x1xxxxxx..0x5xxxxxx）；$1$AUTORUN.txt:66 的 bit-set (global-int 7087f5) 1 就是「包已安装」掩码（SAVE.txt:885-888 拿它比对存档记录的安装状态）。包不在 ⇒ 槽为 NULL ⇒ 静默跳过、无任何日志。"
   },
   {
     "addr": "0x42F7A0",
@@ -5090,6 +5076,169 @@
     "sub_behaviors": ["+24/+28/+32 pivot = 0（⇒ 未设 pivot 的缩放项绕屏幕原点）", "+36/+40/+44 描画位置 = 0", "+8 源矩形 SetRect(0,0,0,0)", "五窗 delay/dur/work/target 初始化（缩放 1、旋转 0、平移 0）"],
     "evidence": "raw 116878-117000",
     "notes": "★pivot 默认 0（不是描画位置）⇒ 渲染侧若把位置写成 pos 而不是 pivot，未设 pivot 的缩放项会算错；修法见 docs-new/03-engine/rendering.md §4.5 与 src/renderer/drawitem/eval.ts 的 itemRenderPlacement。emulator：src/renderer/drawitem/model.ts 的 makeItem/makeDefaultItem。"
+  },
+  {
+    "addr": "0x455750",
+    "raw_name": "sub_455750",
+    "semantic_name": "appendDiscoverAndLoad_455750",
+    "status": "ANALYZED",
+    "purpose": "扩展包发现与注册：在当前工作目录（GetCurrentDirectoryA）用 FindFirstFileA 枚举所有 *.AAI（跳过目录），每个建成一个 AAIFileDB，并**按 AAI 头 @264 的包号**存进 FileDB.packs[包号]（槽 1..255，槽 0 不用）；返回成功装载的包数。★唯一调用点 = 索引装载函数 sub_414AC0 的末尾（raw 22340）⇒ 启动装载 SYS4INI 后立刻扫一次，此后不再重扫。",
+    "sub_behaviors": ["GetCurrentDirectoryA(0x100) → 末尾非反斜杠则补上 → 搜索模式 <CWD>\\*.AAI", "跳过 dwFileAttributes & 0x10（目录）；命中文件名先 _strupr_s 转大写再拼全路径", "new(0x124) + sub_401080 构造 AAIFileDB，再 sub_401100(obj, 全路径, 索引头+8) 装载", "成功 ⇒ ++count 且 FileDB[obj[69] + 3082] = obj（obj 的 dword[69] = 字节 +0x114 = 头部 @264 = 包号）", "失败 ⇒ sprintf 「AAIファイルの読み込みに失敗しました． %s」→ sub_4034C0 记录 → 虚析构释放对象，槽保持 NULL", "FindClose"],
+    "fields_used": ["FileDB/0x3028 packs[256]", "AAIFileDB/0x114 pack_number", "Engine+698912（SYS4INI 头 +8 版本串，透传给 sub_401100）"],
+    "evidence": "raw 67721-67783；唯一调用点 raw 22340（sub_414AC0 末尾，紧随 TOC 解析与内存池构建之后）",
+    "notes": "★引擎**不硬编码 APPEND01..05**：目录里放什么 .AAI 就装什么，包号取自文件头而不是文件名。同一包号装载两次 ⇒ 后装者覆盖槽位、前一个对象泄漏（无查重、无日志）。工作目录由 WinMain 的 -sp/-path 设定（raw 142025 / 142040）⇒ 实际就是游戏安装目录；搜索模式是 <CWD>\\*.AAI，故子目录里的 .AAI 不会被发现。"
+  },
+  {
+    "addr": "0x414AC0",
+    "raw_name": "sub_414AC0",
+    "semantic_name": "loadArchiveIndex_414AC0",
+    "status": "PARTIAL",
+    "purpose": "装载归档索引（SYS4INI.BIN / SYS3INI.BIN）：读 300 字节头 → 魔数门（S3IN/S4IN 体直读；S3IC/S4IC 体为 12B 头 + LZSS）→ sub_454D30 建归档/文件表 → 用头部 @276..296 建内存池 → ★末尾 sub_455750 扫描并注册扩展包（*.AAI）。",
+    "sub_behaviors": ["CreateFileA + ReadFile 0x12C=300 字节头到 Engine+698904", "魔数门：S3IN/S4IN（体直读）或 S3IC/S4IC（LZSS 体）；都不是 ⇒ 报错并 sub_4034E0 退出", "版本门：头 @4..6 三字节与 Engine+382688..382690 逐字节比较，小于 ⇒ 「初期化ファイルのバージョンが古すぎます．バージョン %s 以上のコンパイラを使用してください．」", "S3IC/S4IC ⇒ 读 12B {inLen, outLen, cSize} + cSize 字节 → sub_436A80 LZSS 解压；S3IN/S4IN ⇒ 头之后的全部字节直读", "sub_454D30(Engine+680092 = FileDB, &tocPtr, 头+4) 解析 TOC", "头 @276..296 的 6 个 dword 复制到 Engine+382952..382972（memflip 池尺寸）", "按 set:EnableMemFlip 建两套池（VirtualAlloc + VirtualLock + memset）", "☆末尾 sub_455750(FileDB, 头+8)：扫 CWD 下 *.AAI 注册扩展包（头+8 = 版本串，作为扩展包的版本一致性凭据）"],
+    "fields_used": ["Engine+680092（FileDB）", "Engine+698904（索引头副本 300B）", "Engine+382688（引擎版本串前三字节）", "Engine+382952..382972（memflip 池尺寸）"],
+    "unmodeled": ["Engine+382688 的写入方（sub_4B8E20 读 exe 自身的 FileVersion 资源，raw 141695-141700 ⇒ 版本门的期望值来自 exe 版本，不是配置文件）", "raw 22271-22338 的池指针布局（Engine+382976..383024）", "raw 22156 的 sub_405730（索引内名字表分派，未读体）"],
+    "evidence": "raw 21931-22342；调用点 WinMain raw 142046（先试 SYS4INI.BIN 再试 SYS3INI.BIN，都失败则 MessageBox 退出）",
+    "notes": "★这就是「扩展包从哪来」的答案：不在别处，就在本函数最后一行。索引头字段口径（字节偏移，基址 Engine+698904）：0=魔数、4=版本(3B)、8=版本串、264=屏宽(640)、268=屏高(480)、276..296=池尺寸。"
+  },
+  {
+    "addr": "0x454D30",
+    "raw_name": "sub_454D30",
+    "semantic_name": "fileDbParseToc_454D30",
+    "status": "PARTIAL",
+    "purpose": "FileDB::parseTOC：把已解开的 TOC 缓冲建成归档表（256B 路径 × arcCount）与文件表（80B/项 = name[64] + archiveIndex + fileIndex + offset + length）；初始化时把每项 offset 置 -1（= 本项没有归档副本、只能松散读），再按 fileCount 建两张 4 字节缓存表（VirtualAlloc + VirtualLock）。",
+    "sub_behaviors": ["arcCount = *p；GlobalAlloc(64, arcCount << 8) 存 256B/条归档路径；memcpy 后指针跳过 64*arcCount", "fileCount = *p；GlobalAlloc(64, 80*fileCount)；先线性把每项 +72(offset) 置 -1", "逐项 memcpy 0x50 = 80 字节到文件表；*a2 更新为下一段起点", "为 fileCount 建两张 4*count 的 VirtualAlloc(0x3000) + VirtualLock 缓存（+1048 与 +13364，各带一个 rand()%0x10000 的头部偏移）", "旧布局分支：索引头 @4 == 0x30 且 @5 < 0x32 时按 24B/项读（名字仅 16B、archiveIndex 固定 0）"],
+    "fields_used": ["FileDB/0x408 arc_count", "FileDB/0x40C file_count", "FileDB/0x410 archive_paths（256B/条）", "FileDB/0x414 files（80B/条）", "FileDB/0x418 / FileDB/0x3434（两张 4*fileCount 缓存）"],
+    "unmodeled": ["两张 4*count 缓存（+1048/+1052 与 +13364/+13368）的确切用途未追到使用者", "旧布局分支（24B/项）只在 S3 时代索引里出现，未以真数据验证"],
+    "evidence": "raw 67248-67373",
+    "notes": "同一段表结构在 AAIFileDB 里由 sub_401100 又实现了一遍（扩展包 = 单归档的小型 TOC），故 FileDB 与 AAIFileDB 的表布局一致（arcCount / 256B 路径 / fileCount / 80B 项）——阅读时可直接互相套用。"
+  },
+  {
+    "addr": "0x401100",
+    "raw_name": "sub_401100",
+    "semantic_name": "aaiFileDbOpen_401100",
+    "status": "PARTIAL",
+    "purpose": "AAIFileDB::open：读 268 字节头 → 魔数门（S3AI/S4AI 体直读；S3AC/S4AC 体为 12B 头 + LZSS）→ **头 @8 的版本串必须与索引文件（SYS4INI）头 @8 逐字符 strcmp 相等** → 解 TOC：arcCount → 256B 归档路径 → fileCount → 80B 文件项。头整段留在对象 +12，因此包号（头 @264）就落在对象 dword[69]。",
+    "sub_behaviors": ["sub_454700/sub_454730 打开文件；sub_454800 读 0x10C = 268 字节头到对象 +12", "魔数门：1229009747/1229010003（S3AI/S4AI，体直读）或 1128346451/1128346707（S3AC/S4AC，体为 LZSS）", "strcmp(头@8 = 对象+20, a3 = 调用方给的版本串)：不等 ⇒ 整函数返回 0（装载失败）", "LZSS 变体：读 12B {inLen, outLen, cSize} + cSize 字节 → sub_436A80 解压；直读变体：FileSize-268 字节整体读出", "解出的 TOC：arcCount → GlobalAlloc(64, arcCount<<8) 存 256B 路径；fileCount → GlobalAlloc(64, 80*fileCount)；每项 offset 先置 -1；再 80B/项拷贝", "★包号不是参数、也不是文件名推出来的：它就是头 @264，落在对象 +276 = dword[69]（调用方 sub_455750 直接读它当槽号）"],
+    "fields_used": ["AAIFileDB/0x004 arc_count", "AAIFileDB/0x008 file_count", "AAIFileDB/0x00C header（268B 原样副本）", "AAIFileDB/0x114 pack_number（= 头 @264）", "AAIFileDB/0x118 archive_paths（256B/条）", "AAIFileDB/0x11C files（80B/条）"],
+    "unmodeled": ["raw 7954-7955 的 for 循环 memcpy（反编译形态可疑：疑似一次整体拷贝，未逐字节核对）", "sub_4364E0/sub_436A80（LZSS 解码器对象）未读体"],
+    "evidence": "raw 7850-7962；实测 install/APPEND01..05.AAI：魔数 S4AC、@4 = 450、@8 = 天結いキャッスルマイスタ（与 SYS4INI.BIN @8 完全相同）、@264 = 1..5",
+    "notes": "实测 5 个官方包都是 S4AC（LZSS 体，区段起点 268：{54504,54504,14171}，且 12+cSize 恰好 = 文件长-268）。魔数门证明引擎也吃 S3AI/S4AI（体直读、**没有** 12 字节区段头）⇒ 只按 LZSS 解会把它读错。版本串相等是硬条件：改了索引头的标题而不改扩展包，5 个包会全部装载失败（报 AAIファイルの読み込みに失敗しました）。"
+  },
+  {
+    "addr": "0x401410",
+    "raw_name": "sub_401410",
+    "semantic_name": "aaiFileDbOpenFile_401410",
+    "status": "ANALYZED",
+    "purpose": "AAIFileDB::openFile(idx, &size)：把包内文件编号换成打开的句柄与长度 —— 先按**文件项自带的 64 字节名字**在 CWD 找松散文件（找到即用、长度取 GetFileSize），否则打开本包自己的归档路径（+ 项 @72 的 offset，长度取项 @76）；项 @72 == -1 或 arcCount == 0 ⇒ 返回 -1。",
+    "sub_behaviors": ["idx 越界（>= file_count 或 < 0）⇒ 返回 -1", "CreateFileA(file_table + 80*idx) —— 项的前 64 字节就是文件名 ⇒ 这就是「松散文件优先」的实现", "松散失败 ⇒ 项 @72 == -1（无归档副本）或 arcCount == 0 ⇒ -1", "否则 CreateFileA(archive_paths + 256 * 项@64)、SetFilePointer(项@72)、*a4 = 项@76，返回句柄", "松散成功 ⇒ *a4 = GetFileSize(句柄)"],
+    "fields_used": ["AAIFileDB/0x008 file_count", "AAIFileDB/0x118 archive_paths", "AAIFileDB/0x11C files", "AAIFileDB/0x140 file.offset", "AAIFileDB/0x144 file.length"],
+    "evidence": "raw 7967-8004",
+    "notes": "与本体 FileDB 的同名路径 sub_4559C0 的 else 分支逐行同构 ⇒ 扩展包文件同样遵守「松散同名文件覆盖归档内容」，而松散文件是按 CWD（= 安装目录）找的。"
+  },
+  {
+    "addr": "0x401500",
+    "raw_name": "sub_401500",
+    "semantic_name": "aaiFileDbName_401500",
+    "status": "ANALYZED",
+    "purpose": "AAIFileDB::name(idx)：返回包内第 idx 个文件项的 64 字节名字（文件表 + 80*idx）；越界返回全局字符串 aError（「Error」）。",
+    "sub_behaviors": ["idx >= file_count 或 < 0 ⇒ 返回 aError", "否则返回 file_table + 80*idx 的地址（前 64 字节即名字）"],
+    "fields_used": ["AAIFileDB/0x008 file_count", "AAIFileDB/0x11C files"],
+    "evidence": "raw 8006-8013；调用点 sub_455000（按名查 id，raw 67424）与 sub_4559C0（报错信息，raw 67828）",
+    "notes": "返回的是项首地址而不是单独的字符串 —— 与本体 FileDB 的 sub_454FA0 同构（后者对扩展包分支转调本函数）。"
+  },
+  {
+    "addr": "0x401080",
+    "raw_name": "sub_401080",
+    "semantic_name": "aaiFileDbCtor_401080",
+    "status": "ANALYZED",
+    "purpose": "AAIFileDB 构造函数：装 vftable(off_51D6B8)，把对象 +12 起的 0x10C = 268 字节头副本区清零，并把 dword[1]/[2]（arcCount / fileCount）、[70]/[71]（归档路径表 / 文件表）、[72] 置 0。",
+    "sub_behaviors": ["*_this = &off_51D6B8；memset(_this + 3, 0, 0x10C)", "_this[1] = _this[2] = _this[70] = _this[71] = _this[72] = 0"],
+    "fields_used": ["AAIFileDB/0x000 vftable", "AAIFileDB/0x00C header", "AAIFileDB/0x118 archive_paths", "AAIFileDB/0x11C files"],
+    "evidence": "raw 7815-7825；析构 sub_401530 / 释放缓存 sub_4010C0（raw 7829-7847）",
+    "notes": "对象大小 0x124 = 292 字节（raw 67760 的 operator new(0x124)）；头副本区正好覆盖到 +276..+279（= dword[69] = 包号），所以包号不需要单独字段。"
+  },
+  {
+    "addr": "0x4559C0",
+    "raw_name": "sub_4559C0",
+    "semantic_name": "fileDbOpenById_4559C0",
+    "status": "ANALYZED",
+    "purpose": "FileDB::openById(文件 id, &size)：统一 id 空间的总入口 —— 高字节非 0 ⇒ 扩展包分支（id>>24 = 包号、低 24 位 = 包内编号，走 FileDB.packs[包号] 的 AAIFileDB）；高字节为 0 ⇒ 本体分支（id < file_count，先松散文件名、再 DATA*.ALF 的 offset/length 切片）。返回句柄槽号（0..255），失败一律抛 Command_ShowMessage 异常（可见报错框，不是静默失败）。",
+    "sub_behaviors": ["扩展包分支：v5 = FileDB.packs[(id >> 24) + 3082]；为 NULL ⇒ 抛「拡張ファイル情報ファイル %d は読み込まれていません．」（异常码 65543）", "扩展包分支：sub_401410(包, 句柄参数, id & 0xFFFFFF, &size)；返回 -1 ⇒ sub_401500 取名字后抛「拡張ファイル %s を開くことが出来ません．%d」", "本体分支：id >= file_count 或 < 0 ⇒ 抛「ファイル番号 %d は不正な値です．」", "本体分支：CreateFileA(文件表项) 找松散文件；失败则项 @72 == -1 或 arcCount == 0 报错，否则打开 archive_paths + 256*项@64、SetFilePointer(项@72)、size = 项@76", "两条分支最后都 sub_454960 + sub_455420 把句柄登记进 256 槽句柄表（轮转找空槽；全满 ⇒ 抛「…ファイルIDを取得出来ません．」）；扩展包分支登记时传的文件 id 参数是 0"],
+    "fields_used": ["FileDB/0x40C file_count", "FileDB/0x410 archive_paths", "FileDB/0x414 files", "FileDB/0x3028 packs[256]", "FileDB/0x424 handle_slots[256]", "FileDB/0x2C24 handle_cursor"],
+    "evidence": "raw 67795-67886；句柄表登记 raw 67600-67632",
+    "notes": "★id 空间判定用的是**高字节是否非 0**（不是与 file_count 比较）：pack<<24 | idx，pack ∈ 1..255。缺包是**可见报错**（异常弹框），不是静默 —— 与 0x143 的静默跳过形成对照：引擎在「激活阶段」静默（包不在就当作没装），在「访问阶段」才炸。"
+  },
+  {
+    "addr": "0x455000",
+    "raw_name": "sub_455000",
+    "semantic_name": "fileDbNameToId_455000",
+    "status": "ANALYZED",
+    "purpose": "FileDB::nameToId(名字)：把文件名换成统一 id —— **先在本体表里 _stricmp 全表扫描**（命中 ⇒ 返回本体 id），本体找不到再依次扫扩展包槽 1..255（每个包内再线性扫其文件表，命中 ⇒ 返回 pack<<24 | 包内编号）；全都找不到返回 -1。",
+    "sub_behaviors": ["本体表：for (i = 0; i < file_count; ++i) _stricmp(文件表项, 名字) == 0 ⇒ 返回 i", "扩展包：v10 = 1，i 遍历 FileDB.packs+1（= 槽 1..255，v10 到 256 停）；槽非空且其 file_count > 0 才进入内层扫描", "内层：sub_401500(包, j) 取第 j 项名字，_stricmp 命中 ⇒ 返回 j + (v10 << 24)", "都没命中 ⇒ -1"],
+    "fields_used": ["FileDB/0x40C file_count", "FileDB/0x414 files", "FileDB/0x3028 packs[256]", "AAIFileDB/0x008 file_count", "AAIFileDB/0x11C files"],
+    "evidence": "raw 67394-67443；引擎内调用点 raw 19469 / 19562 / 19690 / 19916（sub_410160 数据装载，参数都是常量 CALLBACK_LOAD.BIN）",
+    "notes": "★比较的是**完整名字**，扩展包文件的名字带 $n$ 前缀（如 $1$ITINIT.BIN）⇒ 用普通名（ITINIT.BIN）按名查**永远不会**落到扩展包里；本体的同名文件因为先被扫到也总是赢。引擎自己只用固定名调用它（CALLBACK_LOAD.BIN / CALLBACK_TEXT.BIN / CALLBACK_SETTING.BIN / CALLBACK_LOST.BIN / CALLBACK_WINDOW.BIN），所以扩展包内容实际只通过数值 id（call-script 立即数、数据表里的 id）到达。"
+  },
+  {
+    "addr": "0x476730",
+    "raw_name": "sub_476730",
+    "semantic_name": "isAppendPackInstalled_476730",
+    "status": "ANALYZED",
+    "purpose": "「第 n 个扩展包装了吗」：读 Engine+692420+4*pack（= FileDB.packs[pack] 槽）是否为非 0 指针。__stdcall，单参数，C 内**无调用者**（未在 .c 里被 call）⇒ 预期是导出/vtable/外部模块（AGERC）或脚本系统侧的查询入口。",
+    "sub_behaviors": ["return Engine[0xA90C4 / 4 + pack] != 0；0xA90C4 = 692420 = FileDB(680092) + 0x3028 + 4，即 packs 表的第 1 个槽（pack=1）"],
+    "fields_used": ["FileDB/0x3028 packs[256]"],
+    "evidence": "raw 91162-91166；同表在 sub_41A000(0x143) 里以 Engine+173106 为起点被遍历",
+    "notes": "与 0x143（i143）读的是**同一张表**：引擎把「装了哪些扩展包」只存在这一个地方（AAIFileDB 指针数组），脚本侧的 global 7087f5 掩码是脚本自己按 $n$AUTORUN 置的镜像。"
+  },
+  {
+    "addr": "0x454FA0",
+    "raw_name": "sub_454FA0",
+    "semantic_name": "fileDbIdToName_454FA0",
+    "status": "ANALYZED",
+    "purpose": "FileDB::idToName(id)：统一 id → 名字字符串。高字节非 0 ⇒ 走 FileDB.packs[id>>24] 的 AAIFileDB，再 sub_401500(包, 低 24 位)；否则本体文件表 + 80*id（需 id < file_count）；查不到返回 aError。",
+    "sub_behaviors": ["(id & 0xFF000000) != 0 ⇒ 包 = packs[(id>>24) + 3082]，包空 ⇒ 落到 aError，否则 sub_401500(包, id & 0xFFFFFF)", "否则 id < file_count 且 >= 0 ⇒ 文件表 + 80*id", "都不满足 ⇒ aError"],
+    "fields_used": ["FileDB/0x40C file_count", "FileDB/0x414 files", "FileDB/0x3028 packs[256]"],
+    "evidence": "raw 67376-67391；调用点示例 raw 31191 起（0x14B 运行时 DLL 加载用字符串表下标取库名）",
+    "notes": "idToName 是 nameToId（sub_455000）的逆；两者对扩展包的处理不对称：nameToId **先扫本体**，故本体同名文件永远压过扩展包。"
+  },
+  {
+    "addr": "0x42E7C0",
+    "raw_name": "sub_42E7C0",
+    "semantic_name": "op_data_manager_query_42E7C0",
+    "op": "0x1D6",
+    "status": "PARTIAL",
+    "purpose": "数据管理器查询：`op1 ← sub_48A140(Engine[698900], op2)`（帧状态槽置 3）。同族 0x1D7/0x1D8 是把同一对象的方法换成 vtable 直调。",
+    "sub_behaviors": ["帧状态槽 `_this + 120*cur + 383220` = 3", "op2 经 readIntOperand 取值 → sub_48A140(管理器, 值)", "结果写回 op1（sub_42B4B0）"],
+    "fields_used": ["Engine+698900（索引/名字数据管理器指针）", "Engine+383220（帧状态槽）"],
+    "unmodeled": ["Engine+698900 那个对象的类与 vtable", "sub_48A140 / sub_48A0D0 / sub_48DA90 未读体"],
+    "evidence": "raw 38727-38742",
+    "notes": "全语料**没有**调用点（`i1d6` 在 src/*.txt 里 0 处）⇒ 只登记语义，emulator 侧按 no-op 插桩。"
+  },
+  {
+    "addr": "0x42E800",
+    "raw_name": "sub_42E800",
+    "semantic_name": "op_data_manager_method1_42E800",
+    "op": "0x1D7",
+    "status": "PARTIAL",
+    "purpose": "数据管理器方法调用（vtable 偏移 44）：`op1 ← (*(Engine[698900]->vtable + 44))(管理器, op2)`（帧状态槽置 5）。",
+    "sub_behaviors": ["帧状态槽 = 5", "v2 = **(管理器) = 它的 vtable；v3 = readIntOperand(op2)", "v4 = (*(v2 + 44))(管理器, v3)；结果写回 op1"],
+    "fields_used": ["Engine+698900（管理器指针）", "Engine+383220（帧状态槽）"],
+    "unmodeled": ["管理器对象的类与 vtable[+44] 的语义", "该管理器在索引装载时的装配（sub_48A0D0 raw 22144 / sub_48DA90 raw 14938）"],
+    "evidence": "raw 38744-38755",
+    "notes": "★唯一调用点 `$3$AUTORUN.txt:67 i1d7 (global-int 1396) 1`：结果写进 global 1396 —— 那是被 i140/i228/i19e 反复覆写的 **scratch 槽**（见 $1$SC0330 大量用例）⇒ 本调用的返回值在脚本层被立即丢弃，故 emulator 现按 no-op 处理（列在闸门 B 缺口里）。"
+  },
+  {
+    "addr": "0x42E850",
+    "raw_name": "sub_42E850",
+    "semantic_name": "op_data_manager_method2_42E850",
+    "op": "0x1D8",
+    "status": "PARTIAL",
+    "purpose": "数据管理器方法调用（vtable 偏移 60，两参）：`op1 ← (*(管理器->vtable + 60))(管理器, op2, op3)`（帧状态槽置 7）。",
+    "sub_behaviors": ["帧状态槽 = 7", "v6 = readIntOperand(op3)、v3 = readIntOperand(op2)（注意取值顺序：先 3 后 2）", "v4 = (*(vtable + 60))(管理器, v3, v6)；结果写回 op1"],
+    "fields_used": ["Engine+698900（管理器指针）", "Engine+383220（帧状态槽）"],
+    "unmodeled": ["vtable[+60] 的语义（看形态像『按 key 注册/登记一项』）"],
+    "evidence": "raw 38757-38771",
+    "notes": "★唯一调用点 `$3$AUTORUN.txt:68 i1d8 (global-int 70801e) 1 30003b2`（op3 = 包 3 的某个脚本 id）：结果写进 **global 70801e，全语料无任何读取方** ⇒ emulator 现按 no-op，不改变可观测状态（列入闸门 B 缺口）。"
   }
 
 ]

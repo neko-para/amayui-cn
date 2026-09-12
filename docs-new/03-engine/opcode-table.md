@@ -243,7 +243,7 @@
 | 0x140 | 4 |  | sub_42FBC0 | 仅映射 |  |
 | 0x141 | 1 |  | sub_4228C0 | 已核对 | **SetMesWinAlpha**：op1 > 0x10 时报错（`aGetmeswina`），否则 `SetConfig("message:MesWinAlpha", op1)`（直写配置注册表，**不进持久字段**）；handler=sub_4228C0（raw .c 30998-31016） |
 | 0x142 | 1 |  | sub_422930 | 已核对 | **脚本写引擎运行开关**：`_this[174812] = readIntOperand(op1)`（字段=字节 `0xAAB70`）。构造 `sub_415640`(raw 22591)/复位 `sub_40DF10`(raw 17961) 都置 **1**；唯一读者是导出查询 `sub_4765C0(){ return _this[699248]!=0; }`(raw 91057，引擎内零调用)。脚本：`CONFIG.txt:40 i142 0` 进设置页挂起、`:354 i142 1` 离开恢复。handler=sub_422930（raw 31020） |
-| 0x143 | 0 |  | sub_41A000 | 已核对 | **派发挂起脚本/事件请求**（dispatchScriptRequests）：置 `_this[124350]=1`，遍历 `_this+173106` 队列对每非零槽 `queueScript_40FC90(slot<<24)` 排队，`dispatchQueuedScripts_40FB60()` 派发；置 `_this[124350]=0`、`_this[30*cur+95805]=0`、`frames[cur].ip+=4`。handler=sub_41A000（raw .c 24928） |
+| 0x143 | 0 |  | sub_41A000 | 已核对 | **派发扩展包的 `$n$AUTORUN`**（dispatchScriptRequests）：置 `_this[124350]=1` 防重入 → 遍历 **FileDB 扩展包表槽 1..255**（`_this+173106` = DWORD 下标 ⇒ 字节 692424 = FileDB(680092)+0x3028+4 = 槽 1）→ 对每个**非零槽**（该包已装载）`queueScript_40FC90(slot<<24)` 入队（`slot<<24` = 该包文件 #0 = `$slot$AUTORUN.BIN` 的统一 id）→ 置 `_this[124350]=0`、`_this[30*cur+95805]=0`、`frames[cur].ip+=4` → `dispatchQueuedScripts_40FB60()` 派发。唯一脚本调用点 = `INIT2.txt:140`（在本体 40 张 INIT 之后）。包未装载 ⇒ 槽为 NULL ⇒ **静默跳过**。handler=sub_41A000（raw 25168-25191） |
 | 0x144 | 2 |  | sub_433AB0 | 仅映射 |  |
 | 0x145 | 1 |  | sub_42FCF0 | 仅映射 |  |
 | 0x146 | 1 |  | sub_422960 | 仅映射 |  |
@@ -324,9 +324,9 @@
 | 0x1D3 | 5 |  | sub_42D4A0 | 已核对 | **文本项记录查询（写回两个操作数）**：`sub_457960(Font, &v7, op3, op4, op5)`：从下标 op4 起扫 `flags & 0x20000000 && +24 == op5` 的记录取 `+20`，遇组首（下一记录 flags bit0）即停 ⇒ **写 op1 = 找到?1:0、op2 = 值**；op3 被调用方忽略；handler=sub_42D4A0（raw .c 38096-38113） |
 | 0x1D4 | 4 |  | sub_42D510 | 已核对 | **文本项记录查询**：`sub_457A20(Font, &v7, &v6, &v5, op3, op4, 0)`：从 op4 起扫 `flags & 0x40000000 && +32 == 0`，输出 `+20/+24/+28` ⇒ **写 op1 / op2**（未找到 -1 / -1）；op3 被忽略；handler=sub_42D510（raw .c 38125-38149） |
 | 0x1D5 | 0 |  | sub_419880 | 仅映射 |  |
-| 0x1D6 | 2 |  | sub_42E7C0 | 仅映射 |  |
-| 0x1D7 | 2 |  | sub_42E800 | 仅映射 |  |
-| 0x1D8 | 3 |  | sub_42E850 | 仅映射 |  |
+| 0x1D6 | 2 |  | sub_42E7C0 | 已核对 | **数据管理器查询**：`op1 ← sub_48A140(Engine[698900], op2)`（帧状态槽=3）。`Engine[698900]` 是索引/名字数据管理器（装载时被 `sub_48A0D0` 填充 raw 22144、并交给 `sub_48DA90` raw 14938）。**全语料无调用点**。handler=sub_42E7C0（raw 38727-38742） |
+| 0x1D7 | 2 |  | sub_42E800 | 已核对 | **数据管理器方法调用**（vtable +44）：`op1 ← (*(管理器->vtable+44))(管理器, op2)`（帧状态槽=5）。★唯一调用点 `$3$AUTORUN.txt:67 i1d7 (global-int 1396) 1` —— 结果写进 scratch 槽、随即被丢弃 ⇒ emulator 按 no-op（列在闸门 B）。handler=sub_42E800（raw 38744-38755） |
+| 0x1D8 | 3 |  | sub_42E850 | 已核对 | **数据管理器方法调用**（vtable +60，两参）：`op1 ← (*(管理器->vtable+60))(管理器, op2, op3)`（帧状态槽=7；取值顺序先 op3 后 op2）。★唯一调用点 `$3$AUTORUN.txt:68 i1d8 (global-int 70801e) 1 30003b2` —— 结果写进**无人读取**的 global 70801e ⇒ emulator 按 no-op（列在闸门 B）。handler=sub_42E850（raw 38757-38771） |
 | 0x1D9 | 2 |  | sub_4213F0 | 仅映射 |  |
 | 0x1F4 | 0 |  | sub_41A090 | 已核对 | **进入"停靠(dock)"锁**：`_this[107438]`(字节 429752)=停靠标志、`_this[107439]`(429756)=**深度 LockDepth**（引擎 debug 打印 "LockDepth" 自证，raw 43619）。首次进入才采样时钟（`92334=92333`、`92333=timeGetTime()`），此后只 `++深度`。**不阻塞、无 Sleep**；脚本 66510 处 i1f4 = 每帧轮询点。handler=sub_41A090（raw 25194） |
 | 0x1F5 | 0 |  | sub_41A0E0 | 已核对 | **退出"停靠"锁**：`v1=_this[429756]`(LockDepth) >0 则 `--深度`；否则若 `_this[429752]` 置位 → 清标志，且 `_this[497400]`(==124350 dispatch_in_progress) 为 0 时 `sub_40FB60` 派发脚本队列（停靠期间只积累、解锁瞬间放行）。**不阻塞、无 Sleep**。handler=sub_41A0E0（raw 25214） |

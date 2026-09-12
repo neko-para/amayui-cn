@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 94,
-    "modeled-verified": 16,
+    "total": 95,
+    "modeled-verified": 17,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2661,6 +2661,39 @@
         "evidence": "E3",
         "guard": "test/save-data.test.ts",
         "note": "实现：src/vm/saveData.ts（头 + 20 字节块 + 表结构；两种 CRC 按引擎 sub_436D50/sub_436D00 逐字实现）+ src/vm/crc32.ts + src/vm/lzss.ts（AGE LZSS）+ Engine.onSaveDataChanged → FileSource.writeSaveData。**玩家数据落在 overlay 层**（src/arch/systemPaths.ts + src/arch/overlay.ts）：base = 真游戏的系统存档目录（%LOCALAPPDATA%\\Eushully\\天結いキャッスルマイスター，含 SYS4REG.INI 与 SAVE\\ 下几十个存档槽），overlay = 同级的 ….overlay\\，**读 overlay → base、写只写 overlay** ⇒ 既能继承玩家真存档（引擎加密格式也能读：Crypt 解密 + format≥2 LZSS），又**永不覆盖真存档**（不再需要 <SAVE.DAT>.amayui 那套后缀规避）；Electron 主进程与 Node 侧共用同一份 overlay 实现。E3 两条分支都在真语料上验证：有存档 ⇒ LOADCONFIG（值恢复）；无存档 ⇒ INITCONFIG（默认值 + global 5 = 1 登记）；E4 用真存档（format=3）验证解码。★引擎载荷的字符串记录区从 strCount 之后 **8** 字节起（中间 4 字节 = trailerDwords = 记录区字节数/4 + 1，sub_438940 raw 45564-45566）：曾经只跳 4 字节 ⇒ 第 1 条读成乱码、**最后一条静默丢失**（真存档里正是字体键 bbf ⇒ CONFIG 第 3 行回退默认字体）；现已按引擎布局读并用记录区长度自校验（不符即如实报错）。★未做：int 块的逐元素模幂混淆（sub_499650，配置值不在那里）、存档槽 SAVEnn.DAT / RT.DAT（overlay 已就位，接上即可）。"
+      }
+    },
+    {
+      "id": "append-pack-discovery-and-activation",
+      "subsystem": "资源",
+      "name": "扩展包（APPENDnn.AAI / APPENDnn.ALF）的发现、注册与激活",
+      "trigger": "发现/注册：装载索引（sub_414AC0）末尾扫一次 `<CWD>\\*.AAI`（sub_455750，唯一调用点 raw 22340）；激活：本体脚本 INIT2.txt:140 的 i143（0x143）遍历包表、对每个已装载包派发其文件 #0 = $n$AUTORUN.BIN",
+      "engine": {
+        "fns": [
+          "sub_455750",
+          "sub_401100",
+          "sub_401410",
+          "sub_4559C0",
+          "sub_414AC0",
+          "sub_41A000",
+          "sub_476730",
+          "sub_455000"
+        ],
+        "raw": "67721-67886"
+      },
+      "reads": [
+        "FileDB+0x3028（packs 表，槽 n = 包号 n）",
+        "AAI 头 @264（包号）",
+        "AAI 头 @8 与索引头 @8（版本串必须 strcmp 相等）",
+        "global 7087f5（脚本侧「已安装扩展包」位掩码）"
+      ],
+      "whySilent": "★整条链**默认全程静默**：目录里没有 .AAI 就当作「没装这个扩展」，包表槽为 NULL 时 i143 直接跳过、一行日志都没有；装载失败的包也只在初始化时留一句「AAIファイルの読み込みに失敗しました． %s」然后释放对象，游戏照常启动。后果不是报错而是**少内容**：该包的 $n$AUTORUN 不执行 ⇒ 它的整套 INIT 表（$n$SCINIT/$n$ITINIT/$n$SKINIT…）不覆盖、global 7087f5 的对应位不置、扩展剧情与道具/立绘全部不可达 —— 一直要走到存档界面比较安装掩码时才显形（SAVE.txt:885-888「インストール状況が一致しません／アペンドデータをインストールしてください」）。反向同样静默：**多**装/错装一个包不报错，只是让旧存档的掩码对不上。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "note": "实现（2026-09）：索引侧 `NodeFileSource` **扫资源根下的 `*.AAI`、按 AAI 头 @264 的包号注册**（不再硬编码文件名、也不再限制 5 个包；`alf.ts` 同时支持 `S4AC`(LZSS) 与 `S4AI`(头后整段直读) 两种体、并按引擎口径用高字节判本体/扩展包）；激活侧 `0x143`(`op_dispatch_script_requests`) 按包号升序把 `包号<<24` 入队、逐条装进**帧 37**、脚本 `exit` 走 `-10` 哨兵继续派发、队列排空后还原发起者（INIT2）现场；访问未装载的包抛 `MissingAppendPackError`（措辞照抄引擎「拡張ファイル情報ファイル %d は読み込まれていません．」，经 IPC/主进程同样冒到渲染侧）。守卫 `test/append-packs.test.ts`（9 条）：合成 AAI 的包号/魔数/直读体、临时目录扫描（坏包跳过、包号越界跳过、不递归子目录、改名照收）、i143 的升序派发与现场还原、无扩展包表时静默跳过、缺包抛错；★E3：真实语料跑完 INIT2 的整条派发链（约 10.8 万步）⇒ 5 包 AUTORUN 按 1..5 装载且 `global 7087f5` 第 1..5 位置起。E4：`npm run shot` 标题画面照常出图，左下角 **6 个 INSTALL 徽章**（= 该掩码的可见效果，`.tmp/shot-0-title.png`）。★残留缺口：`0x1D6`/`0x1D7`/`0x1D8`（引擎数据管理器方法调用 `op1 ← Engine[698900].vtable[+44|+60](op2[，op3])`）仍是 no-op —— 全语料只有 `$3$AUTORUN.txt:67-68` 两处，结果分别写进随后被丢弃的 scratch 槽与**无人读取**的 `global 70801e`，故不改变可观测状态，但仍列在闸门 B 的缺口里；`0x1F5`/`0x7C` 的「空闲时补派发」未建模（本路径不需要：i143 立即派发 + `exit` 链自走）。",
+        "guard": "test/append-packs.test.ts"
       }
     }
   ]

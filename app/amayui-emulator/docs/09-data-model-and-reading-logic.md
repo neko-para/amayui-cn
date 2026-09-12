@@ -159,15 +159,21 @@ u00420E40 5247 2a 20004                    // SO007 相关
 
 ## 7. 模拟器已实现的对应代码
 
-- `src/script/alf.ts`：`parseSys4Index`(SYS4INI, SYS4_TOC_POS=300) / `parseAppendIndex`(APPEND, 268) /
+- `src/script/alf.ts`：`parseSys4Index`(SYS4INI, SYS4_TOC_POS=300) / `parseAppendPack`(APPEND, 268 + **头 @264 包号**) /
   `resolveFileEntry`(统一 id 空间)。
-- `src/arch/nodeFileSource.ts`（**本次改动**）：新增
-  - `#loadAppends()`：解析 `APPEND01..05.AAI`（`parseAppendIndex`）填充 `#appends[1..5]`。
-  - `resolveEntry(id)`：`id<base.files.length` → 本体；否则 `pack#=id>>24`、`pos=id&0xFFFFFF` → 对应包（带各自 `archives`）。
-  - `readScript`/`#readEntry` 改用该解析（携带所属索引归档表）。
-  - 导出 `APPEND_COUNT=5`。
-- 验证：`tsc` 干净；`npm test` 12/12 通过（含 `LOGO.BIN` 与 `src/LOGO.txt` 逐条一致）。
-- 实测：`resolveEntry(0x5245)=SO006.AGF`(DATA1.ALF)、`resolveEntry(0x1000000)=$1$AUTORUN.BIN`(APPEND01.ALF) 等。
+- `src/arch/nodeFileSource.ts`（2026-09 起改为**按引擎口径的扫描+注册**）：
+  - `#loadAppends()`：`fs.readdir` 扫资源根下的 `*.aai`（不递归）→ `parseAppendPack` → 按**头 @264 的包号**
+    填进 `#packs`（坏包/包号越界只记日志并跳过；同包号后者覆盖）。**不再硬编码 `APPEND01..05`、不再设 5 包上限**。
+  - `appendPackNumbers()`：已装载包号（升序）—— `0x143`(`i143`) 据此派发各包的 `$n$AUTORUN.BIN`。
+  - `resolveEntry(id)`：**高字节 0** → 本体（须 `< files.length`）；否则 `pack# = id>>24`、`pos = id & 0xFFFFFF`
+    → 对应包（带各自 `archives`）；**包未装载 ⇒ 抛 `MissingAppendPackError`**（引擎的可见异常，
+    「拡張ファイル情報ファイル %d は読み込まれていません．」；`sub_4559C0` raw 67816-67823）。
+  - `readScript`/`#readEntry` 沿用该解析（松散同名文件优先，否则该包自己的 `APPEND0n.ALF` 切片）。
+  - `APPEND_COUNT=5` 保留为**诊断参考值**（官方发售包数），不再是上限。
+- 验证：`npm run verify` = 254 通过；扩展包专项见 `test/append-packs.test.ts`（9 条，含真实语料跑完
+  5 包派发链 ⇒ `global 7087f5` 第 1..5 位置起）。
+- 实测：`resolveEntry(0x5245)=SO006.AGF`(DATA1.ALF)、`resolveEntry(0x1000000)=$1$AUTORUN.BIN`(APPEND01.ALF)、
+  `resolveEntry(0x6000000)` ⇒ `MissingAppendPackError(pack 6)`（没装这个包）。
 
 ---
 

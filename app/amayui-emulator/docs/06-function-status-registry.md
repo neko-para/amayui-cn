@@ -59,7 +59,7 @@
 | `sub_41ACD0` | `get-input-type` | `studying` | 输入子系统；无界面 stub 返回固定值；待读体确认。 |
 | `sub_421980/421B80` | `mouse_callback/joy_callback` | `studying` | 回调注册子系统；待读体确认。 |
 | `sub_4218D0` | `sleep` | `studying` | 可 stub（无界面直接返回/或最小延时）；待读体看是否改 VM 态。 |
-| `sub_41A000` | `dispatchScriptRequests` | `studying` | opcode 0x143 批量派发；**涉及控制流，非纯子系统**，需小心（`docs/re/engine/08` §3.4），可能从 `ignored` 划回 VM 核心。 |
+| `sub_41A000` | `dispatchScriptRequests` | `rewritten` | opcode 0x143 批量派发 = **派发已装载扩展包的 `$n$AUTORUN`**（遍历 `FileDB.packs` 槽 1..255、`queueScript(slot<<24)`）。★**已划回 VM 核心并实现**：`src/vm/handlers/control.ts` 的 `op_dispatch_script_requests` + `dispatchNextRequest`（帧 37 + `exit` 的 `-10` 哨兵链 + 排空后还原发起者），守卫 `test/append-packs.test.ts`。 |
 
 > ✅ **本条注册表的意义**：以上「待读体确认」的子系统函数，在 M2 会**逐条读 handler 体**，确认「未写 VM 态」后**升级为 `ignored` 并填写证据**；若发现写了 VM 态，则**划回 VM 核心**。这就是 ADR-010 的落地——不凭感觉跳过。
 
@@ -143,8 +143,8 @@
 | `sub_499BC0`(0x499BC0, 114926) | `initTextureTable` | `ignored` | 1000×5int 表，image id 初值 -1；构造函数里 `sub_40DF10` 调它。 |
 | `sub_410160`(0x410160, 19155) | `loadDataFile(含纹理预载)` | `studying` | 通用数据文件载入器：`sub_438120/sub_437980` 读入→拷进全局数组/100 角色图/1000 纹理表，`a6` 时跑**纹理预载循环**(for texid 0..999 判 `[5*texid+151525]==1` 且 `[5*texid+151523]>=0` → `sub_4A3800`)。数据载入 op(0xAB/0x190/0x19F/0x1A1) 只在 APPEND 脚本。 |
 | `sub_430380`(0x216, 39259) | `getTextureImageId` | `studying` | `op1 = _this[5*op2+81174]`（纹理 id→图像 id 查询）。 |
-| `sub_455750`(0x455750, 66738) | `loadAppendPacks(*.AAI)` | `ignored` | `FindFirstFileA("*.AAI")` → 逐个 `sub_401100` 载入注册 `_this[pack#+3082]`。引擎侧加载，模拟器在 `nodeFileSource` 以 `#loadAppends()` 复刻（TS 侧）。 |
-| `sub_401100`(0x401100, 7850) | `loadAppendAAI` | `ignored` | 读 0x10C(268B) 头验 `S4AC` 魔数 + 版本；**包号=头部偏移 264**。模拟器 `parseAppendIndex`。 |
+| `sub_455750`(0x455750, 66738) | `loadAppendPacks(*.AAI)` | `rewritten` | `FindFirstFileA("<CWD>\\*.AAI")` → 逐个 `sub_401100` 载入、按**AAI 头 @264 的包号**注册 `FileDB.packs[包号]`（槽 1..255）。模拟器：`nodeFileSource` 的 `#loadAppends()`（`fs.readdir` 扫 `*.aai` + `parseAppendPack`，**不硬编码文件名、不设 5 包上限**）。 |
+| `sub_401100`(0x401100, 7850) | `loadAppendAAI` | `rewritten` | 读 0x10C(268B) 头验魔数（`S?AC` = 12B 头 + LZSS / `S?AI` = 头后整段直读）+ `头@8` 版本串须与索引头相等；**包号=头部偏移 264**。模拟器 `alf.ts` 的 `parseAppendPack`。 |
 
 ### 2.3.3 纹理 id→图像 id 表（核心数据模型，`docs/09` §4）
 

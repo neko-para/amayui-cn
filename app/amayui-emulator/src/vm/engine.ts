@@ -116,6 +116,23 @@ export class Engine {
   callLink = -1;
   callFlag = 0;
 
+  // ---------------------------------------------------------------------------
+  // 脚本请求派发（引擎：dispatch_queue@0x796DC / dispatch_in_progress@byte 497400 / 派发帧 37）
+  // ---------------------------------------------------------------------------
+  /**
+   * **排队待派发的脚本 id**（引擎的 `dispatch_queue`，`Queue_int` @ byte 0x796DC）。
+   *
+   * 生产者：`0x143`（`i143`）把每个**已装载扩展包**的 `包号<<24` 压进来 —— 那就是该包的文件 #0 =
+   * `$n$AUTORUN.BIN` 的统一 id（引擎 `sub_41A000` 的 `queueScript(slot<<24)`）。
+   * 消费者：`dispatchNextRequest`（引擎 `sub_40FB60`），一次装载一条到帧 37。
+   */
+  scriptRequests: number[] = [];
+  /** **派发中**标志（引擎 `_this[124350]` / byte 497400）：置位时 `queueScript` 只入队、不立即派发。 */
+  dispatching = false;
+  /** 派发保存的现场（引擎 byte 383112/383116 = 派发前的 `cur` 与 `effect_flags`）；队列排空后还原。 */
+  dispatchSavedCur = -1;
+  dispatchSavedFlags = 0;
+
   /** 引擎配置字段（稀疏 _this 索引，fidelity 到 engine.cpp）。默认值与引擎构造函数一致：
    *  构造函数/初始化（engine.cpp 22404，字节偏移 387932 = _this[96983]）把 96983 置 1；另一处重置（34632）清 0。
    *  SYSTEM4 的 `u00415F40`(0x130) 读 96983 决定是否播放 LOGO 开场。构造函数默认=1 → LOGO 显示（真实游戏行为）。

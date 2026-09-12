@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 16 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 17 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 20 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **94** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **95** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -28,7 +28,7 @@
 | 帧循环 | 13 | 8 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
-| 资源 | 10 | 2 |
+| 资源 | 11 | 2 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -130,6 +130,7 @@
 | `text-style-scope-queue-time` | 消息窗 | 文本样式的**消费时机与作用域**：排版入队时把字体/颜色烘进该窗离屏表面，此后改全局样式不回溯 | ✅ 已核验 | E3 · `test/text-style-snapshot.test.ts` |
 | `engine-config-registry-persistence` | 资源 | 引擎配置注册表（SYS4REG.INI）：启动装载 → 脚本读写 → 写盘 | ✅ 已核验 | E3 · `test/config-version-substr.test.ts` |
 | `save-data-tables-persistence` | 资源 | SAVE.DAT：脚本 save-int/save-string 两张表的持久化（= 设置界面那些开关真正存的地方） | ✅ 已核验 | E3 · `test/save-data.test.ts` |
+| `append-pack-discovery-and-activation` | 资源 | 扩展包（APPENDnn.AAI / APPENDnn.ALF）的发现、注册与激活 | ✅ 已核验 | E3 · `test/append-packs.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

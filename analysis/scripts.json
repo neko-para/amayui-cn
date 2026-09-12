@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 12,
+    "total": 14,
     "analyzed": 7,
-    "partial": 5,
+    "partial": 7,
     "stub": 0
   },
   "entries": [
@@ -973,6 +973,131 @@
       "status": "analyzed",
       "evidence": "src/SELFONT.txt（全文 767 行）；CONFIG1.txt:1049 的 call-script 51dd；handler raw 40239-40249/42541-42575/40251-40261；E3 目视：修复后选择器列出 9 个候选面名并以绿框标出当前项（.tmp/fontpick4-1-fontpick.png）",
       "notes": "行几何表与绘制细节未逐条建模；本条聚焦「列表数据从哪来」——正是 0x2DC/0x2DD 缺口导致的那部分。",
+      "guards": []
+    },
+    {
+      "id": "INIT2",
+      "file": "src/INIT2.txt",
+      "bin": "INIT2.BIN",
+      "role": "**本体数据表总装载**：依次 call-script 40 张本体 INIT 表（SCINIT/CTINIT/…/BTANINIT2），再把一大批脚本 id 灌进 globals（界面/场景脚本表），★最后用 `i143` 把**扩展包的 $n$AUTORUN 排进脚本请求队列** ⇒ 扩展包内容在本体表之后覆盖。",
+      "entry": "SYSTEM4.txt:124 `call-script 5261`（本体启动链：SYSTEM4 → INIT2 → 40 张 INIT → i143 → 场景设置）。",
+      "layout": [
+        {
+          "anchor": "call-script 51fc",
+          "lines": "66-105",
+          "what": "40 张本体 INIT 表：`call-script 51fc..5223`（SCINIT…BTANINIT2），按调用顺序即装载顺序"
+        },
+        {
+          "anchor": "mov (global-int 122724) 5244",
+          "lines": "138-143",
+          "what": "脚本 id 表末尾（:139）之后紧跟 ★`:140` 的 `i143`（0x143）：引擎遍历扩展包表槽 1..255、对每个非零槽把 `slot<<24` 排进请求队列并派发 ⇒ 该包的 `$n$AUTORUN.BIN`（包内文件 #0）开始执行（`i143` 本身只有 4 个字符、不满足锚点长度闸门，故锚点取同一段的边界行）"
+        },
+        {
+          "anchor": "call-script 510a",
+          "lines": "165-183",
+          "what": "场景/地图设置段（SETSTAGE/SETMAPTEX/SETHALLTEX/SETOBJ/DRAWMAP/RESETMAPAN/SETREIGNTEX/SETWEATHER），i143 之后才跑"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local 0 / 1 / 2 / 3",
+          "what": "i143 之后的表格修补循环（扫 0x3e8 项、比较 global adcd 与 14a8f1 两表）"
+        },
+        {
+          "key": "global 708xxx 区",
+          "what": "脚本 id 表（`mov (global-int 7088xx) 52xx` 一片）：本体脚本入口地址表"
+        }
+      ],
+      "invariants": [
+        "`i143` 必须排在 40 张本体 INIT（:66-:105）**之后** —— 扩展包的 $n$AUTORUN 会再跑一遍同名的 $n$ 版本表覆盖同一批 globals，顺序就是语义",
+        "INIT2 由 `SYSTEM4.txt:124` 调用，是本体唯一的 INIT2 入口"
+      ],
+      "gotchas": [
+        "本体 40 张 INIT 与扩展包的 $n$ 版本是**同构覆盖**关系（`$1$AUTORUN.txt:6-44` 与 `:66-105` 一一对应），所以「哪些内容属于扩展包」不能靠脚本名判断，要看它跑在哪一轮",
+        "`i143` 只在**本体 INIT2** 里出现一次（全语料仅此一处）；扩展包自己的 `$n$AUTORUN` 不再调 i143 ⇒ 没有递归激活"
+      ],
+      "gaps": [
+        "emulator：`0x143` 仍是 no-op（src/vm/handlers/stubs.ts 的 op_engine_internal）⇒ 本行之后 5 个扩展包一个都不会激活"
+      ],
+      "links": {
+        "capabilities": [
+          "append-pack-discovery-and-activation"
+        ],
+        "functions": [
+          "0x41A000",
+          "0x414AC0",
+          "0x455750"
+        ],
+        "docs": [
+          "docs-new/03-engine/resource-loading.md",
+          "docs-new/03-engine/opcode-table.md"
+        ]
+      },
+      "status": "partial",
+      "evidence": "src/INIT2.txt:66-183 实读（其它段未读）；调用点 src/SYSTEM4.txt:124；handler raw 25168-25191（sub_41A000）；实测：emulator 跑到 INIT2 但无任何 $n$ 脚本载入（.tmp/appendRun.log）",
+      "notes": "只读了启动装载这条主线（:66-:183）；INIT2 的 :1-:65 与 :184-:187（尾部 exit）未逐行读。",
+      "guards": []
+    },
+    {
+      "id": "AUTORUN1",
+      "file": "src/$1$AUTORUN.txt",
+      "bin": "$1$AUTORUN.BIN",
+      "role": "**扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANINIT2`），再把它自己的脚本 id 表灌进 globals，最后 `bit-set (global-int 7087f5) 1` 置「包 1 已安装」。",
+      "entry": "★**没有任何脚本 call 它**（全语料无 0x1xxxxxx..0x5xxxxxx 的 call-script 立即数）——唯一入口是引擎的 `i143`（0x143）派发 `slot<<24`：本体 INIT2.txt:140 执行 i143 时，装载过的包 slot 各被排一个 `slot<<24` 请求，slot=1 ⇒ 0x1000000 = 本脚本。",
+      "layout": [
+        {
+          "anchor": "call-script 1000174",
+          "lines": "6-44",
+          "what": "包内数据表按与本体相同的顺序重跑一遍（$1$SCINIT…$1$BTANINIT2，共 39 条）⇒ 覆盖本体 INIT2 装好的那批 globals"
+        },
+        {
+          "anchor": "mov (global-int 708997) 100019b",
+          "lines": "45-65",
+          "what": "把包内脚本 id 表灌进 globals（界面/场景入口，如 0x100019b..0x10001af）"
+        },
+        {
+          "anchor": "bit-set (global-int 7087f5) 1",
+          "lines": "66-67",
+          "what": "★置「已安装扩展包」掩码第 1 位（global 7087f5），然后 exit —— 存档界面 SAVE.txt:885-888 就是拿这个掩码与存档里记录的安装状态比对"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 7087f5",
+          "what": "扩展包安装位掩码（bit n = 第 n 包装了）；由各 $n$AUTORUN 各置自己那位"
+        },
+        {
+          "key": "global 7088xx / 10e39x / 708xxx",
+          "what": "包 1 的脚本 id 表（0x100019b 起）"
+        }
+      ],
+      "invariants": [
+        "`$n$AUTORUN.BIN` 恒为包 n 的文件 #0 ⇒ id 恒为 `n << 24`（引擎派发的就是它）",
+        "本脚本执行完必须满足：`global 7087f5` 的第 1 位 = 1（装载成功的充分条件）"
+      ],
+      "gotchas": [
+        "它**不是**被 call-script 调用的：反汇编全语料中 `call-script` 的立即数最大只到本体 id，扩展包脚本一律靠 id 高字节分派 —— 所以「谁调用扩展包」这个问题在脚本侧无解，答案在引擎（i143）",
+        "包 1 与包 2..5 的 AUTORUN 同构（同一套 39 张表 + 自己的 id 表 + `bit-set 7087f5 n`），差异只在包号与具体条目"
+      ],
+      "gaps": [
+        "emulator：0x143 未实现 ⇒ 本脚本永不执行（global 7087f5 恒 0、包内 INIT 表不装载）；扩展包的 id 分派本身已实现（readScript 支持 pack<<24|idx，上限 5）"
+      ],
+      "links": {
+        "capabilities": [
+          "append-pack-discovery-and-activation"
+        ],
+        "functions": [
+          "0x41A000",
+          "0x455750",
+          "0x4559C0"
+        ],
+        "docs": [
+          "docs-new/03-engine/resource-loading.md"
+        ]
+      },
+      "status": "partial",
+      "evidence": "src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888",
+      "notes": "包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）；$1$AUTORUN 调用的 39 张 $1$ 表本身未读。",
       "guards": []
     }
   ]

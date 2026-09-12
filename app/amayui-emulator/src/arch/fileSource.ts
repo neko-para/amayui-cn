@@ -13,15 +13,43 @@ export interface ScriptBytes {
   data: Uint8Array;
 }
 
+/**
+ * **扩展包缺失**（访问阶段）：引擎 `sub_4559C0`（raw 67816-67823）在 `FileDB.packs[包号]` 为 NULL 时
+ * 抛 `Command_ShowMessage`（异常码 65543）「拡張ファイル情報ファイル %d は読み込まれていません．」——
+ * 是**可见报错**，与激活阶段（`i143` 遇到空槽静默跳过）相反。宿主据此把这个差别保住：
+ * 调用方要么让错误冒到用户可见处，要么显式 catch 并降级（不要默认当"没有这个文件"）。
+ */
+export class MissingAppendPackError extends Error {
+  constructor(
+    /** 缺失的包号（统一 id 的高字节，1..255）。 */
+    public readonly packNumber: number,
+    /** 触发访问的统一 id（0x…）。 */
+    public readonly fileId: number,
+  ) {
+    // 措辞照抄引擎，便于与真机日志对照
+    super(`拡張ファイル情報ファイル ${packNumber} は読み込まれていません．(id=0x${fileId.toString(16)})`);
+    this.name = 'MissingAppendPackError';
+  }
+}
+
 export interface FileSource {
   /** 读整个文件字节（任意路径）。 */
   readFile(path: string): Promise<Uint8Array>;
   /**
    * 按"call-script 索引"取回一个脚本（含文件名）。
-   * index < baseCount -> SYS4INI base；否则 高字节=APPENDnn、低24位=pos。
-   * 返回 null 表示无法解析/读不到。
+   * index 高字节 0 -> SYS4INI base；高字节 n -> APPENDnn（低 24 位 = 包内编号）。
+   * 返回 null 表示无法解析/读不到；**扩展包缺失时抛 `MissingAppendPackError`**（引擎语义）。
    */
   readScript(index: number): Promise<ScriptBytes | null>;
+  /**
+   * **已装载的扩展包包号（升序）**，= 引擎 `FileDB.packs` 的非空槽（`sub_455750` 按 AAI 头 @264 注册）。
+   *
+   * 调用方是 `0x143`（`i143`，见 `src/vm/handlers/control.ts` 的 `op_dispatch_script_requests`）：
+   * 引擎遍历槽 1..255、对每个非空槽派发 `slot<<24`（= 该包的 `$n$AUTORUN.BIN`）。
+   * **不实现该方法 = 当作"一个扩展包都没装"** —— 与引擎在目录里找不到 `*.AAI` 时的行为一致（静默跳过）。
+   */
+  appendPackNumbers?(): Promise<number[]>;
+
   /**
    * **把整份 `SYS4REG.INI` 文本写回宿主自己的配置路径**（可选）。
    *

@@ -13,14 +13,14 @@
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 12** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 14** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 7 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 5 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 7 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 0 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **12** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **14** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -29,10 +29,12 @@
 
 | id | 脚本 | 是什么（摘要） | 段 | 槽 | 状态 | 守卫 |
 |---|---|---|---|---|---|---|
+| [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | — |
 | [`CHECKCONFIG`](./CHECKCONFIG.md) | `CHECKCONFIG.BIN` | **设置的自检与修复**：校验 5 个字体面名是否还装得上（`0x2DE` 字体名→下标），装不上就回退默认并重新 `save-string`；末尾按 a9… | 7 | 3 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`CONFIG`](./CONFIG.md) | `CONFIG.BIN` | 「OPTION（设置）」的常驻父脚本：左侧分类切换（按当前分类 call-script CONFIG1 / CONFIG2）、消息显示预览（0x300 逐行… | 6 | 4 | ✅ 已分析 | `test/config1-chain.test.ts` `test/text-style-snapshot.test.ts` |
 | [`CONFIG1`](./CONFIG1.md) | `CONFIG1.BIN` | 设置界面的**分类页主体**（本地化后的「系统设定」等页）：左侧分类列表 + 中部设置行（背景带 / 数值贴片 / 帮助图标 / 按 kind 的控件族）+… | 12 | 12 | ✅ 已分析 | `test/config1-chain.test.ts` `test/draw-string.test.ts` `test/draw-item-scale.test.ts` `test/text-style-snapshot.test.ts` |
 | [`CONFIG2`](./CONFIG2.md) | `CONFIG2.BIN` | 设置界面的**「角色设定」页**（左侧第 5 个分类）：9 个角色位（CV 名牌 + 説明文字）+ 詳細変更/on/OFF/▶ 控件 + 左侧分类 + 滚动… | 7 | 7 | 🟠 部分 | `test/text-style-snapshot.test.ts` |
+| [`INIT2`](./INIT2.md) | `INIT2.BIN` | **本体数据表总装载**：依次 call-script 40 张本体 INIT 表（SCINIT/CTINIT/…/BTANINIT2），再把一大批脚本 i… | 3 | 2 | 🟠 部分 | — |
 | [`INITCONFIG`](./INITCONFIG.md) | `INITCONFIG.BIN` | 「配置默认值」的分发脚本：按顺序调用 INITCONFIG0..5（系统/游戏/ADV/声音/角色色/操作 六页各一份）。 | 1 | 1 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`INITCONFIG0`](./INITCONFIG0.md) | `INITCONFIG0.BIN` | 「系统设定」页的**默认值 + 登记**：把 a9cb..a9d5（窗口显示/自动保存/光标自动移动/覆盖存档备注/Live2D 等）与字体名串 bbb..… | 2 | 2 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`LOADCONFIG`](./LOADCONFIG.md) | `LOADCONFIG.BIN` | **把 SAVE.DAT 里的用户设置读回全局**：29 个 `load-int (global …)` / `load-string (global-st… | 5 | 2 | ✅ 已分析 | `test/save-data.test.ts` |

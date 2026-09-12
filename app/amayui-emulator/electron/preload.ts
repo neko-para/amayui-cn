@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('api', {
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
   /** 读任意文件原始字节（number[]）。 */
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+  /** 已装载的扩展包包号（升序；主进程扫 *.AAI 后按文件头 @264 注册的结果），供 0x143 派发 $n$AUTORUN。 */
+  appendPacks: () => ipcRenderer.invoke('append-packs'),
   /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
   readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
   /** 写回引擎配置 SYS4REG.INI（整份文本；写到 readConfigIni 实际返回的那份）。 */
