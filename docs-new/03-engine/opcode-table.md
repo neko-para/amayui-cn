@@ -19,6 +19,7 @@
 >
 > **参考**：`analysis/functions.json`、`analysis/fields.json`（+ `engine-capabilities.json` / `scripts.json`）；报表工具 `.agents/skills/amayui-engine-analysis/scripts/report.js`（读数据层打印进度/字段清单）、`sort-fields.js`（字段排序）、`capabilities.js`（第二层）、`scripts.js`（第三层）；跨脚本的脚本层结论见 `docs-new/05-scripts/`。
 > **功能方向粗分类**（指令→声音/渲染/消息UI/输入/字符串/数据等簇）见 [`./instruction-directions.md`](./instruction-directions.md)。
+> **音频族**（`0xB4`..`0xC7`、`0x1BD`、`0x2BF`/`0x2C0`、`0x2F4`..`0x302`）的整体机制——设备 / SE / Voice / Music 三模块、15 条通道、`sound:Volume0..4` 路由、ADV 文本↔语音联动——见 [`./sound-system.md`](./sound-system.md)。
 
 ## 全部 544 个已映射 opcode
 
@@ -159,25 +160,25 @@
 | 0xB1 | 1 |  | sub_420A80 | 仅映射 |  |
 | 0xB2 | 2 |  | sub_420AB0 | 仅映射 |  |
 | 0xB3 | 0 |  | sub_4196B0 | 仅映射 |  |
-| 0xB4 | 2 | play-sound-effect | sub_420B00 | 已核对 | **play-sound-effect**：帧 arity=5；读 op1=音效 id、op2=通道指针 → `sub_4B4F60(Engine+20719, 通道, id)` 预载/起播音效。**PARTIAL**（`sub_4B4F60` 未分析）；handler=sub_420B00（raw .c 29680-29687） |
-| 0xB5 | 1 |  | sub_420B40 | 已核对 | **声音通道控制**：读 op1=通道号 → `sub_4B5020(_this+20719, op1, 0)` →（设备在时）`sub_4B6020(设备, op1, 0)`：通道>0xE 或未分配→报错/返回；否则 `sub_4B73E0(通道,0)`。**纯声音侧、无 VM/渲染效果**。handler=sub_420B40（raw .c 29689）。emulator：**声音相关→忽略 no-op**（与 0xB4/0xB6 同族）。★**别与 0x5B `ne` 混**：本指令助记符缺失 ⇒ 反汇编/控制面板显示为 `i0b5`，2026-09 用户实测把它读成 `0x05B`（`ne`，已实现）而以为"已实现指令被当缺口"。用法实证：`SELFONT.txt:38 i0b5 1`（选中字体时播确认音）、`CONFIG2.txt` 11 处（ADV 设定页的反馈音） |
-| 0xB6 | 1 |  | sub_420B80 | 已核对 | **声音通道**：`sub_4B5050(_this+20719, op1)`(播/控音效)。handler=sub_420B80（raw .c 29327） |
-| 0xB7 | 1 |  | sub_420C00 | 仅映射 |  |
+| 0xB4 | 2 | play-sound-effect | sub_420B00 | 已核对 | **play-sound-effect（SE 装载）**：读 op1=音效 id、op2=**SE 通道号（0..9）** → `sub_4B4F60(Engine+20719, 通道, id)`：从资源库取 WAV → `sub_4B6570` 建解码缓冲并绑到设备通道 → 记 `SE[1212+通道]=id`；失败抛 `WAVファイル %s の読み込みに失敗しました`（raw 137649）。★只装载+绑缓冲，**起播要另发 0xB5（播一次）/0xBA（循环）**。★订正：早期把 op2 记作「通道指针」，实为通道号。全库 2170 处（`SP2563.txt:409 play-sound-effect 2e 1`）。handler=sub_420B00（raw .c 29678-29687） |
+| 0xB5 | 1 |  | sub_420B40 | 已核对 | **SE 通道起播（播一次）**：读 op1=通道 → `sub_4B5020(Engine+20719, 通道, 0)` →（设备在 且 `SE[261]`=`sound:SE` 开关开）`sub_4B6020(设备, 通道, 0)` → 先应用待定 seek、释放在播的循环缓冲、`sub_4B73E0(缓冲, 0)`。★第 3 参就是 SoundBuffer 的**循环标志**（`+9296`，raw 139322：非 0 循环、0 播完补静音）⇒ 0xB5 播一次、0xBA 循环。通道 >0xE 报 `dsPlaySound(%d)`、通道未绑缓冲报 `dsPlay(%d)`。**纯声音侧**。全库 **2155** 处（惯用法 `play-sound-effect 2e 1` + `i0b5 1`，`SP2563.txt:409-410`）。handler=sub_420B40（raw .c 29689-29697）。emulator：`op_engine_internal` 空操作。★别与 0x5B `ne` 混（助记符缺失 ⇒ 反汇编显示 `i0b5`，2026-09 曾把 `i0b5 1` 读成 `i05b`） |
+| 0xB6 | 1 |  | sub_420B80 | 已核对 | **SE 通道停止/释放**：`sub_4B5050(SE, 通道)` → `sub_4B6390(设备, 通道)`（临界区 + 引用计数 + 释放缓冲）并清 `SE[303+通道]`/`SE[262+通道]`。全库 **1732** 处（ADV 场景收尾）。handler=sub_420B80（raw .c 29699-29707） |
+| 0xB7 | 1 |  | sub_420C00 | 已核对 | **BGM 当前槽起播（循环=1）**：清 `Engine[174801]` bit 0x200 + `sub_489E50(Engine+174454,100)`（推进淡出）→ `sub_489F80(Music, op1, 1)`；`i0b7 0` = 停止/清当前曲。★**op1 = 曲号**（不是统一文件 id）：引擎 `MusicBase` 查「曲号 → 文件 id」表（`sub_48DB80` raw 108738：索引 = 曲号 − 2），本作等价于 `BGM%03d.OGG`（脚本侧 `MUINIT.txt` 的 A/B 两表逐条吻合；`play-bgm 1f` = 曲号 31 = `BGM031.OGG`）。全库 30 处（`CONFIG1.txt:2465 i0b7 29` = 设置界面里预览 BGM）。handler=sub_420C00（raw .c 29719-29734） |
 | 0xB8 | 0 |  | sub_419720 | 仅映射 |  |
-| 0xB9 | 1 |  | sub_420C60 | 仅映射 |  |
-| 0xBA | 1 |  | sub_420BC0 | 仅映射 |  |
-| 0xBB | 1 |  | sub_420D90 | 仅映射 |  |
-| 0xBC | 1 |  | sub_420DC0 | 仅映射 |  |
-| 0xBD | 1 |  | sub_42E460 | 仅映射 |  |
-| 0xBE | 1 |  | sub_42E4D0 | 仅映射 |  |
+| 0xB9 | 1 |  | sub_420C60 | 已核对 | **BGM 当前槽起播（循环=0）**：同 0xB7 的淡出清理，但 `sub_489F80(Music, op1, 0)`（不循环）。op1 同为**曲号**（→ `BGM%03d.OGG`）。全库 1 处（`GAMEOVER.txt:51 i0b9 20`）。handler=sub_420C60（raw .c 29736-29751） |
+| 0xBA | 1 |  | sub_420BC0 | 已核对 | **SE 通道起播（循环）**：同 0xB5，但 `sub_4B5020(SE, 通道, 1)` ⇒ 循环标志 1。全库 154 处（环境音/持续音）。handler=sub_420BC0（raw .c 29709-29717） |
+| 0xBB | 1 |  | sub_420D90 | 已核对 | **SE 总开关**：读 op1 → `sub_408D90`（raw 13545）：与配置 `sound:SE` 现值比较（相同则不动）→ 关时把设备 0..9 通道全 `sub_4B60C0` 停掉并写 0，开时写 1；再 `sub_406DF0(_this,2,op1)`。全库 0 处。handler=sub_420D90（raw .c 29782-29790） |
+| 0xBC | 1 |  | sub_420DC0 | 已核对 | **BGM 开关/模式**：读 op1（1..3）→ `sub_408CF0(_this, op1-1)`（raw 13515）：把配置 `sound:Music` 的值 ±3 写回（<0 视为关）、停当前 BGM（`sub_489B50`）、恢复 `Engine[174713]` 并把 `Engine[174712]` 记为新模式、`sub_489F80(Music,0,Engine[174715])`；op1>2 不动作。全库 0 处。handler=sub_420DC0（raw .c 29792-29802） |
+| 0xBD | 1 |  | sub_42E460 | 已核对 | **读「SE 可用」→ 写 op1**：`sound:SE`==0 ⇒ 0；否则 `sound:UseDirect`==1 ⇒ 1，否则 2（DirectSound / 兜底）。handler=sub_42E460（raw .c 38597-38606） |
+| 0xBE | 1 |  | sub_42E4D0 | 已核对 | **读 BGM 模式 → 写 op1**：`sound:Music` + 1。handler=sub_42E4D0（raw .c 38608-38616） |
 | 0xBF | 1 | play-bgm | sub_420CC0 | 已核对 | **play-bgm**：清 `Engine[174801]` bit 0x200 并 `sub_489E50(Engine+174454, 100)`；读 op1=音乐 id → `sub_489C20(Engine+174454, id, 1)`；并按 `set:KeepMusicVoice` / `sound:MusicFadeOnVoicePlaying(Volume)` 决定 `sub_489C00` 渐隐。**PARTIAL**；handler=sub_420CC0（raw .c 29754-29780） |
 | 0xC0 | 1 |  | sub_42E510 | 已核对 | **读引擎字段 `_this[174713]`→op1**（`sub_42B4B0(_this,1,_this[174713])` = writeIntOperand 写 op1）。`174713` 是**音乐/声音子系统**字段（被 0xC3/sub_420F10 `_this[174713]=op1` 写；与 174712/174715 及 `_this+174454` 音乐对象同用，见 sub_408CF0 保存/恢复它）。handler=sub_42E510（raw .c 38618）。CONFIG.txt 用 `i0c0 (local-int 2)` 读系统值到 local |
 | 0xC1 | 0 |  | sub_419770 | 仅映射 |  |
-| 0xC2 | 2 |  | sub_420E00 | 仅映射 |  |
+| 0xC2 | 2 |  | sub_420E00 | 已核对 | **BGM 淡变（双路径）**：ADV 激活（`Engine[174801]&0x8000000`）⇒ `sub_489D10(Music, op1, op2)` + `sub_489E50(Music,100)`；否则先按 `set:TransferMusic` 经 `sub_418580` 切换、置 bit 0x200、按 op2（<1000 走 ÷10、否则 ÷1000）经 `sub_453A60(Engine+107503,…)` 设节流，再 `sub_489D10(Music, op1, op2<1000?10:1)`。handler=sub_420E00（raw .c 29804-29841） |
 | 0xC3 | 1 |  | sub_420F10 | 已核对 | **写引擎字段**：`Engine[174713] = op1`（音乐/声音子字段 setter），并清 `Engine[174801]` bit 0x200 + `sub_489E50(Engine+174454, 100)`；handler=sub_420F10（raw .c 29844-29859） |
-| 0xC4 | 1 | play-voice | sub_420F70 | 已核对 | **play-voice**：读 op1=语音 id、op2=槽 → 经音乐/声音对象起播语音。**PARTIAL**（内部语音路径未分析）；handler=sub_420F70（raw .c 29861-29870） |
+| 0xC4 | 1 | play-voice | sub_420F70 | 已核对 | **play-voice（通道 0，播一次）**：切 `Engine[21315]`/`[21318]` 状态位；`sub_407120` 推进淡出；ADV 激活位 `0x8000000` 置位 ⇒ **只寄存**（`Engine[122505]=op1`、`Engine[122508]=0`，ADV 位清除时统一冲刷，raw 20146-20159 / 24966-24979），否则 `sub_4BB840(Voice, 0, op1, 0, Engine[5053])`（第 5 参 = 通道 pan）；再 `sub_45EEA0(Font,0,op1,0,0,pan)` 往文本项记录表登记「该文本带语音」；末尾若 `Engine[21293]`（`sound:Voice`）则 `Engine[122501]=1`。全库 **14088** 处（`play-voice (global-int f8007)` 是常态写法）。handler=sub_420F70（raw .c 29861-29912） |
 | 0xC5 | 2 |  | sub_42E540 | 已核对 | **读配置写操作数**：op1 = 0..4 ⇒ `GetConfig("sound:Volume0..4")` → **写 op2**；op1 越界走报错分支（`sprintf_s(aGetvolume)` + `sub_4034D0`），不写操作数；handler=sub_42E540（raw .c 38626-38667） |
-| 0xC6 | 2 |  | sub_421070 | 仅映射 |  |
+| 0xC6 | 2 |  | sub_421070 | 已核对 | **设音量**：读 op1=类别（0..4）、op2=值 → 写配置 `sound:Volume0..4` 并应用：0 ⇒ `sub_4092C0`（主音量，含设备 `[342]`）；1 ⇒ `sub_409290`（BGM：`sub_4071D0(...,1)` + `sub_489B80(Music,值)`）；2 ⇒ `sub_408260`（SE：设备 0..9 通道 `sub_4B68E0`）；3 ⇒ `sub_4082A0`（语音：设备 12..14）；4 ⇒ `sub_4071D0(...,4)` + `Engine[490000]`（影片）。越界报 `setVolume`。handler=sub_421070（raw .c 29915-29983） |
 | 0xC7 | 2 |  | sub_42E670 | 已核对 | **读配置写操作数**：op1=1 ⇒ `sound:Music`（≥0 ⇒ 1）、2 ⇒ `sound:SE`、3 ⇒ `sound:Voice`、4 ⇒ `sound:Movie`（非 0 ⇒ 1）→ **写 op2**；handler=sub_42E670（raw .c 38671-38716） |
 | 0xC8 | 1 | sleep | sub_4218D0 | 已核对 | **睡眠/帧让步**：读 op1=n。非 ADV 激活（`(effect_flags&0x8000000)==0`）时，n<10 → `Sleep(n)` ms；n>=10 → `sub_453A60(_this+107440,n)` 设帧率节流（`_this[6]=n` 帧间隔=n ms，`sub_453AF0` 按 `interval*frame_count-elapsed` 决定 Sleep(剩余)）——本质都**暂停≈n ms**；ADV 激活则跳过。handler=sub_4218D0（raw .c 30288）。emulator：`op_sleep` 置 `sleepUntil=nowMs+max(1,n)`、`waitFlags|=SLEEP_GATE`，渲染帧循环每帧 present 到点放行（帧让步；TITLE 菜单 `sleep 1`）。 |
 | 0xC9 | 0 |  | sub_4198A0 | 仅映射 |  |
@@ -299,7 +300,7 @@
 | 0x1BA | 2 |  | sub_421200 | 仅映射 |  |
 | 0x1BB | 1 |  | sub_420000 | 仅映射 |  |
 | 0x1BC | 0 |  | sub_4197A0 | 已核对 | **清理声音/消息字段**。handler=sub_4197A0（raw .c 25002） |
-| 0x1BD | 1 |  | sub_4212C0 | 仅映射 |  |
+| 0x1BD | 1 |  | sub_4212C0 | 已核对 | **play-voice（通道 0，循环位=1）**：同 0xC4 的寄存/起播/登记三件套，但循环标志传 1（`Engine[122508]=1`、`sub_4BB840(Voice,0,op1,1,Engine[5053])`（第 5 参 = pan）、`sub_45EEA0(…,1,0,pan)`），且 `Engine[21315]` 状态位的清 0 条件是 `(v&0x10000)||(v&1)`。全库 0 处。handler=sub_4212C0（raw .c 30021-30066） |
 | 0x1BE | 2 |  | sub_42E770 | 仅映射 |  |
 | 0x1BF | 0 |  | sub_419840 | 已核对 | **跳读态置**：按跳读态置 `_this[122503]=1`。handler=sub_419840（raw .c 25015） |
 | 0x1C0 | 1 |  | sub_421450 | 仅映射 |  |
@@ -441,8 +442,8 @@
 | 0x2BC | 11 |  | sub_426120 | 仅映射 |  |
 | 0x2BD | 1 |  | sub_426200 | 已核对 | **文本对象字段+字体重建**：读 op1；`op1≠0` 时置文本对象字段 `_this[75953]`/`_this[21636]` 为 700（否则 0），调 `sub_459F40()` 应用/重建字体。handler=sub_426200（raw .c 32884） |
 | 0x2BE | 1 |  | sub_426260 | 已核对 | **注音加粗**：读 op1；真 ⇒ `Font+218588 = 700` 且 `Font+1308 = 700`，假 ⇒ 两者 0；再 `sub_45A6E0(Font)` 重建注音字体句柄；handler=sub_426260（raw .c 33405-33422） |
-| 0x2BF | 3 |  | sub_4262C0 | 仅映射 |  |
-| 0x2C0 | 3 |  | sub_426310 | 仅映射 |  |
+| 0x2BF | 3 |  | sub_4262C0 | 已核对 | **延迟播 SE**：读 op1=通道、op2=循环标志、op3=延迟毫秒 → `sub_4B5170(SE, op1, op2, op3)`（raw 137720：`SE[262+ch]=1` 武装、`[272+ch]=0` 起始时刻、`[282+ch]=延迟`、`[292+ch]=循环标志`、`SE[302]=1`）；每帧 `sub_4B5230(SE, 当前时刻)`（raw 137763、调用点 raw 20645）到期即 `sub_4B5020` 起播。全库 30 处。handler=sub_4262C0（raw .c 33424-33436） |
+| 0x2C0 | 3 |  | sub_426310 | 已核对 | **语音排队到通道 0（带延迟）**：读 op1=语音 id、op2=附带值、op3=延迟毫秒 → `sub_4BBA40(Voice, op1, op2, op3, 0)`（raw 142563：`Voice[265+ch]=1`、`[268+ch]=0`、`[271+ch]=延迟`、`[274+ch]=id`、`[277+ch]=附带值`）；每帧 `sub_4BBAB0(Voice, 当前时刻)`（raw 142585、调用点 raw 20646）到期起播。全库 0 处。handler=sub_426310（raw .c 33438-33450） |
 | 0x2C1 | 1 |  | sub_433CE0 | 仅映射 |  |
 | 0x2C2 | 6 |  | sub_433DE0 | 仅映射 |  |
 | 0x2C3 | 2 |  | sub_430890 | 仅映射 |  |
@@ -494,21 +495,21 @@
 | 0x2F1 | 7 |  | sub_4316E0 | 仅映射 |  |
 | 0x2F2 | 6 |  | sub_4318A0 | 仅映射 |  |
 | 0x2F3 | 6 |  | sub_431A10 | 已核对 | **文本项记录查询（写回三个操作数）**：读 op4/op5/op6 → `sub_457A20(Font, &v8, &v7, &v6, op4, op5, op6)` ⇒ **写 op1 = `+20`、op2 = `+24`、op3 = `+28`**（未找到 -1/-1/0）；op5 = 起始下标、op6 = 选择器（匹配 `+32`，记录需含 `flags & 0x40000000`）。★订正：早期把这条的语义误记在 `0xAA` 上；handler=sub_431A10（raw .c 40724-40740） |
-| 0x2F4 | 3 |  | sub_4266A0 | 仅映射 |  |
-| 0x2F5 | 4 |  | sub_4267D0 | 仅映射 |  |
-| 0x2F6 | 1 |  | sub_426820 | 已核对 | **声音通道管理**：读 op1=通道；写 `_this[30*cur+95805]=3`；`sub_4BB9F0(_this+21032, op1)` 重置通道（`sub_4B6390`），清通道字段；`sub_404CB0()` 找空闲通道存 `_this[122501]` 返回。handler=sub_426820（raw .c 33161） |
-| 0x2F7 | 1 |  | sub_426890 | 仅映射 |  |
-| 0x2F8 | 2 |  | sub_4268D0 | 已核对 | **设声音通道音量**：读 op1=通道、op2=音量；`sub_4B6940(op1+12, op2)` 钳制 ±10000 写 `_this[op1+12+375]` 并应用；通道越界报错。handler=sub_4268D0（raw .c 33188） |
+| 0x2F4 | 3 |  | sub_4266A0 | 已核对 | **播语音（id, 附带, 通道）+ 登记文本项记录**：读 op1/op2/op3=通道；切 `Engine[21315+ch]`/`[21318+ch]` 状态位 + `sub_407120`；ADV 激活位 ⇒ 寄存到 `Engine[122505+ch]`/`[122508+ch]`，否则 `sub_4BB840(Voice, ch, op1, op2, Engine[5053+ch])`（第 5 参 = pan）；再 `sub_45EEA0(Font, 0, op1, 0, ch, pan)` 登记「该文本带语音」；末尾按 `sound:Voice` 置 `Engine[122501]=1`。全库 8 处（`BTL.txt`/`HISTORY.txt`/`REPLAYVOICE.txt`）。handler=sub_4266A0（raw .c 33605-33658） |
+| 0x2F5 | 4 |  | sub_4267D0 | 已核对 | **语音排队到指定通道（带延迟）**：读 op1=id、op2=附带值、op3=延迟、op4=通道槽 → `sub_4BBA40(Voice, op1, op2, op3, op4)`（字段见 0x2C0）。全库 30 处。handler=sub_4267D0（raw .c 33660-33674） |
+| 0x2F6 | 1 |  | sub_426820 | 已核对 | **复位语音通道**：读 op1=语音通道（0..2）→ `sub_4BB9F0(Voice, op1)`（raw 142546：`sub_4B6390(设备, op1+12)` 释放设备通道 + 清 `Voice[op1+280/262/265/277]`）→ 清 `Engine[21315+op1]`/`[21318+op1]`/`[122505+op1]`/`[122508+op1]` → `Engine[122501] = sub_404CB0(Voice)`（3 路语音中是否有正忙的）。**纯声音侧**。全库 **86687** 处（ADV 每页语音收尾/换页；惯用法 `i2f6 2` 紧接 `i2f8 2 0`，`SP2563.txt:17025-17028`）。handler=sub_426820（raw .c 33677-33692）。emulator：`op_engine_internal` 空操作。★订正：早期台账写成「清消息回调槽/消息文本回调」，实为**语音通道** |
+| 0x2F7 | 1 |  | sub_426890 | 已核对 | **置语音通道状态位**：`Engine[21315+op1] = 1`（Voice 模块 `[283+ch]`；0x2F6 清、0x2F4/0xC4/0x1BD 按 bit0/bit16 二态切换）。全库 **28122** 处。handler=sub_426890（raw .c 33694-33703） |
+| 0x2F8 | 2 |  | sub_4268D0 | 已核对 | **设语音通道 pan（左右平衡）**：读 op1=语音通道（0..2，映射设备通道 op1+12）、op2=pan（±10000，0=中央） → `sub_4B6940(Engine+18664, op1+12, op2)`：**对称钳制 ±10000** 写 `设备[375+op1+12]`，`sub_4B6350`→`sub_4B7110` 下发到 `IDirectSoundBuffer::SetPan`（>14 报 `dsSetPan`）。★判据：`sub_4B7110` 的错误串是「左右相対ボリューム変更に失敗しました」(vtable+64=SetPan)，且 SetVolume 的值域是 [-10000,0] 而非对称。★`SYSTEM4.txt:476-480` 的子程序 `i2f8 0 0 / 1 0 / 2 0` = 把三路语音 pan 复位到中央；全库 op2 **14642/14642 恒为 0**（全库 14644 处）。handler=sub_4268D0（raw .c 33705-33715）。emulator：`op_engine_internal` 空操作 |
 | 0x2F9 | 7 |  | sub_431AA0 | 仅映射 |  |
 | 0x2FA | 1 |  | sub_426910 | 仅映射 |  |
 | 0x2FB | 1 |  | sub_431B60 | 仅映射 |  |
 | 0x2FC | 5 |  | sub_431BA0 | 已核对 | **读 UI 触摸/触点**：`sub_477980` 从触摸事件缓冲（`Engine+6780`、条数 `Engine[6776]`、40B/项）取触点并 `ScreenToClient`；有触点写 op1=1/op2=X/op3=Y/op4=触点旗标/op5=项[3]，无触点写 op1=0。**PARTIAL**（缓冲填充来源未建模）；handler=sub_431BA0（raw .c 40776-40826） |
 | 0x2FD | 6 |  | sub_431CF0 | 仅映射 |  |
 | 0x2FE | 1 |  | sub_4332D0 | 已核对 | **set-font（校验列表）**：读 op1 字体名，调 `sub_432DD0(_this+21324, font)` 校验在可选字体列表中、拷字体名字段、`sub_45A6E0` 重建；不在列表则警告。handler=sub_4332D0（raw .c 41052） |
-| 0x2FF | 2 |  | sub_426940 | 仅映射 |  |
+| 0x2FF | 2 |  | sub_426940 | 已核对 | **置语音通道音量因子预备位**：`Engine[21318+op1] = 1`（Voice `[286+ch]` 低位置 1）、`Engine[21321+op1] = op2`（`[289+ch]` 音量因子；`0x2710`=10000=100%）。全库 **14124** 处；与 0x302 配对（0x302 置 `0x10000` 并真正下发）。handler=sub_426940（raw .c 33728-33740） |
 | 0x300 | 3 |  | sub_426990 | 已核对 | **消息槽标志/取值**：读 op1=槽、op2=标志、op3=值 ⇒ `Engine[op1+122466] = op2 ｜ (旧值 & 0x10000)`（保留 bit16）、`Engine[op1+122476] = op3`；handler=sub_426990（raw .c 33743-33757） |
 | 0x301 | 1 |  | sub_4269F0 | 已核对 | **清消息槽绘制项**：`Engine[op1+122486] = 0`，再 `sub_404F80(Font, op1)`：把窗对象 `+132`（显现游标）清 0，并按 id 区间删两组 DrawItem `[+104, +108)` 与 `[+276, +280)`；handler=sub_4269F0（raw .c 33759-33766） |
-| 0x302 | 2 |  | sub_426A30 | 仅映射 |  |
+| 0x302 | 2 |  | sub_426A30 | 已核对 | **设语音通道音量因子 + 应用语音音量**：读 op1=通道、op2=音量因子（0..10000） → `Engine[21318+op1] = 0x10000`（Voice `[286+ch]` 置「有因子值」）、`Engine[21321+op1] = op2`；再 `sub_4BBC30(Voice, op1, Engine[489996])`（raw 142681）：`设备[402+op1] = (Voice[286+op1]&0x10000) ? Voice[289+op1] : -1`，`sub_4B6210(设备, op1+12, 语音音量)` 下发。`Engine[489996]` = `sound:Volume3`（全局语音音量，`sub_4763D0` raw 90852）；因子最终在 `sub_4B6210` 里与通道音量、主音量相乘（raw 138711-138718）。用法：`CONFIGCV.txt:396-402/607`（CV 设定页按角色调音量，值 0x2710=100%）。全库 2 处。handler=sub_426A30（raw .c 33767-33777） |
 | 0x303 | 3 |  | sub_426A90 | 已核对 | **UI/消息对象字段**：读 op1/op2/op3 调 `sub_456600(_this+21324, op1, op2, op3)`，对选中对象写 `+288=op2`、`+292=op3`。handler=sub_426A90（raw .c 33256） |
 | 0x304 | 0 |  | sub_41A420 | 仅映射 |  |
 | 0x305 | 0 |  | sub_41B1C0 | 仅映射 |  |

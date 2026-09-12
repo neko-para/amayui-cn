@@ -39,13 +39,16 @@
 ## 相关
 
 - 引擎常态能力：`engine-config-registry-persistence`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`audio-module-topology-and-volume-routing`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x430DB0`（见 `analysis/functions.json`）
 - 函数结论：`0x434720`（见 `analysis/functions.json`）
 - 函数结论：`0x430DF0`（见 `analysis/functions.json`）
+- 函数结论：`0x420B40`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/opcode-table.md`
 - 主题文档：`docs-new/03-engine/adv-text-rendering.md`
+- 主题文档：`docs-new/03-engine/sound-system.md`
 
 ## 证据与备注
 
 - 证据：src/SELFONT.txt（全文 767 行）；CONFIG1.txt:1049 的 call-script 51dd；handler raw 40239-40249/42541-42575/40251-40261；E3 目视：修复后选择器列出 9 个候选面名并以绿框标出当前项（.tmp/fontpick4-1-fontpick.png）
-- 备注：行几何表与绘制细节未逐条建模；本条聚焦「列表数据从哪来」——正是 0x2DC/0x2DD 缺口导致的那部分。
+- 备注：行几何表与绘制细节未逐条建模；本条聚焦「列表数据从哪来」——正是 0x2DC/0x2DD 缺口导致的那部分。 音频侧：本页「选中即播确认音」用的就是 0xB5（`i0b5 1` = 起播 SE 通道 1·播一次；装载是同一段的 `play-sound-effect`），见 sound-system.md §8。

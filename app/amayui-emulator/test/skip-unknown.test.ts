@@ -45,7 +45,8 @@ function scriptOf(...opcodes: number[]): ScriptBinary {
 test('未知 opcode：先抛 NotImplementedOp（带可重试定位信息），登记用户桩后同一条指令即放行', async () => {
   const e = new Engine(new StubNative(() => {}));
   // 0x1111 不在 OPS/NATIVE_OPS/ENGINE_INTERNAL_OPS 任何静态表中（永不与真实 opcode 冲突的测试值）。
-  loadScriptIntoFrame(e.curScript(), scriptOf(0x1111, 0x2f6), 'TEST.BIN');
+  // 0x7A 是**引擎内部纯 no-op**（不读操作数）—— 用来验证"后续落在静态表里仍按表分类"。
+  loadScriptIntoFrame(e.curScript(), scriptOf(0x1111, 0x7a), 'TEST.BIN');
   const frame = e.curScript();
   assert.equal(frame.ip, 0);
 
@@ -69,18 +70,18 @@ test('未知 opcode：先抛 NotImplementedOp（带可重试定位信息），�
   assert.equal(t.handlerKind, 'user-stub');
   assert.equal(frame.ip, 1, 'user-stub 是 no-op，ip 应正常 +1');
 
-  // 3) 后续静态表里的指令不受影响（0x2f6 = engine-internal）
+  // 3) 后续静态表里的指令不受影响（0x7a = engine-internal 纯 no-op）
   const t2 = await stepOnce(e);
-  assert.equal(t2.opcode, 0x2f6);
+  assert.equal(t2.opcode, 0x7a);
   assert.equal(t2.handlerKind, 'engine-internal');
   assert.equal(frame.ip, 2);
 });
 
 test('用户桩只兜底：不会遮蔽静态表里的同 opcode 实现', async () => {
   const e = new Engine(new StubNative(() => {}));
-  loadScriptIntoFrame(e.curScript(), scriptOf(0x2f6), 'TEST.BIN');
+  loadScriptIntoFrame(e.curScript(), scriptOf(0x7a), 'TEST.BIN');
   // 即便用户"跳过"了一个已实现的 opcode，解析仍优先静态表（engine-internal），不会降级成 user-stub。
-  e.unknownOpStubs.set(0x2f6, 1);
+  e.unknownOpStubs.set(0x7a, 1);
   const t = await stepOnce(e);
   assert.equal(t.handlerKind, 'engine-internal');
 });

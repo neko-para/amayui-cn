@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 17 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 21 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 20 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 26 | 引擎有、emulator 完全没有 |
+| `partial` | 21 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 23 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **95** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **97** | 需要关注（非 n/a 且非已核验）= **51** |
 
 ## 按子系统
 
@@ -24,7 +24,7 @@
 |---|---|---|
 | 3D | 15 | 1 |
 | Live2D | 2 | 2 |
-| 声音 | 3 | 3 |
+| 声音 | 5 | 1 |
 | 帧循环 | 13 | 8 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
@@ -36,9 +36,9 @@
 
 | id | 子系统 | 能力 | emulator | 依据 / 守卫 |
 |---|---|---|---|---|
-| `frame-pump-sound-channels` | 声音 | 每帧声音通道老化 | ❌ 缺失 | E0 |
+| `frame-pump-sound-channels` | 声音 | 每帧声音通道老化 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `frame-pump-input-refresh` | 输入 | 每帧输入态刷新 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
-| `frame-pump-music-fade` | 声音 | 每帧 BGM 淡出推进 | ❌ 缺失 | E0 |
+| `frame-pump-music-fade` | 声音 | 每帧 BGM 淡出推进 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `frame-render-gate-mainloop` | 帧循环 | 主循环帧提交门控 | 🟡 已建模未核验 | E1 |
 | `scene-frame-commit` | 渲染 | Scene 逐帧提交（四路归并 + 绘制） | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
 | `scene-beginscene-recursion-gate` | 渲染 | BeginScene/EndScene 递归门 | ➖ n/a | E1 |
@@ -68,7 +68,7 @@
 | `transition-table-flush` | 转场 | 转场表帧尾收尾（sub_4A9BE0） | ❌ 缺失 | E0 |
 | `lazy-effect-200-201-release` | 3D | 2D/3D effect 槽（46480 起 5 槽）的批量释放 | ➖ n/a | E1 |
 | `renderer-state-reset-each-frame` | 渲染 | 渲染态重置（sub_498B60） | ➖ n/a | E1 |
-| `audio-device-init` | 声音 | DirectSound 设备/对象重建 | ❌ 缺失 | E0 |
+| `audio-device-init` | 声音 | DirectSound 设备/对象重建 | 🟠 部分 | E2 · `test/audio-engine.test.ts` |
 | `movie-object-lifecycle` | 帧循环 | 电影对象帧内生命周期 | ❌ 缺失 | E0 |
 | `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | 🟡 已建模未核验 | E1 · `test/scene-report.test.ts` |
 | `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ❌ 缺失 | E0 |
@@ -131,26 +131,10 @@
 | `engine-config-registry-persistence` | 资源 | 引擎配置注册表（SYS4REG.INI）：启动装载 → 脚本读写 → 写盘 | ✅ 已核验 | E3 · `test/config-version-substr.test.ts` |
 | `save-data-tables-persistence` | 资源 | SAVE.DAT：脚本 save-int/save-string 两张表的持久化（= 设置界面那些开关真正存的地方） | ✅ 已核验 | E3 · `test/save-data.test.ts` |
 | `append-pack-discovery-and-activation` | 资源 | 扩展包（APPENDnn.AAI / APPENDnn.ALF）的发现、注册与激活 | ✅ 已核验 | E3 · `test/append-packs.test.ts` |
+| `audio-module-topology-and-volume-routing` | 声音 | 音频三模块拓扑与音量路由（设备 / SE / Voice / Music） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
+| `voice-request-deferral-and-adv-gate` | 声音 | ADV 激活期间的语音寄存与冲刷（文本↔语音联动） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
-
-### `frame-pump-sound-channels`（absent）
-
-- **能力**：每帧声音通道老化
-- **触发**：主循环每轮内层必然执行（不受 effect_flags 门控）；`Engine+82876+302` 非零时才有可观察效果
-- **缺失时为什么静默**：通道槽为空时循环体只做 `if (*(v5-10))` 判定即跳过，没有断言或日志
-- **引擎**：sub_412290, sub_4B5230 @ raw 20643-20645
-- **读的字段**：Engine+82876, Engine+369332
-- **emulator 现状**：无声音子系统：每帧通道老化不做（声音整体未实现）
-
-### `frame-pump-music-fade`（absent）
-
-- **能力**：每帧 BGM 淡出推进
-- **触发**：`Engine+698852` 非零且配置 `sound:MusicFade` 打开
-- **缺失时为什么静默**：门不满足时函数体整段跳过，仅 return
-- **引擎**：sub_407120, sub_412290 @ raw 12113-12140
-- **读的字段**：Engine+698852, Engine+699204, Engine+490016, Engine+697620
-- **emulator 现状**：无声音子系统
 
 ### `scene-frame-commit`（partial）
 
@@ -278,14 +262,14 @@
 - **读的字段**：Scene+1048, Scene+46516
 - **emulator 现状**：★转场表帧尾收尾（sub_4A9BE0）未建模；与 scene-pending-flag 共同决定"转场是否清空"
 
-### `audio-device-init`（absent）
+### `audio-device-init`（partial）
 
 - **能力**：DirectSound 设备/对象重建
 - **触发**：引擎 ctor（raw 21426 → `sub_4B69B0(Engine+18664)`）；`sub_4B5C50`(138380) 惰性 `LoadLibrary("DSOUND.DLL")`
 - **缺失时为什么静默**：DSOUND.DLL 缺失时 `DirectSoundCreate` 取不到，所有播放调用变成空操作，无报错
 - **引擎**：sub_4B69B0, sub_4B5C50, sub_4B6940 @ raw 138380-139100
 - **读的字段**：Engine+18664
-- **emulator 现状**：无声音子系统（当前范围外；但属"引擎有、emulator 完全没有"的明确缺口）
+- **emulator 现状**：部分实现：AudioContext 懒创建 + resume（first gesture 兜底）已落地；引擎的「设备丢失 → 重建 → 按 SE[1212+ch] 重载 10 通道」（sub_4B5090）与 DirectSound 错误重试未实现
 
 ### `movie-object-lifecycle`（absent）
 

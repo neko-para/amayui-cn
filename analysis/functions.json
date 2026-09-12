@@ -1629,20 +1629,6 @@
     "notes": "与 detach-texture(0x1F7) 区别：release-texture **销毁纹理资源**（槽内存对象），影响引用该槽的所有图元；detach-texture 只是把指定 handle(range) 的**图元**从渲染容器移除、纹理资源仍在"
   },
   {
-    "addr": "0x420B40",
-    "raw_name": "sub_420B40",
-    "semantic_name": "op_sound_channel_420B40",
-    "op": "0xB5",
-    "status": "ANALYZED",
-    "purpose": "op 0xB5：声音通道控制。读 op1=通道号 → sub_4B5020(_this+20719, op1, 0) →（声音设备存在时）sub_4B6020(设备, op1, 0)：通道号 >0xE 或通道未分配则报错/返回；否则 sub_4B73E0(通道, 0) 控制该声音通道。**纯声音侧，无 VM/渲染效果**",
-    "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["设子系操作标记 = 3", "readIntOperand(op1)=通道号", "sub_4B5020(_this+20719, op1, 0) 转发到声音设备", "sub_4B6020(设备, op1, 0)：通道>0xE 或未分配 → 报错/返回；否则 sub_4B73E0(通道, 0)"],
-    "fields_used": ["this->_this+20719(声音系统)", "this->_this[4*op1+1620](声音通道)", "this->_this[4*op1+1440]"],
-    "unmodeled": ["sub_4B6020/sub_4B73E0 内部"],
-    "evidence": "raw 29689-29697 (sub_420B40), 137660-137670 (sub_4B5020), 138590-138615 (sub_4B6020)",
-    "notes": "★别与 0x5B ne 混：本指令助记符缺失 ⇒ 反汇编/控制面板显示为 i0b5，2026-09 用户实测读成 0x05B（ne，已实现）而以为「已实现指令被当缺口」。用法实证：$1$SELFONT.txt:38 i0b5 1（选中字体时的确认音）、CONFIG2.txt 11 处（ADV 设定页的反馈音）。emulator：声音子系统未建模 ⇒ stubs.ts 的 engine-internal no-op；控制面板现每行都带 0x0b5 指令码以免混读。"
-  },
-  {
     "addr": "0x418E60",
     "raw_name": "sub_418E60",
     "semantic_name": "op_abort_418E60",
@@ -1979,22 +1965,20 @@
   {
     "addr": "0x4B6940",
     "raw_name": "sub_4B6940",
-    "semantic_name": "snd_set_volume_4B6940",
+    "semantic_name": "snd_set_pan_4B6940",
     "status": "ANALYZED",
-    "purpose": "设通道音量：a2<15 时钳制 a3 到 ±10000 写 _this[a2+375]，sub_4B6350 应用；越界报 \"dsSetVolume...\"。= 0x2F8 通道音量。",
+    "purpose": "设通道 pan（左右平衡）：a2<15 时**对称**钳制 a3 到 ±10000 写 _this[a2+375]，sub_4B6350→sub_4B7110(=SetPan) 应用；越界报 \"dsSetPan...\"。= 0x2F8。★值域对称 ⇒ 是 SetPan 而非 SetVolume（后者值域 [-10000,0]）。",
     "signature_override": {
       "param0": "this(Sound*)"
     },
     "sub_behaviors": [
       "钳制 ±10000",
       "_this[a2+375]=vol",
-      "sub_4B6350 应用"
+      "sub_4B6350→sub_4B7110 应用（SetPan）"
     ],
-    "unmodeled": [
-      "sub_4B6350 内部"
-    ],
+    "unmodeled": [],
     "evidence": "raw 139064-139089",
-    "notes": "音量单位 ±10000(10^4)；0x2F8 sub_4268D0 调它"
+    "notes": "pan 值域 ±10000（0=中央）；音量走另一条路：sub_4B68E0(设备[327+ch]) + sub_4B6210(=SetVolume)"
   },
   {
     "addr": "0x4B5C50",
@@ -2127,62 +2111,6 @@
     "notes": ""
   },
   {
-    "addr": "0x420B00",
-    "raw_name": "sub_420B00",
-    "semantic_name": "op_play_sound_420B00",
-    "op": "0xB4",
-    "status": "PARTIAL",
-    "category": "声音",
-    "purpose": "op play-sound-effect：设 frame.arity=5，读 op2=通道指针/op1=音效id → sub_4B4F60(_this+20719, 通道, id) 预载/起播音效。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "fields_used": [
-      "this->sound_manager(_this+82876)"
-    ],
-    "unmodeled": [
-      "sub_4B4F60 内部"
-    ],
-    "evidence": "raw 29680-29687",
-    "notes": "声音相关；emulator 可 no-op"
-  },
-  {
-    "addr": "0x420B80",
-    "raw_name": "sub_420B80",
-    "semantic_name": "op_sound_release_420B80",
-    "op": "0xB6",
-    "status": "ANALYZED",
-    "category": "声音",
-    "purpose": "op 0xB6 声音通道：读 op1=通道 → sub_4B5050(_this+20719, 通道)。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "unmodeled": [],
-    "evidence": "raw 29700-29707",
-    "notes": "声音相关"
-  },
-  {
-    "addr": "0x420CC0",
-    "raw_name": "sub_420CC0",
-    "semantic_name": "op_play_bgm_420CC0",
-    "op": "0xBF",
-    "status": "PARTIAL",
-    "category": "声音",
-    "purpose": "op play-bgm：清 _this[174801] bit0x200 并 sub_489E50(_this+174454,100)；读 op1=音乐id → sub_489C20(_this+174454, id, 1) 播 BGM；按 \"set:KeepMusicVoice\"/\"sound:MusicFadeOnVoicePlaying(Volume)\" 决定 sub_489C00 渐隐。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "fields_used": [
-      "this->music(_this+697816)",
-      "this->config_registry(set:KeepMusicVoice/sound:MusicFade*)"
-    ],
-    "unmodeled": [
-      "sub_489C20/489C00 内部"
-    ],
-    "evidence": "raw 29754-29780",
-    "notes": "BGM 播放"
-  },
-  {
     "addr": "0x420F10",
     "raw_name": "sub_420F10",
     "semantic_name": "op_set_field_420F10",
@@ -2199,58 +2127,6 @@
     "unmodeled": [],
     "evidence": "raw 29844-29859",
     "notes": "与 0xC0 成对 get/set"
-  },
-  {
-    "addr": "0x420F70",
-    "raw_name": "sub_420F70",
-    "semantic_name": "op_play_voice_420F70",
-    "op": "0xC4",
-    "status": "PARTIAL",
-    "category": "声音",
-    "purpose": "op play-voice：读 op1=语音id、op2=槽 → 经音乐/声音对象播语音。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "unmodeled": [
-      "内部语音路径"
-    ],
-    "evidence": "raw 29861-29870 附近",
-    "notes": "语音播放"
-  },
-  {
-    "addr": "0x426820",
-    "raw_name": "sub_426820",
-    "semantic_name": "op_sound_mgmt_426820",
-    "op": "0x2F6",
-    "status": "ANALYZED",
-    "category": "声音",
-    "purpose": "op 0x2F6 声音通道管理：读 op1=通道 → sub_4BB9F0(_this+21032, 通道) 重置通道、清 _this[通道+21315/21318/122505/122508]；sub_404CB0(_this+21032) 找空闲通道存 _this[122501]。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "unmodeled": [
-      "sub_4BB9F0/sub_404CB0 内部"
-    ],
-    "evidence": "raw 33677-33692",
-    "notes": "找空闲声音通道"
-  },
-  {
-    "addr": "0x4268D0",
-    "raw_name": "sub_4268D0",
-    "semantic_name": "op_sound_volume_4268D0",
-    "op": "0x2F8",
-    "status": "ANALYZED",
-    "category": "声音",
-    "purpose": "op 0x2F8 设声音通道音量：读 op2=音量、op1=通道 → sub_4B6940(_this+4666, op1+12, op2) 钳 ±10000 应用。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "fields_used": [
-      "this->sound_manager(SoundBase+4666 dword)"
-    ],
-    "unmodeled": [],
-    "evidence": "raw 33706-33715",
-    "notes": "声音通道音量"
   },
   {
     "addr": "0x42FEC0",
@@ -5239,6 +5115,706 @@
     "unmodeled": ["vtable[+60] 的语义（看形态像『按 key 注册/登记一项』）"],
     "evidence": "raw 38757-38771",
     "notes": "★唯一调用点 `$3$AUTORUN.txt:68 i1d8 (global-int 70801e) 1 30003b2`（op3 = 包 3 的某个脚本 id）：结果写进 **global 70801e，全语料无任何读取方** ⇒ emulator 现按 no-op，不改变可观测状态（列入闸门 B 缺口）。"
+  },
+  {
+    "addr": "0x420BC0",
+    "raw_name": "sub_420BC0",
+    "semantic_name": "op_se_channel_play_loop_420BC0",
+    "op": "0xBA",
+    "status": "ANALYZED",
+    "purpose": "op 0xBA SE 通道起播（循环）：读 op1=通道 → sub_4B5020(SE=Engine+20719, 通道, 1)：设备在且 sound:SE 开 → sub_4B6020(设备, 通道, 1) → sub_4B73E0(缓冲, 1)。第 3 参= SoundBuffer 循环标志(+9296)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->se(Engine+82876 int 20719)", "this->se[261](sound:SE 开关)"],
+    "unmodeled": [],
+    "evidence": "raw 29709-29717；sub_4B5020 raw 137661-137670；循环标志读点 raw 139322",
+    "notes": "与 0xB5 只差循环标志（0xB5=0 播一次、0xBA=1 循环）⇒ 二者语义由 sub_4B73E0 的 +9296 决定。全库 154 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x420C00",
+    "raw_name": "sub_420C00",
+    "semantic_name": "op_bgm_play_slot_loop_420C00",
+    "op": "0xB7",
+    "status": "ANALYZED",
+    "purpose": "op 0xB7 在 BGM 当前槽起播（循环）：清 Engine[174801] bit 0x200 + sub_489E50(Music=Engine+174454, 100)（推进淡出）→ sub_489F80(Music, op1, 1)；op1=0 时等价停止/清当前曲。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->music(Engine+697816 int 174454)", "this->effect_flags(174801) bit0x200"],
+    "unmodeled": [],
+    "evidence": "raw 29719-29734；sub_489F80 raw 106352-106372",
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+  },
+  {
+    "addr": "0x420C60",
+    "raw_name": "sub_420C60",
+    "semantic_name": "op_bgm_play_slot_once_420C60",
+    "op": "0xB9",
+    "status": "ANALYZED",
+    "purpose": "op 0xB9 在 BGM 当前槽起播（不循环）：同 0xB7 的淡出清理，但 sub_489F80(Music, op1, 0)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->music(Engine+697816)"],
+    "unmodeled": [],
+    "evidence": "raw 29736-29751",
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+  },
+  {
+    "addr": "0x420D90",
+    "raw_name": "sub_420D90",
+    "semantic_name": "op_se_enable_420D90",
+    "op": "0xBB",
+    "status": "ANALYZED",
+    "purpose": "op 0xBB SE 总开关：读 op1 → sub_408D90(this, op1)：与配置 sound:SE 现值比较（相同则不动）；关时把设备 0..9 通道全 sub_4B60C0 停掉并写 sound:SE=0，开时写 1；再 sub_406DF0(this, 2, op1)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->se[261] = Engine+83920(sound:SE)", "this->sound_device(Engine+18664)"],
+    "unmodeled": [],
+    "evidence": "raw 29782-29790；sub_408D90 raw 13545-13571",
+    "notes": "全库 0 处（脚本不用）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x420DC0",
+    "raw_name": "sub_420DC0",
+    "semantic_name": "op_bgm_mode_420DC0",
+    "op": "0xBC",
+    "status": "ANALYZED",
+    "purpose": "op 0xBC BGM 开关/模式：读 op1（1..3）→ sub_408CF0(this, op1-1)：把配置 sound:Music 的值 ±3 写回（<0 视为关）、停当前 BGM(sub_489B50)、恢复 Engine[174713] 并把 Engine[174712] 记为新模式、sub_489F80(Music, 0, Engine[174715])。op1>2 不动作。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->music(Engine+697816)", "this->Engine[174712]/[174713]/[174715]"],
+    "unmodeled": [],
+    "evidence": "raw 29792-29802；sub_408CF0 raw 13515-13543",
+    "notes": "三种模式值（sound:Music 的 ±3 编码）。全库 0 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x42E460",
+    "raw_name": "sub_42E460",
+    "semantic_name": "op_get_se_state_42E460",
+    "op": "0xBD",
+    "status": "ANALYZED",
+    "purpose": "op 0xBD 读 SE 可用状态 → 写 op1：sound:SE==0 ⇒ 0；否则 sound:UseDirect==1 ⇒ 1，否则 2（DirectSound / 兜底）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->config(sound:SE/sound:UseDirect)"],
+    "unmodeled": [],
+    "evidence": "raw 38597-38606",
+    "notes": "全库 0 处。"
+  },
+  {
+    "addr": "0x42E4D0",
+    "raw_name": "sub_42E4D0",
+    "semantic_name": "op_get_bgm_mode_42E4D0",
+    "op": "0xBE",
+    "status": "ANALYZED",
+    "purpose": "op 0xBE 读 BGM 模式 → 写 op1：sound:Music + 1。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->config(sound:Music)"],
+    "unmodeled": [],
+    "evidence": "raw 38608-38616",
+    "notes": "全库 0 处。"
+  },
+  {
+    "addr": "0x420E00",
+    "raw_name": "sub_420E00",
+    "semantic_name": "op_bgm_fade_420E00",
+    "op": "0xC2",
+    "status": "ANALYZED",
+    "purpose": "op 0xC2 BGM 淡变（双路径）：ADV 激活（Engine[174801]&0x8000000）⇒ sub_489D10(Music, op1, op2) + sub_489E50(Music, 100)；否则先按 set:TransferMusic 经 sub_418580 切换、置 bit 0x200、按 op2（<1000 走 ÷10，否则 ÷1000）经 sub_453A60(Engine+107503,…) 设节流，再 sub_489D10(Music, op1, op2<1000?10:1)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->music(Engine+697816)", "this->effect_flags(174801) bit0x8000000/bit0x200", "this->config(set:TransferMusic)"],
+    "unmodeled": [],
+    "evidence": "raw 29804-29841",
+    "notes": "全库 0 处。"
+  },
+  {
+    "addr": "0x421070",
+    "raw_name": "sub_421070",
+    "semantic_name": "op_set_volume_421070",
+    "op": "0xC6",
+    "status": "ANALYZED",
+    "purpose": "op 0xC6 设音量：读 op1=类别（0..4）、op2=值 → 写配置 sound:Volume0..4 并应用：0 ⇒ sub_4092C0（主音量，含设备[342]）；1 ⇒ sub_409290（BGM：sub_4071D0(...,1) + sub_489B80(Music,值)）；2 ⇒ sub_408260（SE：设备 0..9 通道 sub_4B68E0）；3 ⇒ sub_4082A0（语音：设备 12..14）；4 ⇒ sub_4071D0(...,4) + Engine[490000]（影片）。越界报 setVolume。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->config(sound:Volume0..4)", "this->sound_device(Engine+18664)"],
+    "unmodeled": [],
+    "evidence": "raw 29915-29983；sub_408260/4082A0 raw 13048-13070；sub_476380/4763D0 raw 90829-90870",
+    "notes": "音量模型 0=主/1=BGM/2=SE/3=语音/4=影片（见 sound-system.md §6）。全库 0 处（设置界面走 save-int 表）。"
+  },
+  {
+    "addr": "0x4212C0",
+    "raw_name": "sub_4212C0",
+    "semantic_name": "op_play_voice_loopable_4212C0",
+    "op": "0x1BD",
+    "status": "ANALYZED",
+    "purpose": "op 0x1BD 播语音（通道 0、循环位=1）：同 0xC4 的寄存/起播/登记三件套，但循环标志传 1（Engine[122508]=1、sub_4BB840(Voice,0,op1,1,Engine[5053])（第 5 参 = pan）、sub_45EEA0(…,1,0,pan)）；Engine[21315] 状态位的清 0 条件是 (v&0x10000)||(v&1)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice(Engine+84128)", "this->Engine[122505]/[122508]", "this->font 文本项记录表"],
+    "unmodeled": [],
+    "evidence": "raw 30021-30066",
+    "notes": "全库 0 处。"
+  },
+  {
+    "addr": "0x4262C0",
+    "raw_name": "sub_4262C0",
+    "semantic_name": "op_se_delayed_play_4262C0",
+    "op": "0x2BF",
+    "status": "ANALYZED",
+    "purpose": "op 0x2BF 延迟播 SE：读 op1=通道、op2=循环标志、op3=延迟毫秒 → sub_4B5170(SE=Engine+20719, op1, op2, op3)：SE[262+ch]=1 武装、[272+ch]=0 起始时刻、[282+ch]=延迟、[292+ch]=循环标志、SE[302]=1；每帧 sub_4B5230(SE, 当前时刻) 到期即 sub_4B5020 起播。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->se(Engine+82876 int 20719)", "this->se[262+ch]/[272+ch]/[282+ch]/[292+ch]/[302]"],
+    "unmodeled": [],
+    "evidence": "raw 33424-33436；sub_4B5170 raw 137720-137741；sub_4B5230 raw 137763-137802；每帧调用点 raw 20645",
+    "notes": "全库 30 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x426310",
+    "raw_name": "sub_426310",
+    "semantic_name": "op_voice_queue_426310",
+    "op": "0x2C0",
+    "status": "ANALYZED",
+    "purpose": "op 0x2C0 语音排队到通道 0（带延迟）：读 op1=语音 id、op2=附带值、op3=延迟毫秒 → sub_4BBA40(Voice, op1, op2, op3, 0)：Voice[265+ch]=1、[268+ch]=0、[271+ch]=延迟、[274+ch]=id、[277+ch]=附带值；每帧 sub_4BBAB0(Voice, 当前时刻) 到期起播。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice(Engine+84128 int 21032)"],
+    "unmodeled": [],
+    "evidence": "raw 33438-33450；sub_4BBA40 raw 142563-142571；sub_4BBAB0 raw 142585-142678",
+    "notes": "全库 0 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x4266A0",
+    "raw_name": "sub_4266A0",
+    "semantic_name": "op_voice_play_slot_4266A0",
+    "op": "0x2F4",
+    "status": "ANALYZED",
+    "purpose": "op 0x2F4 播语音（id, 附带, 通道）+ 登记文本项记录：读 op1/op2/op3=语音通道；切 Engine[21315+ch]/[21318+ch] 状态位 + sub_407120；ADV 激活位 ⇒ 寄存到 Engine[122505+ch]/[122508+ch]，否则 sub_4BB840(Voice, ch, op1, op2, Engine[5053+ch])（第 5 参 = pan）；再 sub_45EEA0(Font, 0, op1, 0, ch, pan) 登记「该文本带语音」；末尾按 sound:Voice 置 Engine[122501]=1。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice(Engine+84128)", "this->Engine[21315+ch]/[21318+ch]", "this->Engine[122505+ch]/[122508+ch]", "this->Engine[5053+ch](语音通道 pan；即设备[375+ch+12])", "this->font 文本项记录表"],
+    "unmodeled": [],
+    "evidence": "raw 33605-33658",
+    "notes": "全库 8 处（BTL.txt / HISTORY.txt / REPLAYVOICE.txt）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x4267D0",
+    "raw_name": "sub_4267D0",
+    "semantic_name": "op_voice_queue_slot_4267D0",
+    "op": "0x2F5",
+    "status": "ANALYZED",
+    "purpose": "op 0x2F5 语音排队到指定通道（带延迟）：读 op1=id、op2=附带值、op3=延迟、op4=通道槽 → sub_4BBA40(Voice, op1, op2, op3, op4)（字段见 0x2C0）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice(Engine+84128)"],
+    "unmodeled": [],
+    "evidence": "raw 33660-33674；sub_4BBA40 raw 142563-142571",
+    "notes": "全库 30 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x426890",
+    "raw_name": "sub_426890",
+    "semantic_name": "op_voice_flag_set_426890",
+    "op": "0x2F7",
+    "status": "ANALYZED",
+    "purpose": "op 0x2F7 置语音通道状态位：Engine[21315+op1] = 1（Voice 模块 [283+ch]；0x2F6 清、0x2F4/0xC4/0x1BD 按 bit0/bit16 二态切换）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice[283+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 33694-33703",
+    "notes": "全库 28122 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x426940",
+    "raw_name": "sub_426940",
+    "semantic_name": "op_voice_volume_factor_prepare_426940",
+    "op": "0x2FF",
+    "status": "ANALYZED",
+    "purpose": "op 0x2FF 置语音通道音量因子预备位：Engine[21318+op1] = 1（Voice [286+ch] 低位置 1「有因子值」）、Engine[21321+op1] = op2（[289+ch] 音量因子；0x2710=10000=100%）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice[286+ch]/[289+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 33728-33740",
+    "notes": "全库 14124 处；与 0x302 配对（0x302 置 0x10000 并真正下发）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x426A30",
+    "raw_name": "sub_426A30",
+    "semantic_name": "op_voice_volume_factor_apply_426A30",
+    "op": "0x302",
+    "status": "ANALYZED",
+    "purpose": "op 0x302 设语音通道音量因子 + 应用语音音量：读 op1=通道、op2=音量因子（0..10000） → Engine[21318+op1]=0x10000、Engine[21321+op1]=op2；再 sub_4BBC30(Voice, op1, Engine[489996])：设备[402+op1] = (Voice[286+op1]&0x10000) ? Voice[289+op1] : -1，sub_4B6210(设备, op1+12, 语音音量) 下发。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->voice[286+ch]/[289+ch]", "this->sound_device[402+ch]", "this->Engine[489996](sound:Volume3 语音音量)"],
+    "unmodeled": [],
+    "evidence": "raw 33767-33777；sub_4BBC30 raw 142680-142695；Engine[489996] 写入 raw 90859",
+    "notes": "全库 2 处（CONFIGCV.txt:402/607）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x4BB700",
+    "raw_name": "sub_4BB700",
+    "semantic_name": "voice_module_ctor_4BB700",
+    "status": "ANALYZED",
+    "purpose": "Voice 模块构造（Engine+84128 = int 21032）：vftable=Voice___vftable_，清 [260]/[258]/[259]/[261]=1/[262..264]/[280..288]。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)" },
+    "fields_used": ["_this[258..264]", "_this[280..288]"],
+    "unmodeled": [],
+    "evidence": "raw 142443-142465；vftable 名 raw 142466",
+    "notes": "同族 SE 模块构造=sub_4BB4xx/sub_4B4F10（Engine+82876）。"
+  },
+  {
+    "addr": "0x4BB810",
+    "raw_name": "sub_4BB810",
+    "semantic_name": "audio_module_bind_4BB810",
+    "status": "ANALYZED",
+    "purpose": "音频模块绑定：_this[258]=a3（Sound 设备对象地址 = Engine+18664）、_this[259]=a4（资源库 = Engine+680092 FileDB）、_this[260]=a2（hWnd）。SE 模块（Engine+82876）与 Voice 模块（Engine+84128）共用本函数。",
+    "signature_override": { "param0": "this(SE*/Voice* 模块)", "param1": "hWnd", "param2": "设备对象地址", "param3": "资源库" },
+    "fields_used": ["_this[258](设备)", "_this[259](资源库)", "_this[260](hWnd)"],
+    "unmodeled": [],
+    "evidence": "raw 142476-142486；调用点 raw 14939/14943、23688/23692",
+    "notes": "★模块[258](设备对象地址) 与 设备[258](IDirectSound 接口) 是两层，读反编译勿混。"
+  },
+  {
+    "addr": "0x4BB840",
+    "raw_name": "sub_4BB840",
+    "semantic_name": "voice_play_4BB840",
+    "status": "ANALYZED",
+    "purpose": "语音起播：(模块, 槽 0..2, 语音 id, 循环标志, **pan**)：资源库取 VOICE 资源 → sub_4B6570 绑设备通道 槽+12 → 写 [槽+274]=id / [槽+277]=循环位 / 设备[390+槽+12]=音量因子（-1 或 [289+槽]）→ 第 5 参经 sub_4B6350(设备, 槽+12, pan) 下发 SetPan → 若模块[261](sound:Voice) 开则 sub_4B6020(设备, 槽+12, 循环标志)。失败抛 VOICEファイル %s の読み込みに失敗しました。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)", "param1": "槽 0..2", "param3": "循环标志", "param4": "音量" },
+    "fields_used": ["_this[258](设备)", "_this[259](资源库)", "_this[261](sound:Voice)", "设备[390+ch]/[405+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 142488-142541",
+    "notes": "语音播放的唯一真入口（0xC4/0x1BD/0x2F4/0x2C0/0x2F5 到期、ADV 冲刷、每帧队列泵、ADV 显示路径都调它）。"
+  },
+  {
+    "addr": "0x4BB9F0",
+    "raw_name": "sub_4BB9F0",
+    "semantic_name": "voice_reset_channel_4BB9F0",
+    "status": "ANALYZED",
+    "purpose": "复位一个语音槽：(模块, 槽) → sub_4B6390(设备, 槽+12) 释放设备通道 + 清 _this[槽+280]/[262]/[265]/[277]。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)", "param1": "槽 0..2" },
+    "fields_used": ["_this[258](设备)", "_this[280+ch]/[262+ch]/[265+ch]/[277+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 142546-142560",
+    "notes": "由 0x2F6 调用。"
+  },
+  {
+    "addr": "0x4BBA40",
+    "raw_name": "sub_4BBA40",
+    "semantic_name": "voice_arm_request_4BBA40",
+    "status": "ANALYZED",
+    "purpose": "排入语音槽请求：(模块, id, 附带值, 延迟, 槽) → _this[槽+271]=延迟、[274]=id、[265]=1（武装）、[268]=0（起始时刻）、[277]=附带值。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)", "param4": "槽 0..2" },
+    "fields_used": ["_this[265+ch]/[268+ch]/[271+ch]/[274+ch]/[277+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 142563-142571",
+    "notes": "由 0x2C0 / 0x2F5 调用；由每帧 sub_4BBAB0 消费。"
+  },
+  {
+    "addr": "0x4BBAB0",
+    "raw_name": "sub_4BBAB0",
+    "semantic_name": "voice_pump_4BBAB0",
+    "status": "ANALYZED",
+    "purpose": "每帧推进 3 个语音槽：(模块, 当前时刻) → 对每槽按 [265+ch] 武装位与 [271+ch] 延迟到期判定；到期后按 [283+ch]/[286+ch] 的状态位决定丢弃还是 sub_4BB840(模块, ch, [274+ch], [277+ch]&1, 设备[387+ch]) 起播。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)", "param1": "当前时刻" },
+    "fields_used": ["_this[265+ch]..[289+ch]", "_this[258](设备)"],
+    "unmodeled": [],
+    "evidence": "raw 142585-142678；每帧调用点 raw 20646（受 Engine+85172 语音开关门控）",
+    "notes": "第二层台账 frame-pump-sound-channels 覆盖此每帧行为。"
+  },
+  {
+    "addr": "0x4BBC30",
+    "raw_name": "sub_4BBC30",
+    "semantic_name": "voice_apply_volume_4BBC30",
+    "status": "ANALYZED",
+    "purpose": "应用语音通道音量因子与音量：(模块, ch, 语音音量) → 设备[402+ch] = ([286+ch] & 0x10000) ? [289+ch] : -1；再 sub_4B6210(设备, ch+12, 语音音量)。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)", "param1": "槽 0..2" },
+    "fields_used": ["_this[286+ch]/[289+ch]", "_this[258](设备)", "设备[390+ch+12]"],
+    "unmodeled": [],
+    "evidence": "raw 142680-142695",
+    "notes": "由 0x302 调用（音量 = Engine[489996] = sound:Volume3）。"
+  },
+  {
+    "addr": "0x404CB0",
+    "raw_name": "sub_404CB0",
+    "semantic_name": "voice_busy_query_404CB0",
+    "status": "ANALYZED",
+    "purpose": "语音通道占线查询：(Voice 模块) → _this[258](设备) 为空返回 0；否则对 ch=0..2 判定 (_this[277+ch] & 3)==3 || !sub_4B6130(设备, ch+12)，找到「状态非 3 且设备通道在播」返回 1，否则 0。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)" },
+    "fields_used": ["_this[258](设备)", "_this[277+ch](槽状态低 2 位)"],
+    "unmodeled": [],
+    "evidence": "raw 10583-10598；sub_4B6130 raw 138645-138664",
+    "notes": "读者：0x2F6（写 Engine[122501]）、ADV 显示路径 raw 76893、每帧语音泵 raw 19980。"
+  },
+  {
+    "addr": "0x404D10",
+    "raw_name": "sub_404D10",
+    "semantic_name": "se_busy_query_404D10",
+    "status": "PARTIAL",
+    "purpose": "通道占线查询（另一组）：从 _this+1048（int 262）起遍历，条件 (i[15] & 3)==3 || *i <= 0 ⇒ 返回 1（有槽在播）。",
+    "signature_override": { "param0": "this(Voice* Engine+84128)" },
+    "fields_used": ["_this[262+ch]/[277+ch]"],
+    "unmodeled": ["消费方语义（唯一调用点 raw 20403 的用途未逐句读）"],
+    "evidence": "raw 10600-10613；调用点 raw 20403",
+    "notes": "与 sub_404CB0 同族但判据不同（此处用 *i > 0 而非设备在播）。"
+  },
+  {
+    "addr": "0x4B4F60",
+    "raw_name": "sub_4B4F60",
+    "semantic_name": "se_load_wav_4B4F60",
+    "status": "ANALYZED",
+    "purpose": "SE 装载：从资源库按 id 取 WAV → sub_4B6570(设备, 通道, 资源库, 资源值) 建解码缓冲绑通道 → 记 _this[通道+1212]=id；失败抛 WAVファイル %s の読み込みに失敗しました。",
+    "signature_override": { "param0": "this(SE* Engine+82876)", "param1": "通道 0..9", "param2": "音效 id" },
+    "fields_used": ["_this[258](设备)", "_this[259](资源库)", "_this[260](hWnd)", "_this[1212+ch](已装载 WAV id)"],
+    "unmodeled": [],
+    "evidence": "raw 137629-137658（错误串 raw 137649）",
+    "notes": "0xB4 的唯一被调。装载≠起播：起播要 0xB5/0xBA。"
+  },
+  {
+    "addr": "0x4B5170",
+    "raw_name": "sub_4B5170",
+    "semantic_name": "se_arm_delayed_4B5170",
+    "status": "ANALYZED",
+    "purpose": "SE 延迟起播装填：(模块, 通道, 循环标志, 延迟毫秒) → _this[4*ch+1128]=延迟、[4*ch+1048]=1、[4*ch+1088]=0、[4*ch+1168]=循环标志、_this[1208]=1；通道 >=10 报 setDelaySound。",
+    "signature_override": { "param0": "this(SE* Engine+82876)", "param1": "通道 0..9" },
+    "fields_used": ["_this[262+ch]/[272+ch]/[282+ch]/[292+ch]/[302]"],
+    "unmodeled": [],
+    "evidence": "raw 137720-137741",
+    "notes": "由 0x2BF 调用；由每帧 sub_4B5230 消费。"
+  },
+  {
+    "addr": "0x4B5230",
+    "raw_name": "sub_4B5230",
+    "semantic_name": "se_pump_delayed_4B5230",
+    "status": "ANALYZED",
+    "purpose": "每帧推进延迟音效：(模块, 当前时刻) → _this[302] 非零时对 ch=0..9：未记起始时刻则记；未到期保持 [302]=1；到期则清 [262+ch] 并 sub_4B5020(模块, ch, [292+ch])（[292+ch]=循环标志）。",
+    "signature_override": { "param0": "this(SE* Engine+82876)", "param1": "当前时刻" },
+    "fields_used": ["_this[262+ch]/[272+ch]/[282+ch]/[292+ch]/[302]"],
+    "unmodeled": [],
+    "evidence": "raw 137763-137802；每帧调用点 raw 20645",
+    "notes": "第二层台账 frame-pump-sound-channels 覆盖此每帧行为。"
+  },
+  {
+    "addr": "0x4B51E0",
+    "raw_name": "sub_4B51E0",
+    "semantic_name": "se_reset_all_4B51E0",
+    "status": "ANALYZED",
+    "purpose": "清 SE 模块全部通道状态：_this[262..271]=0、_this[302]=0。",
+    "signature_override": { "param0": "this(SE* Engine+82876)" },
+    "fields_used": ["_this[262..271]/[302]"],
+    "unmodeled": [],
+    "evidence": "raw 137743-137761；调用点 raw 18046/21137/21162/25382",
+    "notes": "与 Voice 侧 sub_4BBA90 成对。"
+  },
+  {
+    "addr": "0x4B5090",
+    "raw_name": "sub_4B5090",
+    "semantic_name": "se_reload_all_4B5090",
+    "status": "ANALYZED",
+    "purpose": "设备重建后重装 SE：对 i=0..9，若 _this[4*i+1212]（已装载 WAV id）> 0 ⇒ 重新 sub_4559C0 取资源 + sub_4B6570 绑通道。",
+    "signature_override": { "param0": "this(SE* Engine+82876)" },
+    "fields_used": ["_this[1212+i]"],
+    "unmodeled": [],
+    "evidence": "raw 137687-137718；调用点 raw 19466/19559/19687/19913",
+    "notes": "设备丢失/重置路径用。"
+  },
+  {
+    "addr": "0x4B6020",
+    "raw_name": "sub_4B6020",
+    "semantic_name": "snd_play_channel_4B6020",
+    "status": "ANALYZED",
+    "purpose": "设备通道起播：(设备, 通道, 循环标志) → 设备[344] 时直接返回 1；通道 >0xE 报 dsPlaySound(%d)；设备[405+ch] 为空报 dsPlay(%d)；先应用待定 seek（设备[360+ch] 毫秒 → sub_4B5A30）、释放在播缓冲（sub_4B5A30 后清零），再 sub_4B73E0(设备[405+ch], 循环标志)。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道 0..14", "param2": "循环标志" },
+    "fields_used": ["设备[344]/[405+ch]/[360+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 138590-138621",
+    "notes": "0xB5/0xBA/0x2BF 到期/语音起播都经此。"
+  },
+  {
+    "addr": "0x4B6390",
+    "raw_name": "sub_4B6390",
+    "semantic_name": "snd_release_channel_4B6390",
+    "status": "ANALYZED",
+    "purpose": "释放设备通道的缓冲：(设备, 通道) → 通道 <15 且设备[258] 与设备[405+ch] 均在时进临界区、引用计数 +1、虚析构释放缓冲、设备[405+ch]=0、引用计数 −1；通道 >=15 报 dsStopSound。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道 0..14" },
+    "fields_used": ["设备[258]/[405+ch]/[420+6ch]/[510+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 138758-138786",
+    "notes": "0xB6（SE）/0x2F6（语音）都会走到这里。"
+  },
+  {
+    "addr": "0x4B6350",
+    "raw_name": "sub_4B6350",
+    "semantic_name": "snd_apply_channel_pan_4B6350",
+    "status": "ANALYZED",
+    "purpose": "把通道 pan 下发到缓冲：(设备, 通道, pan) → 设备[344] 时返回 1；设备[258] 与设备[405+ch] 在时 sub_4B7110(缓冲, pan) = IDirectSoundBuffer::SetPan（错误串「左右相対ボリューム変更に失敗しました」，raw 139426）。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道" },
+    "fields_used": ["设备[344]/[258]/[405+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 138742-138756",
+    "notes": "0x2F8 → sub_4B6940 → 本函数。"
+  },
+  {
+    "addr": "0x4B6570",
+    "raw_name": "sub_4B6570",
+    "semantic_name": "snd_bind_wave_4B6570",
+    "status": "ANALYZED",
+    "purpose": "把资源绑成通道缓冲：(设备, 通道, 资源库, 资源值) → 临界区/引用计数 → new SoundBuffer(sub_4B6A60) → 读文件头 4 字节判格式：RIFF⇒WavePCM(sub_4BBD10)、OggS⇒sub_48D460、AOGG⇒sub_48C870，其它报「このファイルは再生できません」→ 建解码器/缓冲 → sub_4B71C0 绑定 → sub_4B6210 应用音量。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道" },
+    "fields_used": ["设备[258]/[405+ch]/[327+ch]/[420+6ch]/[510+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 138853-139025（格式分派 raw 138932-139010）",
+    "notes": "三种解码器 = RIFF/OggS/AOGG。"
+  },
+  {
+    "addr": "0x4B6210",
+    "raw_name": "sub_4B6210",
+    "semantic_name": "snd_buffer_set_volume_4B6210",
+    "status": "ANALYZED",
+    "purpose": "音量落到 DirectSound：(设备, 通道, 音量) → 设备[344] 或设备[345+ch]（静音标记）时返回；v = 音量 × 设备[342](主音量) / 10000，若设备[390+ch] >= 0 再 × 每通道音量因子 / 10000，最后按对数曲线 (log(v)*k1-k2)*k3 经 sub_4B70B0 下发 SetVolume；通道 >=15 报 dsSetVolume。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道", "param2": "音量" },
+    "fields_used": ["设备[342](主音量)", "设备[345+ch](静音)", "设备[390+ch](每通道音量因子)", "设备[405+ch]"],
+    "unmodeled": ["sub_4B70B0 内部（DirectSound SetVolume 参数换算常量 dbl_527D18/527D10/5201F0/527D20）"],
+    "evidence": "raw 138693-138735",
+    "notes": "★= IDirectSoundBuffer::SetVolume（sub_4B70B0，raw 139395）；a3 通常就是设备[327+ch]（该通道当前音量），乘主音量与每通道因子后走对数曲线。"
+  },
+  {
+    "addr": "0x4B73E0",
+    "raw_name": "sub_4B73E0",
+    "semantic_name": "sndbuf_play_4B73E0",
+    "status": "ANALYZED",
+    "purpose": "SoundBuffer 起播/回起点：(缓冲, 循环标志) → 引用计数/临界区 → 若 +9316==0 且 +9308==0 先 sub_4B6B60 停 + SetCurrentPosition(0)（失败报 dsbPlay:頭出しに失敗しました）→ +9308=0、**+9296=循环标志** → 需要时喂初始块 → +9312=1（播放中）→ Play(0,0,1)。",
+    "signature_override": { "param0": "this(SoundBuffer*)", "param1": "循环标志" },
+    "fields_used": ["+9296(循环标志)", "+9308/+9316(复位)", "+9312(播放中)", "+9320/+9324(循环计数)", "+1036(DS 缓冲)", "+1096(声音 id)"],
+    "unmodeled": [],
+    "evidence": "raw 139555-139684；循环标志读点 raw 139322",
+    "notes": "★0xB5(0)/0xBA(1) 的差别就是这里的 +9296。"
+  },
+  {
+    "addr": "0x4B6B60",
+    "raw_name": "sub_4B6B60",
+    "semantic_name": "sndbuf_stop_4B6B60",
+    "status": "ANALYZED",
+    "purpose": "停止 SoundBuffer：+9304=1、DS 缓冲 Stop()（失败报 dsbStop）、+9312=0。",
+    "signature_override": { "param0": "this(SoundBuffer*)" },
+    "fields_used": ["+9304/+9312/+1036"],
+    "unmodeled": [],
+    "evidence": "raw 139152-139191",
+    "notes": "由起播前/设备停止路径调用。"
+  },
+  {
+    "addr": "0x4B6C30",
+    "raw_name": "sub_4B6C30",
+    "semantic_name": "sndbuf_stream_fill_4B6C30",
+    "status": "ANALYZED",
+    "purpose": "流式喂数据：(缓冲, 循环索引) → 按 DS 流的 4 段循环缓冲 Lock/Unlock，从解码器（+9340，vtable +8/+12/+16/+20）取块写入；解码器取空时看 **+9296**：非 0 ⇒ 解码器复位（vtable+20）继续（+9328 循环计数 +1），0 ⇒ 填静音并把 +9304=2（收尾）。",
+    "signature_override": { "param0": "this(SoundBuffer*)", "param1": "循环段索引 0..3" },
+    "fields_used": ["+9296(循环标志)", "+9292(残留字节)", "+9300(位深)", "+9304(流状态)", "+9320(写计数)", "+9328(循环计数)", "+9340(解码器)"],
+    "unmodeled": [],
+    "evidence": "raw 139194-139400 附近；循环判定 raw 139322-139331",
+    "notes": "由工作线程 sub_4B5AA0（raw 138309）按每通道 4 个事件驱动。"
+  },
+  {
+    "addr": "0x4B5A30",
+    "raw_name": "sub_4B5A30",
+    "semantic_name": "sndbuf_seek_ms_4B5A30",
+    "status": "ANALYZED",
+    "purpose": "按毫秒定位：字节偏移 = 解码器时长(vtable+28) × 毫秒 / 1000，写 +2331。",
+    "signature_override": { "param0": "this(SoundBuffer*)", "param1": "毫秒" },
+    "fields_used": ["+259/+2331/+2335(解码器)"],
+    "unmodeled": [],
+    "evidence": "raw 138282-138304",
+    "notes": "0xB4 起播前的待定 seek 用它。"
+  },
+  {
+    "addr": "0x4B68A0",
+    "raw_name": "sub_4B68A0",
+    "semantic_name": "snd_set_master_volume_4B68A0",
+    "status": "ANALYZED",
+    "purpose": "设主音量：设备[342]=值，并对 ch=0..14 逐个 sub_4B6210(设备, ch, 设备[327+ch]) 重新下发。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "音量" },
+    "fields_used": ["设备[342]/[327+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 139028-139041",
+    "notes": "由 sound:Volume0 路由（raw 14949-14951）。"
+  },
+  {
+    "addr": "0x4B68E0",
+    "raw_name": "sub_4B68E0",
+    "semantic_name": "snd_set_channel_base_volume_4B68E0",
+    "status": "ANALYZED",
+    "purpose": "设通道基准音量：设备[327+ch]=值并 sub_4B6210(设备, ch, 值)；通道 >=15 报 dsSetVolume。",
+    "signature_override": { "param0": "this(Sound* Engine+18664)", "param1": "设备通道", "param2": "音量" },
+    "fields_used": ["设备[327+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 139043-139060",
+    "notes": "SE 音量走 0..9、语音音量走 12..14（sub_408260/sub_4082A0/sub_476380/sub_4763D0）。"
+  },
+  {
+    "addr": "0x4071D0",
+    "raw_name": "sub_4071D0",
+    "semantic_name": "engine_route_user_volume_4071D0",
+    "status": "ANALYZED",
+    "purpose": "用户音量分类路由：(this, 音量, 类别) → 若 effect_flags bit0x2000 且配置 set:DependMovie == 类别 ⇒ sub_486970(影片对象, 音量×Engine[5008]/10000)；再遍历 Engine+94672 起的声音对象表，按对象上的类别掩码（0x10000/0x20000/0x40000/0x80000 → 类别 0/1/2/3）下发音量。",
+    "signature_override": { "param0": "this(Engine*)", "param2": "类别 1..4" },
+    "fields_used": ["this->effect_flags(174801) bit0x2000", "this->Engine[94672..](声音对象表)", "this->Engine[94671](影片对象)", "this->config(set:DependMovie)"],
+    "unmodeled": ["Engine+94672 表内对象结构（逐对象字段偏移未逐个建模）"],
+    "evidence": "raw 12142-12210 附近",
+    "notes": "0xC6 的 1/2/3/4 类别与本函数第 3 参对应。"
+  },
+  {
+    "addr": "0x408260",
+    "raw_name": "sub_408260",
+    "semantic_name": "engine_set_se_volume_408260",
+    "status": "ANALYZED",
+    "purpose": "设 SE 音量：(this, 值) → sub_4071D0(this, 值, 2)、Engine[122498]=值，并对设备通道 i=0..9 sub_4B68E0(this+4666, i, 值)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->Engine[122498]", "this->sound_device(Engine+18664)"],
+    "unmodeled": [],
+    "evidence": "raw 13048-13058",
+    "notes": "由 0xC6 的类别 2 调用（另一等价入口 sub_476380 raw 90830 另写 Engine[489992]）。"
+  },
+  {
+    "addr": "0x4082A0",
+    "raw_name": "sub_4082A0",
+    "semantic_name": "engine_set_voice_volume_4082A0",
+    "status": "ANALYZED",
+    "purpose": "设语音音量：(this, 值) → sub_4071D0(this, 值, 3)、Engine[122499]=值，并对设备通道 i+12（i=0..2）sub_4B68E0(this+4666, i+12, 值)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->Engine[122499]", "this->sound_device(Engine+18664)"],
+    "unmodeled": [],
+    "evidence": "raw 13060-13070",
+    "notes": "由 0xC6 的类别 3 调用（另一等价入口 sub_4763D0 raw 90852 另写 Engine[489996]，0x302 读的就是它）。"
+  },
+  {
+    "addr": "0x489B80",
+    "raw_name": "sub_489B80",
+    "semantic_name": "music_set_user_volume_489B80",
+    "status": "ANALYZED",
+    "purpose": "设 BGM 用户音量：(Music, 值) → 下发到当前槽播放器。",
+    "signature_override": { "param0": "this(Music* Engine+697816)", "param1": "音量" },
+    "fields_used": ["_this[258](当前槽)", "_this[269+槽]"],
+    "unmodeled": ["播放器 vtable 方法"],
+    "evidence": "raw 106185 区；调用点 raw 13747（sub_409290 = sound:Volume1 路由）",
+    "notes": ""
+  },
+  {
+    "addr": "0x420B00",
+    "raw_name": "sub_420B00",
+    "semantic_name": "op_play_sound_effect_420B00",
+    "op": "0xB4",
+    "status": "ANALYZED",
+    "purpose": "op play-sound-effect（SE 装载）：读 op1=音效 id、op2=SE 通道号（0..9） → sub_4B4F60(SE=Engine+20719, 通道, id)：资源库取 WAV → sub_4B6570 建解码缓冲绑到设备通道 → 记 SE[1212+通道]=id；失败抛 WAVファイル %s の読み込みに失敗しました。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->se(Engine+82876 int 20719)", "this->se[1212+ch](已装载 WAV id)"],
+    "unmodeled": [],
+    "evidence": "raw 29680-29687；sub_4B4F60 raw 137629-137658",
+    "notes": "★只装载+绑缓冲，不起播（起播要 0xB5/0xBA）。★订正：op2 是通道号，早期记作「通道指针」。全库 2170 处（SP2563.txt:409 play-sound-effect 2e 1）。emulator：stubSubsystem → native.playSound。"
+  },
+  {
+    "addr": "0x420B40",
+    "raw_name": "sub_420B40",
+    "semantic_name": "op_se_channel_play_420B40",
+    "op": "0xB5",
+    "status": "ANALYZED",
+    "purpose": "op 0xB5 SE 通道起播（播一次）：读 op1=通道 → sub_4B5020(SE=Engine+20719, 通道, 0)：设备在且 sound:SE 开 → sub_4B6020(设备, 通道, 0)（通道 >0xE 报 dsPlaySound、未绑缓冲报 dsPlay；先应用待定 seek、释放循环缓冲）→ sub_4B73E0(缓冲, 0)。第 3 参 = SoundBuffer 循环标志（+9296）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设帧状态槽 = 3", "readIntOperand(1) = 通道", "sub_4B5020(SE, 通道, 0) 门控（设备存在 + sound:SE）", "sub_4B6020 应用待定 seek/释放旧缓冲/起播", "sub_4B73E0(缓冲, 循环标志=0)"],
+    "fields_used": ["this->se(Engine+82876 int 20719)", "this->se[261](sound:SE)", "this->sound_device[405+ch](通道缓冲)"],
+    "unmodeled": [],
+    "evidence": "raw 29689-29697；sub_4B5020 raw 137661-137670；sub_4B6020 raw 138590-138621；循环标志读点 raw 139322",
+    "notes": "★循环标志是 0xB5 与 0xBA 的唯一差别（sub_4B73E0 的 +9296：0=播完补静音、1=循环重解）。全库 2155 处；惯用法 play-sound-effect 2e 1 + i0b5 1（SP2563.txt:409-410）。★别与 0x5B ne 混（助记符缺失 ⇒ 反汇编显示 i0b5，2026-09 曾读成 0x05B）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x420B80",
+    "raw_name": "sub_420B80",
+    "semantic_name": "op_se_channel_stop_420B80",
+    "op": "0xB6",
+    "status": "ANALYZED",
+    "purpose": "op 0xB6 SE 通道停止/释放：读 op1=通道 → sub_4B5050(SE=Engine+20719, 通道) → sub_4B6390(设备, 通道) 释放缓冲（临界区+引用计数），并清 SE[303+通道]/SE[262+通道]。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->se(Engine+82876)", "this->se[303+ch]/[262+ch]", "this->sound_device[405+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 29699-29707；sub_4B5050 raw 137673-137685；sub_4B6390 raw 138758-138786",
+    "notes": "全库 1732 处（ADV 场景收尾）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x420CC0",
+    "raw_name": "sub_420CC0",
+    "semantic_name": "op_play_bgm_420CC0",
+    "op": "0xBF",
+    "status": "ANALYZED",
+    "purpose": "op play-bgm：清 Engine[174801] bit0x200 并 sub_489E50(Music=Engine+174454,100)（推进淡出）；读 op1=曲 id → sub_489C20(Music, id, 1) 播 BGM；再按配置 set:KeepMusicVoice 与 sound:MusicFadeOnVoicePlaying(Volume) 决定 sub_489C00（渐隐/暂停）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "fields_used": ["this->music(Engine+697816 int 174454)", "this->effect_flags(174801) bit0x200", "this->Engine[122503](跳读态标志；0x1BF/sub_419840 置 1、与 0x1CF 写的 122504 成对)", "this->config(set:KeepMusicVoice/sound:MusicFadeOnVoicePlaying)"],
+    "unmodeled": [],
+    "evidence": "raw 29754-29780；sub_489C20 raw 106225-106253；sub_489E50 raw 106323-106341",
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+  },
+  {
+    "addr": "0x420F70",
+    "raw_name": "sub_420F70",
+    "semantic_name": "op_play_voice_420F70",
+    "op": "0xC4",
+    "status": "ANALYZED",
+    "purpose": "op play-voice（语音通道 0、播一次）：切 Engine[21315]/[21318] 状态位 + sub_407120 推进淡出；ADV 激活位 Engine[174801]&0x8000000 置位 ⇒ **只寄存**（Engine[122505]=op1、[122508]=0，ADV 位清除时统一冲刷），否则 sub_4BB840(Voice=Engine+84128, 0, op1, 0, Engine[5053])（第 5 参 = pan）；再 sub_45EEA0(Font, 0, op1, 0, 0, pan) 往文本项记录表登记「该文本带语音」；末尾若 Engine[21293]（sound:Voice）则 Engine[122501]=1。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读 op1=语音 id", "切 Engine[21315]/[21318] 状态位（bit0/bit16 二态）", "sub_407120 推进 BGM 淡变", "ADV 激活位 ⇒ 寄存到 Engine[122505]/[122508]；否则 sub_4BB840 立即起播", "sub_45EEA0 往 Font 文本项记录表登记语音", "按 sound:Voice 置 Engine[122501]"],
+    "fields_used": ["this->voice(Engine+84128 int 21032)", "this->voice[261]=Engine+85172(sound:Voice)", "this->Engine[5053](语音通道 0 的 pan)", "this->Engine[122505]/[122508](ADV 期间寄存)", "this->Engine[122501](语音登记/占线标志)", "this->font(Engine+21324) 文本项记录表"],
+    "unmodeled": [],
+    "evidence": "raw 29861-29912；ADV 冲刷点 raw 20146-20159 与 24966-24979；sub_4BB840 raw 142488-142541",
+    "notes": "全库 14088 处（常态写法 play-voice (global-int f8007)）。ADV 文本↔语音联动见 docs-new/03-engine/sound-system.md §9。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x426820",
+    "raw_name": "sub_426820",
+    "semantic_name": "op_voice_channel_reset_426820",
+    "op": "0x2F6",
+    "status": "ANALYZED",
+    "purpose": "op 0x2F6 复位语音通道：读 op1=语音通道（0..2） → sub_4BB9F0(Voice=Engine+84128, op1)：sub_4B6390(设备, op1+12) 释放设备通道 + 清 Voice[op1+280/262/265/277]；再清 Engine[21315+op1]/[21318+op1]/[122505+op1]/[122508+op1]；最后 Engine[122501] = sub_404CB0(Voice)（3 路语音中是否有正忙的）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设帧状态槽 = 3（arity 1）", "readIntOperand(1) = 语音通道", "sub_4BB9F0 复位 Voice 槽（释放设备通道 op1+12）", "清 Engine[21315+ch]/[21318+ch]/[122505+ch]/[122508+ch]", "Engine[122501] = sub_404CB0(Voice) 占线查询结果"],
+    "fields_used": ["this->voice(Engine+84128 int 21032)", "this->voice[280+ch]/[262+ch]/[265+ch]/[277+ch]", "this->voice[283+ch]/[286+ch](0x2F7/0x2FF/0x302 写)", "this->Engine[122501]", "this->Engine[122505+ch]/[122508+ch]"],
+    "unmodeled": [],
+    "evidence": "raw 33677-33692；sub_4BB9F0 raw 142546-142560；sub_404CB0 raw 10583-10598",
+    "notes": "★订正：早期把本指令记成「清消息回调槽 / 消息文本回调」，实为**语音通道复位**（Voice 模块 @ Engine+84128）。全库 86687 处（最高频音频指令）；惯用法 i2f6 ch 紧接 i2f8 ch 0（SP2563.txt:17025-17028）。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x4268D0",
+    "raw_name": "sub_4268D0",
+    "semantic_name": "op_voice_channel_pan_4268D0",
+    "op": "0x2F8",
+    "status": "ANALYZED",
+    "purpose": "op 0x2F8 设语音通道 pan（左右平衡）：读 op1=语音通道（0..2，映射设备通道 op1+12）、op2=pan（±10000，0=中央） → sub_4B6940(设备=Engine+18664, op1+12, op2)：**对称**钳制 ±10000 写 设备[375+op1+12] 并 sub_4B6350→sub_4B7110(=SetPan) 下发（通道 >14 报 dsSetPan）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设帧状态槽 = 5（arity 2）", "readIntOperand(2)=pan、readIntOperand(1)=通道（先读 op2 后读 op1）", "sub_4B6940(设备, 通道+12, pan)：对称钳制 ±10000 写设备[375+ch]", "sub_4B6350→sub_4B7110 下发（SetPan）"],
+    "fields_used": ["this->sound_device(Engine+18664 int 4666)", "this->sound[375+ch](通道 pan)", "this->sound[327+ch](通道音量)", "this->sound[342](主音量)", "this->sound[390+ch](每通道音量因子)"],
+    "unmodeled": [],
+    "evidence": "raw 33705-33715；sub_4B6940 raw 139064-139089；sub_4B6350 raw 138742-138756；sub_4B6210 raw 138693-138735",
+    "notes": "★两次订正：早期记作泛化的「声音通道音量」，其实①只作用在 **VOICE 通道（设备 12..14）**、通道号 0..2；②语义是 **pan（左右平衡）而非音量** —— 判据：sub_4B7110 的错误串是「左右相対ボリューム変更に失敗しました」(vtable+64=SetPan)、钳制是**对称** ±10000（SetVolume 值域为 [-10000,0]），且全库 op2 **14642/14642 恒为 0** = 回中央。SYSTEM4.txt:476-480 的子程序 label_00001ec8 = i2f8 0 0 / 1 0 / 2 0（三路语音 pan 复位到中央，被 SYSTEM4.txt:11、:320 调用）。全库 14644 处。emulator：engine-internal no-op。"
+  },
+  {
+    "addr": "0x4B70B0",
+    "raw_name": "sub_4B70B0",
+    "semantic_name": "sndbuf_set_volume_4B70B0",
+    "status": "ANALYZED",
+    "purpose": "把音量下发到 DirectSound 缓冲：(SoundBuffer, 值) → IDirectSoundBuffer::SetVolume（vtable+60）；失败打印 ERROR dsbSetVolume:ボリューム変更に失敗しました。",
+    "signature_override": { "param0": "this(SoundBuffer*)", "param1": "百分之一分贝（0=满、-10000=静音）" },
+    "fields_used": ["缓冲+1036(DS 缓冲)", "缓冲+1096(声音 id)"],
+    "unmodeled": [],
+    "evidence": "raw 139394-139411（错误串 raw 139406）",
+    "notes": "值域 [-10000, 0]（百分之一 dB）⇒ 与 sub_4B7110(=SetPan, ±10000) 值域不同，是区分「音量 vs pan」的判据。调用方 sub_4B6210。"
+  },
+  {
+    "addr": "0x4B7110",
+    "raw_name": "sub_4B7110",
+    "semantic_name": "sndbuf_set_pan_4B7110",
+    "status": "ANALYZED",
+    "purpose": "把 pan（左右平衡）下发到 DirectSound 缓冲：(SoundBuffer, pan) → IDirectSoundBuffer::SetPan（vtable+64）；失败打印 ERROR dsbSetPan:左右相対ボリューム変更に失敗しました。",
+    "signature_override": { "param0": "this(SoundBuffer*)", "param1": "pan（-10000=全左、0=中央、+10000=全右）" },
+    "fields_used": ["缓冲+1036(DS 缓冲)", "缓冲+1096(声音 id)"],
+    "unmodeled": [],
+    "evidence": "raw 139414-139431（错误串 raw 139426）",
+    "notes": "★错误串里的「左右相対ボリューム」= SetPan ⇒ 0x2F8/sub_4B6940 写的是 pan 不是音量；调用方 sub_4B6350。"
+  },
+  {
+    "addr": "0x48DB80",
+    "raw_name": "sub_48DB80",
+    "semantic_name": "music_resolve_by_number_48DB80",
+    "status": "ANALYZED",
+    "purpose": "BGM 按**曲号**取文件：`(PCM 播放器, 曲号 a2, 句柄 a3)` → 若高字节非 0（包内曲）走 `PCM+1320` 的嵌套表（`(a2>>24)-1` 与 `(a2&0xFFFFFF)-1` 双重下标，raw 108711-108732）；否则 `v9 = a2 - 2` 从 `PCM+1304` 的表里取文件 id（`*(table+4*v9)`，表尾 `PCM+1308`），再 `sub_4559C0(FileDB, hWnd, 文件 id, &out)` 取资源。越界/空槽返回 0。",
+    "signature_override": { "param0": "this(PCM/MusicBase* 播放器)", "param1": "曲号", "param2": "目标句柄槽" },
+    "fields_used": ["PCM+1304/+1308(曲号 → 文件 id 表)", "PCM+1320/+1324(包内曲的嵌套表)", "PCM+1336/+1340(FileDB)", "PCM+1032(设备)", "PCM+1036(取出后的资源句柄)"],
+    "unmodeled": ["+1304 表的构造点（反编译里只见 ctor 清零与 dtor 释放，未定位填充处）"],
+    "evidence": "raw 108694-108758；调用点经 vtable+8（`sub_489C20` raw 106225 里的 `(*(...)(player_vtable+8))(...)`）",
+    "notes": "★**曲号 ≠ 统一文件 id**：索引是 `曲号 − 2`。本作这张表等价于文件名 `BGM%03d.OGG`（脚本侧 `MUINIT.txt` 的 {A=文件 id, B=曲号} 两表 33/36 条吻合、34 个剧本用到的曲号全部命中）⇒ 实现按 `BGM<曲号>.OGG` 取名解析；用统一 id 解释会静音错曲（标题 `play-bgm 1f` = 曲号 31 = BGM031.OGG，曾被解析成 id 31 = BGM041.OGG）。守卫：test/audio-bgm-naming.test.ts"
   }
 
 ]

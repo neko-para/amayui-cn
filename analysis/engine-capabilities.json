@@ -16,24 +16,25 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 95,
-    "modeled-verified": 17,
+    "total": 97,
+    "modeled-verified": 21,
     "modeled-unverified": 7,
-    "partial": 20,
-    "absent": 26,
+    "partial": 21,
+    "absent": 23,
     "n/a-known": 25,
-    "needsAttention": 53
+    "needsAttention": 51
   },
   "entries": [
     {
       "id": "frame-pump-sound-channels",
       "subsystem": "声音",
       "name": "每帧声音通道老化",
-      "trigger": "主循环每轮内层必然执行（不受 effect_flags 门控）；`Engine+82876+302` 非零时才有可观察效果",
+      "trigger": "主循环每轮内层必然执行（不受 effect_flags 门控）：Engine+82876+302（SE 延迟播有待播）或 Voice 模块槽武装位非零时才有可观察效果",
       "engine": {
         "fns": [
           "sub_412290",
-          "sub_4B5230"
+          "sub_4B5230",
+          "sub_4BBAB0"
         ],
         "raw": "20643-20645"
       },
@@ -44,10 +45,10 @@
       "whySilent": "通道槽为空时循环体只做 `if (*(v5-10))` 判定即跳过，没有断言或日志",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "无声音子系统：每帧通道老化不做（声音整体未实现）"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/audio-engine.test.ts",
+        "note": "已实现：AudioEngine.tick 每帧推进 SE 延迟播（0x2BF）与 3 路语音队列（0x2C0/0x2F5）；通道占用用播放句柄 + 时长判定（非循环音结束即空闲）"
       }
     },
     {
@@ -96,10 +97,10 @@
       "whySilent": "门不满足时函数体整段跳过，仅 return",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "无声音子系统"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/audio-engine.test.ts",
+        "note": "已实现：bgmFadeTo 记录目标与步长、tick 每帧推进（进度满 100 收尾；目标为 0 则停播）——与引擎 sub_489D10/sub_489E50 的逐帧步进对应"
       }
     },
     {
@@ -896,10 +897,10 @@
       "whySilent": "DSOUND.DLL 缺失时 `DirectSoundCreate` 取不到，所有播放调用变成空操作，无报错",
       "confidence": "tentative",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "无声音子系统（当前范围外；但属\"引擎有、emulator 完全没有\"的明确缺口）"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/audio-engine.test.ts",
+        "note": "部分实现：AudioContext 懒创建 + resume（first gesture 兜底）已落地；引擎的「设备丢失 → 重建 → 按 SE[1212+ch] 重载 10 通道」（sub_4B5090）与 DirectSound 错误重试未实现"
       }
     },
     {
@@ -2694,6 +2695,73 @@
         "evidence": "E3",
         "note": "实现（2026-09）：索引侧 `NodeFileSource` **扫资源根下的 `*.AAI`、按 AAI 头 @264 的包号注册**（不再硬编码文件名、也不再限制 5 个包；`alf.ts` 同时支持 `S4AC`(LZSS) 与 `S4AI`(头后整段直读) 两种体、并按引擎口径用高字节判本体/扩展包）；激活侧 `0x143`(`op_dispatch_script_requests`) 按包号升序把 `包号<<24` 入队、逐条装进**帧 37**、脚本 `exit` 走 `-10` 哨兵继续派发、队列排空后还原发起者（INIT2）现场；访问未装载的包抛 `MissingAppendPackError`（措辞照抄引擎「拡張ファイル情報ファイル %d は読み込まれていません．」，经 IPC/主进程同样冒到渲染侧）。守卫 `test/append-packs.test.ts`（9 条）：合成 AAI 的包号/魔数/直读体、临时目录扫描（坏包跳过、包号越界跳过、不递归子目录、改名照收）、i143 的升序派发与现场还原、无扩展包表时静默跳过、缺包抛错；★E3：真实语料跑完 INIT2 的整条派发链（约 10.8 万步）⇒ 5 包 AUTORUN 按 1..5 装载且 `global 7087f5` 第 1..5 位置起。E4：`npm run shot` 标题画面照常出图，左下角 **6 个 INSTALL 徽章**（= 该掩码的可见效果，`.tmp/shot-0-title.png`）。★残留缺口：`0x1D6`/`0x1D7`/`0x1D8`（引擎数据管理器方法调用 `op1 ← Engine[698900].vtable[+44|+60](op2[，op3])`）仍是 no-op —— 全语料只有 `$3$AUTORUN.txt:67-68` 两处，结果分别写进随后被丢弃的 scratch 槽与**无人读取**的 `global 70801e`，故不改变可观测状态，但仍列在闸门 B 的缺口里；`0x1F5`/`0x7C` 的「空闲时补派发」未建模（本路径不需要：i143 立即派发 + `exit` 链自走）。",
         "guard": "test/append-packs.test.ts"
+      }
+    },
+    {
+      "id": "audio-module-topology-and-volume-routing",
+      "subsystem": "声音",
+      "name": "音频三模块拓扑与音量路由（设备 / SE / Voice / Music）",
+      "trigger": "启动初始化时建对象并绑设备（raw 14918-14977 与 23678-23721：`sub_4BB810(Engine+82876, hWnd, Engine+18664, Engine+680092)` 与 `sub_4BB810(Engine+84128, …)`；音量按 sound:Volume0..4 下发）；此后每次 play/stop 类指令与每帧泵都走同一套对象",
+      "engine": {
+        "fns": [
+          "sub_4BB810",
+          "sub_4BB700",
+          "sub_4BB840",
+          "sub_4B6020",
+          "sub_4B6570",
+          "sub_4071D0",
+          "sub_489C20"
+        ],
+        "raw": "14918-14977"
+      },
+      "reads": [
+        "Engine+18664",
+        "Engine+82876",
+        "Engine+84128",
+        "Engine+697816",
+        "Engine+83920",
+        "Engine+85172"
+      ],
+      "whySilent": "整套音频是 fire-and-forget：没有设备时 `sub_4B5020` 直接返回 1、设备被标记不可用时 `sub_4B6020`/`sub_4B6210` 立即返回 1，起播/停止都不回写 VM、不抛异常（只有文件读失败才抛 ShowMessage）。所以缺了它脚本照跑、只是没声音；但当脚本去读音量/占线字段（`Engine[5053+ch]`、`Engine[122501]`）时会拿到不存在或恒 0 的值而静默走错分支",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "note": "已实现：AudioEngine（src/audio/audioEngine.ts）+ WebAudioHost（取字节走 IPC 或 amayui-audio:// 流式）+ handlers/audio.ts 的 22 条音频 opcode（意图经 NativeBridge.audio 下发）。实测定调：SE/语音的操作数=统一文件 id、BGM 的操作数=曲号（按 BGM%03d.OGG 解析，见 functions.json 的 0x48DB80）。仍缺：设备丢失后的重建与 SE 通道重载（引擎 sub_4B5090）",
+        "guard": "test/audio-engine.test.ts"
+      }
+    },
+    {
+      "id": "voice-request-deferral-and-adv-gate",
+      "subsystem": "声音",
+      "name": "ADV 激活期间的语音寄存与冲刷（文本↔语音联动）",
+      "trigger": "`Engine[174801] & 0x8000000`（ADV 页激活位）置位时 0xC4/0x1BD/0x2F4 只把（语音 id，循环标志）写进 `Engine[122505+ch]` / `Engine[122508+ch]`；该位清除时（raw 20146-20159 消息关闭路径、24966-24979）逐通道 `sub_4BB840(Voice, ch, id, 循环标志, Engine[5053+ch])` 冲刷；ADV 文本显示时另有一条：记录 flags 含 0x40000000 的文本项按 `+32` 槽起播或入队（raw 76888-76907），每帧泵排空队列（raw 19967-19999）",
+      "engine": {
+        "fns": [
+          "sub_420F70",
+          "sub_4212C0",
+          "sub_4266A0",
+          "sub_4BB840",
+          "sub_4BBAB0",
+          "sub_409E10"
+        ],
+        "raw": "20144-20160"
+      },
+      "reads": [
+        "Engine+122505",
+        "Engine+122508",
+        "Engine+122501",
+        "Engine+5053",
+        "Engine+85172",
+        "Engine+174801"
+      ],
+      "whySilent": "「ADV 位期间只寄存」是**延迟**语义而不是错误：少了它表现为语音提前响起/与文本错位/整段被吞，引擎与脚本都不报错；少了 `Engine[122501]`（语音占线/已登记标志，读者 raw 13708/28560）还会让依赖它的自动推进与等待分支静默走错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "note": "已实现：ADV 激活位期间 0xC4/0x1BD/0x2F4 发 voice-defer 寄存、tick(advActive=false) 冲刷（引擎 raw 20146/24966 的等价物）；0x2F6 复位会丢弃寄存",
+        "guard": "test/audio-engine.test.ts"
       }
     }
   ]

@@ -251,6 +251,9 @@ export class RendererSession {
    */
   async #present(): Promise<void> {
     if (this.#native.texturesIdle) await this.#native.texturesIdle();
+    // ★音频帧泵（引擎 raw 20645/20646 的每帧步骤）：SE 延迟播到期、语音排入到期、BGM 淡变推进，
+    //   以及 **ADV 激活位刚被清掉时冲刷寄存的语音**（引擎 raw 20146/24966）⇒ 必须带上 advActive。
+    this.#native.audio?.({ kind: 'tick', nowMs: this.#e.nowMs, advActive: this.#e.advActive });
     this.#native.present();
   }
 

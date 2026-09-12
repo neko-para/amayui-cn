@@ -10,7 +10,7 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { ipcMain } from 'electron';
+import { ipcMain, protocol } from 'electron';
 import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
@@ -18,6 +18,9 @@ import { parseIni } from '../../src/engineConfig.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
 import { FONT_DIR, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
+
+/** 音频流式协议名（`amayui-audio://<id>`；见 `docs/13-audio-plan.md` §3.3）。 */
+export const AUDIO_SCHEME = 'amayui-audio';
 
 // 主进程侧的资源读取；log 把「扩展包扫描/注册」等一次性诊断写进主进程日志（与 logSystemPaths 同风格）
 const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR, log: (m) => console.log(`[main] ${m}`) });
@@ -50,7 +53,6 @@ export function registerFileIpc(): void {
     if (!r) return null;
     return { index: r.index, name: r.name, data: Array.from(r.data) };
   });
-
   // 读任意文件（原始字节）
   ipcMain.handle('read-file', async (_e, p: string) => {
     const b = await fileSource.readFile(p);
@@ -134,4 +136,102 @@ export function registerFileIpc(): void {
     // Buffer 经 structured clone 到 renderer 变 Uint8Array
     return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
+
+  // 按统一资源 id（数字）或**文件名**（字符串）取一段音频的原始字节。
+  //  - SE / 语音：剧本操作数就是统一文件 id（实测 `play-sound-effect 2e` → 46 = SE004.WAV）；
+  //  - BGM：剧本操作数是**曲号**，等价于文件名 `BGM%03d.OGG`（见 docs-new/03-engine/sound-system.md §5）。
+  // 返回 Buffer（→ renderer 侧 Uint8Array）：单条最大 ~350KB，直接走 IPC 比协议更简单；
+  // BGM（2–6MB）走下面的 `amayui-audio://` 流式协议，不经过这条。
+  ipcMain.handle('audio', async (_e, key: number | string) => {
+    const r = typeof key === 'string' ? await fileSource.readByName(key) : await fileSource.readById(key);
+    if (!r) {
+      console.log(`[main] audio ${JSON.stringify(key)} 取不到（resolve/切片失败）`);
+      return null;
+    }
+    return Buffer.from(r.data.buffer, r.data.byteOffset, r.data.byteLength);
+  });
+}
+
+/**
+ * **注册音频流式协议**（必须在 `app.whenReady()` **之前**调用）。
+ *
+ * 为什么需要：BGM 单曲 2–6MB、解码成 PCM 约 30–50MB/曲（见 `docs/13-audio-plan.md` §3.2）。
+ * 用 `<audio src="amayui-audio://1">` 让 Chromium 自己按 Range 拉块，渲染进程零拷贝、支持 seek/loop。
+ */
+export function registerAudioScheme(): void {
+  protocol.registerSchemesAsPrivileged([
+    {
+      scheme: AUDIO_SCHEME,
+      privileges: { standard: true, stream: true, supportFetchAPI: true, bypassCSP: true, corsEnabled: true },
+    },
+  ]);
+}
+
+/** 协议处理器（`app.whenReady()` 之后调用）：`amayui-audio://<id>` + 标准 `Range` 语义。 */
+export function registerAudioProtocol(): void {
+  protocol.handle(AUDIO_SCHEME, async (req) => {
+    const url = new URL(req.url);
+    // ★id 走**路径**（`amayui-audio://audio/31`）而不是主机名：WHATWG URL 会把纯数字主机名当 **IPv4**
+    //   解析（`amayui-audio://31` → hostname `0.0.0.31`）⇒ 用主机名取 id 会得到 NaN（实测 400）。
+    //   段是纯数字 ⇒ 统一文件 id；否则 ⇒ 文件名（BGM 曲号 → `BGM031.OGG`）。
+    const seg = decodeURIComponent(url.pathname.replace(/^\//, '') || url.hostname);
+    const isId = /^\d+$/.test(seg);
+    if (seg === '') {
+      console.log(`[main] audio-stream 非法资源：${req.url}`);
+      return new Response('bad resource', { status: 400 });
+    }
+    const range = parseRangeHeader(req.headers.get('range'));
+    const hit = range
+      ? isId
+        ? await fileSource.readByIdRange(Number(seg), range.start, range.end)
+        : await fileSource.readByNameRange(seg, range.start, range.end)
+      : await (isId ? fileSource.readById(Number(seg)) : fileSource.readByName(seg)).then((r) =>
+          r ? { name: r.name, data: r.data, total: r.data.length } : null,
+        );
+    if (!hit) {
+      console.log(`[main] audio-stream ${seg} 取不到（range=${req.headers.get('range') ?? '-'}）`);
+      return new Response('not found', { status: 404 });
+    }
+    const len = hit.data.length;
+    // ★`Response` 的 BodyInit 不收 `Uint8Array<ArrayBufferLike>`（TS 的 lib.dom 口径）⇒ 显式切出 ArrayBuffer
+    const body = hit.data.buffer.slice(hit.data.byteOffset, hit.data.byteOffset + hit.data.byteLength) as ArrayBuffer;
+    const headers: Record<string, string> = {
+      'content-type': mimeOfAudio(hit.name),
+      'accept-ranges': 'bytes',
+      'cache-control': 'no-store',
+      // 页面是 `file://` 起源 ⇒ 对自定义 scheme 的请求按跨源处理，必须给 CORS 头，
+      // 否则 `<audio>` / `fetch` 会被拦（而 `decodeAudioData` 回退照常工作，极难定位）。
+      'access-control-allow-origin': '*',
+    };
+    console.log(`[main] audio-stream ${seg} name=${hit.name} status=${range ? 206 : 200} len=${len}/${hit.total}`);
+    if (range) {
+      const start = range.start;
+      const end = start + len - 1;
+      headers['content-range'] = `bytes ${start}-${end}/${hit.total}`;
+      headers['content-length'] = String(len);
+      return new Response(body, { status: 206, headers });
+    }
+    headers['content-length'] = String(len);
+    return new Response(body, { status: 200, headers });
+  });
+}
+
+/** 解析 `Range: bytes=a-b`（只支持单区间；`b` 可省略）。 */
+function parseRangeHeader(header: string | null): { start: number; end: number } | null {
+  if (!header) return null;
+  const m = /bytes=(\d*)-(\d*)/.exec(header);
+  if (!m) return null;
+  const start = m[1] ? Number(m[1]) : 0;
+  const end = m[2] ? Number(m[2]) : Number.MAX_SAFE_INTEGER;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
+  return { start, end };
+}
+
+/** 音频 MIME（实测只有 `.wav`(RIFF PCM16) 与 `.ogg`(Ogg Vorbis) 两种，见 13-audio-plan.md §1）。 */
+function mimeOfAudio(name: string): string {
+  const ext = path.extname(name).toLowerCase();
+  if (ext === '.ogg' || ext === '.oga') return 'audio/ogg';
+  if (ext === '.wav') return 'audio/wav';
+  if (ext === '.mp3') return 'audio/mpeg';
+  return 'application/octet-stream';
 }

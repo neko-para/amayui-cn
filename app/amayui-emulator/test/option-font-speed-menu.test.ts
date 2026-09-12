@@ -104,8 +104,9 @@ test('★0x5B = ne：在 OPS（implemented），**不可能**出现在「被忽�
   assert.equal(OPS.has(0x5b), true, '0x5B 必须走真实现');
   assert.equal(ENGINE_INTERNAL_OPS.has(0x5b), false, '0x5B 不在引擎内部插桩表');
   assert.notEqual(NATIVE_OPS.has(0x5b), true);
-  assert.equal(ENGINE_INTERNAL_OPS.has(0xb5), true, '0x0B5（DsPlaySound 音轨）才是无音频子系统的插桩项');
+  assert.equal(NATIVE_OPS.has(0xb5), true, '0x0B5（DsPlaySound：SE 通道起播）2026-09 起是音频族真实现（native）');
   assert.equal(OPS.has(0xb5), false);
+  assert.equal(ENGINE_INTERNAL_OPS.has(0xb5), false, '不再是无音频子系统的插桩项');
 });
 
 test('ne 的语义：0x5B 写回 0/1（顺手守住"比较族没被插桩掉"）', () => {

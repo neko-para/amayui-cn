@@ -25,6 +25,8 @@
 import type { Application, Container, ContainerChild, Texture } from 'pixi.js';
 import { assertFlags, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
+import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
+import { WebAudioHost } from './audio/webAudioHost.js';
 import { advanceWindows, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
   newSceneState,
@@ -72,7 +74,9 @@ export class PixiBackend implements NativeBridge {
   private drawRoot: Container<ContainerChild>;
   private status: RenderStatus;
   private unit: Texture;
-  /** 共享输入状态（renderer 写 / VM 读）。由 create 注入。 */
+  /** 音频宿主（Web Audio）+ 音频引擎（通道/音量/pan/延迟/语音仲裁的逻辑全在引擎里）。 */
+  private audioHost!: WebAudioHost;
+  private audioEngine!: AudioEngine;  /** 共享输入状态（renderer 写 / VM 读）。由 create 注入。 */
   input?: InputManager;
 
   /** 纹理槽表（槽 → imgid → Texture）。 */
@@ -115,6 +119,9 @@ export class PixiBackend implements NativeBridge {
     // 内置字族按需加载（TextLayer 在光栅化前调 ensureFont）；加载完成会 bump
     // fontVersion()，TextLayer 据此重画一次用 fallback 画出来的文本。
     b.textLayer = new TextLayer((m) => b.#pushLog(m));
+    // 音频：宿主 = Web Audio（取字节走 IPC / `amayui-audio://` 流式），引擎 = 引擎侧通道模型
+    b.audioHost = new WebAudioHost({ log: (m) => b.#pushLog(m) });
+    b.audioEngine = new AudioEngine(b.audioHost, { log: (m) => b.#pushLog(m) });
     attachMouseInput(b.app.canvas, input, (line) => b.status.trace.push(line));
     return b;
   }
@@ -145,6 +152,20 @@ export class PixiBackend implements NativeBridge {
 
   log(msg: string): void {
     this.#pushLog(msg);
+  }
+
+  /**
+   * **音频意图**（`NativeBridge.audio`）：`0xB4`/`0xB5`/`0xB6`/`0xBA`/`0xB7`/`0xB9`/`0xBB`/`0xBC`/`0xBF`/
+   * `0xC2`/`0xC4`/`0xC6`/`0x1BD`/`0x2BF`/`0x2C0`/`0x2F4`..`0x302` 与每帧 `tick` 都落到这里。
+   * 语义/证据见 `docs-new/03-engine/sound-system.md`；实现见 `src/audio/audioEngine.ts`。
+   */
+  audio(intent: AudioIntent): void {
+    this.audioEngine.handle(intent);
+  }
+
+  /** 音频诊断快照（控制窗/人工排查：通道占用、音量、缓存命中、流式回退次数）。 */
+  debugAudio(): AudioDebugState & { host: ReturnType<WebAudioHost['info']> } {
+    return { ...this.audioEngine.debug(), host: this.audioHost.info() };
   }
   playSound(id: number, volume: number): void {
     this.#pushLog(`sound#${id} vol=${volume}`);

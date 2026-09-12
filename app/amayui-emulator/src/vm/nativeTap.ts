@@ -52,6 +52,7 @@ const WHY: Record<string, string> = {
   playSound: '音效播放：不实现 ⇒ 无声，无报错',
   playBgm: 'BGM 播放：不实现 ⇒ 无 BGM，无报错',
   playVoice: '语音播放：不实现 ⇒ 无语音，无报错',
+  audio: '音频意图（SE/语音/BGM/音量/帧泵）：不实现 ⇒ 整条音频链静音且语音不排队，无报错',
   preloadImage: '图像预载：不实现 ⇒ 首次绘制时才加载（闪一帧空图）或永远取不到纹理',
   sleep: '帧让步：不实现 ⇒ 节流失效/忙等，无报错',
   setFont: '字体设置：不实现 ⇒ 字形回退，无报错',
@@ -144,6 +145,7 @@ export class DropRecorder {
  * `Missing` 就非 `never`，赋值会立刻报类型错误。
  */
 const BRIDGE_METHODS = [
+  'audio',
   'bindTexture',
   'clearDrawContainer',
   'clearMeshSlots',

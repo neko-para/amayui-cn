@@ -26,6 +26,13 @@ contextBridge.exposeInMainWorld('api', {
   writeSaveData: (data: Uint8Array) => ipcRenderer.invoke('write-save-data', data),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
+  /** 按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节（SE = RIFF PCM16 / BGM·语音 = Ogg Vorbis）。 */
+  audio: (key: number | string) => ipcRenderer.invoke('audio', key),
+  /**
+   * 音频流式基址（主进程注册的 `amayui-audio://` + Range）；BGM 用它走 `<audio>` 流播。
+   * ★id 放在**路径**段：纯数字主机名会被 URL 解析器当成 IPv4（`//31` → `0.0.0.31`）。
+   */
+  audioStreamBase: 'amayui-audio://audio/',
   /** 读内置字体文件字节（`res/fonts/` 下相对路径）。返回 null 表示不存在。 */
   font: (file: string) => ipcRenderer.invoke('font', file),
 

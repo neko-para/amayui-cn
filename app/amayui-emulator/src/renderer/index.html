@@ -2,7 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'" />
+    <!--
+      CSP：`media-src`/`connect-src` 必须显式放行音频流式协议 `amayui-audio:`
+      （自定义 scheme 若不写，回退到 `default-src 'self'` ⇒ `<audio src="amayui-audio://…">`
+       会被 CSP 拦下：表现为 "no supported source was found"，且请求**根本到不了主进程**）。
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' amayui-audio:; connect-src 'self' amayui-audio:" />
     <title>天結いキャッスルマイスター</title>
     <style>
       html, body {

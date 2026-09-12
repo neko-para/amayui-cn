@@ -59,7 +59,10 @@ const op_engine_internal: OpHandler = () => {
 
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   // ============ 声音 子系统 ============
-  [0xb5, op_engine_internal], // 声音通道控制（→ sub_4B5020/sub_4B6020）
+  // ★**已全部转真实现**（2026-09）：`0xB4/0xB5/0xBA/0xB6/0xB7/0xB9/0xBB/0xBC/0xBF/0xC2/0xC4/0xC6/0x1BD/
+  //   0x2BF/0x2C0/0x2F4/0x2F5/0x2F6/0x2F7/0x2F8/0x2FF/0x302` 见 `handlers/audio.ts`（`AUDIO_OPS`，落在
+  //   `NATIVE_OPS`：经 `NativeBridge.audio(AudioIntent)` 落到宿主音频引擎）。此前只有 0xB5/0x2BF/0x2C0/
+  //   0x2F6/0x2F8 在本表当 no-op，其余（如 0xB6/0xBA/0x2FF）**根本不在任何表里 ⇒ 命中即硬报错**。
   // ============ 渲染 / 图形 / 图像 / 纹理（emulator 无界面） ============
   // 说明：能落到 emulator 场景模型（drawItems/meshes/纹理槽）或引擎字段的已升级为真实现 —— 见 OPS：
   //   0x1F4 帧计时 / 0x1F5 帧倒计 / 0x20C 帧刷新 / 0x23C 帧时钟 / 0x23D·0x32B 停靠标志 / 0x248 渲染配置 /
@@ -128,10 +131,11 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x25c, op_engine_internal], // 消息/UI
   [0x25e, op_engine_internal], // 消息/UI
   [0x25f, op_engine_internal], // 消息/UI
-  [0x2bf, op_engine_internal], // 文本/字体
-  [0x2c0, op_engine_internal], // 文本/字体
+  // ---- 声音族：已移出本表（2026-09）----
+  //   `handlers/audio.ts` 的 `AUDIO_OPS` 是真实现（`NATIVE_OPS` → `NativeBridge.audio`）。
+  //   整体机制见 docs-new/03-engine/sound-system.md；此前的 no-op 说明留在第二层台账
+  //   `audio-module-topology-and-volume-routing` / `voice-request-deferral-and-adv-gate`。
   [0x324, op_engine_internal], // sub_453530(_this[93384])：计时/文本刷新（无操作数）
-  [0x2f6, op_engine_internal], // 清消息回调槽 _this[v2+122505/122508] + _this[122501]（消息文本回调）
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
   [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
@@ -169,8 +173,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ============ 数据 / 资源登记 ============
   // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============
   // ============ 声音 ============
-  [0x2f8, op_engine_internal], // → sub_4B6940(_this+4666, op1+12, op2)（声音通道/音量）
-  // ---- 「消息渲染 / 声音」子系统：emulator 无对应子系统 ----
+  // ★已移出本表：`0x2F8`（语音通道 pan）等全部音频 opcode 见 `handlers/audio.ts`。
+  // ---- 「消息渲染」子系统：emulator 无对应子系统 ----
   // 判定依据 = 逐条读 handler 体：体内只出现对 `_this[引擎字段]` 的赋值/文本区写入，
   // **既不回写操作数、也不改 ip/cur**，故对 emulator 不可观测（与其余插桩同一取舍）。
   // 这一条**确实未实现**（引擎还会回写 op2），因此照旧受闸门 B 监督：
@@ -179,9 +183,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
 
 /** 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */
 export const STUB_NATIVE_OPS: OpTable = [
-  [0xb4, stubSubsystem], // → native.playSound
-  [0xbf, stubSubsystem], // → native.playBgm
-  [0xc4, stubSubsystem], // → native.playVoice
+  // ★`0xB4`（SE 装载）/ `0xBF`（play-bgm）/ `0xC4`（play-voice）已从本表移出：
+  //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
   /**
    * `0x14B`（sub_4229D0, raw 31056）：**运行时插件/DLL 加载** —— 先 `FreeLibrary(_this+490072)` 释放旧句柄，

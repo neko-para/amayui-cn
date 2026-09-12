@@ -29,6 +29,7 @@
 | [`docs/10-texture-slot-to-agf-file.md`](./docs/10-texture-slot-to-agf-file.md) | **纹理 slot ↔ AGF 文件**：`set-texture <imgid> <slot>` 是唯一绑定，`[5*slot+466]=imgid`，imgid→resolveEntry→文件名；并与 draw-texture 的 tex 句柄区分 |
 | [`docs/11-fadetimer-and-fade-opcodes.md`](./docs/11-fadetimer-and-fade-opcodes.md) | **淡入淡出实现**：FadeTimer 步进计时器结构 + fade opcode 家族 0x20–0x38（SetFade/SetLineFade/SetRandomFade） |
 | [`docs/12-adv-text-rendering.md`](./docs/12-adv-text-rendering.md) | **ADV/消息窗文本渲染选型（ADR）**：引擎侧文本管线（每窗离屏表面 → 逐行显现 → 合成）、5 个候选方案的逐能力对比、结论「纯排版模型 + Pixi 内 canvas2D 光栅化」、分阶段落地与验收 |
+| [`docs/13-audio-plan.md`](./docs/13-audio-plan.md) | **音频实现方案评估**：语料实测（1.54GB，全是 RIFF PCM16 + Ogg Vorbis、无 AOGG）、要建模的三层内容、指令→API 映射、是否需要新库（**不需要**）、分期工作量（4.5–7 人日）与「零新增依赖」结论 |
 
 ---
 
@@ -206,7 +207,7 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   文本子系统、声音设备、计时器）或写无人读取的字段 ⇒ 无 VM 可见副作用、emulator 无输出。
 >   按子系统分组：渲染/图形/纹理（`0x32F`/`0x248`/`0x352`/`0x344`/`0x23B`/`0x25B`/`0x1F6`…）、
 >   消息窗/文本/字体（`0x70`/`0x73`/`0x75`/`0x79`/`0x74`/`0x7A`/`0x7B`/`0x197`/`0x1BB`/`0x1C1`…）、
->   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x1D6`/`0x1D7`/`0x1D8`）、声音（`0xB5`/`0x2F8`）。
+>   输入（`0x10C`/`0x30A`）、字符串/配置（`0x2C8`/`0x2C9`/`0x2DD`）、数据/版本/脚本控制（`0xAE`/`0x1D6`/`0x1D7`/`0x1D8`）。**声音族 22 条已于 2026-09 全部转真实现**（`handlers/audio.ts` + `src/audio/audioEngine.ts` + Web Audio 宿主：SE/语音/BGM/音量/pan/延迟/ADV 语音寄存，见 `docs/13-audio-plan.md`）。
 >   （`0x2C7` SBSubstr 与 `0x2EB` GetConfig(`set:GameVersion`) 2026-09 已**转真实现**：它们会回写操作数，
 >   当 no-op 时 TITLE 的版本号永远是占位值 `0.00.0000` —— 见 `handlers/strings.ts` / `handlers/config-read.ts`。
 >   **`0x143`（`i143`）也已转真实现**：它派发扩展包的 `$n$AUTORUN`（见 `handlers/control.ts` 的

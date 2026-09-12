@@ -11,12 +11,28 @@
 import type { DrawItemConfig, MeshCreateSpec, NativeBridge } from './native.js';
 import type { MsgWinInput } from '../text/layout.js';
 
+/** 把一条音频意图压成一行（headless 日志/测试断言用）。 */
+export function formatAudioIntent(intent: import('../audio/audioEngine.js').AudioIntent): string {
+  const kv = Object.entries(intent)
+    .filter(([k]) => k !== 'kind')
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .join(' ');
+  return `${intent.kind}${kv ? ' ' + kv : ''}`;
+}
+
 /** 无界面桩实现：全部记录 + 返回默认，绝不触发真实渲染/音频/输入。 */
 export class StubNative implements NativeBridge {
   constructor(private onLog: (msg: string) => void = (m) => console.log(m)) {}
 
   log(msg: string): void {
     this.onLog(msg);
+  }
+  /**
+   * 音频意图（headless/测试）：只记一行，不产生声音。
+   * 意图词汇表见 `src/audio/audioEngine.ts`；真实现见 `src/renderer/pixiBackend.ts` 的 `audio()`。
+   */
+  audio(intent: import('../audio/audioEngine.js').AudioIntent): void {
+    this.log(`[native:stub] audio ${formatAudioIntent(intent)}`);
   }
   playSound(id: number, volume: number): void {
     this.log(`[native:stub] play-sound-effect id=0x${id.toString(16)} vol=${volume}`);

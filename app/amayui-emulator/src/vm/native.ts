@@ -8,6 +8,7 @@
  */
 import type { InputManager } from './input.js';
 import type { MsgWinInput } from '../text/layout.js';
+import type { AudioIntent } from '../audio/audioEngine.js';
 
 /** 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 颜色动画。bit2(&4, sub_49BCC0 分支) 未逐字解码 ⇒ 拒绝。 */
 export const KNOWN_DRAW_ITEM_FLAGS = 0b011;
@@ -87,8 +88,20 @@ export interface NativeBridge {
   log(msg: string): void;
   /** 共享输入状态（Engine 构造时赋值；渲染器经它写 / VM 经它读）。 */
   input?: InputManager;
+  /**
+   * **音频意图**（引擎「设备 + SE/Voice/Music 三模块」模型的唯一入口，2026-09 落地）。
+   *
+   * 音频族的 opcode 只产生"意图"，不等待、不回写操作数（详见 `src/vm/handlers/audio.ts`
+   * 与 `docs-new/03-engine/sound-system.md`）。宿主实现方式：
+   *  - Electron 渲染进程：`AudioEngine`（Web Audio，见 `src/renderer/audio/webAudioHost.ts`）；
+   *  - headless/测试：`StubNative` 只记一行日志；未实现 ⇒ 闸门 A 记 `audio` 一次（不再静默）。
+   */
+  audio?(intent: AudioIntent): void;
+  /** @deprecated 旧的三条粗粒度音频缝（只写日志）。真实现走 `audio`；保留以免破坏既有宿主/测试。 */
   playSound?(id: number, volume: number): void;
+  /** @deprecated 见 `playSound`。 */
   playBgm?(id: number): void;
+  /** @deprecated 见 `playSound`。 */
   playVoice?(id: number): void;
   /** 0x1FB draw-texture（sub_422E70）：8 操作数 `[slot, layer, srcX, srcY, srcW, srcH, dstX, dstY]`。
    *  ★与 `configureDrawItem` 的关系：draw-texture 是"**按纹理槽绘制**"；`op_draw_texture` 解析操作数后

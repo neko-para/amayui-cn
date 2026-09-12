@@ -56,6 +56,7 @@ docs-new/
 │   ├── runtime-memory.md     ← (瘦身) this 布局说明 + 消息窗对象叙事；字段以 data 层 fields.json 为准
 │   ├── resource-loading.md   ← 统一文件 id 空间 / 启动链 / 纹理·AGF 映射
 │   ├── save-data.md          ← **SAVE.DAT**：脚本 save-int/save-string 两张表的持久化（= 设置界面开关的真正归处）+ 容器/Crypt/LZSS 全解 + emulator 现状
+│   ├── sound-system.md       ← **声音子系统**：DirectSound 设备(15 通道) / SE·Voice·Music 三模块 / `sound:Volume0..4` 路由 / ADV 文本↔语音联动
 │   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
 │   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
 │                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog

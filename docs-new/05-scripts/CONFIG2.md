@@ -54,16 +54,20 @@
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`gdi-direct-text-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`audio-module-topology-and-volume-routing`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x42F560`（见 `analysis/functions.json`）
 - 函数结论：`0x423390`（见 `analysis/functions.json`）
 - 函数结论：`0x422CB0`（见 `analysis/functions.json`）
 - 函数结论：`0x46BE30`（见 `analysis/functions.json`）
 - 函数结论：`0x459F40`（见 `analysis/functions.json`）
+- 函数结论：`0x420B40`（见 `analysis/functions.json`）
+- 函数结论：`0x420B00`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/opcode-table.md`
 - 主题文档：`docs-new/03-engine/adv-text-rendering.md`
+- 主题文档：`docs-new/03-engine/sound-system.md`
 - 守卫测试：`app/amayui-emulator/test/text-style-snapshot.test.ts`
 
 ## 证据与备注
 
 - 证据：src/CONFIG2.txt 的区间见 layout；运行期证据：`npm run shot`（默认就切到本页）的 .tmp/shot-2-tab4.png；样式作用域的 E3 断言见 test/text-style-snapshot.test.ts 的 previewProbe（win 9 恒为入队色 #ffffff，全局色末值 #b690ff）
-- 备注：尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。
+- 备注：尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。 音频侧：全页 11 处 `i0b5`（:732-733 是成对的 `play-sound-effect 39a4 1` + `i0b5 1`；其余 `i0b5 2` 直接触发通道 2 上已装载的音效）＝ 0xB5 SE 通道起播（播一次）。

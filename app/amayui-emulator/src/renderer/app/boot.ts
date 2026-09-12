@@ -8,6 +8,7 @@
 import { Engine } from '../../vm/engine.js';
 import { loadScriptData } from '../../vm/interpreter.js';
 import { DropRecorder, withNativeTap } from '../../vm/nativeTap.js';
+import { audioBootIntents } from '../../vm/handlers/audio.js';
 import { InputManager } from '../../vm/input.js';
 import type { FileSource } from '../../arch/fileSource.js';
 import { IpcFileSource } from '../ipcFileSource.js';
@@ -56,6 +57,10 @@ export async function bootApp(): Promise<BootedApp | null> {
   traceLog.line('=== amayui emulator boot ===');
 
   await loadEngineConfig(e, (l) => traceLog.line(l));
+
+  // ★启动时把 SYS4REG.INI 里的声音设置灌进音频引擎（引擎 raw 23696-23721 的等价物）：
+  //   音量/开关是玩家配置的一部分，脚本只在**改设置**时才发 0xC6 —— 漏掉这一步 ⇒ "每次启动都巨响"。
+  for (const intent of audioBootIntents(e.config)) pixi.audio(intent);
 
   for (const imgid of PRELOAD_IMAGES) {
     // preloadImage 内部已 pushLog `image <imgid> -> <file> (WxH)`，无需再 trace 一条重复的 [preload]

@@ -10,6 +10,7 @@ import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
 import { ScriptReset, ExitScript } from './vm/ops.js';
+import { audioBootIntents } from './vm/handlers/audio.js';
 import { OPCODE_TABLE } from './script/bin.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
 
@@ -86,6 +87,8 @@ async function main() {
     console.error('无法装载索引 0 (SYSTEM4.BIN)');
     return;
   }
+  // 启动时把声音设置灌进音频引擎（与 Electron 侧 `renderer/app/boot.ts` 同一步；这里只有记录式桩）
+  for (const intent of audioBootIntents(e.config)) native.audio(intent);
   loadScriptData(e, boot.data, boot.name);
   console.log(`[boot] index 0 -> ${boot.name} (${e.curScript().script!.instructions.length} 条指令)`);
 

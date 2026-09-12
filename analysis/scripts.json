@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 14,
+    "total": 15,
     "analyzed": 7,
-    "partial": 7,
+    "partial": 8,
     "stub": 0
   },
   "entries": [
@@ -366,18 +366,22 @@
         "capabilities": [
           "script-frame-local-pool-lifecycle",
           "gdi-direct-text-to-slot",
-          "text-style-scope-queue-time"
+          "text-style-scope-queue-time",
+          "audio-module-topology-and-volume-routing"
         ],
         "functions": [
           "0x42F560",
           "0x423390",
           "0x422CB0",
           "0x46BE30",
-          "0x459F40"
+          "0x459F40",
+          "0x420B40",
+          "0x420B00"
         ],
         "docs": [
           "docs-new/03-engine/opcode-table.md",
-          "docs-new/03-engine/adv-text-rendering.md"
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/sound-system.md"
         ]
       },
       "guards": [
@@ -385,7 +389,7 @@
       ],
       "status": "partial",
       "evidence": "src/CONFIG2.txt 的区间见 layout；运行期证据：`npm run shot`（默认就切到本页）的 .tmp/shot-2-tab4.png；样式作用域的 E3 断言见 test/text-style-snapshot.test.ts 的 previewProbe（win 9 恒为入队色 #ffffff，全局色末值 #b690ff）",
-      "notes": "尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。"
+      "notes": "尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。 音频侧：全页 11 处 `i0b5`（:732-733 是成对的 `play-sound-effect 39a4 1` + `i0b5 1`；其余 `i0b5 2` 直接触发通道 2 上已装载的音效）＝ 0xB5 SE 通道起播（播一次）。"
     },
     {
       "id": "SC0330",
@@ -467,6 +471,11 @@
           "anchor": "load-int (global-int 5)",
           "lines": "71-84",
           "what": "★配置装载分支：`load-int (global 5)` 读 SAVE.DAT 里的「已初始化」标志 —— 有 ⇒ 73 行 `call-script 5258 LOADCONFIG`（load-int/load-string 把用户设置读回 global）+ 74 行 LOADCHARM；没有 ⇒ 78 行 `call-script 51dc INITCONFIG`（写默认值 + save-int/save-string 登记）+ 79 行 INITCHARM + 80/81 行 `mov (global 5) 1` + `save-int (global 5)`；两条路径都汇到 84 行 `call-script 51db CHECKCONFIG`（校验字体名，装不上就回退默认并重新 save-string）"
+        },
+        {
+          "anchor": "label_00001ec8",
+          "lines": "476-480",
+          "what": "子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正）"
         }
       ],
       "slots": [
@@ -487,13 +496,16 @@
         "★顺序是「先 LOADCONFIG 再 INITCONFIG 分支」而不是都跑：INITCONFIG 会把选项**写回默认值**，跑错分支的后果是「玩家设置每次启动都被重置」且不报错",
         "SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG"
       ],
-      "gaps": [],
+      "gaps": [
+        "音频族（0x2F8/0xB5 等）在 emulator 里是空操作 ⇒ 本脚本的「三路语音 pan 复位」子程序无实际效果"
+      ],
       "links": {
         "capabilities": [
           "msgwin-char-reveal-grid",
           "adv-perframe-dispatch",
           "save-data-tables-persistence",
-          "engine-config-registry-persistence"
+          "engine-config-registry-persistence",
+          "audio-module-topology-and-volume-routing"
         ],
         "functions": [
           "0x41F250",
@@ -503,17 +515,19 @@
           "0x434F60",
           "0x434FE0",
           "0x42DF40",
-          "0x433A70"
+          "0x433A70",
+          "0x4268D0"
         ],
         "docs": [
-          "docs-new/03-engine/adv-text-rendering.md"
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/sound-system.md"
         ]
       },
       "guards": [
         "test/save-data.test.ts"
       ],
       "status": "partial",
-      "evidence": "src/SYSTEM4.txt:40-44 / 71-90 / 120-130；0x73 语义见台账 msgwin-char-reveal-grid；配置装载分支的 E3 断言见 test/save-data.test.ts",
+      "evidence": "src/SYSTEM4.txt:40-44 / 71-90 / 120-130；0x73 语义见台账 msgwin-char-reveal-grid；配置装载分支的 E3 断言见 test/save-data.test.ts；语音静音子程序见 src/SYSTEM4.txt:476-480（0x2F8 语义见 sound-system.md §4）",
       "notes": "只登记了启动段与字格入口；初始化字段/INIT 调用链未逐段读。"
     },
     {
@@ -958,21 +972,24 @@
       "gaps": [],
       "links": {
         "capabilities": [
-          "engine-config-registry-persistence"
+          "engine-config-registry-persistence",
+          "audio-module-topology-and-volume-routing"
         ],
         "functions": [
           "0x430DB0",
           "0x434720",
-          "0x430DF0"
+          "0x430DF0",
+          "0x420B40"
         ],
         "docs": [
           "docs-new/03-engine/opcode-table.md",
-          "docs-new/03-engine/adv-text-rendering.md"
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/sound-system.md"
         ]
       },
       "status": "analyzed",
       "evidence": "src/SELFONT.txt（全文 767 行）；CONFIG1.txt:1049 的 call-script 51dd；handler raw 40239-40249/42541-42575/40251-40261；E3 目视：修复后选择器列出 9 个候选面名并以绿框标出当前项（.tmp/fontpick4-1-fontpick.png）",
-      "notes": "行几何表与绘制细节未逐条建模；本条聚焦「列表数据从哪来」——正是 0x2DC/0x2DD 缺口导致的那部分。",
+      "notes": "行几何表与绘制细节未逐条建模；本条聚焦「列表数据从哪来」——正是 0x2DC/0x2DD 缺口导致的那部分。 音频侧：本页「选中即播确认音」用的就是 0xB5（`i0b5 1` = 起播 SE 通道 1·播一次；装载是同一段的 `play-sound-effect`），见 sound-system.md §8。",
       "guards": []
     },
     {
@@ -1099,6 +1116,64 @@
       "evidence": "src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888",
       "notes": "包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）；$1$AUTORUN 调用的 39 张 $1$ 表本身未读。",
       "guards": []
+    },
+    {
+      "id": "SP2563",
+      "file": "src/SP2563.txt",
+      "bin": "SP2563.BIN",
+      "role": "剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。",
+      "entry": "由章节脚本 call-script 进入（调用方未追）；内部按 global 分支处理菜单/选择项。",
+      "layout": [
+        {
+          "anchor": "play-sound-effect 2e 1",
+          "lines": "405-411",
+          "what": "一段分支的收尾：`play-sound-effect 2e 1`（装载 SE 0x2e 到通道 1）→ `i0b5 1`（起播·播一次）→ ret"
+        },
+        {
+          "anchor": "i2f8 2 0",
+          "lines": "17024-17033",
+          "what": "语音页收尾路径：`i2f6 2`（复位语音通道 2）→ `i2f8 2 0`（把该通道 pan 复位到中央）→ 按 global 判据跳转"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 14acda / 14acdb",
+          "what": "该段状态机（label_000389bc 置 3、收尾路径置 0）"
+        },
+        {
+          "key": "global a9d9 / 4fd6",
+          "what": "语音收尾分支的判据（读后立即 jcc）"
+        }
+      ],
+      "invariants": [
+        "音效惯用法成对出现：先 `play-sound-effect <id> <ch>` 装载，再 `i0b5 <ch>`（或 `i0ba <ch>` 循环）起播"
+      ],
+      "gotchas": [
+        "`i0b5` 是 0xB5（SE 通道起播·播一次）而不是 0x5B `ne`：助记符缺失使反汇编显示 `i0b5`，误读会把「播一次」当成「比较不等」",
+        "`i2f6` + `i2f8 … 0` 不是「清消息回调」而是「复位语音通道 + 把该通道 pan 复位到中央」（见 sound-system.md §4）"
+      ],
+      "gaps": [
+        "只读了 2 段（全 17307 行）：调用方、ADV 主流程、菜单分支均未读"
+      ],
+      "links": {
+        "capabilities": [
+          "audio-module-topology-and-volume-routing"
+        ],
+        "functions": [
+          "0x420B00",
+          "0x420B40",
+          "0x426820",
+          "0x4268D0"
+        ],
+        "docs": [
+          "docs-new/03-engine/sound-system.md",
+          "docs-new/03-engine/opcode-table.md"
+        ]
+      },
+      "guards": [],
+      "status": "partial",
+      "evidence": "src/SP2563.txt:405-411（`play-sound-effect 2e 1` + `i0b5 1`）与 :17024-17033（`i2f6 2` + `i2f8 2 0`）；指令语义见 functions.json 的 0x420B00/0x420B40/0x426820/0x4268D0",
+      "notes": "只登记「音频惯用法」两段；ADV 主流程与菜单分支未读。"
     }
   ]
 }

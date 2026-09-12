@@ -12,14 +12,21 @@
  */
 import { app, BrowserWindow } from 'electron';
 import { initLogFile, registerLogIpc } from './logging.js';
-import { logSystemPaths, registerFileIpc } from './ipc/files.js';
+import { logSystemPaths, registerAudioProtocol, registerAudioScheme, registerFileIpc } from './ipc/files.js';
 import { registerControlIpc } from './ipc/control.js';
 import { windows } from './windows.js';
+
+// ★音频：必须在 app ready **之前**做两件事
+//  1) 关闭"必须先有用户手势"的自动播放策略（否则 AudioContext 永远 suspended ⇒ 全程静音）；
+//  2) 注册 `amayui-audio://` 特权 scheme（BGM 流式播放 + Range；见 docs/13-audio-plan.md §3.3）。
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+registerAudioScheme();
 
 app.whenReady().then(() => {
   initLogFile();
   logSystemPaths();
   registerFileIpc();
+  registerAudioProtocol();
   registerLogIpc();
   registerControlIpc();
 

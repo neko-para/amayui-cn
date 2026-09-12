@@ -28,6 +28,7 @@ import { GFX_ITEM_OPS, GFX_ITEM_NATIVE_OPS } from './gfx-item.js';
 import { GFX_MISC_OPS, GFX_MISC_NATIVE_OPS } from './gfx-misc.js';
 import { MENU_OPS } from './menu.js';
 import { INPUT_OPS } from './input.js';
+import { AUDIO_OPS } from './audio.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -56,6 +57,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...GFX_TEXTURE_NATIVE_OPS,
   ...GFX_ITEM_NATIVE_OPS,
   ...GFX_MISC_NATIVE_OPS,
+  ...AUDIO_OPS,
   ...STUB_NATIVE_OPS,
 ]);
 

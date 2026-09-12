@@ -53,6 +53,8 @@ export class NodeFileSource implements FileSource {
   /** 已装载的包号（升序）；`0x143` 按这个顺序派发 `$n$AUTORUN`。 */
   #packNumbers: number[] = [];
   #appendsLoaded = false;
+  /** 文件名（小写）→ 条目；`readByName` 用（惰性建表，见 `#nameLookup`）。 */
+  #nameIndex: Map<string, { entry: Sys4FileEntry; archives: string[] }> | null = null;
   #log: (msg: string) => void;
 
   constructor(opts: NodeFileSourceOptions) {
@@ -237,6 +239,86 @@ export class NodeFileSource implements FileSource {
     const data = await this.#readEntry(r.entry, r.archives);
     if (!data) return null;
     return { name: r.entry.name, data };
+  }
+
+  /**
+   * 按统一文件 id 读出**一个字节区间**（含文件名与总长度）。
+   *
+   * 用途：音频流式（`amayui-audio://audio/<id>` 自定义协议 + `Range` 请求）——BGM 单曲 2–6MB，
+   * 整段过一个 IPC 会把 6MB 拷进渲染进程；`<audio>` 按 Range 取块时这里只读那一块。
+   * 判定与 `#readEntry` 同口径：**松散文件优先**（读整文件后切片），否则从 ALF 按 offset 切。
+   */
+  async readByIdRange(
+    id: number,
+    start: number,
+    endInclusive: number,
+  ): Promise<{ name: string; data: Uint8Array; total: number } | null> {
+    const r = await this.resolveEntry(id);
+    if (!r) return null;
+    return await this.#readEntryRange(r.entry, r.archives, start, endInclusive);
+  }
+
+  /**
+   * 按**文件名**读字节（大小写不敏感；本体索引 + 已装载扩展包）。
+   *
+   * 为什么需要：BGM 的剧本操作数是**曲号**而不是统一文件 id（引擎 `MusicBase` 有一张
+   * 曲号→文件 id 表，本作等价于 `BGM%03d.OGG`；证据见 `docs-new/03-engine/sound-system.md` §5）——
+   * 用统一 id 解释会静音错曲（2026-09 用户实测：标题曲 `play-bgm 1f` 被解析成 id 31 = `BGM041.OGG`）。
+   */
+  async readByName(name: string): Promise<{ name: string; data: Uint8Array } | null> {
+    const hit = await this.#nameLookup(name);
+    if (!hit) return null;
+    const data = await this.#readEntry(hit.entry, hit.archives);
+    return data ? { name: hit.entry.name, data } : null;
+  }
+
+  /** 按文件名读一个字节区间（协议流式用；语义同 `readByIdRange`）。 */
+  async readByNameRange(
+    name: string,
+    start: number,
+    endInclusive: number,
+  ): Promise<{ name: string; data: Uint8Array; total: number } | null> {
+    const hit = await this.#nameLookup(name);
+    if (!hit) return null;
+    return await this.#readEntryRange(hit.entry, hit.archives, start, endInclusive);
+  }
+
+  /** 名字 → 条目（惰性建表：本体 + 已装载扩展包；扩展包先装载以保证表完整）。 */
+  async #nameLookup(name: string): Promise<{ entry: Sys4FileEntry; archives: string[] } | null> {
+    const base = await this.#loadBaseIndex();
+    await this.#loadAppends();
+    if (!this.#nameIndex) {
+      const m = new Map<string, { entry: Sys4FileEntry; archives: string[] }>();
+      for (const e of base.files) m.set(e.name.toLowerCase(), { entry: e, archives: base.archives });
+      for (const pack of this.#packs.values()) {
+        for (const e of pack.files) {
+          const k = e.name.toLowerCase();
+          if (!m.has(k)) m.set(k, { entry: e, archives: pack.archives });
+        }
+      }
+      this.#nameIndex = m;
+    }
+    return this.#nameIndex.get(name.trim().toLowerCase()) ?? null;
+  }
+
+  /** 条目 + 区间 → 字节（松散文件优先）。 */
+  async #readEntryRange(
+    entry: Sys4FileEntry,
+    archives: string[],
+    start: number,
+    endInclusive: number,
+  ): Promise<{ name: string; data: Uint8Array; total: number } | null> {
+    const loose = await this.#findLoose(entry.name);
+    const total = loose ? loose.length : entry.length;
+    if (total <= 0) return null;
+    const from = Math.max(0, Math.floor(start));
+    const to = Math.min(total - 1, Math.floor(endInclusive));
+    if (to < from) return null;
+    if (loose) return { name: entry.name, data: loose.subarray(from, to + 1), total };
+    const arcName = archives[entry.archiveIndex];
+    if (!arcName) return null;
+    const data = await this.#readArchiveSlice(arcName, entry.offset + from, to - from + 1);
+    return { name: entry.name, data, total };
   }
 
   async readScript(index: number): Promise<ScriptBytes | null> {

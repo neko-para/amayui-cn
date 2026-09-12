@@ -14,7 +14,7 @@ const ROOT = path.resolve(HERE, '..', '..', '..');
 // 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
 const RAW_DIR = resolveResourceDir(ROOT);
 
-test('装载 index 0 = SYSTEM4.BIN：comment/dev_ukn 逐条执行，0x2F6 归类引擎内部插桩', async () => {
+test('装载 index 0 = SYSTEM4.BIN：comment/dev_ukn 逐条执行，0x2F6 归类音频族（native）', async () => {
   const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const e = new Engine(new StubNative());
   e.fileSource = src;
@@ -29,10 +29,10 @@ test('装载 index 0 = SYSTEM4.BIN：comment/dev_ukn 逐条执行，0x2F6 归类
   assert.equal(t1.name, 'comment');
   const t2 = await stepOnce(e);
   assert.equal(t2.name, 'dev_ukn');
-  // 0x2F6 已归类为"引擎内部/子系统"（插桩跳过），不再抛未实现
+  // 0x2F6（复位语音通道）2026-09 起是**音频族真实现**：落在 NATIVE_OPS，经 NativeBridge.audio 下发意图。
   const t3 = await stepOnce(e);
   assert.equal(t3.opcode, 0x2f6);
-  assert.equal(t3.handlerKind, 'engine-internal');
+  assert.equal(t3.handlerKind, 'native');
 
   await src.dispose?.();
 });

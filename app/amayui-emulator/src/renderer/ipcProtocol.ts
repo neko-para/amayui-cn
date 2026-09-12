@@ -32,6 +32,18 @@ declare global {
       writeSaveData?(data: Uint8Array): Promise<{ path: string } | null>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
+       * **按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节**
+       * （SE=`RIFF` PCM16 WAV / BGM·语音=`OggS` Vorbis；实测见 `docs/13-audio-plan.md` §1）。
+       * ★BGM 传的是**文件名**（曲号 → `BGM031.OGG`，见 `docs-new/03-engine/sound-system.md` §5）；
+       * SE / 语音传统一文件 id。返回 null = 解析/读取失败。
+       */
+      audio?(key: number | string): Promise<Uint8Array | null>;
+      /**
+       * **音频流式基址**（主进程注册的 `amayui-audio://` 自定义协议 + Range）。
+       * 有它时 BGM 走 `<audio>` 流播（不把 2–6MB 全解成 PCM）；没有则退回 IPC 字节 + `decodeAudioData`。
+       */
+      audioStreamBase?: string;
+      /**
        * 读内置字体文件字节（`res/fonts/` 下的相对路径；渲染进程用 `FontFace` 注册）。
        * 走 IPC 而不是相对 URL：渲染页在 `dist/renderer/` 下，`file://` + CSP 下加载仓外资源不可靠。
        */
