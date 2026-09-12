@@ -15,9 +15,9 @@
 >
 > **状态判定走引擎分析技能规则**：`已核对` = 读 handler 体确证（附 raw .c 行号）；`推测`/`仅映射` = 未读体，不一定可靠。函数含未建模数值偏移或调用未分析函数的记 **`PARTIAL`**，否则 **`ANALYZED`**（如 `random`/0x60 的共用格式化助手 `sub_408050`→`StringFormat`（安全有界 sprintf）确证后转 ANALYZED）。
 >
-> **信息源**：本工程的分析结论**唯一数据层** = `analysis/functions.json` + `analysis/fields.json`（数据驱动方案），原始只读基准 = `engine/天结_unpacked.exe_utf8.c`。`opcode-table.md` 只列**映射 / 语义**，分析结论以数据层为准。
+> **信息源**：本工程的分析结论**唯一数据层** = `analysis/` 下的三层（① `functions.json` + `fields.json` 函数/偏移「是什么」；② `engine-capabilities.json` 引擎**常态能力**；③ `scripts.json` **脚本台账**），原始只读基准 = `engine/天结_unpacked.exe_utf8.c`。`opcode-table.md` 只列**映射 / 语义**，分析结论以数据层为准。
 >
-> **参考**：`analysis/functions.json`、`analysis/fields.json`；报表工具 `.agents/skills/amayui-engine-analysis/scripts/report.js`（读数据层打印进度/字段清单）与 `sort-fields.js`（字段排序）。
+> **参考**：`analysis/functions.json`、`analysis/fields.json`（+ `engine-capabilities.json` / `scripts.json`）；报表工具 `.agents/skills/amayui-engine-analysis/scripts/report.js`（读数据层打印进度/字段清单）、`sort-fields.js`（字段排序）、`capabilities.js`（第二层）、`scripts.js`（第三层）；跨脚本的脚本层结论见 `docs-new/05-scripts/`。
 > **功能方向粗分类**（指令→声音/渲染/消息UI/输入/字符串/数据等簇）见 [`./instruction-directions.md`](./instruction-directions.md)。
 
 ## 全部 544 个已映射 opcode

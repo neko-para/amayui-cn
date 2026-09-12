@@ -9,7 +9,7 @@
 |---|---|---|
 | ① 游戏汉化 | 重制简体中文补丁（方案 B：改数据文件） | `data/`（基线）、`src/`（真值）、`res/`、`scripts/`、`tools/`、`patch/` |
 | ② 游戏数据分析 | 反向业务数据/静态表结构 | `30`（业务数据文档）、`app/amayui-inspector`、`app/amayui-toolkit`、`scripts/` 提取、`output/` |
-| ③ 游戏引擎分析 | 反向 AGE 引擎 VM/字节码/机制 | `engine/`（反编译 C）、`docs-new/03-engine/` |
+| ③ 游戏引擎分析 | 反向 AGE 引擎 VM/字节码/机制 | `engine/`（反编译 C）、`analysis/`（三层数据层：函数/偏移 · 常态能力 · 脚本台账）、`docs-new/03-engine/` + `docs-new/05-scripts/` |
 | ④ app 工具 | 三个可运行子工程 | `app/amayui-emulator`、`app/amayui-inspector`、`app/amayui-toolkit` |
 
 ## 2. 现状（已达成）
@@ -22,6 +22,7 @@
 ## 3. 关键边界
 
 - **引擎机制（`docs-new/03-engine`）**：VM/opcode 分发/`this` 布局/资源加载/渲染。引擎是**通用解释器**，不含单位/掉落/技能等业务语义。
+- **引擎结论的落库纪律**：分析结论只在**三层数据层**（`analysis/*.json`：①函数/偏移 ②常态能力 ③脚本台账）里增长；主题文档（`docs-new/03-engine/*`）与脚本台账渲染物（`docs-new/05-scripts/*`）是**叙述/生成物**，不许成为唯一事实源。
 - **业务数据（`docs-new/02-data`）**：脚本字节码/静态表里的业务字段。其地址是**业务域常量**，**与引擎内部无必然联系**；除非有确切证据（进程内实测读取 + 与脚本语义互证），**不把两者混同**。
 
 ## 4. 术语约定

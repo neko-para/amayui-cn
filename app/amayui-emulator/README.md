@@ -519,8 +519,8 @@ npm run shot -- --tabs 5,3,4    # 指定要点哪些左侧分类（0..5）
 | **门与标志读者** | 每个被每帧读的开关字节（脏 46508 / 冻结 46512 / pending 46516 / 无渲染 167990…）+ 谁清它 |
 | **惰性创建** | `if (!slot) 建` 形态的子系统对象（effect / 纹理槽 / mesh 槽 / L2D 槽 / 字体…）与释放点 |
 
-**当前体检（65 条）**：已核验 **3** / 已建模未核验 **6** / 部分 **10** / 缺失 **22** / n/a **24**
-（n/a 必须写明 why，由 `test/capability-ledger.test.ts` 强制）。**需要关注 38 条** —— 这就是
+**当前体检（91 条）**：已核验 **13** / 已建模未核验 **7** / 部分 **20** / 缺失 **26** / n/a **25**
+（n/a 必须写明 why，由 `test/capability-ledger.test.ts` 强制）。**需要关注 53 条** —— 这就是
 "看起来都实现了、效果却有 bug"的量化答案。其中与 2D 表现直接相关的高风险缺口举例：
 
 - `transition-table-flush` / `clock-read-transition-window`：**转场表未建模** ⇒ wipe/淡入淡出过场不显示；
@@ -533,6 +533,27 @@ npm run shot -- --tabs 5,3,4    # 指定要点哪些左侧分类（0..5）
 - `lazy-572b-node-map` / `render-merge-two-pass-reorder`：**572B 节点表未建模** ⇒ 四路归并只有两路。
 
 > 台账的 `guard` 字段指向真实测试文件（测试会校验文件存在），所以"声称已核验"不能空口说。
+
+### 脚本台账（第三层的清单）—— 「这个界面脚本长什么样」别再重读一遍
+
+`analysis/scripts.json`（数据层）+ `docs-new/05-scripts/`（人可读，由 `node scripts/build-scripts.mjs` 从数据层生成）。
+每个**被分析过的** `src/*.txt` 一条：`role`/`entry`（是什么、谁 call 它）+ `layout`（读过的行区间 + 锚点 + 职责）
++ `slots`（关键槽/局部量）+ `invariants`/`gotchas`/`gaps` + `links`（回链第二层能力 id、第一层函数 addr、主题文档）+ `guards`。
+
+为什么单列一层：设置界面的「可见项表是 36df/179f/273f 三数组、靠 `i12f` 排序、切分类 = 退出后重入、
+**帧局部池必须在装载时重建**」既不是函数语义、也不是引擎常态行为，以前只活在代码注释里 ⇒
+同一个界面被反复重读了几千行反汇编（见 `docs-new/05-scripts/CONFIG1.md` 的坑）。
+
+```bash
+node .agents/skills/amayui-engine-analysis/scripts/scripts.js --index       # 读过哪些脚本（状态/段数/槽数）
+node .agents/skills/amayui-engine-analysis/scripts/scripts.js --id CONFIG1   # 精查某个脚本的结构与坑
+node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage     # 还没登记的 src/*.txt（提醒，不是 KPI）
+node scripts/build-scripts.mjs                                               # 重生成 docs-new/05-scripts/（勿手改 md）
+```
+
+★**锚点棘轮**：每条 `layout` 的 `anchor` 必须**真的出现在它声明的行区间内**（`test/script-ledger.test.ts` 逐条核对真源）。
+好处有两面：一是"凭印象编造结构"过不了关；二是 `src/*.txt` 一旦翻译 reflow 重排行号，守卫**必然变红**，
+逼人刷新行区间 —— 结论不会悄悄失真。覆盖率**不要求凑数登记**（当前 6 / 941，没读过的宁可空着）。
 
 ---
 
@@ -638,11 +659,15 @@ app/amayui-emulator/
 
 ## 权威事实来源（本工程其它目录）
 
-- 逆向文档：[`docs/re/engine/`](../../../docs/re/engine/)（15 篇）
-- opcode→handler 全量表：[`docs/re/engine/06-opcode到handler映射表.md`](../../../docs/re/engine/06-opcode到handler映射表.md)
+- **新文档体系（权威）**：[`docs-new/`](../../../docs-new/README.md) —— 引擎主题 `03-engine/`、脚本台账 `05-scripts/`、
+  汉化 `01-translation/`、数据 `02-data/`、app `04-app/`。旧的 `docs/`（含 `docs/re/engine/`）**已作废**，仅作历史参考。
+- **三层数据层（唯一会增长的地方）**：`analysis/functions.json`+`fields.json`（函数/偏移是什么）、
+  `analysis/engine-capabilities.json`（引擎常态行为）、`analysis/scripts.json`（脚本台账）；
+  它们的 md 渲染物分别是 `docs-new/03-engine/engine-capabilities.md`、`docs-new/05-scripts/*`（**勿手改**）。
 - `this` 对象模型：[`engine/engine.hpp`](../../../engine/engine.hpp)
 - ~~重定型成员化视图（语义参考）~~：**已废弃**（原 `engine/engine.cpp`，`retarget.py` 生成；libclang/AST 改写已放弃，改用数据层 `analysis/*.json` + 原始基准 `engine/天结_unpacked.exe_utf8.c`）
 - 脚本反汇编：[`src/*.txt`](../../../src/)；松散字节码 BIN：[`raw/`](../../../raw/)；ALF 提取：[`raw-parts/`](../../../raw-parts/)
+- 历史（作废）：`docs/re/engine/` 15 篇、`docs/re/engine/06-opcode到handler映射表.md`（真源已迁至 `docs-new/03-engine/opcode-table.md`）
 
 ---
 

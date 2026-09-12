@@ -15,6 +15,7 @@ E:\Games\Eushully\天結\
 ├── plugins\    DSH 工具插件（htmlcard / uimap）
 ├── output\     提取/调用图产物（callgraph*.html/.gv/.json、*.csv）
 ├── engine\     反编译 C（engine.hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h）
+├── analysis\    ★ 引擎分析结论的**三层数据层**（唯一会增长）：functions/fields.json、engine-capabilities.json、scripts.json
 ├── app\        三子工程（amayui-emulator / amayui-inspector / amayui-toolkit）
 ├── docs-new\   ★ 本文档体系：唯一新来源
 ├── data\src 之外：manifest（install-manifest.json、raw-manifest.json）
@@ -30,6 +31,20 @@ E:\Games\Eushully\天結\
 |---|---|---|
 | `data/*.txt` | 只读日文基线 | 不改（assemble 骨架校验以此为准） |
 | `src/*.txt` | 可编辑开发源（翻译语法） | 改（**翻译真值**） |
+
+## 2b. 数据分层（引擎分析结论 → `analysis/`）
+
+引擎分析的结论**只在 `analysis/` 里增长**（三层；主题文档与渲染物都是叙述/生成物）：
+
+| 层 | 文件 | 回答 | 渲染物（生成，勿手改） | 守卫测试 |
+|---|---|---|---|---|
+| 一 | `functions.json` + `fields.json` | 某函数/偏移**是什么** | （无） | `test/opcode-table*` / `registry-tables` 等散在测试 |
+| 二 | `engine-capabilities.json` | 引擎有哪些**常态行为** | `docs-new/03-engine/engine-capabilities.md`（`scripts/build-capabilities.mjs`） | `test/capability-ledger.test.ts` |
+| 三 | `scripts.json` | **每个读过的 `src/*.txt` 长什么样** | `docs-new/05-scripts/*`（`scripts/build-scripts.mjs`） | `test/script-ledger.test.ts` |
+
+> 纪律：改完数据层必须重跑对应 `build-*.mjs`（守卫会核对 md 与数据层同步）；第三层的每条结构记录都带
+> 「行区间 + 锚点」，`src/*.txt` 一重排守卫就红（**锚点棘轮**，见 `docs-new/05-scripts/README.md`）。
+> 工具：`.agents/skills/amayui-engine-analysis/scripts/{report,capabilities,scripts}.js`（查询/增删改/自检）。
 
 ## 3. 排除项（不进入 install）
 

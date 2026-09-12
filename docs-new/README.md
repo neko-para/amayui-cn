@@ -19,6 +19,7 @@
 |---|---|---|
 | 翻译结果 | **`src/*.txt`（941 个）** | 唯一权威、视为已确认；后续仅持续校对、整体修正。**`docs/translate/*`（302 篇）已作废**，不再引用。 |
 | 引擎机制 | `docs-new/03-engine/` | 仅引擎内部（VM/opcode/`this` 布局/资源加载/渲染）。 |
+| 引擎结论数据层 | **`analysis/functions.json` + `fields.json`**（函数/偏移「是什么」）、**`analysis/engine-capabilities.json`**（引擎**常态能力**）、**`analysis/scripts.json`**（**脚本台账**：每个读过的 `src/*.txt` 的结构/槽/不变量/缺口） | 三层数据层是**唯一会增长**的地方；`docs-new/03-engine/engine-capabilities.md` 与 `docs-new/05-scripts/*` 是它们的**生成物**（`scripts/build-capabilities.mjs` / `scripts/build-scripts.mjs`），勿手改。 |
 | 业务数据 | `docs-new/02-data/` | 掉落/技能/物品/地图等及其地址，**与引擎内部无必然联系**；除非有确切证据不与引擎混同。 |
 | 汉化字体基底 | **Sarasa Gothic SC**（更纱黑体 SC，2026-08 起替换 WenQuanYi） | 渲染用 Sarasa SC；游戏内为 Amayui CN（Sarasa 基底 cnjp 替换版）。 |
 
@@ -50,15 +51,21 @@ docs-new/
 │   ├── unpacking.md          ← AGE 引擎加壳拆壳 + 重定型管线
 │   ├── vm-opcodes.md         ← (已归档) 解释器主循环/分发概览；语义看 opcode-table.md + 数据层
 │   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（544+30 条，真源）**
+│   ├── engine-capabilities.md ← **引擎「常态能力」台账（第二层，生成物）**：逐帧流程/门控/惰性创建/转场/资源生命周期 + emulator 现状
 │   ├── operands.md           ← (瘦身) 操作数速记(DEC/ENC/指针模型)；原语以 data 层 functions.json 为准
 │   ├── runtime-memory.md     ← (瘦身) this 布局说明 + 消息窗对象叙事；字段以 data 层 fields.json 为准
 │   ├── resource-loading.md   ← 统一文件 id 空间 / 启动链 / 纹理·AGF 映射
-│   └── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
-└── 04-app/                   ← app 工具
-    ├── README.md             ← 三子工程总览（独立、不引用 app/*/docs）
-    ├── emulator.md           ← amayui-emulator
-    ├── inspector.md          ← amayui-inspector
-    └── toolkit.md            ← amayui-toolkit
+│   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
+│   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
+│                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog
+├── 04-app/                   ← app 工具
+│   ├── README.md             ← 三子工程总览（独立、不引用 app/*/docs）
+│   ├── emulator.md           ← amayui-emulator
+│   ├── inspector.md          ← amayui-inspector
+│   └── toolkit.md            ← amayui-toolkit
+└── 05-scripts/               ← **脚本台账**（第三层数据层 `analysis/scripts.json` 的生成物，勿手改）
+    ├── README.md             ← 索引 + 覆盖率（已登记 N / 941）+ 怎么用的流程
+    └── <ID>.md               ← 每个读过的 src/*.txt 一页：结构（行区间+锚点）/ 关键槽 / 不变量 / 坑 / 缺口 / 相关
 ```
 
 ## 3. 术语速览
@@ -76,6 +83,9 @@ docs-new/
 | DEC/ENC | 引擎操作数去混淆（rol32/ror32 + key） |
 | `this` | 引擎对象指针（engine.hpp 的 `struct Engine`） |
 | Amayui CN | 游戏内中文字体（Sarasa SC 基底，cnjp 替换版，族名 Amayui CN） |
+| 三层数据层 | `analysis/` 下的三类结论：① `functions.json`+`fields.json`（函数/偏移是什么）② `engine-capabilities.json`（引擎常态行为）③ `scripts.json`（脚本台账）。**唯一会增长的地方**，md 都是渲染物 |
+| 脚本台账 | 第三层：每个被分析过的 `src/*.txt` 一条（结构 / 槽 / 不变量 / 坑 / 缺口）；渲染物在 `docs-new/05-scripts/` |
+| 锚点棘轮 | 脚本台账每条结构记录都带「行区间 + 必须出现在该区间内的锚点串」；`src/*.txt` 一重排，守卫测试就红 ⇒ 逼人刷新行号，防止结论悄悄失真 |
 
 ## 4. 四大方向 → 文档入口
 
@@ -83,7 +93,10 @@ docs-new/
 |---|---|
 | ① 游戏汉化 | `01-translation/` |
 | ② 游戏数据分析 | `02-data/` |
-| ③ 游戏引擎分析 | `03-engine/` |
+| ③ 游戏引擎分析 | `03-engine/`（+ 数据层：`analysis/*.json`；`03-engine/engine-capabilities.md` 是第二层的渲染物） |
 | ④ app 工具 | `04-app/` |
+| ⑤ 脚本台账（引擎分析的产物层） | `05-scripts/`（真源 `analysis/scripts.json`；`node scripts/build-scripts.mjs` 生成） |
 
 四个方向的顶层入口见 `04-app/README.md`；方向内各主题按上述目录逐一自包含展开。
+`05-scripts/` 是**按脚本**记录「这个界面/演出脚本长什么样」的台账（行区间 + 锚点钉在 `src/*.txt` 上），
+与 `03-engine/` 的跨脚本叙述互补：能靠读某个脚本回答的，写进 `05-scripts/`；跨脚本的机制写进 `03-engine/`。
