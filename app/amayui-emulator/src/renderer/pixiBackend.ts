@@ -23,7 +23,7 @@
  * 与 `HeadlessScene` 共用同一份 —— 本类**不自己实现任何场景规则**。
  */
 import type { Application, Container, ContainerChild, Texture } from 'pixi.js';
-import { assertFlags, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
+import { assertFlags, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
 import { advanceWindows, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
@@ -37,6 +37,8 @@ import {
   scCreateMesh,
   scDetachTexture,
   scDrawCgNumber,
+  scDrawString,
+  scCreateTextureReset,
   scSetDrawColor,
   scSetDrawColorAlpha,
   scSetDrawPivot,
@@ -217,10 +219,18 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
   }
 
-  /** `0x1F8` create-texture：见 `TextureCache.create`（槽旧纹理失效后重取）。 */
+  /** `0x1F8` create-texture：见 `TextureCache.create`（槽旧纹理失效后重取 / 新建空白表面）。 */
   createTexture(slot: number, w: number, h: number, mode: number): void {
     this.#markDirty();
     this.textures.create(slot, w, h, mode);
+    scCreateTextureReset(this.scene, slot);
+  }
+
+  /** `0x204` draw-string：把整串文本直绘进该槽的表面（见 `TextureCache.drawString`）。 */
+  drawString(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void {
+    this.#markDirty();
+    scDrawString(this.scene, slot, x, y, text); // 共享模型：报告/测试也能看到这串字
+    this.textures.drawString(slot, x, y, text, style);
   }
 
   /**

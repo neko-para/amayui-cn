@@ -1,7 +1,7 @@
 /**
  * Node 宿主文件访问实现（FileSource 的一个实现）。
- * 策略（按用户要求）：只依赖 `raw/`。
- *   1. 先在 raw/ 找松散文件（游戏直读版本，语料权威）；
+ * 策略：资源根由调用方给出（**默认 `install/` = 汉化版安装目录**，见 `resourceDir.ts`）。
+ *   1. 先在资源根找松散文件（游戏直读版本，语料权威 —— 汉化补丁优先落在这里）；
  *   2. 找不到则按 SYS4INI 索引给的 (archive_index, offset, length) 从对应 ALF 里切片取出。
  * 不依赖 raw-parts（那只是预解压产物）。
  * 将来 Electron renderer 侧可换 IpcFileSource：通过 IPC 把"读原始字节/读 ALF 切片"发给主进程，接口一致。
@@ -12,20 +12,25 @@ import type { FileSource, ScriptBytes } from './fileSource.js';
 import { parseSys4Index, parseAppendIndex, type Sys4Index, type Sys4FileEntry } from '../script/alf.js';
 
 export interface NodeFileSourceOptions {
-  /** raw/ 目录（含 SYS4INI.BIN、*.ALF 归档、松散 .BIN 脚本）。 */
-  rawDir: string;
+  /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
+  resourceDir: string;
 }
 
 /** 扩展包数（与游戏一致：APPEND01..05）。 */
 export const APPEND_COUNT = 5;
 
 export class NodeFileSource implements FileSource {
-  #rawDir: string;
+  #root: string;
   #base: Sys4Index | null = null;
   #appends: (Sys4Index | null)[] = [];
 
   constructor(opts: NodeFileSourceOptions) {
-    this.#rawDir = opts.rawDir;
+    this.#root = opts.resourceDir;
+  }
+
+  /** 资源根（诊断/报告用：写清"这次的报告读的是哪套资源"）。 */
+  get root(): string {
+    return this.#root;
   }
 
   async readFile(p: string): Promise<Uint8Array> {
@@ -35,7 +40,7 @@ export class NodeFileSource implements FileSource {
 
   async #loadBaseIndex(): Promise<Sys4Index> {
     if (this.#base) return this.#base;
-    const bytes = await this.readFile(path.join(this.#rawDir, 'SYS4INI.BIN'));
+    const bytes = await this.readFile(path.join(this.#root, 'SYS4INI.BIN'));
     this.#base = parseSys4Index(bytes);
     return this.#base;
   }
@@ -45,7 +50,7 @@ export class NodeFileSource implements FileSource {
     if (this.#appends.length) return this.#appends;
     this.#appends = Array.from({ length: APPEND_COUNT + 1 }, () => null);
     for (let n = 1; n <= APPEND_COUNT; n++) {
-      const p = path.join(this.#rawDir, `APPEND0${n}.AAI`);
+      const p = path.join(this.#root, `APPEND0${n}.AAI`);
       try {
         const bytes = await this.readFile(p);
         this.#appends[n] = parseAppendIndex(bytes);
@@ -56,9 +61,9 @@ export class NodeFileSource implements FileSource {
     return this.#appends;
   }
 
-  /** 在 raw/ 里按文件名找松散文件；找不到返回 null。 */
+  /** 在资源根里按文件名找松散文件；找不到返回 null。 */
   async #findLoose(name: string): Promise<Uint8Array | null> {
-    const p = path.join(this.#rawDir, name);
+    const p = path.join(this.#root, name);
     try {
       const st = await fs.stat(p);
       if (st.isFile()) return await this.readFile(p);
@@ -70,7 +75,7 @@ export class NodeFileSource implements FileSource {
 
   /** 从归档（ALF）里取一个切片。 */
   async #readArchiveSlice(arcName: string, offset: number, length: number): Promise<Uint8Array> {
-    const fh = await fs.open(path.join(this.#rawDir, arcName), 'r');
+    const fh = await fs.open(path.join(this.#root, arcName), 'r');
     try {
       const buf = Buffer.alloc(length);
       const { bytesRead } = await fh.read(buf, 0, length, offset);

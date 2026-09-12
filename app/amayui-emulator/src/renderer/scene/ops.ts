@@ -299,6 +299,25 @@ export function scMsgWinClear(s: SceneState, win: number): void {
   s.msgRev.set(win, (s.msgRev.get(win) ?? 0) + 1);
 }
 
+/**
+ * `0x204` draw-string：把一串文本**追加**到某个纹理槽的直绘文本表（引擎 `sub_456710` 的 GDI 直绘）。
+ *
+ * 语义要点：
+ *  - **不清底**：引擎是往该槽**已有表面**上叠字（`create-texture` 建出来的空表面 → 叠几行字）；
+ *  - **不去重**：同一个槽每帧被脚本重画时，若无 `create-texture` 先重建，字会越叠越多 ——
+ *    这正是引擎的行为（`CONFIG1` 每帧先 `create-texture` 再画，所以不会叠）。
+ */
+export function scDrawString(s: SceneState, slot: number, x: number, y: number, text: string): void {
+  const list = s.slotText.get(slot);
+  if (list) list.push({ x, y, text });
+  else s.slotText.set(slot, [{ x, y, text }]);
+}
+
+/** `0x1F8` create-texture：新建/重建该槽 ⇒ 槽上的直绘文本随之清空（引擎是新表面）。 */
+export function scCreateTextureReset(s: SceneState, slot: number): void {
+  s.slotText.delete(slot);
+}
+
 /** 全部清空（引擎 `op_exit_script` 的 `msgwin.reset()` 语义）。 */
 export function scMsgWinClearAll(s: SceneState): void {
   for (const win of [...s.msgWins.keys()]) scMsgWinClear(s, win);

@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 11 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 12 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 20 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **89** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **90** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -26,7 +26,7 @@
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
 | 帧循环 | 12 | 8 |
-| 消息窗 | 20 | 15 |
+| 消息窗 | 21 | 15 |
 | 渲染 | 23 | 11 |
 | 资源 | 8 | 2 |
 | 转场 | 4 | 4 |
@@ -125,6 +125,7 @@
 | `msgwin-char-reveal-grid` | 消息窗 | 字格逐字显现（引擎逐字渲染的真实机制）：0x73 设字格与节拍 → 0x72 武装 → 主循环每节拍贴出第 k 格（raw 20887-20895 + sub_45A940） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
 | `gfx-texture-load-sync` | 资源 | 纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位 | ✅ 已核验 | E2 · `test/texture-frame-barrier.test.ts` |
 | `drawitem-world-matrix-composition` | 渲染 | DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门 | ✅ 已核验 | E2 · `test/draw-item-scale.test.ts` |
+| `gdi-direct-text-to-slot` | 消息窗 | GDI 整串直绘到纹理槽（0x204 draw-string → sub_456710） | ✅ 已核验 | E2 · `test/draw-string.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

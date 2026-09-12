@@ -29,7 +29,7 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
-import { defaultWinStyle, layoutWindow, type MsgWinStyle } from '../../text/layout.js';
+import { defaultWinStyle, layoutWindow, type FontSpec, type MsgWinStyle } from '../../text/layout.js';
 import { fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
 import type { OpTable } from './shared.js';
@@ -60,13 +60,45 @@ export function setConfigValue(e: Engine, key: string, value: number): void {
  */
 const hex6 = (rgb: number): string => '#' + (rgb & 0xffffff).toString(16).padStart(6, '0');
 
+/**
+ * **全局文本样式**（不依赖任何窗几何）—— 引擎 `Font` 对象上那几个"当前字体/颜色/描边"字段的快照。
+ *
+ * 用途：任何"直绘文本"的指令（`0x204` draw-string → `sub_456710(Font, 槽, 串, x, y)`）
+ * 用的就是同一套全局字段；消息窗的 `styleOfWin` 也在这里取 main/outline 部分，避免两处各写一遍。
+ *
+ * 字段（`engineValues` 下标 = 字节偏移/4，见 `ENGINE_FIELD_STORE`）：
+ * `21664` ← `Font+1360` 填充色（`0x76` 写，BGR→RGB 已重排）、`21665` ← `Font+1364` 描边色（`0x77`）、
+ * `21667` ← `Font+1372` 描边档位（`0x2BD`/`0x2BE` 一族的邻位）、`21670/21671` ← 描边偏移。
+ */
+export function globalTextStyle(e: Engine): {
+  main: FontSpec;
+  outlineMode: 0 | 1 | 2 | 3;
+  outlineDx: number;
+  outlineDy: number;
+} {
+  const m = e.msgwin;
+  const v = (k: number, d: number): number => e.engineValues.get(k) ?? d;
+  const base = defaultWinStyle();
+  return {
+    main: {
+      family: resolveFace(m.font.mainFace).family,
+      size: m.font.mainSize,
+      weight: m.font.mainBold ? 700 : 400,
+      fill: hex6(v(21664, 0xffffff)),
+      outline: hex6(v(21665, 0x000000)),
+    },
+    outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
+    outlineDx: v(21670, base.outlineDx),
+    outlineDy: v(21671, base.outlineDy),
+  };
+}
+
 /** 由「全局样式 + 该窗几何 + 该窗文本」组装排版输入（引擎 `Font` + `FontVWindow` 的快照）。 */
 export function styleOfWin(e: Engine, win: number): MsgWinStyle {
   const m = e.msgwin;
   const g = m.geom(win);
   const v = (k: number, d: number): number => e.engineValues.get(k) ?? d;
-  const base = defaultWinStyle();
-  const resolvedMain = resolveFace(m.font.mainFace);
+  const core = globalTextStyle(e);
   const resolvedRuby = resolveFace(m.font.rubyFace);
   return {
     x: g.x,
@@ -81,23 +113,17 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     vertical: (v(80101, m.font.vertical ? 1 : 0) & 1) !== 0,
     align: g.align,
     alignWidth: g.alignWidth,
-    outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
-    outlineDx: v(21670, base.outlineDx),
-    outlineDy: v(21671, base.outlineDy),
-    main: {
-      family: resolvedMain.family,
-      size: m.font.mainSize,
-      weight: m.font.mainBold ? 700 : 400,
-      fill: hex6(v(21664, 0xffffff)),
-      outline: hex6(v(21665, 0x000000)),
-    },
+    outlineMode: core.outlineMode,
+    outlineDx: core.outlineDx,
+    outlineDy: core.outlineDy,
+    main: core.main,
     ruby: {
       family: resolvedRuby.family,
       size: m.font.rubySize,
       weight: m.font.rubyBold ? 700 : 400,
       // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
-      fill: hex6(v(21664, 0xffffff)),
-      outline: hex6(v(21665, 0x000000)),
+      fill: core.main.fill,
+      outline: core.main.outline,
     },
     background: g.background,
     // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）
@@ -816,11 +842,50 @@ const op_msgwin_slot_clear: OpHandler = (c) => {
   }
 };
 
+/**
+ * **`0x204` draw-string（sub_423390, raw 31454）：把一整串文本"直绘"进某个纹理槽。**
+ *
+ * 引擎：`op1`=纹理槽、`op2`=x、`op3`=y、`op4`=字符串 →
+ * `sub_456710(Font, 槽, 串, x, y)`（raw 68470）：**槽的 CTexture 必须已存在且可锁定、串非空**，
+ * 否则整条什么都不做（raw 68478-68480 的三个 && 门）；然后按当前字体（`Font+1084`）与
+ * `GetTextMetricsA` 的高度把串画到**该槽的表面**上（带描边时走 `sub_471180`，否则 `sub_46F2D0`）。
+ *
+ * ★与消息窗文本的关系：**两条独立路径**。消息窗是"排版 + 逐行贴出"，本指令是"GDI 一次性整串直绘"，
+ *   用的是同一套全局字体/颜色/描边字段（`Font+1360/+1364/+1372`）。
+ * ★为什么必须实现：`CONFIG1`（设置界面）把每行的**项目名 + 数值**先 `draw-string` 写进
+ *   一张 `create-texture` 出来的 628×360 离屏槽（槽 196），再按行把它裁成 628×30 贴到行上
+ *   （`CONFIG1.txt:2760/2773` + `:3019-3022`）。漏了本条 ⇒ 那张离屏槽**永远是空的**
+ *   （宿主只能把它当"程序化纹理"画成白块）⇒ 设置界面中间一片纯白（用户实测）。
+ *
+ * emulator 侧：handler 只把「位置 + 文本 + 全局样式快照」交给宿主（排版/光栅化是宿主的事，
+ * 与 `msgWinSync` 同一分工）；宿主把字画进该槽的 canvas 纹理（见 `textureCache.drawString`）。
+ */
+const op_draw_string: OpHandler = (c) => {
+  const e = c.e;
+  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  const x = readIntOperand(e, c.frame, c.instr, 2);
+  const y = readIntOperand(e, c.frame, c.instr, 3);
+  const text = readStringOperand(e, c.frame, c.instr, 4);
+  if (text.length === 0) return; // 引擎：`*a3` 为 0 直接返回
+  const st = globalTextStyle(e);
+  c.native.drawString?.(slot, x, y, text, {
+    family: st.main.family,
+    size: st.main.size,
+    weight: st.main.weight,
+    fill: st.main.fill,
+    outline: st.main.outline,
+    outlineMode: st.outlineMode,
+    outlineDx: st.outlineDx,
+    outlineDy: st.outlineDy,
+  });
+};
+
 /** 消息窗 / ADV 指令族（全部为 `OPS`＝真实现）。 */
 export const MSGWIN_OPS: OpTable = [
   // ---- 文本内容与推进 ----
   [0x6e, op_show_text], // show-text：追加文本 + 分段节流
   [0x6f, op_end_text_line], // end-text-line
+  [0x204, op_draw_string], // draw-string：把一整串文本直绘进某个纹理槽（不走消息窗）
   [0x071, op_message_show], // message-show（修正：不再无条件置 ADV）
   [0x072, op_wait_for_input], // wait-for-input：结束一页并挂起（bit31 等待门）
   [0x0fa, op_poll_msg_advance], // poll-msg-advance（★过去未注册 ⇒ 命中即硬报错）

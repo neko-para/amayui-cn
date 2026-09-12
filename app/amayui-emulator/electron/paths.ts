@@ -1,10 +1,11 @@
 /**
  * 主进程的路径常量。
  *
- * 单独成文件的原因：路径是"安装布局知识"（dist 相对仓库根、raw 目录、INI 的候选位置），
+ * 单独成文件的原因：路径是"安装布局知识"（dist 相对仓库根、资源目录、INI 的候选位置），
  * 原先散在 IPC 处理器里，改一处布局要在处理器之间找。集中后只有这一处需要维护。
  */
 import * as path from 'node:path';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
 /**
  * 仓库根。运行时 `__dirname` = `<repo>/app/amayui-emulator/dist/electron`，
@@ -12,8 +13,11 @@ import * as path from 'node:path';
  */
 export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 
-/** 游戏原始资源目录（松散 BIN / ALF 归档）。 */
-export const RAW_DIR = path.join(REPO_ROOT, 'raw');
+/**
+ * 游戏资源目录：默认 **`install/`（汉化版）** —— 松散 BIN / 打过补丁的 ALF 归档 / SYS4INI 索引。
+ * 可用 `AMAYUI_RESOURCE_DIR` 覆盖（对比原版：`AMAYUI_RESOURCE_DIR=raw`）。见 `src/arch/resourceDir.ts`。
+ */
+export const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 
 /** 内置字体目录（渲染进程经 IPC `font` 通道读取；见 src/text/fontSet.ts）。 */
 export const FONT_DIR = path.join(REPO_ROOT, 'res', 'fonts');

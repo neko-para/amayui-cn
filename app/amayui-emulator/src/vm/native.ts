@@ -65,6 +65,24 @@ export interface MeshCreateSpec {
   verts: MeshVertexSpec[];
 }
 
+/** `0x204` draw-string 的样式载荷（handler 从引擎全局样式字段组装；宿主只光栅化，见 `globalTextStyle`）。 */
+export interface DrawStringStyle {
+  /** 字族（已由 `fontSet.resolveFace` 解析成浏览器可用族名）。 */
+  family: string;
+  /** 字号 px（引擎 `Font+201684`，`0x75` 写）。 */
+  size: number;
+  /** 字重（400/700；引擎的加粗是"再画一遍"，见 raster 的说明）。 */
+  weight: number;
+  /** 填充色 `#rrggbb`（引擎 `Font+1360`，`0x76` 写）。 */
+  fill: string;
+  /** 描边色 `#rrggbb`（引擎 `Font+1364`，`0x77` 写）。 */
+  outline: string;
+  /** 描边档位（引擎 `Font+1372`）：0 无 / 1 单向 / 2 同位叠 / 3 四向。 */
+  outlineMode: 0 | 1 | 2 | 3;
+  outlineDx: number;
+  outlineDy: number;
+}
+
 export interface NativeBridge {
   log(msg: string): void;
   /** 共享输入状态（Engine 构造时赋值；渲染器经它写 / VM 经它读）。 */
@@ -82,6 +100,12 @@ export interface NativeBridge {
   /** 0x1F8 create-texture：`[slot, w, h, mode]` —— 释放该槽旧纹理对象并**新建**一张（程序化纹理）。
    *  emulator 建模为"该槽的图像缓存失效并重取"（见 PixiBackend）。 */
   createTexture?(slot: number, w: number, h: number, mode: number): void;
+  /**
+   * 0x204 draw-string（sub_423390 → `sub_456710`）：把一整串文本**直绘进纹理槽** `slot`（GDI 路径）。
+   * `(x, y)` = 文本左上角（引擎在 `Font+201680 == 1` 时会再加一次 ascent 修正）。
+   * 宿主只负责光栅化：用 `style` 把 `text` 画到该槽的表面（保留原有像素，不清底）。
+   */
+  drawString?(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void;
   /** 0x1FD（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（无动画窗）。op2/3/4 = sx/sy/sz（**÷100**，`dbl_5201F0`）。
    *  引擎写 `DrawItem+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 work 矩阵）。 */
   setScale?(handle: number, sx: number, sy: number, sz: number): void;

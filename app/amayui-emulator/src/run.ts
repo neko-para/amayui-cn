@@ -2,6 +2,7 @@
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
+import { resolveResourceDir } from './arch/resourceDir.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
@@ -10,10 +11,11 @@ import { OPCODE_TABLE } from './script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
-const RAW_DIR = path.join(REPO_ROOT, 'raw');
+// 资源根 = `install/`（汉化版）；对比原版用 `AMAYUI_RESOURCE_DIR=raw`（见 arch/resourceDir.ts）
+const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 
 async function main() {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
   const native = new StubNative(() => {}); // 安静：run.ts 自己打印结构化摘要
   const e = new Engine(native);
   e.fileSource = src;

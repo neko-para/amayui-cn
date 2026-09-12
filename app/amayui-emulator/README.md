@@ -32,6 +32,29 @@
 
 ---
 
+## 资源根：默认读 **`install/`（汉化版）**
+
+emulator 跑的是**汉化版**游戏 ⇒ 资源根默认是仓库根的 **`install/`**（松散 `.BIN` 脚本 +
+打过补丁的 `DATA*.ALF` / `APPEND0n.AAI` + `SYS4INI.BIN` 索引）。这一点由**唯一一处**解析：
+`src/arch/resourceDir.ts`（`resolveResourceDir(repoRoot)`），Electron 主进程、Node 工具与测试全部走它
+（早前散在 9 个地方、各写各的 `raw`，会出现"测试测原版、产品读汉化版"的漂移）。
+
+```bash
+# 对比原版（raw 是指向日文安装目录的 junction）
+$env:AMAYUI_RESOURCE_DIR='raw'; npm run report -- --steps 200000
+# Node 工具也支持命令行覆盖（等价）
+npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼容
+```
+
+实测差异（`raw` vs `install` 同一 imgid 的位图 sha1）：`SO009A/SO009B`（设置界面素材，汉化）
+不同，`SO010/SO004`（未汉化）相同 ⇒ 换根确实换了素材，而不是"看着像"。
+随之而来的一条编码事实：汉化把简体字映射成 **cp932 可编码的日文写法占位**
+（`scripts/lib/sjis-encode.js` + `res/subs_cn_jp.json`），渲染时由 **cnjp 字体**还原
+（`res/fonts/Amayui-CN_cnjp.ttf`，见 `src/text/fontSet.ts`）。所以脚本层（解析 + 排版模型）
+看到的是占位码位（如 `天俟`），**那不是乱码**，断言也按占位串写。
+
+---
+
 ## 输入指令（鼠标/滚轮）
 
 引擎把输入状态放在 `this + 258` 的输入管理器里，脚本用一族 opcode 读出来。emulator 用 `InputManager`

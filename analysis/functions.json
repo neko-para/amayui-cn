@@ -3011,24 +3011,13 @@
     "semantic_name": "op_sort_index_arrays_42F560",
     "op": "0x12F",
     "status": "ANALYZED",
-    "purpose": "op 0x12F：三个数组地址上的「索引插入排序 + 原地重编码」。op1/op2/op3 经 sub_42AEA0(operandAddress) 取数组基址 A/B/C，op4=元素数 n；`*A=0`；对 i=1..n-1 做插入排序 `while (DEC(A[j])+DEC(C[j]) > DEC(A[i])+DEC(C[i])) { A[j+1]=A[j]; j-- }` 然后 `A[j+1]=i`——即按 (DEC(A[k])+DEC(C[k])) 升序把索引重排写回 A（比较里的 A[i] 是当前位置现存元素 = 上一轮搬进来的值）；末尾 `A[i]=ENC(DEC(A[i]))`（净恒等）。B 只作基址传入、未被使用。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "取 A/B/C 三个数组地址 + n = readIntOperand(4)",
-      "*A = 0",
-      "插入排序：按 DEC(A[k])+DEC(C[k]) 升序把索引重排写回 A（A[j+1]=A[j]；A[j+1]=i）",
-      "末尾 A[i] = ENC(DEC(A[i]))（原地重编码，净恒等）"
-    ],
-    "fields_used": [
-      "this->key（DEC/ENC）"
-    ],
-    "unmodeled": [
-      "B 数组（op2）在本 handler 中未被使用（仅传入基址）"
-    ],
+    "purpose": "把「索引数组 A」按 B[idx]+C[idx] 升序重排（插入排序）：A=索引数组、B=主键、C=次键、op4=n；末尾 A[i]=ENC(DEC(A[i])) 原地重编码",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": "op1/op2/op3 经 sub_42AEA0 取三个数组基址 A/B/C;op4 = 元素个数 n;*A = 0（种子索引 0）;for k=1..n-1 插入排序：while DEC(B[A[j]])+DEC(C[A[j]]) > DEC(B[k])+DEC(C[k]) 则 A[j+1]=A[j] 并回退 j;A[j+1]=k;末尾逐项 A[i]=ENC(DEC(A[i]))",
+    "fields_used": ["this->key（DEC/ENC）"],
+    "unmodeled": ["B 数组（op2）在本 handler 中未被使用（仅传入基址）"],
     "evidence": "raw 39269-39335 (sub_42F560)",
-    "notes": "实测：CONFIG2.txt:1044 `i12f (local 800) (global 14b894) (local be8) 3e8`（n=1000）、CONFIG1.txt:1178 `i12f (local 7ff) (local 179f) (local 273f) (local 561f)`。emulator 已实现 op_sort_index_arrays（DEC 读入 / ENC 写出）；test/ops-142-12f-306.test.ts 以 [2,0,1,3,4] 逐句复刻验证。"
+    "notes": "★比较键是 B[A[j]]+C[A[j]]（用 A 里存的索引去查 B/C），不是 A 位置上的值、也不是 C 的同位置值 —— raw 39299-39307 的下标嵌套就是它。★本条被误读过两次且两次都静默：(1) 曾记成『B 未被使用』（错：B 是主键）；(2) 曾写成 DEC(A[j])+DEC(C[j]) 且再叠一层 DEC/ENC。后者的症状是排序结果取决于 A 的残留内容：CONFIG1 首次进入设置时可见行序表带着上一轮内容，于是『字体系列』被排到第一页最前面，切一次 tab 再回来顺序又『看起来对了』——顺序依赖历史即为判据错的铁证。修好后结果只取决于 B/C。"
   },
   {
     "addr": "0x4ACEE0",
@@ -4641,12 +4630,13 @@
     "semantic_name": "op_draw_string_423390",
     "op": "0x204",
     "status": "ANALYZED",
-    "purpose": "draw-string（直绘，不入队）：读 op1=槽、op2/op3（int）、op4=字符串 → sub_456710(Font, op1, 串op4, op2, op3)",
+    "purpose": "draw-string（直绘文本到纹理槽）：读 op1=槽、op2=x、op3=y、op4=字符串 → sub_456710(Font, 槽, 串, x, y)。三个门（槽对象存在 / 可锁定 / 串非空）不满足则整条无操作",
     "signature_override": { "param0": "this(Engine*)" },
-    "sub_behaviors": ["读 op1/op2/op3/串op4", "sub_456710(Font, 槽, 串, 2 个 int)"],
+    "sub_behaviors": "把当前帧状态槽写 9;读 op2/op3 为 int 当 x/y;读 op4 为字符串;调 sub_456710 做 GDI 整串直绘",
     "fields_used": ["Engine+85296(Font)"],
     "unmodeled": ["sub_456710 内部（GDI/D3D 直绘）"],
-    "evidence": "raw 31454-31464"
+    "evidence": "raw 31454-31467；落笔细节见 sub_456710（raw 68470-68495）",
+    "notes": "与消息窗文本是两条独立路径：本指令不排版/不换行/不建窗，直接往纹理槽的表面上叠字。CONFIG1 用它把列表每行的项目名+数值写进 create-texture(196,628x360) 的离屏槽（CONFIG1.txt:2760/2773），再按行裁贴（:3019-3022）。"
   },
   {
     "addr": "0x430940",
@@ -4908,6 +4898,18 @@
     "unmodeled": [],
     "evidence": "raw 131333-131352",
     "notes": "与 0x1FF(sub_4AC750) 逐行同构（只有矩阵偏移不同：缩放 0x6C / 平移 0x16C）；两者都写 work 矩阵并置 +0x68=1。work 矩阵就是渲染期真正使用的那一份（sub_49AA30 raw 117431 qmemcpy 自 a2+27 = 字节 108）。"
+  },
+  {
+    "addr": "0x456710",
+    "raw_name": "sub_456710",
+    "semantic_name": "fontDrawStringToSlot_456710",
+    "status": "ANALYZED",
+    "purpose": "把一整串 ANSI 文本用当前字体 GDI 直绘到某个纹理槽的表面（0x204/0x205 的共同落笔点）",
+    "sub_behaviors": ["门1：该槽 CTexture 指针非空", "门2：CTexture vtable+32（可锁定/有效）非 0", "门3：字符串首字节非 0", "写 Font+218520=0（复用标记）", "若 Font+1164==2 则 SelectObject(HDC, Font+1084)", "GetTextMetricsA 取 ascent", "若 Font+201680==1 则 y += Font+201712 - ascent", "按 Font+1372 是否有描边分派 sub_471180 / sub_46F2D0"],
+    "fields_used": ["Font+1040", "Scene+4*slot+42456", "Font+1036", "Font+1108", "Font+1084", "Font+201680", "Font+201712", "Font+1372", "Font+1236"],
+    "unmodeled": ["Font+218520（GDI 表面复用标记）", "sub_471180 的描边细节", "sub_46F2D0 的逐字 GetGlyphOutline 路径"],
+    "evidence": "raw 68470-68495",
+    "notes": "★a5 参数是 Font+1236（= 0x75 写下的 -字号/2，raw 24068），不是颜色：颜色/描边在 Font+1360/+1364/+1372。y 的语义是文本顶部（另一模式下再加 Font+201712 - ascent）。"
   }
 
 ]

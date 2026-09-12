@@ -12,10 +12,12 @@ import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW_DIR = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
+const RAW_DIR = resolveResourceDir(ROOT);
 
 // ---- InputManager 单元 ----
 test('InputManager: 光标位置 / 按钮 / 按下沿 / 移动 / flush / 派发目标', () => {
@@ -61,7 +63,7 @@ test('InputManager: 光标位置 / 按钮 / 按下沿 / 移动 / flush / 派发�
 
 // ---- TITLE 端到端：派发（时间节流 get-input-type + hover 命中）----
 test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠标 handler 不崩', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const input = new InputManager();
   const e = new Engine(new StubNative(), input);
   e.fileSource = src;

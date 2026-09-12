@@ -193,12 +193,43 @@ emulator 侧走 `window.api.image()`（renderer → 主进程 IPC + AGF 解码�
 
 ---
 
+## 4.4 ★**程序化槽**（`create-texture` + `draw-string`）与"中间一片纯白"
+
+槽不只有"绑定 AGF 文件"一种来源：`0x1F8 create-texture`（`sub_422C20` → `sub_4A2C10(Scene, slot, w, h, mode)`）
+建的是一张**空白离屏表面**，随后由 `0x204 draw-string`（→ `sub_456710`）往上**直绘文本**、
+`0x207` 在槽之间搬运、`0x1F9` 也可以再把它绑成文件图。`CONFIG1`（设置界面）就是这套：
+
+```
+create-texture 196 628 360 0            # 空白表面（12 行 × 30px）
+draw-string 196 <x> 6+30i "项目名 数值"  # 逐行直绘（CONFIG1.txt:2760/2773）
+draw-texture … 196 0 (30i) 628 30 …     # 每行裁 628×30 贴到列表行上（:3019-3022）
+```
+
+**两个静默缺陷的组合**（2026 实测："设置界面中间的项目的文字没有渲染，而是全是纯白色"）：
+
+| 缺陷 | 症状 |
+|---|---|
+| `create-texture` 只记日志、不建表面 | 该槽没有纹理 ⇒ 渲染器退回 **1×1 白纹理占位** ⇒ 中间一条**纯白** |
+| `0x204 draw-string` 是宿主桩（调用被丢弃） | 即使建了表面也**一个字都不画** |
+
+修法：`TextureCache.create` 真建一张 `w×h` **全透明** canvas 纹理（引擎新表面未初始化 ⇒ 不遮挡下层素材），
+`drawString` 就地 `fillText` 后 `source.update()`；headless 侧把文本记进 `scene.slotText`（快照可断言）。
+字形推进与描边副本放在纯函数 `text/layout.drawStringGlyphs`（可在 Node 单测）。
+`create-texture` 重建表面 = 之前画上去的字一起丢（引擎语义）。
+
+守卫：`test/draw-string.test.ts` + `test/config1-chain.test.ts`（槽 196 上 14 条行文本 / 每行都有控件）。
+
+---
+
 ## 5. 相关代码位置
 
 - 模拟器解析：`src/arch/nodeFileSource.ts`（`resolveEntry`）+ `src/script/alf.ts`（`resolveFileEntry`）。
-- 纹理缓存与帧屏障：`src/renderer/pixi/textureCache.ts`（`bind` / `preloadImage` / `waitIdle`）+ `src/renderer/pixiBackend.ts`（`texturesIdle`）。
+- 纹理缓存与帧屏障：`src/renderer/pixi/textureCache.ts`（`bind` / `preloadImage` / `waitIdle` / `create` / `drawString`）+ `src/renderer/pixiBackend.ts`（`texturesIdle`）。
+- 程序化槽的共享模型（文本可观测）：`src/renderer/scene/ops.ts`（`scDrawString` / `scCreateTextureReset`）+ `src/renderer/scene/state.ts`（`slotText`）。
 
 ## 6. 待确认 / 遗留
 
 - `draw-texture` 的 `tex` 句柄 → 具体子矩形/图集切片的精确映射（仅在需要逐碎片渲染时追）。
 - `create-texture`（0x1F8）`sub_422C20` 会在图形子系统造纹理对象（LOGO 用 `create-texture 2a 500 2d0 0`），其与 `tex=0x30d40` 的从属关系待定。
+- `mode`（op4）的取值语义未建模：emulator 一律按"全透明新表面"处理；若某处 `mode != 0` 表示预填底色/格式差异，需要再读 `sub_4A2C10`。
+

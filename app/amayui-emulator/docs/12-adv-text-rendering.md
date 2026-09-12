@@ -299,9 +299,30 @@ function raster(snap: TextStyleSnap, revealed: number, res: number): ICanvas
 
 ---
 
+## 7.1 ★另一条路径：`0x204 draw-string`（整串直绘进纹理槽）
+
+上面 §1–§7 讲的是**消息窗**（排版 + 逐行贴出 + 逐字显现）。UI（设置界面等）另走一条：
+`0x204` 把一整串文本用**当前全局字体**直接画到**某个纹理槽的表面上**（引擎 `sub_423390` → `sub_456710`，
+raw 31454 / 68470）：
+
+- **三个门**（raw 68478-68480）：该槽 `CTexture` 存在、可锁定、串非空 —— 否则整条**什么都不做**（不抛错）；
+- **不清底、不换行、不建窗**：就是叠字到槽的像素上（字体/颜色/描边仍是 `Font+1360/+1364/+1372` 同一套全局字段）；
+- 典型用法（`CONFIG1`）：`create-texture 196 628 360` → 逐行 `draw-string 196 …` → 按行裁贴到列表行上。
+
+落地：handler 只交出「位置 + 文本 + 全局样式快照」（与 `msgWinSync` 同一分工），
+宿主光栅化（Pixi 侧是 `create-texture` 建的**全透明空白 canvas** 上 `fillText` + `source.update()`；
+headless 侧记进 `scene.slotText` 让快照可断言）；字形推进/描边副本是纯函数 `text/layout.drawStringGlyphs`。
+
+**两个静默缺陷**（2026 实测："设置界面中间的项目的文字没有渲染，而是全是纯白色"）：
+`create-texture` 不建表面（渲染器退回 1×1 白纹理占位）+ `0x204` 只是宿主桩（一个字都不画）。
+守卫：`test/draw-string.test.ts` + `test/config1-chain.test.ts` 的槽 196 断言。
+
+---
+
 ## 8. 验收（守卫）
 
 - **E2（合成指令单测）**：`test/text-layout.test.ts` —— 等宽推进 / 半角 / 边界断行 / 注音居中 / 竖排换列 / 对齐 / 显现游标。
+  直绘路径另见 `test/draw-string.test.ts`（`0x204` 的 ÷样式快照 / 空串门 / 槽文本模型 / `drawStringGlyphs`）。
 - **E3（真实脚本场景断言）**：扩展现有 `test/config1-chain.test.ts` —— CONFIG1 样例窗的**排版结果**
   （行数、每行字符数、注音位置、竖排）成为快照断言，而不只是"文本内容"。
 - **`npm run report`**：`.tmp/<name>.txt` 快照里出现 `[win 9] 3 行 × 4 字（竖排）已显现 7/17` 这类行

@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 89,
-    "modeled-verified": 11,
+    "total": 90,
+    "modeled-verified": 12,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2506,6 +2506,38 @@
         "evidence": "E2",
         "guard": "test/draw-item-scale.test.ts",
         "note": "2026 修正三处：(1) 0x1FD 由『记录式转发』改为真实现（写 work+target 并置 useWorld —— emulator 无窗时求值读 target，只写 work 不生效）；(2) pivot 由绝对值改为 pivot − pos 的局部量（raw 117428/117932）；(3) presenter 增加 +0x68 世界矩阵门（raw 123055 读 Scene+46532，而 Scene+46532 ← DrawItem+0x68，raw 133391）。0x21E 的除数同时由 ÷256 订正为 ÷100（dbl_5201F0 = 100.0，raw 4430）。活证据（E3）：CONFIG1 滚动条拇指 27×23 / 27×1→209 / 27×24 首尾相接，见 test/config1-chain.test.ts 的『滚动条拇指』用例。"
+      }
+    },
+    {
+      "id": "gdi-direct-text-to-slot",
+      "subsystem": "消息窗",
+      "name": "GDI 整串直绘到纹理槽（0x204 draw-string → sub_456710）",
+      "trigger": "脚本显式调用 0x204；且该纹理槽需已有 create-texture(0x1F8) 建出来的表面（三个门：槽对象存在／可锁定／串非空）",
+      "engine": {
+        "fns": [
+          "sub_423390",
+          "sub_456710"
+        ],
+        "raw": "31454-31467"
+      },
+      "reads": [
+        "Font+1040",
+        "Font+1084",
+        "Font+1108",
+        "Font+1236",
+        "Font+1360",
+        "Font+1364",
+        "Font+1372",
+        "Font+201680",
+        "Font+201712"
+      ],
+      "whySilent": "★缺了不报错，只是那串字永远不出现：宿主没有『往离屏槽画字』的能力时，create-texture 出来的空表面只能被当作一张程序化纹理渲染（emulator 早前退化成 1×1 白纹理占位）⇒ CONFIG1 设置界面中间一片纯白（用户实测）。它也不属于消息窗文本：不排版、不换行、不建窗，直接叠在槽的像素上（保留原有像素、不清底）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/draw-string.test.ts",
+        "note": "handler 只交出『位置 + 文本 + 全局样式快照』（与 msgWinSync 同一分工），宿主把字光栅化进该槽：Pixi 侧用 create-texture 给的空白 canvas 就地画字并 update 纹理；headless 侧把文本记进 scene.slotText（快照可断言）。字形推进与描边副本是纯函数 text/layout.drawStringGlyphs（可单测）。E3 活证据：CONFIG1 槽 196 上 14 条行文本，见 test/config1-chain.test.ts。"
       }
     }
   ]

@@ -6,7 +6,6 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, refFromOperand, setRefOperand } from '../operand.js';
-import { asI32, dec, enc } from '../bits.js';
 import { refAt, readRef, writeRef } from '../ref.js';
 import type { OpTable } from './shared.js';
 
@@ -84,47 +83,58 @@ const op_set_array_to: OpHandler = (c) => {
 /** strlen (0x2c5) / mbstrlen (0x2c6)：`op1 = strlen(string op2)`。 */
 
 /**
- * **`0x12F`（sub_42F560, raw 39269-39335）：三个数组地址上的「索引插入排序 + 并行搬运 + 末尾重编码」**
- * —— 确切语义（读完整 handler 体，并逐句复刻验证过）：
- *   - `op1/op2/op3` 经 `sub_42AEA0`（= operandAddress）取**三个数组基址**：A / B / C；`op4` = 元素个数 `n`；
- *   - `*A = 0`；
- *   - **插入排序**（`dword_55D59C` 从 1 到 n-1）：`while (DEC(A[j]) + DEC(C[j]) > DEC(A[i]) + DEC(C[i])) { A[j+1] = A[j]; j-- }`，
- *     收尾 `A[j+1] = i` —— 即把「索引」按 **(DEC(A[k]) + DEC(C[k])) 升序** 重排后写回 A（实测数据得 `[2,0,1,3,4]`）。
- *     ★比较里的 `A[i]`：`i` 是**正在被填的位置**，其现存元素就是上一轮搬进来的值（raw 里 `dword_55D5A8[4*v4]`，
- *       `v4` 在循环内被写/读），故不是"用 A 的原始值比较"。
- *   - `B`（op2）在本 handler 内**只作为基址被传入、未被使用**（`dword_55D5A4` 只在 raw 39300 出现一次且与 A 同索引；
- *     实际参与比较/搬运的是 A 与 C）。emulator 照此只读 A/C。
- *   - 末尾：对 A 的每个元素原地重编码 `A[i] = ENC(DEC(A[i]))`（raw 39329-39331）——因为数组存量是 ENC、
- *     比较要 DEC，这一步净效果为**恒等**，但为与引擎逐句一致仍照做。
- *   ★数组访存一律 **DEC 读入 / ENC 写出**（与引擎成对做的一样），这样 DEC 回读得到的就是排序后的索引。
- *   实测用例：`CONFIG2.txt:1044 i12f (local 800) (global 14b894) (local be8) 3e8`（n=1000）、
- *   `CONFIG1.txt:1178 i12f (local 7ff) (local 179f) (local 273f) (local 561f)`。
+ * **`0x12F`（sub_42F560, raw 39269-39335）：把「索引数组 A」按 `B[idx] + C[idx]` 升序重排。**
+ *
+ * 引擎逐句（A = `operandAddress(1)`、B = `(2)`、C = `(3)`、n = `readInt(4)`）：
+ * ```
+ * A[0] = 0;                                  // 种子：先假定索引 0 在首位
+ * for (k = 1; k < n; k++) {                  // 插入排序
+ *   j = k - 1;
+ *   while (j >= 0 && DEC(B[A[j]]) + DEC(C[A[j]]) > DEC(B[k]) + DEC(C[k])) { A[j+1] = A[j]; j--; }
+ *   A[j+1] = k;
+ * }
+ * for (i = 0; i < n; i++) A[i] = ENC(DEC(A[i]));   // 末尾"原地重编码"
+ * ```
+ * ★关键（raw 39300/39299-39307 的下标嵌套）：比较里的键是 **`B[A[j]] + C[A[j]]`**
+ *   —— 即"用 A 里存的**索引**去查 B/C"，不是"A 位置上的值"、也不是"C 的同位置值"。
+ *   所以三个数组的角色是：**A = 索引数组（被排序/写回）、B = 主键、C = 次键**，三者同索引空间。
+ *
+ * ★订正历史（本条被误读过两次，两次都**静默**）：
+ *  1. 曾把 B 记成"只作基址传入、未被使用"——错：B 是主键数组（raw 39300 就在用它）；
+ *  2. 曾写成 `DEC(A[j]) + DEC(C[j])`（按位置比 C）并**再叠一层** DEC/ENC——错两层：
+ *     键取错 + 双重编解码。它的症状是"排序结果取决于 A 里的**残留内容**"：
+ *     `CONFIG1` 首次进入设置时可见行序表是上一轮的残留，
+ *     于是「字体系列」被排到第一页最前面；切一次 tab 再回来（A 里已有一轮结果）
+ *     顺序又"看起来对了"——**顺序竟然依赖历史**，这本身就是判据错了的铁证。
+ *   正确实现后结果只取决于 B/C，与 A 的初始内容无关（有不变量测试守着）。
+ *
+ * 实测用例：`CONFIG1.txt:1178 i12f (local 7ff) (local 179f) (local 273f) (local 561f)`（n=15）
+ * —— `36df` 是描述符源表、`179f` 是主键（`(type顺序<<16)|value顺序`）、`273f` 是次键（该页全 0）。
  */
 export const op_sort_index_arrays: OpHandler = (c) => {
   const { e, frame } = c;
-  const a = refFromOperand(e, frame, c.instr, 1); // A：值/索引数组
-  refFromOperand(e, frame, c.instr, 2); // B：辅助表（被 A 间接索引）
-  const cc = refFromOperand(e, frame, c.instr, 3); // C：键数组（与 A 同索引）
+  const a = refFromOperand(e, frame, c.instr, 1); // A：索引数组（排序对象 + 写回目标）
+  const b = refFromOperand(e, frame, c.instr, 2); // B：主键数组（**按 A 里存的索引取值**）
+  const cc = refFromOperand(e, frame, c.instr, 3); // C：次键数组（同上）
   const n = readIntOperand(e, frame, c.instr, 4);
   if (n <= 0) return;
-  // 取有符号值的辅助：数组里存的是 **ENC 位模式**，引擎比较用的是 **DEC 后的 int32** 视角
-  // （raw 39300-39307 的 `__ROR4__(key ^ __ROL4__(x,11), 25)` = DEC(x)）
-  const A = (i: number): number => asI32(dec(e.key, readRef(e, frame, refAt(a, i)) >>> 0));
-  const C = (i: number): number => asI32(dec(e.key, readRef(e, frame, refAt(cc, i)) >>> 0));
+  // `readRef` 已经给出 DEC 视角（写侧 ENC）——**不要再 dec/enc 一层**，见 docs/07 §4.4
+  const A = (i: number): number => readRef(e, frame, refAt(a, i));
+  /** 索引 `idx` 的排序键 = `B[idx] + C[idx]`（raw 39299-39307）。 */
+  const keyOf = (idx: number): number => readRef(e, frame, refAt(b, idx)) + readRef(e, frame, refAt(cc, idx));
 
-  writeRef(e, frame, refAt(a, 0), enc(e.key, 0)); // *A = 0（引擎写 ENC(0)，即 DEC 回读为 0）
-  for (let i = 1; i < n; i++) {
-    let j = i - 1;
-    // 引擎原始判据：DEC(A[j]) + DEC(C[j]) > DEC(A[i]) + DEC(C[i])
-    while (j >= 0 && A(j) + C(j) > A(i) + C(i)) {
-      writeRef(e, frame, refAt(a, j + 1), enc(e.key, A(j))); // A[j+1] = A[j]（写回时编码）
+  writeRef(e, frame, refAt(a, 0), 0); // *A = 0
+  for (let k = 1; k < n; k++) {
+    let j = k - 1;
+    while (j >= 0 && keyOf(A(j)) > keyOf(k)) {
+      writeRef(e, frame, refAt(a, j + 1), A(j)); // A[j+1] = A[j]
       j--;
     }
-    writeRef(e, frame, refAt(a, j + 1), enc(e.key, i));
+    writeRef(e, frame, refAt(a, j + 1), k);
   }
-  // 末尾"原地重编码"：raw 是 A[i] = ENC(DEC(A[i])) —— 净效果为恒等，此处直接照做以保持与引擎逐句一致
+  // 末尾"原地重编码"：raw 是 A[i] = ENC(DEC(A[i])) —— readRef/writeRef 版就是"读出来再写回"
   for (let i = 0; i < n; i++) {
-    writeRef(e, frame, refAt(a, i), enc(e.key, A(i)));
+    writeRef(e, frame, refAt(a, i), A(i));
   }
 };
 

@@ -16,13 +16,15 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { Engine } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp } from '../src/vm/interpreter.js';
 import type { NativeBridge } from '../src/vm/native.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW_DIR = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
+const RAW_DIR = resolveResourceDir(ROOT);
 
 /** 只记录 draw-texture / set-texture / detach 的最小 NativeBridge（不渲染，只统计）。 */
 class SlotRecorder implements NativeBridge {
@@ -50,7 +52,7 @@ class SlotRecorder implements NativeBridge {
 }
 
 test('跑到 TITLE：draw-texture 的绘制项绝大多数能解析到已绑定纹理槽（op1/op2 不混淆）', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const rec = new SlotRecorder();
   const e = new Engine(rec);
   e.fileSource = src;

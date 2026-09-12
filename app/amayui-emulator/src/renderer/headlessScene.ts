@@ -22,6 +22,8 @@ import {
   scSetDrawColor,
   scSetDrawColorAlpha,
   scSetDrawPivot,
+  scDrawString,
+  scCreateTextureReset,
   scSetDrawPos,
   scSetDrawTranslation,
   scSetFlipbook,
@@ -41,7 +43,7 @@ import {
   type SetterOutcome,
   type SceneState,
 } from './sceneModel.js';
-import type { DrawItemConfig, MeshCreateSpec, NativeBridge } from '../vm/native.js';
+import type { DrawItemConfig, DrawStringStyle, MeshCreateSpec, NativeBridge } from '../vm/native.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
 
@@ -78,6 +80,8 @@ export class HeadlessScene implements NativeBridge {
   readonly slotImgid = new Map<number, number>();
   /** 引擎里"程序化纹理"标记（`0x1F8` 建过、非文件图像）⇒ 尺寸未知。 */
   readonly proceduralSlots = new Set<number>();
+  /** 程序化槽的**表面尺寸**（`0x1F8` 的 op2/op3）—— 引擎 `CTexture+1040/+1044`。 */
+  readonly slotSize = new Map<number, { w: number; h: number }>();
 
   /** 舞台/待定标志（供 0x400 卫门与报告观察）。 */
   waitFlags = 0;
@@ -136,15 +140,26 @@ export class HeadlessScene implements NativeBridge {
   }
 
   createTexture(slot: number, _w: number, _h: number, _mode: number): void {
-    // 引擎：释放旧纹理对象并**新建**一张程序化纹理 ⇒ 该槽不再指向已绑定的文件图像。
+    // 引擎：释放旧纹理对象并**新建**一张程序化纹理 ⇒ 该槽不再指向已绑定的文件图像，
+    // 且槽上的直绘文本随新表面一起消失（`0x204` 是往"已有表面"上叠字）。
     this.proceduralSlots.add(slot);
-    this.note('createTexture(程序化纹理内容未生成)', `slot=${slot}`);
+    scCreateTextureReset(this.scene, slot);
+    if (_w > 0 && _h > 0) this.slotSize.set(slot, { w: _w, h: _h }); // 新建表面尺寸（0x208 getter 用）
+    this.note('createTexture(程序化纹理内容由 draw-string 直绘，未生成位图)', `slot=${slot} ${_w}x${_h}`);
+  }
+
+  /** `0x204` draw-string：把整串文本记进该槽（无光栅化 —— headless 不做像素）。 */
+  drawString(slot: number, x: number, y: number, text: string, _style: DrawStringStyle): void {
+    scDrawString(this.scene, slot, x, y, text);
   }
 
   getTextureSize(slot: number): { w: number; h: number } {
     const imgid = this.slotImgid.get(slot);
-    if (imgid === undefined) return { w: 0, h: 0 }; // 槽为空 == 引擎口径
-    if (this.proceduralSlots.has(slot)) {
+    if (imgid === undefined || this.proceduralSlots.has(slot)) {
+      // 槽为空 == 引擎口径 0/0；程序化槽（`0x1F8` 建的）尺寸由 create-texture 给出
+      const s = this.slotSize.get(slot);
+      if (s) return s;
+      if (imgid === undefined) return { w: 0, h: 0 };
       this.note('getTextureSize(程序化纹理尺寸未知)', `slot=${slot}`);
       return { w: 0, h: 0 };
     }

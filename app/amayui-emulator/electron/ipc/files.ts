@@ -1,7 +1,7 @@
 /**
  * 主进程的**资源读取 IPC**：脚本字节 / 任意文件 / 引擎配置 / 图像（AGF 解码）。
  *
- * 文件访问统一经 `NodeFileSource`（fs 直读 `raw/` + ALF 切片），
+ * 文件访问统一经 `NodeFileSource`（fs 直读资源根 `install/`（汉化版）+ ALF 切片），
  * 图像在这里就地解码成 top-down RGBA 再交给渲染进程（Node 侧有 zlib/fs）。
  */
 import * as fs from 'node:fs';
@@ -10,9 +10,9 @@ import { ipcMain } from 'electron';
 import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
-import { FONT_DIR, RAW_DIR, configIniCandidates } from '../paths.js';
+import { FONT_DIR, RESOURCE_DIR, configIniCandidates } from '../paths.js';
 
-const fileSource = new NodeFileSource({ rawDir: RAW_DIR });
+const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR });
 
 export function registerFileIpc(): void {
   // 读脚本（call-script 索引 -> 原始字节 + 文件名）

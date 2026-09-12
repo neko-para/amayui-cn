@@ -19,6 +19,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
+import { resolveResourceDir } from './arch/resourceDir.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from './vm/interpreter.js';
 import { ExitScript, ScriptReset } from './vm/ops.js';
@@ -28,7 +29,7 @@ import type { NativeBridge } from './vm/native.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
-const DEFAULT_RAW = path.join(REPO_ROOT, 'raw');
+const DEFAULT_RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 const OUT_DIR = path.join(REPO_ROOT, '.tmp');
 
 /** 一帧的"指令"：引擎的帧时钟/刷新/停靠锁。遇到它们 ⇒ 推进一次虚拟时钟 + 驱动一次场景窗。 */
@@ -47,8 +48,8 @@ export interface ReportOptions {
   frameMs?: number;
   /** 每帧最多跑多少条指令（防一条脚本里没有帧指令时报告跑飞）。 */
   maxStepsPerFrame?: number;
-  /** raw 目录。 */
-  rawDir?: string;
+  /** 资源根目录（默认 `install/` = 汉化版，见 `arch/resourceDir.ts`）。 */
+  resourceDir?: string;
   /** 是否解析图像尺寸（`0x208` getter 用；需要 AGF 解码器）。 */
   resolveImages?: boolean;
   /** 是否把 JSONL/JSON 写到磁盘（测试里设 false 只取内存结果）。 */
@@ -93,11 +94,11 @@ export interface SceneReport {
 
 /** 执行一次场景并产出报告（纯函数式：不写盘，除非 `write !== false`）。 */
 export async function runSceneReport(opt: ReportOptions): Promise<{ report: SceneReport; jsonl: string[]; snapshotText: string }> {
-  const rawDir = opt.rawDir ?? DEFAULT_RAW;
+  const resourceDir = opt.resourceDir ?? DEFAULT_RESOURCE_DIR;
   const name = opt.name ?? 'scene-report';
   const frameMs = opt.frameMs ?? 16;
   const maxStepsPerFrame = opt.maxStepsPerFrame ?? 4096;
-  const src = new NodeFileSource({ rawDir });
+  const src = new NodeFileSource({ resourceDir });
 
   // 图像尺寸解析（可选）：动态载入仓库根的 AGF 解码器；失败则退回"未解析"（并记缺口）。
   let imageSize: ((imgid: number) => { w: number; h: number } | null) | undefined;
@@ -306,8 +307,9 @@ async function main(): Promise<void> {
   };
   const ops = parseOps(arg('ops'));
   if (ops) opts.ops = ops;
-  const raw = arg('raw');
-  if (raw) opts.rawDir = raw;
+  // `--resources <dir>` 指定资源根（默认 install/ = 汉化版）；`--raw` 为旧名，保留兼容。
+  const resDir = arg('resources') ?? arg('raw');
+  if (resDir) opts.resourceDir = resDir;
 
   console.log(`[report] script=${opts.script} steps=${opts.steps} frame-ms=${opts.frameMs} ops=${arg('ops') ?? '全部'}`);
   const { report } = await runSceneReport(opts);

@@ -12,13 +12,15 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runSceneReport, summarizeReport } from '../src/report.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版）：与产品、e2e 链路测试读同一套语料
+const RAW = resolveResourceDir(ROOT);
 
 // 120k 步足以越过启动画面进入 draw-texture 阶段（实测 0x1fb 首次出现在 step 96154）
-const OPTS = { script: 0, steps: 120_000, write: false as const, rawDir: RAW, frameMs: 16 };
+const OPTS = { script: 0, steps: 120_000, write: false as const, resourceDir: RAW, frameMs: 16 };
 
 test('场景执行报告：产出 op 计数 / 模型快照 / 三张缺口清单', async () => {
   const { report, jsonl, snapshotText } = await runSceneReport(OPTS);

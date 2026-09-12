@@ -97,6 +97,8 @@ export interface SceneSnapshot {
   meshes: SnapshotMesh[];
   /** 消息窗文本（按窗索引排序）。 */
   msgWins: SnapshotMsgWin[];
+  /** `0x204` 直绘进纹理槽的文本（按槽号排序；每槽一行汇总）。 */
+  slotText: { slot: number; count: number; sample: string }[];
 }
 
 const hex8 = (v: number): string => '#' + (v >>> 0).toString(16).padStart(8, '0');
@@ -172,6 +174,10 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
         glyphCount: f.glyphCount,
         revealed: f.revealed,
       })),
+    // `0x204` 直绘进纹理槽的文本（每槽一行汇总，便于断言/诊断）
+    slotText: [...s.slotText.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([slot, list]) => ({ slot, count: list.length, sample: list[0]?.text ?? '' })),
   };
 }
 
@@ -216,6 +222,10 @@ export function snapshotToText(snap: SceneSnapshot): string {
     for (const [i, l] of w.lines.entries()) {
       L.push(`  [${i}] w=${l.width} 字=${l.glyphs} 注音=${l.ruby} | ${l.text}`);
     }
+  }
+  // `0x204` 直绘进纹理槽的文本（CONFIG1 的设置行就是这么做出来的）
+  for (const t of snap.slotText) {
+    L.push(`slot-text slot=${t.slot} 条数=${t.count} 例=${JSON.stringify(t.sample)}`);
   }
   return L.join('\n') + '\n';
 }

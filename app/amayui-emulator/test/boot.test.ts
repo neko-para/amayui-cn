@@ -4,16 +4,18 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { StubNative } from '../src/vm/native.js';
 import { Engine } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW_DIR = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
+const RAW_DIR = resolveResourceDir(ROOT);
 
 test('装载 index 0 = SYSTEM4.BIN：comment/dev_ukn 逐条执行，0x2F6 归类引擎内部插桩', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const e = new Engine(new StubNative());
   e.fileSource = src;
 
@@ -36,7 +38,7 @@ test('装载 index 0 = SYSTEM4.BIN：comment/dev_ukn 逐条执行，0x2F6 归类
 });
 
 test('resolveIndex: 0x5264 -> TITLE.BIN；0 -> SYSTEM4.BIN', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const s0 = await src.readScript(0);
   assert.equal(s0?.name, 'SYSTEM4.BIN');
   const title = await src.readScript(0x5264);

@@ -1,5 +1,5 @@
 /** 交叉验证：SYS4450 BIN 解析器 vs 反汇编文本（src/*.txt）逐条一致。
- *  源解析与 FileSource 一致：只依赖 raw/（松散优先，否则从 ALF 切片）。 */
+ *  源解析与 FileSource 一致：资源根 = `install/`（汉化版；松散优先，否则从 ALF 切片）。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,10 +8,12 @@ import { fileURLToPath } from 'node:url';
 import { parseScriptBytes } from '../src/script/bin.js';
 import { parseSys4Index, type Sys4Index } from '../src/script/alf.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW_DIR = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
+const RAW_DIR = resolveResourceDir(ROOT);
 
 function srcTxtOf(name: string): string {
   return fs.readFileSync(path.join(ROOT, 'src', name), 'utf8');
@@ -32,7 +34,7 @@ function parseTxtInstrNames(txt: string): string[] {
 
 /** 用 FileSource 读一个脚本（松散优先，否则 ALF 切片），返回其字节与名字。 */
 async function loadBin(name: string): Promise<{ name: string; data: Uint8Array }> {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   // 从 SYS4INI base 索引找该名字对应的 index
   const idxBytes = new Uint8Array(fs.readFileSync(path.join(RAW_DIR, 'SYS4INI.BIN')));
   const base: Sys4Index = parseSys4Index(idxBytes);

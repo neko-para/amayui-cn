@@ -14,11 +14,13 @@ import { readIntOperand } from '../src/vm/operand.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { StubNative } from '../src/vm/native.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import type { BinInstruction, BinArg, ScriptBinary } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
-const RAW_DIR = path.join(ROOT, 'raw');
+// 资源根 = install/（汉化版），与产品一致；AMAYUI_RESOURCE_DIR 可覆盖（见 src/arch/resourceDir.ts）
+const RAW_DIR = resolveResourceDir(ROOT);
 
 function instr(opcode: number, args: BinArg[]): BinInstruction {
   return { opcode, name: 'x', argc: args.length, args, byteOffset: 0, index: 0 };
@@ -47,7 +49,7 @@ test('load-show-logo(0x130) 读 _this[96983]：构造=1(LOGO on)、exit-script �
 });
 
 test('exit-script(0x9)：重置引擎 + 置 _this[96983]=0 + 重载根脚本 INDEX0 并继续(cur=0)', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const native = new StubNative(() => {});
   const e = new Engine(native);
   e.fileSource = src;
@@ -82,7 +84,7 @@ test('exit-script(0x9)：重置引擎 + 置 _this[96983]=0 + 重载根脚本 IND
 });
 
 test('GAMEOVER→回标题不再播版权页：exit-script 后 0x130 读回 0（组合成立）', async () => {
-  const src = new NodeFileSource({ rawDir: RAW_DIR });
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
   const native = new StubNative(() => {});
   const e = new Engine(native);
   e.fileSource = src;

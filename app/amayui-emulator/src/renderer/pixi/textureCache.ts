@@ -10,8 +10,18 @@
  * ★回归点（历史 bug）：绘制项里的槽号取自 `Item.tex`（= `draw-texture` 的 **op2**），
  * **绝不能**用 `item.layer`/`item.handle`（那是层序键）。见 `resolve()` 与 test/texture-slot-resolve.test.ts。
  */
-import { Texture } from 'pixi.js';
+import { CanvasSource, Texture } from 'pixi.js';
 import type { Item } from '../drawItem.js';
+import type { DrawStringStyle } from '../../vm/native.js';
+import { drawStringGlyphs } from '../../text/layout.js';
+
+/** 一个"程序化槽"（`0x1F8` create-texture 建的空白表面 + `0x204` 直绘上去的文本）。 */
+interface CanvasSlot {
+  canvas: HTMLCanvasElement;
+  tex: Texture;
+  w: number;
+  h: number;
+}
 
 export class TextureCache {
   /** `slot → Texture`（已绑定且已载入）。 */
@@ -20,6 +30,8 @@ export class TextureCache {
   readonly #imgCache = new Map<number, Texture>();
   /** 在途载入（imgid → promise）——`waitIdle` 的帧屏障就等它。 */
   readonly #inflight = new Map<number, Promise<void>>();
+  /** 程序化槽的画布（`0x1F8` 建、"`0x204` 画"）——与文件纹理分开存，因为要**就地改像素**。 */
+  readonly #canvasSlots = new Map<number, CanvasSlot>();
 
   constructor(private readonly log: (msg: string) => void) {}
 
@@ -109,9 +121,13 @@ export class TextureCache {
 
   /**
    * `0x1F8` create-texture（sub_422C20 → `sub_4A2C10(_this+80708, slot, w, h, mode)`）：
-   * 引擎先释放该槽旧纹理对象、再**新建**一张（脚本给尺寸/模式 ⇒ 程序化/空白纹理，非文件图像）。
-   * emulator 建模：**该槽的图像缓存失效后重取**——若该槽此前由 `set-texture` 绑定过文件图像，
-   * 保持绑定语义并刷新缓存；若是全新程序化纹理，则只记录（程序化纹理生成未建模）。
+   * 引擎先释放该槽旧纹理对象、再**新建**一张（脚本给尺寸/模式 ⇒ 程序化/空白表面，非文件图像）。
+   *
+   * emulator 建模：**真的建一张空白 canvas 纹理**（尺寸 = op2/op3，初始全透明）。
+   * ★这里必须建，而不是"什么都不做"：`CONFIG1` 的设置行就是
+   *   ① `create-texture 196 628 360 0` → ② 逐行 `draw-string 196 …` → ③ 把该槽按行裁贴到行上。
+   *   早前这里只记日志 ⇒ 该槽没有纹理 ⇒ 渲染器退回"1×1 白纹理占位" ⇒ **整条中间一片纯白**
+   *   （用户实测："设置界面中间的项目的文字没有渲染，而是全是纯白色"）。
    */
   create(slot: number, w: number, h: number, mode: number): void {
     const bound = this.#slotImgid.get(slot);
@@ -119,10 +135,56 @@ export class TextureCache {
       const tex = this.#imgCache.get(bound);
       if (tex) this.slotTex.set(slot, tex);
     }
+    // 引擎里 create-texture 会**丢掉旧对象**（含画在上面的直绘文本）⇒ 这里重建画布
+    const old = this.#canvasSlots.get(slot);
+    if (old) {
+      this.slotTex.delete(slot);
+      old.tex.destroy(true);
+      this.#canvasSlots.delete(slot);
+    }
+    const cw = Math.max(1, w | 0);
+    const ch = Math.max(1, h | 0);
+    if (typeof document !== 'undefined' && w > 0 && h > 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch; // 全透明（引擎新表面未初始化 ⇒ 不遮挡下层素材）
+      const tex = new Texture({ source: new CanvasSource({ resource: canvas }) });
+      this.#canvasSlots.set(slot, { canvas, tex, w: cw, h: ch });
+      this.slotTex.set(slot, tex);
+    }
     this.log(
       `createTexture slot=${slot} ${w}x${h} mode=${mode}` +
-        (bound !== undefined ? ` (沿用已绑定 imgid=0x${bound.toString(16)})` : ' (程序化纹理未建模)'),
+        (bound !== undefined ? ` (沿用已绑定 imgid=0x${bound.toString(16)})` : ' (新建空白表面)'),
     );
+  }
+
+  /**
+   * `0x204` draw-string（sub_423390 → `sub_456710`）：把一整串文本直绘进该槽的表面。
+   *
+   * 引擎是 GDI `TextOutA` 到该槽的 DIB 上（**保留原有像素**、不清底、不换行）；
+   * 这里用同一套字体/颜色/描边规则逐字 `fillText`（与消息窗共用 `raster` 的描边语义）。
+   * 槽不存在（没先 create-texture）⇒ 引擎那条 `&&` 门会直接返回 ⇒ 这里也**不画**。
+   */
+  drawString(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) {
+      this.log(`drawString slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径）`);
+      return;
+    }
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.font = `${style.weight} ${style.size}px "${style.family}"`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    // 位置/描边副本由 `text/layout.drawStringGlyphs` 决定（引擎语义，可单测）；这里只执行绘制
+    for (const g of drawStringGlyphs(text, x, y, style.size, style.outlineMode, style.outlineDx, style.outlineDy)) {
+      ctx.globalAlpha = g.alpha;
+      ctx.fillStyle = g.role === 'fill' ? style.fill : style.outline;
+      ctx.fillText(g.ch, g.x, g.y);
+    }
+    ctx.globalAlpha = 1;
+    cs.tex.source.update(); // 通知 Pixi 重新上传这张 canvas
+    this.log(`drawString slot=${slot} (${x},${y}) ${JSON.stringify(text)}`);
   }
 
   /**
@@ -132,6 +194,8 @@ export class TextureCache {
    * 并**触发**一次载入，使图像就绪后下一次查询能拿到真实值。
    */
   size(slot: number): { w: number; h: number } {
+    const cs = this.#canvasSlots.get(slot);
+    if (cs) return { w: cs.w, h: cs.h }; // 程序化表面：尺寸就是 create-texture 给的那对
     const tex = this.slotTex.get(slot);
     if (tex) return { w: tex.source.width, h: tex.source.height };
     const imgid = this.#slotImgid.get(slot);
@@ -144,9 +208,14 @@ export class TextureCache {
     return { w: 0, h: 0 };
   }
 
-  /** `0x1FA` release-texture：解除该槽的纹理。 */
+  /** `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。 */
   release(slot: number): void {
     this.slotTex.delete(slot);
+    const cs = this.#canvasSlots.get(slot);
+    if (cs) {
+      cs.tex.destroy(true);
+      this.#canvasSlots.delete(slot);
+    }
   }
 
   /**

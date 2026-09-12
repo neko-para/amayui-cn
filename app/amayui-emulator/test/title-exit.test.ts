@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
+import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { Engine } from '../src/vm/engine.js';
 import { InputManager } from '../src/vm/input.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
@@ -26,7 +27,7 @@ import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec } from '../src/vm/bits.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const RAW = path.join(HERE, '..', '..', '..', 'raw');
+const RAW = resolveResourceDir(path.resolve(HERE, '..', '..', '..'));
 /** 一帧的"指令"（与 src/report.ts 同口径）：遇到就推进虚拟时钟 + 驱动场景窗。 */
 const FRAME_OPS = new Set([0x1f4, 0x20c, 0x23c]);
 
@@ -69,7 +70,7 @@ const local = (rt: Rt, i: number): number => dec(rt.e.key, rt.e.curScript().loca
 const QUIT_XY: [number, number] = [1180, 630];
 
 async function clickQuit(quick: boolean): Promise<{ res: string | null; script: string; hover: number }> {
-  const src = new NodeFileSource({ rawDir: RAW });
+  const src = new NodeFileSource({ resourceDir: RAW });
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
   const rt = await makeRt(src, boot);

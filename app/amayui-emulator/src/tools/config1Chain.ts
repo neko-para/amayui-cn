@@ -13,10 +13,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
+import { resolveResourceDir } from '../arch/resourceDir.js';
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../vm/ops.js';
+import { readIntOperand, refFromOperand } from '../vm/operand.js';
+import { readRef, refAt } from '../vm/ref.js';
+import type { BinInstruction } from '../script/bin.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
 import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
@@ -26,7 +30,8 @@ import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
-const RAW = path.join(ROOT, 'raw');
+/** 资源根 = `install/`（汉化版）；`AMAYUI_RESOURCE_DIR=raw` 可切回原版。 */
+const RESOURCE_DIR = resolveResourceDir(ROOT);
 const INI = path.join(ROOT, 'app', 'amayui-emulator', 'SYS4REG.INI');
 
 /** TITLE 菜单「CONFIG」项的命中点（由 i12e 的 baseX/baseY 数组算出：第 3 项 rect [729,885]×[543,699]）。 */
@@ -41,8 +46,7 @@ export interface CoverInfo {
   color: string;
 }
 
-/** 滚动条拇指的一段（上盖 / 中段 / 下盖）。 */
-export interface ThumbSeg {
+/** 滚动条拇指的一段（上盖 / 中段 / 下盖）。 */export interface ThumbSeg {
   handle: number;
   dstX: number;
   dstY: number;
@@ -71,6 +75,45 @@ export interface ScrollThumb {
   bottom: ThumbSeg;
 }
 
+/**
+ * `0x12F` 在真实脚本里的**输入/输出快照**（E3：可见行序 = 按 `B[x]+C[x]` 升序排出的索引序）。
+ *
+ * 为什么要在链路里抓它：`CONFIG1` 的列表顺序完全由这条指令决定，而它的两个历史错法
+ * （双重编解码 / 用"位置上的值"当键）都**不报错**、只让顺序错，
+ * 且"用位置上的值"还会让顺序**依赖数组残留**（首次进入与切 tab 回来不同）。
+ * 有这份真实数据就能做独立复算比对（见 `test/config1-chain.test.ts`）。
+ */
+export interface Sort12fDump {
+  /** 元素个数（`op4`）。 */
+  n: number;
+  /** 排序结果：索引数组 A（DEC 视角）。 */
+  a: number[];
+  /** 主键数组 B（按索引取值）。 */
+  b: number[];
+  /** 次键数组 C（按索引取值）。 */
+  c: number[];
+}
+
+/**
+ * **CONFIG1 设置列表的一行**（`CONFIG1.txt:2509-2520` 的可见行循环）。
+ * 每行的三种图元各自成一条 handle 家族（基址 `0x1d4c0`）：
+ *  - `+0x3e8+i` 行背景带 `832×40 @(320, 100+50i)`（槽 193）；
+ *  - `+0x3fc+i` 数值/控件贴片 `80×30 @(332, y+5)`，**源 Y = (type−1)×31** ⇒ 源 Y < 0 就等于"这行没有描述符"；
+ *  - `+0x410+i` 帮助图标 `40×40 @(285, y)`（槽 193）。
+ *
+ * ★`type` 来自"可见行序表"（`0x12F` 三数组排序的结果）→ 只有排序正确时每行才拿得到自己的描述符；
+ * 排序一错，除第 0 行外全部读成 0 ⇒ 源 Y = −31（越界）⇒ 数值/◀▶ 控件**只有第一行画得出来**。
+ */
+export interface ConfigRow {
+  i: number;
+  /** 数值贴片（`+0x3fc+i`）的源矩形；`srcY < 0` ⇒ 该行描述符为 0（排序/搬运出错）。 */
+  value: { handle: number; srcX: number; srcY: number; srcW: number; srcH: number; dstX: number; dstY: number };
+  /** 该行是否画了行背景带。 */
+  hasBand: boolean;
+  /** 该行画了几个"控件贴片"（◀▶ / ON-OFF 那一族，handle 基址 `+0x514`/`+0x5dc`）。 */
+  controls: number;
+}
+
 export interface ChainResult {
   script: string;
   unimplemented: string[];
@@ -97,6 +140,12 @@ export interface ChainResult {
   gateLoop: { enabled: boolean; autoHideMs: number; shown: number[] } | null;
   /** CONFIG1 右侧滚动条拇指的三段式几何（见 `ScrollThumb`）；没跑到那段时 null。 */
   scrollThumb: ScrollThumb | null;
+  /** CONFIG1 设置列表的可见行（见 `ConfigRow`）—— `0x12F` 排序正确性的活证据。 */
+  configRows: ConfigRow[];
+  /** `0x204` 直绘进纹理槽的文本（每槽条数 + 抽样 + 全部文本）；CONFIG1 应当是槽 196 上的一串行文本。 */
+  slotText: { slot: number; count: number; sample: string; texts: string[] }[];
+  /** 最近一次 `0x12F` 的输入/输出（列表顺序的正确性判据，见 `Sort12fDump`）。 */
+  sort12f: Sort12fDump | null;
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
   drops?: DroppedIntent[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
@@ -116,7 +165,7 @@ export interface ChainOptions {
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
-  const src = new NodeFileSource({ rawDir: RAW });
+  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
   const input = new InputManager();
   const scene = new HeadlessScene({});
   // 归因用：DropRecorder 需要"当前 opcode"，而 Engine 在 native 之后才建 ⇒ 用可变持有者打破循环。
@@ -140,10 +189,15 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   let coveredBy: CoverInfo[] = [];
   const trace: string[] = [];
   const maxFrames = opt.maxFrames ?? Number.POSITIVE_INFINITY;
+  /** 最近一次 `0x12F` 的输入/输出（CONFIG1 的列表顺序由它决定）。 */
+  let sort12f: Sort12fDump | null = null;
   /** 单步 + 可选的盘点回调（`onStep` 关闭时与直接 `stepOnce` 等价）。 */
   const stepAll = async (): Promise<void> => {
+    const f = e.curScript();
+    const instr = f.script?.instructions[f.ip];
     const t = await stepOnce(e);
     opt.onStep?.(t);
+    if (instr && t.opcode === 0x12f) sort12f = captureSort12f(e, instr);
   };
   const sampleNow = (): void => {
     const f = native.scene.msgWins.get(9);
@@ -261,6 +315,16 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
 
   // ★滚动条拇指（`0x1FD` 的回归不变量）：三段式几何必须首尾相接。
   const scrollThumb = collectScrollThumb(e, native);
+  // ★设置列表的可见行（`0x12F` 排序正确性的回归不变量）+ 直绘进槽的文本（`0x204`）
+  const configRows = collectConfigRows(native);
+  const slotText = [...native.scene.slotText.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([slot, list]) => ({
+      slot,
+      count: list.length,
+      sample: list[0]?.text ?? '',
+      texts: list.map((t) => t.text),
+    }));
 
   const m = e.msgwin;
   const out = {
@@ -276,11 +340,34 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     itemCounts: { drawItems: native.scene.drawItems.size, drawable: [...native.scene.drawItems.values()].filter((i) => (i.flags & 1) !== 0).length },
     gateLoop,
     scrollThumb,
+    configRows,
+    slotText,
+    sort12f,
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
     trace,
   };
   await src.dispose?.();
   return out;
+}
+
+/**
+ * 抓一次 `0x12F`（`i12f A B C n`）的输入/输出：按三个指针操作数取基址，读回 A/B/C 的**解码值**。
+ * 只在链路里出现一次（CONFIG1 建可见项表时），所以"最后一次"就是那一次。
+ */
+function captureSort12f(e: Engine, instr: BinInstruction): Sort12fDump | null {
+  try {
+    const frame = e.curScript();
+    const a = refFromOperand(e, frame, instr, 1);
+    const b = refFromOperand(e, frame, instr, 2);
+    const cc = refFromOperand(e, frame, instr, 3);
+    const n = readIntOperand(e, frame, instr, 4);
+    if (n <= 0 || n > 4096) return null;
+    const dump = (r: ReturnType<typeof refFromOperand>): number[] =>
+      Array.from({ length: n }, (_, i) => readRef(e, frame, refAt(r, i)));
+    return { n, a: dump(a), b: dump(b), c: dump(cc) };
+  } catch {
+    return null; // 诊断用：取不到就算了，不影响链路
+  }
 }
 
 /** 取滚动条拇指三段（`CONFIG1.txt:2934-2971` 的 handle 布局：`0x1d4c0 + 0x76c / 0x776 / 0x777 / 0x778`）。 */
@@ -308,6 +395,29 @@ function collectScrollThumb(e: Engine, native: HeadlessScene): ScrollThumb | nul
   const bottom = seg(0x778);
   if (!top || !middle || !bottom) return null;
   return { base, top, middle, bottom };
+}
+
+/**
+ * 取设置列表的可见行（`CONFIG1.txt:2509-2520` 的每行三种图元）：
+ * 行背景 `+0x3e8+i`、数值贴片 `+0x3fc+i`、控件贴片 `+0x514/+0x528/+0x5dc/+0x5f0 +i`。
+ * 行数不写死：以"实际存在的数值贴片"为准（脚本用 `local5622` 决定画几行）。
+ */
+function collectConfigRows(native: HeadlessScene): ConfigRow[] {
+  const base = 0x1d4c0;
+  const rows: ConfigRow[] = [];
+  for (let i = 0; i < 32; i++) {
+    const v = native.scene.drawItems.get(base + 0x3fc + i);
+    if (!v) break;
+    let controls = 0;
+    for (const off of [0x514, 0x528, 0x5dc, 0x5f0]) if (native.scene.drawItems.has(base + off + i)) controls++;
+    rows.push({
+      i,
+      value: { handle: v.handle, srcX: v.srcX, srcY: v.srcY, srcW: v.srcW, srcH: v.srcH, dstX: v.posX, dstY: v.posY },
+      hasBand: native.scene.drawItems.has(base + 0x3e8 + i),
+      controls,
+    });
+  }
+  return rows;
 }
 
 function uninplementedPush(list: string[], err: NotImplementedOp): void {

@@ -176,7 +176,8 @@ export const STUB_NATIVE_OPS: OpTable = [
   [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）
   [0x1fc, stubSubsystem], // 纹理/图形子系统方法
   [0x1fe, stubSubsystem], // 纹理变换 op（4 浮点）
-  [0x204, stubSubsystem], // draw-string（无界面 stub）
+  // ★`0x204` draw-string 已升为 `MSGWIN_OPS` 真实现（handler 交出"位置 + 文本 + 全局样式"，
+  //   宿主把字直绘进该纹理槽的表面）。漏掉它的症状是"设置界面中间一片纯白"，见 handlers/msgwin.ts。
   [0x205, stubSubsystem], // 纹理/文本 op
   [0x207, stubSubsystem], // 纹理 op
 ];

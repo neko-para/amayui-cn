@@ -179,6 +179,62 @@ export function textWidth(s: string, size: number): number {
   return w;
 }
 
+/** `0x204` draw-string 的一次字形绘制（宿主照这个列表画即可；纯数据 ⇒ 可测）。 */
+export interface DrawStringGlyph {
+  ch: string;
+  x: number;
+  y: number;
+  /** 用填充色还是描边色画这一遍。 */
+  role: 'fill' | 'outline';
+  /** 叠画强度（档位 2 的"同位 1/4 强度副本"用 0.25，其余 1）。 */
+  alpha: number;
+}
+
+/**
+ * **单行直绘文本的字形位置表**（`0x204` draw-string → 引擎 `sub_456710` 的 GDI 整串直绘）。
+ *
+ * 与消息窗的区别：这里**不换行、不排版**，就是"从 (x,y) 起按等宽网格推进一路画过去"，
+ * 描边语义与消息窗同一套（档位来自 `Font+1372`，见 `raster.ts` 的表）。
+ * 抽成纯函数的原因：canvas 只在浏览器里有，而"推进量/描边副本位置"是**引擎语义**，
+ * 必须能在 Node 里断言（见 `test/draw-string.test.ts`）。
+ */
+export function drawStringGlyphs(
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  outlineMode: 0 | 1 | 2 | 3,
+  outlineDx: number,
+  outlineDy: number,
+): DrawStringGlyph[] {
+  const out: DrawStringGlyph[] = [];
+  let cx = x;
+  for (const ch of text) {
+    switch (outlineMode) {
+      case 1:
+        out.push({ ch, x: cx + outlineDx, y: y + outlineDy, role: 'outline', alpha: 1 });
+        out.push({ ch, x: cx, y, role: 'fill', alpha: 1 });
+        break;
+      case 2:
+        out.push({ ch, x: cx, y, role: 'fill', alpha: 1 });
+        out.push({ ch, x: cx, y, role: 'outline', alpha: 0.25 });
+        break;
+      case 3:
+        out.push({ ch, x: cx + outlineDx, y: y + outlineDy, role: 'outline', alpha: 1 });
+        out.push({ ch, x: cx - outlineDx, y: y - outlineDy, role: 'outline', alpha: 1 });
+        out.push({ ch, x: cx + outlineDx, y: y - outlineDy, role: 'outline', alpha: 1 });
+        out.push({ ch, x: cx - outlineDx, y: y + outlineDy, role: 'outline', alpha: 1 });
+        out.push({ ch, x: cx, y, role: 'fill', alpha: 1 });
+        break;
+      default:
+        out.push({ ch, x: cx, y, role: 'fill', alpha: 1 });
+        break;
+    }
+    cx += advance(ch, size);
+  }
+  return out;
+}
+
 /** 默认窗口样式（`sub_465390` Initialize 初值 + 随包 INI：30px 白字 + 黑投影，注音 10px）。 */
 export function defaultWinStyle(): MsgWinStyle {
   return {
