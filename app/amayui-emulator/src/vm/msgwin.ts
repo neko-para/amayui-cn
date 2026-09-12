@@ -23,7 +23,10 @@
  * ## 建模范围（明确不做的部分）
  * 文本**布局与 GDI 渲染**（`sub_456430`/`sub_45D660`/`sub_45BE20`/`sub_465390`…）不在此建模：
  * 这里只保存"这段消息有哪些字、有没有注音、有没有显示完"，足够让状态机与控制流忠实。
+ * （唯一的例外是入队时的**字体/颜色快照** `MsgSlot.fontStyle`：它不是渲染细节，而是
+ * "谁最后写全局样式"这一**状态泄漏**的边界 —— 见 `FontStyleSnapshot`。）
  */
+import type { FontStyleSnapshot } from '../text/layout.js';
 
 /**
  * 一段文本 + 其上的注音对（`display-furigana` 0x196）。
@@ -49,6 +52,15 @@ export interface MsgSegment {
 /** 一个文本槽（引擎 `Font + 1044 + 4*win` = `FontVWindow`；op1 为 0 时用默认窗）。 */
 export interface MsgSlot {
   segments: MsgSegment[];
+  /**
+   * **本页文本入队时的字体/颜色快照**（`null` = 还没有内容 ⇒ 用当前全局样式）。
+   *
+   * ★引擎在**排版时**就把字形连同颜色画进该窗的离屏表面，之后再改全局 `Font+1360/+1364`
+   * 不会回溯；本模型是"每次光栅化时读样式" ⇒ 必须在这里把入队那一刻的样式钉住，
+   * 否则 `CONFIG2` 逐行改色会把已排好的 ADV 样例窗一起染色（用户实测的"颜色溢出"）。
+   * 详见 `FontStyleSnapshot` 的说明。
+   */
+  fontStyle: FontStyleSnapshot | null;
 }
 
 /**
@@ -584,10 +596,21 @@ export class MsgWindow {
   slot(i: number): MsgSlot {
     let s = this.slots.get(i);
     if (!s) {
-      s = { segments: [] };
+      s = { segments: [], fontStyle: null };
       this.slots.set(i, s);
     }
     return s;
+  }
+
+  /**
+   * **把当前全局字体/颜色钉进该窗的槽**（引擎：排版时字形连颜色一起画进离屏表面）。
+   *
+   * 调用点 = 一切"文本入队"的指令（`show-text` 0x6E / `display-furigana` 0x196 / 十六进制串 0x7D）。
+   * 全局样式指令（`0x75/0x76/0x77/0x8B/0x197/0x1A5/0x2FE/0x2BD/0x2BE`）**不**碰它 ——
+   * 它们只改"下一次排版用哪套样式"。
+   */
+  setFontStyle(i: number, snap: FontStyleSnapshot): void {
+    this.slot(this.resolveWin(i)).fontStyle = snap;
   }
 
   /**
@@ -609,7 +632,12 @@ export class MsgWindow {
    */
   beginNewMessage(win: number): void {
     const s = this.slots.get(win);
-    if (s) s.segments.length = 0;
+    if (s) {
+      s.segments.length = 0;
+      // 引擎 `0x71` 同时清该窗离屏表面 ⇒ 已排版的字形（连同颜色）一起没了，
+      // 下一段文本入队时再按**当时的**全局样式钉一次（`show-text` 会重设）。
+      s.fontStyle = null;
+    }
     // 引擎把显现游标 `win+132` 复位到 0；本模型里"没有状态"= 全部显示，
     // 内容已清空 ⇒ 删掉状态即可（下次 show-text 会重新决定）。
     this.reveal.delete(win);

@@ -53,6 +53,7 @@
 - **切分类 = 退出 + 重入**（7dd=1 → exit → CONFIG.BIN 再 call-script）⇒ 帧局部池必须重建，否则 local5620 从上一页泄漏、拇指顶算到轨道外（实测：滚动条溢出轨道）
 - i12f 的比较键是 B[A[j]]+C[A[j]]（用 A 里存的**索引**查 B/C），不是按位置比 A/C；且数组访存的 DEC/ENC 只能一层
 - 0x204 直绘进槽 196 时必须先有 0x1f8 create-texture 建出的表面（引擎三个门：槽对象存在/可锁定/串非空）
+- ★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效
 
 ## 缺口
 
@@ -64,17 +65,21 @@
 - 引擎常态能力：`gdi-direct-text-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`msgwin-window-reveal-gate-300`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x42F560`（见 `analysis/functions.json`）
 - 函数结论：`0x422FD0`（见 `analysis/functions.json`）
 - 函数结论：`0x423390`（见 `analysis/functions.json`）
 - 函数结论：`0x4AC5F0`（见 `analysis/functions.json`）
 - 函数结论：`0x4ACF20`（见 `analysis/functions.json`）
 - 函数结论：`0x4ACEE0`（见 `analysis/functions.json`）
+- 函数结论：`0x46BE30`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/opcode-table.md`
 - 主题文档：`docs-new/03-engine/message-config-gates.md`
+- 主题文档：`docs-new/03-engine/adv-text-rendering.md`
 - 守卫测试：`app/amayui-emulator/test/config1-chain.test.ts`
 - 守卫测试：`app/amayui-emulator/test/draw-string.test.ts`
 - 守卫测试：`app/amayui-emulator/test/draw-item-scale.test.ts`
+- 守卫测试：`app/amayui-emulator/test/text-style-snapshot.test.ts`
 
 ## 证据与备注
 

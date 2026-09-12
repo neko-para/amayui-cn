@@ -173,10 +173,33 @@ export interface ChainResult {
   sort12f: Sort12fDump | null;
   /** 滚动/切分类探针的逐步状态（仅 `scrollProbe: true` 时给出，见 `ScrollStep`）。 */
   scrollSteps?: ScrollStep[];
+  /** 「角色名颜色溢到 ADV 样例窗」回归探针的结果（仅 `previewProbe: true` 时给出）。 */
+  previewStyle?: PreviewStyleProbe;
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
   drops?: DroppedIntent[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
   trace: string[];
+}
+
+/**
+ * **「角色名颜色溢出」探针结果**（`previewProbe: true`）。
+ *
+ * 断言口径（`test/config1-chain.test.ts`）：
+ *  1. `win9Fills` 里在角色设定页绘制期间只应出现**一个**颜色（入队时钉住的那一个）；
+ *     预修复版本会随每行 `i076` 变化 ⇒ 出现 "…最后一个可见行" 的颜色；
+ *  2. 该颜色必须**不等于** `lastRowFill`（最后一行 `draw-string` 直绘用的全局色）。
+ */
+export interface PreviewStyleProbe {
+  /** 进入角色设定页之前，ADV 样例窗（win 9）的填充色。 */
+  beforeFill: string;
+  /** 角色设定页绘制期间，win 9 每帧的填充色（去重前的原始序列，便于看"何时被改"）。 */
+  win9Fills: string[];
+  /** 角色设定页各行 `draw-string` 直绘用的全局填充色（= 该行角色名的颜色）。 */
+  rowFills: string[];
+  /** 角色设定页每帧的**全局**填充色（`Font+1360` = `engineValues[21664]`）—— 逐行设色的痕迹。 */
+  liveFills: string[];
+  /** 切页前后 win 9 的排版结果是否还在（`false` = 样例被清掉了，断言要相应放宽）。 */
+  win9Present: boolean;
 }
 
 export interface ChainOptions {
@@ -195,6 +218,15 @@ export interface ChainOptions {
    * 这是"切页后拇指溢出轨道"的回归路径（见 `ScrollStep`）。
    */
   scrollProbe?: boolean;
+  /**
+   * 跑完 CONFIG1 后切到左侧第 5 个分类（**角色设定 = CONFIG2**）并采样样式（默认关）。
+   *
+   * 这是"角色名的颜色溢到下方 ADV 样例窗"的回归路径：
+   * `CONFIG2` 逐行 `i076 <该行颜色>`（颜色取自 `adcd[]` 表）画角色名，
+   * 而这些是**全局**样式字段 ⇒ 若"写全局色"被当成"给所有窗换色"，
+   * 已排版的 ADV 样例窗（win 9）就会被染成**最后一个可见行**的颜色（用户实测）。
+   */
+  previewProbe?: boolean;
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
@@ -384,6 +416,41 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     snap('切回第 1 个分类');
   }
 
+  // ★「角色名颜色溢到 ADV 样例窗」探针（默认关）：切到左侧第 5 个分类（角色设定 = CONFIG2），
+  //   看样例窗的颜色会不会被逐行设色带走。根因：把"写全局字体色"当成"给所有窗换色"。
+  let previewStyle: PreviewStyleProbe | undefined;
+  if (opt.previewProbe) {
+    const fillOf = (): string | null => native.scene.msgWins.get(9)?.style.main.fill ?? null;
+    const liveFillOf = (): string =>
+      '#' + ((e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0');
+    const beforeFill = fillOf() ?? '';
+    const win9Fills: string[] = [];
+    const liveFills: string[] = [];
+    const rowFills = new Set<string>();
+    // 左侧分类列表第 5 项的中心（190×26 贴片画在 (24, 106+50i) ⇒ 第 5 项 y = 306）
+    input.setCursor(120, 306);
+    await run(60);
+    input.pressMouse(0);
+    await run(120);
+    input.releaseMouse(0);
+    // 采样：切页后若干帧（CONFIG2 逐行设色 + 逐行直绘都在这一段里发生）
+    for (let i = 0; i < 400; i++) {
+      await run(1);
+      const f = fillOf();
+      if (f !== null) win9Fills.push(f);
+      liveFills.push(liveFillOf());
+      // `create-texture` 每帧会清掉槽 196 的直绘表 ⇒ 每帧整体收一遍（色值去重即可）
+      for (const s of native.scene.slotText.get(196) ?? []) rowFills.add(s.fill);
+    }
+    previewStyle = {
+      beforeFill,
+      win9Fills,
+      rowFills: [...rowFills],
+      liveFills,
+      win9Present: fillOf() !== null,
+    };
+  }
+
   // ★滚动条拇指（`0x1FD` 的回归不变量）：三段式几何必须首尾相接。
   const scrollThumb = collectScrollThumb(e, native);
   // ★设置列表的可见行（`0x12F` 排序正确性的回归不变量）+ 直绘进槽的文本（`0x204`）
@@ -415,6 +482,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     slotText,
     sort12f,
     ...(opt.scrollProbe ? { scrollSteps } : {}),
+    ...(opt.previewProbe && previewStyle ? { previewStyle } : {}),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
     trace,
   };

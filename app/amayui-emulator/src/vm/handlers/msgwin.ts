@@ -29,7 +29,13 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
-import { defaultWinStyle, layoutWindow, type FontSpec, type MsgWinStyle } from '../../text/layout.js';
+import {
+  defaultWinStyle,
+  layoutWindow,
+  type FontSpec,
+  type FontStyleSnapshot,
+  type MsgWinStyle,
+} from '../../text/layout.js';
 import { fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
 import type { OpTable } from './shared.js';
@@ -93,13 +99,14 @@ export function globalTextStyle(e: Engine): {
   };
 }
 
-/** 由「全局样式 + 该窗几何 + 该窗文本」组装排版输入（引擎 `Font` + `FontVWindow` 的快照）。 */
+/** 由「该窗入队时钉住的字体样式 + 该窗几何 + 该窗文本」组装排版输入（引擎 `FontVWindow` + `Font` 的快照）。 */
 export function styleOfWin(e: Engine, win: number): MsgWinStyle {
   const m = e.msgwin;
   const g = m.geom(win);
-  const v = (k: number, d: number): number => e.engineValues.get(k) ?? d;
-  const core = globalTextStyle(e);
-  const resolvedRuby = resolveFace(m.font.rubyFace);
+  // ★字体/颜色取**入队时的快照**（`MsgSlot.fontStyle`），几何取**实时**的窗字段。
+  //   理由见 `FontStyleSnapshot`：引擎排版时就把颜色画进离屏表面，之后再改全局色不回溯；
+  //   拿实时全局色会让 CONFIG2 逐行设的角色名颜色溢到已排好的 ADV 样例窗上（用户实测）。
+  const core = m.slot(win).fontStyle ?? globalFontSnapshot(e);
   return {
     x: g.x,
     y: g.y,
@@ -109,26 +116,52 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     originY: g.originY,
     wrapRight: g.wrapRight,
     wrapBottom: g.wrapBottom,
-    // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）
-    vertical: (v(80101, m.font.vertical ? 1 : 0) & 1) !== 0,
+    // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）—— 同样按入队时刻钉住
+    vertical: core.vertical,
     align: g.align,
     alignWidth: g.alignWidth,
     outlineMode: core.outlineMode,
     outlineDx: core.outlineDx,
     outlineDy: core.outlineDy,
     main: core.main,
+    // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
+    ruby: core.ruby,
+    background: g.background,
+    // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）—— 几何类，实时
+    itemId: m.object(win).f104,
+  };
+}
+
+/**
+ * **当前全局字体/颜色快照**（入队时钉住用；`styleOfWin` 在没有快照时也回退到它）。
+ *
+ * 与 `globalTextStyle` 的区别：这里把注音字体与竖排一起收进来，正好是"一次排版要用到的全部样式"，
+ * 而几何（位置/尺寸/换行/对齐/层序）**不在**其中 —— 那些是逐窗字段，必须实时。
+ */
+export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
+  const m = e.msgwin;
+  const core = globalTextStyle(e);
+  const resolvedRuby = resolveFace(m.font.rubyFace);
+  return {
+    main: core.main,
     ruby: {
       family: resolvedRuby.family,
       size: m.font.rubySize,
       weight: m.font.rubyBold ? 700 : 400,
-      // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
       fill: core.main.fill,
       outline: core.main.outline,
     },
-    background: g.background,
-    // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）
-    itemId: m.object(win).f104,
+    outlineMode: core.outlineMode,
+    outlineDx: core.outlineDx,
+    outlineDy: core.outlineDy,
+    // 引擎 `Font+235108` bit0（0x261 写）；未写时用随包 INI 的默认值
+    vertical: ((e.engineValues.get(80101) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
   };
+}
+
+/** 把当前全局样式钉进该窗（文本入队路径专用）。 */
+function captureFontStyle(e: Engine, i: number): void {
+  e.msgwin.setFontStyle(i, globalFontSnapshot(e));
 }
 
 /** 发布一个窗（文本或样式变化后调用；排版在共享层做，宿主只光栅化）。 */
@@ -198,6 +231,8 @@ const op_show_text: OpHandler = (c) => {
   const slot = readIntOperand(e, c.frame, c.instr, 1);
   const text = readStringOperand(e, c.frame, c.instr, 2);
   m.lastArg = slot;
+  // ★入队即钉住当前字体/颜色（引擎 `sub_46BE30` 排版时把字形连颜色画进该窗离屏表面）
+  captureFontStyle(e, slot);
   if ((m.flags & 1) !== 0) {
     m.addRuby(slot, text, '');
     m.flags |= 0x10000;
@@ -352,6 +387,10 @@ const op_poll_msg_advance: OpHandler = (c) => {
 const op_display_furigana: OpHandler = (c) => {
   const e = c.e;
   const slot = readIntOperand(e, c.frame, c.instr, 1);
+  // ★同样是"文本入队"（引擎 `sub_46BE30`）⇒ 追加前钉住当前样式
+  //   （口径：**一页的样式 = 最后一次入队那一刻的样式**；引擎严格来说是"每段各自用当时的样式"，
+  //    但全库 87324 处文本入队里，页内"文本→改样式→再文本"的出现次数是 **0** ⇒ 两者等价）
+  captureFontStyle(e, slot);
   e.msgwin.addRuby(slot, readStringOperand(e, c.frame, c.instr, 2), readStringOperand(e, c.frame, c.instr, 3));
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
@@ -716,56 +755,58 @@ const op_set_advance_mes_on_wheel: OpHandler = (c) => {
   setConfigValue(c.e, 'message:advancemesonwheel', readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
-/** `0x75 <size>`（sub_41F350 → sub_4185F0 raw 24057-24082）：主字号（全局）。 */
+/**
+ * `0x75 <size>`（sub_41F350 → sub_4185F0 raw 24057-24082）：主字号（全局）。
+ *
+ * ★**只改"下一次排版用哪套样式"，不重绘任何已排版的窗**（引擎：`sub_4185F0` 写
+ * `Font+201684/+1232/+101972` 再 `sub_459F40` **重建 GDI 字体对象/字宽**，已画进各窗离屏表面的字形
+ * 一点都不动）。因此这里**不再** `emitAllWins` —— 那会把晚到的全局样式糊到先前排好的窗上
+ * （用户实测：`CONFIG2` 逐行设的角色名颜色溢到设置界面下方的 ADV 样例窗）。
+ * 脚本想换样式重画时会**重新入队**（`i071` + `show-text`，如 `CONFIG.txt:171-179`）。
+ */
 const op_set_main_size: OpHandler = (c) => {
   const e = c.e;
   const size = readIntOperand(e, c.frame, c.instr, 1);
   e.engineValues.set(71745, size); // Font+201684 / 4
   e.msgwin.font.mainSize = size;
-  emitAllWins(e);
 };
 
-/** `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。 */
+/** `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。同上，不重绘。 */
 const op_set_ruby_size: OpHandler = (c) => {
   const e = c.e;
   const size = readIntOperand(e, c.frame, c.instr, 1);
   e.engineValues.set(75970, size); // Font+218584 / 4
   e.msgwin.font.rubySize = size;
-  emitAllWins(e);
 };
 
-/** `0x1A5 <name>`（sub_433290 → sub_4328F0 raw 41344-41565）：主字体面名（全局）。 */
+/** `0x1A5 <name>`（sub_433290 → sub_4328F0 raw 41344-41565）：主字体面名（全局）。同上，不重绘。 */
 const op_set_main_face: OpHandler = (c) => {
   const e = c.e;
   const face = readStringOperand(e, c.frame, c.instr, 1);
   e.msgwin.font.mainFace = face;
-  emitAllWins(e);
 };
 
-/** `0x2FE <name>`（sub_4332D0 → sub_432DD0 raw 41568-41798）：注音字体面名（全局）。 */
+/** `0x2FE <name>`（sub_4332D0 → sub_432DD0 raw 41568-41798）：注音字体面名（全局）。同上，不重绘。 */
 const op_set_ruby_face: OpHandler = (c) => {
   const e = c.e;
   const face = readStringOperand(e, c.frame, c.instr, 1);
   e.msgwin.font.rubyFace = face;
-  emitAllWins(e);
 };
 
-/** `0x2BD <flag>`（sub_426200 raw 33384-33402）：主字体加粗（`lfWeight` 700/0，全局）。 */
+/** `0x2BD <flag>`（sub_426200 raw 33384-33402）：主字体加粗（`lfWeight` 700/0，全局）。同上，不重绘。 */
 const op_set_main_bold: OpHandler = (c) => {
   const e = c.e;
   const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
   e.engineValues.set(75953, on ? 700 : 0); // Font+218516 / 4
   e.msgwin.font.mainBold = on;
-  emitAllWins(e);
 };
 
-/** `0x2BE <flag>`（sub_426260 raw 33404-33422）：注音字体加粗（全局）。 */
+/** `0x2BE <flag>`（sub_426260 raw 33404-33422）：注音字体加粗（全局）。同上，不重绘。 */
 const op_set_ruby_bold: OpHandler = (c) => {
   const e = c.e;
   const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
   e.engineValues.set(75971, on ? 700 : 0); // Font+218588 / 4
   e.msgwin.font.rubyBold = on;
-  emitAllWins(e);
 };
 
 /**

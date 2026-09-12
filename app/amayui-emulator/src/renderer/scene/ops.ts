@@ -307,10 +307,10 @@ export function scMsgWinClear(s: SceneState, win: number): void {
  *  - **不去重**：同一个槽每帧被脚本重画时，若无 `create-texture` 先重建，字会越叠越多 ——
  *    这正是引擎的行为（`CONFIG1` 每帧先 `create-texture` 再画，所以不会叠）。
  */
-export function scDrawString(s: SceneState, slot: number, x: number, y: number, text: string): void {
+export function scDrawString(s: SceneState, slot: number, x: number, y: number, text: string, fill = '#ffffff'): void {
   const list = s.slotText.get(slot);
-  if (list) list.push({ x, y, text });
-  else s.slotText.set(slot, [{ x, y, text }]);
+  if (list) list.push({ x, y, text, fill });
+  else s.slotText.set(slot, [{ x, y, text, fill }]);
 }
 
 /** `0x1F8` create-texture：新建/重建该槽 ⇒ 槽上的直绘文本随之清空（引擎是新表面）。 */

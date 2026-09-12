@@ -28,8 +28,10 @@ export interface SceneState {
    * 而是往"某个纹理槽的表面"上叠一串字（`CONFIG1` 的设置行就是这么画的：先
    * `create-texture 196 628 360`，再逐行 `draw-string 196 …`，最后按行裁贴到 UI 上）。
    * 宿主据此光栅化；报告/测试据此断言"这串字确实被画进了槽 N"，而不是只能靠肉眼看画面。
+   * `fill` = 直绘那一刻的**全局填充色**（引擎 `Font+1360`）—— 直绘是"立即消费全局样式"的路径
+   * （与消息窗的"入队时钉住"相对），记下来才能回归"角色名颜色溢到 ADV 样例窗"这类问题。
    */
-  slotText: Map<number, { x: number; y: number; text: string }[]>;
+  slotText: Map<number, { x: number; y: number; text: string; fill: string }[]>;
 }
 
 export function newSceneState(): SceneState {
@@ -39,6 +41,6 @@ export function newSceneState(): SceneState {
     blendWritten: new Map<number, number>(),
     msgWins: new Map<number, TextFrame>(),
     msgRev: new Map<number, number>(),
-    slotText: new Map<number, { x: number; y: number; text: string }[]>(),
+    slotText: new Map<number, { x: number; y: number; text: string; fill: string }[]>(),
   };
 }

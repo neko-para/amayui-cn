@@ -3780,7 +3780,7 @@
     "fields_used": ["Font+1084/+1100/+218624/+235068..+235104", "Font+1232/+1236/+1248/+1260", "Font+201684/+201688/+201704/+201708/+201712", "Font+218592/+218596"],
     "unmodeled": ["sub_459A20/sub_459C50（Font+201680 分支的真实字宽路径）"],
     "evidence": "raw 70940-71191",
-    "notes": "★原表述「sub_459F40 = 文本重排、被 0x2BD 调用」均不成立：它不在 opcode 派发表里，调用者是 0x75/0x76/0x77/0x78/0x81 与 ctor/UI 组件"
+    "notes": "★它**不是**重排、更不是重绘：只把 LOGFONTA/TEXTMETRICA/字形缓冲与 HFONT 句柄按当前字号/面名重建。含义（2026-09 实测确认）：全局样式指令（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB/0x76/0x77/0x8B/0x78/0x1A4/0x261 一族的收尾）**不会**改变任何已排版窗的颜色/字号 —— 字形与颜色在排版入队那一刻就画进了该窗的离屏表面（见 sub_46BE30）。旧笔记里的『刷文本布局』是误读。据此外推出的作用域规则见引擎台账 text-style-scope-queue-time 与守卫 test/text-style-snapshot.test.ts。"
   },
   {
     "addr": "0x45A6E0",
@@ -3802,7 +3802,7 @@
     "fields_used": ["FontVWindow+36/+40", "FontVWindow+44/+48", "FontVWindow+208", "Font+201684"],
     "unmodeled": ["slot+208 的 120B 记录内部字段", "sub_4691A0 的文本准备分支"],
     "evidence": "raw 83363-83997",
-    "notes": "★无禁则处理；无 0x0A 显式换行处理；换行是像素级硬断"
+    "notes": "★样式在此刻被**消费**：逐字量宽/断行时把字形连同当时的全局样式（Font+1360 填充色、+1364 描边色、+1372 描边档位、+1384/+1388 偏移、字号/字重/竖排）画进**该窗自己的离屏表面** ⇒ 之后再改全局样式字段不会回溯已排版的文本（0x76 那一族的收尾只调 font_rebuild_main_459F40 重建 HFONT，不重绘）。作用域规则与用户实测症状（角色设定页逐行设色把下方 ADV 样例窗染色）见引擎台账 text-style-scope-queue-time、守卫 test/text-style-snapshot.test.ts。"
   },
   {
     "addr": "0x46CBF0",

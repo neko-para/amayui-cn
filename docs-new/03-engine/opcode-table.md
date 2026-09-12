@@ -110,10 +110,10 @@
 | 0x72 | 1 | wait-for-input | sub_41EEF0 | 已核对 | **wait-for-input**：ADV「等待推进」。刷输入掩码（bit 0x40 = 跳读中）→ 与 `0x71` 同构地按 `message:ReadTextSkip` 分支判 `sub_48E870`/`sub_48F000` → 置/清 `effect_flags` 的 `0x8000000`；未显示完时把 3 个消息回调槽交付 `sub_4BB840` 并清槽。**PARTIAL**（消息槽区未建模）；handler=sub_41EEF0（raw .c 28482） |
 | 0x73 | 10 |  | sub_41F250 | 已核对 | **消息窗口全面配置**：读 op1..9 调 `sub_456430(msgobj, op1..9)` 拷 0x28 字节几何/布局结构进消息窗，读 op10 调 `sub_453AD0` 置节流标量。fire-and-forget。handler=sub_41F250（raw .c 28280） |
 | 0x74 | 1 |  | sub_41F320 | 已核对 | **SetMessageSpeed（仅字段）**：`Engine[21668] = op1`（= `Font+1376` = `message:MessageSpeed`）。★**不写配置注册表**（写注册表的是 `0x1B5`）。脚本用它做「这一段立即显示」：`i07f<存>` → `i074 0` → … → `i074<还原>`（全库 206 处）；handler=sub_41F320（raw .c 28642） |
-| 0x75 | 1 |  | sub_41F350 | 已核对 | **设消息窗宽/反向偏移**：读 op1 调 `sub_4185F0(msgobj, op1)` 写 `_this[201684]=op1; _this[1232]=-op1; _this[101972]=-op1` 等，再 `sub_459F40()` 刷文本布局。fire-and-forget。handler=sub_41F350（raw .c 28330） |
-| 0x76 | 1 |  | sub_41F390 | 已核对 | **设消息窗滚动类属性**：读 op1，字节序翻转后写 `_this[21664]`，调 `sub_459F40()` 刷消息/文本布局。handler=sub_41F390（raw .c 28339） |
-| 0x77 | 1 |  | sub_41F3F0 | 已核对 | **同 0x76**：读 op1 字节序翻转写 `_this[21665]`，调 `sub_459F40()` 刷布局。handler=sub_41F3F0（raw .c 28349） |
-| 0x78 | 1 |  | sub_41F450 | 已核对 | **设消息窗属性并刷布局**：读 op1 写 `_this[21667]`，调消息/文本对象 `sub_459F40()`。handler=sub_41F450（raw .c 28359） |
+| 0x75 | 1 |  | sub_41F350 | 已核对 | **主字号（全局）**：读 op1 调 `sub_4185F0(Font, op1)`（raw 24057-24071）= 写 `Font+201684 = op1`（字号）、`+1232 = -op1`（主 LOGFONT.lfHeight）、`+101972 = -op1`（注音 LOGFONT 高度），再 `sub_459F40()` **重建 GDI 字体对象/字宽**。★**不重绘任何已排版的窗**（作用域规则见 `adv-text-rendering.md` §3.5 / 台账 `text-style-scope-queue-time`）。handler=sub_41F350（raw .c 28330） |
+| 0x76 | 1 |  | sub_41F390 | 已核对 | **主填充色（全局）**：读 op1（COLORREF，BGR），字节序翻转成 RGB 写 `Font+1360`（= `_this[21664]`），再 `sub_459F40()` 重建字体对象。★**不是"滚动类属性"、"写字段≠重绘"**：已排版的窗保持入队时的颜色，否则会跨窗溢色（2026-09 实测：角色设定页逐行设色把 ADV 样例窗染色）。handler=sub_41F390（raw .c 28662-28671） |
+| 0x77 | 1 |  | sub_41F3F0 | 已核对 | **主描边/阴影色（全局）**：同 0x76 的字节序翻转后写 `Font+1364`（= `_this[21665]`），再 `sub_459F40()`。作用域同 0x76（入队时消费）。handler=sub_41F3F0（raw .c 28673-28682） |
+| 0x78 | 1 |  | sub_41F450 | 已核对 | **描边/阴影档位（全局）**：读 op1 写 `Font+1372`（= `_this[21667]`：0 无 / 1 单向投影 / 2 同位置 1/4 副本 / 3 多向描边），调 `sub_459F40()`。作用域同 0x76。handler=sub_41F450（raw .c 28359） |
 | 0x79 | 3 |  | sub_41F490 | 已核对 | **文字起点（写窗对象 `+28/+32`）**：读 op1..op3 调 `sub_4563A0(_this+21324, op1, op2, op3)`；该函数取 `Font[win+261]`（win=0 时用 `Font[307]` 的默认窗；`Font+0x414+4*win` = `Engine[21585+win]` 对象表项）后 `obj+28 = op2; obj+32 = op1`（sub_4563A0 raw 68233-68246）。⚠️ 旧注「选中子项 +28/+32」有误：`+28/+32` 是**窗对象**字段。fire-and-forget。handler=sub_41F490（raw .c 28369） |
 | 0x7A | 3 |  | sub_41F4E0 | 仅映射 |  |
 | 0x7B | 2 |  | sub_41F530 | 仅映射 |  |
@@ -261,7 +261,7 @@
 | 0x194 | 3 |  | sub_42CF10 | 已核对 | **字符串相等判定**：取 op2/op3 两个字符串操作数（`sub_42A420`），经 `sub_401540`（`std::string::compare(pos,len,rhs,rhsLen)` 语义：先 memcmp 较短长度、相等再比长度）⇒ `op1 = (cmp == 0)`；handler=sub_42CF10（raw .c 37909-37938） |
 | 0x195 | 3 |  | sub_42D010 | 仅映射 |  |
 | 0x196 | 3 | display-furigana | sub_41FC20 | 已核对 | **display-furigana**：读 op1=槽、op2=本文词、op3=注音（先有界拷进 1024 栈缓冲）。分三路：① `MessageSpeed == 0` 或 ADV 位已置 ⇒ `sub_46CBF0(Font, op1, op2, op3, Engine[388220])`（同步排空）；② 否则 `sub_46BE30(...)`，返回非 0 时置 `effect_flags |= 0x20000000`、`Engine[489484] = op1` 并起节拍定时器 `sub_453A60(Engine+430572, MessageSpeed)`；③ `Engine[489988] & 1` 置位时纯 `sub_46BE30`。★op2（本文词）本身是正文的一部分（全库 6341 处用它把一句话从词中间切开）。**曾「推测」**；handler=sub_41FC20（raw .c 29032-29126） |
-| 0x197 | 1 |  | sub_41FDD0 | 已核对 | **配置显示/布局对象**：读 op1 调 `sub_418680(_this+21324, op1)`，写界面面板/窗口布局字段。fire-and-forget。handler=sub_41FDD0（raw .c 28775） |
+| 0x197 | 1 |  | sub_41FDD0 | 已核对 | **注音（ルビ）字号（全局）**：读 op1 调 `sub_418680(Font, op1)` 写 `Font+218584`（= `_this[75970]`，注音 LOGFONT 尺寸），再 `sub_459F40()` 重建字体对象。作用域同 0x76（入队时消费，不回溯）。handler=sub_41FDD0（raw .c 28775） |
 | 0x198 | 3 |  | sub_41FE10 | 已核对 | **窗屏幕位置**：读 op1=窗、op2=x、op3=y → `sub_456400(Font, op1, op2, op3)` 写窗对象 `+12 = x`、`+16 = y`（win=0 用默认窗 `Font[307]`；对象不存在则不写）；handler=sub_41FE10（raw .c 29127-29135） |
 | 0x199 | 0 |  | sub_418FC0 | 仅映射 |  |
 | 0x19A | 1 |  | sub_42D290 | 仅映射 |  |

@@ -104,6 +104,30 @@ export interface TextSegment {
   lineEnded: boolean;
 }
 
+/**
+ * **一段文本被"排队"那一刻的字体/颜色快照**（引擎侧对应物见下）。
+ *
+ * ★为什么需要它（2026-09 实测的"颜色溢出"）：引擎的文本是**排版时就把字形连颜色一起画进该窗的
+ * 离屏表面**（`sub_46BE30` → `sub_455ED0`，用当时的 `Font+1360/+1364/+1372`），此后
+ * **改全局字体/颜色不会回溯改已排版的文本**（`0x76` 只写 `Font+1360` 并 `sub_459F40` 重建 GDI 字体对象，
+ * 不重绘任何已排好的窗；`0x20A` 的 `sub_45AD30` 也只重算位置、不重画字形）。
+ * 而全局样式字段只有一套 ⇒ 谁最后写谁值（例：`CONFIG2` 逐行 `i076 <该行颜色>` 画完角色名后，
+ * 全局色停在**最后一个可见行**的颜色上）。
+ *
+ * 模型侧因此必须在**入队时**把字体/颜色钉住；否则晚到的全局样式改动会把先前排好的窗
+ * （如设置界面下方的 ADV 样例窗 9）一起改色 —— 这正是用户实测到的
+ * 「角色名的颜色溢出到 ADV 展示页面」。
+ */
+export interface FontStyleSnapshot {
+  main: FontSpec;
+  ruby: FontSpec;
+  outlineMode: 0 | 1 | 2 | 3;
+  outlineDx: number;
+  outlineDy: number;
+  /** 竖排是全局的（`Font+235108`，`0x261`），同样按入队时刻钉住。 */
+  vertical: boolean;
+}
+
 /** 排版输入（= 一个窗口的完整快照；VM 每次改动后交宿主重算）。 */
 export interface MsgWinInput {
   style: MsgWinStyle;

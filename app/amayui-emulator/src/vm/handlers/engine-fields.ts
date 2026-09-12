@@ -12,7 +12,6 @@
  */
 import type { OpHandler } from '../step.js';
 import type { Engine } from '../engine.js';
-import { emitAllWins } from './msgwin.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
@@ -83,21 +82,31 @@ interface FieldStoreSpec {
   /** 取到的值变换（默认原样）。 */
   transform?: (v: number) => number;
   /**
-   * 字段写入之后的**副作用钩子**。用于"该字段同时是文本渲染样式来源"的那些指令
-   * （`0x76`/`0x77`/`0x78`/`0x8b`/`0x1a4`/`0x261`）：字段值照写（保持既有口径），
-   * 再让消息窗把新样式发布给渲染层。
+   * 字段写入之后的**副作用钩子**（可选）。
+   *
+   * ★历史：`0x76`/`0x77`/`0x78`/`0x8b`/`0x1a4`/`0x261` 曾在这里 `emitAllWins` —— 那是错的：
+   * 这些是**字体/颜色全局字段**，引擎只在**排版入队时**消费它们，写入本身不重绘已排版的窗
+   * （详见 `ENGINE_FIELD_STORE` 上方那段注释）。现在没有指令用它，保留设施以备真正的
+   * "写入即需重发"的字段。
    */
   after?: (e: Engine) => void;
 }
 const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldStoreSpec>([
   // ---- 消息窗（メッセージウィンドウ）属性/几何 ----
-  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff), after: emitAllWins }], // 填充色（BGR→RGB）；★发布给文本样式
-  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff), after: emitAllWins }], // 描边色；★发布
-  [0x78, { map: { 1: 21667 }, after: emitAllWins }], // 描边档位；★发布
-  [0x8b, { map: { 1: 21669 }, after: emitAllWins }], // 第三色；★发布
-  [0x1a4, { map: { 1: 21670, 2: 21671 }, after: emitAllWins }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)；★发布
+  // ★这些是**全局字体/颜色/描边/竖排**字段（`Font+1360/+1364/+1368/+1380/+1372/+1384/+1388/+235108`）。
+  //   它们**不在写入时重绘任何已排版的窗** —— 引擎在**排版那一刻**就把字形连颜色画进该窗的离屏表面
+  //   （`sub_46BE30` → `sub_455ED0`），此后只改全局字段不会回溯；`0x75/0x76/0x77/…` 里那次
+  //   `sub_459F40` 只是**重建 GDI 字体对象/字宽**，不重画字形。
+  //   ⇒ 早前在这里挂 `after: emitAllWins`（把新样式立刻发布给所有窗）正是用户实测的
+  //   「设置页面角色名的颜色溢到下方 ADV 样例窗」的根因；样式改由**入队时钉住**
+  //   （`MsgSlot.fontStyle`，见 `FontStyleSnapshot`）。脚本要换样式重画时会重新 `i071`+`show-text`。
+  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 填充色（BGR→RGB）
+  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 描边色
+  [0x78, { map: { 1: 21667 } }], // 描边档位
+  [0x8b, { map: { 1: 21669 } }], // 第三色
+  [0x1a4, { map: { 1: 21670, 2: 21671 } }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)
   [0x252, { map: { 1: 92323 } }], // 消息系统配置
-  [0x261, { map: { 1: 80101 }, after: emitAllWins }], // 竖排标志（Font+235108）；★发布
+  [0x261, { map: { 1: 80101 } }], // 竖排标志（Font+235108）
   [0x2ee, { map: { 1: 80106 } }], // 消息派发
   [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
   [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由同族 0x25A 置 1=影片）

@@ -229,7 +229,7 @@ export class PixiBackend implements NativeBridge {
   /** `0x204` draw-string：把整串文本直绘进该槽的表面（见 `TextureCache.drawString`）。 */
   drawString(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void {
     this.#markDirty();
-    scDrawString(this.scene, slot, x, y, text); // 共享模型：报告/测试也能看到这串字
+    scDrawString(this.scene, slot, x, y, text, style.fill); // 共享模型：报告/测试也能看到这串字
     this.textures.drawString(slot, x, y, text, style);
   }
 

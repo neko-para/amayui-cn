@@ -38,15 +38,16 @@
       ],
       "gotchas": [
         "0x300 是**每窗**闸门（Engine[122466+win] / [122476+win]），不是全局开关",
-        "子脚本（CONFIG1/CONFIG2）退出后由本脚本重新 call-script ⇒ 它们**一定是重入**，帧局部池必须重建"
+        "子脚本（CONFIG1/CONFIG2）退出后由本脚本重新 call-script ⇒ 它们**一定是重入**，帧局部池必须重建",
+        "★样式有**作用域**：i075/i076/i077/… 只是「下一次排版用哪套样式」；引擎在**排版入队时**（0x6E → sub_46BE30）就把字形连颜色画进该窗的离屏表面，之后再改全局色**不回溯**。本脚本 150-183 行「设样式 → i071 9 → show-text」的顺序正是为此 —— 样例窗因此不会被 CONFIG2 逐行设的角色名颜色染上（详见引擎台账 text-style-scope-queue-time）"
       ],
       "gaps": [],
       "links": {
-        "capabilities": ["msgwin-window-reveal-gate-300", "text-reveal-pump-409400", "adv-perframe-dispatch", "script-frame-local-pool-lifecycle"],
-        "functions": ["0x426990"],
+        "capabilities": ["msgwin-window-reveal-gate-300", "text-reveal-pump-409400", "adv-perframe-dispatch", "script-frame-local-pool-lifecycle", "text-style-scope-queue-time"],
+        "functions": ["0x426990", "0x46BE30"],
         "docs": ["docs-new/03-engine/message-config-gates.md", "docs-new/03-engine/adv-text-rendering.md"]
       },
-      "guards": ["test/config1-chain.test.ts"],
+      "guards": ["test/config1-chain.test.ts", "test/text-style-snapshot.test.ts"],
       "status": "analyzed",
       "evidence": "src/CONFIG.txt:30-40 / 44-58 / 150-183 / 190-200；闸门语义见 analysis/functions.json 的 sub_426990 与台账 msgwin-window-reveal-gate-300",
       "notes": "未读：底部按钮（初始化本页/全部/返回）的具体分支与 0x142/0x2ce 一族的用法。"
@@ -92,7 +93,8 @@
       "gotchas": [
         "**切分类 = 退出 + 重入**（7dd=1 → exit → CONFIG.BIN 再 call-script）⇒ 帧局部池必须重建，否则 local5620 从上一页泄漏、拇指顶算到轨道外（实测：滚动条溢出轨道）",
         "i12f 的比较键是 B[A[j]]+C[A[j]]（用 A 里存的**索引**查 B/C），不是按位置比 A/C；且数组访存的 DEC/ENC 只能一层",
-        "0x204 直绘进槽 196 时必须先有 0x1f8 create-texture 建出的表面（引擎三个门：槽对象存在/可锁定/串非空）"
+        "0x204 直绘进槽 196 时必须先有 0x1f8 create-texture 建出的表面（引擎三个门：槽对象存在/可锁定/串非空）",
+        "★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效"
       ],
       "gaps": [
         "数值型行的**数字文本**走 0x205（GDI 数字绘制）——emulator 未实现（当前只画得出文本型的行值）"
@@ -102,12 +104,13 @@
           "drawitem-world-matrix-composition",
           "gdi-direct-text-to-slot",
           "script-frame-local-pool-lifecycle",
-          "msgwin-window-reveal-gate-300"
+          "msgwin-window-reveal-gate-300",
+          "text-style-scope-queue-time"
         ],
-        "functions": ["0x42F560", "0x422FD0", "0x423390", "0x4AC5F0", "0x4ACF20", "0x4ACEE0"],
-        "docs": ["docs-new/03-engine/opcode-table.md", "docs-new/03-engine/message-config-gates.md"]
+        "functions": ["0x42F560", "0x422FD0", "0x423390", "0x4AC5F0", "0x4ACF20", "0x4ACEE0", "0x46BE30"],
+        "docs": ["docs-new/03-engine/opcode-table.md", "docs-new/03-engine/message-config-gates.md", "docs-new/03-engine/adv-text-rendering.md"]
       },
-      "guards": ["test/config1-chain.test.ts", "test/draw-string.test.ts", "test/draw-item-scale.test.ts"],
+      "guards": ["test/config1-chain.test.ts", "test/draw-string.test.ts", "test/draw-item-scale.test.ts", "test/text-style-snapshot.test.ts"],
       "status": "analyzed",
       "evidence": "src/CONFIG1.txt 的区间见 layout；运行期断言见 test/config1-chain.test.ts 的 sort12f / configRows / scrollThumb / slotText 四项",
       "notes": "未读：左列重绘 label_000050f0 的细节、详情/说明区的绘制分支、底部按钮与 0x1b5 一族的配置回写路径。"
@@ -124,34 +127,40 @@
         { "anchor": "set-texture (local-ptr 1) (local-int 193f) (local-int 1940)", "lines": "1240-1250", "what": "角色位贴片绑定：运行期 = 槽 182..190 ← CV0004B..CV0012B.AGF（256×40，共 9 位）" },
         { "anchor": "draw-string c4 6 (local-int 7fe)", "lines": "1320-1330", "what": "行文本直绘进槽 196（x=6、行距 40）——运行期日志形如 drawString slot=196 (6,6) \"喚醒了女神的鍛梁師\"" },
         { "anchor": "draw-string c5 a a \"ＣＶ：\"", "lines": "1500-1512", "what": "槽 197（create-texture 948×90）上的 CV 说明区：三行文本" },
-        { "anchor": "add (local-int 193d) 1d4c0 898", "lines": "1460-1470", "what": "详情面板图元族 0x898（本页特有）" }
+        { "anchor": "add (local-int 193d) 1d4c0 898", "lines": "1460-1470", "what": "详情面板图元族 0x898（本页特有）" },
+        { "anchor": "label_00007178", "lines": "1652-1687", "what": "★**逐行名色的来源**：按开关位 a9dd 从 `adcd[14acda]`（14acda = 当前行下标/选中项）取色写 f807b/f807c，再 `i076/i077/i078/i1a4` 应用（= 全局样式字段只有一套 ⇒ 谁最后写谁值）" }
       ],
       "slots": [
         { "key": "local 193d", "what": "行下标（图元 handle = 0x1d4c0 + 家族偏移 + 193d）" },
         { "key": "local 193f / 1940", "what": "set-texture 的 imgid / 目标槽号" },
         { "key": "local 800 / be8", "what": "i12f 的索引数组 / 次键数组" },
-        { "key": "global 14b894", "what": "i12f 的主键数组（全局，非本脚本局部）" }
+        { "key": "global 14b894", "what": "i12f 的主键数组（全局，非本脚本局部）" },
+        { "key": "global 14acda", "what": "当前行下标（= i2ff/i2f5 的选中项；`label_00007178` 用它索引颜色表 adcd）" },
+        { "key": "global f807b / f807c / f8079 / f807a", "what": "→ i076 填充色 / i077 描边色 / i078 描边档位 / i1a4 描边偏移 的中转（按行设置）" },
+        { "key": "表 adcd[] / a9dd（位 1=描边色 位 2=填充色）", "what": "逐行颜色表 + 「该项是否启用自定义色」的开关位" }
       ],
       "invariants": [
-        "与 CONFIG1 共用 handle 基址 0x1d4c0 ⇒ 图元家族必须按**子区间**辨别（3e8/5dc/514/898 等）"
+        "与 CONFIG1 共用 handle 基址 0x1d4c0 ⇒ 图元家族必须按**子区间**辨别（3e8/5dc/514/898 等）",
+        "★每行的名色只影响**该行自己的直绘文本**（0x204 立即消费全局色），不得改变任何**已入队**的消息窗文本（作用域规则见 text-style-scope-queue-time）"
       ],
       "gotchas": [
         "i12f 的 n 在这里是 1000（全局大表），而 CONFIG1 是 15（当前分类的小表）——同一指令、两种规模",
-        "本页的 9 个角色位靠 set-texture 逐位绑定（槽 182..190），未绑定的位会退化成占位块"
+        "本页的 9 个角色位靠 set-texture 逐位绑定（槽 182..190），未绑定的位会退化成占位块",
+        "★角色名颜色溢出的根因（用户实测）：本页 1300/1349/1369/1511 行**逐行** `i076 (global-int f807b)`（值由 `label_00007178` 按 `adcd[14acda]` 算）——若渲染侧把「写全局色」当成「给所有窗换色」或每次重绘都实时读全局色，下方 ADV 样例窗（win 9，由 CONFIG/CONFIG2 在**入队时**画好）就会变成**最后一个可见角色名**的颜色 ⇒ 修复 = 入队时钉住样式（见 text-style-scope-queue-time / test/text-style-snapshot.test.ts）"
       ],
       "gaps": [
         "未逐段读（layout 列出的就是读过的范围）",
         "0x205 未实现；9 个 CV 名牌（CV000xB.AGF）在 emulator 里渲染成**黑色剪影**（疑似 AGF 调色板/通道解码问题）"
       ],
       "links": {
-        "capabilities": ["script-frame-local-pool-lifecycle", "gdi-direct-text-to-slot"],
-        "functions": ["0x42F560", "0x423390", "0x422CB0"],
-        "docs": ["docs-new/03-engine/opcode-table.md"]
+        "capabilities": ["script-frame-local-pool-lifecycle", "gdi-direct-text-to-slot", "text-style-scope-queue-time"],
+        "functions": ["0x42F560", "0x423390", "0x422CB0", "0x46BE30", "0x459F40"],
+        "docs": ["docs-new/03-engine/opcode-table.md", "docs-new/03-engine/adv-text-rendering.md"]
       },
-      "guards": [],
+      "guards": ["test/text-style-snapshot.test.ts"],
       "status": "partial",
-      "evidence": "src/CONFIG2.txt 的区间见 layout；运行期证据：`npm run shot`（默认就切到本页）的 .tmp/shot-2-tab4.png",
-      "notes": "尚无自动化测试覆盖本页；E4 目视由 `npm run shot` 覆盖。"
+      "evidence": "src/CONFIG2.txt 的区间见 layout；运行期证据：`npm run shot`（默认就切到本页）的 .tmp/shot-2-tab4.png；样式作用域的 E3 断言见 test/text-style-snapshot.test.ts 的 previewProbe（win 9 恒为入队色 #ffffff，全局色末值 #b690ff）",
+      "notes": "尚无自动化测试覆盖本页的**图元**布局；样式作用域已由 previewProbe 覆盖。E4 目视由 `npm run shot` 覆盖。"
     },
     {
       "id": "SC0330",

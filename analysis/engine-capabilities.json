@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 91,
-    "modeled-verified": 13,
+    "total": 92,
+    "modeled-verified": 14,
     "modeled-unverified": 7,
     "partial": 20,
     "absent": 26,
@@ -2564,6 +2564,38 @@
         "evidence": "E3",
         "guard": "test/config1-chain.test.ts",
         "note": "loadScriptIntoFrame 现在调用 frame.locals.clear()（六个局部池全清）+ strTable/arrayContainer 复位（见 handlers/control.ts 的长注释）；exit-script 的全量重置也一并清各帧局部池。E2 守卫 test/call-frame.test.ts 另锁两半：载入即重建 / 已预装帧被 call-frame 反复调用时局部量保留（引擎 sub_41C900 不重建池）。E3 是用户现场：滚到底→切分类→再切回，四步都满足 0≤start≤maxStart 且拇指落在轨道内。"
+      }
+    },
+    {
+      "id": "text-style-scope-queue-time",
+      "subsystem": "消息窗",
+      "name": "文本样式的**消费时机与作用域**：排版入队时把字体/颜色烘进该窗离屏表面，此后改全局样式不回溯",
+      "trigger": "任何「文本入队」指令（0x6E show-text / 0x196 display-furigana / 0x7D）触发 sub_46BE30 排版时消费当时的全局样式（Font+1360/+1364/+1368/+1372/+1384/+1388、+1232 一族字号/字重、+235108 竖排）；全局样式指令（0x75/0x76/0x77/0x78/0x8B/0x197/0x1A4/0x1A5/0x2BD/0x2BE/0x2FE/0x261）只写字段",
+      "engine": {
+        "fns": [
+          "sub_46BE30",
+          "sub_455ED0",
+          "sub_459F40"
+        ],
+        "raw": "83363-83997"
+      },
+      "reads": [
+        "Font+1360",
+        "Font+1364",
+        "Font+1372",
+        "Font+1384",
+        "Font+1388",
+        "Font+201684",
+        "Font+235108",
+        "fontVWindow+208"
+      ],
+      "whySilent": "全局样式只有**一套**字段（Font 对象）⇒ 谁最后写谁值。渲染侧若在**每次重绘时实时读**这套字段（而不是在入队时钉住），先前排好的窗会被后来者污染：不报错、不崩，只是颜色变成「最后一个写字段的人」的颜色（用户实测：角色设置页逐行 i076 <该行名色> 画角色名后，设置界面下方的 ADV 样例窗变成**最后一个可见角色名**的颜色）。反向的错法同样静默：把「写全局样式」当成「给所有已排版的窗换色」立刻重绘，画面一样错。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/text-style-snapshot.test.ts",
+        "note": "模型：入队时把字体/颜色钉进 MsgSlot.fontStyle（FontStyleSnapshot）—— styleOfWin 对**几何**读实时窗字段、对字体/颜色/描边/竖排读快照；全局样式指令不再 emitAllWins（旧行为 = 缺陷根因）。E3 活证据：test/config1-chain.test.ts 的 previewProbe —— 切到角色设定页后 win 9 的颜色恒为入队色 #ffffff，而全局色已走过 #67bf4d → #b690ff（最后一行直绘色），两者不等。★与 text-font-rebuild-cascade 的分工：那条讲「0x75 一族的收尾 sub_459F40 重建 GDI 字体对象/字宽」，本条讲「重建 ≠ 重绘已排版的窗」。★未建模：同一页内「文本 → 改样式 → 再文本」在引擎里是每段各自用当时的样式（混色），本模型按「最后一次入队」统一；全库 87324 处入队里该形态出现 0 次。"
       }
     }
   ]

@@ -37,6 +37,7 @@
 
 - 0x300 是**每窗**闸门（Engine[122466+win] / [122476+win]），不是全局开关
 - 子脚本（CONFIG1/CONFIG2）退出后由本脚本重新 call-script ⇒ 它们**一定是重入**，帧局部池必须重建
+- ★样式有**作用域**：i075/i076/i077/… 只是「下一次排版用哪套样式」；引擎在**排版入队时**（0x6E → sub_46BE30）就把字形连颜色画进该窗的离屏表面，之后再改全局色**不回溯**。本脚本 150-183 行「设样式 → i071 9 → show-text」的顺序正是为此 —— 样例窗因此不会被 CONFIG2 逐行设的角色名颜色染上（详见引擎台账 text-style-scope-queue-time）
 
 ## 相关
 
@@ -44,10 +45,13 @@
 - 引擎常态能力：`text-reveal-pump-409400`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`adv-perframe-dispatch`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x426990`（见 `analysis/functions.json`）
+- 函数结论：`0x46BE30`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/message-config-gates.md`
 - 主题文档：`docs-new/03-engine/adv-text-rendering.md`
 - 守卫测试：`app/amayui-emulator/test/config1-chain.test.ts`
+- 守卫测试：`app/amayui-emulator/test/text-style-snapshot.test.ts`
 
 ## 证据与备注
 

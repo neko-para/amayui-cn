@@ -149,8 +149,8 @@ export class HeadlessScene implements NativeBridge {
   }
 
   /** `0x204` draw-string：把整串文本记进该槽（无光栅化 —— headless 不做像素）。 */
-  drawString(slot: number, x: number, y: number, text: string, _style: DrawStringStyle): void {
-    scDrawString(this.scene, slot, x, y, text);
+  drawString(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void {
+    scDrawString(this.scene, slot, x, y, text, style.fill);
   }
 
   getTextureSize(slot: number): { w: number; h: number } {

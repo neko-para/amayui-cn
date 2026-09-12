@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 13 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 14 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 20 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **91** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **92** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -26,7 +26,7 @@
 | Live2D | 2 | 2 |
 | 声音 | 3 | 3 |
 | 帧循环 | 13 | 8 |
-| 消息窗 | 21 | 15 |
+| 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
 | 资源 | 8 | 2 |
 | 转场 | 4 | 4 |
@@ -127,6 +127,7 @@
 | `drawitem-world-matrix-composition` | 渲染 | DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门 | ✅ 已核验 | E2 · `test/draw-item-scale.test.ts` |
 | `gdi-direct-text-to-slot` | 消息窗 | GDI 整串直绘到纹理槽（0x204 draw-string → sub_456710） | ✅ 已核验 | E2 · `test/draw-string.test.ts` |
 | `script-frame-local-pool-lifecycle` | 帧循环 | 脚本帧局部池的生命周期：每次载入重建（`sub_40ED40` 建池 + local_int 填 enc_zero） | ✅ 已核验 | E3 · `test/config1-chain.test.ts` |
+| `text-style-scope-queue-time` | 消息窗 | 文本样式的**消费时机与作用域**：排版入队时把字体/颜色烘进该窗离屏表面，此后改全局样式不回溯 | ✅ 已核验 | E3 · `test/text-style-snapshot.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
