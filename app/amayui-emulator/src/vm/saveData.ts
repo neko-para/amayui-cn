@@ -112,6 +112,10 @@ function readCString(bytes: Uint8Array, at: number): { text: string; next: numbe
  * u32 strCount ; strCount × { key\0 value\0 }           ← str→str 表（save-string / load-string）
  * u32 0                                                  ← 额外块终止符（引擎 3.10+ 才有内容）
  * ```
+ *
+ * ⚠与引擎的**唯一**结构差异：本工程格式**不写** `strCount` 之后的那个 `trailerDwords`
+ * （= 记录区字节数/4 + 1，引擎用它在读侧定位尾部块）。少这 4 字节不丢信息、也不影响引擎语义，
+ * 但读侧必须用 `parseTables(..., engineLayout: false)` 走本工程布局——见 `parsePayload`。
  */
 function buildPayload(t: SaveDataTables): Uint8Array {
   const ints = [...t.ints.entries()];
@@ -150,6 +154,7 @@ function buildPayload(t: SaveDataTables): Uint8Array {
   return out;
 }
 
+/** 解析**本工程格式**的明文主体（`buildPayload` 写的布局：无 `trailerDwords`，见其文档）。 */
 function parsePayload(bytes: Uint8Array): SaveDataTables | { error: string } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let at = 0;
@@ -340,15 +345,25 @@ function engineKey(bytes: Uint8Array, at: number): string {
 }
 
 /**
- * 解析序列化主体（引擎 `sub_438940` 的结构，与我们的 `buildPayload` 同构）：
+ * 解析序列化主体（引擎 `sub_438940` 的结构；与我们的 `buildPayload` 只差 `trailerDwords` 那 4 字节）：
  * ```text
  * u32 intCount ; intCount × u32            ← 存档槽用的"int 块"（引擎 ≥2.10 逐元素模幂混淆 ⇒ 本模块跳过）
  * u32 recCount ; recCount × { key[12]; u32 }   ← ★str→int 表（配置值就在这里）
- * u32 strCount ; strCount × { key\0 value\0 }  ← str→str 表（字体名等）
+ * u32 strCount
+ * u32 trailerDwords                        ← ★引擎专有：= 记录区字节数/4 + 1（`sub_438320` 写 `v16[1] = v46 + 1`）
+ * strCount × { key\0 value\0 }             ← str→str 表（字体名等）
+ * 尾部块（`trailerDwords` 个 dword；3.10+ 才有内容，低版本仅首个 dword = 0）
  * ```
  * 字符串值：引擎按 **SJIS** 写、本工程按 UTF-8 写 ⇒ 由 `shiftJis` 开关选择解码。
+ *
+ * ★`trailerDwords` 这 4 字节**必须跳过**：引擎读侧 `sub_438940` raw 45564-45566 是
+ * `v23 = *v20; v34 = v20[1]; v24 = (char *)(v20 + 2)` —— 记录区从 strCount **之后 8 字节**开始。
+ * 少跳这 4 字节不会报错，只会把第 1 条记录读成乱码键、并**静默丢掉最后一条记录**
+ * （天結真存档里最后一条恰好是字体键 `\x05…bbf`，见 `docs-new/03-engine/save-data.md` §3）。
+ * 因此这里顺带用 `trailerDwords` 做**结构自校验**：读满 `strCount` 条之后，记录区字节数必须落在
+ * `4 × (trailerDwords - 1)` 之内（引擎按 dword 对齐，尾部最多补 3 字节零）——对不上就如实报错。
  */
-function parseTables(data: Uint8Array, shiftJis: boolean): SaveDataTables | { error: string } {
+function parseTables(data: Uint8Array, shiftJis: boolean, engineLayout: boolean): SaveDataTables | { error: string } {
   const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
   let at = 0;
   const need = (n: number): boolean => at + n <= data.length;
@@ -368,6 +383,13 @@ function parseTables(data: Uint8Array, shiftJis: boolean): SaveDataTables | { er
   if (!need(4)) return { error: '缺字符串表计数' };
   const strCount = dv.getUint32(at, true);
   at += 4;
+  let trailerDwords = 0;
+  if (engineLayout) {
+    if (!need(4)) return { error: '缺字符串表的尾部块长度' };
+    trailerDwords = dv.getUint32(at, true);
+    at += 4;
+  }
+  const recordsAt = at;
   const dec = shiftJis ? new TextDecoder('shift_jis') : new TextDecoder();
   const readC = (o: number): { s: string; next: number } => {
     let e = o;
@@ -382,6 +404,14 @@ function parseTables(data: Uint8Array, shiftJis: boolean): SaveDataTables | { er
     const v = readC(k.next);
     strings.set(k.s, v.s);
     at = v.next;
+  }
+  if (engineLayout && strCount > 0) {
+    // 引擎把记录区按 dword 对齐（`v46 = SizeInBytes/4`）⇒ 实际记录字节数只允许比声明区短 0..3 字节（尾部补零）
+    const declared = 4 * (trailerDwords - 1);
+    const actual = at - recordsAt;
+    if (actual > declared || declared - actual > 3) {
+      return { error: `字符串表与尾部块长度不符（记录区 ${actual} 字节，尾部块声明 ${declared} 字节）` };
+    }
   }
   return { ints, strings };
 }
@@ -428,7 +458,7 @@ export function decodeSaveData(bytes: Uint8Array): SaveDataParseResult {
 
   const ex = extractEnginePayload(bytes, header);
   if ('error' in ex) return { ok: false, reason: ex.error, header };
-  const tables = parseTables(ex.data, true);
+  const tables = parseTables(ex.data, true, true);
   if ('error' in tables) return { ok: false, reason: `引擎 payload 解析失败：${tables.error}`, header };
   return { ok: true, data: { ...header, tables } };
 }

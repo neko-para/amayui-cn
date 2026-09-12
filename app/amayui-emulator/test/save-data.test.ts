@@ -161,7 +161,10 @@ test('损坏检测：改动 payload 一个字节 ⇒ 解码如实失败（不产
 // ---------------------------------------------------------------------------
 
 /** 按引擎 `sub_438320` 的结构造 payload 主体（int 块留空）。 */
-function engineBody(t: { ints: Map<string, number>; strings: Map<string, string> }): Uint8Array {
+function engineBody(
+  t: { ints: Map<string, number>; strings: Map<string, string> },
+  opts?: { legacyNoTrailer?: boolean },
+): Uint8Array {
   const parts: Uint8Array[] = [];
   const u32 = (v: number): Uint8Array => {
     const b = new Uint8Array(4);
@@ -177,11 +180,27 @@ function engineBody(t: { ints: Map<string, number>; strings: Map<string, string>
     parts.push(rec);
   }
   parts.push(u32(t.strings.size));
+  // ★引擎在 strCount 之后还写一个 `trailerDwords = 记录区字节数/4 + 1`（`sub_438320` raw 45293-45295），
+  // 读侧 `sub_438940` 用 `v24 = (char *)(v20 + 2)` 跳过它 ⇒ 记录区从 strCount 之后 **8** 字节起。
   const enc = new TextEncoder();
+  const recParts: Uint8Array[] = [];
+  let recBytes = 0;
   for (const [k, v] of t.strings) {
-    parts.push(enc.encode(k), new Uint8Array([0]), enc.encode(v), new Uint8Array([0]));
+    for (const p of [enc.encode(k), new Uint8Array([0]), enc.encode(v), new Uint8Array([0])]) {
+      recParts.push(p);
+      recBytes += p.length;
+    }
   }
-  parts.push(u32(0));
+  const recPadded = (recBytes + 3) & ~3; // 引擎记录区按 dword 对齐（`v46 = SizeInBytes/4`）
+  const rec = new Uint8Array(recPadded);
+  let recAt = 0;
+  for (const p of recParts) {
+    rec.set(p, recAt);
+    recAt += p.length;
+  }
+  if (!opts?.legacyNoTrailer) parts.push(u32(recPadded / 4 + 1));
+  parts.push(rec);
+  parts.push(u32(0)); // 尾部块（本测试只放终止符 dword）
   const total = parts.reduce((n, p) => n + p.length, 0);
   // 引擎的 payload 是 **dword 粒度**（`sub_438320` 按 dword 计数、Crypt 也按 dword 变换）⇒ 补齐到 4 的倍数
   const padded = (total + 3) & ~3;
@@ -195,8 +214,11 @@ function engineBody(t: { ints: Map<string, number>; strings: Map<string, string>
 }
 
 /** 按引擎 `sub_437480` 造一个 `format = 1` 的存档（Crypt 加密、无压缩、key 写在头里）。 */
-function makeEngineSave(t: { ints: Map<string, number>; strings: Map<string, string> }): Uint8Array {
-  const body = engineBody(t);
+function makeEngineSave(
+  t: { ints: Map<string, number>; strings: Map<string, string> },
+  opts?: { legacyNoTrailer?: boolean },
+): Uint8Array {
+  const body = engineBody(t, opts);
   const crc1 = crc32MsbFirst(body);
   const crc2 = crc32(body);
   const section = new Uint8Array(8 + body.length);
@@ -247,6 +269,33 @@ test('★引擎格式（format = 1）也能读：Crypt 解密 → 表结构（�
   assert.equal(r.data.format, 1);
   assert.equal(r.data.tables.ints.get('\x030000a9ce'), 2);
   assert.equal(r.data.tables.strings.get('\x0500000bbb'), 'Meiryo-Test');
+});
+
+test('★引擎格式：字符串表**每一条**记录都要读到（末日记录回归 —— strCount 后 8 字节才是记录区）', () => {
+  // 回归背景：引擎 `sub_438940` 读 `strCount` 后还有 4 字节 `trailerDwords`
+  //（记录区字节数/4 + 1，`sub_438320` raw 45294）。早先少跳这 4 字节 ⇒ 第 1 条读成乱码键、
+  // **最后一条被静默丢掉**；天結真存档里最后一条正是字体键 `\x05…bbf`（CONFIG 的第 3 个字体槽）。
+  const fonts = new Map([
+    ['\x0500000bbb', 'Amayui CN'],
+    ['\x0500000bbc', 'Amayui CN'],
+    ['\x0500000bbd', 'Amayui CN'],
+    ['\x0500000bbe', 'Amayui CN'],
+    ['\x0500000bbf', 'Amayui CN'], // ← 最后一条：旧实现丢的就是它
+  ]);
+  const r = decodeSaveData(makeEngineSave({ ints: sampleTables().ints, strings: fonts }));
+  assert.equal(r.ok, true, r.ok ? '' : r.reason);
+  if (!r.ok) return;
+  assert.deepEqual([...r.data.tables.strings.entries()], [...fonts.entries()], '条目与顺序都必须一字不差');
+  assert.equal(r.data.tables.strings.get('\x0500000bbf'), 'Amayui CN', '★最后一条记录不能丢');
+  assert.equal(r.data.tables.strings.has('80:2'), false, '不该再出现把尾部块长度读成键的乱码记录');
+});
+
+test('★引擎格式：记录区与尾部块声明不符 ⇒ 如实失败（宁可报错也不静默丢键）', () => {
+  // 旧实现读的布局（少 4 字节）喂给修正后的解析器：必须报结构不符，而不是悄悄少一条或读出错键。
+  const bytes = makeEngineSave(sampleTables(), { legacyNoTrailer: true });
+  const r = decodeSaveData(bytes);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.match(r.reason, /字符串表与尾部块长度不符/);
 });
 
 test('unlzss：与 ALF 工具同算法（用压缩过的构造数据往返验证）', () => {
@@ -453,4 +502,16 @@ test('★E4：真游戏 SAVE.DAT（引擎 format=3，Crypt + LZSS）能解出配
     );
   }
   assert.ok(r.data.tables.ints.size > 100, `真实存档的记录数应远多于样例（实际 ${r.data.tables.ints.size}）`);
+  // 字符串表：`INITCONFIG0` 会 save-string 五个字体槽（`\x05…bbb`..`\x05…bbf`，CONFIG1 的 1..5 行）。
+  // 若存档里有其中任何一个，五个就必须都在 —— 旧实现少跳 strCount 之后的 4 字节（尾部块长度），
+  // 会把第 1 条读成乱码键并**静默丢掉最后一条**，而真存档里最后一条恰是 `bbf`（CONFIG 第 3 行字体）。
+  const fontKeys = ['bbb', 'bbc', 'bbd', 'bbe', 'bbf'].map((h) => `\x0500000${h}`);
+  if (fontKeys.some((k) => r.data.tables.strings.has(k))) {
+    for (const k of fontKeys) {
+      assert.ok(
+        r.data.tables.strings.has(k),
+        `字体键 ${JSON.stringify(k)} 应在存档里（字符串表 ${r.data.tables.strings.size} 条）`,
+      );
+    }
+  }
 });

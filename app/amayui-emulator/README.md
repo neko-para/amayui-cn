@@ -126,10 +126,13 @@ emulator 已把整条链路接通，**并且能读引擎格式的真存档**（`
 | 启动装载（脚本之前） | `renderer/app/configBoot.ts` 的 `loadSaveData()` / `run.ts` 的同名段 |
 | 写盘路径 | Electron IPC `read/write-save-data`；Node `NodeFileSource.saveDataPath` |
 | **不覆盖真存档** | 目标是引擎格式时改写 `<SAVE.DAT>.amayui`，读取优先它 |
+| 载荷表结构 | `saveData.parseTables(…, engineLayout)`：引擎的字符串记录区从 `strCount` 之后 **8** 字节起（中间 4 字节 = `trailerDwords` = 记录区字节数/4 + 1）；少跳 4 字节不报错，只会**静默丢掉最后一条记录**（真存档里恰是字体键 `bbf`），见 `docs-new/03-engine/save-data.md` §3 |
 
 - 默认存档目录 `app/amayui-emulator/SAVE/`（随工程）；`AMAYUI_SAVE_DIR` 可指向真游戏存档目录
   （`%LOCALAPPDATA%\Eushully\<game>\SAVE`）以**继承玩家的真实设置**（那次启动会走 LOADCONFIG 分支，
   日志 `[save] … ⇒ 脚本将走 LOADCONFIG 分支` 可自证）。
+- ⚠**换了存档解码器/版本之后**，旧的 `<SAVE.DAT>.amayui` 仍会（因为读取优先）把关前那份错的设置喂回来；
+  怀疑设置不对时把 `.amayui` 改名/删掉，让它重新从引擎存档继承一次。
 - 守卫：`test/save-data.test.ts`（两种格式往返 + Crypt/LZSS/CRC 单元 + **E3 真语料两条分支** + **E4 真存档解码**）。
   完整格式与实证见 `docs-new/03-engine/save-data.md`；**看某个存档里到底存了什么**：
   `npm run save:dump`（默认看仓库内 `SAVE/SAVE.DAT`，也可 `npm run save:dump -- <文件>` 或

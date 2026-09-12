@@ -4948,22 +4948,22 @@
     "raw_name": "sub_438320",
     "semantic_name": "save_serialize_tables_438320",
     "status": "ANALYZED",
-    "purpose": "把 SaveData 的表序列化成载荷：[count][int 块] + [count][12B 键 + u32 值] + [count][键\\0值\\0] + 额外块",
+    "purpose": "把 SaveData 的表序列化成载荷：[intCount][int 块] + [recCount][12B 键 + u32 值] + [strCount] + [trailerDwords = 字符串记录区字节数/4 + 1] + [strCount × 键\\0值\\0] + 尾部块（3.10+ 才有内容；低版本仅首个 dword = 0）",
     "sub_behaviors": ["写 int 块计数与内容", "写 str→int 记录（16 字节/条）", "写 str→str 记录（变长键值对）", "版本≥3.10 追加 a9/a10/a11 三块", "末尾 0 终止"],
     "fields_used": ["Data+262/263/267/271（str→int）", "Data+282/283/287/291（str→str）"],
     "evidence": "raw 45178-45354",
-    "notes": "emulator：src/vm/saveData.ts 的 buildPayload 与之同构（int 块留空）。"
+    "notes": "★strCount 之后那 4 字节 trailerDwords（raw 45293-45295 的 v16[1] = v46 + 1）不是记录、是给读侧定位尾部块用的偏移；漏掉它会静默丢掉最后一条字符串记录。emulator：src/vm/saveData.ts 的 buildPayload 同形但**不写**这 4 字节（自有格式用 parsePayload），读引擎存档用 parseTables(…, engineLayout=true)。"
   },
   {
     "addr": "0x438940",
     "raw_name": "sub_438940",
     "semantic_name": "save_deserialize_tables_438940",
     "status": "ANALYZED",
-    "purpose": "解析载荷（sub_438320 的逆）：读 int 块、16 字节记录表、字符串记录表，逐条写回引擎",
+    "purpose": "解析载荷（sub_438320 的逆）：读 int 块、16 字节记录表，再读 strCount 与紧随其后的 trailerDwords（记录区字节数/4 + 1），字符串记录区从 strCount 之后 **8** 字节起（raw 45564-45566），逐条写回引擎",
     "sub_behaviors": ["sub_438120 读头校验", "sub_437980 解密/解压", "[count][int 块] → *a7/*a8", "[count][16B 记录] → sub_434D00", "[count][字符串对] → sub_434E00"],
     "fields_used": ["Data+1044（str→int 哈希表）", "Data+1124（str→str 哈希表）"],
     "evidence": "raw 45474-45593",
-    "notes": "emulator：saveData.parseTables（同结构，int 块按计数跳过）。"
+    "notes": "★少跳 trailerDwords 不报错：第 1 条会被读成乱码键、**最后一条静默丢失**（天結真存档里最后一条恰是字体键 \\x05…bbf ⇒ CONFIG 第 3 行回退默认字体）。emulator 现在按引擎布局读并校验记录区长度（src/vm/saveData.ts 的 parseTables）。"
   },
   {
     "addr": "0x437480",

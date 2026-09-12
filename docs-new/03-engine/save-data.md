@@ -88,10 +88,19 @@ CHECKCONFIG      i2de 字体名→下标（装不上 ⇒ 回退默认并重新 s
 ```text
 u32 intCount ; intCount × u32                 ← 存档槽用的 int 块（format≥2.10 逐元素模幂混淆，见 sub_499650）
 u32 recCount ; recCount × { key[12] ; u32 }   ← ★str→int 表（save-int 的值都在这里）
-u32 strCount ; strCount × { key\0 value\0 }   ← str→str 表（save-string 的值）
-（format≥3.10 还有 a9/a10/a11 三个追加块） ; u32 0 终止
+u32 strCount                                  ← str→str 表的记录条数
+u32 trailerDwords                             ← ★= 字符串记录区字节数/4 + 1（`v16[1] = v46 + 1`，raw 45293-45295）
+strCount × { key\0 value\0 }                  ← str→str 表（save-string 的值）
+trailerDwords × u32                           ← 尾部块（3.10+ 放 a9/a10/a11；低版本仅首个 dword = 0 终止）
 ```
 
+- ⚠**字符串记录区从 `strCount` 之后 8 字节起**，不是 4 字节：读侧 `sub_438940` raw 45564-45566 是
+  `v23 = *v20; v34 = v20[1]; v24 = (char *)(v20 + 2)`，`v34` 就是那个 `trailerDwords`，
+  记录区按 dword 对齐（`4×(v34-1)` 字节，尾部补零）。
+  **少跳这 4 字节不会报错**：第 1 条会被读成乱码键，并且**静默丢掉最后一条记录**——
+  天結真存档里最后一条恰好是字体键 `\x05…bbf`（CONFIG 第 3 行字体），于是表现为
+  「五个字体项里第三个回退到默认字体」。emulator 侧 `src/vm/saveData.ts` 的 `parseTables(…, engineLayout)`
+  按引擎布局读，并用 `记录区字节数 ∈ [声明区-3, 声明区]` 做**结构自校验**（宁可如实报错，也不静默丢键）。
 - 写盘触发：**关窗**（`WM_CLOSE`，除非 `set:NoSaveDat`；raw 141189）与**存档槽保存之后**
   （`sub_40CD10` 内 raw 17687 → `sub_40AAE0`）；装载：启动（raw 142107）。
   写的都是 `$$SAVE.DAT` → 改名，旧文件留 `SAVE.BAK`。
@@ -110,13 +119,16 @@ u32 strCount ; strCount × { key\0 value\0 }   ← str→str 表（save-string �
 SAVE.DAT (160,640 B) format=3
   头：magic=S4SD engineVersion=460B title=(SJIS 游戏名) format=3 aux=20
   块：N=40082 dwords  key1=0x49730ECC  key2=0x48A9
-  Crypt 解密 → LZSS 解压 → [count=21111][int块][count=4266][16B 记录][count=86][字符串记录]
+  Crypt 解密 → LZSS 解压 → [intCount=21111][int 块][recCount=5409][16B 记录]
+                             [strCount=245][trailerDwords=1104][245 条字符串记录][尾部块]
   ★配置键（对照 src/INITCONFIG0..5 的默认值）：
     global 000005 = 1        ← 「已初始化」标志
     global 00a9ce = 0  a9cd = 1  a9d5 = 0  a9d0 = 0  a9cb = 3  a9cc = 31
     global 00a9de = 1  a9dd = 2  a9db = 0  a9df = 192  a9e0 = 160  a9e1 = 128  a9e2 = 0
     global 00a9dc = 1  a9d4 = 0  a9d9 = 0  a9da = 0  a9e3 = 0  a9d2 = 0
     …以及玩家改过的项：b1b6 = 2（默认 0）、a9d6 = 1、a9e4 = 0、139b = 0
+  ★字体键：字符串表最后五条就是 CONFIG 的五个字体槽
+    \x0500000bbb / bbc / bbd / bbe / bbf 全是「Amayui CN」（bbf 是**最后一条** ⇒ 上面那个 4 字节陷阱的现场）
 ```
 
 - 字符串表里能看到脚本 `save-string` 过的文本（字体名、技能/角色文本缓存等）。
@@ -132,6 +144,7 @@ SAVE.DAT (160,640 B) format=3
 | `save-int`/`save-string` → 表 → 落盘（`Engine.onSaveDataChanged` → `FileSource.writeSaveData`） | ✅ |
 | 启动装载 → `load-int`/`load-string`（⇒ 走 LOADCONFIG 分支，设置跨会话保留） | ✅ E3 真语料断言 |
 | 读**引擎格式**（format 1..3：Crypt + LZSS + 表） | ✅ 真存档 E4 通过 |
+| 引擎载荷的 `trailerDwords`（字符串记录区起点 = `strCount` + 8） | ✅ 已实现 + 结构自校验（`parseTables(…, engineLayout)`），回归见 `test/save-data.test.ts` |
 | 覆盖真存档的保护 | ✅ 目标是引擎存档时改写 `<SAVE.DAT>.amayui`，读取优先 `.amayui` |
 | `SYS4REG.INI` 回写的防丢键棘轮 | ✅ 新文本键数少于磁盘时拒绝写 |
 | int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（配置值不在该块） |
@@ -142,6 +155,10 @@ SAVE.DAT (160,640 B) format=3
 （`%LOCALAPPDATA%\Eushully\<game>\SAVE`）—— emulator 会读那份 `SAVE.DAT`（引擎格式）并走
 LOADCONFIG 分支；之后它自己的改动写到同目录的 `SAVE.DAT.amayui`，**不碰**原文件。
 （默认目录是随工程的 `app/amayui-emulator/SAVE/`，不污染真游戏。）
+
+⚠**`.amayui` 会盖住引擎存档**（读取优先它）。所以解码器修好后，**上一次用错解码器跑出来的
+`.amayui` 仍会把错的设置喂回来**（`bbf = ＭＳ 明朝` 就是这么留下来的）：换解码器/换版本后若怀疑设置
+不对，把 `<SAVE.DAT>.amayui` 改名或删掉，让它重新从引擎存档继承一次。
 
 **看存档内容**：`npm run save:dump`（仓库内那份）· `npm run save:dump -- <文件>`（指定文件）·
 `AMAYUI_SAVE_DIR=<真游戏 SAVE 目录> npm run save:dump`（真存档：会列出 §5 的那批配置键）。
