@@ -126,13 +126,19 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
   //   理由见 `FontStyleSnapshot`：引擎排版时就把颜色画进离屏表面，之后再改全局色不回溯；
   //   拿实时全局色会让 CONFIG2 逐行设的角色名颜色溢到已排好的 ADV 样例窗上（用户实测）。
   const core = m.slot(win).fontStyle ?? globalFontSnapshot(e);
+  // ★文本块原点：引擎的排版例程先把 `buf[-20] = obj[28]`（= `0x79` 的文字起点）写进文本项缓冲头，
+  //   而 `0x7A`（`sub_45A910`）会**覆盖**这两个 dword；`sub_45A940` 贴字格/贴行时用的正是
+  //   `x = win+80 + buf[-20] + win+12`、`y = win+84 + buf[-16] + win+16`（raw 71352-71359、
+  //   写入端 raw 82684-82685 / 81545-81546）。SN0000 序章：`i079 8 8c 10`（140,16）之后
+  //   `i07a 8 8c 12c`（**140,300**）⇒ 真机文字块顶在 y≈300（实机截图对照）。
+  const o = m.object(win);
   return {
     x: g.x,
     y: g.y,
     w: g.w,
     h: g.h,
-    originX: g.originX,
-    originY: g.originY,
+    originX: o.pre48Set ? o.pre48a : g.originX,
+    originY: o.pre48Set ? o.pre48b : g.originY,
     wrapRight: g.wrapRight,
     wrapBottom: g.wrapBottom,
     // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）—— 同样按入队时刻钉住
@@ -361,10 +367,17 @@ const op_wait_for_input: OpHandler = (c) => {
     const total = laid.glyphCount;
     if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
     else {
-      // ★两条节拍：字格页用 `0x73` op10（一次一格）；普通消息页用「行数 × max(MessageSpeed, 一帧)」
-      //   的预算（引擎一步 = 一行 ⇒ 整段时长 = 行数 × 节拍）。见 MsgWindow.RevealState 注释。
+      // ★两条节拍：字格页用 `0x73` op10 作节拍、**一步一格**（`cells` 格 ⇒ 整段 = cells×op10，
+      //   SN0000：8×100ms=800ms）；普通消息页用 `字数 × max(MessageSpeed, 一帧)` 的预算
+      //   （引擎一步 = 一个字）。见 MsgWindow.RevealState 的 `intervalMs`/`stepGlyphs` 注释。
       const tick = m.gridTickMs(w);
-      m.beginReveal(w, total, e.nowMs, messageSpeedOf(e), tick !== undefined ? { intervalMs: tick } : {});
+      m.beginReveal(
+        w,
+        total,
+        e.nowMs,
+        messageSpeedOf(e),
+        tick !== undefined ? { intervalMs: tick, ...(grid ? { cells: grid.cells } : {}) } : {},
+      );
       m.charMode = total > 0;
       m.charCursor = 0;
       e.engineValues.set(107704, 0);
@@ -732,9 +745,12 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
  * `0x7A`（`sub_41F4E0` raw 28710-28721）：`sub_45A910(Font, op1, op2, op3)`。
  *
  * 引擎：`win = op1 ?: Font[307]`、`obj = Font[win+261]`，
- * `*(obj[48] - 20) = op2`、`*(obj[48] - 16) = op3` —— 把两个 dword 写到**对象第 48 个 dword 指针所指缓冲前面**。
- * 那是"文本项缓冲的写游标参数"（`obj[48]` 指向当前写位置）。emulator 不重放文本块缓冲，
- * 故按字段语义存成 `pre48a/pre48b`（值原样保留，供观测与将来接线）。
+ * `*(obj[48] - 20) = op2`、`*(obj[48] - 16) = op3` —— 写**文本项缓冲头**的两个 dword。
+ * 这两个 dword 就是**文本块原点**：`sub_45A940` 贴字格/贴行时用
+ * `x = win+80 + buf[-20] + win+12`、`y = win+84 + buf[-16] + win+16`（raw 71352-71359），
+ * 而排版例程在重排时把 `buf[-20]` 复位成 `obj[28]`（= `0x79` 的文字起点，raw 82684-82685）。
+ * ⇒ 语义 = 「**覆盖该窗的文字块原点**」，0x79 是默认值、0x7A 是每页的覆盖值。
+ * 语料：win 1 共 506 处（`i07a 1 <x> f`，y 与 0x79 一致）、win 8 共 12 处（序章每页一次）。
  */
 const op_msgwin_obj_pre48: OpHandler = (c) => {
   const e = c.e;
@@ -742,6 +758,7 @@ const op_msgwin_obj_pre48: OpHandler = (c) => {
   const o = e.msgwin.object(win);
   o.pre48a = readIntOperand(e, c.frame, c.instr, 2);
   o.pre48b = readIntOperand(e, c.frame, c.instr, 3);
+  o.pre48Set = true;
 };
 
 /**

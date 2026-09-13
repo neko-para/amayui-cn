@@ -37,6 +37,7 @@ import { ExitScript, ScriptReset } from '../vm/ops.js';
 import { dec } from '../vm/bits.js';
 import type { BinInstruction } from '../script/bin.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
+import { calcDiffuse, meshColor } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { applyConfigToEngine, parseIni } from '../engineConfig.js';
 import * as path from 'node:path';
@@ -109,8 +110,27 @@ export interface GameStartResult {
   scene: {
     drawItems: number;
     drawable: number;
-    msgWins: { win: number; text: string }[];
+    msgWins: { win: number; text: string; rect: { x: number; y: number; w: number; h: number }; vertical: boolean; mainSize: number }[];
     texSlots: number;
+    /**
+     * 场景里的 mesh（顶点色四边形）：引擎里这是"淡入淡出的黑幕/暗幕"，**全屏几何 + 真实颜色**。
+     * `color` = 逐顶点基础色 × CalcDiffuse 插值态色（`#AARRGGBB`）—— SN0000 序章是
+     * `alpha=0x80 黑`（背景压暗 50%），**不是**不透明黑（2026-09 修：旧实现恒画全屏不透明黑 ⇒ 整屏黑）。
+     */
+    meshes: {
+      handle: number;
+      color: string;
+      alpha: number;
+      rect: string;
+      verts: number;
+      flags: number;
+      /** 引擎 state0/state1（`0x322`/`0x323` 写的两端色）。★动画窗在 Node 侧无 present 驱动 ⇒
+       *   `color` 停在 state0，判定"目标色对不对"要看 `state1`（SN0000 的回归点就在这里）。 */
+      state0: string;
+      state1: string;
+      /** 逐顶点基础色（`0x320` 的 op5/op6 数组，DEC 解码后）。语料里应恒为 `#ffffffff`。 */
+      baseColors: string[];
+    }[];
   };
   /** 路径上命中且**未被实现**的 opcode（`stubUnknown: true` 时仍会采集，只是不抛）。 */
   unknown: UnknownOp[];
@@ -285,8 +305,31 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       msgWins: [...scene.scene.msgWins.entries()].map(([win, w]) => ({
         win,
         text: w.lines.map((l) => l.text).join('\n').trim(),
+        rect: { x: w.style.x, y: w.style.y, w: w.style.w, h: w.style.h },
+        vertical: w.style.vertical,
+        mainSize: w.style.main.size,
       })),
       texSlots: e.texSlots.size,
+      meshes: [...scene.scene.meshes.values()]
+        .sort((a, b) => a.handle - b.handle)
+        .map((m) => {
+          const c = meshColor(m, calcDiffuse(m, harness.clock));
+          const xs = m.verts.map((v) => v.x);
+          const ys = m.verts.map((v) => v.y);
+          return {
+            handle: m.handle,
+            color: `#${(c >>> 0).toString(16).padStart(8, '0')}`,
+            alpha: (c >>> 24) & 0xff,
+            rect: m.verts.length
+              ? `${Math.min(...xs)},${Math.min(...ys)}..${Math.max(...xs)},${Math.max(...ys)}`
+              : '无几何',
+            verts: m.verts.length,
+            flags: m.flags,
+            state0: `#${(m.state0 >>> 0).toString(16).padStart(8, '0')}`,
+            state1: `#${(m.state1 >>> 0).toString(16).padStart(8, '0')}`,
+            baseColors: m.baseColors.map((c) => `#${(c >>> 0).toString(16).padStart(8, '0')}`),
+          };
+        }),
     },
     unknown: [...unknown.values()].sort((a, b) => a.opcode - b.opcode),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),

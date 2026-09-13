@@ -51,12 +51,17 @@ export interface DrawItemConfig {
   tex: number;
 }
 
+/**
+ * `0x320` create-mesh 的一个顶点。
+ * 引擎 VB 记录 36 字节 = `x,y,z,w(=1),DWORD diffuse,u,v,attr,attr`；`x/y/z` 是**屏幕像素**
+ * （投影 `D3DXMatrixOrthoLH(显示宽, -显示高)`），`u/v` 是纹理坐标（语料里 = `(0,1,0,1)/(0,0,1,1)`）。
+ */
 export interface MeshVertexSpec {
   x: number;
   y: number;
+  z: number;
   u: number;
-  w: number;
-  diffuse: number;
+  v: number;
 }
 
 export interface MeshCreateSpec {
@@ -64,6 +69,8 @@ export interface MeshCreateSpec {
   layer: number;
   vcount: number;
   verts: MeshVertexSpec[];
+  /** 逐顶点基础色（ARGB；`0x320` 的 op5/op6 两个全局 int 数组 DEC 解码后合成）。 */
+  baseColors: number[];
 }
 
 /** `0x204` draw-string 的样式载荷（handler 从引擎全局样式字段组装；宿主只光栅化，见 `globalTextStyle`）。 */
@@ -226,10 +233,14 @@ export interface NativeBridge {
    */
   texturesIdle?(): Promise<void>;
   createMesh?(spec: MeshCreateSpec): void;
-  /** 0x322 set-vertex-color：置 state0（ARGB）。 */
-  setVertexColor?(handle: number, state0: number): void;
-  /** 0x323 set-vertex-color-alpha：置 delay/count/state1，置动画位。 */
-  setVertexColorAlpha?(handle: number, delay: number, count: number, state1: number): void;
+  /**
+   * `0x322` set-vertex-color：op2=引擎 `entry[9]`、op3=alpha、op4=rgb。
+   * ★alpha/rgb 允许**负值**（= 取当前 state0 的对应通道）且 alpha 会被夹到 255 —— 回退逻辑
+   * 必须在持有 state0 的宿主侧做（`scene/ops.ts` 的 `vertexColorArg`）。
+   */
+  setVertexColor?(handle: number, index: number, alpha: number, rgb: number): void;
+  /** `0x323` set-vertex-color-alpha：op2=delay、op3=count、op4=alpha、op5=rgb（同样允许负值）。 */
+  setVertexColorAlpha?(handle: number, delay: number, count: number, alpha: number, rgb: number): void;
   /** 0x203 set-draw-color-alpha：置 from 色（ARGB）。 */
   setDrawColorAlpha?(handle: number, from: number): void;
   /** 0x1F7 detach-texture（sub_422BC0）：删单/区间图元。op1=handle、op2=count；count≤1 删单，count>1 删 [handle,handle+count)。 */

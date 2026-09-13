@@ -5,9 +5,22 @@
  * 因此这里的字段顺序/排序/格式都是契约的一部分（改动会让回归 diff 变大）。
  */
 import type { Item, MeshObj } from '../drawItem.js';
-import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation } from '../drawItem.js';
+import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor } from '../drawItem.js';
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
+
+/**
+ * mesh 顶点几何的外接矩形（屏幕像素）。`null` = 没有几何（引擎 `sub_4AF1C0` 的 `flags & 1` 门不画）。
+ * 语料里所有 `0x320` 站点都是满屏四边形 ⇒ 矩形 = `(0,0,1280,720)`。
+ */
+function meshRect(m: MeshObj): { x: number; y: number; w: number; h: number } | null {
+  if (m.verts.length < 3) return null;
+  const xs = m.verts.map((v) => v.x);
+  const ys = m.verts.map((v) => v.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+}
 
 // ---------------------------------------------------------------------------
 // 快照（确定性、人可读；供场景执行报告与"快照回归"用）
@@ -40,10 +53,19 @@ export interface SnapshotMesh {
   layer: number;
   state0: string;
   state1: string;
-  /** 求值后的 diffuse 色（`#AARRGGBB`）。 */
+  /** 求值后的 diffuse 态色（`#AARRGGBB`）。 */
   diffuse: string;
+  /** 逐顶点基础色 × 态色后的**代表色**（实际画出来的颜色，`#AARRGGBB`）。 */
+  color: string;
   flags: number;
   pending: boolean;
+  /** 顶点几何（屏幕像素外接矩形；空 = 无几何 ⇒ 引擎不画）。 */
+  verts: number;
+  rect: { x: number; y: number; w: number; h: number } | null;
+  /** 逐顶点基础色（`0x320` 的 op5/op6 数组；诊断用）。 */
+  baseColors: string[];
+  /** `0x322` 的 op2（引擎 entry[9] = alpha 混合模式选择子，D3D 侧消费者未接）。 */
+  blend: number;
 }
 
 /** 一个消息窗的文本快照（「报告里能看见文字」正是本轮要解决的可见性问题）。 */
@@ -135,8 +157,13 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
       state0: hex8(m.state0),
       state1: hex8(m.state1),
       diffuse: hex8(calcDiffuse(m, clock)),
+      color: hex8(meshColor(m, calcDiffuse(m, clock))),
       flags: m.flags,
       pending: (m.flags & 2) !== 0,
+      verts: m.verts.length,
+      rect: meshRect(m),
+      baseColors: m.baseColors.map((c) => hex8(c)),
+      blend: m.blend,
     }));
   const drawable = drawItems.filter((d) => d.drawable);
   return {
@@ -209,7 +236,12 @@ export function snapshotToText(snap: SceneSnapshot): string {
     );
   }
   for (const m of snap.meshes) {
-    L.push(`mesh 0x${m.handle.toString(16)} layer=${m.layer} state0=${m.state0} state1=${m.state1} diffuse=${m.diffuse} flags=0x${m.flags.toString(16)}${m.pending ? ' P' : ''}`);
+    const r = m.rect ? `(${m.rect.x},${m.rect.y},${m.rect.w},${m.rect.h})` : '无几何';
+    L.push(
+      `mesh 0x${m.handle.toString(16)} layer=${m.layer} state0=${m.state0} state1=${m.state1} diffuse=${m.diffuse}` +
+        ` color=${m.color} v=${m.verts} rect=${r} base0=${m.baseColors[0] ?? '-'} blend=${m.blend}` +
+        ` flags=0x${m.flags.toString(16)}${m.pending ? ' P' : ''}`,
+    );
   }
   // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
   for (const w of snap.msgWins) {

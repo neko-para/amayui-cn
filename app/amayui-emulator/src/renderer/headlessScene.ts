@@ -186,8 +186,7 @@ export class HeadlessScene implements NativeBridge {
   }
 
   createMesh(spec: MeshCreateSpec): void {
-    scCreateMesh(this.scene, spec.handle, spec.layer);
-    if (spec.verts.length > 0) this.note('createMesh(顶点几何未建模，仅颜色窗)', `handle=0x${spec.handle.toString(16)} v=${spec.vcount}`);
+    scCreateMesh(this.scene, spec);
   }
 
   detachTexture(handle: number, count: number): void {
@@ -353,15 +352,19 @@ export class HeadlessScene implements NativeBridge {
     );
   }
 
-  setVertexColor(handle: number, state0: number): void {
-    this.outcome(scSetVertexColor(this.scene, handle, state0), 'setVertexColor', `handle=0x${handle.toString(16)}`);
+  setVertexColor(handle: number, index: number, alpha: number, rgb: number): void {
+    this.outcome(
+      scSetVertexColor(this.scene, handle, index, alpha, rgb),
+      'setVertexColor',
+      `handle=0x${handle.toString(16)} idx=${index} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)}`,
+    );
   }
 
-  setVertexColorAlpha(handle: number, delay: number, dur: number, state1: number): void {
+  setVertexColorAlpha(handle: number, delay: number, dur: number, alpha: number, rgb: number): void {
     this.outcome(
-      scSetVertexColorAlpha(this.scene, handle, delay, dur, state1),
+      scSetVertexColorAlpha(this.scene, handle, delay, dur, alpha, rgb),
       'setVertexColorAlpha',
-      `handle=0x${handle.toString(16)}`,
+      `handle=0x${handle.toString(16)} d=${delay} c=${dur} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)}`,
     );
   }
 

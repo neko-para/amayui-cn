@@ -119,11 +119,13 @@ export class StubNative implements NativeBridge {
   createMesh(spec: import('./native.js').MeshCreateSpec): void {
     this.log(`[native:stub] createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
   }
-  setVertexColor(handle: number, state0: number): void {
-    this.log(`[native:stub] setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}`);
+  setVertexColor(handle: number, index: number, alpha: number, rgb: number): void {
+    this.log(`[native:stub] setVertexColor h=0x${handle.toString(16)} idx=${index} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)}`);
   }
-  setVertexColorAlpha(handle: number, delay: number, count: number, state1: number): void {
-    this.log(`[native:stub] setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}`);
+  setVertexColorAlpha(handle: number, delay: number, count: number, alpha: number, rgb: number): void {
+    this.log(
+      `[native:stub] setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)}`,
+    );
   }
   setDrawColorAlpha(handle: number, from: number): void {
     this.log(`[native:stub] setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);

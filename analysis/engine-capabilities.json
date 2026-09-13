@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 108,
-    "modeled-verified": 26,
+    "modeled-verified": 27,
     "modeled-unverified": 7,
-    "partial": 25,
+    "partial": 24,
     "absent": 25,
     "n/a-known": 25,
-    "needsAttention": 57
+    "needsAttention": 56
   },
   "entries": [
     {
@@ -2865,7 +2865,7 @@
       "id": "mesh-vertex-quad-and-per-vertex-color",
       "subsystem": "3D",
       "name": "Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层",
-      "trigger": "脚本 `0x320 create-mesh <handle> <f…> <4/8> <vcount> <layer>` 建项，随后 `0x322 set-vertex-color <handle> <index> <α> <rgb>` / `0x323 set-vertex-color-alpha <handle> <delay> <count> <α> <rgb>` 按**顶点下标**设色，`0x1FB draw-texture <handle> <slot> …` 给网格绑纹理；`sub_4A2050`(CalcDiffuse raw 122287) 做 state0→state1 的浮点插值",
+      "trigger": "脚本 `0x320 create-mesh <handle> <x数组> <y数组> <z数组> <α数组> <rgb数组> <u数组> <v数组> <vcount> <layer>` 建项（op2..op8 是**数组基址** = 全局 float/int 槽号，第 i 个顶点取 slot+i：引擎 `sub_42BF60`/`sub_42AEA0` 返回地址 `base+4*payload`）。语料里所有站点都是同一个轴对齐满屏四边形：x=(0,1280,0,1280)、y=(0,0,720,720)（源码里的 `500`/`2d0` 是**十六进制**），基础色数组来自 INIT2 的 `copy-local-array (global-int f8c48/f8c4c)` = 逐顶点 0xFFFFFFFF。随后 `0x322 set-vertex-color <handle> <blend> <α> <rgb>`（α>255 夹 255；(α|rgb)<0 = 取当前 state0 的对应通道）/ `0x323 set-vertex-color-alpha <handle> <delay> <count> <α> <rgb>`；`sub_4A2050`(CalcDiffuse raw 122287) 逐通道 `态色×基础色/255`；绘制门 = entry[0] bit0（只有真正建出顶点缓冲的 mesh 才画）。",
       "engine": {
         "fns": [
           "sub_426BD0",
@@ -2875,16 +2875,18 @@
         "raw": "122287-122294"
       },
       "reads": [
-        "MeshEntry 顶点缓冲",
-        "MeshEntry+28+4*index 逐顶点色",
-        "Scene+50708 网格层级槽"
+        "MeshEntry[0]：bit0 = 几何已建（绘制门）、bit1 = 颜色动画窗",
+        "MeshEntry[5] vcount / [6] layer / [9] alpha 混合模式选择子 / [10] 窗起点 / [11] delay / [12] dur / [13] state0 / [14] state1",
+        "MeshEntry[2]/[3]/[4]：逐顶点基础色（op5=α 数组、op6=rgb 数组，DEC 后合成 `(α<<24)|(rgb&0xFFFFFF)`）",
+        "MeshEntry 顶点缓冲：36 字节/顶点 = x,y,z,w(=1),DWORD diffuse,u,v,attr,attr；x/y/z 取自 op2/op3/op4 的浮点数组（屏幕像素，投影 OrthoLH(显示宽,-显示高)）"
       ],
-      "whySilent": "emulator 把每个 mesh 近似成**全屏黑色叠加块**（`presenter.ts` 的 `ov.width=VIEW_W; ov.tint=0x000000; ov.alpha=diffuseA/255`），并且 `0x322` **丢掉了顶点下标**、`0x320` 用「默认满屏四边形」占位。于是只要某个 mesh（如菜单条 `0x19640`，引擎里是 `draw-texture 19640 11 0 0 43e 95 5d 22c` —— 底部一条 1086×149 的贴片）的 diffuse α 被动画推到 255，emulator 就画出一整屏不透明的黑 ⇒ **屏幕全黑但 VM 一切正常、日志空白**（2026-09 实测：`SN0000` 序章首文案到达后整屏黑，`.tmp/gs2-7-sn0000-first-text.png`；`present` 摘要 `meshes={8:a0 0:a255}`）",
+      "whySilent": "emulator 曾把**每个** mesh 近似成\"全屏黑色叠加块\"（presenter 的 `ov.width=VIEW_W; ov.tint=0x000000`）**且忽略 RGB**，同时 `0x322/0x323` 把负值参数当无符号位模式读，漏掉引擎的\"负值 = 用当前 state0\"回退。于是 SN0000 序章的 50% 暗幕被算成 0xFFFFFFFF（`set-vertex-color-alpha 19640 0 f8043 -1 -1` 的引擎语义 = 目标色取当前 0x80000000），⇒ 画出一整屏**不透明黑**：**VM 一切正常、日志空白、画面全黑**，背景与首文案一起消失（2026-09 实测 `.tmp/gsfix-7-sn0000-first-text.png`，摘要 `meshes={8:a0 0:a255}`）。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
-        "evidence": "E0",
-        "note": "顶点几何与逐顶点色**完全未建模**（`handlers/gfx-item.ts` 的 `op_mesh_create`/`op_set_vertex_color` 注释已声明）。修法：按 create-mesh 的操作数建真实四边形（顶点坐标 + UV），`0x322/0x323` 保留顶点下标并逐顶点插值，`0x1FB` 对 mesh handle 走纹理路径；完成后 `presenter.ts` 的「全屏黑覆盖层」分支应删除。**这是已知的最大观感缺口之一**（凡进含菜单 mesh 的场景都可能整屏黑）"
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/mesh-vertex-quad.test.ts",
+        "note": "已建模：① 几何（op2/op3/op4 浮点数组 + op7/op8 UV）；② 逐顶点基础色（op5/op6 两个全局 int 数组，DEC 解码后合成）；③ `0x322/0x323` 的 clamp + 负值回退（`scene/ops.ts` 的 `vertexColorArg`）；④ CalcDiffuse 逐通道乘（`drawitem/eval.ts` 的 `mulArgb`/`meshColor`）；⑤ presenter 用真实几何 + 真实颜色合成，轴对齐四边形走 `rect()`、非轴对齐走三角扇（Pixi v8 的 `poly()` 按给定顺序连点，条带序 4 点会自交成\"蝴蝶结\"⇒ 画面出现贯穿全屏的大 X）。残余近似（已登记）：① 逐顶点渐变色取三角形均值；② 逐顶点 base 色语料恒为 0xFFFFFFFF（INIT2），渐变幕布未实测；③ mesh 的 z 序仍统一叠在 draw-item 之上（引擎按 handle 三路归并，见 rendering.md §3.1）。"
       }
     },
     {

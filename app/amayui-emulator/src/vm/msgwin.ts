@@ -111,6 +111,18 @@ export interface RevealState {
    */
   intervalMs?: number;
   /**
+   * 字格路径下**一步覆盖的字形数** = `ceil(total / cells)`。
+   *
+   * ★2026-09 修（用户实测"SN0000 的逐字比设置界面慢了很多"）：引擎的字格路径
+   * （主循环 raw 20887-20894）每拍只做 `sub_45A940(Font, win, k, 0)` + `k = (k+1) % 模数`，
+   * 而 `sub_45A940` 的 `k` 是**字格下标**（raw 71392-71412：`(k % cols) * (cellW)` 算出该格矩形，
+   * 再为该格建一个 DrawItem / blit 一格）——**一步 = 一格**，`模数 = win+92 = op9 = cells`
+   * （由 `a3 == -1` 分支 `*a4 = v6[23]` 写入 `Engine[430820]`，见 raw 71381-71383）。
+   * 所以整段时长 = `cells × op10`（SN0000：8 × 100ms = 800ms），**不是**"字数 × 节拍"。
+   * 重写侧仍然逐字可见，故一步要把进度推进 `total / cells` 个字形，总时长才与引擎一致。
+   */
+  stepGlyphs?: number;
+  /**
    * 整段显现的**时间预算** ms（普通消息路径）：`字形数 × max(message:MessageSpeed, 一帧)`。
    *
    * 引擎的一步 = **一个字**（`sub_45BE20` 每次调用只推一个 24B 记录，见 `docs-new/03-engine/
@@ -329,9 +341,16 @@ export interface MsgObject {
   /** `+264` / `+268`：`0x25F` 写的颜色对（268 已按 ARGB 组装）。 */
   f264: number;
   f268: number;
-  /** `[48]` 指针前的两个 dword：`0x7A`（`sub_45A910`）写的文本项缓冲游标参数。 */
+  /**
+   * `[48]` 指针前的两个 dword：`0x7A`（`sub_45A910`）写的**文本块原点 (x, y)**。
+   *
+   * 引擎消费点 = `sub_45A940` 的贴字格 `x = win+80 + buf[-20] + win+12`（raw 71352-71359）；
+   * 默认值由排版例程写成 `obj[28]/[32]`（= `0x79` 的文字起点，raw 82684-82685）。
+   */
   pre48a: number;
   pre48b: number;
+  /** `0x7A` 是否调用过（未调用 ⇒ 排版原点回退到 `0x79` 的 `win+28/+32`）。 */
+  pre48Set: boolean;
 }
 
 /**
@@ -413,10 +432,13 @@ export class MsgWindow {
     total: number,
     nowMs: number,
     speedMs: number,
-    opts: { intervalMs?: number } = {},
+    opts: { intervalMs?: number; cells?: number } = {},
   ): RevealState {
     const gridTick = opts.intervalMs;
     const instant = speedMs <= 0 && gridTick === undefined;
+    // 字格路径：一步 = 一格 ⇒ 一步推进 ceil(total / cells) 个字（见 `RevealState.stepGlyphs`）
+    const cells = opts.cells && opts.cells > 0 ? opts.cells : undefined;
+    const stepGlyphs = gridTick !== undefined && cells !== undefined ? Math.max(1, Math.ceil(total / cells)) : undefined;
     const st: RevealState = instant
       ? { shown: total, total, active: false, nextAt: 0 }
       : {
@@ -425,6 +447,7 @@ export class MsgWindow {
           active: total > 0,
           nextAt: nowMs + (gridTick ?? revealInterval(speedMs)),
           ...(gridTick !== undefined ? { intervalMs: gridTick } : {}),
+          ...(stepGlyphs !== undefined ? { stepGlyphs } : {}),
           ...(gridTick === undefined
             ? { budgetMs: revealInterval(speedMs) * Math.max(1, total), carry: 0, lastAt: nowMs }
             : {}),
@@ -467,10 +490,12 @@ export class MsgWindow {
   tickRevealWin(win: number, nowMs: number, speedMs: number): boolean {
     const st = this.reveal.get(win);
     if (!st || !st.active) return false;
-    // ① 字格路径：固定步长，一次一格（引擎 `sub_45A940(Font, win, k, 0)` + `sub_453AF0` 节拍门）
+    // ① 字格路径：固定节拍，**一次一格**（引擎 `sub_45A940(Font, win, k, 0)` + `sub_453AF0` 节拍门，
+    //    k = 字格下标、模数 = `win+92` = op9）。一步推进的字形数 = `ceil(total / cells)`
+    //    ⇒ 整段 = `cells × op10` ms（与引擎一致），屏幕上是逐字可见。
     if (st.intervalMs !== undefined) {
       if (nowMs < st.nextAt) return false;
-      st.shown += 1;
+      st.shown = Math.min(st.total, st.shown + (st.stepGlyphs ?? 1));
       st.nextAt = nowMs + st.intervalMs;
       if (st.shown >= st.total) {
         st.shown = st.total;
@@ -726,6 +751,7 @@ export class MsgWindow {
         f268: 0,
         pre48a: 0,
         pre48b: 0,
+        pre48Set: false,
       };
       this.objects.set(idx, o);
     }

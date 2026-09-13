@@ -154,12 +154,14 @@ test('超过下边界即停（引擎报「文字がウインドウ内に収ま�
   );
 });
 
-test('对齐：mode 1 居中 / mode 2 右对齐（引擎 win+288 / win+292）', () => {
+test('对齐：mode 1 居中（op3 = 行中心）/ mode 2 右对齐（行右缘落到 op3）—— 引擎 sub_4576C0', () => {
+  // ★2026-09 修正：mode 1 的位移 = `op3 − 行宽/2`（op3 是**行中心**，不是对齐框宽度）。
+  //   真机对照：win 8 `i303 8 1 1f4`（op3=500）+ 块原点 x=140 ⇒ 行中心 = 640 = 屏幕中心。
   const base = { wrapRight: 1000, alignWidth: 200 } as const;
   const center = layoutWindow(9, input({ text: '天結', style: { ...base, align: 1 } }));
-  assert.equal(center.lines[0].glyphs[0].x, (200 - 60) / 2);
+  assert.equal(center.lines[0].glyphs[0].x, 200 - 60 / 2, '位移 = op3 − 行宽/2 ⇒ 行中心 = op3（此处 200）');
   const right = layoutWindow(9, input({ text: '天結', style: { ...base, align: 2 } }));
-  assert.equal(right.lines[0].glyphs[0].x, 200 - 60);
+  assert.equal(right.lines[0].glyphs[0].x, 200 - 60, '右对齐：行右缘 = op3');
   const left = layoutWindow(9, input({ text: '天結', style: { ...base, align: 0 } }));
   assert.equal(left.lines[0].glyphs[0].x, 0);
 });

@@ -78,6 +78,9 @@ import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
 import type { RenderStatus } from './renderStatus.js';
 
+/** 撤幕留帧的上限帧数（见 `#holdFrameAfterCurtainDrop`）。 */
+const HOLD_MAX_FRAMES = 8;
+
 export type { Item, MeshObj, Vec3 };
 /** `RenderStatus` 由 `./renderStatus.ts` 拥有（入口与后端共用）；此处再导出以保持既有 import 路径可用。 */
 export type { RenderStatus } from './renderStatus.js';
@@ -113,6 +116,8 @@ export class PixiBackend implements NativeBridge {
   private frameStarted = false;
   /** 场景"脏"= 本次有配置类 op 改动过场景（引擎：present 须由脏标记 + 0x400 门控驱动）。 */
   private sceneDirty = false;
+  /** 撤幕留帧的剩余帧数（见 `#holdFrameAfterCurtainDrop`）。 */
+  #holdFrames = 0;
 
   static async create(
     status: RenderStatus,
@@ -226,6 +231,7 @@ export class PixiBackend implements NativeBridge {
 
   configureDrawItem(cfg: DrawItemConfig): void {
     this.#markDirty();
+    this.#releaseFrameHold('draw-texture');
     // 语义（建/覆盖 + 置 bit0 + 覆盖描画位置）在共享模型层；两侧（此处与 HeadlessScene）只有一份。
     const it = scConfigureDrawItem(this.scene, cfg);
     assertFlags('drawitem', it.handle, it.flags);
@@ -247,11 +253,17 @@ export class PixiBackend implements NativeBridge {
     this.#markDirty();
   }
 
+  /** `0x320` create-mesh：建顶点几何 + 逐顶点基础色（`scCreateMesh` 会置 bit0=可画）。 */
   createMesh(spec: MeshCreateSpec): void {
     this.#markDirty();
-    const m = scCreateMesh(this.scene, spec.handle, spec.layer);
+    const m = scCreateMesh(this.scene, spec);
+    this.#releaseFrameHold('createMesh');
     assertFlags('mesh', m.handle, m.flags);
-    this.#pushLog(`createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount}`);
+    const v = m.verts[0];
+    this.#pushLog(
+      `createMesh h=0x${spec.handle.toString(16)} v=${spec.vcount} layer=${spec.layer}` +
+        (v ? ` rect=(${v.x},${v.y})..(${m.verts[3]?.x ?? v.x},${m.verts[3]?.y ?? v.y}) base0=0x${(spec.baseColors[0] ?? 0).toString(16)}` : ' 无几何'),
+    );
   }
 
   /** `0x1F8` create-texture：见 `TextureCache.create`（槽旧纹理失效后重取 / 新建空白表面）。 */
@@ -443,20 +455,29 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
-  /** `0x322`（`sub_4AE2C0`）：mesh 顶点色 state0。★缺失即建项、无门控。 */
-  setVertexColor(handle: number, state0: number): void {
+  /**
+   * `0x322`（`sub_426C20`）：mesh 顶点色 state0 + entry[9]。★缺失即建项、无门控，但**不置 bit0**
+   * （没有几何 ⇒ 不画）。`alpha/rgb` 为负 = 取当前 state0 的对应通道（引擎 raw 33865-33884）。
+   */
+  setVertexColor(handle: number, index: number, alpha: number, rgb: number): void {
     this.#markDirty();
-    const o = scSetVertexColor(this.scene, handle, state0);
+    const o = scSetVertexColor(this.scene, handle, index, alpha, rgb);
     this.#assertMesh(handle);
-    this.#pushLog(`setVertexColor h=0x${handle.toString(16)} state0=0x${state0.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
+    const m = this.scene.meshes.get(handle);
+    this.#pushLog(
+      `setVertexColor h=0x${handle.toString(16)} idx=${index} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)} → state0=0x${(m?.state0 ?? 0).toString(16)}${o === 'applied' ? '' : ' [建空项]'}`,
+    );
   }
 
-  /** `0x323`（`sub_4AE330`）：mesh 顶点色动画窗。★缺失即建项、无门控。 */
-  setVertexColorAlpha(handle: number, delay: number, count: number, state1: number): void {
+  /** `0x323`（`sub_426CF0`）：mesh 顶点色动画窗（delay/count + state1，同样有负值回退）。 */
+  setVertexColorAlpha(handle: number, delay: number, count: number, alpha: number, rgb: number): void {
     this.#markDirty();
-    const o = scSetVertexColorAlpha(this.scene, handle, delay, count, state1);
+    const o = scSetVertexColorAlpha(this.scene, handle, delay, count, alpha, rgb);
     this.#assertMesh(handle);
-    this.#pushLog(`setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${state1.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
+    const m = this.scene.meshes.get(handle);
+    this.#pushLog(
+      `setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)} → state1=0x${(m?.state1 ?? 0).toString(16)}${o === 'applied' ? '' : ' [建空项]'}`,
+    );
   }
 
   setDrawColorAlpha(handle: number, from: number): void {
@@ -475,12 +496,59 @@ export class PixiBackend implements NativeBridge {
    */
   detachTexture(handle: number, count: number): void {
     this.#markDirty();
+    // 撤幕判定必须在删之前做（删完就看不出它是不是满屏幕布了）
+    const droppedCurtain = this.#coversViewportMeshInRange(handle, count);
     const r = scDetachTexture(this.scene, handle, count);
+    if (droppedCurtain) this.#holdFrameAfterCurtainDrop(handle);
     if (count <= 1) {
       this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes})`);
     } else {
       this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes})`);
     }
+  }
+
+  /**
+   * `[handle, handle+count)` 区间里是否有**满屏覆盖幕**（顶点四边形铺满视口）。
+   *
+   * 用途见 `#holdFrameAfterCurtainDrop`。
+   */
+  #coversViewportMeshInRange(handle: number, count: number): boolean {
+    const hi = count <= 1 ? handle + 1 : handle + count;
+    for (const m of this.scene.meshes.values()) {
+      if (m.handle < handle || m.handle >= hi) continue;
+      if ((m.flags & 1) === 0 || m.verts.length < 3) continue;
+      const xs = m.verts.map((v) => v.x);
+      const ys = m.verts.map((v) => v.y);
+      if (Math.min(...xs) <= 0 && Math.min(...ys) <= 0 && Math.max(...xs) >= VIEW_W && Math.max(...ys) >= VIEW_H) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * **撤幕帧的"留帧"策略**（bug：配置界面→SN0000 切换时黑屏后配置界面闪一下）。
+   *
+   * 引擎的 present 由"场景脏 + 动画待播"驱动，而**它从不整屏清 backbuffer**
+   * （`ClearTarget` 被 `_this+46460&1` 守卫、该字段恒 0）⇒ 撤掉黑幕那一帧在引擎里**不会被呈现**，
+   * 屏上留的是"上一帧的黑"。emulator 的重写是"每批指令后整帧重合成"，
+   * 而批边界（`SAFETY_PER_FRAME`）可能正好落在"幕已撤、旧场景图元还没清、新幕还没建"的
+   * 脚本级 teardown 中间 ⇒ 画出一帧**没有覆盖幕的旧场景**（实测：`.tmp` 日志里
+   * `[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）。
+   *
+   * 处理：撤掉满屏幕布后**先留帧**，直到有新内容建立（`createMesh`/`draw-texture`/`copyScene`）
+   * 或容器被整批清空（`clearDrawContainer`，此时画面本就该是空的/黑的）；最多留 `HOLD_MAX` 帧，
+   * 防止"幕撤了但确实什么都不画"的场景被永久冻住。
+   */
+  #holdFrameAfterCurtainDrop(handle: number): void {
+    this.#holdFrames = HOLD_MAX_FRAMES;
+    this.#pushLog(`[frame-hold] 满屏幕布 0x${handle.toString(16)} 被撤 → 留帧最多 ${HOLD_MAX_FRAMES} 帧（等新内容）`);
+  }
+
+  /** 新内容建立 ⇒ 解除留帧。 */
+  #releaseFrameHold(what: string): void {
+    if (this.#holdFrames > 0) this.#pushLog(`[frame-hold] ${what} → 解除留帧（剩 ${this.#holdFrames} 帧）`);
+    this.#holdFrames = 0;
   }
 
   /**
@@ -507,6 +575,7 @@ export class PixiBackend implements NativeBridge {
   copyScene(srcHandle: number, dstHandle: number): boolean {
     const r = scCopyItem(this.scene, srcHandle, dstHandle);
     this.#markDirty();
+    if (r.copied) this.#releaseFrameHold('CopyScene');
     this.#pushLog(
       `CopyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}` +
         (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh}）` : '【源不存在】'),
@@ -551,6 +620,7 @@ export class PixiBackend implements NativeBridge {
   clearDrawContainer(): void {
     const wins = this.scene.msgWins.size;
     const r = scClearDrawContainer(this.scene);
+    this.#releaseFrameHold('clearDrawContainer（画面本就该是空的）');
     this.#markDirty();
     this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} 文本窗=${wins}→0（保留纹理槽）`);
   }
@@ -581,6 +651,12 @@ export class PixiBackend implements NativeBridge {
 
   /** 合成一帧（时钟 = 墙钟，单调推进）。 */
   present(): void {
+    // 撤幕留帧：见 `#holdFrameAfterCurtainDrop`（不动舞台 ⇒ 屏上保留上一帧）
+    if (this.#holdFrames > 0) {
+      this.#holdFrames--;
+      this.#pushLog(`[frame-hold] 跳过本次 present（剩 ${this.#holdFrames} 帧）`);
+      return;
+    }
     this.clockMs = performance.now() - this.wallStart;
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);

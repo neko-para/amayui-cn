@@ -7,19 +7,20 @@
  * 合成顺序（与引擎一致）：
  *  1. 逐帧推进所有 draw-item 的 5 个动画窗；
  *  2. draw-items 按 `layer` 升序、再 `handle` 升序；**`flags & 1` 是绘制门**（空项不画）；
- *  3. meshes（顶点色黑覆盖层）按 `handle` 升序叠在最上层。
+ *  3. meshes（顶点色四边形）按 `handle` 升序叠在最上层 —— 几何/颜色都取自模型（见 `present` 内注释）。
  */
-import { Container, Rectangle, Sprite, Texture, type ContainerChild } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Texture, type ContainerChild } from 'pixi.js';
 import {
   advanceWindows,
   calcDiffuse,
   itemColor,
   itemRenderPlacement,
   itemSrcRect,
+  meshColor,
+  meshVertexColor,
   type Item,
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
-import { VIEW_H, VIEW_W } from '../viewport.js';
 import type { TextureCache } from './textureCache.js';
 
 /** 合成诊断摘要的节流间隔（ms）。 */
@@ -123,18 +124,58 @@ export class ScenePresenter {
     }
     flushText(Number.MAX_SAFE_INTEGER); // 剩余文本（含 20+win 落在没有 draw-item 的层）
 
-    // 2) meshes（顶点色黑覆盖层）：按 handle 升序，叠在图之上。
+    // 2) meshes（顶点色四边形）：按 handle 升序，叠在图之上。
+    //
+    // ★这里画的是**引擎的真实几何与颜色**（2026-09 修）：
+    //   - 几何 = `0x320 create-mesh` 的顶点（op2/op3/op4 的 x/y/z 浮点数组，屏幕像素）；
+    //   - 颜色 = 逐顶点基础色 × CalcDiffuse 插值态色（`mulArgb` 逐通道 ×/255）；
+    //   - `flags & 1` 是绘制门（`sub_4AF1C0` raw 133502）—— 只有 `0x322/0x323` 碰过、
+    //     没有顶点缓冲的 mesh **不画**。
+    //   旧实现把**每个** mesh 画成 `width=VIEW_W; tint=0x000000` 的全屏不透明黑，且忽略
+    //   RGB（永远黑），于是 SN0000 序章被"50% 黑幕"涂成整屏黑（背景与首文案一起消失）。
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
     for (const m of meshes) {
-      const diffuse = calcDiffuse(m, clock);
-      const a = (diffuse >> 24) & 0xff;
-      if (a <= 0) continue;
-      const ov = new Sprite(this.unit);
-      ov.width = VIEW_W;
-      ov.height = VIEW_H;
-      ov.tint = 0x000000;
-      ov.alpha = a / 255;
-      this.drawRoot.addChild(ov);
+      if ((m.flags & 1) === 0 || m.verts.length < 3) continue; // 无几何 ⇒ 引擎不画
+      const state = calcDiffuse(m, clock);
+      const color = meshColor(m, state);
+      const alpha = (color >>> 24) & 0xff;
+      if (alpha <= 0) continue;
+      const g = new Graphics();
+      const box = meshBBox(m);
+      if (isAxisAlignedQuad(m)) {
+        // ★语料里所有 `0x320` 站点都是轴对齐的满屏四边形（x=(0,1280,0,1280)、y=(0,0,720,720)）。
+        //   这条路径必须走 `rect()`：Pixi v8 的 `poly()` 把点按**给定顺序**连成一圈，
+        //   条带序 (v0,v1,v2,v3) 连起来是自交的"蝴蝶结"（填充只剩上下两片）⇒ 画面上会出现
+        //   一条贯穿全屏的大 X（实测：2026-09 用 `poly` 画满屏幕布时）。
+        g.rect(box.x, box.y, box.w, box.h).fill({ color: color & 0xffffff, alpha: alpha / 255 });
+      } else {
+        // 非轴对齐（语料里没有）：按条带三角扇逐片填，逐顶点色取三角形均值近似。
+        for (let i = 1; i + 1 < m.verts.length; i++) {
+          const idx = [0, i, i + 1] as const;
+          const pts: number[] = [];
+          let a = 0;
+          let r = 0;
+          let gg = 0;
+          let b = 0;
+          for (const k of idx) {
+            const v = m.verts[k]!;
+            pts.push(v.x, v.y);
+            const c = meshVertexColor(m, state, k);
+            a += (c >>> 24) & 0xff;
+            r += (c >>> 16) & 0xff;
+            gg += (c >>> 8) & 0xff;
+            b += c & 0xff;
+          }
+          const tri =
+            (((Math.round(a / 3) & 0xff) << 24) |
+              ((Math.round(r / 3) & 0xff) << 16) |
+              ((Math.round(gg / 3) & 0xff) << 8) |
+              (Math.round(b / 3) & 0xff)) >>>
+            0;
+          g.poly(pts).fill({ color: tri & 0xffffff, alpha: ((tri >>> 24) & 0xff) / 255 });
+        }
+      }
+      this.drawRoot.addChild(g);
     }
     return drawn;
   }
@@ -156,7 +197,11 @@ export class ScenePresenter {
       .map((it) => `${it.layer}:a${(itemColor(it, clock) >>> 24) & 0xff}`)
       .join(' ');
     const meshInfo = [...scene.meshes.values()]
-      .map((m) => `${(m.handle & 0xf).toString(16)}:a${(calcDiffuse(m, clock) >> 24) & 0xff}`)
+      .map((m) => {
+        const c = meshColor(m, calcDiffuse(m, clock));
+        const rect = m.verts.length >= 4 ? `${m.verts[0]!.x},${m.verts[0]!.y}..${m.verts[3]!.x},${m.verts[3]!.y}` : '无几何';
+        return `0x${m.handle.toString(16)}:${(c >>> 24) & 0xff}/#${(c & 0xffffff).toString(16).padStart(6, '0')}(${rect})`;
+      })
       .join(' ');
     this.log(
       `[present ${Math.round(clock)}ms] items={${itemInfo || '无'}} meshes={${meshInfo || '无'}} slotTex=${
@@ -170,4 +215,22 @@ function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: nu
   const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
   const cropped = new Texture({ source: tex.source, frame });
   return new Sprite(cropped);
+}
+
+/** mesh 顶点几何的外接矩形（屏幕像素）。 */
+function meshBBox(m: { verts: { x: number; y: number }[] }): { x: number; y: number; w: number; h: number } {
+  const xs = m.verts.map((v) => v.x);
+  const ys = m.verts.map((v) => v.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+}
+
+/** 顶点是否恰好是外接矩形的四个角（⇒ 可以用 `rect()` 精确填充，避开 `poly()` 的自交顺序陷阱）。 */
+function isAxisAlignedQuad(m: { verts: { x: number; y: number }[] }): boolean {
+  if (m.verts.length !== 4) return false;
+  const { x, y, w, h } = meshBBox(m);
+  return m.verts.every(
+    (v) => (v.x === x || v.x === x + w) && (v.y === y || v.y === y + h) && w > 0 && h > 0,
+  );
 }

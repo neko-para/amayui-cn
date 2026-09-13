@@ -11,18 +11,18 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 26 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 27 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 25 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **57** |
+| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **56** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
-| 3D | 17 | 3 |
+| 3D | 17 | 2 |
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 9 |
@@ -136,7 +136,7 @@
 | `music-number-table-lifecycle` | 声音 | BGM 曲号表（PCM 扁平表 + 分组表）的装载、增长与解析 | ✅ 已核验 | E3 · `test/music-table.test.ts` |
 | `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
 | `texture-bind-synchronous-then-query` | 资源 | set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致 | 🟠 部分 | E2 · `test/texture-frame-barrier.test.ts` |
-| `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | 🟠 部分 | E0 |
+| `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
 | `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | ❌ 缺失 | E1 |
 | `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ❌ 缺失 | E1 |
 | `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | ✅ 已核验 | E3 · `test/op-a4-a6.test.ts` |
@@ -560,15 +560,6 @@
 - **引擎**：sub_422CB0, sub_4559C0, sub_49ED60, sub_4ADC20 @ raw 39866-39900
 - **读的字段**：Scene[5*slot+466] = imgid, CTexture+1040/+1044 宽高, DrawItem+4 纹理槽号
 - **emulator 现状**：两道屏障：① `renderer/app/session.ts` 的 `#present()` 前 `texturesIdle()`（既有，防「文本先出现、背景晚几帧」）；② **`0x1F9` 之后立刻 `await texturesIdle()`**（2026-09 新增，`#awaitTextureBound`）—— 后者才修得掉 `0x208` 读到 0×0。`texture-frame-barrier.test.ts` 只覆盖 ① 与 `TextureCache.waitIdle` 本身；② 的端到端证据是 `.tmp/gs2-*.png` 的日志（`configureDrawItem … (0,0,2048x1152)`）与 `test/game-start-chain.test.ts` 的 E3（headless 不实现 `texturesIdle` ⇒ 该屏障在 Node 侧是 no-op，若日后给 headless 加纹理，必须一起补断言）
-
-### `mesh-vertex-quad-and-per-vertex-color`（partial）
-
-- **能力**：Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层
-- **触发**：脚本 `0x320 create-mesh <handle> <f…> <4/8> <vcount> <layer>` 建项，随后 `0x322 set-vertex-color <handle> <index> <α> <rgb>` / `0x323 set-vertex-color-alpha <handle> <delay> <count> <α> <rgb>` 按**顶点下标**设色，`0x1FB draw-texture <handle> <slot> …` 给网格绑纹理；`sub_4A2050`(CalcDiffuse raw 122287) 做 state0→state1 的浮点插值
-- **缺失时为什么静默**：emulator 把每个 mesh 近似成**全屏黑色叠加块**（`presenter.ts` 的 `ov.width=VIEW_W; ov.tint=0x000000; ov.alpha=diffuseA/255`），并且 `0x322` **丢掉了顶点下标**、`0x320` 用「默认满屏四边形」占位。于是只要某个 mesh（如菜单条 `0x19640`，引擎里是 `draw-texture 19640 11 0 0 43e 95 5d 22c` —— 底部一条 1086×149 的贴片）的 diffuse α 被动画推到 255，emulator 就画出一整屏不透明的黑 ⇒ **屏幕全黑但 VM 一切正常、日志空白**（2026-09 实测：`SN0000` 序章首文案到达后整屏黑，`.tmp/gs2-7-sn0000-first-text.png`；`present` 摘要 `meshes={8:a0 0:a255}`）
-- **引擎**：sub_426BD0, sub_4A2050, sub_4AEEA0 @ raw 122287-122294
-- **读的字段**：MeshEntry 顶点缓冲, MeshEntry+28+4*index 逐顶点色, Scene+50708 网格层级槽
-- **emulator 现状**：顶点几何与逐顶点色**完全未建模**（`handlers/gfx-item.ts` 的 `op_mesh_create`/`op_set_vertex_color` 注释已声明）。修法：按 create-mesh 的操作数建真实四边形（顶点坐标 + UV），`0x322/0x323` 保留顶点下标并逐顶点插值，`0x1FB` 对 mesh handle 走纹理路径；完成后 `presenter.ts` 的「全屏黑覆盖层」分支应删除。**这是已知的最大观感缺口之一**（凡进含菜单 mesh 的场景都可能整屏黑）
 
 ### `scene-3d-weather-effects-rain-snow-leaf`（absent）
 

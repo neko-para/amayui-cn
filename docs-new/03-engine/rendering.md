@@ -38,13 +38,17 @@
 **组成**（LOGO.txt）：2 张整屏图（大理石 layer 2a、文字 layer 2b）+ **2 个顶点色全屏四边形**（mesh#1=0x30d42、mesh#2=0x30d43）。
 
 **mesh 建立**（`create-mesh`/0x320, `sub_432150`→`sub_4ADFE0`→`sub_4A2280`，40262/130665/120518）：
-- op1=mesh 句柄、op2/3/4=逐顶点 X/Y/Z-u 源数组、op5=常量1.0(w)、op6=**逐顶点颜色数组**（用 key `_this[388236]` 解码）、op7/8=属性源、**op9=顶点数**（LOGO 里=4）、op10=尾参→entry[6]。
-- 顶点 36 字节/个：`x,y,z/u,w(1.0),DWORD diffuse@+16,4个attr浮点`。
-- mesh 条目（`sub_40DC30(_this+266,&a2)`）：`[1]`=VB [2]=X源 [3]=Y源 [4]=逐顶点颜色数组 [5]=顶点数 [6]=尾参 [9]=色 [11]=rangeStart [12]=rangeCount [13]=**state0** [14]=**state1**。
+- op1=mesh 句柄、op2/3/4=逐顶点 X/Y/Z **数组基址**（全局 float 槽号；第 i 顶点取 `slot+i`）、op5=逐顶点 **alpha 色数组基址**（全局 int 槽号）、op6=逐顶点 **rgb 色数组基址**、op7/8=**u/v 数组基址**、**op9=顶点数**（语料全为 4）、op10=→entry[6]。
+  ★2026-09 更正：旧注把 op5 当成"常量 1.0 的 w 数组"、把 op2..op8 当成标量 —— 实际**都是数组基址**（引擎用取址读法 `sub_42BF60`/`sub_42AEA0`，返回 `base+4*payload`），`w` 数组是引擎内部 `new[]` 后填 1.0 的临时数组，不来自脚本。
+- 顶点 36 字节/个：`x,y,z,w(1.0),DWORD diffuse@+16,u,v,attr,attr`。
+- 语料里的坐标 = **轴对齐满屏四边形**：`x=(0,1280,0,1280)`、`y=(0,0,720,720)`（`float-mov` 的字面量是**十六进制**：`500`=1280、`2d0`=720）；`z` 数组另有槽位（全 0）。UV 数组来自 INIT2（`u=(0,1,0,1)`、`v=(0,0,1,1)`）。
+  逐顶点色数组来自 INIT2 的 `copy-local-array (global-int f8c48) [ff ff ff ff]`（alpha）与 `(global-int f8c4c) [ffffff …]`（rgb）⇒ 逐顶点基础色 = `0xFFFFFFFF`（不透明白），**幕布颜色完全由 state0/state1 决定**。
+  （同 handle 在 mode 6 分支下走 `draw-texture` 贴图形态 —— 例如 `SN0000.txt:3095` 的 `draw-texture 19640 11 0 0 43e 95 5d 22c` 是底部 1086×149 的贴片；**mesh 分支没有局部形态**。）
+- mesh 条目（`sub_40DC30(_this+266,&a2)`）：`[0]`=bit0 几何已建/bit1 颜色动画 [1]=VB [2]=X源 [3]=Y源 [4]=逐顶点颜色数组 [5]=顶点数 [6]=尾参 [7]/[8]=两级纹理槽（`0x321` 写） [9]=**alpha 混合模式选择子**（`0x322` 的 op2，消费者 `sub_49E390` raw 119370-119399） [10]=窗起点 [11]=delay [12]=dur [13]=**state0** [14]=**state1**。
 
 **两个颜色状态**：
-- `set-vertex-color`(0x322, `sub_426C20`→`sub_4AE2C0`)→ entry[13]=**state0**（ARGB=(op3<<24)|op4），并 `CalcDiffuse(entry,0.0)` 立即烘焙。
-- `set-vertex-color-alpha`(0x323, `sub_426CF0`→`sub_4AE330`)→ entry[10]=0、**[11]=起点**、**[12]=点数**、[14]=**state1**（ARGB=(op4<<24)|op5），置 `|2` 待动画旗标。
+- `set-vertex-color`(0x322, `sub_426C20`→`sub_4AE2C0`)→ `[9]=op2`、`[13]=`**state0** = `(clamp(op3)<<24)|(op4&0xFFFFFF)`，并 `CalcDiffuse(entry,0.0)` 立即烘焙。★**α>255 夹到 255；op3/op4 为负 = 取当前 state0 的对应通道**（raw 33865-33884）。
+- `set-vertex-color-alpha`(0x323, `sub_426CF0`→`sub_4AE330`)→ `[10]=0`、**[11]=delay**、**[12]=dur**、`[14]=`**state1** = `(clamp(op4)<<24)|(op5&0xFFFFFF)`（同样有负值回退），置 `|2` 待动画旗标。
 - LOGO 里：mesh#1 state0=0xff000000(不透明黑)、state1=0x00000000(透明黑)；mesh#2 state0=0x00000000(透明黑)、state1=0xff000000(不透明黑)。
 
 **CalcDiffuse（sub_4A2050, 120438）= 颜色调制**：逐字节通道线性插值 `blend = state1*byte*a3 + state0*byte*(1-a3)`（120475-120479）；然后对每顶点基础色（entry[4]/a2+16）**逐通道乘 blend/0xFF** 写入 VB+16（120502-120503），blend=不透明白(0xFFFFFFFF)则原样直拷（120482-120492，性能等值快路径）。⇒ **mesh 渲染色 = 逐顶点基础色 × 插值态色**。
@@ -96,7 +100,11 @@ else  // 完成/收尾
 
 ## 4. 渲染后端现状（app/amayui-emulator）
 
-- ✅ `PixiBackend`（PixiJS v8 WebGL）已改为 **引擎式"配置对象 + 每帧 present 合成"**：`drawItems`/`meshes` 两张以句柄为键的持久场景图；`present()` 按 layer/handle 升序合成（图在下、mesh 黑覆盖层在上），动画（mesh `#calcDiffuse`、draw-item `#itemAlpha`）逐帧求值（墙钟）；`sceneDirty`/`needsRender` 驱动引擎式 present（`0x400` 动画等待每帧 present）。**版权页 frame 效果已实现**（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现。
+- ✅ `PixiBackend`（PixiJS v8 WebGL）已改为 **引擎式"配置对象 + 每帧 present 合成"**：`drawItems`/`meshes` 两张以句柄为键的持久场景图；`present()` 按 layer/handle 升序合成（图在下、mesh 覆盖层在上），动画（mesh `#calcDiffuse`、draw-item `#itemAlpha`）逐帧求值（墙钟）；`sceneDirty`/`needsRender` 驱动引擎式 present（`0x400` 动画等待每帧 present）。**版权页 frame 效果已实现**（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现。
+- ✅ **mesh 已按真实几何 + 真实颜色合成（2026-09）**：见 §3.1 的顶点/颜色表；绘制门 = `entry[0]` bit0。
+  轴对齐四边形走 `Graphics.rect()`，非轴对齐走三角扇 —— ★**不要用 `poly()` 一次喂 4 个条带序顶点**：Pixi v8 按给定顺序连点，`(0,0),(1280,0),(0,720),(1280,720)` 会自交成"蝴蝶结"，填充只剩上下两片 ⇒ 画面上出现贯穿全屏的大 X（实测）。
+- ✅ **撤幕留帧策略（emulator 侧，2026-09）**：撤掉**满屏覆盖幕**（`0x1F7` 删掉一个铺满视口的 mesh）后，最多跳过 `HOLD_MAX_FRAMES=8` 次 present，直到有新内容建立（`0x320`/`0x1FB`/`0x21D`）或 `0x1F6 clearDrawContainer`。
+  为什么需要：实测（`.tmp` 日志）批边界会落在"幕已撤、旧图元未清、新幕未建"的脚本级 teardown 中间，于是画出**一帧没有覆盖幕的旧场景**（`[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）—— 用户看到的就是"配置界面向黑渐变完成后又闪了一下"。这条是 **emulator 侧策略**（非引擎 opcode 语义）：引擎那边 present 由"场景脏 + 动画待播"驱动且**从不整屏清 backbuffer**（`ClearTarget` 被 `_this+46460&1` 守卫、该字段恒 0），撤幕帧屏上留的是上一帧的黑，而重写侧是"每批指令后整帧重合成"，粒度对不上。留帧只在**满屏幕布被撤**时生效且有上限，正常场景切换（撤幕 → 清容器 → 建新幕）只多留 1~2 帧。实现见 `pixiBackend.ts` 的 `#holdFrameAfterCurtainDrop`。
 - ✅ 视口 1280×720；窗口 `useContentSize:true` + `win.setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清）。
 - ✅ 严格 flag：draw-item/mesh 只认 bit0|bit1，未知位（如 draw-item `&4`）抛 `UnknownFlagError` 中断；未实现 opcode 抛 `NotImplementedOp`。
 - ✅ 诊断日志：`log-line`/`log-line-sync` IPC → `app/amayui-emulator/.tmp/..`(实际 `E:\Games\Eushully\天結\.tmp\amayui-emulator.log`)；renderer 逐行/批次落盘 + 关窗同步兜底。

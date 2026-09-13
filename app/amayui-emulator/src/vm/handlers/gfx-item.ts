@@ -10,7 +10,10 @@
  * ★ 缩放的除数 100（`dbl_5201F0`）与平移到像素、旋转到度的差异，都是指令级的既有差异，切勿"统一"。
  */
 import type { OpHandler } from '../step.js';
-import { readIntOperand, readFloatOperand, writeIntOperand, writeFloatOperand } from '../operand.js';
+import type { Engine, Frame } from '../engine.js';
+import type { Ref } from '../ref.js';
+import { readIntOperand, readFloatOperand, writeIntOperand, writeFloatOperand, refFromOperand } from '../operand.js';
+import { readRef, refAt } from '../ref.js';
 import type { OpTable } from './shared.js';
 
 // ---------------------------------------------------------------------------
@@ -235,29 +238,89 @@ const op_set_object_transform: OpHandler = (c) => {
   c.native.setDrawPivot?.(handle, a, b, d);
 };
 
+/**
+ * **`0x320` create-mesh**（`sub_432150` raw 41012-41078，argc=10）：建顶点四边形 + 逐顶点色。
+ *
+ * 操作数布局（**全是"数组基址"**，引擎用取址读法 `sub_42BF60`/`sub_42AEA0` 而不是取值读法）：
+ *  - op1 = handle、op9 = vcount、op10 = layer（`entry[6]`）；
+ *  - op2/op3/op4 = x/y/z 的**浮点数组基址**（= 全局 float 槽号），第 i 个顶点取 `slot+i`；
+ *  - op5/op6 = 逐顶点**颜色数组基址**（全局 int 槽号）：op5 供 alpha（`dec(key)·<<24`）、
+ *    op6 供 rgb（`dec(key) & 0xFFFFFF`）；
+ *  - op7/op8 = u/v 的浮点数组基址（每个顶点取 `slot+i`）。
+ * `vcount <= 0` 时引擎打「頂点数%dは不正です．」并**不建几何**（⇒ 不画）。
+ * 语料里所有站点都是同一个满屏四边形：x=(0,1280,0,1280)、y=(0,0,720,720)（十六进制 0x500/0x2d0），
+ * 颜色数组来自 INIT2 的 `copy-local-array (global-int f8c48/f8c4c)` = 逐顶点 `0xFFFFFFFF`（不透明白）。
+ */
 const op_mesh_create: OpHandler = (c) => {
-  // u0043AA20 (0x320)：op1=handle, op9=vcount, op10=layer/tail；顶点源暂用默认满屏四边形。
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const layer = readIntOperand(c.e, c.frame, c.instr, 10);
-  const vcount = readIntOperand(c.e, c.frame, c.instr, 9);
-  const verts = Array.from({ length: Math.max(0, vcount) }, () => ({ x: 0, y: 0, u: 0, w: 1, diffuse: 0xffffffff }));
-  c.native.createMesh?.({ handle, layer, vcount, verts });
+  const { e, frame, instr } = c;
+  const handle = readIntOperand(e, frame, instr, 1);
+  const layer = readIntOperand(e, frame, instr, 10);
+  const vcount = readIntOperand(e, frame, instr, 9);
+  const xRef = refFromOperand(e, frame, instr, 2);
+  const yRef = refFromOperand(e, frame, instr, 3);
+  const zRef = refFromOperand(e, frame, instr, 4);
+  const aRef = refFromOperand(e, frame, instr, 5);
+  const cRef = refFromOperand(e, frame, instr, 6);
+  const uRef = refFromOperand(e, frame, instr, 7);
+  const vRef = refFromOperand(e, frame, instr, 8);
+  const verts = [];
+  const baseColors = [];
+  for (let i = 0; i < Math.max(0, vcount); i++) {
+    verts.push({
+      x: floatArrayAt(e, frame, xRef, i),
+      y: floatArrayAt(e, frame, yRef, i),
+      z: floatArrayAt(e, frame, zRef, i),
+      u: floatArrayAt(e, frame, uRef, i),
+      v: floatArrayAt(e, frame, vRef, i),
+    });
+    // 引擎：`(dec(alphaWord) << 24) | (dec(rgbWord) & 0xFFFFFF)`（raw 41054-41058）
+    const a = readRef(e, frame, refAt(aRef, i)) >>> 0;
+    const rgb = readRef(e, frame, refAt(cRef, i)) >>> 0;
+    baseColors.push((((a << 24) >>> 0) | (rgb & 0xffffff)) >>> 0);
+  }
+  c.native.createMesh?.({ handle, layer, vcount, verts, baseColors });
 };
+
+/**
+ * 读某个"数组基址"操作数的第 i 个浮点元素。
+ *
+ * 引擎 `sub_42BF60` 对全局/局部 float 操作数返回**地址** `基址 + 4*payload` ⇒ 数组基址槽号就是
+ * 操作数的 payload；emulator 的 float 池按槽号存 JS 数（`readRef` 对 float 返回位模式，故不能用）。
+ */
+function floatArrayAt(e: Engine, frame: Frame, r: Ref, i: number): number {
+  if (r.kind !== 'float') return floatBitsOf(readRef(e, frame, refAt(r, i)) >>> 0);
+  const idx = r.index + i;
+  return r.scope === 'global' ? (e.globals.float.get(idx) ?? 0) : (frame.locals.float.get(idx) ?? 0);
+}
+
+/** u32 位模式 → float32（数组元素若是 int 槽里的位模式，按引擎"内存里就是 float"解释）。 */
+function floatBitsOf(bits: number): number {
+  return new Float32Array(new Uint32Array([bits >>> 0]).buffer)[0]!;
+}
+
+/**
+ * `0x322` set-vertex-color（`sub_426C20` raw 33852-33885，argc=4）：
+ * op1=handle、op2=entry[9]、op3=alpha、op4=rgb。**负值 = 用当前 state0 的对应通道**
+ * （引擎 raw 33865-33881），且 alpha>255 夹到 255 —— 回退在宿主侧做（见 `scene/ops.ts`）。
+ */
 const op_set_vertex_color: OpHandler = (c) => {
-  // 0x322：op1=handle, op3=alpha, op4=rgb → state0 (ARGB)。
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const a = readIntOperand(c.e, c.frame, c.instr, 3);
-  const b = readIntOperand(c.e, c.frame, c.instr, 4);
-  c.native.setVertexColor?.(handle, ((a & 0xff) << 24) | (b & 0xffffff));
+  const index = readIntOperand(c.e, c.frame, c.instr, 2);
+  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
+  const rgb = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.setVertexColor?.(handle, index, alpha, rgb);
 };
+/**
+ * `0x323` set-vertex-color-alpha（`sub_426CF0` raw 33888-33921，argc=5）：
+ * op1=handle、op2=窗起点(delay)、op3=时长(count)、op4=alpha、op5=rgb（同样有负值回退）。
+ */
 const op_set_vertex_color_alpha: OpHandler = (c) => {
-  // 0x323：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → state1 (ARGB)。
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
   const delay = readIntOperand(c.e, c.frame, c.instr, 2);
   const count = readIntOperand(c.e, c.frame, c.instr, 3);
-  const a = readIntOperand(c.e, c.frame, c.instr, 4);
-  const b = readIntOperand(c.e, c.frame, c.instr, 5);
-  c.native.setVertexColorAlpha?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
+  const alpha = readIntOperand(c.e, c.frame, c.instr, 4);
+  const rgb = readIntOperand(c.e, c.frame, c.instr, 5);
+  c.native.setVertexColorAlpha?.(handle, delay, count, alpha, rgb);
 };
 const op_set_draw_color: OpHandler = (c) => {
   // 0x202：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → to (ARGB)。

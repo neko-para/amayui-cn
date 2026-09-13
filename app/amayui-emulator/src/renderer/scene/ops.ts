@@ -11,7 +11,7 @@
  *  - **门控**：部分 setter 在 `flags & 1 == 0` 时**不写**（引擎里对应"项还没被 draw-texture 建立"），
  *    返回值 `SetterOutcome` 把这个区别显式化，便于诊断。
  */
-import type { DrawItemConfig, Item, MeshObj } from '../drawItem.js';
+import type { DrawItemConfig, Item, MeshObj, MeshVertex } from '../drawItem.js';
 import {
   applyDrawColor,
   applyDrawColorAlpha,
@@ -130,12 +130,46 @@ export function scCopyItem(s: SceneState, srcHandle: number, dstHandle: number):
   return { drawItems, meshes };
 }
 
-/** `0x320` create-mesh。 */
-export function scCreateMesh(s: SceneState, handle: number, layer: number): MeshObj {
-  const m = s.meshes.get(handle) ?? makeMesh(handle, layer);
-  m.flags |= 1;
-  s.meshes.set(handle, m);
+/** `0x320` create-mesh 的载荷（`handlers/gfx-item.ts` 从操作数数组读好后送进来）。 */
+export interface MeshSpec {
+  handle: number;
+  layer: number;
+  vcount: number;
+  verts: MeshVertex[];
+  /** 逐顶点基础色（ARGB，已 DEC 解码）。 */
+  baseColors: number[];
+}
+
+/**
+ * `0x320` create-mesh（引擎 `sub_432150` → `sub_4ADFE0`）。
+ *
+ * 引擎只重建**顶点缓冲 + 逐顶点色数组**（旧的先析构），`entry[5]=vcount`、`entry[6]=layer`，
+ * 并置 bit0；**state0/state1/动画窗保持不变**。`vcount <= 0` 走「頂点数%dは不正です．」错误分支，
+ * 不建几何（bit0 不置 ⇒ 不画）。
+ */
+export function scCreateMesh(s: SceneState, spec: MeshSpec): MeshObj {
+  const m = s.meshes.get(spec.handle) ?? makeMesh(spec.handle, spec.layer);
+  m.layer = spec.layer;
+  if (spec.vcount > 0 && spec.verts.length >= 3) {
+    m.verts = spec.verts.map((v) => ({ ...v }));
+    m.baseColors = [...spec.baseColors];
+    m.flags |= 1;
+  }
+  s.meshes.set(spec.handle, m);
   return m;
+}
+
+/**
+ * `sub_4AAB80`（`0x322`/`0x323` 的"缺失即建项"）：只建空条目（`flags = 0` ⇒ 无几何 ⇒ 不画）。
+ * ★必须与 `scCreateMesh` 分开：早前两者共用建项路径，导致"只设颜色的 mesh"被当成
+ * 满屏黑覆盖层画出来（SN0000 黑屏成因之一）。
+ */
+export function scEnsureMesh(s: SceneState, handle: number): { mesh: MeshObj; created: boolean } {
+  const found = s.meshes.get(handle);
+  if (found) return { mesh: found, created: false };
+  const m = makeMesh(handle, handle);
+  s.meshes.set(handle, m);
+  return { mesh: m, created: true };
 }
 
 /** setter 的结果分类（诊断用：区分"写了"、"只建了项"、"被 bit0 门控挡住"）。 */
@@ -238,20 +272,48 @@ export function scSetFlipbook(s: SceneState, handle: number, delay: number, dur:
   return 'applied';
 }
 
-/** `0x322`/`0x323`：mesh setter 同样"缺失即建项"（引擎 `sub_4AAB80`），且**无门控**。 */
-export function scSetVertexColor(s: SceneState, handle: number, state0: number): SetterOutcome {
-  const created = !s.meshes.has(handle);
-  const m = scCreateMesh(s, handle, handle);
-  applyMeshVertexColor(m, state0);
+/**
+ * `0x322` set-vertex-color（引擎 `sub_426C20` raw 33852-33885，argc=4）：
+ * 读 op1=handle、op2=**entry[9]（alpha 混合模式选择子，D3D 侧消费者 `sub_49E390`；emulator 未接）**、
+ * op3=alpha、op4=rgb。
+ *
+ * ★两个"回退"分支必须实现（早前漏掉 ⇒ 目标色完全错）：
+ *  - `op3 > 255` ⇒ alpha=255；`op3 < 0` ⇒ alpha 取**当前 state0 的 alpha**；
+ *  - `op4 < 0`   ⇒ rgb 取**当前 state0 的 rgb**。
+ * SN0000 正是靠它把"渐显目标色"写成"当前色"：`set-vertex-color 19640 0 0 (local0)`
+ * 的 `local0 = -2` ⇒ 目标 = 当前 50% 黑；若按 raw 位模式读就变成 `0x00FFFFFE`（近白），
+ * 配合"全屏黑覆盖层"渲染 ⇒ 整屏黑。
+ */
+export function scSetVertexColor(s: SceneState, handle: number, index: number, alpha: number, rgb: number): SetterOutcome {
+  const { mesh, created } = scEnsureMesh(s, handle);
+  applyMeshVertexColor(mesh, index, vertexColorArg(mesh.state0, alpha, rgb));
+  return created ? 'created-applied' : 'applied';
+}
+/**
+ * `0x323` set-vertex-color-alpha（引擎 `sub_426CF0` raw 33888-33921，argc=5）：
+ * op1=handle、op2=entry[11] 起点、op3=entry[12] 时长、op4=alpha、op5=rgb（同样有回退）。
+ */
+export function scSetVertexColorAlpha(
+  s: SceneState,
+  handle: number,
+  delay: number,
+  dur: number,
+  alpha: number,
+  rgb: number,
+): SetterOutcome {
+  const { mesh, created } = scEnsureMesh(s, handle);
+  applyMeshVertexColorAlpha(mesh, delay, dur, vertexColorArg(mesh.state0, alpha, rgb));
   return created ? 'created-applied' : 'applied';
 }
 
-/** `0x323` mesh 顶点色动画窗（建项 → 无门控置 bit1 + 窗 + state1）。 */
-export function scSetVertexColorAlpha(s: SceneState, handle: number, delay: number, dur: number, state1: number): SetterOutcome {
-  const created = !s.meshes.has(handle);
-  const m = scCreateMesh(s, handle, handle);
-  applyMeshVertexColorAlpha(m, delay, dur, state1);
-  return created ? 'created-applied' : 'applied';
+/**
+ * `0x322`/`0x323` 的颜色实参规整（引擎 raw 33865-33884 / 33901-33921 的 clamp + 回退）。
+ * 负值 = "用当前 state0 的对应通道"，>255 的 alpha 夹到 255。
+ */
+export function vertexColorArg(cur: number, alpha: number, rgb: number): number {
+  const a = alpha > 255 ? 255 : alpha < 0 ? (cur >>> 24) & 0xff : alpha;
+  const c = rgb < 0 ? cur & 0xffffff : rgb & 0xffffff;
+  return (((a & 0xff) << 24) | (c & 0xffffff)) >>> 0;
 }
 
 /**

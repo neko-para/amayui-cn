@@ -145,6 +145,58 @@ export function meshWindowDone(m: MeshObj, clock: number): boolean {
 }
 
 /**
+ * `CalcDiffuse` 的**逐通道相乘**（引擎 raw 122317）：
+ * `out.byte_i = trunc(blend.byte_i * base.byte_i / 0xFF)`。
+ *
+ * 引擎还有个等价快路径（raw 122294-122306）：`blend == 0xFFFFFFFF` 时**直接拷贝基础色**；
+ * 本式在 blend=全 1 时逐字节等于 `base`（`x*255/255 = x`），两条路等价。
+ */
+export function mulArgb(base: number, blend: number): number {
+  const ch = (s: number): number => {
+    const b = ((base >>> s) & 0xff) * ((blend >>> s) & 0xff);
+    return Math.trunc(b / 0xff) & 0xff;
+  };
+  return (((ch(24) << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)) >>> 0) >>> 0;
+}
+
+/** 单个顶点在这一帧的实际颜色 = 顶点基础色 × 插值态色。 */
+export function meshVertexColor(m: MeshObj, state: number, i: number): number {
+  const base = m.baseColors[i] ?? 0xffffffff;
+  return mulArgb(base, state);
+}
+
+/**
+ * 一个 mesh 在这一帧的**代表色**（渲染用）。
+ *
+ * 引擎的 mesh 是"逐顶点 diffuse"，各顶点可以不同（渐变幕布）；emulator 用一个颜色近似，
+ * 取各顶点实际颜色的均值 —— 语料里所有 `0x320` 站点的基础色都是 `0xFFFFFFFF`（INIT2 的
+ * `copy-local-array (global-int f8c48/f8c4c)` 全白），顶点间无差异 ⇒ 本例无损。
+ * 逐顶点渐变的幕布会退化成均值色（已在第二层台账登记为残余近似）。
+ */
+export function meshColor(m: MeshObj, state: number): number {
+  const n = Math.max(1, m.verts.length);
+  if (m.baseColors.length === 0) return mulArgb(0xffffffff, state);
+  let a = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  for (let i = 0; i < n; i++) {
+    const c = meshVertexColor(m, state, i);
+    a += (c >>> 24) & 0xff;
+    r += (c >>> 16) & 0xff;
+    g += (c >>> 8) & 0xff;
+    b += c & 0xff;
+  }
+  return (
+    (((Math.round(a / n) & 0xff) << 24) |
+      ((Math.round(r / n) & 0xff) << 16) |
+      ((Math.round(g / n) & 0xff) << 8) |
+      (Math.round(b / n) & 0xff)) >>>
+    0
+  );
+}
+
+/**
  * mesh 顶点色 CalcDiffuse：state0→state1 逐通道插值（黑覆盖层的 alpha 淡入淡出）。
  * 用**元素2 自己的浮点公式**（`sub_4A2050`，raw 122287-122294），与 DrawItem 的整数式不同。
  * 窗末一次性收尾（引擎 raw 133531-133538）：`delay/dur/start` 清 0、`state0 ← state1`、清 bit1。

@@ -142,12 +142,20 @@ export function applyDrawScale(it: Item, sx: number, sy: number, sz: number): vo
   it.scaleTarget = { x: sx, y: sy, z: sz };
 }
 
-/** `0x322`（`sub_4AE280`）：mesh 顶点色 state0。 */
-export function applyMeshVertexColor(m: MeshObj, state0: number): void {
+/**
+ * `0x322`（`sub_4AE2C0` raw 132810-132823）：写 `entry[9] = op2`（alpha 混合模式选择子，
+ * 消费者是 D3D 绘制 `sub_49E390` ⇒ emulator 未接）、`entry[13] = state0`，
+ * 随后 `CalcDiffuse(entry, 0.0)` 立即烘焙（本模型按帧求值 ⇒ 等价），**不动 bit1/窗**。
+ */
+export function applyMeshVertexColor(m: MeshObj, blend: number, state0: number): void {
+  m.blend = blend;
   m.state0 = state0 >>> 0;
 }
 
-/** `0x323`：mesh 顶点色动画窗（`+40` delay / `+44` dur / `+52` state1），置 bit1。 */
+/**
+ * `0x323`（`sub_4AE330` raw 132827-132845）：`|=2`、`entry[10]=0`（窗起点，绘制期锁存）、
+ * `entry[11]=op2`（delay）、`entry[12]=op3`（count/dur）、`entry[14]=state1`。
+ */
 export function applyMeshVertexColorAlpha(m: MeshObj, delay: number, dur: number, state1: number): void {
   m.flags |= 2;
   m.state1 = state1 >>> 0;

@@ -125,12 +125,12 @@ image b37 -> BG050ABL.AGF (2048x1152)                   ← 图其实载入了�
 （绑定是稀有事件，不影响常规帧率；headless 不实现 `texturesIdle` ⇒ 自动跳过）。
 详见第二层台账 `texture-bind-synchronous-then-query`。
 
-### 4.2 mesh 被近似成「全屏黑叠加块」（**未修，已知观感缺口**）
+### 4.2 mesh 被近似成「全屏黑叠加块」（**已修，2026-09**）
 
-`presenter.ts` 把**每个** mesh 画成 `width=VIEW_W; tint=0x000000; alpha=diffuseA/255` 的全屏覆盖块，
+**修前**：`presenter.ts` 把**每个** mesh 画成 `width=VIEW_W; tint=0x000000; alpha=diffuseA/255` 的全屏覆盖块，
 而 `0x320 create-mesh` 的顶点几何与 `0x322 set-vertex-color` 的**顶点下标**都没建模
 （`handlers/gfx-item.ts` 里 `verts` 用"默认满屏四边形"、`state0` 只存一个 ARGB）。
-菜单条 mesh `0x19640`（引擎里是 `draw-texture 19640 11 0 0 43e 95 5d 22c` —— 底部一条 1086×149 的贴片）
+菜单条 mesh `0x19640`（同 handle 在 mode 6 下是 `draw-texture 19640 11 0 0 43e 95 5d 22c` —— 底部一条 1086×149 的贴片）
 的 diffuse α 被动画推到 255 后，emulator 就画出一整屏不透明黑：
 
 ```
@@ -138,7 +138,21 @@ image b37 -> BG050ABL.AGF (2048x1152)                   ← 图其实载入了�
 ```
 
 ⇒ **VM 一切正常、日志空白，但屏幕全黑**（`.tmp/gs2-7-sn0000-first-text.png`）。
-第二层台账 `mesh-vertex-quad-and-per-vertex-color` 记了症状与修法（建真实四边形 + 逐顶点插值 + 删除全屏覆盖分支）。
+
+**修法（两个成因都补掉）**：
+1. `0x322`/`0x323` 补齐引擎语义（`sub_426C20` raw 33865-33884）：**α>255 夹 255、α/rgb 为负 = 取当前 state0 的对应通道**。
+   SN0000 的暗幕正是 `set-vertex-color-alpha 19640 0 f8043 -1 -1` ⇒ 目标色 = 当前 `0x80000000`（50% 黑），
+   修前按无符号位模式读成 `0xFFFFFFFF`（不透明）。
+2. mesh 真实建模：`0x320` 的 op2..op8 是**数组基址**（全局 float/int 槽号，第 i 顶点取 `slot+i`）——
+   x/y/z 与 u/v 都是屏幕像素坐标的浮点数组，op5/op6 是逐顶点色数组（DEC 后 `(α<<24)|(rgb&0xFFFFFF)`）；
+   最终像素色 = 逐顶点基础色 × CalcDiffuse 插值态色（`mulArgb` 逐通道 `/255`）。
+   presenter 按 `flags & 1`（几何存在位）决定是否绘制，并用真实几何 + 真实颜色合成。
+
+**语料事实**：所有 `0x320` 站点都是同一个**轴对齐满屏四边形**（`x=(0,1280,0,1280)`、`y=(0,0,720,720)`；
+源码里的 `500`/`2d0` 是**十六进制**），基础色数组来自 INIT2 的 `copy-local-array (global-int f8c48/f8c4c)` = 全白，
+所以"幕布颜色"完全由 `0x322/0x323` 的两端色决定，**不存在"局部贴片"形态**（1086×149 那条是 mode 6 的 draw-item 分支）。
+守卫：`app/amayui-emulator/test/mesh-vertex-quad.test.ts`（含真实链路的 E3 断言）。
+残余近似：逐顶点渐变取三角形均值；mesh 的 z 序仍统一叠在 draw-item 之上（引擎按 handle 三路归并）。
 
 ### 4.3 `0x400` 动画等待门是**引擎本来的语义**（不是缺陷）
 

@@ -106,16 +106,54 @@ export interface MeshWin {
   dur: number;
 }
 
-/** 一个 mesh（黑/色覆盖层）在 emulator 侧的建模。 */
+/**
+ * mesh 的一个顶点（引擎 VB 记录 36 字节：`x,y,z,w,DWORD diffuse,u,v,attr,attr`）。
+ *
+ * emulator 只取其中 5 个：位置 + UV。**坐标是屏幕像素**（`sub_4AF1C0` 把源数组原样写进 VB，
+ * 只减 0.5 半像素；投影矩阵 `D3DXMatrixOrthoLH(显示宽, -显示高)` ⇒ 单位 = 像素）。
+ */
+export interface MeshVertex {
+  x: number;
+  y: number;
+  z: number;
+  u: number;
+  v: number;
+}
+
+/** 一个 mesh（顶点色四边形）在 emulator 侧的建模。 */
 export interface MeshObj {
   handle: number;
   layer: number;
-  flags: number; // 仅 bit0 存在 | bit1 颜色动画
+  /**
+   * 引擎 entry[0]：**bit0 = 几何已建**（`sub_4ADFE0` 的 `*v21 |= 1`，draw 门 `sub_4AF1C0`
+   * 的 `& 1` 判定）、bit1 = 颜色动画窗。★只被 `0x322/0x323` 碰过的 mesh 没有几何 ⇒ **不画**。
+   */
+  flags: number;
   /** `+52`（=元素下标 13）state0：起始色。 */
   state0: number;
   /** `+56`（=元素下标 14）state1：目标色（`== -1` 表示"无 TO"）。 */
   state1: number;
   anim?: MeshWin;
+  /**
+   * 顶点几何（`0x320` 的 op2/op3/op4 = x/y/z 浮点数组、op7/op8 = u/v 浮点数组）。
+   * 空 = 没有顶点缓冲（引擎 `sub_4A2280` 没建成功 ⇒ bit0 不置 ⇒ 不画）。
+   */
+  verts: MeshVertex[];
+  /**
+   * 逐顶点**基础色**（ARGB，`0x320` 的 op5=`sub_42AEA0` alpha 数组、op6=rgb 数组；
+   * 引擎在 `sub_432150` 里 `dec(key, …)` 解码后按 `(a<<24)|(rgb&0xFFFFFF)` 合成）。
+   * 最终像素色 = 基础色 × 插值态色（`CalcDiffuse` 逐通道 `×/255`）。
+   */
+  baseColors: number[];
+  /**
+   * `0x322` 的 op2 → 引擎 entry[9] = **网格绘制的 alpha 混合模式选择子**。
+   *
+   * 消费点 = `sub_4AF1C0` raw 133617 `sub_49E390(…, entry[9])`，其中 `a8 = entry[9]` 走
+   * `if (a8==1) SetRenderState(19,5)/(20,2)` / `a8==2` / `a8==3 ·(171,3)` 等分支
+   * （`sub_49E390` raw 119370-119399）。**emulator 未接**（与 `Item` 的 blend 字段同一类缺口，
+   * 见 `dead-writes.baseline.json` 与能力台账 `drawitem.mix-mode`）。语料里恒为 0。
+   */
+  blend: number;
 }
 
 /** draw-texture（`0x1FB`）的配置载荷。 */
@@ -183,9 +221,26 @@ export function makeDefaultItem(handle: number, layer = handle): Item {
   return makeItem({ handle, layer, tex: 0, srcX: 0, srcY: 0, srcW: 0, srcH: 0, dstX: 0, dstY: 0 });
 }
 
-/** 新建一个 mesh（等价 `0x320` create-mesh 的建项）。 */
+/**
+ * 新建一个 mesh 条目（等价引擎 `sub_4AAB80` 的"缺失即建项"）。
+ *
+ * ★`flags = 0`：**没有几何 ⇒ 不画**。只有 `0x320` create-mesh 真正建好顶点缓冲
+ * （`sub_4ADFE0` 的 `*v21 |= 1`）才置 bit0；只被 `0x322/0x323` 碰过的条目在引擎里
+ * 既不画也不报错 —— 早前 emulator 在这里置了 bit0，于是"只有颜色的空 mesh"被画成
+ * 一整屏黑（正是 SN0000 黑屏的两个成因之一）。
+ */
 export function makeMesh(handle: number, layer: number): MeshObj {
-  return { handle, layer, flags: 1, state0: 0xffffffff, state1: 0, anim: undefined };
+  return {
+    handle,
+    layer,
+    flags: 0,
+    state0: 0,
+    state1: 0,
+    anim: undefined,
+    verts: [],
+    baseColors: [],
+    blend: 0,
+  };
 }
 
 /**
@@ -214,5 +269,12 @@ export function cloneItem(it: Item, dstHandle: number): Item {
 
 /** 深拷贝一个 mesh（`0x21D` CopyScene 用；语义同 `cloneItem`）。 */
 export function cloneMesh(m: MeshObj, dstHandle: number): MeshObj {
-  return { ...m, handle: dstHandle, layer: dstHandle, anim: m.anim ? { ...m.anim } : undefined };
+  return {
+    ...m,
+    handle: dstHandle,
+    layer: dstHandle,
+    anim: m.anim ? { ...m.anim } : undefined,
+    verts: m.verts.map((v) => ({ ...v })),
+    baseColors: [...m.baseColors],
+  };
 }

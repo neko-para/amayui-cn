@@ -100,8 +100,36 @@ test('★0x72 启动逐字：字格页的节拍 = 0x73 op10（不是 message:Mes
   assert.equal(e.msgwin.revealedOf(8), 2, '下一次节拍（350ms）未到 ⇒ 原地');
 });
 
-test('无字格页仍按 message:MessageSpeed（引擎逐字只走 i073 那条路）', () => {
+/**
+ * ★2026-09 用户实测："SN0000 的逐字比设置界面慢了很多"。
+ *
+ * 根因（引擎源码）：字格路径的一拍 = **一个 56px 字格**，不是"一个字"——
+ * 主循环 raw 20892-20893 只做 `sub_45A940(Font, 窗, k, 0)` + `k = (k+1) % 模数`，
+ * 而 `sub_45A940` 的 `k` 是**字格下标**（raw 71392-71412：`(k % cols) * (cellW)` 算出该格矩形、
+ * 为该格建一个 DrawItem），模数 = `win+92` = `0x73` 的 op9（`a3 == -1` 分支 `*a4 = v6[23]`，
+ * raw 71381-71383 写进 `Engine[430820]`）。
+ * ⇒ 整段时长 = `cells × op10`（SN0000：8 × 100 = 800ms），**不是** `字数 × op10`（58 字 ⇒ 5.8s，慢了 7 倍）。
+ * 重写侧仍逐字可见 ⇒ 一步要推进 `ceil(total / cells)` 个字。
+ */
+test('★字格页的步长 = 一格（不是一字）：总时长 = cells × op10', () => {
   const { e, step } = mk();
+  e.engineValues.set(21668, 5); // message:MessageSpeed 不参与字格页
+  step(0x80, [im(8)]);
+  step(0x73, grid(8, -5, 0)); // SN0000.txt:1081 的真实参数（8 格 × 56px、节拍 100ms）
+  step(0x6e, [im(0), str('一'.repeat(58))]); // 58 字（首文案那一页的规模）
+  step(0x72, [im(8)]);
+  const st = e.msgwin.reveal.get(8)!;
+  assert.equal(st.stepGlyphs, 8, '一步 = ceil(58 / 8) = 8 个字（一个 56px 竖条覆盖的字）');
+
+  // ★一拍一步（引擎每帧只 `k = (k+1) % 模数`，不跨拍补齐）⇒ 每拍各调一次
+  for (let t = 100; t <= 700; t += 100) e.serviceTextReveal(t);
+  assert.equal(e.msgwin.revealedOf(8), 56, '第 7 拍 ⇒ 56 字');
+  e.serviceTextReveal(800);
+  assert.equal(e.msgwin.revealedOf(8), 58, '8 拍（800ms）整页显完');
+  assert.equal(st.active, false, '★总时长 = cells × op10 = 800ms（旧实现 58 × 100ms = 5.8s）');
+});
+
+test('无字格页仍按 message:MessageSpeed（引擎逐字只走 i073 那条路）', () => {  const { e, step } = mk();
   e.engineValues.set(21668, 25);
   step(0x80, [im(9)]);
   step(0x6e, [im(0), str('あいう')]);

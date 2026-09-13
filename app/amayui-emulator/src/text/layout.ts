@@ -388,11 +388,24 @@ function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle): v
   }
 }
 
-/** 对齐（引擎 `sub_4572A0` raw 68939-68950）：mode 1 居中、mode 2 右对齐。 */
+/**
+ * 对齐（引擎 `sub_4576C0` raw 69147-69231，消费点 raw 79940-79947 的 `sub_4AC750`）。
+ *
+ * 引擎语义（`win+288` = mode、`win+292` = op3，由 `0x303` 写）：
+ * ```c
+ * if (mode == 1) shift = win+292 - (maxX - minX) / 2;   // ★居中：op3 是**行中心**
+ * else if (mode == 2) shift = minX + win+292 - maxX;    // 右对齐：行右缘落到 op3
+ * // mode == 0 → 不位移
+ * *a4 = shift; *a5 = 0;   // 返回的是 (x, y) **位移**，调用方把行图元平移这么多
+ * ```
+ * ★2026-09 修正：旧实现按"op3 = 对齐宽度"算成 `(op3 - 行宽)/2`，**少了 op3/2**。
+ * 反例（真机截图）：win 8 由 `SYSTEM4.txt:70 i303 8 1 1f4` 置 mode=1、op3=500，
+ * 块原点 x = 140（`i079 8 8c 10` / 序章 `i07a 8 8c 12c`）⇒ 行中心 = 140 + 500 = **640（屏幕中心）**，
+ * 与实机画面一致；旧式给 `(500-780)/2 = -140` ⇒ 文字被推到 x<0 的左上角。
+ */
 function applyAlign(line: TextLine, st: MsgWinStyle): void {
-  if (st.align === 0 || st.alignWidth <= 0) return;
-  const off =
-    st.align === 1 ? (st.alignWidth - line.width) / 2 : st.align === 2 ? st.alignWidth - line.width : 0;
+  if (st.align === 0) return;
+  const off = st.align === 1 ? st.alignWidth - line.width / 2 : st.alignWidth - line.width;
   if (off === 0) return;
   for (const g of line.glyphs) g.x += off;
   for (const g of line.ruby) g.x += off;
