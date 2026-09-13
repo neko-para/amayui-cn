@@ -96,7 +96,10 @@ export class InputManager {
    * 不等就抛 `Depth が不正です` —— **不许跨脚本派发回调 label**。
    */
   mouseJumpOwner = -1;
-  /** joy_callback(0xFB)：**输入掩码位**（= `4 + 按钮序号`，与引擎 `sub_477280` 同口径）→ 跳转 label 值。 */
+  /**
+   * joy_callback(0xFB)：**输入掩码位**（= op1，**不偏移**；引擎 `[33*cur+107725+op1]`，raw 30417）→ 跳转 label 值。
+   * ★2026-09 修：曾按 `4 + op1` 存 ⇒ 鼠标左键（掩码位 4）错派发到 `joy-callback 0`。
+   */
   joyJump = new Array<number>(32).fill(-1);
 
   // --- 输入位掩码（poll-input/0x100 读；由 flush() 生成）---

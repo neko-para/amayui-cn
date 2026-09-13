@@ -15,10 +15,11 @@ import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
 import { parseIni } from '../../src/engineConfig.js';
+import { resolveOptionsPath } from '../../src/emulatorOptionsFile.js';
 import { unionUsedFileIds } from '../../src/vm/saveData.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
-import { FONT_DIR, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
+import { FONT_DIR, REPO_ROOT, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
 
 /** 音频流式协议名（`amayui-audio://<id>`；见 `docs/13-audio-plan.md` §3.3）。 */
 export const AUDIO_SCHEME = 'amayui-audio';
@@ -85,6 +86,21 @@ export function registerFileIpc(): void {
     const target = await systemFiles.write(INI_FILE, text);
     console.log(`[main] config ini <- ${target} (${text.length} bytes)`);
     return { path: target };
+  });
+
+  // 外置选项文件 `emulator.config.json`（**只读**；渲染进程无 fs ⇒ 由主进程读文本、渲染侧解析）。
+  // 不存在是正常情况（返回 exists=false），渲染侧据此用默认值；解析/校验在 src/emulatorOptions.ts。
+  ipcMain.handle('read-emulator-options', () => {
+    const p = resolveOptionsPath(REPO_ROOT);
+    try {
+      const text = fs.readFileSync(p, 'utf8');
+      console.log(`[main] emulator options -> ${p} (${text.length} bytes)`);
+      return { path: p, exists: true, text };
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT') console.log(`[main] emulator options: 读取失败 ${p}：${(err as Error).message}`);
+      return { path: p, exists: false, text: '' };
+    }
   });
 
   // ---- SAVE.DAT（`save-int`/`save-string` 表的持久化；设置界面的开关靠它跨会话保留）----

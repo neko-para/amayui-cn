@@ -64,23 +64,29 @@ const op_mouse_callback: OpHandler = (c) => {
 /**
  * 0xFB (`joy_callback`, `sub_421B80` raw 30400-30419)：注册**按键跳转目标**。
  *
- * 引擎：`Engine[33*cur + 107725 + btn] = op2`（**按 `cur` 分脚本**，raw 30417）
- * —— 所以天然不跨脚本；`btn ∈ [0,32)` 越界抛 `set:keyjump` 异常。
+ * 引擎：`Engine[33*cur + 107725 + op1] = op2`（raw 30417；越界抛 `set:keyjump`）。
+ * **op1 就是「输入掩码位」本身**（不是按钮序号）—— 这一点由配对读端钉死：`0x100` 的
+ * `sub_419AF0`（raw 25033/25042）扫掩码里最低的置位 `v6`，再查 `Engine[32*cur + 107725 + cur + v6]`
+ * = `Engine[33*cur + 107725 + v6]`（同一张表、同一个索引），**中间没有任何 ±4 偏移**。
  *
- * ★emulator 目前是**单份全局数组** `InputManager.joyJump`（缺口：跨脚本泄漏，规格 §E9）。
- * 表的下标口径与 `0x100` 的读取口径一致：**掩码位**。
- * 引擎里 `0xFB` 存的是**按钮序号**（`[33*cur+107725+btn]`），而查询端的输入掩码位是
- * `4 + btn`（`sub_477280` raw 91661：`*a2 |= 1 << (*v4 + 4)`）—— emulator 的 `flush()` 生成的
- * 就是这张掩码，所以这里直接按 `4 + btn` 存，`0x100` 才能用掩码位 `b` 一次性查到。
- * （手柄按钮 0..27 与鼠标左/右共享 bit4.. 段；`btn ∈ [0,28)` 之外无处可存，越界仍抛。）
+ * ★2026-09 修（用户报 #1「切界面后按钮停在 hover 态」）：旧实现把 op1 当**按钮序号**存到
+ * `4 + op1`，于是**鼠标左键（掩码位 4）被派发到 `joy-callback 0`** 的 handler。
+ * 后果（实测）：TITLE/GAMESTART 的 `joy-callback 0` 是**行确认**处理器（`label_00000c58`
+ * → `3f7 = 3f8` → `call label_000049d0`），它会把**按钮高亮贴图**（GAMESTART 的 handle `0x44c`）
+ * 画到 index 0 上 ⇒ 每次点击进入一个界面，那个界面的第 0 个按钮就变成"选中/hover"外观
+ * （`.tmp/amayui-emulator.log` 里能看到 `detachTexture h=0x44c` + `configureDrawItem h=0x44c (523,75,…)`
+ * 而**整个 GAMESTART 期间 `0x12E` 只跑过一次**、且那次 x/y=(811,605) 在按钮框内 —— 即高亮不是命中测试画的）。
+ * 引擎里鼠标左键 = 掩码位 4 ⇒ 派发的是脚本的 `joy-callback 4`（GAMESTART 的 `label_00001338`，
+ * 一进去就被 `3fb != 0` 挡回，无副作用）。
+ *
+ * 掩码位布局（与 `InputManager.flush()` 一致，见 `src/vm/input.ts` 的文件头）：
+ * `0..6` = 可配置键、`4/5` = 鼠标左/右、`4+i` = 手柄按钮 i ⇒ 鼠标左键与"手柄按钮 0"**天然别名**（引擎亦然）。
  */
 const op_joy_callback: OpHandler = (c) => {
-  const btn = readIntOperand(c.e, c.frame, c.instr, 1);
-  if (btn < 0 || btn >= 32) throw new Error(`joy_callback: 按钮 ${btn} 越界 [0,32)`);
+  const maskBit = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (maskBit < 0 || maskBit >= 32) throw new Error(`joy_callback: 掩码位 ${maskBit} 越界 [0,32)`);
   const target = operandArg(c.instr, 2).raw;
-  const maskBit = 4 + btn; // = 引擎 sub_477280 的掩码位
-  if (maskBit >= 32) throw new Error(`joy_callback: 按钮 ${btn} 的掩码位 ${maskBit} 越界 [0,32)`);
-  c.e.input.joyJump[maskBit] = target;
+  c.e.input.joyJump[maskBit] = target; // 索引 = 掩码位 = op1（引擎 raw 30417）
 };
 
 /** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */

@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('api', {
   readConfigIni: () => ipcRenderer.invoke('read-config-ini'),
   /** 写回引擎配置 SYS4REG.INI（整份文本；写到 readConfigIni 实际返回的那份）。 */
   saveConfigIni: (text: string) => ipcRenderer.invoke('save-config-ini', text),
+  /**
+   * 读**外置选项文件** `emulator.config.json` 的文本（主进程侧只读；渲染进程无 `fs`）。
+   * `exists=false` 是正常情况（没配就用默认值）。解析/校验在 `src/emulatorOptions.ts`。
+   */
+  readEmulatorOptions: () => ipcRenderer.invoke('read-emulator-options'),
   /** 读存档 SAVE.DAT（`save-int`/`save-string` 表的持久化载体）。 */
   readSaveData: () => ipcRenderer.invoke('read-save-data'),
   /** 写存档 SAVE.DAT（整份字节；主进程侧对引擎格式先备份）。 */

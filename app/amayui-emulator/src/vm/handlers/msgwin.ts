@@ -228,6 +228,16 @@ function itemRangesOf(e: Engine, win: number): { base: number; count: number }[]
  */
 function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
   if ((e.effectFlags & CHAR_REVEAL_ACTIVE) === 0) return undefined;
+  // ★▼ **只在本页逐字显完之后**才出现在载荷里 —— 这是"图标何时可见"的**唯一判决点**。
+  //   引擎依据：文字泵 `sub_45BE20` 在等待泵里**自旋到整页显完**（raw 13847/13863/13907/13920 的
+  //   `while (!sub_45BE20(...))`），主循环的图标分支 raw 20887-20895 只在 `effect_flags & 0x40000000`
+  //   且节拍到点时贴第 k 格 —— 而那一帧永远是"泵已经返回 true"之后才轮到的。
+  //   emulator 的泵是**每帧推进**（非阻塞）⇒ 必须显式挡住：否则 `#publishReveal → emitWin` 会
+  //   边逐字边把 `cell` 发出去，宿主立刻把 ▼ 画上屏（2026-09 用户报 #2「图标被提前显示」；
+  //   E4 日志里 `[reveal] win=8 1/52` 紧跟着 `[cell]`）。
+  //   ★判"**任何**窗还在显现"（`isRevealing()` 无参）而不是只判 `win`：图标游标是**全局一份**
+  //   （`Engine[107704]`）；与 `Engine.serviceCharGrid` 的同一条件保持一致（那里管"别提前起算节拍"）。
+  if (e.msgwin.isRevealing()) return undefined;
   const g = e.msgwin.gridOf(win);
   if (!g || !g.gate || g.cells <= 0 || g.cellW <= 0 || g.cellH <= 0) return undefined;
   const geom = e.msgwin.geom(win);

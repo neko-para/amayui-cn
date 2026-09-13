@@ -14,6 +14,12 @@
  * 排查入口（`.tmp/amayui-emulator.log` 的 `[font]` / `[text]` 日志）。
  */
 import { runConfig1Chain } from './config1Chain.js';
+import { emulatorOptionsOf } from '../emulatorOptionsFile.js';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** 仓库根（`src/tools/` 上溯 4 级）—— 只用于定位外置选项文件 `emulator.config.json`。 */
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 
 /** 与 `TextLayer` 一致的回退层序（`TEXT_LAYER_BASE + win`）。 */
 const TEXT_LAYER_BASE = 20;
@@ -28,7 +34,8 @@ async function main(): Promise<void> {
   line('═');
 
   const t0 = Date.now();
-  const r = await runConfig1Chain();
+  // 外置选项（`emulator.config.json`，可选）：`boot.showLogo=false` 可跳过 LOGO 省等待（本工具只看文本层）。
+  const r = await runConfig1Chain({ emulatorOptions: emulatorOptionsOf(REPO_ROOT) });
   console.log(`链路：${r.script}（${Date.now() - t0}ms）`);
   console.log(`未实现 opcode：${r.unimplemented.length === 0 ? '无 ✓' : r.unimplemented.join(', ')}`);
   console.log(`图元：${r.itemCounts.drawItems} 个（可绘制 ${r.itemCounts.drawable}）`);

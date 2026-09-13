@@ -26,6 +26,12 @@
  */
 import { runConfig1Chain } from './config1Chain.js';
 import { runGameStartChain } from './gameStartChain.js';
+import { emulatorOptionsOf } from '../emulatorOptionsFile.js';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** 仓库根（`src/tools/` 上溯 4 级）—— 只用于定位外置选项文件 `emulator.config.json`。 */
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../vm/ops.js';
 import type { StepTrace } from '../vm/interpreter.js';
 
@@ -134,6 +140,8 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const pathArg = argv.includes('--path') ? argv[argv.indexOf('--path') + 1] : 'config1';
   const useStart = pathArg === 'start' || pathArg === 'game-start' || pathArg === 'gamestart';
+  // 外置选项（`emulator.config.json`，可选）：CLI 才读文件；`boot.showLogo=false` 可跳过 LOGO 省等待。
+  const options = emulatorOptionsOf(REPO_ROOT);
   const rows = new Map<number, Row>();
   const onStep = (t: StepTrace): void => {
     let row = rows.get(t.opcode);
@@ -157,7 +165,13 @@ async function main(): Promise<void> {
   if (useStart) {
     // ★「Game Start → SN0000 首文案」路径：未实现指令用 **stub 策略**一次跑完枚举干净
     //   （`throw` 只能见到第一条；见 gameStartChain.ts 的 unknownPolicy 说明）。
-    const r = await runGameStartChain({ recordDrops: true, unknownPolicy: 'stub', onStep, continueAfterTarget: true });
+    const r = await runGameStartChain({
+      recordDrops: true,
+      unknownPolicy: 'stub',
+      onStep,
+      continueAfterTarget: true,
+      emulatorOptions: options,
+    });
     head =
       `# 链路：SYSTEM4 → … → TITLE →（右上角 Game Start）→ GAMESTART →（ゲーム開始）→ SN0000\n` +
       `# 结果：到达 SN0000 = ${r.reachedSn0000}；首文案（SN0000 第一条 show-text）= ${r.firstTextReached ? `ip=${r.firstTextIp}` : '未到达'}` +
@@ -166,7 +180,7 @@ async function main(): Promise<void> {
     drops = r.drops;
     unknown = r.unknown;
   } else {
-    const r = await runConfig1Chain({ recordDrops: true, onStep });
+    const r = await runConfig1Chain({ recordDrops: true, onStep, emulatorOptions: options });
     head = `# 链路：SYSTEM4 → … → TITLE → CONFIG → ${r.script}（未实现 opcode: ${r.unimplemented.length}）`;
     drops = r.drops;
   }

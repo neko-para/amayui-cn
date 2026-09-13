@@ -154,7 +154,7 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 383 测试 + 死写棘轮
+npm run verify         # ★提交前必跑：3×tsc + 415 测试 + 死写棘轮
 npm test               # node:test
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）
@@ -165,7 +165,33 @@ npm run electron:dev   # build + 启动渲染壳
 npm run save:dump      # SAVE.DAT 解析
 ```
 
-## 8. 待办 / 已知缺口（详见能力台账，勿在本文件抄明细）
+## 8. 外置选项 `emulator.config.json`（可选；测试/调试用运行开关）
+
+- **它是什么**：仓库根的一个 JSON，**只影响"怎么跑"**，不改变引擎/脚本语义。
+  **不是**游戏配置：绝不写回、不进存档（那是 `SYS4REG.INI`，见 `src/engineConfig.ts`）。
+- **路径**：默认 `<仓库根>/emulator.config.json`；可用环境变量 **`AMAYUI_EMULATOR_CONFIG`** 换成任意路径
+  （绝对值，或相对仓库根）—— 例：`$env:AMAYUI_EMULATOR_CONFIG='.tmp/opt-skip-logo.json'`。
+- **目前的全部选项**：
+
+| 键 | 类型 | 默认 | 含义 |
+|---|---|---|---|
+| `boot.showLogo` | boolean | `true` | `false` = **启动时预设 LOGO 显示标记**（`_this[96983] = 0`）⇒ cold boot **不进** `LOGO.txt`（版权页 + `LOGO.MPG`），`SYSTEM4` 直接落到 `INIT → TITLE` |
+
+- **为什么"预设标记"就是正确的跳过方式**：`load-show-logo`(0x130) 读 `_this[96983]`（`sub_42F7A0` raw 39346），
+  `src/SYSTEM4.txt:144-146` 据此 `jcc`；置 0 的正是 LOGO 自己的 `exit`（`exit-script` `sub_428A60` raw 35207）
+  与「GAMEOVER 回标题」走的路径 ⇒ 不是自造旁路。详见 `../03-engine/flow-control.md` §10。
+- **实测收益**：TITLE 之后第一帧的 renderer 时钟 **6333ms → 922ms**（省 ≈5.4s；wall 41.5s → 37.0s，
+  含 electron 构建），日志里 `-> LOGO.BIN` 消失而 GAMESTART/SN0000 照常到达。
+- **刻意的近似**：真机播 LOGO 时 `SYSTEM4` 的 `ip0..143` 会跑两遍（LOGO 的 `exit` 重载根脚本再跑一遍），
+  预设 0 时只跑一遍；这些指令是赋值/建表，实测链路完整（`test/emulator-options.test.ts` 断言仍到达
+  SN0000 首文案 ip=901）。若某天发现"少跑一遍"有副作用，就在能力台账登记后改成"跑一遍再跳"。
+- **不该被它影响的**：`npm test` —— 库入口一律 `opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS`，
+  只有 CLI 入口（`run.ts` / `report.ts` / `opInventory.ts` / `diagText.ts` / Electron `boot.ts`）才读文件。
+  守卫：`test/emulator-options.test.ts`「库入口不得 import node-only 读取模块」+ `test/game-start-chain.test.ts`
+  断言默认仍经过 LOGO。**新增选项时**：同步更新本表 + `src/emulatorOptions.ts` 文件头的表 + 在
+  `test/emulator-options.test.ts` 加一条（拼错的键必须报 problem，不许静默）。
+
+## 9. 待办 / 已知缺口（详见能力台账，勿在本文件抄明细）
 
 - **3D 侧**：A4b 天气/粒子族（`0x324`/`0x325`/`0x326` 为 no-op、`0x327`/`0x328` 未注册）与"每帧渲染状态重设"整体缺失。
 - **材质/混合**：`Item.blend` / `MeshObj.blend`（引擎的混合模式选择子）未接到 Pixi `blendMode`（值已送达，渲染器未消费 ⇒ 留在死写基线）。
@@ -174,7 +200,7 @@ npm run save:dump      # SAVE.DAT 解析
 - **平台侧**：视频（TITLE.MTN）/ Live2D（SO004A）/ 角色立绘来源未定位；GDI 文本度量（`0x205`）走近似。
 - 每条缺口都必须在 `analysis/engine-capabilities.json` 有对应条目（状态 + 症状 + 修法），否则视为未登记。
 
-## 9. 权威事实来源
+## 10. 权威事实来源
 
 - 逆向结论：`../03-engine/`（`engine-capabilities.md` 是生成物）与 `analysis/*.json`（真源）；
   反编译源 `engine/天结_unpacked.exe_utf8.c` 是**唯一分析基准**（raw 行号一律指它）。

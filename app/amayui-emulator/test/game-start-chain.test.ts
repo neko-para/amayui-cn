@@ -281,6 +281,14 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
   assert.ok(r.scene.drawable > 0, `场景应有可绘制项，实际 ${r.scene.drawable}/${r.scene.drawItems}`);
   // ④ 路径上**零**未实现 opcode（throw 策略 ⇒ 有缺口会直接抛）
   assert.deepEqual(r.unknown, [], '这条路径上不应有未实现 opcode');
+  // ⑤ ★默认（不传外置选项）= 真游戏行为：cold boot **会**经过 LOGO/版权页。
+  //    `boot.showLogo=false`（`emulator.config.json`）才能跳过它 —— 见 test/emulator-options.test.ts。
+  //    这条断言顺手锁住"外置选项不得悄悄改变默认行为"。
+  assert.equal(
+    r.scriptTrail.some((s) => s.startsWith('LOGO')),
+    true,
+    `默认应播 LOGO（版权页），实际轨迹 ${r.scriptTrail.slice(0, 8).join(',')}`,
+  );
 });
 
 /**

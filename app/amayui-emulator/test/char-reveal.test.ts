@@ -187,6 +187,13 @@ test('★0x73 = ▼ 图标精灵表：0x72 武装后每 op10 ms 换一格，点�
   assert.equal(e.engineValues.get(107705), 10, '模数 = op9 = 精灵表 10 格');
   // ★图标要等**本页逐字显完**才出现（引擎：文字泵自旋，跑完才轮到主循环的图标分支）
   assert.equal(e.serviceCharGrid(50), false, '逐字还在进行 ⇒ 不画图标');
+  // ★★ 但"serviceCharGrid 返回 false"**不够**：★2026-09 用户报 #2「图标被提前显示」的真因是
+  //    `serviceTextReveal → #publishReveal → emitWin` 也带 `cell` 载荷 —— 即使格子没换，
+  //    宿主也会把 ▼ 画出来。所以必须断言**载荷里没有 cell**（`cellFrameOf` 是唯一判决点）。
+  assert.equal(native.scene.msgWins.get(1)?.cell, undefined, '逐字还在进行 ⇒ 载荷里不得有 cell（否则宿主立刻画 ▼）');
+  e.serviceTextReveal(1010);
+  assert.equal(e.msgwin.revealedOf(1) > 0, true, '前置：这一拍确实显了字（发布路径真的跑过）');
+  assert.equal(native.scene.msgWins.get(1)?.cell, undefined, '显到一半 ⇒ 载荷里仍不得有 cell');
   // 5 个字按节拍（≥16.67ms/字）逐拍显完
   for (let k = 1; k <= 5; k++) e.serviceTextReveal(1000 + k * 20);
   assert.equal(e.serviceCharGrid(1110), false, '显完后的第一帧只**起算**节拍（引擎 sub_453A90 重启计时）');

@@ -7,6 +7,7 @@
  * 失败不致命：找不到/读不动 INI 时只记一行 trace，引擎字段沿用构造默认值。
  */
 import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, parseEmulatorOptions } from '../../emulatorOptions.js';
 import { decodeSaveData, encodeSaveData } from '../../vm/saveData.js';
 import type { Engine } from '../../vm/engine.js';
 
@@ -79,6 +80,36 @@ export async function loadEngineConfig(e: Engine, trace: (line: string) => void)
     };
   } catch (err) {
     trace(`[config] 加载失败：${(err as Error).message}`);
+  }
+}
+
+/**
+ * 启动期套用**外置选项文件**（`emulator.config.json`，可选）—— 与 `SYS4REG.INI` 无关的运行开关。
+ *
+ * 为什么单独一个函数（而不是塞进 `loadEngineConfig`）：那个函数在**没有 INI 时会提前 return**，
+ * 而选项文件与 INI 存不存在无关。也必须在**装载首个脚本之前**调用 —— `src/SYSTEM4.txt:144-146` 的
+ * `load-show-logo` 在脚本一开始就据 `_this[96983]` 决定要不要 `call-script LOGO`。
+ *
+ * 目前只有一个选项 `boot.showLogo`；见 `src/emulatorOptions.ts` 的文件头（含引擎依据与"刻意的近似"）。
+ */
+export async function loadEmulatorOptionsFile(e: Engine, trace: (line: string) => void): Promise<void> {
+  try {
+    const hit = await window.api?.readEmulatorOptions?.();
+    if (!hit) {
+      trace('[options] 该 preload 没有 readEmulatorOptions 通道 ⇒ 用默认值');
+      for (const n of applyEmulatorOptions(e.engineValues, DEFAULT_EMULATOR_OPTIONS)) trace(`[options] ${n}`);
+      return;
+    }
+    if (!hit.exists) {
+      trace(`[options] 未找到 ${hit.path}（用默认值：boot.showLogo=${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}）`);
+    } else {
+      trace(`[options] ${hit.path}`);
+    }
+    const { options, problems } = parseEmulatorOptions(hit.exists ? hit.text : '');
+    for (const p of problems) trace(`[options] ⚠ ${p}`);
+    for (const n of applyEmulatorOptions(e.engineValues, options)) trace(`[options] ${n}`);
+  } catch (err) {
+    trace(`[options] 加载失败：${(err as Error).message}`);
   }
 }
 

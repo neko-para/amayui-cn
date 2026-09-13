@@ -15,7 +15,7 @@ import { IpcFileSource } from '../ipcFileSource.js';
 import { PixiBackend } from '../pixiBackend.js';
 import type { RenderStatus } from '../renderStatus.js';
 import { TraceLog } from './traceLog.js';
-import { loadEngineConfig } from './configBoot.js';
+import { loadEmulatorOptionsFile, loadEngineConfig } from './configBoot.js';
 
 /** 启动时固定预载的图像（引擎启动流程里会立刻用到的那几张）。 */
 const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273];
@@ -57,6 +57,9 @@ export async function bootApp(): Promise<BootedApp | null> {
   traceLog.line('=== amayui emulator boot ===');
 
   await loadEngineConfig(e, (l) => traceLog.line(l));
+  // ★外置选项（`emulator.config.json`）：目前只有 `boot.showLogo`。必须在 `loadScriptData`（下面 :87）之前
+  //   —— SYSTEM4 的 `load-show-logo` 在脚本开头就据 `_this[96983]` 决定是否 `call-script LOGO`。
+  await loadEmulatorOptionsFile(e, (l) => traceLog.line(l));
 
   // ★音乐表（SYS4INI 尾部）：`play-bgm` 的曲号解析 + 扩展包用 0x1D7/0x1D8 登记自己的曲子都靠它。
   //   引擎侧由 SYS4INI 装载流程 `sub_48A0D0` 填进 PCM 对象；取不到就留空表（0x1D8 会返回 -1）。

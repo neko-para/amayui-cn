@@ -23,6 +23,7 @@
 | `360-385` | `mov (local-int 3f4) 1` | ★点击派发：左键落点 `local 3f7 == 0` ⇒ `local 3f4 = 1`（ゲーム開始）；`3f7 == 1` 或右键 ⇒ `3f4 = 2`（戻る） |
 | `1327-1348` | `call-script 51e4` | ★ゲーム開始 分支 `label_000050b8`：全屏淡出幕布（`set-vertex-color`/`i24e`）→ `wait` → `poll-input` → `call-script 51e4`(INITGAME) → `call-script 51e5`(SETFATE) → `global 0 = 1` → `exit` |
 | `1350-1359` | `detach-texture 3e8 3e8` | 戻る 分支 `label_000053c0`：清场 + 释放纹理 c0/c1 → `exit`（不动 `global 0` ⇒ 保持 0 = 取消） |
+| `157-190` | `joy-callback 0 label_00000c58` | ★输入派发表：`i0ff`+`i100`（`157-165`）+ `joy-callback 0..c`（`176-188`）+ `mouse-callback 32 label_00000664`（`189`）。`joy-callback` 的 op1 是**输入掩码位本身**（引擎 `sub_421B80` raw 30417 存 `[33*cur+107725+op1]`、`sub_419AF0` raw 25042 查 `[33*cur+107725+掩码位]` —— 同索引、**无 ±4**）：掩码位 4 = **鼠标左键**（`sub_477150`；手柄才是 `4+i`），所以左键派发的是 `joy-callback 4`（`label_00001338`：被 `3fb != 0` 挡回，无副作用），而**不是** `joy-callback 0`（`label_00000c58` = **行确认**：`3ff = 1` → `3f7 = 3f8` → `call label_000049d0` 重画按钮高亮） |
 
 ## 关键槽 / 局部量
 
@@ -46,6 +47,7 @@
 - ★`local 3f4` 是**同帧内**由鼠标回调写的（`0xCD` 跳到 `label_00000664` 后再 `ret` 回主循环），所以点击处理与主循环判断共享同一个帧局部池 —— 帧局部池若在鼠标回调里被清，`3f4` 就丢了
 - 左键命中判定用 `local 3f7`（悬停项），而悬停只在**鼠标位置变化**时重算（`label_00000724` 的 `ne 3ef/3ed`）⇒ 光标不动时点击依然有效（用的是上次悬停值）
 - ★悬停音（`:128` 的 `i0b5 2`）在**通道 2** 上，而本脚本**从不装载**通道 2 ⇒ 若不经 TITLE 直接进 GAMESTART（或换个调用者），`i0b5 2` 只会重播通道 2 上残留的那个音效（正常路径下 = `TITLE.txt:28` 的 SE005）—— 这不是「漏实现」，是 SE 通道跨脚本常驻（引擎 SE 模块装在 `Engine+82876`，与脚本生命周期无关）
+- `joy-callback`(0xFB) 的 op1 是**掩码位**、不是按钮序号：鼠标左键 = 掩码位 4（手柄按钮 i 才是 `4+i`）⇒ 左键与"手柄按钮 0"**别名**。emulator 曾按 `4 + op1` 存表 ⇒ 鼠标左键被派发到 `joy-callback 0`（本脚本的行确认 `label_00000c58`）⇒ **每次点击进入这个界面，第 0 个按钮就被画成高亮贴图**（handle `0x44c`；正常态是 `3e8/3e9/3ea`），用户看到的"按钮停在 hover 态"（2026-09 #1）。判据：`0x44c` 的出现**早于**本脚本唯一一次 `0x12E`。
 
 ## 缺口
 
@@ -57,6 +59,8 @@
 - 函数结论：`0x42F230`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/scene-start-flow.md`
 - 主题文档：`docs-new/03-engine/sound-system.md`
+- 主题文档：`docs-new/03-engine/input-system.md`
+- 主题文档：`docs-new/03-engine/flow-control.md`
 - 守卫测试：`app/amayui-emulator/test/game-start-chain.test.ts`
 
 ## 证据与备注

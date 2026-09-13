@@ -119,11 +119,12 @@ test('A5 0x91/0x92：面板显示态（effect_flags 0x800000）+ sub_404020；0x
   assert.equal(e.engineValues.get(12958), 0, '`[12958]` 被清 0');
 });
 
-test('0xFB + 0x100：跳转表按**输入掩码位**索引（不是 b-4），b∈{4,5} 也不走 mouseJump', () => {
+test('0xFB + 0x100：跳转表按**输入掩码位**索引（= op1，不偏移；b∈{4,5} 也不走 mouseJump）', () => {
   const { e, run } = mk();
   const f = e.curScript(); // ★`0x100` 在**当前帧**查 labelMap（不是测试里那个 `new Frame()`）
   f.labelMap.set(0x500, 3);
   f.labelMap.set(0x511, 5);
+  f.labelMap.set(0x522, 6);
   /** `run` 的变体：拿回 `StepCtx`（`jump()` 只写 `ctx._nextIp`，由 `stepOnce` 才落到 `frame.ip`）。 */
   const runCtx = (op: number, args: BinArg[]): { _nextIp: number | null } => {
     const h = OPS.get(op);
@@ -132,13 +133,19 @@ test('0xFB + 0x100：跳转表按**输入掩码位**索引（不是 b-4），b�
     h!(ctx);
     return ctx;
   };
-  // `i0fb <btn> <label>`：登记**掩码位** `4+btn`（引擎 `sub_477280` 的 `1 << (btn+4)`）。
-  //   手柄按钮 3 ⇒ 掩码位 7；按钮序号 1 ⇒ 掩码位 5（= 鼠标右）。
-  run(0xfb, [im(3), im(0x500)]);
-  run(0xfb, [im(1), im(0x511)]);
-  assert.equal(e.input.joyJump[7], 0x500, '手柄按钮 3 ⇒ 掩码位 7（`4+3`）');
-  assert.equal(e.input.joyJump[5], 0x511, '按钮序号 1 ⇒ 掩码位 5（= 鼠标右）');
-  // 手柄按钮 3 ⇒ 掩码位 7 ⇒ 用 joyJump[7]
+  // ★`i0fb <掩码位> <label>`：op1 **就是掩码位**（引擎 `sub_421B80` raw 30417 `_this[33*cur+107725+op1]=op2`
+  //   ↔ `sub_419AF0` raw 25042 查 `_this[33*cur+107725+掩码位]` —— 中间没有 ±4）。
+  //   ★2026-09 修：旧实现存到 `4+op1`，害得**鼠标左键（掩码位 4）派发到 `joy-callback 0`** 的 handler
+  //   （TITLE/GAMESTART 的 `0xFB 0` 是"行确认"，会画出按钮高亮贴图 ⇒ 用户报的「切界面后按钮停在 hover 态」）。
+  run(0xfb, [im(7), im(0x500)]); // 掩码位 7 = 手柄按钮 3（flush 的 `4+3`）
+  run(0xfb, [im(5), im(0x511)]); // 掩码位 5 = 鼠标右
+  run(0xfb, [im(4), im(0x522)]); // 掩码位 4 = 鼠标左（与"手柄按钮 0"别名）
+  run(0xfb, [im(0), im(0x533)]); // 掩码位 0 = 可配置键 0 —— **绝不能**被鼠标左键命中
+  assert.equal(e.input.joyJump[7], 0x500, '掩码位 7 ⇒ 存在 7');
+  assert.equal(e.input.joyJump[5], 0x511, '掩码位 5 ⇒ 存在 5');
+  assert.equal(e.input.joyJump[4], 0x522, '掩码位 4 ⇒ 存在 4');
+  assert.equal(e.input.joyJump[0], 0x533, '掩码位 0 ⇒ 存在 0');
+  // 手柄按钮 3 ⇒ 掩码位 7
   e.input.pressJoy(3);
   assert.equal(runCtx(0x100, [])._nextIp, 3, '掩码 bit7 ⇒ joyJump[7] 的目标 0x500');
   // 鼠标右键按下 ⇒ 掩码位 5；`joyJump[5]` 已登记 ⇒ 跳 0x511。
@@ -151,6 +158,16 @@ test('0xFB + 0x100：跳转表按**输入掩码位**索引（不是 b-4），b�
   f.retStack.length = 0;
   assert.equal(runCtx(0x100, [])._nextIp, 5, '掩码 bit5 ⇒ joyJump[5]（不是 mouseJump、也不是 joyJump[b-4]）');
   assert.equal(e.input.mouseJump, 0x999, '0x100 不消费（也不读）mouseJump');
+  // ★用户报 #1 的回归锁：鼠标**左键**（掩码位 4）必须走 `joyJump[4]`，**不能**走 `joyJump[0]`。
+  e.input.joyEdge = [];
+  e.input.consumeEdges();
+  e.input.buttons = 1; // 左键按住 ⇒ flush 出 bit4
+  f.retStack.length = 0;
+  assert.equal(
+    runCtx(0x100, [])._nextIp,
+    6,
+    '掩码 bit4（鼠标左）⇒ joyJump[4] 的目标 0x522；若跳到 0x533 说明又退回 `4+op1` 的错索引',
+  );
   void run;
 });
 

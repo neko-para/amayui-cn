@@ -41,6 +41,7 @@ import { HeadlessScene } from '../renderer/headlessScene.js';
 import { calcDiffuse, meshColor } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { applyConfigToEngine, parseIni } from '../engineConfig.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -165,6 +166,12 @@ export interface GameStartOptions {
   recordDrops?: boolean;
   /** 到达 SN0000 首文案后是否继续跑到"没事干"（默认在首文案处停）。 */
   continueAfterTarget?: boolean;
+  /**
+   * 外置选项（`emulator.config.json` 的内容）。**省略 = 真游戏行为**（`boot.showLogo = true`）。
+   * 为什么不让 library 自己读文件：`test/game-start-chain.test.ts` 直接调本函数 ⇒ 读本机配置文件会让
+   * "测试结果取决于开发机上的一个 JSON"，那是不可复现的。只有 CLI 入口才 `loadEmulatorOptions()`。
+   */
+  emulatorOptions?: EmulatorOptions;
 }
 
 /**
@@ -181,6 +188,10 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   e.fileSource = src;
   e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
+  // 外置选项（`emulator.config.json`）：目前只有 `boot.showLogo`（false = 预设 `_this[96983]=0` 跳过 LOGO）。
+  // ★这条链路的**测试不得受本机配置文件影响** ⇒ library 调用一律 `opt.emulatorOptions ?? 默认值`，
+  //   只有 CLI 入口（`opInventory.ts`）才去读文件。必须在 `loadScriptData` 之前套用（SYSTEM4 开头就查它）。
+  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
 
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');

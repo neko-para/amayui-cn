@@ -26,6 +26,8 @@ import { ExitScript, ScriptReset } from './vm/ops.js';
 import { DropRecorder, withNativeTap } from './vm/nativeTap.js';
 import { HeadlessScene } from './renderer/headlessScene.js';
 import type { NativeBridge } from './vm/native.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from './emulatorOptions.js';
+import { emulatorOptionsOf } from './emulatorOptionsFile.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
@@ -56,6 +58,12 @@ export interface ReportOptions {
   write?: boolean;
   /** 日志回调。 */
   onLog?: (m: string) => void;
+  /**
+   * 外置选项（`emulator.config.json` 的内容）；省略 = 真游戏行为（`boot.showLogo = true`）。
+   * `showLogo=false` 时 `SYSTEM4` 会跳过 LOGO ⇒ 报告里不再出现版权页/LOGO.MPG 那段（快照会变！）。
+   * 只有 CLI 入口读文件；测试一律用默认值（结果不能取决于开发机上的一个 JSON）。
+   */
+  emulatorOptions?: EmulatorOptions;
 }
 
 export interface SceneReport {
@@ -128,6 +136,9 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
   const e = new Engine(native);
   engineRef.e = e;
   e.fileSource = src;
+  // 外置选项（`emulator.config.json`）：省略 = 真游戏行为（播 LOGO）。**必须在装载脚本之前**套用
+  // （SYSTEM4 开头 `load-show-logo` 就据 `_this[96983]` 决定是否 `call-script LOGO`）。只在 CLI 入口读文件。
+  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
 
   const boot = await src.readScript(opt.script);
   if (!boot) throw new Error(`无法装载脚本索引 ${opt.script}`);
@@ -308,6 +319,8 @@ async function main(): Promise<void> {
   };
   const ops = parseOps(arg('ops'));
   if (ops) opts.ops = ops;
+  // 外置选项文件（可选）：`boot.showLogo=false` 可跳过 LOGO/版权页（省启动等待）。
+  opts.emulatorOptions = emulatorOptionsOf(REPO_ROOT);
   // `--resources <dir>` 指定资源根（默认 install/ = 汉化版）；`--raw` 为旧名，保留兼容。
   const resDir = arg('resources') ?? arg('raw');
   if (resDir) opts.resourceDir = resDir;

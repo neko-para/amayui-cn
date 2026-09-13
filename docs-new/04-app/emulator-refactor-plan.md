@@ -272,6 +272,44 @@
   分析报告：`.tmp/se-51e3-analysis.md`（只读分析代理产出，含资源解析/解码/路由/时序四类假设的排除凭据）；
   台账同步：`analysis/scripts.json` 的 `GAMESTART` 补 SE 通道与统一 id 事实、"点击路径自身不发 SE"不变量、
   "SE 通道跨脚本常驻"坑，并回链 `docs-new/03-engine/sound-system.md`。
+- 2026-09（第 12 轮，`npm run verify` 全绿 **415/415**）：
+  ㉒ ★**新增外置选项文件 `emulator.config.json`**（用户要求：跑回归/截图时省掉 LOGO 版权页的无意义等待）：
+  目前**只有一个开关** `boot.showLogo`（boolean，默认 `true` = 真游戏行为）。`false` ⇒ 启动时预设
+  `_this[96983] = 0`（`load-show-logo` 0x130 的字段，`sub_42F7A0` raw 39346 读；`src/SYSTEM4.txt:144-146`
+  据此 `jcc` 直接落到 `:149 INIT` / `:150 TITLE`）。**这不是自造旁路**：LOGO 自身的 `exit`（`exit-script`
+  `sub_428A60` raw 35207 置 0）与 GAMEOVER 回标题走的**就是**这条路径。实现：纯解析/套用在
+  `src/emulatorOptions.ts`（**刻意不 import `node:fs`** —— 渲染进程按 esbuild `platform:'browser'` 打包），
+  node 侧读取在 `src/emulatorOptionsFile.ts`（`AMAYUI_EMULATOR_CONFIG` 可换路径），Electron 走
+  IPC `read-emulator-options`（主进程只读文本、渲染侧解析）。接入点：`run.ts`、Electron `boot.ts`
+  （`loadEngineOptionsFile`，必须在 `loadScriptData` 之前）、`report.ts` / `gameStartChain` / `config1Chain`
+  的 **CLI 入口**。★**库调用一律 `opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS`**：测试结果绝不能
+  取决于开发机上的一个 JSON（守卫：`test/emulator-options.test.ts` 的"库入口不得 import node-only 读取模块"
+  + `test/game-start-chain.test.ts` 断言默认仍经过 LOGO）。**实测收益**（`.tmp/measure-logo.ps1`，
+  两次 `npm run shot -- --gamestart` 对比）：TITLE 之后第一帧的 renderer 时钟 **6333ms → 922ms**
+  （省 ≈5.4s），wall **41.5s → 37.0s**；日志里 `-> LOGO.BIN` 消失、GAMESTART/SN0000 照常到达。
+  ⚠️ 刻意的近似：真机播 LOGO 时 `SYSTEM4` 的 `ip0..143` 会跑两遍（LOGO 的 `exit` 重载根脚本再跑一遍），
+  预设 0 时只跑一遍；实测链路完整（E3 断言仍到达 SN0000 首文案 ip=901）。
+  ㉓ ★**修 #1「切界面后按钮停在 hover 态」**（根因是 `0xFB joy-callback` 的**索引偏移**）：
+  旧实现把 op1 当**按钮序号**存到 `4 + op1`，而引擎存的是 `_this[33*cur + 107725 + op1]`（`sub_421B80`
+  raw 30417）、读的是 `_this[33*cur + 107725 + 掩码位]`（`sub_419AF0` raw 25042）—— **中间没有 ±4**。
+  后果：**鼠标左键 = 掩码位 4**（`sub_477150`；`sub_477280` raw 91661 的 `1 << (btn+4)` 是手柄）被派发到
+  `joy-callback 0` 的 handler；TITLE/GAMESTART 的 `joy-callback 0` 是**行确认**（`label_00000c58` →
+  `3f7 = 3f8` → `call label_000049d0`），于是每次点击进入一个界面就把该界面**第 0 项**的**高亮贴图**
+  画上屏（GAMESTART 的 handle `0x44c`，正常态是 `3e8/3e9/3ea`）⇒ 用户看到的"按钮处于 hover 态"，
+  来回切换 ⇒ 两个界面的第 0 项都亮。**取证**（TEMP-DIAG 仪器化一次 Electron 跑，已撤）：日志里
+  `detachTexture h=0x44c` + `configureDrawItem h=0x44c layer=1100 (523,75,209x73)` 出现在
+  **整个 GAMESTART 期间唯一一次 `0x12E`（x/y=(811,605)）之前** ⇒ 高亮**不是**命中测试画的；
+  且 `0x12E` 全程只跑过一次。修法一行：`joyJump[op1] = target`。守卫：`test/op-a5.test.ts` 的
+  "掩码 bit4（鼠标左）⇒ `joyJump[4]`" 用例（旧实现会跳到 `joyJump[0]`）。E4：`joyFix-6-gamestart.png`
+  三个按钮**全部为正常态**（修复前 `ゲーム開始` 是青色高亮态）。
+  ㉔ ★**修 #2「ADV ▼ 图标被提前显示」**：`serviceCharGrid` 的 `isRevealing()` 门只挡住了"换格/起算节拍"，
+  而 ▼ 的**存在与否**由 `emitWin` 载荷里的 `cell: cellFrameOf(...)` 决定 —— 逐字期间
+  `serviceTextReveal → #publishReveal → emitWin` 同样会带 `cell` ⇒ 宿主立刻把 ▼ 画上屏（E4 日志
+  `[reveal] win=8 1/52` 紧跟着 `[cell]`）。引擎侧依据：文字泵 `sub_45BE20` 在等待泵里**自旋到整页显完**
+  （raw 13847/13863/13907/13920 的 `while (!sub_45BE20(...))`），主循环的图标分支 raw 20887-20895
+  永远是"泵已返回 true"之后才轮到。修法：把门加在 `cellFrameOf`（**唯一判决点**）：
+  `if (e.msgwin.isRevealing()) return undefined;`。守卫：`test/char-reveal.test.ts` 的
+  "显到一半 ⇒ 载荷里仍不得有 cell"（已验证去掉该行即红）。
 
 
 ## 10. 已登记的后继工作（本轮到 8/8 为止**未做**，按价值排序）

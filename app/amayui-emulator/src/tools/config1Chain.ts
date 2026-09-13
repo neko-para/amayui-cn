@@ -27,6 +27,7 @@ import { HeadlessScene } from '../renderer/headlessScene.js';
 import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import { dec } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
 import { FIELD_MSG_DEFAULT_WIN, FIELD_VERTICAL } from '../vm/engineFieldIds.js';
@@ -267,6 +268,8 @@ export interface ChainOptions {
    * `pivot`，被 `0x1FD` 拉伸的中段就整体左移 `707ffa`（用户实测「中段漂到左边」）。
    */
   fontPickerCloseThenScroll?: boolean;
+  /** 外置选项（`emulator.config.json` 的内容）；省略 = 真游戏行为（`boot.showLogo=true`）。 */
+  emulatorOptions?: EmulatorOptions;
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
@@ -282,6 +285,9 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   e.fileSource = src;
   e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
+  // 外置选项（`emulator.config.json`）：library 省略时 = 真游戏行为（播 LOGO）；只有 CLI 入口读文件
+  // （理由见 `gameStartChain.ts` 同名字段：测试结果不能取决于开发机上的一个 JSON）。
+  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
   loadScriptData(e, boot.data, boot.name);

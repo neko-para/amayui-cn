@@ -13,6 +13,8 @@ import { ScriptReset, ExitScript } from './vm/ops.js';
 import { audioBootIntents } from './vm/handlers/audio.js';
 import { OPCODE_TABLE } from './script/bin.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
+import { applyEmulatorOptions } from './emulatorOptions.js';
+import { describeEmulatorOptions, loadEmulatorOptions } from './emulatorOptionsFile.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
@@ -55,6 +57,15 @@ async function main() {
     );
   } else {
     console.log('[config] overlay/base 都没有 SYS4REG.INI（引擎字段用默认值）');
+  }
+
+  // 外置选项（`emulator.config.json`，可选；`AMAYUI_EMULATOR_CONFIG` 可换路径）：
+  // 目前只有一个开关 `boot.showLogo` —— false 时预设 `_this[96983]=0` 跳过 LOGO/版权页（省启动等待）。
+  // ★必须在装载脚本之前套用：SYSTEM4 的 `load-show-logo`（`src/SYSTEM4.txt:144-146`）在开头就据它分派。
+  {
+    const loaded = loadEmulatorOptions(REPO_ROOT);
+    for (const l of describeEmulatorOptions(loaded)) console.log(l);
+    for (const n of applyEmulatorOptions(e.engineValues, loaded.options)) console.log(`[options] ${n}`);
   }
 
   // 装载 SAVE.DAT（`save-int`/`save-string` 表）—— 必须在装载脚本之前：

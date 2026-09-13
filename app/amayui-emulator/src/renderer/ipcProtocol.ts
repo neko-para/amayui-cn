@@ -26,6 +26,12 @@ declare global {
        * （调用点用 `?.` 降级为"只改内存"）。
        */
       saveConfigIni?(text: string): Promise<{ path: string } | null>;
+      /**
+       * 读**外置选项文件** `emulator.config.json` 的文本（主进程只读；渲染进程无 `fs`）。
+       * `exists=false` = 没有该文件（正常情况，用默认值）。解析在 `src/emulatorOptions.ts` 的
+       * `parseEmulatorOptions`，套用在 `applyEmulatorOptions`（目前只有 `boot.showLogo`）。
+       */
+      readEmulatorOptions?(): Promise<{ path: string; exists: boolean; text: string } | null>;
       /** 读 `SAVE.DAT` 原始字节（overlay → base；都没有返回 null）。`save-int`/`save-string` 表的持久化载体。 */
       readSaveData?(): Promise<Uint8Array | number[] | null>;
       /** 写 `SAVE.DAT`（整份字节）；主进程**只写 overlay**，真存档永不被覆盖。 */
