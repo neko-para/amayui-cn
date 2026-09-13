@@ -20,6 +20,15 @@ export interface SceneState {
   /** 每个窗的**内容版本号**：宿主据此判断纹理是否需要重新光栅化（递增即重画）。 */
   msgRev: Map<number, number>;
   /**
+   * 每个窗在 Scene 里的 **DrawItem 区间**（引擎 `FontVWindow+104/+108`（`0x213` 写）与
+   * `+276/+280`（`0x25D` 写）；SYSTEM4 注册 win1/win8 的正文区间 = `[105000,105500)`）。
+   *
+   * 用途单一但关键：脚本清文字的手段是 `0x1F7 detach-texture <base> <count>`（删掉这些图元），
+   * 而重写侧的文本另有载体 ⇒ `scDetachTexture` 必须靠这张表判断"哪个窗的字该跟着消失"
+   * （2026-09 用户实测：转场后 ADV 文字残留）。区间由 `scMsgWinSync` 从 `MsgWinInput.itemRanges` 刷新。
+   */
+  msgRanges: Map<number, { base: number; count: number }[]>;
+  /**
    * **直绘进纹理槽的文本**（`0x204` draw-string → 引擎 `sub_456710` 的 GDI 整串直绘）。
    *
    * 为什么单独记：它**不是**消息窗文本（没有排版、没有逐字显现、不属于任何 win），
@@ -74,6 +83,7 @@ export function newSceneState(): SceneState {
     meshes: new Map<number, MeshObj>(),
     msgWins: new Map<number, TextFrame>(),
     msgRev: new Map<number, number>(),
+    msgRanges: new Map<number, { base: number; count: number }[]>(),
     slotText: new Map<number, { x: number; y: number; text: string; fill: string }[]>(),
     render4: {
       primReset: null,

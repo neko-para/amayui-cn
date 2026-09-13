@@ -445,8 +445,39 @@ export class Engine {
       }
     }
     const more = this.msgwin.isRevealing();
-    if (this.msgwin.charMode && !more) this.endCharReveal();
+    // ★文字显现完了**不等于** ▼ 图标停：bit30（effect_flags & 0x40000000）由点击推进
+    //   （raw 20028-20030）或 0x1CE 0（raw 29344-29348）清 —— 这里只收掉"文字在逐字"这个标志，
+    //   否则玩家点击前的那段等待时间（正是 ▼ 该闪的时候）图标会被提前停掉。
+    if (this.msgwin.charMode && !more) this.msgwin.charMode = false;
     return more;
+  }
+
+  /**
+   * **字格图标动画服务**（引擎主循环 raw 20887-20895）：
+   * `if (effect_flags & 0x40000000) { if (sub_453AF0(Engine+430600) >= 0) { sub_45A940(Font, 当前窗, k, 0);
+   *  k = (k+1) % 模数; } }`
+   *
+   * ★`0x73` 的真相（2026-09 订正，见 `CharGrid` 的说明）：它配的是**一张图标精灵表的网格**
+   * （ADV = `SO000.AGF`(0x5191) 10 帧 35×35 的 ▼ 装进槽 12；序章/NOVEL = `SO026.AGF`(0x5190)
+   * 8 帧 56×56），**不是文字逐字的单位** —— 文字是 `sub_45BE20` 那个泵（见 `serviceTextReveal`）。
+   * 本服务每 `tickMs` 换一格并重新发布该窗（宿主据此把第 k 格画到屏幕上）。
+   * 返回 true = 本帧换了格。
+   */
+  serviceCharGrid(nowMs: number): boolean {
+    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) === 0) return false;
+    const m = this.msgwin;
+    const w = m.resolveWin(m.lastArg);
+    const g = m.gridOf(w);
+    if (!g || !g.gate || g.cells <= 0) return false;
+    if (nowMs < m.cellNextAt) return false;
+    // 引擎 raw 20892-20893：**先贴当前格 k、再 `k = (k+1) % 模数`**
+    // ⇒ 第 1 格在 `t0 + tick` 出现（t0..t0+tick 之间屏上还是 `-1` 查询捕获的背景）。
+    emitWin(this, w);
+    m.cellK = (m.cellK + 1) % g.cells;
+    m.cellNextAt = nowMs + (g.tickMs > 0 ? g.tickMs : 1);
+    // `Engine[107704]` = 下一个格号（与引擎同步给脚本可读的字段一致）
+    this.engineValues.set(FIELD_CHAR_CURSOR, m.cellK);
+    return true;
   }
 
   /**
@@ -543,7 +574,11 @@ export class Engine {
    */
   endCharReveal(): void {
     this.msgwin.charMode = false;
+    const wasArmed = (this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0;
     this.effectFlags &= ~CHAR_REVEAL_ACTIVE;
+    // 停 ▼ 图标（引擎收尾 = sub_45A940(..., -2, 0)：整段贴出并清 bit30，图标不再换格）。
+    // 重新发布一次 ⇒ 主机端从这一帧起不再带 cell（否则最后一格会一直留在画面上）。
+    if (wasArmed) emitWin(this, this.msgwin.resolveWin(this.msgwin.lastArg));
   }
 
   /** 是否有窗还在逐字显现（引擎 `effect_flags & 0x40000000` 的等价判定）。 */
@@ -568,7 +603,9 @@ export class Engine {
 
     // ★引擎 raw 20025-20030：推进前先把逐字显现**收尾**（`sub_45A940(...,-2,0)`）并清 bit30，
     //   除非「快速/跳读」位（`effect_flags & 0x100000`）已置（那种情况下不补画）。
-    if (this.msgwin.charMode && (this.effectFlags & 0x100000) === 0) {
+    //   ★判据用 **bit30**（`CHAR_REVEAL_ACTIVE`，= ▼ 图标动画）而不是 `charMode`：文字可能早就显完了，
+    //   但 ▼ 还在闪 —— 那时点击同样要收尾并停图标。
+    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0 && (this.effectFlags & 0x100000) === 0) {
       for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
       this.endCharReveal();
       this.serviceTextReveal(this.nowMs);
@@ -603,6 +640,31 @@ export class Engine {
   }
 
   /**
+   * **悬停派发判定**（引擎 `sub_411BC0` raw 20322-20337 的前半：`v9 = sub_403E70(routes)`）。
+   *
+   * 引擎在**等待泵**里每帧做一次：`sub_4B8D50`（鼠标移动）已按坐标 `sub_403C50` 设好游标，
+   * 这里再用 `sub_403E70` 按"游标变化"取本帧该跑的 label —— **进入**项取 `[259+i]`、
+   * **离开**项取 `[359+i]`（两段式，见 `RouteTable.nextHoverLabel`），随后 `ip = label` 并清 bit31。
+   *
+   * ★这是"UI 悬停反应"的唯一入口：emulator 在 2026-09 之前**完全没有**它 ⇒ 脚本里靠热点
+   * labelA/labelB 做的悬停 UI（SN0000 的右侧侧边栏展开/收起、CONFIG 的按钮高亮…）永远不响应
+   * （用户实测："ADV 界面右侧的侧边栏菜单无条件展示"）。
+   *
+   * 本方法只做**判定**（不改脚本状态）：label 的**执行**由宿主跑（`session` 的 `#runHoverLabel`），
+   * 因为脚本状态只有一份，而引擎那边这条 label 是"带返回点的子程序调用"。
+   *
+   * 返回 −1 = 本帧没有游标变化（或没有游标/没有热点）。
+   */
+  pickHoverLabel(): number {
+    const im = this.input;
+    if (!im.hasCursor) return -1;
+    // 引擎 `sub_403C50`：按当前坐标重算游标（引擎在鼠标事件里做；这里每帧按当前位置重算）
+    this.routes.hitTest(im.readX(), im.readY());
+    const label = this.routes.nextHoverLabel(); // 引擎 `sub_403E70`
+    return label === 0xffffffff ? -1 : label;
+  }
+
+  /**
    * **headless 确定性放行**：无输入源时（`report.ts` / `run.ts`）把等待门当作"玩家立刻点了"，
    * 若已登记热点则跳到第一个热点的 labelC（与真实点击同一路径），否则只解除门。
    * 返回跳转到的 label（`null` = 未跳转）。**仅 headless 使用**；renderer 走 `serviceAdvanceWait()`。
@@ -610,9 +672,9 @@ export class Engine {
   forceAdvance(): number | null {
     if (!this.awaitingAdvance) return null;
     // 与真实点击同一语义（引擎 raw 20025-20030）：先把逐字显现收尾（整段贴出）再放行。
-    if (this.msgwin.charMode && (this.effectFlags & 0x100000) === 0) {
+    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0 && (this.effectFlags & 0x100000) === 0) {
       for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
-      this.endCharReveal();
+      this.endCharReveal(); // 收尾（整段贴出）+ 清 bit30 ⇒ 停 ▼
       this.serviceTextReveal(this.nowMs);
     }
     this.awaitingAdvance = false;

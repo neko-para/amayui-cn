@@ -99,6 +99,10 @@ export class TextLayer {
     //   （上一版就是漏了这个：启动首帧 DPR 还没稳定时更明显，之后重画才"看起来正常"。）
     const texture = new Texture({ source: new CanvasSource({ resource: canvas, resolution: res }) });
     if (old) {
+      // 逐字游标每变一次记一行（E4 证据：显现应当是**均匀**推进，不是一拍一批字）
+      if (old.revealed !== revealed) {
+        this.log(`[reveal] win=${win} ${revealed < 0 ? frame.glyphCount : revealed}/${frame.glyphCount}`);
+      }
       const prev = old.texture;
       old.sprite.texture = texture;
       old.texture = texture;

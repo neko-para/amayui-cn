@@ -68,71 +68,132 @@ test('★0x73 设字格：写入字格块（含 win+88 总门）与逐字节拍�
   assert.equal(e.msgwin.gridTickMs(3), undefined);
 });
 
-test('★0x72 启动逐字：字格页的节拍 = 0x73 op10（不是 message:MessageSpeed）', () => {
+test('★0x72 武装逐字：节拍 = max(MessageSpeed, 一帧)、一次一个字（0x73 只管 ▼ 图标）', () => {
   const { e, step } = mk();
-  e.engineValues.set(21668, 5); // message:MessageSpeed = 5ms
+  e.engineValues.set(21668, 5); // message:MessageSpeed = 5ms（低于一帧 ⇒ 取一帧）
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('一二三四五')]); // 5 字
   step(0x72, [im(8)]);
   const st = e.msgwin.reveal.get(8);
   assert.ok(st, '0x72 应启动显现');
-  assert.equal(st!.intervalMs, 100, '字格页节拍 = 100ms（引擎 sub_453AF0 用 Engine+430600）');
-  assert.equal(st!.nextAt, 100, '首个字也要等满一个节拍');
+  assert.ok(
+    Math.abs(st!.intervalMs - 1000 / 60) < 0.01,
+    '★逐字节拍 = max(MessageSpeed, 一帧) = 16.67ms（`0x73` 的 op10=100ms 是 **▼ 图标**的换格节拍，不是文字的）',
+  );
   assert.equal(e.msgwin.charMode, true, 'effect_flags bit30 应置位');
-  assert.equal(e.msgwin.charTotal, 8, 'Engine[107705] = win+92 = op9（引擎的循环模数）');
+  assert.equal(e.msgwin.charTotal, 8, 'Engine[107705] = win+92 = op9（▼ 精灵表的格数）');
   assert.equal(e.engineValues.get(107705), 8);
   assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, CHAR_REVEAL_ACTIVE);
 
-  // 一帧（16.7ms）不该推进；100ms 才走 1 个字（不跨节拍补齐）
-  e.serviceTextReveal(16.7);
-  assert.equal(e.msgwin.revealedOf(8), 0, '未到 100ms 节拍 ⇒ 不动');
-  e.serviceTextReveal(100);
-  assert.equal(e.msgwin.revealedOf(8), 1, '到点走一个字');
-  assert.equal(e.engineValues.get(107704), 1, '字格游标 Engine[107704] +1');
-  e.serviceTextReveal(250);
-  assert.equal(e.msgwin.revealedOf(8), 2, '过了下一个节拍点 ⇒ 只走一步（不补齐）');
-  e.serviceTextReveal(260);
-  assert.equal(e.msgwin.revealedOf(8), 2, '下一次节拍（350ms）未到 ⇒ 原地');
+  // 一次一个字、不补拍
+  e.serviceTextReveal(10);
+  assert.equal(e.msgwin.revealedOf(8), 0, '未到节拍 ⇒ 不动');
+  e.serviceTextReveal(1000 / 60);
+  assert.equal(e.msgwin.revealedOf(8), 1, '第一拍 ⇒ 1 字');
+  for (let k = 2; k <= 5; k++) e.serviceTextReveal((1000 / 60) * k);
+  assert.equal(e.msgwin.revealedOf(8), 5, '5 拍显完（整段 = 5 × 16.67ms）');
+  assert.equal(st!.active, false);
 });
 
 /**
- * ★2026-09 用户实测："SN0000 的逐字比设置界面慢了很多"。
- *
- * 根因（引擎源码）：字格路径的一拍 = **一个 56px 字格**，不是"一个字"——
- * 主循环 raw 20892-20893 只做 `sub_45A940(Font, 窗, k, 0)` + `k = (k+1) % 模数`，
- * 而 `sub_45A940` 的 `k` 是**字格下标**（raw 71392-71412：`(k % cols) * (cellW)` 算出该格矩形、
- * 为该格建一个 DrawItem），模数 = `win+92` = `0x73` 的 op9（`a3 == -1` 分支 `*a4 = v6[23]`，
- * raw 71381-71383 写进 `Engine[430820]`）。
- * ⇒ 整段时长 = `cells × op10`（SN0000：8 × 100 = 800ms），**不是** `字数 × op10`（58 字 ⇒ 5.8s，慢了 7 倍）。
- * 重写侧仍逐字可见 ⇒ 一步要推进 `ceil(total / cells)` 个字。
+ * ★2026-09 用户实测（三轮反馈 ⇒ 定出这条模型）：
+ *  ① "SN0000 的逐字比设置界面慢了很多"：旧实现把 `0x73` 的 op10（100ms）当成文字的节拍
+ *     ⇒ 58 字 × 100ms = 5.8s。**真相**：`0x73` 配的是 ▼ 图标精灵表（ADV = SO000.AGF 10 帧 35×35、
+ *     序章 = SO026.AGF 8 帧 56×56），主循环 raw 20887-20895 每 100ms 换的是**格号**（图标帧），
+ *     文字走的是 `sub_45BE20` 那个泵 ⇒ 文字节拍 = `message:MessageSpeed`（与设置界面同一口径）。
+ *  ② "几个字几个字一起出，看着卡顿"：旧实现按"整段预算追赶"（卡一帧就把欠的字一次补出来，
+ *     首次加载字体那种长帧会一次冒出十几个字）。**真相**：引擎是"推一个字 → `Sleep(MessageSpeed)`"
+ *     ⇒ **一帧一次、不补拍**。
  */
-test('★字格页的步长 = 一格（不是一字）：总时长 = cells × op10', () => {
+test('★逐字"不补拍"：卡一帧只少走一个字，不会一次补出一批（用户实测的"卡顿感"）', () => {
   const { e, step } = mk();
-  e.engineValues.set(21668, 5); // message:MessageSpeed 不参与字格页
+  e.engineValues.set(21668, 5); // MessageSpeed 低于一帧 ⇒ 节拍 = 一帧
   step(0x80, [im(8)]);
-  step(0x73, grid(8, -5, 0)); // SN0000.txt:1081 的真实参数（8 格 × 56px、节拍 100ms）
+  step(0x73, grid(8, -5, 0)); // SN0000.txt:1081 的真实参数（8 格 × 56px、图标节拍 100ms）
   step(0x6e, [im(0), str('一'.repeat(58))]); // 58 字（首文案那一页的规模）
   step(0x72, [im(8)]);
   const st = e.msgwin.reveal.get(8)!;
-  assert.equal(st.stepGlyphs, 8, '一步 = ceil(58 / 8) = 8 个字（一个 56px 竖条覆盖的字）');
+  assert.equal(st.intervalMs, 1000 / 60, '文字节拍 = 一帧（MessageSpeed 更低）');
 
-  // ★一拍一步（引擎每帧只 `k = (k+1) % 模数`，不跨拍补齐）⇒ 每拍各调一次
-  for (let t = 100; t <= 700; t += 100) e.serviceTextReveal(t);
-  assert.equal(e.msgwin.revealedOf(8), 56, '第 7 拍 ⇒ 56 字');
-  e.serviceTextReveal(800);
-  assert.equal(e.msgwin.revealedOf(8), 58, '8 拍（800ms）整页显完');
-  assert.equal(st.active, false, '★总时长 = cells × op10 = 800ms（旧实现 58 × 100ms = 5.8s）');
+  // ★逐帧推进必须"细"：一帧一个字
+  let prev = 0;
+  let maxStep = 0;
+  for (let t = 0; t <= 2000; t += 1000 / 60) {
+    e.serviceTextReveal(t);
+    const now = e.msgwin.revealedOf(8);
+    maxStep = Math.max(maxStep, now - prev);
+    prev = now;
+  }
+  assert.equal(maxStep, 1, '单帧最多推进 ' + maxStep + ' 个字（旧实现按预算追赶 ⇒ 一次冒出十几个）');
+  assert.equal(e.msgwin.revealedOf(8), 58, '逐字节拍下整页显完（58 × 16.67ms ≈ 970ms）');
+  assert.equal(st.active, false, '★不补拍：整段 = 字数 × 节拍（不是旧的 字数 × 图标节拍 100ms = 5.8s）');
+
+  // ★卡帧**不补拍**：引擎"推一个字 → Sleep(MessageSpeed)"⇒ 卡一帧只少走一个字、不补出一批
+  step(0x71, [im(8)]);
+  step(0x6e, [im(0), str('一'.repeat(58))]);
+  step(0x72, [im(8)]);
+  e.serviceTextReveal(100); // 第一拍
+  const afterFirst = e.msgwin.revealedOf(8);
+  e.serviceTextReveal(5000); // 模拟一次 5 秒大卡顿
+  assert.equal(
+    e.msgwin.revealedOf(8),
+    afterFirst + 1,
+    '★卡帧后只多走一个字（不补拍）——否则一次卡顿就会"唰"地补出一大批字',
+  );
 });
 
-test('无字格页仍按 message:MessageSpeed（引擎逐字只走 i073 那条路）', () => {  const { e, step } = mk();
+/**
+ * ★2026-09 用户实测（第 3 条）："游戏中文字结尾处会有一个闪烁的图标，目前好像没有渲染出来"。
+ *
+ * 真相：那是引擎内建的 **`0x73` 图标精灵表动画**（不是 DrawItem / 字形 / flipbook / 鼠标光标）——
+ * ADV 用 `SO000.AGF`(id 0x5191，350×35 = 10 帧 35×35 的 ▼) 装进槽 12（`SYSTEM4.txt:40`），
+ * `i073 1 37a 6e c 0 0 23 23 a 64`（`SYSTEM4.txt:41`）配网格；主循环 raw 20887-20895 在
+ * `effect_flags & 0x40000000` 期间每 100ms `sub_45A940(Font, 当前窗, k, 0)` 贴第 k 格、
+ * `k = (k+1) % op9` ⇒ 视觉上就是"闪烁的 ▼"。目标位置（ADV 分支）= `(op2 + 窗框 x, op3 + 窗框 y)`
+ * = `(890+190, 110+557) = (1080,667)`（`SYSTEM4.txt:23` 的 win1 框 190..1070 × 557..705）。
+ */
+test('★0x73 = ▼ 图标精灵表：0x72 武装后每 op10 ms 换一格，点击推进后停', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.engineValues.set(21668, 5); // 文字节拍（与 ▼ 无关）
+  step(0x80, [im(1)]);
+  step(0x70, [im(1), im(0x370), im(0x94), im(0xbe), im(0x22d)]); // 窗1 几何 w/h/x/y（SYSTEM4.txt:23）
+  step(0x73, [im(1), im(0x37a), im(0x6e), im(0xc), im(0), im(0), im(0x23), im(0x23), im(0xa), im(0x64)]);
+  step(0x71, [im(1)]);
+  step(0x6e, [im(0), str('あいうえお')]);
+  step(0x72, [im(1)]);
+  assert.equal(e.engineValues.get(107705), 10, '模数 = op9 = 精灵表 10 格');
+  assert.equal(e.serviceCharGrid(50), false, '未到 100ms 节拍 ⇒ 不换格');
+  // 引擎先贴当前格、再自增 ⇒ 第 1 格出现在 t0 + op10
+  assert.equal(e.serviceCharGrid(100), true, '第一拍 ⇒ 贴格 0');
+  const c0 = native.scene.msgWins.get(1)?.cell;
+  assert.deepEqual(
+    c0 && { k: c0.k, src: c0.srcSurface, w: c0.cellW, h: c0.cellH, cols: c0.cols, x: c0.x, y: c0.y },
+    { k: 0, src: 12, w: 35, h: 35, cols: 10, x: 1080, y: 667 },
+    '★源 = 槽 12 的第 0 格（35×35）、目标 = (890+190, 110+557)（引擎 raw 71368-71377）',
+  );
+  assert.equal(e.serviceCharGrid(200), true);
+  assert.equal(native.scene.msgWins.get(1)?.cell?.k, 1, '第二拍 ⇒ 第 1 格（▼ 动起来 = 闪烁）');
+  assert.equal(e.serviceCharGrid(250), false, '未到下一拍 ⇒ 不换');
+  // 点击推进 ⇒ 停（引擎 raw 20025-20030：收尾 + 清 bit30）
+  e.input.setCursor(10, 10);
+  e.input.pressMouse(0);
+  assert.equal(e.serviceAdvanceWait(), true);
+  assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, 0, '点击后不再武装');
+  assert.equal(e.serviceCharGrid(5000), false, '停后不再换格');
+  assert.equal(native.scene.msgWins.get(1)?.cell, undefined, '停后主机端不再画 ▼（收尾重发布时不带格）');
+});
+
+test('无字格页同样按 message:MessageSpeed（逐字只有一条路；0x73 只管 ▼ 图标）', () => {
+  const { e, step } = mk();
   e.engineValues.set(21668, 25);
   step(0x80, [im(9)]);
   step(0x6e, [im(0), str('あいう')]);
   step(0x72, [im(9)]);
   const st = e.msgwin.reveal.get(9);
-  assert.equal(st!.intervalMs, undefined, '无字格 ⇒ 不覆盖节拍');
-  assert.equal(st!.nextAt, 25, '节拍 = max(MessageSpeed, 一帧) = 25ms');
+  assert.equal(st!.intervalMs, 25, '节拍 = max(MessageSpeed, 一帧) = 25ms');
+  assert.equal(st!.nextAt, 25, '首个字等满一个节拍');
 });
 
 test('★0x1CE：v≠0 置逐字模式并清零游标；v=0 收尾（整段贴出）+ 清位', () => {
@@ -140,7 +201,7 @@ test('★0x1CE：v≠0 置逐字模式并清零游标；v=0 收尾（整段贴�
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('あいうえお')]);
-  e.msgwin.reveal.set(8, { shown: 2, total: 5, active: true, nextAt: 0 });
+  e.msgwin.reveal.set(8, { shown: 2, total: 5, active: true, nextAt: 0, intervalMs: 1000 / 60 });
   step(0x1ce, [im(1)]);
   assert.equal(e.msgwin.charModeArg, 1);
   assert.equal(e.engineValues.get(107706), 1);
@@ -153,6 +214,7 @@ test('★0x1CE：v≠0 置逐字模式并清零游标；v=0 收尾（整段贴�
 
 test('★点击推进：先把逐字收尾（整段显示）再放行（引擎 raw 20025-20030）', () => {
   const { e, step } = mk();
+  e.engineValues.set(21668, 5); // 逐字节拍 = max(MessageSpeed, 一帧)
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('一二三四五')]);
@@ -168,11 +230,12 @@ test('★点击推进：先把逐字收尾（整段显示）再放行（引擎 r
 
 test('★0x20A（过去未注册 ⇒ 命中即硬报错）：重排重画但不动游标', () => {
   const { e, step } = mk();
+  e.engineValues.set(21668, 5); // 逐字节拍 = max(MessageSpeed, 一帧)
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('あいうえお')]);
   step(0x72, [im(8)]);
-  e.serviceTextReveal(100);
+  e.serviceTextReveal(160); // 5 字页的逐字节拍 = 160ms（整段 800ms 摊开）
   assert.equal(e.msgwin.revealedOf(8), 1);
   step(0x20a, [im(8)]);
   assert.equal(e.msgwin.revealedOf(8), 1, '重画不改变已显示字数（引擎用当前游标重贴同一格）');
@@ -182,11 +245,12 @@ test('★0x20A（过去未注册 ⇒ 命中即硬报错）：重排重画但不�
 test('★0x304/0x305 文本块括号：保存/取回行游标 + 把余下的行贴出', () => {
   const native = new HeadlessScene({});
   const { e, step } = mk(native);
+  e.engineValues.set(21668, 5); // 逐字节拍 = max(MessageSpeed, 一帧)
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('あいうえお')]);
   step(0x72, [im(8)]);
-  e.serviceTextReveal(100);
+  e.serviceTextReveal(160); // 同 ③：逐字节拍 160ms ⇒ 1 字
   assert.equal(e.msgwin.revealedOf(8), 1);
   step(0x304, []); // 保存（引擎 win+296 ← win+132）
   assert.equal(e.msgwin.flags, 1, 'Engine[122497] = 1（文本块内的注音/内嵌模式）');
@@ -338,6 +402,7 @@ test('★闸门窗在泵贴出前不得可见：revealedOf = 0（不是 -1），
 test('★字格门窗在 0x72 武装前不得整页可见：revealedOf = 0（不是 -1）', () => {
   const native = new HeadlessScene({});
   const { e, step } = mk(native);
+  e.engineValues.set(21668, 5);
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, 56)); // 上一页留下的字格（总门 = 1）
   step(0x71, [im(8)]); // 本页开始：清窗
@@ -352,10 +417,10 @@ test('★字格门窗在 0x72 武装前不得整页可见：revealedOf = 0（不
   // 0x72 武装后逐步显现：8 格 ⇒ 一步 ceil(10/8)=2 字，节拍 100ms（5 拍显完）
   step(0x72, [im(8)]);
   assert.equal(e.msgwin.revealedOf(8), 0, '武装当帧仍是 0 字');
-  e.serviceTextReveal(100);
-  assert.equal(e.msgwin.revealedOf(8), 2, '第一拍 ⇒ 一格 = 2 字');
-  for (let t = 200; t <= 800; t += 100) e.serviceTextReveal(t);
-  assert.equal(e.msgwin.revealedOf(8), 10, '整页显完');
+  e.serviceTextReveal(80);
+  assert.equal(e.msgwin.revealedOf(8), 1, '80ms ⇒ 1 字（10 字页的节拍 = 800/10，不再一批 7 字）');
+  for (let k = 2; k <= 10; k++) e.serviceTextReveal(80 * k);
+  assert.equal(e.msgwin.revealedOf(8), 10, '整页显完（8 格 × 100ms = 800ms）');
 });
 
 test('分类契约：0x73/0x1CE 已从 engine-internal 表移除（否则真实现被 no-op 掩盖）', () => {

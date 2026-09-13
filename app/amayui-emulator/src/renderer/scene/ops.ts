@@ -85,19 +85,45 @@ export function scEnsureItem(s: SceneState, handle: number): { item: Item; creat
   return { item: it, created: true };
 }
 
-/** `0x1F7` detach-texture：`count<=1` 删单项；`count>1` 删 `[handle, handle+count)` 的 DrawItem 与 Mesh。 */
-export function scDetachTexture(s: SceneState, handle: number, count: number): { drawItems: number; meshes: number } {
-  if (count <= 1) {
-    const a = s.drawItems.delete(handle) ? 1 : 0;
-    const b = s.meshes.delete(handle) ? 1 : 0;
-    return { drawItems: a, meshes: b };
-  }
-  const hi = handle + count;
+/**
+ * `0x1F7` detach-texture：`count<=1` 删单项；`count>1` 删 `[handle, handle+count)` 的 DrawItem 与 Mesh。
+ *
+ * ★2026-09 修（用户实测："切换背景时（转场）ADV 文字应该消失，但被保留了"）：
+ * 引擎里**屏幕上的字就是 Scene 的 DrawItem**（正文行 id = 行号 + `win+104`，注音/另一组在 `win+276`；
+ * 区间由 `0x213`/`0x25D` 登记 —— `SYSTEM4.txt:58/69` 给 win1/win8 登记 `i213 1|8 19a28 1f4`
+ * = `[105000,105500)`，`SYSTEM4.txt:57` 给 win1 登记 `i25d 1 1976c 3` = `[104300,104303)`）。
+ * 脚本清 ADV 文字的手段**就是按区间删项**：`$1$SC0330.txt` 整个文件 0 次 `i071`/`i301`，
+ * 换场只做 `detach-texture 19a28 1f4` + `detach-texture 1a9c8 64`（`$1$SC0330.txt:18117-18119`
+ * 的 `label_000406e8`，被 44 处 `call label_000407c0` 调起）；`SN0000.txt:3799/3814` 同理。
+ *
+ * emulator 的文本另有载体（`msgWins`，见 `scene/state.ts` 的说明）⇒ 只删 DrawItem 不会让字消失，
+ * 于是文字会残留到下一次 `0x71`/`0x301`。这里与 `scClearDrawContainer` 的 `scMsgWinClearAll`
+ * 走同一条思路：**删掉的区间与某窗登记的区间相交 ⇒ 该窗的字也没了**。
+ */
+export function scDetachTexture(
+  s: SceneState,
+  handle: number,
+  count: number,
+): { drawItems: number; meshes: number; clearedWins: number[] } {
+  const hi = count <= 1 ? handle + 1 : handle + count;
   let drawItems = 0;
   let meshes = 0;
-  for (const k of [...s.drawItems.keys()]) if (k >= handle && k < hi) { s.drawItems.delete(k); drawItems++; }
-  for (const k of [...s.meshes.keys()]) if (k >= handle && k < hi) { s.meshes.delete(k); meshes++; }
-  return { drawItems, meshes };
+  if (count <= 1) {
+    if (s.drawItems.delete(handle)) drawItems++;
+    if (s.meshes.delete(handle)) meshes++;
+  } else {
+    for (const k of [...s.drawItems.keys()]) if (k >= handle && k < hi) { s.drawItems.delete(k); drawItems++; }
+    for (const k of [...s.meshes.keys()]) if (k >= handle && k < hi) { s.meshes.delete(k); meshes++; }
+  }
+  // 窗的正文/注音图元区间被删光 ⇒ 该窗在画面上不该再有字
+  const clearedWins: number[] = [];
+  for (const [win, ranges] of s.msgRanges) {
+    if (!ranges.some((r) => r.count > 0 && r.base < hi && r.base + r.count > handle)) continue;
+    if (!s.msgWins.has(win)) continue;
+    scMsgWinClear(s, win);
+    clearedWins.push(win);
+  }
+  return { drawItems, meshes, clearedWins };
 }
 
 /**
@@ -405,6 +431,10 @@ export function scAnimationsDone(s: SceneState, clock: number): boolean {
  */
 export function scMsgWinSync(s: SceneState, win: number, input: MsgWinInput): TextFrame {
   const frame = layoutWindow(win, input);
+  // 该窗的 DrawItem 区间（`0x213`/`0x25D` 登记）：`scDetachTexture` 靠它判"字该跟着消失"
+  if (input.itemRanges) s.msgRanges.set(win, input.itemRanges.map((r) => ({ base: r.base, count: r.count })));
+  // 字格图标（▼）：只在武装期间有（`Engine.serviceCharGrid` 每 tick 换一格后重新发布）
+  if (input.cell) frame.cell = { ...input.cell };
   s.msgWins.set(win, frame);
   s.msgRev.set(win, (s.msgRev.get(win) ?? 0) + 1);
   return frame;

@@ -23,6 +23,7 @@
  * 与 `HeadlessScene` 共用同一份 —— 本类**不自己实现任何场景规则**。
  */
 import type { Application, Container, ContainerChild, Texture } from 'pixi.js';
+import { Rectangle, Sprite, Texture as PixiTexture } from 'pixi.js';
 import { assertFlags, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
 import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
@@ -87,6 +88,8 @@ import type { RenderStatus } from './renderStatus.js';
  * 引擎的 backbuffer 从不清屏，屏上留的就是上一帧，只有**真的画了新东西**才该换帧。
  */
 const HOLD_MAX_FRAMES = 60;
+/** 字格图标（▼）的层序：引擎把它直接 blit 到屏幕面 ⇒ 画在最上层。 */
+const CELL_LAYER = 10_000_000; // 必须大于任何 layer/handle 键（语料里最大约 0x29bf8 = 171000）
 
 export type { Item, MeshObj, Vec3 };
 /** `RenderStatus` 由 `./renderStatus.ts` 拥有（入口与后端共用）；此处再导出以保持既有 import 路径可用。 */
@@ -125,6 +128,10 @@ export class PixiBackend implements NativeBridge {
   private sceneDirty = false;
   /** 撤幕留帧的剩余帧数（见 `#holdFrameAfterCurtainDrop`）。 */
   #holdFrames = 0;
+  /** 字格图标 Sprite 缓存（每窗一条；换格时只换 texture 的 frame）。 */
+  #cellSpritesCache = new Map<number, { sprite: Sprite; texture: Texture; k: number; src: number }>();
+  /** 已经记过"源矩形被裁空"日志的窗（避免每帧刷屏）。 */
+  #cellClippedWarned = new Set<number>();
 
   static async create(
     status: RenderStatus,
@@ -511,10 +518,12 @@ export class PixiBackend implements NativeBridge {
     const droppedCurtain = this.#coversViewportMeshInRange(handle, count);
     const r = scDetachTexture(this.scene, handle, count);
     if (droppedCurtain) this.#holdFrameAfterCurtainDrop(handle);
+    // ★被删区间与某窗登记的 DrawItem 区间相交 ⇒ 该窗的字也消失（转场清 ADV 文字，见 scDetachTexture）
+    const wins = r.clearedWins.length > 0 ? ` 文本窗清=${r.clearedWins.join(',')}` : '';
     if (count <= 1) {
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes})`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes})${wins}`);
     } else {
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes})`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes})${wins}`);
     }
   }
 
@@ -702,7 +711,10 @@ export class PixiBackend implements NativeBridge {
     this.clockMs = performance.now() - this.wallStart;
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);
-    this.presenter.present(this.scene, this.clockMs, this.waitFlags, textSprites);
+    // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），
+    //   所以它画在最上层（层序给一个大值）。见 `MsgCellFrame`。
+    const cellSprites = this.#cellSprites();
+    this.presenter.present(this.scene, this.clockMs, this.waitFlags, [...textSprites, ...cellSprites]);
     // ★舞台已换成新纹理 ⇒ 现在才是销毁旧纹理的安全时刻（否则 ticker 会去画已销毁的纹理 →
     //   WebGL 批次损坏 → 整屏只剩背景色，且此后不再恢复；见 TextureCache.collectGarbage 的说明）
     const gc = this.textures.collectGarbage();
@@ -713,6 +725,79 @@ export class PixiBackend implements NativeBridge {
   /** 绘制项 → 纹理（回归测试与诊断用；实现见 `TextureCache.resolve`）。 */
   resolveItemTexture(it: Item): { tex?: Texture; imgid?: number } {
     return this.textures.resolve(it);
+  }
+
+  /**
+   * **字格图标（▼「点击继续」）的 Sprite**（引擎 `sub_45A940` raw 71296-71474 的等价物）。
+   *
+   * 源 = `0x73` 的 op4 槽（ADV 是 `SO000.AGF` 装进槽 12；序章是 `SO026.AGF`），
+   * 源矩形 = 格原点 + `(k % cols, k / cols) × (cellW, cellH)`；目标 = `MsgCellFrame.x/y`（屏幕像素）。
+   * 层序给 `CELL_LAYER`（很大）—— 引擎是"把图直接 blit 到屏幕面"，即最上层。
+   */
+  #cellSprites(): { win: number; layer: number; sprite: Sprite }[] {
+    const out: { win: number; layer: number; sprite: Sprite }[] = [];
+    for (const [win, frame] of this.scene.msgWins) {
+      const c = frame.cell;
+      if (!c) {
+        const stale = this.#cellSpritesCache.get(win);
+        if (stale) {
+          // ★只销毁"这一格的视图"，**绝不销毁 source** —— 那是槽里共用的精灵表，
+          //   销毁它会把整个 WebGL 纹理状态弄坏（实测：整屏黑 + addressModeU 报错）。
+          stale.sprite.destroy({ texture: false, textureSource: false });
+          stale.texture.destroy(false);
+          this.#cellSpritesCache.delete(win);
+        }
+        continue;
+      }
+      const sheet = this.textures.slotTex.get(c.srcSurface);
+      if (!sheet) continue; // 槽还没绑定/载入（下一帧再画，不静默画错图）
+      const col = c.cols > 0 ? c.k % c.cols : 0;
+      const row = c.cols > 0 ? Math.floor(c.k / c.cols) : 0;
+      const rect = new Rectangle(c.originX + col * c.cellW, c.originY + row * c.cellH, c.cellW, c.cellH);
+      // ★裁剪到贴图范围内（引擎 `ddCpySpriteSurfaceFast` raw 48997-49014 同样裁剪；裁没了就什么都不画）。
+      //   实测：SN0000 序章的 `i073 8 … 38 38 8 64`（56×56、originY=56）是给 **NOVEL 那张 SO026**
+      //   （448×112，两行）写的，而序章进场时槽 12 里是 SYSTEM4 绑的 **SO000**（350×35，单行 10 帧）
+      //   ⇒ 源矩形 y=56..112 整块越界 ⇒ 引擎裁到 0 ⇒ **序章本来就没有 ▼**（普通 ADV 场景才有）。
+      const sw = sheet.source.width;
+      const sh = sheet.source.height;
+      const x0 = Math.max(0, rect.x);
+      const y0 = Math.max(0, rect.y);
+      const x1 = Math.min(sw, rect.x + rect.width);
+      const y1 = Math.min(sh, rect.y + rect.height);
+      if (x1 - x0 <= 0 || y1 - y0 <= 0) {
+        if (!this.#cellClippedWarned.has(win)) {
+          this.#cellClippedWarned.add(win);
+          this.#pushLog(
+            `[cell] win=${win} 源矩形 (${rect.x},${rect.y},${c.cellW}x${c.cellH}) 超出槽 ${c.srcSurface} 贴图 ${sw}×${sh} ⇒ 不画（引擎同样裁空）`,
+          );
+        }
+        continue;
+      }
+      const cached = this.#cellSpritesCache.get(win);
+      if (cached && cached.k === c.k && cached.src === c.srcSurface && cached.sprite.texture.source === sheet.source) {
+        cached.sprite.position.set(c.x, c.y);
+        out.push({ win, layer: CELL_LAYER, sprite: cached.sprite });
+        continue;
+      }
+      // 换格/换图：重建一张带 frame 的纹理视图（旧的一并销毁，避免每帧泄漏）
+      const texture = new PixiTexture({ source: sheet.source, frame: rect });
+      if (cached) {
+        cached.sprite.texture = texture;
+        cached.sprite.position.set(c.x, c.y);
+        const prev = cached.texture;
+        this.#cellSpritesCache.set(win, { sprite: cached.sprite, texture, k: c.k, src: c.srcSurface });
+        prev.destroy(false); // 同上：只销毁 frame 视图，保留共用 source
+        out.push({ win, layer: CELL_LAYER, sprite: cached.sprite });
+        continue;
+      }
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(0, 0);
+      sprite.position.set(c.x, c.y);
+      this.#cellSpritesCache.set(win, { sprite, texture, k: c.k, src: c.srcSurface });
+      this.#pushLog(`[cell] win=${win} 槽=${c.srcSurface} k=${c.k} 源=(${rect.x},${rect.y},${c.cellW}x${c.cellH}) 目标=(${c.x},${c.y})`);
+      out.push({ win, layer: CELL_LAYER, sprite });
+    }
+    return out;
   }
 
   /**

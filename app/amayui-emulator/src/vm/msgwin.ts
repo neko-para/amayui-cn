@@ -106,40 +106,16 @@ export interface RevealState {
   /** 下一次推进的墙钟毫秒（`active` 时有效）。 */
   nextAt: number;
   /**
-   * 本窗的推进节拍覆盖值（ms）—— **字格路径专用**（`0x73` op10 → `sub_453AD0(Engine+430600)`）。
-   * 引擎在那条路上一步 = 一个**字格**、节拍 = op10 ms。缺省时走 `budgetMs` 预算模式。
-   */
-  intervalMs?: number;
-  /**
-   * 字格路径下**一步覆盖的字形数** = `ceil(total / cells)`。
+   * **逐字节拍**（ms/字）= `max(message:MessageSpeed, 一帧)`。
    *
-   * ★2026-09 修（用户实测"SN0000 的逐字比设置界面慢了很多"）：引擎的字格路径
-   * （主循环 raw 20887-20894）每拍只做 `sub_45A940(Font, win, k, 0)` + `k = (k+1) % 模数`，
-   * 而 `sub_45A940` 的 `k` 是**字格下标**（raw 71392-71412：`(k % cols) * (cellW)` 算出该格矩形，
-   * 再为该格建一个 DrawItem / blit 一格）——**一步 = 一格**，`模数 = win+92 = op9 = cells`
-   * （由 `a3 == -1` 分支 `*a4 = v6[23]` 写入 `Engine[430820]`，见 raw 71381-71383）。
-   * 所以整段时长 = `cells × op10`（SN0000：8 × 100ms = 800ms），**不是**"字数 × 节拍"。
-   * 重写侧仍然逐字可见，故一步要把进度推进 `total / cells` 个字形，总时长才与引擎一致。
+   * 一次推进**一个字**、**不补拍** —— 引擎那条路就是"推一个字 → `Sleep(MessageSpeed)`"
+   * （GDI 路径 raw 13954）/ `sub_453B60` 定时器（D3D 路径 raw 13958），所以：
+   *  - 整段时长 = **字数 × 节拍**（不是"行数 × 节拍"：`win+44` 的记录向量是**逐字** push 的，
+   *    历史错误见 `docs-new/03-engine/adv-text-rendering.md` §3.3）；
+   *  - 卡一帧（如首次加载字体）只少走一个字，**不会补出一批字** —— 用户实测的"几个字几个字一起出、
+   *    看着像卡顿"正是"按显现预算追赶"造成的（2026-09）。
    */
-  stepGlyphs?: number;
-  /**
-   * 整段显现的**时间预算** ms（普通消息路径）：`字形数 × max(message:MessageSpeed, 一帧)`。
-   *
-   * 引擎的一步 = **一个字**（`sub_45BE20` 每次调用只推一个 24B 记录，见 `docs-new/03-engine/
-   * adv-text-rendering.md` §3.3：记录向量 `win+44` 是**逐字** push 的 —— `sub_455ED0(…, String, …)`
-   * 画一个字、紧接着 `sub_45D120(win+44, rec)` 压一条记录，`rec[0]` 仅注音记录为 1）
-   * ⇒ 整段耗时 = **字数 × 节拍**，节拍 = `Sleep(MessageSpeed)`（GDI 路径 raw 13954）
-   * / `sub_453B60` 定时器周期（D3D 路径 raw 13958）。
-   *
-   * ★历史错误（2026-09 修）：这里曾按"一步 = 一行"算成 `行数 × 节拍`（把 24B 记录当成行记录），
-   * 于是整段快了约"每行字数"倍（~14×），**设置里的「显示速度」滑条几乎看不出效果**
-   * （1..99ms/字 被压成 50..300ms/页）—— 用户实测"文字出现的速度几乎没有变"。
-   */
-  budgetMs?: number;
-  /** 预算模式的分数余量（避免每帧取整把速度丢掉）。 */
-  carry?: number;
-  /** 预算模式的上次推进时刻。 */
-  lastAt?: number;
+  intervalMs: number;
 }
 
 /**
@@ -420,38 +396,23 @@ export class MsgWindow {
   /**
    * 开始逐字显现。
    *
-   * @param opts.intervalMs 固定步长（字格页用 `0x73` 的 op10：一次一格）
-   *
    * `speedMs <= 0` ⇒ **立即显示完**（引擎：`if (!Engine[21668])` 走同步排空 `sub_46CBF0`）。
-   * 首个字形也要等**一个节拍**（引擎 `sub_453A60` 把 `steps` 置 1 ⇒ 第一次检查就等满 `period`）。
+   * 否则节拍 = `max(speedMs, 一帧)`、一次一个字、**不补拍**（见 `RevealState.intervalMs`）。
    *
-   * 普通路径的预算 = `字形数 × max(speedMs, 一帧)`（引擎一步 = 一个字，见 `RevealState.budgetMs`）。
+   * @param opts.instant 强制立即显示完（点击推进/跳读收尾用，忽略 `speedMs`）。
    */
   beginReveal(
     win: number,
     total: number,
     nowMs: number,
     speedMs: number,
-    opts: { intervalMs?: number; cells?: number } = {},
+    opts: { instant?: boolean } = {},
   ): RevealState {
-    const gridTick = opts.intervalMs;
-    const instant = speedMs <= 0 && gridTick === undefined;
-    // 字格路径：一步 = 一格 ⇒ 一步推进 ceil(total / cells) 个字（见 `RevealState.stepGlyphs`）
-    const cells = opts.cells && opts.cells > 0 ? opts.cells : undefined;
-    const stepGlyphs = gridTick !== undefined && cells !== undefined ? Math.max(1, Math.ceil(total / cells)) : undefined;
+    const instant = opts.instant === true || speedMs <= 0;
+    const interval = revealInterval(speedMs);
     const st: RevealState = instant
-      ? { shown: total, total, active: false, nextAt: 0 }
-      : {
-          shown: 0,
-          total,
-          active: total > 0,
-          nextAt: nowMs + (gridTick ?? revealInterval(speedMs)),
-          ...(gridTick !== undefined ? { intervalMs: gridTick } : {}),
-          ...(stepGlyphs !== undefined ? { stepGlyphs } : {}),
-          ...(gridTick === undefined
-            ? { budgetMs: revealInterval(speedMs) * Math.max(1, total), carry: 0, lastAt: nowMs }
-            : {}),
-        };
+      ? { shown: total, total, active: false, nextAt: 0, intervalMs: interval }
+      : { shown: 0, total, active: total > 0, nextAt: nowMs + interval, intervalMs: interval };
     this.reveal.set(win, st);
     return st;
   }
@@ -468,12 +429,7 @@ export class MsgWindow {
   /**
    * 按时间推进所有窗的显现游标。返回**本帧有变化的窗**（宿主据此重画）。
    *
-   * 两条节拍模型（见 `RevealState`）：
-   *  - **字格路径**（`intervalMs`，引擎 `sub_453AF0(Engine+430600)` + `sub_45A940`）：一次一格；
-   *  - **普通消息路径**（`budgetMs`）：引擎一步 = **一个字**、节拍 = `message:MessageSpeed`
-   *    ⇒ 整段时长 = 字数 × 节拍。重写侧按 `total / budgetMs` 的速率连续推进（`carry` 保存分数余量），
-   *    而 `budgetMs = 字数 × max(speed, 一帧)` ⇒ 等价于"一个字一个节拍"。
-   * `speedMs <= 0` 时才一次性显示完（引擎的同步排空分支 `sub_46CBF0`）。
+   * 一次一个字、节拍 = `max(message:MessageSpeed, 一帧)`、**不补拍**（见 `RevealState.intervalMs`）。
    */
   tickReveal(nowMs: number, speedMs: number): number[] {
     const dirty: number[] = [];
@@ -490,36 +446,16 @@ export class MsgWindow {
   tickRevealWin(win: number, nowMs: number, speedMs: number): boolean {
     const st = this.reveal.get(win);
     if (!st || !st.active) return false;
-    // ① 字格路径：固定节拍，**一次一格**（引擎 `sub_45A940(Font, win, k, 0)` + `sub_453AF0` 节拍门，
-    //    k = 字格下标、模数 = `win+92` = op9）。一步推进的字形数 = `ceil(total / cells)`
-    //    ⇒ 整段 = `cells × op10` ms（与引擎一致），屏幕上是逐字可见。
-    if (st.intervalMs !== undefined) {
-      if (nowMs < st.nextAt) return false;
-      st.shown = Math.min(st.total, st.shown + (st.stepGlyphs ?? 1));
-      st.nextAt = nowMs + st.intervalMs;
-      if (st.shown >= st.total) {
-        st.shown = st.total;
-        st.active = false;
-      }
-      return true;
-    }
-    // ② 普通消息路径：按"引擎整段时长"的预算连续推进（一步一个字，但总时长 = 行数 × 节拍）
-    if (speedMs <= 0) {
+    if (nowMs < st.nextAt) return false;
+    // 一次一个字；`speedMs` 变了（脚本 0x74 改速度）⇒ 按新节拍重排下一次
+    const interval = revealInterval(speedMs);
+    st.intervalMs = interval;
+    st.shown = Math.min(st.total, st.shown + 1);
+    st.nextAt = nowMs + interval;
+    if (st.shown >= st.total) {
       st.shown = st.total;
       st.active = false;
-      return true;
     }
-    const budget = Math.max(1, st.budgetMs ?? revealInterval(speedMs));
-    const last = st.lastAt ?? nowMs;
-    const elapsed = nowMs - last;
-    if (elapsed <= 0) return false;
-    const acc = (st.carry ?? 0) + (elapsed * st.total) / budget;
-    const step = Math.floor(acc);
-    st.carry = acc - step;
-    st.lastAt = nowMs;
-    if (step <= 0) return false;
-    st.shown = Math.min(st.total, st.shown + step);
-    if (st.shown >= st.total) st.active = false;
     return true;
   }
 
@@ -547,13 +483,13 @@ export class MsgWindow {
    * （`win+132` 从 0 开始，`i071` 刚清过场 ⇒ **一行都还没贴**）⇒ 未武装/未推进一律 **0**。
    * 否则 `show-text` 写完就"整段直接出现"，表现为「进设置时 ADV 文案先于背景出现」。
    *
-   * ★例外二：**字格门窗**（`0x73` 置 `win+88 = 1` 逐字总门）。引擎把整页**排版进离屏表面**，
-   * 再由主循环在**逐字模式**（`effect_flags & 0x40000000`，由 `0x72` 置位）里逐格
-   * `sub_45A940` 拍到屏幕 ⇒ 在 `0x72` 武装之前，屏幕上**一个字都没有**。
-   * 语料里 `0x73` 与文本的顺序**不固定**（`SN0000.txt:1240` 是本页文本之后、`1081` 是页首），
-   * 但 `0x73` 早在本页之前的页就设过 ⇒ 总门在整个序章里恒为 1。若这里返回 -1，
-   * 则"文本入队 → `0x72` 武装"之间的那一帧会**整页先亮一次**，随后被逐字从头重播
-   * （2026-09 用户实测："文字会在逐字出现前完整出现"）。
+   * ★例外二：**配了字格图标（▼）的窗**（`0x73` 写 `win+88 = 1`）。★2026-09 订正：`0x73` 是
+   * **图标精灵表**（不是文字的单位，见 `CharGrid`）；这里用它当"该窗走的是 ADV 页、文字由泵逐步贴出"
+   * 的判据 —— 引擎那条路是 `sub_45BE20` 一步一个字（`win+132` 游标从 0 开始），
+   * 在 `0x72` 把游标清零并武装之前，屏上还没有本页的字。
+   * 若这里返回 -1，则"文本入队 → `0x72` 武装"之间的那一帧会**整页先亮一次**，
+   * 随后被逐字从头重播（2026-09 用户实测："文字会在逐字出现前完整出现"）。
+   * ⚠️这是**近似**：引擎那侧的门来自泵（`sub_409400`），不是字格门 —— 别再扩大它的解释范围。
    */
   revealedOf(win: number): number {
     const st = this.reveal.get(win);
@@ -562,6 +498,11 @@ export class MsgWindow {
   }
 
   // ---- 字格逐字显现（引擎 `0x73`/`sub_45A940`/主循环 raw 20887-20895）----
+
+  /** 每窗的**字格图标帧号**（引擎 `Engine[107704]`；主循环每 `tickMs` `(k+1) % cells`）。 */
+  cellK = 0;
+  /** 下一格的时刻（ms；引擎 `Engine+430600` 计时器）。 */
+  cellNextAt = 0;
 
   /** 每窗的字格块（引擎窗对象的 `win+60..99`；`0x73` 写、`sub_45A940` 读）。 */
   readonly grids = new Map<number, CharGrid>();
@@ -616,7 +557,8 @@ export class MsgWindow {
   }
 
   /**
-   * 该窗的逐字节拍（ms）：有字格用 `0x73` op10，否则 `undefined`（= 用 `message:MessageSpeed`）。
+   * 该窗**字格图标**（▼「点击继续」）的换格节拍（`0x73` op10）。**不是文字的节拍** ——
+   * 文字走 `RevealState.intervalMs` = `max(message:MessageSpeed, 一帧)`。
    * 引擎 `sub_453AD0` 对 0 值取 1（raw 66142-66143）。
    */
   gridTickMs(win: number): number | undefined {

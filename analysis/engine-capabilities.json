@@ -2404,7 +2404,7 @@
     {
       "id": "msgwin-char-reveal-grid",
       "subsystem": "消息窗",
-      "name": "字格逐字显现（引擎逐字渲染的真实机制）：0x73 设字格与节拍 → 0x72 武装 → 主循环每节拍贴出第 k 格（raw 20887-20895 + sub_45A940）",
+      "name": "字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20）",
       "trigger": "脚本 i073（字格+节拍，全库 27 处：NOVEL/SN0000/SYSTEM4）→ 每次 0x72 wait-for-input 武装（置 bit30、游标清零、重启节拍）→ 帧循环按 Engine+430600 计时器每步贴一格 → 点击推进或 0x1CE 0 收尾",
       "engine": {
         "fns": [
@@ -2441,7 +2441,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/char-reveal.test.ts",
-        "note": "已实现：0x73 写真格（gate/cells/tickMs）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 帧循环按 0x73 op10 节拍推进 + 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号（保存/取回行游标并把余下的行贴出）。★有意偏离：引擎的循环模数是 win+92（= 0x73 op9，字格/每行字数；NOVEL/SN0000 = 8/10），emulator 的显现单位是页面字符，故上界用本页字形数（否则序章每页只会循环贴出前 8 格）；引擎的 GDI 暂存面 blit 编排（sub_43D870 两段）不复刻，宿主按自己的排版模型画前 N 个字形。★2026-09 补（用户实测\"文字会在逐字出现前**完整出现**一下\"）：**武装之前一个字都不贴**。主循环只在逐字模式（`effect_flags & 0x40000000`，由 0x72 置位）里调 `sub_45A940` 拍格 ⇒ 在 0x72 之前屏幕上没有任何字形。因此\"这一帧能看见几个字\"的判决点只有一处（`MsgWindow.revealedOf`）：字格门（`0x73` 写的 `win+88`）与 `0x300` 逐行泵并列成同一个\"未武装/未推进 ⇒ 0 字\"例外。语料里 `i073` 与文本的顺序**不固定**（`SN0000.txt:1081` 在页首、`:1240` 在本页文本之后），而总门自序章首屏起恒为 1 ⇒ 若把\"无显现状态\"读成\"全部\"，则 `0x6E` 入队 → `0x72` 武装之间的那一帧会整页先亮、随后被逐字从头重播。守卫：`test/char-reveal.test.ts` 的两条 ★（泵门窗 / 字格门窗）+ `test/mesh-vertex-quad.test.ts` 的 E3 链路。"
+        "note": "已实现：0x73 写真格（gate/cells/tickMs/srcSurface/originX/originY/cellW/cellH）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号。★2026-09 重大订正（用户实测\"文字结尾处的闪烁图标没渲染出来\"）：**0x73 不是\"文字逐字的单位\"**，它是**一张图标精灵表的网格**。ADV：SO000.AGF（统一 id 0x5191、350×35 = 10 帧 35×35 的 ▼）由 `src/SYSTEM4.txt:40` 的 `set-texture 5191 c` 装进**槽 12**，`src/SYSTEM4.txt:41` 的 `i073 1 37a 6e c 0 0 23 23 a 64` 配网格；序章/NOVEL：SO026.AGF（id 0x5190、448×112、两行 8 帧 56×56）由 `src/NOVEL.txt:7` 装进同一槽。消费链 = 主循环 raw 20887-20895：`if (effect_flags & 0x40000000) { if (sub_453AF0(Engine+430600) >= 0) { sub_45A940(Font, Engine[122371], Engine[107704], 0); Engine[107704] = (Engine[107704]+1) % Engine[107705]; } }` ——即**每 op10 ms 把精灵表第 k 格 blit 到屏幕**（`sub_45A940` raw 71448-71471：源矩形 = 格原点 + (k%cols, k/cols)×格宽高；目标 = `(op2 + 窗框 x, op3 + 窗框 y)`，`Font+1392==1` 的 NOVEL 分支改为跟随最后一条 24B 字记录的笔位）。emulator 实现：`Engine.serviceCharGrid`（每 tick 换格 + 重新发布 `MsgCellFrame`）+ 宿主 `pixiBackend.#cellSprites`（从槽贴图取格画在最上层、按贴图尺寸裁剪）。文字逐字仍是 **`sub_45BE20` 泵**（节拍 = `max(message:MessageSpeed, 一帧)`、一次一个字、**不补拍**）—— 旧实现曾把它接到 0x73 的 op10 上（SN0000 因此 58 字 × 100ms = 5.8s，且\"一次补一批字\"看着卡顿）。残余/待核：序章那条 `i073 8 0 -5 c 0 0 38 38 8 64` 的源矩形 (0,56,56×56) 是按 **SO026**（448×112）写的，而序章进场时槽 12 里可能是 SYSTEM4 绑的 **SO000**（350×35）⇒ 越界（引擎 `ddCpySpriteSurfaceFast` 会裁空、宿主要按贴图尺寸裁剪）。`Font+1392` 的分岔命名、以及\"序章到底该不该有 ▼\"需要真机截图（E4）确认。守卫：`test/char-reveal.test.ts`（▼ 格号/源矩形/目标位/点击后停）+ `test/option-font-speed-menu.test.ts`（每字节拍定律）。"
       }
     },
     {

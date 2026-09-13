@@ -23,7 +23,7 @@ import { Engine } from '../src/vm/engine.js';
 import { Frame } from '../src/vm/engine.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
-import { ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
+import { ENGINE_INTERNAL_OPS, NATIVE_OPS } from '../src/vm/ops.js';
 import { dec } from '../src/vm/bits.js';
 import { revealInterval } from '../src/vm/msgwin.js';
 import { layoutWindow } from '../src/text/layout.js';
@@ -280,6 +280,56 @@ test('★等待推进门：右键（反向）走 labelPrev（`sub_403E70` 的 [3
   assert.equal(f.ip, 5, '右键 ⇒ labelPrev');
 });
 
+/**
+ * ★2026-09（用户实测"ADV 界面右侧的侧边栏菜单无条件展示"）：**悬停派发**此前完全没实现。
+ *
+ * 引擎 `sub_403E70`（raw 9918-9955）不是"点击专用"，而是**按游标变化**发 label 的两段式状态机：
+ * 游标从 A 移到 B ⇒ 本帧发 **A 的 labelB（离开）**、置 `[7466]=1`；下一帧发 **B 的 labelA（进入）**。
+ * 调用点是等待泵 `sub_411BC0`（raw 20322-20337）每帧一次 ⇒ 脚本里靠热点做的悬停 UI 才会响应
+ * （`SN0000.txt:63/74` 的热点 labelA = 展开侧边栏、`:66` 全屏热点 labelA = 收起）。
+ */
+test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 labelB、A→B 先离开后进入', () => {
+  const { e } = mk();
+  const f = e.curScript();
+  f.labelMap.set(0xaa, 3); // labelA（进入）
+  f.labelMap.set(0xbb, 5); // labelB（离开）
+  // 两个互不相交的热点：h0 = (0,0,100,100) / h1 = (200,0,100,100)
+  OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
+  OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(200), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
+
+  // ① 从"无"进入 h0 ⇒ 直接发 h0 的 labelA
+  e.input.setCursor(50, 50);
+  assert.equal(e.pickHoverLabel(), 0xaa, '进入热点 ⇒ labelA（无"离开"前项）');
+  // ② 同一位置再来一帧 ⇒ 游标没变，什么都不发
+  assert.equal(e.pickHoverLabel(), -1, '游标未变 ⇒ 不重发');
+  // ③ h0 → h1：本帧发 h0 的 labelB（离开），下一帧才发 h1 的 labelA（进入）
+  e.input.setCursor(250, 50);
+  assert.equal(e.pickHoverLabel(), 0xbb, 'A→B：先发旧项的 labelB（离开）');
+  assert.equal(e.pickHoverLabel(), 0xaa, '下一帧补发新项的 labelA（进入）');
+  assert.equal(e.pickHoverLabel(), -1, '之后稳定不再发');
+  // ④ 走出所有热点 ⇒ 发 h1 的 labelB
+  e.input.setCursor(900, 900);
+  assert.equal(e.pickHoverLabel(), 0xbb, '离开所有热点 ⇒ 旧项 labelB');
+  assert.equal(e.pickHoverLabel(), -1, '之后稳定不再发');
+  // ⑤ 没有游标（headless）⇒ 不派发
+  e.input.setCursor(0, 0, false);
+  assert.equal(e.pickHoverLabel(), -1, '无游标 ⇒ 不派发（headless 不受影响）');
+});
+
+test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只给 label，不动 ip/等待门', () => {
+  const { e } = mk();
+  const f = e.curScript();
+  f.labelMap.set(0xaa, 3);
+  f.labelMap.set(0xbb, 5);
+  OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
+  OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
+  const ipBefore = f.ip;
+  e.input.setCursor(50, 50);
+  assert.equal(e.pickHoverLabel(), 0xaa);
+  assert.equal(f.ip, ipBefore, '判定阶段绝不改 ip（label 的执行由宿主当子程序跑并还原）');
+  assert.equal(e.awaitingAdvance, true, '悬停不清等待门（引擎的子程序调用语义）');
+});
+
 test('headless forceAdvance：无输入源时确定性跳到第一个热点 label', () => {
   const { e } = mk();
   const f = e.curScript();
@@ -386,10 +436,12 @@ test('★逐字显现速度定律：MessageSpeed = **每字**毫秒（总时长 
   const st = eLines.msgwin.reveal.get(9)!;
   const laid = layoutWindow(9, { style: styleOfWin(eLines, 9), segments: eLines.msgwin.slot(9).segments });
   assert.ok(laid.lines.length > 1, `窄窗应折成多行（实际 ${laid.lines.length} 行）`);
+  // 2026-09：节拍是逐字的（intervalMs = max(speed, 一帧)），整段 = 字数 × 节拍；一次推进一个字。
+  assert.equal(st.intervalMs, revealInterval(5), '逐字节拍 = max(speed, 一帧)');
   assert.equal(
-    st.budgetMs,
+    st.intervalMs * laid.glyphCount,
     revealInterval(5) * laid.glyphCount,
-    `预算 = 字数(${laid.glyphCount}) × max(speed, 一帧)（行数 ${laid.lines.length} 不参与）`,
+    `整段 = 字数(${laid.glyphCount}) × max(speed, 一帧)（行数 ${laid.lines.length} 不参与）`,
   );
   assert.equal(laid.glyphCount, 5);
 
@@ -425,6 +477,54 @@ test('★0x1B5 设消息速度（字段 + 注册表）：CONFIG 速度滑条走�
   step(0x74, [im(0)]);
   assert.equal(e.engineValues.get(21668), 0);
   assert.equal(e.config.values.get('message:messagespeed'), 25, '0x74 不得改注册表');
+});
+
+/**
+ * ★2026-09 用户实测："切换背景时（转场）ADV 文字应该消失，但被保留了"。
+ *
+ * 引擎里屏幕上的字**就是** Scene 的 DrawItem（正文行 id = 行号 + `win+104`，`0x213` 登记；
+ * 另一组在 `win+276`，`0x25D` 登记）。脚本清字的手段就是 `0x1F7 detach-texture <base> <count>`：
+ * `$1$SC0330.txt` 整个文件 0 次 `i071`/`i301`，换场只做 `detach-texture 19a28 1f4`
+ * （`$1$SC0330.txt:18117-18119`，44 处 `call label_000407c0` 调起；`SN0000.txt:3799/3814` 同理）。
+ * emulator 的文本另有载体（`msgWins`）⇒ 必须按区间判"这窗的图元被删光了 ⇒ 字也消失"。
+ */
+test('★0x1F7 删掉某窗的正文区间 ⇒ 该窗文字随之消失（转场不得残留旧文案）', () => {
+  const native = new HeadlessScene({});
+  const e = new Engine(native);
+  const f = new Frame();
+  const step = (op: number, args: BinArg[]): void => {
+    const h = OPS.get(op) ?? NATIVE_OPS.get(op); // 0x1F7 是 native 表里的（经 NativeBridge 落到宿主）
+    assert.ok(h, `0x${op.toString(16)} 应在 OPS/NATIVE_OPS 里`);
+    h!(makeCtx(e, f, instr(op, args), native, () => {}));
+  };
+  // SYSTEM4.txt:57-58/69 的真实注册：win1 = 注音[104300,104303) + 正文[105000,105500)；win8 共用正文区间
+  step(0x25d, [im(1), im(0x1976c), im(3)]);
+  step(0x213, [im(1), im(0x19a28), im(0x1f4)]);
+  step(0x213, [im(8), im(0x19a28), im(0x1f4)]);
+  step(0x80, [im(1)]);
+  step(0x71, [im(1)]);
+  step(0x6e, [im(0), str('メッセージ')]);
+  step(0x80, [im(8)]);
+  step(0x71, [im(8)]);
+  step(0x6e, [im(0), str('メッセージ')]);
+  assert.ok(native.scene.msgWins.has(1) && native.scene.msgWins.has(8), '两个窗都先有字');
+
+  // ① 换场：删正文区间 ⇒ 两个窗的字都该消失
+  step(0x1f7, [im(0x19a28), im(0x1f4)]);
+  assert.equal(native.scene.msgWins.has(1), false, 'win1 的正文区间被删 ⇒ 字消失');
+  assert.equal(native.scene.msgWins.has(8), false, 'win8 与 win1 共用区间 ⇒ 一起消失');
+  assert.doesNotMatch(native.snapshotText(), /text win=1\b/, '快照里也不该再有该窗');
+
+  // ② 反例：删一个与任何窗都无关的区间，不得误清
+  step(0x80, [im(1)]);
+  step(0x71, [im(1)]);
+  step(0x6e, [im(0), str('メッセージ')]);
+  step(0x1f7, [im(0x19708), im(6)]); // $1$SC0330.txt:18006 那条（与窗区间不相交）
+  assert.equal(native.scene.msgWins.has(1), true, '不相交的区间删除不得清窗');
+
+  // ③ 注音区间（`0x25D` 那组）同样生效
+  step(0x1f7, [im(0x1976c), im(3)]);
+  assert.equal(native.scene.msgWins.has(1), false, 'win1 的注音区间被删也 ⇒ 字消失');
 });
 
 test('★0x1F6 清绘制容器：文本窗必须一起清（否则回主界面后文字又画上去）', () => {

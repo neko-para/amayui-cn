@@ -31,6 +31,11 @@ import type { BootedApp } from './boot.js';
  * 一旦吃满，说明存在**没有门的轮询循环**，此时应当查门而不是靠这个数字兜。
  */
 const SAFETY_PER_FRAME = 10000;
+/**
+ * 一次"悬停 label 子程序"最多执行多少条指令（**只作死循环兜底**，不是引擎语义）。
+ * 语料里的悬停 label 都是十几条：设置几个全局 + 一两个 `i220`/`set-draw-color` + `wait` + `ret`。
+ */
+const HOVER_LABEL_MAX_STEPS = 200;
 /** 交互运行上限：进入 TITLE 后不再按步数截止，靠"脚本退出/重置/错误/关窗"收尾；此处仅作病态死循环兜底。 */
 const MAX_STEPS = 100_000_000;
 
@@ -72,6 +77,8 @@ export class RendererSession {
   #gate = '';
   #gateSince = performance.now();
   #frames = 0;
+  /** 悬停诊断：上次记日志时的光标位置（每变一次记一行，见 `#runHoverLabel`）。 */
+  #lastHoverLog = '';
   #perfSteps = 0;
   #perfMs = performance.now();
   #stepsPerSec = 0;
@@ -170,6 +177,7 @@ export class RendererSession {
       //   且**不阻塞脚本**（raw 21179 `goto LABEL_215` 照样派发 1 条指令）——
       //   CONFIG 的消息预览就是靠它"贴出 → 停留 op3 ms → 消失 → 再来一遍"循环演示。
       e.serviceWinReveal(e.nowMs);
+      e.serviceCharGrid(e.nowMs); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
       if (e.waitFlags & 0x400) {
         // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
         this.#serviceAnimGate();
@@ -202,6 +210,10 @@ export class RendererSession {
           this.#traceLog.line(
             `=== advance-wait cleared → ip=${e.curScript().ip} (page ${e.msgwin.pages}, 热点 ${e.routes.count} 项) steps=${this.#steps} ===`,
           );
+        } else if (await this.#runHoverLabel()) {
+          // ★悬停派发（引擎 `sub_411BC0` raw 20324-20337）：推进输入**优先**（raw 20262 的 advance
+          //   分支在前），没推进输入才看游标变化 ⇒ 鼠标划过只跑 UI label，页不推进。
+          this.#frames++;
         }
         await this.#present();
         this.#frames++;
@@ -223,6 +235,8 @@ export class RendererSession {
       } else {
         this.#setGate('');
         if (await this.#runInstructionBatch()) break outer;
+        // ★悬停派发**只在"等待推进"态**做（引擎的 `sub_411BC0` 就是等待泵）：脚本跑动中派发 UI label
+        //   会与在飞的页状态交错（用户实测："hover 上去会错误触发 ADV 推进 / 侧边栏与黑遮罩一起消失"）。
         // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
         if (native.needsRender()) await this.#present();
       }
@@ -331,6 +345,62 @@ export class RendererSession {
   async #awaitTextureBound(t: StepTrace): Promise<void> {
     if (t.opcode !== 0x1f9) return;
     if (this.#native.texturesIdle) await this.#native.texturesIdle();
+  }
+
+  /**
+   * **悬停 label 子程序**（引擎 `sub_411BC0` raw 20324-20337 的后半）。
+   *
+   * 引擎把热点 label 当**子程序**跑：`sub_4083B0` 存返回点 → `ip = label` →
+   * label 末尾的 `ret` 回到原处，而**等待推进门（bit31）保持**（页不会因为鼠标划过而推进/重播）。
+   *
+   * emulator 的脚本状态只有一份 ⇒ 这里"临时切走、跑完切回"：保存 `{ip, retStack, awaitingAdvance}`，
+   * 把返回点压成**越界哨兵**（label 的 `ret` 跳到 `instructions.length` ⇒ 循环自然结束），
+   * 逐条执行（上限 `HOVER_LABEL_MAX_STEPS`，只作死循环兜底），随后**完整还原**。
+   *
+   * 返回 true = 跑了至少一条（调用方应 present 一帧）。
+   */
+  async #runHoverLabel(): Promise<boolean> {
+    const e = this.#e;
+    const label = e.pickHoverLabel();
+    // 诊断（每次光标位置变化只记一行）：能一眼看出"悬停派发有没有在跑、跑的是哪条 label"
+    const pos = `${e.input.readX()},${e.input.readY()}`;
+    if (pos !== this.#lastHoverLog) {
+      this.#lastHoverLog = pos;
+      this.#traceLog.line(
+        `[hover] pos=(${pos}) cursor=${e.routes.cursor}/${e.routes.count} label=${label === -1 ? -1 : '0x' + (label >>> 0).toString(16)}`,
+      );
+    }
+    if (label === -1) return false;
+    const f = e.curScript();
+    const p = f.labelMap.get(label);
+    if (p === undefined || !f.script) {
+      this.#traceLog.line(
+        `[hover-label] 0x${(label >>> 0).toString(16)} 在 labelMap 里找不到位置（脚本 ${f.name}）`,
+      );
+      return false;
+    }
+    const savedIp = f.ip;
+    const savedRet = f.retStack;
+    const savedAwait = e.awaitingAdvance;
+    f.retStack = [f.script.instructions.length]; // 越界哨兵：label 的 ret 跳出去 ⇒ 下面的循环结束
+    f.ip = p;
+    this.#traceLog.line(`=== hover-label 0x${(label >>> 0).toString(16)} (热点悬停 → 子程序) ===`);
+    try {
+      for (let k = 0; k < HOVER_LABEL_MAX_STEPS; k++) {
+        if (f.ip >= f.script.instructions.length) break;
+        if (this.#pausedOp) break;
+        const t = await stepOnce(e);
+        for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
+      }
+    } catch (caught) {
+      // 悬停 label 里出现未实现指令/异常：只记一行，不打断主流程
+      this.#traceLog.line(`[hover-label] 执行中断：${caught instanceof Error ? caught.message : String(caught)}`);
+    } finally {
+      f.ip = savedIp;
+      f.retStack = savedRet;
+      e.awaitingAdvance = savedAwait;
+    }
+    return true;
   }
 
   /** 推进一批指令；返回 true = 需要终止整个会话（重置/退出/硬错误）。 */

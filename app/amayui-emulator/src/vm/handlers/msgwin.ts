@@ -34,6 +34,7 @@ import {
   layoutWindow,
   type FontSpec,
   type FontStyleSnapshot,
+  type MsgCellFrame,
   type MsgWinStyle,
 } from '../../text/layout.js';
 import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
@@ -196,7 +197,59 @@ export function emitWin(e: Engine, win: number): void {
     style: styleOfWin(e, w),
     segments: e.msgwin.slot(w).segments,
     revealed: e.msgwin.revealedOf(w), // -1 = 全部显示
+    // ★两个 DrawItem 区间（`0x213` 写 `+104/+108`、`0x25D` 写 `+276/+280`）：渲染侧的
+    //   `scDetachTexture` 靠它判"脚本删掉这窗的正文图元 ⇒ 画面上的字也该消失"（见其说明）。
+    itemRanges: itemRangesOf(e, w),
+    cell: cellFrameOf(e, w),
   });
+}
+
+/** 该窗在 Scene 里的 DrawItem 区间（引擎 `FontVWindow+104/+108` 与 `+276/+280`；count<=0 视为未登记）。 */
+function itemRangesOf(e: Engine, win: number): { base: number; count: number }[] {
+  const o = e.msgwin.object(win);
+  const out: { base: number; count: number }[] = [];
+  if (o.f108 > 0) out.push({ base: o.f104, count: o.f108 });
+  if (o.f280 > 0) out.push({ base: o.f276, count: o.f280 });
+  return out;
+}
+
+/**
+ * 该窗此刻要画的**字格图标那一格**（`0x73` 配的精灵表 + 主循环每 `tickMs` 换一格）。
+ *
+ * 目标位置两条路（引擎 `sub_45A940` raw 71349 的 `v7 = Font[348]` 分岔）：
+ *  - `Font+1392 == 1`（NOVEL 分支）：**跟随最后一条 24B 字记录的笔位** ⇒ 就是"文字结尾处"；
+ *  - `Font+1392 == 0`（ADV）：`(op2 + 窗框 x, op3 + 窗框 y)`，ADV win1 实测 = (1080,667)。
+ *
+ * ★2026-09 实测补充（用户指出序章确实有 ▼，用的是 SO026 第二行【横向】那张）：
+ * 序章的 win8 是**满屏叙述窗**（`i070 8 500 2d0 0 0` ⇒ 框 (0,0)-(1280,720)），
+ * 这时"窗内固定位"没有意义（会落到 (0,-5) 左上角）⇒ 只要窗口铺满视口就按 NOVEL 分支处理
+ * （跟随文字末尾）。这条是 E4 实测定的，待真机截图最终确认（已登记）。
+ */
+function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
+  if ((e.effectFlags & CHAR_REVEAL_ACTIVE) === 0) return undefined;
+  const g = e.msgwin.gridOf(win);
+  if (!g || !g.gate || g.cells <= 0 || g.cellW <= 0 || g.cellH <= 0) return undefined;
+  const geom = e.msgwin.geom(win);
+  const followText = e.engineValues.get(21672) === 1 || (geom.x <= 0 && geom.y <= 0 && geom.w >= 640 && geom.h >= 360);
+  let x = g.textX + geom.x;
+  let y = g.textY + geom.y;
+  if (followText) {
+    const laid = layoutWindow(win, { style: styleOfWin(e, win), segments: e.msgwin.slot(win).segments });
+    const line = laid.lines[laid.lines.length - 1];
+    x = g.textX + (line ? line.x + line.width : geom.x);
+    y = g.textY + (line ? line.y : geom.y);
+  }
+  return {
+    srcSurface: g.srcSurface,
+    originX: g.originX,
+    originY: g.originY,
+    cellW: g.cellW,
+    cellH: g.cellH,
+    cols: g.cells,
+    k: e.msgwin.cellK % g.cells,
+    x,
+    y,
+  };
 }
 
 /**
@@ -381,25 +434,20 @@ const op_wait_for_input: OpHandler = (c) => {
   m.lastArg = readIntOperand(e, c.frame, c.instr, 1);
   const w = m.resolveWin(m.lastArg);
   // 引擎 `sub_45A940(..., -1, Engine+107705)`：把该窗字格数写进模数槽（字格未设时 win+92 = 0）。
+  // ★这条查询同时是"**▼ 图标动画的武装**"：模数 = 精灵表格数 op9；`sub_453A90` 重启节拍 ⇒ 帧号归零。
   const grid = m.gridOf(w);
   m.charTotal = grid ? grid.cells : 0;
   e.engineValues.set(107705, m.charTotal);
+  m.cellK = 0;
+  m.cellNextAt = e.nowMs + (grid && grid.tickMs > 0 ? grid.tickMs : 1);
   if (!m.isRevealing(w)) {
     const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments });
     const total = laid.glyphCount;
     if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
     else {
-      // ★两条节拍：字格页用 `0x73` op10 作节拍、**一步一格**（`cells` 格 ⇒ 整段 = cells×op10，
-      //   SN0000：8×100ms=800ms）；普通消息页用 `字数 × max(MessageSpeed, 一帧)` 的预算
-      //   （引擎一步 = 一个字）。见 MsgWindow.RevealState 的 `intervalMs`/`stepGlyphs` 注释。
-      const tick = m.gridTickMs(w);
-      m.beginReveal(
-        w,
-        total,
-        e.nowMs,
-        messageSpeedOf(e),
-        tick !== undefined ? { intervalMs: tick, ...(grid ? { cells: grid.cells } : {}) } : {},
-      );
+      // ★文字逐字 = **正常泵**（引擎 `sub_45BE20` 一步一个字、节拍 `message:MessageSpeed`）——
+      //   `0x73` 不是"文字的单位"（那是 ▼ 图标精灵表，见 `CharGrid`），所以这里不再传 grid。
+      m.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
       m.charMode = total > 0;
       m.charCursor = 0;
       e.engineValues.set(107704, 0);
@@ -511,14 +559,16 @@ const op_char_reveal_switch: OpHandler = (c) => {
     m.charCursor = 0;
     e.engineValues.set(107704, 0);
     e.effectFlags |= CHAR_REVEAL_ACTIVE;
-    // `sub_453A90`：重启节拍 ⇒ 已有显现状态的下一次推进点按字格节拍（或预算）重排。
-    for (const [win, st] of m.reveal) {
+    // `sub_453A90`：重启节拍 ⇒ 已有显现状态的下一次推进点按当前节拍重排（不补走欠账）
+    for (const [, st] of m.reveal) {
       if (!st.active) continue;
-      if (st.intervalMs !== undefined) st.nextAt = e.nowMs + st.intervalMs;
-      else {
-        st.lastAt = e.nowMs;
-        st.carry = 0;
-      }
+      st.nextAt = e.nowMs + st.intervalMs;
+    }
+    // 同一句也重启**字格图标**的节拍（引擎 `Engine+430600` 是同一个计时器对象）
+    const g0 = m.gridOf(m.resolveWin(m.lastArg));
+    if (g0) {
+      m.cellK = 0;
+      m.cellNextAt = e.nowMs + (g0.tickMs > 0 ? g0.tickMs : 1);
     }
     return;
   }

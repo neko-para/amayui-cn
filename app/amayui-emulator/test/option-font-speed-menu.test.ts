@@ -171,31 +171,34 @@ test('★0x1B5 设消息速度：写字段 `Engine[21668]` **且** 写配置 `me
   assert.equal(e.config?.values.get('message:messagespeed'), 25);
 });
 
-test('★显现预算按**字**算（引擎一步 = 一个字）：speed=99 × 42 字 ⇒ 4158ms，speed=1 被一帧地板住', () => {
+test('★显现节拍按**字**算（引擎一步 = 一个字）：speed=99 ⇒ 99ms/字，speed=1 被一帧地板住', () => {
   const e = new Engine(new StubNative(() => {}));
   const st99 = e.msgwin.beginReveal(0, 42, 0, 99);
-  assert.equal(st99.budgetMs, 99 * 42, '99ms/字 × 42 字');
+  assert.equal(st99.intervalMs, 99, '99ms/字 ⇒ 整段 = 99 × 42 = 4158ms');
   const st1 = e.msgwin.beginReveal(0, 42, 0, 1);
-  assert.equal(st1.budgetMs, Math.max(1, REVEAL_FRAME_MS) * 42, '1ms 被"一帧"地板住（引擎 Sleep 也受帧率限制）');
+  assert.equal(st1.intervalMs, Math.max(1, REVEAL_FRAME_MS), '1ms 被"一帧"地板住（引擎 Sleep 也受帧率限制）');
   const st0 = e.msgwin.beginReveal(0, 42, 0, 0);
   assert.equal(st0.active, false, 'speed=0 ⇒ 立即显示完（引擎同步排空分支）');
 });
 
-test('★逐字显现：99ms/字 时每约 99ms 只多一个字（旧实现按"行"算 ⇒ 一帧内跳好几行）', () => {
+test('★逐字显现：99ms/字 ⇒ 每 99ms 一个字（旧实现按"行"算 ⇒ 一帧内跳好几行）', () => {
   const e = new Engine(new StubNative(() => {}));
   e.msgwin.beginReveal(0, 10, 0, 99);
   const seen: number[] = [];
   for (const t of [50, 100, 200, 300, 500, 990]) seen.push(e.msgwin.tickRevealWin(0, t, 99) ? 1 : 0);
-  // 到 100ms ⇒ 1 字；200ms ⇒ 2 字；300 ⇒ 3；500 ⇒ 5；990 ⇒ 10（完）
-  assert.deepEqual(seen, [0, 1, 1, 1, 1, 1], '每次 tick 都有推进（至 990ms 收尾）');
+  // 每帧最多一个字：50ms 未到节拍；100/200/300/500/990 各一个 ⇒ 共 5 个（**不补拍**）
+  assert.deepEqual(seen, [0, 1, 1, 1, 1, 1], '每次 tick 最多推进一个字');
+  assert.equal(e.msgwin.reveal.get(0)!.shown, 5, '5 次节拍到 ⇒ 5 个字（引擎是"推一个字 → Sleep"）');
+  // 按 99ms 节拍逐拍推完剩下的 5 个字（`nextAt` 在上一拍之后 99ms）
+  for (let k = 1; k <= 5; k++) e.msgwin.tickRevealWin(0, 990 + 99 * k, 99);
   const st = e.msgwin.reveal.get(0)!;
-  assert.equal(st.shown, 10, '990ms 时 10 个字全部显示');
+  assert.equal(st.shown, 10, '按 99ms/字 逐拍推满 ⇒ 10 个字全部显示');
   assert.equal(st.active, false);
 });
 
 test('★可观察性回归：速度 1..99ms/字 的整段时长跨度必须是"每字节拍"级（不是"每行"）', () => {
   const e = new Engine(new StubNative(() => {}));
-  const span = (speed: number): number => e.msgwin.beginReveal(0, 40, 0, speed).budgetMs ?? 0;
+  const span = (speed: number): number => e.msgwin.beginReveal(0, 40, 0, speed).intervalMs * 40;
   const fast = span(1);
   const slow = span(99);
   assert.ok(slow / fast > 5, `99ms 与 1ms 的时长比应远大于 5（旧实现只有 ~6×；实际 ${(slow / fast).toFixed(1)}×）`);

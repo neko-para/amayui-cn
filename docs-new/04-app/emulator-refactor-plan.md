@@ -198,6 +198,49 @@
   `setDrawColorAlpha` 三参、`harness.ts` 迁移…）留在工作区；**用 `git stash push --keep-index` 单独
   验证过"暂存区快照"**：typecheck + **382/382** + 死写 ratchet 全绿 ⇒ 暂存区可独立提交。
 
+- 2026-09（第 10 轮 = 用户第二批 4 条反馈的**修复轮**，npm run verify 全绿 **387/387** + E4 实跑复核；
+  本轮**未动暂存区**——工作区里既有本轮修复、也有第 2–8 轮遗留的重构 hunk，按"重构不进暂存区"的约定
+  宁可整体不暂存，避免把重构混进暂存）：
+  ⑰ **"逐字像几个字一起蹦出来" → 文字节拍不该补拍**：旧实现用"整段预算追赶"（budgetMs + carry，
+  一帧把欠的字全补出来 ⇒ 首次加载字体那种长帧一次冒十几个字）。引擎是"推一个字 → Sleep(MessageSpeed)"
+  （GDI raw 13954 / D3D raw 13958）⇒ **一次一个字、卡帧不补**。已把 RevealState 收敛成
+  intervalMs = max(message:MessageSpeed, 一帧) + nextAt，删掉 budgetMs/carry/lastAt 与两条分支
+  （vm/msgwin.ts 的 beginReveal/tickRevealWin）。守卫：test/option-font-speed-menu.test.ts 的
+  "每字节拍定律"三条 + char-reveal 的"不补拍"用例。
+  ⑱ **转场后 ADV 文字残留 → 0x1F7 detach-texture 也要清窗**：引擎里屏幕上的字**就是** Scene 的
+  DrawItem（正文行 id = 行号 + win+104，0x213 登记；注音/另一组在 win+276，0x25D 登记），
+  脚本清字的手段就是按区间删项（$1$SC0330.txt 整个文件 **0 次** i071/i301，换场只做
+  detach-texture 19a28 1f4 + 1a9c8 64 —— $1$SC0330.txt:18117-18119，44 处 call label_000407c0 调起）。
+  emulator 的文本另有载体（msgWins）⇒ 已给 MsgWinInput 加 itemRanges（emitWin 从窗对象的
+  +104/+108、+276/+280 取）、SceneState.msgRanges、scDetachTexture 里"区间相交 ⇒ scMsgWinClear"
+  （与 scClearDrawContainer 的 scMsgWinClearAll 同一条思路）。守卫：test/adv-msgwin.test.ts 的
+  "0x1F7 删正文区间 ⇒ 字消失"（含"不相交区间不得误清"的反例）。
+  ⑲ **0x73 的语义订正（本轮最大发现）＝ ▼「点击继续」图标精灵表**：它不是"文字逐字的单位"。
+  ADV = SO000.AGF(0x5191、350×35、10 帧 35×35) 经 SYSTEM4.txt:40 装进槽 12、SYSTEM4.txt:41 配网格；
+  序章/NOVEL = SO026.AGF(0x5190、448×112)。主循环 raw 20887-20895 每 op10 ms
+  sub_45A940(Font, 当前窗, k, 0) 贴第 k 格、k = (k+1) % op9 ⇒ 视觉上的"闪烁 ▼"；
+  目标 = (op2 + 窗框 x, op3 + 窗框 y)（ADV win1 实测 (890+190, 110+557) = (1080,667)）。
+  已实现：Engine.serviceCharGrid（每 tick 换格 + 重新发布）+ MsgCellFrame 走 msgWinSync 到宿主 +
+  pixiBackend.#cellSprites（取槽贴图、按格裁剪、画在最上层 CELL_LAYER=1e7）。
+  ★连带修正：文字逐字不再受 0x73 影响（0x72 的 beginReveal 不再传字格参数）；revealedOf 的字格例外
+  保留但**改写注释**（引擎那侧的门来自 sub_45BE20 泵，不是字格门 —— 不许再扩大它的解释范围）。
+  守卫：test/char-reveal.test.ts 的 ▼ 用例。
+  ⚠️未收敛（E4 待核）：序章 i073 8 0 -5 c 0 0 38 38 8 64 的源矩形 (0,56,56×56) 是给 **SO026**
+  （448×112 两行）写的，而序章进场时槽 12 里可能是 SYSTEM4 绑的 **SO000**（350×35 单行）⇒ 越界
+  （引擎 ddCpySpriteSurfaceFast raw 48997-49014 会裁空）⇒ **序章可能本来就没有 ▼**；普通 ADV 场景
+  （win1 槽 12 = SO000、格 35×35）才会在 (1080,667) 出现。需要真机截图对照。
+  ⑳ **ADV 右侧侧边栏"无条件展开" → 悬停派发从未实现**：引擎 sub_403E70（raw 9918-9955）是
+  **按游标变化**发 label 的两段式状态机（先发旧项的 [359+i]=离开、下一帧发新项的 [259+i]=进入），
+  调用点在等待泵 sub_411BC0 raw 20322-20337。SN0000 的侧边栏就是靠它：SN0000.txt:63（侧边栏条
+  x=1180..1280）labelA = 展开、SN0000.txt:66（全屏热点）labelA = 收起。
+  已实现：RouteTable.nextHoverLabel（含 hoverLatch/pendingEnter）+ Engine.pickHoverLabel +
+  session 的 #runHoverLabel（保存 {ip, retStack, awaitingAdvance} → 越界哨兵跑完 label → 还原，
+  ⇒ 悬停**不推进页、不重播**）。E4 实测：光标移到侧边栏条 ⇒ 展开（hover-label 0x30e）；
+  移回文本区 ⇒ 收起（hover-label 0x38e，截图 .tmp/gsFix13-9/10）。守卫：test/adv-msgwin.test.ts
+  的"两段式"与"悬停不得推进页面"两条。
+  ⚠️登记：SN0000 的悬停 label 会 call label_00000320 **重新登记热点** ⇒ 表在悬停中增长（14→33→40）。
+  引擎也是同一张 100 上限的表，但"该由谁复位"尚未从源码定清；未到上限前无可见差异，登记为后继核查项。
+
 
 ## 10. 已登记的后继工作（本轮到 8/8 为止**未做**，按价值排序）
 

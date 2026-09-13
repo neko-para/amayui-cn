@@ -94,6 +94,14 @@ async function click(win, [x, y]) {
   win.webContents.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 });
 }
 
+/** 只移动光标（不按键）——复核悬停 UI（热点的 labelA/labelB 派发）。 */
+async function hover(win, [x, y]) {
+  win.webContents.sendInputEvent({ type: 'mouseMove', x, y });
+  await sleep(120);
+  win.webContents.sendInputEvent({ type: 'mouseMove', x, y: y + 1 }); // 再动一格 ⇒ 确保有 mouseMoved 沿
+  await sleep(120);
+}
+
 async function shot(win, step) {
   const img = await win.webContents.capturePage();
   const p = path.join(OUT, `${NAME}-${step}.png`);
@@ -155,6 +163,15 @@ async function shot(win, step) {
     await click(win, [640, 360]);
     await sleep(6000);
     await shot(win, '8-sn0000-next');
+    // ★悬停门控复核（2026-09 bug："右侧侧边栏无条件展示"）：只移动光标、不点击。
+    //   SN0000.txt:63/74 的热点（文本区 / 侧边栏条）labelA = 展开侧边栏；
+    //   SN0000.txt:66 的全屏热点 labelA = 收起 ⇒ 光标移出文本区应看到侧边栏收起。
+    await hover(win, [1240, 300]); // 侧边栏条（SN0000.txt:63 的热点 x=0x49c..0x500, y=0..0x281）
+    await sleep(1500);
+    await shot(win, '9-sn0000-hover-out');
+    await hover(win, [400, 300]);
+    await sleep(1500);
+    await shot(win, '10-sn0000-hover-in');
     console.log('[shot] 完成（gamestart）');
     app.quit();
     return;

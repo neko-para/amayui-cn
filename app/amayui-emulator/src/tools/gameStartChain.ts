@@ -387,6 +387,7 @@ function createHarness(o: HarnessOptions): Harness {
       if (until?.()) return i;
       e.nowMs = clock;
       e.serviceWinReveal(e.nowMs);
+      e.serviceCharGrid(e.nowMs); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
       if (e.waitFlags & 0x400) e.waitFlags &= ~0x400;
       else if (e.waitFlags & SLEEP_GATE) {
         if (clock >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;

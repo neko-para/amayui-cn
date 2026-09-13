@@ -156,6 +156,7 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
     //  2) ADV 分支：先跑每帧服务（输入泵 + 「未显示完」判定，可能清掉 ADV 位）；
     //  3) `0x300` 每窗「逐行贴出」闸门（CONFIG 消息预览的循环演示）——引擎主循环每帧都跑。
     e.serviceWinReveal(clock);
+      e.serviceCharGrid(clock); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
     // ★逐字显现：按确定性时钟推进（与 renderer session 的 `text-reveal` 分支同构）
     if (e.textRevealing) {
       e.serviceTextReveal(clock);

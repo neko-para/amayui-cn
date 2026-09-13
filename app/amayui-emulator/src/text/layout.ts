@@ -140,6 +140,44 @@ export interface MsgWinInput {
    * 重写侧没有离屏表面这一步 ⇒ 直接把游标交给光栅化，只画前 N 个字形。
    */
   revealed?: number;
+  /**
+   * 该窗在 Scene 里的 **DrawItem 区间**（引擎 `FontVWindow+104/+108` 与 `+276/+280`，由
+   * `0x213`/`0x25D` 登记；`i213 1 19a28 1f4` = `[105000,105500)`）。
+   *
+   * 为什么渲染侧需要它：引擎的"正文行"**就是** Scene 的 DrawItem（id = 行号 + base），
+   * 脚本清文字的手段是 `0x1F7 detach-texture <base> <count>`（换场/新页），
+   * 而重写侧文本另有载体（`msgWins`）⇒ 必须按区间判"这窗的图元被删光了 ⇒ 字也消失"
+   * （见 `scDetachTexture`）。缺了它，转场后文字会残留在画面上。
+   */
+  itemRanges?: readonly { base: number; count: number }[];
+  /**
+   * **字格图标**（▼「点击继续」）这一帧要画的那一格（引擎 `0x73` 配的精灵表 + 主循环每 `tickMs` 换一格）。
+   *
+   * 真相（2026-09 订正）：`0x73` **不是**文字逐字的单位，而是"一张图标精灵表的网格" ——
+   * ADV = `SO000.AGF`(id 0x5191) 10 帧 35×35 装进槽 12；序章/NOVEL = `SO026.AGF`(id 0x5190)
+   * 8 帧 56×56。主循环 raw 20887-20895 在 `effect_flags & 0x40000000` 期间每 `op10` ms 用
+   * `sub_45A940(Font, 当前窗, k, 0)` 把第 k 格贴到屏幕（`k = (k+1) % op9`）⇒ 视觉上就是"闪烁的 ▼"。
+   */
+  cell?: MsgCellFrame;
+}
+
+/** 字格图标（▼）的一帧：源 = 槽 `srcSurface` 那张精灵表的第 `k` 格；目标 = 屏幕坐标 `(x,y)`。 */
+export interface MsgCellFrame {
+  /** 源贴图槽（引擎 `win+60` = `0x73` 的 op4）。 */
+  srcSurface: number;
+  /** 精灵表里网格的原点（`0x73` op5/op6）。 */
+  originX: number;
+  originY: number;
+  /** 单格尺寸（op7/op8）。 */
+  cellW: number;
+  cellH: number;
+  /** 每行列数（op9；引擎 `win+96`）。 */
+  cols: number;
+  /** 本帧的格号（引擎 `Engine[107704]`；源矩形 = 原点 + (k%cols, k/cols) × 格宽高）。 */
+  k: number;
+  /** 目标屏幕坐标（ADV 分支 = `0x73` 的 op2/op3 + 窗框原点）。 */
+  x: number;
+  y: number;
 }
 
 /** 一个已摆位的字形（坐标相对**窗口左上角**）。 */
@@ -180,6 +218,8 @@ export interface TextFrame {
   glyphCount: number;
   /** 本帧实际画出的字形数（= `revealed` 截断到 `glyphCount`；`0..glyphCount`）。 */
   revealed: number;
+  /** 本帧要画的字格图标（▼）；`undefined` = 这一帧没有（未武装/该窗没配字格）。 */
+  cell?: MsgCellFrame;
 }
 
 /**
