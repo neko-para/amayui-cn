@@ -1,0 +1,46 @@
+{
+  "title": "headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "G3 回放要逐帧 digest 相等，而 0x208（getTextureSize）的答案是**宿主给出的输入**：pixi 侧走 IPC 异步 ⇒ 图未载入就是 0x0，且脚本拿它算源矩形/描画位置（实测 SN0000 背景的 src/dst 全不同）。现在把答案录进轨迹再喂回 headless（HeadlessScene.setTextureSizeAnswers），代价是\"回放不是独立的\"——换个脚本/场景就得重新录。若 headless 自己能同步回答图像尺寸（真实 AGF 尺寸），回放就只依赖时钟+输入。",
+  "acceptance": [
+    "headless 宿主能在**不开录制**的情况下回答 0x208：给出 imgid → {w,h}（真实 AGF 头尺寸），且对\"尚未载入\"的语义与 Electron 一致地表达出来",
+    "同一份 Scenario：headless 自解析尺寸 ⇔ 录制答案 两条路产出的 digest 序列相等（把 trace.ts 里按帧喂答案的那条路变成可选的对照，而不是唯一路）",
+    "实测：`npm run replay -- <trace>` 在**清空 trace 的 tex 字段**后仍逐帧相等（证明答案确实可由 headless 自己得出）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
+      "anchor": "setTextureSizeAnswers",
+      "note": "现在靠录制答案（按 slot 匹配的队列）"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/trace.ts",
+      "anchor": "tex?: { slot: number; w: number; h: number }[]",
+      "note": "录进轨迹的宿主输入"
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/nodeFileSource.ts",
+      "anchor": "readById",
+      "note": "异步取字节 ⇒ 要同步回答必须先预扫/预热（report.ts 的 resolveImages 也卡在这一步）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-frame-loop-design.md"
+    ],
+    "tickets": [
+      "T-0005",
+      "T-0004"
+    ]
+  },
+  "id": "T-0025",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-13",
+      "what": "创建"
+    }
+  ]
+}

@@ -38,6 +38,8 @@ import { NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js
 import { ExitScript, ScriptReset } from '../vm/ops.js';
 import type { BinInstruction } from '../script/bin.js';
 import type { FrameHost } from './host.js';
+import { buildFrameDigest } from './digest.js';
+import type { FrameObservation, FrameObserver } from './observer.js';
 
 /** 门的处理方式。**三种都要保留**（B1 不改行为，B2 才收敛）。 */
 export interface FrameLoopGates {
@@ -82,10 +84,19 @@ export interface FrameLoopOptions {
   onFrameStart?(nowMs: number, frameIndex: number, e: Engine): void;
   /** 本帧选了哪条分支（在分支体**之前**调用）。`tickets/T-0001` 的 `report.ts` 接线靠它做逐分支记账。 */
   onGate?(branch: FrameBranch, e: Engine): void;
+  /**
+   * **等待推进泵的结果**（`gates.advance: 'pump'` 时，紧接 `serviceAdvanceWait()` 之后）。
+   *
+   * ★为什么需要它：泵的返回值是"这一帧**处理掉了**一次推进"（命中热点/键/点击，或把页内文本推完），
+   * 而 `'force'` 档没有这个语义。观察者要还原"advance-wait handled / hover-label"这两条证据行，
+   * 就必须知道这个布尔值 —— 驱动把它显式交出来，而不是让观察者去猜（`tickets/T-0004` 的 G4 实测：
+   * 少了它，日志里那一条 `=== advance-wait handled → - ===` 会消失）。
+   */
+  onAdvanceWait?(handled: boolean, e: Engine): void;
   /** 每条指令**之前**（`instr` 可能是 `undefined` = ip 越界）。 */
   onStepStart?(frame: Frame, instr: BinInstruction | undefined, e: Engine): void;
-  /** 每条指令**之后**（成功执行完）。 */
-  onStep?(t: StepTrace, e: Engine): void;
+  /** 每条指令**之后**（成功执行完）。★可以是异步的：Electron 的纹理帧屏障挂在这里（见 `observer.ts`）。 */
+  onStep?(t: StepTrace, e: Engine): void | Promise<void>;
   /** 未实现指令的策略；默认 `'throw'`。 */
   onUnknown?(err: NotImplementedOp, frame: Frame, instr: BinInstruction | undefined): 'continue' | 'stop' | 'throw';
   /** 其它异常的策略（`ExitScript`/`ScriptReset` 不经过这里，它们由驱动直接停）。默认 `'throw'`。 */
@@ -128,6 +139,16 @@ export interface FrameLoopOptions {
   stopAfterStep?(t: StepTrace, e: Engine): boolean;
   /** 本次调用最多跑多少帧。 */
   maxFrames?: number;
+  /**
+   * **帧观察者**（设计文档 §2 的 L3；`tickets/T-0004` 的 B4 靠它把 Electron 的
+   * 控制窗/trace/遥测/jsonl 从会话里搬出来）。
+   *
+   * ★它与上面那批 `onXxx` 回调是**同一批接线点**：驱动内部把 observer 适配成 hooks
+   * （`mkObserverNest`），两者都给时**同时**调用（hooks 优先在场，observer 只做观察）——
+   * 这样既有调用点（`report.ts`/两份 chain）一行都不用改，而新入口可以只写一个 observer。
+   * 唯一的例外是 `onUnknown`/`onError` 的**策略**：observer 的返回值优先（它更靠近产品语义）。
+   */
+  observer?: FrameObserver;
 }
 
 /** 驱动为什么停下来（调用方据此还原各自的返回语义）。 */
@@ -157,10 +178,16 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
   const maxSteps = opt.maxStepsPerFrame ?? Number.POSITIVE_INFINITY;
   const cap = opt.maxFrames ?? Number.POSITIVE_INFINITY;
   const audioPolicy = opt.audio ?? 'host';
+  const obs = opt.observer;
 
   let frames = 0;
   let steps = 0;
   let lastScript = opt.initialScript ?? e.curScript().name;
+
+  /** 帧内观察（`frameIndex` = 正在处理的帧号）。 */
+  const obsMid = (): FrameObservation => ({ frameIndex: frames, nowMs: e.nowMs, frames, steps, e });
+  /** 帧末观察（`frames` 已自增 ⇒ 刚完成的那一帧是 `frames - 1`）。 */
+  const obsEnd = (nowMs: number): FrameObservation => ({ frameIndex: frames - 1, nowMs, frames, steps, e });
 
   /** 派发一条指令的结果（`'ok'` 之外都表示"整轮结束"，由调用方还原语义）。 */
   type DispatchResult = 'ok' | 'exit' | 'reset' | 'unknown' | 'error' | 'step-stop';
@@ -170,6 +197,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     const frame = e.curScript();
     const instr = frame.script?.instructions[frame.ip];
     opt.onStepStart?.(frame, instr, e);
+    obs?.onStepStart?.({ ...obsMid(), frame, instr });
     let t: StepTrace;
     try {
       t = await stepOnce(e);
@@ -177,27 +205,36 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       if (err instanceof ExitScript) return 'exit';
       if (err instanceof ScriptReset) return 'reset';
       if (err instanceof NotImplementedOp) {
-        const what = opt.onUnknown?.(err, frame, instr) ?? 'throw';
+        const what = obs?.onUnknown?.(err, 'unknown') ?? opt.onUnknown?.(err, frame, instr) ?? 'throw';
         if (what === 'throw') throw err;
         return what === 'stop' ? 'unknown' : 'ok';
       }
-      const what = opt.onError?.(err) ?? 'throw';
+      const what = obs?.onError?.(err, 'error') ?? opt.onError?.(err) ?? 'throw';
       if (what === 'throw') throw err;
       return what === 'stop' ? 'error' : 'ok';
     }
     steps++;
-    opt.onStep?.(t, e);
+    // ★`await`：Electron 的纹理帧屏障（`0x1F9` 之后等 IPC）必须在"这条之后、下一条之前"。
+    await opt.onStep?.(t, e);
+    await obs?.onStep?.({ ...obsMid(), t });
     if (opt.stopAfterStep?.(t, e) === true) return 'step-stop';
     return 'ok';
   };
 
+  /** 收尾：通知观察者 + 返回（所有出口都经它，避免漏报 `onStop`）。 */
+  const finish = (result: FrameLoopResult): FrameLoopResult => {
+    obs?.onStop?.({ ...obsMid(), result });
+    return result;
+  };
+
   for (;;) {
-    if (frames >= cap) return { frames, steps, stopReason: 'cap' };
-    if (opt.until?.()) return { frames, steps, stopReason: 'until' };
+    if (frames >= cap) return finish({ frames, steps, stopReason: 'cap' });
+    if (opt.until?.()) return finish({ frames, steps, stopReason: 'until' });
 
     const nowMs = host.now();
     e.nowMs = nowMs;
     opt.onFrameStart?.(nowMs, frames, e);
+    obs?.onFrameStart?.(obsMid());
 
     if (services.winReveal) e.serviceWinReveal(nowMs);
     if (services.charGrid) e.serviceCharGrid(nowMs);
@@ -205,19 +242,27 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     let stop: StopReason | null = null;
     if (gates.anim !== 'ignore' && (e.waitFlags & 0x400) !== 0) {
       opt.onGate?.('anim', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'anim' });
       if (gates.anim === 'clear' || host.animationsDone?.(nowMs) === true) e.waitFlags &= ~0x400;
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'sleep' });
       if (gates.sleep === 'clear' || nowMs >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
     } else if (e.textRevealing) {
       opt.onGate?.('text-reveal', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'text-reveal' });
       e.serviceTextReveal(nowMs);
     } else if (gates.advance !== 'ignore' && e.awaitingAdvance) {
       opt.onGate?.('advance', e);
-      if (gates.advance === 'pump') e.serviceAdvanceWait();
-      else e.forceAdvance();
+      obs?.onGate?.({ ...obsMid(), branch: 'advance' });
+      if (gates.advance === 'pump') {
+        const handled = e.serviceAdvanceWait();
+        opt.onAdvanceWait?.(handled, e);
+        obs?.onAdvanceWait?.({ ...obsMid(), handled });
+      } else e.forceAdvance();
     } else if (opt.advFrame === true && e.advActive) {
       opt.onGate?.('adv', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'adv' });
       e.serviceAdv();
       if (opt.advErrors === 'swallow') {
         // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
@@ -232,6 +277,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       }
     } else {
       opt.onGate?.('batch', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'batch' });
       // 常规：派发一批，遇门/等待/脚本尾即停
       for (let k = 0; k < maxSteps; k++) {
         const f = e.curScript();
@@ -242,6 +288,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
         if (f.name !== lastScript) {
           lastScript = f.name;
           opt.onScriptChange?.(f.name, e);
+          obs?.onScriptChange?.({ ...obsMid(), name: f.name });
         }
         const r = await dispatch();
         if (r !== 'ok') {
@@ -252,7 +299,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       }
     }
 
-    if (stop !== null) return { frames, steps, stopReason: stop };
+    if (stop !== null) return finish({ frames, steps, stopReason: stop });
     frames++;
     // ★音频帧泵（D5）：**每完整帧恰好一次**，且**先于**合成 —— 引擎 raw 20645-20646 就在 present 段里，
     //   产品路径的 `session.#present()`（texturesIdle → audio tick → present）也是这个次序。
@@ -264,9 +311,25 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       // `'needsRender'`：引擎式"没变就不重画"。★`advanceModel` **不跳过**（窗末收尾在它里面），
       //   跳过的只是"画"这一步（`tickets/T-0003`）。
       const wantPresent = opt.present === 'needsRender' ? (host.needsRender?.() ?? true) : true;
-      if (wantPresent) host.present?.();
+      // ★`await`：Electron 的合成前屏障（等本帧新绑定的纹理 IPC 到位）必须在 `present` 之前完成。
+      if (wantPresent) await host.present?.();
+    }
+    // ★逐帧对外表现（`tickets/T-0003` 验收 4）：模型已推进之后取一份冻结的 digest。
+    //   只有"观察者明确要 digest"（`wantsDigest`）且宿主交得出场景模型时才构建 —— 构建一次要跑
+    //   一次全场景求值（`scSnapshot`），产品路径没挂记录器时不该付这个代价（`T-0005` 的 `--record`）。
+    const digestState = obs?.wantsDigest === true ? host.digestState?.() : undefined;
+    if (obs?.onPresent && digestState) {
+      const digest = buildFrameDigest({
+        e,
+        scene: digestState,
+        frame: frames - 1,
+        nowMs,
+        host: host.digestHostCounters?.(),
+      });
+      obs.onPresent({ ...obsEnd(nowMs), digest });
     }
     opt.onFrameEnd?.(nowMs, frames - 1, e);
+    obs?.onFrameEnd?.(obsEnd(nowMs));
     await host.yield?.();
   }
 }

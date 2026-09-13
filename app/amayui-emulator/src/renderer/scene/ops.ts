@@ -34,6 +34,7 @@ import {
   makeItem,
   makeMesh,
   advanceWindows,
+  calcDiffuse,
   itemAnimationsPending,
   meshWindowDone,
   windowDone,
@@ -434,6 +435,19 @@ export function scDrawCgNumber(
  */
 export function scAdvance(s: SceneState, clock: number): void {
   for (const it of s.drawItems.values()) if (advanceWindows(it, clock)) s.dirty = true;
+  // ★**mesh 的窗末收尾也在这里**（`tickets/T-0004` 的 G3 实测修）：mesh 没有 `advanceWindows` 那样的
+  //   推进器，它的"求值 + 窗末收尾（`state0 ← state1`、清 bit1）"全在 `calcDiffuse` 里
+  //   （引擎 raw 133531-133538）。修前只有 **pixi 的 `present`**（`presenter.ts:130/201`）会调它 ⇒
+  //   Electron 的幕布在窗末被"烘焙"，headless 的不会 ⇒ 两宿主的 `state0` 从"幕布淡完那一帧"起分叉
+  //   （G3 实测：Electron 录到 `state0=#00000000`，回放得到 `#ff000000`）。
+  //   现在两宿主都经 `advanceModel` → 同一个 `scAdvance` ⇒ 同一份状态；`present` 只负责画。
+  for (const m of s.meshes.values()) {
+    if ((m.flags & 2) === 0) continue;
+    const before = m.state0;
+    calcDiffuse(m, clock); // 求值（并锁存 `w.start`）+ 窗末收尾
+    // 窗跑完那一帧必须置脏：`scAnimationsPending` 此刻已为假，不置脏就不会再合成一次终态。
+    if (m.state0 !== before || (m.flags & 2) === 0) s.dirty = true;
+  }
 }
 
 /**

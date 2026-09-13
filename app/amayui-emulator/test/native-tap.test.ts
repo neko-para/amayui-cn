@@ -130,12 +130,38 @@ const DECLARED_HOST_DIVERGENCE = [
 ];
 
 /**
- * **宿主自己的（非桥）方法**：诊断/测试缝/模型推进。它们**不该**经 `native.*` 调用，
+ * **宿主自己的（非桥）方法**：诊断/测试缝/**帧宿主能力**。它们**不该**经 `native.*` 调用，
  * 所以刻意不进 `NativeBridge`；但也不能随手加 —— 加一个就要在这份清单里登记一次（想清楚它该不该入桥）。
+ *
+ * ★`advanceModel` / `digestState` / `digestHostCounters`（`tickets/T-0003`/`T-0004`）**刻意不入桥**：
+ * 它们不是"VM 让宿主做事"，而是**帧宿主**（`src/frame/host.ts`）与宿主之间的契约 —— 调用方是
+ * 帧驱动/会话的装配层（`session.ts` 构造 `FrameHost` 字面量），不是 opcode handler。
+ * 入桥会把"VM 能调什么"与"驱动能问什么"混成一个面（`needsRender`/`animationsDone` 入桥是因为
+ * **VM 路径也会读它们**：门判据在会话里、经 `#native` 调用）。两者都由 `FrameHost` 的编译期检查兜住。
  */
 const NON_BRIDGE = {
-  'pixiBackend.ts': ['debugAudio', 'debugItemState', 'resolveItemTexture'],
-  'headlessScene.ts': ['advance', 'advanceModel', 'note', 'outcome', 'slotTable', 'snapshot', 'snapshotText'],
+  'pixiBackend.ts': [
+    'advanceModel',
+    'debugAudio',
+    'debugItemState',
+    'digestHostCounters',
+    'digestState',
+    'drainTextureSizeLog',
+    'resolveItemTexture',
+  ],
+  'headlessScene.ts': [
+    'advance',
+    'advanceModel',
+    'digestHostCounters',
+    'digestState',
+    'drainTextureSizeLog',
+    'note',
+    'outcome',
+    'setTextureSizeAnswers',
+    'slotTable',
+    'snapshot',
+    'snapshotText',
+  ],
 };
 
 test('★桥能力面：宿主桥方法差异必须在"已声明的可选能力"内（T-0013）', () => {

@@ -52,6 +52,22 @@ contextBridge.exposeInMainWorld('api', {
   logLineSync: (text: string) => ipcRenderer.sendSync('log-line-sync', text),
   /** 渲染窗→主：追加结构化 trace（JSON 行）到 .tmp/scene-trace.jsonl。 */
   appendTraceLine: (line: string) => ipcRenderer.send('append-trace-line', line),
+  /**
+   * 渲染窗→主：追加一条**回放轨迹**行（时钟 + 输入 + digest）到 `AMAYUI_REPLAY_PATH`
+   * （`tools/record.cjs` 启动时设；见 `electron/logging.ts`）。`tickets/T-0005` 的 `--record`。
+   */
+  appendReplayLine: (line: string) => ipcRenderer.send('append-replay-line', line),
+  // ---- `--record`（`tickets/T-0005`）：录制开关与 Scenario 名（环境变量由 `tools/record.cjs` 设）----
+  /**
+   * **本次是否录制**（`AMAYUI_RECORD=1`）。★为什么走环境变量而不是"主进程发一条开始录制"：
+   * 轨迹必须**从启动第一帧**开始录 —— 回放是从"刚装载 SYSTEM4"开始的，若从"界面就绪"才开始录，
+   * 录到的帧 0 已经在 TITLE，回放对不上（实测过这个错法）。
+   */
+  record: process.env.AMAYUI_RECORD === '1',
+  /** 录制用的 Scenario 名（进轨迹头；与 `--scenario` 那份同名）。 */
+  recordScenario: process.env.AMAYUI_SCENARIO_NAME ?? 'scenario',
+  /** 录制用的启动脚本索引。 */
+  recordScript: Number(process.env.AMAYUI_SCENARIO_SCRIPT ?? '0'),
 
   // ---- 控制面 ----
   /** 控制窗→主：重启主窗口渲染流程。 */

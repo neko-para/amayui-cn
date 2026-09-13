@@ -1,7 +1,7 @@
 {
   "id": "T-0005",
   "type": "req",
-  "status": "open",
+  "status": "done",
   "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B5 统一 Scenario（shot.cjs 的点击脚本 与 chain 的输入驱动合一）+ --record/--replay 回放器",
@@ -13,14 +13,24 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/tools/shot.cjs",
-      "anchor": "GAME_START_XY",
-      "note": "Electron 侧的硬编码点击脚本"
+      "file": "app/amayui-emulator/src/frame/scenario.ts",
+      "anchor": "export interface ScenarioSpec",
+      "note": "可序列化的一份 Scenario（两宿主共用）"
     },
     {
-      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
-      "anchor": "START_GAME_XY",
-      "note": "headless 侧的另一套输入驱动"
+      "file": "app/amayui-emulator/src/frame/trace.ts",
+      "anchor": "export async function runReplay",
+      "note": "G3 回放：逐帧恢复输入 + 比对 engine 段"
+    },
+    {
+      "file": "app/amayui-emulator/tools/record.cjs",
+      "anchor": "AMAYUI_RECORD",
+      "note": "Electron 跑手：真实 DOM 输入 + 从第一帧录制"
+    },
+    {
+      "file": "docs-new/04-app/emulator.md",
+      "anchor": "闸门清单：改哪些文件必须跑 G3 / G4",
+      "note": "G3/G4 的触发面，以及「关键行 ≠ 诊断量行」"
     }
   ],
   "blockedBy": [
@@ -39,6 +49,28 @@
     {
       "at": "2026-09-13",
       "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done —— Scenario 统一 + record/replay 一键 G3；emulator.md §7.1 闸门清单落地，见 changes.md"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：doneWhy"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/scenario-replay.test.ts",
+    "app/amayui-emulator/test/frame-digest.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts"
+  ],
+  "doneWhy": "一份 ScenarioSpec 被 Electron 跑手与 headless 跑手共用；npm run record/replay 一键跑通 G3（3047 帧逐帧相等）；emulator.md §7.1 写明闸门清单与关键行口径。"
 }

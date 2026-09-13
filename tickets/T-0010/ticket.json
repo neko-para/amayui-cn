@@ -14,12 +14,12 @@
     {
       "file": "app/amayui-emulator/src/report.ts",
       "anchor": "forceAdvance",
-      "note": "等待门的处理方式（无 0x400/SLEEP 分支）"
+      "note": "report 的等待门处理方式（刻意无 0x400/SLEEP 分支，见 C2 决策）"
     },
     {
-      "file": "app/amayui-emulator/src/renderer/app/session.ts",
-      "anchor": "serviceAnimGate",
-      "note": "产品路径对 0x400 的正确处理"
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "gates.anim !== 'ignore'",
+      "note": "产品路径对 0x400 的正确处理（B4 后唯一一处在共享驱动里）"
     }
   ],
   "blockedBy": [
@@ -29,6 +29,10 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence"
     }
   ]
 }

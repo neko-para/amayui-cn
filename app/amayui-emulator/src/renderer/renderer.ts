@@ -19,7 +19,8 @@
  * 之后（按"是否需要渲染"）调用的，没有第二个 ticker 在并发跑。
  */
 import { bootApp } from './app/boot.js';
-import { RendererSession } from './app/session.js';
+import { PRODUCT_FRAME_POLICY, RendererSession } from './app/session.js';
+import { TraceRecorder } from '../frame/trace.js';
 
 async function main(): Promise<void> {
   const app = await bootApp();
@@ -41,8 +42,34 @@ async function main(): Promise<void> {
     app.native.log(`[renderer-rejection] ${r?.message ?? String(ev.reason)}\n${r?.stack ?? ''}`);
   });
 
-  const session = new RendererSession(app);
+  /**
+   * **`--record`（`tickets/T-0005` 的 B5）**：开关与 Scenario 名由 `tools/record.cjs` 经环境变量带进来
+   * （preload 的 `record`/`recordScenario`/`recordScript`）。录制器**从启动第一帧**开始录：
+   * 每帧"时钟 + 帧首输入快照 + digest"，经 `appendReplayLine` 落到主进程的 gzip 轨迹文件。
+   * 回放侧见 `src/tools/replay.ts`（G3）。
+   *
+   * ★为什么必须从第一帧录：回放是"刚装载 SYSTEM4"的状态起步的。若从"界面就绪"才开始录，
+   *   录到的帧 0 已经在 TITLE，回放的帧 0 还在 SYSTEM4 ⇒ 整条序列错位（实测踩过）。
+   */
+  let recorder: TraceRecorder | null = null;
+  if (window.api?.record) {
+    recorder = new TraceRecorder({
+      scenario: window.api.recordScenario ?? 'scenario',
+      script: window.api.recordScript ?? 0,
+      write: (line) => window.api?.appendReplayLine?.(line),
+      // ★驱动策略写进轨迹头（回放侧照用）：批上限决定帧边界 ⇒ 不许"回放侧猜一个默认值"。
+      policy: PRODUCT_FRAME_POLICY,
+      // ★`0x208`（纹理尺寸）的答案也录（它是宿主输入：依赖 IPC 加载状态，且直接改变场景状态）。
+      drainTextureSizes: () => app.pixi.drainTextureSizeLog(),
+      note: 'electron record（tools/record.cjs）',
+    });
+    recorder.start();
+    app.native.log(`[record] 开始录制 scenario=${recorder.header.scenario} script=${recorder.header.script}`);
+  }
+
+  const session = new RendererSession(app, recorder ?? undefined);
   session.registerControlHandlers();
+
   try {
     await session.run();
   } catch (caught) {

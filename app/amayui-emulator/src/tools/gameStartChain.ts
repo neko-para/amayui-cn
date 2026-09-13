@@ -136,10 +136,15 @@ export interface GameStartResult {
       rect: string;
       verts: number;
       flags: number;
-      /** 引擎 state0/state1（`0x322`/`0x323` 写的两端色）。★动画窗在 Node 侧无 present 驱动 ⇒
-       *   `color` 停在 state0，判定"目标色对不对"要看 `state1`（SN0000 的回归点就在这里）。 */
+      /** **脚本写的**两端色（`0x322`/`0x323` 在**写入那一刻**抓的值；见本文件 `writtenMeshColors`）。 */
       state0: string;
       state1: string;
+      /**
+       * **跑完那一刻的当前值**（`state0`/`state1` 字段在窗末收尾后可能已被烘焙 `state0 ← state1`）。
+       * 用途：判断"这块幕布**最终**会是什么色"（`flags & 2` ⇒ 看 `nowState1`，否则看 `nowState0`）。
+       */
+      nowState0: string;
+      nowState1: string;
       /** 逐顶点基础色（`0x320` 的 op5/op6 数组，DEC 解码后）。语料里应恒为 `#ffffffff`。 */
       baseColors: string[];
     }[];
@@ -235,6 +240,33 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
   loadScriptData(e, boot.data, boot.name);
+
+  /**
+   * **脚本写的 mesh 两端色**（`0x322`/`0x323`）—— 在**写入那一刻**抓下来。
+   *
+   * ★为什么不能"跑完再读 state0/state1"（`tickets/T-0004` 的 G3 实测）：
+   * mesh 的窗末收尾是 `state0 ← state1`、清 bit1（`drawitem/eval.ts` 的 `calcDiffuse`），而它现在发生在
+   * **共享推进**（`scAdvance`，由驱动每帧的 `advanceModel` 调用）里 —— 于是跑完时 `state0` 已经是**终点色**，
+   * 报告里"`0x322`/`0x323` 写的两端色"就不再是脚本写的东西（实测：淡入幕的 state0 从 `#ff000000` 变成
+   * 收尾后的 `#00000000`）。报告要断言的恰恰是"脚本写了什么"，所以必须抓写入时刻的值。
+   */
+  const writtenMeshColors = new Map<number, { state0: number; state1: number }>();
+  const captureMeshColors = (handle: number): void => {
+    const m = scene.scene.meshes.get(handle);
+    if (m) writtenMeshColors.set(handle, { state0: m.state0 >>> 0, state1: m.state1 >>> 0 });
+  };
+  {
+    const origSetVertexColor = scene.setVertexColor.bind(scene);
+    const origSetVertexColorAlpha = scene.setVertexColorAlpha.bind(scene);
+    scene.setVertexColor = (handle, index, alpha, rgb): void => {
+      origSetVertexColor(handle, index, alpha, rgb);
+      captureMeshColors(handle);
+    };
+    scene.setVertexColorAlpha = (handle, delay, dur, alpha, rgb): void => {
+      origSetVertexColorAlpha(handle, delay, dur, alpha, rgb);
+      captureMeshColors(handle);
+    };
+  }
 
   const unknown = new Map<number, UnknownOp>();
   const scriptTrail: string[] = [];
@@ -460,12 +492,13 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       meshes: [...scene.scene.meshes.values()]
         .sort((a, b) => a.handle - b.handle)
         .map((m) => {
-          // ★先抓"脚本写的两端色/标志"，**再**求值：`calcDiffuse` 在窗末有**烘焙副作用**（`state0 ← state1`、
-          //   清 bit1，见 `drawitem/eval.ts`），若在求值后再读，报告里的 `state0` 就变成"求值后的当前色"，
-          //   与字段说明（"`0x322`/`0x323` 写的两端色"）不符 —— B2 把模型推进接上后这条才暴露出来
-          //   （修前 chains 从不推进窗 ⇒ 窗在求值那一刻才锁存 ⇒ 一直是"延迟期"，掩盖了这个顺序依赖）。
-          const state0 = m.state0 >>> 0;
-          const state1 = m.state1 >>> 0;
+          // ★**脚本写的两端色**取自"写入那一刻"的抓取（`writtenMeshColors`，见上面的说明）：
+          //   `calcDiffuse` 在窗末有烘焙副作用（`state0 ← state1`、清 bit1），而它现在发生在**共享推进**里
+          //   （驱动每帧的 `advanceModel`）⇒ "跑完再读"读到的是收尾后的色，与字段说明不符。
+          //   抓不到（该 mesh 没被 `0x322`/`0x323` 写过）时才退回当前值。
+          const written = writtenMeshColors.get(m.handle);
+          const state0 = written ? written.state0 : m.state0 >>> 0;
+          const state1 = written ? written.state1 : m.state1 >>> 0;
           const flags = m.flags;
           const c = meshColor(m, calcDiffuse(m, harness.clock));
           const xs = m.verts.map((v) => v.x);
@@ -481,6 +514,8 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
             flags,
             state0: `#${state0.toString(16).padStart(8, '0')}`,
             state1: `#${state1.toString(16).padStart(8, '0')}`,
+            nowState0: `#${(m.state0 >>> 0).toString(16).padStart(8, '0')}`,
+            nowState1: `#${(m.state1 >>> 0).toString(16).padStart(8, '0')}`,
             baseColors: m.baseColors.map((c) => `#${(c >>> 0).toString(16).padStart(8, '0')}`),
           };
         }),

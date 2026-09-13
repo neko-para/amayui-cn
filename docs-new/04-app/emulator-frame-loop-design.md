@@ -4,7 +4,9 @@
 > 让 **Electron 层退化为纯粹的交互 + 渲染（宿主）**，并让 **headless 能提取（记录/断言）与 Electron
 > 完全一致的对外表现**。
 >
-> **状态**：⬜ 设计待批。**本文不改变任何行为**；实施按 §6 分批，每批一个闸门（判据 + 回滚点）。
+> **状态**：✅ **B1–B5 全部完成（2026-09-14）**。本文是设计与验收判据的真源；每批的实施证据在
+> `tickets/T-0001`..`T-0005` 的 `changes.md`，闸门清单在 `emulator.md` §7.1。**本文不改变任何行为**；
+> 实施按 §6 分批，每批一个闸门（判据 + 回滚点）。
 > 关联：`emulator-refactor-plan.md` §8 #3、§10 #1（本设计是那一条的展开）。
 > 事实来源：`.tmp/frame-loop-divergence.md`（只读代理的**穷尽**差异清单，287 行、全部带 file:line）+
 > 本文作者逐处复核。**§1 的每一行都有 file:line，可逐条核对。**
@@ -189,7 +191,7 @@ export interface FrameDigest {
 | **D3** | `advanceWindows`/`needsRender`/`animationsDone` 的归属 | **全部收进共享层**：推进契约 = "每帧 present 前推进一次"；"是否渲染/是否跑完"改为共享函数，喂 **Engine** 的门标志（不再读宿主的镜像字段） | 现在推进点三个（pixi `presenter.ts:56` / report `advance` / chains 不推进）；`needsRender` 读 pixi 私有 `waitFlags` 且**永久粘滞**（§1.2-5）；`scAnimationsDone` 只看窗 0（§1.2-8） | ✅ 2026-09（`T-0008`/`T-0009`/`T-0003`）：判据 `sceneNeedsRender` / `scAnimationsPending` / `scGateAnimationsDone` 都在共享层；"脏"也进了共享模型（`SceneState.dirty`：变更型 `sc*` 置位，pixi 在 `present` 清、headless 在 `snapshot` 清）；驱动有 `present: 'needsRender'` 档（只跳过"画"，不跳 `advanceModel`/音频 tick） |
 | **D3b** | ★"该不该合成"与"门能不能放行"是**两条**判据 | `scAnimationsPending`（mesh 全窗 + draw item **5 窗**）供 `sceneNeedsRender`；`scGateAnimationsDone`（mesh 全窗 + draw item **颜色窗**）供 `0x400` 门。**不许再共用一个函数** | 二者共用一个函数时，任一侧的正确范围都会伤到另一侧：把 5 窗同时喂给门 ⇒ 序章 `SN0000.txt:1043` 的 80 000 ms 平移窗把门钉死（E4 A/B 实测 20 s 不放行、黑屏）；只喂窗 0 给合成 ⇒ 缩放/平移/flipbook 的中间帧不上屏。门的真值（`sub_407E20` = 池挂起位 + `0x238` 装载的等待计时器）见 `tickets/T-0024` |
 | **D4** | 无输入源的推进 | 建模成 `Scenario.advancePolicy`，**默认 `synthetic`**：走与真实点击**同一条** `routes`/`labelC` 路由代码（含命中测试与 `routes.shown`），只把事件由脚本合成；`force` 保留为显式登记的近似 | 现存 `forceAdvance` 与真泵刻意不同（`engine.ts:780,964-989`），且 headless 因此**完全没有悬停**（§1.2-10） |
-| **D5** | `present` 的三合一 | 拆开：`host.audio(tick)` 由**驱动**每帧调（不再藏在 `#present` 里）；屏障=可选义务；`present()` 只做渲染 | `session.ts:268-274` 把"音频帧泵/纹理屏障/渲染"挤在一个函数里 ⇒ headless 永远拿不到音频 tick（§1.2-9） | ✅ 2026-09 驱动侧完成（`tickets/T-0006`）：`FrameLoopOptions.audio`（默认 `'host'`）+ 每完整帧一次 tick（先于 `advanceModel`/`present`）；`report` 传 `'never'`。⚠ 产品路径 `session.#present()` 里那一处 tick **暂留**，B4 迁移时必须删（`T-0004`） |
+| **D5** | `present` 的三合一 | 拆开：`host.audio(tick)` 由**驱动**每帧调（不再藏在 `#present` 里）；屏障=可选义务；`present()` 只做渲染 | `session.ts:268-274` 把"音频帧泵/纹理屏障/渲染"挤在一个函数里 ⇒ headless 永远拿不到音频 tick（§1.2-9） | ✅ 2026-09 完成（`tickets/T-0006` + `T-0004`）：`FrameLoopOptions.audio`（默认 `'host'`）+ 每完整帧一次 tick（先于 `advanceModel`/`present`）；`report` 传 `'never'`；**产品路径那一处 tick 已在 B4 删除**（`session.ts` 现在只剩 `FrameHost.present` 的"屏障 + 合成"两件事） |
 | **D6** | 宿主能力面入桥 | 把 `needsRender`/`animationsDone`/`preloadImage` **并入 `NativeBridge` + nativeTap 白名单**（可选方法） | 现在它们不在桥里 ⇒ 缺口不被闸门 A 记（§0.2 ★） | ✅ 2026-09 完成（`tickets/T-0013`）：三者入桥 + `BRIDGE_METHODS`；`RendererSession.#native` 改成 `NativeBridge` 类型；两条宿主能力面守卫（差异清单 + 非桥清单）带负向实测 |
 | **D7** | Electron 的 CI 覆盖 | 接受"Electron 只在 G3/G4（本地）验证"，CI 靠 G1/G2；把 pixi 的**非渲染**逻辑（脏标记/needsRender/digest）下沉共享以缩小不可测面 | Electron 无法在 `node:test` 里跑（需要 GPU/窗口） |
 | **D8** | 死代码 | 删 `interpreter.run()`、`Engine.pickHoverLabel()`（零调用者）；`HeadlessScene.waitFlags` 与 `PixiBackend.waitFlags` 镜像字段随 D3 一并消失 | §1.2-6/10/11 |
@@ -207,6 +209,22 @@ export interface FrameDigest {
 | **B5 Scenario 统一 + 回放器** | `tools/shot.cjs` 的点击脚本与 chain 的 `setCursor/pressMouse` 合到一份 `Scenario`；加 `--record`/`--replay` | G3 一键可跑；shot 与 chain 用同一份输入定义 | 工具独立文件，删除即回退 |
 
 > B1 = `refactor-plan` §10 #1（"先只合并 headless 三家"）；本设计把"三家"扩为"全部 headless 入口 + 两个能力面"。
+
+### 6.1 五批的落地结果（2026-09-14，逐批证据见票据）
+
+| 批 | 结果 | 票据 | 关键证据 |
+|---|---|---|---|
+| B1 | ✅ `src/frame/{host,loop}.ts` + headless 三家接线；**G2**：report 全文 sha256 `FBC05509…` 逐字节不变 | `T-0001` | 427 → 434 测试 |
+| B2 | ✅ 14 条漂移工单逐条落定（13 修 + 1 刻意保留） | `T-0002` | before/after 总表在 `T-0002/changes.md` 顶部 |
+| B3 | ✅ ①音频帧泵归驱动（`T-0006`）②`needsRender` 脏标记进共享模型 ③输入源 ⇒ 悬停真的跑（`T-0007`）④**FrameDigest** + 两宿主等价测试 | `T-0003` | `test/frame-digest.test.ts`（5 例）、`test/headless-needs-render.test.ts` |
+| B4 | ✅ `session.ts` 只剩装配 + 观察者 + `yield`；`#present` 三拆（音频归驱动、屏障 await、present 只渲染）；**G3 通过**（Electron 录 3047 帧 → headless 逐帧 engine 段相等）；**G4 关键行不变** | `T-0004` | `tickets/T-0004/changes.md` 的 before/after |
+| B5 | ✅ 一份 `ScenarioSpec`（`.json`）被 Electron 跑手（`tools/record.cjs`）与 headless 跑手（`npm run scenario`）共用；`--record/--replay` 一键 G3；`emulator.md` §7.1 闸门清单 | `T-0005` | `test/scenario-replay.test.ts`（7 例） |
+
+**G3 实测抓到的三处真分叉**（都不报错、只表现不对 —— 正是本设计存在的理由）：
+1. `scAdvance` 只推进 draw item、**mesh 的窗末收尾藏在 pixi 的 `present` 里** ⇒ 两宿主的幕布状态分叉；
+2. `digest.nowMs` 曾舍入到 3 位小数 ⇒ 回放的时钟与录制差 ≤0.0005ms ⇒ 插值色在边界上差 1/255；
+3. pixi 的**帧保持**判据用过期 `clockMs` 调 `calcDiffuse` ⇒ 给共享模型的动画窗锁了早一帧的起点。
+> 三处都在 `T-0004/changes.md` 有 before/after。
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "id": "T-0003",
   "type": "req",
-  "status": "open",
+  "status": "done",
   "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B3 headless 补齐能力面：audio 帧泵 / needsRender 语义 / 输入源（⇒ 悬停真的跑）/ digest",
@@ -14,19 +14,19 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/renderer/app/session.ts",
-      "anchor": "kind: 'tick'",
-      "note": "音频帧泵只在 Electron 的 #present 里"
+      "file": "app/amayui-emulator/src/frame/digest.ts",
+      "anchor": "export function buildFrameDigest",
+      "note": "逐帧对外表现的唯一构建器（engine 段/host 段）"
     },
     {
-      "file": "app/amayui-emulator/src/vm/engine.ts",
-      "anchor": "forceAdvance",
-      "note": "headless 用的推进旁路（与真泵刻意不同）"
+      "file": "app/amayui-emulator/test/frame-digest.test.ts",
+      "anchor": "engine 段跨宿主能力面一致",
+      "note": "两宿主等价 + 负向控制"
     },
     {
-      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "needsRender",
-      "note": "只有 pixi 有\"是否需要渲染\"的判据"
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "wantsDigest",
+      "note": "只有观察者要 digest 时才构建（产品路径不白跑）"
     }
   ],
   "blockedBy": [
@@ -55,6 +55,30 @@
     {
       "at": "2026-09-13",
       "what": "改字段：links"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done —— 验收 4（FrameDigest）收口；四条验收全部落地，见 changes.md"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：doneWhy"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-digest.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts",
+    "app/amayui-emulator/test/headless-needs-render.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts"
+  ],
+  "doneWhy": "验收 1-3 早先由 T-0006/T-0007 落地；验收 4（FrameDigest + 两宿主等价测试）本轮完成：engine 段跨宿主能力面一致 + 负向控制 + G1 确定性，5 例守卫。"
 }

@@ -66,6 +66,13 @@ export interface SnapshotMesh {
   baseColors: string[];
   /** `0x322` 的 op2（引擎 entry[9] = alpha 混合模式选择子，D3D 侧消费者未接）。 */
   blend: number;
+  /**
+   * **动画窗相位**（起点/延迟/时长；`0x323` 写的窗，起点由绘制期锁存 = `animWindow.winPhase`）。
+   *
+   * ★只进 JSON（**不打印进快照文本** —— 文本要保持逐字节稳定），但它是"两宿主可比"的关键量：
+   * 起点差一帧就会让插值色差 1/255（G3 实测），只报 `color` 时那种差异看起来像"浮点噪声"。
+   */
+  anim: { start: number; delay: number; dur: number } | null;
 }
 
 /** 一个消息窗的文本快照（「报告里能看见文字」正是本轮要解决的可见性问题）。 */
@@ -172,8 +179,11 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
     .map((m) => ({
       handle: m.handle,
       layer: m.layer,
+      // ★`state0/state1` 必须在求值（`calcDiffuse`，窗末有 `state0 ← state1` 的收尾）**之前**读出来。
       state0: hex8(m.state0),
       state1: hex8(m.state1),
+      // ★窗相位也要在求值前读（`winPhase`/锁存会写 `anim.start`）。
+      anim: m.anim ? { start: m.anim.start, delay: m.anim.delay, dur: m.anim.dur } : null,
       diffuse: hex8(calcDiffuse(m, clock)),
       color: hex8(meshColor(m, calcDiffuse(m, clock))),
       flags: m.flags,

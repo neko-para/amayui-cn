@@ -12,8 +12,8 @@
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `modeled-verified` | 28 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 23 | 只实现了一部分（缺口写在该条 note） |
+| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
 | **合计** | **108** | 需要关注（非 n/a 且非已核验）= **55** |
@@ -25,7 +25,7 @@
 | 3D | 17 | 2 |
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
-| 帧循环 | 15 | 9 |
+| 帧循环 | 15 | 10 |
 | 消息窗 | 24 | 15 |
 | 渲染 | 24 | 11 |
 | 资源 | 14 | 4 |
@@ -39,7 +39,7 @@
 | `frame-pump-sound-channels` | 声音 | 每帧声音通道老化 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `frame-pump-input-refresh` | 输入 | 每帧输入态刷新 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
 | `frame-pump-music-fade` | 声音 | 每帧 BGM 淡出推进 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
-| `frame-render-gate-mainloop` | 帧循环 | 主循环帧提交门控 | 🟡 已建模未核验 | E1 |
+| `frame-render-gate-mainloop` | 帧循环 | 主循环帧提交门控 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
 | `scene-frame-commit` | 渲染 | Scene 逐帧提交（四路归并 + 绘制） | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
 | `scene-beginscene-recursion-gate` | 渲染 | BeginScene/EndScene 递归门 | ➖ n/a | E1 |
 | `scene-frame-texture-gate-46672` | 3D | 帧纹理（离屏表面）指针门 | ➖ n/a | E1 |
@@ -47,7 +47,7 @@
 | `scene-capture-target-flag-46680` | 渲染 | Capture 目标为主/后缓冲（38 号）标记 | ➖ n/a | E1 |
 | `scene-render-3d-frame-request-46700` | 3D | 请求显式渲染一帧 3D | ➖ n/a | E1 |
 | `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | ➖ n/a | E1 |
-| `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | 🟠 部分 | E1 |
+| `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | 🟠 部分 | E2 · `test/headless-needs-render.test.ts` |
 | `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ❌ 缺失 | E0 |
 | `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | 🟠 部分 | E3 · `test/anim-window-done.test.ts` |
 | `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ❌ 缺失 | E0 |
@@ -57,7 +57,7 @@
 | `engine-main-window-hwnd` | 渲染 | Engine+387924 主窗口 HWND（旧名 FileSource） | ➖ n/a | E1 |
 | `filesource-script-load` | 资源 | 脚本装载把主窗口 HWND 当资源来源传入 | ➖ n/a | E1 · `test/boot.test.ts` |
 | `scene-draw-total-gate-1056` | 渲染 | Scene+1056 主绘制总门 | ❌ 缺失 | E0 |
-| `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/ops-cg-digit-clock.test.ts` |
+| `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
 | `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | ❌ 缺失 | E0 |
@@ -147,6 +147,15 @@
 
 ## 缺口明细（`absent` / `partial`）
 
+### `frame-render-gate-mainloop`（partial）
+
+- **能力**：主循环帧提交门控
+- **触发**：`Engine+667856==1` 且（`Engine+667860`≠0 或 effect_flags&0x2400）且 effect_flags&0x1000000==0 且 !v93 且(Scene 有脏或对象命中)
+- **缺失时为什么静默**：门不满足时整条 `sub_4B4040` 调用被跳过，画面保持上一帧且无任何诊断输出
+- **引擎**：sub_412290, sub_40BE10 @ raw 20740-20760
+- **读的字段**：Engine+667856, Engine+667860, Engine+699204, Engine+369332, Scene+46508
+- **emulator 现状**：2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates 三档（anim/sleep/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。
+
 ### `scene-frame-commit`（partial）
 
 - **能力**：Scene 逐帧提交（四路归并 + 绘制）
@@ -163,7 +172,7 @@
 - **缺失时为什么静默**：标志为 0 时只是少刷一帧，`sub_40BE10` 走别的条件（D3D 设备/map/内容/Live2D），无断言
 - **引擎**：sub_4B4040, sub_4B4460, sub_40BE10, sub_4AF1C0, sub_49AA30, sub_49A770, sub_49A8E0, sub_4AB950 @ raw 117129-137035
 - **读的字段**：Scene+46508
-- **emulator 现状**：emulator 有 sceneDirty（标脏 → present 消费后清）；引擎是 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置，生命周期更复杂
+- **emulator 现状**：2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。
 
 ### `scene-freeze-flag`（absent）
 
@@ -226,7 +235,7 @@
 - **缺失时为什么静默**：时钟停走时动画只是静止，所有基于时间的比较都合法
 - **引擎**：sub_412290, sub_41A090, sub_41A2C0, sub_41A1A0 @ raw 20750-20751
 - **读的字段**：Engine+369332, Engine+369336, Engine+107438
-- **emulator 现状**：emulator 有时钟写入（0x20C/0x23C → engineValues 92333/92334）+ 0x1F4 停靠锁门控；但没有"时钟冻结"概念（present 用墙钟 performance.now）
+- **emulator 现状**：2026-09 更新（T-0004/D1）：时钟已是**单一时间域** —— 驱动每帧读 host.now() 写进 Engine.nowMs，宿主（pixi）经 advanceModel(nowMs) 接收，不再自己算 performance.now()-wallStart（旧 note 里的『present 用墙钟』已过期）。守卫 test/frame-loop.test.ts（每帧时钟前进/冻结档）+ test/frame-digest.test.ts（时钟进 digest）。★仍 partial：没有引擎的『时钟冻结门』（Engine+107438 非零时只递增 107439）。
 
 ### `clock-read-transition-window`（absent）
 
@@ -406,7 +415,7 @@
 - **缺失时为什么静默**：只是把脏标志置 1 让下一帧继续画，无日志
 - **引擎**：sub_4B06D0 @ raw 136718-136719
 - **读的字段**：Scene+46512, Scene+46516, Scene+46508
-- **emulator 现状**：emulator 的 needsRender() = dirty || !animationsDone || waitFlags&0x400，方向一致；但没有 (46512|46516) 的粘滞语义
+- **emulator 现状**：2026-09 订正（T-0008 之后）：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★仍 partial：没有 (46512|46516) 的粘滞语义。
 
 ### `adv-flag-lifecycle`（partial）
 

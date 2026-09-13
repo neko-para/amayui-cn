@@ -1,7 +1,7 @@
 {
   "id": "T-0004",
   "type": "refactor",
-  "status": "open",
+  "status": "done",
   "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B4 Electron 迁到帧驱动：session.ts 缩成\"装配 + 观察者 + yield\"",
@@ -15,13 +15,28 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
-      "anchor": "#present()",
-      "note": "当前把纹理屏障/音频 tick/渲染挤在一个函数里"
+      "anchor": "PRODUCT_FRAME_POLICY",
+      "note": "产品的帧策略（门档+批上限）唯一一份：loopOptions 与轨迹头共用"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "#onAdvanceWait",
+      "note": "#present 三拆后的观察面（泵的返回值显式交出来）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "present()",
-      "note": "pixi 的合成入口（将成为 FrameHost.present）"
+      "anchor": "advanceModel",
+      "note": "模型推进从 present 拆出（与 headless 同调 scAdvance）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "mesh 的窗末收尾也在这里",
+      "note": "G3 分叉①：mesh 窗末收尾移进共享推进"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#meshVisible",
+      "note": "G3 分叉③：帧保持判据改为无时钟（渲染策略不得改引擎状态）"
     }
   ],
   "blockedBy": [
@@ -41,6 +56,30 @@
     {
       "at": "2026-09-13",
       "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done —— session 迁到驱动 + #present 三拆；G3（3047 帧逐帧相等）+ G4（关键行不变）通过，见 changes.md"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：doneWhy"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-loop.test.ts",
+    "app/amayui-emulator/test/frame-digest.test.ts",
+    "app/amayui-emulator/test/scenario-replay.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/scene-report.test.ts"
+  ],
+  "doneWhy": "session.ts 只剩装配+观察者+yield；#present 三拆（音频归驱动）；G3 = Electron 录 3047 帧 → headless 逐帧 engine 段相等；G4 = shot 关键行不变 + 截图一致。G3 过程中修掉三处真分叉（mesh 窗末收尾 / digest 时钟舍入 / 帧保持用过期时钟）。"
 }

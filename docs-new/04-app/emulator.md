@@ -11,10 +11,12 @@
 
 | 项 | 值 | 校验方式 |
 |---|---|---|
-| 测试 | **383 条** node:test | `npm test` |
+| 测试 | **476 条** node:test | `npm test` |
 | 类型 | 3 个 tsconfig 全干净 | `npm run typecheck` |
 | 死写棘轮 | 基线 2 条（`Item.blend` / `MeshObj.blend`） | `npm run check:dead-writes` |
 | 一条命令全绿 | `npm run verify` = typecheck + test + dead-writes | — |
+| **帧驱动** | **唯一一份**：`src/frame/loop.ts`（`runFrameLoop`）—— Electron（`renderer/app/session.ts`）与全部 headless 入口都经它跑；宿主差异只能经 `FramePolicy`/`FrameHost` 显式表达 | `test/frame-loop.test.ts` |
+| **两宿主等价** | `FrameDigest`（`src/frame/digest.ts`）：同 Scenario 两宿主产出同一 `engine` 段；**G3** = Electron 录、headless 复现（`npm run record` + `npm run replay`） | `test/frame-digest.test.ts`、`test/scenario-replay.test.ts` |
 | opcode 实现表 | `OPS` **230** / `NATIVE_OPS` **50** / `ENGINE_INTERNAL_OPS` **14**（三张表**两两不交**，`test/registry-tables.test.ts` 守） | 代码 |
 | 台账 | functions **460** 条 / capabilities **108** 条（已核验 27、部分 24、缺失 25、n/a 25、已建模未核验 7）/ scripts **23** 条 | `analysis/*.json` + 工具 `--summary` |
 
@@ -64,6 +66,12 @@
    语义一律落到 `scene/ops.ts` 的 `sc*` 函数 —— 否则会出现"报告说 3 行、画面画 2 行"的漂移。
 3. `text/`（排版/光栅化）与 `audio/`（意图 → WebAudio）不反向依赖 `vm/`；`vm/` 只通过桥与 `msgWinSync`/音频 intent 交互。
 4. `electron/` 只做 OS 能力；**任何**引擎语义都不允许只活在主进程里。
+5. ★`frame/` 是 **L1 帧驱动**（`tickets/T-0004`）：它**只认接口**（`host.ts` 的 `FrameHost`）与 `vm/*`，
+   不得 import pixi/DOM/electron；"引擎每帧做什么"只有这一份。宿主能力（合成/门判据/音频泵/digest 输入）
+   只在 L2（`pixiBackend.ts` / `headlessScene.ts`）实现；**宿主的渲染策略不得改变共享模型状态**
+   （反例：pixi 的"帧保持"曾用过期时钟调 `calcDiffuse` ⇒ 给共享模型的动画窗锁了个早一帧的起点，G3 抓到）。
+6. ★`frame/` 里也**不许**再长出第二份帧序：任何入口的差异只能经 `FrameLoopOptions`（门/批/时钟/错误策略）
+   与 `FrameHost`（宿主能力面）显式表达 —— 这条是 `T-0001`..`T-0005` 全部工作的收敛点。
 
 ### 3.2 关键机制（每条都有源码依据，细节见 `../03-engine/`）
 
@@ -111,8 +119,11 @@ app/amayui-emulator/
 │  ├─ vm/               interpreter.ts / ops.ts（三张表）/ engine.ts / msgwin.ts / operand.ts / ref.ts
 │  │  └─ handlers/      control·memory·gfx-item·gfx-texture·gfx-state·gfx-cg·gfx-misc·msgwin·text-items·
 │  │                    audio·frame·engine-fields·panel·agerc·stubs…
+│  ├─ frame/            ★唯一帧驱动：loop.ts（runFrameLoop）/ host.ts（FrameHost）/ observer.ts /
+│  │                    digest.ts（逐帧对外表现）/ scenario.ts（一份 Scenario 两宿主共用）/
+│  │                    trace.ts（G3 录制-回放：TraceRecorder / runReplay）
 │  ├─ renderer/         sceneModel.ts → scene/{state,ops,snapshot}.ts（共享语义）
-│  │                    headlessScene.ts（Node 宿主）/ pixiBackend.ts（WebGL 宿主）
+│  │                    headlessScene.ts（Node 宿主）/ pixiBackend.ts（WebGL 宿主）/ headlessFrameHost.ts
 │  │                    drawitem/（Item/Mesh 模型+窗+求值+setter）/ pixi/（presenter/textLayer/textureCache）
 │  │                    text/raster.ts / audio/ / viewport.ts
 │  ├─ text/             layout.ts（排版）/ raster 无关的纯函数 / fontSet.ts（面名→字体）
@@ -120,7 +131,10 @@ app/amayui-emulator/
 │  ├─ arch/             fileSource / nodeFileSource / ipcFileSource / overlay / agf / alf / systemPaths
 │  ├─ script/           bin.ts / alf / lzss / opcodes.ts
 │  └─ tools/            report / opInventory / diagText / gameStartChain / config1Chain / deadWrites / saveDump
-├─ test/                383 条（含棘轮：registry-tables / game-start-chain / no-dead-writes / capability-* / script-ledger）
+│                       scenarioBoot.ts（headless 启动装配）/ scenarioRun.ts（跑 Scenario）/ replay.ts（G3 回放）
+├─ test/                476 条（含棘轮：registry-tables / game-start-chain / no-dead-writes / capability-* /
+│                       script-ledger / frame-loop / frame-digest / scenario-replay / native-tap 宿主能力面）
+├─ tools/               shot.cjs（G4 截图）/ record.cjs（G3 录制）/ boottime.cjs / scenarios/*.json
 ├─ build-electron.mjs（esbuild 打包）/ package.json / tsconfig{,.control,.electron}.json
 └─ README.md            实现细节与事故复盘（**与本文互补，不重复**）
 ```
@@ -147,7 +161,8 @@ app/amayui-emulator/
   轴对齐四边形走 `Graphics.rect()`；★**不要用 `poly()` 一次喂 4 个条带序顶点**（Pixi v8 按顺序连点 ⇒ 自交成蝴蝶结 ⇒ 全屏大 X）。
   ★**可见色 = 顶点缓冲里那份**：`calcDiffuse` 在"无动画窗"时返回 **`state0`**（不是 `state1`）—— `0x322` 写完 state0 立刻以比例 0 刷 VB、`0x323` 只置窗与 state1 不碰 VB；返回 state1 会让"设色 → 开窗"之间透明一帧（SN0000 进场时背景闪一下）。
 - **没有整屏 Clear**：引擎 present 不无条件清 backbuffer（`ClearTarget` 被恒 0 的守卫挡住）⇒ 撤满屏幕布后留帧（`pixiBackend.#holdFrameAfterCurtainDrop`）。
-  ★**解除判据 = "新内容真的可见"**（`#releaseFrameHoldIfVisible`，读 `calcDiffuse` 出的当前颜色 alpha > 0）：引擎里"建几何（`0x320`）"与"设色（`0x322`）"是两条指令，建项即解除会呈现一帧透明幕。上限 `HOLD_MAX_FRAMES=60`（≈1 秒），`0x1F6 clearDrawContainer` **续期**而不是解除。
+  ★**解除判据 = "新内容真的可见"**（`#releaseFrameHoldIfVisible`，读 **`state0` 的 alpha > 0**）：引擎里"建几何（`0x320`）"与"设色（`0x322`）"是两条指令，建项即解除会呈现一帧透明幕。上限 `HOLD_MAX_FRAMES=60`（≈1 秒），`0x1F6 clearDrawContainer` **续期**而不是解除。
+  ★2026-09（`tickets/T-0004` 的 G3 实测）**判据不许调 `calcDiffuse`**：那个函数会给共享模型的动画窗**锁存起点**，而帧内宿主的 `clockMs` 还是上一帧的值 ⇒ Electron 的 `anim.start` 会比 headless 早一帧（插值色差 1/255，看起来像浮点噪声）。帧保持是**渲染策略**，不得改变引擎状态。
 - 纹理：`set-texture` 在引擎里是**同步**读文件+解码；重写侧走异步 IPC ⇒ `0x1F9` 之后立刻 `await texturesIdle()`（`texture-frame-barrier`）。
   ★**绝不能在舞台还引用纹理时销毁它**（会把 WebGL 批次写坏 ⇒ 整屏只剩背景色且不再恢复，`README.md` §581）。
 - `image(id)` IPC → `resolveEntry` → AGF 字节 → `decodeAgfRgba` → RGBA。无头/沙箱环境跑 Electron 需 `--no-sandbox`。
@@ -155,16 +170,43 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 464 测试 + 死写棘轮
+npm run verify         # ★提交前必跑：3×tsc + 476 测试 + 死写棘轮
 npm test               # node:test
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）
 npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未实现"清单）
 npm run diag:text      # 文本可见性诊断（为什么画面上没有字）
-npm run shot -- --gamestart [--name X] # E4 自动截图（先 build:electron；★时序等日志标记，不睡固定秒数）
+npm run shot -- --gamestart [--name X] # **G4** E4 自动截图（先 build:electron；★时序等日志标记，不睡固定秒数）
+npm run scenario -- --scenario tools/scenarios/gamestart.json [--out X.jsonl]  # headless 跑一份 Scenario
+npm run record -- --scenario tools/scenarios/gamestart.json --out X.jsonl.gz   # **G3 录制端**（Electron，真输入）
+npm run replay -- X.jsonl.gz           # **G3** 把录下来的时钟+输入在 headless 复现，逐帧比 digest
 npm run electron:dev   # build + 启动渲染壳
 npm run save:dump      # SAVE.DAT 解析
 ```
+
+### 7.1 ★闸门清单：改哪些文件必须跑 G3 / G4
+
+**为什么要有这一张表**：Electron 无法在 CI 里跑（需要 GPU/窗口），所以"两宿主等价"只能靠**本地闸门**。
+不写清"哪类改动触发哪个闸门"，就会出现"改了帧驱动却没跑 G3"这类**看起来全绿其实已经分叉**的状态。
+
+| 你改了什么 | 必跑 | 判据 |
+|---|---|---|
+| `src/frame/*`（帧驱动/observer/digest/scenario/trace/host） | **G1**（`npm test`）+ **G3** + **G4** | G3 必须逐帧相等；G4 关键日志行不变 |
+| `src/renderer/scene/*`（共享场景语义：`ops.ts`/`state.ts`/`snapshot.ts`） | **G1** + **G3** | 两个宿主都吃这一份 ⇒ 任何语义改动都会体现在 digest |
+| `src/renderer/{headlessScene,pixiBackend,headlessFrameHost}.ts`（两个宿主的接线/宿主能力） | **G1** + **G3** + **G4** | 宿主侧副作用**不得**改变引擎状态（G3 就是这条的判据） |
+| `src/renderer/app/session.ts`（产品的帧装配/观察者） | **G3** + **G4** | G3 顺带证明"产品的帧序 == headless 的帧序" |
+| `src/vm/*`（VM/引擎态/opcode handler） | **G1** + **G3** | G3 会指出"从第几帧起、哪个字段不同" |
+| `electron/*`（主进程/IPC/preload） | **G4**（起得来 + 关键行不变） | — |
+| `src/audio/*`、`src/text/*`（宿主义务） | 对应单测即可 | 它们只影响 `FrameDigest.host` 段（不参与 G3 比较） |
+
+- **G1 确定性**：`npm test`（同 Scenario 两次跑 ⇒ digest 逐字节相同）。
+- **G3 回放等价**：`npm run record -- --scenario … --out X.gz && npm run replay -- X.gz`（**本地**；约 1 分钟）。
+- **G4 观感**：`npm run shot -- --gamestart --name X` + 与上一份对照截图/关键行比对。
+  ★**只有这几行是"关键行"**（逐条比对过，见 `tickets/T-0004/changes.md`）：`-> TITLE.BIN` / `-> GAMESTART.BIN` /
+  `-> SN0000.BIN` / `gate 0x400 cleared|WAIT` / `=== text reveal done ===` / `=== ADV cleared … ===` /
+  `[hover-label] …` / `=== advance-wait handled … ===`。
+  **诊断量行**（`[present …]`/`[msgwin]`/`[reveal]`）随墙钟抖动：**同一份构建连跑两次**也会差 1–10 行
+  （实测 67 vs 68 / 502 vs 511 / 329 vs 338），所以它们**不是**判据。
 
 ## 8. 外置选项 `emulator.config.json`（可选；测试/调试用运行开关）
 

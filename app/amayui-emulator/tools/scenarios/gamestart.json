@@ -1,0 +1,24 @@
+{
+  "name": "gamestart",
+  "boot": { "script": 0 },
+  "clock": { "kind": "wall" },
+  "readyMarker": "-> TITLE.BIN",
+  "readySettleMs": 4000,
+  "tailMs": 6000,
+  "maxFrames": 9000,
+  "events": [
+    { "kind": "cursor", "x": 1180, "y": 372, "note": "TITLE 右上角 Game Start 命中点（TITLE.txt:100 的 i12e 命中盒中心）" },
+    { "kind": "press", "x": 1180, "y": 372, "button": 0, "holdMs": 160, "note": "按左键" },
+    { "kind": "release", "x": 1180, "y": 372, "button": 0, "note": "松开左键" },
+    { "kind": "cursor", "x": 811, "y": 605, "afterMarker": "-> GAMESTART.BIN", "settleMs": 3500, "note": "GAMESTART 配置界面" },
+    { "kind": "press", "x": 811, "y": 605, "button": 0, "holdMs": 180, "note": "点「ゲーム開始」" },
+    { "kind": "release", "x": 811, "y": 605, "button": 0, "note": "松开" },
+    { "kind": "cursor", "x": 640, "y": 360, "afterMarker": "-> SN0000.BIN", "settleMs": 9000, "note": "等第一页逐字显现走完" },
+    { "kind": "press", "x": 640, "y": 360, "button": 0, "holdMs": 150, "note": "推进下一页（ADV 推进门）" },
+    { "kind": "release", "x": 640, "y": 360, "button": 0, "note": "松开" },
+    { "kind": "cursor", "x": 1240, "y": 300, "afterMarker": "-> SN0000.BIN", "settleMs": 200, "note": "悬停：侧边栏条（SN0000.txt:63 热点 x=0x49c..0x500）" },
+    { "kind": "cursor", "x": 1240, "y": 300, "note": "再动一格（制造 mouseMoved 沿）" },
+    { "kind": "cursor", "x": 400, "y": 300, "note": "悬停：文本区（收起侧边栏）" },
+    { "kind": "cursor", "x": 400, "y": 300, "note": "再动一格" }
+  ]
+}

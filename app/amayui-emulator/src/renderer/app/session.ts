@@ -1,22 +1,33 @@
 /**
- * **VM 会话**：引擎式门控主循环 + 控制窗桥接 + 遥测上报。
+ * **VM 会话（B4：装配 + 观察者 + 让帧）** —— 产品路径的帧驱动**不再在这里**。
  *
- * 这是原先 `renderer.ts` 里那个 388 行 `main()` 的主体，按职责拆成三块后归到本类：
- *  1. **门控状态机**（`run`）——每轮要么服务一个等待门（`0x400` 动画等待 / `SLEEP_GATE` sleep）、
- *     要么停在未知指令等控制窗、要么推进一批指令；
- *  2. **控制窗桥接**（`registerControlHandlers`）——全量指令日志开关、定向 trace 白名单、桩跳过；
- *  3. **状态上报**（`notifyStatus`）——节流推送 `ControlStatus`（BIN 名 / 四张清单 / 遥测 / 暂停点 / 错误）。
+ * 修前本类就是"第 5 份帧循环"（`tickets/T-0001` 的盘点）：它自己写了一遍门控状态机
+ * （`0x400` / sleep / 逐字显现 / 等待推进 / ADV / 批派发），与 headless 的四处实现**各不相同** ——
+ * 于是"Electron 与 headless 是否在做同一件事"无法机械判定（用户 2026-09 定的最优先需求）。
  *
- * 与渲染后端的边界：本类只调 `native.present()/needsRender()/animationsDone()/log()`，
- * 不触碰 Pixi 内部；渲染循环（`startFrameLoop`）由 `boot.ts` 启动，两边靠 `nowMs` 与门旗标协作。
+ * 现在（`tickets/T-0004` 的 B4）本类只剩三件事：
+ *  1. **装配**：把 `PixiBackend` 接成 `FrameHost`（时钟/让帧/屏障/合成/门判据/音频泵/digest 输入）；
+ *  2. **观察者**：把控制窗指令、trace、遥测、jsonl、状态上报接成 `FrameObserver`；
+ *  3. **让帧**：`FrameHost.yield` 就是 `requestAnimationFrame`（`nextFrame`）。
+ *
+ * ★**"暂停在未知指令"不是驱动语义**（设计文档 §7）：驱动在 `stopReason='unknown'` 停下，
+ * 本类接着跑"互动面"（每帧 `present` + 让帧，等控制窗点「作为桩函数跳过」），登记桩后**重新进入驱动**
+ * ——`stepOnce` 抛 `NotImplementedOp` 时未消费操作数、未推进 ip，所以从同一条指令重试即可
+ * （与修前的"暂停态分支"等价）。
+ *
+ * ★**每一处差异都必须是驱动配置或宿主编排**，不许在这里重新长出帧序（那正是本票要消灭的东西）。
  */
-import { SLEEP_GATE, type Engine } from '../../vm/engine.js';
-import { NotImplementedOp, stepOnce, type StepTrace } from '../../vm/interpreter.js';
-import { ExitScript, ScriptReset } from '../../vm/ops.js';
+import { SLEEP_GATE, type Engine, type Frame } from '../../vm/engine.js';
+import { NotImplementedOp, type StepTrace } from '../../vm/interpreter.js';
 import type { NativeBridge } from '../../vm/native.js';
 import type { DropRecorder } from '../../vm/nativeTap.js';
 import type { ControlStatus } from '../ipcFileSource.js';
 import type { RenderStatus } from '../renderStatus.js';
+import type { PixiBackend } from '../pixiBackend.js';
+import { runFrameLoop, type FrameLoopGates, type FrameLoopOptions } from '../../frame/loop.js';
+import type { FrameHost } from '../../frame/host.js';
+import type { FrameObservation, FrameObserver } from '../../frame/observer.js';
+import type { BinInstruction } from '../../script/bin.js';
 import { JsonlWriter } from './jsonlWriter.js';
 import { Telemetry } from './telemetry.js';
 import type { TraceLog } from './traceLog.js';
@@ -34,6 +45,17 @@ const SAFETY_PER_FRAME = 10000;
 /** 交互运行上限：进入 TITLE 后不再按步数截止，靠"脚本退出/重置/错误/关窗"收尾；此处仅作病态死循环兜底。 */
 const MAX_STEPS = 100_000_000;
 
+/**
+ * **产品的帧策略**（门档 + 批上限）—— `#loopOptions` 与 `--record` 的轨迹头**共用这一份**。
+ * ★为什么导出：回放的判据是"同一份帧纪律"，而批上限决定帧边界（批跑满就换帧）⇒ 两边各写一遍极可能漂移
+ * （`T-0002` 的教训：批上限是宿主策略、不是引擎语义，但它**影响**可比性）。录制时把它写进轨迹头，
+ * 回放侧照用（见 `frame/trace.ts` 的 `TraceHeader.policy`）。
+ */
+export const PRODUCT_FRAME_POLICY: { maxStepsPerFrame: number; gates: FrameLoopGates } = {
+  maxStepsPerFrame: SAFETY_PER_FRAME,
+  gates: { anim: 'wait', sleep: 'wait', advance: 'pump' },
+};
+
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
@@ -43,15 +65,20 @@ export class RendererSession {
   readonly #traceLog: TraceLog;
   /**
    * ★类型是**桥接口**（`tickets/T-0013`），不是 `PixiBackend`：
-   * 本类只允许用"桥声明过的能力"（`log`/`present`/`needsRender`/`animationsDone`/`texturesIdle`/`audio`），
-   * 这样"会话偷偷用了某个宿主私有方法"会**编译期**暴露；也给 B4（Electron 迁到帧驱动）铺路。
+   * 会话只允许用"桥声明过的能力"（`log`/`present`/`needsRender`/`animationsDone`/`texturesIdle`/`audio`），
+   * "会话偷偷用了某个宿主私有方法"会**编译期**暴露。
    */
   readonly #native: NativeBridge;
+  /** 帧宿主的**具体**后端（`advanceModel`/`digestState` 等 `FrameHost` 侧能力在这里）。 */
+  readonly #pixi: PixiBackend;
   readonly #drops: DropRecorder;
   readonly #e: Engine;
+  /** 额外观察者（`--record` 等工具挂上来的记录器；见 `attachObserver`）。 */
 
   readonly #telemetry = new Telemetry();
   readonly #jsonl = new JsonlWriter();
+  /** 额外观察者（`--record` 等工具**运行中**挂上来的记录器；见 `attachObserver`）。 */
+  #extra: FrameObserver | undefined;
 
   /** 指令日志开关（控制窗可切）：false = 只记「已忽略/未知」指令；true = 记全量指令。 */
   #traceAll = false;
@@ -65,7 +92,11 @@ export class RendererSession {
    */
   #pausedOp: ControlStatus['pendingUnknown'] | null = null;
 
+  /** 累计指令数 / 帧数（**跨多次进入驱动**累加：`#stepBase`/`#frameBase` + 驱动本轮的计数）。 */
   #steps = 0;
+  #frames = 0;
+  #stepBase = 0;
+  #frameBase = 0;
   #lastStepLog = 0; // 节流：traceAll 全量打印时 step trace 的最小间隔(ms)
   #waiting = false;
   #sleeping = false;
@@ -73,20 +104,36 @@ export class RendererSession {
   #lastInputLog = 0; // 节流：[input-state] 诊断打印
   #lastStatusSend = 0; // 节流：向控制窗上报状态的间隔(ms)
 
+  /** 上一帧末的"逐字显现中"/"ADV 激活"（用于在**状态结束**的那一帧补一条日志，与修前同源）。 */
+  #wasRevealing = false;
+  #wasAdv = false;
+  /** 上一次已记录的派发（`e.lastDispatch` 是"最近一次"，见 `#sampleDispatch`）。 */
+  #lastDispatch: { label: number; kind: string } | null = null;
+
   /** ★遥测：当前卡在哪个门 + 它从何时开始 + present 次数 + 步进速率。 */
   #gate = '';
   #gateSince = performance.now();
-  #frames = 0;
   #perfSteps = 0;
   #perfMs = performance.now();
   #stepsPerSec = 0;
 
-  constructor(app: BootedApp) {
+  constructor(app: BootedApp, extra?: FrameObserver) {
     this.#status = app.status;
     this.#traceLog = app.traceLog;
     this.#native = app.native;
+    this.#pixi = app.pixi;
     this.#drops = app.drops;
     this.#e = app.e;
+    this.#extra = extra;
+  }
+
+  /**
+   * **运行中挂上额外观察者**（`tickets/T-0005` 的 `--record`）：主进程在"界面就绪"后才发录制指令，
+   * 而会话早已在跑 ⇒ 观察者必须能**后挂**。实现要点：本类交出去的观察者对象里的 `wantsDigest` 是
+   * **getter**（驱动每帧重读），所以挂上后从下一帧起就有 digest，不需要重建驱动配置。
+   */
+  attachObserver(obs: FrameObserver): void {
+    this.#extra = obs;
   }
 
   #setGate(g: string): void {
@@ -155,6 +202,7 @@ export class RendererSession {
       `=== skip-as-stub 0x${opcode.toString(16)} (${paused.name}) in ${paused.script} @ ip=${paused.instrIndex} -> resume ===`,
     );
     this.#native.log(`[skip] 0x${opcode.toString(16)} (${paused.name}) 已作为桩函数跳过，继续执行`);
+    // ★清暂停点 ⇒ `#waitForResume` 的等待循环结束 ⇒ 外层重新进入驱动（同一条指令重试）。
     this.#pausedOp = null;
     this.#err = null;
     this.#status.ip = this.#e.curScript().ip;
@@ -162,174 +210,329 @@ export class RendererSession {
     this.#traceLog.flush();
   }
 
+  // -------------------------------------------------------------------------
+  // 装配：宿主能力 → FrameHost（**唯一允许分叉处**，且只允许是宿主能力）
+  // -------------------------------------------------------------------------
+
+  #frameHost(): FrameHost {
+    const e = this.#e;
+    return {
+      /**
+       * 时钟：产品用**真实墙钟**（`performance.now()`，引擎 `timeGetTime()` 的等价物）。
+       * ★单一时间域（`tickets/T-0008` 的 D1）：驱动每帧把它写进 `e.nowMs`，宿主不再自己算一份。
+       */
+      now: () => performance.now(),
+      /** 让出一帧（设计文档 §2 的 L4：Electron 的 yield = `requestAnimationFrame`）。 */
+      yield: () => nextFrame(),
+      /** 模型推进：只把本帧时钟注入宿主（窗的求值发生在 `present` 里）。 */
+      advanceModel: (nowMs) => this.#pixi.advanceModel(nowMs),
+      /**
+       * 合成一帧。★设计 D5 的三拆：**音频 tick 归驱动**（`FrameLoopOptions.audio`）、
+       * 屏障是宿主义务（这里 await）、`present` 只渲染。
+       */
+      present: async () => {
+        if (this.#native.texturesIdle) await this.#native.texturesIdle();
+        this.#native.present?.(e.nowMs, e.waitFlags);
+      },
+      /** 该不该合成（判据在共享层 `sceneNeedsRender`；见 `Tickets/T-0003` 的 B3）。 */
+      needsRender: () => this.#native.needsRender?.() ?? true,
+      /** `0x400` 门的放行判据（带本帧时钟）。 */
+      animationsDone: (nowMs) => this.#native.animationsDone?.(nowMs) ?? false,
+      /** 音频帧泵（引擎 raw 20645-20646）：驱动每完整帧调一次，参数带本帧 `advActive`。 */
+      audio: (intent) => this.#native.audio?.(intent),
+      /** `FrameDigest` 的输入（engine 段由 `frame/digest.ts` 的纯函数组装 ⇒ 两宿主同一份判据）。 */
+      digestState: () => this.#pixi.digestState(),
+      digestHostCounters: () => this.#pixi.digestHostCounters(),
+    };
+  }
+
+  /** 驱动配置：**产品的帧**就是这一份（与 headless 的差异只允许出现在宿主能力上）。 */
+  #loopOptions(observer: FrameObserver): FrameLoopOptions {
+    return {
+      // 门：产品档 —— `0x400` 等 `animationsDone()`、sleep 等时钟、等待推进走**真泵**（含命中测试/悬停两段式）。
+      gates: PRODUCT_FRAME_POLICY.gates,
+      advFrame: true,
+      advErrors: 'stop',
+      maxStepsPerFrame: PRODUCT_FRAME_POLICY.maxStepsPerFrame,
+      // 引擎式合成：脏/窗未跑完才画（判据在共享层），模型推进与音频 tick 不跳过。
+      present: 'needsRender',
+      audio: 'host',
+      observer,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // 观察者：控制窗 / trace / 遥测 / jsonl / 状态上报
+  // -------------------------------------------------------------------------
+
+  #makeObserver(): FrameObserver {
+    const mine: FrameObserver = {
+      onGate: (o) => this.#onGate(o),
+      onAdvanceWait: (o) => this.#onAdvanceWait(o.handled),
+      onStepStart: (o) => this.#onStepStart(o.frame),
+      onStep: async (o) => this.#onStep(o.t, o.steps),
+      onFrameEnd: (o) => this.#onFrameEnd(o),
+      onUnknown: (err) => this.#onUnknown(err),
+      onError: (err) => this.#onError(err),
+    };
+    // ★本类交出去的是**动态合成**（而不是 `mergeObservers(mine, this.#extra)` 的一次性快照）：
+    //   `--record` 的记录器是**运行中**挂上来的（界面就绪后主进程才发指令）。
+    const extra = (): FrameObserver | undefined => this.#extra;
+    return {
+      get wantsDigest(): boolean {
+        return extra()?.wantsDigest === true;
+      },
+      onFrameStart: (o) => extra()?.onFrameStart?.(o),
+      onGate: (o) => mine.onGate?.(o),
+      onAdvanceWait: (o) => {
+        mine.onAdvanceWait?.(o);
+        extra()?.onAdvanceWait?.(o);
+      },
+      onStepStart: (o) => mine.onStepStart?.(o),
+      onStep: async (o) => {
+        await mine.onStep?.(o);
+        await extra()?.onStep?.(o);
+      },
+      onScriptChange: (o) => extra()?.onScriptChange?.(o),
+      onPresent: (o) => extra()?.onPresent?.(o),
+      onFrameEnd: (o) => mine.onFrameEnd?.(o),
+      onStop: (o) => extra()?.onStop?.(o),
+      // 策略类由本类负责（记录器不改产品行为）。
+      onUnknown: (err, phase) => mine.onUnknown?.(err, phase),
+      onError: (err, phase) => mine.onError?.(err, phase),
+    };
+  }
+
+  /** 分支观测：还原修前那几条门日志（内容一字不变），并设置遥测的"当前门"。 */
+  #onGate(o: FrameObservation & { branch: string }): void {
+    const e = this.#e;
+    switch (o.branch) {
+      case 'anim': {
+        // 0x400 动画等待门：场景动画跑完即放行。
+        this.#setGate('0x400');
+        if (this.#native.animationsDone?.(o.nowMs) ?? false) {
+          this.#waiting = false;
+          this.#traceLog.line('=== gate 0x400 cleared (scene anims done) ===');
+        } else {
+          if (!this.#waiting) this.#traceLog.line(`=== gate 0x400 WAIT (scene anims pending) steps=${this.#steps} ===`);
+          this.#waiting = true;
+        }
+        break;
+      }
+      case 'sleep': {
+        // sleep(0xC8) 门：持续让帧直到 nowMs >= sleepUntil 才放行（引擎帧让步 Sleep(n)ms / 帧率节流 n ms）。
+        this.#setGate('sleep');
+        if (e.nowMs >= e.sleepUntil) {
+          // ★不改状态：清位是**驱动**的事（这里只观察）—— 观察者一旦也改门旗标，就又出现
+          //   "同一件事两处实现"（`T-0008` 的 `waitFlags` 镜像事故正是这么来的）。
+          this.#sleeping = false;
+          this.#traceLog.line(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
+        } else {
+          if (!this.#sleeping) {
+            this.#traceLog.line(`=== gate sleep WAIT (until ${Math.round(e.sleepUntil)}ms) steps=${this.#steps} ===`);
+          }
+          this.#sleeping = true;
+        }
+        break;
+      }
+      case 'text-reveal':
+        // ★**逐字显现中**（引擎 `sub_409400`：每帧按 `message:MessageSpeed` 推进一步，期间不派发脚本指令）。
+        this.#setGate('text-reveal');
+        break;
+      case 'advance':
+        // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
+        //   一页消息已显示完，脚本**挂起**等玩家推进；此期间**不派发任何脚本指令**。
+        //   泵的三条出口（键命中 → 点击 → 悬停）都在 `serviceAdvanceWait` 内部；派发证据在帧末采样。
+        this.#setGate('wait-input');
+        break;
+      case 'adv':
+        // ★**ADV 分支**（引擎 `sub_411900`）：消息逐字显示中每帧**恰好派发 1 条**指令。
+        this.#setGate('adv');
+        break;
+      default:
+        this.#setGate('');
+        break;
+    }
+  }
+
+  #onStepStart(frame: Frame): void {
+    this.#status.scriptName = frame.name || this.#status.scriptName;
+    this.#status.ip = frame.ip;
+  }
+
+  /** 每条指令之后：遥测 / 定向 JSONL / 全量 trace / **纹理帧屏障**（`0x1F9` 之后等 IPC 到位）。 */
+  async #onStep(t: StepTrace, driverSteps: number): Promise<void> {
+    this.#steps = this.#stepBase + driverSteps;
+    this.#status.steps = this.#steps;
+    for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
+    this.#writeJsonlIfFiltered(t);
+    this.#traceStepIfEnabled(t);
+    // ★每次派发之后尽早采样：`lastDispatch` 是"最近一次"，同一帧里可能被后续派发覆盖 ⇒
+    //   只在帧边界采样会漏掉点击/悬停（实测：pump 模式下的 `click` 就漏了）。
+    this.#sampleDispatch();
+    if (t.opcode === 0x1f9) await this.#awaitTextureBound(t);
+  }
+
+  #onFrameEnd(o: FrameObservation): void {
+    this.#frames = this.#frameBase + o.frames;
+    this.#sampleDispatch();
+    this.#reflectStateEnds();
+    this.#reportDiagnostics();
+    this.#traceLog.flush(); // 每帧末落盘一次（批量，避免逐行 IPC）
+    this.#jsonl.flush(); // 定向 trace 也按帧末批量发送
+  }
+
+  /**
+   * **等待推进泵的结果**（驱动在 `serviceAdvanceWait()` 之后回调）—— 与修前那两行日志逐字一致：
+   *  - 泵派发的是悬停 label ⇒ `[hover-label] hover-enter/leave …`；
+   *  - 其余（命中键/点击，或"页内文本推完"= 没有新派发）⇒ `=== advance-wait handled → … ===`
+   *    （★修前 `d` 可能是 undefined，那时打的是 `-`；`handled` 为真但没有派发是**正常**的一种出口）。
+   */
+  #onAdvanceWait(handled: boolean): void {
+    if (!handled) return;
+    const d = this.#e.lastDispatch;
+    if (d) this.#lastDispatch = d; // 已记过 ⇒ `#sampleDispatch` 不再重复
+    const hex = (v: number): string => `0x${(v >>> 0).toString(16)}`;
+    if (d && d.kind.startsWith('hover')) {
+      this.#traceLog.line(
+        `[hover-label] ${d.kind} ${hex(d.label)} cursor=${this.#e.routes.cursor}/${this.#e.routes.count} ip=${this.#e.curScript().ip} ret=${this.#e.curScript().retStack[this.#e.curScript().retStack.length - 1]}`,
+      );
+    } else {
+      this.#traceLog.line(
+        `=== advance-wait handled → ${d ? d.kind : '-'} ${d ? hex(d.label) : ''} ip=${this.#e.curScript().ip} (page ${this.#e.msgwin.pages}, 热点 ${this.#e.routes.count} 项) steps=${this.#steps} ===`,
+      );
+    }
+  }
+
+  /**
+   * **悬停派发的证据行**（引擎 `sub_403E70` 的两段式：先"离开"旧项、下一帧"进入"新项）。
+   *
+   * ★只补**泵之外**发生的悬停派发（泵内的那一条由 `#onAdvanceWait` 打，两者靠 `#lastDispatch` 去重）。
+   * 为什么还要补：`e.lastDispatch` 是"最近一次"，同一帧里可能被后续派发覆盖 ⇒ 只在泵出口采样会漏。
+   */
+  #sampleDispatch(): void {
+    const d = this.#e.lastDispatch;
+    if (!d || d === this.#lastDispatch) return;
+    if (!d.kind.startsWith('hover')) return; // 非悬停的由泵出口负责（修前也是那样）
+    this.#lastDispatch = d;
+    const hex = (v: number): string => `0x${(v >>> 0).toString(16)}`;
+    this.#traceLog.line(
+      `[hover-label] ${d.kind} ${hex(d.label)} cursor=${this.#e.routes.cursor}/${this.#e.routes.count} ip=${this.#e.curScript().ip} ret=${this.#e.curScript().retStack[this.#e.curScript().retStack.length - 1]}`,
+    );
+  }
+
+  /**
+   * 两个"态结束"的日志（修前它们写在分支体里）。
+   * ★驱动不搬运"上一帧状态"这类记账（那是观察面）⇒ 这里用**状态沿**判断：
+   * 逐字显现结束 / ADV 位被清 ⇒ 各一条日志，行文本与修前逐字一致。
+   */
+  #reflectStateEnds(): void {
+    const revealing = this.#e.textRevealing;
+    if (this.#wasRevealing && !revealing) this.#traceLog.line('=== text reveal done ===');
+    this.#wasRevealing = revealing;
+    const adv = this.#e.advActive;
+    if (this.#wasAdv && !adv) this.#traceLog.line('=== ADV cleared (reveal done) ===');
+    this.#wasAdv = adv;
+  }
+
+  #onUnknown(err: unknown): 'stop' {
+    const caught = err as NotImplementedOp;
+    // 可恢复的硬停：stepOnce 未消费操作数、未推进 ip ⇒ 记下暂停点，
+    // 等控制窗点「作为桩函数跳过」（→ onControlSkipOp 登记 e.unknownOpStubs）后从**同一条指令**重试。
+    this.#err = caught;
+    this.#pausedOp = {
+      opcode: caught.opcode,
+      name: caught.name,
+      script: caught.scriptName,
+      byteOffset: caught.byteOffset,
+      instrIndex: caught.instrIndex,
+    };
+    this.#native.log(`[pause] ${caught.message} —— 等待控制窗「作为桩函数跳过」`);
+    this.#traceLog.line(
+      `=== PAUSE unknown opcode 0x${caught.opcode.toString(16)} (${caught.name}) ${caught.scriptName}@ip=${caught.instrIndex} ===`,
+    );
+    this.notifyStatus(caught.message);
+    this.#traceLog.flush();
+    return 'stop';
+  }
+
+  #onError(err: unknown): 'stop' {
+    this.#err = err;
+    const emsg = (err as Error).message;
+    this.#native.log(`[error] ${emsg}`);
+    // 其它硬错误（非「未知指令」）：立即上报控制窗展示，然后停
+    this.notifyStatus(emsg);
+    this.#traceLog.flush();
+    return 'stop';
+  }
+
+  // -------------------------------------------------------------------------
+  // 主循环：进入驱动 → 处理停止原因
+  // -------------------------------------------------------------------------
+
   /** 跑到脚本退出/重置/硬错误/关窗为止。 */
   async run(): Promise<void> {
     const e = this.#e;
-    const native = this.#native;
-    const status = this.#status;
+    const observer = this.#makeObserver();
+    const host = this.#frameHost();
+    const opt = this.#loopOptions(observer);
 
-    outer: while (this.#steps < MAX_STEPS) {
-      // 引擎 timeGetTime()（墙钟 ms）：0xCD(get-input-type) 节流 / mesh/文字动画用
-      e.nowMs = performance.now();
-      // ★`0x300` 每窗「逐行贴出」闸门（引擎 `sub_409400` 第一循环）：主循环**每帧**都跑，
-      //   且**不阻塞脚本**（raw 21179 `goto LABEL_215` 照样派发 1 条指令）——
-      //   CONFIG 的消息预览就是靠它"贴出 → 停留 op3 ms → 消失 → 再来一遍"循环演示。
-      e.serviceWinReveal(e.nowMs);
-      e.serviceCharGrid(e.nowMs); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
-      if (e.waitFlags & 0x400) {
-        // 门控：0x400（版权页动画等待）由渲染循环的时钟驱动放行
-        this.#serviceAnimGate();
-        await this.#present(); // 动画播放（每帧）
-      } else if (e.waitFlags & SLEEP_GATE) {
-        this.#serviceSleepGate();
-        await this.#present();
-      } else if (e.textRevealing) {
-        // ★**逐字显现中**（引擎 `sub_409400`：每帧按 `message:MessageSpeed` 推进一步，
-        //   期间不派发脚本指令）。放在等待门**之前**：显现没完就不该被"等玩家推进"挡住。
-        this.#setGate('text-reveal');
-        const more = e.serviceTextReveal(e.nowMs);
-        if (!more) this.#traceLog.line('=== text reveal done ===');
-        if (native.needsRender?.() ?? true) await this.#present();
-        this.#frames++;
-      } else if (e.awaitingAdvance) {
-        // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
-        // 一页消息已显示完，脚本**挂起**等玩家推进；此期间**不派发任何脚本指令**。
-        // 这正是「等待输入态」在引擎里的真实行为（此前 emulator 会在这里空转 10000 条/帧）。
-        // ★玩家在显现期间点击 ⇒ **先把这一页显示完**（引擎 `sub_45A940(...,-2,0)`），本次点击被消费。
-        this.#setGate('wait-input');
-        if (e.msgwin.isRevealing()) {
-          e.msgwin.finishReveal(e.msgwin.resolveWin(e.msgwin.lastArg));
-          e.serviceTextReveal(e.nowMs);
-          await this.#present();
-          this.#frames++;
-          continue outer;
-        }
-        // ★**等待泵**（`sub_411BC0` raw 20206-20461）：键命中 → 点击 → 悬停三条出口都在引擎内部，
-        //   统一由 `serviceAdvanceWait` 按 raw 的行序处理；这里**只调一次**。
-        //   悬停 label 是**带返回点的子程序**（`sub_405360(Engine, -3)`）⇒ `ret` 回到门指令，
-        //   不再需要旧的"跑完还原 ip/retStack/awaitingAdvance"近似（已删，含 `HOVER_DISPATCH_ENABLED`）。
-        if (e.serviceAdvanceWait()) {
-          const d = e.lastDispatch;
-          const hex = (v: number): string => `0x${(v >>> 0).toString(16)}`;
-          if (d && d.kind.startsWith('hover')) {
-            // ★悬停派发的证据行（引擎 `sub_403E70` 的两段式：先"离开"旧项、下一帧"进入"新项）
-            this.#traceLog.line(
-              `[hover-label] ${d.kind} ${hex(d.label)} cursor=${e.routes.cursor}/${e.routes.count} ip=${e.curScript().ip} ret=${e.curScript().retStack[e.curScript().retStack.length - 1]}`,
-            );
-          } else {
-            this.#traceLog.line(
-              `=== advance-wait handled → ${d ? d.kind : '-'} ${d ? hex(d.label) : ''} ip=${e.curScript().ip} (page ${e.msgwin.pages}, 热点 ${e.routes.count} 项) steps=${this.#steps} ===`,
-            );
-          }
-        }
-        await this.#present();
-        this.#frames++;
-      } else if (this.#pausedOp) {
-        this.#setGate('paused');
-        // 暂停态：VM 停在未知指令，等控制窗点「作为桩函数跳过」（或「重启」）。
-        // 这里仍然 present（画面/时钟继续），只是不再推进 VM——保持窗口有响应。
-        await this.#present();
-        this.#frames++;
-      } else if (e.advActive) {
-        // ★**ADV 分支**（引擎 `sub_411900`）：消息逐字显示中每帧**恰好派发 1 条**指令，
-        // 并跑输入泵 + 「取消消息键」三态机 + 「未显示完」判定（后者负责清掉 ADV 位）。
-        this.#setGate('adv');
-        const stillAdv = e.serviceAdv();
-        await this.#stepOnceTraced();
-        if (!stillAdv) this.#traceLog.line('=== ADV cleared (reveal done) ===');
-        if (native.needsRender?.() ?? true) await this.#present();
-        this.#frames++;
-      } else {
-        this.#setGate('');
-        if (await this.#runInstructionBatch()) break outer;
-        // ★悬停派发**只在"等待推进"态**做（引擎的 `sub_411BC0` 就是等待泵，见上面的分支）：
-        //   脚本跑动中派发 UI label 会与在飞的页状态交错。
-        // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
-        if (native.needsRender?.() ?? true) await this.#present();
+    while (this.#steps < MAX_STEPS) {
+      this.#stepBase = this.#steps;
+      this.#frameBase = this.#frames;
+      const r = await runFrameLoop(e, host, opt);
+      this.#steps = this.#stepBase + r.steps;
+      this.#frames = this.#frameBase + r.frames;
+
+      if (r.stopReason === 'unknown') {
+        // ★暂停态（互动面，不是驱动语义）：继续让帧 + 合成，等控制窗登记桩后**重新进入驱动**。
+        await this.#waitForResume();
+        continue;
       }
-
-      this.#reportDiagnostics();
-      this.#traceLog.flush(); // 每帧末落盘一次（批量，避免逐行 IPC）
-      this.#jsonl.flush(); // 定向 trace 也按帧末批量发送
-      // 让渲染帧循环跑（present/时钟），再继续；暂停态下同样在此让出（不空转），等待控制窗的 skip 请求。
-      await nextFrame();
+      if (r.stopReason === 'exit') {
+        // abort(0x1)/程序退出：关闭主窗口（0x2 顶层 program-exit 亦走此）。
+        this.#native.log('=== abort/program exit -> close window ===');
+        this.#traceLog.line('=== abort/program exit ===');
+        this.#traceLog.flush();
+        window.api?.closeWindow?.();
+        break;
+      }
+      if (r.stopReason === 'reset') {
+        // native.log 已同时进 HUD+文件；不再另加一条 trace（避免同事件双行）。
+        this.#native.log('=== exit-script teardown (reset) ===');
+        break;
+      }
+      // error / script-end / until / cap / step-stop：收尾。
+      break;
     }
 
-    this.#traceLog.line(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
+    this.#traceLog.line(`[boot] done script=${this.#status.scriptName} ip=${this.#status.ip} steps=${this.#status.steps}`);
     this.#traceLog.flush();
     this.notifyStatus(); // 收尾上报：把最终态（含仍暂停的未知指令）给控制窗
-    console.log(`[boot] done script=${status.scriptName} ip=${status.ip} steps=${status.steps}`);
+    console.log(`[boot] done script=${this.#status.scriptName} ip=${this.#status.ip} steps=${this.#status.steps}`);
     if (this.#err) console.error(`[boot] ${(this.#err as Error).message}`);
   }
 
   /**
-   * **合成一帧**：先等本帧新绑定的图像到位（纹理帧屏障），再 present。
+   * **暂停态的"互动面"帧**：驱动已停下（VM 不再推进），但窗口要保持响应 ——
+   * 每帧仍做"服务 + 音频 tick + 推进模型 + 屏障 + 合成"，再让帧等控制窗的 skip 请求。
    *
-   * 引擎 `set-texture`(0x1F9) 是**同步**读文件 + 解码（`sub_422CB0` → `sub_4559C0`）⇒ 同一帧
-   * "绑定 + 画"必然一致；renderer 侧走 `window.api.image()` 的 IPC 异步加载，若不在这里补齐，
-   * 就会出现「新一屏的文本已经出现、背景还没切换」的时序错位（2026 实测：首次从主界面进设置时
-   * ADV 样例文案先出现，CONFIG 背景晚几帧）。headless 宿主没有纹理 ⇒ `texturesIdle` 未实现，直接放行。
+   * ★为什么它不进驱动：`paused` 是**控制窗交互**，不是引擎主循环的分支（设计文档 §7 明确不做）。
    */
-  async #present(): Promise<void> {
-    if (this.#native.texturesIdle) await this.#native.texturesIdle();
-    // ★音频帧泵（引擎 raw 20645/20646 的每帧步骤）：SE 延迟播到期、语音排入到期、BGM 淡变推进，
-    //   以及 **ADV 激活位刚被清掉时冲刷寄存的语音**（引擎 raw 20146/24966）⇒ 必须带上 advActive。
-    //   ★**所有权已归帧驱动**（`tickets/T-0003` 的 D5）：`runFrameLoop` 每完整帧发一次同样的 tick。
-    //   本类还没迁到驱动（`T-0004`/B4）⇒ 暂时保留这一处，B4 迁移时**必须删掉它**（否则每帧双 tick）。
-    this.#native.audio?.({ kind: 'tick', nowMs: this.#e.nowMs, advActive: this.#e.advActive });
-    // ★单一时间域（`tickets/T-0008` 的 D1）：把引擎的 `nowMs` 交给宿主做**合成与门判据**的时钟，
-    //   而不是让宿主自己再算一份 `performance.now() - wallStart`（两份时间域 ⇒ "同一时刻"不可比）。
-    this.#native.present?.(this.#e.nowMs, this.#e.waitFlags);
-  }
-
-  /** 0x400 动画等待门：场景动画跑完即放行。 */
-  #serviceAnimGate(): void {
-    this.#setGate('0x400');
-    if (this.#native.animationsDone?.(this.#e.nowMs) ?? false) {
-      this.#e.waitFlags &= ~0x400;
-      this.#waiting = false;
-      this.#traceLog.line('=== gate 0x400 cleared (scene anims done) ===');
-    } else {
-      if (!this.#waiting) this.#traceLog.line(`=== gate 0x400 WAIT (scene anims pending) steps=${this.#steps} ===`);
-      this.#waiting = true;
-    }
-    this.#frames++;
-  }
-
-  /** sleep(0xC8) 门：持续 present 直到 nowMs >= sleepUntil 才放行（引擎帧让步 Sleep(n)ms / 帧率节流 n ms）。 */
-  #serviceSleepGate(): void {
-    const e = this.#e;
-    this.#setGate('sleep');
-    if (e.nowMs >= e.sleepUntil) {
-      e.waitFlags &= ~SLEEP_GATE;
-      this.#sleeping = false;
-      this.#traceLog.line(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
-    } else {
-      if (!this.#sleeping) {
-        this.#traceLog.line(`=== gate sleep WAIT (until ${Math.round(e.sleepUntil)}ms) steps=${this.#steps} ===`);
-      }
-      this.#sleeping = true;
-    }
-    this.#frames++;
-  }
-
-  /** 推进一条指令并记账（`sub_411900` 的 ADV 分支用）。 */
-  async #stepOnceTraced(): Promise<void> {
-    const e = this.#e;
-    const status = this.#status;
-    const f = e.curScript();
-    status.scriptName = f.name || status.scriptName;
-    status.ip = f.ip;
-    status.steps = ++this.#steps;
-    if (!f.script || f.ip >= f.script.instructions.length) return;
-    try {
-      const t = await stepOnce(e);
-      for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
-      this.#writeJsonlIfFiltered(t);
-      this.#traceStepIfEnabled(t);
-      await this.#awaitTextureBound(t);
-    } catch (caught) {
-      this.#handleStepError(caught);
+  async #waitForResume(): Promise<void> {
+    while (this.#pausedOp) {
+      const nowMs = performance.now();
+      this.#e.nowMs = nowMs;
+      this.#e.serviceWinReveal(nowMs);
+      this.#e.serviceCharGrid(nowMs);
+      this.#native.audio?.({ kind: 'tick', nowMs, advActive: this.#e.advActive });
+      this.#pixi.advanceModel(nowMs);
+      if (this.#native.texturesIdle) await this.#native.texturesIdle();
+      this.#native.present?.(nowMs, this.#e.waitFlags);
+      this.#reportDiagnostics();
+      this.#traceLog.flush();
+      this.#jsonl.flush();
+      await nextFrame();
     }
   }
 
@@ -340,7 +543,7 @@ export class RendererSession {
    * 指令序列里 `set-texture` → `0x208`（纹理尺寸 getter）→ `0x1FB`（draw-texture）**必然一致**：
    * 脚本拿到的宽高就是刚绑上那张图的宽高。
    *
-   * renderer 侧走 `window.api.image()` 的**异步 IPC**，只在 `#present()` 前补屏障（见 `#present`）
+   * renderer 侧走 `window.api.image()` 的**异步 IPC**，只在帧末合成前补屏障（见 `#frameHost().present`）
    * 是**不够**的 —— VM 早已带着 0×0 跑过去了：`TextureCache.size()` 在"尚未载入"分支返回 0×0，
    * 于是 `0x1FB` 把 `0×0` 写进绘制项的**源矩形** ⇒ 该图元永远画不出来。
    * 实测（`.tmp/gs-7-sn0000-first-text.png` 全黑）：
@@ -358,40 +561,12 @@ export class RendererSession {
     if (this.#native.texturesIdle) await this.#native.texturesIdle();
   }
 
-
-  /** 推进一批指令；返回 true = 需要终止整个会话（重置/退出/硬错误）。 */
-  async #runInstructionBatch(): Promise<boolean> {
-    const e = this.#e;
-    const status = this.#status;
-    for (let k = 0; k < SAFETY_PER_FRAME; k++) {
-      const f = e.curScript();
-      const name = f.name || status.scriptName;
-      status.scriptName = name;
-      status.ip = f.ip;
-      status.steps = ++this.#steps;
-      if (!f.script || f.ip >= f.script.instructions.length) break;
-      try {
-        const t = await stepOnce(e);
-        for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
-        this.#writeJsonlIfFiltered(t);
-        this.#traceStepIfEnabled(t);
-        await this.#awaitTextureBound(t);
-      } catch (caught) {
-        const stop = this.#handleStepError(caught);
-        if (stop !== null) return stop;
-      }
-      // 遇到门控就停这批：0x400 动画等待 / sleep / **等待推进门**（0x72 wait-for-input 置的 bit31）
-      if (e.waitFlags & (0x400 | SLEEP_GATE) || e.awaitingAdvance) break;
-    }
-    return false;
-  }
-
   /**
    * ★定向 trace → JSONL：**默认关闭**。逐条写 JSONL 每条都要一次 IPC + 主进程写盘，代价极高
    * （实测曾把主进程的同步写盘打满：一次会话写出 109MB、连窗口都关不掉）。
    * 因此只在控制窗**显式设置了 opcode 白名单**时才记，且由 `JsonlWriter` 分批发送。
    */
-  #writeJsonlIfFiltered(t: Awaited<ReturnType<typeof stepOnce>>): void {
+  #writeJsonlIfFiltered(t: StepTrace): void {
     if (this.#traceFilter.size === 0 || !window.api?.appendTraceLine || !this.#traceFilter.has(t.opcode)) return;
     this.#jsonl.push(
       JSON.stringify({
@@ -408,7 +583,7 @@ export class RendererSession {
   }
 
   /** 指令日志：traceAll=全量打印（节流 ≥100ms 防爆炸）；否则默认只打印遥测里的「已忽略」信息。 */
-  #traceStepIfEnabled(t: Awaited<ReturnType<typeof stepOnce>>): void {
+  #traceStepIfEnabled(t: StepTrace): void {
     if (!this.#traceAll) return;
     const now = performance.now();
     if (now - this.#lastStepLog < 100) return;
@@ -416,53 +591,6 @@ export class RendererSession {
     this.#traceLog.line(
       `step ${this.#steps} ${t.name} op=0x${t.opcode.toString(16)} ip=${t.ip} kind=${t.handlerKind} script=${this.#status.scriptName}`,
     );
-  }
-
-  /**
-   * 处理一条指令抛出的异常。
-   * 返回 `true` = 终止会话；`false` = 只结束本批指令、保留状态继续外层循环；`null` = 已就地消化（继续本批）。
-   */
-  #handleStepError(caught: unknown): boolean | null {
-    const native = this.#native;
-    if (caught instanceof ScriptReset) {
-      // native.log 已同时进 HUD+文件；不再另加一条 trace（避免同事件双行）。
-      native.log('=== exit-script teardown (reset) ===');
-      return true;
-    }
-    if (caught instanceof ExitScript) {
-      // abort(0x1)/程序退出：关闭主窗口（0x2 顶层 program-exit 亦走此）。
-      native.log('=== abort/program exit -> close window ===');
-      this.#traceLog.line('=== abort/program exit ===');
-      this.#traceLog.flush();
-      window.api?.closeWindow?.();
-      return true;
-    }
-    if (caught instanceof NotImplementedOp) {
-      // 可恢复的硬停：stepOnce 未消费操作数、未推进 ip ⇒ 记下暂停点，
-      // 等控制窗点「作为桩函数跳过」（→ onControlSkipOp 登记 e.unknownOpStubs）后从**同一条指令**重试。
-      this.#err = caught;
-      this.#pausedOp = {
-        opcode: caught.opcode,
-        name: caught.name,
-        script: caught.scriptName,
-        byteOffset: caught.byteOffset,
-        instrIndex: caught.instrIndex,
-      };
-      native.log(`[pause] ${caught.message} —— 等待控制窗「作为桩函数跳过」`);
-      this.#traceLog.line(
-        `=== PAUSE unknown opcode 0x${caught.opcode.toString(16)} (${caught.name}) ${caught.scriptName}@ip=${caught.instrIndex} ===`,
-      );
-      this.notifyStatus(caught.message);
-      this.#traceLog.flush();
-      return false; // 退出本批指令，保留暂停态（外层循环继续 present / 收 skip 请求）
-    }
-    this.#err = caught;
-    const emsg = (caught as Error).message;
-    native.log(`[error] ${emsg}`);
-    // 其它硬错误（非「未知指令」）：立即上报控制窗展示，然后停
-    this.notifyStatus(emsg);
-    this.#traceLog.flush();
-    return true;
   }
 
   /** 节流打印输入实况 + 上报遥测。 */

@@ -95,6 +95,21 @@ declare global {
       sendRendererStatus(s: ControlStatus): void;
       /** 渲染窗→主：把一条**结构化 trace**（JSON 行）追加到 `.tmp/scene-trace.jsonl`。 */
       appendTraceLine(line: string): void;
+      /**
+       * 渲染窗→主：把一条**回放轨迹**（JSON 行：时钟 + 输入 + digest）追加到录制文件
+       * （`AMAYUI_REPLAY_PATH`，见 `electron/paths.ts`）。`tickets/T-0005` 的 `--record`。
+       */
+      appendReplayLine?(line: string): void;
+      /**
+       * **本次是否录制**（`AMAYUI_RECORD=1`，由 `tools/record.cjs` 经环境变量带给渲染进程）。
+       * ★录制必须**从启动第一帧**开始（回放从"刚装载 SYSTEM4"开始），所以它在 preload 里是**数据属性**
+       * 而不是"主进程发一条开始录制"的推送 —— 见 `renderer.ts` 的装配与 `frame/trace.ts` 的 `TraceRecorder`。
+       */
+      record?: boolean;
+      /** 录制用的 Scenario 名（进轨迹头）。 */
+      recordScenario?: string;
+      /** 录制用的启动脚本索引。 */
+      recordScript?: number;
     };
   }
 }

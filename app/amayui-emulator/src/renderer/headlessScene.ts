@@ -132,16 +132,36 @@ export class HeadlessScene implements NativeBridge {
 
   readonly audioEngine: AudioEngine | null;
 
+  /** 本宿主收到的音频意图条数（进 `FrameDigest.host` 段；不参与两宿主比较）。 */
+  audioIntentCount = 0;
+  /** 本帧 `0x208`（纹理尺寸）的答案记录（`--record` 用；见 `drainTextureSizeLog`）。 */
+  texSizeLog: { slot: number; w: number; h: number }[] = [];
+  /** 回放时"录下来的 `0x208` 答案"队列（见 `setTextureSizeAnswers`）。 */
+  #texSizeQueue: { slot: number; w: number; h: number }[] | null = null;
+
   constructor(private readonly opt: HeadlessOptions = {}) {
     if (opt.audioHost) {
       // ★帧泵由**驱动**每帧调（`tickets/T-0003` 的 D5）：`runFrameLoop` → `host.audio({kind:'tick',…})`
       //   → `HeadlessScene.audio` → `AudioEngine.handle`，与 Electron 的 `session.#present()` 同一条链。
       const eng = new AudioEngine(opt.audioHost, { ...(opt.audioOptions ?? {}), log: (m) => this.log(m) });
       this.audioEngine = eng;
-      this.audio = (intent) => eng.handle(intent);
+      this.audio = (intent) => {
+        this.audioIntentCount++;
+        eng.handle(intent);
+      };
     } else {
       this.audioEngine = null;
     }
+  }
+
+  /** `FrameHost.digestState`：本宿主的场景模型（`frame/digest.ts` 的纯函数构建器吃它）。 */
+  digestState(): SceneState {
+    return this.scene;
+  }
+
+  /** `FrameHost.digestHostCounters`：headless 无纹理（屏障恒 0）、无光栅化（缺字恒 0）。 */
+  digestHostCounters(): { barriers: number; audioIntents: number; fontMisses: number } {
+    return { barriers: 0, audioIntents: this.audioIntentCount, fontMisses: 0 };
   }
 
   private note(what: string, sample: string): void {
@@ -207,17 +227,58 @@ export class HeadlessScene implements NativeBridge {
     if (imgid === undefined || this.proceduralSlots.has(slot)) {
       // 槽为空 == 引擎口径 0/0；程序化槽（`0x1F8` 建的）尺寸由 create-texture 给出
       const s = this.slotSize.get(slot);
-      if (s) return s;
-      if (imgid === undefined) return { w: 0, h: 0 };
+      if (s) return this.#logTexSize(slot, s);
+      if (imgid === undefined) return this.#logTexSize(slot, { w: 0, h: 0 });
       this.note('getTextureSize(程序化纹理尺寸未知)', `slot=${slot}`);
-      return { w: 0, h: 0 };
+      return this.#logTexSize(slot, { w: 0, h: 0 });
     }
     const sz = this.opt.imageSize?.(imgid) ?? null;
     if (!sz) {
       this.note('getTextureSize(headless 未解析图像尺寸)', `slot=${slot} imgid=0x${imgid.toString(16)}`);
-      return { w: 0, h: 0 };
+      return this.#logTexSize(slot, { w: 0, h: 0 });
     }
+    return this.#logTexSize(slot, sz);
+  }
+
+  /** 记一次 `0x208` 的答案（`--record` 录进轨迹；回放时由 `replayTextureSizes` 喂回来）。 */
+  #logTexSize(slot: number, sz: { w: number; h: number }): { w: number; h: number } {
+    this.texSizeLog.push({ slot, w: sz.w, h: sz.h });
     return sz;
+  }
+
+  /** 取走本帧的 `0x208` 答案记录（取走即清空）。 */
+  drainTextureSizeLog(): { slot: number; w: number; h: number }[] {
+    const out = this.texSizeLog;
+    this.texSizeLog = [];
+    return out;
+  }
+
+  /**
+   * **接上"录下来的 `0x208` 答案"**（`tickets/T-0005` 的 G3 回放）。
+   *
+   * 为什么回放要把纹理尺寸当**输入数据**（而不是自己解析 AGF）：这个答案在录制侧
+   * **依赖宿主的加载状态**（`pixiBackend.getTextureSize` 走 IPC 异步 ⇒ 图还没到就是 0×0），
+   * 而脚本拿它算源矩形/描画位置 ⇒ 它直接改变场景状态。headless 没有纹理加载过程，
+   * "自己解析出真实尺寸"只是**近似**那个异步答案（恰好加载完成时才相等）。
+   * 于是：录制侧把它录下来，回放侧按帧、按调用顺序喂回去（位置队列见 `frame/trace.ts` 的 `runReplay`）。
+   *
+   * 缺口登记：让 headless **自带** AGF 尺寸解析（不靠录制）是独立事项，见 `tickets/T-0005/notes.md`。
+   */
+  setTextureSizeAnswers(queue: { slot: number; w: number; h: number }[]): void {
+    this.#texSizeQueue = [...queue];
+    this.opt.imageSize = (imgid) => this.#takeTexSize(imgid);
+  }
+
+  /** 从队列里取"本帧这次调用"的答案（按 slot 匹配优先；匹配不到就交出 0×0 并记一条缺口）。 */
+  #takeTexSize(_imgid: number): { w: number; h: number } | null {
+    const q = this.#texSizeQueue;
+    if (!q || q.length === 0) return null;
+    const slot = [...this.slotImgid.entries()].find(([, id]) => id === _imgid)?.[0];
+    let idx = -1;
+    if (slot !== undefined) idx = q.findIndex((e) => e.slot === slot);
+    if (idx < 0) idx = 0; // 顺序兜底（slot 表可能已被 release/重建）
+    const hit = q.splice(idx, 1)[0];
+    return hit ? { w: hit.w, h: hit.h } : null;
   }
 
   createMesh(spec: MeshCreateSpec): void {

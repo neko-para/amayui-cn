@@ -16,8 +16,28 @@
  * 渲染器（PixiBackend）经 setCursor/pressMouse/releaseMouse/pressJoy 写入本对象；
  * VM 指令经 readX/readY/readButtons/flush/hasPending 读取、经 mouseSlot/mouseJump/joyJump 设跳转目标。
  */
-export class InputManager {
-  // --- 鼠标位置（虚拟坐标）---
+/**
+ * **可序列化的输入状态快照**（`InputManager.snapshot()`/`restore()`；`tickets/T-0005`）。
+ * 字段全是"外部写入"的那些：光标/按钮/滚轮/边沿/待命中测试标记。
+ */
+export interface InputSnapshot {
+  x: number;
+  y: number;
+  hasCursor: boolean;
+  buttons: number;
+  pressLatch: number;
+  wheelDelta: number;
+  mouseEdge: number;
+  joyEdge: number[];
+  keyEdge: number;
+  mouseMoved: boolean;
+  hitTestPending: boolean;
+  lastAdvance: number;
+  touchId: number;
+  inputMask: number;
+}
+
+export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   /** 虚拟 X；未初始化/出窗为 -100000 */
   x = -100000;
   /** 虚拟 Y；未初始化/出窗为 -100000 */
@@ -237,6 +257,60 @@ export class InputManager {
     if (this.mouseEdge === 0) return null;
     if (this.mouseJump === -1 || this.mouseJump === 0xffffffff) return null;
     return this.mouseJump;
+  }
+
+  // ---------- 录制 / 回放（`tickets/T-0005` 的 B5）----------
+
+  /**
+   * **输入状态快照**（可 JSON 序列化）—— `--record` 每帧取一份、`--replay` 每帧恢复一份。
+   *
+   * 为什么记**状态**而不是"事件流"：脚本对输入是**轮询式**读取（`0x101`/`0x108`/`0x109`/`0x10D`/`0xCD`），
+   * 而 `flush()`/`readButtons()`/`consumeWheelDelta()` 都是**读时消费**（边沿、pressLatch、滚轮残量）。
+   * 事件流要复现"哪一帧读到什么"必须精确重放消费顺序与批边界；**帧首状态**则天然对齐：
+   * 回放只要每帧把头状态摆回去，这一帧的每次读取就与录制时逐次相同。
+   *
+   * ★**不包含**脚本自己注册的目标（`mouseSlot`/`mouseJump`/`mouseJumpOwner`/`joyJump`）：那些由
+   * `0xCC`/`0xFB` 写，是**脚本状态的函数**，回放同一条脚本会自己写出来；记进来反而会掩盖"脚本走岔了"。
+   */
+  snapshot(): InputSnapshot {
+    return {
+      x: this.x,
+      y: this.y,
+      hasCursor: this.hasCursor,
+      buttons: this.buttons,
+      pressLatch: this.pressLatch,
+      wheelDelta: this.wheelDelta,
+      mouseEdge: this.mouseEdge,
+      joyEdge: [...this.joyEdge],
+      keyEdge: this.keyEdge,
+      mouseMoved: this.mouseMoved,
+      hitTestPending: this.hitTestPending,
+      lastAdvance: this.lastAdvance,
+      touchId: this.touchId,
+      inputMask: this.inputMask,
+    };
+  }
+
+  /**
+   * 恢复一份快照。
+   * ★**不触发** `onCursorMove`（那会做一次命中测试）：命中测试在引擎里只发生在 WM_MOUSEMOVE；
+   * 回放时"该不该重算"由 `hitTestPending` 表达，交给等待泵消费（与录制时同一时机）。
+   */
+  restore(s: InputSnapshot): void {
+    this.x = s.x;
+    this.y = s.y;
+    this.hasCursor = s.hasCursor;
+    this.buttons = s.buttons;
+    this.pressLatch = s.pressLatch;
+    this.wheelDelta = s.wheelDelta;
+    this.mouseEdge = s.mouseEdge;
+    this.joyEdge = [...s.joyEdge];
+    this.keyEdge = s.keyEdge;
+    this.mouseMoved = s.mouseMoved;
+    this.hitTestPending = s.hitTestPending;
+    this.lastAdvance = s.lastAdvance;
+    this.touchId = s.touchId;
+    this.inputMask = s.inputMask;
   }
 
   /** 取首个"已注册跳转目标"的手把按钮对应 raw label（无 => null）。不消费边沿。

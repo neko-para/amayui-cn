@@ -12,6 +12,8 @@
  * 缺哪些能力 → 见 `tickets/T-0013`（宿主能力面入桥）。
  */
 import type { AudioIntent } from '../audio/audioEngine.js';
+import type { SceneState } from '../renderer/scene/state.js';
+import type { DigestHost } from './digest.js';
 
 export interface FrameHost {
   /**
@@ -27,8 +29,8 @@ export interface FrameHost {
    * （`tickets/T-0008` 的 D3 要在 B4 把它拆出来，与这里对齐）。
    */
   advanceModel?(nowMs: number): void;
-  /** 合成一帧（渲染）。headless 无（它只推进模型 + 出快照）。 */
-  present?(): void;
+  /** 合成一帧（渲染）。headless 无（它只推进模型 + 出快照）。★可以是异步的：Electron 在合成前要等纹理屏障。 */
+  present?(): void | Promise<void>;
   /** "这一帧该不该合成"。headless 无。 */
   needsRender?(): boolean;
   /**
@@ -41,4 +43,15 @@ export interface FrameHost {
   texturesIdle?(): Promise<void>;
   /** 音频帧泵（`Engine+430600` 那一族的等价物）。目前只有 Electron 有（见 T-0006）。 */
   audio?(intent: AudioIntent): void;
+  /**
+   * **本宿主的场景模型**（`FrameDigest` 的输入之一；`tickets/T-0003` 验收 4）。
+   *
+   * ★为什么不按设计文档 §3 把 `digest()` 整个放在宿主上：digest 的 engine 段大部分是 **Engine**
+   * 的状态（`script`/`gates`/`routes`/`pages`），只有场景模型在宿主里。让两个宿主各拼一份 digest
+   * 就是"同一件事两份实现"（`T-0008` 的 `waitFlags` 镜像与 `scAnimationsDone` 口径漂移都是这么来的）。
+   * ⇒ 纯函数构建器在 `frame/digest.ts`（唯一一份），宿主只交出自己的场景模型。
+   */
+  digestState?(): SceneState;
+  /** 宿主义务计数（屏障/音频意图/字体缺字）—— 进 `FrameDigest.host` 段，**不参与两宿主比较**。 */
+  digestHostCounters?(): DigestHost;
 }

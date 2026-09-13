@@ -158,14 +158,17 @@ test('★E3 回归：Game Start → ゲーム開始 → SN0000 首文案时的�
   //   所以这里断言**目标色**（state1 = 50% 黑）——它才是不变量；当前色随淡入进度而变。
   const adv = r.scene.meshes.find((m) => m.handle === 0x19640);
   assert.ok(adv, `应有 0x19640 暗幕；实际 ${JSON.stringify(full)}`);
+  // ★2026-09（`tickets/T-0004` 的 G3）：报告里的 `state0`/`state1` 现在是**脚本写的两端色**
+  //   （在 `0x322`/`0x323` 写入那一刻抓取）⇒ 可以直接断言**目标色**，不再需要
+  //   `(flags & 2) ? state1 : state0` 那个"当前或目标"的模糊口径。
   assert.equal(
-    (adv.flags & 2) !== 0 ? adv.state1 : adv.state0,
+    adv.state1,
     '#80000000',
-    `★ADV 暗幕的（当前或目标）色必须是半透明黑（背景仍可见），实际 state0=${adv.state0} state1=${adv.state1} flags=${adv.flags}`,
+    `★ADV 暗幕的目标色必须是半透明黑（背景仍可见），实际 state0=${adv.state0} state1=${adv.state1} flags=${adv.flags}`,
   );
-  // ③ 终态检查：把"动画窗走完"的幕布算到 state1 后，**不允许**存在不透明的满屏黑幕
+  // ③ 终态检查：不允许存在"最终会变成不透明黑"的满屏幕布（用跑完那一刻的当前值判 `flags & 2`）。
   for (const m of r.scene.meshes) {
-    const end = (m.flags & 2) !== 0 ? m.state1 : m.state0;
+    const end = (m.flags & 2) !== 0 ? m.nowState1 : m.nowState0;
     assert.notEqual(end, '#ff000000', `mesh 0x${m.handle.toString(16)} 的终态是不透明黑 ⇒ 整屏黑`);
   }
 });

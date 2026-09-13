@@ -31,6 +31,7 @@ import { WebAudioHost } from './audio/webAudioHost.js';
 import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
   newSceneState,
+  scAdvance,
   scGateAnimationsDone,
   sceneNeedsRender,
   scClearDrawContainer,
@@ -78,6 +79,7 @@ import { attachMouseInput } from './pixi/inputAttach.js';
 import { ScenePresenter } from './pixi/presenter.js';
 import { TextLayer } from './pixi/textLayer.js';
 import type { MsgWinInput } from '../text/layout.js';
+import { fontFailures } from './text/fontLoader.js';
 import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
 import type { RenderStatus } from './renderStatus.js';
@@ -132,6 +134,18 @@ export class PixiBackend implements NativeBridge {
   private frameStarted = false;
   /** 场景"脏"= 本次有配置类 op 改动过场景（引擎：present 须由脏标记 + 0x400 门控驱动）。 */
   private sceneDirty = false;
+  /**
+   * 本帧的时钟是否已由**驱动**注入（`advanceModel(nowMs)`）。
+   * ★`tickets/T-0004` 的 B4：驱动每帧末先 `advanceModel` 再 `present` ⇒ `present()` 不能再自己算一份
+   * 时钟（那就是修前那个"两个时间域"）。只有在**没人注入**时（旧调用点/测试）才退回 `performance.now()`。
+   */
+  #clockInjected = false;
+  /** 纹理帧屏障真实等待过的次数（进 `FrameDigest.host` 段；不参与两宿主比较）。 */
+  #barriers = 0;
+  /** 收到的音频意图条数（含每帧 `tick`）。 */
+  #audioIntents = 0;
+  /** 本帧 `0x208`（纹理尺寸）的答案（`--record` 录进轨迹；见 `drainTextureSizeLog`）。 */
+  #texSizeLog: { slot: number; w: number; h: number }[] = [];
   /** 撤幕留帧的剩余帧数（见 `#holdFrameAfterCurtainDrop`）。 */
   #holdFrames = 0;
   /** 字格图标 Sprite 缓存（每窗一条；换格时只换 texture 的 frame）。 */
@@ -199,6 +213,7 @@ export class PixiBackend implements NativeBridge {
    * 语义/证据见 `docs-new/03-engine/sound-system.md`；实现见 `src/audio/audioEngine.ts`。
    */
   audio(intent: AudioIntent): void {
+    this.#audioIntents++;
     this.audioEngine.handle(intent);
   }
 
@@ -269,6 +284,7 @@ export class PixiBackend implements NativeBridge {
    */
   async texturesIdle(): Promise<void> {
     if (this.textures.pendingCount === 0) return;
+    this.#barriers++;
     await this.textures.waitIdle();
     this.#markDirty();
   }
@@ -281,7 +297,7 @@ export class PixiBackend implements NativeBridge {
     //   引擎里 `sub_4ADFE0` 建完 VB 后也不写色），颜色由紧随其后的 `0x322 set-vertex-color` 给。
     //   原先在这里就解除留帧 ⇒ 批边界若正好落在两条指令之间，就会呈现一帧"幕存在但还透明"的画面
     //   = 背景闪现。⇒ 只有**颜色已经可见**（alpha>0）才解除，否则继续留帧。
-    this.#releaseFrameHoldIfVisible(`createMesh 0x${spec.handle.toString(16)}`, this.#meshVisibleColor(m));
+    this.#releaseFrameHoldIfVisible(`createMesh 0x${spec.handle.toString(16)}`, this.#meshVisible(m));
     assertFlags('mesh', m.handle, m.flags);
     const v = m.verts[0];
     this.#pushLog(
@@ -394,9 +410,25 @@ export class PixiBackend implements NativeBridge {
     scSet3DColor(this.scene, r, g, b, a);
   }
 
-  /** `0x208`：纹理尺寸 getter（写回脚本操作数由 opcode 侧负责）。 */
+  /**
+   * `0x208`：纹理尺寸 getter（写回脚本操作数由 opcode 侧负责）。
+   *
+   * ★每次调用都记进 `#texSizeLog`（`--record` 把它录进回放轨迹；见 `drainTextureSizeLog`）。
+   * 为什么必须录：这个答案**依赖宿主的加载状态**（IPC 异步 ⇒ 图还没到就是 0×0），
+   * 而脚本拿它算源矩形/描画位置 ⇒ 它直接改变**场景状态**。回放侧没有纹理，等于把"宿主给出的尺寸"
+   * 当输入数据（与时钟、输入同类）。见 `tickets/T-0005/notes.md` 的"0x208 的答案算输入"。
+   */
   getTextureSize(slot: number): { w: number; h: number } {
-    return this.textures.size(slot);
+    const sz = this.textures.size(slot);
+    this.#texSizeLog.push({ slot, w: sz.w, h: sz.h });
+    return sz;
+  }
+
+  /** 取走本帧的 `0x208` 答案记录（录制用；取走即清空 ⇒ 一条记录只属于一帧）。 */
+  drainTextureSizeLog(): { slot: number; w: number; h: number }[] {
+    const out = this.#texSizeLog;
+    this.#texSizeLog = [];
+    return out;
   }
 
   /** `0x215`（sub_4ADC20）：绘制项 → 纹理槽号；项不存在或未创建（`flags&1==0`）⇒ −1。 */
@@ -480,7 +512,7 @@ export class PixiBackend implements NativeBridge {
     const o = scSetVertexColor(this.scene, handle, index, alpha, rgb);
     // ★幕的**颜色**落地这一刻才是"新内容真的可见"⇒ 解除留帧（见 `createMesh` 处说明）
     const mAfter = this.scene.meshes.get(handle);
-    if (mAfter) this.#releaseFrameHoldIfVisible(`setVertexColor 0x${handle.toString(16)}`, this.#meshVisibleColor(mAfter));
+    if (mAfter) this.#releaseFrameHoldIfVisible(`setVertexColor 0x${handle.toString(16)}`, this.#meshVisible(mAfter));
     this.#assertMesh(handle);
     const m = this.scene.meshes.get(handle);
     this.#pushLog(
@@ -573,15 +605,20 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
-   * **只在"新内容已经可见"时解除留帧**（颜色 alpha>0）。
+   * **只在"新内容已经可见"时解除留帧**（`state0` 的 alpha > 0）。
    *
    * 为什么不能"建了项就解除"：引擎建项与设色是**两条指令**（如 `0x320 create-mesh` 后紧跟
    * `0x322 set-vertex-color`），中间那一帧的项还是全透明 ⇒ 解除留帧就会把**旧画面/空画面**呈现出来
    * （用户实测：进 SN0000 时背景闪一下）。上限 `HOLD_MAX_FRAMES` 兜住"新内容长期不可见"的极端情形。
+   *
+   * ★**判据必须无时钟、无副作用**（`tickets/T-0004` 的 G3 实测修）：旧实现用 `#meshVisibleColor`
+   * = `calcDiffuse(m, this.clockMs)`，而帧内 `clockMs` 还是**上一帧**的值（只有 `advanceModel` 才刷新）
+   * ⇒ 它会给共享模型的动画窗**锁存起点**成上一帧的时钟：Electron 的 `anim.start` 比 headless 早一帧，
+   * 插值色差 1/255 —— 这种"宿主渲染策略污染共享模型"正是 G3 要抓的。
    */
-  #releaseFrameHoldIfVisible(what: string, color: number): void {
+  #releaseFrameHoldIfVisible(what: string, visible: boolean): void {
     if (this.#holdFrames <= 0) return;
-    if (((color >>> 24) & 0xff) === 0) {
+    if (!visible) {
       this.#pushLog(`[frame-hold] ${what} 颜色仍透明 → 继续留帧（剩 ${this.#holdFrames} 帧）`);
       return;
     }
@@ -590,12 +627,13 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
-   * 幕此刻**实际可见的颜色**（= presenter 那一帧画出来的颜色）：`state0→state1` 按动画窗插值
-   * （`calcDiffuse`）后取各顶点均值（`meshColor`）。留帧解除的判据必须与渲染同源，
-   * 否则会出现"判据说可见、画面其实还是透明"的裂缝。
+   * 幕"此刻是否已经有颜色"（**无时钟、不碰共享状态**）。
+   *
+   * 用 `state0` 的 alpha：无动画窗时它就是可见色；有窗时它是插值的起点（插值结果的 alpha ≥ 两端较小者
+   * ⇒ 用它判"可见"是**保守**的，只会多留几帧，不会提前露出未完成的新画面）。
    */
-  #meshVisibleColor(m: MeshObj): number {
-    return meshColor(m, calcDiffuse(m, this.clockMs));
+  #meshVisible(m: MeshObj): boolean {
+    return ((m.state0 >>> 24) & 0xff) > 0;
   }
 
   /**
@@ -721,8 +759,39 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * `FrameHost.advanceModel`（`tickets/T-0004` 的 B4）：把**本帧时钟**注入宿主。
+   *
+   * pixi 的"模型推进"= 把时钟刷新到本帧（窗的求值发生在 `present` 里，用 `clockMs` 算相位）。
+   * ★修前这个时钟是 `performance.now() - wallStart`（**独立时间域**，与 `Engine.nowMs` 不同源，
+   * 见 `tickets/T-0008` 的 D1）⇒ 现在一律由驱动经 `Engine.nowMs` 注入，只有没人注入时才退回去。
+   */
+  advanceModel(nowMs: number): void {
+    this.clockMs = nowMs;
+    this.#clockInjected = true;
+    // ★推进窗（窗末 `work ← target`）——与 `HeadlessScene.advanceModel` 调的是**同一个** `scAdvance`
+    //   ⇒ "模型推进"两个宿主只有一份实现（设计 D3）。修前推进藏在 `present` 里（`presenter.ts:56`），
+    //   而 `present` 会被 `needsRender` 跳过（窗恰好结束的那一帧 `pending` 已为假）⇒ 那一帧的
+    //   收尾就永远不会发生，两宿主的 digest 会分叉 —— 正是 G3 要抓的东西。
+    scAdvance(this.scene, nowMs);
+  }
+
+  /**
+   * `FrameHost.digestState`：本宿主的场景模型 —— 与 `HeadlessScene` 是**同一份** `SceneState`
+   * 语义（`scene/ops.ts`），只是画法不同 ⇒ `FrameDigest` 的 engine 段才有可比性。
+   */
+  digestState(): SceneState {
+    return this.scene;
+  }
+
+  /** `FrameHost.digestHostCounters`：宿主义务履行计数（**不参与两宿主比较**）。 */
+  digestHostCounters(): { barriers: number; audioIntents: number; fontMisses: number } {
+    return { barriers: this.#barriers, audioIntents: this.#audioIntents, fontMisses: fontFailures().length };
+  }
+
+  /**
    * 合成一帧。
-   * @param nowMs 本帧时钟（引擎 `nowMs`）；给了就用它（**单一时间域**，D1），否则退回"墙钟 - 起点"
+   * @param nowMs 本帧时钟（引擎 `nowMs`）；给了就用它（**单一时间域**，D1），否则用驱动注入的值，
+   *   都没有才退回"墙钟 - 起点"（旧调用点/测试）
    * @param waitFlags 仅用于诊断日志（`[present … wait=0x…]`）；传 `Engine.waitFlags`
    */
   present(nowMs?: number, waitFlags = 0): void {
@@ -732,7 +801,13 @@ export class PixiBackend implements NativeBridge {
       this.#pushLog(`[frame-hold] 跳过本次 present（剩 ${this.#holdFrames} 帧）`);
       return;
     }
-    this.clockMs = nowMs ?? performance.now() - this.wallStart;
+    if (nowMs !== undefined) {
+      this.clockMs = nowMs;
+      this.#clockInjected = true;
+    } else if (!this.#clockInjected) {
+      this.clockMs = performance.now() - this.wallStart;
+    }
+    this.#clockInjected = false; // 已消费本帧注入的时钟
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);
     // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），

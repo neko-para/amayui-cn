@@ -317,6 +317,21 @@
   永远是"泵已返回 true"之后才轮到。修法：把门加在 `cellFrameOf`（**唯一判决点**）：
   `if (e.msgwin.isRevealing()) return undefined;`。守卫：`test/char-reveal.test.ts` 的
   "显到一半 ⇒ 载荷里仍不得有 cell"（已验证去掉该行即红）。
+- 2026-09（第 7 轮：**帧循环统一 B1–B5**，`npm run verify` 全绿 476/476）：
+  设计 = `emulator-frame-loop-design.md`（§6.1 有五批的落地结果表）；**逐批证据在 `tickets/T-0001`..`T-0005` 的
+  `changes.md`**（本文件不重复）。要点与它对本清单的影响：
+  ① **B1** 抽 `src/frame/{host,loop}.ts` 唯一帧驱动，headless 三家先接上（零行为变更，G2 = report 全文 sha256 不变）；
+  ② **B2** 14 条漂移工单逐条落定（门统一、模型推进成宿主契约、`waitFlags` 粘滞拆除、`scAnimationsDone` 拆分…）；
+  ③ **B3** headless 补齐能力面：音频帧泵归驱动（`T-0006`）、`needsRender` 脏位进共享模型、输入源 ⇒ 悬停真的跑（`T-0007`）、
+     **`FrameDigest`**（逐帧对外表现的量具）；
+  ④ **B4** Electron 迁到驱动：`session.ts` 从"第 5 份帧循环"缩成 **装配 + 观察者 + `yield`**（`#present` 三拆）；
+     **G3 通过**（Electron 录 3047 帧 → headless 逐帧 engine 段相等）、**G4 关键行不变**；
+  ⑤ **B5** 一份 `ScenarioSpec` 两宿主共用 + `npm run record/replay` 一键 G3；`emulator.md` §7.1 新增**闸门清单**。
+  ★**G3 顺带修掉三处"不报错、只表现不对"的真分叉**（细节见 `T-0004/changes.md`）：
+  mesh 的窗末收尾原本只在 pixi 的 `present` 里（⇒ 移进共享 `scAdvance`）、
+  `FrameDigest.nowMs` 的舍入污染了回放时钟（⇒ 不舍入）、
+  pixi 的**帧保持**判据用过期 `clockMs` 调 `calcDiffuse` ⇒ 给共享模型的动画窗锁了早一帧的起点（⇒ 改成无时钟判据）。
+  **本清单 §10 的 #1（帧循环）到此收口**；§2 的"同一语义两处"里与帧序/门/推进相关的条目也随之关闭。
 
 
 ## 10. 已登记的后继工作（本轮到 8/8 为止**未做**，按价值排序）
