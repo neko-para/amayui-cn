@@ -253,6 +253,10 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 ### 3.2 每次分析一个脚本（`src/*.txt`）—— 第三层的流程
 触发场景：要弄清某个界面流程 / 演出 / 消息脚本的行为，或为重现某个现象而读脚本时。
 
+> ★**脚本层的完整流程与纪律见 `amayui-script-analysis` 技能**（§1 先读文档 / §2 同步更新矩阵 / §4 动作序）。
+> 下面是与工具用法直接相关的摘要；两处描述若漂移，以那份为准。
+> 开工前一页纸：`node .agents/skills/amayui-script-analysis/scripts/brief.js <ID>`。
+
 1. **先查台账**：`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --id <ID>`。
    - 有 `analyzed` 条目 ⇒ **别再从头读**，按它的 `layout` 直接跳段；
    - 有 `partial` 条目 ⇒ 看 `notes` 写的"未读"是什么，只补那部分；
@@ -309,6 +313,7 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - **收尾必跑**：`cd app/amayui-emulator && npx tsx --test test/capability-ledger.test.ts`。
 
 ### `scripts/scripts.js` —— 第三层台账：脚本台账（查询 + 增删改 + 自检）
+> 第三层（脚本）的**流程纪律**在 `amayui-script-analysis` 技能；本工具由两个技能**共用**（只此一份，不另起副本）。
 - **查询**：`--summary`（状态分布 + 覆盖率）· `--index [--status analyzed|partial|stub]` ·
   `--coverage`（列出**尚未登记**的 `src/*.txt` —— 提醒还有哪些没看）· `--find <子串>` · `--id <ID>`（精查单条，含 layout/slots 明细）· `--validate`（离线自检）。
 - **写入**：`--add '<json>'` · `--edit <ID> --set k=v [--set …]`（支持点路径，如 `status=analyzed`）· `--rm <ID>`。写入后自动重算 `counts`。

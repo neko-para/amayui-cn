@@ -55,10 +55,13 @@
 
 ## 怎么用（流程）
 
-分析某个 `src/*.txt` 时的动作顺序（详见 `amayui-engine-analysis` 技能 §3.2）：
+分析某个 `src/*.txt` 时的动作顺序（流程与纪律详见 **`amayui-script-analysis`** 技能 §1/§2；引擎层见 `amayui-engine-analysis`）：
 
-1. `scripts.js --id <ID>` 先看有没有现成条目；没有就 `--add` 一个 `partial` 骨架（`role`/`entry` 先写一句话）；
+0. ★**先读文档再读脚本**：`node .agents/skills/amayui-script-analysis/scripts/brief.js <ID>` 打印"开工前一页纸"
+   （台账条目 + 文档落点 + 真源骨架 + 调用关系 + 收尾命令）；本页（`<ID>.md`）就是它的 ① 块渲染物，**先读它**；
+1. `scripts.js --id <ID>` 看真源条目；没有就 `--add` 一个 `partial`/`stub` 骨架（`role`/`entry` 先写一句话），
+   然后**只补 `notes` 里写的"未读"部分**，`layout` 已覆盖的段落不必重读；
 2. 读脚本时**顺手记** `layout`（行区间 + 锚点 + 职责）与 `slots`（槽号 + 含义）——锚点用脚本里真实存在的字符串（label / opcode 行）；
-3. 引擎层面的结论照旧进第一/第二层，并在 `links` 里回链（`capabilities` 填 id、`functions` 填 addr）；
-4. `node scripts/build-scripts.mjs` 重生成 md ⇒ `scripts.js --validate` ⇒ `npx tsx --test test/script-ledger.test.ts`；
+3. 引擎层面的结论照旧进第一/第二层，并在 `links` 里回链（`capabilities` 填 id、`functions` 填 addr）——**分层不许互相复制**；
+4. ★**改完必须同步更新**（不落库 = 没分析）：`node scripts/build-scripts.mjs` 重生成 md ⇒ `scripts.js --validate` ⇒ `npx tsx --test test/script-ledger.test.ts`；
 5. 反汇编重排（翻译/reflow）后行号会变 ⇒ 守卫会红，按失败信息更新 `lines`（这是**刻意**的棘轮）。

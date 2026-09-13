@@ -45,6 +45,10 @@ E:\Games\Eushully\天結\
 > 纪律：改完数据层必须重跑对应 `build-*.mjs`（守卫会核对 md 与数据层同步）；第三层的每条结构记录都带
 > 「行区间 + 锚点」，`src/*.txt` 一重排守卫就红（**锚点棘轮**，见 `docs-new/05-scripts/README.md`）。
 > 工具：`.agents/skills/amayui-engine-analysis/scripts/{report,capabilities,scripts}.js`（查询/增删改/自检）。
+> **流程/纪律**：分析**引擎**（函数/字段/常态能力）走 `amayui-engine-analysis` 技能；分析**某个脚本**（第三层）走
+> `amayui-script-analysis` 技能（§1 先读文档 → 再读脚本；§2 分析完必须同步更新台账与 md），
+> 开工前一页纸：`node .agents/skills/amayui-script-analysis/scripts/brief.js <ID>`（台账条目 + 文档落点 + 真源骨架 +
+> 调用关系 + 收尾命令，只读不写）。第三层的 `scripts.js` 两个技能**共用**同一份（不另起副本以免漂移）。
 
 ## 3. 排除项（不进入 install）
 
