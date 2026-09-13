@@ -48,7 +48,13 @@ const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 /** 过程文档的**约定名**（其余自由命名；这些只是给看板排序用）。 */
 const KNOWN_DOCS = ['notes.md', 'changes.md', 'repro.md', 'design.md', 'evidence.md'];
 
-const VALUE_FLAGS = new Set(['--status', '--area', '--type', '--priority', '--add', '--add-file', '--edit', '--set', '--set-json', '--note', '--file', '--text', '--root', '--rm', '--show']);
+const VALUE_FLAGS = new Set([
+  '--status', '--area', '--type', '--priority',
+  '--add', '--add-file', '--edit', '--set', '--set-json',
+  '--note', '--file', '--text', '--root', '--rm', '--show',
+  // ★带值的子命令（漏一个就会退化成布尔 ⇒ `id=true` 让 path.join 抛错，2026-09 实测踩到）
+  '--set-status',
+]);
 
 function parseOpt(argv) {
   const o = { set: [], setJson: [] };
@@ -224,7 +230,10 @@ function validate() {
     }
     if (t.status === 'done') {
       const tests = Array.isArray(t.tests) ? t.tests : [];
-      if (tests.length === 0) problems.push(at('status=done 但没有 tests[] —— 不许空口声称有守卫'));
+      const doneWhy = typeof t.doneWhy === 'string' ? t.doneWhy.trim() : '';
+      if (tests.length === 0 && doneWhy.length === 0) {
+        problems.push(at('status=done 但没有 tests[]、也没有 doneWhy —— 不许空口声称做完（代码票给 tests，文档/分析票给 doneWhy）'));
+      }
       for (const g of tests) {
         if (!fs.existsSync(path.join(root, g))) problems.push(at(`tests 指向的守卫不存在：${g}`));
       }

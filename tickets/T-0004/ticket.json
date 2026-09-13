@@ -2,7 +2,7 @@
   "id": "T-0004",
   "type": "refactor",
   "status": "open",
-  "priority": "P1",
+  "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B4 Electron 迁到帧驱动：session.ts 缩成\"装配 + 观察者 + yield\"",
   "why": "让 Electron 层真正只剩交互 + 渲染：VM 顺序/门/时钟/批/错误策略全在共享驱动，控制窗/trace/jsonl 变成观察者实现，rAF 变成 yield。",
@@ -37,6 +37,10 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
     }
   ]
 }

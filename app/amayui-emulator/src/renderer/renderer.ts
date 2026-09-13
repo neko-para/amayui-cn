@@ -12,8 +12,11 @@
  * | `app/telemetry.ts` | 四张遥测清单（ignored / internal / skipped / gaps） |
  * | `app/session.ts` | 门控 VM 主循环 + 控制窗桥接 + 状态上报 |
  *
- * Plan A：渲染帧循环（Pixi ticker）独立跑 `present`（推进时钟、合成场景图），VM 在其间按"门控"推进——
- * 无门控时每帧跑一批指令（引擎在无门控时快速跑到门控）；遇 0x400 动画等待则停住，由渲染循环放行。
+ * 主循环：**帧驱动在 `src/frame/loop.ts`（唯一一份）**，`app/session.ts` 目前仍是它自己的那份
+ * （B4 会把 session 接到驱动上，届时 `session.ts` 只剩"装配 + 观察者 + `yield`"）。
+ * ★2026-09 订正（`tickets/T-0002` 的 D3）：旧注释说"渲染帧循环（Pixi ticker）独立跑 present"——
+ * **与实现不符**：`PixiBackend.startFrameLoop()` 只记一个墙钟起点，`present()` 是 `session` 在每批指令
+ * 之后（按"是否需要渲染"）调用的，没有第二个 ticker 在并发跑。
  */
 import { bootApp } from './app/boot.js';
 import { RendererSession } from './app/session.js';

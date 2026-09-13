@@ -2,7 +2,7 @@
   "id": "T-0005",
   "type": "req",
   "status": "open",
-  "priority": "P2",
+  "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B5 统一 Scenario（shot.cjs 的点击脚本 与 chain 的输入驱动合一）+ --record/--replay 回放器",
   "why": "现在\"同一条链路\"有两套输入脚本：tools/shot.cjs 硬编码点击，gameStartChain/config1Chain 硬编码 setCursor/pressMouse。同一条 Scenario 才能让 Electron 与 headless 跑\"同一件事\"。",
@@ -35,6 +35,10 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
     }
   ]
 }

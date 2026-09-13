@@ -1,7 +1,7 @@
 {
   "id": "T-0013",
   "type": "refactor",
-  "status": "open",
+  "status": "done",
   "priority": "P2",
   "area": "emulator/hosts",
   "title": "宿主能力面入桥：needsRender / animationsDone / preloadImage 不在 NativeBridge 也不在 nativeTap 白名单",
@@ -14,23 +14,39 @@
     {
       "file": "app/amayui-emulator/src/vm/native.ts",
       "anchor": "interface NativeBridge",
-      "note": "桥的声明面（无 needsRender/animationsDone）"
+      "note": "桥的声明面：三者（needsRender/animationsDone/preloadImage）已于 2026-09 并入"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "needsRender",
-      "note": "pixi 独有的能力（未入桥）"
+      "anchor": "animationsDone",
+      "note": "pixi 的实现已改成桥名 animationsDone（原 sceneAnimationsDone），判据 = scGateAnimationsDone"
     },
     {
       "file": "app/amayui-emulator/src/vm/nativeTap.ts",
       "anchor": "withNativeTap",
-      "note": "闸门 A 的白名单穷尽性检查只保证\"桥方法都在名单里\""
+      "note": "白名单已加三名 + 导出 BRIDGE_METHODS 供守卫逐名对照"
     }
   ],
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence, tests, links"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/native-tap.test.ts"
+  ],
+  "links": {
+    "tickets": [
+      "T-0002"
+    ]
+  }
 }

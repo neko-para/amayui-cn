@@ -13,13 +13,18 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/run.ts",
-      "anchor": "e.nowMs += 16",
-      "note": "时钟只在逐字分支前进"
+      "anchor": "runFrameLoop(e, host",
+      "note": "run.ts 已接共享帧驱动（G3/C1/C3/C4 一次性收敛）"
     },
     {
-      "file": "app/amayui-emulator/src/renderer/app/session.ts",
-      "anchor": "serviceCharGrid",
-      "note": "产品路径每帧都跑的字格图标服务"
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "stopAfterStep: () => maxSteps !== 0",
+      "note": "STEPS=n 逐条生效（修前只在帧开头判 ⇒ STEPS=300 会跑成 20000）"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "stopAfterStep?(t: StepTrace, e: Engine)",
+      "note": "逐条停是驱动新能力（B2 加）"
     }
   ],
   "blockedBy": [
@@ -29,6 +34,11 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B2 第 2 批：代码已接驱动并实测 STEPS 生效；守卫待补（CLI 无测试面）⇒ 保持 doing"
     }
-  ]
+  ],
+  "notes": "（2026-09-14 B2 第 2 批）代码已修：run.ts 现在经 runFrameLoop 跑 —— 产品顺序 + 每帧时钟 + 两个每帧服务 + ADV 分支 + 门。\n- 实测：STEPS=300 恰好 300 条（修前 20000 条：cap 只在帧边界判；这正是新加的 stopAfterStep 解决的）。\n- 仍 doing：守卫待补。run.ts 是 CLI（只被 npm run run 调用，没有测试面）⇒ 按纪律不能标 done。\n  两条候选：① 把它的驱动配置抽成可导出的常量/函数，用单测断言\"= 产品语义\"；② 给 CLI 写一个 spawnSync 冒烟测试（注意沙箱下\"捕获子进程管道输出\"可能被拒，需 stdio: ignore + 退出码判据）。已登记进 T-0020（测试结构）。"
 }

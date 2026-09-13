@@ -1,8 +1,8 @@
 {
   "id": "T-0002",
   "type": "refactor",
-  "status": "open",
-  "priority": "P1",
+  "status": "done",
+  "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B2 收敛帧循环的漂移（14 条工单，逐条 before/after 对照）",
   "why": "抽完驱动后，各循环之间的漂移要逐条决策后统一：补门、统一顺序与时钟、定\"谁推进动画窗\"、清 waitFlags 粘滞、scAnimationsDone 覆盖 5 窗。每处都会改变 headless 报告的数字，必须逐条解释。",
@@ -13,24 +13,34 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/04-app/emulator-frame-loop-design.md",
-      "anchor": "漂移 / 缺陷",
-      "note": "B2 的工单清单（14 条，带 file:line）"
-    },
-    {
-      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
-      "anchor": "waitFlags &= ~0x400",
-      "note": "chain 每帧无条件清 0x400 门"
-    },
-    {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
-      "anchor": "waitFlags &= ~0x400",
-      "note": "同上"
+      "anchor": "gates: { anim: 'wait'",
+      "note": "门统一（G2）：不再每帧无条件清 0x400"
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
-      "anchor": "e.nowMs += 16",
-      "note": "run.ts 的时钟只在逐字分支里前进"
+      "anchor": "runFrameLoop(e, host",
+      "note": "G3+C1+C3+C4：run.ts 由手写循环改为共享驱动"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "return r.stopReason === 'cap' ? frames : r.frames",
+      "note": "C5：run(frames) 返回语义两处统一"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "stopAfterStep?(t: StepTrace, e: Engine)",
+      "note": "新增\"逐条停\"（修掉\"越过目标一整批\"的停止点伪影）"
+    },
+    {
+      "file": "app/amayui-emulator/test/anim-window-done.test.ts",
+      "anchor": "A2：**缩放窗**",
+      "note": "A2 的守卫（7 例）"
+    },
+    {
+      "file": "app/amayui-emulator/src/report.ts",
+      "anchor": "present: 'never'",
+      "note": "C2 决策：report 是指令驱动 tracer，自管粒度"
     }
   ],
   "blockedBy": [
@@ -39,13 +49,58 @@
   "links": {
     "docs": [
       "docs-new/04-app/emulator-frame-loop-design.md"
+    ],
+    "tickets": [
+      "T-0001",
+      "T-0003",
+      "T-0006",
+      "T-0008",
+      "T-0009",
+      "T-0011",
+      "T-0012",
+      "T-0013",
+      "T-0014",
+      "T-0015",
+      "T-0024"
     ]
   },
-  "notes": "代理清单的 5 条未确认项在这里落成实测（见 .tmp/frame-loop-divergence.md §7 的方法）：① PixiBackend.waitFlags 粘滞是否有意；② chains 不推进窗是否已影响现有断言；③ report 的 SLEEP_GATE 是否真永不满足；④ headless 快照里是否出现 cell；⑤ refactor-plan 里的旧行号是否要重算。",
+  "notes": "代理清单的 5 条未确认项在这里落成实测（见 .tmp/frame-loop-divergence.md §7 的方法）：① PixiBackend.waitFlags 粘滞是否有意；② chains 不推进窗是否已影响现有断言；③ report 的 SLEEP_GATE 是否真永不满足；④ headless 快照里是否出现 cell；⑤ refactor-plan 里的旧行号是否要重算。\n\n（2026-09-14 B1）两张 chain 的「无条件清 0x400 / 不推进动画窗 / ADV 分支吞异常」这些行为**没有改变**，只是从各家手写的 for 循环搬进了 `src/frame/loop.ts` 的驱动配置（`gates.anim='clear'`、`advErrors='swallow'`、帧末钩子里没有 `advance()`）。本票要决策的对象因此变成\"驱动的那几个档位该不该保留\"——证据锚点可从 chain 文件上移到驱动。\n\n（2026-09-14 B2 第 1 批）进度与**实测结论**：\n- ✅ **A2 已修**：`scAnimationsDone` 原先只查窗 0，与 `advanceWindows`（5 窗）不自洽 ⇒ 改为复用 `itemAnimationsPending`。\n  过程中的两个发现：① 我第一版把极性写反了（`itemAnimationsPending` 本身就是\"还有窗没走完\"），**新写的守卫当场抓住**；\n  ② 窗起点用的是 `animStart === 0` 哨兵，而 headless 虚拟时钟**从 0 起** ⇒ 在 clock=0 那刻配的动画会反复重锁、永不结束\n  （真实使用都在若干帧之后配置；测试从 T0=16 起算。这条属于时钟域问题 D1，已记在守卫文件头）。\n- ✅ **A1 已做**：`FrameHost` 增 `advanceModel(nowMs)`（帧末推进模型）与 `animationsDone(nowMs)`；`report` 用 `present: 'never'`\n  保留自己的指令驱动粒度；两份 chain 现在**每帧推进一次模型**（修前从不推进）。\n- ⏸ **门统一（G1/G2/G3）暂缓**——实测它不只是记账差异，会改变**脚本执行路径**：把两份 chain 的 `0x400` 从\n  \"每帧无条件清\"改成\"等 `animationsDone()`\"后，`mesh-vertex-quad.test.ts` 的 ②（ADV 暗幕 0x19640 的 state0 应为 #80000000（50% 黑））\n  变成 #00000000。已隔离验证：**只做 A1、不动门** ⇒ 该测试通过；**只把门改成 wait** ⇒ 变红。\n  ⇒ 门策略通过\"时钟节奏\"间接影响脚本里读时间的分支（0x1F4/0x1F5/i1c7/i1cc 一族）与 `0x323` 窗的完成时刻。\n  下一步：用 `.tmp/dump-report.mts` 那套 before/after 探针，把\"哪几条指令的路径变了\"逐条查清，再决定门的收敛方式\n  （候选：统一成 `animationsDone` 但让 headless 的**虚拟时钟按脚本进度**推进、或在报告里同时给出\"as-written 端点色 / 当前求值色\"）。\n- ✅ 顺带修了一处**顺序依赖**：`gameStartChain` 的 mesh 映射原先在 `calcDiffuse`（**窗末有烘焙副作用** `state0 ← state1`）\n  **之后**才读 `state0/state1/flags` ⇒ 报告里的\"脚本写的两端色\"会被求值污染。现在先抓后算。",
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B1 把本票指的行为搬进共享驱动配置（行为未变）；决策对象随之变为驱动的档位"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B2 第 1 批：A2 修（+7 例守卫）、A1 做（chains 每帧推进模型）、门统一暂缓并记实测原因"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B2 第 2 批：门统一（G1/G2/G3）+ C1/C3/C4/C5 + D3 + 逐条停；两处测试伪影订正"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：links, doneWhy, tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "doing → done"
     }
+  ],
+  "doneWhy": "14 条漂移工单逐条有着落（13 条已修 + 第 1 条按 C2 决策刻意保留 + 第 10 条按设计归 B3/T-0003）：对照总表在 tickets/T-0002/changes.md 顶部；report 全文 sha256 FBC05509… 在每一批之后都复跑且逐字节不变。",
+  "tests": [
+    "app/amayui-emulator/test/frame-loop.test.ts",
+    "app/amayui-emulator/test/scene-report.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts",
+    "app/amayui-emulator/test/anim-window-done.test.ts"
   ]
 }

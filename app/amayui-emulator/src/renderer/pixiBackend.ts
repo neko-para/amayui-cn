@@ -31,7 +31,8 @@ import { WebAudioHost } from './audio/webAudioHost.js';
 import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
   newSceneState,
-  scAnimationsDone,
+  scGateAnimationsDone,
+  sceneNeedsRender,
   scClearDrawContainer,
   scMsgWinClear,
   scMsgWinClearAll,
@@ -119,9 +120,15 @@ export class PixiBackend implements NativeBridge {
    */
   private scene: SceneState = newSceneState();
 
-  private waitFlags = 0; // effect_flags 中的等待位（0x400 等）——由 setWaitFlag 置
-  private clockMs = 0; // 渲染帧时钟（ms，等价 this[46500]）
-  private wallStart = 0; // 帧循环起点（performance.now），时钟 = now - wallStart（墙钟，保证推进）
+  /**
+   * 渲染/模型时钟（ms，引擎 `this[46500]` 的等价物）。
+   * ★2026-09（`tickets/T-0008` 的 D1）：**由调用方按 Engine 的 `nowMs` 传入**（`present(nowMs)` /
+   * `animationsDone(nowMs)`）—— 修前这里是"`performance.now() - wallStart`"这样一个**独立时间域**，
+   * 与 `Engine.nowMs`（绝对墙钟）不同源 ⇒ "同一脚本同一时刻"在两侧不可比。
+   */
+  private clockMs = 0;
+  /** 旧路径的墙钟起点：仅在调用方**不给** `nowMs` 时用作兜底（保留以免外部调用点全改）。 */
+  private wallStart = 0;
   private frameStarted = false;
   /** 场景"脏"= 本次有配置类 op 改动过场景（引擎：present 须由脏标记 + 0x400 门控驱动）。 */
   private sceneDirty = false;
@@ -602,10 +609,17 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setDrawColor h=0x${handle.toString(16)} d=${delay} c=${count} to=0x${to.toString(16)}${o === 'applied' ? '' : ` [${o}]`}`);
   }
 
+  /**
+   * `0x21C set-wait-flag`：引擎往 `Engine[174801]` 置位（`0x400` 动画等待门等）。
+   *
+   * ★2026-09（`tickets/T-0008`）：**宿主不再保存这份镜像** —— 修前这里有 `private waitFlags`，
+   * 由本方法置位而**全文件没有任何清除点**（清的是 `Engine.waitFlags`，见 `session.#serviceAnimGate`）
+   * ⇒ 一旦执行过 `0x21C`，`needsRender()` 就**永久为真**（"引擎式 present"退化成"每次迭代都 present"）。
+   * 门状态的唯一真源是 `Engine.waitFlags`；这里只标脏 + 记日志。
+   */
   setWaitFlag(mask: number): void {
-    this.waitFlags |= mask;
     this.#markDirty();
-    this.#pushLog(`setWaitFlag 0x${mask.toString(16)} (~0x${(this.waitFlags & mask).toString(16)})`);
+    this.#pushLog(`setWaitFlag 0x${mask.toString(16)}（宿主不保存镜像；门状态见 Engine.waitFlags）`);
   }
 
   /**
@@ -677,38 +691,54 @@ export class PixiBackend implements NativeBridge {
 
   // ---- 动画求值 / 渲染驱动 ---- //
 
-  /** 场景是否还有动画在跑（供 0x400 门控放行判断）。 */
-  sceneAnimationsDone(): boolean {
-    return scAnimationsDone(this.scene, this.clockMs);
+  /**
+   * 场景动画是否已跑完 —— **`0x400` 门的放行判据**（桥方法 `NativeBridge.animationsDone`；`session.#serviceAnimGate` 调）。
+   * ★传入 `nowMs` 时**用它**（并把 `clockMs` 刷新到它）——这样"门的判据"与"引擎的时钟"同源，
+   * 不会再出现"读上一帧时钟"（`tickets/T-0008` 的 G4）。
+   * ★判据范围 = `scGateAnimationsDone`（**不是** `scAnimationsPending`）：理由与实测见该函数注释。
+   * ★方法名与桥一致（`tickets/T-0013`）：帧驱动/会话只经接口调用，不再有"宿主私有名字"这一层。
+   */
+  animationsDone(nowMs?: number): boolean {
+    if (nowMs !== undefined) this.clockMs = nowMs;
+    return scGateAnimationsDone(this.scene, this.clockMs);
   }
 
-  /** 引擎式 present 条件："场景脏 || 仍有动画在播 || 命中 0x400 等待门"。 */
+  /**
+   * 引擎式 present 条件："场景脏 || 仍有动画在播"（判据在共享层 `sceneNeedsRender`，见 `tickets/T-0008`）。
+   *
+   * ★2026-09：**去掉了"命中 0x400 等待门"那一项** —— 它读的是宿主自己的 `waitFlags` 镜像（只置不清
+   * ⇒ 永久为真）。门分支下的"持续 present"由**帧驱动**负责（产品路径原本就在门分支里无条件 present）。
+   */
   needsRender(): boolean {
-    return this.sceneDirty || !this.sceneAnimationsDone() || (this.waitFlags & 0x400) !== 0;
+    return sceneNeedsRender(this.scene, this.clockMs, this.sceneDirty);
   }
 
-  /** 启动渲染：仅记录墙钟起点。present 由 renderer 循环在每批指令之后调用（不在 ticker 里并发跑）。 */
+  /** 启动渲染：仅记录墙钟起点（**不是**启动 ticker；见 `startFrameLoop` 的说明）。 */
   startFrameLoop(): void {
     if (this.frameStarted) return;
     this.frameStarted = true;
     this.wallStart = performance.now();
   }
 
-  /** 合成一帧（时钟 = 墙钟，单调推进）。 */
-  present(): void {
+  /**
+   * 合成一帧。
+   * @param nowMs 本帧时钟（引擎 `nowMs`）；给了就用它（**单一时间域**，D1），否则退回"墙钟 - 起点"
+   * @param waitFlags 仅用于诊断日志（`[present … wait=0x…]`）；传 `Engine.waitFlags`
+   */
+  present(nowMs?: number, waitFlags = 0): void {
     // 撤幕留帧：见 `#holdFrameAfterCurtainDrop`（不动舞台 ⇒ 屏上保留上一帧）
     if (this.#holdFrames > 0) {
       this.#holdFrames--;
       this.#pushLog(`[frame-hold] 跳过本次 present（剩 ${this.#holdFrames} 帧）`);
       return;
     }
-    this.clockMs = performance.now() - this.wallStart;
+    this.clockMs = nowMs ?? performance.now() - this.wallStart;
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);
     // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），
     //   所以它画在最上层（层序给一个大值）。见 `MsgCellFrame`。
     const cellSprites = this.#cellSprites();
-    this.presenter.present(this.scene, this.clockMs, this.waitFlags, [...textSprites, ...cellSprites]);
+    this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites]);
     // ★舞台已换成新纹理 ⇒ 现在才是销毁旧纹理的安全时刻（否则 ticker 会去画已销毁的纹理 →
     //   WebGL 批次损坏 → 整屏只剩背景色，且此后不再恢复；见 TextureCache.collectGarbage 的说明）
     const gc = this.textures.collectGarbage();

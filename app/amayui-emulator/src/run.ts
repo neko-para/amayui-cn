@@ -8,10 +8,11 @@ import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/sy
 import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
-import { loadScriptData, stepOnce, NotImplementedOp } from './vm/interpreter.js';
-import { ScriptReset, ExitScript } from './vm/ops.js';
+import { loadScriptData } from './vm/interpreter.js';
 import { audioBootIntents } from './vm/handlers/audio.js';
-import { OPCODE_TABLE } from './script/bin.js';
+import { OPCODE_TABLE, type BinInstruction } from './script/bin.js';
+import { runFrameLoop } from './frame/loop.js';
+import type { FrameHost } from './frame/host.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
 import { applyEmulatorOptions } from './emulatorOptions.js';
 import { describeEmulatorOptions, loadEmulatorOptions } from './emulatorOptionsFile.js';
@@ -122,6 +123,8 @@ async function main() {
   let executed = 0;
   let cfg = 0;
   let advanceWaits = 0;
+  /** 虚拟时钟（ms）：每帧末 +1000/60（B2/C1：修前只在逐字分支里前进，其余时间冻结）。 */
+  let clock = 0;
   let lastSig = '';
   const markScript = () => {
     const f = e.curScript();
@@ -132,62 +135,75 @@ async function main() {
     }
   };
   markScript();
-  while (maxSteps === 0 || executed < maxSteps) {
-    const frame = e.curScript();
-    const instr = frame.script!.instructions[frame.ip];
-    if (!instr) {
-      console.log(`  ip ${frame.ip} 越界, 停止`);
-      break;
-    }
-    // ★逐字显现：无界面时按固定步进推进（引擎每帧一步）—— 显现未完不放行等待门。
-    if (e.textRevealing) {
-      e.serviceTextReveal(e.nowMs);
-      e.nowMs += 16; // 固定步进（headless 用假时钟）
-      continue;
-    }
-    // ★`0x300` 每窗「逐行贴出」闸门（不阻塞脚本，引擎主循环每帧都跑）
-    e.serviceWinReveal(e.nowMs);
-    // ★等待推进门：CLI 无输入源 ⇒ 确定性自动放行（计数），否则剧本一旦进入"等玩家点击"就永不前进。
-    if (e.awaitingAdvance) {
-      advanceWaits++;
-      if (e.forceAdvance() !== null) markScript();
-      continue;
-    }
-    const labelName = OPCODE_TABLE.has(instr.opcode) ? OPCODE_TABLE.get(instr.opcode)!.name : `0x${instr.opcode.toString(16)}`;
-    try {
-      const trace = await stepOnce(e);
+  /**
+   * **帧驱动配置**（`tickets/T-0002` 的 G3/C1/C3/C4：本文件原来那份循环的四处漂移在这里收敛）。
+   *
+   * 修前的四处（都已在 B2 处理）：
+   *  - **C3** 逐字分支排在 `serviceWinReveal` **之前**、且两者永不同帧 ⇒ 现在用驱动的产品顺序；
+   *  - **C1** 时钟只在逐字分支里 `+= 16`（其余时间**冻结** ⇒ `sleep` 门永不满足）⇒ 现在每帧末推进；
+   *  - **C4** 没有 `serviceCharGrid` / `advActive` 分支 ⇒ 现在按产品打开（`advFrame: true` + 两个服务）；
+   *  - **G3** 没有 `0x400`/`SLEEP` 门 ⇒ 现在吃驱动统一后的门。
+   *
+   * ★`gates.anim` 仍传 `'clear'`：本 CLI 的宿主是 `StubNative`（**没有场景模型**），
+   * `host.animationsDone` 无从计算 ⇒ 传 `'wait'` 会永远等不到放行。这是**宿主能力缺口**
+   * （登记在 `tickets/T-0013`：能力面要入桥，驱动才能统一询问"这个宿主能不能报动画跑完"）。
+   */
+  const host: FrameHost = { now: () => clock };
+  /** 打印用：`stepOnce` 之后帧/ip 可能已变，所以在 step **之前**抓住当前指令。 */
+  let lastInstr: BinInstruction | undefined;
+  const result = await runFrameLoop(e, host, {
+    gates: { anim: 'clear', sleep: 'wait', advance: 'force' },
+    services: { winReveal: true, charGrid: true },
+    advFrame: true,
+    maxStepsPerFrame: 20000,
+    onStepStart: (_frame, instr) => {
+      lastInstr = instr;
+    },
+    onStep: (trace) => {
       executed++;
       if (trace.handlerKind === 'engine-internal' || trace.handlerKind === 'native' || trace.handlerKind === 'user-stub') {
         cfg++;
-        continue; // 引擎内部/子系统/用户登记的桩：跳过，不逐条打印（cfg 计数）
+        return; // 引擎内部/子系统/用户登记的桩：跳过，不逐条打印（cfg 计数）
       }
       if (trace.opcode === 0x3) {
         // call-script：打印目标（加载新脚本后当前帧已是新脚本）
         markScript();
         const sc2 = e.curScript().script;
         console.log(`  call-script -> ${sc2 ? e.curScript().name : '?'} (loaded ${sc2 ? sc2.instructions.length : 0} instr)`);
-        continue;
+        return;
       }
+      const instr = lastInstr;
+      const labelName =
+        instr && OPCODE_TABLE.has(instr.opcode) ? OPCODE_TABLE.get(instr.opcode)!.name : `0x${trace.opcode.toString(16)}`;
       console.log(
-        `  #${String(executed).padStart(5)} ip=${String(trace.ip).padStart(4)} op 0x${instr.opcode.toString(16).padStart(3, '0')} ${labelName} [${instr.args.map((a) => a.type === 2 ? `"${a.str}"` : `0x${a.raw.toString(16)}`).join(' ')}]`,
+        `  #${String(executed).padStart(5)} ip=${String(trace.ip).padStart(4)} op 0x${trace.opcode.toString(16).padStart(3, '0')} ${labelName}` +
+          ` [${(instr?.args ?? []).map((a) => (a.type === 2 ? `"${a.str}"` : `0x${a.raw.toString(16)}`)).join(' ')}]`,
       );
-    } catch (err) {
-      if (err instanceof ScriptReset) {
-        console.log('\n[reset] exit-script(0x9) 全量清栈/重置（回到干净根态）');
-        break;
+    },
+    onGate: (branch) => {
+      if (branch === 'advance') {
+        advanceWaits++;
+        if (e.forceAdvance() !== null) markScript();
       }
-      if (err instanceof ExitScript) {
-        console.log('\n[abort] abort(0x1)/程序退出');
-        break;
-      }
-      if (err instanceof NotImplementedOp) {
-        console.error(`\n[stop] ${err.message}`);
-        break;
-      }
+    },
+    onUnknown: (err) => {
+      console.error(`\n[stop] ${err.message}`);
+      return 'stop';
+    },
+    onError: (err) => {
       console.error(`\n[stop] ${(err as Error).message}`);
-      break;
-    }
-  }
+      return 'stop';
+    },
+    until: () => maxSteps !== 0 && executed >= maxSteps,
+    // ★`STEPS=n` 必须**逐条**生效：只在帧开头判 `until` 时，一帧能派发 20000 条 ⇒ `STEPS=300` 会跑成 20000 条
+    stopAfterStep: () => maxSteps !== 0 && executed >= maxSteps,
+    onFrameEnd: () => {
+      clock += 1000 / 60;
+    },
+  });
+  if (result.stopReason === 'script-end') console.log(`  ip ${e.curScript().ip} 越界, 停止`);
+  else if (result.stopReason === 'reset') console.log('\n[reset] exit-script(0x9) 全量清栈/重置（回到干净根态）');
+  else if (result.stopReason === 'exit') console.log('\n[abort] abort(0x1)/程序退出');
 
   console.log(`\n[done] 共执行 ${executed} 条指令（其中引擎内部/子系统 ${cfg} 条已插桩跳过；等待推进门自动放行 ${advanceWaits} 次）。cur=${e.cur} caller=${e.curScript().caller}`);
   await src.dispose?.();

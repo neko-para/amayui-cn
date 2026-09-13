@@ -13,7 +13,9 @@
  */
 import {
   scAdvance,
-  scAnimationsDone,
+  scGateAnimationsDone,
+  scAnimationsPending,
+  sceneNeedsRender,
   scClearDrawContainer,
   scConfigureDrawItem,
   scGetDrawItemPos,
@@ -60,6 +62,7 @@ import {
   type SceneState,
 } from './sceneModel.js';
 import type { DrawItemConfig, DrawStringStyle, MeshCreateSpec, NativeBridge } from '../vm/native.js';
+import { AudioEngine, type AudioHost, type AudioIntent } from '../audio/audioEngine.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
 
@@ -71,6 +74,16 @@ export interface HeadlessOptions {
    * 因为"恒返回 0×0"是 headless 的已知局限，不能让它静默变成"脚本收到的尺寸就是 0"。
    */
   imageSize?: (imgid: number) => { w: number; h: number } | null;
+  /**
+   * **音频宿主**（可选；`tickets/T-0006`/`T-0003`）。给了 ⇒ 本宿主实现 `audio`，里面跑**真 `AudioEngine`**
+   * ⇒ 帧驱动每帧的 `tick` 会真的推进"SE 延迟到期 / 语音排队与占线 / ADV 寄存冲刷 / BGM 淡变"。
+   * 不给 ⇒ **不实现** `audio`（与修前一致：闸门 A 把音频意图记成"意图被丢弃"）——
+   * 这个默认值同时保住了 G2：`report.ts` 的输出必须逐字节不变。
+   * 现成实现：`src/audio/nodeAudioHost.ts`（真字节 + 容器头推时长，不出声）。
+   */
+  audioHost?: AudioHost;
+  /** 音频引擎的额外选项（缓存上限等）。仅在给了 `audioHost` 时有意义。 */
+  audioOptions?: { cacheBytes?: number };
 }
 
 /** headless 特有的"能力缺口"事件（宿主已实现但语义不完整时使用）。 */
@@ -99,8 +112,7 @@ export class HeadlessScene implements NativeBridge {
   /** 程序化槽的**表面尺寸**（`0x1F8` 的 op2/op3）—— 引擎 `CTexture+1040/+1044`。 */
   readonly slotSize = new Map<number, { w: number; h: number }>();
 
-  /** 舞台/待定标志（供 0x400 卫门与报告观察）。 */
-  waitFlags = 0;
+  /** 渲染/模型时钟（ms）。★由 `advanceModel(nowMs)`/`advance(clock)` 推入；门判据用同一份（`tickets/T-0008`）。 */
   clockMs = 0;
   frameTicks = 0;
   /** 被丢弃的副作用（本类不建模的那些）—— 由调用方通过 DropRecorder 读；这里只留最直观的计数。 */
@@ -109,7 +121,28 @@ export class HeadlessScene implements NativeBridge {
   readonly ensure: EnsureStats = { createdApplied: 0, createdGated: 0 };
   readonly logs: string[] = [];
 
-  constructor(private readonly opt: HeadlessOptions = {}) {}
+  /**
+   * **音频意图**（`NativeBridge.audio`）：与 Electron 侧同一个 `AudioEngine.handle`。
+   *
+   * ★**条件能力**：只有构造时给了 `audioHost` 才**存在**（本方法在构造器里按需赋值，原型上没有它）。
+   * 这样"没给宿主"与"宿主没实现"在闸门 A 眼里是同一件事 —— 音频意图会被记成「意图被丢弃」，
+   * 而不是变成一个**静默的空实现**（后者会让缺口彻底不可见，正是 `tickets/T-0013` 要防的事）。
+   */
+  audio?: (intent: AudioIntent) => void;
+
+  readonly audioEngine: AudioEngine | null;
+
+  constructor(private readonly opt: HeadlessOptions = {}) {
+    if (opt.audioHost) {
+      // ★帧泵由**驱动**每帧调（`tickets/T-0003` 的 D5）：`runFrameLoop` → `host.audio({kind:'tick',…})`
+      //   → `HeadlessScene.audio` → `AudioEngine.handle`，与 Electron 的 `session.#present()` 同一条链。
+      const eng = new AudioEngine(opt.audioHost, { ...(opt.audioOptions ?? {}), log: (m) => this.log(m) });
+      this.audioEngine = eng;
+      this.audio = (intent) => eng.handle(intent);
+    } else {
+      this.audioEngine = null;
+    }
+  }
 
   private note(what: string, sample: string): void {
     const g = this.unmodeled.find((x) => x.what === what);
@@ -365,8 +398,12 @@ export class HeadlessScene implements NativeBridge {
     scDrawCgNumber(this.scene, id, rec, value, x, y, digits, flags);
   }
 
-  setWaitFlag(mask: number): void {
-    this.waitFlags |= mask;
+  /**
+   * `0x21C set-wait-flag`：headless **不保存这份镜像**（`tickets/T-0008`）。
+   * 修前这里写 `this.waitFlags`，而全文件**没有任何读者**（死状态）；门状态的唯一真源是 `Engine.waitFlags`。
+   */
+  setWaitFlag(_mask: number): void {
+    /* 无副作用：门状态由 Engine.waitFlags 管，宿主不需要镜像 */
   }
 
   // ---- 消息窗文本（引擎「每窗一张离屏表面」的等价物）----
@@ -395,11 +432,49 @@ export class HeadlessScene implements NativeBridge {
   advance(clock: number): boolean {
     this.clockMs = clock;
     scAdvance(this.scene, clock);
-    return !scAnimationsDone(this.scene, clock);
+    return scAnimationsPending(this.scene, clock);
   }
 
+  // ---- 帧宿主能力（`FrameHost`；见 src/frame/host.ts）----
+  //   headless 没有渲染，所以"合成一帧"在这里就是"推进模型"；两个方法都必须存在，
+  //   否则共享帧驱动（src/frame/loop.ts）里 `0x400` 门永远等不到放行、模型永远不前进。
+
+  /** `FrameHost.advanceModel`：把模型推进到本帧时钟（headless 没有渲染，这就是"合成"的全部内容）。 */
+  advanceModel(nowMs: number): void {
+    this.advance(nowMs);
+  }
+
+  /**
+   * `FrameHost.animationsDone`：用**本帧**时钟判"场景动画是否跑完"（`0x400` 门的放行判据）。
+   * ★用 `scGateAnimationsDone`（门口径），**不是** `scAnimationsPending`（合成口径）——两者范围不同，
+   * 理由见 `scGateAnimationsDone` 的注释（`tickets/T-0024`：长时平移窗不得把门钉住）。
+   */
+  animationsDone(nowMs: number): boolean {
+    return scGateAnimationsDone(this.scene, nowMs);
+  }
+
+  /**
+   * `NativeBridge.needsRender`：**这一帧该不该"合成"**。
+   *
+   * headless 没有像素，它的"合成"= 出快照/被观察 ⇒ 判据与 pixi **同一个函数**（`sceneNeedsRender`），
+   * 差别只在"脏"的来源：pixi 用宿主自己的 `sceneDirty`（+每次 present 清），headless 用**共享模型**的
+   * `scene.dirty`（每个变更型 `sc*` 置位），并在 `snapshot()` 时清零 —— "取快照 = 消费当前状态"。
+   *
+   * ★它**不**参与"要不要推进模型"的决定：`advanceModel` 是模型推进（窗末收尾也发生在那里），
+   * 跳过它会让动画永远收不了尾。驱动里 `advanceModel` 与 `present` 是两件事（`T-0003` 的 D5）。
+   */
+  needsRender(): boolean {
+    return sceneNeedsRender(this.scene, this.clockMs, this.scene.dirty);
+  }
+
+  /**
+   * 导出确定性快照。**同时清脏位**：快照就是 headless 的"合成一帧"，
+   * 之后若模型没再变、也没有窗在跑，`needsRender()` 就应当回到 false。
+   */
   snapshot(): SceneSnapshot {
-    return scSnapshot(this.scene, this.clockMs);
+    const s = scSnapshot(this.scene, this.clockMs);
+    this.scene.dirty = false;
+    return s;
   }
 
   snapshotText(): string {

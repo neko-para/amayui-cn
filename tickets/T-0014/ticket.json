@@ -13,24 +13,40 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/vm/interpreter.ts",
-      "anchor": "export async function run",
-      "note": "第 6 份循环（无导入者）"
+      "anchor": "loadScriptData",
+      "note": "本文件现在只剩 stepOnce / loadScriptData / formatOperands —— `interpreter.run()`（第 6 份帧循环）已在 B1 删除"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "唯一一份",
+      "note": "唯一的帧循环现在在这里（`runFrameLoop`）"
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "pickHoverLabel",
-      "note": "零调用者（只有测试）"
+      "note": "引擎上的悬停包装：**只有测试**在调它（src/ 零调用者）；它只是 `hoverDispatchAllowed()` + `routes.nextHoverLabel()`"
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "waitFlags",
-      "note": "写后无读者的死状态"
+      "note": "headless 宿主的 waitFlags 是死状态（写后无读者）；pixi 那份镜像见 T-0008"
     }
   ],
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B1 删掉 interpreter.run()/RunResult（本票第 1 项完成）；第 2/3 项按 notes 里的实测情况改归：pickHoverLabel 是测试门面（单独改），waitFlags 归 T-0008"
     }
-  ]
+  ],
+  "notes": "（2026-09-14 B1）三项的准确情况，别照原描述盲删：\n1. `interpreter.run()` / `RunResult` **已删**（全仓无导入者，且没有任何每帧服务）——这是 B1 的一部分。\n2. `Engine.pickHoverLabel()` **只被测试调用**（`adv-msgwin.test.ts` 5 处 + `route-dispatch.test.ts` 5 处）。它不是纯死代码，而是\"产品路径已改走 `serviceAdvanceWait` 内部\"之后留下的**测试门面**；删它要同步改写那 10 条断言（并会丢掉这 10 条里对 `hoverDispatchAllowed()` 门控的覆盖）⇒ 单独一次小改动做，别混在 B1 里。\n3. `PixiBackend.waitFlags` 的粘滞是**缺陷**不是死代码 ⇒ 归 T-0008（needsRender 判据），删字段要跟它一起做。",
+  "links": {
+    "tickets": [
+      "T-0008",
+      "T-0001"
+    ]
+  }
 }

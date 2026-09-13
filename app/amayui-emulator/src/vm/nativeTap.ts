@@ -61,6 +61,8 @@ const WHY: Record<string, string> = {
   getInputType: '输入类型查询：不实现 ⇒ 恒 0（可能走错输入分支）',
   unhandled: '未处理上报：不实现 ⇒ 未知指令不再进控制窗',
   present: '帧合成：不实现 ⇒ 画面永不刷新',
+  needsRender: '该不该合成：不实现 ⇒ 帧驱动只能每帧无脑合成（浪费）或从不合成（画面卡住）；两者的判据见共享层 sceneNeedsRender',
+  animationsDone: '0x400 等待门的放行判据：不实现 ⇒ 门的 `wait` 档永远等不到放行（脚本卡在等待门）',
   frameTick: '帧刷新泵：不实现 ⇒ 动画/转场不推进',
   startFrameLoop: '帧循环启动：不实现 ⇒ 无每帧驱动',
 };
@@ -143,8 +145,11 @@ export class DropRecorder {
  *
  * 下面的 `_exhaustive` 是**编译期穷尽性检查**：`NativeBridge` 一旦新增方法而没加进本列表，
  * `Missing` 就非 `never`，赋值会立刻报类型错误。
+ *
+ * ★本清单**导出**给守卫用（`test/native-tap.test.ts` 的"宿主能力面差异必须在声明内"一条）：
+ * 有了它才能把"宿主的桥方法集合"与"桥的声明面"逐名对照。
  */
-const BRIDGE_METHODS = [
+export const BRIDGE_METHODS = [
   'audio',
   'bindTexture',
   'clearDrawContainer',
@@ -170,6 +175,9 @@ const BRIDGE_METHODS = [
   'msgWinClear',
   'msgWinClearAll',
   'msgWinSync',
+  'needsRender',
+  'animationsDone',
+  'preloadImage',
   'playBgm',
   'playMovie',
   'playSound',

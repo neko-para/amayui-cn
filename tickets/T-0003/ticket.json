@@ -2,7 +2,7 @@
   "id": "T-0003",
   "type": "req",
   "status": "open",
-  "priority": "P1",
+  "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B3 headless 补齐能力面：audio 帧泵 / needsRender 语义 / 输入源（⇒ 悬停真的跑）/ digest",
   "why": "headless 目前拿不到\"全部对外表现\"：音频 tick 只在 Electron（session.ts:272）；needsRender/animationsDone 只有 pixi 有；没有输入源 ⇒ 悬停整条通路从不执行（routes.cursor 恒 −1）。这三样补齐后，headless 才能提取与 Electron 一致的对外表现。",
@@ -35,12 +35,26 @@
   "links": {
     "docs": [
       "docs-new/04-app/emulator-frame-loop-design.md"
+    ],
+    "tickets": [
+      "T-0006",
+      "T-0007",
+      "T-0013",
+      "T-0024"
     ]
   },
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：links"
     }
   ]
 }

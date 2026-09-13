@@ -13,16 +13,18 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
+import { NodeAudioHost } from '../audio/nodeAudioHost.js';
 import { resolveResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
 import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
-import { Engine, SLEEP_GATE } from '../vm/engine.js';
+import { Engine } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
-import { ExitScript, ScriptReset } from '../vm/ops.js';
 import { readIntOperand, refFromOperand } from '../vm/operand.js';
 import { readRef, refAt } from '../vm/ref.js';
 import type { BinInstruction } from '../script/bin.js';
+import { runFrameLoop, type FrameLoopOptions } from '../frame/loop.js';
+import type { FrameHost } from '../frame/host.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
 import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
@@ -194,6 +196,8 @@ export interface ChainResult {
   fontPicker?: FontPickerProbe;
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
   drops?: DroppedIntent[];
+  /** **音频事件序列**（`tickets/T-0006`；`[audio] …` 行）—— headless 与 Electron 音频表现的可比对象。 */
+  audioEvents: string[];
   /** 每帧的文本窗诊断行（`diag:text` 用）。 */
   trace: string[];
 }
@@ -229,6 +233,11 @@ export interface ChainOptions {
   onStep?: (t: StepTrace) => void;
   /** 用 `withNativeTap` 记录"脚本想调、宿主没实现"的方法（默认关；开了才付 Proxy 的代价）。 */
   recordDrops?: boolean;
+  /**
+   * 给 headless 宿主接**音频引擎**（默认 `true` = 真游戏行为）。
+   * 置 `false` = 回到"宿主没有 `audio`"的状态（音频意图进 `drops`），**只为 before/after 对照**（`T-0006`）。
+   */
+  audio?: boolean;
   /**
    * 跑完 CONFIG1 后额外做一遍**滚动/切分类**探针（默认关）：
    * 记录初始态 → 滚轮滚到底 → 点左侧第 2 个分类 → 各记录一次滚动条状态。
@@ -275,7 +284,15 @@ export interface ChainOptions {
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
   const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
   const input = new InputManager();
-  const scene = new HeadlessScene({});
+  // ★音频（`tickets/T-0006`）：真 `AudioEngine` + headless 宿主（真字节 + 容器头推时长，不出声）。
+  //   不给宿主时所有音频意图都会进闸门 A 的「意图被丢弃」清单（修前就是这样 ⇒ 链路上看不到发声时机）。
+  const audioEvents: string[] = [];
+  const collectAudio = (m: string): void => {
+    if (m.startsWith('[audio]')) audioEvents.push(m);
+  };
+  const scene = new HeadlessScene(
+    opt.audio === false ? {} : { audioHost: new NodeAudioHost({ source: src, log: collectAudio }), onLog: collectAudio },
+  );
   // 归因用：DropRecorder 需要"当前 opcode"，而 Engine 在 native 之后才建 ⇒ 用可变持有者打破循环。
   let engineRef: Engine | null = null;
   const drops = new DropRecorder(() => engineRef?.currentOpcode ?? 0);
@@ -302,14 +319,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   const maxFrames = opt.maxFrames ?? Number.POSITIVE_INFINITY;
   /** 最近一次 `0x12F` 的输入/输出（CONFIG1 的列表顺序由它决定）。 */
   let sort12f: Sort12fDump | null = null;
-  /** 单步 + 可选的盘点回调（`onStep` 关闭时与直接 `stepOnce` 等价）。 */
-  const stepAll = async (): Promise<void> => {
-    const f = e.curScript();
-    const instr = f.script?.instructions[f.ip];
-    const t = await stepOnce(e);
-    opt.onStep?.(t);
-    if (instr && t.opcode === 0x12f) sort12f = captureSort12f(e, instr);
-  };
+  /** 单步 + 可选的盘点回调（`onStep` 关闭时与直接 `stepOnce` 等价）；`0x12F` 的输入/输出另存。 */
   const sampleNow = (): void => {
     const f = native.scene.msgWins.get(9);
     // ★`0x300` 闸门会让样例"贴出 → 停留 op3 ms → 消失 → 再来一遍"**循环**：
@@ -345,51 +355,65 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     }
   };
   /**
+   * **帧宿主 + 驱动配置** —— B1：逐项照抄本文件原来的帧循环（`tickets/T-0001`，不许"顺手统一"）。
+   *  - `gates.anim: 'wait'`（B2 起）= 与产品同源：等 `animationsDone()`，不再无条件清 `0x400`
+   *  - `gates.sleep: 'wait'`   = `else if (waitFlags & SLEEP_GATE) { if (clock >= sleepUntil) clear }`
+   *  - `gates.advance: 'force'`= `else if (e.awaitingAdvance) e.forceAdvance();`（无输入源；B3 解决）
+   *  - `host.present/animationsDone` = headless 的合成（推进模型）与门判据（B2 起每帧推进一次）
+   *  - `advErrors: 'swallow'`  = ADV 分支外层的 `catch {}`
+   *  - `maxStepsPerFrame: 5000`= 内批的 `k < 5000`
+   *  - `onUnknown → 'stop'`    = 记录 `unimplemented` 后 `return i`（**不登记用户桩**：未实现 opcode 必须让测试失败）
+   *  - `onFrameEnd`            = `sampleNow(); clock += 1000 / 60;`
+   */
+  const host: FrameHost = {
+    now: () => clock,
+    advanceModel: (t) => { native.advance(t); },
+    animationsDone: (t) => native.animationsDone(t),
+  };
+  let lastInstr: BinInstruction | undefined;
+  const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
+    gates: { anim: 'wait', sleep: 'wait', advance: 'force' },
+    advFrame: true,
+    advErrors: 'swallow',
+    maxStepsPerFrame: 5000,
+    onStepStart: (_f, instr) => {
+      lastInstr = instr;
+    },
+    onStep: (t) => {
+      opt.onStep?.(t);
+      if (lastInstr && t.opcode === 0x12f) sort12f = captureSort12f(e, lastInstr);
+    },
+    onUnknown: (err) => {
+      uninplementedPush(unimplemented, err);
+      return 'stop';
+    },
+    onFrameEnd: () => {
+      sampleNow();
+      clock += 1000 / 60;
+    },
+  };
+  /**
    * 跑到 `until()` 为真或达到帧上限。
    * ★不要用「固定跑 N 帧」——那会在已经到达目标后继续空转，把测试拖到几十秒。
    */
-  const run = async (frames: number, until?: () => boolean): Promise<number> => {
-    const cap = Math.min(frames, maxFrames);
-    for (let i = 0; i < cap; i++) {
-      if (until?.()) return i;
-      e.nowMs = clock;
-      // ★`0x300` 每窗「逐行贴出」闸门（CONFIG 消息预览的循环演示）——引擎主循环每帧都跑
-      e.serviceWinReveal(e.nowMs);
-      e.serviceCharGrid(e.nowMs); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
-      if (e.waitFlags & 0x400) e.waitFlags &= ~0x400;
-      else if (e.waitFlags & SLEEP_GATE) {
-        if (clock >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
-      } else if (e.textRevealing) e.serviceTextReveal(e.nowMs);
-      else if (e.awaitingAdvance) e.forceAdvance();
-      else if (e.advActive) {
-        e.serviceAdv();
-        try {
-          await stepAll();
-        } catch {
-          /* ADV 分支的异常按"本帧无进展"处理 */
-        }
-      } else {
-        for (let k = 0; k < 5000; k++) {
-          const f = e.curScript();
-          if (!f.script || f.ip >= f.script.instructions.length) return i;
-          try {
-            await stepAll();
-          } catch (err) {
-            if (err instanceof ExitScript || err instanceof ScriptReset) return i;
-            if (err instanceof NotImplementedOp) {
-              // ★不登记用户桩：未实现 opcode 必须让测试失败，而不是被静默放行
-              uninplementedPush(unimplemented, err);
-              return i;
-            }
-            throw err;
-          }
-          if (e.waitFlags & (0x400 | SLEEP_GATE) || e.awaitingAdvance) break;
-        }
-      }
-      sampleNow();
-      clock += 1000 / 60;
-    }
-    return maxFrames;
+  /**
+   * 跑帧。
+   * @param until 帧开头的提前结束条件（**引擎状态可能在帧内后段才定型**，如悬停下标 `3f7` 是命中测试之后才写
+   *              ⇒ 这类条件只能在帧边界判；逐条判会读到"半成品"状态）
+   * @param stopStep 可选的**逐条**结束条件 —— 只对"一旦为真就永久为真"的条件用（B2 加的；
+   *                 逐条判才能恰好停在目标，否则会越过目标最多一整批）
+   */
+  const run = async (frames: number, until?: () => boolean, stopStep?: () => boolean): Promise<number> => {
+    const r = await runFrameLoop(e, host, {
+      ...base,
+      ...(until ? { until } : {}),
+      ...(stopStep ? { stopAfterStep: () => stopStep() } : {}),
+      maxFrames: Math.min(frames, maxFrames),
+    });
+    // ★B2 起与 `gameStartChain` **统一**（C5：同一语义两处写法不同）：跑满上限 ⇒ 返回调用方给的 `frames`；
+    //   提前结束（until/脚本尾/异常）⇒ 返回**已跑完的帧数**。调用方判据一律 `(await run(N, f)) < N`。
+    //   （修前这里返回 `maxFrames`（默认 `+∞`），靠"`Infinity < N` 为假"侥幸与判据相容。）
+    return r.stopReason === 'cap' ? frames : r.frames;
   };
 
   const onTitle = () => e.curScript().name.startsWith('TITLE');
@@ -606,6 +630,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     ...(fontPicker ? { fontPicker } : {}),
     ...(opt.previewProbe && previewStyle ? { previewStyle } : {}),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
+    audioEvents,
     trace,
   };
   await src.dispose?.();

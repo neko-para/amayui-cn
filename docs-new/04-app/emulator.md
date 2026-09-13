@@ -155,7 +155,7 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 415 测试 + 死写棘轮
+npm run verify         # ★提交前必跑：3×tsc + 464 测试 + 死写棘轮
 npm test               # node:test
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）

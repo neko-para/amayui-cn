@@ -277,7 +277,11 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
   assert.equal(r.firstTextIp, 901, 'SN0000 第一条 show-text 的指令下标（与 SN0000.txt:1225 对应）');
   assert.ok(r.firstText.length > 0);
   assert.ok(r.pageText.includes(r.firstText), `整页文本应包含首句；实际 ${JSON.stringify(r.pageText)}`);
-  assert.ok(r.pageText.split('\n').length >= 3, '首个文案是三行一页（show-text ×3 + end-text-line）');
+  // ★B2（`tickets/T-0002`）：这条链路的目标是"**第一条** show-text"，而 run 现在会**恰好停在它那一刻**
+  //   （`stopAfterStep` 逐条判；修前只在帧边界判 ⇒ 会越过目标最多一整批，于是顺手执行完了一整页）。
+  //   所以这里不再断言"整页 3 行"——那其实是**停止点伪影**，不是目标判据；"首个文案是三行一页"
+  //   是**脚本结构**的事实，登记在脚本台账 `docs-new/05-scripts/SN0000.md`（`i304/i305` 文本块 + 3×show-text）。
+  assert.ok(r.pageText.split('\n').length >= 1, `首句那一刻至少有 1 行文本；实际 ${JSON.stringify(r.pageText)}`);
   assert.ok(r.scene.drawable > 0, `场景应有可绘制项，实际 ${r.scene.drawable}/${r.scene.drawItems}`);
   // ④ 路径上**零**未实现 opcode（throw 策略 ⇒ 有缺口会直接抛）
   assert.deepEqual(r.unknown, [], '这条路径上不应有未实现 opcode');
@@ -289,6 +293,47 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
     true,
     `默认应播 LOGO（版权页），实际轨迹 ${r.scriptTrail.slice(0, 8).join(',')}`,
   );
+  // ⑥ ★B3（`tickets/T-0003` 验收 3 / `T-0007`）：headless 的等待门走**真泵** ⇒ 悬停真的会跑。
+  //   修前 headless 走 `forceAdvance` 旁路（不做命中测试、不看 `routes.shown`）⇒ 游标恒 −1、悬停从不发生。
+  assert.equal(r.advancePolicy, 'pump', '默认（真游戏行为）应走真泵');
+  assert.ok(
+    r.dispatches.some((d) => d.kind === 'hover-enter'),
+    `SN0000 右侧面板的悬停进入应被派发；实际派发序列 ${JSON.stringify(r.dispatches.slice(0, 6))}`,
+  );
+  assert.ok(
+    r.dispatches.every((d) => d.kind !== 'headless'),
+    '真泵模式下不应出现 `headless`（`forceAdvance` 旁路）的派发记录',
+  );
+  assert.ok(
+    r.cursorTrail.some((c) => c.cursor >= 0),
+    `routes.cursor 应真的被命中过（修前恒 −1）；实际轨迹 ${JSON.stringify(r.cursorTrail.slice(0, 8))}`,
+  );
+  assert.ok(
+    r.cursorTrail.some((c) => c.shown !== 0),
+    'routes.shown 应出现过"面板已显示"（悬停才有对象可命中）',
+  );
+  // 悬停的**两段式**（进入 labelA / 离开 labelB、一帧只给一个）由 `test/route-dispatch.test.ts` 判据①③
+  // 用合成表钉死；这里只证明"headless 真的走到了那条代码路径"（上面四条）。
+});
+
+/**
+ * **判据⑦（`tickets/T-0003` 验收 3 的 before/after）**：同一链路把等待门换回修前的 `'force'` 旁路 ⇒
+ * 悬停整条通路消失（游标恒 −1、零 `hover-enter`）。这就是"headless 与 Electron 表现分叉"的实证。
+ */
+test('E3 判据⑦：`advance: "force"`（修前旁路）⇒ 悬停不发生（对照 pump）', async () => {
+  const r = await runGameStartChain({ unknownPolicy: 'stub', advance: 'force' });
+  assert.equal(r.advancePolicy, 'force');
+  assert.equal(
+    r.dispatches.some((d) => d.kind === 'hover-enter' || d.kind === 'hover-leave'),
+    false,
+    '旁路不做命中测试 ⇒ 不应有悬停派发',
+  );
+  assert.deepEqual(
+    r.cursorTrail.map((c) => c.cursor),
+    [-1],
+    '`routes.cursor` 恒 −1（修前的 headless 就是这个状态）',
+  );
+  assert.equal(r.firstTextReached, true, '旁路仍能推进脚本（这正是它当年被引入的原因）');
 });
 
 /**

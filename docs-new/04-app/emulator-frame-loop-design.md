@@ -32,10 +32,13 @@
 
 - `HeadlessScene`（415 行）：`NativeBridge` 子集 + `advance/snapshot/snapshotText/slotTable`。
   **桥方法集合是 pixi 的真子集**（没有一个 headless 独有的桥方法）。
-- `PixiBackend`（837 行）：`NativeBridge` 超集 + `present(:698) needsRender(:686) sceneAnimationsDone(:681)
+- `PixiBackend`（837 行）：`NativeBridge` 超集 + `present(:698) needsRender(:686) animationsDone(:681)
   startFrameLoop(:691) preloadImage(:179) texturesIdle(:263) audio(:194) playMovie(:632) debugAudio(:199)`。
-  ★其中 **`needsRender`/`sceneAnimationsDone`/`preloadImage` 既不在 `NativeBridge`(`native.ts:94-311`)
-  也不在 `withNativeTap` 白名单(`nativeTap.ts:147-218`)** ⇒ 缺口连闸门 A 都不记。
+  ★2026-09（`tickets/T-0013`）**已修**：`needsRender`/`animationsDone`（原名 `sceneAnimationsDone`）/
+  `preloadImage` 三者已进入 `NativeBridge`(`native.ts`) 与 `withNativeTap` 白名单(`nativeTap.ts` 的 `BRIDGE_METHODS`)；
+  宿主能力差异由守卫 `test/native-tap.test.ts` 的两条钉住（桥方法差异必须等于 `DECLARED_HOST_DIVERGENCE`、
+  非桥方法必须登记在 `NON_BRIDGE`），`RendererSession.#native` 也已改成 `NativeBridge` 类型
+  ⇒ "会话偷偷用宿主私有方法"现在会**编译期**报错。
 - **模型已共享**：两侧 import 同一批 `scene/ops.ts` 的 `sc*`（`headlessScene.ts:14-61` vs
   `pixiBackend.ts:32-74`，同一函数名清单）；排版唯一实现 `scene/ops.ts:432-441`；动画窗唯一实现
   `drawitem/animWindow.ts:60-72`；消息窗载荷同源 `handlers/msgwin.ts:195-206`；`assertFlags` **已下沉**
@@ -54,31 +57,35 @@
 pixi 的留帧策略（`pixiBackend.ts:84-89,660-671`）；`0x6E` 后的 `SLEEP_GATE` 节流（`handlers/msgwin.ts:370-376`）。
 
 ### 1.2 漂移 / 缺陷（无理由说明，或说明与实际不符）← **B2 的工单**
-1. `report.ts` **完全没有** `0x400`/`SLEEP` 分支 ⇒ 置上后**永不清**、`sleep` 永不满足（`:158-239`）。
+
+> 状态列（2026-09，B2 进行中）：✅ = 已修 + 有守卫/实测；⏸ = 决策为刻意保留（登记）；⬜ = 未做（属 B3/B4）。
+> 每条后面的 `T-00xx` 是票据号，`changes.md` 里有 before/after。
+
+1. `report.ts` **完全没有** `0x400`/`SLEEP` 分支 ⇒ 置上后**永不清**、`sleep` 永不满足（`:158-239`）。⏸ **C2 决策**：report 是**指令驱动**的 tracer（帧边界由 `FRAME_OPS` 定），不假装是"产品的帧"；等价性由 B5 的 replay runner 证（`T-0010` 记录该决策）。
 2. `run.ts` 没有 `serviceCharGrid`/`serviceAdv`/`advActive` 分支；逐字分支排在 `serviceWinReveal`
-   **之前**、且两者永不同帧（`:143-149`）。
-3. 两份 chain **无条件清 `0x400`** ⇒ 等价于"动画瞬间完成"（`config1Chain.ts:359`、`gameStartChain.ts:426`）。
+   **之前**、且两者永不同帧（`:143-149`）。✅ 已接共享驱动（`T-0012`，逐条停 + 每帧时钟前进）。
+3. 两份 chain **无条件清 `0x400`** ⇒ 等价于"动画瞬间完成"（`config1Chain.ts:359`、`gameStartChain.ts:426`）。✅ 改为 `gates.anim:'wait'`（等 `animationsDone()`），并每帧推进模型（`T-0011`）。
 4. 两份 chain 与 `run.ts` **从不推进场景动画窗** ⇒ 与 `report.ts`（唯一推进者）相反；依赖"窗末 work←target"
-   的取值与 Electron 不同。
+   的取值与 Electron 不同。✅ `FrameHost.advanceModel` 契约（`T-0002` 第 1 批；`mesh-vertex-quad` 的端点色顺序依赖因此显形并修掉）。
 5. ★`PixiBackend.waitFlags` **只置不清**（`:122,606,687`，全文件无清除点；被清的是 **Engine** 那份
    `session.ts:280`）⇒ `needsRender()` 一旦为真就**永久为真** ⇒ Electron 之后**每帧 present**（并连带每帧
-   `audio tick`）。这是"两边表现不同"的一条**独立成因**。
+   `audio tick`）。这是"两边表现不同"的一条**独立成因**。✅ 镜像已删、判据下沉（`T-0008` 的 D1；E4 A/B：presents 66→68、日志 2395→2384 行）。
 6. 同时 `HeadlessScene.waitFlags` 是**死状态**（写后无读者：`:103,368-370`）⇒ 同一个 `setWaitFlag`
-   在一侧是死状态、另一侧是永久粘滞的开关。
+   在一侧是死状态、另一侧是永久粘滞的开关。✅ 死字段已删（`T-0008`）。
 7. `session` 的 `0x400` 判据读的是**上一帧时钟**：`pixiBackend.clockMs` 只在 `present()` 内刷新(`:705`)，
-   而 `#serviceAnimGate` 在 present **之前**读 `sceneAnimationsDone()`(`session.ts:279`)。
+   而 `#serviceAnimGate` 在 present **之前**读 `sceneAnimationsDone()`(`session.ts:279`)。✅ 单一时间域：判据带本帧 `nowMs`（`T-0008`/`T-0009`）。
 8. `scAnimationsDone` 只看**颜色窗（窗 0）**（`scene/ops.ts:414-418`），而 `advanceWindows` 判 **5 个窗**
-   （`animWindow.ts:60-72`）⇒ "已完成"与"窗真的走完"**不自洽**（共享层内部）。
+   （`animWindow.ts:60-72`）⇒ "已完成"与"窗真的走完"**不自洽**（共享层内部）。✅ **拆成两条判据**（`T-0009`/`T-0024`）：合成 = `scAnimationsPending`（5 窗）；门 = `scGateAnimationsDone`（颜色窗，等 `0x238` 计时器落地后再收口）。★5 窗直接喂门会让序章 `SN0000.txt:1043` 的 80 000 ms 平移窗把门钉 80 s（E4 A/B 实测）。
 9. **音频帧泵只在 Electron**（`session.ts:272`）⇒ headless 的"发声时机 / ADV 寄存冲刷 / 延迟 SE / BGM 淡变"
-   整条缺失；且 `HeadlessScene` 无 `audio` ⇒ report 把所有音频意图记成 dropped（`nativeTap.ts:55`）。
+   整条缺失；且 `HeadlessScene` 无 `audio` ⇒ report 把所有音频意图记成 dropped（`nativeTap.ts:55`）。✅ **B3 已补**（`T-0006`）：帧泵归驱动（`frame/loop.ts` 的 `audio` 档，每完整帧一次、先于合成）；`HeadlessScene` 有了**条件能力** `audio`（给 `audioHost` 才存在，否则闸门 A 记缺口）；新增 `NodeAudioHost`（真字节 + 容器头推时长、不出声）。before/after：两份 chain 的 `drops` 里 `audio×37`/`audio×14` → 0，`audioEvents` 0 → 14/6。`report` 显式 `audio:'never'`（C2）⇒ G2 逐字节不变。
 10. **悬停在 headless 从不执行**：`serviceAdvanceWait` 只在 `session.ts:206` 调用；`forceAdvance` 不看
     `routes.shown`、不做命中测试（`engine.ts:780,964-989`）⇒ headless 的 `routes.cursor` 恒 −1。
-    ★`Engine.pickHoverLabel()`（`:935-939`）在 `src/` 里**零调用者**（只剩测试）⇒ 悬停重构后的**死代码**。
-11. `interpreter.run()` 是第 6 份循环且**无任何调用者**（`interpreter.ts:221-237`）。
+    ★`Engine.pickHoverLabel()`（`:935-939`）在 `src/` 里**零调用者**（只剩测试）⇒ 悬停重构后的**死代码**。✅ **B3 已补**（`T-0003` 验收 3 / `T-0007`）：新增共享模块 `src/frame/scenario.ts`（输入编排=数据：帧号或条件、顺序执行、执行日志），链路默认 `gates.advance:'pump'`（真泵：命中测试+键命中+点击+悬停两段式），并加观察者 `dispatches[]`/`cursorTrail[]`。E3 实测：SN0000 出现 2 次 `hover-enter`、`routes.cursor` −1→0→12→−1、`routes.shown` 1→0；`advance:'force'` 对照为零悬停、cursor 恒 −1。`pickHoverLabel()` 仍待删（`T-0014` 的收尾项）。
+11. `interpreter.run()` 是第 6 份循环且**无任何调用者**（`interpreter.ts:221-237`）。✅ 已删（`T-0014`）。
 12. 文档/代码矛盾：`renderer.ts:15-16`、`native.ts:310-311` 称"渲染帧循环由 Pixi ticker/`startFrameLoop`
-    每帧驱动"，而实现里 `startFrameLoop` 只记 `wallStart`（`pixiBackend.ts:690-695`），present 由 session 调。
-13. `run(frames)` 返回值语义不同：`config1Chain.ts:392` 返回 `maxFrames`、`gameStartChain.ts:457` 返回 `frames`。
-14. 宿主能力面不入桥（§0.2 的 ★）⇒ 无法"统一询问某宿主是否支持渲染/屏障"。
+    每帧驱动"，而实现里 `startFrameLoop` 只记 `wallStart`（`pixiBackend.ts:690-695`），present 由 session 调。✅ 已订正（`T-0015`）。
+13. `run(frames)` 返回值语义不同：`config1Chain.ts:392` 返回 `maxFrames`、`gameStartChain.ts:457` 返回 `frames`。✅ 统一（`T-0002` 的 C5）。
+14. 宿主能力面不入桥（§0.2 的 ★）⇒ 无法"统一询问某宿主是否支持渲染/屏障"。✅ `needsRender`/`animationsDone`/`preloadImage` 入 `NativeBridge` + 闸门 A 白名单；宿主能力差异被守卫钉住（`T-0013`）。
 
 ### 1.3 模型层的唯一分叉（已确认**不是**问题）
 `scMsgWinSync` 只在 `input.cell` 存在时写 `frame.cell`（`scene/ops.ts:437`），清 `cell` 靠"不带 cell 的新载荷覆盖"；
@@ -179,10 +186,11 @@ export interface FrameDigest {
 |---|---|---|---|
 | **D1** | 时钟域 | `FrameHost.now()` **单一**时钟；场景模型时钟由驱动统一注入，不再让 pixi 自算 `performance.now()-wallStart` | Electron 现在有**两个**时间域（`session.ts:168` vs `pixiBackend.ts:705`）且门的判据读的是上一帧（§1.2-7） |
 | **D2** | 纹理屏障 | 保留为**可选宿主义务**；headless 也实现并记 `host.barriers`（不比较纹理本身） | 引擎同步 vs IPC 异步是真实差异（`session.ts:259-267`），不能假装相等 |
-| **D3** | `advanceWindows`/`needsRender`/`animationsDone` 的归属 | **全部收进共享层**：推进契约 = "每帧 present 前推进一次"；"是否渲染/是否跑完"改为共享函数，喂 **Engine** 的门标志（不再读宿主的镜像字段） | 现在推进点三个（pixi `presenter.ts:56` / report `advance` / chains 不推进）；`needsRender` 读 pixi 私有 `waitFlags` 且**永久粘滞**（§1.2-5）；`scAnimationsDone` 只看窗 0（§1.2-8） |
+| **D3** | `advanceWindows`/`needsRender`/`animationsDone` 的归属 | **全部收进共享层**：推进契约 = "每帧 present 前推进一次"；"是否渲染/是否跑完"改为共享函数，喂 **Engine** 的门标志（不再读宿主的镜像字段） | 现在推进点三个（pixi `presenter.ts:56` / report `advance` / chains 不推进）；`needsRender` 读 pixi 私有 `waitFlags` 且**永久粘滞**（§1.2-5）；`scAnimationsDone` 只看窗 0（§1.2-8） | ✅ 2026-09（`T-0008`/`T-0009`/`T-0003`）：判据 `sceneNeedsRender` / `scAnimationsPending` / `scGateAnimationsDone` 都在共享层；"脏"也进了共享模型（`SceneState.dirty`：变更型 `sc*` 置位，pixi 在 `present` 清、headless 在 `snapshot` 清）；驱动有 `present: 'needsRender'` 档（只跳过"画"，不跳 `advanceModel`/音频 tick） |
+| **D3b** | ★"该不该合成"与"门能不能放行"是**两条**判据 | `scAnimationsPending`（mesh 全窗 + draw item **5 窗**）供 `sceneNeedsRender`；`scGateAnimationsDone`（mesh 全窗 + draw item **颜色窗**）供 `0x400` 门。**不许再共用一个函数** | 二者共用一个函数时，任一侧的正确范围都会伤到另一侧：把 5 窗同时喂给门 ⇒ 序章 `SN0000.txt:1043` 的 80 000 ms 平移窗把门钉死（E4 A/B 实测 20 s 不放行、黑屏）；只喂窗 0 给合成 ⇒ 缩放/平移/flipbook 的中间帧不上屏。门的真值（`sub_407E20` = 池挂起位 + `0x238` 装载的等待计时器）见 `tickets/T-0024` |
 | **D4** | 无输入源的推进 | 建模成 `Scenario.advancePolicy`，**默认 `synthetic`**：走与真实点击**同一条** `routes`/`labelC` 路由代码（含命中测试与 `routes.shown`），只把事件由脚本合成；`force` 保留为显式登记的近似 | 现存 `forceAdvance` 与真泵刻意不同（`engine.ts:780,964-989`），且 headless 因此**完全没有悬停**（§1.2-10） |
-| **D5** | `present` 的三合一 | 拆开：`host.audio(tick)` 由**驱动**每帧调（不再藏在 `#present` 里）；屏障=可选义务；`present()` 只做渲染 | `session.ts:268-274` 把"音频帧泵/纹理屏障/渲染"挤在一个函数里 ⇒ headless 永远拿不到音频 tick（§1.2-9） |
-| **D6** | 宿主能力面入桥 | 把 `needsRender`/`animationsDone`/`preloadImage` **并入 `NativeBridge` + nativeTap 白名单**（可选方法） | 现在它们不在桥里 ⇒ 缺口不被闸门 A 记（§0.2 ★） |
+| **D5** | `present` 的三合一 | 拆开：`host.audio(tick)` 由**驱动**每帧调（不再藏在 `#present` 里）；屏障=可选义务；`present()` 只做渲染 | `session.ts:268-274` 把"音频帧泵/纹理屏障/渲染"挤在一个函数里 ⇒ headless 永远拿不到音频 tick（§1.2-9） | ✅ 2026-09 驱动侧完成（`tickets/T-0006`）：`FrameLoopOptions.audio`（默认 `'host'`）+ 每完整帧一次 tick（先于 `advanceModel`/`present`）；`report` 传 `'never'`。⚠ 产品路径 `session.#present()` 里那一处 tick **暂留**，B4 迁移时必须删（`T-0004`） |
+| **D6** | 宿主能力面入桥 | 把 `needsRender`/`animationsDone`/`preloadImage` **并入 `NativeBridge` + nativeTap 白名单**（可选方法） | 现在它们不在桥里 ⇒ 缺口不被闸门 A 记（§0.2 ★） | ✅ 2026-09 完成（`tickets/T-0013`）：三者入桥 + `BRIDGE_METHODS`；`RendererSession.#native` 改成 `NativeBridge` 类型；两条宿主能力面守卫（差异清单 + 非桥清单）带负向实测 |
 | **D7** | Electron 的 CI 覆盖 | 接受"Electron 只在 G3/G4（本地）验证"，CI 靠 G1/G2；把 pixi 的**非渲染**逻辑（脏标记/needsRender/digest）下沉共享以缩小不可测面 | Electron 无法在 `node:test` 里跑（需要 GPU/窗口） |
 | **D8** | 死代码 | 删 `interpreter.run()`、`Engine.pickHoverLabel()`（零调用者）；`HeadlessScene.waitFlags` 与 `PixiBackend.waitFlags` 镜像字段随 D3 一并消失 | §1.2-6/10/11 |
 

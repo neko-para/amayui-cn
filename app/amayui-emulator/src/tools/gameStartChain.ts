@@ -27,16 +27,19 @@
  */
 import assert from 'node:assert/strict';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
+import { NodeAudioHost } from '../audio/nodeAudioHost.js';
 import { resolveResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
 import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
-import { Engine, SLEEP_GATE, type Frame } from '../vm/engine.js';
+import { Engine, type Frame } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
-import { formatOperands, loadScriptData, NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
+import { formatOperands, loadScriptData, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
 import { readIntOperand } from '../vm/operand.js';
-import { ExitScript, ScriptReset } from '../vm/ops.js';
 import { dec } from '../vm/bits.js';
 import type { BinInstruction } from '../script/bin.js';
+import { runFrameLoop, type FrameLoopGates, type FrameLoopOptions } from '../frame/loop.js';
+import type { FrameHost } from '../frame/host.js';
+import { Scenario, moveTo } from '../frame/scenario.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
 import { calcDiffuse, meshColor } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
@@ -145,6 +148,21 @@ export interface GameStartResult {
   unknown: UnknownOp[];
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true`）。 */
   drops?: DroppedIntent[];
+  /**
+   * **音频事件序列**（`tickets/T-0006`；`[audio] …` 行，两类来源：引擎的音频决策 + headless 宿主的起播记账）。
+   * 这是"headless 与 Electron 的音频表现是否一致"的可比对象（G3 的一环）。
+   */
+  audioEvents: string[];
+  /**
+   * **等待泵派发序列**（`tickets/T-0003` 验收 3 / `T-0007`）：`kind` ∈
+   * `key`/`click`/`hover-enter`/`hover-leave`/`headless`，附当时的脚本与 ip。
+   * ★这是"悬停真的跑了"的**直接证据**（修前 headless 只有 `headless` = `forceAdvance` 旁路）。
+   */
+  dispatches: { kind: string; label: number; script: string; ip: number }[];
+  /** `routes.cursor` / `shown` 的变化轨迹（去重相邻同值）——"游标真的会随光标变"。 */
+  cursorTrail: { cursor: number; shown: number }[];
+  /** 本链路用的等待门策略：`'pump'` = 真泵（与产品同源）/`'force'` = 旧旁路（对照用）。 */
+  advancePolicy: 'pump' | 'force';
   /** 与真实链路无关的内部时钟（ms），仅诊断。 */
   clockMs: number;
   /** 执行过的指令数（仅 `onStep` 未开时也统计）。 */
@@ -164,6 +182,18 @@ export interface GameStartOptions {
   onStep?: (t: StepTrace) => void;
   /** 用 `withNativeTap` 记录"脚本想调、宿主没实现"的方法（默认关）。 */
   recordDrops?: boolean;
+  /**
+   * 给 headless 宿主接**音频引擎**（默认 `true` = 真游戏行为）。
+   * 置 `false` = 回到"宿主没有 `audio`"的状态（所有音频意图进 `drops`、链路上看不到发声时机），
+   * **只为 before/after 对照**（`tickets/T-0006`）。
+   */
+  audio?: boolean;
+  /**
+   * 等待门的推进方式（`tickets/T-0003` 验收 3）：`'pump'`（默认）= **真泵** —— 与 Electron 同一条
+   * `serviceAdvanceWait`（命中测试 + 键命中 + 点击 + 悬停两段式）；`'force'` = 修前的旁路
+   * （不做命中测试、不看 `routes.shown`，`routes.cursor` 恒 −1），**只为 before/after 对照**。
+   */
+  advance?: 'pump' | 'force';
   /** 到达 SN0000 首文案后是否继续跑到"没事干"（默认在首文案处停）。 */
   continueAfterTarget?: boolean;
   /**
@@ -180,7 +210,16 @@ export interface GameStartOptions {
 export async function runGameStartChain(opt: GameStartOptions = {}): Promise<GameStartResult> {
   const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
   const input = new InputManager();
-  const scene = new HeadlessScene({});
+  // ★音频（`tickets/T-0006`/`T-0003`）：给宿主一个 `NodeAudioHost` ⇒ headless 也有**真 `AudioEngine`**
+  //   （真字节 + 容器头推时长、不出声），帧驱动每帧的 tick 会把"延迟 SE 到期 / 语音排队 / BGM 淡变"推起来。
+  //   修前不给宿主 ⇒ 所有音频意图都被闸门 A 记成"意图被丢弃"，链路上看不到任何发声时机。
+  const audioEvents: string[] = [];
+  const collectAudio = (m: string): void => {
+    if (m.startsWith('[audio]')) audioEvents.push(m);
+  };
+  const scene = new HeadlessScene(
+    opt.audio === false ? {} : { audioHost: new NodeAudioHost({ source: src, log: collectAudio }), onLog: collectAudio },
+  );
   let engineRef: Engine | null = null;
   const drops = new DropRecorder(() => engineRef?.currentOpcode ?? 0);
   const e = new Engine(opt.recordDrops ? withNativeTap(scene, drops) : scene, input);
@@ -214,6 +253,16 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   /** 路径上发过的 SE（`0xB4`）：统一文件 id + 发起脚本 + ip。 */
   const sePlays: { id: number; script: string; ip: number }[] = [];
 
+  // ---- 悬停观察（`T-0003` 验收 3 / `T-0007`）：观察者与 Scenario 必须在 harness 之前建好 ----
+  /** 等待泵派发序列（键命中/点击/悬停进入/悬停离开）。 */
+  const dispatches: { kind: string; label: number; script: string; ip: number }[] = [];
+  /** `routes.cursor` / `routes.shown` 的变化轨迹（去重相邻同值）。 */
+  const cursorTrail: { cursor: number; shown: number }[] = [];
+  let hoverEntered = 0;
+  let hoverLeft = 0;
+  /** 输入编排（步骤在下面"⑤ SN0000 悬停"一节里追加；harness 每帧应用一次）。 */
+  const pumpScenario = new Scenario();
+
   const harness = createHarness({
     e,
     scene,
@@ -238,6 +287,17 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       if (!u.scripts.includes(err.scriptName)) u.scripts.push(err.scriptName);
       if (opt.unknownPolicy !== 'stub') throw err;
       e.unknownOpStubs.set(key, 1);
+    },
+    advance: opt.advance ?? 'pump',
+    scenario: pumpScenario,
+    onDispatch: (kind, label) => {
+      const f = e.curScript();
+      dispatches.push({ kind, label, script: f.name, ip: f.ip });
+      if (kind === 'hover-enter') hoverEntered++;
+      else if (kind === 'hover-leave') hoverLeft++;
+    },
+    onCursor: (cursor, shown) => {
+      cursorTrail.push({ cursor, shown });
     },
     onScript: (name) => {
       // ★只在「GAMESTART → 它的调用者 TITLE」这一刻读 `global 0`：GAMESTART 内部还会
@@ -309,13 +369,67 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   // ---- ④ 跑到 SN0000 首文案 ----
   let reachedSn0000 = false;
   for (let round = 0; round < 40; round++) {
-    await run(2000, () => firstTextIp >= 0 && !opt.continueAfterTarget);
+    // ★目标条件用"逐条"判（B2）：`firstTextIp` 一旦置上就永久为真 ⇒ 可以恰好停在首文案那一刻，
+    //   而不是"越过目标最多一整批"（那会让"到达首文案时的场景状态"变成停止点伪影）。
+    await run(
+      2000,
+      () => firstTextIp >= 0 && !opt.continueAfterTarget,
+      () => firstTextIp >= 0 && !opt.continueAfterTarget,
+    );
     if (name().startsWith('SN0000')) reachedSn0000 = true;
     if (firstTextIp >= 0 && !opt.continueAfterTarget) break;
     if (name() === '') break;
   }
   if (!reachedSn0000) reachedSn0000 = name().startsWith('SN0000') || scriptTrail.some((s) => s.startsWith('SN0000'));
   if (opt.continueAfterTarget) await run(20000);
+
+  // ---- ⑤ SN0000：等待态下的**悬停**（`T-0003` 验收 3 / `T-0007`）----
+  //   修前 headless 走 `forceAdvance`（不做命中测试、不看 routes.shown）⇒ 游标恒 −1、悬停从不发生。
+  //   这里：进等待态 → Scenario 把光标移到**表里真实存在的热点**中心（不写死坐标）→ 观察 hover-enter
+  //   → 再移到表外 → 观察 hover-leave。两条都走 `serviceAdvanceWait`（与 Electron 同一条路由代码）。
+  /** 表里第一个"有进入 label"的热点（`labelEnter` 不是 -1/0xffffffff）——**不写死坐标**，从表里取。 */
+  const pickEnterable = (): { cx: number; cy: number } | null => {
+    for (const en of e.routes.entries) {
+      if (en.labelEnter !== -1 && en.labelEnter !== 0xffffffff) {
+        return { cx: Math.floor((en.x0 + en.x1) / 2), cy: Math.floor((en.y0 + en.y1) / 2) };
+      }
+    }
+    return null;
+  };
+  /** 表外的一个点（粗网格扫描；用于制造"离开"）。 */
+  const pointOutside = (): { x: number; y: number } => {
+    for (let y = 40; y < 720; y += 40) {
+      for (let x = 40; x < 1280; x += 40) {
+        if (!e.routes.entries.some((en) => en.x0 <= x && x <= en.x1 && en.y0 <= y && y <= en.y1)) return { x, y };
+      }
+    }
+    return { x: 4, y: 4 };
+  };
+  pumpScenario
+    .when(
+      '等待态：光标移到热点中心',
+      (c) => c.e.awaitingAdvance && pickEnterable() !== null,
+      (c) => {
+        const p = pickEnterable();
+        if (p) moveTo(c, p.cx, p.cy);
+      },
+    )
+    .when(
+      // ★必须**在等待态里**移出：命中测试只发生在等待泵内部（`serviceAdvanceWait` 开头 `!awaitingAdvance` 直接返回）
+      //   ⇒ 若在非等待态移光标，`hitTestPending` 会一直挂着，等下次等待态时表可能已被重置 ⇒ 观测不到"离开"。
+      'hover-enter 已派发且再次进入等待态：光标移出所有热点',
+      (c) => hoverEntered > 0 && hoverLeft === 0 && c.e.awaitingAdvance,
+      (c) => {
+        const p = pointOutside();
+        moveTo(c, p.x, p.y);
+      },
+    );
+  let pumpFrames = 0;
+  if (reachedSn0000 && (opt.advance ?? 'pump') === 'pump') {
+    await run(3000, () => e.awaitingAdvance, undefined, { advance: 'pump' });
+    pumpFrames = await run(1200, () => hoverLeft > 0, undefined, { advance: 'pump' });
+  }
+  void pumpFrames;
 
   const items = [...scene.scene.drawItems.values()];
   const result: GameStartResult = {
@@ -346,6 +460,13 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       meshes: [...scene.scene.meshes.values()]
         .sort((a, b) => a.handle - b.handle)
         .map((m) => {
+          // ★先抓"脚本写的两端色/标志"，**再**求值：`calcDiffuse` 在窗末有**烘焙副作用**（`state0 ← state1`、
+          //   清 bit1，见 `drawitem/eval.ts`），若在求值后再读，报告里的 `state0` 就变成"求值后的当前色"，
+          //   与字段说明（"`0x322`/`0x323` 写的两端色"）不符 —— B2 把模型推进接上后这条才暴露出来
+          //   （修前 chains 从不推进窗 ⇒ 窗在求值那一刻才锁存 ⇒ 一直是"延迟期"，掩盖了这个顺序依赖）。
+          const state0 = m.state0 >>> 0;
+          const state1 = m.state1 >>> 0;
+          const flags = m.flags;
           const c = meshColor(m, calcDiffuse(m, harness.clock));
           const xs = m.verts.map((v) => v.x);
           const ys = m.verts.map((v) => v.y);
@@ -357,15 +478,19 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
               ? `${Math.min(...xs)},${Math.min(...ys)}..${Math.max(...xs)},${Math.max(...ys)}`
               : '无几何',
             verts: m.verts.length,
-            flags: m.flags,
-            state0: `#${(m.state0 >>> 0).toString(16).padStart(8, '0')}`,
-            state1: `#${(m.state1 >>> 0).toString(16).padStart(8, '0')}`,
+            flags,
+            state0: `#${state0.toString(16).padStart(8, '0')}`,
+            state1: `#${state1.toString(16).padStart(8, '0')}`,
             baseColors: m.baseColors.map((c) => `#${(c >>> 0).toString(16).padStart(8, '0')}`),
           };
         }),
     },
     unknown: [...unknown.values()].sort((a, b) => a.opcode - b.opcode),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
+    audioEvents,
+    dispatches,
+    cursorTrail,
+    advancePolicy: opt.advance ?? 'pump',
     clockMs: harness.clock,
     steps,
   };
@@ -382,16 +507,30 @@ interface HarnessOptions {
   scene: HeadlessScene;
   input: InputManager;
   maxFrames?: number;
+  /**
+   * 等待门的推进方式（`T-0003` 验收 3）：`'pump'`（默认）= 真泵（`serviceAdvanceWait`：
+   * 命中测试 + 键命中 + 点击 + 悬停两段式）；`'force'` = 修前的旁路（只在 before/after 对照里用）。
+   */
+  advance?: 'pump' | 'force';
+  /** 输入编排（每帧 `onFrameStart` 应用一次）。 */
+  scenario?: Scenario;
+  /** 派发观察（等待泵的三条出口：键命中/点击/悬停进入/悬停离开）。 */
+  onDispatch?: (kind: string, label: number, e: Engine) => void;
+  /** `routes.cursor` 变化观察（`T-0007` 的"游标真的会变"）。 */
+  onCursor?: (cursor: number, shown: number, e: Engine) => void;
   onStep?: (t: StepTrace) => void;
   onUnknown: (err: NotImplementedOp, frame: Frame, instr: BinInstruction | undefined) => void;
   onScript: (name: string) => void;
   onStepStart: (frame: Frame, instr: BinInstruction | undefined) => void;
 }
 
-/** 帧循环句柄：`clock` 是**活值**（每次读都是当前虚拟时钟）。 */
+/** 帧循环句柄：`clock`/`frames` 是**活值**（每次读都是当前值）。 */
 interface Harness {
-  run(frames: number, until?: () => boolean): Promise<number>;
+  /** `until` = 帧边界条件；`stopStep` = 逐条条件（只用于"一真即永真"的目标判定，见 `run` 的说明）。 */
+  run(frames: number, until?: () => boolean, stopStep?: () => boolean, gates?: FrameLoopGates): Promise<number>;
   readonly clock: number;
+  /** 已跑的**总帧数**（跨多次 `run()` 累计）。 */
+  readonly frames: number;
 }
 
 function createHarness(o: HarnessOptions): Harness {
@@ -399,62 +538,96 @@ function createHarness(o: HarnessOptions): Harness {
   const maxFrames = o.maxFrames ?? Number.POSITIVE_INFINITY;
   let clock = 0;
   let lastScript = '';
+  /** 跨 `run()` 调用的**单调帧号**（Scenario 的帧号/诊断都用它，避免每轮从 0 重来）。 */
+  let totalFrames = 0;
 
-  const stepAll = async (): Promise<void> => {
-    const frame = e.curScript();
-    const instr = frame.script?.instructions[frame.ip];
-    o.onStepStart(frame, instr);
-    try {
-      const t = await stepOnce(e);
+  /** 帧宿主：虚拟时钟（由 `onFrameEnd` 每帧 +1000/60）+ headless 的模型推进/门判据。 */
+  const host: FrameHost = {
+    now: () => clock,
+    advanceModel: (t) => {
+      o.scene.advance(t);
+    },
+    animationsDone: (t) => o.scene.animationsDone(t),
+  };
+  /**
+   * 驱动配置 —— **B2 起与产品（Electron）同源**：`0x400` 不再无条件清，而是等 `animationsDone()`；
+   * 模型每帧经 `host.advanceModel()` 推进一次（修前两份 chain **从不推进动画窗** ⇒ 与产品/E4 不同源）。
+   * ★等待推进（B3/`T-0003`）：默认 `'pump'` = **真泵**（`serviceAdvanceWait`：命中测试 + 键命中 + 点击 +
+   * 悬停两段式）；`'force'` 是修前的旁路（不做命中测试、不看 `routes.shown`）——保留它只为 before/after 对照。
+   */
+  const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
+    gates: { anim: 'wait', sleep: 'wait', advance: o.advance ?? 'pump' },
+    advFrame: true,
+    advErrors: 'swallow',
+    maxStepsPerFrame: 20000,
+    onFrameStart: (_nowMs, _idx) => {
+      totalFrames++;
+      // ★Scenario（`T-0003` 验收 3）：输入编排由**数据**驱动，而不是散在各处的 `input.setCursor(...)`
+      if (o.scenario) o.scenario.apply({ e, input: o.input, frame: totalFrames });
+      sampleDispatch();
+      recordCursor();
+    },
+    onStepStart: (frame, instr) => o.onStepStart(frame, instr),
+    onStep: (t) => {
+      // ★每次派发之后尽早采样：`lastDispatch` 是"最近一次"，同一帧里可能被后续派发覆盖 ⇒
+      //   只在帧边界采样会漏掉点击/悬停（实测：pump 模式下的 `click` 就漏了）。
+      sampleDispatch();
       o.onStep?.(t);
-    } catch (err) {
-      if (err instanceof NotImplementedOp) {
-        o.onUnknown(err, frame, instr);
-        return; // 已登记桩（stub 策略）⇒ 下一条指令；throw 策略已在上抛
-      }
-      throw err;
+    },
+    onUnknown: (err, frame, instr) => {
+      o.onUnknown(err, frame, instr);
+      return 'continue'; // stub 策略：已登记桩 ⇒ 下一条；throw 策略已在 onUnknown 里上抛
+    },
+    onScriptChange: (name) => {
+      lastScript = name;
+      o.onScript(name);
+    },
+    onFrameEnd: () => {
+      clock += 1000 / 60;
+    },
+  };
+
+  // ---- 观察者：派发序列（等待泵的三条出口）与 `routes.cursor` 变化 ----
+  let lastDispatch: unknown = null;
+  const sampleDispatch = (): void => {
+    const d = e.lastDispatch;
+    if (!d || d === lastDispatch) return;
+    lastDispatch = d;
+    o.onDispatch?.(d.kind, d.label, e);
+  };
+  let lastCursor = Number.NaN;
+  const recordCursor = (): void => {
+    const c = e.routes.cursor;
+    if (c !== lastCursor) {
+      lastCursor = c;
+      o.onCursor?.(c, e.routes.shown, e);
     }
   };
 
-  const run = async (frames: number, until?: () => boolean): Promise<number> => {
-    const cap = Math.min(frames, maxFrames);
-    for (let i = 0; i < cap; i++) {
-      if (until?.()) return i;
-      e.nowMs = clock;
-      e.serviceWinReveal(e.nowMs);
-      e.serviceCharGrid(e.nowMs); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
-      if (e.waitFlags & 0x400) e.waitFlags &= ~0x400;
-      else if (e.waitFlags & SLEEP_GATE) {
-        if (clock >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
-      } else if (e.textRevealing) e.serviceTextReveal(e.nowMs);
-      else if (e.awaitingAdvance) e.forceAdvance();
-      else if (e.advActive) {
-        e.serviceAdv();
-        try {
-          await stepAll();
-        } catch {
-          /* ADV 分支的异常按"本帧无进展"处理 */
-        }
-      } else {
-        for (let k = 0; k < 20000; k++) {
-          const f = e.curScript();
-          if (!f.script || f.ip >= f.script.instructions.length) return i;
-          if (f.name !== lastScript) {
-            lastScript = f.name;
-            o.onScript(f.name);
-          }
-          try {
-            await stepAll();
-          } catch (err) {
-            if (err instanceof ExitScript || err instanceof ScriptReset) return i;
-            throw err;
-          }
-          if (e.waitFlags & (0x400 | SLEEP_GATE) || e.awaitingAdvance) break;
-        }
-      }
-      clock += 1000 / 60;
-    }
-    return frames;
+  /**
+   * 跑帧。
+   * @param until 帧开头的提前结束条件（**引擎状态可能在帧内后段才定型**，如 `hover()` 读的 `local 3f7`
+   *              是在 `i12e` 命中测试之后才写 ⇒ 这类条件只能在帧边界判）
+   * @param stopStep 可选的**逐条**结束条件 —— 只对"一旦为真就永久为真"的条件用（如"首文案已执行"）；
+   *                 逐条判才能**恰好停在目标**，否则会越过目标最多一整批（B2 实测：283100 步 / 停在 CHARMEDIT）
+   * @param gates 覆盖门档（默认取 harness 的 `advance`；悬停阶段要显式传 `'pump'`）
+   */
+  const run = async (
+    frames: number,
+    until?: () => boolean,
+    stopStep?: () => boolean,
+    gates?: FrameLoopGates,
+  ): Promise<number> => {
+    const r = await runFrameLoop(e, host, {
+      ...base,
+      ...(gates ? { gates: { ...base.gates, ...gates } } : {}),
+      ...(until ? { until } : {}),
+      ...(stopStep ? { stopAfterStep: () => stopStep() } : {}),
+      initialScript: lastScript,
+      maxFrames: Math.min(frames, maxFrames),
+    });
+    // 与原 `run` 的返回语义一致：条件达成/中途结束 ⇒ 返回**已跑完的帧数**（< frames）；跑满上限 ⇒ 返回 frames
+    return r.stopReason === 'cap' ? frames : r.frames;
   };
 
   lastScript = e.curScript().name;
@@ -463,6 +636,9 @@ function createHarness(o: HarnessOptions): Harness {
     run,
     get clock(): number {
       return clock;
+    },
+    get frames(): number {
+      return totalFrames;
     },
   };
 }

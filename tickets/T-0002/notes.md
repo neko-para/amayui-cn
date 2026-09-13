@@ -51,3 +51,23 @@
 - 每条工单落地时：**先写 before/after 对照**（写进本条票的 `changes.md`），再改代码；
 - 改动若落在 `report.ts` 之外，跑 `npm test` 全绿即可；若动到 `session.ts`/`pixiBackend.ts`，
   **必须**跑 `npm run shot -- --gamestart` 目视（G4）并说明看了哪几张截图。
+
+## 2026-09-13
+
+第 3 批（changes.md）：A2 口径订正 —— 门判据（scGateAnimationsDone：mesh 全窗 + draw item 颜色窗）与合成判据（scAnimationsPending：5 窗）拆开。原因：序章 80 000 ms 平移窗把门钉死；引擎门真值见 T-0024。判据 npm test 439/439。
+
+## 2026-09-13
+
+第 4 批（H2，T-0013）：宿主能力面入桥 —— needsRender/animationsDone/preloadImage 进 NativeBridge + 闸门 A 白名单；pixi 的 sceneAnimationsDone 改名 animationsDone；session 的 #native 改 NativeBridge 类型；两条能力面守卫 + 负向实测。B2 工单现状：§1.2 第 1/11/12/13/14 条全部 ✅ 或 ⏸（C2 决策），第 9/10 条属 B3。
+
+## 2026-09-13
+
+第 5 批（D5）：音频帧泵所有权归驱动（frame/loop.ts 的 audio 档）+ report 显式 never。产品路径 session.#present 里那一处 tick 暂留，B4/T-0004 迁移时必须删（否则双 tick）。
+
+## 2026-09-13
+
+第 6 批（B3 的一部分，登记在此以免与 B2 的账脱节）：场景脏位从宿主私有搬进共享模型（SceneState.dirty）+ 驱动 present:"needsRender" 档。pixi 仍用自己的 sceneDirty（本轮不动；B4 可并入）。
+
+## 2026-09-13
+
+收口：changes.md 顶部补"14 条工单总表"（每条 → 结果 → 落在哪一批/票据 → 证据），并按 acceptance 三条自查：① 对照表齐 ② report sha256 FBC05509… 逐字节不变（B1/B2 每批后复跑）③ §1.2 十四条里第 10 条（悬停）按设计归 B3。B2 到此结束，后续按 T-0003 → T-0004 → T-0005 推进。

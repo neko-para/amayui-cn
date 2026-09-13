@@ -1,7 +1,7 @@
 {
   "id": "T-0007",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P1",
   "area": "emulator/input",
   "title": "headless 完全没有悬停：serviceAdvanceWait 只在 Electron 被调用",
@@ -20,7 +20,7 @@
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "forceAdvance",
-      "note": "headless 的旁路：不看 routes.shown、不做命中测试"
+      "note": "修前旁路：headless 只记 `headless` 一种派发；现在默认走真泵（`T-0003` 验收 3）"
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
@@ -32,6 +32,26 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence, doneWhy, tests, links"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done"
     }
-  ]
+  ],
+  "doneWhy": "链路级悬停已跑通：`runGameStartChain` 默认 `gates.advance:\"pump\"` + `Scenario` 驱动 InputManager；E3 实测 SN0000 出现 2 次 `hover-enter`、`routes.cursor` 由 −1 → 0 → 12 → −1、`routes.shown` 1 → 0（右侧面板真的被悬停打开）。`advance:\"force\"` 对照：零悬停派发、cursor 恒 −1。两段式（进入 labelA/离开 labelB、一帧一个）由 `route-dispatch.test.ts` 判据①③ 用合成表钉死（SN0000 自己的面板在进入后即被脚本重置，观测不到自身 leave —— 已在该断言的注释里写明）。",
+  "tests": [
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/scenario.test.ts",
+    "app/amayui-emulator/test/route-dispatch.test.ts"
+  ],
+  "links": {
+    "tickets": [
+      "T-0003",
+      "T-0005"
+    ]
+  }
 }

@@ -149,9 +149,20 @@ test('★E3 回归：Game Start → ゲーム開始 → SN0000 首文案时的�
 
   // ② ADV 暗幕 0x19640：场景装配期就写好的 **50% 黑**（`SN0000.txt:3091` 的
   //    `set-vertex-color 19640 0 (global-int f807d) 0`，f807d = a9e1 = 0x80，见 INITCONFIG2.txt:16）
+  //
+  // ★2026-09（`tickets/T-0002` 第 2 批）：门策略统一到**产品语义**（`0x400` 等 `animationsDone()`，
+  //   不再"每帧无条件清"）之后，第一句文案那一刻这块幕布正处于 `0x323 set-vertex-color-alpha` 的
+  //   **淡入窗内**（`SN0000.txt:3272`：state0=透明 → state1=50% 黑，`flags & 2` 仍置）。
+  //   修前链条会**越过目标最多一整批**（实测 clear=283100 步 / 停在 CHARMEDIT；wait=250913 步 / 停在 SN0000），
+  //   于是那份"已淡完（state0=#80000000、无窗）"的状态其实是**停止点伪影**，不是第一句文案的时刻。
+  //   所以这里断言**目标色**（state1 = 50% 黑）——它才是不变量；当前色随淡入进度而变。
   const adv = r.scene.meshes.find((m) => m.handle === 0x19640);
   assert.ok(adv, `应有 0x19640 暗幕；实际 ${JSON.stringify(full)}`);
-  assert.equal(adv.state0, '#80000000', `★ADV 暗幕是半透明黑（背景仍可见），实际 ${adv.state0}`);
+  assert.equal(
+    (adv.flags & 2) !== 0 ? adv.state1 : adv.state0,
+    '#80000000',
+    `★ADV 暗幕的（当前或目标）色必须是半透明黑（背景仍可见），实际 state0=${adv.state0} state1=${adv.state1} flags=${adv.flags}`,
+  );
   // ③ 终态检查：把"动画窗走完"的幕布算到 state1 后，**不允许**存在不透明的满屏黑幕
   for (const m of r.scene.meshes) {
     const end = (m.flags & 2) !== 0 ? m.state1 : m.state0;

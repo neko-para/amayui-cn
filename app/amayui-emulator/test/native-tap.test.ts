@@ -4,10 +4,17 @@
  * 背景：`NativeBridge` 的方法几乎都是可选的，`c.native.setLight?.(...)` 在宿主未实现时会**静默变成空操作**
  * —— 无日志、无计数、控制窗里也看不到。实测有 11 个被 `ops.ts` 调用的方法处于这种状态，而对应的 opcode
  * 全都标着"真实现"。本测试锁死"一定会留下痕迹"这条性质。
+ *
+ * ★2026-09（`tickets/T-0013`）追加**宿主能力面守卫**：把"两个宿主实现了哪些桥方法"钉成显式清单 ——
+ * 桥方法的差异必须落在 `DECLARED_HOST_DIVERGENCE` 内，宿主自己新增的方法必须落在两份非桥清单内。
+ * 这样"headless 悄悄少一个能力"或"某宿主自己长出一个没人知道的桥方法"都会立刻变红，
+ * 而不是等到某条链路跑出怪结果才发现。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DropRecorder, withNativeTap } from '../src/vm/nativeTap.js';
+import { BRIDGE_METHODS, DropRecorder, withNativeTap } from '../src/vm/nativeTap.js';
+import { PixiBackend } from '../src/renderer/pixiBackend.js';
+import { HeadlessScene } from '../src/renderer/headlessScene.js';
 
 test('未实现的方法被调用时会记事件（方法名/次数/实参/归因 opcode）', () => {
   let opcode = 0x32f;
@@ -76,4 +83,99 @@ test('数据属性（非函数）透传；未实现的数据属性不会凭空�
   };
   assert.equal(tapped.input, marker, '数据属性原样透传');
   assert.equal(tapped.nothing, undefined, '非桥方法（数据属性）保持 undefined，不会凭空变成真值');
+});
+
+// ---------------------------------------------------------------------------
+// ★宿主能力面守卫（`tickets/T-0013`）
+// ---------------------------------------------------------------------------
+
+/** 原型上的方法名集合（不实例化：pixi 后端需要 WebGL/DOM，构造不出来）。 */
+function protoMethods(proto: object): string[] {
+  return Object.getOwnPropertyNames(proto)
+    .filter((n) => n !== 'constructor')
+    .sort();
+}
+
+/**
+ * **已声明的宿主能力差异**（pixi 实现、headless 未实现的桥方法）。
+ *
+ * 这份清单就是"契约"：任何增删都要同步改这里 + 在 `tickets/T-0013` 里说明。
+ * 分类与理由：
+ *  - **纹理/像素**（headless 没有渲染目标）：`preloadImage` / `texturesIdle` / `present`
+ *    —— headless 的"合成"是出快照（`snapshot()` 清脏位），不是画像素；
+ *  - **音频**（T-0006 待补：headless 缺音频帧泵）：`audio` / `playSound` / `playBgm` / `playVoice`；
+ *  - **影片/输入/收尾**（headless 无窗口/无消息泵）：`playMovie` / `getInputType` / `sleep` /
+ *    `startFrameLoop` / `unhandled`；
+ *  - **GDI 文本/字符串资源**（headless 不落纹理）：`setFont` / `setString` / `stringResourceId`。
+ * ★`animationsDone` 与 `needsRender` **不在**本表里：两个宿主都必须实现
+ *   （前者 = `0x400` 门的放行判据，`T-0006`/`T-0009`；后者 = "该不该合成"，判据在共享层
+ *   `sceneNeedsRender`，headless 的脏位由共享模型的 `scene.dirty` 提供 —— `T-0003` 的 B3）。
+ */
+const DECLARED_HOST_DIVERGENCE = [
+  'audio',
+  'getInputType',
+  'playBgm',
+  'playMovie',
+  'playSound',
+  'playVoice',
+  'preloadImage',
+  'present',
+  'setFont',
+  'setString',
+  'sleep',
+  'startFrameLoop',
+  'stringResourceId',
+  'texturesIdle',
+  'unhandled',
+];
+
+/**
+ * **宿主自己的（非桥）方法**：诊断/测试缝/模型推进。它们**不该**经 `native.*` 调用，
+ * 所以刻意不进 `NativeBridge`；但也不能随手加 —— 加一个就要在这份清单里登记一次（想清楚它该不该入桥）。
+ */
+const NON_BRIDGE = {
+  'pixiBackend.ts': ['debugAudio', 'debugItemState', 'resolveItemTexture'],
+  'headlessScene.ts': ['advance', 'advanceModel', 'note', 'outcome', 'slotTable', 'snapshot', 'snapshotText'],
+};
+
+test('★桥能力面：宿主桥方法差异必须在"已声明的可选能力"内（T-0013）', () => {
+  const bridge = new Set<string>(BRIDGE_METHODS);
+  const pixi = protoMethods(PixiBackend.prototype).filter((n) => bridge.has(n));
+  const head = protoMethods(HeadlessScene.prototype).filter((n) => bridge.has(n));
+
+  const pixiOnly = pixi.filter((n) => !head.includes(n));
+  const headOnly = head.filter((n) => !pixi.includes(n));
+  const divergence = [...new Set([...pixiOnly, ...headOnly])].sort();
+
+  assert.deepEqual(
+    divergence,
+    DECLARED_HOST_DIVERGENCE,
+    '宿主能力差异变了：新增能力要么补进 headless，要么更新 DECLARED_HOST_DIVERGENCE 并说明理由',
+  );
+  assert.deepEqual(headOnly, [], 'headless 不应有"pixi 没有"的桥方法（差异只允许一个方向）');
+
+  // 帧驱动/会话要用的三个能力必须真的在桥的声明面里（否则 `?.` 的缺口连闸门 A 都不记）
+  for (const m of ['needsRender', 'animationsDone', 'preloadImage']) {
+    assert.ok(bridge.has(m), `${m} 必须在 NativeBridge 里声明`);
+  }
+  // ★"每帧都要问"的两个判据，两个宿主都必须能回答（差异只允许出现在"画/不画"这类能力上）
+  for (const m of ['animationsDone', 'needsRender']) {
+    assert.ok(pixi.includes(m), `pixi 必须实现 ${m}`);
+    assert.ok(head.includes(m), `headless 必须实现 ${m}`);
+  }
+});
+
+test('★桥能力面：宿主的方法要么在桥里，要么在"非桥"清单里登记过（T-0013）', () => {
+  const bridge = new Set<string>(BRIDGE_METHODS);
+  for (const [file, proto] of [
+    ['pixiBackend.ts', PixiBackend.prototype],
+    ['headlessScene.ts', HeadlessScene.prototype],
+  ] as const) {
+    const outside = protoMethods(proto).filter((n) => !bridge.has(n));
+    assert.deepEqual(
+      outside,
+      NON_BRIDGE[file],
+      `${file} 的非桥方法集合变了：新方法要么入桥（NativeBridge + BRIDGE_METHODS），要么登记进 NON_BRIDGE`,
+    );
+  }
 });

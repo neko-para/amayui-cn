@@ -305,9 +305,39 @@ export interface NativeBridge {
   releaseTexture?(layer: number): void;
   /** 0x20F play-movie：起播视频句柄。 */
   playMovie?(id: number): void;
-  /** 每帧渲染合成（由渲染帧循环调用）。 */
-  present?(): void;
-  /** 启动每帧渲染循环（Pixi ticker）。 */
+  /**
+   * 每帧渲染合成（由帧驱动在帧末按"是否需要渲染"调用；见 `src/frame/loop.ts`）。
+   * @param nowMs 本帧时钟（引擎 `nowMs`）—— 单一时间域，见 `tickets/T-0008` 的 D1
+   * @param waitFlags 仅诊断用（`Engine.waitFlags`）
+   */
+  present?(nowMs?: number, waitFlags?: number): void;
+  /**
+   * **本帧该不该合成**（可选能力；`tickets/T-0013` 入桥）。
+   *
+   * 判据本身在共享层（`sceneNeedsRender` = 场景脏 || 还有动画窗在跑），宿主只回答"我这边的状态要不要刷新"。
+   * ★它**不是** `0x400` 门的判据（那是 `animationsDone`）：两者范围不同，见 `sceneGateAnimationsDone` 的注释。
+   * 未实现 ⇒ 闸门 A 记一次；帧驱动把"宿主不报 = 不跳过合成"当作安全默认。
+   */
+  needsRender?(): boolean;
+  /**
+   * **`0x400` 等待门的放行判据**（可选能力；`tickets/T-0013` 入桥）。
+   *
+   * 口径 = 共享层 `scGateAnimationsDone`（mesh 全窗 + draw item 颜色窗），**必须带本帧时钟**：
+   * 修前宿主读"上一帧时钟"导致门判据滞后一帧（`tickets/T-0008` 的 G4 / `T-0009`）。
+   * 未实现 ⇒ 帧驱动的 `gates.anim: 'wait'` 永远等不到放行（`run.ts` 的 `StubNative` 就是这种宿主）。
+   */
+  animationsDone?(nowMs: number): boolean;
+  /**
+   * **图像预载**（可选能力；`tickets/T-0013` 入桥）：把该 imgid 读入纹理缓存（幂等）。
+   *
+   * 引擎 `set-texture` 是同步读文件；renderer 侧异步 ⇒ 启动期预载清单靠它，未实现则首次绘制才加载
+   * （闪一帧空图）或永远取不到纹理。headless 没有纹理 ⇒ 不实现（闸门 A 记一次）。
+   */
+  preloadImage?(imgid: number): Promise<void>;
+  /**
+   * 启动渲染（等价物）。★2026-09 订正（`tickets/T-0002` 的 D3）：**它不是"启动一个每帧 ticker"** ——
+   * `PixiBackend.startFrameLoop()` 只记一个墙钟起点，`present()` 仍由帧驱动调用。
+   */
   startFrameLoop?(now?: number): void;
 }
 

@@ -89,11 +89,16 @@ test('票据 schema：目录名=id、枚举合法、title/area/why/acceptance �
   }
 });
 
-test('★done 必须带真实存在的守卫（不许空口声称有测试）', () => {
+test('★done 必须带真实存在的守卫（代码票给 tests[]，文档/分析票给 doneWhy）', () => {
   for (const [d, t] of load()) {
     if (t.status !== 'done') continue;
-    assert.ok(Array.isArray(t.tests) && t.tests.length > 0, `${d}: status=done 但没有 tests[]`);
-    for (const g of t.tests!) {
+    const tests = Array.isArray(t.tests) ? t.tests : [];
+    const doneWhy = (t.doneWhy ?? '').trim();
+    if (tests.length === 0) {
+      assert.notEqual(doneWhy, '', `${d}: status=done 但没有 tests[] 也没有 doneWhy（不许空口声称做完）`);
+      continue;
+    }
+    for (const g of tests) {
       assert.ok(fs.existsSync(path.join(REPO, g)), `${d}: tests 指向的守卫不存在：${g}`);
     }
   }

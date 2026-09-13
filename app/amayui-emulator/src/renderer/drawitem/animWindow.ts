@@ -57,18 +57,24 @@ export function freezeWindow(it: Item, idx: number): void {
  * 117550（旋转 `a2+59 ← a2+75`）、117646（平移 `a2+91 ← a2+107`）、117831（flipbook 回写源矩形）。
  * 全部窗结束后清项级动画位 `flags &~ 2`（raw 117835）与共享起点 `+0x34 = 0`（raw 117837）。
  */
-export function advanceWindows(it: Item, clock: number): void {
-  if (!(it.flags & 2)) return;
+export function advanceWindows(it: Item, clock: number): boolean {
+  if (!(it.flags & 2)) return false;
   let pending = false;
+  let changed = false;
   for (let i = 0; i < 5; i++) {
     const p = winPhase(it, i, clock);
     if (p.phase === 'before' || p.phase === 'active') pending = true;
-    else if (p.phase === 'after') freezeWindow(it, i);
+    else if (p.phase === 'after') {
+      freezeWindow(it, i);
+      changed = true; // 窗末收尾（`work ← target`）改了可见状态 ⇒ 这一帧必须重新合成
+    }
   }
   if (!pending) {
     it.flags &= ~2;
     it.animStart = 0;
+    changed = true;
   }
+  return changed;
 }
 /** 该 item 是否还有窗没走完（供 0x400 卫门判断）。 */
 export function itemAnimationsPending(it: Item, clock: number): boolean {

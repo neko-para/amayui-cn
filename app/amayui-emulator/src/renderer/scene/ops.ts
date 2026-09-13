@@ -14,6 +14,7 @@
 import type { DrawItemConfig, Item, MeshObj, MeshVertex } from '../drawItem.js';
 import { assertFlags } from '../../vm/native.js';
 import {
+  W_COLOR,
   applyDrawColor,
   applyDrawColorAlpha,
   applyDrawPivot,
@@ -33,6 +34,7 @@ import {
   makeItem,
   makeMesh,
   advanceWindows,
+  itemAnimationsPending,
   meshWindowDone,
   windowDone,
 } from '../drawItem.js';
@@ -48,6 +50,7 @@ import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layou
  * 早前 emulator 用 `posOverride` 暂存并在建项时套用，与引擎不符，已移除。
  */
 export function scConfigureDrawItem(s: SceneState, cfg: DrawItemConfig): Item {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const existing = s.drawItems.get(cfg.handle);
   const it = existing ?? makeItem(cfg);
   it.layer = cfg.layer;
@@ -78,6 +81,7 @@ export function scConfigureDrawItem(s: SceneState, cfg: DrawItemConfig): Item {
  * （实测一条 TITLE 路线就有 31+31 次这样的写入被丢掉，见 `.tmp/scene-report-*.json` 的 `createdBySetter`）。
  */
 export function scEnsureItem(s: SceneState, handle: number): { item: Item; created: boolean } {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const existing = s.drawItems.get(handle);
   if (existing) return { item: existing, created: false };
   const it = makeDefaultItem(handle);
@@ -105,6 +109,7 @@ export function scDetachTexture(
   handle: number,
   count: number,
 ): { drawItems: number; meshes: number; clearedWins: number[] } {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const hi = count <= 1 ? handle + 1 : handle + count;
   let drawItems = 0;
   let meshes = 0;
@@ -141,6 +146,7 @@ export function scDetachTexture(
  * 复制成缩放绘制用的临时项（`$1$SC0330.txt:17564` → `i21d 18a9c 30d40`）。
  */
 export function scCopyItem(s: SceneState, srcHandle: number, dstHandle: number): { copied: boolean; drawItem: boolean; mesh: boolean } {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const srcItem = s.drawItems.get(srcHandle);
   const srcMesh = s.meshes.get(srcHandle);
   if (!srcItem && !srcMesh) return { copied: false, drawItem: false, mesh: false };
@@ -179,6 +185,7 @@ export interface MeshSpec {
  * 不建几何（bit0 不置 ⇒ 不画）。
  */
 export function scCreateMesh(s: SceneState, spec: MeshSpec): MeshObj {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const m = s.meshes.get(spec.handle) ?? makeMesh(spec.handle, spec.layer);
   m.layer = spec.layer;
   if (spec.vcount > 0 && spec.verts.length >= 3) {
@@ -197,6 +204,7 @@ export function scCreateMesh(s: SceneState, spec: MeshSpec): MeshObj {
  * 满屏黑覆盖层画出来（SN0000 黑屏成因之一）。
  */
 export function scEnsureMesh(s: SceneState, handle: number): { mesh: MeshObj; created: boolean } {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const found = s.meshes.get(handle);
   if (found) return { mesh: found, created: false };
   const m = makeMesh(handle, handle);
@@ -218,6 +226,7 @@ export type SetterOutcome =
  * 与早前实现不同：项不存在时**建项并写入**，而不是把值暂存到别处。
  */
 export function scSetDrawPos(s: SceneState, handle: number, x: number, y: number, z: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   applyDrawPos(item, x, y, z);
   return created ? 'created-applied' : 'applied';
@@ -225,6 +234,7 @@ export function scSetDrawPos(s: SceneState, handle: number, x: number, y: number
 
 /** `0x217` pivot（`sub_4ACF20`：建项 → **无门控**写入 `+24/+28/+32`）。 */
 export function scSetDrawPivot(s: SceneState, handle: number, x: number, y: number, z: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   applyDrawPivot(item, x, y, z);
   return created ? 'created-applied' : 'applied';
@@ -232,6 +242,7 @@ export function scSetDrawPivot(s: SceneState, handle: number, x: number, y: numb
 
 /** `0x1FF` 像素平移（`sub_4AC750`：建项 → 无门控 → `+0x68=1` + 平移 work 矩阵）。 */
 export function scSetDrawTranslation(s: SceneState, handle: number, x: number, y: number, z: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   applyDrawTranslation(item, x, y, z);
   return created ? 'created-applied' : 'applied';
@@ -243,6 +254,7 @@ export function scSetDrawTranslation(s: SceneState, handle: number, x: number, y
  *   CONFIG1 右侧滚动条拇指 = 上盖(27×23) + **中段(27×1，靠本条放大到 y=209)** + 下盖(27×24)。
  */
 export function scSetScale(s: SceneState, handle: number, sx: number, sy: number, sz: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   applyDrawScale(item, sx, sy, sz);
   return created ? 'created-applied' : 'applied';
@@ -254,6 +266,7 @@ export function scSetScale(s: SceneState, handle: number, sx: number, sy: number
  * ★项不存在时引擎**只建项、不配窗**（构造器 `flags=0`，门控必失败）。
  */
 export function scSetDrawColor(s: SceneState, handle: number, delay: number, dur: number, to: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   if ((item.flags & 1) === 0) return 'created-gated';
   applyDrawColor(item, delay, dur, to);
@@ -266,6 +279,7 @@ export function scSetDrawColor(s: SceneState, handle: number, delay: number, dur
  *   FROM 保留 ⇒ 画面正确。早前 emulator 丢弃这种写入 ⇒ 该项渲染时用了错误的 FROM。
  */
 export function scSetDrawColorAlpha(s: SceneState, handle: number, from: number, blend = 0): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   applyDrawColorAlpha(item, from, blend);
   return created ? 'created-applied' : 'applied';
@@ -273,6 +287,7 @@ export function scSetDrawColorAlpha(s: SceneState, handle: number, from: number,
 
 /** `0x21E` 缩放窗（`sub_4AD170`：建项 → 门控 `flags & 1`）。 */
 export function scSetScaleAnim(s: SceneState, handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   if ((item.flags & 1) === 0) return 'created-gated';
   applyScaleAnim(item, delay, dur, sx, sy, sz);
@@ -281,6 +296,7 @@ export function scSetScaleAnim(s: SceneState, handle: number, delay: number, dur
 
 /** `0x21F` 旋转窗（`sub_4AD250`：建项 → 门控 `flags & 1`）。 */
 export function scSetRotationAnim(s: SceneState, handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   if ((item.flags & 1) === 0) return 'created-gated';
   applyRotationAnim(item, delay, dur, ax, ay, az, deg);
@@ -289,6 +305,7 @@ export function scSetRotationAnim(s: SceneState, handle: number, delay: number, 
 
 /** `0x220` 平移窗（`sub_4AD3C0`：建项 → 门控 `flags & 1`）。 */
 export function scSetTranslationAnim(s: SceneState, handle: number, delay: number, dur: number, x: number, y: number, z: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   if ((item.flags & 1) === 0) return 'created-gated';
   applyTranslationAnim(item, delay, dur, x, y, z);
@@ -297,6 +314,7 @@ export function scSetTranslationAnim(s: SceneState, handle: number, delay: numbe
 
 /** `0x239` flipbook 窗（`sub_4AD4A0`：建项 → 门控 `flags & 1`）。 */
 export function scSetFlipbook(s: SceneState, handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { item, created } = scEnsureItem(s, handle);
   if ((item.flags & 1) === 0) return 'created-gated';
   applyFlipbook(item, delay, dur, frames, cols, flags);
@@ -342,6 +360,7 @@ export function scGetDrawItemPos(s: SceneState, handle: number): { x: number; y:
  * 配合"全屏黑覆盖层"渲染 ⇒ 整屏黑。
  */
 export function scSetVertexColor(s: SceneState, handle: number, index: number, alpha: number, rgb: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { mesh, created } = scEnsureMesh(s, handle);
   applyMeshVertexColor(mesh, index, vertexColorArg(mesh.state0, alpha, rgb));
   return created ? 'created-applied' : 'applied';
@@ -358,6 +377,7 @@ export function scSetVertexColorAlpha(
   alpha: number,
   rgb: number,
 ): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const { mesh, created } = scEnsureMesh(s, handle);
   applyMeshVertexColorAlpha(mesh, delay, dur, vertexColorArg(mesh.state0, alpha, rgb));
   return created ? 'created-applied' : 'applied';
@@ -387,6 +407,7 @@ export function scDrawCgNumber(
   digits: number,
   flags: number,
 ): number {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   scDetachTexture(s, id, digits);
   const items = cgDigitItems(id, rec, value, x, y, digits, flags);
   for (const it of items) {
@@ -405,16 +426,68 @@ export function scDrawCgNumber(
   return items.length;
 }
 
-/** 逐帧驱动：推进所有 DrawItem 的 5 个窗（窗末 `work ← target`；全窗结束清动画位）。 */
+/**
+ * 逐帧驱动：推进所有 DrawItem 的 5 个窗（窗末 `work ← target`；全窗结束清动画位）。
+ * ★只有**真的推进了窗**（窗末收尾 / 动画位清零）才置脏：否则每帧推进都会把 `dirty` 一直点亮，
+ * 脏位就失去意义（`tickets/T-0003`）。注意窗"跑完"的那一帧要置脏 —— 求值器在 `after` 相位返回目标值，
+ * 与上一帧的插值结果不同，必须再合成一次才能看到终态。
+ */
 export function scAdvance(s: SceneState, clock: number): void {
-  for (const it of s.drawItems.values()) advanceWindows(it, clock);
+  for (const it of s.drawItems.values()) if (advanceWindows(it, clock)) s.dirty = true;
 }
 
-/** 场景是否还有动画在跑（供 0x400 卫门判断）。 */
-export function scAnimationsDone(s: SceneState, clock: number): boolean {
+/**
+ * **合成判据**：场景里是否还有动画窗在跑（mesh 全窗 + draw item **5 个窗**）。
+ *
+ * 为什么要问这个：引擎每 present 都把每个对象的动画求值一次，所以"还有窗在跑"就必须继续合成，
+ * 否则窗口的中间帧根本不会上屏（`advanceWindows` 只在 present 里被调）。
+ * 判据与推进侧共用同一份窗实现（`itemAnimationsPending` → `windowDone`）。
+ *
+ * ★它**不是** `0x400` 门的判据 —— 门判据见 `scGateAnimationsDone`（差别的实证见那里的注释）。
+ */
+export function scAnimationsPending(s: SceneState, clock: number): boolean {
+  for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
+  // 极性：`itemAnimationsPending` = "**还有**窗没走完"（不需要取反）
+  for (const it of s.drawItems.values()) if (it.flags & 2 && itemAnimationsPending(it, clock)) return true;
+  return false;
+}
+
+/**
+ * **`0x400` 等待门的放行判据**：mesh 全窗 + draw item 的**颜色窗（窗 0）**。
+ *
+ * ★为什么不把 draw item 的 5 个窗都算进**门**里（2026-09 实测，`tickets/T-0024` 立案）：
+ *  - 序章 `src/SN0000.txt:1043` 在 `wait`(`:1048`) 的前一条给背景装了 `i220 (global-int f8023) 0 13880 0 1 0`
+ *    = delay 0 / dur **0x13880 = 80 000 ms** 的**平移**窗（`0x220` = 平移动画窗，op3 就是毫秒 dur）；
+ *  - 把窗 3 也算进门 ⇒ 门驻留 80 s。A/B 实测（同一份 `emulator.config.json`）：门连续 20 s 不放行、
+ *    `[present …] meshes={0x19258:255/#000000…} wait=0x400` 三帧数字完全不动、日志停在进 SN0000 前；
+ *    旧判据（窗 0）同一位置 5 s 内就完成淡出并进入正文（meshes 出现 17/53/124/…/255 的渐变序列）。
+ *  - 引擎的真值也不是"扫所有窗"：`sub_407E20`(raw 12762-12786，主循环 raw 21111 每帧轮询) 返回的是
+ *    **池挂起位 `_this[11629]`（= 字节 369348 / `46516`）** 与 **等待计时器**（`_this[11630]`=起点 369352、
+ *    `_this[11631]`=时长 369356）。那个计时器由 **`0x238` 装载**（`sub_4248C0` raw 32303-32312：
+ *    `Engine[92338]=0; Engine[92339]=op1` —— 正好是起点/时长两格；语料里 `i238` 的取值全是
+ *    0xC8/0x1F4/0x3E8/0x7D0… 这样的整毫秒数，见 `tickets/T-0024`）。
+ *    即引擎的"等几秒"主要来自 `i238 N` + `wait`，而不是"等所有动画窗"。
+ *  ⇒ 完整的计时器语义（含 `sub_407EA0` 的强制冻结位 `46512`）是**已知缺口**，实现见 `tickets/T-0024`；
+ *    在它落地前，这里保守保持**用户已验证**的旧口径（窗 0）——只加注释，不静默改行为。
+ */
+export function scGateAnimationsDone(s: SceneState, clock: number): boolean {
   for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return false;
-  for (const it of s.drawItems.values()) if (it.flags & 2 && !windowDone(it, 0, clock)) return false;
+  for (const it of s.drawItems.values()) if (it.flags & 2 && !windowDone(it, W_COLOR, clock)) return false;
   return true;
+}
+
+/**
+ * **"这一帧该不该合成"** —— 引擎式 present 条件：`场景脏 || 仍有动画在播`。
+ *
+ * 为什么做成共享函数（`tickets/T-0008` 的 D3）：这条判据原先只活在 `PixiBackend.needsRender()` 里，
+ * 而它**读了宿主自己的 `waitFlags` 镜像**（只置不清 ⇒ 永久为真）⇒ 既测不到（pixi 需要 WebGL/DOM），
+ * 也无法被 headless 复用。现在判据在共享层：两个宿主同一份，且能在 Node 里断言。
+ *
+ * ★这里**没有**"命中 `0x400` 等待门"这一项：门状态的真源是 `Engine.waitFlags`，
+ * 而"门等待期间持续合成"是**帧驱动**的职责（产品路径在门分支里无条件 present）。
+ */
+export function sceneNeedsRender(s: SceneState, clock: number, dirty: boolean): boolean {
+  return dirty || scAnimationsPending(s, clock);
 }
 // ---------------------------------------------------------------------------
 // 消息窗文本（引擎「每窗一张离屏表面 + 逐行显现」的等价物）
@@ -430,6 +503,7 @@ export function scAnimationsDone(s: SceneState, clock: number): boolean {
  * 返回排版结果，便于调用方诊断/断言。
  */
 export function scMsgWinSync(s: SceneState, win: number, input: MsgWinInput): TextFrame {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const frame = layoutWindow(win, input);
   // 该窗的 DrawItem 区间（`0x213`/`0x25D` 登记）：`scDetachTexture` 靠它判"字该跟着消失"
   if (input.itemRanges) s.msgRanges.set(win, input.itemRanges.map((r) => ({ base: r.base, count: r.count })));
@@ -442,6 +516,7 @@ export function scMsgWinSync(s: SceneState, win: number, input: MsgWinInput): Te
 
 /** 清空一个消息窗（引擎 `0x85` 清行队列 / `0x301` 删绘制项区间 / `0x71` 开始新一段）。 */
 export function scMsgWinClear(s: SceneState, win: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.msgWins.delete(win);
   s.msgRev.set(win, (s.msgRev.get(win) ?? 0) + 1);
 }
@@ -455,6 +530,7 @@ export function scMsgWinClear(s: SceneState, win: number): void {
  *    这正是引擎的行为（`CONFIG1` 每帧先 `create-texture` 再画，所以不会叠）。
  */
 export function scDrawString(s: SceneState, slot: number, x: number, y: number, text: string, fill = '#ffffff'): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const list = s.slotText.get(slot);
   if (list) list.push({ x, y, text, fill });
   else s.slotText.set(slot, [{ x, y, text, fill }]);
@@ -462,11 +538,13 @@ export function scDrawString(s: SceneState, slot: number, x: number, y: number, 
 
 /** `0x1F8` create-texture：新建/重建该槽 ⇒ 槽上的直绘文本随之清空（引擎是新表面）。 */
 export function scCreateTextureReset(s: SceneState, slot: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.slotText.delete(slot);
 }
 
 /** 全部清空（引擎 `op_exit_script` 的 `msgwin.reset()` 语义）。 */
 export function scMsgWinClearAll(s: SceneState): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   for (const win of [...s.msgWins.keys()]) scMsgWinClear(s, win);
 }
 
@@ -477,12 +555,14 @@ export function scMsgWinClearAll(s: SceneState): void {
 
 /** `0x1FC` 复位图元变换（`sub_4AC470`）：清该 DrawItem 的缩放/旋转/平移字段。 */
 export function scResetPrimTransform(s: SceneState, handle: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.primReset = handle;
   s.render4.primTransform.delete(handle);
 }
 
 /** `0x1FE` 图元变换 4 浮点（`sub_4AC660`；**不除 100**，与 0x1FD 的缩放不同）。 */
 export function scSetPrimTransform4(s: SceneState, handle: number, a: number, b: number, c: number, d: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.primTransform.set(handle, [a, b, c, d]);
 }
 
@@ -494,37 +574,44 @@ export function scBlitSlotToSlot(
   srcRect: number[],
   dstRect: number[],
 ): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.blits.push({ srcSlot, dstSlot, srcRect: [...srcRect], dstRect: [...dstRect] });
   if (s.render4.blits.length > 16) s.render4.blits.shift();
 }
 
 /** `0x20E` 图形提交（`sub_41A200`）：状态 38 包裹 + 设备 `Clear(0,0,3,0,1.0,0)`。 */
 export function scCommitGraphics(s: SceneState): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.commits++;
 }
 
 /** `0x224` 清转场表（`sub_41A290` → `sub_4AA180`）。 */
 export function scClearTransitions(s: SceneState): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.transitionClears++;
 }
 
 /** `0x229` 绘制模式 5 元组（`sub_423FE0`：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。 */
 export function scSetDrawModeBlock(s: SceneState, a: number, b: number, x: number, y: number, z: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.drawMode = [a, b, x, y, z];
 }
 
 /** `0x242` 写 DrawItem `+720`（`sub_4AD9A0`；同时写相邻对象的 `+504`）。 */
 export function scSetDrawEntryParam(s: SceneState, entry: number, value: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.entryParams.set(entry, value);
 }
 
 /** `0x256` 按 id 找 DrawItem 并写 2 int + 3 float（`sub_4ACD10`）。 */
 export function scSetSlotParams(s: SceneState, slot: number, a: number, x: number, y: number, z: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.slotParams.set(slot, [a, x, y, z]);
 }
 
 /** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。 */
 export function scSetMeshEntryAttr(s: SceneState, mesh: number, index: number, value: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   let m = s.render4.meshAttrs.get(mesh);
   if (!m) {
     m = new Map<number, number>();
@@ -535,11 +622,13 @@ export function scSetMeshEntryAttr(s: SceneState, mesh: number, index: number, v
 
 /** `0x32A` 释放 3D 模型槽（`sub_4A0750`：析构 + delete + 置 0）。 */
 export function scRelease3DSlot(s: SceneState, slot: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.released3D.push(slot);
   s.meshes.delete(slot);
 }
 
 /** `0x32D` 3D 颜色（`sub_499DF0`：四分量各 ÷255 后下发）。 */
 export function scSet3DColor(s: SceneState, r: number, g: number, b: number, a: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.color3D = [r, g, b, a];
 }

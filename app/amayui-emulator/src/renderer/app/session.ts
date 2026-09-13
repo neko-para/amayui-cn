@@ -7,15 +7,15 @@
  *  2. **控制窗桥接**（`registerControlHandlers`）——全量指令日志开关、定向 trace 白名单、桩跳过；
  *  3. **状态上报**（`notifyStatus`）——节流推送 `ControlStatus`（BIN 名 / 四张清单 / 遥测 / 暂停点 / 错误）。
  *
- * 与渲染后端的边界：本类只调 `native.present()/needsRender()/sceneAnimationsDone()/log()`，
+ * 与渲染后端的边界：本类只调 `native.present()/needsRender()/animationsDone()/log()`，
  * 不触碰 Pixi 内部；渲染循环（`startFrameLoop`）由 `boot.ts` 启动，两边靠 `nowMs` 与门旗标协作。
  */
 import { SLEEP_GATE, type Engine } from '../../vm/engine.js';
 import { NotImplementedOp, stepOnce, type StepTrace } from '../../vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../../vm/ops.js';
+import type { NativeBridge } from '../../vm/native.js';
 import type { DropRecorder } from '../../vm/nativeTap.js';
 import type { ControlStatus } from '../ipcFileSource.js';
-import type { PixiBackend } from '../pixiBackend.js';
 import type { RenderStatus } from '../renderStatus.js';
 import { JsonlWriter } from './jsonlWriter.js';
 import { Telemetry } from './telemetry.js';
@@ -41,7 +41,12 @@ function nextFrame(): Promise<void> {
 export class RendererSession {
   readonly #status: RenderStatus;
   readonly #traceLog: TraceLog;
-  readonly #native: PixiBackend;
+  /**
+   * ★类型是**桥接口**（`tickets/T-0013`），不是 `PixiBackend`：
+   * 本类只允许用"桥声明过的能力"（`log`/`present`/`needsRender`/`animationsDone`/`texturesIdle`/`audio`），
+   * 这样"会话偷偷用了某个宿主私有方法"会**编译期**暴露；也给 B4（Electron 迁到帧驱动）铺路。
+   */
+  readonly #native: NativeBridge;
   readonly #drops: DropRecorder;
   readonly #e: Engine;
 
@@ -184,7 +189,7 @@ export class RendererSession {
         this.#setGate('text-reveal');
         const more = e.serviceTextReveal(e.nowMs);
         if (!more) this.#traceLog.line('=== text reveal done ===');
-        if (native.needsRender()) await this.#present();
+        if (native.needsRender?.() ?? true) await this.#present();
         this.#frames++;
       } else if (e.awaitingAdvance) {
         // ★**等待推进门**（引擎 effect_flags bit31 → 主循环 `sub_411BC0` + `Sleep(2)`）：
@@ -232,7 +237,7 @@ export class RendererSession {
         const stillAdv = e.serviceAdv();
         await this.#stepOnceTraced();
         if (!stillAdv) this.#traceLog.line('=== ADV cleared (reveal done) ===');
-        if (native.needsRender()) await this.#present();
+        if (native.needsRender?.() ?? true) await this.#present();
         this.#frames++;
       } else {
         this.#setGate('');
@@ -240,7 +245,7 @@ export class RendererSession {
         // ★悬停派发**只在"等待推进"态**做（引擎的 `sub_411BC0` 就是等待泵，见上面的分支）：
         //   脚本跑动中派发 UI label 会与在飞的页状态交错。
         // 引擎式 present：场景脏/动画待播/刚命中门控时合成。若此批停在门控，由下轮门控分支持续 present。
-        if (native.needsRender()) await this.#present();
+        if (native.needsRender?.() ?? true) await this.#present();
       }
 
       this.#reportDiagnostics();
@@ -269,14 +274,18 @@ export class RendererSession {
     if (this.#native.texturesIdle) await this.#native.texturesIdle();
     // ★音频帧泵（引擎 raw 20645/20646 的每帧步骤）：SE 延迟播到期、语音排入到期、BGM 淡变推进，
     //   以及 **ADV 激活位刚被清掉时冲刷寄存的语音**（引擎 raw 20146/24966）⇒ 必须带上 advActive。
+    //   ★**所有权已归帧驱动**（`tickets/T-0003` 的 D5）：`runFrameLoop` 每完整帧发一次同样的 tick。
+    //   本类还没迁到驱动（`T-0004`/B4）⇒ 暂时保留这一处，B4 迁移时**必须删掉它**（否则每帧双 tick）。
     this.#native.audio?.({ kind: 'tick', nowMs: this.#e.nowMs, advActive: this.#e.advActive });
-    this.#native.present();
+    // ★单一时间域（`tickets/T-0008` 的 D1）：把引擎的 `nowMs` 交给宿主做**合成与门判据**的时钟，
+    //   而不是让宿主自己再算一份 `performance.now() - wallStart`（两份时间域 ⇒ "同一时刻"不可比）。
+    this.#native.present?.(this.#e.nowMs, this.#e.waitFlags);
   }
 
   /** 0x400 动画等待门：场景动画跑完即放行。 */
   #serviceAnimGate(): void {
     this.#setGate('0x400');
-    if (this.#native.sceneAnimationsDone()) {
+    if (this.#native.animationsDone?.(this.#e.nowMs) ?? false) {
       this.#e.waitFlags &= ~0x400;
       this.#waiting = false;
       this.#traceLog.line('=== gate 0x400 cleared (scene anims done) ===');

@@ -128,7 +128,8 @@ interface SeChannel {
   /** 装载中/待播（`sePlay` 先于装载完成时挂起）。 */
   pending: { loop: boolean; offsetSec?: number } | null;
   /** 延迟播武装（引擎 `[262+ch]`/`[272+ch]`/`[282+ch]`/`[292+ch]`）。 */
-  delay: { delayMs: number; loop: boolean; armedAtMs: number } | null;
+  /** 延迟播记录。`armedAtMs` = **null 表示还没起步**（★不能用 0：headless 的虚拟时钟第一帧就是 0）。 */
+  delay: { delayMs: number; loop: boolean; armedAtMs: number | null } | null;
 }
 
 /** 一条**音频意图**：VM 的音频 opcode 与宿主之间唯一的词汇表（`NativeBridge.audio` 的参数）。 */
@@ -169,7 +170,8 @@ interface VoiceChannel {
   /** 0x2FF 预备但未生效的因子。 */
   preparedFactor: number | null;
   /** 排入的请求（引擎 `[265+ch]`/`[268+ch]`/`[271+ch]`/`[274+ch]`/`[277+ch]`）。 */
-  request: { delayMs: number; armedAtMs: number; id: number; loop: boolean } | null;
+  /** 语音排入记录。`armedAtMs` 同 SE：**null = 还没起步**。 */
+  request: { delayMs: number; armedAtMs: number | null; id: number; loop: boolean } | null;
   /** ADV 激活位期间的寄存（引擎 `Engine[122505+ch]`/`[122508+ch]`）。 */
   deferred: { id: number; loop: boolean } | null;
   /** 装载中：装载完成后自动起播。 */
@@ -332,7 +334,7 @@ export class AudioEngine {
     const c = this.#seChannel(ch, 'se-delay');
     if (!c) return;
     if (!this.#enabled.se) return;
-    c.delay = { delayMs: Math.max(0, delayMs), loop, armedAtMs: 0 };
+    c.delay = { delayMs: Math.max(0, delayMs), loop, armedAtMs: null };
   }
 
   // ==================== 语音（0xC4/0x1BD/0x2F4/0x2C0/0x2F5/0x2F6/0x2F7/0x2F8/0x2FF/0x302） ====================
@@ -372,7 +374,7 @@ export class AudioEngine {
   voiceQueue(ch: number, id: number, _aux: number, delayMs: number): void {
     const v = this.#voiceChannel(ch, 'voice-queue');
     if (!v) return;
-    v.request = { delayMs: Math.max(0, delayMs), armedAtMs: 0, id, loop: false };
+    v.request = { delayMs: Math.max(0, delayMs), armedAtMs: null, id, loop: false };
   }
 
   /** `0x2F6`：复位语音通道（停播 + 清状态 + **丢弃寄存**；引擎还会刷新 `Engine[122501]`）。 */
@@ -569,7 +571,7 @@ export class AudioEngine {
       const c = this.#se[ch]!;
       if (!c.delay) continue;
       const d = c.delay;
-      if (d.armedAtMs === 0) d.armedAtMs = nowMs;
+      if (d.armedAtMs === null) d.armedAtMs = nowMs; // ★null 才是"未起步"（0 会被第一帧吃掉）
       if (nowMs - d.armedAtMs >= d.delayMs) {
         c.delay = null;
         if (!c.clip) c.pending = { loop: d.loop };
@@ -581,7 +583,7 @@ export class AudioEngine {
       const v = this.#voice[ch]!;
       if (!v.request || this.#voiceBusy(v)) continue;
       const r = v.request;
-      if (r.armedAtMs === 0) r.armedAtMs = nowMs;
+      if (r.armedAtMs === null) r.armedAtMs = nowMs; // ★同上
       if (nowMs - r.armedAtMs >= r.delayMs) this.voicePlay(ch, r.id, r.loop);
     }
     // 4) BGM 淡变 + 压低

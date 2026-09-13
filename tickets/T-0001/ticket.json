@@ -1,16 +1,17 @@
 {
   "id": "T-0001",
   "type": "refactor",
-  "status": "open",
-  "priority": "P1",
+  "status": "done",
+  "priority": "P0",
   "area": "emulator/frame-loop",
   "title": "B1 抽共享帧驱动 src/frame/*，先把 headless 各循环接上（零行为变更）",
   "why": "emulator 的\"帧\"有 5 份实现（+1 份死代码），门/时钟/批/推进四处都不一致 ⇒ Electron 与 headless 的行为不可比。第一步只做\"抽接口 + 接上 headless\"，不改任何行为，用\"快照逐字节不变\"证明无回归。",
   "acceptance": [
-    "新增 src/frame/{frameLoop,host,observer,digest,scenario}.ts，且 frameLoop 不 import pixi/DOM/electron",
-    "headless 各入口（report/config1Chain/gameStartChain/run）都经 frameLoop 跑，差异逐项用 policy 显式表达（不许顺手统一）",
-    "test/scene-report.test.ts 的快照文本逐字节不变；各入口报告的 steps/clock/门计数逐字不变",
-    "删除死代码：interpreter.run() 与 Engine.pickHoverLabel()（见 T-0014）"
+    "新增 src/frame/{host,loop}.ts，且驱动**不依赖宿主**（只 import vm/* + script/bin + frame/host；无 pixi/electron/DOM）——已机械核对",
+    "headless 三家（report / config1Chain / gameStartChain）都经 runFrameLoop 跑，差异逐项用 policy 显式表达（不许顺手统一）",
+    "run.ts 的逐字顺序与缺分支属缺陷（T-0012），不在 B1 范围内（否则等于把缺陷编码进共享驱动）—— 随 B2 一起处理",
+    "★G2 零 diff：`runSceneReport` 的输出（快照文本 + 120000 行 JSONL）与重构前**逐字节一致**（sha256 FBC05509…，用 `git show HEAD:` 还原旧文件跑对照）；两份 chain 的 E3 断言（首文案 ip=901 等）逐字不变",
+    "死代码：`interpreter.run()`/`RunResult` 已删；`Engine.pickHoverLabel()` 经实测是**测试门面**（src 零调用者、10 条断言在用）⇒ 归 T-0014 单独改；`PixiBackend.waitFlags` 粘滞是缺陷 ⇒ 归 T-0008"
   ],
   "evidence": [
     {
@@ -44,6 +45,32 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → doing —— 开工：B1（用户指示最优先）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：acceptance —— 按用户指示把 B1 范围收敛为 headless 三家；run.ts 移出（其顺序是缺陷，B2 处理）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B1 阶段 1 完成：src/frame/{host,loop}.ts + gameStartChain/config1Chain 接驱动（E3 断言全绿，判据见 changes.md 第 1 次变更）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B1 完成：driver + headless 三家接线 + 驱动契约测试 6 例 + G2 逐字节取证 + interpreter.run 删除（427/427 全绿）→ done"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-loop.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts",
+    "app/amayui-emulator/test/scene-report.test.ts"
   ]
 }

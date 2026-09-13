@@ -1,21 +1,21 @@
 {
   "id": "T-0009",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P2",
   "area": "emulator/render",
   "title": "动画\"完成\"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟",
   "why": "scAnimationsDone 只检查窗 0（颜色窗），而 advanceWindows 会推进 5 个窗 ⇒ \"已完成\"与\"窗真的走完\"不等价（0x400 门会提前放行/多等）。另外 pixi 的 clockMs 只在 present() 内刷新，而门在 present 之前就读它 ⇒ 判据用的是上一帧时钟。",
   "acceptance": [
-    "scAnimationsDone 与 advanceWindows 覆盖同一组窗（共享一份\"窗是否走完\"的实现）",
+    "合成判据与推进侧共用同一份\"窗是否走完\"的实现（itemAnimationsPending/windowDone）；门判据的范围另立 T-0024",
     "门判据用的时钟与推进用的时钟是同一个（同一帧内不再读旧时钟）",
     "新增测试：多窗动画未跑完时 0x400 门不放行"
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
-      "anchor": "scAnimationsDone",
-      "note": "只看 meshes 与窗 0"
+      "anchor": "export function scAnimationsPending",
+      "note": "合成口径（5 窗，复用 itemAnimationsPending）；门口径见 scGateAnimationsDone / T-0024"
     },
     {
       "file": "app/amayui-emulator/src/renderer/drawitem/animWindow.ts",
@@ -24,14 +24,42 @@
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "clockMs = performance.now()",
-      "note": "时钟只在 present 内刷新"
+      "anchor": "if (nowMs !== undefined) this.clockMs = nowMs;",
+      "note": "时钟改由引擎时钟注入（D1）：门判据与推进判据同源，不再读上一帧时钟"
     }
   ],
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：acceptance, evidence, links"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：links"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-loop.test.ts"
+  ],
+  "links": {
+    "tickets": [
+      "T-0024"
+    ]
+  }
 }

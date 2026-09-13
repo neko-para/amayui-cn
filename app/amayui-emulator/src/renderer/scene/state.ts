@@ -6,6 +6,16 @@ import type { TextFrame } from '../../text/layout.js';
 
 /** 场景模型状态（= `Scene` 在 emulator 侧的可见部分）。 */
 export interface SceneState {
+  /**
+   * **模型脏位**（"自上次合成以来有没有变过"）—— 由**共享层**维护：每个变更型 `sc*` 操作置 `true`
+   * （只读的 getter/判据不置），`scAdvance` 只在**真的推进了某个窗**时置。
+   *
+   * 为什么放在共享层（`tickets/T-0003` 的 B3）：`needsRender` 的判据 `sceneNeedsRender` 已经是共享函数，
+   * 而"脏"若由各宿主自己记，就又是"两个宿主各一份镜像"（同类事故见 `T-0008` 的 `waitFlags`）。
+   * 清零的时机由宿主决定：pixi 在 `present()` 里清（它有自己的 `sceneDirty`，本轮不动）、
+   * headless 在 `snapshot()` 里清 —— "取快照 = 消费当前状态"。
+   */
+  dirty: boolean;
   drawItems: Map<number, Item>;
   meshes: Map<number, MeshObj>;
   /**
@@ -77,6 +87,8 @@ export interface SceneState {
 
 export function newSceneState(): SceneState {
   return {
+    // ★初始为 true：第一帧必须合成一次（与 pixi 的 `sceneDirty` 初值同义）。
+    dirty: true,
     drawItems: new Map<number, Item>(),
     meshes: new Map<number, MeshObj>(),
     msgWins: new Map<number, TextFrame>(),

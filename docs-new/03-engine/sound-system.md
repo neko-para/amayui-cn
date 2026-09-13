@@ -258,8 +258,20 @@ sub_4B70B0(缓冲, 参数);                                     // IDirectSoundB
   `resolveBgmResource` 复刻 `sub_48DB80` 的两条分支（曲号 − 2 / `groups[(id>>>24)−1][id & 0xFFFFFF]`），
   拿不到才退回 `BGM%03d.OGG` 文件名兜底。守卫：`test/music-table.test.ts`（含真实 SYS4INI 与
   `$3$AUTORUN` 演练）+ `test/append-packs.test.ts` 的 E3 段。第二层台账：`music-number-table-lifecycle`。
+- **headless 侧也已补齐**（2026-09，`tickets/T-0006`）：帧泵的**所有权归帧驱动**（`src/frame/loop.ts` 的
+  `audio` 档，每完整帧一次 `tick`、先于合成），两条 chain / `run.ts` 因此天然拿到 tick；`HeadlessScene` 的
+  `audio` 是**条件能力**（构造时给 `audioHost` 才存在，否则闸门 A 记「意图被丢弃」）；现成宿主
+  `src/audio/nodeAudioHost.ts` 不出声但**真取字节**（`FileSource`）+ **从容器头推精确时长**
+  （OGG = 末页 granule ÷ 首页采样率；WAV = `data` ÷ `fmt` 的 byteRate）⇒ 语音占线/SE 通道释放的判据与 Electron 同源。
+  守卫：`test/audio-node-host.test.ts`。★`report.ts` 显式 `audio:'never'`（它是指令驱动的 tracer）⇒ G2 逐字节不变。
 - **仍未做**：① 「语音跟着文本走」所需的文本项记录表（`0x1D2` 仍 no-op）与 ADV 显示路径入队；② 设备丢失后的重建与
   SE 通道重载（`sub_4B5090`）；③ 影片音轨（`sound:Volume4`）；④ 音量曲线的 1:1 听感校准（现为线性增益，数学等价）。
+
+> ★**哨兵坑（2026-09 实测，`T-0006`）**：延迟记录的"还没起步"在 emulator 里曾用数字 **0** 表示
+> （tick 里 `if (armedAtMs === 0) armedAtMs = nowMs`）。引擎那个字段是**浮点时间戳**（`timeGetTime()`，真机几千 ms），
+> 所以"0 = 未起步"在 Electron 侧永远只命中一次；但 headless 的**虚拟时钟第一帧就是 0** ⇒ 锁存后仍是 0 ⇒
+> 下一帧再锁存一次 ⇒ `0x2BF se-delay 500ms` 变成 600ms 才响。已改为显式 `null`
+> （同类的 `animStart === 0`/`meshWindow.start === 0` 见 `tickets/T-0002/notes.md` 的时钟域条目）。
 - 第二层台账 `audio-module-topology-and-volume-routing` / `voice-request-deferral-and-adv-gate` /
   `frame-pump-sound-channels` / `frame-pump-music-fade` 已从 `absent` 升为 `modeled-verified`（E2 + 守卫）。
 

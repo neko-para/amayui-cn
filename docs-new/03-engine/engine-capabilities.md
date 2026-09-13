@@ -49,7 +49,7 @@
 | `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | ➖ n/a | E1 |
 | `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | 🟠 部分 | E1 |
 | `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ❌ 缺失 | E0 |
-| `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | 🟠 部分 | E3 · `test/scene-report.test.ts` |
+| `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | 🟠 部分 | E3 · `test/anim-window-done.test.ts` |
 | `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ❌ 缺失 | E0 |
 | `scene-norender-mode` | 渲染 | Engine+167990 无渲染/隐藏窗口模式 | 🟠 部分 | E1 · `test/engine-config.test.ts` |
 | `3d-effect-level-gate` | 3D | Scene+46668 3D 特效等级 | ➖ n/a | E1 |
@@ -168,20 +168,20 @@
 ### `scene-freeze-flag`（absent）
 
 - **能力**：Scene+46512 动画强制冻结
-- **触发**：`sub_407EA0`（ADV/0x400 分支）置 1，或转场类型为负值
-- **缺失时为什么静默**：冻结只让插值短路到终态，代码路径完全合法，无报错
-- **引擎**：sub_407EA0, sub_49AA30, sub_4AF1C0, sub_4B06D0 @ raw 12788-12801
+- **触发**：sub_407EA0(raw 12789-12801) 置 1（0x400 门被玩家输入跳过时 raw 21135；ADV 分支 raw 21161）；绘制期 raw 134936 在窗类型 v384[13] < 0 时也置 1
+- **缺失时为什么静默**：不建模不会报错：只是等待期间点键无效、动画不会被迫收尾（表现为"点了没反应"）。
+- **引擎**：sub_407EA0, sub_49AA30, sub_4AF1C0, sub_4B06D0 @ raw 12789-12801
 - **读的字段**：Scene+46512, Scene+46528
-- **emulator 现状**：★未建模 Scene+46512「动画强制冻结」：引擎在转场/截图等场景会冻住所有动画窗，emulator 会继续播 ⇒ 表现差异
+- **emulator 现状**：未建模（缺口，不是"已知无关"）：引擎里 46512==1 时绘制期的窗判定走 sub_4AAE10(...)[3]=0（raw 134941 的 `|| *(_DWORD*)(_this+46512)==1`）⇒ 所有窗立刻算结束——这正是"点键跳过 0x400 等待"的实现方式（emulator 现在等待期间点键无效）。相关 raw：21135/21161 置位、134936 的负类型分支。见 tickets/T-0024。
 
 ### `scene-pending-flag-0x400-gate`（partial）
 
 - **能力**：Scene+46516 转场/等待在途标志（0x400 卫门值）
-- **触发**：转场进行中或动画窗未结束时置 1；帧头清 0，帧尾按状态回置
-- **缺失时为什么静默**：标志恒为非零时只是永远不清转场表、0x400 门不开，引擎不认为这是错误
-- **引擎**：sub_4B4040, sub_407E20, sub_4B06D0 @ raw 136793-136841
-- **读的字段**：Scene+46516, Scene+46500, Scene+46512
-- **emulator 现状**：emulator 用 scAnimationsDone()（按各窗相位）推导放行，未建模 46516 本身，也没用 Engine+369344 的"强制重绘请求"⇒ 判据比引擎粗
+- **触发**：池挂起位 Scene+46516 由绘制期置 1、帧头清 0；叠加 0x238 装载的等待计时器（起点 Engine+369352、时长 Engine+369356）
+- **缺失时为什么静默**：标志恒为非零时只是永远不清转场表、0x400 门不开，引擎不认为这是错误；门判据口径错（例如把 80 000 ms 的平移窗算进门）表现为"卡住不动"，也不报错。
+- **引擎**：sub_407E20, sub_407EA0, sub_4B4040, sub_4248C0 @ raw 12762-12786
+- **读的字段**：Scene+46516, Scene+46512, Engine+369352, Engine+369356, Engine+369332, Engine+92338, Engine+92339
+- **emulator 现状**：已拆成两条口径：合成用 scAnimationsPending（5 窗），门用 scGateAnimationsDone（mesh 全窗 + draw item 颜色窗）。仍未建模：① 0x238 装载的等待计时器（Engine[92338]/[92339]，emulator 只写 engineValues 没人读）；② 池挂起位 46516 的逐帧瞬时语义；③ 点键跳过门（raw 21113-21135 清门 + 置强制冻结）。相关 raw：主循环 0x400 分支 21109-21153、0x238 的装载 32303-32312。见 tickets/T-0024。
 
 ### `scene-flag-46528-bits`（absent）
 

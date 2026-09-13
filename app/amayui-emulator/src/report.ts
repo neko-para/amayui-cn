@@ -21,11 +21,13 @@ import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
 import { resolveResourceDir } from './arch/resourceDir.js';
 import { Engine } from './vm/engine.js';
-import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from './vm/interpreter.js';
-import { ExitScript, ScriptReset } from './vm/ops.js';
+import { loadScriptData } from './vm/interpreter.js';
 import { DropRecorder, withNativeTap } from './vm/nativeTap.js';
 import { HeadlessScene } from './renderer/headlessScene.js';
 import type { NativeBridge } from './vm/native.js';
+import { runFrameLoop, type FrameLoopOptions } from './frame/loop.js';
+import type { FrameBranch } from './frame/loop.js';
+import type { FrameHost } from './frame/host.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from './emulatorOptions.js';
 import { emulatorOptionsOf } from './emulatorOptionsFile.js';
 
@@ -155,87 +157,109 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
   let stepsThisFrame = 0;
   let advanceWaits = 0;
 
-  while (steps < opt.steps) {
-    const f = e.curScript();
-    if (!f.script || f.ip >= f.script.instructions.length) {
-      stopReason = 'script-end';
-      break;
-    }
-    e.nowMs = clock;
-    // ★帧循环服务（与 renderer session 同构，见 src/vm/engine.ts 的 serviceAdv/serviceAdvanceWait）：
-    //  1) 等待推进门：headless 无输入源 ⇒ 确定性放行 1 帧（计数），期间不派发指令；
-    //  2) ADV 分支：先跑每帧服务（输入泵 + 「未显示完」判定，可能清掉 ADV 位）；
-    //  3) `0x300` 每窗「逐行贴出」闸门（CONFIG 消息预览的循环演示）——引擎主循环每帧都跑。
-    e.serviceWinReveal(clock);
-      e.serviceCharGrid(clock); // 0x73 的 ▼ 图标：每 op10 ms 换一格（无字格时内部直接返回）
-    // ★逐字显现：按确定性时钟推进（与 renderer session 的 `text-reveal` 分支同构）
-    if (e.textRevealing) {
-      e.serviceTextReveal(clock);
-      frames++;
-      clock += frameMs;
-      headless.advance(clock);
-      continue;
-    }
-    if (e.awaitingAdvance) {
-      advanceWaits++;
-      e.forceAdvance(); // 走热点路由：跳到该热点的 label（与真实点击同一路径）
-      frames++;
-      clock += frameMs;
-      headless.advance(clock);
-      continue;
-    }
-    const advFrame = e.advActive;
-    if (advFrame) e.serviceAdv();
-    let t: StepTrace;
-    try {
-      t = await stepOnce(e);
-    } catch (err) {
-      if (err instanceof ExitScript) { stopReason = 'exit-script'; break; }
-      if (err instanceof ScriptReset) { stopReason = 'reset'; break; }
-      if (err instanceof NotImplementedOp) { stopReason = `unimplemented 0x${err.opcode.toString(16)}`; break; }
+  /**
+   * **帧驱动配置**（`tickets/T-0001` B1：逐项照抄本文件原来的循环，不许"顺手统一"）。
+   *
+   * 本文件的循环与两家 chain 结构性不同，所以这里用驱动的"每次一条"档（`maxStepsPerFrame: 1`）+
+   * 由 `onStep` 自己决定帧边界：
+   *  - `gates.anim/sleep: 'ignore'` = 原实现**没有** `0x400`/`SLEEP` 分支（不是"清掉"，是"不看"）；
+   *  - `gates.advance: 'force'`    = `else if (e.awaitingAdvance) { advanceWaits++; forceAdvance(); …continue }`；
+   *  - `advFrame: false`           = 原实现**没有**独立的 ADV 分支：`const advFrame = e.advActive; if (advFrame) e.serviceAdv();`
+   *    就在 stepOnce 之前 ⇒ 这里放进 `onStepStart`（语义相同：读一次、派发一条）；
+   *  - `maxStepsPerFrame: 1`       = 原循环"一轮一条"（`while (steps < opt.steps)`）；
+   *  - `until`                     = 原来的**帧首**脚本尾/步数上限判定（放在 `until` 里 ⇒ 那两条都不跑每帧服务，与原来一致）；
+   *  - 帧边界（`FRAME_OPS`/超出 `maxStepsPerFrame`/两条门分支）全在 `onStep`/`onFrameEnd` 里，逐句照抄。
+   */
+  let branch: FrameBranch = 'batch';
+  let advFrameNow = false;
+  const boundary = (): void => {
+    frames++;
+    stepsThisFrame = 0;
+    clock += frameMs;
+    headless.advance(clock);
+  };
+  let scriptEnded = false;
+  const host: FrameHost = { now: () => clock };
+  const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
+    gates: { anim: 'ignore', sleep: 'ignore', advance: 'force' },
+    advFrame: false,
+    maxStepsPerFrame: 1,
+    // ★`report` 是**指令驱动的 tracer**（帧边界由 `FRAME_OPS`/批上限决定、时钟按它自己的粒度走），
+    //   所以帧末的模型推进仍由它自己的钩子做（`present: 'never'`）——见 `tickets/T-0002/notes.md` 的 C2 决策。
+    present: 'never',
+    // ★同理：不假装"每帧的音频泵"（`tickets/T-0003` 的 D5 把泵的**所有权**给了驱动）。
+    //   宿主也没有 `audio`，所以两种写法输出相同；显式写出来是为了锁住 C2 口径 + G2 逐字节不变。
+    audio: 'never',
+    onGate: (b) => {
+      branch = b;
+      if (b === 'advance') advanceWaits++;
+    },
+    onStepStart: () => {
+      advFrameNow = e.advActive;
+      if (advFrameNow) e.serviceAdv();
+    },
+    onStep: (t) => {
+      steps++;
+      const hex = `0x${t.opcode.toString(16)}`;
+      const c = opCounts.get(t.opcode);
+      if (c) c.count++;
+      else opCounts.set(t.opcode, { name: t.name, count: 1 });
+      if (t.gap) {
+        const g = gaps.get(t.opcode);
+        if (g) { g.count++; g.sample = t.gap.operands; }
+        else gaps.set(t.opcode, { name: t.name, count: 1, sample: t.gap.operands });
+      }
+      if (opFilter === null || opFilter.has(t.opcode)) {
+        jsonl.push(
+          JSON.stringify({
+            step: steps,
+            script: t.script,
+            ip: t.ip,
+            op: hex,
+            name: t.name,
+            kind: t.handlerKind,
+            operands: t.operands,
+            ...(t.gap ? { gap: true } : {}),
+            clock,
+          }),
+        );
+      }
+      // 帧边界：推进虚拟时钟 + 驱动一次场景窗（确定性）。
+      // ADV 分支下引擎是"每帧恰好 1 条"，因此该分支的每条指令都算一帧。
+      if (FRAME_OPS.has(t.opcode) || advFrameNow) boundary();
+      else if (++stepsThisFrame > maxStepsPerFrame) boundary(); // 长时间没有帧指令（或死循环）也推进
+    },
+    onFrameEnd: () => {
+      // 逐字显现 / 等待推进这两条门分支在原来也是"各占一帧"（`continue` 前 frames++/clock/advance）
+      if (branch === 'text-reveal' || branch === 'advance') boundary();
+    },
+    onUnknown: (err) => {
+      stopReason = `unimplemented 0x${err.opcode.toString(16)}`;
+      return 'stop';
+    },
+    onError: (err) => {
       stopReason = `error: ${(err as Error).message}`;
-      break;
-    }
-    steps++;
-    const hex = `0x${t.opcode.toString(16)}`;
-    const c = opCounts.get(t.opcode);
-    if (c) c.count++;
-    else opCounts.set(t.opcode, { name: t.name, count: 1 });
-    if (t.gap) {
-      const g = gaps.get(t.opcode);
-      if (g) { g.count++; g.sample = t.gap.operands; }
-      else gaps.set(t.opcode, { name: t.name, count: 1, sample: t.gap.operands });
-    }
-    if (opFilter === null || opFilter.has(t.opcode)) {
-      jsonl.push(
-        JSON.stringify({
-          step: steps,
-          script: t.script,
-          ip: t.ip,
-          op: hex,
-          name: t.name,
-          kind: t.handlerKind,
-          operands: t.operands,
-          ...(t.gap ? { gap: true } : {}),
-          clock,
-        }),
-      );
-    }
-
-    // 帧边界：推进虚拟时钟 + 驱动一次场景窗（确定性）。
-    // ADV 分支下引擎是"每帧恰好 1 条"，因此该分支的每条指令都算一帧。
-    if (FRAME_OPS.has(t.opcode) || advFrame) {
-      frames++;
-      stepsThisFrame = 0;
-      clock += frameMs;
-      headless.advance(clock);
-    } else if (++stepsThisFrame > maxStepsPerFrame) {
-      // 脚本里长时间没有帧指令（或死循环）⇒ 仍按帧推进，避免动画窗永远不前进
-      frames++;
-      stepsThisFrame = 0;
-      clock += frameMs;
-      headless.advance(clock);
-    }
+      return 'stop';
+    },
+  };
+  {
+    const r = await runFrameLoop(e, host, {
+      ...base,
+      until: () => {
+        if (steps >= opt.steps) return true;
+        const f = e.curScript();
+        if (!f.script || f.ip >= f.script.instructions.length) {
+          scriptEnded = true;
+          return true;
+        }
+        return false;
+      },
+    });
+    // 驱动的 stopReason → 本文件原来的字符串（顺序与 error 分支各自写过 stopReason，这里只兜底）
+    if (r.stopReason === 'exit') stopReason = 'exit-script';
+    else if (r.stopReason === 'reset') stopReason = 'reset';
+    else if (r.stopReason === 'until' && scriptEnded) stopReason = 'script-end';
+    else if (r.stopReason === 'until') stopReason = 'steps-limit';
   }
   headless.advance(clock);
 

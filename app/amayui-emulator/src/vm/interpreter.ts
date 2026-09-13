@@ -1,6 +1,6 @@
 /** 解释器主循环（每步 await，以支持异步文件代理的 call-script）。 */
 import type { Engine, Frame } from './engine.js';
-import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, ExitScript, ScriptReset, loadScriptIntoFrame } from './ops.js';
+import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, loadScriptIntoFrame } from './ops.js';
 import { readIntOperand, readFloatOperand } from './operand.js';
 import { makeCtx } from './step.js';
 import type { OpHandler } from './step.js';
@@ -204,37 +204,11 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   return trace;
 }
 
-export interface RunResult {
-  executed: number;
-  stoppedAt?: StepTrace;
-  exited: boolean;
-  /** exit-script(0x9) 全量重置后的状态（帧/全局已清空） */
-  reset?: boolean;
-  error?: unknown;
-}
-
 /**
- * 从当前状态运行解释器；steps 为 0/undefined 则一直跑到退出/异常。
- * 注：遇未知 opcode 时 stepOnce 抛 NotImplementedOp（进入 error 字段），调用方若要用「作为桩函数跳过」的
- * 恢复路径，应像 renderer.ts 那样自己持循环（登记 `e.unknownOpStubs` 后对同一条指令重试），而非用本函数。
+ * ★2026-09 **删除**了 `run()` / `RunResult`（`tickets/T-0014`）：它全仓**无导入者**（`grep` 只命中自己），
+ * 而且**没有任何每帧服务**（不 present、不跑门、不推进时钟）⇒ 它其实是"第 6 份帧循环"。
+ * 现在：想单步跑脚本用 `stepOnce`，想跑帧用 `src/frame/loop.ts` 的 `runFrameLoop`（唯一一份）。
  */
-export async function run(e: Engine, steps?: number): Promise<RunResult> {
-  let executed = 0;
-  while (steps === undefined || executed < steps) {
-    try {
-      const trace = await stepOnce(e);
-      executed++;
-      if (trace.handlerKind === 'unimplemented') {
-        return { executed, stoppedAt: trace, exited: false };
-      }
-    } catch (err) {
-      if (err instanceof ExitScript) return { executed, exited: true };
-      if (err instanceof ScriptReset) return { executed, exited: false, reset: true };
-      return { executed, exited: false, error: err };
-    }
-  }
-  return { executed, exited: false };
-}
 
 /**
  * 把脚本字节装入引擎当前帧（供启动时直接 load index 0）。

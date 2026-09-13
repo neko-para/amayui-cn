@@ -1,7 +1,7 @@
 {
   "id": "T-0011",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P1",
   "area": "emulator/frame-loop",
   "title": "两份 chain 无条件清 0x400 且从不推进动画窗 ⇒ E3 证据与产品路径不同源",
@@ -13,18 +13,18 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
-      "anchor": "waitFlags &= ~0x400",
-      "note": "无条件清门"
-    },
-    {
-      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
-      "anchor": "动画窗在 Node 侧无 present 驱动",
-      "note": "注释自陈：chains 不推进动画窗"
+      "anchor": "gates: { anim: 'wait'",
+      "note": "前半修完：不再无条件清 0x400，改为等 animationsDone()"
     },
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
-      "anchor": "waitFlags &= ~0x400",
+      "anchor": "gates: { anim: 'wait'",
       "note": "同上"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "advanceModel: (t) =>",
+      "note": "后半修完：每帧推进模型（修前从不推进动画窗）"
     }
   ],
   "blockedBy": [
@@ -34,6 +34,20 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B1 把本票指的行为搬进共享驱动配置（行为未变）；决策对象随之变为驱动的档位"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B2 第 1 批：本票前半（不推进动画窗）已修；后半（无条件清 0x400）暂缓，附实测原因"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "B2 第 2 批：门统一 + 每帧推进 ⇒ 本票两半都修完 → done（doneWhy）"
     }
-  ]
+  ],
+  "notes": "（2026-09-14 B1）两张 chain 的「无条件清 0x400 / 不推进动画窗 / ADV 分支吞异常」这些行为**没有改变**，只是从各家手写的 for 循环搬进了 `src/frame/loop.ts` 的驱动配置（`gates.anim='clear'`、`advErrors='swallow'`、帧末钩子里没有 `advance()`）。本票要决策的对象因此变成\"驱动的那几个档位该不该保留\"——证据锚点可从 chain 文件上移到驱动。\n\n（2026-09-14 B2 第 1 批）本票拆成两半，进度一半：\n- ✅ \"两份 chain **从不推进动画窗**\" ⇒ **已修**（B2/A1：`FrameHost.advanceModel` 每帧一次，chains 已接）。\n- ⏸ \"**每帧无条件清 0x400**\" ⇒ 仍在（chains 传 `gates.anim: 'clear'`）。原因见 T-0002/notes：改成 `'wait'` 会改变\n  脚本执行路径（`mesh-vertex-quad` ② 的 0x19640 端点色从 #80000000 变 #00000000），必须先做路径级 before/after。",
+  "doneWhy": "两半都已在 B2 收敛：① 0x400 不再每帧无条件清（chains 传 gates.anim = wait，等 host.animationsDone()）；② 每帧推进一次模型（FrameHost.advanceModel）。判据：npm test 434/434 全绿（含两份 chain 的 E3 与 mesh-vertex-quad 的端点色），且 report 的输出仍与重构前逐字节一致（sha256 FBC05509…）。附带订正一处测试伪影：mesh-vertex-quad ② 原先断言的\"幕布已淡完\"其实是\"越过目标一整批\"的停止点伪影（见 T-0002/changes.md 第 2 批的 trace 对照）。"
 }

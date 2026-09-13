@@ -1,7 +1,7 @@
 {
   "id": "T-0006",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P1",
   "area": "emulator/audio",
   "title": "headless 没有音频帧泵 ⇒ 寄存语音/延迟 SE/BGM 淡变整条缺失",
@@ -18,24 +18,40 @@
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
-      "anchor": "snapshotText",
-      "note": "headless 宿主能力面（无 audio）"
+      "anchor": "audio?: (intent: AudioIntent) => void;",
+      "note": "headless 宿主已实现 audio（条件能力：给了 audioHost 才存在）"
     },
     {
       "file": "app/amayui-emulator/src/audio/audioEngine.ts",
       "anchor": "tick(",
-      "note": "tick 的语义（寄存冲刷/延迟/淡变）"
+      "note": "tick 语义（寄存冲刷/延迟 SE/BGM 淡变）；★修掉了 armedAtMs 的 0 哨兵（虚拟时钟从 0 起会晚一帧）"
     }
   ],
   "links": {
     "analysis": [
       "msgwin-char-reveal-grid"
+    ],
+    "tickets": [
+      "T-0003",
+      "T-0004"
     ]
   },
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "改字段：evidence, links, tests"
+    },
+    {
+      "at": "2026-09-13",
+      "what": "open → done"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/audio-node-host.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts"
   ]
 }
