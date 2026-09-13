@@ -13,10 +13,10 @@
 |---|---|---|
 | `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 25 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **103** | 需要关注（非 n/a 且非已核验）= **56** |
+| **合计** | **104** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
@@ -28,7 +28,7 @@
 | 帧循环 | 14 | 9 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
-| 资源 | 13 | 4 |
+| 资源 | 14 | 5 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -139,6 +139,7 @@
 | `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | 🟠 部分 | E0 |
 | `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | ❌ 缺失 | E1 |
 | `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ❌ 缺失 | E1 |
+| `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | 🟠 部分 | E1 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -582,3 +583,12 @@
 - **引擎**：sub_4535F0, sub_453540 @ raw 136828-136829
 - **读的字段**：Manager[261] 设备, Manager[313]/[314] 时间基准, Manager[315] 渲染模式
 - **emulator 现状**：emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但"粒子按墙钟时间步进"这一行为需要随 3D 效果子系统一起建模
+
+### `agerc-module-interface-and-version-lock`（partial）
+
+- **能力**：AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表
+- **触发**：进程启动（WinMain 早期，创建窗口之前）：`sub_48E730` 硬编码 `LoadLibraryA("AGERC.DLL")` 并解析 `_GetInstance@0`/`_ShowDialog@12`/`_OperateMenu@16`；随后用配置 `set:RCVersion` 与 DLL 实例的版本字段比对。脚本侧另有一条：`0x14B`（唯一调用点 `SAVE.txt:7 i14b 5250`）重新加载同一个 DLL，`0x14C` 把 `_SetNameLenMax@20` 绑进槽 1，`0x14D` 调用它
+- **缺失时为什么静默**：★这条**不静默**：`0x14C`/`0x14D` 根本没注册 handler ⇒ 一进「Load Data（ロード）」就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`TITLE → Load Data → SAVE.BIN ip=2 0x14c`）。而 `0x14B` 是记录式桩 ⇒ 前面那条"加载"看起来"成功了"（日志里只有一行丢弃），**缺口被前一条桩掩盖**：不实现这三条，整个存档/读档界面（`SAVE.BIN`，1201 行）都进不去
+- **引擎**：sub_48E730, sub_48E640, sub_4229D0, sub_422AB0, sub_430170 @ raw 109387-109427
+- **读的字段**：Engine+490072 AGERC 模块句柄, Engine+490076 起 100 槽导出表, 配置 set:RCVersion, FileDB（id→名字，0x14B 的库名来源）
+- **emulator 现状**：`0x14B` 是 `NATIVE_OPS` 的记录式桩（`stubSubsystem`，只记一行）；`0x14C`/`0x14D` **未注册**。**建议整体模型化实现**（不需要真的 LoadLibrary）：① `0x14B` 把"AGERC 模块已加载"记为状态并校验库名 ∈ {AGERC.DLL}；② `0x14C` 在 emulator 内置的 AGERC 导出表（该 DLL 的 21 个具名导出，见 docs-new/03-engine/agerc-module.md）里查名 → 存进 100 槽表；③ `0x14D` 调用该槽（`_SetNameLenMax@20` 建模为"记录存档名长度上限"）。这样能解锁整条存档/读档链路，且不引入任何原生依赖

@@ -225,12 +225,18 @@ export const STUB_NATIVE_OPS: OpTable = [
   //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
   /**
-   * `0x14B`（sub_4229D0, raw 31056）：**运行时插件/DLL 加载** —— 先 `FreeLibrary(_this+490072)` 释放旧句柄，
-   * 用 `sub_454FA0(_this+680092, op1)` 从字符串表取库名，再 `LoadLibraryA(name)` 存入 `_this+490072`；
-   * 失败则 `GetLastError` + 抛异常。SAVE.BIN 会走到这条。
-   * emulator 不加载原生库 ⇒ 记录式桩（**不抛异常**）；后续对该库的调用若有，会落到各自 opcode 的桩上。
+   * `0x14B`（sub_4229D0, raw 31056）：**加载 AGERC 模块（脚本侧）** —— 先 `FreeLibrary(_this+490072)` 释放旧句柄并清 0，
+   * 读 op1 = **统一文件 id** → `fileDbIdToName_454FA0` 取名字 → `LoadLibraryA(name)` 存回 `Engine+490072`；
+   * 失败 ⇒ `GetLastError` + 抛 ShowMessage 异常。
+   *
+   * ★**不是通用插件/DLL 加载器**（2026-09 订正）：941 个脚本里**只有 1 处**调用（`src/SAVE.txt:7 i14b 5250`），
+   * 0x5250 = 文件 id 21072 = **`AGERC.DLL`**；引擎自己也用**硬编码字面量** `tstrFilename[] = "AGERC.DLL"`
+   * （raw 4927）在 WinMain 里加载同一个 DLL（`initAgercInterface_48E730`）。配套的 `0x14C`（绑定导出到
+   * `Engine+490076` 起的 **100 槽表**）与 `0x14D`（调用该槽）**当前未注册** ⇒ 一进「Load Data（ロード）」
+   * 就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`.tmp/loadDataProbe.mts`）。
+   * ⇒ 这三条可以**整体模型化实现**（不需要真加载原生库），见 `docs-new/03-engine/agerc-module.md`。
    */
-  [0x14b, stubSubsystem], // 运行时 DLL 加载（不加载原生库）
+  [0x14b, stubSubsystem], // 加载 AGERC 模块（不加载原生库；纯记录）
   [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
   [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
   [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）

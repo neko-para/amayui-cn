@@ -4392,14 +4392,15 @@
   {
     "addr": "0x4229D0",
     "raw_name": "sub_4229D0",
-    "semantic_name": "op_load_library_4229D0",
+    "semantic_name": "op14B_loadAgercModule_4229D0",
     "op": "0x14B",
     "status": "ANALYZED",
-    "purpose": "运行时插件/DLL 加载：若 Engine+490072 已有句柄先 FreeLibrary 并清 0；读 op1=字符串表下标 → sub_454FA0 取名 → LoadLibraryA 存进 Engine+490072；失败 ⇒ GetLastError + 抛异常（抛异常影响控制流）",
+    "purpose": "**脚本侧加载 AGERC 模块**：若有旧句柄先 FreeLibrary 并清 0；读 op1 = 统一文件 id → `fileDbIdToName_454FA0` 取名字 → `LoadLibraryA(name)` 存进 `Engine+490072`（字节；dword 122518）；失败 ⇒ GetLastError + 抛 ShowMessage 异常",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["FreeLibrary 旧句柄", "LoadLibraryA(名)", "失败 GetLastError + 抛", "句柄存 Engine+490072"],
     "fields_used": ["Engine+490072", "Engine+680092(字符串表)"],
-    "evidence": "raw 31056-31075"
+    "evidence": "raw 31056-31075",
+    "notes": "★**不是通用插件/DLL 加载器**（2026-09 复核）：941 个脚本里只有 **1 处**调用（`src/SAVE.txt:7` `i14b 5250`），而 0x5250 = 文件 id 21072 = **`AGERC.DLL`**（SYS4INI 文件表第 21072 项）；引擎自己也用**硬编码字面量** `LoadLibraryA(\"AGERC.DLL\")`（`tstrFilename[]` raw 4927）在 WinMain 里加载同一个 DLL（见 initAgercInterface_48E730）。⇒ 不存在\"加载任意动态库\"的机制，可实现为\"固定/模型化的 AGERC 模块句柄\"，无需真加载原生库"
   },
   {
     "addr": "0x422F80",
@@ -6680,6 +6681,42 @@
     "fields_used": ["Scene+1860 设备", "Scene+50704 3D 效果管理器", "Scene+46668 3D 特效等级"],
     "evidence": "raw 126522-126570（创建点 raw 126541-126545）",
     "notes": "管理器销毁点：raw 130401 / 130644-130648（Scene 重建/关闭时）"
+  },
+  {
+    "addr": "0x422AB0",
+    "raw_name": "sub_422AB0",
+    "semantic_name": "op14C_bindAgercExport_422AB0",
+    "op": "0x14C",
+    "status": "ANALYZED",
+    "purpose": "**绑定 AGERC 导出到槽表**：`op1` = 槽号（0..99）、`op2` = 导出名字符串；`GetProcAddress(Engine+490072, op2)` → 存进 `Engine + 4*op1 + 490076`",
+    "sub_behaviors": ["v2 = readString(2)；ProcAddress = GetProcAddress(*(HMODULE*)(Engine+490072), v2)", "ProcAddress == 0 ⇒ 抛 ShowMessage「%sのアドレス取得に失敗しました．ERRORCODE = %d」", "result = readInt(1)；if (result > 0x63) ⇒ 抛 ShowMessage「%sの関数インデックスが不正です．0から99までを指定してください．」(raw 31124)", "*(Engine + 4*result + 490076) = ProcAddress"],
+    "fields_used": ["Engine+490072 AGERC 模块句柄", "Engine+490076 起 100 槽函数指针表", "operand 1/2"],
+    "evidence": "raw 31090-31135",
+    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp（实测：TITLE → Load Data 进 SAVE.BIN 后**第 2 条指令**就停在这条）。语料唯一用法 `src/SAVE.txt:8 set-agerc-export 1 \"_SetNameLenMax@20\"`"
+  },
+  {
+    "addr": "0x430170",
+    "raw_name": "sub_430170",
+    "semantic_name": "op14D_callAgercExport_430170",
+    "op": "0x14D",
+    "status": "ANALYZED",
+    "purpose": "**调用 AGERC 槽表里的导出**：`i14D <槽> <op2未使用> <数组地址> <数组长度> <数组地址2> <n>`",
+    "sub_behaviors": ["v2 = readInt(4)（数组长度）；v15 = operandAddress(3)", "v2 > 0 ⇒ v3 = new[](4*v2)，逐元素 **DEC**（`__ROR4__(key ^ ROL4(v,11),25)`，key = Engine[97059]）拷进 v3", "v14 = &Engine[readInt(1) + 122519]（= 槽表第 op1 项，字节 490076 + 4*op1）", "v11 = operandAddress(5)；v12 = readInt(6)", "v13 = (*v14)(Engine[96981], v3, v2, v11, v12)   // 5 个实参（与 `_SetNameLenMax@20` 的 @20 一致）", "调用后把 v3 逐元素 **ENC** 回 op3 指向的数组（原地回写）"],
+    "fields_used": ["Engine+490076 起 100 槽函数指针表", "Engine[96981]（字节 387924，引擎的消息窗 HWND/资源\"窗口\"参数）", "Engine[97059] DEC key", "operand 1/3/4/5/6（op2 未被读）"],
+    "evidence": "raw 43038-43090（`//----- (00430170)`）",
+    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp。语料唯一用法 `src/SAVE.txt:9 call-agerc-export 1 (local 12) (local 21bc) 1 (local 21bc) 0`（调用 `_SetNameLenMax@20`）"
+  },
+  {
+    "addr": "0x48E640",
+    "raw_name": "sub_48E640",
+    "semantic_name": "checkAgercVersion_48E640",
+    "status": "PARTIAL",
+    "purpose": "AGERC 版本校验：取 DLL 侧版本字段（实例 [5]）并与配置 `set:RCVersion` 比对；不符 ⇒ MessageBox「AGERC.DLLのバージョンが異なります．」+ 退出",
+    "sub_behaviors": ["由 initAgercInterface_48E730 在解析完三个导出后调用（raw 109409）", "调用方 WinMain 侧另有一道：`v26 = GetConfig(\"set:RCVersion\"); if (v26 && v26 != AGERC实例[5]) MessageBox + 退出`（raw 142155-142162）"],
+    "fields_used": ["配置键 set:RCVersion（raw 5004）", "AGERC 实例 +5（版本字段）"],
+    "unmodeled": ["sub_48E640 体内细节未逐行读（版本字段来源）"],
+    "evidence": "raw 109336-109385（定义行起）；调用点 raw 109409；WinMain 侧校验 raw 142155-142162；字符串 raw 5273",
+    "notes": "★这条是\"引擎与 DLL 必须同版本\"的锁：`set:RCVersion` 为空时跳过校验（真机 SYS4REG.INI 里没有 [set] 节）"
   }
 
 ]

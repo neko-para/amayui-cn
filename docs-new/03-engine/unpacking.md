@@ -13,11 +13,15 @@ AGE/System4 是 Eushully 自研引擎，**是通用解释器**，本身**不含�
 | `raw/天结_unpacked.exe` | **已脱壳干净版**（1,746,944 B）—— 分析主对象 |
 | `engine/天结_unpacked.exe_utf8.c` | Hex-Rays 全量反编译 C（UTF-8，**主力**） |
 | `engine/天结_unpacked.exe_utf8.lst` | IDA 清单（含数据区） |
+| `engine/AGERC.DLL.c` / `.lst` | 配套模块 **AGERC.DLL** 的反编译/清单（CP932 + GBK 文件名行 + UTF-16LE 宽字符串混编；见 `./agerc-internals.md`） |
+| `engine/AGERC.DLL_utf8.c` / `_utf8.lst` | ↑ 的 UTF-8 转写（LF；**行号与原文件一致**，分析用这份） |
 | `engine/engine.hpp` | `this` 对象模型（`struct Engine` C++ 布局，未知区 char 占位） |
 | ~~`engine/engine.cpp`~~ | ⚠️ **已废弃**：`scripts/re/retarget.py` 重定型管线产物（libclang/AST 文本改写已放弃；分析结论以数据层 `analysis/*.json` + 原始基准 `_utf8.c` 为准） |
 | `scripts/re/` | 反汇编→重定型管线（⚠️ 重定型部分已废弃） |
 
 > ⚠️ 原始 `engine/天结_unpacked.exe.c` 为 Shift-JIS、`.lst` 为 Shift-JIS+GBK 混编，需读 `*_utf8.*` 版本。
+> `engine/AGERC.DLL.c` / `.lst` 同样混编（CP932 + GBK 文件名行 + **UTF-16LE 汉化宽字符串**），读 `engine/AGERC.DLL_utf8.*`；
+> 转写规则与两份产物的字节实测见 [`agerc-module.md`](./agerc-module.md) §4。
 
 ## 2. 反汇编 → 重定型管线
 

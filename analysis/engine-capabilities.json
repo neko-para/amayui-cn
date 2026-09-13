@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 103,
+    "total": 104,
     "modeled-verified": 22,
     "modeled-unverified": 7,
-    "partial": 24,
+    "partial": 25,
     "absent": 25,
     "n/a-known": 25,
-    "needsAttention": 56
+    "needsAttention": 57
   },
   "entries": [
     {
@@ -2943,6 +2943,35 @@
         "status": "absent",
         "evidence": "E1",
         "note": "emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但\"粒子按墙钟时间步进\"这一行为需要随 3D 效果子系统一起建模"
+      }
+    },
+    {
+      "id": "agerc-module-interface-and-version-lock",
+      "subsystem": "资源",
+      "name": "AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表",
+      "trigger": "进程启动（WinMain 早期，创建窗口之前）：`sub_48E730` 硬编码 `LoadLibraryA(\"AGERC.DLL\")` 并解析 `_GetInstance@0`/`_ShowDialog@12`/`_OperateMenu@16`；随后用配置 `set:RCVersion` 与 DLL 实例的版本字段比对。脚本侧另有一条：`0x14B`（唯一调用点 `SAVE.txt:7 i14b 5250`）重新加载同一个 DLL，`0x14C` 把 `_SetNameLenMax@20` 绑进槽 1，`0x14D` 调用它",
+      "engine": {
+        "fns": [
+          "sub_48E730",
+          "sub_48E640",
+          "sub_4229D0",
+          "sub_422AB0",
+          "sub_430170"
+        ],
+        "raw": "109387-109427"
+      },
+      "reads": [
+        "Engine+490072 AGERC 模块句柄",
+        "Engine+490076 起 100 槽导出表",
+        "配置 set:RCVersion",
+        "FileDB（id→名字，0x14B 的库名来源）"
+      ],
+      "whySilent": "★这条**不静默**：`0x14C`/`0x14D` 根本没注册 handler ⇒ 一进「Load Data（ロード）」就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`TITLE → Load Data → SAVE.BIN ip=2 0x14c`）。而 `0x14B` 是记录式桩 ⇒ 前面那条\"加载\"看起来\"成功了\"（日志里只有一行丢弃），**缺口被前一条桩掩盖**：不实现这三条，整个存档/读档界面（`SAVE.BIN`，1201 行）都进不去",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E1",
+        "note": "`0x14B` 是 `NATIVE_OPS` 的记录式桩（`stubSubsystem`，只记一行）；`0x14C`/`0x14D` **未注册**。**建议整体模型化实现**（不需要真的 LoadLibrary）：① `0x14B` 把\"AGERC 模块已加载\"记为状态并校验库名 ∈ {AGERC.DLL}；② `0x14C` 在 emulator 内置的 AGERC 导出表（该 DLL 的 21 个具名导出，见 docs-new/03-engine/agerc-module.md）里查名 → 存进 100 槽表；③ `0x14D` 调用该槽（`_SetNameLenMax@20` 建模为\"记录存档名长度上限\"）。这样能解锁整条存档/读档链路，且不引入任何原生依赖"
       }
     }
   ]
