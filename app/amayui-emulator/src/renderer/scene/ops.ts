@@ -346,3 +346,77 @@ export function scCreateTextureReset(s: SceneState, slot: number): void {
 export function scMsgWinClearAll(s: SceneState): void {
   for (const win of [...s.msgWins.keys()]) scMsgWinClear(s, win);
 }
+
+// ---------------------------------------------------------------------------
+// A4 族（图元/网格/纹理/渲染状态，2026-09）：引擎写 Scene 字段/DrawItem 属性，
+// emulator 记录进 `SceneState.render4`（渲染器可选消费，见该字段的说明）。
+// ---------------------------------------------------------------------------
+
+/** `0x1FC` 复位图元变换（`sub_4AC470`）：清该 DrawItem 的缩放/旋转/平移字段。 */
+export function scResetPrimTransform(s: SceneState, handle: number): void {
+  s.render4.primReset = handle;
+  s.render4.primTransform.delete(handle);
+}
+
+/** `0x1FE` 图元变换 4 浮点（`sub_4AC660`；**不除 100**，与 0x1FD 的缩放不同）。 */
+export function scSetPrimTransform4(s: SceneState, handle: number, a: number, b: number, c: number, d: number): void {
+  s.render4.primTransform.set(handle, [a, b, c, d]);
+}
+
+/** `0x207` 槽→槽 StretchRect（`sub_4A3980`）：源/目标同尺寸矩形。 */
+export function scBlitSlotToSlot(
+  s: SceneState,
+  srcSlot: number,
+  dstSlot: number,
+  srcRect: number[],
+  dstRect: number[],
+): void {
+  s.render4.blits.push({ srcSlot, dstSlot, srcRect: [...srcRect], dstRect: [...dstRect] });
+  if (s.render4.blits.length > 16) s.render4.blits.shift();
+}
+
+/** `0x20E` 图形提交（`sub_41A200`）：状态 38 包裹 + 设备 `Clear(0,0,3,0,1.0,0)`。 */
+export function scCommitGraphics(s: SceneState): void {
+  s.render4.commits++;
+}
+
+/** `0x224` 清转场表（`sub_41A290` → `sub_4AA180`）。 */
+export function scClearTransitions(s: SceneState): void {
+  s.render4.transitionClears++;
+}
+
+/** `0x229` 绘制模式 5 元组（`sub_423FE0`：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。 */
+export function scSetDrawModeBlock(s: SceneState, a: number, b: number, x: number, y: number, z: number): void {
+  s.render4.drawMode = [a, b, x, y, z];
+}
+
+/** `0x242` 写 DrawItem `+720`（`sub_4AD9A0`；同时写相邻对象的 `+504`）。 */
+export function scSetDrawEntryParam(s: SceneState, entry: number, value: number): void {
+  s.render4.entryParams.set(entry, value);
+}
+
+/** `0x256` 按 id 找 DrawItem 并写 2 int + 3 float（`sub_4ACD10`）。 */
+export function scSetSlotParams(s: SceneState, slot: number, a: number, x: number, y: number, z: number): void {
+  s.render4.slotParams.set(slot, [a, x, y, z]);
+}
+
+/** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。 */
+export function scSetMeshEntryAttr(s: SceneState, mesh: number, index: number, value: number): void {
+  let m = s.render4.meshAttrs.get(mesh);
+  if (!m) {
+    m = new Map<number, number>();
+    s.render4.meshAttrs.set(mesh, m);
+  }
+  m.set(index, value);
+}
+
+/** `0x32A` 释放 3D 模型槽（`sub_4A0750`：析构 + delete + 置 0）。 */
+export function scRelease3DSlot(s: SceneState, slot: number): void {
+  s.render4.released3D.push(slot);
+  s.meshes.delete(slot);
+}
+
+/** `0x32D` 3D 颜色（`sub_499DF0`：四分量各 ÷255 后下发）。 */
+export function scSet3DColor(s: SceneState, r: number, g: number, b: number, a: number): void {
+  s.render4.color3D = [r, g, b, a];
+}

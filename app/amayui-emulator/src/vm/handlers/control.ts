@@ -341,6 +341,8 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.msgwin.reset();
   c.e.native.msgWinClearAll?.(); // 文本图层也要清（引擎：换脚本即整块清 0，见 sub_40DF10）
   c.e.routes.reset();
+  // 文本项记录表（引擎 `Font+3364` 的 vector）也是引擎复位整块清掉的一部分：回想/语音重播的账本随脚本作废。
+  c.e.textItems.reset();
   // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
   c.e.engineValues.set(96983, 0);
   // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。

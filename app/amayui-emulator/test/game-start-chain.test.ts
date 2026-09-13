@@ -69,34 +69,42 @@ function mk(native: NativeBridge = new StubNative(() => {})): {
 
 /** 本链路采集到的 25 条。 */
 const IMPLEMENTED_9 = [0x195, 0x19a, 0x1b6, 0x1c7, 0x1cc, 0x215, 0x216, 0x218, 0x21a] as const;
-const SKIPPED_16 = [
-  0x93, 0x94, 0x97, 0xd9, 0x1ad, 0x1b1, 0x1bc, 0x20e, 0x224, 0x229, 0x238, 0x242, 0x256, 0x258, 0x32a, 0x32d,
-] as const;
+/**
+ * A4（图元/网格/纹理/渲染状态）9 条：2026-09 转真实现（`handlers/gfx-state.ts`）。
+ * 它们**不回写操作数**（从 VM 视角不可观测），所以不在 IMPLEMENTED_9 里；但也**不再是"无依据的 no-op"**。
+ */
+const A4_IMPLEMENTED = [0x20e, 0x224, 0x229, 0x238, 0x242, 0x256, 0x258, 0x32a, 0x32d] as const;
+/** 仍按依据跳过的（纯渲染/字段清理，且 emulator 无消费者）。 */
+const SKIPPED_7 = [0x93, 0x94, 0x97, 0xd9, 0x1ad, 0x1b1, 0x1bc] as const;
 
 // ---------------------------------------------------------------------------
 // 注册表棘轮
 // ---------------------------------------------------------------------------
 
-test('注册表棘轮：9 条写操作数的已转真实现（OPS），16 条视觉/死写类归 engine-internal', () => {
+test('注册表棘轮：9 条写操作数 + A4 的 9 条已转真实现（OPS），7 条视觉/死写类仍归 engine-internal', () => {
   for (const op of IMPLEMENTED_9) {
     assert.ok(OPS.has(op), `0x${op.toString(16)} 必须已实现（它会回写脚本操作数）`);
     assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应是 no-op`);
   }
-  for (const op of SKIPPED_16) {
+  for (const op of A4_IMPLEMENTED) {
+    assert.ok(OPS.has(op), `0x${op.toString(16)} 必须已实现（A4：见 handlers/gfx-state.ts）`);
+    assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应再是 no-op`);
+  }
+  for (const op of SKIPPED_7) {
     assert.ok(ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 应有依据地跳过（engine-internal）`);
     assert.ok(!OPS.has(op) && !NATIVE_OPS.has(op), `0x${op.toString(16)} 不应出现在 OPS/NATIVE_OPS`);
   }
 });
 
-test('棘轮：engine-internal 的 25 条中，被跳过的 16 条**一个字都不写操作数**', () => {
+test('棘轮：仍被跳过的 7 条**一个字都不写操作数**', () => {
   // 机械判据：把 op1/op2 指向两个全局 int，跑完 handler 后两者必须都没变。
   // （这正是"能否安全跳过"的定义 —— 一旦有人把它们改成半实现并开始回写，本测试会红，
-  //   提示应当把它们搬进 OPS 并补断言。）
+  //   提示应当把它们搬进 OPS 并补断言。）——A4 那 9 条就是这么搬走的（2026-09）。
   const { e, run } = mk();
   const before = { a: 0x1234, b: 0x5678 };
   e.globals.int.set(0x300, enc(e.key, before.a));
   e.globals.int.set(0x301, enc(e.key, before.b));
-  for (const op of SKIPPED_16) {
+  for (const op of SKIPPED_7) {
     run(op, [gInt(0x300), gInt(0x301), gInt(0x302), gInt(0x303), gInt(0x304)]);
     assert.equal(dec(e.key, e.globals.int.get(0x300) ?? 0), before.a, `0x${op.toString(16)} 不应写 op1`);
     assert.equal(dec(e.key, e.globals.int.get(0x301) ?? 0), before.b, `0x${op.toString(16)} 不应写 op2`);

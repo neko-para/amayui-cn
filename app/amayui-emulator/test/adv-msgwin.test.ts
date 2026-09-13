@@ -468,19 +468,29 @@ test('★0x71 开始一段新消息：清该窗文本记录（CONFIG 进出设�
   assert.deepEqual(e.msgwin.slot(9).segments, []);
 });
 
-test('★0x1D2（文本项属性记录表 push）：已注册、不抛错、不回写操作数', () => {
-  // 背景（2026 实测 `.tmp/amayui-emulator.log:2215`）：用户在 CONFIG.BIN 命中 0x1D2 被暂停并手工跳过。
-  // 它在全库出现 42760 次（最常用的未注册 opcode）；引擎体只往 `Font+3364` 的 72B 记录向量 push
-  // 一条 `{win=默认窗, +20=op2, +24=op1}`，**不回写操作数** ⇒ 归 ENGINE_INTERNAL_OPS（宿主无消费者）。
-  const native = new HeadlessScene({});
-  const e = new Engine(native);
-  const f = new Frame();
-  const h = ENGINE_INTERNAL_OPS.get(0x1d2);
-  assert.ok(h, '0x1D2 应在 ENGINE_INTERNAL_OPS 里（否则命中即硬报错，CONFIG.BIN 会停住）');
-  // 写目标槽（type 0x9 池操作数）：no-op 不应改动它
-  f.locals[5] = 12345;
-  const fieldsBefore = e.engineValues.size;
-  h!(makeCtx(e, f, instr(0x1d2, [loc(5), im(0)]), native, () => {}));
-  assert.equal(f.locals[5], 12345, '0x1D2 不回写操作数（引擎只 push 到 Font 侧记录表）');
-  assert.equal(e.engineValues.size, fieldsBefore, '0x1D2 不写引擎字段');
+test('★0x1D2（文本项记录表 push）：OPS 真实现、push 一条记录、不回写操作数', () => {
+  // 背景：0x1D2 在全库出现 42760 次（最高频的原本未实现指令）。2026-09 起与读取端
+  // 0x1D3/0x1D4/0x2F3 一起**成对转真实现**（见 `handlers/text-items.ts` + `../vm/textItems.ts`）：
+  // 引擎体 `if (!Engine[97055]) sub_45EFA0(Font, 0, op1, op2)` ⇒ 往 `Font+3364` 的 72B 记录表
+  // push `{win=默认窗, +24=op1, +20=op2}`，**不回写操作数**。
+  const { e, step } = mk();
+  const h = OPS.get(0x1d2);
+  assert.ok(h, '0x1D2 应在 OPS 里（曾是 ENGINE_INTERNAL_OPS；读取端没它就没数据）');
+  assert.equal(ENGINE_INTERNAL_OPS.has(0x1d2), false, '不得同时留在 ENGINE_INTERNAL_OPS（两表不相交）');
+  // 写目标槽（type 0x9 池操作数）：push 不应改动它
+  e.engineValues.set(21631, 8); // 默认窗 = 8
+  step(0x1d2, [im(0x1234), im(0x5678)]);
+  assert.equal(e.textItems.records.length, 1, '0x1D2 应 push 一条记录');
+  assert.deepEqual(
+    { win: e.textItems.records[0]!.win, v24: e.textItems.records[0]!.v24, v20: e.textItems.records[0]!.v20 },
+    { win: 8, v24: 0x1234, v20: 0x5678 },
+    '记录字段：win=默认窗、+24=op1、+20=op2',
+  );
+  // ★i1bb 0 期间不记账（引擎 `if (!Engine[97055])`）
+  step(0x1bb, [im(0)]);
+  step(0x1d2, [im(1), im(2)]);
+  assert.equal(e.textItems.records.length, 1, 'i1bb 0 后不得再记账');
+  step(0x1bb, [im(1)]);
+  step(0x1d2, [im(3), im(4)]);
+  assert.equal(e.textItems.records.length, 2, 'i1bb 1 后恢复记账');
 });

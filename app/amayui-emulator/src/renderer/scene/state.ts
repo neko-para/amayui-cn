@@ -32,6 +32,39 @@ export interface SceneState {
    * （与消息窗的"入队时钉住"相对），记下来才能回归"角色名颜色溢到 ADV 样例窗"这类问题。
    */
   slotText: Map<number, { x: number; y: number; text: string; fill: string }[]>;
+  /**
+   * **A4 族的渲染状态记录**（2026-09 落地）。
+   *
+   * 引擎里这 11 条写的是 Scene 的字段 / DrawItem 与 MeshEntry 的属性（见 `handlers/gfx-state.ts`
+   * 的对照表）。emulator 目前**只记录**：这些字段在真机上影响 D3D/DD 的绘制细节（变换复位、
+   * 槽→槽 blit、Clear、转场表、绘制模式、网格属性、3D 颜色），而重写侧的 Pixi 渲染管线还没有
+   * 逐条消费它们。记录下来的意义：① 不再是无依据的 no-op；② 报告/测试可以断言"脚本确实下发了
+   * 这个状态"；③ 将来渲染器要消费时，数据已经在模型里。
+   */
+  render4: {
+    /** `0x1FC` 最近一次复位过变换的图元 handle。 */
+    primReset: number | null;
+    /** `0x1FE` 图元变换 4 浮点（handle → [a,b,c,d]，**原样**，不除 100）。 */
+    primTransform: Map<number, number[]>;
+    /** `0x207` 槽→槽 blit（保留最近 16 次）。 */
+    blits: Array<{ srcSlot: number; dstSlot: number; srcRect: number[]; dstRect: number[] }>;
+    /** `0x20E` 图形提交次数。 */
+    commits: number;
+    /** `0x224` 清转场表次数。 */
+    transitionClears: number;
+    /** `0x229` 绘制模式 5 元组（2 int + 3 float）。 */
+    drawMode: number[];
+    /** `0x242` DrawItem `+720`（entry → value）。 */
+    entryParams: Map<number, number>;
+    /** `0x256` 按 id 的绘制项参数（slot → [int, x, y, z]）。 */
+    slotParams: Map<number, number[]>;
+    /** `0x321` MeshEntry 属性（mesh → index → value）。 */
+    meshAttrs: Map<number, Map<number, number>>;
+    /** `0x32A` 已释放的 3D 模型槽。 */
+    released3D: number[];
+    /** `0x32D` 3D 颜色 [r,g,b,a]（各 0..1）。 */
+    color3D: number[];
+  };
 }
 
 export function newSceneState(): SceneState {
@@ -42,5 +75,18 @@ export function newSceneState(): SceneState {
     msgWins: new Map<number, TextFrame>(),
     msgRev: new Map<number, number>(),
     slotText: new Map<number, { x: number; y: number; text: string; fill: string }[]>(),
+    render4: {
+      primReset: null,
+      primTransform: new Map<number, number[]>(),
+      blits: [],
+      commits: 0,
+      transitionClears: 0,
+      drawMode: [0, 0, 0, 0, 0],
+      entryParams: new Map<number, number>(),
+      slotParams: new Map<number, number[]>(),
+      meshAttrs: new Map<number, Map<number, number>>(),
+      released3D: [],
+      color3D: [1, 1, 1, 1],
+    },
   };
 }

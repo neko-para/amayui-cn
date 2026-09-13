@@ -12,6 +12,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import { SLEEP_GATE } from '../engine.js';
+import { cfgInt } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -90,12 +91,147 @@ const op_sleep: OpHandler = (c) => {
   c.native.sleep?.(n);
 };
 
-/** 帧计时/时钟 + sleep/等待门（真实现；native.frameTick 转发）。 */
+/**
+ * `0x7B`（`sub_41F530` raw 28724-28733）：**设置本帧的「重显示（回退）游标」**。
+ *
+ * 引擎体只有两句（外加每步元数据）：
+ * ```c
+ * _this[30*cur + 95805] = 5;                       // 操作数记数（2 个操作数）
+ * _this[cur + 122372] = op1;                       // 主回退点：帧 ip 的**指令下标**
+ * _this[cur + 122412] = op2;                       // 备用回退点
+ * ```
+ * **两个读者**（这就是它不能当 no-op 的原因）：
+ *  - `0x199`（`sub_418FC0` raw 24492-24529，argc 0）：「**重显示文本**」——按模式位 `Engine[122452] & 0x4000000`
+ *    选主/备用游标，把 `frame.ip` 直接设回它（`ip = base + 4*游标`），并挂起本帧（操作数记数置 0 = 不前进）；
+ *  - 主循环 `sub_409700`（raw 14001-14008）：`effect_flags & 0x20` 分支下同样回退到主游标。
+ * ⇒ 游标值 = **指令下标**（不是字节偏移），emulator 可直接当 `jump(idx)` 用。
+ * 缺省值 `-1`（引擎在装载/读档时把这两个数组初始化成 -1，raw 18639-18640）。
+ *
+ * 语料：`i7b` **0 处**（全 941 脚本）；仍实现，因为它是「文本重显示」链的一半。
+ */
+const REWIND_MAIN_BASE = 122372;
+const REWIND_ALT_BASE = 122412;
+
+const op_set_rewind_cursor: OpHandler = (c) => {
+  const e = c.e;
+  e.engineValues.set(REWIND_MAIN_BASE + e.cur, readIntOperand(e, c.frame, c.instr, 1));
+  e.engineValues.set(REWIND_ALT_BASE + e.cur, readIntOperand(e, c.frame, c.instr, 2));
+};
+
+/**
+ * `0x199`（`sub_418FC0` raw 24492-24529，argc 0）：**重显示文本**（`0x7B` 的读取端）。
+ *
+ * ```c
+ * _this[174802] = 0;
+ * if ((_this[122452] & 0x4000000) == 0) {                 // 未处于"重画"模式
+ *   if (_this[cur + 122372] != -1) {
+ *     _this[30*cur + 95805] = 0;                          // 不前进（handler 自己定了 ip）
+ *     v4 = effect_flags; effect_flags = 0;
+ *     _this[122452] = v4 | 0x6000000;                     // 记下旧 flags 并进入"重画"模式
+ *     _this[122453] = frame_ip_index + 1;                 // 重画后要跳回的**下一条**
+ *     _this[107678] = frame[+0x50];                       // 记脚本 id（emulator 未建模 ⇒ 略）
+ *     frame.ip = base + 4*_this[cur + 122372];            // ★回退
+ *   }
+ * } else if (_this[cur + 122412] != -1) {                 // 已处于重画模式 ⇒ 用备用游标
+ *   _this[30*cur + 95805] = 0;
+ *   _this[122452] = (_this[122452] & 0xF9FFFFFF) | 0x2000000;
+ *   frame.ip = base + 4*_this[cur + 122412];
+ * }
+ * ```
+ * 语料 **668 处 / 334 个脚本**（此前**根本不在任何表里 ⇒ 命中即硬报错**）。典型序列：
+ * `i7b <idx> -1`（设回退点）… 若干条 … `i199`（重显示同一段文本）。
+ */
+const op_redisplay_text: OpHandler = (c) => {
+  const e = c.e;
+  const cur = e.cur;
+  const mode = e.engineValues.get(122452) ?? 0;
+  e.engineValues.set(174802, 0);
+  if ((mode & 0x4000000) === 0) {
+    const target = e.engineValues.get(REWIND_MAIN_BASE + cur) ?? -1;
+    if (target !== -1) {
+      const saved = e.effectFlags;
+      e.effectFlags = 0;
+      e.engineValues.set(122452, (saved | 0x6000000) | 0);
+      // 引擎存 ((ip-base)>>2)+1 = 当前指令下标 + 1（重画完成后由主循环跳回它继续）
+      e.engineValues.set(122453, c.frame.ip + 1);
+      c.jump(target); // 指令下标（引擎 ip = base + 4*target）
+    }
+    return;
+  }
+  const alt = e.engineValues.get(REWIND_ALT_BASE + cur) ?? -1;
+  if (alt !== -1) {
+    e.engineValues.set(122452, ((mode & 0xf9ffffff) | 0x2000000) | 0);
+    c.jump(alt);
+  }
+};
+
+/**
+ * `0xAE`（`sub_4192F0` raw 24634-24773）：**存档版本分支** —— 读档时把当前帧的 ip 重算到
+ * 存档记录的位置，然后切帧/装载。
+ *
+ * 引擎形状（三段几乎同构，只有**步长与槽位**不同）：
+ * ```c
+ * if (!_this[95780]) return;                    // ★门控：只有读档流程置 1
+ * sv1 = GetConfig("set:SaveVersion1"); sv2 = GetConfig("set:SaveVersion2");
+ * // sv1==1 && sv2==20 → 263*cur 槽位组；sv1==2 → 261*cur 组；sv1==3 → 261*cur 另一组
+ * v = _this[stride*cur + A];                    // A = 130199 / 141030 / 156783（"存档侧下标"）
+ * if (v >= 0)     ip = *(base + 4*_this[30*cur+95800] + 4*v)   // 正下标 → 用 95800 那张表
+ * else if (w>=0)  ip = *(base + 4*_this[30*cur+95798] + 4*w)   // 负下标 → 用 95798 那张表（w = A-1 槽）
+ * _this[30*cur+95782] = _this[30*cur+95781] + 4*ip;            // 帧 ip
+ * _this[30*cur+95803/95804] = 已执行指令记数（版本 2/3 才有）
+ * if (cur == _this[savedCurSlot]) { _this[95776] = savedCur; _this[95777] = savedRet; _this[95780] = 0; [v2: _this[97054]=1] }
+ * else { _this[95777] = cur; _this[95776] = cur + 1; return sub_40F750(_this, mode, sv2); }
+ * ```
+ * `95780` = 帧 0 的 `+0x10`（"正在读档"标志）；`sub_40F750(Engine, mode, ver)` = 装载/初始化目标帧的脚本。
+ *
+ * **emulator 的取舍（明确记录，不假装实现）**：
+ *  - **门控路径（`95780 == 0`）与引擎完全一致** —— 这也是唯一在真机上可达的路径
+ *    （语料 `iae` **0 处**；只有读档流程才会把门置 1）；
+ *  - 置位后的分支需要**存档侧的两张 ip 指针表**（`[30*cur+95798]/[95800]` 指向的数组）与
+ *    `sub_40F750` 的帧装载，而 emulator **尚无读档装载**（不读存档里的帧 ip 表）⇒ 这里只做
+ *    「按版本选组 → 判定是否已回到存档帧 → 清门」这一层，**帧 ip 重算与帧装载记为缺口并写日志**。
+ *    一旦将来实现读档装载，补上的是这两处（槽位常量已在下面列出）。
+ */
+const SAVE_VERSION_BRANCH: Record<number, { stride: number; idxSlot: number; savedCur: number; savedRet: number; mode: number; setLoadFlag?: boolean; sv2?: number }> = {
+  // sv1=1 且 sv2=20
+  1: { stride: 263, idxSlot: 130199, savedCur: 129624, savedRet: 129625, mode: 1, sv2: 20 },
+  // sv1=2
+  2: { stride: 261, idxSlot: 141030, savedCur: 140457, savedRet: 140458, mode: 2, setLoadFlag: true },
+  // sv1=3
+  3: { stride: 261, idxSlot: 156783, savedCur: 151210, savedRet: 151211, mode: 3 },
+};
+
+const op_save_version_branch: OpHandler = (c) => {
+  const e = c.e;
+  if ((e.engineValues.get(95780) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
+  const sv1 = e.config ? cfgInt(e.config, 'set:saveversion1', 0) : 0;
+  const sv2 = e.config ? cfgInt(e.config, 'set:saveversion2', 0) : 0;
+  const spec = SAVE_VERSION_BRANCH[sv1];
+  if (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2)) return;
+  const cur = e.cur;
+  const savedCur = e.engineValues.get(spec.savedCur) ?? -1;
+  if (savedCur === cur) {
+    // 引擎：已回到存档记录的帧 ⇒ 收尾（清读档门；版本 2 还会置 97054=1）
+    e.engineValues.set(95777, e.engineValues.get(spec.savedRet) ?? 0);
+    e.engineValues.set(95780, 0);
+    if (spec.setLoadFlag) e.engineValues.set(97054, 1);
+    return;
+  }
+  c.log(
+    `0xAE: 读档版本分支 sv1=${sv1}/sv2=${sv2}（slot ${spec.stride}*${cur}+${spec.idxSlot}）—— ` +
+      `存档 ip 指针表与帧装载未建模，帧 ip 重算/切帧跳过（缺口已登记）`,
+  );
+};
+
+/** 帧计时/时钟 + sleep/等待门 + 文本重显示/存档版本分支（真实现；native.frameTick 转发）。 */
 export const FRAME_OPS: OpTable = [
   [0x1f4, op_frame_tick], // 帧计时（+帧计数 / 刷时钟）
   [0x1f5, op_frame_countdown], // 帧倒计 → 清停靠标志（脚本队列派发未建模）
   [0x20c, op_frame_present], // 每帧刷时钟 + native.frameTick()
   [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
+  [0x7b, op_set_rewind_cursor], // 设本帧「重显示」回退游标（_this[cur+122372]/[cur+122412]）
+  [0x199, op_redisplay_text], // ★重显示文本（0x7B 的读取端；668 处，原先命中即硬报错）
+  [0xae, op_save_version_branch], // 存档版本分支（门控 Engine[95780]；帧 ip 重算=已登记缺口）
 ];
 
 /** 帧让步 / 等待门（native 转发）。 */

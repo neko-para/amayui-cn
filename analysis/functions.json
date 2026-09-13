@@ -2700,7 +2700,7 @@
       "_this[140457/151210/129624] 写入方"
     ],
     "evidence": "raw 24634-24773 (sub_4192F0)",
-    "notes": "★已定性：是「存档续档」机制，**不是**预装帧启动路径。读 set:SaveVersion(1/2/3)+set:SaveVersion_0(20)；若 cur==快照帧(_this[140457]/[151210]/[129624] 首字段=存档时活跃帧号) 则切 cur 续档；否则 cur=cur+1 并 sub_40F750→loadScriptFrame 载入对应场景脚本(按 261/263*cur+… 跳转表定 ip)。快照结构由 sub_40CD10 一族在存档时写入(memset 0xA804/0xF624)，目标帧=存档时活跃场景脚本帧，非预装帧(26/28-31, 那是 i008 启动的)。_this[95780]=门、_this[97054]=续档标志、_this[95777]=call_ret。"
+    "notes": "★已定性：是「存档续档」机制，**不是**预装帧启动路径。读 set:SaveVersion(1/2/3)+set:SaveVersion_0(20)；若 cur==快照帧(_this[140457]/[151210]/[129624] 首字段=存档时活跃帧号) 则切 cur 续档；否则 cur=cur+1 并 sub_40F750→loadScriptFrame 载入对应场景脚本(按 261/263*cur+… 跳转表定 ip)。快照结构由 sub_40CD10 一族在存档时写入(memset 0xA804/0xF624)，目标帧=存档时活跃场景脚本帧，非预装帧(26/28-31, 那是 i008 启动的)。_this[95780]=门、_this[97054]=续档标志、_this[95777]=call_ret。 ★2026-09 A2/A3 落地：emulator `handlers/frame.ts` 的 `op_save_version_branch` —— **门控路径（Engine[95780]==0）与引擎逐字一致**；置位后按 `set:SaveVersion1/2` 选组（1+20 / 2 / 3）并处理「已回到存档帧」的收尾。★缺口（已登记 unmodeled）：存档侧的帧 ip 指针表与 `sub_40F750` 的帧装载未建模（emulator 无读档装载）。语料 0 处。"
   },
   {
     "addr": "0x41AB80",
@@ -3344,7 +3344,7 @@
     "fields_used": "[\"FontVWindow+44/+132/+208/+284/+296/+104/+276/+849\",\"Font+1228/+845/+846/+859/+860/+1040\"]",
     "unmodeled": "[\"sub_43E260 清区参数\",\"sub_48FFB0/sub_48E870（既读 DB）\"]",
     "evidence": "raw 74196-74282",
-    "notes": "★纠正三处旧口径：①Font 在 Engine+85296 字节（旧文写 Engine+85296(文本对象) 又标 dword 写法 Engine[21324]，易混）；②它不是「写文本」而是「开始一段新消息」（清记录 + 复位游标 + 清表面），文本由之后的 sub_46BE30/sub_46CBF0 依 show-text 铺排；③「清 win+208 记录向量」是 120B/条的**文本**记录（不是 24B 行记录），即槽里的正文被清空。"
+    "notes": "★纠正三处旧口径：①Font 在 Engine+85296 字节（旧文写 Engine+85296(文本对象) 又标 dword 写法 Engine[21324]，易混）；②它不是「写文本」而是「开始一段新消息」（清记录 + 复位游标 + 清表面），文本由之后的 sub_46BE30/sub_46CBF0 依 show-text 铺排；③「清 win+208 记录向量」是 120B/条的**文本**记录（不是 24B 行记录），即槽里的正文被清空。 ★2026-09 A2/A3 落地：emulator 在 `handlers/msgwin.ts` 的 `op_message_show`(0x71) 里调 `textItems.markGroupStart(win)`（对应引擎的 `Font[win+849] = 1`）⇒ 下一条记录带组首位，`0x1D3`/`0x1D4`/`0x2F3` 的扫描在此停。"
   },
   {
     "addr": "0x48F000",
@@ -3841,7 +3841,8 @@
     "status": "ANALYZED",
     "purpose": "往 Font+3364 的 72B/条记录向量 push 一条文本项记录（sub_45E7E0）：{win(+0), +20 = 值(a4), +24 = 键(a3), +28/+32 = 0, +40 = flags 0x20000000（若 win+849 标志置位则清它并置 bit0 ⇒ 本组首条）}；键/值随后由 0x1D3/0x1D4/0xAA 读回脚本",
     "fields_used": "[\"Font+3364\",\"Font+3396+4*win\",\"FontVWindow+849\"]",
-    "evidence": "raw 74323-74357（调用点 op 0x1D2 raw 29384）"
+    "evidence": "raw 74323-74357（调用点 op 0x1D2 raw 29384）",
+    "notes": "★2026-09 A2/A3 落地：emulator 模型 `vm/textItems.ts` 的 `TextItemTable.pushText/pushVoice`（72B 记录、组首标记、两条查询扫描都在那里）。插入实现 `sub_45E7E0`、语音变体 `sub_45EEA0`、查询 `sub_457960`/`sub_457A20` 同批入账。"
   },
   {
     "addr": "0x459770",
@@ -4117,7 +4118,7 @@
     "fields_used": ["Engine+388220", "Font+3364", "Font+1228"],
     "unmodeled": ["Font+3364 记录向量的消费者（排版/绘制期读回）"],
     "evidence": "raw 29373-29385",
-    "notes": "全库出现 42760 次（最高频未实现 opcode）；读取端 0x1D0/0x1D3/0x1D4/0xAA 会回写操作数，必须与它一起实现"
+    "notes": "全库出现 42760 次（最高频未实现 opcode）；读取端 0x1D0/0x1D3/0x1D4/0xAA 会回写操作数，必须与它一起实现 ★2026-09 A2/A3 落地：emulator `handlers/text-items.ts` 的 `op_text_item_push` + 表模型 `vm/textItems.ts` （`Engine.textItems`）—— 与读取端 `0x1D3`/`0x1D4`/`0x2F3` **同进同出**；语料 42760 处 / 333 个脚本。"
   },
   {
     "addr": "0x42D4A0",
@@ -4129,7 +4130,8 @@
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["读 op3/op4/op5", "sub_457960(Font, &v7, op3, op4, op5)", "writeIntOperand(op1 = 是否找到)", "writeIntOperand(op2 = +20)"],
     "fields_used": ["Font+3364"],
-    "evidence": "raw 38096-38113"
+    "evidence": "raw 38096-38113",
+    "notes": "★2026-09 A2/A3 落地：emulator `op_text_item_query`（「组内最后一次命中」与「下一条是组首即停」照抄引擎；越界时 op1=0、op2 保持 0）。语料 15 处 / 3 个脚本（HISTORY 10 / REPLAYVOICE 4 / CONFIG 1）。"
   },
   {
     "addr": "0x42D510",
@@ -4141,7 +4143,8 @@
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["读 op3/op4", "sub_457A20(Font, …, 起始=op4, 选择器=0)", "writeIntOperand(op1 = +20)", "writeIntOperand(op2 = +24)"],
     "fields_used": ["Font+3364"],
-    "evidence": "raw 38125-38149"
+    "evidence": "raw 38125-38149",
+    "notes": "★2026-09 A2/A3 落地：emulator `op_voice_item_query0`（选择器恒 0；未命中写 -1/-1）。写入端 = `0xC4`/`0x1BD`/`0x2F4` 播语音时同函数末尾的记录 push（raw 29904-29908 / 30058-30062 / 33650-33654）。"
   },
   {
     "addr": "0x42D580",
@@ -4349,7 +4352,8 @@
     "sub_behaviors": ["读 op4/op5/op6", "sub_457A20(Font, …, 起始=op5, 选择器=op6)", "writeIntOperand(op1/op2/op3)"],
     "fields_used": ["Font+3364"],
     "unmodeled": ["flags&0x40000000 记录的产出方（不在 0x1D2 路径上）"],
-    "evidence": "raw 40724-40740"
+    "evidence": "raw 40724-40740",
+    "notes": "★2026-09 A2/A3 落地：emulator `op_voice_item_query`（选择器 = op6 = 语音通道；未命中写 -1/-1/0）。REPLAYVOICE 就是按通道查回该条语音的 id。语料 2 处 / 2 个脚本。"
   },
   {
     "addr": "0x419A90",
@@ -4400,7 +4404,7 @@
     "sub_behaviors": ["FreeLibrary 旧句柄", "LoadLibraryA(名)", "失败 GetLastError + 抛", "句柄存 Engine+490072"],
     "fields_used": ["Engine+490072", "Engine+680092(字符串表)"],
     "evidence": "raw 31056-31075",
-    "notes": "★**不是通用插件/DLL 加载器**（2026-09 复核）：941 个脚本里只有 **1 处**调用（`src/SAVE.txt:7` `i14b 5250`），而 0x5250 = 文件 id 21072 = **`AGERC.DLL`**（SYS4INI 文件表第 21072 项）；引擎自己也用**硬编码字面量** `LoadLibraryA(\"AGERC.DLL\")`（`tstrFilename[]` raw 4927）在 WinMain 里加载同一个 DLL（见 initAgercInterface_48E730）。⇒ 不存在\"加载任意动态库\"的机制，可实现为\"固定/模型化的 AGERC 模块句柄\"，无需真加载原生库"
+    "notes": "★**不是通用插件/DLL 加载器**（2026-09 复核）：941 个脚本里只有 **1 处**调用（`src/SAVE.txt:7` `i14b 5250`），而 0x5250 = 文件 id 21072 = **`AGERC.DLL`**（SYS4INI 文件表第 21072 项）；引擎自己也用**硬编码字面量** `LoadLibraryA(\"AGERC.DLL\")`（`tstrFilename[]` raw 4927）在 WinMain 里加载同一个 DLL（见 initAgercInterface_48E730）。⇒ 不存在\"加载任意动态库\"的机制，可实现为\"固定/模型化的 AGERC 模块句柄\"，无需真加载原生库 ★2026-09 A6 落地：emulator `handlers/agerc.ts` 的 `op_agerc_load`（`OPS`）—— `Engine.agerc.loaded` 建模句柄、**只接受 AGERC.DLL**（`0x5250`），其余 id 按引擎同文抛错；重载语义 = 清槽表。守卫 `test/op-a4-a6.test.ts`。"
   },
   {
     "addr": "0x422F80",
@@ -4413,7 +4417,8 @@
     "sub_behaviors": ["sub_4AAA50 建项", "零/单位化 DrawItem 变换字段"],
     "fields_used": ["Engine+80708(Scene)"],
     "unmodeled": ["sub_4AC470 内全部字段偏移"],
-    "evidence": "raw 31303-31308；sub_4AC470 raw 13xxxx"
+    "evidence": "raw 31303-31308；sub_4AC470 raw 13xxxx",
+    "notes": "★2026-09 A4 落地：emulator `op_reset_prim_transform` → 宿主缝 `native.resetPrimTransform`（`SceneState.render4.primReset`）。"
   },
   {
     "addr": "0x423060",
@@ -4426,7 +4431,8 @@
     "sub_behaviors": ["读 4 个 float 操作数", "sub_4AC660(Scene, handle, …)"],
     "fields_used": ["Engine+80708(Scene)"],
     "unmodeled": ["sub_4AC660 内部"],
-    "evidence": "raw 31330-31342"
+    "evidence": "raw 31330-31342",
+    "notes": "★2026-09 A4 落地：emulator `op_prim_transform4` → `native.setPrimTransform4`（4 个 float 原样、不除 100）。"
   },
   {
     "addr": "0x4302B0",
@@ -6213,7 +6219,7 @@
     "sub_behaviors": ["if (Engine[80684]==1 && Engine[92322]==-1) { sub_4A50C0(Scene,0x26); sub_498B60(Engine+80393); sub_4A50C0(Scene,-1) }", "sub_498B60(Engine+80393)"],
     "fields_used": ["Engine[80684]", "Engine[92322]", "Scene(_this+80708)", "Engine+80393 渲染器"],
     "evidence": "raw 25277-25287",
-    "notes": "emulator 的渲染循环自行 present ⇒ engine-internal"
+    "notes": "emulator 的渲染循环自行 present ⇒ engine-internal ★2026-09 A4 落地：emulator `op_commit_graphics` → `native.commitGraphics`（记录提交次数；重写侧每帧自绘，不需要设备 Clear）。语料 786 处。"
   },
   {
     "addr": "0x430340",
@@ -6274,7 +6280,7 @@
     "fields_used": ["Scene+1048 转场表"],
     "unmodeled": ["Scene+1048 转场表在 emulator 里没有对应模型"],
     "evidence": "raw 25301-25305 + 129580-129583",
-    "notes": "不写操作数 ⇒ engine-internal"
+    "notes": "不写操作数 ⇒ engine-internal ★2026-09 A4 落地：emulator `op_clear_transitions` → `native.clearTransitions`（记数）。语料 334 处。"
   },
   {
     "addr": "0x423FE0",
@@ -6287,7 +6293,7 @@
     "fields_used": ["Scene 绘制模式配置区"],
     "unmodeled": ["sub_49A690/6C0/6F0 的绘制模式（D3D 绘制状态）"],
     "evidence": "raw 31984-32001",
-    "notes": "纯渲染侧，不写操作数；语料 src/SN0000.txt:3579 `i229 0 0 0 0 0`"
+    "notes": "纯渲染侧，不写操作数；语料 src/SN0000.txt:3579 `i229 0 0 0 0 0` ★2026-09 A4 落地：emulator `op_set_draw_mode` → `native.setDrawModeBlock`（记录 5 元组）。语料 716 处。"
   },
   {
     "addr": "0x4248C0",
@@ -6299,7 +6305,7 @@
     "sub_behaviors": ["result = readIntOperand(1)", "_this[92338] = 0", "_this[92339] = result"],
     "fields_used": ["Engine[92338]", "Engine[92339]"],
     "evidence": "raw 32303-32312",
-    "notes": "★死写：92338/92339 全工程只写不读（与 92333/92334 时钟槽不同）"
+    "notes": "★死写：92338/92339 全工程只写不读（与 92333/92334 时钟槽不同） ★2026-09 A4 落地（**建模**）：emulator `op_set_canvas_size` 写 `engineValues[92338]=0`/`[92339]=op1`。语料 2056 处。"
   },
   {
     "addr": "0x4251A0",
@@ -6312,7 +6318,7 @@
     "fields_used": ["DrawItem+720", "Scene 转场项+504"],
     "unmodeled": ["DrawItem+720 / 转场项+504 的消费者"],
     "evidence": "raw 32649-32658 + 132346-132362",
-    "notes": "不写操作数 ⇒ engine-internal（渲染侧）"
+    "notes": "不写操作数 ⇒ engine-internal（渲染侧） ★2026-09 A4 落地：emulator `op_set_draw_entry_param` → `native.setDrawEntryParam`。语料 350 处。"
   },
   {
     "addr": "0x425C30",
@@ -6325,7 +6331,7 @@
     "fields_used": ["Scene DrawItem 表的项"],
     "unmodeled": ["sub_4ACD10 写入的具体 float 三元组语义"],
     "evidence": "raw 33120-33135 + 131733-…",
-    "notes": "纯渲染侧；语料 src/DRAWCHARM.txt:150"
+    "notes": "纯渲染侧；语料 src/DRAWCHARM.txt:150 ★2026-09 A4 落地：emulator `op_set_slot_params` → `native.setSlotParams`。语料 5 处。"
   },
   {
     "addr": "0x425D20",
@@ -6338,7 +6344,7 @@
     "fields_used": ["Scene+1864 起的 5-dword/槽记录（+468/+469 = 字节 +1872/+1876）", "Scene+21872 起的平行表（+5468/+5469）"],
     "unmodeled": ["这两个标志位的渲染消费者"],
     "evidence": "raw 33156-33185",
-    "notes": "不写操作数 ⇒ engine-internal。语料 SC0000/SN0000 开头各 30+ 条 `i258 <slot> 1`"
+    "notes": "不写操作数 ⇒ engine-internal。语料 SC0000/SN0000 开头各 30+ 条 `i258 <slot> 1` ★2026-09 A4 落地（**建模**）：emulator `op_set_slot_flags` 写 `Engine.texSlotFlags`（值 = bit0|bit1<<1，两张镜像表同值）。这是本批用量最大的一条：**11356 处 / 334 个脚本**。"
   },
   {
     "addr": "0x426F80",
@@ -6351,7 +6357,7 @@
     "fields_used": ["Scene[op1+12677] 3D 模型槽"],
     "unmodeled": ["3D 模型对象本身"],
     "evidence": "raw 34003-34010 + 121105-121116",
-    "notes": "emulator 无 3D 模型模型 ⇒ engine-internal。语料 src/SETWEATHER.txt:5-6 `i32a 0/1/2`"
+    "notes": "emulator 无 3D 模型模型 ⇒ engine-internal。语料 src/SETWEATHER.txt:5-6 `i32a 0/1/2` ★2026-09 A4 落地：emulator `op_release_3d_slot` → `native.release3DSlot`（同时从场景模型删掉该 mesh）。语料 3 处。"
   },
   {
     "addr": "0x427040",
@@ -6364,7 +6370,7 @@
     "fields_used": ["Scene 的 3D 颜色/光照参数"],
     "unmodeled": ["sub_499DF0 的 3D 颜色应用"],
     "evidence": "raw 34033-34054",
-    "notes": "纯 3D 渲染侧 ⇒ engine-internal。语料 src/SETWEATHER.txt:3 `i32d ff ffffff`"
+    "notes": "纯 3D 渲染侧 ⇒ engine-internal。语料 src/SETWEATHER.txt:3 `i32d ff ffffff` ★2026-09 A4 落地：emulator `op_set_3d_color` → `native.set3DColor`（四分量 ÷255 后记录）。语料 1 处。"
   },
   {
     "addr": "0x41A260",
@@ -6692,7 +6698,7 @@
     "sub_behaviors": ["v2 = readString(2)；ProcAddress = GetProcAddress(*(HMODULE*)(Engine+490072), v2)", "ProcAddress == 0 ⇒ 抛 ShowMessage「%sのアドレス取得に失敗しました．ERRORCODE = %d」", "result = readInt(1)；if (result > 0x63) ⇒ 抛 ShowMessage「%sの関数インデックスが不正です．0から99までを指定してください．」(raw 31124)", "*(Engine + 4*result + 490076) = ProcAddress"],
     "fields_used": ["Engine+490072 AGERC 模块句柄", "Engine+490076 起 100 槽函数指针表", "operand 1/2"],
     "evidence": "raw 31090-31135",
-    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp（实测：TITLE → Load Data 进 SAVE.BIN 后**第 2 条指令**就停在这条）。语料唯一用法 `src/SAVE.txt:8 set-agerc-export 1 \"_SetNameLenMax@20\"`"
+    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp（实测：TITLE → Load Data 进 SAVE.BIN 后**第 2 条指令**就停在这条）。语料唯一用法 `src/SAVE.txt:8 set-agerc-export 1 \"_SetNameLenMax@20\"` ★2026-09 A6 落地：emulator `op_agerc_bind_export` —— 导出名按 PE 实读的 **21 个**校验，槽 0..99 越界抛引擎同文「0から99まで」。此前**根本没注册**（一进 Load Data 就硬报错）。"
   },
   {
     "addr": "0x430170",
@@ -6704,7 +6710,7 @@
     "sub_behaviors": ["v2 = readInt(4)（数组长度）；v15 = operandAddress(3)", "v2 > 0 ⇒ v3 = new[](4*v2)，逐元素 **DEC**（`__ROR4__(key ^ ROL4(v,11),25)`，key = Engine[97059]）拷进 v3", "v14 = &Engine[readInt(1) + 122519]（= 槽表第 op1 项，字节 490076 + 4*op1）", "v11 = operandAddress(5)；v12 = readInt(6)", "v13 = (*v14)(Engine[96981], v3, v2, v11, v12)   // 5 个实参（与 `_SetNameLenMax@20` 的 @20 一致）", "调用后把 v3 逐元素 **ENC** 回 op3 指向的数组（原地回写）"],
     "fields_used": ["Engine+490076 起 100 槽函数指针表", "Engine[96981]（字节 387924，引擎的消息窗 HWND/资源\"窗口\"参数）", "Engine[97059] DEC key", "operand 1/3/4/5/6（op2 未被读）"],
     "evidence": "raw 43038-43090（`//----- (00430170)`）",
-    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp。语料唯一用法 `src/SAVE.txt:9 call-agerc-export 1 (local 12) (local 21bc) 1 (local 21bc) 0`（调用 `_SetNameLenMax@20`）"
+    "notes": "★**当前未注册任何 handler** ⇒ 命中即 NotImplementedOp。语料唯一用法 `src/SAVE.txt:9 call-agerc-export 1 (local 12) (local 21bc) 1 (local 21bc) 0`（调用 `_SetNameLenMax@20`） ★2026-09 A6 落地：emulator `op_agerc_call_export` —— op3 数组经 `readRef`（DEC）读出、经 `writeRef`（ENC）回写（与引擎的 `__ROR4__/__ROL4__` 同式）；`op2 ← 返回值`。内置导出里只有 `_SetNameLenMax@20` 有行为（写 `Engine.agerc.nameLenMax`），其余调用即抛明确错误（本作不可达）。"
   },
   {
     "addr": "0x48E640",
@@ -6717,6 +6723,185 @@
     "unmodeled": ["sub_48E640 体内细节未逐行读（版本字段来源）"],
     "evidence": "raw 109336-109385（定义行起）；调用点 raw 109409；WinMain 侧校验 raw 142155-142162；字符串 raw 5273",
     "notes": "★这条是\"引擎与 DLL 必须同版本\"的锁：`set:RCVersion` 为空时跳过校验（真机 SYS4REG.INI 里没有 [set] 节）"
+  },
+  {
+    "addr": "0x4233E0",
+    "raw_name": "sub_4233E0",
+    "semantic_name": "drawNumberText_4233E0",
+    "op": "0x205",
+    "status": "ANALYZED",
+    "purpose": "把数值按格式画进纹理槽（GDI 数字文本；op2 是 in/out 的 x）",
+    "sub_behaviors": ["v8 = op2（x，in/out）、v6 = op6（格式位）、v4 = op5（字段宽）、v2 = op4（数值）", "sub_4072F0(Font, buf, &v8, v2, v4, v6)（格式化 + 回写 v8 = x 前进量）", "v7 = op3（y）；sub_456710(Font, op1, buf, v8, v7)（把串直绘进槽 op1）"],
+    "fields_used": ["Font+1084/+1108(GDI 字体/DC)", "Font+201680"],
+    "evidence": "raw 31470-31491；绘制实现 sub_456710 raw 68470-68495（与 0x204 同一缝）",
+    "notes": "语料 `i205` **313 处 / 35 个脚本**（INFOSK/DRAWLINKTIP/INFOIT/ALCHEMY/INFOEN…）。emulator：`op_draw_number_string` —— 回写 op2（脚本可观测）+ `native.drawString` 光栅化；格式位语义见 sub_4072F0 条目（bit16 = 半角）。"
+  },
+  {
+    "addr": "0x4072F0",
+    "raw_name": "sub_4072F0",
+    "semantic_name": "formatNumberCell_4072F0",
+    "status": "ANALYZED",
+    "purpose": "把数值按 (字段宽, 格式位) 排成字符串，并回写 x 前进量（0x205 的核心）",
+    "sub_behaviors": ["cy = Engine[71744] ? Engine[71745] : -Engine[21632]（一个全角格宽）；set:BlankExtentMode == 1 时改用 sub_404EE0 量空格宽", "从右往左填格子：i == 宽-1 || 剩余值 || bit0(补零) 才写数字；符号占一格（宽-2）", "符号：正数+bit3 / 0+bit4 ⇒ '+'；0+bit5 或负数 ⇒ '-'；v11<0 时写 '#'（溢出标记）", "*x = x + 前进量（居中 v13*cy/4|/2、左对齐 0、右对齐 v13*cy|/2）", "(flags & 0x10000) == 0 时 sub_41A6C0 把 ASCII 转 SJIS 全角"],
+    "fields_used": ["Engine[71744/71745](文本属性/字号)", "Engine[21632]", "Engine+697620(配置对象)"],
+    "evidence": "raw 12198-12334；全角转换 sub_41A6C0 raw 25539-25593",
+    "notes": "★**订正**：`bit16` 语义是**半角**（未设时按全角渲染），opcode-table 早前记反。emulator：`handlers/msgwin.ts` 的 `formatNumberCell`（纯函数）+ `op_draw_number_string`（回写 op2）。缺口：BlankExtentMode 的 GDI 字宽量测未建模（统一用字号当格宽）。"
+  },
+  {
+    "addr": "0x425310",
+    "raw_name": "sub_425310",
+    "semantic_name": "loadTextureById_425310",
+    "op": "0x249",
+    "status": "ANALYZED",
+    "purpose": "按统一 id 把纹理载入槽（带颜色；先释放旧槽；失败抛 ShowMessage）",
+    "sub_behaviors": ["若 Engine[op2+94672] 存在 ⇒ sub_488FB0 + 析构 + 置 0（释放旧槽）", "h = sub_4559C0(FileDB, hwnd, op1, &v)（按 id 打开图像文件 ⇒ 写 FileDB「已使用」表）", "颜色 = op3 < 0 ? 0 : (0xFF000000 | op3 低 3 字节)", "sub_4A3800(Scene, id, f, op2, color, 1) != 1 ⇒ 关闭文件 + 「画像ファイル %s の読み込みに失敗しました」+ 抛异常", "关闭文件"],
+    "fields_used": ["Engine[94672 + slot]", "FileDB", "Scene+322832"],
+    "evidence": "raw 32717-32768",
+    "notes": "语料 20 处/8 个脚本（BTL 7 / ALLMAP 3 / MOVERUIN 3 / SHOWALLMAP 3 / ADDEXP 1…）。emulator：`op_load_texture_by_id`（槽绑定 + 已使用标记 + `native.bindTexture`；「文件缺失抛异常」归宿主 —— FileSource 是异步接口，handler 不能同步探测）。"
+  },
+  {
+    "addr": "0x425F50",
+    "raw_name": "sub_425F50",
+    "semantic_name": "msgwinObjColors_425F50",
+    "op": "0x25E",
+    "status": "ANALYZED",
+    "purpose": "写消息窗对象颜色三件（+256/+260/+272，alpha 截断 255）",
+    "sub_behaviors": ["obj = Font[(op1 ?: Font[307])+261]", "obj[64] = op2、obj[65] = op3", "obj[68] = (min(op4,255)<<24) | (op5 的低 3 字节按 BGR→RGB 组装)"],
+    "fields_used": ["Font[win+261] 对象 +256/+260/+272"],
+    "evidence": "raw 33269-33288；写入实现 sub_456590 raw 68375-68388",
+    "notes": "语料 0 处。emulator：`op_msgwin_obj_colors`（`packArgb`）。"
+  },
+  {
+    "addr": "0x425FF0",
+    "raw_name": "sub_425FF0",
+    "semantic_name": "msgwinObjColors2_425FF0",
+    "op": "0x25F",
+    "status": "ANALYZED",
+    "purpose": "写消息窗对象颜色对（+264/+268，ARGB）",
+    "sub_behaviors": ["obj = Font[(op1 ?: Font[307])+261]", "*(obj+264) = op2；*(obj+268) = ARGB(op3 截断为 alpha, op4 低 3 字节为 RGB)"],
+    "fields_used": ["Font[win+261] 对象 +264/+268"],
+    "evidence": "raw 33291-33308；写入实现 sub_4565D0 raw 68391-68403",
+    "notes": "语料 0 处。emulator：`op_msgwin_obj_colors2`。"
+  },
+  {
+    "addr": "0x41F4E0",
+    "raw_name": "sub_41F4E0",
+    "semantic_name": "msgwinObjPre48_41F4E0",
+    "op": "0x7A",
+    "status": "ANALYZED",
+    "purpose": "写消息窗对象的文本项缓冲写游标参数（[48] 指针前的两个 dword）",
+    "sub_behaviors": ["win = op1 ?: Font[307]；obj = Font[win+261]", "*(obj[48] - 20) = op2；*(obj[48] - 16) = op3"],
+    "fields_used": ["Font+86524(307 默认窗)", "Font(win+261) 对象", "obj[48]"],
+    "evidence": "raw 28710-28721",
+    "notes": "语料 0 处。emulator：`handlers/msgwin.ts` 的 `op_msgwin_obj_pre48`（写 `MsgObject.pre48a/pre48b`，值原样保留供观测/接线；emulator 不重放文本块缓冲）。"
+  },
+  {
+    "addr": "0x425E70",
+    "raw_name": "sub_425E70",
+    "semantic_name": "msgwinObjTextBlock_425E70",
+    "op": "0x25C",
+    "status": "ANALYZED",
+    "purpose": "写消息窗对象的「文本块」参数（13 dword，sub_456510）",
+    "sub_behaviors": ["win = op1 ?: Font[307]；obj = Font[win+261]", "qmemcpy 13 dword 到 obj+224：[0]=1、[1..3]=op4..op6、[4]=op7+op5、[5]=op8+op6、[6..7]=op2/op3、[8..10]=0、[11..12]=-1"],
+    "fields_used": ["Font[win+261] 对象 +224"],
+    "evidence": "raw 33224-33245；写入实现 sub_456510 raw 68347-68372",
+    "notes": "语料 0 处。emulator：`op_msgwin_obj_text_block`（`MsgObject.block224`）。"
+  },
+  {
+    "addr": "0x418FC0",
+    "raw_name": "sub_418FC0",
+    "semantic_name": "redisplayText_418FC0",
+    "op": "0x199",
+    "status": "ANALYZED",
+    "purpose": "重显示文本（0x7B 的读取端）：把 frame.ip 回退到 0x7B 设的游标并挂起本帧",
+    "sub_behaviors": ["Engine[174802] = 0", "if ((Engine[122452] & 0x4000000) == 0) 用主游标：存旧 effect_flags 到 122452(|0x6000000)、122453 = 当前指令下标+1、frame.ip = base + 4*游标、操作数记数置 0（本步不前进）", "否则若备用游标 != -1：122452 = (&0xF9FFFFFF)|0x2000000、frame.ip = base + 4*备用游标"],
+    "fields_used": ["Engine+122452(0x7780C ?)", "Engine+122453", "Engine+174802", "Engine[cur+122372]", "Engine[cur+122412]"],
+    "evidence": "raw 24492-24529",
+    "notes": "语料 **668 处 / 334 个脚本**；此前**不在任何表里 ⇒ 命中即硬报错**（属复评台账里「压根没做」的一类）。emulator：`handlers/frame.ts` 的 `op_redisplay_text`（`c.jump(游标)`；游标缺省 -1 ⇒ 不动控制流）。"
+  },
+  {
+    "addr": "0x425DB0",
+    "raw_name": "sub_425DB0",
+    "semantic_name": "setMediaMovie_425DB0",
+    "op": "0x25A",
+    "status": "ANALYZED",
+    "purpose": "消息态影片（模式 1）：置模式位与 id，必要时向 Scene 图层下发",
+    "sub_behaviors": ["v = op1；v3 = (Engine[92377] == 0)", "Engine[92379] = 1（模式 = 影片）；Engine[92380] = v", "if (v3) sub_4A5470(Scene, v)", "if (!Engine[167990]) sub_4A5470(Scene, Engine[92380])"],
+    "fields_used": ["Engine+369508(92377 上次模式镜像)", "Engine+369516(92379 模式)", "Engine+369520(92380 id)", "Engine+671960(167990 display:ScreenMode)"],
+    "evidence": "raw 33188-33203",
+    "notes": "同族 `0x25B`（sub_425E20 raw 33206-33221）是**模式 2（图像）**并写 Engine[92381]。语料 0 处。emulator：`handlers/engine-fields.ts` 的 `op_set_media_movie`（两个字段精确；`sub_4A5470` 的 Scene 下发属复评台账**排除**的影片子系统 ⇒ 已登记缺口）。"
+  },
+  {
+    "addr": "0x420000",
+    "raw_name": "sub_420000",
+    "semantic_name": "setTextBase_420000",
+    "op": "0x1BB",
+    "status": "ANALYZED",
+    "purpose": "SetTB：文本项记账开关（Engine[97055]）",
+    "sub_behaviors": ["op1 == 1 ⇒ Engine[97055] = 0（正常记账）", "op1 == 0 ⇒ Engine[97055] = 0x80000000（暂停记账）", "其它 ⇒ sub_408050(\"SetTBの引数が不正です．\\r\\n\") + sub_4034D0（抛 ShowMessage）"],
+    "fields_used": ["Engine+388220(=97055*4)"],
+    "evidence": "raw 29223-29242；错误串 raw 4409",
+    "notes": "Engine[97055] 同字段两职：**记账门**（0x1D2/0xC4/0x1BD/0x2F4 的 `if (!Engine[97055])`）与**文本对象槽参数**（`0x71` 传给 `sub_45EC60(Font, win, slot)`）。语料 470 处/220 文件，`i1bb 0` … `i1bb 1` 成对包住「不要记账」的片段（典型 SC0000.txt:1554-1560 的语音重播：`i1bb 0; i1cf 10001; play-voice 7c; i1bf; i1bb 1`）。emulator：`handlers/text-items.ts` 的 `op_set_text_base`。"
+  },
+  {
+    "addr": "0x41F530",
+    "raw_name": "sub_41F530",
+    "semantic_name": "setTextRewindCursor_41F530",
+    "op": "0x7B",
+    "status": "ANALYZED",
+    "purpose": "设置本帧「文本重显示」回退游标（主/备用两个）",
+    "sub_behaviors": ["_this[cur+122372] = op1（主游标，值 = 指令下标）", "_this[cur+122412] = op2（备用游标）", "每步元数据 _this[30*cur+95805] = 5"],
+    "fields_used": ["Engine+489488(=122372*4)+4*cur", "Engine+489648(=122412*4)+4*cur", "Engine[30*cur+95805]"],
+    "evidence": "raw 28724-28733",
+    "notes": "读者 = `0x199`（sub_418FC0 raw 24506/24520：把 frame.ip 设回该游标 = 重显示同一段文本）与主循环 sub_409700 raw 14001-14008（effect_flags & 0x20 分支）。游标缺省 -1（读档装载时 init，raw 18639-18640）。★原表把读者记成「点击路由游标」是误：路由表是 `0x090` → `Engine.routes`。语料 0 处。emulator：`vm/textItems.ts` 的 `TextItemTable`（`Engine.textItems`），handler 见 `handlers/text-items.ts`。"
+  },
+  {
+    "addr": "0x4251E0",
+    "raw_name": "sub_4251E0",
+    "semantic_name": "textureObjFloat_4251E0",
+    "op": "0x245",
+    "status": "ANALYZED",
+    "purpose": "纹理对象的浮点参数（sub_4081B0）",
+    "sub_behaviors": ["obj = Engine[op1 + 94672]（CTexture 表）；存在则 sub_4081B0(obj, op2 / dbl_51FB50)"],
+    "fields_used": ["Engine[94672 + slot](CTexture 表)"],
+    "evidence": "raw 32661-32676",
+    "notes": "语料 0 处。emulator：`op_texture_obj_float` → 宿主缝 `native.setTextureObjectFloat`（未实现该缝的宿主只记字段）。"
+  },
+  {
+    "addr": "0x425250",
+    "raw_name": "sub_425250",
+    "semantic_name": "textureObjParam_425250",
+    "op": "0x246",
+    "status": "ANALYZED",
+    "purpose": "纹理对象子对象的 vtable+56 调用（参数 ÷100）",
+    "sub_behaviors": ["obj = Engine[op1 + 94672]；若 *(obj+1084) == dword_52839C（类型判定）", "则 (*(obj+1044))+56 以 op2 / dbl_5201F0 调用"],
+    "fields_used": ["Engine[94672 + slot]", "CTexture+1084/+1044"],
+    "evidence": "raw 32680-32700",
+    "notes": "语料 0 处。emulator：`op_texture_obj_param` → 宿主缝 `native.setTextureObjectParam`。"
+  },
+  {
+    "addr": "0x423480",
+    "raw_name": "sub_423480",
+    "semantic_name": "blitSlotToSlot_423480",
+    "op": "0x207",
+    "status": "ANALYZED",
+    "purpose": "槽→槽 StretchRect（源/目标同尺寸矩形）",
+    "sub_behaviors": ["src = {op3, op4, op3+op5, op4+op6}（op3/op4 = 源左上，op5/op6 = 宽高）", "dst = {op7, op8, op7+op5, op8+op6}", "sub_4A3980(Scene, op1 源槽, op2 目标槽, src, dst)"],
+    "fields_used": ["Scene 纹理槽表"],
+    "evidence": "raw 31494-31521；被调 sub_4A3980 raw 123446-123862（416 行 blit/clip 例程）",
+    "notes": "语料 24 处 / 3 个脚本。★2026-09 A4 落地：emulator `handlers/gfx-state.ts` 的 `op_blit_slot_to_slot` → 宿主缝 `native.blitSlotToSlot`（记录进 `SceneState.render4.blits`）。不回写操作数。"
+  },
+  {
+    "addr": "0x426BD0",
+    "raw_name": "sub_426BD0",
+    "semantic_name": "setMeshEntryAttr_426BD0",
+    "op": "0x321",
+    "status": "ANALYZED",
+    "purpose": "MeshEntry 属性写入（`entry[op2 + 7] = op3`）",
+    "sub_behaviors": ["sub_4AAB80(Scene, op1)（取/建该网格项）", "result = sub_40DC30(Scene+1064, &op1)（按 id 查表）", "result[op2 + 7] = op3；置 Scene[11627] = 1（脏标记）"],
+    "fields_used": ["Scene+1064（网格属性表）", "Scene[11627] 脏标记"],
+    "evidence": "raw 33839-33850",
+    "notes": "语料 1 处。★2026-09 A4 落地：emulator `op_set_mesh_entry_attr` → 宿主缝 `native.setMeshEntryAttr`（记录进 `SceneState.render4.meshAttrs`）。不回写操作数。"
   }
 
 ]

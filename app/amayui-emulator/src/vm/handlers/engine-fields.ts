@@ -110,7 +110,7 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   [0x261, { map: { 1: 80101 } }], // 竖排标志（Font+235108）
   [0x2ee, { map: { 1: 80106 } }], // 消息派发
   [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
-  [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由同族 0x25A 置 1=影片）
+  [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由它在引擎里写；见 0x25A 的说明）
   // ---- 数据/配置/标志 ----
   [0x21b, { map: { 1: 166965 }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
   [0x24e, { map: { 1: 92340 } }],
@@ -218,6 +218,30 @@ const op_set_skip_read_state: OpHandler = (c) => {
   if (((e.engineValues.get(122504) ?? 0) & 1) === 0) e.engineValues.set(122503, 1);
 };
 
+/**
+ * **`0x25A`（`sub_425DB0` raw 33188-33203）：消息态"影片"（模式 1）**。
+ *
+ * ```c
+ * v = op1;
+ * v3 = (_this[92377] == 0);          // 92377 = 上一次的显示模式镜像
+ * _this[92379] = 1;                  // ★模式位 = 1（影片；同族 0x25B 置 2 = 图像）
+ * _this[92380] = v;                  // 影片/图像 id
+ * if (v3) sub_4A5470(Scene, v);      // 模式发生变化 ⇒ 立刻下发一次
+ * if (!_this[167990]) return sub_4A5470(Scene, _this[92380]);   // 非全屏再下发一次
+ * ```
+ * `92377` = 上一次模式镜像（引擎主循环 raw 11960/21708 维护）、`167990` = `display:ScreenMode`。
+ * ⇒ 脚本可观测的是**两个字段**（模式 1 + id）；`sub_4A5470(Scene, id)` 属宿主渲染侧
+ * （影片/图像叠加 = 复评台账里**明确排除**的"播放视频"子系统）⇒ 字段照写、下发部分记为缺口。
+ * 语料 `i25a` 0 处；同族的 `0x25B`（图像）也有 0 处。
+ */
+const op_set_media_movie: OpHandler = (c) => {
+  const e = c.e;
+  const v = readIntOperand(e, c.frame, c.instr, 1);
+  e.engineValues.set(92379, 1); // 模式 1 = 影片
+  e.engineValues.set(92380, v);
+  // 引擎：模式变化时（92377 == 0）与"非全屏"时各下发一次 Scene 图层；宿主无影片子系统 ⇒ 只记字段。
+};
+
 /** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */
 export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
   // ---- 「读操作数 → 写引擎字段」一族（真实现；规格见 ENGINE_FIELD_STORE）----
@@ -230,7 +254,8 @@ export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表�
   [0x261, op_engine_field_store], // _this[80101]
   [0x2ee, op_engine_field_store], // _this[80106]
   [0x2db, op_engine_field_store], // _this[71744]
-  [0x25b, op_engine_field_store], // 消息态图像：_this[92381] = op1（模式位 92379 由同族 0x25A 置 1=影片/2=图像）
+  [0x25b, op_engine_field_store], // 消息态图像（模式 2）：_this[92381] = op1（模式位 92379=2 由它在引擎里写；emulator 只存 id）
+  [0x25a, op_set_media_movie], // 消息态影片（模式 1）：_this[92379]=1、[92380]=op1（Scene 下发=已登记缺口）
   [0x21b, op_engine_field_store], // _this[166965] = (op1!=0)（配套 getter 0x247）
   [0x24e, op_engine_field_store], // _this[92340]
   [0x1cf, op_engine_field_store], // **消息跳读态**：`_this[122504] = op1`（sub_4213C0 raw 30069）

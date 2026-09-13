@@ -244,6 +244,32 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   → op1 指针，含按需扩容 + 负下标抛错）。落点：`handlers/msgwin.ts` / `handlers/strings.ts`
 >   （+ `text/sjis.ts`）/ `handlers/memory.ts`（+ `operand.ts` 新增 6 个数组操作数标签、
 >   `ref.ts` 新增 `hasRefValue`）；守卫 `test/op-1cb-2c8-2c9.test.ts`（18 例）。
+> - **批 A2（4 条，已完成）**：`0x7B`（**设本帧「重显示」回退游标** `Engine[cur+122372]/[+122412]`）
+>   —— 同时补上它的读取端 **`0x199`（重显示文本，语料 668 处 / 334 个脚本；此前命中即硬报错）**、
+>   `0x1BB`（**SetTB 文本项记账开关** `Engine[97055]`，非法值按引擎同文抛错）、
+>   `0x25A`（消息态影片 = 模式 1 + id；同族 `0x25B` 是模式 2）、
+>   `0xAE`（**存档版本分支**；门控 `Engine[95780]` 路径与引擎逐字一致，读档 ip 表/帧装载为已登记缺口）。
+>   落点：`handlers/frame.ts` / `handlers/text-items.ts` / `handlers/engine-fields.ts`。
+> - **批 A3（12 条，已完成）**：**文本项记录表**（引擎 `Font+3364` 的 72B/条 vector）—— 写入端 `0x1D2`
+>   （语料 **42760 处 / 333 个脚本**，全语料最高频的原本未实现指令）+ 语音记录 push（`0xC4`/`0x1BD`/`0x2F4` 同函数末尾）
+>   + 读取端 `0x1D3`/`0x1D4`/`0x2F3`（此前**压根没注册**，命中即硬报错）+ 记账门 `0x1BB`；
+>   模型 `src/vm/textItems.ts`（`Engine.textItems`），handler `handlers/text-items.ts`。
+>   它是 **`HISTORY`（回想）与 `REPLAYVOICE`（语音重播）** 的数据源。另含消息窗对象属性面
+>   `0x7A`/`0x25C`/`0x25E`/`0x25F`、**数值直绘 `0x205`**（op2 是 in/out 的 x 前进量；313 处）、
+>   纹理 `0x249`（按 id 载入槽 + 已使用标记）/`0x245`/`0x246`。
+>   守卫 `test/op-a2-a3.test.ts`（11 例）；状态总表见台账 §4。
+> - **批 A4（13 条，已完成）**：图元/网格/纹理/渲染状态 —— `0x1FC` `0x1FE` `0x207` `0x20E` `0x224` `0x229`
+>   `0x238` `0x242` `0x256` `0x258` `0x321` `0x32A` `0x32D`（`handlers/gfx-state.ts`）。
+>   其中 `0x238`（`Engine[92338]/[92339]`）与 `0x258`（`Engine.texSlotFlags`，**11356 处**）是**建模**，
+>   其余 11 条走宿主缝（`resetPrimTransform`/`setPrimTransform4`/`blitSlotToSlot`/`commitGraphics`/
+>   `clearTransitions`/`setDrawModeBlock`/`setDrawEntryParam`/`setSlotParams`/`setMeshEntryAttr`/
+>   `release3DSlot`/`set3DColor`），两个宿主经共享层 `scene/ops.ts` 落进 `SceneState.render4`。
+> - **批 A6（3 条，已完成）**：**AGERC 模块接口** `0x14B`/`0x14C`/`0x14D`（`handlers/agerc.ts`）——
+>   模型化（**不加载原生库**）：只接受 `AGERC.DLL`、按 PE 实读的 21 个导出名校验、100 槽表、
+>   `0x14D` 的 DEC→调用→ENC 回写。内置导出里只有 `_SetNameLenMax@20` 有行为（写 `Engine.agerc.nameLenMax`）。
+>   ★这一批**解锁了 TITLE →「Load Data」**：此前一进 `SAVE.BIN` 就在 ip=2 硬报错，现在能跑到 ip=628
+>   （下一个缺口是同路的 `0x1A0` 存档文件读取，不在 57 条 stub 名单里）。
+>   守卫 `test/op-a4-a6.test.ts`（8 例）。
 
 设置界面（CONFIG2/CONFIG1）实测涉及的一批 opcode，按「读 handler 体」判定为**只写引擎内部字段、无操作数回写、无控制流**，
 已进 `ENGINE_INTERNAL_OPS`（默认插桩，**不再需要用户逐条点「作为桩函数跳过」**）：

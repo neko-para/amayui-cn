@@ -312,6 +312,9 @@ const op_message_show: OpHandler = (c) => {
   const w = m.resolveWin(slot);
   // ★开始一段新消息：清该窗文本记录 + 复位显现游标（引擎 sub_45EC60，raw 74277-74281）
   m.beginNewMessage(w);
+  // 同一函数还会在 `slotslot >= 0` 时置该窗的**文本项组首标记**（`Font[win+849] = 1`，raw 74267-74275）：
+  // 下一条 `0x1D2`/语音记录 push 会带上"组首"位，`0x1D3`/`0x1D4`/`0x2F3` 的扫描在此处停。
+  if (m.textSlotArg >= 0) e.textItems.markGroupStart(w);
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
   // 引擎 `sub_41ED80` raw 28361-28382：非跳读路径下入队 + `sub_453A60(Engine+430572, MessageSpeed)`
@@ -719,6 +722,81 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
 };
 
 // ---------------------------------------------------------------------------
+// 消息窗对象：文本块参数 / 颜色（2026-09 落地；`Font[win+261]` = `Engine[21585+win]` 对象）
+// 引擎里这三条与 `0x212`/`0x213`/`0x25D` 同族 —— 都写**窗对象**的固定偏移，只是偏移不同。
+// 语料 0 处调用（`i7a`/`i25c`/`i25e`/`i25f` 全 0），但它们是"对象属性面"的一部分，
+// 且**写的是有读者的对象字段**，因此按引擎语义建模到 `MsgObject`，不做 no-op。
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x7A`（`sub_41F4E0` raw 28710-28721）：`sub_45A910(Font, op1, op2, op3)`。
+ *
+ * 引擎：`win = op1 ?: Font[307]`、`obj = Font[win+261]`，
+ * `*(obj[48] - 20) = op2`、`*(obj[48] - 16) = op3` —— 把两个 dword 写到**对象第 48 个 dword 指针所指缓冲前面**。
+ * 那是"文本项缓冲的写游标参数"（`obj[48]` 指向当前写位置）。emulator 不重放文本块缓冲，
+ * 故按字段语义存成 `pre48a/pre48b`（值原样保留，供观测与将来接线）。
+ */
+const op_msgwin_obj_pre48: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const o = e.msgwin.object(win);
+  o.pre48a = readIntOperand(e, c.frame, c.instr, 2);
+  o.pre48b = readIntOperand(e, c.frame, c.instr, 3);
+};
+
+/**
+ * `0x25C`（`sub_425E70` raw 33224-33245 → `sub_456510` raw 68347-68372）：
+ * **消息窗「文本块」参数（13 dword）**。
+ *
+ * 引擎把 13 个 dword 整块 `qmemcpy` 到窗对象 `+224`：
+ * `[0]=1, [1]=op4, [2]=op5, [3]=op6, [4]=op7+op5, [5]=op8+op6, [6]=op2, [7]=op3, [11]=-1, [12]=-1`
+ * （`+8..+10` 清零）⇒ 即"文本框原点/宽高 + 两个终结哨兵"。emulator 存成数组（渲染层不消费）。
+ */
+const op_msgwin_obj_text_block: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const [, o2, o3, o4, o5, o6, o7, o8] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) =>
+    readIntOperand(e, c.frame, c.instr, n),
+  );
+  const o = e.msgwin.object(win);
+  o.block224 = [1, o4!, o5!, o6!, o7! + o5!, o8! + o6!, o2!, o3!, 0, 0, 0, -1, -1];
+};
+
+/** `0x25E`（`sub_425F50` raw 33269-33288 → `sub_456590`）：窗对象 `+256=op2`、`+260=op3`、`+272=ARGB`。 */
+const op_msgwin_obj_colors: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const o = e.msgwin.object(win);
+  o.f256 = readIntOperand(e, c.frame, c.instr, 2);
+  o.f260 = readIntOperand(e, c.frame, c.instr, 3);
+  // 引擎：v2 = op4（>255 截断）当 alpha，op5 取 RGB ⇒ `(a<<24)|(b2<<16)|(b1<<8)|b0`
+  o.f272 = packArgb(readIntOperand(e, c.frame, c.instr, 4), readIntOperand(e, c.frame, c.instr, 5));
+};
+
+/** `0x25F`（`sub_425FF0` raw 33291-33308 → `sub_4565D0`）：窗对象 `+264=op2`、`+268=ARGB`。 */
+const op_msgwin_obj_colors2: OpHandler = (c) => {
+  const e = c.e;
+  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const o = e.msgwin.object(win);
+  o.f264 = readIntOperand(e, c.frame, c.instr, 2);
+  o.f268 = packArgb(readIntOperand(e, c.frame, c.instr, 3), readIntOperand(e, c.frame, c.instr, 4));
+};
+
+/**
+ * 引擎 `sub_425F50`/`sub_425FF0` 的颜色组装：
+ * ```c
+ * if (a > 255) a = 255;
+ * v = (u8)c | ((BYTE1(c) | (((a << 8) | BYTE2(c)) << 8)) << 8);
+ * ```
+ * ⇒ `(a<<24) | (c.b2<<16) | (c.b1<<8) | c.b0`（`c` 的低 3 字节当 RGB，`a` 当 alpha）。
+ */
+function packArgb(a: number, c: number): number {
+  const alpha = a > 255 ? 255 : a & 0xff;
+  return (((alpha << 24) | ((c >>> 16) & 0xff) << 16) | ((c >>> 8) & 0xff) << 8) | (c & 0xff);
+}
+
+
+// ---------------------------------------------------------------------------
 // P0 参数面（描边 / 颜色 / 字号 / 几何 / 竖排）—— 直接决定阅读体验
 // ---------------------------------------------------------------------------
 
@@ -1053,12 +1131,134 @@ const op_draw_string: OpHandler = (c) => {
   });
 };
 
+/**
+ * **`0x205`（`sub_4233E0` raw 31470-31491）：把**数值**按格式画进纹理槽（GDI 数字文本）。**
+ *
+ * 引擎体只有 6 步（`op2` 是 **in/out**）：
+ * ```c
+ * v8 = op2;  v6 = op6;  v4 = op5;  v2 = op4;         // x / 格式标志 / 字段宽 / 数值
+ * sub_4072F0(_this, buf, &v8, v2, v4, v6);           // ★把数值格式化，并**回写 v8 = 新的 x**
+ * v7 = op3;  sub_456710(Font, op1, buf, v8, v7);     // 用新 x 把串直绘进槽 op1（与 0x204 同一个 GDI 缝）
+ * ```
+ * ⇒ 脚本可观测的部分是 **`op2` 的写回**（数字排完后 x 前进到哪），其次是那张槽上出现的数字。
+ * 语料：`i205` **313 处 / 35 个脚本**（`INFOSK` / `DRAWLINKTIP` / `INFOIT` / `ALCHEMY` / `INFOEN` …），
+ * 典型写法 `i205 c5 166 50 (local-int 2776) 1 10000`。
+ *
+ * ## 格式语义（`sub_4072F0` raw 12198-12334，逐条照抄）
+ * - `op5` = 字段宽（字符格），下面 `v11 = 宽-1`；需要符号位时 `v11 = 宽-2`（少一格）。
+ * - `op6` 位：`bit0` = 补前导零；`bit1` = 居中；`bit2` = 左对齐（否则右对齐）；`bit3` = 正数带 `+`；
+ *   `bit4` = 值为 0 时带 `+`；`bit5` = 值为 0 时带 `-`；**`bit16` = 半角**（不设时按全角输出）。
+ *   ★订正：`opcode-table.md` 早前把 `bit16` 记成"全角"，读 `sub_4072F0` 的调用点可确证**相反** ——
+ *   `if ((flags & 0x10000) == 0) sub_41A6C0(buf)`，而 `sub_41A6C0`（raw 25539-25593）是把 ASCII
+ *   逐字改成 **SJIS 全角**（`'0'→0x82B0`、`'-'→0xA3AD`、`'+'→0xA3AB`、`'#'→0xA3A3`）。
+ * - 数字从右往左填（`i = v11 … 0`，写 `buf[i + 符号位]`），`i == v11 || 剩余值 || bit0` 才写 ⇒ 前导零/空格。
+ * - 符号写在 `buf[v19]`（`v19` = 最后写入的格）；`v11 < 0`（字段太窄）时写 `#`。
+ * - **x 前进量**（`v13 = v19` = 首个字符所在格）：居中 = `v13*cy/4`（全角）/`v13*cy/2`（半角）；
+ *   左对齐 = `0`；右对齐 = `v13*cy`（全角）/`v13*cy/2`（半角）。`cy` = 一个全角格宽
+ *   （引擎取 `Engine[71744] ? Engine[71745] : -Engine[21632]`，即字号；`set:BlankExtentMode == 1`
+ *   时改用 GDI 字宽量测 —— **那段字宽量测未建模**，见下方"缺口"）。
+ *
+ * ## 缺口（明确记录）
+ * `set:BlankExtentMode == 1` 分支用 `sub_404EE0` 量空格宽度；emulator 无 GDI 度量，统一用字号当格宽。
+ * 对"把数字排进离屏槽"的用量（INFO/ALCHEMY 等）只影响像素级位置，不影响脚本状态。
+ */
+const op_draw_number_string: OpHandler = (c) => {
+  const e = c.e;
+  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  const x = readIntOperand(e, c.frame, c.instr, 2);
+  const y = readIntOperand(e, c.frame, c.instr, 3);
+  const value = readIntOperand(e, c.frame, c.instr, 4);
+  const width = readIntOperand(e, c.frame, c.instr, 5);
+  const flags = readIntOperand(e, c.frame, c.instr, 6);
+  // 引擎：cy = Engine[71744] ? Engine[71745] : -Engine[21632]（= 一个全角格宽）
+  const cy = (e.engineValues.get(71744) ?? 0) !== 0 ? e.engineValues.get(71745) ?? 0 : -(e.engineValues.get(21632) ?? 0);
+  const cell = formatNumberCell(value, width, flags);
+  const halfWidth = (flags & 0x10000) !== 0;
+  // 引擎的 x 前进量（全角/半角与对齐方式三档）
+  const advance =
+    (flags & 2) !== 0
+      ? Math.trunc((cell.start * cy) / (halfWidth ? 2 : 4))
+      : (flags & 4) !== 0
+        ? 0
+        : halfWidth
+          ? Math.trunc((cell.start * cy) / 2)
+          : cell.start * cy;
+  const nx = x + advance;
+  writeIntOperand(e, c.frame, c.instr, 2, nx); // ★op2 是 in/out
+  if (cell.ascii.length === 0) return;
+  const st = globalTextStyle(e);
+  c.native.drawString?.(slot, nx, y, halfWidth ? cell.ascii : toFullWidth(cell.ascii), {
+    family: st.main.family,
+    size: st.main.size,
+    weight: st.main.weight,
+    fill: st.main.fill,
+    outline: st.main.outline,
+    outlineMode: st.outlineMode,
+    outlineDx: st.outlineDx,
+    outlineDy: st.outlineDy,
+  });
+};
+
+/**
+ * `sub_4072F0` 的**纯函数**部分：把数值按 (字段宽, 格式位) 排成 ASCII 数字串。
+ *
+ * 返回 `ascii`（首位是符号位时的符号 + 数字）与 `start`（= 引擎的 `v13`，首个字符所在的格号；
+ * 调用方用它算 x 前进量）。字段太窄时引擎写 `#`（溢出标记），这里照做。
+ */
+export function formatNumberCell(value: number, width: number, flags: number): { ascii: string; start: number } {
+  const cells = new Array<string>(Math.max(8, width + 2)).fill('');
+  let v11 = width - 1;
+  let v9 = value;
+  let showSign = false;
+  let plus = false;
+  if (value >= 0) {
+    if (value > 0 && (flags & 8) !== 0) {
+      plus = true;
+      showSign = true;
+    } else if (value === 0 && (flags & 0x10) !== 0) {
+      plus = true;
+      showSign = true;
+    } else if (value === 0 && (flags & 0x20) !== 0) {
+      plus = false;
+      showSign = true;
+    }
+    if (showSign) v11 = width - 2;
+  } else {
+    v11 = width - 2;
+    v9 = -value;
+    showSign = true;
+  }
+  const signOffset = showSign ? 1 : 0;
+  let v19 = 0;
+  for (let i = v11; i >= 0; i--) {
+    if (i === v11 || v9 !== 0 || (flags & 1) !== 0) {
+      cells[i + signOffset] = String(((v9 % 10) + 10) % 10);
+      v19 = i;
+    }
+    v9 = Math.trunc(v9 / 10);
+  }
+  if (showSign) cells[v19] = v11 >= 0 ? (plus ? '+' : '-') : '#';
+  const ascii = cells.slice(v19).join('');
+  return { ascii, start: v19 };
+}
+
+/** `sub_41A6C0`（raw 25539-25593）：ASCII 数字 → 全角（`'0'`→`'０'`、`'-'`→`'－'`、`'+'`→`'＋'`、`'#'`→`'＃'`）。 */
+function toFullWidth(s: string): string {
+  return s.replace(/[0-9A-Za-z+\-#]/g, (ch) => {
+    if (ch === '-') return '－';
+    if (ch === '+') return '＋';
+    if (ch === '#') return '＃';
+    return String.fromCharCode(ch.charCodeAt(0) + 0xfee0);
+  });
+}
+
 /** 消息窗 / ADV 指令族（全部为 `OPS`＝真实现）。 */
 export const MSGWIN_OPS: OpTable = [
   // ---- 文本内容与推进 ----
   [0x6e, op_show_text], // show-text：追加文本 + 分段节流
   [0x6f, op_end_text_line], // end-text-line
   [0x204, op_draw_string], // draw-string：把一整串文本直绘进某个纹理槽（不走消息窗）
+  [0x205, op_draw_number_string], // ★数字直绘进纹理槽（op2 是 in/out：回写 x 前进量），313 处
   [0x071, op_message_show], // message-show（修正：不再无条件置 ADV）
   [0x072, op_wait_for_input], // wait-for-input：结束一页并挂起（bit31 等待门）
   [0x0fa, op_poll_msg_advance], // poll-msg-advance（★过去未注册 ⇒ 命中即硬报错）
@@ -1113,4 +1313,9 @@ export const MSGWIN_OPS: OpTable = [
   [0x212, op_msgwin_obj_f100], // 对象 +100
   [0x213, op_msgwin_obj_range], // 对象 +104/+108
   [0x25d, op_msgwin_obj_range2], // 对象 +276/+280
+  // ---- 消息窗对象：文本块参数 / 颜色（2026-09；`Font[win+261]`）----
+  [0x7a, op_msgwin_obj_pre48], // 对象 `[48]` 前两个 dword（文本项缓冲写游标参数）
+  [0x25c, op_msgwin_obj_text_block], // 对象 +224：13 dword 文本块参数
+  [0x25e, op_msgwin_obj_colors], // 对象 +256/+260/+272（颜色 + ARGB）
+  [0x25f, op_msgwin_obj_colors2], // 对象 +264/+268（颜色 + ARGB）
 ];

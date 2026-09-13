@@ -320,6 +320,18 @@ export interface MsgObject {
   f280: number;
   /** `+132`：布局重算时清零（sub_404F80）。 */
   f132: number;
+  /** `+224` 起 13 个 dword：`0x25C` 写的**文本块参数**（`sub_456510`）。 */
+  block224: number[];
+  /** `+256` / `+260` / `+272`：`0x25E` 写的颜色三件（最后一个已按 ARGB 组装）。 */
+  f256: number;
+  f260: number;
+  f272: number;
+  /** `+264` / `+268`：`0x25F` 写的颜色对（268 已按 ARGB 组装）。 */
+  f264: number;
+  f268: number;
+  /** `[48]` 指针前的两个 dword：`0x7A`（`sub_45A910`）写的文本项缓冲游标参数。 */
+  pre48a: number;
+  pre48b: number;
 }
 
 /**
@@ -350,7 +362,17 @@ export class MsgWindow {
   advEnter = 0;
   /** `[124331]`（0x1E5B4）：仅 0x19C 读取的保持条件（语义未定）。 */
   hold = 0;
-  /** `[97055]`（0x5EC3C）：文本槽号参数（0x6E/0x6F/0x71 传给文本对象）。 */
+  /**
+   * `[97055]`（0x5EC3C）：**文本项记账开关 + 文本对象槽参数**（同一字段两种角色）。
+   *
+   * - **记账门**（2026-09 读体确证）：`0` = 正常记账；`0x80000000` = 暂停记账。
+   *   写入端只有 `0x1BB`（SetTB，`sub_420000` raw 29230/29240）；`i1bb 0` … `i1bb 1` 成对包住
+   *   "不要记账"的片段（如 `SC0000.txt:1554-1560` 的语音重播）。
+   *   读取端：`0x1D2`/`0xC4`/`0x1BD`/`0x2F4` 的 `if (!Engine[97055]) { push 记录 }`
+   *   （见 `handlers/text-items.ts`）与主循环 `*(int*)(this+388220) < 0`（raw 20319）。
+   * - **槽参数**：`0x71`（`sub_41ED80` raw 28427）把它当第 3 参传给 `sub_45EC60`（开启新一段消息，
+   *   并在 ≥0 时置该窗的"组首"标记 ⇒ 下一条记录 flags bit0）。
+   */
   textSlotArg = 0;
 
   // ---- 运行期配置覆盖 ----
@@ -689,7 +711,22 @@ export class MsgWindow {
   object(idx: number): MsgObject {
     let o = this.objects.get(idx);
     if (!o) {
-      o = { f100: 0, f104: 0, f108: 0, f276: 0, f280: 0, f132: 0 };
+      o = {
+        f100: 0,
+        f104: 0,
+        f108: 0,
+        f276: 0,
+        f280: 0,
+        f132: 0,
+        block224: new Array<number>(13).fill(0),
+        f256: 0,
+        f260: 0,
+        f272: 0,
+        f264: 0,
+        f268: 0,
+        pre48a: 0,
+        pre48b: 0,
+      };
       this.objects.set(idx, o);
     }
     return o;
@@ -721,6 +758,8 @@ export class MsgWindow {
     this.skipMode = 0;
     this.advEnter = 0;
     this.hold = 0;
+    // 引擎复位把 `Engine[97055]` 清 0（raw 17962）⇒ 记账门回到"正常记账"
+    this.textSlotArg = 0;
     this.slots.clear();
     this.objects.clear();
     this.wins.clear();

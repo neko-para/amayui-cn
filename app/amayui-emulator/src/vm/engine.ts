@@ -5,6 +5,7 @@ import type { NativeBridge } from './native.js';
 import { InputManager } from './input.js';
 import { MsgWindow } from './msgwin.js';
 import { RouteTable } from './route.js';
+import { TextItemTable } from './textItems.js';
 import { cfgInt } from '../engineConfig.js';
 import { styleOfWin as msgWinStyleFor } from './handlers/msgwin.js';
 import { layoutWindow } from '../text/layout.js';
@@ -281,6 +282,36 @@ export class Engine {
    * 见 `./route.ts` 顶部注释。
    */
   routes = new RouteTable();
+
+  /**
+   * **文本项记录表**（引擎 `Font+3364` 的 72B 记录 vector）。
+   *
+   * 写入端 `0x1D2`（42760 处）与语音族 `0xC4`/`0x1BD`/`0x2F4`；读取端 `0x1D3`/`0x1D4`/`0x2F3`；
+   * 记账开关 `0x1BB`（`i1bb 0` … `i1bb 1` 包住"不要记账"的片段，如语音重播）。
+   * 它是「回想/历史（HISTORY）」与「语音重播（REPLAYVOICE）」的数据源，见 `./textItems.ts` 顶部注释。
+   */
+  textItems = new TextItemTable();
+
+  /**
+   * **纹理槽标志对**（引擎 `Scene + 1872 + 20*slot` 与 `Scene + 21872 + 20*slot` 两张镜像表：
+   * `0x258` 按 op2 的 bit0/bit1 各写 1/0）。值 = `bit0 | bit1<<1`。
+   * 读体：`sub_425D20` raw 33156-33185（`result[468]/[469]` 与 `result[5468]/[5469]` 两处同写）。
+   */
+  texSlotFlags = new Map<number, number>();
+
+  /**
+   * **AGERC 模块状态**（`0x14B`/`0x14C`/`0x14D` 的模型；**不加载任何原生库**）。
+   *
+   * - `loaded` = 引擎 `Engine+490072`（模块句柄；只可能是 `AGERC.DLL`，文件 id `0x5250`）；
+   * - `exports` = `Engine[122519 + slot]`（槽 0..99 → 导出名）；
+   * - `nameLenMax` = AGERC 内 `dword_100A9000`（`_SetNameLenMax@20` 写的"名字/注释最多几个全角字"，
+   *   初值 18）；消费者是 AGERC 的注释输入对话框（在 DLL 里，emulator 未建模该 UI ⇒ 只记录）。
+   */
+  agerc: { loaded: boolean; exports: Map<number, string>; nameLenMax: number } = {
+    loaded: false,
+    exports: new Map<number, string>(),
+    nameLenMax: 18,
+  };
 
   /**
    * **用户登记的「未知指令桩函数」**：opcode -> 桩句柄（当前恒为 no-op，无返回值；句柄留着以便将来区分/替换）。

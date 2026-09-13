@@ -34,6 +34,18 @@ import {
   scSetTranslationAnim,
   scSetVertexColor,
   scSetVertexColorAlpha,
+  // A4 族（2026-09）：图元/网格/纹理/渲染状态
+  scResetPrimTransform,
+  scSetPrimTransform4,
+  scBlitSlotToSlot,
+  scCommitGraphics,
+  scClearTransitions,
+  scSetDrawModeBlock,
+  scSetDrawEntryParam,
+  scSetSlotParams,
+  scSetMeshEntryAttr,
+  scRelease3DSlot,
+  scSet3DColor,
   scMsgWinClear,
   scMsgWinClearAll,
   scMsgWinSync,
@@ -222,6 +234,63 @@ export class HeadlessScene implements NativeBridge {
   /** `0x1FD` 立即缩放（走共享语义 ⇒ 报告与画面不会漂移）。 */
   setScale(handle: number, sx: number, sy: number, sz: number): void {
     scSetScale(this.scene, handle, sx, sy, sz);
+  }
+
+  // ---- A4 族（2026-09）：全部走共享场景语义（`scene/ops.ts` 的 `scXxx`）----
+
+  /** `0x1FC` 复位图元变换。 */
+  resetPrimTransform(handle: number): void {
+    scResetPrimTransform(this.scene, handle);
+  }
+
+  /** `0x1FE` 图元变换 4 浮点（**原样**，不除 100）。 */
+  setPrimTransform4(handle: number, a: number, b: number, c: number, d: number): void {
+    scSetPrimTransform4(this.scene, handle, a, b, c, d);
+  }
+
+  /** `0x207` 槽→槽 StretchRect。 */
+  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): void {
+    scBlitSlotToSlot(this.scene, srcSlot, dstSlot, srcRect, dstRect);
+  }
+
+  /** `0x20E` 图形提交（状态包裹 + 设备 Clear）。 */
+  commitGraphics(): void {
+    scCommitGraphics(this.scene);
+  }
+
+  /** `0x224` 清转场表。 */
+  clearTransitions(): void {
+    scClearTransitions(this.scene);
+  }
+
+  /** `0x229` 绘制模式 5 元组。 */
+  setDrawModeBlock(a: number, b: number, x: number, y: number, z: number): void {
+    scSetDrawModeBlock(this.scene, a, b, x, y, z);
+  }
+
+  /** `0x242` DrawItem `+720`。 */
+  setDrawEntryParam(entry: number, value: number): void {
+    scSetDrawEntryParam(this.scene, entry, value);
+  }
+
+  /** `0x256` 按 id 的绘制项参数。 */
+  setSlotParams(slot: number, a: number, x: number, y: number, z: number): void {
+    scSetSlotParams(this.scene, slot, a, x, y, z);
+  }
+
+  /** `0x321` MeshEntry 属性。 */
+  setMeshEntryAttr(mesh: number, index: number, value: number): void {
+    scSetMeshEntryAttr(this.scene, mesh, index, value);
+  }
+
+  /** `0x32A` 释放 3D 模型槽。 */
+  release3DSlot(slot: number): void {
+    scRelease3DSlot(this.scene, slot);
+  }
+
+  /** `0x32D` 3D 颜色（四分量 0..1）。 */
+  set3DColor(r: number, g: number, b: number, a: number): void {
+    scSet3DColor(this.scene, r, g, b, a);
   }
 
   setDrawColor(handle: number, delay: number, dur: number, to: number): void {

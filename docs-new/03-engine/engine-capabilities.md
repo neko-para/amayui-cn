@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 25 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 25 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **104** | 需要关注（非 n/a 且非已核验）= **57** |
+| **合计** | **107** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
@@ -26,9 +26,9 @@
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 14 | 9 |
-| 消息窗 | 22 | 15 |
-| 渲染 | 23 | 11 |
-| 资源 | 14 | 5 |
+| 消息窗 | 24 | 15 |
+| 渲染 | 24 | 12 |
+| 资源 | 14 | 4 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -139,7 +139,10 @@
 | `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | 🟠 部分 | E0 |
 | `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | ❌ 缺失 | E1 |
 | `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ❌ 缺失 | E1 |
-| `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | 🟠 部分 | E1 |
+| `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | ✅ 已核验 | E3 · `test/op-a4-a6.test.ts` |
+| `text-item-record-table` | 消息窗 | 文本项记录表（Font+3364 的 72B/条 vector）：回想/历史与语音重播的账本 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
+| `text-redisplay-rewind` | 消息窗 | 文本重显示：`0x7B` 设本帧回退游标 + `0x199` 回退重画 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
+| `gfx-prim-mesh-and-render-state` | 渲染 | A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条） | 🟠 部分 | E3 · `test/op-a4-a6.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -584,11 +587,11 @@
 - **读的字段**：Manager[261] 设备, Manager[313]/[314] 时间基准, Manager[315] 渲染模式
 - **emulator 现状**：emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但"粒子按墙钟时间步进"这一行为需要随 3D 效果子系统一起建模
 
-### `agerc-module-interface-and-version-lock`（partial）
+### `gfx-prim-mesh-and-render-state`（partial）
 
-- **能力**：AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表
-- **触发**：进程启动（WinMain 早期，创建窗口之前）：`sub_48E730` 硬编码 `LoadLibraryA("AGERC.DLL")` 并解析 `_GetInstance@0`/`_ShowDialog@12`/`_OperateMenu@16`；随后用配置 `set:RCVersion` 与 DLL 实例的版本字段比对。脚本侧另有一条：`0x14B`（唯一调用点 `SAVE.txt:7 i14b 5250`）重新加载同一个 DLL，`0x14C` 把 `_SetNameLenMax@20` 绑进槽 1，`0x14D` 调用它
-- **缺失时为什么静默**：★这条**不静默**：`0x14C`/`0x14D` 根本没注册 handler ⇒ 一进「Load Data（ロード）」就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`TITLE → Load Data → SAVE.BIN ip=2 0x14c`）。而 `0x14B` 是记录式桩 ⇒ 前面那条"加载"看起来"成功了"（日志里只有一行丢弃），**缺口被前一条桩掩盖**：不实现这三条，整个存档/读档界面（`SAVE.BIN`，1201 行）都进不去
-- **引擎**：sub_48E730, sub_48E640, sub_4229D0, sub_422AB0, sub_430170 @ raw 109387-109427
-- **读的字段**：Engine+490072 AGERC 模块句柄, Engine+490076 起 100 槽导出表, 配置 set:RCVersion, FileDB（id→名字，0x14B 的库名来源）
-- **emulator 现状**：`0x14B` 是 `NATIVE_OPS` 的记录式桩（`stubSubsystem`，只记一行）；`0x14C`/`0x14D` **未注册**。**建议整体模型化实现**（不需要真的 LoadLibrary）：① `0x14B` 把"AGERC 模块已加载"记为状态并校验库名 ∈ {AGERC.DLL}；② `0x14C` 在 emulator 内置的 AGERC 导出表（该 DLL 的 21 个具名导出，见 docs-new/03-engine/agerc-module.md）里查名 → 存进 100 槽表；③ `0x14D` 调用该槽（`_SetNameLenMax@20` 建模为"记录存档名长度上限"）。这样能解锁整条存档/读档链路，且不引入任何原生依赖
+- **能力**：A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条）
+- **触发**：脚本下发绘制细节时逐条执行（`0x1FC`/`0x1FE` 变换、`0x207` 槽→槽 blit、`0x20E` 图形提交、`0x224` 清转场表、`0x229` 绘制模式、`0x238` 画布尺寸对、`0x242`/`0x256` DrawItem 属性、`0x258` 纹理槽标志、`0x321` 网格属性、`0x32A` 3D 槽释放、`0x32D` 3D 颜色）；语料用量很大：`0x258` 11356 处 / 334 个脚本、`0x238` 2056 处、`0x20E` 786 处、`0x229` 716 处
+- **缺失时为什么静默**：★这一族**从不回写脚本操作数、也不改控制流** ⇒ 从 VM 视角完全不可观测：漏掉它们**不会报错**，只表现为「画面与真机不一致」（变换/裁剪/blit/清屏/槽标志/网格属性失真）。正因如此它们长期被当作「无依据的 no-op」（`ENGINE_INTERNAL_OPS` 与 `STUB_NATIVE_OPS`），缺口在纯脚本链路里永远看不到 —— 属闸门 B（能力缺口）那一类。
+- **引擎**：sub_422F80, sub_423060, sub_423480, sub_41A200, sub_41A290, sub_423FE0, sub_4248C0, sub_4251A0, sub_425C30, sub_425D20, sub_426BD0, sub_426F80, sub_427040, sub_4AC470, sub_4AC660, sub_4A3980, sub_498B60, sub_4AA180, sub_49A690, sub_49A6C0, sub_49A6F0, sub_4AD9A0, sub_4ACD10, sub_4AE280, sub_4A0750, sub_499DF0 @ raw 31303-31345
+- **读的字段**：DrawItem 变换字段（`+104`、`+132..+164`）, Scene 纹理槽表（槽→槽 blit）, Scene+1048（转场容器）, Scene[278]/[279] 与 Scene[286..288]（绘制模式）, Engine[92338]/[92339]（画布尺寸对）, DrawItem `+720`（与相邻对象 `+504`）, Scene+1872/+21872 的两张纹理槽标志镜像表, Scene+1064（网格属性表）, Scene[op1 + 12677]（3D 模型槽）
+- **emulator 现状**：2026-09 A4 落地：`handlers/gfx-state.ts`（进 `OPS`）。**建模 2 条**：`0x238` → `engineValues[92338]/[92339]`、`0x258` → `Engine.texSlotFlags`（bit0|bit1）。**宿主缝 11 条**：`native.resetPrimTransform` / `setPrimTransform4` / `blitSlotToSlot` / `commitGraphics` / `clearTransitions` / `setDrawModeBlock` / `setDrawEntryParam` / `setSlotParams` / `setMeshEntryAttr` / `release3DSlot` / `set3DColor`，两个宿主（headlessScene / pixiBackend）都走共享层 `scene/ops.ts` 的新 `sc*` 并落进 `SceneState.render4`。★**仍为 partial 的原因（已登记缺口）**：`render4` 目前只**记录**，Pixi 管线尚未逐条消费（变换复位/槽→槽 blit/Clear/转场表/绘制模式/网格属性/3D 颜色对画面的实际影响待接入；3D 一族在本作重写侧无 3D 管线）。另：这 13 条**不在** TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 8 例单元测试锁定。

@@ -33,6 +33,64 @@ const op_set_texture_transform: OpHandler = (c) => {
 };
 
 /**
+ * `0x249`（`sub_425310` raw 32717-32768）：**按统一 id 把纹理载入槽 `op2`（带颜色 `op3`）**。
+ *
+ * 引擎体（51 行，是 0x1F9 的"重型兄弟"）：
+ * ```c
+ * if (_this[op2 + 94672]) { sub_488FB0(old); (*old->vt)->dtor(old, 1); _this[op2+94672] = 0; }  // 先释放该槽
+ * h = sub_4559C0(FileDB, hwnd, op1, &v);        // 按统一 id 打开图像文件（写 FileDB 的「已使用」表）
+ * f = sub_455560(FileDB, h);                    // 取文件句柄
+ * color = op3 < 0 ? 0 : (0xFF000000 | (op3&0xFFFFFF 重排为 BGR→RGB?));
+ * if (sub_4A3800(Scene, op1, f, op2, color, 1) != 1) {   // ★失败
+ *   关闭文件; sub_408050("画像ファイル %s の読み込みに失敗しました", FileDB.name(op1)); throw ShowMessage;
+ * }
+ * 关闭文件;
+ * ```
+ * ⇒ 与 `0x1F9` 同样是"槽 ↔ 图像"绑定，但**先释放旧槽对象**、带颜色、且**失败会抛异常**。
+ * 语料：`i249` **20 处 / 8 个脚本**（`BTL` 7 / `ALLMAP` 3 / `MOVERUIN` 3 / `SHOWALLMAP` 3 / `ADDEXP` 1 …）。
+ *
+ * **emulator 取舍**：槽绑定 + 「已使用」标记 + `native.bindTexture` 与 `0x1F9` 一致；
+ * 「文件不存在 ⇒ 抛 `画像ファイル %s の読み込みに失敗しました`」这条**归宿主**（`FileSource` 是异步接口，
+ * handler 不能同步探测；宿主 `bindTexture` 拿不到图时按自己的缺口通道报告）。
+ */
+const op_load_texture_by_id: OpHandler = (c) => {
+  const e = c.e;
+  const imgid = readIntOperand(e, c.frame, c.instr, 1);
+  const slot = readIntOperand(e, c.frame, c.instr, 2);
+  const color = readIntOperand(e, c.frame, c.instr, 3);
+  e.texSlots.set(slot, imgid);
+  e.markFileUsed(imgid); // 引擎按 id 打开文件 ⇒ 写 FileDB 的「已使用」表（鉴赏解锁的判据）
+  c.native.bindTexture?.(imgid, slot);
+  if (color >= 0) c.native.setTextureObjectParam?.(slot, color); // 颜色随绑定下发（宿主可选）
+};
+
+/**
+ * `0x245`（`sub_4251E0` raw 32661-32676）：**纹理对象的浮点参数**。
+ * 引擎：`obj = Engine[op1 + 94672]`（CTexture 对象表）；存在则 `sub_4081B0(obj, op2 / dbl_51FB50)`
+ * （把 op2 按常量缩放后写进对象的浮点字段）。emulator 无 CTexture 对象 ⇒ 转发给宿主的
+ * 纹理对象参数缝（未实现该缝的宿主只当"记录"）。
+ * 语料 0 处，但它是"对象属性面"的一员，且会写宿主可见的对象状态，故不 no-op。
+ */
+const op_texture_obj_float: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.setTextureObjectFloat?.(slot, value);
+};
+
+/**
+ * `0x246`（`sub_425250` raw 32680-32700）：**纹理对象子对象的 vtable+56 调用**。
+ *
+ * 引擎：`obj = Engine[op1+94672]`；若 `*(obj+1084) == dword_52839C`（对象类型判定）
+ * 则 `(**(obj+1044))+56` 用 `op2 / dbl_5201F0`（÷100，`dbl_5201F0` = 缩放常量）调用。
+ * 即"对纹理对象的某个子对象下发一个浮点参数"。emulator 同 `0x245`：转发宿主缝。
+ */
+const op_texture_obj_param: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.setTextureObjectParam?.(slot, value);
+};
+
+/**
  * `0x1F8` create-texture（sub_422C20, raw 31161）：读 op1=槽、op2/op3/op4（w/h/mode）；
  * 引擎**先释放该槽旧纹理对象**（`_this[slot+94672]`：`sub_488FB0` + vtable delete + 置 0），
  * 再 `sub_4A2C10(_this+80708, slot, w, h, mode)` 新建 ⇒ 程序化/空白纹理（非文件图像）。
@@ -95,6 +153,9 @@ export const GFX_TEXTURE_OPS: OpTable = [
   [0x1f8, op_create_texture], // 创建程序化纹理（释放旧槽对象）→ native.createTexture
   [0x208, op_get_texture_size], // 纹理尺寸 getter（写回 op2/op3）→ native.getTextureSize
   [0x344, op_set_texture_transform], // 纹理槽变换 → native.setTextureTransform
+  [0x249, op_load_texture_by_id], // ★按统一 id 载纹理入槽（带颜色；先释放旧槽）→ native.bindTexture
+  [0x245, op_texture_obj_float], // 纹理对象浮点参数 → native.setTextureObjectFloat
+  [0x246, op_texture_obj_param], // 纹理对象子对象参数 → native.setTextureObjectParam
 ];
 
 /** 纹理槽族的 native 转发（绘制/绑定/删除/变换）。 */

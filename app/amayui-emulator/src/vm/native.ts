@@ -135,6 +135,40 @@ export interface NativeBridge {
    */
   getTextureSize?(slot: number): { w: number; h: number };
   /**
+   * 0x245（sub_4251E0 → `sub_4081B0`）：**纹理对象的浮点参数**（`op2` 按常量缩放后写进该槽的 CTexture）。
+   * emulator 无 CTexture 对象 ⇒ 宿主可选实现（不实现 = 只落字段、缺口由闸门记）。语料 0 处。
+   */
+  setTextureObjectFloat?(slot: number, value: number): void;
+  /**
+   * 0x246（sub_425250：`obj+1044` 子对象的 `vtable+56`，参数 = `op2 ÷ 100`）与
+   * 0x249（sub_425310：绑定时的颜色 `op3`）：**纹理对象/槽的参数下发**。宿主可选实现。
+   */
+  setTextureObjectParam?(slot: number, value: number): void;
+
+  // ---- A4 图元 / 网格 / 纹理 / 渲染状态族（2026-09 落地；语义见 handlers/gfx-state.ts）----
+  /** `0x1FC`（sub_422F80 → `sub_4AC470`）：**复位图元变换**（清 DrawItem 的缩放/旋转/平移等字段）。 */
+  resetPrimTransform?(handle: number): void;
+  /** `0x1FE`（sub_423060 → `sub_4AC660`）：**图元变换 4 浮点**（op2..op5 原样，不除 100）。 */
+  setPrimTransform4?(handle: number, a: number, b: number, c: number, d: number): void;
+  /** `0x207`（sub_423480 → `sub_4A3980`）：**槽→槽 StretchRect**（同尺寸源/目标矩形，各 4 个 int）。 */
+  blitSlotToSlot?(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): void;
+  /** `0x20E`（sub_41A200）：**图形提交**——包一层渲染状态 38 后对设备做 `Clear(0,0,3,0,1.0,0)`（清 target+z）。 */
+  commitGraphics?(): void;
+  /** `0x224`（sub_41A290 → `sub_4AA180`）：**清转场表**（Scene+1048 的转场容器）。 */
+  clearTransitions?(): void;
+  /** `0x229`（sub_423FE0 → `sub_49A690/6C0/6F0`）：**绘制模式 5 元组**（op1/op2 两个 int + op3..op5 三个 float）。 */
+  setDrawModeBlock?(a: number, b: number, x: number, y: number, z: number): void;
+  /** `0x242`（sub_4251A0 → `sub_4AD9A0`）：**写 DrawItem `+720`**（同时写相邻对象的 `+504`）。 */
+  setDrawEntryParam?(entry: number, value: number): void;
+  /** `0x256`（sub_425C30 → `sub_4ACD10`）：**按 id 找 DrawItem 并写两个 int + 三个 float**。 */
+  setSlotParams?(slot: number, a: number, x: number, y: number, z: number): void;
+  /** `0x321`（sub_426BD0 → `sub_4AE280`）：**MeshEntry 属性**（`entry[a3 + 7] = a4`）。 */
+  setMeshEntryAttr?(mesh: number, index: number, value: number): void;
+  /** `0x32A`（sub_426F80 → `sub_4A0750`）：**释放 3D 模型槽**（`Scene[op1 + 12677]` 析构 + delete + 置 0）。 */
+  release3DSlot?(slot: number): void;
+  /** `0x32D`（sub_427040 → `sub_499DF0`）：**3D 颜色**（op1 截断为 alpha、op2 低 3 字节为 RGB，四分量各 ÷255）。 */
+  set3DColor?(r: number, g: number, b: number, a: number): void;
+  /**
    * 0x23B（sub_424970）：**按 CG 数字条画数值**。
    * 实现方负责：先删 DrawItem/Mesh 的 `[id, id+digits)` 区间，再按记录逐位建 DrawItem。
    * `rec` = 7 dword（[0] 纹理槽 / [1] x0 / [2] y0 / [3] 单字宽 / [4] 字高 / [5] 字内空隙 / [6] 字距）；

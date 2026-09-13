@@ -82,7 +82,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x34b, op_engine_internal], // 缩放目标矩阵 + 窗1 → sub_428030（置 pending Scene+46516）
   [0x34c, op_engine_internal], // 旋转目标矩阵 + 轴角 + 窗2 → sub_4280D0（置 pending）
   [0x34d, op_engine_internal], // 平移目标矩阵 + 窗3 → sub_428170（置 pending）
-  [0x321, op_engine_internal], // MeshEntry 属性块 `+28+4·op2` → sub_426BD0（原样写入，无 clamp/回退）
   // ★0x326/0x325 属 **3D 天气/粒子效果管理器**（见本文件 0x324 处的说明）：
   //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
   //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
@@ -96,46 +95,22 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   0x260 竖排矩形 / 0x2BD·0x2BE 加粗 / 0x2E8 自动翻页选项 / 0x2FE 注音面名 / 0x303 对齐
   // —— 三张表**必须两两不相交**（`test/registry-tables.test.ts` 守着），否则真实现会被 no-op 掩盖。
   //
-  // ★`0x1D2`（sub_420380）—— **「文本项属性记录表」家族的写入端**，本表里唯一"引擎其实做了事"的一条：
-  //   引擎体：`if (!Engine[97055]) sub_45EFA0(Font, 0, op1, op2)` ⇒ 往 **`Font+3364` 的 72B/条
-  //   记录向量**里 push 一条 `{win = 默认窗, +20 = op2, +24 = op1, +28 = 0, +32 = 0, flags = 0x20000000
-  //   (| 1 = 组首)}`（push 实现 sub_45E7E0 raw 73986：传入指针落在向量内则**按索引插入**，否则尾插）。
-  //   它**不回写操作数、不改 ip/cur**，从 VM 视角不可观测 ⇒ 归 engine-internal（宿主没有这张表的消费者）。
+  // ★`0x1D2`（sub_420380）—— **「文本项记录表」家族**：**2026-09 成对转真实现**，
+  //   见 `handlers/text-items.ts`（`TEXT_ITEM_OPS`）+ 模型 `../textItems.ts`。
+  //   写入端 `0x1D2`（42760 处）与语音族 `0xC4`/`0x1BD`/`0x2F4`；读取端 `0x1D3`/`0x1D4`/`0x2F3`
+  //   （后三条过去**根本不在任何表里** ⇒ 命中即硬报错）；记账开关 `0x1BB`（SetTB）。
+  //   ⇒ 回想/历史（`HISTORY.txt`）与语音重播（`REPLAYVOICE.txt`）的数据源就此打通。
   //
-  //   ⚠**同一家族的读取端仍未实现，故意保持"命中即硬报错"**（它们**会回写操作数**，绝不能当 no-op）：
-  //     · `0x1D3 <o1> <o2> <o3> <o4> <o5>`（sub_42D4A0 → sub_457960 raw 69329）：从下标 `o4` 起扫
-  //       `flags & 0x20000000 && +24 == o5` 的记录，取 `+20` ⇒ 写回 `o1 = 找到?1:0`、`o2 = 值`，
-  //       遇到"下一条是组首（bit0）"即停。
-  //     · `0x1D4 <o1> <o2> <o3> <o4>`（sub_42D510 → sub_457A20 raw 69367）：扫 `flags & 0x40000000
-  //       && +32 == 0`，取 `+20/+24/+28`（缺省 -1/-1/0）⇒ 写回 `o1/o2`。
-  //     · `0x1D0 <o1> <o2> <o3>`（sub_42D440 → sub_459860 raw 38099）：读**回看页索引表**
-  //       （`Font+3380`，8B/条 `{槽号, 回看下标}`）⇒ 写回 `o1/o2`。
-  //     · `0x2F3 <o1> <o2> <o3> <o4> <o5> <o6>`（sub_431A10 → sub_457A20 raw 40724）：扫
-  //       `flags & 0x40000000 && +32 == o6`，取 `+20/+24/+28` ⇒ 写回 `o1/o2/o3`（`o5` = 起始下标）。
-  //       ★订正：早前把这条的语义记在 `0xAA` 上；`0xAA`（sub_42D580 raw 38148）其实是**写文件/保存族**
-  //       （`CreateFileA` + `sub_40CD10`，读 op2、写 op1），与记录表无关。
-  //   证据：`src/CONFIG.txt:26-38`（CONFIG 屏的配置项枚举循环：`i1d0` 取一段 → `i1d3` 查键 `-1` 的哨兵
-  //   记录 → 递减下标回环）、`src/CONFIG.txt:357`（`i1d2 (-1) 0` 压哨兵）——2026 实测用户在 CONFIG.BIN
-  //   命中 `0x1D2` 被暂停（`.tmp/amayui-emulator.log:2215`）。
-  //   ⇒ **实现这张表时必须把 0x1D2 一起搬进 OPS**（写入端与读取端同进同出，否则表的语义仍然缺一半）。
-  [0x1d2, op_engine_internal], // 文本项属性记录表：push（宿主无消费者；读取端见上方说明）
-  [0x7a, op_engine_internal], // 消息窗
-  [0x7b, op_engine_internal], // 消息窗
+  //   ⚠同族里**仍未实现**的一条：`0x1D0`（sub_42D440 → sub_459860 raw 38099）读的是**另一张表**
+  //   （回看页索引表 `Font+3380`，8B/条 `{槽号, 回看下标}`）⇒ 写回 `o1/o2`；它不在本次批次里，**故意不上桩**。
+  //   证据：`src/CONFIG.txt:26-38`（CONFIG 屏配置项枚举：`i1d0` 取一段 → `i1d3` 查键 `-1` 的哨兵记录）。
   // ★`0x73`（字格+逐字节拍）与 `0x1CE`（逐字开关）已升为 `MSGWIN_OPS` 真实现 ——
   //   它们写的是窗对象的 `win+60..99` 字格块与 `effect_flags & 0x40000000`，
   //   是逐字显现的**可观测状态**（引擎主循环 raw 20887-20895 每帧消费），不能当 no-op。
-  [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
   // ★`0x1CB`（GetConfig("message:ReadTextSkip") → 写 op1）**已转真实现**（2026-09）：
   //   见 `handlers/msgwin.ts` 的 `op_get_read_text_skip` —— 它与 `0x1CA`（SetConfig 同一个键）成对，
   //   当 no-op 时脚本读到的是旧槽值（静默逻辑错误）。语料里 30+ 个场景脚本有 `i1cb (global-int 139d)`。
   [0x1c9, op_engine_internal], // 消息窗（触摸/输入注册族，见 0x308）
-  [0x245, op_engine_internal], // 消息/UI
-  [0x246, op_engine_internal], // 消息/UI
-  [0x249, op_engine_internal], // 消息/UI
-  [0x25a, op_engine_internal], // 消息/UI
-  [0x25c, op_engine_internal], // 消息/UI
-  [0x25e, op_engine_internal], // 消息/UI
-  [0x25f, op_engine_internal], // 消息/UI
   // ---- 声音族：已移出本表（2026-09）----
   //   `handlers/audio.ts` 的 `AUDIO_OPS` 是真实现（`NATIVE_OPS` → `NativeBridge.audio`）。
   //   整体机制见 docs-new/03-engine/sound-system.md；此前的 no-op 说明留在第二层台账
@@ -157,6 +132,14 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ★同族的 `0x327`（Set3DEffect**Rain**：`sub_426E70` → `sub_453280`）与 `0x328`（Set3DEffect**Leaf**：
   //   `sub_432300` → `sub_4183F0`，错误串 raw 23969）**目前根本没注册** ⇒ 命中即 `NotImplementedOp`。
   //   **故意不上桩**：它们是"该实现"的缺口，登记成 no-op 反而会把缺口藏起来（见 stub-reaudit §1.1 A4）。
+  // ============ 图元 / 网格 / 纹理 / 渲染状态（A4，13 条）★已转真实现（2026-09）============
+  //   见 `handlers/gfx-state.ts`（`GFX_STATE_OPS`，进 `OPS`）：`0x1FC` `0x1FE` `0x207` `0x20E` `0x224`
+  //   `0x229` `0x238` `0x242` `0x256` `0x258` `0x321` `0x32A` `0x32D`。
+  //   两条**建模**（`0x238` → `Engine[92338]/[92339]`；`0x258` → `Engine.texSlotFlags`），
+  //   其余 11 条是纯渲染侧 ⇒ 走宿主缝（`native.resetPrimTransform`/`setPrimTransform4`/`blitSlotToSlot`/
+  //   `commitGraphics`/`clearTransitions`/`setDrawModeBlock`/`setDrawEntryParam`/`setSlotParams`/
+  //   `setMeshEntryAttr`/`release3DSlot`/`set3DColor`）。语料用量很大：`0x258` 11356 处、`0x238` 2056 处、
+  //   `0x20E` 786 处、`0x229` 716 处 —— 此前一律当无依据的 no-op。
   // ============ 「启动 → Game Start → SN0000 首文案」路径上确认可跳过的 16 条（2026-09）============
   // 判据（逐条读 handler 体，raw 行号见右注）：**既不回写任何脚本操作数、也不改 ip/cur**，
   // 只写引擎里 emulator 无消费者的字段 / 只调渲染或 3D 子系统。因此对 VM 不可观测。
@@ -170,15 +153,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x1ad, op_engine_internal], // sub_4196F0 raw 24806：`166963 = cur`（存档序列化用"当前帧"记忆；emulator 不序列化该字段，无读者）
   [0x1b1, op_engine_internal], // sub_41FEA0 raw 29155：`21672 = op1` —— **全工程无读者**（死写，与 21668 MessageSpeed 不是同一槽）
   [0x1bc, op_engine_internal], // sub_4197A0 raw 24845：清消息/声音字段（`85260..85280`、`490004..490040`、3×`sub_4B60C0`）—— 都是清场，无操作数回写
-  [0x20e, op_engine_internal], // sub_41A200 raw 25277：图形提交（`sub_4A50C0(Scene,0x26)` + `sub_498B60`）—— 宿主每帧自行 present
-  [0x224, op_engine_internal], // sub_41A290 raw 25301 → sub_4AA180 → `sub_4A9BE0(Scene+262)`：清 Scene 转场表（emulator 无转场表）
-  [0x229, op_engine_internal], // sub_423FE0 raw 31984：绘制模式配置（`sub_49A690/4AC0/4AF0` + 3 个 float）—— 渲染侧
-  [0x238, op_engine_internal], // sub_4248C0 raw 32303：`92338=0; 92339=op1` —— **两个槽全工程只写不读**（死写）
-  [0x242, op_engine_internal], // sub_4251A0 raw 32649 → sub_4AD9A0：写 `DrawItem+720` 与转场项 `+504`—— 渲染侧
-  [0x256, op_engine_internal], // sub_425C30 raw 33120 → sub_4ACD10：绘制项 3 个 float 设置 —— 渲染侧
-  [0x258, op_engine_internal], // sub_425D20 raw 33156：按 op2 的 bit0/bit1 置纹理槽标志（`5*slot+468/+469`、`+5468/+5469`）—— 渲染侧
-  [0x32a, op_engine_internal], // sub_426F80 raw 34003 → sub_4A0750：释放 3D 模型槽（`Scene[op1+12677]` 析构 + delete）—— 3D 槽，emulator 无模型
-  [0x32d, op_engine_internal], // sub_427040 raw 34033 → sub_499DF0：3D 颜色（op1=α 上限 255、op2=RGB）→ 4 个 float —— 3D 渲染侧
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
   [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
@@ -194,7 +168,8 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   —— 它回写 op1 字符串，是字体选择器逐行画候选名的数据源；当 no-op ⇒ 列表整片空白。
   // ============ 数据字段 / 版本 / 脚本控制 ============
   [0xad, op_engine_internal], // 数据
-  [0xae, op_engine_internal], // 版本/存档：读 set:SaveVersion1/2 分支续档（sub_4192F0）
+  // 0xAE（sub_4192F0）**已转真实现**（2026-09）：见 handlers/frame.ts 的 op_save_version_branch
+  //   —— 存档版本分支（读档时把帧 ip 重算到存档记录的位置）。语料 0 处调用，但**会改控制流**，不能当 no-op。
   [0xaf, op_engine_internal], // 数据
   // 0x143（i143）**已转真实现**：见 handlers/control.ts 的 op_dispatch_script_requests
   //   —— 它派发已装载扩展包的 $n$AUTORUN（引擎遍历 FileDB.packs 槽 1..255），当 no-op 会让扩展包永不激活。
@@ -225,26 +200,27 @@ export const STUB_NATIVE_OPS: OpTable = [
   //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
   [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
   /**
-   * `0x14B`（sub_4229D0, raw 31056）：**加载 AGERC 模块（脚本侧）** —— 先 `FreeLibrary(_this+490072)` 释放旧句柄并清 0，
-   * 读 op1 = **统一文件 id** → `fileDbIdToName_454FA0` 取名字 → `LoadLibraryA(name)` 存回 `Engine+490072`；
-   * 失败 ⇒ `GetLastError` + 抛 ShowMessage 异常。
+   * ★`0x14B` / `0x14C` / `0x14D`（**AGERC 模块接口**）**已全部转真实现（2026-09，A6）**：
+   * 见 `handlers/agerc.ts`（`AGERC_OPS`，进 `OPS`）+ 模型 `Engine.agerc`。
    *
-   * ★**不是通用插件/DLL 加载器**（2026-09 订正）：941 个脚本里**只有 1 处**调用（`src/SAVE.txt:7 i14b 5250`），
-   * 0x5250 = 文件 id 21072 = **`AGERC.DLL`**；引擎自己也用**硬编码字面量** `tstrFilename[] = "AGERC.DLL"`
-   * （raw 4927）在 WinMain 里加载同一个 DLL（`initAgercInterface_48E730`）。配套的 `0x14C`（绑定导出到
-   * `Engine+490076` 起的 **100 槽表**）与 `0x14D`（调用该槽）**当前未注册** ⇒ 一进「Load Data（ロード）」
-   * 就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`.tmp/loadDataProbe.mts`）。
-   * ⇒ 这三条可以**整体模型化实现**（不需要真加载原生库），见 `docs-new/03-engine/agerc-module.md`。
+   * 引擎语义（raw 31056-31135 / 39810-39855）：`0x14B` 读 op1 = **统一文件 id** →
+   * `fileDbIdToName_454FA0` 取名 → `LoadLibraryA` 存进 `Engine+490072`；`0x14C` 把
+   * `GetProcAddress` 的结果绑到 `Engine+490076` 起的 **100 槽表**（槽越界抛「0から99まで」）；
+   * `0x14D` 把 op3 的数组**逐元素 DEC** → 调该槽 → **ENC 回写** → `op2 ← 返回值`。
+   *
+   * ★**不是通用插件/DLL 加载器**：941 个脚本里**只有 1 处**调用（`src/SAVE.txt:7 i14b 5250`），
+   * 0x5250 = 文件 id 21072 = **`AGERC.DLL`**；引擎自己也用硬编码字面量加载同一个 DLL（raw 4927）。
+   * ⇒ emulator **只接受 AGERC.DLL**（其余 id 按引擎同文报错），导出表按 PE 实读的 21 个名字建，
+   * 其中只有 `_SetNameLenMax@20` 有行为实现（脚本侧唯一用到；消费者 = `Engine.agerc.nameLenMax`）。
+   * 详见 `docs-new/03-engine/agerc-module.md` 与 `agerc-internals.md`。
    */
-  [0x14b, stubSubsystem], // 加载 AGERC 模块（不加载原生库；纯记录）
   [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
   [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
   [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）
-  [0x1fc, stubSubsystem], // 纹理/图形子系统方法
-  [0x1fe, stubSubsystem], // 纹理变换 op（4 浮点）
   // ★`0x204` draw-string 已升为 `MSGWIN_OPS` 真实现（handler 交出"位置 + 文本 + 全局样式"，
   //   宿主把字直绘进该纹理槽的表面）。漏掉它的症状是"设置界面中间一片纯白"，见 handlers/msgwin.ts。
-  [0x205, stubSubsystem], // 纹理/文本 op
-  [0x207, stubSubsystem], // 纹理 op
+  // ★`0x205` 数字直绘（GDI 数字文本 → 纹理槽）**已转真实现**（2026-09）：同 `handlers/msgwin.ts`
+  //   —— 它按格式标志把数字排成串、**回写 op2（x 前进量）**再交给 `native.drawString`（与 0x204 同一宿主缝）。
+  //   语料 313 处 / 35 个脚本（INFOSK / DRAWLINKTIP / INFOIT / ALCHEMY …）。
 ];
 

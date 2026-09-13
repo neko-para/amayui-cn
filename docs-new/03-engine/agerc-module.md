@@ -104,35 +104,33 @@ PE 版本资源：`FileDescription = "ARCGameEngine Resource"`、`CompanyName = 
 - ⇒ 与 §2.1 的哈希结论互为印证：`install/AGERC.DLL` 确为**汉化改动过的构建**，且改动方式是
   **只替换宽字符串**（菜单项文字），ANSI 字符串仍是日文原型。
 
-## 3. emulator 现状与建议（订正此前的"待裁决"）
+## 3. emulator 现状（2026-09 **已实现**，A6 批次）
 
 | | 现状 |
 |---|---|
-| `0x14B` | `NATIVE_OPS` 的**记录式桩**（`stubSubsystem`，只记一行日志，不加载原生库、不抛） |
-| `0x14C` / `0x14D` | **完全未注册** ⇒ 命中即 `NotImplementedOp` |
+| `0x14B` | ✅ `OPS` 的 `op_agerc_load`（`handlers/agerc.ts`）：重载语义（已有句柄 ⇒ 清槽）+ **只接受 `AGERC.DLL`**（id `0x5250`），其余 id 按引擎同文报错；状态 = `Engine.agerc.loaded` |
+| `0x14C` | ✅ `op_agerc_bind_export`：导出名按 PE 实读的 **21 个**校验（查不到 ⇒ 引擎同文「アドレス取得に失敗しました」）、槽 0..99 越界 ⇒「0から99まで」 |
+| `0x14D` | ✅ `op_agerc_call_export`：op3 数组按 DEC 读出 → 调槽 → ENC 回写 → `op2 ← 返回值`；内置导出表里只有 `_SetNameLenMax@20` 有行为（写 `Engine.agerc.nameLenMax`，初值 18），其余**调用即抛**明确错误（本作不可达） |
 
-**实测后果**（探针 `.tmp/loadDataProbe.mts`，可直接复跑）：
+**实测后果**（探针 `.tmp/loadDataProbe.mts`，可直接复跑）——**A6 之前 vs 之后**：
 
 ```
-TITLE 悬停项 = 1（Load Data）
-★ 首次未实现指令：0x14c set-agerc-export @SAVE.BIN:ip=2
-⇒ 硬报错于 0x14c
+（A6 之前）★ 首次未实现指令：0x14c set-agerc-export @SAVE.BIN:ip=2      ⇒ 一进 Load Data 就硬报错
+（A6 之后）★ 首次未实现指令：0x1a0 i1a0 @SAVE.BIN:ip=628                ⇒ 存档/读档界面已能跑 628 条指令
 ```
 
-即 **TITLE →「Load Data（ロード）」一进去就停**，整个存档/读档界面（`SAVE.BIN`，1201 行）在当前
-emulator 里**根本进不去**。而前一条 `0x14B` 是记录式桩 ⇒ 日志只显示"一行被丢弃"，
-**缺口被前一条桩掩盖**（这正是第二层台账 `whySilent` 想抓住的那类）。
+即 **TITLE →「Load Data（ロード）」不再卡在 AGERC 链上**：`SAVE.BIN` 的第 1-4 条
+（`i14b 5250` / `set-agerc-export` / `call-agerc-export`）现在按引擎语义执行。
+**下一个缺口**是同一条路上的 `0x1A0`（`sub_42DC70` raw 38366-38404，argc 9）＝
+**存档文件读取**（`"%s\\SAVE%2.2d.DAT"` + `CreateFileA` + `sub_438120` 反序列化；语料 339 处 / 335 个脚本）——
+它**不在**复评台账的 57 条 stub 里（属"压根没有 handler"的 286 条），需要另立批次。
 
-**建议实现方式（不需要任何原生依赖）**：
+**实现方式（不需要任何原生依赖）** —— 与本节此前的建议一致：
+1. `0x14B`：把"AGERC 模块已加载"记为状态，并**校验库名**（只接受 `AGERC.DLL`）⇒ 把"只能加载这一个库"编码进实现；
+2. `0x14C`：在内置的 **AGERC 导出表**（§2 的 21 个名字）里查名，查不到/越界 ⇒ 抛与引擎同文的 ShowMessage；
+3. `0x14D`：调用该槽；唯一会被调到的 `_SetNameLenMax@20` 建模为"记录存档名长度上限"
+   （可见效果只在 AGERC 的注释输入 UI，emulator 未建模该 UI ⇒ 先记录 + 台账登记）。
 
-1. `0x14B`：把"AGERC 模块已加载"记为状态；**校验库名**——只接受 `AGERC.DLL`（语料里也只会有它），
-   其它名字按引擎同文报错（或记 gap），从而把"只能加载这一个库"这一事实**编码进实现**；
-2. `0x14C`：在 emulator 内置的 **AGERC 导出表**（上表 21 个名字 → 宿主方法）里查名；查不到 ⇒ 抛与引擎
-   同文的 ShowMessage；查到 ⇒ 存进 100 槽表（越界抛）；
-3. `0x14D`：调用该槽。目前唯一会被调到的 `_SetNameLenMax@20` 建模为"记录存档名长度上限"
-   （其可见效果只在存档命名 UI，emulator 的存档 UI 尚未建模 ⇒ 先记录 + 台账登记）。
-
-这样：**不加载任何原生库**，但脚本侧的语义（绑定/调用/越界报错）与引擎一致，且能解锁整条存档链路。
 
 ### 3.1 范围订正：17 个地图/地块/碰撞导出**本作不可达**，不必实现
 

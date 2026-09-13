@@ -36,6 +36,7 @@
 import type { StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import { ADV_ACTIVE } from '../engine.js';
+import { pushVoiceRecord } from './text-items.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
 import { VOLUME_MAX } from '../../audio/audioEngine.js';
 import { setConfigValue } from './msgwin.js';
@@ -186,15 +187,24 @@ const op_bgm_fade: OpHandlerLike = (c) => {
 
 /** `0xC4`（循环位 0）/ `0x1BD`（循环位 1）：播语音到通道 0（ADV 位在时寄存）。 */
 const op_play_voice: OpHandlerLike = (c) => {
-  voicePlayOrDefer(c, 0, readIntOperand(c.e, c.frame, c.instr, 1), c.instr.opcode === 0x1bd);
+  const loop = c.instr.opcode === 0x1bd;
+  const id = readIntOperand(c.e, c.frame, c.instr, 1);
+  voicePlayOrDefer(c, 0, id, loop);
+  // 引擎在同一 handler 末尾（raw 29904-29908 / 30058-30062）往**文本项记录表**压一条语音记录：
+  //   `if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 循环位, 0, Engine[5053])`
+  // 它是 `0x1D4`/`0x2F3`（`REPLAYVOICE` 的"重播这条语音"）的数据源 ⇒ 必须一起做。
+  pushVoiceRecord(c.e, id, loop ? 1 : 0, 0);
 };
 
-/** `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录（记录表未建模）。 */
+/** `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录。 */
 const op_voice_play_slot: OpHandlerLike = (c) => {
   const id = readIntOperand(c.e, c.frame, c.instr, 1);
   const loop = readIntOperand(c.e, c.frame, c.instr, 2) !== 0;
   const ch = readIntOperand(c.e, c.frame, c.instr, 3);
   voicePlayOrDefer(c, ch, id, loop);
+  // 引擎 raw 33650-33654：`if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 0, op3, Engine[op3+5053])`
+  // ⇒ 选择器 = **通道号**（`0x2F3` 就是按它查回语音 id 的）。
+  pushVoiceRecord(c.e, id, 0, ch);
 };
 
 /** `0x2C0`（通道 0）/ `0x2F5`（op4 = 通道）：把语音排入通道（带延迟；引擎 `sub_4BBA40`）。 */

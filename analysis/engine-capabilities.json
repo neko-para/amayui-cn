@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 104,
-    "modeled-verified": 22,
+    "total": 107,
+    "modeled-verified": 25,
     "modeled-unverified": 7,
     "partial": 25,
     "absent": 25,
@@ -2969,9 +2969,130 @@
       "whySilent": "★这条**不静默**：`0x14C`/`0x14D` 根本没注册 handler ⇒ 一进「Load Data（ロード）」就在 `SAVE.BIN` 第 2 条指令上抛 `NotImplementedOp`（实测探针：`TITLE → Load Data → SAVE.BIN ip=2 0x14c`）。而 `0x14B` 是记录式桩 ⇒ 前面那条\"加载\"看起来\"成功了\"（日志里只有一行丢弃），**缺口被前一条桩掩盖**：不实现这三条，整个存档/读档界面（`SAVE.BIN`，1201 行）都进不去",
       "confidence": "confirmed",
       "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "note": "2026-09 A6 落地：handlers/agerc.ts（AGERC_OPS，进 OPS）+ 模型 Engine.agerc。0x14B 重载语义且只接受 AGERC.DLL（id 0x5250）；0x14C 按 PE 实读的 21 个导出名校验 + 槽 0..99 越界抛引擎同文；0x14D 把 op3 数组按 DEC 读出→调槽→ENC 回写→op2 ← 返回值。内置导出只有 _SetNameLenMax@20 有行为（写 Engine.agerc.nameLenMax），其余调用即抛明确错误（本作不可达）。★这一批解锁了整个存档/读档界面（SAVE.BIN）：此前 0x14C/0x14D 根本没注册、一进 Load Data 就硬报错。",
+        "guard": "test/op-a4-a6.test.ts"
+      }
+    },
+    {
+      "id": "text-item-record-table",
+      "subsystem": "消息窗",
+      "name": "文本项记录表（Font+3364 的 72B/条 vector）：回想/历史与语音重播的账本",
+      "trigger": "每显示一条文本项（`0x1D2`，语料 42760 处）或播一条语音（`0xC4`/`0x1BD`/`0x2F4`）时，若 `Engine[97055] == 0` 就往 `Font+3364` 的 vector 尾插一条 72B 记录；脚本随后用 `0x1D3`（按 key 查文本项）/`0x1D4`/`0x2F3`（按选择器查语音项）读回，`HISTORY`（回想）与 `REPLAYVOICE`（语音重播）就是它的两个消费者",
+      "engine": {
+        "fns": [
+          "sub_45EFA0",
+          "sub_45EEA0",
+          "sub_45E7E0",
+          "sub_457960",
+          "sub_457A20",
+          "sub_420380",
+          "sub_42D4A0",
+          "sub_42D510",
+          "sub_431A10",
+          "sub_420000",
+          "sub_45EC60"
+        ],
+        "raw": "29374-29386"
+      },
+      "reads": [
+        "Font+3364/+3368（记录 vector begin/end，72B/条）",
+        "Font[307]（默认窗 = Engine[21631]）",
+        "Font[win+849]（该窗「下一条是组首」标记，由 0x71 的新消息流程置位）",
+        "Engine[97055]（记账门：0 = 记账、0x80000000 = 暂停）"
+      ],
+      "whySilent": "★这条**不静默但也有静默面**：写入端 `0x1D2` 长期被当 no-op（不回写操作数、不改控制流 ⇒ 从 VM 视角不可观测），而读取端 `0x1D3`/`0x1D4`/`0x2F3` **压根没有 handler** ⇒ 命中即硬报错。只做一半的后果：写端做了读端没做 ⇒ 表里有数据但脚本读不到；读端做了写端没做 ⇒ 表永远空。两个后果都是「回想列表/语音重播静默错误」而不是报错 —— 属闸门 B（能力缺口）那一类",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "note": "2026-09 A3 落地：模型 `app/amayui-emulator/src/vm/textItems.ts`（`Engine.textItems`），handler `handlers/text-items.ts`（`0x1BB`/`0x1D2`/`0x1D3`/`0x1D4`/`0x2F3`）+ 音频族在播语音时同函数末尾 push 语音记录（`pushVoiceRecord`）+ `0x71` 置组首标记。「组内最后一次命中」「下一条是组首即停」「越界保持初值」逐条照抄引擎；守卫 `test/op-a2-a3.test.ts`。★未建模：记录的 `+4..+16` 字形/位置字段（渲染层 sub_45F090 写入，emulator 不重放文本绘制）",
+        "guard": "test/op-a2-a3.test.ts"
+      }
+    },
+    {
+      "id": "text-redisplay-rewind",
+      "subsystem": "消息窗",
+      "name": "文本重显示：`0x7B` 设本帧回退游标 + `0x199` 回退重画",
+      "trigger": "脚本用 `0x7B <主游标> <备用游标>` 记下「重显示点」（值 = 指令下标），之后用 `0x199`（0 操作数）把 `frame.ip` 直接设回该点（并按 `Engine[122452] & 0x4000000` 决定用主游标还是备用游标），从而重跑那一段文本；主循环 `sub_409700` 的 `effect_flags & 0x20` 分支是另一条消费路径",
+      "engine": {
+        "fns": [
+          "sub_41F530",
+          "sub_418FC0",
+          "sub_409700"
+        ],
+        "raw": "28724-28733"
+      },
+      "reads": [
+        "Engine[cur+122372]（主回退游标，缺省 -1）",
+        "Engine[cur+122412]（备用回退游标，缺省 -1）",
+        "Engine[122452]（模式位 0x4000000 = 处于重画中）/122453/174802",
+        "effect_flags（174801）"
+      ],
+      "whySilent": "`0x7B` 只写两个 per-frame 槽（无操作数回写）；但它的读取端 `0x199` **不在任何表里** ⇒ 命中即硬报错（语料 668 处 / 334 个脚本）。若把 `0x7B` 当 no-op，`0x199` 就永远读到 -1 ⇒ 「按 set:ReDrawTextOnKey 重显示文本」的行为整条消失，而不会有任何报错",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "note": "2026-09 A2 落地：`handlers/frame.ts` 的 `op_set_rewind_cursor`（0x7B）+ `op_redisplay_text`（0x199，`c.jump(游标)`，并把旧 `effect_flags` 存进 `122452`、写 `122453 = 当前指令下标+1`）。游标缺省 -1 ⇒ 无游标时严格不动控制流。★订正：原表把 0x7B 的读者记成「点击路由游标」是误 —— 路由表是 `0x090` → `Engine.routes`，两回事。守卫 `test/op-a2-a3.test.ts`",
+        "guard": "test/op-a2-a3.test.ts"
+      }
+    },
+    {
+      "id": "gfx-prim-mesh-and-render-state",
+      "subsystem": "渲染",
+      "name": "A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条）",
+      "trigger": "脚本下发绘制细节时逐条执行（`0x1FC`/`0x1FE` 变换、`0x207` 槽→槽 blit、`0x20E` 图形提交、`0x224` 清转场表、`0x229` 绘制模式、`0x238` 画布尺寸对、`0x242`/`0x256` DrawItem 属性、`0x258` 纹理槽标志、`0x321` 网格属性、`0x32A` 3D 槽释放、`0x32D` 3D 颜色）；语料用量很大：`0x258` 11356 处 / 334 个脚本、`0x238` 2056 处、`0x20E` 786 处、`0x229` 716 处",
+      "engine": {
+        "fns": [
+          "sub_422F80",
+          "sub_423060",
+          "sub_423480",
+          "sub_41A200",
+          "sub_41A290",
+          "sub_423FE0",
+          "sub_4248C0",
+          "sub_4251A0",
+          "sub_425C30",
+          "sub_425D20",
+          "sub_426BD0",
+          "sub_426F80",
+          "sub_427040",
+          "sub_4AC470",
+          "sub_4AC660",
+          "sub_4A3980",
+          "sub_498B60",
+          "sub_4AA180",
+          "sub_49A690",
+          "sub_49A6C0",
+          "sub_49A6F0",
+          "sub_4AD9A0",
+          "sub_4ACD10",
+          "sub_4AE280",
+          "sub_4A0750",
+          "sub_499DF0"
+        ],
+        "raw": "31303-31345"
+      },
+      "reads": [
+        "DrawItem 变换字段（`+104`、`+132..+164`）",
+        "Scene 纹理槽表（槽→槽 blit）",
+        "Scene+1048（转场容器）",
+        "Scene[278]/[279] 与 Scene[286..288]（绘制模式）",
+        "Engine[92338]/[92339]（画布尺寸对）",
+        "DrawItem `+720`（与相邻对象 `+504`）",
+        "Scene+1872/+21872 的两张纹理槽标志镜像表",
+        "Scene+1064（网格属性表）",
+        "Scene[op1 + 12677]（3D 模型槽）"
+      ],
+      "whySilent": "★这一族**从不回写脚本操作数、也不改控制流** ⇒ 从 VM 视角完全不可观测：漏掉它们**不会报错**，只表现为「画面与真机不一致」（变换/裁剪/blit/清屏/槽标志/网格属性失真）。正因如此它们长期被当作「无依据的 no-op」（`ENGINE_INTERNAL_OPS` 与 `STUB_NATIVE_OPS`），缺口在纯脚本链路里永远看不到 —— 属闸门 B（能力缺口）那一类。",
+      "confidence": "confirmed",
+      "emulator": {
         "status": "partial",
-        "evidence": "E1",
-        "note": "`0x14B` 是 `NATIVE_OPS` 的记录式桩（`stubSubsystem`，只记一行）；`0x14C`/`0x14D` **未注册**。**建议整体模型化实现**（不需要真的 LoadLibrary）：① `0x14B` 把\"AGERC 模块已加载\"记为状态并校验库名 ∈ {AGERC.DLL}；② `0x14C` 在 emulator 内置的 AGERC 导出表（该 DLL 的 21 个具名导出，见 docs-new/03-engine/agerc-module.md）里查名 → 存进 100 槽表；③ `0x14D` 调用该槽（`_SetNameLenMax@20` 建模为\"记录存档名长度上限\"）。这样能解锁整条存档/读档链路，且不引入任何原生依赖"
+        "evidence": "E3",
+        "guard": "test/op-a4-a6.test.ts",
+        "note": "2026-09 A4 落地：`handlers/gfx-state.ts`（进 `OPS`）。**建模 2 条**：`0x238` → `engineValues[92338]/[92339]`、`0x258` → `Engine.texSlotFlags`（bit0|bit1）。**宿主缝 11 条**：`native.resetPrimTransform` / `setPrimTransform4` / `blitSlotToSlot` / `commitGraphics` / `clearTransitions` / `setDrawModeBlock` / `setDrawEntryParam` / `setSlotParams` / `setMeshEntryAttr` / `release3DSlot` / `set3DColor`，两个宿主（headlessScene / pixiBackend）都走共享层 `scene/ops.ts` 的新 `sc*` 并落进 `SceneState.render4`。★**仍为 partial 的原因（已登记缺口）**：`render4` 目前只**记录**，Pixi 管线尚未逐条消费（变换复位/槽→槽 blit/Clear/转场表/绘制模式/网格属性/3D 颜色对画面的实际影响待接入；3D 一族在本作重写侧无 3D 管线）。另：这 13 条**不在** TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 8 例单元测试锁定。"
       }
     }
   ]
