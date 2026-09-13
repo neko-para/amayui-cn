@@ -1,0 +1,41 @@
+{
+  "id": "T-0006",
+  "type": "bug",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/audio",
+  "title": "headless 没有音频帧泵 ⇒ 寄存语音/延迟 SE/BGM 淡变整条缺失",
+  "why": "audio.tick 只在 session.ts 的 #present 里调；headless 四家循环全无，且 HeadlessScene 没有 audio 方法 ⇒ report 把所有音频意图记成 dropped。后果：#3「点ゲーム開始音效错」这类缺陷在 headless 测试里**原理上抓不到**，只能靠 E4 日志。",
+  "acceptance": [
+    "headless 宿主有 audio（真 AudioEngine + fake host），帧循环每帧 tick(nowMs, advActive)",
+    "能断言：ADV 位清除后的寄存语音冲刷、延迟 SE 到期、BGM 淡变推进（三者各一条测试）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "kind: 'tick'",
+      "note": "唯一的音频帧泵调用点"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
+      "anchor": "snapshotText",
+      "note": "headless 宿主能力面（无 audio）"
+    },
+    {
+      "file": "app/amayui-emulator/src/audio/audioEngine.ts",
+      "anchor": "tick(",
+      "note": "tick 的语义（寄存冲刷/延迟/淡变）"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "msgwin-char-reveal-grid"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

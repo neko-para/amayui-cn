@@ -1,0 +1,37 @@
+{
+  "id": "T-0009",
+  "type": "bug",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/render",
+  "title": "动画\"完成\"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟",
+  "why": "scAnimationsDone 只检查窗 0（颜色窗），而 advanceWindows 会推进 5 个窗 ⇒ \"已完成\"与\"窗真的走完\"不等价（0x400 门会提前放行/多等）。另外 pixi 的 clockMs 只在 present() 内刷新，而门在 present 之前就读它 ⇒ 判据用的是上一帧时钟。",
+  "acceptance": [
+    "scAnimationsDone 与 advanceWindows 覆盖同一组窗（共享一份\"窗是否走完\"的实现）",
+    "门判据用的时钟与推进用的时钟是同一个（同一帧内不再读旧时钟）",
+    "新增测试：多窗动画未跑完时 0x400 门不放行"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "scAnimationsDone",
+      "note": "只看 meshes 与窗 0"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/drawitem/animWindow.ts",
+      "anchor": "windowDone",
+      "note": "逐窗完成判据（5 窗）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "clockMs = performance.now()",
+      "note": "时钟只在 present 内刷新"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

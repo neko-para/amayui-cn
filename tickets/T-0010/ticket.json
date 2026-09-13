@@ -1,0 +1,34 @@
+{
+  "id": "T-0010",
+  "type": "bug",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/frame-loop",
+  "title": "report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足）",
+  "why": "report 是 headless 复现\"某脚本跑起来是什么样\"的主工具；它既不清 0x400 也不清 SLEEP_GATE ⇒ 同一脚本在 report 与 Electron 里的门行为不同，用它得出的结论不能代表产品路径。",
+  "acceptance": [
+    "report 的循环处理 0x400（等动画跑完）与 SLEEP_GATE（等 nowMs >= sleepUntil）",
+    "before/after 对照：报告里的 steps/clock/门计数变化逐条解释"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/report.ts",
+      "anchor": "forceAdvance",
+      "note": "等待门的处理方式（无 0x400/SLEEP 分支）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "serviceAnimGate",
+      "note": "产品路径对 0x400 的正确处理"
+    }
+  ],
+  "blockedBy": [
+    "T-0001"
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

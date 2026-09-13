@@ -1,0 +1,31 @@
+{
+  "id": "T-0023",
+  "type": "analysis",
+  "status": "open",
+  "priority": "P3",
+  "area": "engine/opcodes",
+  "title": "把 88 条\"md 已核对但数据层没有条目\"的 opcode 语义回填 analysis/（按族推进）",
+  "why": "CONTEXT.md 登记：241 条已核对里 88 条只活在 md 里，数据层查不到 ⇒ report.js --op / 能力缺口判定会漏掉它们。回填时每条仍要照 raw 复读一遍，不做\"从 md 抄进 JSON\"。",
+  "acceptance": [
+    "按族回填（先消息窗/ADV 的 38 条），每条带 raw 行号与 status",
+    "report.js --summary 的条数增长可核对；不回填\"从 md 抄\"的条目"
+  ],
+  "evidence": [
+    {
+      "file": "CONTEXT.md",
+      "anchor": "88 条",
+      "note": "问题登记（含族分布）"
+    },
+    {
+      "file": "analysis/functions.json",
+      "anchor": "addr",
+      "note": "第一层真源（回填目标）"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

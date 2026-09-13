@@ -1,0 +1,36 @@
+{
+  "id": "T-0020",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P3",
+  "area": "emulator/test",
+  "title": "收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动",
+  "why": "测试里 5 处自造帧循环（其中 save-data 那处时钟恒 0）与 17 个 mk() 变体 ⇒ \"测试通过\"与\"产品路径一致\"之间没有机械联系。收敛到共享 harness 后，E3 才真的代表产品行为。",
+  "acceptance": [
+    "mk() 参数化统一到 test/harness.ts（差异维度显式化），逐文件迁移且 npm test 条数不变",
+    "5 处自造帧循环改为调用共享 driver（或显式标注\"只测单一服务\"）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/title-exit.test.ts",
+      "anchor": "clock += 16",
+      "note": "测试自造的帧循环之一"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-data.test.ts",
+      "anchor": "bootOnce",
+      "note": "时钟恒 0 的近似循环"
+    },
+    {
+      "file": "docs-new/04-app/emulator-refactor-plan.md",
+      "anchor": "mk()` 17 变体",
+      "note": "已登记的重构项"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

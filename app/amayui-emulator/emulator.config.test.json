@@ -1,0 +1,6 @@
+{
+  "$comment": "**测试专用的选项文件**：空对象 = 全部选项取默认值（真游戏行为）。由 `npm test` / `npm run verify` 通过环境变量 AMAYUI_EMULATOR_CONFIG 指向本文件 ⇒ 测试结果不受开发机上的 emulator.config.json 影响。新增选项时无需改本文件（缺键即默认）。",
+  "boot": {
+    "showLogo": true
+  }
+}

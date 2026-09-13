@@ -1,0 +1,32 @@
+{
+  "id": "T-0019",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P3",
+  "area": "emulator/msgwin",
+  "title": "拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行）",
+  "why": "两个大文件各含 4–5 个职责（文本状态/字格/窗对象/样式；ADV 状态/内容槽/逐字/几何样式），且 engine.ts ⇄ handlers/msgwin.ts 之间存在真循环依赖（A2）。按已有分节边界拆分是低风险纯搬移。",
+  "acceptance": [
+    "按 refactor-plan §1 的分节边界拆成 msgwin-text/chargrid/obj/style（+ msgwin-reveal/style）",
+    "registry-tables / adv-msgwin / char-reveal / text-style-snapshot 全绿且条数不变；tsc 干净",
+    "顺带解掉 A2（styleOfWin 下沉，删掉 engine.ts 的 winStyle 别名）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "cellFrameOf",
+      "note": "该文件已含多族（此函数属文本/字格族）"
+    },
+    {
+      "file": "docs-new/04-app/emulator-refactor-plan.md",
+      "anchor": "拆 `handlers/msgwin.ts`",
+      "note": "拆分方案与风险登记"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

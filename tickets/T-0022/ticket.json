@@ -1,0 +1,31 @@
+{
+  "id": "T-0022",
+  "type": "tooling",
+  "status": "open",
+  "priority": "P3",
+  "area": "repo",
+  "title": "跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等）",
+  "why": "tsc rootDir 越界与\"无 npm script、无人手动跑\"的孤儿文件是长期隐患：前者可能在某次 build 时炸，后者会让人误用旧工具。",
+  "acceptance": [
+    "确认 npm run build 是否触发 TS6059；是则把 opcodes.json 生成物同步进 src/generated/",
+    "删除孤儿文件（或给它们补 npm script + 说明），并在 refactor-plan 里销账"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/04-app/emulator-refactor-plan.md",
+      "anchor": "跨包边",
+      "note": "审计登记（含待核项）"
+    },
+    {
+      "file": "scripts/asm/opcodes.json",
+      "anchor": "\"opcode\": 1",
+      "note": "被 src/opcodes.ts 跨包引用的生成物（指令集 JSON）"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

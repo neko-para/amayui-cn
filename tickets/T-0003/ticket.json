@@ -1,0 +1,46 @@
+{
+  "id": "T-0003",
+  "type": "req",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/frame-loop",
+  "title": "B3 headless 补齐能力面：audio 帧泵 / needsRender 语义 / 输入源（⇒ 悬停真的跑）/ digest",
+  "why": "headless 目前拿不到\"全部对外表现\"：音频 tick 只在 Electron（session.ts:272）；needsRender/animationsDone 只有 pixi 有；没有输入源 ⇒ 悬停整条通路从不执行（routes.cursor 恒 −1）。这三样补齐后，headless 才能提取与 Electron 一致的对外表现。",
+  "acceptance": [
+    "headless 宿主实现 audio（真 AudioEngine + test/fakeAudioHost），能断言 SE 延迟播/语音寄存冲刷/BGM 淡变",
+    "needsRender/animationsDone 的语义下沉共享层（喂 Engine 的门标志），两宿主同一份判据",
+    "Scenario.events 驱动 InputManager（含命中测试），headless 下 routes.cursor 真的会变、悬停两段式可断言",
+    "同 Scenario 两宿主产出同一 FrameDigest 序列的 engine 段（新增等价测试）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "kind: 'tick'",
+      "note": "音频帧泵只在 Electron 的 #present 里"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "forceAdvance",
+      "note": "headless 用的推进旁路（与真泵刻意不同）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "needsRender",
+      "note": "只有 pixi 有\"是否需要渲染\"的判据"
+    }
+  ],
+  "blockedBy": [
+    "T-0001"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-frame-loop-design.md"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "T-0017",
+  "type": "req",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/render",
+  "title": "消费 Item.blend / MeshObj.blend（引擎的混合模式选择子 → Pixi blendMode）",
+  "why": "引擎里 +0x30 与 mesh entry[9] 是混合模式选择子，D3D 侧消费者（sub_4AEEA0 / sub_49E390）已读清，emulator 只送达未消费 ⇒ 混合模式不生效，两条留在死写基线里。",
+  "acceptance": [
+    "按引擎枚举把值映射到 PIXI.BLEND_MODES，并用淡出/叠加场景截图对照（E4）",
+    "完成后从 dead-writes 基线删除 Item.blend / MeshObj.blend（闸门更严）"
+  ],
+  "evidence": [
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "alpha 混合模式选择子",
+      "note": "MeshEntry[9] 混合选择子（能力台账）"
+    },
+    {
+      "file": "docs-new/03-engine/rendering.md",
+      "anchor": "+48=混合模式",
+      "note": "DrawItem +48 混合模式的引擎依据"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-refactor-plan.md"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

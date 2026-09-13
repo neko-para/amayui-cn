@@ -42,3 +42,6 @@ res/fonts/SarasaGothicJ
 #   （%LOCALAPPDATA%\Eushully\<game>\ 与同级的 <game>.overlay\，见 src/arch/systemPaths.ts），
 #   所以这里不再需要忽略 app/amayui-emulator/SAVE/。
 /app/amayui-emulator/.tmp/
+
+# emulator 的**本机私有运行开关**（每个测试者可能不同 ⇒ 不入库；示例见 emulator.config.example.json）
+/emulator.config.json

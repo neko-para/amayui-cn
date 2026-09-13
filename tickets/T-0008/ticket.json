@@ -1,0 +1,37 @@
+{
+  "id": "T-0008",
+  "type": "bug",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/render",
+  "title": "PixiBackend.waitFlags 只置不清 ⇒ needsRender() 永久为真（Electron 此后每帧 present）",
+  "why": "setWaitFlag 只写宿主自己那份 waitFlags，而清的是 Engine 那份（session.ts 的 #serviceAnimGate/#serviceSleepGate）⇒ 只要发生过一次 0x21C，needsRender() 就恒为真，Electron 变成每帧 present（并连带每帧 audio tick）。同一方法在 headless 侧写的却是**死状态**（无读者）。",
+  "acceptance": [
+    "needsRender 的判据只读 Engine 的门标志（不再有宿主镜像字段），或镜像与 Engine 同步清除",
+    "能断言：门关掉之后 needsRender() 会变为 false（新增测试）",
+    "headless 侧的 waitFlags 死状态一并消失"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "needsRender",
+      "note": "判据里读了宿主自己的 waitFlags"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "setWaitFlag",
+      "note": "只置不清的那份镜像"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "waitFlags &= ~0x400",
+      "note": "被清的是 Engine 那份"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

@@ -16,10 +16,11 @@ E:\Games\Eushully\天結\
 ├── output\     提取/调用图产物（callgraph*.html/.gv/.json、*.csv）
 ├── engine\     反编译 C（engine.hpp、天结_unpacked.exe_*.c/.lst、defs.h、hxclang_prelude.h）
 ├── analysis\    ★ 引擎分析结论的**三层数据层**（唯一会增长）：functions/fields.json、engine-capabilities.json、scripts.json
+├── tickets\     ★ **需求/缺陷单台账**（一个需求=一个文件夹：ticket.json 真源 + 任意多份手写过程文档；README.md 是生成看板）
 ├── app\        三子工程（amayui-emulator / amayui-inspector / amayui-toolkit）
 ├── docs-new\   ★ 本文档体系：唯一新来源
 ├── data\src 之外：manifest（install-manifest.json、raw-manifest.json）
-└── 根注释：CONTEXT.md / PROGRESS.md / PENDING.md / TODO.md 为会话/工作临时快照，非正式文档
+└── 根注释：CONTEXT.md / PROGRESS.md 为会话/工作临时快照，非正式文档（待办一律开票进 tickets\）
 ```
 
 > ⚠️ `raw/`、`install/` 被 `.gitignore` 排除。`install/` 是本体独立真拷贝（无硬链接），对 ALF/AGF 重打包
@@ -41,6 +42,17 @@ E:\Games\Eushully\天結\
 | 一 | `functions.json` + `fields.json` | 某函数/偏移**是什么** | （无） | `test/opcode-table*` / `registry-tables` 等散在测试 |
 | 二 | `engine-capabilities.json` | 引擎有哪些**常态行为** | `docs-new/03-engine/engine-capabilities.md`（`scripts/build-capabilities.mjs`） | `test/capability-ledger.test.ts` |
 | 三 | `scripts.json` | **每个读过的 `src/*.txt` 长什么样** | `docs-new/05-scripts/*`（`scripts/build-scripts.mjs`） | `test/script-ledger.test.ts` |
+
+**外加一层"工作台账"**（回答"还要做什么"，与上面三层的"是什么"分工不重叠）：
+
+| 层 | 文件 | 回答 | 渲染物（生成，勿手改） | 守卫测试 |
+|---|---|---|---|---|
+| 工作 | `tickets/<ID>/ticket.json`（**一个需求=一个文件夹**，可带 `notes.md`/`changes.md`/… 多份手写文档） | **还要做什么、做到哪、判据是什么** | `tickets/README.md`（`scripts/build-tickets.mjs`） | `test/ticket-ledger.test.ts` |
+
+> 工具：`.agents/skills/amayui-ticket-ledger/scripts/tickets.js`（`--add/--edit/--set-status/--note/--show/--list/--graph/--validate`）。
+> 纪律：`acceptance` 非空（没有判据的单不算单）；`done` 必须带真实存在的 `tests[]`；`dropped` 必须写理由；
+> `evidence[].anchor` 消失即红（**票据锚点棘轮**）；票据**不抄**台账内容（只 `links.analysis` 回链），
+> **已完成的往事不补票**（留在 `emulator-refactor-plan.md` §9）。手册：`docs-new/00-overview/tickets.md`。
 
 > 纪律：改完数据层必须重跑对应 `build-*.mjs`（守卫会核对 md 与数据层同步）；第三层的每条结构记录都带
 > 「行区间 + 锚点」，`src/*.txt` 一重排守卫就红（**锚点棘轮**，见 `docs-new/05-scripts/README.md`）。

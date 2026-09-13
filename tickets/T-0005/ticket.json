@@ -1,0 +1,40 @@
+{
+  "id": "T-0005",
+  "type": "req",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/frame-loop",
+  "title": "B5 统一 Scenario（shot.cjs 的点击脚本 与 chain 的输入驱动合一）+ --record/--replay 回放器",
+  "why": "现在\"同一条链路\"有两套输入脚本：tools/shot.cjs 硬编码点击，gameStartChain/config1Chain 硬编码 setCursor/pressMouse。同一条 Scenario 才能让 Electron 与 headless 跑\"同一件事\"。",
+  "acceptance": [
+    "一份 Scenario 定义（脚本 + 定时输入 + 时钟策略）被 Electron 跑手与 headless 跑手共用",
+    "npm run replay <trace> 能把 Electron 录的轨迹在 headless 复现，逐帧 digest 相等（G3 可一键跑）",
+    "emulator.md 的闸门清单写明\"改哪些文件必须跑 G3/G4\""
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/tools/shot.cjs",
+      "anchor": "GAME_START_XY",
+      "note": "Electron 侧的硬编码点击脚本"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "START_GAME_XY",
+      "note": "headless 侧的另一套输入驱动"
+    }
+  ],
+  "blockedBy": [
+    "T-0004"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-frame-loop-design.md"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "T-0011",
+  "type": "bug",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/frame-loop",
+  "title": "两份 chain 无条件清 0x400 且从不推进动画窗 ⇒ E3 证据与产品路径不同源",
+  "why": "config1Chain/gameStartChain 每帧把 0x400 直接清掉（等于\"动画瞬间完成\"），并且从不调用 advance ⇒ 依赖\"窗末 work←target\"的取值（缩放/颜色/源矩形）与 Electron、甚至与 report 都不同。E3/E4 里\"快照对、画面不对\"的一大来源。",
+  "acceptance": [
+    "两条 chain 的门与推进与产品路径同源（经共享帧驱动），或把差异显式登记为策略并说明为何可接受",
+    "before/after 对照：受影响断言的取值变化逐条解释（尤其动画相关的几何/颜色）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "waitFlags &= ~0x400",
+      "note": "无条件清门"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "动画窗在 Node 侧无 present 驱动",
+      "note": "注释自陈：chains 不推进动画窗"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "waitFlags &= ~0x400",
+      "note": "同上"
+    }
+  ],
+  "blockedBy": [
+    "T-0001"
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

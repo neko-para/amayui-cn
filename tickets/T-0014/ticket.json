@@ -1,0 +1,36 @@
+{
+  "id": "T-0014",
+  "type": "tooling",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/deadcode",
+  "title": "删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBackend 的 waitFlags 镜像",
+  "why": "第 6 份帧循环（interpreter.run）全仓无导入者；Engine.pickHoverLabel 在 src 里零调用者（悬停重构后的遗留）；两处 waitFlags 一份是死状态、一份是永久粘滞的开关。留着会误导后来人（也会让\"到底有几份循环\"数不清）。",
+  "acceptance": [
+    "删除上述四处，且 npm run verify 全绿（无测试依赖它们）",
+    "如果某处其实有用，改为显式接线并补注释（不许\"看着像死代码就删\"）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/interpreter.ts",
+      "anchor": "export async function run",
+      "note": "第 6 份循环（无导入者）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "pickHoverLabel",
+      "note": "零调用者（只有测试）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
+      "anchor": "waitFlags",
+      "note": "写后无读者的死状态"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "T-0015",
+  "type": "docs",
+  "status": "open",
+  "priority": "P3",
+  "area": "emulator/frame-loop",
+  "title": "订正文档与代码矛盾：renderer.ts/native.ts 称\"Pixi ticker 每帧驱动渲染\"、run(frames) 返回语义不同",
+  "why": "renderer.ts 与 native.ts 的注释说渲染帧循环由 Pixi ticker/startFrameLoop 启动，实际 startFrameLoop 只记 wallStart、present 由 session 调；另外 config1Chain 与 gameStartChain 的 run() 返回值一个返 maxFrames 一个返 frames。看注释会被误导。",
+  "acceptance": [
+    "注释与实现一致（或实现按注释改），且 run(frames) 的语义两处统一并写清",
+    "docs-new/04-app/emulator.md 的闸门清单同步（改哪些文件必须跑 G3/G4）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "startFrameLoop",
+      "note": "只记 wallStart，不启动循环"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "return maxFrames",
+      "note": "两个 chain 的返回值语义不同"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "return frames",
+      "note": "同上"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

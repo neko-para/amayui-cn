@@ -1,0 +1,51 @@
+{
+  "id": "T-0002",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/frame-loop",
+  "title": "B2 收敛帧循环的漂移（14 条工单，逐条 before/after 对照）",
+  "why": "抽完驱动后，各循环之间的漂移要逐条决策后统一：补门、统一顺序与时钟、定\"谁推进动画窗\"、清 waitFlags 粘滞、scAnimationsDone 覆盖 5 窗。每处都会改变 headless 报告的数字，必须逐条解释。",
+  "acceptance": [
+    "交出一张 before/after 对照表：每处差异 → 哪个报告字段变了、为什么（不许只看测试全绿）",
+    "test/scene-report.test.ts 快照文本仍逐字节不变（或变化被逐条解释并落在 diff 里）",
+    "逐条处理：report 无 0x400/SLEEP、chains 无条件清 0x400、chains 不推进动画窗、run.ts 顺序/时钟、pixi waitFlags 粘滞、scAnimationsDone 只看窗 0、run(frames) 返回语义、文档矛盾"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/04-app/emulator-frame-loop-design.md",
+      "anchor": "漂移 / 缺陷",
+      "note": "B2 的工单清单（14 条，带 file:line）"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "waitFlags &= ~0x400",
+      "note": "chain 每帧无条件清 0x400 门"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "waitFlags &= ~0x400",
+      "note": "同上"
+    },
+    {
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "e.nowMs += 16",
+      "note": "run.ts 的时钟只在逐字分支里前进"
+    }
+  ],
+  "blockedBy": [
+    "T-0001"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-frame-loop-design.md"
+    ]
+  },
+  "notes": "代理清单的 5 条未确认项在这里落成实测（见 .tmp/frame-loop-divergence.md §7 的方法）：① PixiBackend.waitFlags 粘滞是否有意；② chains 不推进窗是否已影响现有断言；③ report 的 SLEEP_GATE 是否真永不满足；④ headless 快照里是否出现 cell；⑤ refactor-plan 里的旧行号是否要重算。",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

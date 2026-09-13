@@ -89,8 +89,15 @@
 2. **A1 分层违规**：`arch/nodeFileSource.ts` → `vm/saveData.js`（I/O 层反向依赖 VM）；`electron/ipc/files.ts` 同。
 3. **帧循环 5 份实现且实质分歧**（批上限 10000/5000/20000；`run.ts`/`report.ts` 无 0x400/SLEEP 分支；
    `run.ts` 的 text-reveal 判定顺序与其余相反）⇒ 抽 `vm/frameLoop.ts`（**先只合并 headless 三家，快照零 diff**）。
-4. **`assertFlags` 只在一侧**：契约"未知 flag 必须中断"仅 Pixi 成立，headless（所有棘轮的运行环境）永不暴露未知位
-   ⇒ 下沉 `sc*` 前**先跑探针收集真实 flags**（否则 E2E 立刻红）。
+   ★**设计已立项**：`emulator-frame-loop-design.md` —— 把这条展开成"1 份帧驱动 + 2 个宿主 + 观察者 + 场景脚本"，
+   并给出「headless 与 Electron 完全一致」的**可执行定义**（G1 确定性 / G2 零 diff / G3 回放等价 / G4 观感）
+   与 B1–B5 迁移批次。**B1 = 本文这一条**。
+4. ~~**`assertFlags` 只在一侧**：契约"未知 flag 必须中断"仅 Pixi 成立，headless（所有棘轮的运行环境）永不暴露未知位
+   ⇒ 下沉 `sc*` 前**先跑探针收集真实 flags**（否则 E2E 立刻红）。~~
+   ✅**已完成**（第 9 轮 ⑫）：`assertFlags` 已下沉到 `scene/ops.ts:65,188`（`native.ts:34-38` 声明），
+   pixi 侧只留纵深防御（`pixiBackend.ts:250,278,824-832`）。**本条为过期登记**（2026-09 帧循环差异清单 §4 复核确认）。
+   ⚠️ 但**宿主能力面仍未入桥**：`needsRender`/`sceneAnimationsDone`/`preloadImage` 既不在 `NativeBridge`
+   也不在 `withNativeTap` 白名单 ⇒ 这类缺口连闸门 A 都不记（见 `emulator-frame-loop-design.md` D6）。
 5. **`SceneState.render4`（12 字段）+ `blendWritten` 纯写不读**，且 `state.ts` 自称"报告可断言"但 `scSnapshot` 不导出
    ⇒ 二选一：导出进快照（让声明成真）或删除（与 §7 的"不做"一致：这些是 A4 记录族，信息有价值，倾向**导出**）。
 6. **`Item.blend` 其实从未被送达**：`handlers/gfx-item.ts` 的 `0x203` 自述读 `op2=blend`，实际只读 op1/op3/op4
@@ -319,7 +326,7 @@
 
 | # | 项 | 位置 | 为什么现在不做 | 建议判据 |
 |---|---|---|---|---|
-| 1 | 抽 `vm/frameLoop.ts`，先合并 headless 三家 | `src/report.ts:147-190`、`tools/config1Chain.ts:349-385`、`tools/gameStartChain.ts:386-424`（三份批上限/门策略各异；`run.ts`/`report.ts` 甚至没有 0x400/SLEEP 分支） | 五份实现行为有**实质分歧**，一次改五处无法用"快照零 diff"证明无回归 | 先合并 headless 三家：`scene-report.test.ts` 的快照文本逐字节不变；再单独一轮迁 `session.ts`（需 `npm run shot -- --gamestart` 目视） |
+| 1 | 抽 `vm/frameLoop.ts`，先合并 headless 三家 | `src/report.ts:147-190`、`tools/config1Chain.ts:349-385`、`tools/gameStartChain.ts:386-424`（三份批上限/门策略各异；`run.ts`/`report.ts` 甚至没有 0x400/SLEEP 分支） | 五份实现行为有**实质分歧**，一次改五处无法用"快照零 diff"证明无回归 | 先合并 headless 三家：`scene-report.test.ts` 的快照文本逐字节不变；再单独一轮迁 `session.ts`（需 `npm run shot -- --gamestart` 目视）。★**已立项为 `emulator-frame-loop-design.md` 的 B1**（该文含 5 份循环的差异清单、`FrameHost`/`FrameObserver`/`Scenario`/`FrameDigest` 接口草案、G1–G4 判据与 B1–B5 批次） |
 | 2 | draw-item 混合模式消费（`+0x30` → Pixi `blendMode`） | 消费者：`sub_4AEEA0`/`sub_4A2D50`（D3D 混合路径）；值已送达 `Item.blend` | **行为变更**：引擎的 `+0x30` 枚举语义（0/1/2…）尚未从源码逐值定清，猜映射 = 制造新缺陷 | 先读 `sub_4AEEA0` 的 SetRenderState 分支定枚举 → 映射 → `npm run shot` 对照淡出/叠加场景 → 从死写基线删 `Item.blend` |
 | 3 | 拆 `handlers/msgwin.ts`（1338 行）→ style/number/query/chargrid 四文件 | 分节边界：76 / 434 / 634 / 737 / 816 | 纯搬移但量大，`MSGWIN_OPS` 与两个测试的手抄分类要同步 | `registry-tables.test.ts`（两两不相交）+ `adv-msgwin`/`op-a2-a3` 全绿、条数不变 |
 | 4 | `mk()` 17 变体参数化统一 | 17 个 `test/*.test.ts`（差异维度：查表集合/帧来源/返回形状/native 默认/是否带 InputManager） | 差异是**真实需求**，需先设计参数面，否则会把不同语义抹平 | 先在一份 `test/harness.ts` 里给出 `makeHarness({tables,frame,native,input})`，逐个文件迁移，`npm test` 条数不变 |

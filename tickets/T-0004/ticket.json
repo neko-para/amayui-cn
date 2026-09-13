@@ -1,0 +1,42 @@
+{
+  "id": "T-0004",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/frame-loop",
+  "title": "B4 Electron 迁到帧驱动：session.ts 缩成\"装配 + 观察者 + yield\"",
+  "why": "让 Electron 层真正只剩交互 + 渲染：VM 顺序/门/时钟/批/错误策略全在共享驱动，控制窗/trace/jsonl 变成观察者实现，rAF 变成 yield。",
+  "acceptance": [
+    "session.ts 只负责装配、把 PixiBackend 接成 FrameHost、把控制窗事件接成 FrameObserver",
+    "present() 的三合一拆开：音频 tick 由驱动每帧调、屏障为可选义务、present 只渲染",
+    "npm run shot -- --gamestart 截图与日志关键行不变（G4）",
+    "npm run replay（G3 回放）通过：Electron 录的时钟+输入，headless 复现同一 digest 序列"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "#present()",
+      "note": "当前把纹理屏障/音频 tick/渲染挤在一个函数里"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "present()",
+      "note": "pixi 的合成入口（将成为 FrameHost.present）"
+    }
+  ],
+  "blockedBy": [
+    "T-0001",
+    "T-0002"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator-frame-loop-design.md"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

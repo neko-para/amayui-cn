@@ -97,6 +97,7 @@
 | 脚本台账 | `analysis/scripts.json` | `docs-new/05-scripts/*.md`（`node scripts/build-scripts.mjs`） |
 | opcode 助记符 | `docs-new/03-engine/opcode-table.md` | `scripts/asm/opcodes.json`（`build-opcodes.js`）、`src/vm/ops.ts`、`src/*.txt` |
 | 引擎行为 | `engine/天结_unpacked.exe_utf8.c`（raw 行号基准） | — |
+| **工作票据** | `tickets/<ID>/ticket.json`（+ 同目录任意多份手写过程文档） | `tickets/README.md`（`node scripts/build-tickets.mjs`）＋ `test/ticket-ledger.test.ts` |
 
 工具（`.agents/skills/amayui-engine-analysis/scripts/`）：`report.js` / `capabilities.js` / `scripts.js`；
 写入走工具（自动重算 counts），改完必须重跑 `build-capabilities.mjs`，否则 `test/capability-*.test.ts` 会红。
@@ -169,6 +170,9 @@ npm run save:dump      # SAVE.DAT 解析
 
 - **它是什么**：仓库根的一个 JSON，**只影响"怎么跑"**，不改变引擎/脚本语义。
   **不是**游戏配置：绝不写回、不进存档（那是 `SYS4REG.INI`，见 `src/engineConfig.ts`）。
+- **怎么开始用**：把入库的示例 `emulator.config.example.json` **复制**成 `emulator.config.json` 再改。
+  ★`emulator.config.json` 是**本机私有**的（已 gitignore）——每个人的测试偏好不同，不该入库，
+  也不该让"我改了它"变成"别人跑不过测试"（2026-09 由守卫误报发现并修正）。
 - **路径**：默认 `<仓库根>/emulator.config.json`；可用环境变量 **`AMAYUI_EMULATOR_CONFIG`** 换成任意路径
   （绝对值，或相对仓库根）—— 例：`$env:AMAYUI_EMULATOR_CONFIG='.tmp/opt-skip-logo.json'`。
 - **目前的全部选项**：
@@ -190,6 +194,12 @@ npm run save:dump      # SAVE.DAT 解析
   守卫：`test/emulator-options.test.ts`「库入口不得 import node-only 读取模块」+ `test/game-start-chain.test.ts`
   断言默认仍经过 LOGO。**新增选项时**：同步更新本表 + `src/emulatorOptions.ts` 文件头的表 + 在
   `test/emulator-options.test.ts` 加一条（拼错的键必须报 problem，不许静默）。
+- ★**测试一律跑在"空配置"上**（2026-09 用户要求）：`npm test` / `npm run verify` 用
+  `node --env-file=test/options.test.env` 把 `AMAYUI_EMULATOR_CONFIG` 指向 `emulator.config.test.json`
+  （= 全默认）⇒ **你本地把 `emulator.config.json` 改成 `showLogo:false` 不会影响任何测试**。
+  守卫：`test/emulator-options.test.ts` 的「钉住」用例（它还会在日志里打印本机值 + "测试不受它影响"，
+  例如 `[options] 本机 emulator.config.json → showLogo=false（测试固定用上面的空配置，不受它影响）`）。
+  想跑"未钉住"的测试：`npm run test:unpinned`（只用来看"本机设置下的表现"，不作为闸门）。
 
 ## 9. 待办 / 已知缺口（详见能力台账，勿在本文件抄明细）
 

@@ -1,0 +1,31 @@
+{
+  "id": "T-0021",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P3",
+  "area": "emulator/arch",
+  "title": "消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData",
+  "why": "I/O 层反向 import VM 层（存档格式），使依赖方向出现环，也让\"换资源来源\"要动 VM。",
+  "acceptance": [
+    "存档纯格式层移出 vm/（或经注入解耦），依赖方向恢复单向",
+    "3 个 tsconfig 干净 + save-data/overlay 测试全绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/arch/nodeFileSource.ts",
+      "anchor": "unionUsedFileIds",
+      "note": "I/O 层反向依赖 VM"
+    },
+    {
+      "file": "docs-new/04-app/emulator-refactor-plan.md",
+      "anchor": "A1 分层违规",
+      "note": "审计结论"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

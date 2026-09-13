@@ -37,6 +37,8 @@ import { runGameStartChain } from '../src/tools/gameStartChain.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(HERE, '..');
+/** 仓库根（选项文件的默认位置在它下面）。 */
+const REPO_ROOT = path.resolve(APP_ROOT, '..', '..');
 
 // ---------------------------------------------------------------------------
 // 纯解析
@@ -114,14 +116,15 @@ test('resolveOptionsPath：默认 = <仓库根>/emulator.config.json；AMAYUI_EM
 
 test('loadEmulatorOptions：文件不存在 ⇒ 默认值且 problems 为空（"没配"是正常情况）', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'amayui-opt-'));
+  const NO_ENV = {} as NodeJS.ProcessEnv; // 显式空环境：本用例要的是"这个 dir 里没文件"，不能被 npm test 的钉住值覆盖
   try {
-    const r = loadEmulatorOptions(dir);
+    const r = loadEmulatorOptions(dir, NO_ENV);
     assert.equal(r.exists, false);
     assert.equal(r.path, path.join(dir, EMULATOR_OPTIONS_FILE));
     assert.equal(r.options.boot.showLogo, true);
     assert.deepEqual(r.problems, []);
     assert.match(describeEmulatorOptions(r).join('\n'), /未找到/);
-    assert.equal(emulatorOptionsOf(dir).boot.showLogo, true);
+    assert.equal(emulatorOptionsOf(dir, {} as NodeJS.ProcessEnv).boot.showLogo, true);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -129,16 +132,17 @@ test('loadEmulatorOptions：文件不存在 ⇒ 默认值且 problems 为空（"
 
 test('loadEmulatorOptions：读到真文件 ⇒ 生效；坏 JSON ⇒ 默认值 + problems 上浮', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'amayui-opt-'));
+  const NO_ENV = {} as NodeJS.ProcessEnv; // ★显式传空环境：否则 npm test 的 AMAYUI_EMULATOR_CONFIG 会覆盖 dir（见文件末尾的"钉住"用例）
   try {
     fs.writeFileSync(path.join(dir, EMULATOR_OPTIONS_FILE), '{"boot":{"showLogo":false}}', 'utf8');
-    const off = loadEmulatorOptions(dir);
+    const off = loadEmulatorOptions(dir, NO_ENV);
     assert.equal(off.exists, true);
     assert.equal(off.options.boot.showLogo, false);
     assert.deepEqual(off.problems, []);
     assert.match(describeEmulatorOptions(off).join('\n'), /emulator\.config\.json/);
 
     fs.writeFileSync(path.join(dir, EMULATOR_OPTIONS_FILE), '{bad', 'utf8');
-    const bad = loadEmulatorOptions(dir);
+    const bad = loadEmulatorOptions(dir, NO_ENV);
     assert.equal(bad.exists, true);
     assert.equal(bad.options.boot.showLogo, true, '坏 JSON ⇒ 默认值');
     assert.equal(bad.problems.length, 1);
@@ -157,13 +161,40 @@ test('loadEmulatorOptions：读到真文件 ⇒ 生效；坏 JSON ⇒ 默认值 
 // ★两条"不许退化"的守卫
 // ---------------------------------------------------------------------------
 
-test('★仓库自带 emulator.config.json 必须是"默认行为"（showLogo=true），否则所有人的测试/截图都会被静默改变', () => {
-  const p = path.resolve(APP_ROOT, '..', '..', EMULATOR_OPTIONS_FILE);
-  assert.equal(fs.existsSync(p), true, `仓库根应有 ${EMULATOR_OPTIONS_FILE}（兼作用法示例）：${p}`);
-  const r = loadEmulatorOptions(path.dirname(p));
-  assert.equal(r.exists, true);
-  assert.deepEqual(r.problems, [], `自带的选项文件必须干净：${r.problems.join(' / ')}`);
-  assert.equal(r.options.boot.showLogo, true, '默认值必须是真游戏行为（播 LOGO）——测试不因此漂移');
+test('★测试用环境把选项钉在"空配置"上：本机 emulator.config.json 怎么改都不影响测试', () => {
+  // 机制：npm test / npm run verify 用 `node --env-file=test/options.test.env`（见 package.json），
+  //      把 AMAYUI_EMULATOR_CONFIG 指向 emulator.config.test.json（= 全默认）。这样"我本地为了省 LOGO 等待
+  //      把它设成 false"不会让测试变成不稳定/不可复现（2026-09 用户实测踩到，本用例把它钉住）。
+  const pinned = process.env[EMULATOR_OPTIONS_ENV];
+  assert.ok(pinned, 'npm test 必须通过 --env-file 设置 AMAYUI_EMULATOR_CONFIG（见 test/options.test.env）');
+  assert.match(pinned!, /emulator\.config\.test\.json$/);
+  const r = loadEmulatorOptions(REPO_ROOT); // ← 用 process.env（被钉住）
+  assert.deepEqual(r.problems, [], `钉住的选项文件必须干净：${r.problems.join(' / ')}`);
+  assert.equal(r.options.boot.showLogo, true, '钉住 ⇒ 无论本机怎么改，测试里都是默认值（播 LOGO）');
+  assert.match(r.path, /emulator\.config\.test\.json$/);
+  // 反证：用空环境读**本机**文件，可以看到它可能被改成 false —— 说明"钉住"确实在起作用
+  const local = loadEmulatorOptions(REPO_ROOT, {} as NodeJS.ProcessEnv);
+  console.log(`[options] 本机 emulator.config.json → showLogo=${local.options.boot.showLogo}（测试固定用上面的空配置，不受它影响）`);
+});
+
+test('★示例文件 emulator.config.example.json 必须是"默认行为"（showLogo=true），且本机私有文件被 gitignore', () => {
+  // ★2026-09 修正：**不再**断言仓库根 `emulator.config.json` 的值 —— 那是**本机私有开关**
+  //   （测试者会把它改成 false 以省掉 LOGO 等待），断言它等于默认值会让"用它"变成"跑不过测试"。
+  //   现在：`.example.json` 是入库的用法示例（必须等于默认行为），真文件在 .gitignore 里。
+  const example = path.resolve(APP_ROOT, '..', '..', `${EMULATOR_OPTIONS_FILE.replace(/\.json$/, '')}.example.json`);
+  assert.equal(fs.existsSync(example), true, `仓库根应有示例文件：${example}`);
+  const text = fs.readFileSync(example, 'utf8');
+  const parsed = parseEmulatorOptions(text);
+  assert.deepEqual(parsed.problems, [], `示例文件必须干净：${parsed.problems.join(' / ')}`);
+  assert.equal(parsed.options.boot.showLogo, true, '示例值必须是真游戏行为（播 LOGO）——照抄它不会改变行为');
+  // 本机私有文件若存在：只要求"能解析、无问题"，**不管它的值**（那是使用者的选择）
+  const local = path.resolve(APP_ROOT, '..', '..', EMULATOR_OPTIONS_FILE);
+  if (fs.existsSync(local)) {
+    const r = loadEmulatorOptions(path.dirname(local));
+    assert.deepEqual(r.problems, [], `本机选项文件若存在必须写得对：${r.problems.join(' / ')}`);
+  }
+  const ignore = fs.readFileSync(path.resolve(APP_ROOT, '..', '..', '.gitignore'), 'utf8');
+  assert.match(ignore, /^\/emulator\.config\.json$/m, '本机私有选项文件应被 gitignore（不许入库）');
 });
 
 test('★library 入口不得自己读配置文件：`runGameStartChain` 的默认参数 = 真游戏行为', () => {

@@ -1,0 +1,31 @@
+{
+  "id": "T-0018",
+  "type": "req",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "title": "实现 0x1A0（读档：SAVE%2.2d.DAT + sub_438120）",
+  "why": "refactor-plan §9 登记：这是存档侧下一个大缺口 —— 读档路径未实现，LOAD DATA 走不通。",
+  "acceptance": [
+    "0x1A0 按引擎语义装载指定槽位的存档（含 sub_438120 的解密/表还原）",
+    "新增守卫：构造/读取一个存档后，脚本 `load-int/load-string` 能取回登记的值"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/04-app/emulator.md",
+      "anchor": "0x1A0",
+      "note": "缺口登记处（待办/已知缺口节）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/saveData.ts",
+      "anchor": "decodeSaveData",
+      "note": "已有的存档格式层（可复用）"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "T-0012",
+  "type": "bug",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/frame-loop",
+  "title": "run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive",
+  "why": "run.ts 是\"最小可跑\"入口，但它的 e.nowMs 只在逐字分支里 +16（其余时间冻结 ⇒ sleep 门永不满足），textRevealing 又排在 serviceWinReveal 之前，且没有 serviceCharGrid/advActive 分支 ⇒ 它跑出来的结果不能当作链路证据。",
+  "acceptance": [
+    "run.ts 经共享帧驱动跑，时钟每帧前进、分支顺序与产品路径一致",
+    "run.ts 的输出里能反映 ▼ 图标与 ADV 分支（或明确登记为\"CLI 简化\"并说明判据）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "e.nowMs += 16",
+      "note": "时钟只在逐字分支前进"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "serviceCharGrid",
+      "note": "产品路径每帧都跑的字格图标服务"
+    }
+  ],
+  "blockedBy": [
+    "T-0001"
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

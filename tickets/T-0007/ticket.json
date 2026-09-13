@@ -1,0 +1,37 @@
+{
+  "id": "T-0007",
+  "type": "bug",
+  "status": "open",
+  "priority": "P1",
+  "area": "emulator/input",
+  "title": "headless 完全没有悬停：serviceAdvanceWait 只在 Electron 被调用",
+  "why": "悬停是**对外可见行为**（SN0000 右侧面板展开/收起就靠它）。headless 走 forceAdvance（不做命中测试、不看 routes.shown）⇒ routes.cursor 恒 −1，侧边栏状态与 Electron 必然不同。",
+  "acceptance": [
+    "headless 的等待门走与真实点击同一条路由代码（Scenario.advancePolicy=synthetic）",
+    "能断言 SN0000 的 hover-enter/hover-leave（侧边栏展开/收起）在 headless 下同样发生",
+    "routes.cursor / routes.shown 在 headless 下会随光标变化"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "serviceAdvanceWait",
+      "note": "等待泵（含悬停两段式）—— 只在 Electron 被调"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "forceAdvance",
+      "note": "headless 的旁路：不看 routes.shown、不做命中测试"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "hitTestPending",
+      "note": "命中测试只在光标移动时排队"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

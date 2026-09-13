@@ -1,0 +1,36 @@
+{
+  "id": "T-0013",
+  "type": "refactor",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/hosts",
+  "title": "宿主能力面入桥：needsRender / animationsDone / preloadImage 不在 NativeBridge 也不在 nativeTap 白名单",
+  "why": "帧驱动要\"统一询问任意宿主是否支持渲染/屏障\"，但这些方法既不在 NativeBridge（无法声明可选能力）也不在 withNativeTap 白名单（缺口连闸门 A 都不记）⇒ 宿主之间悄悄不一致也没人发现。",
+  "acceptance": [
+    "这些方法以可选能力的形式进入 NativeBridge（+ nativeTap 白名单），帧驱动只经接口调用",
+    "新增守护：两宿主的桥方法集合差异必须是\"声明过的可选能力\"子集"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/native.ts",
+      "anchor": "interface NativeBridge",
+      "note": "桥的声明面（无 needsRender/animationsDone）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "needsRender",
+      "note": "pixi 独有的能力（未入桥）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/nativeTap.ts",
+      "anchor": "withNativeTap",
+      "note": "闸门 A 的白名单穷尽性检查只保证\"桥方法都在名单里\""
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

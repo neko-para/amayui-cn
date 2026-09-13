@@ -1,0 +1,48 @@
+{
+  "id": "T-0016",
+  "type": "bug",
+  "status": "open",
+  "priority": "P2",
+  "area": "emulator/adv",
+  "title": "#4 ADV 右侧面板仍被无条件展示，且 hover 时会触发并 cache 若干推进指令",
+  "why": "用户实测（第 3 轮报告）：ADV 页面右侧面板进页面即展开（应只在悬停时展开），且悬停会错误推进 ADV/把推进指令缓存下来。已修掉一部分（0x93 清表、两段式悬停），但用户复核后仍复现。",
+  "acceptance": [
+    "进 ADV 页时右侧面板处于收起态，只有光标移到侧边栏条上才展开（E4 截图：hover-out / hover-in 两张）",
+    "悬停期间不产生任何\"推进\"副作用（页不前进、遮罩不消失），且不累积待派发的推进指令",
+    "新增/加强守卫：悬停不得推进页面（test/adv-msgwin.test.ts）"
+  ],
+  "evidence": [
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 49c 0 64 281",
+      "note": "侧边栏条热点（展开）",
+      "line": 63
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 0 0 500 2d0",
+      "note": "全屏热点（收起）",
+      "line": 66
+    },
+    {
+      "file": "docs-new/03-engine/input-system.md",
+      "anchor": "hover 回退",
+      "note": "悬停（hover）派发与回退的引擎机制"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md"
+    ],
+    "tickets": [
+      "T-0007"
+    ]
+  },
+  "notes": "用户明确要求排在 #1/#2/#3 之后处理（2026-09）。",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    }
+  ]
+}

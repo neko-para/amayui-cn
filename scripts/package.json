@@ -26,7 +26,10 @@
     "sync-patch": "node sync-patch.js",
     "agf": "node agf/cli.js",
     "asm": "node asm/cli.js",
-    "asm:build-opcodes": "node asm/build-opcodes.js"
+    "asm:build-opcodes": "node asm/build-opcodes.js",
+    "tickets": "node build-tickets.mjs",
+    "tickets:list": "node ../.agents/skills/amayui-ticket-ledger/scripts/tickets.js --list",
+    "tickets:check": "node ../.agents/skills/amayui-ticket-ledger/scripts/tickets.js --validate"
   },
   "dependencies": {
     "@viz-js/viz": "^3.29.0",
