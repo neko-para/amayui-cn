@@ -13,22 +13,22 @@
 |---|---|---|
 | `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 22 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 23 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **99** | 需要关注（非 n/a 且非已核验）= **52** |
+| **合计** | **101** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
-| 3D | 15 | 1 |
+| 3D | 16 | 2 |
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 13 | 8 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
-| 资源 | 12 | 3 |
+| 资源 | 13 | 4 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
 
@@ -135,6 +135,8 @@
 | `voice-request-deferral-and-adv-gate` | 声音 | ADV 激活期间的语音寄存与冲刷（文本↔语音联动） | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
 | `music-number-table-lifecycle` | 声音 | BGM 曲号表（PCM 扁平表 + 分组表）的装载、增长与解析 | ✅ 已核验 | E3 · `test/music-table.test.ts` |
 | `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
+| `texture-bind-synchronous-then-query` | 资源 | set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致 | 🟠 部分 | E2 · `test/texture-frame-barrier.test.ts` |
+| `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | 🟠 部分 | E0 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -542,3 +544,21 @@
 - **引擎**：sub_4559C0, sub_454960, sub_404A70, sub_4181F0, sub_42D8E0, sub_40AAE0, sub_404B20 @ raw 23838-23856
 - **读的字段**：FileDB+1052（本体「已使用」表）/ +14404+4*包号（扩展包表）, FileDB+13368 / +15432+4*包号（防篡改副本，密钥由 ctor 的 srand 抽签）, global 12265c[1..64]（BGM 统一文件 id，MUINIT 填）, global 1226c0[1..64]（BGM 曲号）+ global-string 3629[1..64]（曲名）, global 122731[1..n]（已收集的 BGM 下标）/ 12272f（数量）/ 12272e（收集率）, global 10e3af / 10e3ad / 10e3ac（CG 收集表与收集率）、122271 / 12251c / 122519（场景回想）, $$SAVE.DAT（整表的持久化载体；装载 sub_40AAE0，头 sub_404B20）
 - **emulator 现状**：实现（2026-09）：`Engine.usedFileIds`（键 = **完整统一 id**，天然分"包"）+ `markFileUsed()`，打点三处 —— ① `0x1F9` set-texture（载图，= CG/场景收集）；② `play-bgm` 的曲号解析命中（= BGM 收集，引擎在 `sub_48DB80` 里就打开了文件）；③ 脚本装载（call-script / `i143`，与引擎同口径，无害）。`0x19D` 转真实现（`handlers/resource-usage.ts`），含扩展包资源的版本门。E3 守卫：`test/gallery-bgm-list.test.ts` —— 真实语料启动到 TITLE（其间 `play-bgm 1f` 解锁标题曲）→ 直接调 `SETMEMOIR`（0x524c）→ 断言 `122730 = 36`、`12272f ≥ 1`、`122731[1] = 2`（= 曲号表下标 2 = 文件 id 0x17 = BGM031.OGG）、`12272e = 2`；同一条路径上"不得再有未知指令"（修好前是 `0x19D×1`）。E4：`npm run shot -- --gallery`（回想 → BGM 鑑賞）出图 —— 界面显示 `回収率 5%`/`回収数 2/36 曲`，两条已收集曲目显示曲名（标题曲＋ROOM 的 BGM）、其余为 `UNKNOWN`（`.tmp/gallery-5-bgm-list.png`；回想界面同图见 `.tmp/gallery-4-room.png`）。★2026-09 补齐（持久化）：该进度**存在 `SAVE.DAT`**（`payload` 开头的 int 块 = FileDB 的「已使用文件」表；写 `sub_40AAE0` → `sub_438320` 的 a7/a8，装载 `sub_40AEE0` raw 15202-15238 → `sub_404A70`），**不是** `RT.DAT`（那是 ADV 续玩状态）。`saveData.ts` 现在解/写这块（`SaveDataUsage`，判据「槽值非 0」，`format≥3` 判新布局），启动时 `NodeFileSource.readSaveFlags()` / 主进程 `read-save-flags` 把 overlay 与 base **取并集**（进度是单调集合）⇒ 继承玩家真存档进度。★E4 实测（本机 `SAVE\SAVE.DAT` 161,584 B / format=3 / `intCount=21111` ⇒ 已使用文件 **11106**）：`npm run shot -- --gallery` 出图 `CG 797/1269、シーン 14/23、BGM **31/36**（回収率 86%）`，BGM 列表 31 首显示曲名、5 条 UNKNOWN（缺 0x15/0x16/0x1d 三首 + 两张 OP/ED 影片 id）—— `.tmp/gallery-save-*.png`。★残留缺口：① **扩展包 flag 块**（payload 尾部：跨包线性下标 + 256 项每包文件数表）未解 —— 布局已记在 `docs-new/03-engine/save-data.md` §3.5，基础版 BGM/CG 全是本体 id ⇒ 不影响本机实测；② `sub_499650` 的模幂还原未实现（不需要：只要「槽值非 0」）；③ 2026-09 之前的本工程 overlay `SAVE.DAT` 不写这块（会遮住真存档进度）⇒ 已用「两侧并集」兜住。
+
+### `texture-bind-synchronous-then-query`（partial）
+
+- **能力**：set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致
+- **触发**：脚本执行 `0x1F9 set-texture`（`sub_422CB0` → `sub_4559C0`）时：引擎**当场**打开并解码图像文件（`sub_454960` 还会登记 FileDB 的「已使用文件」表），返回时该槽的 CTexture 已就绪
+- **缺失时为什么静默**：宿主把装载做成异步（IPC 取图 + 光栅化）后，紧随其后读尺寸的 `0x208` 会落进「尚未载入」分支返回 0×0，脚本把它当真实宽高写进绘制项的**源矩形** ⇒ 图元宽度/高度为 0，**永远画不出来**，而引擎/VM/日志全都不报错（2026-09 实测：`SN0000` 序章开场的 `BG050ABL` 背景图元 src = 0×0，整屏黑）
+- **引擎**：sub_422CB0, sub_4559C0, sub_49ED60, sub_4ADC20 @ raw 39866-39900
+- **读的字段**：Scene[5*slot+466] = imgid, CTexture+1040/+1044 宽高, DrawItem+4 纹理槽号
+- **emulator 现状**：两道屏障：① `renderer/app/session.ts` 的 `#present()` 前 `texturesIdle()`（既有，防「文本先出现、背景晚几帧」）；② **`0x1F9` 之后立刻 `await texturesIdle()`**（2026-09 新增，`#awaitTextureBound`）—— 后者才修得掉 `0x208` 读到 0×0。`texture-frame-barrier.test.ts` 只覆盖 ① 与 `TextureCache.waitIdle` 本身；② 的端到端证据是 `.tmp/gs2-*.png` 的日志（`configureDrawItem … (0,0,2048x1152)`）与 `test/game-start-chain.test.ts` 的 E3（headless 不实现 `texturesIdle` ⇒ 该屏障在 Node 侧是 no-op，若日后给 headless 加纹理，必须一起补断言）
+
+### `mesh-vertex-quad-and-per-vertex-color`（partial）
+
+- **能力**：Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层
+- **触发**：脚本 `0x320 create-mesh <handle> <f…> <4/8> <vcount> <layer>` 建项，随后 `0x322 set-vertex-color <handle> <index> <α> <rgb>` / `0x323 set-vertex-color-alpha <handle> <delay> <count> <α> <rgb>` 按**顶点下标**设色，`0x1FB draw-texture <handle> <slot> …` 给网格绑纹理；`sub_4A2050`(CalcDiffuse raw 122287) 做 state0→state1 的浮点插值
+- **缺失时为什么静默**：emulator 把每个 mesh 近似成**全屏黑色叠加块**（`presenter.ts` 的 `ov.width=VIEW_W; ov.tint=0x000000; ov.alpha=diffuseA/255`），并且 `0x322` **丢掉了顶点下标**、`0x320` 用「默认满屏四边形」占位。于是只要某个 mesh（如菜单条 `0x19640`，引擎里是 `draw-texture 19640 11 0 0 43e 95 5d 22c` —— 底部一条 1086×149 的贴片）的 diffuse α 被动画推到 255，emulator 就画出一整屏不透明的黑 ⇒ **屏幕全黑但 VM 一切正常、日志空白**（2026-09 实测：`SN0000` 序章首文案到达后整屏黑，`.tmp/gs2-7-sn0000-first-text.png`；`present` 摘要 `meshes={8:a0 0:a255}`）
+- **引擎**：sub_426BD0, sub_4A2050, sub_4AEEA0 @ raw 122287-122294
+- **读的字段**：MeshEntry 顶点缓冲, MeshEntry+28+4*index 逐顶点色, Scene+50708 网格层级槽
+- **emulator 现状**：顶点几何与逐顶点色**完全未建模**（`handlers/gfx-item.ts` 的 `op_mesh_create`/`op_set_vertex_color` 注释已声明）。修法：按 create-mesh 的操作数建真实四边形（顶点坐标 + UV），`0x322/0x323` 保留顶点下标并逐顶点插值，`0x1FB` 对 mesh handle 走纹理路径；完成后 `presenter.ts` 的「全屏黑覆盖层」分支应删除。**这是已知的最大观感缺口之一**（凡进含菜单 mesh 的场景都可能整屏黑）

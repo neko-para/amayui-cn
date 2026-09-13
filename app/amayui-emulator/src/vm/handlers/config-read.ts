@@ -136,9 +136,40 @@ const op_string_equal: OpHandler = (c) => {
   writeIntOperand(e, c.frame, c.instr, 1, a === b ? 1 : 0);
 };
 
-/** 配置读取指令族（`OPS`：读配置键 → 写回脚本操作数）+ 字符串相等判定 + `set:GameVersion` 字符串读。 */
+/**
+ * `0x195`（sub_42D010 raw 37942-37972）：**字符串不等判定** `op1 = (op2 != op3)` —— `0x194` 的取反兄弟。
+ *
+ * 引擎体与 `sub_42CF10`（0x194）逐行同构，只差最后一步：
+ * ```
+ * v2 = sub_42A420(this, v6, 3)                  // op3 字符串
+ * v3 = sub_42A420(this, v7, 2)                  // op2 字符串
+ * v5 = sub_401540(v3, 0, v3.len, v2, v2.len)    // std::string::compare ⇒ 0 当且仅当相等
+ * sub_42B4B0(this, 1, v5 != 0)                  // ★写回 op1：不等 = 1
+ * ```
+ * ⇒ **`op1 = 1` 当且仅当两串不同**（`op1` 恒为 0/1，不带 compare 的负/正值）。
+ *
+ * ★**为什么不能跳过**：它**回写 op1**，跳过后 op1 保留上一条指令留下的旧值 ⇒ 紧随其后的
+ * `jcc (op1) ffffffff <label>`（"为 0 才跳"）会按旧值分支。真实用例：
+ * `src/SETFATE.txt:15-17`（初始化"运命"标志表的 1000 次循环）——
+ * ```
+ * lookup-array (local-string-ptr 0) (global-string 368c) (local-int 0)   // 角色名表
+ * i195 (local-int 7d4) (local-string-ptr 0) ""                          // 7d4 = (名字 != "")
+ * jcc (local-int 7d4) ffffffff label_00000278                            // 名字为空 ⇒ 跳过
+ * ```
+ * 跳过 `0x195` 时 `7d4` 还留着上一行 `lt (local-int 7d4) (local-int 0) 3e8` 的 **1**（= "非空"）
+ * ⇒ **空名条目也会被处理**，对它们跑 `lookup-array-2d` 的三张表并置 `global def7c[]` 的位。
+ */
+const op_string_not_equal: OpHandler = (c) => {
+  const e = c.e;
+  const a = readStringOperand(e, c.frame, c.instr, 2);
+  const b = readStringOperand(e, c.frame, c.instr, 3);
+  writeIntOperand(e, c.frame, c.instr, 1, a === b ? 0 : 1);
+};
+
+/** 配置读取指令族（`OPS`：读配置键 → 写回脚本操作数）+ 字符串相等/不等判定 + `set:GameVersion` 字符串读。 */
 export const CONFIG_READ_OPS: OpTable = [
   ...Object.keys(CFG_READ).map((op) => [Number(op), op_cfg_read] as const),
   [0x194, op_string_equal],
+  [0x195, op_string_not_equal],
   [0x2eb, op_cfg_read_string],
 ];

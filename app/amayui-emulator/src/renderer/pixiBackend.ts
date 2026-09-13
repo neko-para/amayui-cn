@@ -285,6 +285,24 @@ export class PixiBackend implements NativeBridge {
     return this.textures.size(slot);
   }
 
+  /** `0x215`（sub_4ADC20）：绘制项 → 纹理槽号；项不存在或未创建（`flags&1==0`）⇒ −1。 */
+  getDrawItemTexSlot(handle: number): number {
+    const it = this.scene.drawItems.get(handle);
+    return !it || (it.flags & 1) === 0 ? -1 : it.tex;
+  }
+
+  /** `0x218`（sub_4ADCF0）：绘制项 pivot 三元组（项不存在 ⇒ 全 0）。 */
+  getDrawItemPivot(handle: number): { x: number; y: number; z: number } {
+    const it = this.scene.drawItems.get(handle);
+    return it ? { x: it.pivotX, y: it.pivotY, z: it.pivotZ } : { x: 0, y: 0, z: 0 };
+  }
+
+  /** `0x21A`（sub_4ADC80）：绘制项描画位置三元组（项不存在 ⇒ 全 0）。 */
+  getDrawItemPos(handle: number): { x: number; y: number; z: number } {
+    const it = this.scene.drawItems.get(handle);
+    return it ? { x: it.posX, y: it.posY, z: it.posZ } : { x: 0, y: 0, z: 0 };
+  }
+
   /**
    * `0x23B`（sub_424970）：**按 CG 数字条画数值**。
    * 忠实复刻引擎几何（raw 32381-32503）：先按 `[id, id+digits)` 删 DrawItem/Mesh，再逐位建 DrawItem。

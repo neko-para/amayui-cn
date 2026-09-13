@@ -1,5 +1,7 @@
 /**
- * **`SYSTEM4 → … → TITLE → CONFIG → CONFIG1` 路径的指令盘点**（`npm run op:inventory`）。
+ * **`SYSTEM4 → … → TITLE → CONFIG → CONFIG1`（默认）或
+ * `SYSTEM4 → … → TITLE → Game Start → GAMESTART → ゲーム開始 → SN0000`（`--path start`）
+ * 路径的指令盘点**（`npm run op:inventory [-- --path start]`）。
  *
  * 回答的问题：**这条路径上，哪些指令"没完全实现"，其中哪些涉及图像渲染 / 文字输出？**
  *
@@ -19,8 +21,11 @@
  *  - `handlerKind !== 'implemented'`（native / engine-internal）不必然是缺陷 —— `native` 里既有真实现
  *    （0x1FB draw-texture）也有纯记录桩（0x204 draw-string）；`engine-internal` 是"确认对 VM 不可观测"的跳过。
  *    所以本工具**只列事实**（来源 + 实参 + 是否丢弃），定性在最后一张表里按引擎语义给出。
+ *  - `--path start` 时，路径上**仍未实现**的 opcode 还会由 `runGameStartChain({unknownPolicy:'stub'})`
+ *    直接列出（= 采集缺口的那条路），与"三张表"互为印证。
  */
 import { runConfig1Chain } from './config1Chain.js';
+import { runGameStartChain } from './gameStartChain.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../vm/ops.js';
 import type { StepTrace } from '../vm/interpreter.js';
 
@@ -126,28 +131,60 @@ const QUALITATIVE = new Map<number, string>([
 ]);
 
 async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  const pathArg = argv.includes('--path') ? argv[argv.indexOf('--path') + 1] : 'config1';
+  const useStart = pathArg === 'start' || pathArg === 'game-start' || pathArg === 'gamestart';
   const rows = new Map<number, Row>();
-  const r = await runConfig1Chain({
-    recordDrops: true,
-    onStep: (t: StepTrace) => {
-      let row = rows.get(t.opcode);
-      if (!row) {
-        row = { opcode: t.opcode, name: t.name, kind: t.handlerKind, count: 0, scripts: new Set(), sample: '', gaps: 0, gapSample: '' };
-        rows.set(t.opcode, row);
-      }
-      row.count++;
-      row.scripts.add(t.script);
-      if (!row.sample && t.operands.length) row.sample = t.operands.join(' ');
-      if (t.gap) {
-        row.gaps++;
-        if (!row.gapSample) row.gapSample = t.operands.join(' ');
-      }
-    },
-  });
+  const onStep = (t: StepTrace): void => {
+    let row = rows.get(t.opcode);
+    if (!row) {
+      row = { opcode: t.opcode, name: t.name, kind: t.handlerKind, count: 0, scripts: new Set(), sample: '', gaps: 0, gapSample: '' };
+      rows.set(t.opcode, row);
+    }
+    row.count++;
+    row.scripts.add(t.script);
+    if (!row.sample && t.operands.length) row.sample = t.operands.join(' ');
+    if (t.gap) {
+      row.gaps++;
+      if (!row.gapSample) row.gapSample = t.operands.join(' ');
+    }
+  };
+
+  let head: string;
+  let drops: { method: string; count: number; opcodes: string[]; sample: string; why: string }[] | undefined;
+  let unknown: { opcode: number; name: string; count: number; scripts: string[]; sample: string; firstAt: string }[] = [];
+
+  if (useStart) {
+    // ★「Game Start → SN0000 首文案」路径：未实现指令用 **stub 策略**一次跑完枚举干净
+    //   （`throw` 只能见到第一条；见 gameStartChain.ts 的 unknownPolicy 说明）。
+    const r = await runGameStartChain({ recordDrops: true, unknownPolicy: 'stub', onStep, continueAfterTarget: true });
+    head =
+      `# 链路：SYSTEM4 → … → TITLE →（右上角 Game Start）→ GAMESTART →（ゲーム開始）→ SN0000\n` +
+      `# 结果：到达 SN0000 = ${r.reachedSn0000}；首文案（SN0000 第一条 show-text）= ${r.firstTextReached ? `ip=${r.firstTextIp}` : '未到达'}` +
+      `；路径上未实现的 opcode = ${r.unknown.length} 个\n` +
+      `# （GAMESTART 返回 global 0 = ${r.gameStartResult}（1=已选开始游戏）、进入 INITGAME = ${r.reachedInitGame}）`;
+    drops = r.drops;
+    unknown = r.unknown;
+  } else {
+    const r = await runConfig1Chain({ recordDrops: true, onStep });
+    head = `# 链路：SYSTEM4 → … → TITLE → CONFIG → ${r.script}（未实现 opcode: ${r.unimplemented.length}）`;
+    drops = r.drops;
+  }
 
   const all = [...rows.values()].sort((a, b) => a.opcode - b.opcode);
-  console.log(`# 链路：SYSTEM4 → … → TITLE → CONFIG → ${r.script}（未实现 opcode: ${r.unimplemented.length}）`);
+  console.log(head);
   console.log(`# 执行到的 opcode：${all.length} 个；三张表 = ${OPS.size} implemented / ${NATIVE_OPS.size} native / ${ENGINE_INTERNAL_OPS.size} engine-internal\n`);
+
+  if (unknown.length) {
+    console.log('## 0. ★路径上**命中但未实现**的 opcode（这才是"必须处理"的清单）');
+    for (const u of unknown) {
+      console.log(`  0x${u.opcode.toString(16).padEnd(5)} ×${String(u.count).padStart(5)}  ${u.name.padEnd(22)} ${u.scripts.join(',')}  （首次 ${u.firstAt}）`);
+      if (u.sample) console.log(`        实参: ${u.sample}`);
+    }
+    console.log('');
+  } else if (useStart) {
+    console.log('## 0. ★路径上**没有**未实现的 opcode（全部已实现或有依据地跳过）\n');
+  }
 
   console.log('## 1. 非 implemented 的指令（native / engine-internal）');
   for (const x of all.filter((x) => x.kind !== 'implemented')) {
@@ -159,7 +196,7 @@ async function main(): Promise<void> {
   }
 
   console.log('\n## 2. 宿主未实现 ⇒ 调用被丢弃（闸门 A）');
-  for (const d of r.drops ?? []) {
+  for (const d of drops ?? []) {
     console.log(`  ${d.method.padEnd(22)} n=${String(d.count).padStart(5)}  ops=${d.opcodes.join(',')}  ${d.sample}`);
     console.log(`        ${d.why}`);
   }
@@ -168,7 +205,7 @@ async function main(): Promise<void> {
   for (const x of all) {
     if (!RENDER_TEXT.has(x.opcode)) continue;
     const q = QUALITATIVE.get(x.opcode);
-    const dropped = (r.drops ?? []).some((d) => d.opcodes.includes(`0x${x.opcode.toString(16)}`));
+    const dropped = (drops ?? []).some((d) => d.opcodes.includes(`0x${x.opcode.toString(16)}`));
     if (!q && !dropped && x.kind === 'implemented' && !x.gaps) continue;
     console.log(`  0x${x.opcode.toString(16).padEnd(5)} ${RENDER_TEXT.get(x.opcode)}`);
     console.log(`        来源=${x.kind} 次数=${x.count} 脚本=${[...x.scripts].join(',')}`);

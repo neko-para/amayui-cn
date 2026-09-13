@@ -152,6 +152,24 @@ export class StubNative implements NativeBridge {
   setDrawPivot(handle: number, x: number, y: number, z: number): void {
     this.log(`[native:stub] setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})`);
   }
+  /**
+   * `0x215` 绘制项 → 纹理槽号（getter）。桩宿主没有场景模型 ⇒ 按引擎的"项不存在"语义返回 −1，
+   * 与真实宿主（HeadlessScene/PixiBackend 走同一份 `scene/ops.ts`）保持同一契约。
+   */
+  getDrawItemTexSlot(handle: number): number {
+    this.log(`[native:stub] getDrawItemTexSlot h=0x${handle.toString(16)} → -1（桩无场景）`);
+    return -1;
+  }
+  /** `0x218` 绘制项 pivot（getter）。桩返回全 0（= 引擎"项不存在"分支）。 */
+  getDrawItemPivot(handle: number): { x: number; y: number; z: number } {
+    this.log(`[native:stub] getDrawItemPivot h=0x${handle.toString(16)} → (0,0,0)（桩无场景）`);
+    return { x: 0, y: 0, z: 0 };
+  }
+  /** `0x21A` 绘制项描画位置（getter）。桩返回全 0（= 引擎"项不存在"分支）。 */
+  getDrawItemPos(handle: number): { x: number; y: number; z: number } {
+    this.log(`[native:stub] getDrawItemPos h=0x${handle.toString(16)} → (0,0,0)（桩无场景）`);
+    return { x: 0, y: 0, z: 0 };
+  }
   setDrawPos(handle: number, x: number, y: number, z: number): void {
     this.log(`[native:stub] setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
   }

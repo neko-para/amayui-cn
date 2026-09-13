@@ -224,6 +224,14 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   `0xB8`（停 BGM，走音频族 `{kind:'bgm-stop'}`）。守卫 `test/gallery-bgm-list.test.ts`；
 >   真机出图 `npm run shot -- --gallery`（`.tmp/gallery-5-bgm-list.png`）。语义见
 >   `docs-new/03-engine/gallery-and-unlock-flags.md`。）
+>   **「启动 → 右上角 Game Start → ゲーム開始 → SN0000 首文案」路径上的 25 条也已处理**（2026-09）：
+>   逐条读 handler 体后分成两类 —— **9 条会回写脚本操作数**（`0x195` 字符串不等 / `0x19A` / `0x1B6`+`0x1B7` /
+>   `0x1C7` / `0x1CC` / `0x215` / `0x216` / `0x218` / `0x21A`）**必须实现**（跳过 ⇒ 操作数保留旧值 ⇒
+>   静默逻辑错误），**16 条只碰渲染/3D/无读者的引擎字段**（`0x93` `0x94` `0x97` `0xD9` `0x1AD` `0x1B1`
+>   `0x1BC` `0x20E` `0x224` `0x229` `0x238` `0x242` `0x256` `0x258` `0x32A` `0x32D`）**有依据地跳过**。
+>   跑手 `src/tools/gameStartChain.ts`（`runGameStartChain`）、盘点 `npm run op:inventory -- --path start`、
+>   目视 `npm run shot -- --gamestart`、守卫 `test/game-start-chain.test.ts`；
+>   语义与两个渲染侧缺口见 `docs-new/03-engine/scene-start-flow.md`。
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。
@@ -514,10 +522,15 @@ npm run op:inventory
 #       （`native` **不等于**"没实现"：0x1FB draw-texture 是真实现，0x204 draw-string 是纯记录桩）
 # 表 2：宿主未实现 ⇒ 调用被丢弃（闸门 A：NativeBridge 方法被调但宿主没有）
 # 表 3：图像渲染 / 文字输出相关、且未完全实现的指令（按 opcode-table 家族归类 + 一句话定性）
+
+npm run op:inventory -- --path start
+# 换一条链路：SYSTEM4 → … → TITLE →（右上角 Game Start）→ GAMESTART →（ゲーム開始）→ SN0000
+# 多一张「表 0」= ★路径上**命中但未实现**的 opcode（用 stub 策略一次跑完枚举干净，`throw` 只能见到第一条），
+# 并打印「是否到达 SN0000 / 首文案 ip / GAMESTART 的返回值」——这是「采集缺口」那一步的标准姿势。
 ```
 
-实现要点：`runConfig1Chain({ onStep, recordDrops })` —— 盘点回调与 `withNativeTap` 都**默认关**，
-所以既有测试/工具不为盘点付代价（数十万条指令的链路，多一次回调就是实打实的开销）。
+实现要点：`runConfig1Chain({ onStep, recordDrops })` 与 `runGameStartChain(...)` —— 盘点回调与
+`withNativeTap` 都**默认关**，所以既有测试/工具不为盘点付代价（数十万条指令的链路，多一次回调就是实打实的开销）。
 
 2026 用它查出的典型缺口：`0x1FD` 被登记成"已实现"、实际只把参数转发给宿主而渲染端只记一行日志
 （CONFIG1 滚动条拇指的中段就是这么丢的）；`0x204 draw-string` 的 9 次调用**整体丢弃**（CONFIG1 右侧说明条画不出来）。
@@ -542,9 +555,18 @@ Sprite ⇒ 紧接着的一次 ticker 渲染去画已销毁的纹理 ⇒ **WebGL 
 ```bash
 npm run shot                    # 默认：CONFIG1 → 角色设定 → 回第 1 页
 npm run shot -- --tabs 5,3,4    # 指定要点哪些左侧分类（0..5）
+npm run shot -- --gallery       # 回想 → BGM 鑑賞（第三个按钮）
+npm run shot -- --gamestart     # 右上角 Game Start → 配置界面 ゲーム開始 → SN0000 首文案
 # 产物：.tmp/shot-*.png ；时序一律"等日志出现装载标记"，不睡固定秒数（机器忙时会误判成全黑）
 npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（分辨「慢」与「卡住」）
 ```
+
+> ★`--gamestart` 的现状（2026-09）：**TITLE / GAMESTART 正常出图**，进 `SN0000` 后**整屏黑** ——
+> 根因不是本路径的 opcode，而是 **mesh 被近似成全屏黑叠加块**（`presenter.ts` 的 "顶点色黑覆盖层"：
+> `0x320` 的顶点几何与 `0x322` 的顶点下标都没建模）。用同一趟还发现并修掉了一个真缺陷：
+> `0x1F9 set-texture` 是**同步装载**而渲染侧走异步 IPC ⇒ 紧随其后的 `0x208` 会读到 `0×0` 并被写进
+> 绘制项的源矩形（背景永远画不出来）。修法见 `renderer/app/session.ts` 的 `#awaitTextureBound`
+> 与 `docs-new/03-engine/scene-start-flow.md` §4。
 
 > ★**截图工具必须关掉 Chromium 的后台节流**（`tools/shot.cjs` 顶部三行 `app.commandLine.appendSwitch`）：
 > 主进程是脚本自己、窗口不在前台时，`requestAnimationFrame` 会被降到极低频 ⇒ 渲染循环几乎不推进 ⇒

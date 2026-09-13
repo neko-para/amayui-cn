@@ -210,6 +210,25 @@ export interface NativeBridge {
    */
   setDrawPivot?(handle: number, x: number, y: number, z: number): void;
   /**
+   * `0x215`（sub_430340 → `sub_4ADC20`, raw 132507）：**绘制项 → 纹理槽号**（getter）。
+   * 引擎：DrawItem map（`Scene+1032`）按 key 查；**不存在或 `flags & 1 == 0` ⇒ −1**；
+   * 否则返回 `DrawItem+4`（`draw-texture` 的 op2 = 纹理槽号）。
+   * ★getter：调用方把结果**写回脚本 op1**，漏实现 ⇒ 脚本拿到旧槽号（逻辑错误）。
+   */
+  getDrawItemTexSlot?(handle: number): number;
+  /**
+   * `0x218`（sub_4303C0 → `sub_4ADCF0`, raw 132549）：**绘制项的 pivot 三元组**（getter）。
+   * 引擎读 `DrawItem+24/+28/+32`（= `0x217` 写的 pivot）；项不存在 ⇒ 全 0。
+   * 调用方把它写回 op2/op3/op4（float 操作数）。
+   */
+  getDrawItemPivot?(handle: number): { x: number; y: number; z: number };
+  /**
+   * `0x21A`（sub_430450 → `sub_4ADC80`, raw 132519）：**绘制项的描画位置三元组**（getter）。
+   * 引擎读 `DrawItem+36/+40/+44`（= `0x219` 写的位置）；项不存在 ⇒ 全 0。
+   * 调用方把它写回 op2/op3/op4（float 操作数）。
+   */
+  getDrawItemPos?(handle: number): { x: number; y: number; z: number };
+  /**
    * 0x219（sub_423BA0, raw 31807）：**描画位置** `sub_4ACEE0(_this+80708, handle, f2, f3, f4)`。
    * 引擎：与 `sub_4ACF20` 逐行同构，唯写元素下标 `9/10/11` = DrawItem`+36/+40/+44` = 描画位置 (x,y,z)；
    * 绘制期 `sub_4AEEA0` 把 `&v26[9]` 作第 5 参交 `sub_4A2D50` → `CTexture::Draw`。

@@ -10,8 +10,89 @@
  * ★ 缩放的除数 100（`dbl_5201F0`）与平移到像素、旋转到度的差异，都是指令级的既有差异，切勿"统一"。
  */
 import type { OpHandler } from '../step.js';
-import { readIntOperand, readFloatOperand } from '../operand.js';
+import { readIntOperand, readFloatOperand, writeIntOperand, writeFloatOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
+
+// ---------------------------------------------------------------------------
+// 绘制项 / 纹理槽的**查询**指令族（`sub_4303xx` / `sub_4304xx`）
+//
+// ★判据与 `0x208`（纹理尺寸 getter）相同：这四条 handler 体都很短，但**每条都回写操作数**
+//   （`sub_42B4B0` 写 int / `sub_42BA00` 写 float）。当 no-op 跳过时脚本拿到的是上一轮的旧值
+//   ⇒ 属于「脚本层逻辑错误」，不只是画面问题。2026 实测：SN0000 首文案路径上它们命中 4 条
+//   （`SN0000.txt:1029/1030/1040` 与 `...:3125/3128/3153/3469…` 的立绘/图元摆放例程）。
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x215`（sub_430340 raw 39880-39889）：**绘制项 → 它当前用的纹理槽号**。
+ *
+ * 引擎：`v2 = op2`（图元 handle）→ `sub_4ADC20(Scene, v2)`：
+ * 在 DrawItem map（`Scene+1032`）里找 key；**找不到、或 `flags & 1 == 0`（未创建）⇒ 返回 −1**；
+ * 否则返回 `DrawItem+4` ＝ **纹理槽号**（`draw-texture` 的 op2 写进去的那个）。
+ * ⇒ `op1 = 槽号` 或 `−1`。
+ *
+ * 语料：`src/SN0000.txt:3125 i215 (global-int f801f) 18a9c`（问"handle 0x18a9c 现在挂在哪个槽"），
+ * 紧接着 `i216` 用这个槽去查 imgid —— 这一对就是**立绘/图元→资源的反查**。
+ */
+const op_get_draw_texture_slot: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 2);
+  const slot = c.native.getDrawItemTexSlot?.(handle);
+  writeIntOperand(c.e, c.frame, c.instr, 1, slot === undefined || slot < 0 ? -1 : slot);
+};
+
+/**
+ * `0x216`（sub_430380 raw 39891-39899）：**纹理槽 → 它绑定的图像 id（imgid）**。
+ *
+ * 引擎：`v2 = op2`（槽号）→ `op1 = Engine[5 * v2 + 81174]`。
+ * ★这个下标就是 `Scene[5 * slot + 466]`（`Engine+80708` = Scene 基址）——
+ * 即 `set-texture`（0x1F9）写的**唯一槽↔图像绑定表**（`docs/10-texture-slot-to-agf-file.md`）。
+ * 槽从未绑定过时该格为 0（引擎不初始化，是 bss 0）。
+ * emulator 侧同一张表 = `Engine.texSlots`（`0x1F9` 写、`0x1FA` 清）。
+ *
+ * 语料：`src/SN0000.txt:3128 i216 (global-int a9ba) (global-int f801f)` —— 把"当前立绘用的槽"
+ * 换成 imgid 存起来，供后续 `i2ff`（按 imgid 播语音/取资源）用。
+ */
+const op_get_slot_imgid: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.texSlots.get(slot) ?? 0);
+};
+
+/**
+ * `0x218`（sub_4303C0 raw 39902-39913）：**绘制项的 pivot（旋转/缩放中心）三元组**（float getter）。
+ *
+ * 引擎：`v2 = op1`（handle）→ `sub_4ADCF0(Scene, v4, v2)` 取 DrawItem 的 `v5[6..8]` =
+ * `DrawItem+24/+28/+32` = **pivot**（正是 `0x217` 写的那个三元组；项不存在 ⇒ 全 0）
+ * → `sub_42BA00(this, 2/3/4, …)` **写回 op2/op3/op4**。
+ *
+ * ★与 `0x21A`（描画位置）是**两个不同的 float 三元组**，不可互换（见 `0x217`/`0x219` 的说明）。
+ * 语料：`src/SN0000.txt:1030/1040`（取当前 pivot ⇒ 先校正再设回去，做"围绕人物中心"的摆放）。
+ */
+const op_get_draw_pivot: OpHandler = (c) => {
+  const e = c.e;
+  const handle = readIntOperand(e, c.frame, c.instr, 1);
+  const p = c.native.getDrawItemPivot?.(handle) ?? { x: 0, y: 0, z: 0 };
+  writeFloatOperand(e, c.frame, c.instr, 2, p.x);
+  writeFloatOperand(e, c.frame, c.instr, 3, p.y);
+  writeFloatOperand(e, c.frame, c.instr, 4, p.z);
+};
+
+/**
+ * `0x21A`（sub_430450 raw 39916-39927）：**绘制项的描画位置三元组**（float getter）。
+ *
+ * 引擎：`v2 = op1`（handle）→ `sub_4ADC80(Scene, v4, v2)` 取 DrawItem 的 `v5[9..11]` =
+ * `DrawItem+36/+40/+44` = **描画位置**（`0x219` 写的那个三元组；项不存在 ⇒ 全 0）
+ * → 写回 **op2/op3/op4**。
+ *
+ * 语料：`src/SN0000.txt:1029` —— `i21a` 取当前位置 → 按屏幕尺寸加偏移 → `i219` 写回，
+ * 即"把立绘从预置位置挪到目标位置"；跳过 `i21a` 会让偏移量基于 0 计算 ⇒ 立绘位置全错。
+ */
+const op_get_draw_pos: OpHandler = (c) => {
+  const e = c.e;
+  const handle = readIntOperand(e, c.frame, c.instr, 1);
+  const p = c.native.getDrawItemPos?.(handle) ?? { x: 0, y: 0, z: 0 };
+  writeFloatOperand(e, c.frame, c.instr, 2, p.x);
+  writeFloatOperand(e, c.frame, c.instr, 3, p.y);
+  writeFloatOperand(e, c.frame, c.instr, 4, p.z);
+};
 
 /**
  * **`0x219`（sub_423BA0, raw 31807）：写绘制项的「描画位置 (x,y,z)」**。
@@ -232,6 +313,11 @@ export const GFX_ITEM_OPS: OpTable = [
   [0x1fd, op_set_scale], // 3D 缩放变换（百分数）→ native.setScale
   [0x1ff, op_set_draw_translation], // DrawItem 像素平移（+0x68 用世界矩阵 / +0x16C work 矩阵）→ native
   [0x21d, op_copy_scene], // CopyScene（源项 → 目标 handle 整份复制）→ native.copyScene
+  // ---- 查询族（回写操作数；见文件头「查询指令族」说明）----
+  [0x215, op_get_draw_texture_slot], // op1 = DrawItem(op2).纹理槽号 / −1
+  [0x216, op_get_slot_imgid], // op1 = 纹理槽 op2 绑定的 imgid（Engine[5*slot+466]）
+  [0x218, op_get_draw_pivot], // op2/3/4 = DrawItem(op1) 的 pivot (x,y,z)
+  [0x21a, op_get_draw_pos], // op2/3/4 = DrawItem(op1) 的描画位置 (x,y,z)
 ];
 
 /** 绘制项的 native 路由表（`handlerKind === 'native'`）。 */

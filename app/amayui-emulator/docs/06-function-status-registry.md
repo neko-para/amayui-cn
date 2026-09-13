@@ -97,6 +97,32 @@
 | 0x19D | 19D | `sub_42D8E0`(38267) | **rewritten** | **已使用文件查询**：`op1 ← sub_4181F0(FileDB, op2)` = 「统一文件 id 是否**已被打开过**」(0/1)；扩展包资源（高字节 ≠ 0）在 `set:SaveVersion1 < 3`（或 `==3` 且 `SaveVersion2 < 10`）时恒 0。★**回想界面四个按钮的收集数与 BGM 鑑賞列表的唯一数据源**（`SETMEMOIR` 靠它写 `122731/12272f/12272e`）——跳过它会让列表整片空白（2026-09 用户实测）；2026-09 转真实现（`handlers/resource-usage.ts` + `Engine.usedFileIds`）；守卫 `test/gallery-bgm-list.test.ts` |
 | 0x1BF | 1BF | `sub_419840`(24874) | **rewritten** | **跳读态置**（0 操作数）：`if (122504 & 0x10000) 122504 = 0; if ((122504 & 1) == 0) 122503 = 1;`。唯一读者是 `0xBF` play-bgm（raw 29773）：快进时不把 BGM 压给语音；2026-09 转真实现（`handlers/engine-fields.ts`） |
 | 0x21D | 21D | `sub_423C60`(31834) | **rewritten** | **CopyScene**：`sub_4AC0D0(Scene, op1, op2)` = 把源绘图项（+网格）整份复制到目标 handle（三张 map 全未命中 ⇒ 引擎打「コピー元のシーンが存在しません」）。语料 `ROOM/MMODE/CGMODE/HMODE` 复制全屏过渡幕布 + `$1$SC0330.txt:17564` 复制 CG 图元；2026-09 转真实现（`handlers/gfx-item.ts` → `scene/ops.ts` 的 `scCopyItem`）；守卫 `test/gallery-bgm-list.test.ts` |
+| 0x195 | 195 | `sub_42D010`(37942) | **rewritten** | **字符串不等判定** `op1 = (op2 != op3)`（`sub_401540` = `std::string::compare`，0x194 的取反兄弟）。★**会回写 op1** ⇒ 不能当 no-op：`src/SETFATE.txt:15-17` 的 1000 次循环靠它跳过空名条目，跳过会让空名条目也被处理。2026-09 转真实现（`handlers/config-read.ts` 的 `op_string_not_equal`）；守卫 `test/game-start-chain.test.ts` |
+| 0x19A | 19A | `sub_42D290`(38031) | **rewritten** | **跳读/自动模式查询** `op1 = Engine[97050]`（0x88 写入）。会回写 op1；2026-09 转真实现（`handlers/msgwin.ts` 的 `op_get_skip_mode`） |
+| 0x1B6 | 1B6 | `sub_42D2C0`(38038) | **rewritten** | **共存消息状态查询** `op1 = (Engine[97052] != 0)`。会回写 op1；2026-09 转真实现（`op_get_coexist_state`） |
+| 0x1B7 | 1B7 | `sub_41FF20`(29181) | **rewritten** | **置共存消息状态** `Engine[97052] = (op1 != 0)`（0x1B6 的写入端，可往返验证）；2026-09 转真实现（`op_set_coexist_state`） |
+| 0x1C7 | 1C7 | `sub_42D390`(38072) | **rewritten** | **ADV 激活查询** `op1 = (effect_flags & 0x8000000) != 0`。会回写 op1；语料 `src/SN0000.txt:1114` 的 ADV 等待循环；2026-09 转真实现（`op_get_adv_active`） |
+| 0x1CC | 1CC | `sub_42D410`(38092) | **rewritten** | **本页文本显示中查询** `op1 = Engine[122455]`。会回写 op1；2026-09 转真实现（`op_get_msg_showing`） |
+| 0x215 | 215 | `sub_430340`(39880) | **rewritten** | **绘制项 → 纹理槽号（getter）** `op1 = sub_4ADC20(Scene, op2)`（DrawItem`+4`；项不存在或 `flags&1==0` ⇒ −1）。会回写 op1；2026-09 转真实现（`handlers/gfx-item.ts` 的 `op_get_draw_texture_slot` + `native.getDrawItemTexSlot`） |
+| 0x216 | 216 | `sub_430380`(39891) | **rewritten** | **纹理槽 → imgid（getter）** `op1 = Engine[5*op2+81174]` ＝ `Scene[5*slot+466]` ＝ `set-texture` 的唯一绑定表（emulator：`Engine.texSlots`）。会回写 op1；2026-09 转真实现（`op_get_slot_imgid`） |
+| 0x218 | 218 | `sub_4303C0`(39902) | **rewritten** | **绘制项 pivot 三元组（getter）** `op2/3/4 =` DrawItem`+24/+28/+32`（项不存在 ⇒ 全 0）。会回写 op2..4（float）；2026-09 转真实现（`op_get_draw_pivot` + `native.getDrawItemPivot`） |
+| 0x21A | 21A | `sub_430450`(39916) | **rewritten** | **绘制项描画位置三元组（getter）** `op2/3/4 =` DrawItem`+36/+40/+44`（项不存在 ⇒ 全 0）。会回写 op2..4（float）；语料 `src/SN0000.txt:1029`；2026-09 转真实现（`op_get_draw_pos` + `native.getDrawItemPos`） |
+| 0x93 | 93 | `sub_4191D0`(24589) | ignored（有证据） | 显示态切换（`effect_flags &= ~0x800000`、`sub_403EF0`、toggle `12956/12957`）。**不写操作数** ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x94 | 94 | `sub_419230`(24604) | ignored（有证据） | 置 `12957=1` + `sub_404020(Font+652, 10000)`；不写操作数 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x97 | 97 | `sub_420910`(29596) | ignored（有证据） | 消息面填矩形 `sub_403D10`（语料首参 −1000 = 屏外空转）；不写操作数 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0xD9 | D9 | `sub_419970`(24939) | ignored（有证据） | 清 `effect_flags` bit0x1000；**全工程无该位读者** ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x1AD | 1AD | `sub_4196F0`(24806) | ignored（有证据） | `Engine[166963] = cur`；唯一读者在存档序列化（emulator 不序列化该字段）⇒ `ENGINE_INTERNAL_OPS` |
+| 0x1B1 | 1B1 | `sub_41FEA0`(29155) | ignored（有证据） | `Engine[21672] = op1`；**全工程无读者**（死写）⇒ `ENGINE_INTERNAL_OPS` |
+| 0x1BC | 1BC | `sub_4197A0`(24845) | ignored（有证据） | 清消息/声音字段（3×`sub_4B60C0` + 12 个 dword 清零）；不写操作数 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x20E | 20E | `sub_41A200`(25277) | ignored（有证据） | 图形提交（`sub_4A50C0` + `sub_498B60`）；emulator 渲染循环自行 present ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x224 | 224 | `sub_41A290`(25301) | ignored（有证据） | 清 Scene 转场表（`sub_4A9BE0(Scene+262)`）；emulator 无转场表 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x229 | 229 | `sub_423FE0`(31984) | ignored（有证据） | 绘制模式配置（`sub_49A690/6C0/6F0`）；不写操作数 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x238 | 238 | `sub_4248C0`(32303) | ignored（有证据） | `Engine[92338]=0; [92339]=op1`；**两槽只写不读**（死写）⇒ `ENGINE_INTERNAL_OPS` |
+| 0x242 | 242 | `sub_4251A0`(32649) | ignored（有证据） | 写 DrawItem`+720`（与同 key 转场项 `+504`）；渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x256 | 256 | `sub_425C30`(33120) | ignored（有证据） | 绘制项 3 float（`sub_4ACD10`）；渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x258 | 258 | `sub_425D20`(33156) | ignored（有证据） | 按 op2 的 bit0/bit1 置纹理槽标志（`Scene[5*slot+468/+469]`、`+5468/+5469`）；渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x32A | 32A | `sub_426F80`(34003) | ignored（有证据） | 释放 3D 模型槽（`sub_4A0750`）；emulator 无 3D 模型 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x32D | 32D | `sub_427040`(34033) | ignored（有证据） | 3D 颜色（`sub_499DF0`）；纯 3D 渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
 | 0x149 | u0041FCE0 | `sub_4229A0`(30687) | ignored | `_this[97058]=op1`，config setter |
 | 0x88 | u0041B290 | `sub_41FAB0`(28686) | ignored | `_this[1415]/[97050]` + flag |
 | 0x21b | u004213E0 | `sub_423C20`(31433) | ignored | `_this[166965]=(op1!=0)` |

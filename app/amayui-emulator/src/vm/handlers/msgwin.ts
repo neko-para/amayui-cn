@@ -594,6 +594,67 @@ const op_set_read_text_skip: OpHandler = (c) => {
   c.e.msgwin.readTextSkip = readIntOperand(c.e, c.frame, c.instr, 1);
 };
 
+// ---------------------------------------------------------------------------
+// ADV / 消息状态**查询**指令族（sub_42D2xx / sub_42D3xx / sub_42D4xx 的 getter）
+//
+// ★这一族的共同点：handler 体极短，但**每一条都经 `sub_42B4B0(this, 1, v)` 回写 op1**。
+// 因此它们**不是**可以忽略的"内部状态写入" —— 当 no-op 跳过时 op1 保留上一条指令的旧值，
+// 而脚本紧接着就用 op1 做条件跳转（SN0000 的 ADV 主循环就是 `i1c7/i1cc` + `or` + `jcc`）。
+// 2026 实测：启动 → Game Start → SN0000 首文案这条路径上，这一族占了未知指令的 4/25。
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x19A`（sub_42D290 raw 38031-38035）：`op1 = Engine[97050]`（**跳读/自动模式镜像**）。
+ *
+ * 引擎：`return sub_42B4B0(this, 1, this[97050]);`。
+ * 写者：`0x88 message-mode`（`1415 = 97050 = op1`，emulator 见 `op_message_mode`）。
+ * 读者（引擎内）：`sub_41EB20`/`sub_411BC0` 的「跳读中」分支；语料里脚本也直接读
+ * （`src/DRAWCHARM.txt:1` 等）。
+ */
+const op_get_skip_mode: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.msgwin.skipMode);
+};
+
+/**
+ * `0x1B6`（sub_42D2C0 raw 38038-38042）：`op1 = (Engine[97052] != 0)`。
+ *
+ * `Engine[97052]` 是**「共存消息」状态**（引擎的配置键串是 `set:CoexistMess`，raw 13706）：
+ *  - 置位端 = `0x1B7`（sub_41FF20 raw 29181-29189）`97052 = (op1 != 0)`；
+ *  - 引擎帧循环（raw 13699-13705）每帧看到它就 `97052 = 0` 并提前 return，
+ *    同时按 `set:CoexistMess` 决定 `97050 = 0`（关掉跳读）。
+ * emulator 把 97052 放在 `Engine.advFields`（与 `0x1B7` 成对，可往返测试）。
+ */
+const op_get_coexist_state: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.advFields.get(97052) ?? 0) !== 0 ? 1 : 0);
+};
+
+/** `0x1B7`（sub_41FF20 raw 29181-29189）：`Engine[97052] = (op1 != 0)`（`0x1B6` 的写入端）。 */
+const op_set_coexist_state: OpHandler = (c) => {
+  c.e.advFields.set(97052, readIntOperand(c.e, c.frame, c.instr, 1) !== 0 ? 1 : 0);
+};
+
+/**
+ * `0x1C7`（sub_42D390 raw 38072-38079）：`op1 = (effect_flags & 0x8000000) != 0`
+ * ＝ **「消息逐字显示中 / ADV 激活」查询**（与 `Engine.advActive` 同一位）。
+ *
+ * 语料：`src/SN0000.txt:1114` 起的主循环 `i1c7 f7ff5` / `i1cc f7ff6` → `or` → `jcc`，
+ * 用来判断"这一页是否还在显示 / 是否需要等玩家"。跳过它会让 `f7ff5` 保留旧值，
+ * 循环按错误的状态走（提前跳读或永不推进）。
+ */
+const op_get_adv_active: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.effectFlags & ADV_ACTIVE) !== 0 ? 1 : 0);
+};
+
+/**
+ * `0x1CC`（sub_42D410 raw 38092-38096）：`op1 = Engine[122455]` ＝ **「本页文本正在显示中」**。
+ *
+ * 与 `Engine.msgwin.showing` 同一字段（`0x88`/`0x19C`/`sub_411900` 都写它）。
+ * 语料同 `0x1C7`（`i1cc f7ff6`，与 `i1c7` 的 `or` 一起作为"要不要接着等"的判据）。
+ */
+const op_get_msg_showing: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.msgwin.showing);
+};
+
 /**
  * `0x090`（sub_420640 raw 29477-29518）：**登记点击热点/路由项**。
  * `i090 <x> <y> <w> <h> <labelA> <labelB> <labelC>` →
@@ -986,6 +1047,12 @@ export const MSGWIN_OPS: OpTable = [
   [0x19c, op_adv_enter],
   [0x19b, op_adv_exit],
   [0x1ca, op_set_read_text_skip], // SetConfig message:ReadTextSkip
+  // ---- ADV 状态**查询**（getter，回写 op1；见上方「查询指令族」说明）----
+  [0x19a, op_get_skip_mode], // op1 = Engine[97050]（跳读/自动模式镜像）
+  [0x1b6, op_get_coexist_state], // op1 = (Engine[97052] != 0)（共存消息状态）
+  [0x1b7, op_set_coexist_state], // Engine[97052] = (op1 != 0)（0x1B6 的写入端）
+  [0x1c7, op_get_adv_active], // op1 = (effect_flags & 0x8000000) != 0（ADV 激活）
+  [0x1cc, op_get_msg_showing], // op1 = Engine[122455]（本页文本显示中）
   // ---- 字格逐字显现（序章 SN0000 / NOVEL / SYSTEM4）----
   [0x73, op_set_char_grid], // ★字格 + 逐字节拍（0x73 op10 → sub_453AD0；win+88 总门）
   [0x1ce, op_char_reveal_switch], // 逐字开关（v≠0 置 bit30+游标归零；v=0 收尾）

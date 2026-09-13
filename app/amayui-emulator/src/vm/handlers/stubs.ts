@@ -136,6 +136,28 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   整体机制见 docs-new/03-engine/sound-system.md；此前的 no-op 说明留在第二层台账
   //   `audio-module-topology-and-volume-routing` / `voice-request-deferral-and-adv-gate`。
   [0x324, op_engine_internal], // sub_453530(_this[93384])：计时/文本刷新（无操作数）
+  // ============ 「启动 → Game Start → SN0000 首文案」路径上确认可跳过的 16 条（2026-09）============
+  // 判据（逐条读 handler 体，raw 行号见右注）：**既不回写任何脚本操作数、也不改 ip/cur**，
+  // 只写引擎里 emulator 无消费者的字段 / 只调渲染或 3D 子系统。因此对 VM 不可观测。
+  // 与之相对，同一路径上**会回写操作数**的 9 条已转真实现（0x195 → handlers/config-read.ts；
+  // 0x19A/0x1B6/0x1B7/0x1C7/0x1CC → handlers/msgwin.ts；0x215/0x216/0x218/0x21A → handlers/gfx-item.ts）。
+  // 采集与逐条评估见 docs-new/03-engine/scene-start-flow.md。
+  [0x93, op_engine_internal], // sub_4191D0 raw 24589：显示态切换（`174801&=~0x800000`、toggle `12956/12957`、`sub_403EF0`）—— 渲染侧
+  [0x94, op_engine_internal], // sub_419230 raw 24604：置 `12957=1` + `sub_404020(Font+652, 10000)`（窗面清成色 10000）—— 渲染侧
+  [0x97, op_engine_internal], // sub_420910 raw 29596：5 操作数 → `sub_403D10(Font+652, rect, mode)` 填矩形（语料里首参为 −1000 ⇒ 屏外空转）—— 渲染侧
+  [0xd9, op_engine_internal], // sub_419970 raw 24939：清 `174801 &= ~0x1000`（+ `95779` 同位）—— 该位 emulator 无消费者（ADV 门是 0x8000000/0x40000000/bit31）
+  [0x1ad, op_engine_internal], // sub_4196F0 raw 24806：`166963 = cur`（存档序列化用"当前帧"记忆；emulator 不序列化该字段，无读者）
+  [0x1b1, op_engine_internal], // sub_41FEA0 raw 29155：`21672 = op1` —— **全工程无读者**（死写，与 21668 MessageSpeed 不是同一槽）
+  [0x1bc, op_engine_internal], // sub_4197A0 raw 24845：清消息/声音字段（`85260..85280`、`490004..490040`、3×`sub_4B60C0`）—— 都是清场，无操作数回写
+  [0x20e, op_engine_internal], // sub_41A200 raw 25277：图形提交（`sub_4A50C0(Scene,0x26)` + `sub_498B60`）—— 宿主每帧自行 present
+  [0x224, op_engine_internal], // sub_41A290 raw 25301 → sub_4AA180 → `sub_4A9BE0(Scene+262)`：清 Scene 转场表（emulator 无转场表）
+  [0x229, op_engine_internal], // sub_423FE0 raw 31984：绘制模式配置（`sub_49A690/4AC0/4AF0` + 3 个 float）—— 渲染侧
+  [0x238, op_engine_internal], // sub_4248C0 raw 32303：`92338=0; 92339=op1` —— **两个槽全工程只写不读**（死写）
+  [0x242, op_engine_internal], // sub_4251A0 raw 32649 → sub_4AD9A0：写 `DrawItem+720` 与转场项 `+504`—— 渲染侧
+  [0x256, op_engine_internal], // sub_425C30 raw 33120 → sub_4ACD10：绘制项 3 个 float 设置 —— 渲染侧
+  [0x258, op_engine_internal], // sub_425D20 raw 33156：按 op2 的 bit0/bit1 置纹理槽标志（`5*slot+468/+469`、`+5468/+5469`）—— 渲染侧
+  [0x32a, op_engine_internal], // sub_426F80 raw 34003 → sub_4A0750：释放 3D 模型槽（`Scene[op1+12677]` 析构 + delete）—— 3D 槽，emulator 无模型
+  [0x32d, op_engine_internal], // sub_427040 raw 34033 → sub_499DF0：3D 颜色（op1=α 上限 255、op2=RGB）→ 4 个 float —— 3D 渲染侧
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
   [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7

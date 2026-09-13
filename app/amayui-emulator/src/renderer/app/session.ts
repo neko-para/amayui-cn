@@ -11,7 +11,7 @@
  * 不触碰 Pixi 内部；渲染循环（`startFrameLoop`）由 `boot.ts` 启动，两边靠 `nowMs` 与门旗标协作。
  */
 import { SLEEP_GATE, type Engine } from '../../vm/engine.js';
-import { NotImplementedOp, stepOnce } from '../../vm/interpreter.js';
+import { NotImplementedOp, stepOnce, type StepTrace } from '../../vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../../vm/ops.js';
 import type { DropRecorder } from '../../vm/nativeTap.js';
 import type { ControlStatus } from '../ipcFileSource.js';
@@ -302,9 +302,35 @@ export class RendererSession {
       for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
       this.#writeJsonlIfFiltered(t);
       this.#traceStepIfEnabled(t);
+      await this.#awaitTextureBound(t);
     } catch (caught) {
       this.#handleStepError(caught);
     }
+  }
+
+  /**
+   * **`set-texture`(0x1F9) 之后的同步屏障**（2026-09 新增；修「进 `SN0000` 序章整屏全黑」）。
+   *
+   * 引擎的 `0x1F9`（`sub_422CB0` → `sub_4559C0`）是**同步**读文件 + 解码 ⇒ 在同一条不可分割的
+   * 指令序列里 `set-texture` → `0x208`（纹理尺寸 getter）→ `0x1FB`（draw-texture）**必然一致**：
+   * 脚本拿到的宽高就是刚绑上那张图的宽高。
+   *
+   * renderer 侧走 `window.api.image()` 的**异步 IPC**，只在 `#present()` 前补屏障（见 `#present`）
+   * 是**不够**的 —— VM 早已带着 0×0 跑过去了：`TextureCache.size()` 在"尚未载入"分支返回 0×0，
+   * 于是 `0x1FB` 把 `0×0` 写进绘制项的**源矩形** ⇒ 该图元永远画不出来。
+   * 实测（`.tmp/gs-7-sn0000-first-text.png` 全黑）：
+   * ```
+   * bindTexture imgid=0xb37 slot=4
+   * getTextureSize slot=4 → 0x0（纹理尚未载入，imgid=0xb37）
+   * configureDrawItem h=0x18a88 layer=101000 (0,0,0x0)      ← 源矩形 0×0 = 不可见
+   * image b37 -> BG050ABL.AGF (2048x1152)                   ← 图其实载入了，只是晚了一步
+   * ```
+   * 只在 `0x1F9` 这一条之后等待（绑定是稀有事件），不影响常规帧率；
+   * headless 宿主不实现 `texturesIdle` ⇒ 自动跳过（`test/game-start-chain.test.ts` 的 E3 不受影响）。
+   */
+  async #awaitTextureBound(t: StepTrace): Promise<void> {
+    if (t.opcode !== 0x1f9) return;
+    if (this.#native.texturesIdle) await this.#native.texturesIdle();
   }
 
   /** 推进一批指令；返回 true = 需要终止整个会话（重置/退出/硬错误）。 */
@@ -323,6 +349,7 @@ export class RendererSession {
         for (const line of this.#telemetry.note(t)) this.#traceLog.line(line);
         this.#writeJsonlIfFiltered(t);
         this.#traceStepIfEnabled(t);
+        await this.#awaitTextureBound(t);
       } catch (caught) {
         const stop = this.#handleStepError(caught);
         if (stop !== null) return stop;

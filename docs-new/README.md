@@ -58,6 +58,7 @@ docs-new/
 │   ├── save-data.md          ← **SAVE.DAT**：脚本 save-int/save-string 两张表的持久化（= 设置界面开关的真正归处）+ 容器/Crypt/LZSS 全解 + emulator 现状
 │   ├── sound-system.md       ← **声音子系统**：DirectSound 设备(15 通道) / SE·Voice·Music 三模块 / `sound:Volume0..4` 路由 / ADV 文本↔语音联动
 │   ├── gallery-and-unlock-flags.md ← **回想/鉴赏与解锁**：FileDB「已使用文件」哈希表 / `0x19D` / SETMEMOIR 的三套收集表 / `$$SAVE.DAT` / BGM 鑑賞列表
+│   ├── scene-start-flow.md   ← **新游戏开局链路**：TITLE 右上角 Game Start → GAMESTART → INITGAME/SETFATE → SN0000 首文案；两个点击点坐标的脚本来源 + 该路径 25 条缺失指令的逐条跳过评估 + 两个渲染侧缺口
 │   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
 │   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
 │                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog

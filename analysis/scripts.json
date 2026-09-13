@@ -10,10 +10,10 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 20,
+    "total": 23,
     "analyzed": 9,
-    "partial": 11,
-    "stub": 0
+    "partial": 13,
+    "stub": 1
   },
   "entries": [
     {
@@ -546,39 +546,99 @@
           "anchor": "i1ce 0",
           "lines": "575-580",
           "what": "逐字开关收尾（0x1ce 0）"
+        },
+        {
+          "anchor": "show-text 0 @\"由两个世界融合而生的\"",
+          "lines": "1224-1236",
+          "what": "★**第一条文案**（`SN0000.txt:1224` 的 `// 输入原文：…`）：本文件里第一条**被汇编**的 show-text（更早的 `:1210` 等都在 `/* 原文存档（对照用，不参与汇编） */` 注释块内）⇒ 指令下标 ip = 901，整页 3 行 58 字"
+        },
+        {
+          "anchor": "i238 157c",
+          "lines": "1018-1049",
+          "what": "开场序列：`i238 0x157c`(5500) → `wait` → `play-bgm d` → `i1f4` → 调两个子程序 → `i21a`/`i218` 读图元当前「位置/pivot」→ 校正后 `i219`/`i217` 写回 → `i1ff` 平移归零 → `i220 0 0x13880`(80s) 背景横移 → `i242` 登记 → `wait`"
+        },
+        {
+          "anchor": "i1c7 (global-int f7ff5)",
+          "lines": "1112-1122",
+          "what": "ADV 等待循环：`i1c7`(ADV 激活) / `i1cc`(本页显示中) 写 `f7ff5`/`f7ff6` → `or` → `jcc`；随后 `i2f6`/`i2f8` 与 `play-voice`/`i2ff` 组页"
+        },
+        {
+          "anchor": "i21a (global-int f8023) (global-int f803b) (global-int f803c) (global-int f803d)",
+          "lines": "1029-1045",
+          "what": "★立绘/图元摆放：`i21a` 取**描画位置**、`i218` 取 **pivot** → 按 (100,370) 对齐 → `i219`/`i217` 写回 → `i220` 平移窗 → `i242`。跳过 `i21a`/`i218`（它们回写操作数）会让偏移基于 0 计算 ⇒ 位置全错"
+        },
+        {
+          "anchor": "i258 3 1",
+          "lines": "8-41",
+          "what": "开头 30+ 条 `i258 <槽> 1`：按位设置各纹理槽记录标志（`0x258`）"
         }
       ],
       "slots": [
         {
           "key": "win 8",
           "what": "序章正文窗（字格逐字的目标窗）"
+        },
+        {
+          "key": "global f8023",
+          "what": "开场背景图元的 handle（1015843；`i21a/i218/i219/i217/i220/i242` 的操作对象）"
+        },
+        {
+          "key": "global f803b..f8040",
+          "what": "位置三元组（f803b/c/d）与 pivot 三元组（f803e/f8040）的暂存槽"
+        },
+        {
+          "key": "global f7ff5 / f7ff6",
+          "what": "ADV 状态快照：`i1c7`(ADV 激活) / `i1cc`(本页显示中)"
+        },
+        {
+          "key": "global f801f / f801d / a9ba",
+          "what": "当前立绘的**纹理槽**与由 `i216` 反查出的 **imgid**（`i2ff` 用它取资源/播语音）"
+        },
+        {
+          "key": "win 8",
+          "what": "序章正文窗（字格逐字的目标窗，也是首文案所在的窗）"
         }
       ],
       "invariants": [
-        "页序列：i304（文本块开始）→ show-text → i305（文本块结束）→ i073（设字格）→ wait-for-input → 点击 → i071（清场）"
+        "页序列：i304（文本块开始）→ show-text → i305（文本块结束）→ i073（设字格）→ wait-for-input → 点击 → i071（清场）",
+        "SN0000 的第一条被汇编 show-text 在 ip = 901（= `src/SN0000.txt:1225`），页面 3 行 58 字，全部落在窗 8"
       ],
-      "gotchas": [],
+      "gotchas": [
+        "★`src/SN0000.txt:1209-1223` 是 `/* 原文存档（对照用，不参与汇编） */` 注释块 —— 里面也有 show-text，**不能**拿它当「第一条文案」的锚点（会被注释误导）；判据要用「第一条被汇编的 show-text」或 ip=901",
+        "★`i1c7`/`i1cc`/`i21a`/`i218`/`i215`/`i216` 都是**会回写操作数**的 getter：当 no-op 跳过时 op1/op2..4 保留上一条指令的旧值，脚本据此做的 `or`+`jcc` 与位置校正都会静默出错"
+      ],
       "gaps": [],
       "links": {
         "capabilities": [
           "msgwin-char-reveal-grid",
-          "text-reveal-pump-409400"
+          "text-reveal-pump-409400",
+          "texture-bind-synchronous-then-query",
+          "mesh-vertex-quad-and-per-vertex-color",
+          "scene-pending-flag-0x400-gate"
         ],
         "functions": [
           "0x41F250",
           "0x45A940",
-          "0x45BE20"
+          "0x45BE20",
+          "0x42D390",
+          "0x42D410",
+          "0x4303C0",
+          "0x430450",
+          "0x430340",
+          "0x430380"
         ],
         "docs": [
-          "docs-new/03-engine/adv-text-rendering.md"
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/scene-start-flow.md"
         ]
       },
       "guards": [
-        "test/char-reveal.test.ts"
+        "test/char-reveal.test.ts",
+        "test/game-start-chain.test.ts"
       ],
       "status": "partial",
       "evidence": "src/SN0000.txt:1075-1085 / 575-580；页序列断言见 test/char-reveal.test.ts 的『真实序章页序列（SN0000…）』",
-      "notes": "只登记了字格/逐字相关片段；序章剧情本身未读。"
+      "notes": "字格/逐字片段 + 序章开场（背景横移、立绘摆放、第一条文案 ip=901）已读；序章正文其余页与战斗/地图分支未读。★已知观感缺口：菜单 mesh（如 0x19640）被 emulator 近似成全屏黑叠加块 ⇒ 进本场景后整屏黑（见 capabilities 的 mesh-vertex-quad-and-per-vertex-color）。"
     },
     {
       "id": "TITLE",
@@ -601,6 +661,31 @@
           "anchor": "i2c7 (local-string 1) (local-string 0) 5 4",
           "lines": "590-592",
           "what": "第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」）"
+        },
+        {
+          "anchor": "copy-local-array (local-int cd) [0 9c 0 9c]",
+          "lines": "6-19",
+          "what": "菜单几何数据表：`25d/261/265/269/26d` 是 5 项的四邻接矩形表（`menu-bind` 的悬停导航），`cd`..`dd` 是 5 个 size 盒（`i12e` 用，全是 `[0,0x9c,0,0x9c]`），`5`/`69` 是 baseX/baseY 数组（每项的命中盒左上角）"
+        },
+        {
+          "anchor": "mouse-callback 10 label_00000460",
+          "lines": "41-64",
+          "what": "手柄/鼠标回调注册（`0xFB` 一列 + `0xCC`）与主循环：`get-input-type` 后按 `local 3fc`（输入类型 1/2/3）分派到 0x388c / 0x184 / 0x154"
+        },
+        {
+          "anchor": "menu-bind 0 label_00001184",
+          "lines": "304-315",
+          "what": "菜单表重建 + 派发：`menu-bind -1/0/1/2/3/4` 分别绑「无悬停 / Game Start / Load Data / Room / Option / Quit」，`menu-dispatch (local 3f7)` 按当前悬停项跳转"
+        },
+        {
+          "anchor": "call-script 526b",
+          "lines": "316-330",
+          "what": "★第 0 项 = Game Start：`call-script 526b`(GAMESTART) → 回来按 `global 0`（1=已选开始游戏）决定继续进 INITGAME 还是留在标题"
+        },
+        {
+          "anchor": "i12e (local-int 3f5) (local-int 1) (local-int 3f0) (local-int 3f1) (local-int cd) (local-int 5) (local-int 69) (local-int 0)",
+          "lines": "95-102",
+          "what": "鼠标悬停命中：`0x12E` 用 `cd`(盒 156×156) + `5`/`69`(baseX/baseY) + `local 0`(count=5) 逐个判点在矩形内 ⇒ 写回 `local 3f5`/`3f7`（−1 = 无）"
         }
       ],
       "slots": [
@@ -623,21 +708,44 @@
         {
           "key": "菜单命中槽 3f7 / 3f3…",
           "what": "`i12e` 命中区扫描结果与点击派发（见 TITLE 菜单相关测试）"
+        },
+        {
+          "key": "local-int cd/d1/d5/d9/dd",
+          "what": "`i12e` 的 5 个 size 盒（每项 4 值 dx0/dx1/dy0/dy1；TITLE 全是 `[0,0x9c,0,0x9c]`）"
+        },
+        {
+          "key": "local-int 5",
+          "what": "`i12e` 的 baseX 数组 = [0x44e, 0x3e0, 0x365, 0x2d9, 0x453]（1102/992/869/729/1107）"
+        },
+        {
+          "key": "local-int 69",
+          "what": "`i12e` 的 baseY 数组 = [0x126, 0x192, 0x1e5, 0x21f, 0x22a]（294/402/485/543/554）"
+        },
+        {
+          "key": "local-int 0",
+          "what": "`i12e` 的 count（= 5 个菜单项）"
+        },
+        {
+          "key": "local-int 3f7 / 3f5 / 3f6",
+          "what": "当前/新/上次悬停项下标（3f7 是 `menu-dispatch` 的键）"
         }
       ],
       "invariants": [
-        "版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）"
+        "版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）",
+        "菜单 5 项的命中盒 = base `5[i]`/`69[i]` + 盒 156×156（`cd[i]`）⇒ 第 0 项（**右上角 Game Start**）中心 = (1102+78, 294+78) = **(1180, 372)**"
       ],
       "gotchas": [
         "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
-        "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）"
+        "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）",
+        "★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位"
       ],
       "gaps": [
         "菜单命中/派发（`i12e`/`0xa2`/`0xa3`）与背景演出未逐段读（layout 列出的只是版本号这一段）"
       ],
       "links": {
         "capabilities": [
-          "engine-config-registry-persistence"
+          "engine-config-registry-persistence",
+          "texture-bind-synchronous-then-query"
         ],
         "functions": [
           "0x434830",
@@ -647,16 +755,18 @@
           "0x426420"
         ],
         "docs": [
-          "docs-new/03-engine/opcode-table.md"
+          "docs-new/03-engine/opcode-table.md",
+          "docs-new/03-engine/scene-start-flow.md"
         ]
       },
       "guards": [
         "test/config-version-substr.test.ts",
-        "test/title-exit.test.ts"
+        "test/title-exit.test.ts",
+        "test/game-start-chain.test.ts"
       ],
       "status": "partial",
       "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png",
-      "notes": "只登记了版本号显示段；菜单/背景/演出未读。"
+      "notes": "版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。"
     },
     {
       "id": "INITCONFIG",
@@ -1563,6 +1673,209 @@
       "status": "analyzed",
       "evidence": "src/MUINIT.txt 全文 114 行实读；E3 断言 122730 = 36（= 非空条目数）",
       "notes": "扩展包各自的 `$n$MUINIT`（`$1$MUINIT`/`$3$MUINIT`…）填的是自己那几首，未逐行读。"
+    },
+    {
+      "id": "GAMESTART",
+      "file": "src/GAMESTART.txt",
+      "bin": "GAMESTART.BIN",
+      "role": "「Game Start」之后的新游戏配置界面（基本设定/引继设定/周回プレイ设定）+ 三个按钮：**ゲーム開始 / 戻る / 初期化**。",
+      "entry": "TITLE 菜单第 0 项 `call-script 526b` 进入；`exit` 返回 TITLE，并把结果写进 `global 0`（1 = 已选择开始游戏 ⇒ TITLE 继续进 INITGAME）。",
+      "layout": [
+        {
+          "anchor": "i070 9 1ec 5c 0 0",
+          "lines": "32-40",
+          "what": "初始化 9 号窗几何（w=0x1ec,h=0x5c）与文字起点，并给整屏淡入幕布 `i213 9 (0x1d4c0+0x9c4) 0x1f4`（把 handle 0x1e484 的图元复制到 0x1e484+0x9c4）"
+        },
+        {
+          "anchor": "copy-local-array (local-int 195) [2cb 3a3 44d]",
+          "lines": "64-68",
+          "what": "★三个按钮的几何：size 盒 `5`=[0,0xc1,0,0x3b]（193×59）、baseX `195`=[0x2cb,0x3a3,0x44d]、baseY `1f9`=[0x240,0x240,0x240]"
+        },
+        {
+          "anchor": "i12e (local-int 3f5) (local-int 1) (local-int 3ed) (local-int 3ee) (local-int 5) (local-int 195) (local-int 1f9) (local-int 0)",
+          "lines": "110-118",
+          "what": "鼠标悬停命中（`0x12E`）⇒ `local 3f5`/`3f7` = 按钮下标（−1 = 无）"
+        },
+        {
+          "anchor": "get-input-type",
+          "lines": "84-91",
+          "what": "主循环：`get-input-type`（`0xCD` → 跳 `mouse-callback 32 label_00000664` 的点击处理）后按 `local 3f4` 分派：**1 = ゲーム開始** ⇒ `label_000050b8`、**2 = 戻る/取消** ⇒ `label_000053c0`"
+        },
+        {
+          "anchor": "mov (local-int 3f4) 1",
+          "lines": "360-385",
+          "what": "★点击派发：左键落点 `local 3f7 == 0` ⇒ `local 3f4 = 1`（ゲーム開始）；`3f7 == 1` 或右键 ⇒ `3f4 = 2`（戻る）"
+        },
+        {
+          "anchor": "call-script 51e4",
+          "lines": "1327-1348",
+          "what": "★ゲーム開始 分支 `label_000050b8`：全屏淡出幕布（`set-vertex-color`/`i24e`）→ `wait` → `poll-input` → `call-script 51e4`(INITGAME) → `call-script 51e5`(SETFATE) → `global 0 = 1` → `exit`"
+        },
+        {
+          "anchor": "detach-texture 3e8 3e8",
+          "lines": "1350-1359",
+          "what": "戻る 分支 `label_000053c0`：清场 + 释放纹理 c0/c1 → `exit`（不动 `global 0` ⇒ 保持 0 = 取消）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local-int 3f7 / 3f5 / 3f6",
+          "what": "按钮悬停下标（新/当前/上次）"
+        },
+        {
+          "key": "local-int 3f4",
+          "what": "★退出原因：1 = ゲーム開始、2 = 戻る（主循环在 `:86-89` 读它）"
+        },
+        {
+          "key": "local-int 3f2",
+          "what": "按钮去抖位（bit0 左键已按、bit1 右键已按）"
+        },
+        {
+          "key": "local-int 5/195/1f9",
+          "what": "`i12e` 的 size 盒 / baseX / baseY 三张表"
+        },
+        {
+          "key": "global 0",
+          "what": "★返回值（`exit` 前写 1 = 开始游戏）；TITLE 在 `:320` 读它"
+        }
+      ],
+      "invariants": [
+        "三个按钮中心 = (0x2cb+96, 0x240+29) / (0x3a3+96, …) / (0x44d+96, …) = (811,605) / (1027,605) / (1197,605)",
+        "选了「ゲーム開始」⇒ 退出前必然先 `call-script INITGAME` 与 `call-script SETFATE`，再写 `global 0 = 1`"
+      ],
+      "gotchas": [
+        "★`local 3f4` 是**同帧内**由鼠标回调写的（`0xCD` 跳到 `label_00000664` 后再 `ret` 回主循环），所以点击处理与主循环判断共享同一个帧局部池 —— 帧局部池若在鼠标回调里被清，`3f4` 就丢了",
+        "左键命中判定用 `local 3f7`（悬停项），而悬停只在**鼠标位置变化**时重算（`label_00000724` 的 `ne 3ef/3ed`）⇒ 光标不动时点击依然有效（用的是上次悬停值）"
+      ],
+      "gaps": [
+        "配置项本身（难度/引继/周回 6 行）的读写路径未逐段读；「初期化」按钮的效果未读"
+      ],
+      "links": {
+        "capabilities": [
+          "scene-pending-flag-0x400-gate"
+        ],
+        "functions": [
+          "0x42F230"
+        ],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [
+        "test/game-start-chain.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/GAMESTART.txt:32-40/64-68/84-91/110-118/360-385/1327-1359；运行期断言见 test/game-start-chain.test.ts 的 titleHover/gameStartHover/gameStartResult/reachedInitGame",
+      "notes": "三个按钮的分派与「ゲーム開始」整条退出路径已读；配置界面每一行控件（`i12e` 之外的设置项）未读。"
+    },
+    {
+      "id": "SETFATE",
+      "file": "src/SETFATE.txt",
+      "bin": "SETFATE.BIN",
+      "role": "「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。",
+      "entry": "GAMESTART 的 `label_000050b8` 在 INITGAME 之后 `call-script 51e5` 进入；跑完 `exit`。",
+      "layout": [
+        {
+          "anchor": "i195 (local-int 7d4) (local-string-ptr 0) \"\"",
+          "lines": "12-17",
+          "what": "★1000 次循环：取角色名表 `global-string 368c[i]` → `i195 out name \"\"` ⇒ out = (名字 != \"\")；空名条目直接跳到下一次迭代"
+        },
+        {
+          "anchor": "lookup-array (local-ptr 0) (global-int def7c) (local-int 0)",
+          "lines": "18-36",
+          "what": "对**非空名**的角色按 `def7c[i] & 6 / & 7` 分三路调 `label_290` / `label_5c4` / `label_920`（三张表 122bce / 123786 / 125aae / 126666 / 12433e / 124ef6 与 13d7 比对后置 `def7c[i]` 的位）"
+        },
+        {
+          "anchor": "bit-set (local-ptr 1) 2",
+          "lines": "197-203",
+          "what": "第三路的收尾：条件满足时置 `def7c[i]` 的 bit2"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local-int 7d4",
+          "what": "循环下标 i；**同时是 `i195` 的输出槽**（每轮被覆写）"
+        },
+        {
+          "key": "global def7c",
+          "what": "运命标志表（按角色下标，位 0/1/2）"
+        },
+        {
+          "key": "global 368c",
+          "what": "角色名表（`global-string`）"
+        },
+        {
+          "key": "global 13d7",
+          "what": "用于比对的角色/职业表"
+        }
+      ],
+      "invariants": [
+        "循环上限 1000（`lt i 0x3e8`）；名字为空的条目必须被跳过（`i195` ⇒ 7d4 = 0 ⇒ `jcc 7d4 ffffffff next`）"
+      ],
+      "gotchas": [
+        "★`i195`（字符串不等）**必须实现**：它回写 `local 7d4`，而下一行 `jcc (local 7d4) ffffffff label_00000278` 就是靠它判「空名跳过」。当 no-op 跳过时 `7d4` 还留着上一行 `lt (local-int 7d4) (local-int 0) 3e8` 的 **1**（永远\"非空\"）⇒ 空名条目也会被处理（对它们跑三张 lookup-array-2d 并置位）",
+        "三条子路径里的 `jcc (local-ptr 1) ffffffff label` 是「指针为空 ⇒ 跳到下一次迭代」，不是「非空才跳」"
+      ],
+      "gaps": [],
+      "links": {
+        "capabilities": [],
+        "functions": [
+          "0x42D010",
+          "0x401540"
+        ],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [
+        "test/game-start-chain.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/SETFATE.txt:12-36/197-203；`0x195` 的语义与危险见 test/game-start-chain.test.ts 的「0x195 string-ne」用例",
+      "notes": "三条子路径（label_290/5c4/920）内部的表语义未逐条读 —— 只确证了「空名必须跳过」这条控制流不变量。"
+    },
+    {
+      "id": "INITGAME",
+      "file": "src/INITGAME.txt",
+      "bin": "INITGAME.BIN",
+      "role": "新游戏的初始状态写入（全局表初值）。",
+      "entry": "GAMESTART 的「ゲーム開始」分支 `call-script 51e4` 进入；TITLE 的 DEBUG 路径也会调它。",
+      "layout": [
+        {
+          "anchor": "call-script 5d  // SHOWPOP",
+          "lines": "6-11",
+          "what": "若 global 0 != 1（新游戏）则置 70801f=0 / 708020=1 并 call-script SHOWPOP（开局提示）"
+        },
+        {
+          "anchor": "call-script 5e  // UNITECH",
+          "lines": "13-18",
+          "what": "置 546ddf / 546de7 / 546dff 初值并 call-script UNITECH，然后 exit"
+        }
+      ],
+      "slots": [
+        {
+          "key": "—",
+          "what": "只写全局量初值，无局部槽"
+        }
+      ],
+      "invariants": [],
+      "gotchas": [],
+      "gaps": [
+        "每一行写的全局量语义未逐条读（只确证它在「ゲーム開始」分支被调用）"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [
+        "test/game-start-chain.test.ts"
+      ],
+      "status": "stub",
+      "evidence": "src/INITGAME.txt:1-18；调用点见 src/GAMESTART.txt:1338 与 test/game-start-chain.test.ts 的 reachedInitGame",
+      "notes": "只登记「谁调它 / 它在链路里的位置」；正文未读（stub）。"
     }
   ]
 }

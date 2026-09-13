@@ -9,6 +9,7 @@
  *   npm run shot                     # 默认路径：TITLE → CONFIG → CONFIG1 → 角色设定 → 回第 1 页
  *   npm run shot -- --tabs 9 8       # 只点指定的左侧分类序号（0..5），按给出的顺序
  *   npm run shot -- --gallery        # 回想 → BGM 鉴赏（第三个按钮）：验证曲目列表能列出来
+ *   npm run shot -- --gamestart      # 右上角 Game Start → 配置界面 ゲーム開始 → SN0000 首文案
  *   npm run shot -- --name mycase    # 产物前缀（默认 shot）
  *
  * 产物：`<仓库根>/.tmp/<name>-<步骤>.png`（每步一张）+ 主进程 stdout。
@@ -54,6 +55,15 @@ const CONFIG_XY = [807, 621];
  */
 const ROOM_XY = [956, 577];
 const MMODE_XY = [1018, 450];
+/**
+ * TITLE 菜单「Game Start」（第 0 项，**右上角**）与 GAMESTART 配置界面「ゲーム開始」（第 0 项）。
+ * 由脚本数据算出（不写死像素"魔法数"）：`TITLE.txt:100` 的 `i12e` 命中盒 `156×156`
+ * + baseX `local 5[0]=0x44e` / baseY `local 69[0]=0x126` ⇒ 中心 (1180,372)；
+ * `GAMESTART.txt:115` 的命中盒 `193×59` + baseX `local 195[0]=0x2cb` / baseY `local 1f9[0]=0x240`
+ * ⇒ 中心 (811,605)。与 `src/tools/gameStartChain.ts` 的两个常量一致。
+ */
+const GAME_START_XY = [1180, 372];
+const START_GAME_XY = [811, 605];
 /** 左侧分类列表第 i 项的中心（贴片画在 (24, 106+50i)，190×26）。 */
 const tabXY = (i) => [120, 106 + 50 * i];
 
@@ -122,6 +132,30 @@ async function shot(win, step) {
     await sleep(4000);
     await shot(win, '5-bgm-list');
     console.log('[shot] 完成（gallery）');
+    app.quit();
+    return;
+  }
+
+  // ---- --gamestart：右上角 Game Start → 配置界面 ゲーム開始 → SN0000 首文案 ----
+  // 判据：日志里出现 `-> SN0000.BIN`（call-script 足迹），截图应看到第一段文案与背景立绘
+  //      （「由两个世界融合而生的『迪尔-利菲娜』的世界上…三神战争」= src/SN0000.txt:1224）。
+  if (argv.includes('--gamestart')) {
+    await click(win, GAME_START_XY);
+    const okGs = await waitLog('-> GAMESTART.BIN', 30000);
+    console.log(`[shot] GAMESTART=${okGs}`);
+    await sleep(3500);
+    await shot(win, '6-gamestart');
+    await click(win, START_GAME_XY);
+    const okSn = await waitLog('-> SN0000.BIN', 60000);
+    console.log(`[shot] SN0000=${okSn}`);
+    // 首文案是"逐字显现"的：等足以走完第一页（3 行 × 每字 MessageSpeed）再多留一截
+    await sleep(9000);
+    await shot(win, '7-sn0000-first-text');
+    // 点一下推进到下一页，确认 ADV 推进门工作（不是卡死在同一屏）
+    await click(win, [640, 360]);
+    await sleep(6000);
+    await shot(win, '8-sn0000-next');
+    console.log('[shot] 完成（gamestart）');
     app.quit();
     return;
   }
