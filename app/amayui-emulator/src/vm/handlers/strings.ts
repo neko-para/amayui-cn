@@ -7,7 +7,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, readStringOperand, writeStringOperand, readIndexOperand, readStringIndexOperand } from '../operand.js';
 import { atoi } from '../bits.js';
-import { sjisSubstr } from '../../text/sjis.js';
+import { sjisSubstr, sjisSubstrChars } from '../../text/sjis.js';
 import type { OpTable } from './shared.js';
 
 const op_strlen: OpHandler = (c) => {
@@ -51,6 +51,25 @@ const op_substr: OpHandler = (c) => {
   // 引擎的两种"切在全角中间"警告（raw 42331/42346）只进调试日志，不改语义 ⇒ 这里只取文本；
   // 修正逻辑本身在 `sjisSubstr` 里（纯函数，可单测，见 test/sjis-substr.test.ts）。
   writeStringOperand(c.e, c.frame, c.instr, 1, sjisSubstr(src, start, len).text);
+};
+
+/**
+ * `0x2C8`（`sub_434260`, raw 42379-42457）：**按「字符」取子串** —— `0x2C7`（按字节）的兄弟。
+ *
+ * 引擎：`op2` 的**字符数**由 `_mbstrlen` 给出，`op3` = 起始字符下标、`op4` = 字符长度，
+ * 逐字节用 `_mbbtype` 认 SJIS 双字节字；结果经 `sub_433310(this,1,…)` **写回 op1 字符串**。
+ * 与 `0x2C7` 的区别只在"单位"：一个按字节、一个按字符（`op4` 为负时两者行为还不一样，
+ * 见 `sjisSubstrChars` 的注释 —— 那是引擎里的真实不对称，本实现逐条复刻）。
+ *
+ * ★**必须实现**：它会回写 op1；当 no-op 跳过时脚本拿到的是旧串（静默逻辑错误）。
+ * 语料现状：`i2c8` 在 941 个 `src/*.txt` 里**没有任何调用点**（0x2C7 才被大量使用）——
+ * 实现它主要是为了补全"按字符"这条语义并消除"命中即硬报错"的隐患。
+ */
+const op_substr_chars: OpHandler = (c) => {
+  const src = readStringOperand(c.e, c.frame, c.instr, 2);
+  const start = readIntOperand(c.e, c.frame, c.instr, 3);
+  const len = readIntOperand(c.e, c.frame, c.instr, 4);
+  writeStringOperand(c.e, c.frame, c.instr, 1, sjisSubstrChars(src, start, len));
 };
 
 // ---- 字符串表族（save/load-int=str→int 表 `_this+5452`；save/load-string=str→str 表 `_this+5472`；见 opcode-table.md）----
@@ -109,6 +128,7 @@ export const STRING_OPS: OpTable = [
   [0x2c5, op_strlen],
   [0x2c6, op_strlen],
   [0x2c7, op_substr], // SBSubstr：字节起点/长度 + SJIS 全角边界修正
+  [0x2c8, op_substr_chars], // 按「字符」取子串（_mbstrlen 计数；写回 op1 字符串）
   [0x2ec, op_atoi],
   [0x192, op_set_string],
   [0x193, op_concat],

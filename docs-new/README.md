@@ -59,6 +59,7 @@ docs-new/
 │   ├── sound-system.md       ← **声音子系统**：DirectSound 设备(15 通道) / SE·Voice·Music 三模块 / `sound:Volume0..4` 路由 / ADV 文本↔语音联动
 │   ├── gallery-and-unlock-flags.md ← **回想/鉴赏与解锁**：FileDB「已使用文件」哈希表 / `0x19D` / SETMEMOIR 的三套收集表 / `$$SAVE.DAT` / BGM 鑑賞列表
 │   ├── scene-start-flow.md   ← **新游戏开局链路**：TITLE 右上角 Game Start → GAMESTART → INITGAME/SETFATE → SN0000 首文案；两个点击点坐标的脚本来源 + 该路径 25 条缺失指令的逐条跳过评估 + 两个渲染侧缺口
+│   ├── stub-reaudit-2026-09.md ← **已 stub 指令的复评台账**：57 条 stub 逐条判据（40 要实现 / 15 排除（视频·Live2D·键盘输入）/ 1 真·空 / 1 待裁决）+ 分批实施进度
 │   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
 │   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
 │                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog

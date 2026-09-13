@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 101,
+    "total": 103,
     "modeled-verified": 22,
     "modeled-unverified": 7,
     "partial": 24,
-    "absent": 23,
+    "absent": 25,
     "n/a-known": 25,
-    "needsAttention": 54
+    "needsAttention": 56
   },
   "entries": [
     {
@@ -2119,7 +2119,7 @@
     {
       "id": "msgwin-config-read-opcodes",
       "subsystem": "消息窗",
-      "name": "配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集**",
+      "name": "配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集**",
       "trigger": "设置界面（CONFIG1）打开时逐项回读当前取值；结果存进 local 供显示与分支使用",
       "engine": {
         "fns": [
@@ -2144,7 +2144,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/config-read.test.ts",
-        "note": "7 条全部实现并注册进 `OPS`（`src/vm/handlers/config-read.ts`）。此前 `0x194` 根本未注册（命中即硬报错），其余 6 条走 no-op。CONFIG1 链路因此有 7 处静默/硬错误，现已消除；`test/config1-chain.test.ts` 锁住「CONFIG1 路径零未实现 opcode」。"
+        "note": "8 条全部实现并注册进 OPS（0x194/0x1CB 在 config-read.ts / msgwin.ts，其余在 config-read.ts 的 CFG_READ 表）。此前 "
       }
     },
     {
@@ -2885,6 +2885,64 @@
         "status": "partial",
         "evidence": "E0",
         "note": "顶点几何与逐顶点色**完全未建模**（`handlers/gfx-item.ts` 的 `op_mesh_create`/`op_set_vertex_color` 注释已声明）。修法：按 create-mesh 的操作数建真实四边形（顶点坐标 + UV），`0x322/0x323` 保留顶点下标并逐顶点插值，`0x1FB` 对 mesh handle 走纹理路径；完成后 `presenter.ts` 的「全屏黑覆盖层」分支应删除。**这是已知的最大观感缺口之一**（凡进含菜单 mesh 的场景都可能整屏黑）"
+      }
+    },
+    {
+      "id": "scene-3d-weather-effects-rain-snow-leaf",
+      "subsystem": "3D",
+      "name": "3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁",
+      "trigger": "Scene 初始化 `sub_4A6EE0` 里建管理器；脚本用 `0x327`(Rain) / `0x326`(Snow) / `0x328`(Leaf) 懒建或重建单个效果；`0x325` 写管理器的两个字段；`0x324` 一次性销毁全部；帧循环每帧推进",
+      "engine": {
+        "fns": [
+          "sub_4A6EE0",
+          "sub_4530B0",
+          "sub_453280",
+          "sub_453330",
+          "sub_453410",
+          "sub_453150",
+          "sub_4535F0",
+          "sub_453540"
+        ],
+        "raw": "126522-126570"
+      },
+      "reads": [
+        "Engine+0x5B320（= Scene+50704）3D 效果管理器指针",
+        "Manager[258] Rain / [259] Snow / [260] Leaf",
+        "Manager[262..309] 三组 16-dword 参数块 / [310]/[311] / [312] 清空标记",
+        "Scene+46668 3D 特效等级门槛 / Scene+46496 共享 ID3DXEffect(资源 202)",
+        "Scene+4*mesh+50708 网格层级槽表"
+      ],
+      "whySilent": "管理器与三个效果对象都不在脚本可见状态里：漏掉它**不报错、不改控制流**，只是**雨/雪/落叶完全不出现或永远不更新**（`0x324`/`0x325`/`0x326` 当 no-op 时），而 `0x327`/`0x328` 因为**没有注册 handler** 会以 `NotImplementedOp` 的形式暴露 —— 两条路都不指向\"真正的缺陷是缺了整个子系统\"",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E1",
+        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/03-engine/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场景模型里加\"每槽粒子效果\"这一层"
+      }
+    },
+    {
+      "id": "passive-camera-and-effect-render-state",
+      "subsystem": "帧循环",
+      "name": "3D 效果的逐帧渲染状态重设（不是 opcode 设置的）",
+      "trigger": "帧循环每帧：`sub_4535F0(管理器, -1)` 下发 SetRenderState(7/14/27/…) 并按管理器 `[315]` 分支，再 `sub_453540(管理器)` 按 `timeGetTime()` 步进粒子",
+      "engine": {
+        "fns": [
+          "sub_4535F0",
+          "sub_453540"
+        ],
+        "raw": "136828-136829"
+      },
+      "reads": [
+        "Manager[261] 设备",
+        "Manager[313]/[314] 时间基准",
+        "Manager[315] 渲染模式"
+      ],
+      "whySilent": "这两个调用在**帧循环**里，不在任何 opcode 上：缺失时粒子不会动、渲染状态不重置 ⇒ 画面错但不报错。★这条正是\"第二层能力面\"的典型 —— 把所有 opcode 都实现对了它仍然会缺",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E1",
+        "note": "emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但\"粒子按墙钟时间步进\"这一行为需要随 3D 效果子系统一起建模"
       }
     }
   ]

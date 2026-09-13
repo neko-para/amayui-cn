@@ -123,6 +123,9 @@
 | 0x258 | 258 | `sub_425D20`(33156) | ignored（有证据） | 按 op2 的 bit0/bit1 置纹理槽标志（`Scene[5*slot+468/+469]`、`+5468/+5469`）；渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
 | 0x32A | 32A | `sub_426F80`(34003) | ignored（有证据） | 释放 3D 模型槽（`sub_4A0750`）；emulator 无 3D 模型 ⇒ `ENGINE_INTERNAL_OPS` |
 | 0x32D | 32D | `sub_427040`(34033) | ignored（有证据） | 3D 颜色（`sub_499DF0`）；纯 3D 渲染侧 ⇒ `ENGINE_INTERNAL_OPS` |
+| 0x1CB | 1CB | `sub_42D3D0`(38082) | **rewritten** | **读配置写操作数**：`op1 ← GetConfig("message:ReadTextSkip")`（键名 raw 4277；`0x1CA` SetConfig 的**读取端**）。★会回写 op1 —— 此前当 no-op ⇒ 脚本读到旧槽值（静默逻辑错误）。语料：扩展包 1/2 场景脚本 30+ 处 + 本体 `SC0000:443`/`DRAWCHARM:8`/`CHARMEDIT:751` 的 `i1cb (global-int 139d)`；2026-09 转真实现（`handlers/msgwin.ts` 的 `op_get_read_text_skip`，走 `readTextSkipOf`）；守卫 `test/op-1cb-2c8-2c9.test.ts` |
+| 0x2C8 | 2C8 | `sub_434260`(42379) | **rewritten** | **按「字符」取子串**（`0x2C7` 的字符版）：`op2` 的字符数由 `_mbstrlen` 给出，`op3`/`op4` 是**字符**下标/长度，`_mbbtype` 认 SJIS 双字节，结果 `sub_433310(this,1,…)` **写回 op1 字符串**。`op4<=0` 时"双字节只看起点、单字节还看钳制前终点"的不对称照原样复刻。语料 0 处；2026-09 转真实现（`handlers/strings.ts` 的 `op_substr_chars` + `text/sjis.ts` 的 `sjisSubstrChars`） |
+| 0x2C9 | 2C9 | `sub_4344A0`(42460) | **rewritten** | **可变数组元素引用** `op1 = &op2[op3]`（写指针操作数 `sub_418CC0`，不是值）。`0x8003/0x8009` = int 数组（`sub_40C880` 扩容 + 新槽写 `ENC(0)`）、`0x8005/0x800B` = 字符串数组（28B 元素，`sub_4149D0`）、其余 tag 抛 `Command_Type_Exception`；`op3<0` 抛 ShowMessage「可変配列のインデックス %d は不正です」。此前当 no-op ⇒ op1 留旧引用，后续读写落到**别的元素**（静默串数据）。语料 0 处；2026-09 转真实现（`handlers/memory.ts` 的 `op_array_element_ref`） |
 | 0x149 | u0041FCE0 | `sub_4229A0`(30687) | ignored | `_this[97058]=op1`，config setter |
 | 0x88 | u0041B290 | `sub_41FAB0`(28686) | ignored | `_this[1415]/[97050]` + flag |
 | 0x21b | u004213E0 | `sub_423C20`(31433) | ignored | `_this[166965]=(op1!=0)` |

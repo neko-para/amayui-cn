@@ -235,6 +235,15 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >
 > 校验：49 条**全部已登记**（无一条落到 `unimplemented`），三张表内**无重复键**；测试见
 > `test/engine-field-store.test.ts`。
+>
+> **「会回写操作数」的 stub 正在逐批转真实现**（2026-09 起；57 条 stub 的逐条复评、分类判据与批次台账见
+> `docs-new/03-engine/stub-reaudit-2026-09.md`）：
+> - **批 A1（3 条，已完成）**：`0x1CB`（`GetConfig("message:ReadTextSkip") → op1`，`0x1CA` 的读取端；
+>   语料 30+ 场景脚本 + 本体 `SC0000:443`/`DRAWCHARM:8` 都用它 —— 此前当 no-op ⇒ 读到旧槽值）、
+>   `0x2C8`（**按字符**取子串 → op1 字符串，`0x2C7` 的字符版）、`0x2C9`（**可变数组元素引用**
+>   → op1 指针，含按需扩容 + 负下标抛错）。落点：`handlers/msgwin.ts` / `handlers/strings.ts`
+>   （+ `text/sjis.ts`）/ `handlers/memory.ts`（+ `operand.ts` 新增 6 个数组操作数标签、
+>   `ref.ts` 新增 `hasRefValue`）；守卫 `test/op-1cb-2c8-2c9.test.ts`（18 例）。
 
 设置界面（CONFIG2/CONFIG1）实测涉及的一批 opcode，按「读 handler 体」判定为**只写引擎内部字段、无操作数回写、无控制流**，
 已进 `ENGINE_INTERNAL_OPS`（默认插桩，**不再需要用户逐条点「作为桩函数跳过」**）：

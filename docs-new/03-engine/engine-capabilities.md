@@ -14,18 +14,18 @@
 | `modeled-verified` | 22 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 23 | 引擎有、emulator 完全没有 |
+| `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **101** | 需要关注（非 n/a 且非已核验）= **54** |
+| **合计** | **103** | 需要关注（非 n/a 且非已核验）= **56** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
-| 3D | 16 | 2 |
+| 3D | 17 | 3 |
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
-| 帧循环 | 13 | 8 |
+| 帧循环 | 14 | 9 |
 | 消息窗 | 22 | 15 |
 | 渲染 | 23 | 11 |
 | 资源 | 13 | 4 |
@@ -113,7 +113,7 @@
 | `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
-| `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
+| `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 | `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
 | `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
 | `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | ❌ 缺失 | E0 |
@@ -137,6 +137,8 @@
 | `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
 | `texture-bind-synchronous-then-query` | 资源 | set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致 | 🟠 部分 | E2 · `test/texture-frame-barrier.test.ts` |
 | `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | 🟠 部分 | E0 |
+| `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | ❌ 缺失 | E1 |
+| `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ❌ 缺失 | E1 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -562,3 +564,21 @@
 - **引擎**：sub_426BD0, sub_4A2050, sub_4AEEA0 @ raw 122287-122294
 - **读的字段**：MeshEntry 顶点缓冲, MeshEntry+28+4*index 逐顶点色, Scene+50708 网格层级槽
 - **emulator 现状**：顶点几何与逐顶点色**完全未建模**（`handlers/gfx-item.ts` 的 `op_mesh_create`/`op_set_vertex_color` 注释已声明）。修法：按 create-mesh 的操作数建真实四边形（顶点坐标 + UV），`0x322/0x323` 保留顶点下标并逐顶点插值，`0x1FB` 对 mesh handle 走纹理路径；完成后 `presenter.ts` 的「全屏黑覆盖层」分支应删除。**这是已知的最大观感缺口之一**（凡进含菜单 mesh 的场景都可能整屏黑）
+
+### `scene-3d-weather-effects-rain-snow-leaf`（absent）
+
+- **能力**：3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁
+- **触发**：Scene 初始化 `sub_4A6EE0` 里建管理器；脚本用 `0x327`(Rain) / `0x326`(Snow) / `0x328`(Leaf) 懒建或重建单个效果；`0x325` 写管理器的两个字段；`0x324` 一次性销毁全部；帧循环每帧推进
+- **缺失时为什么静默**：管理器与三个效果对象都不在脚本可见状态里：漏掉它**不报错、不改控制流**，只是**雨/雪/落叶完全不出现或永远不更新**（`0x324`/`0x325`/`0x326` 当 no-op 时），而 `0x327`/`0x328` 因为**没有注册 handler** 会以 `NotImplementedOp` 的形式暴露 —— 两条路都不指向"真正的缺陷是缺了整个子系统"
+- **引擎**：sub_4A6EE0, sub_4530B0, sub_453280, sub_453330, sub_453410, sub_453150, sub_4535F0, sub_453540 @ raw 126522-126570
+- **读的字段**：Engine+0x5B320（= Scene+50704）3D 效果管理器指针, Manager[258] Rain / [259] Snow / [260] Leaf, Manager[262..309] 三组 16-dword 参数块 / [310]/[311] / [312] 清空标记, Scene+46668 3D 特效等级门槛 / Scene+46496 共享 ID3DXEffect(资源 202), Scene+4*mesh+50708 网格层级槽表
+- **emulator 现状**：emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/03-engine/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场景模型里加"每槽粒子效果"这一层
+
+### `passive-camera-and-effect-render-state`（absent）
+
+- **能力**：3D 效果的逐帧渲染状态重设（不是 opcode 设置的）
+- **触发**：帧循环每帧：`sub_4535F0(管理器, -1)` 下发 SetRenderState(7/14/27/…) 并按管理器 `[315]` 分支，再 `sub_453540(管理器)` 按 `timeGetTime()` 步进粒子
+- **缺失时为什么静默**：这两个调用在**帧循环**里，不在任何 opcode 上：缺失时粒子不会动、渲染状态不重置 ⇒ 画面错但不报错。★这条正是"第二层能力面"的典型 —— 把所有 opcode 都实现对了它仍然会缺
+- **引擎**：sub_4535F0, sub_453540 @ raw 136828-136829
+- **读的字段**：Manager[261] 设备, Manager[313]/[314] 时间基准, Manager[315] 渲染模式
+- **emulator 现状**：emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但"粒子按墙钟时间步进"这一行为需要随 3D 效果子系统一起建模

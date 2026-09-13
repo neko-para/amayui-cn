@@ -594,6 +594,27 @@ const op_set_read_text_skip: OpHandler = (c) => {
   c.e.msgwin.readTextSkip = readIntOperand(c.e, c.frame, c.instr, 1);
 };
 
+/**
+ * `0x1CB`（sub_42D3D0 raw 38082-38089）：**读 `message:ReadTextSkip` ⇒ 写回 op1**（`0x1CA` 的读取端）。
+ *
+ * ```
+ * sub_42D3D0: v2 = GetConfig(_this+174405, "message:ReadTextSkip");
+ *             return sub_42B4B0(_this, 1, v2);      // ★写操作数 1
+ * ```
+ * 引擎里 `GetConfig` 与 `0x1CA` 的 `SetConfig` 操作**同一个配置对象**，
+ * 所以运行期写进去的值立刻能被读回来；emulator 用 `readTextSkipOf(e)` 表达同一件事
+ * （运行期覆盖 `msgwin.readTextSkip` 优先，否则回落启动配置 `message:ReadTextSkip`）。
+ *
+ * ★**这是一条回写操作数的指令**：此前它在 `ENGINE_INTERNAL_OPS` 里当 no-op，
+ * 于是脚本读到的是**上一条指令留在那个槽里的旧值**（静默逻辑错误）。
+ * 语料证据：扩展包 1/2 的场景脚本（`$1$SC0330` / `$1$SG0821` / `$2$SG2331` …）等 30+ 个文件
+ * 在固定位置都有 `i1cb (global-int 139d)`（把该开关读进全局 139d 再分支）。
+ * 与 `0x1CA`（写）成对，`Engine` 帧循环 `sub_411900` 收消息时把它写回 0（emulator：`engine.ts` 同点）。
+ */
+const op_get_read_text_skip: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, readTextSkipOf(c.e));
+};
+
 // ---------------------------------------------------------------------------
 // ADV / 消息状态**查询**指令族（sub_42D2xx / sub_42D3xx / sub_42D4xx 的 getter）
 //
@@ -1047,6 +1068,7 @@ export const MSGWIN_OPS: OpTable = [
   [0x19c, op_adv_enter],
   [0x19b, op_adv_exit],
   [0x1ca, op_set_read_text_skip], // SetConfig message:ReadTextSkip
+  [0x1cb, op_get_read_text_skip], // ★GetConfig message:ReadTextSkip → 写回 op1（0x1CA 的读取端）
   // ---- ADV 状态**查询**（getter，回写 op1；见上方「查询指令族」说明）----
   [0x19a, op_get_skip_mode], // op1 = Engine[97050]（跳读/自动模式镜像）
   [0x1b6, op_get_coexist_state], // op1 = (Engine[97052] != 0)（共存消息状态）

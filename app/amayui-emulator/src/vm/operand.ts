@@ -31,6 +31,18 @@ const TYPE_LOCAL_FLOAT_PTR = 0xd;
 const TYPE_LOCAL_STRING_PTR = 0xe;
 const TYPE_GLOBAL_INT_ARRAY = 0x8003;
 const TYPE_LOCAL_INT_ARRAY = 0x8009;
+/**
+ * 其余「数组」操作数标签（低 3 位与直接型同构：3=int / 4=float / 5=string，9/A/B = 局部）：
+ * `0x8004`/`0x800A` = 全局/局部 **float 数组**、`0x8005`/`0x800B` = 全局/局部 **字符串数组**。
+ * 引擎侧证据：`0x2C9`（sub_4344A0 raw 42494-42522）按 `op2` 的 tag 分派 ——
+ * `0x8003/0x8009` 走 4 字节元素（int 向量）、`0x8005/0x800B` 走 **28 字节元素**（`std::string` 向量，
+ * 与 `STRIDE_STR` 一致），其余 tag ⇒ 抛 `Command_Type_Exception`。
+ * ★这些标签此前**完全没有被建模**：`refFromOperand` 遇到就抛，于是任何"数组型操作数"的取址都用不了。
+ */
+const TYPE_GLOBAL_FLOAT_ARRAY = 0x8004;
+const TYPE_GLOBAL_STRING_ARRAY = 0x8005;
+const TYPE_LOCAL_FLOAT_ARRAY = 0x800a;
+const TYPE_LOCAL_STRING_ARRAY = 0x800b;
 
 function isPtrType(t: number): boolean {
   return (
@@ -108,6 +120,14 @@ export function refFromOperand(e: Engine, frame: Frame, instr: BinInstruction, n
     case TYPE_LOCAL_PTR: return readRefSlot(frame.locals.ptr, a.raw);
     case TYPE_LOCAL_FLOAT_PTR: return readRefSlot(frame.locals.floatPtr, a.raw);
     case TYPE_LOCAL_STRING_PTR: return readRefSlot(frame.locals.strPtr, a.raw);
+    // 数组型操作数（`0x8003` 族）：**基址就在槽号 `a.raw` 处**，元素由 `refAt` 按 stride 平移。
+    // 这与 `readIntOperand(0x8003)`（把它当"该数组首元素所在槽"读一个值）互相一致。
+    case TYPE_GLOBAL_INT_ARRAY: return { scope: 'global', kind: 'int', index: a.raw, stride: STRIDE_INT };
+    case TYPE_GLOBAL_FLOAT_ARRAY: return { scope: 'global', kind: 'float', index: a.raw, stride: STRIDE_INT };
+    case TYPE_GLOBAL_STRING_ARRAY: return { scope: 'global', kind: 'str', index: a.raw, stride: STRIDE_STR };
+    case TYPE_LOCAL_INT_ARRAY: return { scope: 'local', kind: 'int', index: a.raw, stride: STRIDE_INT };
+    case TYPE_LOCAL_FLOAT_ARRAY: return { scope: 'local', kind: 'float', index: a.raw, stride: STRIDE_INT };
+    case TYPE_LOCAL_STRING_ARRAY: return { scope: 'local', kind: 'str', index: a.raw, stride: STRIDE_STR };
     default:
       throw new Error(`refFromOperand: unsupported operand type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }

@@ -314,7 +314,7 @@
 | 0x1C8 | 2 | to-string | sub_433820 | 已核对 | **to-string**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990），纯。**助记符改名 to-string**（原 toString 与 JS/Object 原型 key 冲突，曾反汇编成 `function toString() { [native code] }`） |
 | 0x1C9 | 3 |  | sub_420160 | 仅映射 |  |
 | 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 28961） |
-| 0x1CB | 1 |  | sub_42D3D0 | 仅映射 |  |
+| 0x1CB | 1 |  | sub_42D3D0 | 已核对 | **读配置写操作数**：`op1 = GetConfig("message:ReadTextSkip")`（键名 raw 4277；`0x1CA` 的**读取端**）。★会回写 op1 —— 当 no-op 时脚本读到的是旧槽值（静默逻辑错误）；语料 30+ 个场景脚本 + 本体 `SC0000:443`/`DRAWCHARM:8`/`CHARMEDIT:751` 都有 `i1cb (global-int 139d)`。emulator：`OPS` 的 `op_get_read_text_skip`（走 `readTextSkipOf`，运行期覆盖优先）。handler=sub_42D3D0（raw .c 38082） |
 | 0x1CC | 1 |  | sub_42D410 | 已核对 | **本页文本显示中查询**：`op1 = Engine[122455]`。★会回写 op1（与 0x1C7 一起构成等待判据）。emulator：`OPS` 的 `op_get_msg_showing`。handler=sub_42D410（raw .c 38092） |
 | 0x1CD | 2 |  | sub_42D1A0 | 仅映射 |  |
 | 0x1CE | 1 |  | sub_420280 | 已核对 | **消息/UI 点击-跳读状态机**：读 op1；非0→`_this[174801]|=0x40000000`、`_this[107704]=0`、`sub_453A90(_this+430600)`(重置轮播计时器)；0→清 0x40000000。handler=sub_420280（raw .c 28974） |
@@ -451,8 +451,8 @@
 | 0x2C5 | 2 | strlen | sub_430900 | 已核对 | **strlen**：`op1 = strlen(op2)`（`sub_41B640(2)` 读 op2 字符串 → `strlen` → `writeIntOperand_42B4B0(1)`）。handler=sub_430900（raw .c 40064），纯 |
 | 0x2C6 | 2 |  | sub_430940 | 已核对 | **mbstrlen**：`setlocale(0, Locale)` 后 `op1 = _mbstrlen(串op2)`（多字节长度；与 `0x2C5` strlen 成对）。handler=sub_430940（raw .c 40074） |
 | 0x2C7 | 4 |  | sub_433FD0 | 已核对 | **SBSubstr（子串，SJIS 字节语义）**：`op1 = substr(op2, op3, op4)` —— **op3 是起始字节、op4 是字节长度**（与 `strlen` 比较，raw 42298-42299），并按全角边界修正：起点落在 2 字节字的**第二**字节 ⇒ `start++`/`len--`（日志 raw 4458）、最后一个被包含的字节是 2 字节字的**首**字节 ⇒ `len--`（raw 4457）；越界或 `op4<=0` ⇒ **写空串**；再 `sub_429F60` 取子串 → `sub_433310` 写 op1。handler=sub_433FD0（raw 42259-42376）。★`TITLE.txt:584/587/590` 用它切 `set:GameVersion` 的三段 |
-| 0x2C8 | 4 |  | sub_434260 | 仅映射 |  |
-| 0x2C9 | 3 |  | sub_4344A0 | 仅映射 |  |
+| 0x2C8 | 4 |  | sub_434260 | 已核对 | **按「字符」取子串**（`0x2C7` 的字符版）：`op1 = substr_chars(op2, op3, op4)` —— `op2` 的字符数由 `_mbstrlen` 给出，`op3`/`op4` 是**字符**下标与**字符**长度，逐字节用 `_mbbtype` 认 SJIS 双字节；结果经 `sub_433310(this,1,…)` **写回 op1 字符串**。★会回写操作数；★`op4 <= 0` 时"双字节只看起点、单字节还看钳制前终点"的**不对称**是引擎真实行为（已逐条复刻）。语料 0 处调用。emulator：`STRING_OPS` 的 `op_substr_chars` + `text/sjis.ts` 的 `sjisSubstrChars`。handler=sub_434260（raw .c 42379） |
+| 0x2C9 | 3 |  | sub_4344A0 | 已核对 | **可变数组元素引用**：`op1 = &op2[op3]`（**写指针操作数** `sub_418CC0`，不是元素值）。按 `op2` 的数组 tag 分派：`0x8003`/`0x8009` = int 数组（4 字节元素，按需 `sub_40C880` 扩容并把新槽写 `ENC(0)`）、`0x8005`/`0x800B` = 字符串数组（28 字节元素 = `std::string`，`sub_4149D0` 扩容）、其余 tag ⇒ 抛 `Command_Type_Exception`；`op3 < 0` ⇒ 抛 ShowMessage「可変配列のインデックス %d は不正です」（raw 42488）。★会回写 op1 引用 ⇒ 当 no-op 时后续读写会落到**别的元素**上（静默串数据）。语料 0 处调用。emulator：`MEMORY_OPS` 的 `op_array_element_ref`（`operand.ts` 的 `refFromOperand` 新增 6 个数组标签）。handler=sub_4344A0（raw .c 42460） |
 | 0x2CA | - |   | sub_430990 | 仅映射 |  |
 | 0x2CB | - |   | sub_426360 | 仅映射 |  |
 | 0x2CC | 1 |  | sub_4309E0 | 已核对 | **读配置**：`op1 = GetConfig("message:AdvanceMesOnWheel")`；handler=sub_4309E0（raw .c 40101-40107） |
@@ -522,11 +522,11 @@
 | 0x321 | 3 |  | sub_426BD0 | 已核对 | **3D 网格元素属性写 setter**：`sub_4AE280` 把 `elem[op2+7] = op3`（op2 是字段选择子）→ 改 **3D 网格元素**（`Scene+1064` 表）的属性块（`+28 + 4·op2`）。★**本 op 原样写入、无 clamp 也无回退**（raw 33839-33850）；旧文档把它写成「op3<0 时回退取 `sub_4AE3C0(Scene,op1)>>24`」是**错的** —— 该回退逻辑属 **0x322（sub_426C20）/0x323（sub_426CF0）**（raw 33865-33884、33901-33917）。emulator：真·忽略（3D 网格属性无对应模型）。 |
 | 0x322 | 4 |  | sub_426C20 | 已核对 | **set-vertex-color**：读 op1=网格id、op2/3/4；op3/op4 作颜色分量（clamp/回退），组装 32 位色 → `sub_4AE2C0(_this+80708, op1, op2, color)` 写网格顶点色。handler=sub_426C20（raw .c 33324） |
 | 0x323 | 5 |  | sub_426CF0 | 已核对 | **set-vertex-color-alpha**：读 op1=网格id、op2/3/4/5；组装色（含 alpha）→ `sub_4AE330(_this+80708, op1, op2, op3, color)` 写网格顶点色+alpha。handler=sub_426CF0（raw .c 33358） |
-| 0x324 | 0 |  | sub_41A470 | 已核对 | **消息/文本子系统方法**：取 `_this[93384]` 对象指针调外部弱符号 `sub_453530`（本文件无实现；fire-and-forget）。handler=sub_41A470（raw .c 25148） |
-| 0x325 | 2 |  | sub_426DC0 | 仅映射 |  |
-| 0x326 | 4 |  | sub_426E10 | 已核对 | **3D 特效雪花**：`sub_418340` 惰性建共享 `ID3DXEffect`（资源 ID 202，`Scene+46496`）并经 `sub_453330` 下发 (网格 op1, 参数 op3 浮点, op4, 纹理 op2)；**不做任何 RGBA 运算、不写元素色槽**。handler=sub_426E10（raw 33937） |
-| 0x327 | 1 |  | sub_426E70 | 仅映射 |  |
-| 0x328 | 3 |  | sub_432300 | 仅映射 |  |
+| 0x324 | 0 |  | sub_41A470 | 已核对 | **销毁 3D 天气/粒子效果**：`sub_41A470` 取 `Engine[93384]`（= 字节 `0x5B320` = `Scene+50704`）= **3D 效果管理器**，尾调到 `sub_453530` → **thunk** `jmp sub_453150`（IDA 清单 135090-135093 标注 `Attributes: thunk`）⇒ `sub_453150`(raw 65366) **释放管理器的三个效果对象** `[258]`=Rain / `[259]`=Snow / `[260]`=Leaf（各自 `(**v)(v,1)` 析构 + 置 0）并把 `[312]`（字节 `+0x4E0`）清零。★**订正**：旧注"消息/文本子系统方法；调外部弱符号 `sub_453530`（本文件无实现）"是**误判** —— 它是可跟到底的 thunk，且属 **3D 效果族**（与 `0x325`/`0x326`/`0x327`/`0x328` 同一对象），**不是影片族**。无操作数回写。emulator：`ENGINE_INTERNAL_OPS`（待实现，见 `stub-reaudit-2026-09.md`）。handler=sub_41A470（raw .c 25403） |
+| 0x325 | 2 |  | sub_426DC0 | 已核对 | **3D 效果管理器字段写入**：`Engine[93384]` 的 `[+0x4D8] = op1`、`[+0x4DC] = op2`（`sub_426DC0` raw 33925，汇编 `mov [esi+4D8h], eax` / `mov [esi+4DCh], edi`，清单 61815-618FD）。不写操作数；emulator：`ENGINE_INTERNAL_OPS`（待实现）。handler=sub_426DC0 |
+| 0x326 | 4 |  | sub_426E10 | 已核对 | **Set3DEffect_snow_**：`sub_418340(Scene, op1, f2, op3, op4)` —— 错误串「関数：Set3DEffectSnow エラー：テクスチャが作成されていません．TEXTURE=%d」（raw 23942）。`Scene+46668 >= 1` 门槛内：对纹理槽 `op4` 惰性建**共享** `ID3DXEffect`（`D3DXCreateEffectFromResourceA` 资源 202，存 `Scene+46496`），再 `sub_453330(管理器, op1, f2, op3, 纹理对象, effect)` **重建 Snow 对象**（`operator new(0xE4)` + `sub_4B58C0`，`_this[0] = &Snow___vftable_`）。不写操作数。emulator：`ENGINE_INTERNAL_OPS`（待实现）。handler=sub_426E10（raw .c 33941） |
+| 0x327 | 1 |  | sub_426E70 | 已核对 | **Set3DEffect_rain_**：`sub_426E70` → `sub_453280(Engine[93384], op1)` = 先释放管理器 `[258]` 旧对象，再 `operator new(0x29C)` + `sub_48E370`（`_this[0] = &Rain___vftable_`，参数块取管理器 `[294..309]`）**重建 Rain**。★**当前根本没注册 handler** ⇒ 命中即 `NotImplementedOp`（故意不上桩，见 `stub-reaudit-2026-09.md`）。handler=sub_426E70（raw .c 33956） |
+| 0x328 | 3 |  | sub_432300 | 已核对 | **Set3DEffect_leaf_**：`sub_432300` → 先把 op2（网格 id **数组地址**，`sub_42AEA0`）里的每个元素 **DEC** 到临时数组，再 `sub_4183F0(Scene, op1, 临时数组, op3=数量)`（错误串「関数：Set3DEffectLeaf エラー：メッシュが作成されていません．MESH=%d」raw 23969）⇒ `sub_453410(管理器, op1)` **重建 Leaf**（`operator new(0xA0)` + `sub_478CC0`，`_this[0] = &Leaf___vftable_`）并对数组里每个网格槽 `sub_4534F0(管理器, 槽)` 挂上。★**当前根本没注册 handler** ⇒ 命中即 `NotImplementedOp`。handler=sub_432300（raw .c 41081） |
 | 0x329 | 2 |  | sub_426EB0 | 仅映射 |  |
 | 0x32A | 1 |  | sub_426F80 | 已核对 | **释放 3D 模型槽**：`sub_4A0750(Scene, op1)`（`Scene[op1+12677]` 析构 + delete + 置 0）。emulator 无 3D 模型 ⇒ engine-internal。handler=sub_426F80（raw .c 34003） |
 | 0x32B | 0 |  | sub_41A4A0 | 已核对 | **清 D3DX 网格层级槽表**（`Scene+50708` 区 1000 槽）：经 `sub_4A0750 → sub_479A50` + delete 逐项释放（与 0x23D、0x259 均不同族）。handler=sub_41A4A0（raw 25411）。TITLE.txt:800 与 0x1F6/0x23D 组成收尾序列 |

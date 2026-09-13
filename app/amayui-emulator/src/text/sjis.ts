@@ -86,3 +86,43 @@ export function sjisSubstr(src: string, start: number, len: number): SjisSubstrR
   }
   return { text: out.join(''), ...(warning ? { warning } : {}) };
 }
+
+/**
+ * **`0x2C8`（`sub_434260`, raw 42379-42457）：按「字符」取子串** —— `0x2C7` 的字符版兄弟。
+ *
+ * 引擎逐句（`Destination` = op2 的 256 字节拷贝）：
+ * ```
+ * v11 = _mbstrlen(op2);              // ★字符数（多字节感知），不是字节数
+ * v9  = readInt(op3);                // 起始「字符」下标
+ * v5  = v9 + readInt(op4);           // 结束位置 = 起始 + 长度（同为字符数）
+ * v8 = v5; v10 = v5;                 // ★v8 保留**钳制前**的结束位置，v10 用钳制后的
+ * if (v5 <= 0 || v5 > v11) { v5 = v11; v10 = v11; }
+ * 逐字节走（_mbbtype 判 SJIS 双字节）：
+ *   双字节字：v12 < v9 ⇒ 跳过 2 字节；否则拷 2 字节        ← ★不看 v8（只受循环上界 v10 限）
+ *   单字节字：v12 < v9 || v12 >= v8 ⇒ 跳过 1 字节；否则拷 1 字节
+ * ⇒ 结果写回 op1 字符串（sub_433310(this,1,…)，与 set-string 同一个写入原语）
+ * ```
+ * ★两条分支的边界条件**不一样**（双字节只看起点、单字节还看 `v8`）——这是引擎里的**真实不对称**，
+ *  只有在 `op3+op4 <= 0`（长度为 0/负）时才有可观测差异：此时单字节**全部丢弃**、
+ *  而双字节字（`v12 >= v9` 的部分）**仍然被保留**。本实现按读到的代码逐条复刻，不做"顺手修正"。
+ *
+ * @param src   源串（op2）
+ * @param start 起始**字符**下标（op3）
+ * @param len   长度（**字符**数，op4）
+ */
+export function sjisSubstrChars(src: string, start: number, len: number): string {
+  const chars = [...src];
+  const total = chars.length; // = 引擎 _mbstrlen（SJIS 字符数；JS 码点与之同构）
+  const endRaw = start + len; // 引擎的 v8：钳制**前**的结束位置
+  const end = endRaw <= 0 || endRaw > total ? total : endRaw; // 引擎的 v10：钳制**后**
+  const out: string[] = [];
+  for (let i = 0; i < end; i++) {
+    const ch = chars[i]!;
+    if (sjisBytes(ch) === 2) {
+      if (i >= start) out.push(ch); // 双字节：只看起点（引擎不查 v8）
+    } else if (i >= start && i < endRaw) {
+      out.push(ch); // 单字节：起点与 **钳制前** 的结束位置都要满足
+    }
+  }
+  return out.join('');
+}

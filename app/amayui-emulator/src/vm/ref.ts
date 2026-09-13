@@ -82,8 +82,14 @@ export function readRef(e: Engine, frame: Frame, r: Ref): number {
   }
 }
 
-/** 写穿：int 族过 ENC；指针族递归一次；str 存字符串。 */
-export function writeRef(e: Engine, frame: Frame, r: Ref, v: number): void {
+/**
+ * 写穿：int 族过 ENC；指针族递归一次；str 存字符串。
+ *
+ * `v` 允许 `string`（2026-09 起）：字符串池的元素是 `std::string`，而 `0x2C9` 的
+ * 「按需扩容」要对**字符串数组**的新槽写空串（引擎那边是 `std::string()` 默认构造）。
+ * 对 int/float 族传字符串会按 `Number(v)` 转换（不抛，保持写穿语义）。
+ */
+export function writeRef(e: Engine, frame: Frame, r: Ref, v: number | string): void {
   if (r.kind === 'ptr' || r.kind === 'fptr') {
     const inner = poolFor(e, frame, r).get(r.index);
     if (inner === undefined || inner === 0) throw nullRefError(r);
@@ -93,9 +99,9 @@ export function writeRef(e: Engine, frame: Frame, r: Ref, v: number): void {
   }
   const pool = poolFor(e, frame, r);
   switch (r.kind) {
-    case 'int': pool.set(r.index, enc(e.key, v)); return;
-    case 'float': pool.set(r.index, v); return;
-    case 'str': pool.set(r.index, String(v)); return;
+    case 'int': pool.set(r.index, enc(e.key, typeof v === 'string' ? Number(v) | 0 : v)); return;
+    case 'float': pool.set(r.index, typeof v === 'string' ? Number(v) : v); return;
+    case 'str': pool.set(r.index, typeof v === 'string' ? v : String(v)); return;
     default: throw new Error(`writeRef：坏 kind ${r.kind}`);
   }
 }
@@ -103,4 +109,21 @@ export function writeRef(e: Engine, frame: Frame, r: Ref, v: number): void {
 /** 元素偏移（elemOffset 个元素；跨元素用 stride 的语义由调用方保证）。 */
 export function refAt(r: Ref, elemOffset: number): Ref {
   return { scope: r.scope, kind: r.kind, index: r.index + elemOffset, stride: r.stride };
+}
+
+/**
+ * 该 Ref 指向的槽**是否已有值**（未被写过 = 假）。
+ *
+ * 用途：引擎的池/向量在建立时是"全 `ENC(0)`"（整块内存清零 ⇒ 解码后就是 0），
+ * 所以"槽里没有条目"与"槽里存着编码后的 0"在**读**的时候是同一件事。
+ * emulator 的池是稀疏 `Map`：`readIntOperand` 对缺失槽写的是 `dec(key, 0)`（**不是 0**），
+ * 于是"从没写过的槽"会读成垃圾。凡是需要"按引擎语义补 0"的地方（如按需扩容的 `0x2C9`）
+ * 都应该先用它判断，只补**缺失**的槽 —— 已写过的槽绝不能被覆盖。
+ *
+ * 指针族（`ptr`/`fptr`）不适用（它们是"指向别的池"的一层间接）：一律返回 true，
+ * 让调用方的 `writeRef` 走它自己的写穿/报错路径。
+ */
+export function hasRefValue(e: Engine, frame: Frame, r: Ref): boolean {
+  if (r.kind === 'ptr' || r.kind === 'fptr') return true;
+  return poolFor(e, frame, r).has(r.index);
 }

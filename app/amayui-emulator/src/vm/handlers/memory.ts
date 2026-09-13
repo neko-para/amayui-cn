@@ -6,7 +6,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, refFromOperand, setRefOperand } from '../operand.js';
-import { refAt, readRef, writeRef } from '../ref.js';
+import { refAt, readRef, writeRef, hasRefValue, STRIDE_INT, STRIDE_STR } from '../ref.js';
 import type { OpTable } from './shared.js';
 
 // ---- 取址/数组（ADR-011：指针=带标记引用，读解引用/写写穿）----
@@ -138,12 +138,67 @@ export const op_sort_index_arrays: OpHandler = (c) => {
   }
 };
 
+/**
+ * **`0x2C9`（`sub_4344A0`, raw 42460-42539）：取「可变数组」的元素引用 ⇒ 写回 op1 指针。**
+ *
+ * 引擎逐句：
+ * ```
+ * v2 = readInt(op3);                                    // 索引
+ * if (v2 < 0) 抛 ShowMessage「可変配列のインデックス %d は不正です」(raw 42488)
+ * switch (op2 的 tag) {
+ *   case 0x8003: case 0x8009:                            // int 数组（4 字节元素）
+ *      v6 = operandAddress(op2);  n = (v6.end - v6.begin)/4;
+ *      if (n <= idx) sub_40C880(v6, idx+1);              // ★按需扩容，新增元素填 ENC(0)
+ *      … 再把 [n, idx] 之间的新槽逐个写 ENC(0)（raw 42524-42533）
+ *   case 0x8005: case 0x800B:                            // 字符串数组（28 字节元素）
+ *      if (n <= idx) sub_4149D0(v9, idx+1);              // std::string 向量扩容
+ *      return sub_418CC0(this, 1, base, idx, -1, -1);    // ⇒ op1 = &base[idx]
+ *   default: 抛 Command_Type_Exception
+ * }
+ * return sub_418CC0(this, 1, base, idx, -1, -1);
+ * ```
+ * ★`sub_418CC0` 是**写指针操作数**原语（`writePointerElement_418CC0`，见技能文档 §6 的操作数原语表）
+ * —— 即 **`op1` 是"指向该数组第 idx 个元素"的引用**，不是元素的值。所以这条指令
+ * **必须实现**：当 no-op 时 op1 保留旧引用，后续对它的读写会落到**别的元素**上（静默串数据）。
+ *
+ * emulator 映射：数组 = "从基址 Ref 起、按 stride 连续的池槽"（`refAt`），
+ *  `setRefOperand(op1, refAt(base, idx))`。
+ *  ★扩容：引擎的向量在分配时整块是 `ENC(0)`，所以"新槽"读出来就是 0；而 emulator 的池是稀疏 `Map`，
+ *  缺失槽会读成 `dec(key,0)`（垃圾）。因此这里**只对缺失槽**补 `0`/`''`（`hasRefValue`），
+ *  既有槽一律不动 —— 与引擎"扩容只影响新元素的初值"完全等价。
+ *  索引越界（负）与引擎一致地**抛错**（引擎抛的是 ShowMessage 异常，emulator 用 Error 表达）。
+ */
+const op_array_element_ref: OpHandler = (c) => {
+  const { e, frame } = c;
+  const idx = readIntOperand(e, frame, c.instr, 3);
+  if (idx < 0) {
+    // 引擎 raw 42488：可変配列のインデックス %d は不正です
+    throw new Error(`可変配列のインデックス ${idx} は不正です（0x2C9 数组下标为负）`);
+  }
+  const base = refFromOperand(e, frame, c.instr, 2); // 数组基址（含 0x8003 族数组操作数）
+  // 引擎的 switch 只认 `0x8003/0x8009`（4 字节元素）与 `0x8005/0x800B`（28 字节元素 = std::string），
+  // 其余 tag（如 float 数组 0x8004/0x800A）走 `default:` ⇒ 抛 `Command_Type_Exception`。
+  if (base.stride !== STRIDE_INT && base.stride !== STRIDE_STR) {
+    throw new Error(`0x2C9: 不支持的数组元素步长 ${base.stride}（引擎抛 Command_Type_Exception）`);
+  }
+  if (base.kind !== 'int' && base.kind !== 'str') {
+    throw new Error(`0x2C9: 不支持的数组元素类型 ${base.kind}（引擎抛 Command_Type_Exception）`);
+  }
+  const fill = base.kind === 'str' ? '' : 0;
+  for (let i = 0; i <= idx; i++) {
+    const r = refAt(base, i);
+    if (!hasRefValue(e, frame, r)) writeRef(e, frame, r, fill); // 只补缺失槽（等价于引擎的 ENC(0) 初始化）
+  }
+  setRefOperand(e, frame, c.instr, 1, refAt(base, idx));
+};
+
 /** 取址 / 数组 / 批量搬运 / 索引排序（真实现；ADR-011）。 */
 export const MEMORY_OPS: OpTable = [
   [0x61, op_lookup_array],
   [0x63, op_lea],
   [0x64, op_copy_local_array],
   [0x6c, op_copy_to_global],
+  [0x2c9, op_array_element_ref], // 可变数组元素引用（写 op1 指针；按需扩容）
   [0x2d8, op_set_array_to],
   [0x12c, op_lookup_array_2d],
   [0x1b0, op_memcpy],

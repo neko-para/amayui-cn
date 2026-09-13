@@ -83,8 +83,11 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   [0x34c, op_engine_internal], // 旋转目标矩阵 + 轴角 + 窗2 → sub_4280D0（置 pending）
   [0x34d, op_engine_internal], // 平移目标矩阵 + 窗3 → sub_428170（置 pending）
   [0x321, op_engine_internal], // MeshEntry 属性块 `+28+4·op2` → sub_426BD0（原样写入，无 clamp/回退）
-  [0x326, op_engine_internal], // 3D 雪花 ID3DXEffect（自带 `Scene+46668>=1` 门槛）→ sub_426E10
-  [0x325, op_engine_internal], // 消息对象字段 +1240/+1244 → sub_426DC0
+  // ★0x326/0x325 属 **3D 天气/粒子效果管理器**（见本文件 0x324 处的说明）：
+  //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
+  //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
+  [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + 重建 Snow（自带 `Scene+46668>=1` 门槛）→ sub_426E10/sub_418340
+  [0x325, op_engine_internal], // 3D 效果管理器字段 [+0x4D8]/[+0x4DC] = op1/op2 → sub_426DC0
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
   // 这里的每条都**确认过 handler 体不写 VM 可见态**（不回写操作数、不改 ip/cur）。
   // 「字段/状态可建模」的都在 `msgwin.ts` 的 `MSGWIN_OPS`（OPS 表，engine-first）：
@@ -122,8 +125,10 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   它们写的是窗对象的 `win+60..99` 字格块与 `effect_flags & 0x40000000`，
   //   是逐字显现的**可观测状态**（引擎主循环 raw 20887-20895 每帧消费），不能当 no-op。
   [0x1bb, op_engine_internal], // → sub_4034D0/sub_408050（文本格式化助手）
-  [0x1c9, op_engine_internal], // 消息窗
-  [0x1cb, op_engine_internal], // 消息窗
+  // ★`0x1CB`（GetConfig("message:ReadTextSkip") → 写 op1）**已转真实现**（2026-09）：
+  //   见 `handlers/msgwin.ts` 的 `op_get_read_text_skip` —— 它与 `0x1CA`（SetConfig 同一个键）成对，
+  //   当 no-op 时脚本读到的是旧槽值（静默逻辑错误）。语料里 30+ 个场景脚本有 `i1cb (global-int 139d)`。
+  [0x1c9, op_engine_internal], // 消息窗（触摸/输入注册族，见 0x308）
   [0x245, op_engine_internal], // 消息/UI
   [0x246, op_engine_internal], // 消息/UI
   [0x249, op_engine_internal], // 消息/UI
@@ -135,7 +140,23 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   `handlers/audio.ts` 的 `AUDIO_OPS` 是真实现（`NATIVE_OPS` → `NativeBridge.audio`）。
   //   整体机制见 docs-new/03-engine/sound-system.md；此前的 no-op 说明留在第二层台账
   //   `audio-module-topology-and-volume-routing` / `voice-request-deferral-and-adv-gate`。
-  [0x324, op_engine_internal], // sub_453530(_this[93384])：计时/文本刷新（无操作数）
+  // ============ 3D 天气/粒子效果族（2026-09 复核：**不是**影片，也不是"消息/文本刷新"）============
+  // 对象：`Engine[93384]`（= 字节 `0x5B320`；因 `Scene = Engine + 322832` 字节，也就是 `Scene+50704`）
+  //   —— **3D 天气/粒子效果管理器**（`sub_4530B0` 构造，`operator new(0x4F4)`，在 Scene 初始化
+  //   `sub_4A6EE0` 里创建：raw 126541-126545）。三个效果子对象槽：
+  //     `[258]` = **Rain**（`sub_453280` → `sub_48E370`，`_this[0] = &Rain___vftable_`）
+  //     `[259]` = **Snow**（`sub_453330` → `sub_4B58C0`，`&Snow___vftable_`）
+  //     `[260]` = **Leaf**（`sub_453410` → `sub_478CC0`，`&Leaf___vftable_`）
+  //   另有 `[261]`（传给各 ctor 的共享 D3D 设备）、三组 16-dword 参数块 `[262]/[278]/[294]`、
+  //   `[310]/[311]`（0x325 写）、`[312]`（清空标记）。帧循环每帧调 `sub_4535F0(管理器,-1)` +
+  //   `sub_453540(管理器)` 推进（raw 136828-136829）。
+  // ★`sub_453530` 在 IDA 清单里是 **thunk**（`; Attributes: thunk` → `jmp sub_453150`，见
+  //   `engine/天结_unpacked.exe_utf8.lst` 135090-135093），**不是**外部符号 —— 曾经的"外部弱符号、
+  //   无法逐行确证、按影片族排除"是**误判**（2026-09 复核纠正）。
+  [0x324, op_engine_internal], // 销毁 3D 效果管理器里的全部效果（Rain/Snow/Leaf）+ 清 [+0x4E0] → sub_41A470 →(thunk sub_453530)→ sub_453150
+  // ★同族的 `0x327`（Set3DEffect**Rain**：`sub_426E70` → `sub_453280`）与 `0x328`（Set3DEffect**Leaf**：
+  //   `sub_432300` → `sub_4183F0`，错误串 raw 23969）**目前根本没注册** ⇒ 命中即 `NotImplementedOp`。
+  //   **故意不上桩**：它们是"该实现"的缺口，登记成 no-op 反而会把缺口藏起来（见 stub-reaudit §1.1 A4）。
   // ============ 「启动 → Game Start → SN0000 首文案」路径上确认可跳过的 16 条（2026-09）============
   // 判据（逐条读 handler 体，raw 行号见右注）：**既不回写任何脚本操作数、也不改 ip/cur**，
   // 只写引擎里 emulator 无消费者的字段 / 只调渲染或 3D 子系统。因此对 VM 不可观测。
@@ -165,8 +186,10 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 0x2C7（SBSubstr）与 0x2EB（GetConfig("set:GameVersion") → 字符串）**已转真实现**：
   //   见 handlers/strings.ts（0x2C7）与 handlers/config-read.ts（0x2EB）——它们会回写操作数，
   //   当 no-op 会让 TITLE 的版本号永远是占位值、以及所有切片调用读到旧串。
-  [0x2c8, op_engine_internal], // 字符串
-  [0x2c9, op_engine_internal], // 字符串
+  // ★`0x2C8`（**按字符**取子串 → 写 op1 字符串）与 `0x2C9`（可变数组元素引用 → 写 op1 指针）
+  //   也**已转真实现**（2026-09）：见 `handlers/strings.ts` 的 `op_substr_chars`（+ `text/sjis.ts`
+  //   的 `sjisSubstrChars`）与 `handlers/memory.ts` 的 `op_array_element_ref`（ADR-011 指针族）。
+  //   两条都是"回写操作数"的指令，当 no-op 会让 op1 留旧值 ⇒ 静默逻辑错误。
   // 0x2DD（字体表第 idx 项的名字）**已转真实现**：见 handlers/msgwin.ts 的 op_font_list_name
   //   —— 它回写 op1 字符串，是字体选择器逐行画候选名的数据源；当 no-op ⇒ 列表整片空白。
   // ============ 数据字段 / 版本 / 脚本控制 ============
