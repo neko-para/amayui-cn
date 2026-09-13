@@ -288,9 +288,12 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
  * `GAMESTART` 发出**（而不是被 SN0000 的通用 ADV 框架抢先）。
  *
  * 依据：`0xB4 play-sound-effect` 的 op1 是**统一文件 id**（`SYS4INI` 下标）；
- * `GAMESTART.txt:1307` 附近的那条 = **0x51e3**（= SE004.WAV），而 SN0000 的通用 ADV 框架用的是
- * `SE002`（id **0x32**，`SN0000.txt:526/571`）。用户报的症状「点击进游戏时响的是错误音效」正是
- * 「鼠标沿被 SN0000 的 ADV 泵抢先消费」⇒ 这条断言把"谁先发 SE"钉死。
+ * `GAMESTART.txt:1307` 附近的那条 = **0x51e3**（id 20963 = **SE009.WAV**，2026-09 订正：旧注释误写 SE004，
+ * 实测 `0x51e3`→`SE009.WAV`，而 SE004 是 `0x2e` = id 46），而 SN0000 的通用 ADV 框架用的是
+ * `SE002`（id **0x32**，`SN0000.txt:526/571`）。用户报的症状「点击进游戏时响的是错误音效」正**不是**
+ * 「鼠标沿被 SN0000 的 ADV 泵抢先消费」（2026-09 已推翻，见 `.tmp/se-51e3-analysis.md`：意图一直是对的，
+ * 错的是 emulator 起播时复用了通道 1 上的旧 clip）—— 这条断言锁的是**意图**这一半。
+ * 起播侧的锁在 `test/audio-engine.test.ts` 的「同一通道换装不同 id」。
  */
 test('E3 判据⑥：点「ゲーム開始」后下一条 SE 由 GAMESTART 发（id 0x51e3），且早于任何 SN0000 的 SE', async () => {
   const r = await runGameStartChain({});

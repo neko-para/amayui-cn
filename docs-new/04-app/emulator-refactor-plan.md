@@ -240,6 +240,38 @@
   的"两段式"与"悬停不得推进页面"两条。
   ⚠️登记：SN0000 的悬停 label 会 call label_00000320 **重新登记热点** ⇒ 表在悬停中增长（14→33→40）。
   引擎也是同一张 100 上限的表，但"该由谁复位"尚未从源码定清；未到上限前无可见差异，登记为后继核查项。
+- 2026-09（第 11 轮，`npm run verify` 全绿 **404/404**：原 402 + 新增 2 条 SE 换装用例）：
+  ㉑ ★**SE「先装载后起播」错序已修**（§10 #12；用户报「点『ゲーム開始』音效不对」的真因）：
+  `0xB4`→`seLoad` 是**异步**装载（IPC 取字节 + `decodeAudioData`），紧随的 `0xB5`→`sePlay` 是**同步**
+  读 `c.clip` ⇒ 通道上仍绑着**上一次**装载的音效时，`i0b5` 播的是旧音效，而新音效解码完因 `pending`
+  已被忽略而永不发声。修法**一行**：`seLoad()` 里 `c.loadedId = id;` 之后加
+  `if (c.clip && c.clip.id !== id) c.clip = null;`（同 id 重复装载仍命中缓存、不引入延迟；换装不同 id
+  改为"解码完再响"）。引擎语义依据（源码已核）：`0xB4` handler `sub_420B00`（raw 29678-29687）→
+  `sub_4B4F60`（raw 137630-137658）→ `sub_4B6570` **先释放该通道旧缓冲**（raw 138906-138908）
+  **再绑新缓冲**（raw 138925）⇒ `0xB5` 执行时通道上必定已是新音效（无缓冲则 `sub_4B6020` 报
+  `dsPlay(%d)` 返回 0，raw 138605-138612）。**取证与判据**：
+  - 单测 `test/audio-engine.test.ts`「同一通道换装不同 id」——**已验证"去掉该行即红"**（实测
+    `14755 !== 50`，正是用户听到的症状）；另加一条"同 id 重复装载仍同步起播"防过度修正；
+  - E4（`npm run shot -- --gamestart --name seFix`，`.tmp/amayui-emulator.log`）：点 TITLE 的
+    Game Start `:870 (1180,372)` → `:884 -> GAMESTART.BIN` → **`:897 [audio] SE ch1 起播 id=50`**
+    （修复前是 `id=14755`）；点「ゲーム開始」`:1242 (811,605)` → `:1256 createMesh h=0x30d40`
+    （= `GAMESTART.txt:1317`，证明确在 `label_000050b8`）→ **`:1261 [audio] SE ch1 起播 id=20963`**
+    （修复前是 `id=50`）→ `:1272 -> INITGAME.BIN`（= `GAMESTART.txt:1338`）。ch2 的悬停音
+    `id=14755` 保持正确。
+  ★**「路由走到错误分支」的旧判断被推翻**：`0xB4` 的**意图**（op1 = `0x51e3`）从头到尾都是对的
+  （`test/game-start-chain.test.ts` 判据⑥ 断言的就是意图，一直通过）—— 错的只有**起播用的 clip**。
+  连带订正两处注释错误：`src/tools/gameStartChain.ts:112` 与 `test/game-start-chain.test.ts:291`
+  把 `0x51e3` 写成 `SE004.WAV`（实为 **SE009.WAV** = id 20963；`SE004` = `0x2e` = 46）。
+  **量级（下限）**：全库 941 脚本里「装载→紧随同通道起播」1936 对，其中 **799 对换装不同 id**
+  （涉 **379** 脚本）⇒ 修复前 UI 确认音会系统性播成"上一个装到该通道的音效"。
+  **未收敛**：① SE009 的**听感**是否就是玩家记得的那个只能人耳确认（本次只证明"脚本要 20963、
+  修复前实际播 50"）；② `AMAYUI_RESOURCE_DIR=raw` 未复核（id 表来自 `SYS4INI.BIN`，汉化补丁不动它，
+  风险低）；③ 「装载失败 ⇒ 不响」的严格 1:1（引擎抛 `WAVファイル %s の読み込みに失敗しました`
+  raw 137649 vs 这里降级为静音 + `pending` 兜底）仍是**刻意的偏差**；④ `seLoad` 成功不写日志 ⇒
+  "日志里对不上装载 id / 起播 id"要另配脚本，未加日志行。
+  分析报告：`.tmp/se-51e3-analysis.md`（只读分析代理产出，含资源解析/解码/路由/时序四类假设的排除凭据）；
+  台账同步：`analysis/scripts.json` 的 `GAMESTART` 补 SE 通道与统一 id 事实、"点击路径自身不发 SE"不变量、
+  "SE 通道跨脚本常驻"坑，并回链 `docs-new/03-engine/sound-system.md`。
 
 
 ## 10. 已登记的后继工作（本轮到 8/8 为止**未做**，按价值排序）
@@ -260,6 +292,7 @@
 | 9 | 孤儿文件：仓根 `age_map_src.mjs`、`dist/tmp_scan.js`、`dist/tmp_trace.js.map` | 仓根 / `dist/`（gitignored） | 无自动闸门；删之前要确认无人手动跑它 | 手工 `Test-Path` + grep 引用 |
 | 10 | 留帧的**续期语义**：`0x1F6 clearDrawContainer` 现在把预算**重置**成 `HOLD_MAX_FRAMES=60`（`Math.max`），而不是"沿用剩余" | `src/renderer/pixiBackend.ts` 的 `clearDrawContainer` / `#holdFrameAfterCurtainDrop` | 第 9 轮把它从"解除"改成"续期"就已修掉可见缺陷；改成"沿用剩余"是**策略微调**，需要实跑对比才敢动 | `npm run shot -- --gamestart` 逐帧日志里"撤幕 → 清容器 → 建新幕"链上 `跳过本次 present` 的次数不增加；`.tmp` 截图无闪烁 |
 | 11 | mesh 的 alpha 混合选择子消费（`entry[9]` = `0x322` 的 op2 → Pixi `blendMode`） | 消费者：`sub_49E390`（raw 119370-119399 的 SetRenderState 19/20/171 分支）；值已落 `MeshObj.blend` | 与 #2 同族：**行为变更**，枚举语义未逐值定清；语料该参数恒 0（默认）⇒ 画面零差异 | 同 #2；完成后从死写基线删 `MeshObj.blend` |
+| 12 | ✅**已修（第 11 轮 ㉑，本行保留作溯源）** ~~SE「先装载后起播」错序~~（用户报「点『ゲーム開始』音效不对」的真因）：`0xB4` 的装载是**异步**（IPC 取字节 + `decodeAudioData`），而 `0xB5` 的起播是**同步**读 `c.clip` ⇒ 通道上还绑着上一次装载的音效时，`i0b5` 会用**旧 clip** 起播，新音效解码完却因 `pending == null` 永不发声 | 修法：`src/audio/audioEngine.ts` 的 `seLoad()` 加 `if (c.clip && c.clip.id !== id) c.clip = null;`（一行，已落）；对照：语音路径 `voicePlay()`（:331-349）早就有 `loading` 保护。引擎侧语义 = **同步**：`sub_420B00`（raw 29678-29687）→ `sub_4B4F60`（raw 137630-137658）→ `sub_4B6570` 先释放旧缓冲（raw 138906-138908）再绑新缓冲（raw 138925）；绑定失败抛 `WAVファイル %s の読み込みに失敗しました`（raw 137649） | **已兑现**：单测 `test/audio-engine.test.ts`「同一通道换装不同 id」（去掉该行即红：`14755 !== 50`）；E4 `.tmp/amayui-emulator.log:1261 [audio] SE ch1 起播 id=20963`（修复前 `id=50`）。剩余偏差登记见 §9 ㉑ 的"未收敛" | 复现脚本 `.tmp/repro-se-race.mts`、分析报告 `.tmp/se-51e3-analysis.md` |
 
 
 - 🚫 把 `docs/**`、`app/amayui-emulator/docs/**` 的旧文档搬进 `docs-new/`：权威声明已宣布它们作废；

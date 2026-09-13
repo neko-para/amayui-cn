@@ -61,6 +61,48 @@ test('起播先于装载完成 ⇒ 装载完自动起播（不丢音）', async 
   assert.equal(host.plays[0]!.id, 46);
 });
 
+/**
+ * ★**同一通道换装不同 id ⇒ 必须播出新 id**（2026-09：用户报「点『ゲーム開始』音效错」的回归锁）。
+ *
+ * 依据：`GAMESTART.txt:1307-1308` 是相邻的 `play-sound-effect 51e3 1` + `i0b5 1`（id 20963 = SE009.WAV）；
+ * 通道 1 上此前已绑着 TITLE 点击音装的 id 50（SE002.WAV）。真实的 Electron 日志当时是
+ * `[audio] SE ch1 起播 id=50`（`.tmp/se-51e3-analysis.md` §2/E2）—— 播的是**旧**音效。
+ *
+ * 为什么这个用例能抓到：引擎的 `0xB4` 是**同步**装载（`sub_4B4F60` raw 137630 → `sub_4B6570`
+ * 先释放旧缓冲 raw 138906-138908、再绑新缓冲 raw 138925），而 emulator 是异步装载 ——
+ * 同一个同步突发里的 `0xB5` 只能看到**上一个** clip。若把 `seLoad` 里的"换装即作废旧绑定"删掉，
+ * 本测试会红（得到 14755 / 50），这正是「缺陷必须让测试失败」的口径。
+ */
+test('同一通道换装不同 id：0xB4 + 0xB5 必须播出新 id（不得复用旧 clip）', async () => {
+  const { host, eng } = mk();
+  eng.seLoad(14755, 1); // TITLE.txt:19  play-sound-effect 39a3 1（SE005.WAV）→ 通道 1
+  await eng.idle();
+  eng.sePlay(1, false);
+  assert.equal(host.plays.at(-1)!.id, 14755, '通道首次装载：正常起播');
+
+  eng.seLoad(50, 1); // TITLE.txt:316-317（点 TITLE 的 Game Start）
+  eng.sePlay(1, false);
+  await eng.idle();
+  assert.equal(host.plays.at(-1)!.id, 50, '换装 SE002 后必须播 SE002（不是残留的 SE005）');
+
+  eng.seLoad(20963, 1); // GAMESTART.txt:1307-1308（点 ゲーム開始）
+  eng.sePlay(1, false);
+  await eng.idle();
+  assert.equal(host.plays.at(-1)!.id, 20963, '换装 SE009 后必须播 SE009（不是残留的 SE002）');
+});
+
+test('同一通道重复装载**同一个** id：仍命中缓存、无需等装载即可起播（不引入额外延迟）', async () => {
+  const { host, eng } = mk();
+  eng.seLoad(46, 4);
+  await eng.idle();
+  eng.sePlay(4, false);
+  const n = host.plays.length;
+  eng.seLoad(46, 4); // 同 id 重复装载（同一界面反复点同一个按钮）
+  eng.sePlay(4, false);
+  assert.equal(host.plays.length, n + 1, '同 id 不丢同步起播（缓存命中）');
+  assert.equal(host.plays.at(-1)!.id, 46);
+});
+
 test('0xB6 停止通道；0x2F6 之外的通道也立即静音', async () => {
   const { host, eng } = mk();
   eng.seLoad(46, 0);

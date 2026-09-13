@@ -109,7 +109,7 @@ export interface GameStartResult {
    * **路径上发过的音效**（`0xB4 play-sound-effect` 的**统一文件 id** + 发起脚本），按发生顺序。
    *
    * 为什么需要：`play-sound-effect` 的 id 是**统一文件 id**（`SYS4INI` 下标），
-   * 因此"点「ゲーム開始」应当由 `GAMESTART` 发 SE004（id 0x51e3）"这类断言可以直接核对
+   * 因此"点「ゲーム開始」应当由 `GAMESTART` 发 SE009（id 0x51e3 = 20963）"这类断言可以直接核对
    * 「谁在什么时候发了哪个音效」—— 它同时是"点击确实走了 GAMESTART 的分支"的独立证据
    * （另一个证据是 `gameStartResult` 与鼠标沿有没有被 `poll-input` 消费，见 §F.4-6）。
    */

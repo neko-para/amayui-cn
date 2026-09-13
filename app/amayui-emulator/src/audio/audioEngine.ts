@@ -283,6 +283,16 @@ export class AudioEngine {
     const c = this.#seChannel(ch, 'se-load');
     if (!c) return;
     c.loadedId = id;
+    // ★换装不同 id 时**立刻作废旧绑定**（2026-09 修：用户报「点『ゲーム開始』音效错」的根因）。
+    //   引擎的 `0xB4` 是**同步**装载：`sub_4B4F60`（raw 137630-137658）→ `sub_4B6570` 先释放该通道
+    //   的旧缓冲（raw 138906-138908）再绑新缓冲（raw 138925）⇒ `0xB5` 执行时通道上**必定**已是新音效
+    //   （通道无缓冲则 `sub_4B6020` 报 `dsPlay(%d)` 并返回 0，raw 138605-138612）。
+    //   而这里是异步装载（IPC 取字节 + decodeAudioData，毫秒级），紧随的 `0xB5` 是同步的 —— 若不作废，
+    //   `sePlay` 会看到**上一个**音效的 `c.clip` 而立刻播它（`GAMESTART.txt:1307-1308` 于是播出通道 1
+    //   上残留的 SE002(id 50)，而脚本要的是 SE009(id 20963)）。作废后 `sePlay` 走 `pending` 分支，
+    //   装载完成由上面的 `.then` 起播**新**音效 ⇒ 延迟但正确（对照 `voicePlay` 早就有的 `loading` 保护）。
+    //   同 id 重复装载仍命中缓存、立即起播，不引入额外延迟。
+    if (c.clip && c.clip.id !== id) c.clip = null;
     if (!this.#enabled.se) return; // 关掉 SE 时不装载（引擎 SE 模块 `[261]` 关时 sub_4B5020 直接返回）
     void this.#track(this.#ensureClip({ id }, id)).then((clip) => {
       if (!clip || c.loadedId !== id) return;
