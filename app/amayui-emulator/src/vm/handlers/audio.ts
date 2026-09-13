@@ -247,6 +247,53 @@ const op_voice_factor_prepare: OpHandlerLike = (c) => {
   });
 };
 
+// ---------------------------------------------------------------------------
+// A5（音频设备 / 清理）—— 2026-09 落地
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x1BC`（`sub_4197A0` raw 24845-24871）：**清消息/声音字段**（语料 213 处 / 184 个脚本）。
+ *
+ * 引擎三件事：
+ * 1. 若 `Engine[21290]`（byte 85160）非空 ⇒ 对 i=0..2 调 `sub_4B60C0(voiceObj, i + 12)`
+ *    （**释放 3 个语音通道对象**，通道号 12/13/14）；
+ * 2. 清零 `Engine[21315..21320]`（byte 85260-85280）= **语音通道状态位**（`0x2F7` 写的那组）；
+ * 3. 清零 `Engine[122501]`（byte 490004）与 `Engine[122505..122510]`（byte 490020-490040）
+ *    = **寄存语音槽**（`0xC4` 的 ADV 分支写 `[122505]=id`/`[122508]=标志`）。
+ */
+const op_clear_message_sound_fields: OpHandlerLike = (c) => {
+  const e = c.e;
+  for (let ch = 0; ch < 3; ch++) {
+    e.engineValues.set(21315 + ch, 0);
+    e.engineValues.set(122505 + ch, 0);
+    emit(c, { kind: 'voice-reset', ch });
+  }
+  e.engineValues.set(21318, 0);
+  e.engineValues.set(21319, 0);
+  e.engineValues.set(21320, 0);
+  e.engineValues.set(122501, 0);
+  e.engineValues.set(122508, 0);
+  e.engineValues.set(122509, 0);
+  e.engineValues.set(122510, 0);
+};
+
+/**
+ * `0x1C9`（`sub_420160` raw 29291-29312）：**音频设备 / 驱动初始化**（语料 0 处）。
+ *
+ * 引擎：按统一 id（op1）打开音频驱动文件 → `sub_4B8490(Engine+7912, id, data, size)`（装载设备数据）
+ * → `sub_4B86E0(Engine+696548, hInstance)`（用宿主 hInstance 初始化音频子系统）
+ * → `Engine[18656] = op2`、`Engine[18660] = op3` → 取窗口坐标 `sub_4771D0` → `sub_4B7B70(设备, x, y)`。
+ *
+ * emulator：**两个参数照写字段**（`18656`/`18660`）；设备/驱动的装载与窗口坐标下发**无宿主等价物**
+ * （重写侧用 Web Audio，声部按需惰性创建，没有"驱动文件"这一层）⇒ 记为已登记缺口，不假装实现。
+ */
+const op_audio_device_init: OpHandlerLike = (c) => {
+  const e = c.e;
+  e.engineValues.set(18656, readIntOperand(e, c.frame, c.instr, 2));
+  e.engineValues.set(18660, readIntOperand(e, c.frame, c.instr, 3));
+  c.log('0x1C9: 音频设备/驱动初始化 —— 设备文件装载与窗口坐标下发未建模（重写侧无驱动层，缺口已登记）');
+};
+
 /** `0x302`：语音通道音量因子**生效**并应用（引擎 `Engine[21318+ch]=0x10000` → `sub_4BBC30`）。 */
 const op_voice_factor_apply: OpHandlerLike = (c) => {
   emit(c, {
@@ -305,6 +352,9 @@ export const AUDIO_OPS: OpTable = [
   [0x2ff, op_voice_factor_prepare],
   [0x302, op_voice_factor_apply],
   [0xc6, op_set_volume],
+  // ---- A5（音频设备 / 清理，2026-09）----
+  [0x1bc, op_clear_message_sound_fields], // 清语音通道状态位 + 寄存槽 + 释放 3 个通道对象（213 处）
+  [0x1c9, op_audio_device_init], // 音频设备/驱动初始化 + `Engine[18656]/[18660]`（0 处；装载=已登记缺口）
 ];
 
 /** 音频族用到的量程常量（导出便于测试断言，避免测试里写魔法数）。 */

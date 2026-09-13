@@ -169,6 +169,11 @@ export interface NativeBridge {
   /** `0x32D`（sub_427040 → `sub_499DF0`）：**3D 颜色**（op1 截断为 alpha、op2 低 3 字节为 RGB，四分量各 ÷255）。 */
   set3DColor?(r: number, g: number, b: number, a: number): void;
   /**
+   * `0x97`（sub_420910 → `sub_403D10`）：**面板填矩形**（`rect = {op1, op2, op1+op3, op2+op4}`、模式 `op5`）。
+   * 作用对象 = 消息面/面板对象（`Engine+0x55D8`）。宿主可选实现（记录进 `SceneState.render4.panelRects`）。
+   */
+  fillPanelRect?(x0: number, y0: number, x1: number, y1: number, mode: number): void;
+  /**
    * 0x23B（sub_424970）：**按 CG 数字条画数值**。
    * 实现方负责：先删 DrawItem/Mesh 的 `[id, id+digits)` 区间，再按记录逐位建 DrawItem。
    * `rec` = 7 dword（[0] 纹理槽 / [1] x0 / [2] y0 / [3] 单字宽 / [4] 字高 / [5] 字内空隙 / [6] 字距）；

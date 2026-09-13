@@ -66,6 +66,7 @@ import {
   scSetMeshEntryAttr,
   scRelease3DSlot,
   scSet3DColor,
+  scFillPanelRect,
   type SceneState,
 } from './sceneModel.js';
 import { setupPixiStage } from './pixi/appSetup.js';
@@ -355,6 +356,11 @@ export class PixiBackend implements NativeBridge {
   /** `0x32D` 3D 颜色（四分量 0..1）。 */
   set3DColor(r: number, g: number, b: number, a: number): void {
     scSet3DColor(this.scene, r, g, b, a);
+  }
+
+  /** `0x97` 面板填矩形（A5）。 */
+  fillPanelRect(x0: number, y0: number, x1: number, y1: number, mode: number): void {
+    scFillPanelRect(this.scene, [x0, y0, x1, y1], mode);
   }
 
   /** `0x208`：纹理尺寸 getter（写回脚本操作数由 opcode 侧负责）。 */

@@ -206,6 +206,7 @@ const BRIDGE_METHODS = [
   'setMeshEntryAttr',
   'release3DSlot',
   'set3DColor',
+  'fillPanelRect',
   'setTranslationAnim',
   'setVertexColor',
   'setVertexColorAlpha',

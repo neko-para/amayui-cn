@@ -242,8 +242,52 @@ const op_set_media_movie: OpHandler = (c) => {
   // 引擎：模式变化时（92377 == 0）与"非全屏"时各下发一次 Scene 图层；宿主无影片子系统 ⇒ 只记字段。
 };
 
-/** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */
-export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
+// ---------------------------------------------------------------------------
+// A5（单行字段 / 计时）—— 2026-09 落地
+// ---------------------------------------------------------------------------
+
+/** `0xD9`（sub_419970 raw 24939）：清 `effect_flags & 0x1000`（派发中时同清 `Engine[95779]` 的该位）。 */
+const op_clear_flag_1000: OpHandler = (c) => {
+  const e = c.e;
+  e.effectFlags &= ~0x1000;
+  if ((e.engineValues.get(124350) ?? 0) !== 0) {
+    // 引擎：`if (_this[124350]) _this[95779] &= ~0x1000;`（124350 = 脚本派发中标志）
+    e.engineValues.set(95779, (e.engineValues.get(95779) ?? 0) & ~0x1000);
+  }
+};
+
+/**
+ * `0xAD`（sub_4192C0 raw 24627 → `sub_4380F0` raw 45095-45103）：**秒计时器推进**。
+ *
+ * 引擎（对象 = `_this + 5191`）：
+ * ```c
+ * obj[259] = obj[260];                                   // 上一秒 ← 当前秒（对外读的口）
+ * v2 = 274877907i64 * timeGetTime();                     // 64 位乘
+ * obj[258] = HIDWORD(v2) >> 6;                           // ≈ ms / 1000 = 秒
+ * ```
+ * ⇒ `_this[5191+259]=5450 ← _this[5191+260]=5451`、`_this[5191+258]=5449 ← timeGetTime()/1000`。
+ * `274877907 / 2^38 = 1/1000.0000009…`（定点近似）。emulator 用 `BigInt` 复刻同一算术
+ * （`Number((274877907n * BigInt(nowMs)) >> 38n)`），避免 JS 双精度在 2^59 量级丢位。
+ */
+const op_seconds_timer: OpHandler = (c) => {
+  const e = c.e;
+  e.engineValues.set(5450, e.engineValues.get(5451) ?? 0);
+  const ms = BigInt(e.nowMs | 0);
+  e.engineValues.set(5449, Number((274877907n * ms) >> 38n) | 0);
+};
+
+/** `0x1AD`（sub_4196F0 raw 24806）：`Engine[166963] = cur`（存档序列化用的"当前帧"记忆；语料 1100 处）。 */
+const op_store_cur_166963: OpHandler = (c) => {
+  c.e.engineValues.set(166963, c.e.cur);
+};
+
+/** `0x1B1`（sub_41FEA0 raw 29155）：`Engine[21672] = op1`。 */
+const op_set_field_21672: OpHandler = (c) => {
+  const e = c.e;
+  e.engineValues.set(21672, readIntOperand(e, c.frame, c.instr, 1));
+};
+
+/** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。
   // ---- 「读操作数 → 写引擎字段」一族（真实现；规格见 ENGINE_FIELD_STORE）----
   [0x76, op_engine_field_store], // _this[21664]
   [0x77, op_engine_field_store], // _this[21665]
@@ -268,6 +312,11 @@ export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表�
   [0x142, op_set_engine_flag_174812], // _this[174812] = op1（脚本可控的引擎运行开关；构造/复位默认 1）
   [0x148, op_read_global_slot], // read `_this[97058]` → op1（暂无用，仅建模）
   [0x149, op_write_global_slot], // write op1 → `_this[97058]`（暂无用，仅建模）
+  // ---- A5（单行字段 / 计时，2026-09）----
+  [0xd9, op_clear_flag_1000], // 清 effect_flags & 0x1000（+ `95779` 同位）
+  [0xad, op_seconds_timer], // 秒计时器推进（`_this[5449]` ← timeGetTime/1000）
+  [0x1ad, op_store_cur_166963], // `_this[166963] = cur`（1100 处）
+  [0x1b1, op_set_field_21672], // `_this[21672] = op1`
 ];
 
 /** 引擎字段/配置 getter（值来自配置注册表或其它子系统）。 */

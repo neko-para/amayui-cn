@@ -64,6 +64,8 @@ export interface SceneState {
     released3D: number[];
     /** `0x32D` 3D 颜色 [r,g,b,a]（各 0..1）。 */
     color3D: number[];
+    /** `0x97` 面板填矩形（保留最近 16 次）。 */
+    panelRects: Array<{ rect: number[]; mode: number }>;
   };
 }
 
@@ -87,6 +89,7 @@ export function newSceneState(): SceneState {
       meshAttrs: new Map<number, Map<number, number>>(),
       released3D: [],
       color3D: [1, 1, 1, 1],
+      panelRects: [],
     },
   };
 }

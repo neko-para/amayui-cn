@@ -13,12 +13,12 @@
 | 项 | 数量 | 说明 |
 |---|---|---|
 | `opcode-table.md` 全表 | 574 | 引擎实际存在的 opcode |
-| `OPS`（implemented） | **223** | 真实现（A1/A2/A3/A4/A6 落地后；原 187） |
-| `NATIVE_OPS`（native） | **48**（含 5 条记录式桩 `STUB_NATIVE_OPS`） | 经 `NativeBridge` 落宿主（原 53） |
-| `ENGINE_INTERNAL_OPS`（纯 no-op） | **23** | 原 48；A1/A2/A3/A4/A6 共移出 25 条 |
+| `OPS`（implemented） | **230** | 真实现（A1–A6 落地后；原 187） |
+| `NATIVE_OPS`（native） | **50**（含 5 条记录式桩 `STUB_NATIVE_OPS`） | 经 `NativeBridge` 落宿主（原 53；`0x1BC`/`0x1C9` 属音频族） |
+| `ENGINE_INTERNAL_OPS`（纯 no-op） | **14** | 原 48；A1–A6 共移出 34 条 |
 | **复评对象（stub 合计）** | **57** | = 48 + 9（复评时口径） |
-| 其中已转真实现 | **34** | A1 三条 + A2 四条 + A3 十二条 + **A4 十三条** + **A6 三条** |
-| 仍为 stub（未开工批次） | 23 | A4b/A5 + 排除项 + 真空 1 条 |
+| 其中已转真实现 | **44** | A1 三 + A2 四 + A3 十二 + A4 十三 + **A5 九** + A6 三 |
+| 仍为 stub（未开工批次） | 14 | A4b 3 + 排除项 10 + 真空 1 条 |
 | **根本没有 handler**（命中即 `NotImplementedOp`） | 286 → **282** | A3 补了 3 条（`0x1D3`/`0x1D4`/`0x2F3`）+ 接线补 `0x199`；A6 的 `0x14C`/`0x14D` 也已补上（`0x327`/`0x328` 仍未做） |
 
 复评判据（每条都**读过 handler 体**，raw 行号见下）：
@@ -111,7 +111,7 @@ Engine[93384]（字节 0x5B320；Scene = Engine+322832 ⇒ 也是 Scene+50704）
   每帧：帧循环调 sub_4535F0(管理器,-1) + sub_453540(管理器) 推进（raw 136828-136829）
 ```
 
-**A5｜单行字段写 / 计时 / 音频设备 / AGERC 模块** —— 10 条
+**A5｜单行字段写 / 计时 / 音频设备 / 消息面** —— 9 条（`0x14B` 已移入 A6）　✅ **已实现（2026-09，§6）**
 `0x93`(24589 消息面显示态 toggle)、`0x94`(24604 消息面可见+清色)、`0x97`(29596 消息面填矩形)、
 `0xD9`(24939 清 `effect_flags` 0x1000)、`0x1AD`(24806 `166963=cur`)、`0x1B1`(29155 `21672=op1`)、
 `0x1BC`(24845 清消息/声音字段)、`0xAD`(24627 **秒计时器推进**：`(timeGetTime*274877906)>>38`)、
@@ -171,7 +171,7 @@ Engine[93384]（字节 0x5B320；Scene = Engine+322832 ⇒ 也是 Scene+50704）
 | **A3** | 文本/消息族 9 条 + 读取端 `0x1D3` `0x1D4` `0x2F3` | 12 | ✅ **已完成**（§5；含接线项 `0x199`） |
 | **A4** | 图元/网格/纹理/渲染状态 13 条 | 13 | ✅ **已完成**（§6） |
 | A4b | **3D 天气效果族** `0x324` `0x325` `0x326` `0x327` `0x328`（后两条未注册） | 5 | 待做 |
-| A5 | 单行字段/计时/音频设备 9 条（`0x14B` 已随 A6 完成，见下行） | 9 | 待做 |
+| **A5** | 单行字段/计时/音频设备/消息面 9 条 | 9 | ✅ **已完成**（§6） |
 | **A6** | **AGERC 模块接口** `0x14B` `0x14C` `0x14D`（模型化，无原生依赖；导出表里只有 `_SetNameLenMax@20` 需要真实实现——另 17 个地图导出本作不可达，见 §1.4 订正） | 3 | ✅ **已完成**（§6；这一条解锁了整个存档/读档界面） |
 | ~~A7~~ | 读取端 `0x1D3` `0x1D4` `0x2F3` | — | ✅ **并入 A3 完成**（不必再单列） |
 
@@ -205,8 +205,9 @@ E2 用例、`opcode-table.md` 行、emulator 注册表与三层数据层。
 > `OPS`/`NATIVE_OPS` = 真实现；`ENGINE_INTERNAL_OPS` = 记录式 no-op；**无（硬报错）** = 命中即 `NotImplementedOp`。
 > 口径 = 复评时的 57 条（48 纯 no-op + 9 记录式桩）+ 7 条"压根没做"的 + 1 条接线项（`0x199`）。
 >
-> 合计：`OPS` **223** / `NATIVE_OPS` **48**（含 5 条桩）/ `ENGINE_INTERNAL_OPS` **23**。
-> 已转真实现 **34** 条：A1 三条 + A2 四条 + A3 十二条 + **A4 十三条 + A6 三条**（`0x199` 为随 A2 补的接线项）。
+> 合计：`OPS` **230** / `NATIVE_OPS` **50**（含 5 条记录式桩）/ `ENGINE_INTERNAL_OPS` **14**。
+> 已转真实现 **44 条**：A1 3 + A2 4 + A3 12 + A4 13 + A5 9 + A6 3
+> （A3 的 3 条读取端与 A6 的 `0x14C`/`0x14D` 原本属“压根没做”；`0x199` 是随 A2 补的接线项）。
 
 ### A1
 
@@ -274,15 +275,15 @@ E2 用例、`opcode-table.md` 行、emulator 注册表与三层数据层。
 
 | opcode | argc | handler | 现在落在哪张表 | 说明 |
 |---|---|---|---|---|
-| `0x93` | 0 | `sub_4191D0` | `ENGINE_INTERNAL_OPS` |  |
-| `0x94` | 0 | `sub_419230` | `ENGINE_INTERNAL_OPS` |  |
-| `0x97` | 5 | `sub_420910` | `ENGINE_INTERNAL_OPS` |  |
-| `0xD9` | 0 | `sub_419970` | `ENGINE_INTERNAL_OPS` |  |
-| `0x1AD` | 0 | `sub_4196F0` | `ENGINE_INTERNAL_OPS` |  |
-| `0x1B1` | 1 | `sub_41FEA0` | `ENGINE_INTERNAL_OPS` |  |
-| `0x1BC` | 0 | `sub_4197A0` | `ENGINE_INTERNAL_OPS` |  |
-| `0xAD` | 0 | `sub_4192C0` | `ENGINE_INTERNAL_OPS` |  |
-| `0x1C9` | 3 | `sub_420160` | `ENGINE_INTERNAL_OPS` |  |
+| `0x93` | 0 | `sub_4191D0` | `OPS`(op_message_surface_off) |  |
+| `0x94` | 0 | `sub_419230` | `OPS`(op_message_surface_fill) |  |
+| `0x97` | 5 | `sub_420910` | `OPS`(op_message_surface_rect) |  |
+| `0xD9` | 0 | `sub_419970` | `OPS`(op_clear_flag_1000) |  |
+| `0x1AD` | 0 | `sub_4196F0` | `OPS`(op_store_cur_166963) |  |
+| `0x1B1` | 1 | `sub_41FEA0` | `OPS`(op_set_field_21672) |  |
+| `0x1BC` | 0 | `sub_4197A0` | `NATIVE_OPS`(op_clear_message_sound_fields) |  |
+| `0xAD` | 0 | `sub_4192C0` | `OPS`(op_seconds_timer) |  |
+| `0x1C9` | 3 | `sub_420160` | `NATIVE_OPS`(op_audio_device_init) |  |
 
 ### A6
 
@@ -382,3 +383,16 @@ E2 用例、`opcode-table.md` 行、emulator 注册表与三层数据层。
 `"%s\SAVE%2.2d.DAT"` → `CreateFileA` → `sub_438120(Engine+20764, hFile, Engine+382688, Engine+698912, buf)` 反序列化；
 失败时 `op1 ← 1`（语料 **339 处 / 335 个脚本**）。它属"**压根没有 handler**"的 286 条，
 需要另立批次（连同读档后的 `save-int`/`save-string` 表恢复）。
+
+### A5｜单行字段 / 计时 / 音频设备 / 消息面（9 条）—— 3 条建模 + 6 条字段·意图
+
+| 落点 | 内容 |
+|---|---|
+| `handlers/panel.ts`（新） | `0x93`（清 `effect_flags & 0x800000` + 复位面板游标态 + toggle `12956/12957`）、`0x94`（置 `12957` + 面板填充色 + 首次按鼠标重做命中测试）、`0x97`（填矩形 → 宿主缝 `native.fillPanelRect`，落 `SceneState.render4.panelRects`） |
+| `handlers/engine-fields.ts` | `0xD9`（清 `effect_flags & 0x1000`，派发中时同清 `95779`）、`0xAD`（**秒计时器**：`_this[5449] ← timeGetTime/1000`，用 `BigInt` 复刻 `274877907 * t >> 38` 的定点算术）、`0x1AD`（`_this[166963] = cur`，**1100 处**）、`0x1B1`（`_this[21672] = op1`） |
+| `handlers/audio.ts` | `0x1BC`（清语音通道状态位 `21315..21320` + 寄存槽 `122501`/`122505..122510` + 对 3 个通道发 `voice-reset`，**213 处**）、`0x1C9`（音频设备初始化：写 `18656`/`18660`；驱动装载=已登记缺口） |
+| 守卫 | `test/op-a5.test.ts`（10 例：注册表棘轮 / 面板复位与 toggle / 填充色与命中测试 / 填矩形转发 / 清位 / 秒计时器 BigInt 算术 / 字段写 / 语音清理意图 / 设备参数 / 不写操作数） |
+| 既有测试更新 | `test/game-start-chain.test.ts` 的棘轮：本链路采集到的 25 条（9 + A4 9 + A5 7）**全部**已转真实现 ⇒ 该链路不再有任何 `ENGINE_INTERNAL_OPS` |
+
+**这一批的意义**：A5 的 9 条**都不回写操作数**（属"单行字段写"），但从"无依据的 no-op"变成了
+**有依据的字段写 / 意图下发**；其中 `0x1AD`（1100 处）与 `0x1BC`（213 处）在本体脚本里用量最大。

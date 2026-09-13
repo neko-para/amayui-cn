@@ -6059,7 +6059,7 @@
     "fields_used": ["Engine[174801] effect_flags", "Engine[12956]", "Engine[12957]", "Font+652 窗口消息面"],
     "unmodeled": ["sub_403EF0 的窗口面重绘", "12956/12957 的下游消费者"],
     "evidence": "raw 24589-24601",
-    "notes": "不写任何脚本操作数 ⇒ emulator 归 ENGINE_INTERNAL_OPS（有依据地跳过）"
+    "notes": "不写任何脚本操作数 ⇒ emulator 归 ENGINE_INTERNAL_OPS（有依据地跳过） ★2026-09 A5 落地：emulator `handlers/panel.ts` 的 `op_message_surface_off`（`OPS`）—— 清 `effect_flags & 0x800000`、复位面板游标态（`RouteTable.cursor = -1` + 其余字段进 `engineValues`）、toggle `12956/12957`。守卫 `test/op-a5.test.ts`。"
   },
   {
     "addr": "0x419230",
@@ -6072,7 +6072,7 @@
     "fields_used": ["Engine[12957]", "Font+652 窗口消息面"],
     "unmodeled": ["sub_404020 的窗口面清色", "10000 这个色值的含义"],
     "evidence": "raw 24604-24609",
-    "notes": "不写操作数 ⇒ engine-internal"
+    "notes": "不写操作数 ⇒ engine-internal ★2026-09 A5 落地：emulator `op_message_surface_fill` —— 置 `12957`、记录填充色 `[960]=10000`、首次初始化时按 `InputManager.x/y` 重做命中测试（`routes.hitTest`）。"
   },
   {
     "addr": "0x420910",
@@ -6085,7 +6085,7 @@
     "fields_used": ["Font+652 窗口消息面"],
     "unmodeled": ["sub_403D10 的矩形填充（消息面绘制路径）"],
     "evidence": "raw 29596-29612",
-    "notes": "语料里首参常为 −1000（屏外/无效）⇒ 本就是空转；不写操作数 ⇒ engine-internal"
+    "notes": "语料里首参常为 −1000（屏外/无效）⇒ 本就是空转；不写操作数 ⇒ engine-internal ★2026-09 A5 落地：emulator `op_message_surface_rect` → 宿主缝 `native.fillPanelRect`（落 `SceneState.render4.panelRects`）。"
   },
   {
     "addr": "0x419970",
@@ -6098,7 +6098,7 @@
     "fields_used": ["Engine[174801] effect_flags", "Engine[95779]", "Engine[124350]"],
     "unmodeled": ["124350 的语义"],
     "evidence": "raw 24939-24949",
-    "notes": "全工程没有任何地方**读** effect_flags 的 0x1000 位（只有全量清零路径）⇒ VM 不可观测"
+    "notes": "全工程没有任何地方**读** effect_flags 的 0x1000 位（只有全量清零路径）⇒ VM 不可观测 ★2026-09 A5 落地：emulator `op_clear_flag_1000`（`handlers/engine-fields.ts`）—— 清 `effect_flags & 0x1000`，`Engine[124350]`（派发中）非零时同清 `95779` 的该位。"
   },
   {
     "addr": "0x42D010",
@@ -6182,7 +6182,7 @@
     "sub_behaviors": ["_this[166963] = _this[95776]"],
     "fields_used": ["Engine[166963]", "Engine[95776] cur"],
     "evidence": "raw 24806-24814",
-    "notes": "唯一读者在存档序列化路径（raw 17035/17059，按 case 2/3 写\"当前帧\"），emulator 不序列化该字段 ⇒ VM 不可观测"
+    "notes": "唯一读者在存档序列化路径（raw 17035/17059，按 case 2/3 写\"当前帧\"），emulator 不序列化该字段 ⇒ VM 不可观测 ★2026-09 A5 落地：emulator `op_store_cur_166963` 写 `engineValues[166963] = cur`（语料 1100 处 / 337 个脚本）。"
   },
   {
     "addr": "0x41FEA0",
@@ -6194,7 +6194,7 @@
     "sub_behaviors": ["result = sub_41BF50(this, 1)", "_this[21672] = result"],
     "fields_used": ["Engine[21672]"],
     "evidence": "raw 29155-29163",
-    "notes": "★死写：21672 与 21668(MessageSpeed)/21670 相邻但语义不同；grep 全工程只有这一处引用"
+    "notes": "★死写：21672 与 21668(MessageSpeed)/21670 相邻但语义不同；grep 全工程只有这一处引用 ★2026-09 A5 落地：emulator `op_set_field_21672` 写 `engineValues[21672] = op1`。"
   },
   {
     "addr": "0x4197A0",
@@ -6207,7 +6207,7 @@
     "fields_used": ["Engine[85160]", "Engine+85260..85280", "Engine+490004..490040"],
     "unmodeled": ["sub_4B60C0 的声音槽停止"],
     "evidence": "raw 24845-24871",
-    "notes": "不写操作数 ⇒ VM 不可观测（清场语义）"
+    "notes": "不写操作数 ⇒ VM 不可观测（清场语义） ★2026-09 A5 落地：emulator `handlers/audio.ts` 的 `op_clear_message_sound_fields`（`NATIVE_OPS`）—— 清 `21315..21320` 与 `122501`/`122505..122510`，并对通道 0..2 发 `voice-reset` 意图（对应 3 次 `sub_4B60C0`）。语料 213 处。"
   },
   {
     "addr": "0x41A200",
@@ -6902,6 +6902,30 @@
     "fields_used": ["Scene+1064（网格属性表）", "Scene[11627] 脏标记"],
     "evidence": "raw 33839-33850",
     "notes": "语料 1 处。★2026-09 A4 落地：emulator `op_set_mesh_entry_attr` → 宿主缝 `native.setMeshEntryAttr`（记录进 `SceneState.render4.meshAttrs`）。不回写操作数。"
+  },
+  {
+    "addr": "0x420160",
+    "raw_name": "sub_420160",
+    "semantic_name": "audioDeviceInit_420160",
+    "op": "0x1C9",
+    "status": "ANALYZED",
+    "purpose": "音频设备 / 驱动初始化（按 id 装载驱动文件 + 用 hInstance 初始化音频子系统 + 写两个设备参数）",
+    "sub_behaviors": ["按统一 id（op1）打开音频驱动文件（sub_4559C0/sub_455560）", "sub_4B8490(Engine+7912, id, data, size)（装载设备数据）+ 关文件", "sub_4B86E0(Engine+696548, Engine[388224])（用宿主 hInstance 初始化音频子系统）", "Engine[18656] = op2；Engine[18660] = op3", "sub_4771D0(Engine+1032, &Point) 取窗口坐标 → sub_4B7B70(设备, x, y)"],
+    "fields_used": ["Engine+7912（音频设备对象）", "Engine+696548（音频子系统）", "Engine[388224](hInstance)", "Engine+18656/+18660（设备参数）", "Engine+1032（窗口/输入）"],
+    "evidence": "raw 29291-29312",
+    "notes": "语料 0 处（引擎内部路径用）。★2026-09 A5 落地：emulator `handlers/audio.ts` 的 `op_audio_device_init` （`NATIVE_OPS`）—— 两个参数照写字段；**驱动文件装载与窗口坐标下发未建模**（重写侧用 Web Audio、声部按需惰性创建，没有「驱动文件」这一层）⇒ 已登记缺口。 ★2026-09 A5 落地：emulator `op_audio_device_init` 写 `engineValues[18656]=op2`/`[18660]=op3`；**驱动文件装载与窗口坐标下发未建模**（重写侧 Web Audio 无驱动层）⇒ 已登记缺口。"
+  },
+  {
+    "addr": "0x4192C0",
+    "raw_name": "sub_4192C0",
+    "semantic_name": "secondsTimer_4192C0",
+    "op": "0xAD",
+    "status": "ANALYZED",
+    "purpose": "秒计时器推进（把 timeGetTime 换算成秒，供脚本读「已过多少秒」）",
+    "sub_behaviors": ["obj = _this + 5191；obj[259] = obj[260]（上一秒 ← 当前秒）", "v2 = 274877907i64 * timeGetTime()；obj[258] = HIDWORD(v2) >> 6（≈ ms/1000）", "被调 sub_4380F0 raw 45095-45103"],
+    "fields_used": ["Engine[5450](= obj[259])", "Engine[5451](= obj[260])", "Engine[5449](= obj[258])"],
+    "evidence": "raw 24627-24631（handler）；sub_4380F0 raw 45095-45103（实现）",
+    "notes": "定点常数 `274877907 / 2^38 = 1/1000.0000009…`（引擎自己的近似）。语料 0 处。★2026-09 A5 落地：emulator `handlers/engine-fields.ts` 的 `op_seconds_timer` —— 用 `BigInt` 复刻 64 位定点乘（`Number((274877907n * BigInt(nowMs)) >> 38n)`），避免 JS 双精度在 2^59 量级丢位。 ★2026-09 A5 落地：emulator `op_seconds_timer` —— `engineValues[5450] ← [5451]`、`engineValues[5449] ← Number((274877907n * BigInt(nowMs)) >> 38n)`（BigInt 复刻 64 位定点乘，避免双精度丢位）。"
   }
 
 ]

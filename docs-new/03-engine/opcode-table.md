@@ -141,11 +141,11 @@
 | 0x90 | 7 |  | sub_420640 | 已核对 | **登记点击热点 / 路由项**：`i090 <x> <y> <w> <h> <labelA> <labelB> <labelC>` → `sub_403B30(Engine+0x55D8, x, y, x+w, y+h, labelA, labelB, labelC, 帧参数)`；入队失败（表满 100）抛 `Command_ShowMessage`；随后置游标 `Engine[7468] = -1`、推进标志 `Engine[7466] = 0`。**PARTIAL**；handler=sub_420640（raw .c 29477-29518） |
 | 0x91 | 1 |  | sub_420740 | 仅映射 |  |
 | 0x92 | 2 |  | sub_4207D0 | 仅映射 |  |
-| 0x93 | 0 |  | sub_4191D0 | 已核对 | **显示态切换**：`_this[174801]&=~0x800000`、`sub_403EF0`、toggle `_this[12957]/[12956]`。★不写操作数 ⇒ emulator `ENGINE_INTERNAL_OPS`（`scene-start-flow.md`）。handler=sub_4191D0（raw .c 24589） |
-| 0x94 | 0 |  | sub_419230 | 已核对 | **置消息面可见标记**：`_this[12957]=1` + `sub_404020(_this+5494, 10000)`。★不写操作数 ⇒ engine-internal。handler=sub_419230（raw .c 24604） |
+| 0x93 | 0 |  | sub_4191D0 | 已核对 | **消息面显示态关**：`effect_flags &= ~0x800000`；`sub_403EF0(面板)` 复位面板游标态（`[258]=0`、`[959]=-1`、`[960]=0`、`[7464]=0`、`[7466]=0`、`[7467]=-1`、`[7468]=-1`，**不清**路由条目表）；再 toggle：`Engine[12957] ? =0 : Engine[12956]=1`。handler=sub_4191D0（raw 24589-24601）。★面板对象 = `Engine+0x55D8`（`_this + 5494`，也是点击热点/路由表的宿主）。语料 0 处。emulator：`OPS` 的 `op_message_surface_off`（`handlers/panel.ts`）。 |
+| 0x94 | 0 |  | sub_419230 | 已核对 | **消息面显示态开**：`Engine[12957] = 1`；`sub_404020(面板, 10000)` —— 已初始化（`[7465]`）则置填充色 `[960]=10000` + 待填充 `[7464]=1`，否则置初始化标记并**按当前鼠标坐标重做一次命中测试**（`GetCursorPos`→`sub_403C50`）。handler=sub_419230（raw 24604-24609）。语料 0 处。emulator：`op_message_surface_fill`（用 `InputManager.x/y` + `routes.hitTest`）。 |
 | 0x95 | 2 |  | sub_420870 | 仅映射 |  |
 | 0x96 | 0 |  | sub_419260 | 仅映射 |  |
-| 0x97 | 5 |  | sub_420910 | 已核对 | **消息面填矩形**：读 op1..op5(x,y,w,h,mode) → `sub_403D10(_this+5494, {x,y,x+w,y+h}, mode)`。语料首参常为 −1000（屏外空转）；不写操作数 ⇒ engine-internal。handler=sub_420910（raw .c 29596） |
+| 0x97 | 5 |  | sub_420910 | 已核对 | **面板填矩形**：矩形 `{op1, op2, op1+op3, op2+op4}` + 模式 `op5` → `sub_403D10(面板, rect, 模式)`。handler=sub_420910（raw 29596-29612）。语料 0 处。emulator：`op_message_surface_rect` → 宿主缝 `native.fillPanelRect`（落 `SceneState.render4.panelRects`）。 |
 | 0xA0 | 3 | jcc | sub_4209B0 | 已核对 | **两目标条件跳转**（仅 3 个操作数）：`op1=条件`（非 0 为真）；`op1≠0`→跳 `op2`（若 `op2==0xFFFFFFFF` 则落下句）；`op1==0`→跳 `op3`（若 `op3==0xFFFFFFFF` 则落下句）。 |
 | 0xA1 | 0 | menu-reset | sub_433A40 | 已核对 | **菜单派发表复位**：`sub_415530(_this+107679, 0xFFF)`（0xFFF=容量/上限）。清空菜单对象 `_this+107679` 的内存表（字符串哈希表）。handler=sub_433A40（raw .c 42046）。emulator：`op_menu_reset` → `engine.menuMap.clear()` |
 | 0xA2 | 2 | menu-bind | sub_434F10 | 已核对 | **登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind` key=String(DEC(op1))、value=DEC(op2) → `menuMap.set(key,value)`（**注意**：引擎 sub_41B640 读 string；TITLE 用菜单项序号(-1/0/1/2/3/4)为键，emulator 取 op1 的 DEC 值字符串化） |
@@ -153,7 +153,7 @@
 | 0xAA | 2 |  | sub_42D580 | 已核对 | **写文件（保存族）**：读 op2=字符串表下标 → `CreateFileA(名, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, 0)`；失败 ⇒ ShowMessage + 写 `op1 = 1`；成功 ⇒ 取注册表 `set:SaveVersion` 经 `sub_40CD10(this, 文件, 版本, "set:SaveVersion")` 写文件、CloseHandle、写 `op1 = 返回值`。★订正：数据层早期误标为「文本项记录查询」（那条是 `0x2F3`/sub_431A10）；handler=sub_42D580（raw .c 38148-38175） |
 | 0xAB | 2 |  | sub_42D650 | 仅映射 |  |
 | 0xAC | 9 |  | sub_42D700 | 仅映射 |  |
-| 0xAD | 0 |  | sub_4192C0 | 仅映射 |  |
+| 0xAD | 0 |  | sub_4192C0 | 已核对 | **秒计时器推进**（`sub_4380F0` raw 45095-45103）：`obj[259] = obj[260]`、`obj[258] = (274877907i64 * timeGetTime()) >> 38`（≈ ms/1000，定点近似）⇒ `_this[5450] ← _this[5451]`、`_this[5449] ← timeGetTime()/1000`。handler=sub_4192C0（raw 24627-24631）。语料 0 处。emulator：`op_seconds_timer`（`BigInt` 复刻同一算术，避免 JS 双精度在 2^59 丢位）。 |
 | 0xAE | 0 |  | sub_4192F0 | 已核对 | **存档版本分支指令**：经 `_this+174405` 对象 vtable 读存档版本（"set:SaveVersion1"/"set:SaveVersion2"），按版本(1/2/3/20)重算每脚本 ip（`_this[30*x+95782/95803/95804]`）、设 frame arity、切换 `cur` 或 `sub_40F750`→`loadScriptFrame_40ED40` 装载目标脚本帧；并置 `_this[95780]=0`、`_this[97054]=1`。handler=sub_4192F0（raw .c 24413） emulator：`OPS` 的 `op_save_version_branch` —— **门控路径（`Engine[95780] == 0`）与引擎逐字一致**（引擎在此直接返回）；置位后按 `set:SaveVersion1/2` 选组（1+20 / 2 / 3）并处理「已回到存档帧」的收尾。★缺口：存档侧的帧 ip 指针表（`[30*cur+95798]/[95800]` 指向的数组）与 `sub_40F750` 的帧装载**未建模**（emulator 无读档装载），该分支已登记缺口并写日志；语料 0 处。 |
 | 0xAF | 0 |  | sub_419690 | 仅映射 |  |
 | 0xB0 | 1 |  | sub_420A50 | 仅映射 |  |
@@ -197,7 +197,7 @@
 | 0xD6 | 6 |  | sub_42EB80 | 仅映射 |  |
 | 0xD7 | 1 |  | sub_421AF0 | 仅映射 |  |
 | 0xD8 | 2 |  | sub_421AA0 | 仅映射 |  |
-| 0xD9 | 0 |  | sub_419970 | 已核对 | **清标志位**：`_this[174801]&=~0x1000`（`124350` 非 0 时同步清 `95779`）。全工程**无人读** 0x1000 位 ⇒ VM 不可观测。handler=sub_419970（raw .c 24939） |
+| 0xD9 | 0 |  | sub_419970 | 已核对 | **清 `effect_flags` 的 0x1000 位**：`effect_flags &= ~0x1000`；若 `Engine[124350]`（脚本派发中）非零，则同清 `Engine[95779] &= ~0x1000`。handler=sub_419970（raw 24939-24949）。语料 0 处。emulator：`OPS` 的 `op_clear_flag_1000`（`handlers/engine-fields.ts`）。 |
 | 0xDA | 6 |  | sub_42EAE0 | 仅映射 |  |
 | 0xFA | 0 |  | sub_4199B0 | 已核对 | **poll-msg-advance（输入 + ADV 状态机）**：清 `Engine[97054]`；`sub_4780D0` 读输入状态；若 `(v5 & 0x40) == 0` 则清 `Engine[174801]` 的 `0x8000000`（退出 ADV）、遍历 3 个回调槽（122505 区）经 `sub_4BB840` 处理并清空；若仍非 ADV 则 `sub_478090` flush 输入 → `Engine[174802]`、置负 `effect_flags`（`|= 0x80000000`，等待门）并清输入掩码 —— 即空闲时触发 `sub_411BC0` 空等待派发；handler=sub_4199B0（raw .c 24952-24988） |
 | 0xFB | 2 | joy-callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
@@ -284,11 +284,11 @@
 | 0x1AA | 1 | load-string | sub_433A70 | 已核对 | **load-string**：`sub_418AE0(1)` 读 op1 字符串索引 → `sub_429390(_this+5191, 5, idx)`（键 `"%c%8.8x",5,idx`，查 `_this+5472`，未命中返静态默认 `dword_55D0FC`）→ `sub_433310(1, 结果串)` 写回 op1 的字符串。（写操作数故 VM 可见）handler=sub_433A70（raw .c 42053）。**0x1A9 的读侧** |
 | 0x1AB | 2 |  | sub_42DFC0 | 仅映射 |  |
 | 0x1AC | 3 |  | sub_42E0A0 | 仅映射 |  |
-| 0x1AD | 0 |  | sub_4196F0 | 已核对 | **记当前帧下标**：`Engine[166963] = cur`。唯一读者在存档序列化（raw 17035/17059）⇒ emulator 不序列化该字段 ⇒ engine-internal。handler=sub_4196F0（raw .c 24806） |
+| 0x1AD | 0 |  | sub_4196F0 | 已核对 | **`Engine[166963] = cur`**（存档序列化用的「当前帧」记忆）。handler=sub_4196F0（raw 24806-24814）。语料 **1100 处 / 337 个脚本**。emulator：`op_store_cur_166963`（写 `engineValues`）。 |
 | 0x1AE | 3 |  | sub_42E1F0 | 仅映射 |  |
 | 0x1AF | 3 |  | sub_42E320 | 仅映射 |  |
 | 0x1B0 | 3 | memcpy | sub_42D150 | 已核对 | **memcpy**：`memcpy(dest=op2, src=op1, n=4*op3)`（`operandAddress(1)` 取 op1 基址、`operandAddress(2)` 取 op2 基址、`4*op3` 为字节数）。handler=sub_42D150（raw .c 37985），纯内存拷贝 |
-| 0x1B1 | 1 |  | sub_41FEA0 | 已核对 | **写 Engine[21672]**（消息子系统字段）。★**全工程无读者**（死写）⇒ engine-internal。handler=sub_41FEA0（raw .c 29155） |
+| 0x1B1 | 1 |  | sub_41FEA0 | 已核对 | **`Engine[21672] = op1`**。handler=sub_41FEA0（raw 29155-29163）。语料 2 处 / 1 个脚本。emulator：`op_set_field_21672`。（同类 `0x74`/`0x1B5` 写的是 21668 = `message:MessageSpeed`，本槽是另一个。） |
 | 0x1B2 | 1 |  | sub_42A9B0 | 已核对 | **字符串 append 日志缓冲**：`sub_40C660(_this+124336)`。handler=sub_42A9B0（raw .c 41442） |
 | 0x1B3 | 0 |  | sub_42AA00 | 已核对 | **append 2 字符换行**。handler=sub_42AA00（raw .c 41452） |
 | 0x1B4 | 0 |  | sub_428DB0 | 已核对 | **错误输出/中止**：`sub_40B420`。handler=sub_428DB0（raw .c 35482） |
@@ -299,7 +299,7 @@
 | 0x1B9 | 2 |  | sub_41FF60 | 已核对 | **设自动翻页基础时长**：读 op1=下标、op2=值；op1==1 ⇒ `SetConfig("message:AutoMessageTime1", op2)`、op1==0 ⇒ `…Time0`，其它值报错（`sub_4034D0`）。`INITREGMES` 用 `i1b9 0 5dc`（=1500ms）/ `i1b9 1 9c4`（=2500ms）设默认；handler=sub_41FF60（raw .c 29191-29220） |
 | 0x1BA | 2 |  | sub_421200 | 仅映射 |  |
 | 0x1BB | 1 |  | sub_420000 | 已核对 | **SetTB（文本项记账开关）**：op1==1 ⇒ `Engine[97055]=0`；op1==0 ⇒ `Engine[97055]=0x80000000`；其它 ⇒ `sprintf("SetTBの引数が不正です．\r\n")` + 抛 ShowMessage。`Engine[97055]` 同一字段兼两职：**记账门**（`0x1D2`/`0xC4`/`0x1BD`/`0x2F4` 的 `if (!Engine[97055])`）与**文本对象槽参数**（`0x71` 传给 `sub_45EC60`）。handler=sub_420000（raw 29223-29242）。语料 470 处 / 220 文件（`i1bb 0` … `i1bb 1` 成对）。emulator：`OPS` 的 `op_set_text_base`。 |
-| 0x1BC | 0 |  | sub_4197A0 | 已核对 | **清理声音/消息字段**：3×`sub_4B60C0` + 零 `85260..85280`/`490004..490040`。不写操作数 ⇒ engine-internal（清场语义）。handler=sub_4197A0（raw .c 24845） |
+| 0x1BC | 0 |  | sub_4197A0 | 已核对 | **清消息/声音字段**：若 `Engine[21290]` 非空 ⇒ 对 i=0..2 调 `sub_4B60C0(voiceObj, i + 12)`（释放 3 个语音通道对象）；再清零 `Engine[21315..21320]`（语音通道状态位，`0x2F7` 写的那组）与 `Engine[122501]`、`Engine[122505..122510]`（寄存语音槽，`0xC4` 的 ADV 分支写）。handler=sub_4197A0（raw 24845-24871）。语料 **213 处 / 184 个脚本**。emulator：`NATIVE_OPS` 的 `op_clear_message_sound_fields`（`handlers/audio.ts`：清字段 + 对 3 个通道发 `voice-reset`）。 |
 | 0x1BD | 1 |  | sub_4212C0 | 已核对 | **play-voice（通道 0，循环位=1）**：同 0xC4 的寄存/起播/登记三件套，但循环标志传 1（`Engine[122508]=1`、`sub_4BB840(Voice,0,op1,1,Engine[5053])`（第 5 参 = pan）、`sub_45EEA0(…,1,0,pan)`），且 `Engine[21315]` 状态位的清 0 条件是 `(v&0x10000)||(v&1)`。全库 0 处。handler=sub_4212C0（raw .c 30021-30066） |
 | 0x1BE | 2 |  | sub_42E770 | 仅映射 |  |
 | 0x1BF | 0 |  | sub_419840 | 已核对 | **跳读态置**（0 操作数）：`if (122504 & 0x10000) 122504 = 0; if ((122504 & 1) == 0) 122503 = 1;` —— `122504` 由 0x1CF 写入（消息跳读态），`122503` 的**唯一读者是 `0xBF` play-bgm**（raw 29773）：`set:KeepMusicVoice && sound:MusicFadeOnVoicePlaying && !122503` ⇒ 暂停 BGM 给语音让路（= 快进/跳读时不要压低音乐）。★不是脚本全局槽（`global-int 122503` 是另一个地址）。handler=sub_419840（raw 24874-24885）；emulator：`OPS` 的 `op_set_skip_read_state` |
@@ -312,7 +312,7 @@
 | 0x1C6 | 2 |  | sub_421690 | 仅映射 |  |
 | 0x1C7 | 1 |  | sub_42D390 | 已核对 | **ADV 激活查询**：`op1 = (effect_flags & 0x8000000) != 0`。★会回写 op1；语料 `src/SN0000.txt:1114` 的 `i1c7 f7ff5` / `i1cc f7ff6` → `or` → `jcc` 是 ADV 等待循环的判据。emulator：`OPS` 的 `op_get_adv_active`。handler=sub_42D390（raw .c 38072） |
 | 0x1C8 | 2 | to-string | sub_433820 | 已核对 | **to-string**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990），纯。**助记符改名 to-string**（原 toString 与 JS/Object 原型 key 冲突，曾反汇编成 `function toString() { [native code] }`） |
-| 0x1C9 | 3 |  | sub_420160 | 仅映射 |  |
+| 0x1C9 | 3 |  | sub_420160 | 已核对 | **音频设备 / 驱动初始化**：按 id（op1）打开音频驱动文件 → `sub_4B8490(Engine+7912, id, data, size)` → `sub_4B86E0(Engine+696548, hInstance)` → `Engine[18656] = op2`、`Engine[18660] = op3` → 取窗口坐标（`sub_4771D0`）→ `sub_4B7B70(设备, x, y)`。handler=sub_420160（raw 29291-29312）。语料 0 处。emulator：`op_audio_device_init` —— 两个参数照写字段；**驱动装载与窗口坐标下发无宿主等价物**（重写侧用 Web Audio，声部按需惰性创建）⇒ 已登记缺口。 |
 | 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 28961） |
 | 0x1CB | 1 |  | sub_42D3D0 | 已核对 | **读配置写操作数**：`op1 = GetConfig("message:ReadTextSkip")`（键名 raw 4277；`0x1CA` 的**读取端**）。★会回写 op1 —— 当 no-op 时脚本读到的是旧槽值（静默逻辑错误）；语料 30+ 个场景脚本 + 本体 `SC0000:443`/`DRAWCHARM:8`/`CHARMEDIT:751` 都有 `i1cb (global-int 139d)`。emulator：`OPS` 的 `op_get_read_text_skip`（走 `readTextSkipOf`，运行期覆盖优先）。handler=sub_42D3D0（raw .c 38082） |
 | 0x1CC | 1 |  | sub_42D410 | 已核对 | **本页文本显示中查询**：`op1 = Engine[122455]`。★会回写 op1（与 0x1C7 一起构成等待判据）。emulator：`OPS` 的 `op_get_msg_showing`。handler=sub_42D410（raw .c 38092） |

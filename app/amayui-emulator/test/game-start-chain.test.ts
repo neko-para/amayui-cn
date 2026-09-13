@@ -74,14 +74,14 @@ const IMPLEMENTED_9 = [0x195, 0x19a, 0x1b6, 0x1c7, 0x1cc, 0x215, 0x216, 0x218, 0
  * 它们**不回写操作数**（从 VM 视角不可观测），所以不在 IMPLEMENTED_9 里；但也**不再是"无依据的 no-op"**。
  */
 const A4_IMPLEMENTED = [0x20e, 0x224, 0x229, 0x238, 0x242, 0x256, 0x258, 0x32a, 0x32d] as const;
-/** 仍按依据跳过的（纯渲染/字段清理，且 emulator 无消费者）。 */
-const SKIPPED_7 = [0x93, 0x94, 0x97, 0xd9, 0x1ad, 0x1b1, 0x1bc] as const;
+/** A5（单行字段 / 计时 / 音频设备）7 条：2026-09 也转真实现（`handlers/panel.ts` / `engine-fields.ts` / `audio.ts`）。 */
+const A5_IMPLEMENTED = [0x93, 0x94, 0x97, 0xd9, 0x1ad, 0x1b1, 0x1bc] as const;
 
 // ---------------------------------------------------------------------------
 // 注册表棘轮
 // ---------------------------------------------------------------------------
 
-test('注册表棘轮：9 条写操作数 + A4 的 9 条已转真实现（OPS），7 条视觉/死写类仍归 engine-internal', () => {
+test('注册表棘轮：本链路采集到的 25 条**全部**已转真实现（OPS）', () => {
   for (const op of IMPLEMENTED_9) {
     assert.ok(OPS.has(op), `0x${op.toString(16)} 必须已实现（它会回写脚本操作数）`);
     assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应是 no-op`);
@@ -90,13 +90,21 @@ test('注册表棘轮：9 条写操作数 + A4 的 9 条已转真实现（OPS）
     assert.ok(OPS.has(op), `0x${op.toString(16)} 必须已实现（A4：见 handlers/gfx-state.ts）`);
     assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应再是 no-op`);
   }
-  for (const op of SKIPPED_7) {
-    assert.ok(ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 应有依据地跳过（engine-internal）`);
-    assert.ok(!OPS.has(op) && !NATIVE_OPS.has(op), `0x${op.toString(16)} 不应出现在 OPS/NATIVE_OPS`);
+  for (const op of A5_IMPLEMENTED) {
+    // `0x93`/`0x94`/`0x97`/`0xD9`/`0xAD`/`0x1AD`/`0x1B1` 在 OPS；
+    // `0x1BC`/`0x1C9` 在 NATIVE_OPS（音频子系统：`AUDIO_OPS` 经 NativeBridge 落宿主）
+    assert.ok(OPS.has(op) || NATIVE_OPS.has(op), `0x${op.toString(16)} 必须已实现（A5）`);
+    assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应再是 no-op`);
+  }
+  // ★2026-09 收口：这条链路上采集到的 16 条"按依据跳过"的**全部**已实现 ⇒ 本链路不再有任何 no-op。
+  const ALL_25 = [...IMPLEMENTED_9, ...A4_IMPLEMENTED, ...A5_IMPLEMENTED];
+  assert.equal(ALL_25.length, 25);
+  for (const op of ALL_25) {
+    assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应留在 ENGINE_INTERNAL_OPS`);
   }
 });
 
-test('棘轮：仍被跳过的 7 条**一个字都不写操作数**', () => {
+test('棘轮：A5 的 7 条也不写脚本操作数（引擎里它们只改引擎状态/渲染态）', () => {
   // 机械判据：把 op1/op2 指向两个全局 int，跑完 handler 后两者必须都没变。
   // （这正是"能否安全跳过"的定义 —— 一旦有人把它们改成半实现并开始回写，本测试会红，
   //   提示应当把它们搬进 OPS 并补断言。）——A4 那 9 条就是这么搬走的（2026-09）。
@@ -104,7 +112,7 @@ test('棘轮：仍被跳过的 7 条**一个字都不写操作数**', () => {
   const before = { a: 0x1234, b: 0x5678 };
   e.globals.int.set(0x300, enc(e.key, before.a));
   e.globals.int.set(0x301, enc(e.key, before.b));
-  for (const op of SKIPPED_7) {
+  for (const op of A5_IMPLEMENTED) {
     run(op, [gInt(0x300), gInt(0x301), gInt(0x302), gInt(0x303), gInt(0x304)]);
     assert.equal(dec(e.key, e.globals.int.get(0x300) ?? 0), before.a, `0x${op.toString(16)} 不应写 op1`);
     assert.equal(dec(e.key, e.globals.int.get(0x301) ?? 0), before.b, `0x${op.toString(16)} 不应写 op2`);

@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 25 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 26 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 25 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **107** | 需要关注（非 n/a 且非已核验）= **57** |
+| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
@@ -25,7 +25,7 @@
 | 3D | 17 | 3 |
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
-| 帧循环 | 14 | 9 |
+| 帧循环 | 15 | 9 |
 | 消息窗 | 24 | 15 |
 | 渲染 | 24 | 12 |
 | 资源 | 14 | 4 |
@@ -143,6 +143,7 @@
 | `text-item-record-table` | 消息窗 | 文本项记录表（Font+3364 的 72B/条 vector）：回想/历史与语音重播的账本 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
 | `text-redisplay-rewind` | 消息窗 | 文本重显示：`0x7B` 设本帧回退游标 + `0x199` 回退重画 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
 | `gfx-prim-mesh-and-render-state` | 渲染 | A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条） | 🟠 部分 | E3 · `test/op-a4-a6.test.ts` |
+| `single-field-timers-audio-device` | 帧循环 | A5：单行字段写 / 秒计时器 / 消息面 / 音频设备（9 条） | ✅ 已核验 | E3 · `test/op-a5.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

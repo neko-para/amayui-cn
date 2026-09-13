@@ -110,7 +110,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ★`0x1CB`（GetConfig("message:ReadTextSkip") → 写 op1）**已转真实现**（2026-09）：
   //   见 `handlers/msgwin.ts` 的 `op_get_read_text_skip` —— 它与 `0x1CA`（SetConfig 同一个键）成对，
   //   当 no-op 时脚本读到的是旧槽值（静默逻辑错误）。语料里 30+ 个场景脚本有 `i1cb (global-int 139d)`。
-  [0x1c9, op_engine_internal], // 消息窗（触摸/输入注册族，见 0x308）
   // ---- 声音族：已移出本表（2026-09）----
   //   `handlers/audio.ts` 的 `AUDIO_OPS` 是真实现（`NATIVE_OPS` → `NativeBridge.audio`）。
   //   整体机制见 docs-new/03-engine/sound-system.md；此前的 no-op 说明留在第二层台账
@@ -140,19 +139,17 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   `commitGraphics`/`clearTransitions`/`setDrawModeBlock`/`setDrawEntryParam`/`setSlotParams`/
   //   `setMeshEntryAttr`/`release3DSlot`/`set3DColor`）。语料用量很大：`0x258` 11356 处、`0x238` 2056 处、
   //   `0x20E` 786 处、`0x229` 716 处 —— 此前一律当无依据的 no-op。
+  // ============ A5（单行字段 / 计时 / 音频设备）★已转真实现（2026-09）============
+  //   `0x93`/`0x94`/`0x97`（消息面/面板表面）→ `handlers/panel.ts`（`PANEL_OPS`）；
+  //   `0xD9`/`0xAD`/`0x1AD`/`0x1B1`（清位/秒计时器/字段写）→ `handlers/engine-fields.ts`；
+  //   `0x1BC`/`0x1C9`（清消息·声音字段 / 音频设备初始化）→ `handlers/audio.ts`。
+  //   语料用量：`0x1AD` 1100 处 / 337 个脚本、`0x1BC` 213 处 / 184 个脚本；其余 0-2 处。
   // ============ 「启动 → Game Start → SN0000 首文案」路径上确认可跳过的 16 条（2026-09）============
   // 判据（逐条读 handler 体，raw 行号见右注）：**既不回写任何脚本操作数、也不改 ip/cur**，
   // 只写引擎里 emulator 无消费者的字段 / 只调渲染或 3D 子系统。因此对 VM 不可观测。
   // 与之相对，同一路径上**会回写操作数**的 9 条已转真实现（0x195 → handlers/config-read.ts；
   // 0x19A/0x1B6/0x1B7/0x1C7/0x1CC → handlers/msgwin.ts；0x215/0x216/0x218/0x21A → handlers/gfx-item.ts）。
   // 采集与逐条评估见 docs-new/03-engine/scene-start-flow.md。
-  [0x93, op_engine_internal], // sub_4191D0 raw 24589：显示态切换（`174801&=~0x800000`、toggle `12956/12957`、`sub_403EF0`）—— 渲染侧
-  [0x94, op_engine_internal], // sub_419230 raw 24604：置 `12957=1` + `sub_404020(Font+652, 10000)`（窗面清成色 10000）—— 渲染侧
-  [0x97, op_engine_internal], // sub_420910 raw 29596：5 操作数 → `sub_403D10(Font+652, rect, mode)` 填矩形（语料里首参为 −1000 ⇒ 屏外空转）—— 渲染侧
-  [0xd9, op_engine_internal], // sub_419970 raw 24939：清 `174801 &= ~0x1000`（+ `95779` 同位）—— 该位 emulator 无消费者（ADV 门是 0x8000000/0x40000000/bit31）
-  [0x1ad, op_engine_internal], // sub_4196F0 raw 24806：`166963 = cur`（存档序列化用"当前帧"记忆；emulator 不序列化该字段，无读者）
-  [0x1b1, op_engine_internal], // sub_41FEA0 raw 29155：`21672 = op1` —— **全工程无读者**（死写，与 21668 MessageSpeed 不是同一槽）
-  [0x1bc, op_engine_internal], // sub_4197A0 raw 24845：清消息/声音字段（`85260..85280`、`490004..490040`、3×`sub_4B60C0`）—— 都是清场，无操作数回写
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
   [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
@@ -167,7 +164,6 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 0x2DD（字体表第 idx 项的名字）**已转真实现**：见 handlers/msgwin.ts 的 op_font_list_name
   //   —— 它回写 op1 字符串，是字体选择器逐行画候选名的数据源；当 no-op ⇒ 列表整片空白。
   // ============ 数据字段 / 版本 / 脚本控制 ============
-  [0xad, op_engine_internal], // 数据
   // 0xAE（sub_4192F0）**已转真实现**（2026-09）：见 handlers/frame.ts 的 op_save_version_branch
   //   —— 存档版本分支（读档时把帧 ip 重算到存档记录的位置）。语料 0 处调用，但**会改控制流**，不能当 no-op。
   [0xaf, op_engine_internal], // 数据

@@ -420,3 +420,9 @@ export function scRelease3DSlot(s: SceneState, slot: number): void {
 export function scSet3DColor(s: SceneState, r: number, g: number, b: number, a: number): void {
   s.render4.color3D = [r, g, b, a];
 }
+
+/** `0x97` 面板填矩形（`sub_403D10`；作用对象 = 消息面/面板 `Engine+0x55D8`）。 */
+export function scFillPanelRect(s: SceneState, rect: number[], mode: number): void {
+  s.render4.panelRects.push({ rect: [...rect], mode });
+  if (s.render4.panelRects.length > 16) s.render4.panelRects.shift();
+}

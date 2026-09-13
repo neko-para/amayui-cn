@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 107,
-    "modeled-verified": 25,
+    "total": 108,
+    "modeled-verified": 26,
     "modeled-unverified": 7,
     "partial": 25,
     "absent": 25,
@@ -3093,6 +3093,48 @@
         "evidence": "E3",
         "guard": "test/op-a4-a6.test.ts",
         "note": "2026-09 A4 落地：`handlers/gfx-state.ts`（进 `OPS`）。**建模 2 条**：`0x238` → `engineValues[92338]/[92339]`、`0x258` → `Engine.texSlotFlags`（bit0|bit1）。**宿主缝 11 条**：`native.resetPrimTransform` / `setPrimTransform4` / `blitSlotToSlot` / `commitGraphics` / `clearTransitions` / `setDrawModeBlock` / `setDrawEntryParam` / `setSlotParams` / `setMeshEntryAttr` / `release3DSlot` / `set3DColor`，两个宿主（headlessScene / pixiBackend）都走共享层 `scene/ops.ts` 的新 `sc*` 并落进 `SceneState.render4`。★**仍为 partial 的原因（已登记缺口）**：`render4` 目前只**记录**，Pixi 管线尚未逐条消费（变换复位/槽→槽 blit/Clear/转场表/绘制模式/网格属性/3D 颜色对画面的实际影响待接入；3D 一族在本作重写侧无 3D 管线）。另：这 13 条**不在** TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 8 例单元测试锁定。"
+      }
+    },
+    {
+      "id": "single-field-timers-audio-device",
+      "subsystem": "帧循环",
+      "name": "A5：单行字段写 / 秒计时器 / 消息面 / 音频设备（9 条）",
+      "trigger": "脚本逐条调用：`0x93`/`0x94`/`0x97`（消息面开关与填矩形）、`0xD9`（清 `effect_flags` 0x1000）、`0xAD`（**秒计时器推进**）、`0x1AD`（`Engine[166963] = cur`，**1100 处 / 337 个脚本**）、`0x1B1`（`Engine[21672] = op1`）、`0x1BC`（清消息/声音字段 + 释放 3 个语音通道对象，**213 处**）、`0x1C9`（音频设备/驱动初始化）",
+      "engine": {
+        "fns": [
+          "sub_4191D0",
+          "sub_419230",
+          "sub_420910",
+          "sub_419970",
+          "sub_4192C0",
+          "sub_4196F0",
+          "sub_41FEA0",
+          "sub_4197A0",
+          "sub_420160",
+          "sub_4380F0",
+          "sub_403EF0",
+          "sub_404020",
+          "sub_403D10",
+          "sub_4B60C0"
+        ],
+        "raw": "24589-24631"
+      },
+      "reads": [
+        "effect_flags（174801）的 0x800000 / 0x1000 位",
+        "面板对象 `Engine+0x55D8` 的填充色/待填充/游标字段",
+        "Engine[95779]（与 174801 同位的影子槽）",
+        "Engine[166963]（存档序列化用的当前帧）",
+        "Engine[21672]",
+        "语音通道状态位 `21315..21320` 与寄存槽 `122501`/`122505..122510`",
+        "Engine[18656]/[18660]（音频设备参数）"
+      ],
+      "whySilent": "★这一族**都不回写脚本操作数、也不改控制流** ⇒ 漏掉它们**不报错**：`0xAD` 漏了没有秒计时、`0x1BC` 漏了语音通道状态残留（下一段语音可能不再起播）、`0x93`/`0x94` 漏了消息面开关失灵 —— 全是「闸门 B（能力缺口）」那类静默失真。它们长期躺在 `ENGINE_INTERNAL_OPS` 里当无依据的 no-op。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/op-a5.test.ts",
+        "note": "2026-09 A5 落地：`handlers/panel.ts`（`0x93`/`0x94`/`0x97`）、`handlers/engine-fields.ts`（`0xD9`/`0xAD`/`0x1AD`/`0x1B1`）、`handlers/audio.ts`（`0x1BC`/`0x1C9`，经 `NATIVE_OPS` 发 `voice-reset` 意图）。`0xAD` 的定点乘用 `BigInt` 复刻（`274877907 * t >> 38`）；`0x97` 经宿主缝 `native.fillPanelRect` 落 `SceneState.render4.panelRects`。★已登记缺口：`0x1C9` 的**驱动文件装载与窗口坐标下发**（重写侧 Web Audio 无驱动层）。★这批收口后，TITLE→SN0000 链路上采集到的 25 条**全部**已转真实现（链路上不再有任何 `ENGINE_INTERNAL_OPS`）。"
       }
     }
   ]

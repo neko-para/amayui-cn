@@ -24,6 +24,7 @@ import { MSGWIN_OPS } from './msgwin.js';
 import { TEXT_ITEM_OPS } from './text-items.js';
 import { GFX_STATE_OPS } from './gfx-state.js';
 import { AGERC_OPS } from './agerc.js';
+import { PANEL_OPS } from './panel.js';
 import { FRAME_OPS, FRAME_NATIVE_OPS } from './frame.js';
 import { GFX_CG_OPS } from './gfx-cg.js';
 import { GFX_TEXTURE_OPS, GFX_TEXTURE_NATIVE_OPS } from './gfx-texture.js';
@@ -48,6 +49,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...TEXT_ITEM_OPS, // 0x1BB/0x1D2/0x1D3/0x1D4/0x2F3：文本项记录表（回想/历史 + 语音重播的账本）
   ...GFX_STATE_OPS, // A4：图元/网格/纹理/渲染状态 13 条（2 条建模 + 11 条宿主缝）
   ...AGERC_OPS, // A6：AGERC 模块接口 0x14B/0x14C/0x14D（模型化，不加载原生库）
+  ...PANEL_OPS, // A5：消息面/面板表面 0x93/0x94/0x97
   ...FRAME_OPS,
   ...GFX_CG_OPS,
   ...GFX_TEXTURE_OPS,
