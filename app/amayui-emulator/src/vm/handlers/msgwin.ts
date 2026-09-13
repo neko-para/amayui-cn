@@ -30,6 +30,7 @@ import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand 
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import {
+  advance,
   defaultWinStyle,
   layoutWindow,
   type FontSpec,
@@ -234,10 +235,20 @@ function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
   let x = g.textX + geom.x;
   let y = g.textY + geom.y;
   if (followText) {
-    const laid = layoutWindow(win, { style: styleOfWin(e, win), segments: e.msgwin.slot(win).segments });
-    const line = laid.lines[laid.lines.length - 1];
-    x = g.textX + (line ? line.x + line.width : geom.x);
-    y = g.textY + (line ? line.y : geom.y);
+    // 引擎 raw 71352-71359 的 mode-1：`v6[12]` = win+48 = 记录向量的 **end 指针** ⇒
+    // `buf[-20]`/`buf[-16]` 就是**最后一条 24B 记录**的 `+4`/`+8`：
+    //   - 逐字排版（sub_46BE30 raw 83899/83912）把它写成"该字画完后的笔位 / 该行 y"；
+    //   - `0x6F end-text-line`（raw 82684-82685）才把它重置成"下一行行首 x / 下一行 y"。
+    // 语料里页末最后一条是 `concat`（不是 end-text-line）⇒ 目标 = **末行最后一个字的后面**
+    // （用户实测："应该在最后一行的末尾"）。
+    const style = styleOfWin(e, win);
+    const layout = layoutWindow(win, { style, segments: e.msgwin.slot(win).segments });
+    const line = layout.lines[layout.lines.length - 1];
+    const glyph = line && line.glyphs.length > 0 ? line.glyphs[line.glyphs.length - 1] : undefined;
+    // 末字右边 = 字形 x + 该字的推进量（`advance` = 半角格数 × 0.5em，与排版同源）
+    const penX = glyph ? glyph.x + advance(glyph.ch, style.main.size) : line ? line.x + line.width : 0;
+    x = g.textX + penX;
+    y = g.textY + (line ? line.y : 0);
   }
   return {
     srcSurface: g.srcSurface,
@@ -439,7 +450,9 @@ const op_wait_for_input: OpHandler = (c) => {
   m.charTotal = grid ? grid.cells : 0;
   e.engineValues.set(107705, m.charTotal);
   m.cellK = 0;
-  m.cellNextAt = e.nowMs + (grid && grid.tickMs > 0 ? grid.tickMs : 1);
+  // ★0 = "已预备、等本页逐字显完再起步"：引擎主循环里文字泵（sub_409400 的 `while(!sub_45BE20) Sleep`）
+  //   是自旋的 —— 一页没贴完就走不到 raw 20887-20895 的图标分支 ⇒ 图标天然出现在文字之后。
+  m.cellNextAt = 0;
   if (!m.isRevealing(w)) {
     const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments });
     const total = laid.glyphCount;
@@ -767,7 +780,12 @@ const op_get_msg_showing: OpHandler = (c) => {
 /**
  * `0x090`（sub_420640 raw 29477-29518）：**登记点击热点/路由项**。
  * `i090 <x> <y> <w> <h> <labelA> <labelB> <labelC>` →
- * `sub_403B30(Engine+0x55D8, x, y, x+w, y+h, labelA, labelB, labelC, frame_arg)`。
+ * `sub_403B30(Engine+0x55D8, x, y, x+w, y+h, labelA, labelB, labelC, frames[cur][95796])`。
+ *
+ * ★第 9 个实参是 **`frames[cur][95796]` = 当前帧的脚本身份 token**（raw 29504），
+ * 引擎把它存成 `panelA[7461]`，供 `sub_4083B0` 的「不许跨脚本派发 label」守卫比对
+ * （见 `Engine.guardScriptIdentity`）。这里传 `frame.scriptId` —— 早前传的是 `frameArg`（恒 0），
+ * 那是语义错（`frameArg` 与 `[7461]` 无关）。
  *
  * 入队失败（表满 100）时引擎抛 `Command_ShowMessage`；emulator 照抛，绝不静默。
  * ★这是「等待输入」结束后脚本能继续的**唯一**机制（见 `src/vm/route.ts`）。
@@ -775,7 +793,7 @@ const op_get_msg_showing: OpHandler = (c) => {
 const op_route_push: OpHandler = (c) => {
   const e = c.e;
   const [x, y, w, h, labelA, labelB, labelC] = [1, 2, 3, 4, 5, 6, 7].map((n) => readIntOperand(e, c.frame, c.instr, n));
-  const ok = e.routes.push(x!, y!, w!, h!, labelA!, labelB!, labelC!, c.frame.frameArg);
+  const ok = e.routes.push(x!, y!, w!, h!, labelA!, labelB!, labelC!, c.frame.scriptId);
   if (!ok) throw new Error('0x090: 点击热点表已满（引擎上限 100，引擎此处抛 ShowMessage）');
 };
 

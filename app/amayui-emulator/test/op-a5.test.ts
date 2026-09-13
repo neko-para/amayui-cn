@@ -34,9 +34,9 @@ function mk(native: NativeBridge = new StubNative(() => {}), input = new InputMa
   return { e, f, run, input };
 }
 
-const A5 = [0x93, 0x94, 0x97, 0xd9, 0xad, 0x1ad, 0x1b1, 0x1bc, 0x1c9] as const;
+const A5 = [0x91, 0x92, 0x93, 0x94, 0x97, 0xd9, 0xad, 0x1ad, 0x1b1, 0x1bc, 0x1c9] as const;
 
-test('注册表棘轮：A5 的 9 条都已实现，且不在 ENGINE_INTERNAL_OPS', () => {
+test('注册表棘轮：A5 的 11 条都已实现，且不在 ENGINE_INTERNAL_OPS', () => {
   for (const op of A5) {
     assert.ok(OPS.has(op) || NATIVE_OPS.has(op), `0x${op.toString(16)} 应已实现`);
     assert.equal(ENGINE_INTERNAL_OPS.has(op), false, `0x${op.toString(16)} 不得留在 stub 表`);
@@ -55,14 +55,19 @@ test('A5 0x93：清 effect_flags 0x800000 + 复位面板游标态 + toggle 12956
   assert.equal(e.effectFlags & 0x40, 0x40, '别的位不动');
   assert.equal(e.routes.cursor, -1, '`[7468]` 游标复位');
   assert.equal(e.engineValues.get(F(959)), -1);
-  assert.equal(e.routes.count, 1, '复位**不清**路由条目表');
+  // ★2026-09 订正：`[258]` **就是路由表的条目数**（面板 `_this + 1032`，命中测试 `sub_403C50`
+  //   raw 9819 用的就是它）⇒ `sub_403EF0` 的 `[258] = 0` = **清空路由表**。旧断言写的是
+  //   "复位不清路由条目表"（源于 opcode-table 的一句笔误），实际引擎会清 —— 不清的话 UI 例程
+  //   每次 `i093` + 重登记都会累积热点（实测 14→33→40），旧的全屏热点继续遮蔽新的 ⇒ 派发错 label。
+  assert.equal(e.routes.count, 0, '复位会**清空**路由条目表（[258] = 条目数 = 0）');
+  assert.equal(e.engineValues.get(F(258)), 0, '`[258]` 也同步写 0');
   assert.equal(e.engineValues.get(12957), 0, '12957 原为 1 ⇒ 清 0');
   // 再跑一次：12957 已 0 ⇒ 置 12956 = 1
   run(0x93);
   assert.equal(e.engineValues.get(12956), 1);
 });
 
-test('A5 0x94：置 12957 + 面板填充色（首次初始化时按鼠标做命中测试）', () => {
+test('A5 0x94：置 12957 + 步长/待填充（首次初始化时按鼠标做命中测试）', () => {
   const input = new InputManager();
   input.x = 5;
   input.y = 5;
@@ -71,23 +76,82 @@ test('A5 0x94：置 12957 + 面板填充色（首次初始化时按鼠标做命�
   e.routes.push(0, 0, 10, 10, 1, 2, 3, 0);
   run(0x94);
   assert.equal(e.engineValues.get(12957), 1);
-  assert.equal(e.engineValues.get(F(7465)), 1, '置"已初始化"');
+  assert.equal(e.engineValues.get(F(7465)), 1, '置"已初始化"（sub_404020 首次分支）');
   assert.equal(e.routes.cursor, 0, '首次初始化按鼠标坐标命中（GetCursorPos→sub_403C50 等价物）');
-  // 第二次：只写填充色 + 待填充标记
+  // 第二次：只写步长 + 待填充标记（引擎 `sub_404020` 的 `[7465] != 0` 分支）
   e.routes.cursor = -1;
   run(0x94);
-  assert.equal(e.engineValues.get(F(960)), 10000, '填充色 = 10000');
+  assert.equal(e.engineValues.get(F(960)), 10000, '步长 = 10000');
   assert.equal(e.engineValues.get(F(7464)), 1, '待填充');
   assert.equal(e.routes.cursor, -1, '已初始化分支不再做命中测试');
+  assert.equal(e.routes.pageStep, 10000, '同一份状态：`[960]` 也落在 RoutePanel 上');
 });
 
-test('A5 0x97：面板填矩形转发（rect = 左上+宽高）', () => {
-  const calls: number[][] = [];
-  const native = new StubNative(() => {});
-  (native as unknown as { fillPanelRect?: (...a: number[]) => void }).fillPanelRect = (...a) => calls.push(a);
-  const { run } = mk(native);
-  run(0x97, [im(10), im(20), im(30), im(40), im(7)]);
-  assert.deepEqual(calls, [[10, 20, 40, 60, 7]]);
+test('A5 0x97：**把输入掩码位绑到矩形相同的那个热点**（= sub_403D10，不是"填矩形"）', () => {
+  const { e, run } = mk();
+  // `i090 x y w h …` 登记（矩形存成 x1=x+w, y1=y+h），随后 `i097 x y w h bit` 绑定
+  run(0x90, [im(0x10), im(0x20), im(0x30), im(0x40), im(-1), im(-1), im(0x770)]);
+  run(0x97, [im(0x10), im(0x20), im(0x30), im(0x40), im(3)]);
+  assert.equal(e.routes.entries[0]!.keyBit, 3, '绑定掩码位 3（引擎 `[7361+i] = a3`，raw 9842）');
+  // `sub_403D70`（raw 9847-9862）：该位在掩码里 ⇒ 返回该热点的 **labelC**
+  assert.equal(e.routes.pickByKey(1 << 3), 0x770, '掩码含 bit3 ⇒ 键命中返回 labelC');
+  assert.equal(e.routes.pickByKey(0), -1, '掩码为 0 ⇒ 不命中');
+  // 矩形不完全相同 ⇒ 引擎静默什么都不做（`sub_403D10` 没有 else 分支）
+  run(0x97, [im(0x11), im(0x20), im(0x30), im(0x40), im(5)]);
+  assert.equal(e.routes.entries[0]!.keyBit, 3, '矩形不全等 ⇒ 不改绑定');
+  // ★这不再经过 NativeBridge（旧实现转发 `native.fillPanelRect` 是语义错）
+  assert.equal((e.native as unknown as { fillPanelRect?: unknown }).fillPanelRect, undefined);
+});
+
+test('A5 0x91/0x92：面板显示态（effect_flags 0x800000）+ sub_404020；0x92 另写回退 label [7467]', () => {  const { e, run } = mk();
+  e.routes.push(0, 0, 10, 10, 1, 2, 3, 0);
+  run(0x92, [im(7), im(0x4321)]);
+  assert.equal(e.effectFlags & 0x800000, 0x800000, '置位 0x800000（raw 29560）');
+  assert.equal(e.routes.fallbackLabel, 0x4321, '`[7467]` = op2（回退 label）');
+  assert.equal(e.engineValues.get(F(7464)), 1, '经 sub_404020 置"待填充"');
+  assert.equal(e.engineValues.get(F(960)), 7, '步长 = op1');
+  // toggle：`[12956]` 非 0 ⇒ 只清 12956/12958（不发显示态）
+  e.effectFlags = 0;
+  e.engineValues.set(12956, 1);
+  run(0x91, [im(5)]);
+  assert.equal(e.effectFlags & 0x800000, 0, '关闭已发生 ⇒ 不置显示位');
+  assert.equal(e.engineValues.get(12956), 0, '`[12956]` 被清 0');
+  assert.equal(e.engineValues.get(12958), 0, '`[12958]` 被清 0');
+});
+
+test('0xFB + 0x100：跳转表按**输入掩码位**索引（不是 b-4），b∈{4,5} 也不走 mouseJump', () => {
+  const { e, run } = mk();
+  const f = e.curScript(); // ★`0x100` 在**当前帧**查 labelMap（不是测试里那个 `new Frame()`）
+  f.labelMap.set(0x500, 3);
+  f.labelMap.set(0x511, 5);
+  /** `run` 的变体：拿回 `StepCtx`（`jump()` 只写 `ctx._nextIp`，由 `stepOnce` 才落到 `frame.ip`）。 */
+  const runCtx = (op: number, args: BinArg[]): { _nextIp: number | null } => {
+    const h = OPS.get(op);
+    assert.ok(h, `0x${op.toString(16)} 应已实现`);
+    const ctx = makeCtx(e, f, instr(op, args), e.native, () => {});
+    h!(ctx);
+    return ctx;
+  };
+  // `i0fb <btn> <label>`：登记**掩码位** `4+btn`（引擎 `sub_477280` 的 `1 << (btn+4)`）。
+  //   手柄按钮 3 ⇒ 掩码位 7；按钮序号 1 ⇒ 掩码位 5（= 鼠标右）。
+  run(0xfb, [im(3), im(0x500)]);
+  run(0xfb, [im(1), im(0x511)]);
+  assert.equal(e.input.joyJump[7], 0x500, '手柄按钮 3 ⇒ 掩码位 7（`4+3`）');
+  assert.equal(e.input.joyJump[5], 0x511, '按钮序号 1 ⇒ 掩码位 5（= 鼠标右）');
+  // 手柄按钮 3 ⇒ 掩码位 7 ⇒ 用 joyJump[7]
+  e.input.pressJoy(3);
+  assert.equal(runCtx(0x100, [])._nextIp, 3, '掩码 bit7 ⇒ joyJump[7] 的目标 0x500');
+  // 鼠标右键按下 ⇒ 掩码位 5；`joyJump[5]` 已登记 ⇒ 跳 0x511。
+  //   ★旧实现走 `(b===4||b===5) && mouseJump!==-1 ? mouseJump : joyJump[b-4]`：
+  //     mouseJump 未注册时取 `joyJump[1]`（= -1）⇒ **什么都不跳**；注册了则错跳 mouseJump。
+  e.input.joyEdge = [];
+  e.input.consumeEdges();
+  e.input.buttons = 2; // 右键按住 ⇒ flush 出 bit5
+  e.input.mouseJump = 0x999; // 注册了 mouse-callback 也不该被 0x100 用
+  f.retStack.length = 0;
+  assert.equal(runCtx(0x100, [])._nextIp, 5, '掩码 bit5 ⇒ joyJump[5]（不是 mouseJump、也不是 joyJump[b-4]）');
+  assert.equal(e.input.mouseJump, 0x999, '0x100 不消费（也不读）mouseJump');
+  void run;
 });
 
 test('A5 0xD9：清 effect_flags & 0x1000（派发中时同清 95779）', () => {

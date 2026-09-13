@@ -1,102 +1,224 @@
 /**
- * **点击热点 / 路由表**（引擎 `Engine+0x55D8` 起的对象，`_this + 5494`（dword 下标））。
+ * **点击热点 / 路由表**（引擎 `Engine+0x55D8` 起的对象，`_this + 5494`（dword 下标）＝
+ * C++ 侧的 `CBunki` 面板对象；raw 行号 = `engine/天结_unpacked.exe_utf8.c`）。
  *
- * ## 为什么它决定「等待输入」能不能结束
- * ADV 的推进不是"读鼠标键就直接往下跑"，而是走这张表：
- *  1. 脚本用 `0x090`（sub_420640 → sub_403B30）**登记一个矩形热点 + 三个 label**；
- *     消息场景常见的就是 `i090 0 0 500 2d0 …` —— 覆盖全屏的"点任意处推进"。
- *  2. `0x72 wait-for-input` 置 `effect_flags` bit31 挂起脚本。
- *  3. 主循环 / 等待泵（`sub_411BC0`）每帧刷输入掩码，再按**喂给它的 label** 重定位脚本：
- *     - **点击/推进输入**（`aMessageAdvance`，raw 20262-20293）：`sub_404E00` = `[459+游标]`（labelC）；
- *     - **悬停（游标变化）**（raw 20324-20337）：`sub_403E70` 返回 labelA（进入）/ labelB（离开）。
+ * ## 一句话
+ * 引擎里「鼠标/键 → label」不是一条链，而是**5 条出口共用一个面板对象**：`0x090` 登记矩形 +
+ * 三个 label，运行时由三条出口取用：
+ *  - **按下键位命中** `sub_403D70`（raw 9847-9862）→ 取 `[459+i]`（**labelC**）；
+ *  - **游标进入/离开** `sub_403E70`（raw 9918-9955）→ 分别取 `[259+i]`（labelA）/ `[359+i]`（labelB），
+ *    且**一次调用只返回一个**（A→B 要跨两帧，靠 `[7466]` 补发）；
+ *  - **读当前游标项的 labelC** `sub_404E00`（raw 10667-10676，无副作用）/
+ *    **提交并清表** `sub_404120`（raw 10052-10062）。
  *
- * ## 表结构（引擎实证，`sub_403B30` raw 9740-9764）
- * 最多 **100** 项，每项：
+ * ## 表结构（`sub_403B30` raw 9740-9764）——最多 100 项
  * ```
- * [259 + i] = a6   // labelA：**游标进入**该项时派发（`sub_403E70` 的 else 分支）
- * [359 + i] = a7   // labelB：**游标离开**该项时派发
- * [459 + i] = a8   // labelC：**点击/键命中**时派发（`sub_404E00` / `sub_403D70`）
- * [559 + 4i .. +3] = a2,a3,a4,a5   // 矩形 x0,y0,x1,y1（调用方已把 w/h 加成 x1/y1）
- * [7361 + i] = -1  // 输入掩码位（入队时未绑定；-1 表示不参与键命中）
- * [7461] = a9      // frame_arg
+ * [258]        = 条目数（★就是它，置 0 = 清表；`sub_403EF0` raw 9963）
+ * [259 + i]    = labelA：游标**进入**该项（`sub_403E70` 的 else 分支）
+ * [359 + i]    = labelB：游标**离开**该项
+ * [459 + i]    = labelC：**点击 / 键命中**（`sub_403D70` 9862、`sub_404E00` 10675、主循环 20182）
+ * [559 + 4i..] = 矩形 x0,y0,x1,y1（步长 4 dword = 16 字节；`0x090` 的调用方已把 w/h 加成 x1/y1）
+ * [7361 + i]   = 该热点绑定的**输入掩码位**（入队时置 -1；`0x97` → `sub_403D10` 写入）
+ * [7461]       = **登记这张表时的脚本身份 token**（= 当时 `frames[cur][95796]`；raw 9762）
+ * [7465]       = 「已做过命中测试」标记（9763/10023）
+ * [7466]       = 「上一帧刚发过离开 ⇒ 本帧补发进入」
+ * [7467]       = 回退 label（只有 `0x92` 写；语料 0 处）
+ * [7468]       = **游标**（命中项下标，-1 = 无；9810/9822）
+ * [959]        = 已派发过「进入」的项（9927/9941/9964）
+ * [960]        = 步长（`0x94` 写 10000；`sub_403DD0` 的方向键翻页用）
  * ```
- * `0x090` 的调用形态（真实脚本）：`i090 <x> <y> <w> <h> <labelA> <labelB> <labelC>`
- * —— `sub_420640` 把 w/h 加成 x1/y1 后传入。
  *
- * ## 本实现的范围与偏差（明确记录）
- * - 实现：入队（`0x090`）、按坐标命中测试设游标、**悬停"进入/离开"两段式派发**（`nextHoverLabel`）、
- *   按"推进输入 + 游标命中"取 label 并重定位 `ip`。
- * - 偏差①：点击走的是 **labelA**（`labelNext`）而不是引擎的 labelC（`sub_404E00`）。
- *   原因：引擎跳 label 时带**返回点**（`sub_4083B0`/`sub_405360(-3)`/`sub_4051A0`），
- *   而 ADV 页里的 labelC 多为 `ret` 结尾的 UI 子程序，没有返回点就语义不成立。
- *   语料实测：`i090 0 0 500 2d0 … ffffffff ffffffff <labelC>`（"点任意处推进"）的 labelA = −1
- *   ⇒ emulator 只清等待门、由脚本自己继续，页推进行为与真机一致（用户实测通过）。
- * - 偏差②：**未实现**引擎里 `[7466]/[959]` 之外的那些去重/键位绑定细节（`[7361+i]` 的写入方
- *   与 `sub_403500` 的坐标变换（视口缩放））。
+ * ## 命中测试什么时候做（★不是每帧）
+ * `sub_403C50`（raw 9787-9824）**只有三个调用点**：`sub_404020`（10026，面板首次显示）、
+ * `sub_4040A0`（10043，面板 B）、`sub_4B8D50`（140828/140830，**WM_MOUSEMOVE**）。
+ * 等待泵（`sub_411BC0`）与主循环（`sub_411900`）里**没有**命中测试 ⇒
+ * 游标只在「鼠标移动 / 面板刚显示」时更新。本实现把 `hitTest` 同样限制在这两种时机
+ * （宿主在 `InputManager` 的光标变化回调里调 → 见 `Engine` 构造函数的订阅）。
+ *
+ * ## 命中取**第一个**（9815 的下标升序循环，第一个满足即停）
+ * ⇒ 先登记的全屏热点会遮蔽后来者；引擎靠「每个状态只登记一套热点 + `i093` 清表」避开
+ * （`SN0000.txt:125` 的 `i093` 就是清表）。
+ *
+ * ## 坐标
+ * `sub_403C50` 先把客户区坐标经 `sub_403500` 换算成虚拟坐标（`sub_404E20` 装填的变换参数）。
+ * 在客户区就是 1280×720 时该变换**恒等**（`scale = (size+2*offset)/clientSize` = 1、偏移 0）
+ * ⇒ 直接用虚拟 1280×720 比较是等价的。非该分辨率/多显示器下未验证（见规格 §G3）。
  */
 
-/** 一个热点项。 */
+/** 一个热点项（引擎里是 5 个并行数组的同一下标）。 */
 export interface RouteEntry {
-  /** 命中矩形（引擎里 x1/y1 已含宽度）。 */
+  /** `[559+4i]`（x0）。 */
   x0: number;
+  /** `[560+4i]`（y0）。 */
   y0: number;
+  /** `[561+4i]`（x1 = x + w）。 */
   x1: number;
+  /** `[562+4i]`（y1 = y + h）。 */
   y1: number;
-  /** `[259+i]`：**游标进入**该热点时派发的 label（`sub_403E70`）。 */
-  labelNext: number;
-  /** `[359+i]`：**游标离开**该热点时派发的 label。 */
-  labelPrev: number;
-  /** `[459+i]`：点击 / 键命中派发的 label（`sub_404E00` / `sub_403D70`）。 */
-  labelKey: number;
-  /** `[7461]`：入队时所在帧的 frame_arg。 */
-  frameArg: number;
+  /** `[259+i]`：**游标进入**该热点时派发（`sub_403E70` 的 else 分支 9950）。 */
+  labelEnter: number;
+  /** `[359+i]`：**游标离开**该热点时派发（9945）。 */
+  labelLeave: number;
+  /** `[459+i]`：**点击 / 键命中**时派发（`sub_403D70` 9862 / `sub_404E00` 10675）。 */
+  labelClick: number;
   /** `[7361+i]`：输入掩码位；-1 = 未绑定（不参与键命中）。 */
   keyBit: number;
 }
 
-/** 引擎上限：`sub_403B30` 的 `if (count >= 100) return 0;`。 */
+/**
+ * 面板对象需要的 `Engine._this` 稀疏字段读写（`engineValues`）。
+ *
+ * 为什么把耦合收敛到这一个函数：**[7464]/[7465]/[960]/[7462]/[7463]** 这几格是**有读者的引擎字段**
+ * （脚本侧 `0x94` 的两次调用要看 `[7465]`；等待泵被 `[7463]` 门控），所以它们必须与 `RoutePanel`
+ * 的字段是**同一份状态**，不能各存一份（规格 §F.2 的 `panel.ts` 第 ③ 条）。
+ *
+ * 签名刻意做成**无类型耦合的纯函数**：`get(k)` / `set(k, v)`，
+ * `Engine.panelField` 一行即可实现（见 `engine.ts`）。
+ */
+export type PanelField = (k: number, v?: number) => number | undefined;
+
+/** 引擎上限：`sub_403B30` 的 `if (count >= 100) return 0;`（9748-9749）。 */
 export const ROUTE_MAX = 100;
 
-export class RouteTable {
+/** 面板对象在 `_this` 里的基址（dword 下标）：`Engine+0x55D8` = `_this + 5494`。 */
+const PANEL_BASE = 5494;
+
+/**
+ * 面板对象**之外**的两个引擎槽（与 `panelA` 的对应关系是 raw 实证）：
+ * - `[7463]`（= `Engine[12957]`）：面板已显示（`0x94` 置 1、`0x93` toggle 清 0）；
+ * - `[7462]`（= `Engine[12956]`）：关闭已发生（`0x93` 的 toggle 端、`0x91`/`0x92` 的清零点）。
+ *
+ * ★为什么单独列出来：它们是 `sub_4191D0`/`sub_419230` 直接读写的**引擎字段**
+ * （raw 24596-24599、24607），不是从 `panelA` 基址算出来的 —— 但只要它们是「同一份状态」，
+ * 写一处就必须对另一处可见（否则 `0x93` 与泵的门控会各看各的）。
+ */
+const ENGINE_SHOWN = 12957;
+const ENGINE_CLOSE_PENDING = 12956;
+
+/**
+ * 点击热点面板（引擎 `Engine+0x55D8` 的 CBunki 对象）。
+ *
+ * 字段名与引擎下标的对应见类注释；命名统一为「事件语义」（`cursor`/`hover`/`enterPending`…），
+ * 引擎下标写在各 getter/setter 的注释里，便于对着 raw 核对。
+ */
+export class RoutePanel {
   readonly entries: RouteEntry[] = [];
-  /**
-   * 命中游标（引擎 `[7468]`）：由坐标命中测试写入，`-1` = 未命中。
-   */
+  /** `[7468]`：命中游标（-1 = 未命中）。由 `hitTest` 写。 */
   cursor = -1;
-  /**
-   * 上一次已派发过"进入"的热点下标（引擎 `[959]`）。
-   *
-   * 引擎在"游标变化"时用它与当前游标比较，决定这次该发**离开**（旧项）还是**进入**（新项）。
-   */
-  hoverLatch = -1;
-  /**
-   * 上一帧刚发过"离开"⇒ **本帧补发"进入"**（引擎 `[7466]`）。
-   *
-   * 为什么需要两段式：`sub_403E70`（raw 9918-9955）一次调用只返回**一个** label，
-   * 而"从 A 移到 B"要发两个（先 A 的 labelB，再 B 的 labelA）⇒ 引擎把 A 的离开先发出去、
-   * 置 `[7466]=1`，下一帧（`[959]` 已是 B）再发 B 的进入。
-   */
-  pendingEnter = 0;
+  /** `[959]`：已派发过「进入」的项（`sub_403E70` 的两段式状态的另一半）。 */
+  hover = -1;
+  /** `[7466]`：上一帧刚发过「离开」⇒ 本帧补发「进入」。 */
+  enterPending = 0;
+  /** `[7461]`：**登记这张表时的脚本身份 token**（= 那一刻 `frames[cur][95796]`）。 */
+  ownerScriptId = -1;
+
+  /** `[7464]` 待填充标记（`0x94` 经 `sub_404020` 写；emulator 未建模填充的视觉语义，见规格 §G5）。 */
+  #fillPending = 0;
+  /** `[7465]` 是否已做过命中测试（`0x94`/`sub_404020` 读它决定"首次按鼠标重做命中测试"）。 */
+  #hitDone = 0;
+  /** `[960]` 步长（`0x94` 写 10000；`sub_403DD0` 用它做方向键/翻页键跳项）。 */
+  #pageStep = 0;
+  /** `[7467]` 回退 label（**只有 `0x92` 写**，等待泵的 `sub_4098E0` 读；语料 0 处）。 */
+  fallbackLabel = -1;
+
+  /** `[7463]`/`[7462]` 的本地回退（有 sink 时以 `engineValues` 为准，见 `#read`）。 */
+  #shown = 0;
+  #closePending = 0;
+
+  constructor(private readonly field?: PanelField) {}
 
   get count(): number {
     return this.entries.length;
   }
 
   /**
-   * `0x090`（sub_403B30）：登记一项。矩形按**宽高**给（与脚本一致），内部存 x1/y1。
-   * 返回 `false` = 表满（引擎同样返回 0，调用方据此抛 ShowMessage）。
+   * 读一个"同时是引擎格"的面板字段（参数 k 是**相对 `panelA` 基址**的下标）：
+   * `field` 就是 `Engine.panelField`（读写 `engineValues` 里的 `_this[PANEL_BASE + k]`，
+   * 它收的是**绝对**下标）；没有 `field` 时回退到本地字段（测试里 `new RoutePanel()` 的场景）。
    */
-  push(x: number, y: number, w: number, h: number, labelNext: number, labelPrev: number, labelKey: number, frameArg: number): boolean {
+  #read(k: number, local: number): number {
+    return this.field?.(PANEL_BASE + k) ?? local;
+  }
+
+  /** 写一个"同时是引擎格"的面板字段（参数 k 是**相对 `panelA` 基址**的下标）。 */
+  #write(k: number, v: number): void {
+    this.field?.(PANEL_BASE + k, v);
+  }
+
+  /** 写一个**绝对** `_this` 下标（面板对象之外那两格：`12956`/`12957`）。 */
+  #writeAbs(k: number, v: number): void {
+    this.field?.(k, v);
+  }
+
+  /** `[7463]`（= `Engine[12957]`）：面板已显示。 */
+  get shown(): number {
+    return this.field?.(ENGINE_SHOWN) ?? this.#shown;
+  }
+  set shown(v: number) {
+    this.#shown = v;
+    this.#writeAbs(ENGINE_SHOWN, v);
+    this.#write(7463, v);
+  }
+
+  /** `[7462]`（= `Engine[12956]`）：关闭已发生。 */
+  get closePending(): number {
+    return this.field?.(ENGINE_CLOSE_PENDING) ?? this.#closePending;
+  }
+  set closePending(v: number) {
+    this.#closePending = v;
+    this.#writeAbs(ENGINE_CLOSE_PENDING, v);
+    this.#write(7462, v);
+  }
+
+  /** `[7464]`（待填充标记）。 */
+  get fillPending(): number {
+    return this.#read(7464, this.#fillPending);
+  }
+  set fillPending(v: number) {
+    this.#fillPending = v;
+    this.#write(7464, v);
+  }
+
+  /** `[7465]`（是否已做过命中测试）。 */
+  get hitDone(): number {
+    return this.#read(7465, this.#hitDone);
+  }
+  set hitDone(v: number) {
+    this.#hitDone = v;
+    this.#write(7465, v);
+  }
+
+  /** `[960]`（步长）。 */
+  get pageStep(): number {
+    return this.#read(960, this.#pageStep);
+  }
+  set pageStep(v: number) {
+    this.#pageStep = v;
+    this.#write(960, v);
+  }
+
+  /**
+   * `0x090`（`sub_403B30` raw 9740-9764）：登记一项。
+   *
+   * 矩形按**宽高**给（脚本口径），内部存 x1/y1；三个 label 分别落 `[259+i]/[359+i]/[459+i]`；
+   * `keyBit` 置 -1（9759）；`[7465] = 0`（9763）；`[7461] = ownerScriptId`（9762）。
+   * 返回 `false` = 表满（引擎同样返回 0，调用方据此抛 `Command_ShowMessage`）。
+   *
+   * ★调用方（`sub_420640` raw 29516-29517）随后还写 `[7468] = -1`、`[7466] = 0`。
+   */
+  push(x: number, y: number, w: number, h: number, labelEnter: number, labelLeave: number, labelClick: number, ownerScriptId: number): boolean {
     if (this.entries.length >= ROUTE_MAX) return false;
-    this.entries.push({ x0: x, y0: y, x1: x + w, y1: y + h, labelNext, labelPrev, labelKey, frameArg, keyBit: -1 });
-    // 引擎入队后把游标清 -1（`sub_420640` 写 `[7468] = -1`）
+    this.entries.push({ x0: x, y0: y, x1: x + w, y1: y + h, labelEnter, labelLeave, labelClick, keyBit: -1 });
+    this.ownerScriptId = ownerScriptId;
+    this.hitDone = 0;
     this.cursor = -1;
+    this.enterPending = 0;
     return true;
   }
 
   /**
-   * `sub_403C50`（raw 9787-9823）：**按坐标命中测试** —— 逐项判 `x0 <= px <= x1 && y0 <= py <= y1`，
-   * 命中则把游标设为该项下标（**取第一个命中项**），否则 `-1`。
+   * `sub_403C50`（raw 9787-9824）：**按坐标命中测试** —— 逐项判 `x0 <= px <= x1 && y0 <= py <= y1`，
+   * 命中则把游标设为该下标（**取第一个命中项**，9815 的下标升序循环），否则 -1（9810）。
    */
   hitTest(px: number, py: number): number {
     for (let i = 0; i < this.entries.length; i++) {
@@ -111,51 +233,97 @@ export class RouteTable {
   }
 
   /**
-   * `sub_403E70`（raw 9918-9955）：按**游标变化**返回本帧该派发的悬停 label（−1 = 无）。
+   * `sub_403D10`（raw 9827-9844）：**把输入掩码位绑到矩形相同的那个热点**（键位绑定，不是绘制！）。
    *
-   * 语义（逐行对齐源码）：
-   *  - `pendingEnter`（`[7466]`）已置 ⇒ 本帧发 `[959]` 那项的 **labelA（进入）**，并清该标志；
-   *  - 否则取 `hoverLatch`（`[959]`）与当前游标比较：
-   *    - 相同 ⇒ 什么都不发；
-   *    - 不同 ⇒ 先更新 `[959]`；**旧项有效** ⇒ 置 `pendingEnter` 并返回旧项的 **labelB（离开）**；
-   *      旧项无效而新项有效 ⇒ 直接返回新项的 **labelA（进入）**。
+   * 引擎逐项比较矩形的**四个字段全等**（`*(i-2) != *a2 || a2[2] != *i || *(i-1) != a2[1] || a2[3] != i[1]`），
+   * 第一个全等的项写 `[7361+i] = a3`；**没有全等项则静默什么都不做**（没有 else 分支）。
+   * 调用者唯一 = `0x97`（`sub_420910` raw 29596-29612），参数是 `{op1, op2, op1+op3, op2+op4}` + `op5`。
    *
-   * ★这就是 SN0000 右侧侧边栏"悬停展开/离开收起"的驱动：`SN0000.txt:63/74` 登记的热点
-   * （文本区 / 侧边栏条）labelA = `label_00000c74`（展开），`SN0000.txt:66` 那块全屏热点
-   * labelA = `label_00000e78`（收起）。emulator 此前**完全不派发悬停** ⇒ 侧边栏停在初始布局
-   * （看起来"无条件展开"，用户 2026-09 实测）。
+   * @returns 绑到的项下标；-1 = 没有矩形全等的项（引擎同样静默）。
    */
-  nextHoverLabel(): number {
-    const v1 = this.cursor;
-    if (this.pendingEnter) {
-      const v2 = this.hoverLatch;
-      this.pendingEnter = 0;
-      if (v2 !== -1) return this.entries[v2]?.labelNext ?? -1;
-    } else {
-      const v4 = this.hoverLatch;
-      if (v1 === v4) {
-        this.pendingEnter = 0;
-      } else {
-        this.hoverLatch = v1;
-        if (v4 !== -1) {
-          this.pendingEnter = 1;
-          return this.entries[v4]?.labelPrev ?? -1;
-        }
-        if (v1 !== -1) return this.entries[v1]?.labelNext ?? -1;
+  bindKeyBit(x0: number, y0: number, x1: number, y1: number, bit: number): number {
+    for (let i = 0; i < this.entries.length; i++) {
+      const e = this.entries[i]!;
+      if (e.x0 === x0 && e.y0 === y0 && e.x1 === x1 && e.y1 === y1) {
+        e.keyBit = bit;
+        return i;
       }
     }
     return -1;
   }
 
   /**
-   * `sub_403D70`（raw 9847-9862）：按**输入掩码**找第一个"已绑定键且该键被按下"的项，返回其 labelC。
-   * 未绑定的项（`keyBit < 0`）按引擎一样跳过。
+   * `sub_403E70`（raw 9918-9955）：按**游标变化**返回本帧该派发的悬停 label（−1 = 无）。
+   *
+   * 逐行对齐源码：
+   *  - `[7466]` 已置 ⇒ 本帧发 `[959]` 那项的 **labelA（进入）**，并清该标志；
+   *  - 否则取 `[959]` 与当前游标比较：相同 ⇒ 什么都不发；不同 ⇒ 先更新 `[959]`，
+   *    **旧项有效** ⇒ 置 `[7466]` 并返回旧项的 **labelB（离开）**；旧项无效而新项有效 ⇒ 直接发 labelA。
+   *
+   * ★这就是「每帧只取一个 label」的含义：从 A 移到 B 要发两条，跨两帧发完。
+   * 引擎**不检查**返回的 label 是不是 -1/0xffffffff（语料把不可达热点的 labelA/B 写成 `ffffffff`，
+   * 但那些矩形在屏幕外/被前面的全屏热点遮蔽 ⇒ 永远不会成为 enter/leave 的目标）。
+   */
+  nextHoverLabel(): number {
+    const v1 = this.cursor;
+    if (this.enterPending) {
+      const v2 = this.hover;
+      this.enterPending = 0;
+      if (v2 !== -1) return this.entries[v2]?.labelEnter ?? -1;
+    } else {
+      const v4 = this.hover;
+      if (v1 === v4) {
+        this.enterPending = 0;
+      } else {
+        this.hover = v1;
+        if (v4 !== -1) {
+          this.enterPending = 1;
+          return this.entries[v4]?.labelLeave ?? -1;
+        }
+        if (v1 !== -1) return this.entries[v1]?.labelEnter ?? -1;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * `sub_403D70`（raw 9847-9862）：按**输入掩码**找第一个「已绑定键且该键被按下」的项，返回其 labelC。
+   * 未绑定的项（`keyBit < 0`）按引擎一样跳过（`*i < 0 || ((1 << *i) & *a2) == 0` 继续下一项）。
+   *
+   * ★这是等待泵的**第一优先出口**（raw 20242）——ADV「键盘推进」走的就是它。
    */
   pickByKey(mask: number): number {
     for (const e of this.entries) {
-      if (e.keyBit >= 0 && (mask & (1 << e.keyBit)) !== 0) return e.labelKey;
+      if (e.keyBit >= 0 && (mask & (1 << e.keyBit)) !== 0) return e.labelClick;
     }
     return -1;
+  }
+
+  /** `sub_404DE0`（raw 10658-10664）：游标是否有效（`0 <= [7468] < [258]`）。 */
+  cursorValid(): boolean {
+    return this.cursor >= 0 && this.entries.length > this.cursor;
+  }
+
+  /** `sub_404E00`（raw 10667-10676）：**读**当前游标项的 labelC（`[459+游标]`）；无副作用。 */
+  currentLabelClick(): number {
+    const v1 = this.cursor;
+    if (v1 < 0 || this.entries.length <= v1) return -1;
+    return this.entries[v1]!.labelClick;
+  }
+
+  /**
+   * `sub_404120`（raw 10052-10062）：**提交**本次点击 —— 先取 `[459+游标]`，**再把整表清空**
+   * （`sub_403EF0`）后返回该 label。
+   *
+   * 调用点 = `sub_4098E0`(14073) / `sub_409700`(13988)，即 `effect_flags & 0x800000` /
+   * `0x10000000` 两条「面板显示态」路径：那里**左键点击 = 取游标项的 labelC 并清表**。
+   */
+  commitClickAndReset(): number {
+    const v1 = this.cursor;
+    if (v1 < 0 || this.entries.length <= v1) return -1;
+    const label = this.entries[v1]!.labelClick;
+    this.reset();
+    return label;
   }
 
   /** 当前命中项（游标有效时）。 */
@@ -163,11 +331,32 @@ export class RouteTable {
     return this.cursor >= 0 ? (this.entries[this.cursor] ?? null) : null;
   }
 
-  /** 全量 teardown 时的复位。 */
+  /**
+   * `sub_403EF0`（raw 9958-9971）：**整体复位**（绘制子系统/控件轨道的复位）。
+   *
+   * ```
+   * [258] = 0     // ★★ 条目数置 0 = **清空整张路由表**（后续 0x090 从下标 0 覆写）
+   * [959] = -1; [960] = 0; [7467] = -1; [7468] = -1; [7466] = 0; [7464] = 0;
+   * ```
+   * ★**不改 `[7461]`（注册脚本身份）** —— 但条目没了，所以对派发没有意义。
+   */
   reset(): void {
     this.entries.length = 0;
+    this.hover = -1;
+    this.enterPending = 0;
+    this.fallbackLabel = -1;
     this.cursor = -1;
-    this.hoverLatch = -1;
-    this.pendingEnter = 0;
+    this.pageStep = 0;
+    this.fillPending = 0;
+    // 下面两步是**写回「对 raw 找字段」的引擎格**（emulator 用 `entries.length` / `hover` 作权威）：
+    // 命中测试的条目数（`sub_403C50` raw 9819）与「已派发过进入的项」（`sub_403E70` raw 9927/9941）。
+    this.#write(258, 0);
+    this.#write(959, -1);
   }
 }
+
+/**
+ * 旧名（`RouteTable`）保留为别名：既有的调用点/测试代码引用的是这个名字，
+ * 而引擎里的实体是「面板对象」⇒ 新名 `RoutePanel` 更贴切（改名的动因见 route.ts 顶部注释）。
+ */
+export { RoutePanel as RouteTable };

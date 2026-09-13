@@ -42,20 +42,45 @@ const op_read_mouse_wheel: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeWheelDelta());
 };
 
-/** `mouse-callback` (0xCC, sub_421980)：注册鼠标跳转目标。op2=label。 */
+/**
+ * `mouse-callback` (0xCC, sub_421980)：注册鼠标跳转目标。op2=label。
+ *
+ * 引擎（raw 30317-30325）：
+ * ```
+ * Engine[107664] = read(2);                       // label
+ * Engine[107674] = frames[cur][95796];            // ★注册时的脚本身份 token
+ * sub_453A60(Engine+107447, read(1));             // 节流对象（op1 = 槽）
+ * ```
+ * `Engine[107674]` 是 `0xCD`（`sub_41ACD0` raw 25861）跳转前的**脚本身份守卫**要比对的那一格。
+ */
 const op_mouse_callback: OpHandler = (c) => {
   const slot = readIntOperand(c.e, c.frame, c.instr, 1);
   const target = operandArg(c.instr, 2).raw; // label 值（与 jmp/call 同尺度）
   c.e.input.mouseSlot = slot;
   c.e.input.mouseJump = target;
+  c.e.input.mouseJumpOwner = c.frame.scriptId; // = Engine[107674]
 };
 
-/** 0xFB (joy_callback, sub_421B80)：注册手柄跳转目标 op2。op1∈[0,32)。 */
+/**
+ * 0xFB (`joy_callback`, `sub_421B80` raw 30400-30419)：注册**按键跳转目标**。
+ *
+ * 引擎：`Engine[33*cur + 107725 + btn] = op2`（**按 `cur` 分脚本**，raw 30417）
+ * —— 所以天然不跨脚本；`btn ∈ [0,32)` 越界抛 `set:keyjump` 异常。
+ *
+ * ★emulator 目前是**单份全局数组** `InputManager.joyJump`（缺口：跨脚本泄漏，规格 §E9）。
+ * 表的下标口径与 `0x100` 的读取口径一致：**掩码位**。
+ * 引擎里 `0xFB` 存的是**按钮序号**（`[33*cur+107725+btn]`），而查询端的输入掩码位是
+ * `4 + btn`（`sub_477280` raw 91661：`*a2 |= 1 << (*v4 + 4)`）—— emulator 的 `flush()` 生成的
+ * 就是这张掩码，所以这里直接按 `4 + btn` 存，`0x100` 才能用掩码位 `b` 一次性查到。
+ * （手柄按钮 0..27 与鼠标左/右共享 bit4.. 段；`btn ∈ [0,28)` 之外无处可存，越界仍抛。）
+ */
 const op_joy_callback: OpHandler = (c) => {
   const btn = readIntOperand(c.e, c.frame, c.instr, 1);
   if (btn < 0 || btn >= 32) throw new Error(`joy_callback: 按钮 ${btn} 越界 [0,32)`);
   const target = operandArg(c.instr, 2).raw;
-  c.e.input.joyJump[btn] = target;
+  const maskBit = 4 + btn; // = 引擎 sub_477280 的掩码位
+  if (maskBit >= 32) throw new Error(`joy_callback: 按钮 ${btn} 的掩码位 ${maskBit} 越界 [0,32)`);
+  c.e.input.joyJump[maskBit] = target;
 };
 
 /** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
@@ -64,17 +89,25 @@ const op_input_reset: OpHandler = (c) => {
   c.e.input.flush();
 };
 
-/** 0x100 (u00415A60, sub_419AF0)：消息跳读/按键推进派发。扫掩码最低位、按注册表跳转。 */
+/**
+ * 0x100 (`i100`，`sub_419AF0` raw 25012-25066)：**按键跳读派发** —— 扫掩码里**最低**的置位 `b`，
+ * 查 `Engine[33*cur + 107725 + b]`（由 `0xFB joy-callback` 登记）⇒ 命中则 `ip = base + 4*该值`。
+ *
+ * ★2026-09 订正（规格 §E10）：索引是**掩码位 `b` 本身**（`result[32*v8 + 107725 + v8 + v6]`，
+ * v6 = 掩码位），**不是** `b - 4`；也**没有**"b∈{4,5} 就改用 mouseJump"的规则
+ * （那是 emulator 自造的旁路）。掩码位语义（raw 91521-91524 与 25042）：`0..6` = 可配置键
+ * （`sub_4770A0` 经 `_this[1176+VK]`）、`4/5` = 鼠标左/右（`sub_477150`）、`4+i` = 手柄按钮 i。
+ *
+ * ★扫描游标（`Engine[cur+122287]`）：emulator 用"消费边沿"近似"每个位只派发一次"
+ * （`consumeEdges()`），因为 `flush()` 不保持 `Engine[699208]` 的持久掩码。
+ */
 const op_input_dispatch: OpHandler = (c) => {
   const mask = c.e.input.flush();
-  if (mask === 0) return; // 无输入，落回
+  if (mask === 0) return; // 无输入，落回（引擎 raw 25050-25052 的 else 分支：压返回点 +1 后弹回）
   let b = 0;
-  while (((mask >> b) & 1) === 0) b++;
-  // 鼠标位（4/5）→ 鼠标目标；否则按 joy 表（掩码位 = 4 + buttonIndex，故用 b-4）
-  const t =
-    (b === 4 || b === 5) && c.e.input.mouseJump !== -1
-      ? c.e.input.mouseJump
-      : c.e.input.joyJump[b - 4] ?? -1;
+  while (b < 32 && ((mask >> b) & 1) === 0) b++;
+  if (b >= 32) return;
+  const t = c.e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
   if (t === -1 || t === 0xffffffff) return;
   const p = labelPos(c.frame, t);
   if (p !== null) {
@@ -99,9 +132,13 @@ const op_get_input_type: OpHandler = (c) => {
   const input = c.e.input;
   const target = input.getInputType(c.e.nowMs, c.e.advActive);
   if (target === null) return; // 未到节流/未激活/未注册 → 不推进（也不动鼠标/手把边沿）
+  // ★脚本身份守卫（引擎 raw 25861：`if (frames[cur][95796] != Engine[107674]) 抛 "Depth が不正です"`）：
+  //   注册回调的脚本与当前帧不同 ⇒ **必须抛**，否则过期 label 会在当前脚本里静默命中无关指令。
+  c.e.guardScriptIdentity(input.mouseJumpOwner);
   const p = labelPos(c.frame, target);
   if (p === null) return;
-  c.frame.retStack.push(c.frame.ip + 1); // 压返回地址：handler 的 ret 回到循环下一条
+  // 压返回点：引擎 `sub_41ACD0` raw 25845-25849 压 `((ip-ip_base)>>2) + 1`（**dword 偏移**）。
+  c.frame.retStack.push((c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
   c.jump(p);
 };
 

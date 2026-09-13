@@ -33,6 +33,7 @@ import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arc
 import { Engine, SLEEP_GATE, type Frame } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { formatOperands, loadScriptData, NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
+import { readIntOperand } from '../vm/operand.js';
 import { ExitScript, ScriptReset } from '../vm/ops.js';
 import { dec } from '../vm/bits.js';
 import type { BinInstruction } from '../script/bin.js';
@@ -104,6 +105,15 @@ export interface GameStartResult {
   firstText: string;
   /** 该窗当前整页文本（`msgwin.textOf(0)`）。 */
   pageText: string;
+  /**
+   * **路径上发过的音效**（`0xB4 play-sound-effect` 的**统一文件 id** + 发起脚本），按发生顺序。
+   *
+   * 为什么需要：`play-sound-effect` 的 id 是**统一文件 id**（`SYS4INI` 下标），
+   * 因此"点「ゲーム開始」应当由 `GAMESTART` 发 SE004（id 0x51e3）"这类断言可以直接核对
+   * 「谁在什么时候发了哪个音效」—— 它同时是"点击确实走了 GAMESTART 的分支"的独立证据
+   * （另一个证据是 `gameStartResult` 与鼠标沿有没有被 `poll-input` 消费，见 §F.4-6）。
+   */
+  sePlays: { id: number; script: string; ip: number }[];
   /** 场景快照统计（诊断/断言用）。 */
   scene: {
     drawItems: number;
@@ -190,6 +200,8 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
    */
   let gameStartResult = -1;
   let prevScript = '';
+  /** 路径上发过的 SE（`0xB4`）：统一文件 id + 发起脚本 + ip。 */
+  const sePlays: { id: number; script: string; ip: number }[] = [];
 
   const harness = createHarness({
     e,
@@ -228,6 +240,17 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     },
     onStepStart: (frame, instr) => {
       steps++;
+      // ★`0xB4 play-sound-effect` 的 op1 = 该音效的**统一文件 id**（`0xB4` 只装载、`0xB5`/`0xBA` 起播，
+      //   所以"发过哪个音效"看 op1 就够）。记下发起脚本 ⇒ 可断言"这条 SE 由谁发"。
+      if (instr && instr.opcode === 0xb4 && frame.script) {
+        let id = -1;
+        try {
+          id = readIntOperand(e, frame, instr, 1);
+        } catch {
+          /* 取不到就不记 id（诊断用，不影响链路） */
+        }
+        sePlays.push({ id, script: frame.name, ip: frame.ip });
+      }
       // ★目标：SN0000 里**第一条被汇编的 show-text**（= `SN0000.txt:1225`）
       if (firstTextIp < 0 && instr && frame.name.startsWith('SN0000') && instr.opcode === 0x6e) {
         const s = instr.args.find((a) => a.type === 2);
@@ -297,6 +320,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     firstTextIp,
     firstText,
     pageText: e.msgwin.textOf(0),
+    sePlays,
     scene: {
       drawItems: items.length,
       drawable: items.filter((i) => (i.flags & 1) !== 0).length,

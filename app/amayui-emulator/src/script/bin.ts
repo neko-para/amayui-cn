@@ -42,6 +42,17 @@ export interface ScriptBinary {
   instructions: BinInstruction[];
   /** label 目标值(index) -> 指令的 index；等价于"哪些 index 是某 label 的目标" */
   labelTargets: Set<number>;
+  /**
+   * **dword 偏移 → 指令数组下标**（步长位图）。第 i 项 = 该 dword 偏移是否落在指令 i 的范围内。
+   *
+   * 为什么需要：引擎的 `ip` 是**字节/dword 偏移**（`ip = ip_base + 4*label`），指令长度 =
+   * `1 + 2*argc` 个 dword（`frames[cur][95805]` = 1+2*argc，主循环 `ip += 4*step`）；
+   * 而 emulator 的 `frame.ip` 是**指令数组下标**（每条 +1）。返回栈在引擎里存的是 **dword 偏移**
+   * （`sub_405360` raw 11035-11037、`call` 0x8F raw 29458-29460 都压 `(ip-ip_base)>>2` 系的量），
+   * 所以 `ret`（`sub_41A9B0` raw 25704-25727：`ip = ip_base + 4*v2`）弹出来的是 dword 偏移，
+   * 必须经这张表换回数组下标才能落对指令。
+   */
+  dwordToInstr: number[];
   /** 原始字节（供后续按需重读/调试） */
   raw: Uint8Array;
 }
@@ -203,6 +214,14 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
     }
   }
 
+  // dword 偏移 → 指令下标（每 4 字节一格；一条 `1+2*argc` dword 的指令占满自己那几格）。
+  const dwordToInstr: number[] = [];
+  for (let i = 0; i < instructions.length; i++) {
+    const ins = instructions[i]!;
+    const dwords = 1 + 2 * ins.argc;
+    for (let d = 0; d < dwords; d++) dwordToInstr[ins.index + d] = i;
+  }
+
   return {
     signature,
     isVer5,
@@ -212,6 +231,7 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
     tables,
     instructions,
     labelTargets,
+    dwordToInstr,
     raw: bin,
   };
 }

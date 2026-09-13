@@ -111,7 +111,7 @@
 | `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E3 · `test/route-dispatch.test.ts` |
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 | `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
@@ -478,7 +478,15 @@
 - **缺失时为什么静默**：表为空或游标 -1 时 `sub_403E70`/`sub_403D70` 都返回 -1，调用方只是「继续等下一帧」，无日志无错误码；只有表满时 `0x090` 才抛 ShowMessage
 - **引擎**：sub_420640, sub_403B30, sub_403C50, sub_403D70, sub_403E70, sub_411BC0, sub_411900 @ raw 9740-29518
 - **读的字段**：Engine+21976(表基址 0x55D8), Engine+29872(游标), Engine+29864(推进标志)
-- **emulator 现状**：已实现：`RouteTable`（入队 `0x090`、坐标命中 `hitTest`、键命中 `pickByKey`、label 重定位 `Engine.jumpToLabel`）与等待门集成；真实脚本 SC0000 登记 6 个热点且不再硬报错。未实现：引擎 `[7466]/[959]` 的游标去重锁存（emulator 改为「本帧有推进输入」才推进，避免鼠标悬停即自动翻页）、`sub_403500` 的坐标变换、`[7361+i]` 键位绑定的写入方。
+- **emulator 现状**：已按 .tmp/mouse-dispatch-spec.md 忠实重做（2026-09）：
+① **点击/键命中一律走 labelC**（[459+i]：sub_403D70 raw 9862 / sub_404E00 raw 10675 / 主循环 raw 20182）；旧实现取 labelA 是错的。
+② **悬停 label 是带返回点的子程序**：sub_405360(Engine, -3)（raw 11030-11041）压的是 a2 + ((ip-ip_base)>>2)，a2 是**字面 dword 偏移**；wait-for-input 长 3 dword（sub_41EEF0 raw 28484）⇒ 返回点正好 = 门指令 ⇒ label 末尾 ret（sub_41A9B0 raw 25704）后**重跑门指令**（页已显示完 ⇒ 再挂起）。
+③ **命中测试只在鼠标移动**（sub_4B8D50 raw 140825-140836 → InputManager.onCursorMove → routes.hitTest）与**面板首次显示**（sub_404020 raw 10026）时做；等待泵里没有它。
+④ **i093 真清表**：sub_403EF0（raw 9958-9971）把 [258]（= 条目数）置 0 ⇒ 整表作废；[7465] 不在它的复位列表里。
+⑤ **i097 是键位绑定**（sub_403D10 raw 9827-9844：矩形四字段全等 ⇒ [7361+i] = bit），不是「面板填矩形」；native.fillPanelRect 直通链路已删。
+⑥ **脚本身份守卫** Engine.guardScriptIdentity（= sub_4083B0 raw 13112-13131 / 0xCD raw 25861）：路由表 ownerScriptId 与 0xCC 的 mouseJumpOwner 都要等于当前帧 scriptId（= frames[cur][95796]，sub_40ED40 raw 18636 写），不等即抛 Depth が不正です。
+⑦ **悬停门控按汇编订正**（0x411DBF-0x411DEB）：mask & 0x20（鼠标右键）⇒ 整段悬停/推进被跳过；只有「滚轮键按下 && Engine[97055] >= 0 && Conf(set:ReDrawTextOnKey) == 1」才跳过悬停（规格 §D.1 把它写成 ReDrawTextOnKey==1 才启用，极性反了）。
+★仍未实现（已登记缺口，不猜）：(a) 0x91/0x92 的**显示态派发通路** sub_4098E0（raw 14055-14105：含 sub_403DD0 raw 9866-9915 的方向键/翻页键移动游标、[7467] 回退 label）；(b) **panelB**（Engine+0x32B0）整套：0x8D/0x8E/0x95/0x96 + sub_409700/sub_4040A0；(c) sub_403500 的坐标变换（客户区 = 1280×720 时恒等；其它分辨率/多显示器未验证）；(d) 0x7C 的 Engine[489488]「取消/跳读」通路（raw 20365-20374 → sub_41AB80 raw 25778，含自己的身份守卫）—— 鼠标右键走的就是它。
 
 ### `msgwin-config-gates`（partial）
 

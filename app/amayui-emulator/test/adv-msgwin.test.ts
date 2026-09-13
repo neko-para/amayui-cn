@@ -35,10 +35,13 @@ import { im, instr, str } from './harness.js';
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 
 
-function mk(): { e: Engine; f: Frame; step: (op: number, args?: BinArg[]) => void } {
+function mk(given?: Frame): { e: Engine; f: Frame; step: (op: number, args?: BinArg[]) => void } {
   const native = new StubNative(() => {});
   const e = new Engine(native);
-  const f = new Frame();
+  // ★默认给一个"游离帧"（与 `e.curScript()` 不是同一个对象）—— 这是历史用法，很多老测试靠它；
+  //   但凡是**让引擎按坐标做命中测试**（`sub_403C50` 写游标、泵读游标）的新测试，必须传
+  //   `e.curScript()`（否则游标写在游离帧上、泵读的是 `e.curScript()`，两边不是同一个对象）。
+  const f = given ?? new Frame();
   return {
     e,
     f,
@@ -48,6 +51,30 @@ function mk(): { e: Engine; f: Frame; step: (op: number, args?: BinArg[]) => voi
       h!(makeCtx(e, f, instr(op, args), native, () => {}));
     },
   };
+}
+
+/**
+ * **注册消息面面板**（引擎 `i094` → `sub_419230`）：置 `Engine[12957] = 1`（= `panelA[7463]`「面板已显示」）
+ * + `sub_404020(panelA, 10000)`。
+ *
+ * ★为什么每条"等待推进"的测试都要先跑它：引擎的等待泵（`sub_411BC0` raw 20239）**整个被
+ * `Engine[51828]`（= `panelA[7463]`）门控** —— 面板没显示时泵什么都不做。真实 ADV 脚本的
+ * UI 例程末尾就是 `i094`（`src/SN0000.txt:117`），随后才 `wait-for-input`。
+ */
+function showPanel(step: (op: number, args?: BinArg[]) => void): void {
+  step(0x94);
+}
+
+/**
+ * **注入一次鼠标移动 + 左键按下**（引擎：`sub_4B8D50`（WM_MOUSEMOVE → `sub_403C50` 命中测试）
+ * 然后 WM_LBUTTONDOWN）。
+ *
+ * ★必须**先移动再按下**：引擎的命中测试只在鼠标移动/面板首次显示时做，泵里不做
+ * ⇒ 只 `pressMouse` 而不产生 `mouseMoved` 的话游标仍是旧的（引擎里也是这个语义）。
+ */
+function moveAndClick(e: Engine, x: number, y: number, btn: 0 | 1 = 0): void {
+  e.input.setCursor(x, y); // 触发 onCursorMove ⇒ routes.hitTest（引擎 sub_4B8D50）
+  e.input.pressMouse(btn);
 }
 
 test('0x6E show-text / 0x6F end-text-line / 0x196 display-furigana：文本内容按槽记录', () => {
@@ -188,11 +215,12 @@ test('★0x72 wait-for-input：结束一页并置等待推进门（bit31），�
 
 test('等待推进门：无输入时不放行；有鼠标按下沿时放行并清位', () => {
   const { e, step } = mk();
+  showPanel(step); // ★引擎等待泵被 `Engine[51828]`（panelA[7463]）门控，先显示面板
   step(0x72, [im(0)]);
   assert.equal(e.serviceAdvanceWait(), false, '无输入 ⇒ 不推进（脚本挂起）');
   assert.equal(e.awaitingAdvance, true, '门保持');
-  e.input.setCursor(10, 10);
-  e.input.pressMouse(0);
+  // ★鼠标移动（`sub_4B8D50` → `sub_403C50` 命中测试）——没有热点 ⇒ 游标 -1 ⇒ 走"窗内推进文本"
+  moveAndClick(e, 10, 10);
   assert.equal(e.serviceAdvanceWait(), true, '有左键按下沿 ⇒ 放行');
   assert.equal(e.awaitingAdvance, false);
 });
@@ -224,9 +252,9 @@ test('★0x090 登记点击热点：矩形按宽高给，内部存 x1/y1，标�
   assert.equal(e.routes.count, 1);
   const r = e.routes.entries[0]!;
   assert.deepEqual(
-    { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, a: r.labelNext, b: r.labelPrev, c: r.labelKey },
+    { x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, a: r.labelEnter, b: r.labelLeave, c: r.labelClick },
     { x0: 0, y0: 0, x1: 500, y1: 720, a: 0x1078, b: 0x10a4, c: 0x10b4 },
-    '引擎 sub_403B30 用 (x, y, x+w, y+h) 作矩形，三个 label 分别进 [259]/[359]/[459]',
+    '引擎 sub_403B30 用 (x, y, x+w, y+h) 作矩形，三个 label 分别进 [259]（进入）/ [359]（离开）/ [459]（点击/键命中）',
   );
 });
 
@@ -241,43 +269,69 @@ test('热点表：命中测试设游标；表满 100 时抛错（引擎同样抛
   assert.throws(() => step(0x090, [im(0), im(0), im(1), im(1), im(1), im(2), im(3)]), /热点表已满/);
 });
 
-test('★等待推进门：点中热点 → 跳到该热点的 labelNext（`sub_403E70` 的 [259+i]）', () => {
-  const { e } = mk();
+test('★等待推进门：点中热点 → 跳到该热点的 **labelC**（`sub_404E00` = [459+游标]，加载返回点 -3）', () => {
+  const e0 = new Engine(new StubNative(() => {}));
+  const { e, step } = mk(e0.curScript());
   // 造一个带 labelMap 的帧：三个 label 各自映射到不同指令下标，以便区分走的是哪一条
   const f = e.curScript();
-  f.labelMap.set(0x1078, 3); // labelA / labelNext（"下一页"）
-  f.labelMap.set(0x10a4, 5); // labelB / labelPrev
-  f.labelMap.set(0x10b4, 7); // labelC（**键盘**命中目标，`sub_403D70`）
+  f.labelMap.set(0x1078, 3); // labelA（游标**进入**该热点；`sub_403E70` 的 [259+i]）
+  f.labelMap.set(0x10a4, 5); // labelB（游标**离开**）
+  f.labelMap.set(0x10b4, 7); // labelC（**点击/键命中**；`sub_403D70` / `sub_404E00` / 主循环 20182）
+  f.script = { instructions: [instr(0x90, []), instr(0x72, [im(0)]), ...Array.from({ length: 10 }, () => instr(0x72, [im(0)]))] } as never;
+  showPanel(step); // 面板必须已显示（等待泵被 Engine[51828] 门控）
   OPS.get(0x090)!(
     makeCtx(e, f, instr(0x090, [im(0), im(0), im(500), im(720), im(0x1078), im(0x10a4), im(0x10b4)]), e.native, () => {}),
   );
-  OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
+  step(0x72, [im(0)]); // wait-for-input 挂起（本指令 3 dword ⇒ 返回点 = 当前 dword 偏移 - 3）
   assert.equal(e.awaitingAdvance, true);
-  e.input.setCursor(100, 100); // 落在全屏热点内
-  e.input.pressMouse(0);
-  assert.equal(e.serviceAdvanceWait(), true, '点到热点 ⇒ 推进');
+  moveAndClick(e, 100, 100); // 落在全屏热点内（移动 ⇒ hitTest；再按下）
+  assert.equal(e.routes.cursor, 0, '鼠标移动做了一次命中测试（引擎 sub_4B8D50）');
+  assert.equal(e.serviceAdvanceWait(), true, '点到热点 ⇒ 派发');
   assert.equal(e.awaitingAdvance, false);
-  // ★2026-09 订正：`sub_403E70`（raw 9918-9930）在游标命中且本帧按下时
-  //   `return _this[v2 + 259]` = **labelA = labelNext**；`[459+i]`（labelC）是 `sub_403D70`
-  //   的**键盘**命中目标。曾错用 labelC ⇒ 点一下会跳到"清窗重贴本页"那条 label
+  // ★2026-09 订正（raw 20284-20292 / 20251-20258 / 10667-10676）：**点击走 labelC**（[459+i]），
+  //   且是**带返回点的子程序**：`sub_405360(Engine, -3)` 压「当前 dword 偏移 - 3」，
+  //   而 wait-for-input(0x72) 正好 3 dword（`sub_41EEF0` raw 28484 `step = 3`）
+  //   ⇒ 返回点 = **那条门指令本身** ⇒ label 末尾 `ret` 后**重跑门指令**（页已显示完 ⇒ 再挂起）。
+  //   旧实现取 labelA（labelNext=3）是错的：那条 label 在 ADV 页里会"清窗重贴本页"
   //   （用户实测："点击推进时先整句显示 → 清掉 → 又从零逐字"）。
-  assert.equal(f.ip, 3, 'ip 应被重定位到 labelNext 对应的指令（不是 labelC 的 7）');
+  assert.equal(f.ip, 7, 'ip 应被重定位到 **labelC** 对应的指令（不是 labelA 的 3）');
+  // 返回点 = 「调用点之后的 dword 偏移」+ `a2`（引擎 `sub_405360` raw 11035-11037 压的是
+  // `a2 + ((ip - ip_base) >> 2)`，而调用方已经 `ip += 4*step`）。本测试手搓 `makeCtx`
+  // （没有 stepOnce 推进 ip）⇒ emu 的回退口径 = `dwordToInstr[curDwordOffset]` 的下一个 dword。
+  // 精确到具体 dword 值的断言在 `test/route-dispatch.test.ts` 的判据②（那里用真实 stepOnce）。
+  assert.equal(f.retStack.length, 1, '带返回点的子程序派发 ⇒ 压了 1 个返回点');
+  // 手搓 `makeCtx` 时 ip 未推进 ⇒ emu 的回退口径 = `instructions[ip].index + (-3)`。
+  assert.equal(
+    f.retStack[0],
+    f.script!.instructions[0]!.index - 3,
+    '返回点 = 调用点之后的 dword 偏移 + (-3)（`a2` 是**字面 dword 偏移**）',
+  );
+  assert.equal(e.routes.cursor, -1, '派发后游标清 -1（LABEL_68 raw 20457）');
+  assert.equal(e.routes.enterPending, 0, '派发后 [7466] 清 0（raw 20456）');
 });
 
-test('★等待推进门：右键（反向）走 labelPrev（`sub_403E70` 的 [359+i]）', () => {
-  const { e } = mk();
+test('★等待推进门：**右键不派发 label**（推进分支的 mask 判据是 `& 0x10` = 鼠标左；右键只"处理输入"）', () => {
+  const e0 = new Engine(new StubNative(() => {}));
+  const { e, step } = mk(e0.curScript());
   const f = e.curScript();
   f.labelMap.set(0x1078, 3);
   f.labelMap.set(0x10a4, 5);
   f.labelMap.set(0x10b4, 7);
+  f.script = { instructions: Array.from({ length: 12 }, () => instr(0x72, [im(0)])) } as never;
+  showPanel(step);
   OPS.get(0x090)!(
     makeCtx(e, f, instr(0x090, [im(0), im(0), im(500), im(720), im(0x1078), im(0x10a4), im(0x10b4)]), e.native, () => {}),
   );
-  OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
-  e.input.setCursor(100, 100);
-  e.input.pressMouse(1); // 右键
-  assert.equal(e.serviceAdvanceWait(), true);
-  assert.equal(f.ip, 5, '右键 ⇒ labelPrev');
+  step(0x72, [im(0)]);
+  const ipAtGate = f.ip;
+  moveAndClick(e, 100, 100, 1); // 右键（掩码 bit5）
+  // 引擎 raw 20315：`(mask & 0x20) == 0` 为**假**（右键按下）⇒ 整段"悬停/推进"被跳过，走 20365 的
+  // 「取消/跳读」通路（`Engine[489488]`，由 `0x7C` 登记；emulator 未实现 0x7C ⇒ 该格恒 -1 ⇒ 无操作）。
+  // ⇒ 右键**既不派发 label、也不动 ip**。
+  assert.equal(e.serviceAdvanceWait(), false, '右键 ⇒ 泵不做"悬停/推进"（走 20365 那条独立通路）');
+  assert.equal(f.ip, ipAtGate, 'ip 不动（旧实现把右键当"反向推进 labelPrev"，引擎里没有这条）');
+  assert.equal(f.retStack.length, 0, '没有压返回点（没派发任何 label）');
+  assert.equal(e.awaitingAdvance, true, '门保持（脚本仍挂起）');
 });
 
 /**
@@ -288,6 +342,19 @@ test('★等待推进门：右键（反向）走 labelPrev（`sub_403E70` 的 [3
  * 调用点是等待泵 `sub_411BC0`（raw 20322-20337）每帧一次 ⇒ 脚本里靠热点做的悬停 UI 才会响应
  * （`SN0000.txt:63/74` 的热点 labelA = 展开侧边栏、`:66` 全屏热点 labelA = 收起）。
  */
+test('★0x93 清面板 = **清空路由表**（引擎 [258] = _this+1032 = 命中测试用的条目数）', () => {
+  const { e, step } = mk();
+  step(0x090, [im(0), im(0), im(100), im(100), im(1), im(2), im(3)]);
+  step(0x090, [im(200), im(0), im(100), im(100), im(4), im(5), im(6)]);
+  assert.equal(e.routes.count, 2, '先登记 2 项');
+  step(0x093, []); // 消息面显示态关 → sub_403EF0：面板游标态复位（含 [258]=0）
+  assert.equal(e.routes.count, 0, '★0x93 必须把路由条目表清空（否则 UI 例程每次重登记都会累积、旧热点持续遮蔽）');
+  assert.equal(e.routes.cursor, -1);
+  // 再登记 2 项：不应是 4（用户实测过 14→33→40 的累积）
+  step(0x090, [im(0), im(0), im(100), im(100), im(1), im(2), im(3)]);
+  step(0x090, [im(200), im(0), im(100), im(100), im(4), im(5), im(6)]);
+  assert.equal(e.routes.count, 2, '清表后重新登记 ⇒ 只有 2 项');
+});
 test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 labelB、A→B 先离开后进入', () => {
   const { e } = mk();
   const f = e.curScript();
@@ -297,10 +364,12 @@ test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 l
   OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
   OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(200), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
 
+  // ★游标由**鼠标移动**更新（引擎 `sub_4B8D50` → `sub_403C50`）；`pickHoverLabel` 自己**不做**
+  //   命中测试（raw 20324 只调 `sub_403E70`）。
   // ① 从"无"进入 h0 ⇒ 直接发 h0 的 labelA
   e.input.setCursor(50, 50);
   assert.equal(e.pickHoverLabel(), 0xaa, '进入热点 ⇒ labelA（无"离开"前项）');
-  // ② 同一位置再来一帧 ⇒ 游标没变，什么都不发
+  // ② 同一位置（无移动）⇒ 游标没变，什么都不发
   assert.equal(e.pickHoverLabel(), -1, '游标未变 ⇒ 不重发');
   // ③ h0 → h1：本帧发 h0 的 labelB（离开），下一帧才发 h1 的 labelA（进入）
   e.input.setCursor(250, 50);
@@ -311,9 +380,9 @@ test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 l
   e.input.setCursor(900, 900);
   assert.equal(e.pickHoverLabel(), 0xbb, '离开所有热点 ⇒ 旧项 labelB');
   assert.equal(e.pickHoverLabel(), -1, '之后稳定不再发');
-  // ⑤ 没有游标（headless）⇒ 不派发
+  // ⑤ 没有光标（headless）⇒ 无移动、游标保持 ⇒ 不派发
   e.input.setCursor(0, 0, false);
-  assert.equal(e.pickHoverLabel(), -1, '无游标 ⇒ 不派发（headless 不受影响）');
+  assert.equal(e.pickHoverLabel(), -1, '无游标/无变化 ⇒ 不派发（headless 不受影响）');
 });
 
 test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只给 label，不动 ip/等待门', () => {
@@ -324,20 +393,24 @@ test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只�
   OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
   OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
   const ipBefore = f.ip;
-  e.input.setCursor(50, 50);
+  e.input.setCursor(50, 50); // 鼠标移动 ⇒ 命中测试（引擎 sub_4B8D50）
   assert.equal(e.pickHoverLabel(), 0xaa);
-  assert.equal(f.ip, ipBefore, '判定阶段绝不改 ip（label 的执行由宿主当子程序跑并还原）');
-  assert.equal(e.awaitingAdvance, true, '悬停不清等待门（引擎的子程序调用语义）');
+  assert.equal(f.ip, ipBefore, '判定阶段绝不改 ip（label 由泵当**带返回点的子程序**派发）');
+  assert.equal(e.awaitingAdvance, true, '悬停判定本身不清等待门（清位在泵的派发点 raw 20334）');
 });
 
-test('headless forceAdvance：无输入源时确定性跳到第一个热点 label', () => {
+test('headless forceAdvance：无输入源时确定性跳到第一个热点的 labelC（不压返回点，与 baseline 同路）', () => {
   const { e } = mk();
   const f = e.curScript();
   f.labelMap.set(0x22, 5);
+  f.script = { instructions: [instr(0x90, []), instr(0x72, [im(0)]), ...Array.from({ length: 10 }, () => instr(0x72, [im(0)]))] } as never;
   OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(1), im(1), im(1), im(2), im(0x22)]), e.native, () => {}));
   OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
   assert.equal(e.forceAdvance(), 0x22);
   assert.equal(f.ip, 5);
+  // ★headless 不压返回点：见 `Engine.forceAdvance` 的说明（压了会让 SN0000 跳过 ADV 暗幕的装配，
+  //   `test/mesh-vertex-quad.test.ts` 的 E3 因此变红）。
+  assert.equal(f.retStack.length, 0, 'headless 放行不压返回点');
   assert.equal(e.awaitingAdvance, false);
 });
 
@@ -448,13 +521,13 @@ test('★逐字显现速度定律：MessageSpeed = **每字**毫秒（总时长 
   // ⑤ 点击先补完这一页（引擎 raw 20025-20030），再放行
   const { e: eClick, step: stepClick } = mk();
   eClick.engineValues.set(21668, 100);
+  showPanel(stepClick); // ★等待泵被 Engine[51828]（panelA[7463]）门控
   stepClick(0x80, [im(9)]);
   stepClick(0x6e, [im(0), str('あいうえお')]);
   stepClick(0x72, [im(9)]);
   eClick.serviceTextReveal(2 * FRAME);
   assert.ok(eClick.msgwin.revealedOf(9) < 5, '慢速下应还在逐字');
-  eClick.input.setCursor(10, 10);
-  eClick.input.pressMouse(0);
+  moveAndClick(eClick, 10, 10);
   assert.equal(eClick.serviceAdvanceWait(), true, '点击应放行等待门');
   assert.equal(eClick.msgwin.revealedOf(9), 5, '放行前先补完整段');
   assert.equal(eClick.awaitingAdvance, false);

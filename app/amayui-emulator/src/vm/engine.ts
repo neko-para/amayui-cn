@@ -4,8 +4,11 @@ import type { FileSource } from '../arch/fileSource.js';
 import type { NativeBridge } from './native.js';
 import { InputManager } from './input.js';
 import { MsgWindow } from './msgwin.js';
-import { RouteTable } from './route.js';
+import { PANEL_BASE } from './handlers/panel.js';
+import { RoutePanel } from './route.js';
+import type { PanelField } from './route.js';
 import { TextItemTable } from './textItems.js';
+import { TEXT_BASE_GATE } from './handlers/text-items.js';
 import { cfgInt } from '../engineConfig.js';
 import { emitWin, messageSpeedOf, winStyle } from './handlers/msgwin.js';
 import { FIELD_CHAR_CURSOR, FIELD_WIN_REVEAL_GATE } from './engineFieldIds.js';
@@ -71,6 +74,17 @@ export class Frame {
   name = '';
   /** 当前指令在 script.instructions[] 里的下标 */
   ip = 0;
+  /**
+   * **当前正在执行的那条指令的 dword 偏移**（= 引擎 `(ip - ip_base) >> 2`，`sub_4051E0` raw 10940）。
+   *
+   * 为什么需要它：引擎的返回点规则（`sub_405360(Engine, -3)`）是**纯 dword 算术**
+   * ——「调用点的 dword 偏移 − 3」。emulator 的 `ip` 是**指令数组下标**（每条 +1，不随指令的
+   * dword 长度变），所以在 dword 空间里换算时必须知道"调用点那条指令自己的 dword 起点"。
+   *
+   * 由 `stepOnce` 在调用 handler **之前**写入（那时 ip 还没推进）；`dispatchWithReturn` 用它。
+   * 手搓 `makeCtx` 的测试路径没有写它 ⇒ 回退到"用 `ip` 反推"（见 `currentDwordOffset`）。
+   */
+  curDwordOffset = -1;
   locals = new LocalPools();
   /** 字符串表（脚本头部/装载时建立；M0 用 args.str 直接取，字段留空） */
   strTable: string[] = [];
@@ -85,6 +99,20 @@ export class Frame {
   labelMap = new Map<number, number>();
   /** 同脚本内 `call` 的返回地址栈（intra-script） */
   retStack: number[] = [];
+  /**
+   * **脚本身份 token**（引擎 `frames[cur][95796]`，dword 下标 95796 / 字节 383184）。
+   *
+   * 装载脚本时写入（引擎 `sub_40ED40` raw 18636 `frames[cur][95796] = a4`，`a4` = 打开该脚本用的
+   * **统一文件 id**；同一处用它取脚本名）。初始值 -1（构造函数 raw 11174/18463）。
+   *
+   * 谁用它：
+   *  - `0x090` 把它当 `panelA[7461]` 存进路由表（raw 29504 → 9762）＝「登记这张表的脚本」；
+   *  - 三个守卫拿它与注册那一刻的值比对，不等就抛 `Depth が不正です`
+   *    （`sub_4083B0` raw 13121 比 `[7461]`、`0xCD` raw 25861 比 `Engine[107674]`、
+   *     `0x7C` raw 25799 比 `Engine[430712]`）；
+   *  - 文本排版把它当"脚本深度"传给 `sub_48F000`/`sub_48EB30`。
+   */
+  scriptId = -1;
 }
 
 /** 全局 variant 数组（索引为 VM 抽象索引，非进程地址）。用 Map 稀疏存储。 */
@@ -280,9 +308,36 @@ export class Engine {
   /**
    * **点击热点 / 路由表**（引擎 `Engine+0x55D8`）。
    * `0x090` 登记热点（矩形 + 三个 label），`wait-for-input` 挂起后由它决定"玩家点了哪里 → 跳到哪个 label"。
-   * 见 `./route.ts` 顶部注释。
+   * 见 `./route.ts` 顶部注释。`[258]/[7462]…[7468]/[959]/[960]` 这些**面板字段**的读写统一走
+   * 下面的 `panelField`（落在 `engineValues`，对位引擎的 `_this[K]`）⇒ 路由表与 `engineValues`
+   * 永远是同一份状态，不会各存一份。
    */
-  routes = new RouteTable();
+  routes: RoutePanel = new RoutePanel((k, v) => this.panelField(k, v));
+
+  /**
+   * **面板字段的读写**（统一入口）：`k` 是**绝对的 `_this` 下标**（`panelA[k - 5494]`
+   * 或面板对象之外的那两格 `12956`/`12957`），`v === undefined` ⇒ 读、否则写。
+   *
+   * `engineValues` 是这些格的**唯一真身**；路由表（`RoutePanel`）与 `0x93`/`0x94`/`0x97`
+   * 都经这里读写，避免同一状态存两处（规格 §F.2 的 `panel.ts` 第 ③ 条）。
+   *
+   * ★做成**箭头函数字段**（不是原型方法）：它会被当作回调传给 `RoutePanel`，
+   * 必须与创建它的 Engine 实例绑定（原型方法会被调用方以别的 `this` 调）。
+   */
+  panelField = (k: number, v?: number): number | undefined => {
+    if (v === undefined) return this.engineValues.get(k);
+    this.engineValues.set(k, v);
+    return undefined;
+  };
+
+  /**
+   * **最近一次 label 派发的诊断记录**（引擎没有这个字段；纯观测用）。
+   *
+   * `kind`：`'key'` = 键命中（`sub_403D70`）/ `'click'` = 点击（`sub_404E00`）/
+   * `'hover-enter'` / `'hover-leave'` = 悬停两段式（`sub_403E70`）/ `'headless'` = `forceAdvance`。
+   * 宿主（renderer session）据此打 `[hover-label]` 诊断行 —— E2E 日志里能直接看到"悬停派发了哪条 label"。
+   */
+  lastDispatch: { label: number; kind: string } | null = null;
 
   /**
    * **文本项记录表**（引擎 `Font+3364` 的 72B 记录 vector）。
@@ -368,6 +423,12 @@ export class Engine {
     // 共享给 native（渲染器经 native.input 写鼠标事件）
     native.input = this.input;
     for (let i = 0; i < 40; i++) this.frames.push(new Frame());
+    // ★引擎 `sub_4B8D50`（raw 140825-140836，WM_MOUSEMOVE）：只在**鼠标移动**时做命中测试。
+    //   等待泵 / 主循环里**没有** `sub_403C50` ⇒ 不能每帧重算（否则"表重登记后立刻重新命中"
+    //   会让悬停反复触发，见规格 §E2）。
+    this.input.onCursorMove = (x, y) => {
+      this.routes.hitTest(x, y);
+    };
   }
 
   curScript(): Frame {
@@ -469,12 +530,23 @@ export class Engine {
     const w = m.resolveWin(m.lastArg);
     const g = m.gridOf(w);
     if (!g || !g.gate || g.cells <= 0) return false;
+    // ★图标要等**本页逐字显完**才出现（引擎：文字泵自旋 `sub_409400`，跑完才轮到主循环的图标分支
+    //   raw 20887-20895）。判"**任何**窗还在显现"而不是只判当前窗：引擎的图标游标 `Engine[107704]`
+    //   是**全局一份**；只判当前窗时，若 `lastArg` 解析到别的窗就会在文字还没显完时把 ▼ 画出来
+    //   （2026-09 实测：`[reveal] 47/58` 时 ▼ 已在屏上）。
+    if (m.isRevealing()) return false;
+    const tick = g.tickMs > 0 ? g.tickMs : 1;
+    if (m.cellNextAt === 0) {
+      // 文字刚显完 ⇒ 从这里起算第一拍（引擎 `sub_453A90` 重启计时器，首格等满一个 period）
+      m.cellNextAt = nowMs + tick;
+      return false;
+    }
     if (nowMs < m.cellNextAt) return false;
     // 引擎 raw 20892-20893：**先贴当前格 k、再 `k = (k+1) % 模数`**
     // ⇒ 第 1 格在 `t0 + tick` 出现（t0..t0+tick 之间屏上还是 `-1` 查询捕获的背景）。
     emitWin(this, w);
     m.cellK = (m.cellK + 1) % g.cells;
-    m.cellNextAt = nowMs + (g.tickMs > 0 ? g.tickMs : 1);
+    m.cellNextAt = nowMs + tick;
     // `Engine[107704]` = 下一个格号（与引擎同步给脚本可读的字段一致）
     this.engineValues.set(FIELD_CHAR_CURSOR, m.cellK);
     return true;
@@ -587,103 +659,336 @@ export class Engine {
   }
 
   /**
-   * **等待推进门服务**（引擎 `sub_411BC0` raw 20206-20461 的等价物）。
+   * **脚本身份守卫**（引擎 `sub_4083B0` raw 13112-13131）。
    *
-   * 引擎在 `effect_flags < 0`（bit31）时每帧只做：刷输入 → 命中测试/键命中 → 取该热点的 label →
-   * `ip = label` 并**清 bit31** + `Sleep(2)`。**不派发脚本指令。**
+   * ```
+   * result = Engine[12955];                                  // = panelA[7461] = 注册那张表时的脚本身份
+   * if (result != frames[cur][95796]) {                      // 与当前帧的脚本身份不同
+   *     sprintf(buf, "Depth が不正です %s != %s", cur, owner);
+   *     throw Command_ShowMessage;                           // ★不是静默跳过
+   * }
+   * ```
+   * **所有 label 派发点都先调它**（等待泵 20245/20289/20327/20451、主循环 20179/20194、
+   * `sub_4098E0` 14087/14097、`sub_411590` 20007）。一句话：**不许跨脚本派发 label**。
    *
-   * 返回 `true` = 本帧玩家推进了（并已重定位 `ip`）。
+   * 为什么必须有：路由表里的 label 是「在脚本 A 里登记时的 dword 偏移」，而 `labelPos` 是
+   * **在当前脚本**的 labelMap 里按裸值查表 ⇒ 一个过期目标会在另一个脚本里**静默命中一条无关指令**。
+   *
+   * @param ownerScriptId 注册那一刻的脚本身份（路由表 = `routes.ownerScriptId`；
+   *        `0xCD` = `input.mouseJumpOwner`）。-1 = 从未注册过（引擎初值），不比。
    */
-  serviceAdvanceWait(): boolean {
-    if (!this.awaitingAdvance) return false;
-    const im = this.input;
-    const mask = im.flush();
-    const pressed = (im.mouseEdge & 0b11) !== 0 || im.joyEdge.length > 0 || im.wheelDelta !== 0;
-    if (!pressed) return false;
-
-    // ★引擎 raw 20025-20030：推进前先把逐字显现**收尾**（`sub_45A940(...,-2,0)`）并清 bit30，
-    //   除非「快速/跳读」位（`effect_flags & 0x100000`）已置（那种情况下不补画）。
-    //   ★判据用 **bit30**（`CHAR_REVEAL_ACTIVE`，= ▼ 图标动画）而不是 `charMode`：文字可能早就显完了，
-    //   但 ▼ 还在闪 —— 那时点击同样要收尾并停图标。
-    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0 && (this.effectFlags & 0x100000) === 0) {
-      for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
-      this.endCharReveal();
-      this.serviceTextReveal(this.nowMs);
+  guardScriptIdentity(ownerScriptId: number): void {
+    if (ownerScriptId === -1) return; // 未注册：调用点自己有 -1 的前置判断（引擎 raw 25852/20272）
+    const cur = this.curScript().scriptId;
+    if (ownerScriptId !== cur) {
+      throw new Error(
+        `Depth が不正です ${cur} != ${ownerScriptId}` +
+          `（跨脚本派发 label：热点/回调注册于脚本 id ${ownerScriptId}，当前 ${cur} ${this.curScript().name}）`,
+      );
     }
+  }
 
-    // 引擎路径：`sub_403D70(queue, mask)`（**键**命中 → labelC）优先，其次 `sub_403E70(queue)`
-    // （**游标**命中 → labelA/labelB）。
-    let target = this.routes.pickByKey(mask);
-    if (target === -1 && this.routes.count > 0) {
-      // `sub_403C50`：按鼠标坐标设游标（引擎在鼠标事件路径里调它；这里每帧按当前位置重算）
-      if (im.hasCursor) this.routes.hitTest(im.readX(), im.readY());
-      const hit = this.routes.current();
-      // ★2026-09 修（用户实测：点击推进时"先整句显示 → 清掉 → 又从零逐字"）：
-      //   鼠标点热点走的是 `sub_403E70`（坐标命中），它取的是 **`[259+i]` = labelNext（"下一页"）**；
-      //   而 `[459+i]` = labelC 是 `sub_403D70`（**键盘**命中）的目标。此前这里错用了 labelKey
-      //   ⇒ 跳到"键命中"label（在 ADV 页里那条 label 会 `i071` 清窗 + 重贴本页）⇒ 症状完全吻合。
-      //   反向推进（右键）取 `[359+i]` = labelPrev（"上一页 / 另一路"）。
-      const reverse = (im.mouseEdge & 0b10) !== 0 && (im.mouseEdge & 0b01) === 0;
-      if (hit) target = reverse ? hit.labelPrev : hit.labelNext;
+  /**
+   * **把 label 当"带返回点的子程序"派发**（引擎 `sub_405360` raw 11030-11041 + `ip = base + 4*label`）。
+   *
+   * 引擎：
+   * ```
+   * retstack[cur][depth] = a2 + ((ip - ip_base) >> 2);   // 存 **dword 偏移**
+   * ++depth;
+   * ```
+   * 调用方给的 `a2` 是**字面 dword 偏移**，不是"退几条指令"：
+   *  - 等待泵 / 主循环 / 悬停 / 交互回调：`a2 = -3`；
+   *  - `sub_4098E0`（面板显示态 `0x800000`）：`a2 = 0`；
+   *  - `0xCD`（get-input-type）：`a2 = +1`。
+   *
+   * ★`-3` 为什么正好回到门指令：设置等待门的是 `wait-for-input`(0x72)，它 **3 dword** 长
+   * （`sub_41EEF0` raw 28484 `step = 3`）且执行完 `ip += 4*step` ⇒ 泵运行时
+   * `(ip - ip_base) >> 2 - 3` = **那条门指令的起点**。于是 label 末尾的 `ret`
+   * （`sub_41A9B0` raw 25704-25727）弹回门指令并**重跑它**：页已显示完 ⇒ 再挂起（页不推进）。
+   *
+   * emulator 的 `frame.ip` 是**指令数组下标**（每条指令 +1，不随 dword 长度变），所以要把
+   * 「上一条指令的 dword 起点」换算过来：上一条起点 = `ip - 1 + (3 - dw_prev)`，
+   * 再由 `a2` 调整。`dw_prev = 1 + 2*arity`。
+   *
+   * @returns 派发成功（label 在 labelMap 里）；
+   *          label 是 -1/0xFFFFFFFF（引擎里表示"无目标"）时**不动 ip**、也不压返回点，返回 false。
+   */
+  dispatchWithReturn(label: number, offsetDwords: number): boolean {
+    if (label === -1 || label === 0xffffffff) return false;
+    const f = this.curScript();
+    const p = f.labelMap.get(label);
+    if (p === undefined) {
+      throw new Error(
+        `label 0x${(label >>> 0).toString(16)} 不在 ${f.name || '(frame ' + this.cur + ')'} 的 labelMap 里` +
+          `（脚本 id ${f.scriptId}）—— 引擎里这是一次非法跳转`,
+      );
     }
-
-    im.consumeEdges();
-    im.consumeWheelDelta();
-    this.awaitingAdvance = false;
-    if (target !== -1 && target !== 0xffffffff) {
-      // 引擎：`ip = str_table + 4 * label` —— 即跳到该 label
-      this.jumpToLabel(target);
-      return true;
-    }
-    // 表为空（无热点登记）时回退：仅解除等待门，由脚本自己决定后续（近似，见台账 adv-advance-route-table）
+    // 返回点 = `(ip - ip_base) >> 2 + offsetDwords`，其中 `(ip-ip_base)>>2` 是**调用点之后**的
+    //   dword 偏移（引擎里调用方已经 `ip += 4*step`；`sub_405360` raw 11035-11037 读的就是推进后的 ip）。
+    //   于是 `offsetDwords = -3` 且调用点是 3 dword 长的 `wait-for-input` 时，返回点正好 = 门指令的
+    //   dword 偏移（页已显示完 ⇒ `ret` 回去重跑门指令 ⇒ 再挂起）。
+    //   下一条指令的 dword 偏移：优先取「当前 ip 那条指令」（正常路径 `stepOnce` 已把 ip 推进到调用点
+    //   之后）；手搓 `makeCtx`（ip 没推进）时退回 `curDwordOffset` 那条 + 它的长度（`1 + 2*argc`）。
+    const atIp = f.script?.instructions[f.ip];
+    const curIdx = f.curDwordOffset >= 0 ? f.curDwordOffset : (atIp?.index ?? 0);
+    const at = f.script?.dwordToInstr?.[curIdx];
+    const cur = at !== undefined ? f.script!.instructions[at] : undefined;
+    const nextDword = atIp ? atIp.index : cur ? curIdx + (1 + 2 * cur.argc) : curIdx + 3;
+    f.retStack.push(nextDword + offsetDwords);
+    f.ip = p;
     return true;
   }
 
   /**
-   * **悬停派发判定**（引擎 `sub_411BC0` raw 20322-20337 的前半：`v9 = sub_403E70(routes)`）。
+   * **等待推进泵**（引擎 `sub_411BC0` raw 20206-20461 的等价物）——`effect_flags` bit31 置位时每帧跑。
    *
-   * 引擎在**等待泵**里每帧做一次：`sub_4B8D50`（鼠标移动）已按坐标 `sub_403C50` 设好游标，
-   * 这里再用 `sub_403E70` 按"游标变化"取本帧该跑的 label —— **进入**项取 `[259+i]`、
-   * **离开**项取 `[359+i]`（两段式，见 `RouteTable.nextHoverLabel`），随后 `ip = label` 并清 bit31。
+   * 逐帧顺序（**与 raw 的行序一致**）：
+   * ```
+   * mask = input.flush()                                   // sub_478090 (20238)
+   * if (!panel.shown) return false                         // Engine[51828] != 0 (20239)
+   * ① 键命中：l = panel.pickByKey(mask)                    // sub_403D70 (20242) ★第一优先出口
+   *    l != -1 ⇒ guard(owner)                               // sub_4083B0 (20245)
+   *              if (!Conf(set:ControlDisibleCursor)) finishCharReveal()   // sub_4051A0 (20246-20247)
+   *              eatAllInput()                             // sub_4053C0 (20248)
+   *              clear bit31 (20250)
+   *              dispatch(label, -3)                       // 压返回点 -3 → ip = labelC (20251-20258)
+   *              cursor = -1; enterPending = 0             // LABEL_68 (20456-20457)
+   * ② 推进输入 (mask & 0x10) 或 滚轮键：                    // 20262-20267
+   *    clear bit31 (20276)
+   *    if (mask & 0x10 && panel.shown && 0 <= cursor < count)   // 20284-20288（鼠标左键）
+   *        guard(owner); dispatch(labelC of cursor, -3); cursor = -1; enterPending = 0   // 20289-20292
+   *    else messageAdvanceInWindow()                       // sub_48E870/sub_48EB30 (20296-20305)：★不动 ip
+   * ③ 悬停（两段式 enter/leave）：                          // 20315-20339
+   *    gated ⇒ r = panel.nextHoverLabel() (sub_403E70, 20324)
+   *    r != -1 ⇒ guard(owner); dispatch(r, -3); clear bit31 (20327-20334)
+   *              if (!Conf(set:ControlDisibleCursor)) finishCharReveal()   // 20335-20336
+   * ```
    *
-   * ★这是"UI 悬停反应"的唯一入口：emulator 在 2026-09 之前**完全没有**它 ⇒ 脚本里靠热点
-   * labelA/labelB 做的悬停 UI（SN0000 的右侧侧边栏展开/收起、CONFIG 的按钮高亮…）永远不响应
-   * （用户实测："ADV 界面右侧的侧边栏菜单无条件展示"）。
+   * ★**与旧实现的差别**（旧实现已删）：
+   *  - 点击走 **labelC**（`sub_404E00` / 主循环 20182），**不是** labelA——旧实现取 `labelNext` 是错的；
+   *  - 悬停 label **带返回点**（`-3`）当子程序跑，`ret` 回到门指令重跑 ⇒ 不需要"跑完还原 ip"；
+   *  - **泵里不做命中测试**（`sub_403C50` 只在鼠标移动/面板首次显示时调）；
+   *  - 没有热点时 = **在消息窗内推进文本**（不动 ip），不是"放行脚本自己跑"。
    *
-   * 本方法只做**判定**（不改脚本状态）：label 的**执行**由宿主跑（`session` 的 `#runHoverLabel`），
-   * 因为脚本状态只有一份，而引擎那边这条 label 是"带返回点的子程序调用"。
+   * @returns `true` = 本帧处理过一次输入（派发了 label 或推进了页内文本）。
+   */
+  serviceAdvanceWait(): boolean {
+    if (!this.awaitingAdvance) return false;
+    const im = this.input;
+    const panel = this.routes;
+    const mask = im.flush();
+    if (!panel.shown) return false;
+
+    // ★命中测试**只在鼠标移动过时**重做（引擎 `sub_4B8D50` raw 140827-140830 在 WM_MOUSEMOVE 里调
+    //   `sub_403C50`；等待泵里没有它）。`hitTestPending` = "游标还没按最新位置重算过" ⇒ 做完即消费
+    //   （**不能**用 `mouseMoved`：那一格在等待态不会被 `consumeEdges()` 清掉 ⇒ 会退化成每帧重算）。
+    if (im.hitTestPending && im.hasCursor) {
+      panel.hitTest(im.readX(), im.readY());
+      im.hitTestPending = false;
+    }
+
+    // ① 键命中（sub_403D70）—— **等待泵的第一优先出口**，ADV「键盘推进」走这条。
+    const keyLabel = panel.pickByKey(mask);
+    if (keyLabel !== -1) {
+      this.guardScriptIdentity(panel.ownerScriptId); // sub_4083B0
+      if (this.controlDisableCursor() === 0) this.finishCharReveal(); // sub_4051A0
+      this.eatAllInput(); // sub_4053C0：刷掩码 + 按钮保持位 + 掩码清 0
+      this.awaitingAdvance = false; // effect_flags &= ~0x80000000（20250）
+      this.dispatchWithReturn(keyLabel, -3);
+      this.lastDispatch = { label: keyLabel, kind: 'key' };
+      panel.cursor = -1; // LABEL_68
+      panel.enterPending = 0;
+      return true;
+    }
+
+    // ② 推进输入：`(mask & 0x50) != 0`（鼠标左/右）或滚轮键位命中（受 set:WheelKeyDown +
+    //    message:AdvanceMesOnWheel 位 0 门控）。**没有推进输入时继续看 ③ 悬停**。
+    if (this.advancePressed(mask)) {
+      this.awaitingAdvance = false; // 20276
+      // 20278-20282：收尾逐字显现（同 sub_4051A0）
+      if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0) this.finishCharReveal();
+
+      if ((mask & 0x10) !== 0 && panel.cursorValid()) {
+        // 20284-20292：**鼠标左键 + 游标有效 ⇒ 派发当前游标项的 labelC**（sub_404E00）。
+        this.guardScriptIdentity(panel.ownerScriptId);
+        this.dispatchWithReturn(panel.currentLabelClick(), -3);
+        this.lastDispatch = { label: panel.entries[panel.cursor]?.labelClick ?? -1, kind: 'click' };
+        panel.cursor = -1;
+        panel.enterPending = 0;
+      } else {
+        // 20296-20305：没有命中热点 ⇒ 在消息窗对象内部推进文本（`sub_48E870`/`sub_48EB30`），
+        // **完全不动脚本 ip**。这就是「点空白处翻页」的真实机制。
+        this.messageAdvanceInWindow();
+      }
+      im.consumeWheelDelta();
+      im.consumeEdges(); // `*v2 &= ~0x10`（20312）+ 掩码整体弃用
+      return true;
+    }
+
+    // ③ 悬停（两段式 enter/leave；raw 20315-20339）。
+    //    ★与规格 §D.1 的字面描述相反：`set:ReDrawTextOnKey == 1` 是**跳过**悬停的条件之一
+    //    （汇编 0x411DBF-0x411DEB：`cmp eax,1 / jnz 悬停分支`），且只在"滚轮键按下 + `97055>=0`"时才生效
+    //    ⇒ 随包 INI 缺该键（= 0）时悬停**是生效的**（见 `hoverDispatchAllowed` 的注释）。
+    if (!this.hoverDispatchAllowed()) return false;
+    const hoverLabel = panel.nextHoverLabel(); // sub_403E70 (20324)
+    if (hoverLabel === -1) return false;
+    this.guardScriptIdentity(panel.ownerScriptId); // sub_4083B0 (20327)
+    this.dispatchWithReturn(hoverLabel, -3); // sub_405360(-3) + ip = label (20328-20332)
+    // 观测：`[7466]` 已置 ⇒ 这一条是"离开"（`sub_403E70` 的 9944），否则是"进入"（9949）
+    this.lastDispatch = { label: hoverLabel, kind: panel.enterPending !== 0 ? 'hover-leave' : 'hover-enter' };
+    this.awaitingAdvance = false; // effect_flags &= ~0x80000000 (20334)
+    if (this.controlDisableCursor() === 0) this.finishCharReveal(); // sub_4051A0 (20335-20336)
+    return true;
+  }
+
+  /**
+   * **悬停/点击的收尾**（引擎 `sub_4051A0` raw 10923-10935）：
+   * `if (effect_flags & 0x40000000) { if (!(flags & 0x100000)) sub_45A940(Font, 当前窗, -2, 0); 清 bit30 }`
+   * ＝ **把在飞的逐字显现立刻收尾（整段贴出）并清 bit30**。
+   */
+  finishCharReveal(): void {
+    for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
+    this.endCharReveal();
+    this.serviceTextReveal(this.nowMs);
+  }
+
+  /**
+   * **吃掉本次输入**（引擎 `sub_4053C0` raw 11044-11058）：
+   * `sub_478090(输入管理器, mask)`（刷掩码）→ `sub_477220` 把鼠标按钮值读进临时量，
+   * 非 0 则 `输入管理器[1690] = 1` → **最后 `mask = 0`**。
+   */
+  eatAllInput(): void {
+    this.input.flush();
+    this.input.consumeEdges();
+    this.input.consumeWheelDelta();
+  }
+
+  /**
+   * 「推进输入」判定（引擎 raw 20262-20267，逐字对齐）：
+   * ```
+   * (mask & 0x50) != 0                       // ★bit4 = 鼠标左、bit5 = 鼠标右（sub_477150 的映射）
+   * || ( ((1 << Conf(set:WheelKeyDown)) & mask) != 0
+   *      && (effect_flags & 0x100000) == 0   // 跳读中不按滚轮推进
+   *      && (Conf(message:AdvanceMesOnWheel) & 1) != 0 )
+   * ```
+   * ★**掩码位 0x50 = 鼠标左/右**（`sub_477150`：`*a2 |= 1 << (LOBYTE(_this[SystemMetrics+1125]) + 4)`，
+   * 左键时 `SystemMetrics(23)=0` ⇒ bit4；右键 `1 - v4` ⇒ bit5）。**不是"左+右键都算"**，
+   * 而是"这一位本身代表鼠标键"。
    *
-   * 返回 −1 = 本帧没有游标变化（或没有游标/没有热点）。
+   * ★滚轮**不是**无条件推进输入：随包 INI 缺 `set:WheelKeyDown`（= bit0）与
+   * `message:AdvanceMesOnWheel`（= 0）⇒ 滚轮推进这条路默认**不成立**（见
+   * `docs-new/03-engine/message-config-gates.md`）。旧实现把 `wheelDelta != 0` 也算推进输入，与引擎不符。
+   */
+  advancePressed(mask: number): boolean {
+    if ((mask & 0x50) !== 0) return true;
+    const cfg = this.config;
+    if (!cfg) return false;
+    const wheelKey = cfgInt(cfg, 'set:wheelkeydown', 0);
+    if (wheelKey < 0 || wheelKey >= 32) return false;
+    if ((mask & (1 << wheelKey)) === 0) return false;
+    if ((this.effectFlags & 0x100000) !== 0) return false; // 跳读中 ⇒ 不按滚轮推进
+    return (cfgInt(cfg, 'message:advancemesonwheel', 0) & 1) !== 0;
+  }
+
+  /**
+   * `Conf(set:ControlDisibleCursor)`（缺键 = 0）：
+   * **非 0 ⇒ 派发 label 前不调 `sub_4051A0`**（「光标模式：不要自动收尾逐字显现」）。
+   */
+  controlDisableCursor(): number {
+    return this.config ? cfgInt(this.config, 'set:controldisibiecursor', 0) : 0;
+  }
+
+  /**
+   * **没有命中热点时的页内推进**（引擎 raw 20296-20305 的 `sub_48E870`/`sub_48EB30`）。
+   *
+   * 引擎在**消息窗对象内部**推进文本（把该窗的逐字显现收尾 / 推进到下一段），**不动脚本 ip**。
+   * emulator 没有那套文本对象 ⇒ 等价物 = 「本页认为是显示完的」并把余下的字整段贴出：
+   * 脚本仍停在 `wait-for-input`（门已清），下一帧照常往下跑。
+   *
+   * ★这与旧实现的"表空 ⇒ 清门让脚本自己跑"**语义不同**：旧实现把整页推进交回脚本，
+   * 而引擎这里只是把这一窗的字贴完。
+   */
+  messageAdvanceInWindow(): void {
+    if (this.msgwin.isRevealing()) this.finishCharReveal();
+    this.msgwin.showing = 0;
+  }
+
+  /**
+   * **悬停判定**（引擎 `sub_411BC0` raw 20315-20339 的前半：`v9 = sub_403E70(routes)`）。
+   *
+   * ★**不在这里做命中测试**：游标由鼠标移动事件（`sub_4B8D50` → `InputManager.onCursorMove`
+   * → `routes.hitTest`）或面板首次显示（`sub_404020`）更新。
+   *
+   * ★**总开关的正确极性**（raw 20318-20320，汇编 0x411DBF-0x411DEB 已逐条核对）：
+   * ```
+   * edx = (1<<Conf(set:WheelKeyUp)) | (1<<Conf(set:WheelKeyDown));
+   * if ((mask & edx) == 0)  goto 悬停分支;        // 滚轮键没按 ⇒ 悬停
+   * if (Engine[388220] < 0) goto 悬停分支;        // 文本对象槽参数为负（= 0x1BB 0 置的 0x80000000）⇒ 悬停
+   * if (Conf(set:ReDrawTextOnKey) != 1) goto 悬停分支;
+   * // ↓ 只有"滚轮键按下 && 97055>=0 && ReDrawTextOnKey==1"才**跳过**悬停
+   * ```
+   * ⇒ 随包 INI **缺** `set:ReDrawTextOnKey`（= 0）且 `i1bb 0` 期间（`97055 = 0x80000000 < 0`）时，
+   * **悬停派发是生效的**（规格 §D.1 把它写反了，这里按汇编订正）。
+   *
+   * 返回 −1 = 本帧没有游标变化（或没有热点、门控拦住）。
    */
   pickHoverLabel(): number {
-    const im = this.input;
-    if (!im.hasCursor) return -1;
-    // 引擎 `sub_403C50`：按当前坐标重算游标（引擎在鼠标事件里做；这里每帧按当前位置重算）
-    this.routes.hitTest(im.readX(), im.readY());
-    const label = this.routes.nextHoverLabel(); // 引擎 `sub_403E70`
+    if (!this.hoverDispatchAllowed()) return -1;
+    const label = this.routes.nextHoverLabel(); // 引擎 sub_403E70
     return label === 0xffffffff ? -1 : label;
   }
 
   /**
-   * **headless 确定性放行**：无输入源时（`report.ts` / `run.ts`）把等待门当作"玩家立刻点了"，
-   * 若已登记热点则跳到第一个热点的 labelC（与真实点击同一路径），否则只解除门。
-   * 返回跳转到的 label（`null` = 未跳转）。**仅 headless 使用**；renderer 走 `serviceAdvanceWait()`。
+   * 悬停分支的门控（raw 20315-20320 的整体条件；见 `pickHoverLabel` 的汇编核对）。
+   *
+   * 整体条件（`sub_411BC0` 的 `if (~((mask & 0x20) == 0 && …))`，raw 20315-20321）：
+   * ```
+   * (mask & 0x20) != 0          → 跳过整个悬停/推进段（右键走 20365 的"取消/跳读"通路）
+   * 或 (mask & 滚轮键位) != 0 且 Engine[388220] >= 0 且 Conf(set:ReDrawTextOnKey) == 1 → 跳过
+   * ```
+   * 其余情况**都走悬停派发**（`sub_403E70`，20324）。
+   */
+  hoverDispatchAllowed(): boolean {
+    // `(mask & 0x20)` = 鼠标**右**键（`sub_477150` 的 bit5）⇒ 右击时整段悬停/推进被跳过。
+    if ((this.input.flush() & 0x20) !== 0) return false;
+    const cfg = this.config;
+    const wheelUp = cfg ? cfgInt(cfg, 'set:wheelkeyup', 0) : 0;
+    const wheelDown = cfg ? cfgInt(cfg, 'set:wheelkeydown', 0) : 0;
+    const wheelBits = (1 << (wheelUp & 31)) | (1 << (wheelDown & 31));
+    if ((this.input.flush() & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
+    if (((this.engineValues.get(TEXT_BASE_GATE) ?? 0) | 0) < 0) return true; // `i1bb 0`（0x80000000，有符号为负）⇒ 悬停
+    if (!cfg) return true;
+    return cfgInt(cfg, 'set:redrawtextonkey', 0) !== 1; // redraw==1 ⇒ **跳过**悬停
+  }
+
+  /**
+   * **headless 确定性放行**：无输入源时（`report.ts` / `run.ts` / `tools/gameStartChain.ts`）
+   * 把等待门当作"玩家立刻点了"，若已登记热点则**跳到第一个热点的 labelC**（与真实点击同一出口），
+   * 否则只解除门。
+   *
+   * ★这条与 `serviceAdvanceWait`（renderer 的泵）刻意不同：**不压返回点**。
+   * 依据 = 引擎的 `sub_411900`（ADV 跑动帧）在 `panelA[7463]` 且 `Engine[122368] == 0` 时也是
+   * **直接 `ip = labelC`**（raw 20175-20184 的 `sub_405360(_this, 0)` 是"压当前偏移"——
+   * 但 headless 宿主不驱动 `ret`/帧循环，压了反而改变走向）。实测：压返回点会让 SN0000 跳过
+   * ADV 暗幕 `f807d` 的装配，`0x19640` 的 `set-vertex-color` 读到 0（见 `test/mesh-vertex-quad.test.ts` E3）。
+   *
+   * 返回跳转到的 label（`null` = 未跳转）。**仅 headless 使用**。
    */
   forceAdvance(): number | null {
     if (!this.awaitingAdvance) return null;
-    // 与真实点击同一语义（引擎 raw 20025-20030）：先把逐字显现收尾（整段贴出）再放行。
-    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0 && (this.effectFlags & 0x100000) === 0) {
-      for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);
-      this.endCharReveal(); // 收尾（整段贴出）+ 清 bit30 ⇒ 停 ▼
-      this.serviceTextReveal(this.nowMs);
-    }
-    this.awaitingAdvance = false;
+    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0) this.finishCharReveal();
     const first = this.routes.entries[0];
-    if (first && this.jumpToLabel(first.labelKey)) return first.labelKey;
+    this.awaitingAdvance = false;
+    if (first && this.jumpToLabel(first.labelClick)) {
+      this.routes.cursor = -1;
+      this.routes.enterPending = 0;
+      this.lastDispatch = { label: first.labelClick, kind: 'headless' };
+      return first.labelClick;
+    }
     return null;
   }
 
-  /** 把当前帧的 `ip` 重定位到某个 label 值（引擎 `ip = str_table + 4*label`）。 */
+  /** 把当前帧的 `ip` 重定位到某个 label 值（引擎 `ip = ip_base + 4*label`）—— **只服务 `jmp`/`call`**。 */
   jumpToLabel(label: number): boolean {
     const f = this.curScript();
     const p = f.labelMap.get(label);

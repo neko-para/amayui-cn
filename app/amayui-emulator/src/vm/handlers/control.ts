@@ -24,9 +24,13 @@ const op_jmp: OpHandler = (c) => {
 };
 
 const op_call: OpHandler = (c) => {
-  // 同脚本内 call label：压下一指令到返回栈、跳转。operand==-1(0xFFFFFFFF) 则不跳（弹回）。
+  // 同脚本内 call label：压**下一条指令的 dword 偏移**到返回栈、跳转。
+  //   ★与引擎同口径：`sub_420560`（raw 29457-29471）压 `((ip-ip_base)>>2) + 3`（本指令 3 dword 长）
+  //   ⇒ 返回栈里存的是 **dword 偏移**，不是数组下标（`ret` 再经 `dwordToInstr` 换回来）。
+  //   operand==-1(0xFFFFFFFF) 则不跳（弹回）。
   const a = operandArg(c.instr, 1);
-  c.frame.retStack.push(c.frame.ip + 1);
+  const retDword = (c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 3;
+  c.frame.retStack.push(retDword);
   if (a.raw === 0xffffffff) {
     c.frame.retStack.pop(); // 无目标，弹回（no-op）
     return;
@@ -84,7 +88,11 @@ const op_jcc: OpHandler = (c) => {
 const op_ret: OpHandler = (c) => {
   const top = c.frame.retStack.pop();
   if (top !== undefined) {
-    c.jump(top);
+    // ★返回栈里存的是 **dword 偏移**（引擎 `sub_41A9B0` raw 25704-25727：`ip = ip_base + 4*v2`）
+    //   ⇒ 必须经 `dwordToInstr` 换回指令数组下标。直接用会把偏移当 index 落错指令。
+    const idx = c.frame.script?.dwordToInstr[top];
+    if (idx === undefined) throw new Error(`ret: 返回点 dword 偏移 ${top} 不在脚本映像里（${c.frame.name}）`);
+    c.jump(idx);
   }
   // 栈空：同脚本函数调用栈为空 → 不跳，落到下一指令（引擎里 arity=1 前进 1 dword）
 };
@@ -144,7 +152,7 @@ const op_call_script: OpHandler = async (c) => {
       `call-script: 解析脚本失败 0x${target.toString(16)} -> ${src.name} (data=${src.data.length}B): ${(err as Error).message}`,
     );
   }
-  loadScriptIntoFrame(newFrame, script, src.name);
+  loadScriptIntoFrame(newFrame, script, src.name, target);
   c.log(`  [call-script] 0x${target.toString(16)} -> ${src.name} (${script.instructions.length} instr)`);
   c.jump(-1); // 控制到新帧
 };
@@ -198,7 +206,7 @@ async function dispatchNextRequest(c: StepCtx): Promise<void> {
   e.scriptRequests.shift();
   const frame = e.frames[DISPATCH_FRAME]!;
   const script = parseScriptBytes(src.data);
-  loadScriptIntoFrame(frame, script, src.name);
+  loadScriptIntoFrame(frame, script, src.name, id);
   frame.caller = DISPATCH_SENTINEL;
   frame.frameArg = 0;
   e.dispatching = true;
@@ -246,11 +254,11 @@ const op_load_into_frame: OpHandler = async (c) => {
   const src = await c.e.fileSource.readScript(scriptIdx);
   if (!src) throw new Error(`0x6: cannot load script 0x${scriptIdx.toString(16)}`);
   const script = parseScriptBytes(src.data);
-  loadScriptIntoFrame(c.e.frames[frameIdx]!, script, src.name);
+  loadScriptIntoFrame(c.e.frames[frameIdx]!, script, src.name, scriptIdx);
 };
 
 /**
- * 把解析好的脚本装入一个帧（建立 labelMap + **重建局部池**）。
+ * 把解析好的脚本装入一个帧（建立 labelMap + **重建局部池** + 写**脚本身份 token**）。
  *
  * ★★**一次载入 = 一次新调用**：引擎 `sub_40ED40`（loadScriptFrame）读脚本后**建局部池
  * 并把 `local_int` 填 `enc_zero`** ⇒ 启动、`call-script`(0x3)、`load-frame`(0x6)、
@@ -267,10 +275,19 @@ const op_load_into_frame: OpHandler = async (c) => {
  * 全局池（`Engine.globals.*`）**不在此列**：那是跨脚本状态（"上次选的分类" `12721e` 就在里面，
  * 所以切完分类高亮才记得住）。
  *
+ * ★**`scriptId`**：引擎同一处还写 `frames[cur][95796] = a4`（raw 18636）＝**打开该脚本用的统一文件 id**，
+ * 它就是 `sub_4083B0` / `0xCD` 的脚本身份守卫要比对的那个 token（见 `Engine.guardScriptIdentity`）。
+ * 没传（测试里手搓的帧）时为 -1 ⇒ 守卫跳过（引擎里 -1 也是"未注册"的初值）。
+ *
  * 注意 `call-frame`(0x8) 跑的是**已预装**的固定帧、不再走本函数 ⇒ 固定帧被反复调用时局部量照旧保留
  * （与引擎一致：`sub_41C900` 不重建池）。
  */
-export function loadScriptIntoFrame(frame: Frame, script: import('../../script/bin.js').ScriptBinary, name?: string): void {
+export function loadScriptIntoFrame(
+  frame: Frame,
+  script: import('../../script/bin.js').ScriptBinary,
+  name?: string,
+  scriptId = -1,
+): void {
   frame.script = script;
   frame.name = name ?? script.signature;
   frame.ip = 0;
@@ -283,6 +300,7 @@ export function loadScriptIntoFrame(frame: Frame, script: import('../../script/b
   frame.strTable = [];
   frame.arrayContainer.clear();
   frame.frameArg = 0;
+  frame.scriptId = scriptId; // ★脚本身份 token（引擎 frames[cur][95796]，raw 18636）
 }
 
 // ---- 杂项 ----
@@ -350,7 +368,7 @@ const op_exit_script: OpHandler = async (c) => {
   const boot = await c.e.fileSource.readScript(0);
   if (!boot) throw new ExitScript();
   const script = parseScriptBytes(boot.data);
-  loadScriptIntoFrame(c.e.frames[0]!, script, boot.name);
+  loadScriptIntoFrame(c.e.frames[0]!, script, boot.name, 0);
   c.e.cur = 0;
   c.jump(0); // 控制流重定位到新根帧 ip=0，继续跑（而非停在 reset）
 };

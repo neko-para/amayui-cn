@@ -282,3 +282,32 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
   // ④ 路径上**零**未实现 opcode（throw 策略 ⇒ 有缺口会直接抛）
   assert.deepEqual(r.unknown, [], '这条路径上不应有未实现 opcode');
 });
+
+/**
+ * **判据⑥（规格 `.tmp/mouse-dispatch-spec.md` §F.4-6）**：点「ゲーム開始」之后，**下一条 SE 必须由
+ * `GAMESTART` 发出**（而不是被 SN0000 的通用 ADV 框架抢先）。
+ *
+ * 依据：`0xB4 play-sound-effect` 的 op1 是**统一文件 id**（`SYS4INI` 下标）；
+ * `GAMESTART.txt:1307` 附近的那条 = **0x51e3**（= SE004.WAV），而 SN0000 的通用 ADV 框架用的是
+ * `SE002`（id **0x32**，`SN0000.txt:526/571`）。用户报的症状「点击进游戏时响的是错误音效」正是
+ * 「鼠标沿被 SN0000 的 ADV 泵抢先消费」⇒ 这条断言把"谁先发 SE"钉死。
+ */
+test('E3 判据⑥：点「ゲーム開始」后下一条 SE 由 GAMESTART 发（id 0x51e3），且早于任何 SN0000 的 SE', async () => {
+  const r = await runGameStartChain({});
+  const i = r.sePlays.findIndex((s) => s.id === 0x51e3);
+  assert.ok(i >= 0, `应发出 id 0x51e3 的 SE；实际 ${JSON.stringify(r.sePlays.map((s) => `0x${s.id.toString(16)}@${s.script}`))}`);
+  assert.equal(r.sePlays[i]!.script, 'GAMESTART.BIN', '这条 SE 必须由 GAMESTART 发出');
+  // 在它之前不得有任何 SN0000 发起的 SE（= 鼠标沿没被 SN0000 的通用 ADV 框架抢先消费）
+  const before = r.sePlays.slice(0, i);
+  assert.equal(
+    before.some((s) => s.script.startsWith('SN0000')),
+    false,
+    `0x51e3 之前不得有 SN0000 的 SE；实际 ${JSON.stringify(before.map((s) => `0x${s.id.toString(16)}@${s.script}`))}`,
+  );
+  // SN0000 的通用 ADV SE 是 0x32（SE002，`SN0000.txt:526/571`）—— 更直白地排除"SN0000 抢先发声"
+  assert.equal(
+    before.some((s) => s.script.startsWith('SN0000') && s.id === 0x32),
+    false,
+    '0x51e3 之前不得出现 SN0000 的 SE002（0x32）',
+  );
+});

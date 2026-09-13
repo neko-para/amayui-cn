@@ -175,6 +175,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     gap = { operands };
   }
   e.currentOpcode = op; // 供 NativeTap（闸门 A）把"意图被丢弃"归因到指令
+  frame.curDwordOffset = instr.index; // 调用点的 dword 偏移（引擎 `(ip - ip_base) >> 2`；派发返回点要用）
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
   await handler(ctx);
   // 注意：handler 可能改了 cur（call-script / ret），因此用"当前帧"来推进，而非 handler 前的 frame。
@@ -235,8 +236,13 @@ export async function run(e: Engine, steps?: number): Promise<RunResult> {
   return { executed, exited: false };
 }
 
-/** 把脚本字节装入引擎当前帧（供启动时直接 load index 0）。 */
-export function loadScriptData(e: Engine, data: Uint8Array, name?: string): void {
+/**
+ * 把脚本字节装入引擎当前帧（供启动时直接 load index 0）。
+ *
+ * `scriptId` = 打开该脚本用的统一文件 id（引擎 `frames[cur][95796]`）：根脚本恒为 **0**，
+ * 它就是 `sub_4083B0`/`0xCD` 的脚本身份守卫要比对的 token。
+ */
+export function loadScriptData(e: Engine, data: Uint8Array, name?: string, scriptId = 0): void {
   const script = parseScriptBytes(data);
-  loadScriptIntoFrame(e.curScript(), script, name);
+  loadScriptIntoFrame(e.curScript(), script, name, scriptId);
 }

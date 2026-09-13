@@ -1795,7 +1795,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "已实现：`Engine.serviceAdv()`（= `sub_411900` 的输入泵 + 「未显示完」判定 + ADV 清除）与 renderer session 的 `adv` 门分支（每帧恰好 1 条指令）；headless 侧（report/run）同构处理。"
+        "note": "已实现：Engine.serviceAdv()（= sub_411900 的输入泵 + 「未显示完」判定 + ADV 清除）与 renderer session 的 adv 门分支（每帧恰好 1 条指令）；headless 侧（report/run）同构处理。★2026-09 补：sub_411900 尾段（raw 20166-20201）的**另一处派发**也已实现于 Engine.serviceAdvanceWait（等待泵）：鼠标左键 + panelA[7463] + Engine[122368] == 0 ⇒ [12962]（= panelA[7468] 游标，**不是**另一个 label 槽）合法性门 → sub_405360(0) → ip = base + 4*sub_404E00(panelA)（**labelC of 游标**）；Engine[122368] 的写入点（24569/28974/90988）身份未确认（规格 §G4）。"
       }
     },
     {
@@ -1882,7 +1882,7 @@
         "status": "modeled-unverified",
         "evidence": "E1",
         "guard": "test/input.test.ts",
-        "note": "已部分实现：`Engine.serviceAdv()` 每帧 `input.flush()`（= `sub_4780D0`）；「跳读中」掩码位 0x40 由 `msgwin.skipMirror`(1415) 合成。仍未建模：引擎经 `sub_403E70` 的文本队列推进与 `set:WheelKeyUp/Down` 键绑定。"
+        "note": "已部分实现：Engine.serviceAdv() 每帧 input.flush()（= sub_4780D0）；「跳读中」掩码位 0x40 由 msgwin.skipMirror(1415) 合成。★2026-09 补：等待泵 Engine.serviceAdvanceWait（= sub_411BC0）已按逐帧顺序实现（键命中 sub_403D70 → 推进输入 (mask & 0x50) → 悬停 sub_403E70），含 set:WheelKeyDown + message:AdvanceMesOnWheel 的滚轮推进门与 set:ControlDisibleCursor 的收尾门；仍未建模：sub_403DD0（方向键/翻页键移动游标，属 sub_4098E0 显示态通路）与 panelB 的 sub_4040A0。"
       }
     },
     {
@@ -2075,9 +2075,9 @@
       "confidence": "confirmed",
       "emulator": {
         "status": "partial",
-        "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
-        "note": "已实现：`RouteTable`（入队 `0x090`、坐标命中 `hitTest`、键命中 `pickByKey`、label 重定位 `Engine.jumpToLabel`）与等待门集成；真实脚本 SC0000 登记 6 个热点且不再硬报错。未实现：引擎 `[7466]/[959]` 的游标去重锁存（emulator 改为「本帧有推进输入」才推进，避免鼠标悬停即自动翻页）、`sub_403500` 的坐标变换、`[7361+i]` 键位绑定的写入方。"
+        "evidence": "E3",
+        "guard": "test/route-dispatch.test.ts",
+        "note": "已按 .tmp/mouse-dispatch-spec.md 忠实重做（2026-09）：\n① **点击/键命中一律走 labelC**（[459+i]：sub_403D70 raw 9862 / sub_404E00 raw 10675 / 主循环 raw 20182）；旧实现取 labelA 是错的。\n② **悬停 label 是带返回点的子程序**：sub_405360(Engine, -3)（raw 11030-11041）压的是 a2 + ((ip-ip_base)>>2)，a2 是**字面 dword 偏移**；wait-for-input 长 3 dword（sub_41EEF0 raw 28484）⇒ 返回点正好 = 门指令 ⇒ label 末尾 ret（sub_41A9B0 raw 25704）后**重跑门指令**（页已显示完 ⇒ 再挂起）。\n③ **命中测试只在鼠标移动**（sub_4B8D50 raw 140825-140836 → InputManager.onCursorMove → routes.hitTest）与**面板首次显示**（sub_404020 raw 10026）时做；等待泵里没有它。\n④ **i093 真清表**：sub_403EF0（raw 9958-9971）把 [258]（= 条目数）置 0 ⇒ 整表作废；[7465] 不在它的复位列表里。\n⑤ **i097 是键位绑定**（sub_403D10 raw 9827-9844：矩形四字段全等 ⇒ [7361+i] = bit），不是「面板填矩形」；native.fillPanelRect 直通链路已删。\n⑥ **脚本身份守卫** Engine.guardScriptIdentity（= sub_4083B0 raw 13112-13131 / 0xCD raw 25861）：路由表 ownerScriptId 与 0xCC 的 mouseJumpOwner 都要等于当前帧 scriptId（= frames[cur][95796]，sub_40ED40 raw 18636 写），不等即抛 Depth が不正です。\n⑦ **悬停门控按汇编订正**（0x411DBF-0x411DEB）：mask & 0x20（鼠标右键）⇒ 整段悬停/推进被跳过；只有「滚轮键按下 && Engine[97055] >= 0 && Conf(set:ReDrawTextOnKey) == 1」才跳过悬停（规格 §D.1 把它写成 ReDrawTextOnKey==1 才启用，极性反了）。\n★仍未实现（已登记缺口，不猜）：(a) 0x91/0x92 的**显示态派发通路** sub_4098E0（raw 14055-14105：含 sub_403DD0 raw 9866-9915 的方向键/翻页键移动游标、[7467] 回退 label）；(b) **panelB**（Engine+0x32B0）整套：0x8D/0x8E/0x95/0x96 + sub_409700/sub_4040A0；(c) sub_403500 的坐标变换（客户区 = 1280×720 时恒等；其它分辨率/多显示器未验证）；(d) 0x7C 的 Engine[489488]「取消/跳读」通路（raw 20365-20374 → sub_41AB80 raw 25778，含自己的身份守卫）—— 鼠标右键走的就是它。"
       }
     },
     {

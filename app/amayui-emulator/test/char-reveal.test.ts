@@ -50,6 +50,26 @@ function grid(win: number, op3: number, op6: number): BinArg[] {
   return [im(win), im(0), im(op3), im(0xc), im(0), im(op6), im(0x38), im(0x38), im(8), im(100)];
 }
 
+/**
+ * **注册消息面面板**（引擎 `i094` → `sub_419230`）。
+ *
+ * ★等待推进泵（`sub_411BC0` raw 20239）整个被 `Engine[51828]`（= `panelA[7463]`「面板已显示」）
+ * 门控 —— 真实 ADV 脚本的 UI 例程末尾就是 `i094`（`src/SN0000.txt:117`），随后才 `wait-for-input`。
+ * 所以凡是"点击推进"的断言都必须先跑它。
+ */
+function showPanel(step: (op: number, args?: BinArg[]) => void): void {
+  step(0x94);
+}
+
+/**
+ * 注入一次鼠标移动 + 左键按下（引擎：WM_MOUSEMOVE 里的 `sub_403C50` 命中测试 → WM_LBUTTONDOWN）。
+ * ★必须先移动再按下：命中测试只在鼠标移动/面板首次显示时做，泵里不做。
+ */
+function moveAndClick(e: Engine, x: number, y: number): void {
+  e.input.setCursor(x, y);
+  e.input.pressMouse(0);
+}
+
 test('★0x73 设字格：写入字格块（含 win+88 总门）与逐字节拍（op10）', () => {
   const { e, step } = mk();
   step(0x80, [im(8)]);
@@ -162,23 +182,26 @@ test('★0x73 = ▼ 图标精灵表：0x72 武装后每 op10 ms 换一格，点�
   step(0x73, [im(1), im(0x37a), im(0x6e), im(0xc), im(0), im(0), im(0x23), im(0x23), im(0xa), im(0x64)]);
   step(0x71, [im(1)]);
   step(0x6e, [im(0), str('あいうえお')]);
+  showPanel(step); // ★等待推进泵被 Engine[51828]（= panelA[7463]「面板已显示」）门控
   step(0x72, [im(1)]);
   assert.equal(e.engineValues.get(107705), 10, '模数 = op9 = 精灵表 10 格');
-  assert.equal(e.serviceCharGrid(50), false, '未到 100ms 节拍 ⇒ 不换格');
-  // 引擎先贴当前格、再自增 ⇒ 第 1 格出现在 t0 + op10
-  assert.equal(e.serviceCharGrid(100), true, '第一拍 ⇒ 贴格 0');
+  // ★图标要等**本页逐字显完**才出现（引擎：文字泵自旋，跑完才轮到主循环的图标分支）
+  assert.equal(e.serviceCharGrid(50), false, '逐字还在进行 ⇒ 不画图标');
+  // 5 个字按节拍（≥16.67ms/字）逐拍显完
+  for (let k = 1; k <= 5; k++) e.serviceTextReveal(1000 + k * 20);
+  assert.equal(e.serviceCharGrid(1110), false, '显完后的第一帧只**起算**节拍（引擎 sub_453A90 重启计时）');
+  assert.equal(e.serviceCharGrid(1210), true, '再过一拍 ⇒ 贴格 0');
   const c0 = native.scene.msgWins.get(1)?.cell;
   assert.deepEqual(
     c0 && { k: c0.k, src: c0.srcSurface, w: c0.cellW, h: c0.cellH, cols: c0.cols, x: c0.x, y: c0.y },
     { k: 0, src: 12, w: 35, h: 35, cols: 10, x: 1080, y: 667 },
     '★源 = 槽 12 的第 0 格（35×35）、目标 = (890+190, 110+557)（引擎 raw 71368-71377）',
   );
-  assert.equal(e.serviceCharGrid(200), true);
+  assert.equal(e.serviceCharGrid(1310), true);
   assert.equal(native.scene.msgWins.get(1)?.cell?.k, 1, '第二拍 ⇒ 第 1 格（▼ 动起来 = 闪烁）');
-  assert.equal(e.serviceCharGrid(250), false, '未到下一拍 ⇒ 不换');
+  assert.equal(e.serviceCharGrid(1350), false, '未到下一拍 ⇒ 不换');
   // 点击推进 ⇒ 停（引擎 raw 20025-20030：收尾 + 清 bit30）
-  e.input.setCursor(10, 10);
-  e.input.pressMouse(0);
+  moveAndClick(e, 10, 10);
   assert.equal(e.serviceAdvanceWait(), true);
   assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, 0, '点击后不再武装');
   assert.equal(e.serviceCharGrid(5000), false, '停后不再换格');
@@ -218,10 +241,10 @@ test('★点击推进：先把逐字收尾（整段显示）再放行（引擎 r
   step(0x80, [im(8)]);
   step(0x73, grid(8, -5, -280));
   step(0x6e, [im(0), str('一二三四五')]);
+  showPanel(step); // ★等待推进泵被 Engine[51828]（= panelA[7463]）门控
   step(0x72, [im(8)]);
   assert.equal(e.msgwin.revealedOf(8), 0);
-  e.input.setCursor(10, 10);
-  e.input.pressMouse(0);
+  moveAndClick(e, 10, 10);
   assert.equal(e.serviceAdvanceWait(), true, '点击应放行等待门');
   assert.equal(e.msgwin.revealedOf(8), 5, '放行前先补完整段');
   assert.equal(e.msgwin.charMode, false, '逐字模式应退出');
@@ -272,6 +295,7 @@ test('★真实序章页序列（SN0000：i304 → show-text → i305 → i073 �
   step(0x305, []);
   // 页末：i073 设字格 → wait-for-input 启动逐字
   step(0x73, grid(8, -5, 56));
+  showPanel(step); // ★等待推进泵被 Engine[51828]（= panelA[7463]）门控（真实脚本在 UI 例程末尾 `i094`）
   step(0x72, [im(8)]);
   assert.equal(e.msgwin.charMode, true);
   assert.equal(e.msgwin.reveal.get(8)!.total, 10, '本页 10 个字（二つの世界が 6 + 融合して 4）');
@@ -285,8 +309,7 @@ test('★真实序章页序列（SN0000：i304 → show-text → i305 → i073 �
   assert.equal(e.textRevealing, false);
   assert.equal(e.msgwin.charMode, false, '显完即退出逐字模式');
   // 点击 → 放行 → 页末 i071 清窗（下一页开始前清场）
-  e.input.setCursor(10, 10);
-  e.input.pressMouse(0);
+  moveAndClick(e, 10, 10);
   assert.equal(e.serviceAdvanceWait(), true);
   step(0x71, [im(8)]);
   assert.deepEqual(e.msgwin.slot(8).segments, [], 'i071 清场（清理上一页）');

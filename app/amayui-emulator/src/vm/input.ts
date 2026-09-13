@@ -63,12 +63,40 @@ export class InputManager {
   /** 光标位置是否"变化过"（自上次消费以来 mousemove）。get-input-type 依此派发（hover 用）。 */
   mouseMoved = false;
 
+  /**
+   * **待做的命中测试**（引擎 `sub_4B8D50` raw 140825-140836 的 WM_MOUSEMOVE）。
+   *
+   * 与 `mouseMoved` 的区别：`mouseMoved` 表示"自 `consumeEdges()` 以来动过"（供诊断/`hasPending`），
+   * 而这一格表示**游标还没按最新位置重算过** ⇒ 等待泵（`serviceAdvanceWait`）看到它才调
+   * `routes.hitTest` 并**消费**它。
+   *
+   * ★为什么需要它：`mouseMoved` 只在点击/键命中时被 `consumeEdges()` 清掉，等待态下会一直为真
+   * ⇒ 泵会**每帧**重做命中测试（= 引擎里没有的"每帧重算"，正是规格 §E2 的那条偏差）。
+   */
+  hitTestPending = false;
+
+  /**
+   * **光标移动钩子**（引擎 `sub_4B8D50` raw 140825-140836，WM_MOUSEMOVE 的处理体）：
+   * `if (panelA[7463] || panelA[7462]) sub_403C50(Engine+5494, x, y);`
+   * `if (panelB[7464]) sub_403C50(Engine+12976, x, y);`
+   *
+   * ★这是**命中测试的唯一时机之一**（另一个是面板首次显示 `sub_404020`）；等待泵里没有命中测试。
+   * `Engine` 在构造函数里把它接到 `routes.hitTest`（emu 侧没有 panelB，只做 panelA）。
+   */
+  onCursorMove?: (x: number, y: number) => void;
+
   // --- 回调跳转目标（raw label dword 值；-1=未注册；0xFFFFFFFF=无目标）---
   /** mouse_callback(0xCC) 的 op1（slot）。 */
   mouseSlot = -1;
   /** mouse_callback(0xCC) 的 op2（跳转 label 值）。 */
   mouseJump = -1;
-  /** joy_callback(0xFB)：btn(0..31) -> 跳转 label 值。 */
+  /**
+   * **注册 `mouseJump` 时的脚本身份**（引擎 `Engine[107674]`，`0xCC` raw 30323 写
+   * `frames[cur][95796]`）。`0xCD`（`sub_41ACD0` raw 25861）跳转前拿它与当前帧比：
+   * 不等就抛 `Depth が不正です` —— **不许跨脚本派发回调 label**。
+   */
+  mouseJumpOwner = -1;
+  /** joy_callback(0xFB)：**输入掩码位**（= `4 + 按钮序号`，与引擎 `sub_477280` 同口径）→ 跳转 label 值。 */
   joyJump = new Array<number>(32).fill(-1);
 
   // --- 输入位掩码（poll-input/0x100 读；由 flush() 生成）---
@@ -86,16 +114,22 @@ export class InputManager {
 
   // ---------- 渲染器入口 ----------
 
-  /** 更新光标位置（虚拟坐标）。valid=false 表示出窗/未初始化。位置变化即置 mouseMoved（供 hover 派发）。 */
+  /** 更新光标位置（虚拟坐标）。valid=false 表示出窗/未初始化。位置变化即置 mouseMoved（供 hover 派发）。
+   *  ★位置**变化**时还会回调 `onCursorMove`（= 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试）。 */
   setCursor(x: number, y: number, valid = true): void {
     if (valid) {
       x |= 0;
       y |= 0;
-      if (x !== this.x || y !== this.y) this.mouseMoved = true;
+      const moved = x !== this.x || y !== this.y;
+      if (moved) {
+        this.mouseMoved = true;
+        this.hitTestPending = true; // 等待泵消费它时做一次 sub_403C50
+      }
       this.x = x;
       this.y = y;
       this.hasCursor = true;
       this.touchId = 1; // 触点存在（0x2FC op5）
+      if (moved) this.onCursorMove?.(x, y);
     } else {
       this.x = -100000;
       this.y = -100000;
@@ -202,10 +236,11 @@ export class InputManager {
     return this.mouseJump;
   }
 
-  /** 取首个"已注册跳转目标"的手把按钮对应 raw label（无 => null）。不消费边沿。 */
+  /** 取首个"已注册跳转目标"的手把按钮对应 raw label（无 => null）。不消费边沿。
+   *  索引口径 = **输入掩码位**（`4 + 按钮序号`），与 `0xFB` 的写入端一致。 */
   pickJoyTarget(): number | null {
     for (const idx of this.joyEdge) {
-      const t = this.joyJump[idx];
+      const t = this.joyJump[4 + idx];
       if (t !== undefined && t !== -1 && t !== 0xffffffff) return t;
     }
     return null;

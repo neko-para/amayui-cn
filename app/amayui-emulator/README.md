@@ -283,14 +283,15 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 >   ★这一批**解锁了 TITLE →「Load Data」**：此前一进 `SAVE.BIN` 就在 ip=2 硬报错，现在能跑到 ip=628
 >   （下一个缺口是同路的 `0x1A0` 存档文件读取，不在 57 条 stub 名单里）。
 >   守卫 `test/op-a4-a6.test.ts`（8 例）。
-> - **批 A5（9 条，已完成）**：单行字段 / 计时 / 音频设备 / 消息面 —— `0x93` `0x94` `0x97`（`handlers/panel.ts`：
->   消息面开关 + 面板填充色 + 填矩形 → 宿主缝 `native.fillPanelRect`）、
+> - **批 A5（11 条，已完成）**：单行字段 / 计时 / 音频设备 / 消息面 —— `0x91` `0x92` `0x93` `0x94` `0x97`（`handlers/panel.ts`：
+>   显示态开 + `sub_404020`（步长/待填充，`0x92` 另写回退 label `[7467]`）+ 面板复位（`0x93` = `sub_403EF0`，**真正清空路由表**）
+>   + **键位绑定**（`0x97` = `sub_403D10` → `routes.bindKeyBit`；★2026-09 订正：旧的「填矩形 → 宿主缝 `native.fillPanelRect`」是语义错，该直通链路已删））、
 >   `0xD9` `0xAD` `0x1AD` `0x1B1`（`handlers/engine-fields.ts`：清位 / **秒计时器**（BigInt 复刻
 >   `274877907*t>>38`）/ `Engine[166963]=cur`（**1100 处**）/ `Engine[21672]=op1`）、
 >   `0x1BC` `0x1C9`（`handlers/audio.ts`：清语音通道状态位与寄存槽 + 发 `voice-reset` 意图（**213 处**）/
 >   音频设备初始化写 18656·18660）。
 >   ★这批收口后 **TITLE→SN0000 链路上采集到的 25 条全部已转真实现**（该链路不再有任何 `ENGINE_INTERNAL_OPS`）。
->   守卫 `test/op-a5.test.ts`（10 例）。
+>   守卫 `test/op-a5.test.ts`（11 例）。
 
 设置界面（CONFIG2/CONFIG1）实测涉及的一批 opcode，按「读 handler 体」判定为**只写引擎内部字段、无操作数回写、无控制流**，
 已进 `ENGINE_INTERNAL_OPS`（默认插桩，**不再需要用户逐条点「作为桩函数跳过」**）：

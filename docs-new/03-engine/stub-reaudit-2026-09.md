@@ -388,10 +388,10 @@ E2 用例、`opcode-table.md` 行、emulator 注册表与三层数据层。
 
 | 落点 | 内容 |
 |---|---|
-| `handlers/panel.ts`（新） | `0x93`（清 `effect_flags & 0x800000` + 复位面板游标态 + toggle `12956/12957`）、`0x94`（置 `12957` + 面板填充色 + 首次按鼠标重做命中测试）、`0x97`（填矩形 → 宿主缝 `native.fillPanelRect`，落 `SceneState.render4.panelRects`） |
+| `handlers/panel.ts`（新） | `0x91`/`0x92`（显示态开 + `sub_404020`；`0x92` 另写回退 label `[7467]`）、`0x93`（清 `effect_flags & 0x800000` + `sub_403EF0` **真正清空路由表** + toggle `12956/12957`）、`0x94`（置 `12957` + 步长/待填充 + 首次按鼠标重做命中测试）、`0x97`（**键位绑定** → `routes.bindKeyBit`；★2026-09 订正：旧的「填矩形 → 宿主缝 `native.fillPanelRect`」语义是错的，该直通链路已删） |
 | `handlers/engine-fields.ts` | `0xD9`（清 `effect_flags & 0x1000`，派发中时同清 `95779`）、`0xAD`（**秒计时器**：`_this[5449] ← timeGetTime/1000`，用 `BigInt` 复刻 `274877907 * t >> 38` 的定点算术）、`0x1AD`（`_this[166963] = cur`，**1100 处**）、`0x1B1`（`_this[21672] = op1`） |
 | `handlers/audio.ts` | `0x1BC`（清语音通道状态位 `21315..21320` + 寄存槽 `122501`/`122505..122510` + 对 3 个通道发 `voice-reset`，**213 处**）、`0x1C9`（音频设备初始化：写 `18656`/`18660`；驱动装载=已登记缺口） |
-| 守卫 | `test/op-a5.test.ts`（10 例：注册表棘轮 / 面板复位与 toggle / 填充色与命中测试 / 填矩形转发 / 清位 / 秒计时器 BigInt 算术 / 字段写 / 语音清理意图 / 设备参数 / 不写操作数） |
+| 守卫 | `test/op-a5.test.ts`（11 例：注册表棘轮 / 面板复位与 toggle / 步长与命中测试 / **键位绑定** / 显示态 0x91+0x92 / 清位 / 秒计时器 BigInt 算术 / 字段写 / 语音清理意图 / 设备参数 / 不写操作数） |
 | 既有测试更新 | `test/game-start-chain.test.ts` 的棘轮：本链路采集到的 25 条（9 + A4 9 + A5 7）**全部**已转真实现 ⇒ 该链路不再有任何 `ENGINE_INTERNAL_OPS` |
 
 **这一批的意义**：A5 的 9 条**都不回写操作数**（属"单行字段写"），但从"无依据的 no-op"变成了

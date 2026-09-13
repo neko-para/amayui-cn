@@ -121,7 +121,6 @@ export interface SceneSnapshot {
     meshAttrs: [number, number, number][];
     released3D: number[];
     color3D: number[];
-    panelRects: { rect: number[]; mode: number }[];
   };
   counts: {
     drawItems: number;
@@ -212,7 +211,6 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
       ),
       released3D: [...s.render4.released3D],
       color3D: [...s.render4.color3D],
-      panelRects: s.render4.panelRects.map((p) => ({ rect: [...p.rect], mode: p.mode })),
     },
     drawItems,
     meshes,
@@ -296,7 +294,6 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.meshAttrs.length) parts.push(`meshAttrs=${JSON.stringify(r4.meshAttrs)}`);
     if (r4.released3D.length) parts.push(`released3D=${JSON.stringify(r4.released3D)}`);
     if (r4.color3D.length) parts.push(`color3D=${JSON.stringify(r4.color3D)}`);
-    if (r4.panelRects.length) parts.push(`panelRects=${JSON.stringify(r4.panelRects)}`);
     if (parts.length) L.push(`render4（只记录，渲染器未消费） ${parts.join(' ')}`);
   }
   // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
