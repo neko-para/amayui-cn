@@ -17,14 +17,11 @@ import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 const F = (k: number): number => PANEL_BASE + k;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 function mk(native: NativeBridge = new StubNative(() => {}), input = new InputManager()) {
   const e = new Engine(native, input);

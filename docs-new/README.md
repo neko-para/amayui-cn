@@ -8,10 +8,13 @@
 
 ## 0. 一条话现状
 
-用 **TypeScript + Electron + PixiJS v8** 重写《天結いキャッスルマイスター》的 AGE/System4 引擎 VM
-（解释器已能无界面跑启动链到 `TITLE.BIN`，Electron 渲染壳已接通、标题真实图像已接入），
+用 **TypeScript + Electron + PixiJS v8** 重写《天結いキャッスルマイスター》的 AGE/System4 引擎 VM：
+启动链 `SYSTEM4 → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 已**零未实现 opcode**跑通，
+Electron 渲染壳（场景合成 / ADV 文本 / 音频 / 输入）与三闸门（意图丢弃 / 能力缺口 / 死写）齐备，
+`npm run verify` 全绿（383 测试 + 3×tsc + 死写棘轮）；
 同时以「方案 B：改数据文件」完成**简体中文重制补丁**（翻译已收官，仅剩校对），
 并配套**进程内存查看器**与**数据查询/制作规划 App** 两个落地工具。
+（架构总览见 `04-app/emulator.md`。★旧文里"解释器只跑到 TITLE"的说法已过期。）
 
 ## 1. 权威声明（贯穿全库）
 
@@ -50,7 +53,7 @@ docs-new/
 ├── 03-engine/                ← 游戏引擎分析
 │   ├── unpacking.md          ← AGE 引擎加壳拆壳 + 重定型管线
 │   ├── vm-opcodes.md         ← (已归档) 解释器主循环/分发概览；语义看 opcode-table.md + 数据层
-│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（544+30 条，真源）**
+│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（574 条，真源；`scripts/asm/opcodes.json` 由它生成）**
 │   ├── engine-capabilities.md ← **引擎「常态能力」台账（第二层，生成物）**：逐帧流程/门控/惰性创建/转场/资源生命周期 + emulator 现状
 │   ├── operands.md           ← (瘦身) 操作数速记(DEC/ENC/指针模型)；原语以 data 层 functions.json 为准
 │   ├── runtime-memory.md     ← (瘦身) this 布局说明 + 消息窗对象叙事；字段以 data 层 fields.json 为准

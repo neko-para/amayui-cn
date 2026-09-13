@@ -12,6 +12,7 @@
  *    返回值 `SetterOutcome` 把这个区别显式化，便于诊断。
  */
 import type { DrawItemConfig, Item, MeshObj, MeshVertex } from '../drawItem.js';
+import { assertFlags } from '../../vm/native.js';
 import {
   applyDrawColor,
   applyDrawColorAlpha,
@@ -58,6 +59,10 @@ export function scConfigureDrawItem(s: SceneState, cfg: DrawItemConfig): Item {
   it.dstX = cfg.dstX;
   it.dstY = cfg.dstY;
   it.flags |= 1; // ★bit0 = 可绘制（引擎 sub_4ACE50 raw 131826 `|= 1u`）
+  // ★严格 flag 校验放在**共享层**（原先只在 PixiBackend）：契约是"配置了不认识的 flag 必须立即中断"，
+  //   而所有 E2E 棘轮（`game-start-chain`/`char-reveal`/`config1-chain`…）都跑 headless ⇒
+  //   只在 Pixi 侧校验等于"报告/测试永远不会暴露未知位"。两宿主共用同一份模型，就该共用同一道闸。
+  assertFlags('drawitem', it.handle, it.flags);
   applyDrawPos(it, cfg.dstX, cfg.dstY, 0); // 引擎同函数写 +36/+40/+44（覆盖）
   s.drawItems.set(cfg.handle, it);
   return it;
@@ -154,6 +159,7 @@ export function scCreateMesh(s: SceneState, spec: MeshSpec): MeshObj {
     m.verts = spec.verts.map((v) => ({ ...v }));
     m.baseColors = [...spec.baseColors];
     m.flags |= 1;
+    assertFlags('mesh', m.handle, m.flags); // 严格 flag 校验放共享层（见 scConfigureDrawItem 处说明）
   }
   s.meshes.set(spec.handle, m);
   return m;
@@ -236,7 +242,6 @@ export function scSetDrawColor(s: SceneState, handle: number, delay: number, dur
 export function scSetDrawColorAlpha(s: SceneState, handle: number, from: number, blend = 0): SetterOutcome {
   const { item, created } = scEnsureItem(s, handle);
   applyDrawColorAlpha(item, from, blend);
-  s.blendWritten.set(handle, blend);
   return created ? 'created-applied' : 'applied';
 }
 
@@ -270,6 +275,32 @@ export function scSetFlipbook(s: SceneState, handle: number, delay: number, dur:
   if ((item.flags & 1) === 0) return 'created-gated';
   applyFlipbook(item, delay, dur, frames, cols, flags);
   return 'applied';
+}
+
+// ---------------------------------------------------------------------------
+// DrawItem 的**查询**族（getter；两个宿主共用一份语义 ⇒ 见 `headlessScene`/`pixiBackend` 的转发）
+//
+// ★为什么必须共享：这三条都是**会回写操作数**的 getter（`0x215`/`0x218`/`0x21A`），
+//   返回值直接进脚本的算术；两侧各写一份一旦漂移（例如漏掉 `flags & 1` 门），
+//   症状是"报告里对、画面上错"或反之 —— 这正是共享场景模型要消灭的那类缺陷。
+// ---------------------------------------------------------------------------
+
+/** `0x215`（`sub_4ADC20`）：绘制项 → 纹理槽号；项不存在或未创建（`flags & 1 == 0`）⇒ **−1**（引擎原样）。 */
+export function scGetDrawItemTexSlot(s: SceneState, handle: number): number {
+  const it = s.drawItems.get(handle);
+  return !it || (it.flags & 1) === 0 ? -1 : it.tex;
+}
+
+/** `0x218`（`sub_4ADCF0`）：绘制项 pivot 三元组；项不存在 ⇒ 全 0（引擎原样）。 */
+export function scGetDrawItemPivot(s: SceneState, handle: number): { x: number; y: number; z: number } {
+  const it = s.drawItems.get(handle);
+  return it ? { x: it.pivotX, y: it.pivotY, z: it.pivotZ } : { x: 0, y: 0, z: 0 };
+}
+
+/** `0x21A`（`sub_4ADC80`）：绘制项描画位置三元组；项不存在 ⇒ 全 0（引擎原样）。 */
+export function scGetDrawItemPos(s: SceneState, handle: number): { x: number; y: number; z: number } {
+  const it = s.drawItems.get(handle);
+  return it ? { x: it.posX, y: it.posY, z: it.posZ } : { x: 0, y: 0, z: 0 };
 }
 
 /**

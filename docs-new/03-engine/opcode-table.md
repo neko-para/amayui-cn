@@ -25,12 +25,12 @@
 
 | opcode | argc | 名称（age-shared） | 引擎位置（handler） | 分析状态 | 已知语义 |
 |---|---|---|---|---|---|
-| 0x1 | 0 | abort | sub_418E60 | 已核对 | **程序中止**：`_CxxThrowException(&1, Command_Exit)` —— 立即退出整个程序。handler=sub_418E60（raw .c 25682）。emulator：`op_abort` → 抛 `ExitScript`（程序退出信号）；渲染窗捕获后经 IPC `close-window` 关闭主窗口，headless(run.ts) 捕获后停执行 |
+| 0x1 | 0 | abort | sub_418E60 | 已核对 | **程序中止**：`_CxxThrowException(&1, Command_Exit)` —— 立即退出整个程序。handler=sub_418E60（raw .c 24419）。emulator：`op_abort` → 抛 `ExitScript`（程序退出信号）；渲染窗捕获后经 IPC `close-window` 关闭主窗口，headless(run.ts) 捕获后停执行 |
 | 0x2 | 0 | exit | sub_41A820 | 已核对 | 跨脚本**返回调用层**（`cur=frame.caller`；顶层 caller<0 才程序退出）。handler=sub_41A820（raw .c 25629） |
 | 0x3 | 1 | call-script | sub_41C6A0 | 已核对 | 读 operand1=目标脚本索引 → 压帧（cur++）+ 装载新脚本帧。handler=sub_41C6A0（raw .c 26762） |
 | 0x4 | 2 |  | sub_41C770 | 仅映射 |  |
 | 0x5 | 0 | ret | sub_41A9B0 | 已核对 | **同脚本**子程序返回（弹每帧返回栈 `256*cur+97193`；栈空 no-op）。handler=sub_41A9B0（raw .c 25704） |
-| 0x6 | 2 | load-frame | sub_41C7C0 | 已核对 | **load-frame**（曾名 `i006`，即 load-script-into-frame）：`op1=目标脚本索引, op2=帧编号`。备份/恢复 `cur`（`_this[383104]`↔`_this[383108]`），把脚本 `op1` 解析并装入帧 `op2`（`loadScriptFrame_40ED40`）；`op2≥40` 抛 ShowMessage「ファイルの階層が深すぎます．最大は%dです．」、装载失败抛 Exit。SYSTEM4 帧布局初始化（预装）用。handler=sub_41C7C0（raw .c 26549） |
+| 0x6 | 2 | load-frame | sub_41C7C0 | 已核对 | **load-frame**（曾名 `i006`，即 load-script-into-frame）：`op1=目标脚本索引, op2=帧编号`。备份/恢复 `cur`（`_this[383104]`↔`_this[383108]`），把脚本 `op1` 解析并装入帧 `op2`（`loadScriptFrame_40ED40`）；`op2≥40` 抛 ShowMessage「ファイルの階層が深すぎます．最大は%dです．」、装载失败抛 Exit。SYSTEM4 帧布局初始化（预装）用。handler=sub_41C7C0（raw .c 26823） |
 | 0x7 | 1 |  | sub_41C8D0 | 仅映射 |  |
 | 0x8 | 1 | call-frame | sub_41C900 | 已核对 | **调用/切换到预加载帧**：`op1=帧号`。save `cur→call_ret`；`cur=op1`（readIntOperand）；要求该帧已预装（`*(frame+383124)!=0`）否则抛「この階層にはファイルが読み込まれていません」(ShowMessage)；设目标帧 `caller=call_ret`、`ip=帧起始`、状态槽=0；返回新 cur。被调帧跑完 `exit(0x2)` 依其 caller 返回调用帧。SYSTEM4 `load-frame`(0x6) 预装的帧（DRAWTOOLTIP/DRAWORN/ATSEEK/SETROUTE/MVSEEK↔帧26/28/29/30/31）由游戏脚本 `call-frame <帧号>`(0x8, 曾名 `i008`) 启动。handler=sub_41C900（raw .c 26876）。**曾仅映射** |
 | 0x9 | 0 | exit-script | sub_428A60 | 已核对 | **全量 teardown**：清 40 帧 + 重置全局数组 → 回根态。handler=sub_428A60（raw .c 35171） |
@@ -106,16 +106,16 @@
 | 0x6D | 0 |  | sub_41AA50 | 仅映射 |  |
 | 0x6E | 2 | show-text | sub_41EB20 | 已核对 | **show-text**：读 op1=槽、op2=字符串。① `Engine[122497]` bit0 置位 ⇒ 走注音/内嵌模式 `sub_46BE30(文本对象 Engine+85296, op1, 串op2, 0, Engine[97055])`，并置 `Engine[122497] |= 0x10000`、`Engine[122371] = op1`；② 否则按 `message:ReadTextSkip` 门决定是否置 `effect_flags |= 0x8000000`（ADV），文本经 `sub_46CBF0`（同步排空）或 `sub_46BE30`（逐段）写进文本对象。**PARTIAL**（`sub_46BE30`/`sub_46CBF0` 未建模）；handler=sub_41EB20（raw .c 28307） |
 | 0x6F | 1 | end-text-line | sub_41ECE0 | 已核对 | **end-text-line**：读 op1=槽 → `sub_46AF90(文本对象, op1, Engine[97055])` 在文本对象里封口当前行（后续文本进下一行）；handler=sub_41ECE0（raw .c 28389） |
-| 0x70 | 5 |  | sub_41ED20 | 已核对 | **消息窗口定位尺寸**：读 op1..op5 调 `sub_45D660(_this+21324, op1..op5, 0)` 设置文本消息窗口 x/y/宽/高坐标。fire-and-forget。handler=sub_41ED20（raw .c 28083） |
-| 0x71 | 1 |  | sub_41ED80 | 已核对 | **显示消息/推进文本**：读 op1 文本调 `sub_45EC60(msgobj, op1, _this[97055])`，经 `sub_48E870`/`sub_48F000` 渲染；置 flag `_this[174801]\|=0x8000000`、`_this[122455]=1`、`_this[122496]=0`。handler=sub_41ED80（raw .c 28100） |
+| 0x70 | 5 |  | sub_41ED20 | 已核对 | **消息窗口定位尺寸**：读 op1..op5 调 `sub_45D660(_this+21324, op1..op5, 0)` 设置文本消息窗口 x/y/宽/高坐标。fire-and-forget。handler=sub_41ED20（raw .c 28401） |
+| 0x71 | 1 |  | sub_41ED80 | 已核对 | **显示消息/推进文本**：读 op1 文本调 `sub_45EC60(msgobj, op1, _this[97055])`，经 `sub_48E870`/`sub_48F000` 渲染；置 flag `_this[174801]\|=0x8000000`、`_this[122455]=1`、`_this[122496]=0`。handler=sub_41ED80（raw .c 28419） |
 | 0x72 | 1 | wait-for-input | sub_41EEF0 | 已核对 | **wait-for-input**：ADV「等待推进」。刷输入掩码（bit 0x40 = 跳读中）→ 与 `0x71` 同构地按 `message:ReadTextSkip` 分支判 `sub_48E870`/`sub_48F000` → 置/清 `effect_flags` 的 `0x8000000`；未显示完时把 3 个消息回调槽交付 `sub_4BB840` 并清槽。**PARTIAL**（消息槽区未建模）；handler=sub_41EEF0（raw .c 28482） |
-| 0x73 | 10 |  | sub_41F250 | 已核对 | **消息窗口全面配置**：读 op1..9 调 `sub_456430(msgobj, op1..9)` 拷 0x28 字节几何/布局结构进消息窗，读 op10 调 `sub_453AD0` 置节流标量。fire-and-forget。handler=sub_41F250（raw .c 28280） |
+| 0x73 | 10 |  | sub_41F250 | 已核对 | **消息窗口全面配置**：读 op1..9 调 `sub_456430(msgobj, op1..9)` 拷 0x28 字节几何/布局结构进消息窗，读 op10 调 `sub_453AD0` 置节流标量。fire-and-forget。handler=sub_41F250（raw .c 28601） |
 | 0x74 | 1 |  | sub_41F320 | 已核对 | **SetMessageSpeed（仅字段）**：`Engine[21668] = op1`（= `Font+1376` = `message:MessageSpeed`）。★**不写配置注册表**（写注册表的是 `0x1B5`）。脚本用它做「这一段立即显示」：`i07f<存>` → `i074 0` → … → `i074<还原>`（全库 206 处）；handler=sub_41F320（raw .c 28642） |
-| 0x75 | 1 |  | sub_41F350 | 已核对 | **主字号（全局）**：读 op1 调 `sub_4185F0(Font, op1)`（raw 24057-24071）= 写 `Font+201684 = op1`（字号）、`+1232 = -op1`（主 LOGFONT.lfHeight）、`+101972 = -op1`（注音 LOGFONT 高度），再 `sub_459F40()` **重建 GDI 字体对象/字宽**。★**不重绘任何已排版的窗**（作用域规则见 `adv-text-rendering.md` §3.5 / 台账 `text-style-scope-queue-time`）。handler=sub_41F350（raw .c 28330） |
+| 0x75 | 1 |  | sub_41F350 | 已核对 | **主字号（全局）**：读 op1 调 `sub_4185F0(Font, op1)`（raw 24057-24071）= 写 `Font+201684 = op1`（字号）、`+1232 = -op1`（主 LOGFONT.lfHeight）、`+101972 = -op1`（注音 LOGFONT 高度），再 `sub_459F40()` **重建 GDI 字体对象/字宽**。★**不重绘任何已排版的窗**（作用域规则见 `adv-text-rendering.md` §3.5 / 台账 `text-style-scope-queue-time`）。handler=sub_41F350（raw .c 28653） |
 | 0x76 | 1 |  | sub_41F390 | 已核对 | **主填充色（全局）**：读 op1（COLORREF，BGR），字节序翻转成 RGB 写 `Font+1360`（= `_this[21664]`），再 `sub_459F40()` 重建字体对象。★**不是"滚动类属性"、"写字段≠重绘"**：已排版的窗保持入队时的颜色，否则会跨窗溢色（2026-09 实测：角色设定页逐行设色把 ADV 样例窗染色）。handler=sub_41F390（raw .c 28662-28671） |
 | 0x77 | 1 |  | sub_41F3F0 | 已核对 | **主描边/阴影色（全局）**：同 0x76 的字节序翻转后写 `Font+1364`（= `_this[21665]`），再 `sub_459F40()`。作用域同 0x76（入队时消费）。handler=sub_41F3F0（raw .c 28673-28682） |
-| 0x78 | 1 |  | sub_41F450 | 已核对 | **描边/阴影档位（全局）**：读 op1 写 `Font+1372`（= `_this[21667]`：0 无 / 1 单向投影 / 2 同位置 1/4 副本 / 3 多向描边），调 `sub_459F40()`。作用域同 0x76。handler=sub_41F450（raw .c 28359） |
-| 0x79 | 3 |  | sub_41F490 | 已核对 | **文字起点（写窗对象 `+28/+32`）**：读 op1..op3 调 `sub_4563A0(_this+21324, op1, op2, op3)`；该函数取 `Font[win+261]`（win=0 时用 `Font[307]` 的默认窗；`Font+0x414+4*win` = `Engine[21585+win]` 对象表项）后 `obj+28 = op2; obj+32 = op1`（sub_4563A0 raw 68233-68246）。⚠️ 旧注「选中子项 +28/+32」有误：`+28/+32` 是**窗对象**字段。fire-and-forget。handler=sub_41F490（raw .c 28369） |
+| 0x78 | 1 |  | sub_41F450 | 已核对 | **描边/阴影档位（全局）**：读 op1 写 `Font+1372`（= `_this[21667]`：0 无 / 1 单向投影 / 2 同位置 1/4 副本 / 3 多向描边），调 `sub_459F40()`。作用域同 0x76。handler=sub_41F450（raw .c 28685） |
+| 0x79 | 3 |  | sub_41F490 | 已核对 | **文字起点（写窗对象 `+28/+32`）**：读 op1..op3 调 `sub_4563A0(_this+21324, op1, op2, op3)`；该函数取 `Font[win+261]`（win=0 时用 `Font[307]` 的默认窗；`Font+0x414+4*win` = `Engine[21585+win]` 对象表项）后 `obj+28 = op2; obj+32 = op1`（sub_4563A0 raw 68233-68246）。⚠️ 旧注「选中子项 +28/+32」有误：`+28/+32` 是**窗对象**字段。fire-and-forget。handler=sub_41F490（raw .c 28696） |
 | 0x7A | 3 |  | sub_41F4E0 | 已核对 | **消息窗对象的文本项缓冲写游标参数**：`sub_45A910(Font, op1, op2, op3)` —— `win = op1 ?: Font[307]`、`obj = Font[win+261]`，写 `*(obj[48]-20)=op2`、`*(obj[48]-16)=op3`。handler=sub_41F4E0（raw 28710-28721）。语料 0 处。emulator：`OPS` 的 `op_msgwin_obj_pre48`（写 `MsgObject.pre48a/pre48b`）。 |
 | 0x7B | 2 |  | sub_41F530 | 已核对 | **设本帧「重显示」回退游标**：`_this[cur+122372]=op1`、`[cur+122412]=op2`（值 = **指令下标**，缺省 -1）。读者 = `0x199`（raw 24506/24520）与主循环 raw 14001-14008。handler=sub_41F530（raw 28724-28733）。语料 0 处。emulator：`OPS` 的 `op_set_rewind_cursor`。★原表把读者记成「点击路由游标」是误（路由表是 `0x090` → `Engine.routes`）。 |
 | 0x7C | 0 | local-ret | sub_41AB80 | 已核对 | **local-ret**（曾名 `i07c`；单帧"续点 ret"——wait→事件→恢复的协程返回，主循环 `0x4000000` jump/call-pending 的配对方）：要求 `_this[489808]&0x2000000` 置位（否则抛 EndHWl）；校验当前帧[95796]==`_this[430712]`（深度，否则抛「Depth が不正」）；恢复当前帧 `ip=帧起始+4*_this[489812]`、状态=0、`effect_flags=_this[489808]&0xFDFFFFFF`、清 `489808/81776/81768/51848/51840`；若 `_this[387940]` 置位则清之，且 `dispatch_queue` 恰有 1 个（`read<write && write-read==1`）时 `sub_40FB60` 一次性派发。handler=sub_41AB80（raw .c 25779）。**曾仅映射** |
@@ -130,10 +130,10 @@
 | 0x85 | 0 |  | sub_418F50 | 仅映射 |  |
 | 0x86 | 1 |  | sub_41FA20 | 仅映射 |  |
 | 0x87 | 0 |  | sub_418F80 | 仅映射 |  |
-| 0x88 | 1 |  | sub_41FAB0 | 已核对 | **消息显示/跳读模式**：读 op1，同时写引擎字段 `_this[1415]` 与全局数组槽 `_this[97050]`；非零置 `_this[122368]=1`，零则清 `_this[174801]` 的 0x8000000 位。（写全局数组故为 VM 可见）handler=sub_41FAB0（raw .c 28628） |
+| 0x88 | 1 |  | sub_41FAB0 | 已核对 | **消息显示/跳读模式**：读 op1，同时写引擎字段 `_this[1415]` 与全局数组槽 `_this[97050]`；非零置 `_this[122368]=1`，零则清 `_this[174801]` 的 0x8000000 位。（写全局数组故为 VM 可见）handler=sub_41FAB0（raw .c 28965） |
 | 0x89 | 4 |  | sub_41FB00 | 仅映射 |  |
 | 0x8A | 6 |  | sub_41FB50 | 仅映射 |  |
-| 0x8B | 1 |  | sub_41FBF0 | 已核对 | **消息窗字段**：读 op1 写 `_this[21669]`。handler=sub_41FBF0（raw .c 28681） |
+| 0x8B | 1 |  | sub_41FBF0 | 已核对 | **消息窗字段**：读 op1 写 `_this[21669]`。handler=sub_41FBF0（raw .c 29021） |
 | 0x8C | 1 | jmp | sub_4203D0 | 已核对 | 跳到 operand1 的 label（无条件，不入栈） |
 | 0x8D | 2 |  | sub_420450 | 仅映射 |  |
 | 0x8E | 1 |  | sub_4204D0 | 仅映射 |  |
@@ -154,7 +154,7 @@
 | 0xAB | 2 |  | sub_42D650 | 仅映射 |  |
 | 0xAC | 9 |  | sub_42D700 | 仅映射 |  |
 | 0xAD | 0 |  | sub_4192C0 | 已核对 | **秒计时器推进**（`sub_4380F0` raw 45095-45103）：`obj[259] = obj[260]`、`obj[258] = (274877907i64 * timeGetTime()) >> 38`（≈ ms/1000，定点近似）⇒ `_this[5450] ← _this[5451]`、`_this[5449] ← timeGetTime()/1000`。handler=sub_4192C0（raw 24627-24631）。语料 0 处。emulator：`op_seconds_timer`（`BigInt` 复刻同一算术，避免 JS 双精度在 2^59 丢位）。 |
-| 0xAE | 0 |  | sub_4192F0 | 已核对 | **存档版本分支指令**：经 `_this+174405` 对象 vtable 读存档版本（"set:SaveVersion1"/"set:SaveVersion2"），按版本(1/2/3/20)重算每脚本 ip（`_this[30*x+95782/95803/95804]`）、设 frame arity、切换 `cur` 或 `sub_40F750`→`loadScriptFrame_40ED40` 装载目标脚本帧；并置 `_this[95780]=0`、`_this[97054]=1`。handler=sub_4192F0（raw .c 24413） emulator：`OPS` 的 `op_save_version_branch` —— **门控路径（`Engine[95780] == 0`）与引擎逐字一致**（引擎在此直接返回）；置位后按 `set:SaveVersion1/2` 选组（1+20 / 2 / 3）并处理「已回到存档帧」的收尾。★缺口：存档侧的帧 ip 指针表（`[30*cur+95798]/[95800]` 指向的数组）与 `sub_40F750` 的帧装载**未建模**（emulator 无读档装载），该分支已登记缺口并写日志；语料 0 处。 |
+| 0xAE | 0 |  | sub_4192F0 | 已核对 | **存档版本分支指令**：经 `_this+174405` 对象 vtable 读存档版本（"set:SaveVersion1"/"set:SaveVersion2"），按版本(1/2/3/20)重算每脚本 ip（`_this[30*x+95782/95803/95804]`）、设 frame arity、切换 `cur` 或 `sub_40F750`→`loadScriptFrame_40ED40` 装载目标脚本帧；并置 `_this[95780]=0`、`_this[97054]=1`。handler=sub_4192F0（raw .c 24634） emulator：`OPS` 的 `op_save_version_branch` —— **门控路径（`Engine[95780] == 0`）与引擎逐字一致**（引擎在此直接返回）；置位后按 `set:SaveVersion1/2` 选组（1+20 / 2 / 3）并处理「已回到存档帧」的收尾。★缺口：存档侧的帧 ip 指针表（`[30*cur+95798]/[95800]` 指向的数组）与 `sub_40F750` 的帧装载**未建模**（emulator 无读档装载），该分支已登记缺口并写日志；语料 0 处。 |
 | 0xAF | 0 |  | sub_419690 | 仅映射 |  |
 | 0xB0 | 1 |  | sub_420A50 | 仅映射 |  |
 | 0xB1 | 1 |  | sub_420A80 | 仅映射 |  |
@@ -203,7 +203,7 @@
 | 0xFB | 2 | joy-callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
 | 0xFC | 0 |  | sub_419A70 | 仅映射 |  |
 | 0xFD | 2 |  | sub_421C10 | 仅映射 |  |
-| 0xFE | 1 |  | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30046） |
+| 0xFE | 1 |  | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30444） |
 | 0xFF | 0 |  | sub_419A90 | 已核对 | **复位输入/ADV 状态**：`Engine[174802] = 0` → `sub_4780D0(Engine+1032, Engine+174802)`（读输入态）；`Engine[cur+122287] = 0`；`Engine[cur+122327] = Engine[517]`（把字段灌进当前帧槽）。handler=sub_419A90（raw .c 24998） |
 | 0x100 | 0 |  | sub_419AF0 | 已核对 | **消息跳读/按键推进派发**：`v2=_this[174802]`(输入掩码)；非 0→从 `_this[cur+122287]` 起扫最低按下位（上限 `_this[517]`=SetKeyTotal），push 推进量、查 `_this[33*cur+107725+bit]`，==-1 回退否则跳 `4*登记值`；掩码 0→检查默认键 `_this[517]`。handler=sub_419AF0（raw .c 25011） |
 | 0x101 | 0 | poll-input | sub_419CC0 | 已核对 | **刷输入掩码并复位**：`sub_478090(_this+258,_this+174802)` 刷累计事件进掩码 → 清 `_this[174801]` 的 0x8000000 位 → `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。供同批 `check-bit`/位检查读，随即清零。handler=sub_419CC0（raw .c 25069）。旧 label `u00415BF0` |
@@ -212,20 +212,20 @@
 | 0x104 | 0 |  | sub_419D20 | 仅映射 |  |
 | 0x105 | 1 |  | sub_421E20 | 仅映射 |  |
 | 0x106 | 1 |  | sub_42ED90 | 已核对 | **配置 getter**：`op1 = Engine[550]`。handler=sub_42ED90（raw .c 39040） |
-| 0x107 | 2 |  | sub_421E50 | 已核对 | **SetKey（按键绑定）**：读 op2=值、op1=键下标；`op1≤0x1F` 时写 `_this[551+op1]=op2`。handler=sub_421E50（raw .c 30114） |
+| 0x107 | 2 |  | sub_421E50 | 已核对 | **SetKey（按键绑定）**：读 op2=值、op1=键下标；`op1≤0x1F` 时写 `_this[551+op1]=op2`。handler=sub_421E50（raw .c 30516） |
 | 0x108 | 1 | read-mouse-button | sub_42EDC0 | 已核对 | **读鼠标按钮值到 op1**（曾名 `i108`）：`sub_477220(_this+258,&v3)`（左=bit0/右=bit1，随 SM_SWAPBUTTON 互换）→ `sub_42B4B0(1,v3)`。handler=sub_42EDC0（raw .c 39047） |
 | 0x109 | 2 | read-mouse-pos | sub_42EE10 | 已核对 | **读鼠标位置到 op1=X,op2=Y**（曾名 `i109`）：`sub_4771D0`(GetCursorPos+ScreenToClient) → `sub_498350`(坐标变换)+`sub_403500`(虚拟显示映射，用 `_this[699168/699172]` 分辨率) → 写 op1/op2。(-100000,-100000)=未初始化。handler=sub_42EE10（raw .c 39057） |
 | 0x10A | 2 |  | sub_421EA0 | 仅映射 |  |
-| 0x10B | 2 |  | sub_422070 | 已核对 | **SetKey（另一按键表）**：读 op2=键下标、op1=值；`op1≤0x1F` 时写 `_this[op2+1383]=op1`。handler=sub_422070（raw .c 30200） |
-| 0x10C | 2 |  | sub_4220B0 | 已核对 | **SetKeyMulti**：读 op1=值、op2=键索引；`op1>0x1F` 抛 ShowMessage「set-keymulti 引数不正」，否则写 `_this[_this[op2+1690]+1434]=op1`。handler=sub_4220B0（raw .c 30213） |
+| 0x10B | 2 |  | sub_422070 | 已核对 | **SetKey（另一按键表）**：读 op2=键下标、op1=值；`op1≤0x1F` 时写 `_this[op2+1383]=op1`。handler=sub_422070（raw .c 30603） |
+| 0x10C | 2 |  | sub_4220B0 | 已核对 | **SetKeyMulti**：读 op1=值、op2=键索引；`op1>0x1F` 抛 ShowMessage「set-keymulti 引数不正」，否则写 `_this[_this[op2+1690]+1434]=op1`。handler=sub_4220B0（raw .c 30617） |
 | 0x10D | 1 | read-mouse-wheel | sub_42EF50 | 已核对 | **读鼠标滚轮增量（一次性消费）**（曾名 `i10d`）：`v2=mouse_wheel_residual(_this[1949]/+0x1E74)`；**随即清零**；`sub_42B4B0(1,v2)` 写 op1。值 = 自上次读取以来 WM_MOUSEWHEEL 的 `+= SHIWORD(wParam)` 累计（一格 ±120，上滚正/下滚负），清零点见 raw 141582 写入、raw 13938/21060 消息泵 ADV 推进门（仅 `<0` 即下滚才推进文本）。handler=sub_42EF50（raw .c 39114）。★脚本模式：菜单/列表进入时 `read-mouse-wheel (local 403)` 丢弃残量，主循环反复 `read-mouse-wheel (local 403)`+`jcc (local 403) <翻页label>` 实现滚轮翻页（AGENCY:258/283 等 40+ 脚本） |
 | 0x10E | 2 |  | sub_42EF90 | 仅映射 |  |
-| 0x10F | 1 |  | sub_422120 | 已核对 | **引擎控制字段**：读 op1 写 `_this[122369]`。handler=sub_422120（raw .c 30232） |
-| 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 已核对 | **lookup-array-2d**（二维数组元素地址）：`v6=op3*op4+op5`（行×列宽+列），`operandAddress_42AEA0(2)` 取 op2 基址，`sub_418CC0(1, base, v6, -1, -1)` 把 `base+4*v6` 写入 op1 指针槽。handler=sub_42EFD0（raw .c 38462） |
+| 0x10F | 1 |  | sub_422120 | 已核对 | **引擎控制字段**：读 op1 写 `_this[122369]`。handler=sub_422120（raw .c 30637） |
+| 0x12C | 5 | lookup-array-2d | sub_42EFD0 | 已核对 | **lookup-array-2d**（二维数组元素地址）：`v6=op3*op4+op5`（行×列宽+列），`operandAddress_42AEA0(2)` 取 op2 基址，`sub_418CC0(1, base, v6, -1, -1)` 把 `base+4*v6` 写入 op1 指针槽。handler=sub_42EFD0（raw .c 39137） |
 | 0x12D | 7 |  | sub_42F040 | 仅映射 |  |
 | 0x12E | 8 |  | sub_42F230 | 已核对 | **悬停命中测试**：先用 `sub_42AEA0` 取 op2/op5/op6/op7 的**操作数地址**、`sub_41BF50` 取 op1/op3/op4/op8 的值并缓存进全局 `dword_55D5xx`；再从 `base + 16*(op1+1)` 起遍历矩形表（每项 16B，4 个 dword 经 DEC 去混淆作 x0/x1/y0/y1），命中 ⇒ **写 op1 = 项下标**，否则 -1。**PARTIAL**（全局缓存跨帧语义未定）。handler=sub_42F230（raw .c 39199） |
 | 0x12F | 4 |  | sub_42F560 | 已核对 | **索引插入排序**：`op1/op2/op3` 经 `sub_42AEA0`（operandAddress）取三个数组基址 **A=索引数组 / B=主键 / C=次键**（三者同索引空间），`op4` = 元素数 `n`；`*A = 0`；对 `k=1..n-1`：`while (DEC(B[A[j]]) + DEC(C[A[j]]) > DEC(B[k]) + DEC(C[k])) { A[j+1]=A[j]; j-- }` 再 `A[j+1]=k`；末尾逐项 `A[i] = ENC(DEC(A[i]))`（净恒等）。★**比较键是 `B[A[j]] + C[A[j]]`**（用 A 里存的**索引**去查 B/C，raw 39299-39307 的下标嵌套就是它），**不是**"A 位置上的值"、也不是"C 的同位置值" —— 取错键会让顺序**依赖 A 的残留内容**（`CONFIG1` 首次进设置「字体系列」被前置、切 tab 回来又"看起来对"；实测已修）。★**DEC/ENC 只做一层**：数组里存 `ENC` 位模式，引擎的数组访问器（`sub_41BF50` 读 / `sub_42B4B0` 写）就是 `DEC` 读 / `ENC` 写；本条体内自带的 `DEC`（raw 39300 的 `__ROR4__(key ^ __ROL4__(x,11),25)`）是**同一层**，实现时不得再叠一次。handler=sub_42F560（raw 39269-39335）。实测用例：CONFIG2.txt:1044（n=1000）、CONFIG1.txt:1178 |
-| 0x130 | 1 | load-show-logo | sub_42F7A0 | 已核对 | **LOGO/版权页开关 getter**（曾名 `i130`）：`op1 = _this[96983]`（写回操作数 1；SYSTEM4 第 146 行据此判断是否 `call-script LOGO`）。构造=1 播版权页、exit-script(0x9) 置 0 → GAMEOVER 回标题不再播。handler=sub_42F7A0（raw .c 38662） |
+| 0x130 | 1 | load-show-logo | sub_42F7A0 | 已核对 | **LOGO/版权页开关 getter**（曾名 `i130`）：`op1 = _this[96983]`（写回操作数 1；SYSTEM4 第 146 行据此判断是否 `call-script LOGO`）。构造=1 播版权页、exit-script(0x9) 置 0 → GAMEOVER 回标题不再播。handler=sub_42F7A0（raw .c 39343） |
 | 0x131 | 1 |  | sub_42F7D0 | 已核对 | **GetMesWinAlpha**：`op1 = GetConfig("message:MesWinAlpha")`（按名直读配置注册表，**不读任何 Engine 字段**）；handler=sub_42F7D0（raw .c 39350-39356） |
 | 0x132 | 1 |  | sub_422150 | 仅映射 |  |
 | 0x133 | 2 |  | sub_422240 | 仅映射 |  |
@@ -250,7 +250,7 @@
 | 0x146 | 1 |  | sub_422960 | 仅映射 |  |
 | 0x147 | 6 |  | sub_42FD60 | 仅映射 |  |
 | 0x148 | 1 |  | sub_42FEC0 | 已核对 | **读全局时间阈值槽**：`sub_42B4B0(1, _this[97058])` 把引擎全局槽 `_this[97058]`（byte 388232，见 `analysis/fields.json` `global_slot_97058`）写回 op1（**get**；与 0x149 构成 get/set 对）。该槽是「光标贴屏幕顶边缘 / 松开 Alt → 弹系统对话框」的去抖时长：`sub_4B9240`(WM_TIMER) 读它并与 `timeGetTime()-dword_55E1D8` 比较，超时才弹框。handler=sub_42FEC0（raw .c 39705）。**曾仅映射，已读体确证** |
-| 0x149 | 1 |  | sub_4229A0 | 已核对 | **写全局时间阈值槽**：读 op1 写 `_this[97058]`（byte 388232，紧邻 DEC/ENC 机制的 key `_this[97059]`/`enc_zero` `_this[97060]`；与 0x148 构成 get/set 对）。作用：设置「光标贴顶/Alt→弹系统对话框」的去抖时长（`sub_4B9240` 读、SYSTEM4 `i149 3e8`=1000ms）。handler=sub_4229A0（raw .c 30629） |
+| 0x149 | 1 |  | sub_4229A0 | 已核对 | **写全局时间阈值槽**：读 op1 写 `_this[97058]`（byte 388232，紧邻 DEC/ENC 机制的 key `_this[97059]`/`enc_zero` `_this[97060]`；与 0x148 构成 get/set 对）。作用：设置「光标贴顶/Alt→弹系统对话框」的去抖时长（`sub_4B9240` 读、SYSTEM4 `i149 3e8`=1000ms）。handler=sub_4229A0（raw .c 31045） |
 | 0x14A | 7 |  | sub_42FEF0 | 仅映射 |  |
 | 0x14B | 1 |  | sub_4229D0 | 已核对 | **加载 AGERC 模块**（脚本侧）：若 `Engine+490072` 已有句柄 ⇒ `FreeLibrary` + 清 0；`id = op1` → `FileDB.name(id)`（`fileDbIdToName_454FA0`）→ `LoadLibraryA(名)` → 存回；失败 ⇒ `GetLastError` + 抛 ShowMessage「`%sを読み込み出来ません．ERRORCODE = %d`」。handler=sub_4229D0（raw 31056-31088）。语料**唯一 1 处**：`src/SAVE.txt:7 i14b 5250`（`0x5250`=21072=`AGERC.DLL`）。★不是通用 DLL 加载器。emulator：`OPS` 的 `op_agerc_load`（`handlers/agerc.ts`）——**只接受 AGERC.DLL**，其余 id 按引擎同文报错；模型 `Engine.agerc`。 |
 | 0x14C | 2 | set-agerc-export | sub_422AB0 | 已核对 | **set-agerc-export**：`name = op2`（字符串）→ `GetProcAddress(模块, name)`（失败 ⇒「`%sのアドレス取得に失敗しました．`」）→ `slot = op1`，`slot > 99` ⇒「`%sの関数インデックスが不正です．0から99までを指定してください．`」→ `Engine[4*slot + 490076] = proc`（**100 槽导出表**）。handler=sub_422AB0（raw 31091-31135）。语料 1 处（同上）。emulator：`OPS` 的 `op_agerc_bind_export` —— 导出名按 PE 实读的 **21 个**校验，槽号越界抛引擎同文。★此前**根本没注册** ⇒ 一进「Load Data」就硬报错。 |
@@ -262,12 +262,12 @@
 | 0x194 | 3 |  | sub_42CF10 | 已核对 | **字符串相等判定**：取 op2/op3 两个字符串操作数（`sub_42A420`），经 `sub_401540`（`std::string::compare(pos,len,rhs,rhsLen)` 语义：先 memcmp 较短长度、相等再比长度）⇒ `op1 = (cmp == 0)`；handler=sub_42CF10（raw .c 37909-37938） |
 | 0x195 | 3 |  | sub_42D010 | 已核对 | **字符串不等判定（0x194 的取反兄弟）**：`op1 = (op2 != op3)`（`sub_401540` 的 compare ≠ 0 ⇒ 写 1）。★**会回写 op1**：`src/SETFATE.txt:15-17` 的 1000 次循环靠它跳过空名条目，跳过会让空名条目也被处理。emulator：`OPS` 的 `op_string_not_equal`。handler=sub_42D010（raw .c 37942） |
 | 0x196 | 3 | display-furigana | sub_41FC20 | 已核对 | **display-furigana**：读 op1=槽、op2=本文词、op3=注音（先有界拷进 1024 栈缓冲）。分三路：① `MessageSpeed == 0` 或 ADV 位已置 ⇒ `sub_46CBF0(Font, op1, op2, op3, Engine[388220])`（同步排空）；② 否则 `sub_46BE30(...)`，返回非 0 时置 `effect_flags |= 0x20000000`、`Engine[489484] = op1` 并起节拍定时器 `sub_453A60(Engine+430572, MessageSpeed)`；③ `Engine[489988] & 1` 置位时纯 `sub_46BE30`。★op2（本文词）本身是正文的一部分（全库 6341 处用它把一句话从词中间切开）。**曾「推测」**；handler=sub_41FC20（raw .c 29032-29126） |
-| 0x197 | 1 |  | sub_41FDD0 | 已核对 | **注音（ルビ）字号（全局）**：读 op1 调 `sub_418680(Font, op1)` 写 `Font+218584`（= `_this[75970]`，注音 LOGFONT 尺寸），再 `sub_459F40()` 重建字体对象。作用域同 0x76（入队时消费，不回溯）。handler=sub_41FDD0（raw .c 28775） |
+| 0x197 | 1 |  | sub_41FDD0 | 已核对 | **注音（ルビ）字号（全局）**：读 op1 调 `sub_418680(Font, op1)` 写 `Font+218584`（= `_this[75970]`，注音 LOGFONT 尺寸），再 `sub_459F40()` 重建字体对象。作用域同 0x76（入队时消费，不回溯）。handler=sub_41FDD0（raw .c 29117） |
 | 0x198 | 3 |  | sub_41FE10 | 已核对 | **窗屏幕位置**：读 op1=窗、op2=x、op3=y → `sub_456400(Font, op1, op2, op3)` 写窗对象 `+12 = x`、`+16 = y`（win=0 用默认窗 `Font[307]`；对象不存在则不写）；handler=sub_41FE10（raw .c 29127-29135） |
 | 0x199 | 0 |  | sub_418FC0 | 已核对 | **重显示文本（`0x7B` 的读取端）**：`if ((Engine[122452] & 0x4000000) == 0)` 用主游标否则用备用游标；`frame.ip = base + 4*游标`（= 直接回退到该指令）、旧 `effect_flags` 存进 `122452`（并置 `0x6000000`）、`122453 = 当前指令下标+1`、`Engine[174802]=0`；游标为 -1 时什么都不做。handler=sub_418FC0（raw 24492-24529，argc 0）。语料 **668 处 / 334 个脚本**（**此前不在任何表里 ⇒ 命中即硬报错**）。emulator：`OPS` 的 `op_redisplay_text`（`c.jump(游标)`）。 |
 | 0x19A | 1 |  | sub_42D290 | 已核对 | **跳读/自动模式查询**：`op1 = Engine[97050]`（由 `0x88` 写入）。★会回写 op1。emulator：`OPS` 的 `op_get_skip_mode`。handler=sub_42D290（raw .c 38031） |
-| 0x19B | 0 |  | sub_4190E0 | 已核对 | **退出消息/ADV**：清 `_this[174801]&~0x8000000`、`_this[1415]=0`。handler=sub_4190E0（raw .c 25031） |
-| 0x19C | 0 |  | sub_419120 | 已核对 | **进入消息/ADV**：`_this[97051]=1`、`_this[174801]|=0x8000000`、`_this[122368]=1`。handler=sub_419120（raw .c 25076） |
+| 0x19B | 0 |  | sub_4190E0 | 已核对 | **退出消息/ADV**：清 `_this[174801]&~0x8000000`、`_this[1415]=0`。handler=sub_4190E0（raw .c 24532） |
+| 0x19C | 0 |  | sub_419120 | 已核对 | **进入消息/ADV**：`_this[97051]=1`、`_this[174801]|=0x8000000`、`_this[122368]=1`。handler=sub_419120（raw .c 24546） |
 | 0x19D | 2 |  | sub_42D8E0 | 已核对 | **已使用文件查询**：`op1 ← sub_4181F0(FileDB, op2)` = 「统一文件 id op2 是否**已被打开过**」(0/1)。`sub_4181F0`（raw 23838）读 `FileDB+1052`（本体）/ `FileDB+14404+4*包号`（扩展包）这张按 id 索引的哈希表，判据 `(u16)槽值 == (u16)(28569*id − 20304)`；写这张表的**只有** `sub_4559C0`（按 id 打开文件，raw 67832/67882 两处调 `sub_454960`）⇒ 语义 = 「该文件曾被打过」。★高字节 ≠ 0（扩展包资源）且 `set:SaveVersion1 < 3`（或 `==3` 且 `SaveVersion2 < 10`）⇒ 恒 0。**用途**：`SETMEMOIR.BIN` 靠它把「已播放过的 BGM / 看过的 CG / 看过的场景」标成已收集（回想界面 4 个按钮的 `回収数`/`回収率` 与 BGM 鉴赏列表都由它决定）——跳过它会让列表整片空白。见 `docs-new/03-engine/gallery-and-unlock-flags.md`。handler=sub_42D8E0（raw 38267-38285）；emulator：`OPS` 的 `op_file_used_query` |
 | 0x19E | 2 |  | sub_42D980 | 仅映射 |  |
 | 0x19F | 2 |  | sub_42DB10 | 仅映射 |  |
@@ -275,12 +275,12 @@
 | 0x1A1 | 2 |  | sub_42DDE0 | 已核对 | **存档到槽位**：读 op2=槽号 → `CreateFileA("%s\\SAVE%2.2d.DAT")` → `sub_410160(this, SaveVersion2, file, SaveVersion1, "set:SaveVersion2", 1, 1)` 写整个游戏状态；写完把 `_this[95744]`（= `pool_int`）起的 `_this[95738]+1` 个 dword 重新 **ENC** 混淆（raw 38433-38438）。写成功后引擎还会 `sub_40AAE0` 顺带刷新系统存档（raw 17687）。handler=sub_42DDE0（raw .c 38407-38440）。★emulator 未实现（存档槽菜单未接） |
 | 0x1A2 | 1 | save-int | sub_434F60 | 已核对 | **save-int**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42920）。★**设置界面的开关就是靠它持久化**：`INITCONFIG0..5` 逐个 `save-int (global a9ce)`，引擎再把这张表写进 `SAVE.DAT`（见 [`save-data.md`](./save-data.md)） |
 | 0x1A3 | 1 | load-int | sub_42DF40 | 已核对 | **load-int**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 38442）。★`LOADCONFIG` 用 29 次 load-int/load-string 把 `SAVE.DAT` 里的用户设置读回全局（见 [`save-data.md`](./save-data.md)） |
-| 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 28797） |
-| 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41043） |
+| 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 29141） |
+| 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41802） |
 | 0x1A6 | 2 | halve-strlen | sub_42D110 | 已核对 | **halve-strlen**：`op1 = strlen(op2) >> 1`（`sub_41B640(2)` 读 op2 → `strlen` → `writeIntOperand_42B4B0(1, len>>1)`）。handler=sub_42D110（raw .c 37975），纯 |
 | 0x1A7 | 1 | comment | sub_4191B0 | 已核对 | nop（dev 注释，无副作用） |
 | 0x1A8 | 0 | dev_ukn | sub_419690 | 已核对 | nop（dev 未知指令，通常空实现） |
-| 0x1A9 | 1 | save-string | sub_434FE0 | 已核对 | **save-string**：`sub_42A420` 读 op1 字符串、`sub_418AE0(1)` 读值（字符串索引），键 `"%c%8.8x",5,val`，`sub_434E00(key, str)` 插入/更新（table 满 `sub_434AF0` 扩容）。handler=sub_434FE0（raw .c 42154） |
+| 0x1A9 | 1 | save-string | sub_434FE0 | 已核对 | **save-string**：`sub_42A420` 读 op1 字符串、`sub_418AE0(1)` 读值（字符串索引），键 `"%c%8.8x",5,val`，`sub_434E00(key, str)` 插入/更新（table 满 `sub_434AF0` 扩容）。handler=sub_434FE0（raw .c 42935） |
 | 0x1AA | 1 | load-string | sub_433A70 | 已核对 | **load-string**：`sub_418AE0(1)` 读 op1 字符串索引 → `sub_429390(_this+5191, 5, idx)`（键 `"%c%8.8x",5,idx`，查 `_this+5472`，未命中返静态默认 `dword_55D0FC`）→ `sub_433310(1, 结果串)` 写回 op1 的字符串。（写操作数故 VM 可见）handler=sub_433A70（raw .c 42053）。**0x1A9 的读侧** |
 | 0x1AB | 2 |  | sub_42DFC0 | 仅映射 |  |
 | 0x1AC | 3 |  | sub_42E0A0 | 仅映射 |  |
@@ -289,9 +289,9 @@
 | 0x1AF | 3 |  | sub_42E320 | 仅映射 |  |
 | 0x1B0 | 3 | memcpy | sub_42D150 | 已核对 | **memcpy**：`memcpy(dest=op2, src=op1, n=4*op3)`（`operandAddress(1)` 取 op1 基址、`operandAddress(2)` 取 op2 基址、`4*op3` 为字节数）。handler=sub_42D150（raw .c 37985），纯内存拷贝 |
 | 0x1B1 | 1 |  | sub_41FEA0 | 已核对 | **`Engine[21672] = op1`**。handler=sub_41FEA0（raw 29155-29163）。语料 2 处 / 1 个脚本。emulator：`op_set_field_21672`。（同类 `0x74`/`0x1B5` 写的是 21668 = `message:MessageSpeed`，本槽是另一个。） |
-| 0x1B2 | 1 |  | sub_42A9B0 | 已核对 | **字符串 append 日志缓冲**：`sub_40C660(_this+124336)`。handler=sub_42A9B0（raw .c 41442） |
-| 0x1B3 | 0 |  | sub_42AA00 | 已核对 | **append 2 字符换行**。handler=sub_42AA00（raw .c 41452） |
-| 0x1B4 | 0 |  | sub_428DB0 | 已核对 | **错误输出/中止**：`sub_40B420`。handler=sub_428DB0（raw .c 35482） |
+| 0x1B2 | 1 |  | sub_42A9B0 | 已核对 | **字符串 append 日志缓冲**：`sub_40C660(_this+124336)`。handler=sub_42A9B0（raw .c 36551） |
+| 0x1B3 | 0 |  | sub_42AA00 | 已核对 | **append 2 字符换行**。handler=sub_42AA00（raw .c 36561） |
+| 0x1B4 | 0 |  | sub_428DB0 | 已核对 | **错误输出/中止**：`sub_40B420`。handler=sub_428DB0（raw .c 35323） |
 | 0x1B5 | 1 |  | sub_41FED0 | 已核对 | **SetMessageSpeed（字段 + 注册表）**：`Engine[21668] = op1` 且 `SetConfig("message:MessageSpeed", op1)`。CONFIG1/CONFIG2 的速度滑条走这条（滑条 1..99，脚本 `sub 7f2 = 100 - 滑条值`）；`INITREGMES` 用 `i1b5 19`（= 25ms）设默认；handler=sub_41FED0（raw .c 29165-29178） |
 | 0x1B6 | 1 |  | sub_42D2C0 | 已核对 | **共存消息状态查询**：`op1 = (Engine[97052] != 0)`。★会回写 op1（写入端 = 0x1B7）。emulator：`OPS` 的 `op_get_coexist_state`。handler=sub_42D2C0（raw .c 38038） |
 | 0x1B7 | 1 |  | sub_41FF20 | 已核对 | **置共存消息状态**：`Engine[97052] = (op1 != 0)`（`0x1B6` 的写入端；引擎帧循环 raw 13699-13707 看到它就清 0 并按压跳读）。emulator：`OPS` 的 `op_set_coexist_state`。handler=sub_41FF20（raw .c 29181） |
@@ -304,7 +304,7 @@
 | 0x1BE | 2 |  | sub_42E770 | 仅映射 |  |
 | 0x1BF | 0 |  | sub_419840 | 已核对 | **跳读态置**（0 操作数）：`if (122504 & 0x10000) 122504 = 0; if ((122504 & 1) == 0) 122503 = 1;` —— `122504` 由 0x1CF 写入（消息跳读态），`122503` 的**唯一读者是 `0xBF` play-bgm**（raw 29773）：`set:KeepMusicVoice && sound:MusicFadeOnVoicePlaying && !122503` ⇒ 暂停 BGM 给语音让路（= 快进/跳读时不要压低音乐）。★不是脚本全局槽（`global-int 122503` 是另一个地址）。handler=sub_419840（raw 24874-24885）；emulator：`OPS` 的 `op_set_skip_read_state` |
 | 0x1C0 | 1 |  | sub_421450 | 仅映射 |  |
-| 0x1C1 | 3 |  | sub_420070 | 已核对 | **消息/UI 子系统方法**：读 op1..op3 调 `sub_4563D0(_this+21324, op1, op2, op3)`。fire-and-forget。handler=sub_420070（raw .c 28895） |
+| 0x1C1 | 3 |  | sub_420070 | 已核对 | **消息/UI 子系统方法**：读 op1..op3 调 `sub_4563D0(_this+21324, op1, op2, op3)`。fire-and-forget。handler=sub_420070（raw .c 29245） |
 | 0x1C2 | 2 |  | sub_4200C0 | 仅映射 |  |
 | 0x1C3 | 2 |  | sub_420110 | 仅映射 |  |
 | 0x1C4 | 1 |  | sub_42E8A0 | 仅映射 |  |
@@ -313,12 +313,12 @@
 | 0x1C7 | 1 |  | sub_42D390 | 已核对 | **ADV 激活查询**：`op1 = (effect_flags & 0x8000000) != 0`。★会回写 op1；语料 `src/SN0000.txt:1114` 的 `i1c7 f7ff5` / `i1cc f7ff6` → `or` → `jcc` 是 ADV 等待循环的判据。emulator：`OPS` 的 `op_get_adv_active`。handler=sub_42D390（raw .c 38072） |
 | 0x1C8 | 2 | to-string | sub_433820 | 已核对 | **to-string**：`op1 = str(op2)`（`readIntOperand(2)` 读整数 → `sprintf("%d")` → 组装 SSO 字符串 → `sub_433310(1)` 写 op1）。handler=sub_433820（raw .c 41990），纯。**助记符改名 to-string**（原 toString 与 JS/Object 原型 key 冲突，曾反汇编成 `function toString() { [native code] }`） |
 | 0x1C9 | 3 |  | sub_420160 | 已核对 | **音频设备 / 驱动初始化**：按 id（op1）打开音频驱动文件 → `sub_4B8490(Engine+7912, id, data, size)` → `sub_4B86E0(Engine+696548, hInstance)` → `Engine[18656] = op2`、`Engine[18660] = op3` → 取窗口坐标（`sub_4771D0`）→ `sub_4B7B70(设备, x, y)`。handler=sub_420160（raw 29291-29312）。语料 0 处。emulator：`op_audio_device_init` —— 两个参数照写字段；**驱动装载与窗口坐标下发无宿主等价物**（重写侧用 Web Audio，声部按需惰性创建）⇒ 已登记缺口。 |
-| 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 28961） |
+| 0x1CA | 1 |  | sub_420240 | 已核对 | **配置 set-message-read-texture**：读 op1，经 `_this[174405]` 消息子系统对象 vtable+12 以 `"message"`/`readtex`+op1 派发。handler=sub_420240（raw .c 29315） |
 | 0x1CB | 1 |  | sub_42D3D0 | 已核对 | **读配置写操作数**：`op1 = GetConfig("message:ReadTextSkip")`（键名 raw 4277；`0x1CA` 的**读取端**）。★会回写 op1 —— 当 no-op 时脚本读到的是旧槽值（静默逻辑错误）；语料 30+ 个场景脚本 + 本体 `SC0000:443`/`DRAWCHARM:8`/`CHARMEDIT:751` 都有 `i1cb (global-int 139d)`。emulator：`OPS` 的 `op_get_read_text_skip`（走 `readTextSkipOf`，运行期覆盖优先）。handler=sub_42D3D0（raw .c 38082） |
 | 0x1CC | 1 |  | sub_42D410 | 已核对 | **本页文本显示中查询**：`op1 = Engine[122455]`。★会回写 op1（与 0x1C7 一起构成等待判据）。emulator：`OPS` 的 `op_get_msg_showing`。handler=sub_42D410（raw .c 38092） |
 | 0x1CD | 2 |  | sub_42D1A0 | 仅映射 |  |
-| 0x1CE | 1 |  | sub_420280 | 已核对 | **消息/UI 点击-跳读状态机**：读 op1；非0→`_this[174801]|=0x40000000`、`_this[107704]=0`、`sub_453A90(_this+430600)`(重置轮播计时器)；0→清 0x40000000。handler=sub_420280（raw .c 28974） |
-| 0x1CF | 1 |  | sub_4213C0 | 已核对 | **消息跳读态**：写 `_this[122504]=op1`。handler=sub_4213C0（raw .c 29445） |
+| 0x1CE | 1 |  | sub_420280 | 已核对 | **消息/UI 点击-跳读状态机**：读 op1；非0→`_this[174801]|=0x40000000`、`_this[107704]=0`、`sub_453A90(_this+430600)`(重置轮播计时器)；0→清 0x40000000。handler=sub_420280（raw .c 29329） |
+| 0x1CF | 1 |  | sub_4213C0 | 已核对 | **消息跳读态**：写 `_this[122504]=op1`。handler=sub_4213C0（raw .c 30069） |
 | 0x1D0 | 3 |  | sub_42D440 | 已核对 | **读回看页索引表（写回两个操作数）**：读 op3=页下标 → `sub_459860(Font, &v5, &v4, op3, 2)` ⇒ **写 op1 / op2**（页表 = `Font+3380`，8B/条 `{槽号, 回看下标}`）；handler=sub_42D440（raw .c 38099-38111） |
 | 0x1D1 | 5 |  | sub_420310 | 仅映射 |  |
 | 0x1D2 | 2 |  | sub_420380 | 已核对 | **文本项记录表 push**（引擎 `Font+3364` 的 72B/条 vector）：`if (!Engine[97055]) sub_45EFA0(Font, 0, op1, op2)` ⇒ 记录 `{win=Font[307], +24=op1, +20=op2, +28=0, +32=0, flags=0x20000000(|1=组首)}`；**不回写操作数**。读取端 = `0x1D3`/`0x1D4`/`0x2F3`。语料 **42760 处 / 333 个脚本**（最高频的原本未实现指令）。emulator：`OPS` 的 `op_text_item_push`（表模型 `vm/textItems.ts`；与读取端**同进同出**）。 |
@@ -332,10 +332,10 @@
 | 0x1F4 | 0 |  | sub_41A090 | 已核对 | **进入"停靠(dock)"锁**：`_this[107438]`(字节 429752)=停靠标志、`_this[107439]`(429756)=**深度 LockDepth**（引擎 debug 打印 "LockDepth" 自证，raw 43619）。首次进入才采样时钟（`92334=92333`、`92333=timeGetTime()`），此后只 `++深度`。**不阻塞、无 Sleep**；脚本 66510 处 i1f4 = 每帧轮询点。handler=sub_41A090（raw 25194） |
 | 0x1F5 | 0 |  | sub_41A0E0 | 已核对 | **退出"停靠"锁**：`v1=_this[429756]`(LockDepth) >0 则 `--深度`；否则若 `_this[429752]` 置位 → 清标志，且 `_this[497400]`(==124350 dispatch_in_progress) 为 0 时 `sub_40FB60` 派发脚本队列（停靠期间只积累、解锁瞬间放行）。**不阻塞、无 Sleep**。handler=sub_41A0E0（raw 25214） |
 | 0x1F6 | 0 |  | sub_41A130 | 已核对 | **清空绘制容器全部 4 张表**（`sub_4AB7A0(Scene)`；Scene = `_this[80708]`，字节 322832）+ 复位脏标志。这是引擎里**唯一**的整批清场；脚本侧删除只经 0x1F7/0x1FA。handler=sub_41A130（raw 25239） |
-| 0x1F7 | 2 | detach-texture | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1=handle、op2=count，按 count 分派图形子系统（同一套容器：`sub_4AB950` 的 `_this+1032`(字节) 与 `sub_4ABB60` 的 `_this[258]`(DWORD 下标) 都是 byte 1032 = 同一 draw-item 容器）。`count≤1`→`sub_4AB950(handle)`：**移除该 handle 单图元**（`sub_459EA0` 找 + `sub_4A8AF0` std::map erase，置脏 `[46508]=1`；TITLE hover 回退用它删旧 normal）。`count>1`→`sub_4ABB60(handle,count)`：**按 handle 区间批量移除**——4 个容器 lower_bound `handle` 与 `handle+count`，对 `[begin,end)` 逐结点 `sub_4A8AF0`(erase，经 `sub_4AA1D0`/`sub_4AA330`/`sub_4AA3D0`)，并销毁 `+266/+267` 容器每项 record（vtable 删 `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `[11627]=1`。→ **删 handle∈[handle,handle+count) 的全部绘制项/网格**。SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4，批量清特效段）。handler=sub_422BC0（raw .c 30717）。emulator：count≤1→`detachTexture` 删单；count>1→`detachTexture` 删 `[handle,handle+count)` 区间。旧 label `u00420270` |
+| 0x1F7 | 2 | detach-texture | sub_422BC0 | 已核对 | **纹理子系统方法**：读 op1=handle、op2=count，按 count 分派图形子系统（同一套容器：`sub_4AB950` 的 `_this+1032`(字节) 与 `sub_4ABB60` 的 `_this[258]`(DWORD 下标) 都是 byte 1032 = 同一 draw-item 容器）。`count≤1`→`sub_4AB950(handle)`：**移除该 handle 单图元**（`sub_459EA0` 找 + `sub_4A8AF0` std::map erase，置脏 `[46508]=1`；TITLE hover 回退用它删旧 normal）。`count>1`→`sub_4ABB60(handle,count)`：**按 handle 区间批量移除**——4 个容器 lower_bound `handle` 与 `handle+count`，对 `[begin,end)` 逐结点 `sub_4A8AF0`(erase，经 `sub_4AA1D0`/`sub_4AA330`/`sub_4AA3D0`)，并销毁 `+266/+267` 容器每项 record（vtable 删 `[1]` + `operator delete` `[2]/[3]/[4]`），置脏 `[11627]=1`。→ **删 handle∈[handle,handle+count) 的全部绘制项/网格**。SYSTEM4/LOGO/TITLE 开机大量用（count 2/3/4/6/0x19/0x64/0x12c/0x1f4，批量清特效段）。handler=sub_422BC0（raw .c 31138）。emulator：count≤1→`detachTexture` 删单；count>1→`detachTexture` 删 `[handle,handle+count)` 区间。旧 label `u00420270` |
 | 0x1F8 | 4 | create-texture | sub_422C20 | 已核对 | **create-texture**：读 op1=槽、op2/3/4 → 先释放**该槽的 movie 播放器对象**（`_this[slot+94672]` = pool[13964+slot]，`sub_488FB0`+delete+置 0），再 `sub_4A2C10(Scene, slot, w, h, mode)` 建程序化纹理（`operator new(0x450)`+`sub_48AB20`）；失败抛「CTexture エラー：テクスチャ作成に失敗．TEXTURE=%d」。★建出来的是**一张空白离屏表面**（非文件图像）：`0x204` draw-string / `0x205` 数字文本就是往它上面画；`0x207` 在槽之间搬运它。★槽**重建 = 旧表面（含画上去的字）一起丢**。handler=sub_422C20（raw 31161） |
-| 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 30769） |
-| 0x1FA | 1 |  | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 30822） |
+| 0x1F9 | 3 | set-texture | sub_422CB0 | 已核对 | **set-texture**（唯一绑定）：`op1=imgid, op2=slot, op3=color`。清空 slot 旧纹理对象（`sub_488FB0`+置0），`sub_4559C0` imgid→路径 + `sub_455560` 开文件 → `sub_4A3800(_this+322832, imgid, hFile, slot, color, 0)` 载入纹理（`[5*slot+466]=imgid`）；失败抛「画像ファイル %s の読み込みに失敗しました」。handler=sub_422CB0（raw .c 31192） |
+| 0x1FA | 1 |  | sub_422E00 | 已核对 | **release-texture**：读 op1=slot，释放 `_this[slot+94672]` 纹理对象（`sub_488FB0`+delete+置0），`sub_49E980(slot)` 释放该槽（`[5*slot+466]=-1`）。handler=sub_422E00（raw .c 31246） |
 | 0x1FB | 8 | draw-texture | sub_422E70 | 已核对 | **draw-texture**：**op1 = 图元 handle（= Scene map 的 key，同时是层序，越小越先画）**、**op2 = 纹理槽号**（存 DrawItem`+4`，渲染时 `Scene+4*slot+42456` 取 `CTexture*`）、op3/op4 = 源 x/y、op5/op6 = 源 w/h、op7/op8 目标位置。★**源矩形在元素里存成 left/top/right/bottom**：handler 先 `SetRect(&rc, op3, op4, op3+op5, op4+op6)`（raw 31287-31293）再 `sub_4ACE50(Scene, handle, slot, rc.left, rc.top, rc.right, rc.bottom, op7, op8, 0)`（raw 31299）→ 元素 `v13[2..5]` = `+8/+0xC/+0x10/+0x14`；所以**元素内"源宽" = `+0x10 − +8`**（flipbook 的格子尺寸就取这个，raw 117798）。Arity=17。handler=sub_422E70（raw 31271）。★2025 修正：op1 是 handle/key、op2 是纹理槽（旧文档把二者写反）；元素内部**不存 layer** |
 | 0x1FC | 1 |  | sub_422F80 | 已核对 | **复位图元变换**：`sub_4AC470(Scene, op1)` —— 清该 DrawItem 的变换字段（`+104`、`+132..+164` 等批量清零）。handler=sub_422F80（raw 31303-31310）。语料 0 处。emulator：`OPS` 的 `op_reset_prim_transform` → 宿主缝 `native.resetPrimTransform`（记录进 `SceneState.render4`）。 |
 | 0x1FD | 4 |  | sub_422FD0 | 已核对 | **绘制项「立即缩放」**（无动画窗；2D 唯一的"立刻设缩放"指令）：`op1`=handle、`op2/3/4` = sx/sy/sz（`sub_41C300(...) / dbl_5201F0`，**÷100** —— `dbl_5201F0 = 100.0`（raw 4430），脚本里 `64` = 100% = 1.0）→ `sub_4AC5F0`（raw 131333）：`sub_4AAA50` 缺失即建项 → `+0x68 = 1`（**用世界矩阵**）+ `D3DXMatrixScaling(元素+0x6C, …)`（缩放 **work** 矩阵）→ 置脏 `Scene+46508`。★渲染期用的就是这份 work 矩阵（`sub_49AA30` raw 117431 `qmemcpy(v118, a2+27, 64)`），故**立即生效**；写 target + 开窗的是 `0x21E`。★订正：旧文档记作「3D 缩放 / ÷256」，两处都错。handler=sub_422FD0（raw 31313） |
@@ -343,8 +343,8 @@
 | 0x1FF | 4 |  | sub_4230F0 | 已核对 | **DrawItem 像素平移**：`op1`=DrawItem id、`op2/op3/op4`=float x/y/z（**像素单位**，无 /100、无 /256）→ `sub_4AC750(Scene, id, x, y, z)`：`sub_4AAA50` 保证项存在 → DrawItem`+0x68 = 1`（**用世界矩阵**）→ `D3DXMatrixTranslation(元素+0x16C, x,y,z)` 写**平移 work 矩阵**，**立即生效、无动画窗**（与 0x220 写 target + 开窗不同）→ 置脏 `[11627]=1`。★对照 0x1FD：**平移用像素、缩放用百分数**（0x1FD 的 op2..op4 经 `/dbl_5201F0`）。handler=sub_4230F0（raw .c 31348） |
 | 0x200 | 1 |  | sub_423170 | 仅映射 |  |
 | 0x201 | 1 |  | sub_4302B0 | 已核对 | **配置 getter**：`op1 = Engine[166964]`。handler=sub_4302B0（raw .c 39859） |
-| 0x202 | 5 | set-draw-color | sub_4231F0 | 已核对 | **set-draw-color**：读 op4=alpha（>255 clamp 255，<0 取当前色 `sub_4ADD60>>24`）、op5=color（<0 取当前色）、op2/op3 参数、op1=图元；组装 ARGB（`(color&0xFFFFFF) | ((alpha&0xFF)<<24)`）→ `sub_4AD0C0(Scene, handle, delay, dur, argb)`。引擎写入（raw 131957-131981）：**门控 `flags & 1`（元素必须已创建）** → `flags |= 2`（颜色动画启用）、`+0x34 = 0`（**全项共享的动画起点，此处清 0 表示"下一帧锁存"**）、`+0x38 = delay`、`+0x4C = dur`、`+0x64 = TO 色`；并置脏 `_this[11627]=1` 与图形池挂起 `_this[11629]=1`。**注意它不写 `+0x60`（工作色/FROM）** —— FROM 由 0x203 写。handler=sub_4231F0（raw .c 30951） | ★**逐帧求值器（2026 复核确证）**：在 `sub_49AA30` 内 raw 117434-117483 —— 由 DrawItem 渲染器 `sub_4AEEA0` 在 raw 133389 以 `a2 = 该 DrawItem` 调用（第 4 参 `COERCE_FLOAT(&v25)` 是**颜色变量的地址**，函数内 `v117 = a4`，插值结果写回 `*v117`），随后 raw 133443 把该值作 diffuse 交 `sub_4A2D50`。公式：`we = clock − start − delay`、`left = dur − we`、`ch = (left·from + we·to)/dur`（**整数截断**，通道序 B/G/R/A）；窗末 `+0x60 ← +0x64`、`+0x64 = NaN`、`+0x38/+0x4C` 清 0 并置 pending `Scene+46516`（raw 117844）。局部副本 raw 133447 `qmemcpy(元素, v26, 0x2E4)` **写回元素**。
-| 0x203 | 4 | set-draw-color-alpha | sub_4232C0 | 已核对 | **set-draw-color-alpha**：读 op3=alpha（clamp/回退）、op4=color（回退），组装 ARGB → `sub_4ACF60(Scene, handle, op2, argb)`。引擎写入（raw 131871-131883）：`+0x30 = op2`（**混合模式**，0=默认）、`+0x60 = FROM 色（当前工作色）`；只置脏 `_this[11627]=1`（**不置挂起位、不清动画窗**）⇒ 可随时改工作色做 hover 高亮/回退，且正在跑的 0x202 窗会从新的 FROM 继续插值。handler=sub_4232C0（raw .c 30987） | ★该 FROM 就是颜色窗的插值起点：`sub_49AA30` 在窗内用 `(left·FROM + we·TO)/dur` 逐帧算 diffuse（raw 117470 写回调用方指针），所以 **0x203 可在窗内任意时刻改 FROM 并立即参与插值**。
+| 0x202 | 5 | set-draw-color | sub_4231F0 | 已核对 | **set-draw-color**：读 op4=alpha（>255 clamp 255，<0 取当前色 `sub_4ADD60>>24`）、op5=color（<0 取当前色）、op2/op3 参数、op1=图元；组装 ARGB（`(color&0xFFFFFF) | ((alpha&0xFF)<<24)`）→ `sub_4AD0C0(Scene, handle, delay, dur, argb)`。引擎写入（raw 131957-131981）：**门控 `flags & 1`（元素必须已创建）** → `flags |= 2`（颜色动画启用）、`+0x34 = 0`（**全项共享的动画起点，此处清 0 表示"下一帧锁存"**）、`+0x38 = delay`、`+0x4C = dur`、`+0x64 = TO 色`；并置脏 `_this[11627]=1` 与图形池挂起 `_this[11629]=1`。**注意它不写 `+0x60`（工作色/FROM）** —— FROM 由 0x203 写。handler=sub_4231F0（raw .c 31382） | ★**逐帧求值器（2026 复核确证）**：在 `sub_49AA30` 内 raw 117434-117483 —— 由 DrawItem 渲染器 `sub_4AEEA0` 在 raw 133389 以 `a2 = 该 DrawItem` 调用（第 4 参 `COERCE_FLOAT(&v25)` 是**颜色变量的地址**，函数内 `v117 = a4`，插值结果写回 `*v117`），随后 raw 133443 把该值作 diffuse 交 `sub_4A2D50`。公式：`we = clock − start − delay`、`left = dur − we`、`ch = (left·from + we·to)/dur`（**整数截断**，通道序 B/G/R/A）；窗末 `+0x60 ← +0x64`、`+0x64 = NaN`、`+0x38/+0x4C` 清 0 并置 pending `Scene+46516`（raw 117844）。局部副本 raw 133447 `qmemcpy(元素, v26, 0x2E4)` **写回元素**。
+| 0x203 | 4 | set-draw-color-alpha | sub_4232C0 | 已核对 | **set-draw-color-alpha**：读 op3=alpha（clamp/回退）、op4=color（回退），组装 ARGB → `sub_4ACF60(Scene, handle, op2, argb)`。引擎写入（raw 131871-131883）：`+0x30 = op2`（**混合模式**，0=默认）、`+0x60 = FROM 色（当前工作色）`；只置脏 `_this[11627]=1`（**不置挂起位、不清动画窗**）⇒ 可随时改工作色做 hover 高亮/回退，且正在跑的 0x202 窗会从新的 FROM 继续插值。handler=sub_4232C0（raw .c 31419） | ★该 FROM 就是颜色窗的插值起点：`sub_49AA30` 在窗内用 `(left·FROM + we·TO)/dur` 逐帧算 diffuse（raw 117470 写回调用方指针），所以 **0x203 可在窗内任意时刻改 FROM 并立即参与插值**。
 | 0x204 | 4 | draw-string | sub_423390 | 已核对 | **draw-string（直绘，不入队）**：读 op1=纹理槽、op2=x、op3=y、op4=字符串 → `sub_456710(Font, op1, 串op4, op2, op3)`（raw 68470）。**三个门**（raw 68478-68480）：该槽的 `CTexture` 必须存在、vtable+32 可锁定、串非空 —— 否则整条**什么都不做**（不抛错）。落笔：按 `GetTextMetricsA` 的 ascent 定位（`Font+201680 == 1` 时再加 `Font+201712`），用当前字体（`Font+1084`）与全局颜色/描边（`Font+1360/+1364/+1372`）；带描边走 `sub_471180`，否则 `sub_46F2D0`。★**与消息窗文本是两条独立路径**（本指令不排版、不换行、不走窗）；`CONFIG1` 用它把每行"项目名 + 数值"写进 `create-texture 196 628 360` 出来的离屏槽，再按行裁贴到列表行上（`CONFIG1.txt:2760/2773` + `:3019-3022`）。handler=sub_423390（raw .c 31454） |
 | 0x205 | 6 |  | sub_4233E0 | 已核对 | **消息子系统的 GDI 数字文本绘制**：`op1`=目标纹理槽、`op2`=x（in/out，`sub_4072F0` 会更新）、`op3`=y、`op4`=数值、`op5`=字段宽（字符数）、`op6`=格式标志（bit0x10000 全角、bit1 居中、bit2 左对齐、bit3 正数带 `+`）→ `sub_4072F0(_this, …, &x, 数值, 宽, 标志)` 把数值格式化成字符串，再 `sub_456710(_this+21324, 槽, 串, x, y)`（`GetTextMetricsA` 后写进 `*(Engine+21324+1040)+4*op1+42456` 的 1000 槽纹理表）。**旧注「仅映射」为误**。handler=sub_4233E0（raw .c 31470） emulator：`OPS` 的 `op_draw_number_string` —— 格式化纯函数 `formatNumberCell`（补零/符号/溢出 `#` 逐条照抄）、**回写 op2 = x + 前进量**（居中 `start*cy/4`|`/2`、左对齐 0、右对齐 `start*cy`|`/2`）、非半角时按 `sub_41A6C0` 转全角后交 `native.drawString`。★**订正**：op6 的 `bit16` 是**半角**而非「全角」——`(flags & 0x10000) == 0` 时才把 ASCII 转 SJIS 全角。缺口：`set:BlankExtentMode == 1` 的 GDI 字宽量测未建模（统一用字号当格宽）。 |
 | 0x206 | 7 |  | sub_41A160 | 仅映射 |  |
@@ -356,11 +356,11 @@
 | 0x20C | 0 |  | sub_41A1A0 | 已核对 | **绘图帧控制**：帧计时（timeGetTime 写 `_this[92333/92334]`）+ 调图形子系统 `sub_4B4040(_this+80708)`、`_this[168998]=0`。handler=sub_41A1A0（raw .c 25258）。方向：渲染/帧控制 |
 | 0x20D | 1 |  | sub_423770 | 仅映射 |  |
 | 0x20E | 0 |  | sub_41A200 | 已核对 | **图形提交**：`sub_41A200` —— `if (Engine[80684]==1 && Engine[92322]==-1)` 时 `sub_4A50C0(Scene, 0x26)`（压渲染状态 38）+ `sub_498B60(Engine+321572)`（设备 `Clear(0,0,3,0,1.0,0)` = 清 target+z）+ `sub_4A50C0(Scene,-1)`；**两条路径最后都会**再调一次 `sub_498B60`。handler=sub_41A200（raw 25277-25287）。语料 **786 处 / 342 个脚本**。emulator：`OPS` 的 `op_commit_graphics` → `native.commitGraphics`（记录次数；重写侧每帧自绘，不需要 Clear）。 |
-| 0x20F | 3 |  | sub_4237B0 | 已核对 | **play-movie**：读 op1=movie资源id、op2=slot、op3=模式/音量；构造/复用 `[4*slot+378688]` movie 对象，`sub_454FA0` 取路径、`sub_488DC0` 装载（失败抛「…」）、`sub_489230` 绑定、`sub_4054D0` 求播放模式、`sub_408350` 求音量、`sub_4885A0` 设音量、`sub_4883A0` 启动；置 `_this[699204]\|=0x2000`、`_this[675972]=1`。handler=sub_4237B0（raw .c 31165） |
+| 0x20F | 3 |  | sub_4237B0 | 已核对 | **play-movie**：读 op1=movie资源id、op2=slot、op3=模式/音量；构造/复用 `[4*slot+378688]` movie 对象，`sub_454FA0` 取路径、`sub_488DC0` 装载（失败抛「…」）、`sub_489230` 绑定、`sub_4054D0` 求播放模式、`sub_408350` 求音量、`sub_4885A0` 设音量、`sub_4883A0` 启动；置 `_this[699204]\|=0x2000`、`_this[675972]=1`。handler=sub_4237B0（raw .c 31605） |
 | 0x210 | 1 |  | sub_423980 | 仅映射 |  |
 | 0x211 | 1 |  | sub_4239F0 | 仅映射 |  |
-| 0x212 | 2 |  | sub_423A30 | 已核对 | **消息窗对象字段**：读 op1=对象下标、op2=值；`_this[op1+21585]` 对象非空则写其 `+100=op2`。handler=sub_423A30（raw .c 31299） |
-| 0x213 | 3 |  | sub_423A80 | 已核对 | **消息窗对象字段**：读 op1=对象下标、op2/op3；对象非空写 `+104=op2`、`+108=op3`。handler=sub_423A80（raw .c 31314） |
+| 0x212 | 2 |  | sub_423A30 | 已核对 | **消息窗对象字段**：读 op1=对象下标、op2=值；`_this[op1+21585]` 对象非空则写其 `+100=op2`。handler=sub_423A30（raw .c 31742） |
+| 0x213 | 3 |  | sub_423A80 | 已核对 | **消息窗对象字段**：读 op1=对象下标、op2/op3；对象非空写 `+104=op2`、`+108=op3`。handler=sub_423A80（raw .c 31758） |
 | 0x214 | 2 |  | sub_423AE0 | 仅映射 |  |
 | 0x215 | 2 |  | sub_430340 | 已核对 | **绘制项 → 纹理槽号（getter）**：`op1 = sub_4ADC20(Scene, op2)`（DrawItem`+4`；项不存在或 `flags&1==0` ⇒ **−1**）。★会回写 op1；语料 `src/SN0000.txt:3125`。emulator：`OPS` 的 `op_get_draw_texture_slot` + `native.getDrawItemTexSlot`。handler=sub_430340（raw .c 39880） |
 | 0x216 | 2 |  | sub_430380 | 已核对 | **纹理槽 → imgid（getter）**：`op1 = Engine[5*op2+81174]` ＝ `Scene[5*slot+466]` ＝ `set-texture` 写的唯一槽↔图像绑定表。★会回写 op1；语料 `src/SN0000.txt:3128`。emulator：`OPS` 的 `op_get_slot_imgid`（读 `Engine.texSlots`）。handler=sub_430380（raw .c 39891） |
@@ -368,8 +368,8 @@
 | 0x218 | 4 |  | sub_4303C0 | 已核对 | **绘制项 pivot 三元组（getter）**：`op2/op3/op4 =` DrawItem`+24/+28/+32`（`sub_4ADCF0`；项不存在 ⇒ 全 0）。★会回写 op2/3/4（float）；与 0x21A 是两个不同的三元组。emulator：`OPS` 的 `op_get_draw_pivot` + `native.getDrawItemPivot`。handler=sub_4303C0（raw .c 39902） |
 | 0x219 | 4 |  | sub_423BA0 | 已核对 | **绘制项「描画位置 (x,y,z)」**：读 op1=handle、op2/3/4=3 float → DrawItem`+36/+40/+44`；绘制期 `sub_4AEEA0` 读 `&v26[9]` 交 `CTexture::Draw`（vtable+20）。★与 0x217 的 pivot 是**两个不同三元组**。handler=sub_423BA0 → sub_4ACEE0（raw 131843） |
 | 0x21A | 4 |  | sub_430450 | 已核对 | **绘制项描画位置三元组（getter）**：`op2/op3/op4 =` DrawItem`+36/+40/+44`（`sub_4ADC80`；项不存在 ⇒ 全 0）。★会回写 op2/3/4（float）；语料 `src/SN0000.txt:1029` 取当前位置加偏移后 `i219` 写回。emulator：`OPS` 的 `op_get_draw_pos` + `native.getDrawItemPos`。handler=sub_430450（raw .c 39916） |
-| 0x21B | 1 |  | sub_423C20 | 已核对 | **引擎布尔标志**：读 op1，写 `_this[166965]=(op1!=0)`（成对读取方 sub_430810 回写操作数 1）。handler=sub_423C20（raw .c 31375） |
-| 0x21C | 0 | wait | sub_41A260 | 已核对 | **每脚本引擎状态槽→0x400 动画等待**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`（版权页/淡入淡出的"等几秒"等待门）。handler=sub_41A260（raw .c 25043）。旧 label `u00416270` |
+| 0x21B | 1 |  | sub_423C20 | 已核对 | **引擎布尔标志**：读 op1，写 `_this[166965]=(op1!=0)`（成对读取方 sub_430810 回写操作数 1）。handler=sub_423C20（raw .c 31823） |
+| 0x21C | 0 | wait | sub_41A260 | 已核对 | **每脚本引擎状态槽→0x400 动画等待**：读 cur，写 `_this[30*cur+95805]=1`、`_this[174801]\|=0x400`（版权页/淡入淡出的"等几秒"等待门）。handler=sub_41A260（raw .c 25290）。旧 label `u00416270` |
 | 0x21D | 2 |  | sub_423C60 | 已核对 | **CopyScene**：`op1` = 源 handle、`op2` = 目标 handle（取值顺序先 op2 后 op1）→ `sub_4AC0D0(Scene, op1, op2)`（raw 131146）= 把源绘图项（+同 key 的网格）**整块复制**到目标 handle（引擎 `qmemcpy` 0x2E4/0x3C/0x23C；三张 map 都没命中 ⇒ 打「関数：CopyScene エラー：コピー元のシーンが存在しません」串并返回 0）。语料：`ROOM.txt:83/391`、`MMODE.txt:71/763`（把预置的全屏过渡幕布 handle 0 复制成临时项 `0x1f4`/`0x7d0` 再单独改色做淡入淡出）、`$1$SC0330.txt:17564`（复制 CG 图元做缩放绘制）。handler=sub_423C60（raw 31834-31843）；emulator：`scene/ops.ts` 的 `scCopyItem` + `OPS` 的 `op_copy_scene` |
 | 0x21E | 6 |  | sub_423CA0 | 已核对 | **缩放动画窗（DrawItem 窗1）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = sx/sy/sz`（`sub_41C300(...) / dbl_5201F0`，**÷100** —— `dbl_5201F0 = 100.0`（raw 4430），脚本里 `64` = 100%）→ `sub_4AD170(Scene, handle, delay, dur, sx, sy, sz)`（raw 31846-31862）。引擎写入（raw 131984-132018）：门控 `flags & 1` → `|= 2`、`+0x34 = 0`（共享起点）、`+0x3C = delay`、`+0x50 = dur`、`+0x68(+104) = 1`、`D3DXMatrixScaling(元素+0xAC, sx,sy,sz)`（**目标**缩放矩阵；工作矩阵在 `+0x6C`）→ 置 `[11627]=1`、`[11629]=1`。★`dur` 是插值分母（ms）。★订正：旧文档写 `÷256`（把 `dbl_5201F0` 误记为 256.0）——它是 **100.0**，`0x12c`=300 ⇒ 3.0 倍。handler=sub_423CA0（raw .c 31846） |
 | 0x21F | 7 |  | sub_423D40 | 已核对 | **旋转动画窗（DrawItem 窗2）**：`op1=handle`、`op2=delay`、`op3=dur`、`op4/5/6 = 旋转轴 (x,y,z)`、`op7 = 角（度）` → `sub_4AD250(...)`（raw 31867-31885）。引擎写入（raw 132022-132075）：`|= 2`、`+0x34 = 0`、`+0x40 = delay`、`+0x54 = dur`、`+0x68 = 1`、轴存 `+0x1F8/+0x1FC/+0x200`、止角存 `+0x208`（起角在 `+0x204`），并 `D3DXMatrixRotationAxis(元素+0x12C, axis, θ·π/180)`（**目标**旋转矩阵）。度数→弧度换算常量 `dbl_526C98/dbl_5263F0`。handler=sub_423D40（raw .c 31867） |
@@ -413,7 +413,7 @@
 | 0x245 | 2 |  | sub_4251E0 | 已核对 | **纹理对象的浮点参数**：`obj = Engine[op1+94672]`（CTexture 表），存在则 `sub_4081B0(obj, op2 / dbl_51FB50)`。handler=sub_4251E0（raw 32661-32676）。语料 0 处。emulator：`OPS` 的 `op_texture_obj_float` → 宿主缝 `native.setTextureObjectFloat`。 |
 | 0x246 | 2 |  | sub_425250 | 已核对 | **纹理对象子对象的 `vtable+56` 调用**：`obj = Engine[op1+94672]`，若 `*(obj+1084) == dword_52839C`（类型判定）则用 `op2 / dbl_5201F0`（÷100）调用 `(*(obj+1044))+56`。handler=sub_425250（raw 32680-32700）。语料 0 处。emulator：`OPS` 的 `op_texture_obj_param` → 宿主缝 `native.setTextureObjectParam`。 |
 | 0x247 | 1 |  | sub_430810 | 已核对 | **读引擎布尔标志写回操作数**：`op1 = (Engine[166965] != 0)`（0/1）。与设置方 `0x21B`（sub_423C20）成对，构成脚本可读写的引擎级布尔寄存器；handler=sub_430810（raw .c 40034-40038） |
-| 0x248 | 1 |  | sub_4252E0 | 已核对 | **模块静态配置**：读 op1 写全局 `dword_55052C`（默认 256，图像缩放/坐标换算的格子除数）。handler=sub_4252E0（raw .c 32228） |
+| 0x248 | 1 |  | sub_4252E0 | 已核对 | **模块静态配置**：读 op1 写全局 `dword_55052C`（默认 256，图像缩放/坐标换算的格子除数）。handler=sub_4252E0（raw .c 32705） |
 | 0x249 | 3 |  | sub_425310 | 已核对 | **按统一 id 载纹理进槽（带颜色）**：先释放 `Engine[op2+94672]` 旧对象 → `sub_4559C0` 按 id 打开文件（写 FileDB「已使用」表）→ 颜色 = `op3 < 0 ? 0 : (0xFF000000|op3 低 3 字节)` → `sub_4A3800(Scene, id, hFile, op2, color, 1)`；**失败抛 `画像ファイル %s の読み込みに失敗しました`**。handler=sub_425310（raw 32717-32768）。语料 20 处 / 8 个脚本（BTL/ALLMAP/MOVERUIN/SHOWALLMAP…）。emulator：`OPS` 的 `op_load_texture_by_id`（槽绑定 + 已使用标记 + `native.bindTexture`；文件缺失归宿主）。 |
 | 0x24A | 3 |  | sub_430840 | 仅映射 |  |
 | 0x24B | - |   | sub_425460 | 仅映射 |  |
@@ -423,7 +423,7 @@
 | 0x24F | 10 |  | sub_4258F0 | 仅映射 |  |
 | 0x250 | 10 |  | sub_425980 | 仅映射 |  |
 | 0x251 | 12 |  | sub_425A10 | 仅映射 |  |
-| 0x252 | 1 |  | sub_425AB0 | 已核对 | **消息/系统配置字段**：读 op1 写 `_this[92323]`。handler=sub_425AB0（raw .c 32573） |
+| 0x252 | 1 |  | sub_425AB0 | 已核对 | **消息/系统配置字段**：读 op1 写 `_this[92323]`。handler=sub_425AB0（raw .c 33058） |
 | 0x253 | 2 |  | sub_425AE0 | 仅映射 |  |
 | 0x254 | 5 |  | sub_425B20 | 仅映射 |  |
 | 0x255 | - |   | sub_425BC0 | 仅映射 |  |
@@ -434,13 +434,13 @@
 | 0x25A | 1 |  | sub_425DB0 | 已核对 | **消息态影片（模式 1）**：`Engine[92379] = 1`、`[92380] = op1`；模式变化（`Engine[92377] == 0`）或非全屏（`!Engine[167990]` = `display:ScreenMode`）时 `sub_4A5470(Scene, id)` 下发。同族 `0x25B`（sub_425E20）是**模式 2（图像）**并写 `[92381]`。handler=sub_425DB0（raw 33188-33203）。语料 0 处。emulator：`OPS` 的 `op_set_media_movie`（两个字段精确；Scene 下发属**排除**的影片子系统 ⇒ 已登记缺口）。 |
 | 0x25B | 1 |  | sub_425E20 | 已核对 | **图像资源加载（消息态）**：读 op1，置**模式** `_this[92379]=2`（1=影片 / 2=图像，同族 0x25A 用 92379=1 + 92380）、**图像 id** `_this[92381]=op1`；`_this[167990]==0`（全局「无渲染模式」开关）时调 `sub_408440` 加载（`sub_4A7210` ReadFrameTex → 渲染进固定帧纹理 `Scene+42452`），失败**抛 `Command_ShowMessage_Exception`「画像ファイル %s の読み込みに失敗しました」**（影响控制流）。★`sub_4A7210` 从不使用图像 id ⇒ `[推测]` op1 只用于消息态记录。emulator：真实现字段写入（92381=op1），不做图像解码（消息窗自绘）。handler=sub_425E20（raw .c 33206） |
 | 0x25C | 8 |  | sub_425E70 | 已核对 | **消息窗对象「文本块」参数（13 dword）**：`sub_456510` 整块 `qmemcpy` 到 `Font[win+261]+224`：`[0]=1, [1..3]=op4..op6, [4]=op7+op5, [5]=op8+op6, [6..7]=op2/op3, [8..10]=0, [11..12]=-1`。handler=sub_425E70（raw 33224-33245）。语料 0 处。emulator：`OPS` 的 `op_msgwin_obj_text_block`（`MsgObject.block224`）。 |
-| 0x25D | 3 |  | sub_425EF0 | 已核对 | **消息列表对象字段**：读 op1/op2/op3；`_this[op1+21585]` 对象非空写 `+276=op2`、`+280=op3`。handler=sub_425EF0（raw .c 32753） |
+| 0x25D | 3 |  | sub_425EF0 | 已核对 | **消息列表对象字段**：读 op1/op2/op3；`_this[op1+21585]` 对象非空写 `+276=op2`、`+280=op3`。handler=sub_425EF0（raw .c 33248） |
 | 0x25E | 5 |  | sub_425F50 | 已核对 | **消息窗对象颜色三件**：`+256=op2`、`+260=op3`、`+272=ARGB`，其中 ARGB = `(min(op4,255)<<24) | op5 的低 3 字节`（引擎 `sub_456590`）。handler=sub_425F50（raw 33269-33288）。语料 0 处。emulator：`OPS` 的 `op_msgwin_obj_colors`。 |
 | 0x25F | 4 |  | sub_425FF0 | 已核对 | **消息窗对象颜色对**：`+264=op2`、`+268=ARGB`（alpha = op3 截断、RGB = op4 低 3 字节；引擎 `sub_4565D0`）。handler=sub_425FF0（raw 33291-33308）。语料 0 处。emulator：`OPS` 的 `op_msgwin_obj_colors2`。 |
-| 0x260 | 4 |  | sub_426080 | 已核对 | **消息窗配置字段×4**：读 op1..op4 写 `_this[80102]/[80103]/[80104]/[80105]`。handler=sub_426080（raw .c 32813） |
-| 0x261 | 1 |  | sub_4260F0 | 已核对 | **消息窗配置字段**：读 op1 写 `_this[80101]`。handler=sub_4260F0（raw .c 32832） |
+| 0x260 | 4 |  | sub_426080 | 已核对 | **消息窗配置字段×4**：读 op1..op4 写 `_this[80102]/[80103]/[80104]/[80105]`。handler=sub_426080（raw .c 33311） |
+| 0x261 | 1 |  | sub_4260F0 | 已核对 | **消息窗配置字段**：读 op1 写 `_this[80101]`。handler=sub_4260F0（raw .c 33331） |
 | 0x2BC | 11 |  | sub_426120 | 仅映射 |  |
-| 0x2BD | 1 |  | sub_426200 | 已核对 | **文本对象字段+字体重建**：读 op1；`op1≠0` 时置文本对象字段 `_this[75953]`/`_this[21636]` 为 700（否则 0），调 `sub_459F40()` 应用/重建字体。handler=sub_426200（raw .c 32884） |
+| 0x2BD | 1 |  | sub_426200 | 已核对 | **文本对象字段+字体重建**：读 op1；`op1≠0` 时置文本对象字段 `_this[75953]`/`_this[21636]` 为 700（否则 0），调 `sub_459F40()` 应用/重建字体。handler=sub_426200（raw .c 33385） |
 | 0x2BE | 1 |  | sub_426260 | 已核对 | **注音加粗**：读 op1；真 ⇒ `Font+218588 = 700` 且 `Font+1308 = 700`，假 ⇒ 两者 0；再 `sub_45A6E0(Font)` 重建注音字体句柄；handler=sub_426260（raw .c 33405-33422） |
 | 0x2BF | 3 |  | sub_4262C0 | 已核对 | **延迟播 SE**：读 op1=通道、op2=循环标志、op3=延迟毫秒 → `sub_4B5170(SE, op1, op2, op3)`（raw 137720：`SE[262+ch]=1` 武装、`[272+ch]=0` 起始时刻、`[282+ch]=延迟`、`[292+ch]=循环标志`、`SE[302]=1`）；每帧 `sub_4B5230(SE, 当前时刻)`（raw 137763、调用点 raw 20645）到期即 `sub_4B5020` 起播。全库 30 处。handler=sub_4262C0（raw .c 33424-33436） |
 | 0x2C0 | 3 |  | sub_426310 | 已核对 | **语音排队到通道 0（带延迟）**：读 op1=语音 id、op2=附带值、op3=延迟毫秒 → `sub_4BBA40(Voice, op1, op2, op3, 0)`（raw 142563：`Voice[265+ch]=1`、`[268+ch]=0`、`[271+ch]=延迟`、`[274+ch]=id`、`[277+ch]=附带值`）；每帧 `sub_4BBAB0(Voice, 当前时刻)`（raw 142585、调用点 raw 20646）到期起播。全库 0 处。handler=sub_426310（raw .c 33438-33450） |
@@ -464,16 +464,16 @@
 | 0x2D2 | 3 |  | sub_430B10 | 已核对 | **浮点乘**：写回 float `op1 = 浮点op2 * 浮点op3`。handler=sub_430B10（raw .c 40140） |
 | 0x2D3 | 3 |  | sub_430B70 | 已核对 | **浮点除**：写回 float `op1 = 浮点op2 / 浮点op3`。handler=sub_430B70（raw .c 40151） |
 | 0x2D4 | 3 |  | sub_430BD0 | 已核对 | **浮点取余**：写回 float `op1 = fmod(浮点op2, 浮点op3)`。★argc 由 handler 体补全（旧表 `-`）：读 op2/op3、写 op1。handler=sub_430BD0（raw .c 40162） |
-| 0x2D5 | 2 | float-mov | sub_430C30 | 已核对 | **float mov**：`op1 = op2`（`readFloatOperand(2)` → `writeFloatOperand(1)`）。handler=sub_430C30（raw .c 39455）。旧 label `u0042B990` |
+| 0x2D5 | 2 | float-mov | sub_430C30 | 已核对 | **float mov**：`op1 = op2`（`readFloatOperand(2)` → `writeFloatOperand(1)`）。handler=sub_430C30（raw .c 40176）。旧 label `u0042B990` |
 | 0x2D6 | 2 |  | sub_430C70 | 已核对 | **整数→浮点**：写回 float `op1 = (float)整数op2`。★argc 由 handler 体补全（旧表 `-`）：读 op2、写 op1。handler=sub_430C70（raw .c 40186） |
 | 0x2D7 | 2 |  | sub_430CB0 | 仅映射 |  |
 | 0x2D8 | 3 | set-array-to | sub_430CF0 | 已核对 | `op1 起 count 个槽填 op2 值`（**脚本值 bulk 填充**；对比 copy-to-global 固定 0）：`v2=&op1; v5=ENC(op2); n=op3; memset32(v2,v5,n)`。handler=sub_430CF0（raw .c 40206） |
 | 0x2D9 | 2 |  | sub_430D60 | 仅映射 |  |
 | 0x2DA | 8 |  | sub_426420 | 已核对 | **CG 数字条记录登记**：`op1`=CG 番号（合法 0..0xA，越界只记日志不抛）+ `op2..op8` = **7 个 int** → 写进 `Engine+388332+28*cgno` 的 28 字节记录（`28*(n+13869)` 与 `4*97084+28*n` 是同一地址）。字段语义由消费方 0x23B 反推：`+0` 纹理槽 / `+4` x0 / `+8` y0 / `+12` 单字宽 / `+16` 字高 / `+20` 字内空隙 / `+24` 字距。★**是 7 个 dword（28 字节）**，旧文档「共 8 字段」把手写操作数 op1（编号）也算进去了。纯数据登记：不碰 Scene / 不置脏 / 不影响控制流。handler=sub_426420（raw .c 33498） |
-| 0x2DB | 1 |  | sub_426500 | 已核对 | **文本对象字段+字体重建**：读 op1 写 `_this[71744]`，调 `sub_459F40()` 重建字体。handler=sub_426500（raw .c 33015） |
+| 0x2DB | 1 |  | sub_426500 | 已核对 | **文本对象字段+字体重建**：读 op1 写 `_this[71744]`，调 `sub_459F40()` 重建字体。handler=sub_426500（raw .c 33524） |
 | 0x2DC | 1 |  | sub_430DB0 | 已核对 | **可选字体数量 → op1**：`v1 = (Font[71741] - Font[71740]) >> 5`（`Font+201664` 的 **32B/条**字体名向量长度，由 `EnumFontFamilies` 填充；**空表 ⇒ -1，绝不返回 0**）⇒ `op1 = v1`。脚本 `$1$SELFONT.txt:34` 用它做分页（每页 9 项）与滚动条分母（`:78 div` 拿它当**除数**）⇒ 返回 0 会让字体选择器直接退出并除零。handler=sub_430DB0（raw .c 40239-40249）。emulator：`op_font_list_count`（`ENGINE_FONT_LIST`，与 0x2DD/0x2DE 同一张表） |
 | 0x2DD | 2 |  | sub_434720 | 已核对 | **字体表第 op2 项的名字 → op1（字符串）**：`v2 = read(2)`；越界（`<0` 或 `>= count`）⇒ 写**空串**（`byte_51EA3C`），否则把 `Font+201664 + 32*v2` 那条 `std::string` 拷进 op1（`sub_433310(_this,1,串)`）。脚本 `$1$SELFONT.txt:567/:644` 用它逐行画候选字体名（`:644` → `set-font` → `draw-string`）。handler=sub_434720（raw .c 42541-42575）。emulator：`op_font_list_name` |
-| 0x2DE | 2 |  | sub_430DF0 | 已核对 | **字符串→索引查表**：`sub_41B640(2)` 读 op2 字符串 → `sub_428990(_this[50416] 表)` 查找（跳过前导 `@`，未命中=-1）→ `writeIntOperand_42B4B0(1, idx)` 写回 op1。handler=sub_430DF0（raw .c 39525） |
+| 0x2DE | 2 |  | sub_430DF0 | 已核对 | **字符串→索引查表**：`sub_41B640(2)` 读 op2 字符串 → `sub_428990(_this[50416] 表)` 查找（跳过前导 `@`，未命中=-1）→ `writeIntOperand_42B4B0(1, idx)` 写回 op1。handler=sub_430DF0（raw .c 40252） |
 | 0x2DF | 3 |  | sub_430E30 | 仅映射 |  |
 | 0x2E0 | 3 |  | sub_430EA0 | 仅映射 |  |
 | 0x2E1 | 3 |  | sub_430F10 | 仅映射 |  |
@@ -489,7 +489,7 @@
 | 0x2EB | 1 |  | sub_434830 | 已核对 | **读配置字符串 `set:GameVersion` → op1**：走配置对象 vtable+8 的查询（raw 42583）→ `sub_40C210` 拷串 → `sub_433310(this,1,串)`。键值来源：引擎内建 `"1.00"`（raw 111627-111629）→ INI `[set] GameVersion` 覆盖（raw 112426-112433）→ 若 `set:VerRegPos` 非空再用注册表 `DisplayVersion` 覆盖（raw 112835-112851 + sub_490010，缺省 `"1.00.0000"`）。★`TITLE.txt:583` 取它画 "Version X.YY.ZZZZ"（经 0x2C7/0x2EC/0x23B）；不实现 ⇒ 屏幕上是占位值 `0.00.0000`（2026-09 实测）。handler=sub_434830（raw 42575-42593） |
 | 0x2EC | 2 |  | sub_4311F0 | 已核对 | **atoi**：`op1 = atoi(串op2)`（字符串→整数）。handler=sub_4311F0（raw .c 40390） |
 | 0x2ED | - |   | sub_431230 | 仅映射 |  |
-| 0x2EE | 1 |  | sub_426650 | 已核对 | **消息派发**：读 op1 写 `_this[80106]`，并经 `_this[174405]` 对象 vtable+12 以 `"message"`+op1 派发消息/自动消息。handler=sub_426650（raw .c 33078） |
+| 0x2EE | 1 |  | sub_426650 | 已核对 | **消息派发**：读 op1 写 `_this[80106]`，并经 `_this[174405]` 对象 vtable+12 以 `"message"`+op1 派发消息/自动消息。handler=sub_426650（raw .c 33591） |
 | 0x2EF | 11 |  | sub_431270 | 仅映射 |  |
 | 0x2F0 | 9 |  | sub_431460 | 仅映射 |  |
 | 0x2F1 | 7 |  | sub_4316E0 | 仅映射 |  |
@@ -505,23 +505,23 @@
 | 0x2FB | 1 |  | sub_431B60 | 仅映射 |  |
 | 0x2FC | 5 |  | sub_431BA0 | 已核对 | **读 UI 触摸/触点**：`sub_477980` 从触摸事件缓冲（`Engine+6780`、条数 `Engine[6776]`、40B/项）取触点并 `ScreenToClient`；有触点写 op1=1/op2=X/op3=Y/op4=触点旗标/op5=项[3]，无触点写 op1=0。**PARTIAL**（缓冲填充来源未建模）；handler=sub_431BA0（raw .c 40776-40826） |
 | 0x2FD | 6 |  | sub_431CF0 | 仅映射 |  |
-| 0x2FE | 1 |  | sub_4332D0 | 已核对 | **set-font（校验列表）**：读 op1 字体名，调 `sub_432DD0(_this+21324, font)` 校验在可选字体列表中、拷字体名字段、`sub_45A6E0` 重建；不在列表则警告。handler=sub_4332D0（raw .c 41052） |
+| 0x2FE | 1 |  | sub_4332D0 | 已核对 | **set-font（校验列表）**：读 op1 字体名，调 `sub_432DD0(_this+21324, font)` 校验在可选字体列表中、拷字体名字段、`sub_45A6E0` 重建；不在列表则警告。handler=sub_4332D0（raw .c 41812） |
 | 0x2FF | 2 |  | sub_426940 | 已核对 | **置语音通道音量因子预备位**：`Engine[21318+op1] = 1`（Voice `[286+ch]` 低位置 1）、`Engine[21321+op1] = op2`（`[289+ch]` 音量因子；`0x2710`=10000=100%）。全库 **14124** 处；与 0x302 配对（0x302 置 `0x10000` 并真正下发）。handler=sub_426940（raw .c 33728-33740） |
 | 0x300 | 3 |  | sub_426990 | 已核对 | **消息槽标志/取值**：读 op1=槽、op2=标志、op3=值 ⇒ `Engine[op1+122466] = op2 ｜ (旧值 & 0x10000)`（保留 bit16）、`Engine[op1+122476] = op3`；handler=sub_426990（raw .c 33743-33757） |
 | 0x301 | 1 |  | sub_4269F0 | 已核对 | **清消息槽绘制项**：`Engine[op1+122486] = 0`，再 `sub_404F80(Font, op1)`：把窗对象 `+132`（显现游标）清 0，并按 id 区间删两组 DrawItem `[+104, +108)` 与 `[+276, +280)`；handler=sub_4269F0（raw .c 33759-33766） |
 | 0x302 | 2 |  | sub_426A30 | 已核对 | **设语音通道音量因子 + 应用语音音量**：读 op1=通道、op2=音量因子（0..10000） → `Engine[21318+op1] = 0x10000`（Voice `[286+ch]` 置「有因子值」）、`Engine[21321+op1] = op2`；再 `sub_4BBC30(Voice, op1, Engine[489996])`（raw 142681）：`设备[402+op1] = (Voice[286+op1]&0x10000) ? Voice[289+op1] : -1`，`sub_4B6210(设备, op1+12, 语音音量)` 下发。`Engine[489996]` = `sound:Volume3`（全局语音音量，`sub_4763D0` raw 90852）；因子最终在 `sub_4B6210` 里与通道音量、主音量相乘（raw 138711-138718）。用法：`CONFIGCV.txt:396-402/607`（CV 设定页按角色调音量，值 0x2710=100%）。全库 2 处。handler=sub_426A30（raw .c 33767-33777） |
-| 0x303 | 3 |  | sub_426A90 | 已核对 | **UI/消息对象字段**：读 op1/op2/op3 调 `sub_456600(_this+21324, op1, op2, op3)`，对选中对象写 `+288=op2`、`+292=op3`。handler=sub_426A90（raw .c 33256） |
+| 0x303 | 3 |  | sub_426A90 | 已核对 | **UI/消息对象字段**：读 op1/op2/op3 调 `sub_456600(_this+21324, op1, op2, op3)`，对选中对象写 `+288=op2`、`+292=op3`。handler=sub_426A90（raw .c 33780） |
 | 0x304 | 0 |  | sub_41A420 | 仅映射 |  |
 | 0x305 | 0 |  | sub_41B1C0 | 仅映射 |  |
 | 0x306 | 1 |  | sub_431FC0 | 已核对 | **纯配置 getter**：`op1 = GetConfig("system:EffectSkipOnClick")`（点击跳过特效开关；构造默认 1、配置文件可覆盖）。handler=sub_431FC0（raw 40948） |
 | 0x307 | 1 |  | sub_426AE0 | 仅映射 |  |
-| 0x308 | 1 |  | sub_426B20 | 已核对 | **输入触摸注册**：读 op1，调全局输入管理器 `sub_407B20(_this[96981], op1)`（LoadLibrary+GetProcAddress 注册/注销触摸），置 `_this[1954]`。handler=sub_426B20（raw .c 33282） |
+| 0x308 | 1 |  | sub_426B20 | 已核对 | **输入触摸注册**：读 op1，调全局输入管理器 `sub_407B20(_this[96981], op1)`（LoadLibrary+GetProcAddress 注册/注销触摸），置 `_this[1954]`。handler=sub_426B20（raw .c 33808） |
 | 0x309 | - |   | sub_432000 | 仅映射 |  |
-| 0x30A | 2 |  | sub_426B60 | 已核对 | **SetGesKey**：读 op1=值、op2=索引；`op1>0x1F` 或 `op2>7` 抛 ShowMessage「SetGesKey」，否则写 `_this[op2+1969]=op1`。handler=sub_426B60（raw .c 33292） |
-| 0x320 | 10 | create-mesh | sub_432150 | 已核对 | **顶点网格配置**：读 op1/9/10 及多操作数；`op9>0` 时申请缓冲、用 key `_this[388236]`（ROL11^XOR^ROR25）解码顶点，`sub_4ADFE0(_this+322832, obj, …)` 配置网格（顶点+索引+材质）；`op9≤0` 报「頂点数%dは不正です．」。fire-and-forget。handler=sub_432150（raw .c 40262）。旧 label `u0043AA20` |
+| 0x30A | 2 |  | sub_426B60 | 已核对 | **SetGesKey**：读 op1=值、op2=索引；`op1>0x1F` 或 `op2>7` 抛 ShowMessage「SetGesKey」，否则写 `_this[op2+1969]=op1`。handler=sub_426B60（raw .c 33819） |
+| 0x320 | 10 | create-mesh | sub_432150 | 已核对 | **顶点网格配置**：读 op1/9/10 及多操作数；`op9>0` 时申请缓冲、用 key `_this[388236]`（ROL11^XOR^ROR25）解码顶点，`sub_4ADFE0(_this+322832, obj, …)` 配置网格（顶点+索引+材质）；`op9≤0` 报「頂点数%dは不正です．」。fire-and-forget。handler=sub_432150（raw .c 41012）。旧 label `u0043AA20` |
 | 0x321 | 3 |  | sub_426BD0 | 已核对 | **MeshEntry 属性**：`sub_4AE280(Scene, op1, op2, op3)` → `sub_40DC30(Scene+1064, &op1)` 取网格项后 `entry[op2 + 7] = op3`。handler=sub_426BD0（raw 33839-33850）。语料 1 处。emulator：`OPS` 的 `op_set_mesh_entry_attr` → `native.setMeshEntryAttr`。 |
-| 0x322 | 4 |  | sub_426C20 | 已核对 | **set-vertex-color**：读 op1=网格id、op2/3/4；op3/op4 作颜色分量（clamp/回退），组装 32 位色 → `sub_4AE2C0(_this+80708, op1, op2, color)` 写网格顶点色。handler=sub_426C20（raw .c 33324） |
-| 0x323 | 5 |  | sub_426CF0 | 已核对 | **set-vertex-color-alpha**：读 op1=网格id、op2/3/4/5；组装色（含 alpha）→ `sub_4AE330(_this+80708, op1, op2, op3, color)` 写网格顶点色+alpha。handler=sub_426CF0（raw .c 33358） |
+| 0x322 | 4 |  | sub_426C20 | 已核对 | **set-vertex-color**：读 op1=网格id、op2/3/4；op3/op4 作颜色分量（clamp/回退），组装 32 位色 → `sub_4AE2C0(_this+80708, op1, op2, color)` 写网格顶点色。handler=sub_426C20（raw .c 33853） |
+| 0x323 | 5 |  | sub_426CF0 | 已核对 | **set-vertex-color-alpha**：读 op1=网格id、op2/3/4/5；组装色（含 alpha）→ `sub_4AE330(_this+80708, op1, op2, op3, color)` 写网格顶点色+alpha。handler=sub_426CF0（raw .c 33888） |
 | 0x324 | 0 |  | sub_41A470 | 已核对 | **销毁 3D 天气/粒子效果**：`sub_41A470` 取 `Engine[93384]`（= 字节 `0x5B320` = `Scene+50704`）= **3D 效果管理器**，尾调到 `sub_453530` → **thunk** `jmp sub_453150`（IDA 清单 135090-135093 标注 `Attributes: thunk`）⇒ `sub_453150`(raw 65366) **释放管理器的三个效果对象** `[258]`=Rain / `[259]`=Snow / `[260]`=Leaf（各自 `(**v)(v,1)` 析构 + 置 0）并把 `[312]`（字节 `+0x4E0`）清零。★**订正**：旧注"消息/文本子系统方法；调外部弱符号 `sub_453530`（本文件无实现）"是**误判** —— 它是可跟到底的 thunk，且属 **3D 效果族**（与 `0x325`/`0x326`/`0x327`/`0x328` 同一对象），**不是影片族**。无操作数回写。emulator：`ENGINE_INTERNAL_OPS`（待实现，见 `stub-reaudit-2026-09.md`）。handler=sub_41A470（raw .c 25403） |
 | 0x325 | 2 |  | sub_426DC0 | 已核对 | **3D 效果管理器字段写入**：`Engine[93384]` 的 `[+0x4D8] = op1`、`[+0x4DC] = op2`（`sub_426DC0` raw 33925，汇编 `mov [esi+4D8h], eax` / `mov [esi+4DCh], edi`，清单 61815-618FD）。不写操作数；emulator：`ENGINE_INTERNAL_OPS`（待实现）。handler=sub_426DC0 |
 | 0x326 | 4 |  | sub_426E10 | 已核对 | **Set3DEffect_snow_**：`sub_418340(Scene, op1, f2, op3, op4)` —— 错误串「関数：Set3DEffectSnow エラー：テクスチャが作成されていません．TEXTURE=%d」（raw 23942）。`Scene+46668 >= 1` 门槛内：对纹理槽 `op4` 惰性建**共享** `ID3DXEffect`（`D3DXCreateEffectFromResourceA` 资源 202，存 `Scene+46496`），再 `sub_453330(管理器, op1, f2, op3, 纹理对象, effect)` **重建 Snow 对象**（`operator new(0xE4)` + `sub_4B58C0`，`_this[0] = &Snow___vftable_`）。不写操作数。emulator：`ENGINE_INTERNAL_OPS`（待实现）。handler=sub_426E10（raw .c 33941） |
@@ -550,7 +550,7 @@
 | 0x33D | 3 |  | sub_4279B0 | 仅映射 |  |
 | 0x33E | 5 |  | sub_427A00 | 仅映射 |  |
 | 0x33F | 3 |  | sub_427A90 | 仅映射 |  |
-| 0x340 | 1 |  | sub_427B60 | 已核对 | **渲染状态下发**：写状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22，设备在 raw 122124 重放）。handler=sub_427B60 → sub_49A2D0（raw 116790） |
+| 0x340 | 1 |  | sub_427B60 | 已核对 | **渲染状态下发**：写状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22，设备在 raw 122124 重放）。handler=sub_427B60 → sub_49A2D0（raw 116869） |
 | 0x341 | 2 |  | sub_427BA0 | 已核对 | **Live2D 模型加载**：读 op1（文件名/资源 id）、op2 → `sub_4559C0(资源表, 主窗口, op1, &dwBytes)` 读文件进内存 → `sub_455560` 建句柄 → `sub_4A1860(Engine+322832, 资源表, op1, hFile, dwBytes, op2)`；失败 ⇒ `sub_455C60` 释放 + **抛异常**。**PARTIAL**（内部未建模；桩实现不得抛）。handler=sub_427BA0（raw .c 34461） |
 | 0x342 | 1 |  | sub_427C70 | 已核对 | **销毁 Live2D 模型实例槽**：`objects[op1]`（`Scene+55812`+4·op1，**10 槽**）非空则 `sub_4785E0` 析构 + `operator delete` + 置 0。handler=sub_427C70 → sub_4A1A60（raw 121745）。（旧称"释放图形资源槽"为误） |
 | 0x343 | - |   | sub_41A4E0 | 仅映射 |  |

@@ -25,13 +25,9 @@ import { Engine, Frame, CHAR_REVEAL_ACTIVE } from '../src/vm/engine.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
-const str = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 function mk(native: StubNative | HeadlessScene = new StubNative(() => {})): {
   e: Engine;
@@ -326,6 +322,40 @@ test('★闸门窗在泵贴出前不得可见：revealedOf = 0（不是 -1），
   }
   assert.ok((e.msgwin.revealedOf(9) ?? 0) > 0, `泵推进后应开始逐字出现（泵了 ${frames} 帧）`);
   assert.ok(native.scene.msgWins.get(9)!.revealed > 0);
+});
+
+/**
+ * ★2026-09 反馈回归：「文字会在逐字出现前**完整出现**一下」（SN0000 首文案）。
+ *
+ * 字格门窗（`0x73` 置 `win+88` 总门）在引擎里是"整页排版进离屏表面 → 主循环在**逐字模式**
+ * 里逐格 `sub_45A940` 拍到屏幕"⇒ `0x72 wait-for-input` 武装之前屏幕上**一个字都没有**。
+ *
+ * 语料里 `i073` 与文本的顺序不固定（`SN0000.txt:1240` 在本页文本之后、`1081` 在页首），
+ * 而总门自序章首屏起恒为 1 ⇒ "文本入队（`0x6E`）→ 页末 `0x73`/`end-text-line`（`emitWin`）
+ * → `0x72` 武装"之间存在一帧"无显现状态"的发布窗口。若把"无显现状态"解释成 −1（全部），
+ * 那一帧就是整页先亮一次、随后被逐字从头重播（正是用户看到的现象）。
+ */
+test('★字格门窗在 0x72 武装前不得整页可见：revealedOf = 0（不是 -1）', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  step(0x80, [im(8)]);
+  step(0x73, grid(8, -5, 56)); // 上一页留下的字格（总门 = 1）
+  step(0x71, [im(8)]); // 本页开始：清窗
+  step(0x6e, [im(0), str('由两个世界融合而生的')]);
+  step(0x6f, [im(0)]);
+  assert.equal(e.msgwin.gridOf(8)?.gate, true, '字格总门仍在（0x73 之后没有任何东西清它）');
+  assert.equal(e.msgwin.revealedOf(8), 0, '★武装前 = 0 字（-1 会让整页先亮一次）');
+  assert.equal(native.scene.msgWins.get(8)?.revealed, 0, '渲染模型里也必须是 0 字');
+  step(0x73, grid(8, -5, 56)); // 页末再设一次（SN0000 的实际顺序）
+  assert.equal(e.msgwin.revealedOf(8), 0, '0x73 自己的 emitWin 也不得把整页放出来');
+
+  // 0x72 武装后逐步显现：8 格 ⇒ 一步 ceil(10/8)=2 字，节拍 100ms（5 拍显完）
+  step(0x72, [im(8)]);
+  assert.equal(e.msgwin.revealedOf(8), 0, '武装当帧仍是 0 字');
+  e.serviceTextReveal(100);
+  assert.equal(e.msgwin.revealedOf(8), 2, '第一拍 ⇒ 一格 = 2 字');
+  for (let t = 200; t <= 800; t += 100) e.serviceTextReveal(t);
+  assert.equal(e.msgwin.revealedOf(8), 10, '整页显完');
 });
 
 test('分类契约：0x73/0x1CE 已从 engine-internal 表移除（否则真实现被 no-op 掩盖）', () => {

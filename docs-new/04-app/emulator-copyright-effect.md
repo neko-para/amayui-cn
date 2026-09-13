@@ -87,7 +87,7 @@ if (v17 & 0x8000000)                → sub_411900 + 清 scene + present(sub_4B4
 - 新增**渲染帧循环**（Pixi `ticker`/`requestAnimationFrame`），每帧：
   1. `clockMs = now - t0`（单调墙钟，等价 `this[46500]`）；
   2. 对每个有动画窗的对象求值（`calcDiffuse`/`drawItemAlpha`）；
-  3. `present()`：清空 `drawRoot` → 按 LAYER 升序画 draw-items（`spr.alpha = itemAlpha/255`）→ 按 handle 升序画 meshes（黑覆盖层 `alpha = calcDiffuse>>24 / 255`）。
+  3. `present()`：清空 `drawRoot` → 按 LAYER 升序画 draw-items（`spr.alpha = itemAlpha/255`）→ 按 handle 升序画 meshes（★2026-09 起按**真实顶点四边形 + 真实颜色**合成：轴对齐走 `Graphics.rect()`，颜色 = 逐顶点基础色 × `CalcDiffuse` 态色）。
 - **与 VM 指令解耦**：不再"每指令渲一次"，而是"每帧重绘整个图"。
 
 ### (c) 门控派发（script dispatch gating）
@@ -121,9 +121,14 @@ interface Mesh {
 
 ```ts
 function calcDiffuse(m: Mesh, clock: number): number {
-  const w = m.anim!;
-  if (w.count <= 0) return m.state1;
-  if (clock >= w.start + w.delay + w.count) return m.state1;
+  // ★2026-09 订正：**没有动画窗时返回 state0**（= 顶点缓冲里那份"当前可见色"），不是 state1。
+  //   引擎：`0x322` 写完 state0 立刻以比例 0 刷 VB（`sub_4AE2C0` raw 132816-132823）、
+  //   `0x323` 只置窗与 state1 不碰 VB（raw 132834-132843）、窗末 state0←state1 后再刷 VB。
+  //   返回 state1 会让"设色 → 开窗"之间的那一帧变透明（SN0000 进场时背景闪一下）。
+  if (!(m.flags & 2) || !m.anim) return m.state0;
+  const w = m.anim;
+  if (w.count <= 0) return m.state0;
+  if (clock >= w.start + w.delay + w.count) return m.state0; // 窗末：state0 已被收尾逻辑置成 state1
   if (clock <= w.start + w.delay) return m.state0;
   const a = (clock - w.start - w.delay) / w.count;
   return lerpArgb(m.state0, m.state1, a);
@@ -146,10 +151,13 @@ function drawItemAlpha(it: DrawItem, clock: number): number {
 
 ```
 clear drawRoot;
-for (it of drawItems sorted by layer asc, handle asc)
-   Sprite(裁剪 src)——spr.alpha = drawItemAlpha(it, clock)/255
-for (m of meshes sorted by handle asc)
-   黑覆盖层 Sprite(unit 全屏)——spr.tint=0x000000, spr.alpha=(calcDiffuse(m,clock)>>24)/255
+# ★2026-09 订正：不再是"draw-item 全画完再画 mesh"，而是**三路归并**（与引擎 `sub_4B06D0` 同构）：
+#   draw-item 键 = layer、文本窗键 = layerOfFrame、mesh 键 = handle；同键序 = item → text → mesh
+for (node of merge(drawItems, textWins, meshes) by key asc)
+   if (node is drawItem)  Sprite(裁剪 src)——spr.alpha = itemColor(it, clock) 的 alpha /255
+   if (node is textWin)   文本纹理 Sprite（前 revealed 个字形）
+   if (node is mesh)      mesh 四边形(按 0x320 顶点几何; 轴对齐走 rect())
+                          ——fill({color: 逐顶点基础色×态色, alpha: 态色 alpha/255})
 ```
 mesh#1（state0 0xff→state1 0x00）alpha 1→0 淡出=揭示；mesh#2（0x00→0xff）alpha 0→1 淡入=整体淡出。文字层 image alpha（0→255）渐显，阴影随纹理自身 alpha 保留。
 

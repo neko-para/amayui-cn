@@ -20,14 +20,11 @@ import { formatNumberCell } from '../src/vm/handlers/msgwin.js';
 import { dec, enc } from '../src/vm/bits.js';
 import { ITEM_TEXT, ITEM_VOICE, ITEM_GROUP_START } from '../src/vm/textItems.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 /** 本帧 int 槽（type 0x9）—— 只有池操作数能做**写目标**，立即数不行。 */
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 interface Harness {
   e: Engine;

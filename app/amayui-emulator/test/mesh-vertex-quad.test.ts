@@ -102,6 +102,26 @@ test('CalcDiffuse 窗末冻结在 state1：50% 黑幕的最终色必须是 0x800
   assert.equal(at(6145) >>> 0, 0x80000000, '窗末 = state1（50% 黑，背景仍可见）');
 });
 
+test('★回归：没有动画窗时 mesh 可见色 = state0（不是 state1）—— SN0000 进场黑幕不许在设色与开窗之间闪出背景', () => {
+  // 引擎的可见色是**顶点缓冲里那份**：`0x322`（sub_4AE2C0 raw 132816-132823）写 entry[13]=state0 后
+  // 立刻以比例 0 刷 VB ⇒ 当帧可见；`0x323`（sub_4AE330 raw 132834-132843）只置 bit1/delay/dur/state1，
+  // **不碰 VB** ⇒ 在 `set-vertex-color` 与 `set-vertex-color-alpha` 之间（未开窗）看到的仍是 state0。
+  const m = fullScreenMesh();
+  m.state0 = 0xff000000; // 0x322 写的：全黑、不透明
+  m.state1 = 0x00000000; // 尚未写（引擎里是 -1"无 TO"）
+  assert.equal(m.anim, undefined, '未开窗');
+  assert.equal(meshColor(m, calcDiffuse(m, 1000)) >>> 0, 0xff000000, '未开窗 ⇒ 全黑幕必须可见（此前返回 state1=0 ⇒ 透明 ⇒ 背景闪一帧）');
+
+  // 开窗（0x323）后：延迟期仍是 state0，窗内插值，窗末冻在 state1
+  m.flags |= 2;
+  m.anim = { start: 1, delay: 100, dur: 3600 };
+  assert.equal(meshColor(m, calcDiffuse(m, 50)) >>> 0, 0xff000000, '延迟期保持 state0（黑）');
+  assert.equal(meshColor(m, calcDiffuse(m, 4100)) >>> 0, 0x00000000, '窗末 = state1（透明，背景露出）');
+  assert.equal(m.flags & 2, 0, '窗末清 bit1');
+  assert.equal(m.state0 >>> 0, 0x00000000, '窗末 state0 ← state1（此后可见色继续由 state0 决定）');
+  assert.equal(meshColor(m, calcDiffuse(m, 5000)) >>> 0, 0x00000000, '窗末之后仍是 state0（= 新的当前色）');
+});
+
 test('mesh 颜色 = 基础色 × 态色：SN0000 的"50% 黑幕"必须是 alpha=0x80，而不是 255', () => {
   const m = fullScreenMesh();
   assert.equal(meshColor(m, 0x80000000) >>> 0, 0x80000000, '不透明黑幕会把背景与首文案一起吃掉');

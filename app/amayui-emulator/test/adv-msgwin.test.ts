@@ -29,15 +29,11 @@ import { revealInterval } from '../src/vm/msgwin.js';
 import { layoutWindow } from '../src/text/layout.js';
 import { styleOfWin } from '../src/vm/handlers/msgwin.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
-const str = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 /** 本帧 int 槽（type 0x9）—— 只有池操作数能做**写目标**，立即数不行。 */
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 function mk(): { e: Engine; f: Frame; step: (op: number, args?: BinArg[]) => void } {
   const native = new StubNative(() => {});
@@ -245,11 +241,13 @@ test('热点表：命中测试设游标；表满 100 时抛错（引擎同样抛
   assert.throws(() => step(0x090, [im(0), im(0), im(1), im(1), im(1), im(2), im(3)]), /热点表已满/);
 });
 
-test('★等待推进门：点中热点 → 跳到该热点的 labelC（引擎 sub_411BC0 的真实路径）', () => {
+test('★等待推进门：点中热点 → 跳到该热点的 labelNext（`sub_403E70` 的 [259+i]）', () => {
   const { e } = mk();
-  // 造一个带 labelMap 的帧：label 0x10b4 → 指令下标 7
+  // 造一个带 labelMap 的帧：三个 label 各自映射到不同指令下标，以便区分走的是哪一条
   const f = e.curScript();
-  f.labelMap.set(0x10b4, 7);
+  f.labelMap.set(0x1078, 3); // labelA / labelNext（"下一页"）
+  f.labelMap.set(0x10a4, 5); // labelB / labelPrev
+  f.labelMap.set(0x10b4, 7); // labelC（**键盘**命中目标，`sub_403D70`）
   OPS.get(0x090)!(
     makeCtx(e, f, instr(0x090, [im(0), im(0), im(500), im(720), im(0x1078), im(0x10a4), im(0x10b4)]), e.native, () => {}),
   );
@@ -259,7 +257,27 @@ test('★等待推进门：点中热点 → 跳到该热点的 labelC（引擎 s
   e.input.pressMouse(0);
   assert.equal(e.serviceAdvanceWait(), true, '点到热点 ⇒ 推进');
   assert.equal(e.awaitingAdvance, false);
-  assert.equal(f.ip, 7, 'ip 应被重定位到热点 labelC 对应的指令');
+  // ★2026-09 订正：`sub_403E70`（raw 9918-9930）在游标命中且本帧按下时
+  //   `return _this[v2 + 259]` = **labelA = labelNext**；`[459+i]`（labelC）是 `sub_403D70`
+  //   的**键盘**命中目标。曾错用 labelC ⇒ 点一下会跳到"清窗重贴本页"那条 label
+  //   （用户实测："点击推进时先整句显示 → 清掉 → 又从零逐字"）。
+  assert.equal(f.ip, 3, 'ip 应被重定位到 labelNext 对应的指令（不是 labelC 的 7）');
+});
+
+test('★等待推进门：右键（反向）走 labelPrev（`sub_403E70` 的 [359+i]）', () => {
+  const { e } = mk();
+  const f = e.curScript();
+  f.labelMap.set(0x1078, 3);
+  f.labelMap.set(0x10a4, 5);
+  f.labelMap.set(0x10b4, 7);
+  OPS.get(0x090)!(
+    makeCtx(e, f, instr(0x090, [im(0), im(0), im(500), im(720), im(0x1078), im(0x10a4), im(0x10b4)]), e.native, () => {}),
+  );
+  OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
+  e.input.setCursor(100, 100);
+  e.input.pressMouse(1); // 右键
+  assert.equal(e.serviceAdvanceWait(), true);
+  assert.equal(f.ip, 5, '右键 ⇒ labelPrev');
 });
 
 test('headless forceAdvance：无输入源时确定性跳到第一个热点 label', () => {

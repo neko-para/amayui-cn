@@ -8,15 +8,21 @@
 
 ## 定位与现状
 
-- **当前阶段**：**M0–M3 里程碑已达到**——解释器已能从 `SYSTEM4.BIN`（index 0）一路执行，经过全部数据表 INIT 脚本（AMINIT2 / WDINIT / ALINIT / EBINIT / ITINIT / SKINIT / CGINIT / BTANINIT2…），正确运行到 **`TITLE.BIN`（622 条指令）执行点**——这是 `docs/03` 的第一里程碑。`npm test` 12/12 通过（含 5 条指针模型测试），`tsc` 干净。TITLE 其后进入 Live2D/消息主循环（`setL2DMOC`、等待输入），M0 无界面 stub 使其停在消息循环，属预期。
-- **第一里程碑**（对应 `docs/03` 的 M0–M3）：**在无任何界面层输入/输出的前提下，让解释器执行启动链，并正确运行到 `src/TITLE.txt`（游戏开始界面脚本）的执行点。**（✅ 已达成）
+- **当前阶段**（2026-09 实测）：启动链 `SYSTEM4.BIN(0) → … → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 已跑通且**零未实现 opcode**；`npm run verify` 全绿（**380 测试** + 3×tsc + 死写棘轮）。渲染壳（场景合成 / ADV 文本 / 音频 / 输入）、三闸门（意图丢弃 / 能力缺口 / 死写）、SAVE.DAT 读写与 overlay 保护全部接通。链路与产物的复核命令：`npm run op:inventory -- --path start`、`npm run shot -- --gamestart`、`npm run report`。
+  架构总览见 `docs-new/04-app/emulator.md`；本文余下章节是**实现细节与事故复盘**（互补，不重复）。
+  ★本行此前的"M0–M3 / `npm test` 12/12 / 停在消息循环"已过期（当时只跑到 TITLE）。
+- **第一里程碑（历史）**：在无任何界面层输入/输出的前提下让解释器执行启动链到 `src/TITLE.txt` 的执行点 —— ✅ 已达成（后续 M4+ 的界面/文本/音频/存档均已落地，见上）。
 - **技术前提（用户已确认）**：JS 可安全操作 2^53 内的整数/double，除非引擎使用 int64——当前引擎为 x86 32 位，未见 int64，故可用 `number`（配合显式 32 位位运算）。
 
 ---
 
 ## 快速导航
 
-| 文档 | 内容 |
+> ⚠️ **下面 `./docs/*.md` 一批是 2026-09 之前的工程文档，已作废**（`docs-new/README.md` 的权威声明：新来源只有 `docs-new/` + `analysis/`）。
+> 只作历史参考；事实以 `docs-new/03-engine/`（生成物）+ `analysis/*.json`（真源）+ `engine/天结_unpacked.exe_utf8.c`（反编译基准）为准。
+> 本工程**现行**文档 = 本 README（实现细节）+ `docs-new/04-app/emulator.md`（架构总览）。
+
+| 历史文档（已作废） | 内容 |
 |---|---|
 | [`docs/01-background.md`](./docs/01-background.md) | 引擎是什么、逆向已解/未解、对重写的影响 |
 | [`docs/02-architecture-decisions.md`](./docs/02-architecture-decisions.md) | 关键架构决策（ADR）：启动层级、对象模型、NativeBridge、未实现 opcode 硬报错、32 位语义、BIN 读取器、**函数级状态追踪（ADR-010）** |
@@ -119,7 +125,7 @@ CHECKCONFIG      i2de 字体名→下标（装不上 ⇒ 回退默认并重新 s
 SYSTEM4.txt:71   load-int (global-int 5)  ← 判据：SAVE.DAT 里有「已初始化」标志就走 LOADCONFIG，否则 INITCONFIG
 ```
 
-### ★ADV 文字速度（`message:MessageSpeed`）= **每字毫秒**
+### ★ADV 文字速度（`message:MessageSpeed`）= **每字毫秒**（**字格页例外，见下**）
 
 设置界面「显示速度」滑条 → `CONFIG1.txt:2286` `i1b5 (100 - 滑条值)` → `0x1B5` 写
 `Font+1376`（= `Engine[21668]`）**且**写配置 `message:MessageSpeed`；显现泵 `sub_409400` 每
@@ -133,6 +139,13 @@ SYSTEM4.txt:71   load-int (global-int 5)  ← 判据：SAVE.DAT 里有「已初�
   1..99ms/字 被压成 ~50..300ms/页 ⇒ 用户实测"文字出现的速度几乎没有变"。修后实测：
   42 字页 1ms ⇒ 0.7s（被帧率地板住）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。
   守卫：`test/adv-msgwin.test.ts` 的速度定律 + `test/option-font-speed-menu.test.ts`。
+- ★**字格页（`i073`，序章/NOVEL/SYSTEM4 共 27 处）不走这条**：主循环 raw 20887-20895 每拍只做
+  `sub_45A940(Font, 窗, k, 0)` + `k = (k+1) % 模数`，而 `k` 是**字格下标**（raw 71392-71412 用
+  `(k%cols)*cellW` 算该格矩形），模数 = `win+92` = `i073` 的 op9 ⇒ **一步一格、节拍 = op10**、
+  整段 = `cells × op10`（SN0000 序章：8 × 100ms = **800ms**），与 `MessageSpeed` 无关。
+  emulator：`RevealState.stepGlyphs = ceil(字数/cells)`（逐字可见但总时长对齐引擎）。
+  ★2026-09 修前按"一字一拍"⇒ 该页 58 字 = 5.8s（用户实测"SN0000 比设置界面慢很多"）；
+  守卫：`test/char-reveal.test.ts` 的「字格页的步长 = 一格」。
 - 脚本还会用 `i07f`(读) / `i074`(只写字段) 做"这一段立即显示"（`i074 0` … 还原），见 `0x74`/`0x1B5` 的差别。
 
 引擎把这两张表（`Font+5452` str→int / `Font+5472` str→str）序列化进 `SAVE.DAT`
@@ -604,12 +617,21 @@ npm run shot -- --gamestart     # 右上角 Game Start → 配置界面 ゲー�
 npm run boot:time               # 只量"启动 → 到 TITLE 用了多久"（分辨「慢」与「卡住」）
 ```
 
-> ★`--gamestart` 的现状（2026-09）：**TITLE / GAMESTART 正常出图**，进 `SN0000` 后**整屏黑** ——
-> 根因不是本路径的 opcode，而是 **mesh 被近似成全屏黑叠加块**（`presenter.ts` 的 "顶点色黑覆盖层"：
-> `0x320` 的顶点几何与 `0x322` 的顶点下标都没建模）。用同一趟还发现并修掉了一个真缺陷：
-> `0x1F9 set-texture` 是**同步装载**而渲染侧走异步 IPC ⇒ 紧随其后的 `0x208` 会读到 `0×0` 并被写进
-> 绘制项的源矩形（背景永远画不出来）。修法见 `renderer/app/session.ts` 的 `#awaitTextureBound`
-> 与 `docs-new/03-engine/scene-start-flow.md` §4。
+> ★`--gamestart` 的现状（2026-09 已修）：**TITLE / GAMESTART / SN0000 序章都正常出图**
+> （背景 + 首文案 + 右侧菜单；产物 `.tmp/gsLayout-7-sn0000-first-text.png`）。
+> 修掉的两件事都属"VM 正常、日志空白、画面错"那一类：
+> ① **mesh 被近似成全屏黑叠加块**且忽略 RGB（`presenter.ts`），加上 `0x322/0x323` 漏掉引擎的
+> "负值 = 用当前 state0"回退 ⇒ 序章的 **50% 暗幕**（`0x19640`，`0x80000000`）被算成不透明黑 ⇒ 整屏黑。
+> 现在 `0x320` 的顶点几何/逐顶点色按引擎语义建模（op2..op8 是**数组基址**），presenter 用真实几何 + 真实颜色
+> （轴对齐走 `rect()`；★`poly()` 喂 4 个条带序顶点会因自交画出全屏大 X）。
+> ② 首文案位置：文字块原点来自 **`0x7A` 覆盖值**（序章 (140,300)）、对齐 `0x303 8 1 1f4` 的
+> **行中心 = 140+500 = 640**（旧实现按"对齐宽度"算 ⇒ 文字跑到左上角）。
+> 守卫：`test/mesh-vertex-quad.test.ts`、`test/text-layout.test.ts`、`test/char-reveal.test.ts`。
+> 另外这一轮还发现并修掉一个真缺陷：`0x1F9 set-texture` 是**同步装载**而渲染侧走异步 IPC ⇒
+> 紧随其后的 `0x208` 会读到 `0×0` 并被写进绘制项的源矩形（背景永远画不出来）。修法见
+> `renderer/app/session.ts` 的 `#awaitTextureBound` 与 `docs-new/03-engine/scene-start-flow.md` §4。
+> 还有一个**过渡帧**问题：撤掉满屏幕布后，`SAFETY_PER_FRAME` 批边界可能落在"旧图元未清、新幕未建"的
+> 脚本级 teardown 中间 ⇒ 配置界面闪一下；修法见 `pixiBackend.#holdFrameAfterCurtainDrop`（不暂存这些布那一帧）。
 
 > ★**截图工具必须关掉 Chromium 的后台节流**（`tools/shot.cjs` 顶部三行 `app.commandLine.appendSwitch`）：
 > 主进程是脚本自己、窗口不在前台时，`requestAnimationFrame` 会被降到极低频 ⇒ 渲染循环几乎不推进 ⇒
@@ -777,13 +799,16 @@ WenQuanYi 时代理由都已作废；`fontFileList()` 也改成"只列真面"（
 | **惰性创建** | `if (!slot) 建` 形态的子系统对象（effect / 纹理槽 / mesh 槽 / L2D 槽 / 字体…）与释放点 |
 
 **当前体检（95 条）**：已核验 **17** / 已建模未核验 **7** / 部分 **20** / 缺失 **26** / n/a **25**
-（n/a 必须写明 why，由 `test/capability-ledger.test.ts` 强制）。**需要关注 53 条** —— 这就是
+（n/a 必须写明 why，由 `test/capability-ledger.test.ts` 强制）。**需要关注 56 条** —— 这就是
 "看起来都实现了、效果却有 bug"的量化答案。其中与 2D 表现直接相关的高风险缺口举例：
 
 - `transition-table-flush` / `clock-read-transition-window`：**转场表未建模** ⇒ wipe/淡入淡出过场不显示；
 - `scene-freeze-flag`(46512) / `scene-flag-46528-bits`：**动画强制冻结未建模** ⇒ 该冻的时候还在播；
-- `vertex-buffer-lock-scale`：**mesh 顶点几何未建模** ⇒ mesh 只能画成整屏色块；
-- `lazy-gdi-font-set`：**消息窗文本渲染未建模** ⇒ 文字不显示；
+- `vertex-buffer-lock-scale`：★2026-09 订正 —— 本条指的是**3D 顶点缓冲 Lock/Unlock + 视口缩放改写**（仍缺）；
+  曾经的"mesh 只能画成整屏色块"已由 `mesh-vertex-quad-and-per-vertex-color`（已核验 E3，`test/mesh-vertex-quad.test.ts`）修掉；
+- ~~`lazy-gdi-font-set`：**消息窗文本渲染未建模** ⇒ 文字不显示；~~ **症状描述已过期**：文本渲染由
+  `src/text/layout.ts` + `renderer/text/raster.ts` + `renderer/pixi/textLayer.ts` 实现（ADV 首文案可见）；
+  本条真正的残余是"引擎 GDI 字体对象的惰性创建/度量"在重写侧没有对应物（`0x205` 文本度量走近似）；
 - ~~`script-queue-dispatch`：**脚本派发队列未建模** ⇒ 依赖"延迟派发"的流程不会发生（`0x143` 是 no-op）；~~
   **已转真实现（E3）**：`append-pack-discovery-and-activation` —— `0x143`（`i143`）现在按 `FileDB.packs` 槽序
   派发每个已装载扩展包的 `$n$AUTORUN.BIN`（帧 37 + `-10` 哨兵链），见 `test/append-packs.test.ts`

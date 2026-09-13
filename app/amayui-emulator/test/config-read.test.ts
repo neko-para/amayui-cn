@@ -23,6 +23,7 @@ import { OPS } from '../src/vm/ops.js';
 import { parseIni } from '../src/engineConfig.js';
 import { dec } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
 /** 与随包 `SYS4REG.INI` 的 `[message]`/`[sound]` 段一致的最小配置。 */
 const INI = `[sound]
@@ -45,10 +46,8 @@ ReadTextSkip=0
 AdvanceMesOnWheel=0
 `;
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 /** 目标操作数必须是**可写**类型：local-int = 0x9。 */
 const li = (raw: number): BinArg => ({ type: 0x9, raw }) as unknown as BinArg;
-const str = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 const gstr = (raw: number): BinArg => ({ type: 5, raw }) as unknown as BinArg;
 /** local-string = 0x2（引擎的"字符串字面量"就用它携带 `str`）。 */
 const lstr = (raw: number): BinArg => ({ type: 0x2, raw }) as unknown as BinArg;

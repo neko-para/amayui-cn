@@ -21,8 +21,8 @@ import { ENGINE_FONT_LIST } from '../src/text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../src/vm/msgwin.js';
 import { dec } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const gstr = (v: number): BinArg => ({ type: 5, raw: v }) as unknown as BinArg;
 const lit = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 const locInt = (i: number): BinArg => ({ type: 9, raw: i }) as unknown as BinArg;

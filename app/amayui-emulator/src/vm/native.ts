@@ -143,7 +143,8 @@ export interface NativeBridge {
   getTextureSize?(slot: number): { w: number; h: number };
   /**
    * 0x245（sub_4251E0 → `sub_4081B0`）：**纹理对象的浮点参数**（`op2` 按常量缩放后写进该槽的 CTexture）。
-   * emulator 无 CTexture 对象 ⇒ 宿主可选实现（不实现 = 只落字段、缺口由闸门记）。语料 0 处。
+   * emulator 无 CTexture 对象 ⇒ 宿主可选实现（不实现 = 只落字段、缺口由闸门记）。
+   * ★语料用量（2026-09 实测）：`i245` = **0**、`i246` = **0**、`i249` = **20**（`i249` 已接线）。
    */
   setTextureObjectFloat?(slot: number, value: number): void;
   /**
@@ -242,7 +243,7 @@ export interface NativeBridge {
   /** `0x323` set-vertex-color-alpha：op2=delay、op3=count、op4=alpha、op5=rgb（同样允许负值）。 */
   setVertexColorAlpha?(handle: number, delay: number, count: number, alpha: number, rgb: number): void;
   /** 0x203 set-draw-color-alpha：置 from 色（ARGB）。 */
-  setDrawColorAlpha?(handle: number, from: number): void;
+  setDrawColorAlpha?(handle: number, from: number, blend: number): void;
   /** 0x1F7 detach-texture（sub_422BC0）：删单/区间图元。op1=handle、op2=count；count≤1 删单，count>1 删 [handle,handle+count)。 */
   detachTexture?(handle: number, count: number): void;
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */

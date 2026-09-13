@@ -127,8 +127,8 @@ export class StubNative implements NativeBridge {
       `[native:stub] setVertexColorAlpha h=0x${handle.toString(16)} d=${delay} c=${count} a=${alpha} rgb=0x${(rgb >>> 0).toString(16)}`,
     );
   }
-  setDrawColorAlpha(handle: number, from: number): void {
-    this.log(`[native:stub] setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}`);
+  setDrawColorAlpha(handle: number, from: number, blend: number): void {
+    this.log(`[native:stub] setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)} blend=${blend}`);
   }
   detachTexture(handle: number, count: number): void {
     this.log(`[native:stub] detachTexture h=0x${handle.toString(16)} count=${count}`);

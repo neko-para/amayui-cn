@@ -19,6 +19,7 @@ import { parseIni } from '../src/engineConfig.js';
 import { audioBootIntents } from '../src/vm/handlers/audio.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
 const INI = `[sound]
 Volume0=80
@@ -31,7 +32,6 @@ MusicFadeOnVoicePlaying=1
 KeepMusicVoice=1
 `;
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 
 /** 记录音频意图的宿主（其余走 StubNative 的记录实现）。 */
 class RecordingNative extends StubNative {

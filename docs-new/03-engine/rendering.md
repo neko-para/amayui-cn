@@ -100,11 +100,14 @@ else  // 完成/收尾
 
 ## 4. 渲染后端现状（app/amayui-emulator）
 
-- ✅ `PixiBackend`（PixiJS v8 WebGL）已改为 **引擎式"配置对象 + 每帧 present 合成"**：`drawItems`/`meshes` 两张以句柄为键的持久场景图；`present()` 按 layer/handle 升序合成（图在下、mesh 覆盖层在上），动画（mesh `#calcDiffuse`、draw-item `#itemAlpha`）逐帧求值（墙钟）；`sceneDirty`/`needsRender` 驱动引擎式 present（`0x400` 动画等待每帧 present）。**版权页 frame 效果已实现**（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现。
+- ✅ `PixiBackend`（PixiJS v8 WebGL）已改为 **引擎式"配置对象 + 每帧 present 合成"**：`drawItems`/`meshes` 两张以句柄为键的持久场景图；`present()` 做**三路归并**（draw-item 按 `layer`、文本窗按 `layerOfFrame`、mesh 按 `handle`，同键序 item→text→mesh —— 与引擎 `sub_4B06D0` 的"按 sort-key 归并"同构，见 §3.1），动画（mesh `calcDiffuse`、draw-item `itemColor`）逐帧求值（墙钟）；`sceneDirty`/`needsRender` 驱动引擎式 present（`0x400` 动画等待每帧 present）。**版权页 frame 效果已实现**（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现。
+  - ★2026-09 订正：此前这里是"**图在下、mesh 覆盖层在上**"（两表各自升序、mesh 整体后画）。那只是 LOGO 那一页的巧合；`sub_4B06D0` 实际把两表**归并**到同一个序（sort-key = 项的 `+12`/mesh 的 handle），所以 mesh 也会插在两图之间。SN0000 序章的实测层序 = 背景 `101000` → 淡入幕 `0x19258`(=`102488`) → 暗幕 `0x19640`(=`104000`) → 立绘 `104501+` → 文本 `105000`，正是归并序（旧实现会把两块幕布都压到文本之上 ⇒ 整屏黑）。
 - ✅ **mesh 已按真实几何 + 真实颜色合成（2026-09）**：见 §3.1 的顶点/颜色表；绘制门 = `entry[0]` bit0。
   轴对齐四边形走 `Graphics.rect()`，非轴对齐走三角扇 —— ★**不要用 `poly()` 一次喂 4 个条带序顶点**：Pixi v8 按给定顺序连点，`(0,0),(1280,0),(0,720),(1280,720)` 会自交成"蝴蝶结"，填充只剩上下两片 ⇒ 画面上出现贯穿全屏的大 X（实测）。
-- ✅ **撤幕留帧策略（emulator 侧，2026-09）**：撤掉**满屏覆盖幕**（`0x1F7` 删掉一个铺满视口的 mesh）后，最多跳过 `HOLD_MAX_FRAMES=8` 次 present，直到有新内容建立（`0x320`/`0x1FB`/`0x21D`）或 `0x1F6 clearDrawContainer`。
-  为什么需要：实测（`.tmp` 日志）批边界会落在"幕已撤、旧图元未清、新幕未建"的脚本级 teardown 中间，于是画出**一帧没有覆盖幕的旧场景**（`[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）—— 用户看到的就是"配置界面向黑渐变完成后又闪了一下"。这条是 **emulator 侧策略**（非引擎 opcode 语义）：引擎那边 present 由"场景脏 + 动画待播"驱动且**从不整屏清 backbuffer**（`ClearTarget` 被 `_this+46460&1` 守卫、该字段恒 0），撤幕帧屏上留的是上一帧的黑，而重写侧是"每批指令后整帧重合成"，粒度对不上。留帧只在**满屏幕布被撤**时生效且有上限，正常场景切换（撤幕 → 清容器 → 建新幕）只多留 1~2 帧。实现见 `pixiBackend.ts` 的 `#holdFrameAfterCurtainDrop`。
+- ✅ **撤幕留帧策略（emulator 侧，2026-09）**：撤掉**满屏覆盖幕**（`0x1F7` 删掉一个铺满视口的 mesh）后，最多跳过 `HOLD_MAX_FRAMES=60` 次 present（≈1 秒），直到**新内容真的可见**为止。
+  为什么需要：实测（`.tmp` 日志）批边界会落在"幕已撤、旧图元未清、新幕未建"的脚本级 teardown 中间，于是画出**一帧没有覆盖幕的旧场景**（`[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）—— 用户看到的就是"配置界面向黑渐变完成后又闪了一下"。这条是 **emulator 侧策略**（非引擎 opcode 语义）：引擎那边 present 由"场景脏 + 动画待播"驱动且**从不整屏清 backbuffer**（`ClearTarget` 被 `_this+46460&1` 守卫、该字段恒 0），撤幕帧屏上留的是上一帧的黑，而重写侧是"每批指令后整帧重合成"，粒度对不上。实现见 `pixiBackend.ts` 的 `#holdFrameAfterCurtainDrop`/`#releaseFrameHoldIfVisible`。
+  - ★2026-09 两处收紧（用户实测"进 SN0000 时**背景**闪一下"）：① **建项 ≠ 可见** —— 引擎建几何（`0x320`）与设色（`0x322`）是两条指令，中间那一帧的幕还是全透明 ⇒ 解除判据改成"`calcDiffuse` 出的颜色 alpha > 0"（`#releaseFrameHoldIfVisible`），`0x1F6 clearDrawContainer` 也**不再解除**留帧（改为续期）；② 上限 8 → 60 帧 —— 8 帧在慢机上不够跨过"撤幕 → 清容器 → 建新场景"这串脚本级操作。
+  - 日志可复现：`.tmp/amayui-emulator.log` 里 `[frame-hold] 满屏幕布 0x30d40 被撤 → …` → `createMesh 0x19258 颜色仍透明 → 继续留帧` → `setVertexColor 0x19258 → 新内容可见，解除留帧`（解除时刻的幕是**不透明黑**，与留帧中屏上那帧黑完全相同 ⇒ 无缝），随后才是 `setVertexColorAlpha 0x19258 … → state1=0` 的 3.6s 淡出。
 - ✅ 视口 1280×720；窗口 `useContentSize:true` + `win.setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清）。
 - ✅ 严格 flag：draw-item/mesh 只认 bit0|bit1，未知位（如 draw-item `&4`）抛 `UnknownFlagError` 中断；未实现 opcode 抛 `NotImplementedOp`。
 - ✅ 诊断日志：`log-line`/`log-line-sync` IPC → `app/amayui-emulator/.tmp/..`(实际 `E:\Games\Eushully\天結\.tmp\amayui-emulator.log`)；renderer 逐行/批次落盘 + 关窗同步兜底。

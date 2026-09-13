@@ -199,6 +199,15 @@ export function emitWin(e: Engine, win: number): void {
   });
 }
 
+/**
+ * `styleOfWin` 的**别名**，供 `vm/engine.ts` 使用。
+ *
+ * 为什么需要别名：engine 的闸门泵（`serviceWinReveal`）要排版该窗，需要同一份 style；
+ * 而 `engine → handlers/msgwin` 这条值依赖是既有的（见重构清单 §8 A2 循环）。别名只是把
+ * "engine 侧只读样式"的意图写清楚，等 `styleOfWin` 下沉到 `vm/msgwin-style.ts` 后即可删除。
+ */
+export const winStyle = styleOfWin;
+
 /** 发布全部"已知"窗口（全局样式变化时用 —— 字号/颜色/描边/竖排都是全局的）。 */
 export function emitAllWins(e: Engine): void {
   const wins = new Set<number>([...e.msgwin.slots.keys(), ...e.msgwin.wins.keys(), e.msgwin.defaultWin]);
@@ -222,7 +231,14 @@ export function readTextSkipOf(e: Engine): number {
  * ★历史错误：这里曾读 `message:MesWinAlpha`。引擎的 `Engine[21668]` 其实是 **MessageSpeed**
  * （raw 23736-23738 把 `message:MessageSpeed` 灌进 `Engine+86672`）；`MesWinAlpha` 从不进字段。
  */
-function messageSpeedOf(e: Engine): number {
+/**
+ * `message:MessageSpeed` 的**唯一**解析处（`Font+1376` = `Engine[21668]`，缺省回退到随包 INI 的配置键）。
+ *
+ * ★为什么必须唯一：引擎里它就是**一个字段**（`sub_41A5?` 写、显现泵读），
+ * emulator 曾在 `vm/engine.ts` 两处 + 本文件一处各写一遍同样的 `??` 回退
+ * ⇒ 任何一处漏掉回退（或改了键名）都会让"速度旋钮"只在部分路径生效。
+ */
+export function messageSpeedOf(e: Engine): number {
   return e.engineValues.get(21668) ?? (e.config ? cfgInt(e.config, 'message:messagespeed', 0) : 0);
 }
 
@@ -266,7 +282,13 @@ const op_show_text: OpHandler = (c) => {
   m.appendText(slot, text);
   m.flags &= ~0x10000;
   // 新内容入队 ⇒ 该窗的显现游标作废（引擎 `0x71` 会 idx=0 重头显示）
-  e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
+  const w = e.msgwin.resolveWin(slot);
+  e.msgwin.reveal.delete(w);
+  // ★2026-09 修（用户实测："文字会在逐字出现前**完整出现**一下"）：可见字形数**只在
+  //   `MsgWindow.revealedOf` 一处判决** —— 它已把"字格门（`0x73` 的 `win+88`）"与
+  //   "`0x300` 逐行泵"两条路径的"未武装 ⇒ 0 个"写进同一个例外里。
+  //   这里**不能**自己判断再发一份（曾在 `0x6E` 里单独发 `revealed: 0`，但紧随其后的
+  //   `0x6F end-text-line`/`0x73` 仍走 `emitWin` 发出 −1 ⇒ 中间那一帧照样整页先亮）。
   emitWin(e, slot);
   // 引擎 sub_41EB20：`sub_48F000` 非 0（仍在显示）才置 ADV，否则清 122455（并保持 ADV 清除）
   if (advanceReveal(e)) setAdv(e);
@@ -735,10 +757,13 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
 };
 
 // ---------------------------------------------------------------------------
-// 消息窗对象：文本块参数 / 颜色（2026-09 落地；`Font[win+261]` = `Engine[21585+win]` 对象）
-// 引擎里这三条与 `0x212`/`0x213`/`0x25D` 同族 —— 都写**窗对象**的固定偏移，只是偏移不同。
-// 语料 0 处调用（`i7a`/`i25c`/`i25e`/`i25f` 全 0），但它们是"对象属性面"的一部分，
-// 且**写的是有读者的对象字段**，因此按引擎语义建模到 `MsgObject`，不做 no-op。
+// 消息窗对象：文本块原点 / 块参数 / 颜色（`Font[win+261]` = `Engine[21585+win]` 对象）
+// 引擎里这几条与 `0x212`/`0x213`/`0x25D` 同族 —— 都写**窗对象**的固定偏移，只是偏移不同。
+// ★语料用量（2026-09 实测 `grep -c '^i0xx ' src/*.txt`）：`i07a` = **520**（win 1 共 506、win 8 共 12，
+//   用序章页每次 `i07a 8 8c 12c` 覆盖文字块原点）、`i303` = 252、`i073` = 27、`i079` = 10；
+//   而 `i25c`/`i25e`/`i25f` = **0**（无调用，但写的是有读者的对象字段 ⇒ 仍按引擎语义建真实现，不做 no-op）。
+//   历史错误：这里曾写"i7a/i25c/i25e/i25f 全 0"，据此外推成"0x7A 只是游标参数、与排版无关"，
+//   直接导致序章文字块原点被忽略（文字跑到左上角）。**别再用"语料 0 处"当"语义不重要"的证据。**
 // ---------------------------------------------------------------------------
 
 /**
@@ -1331,7 +1356,7 @@ export const MSGWIN_OPS: OpTable = [
   [0x213, op_msgwin_obj_range], // 对象 +104/+108
   [0x25d, op_msgwin_obj_range2], // 对象 +276/+280
   // ---- 消息窗对象：文本块参数 / 颜色（2026-09；`Font[win+261]`）----
-  [0x7a, op_msgwin_obj_pre48], // 对象 `[48]` 前两个 dword（文本项缓冲写游标参数）
+  [0x7a, op_msgwin_obj_pre48], // 文本块原点覆盖（写 buf[-20]/-16；默认来自 0x79 的文字起点）
   [0x25c, op_msgwin_obj_text_block], // 对象 +224：13 dword 文本块参数
   [0x25e, op_msgwin_obj_colors], // 对象 +256/+260/+272（颜色 + ARGB）
   [0x25f, op_msgwin_obj_colors2], // 对象 +264/+268（颜色 + ARGB）

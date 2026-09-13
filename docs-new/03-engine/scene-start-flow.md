@@ -169,10 +169,10 @@ SN0000 开场有一条 **80 秒**的背景横移动画窗，所以这个门会�
 | E1 | 25 条 handler 体逐条读过（raw 行号见 `opcode-table.md` / `functions.json`） |
 | E2 | `test/game-start-chain.test.ts`：25 条登录棘轮 + 16 条"不写操作数"棘轮 + 9 条语义用例（含 `0x1B6↔0x1B7` 往返、`0x215/0x218/0x21A` 与场景模型往返） |
 | E3 | 同文件的 E3 用例：真实语料跑完整链路 ⇒ `titleHover=0`、进入 `GAMESTART`、`gameStartHover=0`、`gameStartResult=1`、`reachedInitGame`、进入 `SN0000`、**首文案 ip=901 且页面文本含该串**、路径上 `unknown=[]` |
-| E4 | `npm run shot -- --gamestart`（`.tmp/gs2-*.png`）：TITLE / GAMESTART 正常出图；SN0000 **整屏黑** ⇒ 定位到 §4.2 的 mesh 缺口（并因此发现并修掉 §4.1） |
+| E4 | `npm run shot -- --gamestart`：**2026-09 现状 = TITLE / GAMESTART / SN0000 序章都正常出图**（`.tmp/gsLayout-7-sn0000-first-text.png`）。它抓到的两个缺陷都已修：§4.1 纹理同步屏障、§4.2 mesh 全屏黑叠加块；另有"撤幕过渡帧闪一下"由 `pixiBackend.#holdFrameAfterCurtainDrop` 处理 |
 | 工具 | `npm run op:inventory -- --path start`（表 0 = 路径上未实现指令，表 1/2/3 同既有口径） |
 
-`npm run verify` = 326/326（其中本主题新增 10 条）。
+`npm run verify` = **380/380**（2026-09 实测；本条写于修复 §4.1/§4.2 之前，当时 326/326。测试数会随功能增长，**以实测为准**）。
 
 ## 6. 现状与缺口
 

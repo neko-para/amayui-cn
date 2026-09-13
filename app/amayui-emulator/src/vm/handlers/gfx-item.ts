@@ -334,10 +334,11 @@ const op_set_draw_color: OpHandler = (c) => {
 const op_set_draw_color_alpha: OpHandler = (c) => {
   // 0x203 (sub_4232C0)：op1=handle, op2=blend(+48), op3=alpha(clamp/回退), op4=color(回退) → ARGB。
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const blend = readIntOperand(c.e, c.frame, c.instr, 2); // → DrawItem+0x30（引擎 raw 131878）
   const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
   const color = readIntOperand(c.e, c.frame, c.instr, 4);
   const argb = ((alpha & 0xff) << 24) | (color & 0xffffff);
-  c.native.setDrawColorAlpha?.(handle, argb);
+  c.native.setDrawColorAlpha?.(handle, argb, blend);
 };
 
 /**

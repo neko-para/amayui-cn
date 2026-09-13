@@ -37,7 +37,7 @@ const op_frame_tick: OpHandler = (c) => {
   }
 };
 
-/** `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清停靠标志（`_this[429752]=0`）；派发脚本队列（未建模 → no-op）。 */
+/** `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清停靠标志（`_this[429752]=0`）；派发脚本队列（`dispatchNextRequest` 已建模；本条尚未接线）。 */
 const op_frame_countdown: OpHandler = (c) => {
   const e = c.e;
   const left = e.engineValues.get(429756) ?? 0;

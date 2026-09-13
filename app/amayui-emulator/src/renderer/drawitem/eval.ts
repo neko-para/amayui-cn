@@ -200,9 +200,20 @@ export function meshColor(m: MeshObj, state: number): number {
  * mesh 顶点色 CalcDiffuse：state0→state1 逐通道插值（黑覆盖层的 alpha 淡入淡出）。
  * 用**元素2 自己的浮点公式**（`sub_4A2050`，raw 122287-122294），与 DrawItem 的整数式不同。
  * 窗末一次性收尾（引擎 raw 133531-133538）：`delay/dur/start` 清 0、`state0 ← state1`、清 bit1。
+ *
+ * ★**没有动画窗时返回 `state0`，不是 `state1`** —— 引擎的可见色是**顶点缓冲里那份**：
+ *  - `0x322`（`sub_426C20` → `sub_4AE2C0` raw 132816-132823）写 `entry[13] = state0` 后
+ *    **立刻** `sub_4A2050(entry, 0.0)`（比例 0 = 纯 state0）刷进 VB ⇒ 设色当帧就可见；
+ *  - `0x323`（sub_426CF0 → `sub_4AE330` raw 132834-132843）只置 bit1 / delay / dur / `entry[14]=state1`，
+ *    **不碰 VB** ⇒ 延迟期看到的仍是 state0（本函数的 `clock <= start+delay` 分支）；
+ *  - 窗末（raw 133531-133538）`state0 ← state1` 后再以比例 0 刷 VB ⇒ 之后看到的还是 state0。
+ *  所以 state1 在任何时刻都只是"目标"，只有插值过程中才参与。
+ *  此前这里返回 `state1`（初始 0 = 全透明）⇒ 新建幕在 `0x322` 与 `0x323` 之间渲染成**透明**，
+ *  SN0000 进场的黑幕（state0=0xFF000000 全黑、state1=0 透明）就在那一帧闪出背景 ——
+ *  用户实测"进 SN0000 时背景闪一下"。
  */
 export function calcDiffuse(m: MeshObj, clock: number): number {
-  if (!(m.flags & 2) || !m.anim) return m.state1;
+  if (!(m.flags & 2) || !m.anim) return m.state0;
   const w = m.anim;
   if (w.start === 0) w.start = clock; // raw 133511
   if (w.dur > 0 && clock < w.start + w.delay + w.dur) {
@@ -214,6 +225,6 @@ export function calcDiffuse(m: MeshObj, clock: number): number {
   w.start = 0;
   m.state0 = m.state1;
   m.flags &= ~2;
-  return m.state1;
+  return m.state0;
 }
 

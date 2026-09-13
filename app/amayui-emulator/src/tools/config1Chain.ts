@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { resolveResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
-import { INI_FILE, resolveSystemPaths } from '../arch/systemPaths.js';
+import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
 import { Engine, SLEEP_GATE } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
@@ -29,6 +29,7 @@ import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
 import { dec } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
+import { FIELD_MSG_DEFAULT_WIN, FIELD_VERTICAL } from '../vm/engineFieldIds.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
@@ -38,11 +39,8 @@ const RESOURCE_DIR = resolveResourceDir(ROOT);
 const SYSTEM = resolveSystemPaths(ROOT);
 const SYSTEM_FILES = new OverlayDir(SYSTEM);
 
-/** 取当前生效的 `SYS4REG.INI` 文本（overlay 优先；两边都没有 ⇒ 空串 ⇒ 引擎字段用缺省）。 */
-function effectiveIniText(): string {
-  const hit = SYSTEM_FILES.readTextSync(INI_FILE);
-  return hit ? hit.text : '';
-}
+/** 取当前生效的 `SYS4REG.INI` 文本（共享实现见 `arch/systemPaths.ts`）。 */
+const effectiveIniText = (): string => readEffectiveIni(SYSTEM_FILES);
 
 /** TITLE 菜单「CONFIG」项的命中点（由 i12e 的 baseX/baseY 数组算出：第 3 项 rect [729,885]×[543,699]）。 */
 export const CONFIG_XY: [number, number] = [807, 621];
@@ -586,8 +584,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     unimplemented,
     text: m.textOf(0),
     ruby: m.slot(m.resolveWin(0)).segments.flatMap((s) => s.ruby) as unknown as string[][],
-    pane: e.engineValues.get(21631),
-    msgField: e.engineValues.get(80101),
+    pane: e.engineValues.get(FIELD_MSG_DEFAULT_WIN),
+    msgField: e.engineValues.get(FIELD_VERTICAL),
     sampleWin,
     snapshotText: sampleText,
     coveredBy,

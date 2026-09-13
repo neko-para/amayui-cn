@@ -7,7 +7,8 @@ import { MsgWindow } from './msgwin.js';
 import { RouteTable } from './route.js';
 import { TextItemTable } from './textItems.js';
 import { cfgInt } from '../engineConfig.js';
-import { styleOfWin as msgWinStyleFor } from './handlers/msgwin.js';
+import { emitWin, messageSpeedOf, winStyle } from './handlers/msgwin.js';
+import { FIELD_CHAR_CURSOR, FIELD_WIN_REVEAL_GATE } from './engineFieldIds.js';
 import { layoutWindow } from '../text/layout.js';
 import type { Ref } from './ref.js';
 
@@ -430,7 +431,7 @@ export class Engine {
    * 返回 `true` = 仍有窗在显现中（调用方应把它当作"这一页还没显示完"）。
    */
   serviceTextReveal(nowMs: number): boolean {
-    const speed = this.engineValues.get(21668) ?? (this.config ? cfgInt(this.config, 'message:messagespeed', 0) : 0);
+    const speed = messageSpeedOf(this);
     const dirty = this.msgwin.tickReveal(nowMs, speed);
     for (const win of dirty) this.#publishReveal(win);
     if (dirty.length > 0) {
@@ -440,7 +441,7 @@ export class Engine {
       if (this.msgwin.charMode) {
         const t = this.msgwin.charTotal;
         this.msgwin.charCursor = t > 0 ? (this.msgwin.charCursor + 1) % t : this.msgwin.charCursor + 1;
-        this.engineValues.set(107704, this.msgwin.charCursor);
+        this.engineValues.set(FIELD_CHAR_CURSOR, this.msgwin.charCursor);
       }
     }
     const more = this.msgwin.isRevealing();
@@ -448,13 +449,14 @@ export class Engine {
     return more;
   }
 
-  /** 把一个窗的显现进度发布给宿主（`MsgWinInput.revealed`）。 */
+  /**
+   * 把一个窗的显现进度发布给宿主（`MsgWinInput.revealed`）。
+   *
+   * ★载荷与 `handlers/msgwin.ts` 的 `emitWin` **逐字相同** ⇒ 直接复用，避免两处漂移
+   * （历史：两处各写一遍，`resolveWin` 的有无都不同）。
+   */
   #publishReveal(win: number): void {
-    this.native.msgWinSync?.(win, {
-      style: msgWinStyleFor(this, win),
-      segments: this.msgwin.slot(win).segments,
-      revealed: this.msgwin.revealedOf(win),
-    });
+    emitWin(this, win);
   }
 
   /**
@@ -474,7 +476,7 @@ export class Engine {
    * @returns 是否仍有闸门窗在贴出（= 引擎 `Engine[489860] == 1`）
    */
   serviceWinReveal(nowMs: number): boolean {
-    const speed = this.engineValues.get(21668) ?? (this.config ? cfgInt(this.config, 'message:messagespeed', 0) : 0);
+    const speed = messageSpeedOf(this);
     let active = false;
     for (const [win, g] of this.msgwin.gates) {
       if (!g.enabled) {
@@ -485,16 +487,16 @@ export class Engine {
         g.autoHideMs = 0;
         g.doneAt = 0;
         // 引擎 `*v3 = 0`：连 bit16 一起清掉（字段即事实）
-        this.engineValues.set(122466 + win, 0);
+        this.engineValues.set(FIELD_WIN_REVEAL_GATE + win, 0);
         this.#publishReveal(win);
         continue;
       }
       active = true;
       g.pumping = true;
       // 引擎 `*v3 = result | 0x10000`：把"已被泵接管"写回字段（0x300 的 handler 会保留它）
-      this.engineValues.set(122466 + win, (this.engineValues.get(122466 + win) ?? 0) | 0x10000);
+      this.engineValues.set(FIELD_WIN_REVEAL_GATE + win, (this.engineValues.get(FIELD_WIN_REVEAL_GATE + win) ?? 0) | 0x10000);
       const laid = layoutWindow(win, {
-        style: msgWinStyleFor(this, win),
+        style: winStyle(this, win),
         segments: this.msgwin.slot(win).segments,
       });
       const total = laid.glyphCount;
@@ -572,13 +574,20 @@ export class Engine {
       this.serviceTextReveal(this.nowMs);
     }
 
-    // 引擎路径：`sub_403D70(queue, mask)`（键命中）优先，其次 `sub_403E70(queue)`（游标命中）。
+    // 引擎路径：`sub_403D70(queue, mask)`（**键**命中 → labelC）优先，其次 `sub_403E70(queue)`
+    // （**游标**命中 → labelA/labelB）。
     let target = this.routes.pickByKey(mask);
     if (target === -1 && this.routes.count > 0) {
       // `sub_403C50`：按鼠标坐标设游标（引擎在鼠标事件路径里调它；这里每帧按当前位置重算）
       if (im.hasCursor) this.routes.hitTest(im.readX(), im.readY());
       const hit = this.routes.current();
-      if (hit) target = hit.labelKey;
+      // ★2026-09 修（用户实测：点击推进时"先整句显示 → 清掉 → 又从零逐字"）：
+      //   鼠标点热点走的是 `sub_403E70`（坐标命中），它取的是 **`[259+i]` = labelNext（"下一页"）**；
+      //   而 `[459+i]` = labelC 是 `sub_403D70`（**键盘**命中）的目标。此前这里错用了 labelKey
+      //   ⇒ 跳到"键命中"label（在 ADV 页里那条 label 会 `i071` 清窗 + 重贴本页）⇒ 症状完全吻合。
+      //   反向推进（右键）取 `[359+i]` = labelPrev（"上一页 / 另一路"）。
+      const reverse = (im.mouseEdge & 0b10) !== 0 && (im.mouseEdge & 0b01) === 0;
+      if (hit) target = reverse ? hit.labelPrev : hit.labelNext;
     }
 
     im.consumeEdges();

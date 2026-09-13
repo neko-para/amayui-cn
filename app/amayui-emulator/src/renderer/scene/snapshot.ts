@@ -104,6 +104,25 @@ export interface SnapshotMsgWin {
 
 export interface SceneSnapshot {
   clock: number;
+  /**
+   * **A4 族的渲染状态记录**（`0x1FC/0x1FE/0x207/0x20E/0x224/0x229/0x242/0x256/0x321/0x32A/0x32D/0x97`）。
+   * 渲染器尚未逐条消费（见 `analysis/engine-capabilities.json`），但**导出到快照**才能断言
+   * "脚本确实下发了这个状态"，也才能在未来接线时对照。
+   */
+  render4: {
+    primReset: number | null;
+    primTransform: [number, number[]][];
+    blits: { srcSlot: number; dstSlot: number; srcRect: number[]; dstRect: number[] }[];
+    commits: number;
+    transitionClears: number;
+    drawMode: number[];
+    entryParams: [number, number][];
+    slotParams: [number, number[]][];
+    meshAttrs: [number, number, number][];
+    released3D: number[];
+    color3D: number[];
+    panelRects: { rect: number[]; mode: number }[];
+  };
   counts: {
     drawItems: number;
     /** 可绘制项（`flags & 1`）—— 引擎渲染器真正会画的那些。 */
@@ -176,6 +195,25 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
       meshes: meshes.length,
       pendingItems: drawItems.filter((d) => d.pending).length,
     },
+    // ★A4 记录族（`SceneState.render4`）+ `0x203` 的混合模式：**只记录、渲染器暂不消费**。
+    //   导出到快照是 `scene/state.ts` 声明的兑现（"报告/测试可以断言脚本确实下发了这个状态"）——
+    //   否则这些字段就是"写了没人读"（审计 2026-09 实测：全工程只有写入点 + 声明）。
+    render4: {
+      primReset: s.render4.primReset,
+      primTransform: [...s.render4.primTransform.entries()].map(([k, v]) => [k, [...v]] as [number, number[]]),
+      blits: s.render4.blits.map((b) => ({ srcSlot: b.srcSlot, dstSlot: b.dstSlot, srcRect: [...b.srcRect], dstRect: [...b.dstRect] })),
+      commits: s.render4.commits,
+      transitionClears: s.render4.transitionClears,
+      drawMode: [...s.render4.drawMode],
+      entryParams: [...s.render4.entryParams.entries()].map(([k, v]) => [k, v] as [number, number]),
+      slotParams: [...s.render4.slotParams.entries()].map(([k, v]) => [k, [...v]] as [number, number[]]),
+      meshAttrs: [...s.render4.meshAttrs.entries()].flatMap(([mesh, m]) =>
+        [...m.entries()].map(([idx, v]) => [mesh, idx, v] as [number, number, number]),
+      ),
+      released3D: [...s.render4.released3D],
+      color3D: [...s.render4.color3D],
+      panelRects: s.render4.panelRects.map((p) => ({ rect: [...p.rect], mode: p.mode })),
+    },
     drawItems,
     meshes,
     msgWins: [...s.msgWins.values()]
@@ -242,6 +280,24 @@ export function snapshotToText(snap: SceneSnapshot): string {
         ` color=${m.color} v=${m.verts} rect=${r} base0=${m.baseColors[0] ?? '-'} blend=${m.blend}` +
         ` flags=0x${m.flags.toString(16)}${m.pending ? ' P' : ''}`,
     );
+  }
+  // A4 记录族 + 0x203 混合模式：**只在有内容时打一行**（避免空快照变化；渲染器未消费，属缺口账本）
+  {
+    const r4 = snap.render4;
+    const parts: string[] = [];
+    if (r4.primReset !== null) parts.push(`primReset=0x${r4.primReset.toString(16)}`);
+    if (r4.primTransform.length) parts.push(`primTransform=${JSON.stringify(r4.primTransform)}`);
+    if (r4.blits.length) parts.push(`blits=${r4.blits.length}`);
+    if (r4.commits) parts.push(`commits=${r4.commits}`);
+    if (r4.transitionClears) parts.push(`transitionClears=${r4.transitionClears}`);
+    if (r4.drawMode.length) parts.push(`drawMode=${JSON.stringify(r4.drawMode)}`);
+    if (r4.entryParams.length) parts.push(`entryParams=${JSON.stringify(r4.entryParams)}`);
+    if (r4.slotParams.length) parts.push(`slotParams=${JSON.stringify(r4.slotParams)}`);
+    if (r4.meshAttrs.length) parts.push(`meshAttrs=${JSON.stringify(r4.meshAttrs)}`);
+    if (r4.released3D.length) parts.push(`released3D=${JSON.stringify(r4.released3D)}`);
+    if (r4.color3D.length) parts.push(`color3D=${JSON.stringify(r4.color3D)}`);
+    if (r4.panelRects.length) parts.push(`panelRects=${JSON.stringify(r4.panelRects)}`);
+    if (parts.length) L.push(`render4（只记录，渲染器未消费） ${parts.join(' ')}`);
   }
   // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
   for (const w of snap.msgWins) {

@@ -166,7 +166,15 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ============ 数据字段 / 版本 / 脚本控制 ============
   // 0xAE（sub_4192F0）**已转真实现**（2026-09）：见 handlers/frame.ts 的 op_save_version_branch
   //   —— 存档版本分支（读档时把帧 ip 重算到存档记录的位置）。语料 0 处调用，但**会改控制流**，不能当 no-op。
-  [0xaf, op_engine_internal], // 数据
+  /**
+   * `0xAF`（`sub_419690`，raw 24775-24783）：**唯一一条"体内什么都不做"的指令**。
+   *
+   * 体全文 = `result = _this[95776]; _this[30*result + 95805] = 1; return result;`
+   * —— 只把当前指令的操作数个数置 1（派发器的 arity 槽）并返回当前脚本下标：
+   * **不写任何引擎字段、不回写操作数、不改 ip/cur**。⇒ 归 `engine-internal` 是**有依据的**，
+   * 不是"没读体就丢进去"（对照本文件顶部声明的判据）。
+   */
+  [0xaf, op_engine_internal],
   // 0x143（i143）**已转真实现**：见 handlers/control.ts 的 op_dispatch_script_requests
   //   —— 它派发已装载扩展包的 $n$AUTORUN（引擎遍历 FileDB.packs 槽 1..255），当 no-op 会让扩展包永不激活。
   /**
@@ -178,16 +186,11 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    * 就是副作用**：把它当 no-op，全局表的内容就取决于"哪条指令被跳过"，任何后续读它的脚本都会拿到垃圾。
    * 另外这两张表是**活的**：`play-bgm` 的曲号解析（`sub_48DB80`）读的正是它们。
    */
-  // ============ 渲染 / 图形 / 图像 / 纹理 ============
-  // ============ 数据 / 资源登记 ============
-  // ============ 鼠标点击路径安全桩（emulator 暂不渲染/不算，no-op 不崩） ============
-  // ============ 声音 ============
-  // ★已移出本表：`0x2F8`（语音通道 pan）等全部音频 opcode 见 `handlers/audio.ts`。
-  // ---- 「消息渲染」子系统：emulator 无对应子系统 ----
-  // 判定依据 = 逐条读 handler 体：体内只出现对 `_this[引擎字段]` 的赋值/文本区写入，
-  // **既不回写操作数、也不改 ip/cur**，故对 emulator 不可观测（与其余插桩同一取舍）。
-  // 这一条**确实未实现**（引擎还会回写 op2），因此照旧受闸门 B 监督：
-  // 脚本若给它传了非平凡实参，会出现在控制窗的「能力缺口」栏。
+  // ★2026-09 清理：这里原有 4 个**空分区标题**（渲染/图形/图像/纹理、数据/资源登记、
+  //   鼠标点击路径安全桩、声音）与一段**无指代对象**的悬空注释 —— 它们的条目早已转真实现或移出本表
+  //   （音频见 `handlers/audio.ts`、消息见 `handlers/msgwin.ts`、图形见 `gfx-*.ts`）。
+  //   本表的纪律：**每条 `engine-internal` 都必须带 raw 依据**；没有依据的条目应当去读体，
+  //   读完要么转真实现、要么在此写明"体内只做 X，对 emulator 不可观测"。
 ]);
 
 /** 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */

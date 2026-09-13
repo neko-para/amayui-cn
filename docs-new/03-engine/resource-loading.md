@@ -6,7 +6,7 @@
 - ✅ 统一 id = `pack# << 24 | idx`；`pack#=0` 时低 24 位是本体文件号（须 `< file_count`），`pack#=1..255` 落在扩展包表。实测：`SO006=0x5245`、`SO005=0x5246`、`SO004=0x5272`、`TITLE.BIN=0x5264`、`$1$AUTORUN=0x1000000`、`$5$SC0370=0x5000001`。
 - ✅ 引擎侧三个分派点：`sub_4559C0`（id → 句柄，含**可见报错**）、`sub_454FA0`（id → 名字）、`sub_455000`（名字 → id，**先扫本体再扫扩展包**）。
 - ✅ 实测索引规模（`.tmp/appendProbe.mts`，读 `install/`）：SYS4INI `arcCount=8`（`DATA1..8.ALF`）/`filCount=21109`；APPEND01..05 各 `arcCount=1`（自己的 `APPEND0n.ALF`）/`filCount` = 678 / 261 / 1689 / 425 / 918，包内文件名一律带 `$n$` 前缀。
-- ✅ `NodeFileSource.resolveEntry(id)` 已实现 base+APPEND 合并；`npm test` 12/12。
+- ✅ `NodeFileSource.resolveEntry(id)` 已实现 base+APPEND 合并；`npm run verify` = 380/380（2026-09 实测）。
 
 ### 1.1 扩展包（APPENDnn.AAI + APPENDnn.ALF）的发现 · 注册 · 激活
 

@@ -54,15 +54,12 @@ const INI = path.join(REPO, 'app', 'amayui-emulator', 'SYS4REG.INI');
 void INI;
 
 import { fileURLToPath } from 'node:url';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const locInt = (i: number): BinArg => ({ type: 9, raw: i }) as unknown as BinArg;
 const gInt = (i: number): BinArg => ({ type: 3, raw: i }) as unknown as BinArg;
 const gStr = (i: number): BinArg => ({ type: 5, raw: i }) as unknown as BinArg;
 const encInt = (e: Engine, v: number): number => enc(e.key, v);
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 function mk(): { e: Engine; step: (op: number, args?: BinArg[]) => void } {
   const e = new Engine(new HeadlessScene({}), new InputManager());
   const f = new Frame();

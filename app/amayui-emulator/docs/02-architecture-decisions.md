@@ -115,7 +115,7 @@ interface NativeBridge {
 | `unimplemented` | 未分类/未读体 | **硬报错**（NotImplementedOp） |
 
 > 判定 `engine-internal` 必须**读 handler 体**（ADR-010）。当前已在 boot 路径分类 ~24 个（见 `docs/06 §2.2`）；`string-lookup-set`(0x1a3)/0x1a2/0x1a9 这类字符串表操作暂列插桩，M1 需细化。
-> **里程碑：M0–M3 已达**——解释器一路从 SYSTEM4 执行到 `TITLE.BIN`（经全部数据表 INIT 脚本），未再触发"未实现 opcode 硬报错"；`npm test` 12/12 通过、`tsc` 干净。期间实现/分类了 ~70 个 opcode（VM 核心：lea/lookup-array(-2d)/memcpy/copy-local-array/copy-to-global/set-array-to/random/bit-*/float-*/strlen/atoi/预装帧；engine-internal/native：消息窗/配置/图形 L2D/纹理/子系统等），并修复 bin.ts 的 copy-local-array 越界与 op_jcc 的 `0xFFFFFFFF` 真分支误判。
+> **里程碑：M0–M3 已达**——解释器一路从 SYSTEM4 执行到 `TITLE.BIN`（经全部数据表 INIT 脚本），未再触发"未实现 opcode 硬报错"；`npm test` 12/12 通过（★M0–M3 时快照；2026-09 实测 380）、`tsc` 干净。期间实现/分类了 ~70 个 opcode（VM 核心：lea/lookup-array(-2d)/memcpy/copy-local-array/copy-to-global/set-array-to/random/bit-*/float-*/strlen/atoi/预装帧；engine-internal/native：消息窗/配置/图形 L2D/纹理/子系统等），并修复 bin.ts 的 copy-local-array 越界与 op_jcc 的 `0xFFFFFFFF` 真分支误判。
 
 ---
 

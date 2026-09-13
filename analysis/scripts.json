@@ -638,7 +638,7 @@
       ],
       "status": "partial",
       "evidence": "src/SN0000.txt:1075-1085 / 575-580；页序列断言见 test/char-reveal.test.ts 的『真实序章页序列（SN0000…）』",
-      "notes": "字格/逐字片段 + 序章开场（背景横移、立绘摆放、第一条文案 ip=901）已读；序章正文其余页与战斗/地图分支未读。★已知观感缺口：菜单 mesh（如 0x19640）被 emulator 近似成全屏黑叠加块 ⇒ 进本场景后整屏黑（见 capabilities 的 mesh-vertex-quad-and-per-vertex-color）。"
+      "notes": "★2026-09 已修三处（原记录：菜单 mesh 被近似成全屏黑叠加块 ⇒ 进本场景后整屏黑）：① mesh 整屏黑 —— `0x320` 的 op2..op8 是**数组基址**（x/y/z 浮点数组 + 逐顶点色数组 + UV 数组），presenter 已按真实几何 + 真实颜色合成；且 `0x322/0x323` 补上引擎的\"负值 = 取当前 state0\"回退（序章 50% 暗幕 `0x19640` = 0x80000000，曾算成不透明）。守卫 `test/mesh-vertex-quad.test.ts`（E3）。② 首文案跑到左上角 —— 文字块原点 = `0x7A` 覆盖值（`SN0000.txt:1087 i07a 8 8c 12c` = (140,300)；默认是 `SYSTEM4.txt:54 i079 8 8c 10` 的 (140,16)），行中心由 `SYSTEM4.txt:70 i303 8 1 1f4` 定为 140+500=640。守卫 `test/text-layout.test.ts`。③ 逐字过慢 —— 字格路径（`i073`）一拍 = **一个字格**（模数 = op9 = cells），整段 = cells × op10 = 800ms，不是\"一字一拍\"（58 字 ⇒ 5.8s）。守卫 `test/char-reveal.test.ts`。★2026-09 再修两处（同一轮用户复测）：④ **进场景时背景闪一下** —— 淡入幕 `0x19258` 的 `0x322 set-vertex-color` 写 state0=0xFF000000（全黑）后，`0x323 set-vertex-color-alpha` 才把 state1=0（透明）挂上 3.6s 淡出窗；两帧之间\"无动画窗\"时 `calcDiffuse` 曾返回 state1 ⇒ 那一帧幕是**透明**的 ⇒ 背景先露一下再被黑色盖上重淡。引擎的可见色是**顶点缓冲里那份**：`sub_4AE2C0`(raw 132816-132823) 写完 state0 立刻以比例 0 刷 VB、`sub_4AE330`(raw 132834-132843) 不碰 VB ⇒ 未开窗时可见色 = state0。守卫 `test/mesh-vertex-quad.test.ts`。⑤ **逐字出现前整页先亮一次** —— 本页的 `i073` 在文本**之后**（`SN0000.txt:1240`，而 `:1081` 在页首），字格总门（`win+88`）自首屏起恒 1；但 `0x72 wait-for-input` 才进逐字模式（`effect_flags & 0x40000000`）、主循环才逐格 `sub_45A940` 拍字 ⇒ 在 `0x6E` 入队到 `0x72` 武装之间屏幕上一个字都没有。\"无显现状态\"曾一律读成\"全部\"（-1），于是那一帧整页先亮、随后被逐字从头重播。已把判决点收敛到 `MsgWindow.revealedOf` 一处（字格门与 `0x300` 逐行泵并列为例外）。守卫 `test/char-reveal.test.ts`。（其余序章正文页、战斗/地图分支仍未读。）"
     },
     {
       "id": "TITLE",

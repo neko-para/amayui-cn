@@ -16,6 +16,9 @@ import {
   scAnimationsDone,
   scClearDrawContainer,
   scConfigureDrawItem,
+  scGetDrawItemPos,
+  scGetDrawItemPivot,
+  scGetDrawItemTexSlot,
   scCreateMesh,
   scDetachTexture,
   scDrawCgNumber,
@@ -210,21 +213,17 @@ export class HeadlessScene implements NativeBridge {
    * 与 `0x1FB` 把 op2 写进 `DrawItem+4` 一一对应。
    */
   getDrawItemTexSlot(handle: number): number {
-    const it = this.scene.drawItems.get(handle);
-    if (!it || (it.flags & 1) === 0) return -1;
-    return it.tex;
+    return scGetDrawItemTexSlot(this.scene, handle);
   }
 
   /** `0x218`（sub_4ADCF0）：绘制项 pivot 三元组；项不存在 ⇒ 全 0（引擎原样）。 */
   getDrawItemPivot(handle: number): { x: number; y: number; z: number } {
-    const it = this.scene.drawItems.get(handle);
-    return it ? { x: it.pivotX, y: it.pivotY, z: it.pivotZ } : { x: 0, y: 0, z: 0 };
+    return scGetDrawItemPivot(this.scene, handle);
   }
 
   /** `0x21A`（sub_4ADC80）：绘制项描画位置三元组；项不存在 ⇒ 全 0（引擎原样）。 */
   getDrawItemPos(handle: number): { x: number; y: number; z: number } {
-    const it = this.scene.drawItems.get(handle);
-    return it ? { x: it.posX, y: it.posY, z: it.posZ } : { x: 0, y: 0, z: 0 };
+    return scGetDrawItemPos(this.scene, handle);
   }
 
   setDrawTranslation(handle: number, x: number, y: number, z: number): void {

@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 27 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 28 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 23 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **56** |
+| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **55** |
 
 ## 按子系统
 
@@ -27,7 +27,7 @@
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 9 |
 | 消息窗 | 24 | 15 |
-| 渲染 | 24 | 12 |
+| 渲染 | 24 | 11 |
 | 资源 | 14 | 4 |
 | 转场 | 4 | 4 |
 | 输入 | 2 | 0 |
@@ -59,7 +59,7 @@
 | `scene-draw-total-gate-1056` | 渲染 | Scene+1056 主绘制总门 | ❌ 缺失 | E0 |
 | `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/ops-cg-digit-clock.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
-| `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | 🟠 部分 | E1 |
+| `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
 | `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | ❌ 缺失 | E0 |
 | `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ❌ 缺失 | E0 |
 | `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
@@ -228,15 +228,6 @@
 - **读的字段**：Engine+369332, Engine+369336, Engine+107438
 - **emulator 现状**：emulator 有时钟写入（0x20C/0x23C → engineValues 92333/92334）+ 0x1F4 停靠锁门控；但没有"时钟冻结"概念（present 用墙钟 performance.now）
 
-### `clock-read-meshentry-color-window`（partial）
-
-- **能力**：MeshEntry 颜色/α 动画窗
-- **触发**：MeshEntry `flags & 2`（颜色动画挂起）且 `flags & 1`（可见）
-- **缺失时为什么静默**：颜色窗不活动时只做一次顶点缓冲 Unlock 回写，逐通道 lerp 全跳过
-- **引擎**：sub_4AF1C0, sub_4A2050 @ raw 133459-133646
-- **读的字段**：Scene+46500, Scene+46512, Scene+46508, Scene+46516
-- **emulator 现状**：mesh 颜色窗实现了（CalcDiffuse 浮点式），但 ① mesh 渲染是整屏黑罩（顶点几何未建模）② 元素2 的色槽偏移（+36/+52/+56）与窗口字段归属仍需复核（sub_4AE2C0 同时写两处色槽 ⇒ 现模型的 state0/state1 映射可疑）
-
 ### `clock-read-transition-window`（absent）
 
 - **能力**：转场窗口进度与扫描带绘制
@@ -316,7 +307,7 @@
 - **缺失时为什么静默**：Lock 成功但 vcount<=0 时循环体不执行；仅 Lock 失败才 sprintf_s + `sub_4034C0`
 - **引擎**：sub_4AF1C0, sub_4A1F00, sub_4A2050 @ raw 133571-133612
 - **读的字段**：Scene+46676, Scene+1860, Scene+46456
-- **emulator 现状**：★顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 只能画成整屏色块，顶点几何全丢
+- **emulator 现状**：★顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 曾只能画成整屏色块（2026-09 已按真实四边形绘制），顶点几何曾全丢（2026-09 已建模） ★2026-09 订正：mesh 的**顶点几何与逐顶点色已建模**（见 `mesh-vertex-quad-and-per-vertex-color`，modeled-verified/E3，守卫 `test/mesh-vertex-quad.test.ts`；`0x320` 的 op2..op8 是数组基址）。本条残余的缺口与 mesh 四边形无关。
 
 ### `world-matrix-identity-refresh`（partial）
 

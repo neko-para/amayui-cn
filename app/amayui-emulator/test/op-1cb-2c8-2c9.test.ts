@@ -25,8 +25,8 @@ import { readRef, writeRef, refAt } from '../src/vm/ref.js';
 import { parseIni } from '../src/engineConfig.js';
 import { sjisSubstrChars } from '../src/text/sjis.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const gInt = (n: number): BinArg => ({ type: 3, raw: n }) as unknown as BinArg;
 const lInt = (n: number): BinArg => ({ type: 9, raw: n }) as unknown as BinArg;
 const lStr = (n: number): BinArg => ({ type: 0xb, raw: n }) as unknown as BinArg;

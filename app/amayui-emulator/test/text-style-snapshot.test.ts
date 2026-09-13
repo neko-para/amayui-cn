@@ -34,13 +34,9 @@ import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { runConfig1Chain } from '../src/tools/config1Chain.js';
 import type { DrawStringStyle } from '../src/vm/native.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
-const str = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 /** 最小宿主：HeadlessScene 之上记录 `draw-string` 收到的样式。 */
 function mk(): {

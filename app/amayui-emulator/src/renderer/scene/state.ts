@@ -8,8 +8,6 @@ import type { TextFrame } from '../../text/layout.js';
 export interface SceneState {
   drawItems: Map<number, Item>;
   meshes: Map<number, MeshObj>;
-  /** `0x203` 的 op2 混合模式是否曾被写入（用于死写/缺口自检；当前渲染器不消费它）。 */
-  blendWritten: Map<number, number>;
   /**
    * **消息窗文本**（引擎里是「每窗一张离屏表面 + 逐行显现」，见
    * `docs-new/03-engine/adv-text-rendering.md` §3）。键 = 窗索引（0..9）。
@@ -38,8 +36,9 @@ export interface SceneState {
    * 引擎里这 11 条写的是 Scene 的字段 / DrawItem 与 MeshEntry 的属性（见 `handlers/gfx-state.ts`
    * 的对照表）。emulator 目前**只记录**：这些字段在真机上影响 D3D/DD 的绘制细节（变换复位、
    * 槽→槽 blit、Clear、转场表、绘制模式、网格属性、3D 颜色），而重写侧的 Pixi 渲染管线还没有
-   * 逐条消费它们。记录下来的意义：① 不再是无依据的 no-op；② 报告/测试可以断言"脚本确实下发了
-   * 这个状态"；③ 将来渲染器要消费时，数据已经在模型里。
+   * 逐条消费它们。记录下来的意义：① 不再是无依据的 no-op；② **已导出到 `scene/snapshot.ts`**
+   * （`SceneSnapshot.render4` + `snapshotToText` 的 `render4（只记录…）` 行）⇒ 报告/测试可以断言
+   * "脚本确实下发了这个状态"；③ 将来渲染器要消费时，数据已经在模型里。
    */
   render4: {
     /** `0x1FC` 最近一次复位过变换的图元 handle。 */
@@ -73,7 +72,6 @@ export function newSceneState(): SceneState {
   return {
     drawItems: new Map<number, Item>(),
     meshes: new Map<number, MeshObj>(),
-    blendWritten: new Map<number, number>(),
     msgWins: new Map<number, TextFrame>(),
     msgRev: new Map<number, number>(),
     slotText: new Map<number, { x: number; y: number; text: string; fill: string }[]>(),

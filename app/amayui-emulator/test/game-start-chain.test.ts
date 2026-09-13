@@ -35,12 +35,12 @@ import { dec, enc } from '../src/vm/bits.js';
 import { runGameStartChain } from '../src/tools/gameStartChain.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 void ROOT;
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const gInt = (n: number): BinArg => ({ type: 3, raw: n }) as unknown as BinArg;
 const lInt = (n: number): BinArg => ({ type: 9, raw: n }) as unknown as BinArg;
 const lFloat = (n: number): BinArg => ({ type: 0xa, raw: n }) as unknown as BinArg;

@@ -34,12 +34,12 @@ import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec } from '../src/vm/bits.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 const RES = resolveResourceDir(ROOT);
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const gInt = (n: number): BinArg => ({ type: 3, raw: n }) as unknown as BinArg;
 const lInt = (n: number): BinArg => ({ type: 9, raw: n }) as unknown as BinArg;
 const instr = (op: number, args: BinArg[]): BinInstruction =>

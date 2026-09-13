@@ -15,7 +15,7 @@
 ## 2. 现状（已达成）
 
 - **汉化已收官**：需翻译文件 465 中已译 453；剩余 12 为系统/杂项+追加包。译文以 `src/*.txt` 为真值，后续仅持续校对。
-- **引擎重写**：`app/amayui-emulator` 解释器已从 `SYSTEM4(0)` 跑到 `TITLE.BIN`；`npm test` 12/12；Electron+PixiJS 渲染壳已接通、标题真实图像已接入。
+- **引擎重写**：`app/amayui-emulator` 已把启动链 `SYSTEM4(0) → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 跑到**零未实现 opcode**；`npm run verify` 全绿（380 测试 + 3×tsc + 死写棘轮）；Electron+PixiJS 渲染壳（场景合成/ADV 文本/音频/输入）与三闸门齐备。架构总览见 `../04-app/emulator.md`。★旧文"只跑到 TITLE、`npm test` 12/12"已过期。
 - **数据**：业务数据结构（掉落/技能/物品/地图/单位）已摸清；`app/amayui-toolkit` 产出统一 `metadata.json`（items=923、buildings=113、recipes=458、units=373、skills=450 等）。
 - **进程查看器**：`app/amayui-inspector` 可定位 `this`、DEC 校验、快照全局/脚本帧。
 

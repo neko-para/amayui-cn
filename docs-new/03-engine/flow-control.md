@@ -320,7 +320,7 @@ const op_jcc: OpHandler = (c) => {
   }
 };
 ```
-> 这两处改动与既有 `op_call`/`op_jcc` 的 `0xFFFFFFFF` 处理方式一致（同用 `readIntOperand` + `-1` 哨兵）。`tsc --noEmit` 通过、`npm test` 24/24 通过（含新增 exit-script/load-show-logo 用例）。
+> 这两处改动与既有 `op_call`/`op_jcc` 的 `0xFFFFFFFF` 处理方式一致（同用 `readIntOperand` + `-1` 哨兵）。`tsc --noEmit` 通过、`npm run verify` = 380/380（2026-09 实测）（含新增 exit-script/load-show-logo 用例）。
 
 `op_exit_script`（第 2 处修正，支撑 GAMEOVER → 回标题）：
 ```ts

@@ -27,7 +27,7 @@ import { assertFlags, type DrawStringStyle, type MeshCreateSpec, type NativeBrid
 import type { InputManager } from '../vm/input.js';
 import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
 import { WebAudioHost } from './audio/webAudioHost.js';
-import { advanceWindows, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
+import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
   newSceneState,
   scAnimationsDone,
@@ -36,6 +36,9 @@ import {
   scMsgWinClearAll,
   scMsgWinSync,
   scConfigureDrawItem,
+  scGetDrawItemPos,
+  scGetDrawItemPivot,
+  scGetDrawItemTexSlot,
   scCreateMesh,
   scDetachTexture,
   scDrawCgNumber,
@@ -78,8 +81,12 @@ import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
 import type { RenderStatus } from './renderStatus.js';
 
-/** 撤幕留帧的上限帧数（见 `#holdFrameAfterCurtainDrop`）。 */
-const HOLD_MAX_FRAMES = 8;
+/**
+ * 留帧上限（帧数）。★2026-09 用户实测"配置界面在进 SN0000 前仍闪一下"后加强：
+ * 8 → 60 帧（≈1 秒），并**改掉"清容器即解除"**（见 `clearDrawContainer`）——
+ * 引擎的 backbuffer 从不清屏，屏上留的就是上一帧，只有**真的画了新东西**才该换帧。
+ */
+const HOLD_MAX_FRAMES = 60;
 
 export type { Item, MeshObj, Vec3 };
 /** `RenderStatus` 由 `./renderStatus.ts` 拥有（入口与后端共用）；此处再导出以保持既有 import 路径可用。 */
@@ -257,7 +264,11 @@ export class PixiBackend implements NativeBridge {
   createMesh(spec: MeshCreateSpec): void {
     this.#markDirty();
     const m = scCreateMesh(this.scene, spec);
-    this.#releaseFrameHold('createMesh');
+    // ★2026-09 修（用户实测："进 SN0000 时背景闪一下"）：新幕的**几何**建好时颜色还是 0（全透明，
+    //   引擎里 `sub_4ADFE0` 建完 VB 后也不写色），颜色由紧随其后的 `0x322 set-vertex-color` 给。
+    //   原先在这里就解除留帧 ⇒ 批边界若正好落在两条指令之间，就会呈现一帧"幕存在但还透明"的画面
+    //   = 背景闪现。⇒ 只有**颜色已经可见**（alpha>0）才解除，否则继续留帧。
+    this.#releaseFrameHoldIfVisible(`createMesh 0x${spec.handle.toString(16)}`, this.#meshVisibleColor(m));
     assertFlags('mesh', m.handle, m.flags);
     const v = m.verts[0];
     this.#pushLog(
@@ -382,20 +393,17 @@ export class PixiBackend implements NativeBridge {
 
   /** `0x215`（sub_4ADC20）：绘制项 → 纹理槽号；项不存在或未创建（`flags&1==0`）⇒ −1。 */
   getDrawItemTexSlot(handle: number): number {
-    const it = this.scene.drawItems.get(handle);
-    return !it || (it.flags & 1) === 0 ? -1 : it.tex;
+    return scGetDrawItemTexSlot(this.scene, handle);
   }
 
   /** `0x218`（sub_4ADCF0）：绘制项 pivot 三元组（项不存在 ⇒ 全 0）。 */
   getDrawItemPivot(handle: number): { x: number; y: number; z: number } {
-    const it = this.scene.drawItems.get(handle);
-    return it ? { x: it.pivotX, y: it.pivotY, z: it.pivotZ } : { x: 0, y: 0, z: 0 };
+    return scGetDrawItemPivot(this.scene, handle);
   }
 
   /** `0x21A`（sub_4ADC80）：绘制项描画位置三元组（项不存在 ⇒ 全 0）。 */
   getDrawItemPos(handle: number): { x: number; y: number; z: number } {
-    const it = this.scene.drawItems.get(handle);
-    return it ? { x: it.posX, y: it.posY, z: it.posZ } : { x: 0, y: 0, z: 0 };
+    return scGetDrawItemPos(this.scene, handle);
   }
 
   /**
@@ -462,6 +470,9 @@ export class PixiBackend implements NativeBridge {
   setVertexColor(handle: number, index: number, alpha: number, rgb: number): void {
     this.#markDirty();
     const o = scSetVertexColor(this.scene, handle, index, alpha, rgb);
+    // ★幕的**颜色**落地这一刻才是"新内容真的可见"⇒ 解除留帧（见 `createMesh` 处说明）
+    const mAfter = this.scene.meshes.get(handle);
+    if (mAfter) this.#releaseFrameHoldIfVisible(`setVertexColor 0x${handle.toString(16)}`, this.#meshVisibleColor(mAfter));
     this.#assertMesh(handle);
     const m = this.scene.meshes.get(handle);
     this.#pushLog(
@@ -480,11 +491,11 @@ export class PixiBackend implements NativeBridge {
     );
   }
 
-  setDrawColorAlpha(handle: number, from: number): void {
+  setDrawColorAlpha(handle: number, from: number, blend: number): void {
     this.#markDirty();
-    const o = scSetDrawColorAlpha(this.scene, handle, from);
+    const o = scSetDrawColorAlpha(this.scene, handle, from, blend);
     this.#assertItem(handle);
-    this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)}${o === 'applied' ? '' : ' [建空项]'}`);
+    this.#pushLog(`setDrawColorAlpha h=0x${handle.toString(16)} from=0x${from.toString(16)} blend=${blend}${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
   /**
@@ -549,6 +560,32 @@ export class PixiBackend implements NativeBridge {
   #releaseFrameHold(what: string): void {
     if (this.#holdFrames > 0) this.#pushLog(`[frame-hold] ${what} → 解除留帧（剩 ${this.#holdFrames} 帧）`);
     this.#holdFrames = 0;
+  }
+
+  /**
+   * **只在"新内容已经可见"时解除留帧**（颜色 alpha>0）。
+   *
+   * 为什么不能"建了项就解除"：引擎建项与设色是**两条指令**（如 `0x320 create-mesh` 后紧跟
+   * `0x322 set-vertex-color`），中间那一帧的项还是全透明 ⇒ 解除留帧就会把**旧画面/空画面**呈现出来
+   * （用户实测：进 SN0000 时背景闪一下）。上限 `HOLD_MAX_FRAMES` 兜住"新内容长期不可见"的极端情形。
+   */
+  #releaseFrameHoldIfVisible(what: string, color: number): void {
+    if (this.#holdFrames <= 0) return;
+    if (((color >>> 24) & 0xff) === 0) {
+      this.#pushLog(`[frame-hold] ${what} 颜色仍透明 → 继续留帧（剩 ${this.#holdFrames} 帧）`);
+      return;
+    }
+    this.#pushLog(`[frame-hold] ${what} → 新内容可见，解除留帧（剩 ${this.#holdFrames} 帧）`);
+    this.#holdFrames = 0;
+  }
+
+  /**
+   * 幕此刻**实际可见的颜色**（= presenter 那一帧画出来的颜色）：`state0→state1` 按动画窗插值
+   * （`calcDiffuse`）后取各顶点均值（`meshColor`）。留帧解除的判据必须与渲染同源，
+   * 否则会出现"判据说可见、画面其实还是透明"的裂缝。
+   */
+  #meshVisibleColor(m: MeshObj): number {
+    return meshColor(m, calcDiffuse(m, this.clockMs));
   }
 
   /**
@@ -620,7 +657,12 @@ export class PixiBackend implements NativeBridge {
   clearDrawContainer(): void {
     const wins = this.scene.msgWins.size;
     const r = scClearDrawContainer(this.scene);
-    this.#releaseFrameHold('clearDrawContainer（画面本就该是空的）');
+    // ★2026-09 改：清容器**不再解除留帧**。理由 = 引擎的 present **从不整屏清 backbuffer**
+    //   （`ClearTarget` 被恒 0 的 `Scene+46460&1` 守卫）⇒ 屏上留的是上一帧，直到**新内容被画出来**。
+    //   若在这里解除，批边界一旦落在"已清容器、新场景还没画"之间，就会呈现一帧空场景/旧场景
+    //   （用户实测：进 SN0000 前配置界面闪一下）。解除点只剩"真的建了新内容"（见 `#releaseFrameHold` 的调用方）。
+    this.#holdFrames = Math.max(this.#holdFrames, HOLD_MAX_FRAMES);
+    this.#pushLog(`[frame-hold] clearDrawContainer → 继续留帧（最多 ${HOLD_MAX_FRAMES} 帧，等新内容）`);
     this.#markDirty();
     this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} 文本窗=${wins}→0（保留纹理槽）`);
   }

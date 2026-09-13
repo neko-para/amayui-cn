@@ -42,6 +42,7 @@ import { ExitScript, ScriptReset } from '../src/vm/ops.js';
 import { applyConfigToEngine, DEFAULT_GAME_VERSION, ENGINE_BUILTIN_GAME_VERSION, formatIni, parseIni } from '../src/engineConfig.js';
 import { sjisSubstr } from '../src/text/sjis.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import { im, instr, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -58,16 +59,12 @@ function effectiveIniText(): string {
   }
 }
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 const lit = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg; // 字符串字面量
 /** 本帧 `local-string` **值**槽（type 0xB；读/写都作用在 `frame.locals.str`）。 */
 const locStr = (i: number): BinArg => ({ type: 0xb, raw: i }) as unknown as BinArg;
 /** 本帧 `local-int` **值**槽（type 9；读/写都作用在 `frame.locals.int`）。 */
 const locInt = (i: number): BinArg => ({ type: 9, raw: i }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 function mk(cfgText?: string): {
   e: Engine;

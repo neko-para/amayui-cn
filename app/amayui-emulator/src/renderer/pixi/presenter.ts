@@ -57,28 +57,27 @@ export class ScenePresenter {
 
     this.#logSummary(scene, clock, waitFlags);
 
-    // 1) draw-items（图像）+ 消息窗文本：按 layer 归并（同 layer 时 draw-item 在前）
+    // 1) **三路归并**：draw-item / 消息窗文本 / mesh 按**同一个层序键**排序后依次合成。
+    //
+    // ★2026-09 修（用户实测：ADV 文字被半透明暗幕盖住）：旧实现把 mesh **一律画在最上层**，
+    //   于是 SN0000 序章的 50% 暗幕（`0x19640` = 104000）盖住了 ADV 文字。
+    //   引擎的合成是**按对象 id 归并**：`sub_4B06D0` 对「绘图项表 / mesh 表」三路归并、取小的
+    //   sort-key 先画（`rendering.md` §3.1；LOGO 的 mesh 0x30d42/43 > 图 0x30d40/41 ⇒ 幕布在上）。
+    //   SN0000 的键序：背景 101000 → **暗幕 104000** → 立绘 104501+ → **正文文本 105000**
+    //   （win 8 的文本项 id = `SYSTEM4.txt:69 i213 8 19a28 1f4` = 0x19a28 = 105000，见 `layerOfFrame`）。
+    //   键相同者按 item → text → mesh 排（引擎三路归并的等键次序；语料里等键极罕见）。
     let drawn = 0;
     const items = [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
-    let ti = 0;
-    const flushText = (upto: number): void => {
-      let t = texts[ti];
-      while (t && t.layer <= upto) {
-        this.drawRoot.addChild(t.sprite);
-        ti++;
-        t = texts[ti];
-      }
-    };
-    for (const it of items) {
-      flushText(it.layer - 1); // 先把 layer 更小的文本插进去
+    const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
+    const drawItem = (it: Item): void => {
       // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
       //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
       //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
-      if ((it.flags & 1) === 0) continue;
+      if ((it.flags & 1) === 0) return;
       const color = itemColor(it, clock);
       const alpha = (color >> 24) & 0xff;
-      if (alpha <= 0) continue; // 全透明跳过
+      if (alpha <= 0) return; // 全透明跳过
 
       // ★纹理解析：**槽号 = DrawItem`+4`**（`draw-texture` 的 op2）。`it.layer`/`it.handle` 是层序键。
       const { tex, imgid } = this.textures.resolve(it);
@@ -115,14 +114,7 @@ export class ScenePresenter {
       spr.alpha = alpha / 255; // diffuse alpha 淡入
       this.drawRoot.addChild(spr);
       drawn++;
-      // 同 layer 的文本放在该项之后（引擎里文本是后建的 map 项）
-      const sameLayer = texts[ti];
-      if (sameLayer && sameLayer.layer === it.layer) {
-        this.drawRoot.addChild(sameLayer.sprite);
-        ti++;
-      }
-    }
-    flushText(Number.MAX_SAFE_INTEGER); // 剩余文本（含 20+win 落在没有 draw-item 的层）
+    };
 
     // 2) meshes（顶点色四边形）：按 handle 升序，叠在图之上。
     //
@@ -133,13 +125,12 @@ export class ScenePresenter {
     //     没有顶点缓冲的 mesh **不画**。
     //   旧实现把**每个** mesh 画成 `width=VIEW_W; tint=0x000000` 的全屏不透明黑，且忽略
     //   RGB（永远黑），于是 SN0000 序章被"50% 黑幕"涂成整屏黑（背景与首文案一起消失）。
-    const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
-    for (const m of meshes) {
-      if ((m.flags & 1) === 0 || m.verts.length < 3) continue; // 无几何 ⇒ 引擎不画
+    const drawMesh = (m: typeof meshes[number]): void => {
+      if ((m.flags & 1) === 0 || m.verts.length < 3) return; // 无几何 ⇒ 引擎不画
       const state = calcDiffuse(m, clock);
       const color = meshColor(m, state);
       const alpha = (color >>> 24) & 0xff;
-      if (alpha <= 0) continue;
+      if (alpha <= 0) return;
       const g = new Graphics();
       const box = meshBBox(m);
       if (isAxisAlignedQuad(m)) {
@@ -176,7 +167,16 @@ export class ScenePresenter {
         }
       }
       this.drawRoot.addChild(g);
-    }
+    };
+
+    // 三路归并（键 = item.layer / text.layer / mesh.handle；等键按 item→text→mesh）
+    const entries: { key: number; order: 0 | 1 | 2; draw: () => void }[] = [
+      ...items.map((it) => ({ key: it.layer, order: 0 as const, draw: () => drawItem(it) })),
+      ...texts.map((t) => ({ key: t.layer, order: 1 as const, draw: () => void this.drawRoot.addChild(t.sprite) })),
+      ...meshes.map((m) => ({ key: m.handle, order: 2 as const, draw: () => drawMesh(m) })),
+    ];
+    entries.sort((a, b) => a.key - b.key || a.order - b.order);
+    for (const e of entries) e.draw();
     return drawn;
   }
 

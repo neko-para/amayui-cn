@@ -91,7 +91,7 @@
 ## 4. 与本方向相关的落地工程
 
 `app/amayui-emulator/`（TS+Electron+PixiJS 重写 AGE VM 解释器）的结论已吸收本文件：
-- M0–M3 达成（启动链到 TITLE.BIN、`npm test` 12/12、`tsc` 干净）；`docs/03` 为里程碑。
+- M0–M3 达成（启动链到 TITLE.BIN、`npm test` 12/12（★历史文档；2026-09 实测 380）、`tsc` 干净）；`docs/03` 为里程碑。
 - 关键 ADR：启动层级、对象模型、`NativeBridge`、未实现 opcode 硬报错、32 位语义、ADR-010 函数级状态追踪、ADR-011 指针=带标记引用。
 - Electron 渲染壳：`electron/main.ts`（窗口 1280×720 + IPC 文件流）、`src/renderer/pixiBackend.ts`（PixiJS v8）、标题真实图像已接入。
 - 详见 `app/amayui-emulator/README.md` 与 `app/amayui-emulator/docs/*`。

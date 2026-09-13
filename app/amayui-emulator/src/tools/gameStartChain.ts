@@ -29,7 +29,7 @@ import assert from 'node:assert/strict';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { resolveResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
-import { INI_FILE, resolveSystemPaths } from '../arch/systemPaths.js';
+import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
 import { Engine, SLEEP_GATE, type Frame } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { formatOperands, loadScriptData, NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
@@ -52,10 +52,8 @@ const RESOURCE_DIR = resolveResourceDir(ROOT);
 const SYSTEM = resolveSystemPaths(ROOT);
 const SYSTEM_FILES = new OverlayDir(SYSTEM);
 
-function effectiveIniText(): string {
-  const hit = SYSTEM_FILES.readTextSync(INI_FILE);
-  return hit ? hit.text : '';
-}
+/** 取当前生效的 `SYS4REG.INI` 文本（共享实现见 `arch/systemPaths.ts`）。 */
+const effectiveIniText = (): string => readEffectiveIni(SYSTEM_FILES);
 
 /**
  * TITLE 菜单「Game Start」命中点 —— 由 `TITLE.txt:100` 的 `i12e` 数据数组算出：

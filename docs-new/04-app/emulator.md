@@ -1,94 +1,182 @@
 # 04-app · amayui-emulator
 
-用 **TypeScript + Electron** 重写《天結いキャッスルマイスター》的 AGE 引擎 VM（解释器），把 `engine/天结_unpacked.exe_utf8.c` 的逻辑以干净 TS 语义实现，替换原 Win32 调用为 H5/IPC，获得**更好的可调试性、可观测性、可插件化与跨平台**。
+用 **TypeScript + Electron + PixiJS** 重写《天結いキャッスルマイスター》的 AGE 引擎（脚本 VM + 场景合成 + 文本 + 音频），把 `engine/天结_unpacked.exe_utf8.c` 的逻辑以干净 TS 语义实现，替换原 Win32 调用为 H5/IPC，获得**可调试性、可观测性、可插件化与跨平台**。
 
-## 1. 现状
+> **本文件是 `amayui-emulator` 的架构总览**（分层/真源/闸门/缺口）。逐条 opcode 语义、字段偏移、脚本台账**不在**这里：
+> 见 `../03-engine/`（真源是 `analysis/*.json`）与 `../../app/amayui-emulator/README.md`（实现细节与事故复盘）。
+> ★历史提示：本文 2026-09 之前的内容已严重过期（当时写的是"M0–M3、`npm test` 12/12、停在消息循环、菜单派发表未解"），
+> 现按代码实况重写。**凡本文与代码/台账冲突，以代码与 `analysis/*.json` 为准。**
 
-- **M0–M3 里程碑达成**：解释器能从 `SYSTEM4.BIN`（index 0）沿启动链执行全部数据表 INIT 脚本，正确运行到 **`TITLE.BIN`（622 指令）执行点**（第一里程碑）。
-- `npm test` 12/12 通过（含 5 条指针模型测试）；`tsc` 干净。
-- TITLE 后进入 Live2D/消息主循环（`setL2DMOC`、等待输入），M0 无界面 stub 使其停在消息循环（预期）。
-- **Electron 渲染壳已接通**：窗口（内容区 1280×720）+ IPC 文件流 + PixiJS v8 WebGL 渲染；标题布局、真实标题图像已接入。
+## 1. 现状（2026-09 实测）
+
+| 项 | 值 | 校验方式 |
+|---|---|---|
+| 测试 | **383 条** node:test | `npm test` |
+| 类型 | 3 个 tsconfig 全干净 | `npm run typecheck` |
+| 死写棘轮 | 基线 2 条（`Item.blend` / `MeshObj.blend`） | `npm run check:dead-writes` |
+| 一条命令全绿 | `npm run verify` = typecheck + test + dead-writes | — |
+| opcode 实现表 | `OPS` **230** / `NATIVE_OPS` **50** / `ENGINE_INTERNAL_OPS` **14**（三张表**两两不交**，`test/registry-tables.test.ts` 守） | 代码 |
+| 台账 | functions **460** 条 / capabilities **108** 条（已核验 27、部分 24、缺失 25、n/a 25、已建模未核验 7）/ scripts **23** 条 | `analysis/*.json` + 工具 `--summary` |
+
+**链路覆盖**（`npm run op:inventory -- --path start`）：`SYSTEM4 → … → TITLE →（Game Start）→ GAMESTART →（ゲーム開始）→ INITGAME/SETFATE/… → SC0000 → SN0000 首文案`，
+该路径**零未实现 opcode**；`npm run shot -- --gamestart` 产出实机对照截图（`.tmp/gs*-*.png`）。
+**未实现 opcode 一律硬报错**（`NotImplementedOp`），不允许静默 no-op —— 这是本工程的第一原则。
 
 ## 2. 技术前提
 
-- 引擎为 x86 32 位、未见 int64；JS `number` 配合显式 32 位位运算可安全操作 2^53 内整数（ADR-011 配套）。
+- 引擎为 x86 32 位、未见 int64；JS `number` + 显式 32 位位运算（`|0`/`>>>0`/手写 ROL/ROR）可安全表达（ADR-006）。
+- 引擎的全局 int 池存的是 `ENC(key, v)`、读时 `DEC(key, ·)`（key 每进程随机）⇒ 重写侧必须在**同一条读写路径**上做 ENC/DEC，不能"原样读"（见 §3.2）。
 
 ## 3. 架构
 
+### 3.1 分层与依赖方向
+
 ```
-[主进程]  NativeBridge 壳（文件/归档/未来渲染+音频，经 IPC）
-   ▲ IPC
-[渲染进程] 解释器核心 (纯 TS)
-   - Engine / ScriptContext 对象
-   - dispatch[opcode] 分发表（可注入 = 插件点）
-   - 读写原语 (readInt/Float, writeInt/Float, DEC/ENC)
-   - NativeBridge 调用（当前 == stub）
+┌─ electron/（主进程）───────────────────────────────────────────────┐
+│  main.ts：窗口（内容区 1280×720）+ 脚本/图像/音频 IPC + 归档解析     │
+│  （唯一能碰 Node fs 的地方；AGF/ALF 解码在这里做，结果以 RGBA/字节流下发）
+└──────────────▲───────────────────────────────────────────────────┘
+               │ IPC（IpcFileSource / image / audio-stream / log-line）
+┌──────────────┴─ renderer 进程 ────────────────────────────────────┐
+│                                                                   │
+│  renderer/                     vm/                                │
+│  ┌───────────────────────┐    ┌─────────────────────────────┐     │
+│  │ scene/state.ts        │    │ interpreter.ts 单步派发      │     │
+│  │  SceneState（唯一场景 │◄───┤ ops.ts OPS/NATIVE/INTERNAL   │     │
+│  │  模型：drawItems/     │    │ handlers/*.ts 按族分文件     │     │
+│  │  meshes/msgWins/...） │    │ engine.ts 引擎态（字段即事实）│     │
+│  ├───────────────────────┤    │ msgwin.ts 消息窗/文本模型    │     │
+│  │ scene/ops.ts（sc* 语义│    │ operand.ts/ref.ts 操作数+引用│     │
+│  │  层，**两个宿主共用**）│    │ native.ts 宿主桥接口         │     │
+│  ├───────────┬───────────┤    └──────────────┬──────────────┘     │
+│  │headless   │pixi       │                   │ NativeBridge（可选方法）│
+│  │Scene.ts   │Backend.ts │◄──────────────────┘                    │
+│  │（Node 报告│+pixi/*    │                                        │
+│  │ /测试）   │（WebGL）  │        text/（layout+raster+fontSet）  │
+│  └───────────┴───────────┘        audio/（intent → WebAudio）     │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-- 文件访问全走异步代理 `FileSource`（`src/arch/fileSource.ts`；宿主 `NodeFileSource`，renderer 换 `IpcFileSource`）。
-- 插件点 = `dispatch[]` 可替换（ADR-009，后置）；观测点 = 解释器步进 hook。
+**依赖铁律**（评审时按它判违规）：
 
-## 4. 目录结构
+1. `vm/` **不依赖** `renderer/`、`audio/`、DOM：它只认 `NativeBridge` 接口（`native.ts`），实现由宿主注入。
+2. `renderer/scene/*` 是**两个宿主的唯一共享语义层**：`headlessScene.ts`（Node）与 `pixiBackend.ts`（WebGL）都只做"接线"，
+   语义一律落到 `scene/ops.ts` 的 `sc*` 函数 —— 否则会出现"报告说 3 行、画面画 2 行"的漂移。
+3. `text/`（排版/光栅化）与 `audio/`（意图 → WebAudio）不反向依赖 `vm/`；`vm/` 只通过桥与 `msgWinSync`/音频 intent 交互。
+4. `electron/` 只做 OS 能力；**任何**引擎语义都不允许只活在主进程里。
+
+### 3.2 关键机制（每条都有源码依据，细节见 `../03-engine/`）
+
+- **单步派发**：`interpreter.stepOnce` 读一条指令 → 查 `OPS → NATIVE_OPS → ENGINE_INTERNAL_OPS` → 未命中抛 `NotImplementedOp`。
+  操作数读取集中在 `operand.ts`（`readIntOperand` 对 int 槽过 DEC；`readFloatOperand` 的立即数是 IEEE 位模式）；
+  引用（指针/数组/lea）集中在 `ref.ts`（`Ref={scope,kind,index,stride}`，读解引用、写写穿）。
+- **字段即事实**：引擎字段写进 `Engine.engineValues`（稀疏 `Map<number,number>`，键 = `_this[K]` 的 K）；
+  有结构的那部分再建强类型视图（`Engine.msgwin` / `routes` / `textItems` / `agerc` / `texSlotFlags` …）。
+  两者的关系是"字段是真源、视图是投影"，不允许只有视图没有字段。
+- **场景模型**：`SceneState`（drawItems / meshes / msgWins / texSlots / render4 诊断袋）是**持久**的；
+  指令只**配置对象**，`present()` 每帧按模型合成（引擎式"配置 + 每帧合成"，与指令流解耦）。
+- **动画两套、正交**：DrawItem 用整数式 diffuse-alpha 窗（5 个窗共享起点）；Mesh 用浮点 `CalcDiffuse`
+  （元素 2 自己锁存起点）。混用会让"背景先、文字后"的观感消失（见 `copyright-effect.md`）。
+- **文本**：排版在 `text/layout.ts`（等宽网格、边界硬断、注音配对、**恒横向**、对齐=行中心/右缘、逐字游标），
+  光栅化在 `renderer/text/raster.ts`（自绘，不用 `pixi.Text`），层序 = `20+win`；
+  逐字两种节拍：普通消息 = "一步一字、时长 = 字数 × max(MessageSpeed, 一帧)"，**字格页**（`0x73`）= "一步一格、时长 = cells × op10"。
+  ★**"这一帧能看见几个字"只有一处判决**：`MsgWindow.revealedOf`（所有发布者都走 `emitWin` → 它）。
+  两条例外（未武装/未推进 ⇒ **0 字**而不是"全部"）：`0x300` 逐行泵、`0x73` 字格门 —— 引擎的字格页在 `0x72` 武装前**一个字都不贴**（`sub_45A940` 只在 `effect_flags & 0x40000000` 分支里被调用），
+  而语料里 `i073` 与文本的顺序不固定（`SN0000.txt:1081` 页首 / `:1240` 页末）⇒ 判决写在各 op 里就会出现"一条判 0、下一条判全部"的裂缝（2026-09 用户实测"文字在逐字出现前完整出现"）。
+- **宿主桥的"可选方法"语义**：`NativeBridge` 的方法全是可选的；**调用方一律 `?.`，闸门 A 记录"意图被丢弃"**
+  （`nativeTap.ts` 的方法白名单 + 编译期穷尽检查）。
+- **三闸门**（缺口可见性，`README.md` §488+ 有完整表）：A = 桥方法被调但宿主没实现；B = 能力台账缺口；
+  C = 死写（模型字段写了没人读，基线 `dead-writes.baseline.json`）。**新增缺口必须登记**，不许静默。
+
+### 3.3 权威源与生成物（**不要手改生成物**）
+
+| 类别 | 真源 | 生成物 / 校验 |
+|---|---|---|
+| 函数/字段 | `analysis/functions.json`、`analysis/fields.json` | `report.js` 查询；`--validate` 自检 |
+| 引擎常态能力 | `analysis/engine-capabilities.json` | `docs-new/03-engine/engine-capabilities.md`（`node scripts/build-capabilities.mjs`） |
+| 脚本台账 | `analysis/scripts.json` | `docs-new/05-scripts/*.md`（`node scripts/build-scripts.mjs`） |
+| opcode 助记符 | `docs-new/03-engine/opcode-table.md` | `scripts/asm/opcodes.json`（`build-opcodes.js`）、`src/vm/ops.ts`、`src/*.txt` |
+| 引擎行为 | `engine/天结_unpacked.exe_utf8.c`（raw 行号基准） | — |
+
+工具（`.agents/skills/amayui-engine-analysis/scripts/`）：`report.js` / `capabilities.js` / `scripts.js`；
+写入走工具（自动重算 counts），改完必须重跑 `build-capabilities.mjs`，否则 `test/capability-*.test.ts` 会红。
+
+## 4. 目录结构（实况）
 
 ```
 app/amayui-emulator/
-├─ electron/     # main.ts(主进程+文件IPC)/preload.ts(contextBridge)
-├─ src/          # arch/(FileSource) renderer/(IpcFileSource+PixiBackend+renderer.ts)
-│                # script/(lzss/alf/bin/opcodes) util/ vm/(engine/operand/ops/interpreter/native)
-├─ test/         # xval(解析vs文本) + boot(管线级)
-├─ build-electron.mjs / package.json / tsconfig.json
-└─ README.md
+├─ electron/            main.ts（窗口+IPC+归档）/ preload.ts（contextBridge）
+├─ src/
+│  ├─ vm/               interpreter.ts / ops.ts（三张表）/ engine.ts / msgwin.ts / operand.ts / ref.ts
+│  │  └─ handlers/      control·memory·gfx-item·gfx-texture·gfx-state·gfx-cg·gfx-misc·msgwin·text-items·
+│  │                    audio·frame·engine-fields·panel·agerc·stubs…
+│  ├─ renderer/         sceneModel.ts → scene/{state,ops,snapshot}.ts（共享语义）
+│  │                    headlessScene.ts（Node 宿主）/ pixiBackend.ts（WebGL 宿主）
+│  │                    drawitem/（Item/Mesh 模型+窗+求值+setter）/ pixi/（presenter/textLayer/textureCache）
+│  │                    text/raster.ts / audio/ / viewport.ts
+│  ├─ text/             layout.ts（排版）/ raster 无关的纯函数 / fontSet.ts（面名→字体）
+│  ├─ audio/            audioEngine.ts（intent 队列 + 墙钟推进）
+│  ├─ arch/             fileSource / nodeFileSource / ipcFileSource / overlay / agf / alf / systemPaths
+│  ├─ script/           bin.ts / alf / lzss / opcodes.ts
+│  └─ tools/            report / opInventory / diagText / gameStartChain / config1Chain / deadWrites / saveDump
+├─ test/                383 条（含棘轮：registry-tables / game-start-chain / no-dead-writes / capability-* / script-ledger）
+├─ build-electron.mjs（esbuild 打包）/ package.json / tsconfig{,.control,.electron}.json
+└─ README.md            实现细节与事故复盘（**与本文互补，不重复**）
 ```
 
 ## 5. 关键 ADR（架构决策）
 
-- 启动层级 / 对象模型（Engine、ScriptContext）/ `NativeBridge` / 未实现 opcode 硬报错 / 32 位语义 / BIN 读取器。
-- **ADR-010**：函数级状态追踪（每原函数重写状态 + 确认忽略的证据/复核）——`src` 内函数状态注册表。
-- **ADR-011**：指针 = 带标记引用（`Ref={scope,kind,index,stride}`）；读解引用、写写穿；不当数值（`lea`/`lookup-array`/`memcpy` 模拟隐患）。
+| ADR | 决策 | 现状 |
+|---|---|---|
+| 006 | 32 位语义显式化（`|0`/`>>>0`/手写 ROL/ROR） | ✅ |
+| 009 | 派发表可替换 = 插件点 | 后置（当前是 `Map`） |
+| 010 | 函数级状态追踪（每个原函数：已重写/已确认忽略 + 证据） | ✅ 并入三层台账 |
+| 011 | 指针 = 带标记引用 `Ref`；读解引用、写写穿 | ✅ `ref.ts` |
+| — | **两个宿主共用 `scene/ops.ts`**（消除"两份语义"） | ✅ |
+| — | **未实现 opcode 硬报错**；未实现能力必须登记台账 | ✅ |
+| — | **不要手改生成物**（台账 → md/JSON） | ✅ 有测试守 |
 
 ## 6. 渲染（Electron + PixiJS）
 
-- `PixiBackend`：`setTexture([imgid,slot,color])` 绑定 slot→imgid 纹理；`drawTexture([tex,layer,srcX,srcY,srcW,srcH,dstX,dstY])` 按 op3-6=源裁剪、op7/op8=目标位置 1:1 贴；场景切换（脚本名变化）清空绘制层。
-- 视口 1280×720；窗口 `useContentSize:true` + `win.setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清）。CSP 含 `unsafe-eval`（Pixi v8 需要）+ `img-src`/`blob:`。
-- ✅ `image(id)` IPC → `resolveEntry(id)` → AGF 字节 → `decodeAgfRgba` → RGBA 给 renderer。
-- ⚠️ 沙箱/无头环境跑 Electron 需 `--no-sandbox`；GPU 进程只加 `--no-sandbox` 时不崩（WebGL 可用）。
-
-## 6b. 输入子系统（鼠标）
-
-- **`InputManager`**（`src/vm/input.ts`）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿、**移动标记（`mouseMoved`，供 hover 派发）**、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（`flush()`）。
-- **已实现 opcode**（`src/vm/ops.ts`）：`0x108`(读鼠标按钮→op1)、`0x109`(读鼠标位置→op1/op2)、`0xCC`(mouse_callback 注册)、`0xFB`(joy_callback 注册)、`0xCD`(get-input-type 派发：移动/点击皆派发，并**压返回地址**回循环)、`0x12E`(悬停命中 point-in-rect)、`0x100`/`0xFF`/`0x101`(掩码派发/重置/刷清)。
-- **DOM 捕获**：`PixiBackend.create(status, input)` 监听 canvas `mousemove/mousedown/mouseup/mouseleave` 写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 显示 `mouse=(x,y) btn=L/R`。
-- 测试 `test/input.test.ts`（InputManager 单元 + TITLE hover/点击派发端到端，含 `0x12E` 悬停索引断言）。**语义见 `../03-engine/input-system.md` §11**。
-- `0x2FC`(读鼠标触点+坐标)、`0x12E`(悬停命中 point-in-rect，**几何来自脚本数据** local5/local69/local cd，引擎不写死) 已实现；**hover 高亮**随光标移动可工作且可回退。
-- **hover 高亮叠层回退**：标题的高亮叠层（`0x12c/0x12e/0x130/0x132/0x134`）经 `0x203 set-draw-color-alpha` 控制 alpha；修正了 `0x203` 的读参（**op3=alpha、op4=color → ARGB**，此前误把 op3 当整色），并让 `PixiBackend#itemAlpha` 在**无动画窗时也尊重显式设色的 alpha**（`colorSet`），从而叠层能淡入/淡出（hover 可回退）。
-- `0x1F7 detach-texture` 已实现（映射 `native.detachTexture(handle,count)`，删单/区间图元：`count≤1` 删单 handle、`count>1` 删 `[handle,handle+count)` 区间），不再走 `unhandled`。「unhandled」的 `0x1ff/0x341/0x345/0x34e/0x308/0x1f8` 是 M0「记录后放行」桩（boot/TITLE setup 的 L2D/模型/注册/造纹理 op），为跑到 TITLE 而未硬报错；如需严格可后续实现。
-- **交互运行**：进入 TITLE 后**不再按步数/`titleSteps` 自动截止**（脚本退出/重置/错误/关窗才收尾）；`MAX_STEPS` 仅作病态死循环兜底。TITLE 后**停止逐条步进日志**（避免交互运行日志爆炸），只记关键事件（`[input]`/`[input-state]`/错误/脚本切换）。
-
-### 诊断法（无法搜到 `op=0x12e` 时）
-在 `.tmp/amayui-emulator.log`：
-- 搜 `[input] move/down` → DOM 鼠标事件是否到达 `InputManager.setCursor`；
-- 搜 `[input-state] hasCursor=… moved=…` → VM 侧 InputManager 实况；
-- 若无 `[input]` 且 `hasCursor=0` → 鼠标事件没进 renderer（DOM/焦点问题）；
-- 若有 `[input]`/`moved=1` 却仍无 `op=0x12e` → 后续查 get-input-type 派发。
-- ⚠️ **点击选中菜单项**仍依赖菜单派发表 `0xA1/0xA2/0xA3`（当前安全桩）；`0x20C/0xB5/0x23D/0x32B`（图形/声音清理）为 no-op 桩。如需完整菜单交互另见 `../03-engine/input-system.md`。
-- ⚠️ **opcode 名称同步**：`src/opcodes.ts` 已把语义化名 `detach-texture`/`float-mov`/`create-mesh`/`wait`/`poll-input` 等从 `u00xxxxxx` 别名改为语义名（对齐 `src/*.txt` 与 `../03-engine/opcode-table.md`）。
+- 视口 1280×720；窗口 `useContentSize:true` + `setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（CSS 1280×720、底层按 DPR 高清）。CSP 含 `unsafe-eval`（Pixi v8）+ `img-src`/`blob:`。
+- **合成顺序 = 三路归并**（2026-09 订正）：draw-item 键 = `layer`、文本窗键 = `layerOfFrame`（`style.itemId > 0 ? itemId : 20+win`）、mesh 键 = `handle`，同键序 item→text→mesh —— 与引擎 `sub_4B06D0` 的"按 sort-key 归并两表"同构。
+  ★旧文写的是"meshes 叠在其上"，那只是 LOGO 那一页的巧合：SN0000 的实际层序是 背景 `101000` → 淡入幕 `0x19258`(=`102488`) → 暗幕 `0x19640`(=`104000`) → 立绘 `104501+` → 文本 `105000`，把 mesh 一律压到最上就会整屏黑。
+  `flags & 1` 是两条绘制门（DrawItem 由 `0x1FB` 置、Mesh 由 `0x320` 建几何置）——**空项不画**。
+- **Mesh = 真实顶点四边形**：几何取自 `0x320` 的 x/y/z 浮点数组（屏幕像素），颜色 = 逐顶点基础色 × `CalcDiffuse` 插值态色。
+  轴对齐四边形走 `Graphics.rect()`；★**不要用 `poly()` 一次喂 4 个条带序顶点**（Pixi v8 按顺序连点 ⇒ 自交成蝴蝶结 ⇒ 全屏大 X）。
+  ★**可见色 = 顶点缓冲里那份**：`calcDiffuse` 在"无动画窗"时返回 **`state0`**（不是 `state1`）—— `0x322` 写完 state0 立刻以比例 0 刷 VB、`0x323` 只置窗与 state1 不碰 VB；返回 state1 会让"设色 → 开窗"之间透明一帧（SN0000 进场时背景闪一下）。
+- **没有整屏 Clear**：引擎 present 不无条件清 backbuffer（`ClearTarget` 被恒 0 的守卫挡住）⇒ 撤满屏幕布后留帧（`pixiBackend.#holdFrameAfterCurtainDrop`）。
+  ★**解除判据 = "新内容真的可见"**（`#releaseFrameHoldIfVisible`，读 `calcDiffuse` 出的当前颜色 alpha > 0）：引擎里"建几何（`0x320`）"与"设色（`0x322`）"是两条指令，建项即解除会呈现一帧透明幕。上限 `HOLD_MAX_FRAMES=60`（≈1 秒），`0x1F6 clearDrawContainer` **续期**而不是解除。
+- 纹理：`set-texture` 在引擎里是**同步**读文件+解码；重写侧走异步 IPC ⇒ `0x1F9` 之后立刻 `await texturesIdle()`（`texture-frame-barrier`）。
+  ★**绝不能在舞台还引用纹理时销毁它**（会把 WebGL 批次写坏 ⇒ 整屏只剩背景色且不再恢复，`README.md` §581）。
+- `image(id)` IPC → `resolveEntry` → AGF 字节 → `decodeAgfRgba` → RGBA。无头/沙箱环境跑 Electron 需 `--no-sandbox`。
 
 ## 7. 命令
 
 ```bash
-npm test            # 解析 vs 文本 + boot 管线级
-npm run build       # tsc
-npm run run         # tsx src/run.ts（无界面）
-npm run electron:dev  # build + 启动 Electron 渲染壳
+npm run verify         # ★提交前必跑：3×tsc + 383 测试 + 死写棘轮
+npm test               # node:test
+npm run run            # 无界面跑（tsx src/run.ts）
+npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）
+npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未实现"清单）
+npm run diag:text      # 文本可见性诊断（为什么画面上没有字）
+npm run shot -- --gamestart [--name X] # E4 自动截图（先 build:electron；★时序等日志标记，不睡固定秒数）
+npm run electron:dev   # build + 启动渲染壳
+npm run save:dump      # SAVE.DAT 解析
 ```
 
-## 8. 待办/未解（属引擎方向）
+## 8. 待办 / 已知缺口（详见能力台账，勿在本文件抄明细）
 
-- 角色图层（标题左侧角色立绘来源未定位）；视频（TITLE.MTN，步骤 2）；Live2D（SO004A）。
-- 输入：**输入子系统（鼠标位置/按钮/回调/派发/掩码）已实现**（见 §6b）；**标题菜单"内容选择"（UI 命中测试 `0x2FC` + 菜单派发表）仍属未解**，需消息/UI 子系统。
-- 详见 `../03-engine/`（尤其 `resource-loading.md`、`rendering.md`、`input-system.md`）。
+- **3D 侧**：A4b 天气/粒子族（`0x324`/`0x325`/`0x326` 为 no-op、`0x327`/`0x328` 未注册）与"每帧渲染状态重设"整体缺失。
+- **材质/混合**：`Item.blend` / `MeshObj.blend`（引擎的混合模式选择子）未接到 Pixi `blendMode`（值已送达，渲染器未消费 ⇒ 留在死写基线）。
+- **存档路径**：`0x1A0`（读档 `SAVE%2.2d.DAT` + `sub_438120`）未实现，是下一个大缺口。
+- **几何近似**：mesh 逐顶点渐变色取三角形均值（语料里逐顶点色恒等，无实测差异）。
+- **平台侧**：视频（TITLE.MTN）/ Live2D（SO004A）/ 角色立绘来源未定位；GDI 文本度量（`0x205`）走近似。
+- 每条缺口都必须在 `analysis/engine-capabilities.json` 有对应条目（状态 + 症状 + 修法），否则视为未登记。
 
 ## 9. 权威事实来源
 
-- 逆向结论：`../03-engine/`；`engine/engine.hpp`（`this` 模型）、`engine/天结_unpacked.exe_utf8.c`（反编译源，唯一分析基准）。
-- 本工程不再引用旧的逆向散篇或进度文档（已并入上述）；里程碑/进度记录仅作工程内部留存，不作新来源。
+- 逆向结论：`../03-engine/`（`engine-capabilities.md` 是生成物）与 `analysis/*.json`（真源）；
+  反编译源 `engine/天结_unpacked.exe_utf8.c` 是**唯一分析基准**（raw 行号一律指它）。
+- 实现细节/事故复盘/闸门说明：`../../app/amayui-emulator/README.md`。
+- 里程碑/进度记录只作内部留存，**不作新来源**。

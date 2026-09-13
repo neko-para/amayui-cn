@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 108,
-    "modeled-verified": 27,
+    "modeled-verified": 28,
     "modeled-unverified": 7,
-    "partial": 24,
+    "partial": 23,
     "absent": 25,
     "n/a-known": 25,
-    "needsAttention": 56
+    "needsAttention": 55
   },
   "entries": [
     {
@@ -662,10 +662,10 @@
       "whySilent": "颜色窗不活动时只做一次顶点缓冲 Unlock 回写，逐通道 lerp 全跳过",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
-        "evidence": "E1",
-        "guard": "",
-        "note": "mesh 颜色窗实现了（CalcDiffuse 浮点式），但 ① mesh 渲染是整屏黑罩（顶点几何未建模）② 元素2 的色槽偏移（+36/+52/+56）与窗口字段归属仍需复核（sub_4AE2C0 同时写两处色槽 ⇒ 现模型的 state0/state1 映射可疑）"
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/mesh-vertex-quad.test.ts",
+        "note": "mesh 颜色窗已建模：`drawitem/eval.ts` 的 `calcDiffuse`（浮点式，对齐 `sub_4A2050` raw 122287-122294）+ `mulArgb`/`meshColor` 的逐通道乘。★2026-09 三处订正：① 顶点几何与逐顶点色早已建模（见 `mesh-vertex-quad-and-per-vertex-color`，modeled-verified/E3；`0x320` 的 op2..op8 是数组基址）——本条原先\"mesh 渲染是整屏黑罩\"的残余缺口描述作废；② state0/state1 的归属已定：`0x322`（`sub_426C20` → `sub_4AE2C0` raw 132816-132823）写 `entry[13] = state0` 后**立刻** `sub_4A2050(entry, 0.0)` 以比例 0 刷进顶点缓冲 ⇒ **state0 = 当前可见色**；`0x323`（`sub_426CF0` → `sub_4AE330` raw 132834-132843）只置 bit1/delay/dur 与 `entry[14] = state1`、**不碰 VB** ⇒ 延迟期看到的仍是 state0；窗末（raw 133531-133538）`state0 ← state1` 后再以比例 0 刷 VB。⇒ emulator 在\"无动画窗\"时必须返回 **state0**：此前返回 state1（初始 0 = 全透明），SN0000 进场的黑幕（state0=0xFF000000、state1=0）就在 `0x322` 与 `0x323` 之间渲染成透明 ⇒ 背景闪一帧（用户实测\"进 SN0000 时背景闪一下\"，`.tmp/amayui-emulator.log` 的 `[frame-hold]` 与 `[present]` 序列可复现）；③ 元素2 的色槽偏移（+36/+52/+56）已对上（+52 = state0、+56 = state1、+36 = 逐顶点 diffuse 数组），\"映射可疑\"作废。残余缺口：`entry[9]` 的 alpha 混合选择子（`0x322` op2）未接到 Pixi 混合模式（见 `dead-writes.baseline.json` 的 `MeshObj.blend`）。"
       }
     },
     {
@@ -1060,7 +1060,7 @@
         "status": "absent",
         "evidence": "E0",
         "guard": "",
-        "note": "★顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 只能画成整屏色块，顶点几何全丢"
+        "note": "★顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 曾只能画成整屏色块（2026-09 已按真实四边形绘制），顶点几何曾全丢（2026-09 已建模） ★2026-09 订正：mesh 的**顶点几何与逐顶点色已建模**（见 `mesh-vertex-quad-and-per-vertex-color`，modeled-verified/E3，守卫 `test/mesh-vertex-quad.test.ts`；`0x320` 的 op2..op8 是数组基址）。本条残余的缺口与 mesh 四边形无关。"
       }
     },
     {
@@ -2441,7 +2441,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/char-reveal.test.ts",
-        "note": "已实现：0x73 写真格（gate/cells/tickMs）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 帧循环按 0x73 op10 节拍推进 + 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号（保存/取回行游标并把余下的行贴出）。★有意偏离：引擎的循环模数是 win+92（= 0x73 op9，字格/每行字数；NOVEL/SN0000 = 8/10），emulator 的显现单位是页面字符，故上界用本页字形数（否则序章每页只会循环贴出前 8 格）；引擎的 GDI 暂存面 blit 编排（sub_43D870 两段）不复刻，宿主按自己的排版模型画前 N 个字形。"
+        "note": "已实现：0x73 写真格（gate/cells/tickMs）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 帧循环按 0x73 op10 节拍推进 + 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号（保存/取回行游标并把余下的行贴出）。★有意偏离：引擎的循环模数是 win+92（= 0x73 op9，字格/每行字数；NOVEL/SN0000 = 8/10），emulator 的显现单位是页面字符，故上界用本页字形数（否则序章每页只会循环贴出前 8 格）；引擎的 GDI 暂存面 blit 编排（sub_43D870 两段）不复刻，宿主按自己的排版模型画前 N 个字形。★2026-09 补（用户实测\"文字会在逐字出现前**完整出现**一下\"）：**武装之前一个字都不贴**。主循环只在逐字模式（`effect_flags & 0x40000000`，由 0x72 置位）里调 `sub_45A940` 拍格 ⇒ 在 0x72 之前屏幕上没有任何字形。因此\"这一帧能看见几个字\"的判决点只有一处（`MsgWindow.revealedOf`）：字格门（`0x73` 写的 `win+88`）与 `0x300` 逐行泵并列成同一个\"未武装/未推进 ⇒ 0 字\"例外。语料里 `i073` 与文本的顺序**不固定**（`SN0000.txt:1081` 在页首、`:1240` 在本页文本之后），而总门自序章首屏起恒为 1 ⇒ 若把\"无显现状态\"读成\"全部\"，则 `0x6E` 入队 → `0x72` 武装之间的那一帧会整页先亮、随后被逐字从头重播。守卫：`test/char-reveal.test.ts` 的两条 ★（泵门窗 / 字格门窗）+ `test/mesh-vertex-quad.test.ts` 的 E3 链路。"
       }
     },
     {
@@ -2886,7 +2886,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/mesh-vertex-quad.test.ts",
-        "note": "已建模：① 几何（op2/op3/op4 浮点数组 + op7/op8 UV）；② 逐顶点基础色（op5/op6 两个全局 int 数组，DEC 解码后合成）；③ `0x322/0x323` 的 clamp + 负值回退（`scene/ops.ts` 的 `vertexColorArg`）；④ CalcDiffuse 逐通道乘（`drawitem/eval.ts` 的 `mulArgb`/`meshColor`）；⑤ presenter 用真实几何 + 真实颜色合成，轴对齐四边形走 `rect()`、非轴对齐走三角扇（Pixi v8 的 `poly()` 按给定顺序连点，条带序 4 点会自交成\"蝴蝶结\"⇒ 画面出现贯穿全屏的大 X）。残余近似（已登记）：① 逐顶点渐变色取三角形均值；② 逐顶点 base 色语料恒为 0xFFFFFFFF（INIT2），渐变幕布未实测；③ mesh 的 z 序仍统一叠在 draw-item 之上（引擎按 handle 三路归并，见 rendering.md §3.1）。"
+        "note": "已建模：① 几何（op2/op3/op4 浮点数组 + op7/op8 UV）；② 逐顶点基础色（op5/op6 两个全局 int 数组，DEC 解码后合成）；③ `0x322/0x323` 的 clamp + 负值回退（`scene/ops.ts` 的 `vertexColorArg`）；④ CalcDiffuse 逐通道乘（`drawitem/eval.ts` 的 `mulArgb`/`meshColor`）；⑤ presenter 用真实几何 + 真实颜色合成，轴对齐四边形走 `rect()`、非轴对齐走三角扇（Pixi v8 的 `poly()` 按给定顺序连点，条带序 4 点会自交成\"蝴蝶结\"⇒ 画面出现贯穿全屏的大 X）。★2026-09 订正/新增：⑥ **z 序已复刻** —— 原先\"mesh 统一叠在 draw-item 之上\"的近似作废：`presenter.ts` 现按引擎 `sub_4B06D0` 的归并对 draw-item / 文本 / mesh 三路合并（mesh 的排序键 = handle），同键序 item→text→mesh；SN0000 实测层序 = 背景 101000 → 淡入幕 0x19258(=102488) → 暗幕 0x19640(=104000) → 立绘 104501+ → 文本 105000（与 `rendering.md` §3.1 一致）。⑦ **可见色 = 顶点缓冲里那份**：`calcDiffuse` 在\"无动画窗\"时返回 **state0**（`0x322` 写完即以比例 0 刷 VB、`0x323` 不碰 VB、窗末 `state0 ← state1` 后同样以比例 0 刷）—— 此前返回 state1 会让进场黑幕在\"设色\"与\"开窗\"之间透明一帧（背景闪现，用户 2026-09 实测）。残余近似（已登记）：① 逐顶点渐变色取三角形均值；② 逐顶点 base 色语料恒为 0xFFFFFFFF（INIT2），渐变幕布未实测。"
       }
     },
     {

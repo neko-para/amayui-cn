@@ -48,6 +48,17 @@ export const FALLBACK_APPDATA_REL = path.join('.tmp', 'appdata');
 
 /** 系统存档目录下的逻辑文件名（overlay 与 base 共用同一套相对路径）。 */
 export const INI_FILE = 'SYS4REG.INI';
+
+/**
+ * 取**当前生效**的 `SYS4REG.INI` 文本（overlay 优先；两边都没有 ⇒ 空串 ⇒ 引擎字段用缺省）。
+ *
+ * 三个跑手（`tools/config1Chain`、`tools/gameStartChain`、`report`）都需要它，原先在两处逐字重复
+ * ⇒ 下沉到这里一份（结构类型入参，避免 `arch` 依赖上层）。
+ */
+export function effectiveIniText(files: { readTextSync(rel: string): { text: string } | null | undefined }): string {
+  const hit = files.readTextSync(INI_FILE);
+  return hit ? hit.text : '';
+}
 /** `SAVE.DAT` 相对系统存档目录的路径（引擎在这里放"设置 + 存档槽共用"的那份）。 */
 export const SAVE_DAT_REL = path.join('SAVE', 'SAVE.DAT');
 /** 存档子目录名（`SAVEnn.DAT` / `RT.DAT` 都在这下面）。 */

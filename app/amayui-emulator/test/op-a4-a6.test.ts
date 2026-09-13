@@ -17,17 +17,14 @@ import { StubNative } from '../src/vm/native.js';
 import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import type { NativeBridge } from '../src/vm/native.js';
+import { im, instr, str } from './harness.js';
 
-const im = (v: number): BinArg => ({ type: 0, raw: v }) as unknown as BinArg;
 /** 立即数 float：`raw` 必须是 **IEEE 位模式**（`readFloatOperand` 走 `floatBits(raw)`）。 */
 const fm = (v: number): BinArg =>
   ({ type: 1, raw: new Uint32Array(new Float32Array([v]).buffer)[0]! }) as unknown as BinArg;
 /** 本帧 int 槽（type 0x9）—— 可作写目标，也可当 `i14d` 的「数组」操作数（引擎 `sub_42AEA0` 取址）。 */
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 
-function instr(op: number, args: BinArg[]): BinInstruction {
-  return { opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 } as unknown as BinInstruction;
-}
 
 function mk(native: NativeBridge = new StubNative(() => {})) {
   const e = new Engine(native);
