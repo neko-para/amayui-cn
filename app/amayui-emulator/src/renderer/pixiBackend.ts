@@ -32,7 +32,7 @@ import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, ite
 import {
   newSceneState,
   scAdvance,
-  scGateAnimationsDone,
+  scPoolPending,
   sceneNeedsRender,
   scClearDrawContainer,
   scMsgWinClear,
@@ -125,7 +125,7 @@ export class PixiBackend implements NativeBridge {
   /**
    * 渲染/模型时钟（ms，引擎 `this[46500]` 的等价物）。
    * ★2026-09（`tickets/T-0008` 的 D1）：**由调用方按 Engine 的 `nowMs` 传入**（`present(nowMs)` /
-   * `animationsDone(nowMs)`）—— 修前这里是"`performance.now() - wallStart`"这样一个**独立时间域**，
+   * `advanceModel(nowMs)`）—— 修前这里是"`performance.now() - wallStart`"这样一个**独立时间域**，
    * 与 `Engine.nowMs`（绝对墙钟）不同源 ⇒ "同一脚本同一时刻"在两侧不可比。
    */
   private clockMs = 0;
@@ -733,15 +733,14 @@ export class PixiBackend implements NativeBridge {
   // ---- 动画求值 / 渲染驱动 ---- //
 
   /**
-   * 场景动画是否已跑完 —— **`0x400` 门的放行判据**（桥方法 `NativeBridge.animationsDone`；`session.#serviceAnimGate` 调）。
-   * ★传入 `nowMs` 时**用它**（并把 `clockMs` 刷新到它）——这样"门的判据"与"引擎的时钟"同源，
-   * 不会再出现"读上一帧时钟"（`tickets/T-0008` 的 G4）。
-   * ★判据范围 = `scGateAnimationsDone`（**不是** `scAnimationsPending`）：理由与实测见该函数注释。
-   * ★方法名与桥一致（`tickets/T-0013`）：帧驱动/会话只经接口调用，不再有"宿主私有名字"这一层。
+   * **本遍推进后池是否还挂着** —— `Scene+46516` 的等价物（引擎 `sub_49AA30` raw 117843-117844；`tickets/T-0024`）。
+   * ★口径 = `scPoolPending`（mesh 窗 + draw item 5 窗，**排除 `+720` bit0 的元素**）：
+   * 这一格不是"门自己扫几个窗"的猜测 —— 门 = 它 + `0x238` 计时器（`Engine.gatePending`）。
+   * ★时钟用 `advanceModel(nowMs)` 注入的 `clockMs`（`tickets/T-0008` 的单一时间域）。
+   * ★方法名与桥一致（`tickets/T-0013`）：帧驱动/会话只经接口调用。
    */
-  animationsDone(nowMs?: number): boolean {
-    if (nowMs !== undefined) this.clockMs = nowMs;
-    return scGateAnimationsDone(this.scene, this.clockMs);
+  poolPending(): boolean {
+    return scPoolPending(this.scene, this.clockMs);
   }
 
   /**

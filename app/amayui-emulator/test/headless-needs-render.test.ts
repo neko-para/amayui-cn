@@ -77,7 +77,7 @@ test('needsRender：只读的 getter / 判据不置脏', () => {
   s.getDrawItemPos(H);
   s.getDrawItemPivot(H);
   s.getDrawItemTexSlot(H);
-  s.animationsDone(T0 + 10_000);
+  s.poolPending();
   assert.equal(s.needsRender(), false, '问问题不该让画面变脏');
 });
 
@@ -97,7 +97,7 @@ test('源码棘轮：`scene/ops.ts` 里变更型 sc* 都要置脏，只读的白
   }
   const READ_ONLY = [
     'scAnimationsPending', // 判据
-    'scGateAnimationsDone', // 判据
+    'scPoolPending', // 判据（池挂起位 Scene+46516；T-0024）
     'scGetDrawItemPos', // getter
     'scGetDrawItemPivot', // getter
     'scGetDrawItemTexSlot', // getter

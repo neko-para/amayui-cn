@@ -68,6 +68,15 @@ export interface Item {
   to: number;
   /** `+0x68`：使用世界矩阵标志。 */
   useWorld: boolean;
+  /**
+   * `+720`（= `a2[180]`）：`0x242`（`sub_4251A0` → `sub_4AD9A0` raw 132346-132361）**直写**该格。
+   *
+   * ★**bit0 = "此项动画不参与等待门"**（`tickets/T-0024`，引擎依据）：
+   *  - `sub_49AA30` raw 117843-117844：本项窗还在跑时，**只有** bit0 为 0 才置池挂起位 `Scene+46516`；
+   *  - 同函数 raw 117440-117442：bit0 为 1 ⇒ 本项豁免 `Scene+46512` 的强制冻结（窗不被"跳过"截断）。
+   *  序章 `src/SN0000.txt:1043-1048` 正是 `i220 f8023 0 13880 …`（80 000 ms 慢推）+ `i242 f8023 1` + `i238 64` + `wait`。
+   */
+  entryParam: number;
   /** `+0x6C`(work) / `+0xAC`(target)：缩放矩阵（`0x21E` 写 target）。 */
   scaleWork: Vec3;
   scaleTarget: Vec3;
@@ -200,6 +209,7 @@ export function makeItem(cfg: DrawItemConfig): Item {
     from: 0xffffffff,
     to: 0xffffffff,
     useWorld: false,
+    entryParam: 0, // `+720`：0x242 直写（bit0 = 此项动画不参与等待门）
     scaleWork: { x: 1, y: 1, z: 1 },
     scaleTarget: { x: 1, y: 1, z: 1 },
     rotWork: { axis: { x: 0, y: 0, z: 0 }, deg: 0 },

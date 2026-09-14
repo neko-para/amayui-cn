@@ -6,7 +6,7 @@
  * 而它们对宿主的诉求其实只有很少几项。把这几项显式化成接口后，**驱动只需要一份**
  * （`frameLoop.ts`），Electron 与 headless 只在"实现了哪些能力"上分叉。
  *
- * ★**可选性是刻意的**：`present`/`needsRender`/`animationsDone`/`texturesIdle`/`audio` 目前只有
+ * ★**可选性是刻意的**：`present`/`needsRender`/`poolPending`/`texturesIdle`/`audio` 目前只有
  * Electron 宿主有（`PixiBackend`）。B1 阶段（零行为变更）驱动对"宿主没有该能力"必须降级而不是报错，
  * 否则 headless 进不来；B3 会把 `audio`/`needsRender` 语义补到 headless 侧（那样两条路径才真的等价）。
  * 缺哪些能力 → 见 `tickets/T-0013`（宿主能力面入桥）。
@@ -34,11 +34,17 @@ export interface FrameHost {
   /** "这一帧该不该合成"。headless 无。 */
   needsRender?(): boolean;
   /**
-   * 场景动画是否跑完 —— `0x400` 动画等待门的放行判据（引擎 `sub_407E20` 的图形池计时）。
-   * ★参数是本帧时钟：headless 直接拿它算（避免"读上一帧时钟"那个偏差）；pixi 暂时忽略它用自己的
-   * `clockMs`（`tickets/T-0008` 要修的正是这一处）。
+   * **本遍推进/合成时"池是否挂起"** —— `Scene+46516`（引擎绘制期"还有元素在动"；`tickets/T-0024`）。
+   *
+   * ★口径 = 共享层 `scPoolPending`（mesh 窗 + draw item 5 个窗，**排除 `+720` bit0 的元素**）：
+   * 排除项有引擎依据（`sub_49AA30` raw 117843-117844），也是序章 80 000 ms 慢推不钉住门的原因
+   * （`src/SN0000.txt:1043-1048` 的 `i220` + `i242 … 1`）。
+   *
+   * ★**无参**且只回答"上一遍"：驱动在每帧末 `advanceModel(nowMs)` 之后取一次，锁存进
+   * `Engine.scenePending`（引擎 raw 130427-130428 每遍绘制开头清零、绘制期置位 ⇒ 门读到的是**上一遍**的值）。
+   * 未实现 ⇒ 驱动按"池不挂起"处理（`gates.anim: 'wait'` 就只等 `0x238` 计时器）。
    */
-  animationsDone?(nowMs: number): boolean;
+  poolPending?(): boolean;
   /** 纹理帧屏障（引擎 `0x1F9` 是同步读文件，renderer 走异步 IPC ⇒ 需要补偿）。headless 无纹理，跳过。 */
   texturesIdle?(): Promise<void>;
   /** 音频帧泵（`Engine+430600` 那一族的等价物）。目前只有 Electron 有（见 T-0006）。 */

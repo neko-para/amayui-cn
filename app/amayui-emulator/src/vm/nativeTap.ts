@@ -62,7 +62,7 @@ const WHY: Record<string, string> = {
   unhandled: '未处理上报：不实现 ⇒ 未知指令不再进控制窗',
   present: '帧合成：不实现 ⇒ 画面永不刷新',
   needsRender: '该不该合成：不实现 ⇒ 帧驱动只能每帧无脑合成（浪费）或从不合成（画面卡住）；两者的判据见共享层 sceneNeedsRender',
-  animationsDone: '0x400 等待门的放行判据：不实现 ⇒ 门的 `wait` 档永远等不到放行（脚本卡在等待门）',
+  poolPending: '池挂起位（Scene+46516）：不实现 ⇒ 驱动按"池不挂起"处理（门只等 0x238 计时器）',
   frameTick: '帧刷新泵：不实现 ⇒ 动画/转场不推进',
   startFrameLoop: '帧循环启动：不实现 ⇒ 无每帧驱动',
 };
@@ -176,7 +176,7 @@ export const BRIDGE_METHODS = [
   'msgWinClearAll',
   'msgWinSync',
   'needsRender',
-  'animationsDone',
+  'poolPending',
   'preloadImage',
   'playBgm',
   'playMovie',

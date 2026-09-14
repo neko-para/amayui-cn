@@ -95,6 +95,12 @@ if (v17 & 0x8000000)                → sub_411900 + 清 scene + present(sub_4B4
   - `0x400` 动画等待：若仍有动画对象未完成（或 `_this[369348]` pending）→ **不推进脚本 ip**，但**继续 present**（让动画播）。
   - 等待对象完成（`clock >= start+delay+count` 全完成且 pending 清）→ **清 0x400、推进下一指令**。
 - 其余门控（0x40/0x8000000 等）按需最小实现；版权页只关心 0x400。
+- ★**2026-09（`tickets/T-0024`）订正**：上面那两条的判据已经换成**引擎真值** ——
+  放行 = `sub_407E20(pool) == 0`，即「`0x238` 装载的等待计时器到期（`Engine.gatePending`）」**且**
+  「池挂起位 `Scene+46516` 为 0（`scPoolPending`：mesh 窗 + draw item 5 窗，**排除 `DrawItem+720` bit0 的元素**）」；
+  不再是"所有动画对象都完成"的近似（那是 `scGateAnimationsDone`，已删除）。版权页这 5 s 是
+  `src/LOGO.txt:44` 的 **mesh 颜色窗**（delay 4500 + dur 500）⇒ 池挂起位驱动（实测 `gateWaitMs=0`、驻留 5000 ms）；
+  而序章那些"等几秒"是 `i238 N` + `wait`（实测驻留 = 脚本值）。
 
 ---
 

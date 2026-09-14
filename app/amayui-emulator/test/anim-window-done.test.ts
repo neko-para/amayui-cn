@@ -7,7 +7,7 @@
  * | 判据 | 函数 | 范围 | 为什么 |
  * |---|---|---|---|
  * | 合成 | `scAnimationsPending` | mesh 全窗 + draw item **5 个窗** | 引擎每 present 才求值一次动画 ⇒ 任何窗在跑就必须继续合成，否则中间帧不上屏 |
- * | `0x400` 门 | `scGateAnimationsDone` | mesh 全窗 + draw item **颜色窗** | 引擎的门真值是池挂起位 + `0x238` 等待计时器（见 `T-0024`）；把长时平移窗算进门 = 序章被钉 80 s（A/B 实测） |
+ * | `0x400` 门（池挂起位） | `scPoolPending` | mesh 全窗 + draw item 5 窗，**排除 `+720` bit0 的元素** | 引擎 `sub_49AA30` raw 117843-117844 就是这条；门 = 本位 + `0x238` 计时器（`T-0024`） |
  *
  * ★本文件一律按引擎的调用序 **`scAdvance(clock) → 判据(clock)`** 走：
  * `advanceWindows` 会在"所有窗都结束"时清项级动画位（`flags &~ 2`），而判据只读不写。
@@ -23,7 +23,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { scAdvance, scAnimationsPending, scGateAnimationsDone, sceneNeedsRender } from '../src/renderer/sceneModel.js';
+import { scAdvance, scAnimationsPending, scPoolPending, sceneNeedsRender } from '../src/renderer/sceneModel.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -94,36 +94,39 @@ test('A2：无动画的项不影响判定（空项/普通项 ⇒ 立刻"跑完"�
 });
 
 /**
- * **`0x400` 门的口径**（`tickets/T-0024`）：长时**平移**窗不得把门钉住，颜色窗必须等。
- *
- * 实证锚点：序章 `src/SN0000.txt:1043` 在 `wait`(`:1048`) 前装了 `i220 (global-int f8023) 0 13880 …`
- * = dur **0x13880 = 80 000 ms** 的平移窗；把窗 3 算进门 ⇒ 黑屏 80 s（E4 A/B 实测 20 s 不放行）。
+ * **池挂起位 `Scene+46516` 的口径**（`tickets/T-0024`）：序章的 80 000 ms 慢推不是靠"门只看颜色窗"绕过门的，
+ * 而是脚本用 **`i242 <handle> 1`**（`DrawItem+720` bit0）把它**排除**出池挂起位（引擎 `sub_49AA30` raw 117843-117844）。
  */
-test('T-0024：门判据**不**等平移窗（序章 80 000 ms 平移窗），但**等**颜色窗', () => {
+test('T-0024：`+720` bit0 的元素不参与池挂起位（序章 80 000 ms 慢推），颜色窗照旧参与', () => {
   const s = sceneWithItem();
   s.setTranslationAnim(H, 0, 0x13880, 0, 1, 0); // = SN0000.txt:1043 的那条
   assert.equal(scAnimationsPending(s.scene, T0), true, '合成口径：有窗在跑 ⇒ 要继续合成');
-  assert.equal(scGateAnimationsDone(s.scene, T0), true, '门口径：平移窗不算门（否则门驻留 80 s）');
-  assert.equal(scGateAnimationsDone(s.scene, T0 + 40000), true, '40 s 后仍是同一个结论（单调）');
+  assert.equal(scPoolPending(s.scene, T0), true, '未排除 ⇒ 池挂起位被置（"此项还在动"）');
+  s.setDrawEntryParam(H, 1); // = SN0000.txt:1045 的 `i242 (global-int f8023) 1`
+  assert.equal(scPoolPending(s.scene, T0), false, '`+720` bit0 ⇒ 本项不置池挂起位（门不再等它）');
+  assert.equal(scPoolPending(s.scene, T0 + 40000), false, '40 s 后仍是同一个结论（单调）');
 
   const s2 = sceneWithItem();
   s2.setDrawColor(H, 0, 1000, 0x11223344);
-  assert.equal(scGateAnimationsDone(s2.scene, T0), false, '颜色窗在跑 ⇒ 门必须等');
+  assert.equal(scPoolPending(s2.scene, T0), true, '颜色窗在跑 ⇒ 池挂起位置上 ⇒ 门必须等');
   scAdvance(s2.scene, T0 + 1000);
-  assert.equal(scGateAnimationsDone(s2.scene, T0 + 1000), true, '颜色窗结束 ⇒ 放行');
+  assert.equal(scPoolPending(s2.scene, T0 + 1000), false, '颜色窗结束 ⇒ 池空闲 ⇒ 放行');
 });
 
 /**
- * 证据棘轮：上面那条测试的依据是**脚本里真的存在那条 80 000 ms 平移窗**。
- * 脚本改了（值变小/被删）⇒ 这条断言变红 ⇒ 回来重核 `scGateAnimationsDone` 的范围。
+ * 证据棘轮：上面那条测试的依据是**脚本里真的存在**那条 80 000 ms 平移窗，且紧随其后就被 `i242 … 1` 排除
+ * （`i238 64` = 100 ms 计时器 + `wait`）。脚本改了（值变小 / `i242` 被删）⇒ 这条断言变红 ⇒ 回来重核 `scPoolPending`。
  */
-test('T-0024：序章那条 `i220 … 0 13880` 仍在（证据锚点棘轮）', () => {
+test('T-0024：序章的 `i220 … 0 13880` + `i242 … 1` + `i238 64` + `wait` 仍在（证据锚点棘轮）', () => {
   const s = fs
     .readFileSync(path.join(HERE, '..', '..', '..', 'src', 'SN0000.txt'), 'utf8')
     .split(/\r?\n/);
   const i = s.findIndex((l) => l.trim() === 'i220 (global-int f8023) 0 13880 (local-int 0) (local-int 1) 0');
   assert.notEqual(i, -1, '找不到 SN0000 的 80 000 ms 平移窗（T-0024 的实证锚点）');
   assert.equal(s[i + 1]?.trim(), 'mov (global-int f8047) 1', `锚点行号漂移（当前 ${i + 1}）`);
+  assert.equal(s[i + 2]?.trim(), 'i242 (global-int f8023) 1', '慢推必须被 `i242 … 1` 排除出池挂起位');
+  assert.equal(s[i + 4]?.trim(), 'i238 64', '门靠 `i238` 的 100 ms 计时器放行');
+  assert.equal(s[i + 5]?.trim(), 'wait', '计时器之后紧跟 `wait`（置 0x400 门）');
 });
 
 /**

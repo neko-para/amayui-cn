@@ -398,6 +398,88 @@ export class Engine {
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;
 
+  // ---------------------------------------------------------------------------
+  // `0x400` 等待门的真值（`tickets/T-0024`）：`sub_407E20` = 池挂起位 + `0x238` 装载的等待计时器
+  // ---------------------------------------------------------------------------
+  // 引擎里的四格（`_this` = 图形池/Scene 基址 322832，`_this[K]` 即字节 322832+4K）：
+  //   `[11625]` = 现在（= Engine[92333] = timeGetTime）
+  //   `[11628]` = 强制冻结/立即收尾（46512，`sub_407EA0` 置 1）
+  //   `[11629]` = **池挂起位**（46516，"上一遍绘制时还有元素在动"）
+  //   `[11630]`/`[11631]` = 等待计时器 起点/时长（46520/46524 = **Engine[92338]/[92339]**）
+
+  /**
+   * 等待计时器起点（`Scene+46520` = `Engine[92338]`）。0 = 未起步（`sub_407E20` raw 12775 会锁存当前时钟）。
+   * 装载者 = `0x238`（`sub_4248C0` raw 32303-32312：`Engine[92338] = 0; Engine[92339] = op1`）。
+   */
+  gateWaitStart = 0;
+  /** 等待计时器时长 ms（`Scene+46524` = `Engine[92339]`）。0 = 没装计时器 ⇒ 门只看池挂起位。 */
+  gateWaitMs = 0;
+
+  /**
+   * **池挂起位**（`Scene+46516`）：引擎每遍绘制开头清零、绘制期"还有元素在动"时置 1
+   * （raw 130427-130428 清零；raw 117843-117844 / 133528 / 134944 置位）。
+   * ⇒ 语义是"**上一遍绘制**时还有没有东西在动"，由帧驱动在 `advanceModel` 之后锁存（见 `frame/loop.ts`）。
+   */
+  scenePending = false;
+
+  /**
+   * **强制冻结/立即收尾**（`Scene+46512`，`sub_407EA0` raw 12789-12801）：
+   * 为 1 时所有动画窗立刻算结束（raw 134941 / 135806 / 136182），且等待计时器到期（raw 12776 `_this[11628] == 1`）。
+   * 置位者：① 门被玩家输入跳过（主循环 raw 21135）；② ADV 分支每帧（raw 21161）。
+   * 引擎每遍绘制开头清零（raw 130427）⇒ 驱动在锁存池挂起位之后清它。
+   */
+  sceneFreeze = false;
+
+  /**
+   * **`sub_407E20`（raw 12762-12786）**：图形池是否仍"挂着" ⇒ 返回 `true` = 门**不放行**。
+   *
+   * 逐行等价：
+   * ```c
+   * if (dur) { if (!start) start = now;                 // 起步（raw 12774-12775）
+   *            if (now > start + dur || freeze) { start = 0; dur = 0; }  // 到期（raw 12776-12779）
+   *            else return 1; }                          // ★未到点 ⇒ 一律"还在等"（raw 12785）
+   * return pending;                                       // 池挂起位（raw 12783）
+   * ```
+   * ★未建模：raw 12781-12782 的 `_this[11632] & 0x10000`（`Scene+46528`）—— 该格每次绘制清零
+   * （raw 130430）且语料/二进制里**没有任何置位点**（`tickets/T-0024` 的 notes §6）。
+   */
+  gatePending(nowMs: number): boolean {
+    if (this.gateWaitMs !== 0) {
+      if (this.gateWaitStart === 0) this.gateWaitStart = nowMs; // 起步：起点 ← 现在
+      if (nowMs > this.gateWaitStart + this.gateWaitMs || this.sceneFreeze) {
+        this.gateWaitStart = 0; // 到期：两格清零（下次不再生效）
+        this.gateWaitMs = 0;
+      } else {
+        return true; // 计时器未到点 ⇒ 不放行
+      }
+    }
+    return this.scenePending;
+  }
+
+  /**
+   * **主循环 `0x400` 分支的门**（raw 21109-21152）：`true` = 放行（调用方清 `effect_flags & 0x400` 并继续派发）。
+   *
+   * 引擎：`if (sub_407E20(pool) || v95) { …玩家可跳过…; goto LABEL_186（本帧不派发） } else { effect_flags &= ~0x400; Sleep(0); }`
+   * ★未建模的 `v95`：raw 20701 由 Live2D/角色槽的 `sub_4050E0` 置 1（那 1000 个槽 emulator 没有）⇒ 恒 0。
+   */
+  serviceWaitGate(nowMs: number): boolean {
+    return !this.gatePending(nowMs);
+  }
+
+  /**
+   * **跳过一个 `0x400` 等待门**（`sub_407EA0` raw 12789-12801）：置强制冻结 + 清等待计时器
+   * ⇒ 下一遍绘制把所有窗算结束、池挂起位归零 ⇒ 门立刻放行。
+   *
+   * 调用点：① 玩家在门等待期间按了键/点了鼠标/滚轮（主循环 raw 21113-21135，门控 = `Config("System:EffectSkip…")`）；
+   * ② ADV 分支每帧（raw 21161）。
+   * ★未建模：raw 12793 的 `(Scene+46528) & 2` 门 —— 该格无置位点（见 `gatePending` 的说明）。
+   */
+  skipWaitGate(): void {
+    this.sceneFreeze = true;
+    this.gateWaitStart = 0;
+    this.gateWaitMs = 0;
+  }
+
   /** 墙钟毫秒（= 引擎 timeGetTime()）；由渲染帧循环(renderer)或测试注入。0xCD(get-input-type) 节流用。 */
   nowMs = 0;
 

@@ -142,13 +142,14 @@ test("★0x400 门：'clear' 清位且该帧不派发；'ignore' 不看它（位
 });
 
 /**
- * ★`0x400` 门的第三档 `'wait'`（**产品档**：宿主说了才算跑完）—— 这档是 `T-0009` 验收 3 的守卫：
- * 宿主报"动画还在跑"时门**不得**放行，否则"多窗动画没跑完就继续派发"的老 bug 会在产品链路上复现。
+ * ★`0x400` 门的第三档 `'wait'`（**产品档**：按引擎语义 = 池挂起位 + `0x238` 计时器）——
+ * 宿主报"池还挂着"时门**不得**放行，否则"多窗动画没跑完就继续派发"的老 bug 会在产品链路上复现。
+ * ★`T-0024`：判据从"宿主报动画跑完"改成"引擎的 `sub_407E20`"，宿主只交**池挂起位**（`host.poolPending`）。
  */
-test("★0x400 门 'wait'：宿主报动画没跑完 ⇒ 不放行（位留着）；报了才清位放行", async () => {
+test("★0x400 门 'wait'：宿主报池挂起 ⇒ 不放行（位留着）；报了空闲才清位放行", async () => {
   const e = mk([instr(0x21c), pollInput(), pollInput()]);
   const box = { clock: 0, done: false };
-  const host: FrameHost = { now: () => box.clock, animationsDone: () => box.done };
+  const host: FrameHost = { now: () => box.clock, poolPending: () => !box.done };
   const gateKinds: string[] = [];
   const bitAtFrameEnd: number[] = [];
   let ended = 0;
@@ -162,14 +163,21 @@ test("★0x400 门 'wait'：宿主报动画没跑完 ⇒ 不放行（位留着�
     onFrameEnd: () => {
       bitAtFrameEnd.push(e.waitFlags & 0x400 ? 1 : 0);
       box.clock += 1000 / 60;
-      if (++ended === 2) box.done = true; // 第 3 帧起宿主报"动画跑完"
+      if (++ended === 2) box.done = true; // 第 3 帧起宿主报"池空闲"（下一边绘制才被门看见）
     },
   });
   assert.equal(r.stopReason, 'script-end');
   assert.equal(r.steps, 3, 'wait + 两条（等待的帧、清位的帧都不派发）');
-  assert.equal(r.frames, 3, '第 4 帧才撞到脚本尾 ⇒ 只完整跑完 3 帧');
-  assert.deepEqual(bitAtFrameEnd, [1, 1, 0], '帧1 置位；帧2 报没跑完 ⇒ 位留着；帧3 报完 ⇒ 清位（第 4 帧不完整、不记）');
-  assert.equal(gateKinds.filter((k) => k === 'anim').length, 2, '门被访问两次：一次被挡、一次放行');
+  // ★`T-0024` 起池挂起位是**绘制期锁存量**（引擎 raw 130427-130428 每遍绘制开头清零、绘制期置位）：
+  //   宿主在 `onFrameEnd`（= 这一遍绘制之后）把 `done` 翻真 ⇒ 它要到**下一遍**绘制才对门可见
+  //   ⇒ 比"门在帧首现问宿主"多一帧。这正是引擎的次序（门读的是**上一遍**绘制的结果）。
+  assert.equal(r.frames, 4, '第 5 帧才撞到脚本尾 ⇒ 只完整跑完 4 帧（池挂起位滞后一遍绘制）');
+  assert.deepEqual(
+    bitAtFrameEnd,
+    [1, 1, 1, 0],
+    '帧1 置位；帧2/帧3 池还挂着 ⇒ 位留着；帧4 池空闲 ⇒ 清位（第 5 帧不完整、不记）',
+  );
+  assert.equal(gateKinds.filter((k) => k === 'anim').length, 3, '门被访问三次：两次被挡、一次放行');
 });
 
 /** ★`sleep` 门的两档。合成脚本：`0xC8 sleep 1000`（置 SLEEP_GATE、sleepUntil=1000）→ 两条 `0x101`。 */

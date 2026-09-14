@@ -2,7 +2,7 @@
  * **headless 宿主 → `FrameHost`**（把 `HeadlessScene` 接成帧宿主）。
  *
  * 为什么单独一个文件：两份 chain、`run.ts`、报告、Scenario 跑手、回放跑手都要"同一个 headless 宿主"。
- * 以前每处各接一遍（`advanceModel`/`animationsDone`/`needsRender` 各写一行）⇒ 一处漏接就是一处漂移
+ * 以前每处各接一遍（`advanceModel`/`poolPending`/`needsRender` 各写一行）⇒ 一处漏接就是一处漂移
  * （`T-0002` 的"chains 从不推进动画窗"就是这么来的）。现在只有这一份。
  *
  * ★它**不**提供 `present`：headless 的"合成"是出快照/被观察（`snapshot()` 清脏），不是画像素。
@@ -16,7 +16,7 @@ export function headlessFrameHost(scene: HeadlessScene, now: () => number): Fram
   const host: FrameHost = {
     now,
     advanceModel: (t) => scene.advanceModel(t),
-    animationsDone: (t) => scene.animationsDone(t),
+    poolPending: () => scene.poolPending(),
     needsRender: () => scene.needsRender(),
     digestState: () => scene.digestState(),
     digestHostCounters: () => scene.digestHostCounters(),

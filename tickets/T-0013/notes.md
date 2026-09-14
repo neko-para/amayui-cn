@@ -7,3 +7,7 @@
 ## 2026-09-13
 
 能力面棘轮按设计生效了一次：headless 实现 needsRender 后，守卫报"宿主能力差异变了" ⇒ DECLARED_HOST_DIVERGENCE 由 16 项缩到 15 项（needsRender 移入"两个宿主都必须实现"的一组，与 animationsDone 并列）。这类"差异缩小"是 B3 的目标方向：每补一个能力，差异表就短一项。
+
+## 2026-09-14
+
+★2026-09（T-0024）：本票入桥的 \nimationsDone\ 已随 0x400 门真值建模**改名** \poolPending\（语义也变：宿主只报池挂起位 \Scene+46516\，门由 \Engine.gatePending\ = 池挂起位 + 0x238 计时器判）。改名与口径订正的实现记在 tickets/T-0024/changes.md；本票的 evidence 锚点已同步刷新。

@@ -14,7 +14,6 @@
 import type { DrawItemConfig, Item, MeshObj, MeshVertex } from '../drawItem.js';
 import { assertFlags } from '../../vm/native.js';
 import {
-  W_COLOR,
   applyDrawColor,
   applyDrawColorAlpha,
   applyDrawPivot,
@@ -37,7 +36,6 @@ import {
   calcDiffuse,
   itemAnimationsPending,
   meshWindowDone,
-  windowDone,
 } from '../drawItem.js';
 import type { SceneState } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
@@ -457,7 +455,7 @@ export function scAdvance(s: SceneState, clock: number): void {
  * 否则窗口的中间帧根本不会上屏（`advanceWindows` 只在 present 里被调）。
  * 判据与推进侧共用同一份窗实现（`itemAnimationsPending` → `windowDone`）。
  *
- * ★它**不是** `0x400` 门的判据 —— 门判据见 `scGateAnimationsDone`（差别的实证见那里的注释）。
+ * ★它**不是** `0x400` 门的判据 —— 门判据见 `scPoolPending`（差别的实证见那里的注释）。
  */
 export function scAnimationsPending(s: SceneState, clock: number): boolean {
   for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
@@ -467,27 +465,36 @@ export function scAnimationsPending(s: SceneState, clock: number): boolean {
 }
 
 /**
- * **`0x400` 等待门的放行判据**：mesh 全窗 + draw item 的**颜色窗（窗 0）**。
+ * **池挂起位 `Scene+46516`** —— `0x400` 门的"挂起"半边（`tickets/T-0024`）。
  *
- * ★为什么不把 draw item 的 5 个窗都算进**门**里（2026-09 实测，`tickets/T-0024` 立案）：
- *  - 序章 `src/SN0000.txt:1043` 在 `wait`(`:1048`) 的前一条给背景装了 `i220 (global-int f8023) 0 13880 0 1 0`
- *    = delay 0 / dur **0x13880 = 80 000 ms** 的**平移**窗（`0x220` = 平移动画窗，op3 就是毫秒 dur）；
- *  - 把窗 3 也算进门 ⇒ 门驻留 80 s。A/B 实测（同一份 `emulator.config.json`）：门连续 20 s 不放行、
- *    `[present …] meshes={0x19258:255/#000000…} wait=0x400` 三帧数字完全不动、日志停在进 SN0000 前；
- *    旧判据（窗 0）同一位置 5 s 内就完成淡出并进入正文（meshes 出现 17/53/124/…/255 的渐变序列）。
- *  - 引擎的真值也不是"扫所有窗"：`sub_407E20`(raw 12762-12786，主循环 raw 21111 每帧轮询) 返回的是
- *    **池挂起位 `_this[11629]`（= 字节 369348 / `46516`）** 与 **等待计时器**（`_this[11630]`=起点 369352、
- *    `_this[11631]`=时长 369356）。那个计时器由 **`0x238` 装载**（`sub_4248C0` raw 32303-32312：
- *    `Engine[92338]=0; Engine[92339]=op1` —— 正好是起点/时长两格；语料里 `i238` 的取值全是
- *    0xC8/0x1F4/0x3E8/0x7D0… 这样的整毫秒数，见 `tickets/T-0024`）。
- *    即引擎的"等几秒"主要来自 `i238 N` + `wait`，而不是"等所有动画窗"。
- *  ⇒ 完整的计时器语义（含 `sub_407EA0` 的强制冻结位 `46512`）是**已知缺口**，实现见 `tickets/T-0024`；
- *    在它落地前，这里保守保持**用户已验证**的旧口径（窗 0）——只加注释，不静默改行为。
+ * 引擎依据（逐行读 `engine/天结_unpacked.exe_utf8.c`）：
+ *  - **置位**：绘制期发现"还有元素在动"就置 1
+ *    - DrawItem 路径 `sub_49AA30` raw 117843-117844：本项的窗没走完（`v115 != 0`）**且**
+ *      `DrawItem+720` 的 **bit0 为 0** ⇒ `Scene[46516] = 1`；
+ *    - 转场/网格路径 raw 133528 / 135822 / 136197 / 136691-136701：窗未到 `start + delay + dur` 时置 1；
+ *  - **清零**：每遍绘制开头 raw 130427-130428（`46512 = 0; 46516 = 0`）
+ *    ⇒ 本位是**逐遍瞬时量**："**上一遍绘制**时还有没有东西在动"，正是主循环 raw 21111 门判据要读的东西；
+ *  - **强制冻结** `Scene+46512`（`sub_407EA0` raw 12796 置 1）：为 1 时所有窗立刻算结束
+ *    （raw 134941 / 135806 / 136182 的 `… || *(_DWORD *)(_this + 46512) == 1` ⇒ 窗收尾）⇒ 不再置本位。
+ *    驱动把这一条折进锁存（`loop.ts`：`e.scenePending = !e.sceneFreeze && host.poolPending()`）。
+ *
+ * ★★**门不再有自己的一套"扫几个窗"口径**：门 = `0x238` 装载的等待计时器（`Engine.gatePending`）+ 本位。
+ *   长时平移窗之所以**不**钉住门，不是"门不看平移窗"，而是脚本用 **`i242 <handle> 1`**（= `+720` bit0）
+ *   把它排除出本位 —— `src/SN0000.txt:1043-1048` 就是 `i220 f8023 0 13880 …`（80 000 ms 慢推）
+ *   + `i242 f8023 1` + `i238 64` + `wait`。这一格同时让该动画**不被玩家"跳过"截断**（raw 117440-117442）。
+ *
+ * 与 `scAnimationsPending`（合成判据）的区别：那一条问"要不要继续画"（不看 `+720`，因为慢推本身要出画面），
+ * 本位问"引擎要不要卡在等待门"（看 `+720`）。守卫：`test/wait-gate-timer.test.ts`、`test/anim-window-done.test.ts`。
  */
-export function scGateAnimationsDone(s: SceneState, clock: number): boolean {
-  for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return false;
-  for (const it of s.drawItems.values()) if (it.flags & 2 && !windowDone(it, W_COLOR, clock)) return false;
-  return true;
+export function scPoolPending(s: SceneState, clock: number): boolean {
+  for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
+  for (const it of s.drawItems.values()) {
+    if ((it.flags & 2) === 0) continue;
+    if ((it.entryParam & 1) !== 0) continue; // raw 117843-117844：`+720` bit0 ⇒ 本项不置池挂起位
+    // 极性：`itemAnimationsPending` = "**还有**窗没走完"（不需要取反）
+    if (itemAnimationsPending(it, clock)) return true;
+  }
+  return false;
 }
 
 /**
@@ -611,10 +618,22 @@ export function scSetDrawModeBlock(s: SceneState, a: number, b: number, x: numbe
   s.render4.drawMode = [a, b, x, y, z];
 }
 
-/** `0x242` 写 DrawItem `+720`（`sub_4AD9A0`；同时写相邻对象的 `+504`）。 */
+/**
+ * `0x242` 写 DrawItem `+720`（`sub_4251A0` raw 32649-32658 → `sub_4AD9A0` raw 132346-132361）。
+ *
+ * 引擎：`sub_4AAA50(Scene, op1)`（**缺失即建项**）→ `sub_4AAD40(...)+720 = op2`，
+ * 随后还把**另一个对象**（`Scene+1080` 那张表的项）的 `+504` 写成同一个值（本层记为 `render4.entryParam` 台账）。
+ *
+ * ★`+720` 的 **bit0 = "此项动画不参与等待门"**（`sub_49AA30` raw 117843-117844）——
+ * `i242 <handle> 1` 就是序章排除 80 000 ms 慢推的手段，见 `scPoolPending` 与 `tickets/T-0024`。
+ */
 export function scSetDrawEntryParam(s: SceneState, entry: number, value: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
-  s.render4.entryParams.set(entry, value);
+  // 引擎 `sub_4AAA50` 的"缺失即建项"：建出来的项 `flags = 0`（尚不可绘制），字段仍然照写。
+  const it = s.drawItems.get(entry) ?? makeDefaultItem(entry);
+  s.drawItems.set(entry, it);
+  it.entryParam = value; // `+720`：位 0 = 不参与池挂起位 / 豁免强制冻结
+  s.render4.entryParams.set(entry, value); // 相邻对象 `+504` 的台账（宿主侧无该对象类型 ⇒ 只记）
 }
 
 /**

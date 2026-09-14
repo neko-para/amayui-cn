@@ -360,10 +360,10 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   };
   /**
    * **帧宿主 + 驱动配置** —— B1：逐项照抄本文件原来的帧循环（`tickets/T-0001`，不许"顺手统一"）。
-   *  - `gates.anim: 'wait'`（B2 起）= 与产品同源：等 `animationsDone()`，不再无条件清 `0x400`
+   *  - `gates.anim: 'wait'`（B2 起）= 与产品同源：按引擎语义放行（池挂起位 + `0x238` 计时器，`T-0024`），不再无条件清 `0x400`
    *  - `gates.sleep: 'wait'`   = `else if (waitFlags & SLEEP_GATE) { if (clock >= sleepUntil) clear }`
    *  - `gates.advance: 'force'`= `else if (e.awaitingAdvance) e.forceAdvance();`（无输入源；B3 解决）
-   *  - `host.present/animationsDone` = headless 的合成（推进模型）与门判据（B2 起每帧推进一次）
+   *  - `host.present/poolPending` = headless 的合成（推进模型）与池挂起位（B2 起每帧推进一次）
    *  - `advErrors: 'swallow'`  = ADV 分支外层的 `catch {}`
    *  - `maxStepsPerFrame: 5000`= 内批的 `k < 5000`
    *  - `onUnknown → 'stop'`    = 记录 `unimplemented` 后 `return i`（**不登记用户桩**：未实现 opcode 必须让测试失败）
@@ -372,7 +372,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   const host: FrameHost = {
     now: () => clock,
     advanceModel: (t) => { native.advance(t); },
-    animationsDone: (t) => native.animationsDone(t),
+    poolPending: () => native.poolPending(),
   };
   let lastInstr: BinInstruction | undefined;
   const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {

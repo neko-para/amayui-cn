@@ -145,8 +145,8 @@ async function main() {
    *  - **G3** 没有 `0x400`/`SLEEP` 门 ⇒ 现在吃驱动统一后的门。
    *
    * ★`gates.anim` 仍传 `'clear'`：本 CLI 的宿主是 `StubNative`（**没有场景模型**），
-   * `host.animationsDone` 无从计算 ⇒ 传 `'wait'` 会永远等不到放行。这是**宿主能力缺口**
-   * （登记在 `tickets/T-0013`：能力面要入桥，驱动才能统一询问"这个宿主能不能报动画跑完"）。
+   * `host.poolPending` 无从计算 ⇒ 传 `'wait'` 只能靠 `0x238` 计时器放行（而本 CLI 的虚拟时钟不按真实节奏走）。
+   * 这是**宿主能力缺口**（登记在 `tickets/T-0013`：能力面要入桥，驱动才能统一询问"这个宿主能不能报池挂起位"）。
    */
   const host: FrameHost = { now: () => clock };
   /** 打印用：`stepOnce` 之后帧/ip 可能已变，所以在 step **之前**抓住当前指令。 */

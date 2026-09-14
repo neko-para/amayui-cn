@@ -313,7 +313,7 @@ export function wrapHostClock(host: FrameHost, now: () => number): FrameHost {
   if (host.advanceModel) out.advanceModel = (t) => host.advanceModel!(t);
   if (host.present) out.present = () => host.present!();
   if (host.needsRender) out.needsRender = () => host.needsRender!();
-  if (host.animationsDone) out.animationsDone = (t) => host.animationsDone!(t);
+  if (host.poolPending) out.poolPending = () => host.poolPending!();
   if (host.texturesIdle) out.texturesIdle = () => host.texturesIdle!();
   if (host.audio) out.audio = (i) => host.audio!(i);
   if (host.digestState) out.digestState = () => host.digestState!();

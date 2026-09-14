@@ -3155,8 +3155,8 @@
     "semantic_name": "driveDrawItemAnimWindows_49AA30",
     "status": "ANALYZED",
     "purpose": "DrawItem 的逐帧动画驱动（颜色/缩放/旋转/平移/flipbook 五窗）：按共享起点 +0x34 与各窗 delay/dur 把颜色整数插值写回调用方颜色变量、把矩阵 work 向 target 插值；窗末一次性收尾；有窗在跑时置 pending Scene+46516，全部结束清 flags bit1 与 +0x34",
-    "sub_behaviors": ["读共享起点 a2[13]，为 0 时锁存当前时钟 (Scene+46500)", "窗5 flipbook：frame=frames*(clock-start-delay)/dur，col/row → 源矩形偏移，写回 a2[2..5]", "窗1/2/3 颜色与矩阵插值（窗末 qmemcpy work←target）", "全部窗结束：flags &= ~2、+0x34=0"],
-    "fields_used": ["Scene+0x34 anim_start(item)", "Scene+0x38..+0x5C win_delay_dur(item)", "Scene+0x60 color_from(item)", "Scene+0x64 color_to(item)", "Scene+0x6C work_scale_matrix", "Scene+0xAC target_scale_matrix", "Scene+0xEC work_rot_matrix", "Scene+0x12C target_rot_matrix", "Scene+0x16C work_trans_matrix", "Scene+0x1AC target_trans_matrix", "Scene+0x234 flipbook_flags", "Scene+0x238 flipbook_frames", "Scene+0x23C flipbook_cols", "clock"],
+    "sub_behaviors": "[\"读共享起点 a2[13]，为 0 时锁存当前时钟 (Scene+46500)\",\"窗5 flipbook：frame=frames*(clock-start-delay)/dur，col/row → 源矩形偏移，写回 a2[2..5]\",\"窗1/2/3 颜色与矩阵插值（窗末 qmemcpy work←target）\",\"全部窗结束：flags &= ~2、+0x34=0\",\"★还有窗在跑且项 +720 bit0 == 0 ⇒ Scene+46516 = 1（池挂起位，raw 117843-117844）；+720 bit0 置位时同时豁免强制冻结（raw 117440-117442）\"]",
+    "fields_used": "[\"Scene+0x34 anim_start(item)\",\"Scene+0x38..+0x5C win_delay_dur(item)\",\"Scene+0x60 color_from(item)\",\"Scene+0x64 color_to(item)\",\"Scene+0x6C work_scale_matrix\",\"Scene+0xAC target_scale_matrix\",\"Scene+0xEC work_rot_matrix\",\"Scene+0x12C target_rot_matrix\",\"Scene+0x16C work_trans_matrix\",\"Scene+0x1AC target_trans_matrix\",\"Scene+0x234 flipbook_flags\",\"Scene+0x238 flipbook_frames\",\"Scene+0x23C flipbook_cols\",\"Scene+46512\",\"Scene+46516\",\"DrawItem+720\",\"clock\"]",
     "evidence": "raw 117240-117942（a2 为元素局部副本，由 sub_4AEEA0 raw 133363 qmemcpy 拷入）",
     "notes": "★调用点 raw 133389 来自 DrawItem 渲染器 sub_4AEEA0（a2 = DrawItem），故颜色窗求值器确实作用于 DrawItem —— 推翻 .tmp/re-color-transform.md §2.3「元素1 没有逐帧求值器」与其「元素3 内联 sub_4A230」的归属。第 4 参 a4 是调用方颜色变量地址（COERCE_FLOAT(&v25)），函数内 v117 = a4（raw 117374），插值结果写回 *(DWORD*)LODWORD(v117)（raw 117470）、窗末写 v23=TO（raw 117457）。颜色公式 = 整数截断 (left*from + we*to)/dur，通道序 B/G/R/A（raw 117466-117479）。a2 虽是局部副本，但调用方 raw 133447 qmemcpy(元素, v26, 0x2E4=740) **整体写回元素** ⇒ 窗末冻结/delay·dur 清 0/flipbook 源矩形结果都持久化，不会逐帧累加。"
   },
@@ -6301,7 +6301,7 @@
     "semantic_name": "setField92339_4248C0",
     "op": "0x238",
     "status": "ANALYZED",
-    "purpose": "Engine[92338] = 0；Engine[92339] = op1",
+    "purpose": "0x238：装载 0x400 等待门的计时器 —— Engine[92338] = 0（起点清零，= Scene+46520）、Engine[92339] = op1（时长 ms，= Scene+46524）；sub_407E20 在读它",
     "sub_behaviors": ["result = readIntOperand(1)", "_this[92338] = 0", "_this[92339] = result"],
     "fields_used": ["Engine[92338]", "Engine[92339]"],
     "evidence": "raw 32303-32312",
@@ -6977,6 +6977,30 @@
     "unmodeled": ["53 个键的完整序列未逐条抄录（raw 110734-110963 可直接抽取）", "调用时机（是否 WM_CLOSE）未逐段确认"],
     "evidence": "raw 110734-110963",
     "notes": "★订正：这不是“把注册表写回 INI 文件”，而是**写 HKCU 注册表**；配套读取端 `sub_492CB0`（raw 111846）也是 `RegQueryValueExA`。SYS4REG.INI 在引擎里是**只读输入**。emulator 用“写 INI”作为跨平台替代（`engineConfig.ts`），因此**导出形态应对齐本函数：固定顺序 + 全量**（见 tickets/T-0031）。"
+  },
+  {
+    "addr": "0x407E20",
+    "raw_name": "sub_407E20",
+    "semantic_name": "gateWaitPending_407E20",
+    "status": "ANALYZED",
+    "purpose": "0x400 等待门的真值：返回「图形池是否仍挂着」——池挂起位 Scene+46516 叠加 0x238 装载的等待计时器（起点 Scene+46520、时长 Scene+46524）。计时器未到点一律返回 1（= 继续等）；到点或强制冻结（Scene+46512==1）则清零两格并返回池挂起位。",
+    "sub_behaviors": ["读时长 _this[11631]（Scene+46524）；为 0 ⇒ 直接返回池挂起位", "起点为 0 ⇒ 锁存当前时钟 _this[11625]（= Engine[92333] = timeGetTime）", "now > 起点+时长 或 强制冻结 ⇒ 起点/时长清零（下次不再生效）", "否则返回 1（未到点 ⇒ 不放行）", "LABEL_7：若 flags(Scene+46528) bit16 置位且池挂起位为 0 ⇒ 清 flags（该位无置位点）"],
+    "fields_used": ["Scene+46516", "Scene+46512", "Scene+46520", "Scene+46524", "Scene+46500", "Scene+46528"],
+    "unmodeled": ["Scene+46528 的 bit16（反编译里只有读、没有置位点）"],
+    "evidence": "raw 12762-12786；0x400 门调用点 = 主循环 raw 21111（if (sub_407E20((_DWORD *)(_this + 322832)) || v95)），放行分支 raw 21151",
+    "notes": "池基 322832，故 _this[K] 的字节偏移 = 322832+4K：11625→46500、11628→46512、11629→46516、11630→46520、11631→46524、11632→46528。emulator 实现 = Engine.gatePending（T-0024）"
+  },
+  {
+    "addr": "0x407EA0",
+    "raw_name": "sub_407EA0",
+    "semantic_name": "forceFreezePool_407EA0",
+    "status": "ANALYZED",
+    "purpose": "置「强制冻结/立即收尾」Scene+46512 = 1，并清掉等待计时器两格（46520/46524）——效果是下一遍绘制把所有权都算作「已结束」（raw 134941/135806/136182 的 || *(_DWORD*)(_this+46512)==1），于是池挂起位不再被置、等待门立刻放行。",
+    "sub_behaviors": ["门控：仅当 (Scene+46528) & 2 == 0 时动作", "Scene+46512 = 1（强制冻结/立即收尾）", "Scene+46520 = 0、Scene+46524 = 0（清等待计时器）"],
+    "fields_used": ["Scene+46512", "Scene+46520", "Scene+46524", "Scene+46528"],
+    "unmodeled": ["Scene+46528 bit1 的含义（反编译里只有这一处读、没有置位点）"],
+    "evidence": "raw 12789-12801；调用点 = 门被玩家输入跳过 raw 21135、ADV 分支每帧 raw 21161",
+    "notes": "emulator 实现 = Engine.skipWaitGate（T-0024）；「冻结让窗立刻算结束」目前只在池挂起位的锁存里折算，绘制期收尾见 capabilities 的 scene-freeze-flag"
   }
 
 ]

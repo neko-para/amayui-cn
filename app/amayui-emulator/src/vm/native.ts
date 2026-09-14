@@ -315,18 +315,20 @@ export interface NativeBridge {
    * **本帧该不该合成**（可选能力；`tickets/T-0013` 入桥）。
    *
    * 判据本身在共享层（`sceneNeedsRender` = 场景脏 || 还有动画窗在跑），宿主只回答"我这边的状态要不要刷新"。
-   * ★它**不是** `0x400` 门的判据（那是 `animationsDone`）：两者范围不同，见 `sceneGateAnimationsDone` 的注释。
+   * ★它**不是** `0x400` 门的判据（那是 `poolPending` + `Engine.gatePending`）：两者范围不同，
+   * 见 `scPoolPending` / `scAnimationsPending` 的注释。
    * 未实现 ⇒ 闸门 A 记一次；帧驱动把"宿主不报 = 不跳过合成"当作安全默认。
    */
   needsRender?(): boolean;
   /**
-   * **`0x400` 等待门的放行判据**（可选能力；`tickets/T-0013` 入桥）。
+   * **本遍推进后"池是否挂起"**（`Scene+46516` 的等价物；可选能力；`tickets/T-0013` 入桥 / `T-0024` 定口径）。
    *
-   * 口径 = 共享层 `scGateAnimationsDone`（mesh 全窗 + draw item 颜色窗），**必须带本帧时钟**：
-   * 修前宿主读"上一帧时钟"导致门判据滞后一帧（`tickets/T-0008` 的 G4 / `T-0009`）。
-   * 未实现 ⇒ 帧驱动的 `gates.anim: 'wait'` 永远等不到放行（`run.ts` 的 `StubNative` 就是这种宿主）。
+   * 口径 = 共享层 `scPoolPending`（`sub_49AA30` raw 117843-117844：mesh 窗 + draw item 5 窗，
+   * **排除 `+720` bit0 的元素**）；驱动在 `advanceModel` 之后取一次并锁存进 `Engine.scenePending`，
+   * 再由 `Engine.serviceWaitGate`（= `sub_407E20`：池挂起位 + `0x238` 计时器）决定门放不放行。
+   * 未实现 ⇒ 驱动按"池不挂起"处理（`run.ts` 的 `StubNative` 就是这种宿主 ⇒ 它用 `gates.anim: 'clear'`）。
    */
-  animationsDone?(nowMs: number): boolean;
+  poolPending?(): boolean;
   /**
    * **图像预载**（可选能力；`tickets/T-0013` 入桥）：把该 imgid 读入纹理缓存（幂等）。
    *

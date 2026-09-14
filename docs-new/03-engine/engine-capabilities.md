@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 29 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 30 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 25 | 引擎有、emulator 完全没有 |
+| `absent` | 24 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **54** |
+| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -29,7 +29,7 @@
 | 消息窗 | 24 | 15 |
 | 渲染 | 24 | 11 |
 | 资源 | 14 | 4 |
-| 转场 | 4 | 4 |
+| 转场 | 4 | 3 |
 | 输入 | 2 | 0 |
 
 ## 全部条目
@@ -48,8 +48,8 @@
 | `scene-render-3d-frame-request-46700` | 3D | 请求显式渲染一帧 3D | ➖ n/a | E1 |
 | `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | ➖ n/a | E1 |
 | `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | 🟠 部分 | E2 · `test/headless-needs-render.test.ts` |
-| `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ❌ 缺失 | E0 |
-| `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | 🟠 部分 | E3 · `test/anim-window-done.test.ts` |
+| `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | 🟠 部分 | E2 · `test/wait-gate-timer.test.ts` |
+| `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | ✅ 已核验 | E3 · `test/wait-gate-timer.test.ts` |
 | `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ❌ 缺失 | E0 |
 | `scene-norender-mode` | 渲染 | Engine+167990 无渲染/隐藏窗口模式 | 🟠 部分 | E1 · `test/engine-config.test.ts` |
 | `3d-effect-level-gate` | 3D | Scene+46668 3D 特效等级 | ➖ n/a | E1 |
@@ -174,23 +174,14 @@
 - **读的字段**：Scene+46508
 - **emulator 现状**：2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。
 
-### `scene-freeze-flag`（absent）
+### `scene-freeze-flag`（partial）
 
 - **能力**：Scene+46512 动画强制冻结
 - **触发**：sub_407EA0(raw 12789-12801) 置 1（0x400 门被玩家输入跳过时 raw 21135；ADV 分支 raw 21161）；绘制期 raw 134936 在窗类型 v384[13] < 0 时也置 1
 - **缺失时为什么静默**：不建模不会报错：只是等待期间点键无效、动画不会被迫收尾（表现为"点了没反应"）。
 - **引擎**：sub_407EA0, sub_49AA30, sub_4AF1C0, sub_4B06D0 @ raw 12789-12801
 - **读的字段**：Scene+46512, Scene+46528
-- **emulator 现状**：未建模（缺口，不是"已知无关"）：引擎里 46512==1 时绘制期的窗判定走 sub_4AAE10(...)[3]=0（raw 134941 的 `|| *(_DWORD*)(_this+46512)==1`）⇒ 所有窗立刻算结束——这正是"点键跳过 0x400 等待"的实现方式（emulator 现在等待期间点键无效）。相关 raw：21135/21161 置位、134936 的负类型分支。见 tickets/T-0024。
-
-### `scene-pending-flag-0x400-gate`（partial）
-
-- **能力**：Scene+46516 转场/等待在途标志（0x400 卫门值）
-- **触发**：池挂起位 Scene+46516 由绘制期置 1、帧头清 0；叠加 0x238 装载的等待计时器（起点 Engine+369352、时长 Engine+369356）
-- **缺失时为什么静默**：标志恒为非零时只是永远不清转场表、0x400 门不开，引擎不认为这是错误；门判据口径错（例如把 80 000 ms 的平移窗算进门）表现为"卡住不动"，也不报错。
-- **引擎**：sub_407E20, sub_407EA0, sub_4B4040, sub_4248C0 @ raw 12762-12786
-- **读的字段**：Scene+46516, Scene+46512, Engine+369352, Engine+369356, Engine+369332, Engine+92338, Engine+92339
-- **emulator 现状**：已拆成两条口径：合成用 scAnimationsPending（5 窗），门用 scGateAnimationsDone（mesh 全窗 + draw item 颜色窗）。仍未建模：① 0x238 装载的等待计时器（Engine[92338]/[92339]，emulator 只写 engineValues 没人读）；② 池挂起位 46516 的逐帧瞬时语义；③ 点键跳过门（raw 21113-21135 清门 + 置强制冻结）。相关 raw：主循环 0x400 分支 21109-21153、0x238 的装载 32303-32312。见 tickets/T-0024。
+- **emulator 现状**：部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★仍未建模：① **门等待期间的玩家输入跳过**（raw 21113-21135：命中/滚轮 + `Config(System:EffectSkip…)` 门 ⇒ 清 `0x400` + `sub_407EA0` + 刷 present）—— 功能性缺口：等待期间点键无效；② 绘制期「窗立刻算结束」（raw 134941/135806/136182 的 `|| freeze==1`）与 `+720` bit0 的冻结豁免（raw 117440-117442）**没有作用在窗状态上**（只折进池挂起位）⇒ 冻结后窗仍在跑（后果是继续合成，不是逻辑错误）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。
 
 ### `scene-flag-46528-bits`（absent）
 
@@ -415,7 +406,7 @@
 - **缺失时为什么静默**：只是把脏标志置 1 让下一帧继续画，无日志
 - **引擎**：sub_4B06D0 @ raw 136718-136719
 - **读的字段**：Scene+46512, Scene+46516, Scene+46508
-- **emulator 现状**：2026-09 订正（T-0008 之后）：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★仍 partial：没有 (46512|46516) 的粘滞语义。
+- **emulator 现状**：2026-09 订正（T-0008 之后）：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★2026-09（T-0024）：`46516` 现在是**跨帧锁存量**（`Engine.scenePending`：绘制期置位、帧末锁存），`46512` 也有 `Engine.sceneFreeze`（ADV 分支每帧置位、锁存后按 raw 130427 清零）；不过驱动是把它折进**池挂起位**而不是 needsRender 的脏位 —— 而 `sceneNeedsRender` 用的 `scAnimationsPending` 对 `+720` 排除项同样为真 ⇒ 「长时慢推要继续画」的行为本来就对。⇒ 仍 partial：`sub_4B06D0` 的 `(46512|46516) ⇒ 脏` 这一条没有逐字建模。
 
 ### `adv-flag-lifecycle`（partial）
 

@@ -162,6 +162,14 @@ export interface GameStartResult {
    * ★这是"悬停真的跑了"的**直接证据**（修前 headless 只有 `headless` = `forceAdvance` 旁路）。
    */
   dispatches: { kind: string; label: number; script: string; ip: number }[];
+  /**
+   * **`0x400` 门的驻留记录**（`tickets/T-0024` 的 acceptance ③）：每次"进等待 → 放行"一段，
+   * 附引擎里装着的等待计时器（`timerMs` = `0x238` 写的 `Engine[92339]`）。
+   * 判据："脚本 `i238 N` + `wait`"这段门的 `waitedMs` 应与 `N` 同量级（帧粒度 ⇒ 上偏一帧内）。
+   * ★长时**平移**窗（如序章 `SN0000.txt:1043` 的 80 000 ms）不得出现在 `waitedMs` 里 ——
+   * 脚本用 `i242 <handle> 1` 把它排除出池挂起位（见 `scPoolPending`）。
+   */
+  gateWaits: { script: string; ip: number; timerMs: number; waitedMs: number }[];
   /** `routes.cursor` / `shown` 的变化轨迹（去重相邻同值）——"游标真的会随光标变"。 */
   cursorTrail: { cursor: number; shown: number }[];
   /** 本链路用的等待门策略：`'pump'` = 真泵（与产品同源）/`'force'` = 旧旁路（对照用）。 */
@@ -291,6 +299,27 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   /** 路径上发过的 SE（`0xB4`）：统一文件 id + 发起脚本 + ip。 */
   const sePlays: { id: number; script: string; ip: number }[] = [];
 
+  /**
+   * **`0x400` 门的驻留记录**（`tickets/T-0024` 的 acceptance ③）：每一次"进等待"到"放行"一段。
+   *
+   * 量法：`onGateWait`（每帧、门被访问时）报告当前 `脚本:ip` 与引擎里装着的计时器 `gateWaitMs`；
+   * 同一 `脚本:ip` 的连续帧算一段；`onFrameEnd` 看到 `0x400` 位被清掉 ⇒ 闭合这一段。
+   * 于是"脚本 `i238 N` + `wait`"这条门的驻留时长可以直接与 `N` 对照（实测见 `changes.md`）。
+   */
+  const gateWaits: { script: string; ip: number; timerMs: number; waitedMs: number }[] = [];
+  /** 正在等待的那一段（未闭合）。 */
+  let gateOpen: { script: string; ip: number; timerMs: number; at: number } | null = null;
+  const closeGate = (nowMs: number): void => {
+    if (!gateOpen) return;
+    gateWaits.push({
+      script: gateOpen.script,
+      ip: gateOpen.ip,
+      timerMs: gateOpen.timerMs,
+      waitedMs: Math.round(nowMs - gateOpen.at),
+    });
+    gateOpen = null;
+  };
+
   // ---- 悬停观察（`T-0003` 验收 3 / `T-0007`）：观察者与 Scenario 必须在 harness 之前建好 ----
   /** 等待泵派发序列（键命中/点击/悬停进入/悬停离开）。 */
   const dispatches: { kind: string; label: number; script: string; ip: number }[] = [];
@@ -307,6 +336,16 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     input,
     ...(opt.maxFrames !== undefined ? { maxFrames: opt.maxFrames } : {}),
     ...(opt.onStep ? { onStep: opt.onStep } : {}),
+    onGateWait: (script, ip, nowMs, timerMs) => {
+      if (!gateOpen || gateOpen.script !== script || gateOpen.ip !== ip) {
+        closeGate(nowMs); // 上一段（若还没闭合）以本帧为界
+        gateOpen = { script, ip, timerMs, at: nowMs };
+      }
+    },
+    onFrameEnd: (eng, now) => {
+      // `0x400` 位本帧被清掉 ⇒ 门放行 ⇒ 闭合这一段
+      if (gateOpen && (eng.waitFlags & 0x400) === 0) closeGate(now);
+    },
     onUnknown: (err, frame, instr) => {
       const key = err.opcode;
       let u = unknown.get(key);
@@ -531,6 +570,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     audioEvents,
     dispatches,
     cursorTrail,
+    gateWaits,
     advancePolicy: opt.advance ?? 'pump',
     clockMs: harness.clock,
     steps,
@@ -560,6 +600,14 @@ interface HarnessOptions {
   /** `routes.cursor` 变化观察（`T-0007` 的"游标真的会变"）。 */
   onCursor?: (cursor: number, shown: number, e: Engine) => void;
   onStep?: (t: StepTrace) => void;
+  /**
+   * **`0x400` 门被访问**（每帧一次，`tickets/T-0024` 的 acceptance ③）：报出当前脚本:ip、
+   * 本帧时钟、以及引擎里**装着的等待计时器**（`gateWaitMs` = `0x238` 写的那一格）。
+   * 与 `onFrameEnd` 合起来就能量出"每道门实际驻留了多少毫秒"，与脚本里的 `i238` 对照。
+   */
+  onGateWait?: (script: string, ip: number, nowMs: number, timerMs: number, e: Engine) => void;
+  /** 帧末（`clock` 尚未 +1/60；用于闭合"门驻留"区间）。 */
+  onFrameEnd?: (e: Engine, clock: number) => void;
   onUnknown: (err: NotImplementedOp, frame: Frame, instr: BinInstruction | undefined) => void;
   onScript: (name: string) => void;
   onStepStart: (frame: Frame, instr: BinInstruction | undefined) => void;
@@ -588,10 +636,11 @@ function createHarness(o: HarnessOptions): Harness {
     advanceModel: (t) => {
       o.scene.advance(t);
     },
-    animationsDone: (t) => o.scene.animationsDone(t),
+    poolPending: () => o.scene.poolPending(),
   };
   /**
-   * 驱动配置 —— **B2 起与产品（Electron）同源**：`0x400` 不再无条件清，而是等 `animationsDone()`；
+   * 驱动配置 —— **B2 起与产品（Electron）同源**：`0x400` 不再无条件清，而是按引擎语义放行
+   * （池挂起位 + `0x238` 等待计时器，见 `tickets/T-0024`；`host.poolPending` 每帧推进后取一次）；
    * 模型每帧经 `host.advanceModel()` 推进一次（修前两份 chain **从不推进动画窗** ⇒ 与产品/E4 不同源）。
    * ★等待推进（B3/`T-0003`）：默认 `'pump'` = **真泵**（`serviceAdvanceWait`：命中测试 + 键命中 + 点击 +
    * 悬停两段式）；`'force'` 是修前的旁路（不做命中测试、不看 `routes.shown`）——保留它只为 before/after 对照。
@@ -623,7 +672,14 @@ function createHarness(o: HarnessOptions): Harness {
       lastScript = name;
       o.onScript(name);
     },
+    onGate: (branch) => {
+      if (branch === 'anim') {
+        const f = e.curScript();
+        o.onGateWait?.(f.name, f.ip, e.nowMs, e.gateWaitMs, e);
+      }
+    },
     onFrameEnd: () => {
+      o.onFrameEnd?.(e, clock);
       clock += 1000 / 60;
     },
   };

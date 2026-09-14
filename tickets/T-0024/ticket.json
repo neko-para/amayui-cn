@@ -1,23 +1,23 @@
 {
   "id": "T-0024",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P1",
   "area": "emulator/render",
   "title": "0x400 门的真值没建模：sub_407E20 = 池挂起位 + 0x238 装载的等待计时器（现在门的动画口径无引擎依据）",
   "why": "引擎的 0x400 等待门（主循环 raw 21109-21153）放行条件是 `!sub_407E20(pool) && !movie`。`sub_407E20`(raw 12762-12786) 返回**池挂起位** `_this[11629]`（字节 369348 / 引擎基 `46516`），并叠加一个**等待计时器**：`_this[11630]`=起点(369352)、`_this[11631]`=时长(369356)，计时器未到点时直接返回 1（= 继续等）。这两格正好由 **`0x238`** 装载（`sub_4248C0` raw 32303-32312：`Engine[92338]=0; Engine[92339]=op1`）⇒ 脚本的 `i238 N` + `wait` 才是\"等几秒\"的主来源（语料里 i238 的取值全是 0xC8/0x1F4/0x3E8/0x7D0/0x9C4… 整毫秒数，共 2056 处）。emulator 现状：`0x238` 只写 engineValues 没人读；门判据改用\"扫动画窗\"，既没有计时器、范围也没有引擎依据 —— 把长时窗算进去会钉死门（序章 `SN0000.txt:1043` 的 80 000 ms 平移窗），不算进去则\"等几秒\"完全靠动画窗凑巧对上。",
   "acceptance": [
     "`0x238 v` 装载等待计时器（起点清 0、时长 = v），`0x21C wait` 置门后按 sub_407E20 语义放行：计时器未到点 ⇒ 不放行",
-    "门判据与\"扫动画窗\"解耦：`scGateAnimationsDone` 的最终口径有引擎行号依据（不得再靠\"5 窗/窗 0\"猜）",
-    "E4 目视：序章/版权页的等待时长与脚本 `i238` 值一致，且长时平移窗不再影响门",
-    "新增测试：① 计时器未到时门不放行、到点即放行；② 80 000 ms 平移窗不影响门的放行时刻"
+    "门判据与\"扫动画窗\"解耦：门的唯一判据 = 池挂起位（`scPoolPending`，raw 117843-117844 的 `+720` bit0 排除）+ `0x238` 计时器；旧的 scGateAnimationsDone 已删除",
+    "E3 真实语料：装了 `i238` 的门驻留逐条等于脚本值（SN0000 的 5500/100/2000/200 ms），序章 80 000 ms 慢推不参与；版权页 ~5 s 来自 mesh 颜色窗（timer=0）。E4 目视仍待有画面的环境补做（notes §6.4）",
+    "新增测试：① 计时器未到时门不放行、到点即放行；② 80 000 ms 平移窗不影响门的放行时刻（且\"不写 i242\"的对照里门被钉住）"
   ],
   "evidence": [
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "int __thiscall sub_407E20(_DWORD *_this)",
       "line": 12762,
-      "note": "门判据本体：池挂起位 + 等待计时器（起点 11630 / 时长 11631 / 现在 11625）"
+      "note": "门判据本体：池挂起位 _this[11629] + 等待计时器（起点 11630 / 时长 11631 / 现在 11625 / 强制冻结 11628）"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -26,25 +26,31 @@
       "note": "计时器到点后返回池挂起位本身（= 字节 369348 / 46516）"
     },
     {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( ((_BYTE)a2[180] & 1) == 0 )",
+      "line": 117843,
+      "note": "DrawItem 路径置池挂起位：`+720` bit0 的元素被排除（序章的 80 000 ms 慢推就靠它）"
+    },
+    {
       "file": "src/SN0000.txt",
       "anchor": "i220 (global-int f8023) 0 13880 (local-int 0) (local-int 1) 0",
       "line": 1043,
-      "note": "序章在 wait(:1048) 前装了 0x13880 = 80 000 ms 平移窗 ⇒ 它不得参与门判据"
+      "note": "序章在 wait(:1048) 前装了 0x13880 = 80 000 ms 平移窗；紧随其后的 i242 f8023 1 才是它不影响门的原因"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-state.ts",
-      "anchor": "op_set_canvas_size",
-      "note": "现状：0x238 只写 engineValues，没有任何读者 ⇒ 计时器缺口"
+      "anchor": "op_load_wait_timer",
+      "note": "0x238 装载等待计时器（Engine.gateWaitStart/gateWaitMs）—— 原 handler 名 op_set_canvas_size 已订正"
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
-      "anchor": "scGateAnimationsDone",
-      "note": "当前门判据（保守保持窗 0 口径，等本单实现计时器）"
+      "anchor": "scPoolPending",
+      "note": "池挂起位口径（raw 117843-117844 的 +720 bit0 排除）；旧的 scGateAnimationsDone 已删除"
     },
     {
       "file": "docs-new/03-engine/copyright-effect.md",
       "anchor": "sub_407E20",
-      "note": "旧文档把 0x400 门记为\"图形池 pending\"；\"~5s 时长驱动者尚未收敛\"正是缺 0x238 计时器"
+      "note": "旧文档把 0x400 门记为图形池 pending；~5s 时长驱动者 = 0x238 计时器"
     }
   ],
   "blockedBy": [],
@@ -66,6 +72,32 @@
     {
       "at": "2026-09-14",
       "what": "创建：T-0008/D1 的 E4 A/B 测出\"5 窗门口径 ⇒ 序章黑屏 20 s+ 不放行\"，反查 engine 源后定位真值（sub_407E20 + 0x238）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → doing —— 开工：按 notes §5 实现 sub_407E20 全语义（0x238 计时器 + 池挂起位 + 强制冻结）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：acceptance, tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "doing → done —— 守卫 + E3 见 changes.md；残余缺口见 notes.md §6.3"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/wait-gate-timer.test.ts",
+    "app/amayui-emulator/test/anim-window-done.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts"
   ]
 }

@@ -107,8 +107,8 @@ function protoMethods(proto: object): string[] {
  *  - **影片/输入/收尾**（headless 无窗口/无消息泵）：`playMovie` / `getInputType` / `sleep` /
  *    `startFrameLoop` / `unhandled`；
  *  - **GDI 文本/字符串资源**（headless 不落纹理）：`setFont` / `setString` / `stringResourceId`。
- * ★`animationsDone` 与 `needsRender` **不在**本表里：两个宿主都必须实现
- *   （前者 = `0x400` 门的放行判据，`T-0006`/`T-0009`；后者 = "该不该合成"，判据在共享层
+ * ★`poolPending` 与 `needsRender` **不在**本表里：两个宿主都必须实现
+ *   （前者 = `0x400` 门的池挂起位，`T-0013`/`T-0024`；后者 = "该不该合成"，判据在共享层
  *   `sceneNeedsRender`，headless 的脏位由共享模型的 `scene.dirty` 提供 —— `T-0003` 的 B3）。
  */
 const DECLARED_HOST_DIVERGENCE = [
@@ -136,7 +136,7 @@ const DECLARED_HOST_DIVERGENCE = [
  * ★`advanceModel` / `digestState` / `digestHostCounters`（`tickets/T-0003`/`T-0004`）**刻意不入桥**：
  * 它们不是"VM 让宿主做事"，而是**帧宿主**（`src/frame/host.ts`）与宿主之间的契约 —— 调用方是
  * 帧驱动/会话的装配层（`session.ts` 构造 `FrameHost` 字面量），不是 opcode handler。
- * 入桥会把"VM 能调什么"与"驱动能问什么"混成一个面（`needsRender`/`animationsDone` 入桥是因为
+ * 入桥会把"VM 能调什么"与"驱动能问什么"混成一个面（`needsRender`/`poolPending` 入桥是因为
  * **VM 路径也会读它们**：门判据在会话里、经 `#native` 调用）。两者都由 `FrameHost` 的编译期检查兜住。
  */
 const NON_BRIDGE = {
@@ -181,11 +181,11 @@ test('★桥能力面：宿主桥方法差异必须在"已声明的可选能力"
   assert.deepEqual(headOnly, [], 'headless 不应有"pixi 没有"的桥方法（差异只允许一个方向）');
 
   // 帧驱动/会话要用的三个能力必须真的在桥的声明面里（否则 `?.` 的缺口连闸门 A 都不记）
-  for (const m of ['needsRender', 'animationsDone', 'preloadImage']) {
+  for (const m of ['needsRender', 'poolPending', 'preloadImage']) {
     assert.ok(bridge.has(m), `${m} 必须在 NativeBridge 里声明`);
   }
   // ★"每帧都要问"的两个判据，两个宿主都必须能回答（差异只允许出现在"画/不画"这类能力上）
-  for (const m of ['animationsDone', 'needsRender']) {
+  for (const m of ['poolPending', 'needsRender']) {
     assert.ok(pixi.includes(m), `pixi 必须实现 ${m}`);
     assert.ok(head.includes(m), `headless 必须实现 ${m}`);
   }

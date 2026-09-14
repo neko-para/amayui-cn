@@ -14,17 +14,17 @@
     {
       "file": "app/amayui-emulator/src/vm/native.ts",
       "anchor": "interface NativeBridge",
-      "note": "桥的声明面：三者（needsRender/animationsDone/preloadImage）已于 2026-09 并入"
+      "note": "桥的声明面：三者（needsRender / poolPending / preloadImage）已于 2026-09 并入；★poolPending 原名 animationsDone，2026-09（T-0024）随 0x400 门真值建模改名（语义也变：宿主只报池挂起位 Scene+46516，门由 Engine.gatePending 判）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "animationsDone",
-      "note": "pixi 的实现已改成桥名 animationsDone（原 sceneAnimationsDone），判据 = scGateAnimationsDone"
+      "anchor": "poolPending(): boolean",
+      "note": "pixi 的实现（原 sceneAnimationsDone → animationsDone → 2026-09 T-0024 改名 poolPending），口径 = scPoolPending"
     },
     {
       "file": "app/amayui-emulator/src/vm/nativeTap.ts",
       "anchor": "withNativeTap",
-      "note": "白名单已加三名 + 导出 BRIDGE_METHODS 供守卫逐名对照"
+      "note": "白名单已加三名 + 导出 BRIDGE_METHODS 供守卫逐名对照（animationsDone → poolPending，见 T-0024）"
     }
   ],
   "history": [
@@ -39,6 +39,10 @@
     {
       "at": "2026-09-13",
       "what": "open → done"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

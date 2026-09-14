@@ -459,7 +459,8 @@ DrawItem = `Scene+1032` 的 map 值，**740 字节**；元素内偏移 = f32 下
 
 > **口径更正（2026 复核）**：`Scene+46516` 不是"**颜色**动画 pending"，而是**通用**的「仍有动画 / 目标变换插值待处理」
 > （0x34B/0x34C/0x34D 的目标矩阵 setter 也置它，raw 134174/134231/134271；渲染路径 raw 136840 以它作"还需继续演算"判据）。
-> emulator 里对应的是 `PixiBackend.needsRender()` / `sceneAnimationsDone()`（用各窗相位判断），语义一致但更细。
+> emulator 里对应的是 `PixiBackend.needsRender()`（`sceneNeedsRender`：脏 || 还有窗在跑）与 `poolPending()`
+> （`scPoolPending`：本位 `Scene+46516` 的几何口径；`T-0024` 起门 = 本位 + `0x238` 计时器），语义一致但更细。
 
 **实测命中**（跑 20 万步）：
 

@@ -76,7 +76,7 @@ function mkHost(scene: HeadlessScene, profile: HostProfile): { host: FrameHost; 
       box.draws++;
     },
     needsRender: () => profile.wantRender,
-    animationsDone: (nowMs) => scene.animationsDone(nowMs),
+    poolPending: () => scene.poolPending(),
     digestState: () => scene.scene,
     digestHostCounters: () => scene.digestHostCounters(),
     ...(profile.audio ? { audio: (intent) => scene.audio?.(intent) } : {}),

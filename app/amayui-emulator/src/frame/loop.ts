@@ -7,7 +7,7 @@
  * ① 取时钟（wall / 虚拟）            → host.now() → e.nowMs
  * ② 每窗「逐行贴出」闸门  0x300       → serviceWinReveal()
  * ③ 字格图标动画          0x73        → serviceCharGrid()
- * ④ 门：0x400 动画等待 / sleep        → 等条件成立才清位（或按 policy 清/忽略）
+ * ④ 门：0x400 动画等待 / sleep        → 等条件成立才清位（`0x400` = 池挂起位 + `0x238` 计时器，`T-0024`）
  * ⑤ 逐字显现泵            sub_45BE20  → serviceTextReveal()
  * ⑥ 等待推进门（bit31）               → 泵（产品）/ forceAdvance（headless 现状）/ 忽略
  * ⑦ ADV 分支（sub_411900）            → serviceAdv() + **恰好 1 条**指令
@@ -21,7 +21,7 @@
  * | 维度 | 产品（Electron） | report.ts | 两份 chain | run.ts |
  * |---|---|---|---|---|
  * | 批上限 | 10000 | 4096 | 5000 / 20000 | 1（每轮一条） |
- * | `0x400` 门 | `'wait'`（等动画） | `'ignore'`（无分支） | `'clear'`（无条件清） | `'ignore'` |
+ * | `0x400` 门 | `'wait'`（等动画） | `'ignore'`（无分支） | `'wait'` | `'clear'` |
  * | `sleep` 门 | `'wait'` | `'ignore'` | `'wait'` | `'ignore'` |
  * | 等待推进 | `'pump'`（真泵+悬停） | `'force'` | `'force'` | `'force'` |
  * | ADV 分支 | 开 | 开 | 开 | **关** |
@@ -44,10 +44,10 @@ import type { FrameObservation, FrameObserver } from './observer.js';
 /** 门的处理方式。**三种都要保留**（B1 不改行为，B2 才收敛）。 */
 export interface FrameLoopGates {
   /**
-   * `0x400` 动画等待门（`0x21C wait` 置位；引擎由图形池计时器放行）：
-   *  - `'wait'`（产品）：宿主报 `animationsDone()` 才清位；
-   *  - `'clear'`：每帧无条件清（两份 chain 的现状 —— 等于"动画瞬间完成"）；
-   *  - `'ignore'`：完全不看这一位（`report.ts`/`run.ts` 的现状）。
+   * `0x400` 动画等待门（`0x21C wait` 置位；引擎由 `sub_407E20` = 池挂起位 + `0x238` 计时器放行）：
+   *  - `'wait'`（产品）：按引擎语义放行 —— `Engine.serviceWaitGate(nowMs)`（`tickets/T-0024`）；
+   *  - `'clear'`：每帧无条件清（`run.ts` 的 `StubNative` 宿主**没有场景模型** ⇒ 没有任何挂起可言）；
+   *  - `'ignore'`：完全不看这一位（`report.ts` 的现状）。
    */
   anim?: 'wait' | 'clear' | 'ignore';
   /** `sleep(0xC8)` / `0x6E` 后的节流门：`'wait'` 等 `nowMs >= sleepUntil`；`'clear'` 直接清；`'ignore'` 不看。 */
@@ -243,7 +243,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     if (gates.anim !== 'ignore' && (e.waitFlags & 0x400) !== 0) {
       opt.onGate?.('anim', e);
       obs?.onGate?.({ ...obsMid(), branch: 'anim' });
-      if (gates.anim === 'clear' || host.animationsDone?.(nowMs) === true) e.waitFlags &= ~0x400;
+      // 引擎主循环 raw 21109-21152：`!sub_407E20(pool)` ⇒ 清门放行；否则本帧什么都不派发
+      // （玩家可跳过那条路在 raw 21113-21135，本驱动的 `skipWaitGate()` 出口见下）。
+      if (gates.anim === 'clear' || e.serviceWaitGate(nowMs)) e.waitFlags &= ~0x400;
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
       obs?.onGate?.({ ...obsMid(), branch: 'sleep' });
@@ -264,6 +266,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       opt.onGate?.('adv', e);
       obs?.onGate?.({ ...obsMid(), branch: 'adv' });
       e.serviceAdv();
+      // 引擎 raw 21158-21161：ADV 分支每帧 `sub_411900(...)` 之后紧跟 `sub_407EA0(pool)` ——
+      // 置强制冻结并清等待计时器（`tickets/T-0024`）。★放在 `serviceAdv()` 之后与引擎同序。
+      e.skipWaitGate();
       if (opt.advErrors === 'swallow') {
         // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
         try {
@@ -308,6 +313,12 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     if (opt.present !== 'never') {
       // 帧末两件事分开做（B2；设计 D5）：先推进模型到本帧时钟，再让宿主合成
       host.advanceModel?.(nowMs);
+      // ★**池挂起位**（`Scene+46516`，`tickets/T-0024`）：引擎每遍绘制开头清零（raw 130427-130428）、
+      //   绘制期"还有元素在动"时置位（raw 117843-117844 / 133528 / 134944）⇒ 帧**开头**的门读到的是
+      //   **上一遍绘制**的结果。宿主交出的是"本遍是否还有窗在跑"（`scPoolPending`），
+      //   强制冻结（46512）让所有窗立刻算结束（raw 134941）⇒ 折进这里的锁存，随后按"每遍清零"复位。
+      e.scenePending = !e.sceneFreeze && (host.poolPending?.() ?? false);
+      e.sceneFreeze = false;
       // `'needsRender'`：引擎式"没变就不重画"。★`advanceModel` **不跳过**（窗末收尾在它里面），
       //   跳过的只是"画"这一步（`tickets/T-0003`）。
       const wantPresent = opt.present === 'needsRender' ? (host.needsRender?.() ?? true) : true;

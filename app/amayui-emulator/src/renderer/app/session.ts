@@ -65,7 +65,7 @@ export class RendererSession {
   readonly #traceLog: TraceLog;
   /**
    * ★类型是**桥接口**（`tickets/T-0013`），不是 `PixiBackend`：
-   * 会话只允许用"桥声明过的能力"（`log`/`present`/`needsRender`/`animationsDone`/`texturesIdle`/`audio`），
+   * 会话只允许用"桥声明过的能力"（`log`/`present`/`needsRender`/`poolPending`/`texturesIdle`/`audio`），
    * "会话偷偷用了某个宿主私有方法"会**编译期**暴露。
    */
   readonly #native: NativeBridge;
@@ -236,8 +236,8 @@ export class RendererSession {
       },
       /** 该不该合成（判据在共享层 `sceneNeedsRender`；见 `Tickets/T-0003` 的 B3）。 */
       needsRender: () => this.#native.needsRender?.() ?? true,
-      /** `0x400` 门的放行判据（带本帧时钟）。 */
-      animationsDone: (nowMs) => this.#native.animationsDone?.(nowMs) ?? false,
+      /** `0x400` 门的"挂起"半边：本遍推进后池是否还挂着（`Scene+46516`；`tickets/T-0024`）。 */
+      poolPending: () => this.#native.poolPending?.() ?? false,
       /** 音频帧泵（引擎 raw 20645-20646）：驱动每完整帧调一次，参数带本帧 `advActive`。 */
       audio: (intent) => this.#native.audio?.(intent),
       /** `FrameDigest` 的输入（engine 段由 `frame/digest.ts` 的纯函数组装 ⇒ 两宿主同一份判据）。 */
@@ -249,7 +249,8 @@ export class RendererSession {
   /** 驱动配置：**产品的帧**就是这一份（与 headless 的差异只允许出现在宿主能力上）。 */
   #loopOptions(observer: FrameObserver): FrameLoopOptions {
     return {
-      // 门：产品档 —— `0x400` 等 `animationsDone()`、sleep 等时钟、等待推进走**真泵**（含命中测试/悬停两段式）。
+      // 门：产品档 —— `0x400` 按引擎语义放行（池挂起位 + `0x238` 等待计时器）、sleep 等时钟、
+      //      等待推进走**真泵**（含命中测试/悬停两段式）。
       gates: PRODUCT_FRAME_POLICY.gates,
       advFrame: true,
       advErrors: 'stop',
@@ -308,9 +309,10 @@ export class RendererSession {
     const e = this.#e;
     switch (o.branch) {
       case 'anim': {
-        // 0x400 动画等待门：场景动画跑完即放行。
+        // `0x400` 动画等待门：引擎主循环 raw 21109-21152 —— 放行 = `!sub_407E20(pool)`。
+        // 观察者与驱动**问同一个引擎函数**（`Engine.serviceWaitGate`，同帧内幂等；不是第二份判据）。
         this.#setGate('0x400');
-        if (this.#native.animationsDone?.(o.nowMs) ?? false) {
+        if (this.#e.serviceWaitGate(o.nowMs)) {
           this.#waiting = false;
           this.#traceLog.line('=== gate 0x400 cleared (scene anims done) ===');
         } else {

@@ -111,6 +111,15 @@
 
 ## 9. 变更记录
 
+- 2026-09（`tickets/T-0024`，`npm run verify` 全绿 498/498）：**`0x400` 等待门的真值落地**
+  （`sub_407E20` = 池挂起位 + `0x238` 装载的等待计时器）—— `Engine.gatePending/serviceWaitGate/skipWaitGate`
+  + `gateWaitStart/gateWaitMs/scenePending/sceneFreeze`；`0x238` handler 改名 `op_load_wait_timer`（旧名
+  "画布尺寸"无依据）；`FrameHost.animationsDone?(nowMs)` → **`poolPending?()`**（宿主只报池挂起位），
+  `scGateAnimationsDone`（只看窗 0）**删除**，改为 `scPoolPending`（5 窗，**排除 `DrawItem+720` bit0**：
+  `sub_49AA30` raw 117843-117844）；`0x242` 现在真的写 `+720`。E3（真实语料逐门驻留）：装了 `i238` 的门
+  waited == 脚本值（SN0000 的 5500/100/2000/200 ms）；序章 `SN0000.txt:1048` 那道门驻留 100 ms，旁边就是
+  80 000 ms 慢推 + `i242 f8023 1`（这才是它不钉住门的原因）；版权页 5 s 是 mesh 颜色窗而非计时器。
+  残余缺口（46516 的立即变换/3D 槽 setter 来源、门等待期输入跳过、冻结的绘制期收尾）见 `T-0024/notes.md` §6.3。
 - 2026-09（第 1 轮）：建立本清单；完成 §8 的 ✅ 条目（数据层回填/计数/语义冲突/代码注释）；
   两个只读审计代理产出分层/重复/大文件/死写/测试结构/路线图六类结论（结论已并入 §1–§8）。
 - 2026-09（第 2 轮，重构开始，全部 `npm run verify` 全绿）：

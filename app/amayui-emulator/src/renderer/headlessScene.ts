@@ -13,7 +13,7 @@
  */
 import {
   scAdvance,
-  scGateAnimationsDone,
+  scPoolPending,
   scAnimationsPending,
   sceneNeedsRender,
   scClearDrawContainer,
@@ -513,12 +513,13 @@ export class HeadlessScene implements NativeBridge {
   }
 
   /**
-   * `FrameHost.animationsDone`：用**本帧**时钟判"场景动画是否跑完"（`0x400` 门的放行判据）。
-   * ★用 `scGateAnimationsDone`（门口径），**不是** `scAnimationsPending`（合成口径）——两者范围不同，
-   * 理由见 `scGateAnimationsDone` 的注释（`tickets/T-0024`：长时平移窗不得把门钉住）。
+   * `FrameHost.poolPending`：**本遍推进后池是否还挂着**（`Scene+46516` 的等价物；`tickets/T-0024`）。
+   * ★口径 = `scPoolPending`（mesh 窗 + draw item 5 窗，**排除 `+720` bit0 的元素**）——
+   * 不是"门自己扫哪几个窗"的猜测：门 = 这条 + `Engine.gatePending` 的 `0x238` 计时器。
+   * 时钟用 `advanceModel(nowMs)` 注入的 `clockMs`（"这一遍"的时间）。
    */
-  animationsDone(nowMs: number): boolean {
-    return scGateAnimationsDone(this.scene, nowMs);
+  poolPending(): boolean {
+    return scPoolPending(this.scene, this.clockMs);
   }
 
   /**

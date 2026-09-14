@@ -2,14 +2,15 @@
  * **A4 图元 / 网格 / 纹理 / 渲染状态族**（13 条，2026-09 落地）。
  *
  * 这一族在复评台账里的判据是「写有读者的引擎状态 / 改渲染状态」——语料用量很大：
- * `0x258` 11356 处、`0x238` 2056 处、`0x20E` 786 处、`0x229` 716 处、`0x224` 334 处、`0x242` 350 处。
+ * `0x258` 11356 处、`0x238` 2056 处（**`0x400` 等待计时器，有读者**：`Engine.gatePending`）、
+ * `0x20E` 786 处、`0x229` 716 处、`0x224` 334 处、`0x242` 350 处。
  * 它们此前一律是 `ENGINE_INTERNAL_OPS` 的纯 no-op（或 `STUB_NATIVE_OPS` 的记录式桩）。
  *
  * 实现分两档（与全项目口径一致：**能建模的建模、纯渲染侧的走宿主缝**）：
  *
  * | opcode | handler | 引擎做的事 | emulator |
  * |---|---|---|---|
- * | `0x238` | `sub_4248C0` raw 32303-32312 | `Engine[92338] = 0`、`Engine[92339] = op1` | **建模**：写 `engineValues` |
+ * | `0x238` | `sub_4248C0` raw 32303-32312 | `Engine[92338] = 0`、`Engine[92339] = op1` | **建模**：装载 `0x400` 等待门的计时器（`Engine.gateWaitStart/gateWaitMs`；见 `tickets/T-0024`） |
  * | `0x258` | `sub_425D20` raw 33156-33185 | 按 op2 的 bit0/bit1 写纹理槽记录的两张镜像表（`Scene+1872+20*slot` / `+21872+20*slot`） | **建模**：`Engine.texSlotFlags` |
  * | `0x1FC` | `sub_422F80` raw 31303-31310 | `sub_4AC470(Scene, op1)`：复位该 DrawItem 的变换字段（+104/+132..+164 清零） | 宿主缝 `resetPrimTransform` |
  * | `0x1FE` | `sub_423060` raw 31330-31345 | 读 op2..op5 **4 个 float**（不除 100）→ `sub_4AC660(Scene, op1, …)` | 宿主缝 `setPrimTransform4` |
@@ -31,10 +32,23 @@ import type { OpHandler } from '../step.js';
 import { readFloatOperand, readIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
 
-/** `0x238`（sub_4248C0 raw 32303-32312）：`Engine[92338]=0`、`[92339]=op1`（画布/视口尺寸对）。 */
-const op_set_canvas_size: OpHandler = (c) => {
+/**
+ * `0x238`（sub_4248C0 raw 32303-32312）：**装载 `0x400` 等待门的计时器**（`tickets/T-0024`）。
+ *
+ * 引擎写的是 `Engine[92338] = 0`（起点清零）、`Engine[92339] = op1`（时长 ms）——
+ * 这两格 = 图形池基址别名的 `_this[11630]`/`_this[11631]`（字节 369352/369356），
+ * 正是 `sub_407E20`（raw 12762-12786）读的**等待计时器**。⇒ 脚本的 `i238 N` + `wait`（`0x21C`）= "等 N 毫秒"：
+ * 计时器未到点 ⇒ `sub_407E20` 返回 1 ⇒ 主循环 `0x400` 分支（raw 21109-21152）不放行。
+ *
+ * ★2026-09 订正：原注释记的"画布/视口尺寸对"没有依据（语料 2056 处取值全是整毫秒，
+ * 且 `src/SN0000.txt` 等处每条 `i238` 都紧跟 `wait`）；`engineValues` 里那两格仍照写
+ * （同一份语义的第二视图，供报告/digest 与 `0x238` 的既有证据锚点使用）。
+ */
+const op_load_wait_timer: OpHandler = (c) => {
   const e = c.e;
   const v = readIntOperand(e, c.frame, c.instr, 1);
+  e.gateWaitStart = 0; // Engine[92338]：起点清零 ⇒ 下一帧由 sub_407E20 锁存
+  e.gateWaitMs = v; // Engine[92339]：时长（ms）
   e.engineValues.set(92338, 0);
   e.engineValues.set(92339, v);
 };
@@ -169,7 +183,7 @@ export const GFX_STATE_OPS: OpTable = [
   [0x20e, op_commit_graphics], // 图形提交（Clear）
   [0x224, op_clear_transitions], // 清转场表
   [0x229, op_set_draw_mode], // 绘制模式 5 元组
-  [0x238, op_set_canvas_size], // Engine[92338]/[92339]（建模）
+  [0x238, op_load_wait_timer], // 装载 0x400 等待门的计时器（建模）
   [0x242, op_set_draw_entry_param], // DrawItem +720
   [0x256, op_set_slot_params], // 按 id 写 DrawItem 字段
   [0x258, op_set_slot_flags], // 纹理槽标志对（建模）

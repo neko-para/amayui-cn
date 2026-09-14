@@ -15,7 +15,7 @@
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "export function scAnimationsPending",
-      "note": "合成口径（5 窗，复用 itemAnimationsPending）；门口径见 scGateAnimationsDone / T-0024"
+      "note": "合成口径（5 窗，复用 itemAnimationsPending）；门口径 = 池挂起位 scPoolPending + 0x238 计时器（T-0024）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/drawitem/animWindow.ts",
@@ -24,8 +24,8 @@
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "if (nowMs !== undefined) this.clockMs = nowMs;",
-      "note": "时钟改由引擎时钟注入（D1）：门判据与推进判据同源，不再读上一帧时钟"
+      "anchor": "advanceModel(nowMs: number): void",
+      "note": "时钟改由引擎时钟注入（D1）：推进与合成同源。★2026-09（T-0024）：原来指向 animationsDone 的锚点已随该判据整体删除（门真值 = 池挂起位 + 0x238 计时器）"
     }
   ],
   "history": [
@@ -52,6 +52,10 @@
     {
       "at": "2026-09-13",
       "what": "改字段：links"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

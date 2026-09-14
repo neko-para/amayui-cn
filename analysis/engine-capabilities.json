@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 108,
-    "modeled-verified": 29,
+    "modeled-verified": 30,
     "modeled-unverified": 5,
     "partial": 24,
-    "absent": 25,
+    "absent": 24,
     "n/a-known": 25,
-    "needsAttention": 54
+    "needsAttention": 53
   },
   "entries": [
     {
@@ -367,10 +367,10 @@
       "whySilent": "不建模不会报错：只是等待期间点键无效、动画不会被迫收尾（表现为\"点了没反应\"）。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "未建模（缺口，不是\"已知无关\"）：引擎里 46512==1 时绘制期的窗判定走 sub_4AAE10(...)[3]=0（raw 134941 的 `|| *(_DWORD*)(_this+46512)==1`）⇒ 所有窗立刻算结束——这正是\"点键跳过 0x400 等待\"的实现方式（emulator 现在等待期间点键无效）。相关 raw：21135/21161 置位、134936 的负类型分支。见 tickets/T-0024。"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/wait-gate-timer.test.ts",
+        "note": "部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★仍未建模：① **门等待期间的玩家输入跳过**（raw 21113-21135：命中/滚轮 + `Config(System:EffectSkip…)` 门 ⇒ 清 `0x400` + `sub_407EA0` + 刷 present）—— 功能性缺口：等待期间点键无效；② 绘制期「窗立刻算结束」（raw 134941/135806/136182 的 `|| freeze==1`）与 `+720` bit0 的冻结豁免（raw 117440-117442）**没有作用在窗状态上**（只折进池挂起位）⇒ 冻结后窗仍在跑（后果是继续合成，不是逻辑错误）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。"
       },
       "capability": "Scene+46512 动画强制冻结（让所有动画窗立刻算\"已结束\"）",
       "evidence": "E2"
@@ -379,7 +379,7 @@
       "id": "scene-pending-flag-0x400-gate",
       "subsystem": "转场",
       "name": "Scene+46516 转场/等待在途标志（0x400 卫门值）",
-      "trigger": "池挂起位 Scene+46516 由绘制期置 1、帧头清 0；叠加 0x238 装载的等待计时器（起点 Engine+369352、时长 Engine+369356）",
+      "trigger": "池挂起位 `Scene+46516`：绘制期发现「还有元素在动」时置 1（DrawItem 路径 raw 117843-117844，**排除 `+720` bit0 的元素**；转场/网格路径 raw 133528/135822/136197/136691），每遍绘制开头清零（raw 130427-130428）⇒ 逐遍瞬时量，由帧驱动锁存进 `Engine.scenePending`。门判据 = 本位 + `0x238` 装载的等待计时器（起点 `Scene+46520` = `Engine[92338]`、时长 `Scene+46524` = `Engine[92339]`），放行条件 = `sub_407E20(pool) == 0`（主循环 raw 21109-21152）；玩家输入可跳过（raw 21113-21135）。",
       "engine": {
         "fns": [
           "sub_407E20",
@@ -401,10 +401,10 @@
       "whySilent": "标志恒为非零时只是永远不清转场表、0x400 门不开，引擎不认为这是错误；门判据口径错（例如把 80 000 ms 的平移窗算进门）表现为\"卡住不动\"，也不报错。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
+        "status": "modeled-verified",
         "evidence": "E3",
-        "guard": "test/anim-window-done.test.ts",
-        "note": "已拆成两条口径：合成用 scAnimationsPending（5 窗），门用 scGateAnimationsDone（mesh 全窗 + draw item 颜色窗）。仍未建模：① 0x238 装载的等待计时器（Engine[92338]/[92339]，emulator 只写 engineValues 没人读）；② 池挂起位 46516 的逐帧瞬时语义；③ 点键跳过门（raw 21113-21135 清门 + 置强制冻结）。相关 raw：主循环 0x400 分支 21109-21153、0x238 的装载 32303-32312。见 tickets/T-0024。"
+        "guard": "test/wait-gate-timer.test.ts",
+        "note": "已建模（T-0024）：① `0x238` 装载等待计时器（`Engine.gateWaitStart/gateWaitMs` = `Scene+46520/46524`）；② 池挂起位 `Engine.scenePending`（`Scene+46516`）由帧驱动在每帧 `advanceModel` 之后锁存，口径 = `scPoolPending`（mesh 窗 + draw item 5 窗，**排除 `+720` bit0 的元素** —— raw 117843-117844）；③ 门 = `Engine.gatePending`（`sub_407E20` 逐行等价：未到点返回 1、到期清两格、否则看池挂起位），`serviceWaitGate` 供驱动与观察者共用；④ 旧的 `scGateAnimationsDone`（只扫窗 0 的口径）已删除。E3 实测（真实语料 GAME START 链路的 `gateWaits`）：SN0000 的四道计时器门 waited == timer（5500/100/2000/200 ms），其中 100 ms 那道正是 `src/SN0000.txt:1043-1048` 的 80 000 ms 慢推 + `i242 f8023 1` 的场景；LOGO 版权页的 ~5 s 由**动画窗**驱动（`src/LOGO.txt:44` 的 `set-vertex-color-alpha 1194 1f4` = delay 4500 + dur 500），与计时器无关。★仍未建模（缺口都在这里点名）：① `Scene+46516` 另有置位来源 —— 立即变换 setter（`sub_49A870/49A9C0/49A8E0` raw 117177/117234/117215）与 3D 槽矩阵 setter（`sub_4B0030/4B0110/4B0280` raw 134174/134231/134271）；emulator 只按「窗是否在跑」推本位 ⇒ 这些场景下门可能早放行一遍绘制；② `Scene+46528`（每遍绘制清零、反编译里无置位点）；③ 主循环的 `v95`（raw 20701 `sub_4050E0` = Live2D/角色槽在播）—— emulator 没有那 1000 个槽 ⇒ 恒 0；④ 门等待期间的玩家输入跳过（raw 21113-21135）未接（`skipWaitGate()` 已就位，缺输入判定与 `Config(System:EffectSkip…)` 门）。守卫：test/wait-gate-timer.test.ts（计时器定律 + 80 000 ms 慢推对照 + 序章锚点棘轮）。"
       }
     },
     {
@@ -1709,7 +1709,7 @@
         "status": "partial",
         "evidence": "E1",
         "guard": "",
-        "note": "2026-09 订正（T-0008 之后）：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★仍 partial：没有 (46512|46516) 的粘滞语义。"
+        "note": "2026-09 订正（T-0008 之后）：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★2026-09（T-0024）：`46516` 现在是**跨帧锁存量**（`Engine.scenePending`：绘制期置位、帧末锁存），`46512` 也有 `Engine.sceneFreeze`（ADV 分支每帧置位、锁存后按 raw 130427 清零）；不过驱动是把它折进**池挂起位**而不是 needsRender 的脏位 —— 而 `sceneNeedsRender` 用的 `scAnimationsPending` 对 `+720` 排除项同样为真 ⇒ 「长时慢推要继续画」的行为本来就对。⇒ 仍 partial：`sub_4B06D0` 的 `(46512|46516) ⇒ 脏` 这一条没有逐字建模。"
       }
     },
     {
