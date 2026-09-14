@@ -1,0 +1,66 @@
+{
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/render",
+  "title": "删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障）",
+  "why": "现状：`src/renderer/app/boot.ts` 在跑脚本前硬编码预载 4 张图 —— `const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273]`（实测映射：0x5245→`SO006.AGF` 1280×720、0x5246→`SO005.AGF` 1280×720、0x5272→`SO004.AGF` **1664×1536**、0x5273→`SO004A.AGF` 740×700；见 `.tmp/amayui-emulator.log` 启动段）。\n\n问题：① **重复的第二套加载入口** —— 图像本来就有正统的按需路径：脚本 `0x1F9 set-texture` → `PixiBackend.bindTexture` → `TextureCache.bind`（缓存未命中即 `void this.preloadImage(imgid).then(...)` 异步取图）→ 帧末 `PixiBackend.texturesIdle()`（纹理帧屏障）等到位再合成。boot 里这份清单等于在「脚本会自己加载」之外又写了一遍「谁在什么时候加载」，而它**没有**任何引擎依据（不是 `0x1F9`/`0x1F8`，也不是引擎启动流程里的动作）。\n② **两宿主加载时机不一致**：headless（`bootHeadless`/两份 chain/scenario）**不预载**，只有 Electron 预载 ⇒ 同一份脚本在两侧的图文就绪时机不同，属于 `T-0002` 那类\"宿主漂移\"的温床。\n③ **白付启动成本**：`SO004.AGF` 是 1664×1536 的大图，启动期无条件解码/占显存，哪怕本次流程根本用不到。\n④ 预载掩盖了真实缺陷：`texture-bind-synchronous-then-query` 那条能力缺口（异步装载 ⇒ 紧随的 `0x208` 读到 0×0）正是被预载盖住过 —— 预载在时看不出，去掉后才会暴露「哪一处没走屏障」。\n\n目标：删掉 `PRELOAD_IMAGES` 与那段循环，让这 4 张图和其它图一样在 `0x1F9` 绑定时按需加载；若发现某张图确实「绑定前就要用」（例如启动期直接 `draw-texture` 而不经 `0x1F9`），把该需求写进 `analysis/engine-capabilities.json` 的对应条目（能力面清单）而不是留在 boot 的硬编码列表里。",
+  "acceptance": [
+    "`src/renderer/app/boot.ts` 的 `PRELOAD_IMAGES` 常量与预载循环删除；全仓（含 electron/）不再有该常量或启动期预载清单",
+    "这 4 张图在脚本 `0x1F9` 绑定时按需装载：启动日志里不再有启动段的 `image 0x5245/0x5246/0x5272/0x5273 -> …`，而是在首次绑定前后出现，且 `bindTexture` 未命中缓存时仍走 `TextureCache` 的异步装载",
+    "首帧不缺图：`npm run shot -- --gamestart` 的 TITLE / GAMESTART / SN0000 三屏与改动前逐像素目视一致（若因异步装载出现一帧缺图，必须由 `texturesIdle` 屏障消除，而不是靠预载掩盖）",
+    "`texturesIdle` 帧屏障覆盖这些绑定：G3 `npm run record` + `npm run replay` 在改动后仍 `engine 段逐帧相等`（两宿主一致），headless 侧不因缺预载而分叉",
+    "若确认某张图必须在启动期就绪：把\"启动期必需图像\"的依据（引擎 raw / 脚本调用点）登记进 `analysis/engine-capabilities.json` 的对应能力条目，而不是恢复 boot 里的硬编码清单"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/app/boot.ts",
+      "anchor": "const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273];",
+      "line": 21,
+      "note": "要点删的硬编码清单（启动期唯一预载入口）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/boot.ts",
+      "anchor": "for (const imgid of PRELOAD_IMAGES) {",
+      "line": 78,
+      "note": "预载循环：await native.preloadImage(imgid)"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
+      "anchor": "bind(imgid: number, slot: number): void {",
+      "line": 174,
+      "note": "正统按需路径：缓存未命中即触发装载"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
+      "anchor": "void this.preloadImage(imgid).then(() => {",
+      "line": 183,
+      "note": "未命中时的异步装载（IPC 取图 + 解码）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "async texturesIdle(): Promise<void> {",
+      "line": 285,
+      "note": "纹理帧屏障：等本帧新绑定到位再 present（异步装载的兜底）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md"
+    ],
+    "analysis": [
+      "texture-bind-synchronous-then-query"
+    ],
+    "tickets": [
+      "T-0002"
+    ]
+  },
+  "notes": "预载的 4 张图的实测映射见 why；本条是'删掉第二套入口'的整理需求，不需要新守卫，判据是启动日志 + 三屏截图 + G3 逐帧相等。",
+  "id": "T-0029",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "type": "tooling",
+  "priority": "P3",
+  "area": "emulator/tools",
+  "title": "tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Electron 弹「App threw an error during load」",
+  "why": "实测（2026-09，两次踩到并让用户看到弹窗）：\n```\ncd app/amayui-emulator\nnpx electron tools/record.cjs --scenario ../../.tmp/scen.json --out ../../.tmp/x.jsonl.gz\n→ record.cjs:43  fs.mkdirSync(path.dirname(OUT), {recursive:true})\n→ Error: EPERM: operation not permitted, mkdir '/Users/<user>/Documents/.tmp'\n→ Electron: App threw an error during load（应用还没起来就抛，用户看到 JS 异常弹窗）\n```\n根因：同一个命令里**两种路径基准**并存 ——\n- `--scenario` 走 `path.resolve(argOf('scenario', …))`（**相对 cwd**，`record.cjs:31`）；\n- `--out` 走 `path.resolve(ROOT, argOf('out', …))`（**相对仓库根**，`record.cjs:32`）；\n- 而 `ROOT` 是 `path.resolve(__dirname,'..','..','..')`（`record.cjs:24`）。\n⇒ 从 `app/amayui-emulator/` 传 `--out ../../.tmp/x` 会拼成 `…/Documents/.tmp/x`（越出仓库）→ mkdir EPERM → 未捕获异常把 Electron 拉死在加载阶段。\n同类隐患：`shot.cjs` 的 `OUT/LOG` 一律 `path.join(ROOT, '.tmp')`（`shot.cjs:35/36`，安全），但 `--name`（`:43`）与 record 的 `--out` 命名/基准不统一；越界路径没有任何前置校验，错误表现在\"Electron 弹窗\"而不是\"可读的一行报错\"。",
+  "acceptance": [
+    "路径参数基准统一且写明：`--out`（record）/`--name`（shot）等一律按 cwd 或一律按仓库根，并在 `--help`/启动日志里打印最终解析结果（绝对路径）",
+    "越出仓库的路径**前置报错**：给出可读提示 + 退出码 ≠ 0，绝不因为 mkdir 失败在 Electron 加载阶段抛未捕获异常（不再出现「App threw an error during load」弹窗）",
+    "回归：`npm run record -- --scenario tools/scenarios/gamestart.json --out .tmp/x.jsonl.gz` 与 `npm run shot -- --gamestart` 都正常产出（产物落在仓库 `.tmp/`）",
+    "顺带核对 `tools/scenarios/*.json` 与 README/注释里所有 `--out/--scenario` 示例路径基准一致（避免文档教人踩）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/tools/record.cjs",
+      "anchor": "const OUT = path.resolve(ROOT, argOf('out', '.tmp/replay-electron.jsonl.gz'));",
+      "line": 32,
+      "note": "--out 按**仓库根**解析（与 --scenario 的 cwd 基准不一致）"
+    },
+    {
+      "file": "app/amayui-emulator/tools/record.cjs",
+      "anchor": "const SCENARIO_PATH = path.resolve(argOf('scenario', path.join(__dirname, 'scenarios', 'gamestart.json')));",
+      "line": 31,
+      "note": "--scenario 按**cwd**解析 ⇒ 同一命令两种基准"
+    },
+    {
+      "file": "app/amayui-emulator/tools/record.cjs",
+      "anchor": "fs.mkdirSync(path.dirname(OUT), { recursive: true });",
+      "line": 43,
+      "note": "★越界路径在此抛 EPERM（未捕获）⇒ Electron 弹「App threw an error during load」"
+    },
+    {
+      "file": "app/amayui-emulator/tools/shot.cjs",
+      "anchor": "const OUT = path.join(ROOT, '.tmp');",
+      "line": 35,
+      "note": "shot.cjs 固定写仓库 .tmp（安全，但与 record 的风格不统一）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0005"
+    ]
+  },
+  "notes": "本条只修工具参数的路径基准与错误表现，不改录制格式。★证据里的报错文本来自实测日志（原文：`App threw an error during load` / `Error: EPERM: operation not permitted, mkdir '/Users/<user>/Documents/.tmp'`）。",
+  "id": "T-0032",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：area"
+    }
+  ]
+}

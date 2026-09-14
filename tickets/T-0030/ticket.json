@@ -1,0 +1,130 @@
+{
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/boot",
+  "title": "首次运行（overlay 里没有 SYS4REG.INI）时 SAVE.DAT 既不装载也不回写 ⇒ 设置/侧栏编辑永远还原",
+  "why": "现象（用户 2026-09 实测）：ADV 右侧栏「設定変更」（实际 `call-script 2d` = `CHARMEDIT.BIN`，见 `docs-new/02-data/scripts-control.md:15`）里做的编辑，重启后全部还原；设置项同理。\n\n根因（读码 + Electron 实测）：`src/renderer/app/configBoot.ts` 的 `loadEngineConfig()` 在**读不到 SYS4REG.INI** 时直接早退：\n```\n17:  if (!ini) {\n18:    trace('[config] 未找到 SYS4REG.INI（引擎字段用默认值）');\n19:    return;                       // ★★ 早退\n20:  }\n...\n57:  await loadSaveData(e, trace);   // ← 在早退之后：不装载 save-int/save-string 两张表\n74:  e.onSaveDataChanged = () => {…} // ← 也在早退之后：save-int 改动不回写\n```\n⇒ ① SAVE.DAT 不装载 ⇒ `SYSTEM4.txt:71 load-int (global 5)` 恒读到 0 ⇒ 每次启动都落到 `label_0000068c` 分支 `INITCONFIG` + `INITCHARM`（`:78-79`）**把玩家数据覆盖成默认**；② 连 `mov (global-int 5) 1; save-int (global-int 5)`（`:80-81`）也写不出去（`onSaveDataChanged` 没挂）⇒ overlay 里 `SYS4REG.INI` 与 `SAVE\\SAVE.DAT` **一个都不会出现**。\n★这是**死循环**：`SYS4REG.INI` 只能由 `onConfigChanged` 写，而它同样被早退跳过 ⇒ 在\"首次运行\"的 emulator 上永远无法自愈。已存在 INI 的环境（真游戏存档目录）不走早退，所以一直没暴露 —— 这正是它能躲过 E3 守卫的原因（`save-data-tables-persistence` 的 E3 用的是**假定的宿主装配**，没覆盖\"无 INI\"这条 boot 分支）。\n\n影响面远大于侧栏编辑：`save-int`/`save-string` 是设置界面所有开关、饰品编辑（CHARMEDIT 写 → `LOADCHARM` 读回 `global-int 13b0` 数组）、鉴赏/已使用文件标志的统一持久化载体（`analysis/engine-capabilities.json` 的 `save-data-tables-persistence`）。⇒ 在首次运行的 emulator 上，**所有玩家数据都不落盘**。\n\n实测证据（Electron 产品路径，可复现）：跑 `ELECTRON_DISABLE_SANDBOX=1 npm run shot -- --gamestart`（内部会走 SYSTEM4 启动流程）后：日志只有 `[config] 未找到 SYS4REG.INI（引擎字段用默认值）`，**没有任何 `[save]` 行、也没有主进程的 `[main] save data <- …`**；且默认 overlay 目录 `…/.tmp/appdata/Eushully/天結いキャッスルマイスター.overlay/` **根本不存在**（既无 INI 也无 `SAVE\\SAVE.DAT`）—— 而这次运行确实走到了 `INITCONFIG`/`INITCONFIG0..5`（日志可见），本该写出 `save-int (global 5) 1`。\n\n★**2026-09 已修**（实现记录见 changes.md）：把两条通路拆成互不依赖的两个函数 —— `loadConfigIni`（只管 INI）与 `attachSaveDataPersistence`（装载 SAVE.DAT + 挂回写，`io.write` 可注入），`loadEngineConfig` 变成两行顺序调用 ⇒ 无 INI / INI 读取抛错都不再连坐 SAVE.DAT。",
+  "acceptance": [
+    "✅ SAVE.DAT 的装载与回写不再依赖 SYS4REG.INI：`loadEngineConfig` = `await loadConfigIni(...)` + `await attachSaveDataPersistence(...)`（后者无条件执行，且 `io.write` 可注入便于断言）",
+    "✅ 首次运行（overlay 为空）落盘：run1 日志 `[save] 无 SAVE.DAT（首次启动…）` → INITCONFIG+INITCHARM → `[main] save data <- …/SAVE/SAVE.DAT (84188 bytes)`（后续 84400/84464/… 递增），overlay 里确实出现 `SAVE/SAVE.DAT`",
+    "✅ 重启走恢复分支：run2 日志 `[save] AmayuiEmulator（format=0，3042 个 int / 5 个 string…）⇒ 脚本将走 LOADCONFIG 分支` + `[main] save data -> …(overlay, 133576 bytes)`；脚本足迹为 `0x5258 -> LOADCONFIG.BIN` + `0x51c3 -> LOADCHARM.BIN`（不再是 INITCONFIG/INITCHARM）",
+    "✅ 守卫（先红后绿）：`app/amayui-emulator/test/save-data.test.ts` 的『★无 SYS4REG.INI 时也要装载 SAVE.DAT 并挂上回写（T-0030）』—— 把 `loadEngineConfig` 临时改回早退即红",
+    "E4 待人工确认：进 ADV 侧栏「設定変更」（CHARMEDIT）改一项 → 退出 → 重启 → 该项保留（日志链路已证，UI 行为请用户复核）",
+    "✅ 不回归：有 INI 的老路径行为不变（`configRatchetOk` 防丢键、`read-save-flags` 并集、`save-data-tables-persistence` 的 E3 用例仍绿）；全量 491 例中失败项与改动前逐条相同（既存 7 个）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "if (!ini) {",
+      "line": 40,
+      "note": "早退点（现位于 `loadConfigIni` 内，只影响配置部分，不再连坐 SAVE.DAT）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "trace('[config] 未找到 SYS4REG.INI（引擎字段用默认值；玩家一改设置即按引擎键表全量生成）');",
+      "line": 43,
+      "note": "实测日志里唯一一条 config/save 相关输出（之后没有任何 [save] 行）。★2026-09（T-0031）文案改为\"一改设置即按引擎键表全量生成\""
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "await loadSaveData(e, trace);",
+      "line": 97,
+      "note": "SAVE.DAT 装载：现在位于 `attachSaveDataPersistence` 内，无条件执行"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "e.onSaveDataChanged = () => {",
+      "line": 115,
+      "note": "回写接线：同样在早退之后 ⇒ save-int 改动永不落盘"
+    },
+    {
+      "file": "src/SYSTEM4.txt",
+      "anchor": "load-int (global-int 5)",
+      "line": 71,
+      "note": "「已初始化」标志：读到 0 就走首次启动分支"
+    },
+    {
+      "file": "src/SYSTEM4.txt",
+      "anchor": "call-script 51dc  // INITCONFIG",
+      "line": 78,
+      "note": "首次分支：INITCONFIG + INITCHARM（INITCHARM 会覆盖饰品/编辑数据）"
+    },
+    {
+      "file": "src/SYSTEM4.txt",
+      "anchor": "save-int (global-int 5)",
+      "line": 81,
+      "note": "本该写出去的那次登记（因 onSaveDataChanged 未挂而丢失）"
+    },
+    {
+      "file": "src/CHARMEDIT.txt",
+      "anchor": "save-int (local-ptr 1)",
+      "line": 494,
+      "note": "侧栏「設定変更」= CHARMEDIT 的编辑落点（写进 save-int 表）"
+    },
+    {
+      "file": "src/LOADCHARM.txt",
+      "anchor": "load-int (local-ptr 0)",
+      "line": 16,
+      "note": "对应的恢复端：把 save-int 表读回 global-int 13b0 数组（被早退挡住的正是它）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/ipcFileSource.ts",
+      "anchor": "async writeSaveData(data: Uint8Array): Promise<void> {",
+      "line": 53,
+      "note": "渲染进程 → 主进程的写盘通道（本身没坏，只是没人调用它）"
+    },
+    {
+      "file": "app/amayui-emulator/electron/ipc/files.ts",
+      "anchor": "ipcMain.handle('write-save-data'",
+      "line": 112,
+      "note": "主进程写 overlay 的 save-data（日志 `[main] save data <- …` 是 E4 判据）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "await attachSaveDataPersistence(e, trace);",
+      "line": 25,
+      "note": "★修复点：两条通路并列，SAVE.DAT 不再被 INI 的缺失跳过"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "export async function attachSaveDataPersistence(",
+      "line": 90,
+      "note": "装载 + 回写接线收口在此（`io.write` 可注入 ⇒ 可单测）"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-data.test.ts",
+      "anchor": "★无 SYS4REG.INI 时也要装载 SAVE.DAT 并挂上回写",
+      "line": 351,
+      "note": "回归锁（先红后绿）：无 INI 分支下装载生效 + `onSaveDataChanged` 被挂 + 触发一次写盘"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/02-data/scripts-control.md"
+    ],
+    "analysis": [
+      "save-data-tables-persistence"
+    ],
+    "tickets": [
+      "T-0018",
+      "T-0026"
+    ]
+  },
+  "notes": "定因 = configBoot 的「无 INI 早退」把 SAVE.DAT 的装载与回写一起跳过（死循环）；已修并给出 E4 两次运行的日志证据（evidence/run1-* = 首次落盘、run2-* = 重启走 LOADCONFIG+LOADCHARM）。环境：macOS + jp 资源、overlay 为默认 `.tmp/appdata/...`。UI 层复核（改一项→重启→仍在）待用户确认。",
+  "id": "T-0030",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— 修复：loadConfigIni / attachSaveDataPersistence 解耦 + 守卫先红后绿 + E4 两次运行（首次落盘 / 重启 LOADCONFIG+LOADCHARM）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-data.test.ts"
+  ]
+}

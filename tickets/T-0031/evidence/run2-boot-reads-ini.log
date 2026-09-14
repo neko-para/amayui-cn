@@ -1,0 +1,2181 @@
+=== amayui-emulator.log ===
+=== amayui emulator boot ===
+[config] /Users/nekosu/Documents/Projects/amayui-cn/.tmp/appdata/Eushully/天結いキャッスルマイスター.overlay/SYS4REG.INI（overlay）分节=[sound,debug,display,system,message,set] 键=115 个；写入引擎字段 8 个：_this[174713]=0(sound:music) _this[167990]=0(display:screenmode) _this[21668]=42(message:messagespeed) _this[80106]=0(message:messagefade) _this[1384]=0(message:rmouseevent) _this[174810]=1(sound:sound) _this[20980]=1(sound:se) _this[21293]=1(sound:voice)
+[save] AmayuiEmulator（format=0，3042 个 int / 5 个 string，已使用文件 70 个［本文件 emulator:70 / 并集 70］）⇒ 脚本将走 LOADCONFIG 分支
+[options] /Users/nekosu/Documents/Projects/amayui-cn/emulator.config.json
+[options] boot.showLogo=false ⇒ 预设 _this[96983]=0（跳过 LOGO/版权页；与 LOGO 自身的 exit-script、GAMEOVER 回标题同一条路径 —— SYSTEM4.txt:144-146 将直接落到 :149 INIT / :150 TITLE）
+[options] resources.version=jp ⇒ 字体面名落到未做 cnjp 替换的更纱黑体（res/fonts/SarasaGothicSC）
+[music] 曲号表 59 条（other 0 条）
+[audio] 流式协议探测：status=206 ⇒ 走流式
+image 5245 -> SO006.AGF (1280x720)
+image 5246 -> SO005.AGF (1280x720)
+image 5272 -> SO004.AGF (1664x1536)
+image 5273 -> SO004A.AGF (740x700)
+[ignored] i324
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=6 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=6 1 行 0 字 横排 30px
+[msgwin] win=7 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=6 1 行 0 字 横排 30px
+[msgwin] win=7 1 行 0 字 横排 30px
+[msgwin] win=8 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=6 1 行 0 字 横排 30px
+[msgwin] win=7 1 行 0 字 横排 30px
+[msgwin] win=8 1 行 0 字 横排 30px
+bindTexture imgid=0x5191 slot=12
+image 5191 -> SO000.AGF (350x35)
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=1 1 行 0 字 横排 30px
+[msgwin] win=2 1 行 0 字 横排 30px
+[msgwin] win=3 1 行 0 字 横排 30px
+[msgwin] win=4 1 行 0 字 横排 30px
+[msgwin] win=5 1 行 0 字 横排 30px
+[msgwin] win=6 1 行 0 字 横排 30px
+[msgwin] win=7 1 行 0 字 横排 30px
+[msgwin] win=8 1 行 0 字 横排 30px
+[msgwin] win=8 1 行 0 字 横排 30px
+  [call-script] 0x5258 -> LOADCONFIG.BIN (41 instr)
+[present 826ms] items={无} meshes={无} slotTex=1 wait=0x0
+[input-state] hasCursor=0 pos=(-100000,-100000) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x-1 mouseSlot=0x-1
+  [call-script] 0x51c3 -> LOADCHARM.BIN (9 instr)
+  [call-script] 0x51db -> CHECKCONFIG.BIN (57 instr)
+[ignored] i10c
+[gap] i10c 被忽略但收到实参：imm-int#4 imm-int#44
+unhandled 0x308 i308
+[ignored] i30a
+[gap] i30a 被忽略但收到实参：imm-int#6 imm-int#5
+bindTexture imgid=0x525e slot=15
+image 525e -> SO002.AGF (640x256)
+bindTexture imgid=0x525f slot=16
+image 525f -> SO027.AGF (1280x768)
+bindTexture imgid=0x5260 slot=17
+image 5260 -> SO001.AGF (1280x1792)
+  [call-script] 0x5261 -> INIT2.BIN (168 instr)
+  [call-script] 0x51fc -> SCINIT.BIN (2903 instr)
+  [call-script] 0x51fd -> CTINIT.BIN (237 instr)
+  [call-script] 0x51fe -> PLINIT.BIN (2024 instr)
+  [call-script] 0x51ff -> AMINIT2.BIN (196 instr)
+  [call-script] 0x5200 -> WDINIT.BIN (491 instr)
+  [call-script] 0x5201 -> LKINIT.BIN (40 instr)
+  [call-script] 0x5202 -> DPINIT.BIN (19 instr)
+  [call-script] 0x5203 -> ALINIT.BIN (3993 instr)
+  [call-script] 0x5204 -> IMINIT.BIN (6070 instr)
+  [call-script] 0x5205 -> RCINIT.BIN (35 instr)
+  [call-script] 0x5206 -> SHINIT2.BIN (82 instr)
+  [call-script] 0x5207 -> EBINIT.BIN (19800 instr)
+  [call-script] 0x5208 -> CNINIT.BIN (363 instr)
+  [call-script] 0x5209 -> ITINIT.BIN (8618 instr)
+  [call-script] 0x520a -> SKINIT.BIN (5430 instr)
+  [call-script] 0x520b -> ILINIT.BIN (495 instr)
+  [call-script] 0x520c -> AFINIT.BIN (156 instr)
+  [call-script] 0x520d -> OFINIT.BIN (954 instr)
+  [call-script] 0x520e -> DGINIT.BIN (79 instr)
+  [call-script] 0x520f -> LAINIT.BIN (301 instr)
+  [call-script] 0x5210 -> OBINIT.BIN (616 instr)
+  [call-script] 0x5211 -> RTINIT.BIN (2911 instr)
+  [call-script] 0x5212 -> STINIT2.BIN (1498 instr)
+  [call-script] 0x5213 -> HAINIT.BIN (862 instr)
+  [call-script] 0x5214 -> DIINIT.BIN (1042 instr)
+  [call-script] 0x5215 -> CDINIT2.BIN (550 instr)
+  [call-script] 0x5216 -> MIINIT.BIN (1306 instr)
+  [call-script] 0x5217 -> CVINIT.BIN (252 instr)
+  [call-script] 0x5218 -> OPINIT1.BIN (415 instr)
+  [call-script] 0x5219 -> OPINIT2.BIN (13 instr)
+  [call-script] 0x521a -> GSINIT.BIN (19 instr)
+  [call-script] 0x521b -> EUINIT.BIN (9 instr)
+  [call-script] 0x521c -> CGINIT.BIN (6041 instr)
+  [call-script] 0x521d -> SPINIT.BIN (47 instr)
+  [call-script] 0x521e -> MUINIT.BIN (109 instr)
+  [call-script] 0x521f -> FAINIT.BIN (444 instr)
+  [call-script] 0x5220 -> VIINIT.BIN (643 instr)
+  [call-script] 0x5221 -> CIINIT.BIN (470 instr)
+  [call-script] 0x5222 -> BIINIT.BIN (961 instr)
+  [call-script] 0x5223 -> BTANINIT2.BIN (1063 instr)
+  [dispatch] 0x1000000 -> $1$AUTORUN.BIN（扩展包 1 的 $n$AUTORUN，帧 37）
+  [call-script] 0x1000174 -> $1$SCINIT.BIN (96 instr)
+  [call-script] 0x1000175 -> $1$CTINIT.BIN (19 instr)
+  [call-script] 0x1000176 -> $1$PLINIT.BIN (263 instr)
+  [call-script] 0x1000177 -> $1$AMINIT2.BIN (11 instr)
+  [call-script] 0x1000178 -> $1$WDINIT.BIN (1 instr)
+  [call-script] 0x1000179 -> $1$LKINIT.BIN (1 instr)
+  [call-script] 0x100017a -> $1$DPINIT.BIN (1 instr)
+  [call-script] 0x100017b -> $1$ALINIT.BIN (220 instr)
+  [call-script] 0x100017c -> $1$IMINIT.BIN (367 instr)
+  [call-script] 0x100017d -> $1$RCINIT.BIN (1 instr)
+  [call-script] 0x100017e -> $1$SHINIT2.BIN (1 instr)
+  [call-script] 0x100017f -> $1$EBINIT.BIN (1111 instr)
+  [call-script] 0x1000180 -> $1$CNINIT.BIN (15 instr)
+  [call-script] 0x1000181 -> $1$ITINIT.BIN (434 instr)
+  [call-script] 0x1000182 -> $1$SKINIT.BIN (201 instr)
+  [call-script] 0x1000183 -> $1$ILINIT.BIN (1 instr)
+  [call-script] 0x1000184 -> $1$AFINIT.BIN (1 instr)
+  [call-script] 0x1000185 -> $1$OFINIT.BIN (8 instr)
+  [call-script] 0x1000186 -> $1$DGINIT.BIN (1 instr)
+  [call-script] 0x1000187 -> $1$LAINIT.BIN (1 instr)
+  [call-script] 0x1000188 -> $1$OBINIT.BIN (1 instr)
+  [call-script] 0x1000189 -> $1$RTINIT.BIN (165 instr)
+  [call-script] 0x100018a -> $1$STINIT2.BIN (150 instr)
+  [call-script] 0x100018b -> $1$HAINIT.BIN (13 instr)
+  [call-script] 0x100018c -> $1$DIINIT.BIN (214 instr)
+  [call-script] 0x100018d -> $1$CDINIT2.BIN (1 instr)
+  [call-script] 0x100018e -> $1$MIINIT.BIN (124 instr)
+  [call-script] 0x100018f -> $1$CVINIT.BIN (21 instr)
+  [call-script] 0x1000190 -> $1$OPINIT1.BIN (1 instr)
+  [call-script] 0x1000191 -> $1$OPINIT2.BIN (1 instr)
+  [call-script] 0x1000192 -> $1$GSINIT.BIN (1 instr)
+  [call-script] 0x1000193 -> $1$EUINIT.BIN (9 instr)
+  [call-script] 0x1000194 -> $1$CGINIT.BIN (56 instr)
+  [call-script] 0x1000195 -> $1$SPINIT.BIN (1 instr)
+  [call-script] 0x1000196 -> $1$MUINIT.BIN (1 instr)
+  [call-script] 0x1000197 -> $1$FAINIT.BIN (51 instr)
+  [call-script] 0x1000198 -> $1$VIINIT.BIN (1 instr)
+  [call-script] 0x1000199 -> $1$CIINIT.BIN (33 instr)
+  [call-script] 0x100019a -> $1$BTANINIT2.BIN (46 instr)
+  [dispatch] 0x2000000 -> $2$AUTORUN.BIN（扩展包 2 的 $n$AUTORUN，帧 37）
+  [call-script] 0x2000001 -> $2$SCINIT.BIN (23 instr)
+  [call-script] 0x2000002 -> $2$CTINIT.BIN (1 instr)
+  [call-script] 0x2000003 -> $2$PLINIT.BIN (21 instr)
+  [call-script] 0x2000004 -> $2$AMINIT2.BIN (1 instr)
+  [call-script] 0x2000005 -> $2$WDINIT.BIN (17 instr)
+  [call-script] 0x2000006 -> $2$LKINIT.BIN (1 instr)
+  [call-script] 0x2000007 -> $2$DPINIT.BIN (1 instr)
+  [call-script] 0x2000008 -> $2$ALINIT.BIN (49 instr)
+  [call-script] 0x2000009 -> $2$IMINIT.BIN (38 instr)
+  [call-script] 0x200000a -> $2$RCINIT.BIN (1 instr)
+  [call-script] 0x200000b -> $2$SHINIT2.BIN (1 instr)
+  [call-script] 0x200000c -> $2$EBINIT.BIN (1200 instr)
+  [call-script] 0x200000d -> $2$CNINIT.BIN (4 instr)
+  [call-script] 0x200000e -> $2$ITINIT.BIN (235 instr)
+  [call-script] 0x200000f -> $2$SKINIT.BIN (36 instr)
+  [call-script] 0x2000010 -> $2$ILINIT.BIN (1 instr)
+  [call-script] 0x2000011 -> $2$AFINIT.BIN (1 instr)
+  [call-script] 0x2000012 -> $2$OFINIT.BIN (38 instr)
+  [call-script] 0x2000013 -> $2$DGINIT.BIN (1 instr)
+  [call-script] 0x2000014 -> $2$LAINIT.BIN (1 instr)
+  [call-script] 0x2000015 -> $2$OBINIT.BIN (1 instr)
+  [call-script] 0x2000016 -> $2$RTINIT.BIN (1 instr)
+  [call-script] 0x2000017 -> $2$STINIT2.BIN (115 instr)
+  [call-script] 0x2000018 -> $2$HAINIT.BIN (51 instr)
+  [call-script] 0x2000019 -> $2$DIINIT.BIN (69 instr)
+  [call-script] 0x200001a -> $2$CDINIT2.BIN (25 instr)
+  [call-script] 0x200001b -> $2$MIINIT.BIN (83 instr)
+  [call-script] 0x200001c -> $2$CVINIT.BIN (1 instr)
+  [call-script] 0x200001d -> $2$OPINIT1.BIN (1 instr)
+  [call-script] 0x200001e -> $2$OPINIT2.BIN (1 instr)
+  [call-script] 0x200001f -> $2$GSINIT.BIN (1 instr)
+  [call-script] 0x2000020 -> $2$EUINIT.BIN (1 instr)
+  [call-script] 0x2000021 -> $2$CGINIT.BIN (1 instr)
+  [call-script] 0x2000022 -> $2$SPINIT.BIN (1 instr)
+  [call-script] 0x2000023 -> $2$MUINIT.BIN (1 instr)
+  [call-script] 0x2000024 -> $2$FAINIT.BIN (1 instr)
+  [call-script] 0x2000025 -> $2$VIINIT.BIN (1 instr)
+  [call-script] 0x2000026 -> $2$CIINIT.BIN (1 instr)
+  [call-script] 0x2000027 -> $2$BTANINIT2.BIN (1 instr)
+  [dispatch] 0x3000000 -> $3$AUTORUN.BIN（扩展包 3 的 $n$AUTORUN，帧 37）
+  [call-script] 0x3000375 -> $3$SCINIT.BIN (350 instr)
+  [call-script] 0x3000376 -> $3$CTINIT.BIN (67 instr)
+  [call-script] 0x3000377 -> $3$PLINIT.BIN (263 instr)
+  [call-script] 0x3000378 -> $3$AMINIT2.BIN (16 instr)
+  [call-script] 0x3000379 -> $3$WDINIT.BIN (17 instr)
+  [call-script] 0x300037a -> $3$LKINIT.BIN (1 instr)
+  [call-script] 0x300037b -> $3$DPINIT.BIN (2 instr)
+  [call-script] 0x300037c -> $3$ALINIT.BIN (973 instr)
+  [call-script] 0x300037d -> $3$IMINIT.BIN (2130 instr)
+  [call-script] 0x300037e -> $3$RCINIT.BIN (1 instr)
+  [call-script] 0x300037f -> $3$SHINIT2.BIN (1 instr)
+  [call-script] 0x3000380 -> $3$EBINIT.BIN (3607 instr)
+  [call-script] 0x3000381 -> $3$CNINIT.BIN (20 instr)
+  [call-script] 0x3000382 -> $3$ITINIT.BIN (1490 instr)
+  [call-script] 0x3000383 -> $3$SKINIT.BIN (358 instr)
+  [call-script] 0x3000384 -> $3$ILINIT.BIN (1 instr)
+  [call-script] 0x3000385 -> $3$AFINIT.BIN (1 instr)
+  [call-script] 0x3000386 -> $3$OFINIT.BIN (46 instr)
+  [call-script] 0x3000387 -> $3$DGINIT.BIN (1 instr)
+  [call-script] 0x3000388 -> $3$LAINIT.BIN (1 instr)
+  [call-script] 0x3000389 -> $3$OBINIT.BIN (11 instr)
+  [call-script] 0x300038a -> $3$RTINIT.BIN (570 instr)
+  [call-script] 0x300038b -> $3$STINIT2.BIN (279 instr)
+  [call-script] 0x300038c -> $3$HAINIT.BIN (332 instr)
+  [call-script] 0x300038d -> $3$DIINIT.BIN (350 instr)
+  [call-script] 0x300038e -> $3$CDINIT2.BIN (175 instr)
+  [call-script] 0x300038f -> $3$MIINIT.BIN (308 instr)
+  [call-script] 0x3000390 -> $3$CVINIT.BIN (11 instr)
+  [call-script] 0x3000391 -> $3$OPINIT1.BIN (1 instr)
+  [call-script] 0x3000392 -> $3$OPINIT2.BIN (1 instr)
+  [call-script] 0x3000393 -> $3$GSINIT.BIN (1 instr)
+  [call-script] 0x3000394 -> $3$EUINIT.BIN (9 instr)
+  [call-script] 0x3000395 -> $3$CGINIT.BIN (249 instr)
+  [call-script] 0x3000396 -> $3$SPINIT.BIN (5 instr)
+  [call-script] 0x3000397 -> $3$MUINIT.BIN (1 instr)
+  [call-script] 0x3000398 -> $3$FAINIT.BIN (61 instr)
+  [call-script] 0x3000399 -> $3$VIINIT.BIN (1 instr)
+  [call-script] 0x300039a -> $3$CIINIT.BIN (17 instr)
+  [call-script] 0x300039b -> $3$BTANINIT2.BIN (1 instr)
+  [dispatch] 0x4000000 -> $4$AUTORUN.BIN（扩展包 4 的 $n$AUTORUN，帧 37）
+  [call-script] 0x40000cf -> $4$SCINIT.BIN (54 instr)
+  [call-script] 0x40000d0 -> $4$CTINIT.BIN (1 instr)
+  [call-script] 0x40000d1 -> $4$PLINIT.BIN (1 instr)
+  [call-script] 0x40000d2 -> $4$AMINIT2.BIN (1 instr)
+  [call-script] 0x40000d3 -> $4$WDINIT.BIN (16 instr)
+  [call-script] 0x40000d4 -> $4$LKINIT.BIN (1 instr)
+  [call-script] 0x40000d5 -> $4$DPINIT.BIN (1 instr)
+  [call-script] 0x40000d6 -> $4$ALINIT.BIN (57 instr)
+  [call-script] 0x40000d7 -> $4$IMINIT.BIN (1 instr)
+  [call-script] 0x40000d8 -> $4$RCINIT.BIN (1 instr)
+  [call-script] 0x40000d9 -> $4$SHINIT2.BIN (1 instr)
+  [call-script] 0x40000da -> $4$EBINIT.BIN (642 instr)
+  [call-script] 0x40000db -> $4$CNINIT.BIN (4 instr)
+  [call-script] 0x40000dc -> $4$ITINIT.BIN (106 instr)
+  [call-script] 0x40000dd -> $4$SKINIT.BIN (236 instr)
+  [call-script] 0x40000de -> $4$ILINIT.BIN (1 instr)
+  [call-script] 0x40000df -> $4$AFINIT.BIN (1 instr)
+  [call-script] 0x40000e0 -> $4$OFINIT.BIN (1 instr)
+  [call-script] 0x40000e1 -> $4$DGINIT.BIN (1 instr)
+  [call-script] 0x40000e2 -> $4$LAINIT.BIN (1 instr)
+  [call-script] 0x40000e3 -> $4$OBINIT.BIN (1 instr)
+  [call-script] 0x40000e4 -> $4$RTINIT.BIN (28 instr)
+  [call-script] 0x40000e5 -> $4$STINIT2.BIN (41 instr)
+  [call-script] 0x40000e6 -> $4$HAINIT.BIN (64 instr)
+  [call-script] 0x40000e7 -> $4$DIINIT.BIN (64 instr)
+  [call-script] 0x40000e8 -> $4$CDINIT2.BIN (19 instr)
+  [call-script] 0x40000e9 -> $4$MIINIT.BIN (47 instr)
+  [call-script] 0x40000ea -> $4$CVINIT.BIN (1 instr)
+  [call-script] 0x40000eb -> $4$OPINIT1.BIN (1 instr)
+  [call-script] 0x40000ec -> $4$OPINIT2.BIN (1 instr)
+  [call-script] 0x40000ed -> $4$GSINIT.BIN (1 instr)
+  [call-script] 0x40000ee -> $4$EUINIT.BIN (1 instr)
+  [call-script] 0x40000ef -> $4$CGINIT.BIN (121 instr)
+  [call-script] 0x40000f0 -> $4$SPINIT.BIN (3 instr)
+  [call-script] 0x40000f1 -> $4$MUINIT.BIN (1 instr)
+  [call-script] 0x40000f2 -> $4$FAINIT.BIN (31 instr)
+  [call-script] 0x40000f3 -> $4$VIINIT.BIN (1 instr)
+  [call-script] 0x40000f4 -> $4$CIINIT.BIN (1 instr)
+  [call-script] 0x40000f5 -> $4$BTANINIT2.BIN (37 instr)
+  [dispatch] 0x5000000 -> $5$AUTORUN.BIN（扩展包 5 的 $n$AUTORUN，帧 37）
+  [call-script] 0x5000205 -> $5$SCINIT.BIN (85 instr)
+  [call-script] 0x5000206 -> $5$CTINIT.BIN (8 instr)
+  [call-script] 0x5000207 -> $5$PLINIT.BIN (182 instr)
+  [call-script] 0x5000208 -> $5$AMINIT2.BIN (6 instr)
+  [call-script] 0x5000209 -> $5$WDINIT.BIN (17 instr)
+  [call-script] 0x500020a -> $5$LKINIT.BIN (1 instr)
+  [call-script] 0x500020b -> $5$DPINIT.BIN (1 instr)
+  [call-script] 0x500020c -> $5$ALINIT.BIN (150 instr)
+  [call-script] 0x500020d -> $5$IMINIT.BIN (178 instr)
+  [call-script] 0x500020e -> $5$RCINIT.BIN (1 instr)
+  [call-script] 0x500020f -> $5$SHINIT2.BIN (1 instr)
+  [call-script] 0x5000210 -> $5$EBINIT.BIN (1527 instr)
+  [call-script] 0x5000211 -> $5$CNINIT.BIN (16 instr)
+  [call-script] 0x5000212 -> $5$ITINIT.BIN (146 instr)
+  [call-script] 0x5000213 -> $5$SKINIT.BIN (181 instr)
+  [call-script] 0x5000214 -> $5$ILINIT.BIN (1 instr)
+  [call-script] 0x5000215 -> $5$AFINIT.BIN (1 instr)
+  [call-script] 0x5000216 -> $5$OFINIT.BIN (8 instr)
+  [call-script] 0x5000217 -> $5$DGINIT.BIN (1 instr)
+  [call-script] 0x5000218 -> $5$LAINIT.BIN (1 instr)
+  [call-script] 0x5000219 -> $5$OBINIT.BIN (1 instr)
+  [call-script] 0x500021a -> $5$RTINIT.BIN (144 instr)
+  [call-script] 0x500021b -> $5$STINIT2.BIN (95 instr)
+  [call-script] 0x500021c -> $5$HAINIT.BIN (101 instr)
+  [call-script] 0x500021d -> $5$DIINIT.BIN (98 instr)
+  [call-script] 0x500021e -> $5$CDINIT2.BIN (31 instr)
+  [call-script] 0x500021f -> $5$MIINIT.BIN (87 instr)
+  [call-script] 0x5000220 -> $5$CVINIT.BIN (11 instr)
+  [call-script] 0x5000221 -> $5$OPINIT1.BIN (1 instr)
+  [call-script] 0x5000222 -> $5$OPINIT2.BIN (1 instr)
+  [call-script] 0x5000223 -> $5$GSINIT.BIN (1 instr)
+  [call-script] 0x5000224 -> $5$EUINIT.BIN (1 instr)
+  [call-script] 0x5000225 -> $5$CGINIT.BIN (325 instr)
+  [call-script] 0x5000226 -> $5$SPINIT.BIN (7 instr)
+  [call-script] 0x5000227 -> $5$MUINIT.BIN (1 instr)
+  [call-script] 0x5000228 -> $5$FAINIT.BIN (36 instr)
+  [call-script] 0x5000229 -> $5$VIINIT.BIN (1 instr)
+  [call-script] 0x500022a -> $5$CIINIT.BIN (17 instr)
+  [call-script] 0x500022b -> $5$BTANINIT2.BIN (1 instr)
+  [call-script] 0x5263 -> INIT.BIN (13 instr)
+  [call-script] 0x5264 -> TITLE.BIN (622 instr)
+[audio] bgm#31(id=23) 流式起播 loop=true
+bindTexture imgid=0x5272 slot=4
+  bind slot 4 <- imgid 0x5272
+[audio] AudioContext 建立（state=running, 48000Hz, 流式=on）
+[audio] <audio> 事件 waiting amayui-audio://audio/23
+  [call-script] 0x522d -> SETL2DMOC.BIN (1275 instr)
+unhandled 0x341 i341
+unhandled 0x345 i345
+unhandled 0x345 i345
+unhandled 0x345 i345
+  [call-script] 0x10001a4 -> $1$SETL2DMOC.BIN (49 instr)
+  [call-script] 0x2000031 -> $2$SETL2DMOC.BIN (97 instr)
+  [call-script] 0x30003a5 -> $3$SETL2DMOC.BIN (217 instr)
+  [call-script] 0x40000ff -> $4$SETL2DMOC.BIN (51 instr)
+  [call-script] 0x5000235 -> $5$SETL2DMOC.BIN (94 instr)
+unhandled 0x34e i34e
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=0 文本窗=8→0（保留纹理槽）
+[frame-hold] createMesh 0x0 颜色仍透明 → 继续留帧（剩 60 帧）
+createMesh h=0x0 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+[frame-hold] setVertexColor 0x0 → 新内容可见，解除留帧（剩 60 帧）
+setVertexColor h=0x0 idx=0 a=255 rgb=0x0 → state0=0xff000000
+configureDrawItem h=0xa layer=10 (0,0,1280x720)
+setDrawTranslation h=0xa (0,0,1)
+configureDrawItem h=0x64 layer=100 (0,1161,575x284)
+configureDrawItem h=0x6e layer=110 (1282,811,58x15)
+drawCgNumber id=0x6f value=0 digits=1 flags=1 → 建 1 项（槽 4）
+drawCgNumber id=0x70 value=0 digits=2 flags=1 → 建 2 项（槽 4）
+drawCgNumber id=0x72 value=0 digits=4 flags=1 → 建 4 项（槽 4）
+configureDrawItem h=0x76 layer=118 (1342,811,12x15)
+configureDrawItem h=0x77 layer=119 (1342,811,12x15)
+configureDrawItem h=0xc8 layer=200 (0,722,1280x437)
+configureDrawItem h=0xc9 layer=201 (1282,790,279x19)
+configureDrawItem h=0xd3 layer=211 (577,1161,62x75)
+configureDrawItem h=0xd4 layer=212 (641,1161,62x75)
+configureDrawItem h=0xd5 layer=213 (705,1161,62x75)
+configureDrawItem h=0xd6 layer=214 (769,1161,62x75)
+configureDrawItem h=0xd7 layer=215 (833,1161,62x75)
+configureDrawItem h=0x12c layer=300 (1440,0,156x156)
+configureDrawItem h=0x12e layer=302 (1440,158,156x156)
+configureDrawItem h=0x130 layer=304 (1440,316,156x156)
+configureDrawItem h=0x132 layer=306 (1440,474,156x156)
+configureDrawItem h=0x134 layer=308 (1440,632,156x156)
+setDrawColor h=0x64 d=300 c=200 to=0x-1
+setDrawColorAlpha h=0x64 from=0xffffff blend=300
+setDrawColor h=0x6e d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x6e from=0xffffff blend=0
+setDrawColor h=0x6f d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x6f from=0xffffff blend=0
+setDrawColor h=0x70 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x70 from=0xffffff blend=0
+setDrawColor h=0x71 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x71 from=0xffffff blend=0
+setDrawColor h=0x72 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x72 from=0xffffff blend=0
+setDrawColor h=0x73 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x73 from=0xffffff blend=0
+setDrawColor h=0x74 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x74 from=0xffffff blend=0
+setDrawColor h=0x75 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x75 from=0xffffff blend=0
+setDrawColor h=0x76 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x76 from=0xffffff blend=0
+setDrawColor h=0x77 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0x77 from=0xffffff blend=0
+setDrawColor h=0xc8 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xc8 from=0xffffff blend=0
+setDrawColor h=0xc9 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xc9 from=0xffffff blend=0
+setDrawColor h=0xd3 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xd3 from=0xffffff blend=0
+setDrawColor h=0xd4 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xd4 from=0xffffff blend=0
+setDrawColor h=0xd5 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xd5 from=0xffffff blend=0
+setDrawColor h=0xd6 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xd6 from=0xffffff blend=0
+setDrawColor h=0xd7 d=400 c=200 to=0x-1
+setDrawColorAlpha h=0xd7 from=0xffffff blend=0
+setDrawColor h=0xd8 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xd8 from=0xffffff blend=0
+setDrawColor h=0xd9 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xd9 from=0xffffff blend=0
+setDrawColor h=0xda d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xda from=0xffffff blend=0
+setDrawColor h=0xdb d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xdb from=0xffffff blend=0
+setDrawColor h=0xdc d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xdc from=0xffffff blend=0
+setDrawColor h=0xdd d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xdd from=0xffffff blend=0
+setDrawColor h=0xde d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xde from=0xffffff blend=0
+setDrawColor h=0xdf d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xdf from=0xffffff blend=0
+setDrawColor h=0xe0 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe0 from=0xffffff blend=0
+setDrawColor h=0xe1 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe1 from=0xffffff blend=0
+setDrawColor h=0xe2 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe2 from=0xffffff blend=0
+setDrawColor h=0xe3 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe3 from=0xffffff blend=0
+setDrawColor h=0xe4 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe4 from=0xffffff blend=0
+setDrawColor h=0xe5 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe5 from=0xffffff blend=0
+setDrawColor h=0xe6 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe6 from=0xffffff blend=0
+setDrawColor h=0xe7 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe7 from=0xffffff blend=0
+setDrawColor h=0xe8 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe8 from=0xffffff blend=0
+setDrawColor h=0xe9 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xe9 from=0xffffff blend=0
+setDrawColor h=0xea d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xea from=0xffffff blend=0
+setDrawColor h=0xeb d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xeb from=0xffffff blend=0
+setDrawColor h=0xec d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xec from=0xffffff blend=0
+setDrawColor h=0xed d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xed from=0xffffff blend=0
+setDrawColor h=0xee d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xee from=0xffffff blend=0
+setDrawColor h=0xef d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xef from=0xffffff blend=0
+setDrawColor h=0xf0 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xf0 from=0xffffff blend=0
+setDrawColor h=0xf1 d=400 c=200 to=0x-1 [created-gated]
+setDrawColorAlpha h=0xf1 from=0xffffff blend=0
+setDrawColor h=0x12c d=500 c=300 to=0x-1
+setDrawColorAlpha h=0x12c from=0xffffff blend=0
+setDrawColor h=0x12e d=500 c=300 to=0x-1
+setDrawColorAlpha h=0x12e from=0xffffff blend=0
+setDrawColor h=0x130 d=500 c=300 to=0x-1
+setDrawColorAlpha h=0x130 from=0xffffff blend=0
+setDrawColor h=0x132 d=500 c=300 to=0x-1
+setDrawColorAlpha h=0x132 from=0xffffff blend=0
+setDrawColor h=0x134 d=500 c=300 to=0x-1
+setDrawColorAlpha h=0x134 from=0xffffff blend=0
+createMesh h=0x30d40 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+setVertexColor h=0x30d40 idx=0 a=255 rgb=0x0 → state0=0xff000000
+setVertexColorAlpha h=0x30d40 d=0 c=300 a=0 rgb=0x0 → state1=0x0
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+[input-state] hasCursor=0 pos=(-100000,-100000) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x-1 mouseSlot=0x-1
+[audio] <audio> 事件 suspend amayui-audio://audio/23
+[audio] <audio> 元数据 amayui-audio://audio/23 时长=134s
+=== gate 0x400 WAIT (scene anims pending) steps=116046 ===
+[present 1537ms] items={10:a255 100:a69 110:a0 111:a0 112:a0 113:a0 114:a0 115:a0 116:a0 117:a0 118:a0 119:a0 200:a0 201:a0 211:a0 212:a0 213:a0 214:a0 215:a0 300:a0 302:a0 304:a0 306:a0 308:a0 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0} meshes={0x0:255/#000000(0,0..1280,720) 0x30d40:0/#000000(0,0..1280,720)} slotTex=5 wait=0x400
+[audio] 流式起播确认 amayui-audio://audio/23（readyState=4 时长=134s 音量=1.00）
+[input-state] hasCursor=0 pos=(-100000,-100000) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x-1 mouseSlot=0x-1
+=== gate 0x400 cleared (scene anims done) ===
+[frame-hold] 满屏幕布 0x30d40 被撤 → 留帧最多 60 帧（等新内容）
+detachTexture h=0x30d40 count=1 REMOVE (drawItems=0, meshes=1)
+detachTexture h=0x96 count=1 REMOVE (drawItems=0, meshes=0)
+setDrawColorAlpha h=0x12c from=0x-1 blend=0
+detachTexture h=0x12d count=1 REMOVE (drawItems=0, meshes=0)
+[frame-hold] 跳过本次 present（剩 59 帧）
+=== gate sleep cleared (t=1999ms) ===
+[frame-hold] 跳过本次 present（剩 58 帧）
+[frame-hold] 跳过本次 present（剩 57 帧）
+=== gate sleep cleared (t=2015ms) ===
+[frame-hold] 跳过本次 present（剩 56 帧）
+[frame-hold] 跳过本次 present（剩 55 帧）
+=== gate sleep cleared (t=2032ms) ===
+[frame-hold] 跳过本次 present（剩 54 帧）
+[frame-hold] 跳过本次 present（剩 53 帧）
+=== gate sleep cleared (t=2048ms) ===
+[frame-hold] 跳过本次 present（剩 52 帧）
+[frame-hold] 跳过本次 present（剩 51 帧）
+=== gate sleep cleared (t=2066ms) ===
+[frame-hold] 跳过本次 present（剩 50 帧）
+[frame-hold] 跳过本次 present（剩 49 帧）
+=== gate sleep cleared (t=2082ms) ===
+[frame-hold] 跳过本次 present（剩 48 帧）
+[frame-hold] 跳过本次 present（剩 47 帧）
+=== gate sleep cleared (t=2099ms) ===
+[frame-hold] 跳过本次 present（剩 46 帧）
+[frame-hold] 跳过本次 present（剩 45 帧）
+=== gate sleep cleared (t=2115ms) ===
+[frame-hold] 跳过本次 present（剩 44 帧）
+[frame-hold] 跳过本次 present（剩 43 帧）
+=== gate sleep cleared (t=2132ms) ===
+[frame-hold] 跳过本次 present（剩 42 帧）
+[frame-hold] 跳过本次 present（剩 41 帧）
+=== gate sleep cleared (t=2149ms) ===
+[frame-hold] 跳过本次 present（剩 40 帧）
+[frame-hold] 跳过本次 present（剩 39 帧）
+=== gate sleep cleared (t=2166ms) ===
+[frame-hold] 跳过本次 present（剩 38 帧）
+[frame-hold] 跳过本次 present（剩 37 帧）
+=== gate sleep cleared (t=2182ms) ===
+[frame-hold] 跳过本次 present（剩 36 帧）
+[frame-hold] 跳过本次 present（剩 35 帧）
+=== gate sleep cleared (t=2199ms) ===
+[frame-hold] 跳过本次 present（剩 34 帧）
+[frame-hold] 跳过本次 present（剩 33 帧）
+=== gate sleep cleared (t=2216ms) ===
+[frame-hold] 跳过本次 present（剩 32 帧）
+[frame-hold] 跳过本次 present（剩 31 帧）
+=== gate sleep cleared (t=2232ms) ===
+[frame-hold] 跳过本次 present（剩 30 帧）
+[frame-hold] 跳过本次 present（剩 29 帧）
+=== gate sleep cleared (t=2249ms) ===
+[frame-hold] 跳过本次 present（剩 28 帧）
+[frame-hold] 跳过本次 present（剩 27 帧）
+=== gate sleep cleared (t=2265ms) ===
+[frame-hold] 跳过本次 present（剩 26 帧）
+[frame-hold] 跳过本次 present（剩 25 帧）
+=== gate sleep cleared (t=2283ms) ===
+[frame-hold] 跳过本次 present（剩 24 帧）
+[frame-hold] 跳过本次 present（剩 23 帧）
+=== gate sleep cleared (t=2300ms) ===
+[frame-hold] 跳过本次 present（剩 22 帧）
+[frame-hold] 跳过本次 present（剩 21 帧）
+=== gate sleep cleared (t=2316ms) ===
+[frame-hold] 跳过本次 present（剩 20 帧）
+[frame-hold] 跳过本次 present（剩 19 帧）
+=== gate sleep cleared (t=2333ms) ===
+[frame-hold] 跳过本次 present（剩 18 帧）
+[frame-hold] 跳过本次 present（剩 17 帧）
+=== gate sleep cleared (t=2348ms) ===
+[frame-hold] 跳过本次 present（剩 16 帧）
+[frame-hold] 跳过本次 present（剩 15 帧）
+=== gate sleep cleared (t=2366ms) ===
+[frame-hold] 跳过本次 present（剩 14 帧）
+[frame-hold] 跳过本次 present（剩 13 帧）
+=== gate sleep cleared (t=2382ms) ===
+[frame-hold] 跳过本次 present（剩 12 帧）
+[frame-hold] 跳过本次 present（剩 11 帧）
+=== gate sleep cleared (t=2399ms) ===
+[frame-hold] 跳过本次 present（剩 10 帧）
+[frame-hold] 跳过本次 present（剩 9 帧）
+=== gate sleep cleared (t=2416ms) ===
+[frame-hold] 跳过本次 present（剩 8 帧）
+[frame-hold] 跳过本次 present（剩 7 帧）
+=== gate sleep cleared (t=2432ms) ===
+[frame-hold] 跳过本次 present（剩 6 帧）
+[frame-hold] 跳过本次 present（剩 5 帧）
+[input-state] hasCursor=0 pos=(-100000,-100000) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=2449ms) ===
+[frame-hold] 跳过本次 present（剩 4 帧）
+[frame-hold] 跳过本次 present（剩 3 帧）
+=== gate sleep cleared (t=2466ms) ===
+[frame-hold] 跳过本次 present（剩 2 帧）
+[frame-hold] 跳过本次 present（剩 1 帧）
+=== gate sleep cleared (t=2483ms) ===
+[frame-hold] 跳过本次 present（剩 0 帧）
+[present 2491ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a255 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=2499ms) ===
+=== gate sleep cleared (t=2516ms) ===
+=== gate sleep cleared (t=2533ms) ===
+=== gate sleep cleared (t=2549ms) ===
+=== gate sleep cleared (t=2565ms) ===
+=== gate sleep cleared (t=2583ms) ===
+=== gate sleep cleared (t=2599ms) ===
+=== gate sleep cleared (t=2616ms) ===
+=== gate sleep cleared (t=2632ms) ===
+=== gate sleep cleared (t=2649ms) ===
+=== gate sleep cleared (t=2666ms) ===
+=== gate sleep cleared (t=2683ms) ===
+=== gate sleep cleared (t=2700ms) ===
+=== gate sleep cleared (t=2715ms) ===
+=== gate sleep cleared (t=2733ms) ===
+=== gate sleep cleared (t=2749ms) ===
+=== gate sleep cleared (t=2766ms) ===
+=== gate sleep cleared (t=2783ms) ===
+=== gate sleep cleared (t=2799ms) ===
+=== gate sleep cleared (t=2816ms) ===
+=== gate sleep cleared (t=2833ms) ===
+=== gate sleep cleared (t=2849ms) ===
+=== gate sleep cleared (t=2865ms) ===
+[input] move (1245,306) hasCursor=1
+=== gate sleep cleared (t=2886ms) ===
+[audio] SE ch2 起播 id=14755 loop=false
+detachTexture h=0x96 count=1 REMOVE (drawItems=0, meshes=0)
+setDrawColorAlpha h=0x12c from=0x-1 blend=0
+detachTexture h=0x12d count=1 REMOVE (drawItems=0, meshes=0)
+setDrawColorAlpha h=0x12c from=0xffffff blend=0
+configureDrawItem h=0x12d layer=301 (1282,0,156x156)
+=== gate sleep cleared (t=2899ms) ===
+=== gate sleep cleared (t=2915ms) ===
+=== gate sleep cleared (t=2931ms) ===
+=== gate sleep cleared (t=2949ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=2965ms) ===
+=== gate sleep cleared (t=2982ms) ===
+=== gate sleep cleared (t=2999ms) ===
+[present 3007ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=3015ms) ===
+=== gate sleep cleared (t=3032ms) ===
+=== gate sleep cleared (t=3048ms) ===
+=== gate sleep cleared (t=3065ms) ===
+=== gate sleep cleared (t=3082ms) ===
+=== gate sleep cleared (t=3099ms) ===
+=== gate sleep cleared (t=3115ms) ===
+=== gate sleep cleared (t=3132ms) ===
+=== gate sleep cleared (t=3149ms) ===
+=== gate sleep cleared (t=3165ms) ===
+=== gate sleep cleared (t=3182ms) ===
+=== gate sleep cleared (t=3199ms) ===
+=== gate sleep cleared (t=3215ms) ===
+=== gate sleep cleared (t=3232ms) ===
+=== gate sleep cleared (t=3248ms) ===
+=== gate sleep cleared (t=3265ms) ===
+=== gate sleep cleared (t=3282ms) ===
+=== gate sleep cleared (t=3299ms) ===
+=== gate sleep cleared (t=3315ms) ===
+=== gate sleep cleared (t=3331ms) ===
+=== gate sleep cleared (t=3349ms) ===
+=== gate sleep cleared (t=3365ms) ===
+=== gate sleep cleared (t=3382ms) ===
+=== gate sleep cleared (t=3399ms) ===
+=== gate sleep cleared (t=3415ms) ===
+=== gate sleep cleared (t=3432ms) ===
+=== gate sleep cleared (t=3449ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=3465ms) ===
+=== gate sleep cleared (t=3482ms) ===
+=== gate sleep cleared (t=3499ms) ===
+[present 3507ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=3515ms) ===
+=== gate sleep cleared (t=3532ms) ===
+=== gate sleep cleared (t=3549ms) ===
+=== gate sleep cleared (t=3566ms) ===
+=== gate sleep cleared (t=3582ms) ===
+=== gate sleep cleared (t=3599ms) ===
+=== gate sleep cleared (t=3616ms) ===
+=== gate sleep cleared (t=3633ms) ===
+=== gate sleep cleared (t=3649ms) ===
+=== gate sleep cleared (t=3665ms) ===
+=== gate sleep cleared (t=3681ms) ===
+=== gate sleep cleared (t=3699ms) ===
+=== gate sleep cleared (t=3715ms) ===
+=== gate sleep cleared (t=3731ms) ===
+=== gate sleep cleared (t=3749ms) ===
+=== gate sleep cleared (t=3764ms) ===
+=== gate sleep cleared (t=3782ms) ===
+=== gate sleep cleared (t=3799ms) ===
+=== gate sleep cleared (t=3815ms) ===
+=== gate sleep cleared (t=3831ms) ===
+=== gate sleep cleared (t=3848ms) ===
+=== gate sleep cleared (t=3865ms) ===
+=== gate sleep cleared (t=3882ms) ===
+=== gate sleep cleared (t=3899ms) ===
+=== gate sleep cleared (t=3916ms) ===
+=== gate sleep cleared (t=3932ms) ===
+=== gate sleep cleared (t=3949ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=3966ms) ===
+=== gate sleep cleared (t=3982ms) ===
+=== gate sleep cleared (t=3999ms) ===
+[present 4007ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=4016ms) ===
+=== gate sleep cleared (t=4032ms) ===
+=== gate sleep cleared (t=4049ms) ===
+=== gate sleep cleared (t=4066ms) ===
+=== gate sleep cleared (t=4083ms) ===
+=== gate sleep cleared (t=4099ms) ===
+=== gate sleep cleared (t=4116ms) ===
+=== gate sleep cleared (t=4133ms) ===
+=== gate sleep cleared (t=4149ms) ===
+=== gate sleep cleared (t=4166ms) ===
+=== gate sleep cleared (t=4182ms) ===
+=== gate sleep cleared (t=4199ms) ===
+=== gate sleep cleared (t=4216ms) ===
+=== gate sleep cleared (t=4232ms) ===
+=== gate sleep cleared (t=4248ms) ===
+=== gate sleep cleared (t=4266ms) ===
+=== gate sleep cleared (t=4282ms) ===
+=== gate sleep cleared (t=4299ms) ===
+=== gate sleep cleared (t=4316ms) ===
+=== gate sleep cleared (t=4332ms) ===
+=== gate sleep cleared (t=4349ms) ===
+=== gate sleep cleared (t=4366ms) ===
+=== gate sleep cleared (t=4382ms) ===
+=== gate sleep cleared (t=4399ms) ===
+=== gate sleep cleared (t=4416ms) ===
+=== gate sleep cleared (t=4432ms) ===
+=== gate sleep cleared (t=4449ms) ===
+=== gate sleep cleared (t=4466ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=4482ms) ===
+=== gate sleep cleared (t=4499ms) ===
+=== gate sleep cleared (t=4516ms) ===
+[present 4524ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=4532ms) ===
+=== gate sleep cleared (t=4551ms) ===
+=== gate sleep cleared (t=4565ms) ===
+=== gate sleep cleared (t=4582ms) ===
+=== gate sleep cleared (t=4599ms) ===
+=== gate sleep cleared (t=4615ms) ===
+=== gate sleep cleared (t=4632ms) ===
+=== gate sleep cleared (t=4649ms) ===
+=== gate sleep cleared (t=4665ms) ===
+=== gate sleep cleared (t=4682ms) ===
+=== gate sleep cleared (t=4699ms) ===
+=== gate sleep cleared (t=4715ms) ===
+=== gate sleep cleared (t=4732ms) ===
+=== gate sleep cleared (t=4749ms) ===
+=== gate sleep cleared (t=4765ms) ===
+=== gate sleep cleared (t=4782ms) ===
+=== gate sleep cleared (t=4799ms) ===
+=== gate sleep cleared (t=4815ms) ===
+=== gate sleep cleared (t=4831ms) ===
+=== gate sleep cleared (t=4849ms) ===
+=== gate sleep cleared (t=4865ms) ===
+=== gate sleep cleared (t=4882ms) ===
+=== gate sleep cleared (t=4899ms) ===
+=== gate sleep cleared (t=4915ms) ===
+=== gate sleep cleared (t=4932ms) ===
+=== gate sleep cleared (t=4949ms) ===
+=== gate sleep cleared (t=4965ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=4982ms) ===
+=== gate sleep cleared (t=4999ms) ===
+=== gate sleep cleared (t=5016ms) ===
+=== gate sleep cleared (t=5032ms) ===
+[present 5040ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=5049ms) ===
+=== gate sleep cleared (t=5065ms) ===
+=== gate sleep cleared (t=5082ms) ===
+=== gate sleep cleared (t=5099ms) ===
+=== gate sleep cleared (t=5115ms) ===
+=== gate sleep cleared (t=5132ms) ===
+=== gate sleep cleared (t=5149ms) ===
+=== gate sleep cleared (t=5165ms) ===
+=== gate sleep cleared (t=5182ms) ===
+=== gate sleep cleared (t=5199ms) ===
+=== gate sleep cleared (t=5215ms) ===
+=== gate sleep cleared (t=5232ms) ===
+=== gate sleep cleared (t=5249ms) ===
+=== gate sleep cleared (t=5265ms) ===
+=== gate sleep cleared (t=5282ms) ===
+=== gate sleep cleared (t=5298ms) ===
+=== gate sleep cleared (t=5315ms) ===
+=== gate sleep cleared (t=5333ms) ===
+=== gate sleep cleared (t=5348ms) ===
+=== gate sleep cleared (t=5366ms) ===
+=== gate sleep cleared (t=5383ms) ===
+=== gate sleep cleared (t=5400ms) ===
+=== gate sleep cleared (t=5415ms) ===
+=== gate sleep cleared (t=5433ms) ===
+=== gate sleep cleared (t=5449ms) ===
+=== gate sleep cleared (t=5465ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=5482ms) ===
+=== gate sleep cleared (t=5499ms) ===
+=== gate sleep cleared (t=5516ms) ===
+=== gate sleep cleared (t=5532ms) ===
+[present 5541ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=5549ms) ===
+=== gate sleep cleared (t=5565ms) ===
+=== gate sleep cleared (t=5582ms) ===
+=== gate sleep cleared (t=5599ms) ===
+=== gate sleep cleared (t=5616ms) ===
+=== gate sleep cleared (t=5632ms) ===
+=== gate sleep cleared (t=5649ms) ===
+=== gate sleep cleared (t=5666ms) ===
+=== gate sleep cleared (t=5683ms) ===
+=== gate sleep cleared (t=5699ms) ===
+=== gate sleep cleared (t=5716ms) ===
+=== gate sleep cleared (t=5733ms) ===
+=== gate sleep cleared (t=5749ms) ===
+=== gate sleep cleared (t=5766ms) ===
+=== gate sleep cleared (t=5783ms) ===
+=== gate sleep cleared (t=5800ms) ===
+=== gate sleep cleared (t=5816ms) ===
+=== gate sleep cleared (t=5833ms) ===
+=== gate sleep cleared (t=5849ms) ===
+=== gate sleep cleared (t=5866ms) ===
+=== gate sleep cleared (t=5882ms) ===
+=== gate sleep cleared (t=5899ms) ===
+=== gate sleep cleared (t=5916ms) ===
+=== gate sleep cleared (t=5932ms) ===
+=== gate sleep cleared (t=5949ms) ===
+=== gate sleep cleared (t=5966ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=5982ms) ===
+=== gate sleep cleared (t=5999ms) ===
+=== gate sleep cleared (t=6016ms) ===
+=== gate sleep cleared (t=6033ms) ===
+[present 6041ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=6049ms) ===
+=== gate sleep cleared (t=6240ms) ===
+=== gate sleep cleared (t=6257ms) ===
+=== gate sleep cleared (t=6274ms) ===
+=== gate sleep cleared (t=6290ms) ===
+=== gate sleep cleared (t=6307ms) ===
+=== gate sleep cleared (t=6324ms) ===
+=== gate sleep cleared (t=6340ms) ===
+=== gate sleep cleared (t=6356ms) ===
+=== gate sleep cleared (t=6374ms) ===
+=== gate sleep cleared (t=6390ms) ===
+=== gate sleep cleared (t=6407ms) ===
+=== gate sleep cleared (t=6424ms) ===
+=== gate sleep cleared (t=6440ms) ===
+=== gate sleep cleared (t=6457ms) ===
+=== gate sleep cleared (t=6474ms) ===
+[input-state] hasCursor=1 pos=(1245,306) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=6490ms) ===
+=== gate sleep cleared (t=6507ms) ===
+=== gate sleep cleared (t=6524ms) ===
+=== gate sleep cleared (t=6540ms) ===
+[present 6549ms] items={10:a255 100:a255 110:a255 111:a255 112:a255 113:a255 114:a255 115:a255 116:a255 117:a255 118:a255 119:a255 200:a255 201:a255 211:a255 212:a255 213:a255 214:a255 215:a255 300:a0 302:a255 304:a255 306:a255 308:a255 216:a0 217:a0 218:a0 219:a0 220:a0 221:a0 222:a0 223:a0 224:a0 225:a0 226:a0 227:a0 228:a0 229:a0 230:a0 231:a0 232:a0 233:a0 234:a0 235:a0 236:a0 237:a0 238:a0 239:a0 240:a0 241:a0 301:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=5 wait=0x20000000
+=== gate sleep cleared (t=6557ms) ===
+=== gate sleep cleared (t=6574ms) ===
+=== gate sleep cleared (t=6590ms) ===
+=== gate sleep cleared (t=6607ms) ===
+=== gate sleep cleared (t=6624ms) ===
+=== gate sleep cleared (t=6640ms) ===
+=== gate sleep cleared (t=6657ms) ===
+=== gate sleep cleared (t=6674ms) ===
+=== gate sleep cleared (t=6690ms) ===
+=== gate sleep cleared (t=6707ms) ===
+[input] move (1180,372) hasCursor=1
+=== gate sleep cleared (t=6724ms) ===
+=== gate sleep cleared (t=6740ms) ===
+=== gate sleep cleared (t=6757ms) ===
+=== gate sleep cleared (t=6774ms) ===
+=== gate sleep cleared (t=6790ms) ===
+=== gate sleep cleared (t=6807ms) ===
+=== gate sleep cleared (t=6824ms) ===
+=== gate sleep cleared (t=6841ms) ===
+=== gate sleep cleared (t=6857ms) ===
+[input] down btn=0 (1180,372)
+=== gate sleep cleared (t=6874ms) ===
+=== gate sleep cleared (t=6891ms) ===
+=== gate sleep cleared (t=6907ms) ===
+=== gate sleep cleared (t=6924ms) ===
+=== gate sleep cleared (t=6941ms) ===
+=== gate sleep cleared (t=6958ms) ===
+=== gate sleep cleared (t=6975ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=1 edge=0x1 btn=1 wheel=0 mouseJump=0x109 mouseSlot=0x10
+=== gate sleep cleared (t=6991ms) ===
+=== gate sleep cleared (t=7007ms) ===
+=== gate sleep cleared (t=7024ms) ===
+[input] up btn=0
+=== gate sleep cleared (t=7041ms) ===
+detachTexture h=0x64 count=300 RANGE-REMOVE [0x64,0x190) (drawItems=50, meshes=0)
+  [call-script] 0x526b -> GAMESTART.BIN (946 instr)
+[msgwin] win=1 1 行 0 字 竖排 30px
+[msgwin] win=2 1 行 0 字 竖排 30px
+[msgwin] win=3 1 行 0 字 竖排 30px
+[msgwin] win=4 1 行 0 字 竖排 30px
+[msgwin] win=5 1 行 0 字 竖排 30px
+[msgwin] win=6 1 行 0 字 竖排 30px
+[msgwin] win=7 1 行 0 字 竖排 30px
+[msgwin] win=8 1 行 0 字 竖排 30px
+[msgwin] win=9 1 行 0 字 竖排 30px
+[msgwin] win=9 1 行 0 字 竖排 30px
+[msgwin] win=9 1 行 0 字 竖排 30px
+bindTexture imgid=0x51e2 slot=192
+[audio] SE ch1 起播 id=50 loop=false
+image 51e2 -> SO007.AGF (1024x896)
+configureDrawItem h=0x3e8 layer=1000 (523,0,209x73)
+configureDrawItem h=0x3e9 layer=1001 (734,0,105x73)
+configureDrawItem h=0x3ea layer=1002 (841,0,105x73)
+configureDrawItem h=0x4b0 layer=1200 (0,0,521x466)
+configureDrawItem h=0x4b1 layer=1201 (0,468,499x100)
+configureDrawItem h=0x4ba layer=1210 (523,465,174x22)
+configureDrawItem h=0x4bb layer=1211 (523,441,194x22)
+configureDrawItem h=0x4bc layer=1212 (523,417,234x22)
+createTexture slot=193 360x240 mode=0 @2x (新建空白表面)
+setDrawTranslation h=0x4ba (0,135,0)
+configureDrawItem h=0x514 layer=1300 (731,306,102x35)
+configureDrawItem h=0x532 layer=1330 (0,603,362x31)
+configureDrawItem h=0x5dc layer=1500 (0,0,360x24)
+drawString slot=193 (10,3) @2x w=400 "難易度"
+setDrawTranslation h=0x4bb (0,205,0)
+configureDrawItem h=0x515 layer=1301 (523,306,102x35)
+setDrawColorAlpha h=0x515 from=0x-7f7f80 blend=0
+configureDrawItem h=0x533 layer=1331 (0,603,362x31)
+configureDrawItem h=0x5dd layer=1501 (0,24,360x24)
+drawString slot=193 (10,27) @2x w=400 "ユニット・城砦"
+configureDrawItem h=0x516 layer=1302 (523,306,102x35)
+setDrawColorAlpha h=0x516 from=0x-7f7f80 blend=0
+configureDrawItem h=0x534 layer=1332 (0,603,362x31)
+configureDrawItem h=0x5de layer=1502 (0,48,360x24)
+drawString slot=193 (10,51) @2x w=400 "アイテム・所持金"
+setDrawTranslation h=0x4bc (0,310,0)
+configureDrawItem h=0x517 layer=1303 (627,306,102x35)
+setDrawColorAlpha h=0x517 from=0x-7f7f80 blend=0
+configureDrawItem h=0x535 layer=1333 (0,603,362x31)
+configureDrawItem h=0x5df layer=1503 (0,72,360x24)
+drawString slot=193 (10,75) @2x w=400 "クローンモード"
+configureDrawItem h=0x518 layer=1304 (627,306,102x35)
+setDrawColorAlpha h=0x518 from=0x-7f7f80 blend=0
+configureDrawItem h=0x536 layer=1334 (0,603,362x31)
+configureDrawItem h=0x5e0 layer=1504 (0,96,360x24)
+drawString slot=193 (10,99) @2x w=400 "周回イベント"
+configureDrawItem h=0x519 layer=1305 (627,306,102x35)
+setDrawColorAlpha h=0x519 from=0x-7f7f80 blend=0
+configureDrawItem h=0x537 layer=1335 (0,603,362x31)
+configureDrawItem h=0x5e1 layer=1505 (0,120,360x24)
+drawString slot=193 (10,123) @2x w=400 "敵ＬＶ上限解除"
+detachTexture h=0x640 count=30 RANGE-REMOVE [0x640,0x65e) (drawItems=0, meshes=0)
+configureDrawItem h=0x640 layer=1600 (731,380,50x35)
+[present 7049ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=7095ms) ===
+=== gate sleep cleared (t=7099ms) ===
+=== gate sleep cleared (t=7115ms) ===
+=== gate sleep cleared (t=7132ms) ===
+=== gate sleep cleared (t=7148ms) ===
+=== gate sleep cleared (t=7165ms) ===
+=== gate sleep cleared (t=7182ms) ===
+=== gate sleep cleared (t=7199ms) ===
+=== gate sleep cleared (t=7215ms) ===
+=== gate sleep cleared (t=7232ms) ===
+=== gate sleep cleared (t=7249ms) ===
+=== gate sleep cleared (t=7266ms) ===
+=== gate sleep cleared (t=7282ms) ===
+=== gate sleep cleared (t=7299ms) ===
+=== gate sleep cleared (t=7315ms) ===
+=== gate sleep cleared (t=7333ms) ===
+=== gate sleep cleared (t=7349ms) ===
+=== gate sleep cleared (t=7366ms) ===
+=== gate sleep cleared (t=7382ms) ===
+=== gate sleep cleared (t=7400ms) ===
+=== gate sleep cleared (t=7415ms) ===
+=== gate sleep cleared (t=7433ms) ===
+=== gate sleep cleared (t=7449ms) ===
+=== gate sleep cleared (t=7466ms) ===
+=== gate sleep cleared (t=7482ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=7499ms) ===
+=== gate sleep cleared (t=7516ms) ===
+=== gate sleep cleared (t=7532ms) ===
+=== gate sleep cleared (t=7549ms) ===
+[present 7557ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=7566ms) ===
+=== gate sleep cleared (t=7583ms) ===
+=== gate sleep cleared (t=7599ms) ===
+=== gate sleep cleared (t=7616ms) ===
+=== gate sleep cleared (t=7632ms) ===
+=== gate sleep cleared (t=7649ms) ===
+=== gate sleep cleared (t=7666ms) ===
+=== gate sleep cleared (t=7682ms) ===
+=== gate sleep cleared (t=7699ms) ===
+=== gate sleep cleared (t=7716ms) ===
+=== gate sleep cleared (t=7732ms) ===
+=== gate sleep cleared (t=7749ms) ===
+=== gate sleep cleared (t=7765ms) ===
+=== gate sleep cleared (t=7782ms) ===
+=== gate sleep cleared (t=7799ms) ===
+=== gate sleep cleared (t=7816ms) ===
+=== gate sleep cleared (t=7832ms) ===
+=== gate sleep cleared (t=7849ms) ===
+=== gate sleep cleared (t=7865ms) ===
+=== gate sleep cleared (t=7883ms) ===
+=== gate sleep cleared (t=7898ms) ===
+=== gate sleep cleared (t=7916ms) ===
+=== gate sleep cleared (t=7933ms) ===
+=== gate sleep cleared (t=7949ms) ===
+=== gate sleep cleared (t=7966ms) ===
+=== gate sleep cleared (t=7982ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=7999ms) ===
+=== gate sleep cleared (t=8016ms) ===
+=== gate sleep cleared (t=8033ms) ===
+=== gate sleep cleared (t=8049ms) ===
+[present 8057ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=8066ms) ===
+=== gate sleep cleared (t=8083ms) ===
+=== gate sleep cleared (t=8099ms) ===
+=== gate sleep cleared (t=8116ms) ===
+=== gate sleep cleared (t=8133ms) ===
+=== gate sleep cleared (t=8149ms) ===
+=== gate sleep cleared (t=8166ms) ===
+=== gate sleep cleared (t=8183ms) ===
+=== gate sleep cleared (t=8199ms) ===
+=== gate sleep cleared (t=8216ms) ===
+=== gate sleep cleared (t=8233ms) ===
+=== gate sleep cleared (t=8249ms) ===
+=== gate sleep cleared (t=8266ms) ===
+=== gate sleep cleared (t=8283ms) ===
+=== gate sleep cleared (t=8299ms) ===
+=== gate sleep cleared (t=8315ms) ===
+=== gate sleep cleared (t=8333ms) ===
+=== gate sleep cleared (t=8349ms) ===
+=== gate sleep cleared (t=8366ms) ===
+=== gate sleep cleared (t=8383ms) ===
+=== gate sleep cleared (t=8399ms) ===
+=== gate sleep cleared (t=8415ms) ===
+=== gate sleep cleared (t=8433ms) ===
+=== gate sleep cleared (t=8449ms) ===
+=== gate sleep cleared (t=8466ms) ===
+=== gate sleep cleared (t=8483ms) ===
+=== gate sleep cleared (t=8499ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=8516ms) ===
+=== gate sleep cleared (t=8532ms) ===
+=== gate sleep cleared (t=8549ms) ===
+=== gate sleep cleared (t=8566ms) ===
+[present 8574ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=8582ms) ===
+=== gate sleep cleared (t=8599ms) ===
+=== gate sleep cleared (t=8615ms) ===
+=== gate sleep cleared (t=8631ms) ===
+=== gate sleep cleared (t=8649ms) ===
+=== gate sleep cleared (t=8666ms) ===
+=== gate sleep cleared (t=8682ms) ===
+=== gate sleep cleared (t=8698ms) ===
+=== gate sleep cleared (t=8716ms) ===
+=== gate sleep cleared (t=8732ms) ===
+=== gate sleep cleared (t=8748ms) ===
+=== gate sleep cleared (t=8765ms) ===
+=== gate sleep cleared (t=8782ms) ===
+=== gate sleep cleared (t=8799ms) ===
+=== gate sleep cleared (t=8816ms) ===
+=== gate sleep cleared (t=8832ms) ===
+=== gate sleep cleared (t=8849ms) ===
+=== gate sleep cleared (t=8866ms) ===
+=== gate sleep cleared (t=8882ms) ===
+=== gate sleep cleared (t=8899ms) ===
+=== gate sleep cleared (t=8916ms) ===
+=== gate sleep cleared (t=8933ms) ===
+=== gate sleep cleared (t=8949ms) ===
+=== gate sleep cleared (t=8966ms) ===
+=== gate sleep cleared (t=8982ms) ===
+=== gate sleep cleared (t=8999ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=9016ms) ===
+=== gate sleep cleared (t=9033ms) ===
+=== gate sleep cleared (t=9049ms) ===
+=== gate sleep cleared (t=9066ms) ===
+[present 9074ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=9082ms) ===
+=== gate sleep cleared (t=9099ms) ===
+=== gate sleep cleared (t=9116ms) ===
+=== gate sleep cleared (t=9133ms) ===
+=== gate sleep cleared (t=9148ms) ===
+=== gate sleep cleared (t=9165ms) ===
+=== gate sleep cleared (t=9182ms) ===
+=== gate sleep cleared (t=9198ms) ===
+=== gate sleep cleared (t=9215ms) ===
+=== gate sleep cleared (t=9232ms) ===
+=== gate sleep cleared (t=9249ms) ===
+=== gate sleep cleared (t=9265ms) ===
+=== gate sleep cleared (t=9282ms) ===
+=== gate sleep cleared (t=9299ms) ===
+=== gate sleep cleared (t=9315ms) ===
+=== gate sleep cleared (t=9331ms) ===
+=== gate sleep cleared (t=9349ms) ===
+=== gate sleep cleared (t=9366ms) ===
+=== gate sleep cleared (t=9382ms) ===
+=== gate sleep cleared (t=9399ms) ===
+=== gate sleep cleared (t=9416ms) ===
+=== gate sleep cleared (t=9433ms) ===
+=== gate sleep cleared (t=9449ms) ===
+=== gate sleep cleared (t=9466ms) ===
+=== gate sleep cleared (t=9482ms) ===
+=== gate sleep cleared (t=9499ms) ===
+=== gate sleep cleared (t=9516ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=9531ms) ===
+=== gate sleep cleared (t=9549ms) ===
+=== gate sleep cleared (t=9566ms) ===
+=== gate sleep cleared (t=9583ms) ===
+[present 9591ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=9599ms) ===
+=== gate sleep cleared (t=9616ms) ===
+=== gate sleep cleared (t=9633ms) ===
+=== gate sleep cleared (t=9649ms) ===
+=== gate sleep cleared (t=9666ms) ===
+=== gate sleep cleared (t=9683ms) ===
+=== gate sleep cleared (t=9699ms) ===
+=== gate sleep cleared (t=9716ms) ===
+=== gate sleep cleared (t=9733ms) ===
+=== gate sleep cleared (t=9749ms) ===
+=== gate sleep cleared (t=9766ms) ===
+=== gate sleep cleared (t=9782ms) ===
+=== gate sleep cleared (t=9799ms) ===
+=== gate sleep cleared (t=9816ms) ===
+=== gate sleep cleared (t=9833ms) ===
+=== gate sleep cleared (t=9849ms) ===
+=== gate sleep cleared (t=9866ms) ===
+=== gate sleep cleared (t=9883ms) ===
+=== gate sleep cleared (t=9899ms) ===
+=== gate sleep cleared (t=9916ms) ===
+=== gate sleep cleared (t=9932ms) ===
+=== gate sleep cleared (t=9949ms) ===
+=== gate sleep cleared (t=9966ms) ===
+=== gate sleep cleared (t=9982ms) ===
+=== gate sleep cleared (t=9999ms) ===
+=== gate sleep cleared (t=10016ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=10033ms) ===
+=== gate sleep cleared (t=10049ms) ===
+=== gate sleep cleared (t=10066ms) ===
+=== gate sleep cleared (t=10082ms) ===
+=== gate sleep cleared (t=10098ms) ===
+[present 10107ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=10116ms) ===
+=== gate sleep cleared (t=10133ms) ===
+=== gate sleep cleared (t=10149ms) ===
+=== gate sleep cleared (t=10166ms) ===
+=== gate sleep cleared (t=10183ms) ===
+=== gate sleep cleared (t=10199ms) ===
+=== gate sleep cleared (t=10216ms) ===
+=== gate sleep cleared (t=10232ms) ===
+=== gate sleep cleared (t=10249ms) ===
+=== gate sleep cleared (t=10266ms) ===
+=== gate sleep cleared (t=10283ms) ===
+=== gate sleep cleared (t=10299ms) ===
+=== gate sleep cleared (t=10316ms) ===
+=== gate sleep cleared (t=10332ms) ===
+=== gate sleep cleared (t=10349ms) ===
+=== gate sleep cleared (t=10366ms) ===
+=== gate sleep cleared (t=10382ms) ===
+=== gate sleep cleared (t=10399ms) ===
+=== gate sleep cleared (t=10416ms) ===
+=== gate sleep cleared (t=10433ms) ===
+=== gate sleep cleared (t=10449ms) ===
+=== gate sleep cleared (t=10466ms) ===
+=== gate sleep cleared (t=10483ms) ===
+=== gate sleep cleared (t=10499ms) ===
+=== gate sleep cleared (t=10516ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=10532ms) ===
+=== gate sleep cleared (t=10549ms) ===
+=== gate sleep cleared (t=10566ms) ===
+=== gate sleep cleared (t=10582ms) ===
+=== gate sleep cleared (t=10599ms) ===
+[present 10607ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=10616ms) ===
+=== gate sleep cleared (t=10632ms) ===
+=== gate sleep cleared (t=10649ms) ===
+=== gate sleep cleared (t=10666ms) ===
+=== gate sleep cleared (t=10683ms) ===
+=== gate sleep cleared (t=10699ms) ===
+=== gate sleep cleared (t=10716ms) ===
+=== gate sleep cleared (t=10733ms) ===
+=== gate sleep cleared (t=10749ms) ===
+=== gate sleep cleared (t=10766ms) ===
+=== gate sleep cleared (t=10783ms) ===
+=== gate sleep cleared (t=10800ms) ===
+=== gate sleep cleared (t=10816ms) ===
+=== gate sleep cleared (t=10833ms) ===
+=== gate sleep cleared (t=10849ms) ===
+=== gate sleep cleared (t=10866ms) ===
+=== gate sleep cleared (t=10882ms) ===
+=== gate sleep cleared (t=10900ms) ===
+=== gate sleep cleared (t=10916ms) ===
+=== gate sleep cleared (t=10933ms) ===
+=== gate sleep cleared (t=10949ms) ===
+=== gate sleep cleared (t=10966ms) ===
+=== gate sleep cleared (t=10983ms) ===
+=== gate sleep cleared (t=10999ms) ===
+=== gate sleep cleared (t=11016ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=11032ms) ===
+=== gate sleep cleared (t=11049ms) ===
+=== gate sleep cleared (t=11066ms) ===
+=== gate sleep cleared (t=11082ms) ===
+=== gate sleep cleared (t=11099ms) ===
+=== gate sleep cleared (t=11115ms) ===
+[present 11124ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=11132ms) ===
+=== gate sleep cleared (t=11149ms) ===
+=== gate sleep cleared (t=11165ms) ===
+=== gate sleep cleared (t=11182ms) ===
+=== gate sleep cleared (t=11199ms) ===
+=== gate sleep cleared (t=11215ms) ===
+=== gate sleep cleared (t=11232ms) ===
+=== gate sleep cleared (t=11249ms) ===
+=== gate sleep cleared (t=11265ms) ===
+=== gate sleep cleared (t=11282ms) ===
+=== gate sleep cleared (t=11298ms) ===
+=== gate sleep cleared (t=11315ms) ===
+=== gate sleep cleared (t=11332ms) ===
+=== gate sleep cleared (t=11349ms) ===
+=== gate sleep cleared (t=11365ms) ===
+=== gate sleep cleared (t=11382ms) ===
+=== gate sleep cleared (t=11399ms) ===
+=== gate sleep cleared (t=11415ms) ===
+=== gate sleep cleared (t=11431ms) ===
+=== gate sleep cleared (t=11449ms) ===
+=== gate sleep cleared (t=11465ms) ===
+=== gate sleep cleared (t=11482ms) ===
+=== gate sleep cleared (t=11499ms) ===
+=== gate sleep cleared (t=11515ms) ===
+=== gate sleep cleared (t=11532ms) ===
+[input-state] hasCursor=1 pos=(1180,372) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+=== gate sleep cleared (t=11548ms) ===
+[input] move (811,605) hasCursor=1
+[audio] SE ch2 起播 id=14755 loop=false
+detachTexture h=0x44c count=1 REMOVE (drawItems=0, meshes=0)
+detachTexture h=0x578 count=2 RANGE-REMOVE [0x578,0x57a) (drawItems=0, meshes=0)
+configureDrawItem h=0x44c layer=1100 (523,75,209x73)
+=== gate sleep cleared (t=11565ms) ===
+=== gate sleep cleared (t=11581ms) ===
+=== gate sleep cleared (t=11599ms) ===
+=== gate sleep cleared (t=11615ms) ===
+=== gate sleep cleared (t=11632ms) ===
+[present 11640ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(0,0..1280,720)} slotTex=7 wait=0x20000000
+=== gate sleep cleared (t=11649ms) ===
+=== gate sleep cleared (t=11665ms) ===
+=== gate sleep cleared (t=11682ms) ===
+=== gate sleep cleared (t=11699ms) ===
+[input] down btn=0 (811,605)
+=== gate sleep cleared (t=11715ms) ===
+=== gate sleep cleared (t=11731ms) ===
+=== gate sleep cleared (t=11749ms) ===
+=== gate sleep cleared (t=11765ms) ===
+=== gate sleep cleared (t=11782ms) ===
+=== gate sleep cleared (t=11798ms) ===
+=== gate sleep cleared (t=11815ms) ===
+=== gate sleep cleared (t=11832ms) ===
+=== gate sleep cleared (t=11849ms) ===
+=== gate sleep cleared (t=11866ms) ===
+=== gate sleep cleared (t=11882ms) ===
+[input] up btn=0
+createMesh h=0x30d40 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+setVertexColor h=0x30d40 idx=0 a=0 rgb=0x0 → state0=0x0
+setVertexColorAlpha h=0x30d40 d=0 c=1500 a=255 rgb=0x0 → state1=0xff000000
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 WAIT (scene anims pending) steps=140871 ===
+[audio] SE ch1 起播 id=20963 loop=false
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 12140ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(0,0..1280,720) 0x30d40:42/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 12640ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(0,0..1280,720) 0x30d40:127/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 13149ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(0,0..1280,720) 0x30d40:214/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+=== gate 0x400 cleared (scene anims done) ===
+[frame-hold] 满屏幕布 0x30d40 被撤 → 留帧最多 60 帧（等新内容）
+detachTexture h=0x30d40 count=1 REMOVE (drawItems=0, meshes=1)
+[msgwin] win=9 1 行 0 字 横排 18px
+  [call-script] 0x51e4 -> INITGAME.BIN (11 instr)
+  [call-script] 0x5e -> UNITECH.BIN (307 instr)
+  [call-script] 0x50e9 -> CALCCC.BIN (145 instr)
+  [call-script] 0x5227 -> CCINIT.BIN (3427 instr)
+  [call-script] 0x100019e -> $1$CCINIT.BIN (389 instr)
+  [call-script] 0x200002b -> $2$CCINIT.BIN (1 instr)
+  [call-script] 0x300039f -> $3$CCINIT.BIN (164 instr)
+  [call-script] 0x40000f9 -> $4$CCINIT.BIN (1 instr)
+  [call-script] 0x500022f -> $5$CCINIT.BIN (110 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x51e5 -> SETFATE.BIN (129 instr)
+[frame-hold] 跳过本次 present（剩 59 帧）
+[frame-hold] 跳过本次 present（剩 58 帧）
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=29 meshes=1 文本窗=9→0（保留纹理槽）
+releaseTexture layer=4
+releaseTexture layer=5
+detachTexture h=0x19258 count=1 REMOVE (drawItems=0, meshes=0)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=0 文本窗=0→0（保留纹理槽）
+[frame-hold] createMesh 0x19258 颜色仍透明 → 继续留帧（剩 60 帧）
+createMesh h=0x19258 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+[frame-hold] setVertexColor 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+setVertexColor h=0x19258 idx=0 a=255 rgb=0x0 → state0=0xff000000
+  [call-script] 0x3a -> SETCHARM.BIN (14 instr)
+detachTexture h=0x19640 count=2 RANGE-REMOVE [0x19640,0x19642) (drawItems=0, meshes=0)
+detachTexture h=0x19834 count=25 RANGE-REMOVE [0x19834,0x1984d) (drawItems=0, meshes=0)
+detachTexture h=0x19708 count=6 RANGE-REMOVE [0x19708,0x1970e) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+unhandled 0x308 i308
+  [call-script] 0x73 -> SC0000.BIN (24400 instr)
+unhandled 0x308 i308
+detachTexture h=0x19640 count=2 RANGE-REMOVE [0x19640,0x19642) (drawItems=0, meshes=0)
+detachTexture h=0x19834 count=25 RANGE-REMOVE [0x19834,0x1984d) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=1 文本窗=0→0（保留纹理槽）
+releaseTexture layer=4
+releaseTexture layer=5
+releaseTexture layer=6
+releaseTexture layer=7
+releaseTexture layer=8
+releaseTexture layer=9
+releaseTexture layer=43
+releaseTexture layer=53
+releaseTexture layer=63
+releaseTexture layer=44
+releaseTexture layer=54
+releaseTexture layer=64
+releaseTexture layer=45
+releaseTexture layer=55
+releaseTexture layer=65
+releaseTexture layer=46
+releaseTexture layer=56
+releaseTexture layer=66
+releaseTexture layer=47
+releaseTexture layer=57
+releaseTexture layer=67
+releaseTexture layer=48
+releaseTexture layer=58
+releaseTexture layer=68
+releaseTexture layer=49
+releaseTexture layer=59
+releaseTexture layer=69
+releaseTexture layer=50
+releaseTexture layer=60
+releaseTexture layer=70
+releaseTexture layer=51
+releaseTexture layer=61
+releaseTexture layer=71
+  [call-script] 0x47 -> SETWEATHER.BIN (58 instr)
+releaseTexture layer=62
+  [call-script] 0x51e5 -> SETFATE.BIN (129 instr)
+[frame-hold] 跳过本次 present（剩 59 帧）
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+  [call-script] 0x5268 -> NOVEL.BIN (377 instr)
+bindTexture imgid=0x5190 slot=12
+image 5190 -> SO026.AGF (448x112)
+[msgwin] win=8 1 行 0 字 竖排 30px
+detachTexture h=0x19258 count=1 REMOVE (drawItems=0, meshes=0)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=0 文本窗=1→0（保留纹理槽）
+[frame-hold] createMesh 0x19258 颜色仍透明 → 继续留帧（剩 60 帧）
+createMesh h=0x19258 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+[frame-hold] setVertexColor 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+setVertexColor h=0x19258 idx=0 a=255 rgb=0x0 → state0=0xff000000
+  [call-script] 0x3a -> SETCHARM.BIN (14 instr)
+detachTexture h=0x19640 count=2 RANGE-REMOVE [0x19640,0x19642) (drawItems=0, meshes=0)
+detachTexture h=0x19834 count=25 RANGE-REMOVE [0x19834,0x1984d) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+unhandled 0x308 i308
+  [call-script] 0x74 -> SN0000.BIN (2825 instr)
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+[audio] <audio> 事件 abort amayui-audio://audio/23
+[audio] bgm#13(id=11) 流式起播 loop=true
+setDrawPivot h=0x18a88 (640,720,0) [建空项]
+bindTexture imgid=0xb37 slot=4
+[audio] <audio> 事件 waiting amayui-audio://audio/11
+image b37 -> BG050ABL.AGF (2048x1152)
+configureDrawItem h=0x18a88 layer=101000 (0,0,2048x1152)
+setDrawPos h=0x18a88 (-768,-272,0)
+setDrawPivot h=0x18a88 (256,880,0)
+setDrawTranslation h=0x18a88 (0,0,0)
+setTranslationAnim h=0x18a88 d=0 dur=80000 t=(768,0,0)
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+[audio] <audio> 事件 suspend amayui-audio://audio/11
+[audio] <audio> 元数据 amayui-audio://audio/11 时长=319s
+[audio] 流式起播确认 amayui-audio://audio/11（readyState=4 时长=319s 音量=1.00）
+=== gate 0x400 cleared (scene anims done) ===
+setVertexColorAlpha h=0x19258 d=0 c=3600 a=0 rgb=0x0 → state1=0x0
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 WAIT (scene anims pending) steps=173591 ===
+[present 13657ms] items={101000:a255} meshes={0x19258:253/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 14165ms] items={101000:a255} meshes={0x19258:217/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 14665ms] items={101000:a255} meshes={0x19258:182/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 15166ms] items={101000:a255} meshes={0x19258:146/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 15674ms] items={101000:a255} meshes={0x19258:110/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 16174ms] items={101000:a255} meshes={0x19258:75/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 16683ms] items={101000:a255} meshes={0x19258:39/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 17183ms] items={101000:a255} meshes={0x19258:4/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+=== gate 0x400 cleared (scene anims done) ===
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+[msgwin] win=8 1 行 0 字 竖排 30px
+[msgwin] win=8 1 行 0 字 竖排 30px
+unhandled 0x308 i308
+detachTexture h=0x19640 count=2 RANGE-REMOVE [0x19640,0x19642) (drawItems=0, meshes=0)
+detachTexture h=0x19834 count=25 RANGE-REMOVE [0x19834,0x1984d) (drawItems=0, meshes=0)
+createMesh h=0x19640 v=4 layer=0 rect=(0,0)..(1280,720) base0=0xffffffff
+setVertexColor h=0x19640 idx=0 a=128 rgb=0x0 → state0=0x80000000
+  [call-script] 0x46 -> DRAWCHARM.BIN (152 instr)
+detachTexture h=0x19834 count=25 RANGE-REMOVE [0x19834,0x1984d) (drawItems=0, meshes=0)
+configureDrawItem h=0x19835 layer=104501 (182,794,134x736)
+configureDrawItem h=0x19836 layer=104502 (602,794,80x81)
+configureDrawItem h=0x19837 layer=104503 (602,1209,80x47)
+configureDrawItem h=0x19838 layer=104504 (848,794,80x47)
+configureDrawItem h=0x19839 layer=104505 (930,794,80x47)
+configureDrawItem h=0x1983a layer=104506 (930,843,80x47)
+configureDrawItem h=0x1983b layer=104507 (848,843,80x47)
+configureDrawItem h=0x1983c layer=104508 (848,892,80x47)
+configureDrawItem h=0x1983d layer=104509 (848,941,80x47)
+configureDrawItem h=0x1983e layer=104510 (848,990,80x47)
+configureDrawItem h=0x1983f layer=104511 (848,1039,80x47)
+configureDrawItem h=0x19840 layer=104512 (848,1088,80x47)
+configureDrawItem h=0x19845 layer=104517 (1094,1340,32x14)
+configureDrawItem h=0x19846 layer=104518 (1094,1340,32x14)
+configureDrawItem h=0x19847 layer=104519 (1094,1340,32x14)
+setSlotParams slot=0x19835 count=0x15 t=(110,0,0)
+setVertexColorAlpha h=0x19640 d=0 c=1800 a=-1 rgb=0xffffffff → state1=0x80000000
+setVertexColor h=0x19640 idx=0 a=0 rgb=0xffffffff → state0=0x0
+setDrawColor h=0x19834 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19834 from=0xffffff blend=0
+setDrawColor h=0x19835 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19835 from=0xffffff blend=0
+setDrawColor h=0x19836 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19836 from=0xffffff blend=0
+setDrawColor h=0x19837 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19837 from=0xffffff blend=0
+setDrawColor h=0x19838 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19838 from=0xffffff blend=0
+setDrawColor h=0x19839 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19839 from=0xffffff blend=0
+setDrawColor h=0x1983a d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983a from=0xffffff blend=0
+setDrawColor h=0x1983b d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983b from=0xffffff blend=0
+setDrawColor h=0x1983c d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983c from=0xffffff blend=0
+setDrawColor h=0x1983d d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983d from=0xffffff blend=0
+setDrawColor h=0x1983e d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983e from=0xffffff blend=0
+setDrawColor h=0x1983f d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x1983f from=0xffffff blend=0
+setDrawColor h=0x19840 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19840 from=0xffffff blend=0
+setDrawColor h=0x19841 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19841 from=0xffffff blend=0
+setDrawColor h=0x19842 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19842 from=0xffffff blend=0
+setDrawColor h=0x19843 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19843 from=0xffffff blend=0
+setDrawColor h=0x19844 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19844 from=0xffffff blend=0
+setDrawColor h=0x19845 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19845 from=0xffffff blend=0
+setDrawColor h=0x19846 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19846 from=0xffffff blend=0
+setDrawColor h=0x19847 d=0 c=1800 to=0x-1
+setDrawColorAlpha h=0x19847 from=0xffffff blend=0
+setDrawColor h=0x19848 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19848 from=0xffffff blend=0
+setDrawColor h=0x19849 d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x19849 from=0xffffff blend=0
+setDrawColor h=0x1984a d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x1984a from=0xffffff blend=0
+setDrawColor h=0x1984b d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x1984b from=0xffffff blend=0
+setDrawColor h=0x1984c d=0 c=1800 to=0x-1 [created-gated]
+setDrawColorAlpha h=0x1984c from=0xffffff blend=0
+detachTexture h=0x197d0 count=1 REMOVE (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0) 文本窗清=8
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 WAIT (scene anims pending) steps=174734 ===
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 17691ms] items={101000:a255 104501:a60 104502:a60 104503:a60 104504:a60 104505:a60 104506:a60 104507:a60 104508:a60 104509:a60 104510:a60 104511:a60 104512:a60 104517:a60 104518:a60 104519:a60 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:30/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 18199ms] items={101000:a255 104501:a132 104502:a132 104503:a132 104504:a132 104505:a132 104506:a132 104507:a132 104508:a132 104509:a132 104510:a132 104511:a132 104512:a132 104517:a132 104518:a132 104519:a132 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:66/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 18700ms] items={101000:a255 104501:a203 104502:a203 104503:a203 104504:a203 104505:a203 104506:a203 104507:a203 104508:a203 104509:a203 104510:a203 104511:a203 104512:a203 104517:a203 104518:a203 104519:a203 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:101/#000000(0,0..1280,720)} slotTex=7 wait=0x400
+=== gate 0x400 cleared (scene anims done) ===
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+[msgwin] win=8 1 行 0 字 竖排 30px
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+[msgwin] win=8 1 行 8 字 竖排 30px
+[msgwin] win=8 1 行 24 字 竖排 30px
+[msgwin] win=8 1 行 26 字 竖排 30px
+[msgwin] win=8 2 行 50 字 竖排 30px
+[msgwin] win=8 2 行 52 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[text] win=8 layer=105000 3 行 66 字 → 纹理 2560×1440 @(0,0) 已显示=0
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[font] Sarasa Gothic SC#700 ← SarasaGothicSC/SarasaGothicSC-Bold.ttf（23332KB）
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 1/66
+[font] Sarasa Gothic SC#400 ← SarasaGothicSC/SarasaGothicSC-Regular.ttf（23484KB）
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 2/66
+[present 19216ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[audio] 语音 ch0(设备 12) 起播 id=12692 loop=false
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 3/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 4/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 5/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 6/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 7/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 8/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 9/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 10/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 11/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 12/66
+[present 19724ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 13/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 14/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 15/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 16/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 17/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 18/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 19/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 20/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 21/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 22/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 23/66
+[present 20233ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 24/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 25/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 26/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 27/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 28/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 29/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 30/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 31/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 32/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 33/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 34/66
+[present 20741ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 35/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 36/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 37/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 38/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 39/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 40/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 41/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 42/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 43/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 44/66
+[present 21241ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 45/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 46/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 47/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 48/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 49/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 50/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 51/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 52/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 53/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 54/66
+[present 21749ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 55/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 56/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 57/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 58/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 59/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 60/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 61/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 62/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 63/66
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 64/66
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 65/66
+[present 22257ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[reveal] win=8 66/66
+[cell] win=8 槽=12 k=0 源=(0,56,56x56) 目标=(850,355)
+=== text reveal done ===
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[present 22758ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 66 字 竖排 30px
+[present 23265ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[input] move (640,360) hasCursor=1
+[msgwin] win=8 3 行 66 字 竖排 30px
+[input] down btn=0 (640,360)
+[msgwin] win=8 3 行 66 字 竖排 30px
+=== advance-wait handled → -  ip=919 (page 0, 热点 7 项) steps=175087 ===
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 1 行 0 字 竖排 30px
+[msgwin] win=8 1 行 0 字 竖排 30px
+unhandled 0x308 i308
+[msgwin] win=8 1 行 15 字 竖排 30px
+[msgwin] win=8 1 行 26 字 竖排 30px
+[msgwin] win=8 2 行 35 字 竖排 30px
+[msgwin] win=8 2 行 52 字 竖排 30px
+[msgwin] win=8 3 行 60 字 竖排 30px
+[msgwin] win=8 3 行 66 字 竖排 30px
+[msgwin] win=8 3 行 68 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 0/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=1 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[audio] 语音 ch0(设备 12) 起播 id=12693 loop=false
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 1/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 2/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 3/75
+[present 23766ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[input] up btn=0
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 4/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 5/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 6/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 7/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 8/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 9/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 10/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 11/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 12/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 13/75
+[present 24274ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 14/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 15/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 16/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 17/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 18/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 19/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 20/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 21/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 22/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 23/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 24/75
+[present 24774ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 25/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 26/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 27/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 28/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 29/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 30/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 31/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 32/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 33/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 34/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 35/75
+[present 25282ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 36/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 37/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 38/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 39/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 40/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 41/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 42/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 43/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 44/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 45/75
+[present 25783ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 46/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 47/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 48/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 49/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 50/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 51/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 52/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 53/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 54/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 55/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 56/75
+[present 26290ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 57/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 58/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 59/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 60/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 61/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 62/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 63/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 64/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 65/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 66/75
+[present 26791ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 67/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 68/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 69/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 70/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 71/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 72/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 73/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 74/75
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 75/75
+[cell] win=8 槽=12 k=0 源=(0,56,56x56) 目标=(985,355)
+=== text reveal done ===
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 27299ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 27807ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 28307ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 28807ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 29307ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 29815ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input-state] hasCursor=1 pos=(640,360) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[present 30315ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[input] move (1240,300) hasCursor=1
+[msgwin] win=8 3 行 75 字 竖排 30px
+[hover-label] hover-enter 0x30e cursor=0/7 ip=104 ret=5184
+setTranslationAnim h=0x19835 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19836 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19837 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19838 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19839 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983a d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983b d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983c d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983d d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983e d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x1983f d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19840 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19841 d=0 dur=200 t=(0,0,0) [created-gated]
+setTranslationAnim h=0x19842 d=0 dur=200 t=(0,0,0) [created-gated]
+setTranslationAnim h=0x19843 d=0 dur=200 t=(0,0,0) [created-gated]
+setTranslationAnim h=0x19844 d=0 dur=200 t=(0,0,0) [created-gated]
+setTranslationAnim h=0x19845 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19846 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19847 d=0 dur=200 t=(0,0,0)
+setTranslationAnim h=0x19848 d=0 dur=200 t=(0,0,0) [created-gated]
+setTranslationAnim h=0x19849 d=0 dur=200 t=(0,0,0) [created-gated]
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 1/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 2/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 3/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 4/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 5/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 6/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 7/75
+[input-state] hasCursor=1 pos=(1240,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 8/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 9/75
+[present 30816ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 10/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 11/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 12/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 13/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 14/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 15/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 16/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 17/75
+[input-state] hasCursor=1 pos=(1240,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 18/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 19/75
+[present 31324ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 20/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 21/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 22/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 23/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 24/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 25/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 26/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 27/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 28/75
+[input-state] hasCursor=1 pos=(1240,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 29/75
+[present 31824ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 30/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 31/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 32/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 33/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 34/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 35/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 36/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 37/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 38/75
+[input-state] hasCursor=1 pos=(1240,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 39/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 40/75
+[present 32324ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 41/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 42/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 43/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 44/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 45/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 46/75
+[input] move (400,300) hasCursor=1
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 47/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 48/75
+[input-state] hasCursor=1 pos=(400,300) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 49/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 50/75
+[present 32832ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 51/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 52/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 53/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 54/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 55/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 56/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 57/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 58/75
+[input-state] hasCursor=1 pos=(400,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 59/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 60/75
+[present 33340ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 61/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 62/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 63/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 64/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 65/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 66/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 67/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 68/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 69/75
+[input-state] hasCursor=1 pos=(400,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 70/75
+[present 33841ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 71/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 72/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 73/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 74/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 75/75
+[cell] win=8 槽=12 k=0 源=(0,56,56x56) 目标=(985,355)
+=== text reveal done ===
+[msgwin] win=8 3 行 75 字 竖排 30px
+[hover-label] hover-enter 0x38f cursor=12/19 ip=129 ret=5184
+setTranslationAnim h=0x19835 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19836 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19837 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19838 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19839 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983a d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983b d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983c d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983d d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983e d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x1983f d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19840 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19841 d=0 dur=200 t=(110,0,0) [created-gated]
+setTranslationAnim h=0x19842 d=0 dur=200 t=(110,0,0) [created-gated]
+setTranslationAnim h=0x19843 d=0 dur=200 t=(110,0,0) [created-gated]
+setTranslationAnim h=0x19844 d=0 dur=200 t=(110,0,0) [created-gated]
+setTranslationAnim h=0x19845 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19846 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19847 d=0 dur=200 t=(110,0,0)
+setTranslationAnim h=0x19848 d=0 dur=200 t=(110,0,0) [created-gated]
+setTranslationAnim h=0x19849 d=0 dur=200 t=(110,0,0) [created-gated]
+setWaitFlag 0x400（宿主不保存镜像；门状态见 Engine.waitFlags）
+=== gate 0x400 cleared (scene anims done) ===
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 1/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 2/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 3/75
+[input-state] hasCursor=1 pos=(400,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 4/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 5/75
+[present 34341ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 6/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 7/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 8/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 9/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 10/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 11/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 12/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 13/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 14/75
+[input-state] hasCursor=1 pos=(400,301) moved=1 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 15/75
+[present 34849ms] items={101000:a255 104501:a255 104502:a255 104503:a255 104504:a255 104505:a255 104506:a255 104507:a255 104508:a255 104509:a255 104510:a255 104511:a255 104512:a255 104517:a255 104518:a255 104519:a255 104500:a0 104513:a0 104514:a0 104515:a0 104516:a0 104520:a0 104521:a0 104522:a0 104523:a0 104524:a0} meshes={0x19258:0/#000000(0,0..1280,720) 0x19640:128/#000000(0,0..1280,720)} slotTex=7 wait=0x-40000000
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 16/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 17/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 18/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 19/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 20/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 21/75
+[msgwin] win=8 3 行 75 字 竖排 30px
+[reveal] win=8 22/75

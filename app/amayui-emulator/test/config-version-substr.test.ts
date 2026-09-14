@@ -39,7 +39,15 @@ import { INI_FILE, resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { InputManager } from '../src/vm/input.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../src/vm/ops.js';
-import { applyConfigToEngine, DEFAULT_GAME_VERSION, ENGINE_BUILTIN_GAME_VERSION, formatIni, parseIni } from '../src/engineConfig.js';
+import {
+  applyConfigToEngine,
+  cfgInt,
+  cfgStr,
+  DEFAULT_GAME_VERSION,
+  ENGINE_BUILTIN_GAME_VERSION,
+  formatIni,
+  parseIni,
+} from '../src/engineConfig.js';
 import { sjisSubstr } from '../src/text/sjis.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import { im, instr, str } from './harness.js';
@@ -199,23 +207,85 @@ test('配置写会通知宿主（onConfigChanged）—— 这是"落盘"的唯�
   assert.match(seen[1]!, /AutoMessagePitch0=7/i);
 });
 
-test('formatIni：往返不丢键、不改分节/键顺序（只改一个值时 INI 不该被重排）', () => {
-  const base = effectiveIniText();
-  // 真游戏的 INI **没有** `[set]` 节（那节由引擎退出时按配置注册表写）⇒ 这里补上，
-  // 专门验证"额外/未知分节也会原样保留、不被重排"。
-  const original = /\[set\]/i.test(base)
-    ? base
-    : `${base}\r\n[set]\r\nGameVersion=1.07.0019\r\nVerRegPos=\r\n`;
-  const cfg = parseIni(original);
-  const back = formatIni(cfg);
-  const again = parseIni(back);
-  assert.deepEqual([...again.values.entries()].sort(), [...cfg.values.entries()].sort(), '键值集合一致');
-  assert.deepEqual(again.sections, cfg.sections, '分节顺序一致');
+/**
+ * ★★`formatIni` 的新语义（`tickets/T-0031`）：**全量 + 固定顺序**，不再"保持文件原序 + 局部编辑"★★
+ *
+ * 引擎的键表/默认/顺序由注册表对象构造 `sub_491880`（raw 111338-111845）写死；导出端 `sub_490590`
+ * （raw 110734）是固定顺序的全量枚举（53 次 GetConfig 直线序列）。我们用它做"写回 INI"的等价物。
+ * 本用例**自带 fixture**（不依赖本机真游戏 INI —— 旧版本正因为依赖 `%LOCALAPPDATA%` 那份而在无该文件的机器上假红）。
+ */
+test('formatIni：① 键表全量（缺值写引擎内建默认）② 固定顺序 ③ 不丢自定义键 ④ 输出确定', () => {
+  // fixture：只给两个键，其中一个键表里没有（自定义 [mysec] Foo）
+  const cfg = parseIni('[Message]\r\nMessageSpeed=42\r\n\r\n[mysec]\r\nFoo=bar\r\n');
+  const out = formatIni(cfg);
+  const back = parseIni(out);
+
+  // ① 全量：键表里的键都在（含没在 fixture 里出现过的），缺值写内建默认
+  assert.equal(cfgInt(back, 'message:MessageSpeed'), 42, '现值优先');
+  assert.equal(cfgInt(back, 'message:MesWinAlpha'), 8, '未给值的键写引擎内建默认（raw 111338 的构造表）');
+  assert.equal(cfgInt(back, 'message:MessageFade'), 0);
+  assert.equal(cfgInt(back, 'sound:Sound'), 1);
+  assert.equal(cfgInt(back, 'display:FullScreenBit'), 16);
+  assert.equal(cfgStr(back, 'message:Font'), '', 'string 键默认空串');
+
+  // ② 固定顺序：分节顺序与节内键序 = 键表顺序（与 fixture 里的书写顺序无关）
   const seq = (c: ReturnType<typeof parseIni>): string[] =>
-    c.sections.flatMap((s) => (c.order.get(s.toLowerCase()) ?? []).map((k) => `${s}:${k.toLowerCase()}`));
-  assert.deepEqual(seq(again), seq(cfg), '键出现顺序一致');
-  assert.match(back, /\[set\]\r?\nGameVersion=1\.07\.0019/, '[set] 段与其中的键原样保留');
-  assert.match(back, /\[message\]/, '分节头保留');
+    c.sections.flatMap((s) => (c.order.get(s.toLowerCase()) ?? []).map((k) => `${s.toLowerCase()}:${k.toLowerCase()}`));
+  const order = seq(back);
+  const idx = (k: string): number => order.indexOf(k);
+  assert.ok(idx('message:messagespeed') >= 0 && idx('sound:music') >= 0);
+  assert.ok(idx('sound:music') < idx('message:messagespeed'), '键表顺序：sound 族在 message 族之前（构造顺序）');
+  assert.ok(idx('message:messagespeed') < idx('message:meswinalpha'), '节内也按键表顺序');
+
+  // ③ 自定义键不丢（不在键表里的追加在最后，大小写原样）
+  assert.equal(cfgStr(back, 'mysec:Foo'), 'bar');
+  assert.match(out, /Foo=bar/);
+  assert.equal(idx('mysec:foo'), order.length - 1, '未知分节追加在末尾');
+  assert.match(out, /^\[mysec\]$/m, '未知分节名大小写原样保留');
+
+  // ④ 确定性：同配置两次输出逐字节相同（"改一个值只动那一行"的前提）
+  assert.equal(formatIni(parseIni(out)), out);
+
+  // ⑤ 值格式：数字不带引号、空串写 `key=`（与真机 INI 习惯一致）
+  assert.match(out, /^MessageSpeed=42$/m, '键表拼写优先（cfg 里存的是小写键也不影响）');
+  assert.match(out, /^Font=$/m);
+  assert.ok(out.endsWith('\r\n'), '以 CRLF 结束');
+});
+
+test('★无 INI 时也接线 onConfigChanged：首次改设置即按引擎键表全量生成（T-0031）', async () => {
+  const writes: string[] = [];
+  const g = globalThis as unknown as Record<string, unknown>;
+  const prev = g.window;
+  g.window = {
+    api: {
+      readConfigIni: async () => null, // ★没有 INI
+      saveConfigIni: async (text: string) => {
+        writes.push(text);
+        return { path: 'test' };
+      },
+    },
+  };
+  try {
+    const { loadEngineConfig } = await import('../src/renderer/app/configBoot.js');
+    const e = new Engine(new HeadlessScene({}), new InputManager());
+    e.fileSource = { readSaveData: async () => null, readSaveFlags: async () => null } as unknown as typeof e.fileSource;
+    const traces: string[] = [];
+    await loadEngineConfig(e, (l) => traces.push(l));
+    assert.ok(traces.some((l) => l.includes('未找到 SYS4REG.INI')), '确实走了"无 INI"分支');
+    assert.equal(typeof e.onConfigChanged, 'function', '★无 INI 也必须挂上 onConfigChanged');
+    // 模拟 CONFIG1 改 ADV 速度：0x1B5 → 字段 + 注册表（setConfigValue 会按需建 config）
+    const f = new Frame();
+    OPS.get(0x1b5)!(makeCtx(e, f, instr(0x1b5, [im(30)]), e.native, () => {}));
+    await new Promise((r) => setTimeout(r, 0)); // 让 flush 的 promise 链跑完
+    assert.equal(writes.length, 1, '一次改动触发一次写盘');
+    const text = writes[0]!;
+    assert.match(text, /^MessageSpeed=30$/m, '改过的键写新值');
+    assert.match(text, /^MesWinAlpha=8$/m, '★其余键写引擎内建默认 ⇒ 首跑生成的就是"全量"文件');
+    assert.match(text, /^\[message\]$/m, '无文件时分节名取键表的小写（有文件时才沿用文件的大小写）');
+  } finally {
+    if (prev === undefined) delete g.window;
+    else g.window = prev;
+  }
 });
 
 test('NodeFileSource：没给 system 时**完全不落盘**（测试/链路工具不碰玩家数据）', async () => {
@@ -245,7 +315,14 @@ test('applyConfigToEngine 不受 formatIni 影响：往返后仍能灌字段', (
   const a = applyConfigToEngine(cfg, values);
   const values2 = new Map<number, number>();
   const b = applyConfigToEngine(parseIni(formatIni(cfg)), values2);
-  assert.deepEqual(b, a, '往返后写入的字段集合一致');
+  // ★全量导出后 cfg 会多出"键表里但原文件没写"的键 ⇒ 绑定集合只增不减；
+  //   原文件里那些键的绑定结果必须逐字节不变。
+  assert.deepEqual(
+    b.filter((x) => a.some((y) => y.key === x.key)),
+    a,
+    '原文件里那些键的绑定结果不变（值/映射一致）',
+  );
+  assert.ok(b.length >= a.length, '全量导出后绑定只增不减（未给值的键补引擎默认）');
   if (text.length > 0) assert.ok(a.length >= 5, `至少应绑上几个键（实际 ${a.length}）`);
 });
 

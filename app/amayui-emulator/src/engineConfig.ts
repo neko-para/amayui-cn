@@ -13,6 +13,8 @@
  *    不驱动任何实际输出（与「引擎内部插桩」同一取舍，见 README 的 0.10D/输入章节说明）。
  */
 
+import { CONFIG_REGISTRY_KEYS } from './configRegistry.js';
+
 /** 解析结果：`section:key` -> 值（数字键保留为 number，其余为 string）。 */
 export interface EngineConfig {
   /** 原始解析表（键一律小写 `section:key`）。 */
@@ -96,39 +98,75 @@ export const ENGINE_BUILTIN_GAME_VERSION = '1.00';
 export const DEFAULT_GAME_VERSION = '1.07.0019';
 
 /**
- * 把配置渲染回 `SYS4REG.INI` 文本（**回写**用；与 `parseIni` 往返一致）。
+ * 把配置渲染回 `SYS4REG.INI` 文本（**回写**用）。
  *
- * 规则：按 `sections` 顺序输出分节（顺序 = 首次解析到的顺序，保证"只改一个值"时文件不会被打乱），
- * 每节里按 `order` 记忆的键序输出 `key=value`；节内与整体都不写注释（引擎侧不保证读注释）。
- * 解析时遇到但未登记的键也会原样保留（`order` 覆盖全部键）。
+ * ★★**全量 + 固定顺序**（`tickets/T-0031`）★★ —— 对齐引擎的导出形态：
+ * 引擎的键表/默认值/顺序由注册表对象构造 `sub_491880`（raw 111338-111845）静态写死，
+ * 导出端 `sub_490590`（raw 110734）是**固定顺序的全量枚举**（53 次 `GetConfig` 直线序列，无局部编辑），
+ * 只是它的目标是 HKCU 注册表；我们把它换成"写回 INI"这份跨平台等价物，形态保持一致：
+ *
+ *  1. **先按 `CONFIG_REGISTRY_KEYS` 的顺序全量输出**：值取 `cfg` 里的现值，缺则写**引擎内建默认**（`def`）
+ *     ⇒ 首跑生成的文件天然完整（不是"只含玩家碰过的键"）；
+ *  2. 再追加 `cfg` 里**不在键表内**的键（按解析顺序/大小写原样保留）⇒ 不丢任何自定义键；
+ *  3. 分节顺序 = 键表里首次出现的顺序（`message`/`sound`/`display`/`set`/`system`/`debug`…），
+ *     文件原有的分节名大小写优先保留（真机 INI 习惯 `[Message]` 这种写法）。
+ *
+ * 输出对同一份配置**确定**（同内容 ⇒ 同字节），因此"改一个值"只会改动那一行 —— 不再依赖 `order` 记账。
  */
 export function formatIni(cfg: EngineConfig): string {
-  const lines: string[] = [];
-  const seen = new Set<string>();
-  const emit = (section: string, keys: string[]): void => {
-    const head = `[${section}]`;
-    const body: string[] = [];
-    for (const key of keys) {
-      const full = `${section.toLowerCase()}:${key.toLowerCase()}`;
-      if (seen.has(full)) continue;
-      seen.add(full);
-      body.push(`${key}=${cfg.values.get(full) ?? ''}`);
-    }
-    if (!body.length) return;
-    lines.push(head, ...body);
-  };
-  // 1) 已知分节（按解析顺序 + 键的插入顺序）
-  for (const s of cfg.sections) emit(s, cfg.order.get(s.toLowerCase()) ?? []);
-  // 2) 兜底：解析表里有、但分节列表没记到的键（如手写 INI 的怪分节）
-  const rest = new Map<string, string[]>();
-  for (const full of cfg.values.keys()) {
-    if (seen.has(full)) continue;
-    const [s = '', ...k] = full.split(':');
-    const arr = rest.get(s) ?? [];
-    arr.push(k.join(':'));
-    rest.set(s, arr);
+  // 文件原有的分节名/键名大小写（仅用于"显示"，语义一律小写查表）
+  const secCase = new Map<string, string>();
+  const keyCase = new Map<string, string>();
+  for (const s of cfg.sections) {
+    const sl = s.toLowerCase();
+    secCase.set(sl, s);
+    for (const k of cfg.order.get(sl) ?? []) keyCase.set(`${sl}:${k.toLowerCase()}`, k);
   }
-  for (const [s, keys] of rest) emit(s, keys);
+
+  // 键表里的键一律用**键表的拼写**（`setConfigValue` 写进 cfg 的是小写键 ⇒ 不能让它决定文件名拼写）
+  const canonicalCase = new Map<string, string>();
+  for (const { key } of CONFIG_REGISTRY_KEYS) {
+    canonicalCase.set(key.toLowerCase(), key.slice(key.indexOf(':') + 1));
+  }
+  const secOrder: string[] = [];
+  const secLines = new Map<string, string[]>();
+  const seen = new Set<string>();
+  const put = (fullLower: string, fallbackKeyCase: string, value: number | string): void => {
+    if (seen.has(fullLower)) return;
+    seen.add(fullLower);
+    const ci = fullLower.indexOf(':');
+    const sl = ci < 0 ? '' : fullLower.slice(0, ci);
+    const bare = ci < 0 ? fullLower : fullLower.slice(ci + 1);
+    const dispKey = canonicalCase.get(fullLower) ?? keyCase.get(fullLower) ?? fallbackKeyCase;
+    if (!secLines.has(sl)) {
+      secLines.set(sl, []);
+      secOrder.push(sl);
+    }
+    secLines.get(sl)!.push(`${dispKey}=${value}`);
+  };
+
+  // ① 键表全量（顺序 = 引擎构造顺序）
+  for (const { key, def } of CONFIG_REGISTRY_KEYS) {
+    const full = key.toLowerCase();
+    const v = cfg.values.get(full);
+    put(full, key.slice(key.indexOf(':') + 1), v ?? def);
+  }
+  // ② cfg 里的额外键（解析顺序：分节顺序 + 节内键序）
+  for (const s of cfg.sections) {
+    for (const k of cfg.order.get(s.toLowerCase()) ?? []) {
+      const full = `${s.toLowerCase()}:${k.toLowerCase()}`;
+      put(full, k, cfg.values.get(full) ?? '');
+    }
+  }
+  // ③ 兜底：values 里有、但 sections/order 没记到的键（手写怪文件）
+  for (const [full, v] of cfg.values) put(full, full.slice(full.indexOf(':') + 1), v);
+
+  const lines: string[] = [];
+  for (const sl of secOrder) {
+    const body = secLines.get(sl) ?? [];
+    if (!body.length) continue;
+    lines.push(`[${secCase.get(sl) ?? sl}]`, ...body);
+  }
   return lines.join('\r\n') + '\r\n';
 }
 

@@ -6965,6 +6965,18 @@
     "unmodeled": [],
     "evidence": "raw 92465-92471",
     "notes": "与 sub_478090 共用位约定（mouse bit4/5、手柄 bit(4+i)）但生命周期相反：读它不改任何状态，按住期间每帧都为真。emulator 对应物 = InputManager.flushHeld()。★使用场景绝不能互换（见 tickets/T-0027）。"
+  },
+  {
+    "addr": "0x490590",
+    "raw_name": "sub_490590",
+    "semantic_name": "configExportFixedOrder_490590",
+    "status": "PARTIAL",
+    "purpose": "★配置**导出**：**固定顺序、全量**（53 次 `GetConfig` 的直线序列，无分支枚举），写进 **HKCU 注册表**（`RegCreateKeyExA(HKEY_CURRENT_USER, SubKey, …, KEY_ALL_ACCESS)` + `RegSetValueExA`）；并调 `sub_4900F0` 确保 SYS4REG.INI 路径/目录存在。",
+    "sub_behaviors": ["按固定直线顺序逐键 `GetConfig`（vtable+4）—— 实测 53 次调用", "`RegCreateKeyExA(HKEY_CURRENT_USER, …)` 建/开 `set:RegRootPath`+`set:RegSubKey` 下的键", "逐值 `RegSetValueExA`（含 WindowPos 等 BINARY/REG_DWORD）", "调 `sub_4900F0` 拼 SYS4REG.INI 路径 + 存在性检查 + `MakeSureDirectoryPathExists`"],
+    "fields_used": ["Reg 对象（Engine+697620）", "set:RegRootPath/set:RegSubKey/set:SaveWinPos", "display:* / sound:* / message:* / set:* 各键"],
+    "unmodeled": ["53 个键的完整序列未逐条抄录（raw 110734-110963 可直接抽取）", "调用时机（是否 WM_CLOSE）未逐段确认"],
+    "evidence": "raw 110734-110963",
+    "notes": "★订正：这不是“把注册表写回 INI 文件”，而是**写 HKCU 注册表**；配套读取端 `sub_492CB0`（raw 111846）也是 `RegQueryValueExA`。SYS4REG.INI 在引擎里是**只读输入**。emulator 用“写 INI”作为跨平台替代（`engineConfig.ts`），因此**导出形态应对齐本函数：固定顺序 + 全量**（见 tickets/T-0031）。"
   }
 
 ]

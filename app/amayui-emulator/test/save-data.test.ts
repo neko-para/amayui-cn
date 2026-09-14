@@ -55,6 +55,7 @@ void INI;
 
 import { fileURLToPath } from 'node:url';
 import { im, instr, str } from './harness.js';
+import { loadEngineConfig } from '../src/renderer/app/configBoot.js';
 
 const locInt = (i: number): BinArg => ({ type: 9, raw: i }) as unknown as BinArg;
 const gInt = (i: number): BinArg => ({ type: 3, raw: i }) as unknown as BinArg;
@@ -336,6 +337,60 @@ test('★save-int / load-int：写表会通知宿主；装载后 load-int 能读
   const f2 = new Frame();
   OPS.get(0x1a3)!(makeCtx(e2, f2, instr(0x1a3, [gInt(5)]), e2.native, () => {}));
   assert.equal(e2.globals.int.get(5), encInt(e2, 1), 'load-int 应把表里的值写回 global 5');
+});
+
+/**
+ * ★★`tickets/T-0030`：**没有 `SYS4REG.INI` 时也必须装载 `SAVE.DAT` 并挂上回写**★★
+ *
+ * 回归的是 `loadEngineConfig` 的"早退"缺陷：它以前在 `readConfigIni()` 返回 null 时直接 `return`，
+ * 而 `loadSaveData` + `e.onSaveDataChanged` 接线都在那个 `return` 之后 ⇒ 首次运行（overlay 里两份文件都没有）：
+ *  ① 表不装载 ⇒ `SYSTEM4.txt:71 load-int (global 5)` 恒读 0 ⇒ 每次启动都 `INITCONFIG`+`INITCHARM` 覆盖玩家数据；
+ *  ② 回写不接线 ⇒ 连 `save-int (global 5) 1` 都写不出去 ⇒ 永远产生不了 INI/存档（死循环）。
+ * 本用例就是"无 INI"那条分支：装载要生效、回写要接线，二者都不得被 INI 的缺失连坐。
+ */
+test('★无 SYS4REG.INI 时也要装载 SAVE.DAT 并挂上回写（T-0030）', async () => {
+  const bytes = encodeSaveData({ tables: { ints: new Map([['\x0300000005', 1]]), strings: new Map<string, string>() } });
+  const writes: Uint8Array[] = [];
+  const g = globalThis as unknown as Record<string, unknown>;
+  const prev = g.window;
+  g.window = {
+    api: {
+      readConfigIni: async () => null, // ★没有 INI
+      writeSaveData: async (b: Uint8Array) => {
+        writes.push(b);
+        return { path: 'test' };
+      },
+    },
+  };
+  try {
+    const e = new Engine(new HeadlessScene({}), new InputManager());
+    e.fileSource = {
+      readSaveData: async () => bytes,
+      readSaveFlags: async () => null,
+    } as unknown as typeof e.fileSource;
+    const traces: string[] = [];
+    await loadEngineConfig(e, (l) => traces.push(l));
+    assert.ok(
+      traces.some((l) => l.includes('未找到 SYS4REG.INI')),
+      `确实走了"无 INI"这条分支；实际 trace=${JSON.stringify(traces)}`,
+    );
+    // ① 表被装载 ⇒ load-int (global 5) 读到 1 ⇒ SYSTEM4 会走 LOADCONFIG/LOADCHARM
+    const f = new Frame();
+    OPS.get(0x1a3)!(makeCtx(e, f, instr(0x1a3, [gInt(5)]), e.native, () => {}));
+    assert.equal(
+      e.globals.int.get(5),
+      encInt(e, 1),
+      '★无 INI 也必须把 SAVE.DAT 的表装载进来（否则 global 5 恒 0 ⇒ 每次启动都覆盖玩家数据）',
+    );
+    // ② 回写接线也在 ⇒ save-int 改动能落盘
+    assert.equal(typeof e.onSaveDataChanged, 'function', '★无 INI 也必须挂上 onSaveDataChanged');
+    e.onSaveDataChanged?.();
+    assert.equal(writes.length, 1, 'save-int 改动必须触发一次写盘');
+    assert.ok((writes[0]?.length ?? 0) > 0);
+  } finally {
+    if (prev === undefined) delete g.window;
+    else g.window = prev;
+  }
 });
 
 test('save-string / load-string：字符串表同样往返（字体名）', () => {
