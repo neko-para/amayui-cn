@@ -1,0 +1,114 @@
+{
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/input",
+  "title": "ADV 等待推进门把「按住态」当成新按下：一次点击连翻多页、按住即每帧推进",
+  "why": "现象（用户 2026-09 报）：在 macOS 上用 jp 版资源跑 emulator，ADV 界面里**一次普通的左键点击会连着快进很多页文案**；感觉像「按住就一直在输入点击」，一按下去文案就停不住。平台与资源版本只是**出现该现象的环境**，不是结论 —— 本票按「引擎语义 vs emulator 语义」定因，不按平台定因。\n\n复现（无需平台差异，headless 已复现）：把等待推进门（0x72 wait-for-input 置的 effect_flags bit31）置于等待态，注入一次「只按下、不松开」的左键，再按帧循环每帧调一次 Engine.serviceAdvanceWait()，同时让脚本回到门指令重新挂起 —— 当前实现**每帧都放行一次**：10 帧内第 3 帧才松开 ⇒ 推进 3 页（复现代码见本票 repro.md §A；实测 3 页，期望 1 页）。人手的单击在 60Hz 下天然跨 3~9 帧 ⇒ 一次点击就翻好几页；若释放事件丢失（window blur / 指针移出窗口 / 事件不成对）则永久停不下来。\n\n定因（读反编译体，见 evidence）：引擎有**两把不同的输入刷子**，等待推进泵用的是「吸取挂起事件、读后即清」那把，ADV 分支用的才是「实时按住态」那把。\n  - 等待推进泵 `sub_411BC0`（raw 20238）开头：`sub_478090(Engine+1032, Engine+699208)`。`sub_478090`（raw 92449）依次调 `sub_477130`（键挂起累加，读后清）/ `sub_477280`（手柄按钮挂起，读后清）/ `sub_4774F0` / `sub_477C30`（按钮累加器 `_this[1710]`，读后清）—— **没有任何实时按住态读取**；鼠标左键的挂起位由 WndProc 的 WM_LBUTTONDOWN（`sub_4B8DC0` raw 140839 写输入管理器 `[1158]`）设置、经 `sub_477280` 映射成掩码 bit4 并被消费一次。⇒ 引擎里**一次按下最多推进一页，按住不放不会连续推进**。\n  - ADV 分支 `sub_411900`（raw 20111）：`sub_4780D0(Engine+258, Engine+174802)`，其中 `sub_477150` 才读鼠标左右键的**实时按住态**（bit4/5）。两把刷子共用位约定但生命周期完全不同（docs-new/03-engine/input-system.md §4）。\n\nemulator 缺陷：`InputManager.flush()` 是**唯一一把**刷子，把「实时按住态 `buttons`」与「按下沿 `mouseEdge`」混在一起（src/vm/input.ts「(this.buttons & 1)」那两行）；而等待泵 `serviceAdvanceWait`（src/vm/engine.ts「const mask = im.flush();」）与 ADV 分支 `serviceAdv` 都吃这一把 ⇒ 泵在按住期间**每帧**都满足 `advancePressed(mask)` ⇒ 每帧放行一次 = 每帧翻一页。\n\n影响面：ADV 正文不可读（单击即跳过整段），且与「跳读/取消键三态机」（serviceAdv 的 set:CancelMessageKey 分支用 mask&0x10）共用这把混合刷子 ⇒ 一旦开始拆刷子，必须同时核对 0x100/0x101/0xFA/0xFF 这几个 `sub_478090`/`sub_4780D0` 消费者的归属，别把 ADV 分支一起改坏。",
+  "acceptance": [
+    "输入刷子一分为二且语义可查：InputManager 提供「消费挂起事件」刷（= sub_478090，读后清）与「实时按住态」刷（= sub_4780D0），两者的注释分别锚到 raw 20238 与 raw 20111",
+    "等待推进泵 serviceAdvanceWait 只消费「挂起事件」：按住不放、连续跑 ≥10 帧时 ADV 页只推进 1 次（第二帧起 advancePressed 不再成立、awaitingAdvance 不再被放行）；down+up 落在同一帧或跨帧也都恰好推进 1 次",
+    "消费者归属逐条核对并记录（按 raw：泵 20238 / 0x101 25069 / 0xFA 后半 24983 / eatAllInput 11052 走**消费刷**；serviceAdv 20111 / 0x100 25009（不调刷子，读 20111 的 0D0 填好的字段）/ 0xFF 25004 / 0xFA 前半 24963 走**实时刷**）；改动写进 changes.md",
+    "引擎判定落库（不许只改代码）：第一层补 0x411BC0/0x478090/0x4780D0 的函数结论，第二层 adv-input-pump-perframe 的 note 写清「泵 = sub_478090 消费刷，ADV 分支 = sub_4780D0 实时刷」，本票回链它",
+    "守卫落在真实测试文件（app/amayui-emulator/test/adv-msgwin.test.ts 或 test/route-dispatch.test.ts）：先按现状写红（按住 10 帧 ⇒ 3+ 次放行），修后转绿",
+    "E4 实测（macOS + jp 资源）：一次普通单击只前进一页、按住左键不再连续翻页；trace/截图与判定写进 changes.md"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_478090((_DWORD *)(_this + 1032), (_DWORD *)(_this + 699208));",
+      "line": 20238,
+      "note": "等待推进泵 sub_411BC0 的开头：用的是「吸取挂起事件、读后即清」的刷子 —— 按住态不参与"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4780D0(_this + 258, _this + 174802);",
+      "line": 20111,
+      "note": "ADV 分支 sub_411900 用的是「实时按住态」刷子（sub_4780D0 → sub_477150 读鼠标左右键）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[1710] = 0;",
+      "line": 92281,
+      "note": "sub_477C30：按钮累加器读后清零 —— sub_478090 的鼠标事件只有一次寿命（一次按下 = 一次推进）"
+    },
+    {
+      "file": "docs-new/03-engine/input-system.md",
+      "anchor": "读后即清",
+      "line": 18,
+      "note": "两把刷子的语义差异（0D0 = 此刻仍按着的 / 090 = 自上次以来新发生、读一次即清）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "(this.buttons & 1)",
+      "line": 291,
+      "note": "两把刷子：这一行是**实时刷** flushHeld（保留按住态）；**消费刷** flushPending 不含它 —— 修复前只有一把 flush() 把两者混在一起，等待泵因此把按住当成每帧新按下"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "const mask = im.flushPending();",
+      "line": 793,
+      "note": "等待推进泵已改为只消费挂起事件（flushPending = sub_478090）⇒ 按住期间不再每帧放行（修复点）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "const mask = im.flushHeld();",
+      "line": 467,
+      "note": "ADV 分支（serviceAdv）保留**实时刷**（sub_4780D0）—— 拆刷子时不许把它一起改掉"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "wait-for-input 0",
+      "line": 1241,
+      "note": "ADV 页与页之间的等待门（一页一条门指令）—— 一次按下应当只穿过一道门"
+    },
+    {
+      "file": "app/amayui-emulator/test/adv-msgwin.test.ts",
+      "anchor": "★等待推进门只吃「挂起事件」",
+      "line": 239,
+      "note": "回归锁：按住左键 10 帧只推进 1 页（旧实现在此断言为 10 ⇒ 先红后绿）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/adv-text-rendering.md"
+    ],
+    "analysis": [
+      "adv-input-pump-perframe",
+      "frame-pump-input-refresh"
+    ],
+    "tickets": [
+      "T-0007",
+      "T-0016"
+    ]
+  },
+  "notes": "调查与候选次因见 notes.md；复现步骤见 repro.md；实现级变更见 changes.md。环境（macOS + jp 资源）只记录不归因。",
+  "id": "T-0027",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → doing —— 实现完成（拆两把刷子 + 自愈 + 守卫先红后绿 + 数据层落库）；等 macOS/jp 产品路径 E4 手测（repro.md §B）后转 done"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/input.test.ts"
+  ]
+}

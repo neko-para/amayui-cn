@@ -39,6 +39,10 @@ export function attachMouseInput(
   window.addEventListener('mousemove', (e) => {
     const [x, y] = toVirtual(e.clientX, e.clientY);
     input.setCursor(x, y, true);
+    // ★按住态按宿主真值重同步（`e.buttons` = 当前按下的键）：引擎每帧 `GetAsyncKeyState` 轮询真值，
+    //   永远不会因为丢一条消息就卡在"按住"；DOM 事件流却可能丢 mouseup（指针移出窗口后松开 /
+    //   窗口失焦 / Electron 不来事件）⇒ 这里用浏览器保证的真值把它拉回去（`tickets/T-0027`）。
+    input.syncButtons(e.buttons);
     logMove('move', x, y);
   });
 
@@ -47,17 +51,30 @@ export function attachMouseInput(
     trace('[input] leave');
   });
 
+  // 失焦/隐藏：浏览器此后可能不再派发 mouseup ⇒ 先释放按钮态（回到窗口后由 mousemove 的
+  // `e.buttons` 真值重建，见 `InputManager.syncButtons`）。
+  window.addEventListener('blur', () => {
+    input.releaseAllMouse();
+    trace('[input] blur -> release');
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) input.releaseAllMouse();
+  });
+
   window.addEventListener('mousedown', (e) => {
     const [x, y] = toVirtual(e.clientX, e.clientY);
     input.setCursor(x, y, true);
     if (e.button === 0) input.pressMouse(0); // 左
     else if (e.button === 2) input.pressMouse(1); // 右
+    input.syncButtons(e.buttons); // 与真值对齐（多键同按时不漏不错）
     trace(`[input] down btn=${e.button} (${x},${y})`);
   });
 
   window.addEventListener('mouseup', (e) => {
-    if (e.button === 0) input.releaseMouse(0);
-    else if (e.button === 2) input.releaseMouse(1);
+    // ★用 `e.buttons` 重同步（而不是只清被松开的那一个 bit）：一次丢失的 up 之后，
+    //   任意一次事件都会把状态拉回真值 —— 这正是引擎"每帧轮询"的等价物（`tickets/T-0027`）。
+    input.syncButtons(e.buttons);
+    trace(`[input] up btn=${e.button}`);
   });
 
   // 滚轮：喂给 InputManager.wheelDelta（0x10D 读并清零）。

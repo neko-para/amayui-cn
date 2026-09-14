@@ -11,10 +11,10 @@
  * 位约定（与引擎一致，见 docs-new/03-engine/input-system.md）：
  *  - 鼠标按钮值读取（0x108 走 sub_477220）：**bit0=左、bit1=右**（随 SM_SWAPBUTTON 互换，emulator 不模拟互换）。
  *  - 输入掩码帧循环约定（sub_477150 / sub_477280）：鼠标左=**bit4**、右=**bit5**；手把按钮 i=**bit(4+i)**。
- *  - 两套 bit 位置不同，请勿混用（readButtons 用 bit0/1；flush 生成的 mask 用 bit4/5）。
+ *  - 两套 bit 位置不同，请勿混用（readButtons 用 bit0/1；两把刷子 flushPending/flushHeld 生成的 mask 用 bit4/5）。
  *
  * 渲染器（PixiBackend）经 setCursor/pressMouse/releaseMouse/pressJoy 写入本对象；
- * VM 指令经 readX/readY/readButtons/flush/hasPending 读取、经 mouseSlot/mouseJump/joyJump 设跳转目标。
+ * VM 指令经 readX/readY/readButtons/flushPending/flushHeld/hasPending 读取、经 mouseSlot/mouseJump/joyJump 设跳转目标。
  */
 /**
  * **可序列化的输入状态快照**（`InputManager.snapshot()`/`restore()`；`tickets/T-0005`）。
@@ -122,7 +122,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
    */
   joyJump = new Array<number>(32).fill(-1);
 
-  // --- 输入位掩码（poll-input/0x100 读；由 flush() 生成）---
+  // --- 输入位掩码（poll-input/0x100 读；由两把刷子生成，见 flushPending/flushHeld）---
   inputMask = 0;
 
   // --- get-input-type(0xCD) 节流态（引擎 _this[429808]/[429812]）---
@@ -171,6 +171,25 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   /** 鼠标按钮松开。bit：0=左、1=右。只清按钮态（边沿一旦被消费就无影响）。 */
   releaseMouse(bit: 0 | 1): void {
     this.buttons &= ~(1 << bit);
+  }
+
+  /**
+   * **按宿主真值重同步按住态**（`mask` = DOM `MouseEvent.buttons` 位：1=左、2=右、4=中）。
+   *
+   * 引擎的等价物 = 每帧 `GetAsyncKeyState` 轮询真值（第二层 `frame-pump-input-refresh`，
+   * `sub_4770A0`/`sub_477150`）—— 引擎**永远不会**因为丢一条消息就卡住按住态。
+   * emulator 的 `buttons` 只由 mousedown/mouseup 事件对维护，而浏览器在
+   * 「指针移出窗口后松开 / 窗口失焦 / 事件不成对」时**可能不派发 mouseup**
+   * ⇒ 按住态永久为 1（`releaseMouse` 是唯一清除路径）。这里借任何一次鼠标事件携带的
+   * `e.buttons`（浏览器保证是**当前真值**）把它拉回去 —— 这就是"每帧轮询"的 DOM 等价物。
+   */
+  syncButtons(mask: number): void {
+    this.buttons = ((mask & 1) !== 0 ? 1 : 0) | ((mask & 2) !== 0 ? 2 : 0);
+  }
+
+  /** 释放全部鼠标键（窗口失焦/隐藏的兜底；之后任何一次 `syncButtons` 都会按真值重建）。 */
+  releaseAllMouse(): void {
+    this.buttons = 0;
   }
 
   /** 手把按钮按下（0..31）。记录按下沿。 */
@@ -228,10 +247,46 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   }
 
   /**
-   * sub_478090 式 flush：把"当前按住 + 新按下沿"并入 inputMask，返回掩码。
-   * 约定：鼠标左=bit4、右=bit5；手把按钮 i=bit(4+i)。不清除边沿（边沿由 consumeEdges/dispatch 消费）。
+   * ★★**引擎有「两把刷子」，emulator 必须分开**（`tickets/T-0027`）★★
+   *
+   * 两把刷子共用同一套位约定（鼠标左=bit4、右=bit5；手把按钮 i=bit(4+i)），但**生命周期完全不同**：
+   *
+   * | 刷子 | 引擎 | 语义 | 谁用 |
+   * |---|---|---|---|
+   * | 消费刷 | `sub_478090`(raw 92449) | 吸取**挂起事件**（键挂起 `_this[1159]`、手把按钮挂起 `_this[1158]`、按钮累加器 `_this[1710]`），**读后清零** | 等待推进泵 `sub_411BC0`(raw 20238)、`0x101`(sub_419CC0 raw 25069)、`0xFA` 后半(raw 24983)、`sub_4053C0`(eatAllInput) |
+   * | 实时刷 | `sub_4780D0`(raw 92465) | `sub_4770A0`(键盘 `GetAsyncKeyState`) + `sub_477150`(**鼠标左右键实时按住态**) + `sub_4772E0` | ADV 分支 `sub_411900`(raw 20111)、`0x100`(sub_419AF0 raw 25009 不调刷子，直接读 ADV 分支 20111 用 0D0 填好的 `_this[174802]`)、`0xFF`(raw 25004)、`0xFA` 前半(raw 24963) |
+   *
+   * ★`sub_478090` 的调用链里**没有** `sub_477150` ⇒ **按住左键不会每帧重新置 bit4**：
+   * 一次按下 = 一次推进（鼠标挂起位由 WndProc 的 WM_LBUTTONDOWN → `sub_4B8DC0` 写、`sub_477280`
+   * 消费一次即清）。等待泵若用实时刷，按住期间会**每帧**满足 `advancePressed` ⇒ 每帧翻一页
+   * （用户实测："单击一次快进非常多个文案、按住就一直在输入点击"）。
+   *
+   * **本方法 = 消费刷**：只并「自上次消费以来新发生的事件」（`mouseEdge` / `joyEdge`），
+   * **不含 `buttons`（此刻仍按着的）**。读后仍由 `consumeEdges()` 清（引擎那侧是 `*a2` 掩码位被处理时清）。
    */
-  flush(): number {
+  flushPending(): number {
+    let m = 0;
+    if ((this.mouseEdge & 1) !== 0) m |= 1 << 4; // 左（挂起事件，非按住态）
+    if ((this.mouseEdge & 2) !== 0) m |= 1 << 5; // 右
+    for (const i of this.joyEdge) {
+      if (i < 0 || i >= 32) continue;
+      m |= 1 << (4 + i);
+    }
+    this.inputMask = m;
+    return m;
+  }
+
+  /**
+   * **实时刷**（`sub_4780D0`）：当前**按住态** + 新按下沿 + 手把按下沿。
+   *
+   * ★为什么仍带 `mouseEdge`：引擎的 0D0 用 `GetAsyncKeyState` 真值，而 emulator 的按钮态来自
+   * DOM 事件对 —— 若 down+up 落在同一帧之间，只看 `buttons` 会把这次点击整次丢掉。
+   * 带按下沿是**保真性补丁**（与 `pressLatch` 同思路），不是新语义。
+   *
+   * 谁用它：ADV 分支 `serviceAdv()`（含 `set:CancelMessageKey` 三态机）、`0x100` 派发、
+   * `0xFF` 输入重置、`0xFA` 的「跳读中」0x40 判定。
+   */
+  flushHeld(): number {
     let m = 0;
     if ((this.buttons & 1) !== 0 || (this.mouseEdge & 1) !== 0) m |= 1 << 4; // 左
     if ((this.buttons & 2) !== 0 || (this.mouseEdge & 2) !== 0) m |= 1 << 5; // 右
@@ -265,7 +320,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
    * **输入状态快照**（可 JSON 序列化）—— `--record` 每帧取一份、`--replay` 每帧恢复一份。
    *
    * 为什么记**状态**而不是"事件流"：脚本对输入是**轮询式**读取（`0x101`/`0x108`/`0x109`/`0x10D`/`0xCD`），
-   * 而 `flush()`/`readButtons()`/`consumeWheelDelta()` 都是**读时消费**（边沿、pressLatch、滚轮残量）。
+   * 而 `flushPending()`/`readButtons()`/`consumeWheelDelta()` 都是**读时消费**（边沿、pressLatch、滚轮残量）。
    * 事件流要复现"哪一帧读到什么"必须精确重放消费顺序与批边界；**帧首状态**则天然对齐：
    * 回放只要每帧把头状态摆回去，这一帧的每次读取就与录制时逐次相同。
    *

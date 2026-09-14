@@ -54,7 +54,7 @@
 ```
 OS 鼠标/键盘/手柄事件
   → 消息泵（WinMain: GetMessage/PeekMessage/DispatchMessage，见 opcode-table / WndProc 区）
-  → sub_478090(_this+258, _this+174802)   // 实时刷：键盘 GetAsyncKeyState + 鼠标按钮 + 手柄 POV/摇杆/按钮
+  → sub_478090(_this+258, _this+174802)   // 消费刷：吸取**挂起事件**（键/手柄按钮/按钮累加器），读后清零（**不读实时按住态**）
   → _this[174802]                          // 输入状态位掩码
   → 脚本读：poll-input(0x101) 刷后复位 / get-input-type(0xCD) 消息推进
            / 位检查 check-bit(0x13F) 或 (1<<bit)&value / joy·mouse-callback 注册的跳转
@@ -248,15 +248,17 @@ _this[30*cur + 95805] = 0;
 
 当前在 `app/amayui-emulator` 已实现**输入子系统**（新增 `src/vm/input.ts` 的 `InputManager`，并接入 `Engine`/`NativeBridge`/`PixiBackend`）：
 
-- **`InputManager`**（emulator 侧重建模输入管理器）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿（mouse/joy）、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（`flush()` 生成，鼠标=bit4/5、手把=bit4+i）。
+- **`InputManager`**（emulator 侧重建模输入管理器）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿（mouse/joy）、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（鼠标=bit4/5、手把=bit4+i）。
+  ★掩码有**两把刷子**（`T-0027`，对应 §4 的引擎两把）：`flushPending()` = `sub_478090`（消费刷：只并按下沿/手柄挂起，**不含按住态**）、`flushHeld()` = `sub_4780D0`（实时刷：含 `buttons` 按住态）。**谁是哪个消费者是硬约束**：等待推进泵/`0x101`/`0xFA` 后半/`eatAllInput`/悬停门控走消费刷；`serviceAdv`(ADV 分支)/`0x100`/`0xFF`/`0xFA` 前半走实时刷。把等待泵接到实时刷会让「按住左键」每帧翻一页（用户实测的"一次点击快进多页"）。
+  按住态另有**真值重同步** `syncButtons(MouseEvent.buttons)`（引擎"每帧 `GetAsyncKeyState` 轮询"的 DOM 等价物）与失焦兜底 `releaseAllMouse()`。
 - **已实现的输入 opcode**（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/注册/跳转均真实生效）：
   - `0x108` 读鼠标按钮值→op1；`0x109` 读鼠标位置 X/Y→op1/op2（-100000=未初始化）。
   - `0xCC` mouse-callback：记 `input.mouseSlot=op1`、`input.mouseJump=op2`；`0xFB` joy-callback：记 `input.joyJump[btn]=op2`（校验 0..31）。
   - `0xCD` get-input-type：**已修复为引擎语义**（见 §7b）：**时间节流(≥200ms)或 ADV 激活(effect_flags&0x8000000)触发**→压返回地址 CALL 注册的 `mouseJump`；**不读/不消费鼠标移动或按下沿**；未注册目标则原地不跳。emulator 用 `InputManager.getInputType(nowMs, advActive)` + 引擎 `nowMs`（渲染帧注入 `performance.now()`）实现。
   - `0x12E` (u0041E940) 悬停命中：point-in-rect，**几何完全读取自脚本数据数组**（op5=size 盒数组逐项 4 值、op6=base X 数组、op7=base Y 数组、op8=count；判定 `dx0≤x-baseX[i]≤dx1 && dy0≤y-baseY[i]≤dy1`）。TITLE 实例用 `local cd/d1/d5/d9/dd`（size）+ `local 5`/`local 69`（base X/Y）+ `local 0`=count=5；**不在引擎里写死/模拟任何按钮坐标**。
   - `0x2FC` (sub_431BA0) 读触摸/触点：**已修复为引擎语义**：从**触摸/手势缓冲**(`_this+6780`,count `_this[6776]`, 40B/项) 取触点(非 GetCursorPos)，有触点写 `op1=1`、`op2=X`、`op3=Y`、**`op4=触点旗标(v9[4]=dwFlags)`、`op5=触点项[3](v9[3]=dwID)`（触点存在时非 0）**；无触点写 `op1=0`。emulator 以 `hasCursor` 代触点、`touchId` 作 op5。TITLE 紧随 `jcc(op1) … label_00000500` 据此走"聚焦/选中"分支。
-  - `0x100` / `0xFF` / `0x101`：掩码派发扫描 / 重置重刷 / 刷后清零。
-- **DOM 鼠标捕获**（`PixiBackend.create(status, input)`）：监听 canvas 的 `mousemove`/`mousedown`/`mouseup`/`mouseleave`，映射到虚拟坐标并写入 `InputManager`（左=bit0、右=bit1；`contextmenu` 阻止默认）。HUD 顶部显示 `mouse=(x,y) btn=L/R`。
+  - `0x100` / `0xFF` / `0x101`：掩码派发扫描 / 重置重刷 / 刷后清零。★刷子归属：`0x100`/`0xFF` 用**实时刷**（引擎 raw 25009/25004），`0x101` 用**消费刷**（raw 25069）——见 §4 与 `T-0027`。
+- **DOM 鼠标捕获**（`PixiBackend.create(status, input)` → `renderer/pixi/inputAttach.ts`）：在 `window` 上监听 `mousemove`/`mouseleave`/`mousedown`/`mouseup`/`wheel`/`contextmenu`，映射到虚拟坐标并写入 `InputManager`（左=bit0、右=bit1）。`mousemove`/`down`/`up` 都按 `e.buttons` 重同步按住态；`blur` 与 `visibilitychange(hidden)` 释放全部鼠标键（丢 mouseup 的自愈，`T-0027`）。HUD 顶部显示 `mouse=(x,y) btn=L/R`。
 - **测试**：`test/input.test.ts` 覆盖 InputManager 单元 + TITLE 端到端（登记 mouse-callback → 首条 get-input-type → 注入**鼠标移动**/点击 → 派发跳到目标，hover handler 跑完回循环且不离开 TITLE）。
 
 > ⚠️ **hover 高亮可随光标移动并可回退**：`0x2FC` 取鼠标（op1=触点?1:0、op2/3=坐标）、`0x12E` 按脚本数据命中、`detach-texture`(0x1F7) **删单/区间图元**（hover 回退删除旧 normal）；`0x203 set-draw-color-alpha` 按引擎读 **op3=alpha、op4=color → ARGB**（修正此前误把 op3 当整色），`PixiBackend` 在无动画窗时也尊重显式设色的 alpha（`colorSet`，供 hover 叠层淡入/淡出）。

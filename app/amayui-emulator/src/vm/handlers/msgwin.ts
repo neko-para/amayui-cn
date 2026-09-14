@@ -500,7 +500,9 @@ const op_wait_for_input: OpHandler = (c) => {
  */
 const op_poll_msg_advance: OpHandler = (c) => {
   const e = c.e;
-  const mask = e.input.flush();
+  // 引擎 raw 24963：这里的 `(mask & 0x40)` 判据来自 `sub_4780D0(..., &v5)` ⇒ **实时刷**；
+  //  随后 raw 24983 的 `sub_478090` + `_this[174802]=0` = 消费刷的吸收（emulator 用 consumeEdges 等价）。
+  const mask = e.input.flushHeld();
   if ((mask & 0x40) === 0) {
     clearAdv(e);
     e.msgwin.showing = 0;

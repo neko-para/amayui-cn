@@ -7,9 +7,15 @@
 
 ## 概览
 
-共 **26** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **13** · 🚫 dropped **1**（P0 5 / P1 5）
+共 **27** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **13** · 🚫 dropped **1**（P0 5 / P1 6）
 
-按域：`emulator/frame-loop` 9 · `emulator/render` 6 · `emulator/audio` 1 · `emulator/input` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/adv` 1 · `emulator/vm` 1 · `emulator/msgwin` 1 · `emulator/test` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
+按域：`emulator/frame-loop` 9 · `emulator/render` 6 · `emulator/input` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/adv` 1 · `emulator/vm` 1 · `emulator/msgwin` 1 · `emulator/test` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
+
+## 🔜 doing（1）
+
+| id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
+|---|---|---|---|---|---|---|---|---|
+| [`T-0027`](./T-0027/ticket.json) | P1 | bug | `emulator/input` | ADV 等待推进门把「按住态」当成新按下：一次点击连翻多页、按住即每帧推进 | 6 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/input.test.ts` | `notes.md` `changes.md` `repro.md` | — |
 
 ## ⬜ open（12）
 

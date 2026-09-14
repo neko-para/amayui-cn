@@ -48,7 +48,7 @@ test('InputManager: 光标位置 / 按钮 / 按下沿 / 移动 / flush / 派发�
   im.pressJoy(3);
   assert.equal(im.hasPending(), true);
 
-  const m = im.flush();
+  const m = im.flushPending();
   assert.equal((m >> 4) & 1, 1);
   assert.equal((m >> 7) & 1, 1);
   assert.equal(m & ~((1 << 4) | (1 << 7)), 0);
@@ -59,6 +59,43 @@ test('InputManager: 光标位置 / 按钮 / 按下沿 / 移动 / flush / 派发�
   im.consumeEdges();
   assert.equal(im.pickMouseTarget(), null);
   assert.equal(im.hasPending(), false);
+});
+
+/**
+ * ★★**两把刷子**（`tickets/T-0027`）★★
+ *
+ * 引擎 `sub_478090`（消费刷）与 `sub_4780D0`（实时刷）生命周期不同：
+ *  - 消费刷只吃「挂起事件」（鼠标按下沿 / 手柄按下沿），**不含按住态** ⇒ 一次按下只能被消费一次；
+ *  - 实时刷含「此刻仍按着的」⇒ 按住期间一直为真。
+ * 等待推进泵（`serviceAdvanceWait`）必须用消费刷，否则按住左键会**每帧**翻一页。
+ */
+test('★两把刷子：flushPending 不含按住态（一次按下只有一次寿命），flushHeld 含按住态', () => {
+  const im = new InputManager();
+  im.pressMouse(0); // 左键按下（不松）
+  assert.equal(im.flushHeld() & 0x10, 0x10, '实时刷：按住 ⇒ bit4');
+  assert.equal(im.flushPending() & 0x10, 0x10, '消费刷：还没被消费过的新按下沿 ⇒ bit4');
+
+  im.consumeEdges(); // 泵消费掉这次按下（引擎：`*v2 &= ~0x10` / `_this[174802]=0`）
+  assert.equal(im.flushPending() & 0x10, 0, '★消费过之后，按住不放**不得**再出现在消费刷');
+  assert.equal(im.flushHeld() & 0x10, 0x10, '实时刷仍反映"此刻仍按着"（ADV 分支/取消键三态机要用它）');
+
+  im.releaseMouse(0);
+  assert.equal(im.flushHeld() & 0x10, 0, '松开后实时刷也清');
+  assert.equal(im.flushPending() & 0x10, 0, '松开本身不产生新的按下沿');
+});
+
+test('★按住态自愈：syncButtons 按宿主真值重建，releaseAllMouse 清全部（丢 mouseup 的兜底）', () => {
+  const im = new InputManager();
+  im.pressMouse(0); // 按下后假设 mouseup 丢失（指针移出窗口/失焦）
+  assert.equal(im.buttons, 1);
+  im.syncButtons(0); // 之后任意一次 mousemove 携带真值 e.buttons=0
+  assert.equal(im.buttons, 0, '★丢一次 mouseup 后，任意事件都能把按住态拉回真值');
+  im.pressMouse(1);
+  assert.equal(im.buttons, 2);
+  im.releaseAllMouse();
+  assert.equal(im.buttons, 0, '失焦/隐藏 ⇒ 全部释放');
+  im.syncButtons(3);
+  assert.equal(im.buttons, 3, '回到窗口后按真值重建（左+右）');
 });
 
 // ---- TITLE 端到端：派发（时间节流 get-input-type + hover 命中）----

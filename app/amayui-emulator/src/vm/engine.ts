@@ -462,7 +462,9 @@ export class Engine {
   serviceAdv(): boolean {
     const im = this.input;
     const m = this.msgwin;
-    const mask = im.flush();
+    // ★ADV 分支用**实时刷**（引擎 sub_411900 raw 20111 的 `sub_4780D0`）：含鼠标左右键的**按住态**
+    //   （set:CancelMessageKey 三态机就靠它判「已松开」）。**不要**换成 flushPending（T-0027）。
+    const mask = im.flushHeld();
     const skipBit = m.skipMirror !== 0;
 
     // 取消消息键三态机（引擎门控：GetConfig("set:CancelMessageKey")）
@@ -753,7 +755,7 @@ export class Engine {
    *
    * 逐帧顺序（**与 raw 的行序一致**）：
    * ```
-   * mask = input.flush()                                   // sub_478090 (20238)
+   * mask = input.flushPending()                           // ★sub_478090 (20238)：**消费挂起事件**
    * if (!panel.shown) return false                         // Engine[51828] != 0 (20239)
    * ① 键命中：l = panel.pickByKey(mask)                    // sub_403D70 (20242) ★第一优先出口
    *    l != -1 ⇒ guard(owner)                               // sub_4083B0 (20245)
@@ -785,7 +787,10 @@ export class Engine {
     if (!this.awaitingAdvance) return false;
     const im = this.input;
     const panel = this.routes;
-    const mask = im.flush();
+    // ★★必须是**消费刷**（引擎 raw 20238 的 `sub_478090`）：只吃「新按下事件」。
+    //   若用 `flushHeld()`（含按住态），按住左键期间本泵会**每帧**满足 `advancePressed` ⇒
+    //   每帧翻一页（用户实测：单击一次快进多页、按住就一直推进）。见 `tickets/T-0027`。
+    const mask = im.flushPending();
     if (!panel.shown) return false;
 
     // ★命中测试**只在鼠标移动过时**重做（引擎 `sub_4B8D50` raw 140827-140830 在 WM_MOUSEMOVE 里调
@@ -867,7 +872,7 @@ export class Engine {
    * 非 0 则 `输入管理器[1690] = 1` → **最后 `mask = 0`**。
    */
   eatAllInput(): void {
-    this.input.flush();
+    this.input.flushPending(); // 引擎 sub_478090（sub_4053C0 调它刷一次挂起事件）
     this.input.consumeEdges();
     this.input.consumeWheelDelta();
   }
@@ -959,12 +964,12 @@ export class Engine {
    */
   hoverDispatchAllowed(): boolean {
     // `(mask & 0x20)` = 鼠标**右**键（`sub_477150` 的 bit5）⇒ 右击时整段悬停/推进被跳过。
-    if ((this.input.flush() & 0x20) !== 0) return false;
+    if ((this.input.flushPending() & 0x20) !== 0) return false;
     const cfg = this.config;
     const wheelUp = cfg ? cfgInt(cfg, 'set:wheelkeyup', 0) : 0;
     const wheelDown = cfg ? cfgInt(cfg, 'set:wheelkeydown', 0) : 0;
     const wheelBits = (1 << (wheelUp & 31)) | (1 << (wheelDown & 31));
-    if ((this.input.flush() & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
+    if ((this.input.flushPending() & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
     if (((this.engineValues.get(TEXT_BASE_GATE) ?? 0) | 0) < 0) return true; // `i1bb 0`（0x80000000，有符号为负）⇒ 悬停
     if (!cfg) return true;
     return cfgInt(cfg, 'set:redrawtextonkey', 0) !== 1; // redraw==1 ⇒ **跳过**悬停

@@ -3,7 +3,8 @@
  *
  * 两套 bit 位**不可混用**（见 input.ts 顶部注释）：
  *  - `readButtons()`（0x108）用 bit0=左 / bit1=右；
- *  - `flush()` 生成的输入掩码（0x100/0x101）用 bit4=鼠标左 / bit5=鼠标右 / bit(4+i)=手柄 i。
+ *  - `flushPending()`/`flushHeld()` 生成的输入掩码用 bit4=鼠标左 / bit5=鼠标右 / bit(4+i)=手柄 i
+ *    （两把刷子的取舍见 `src/vm/input.ts` 的 flushPending/flushHeld 注释与 `tickets/T-0027`）。
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
@@ -79,7 +80,7 @@ const op_mouse_callback: OpHandler = (c) => {
  * 引擎里鼠标左键 = 掩码位 4 ⇒ 派发的是脚本的 `joy-callback 4`（GAMESTART 的 `label_00001338`，
  * 一进去就被 `3fb != 0` 挡回，无副作用）。
  *
- * 掩码位布局（与 `InputManager.flush()` 一致，见 `src/vm/input.ts` 的文件头）：
+ * 掩码位布局（与 `InputManager.flushPending()`/`flushHeld()` 一致，见 `src/vm/input.ts` 的文件头）：
  * `0..6` = 可配置键、`4/5` = 鼠标左/右、`4+i` = 手柄按钮 i ⇒ 鼠标左键与"手柄按钮 0"**天然别名**（引擎亦然）。
  */
 const op_joy_callback: OpHandler = (c) => {
@@ -91,8 +92,8 @@ const op_joy_callback: OpHandler = (c) => {
 
 /** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
 const op_input_reset: OpHandler = (c) => {
-  // 引擎：_this[174802]=0; sub_4780D0(键盘+鼠标)；emulator 简化为按当前按住态重建掩码
-  c.e.input.flush();
+  // 引擎（raw 24992-25006）：`_this[174802]=0; sub_4780D0(...)` ⇒ **实时刷**（含按住态）
+  c.e.input.flushHeld();
 };
 
 /**
@@ -105,10 +106,12 @@ const op_input_reset: OpHandler = (c) => {
  * （`sub_4770A0` 经 `_this[1176+VK]`）、`4/5` = 鼠标左/右（`sub_477150`）、`4+i` = 手柄按钮 i。
  *
  * ★扫描游标（`Engine[cur+122287]`）：emulator 用"消费边沿"近似"每个位只派发一次"
- * （`consumeEdges()`），因为 `flush()` 不保持 `Engine[699208]` 的持久掩码。
+ * （`consumeEdges()`），因为刷子不保持 `Engine[699208]` 的持久掩码。
  */
 const op_input_dispatch: OpHandler = (c) => {
-  const mask = c.e.input.flush();
+  // 引擎 `sub_419AF0`（0x100，raw 25009）**不调用刷子**，直接读 ADV 分支（`sub_411900` raw 20111）用
+  //   `sub_4780D0` 填好的 `_this[174802]` ⇒ 掩码含**按住态**。故这里用实时刷。
+  const mask = c.e.input.flushHeld();
   if (mask === 0) return; // 无输入，落回（引擎 raw 25050-25052 的 else 分支：压返回点 +1 后弹回）
   let b = 0;
   while (b < 32 && ((mask >> b) & 1) === 0) b++;
@@ -124,7 +127,8 @@ const op_input_dispatch: OpHandler = (c) => {
 
 /** 0x101 (poll-input, sub_419CC0)：刷掩码后复位（清待处理输入）。 */
 const op_poll_input: OpHandler = (c) => {
-  c.e.input.flush();
+  // 引擎 raw 25068-25074：`sub_478090(...)` 后 `*v2 = 0` ⇒ **消费刷**（挂起事件，不含按住态）
+  c.e.input.flushPending();
   c.e.input.consumeEdges();
 };
 

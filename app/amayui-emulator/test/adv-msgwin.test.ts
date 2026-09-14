@@ -225,6 +225,67 @@ test('等待推进门：无输入时不放行；有鼠标按下沿时放行并�
   assert.equal(e.awaitingAdvance, false);
 });
 
+/**
+ * ★★**按住左键不得每帧推进**（`tickets/T-0027`）★★
+ *
+ * 引擎的等待推进泵 `sub_411BC0`（raw 20238）用的是**消费刷** `sub_478090`（吸取挂起事件、读后清零），
+ * 其调用链 `sub_477130`/`sub_477280`/`sub_4774F0`/`sub_477C30` 里**没有** `sub_477150`
+ * （鼠标左右键的实时按住态）⇒ **一次按下只推进一页**。
+ * ADV 分支 `sub_411900`（raw 20111）才用实时刷 `sub_4780D0`。
+ *
+ * 用户实测症状（macOS + jp 资源）：ADV 里一次普通单击就快进很多页文案，按住更是停不下来。
+ * 根因 = emulator 只有一把 `flush()`（把 `buttons` 按住态也 OR 进掩码），等待泵吃它 ⇒ 按住期间每帧放行。
+ */
+test('★等待推进门只吃「挂起事件」：按住左键不放也只推进一页（sub_478090 ≠ sub_4780D0）', () => {
+  const { e, step } = mk();
+  showPanel(step);
+  step(0x72, [im(0)]);
+  moveAndClick(e, 10, 10); // setCursor + pressMouse(0)：**按下后不松**
+  let advanced = 0;
+  for (let frame = 0; frame < 10; frame++) {
+    if (e.awaitingAdvance && e.serviceAdvanceWait()) advanced++;
+    // 引擎里点击 label 末尾 `ret` 后**重跑门指令**（adv-advance-route-table ②）⇒ 每帧重新挂起
+    step(0x72, [im(0)]);
+  }
+  assert.equal(advanced, 1, '★按住 10 帧只应推进 1 页（旧实现在这里会放行 10 次 ⇒ 一次点击快进多页）');
+});
+
+test('★等待推进门：down+up 落在同一帧也不丢（消费刷保留按下沿，但要恰好推进一次）', () => {
+  const { e, step } = mk();
+  showPanel(step);
+  step(0x72, [im(0)]);
+  e.input.setCursor(10, 10);
+  e.input.pressMouse(0);
+  e.input.releaseMouse(0); // 快速点击：up 在泵看到之前就到了
+  assert.equal(e.serviceAdvanceWait(), true, '同一帧的快速点击不得整次丢弃');
+  assert.equal(e.awaitingAdvance, false);
+  let advanced = 0;
+  for (let frame = 0; frame < 5; frame++) {
+    if (e.awaitingAdvance && e.serviceAdvanceWait()) advanced++;
+    step(0x72, [im(0)]);
+  }
+  assert.equal(advanced, 0, '按下沿已被消费 ⇒ 后续帧不得再放行');
+});
+
+test('★ADV 分支仍吃「实时按住态」（sub_4780D0）：set:CancelMessageKey 下按住 ⇒ 三态机进 stage2', () => {
+  const { e, step } = mk();
+  e.config = {
+    values: new Map([['set:cancelmessagekey', '1']]),
+    sections: [],
+    order: new Map(),
+  } as unknown as Engine['config'];
+  step(0x71, [im(1)]); // 置 ADV
+  e.msgwin.skipMode = 1;
+  e.msgwin.showing = 1; // 让 serviceAdv 不停在"显示完"那一支
+  e.input.consumeEdges();
+  e.input.buttons = 0; // 未按住
+  e.serviceAdv();
+  assert.equal(e.msgwin.cancelStage, 1, '未按住 ⇒ stage1');
+  e.input.buttons = 1; // ★只置"按住态"，没有任何新按下沿
+  e.serviceAdv();
+  assert.equal(e.msgwin.cancelStage, 2, '★仍按住（实时刷）⇒ stage2 —— 若 serviceAdv 改用消费刷会永远停在 stage1');
+});
+
 test('ADV 每帧服务：未显示完判定成立时清掉 ADV（位不会永久卡住）', () => {
   const { e, step } = mk();
   step(0x88, [im(1)]);

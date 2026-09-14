@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 28 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `modeled-verified` | 29 | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 25 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **55** |
+| **合计** | **108** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
@@ -105,7 +105,7 @@
 | `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-text-object` | 消息窗 | 文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
+| `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |

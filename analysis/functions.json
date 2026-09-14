@@ -6926,6 +6926,45 @@
     "fields_used": ["Engine[5450](= obj[259])", "Engine[5451](= obj[260])", "Engine[5449](= obj[258])"],
     "evidence": "raw 24627-24631（handler）；sub_4380F0 raw 45095-45103（实现）",
     "notes": "定点常数 `274877907 / 2^38 = 1/1000.0000009…`（引擎自己的近似）。语料 0 处。★2026-09 A5 落地：emulator `handlers/engine-fields.ts` 的 `op_seconds_timer` —— 用 `BigInt` 复刻 64 位定点乘（`Number((274877907n * BigInt(nowMs)) >> 38n)`），避免 JS 双精度在 2^59 量级丢位。 ★2026-09 A5 落地：emulator `op_seconds_timer` —— `engineValues[5450] ← [5451]`、`engineValues[5449] ← Number((274877907n * BigInt(nowMs)) >> 38n)`（BigInt 复刻 64 位定点乘，避免双精度丢位）。"
+  },
+  {
+    "addr": "0x411BC0",
+    "raw_name": "sub_411BC0",
+    "semantic_name": "advWaitPump_411BC0",
+    "status": "PARTIAL",
+    "purpose": "ADV/消息「等待推进」泵：`effect_flags & 0x80000000` 期间主循环每帧调它。★★开头用**消费刷** `sub_478090`（吸取挂起事件、读后清零）——不是 ADV 分支 `sub_411900` 用的实时刷 `sub_4780D0` ⇒ **一次鼠标按下只推进一页，按住不放不会连续推进**（emulator 曾把两把刷子合成一把，导致单击快进多页，见 tickets/T-0027）。顺序：刷挂起事件 → ①键命中 `sub_403D70`（第一优先）→ ②推进输入 `(mask&0x50)` 或滚轮键（配置门）→ ③悬停 `sub_403E70` 两段式。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["sub_478090(Engine+1032, Engine+699208)：消费刷（挂起事件，读后清；内部无 sub_477150 实时按住态）", "门控：Engine[51828]（panelA 已显示）为 0 ⇒ 什么都不做", "①键命中 sub_403D70：sub_4083B0 脚本身份守卫 → set:ControlDisibleCursor 未置则 sub_4051A0 收尾逐字 → sub_4053C0 吃掉输入 → 清 0x80000000 → sub_405360(Engine,-3) 压返回点 + ip += 4*labelC → [7466]=0/[7468]=-1", "②推进输入：`(mask&0x50)` 或 (滚轮键位 & mask) 且 !(effect_flags&0x100000) 且 message:AdvanceMesOnWheel&1", "②收尾：bit30(0x40000000 逐字中) 且 !0x100000 ⇒ sub_45A940(Font,窗,-2,0)；清 bit30", "②命中分支：`(mask&0x10) && Engine[51828] && Engine[51848]>=0 && Engine[23008]>游标` ⇒ 守卫 + 压 -3 + ip += 4*sub_404E00（labelC）", "②无命中分支：sub_48E870/sub_48EB30 在**消息窗对象内**推进文本（不动脚本 ip）", "②末尾：`(mask&0x40)` ⇒ 置 0x8000000 + 掩码清 0；最后 `*mask &= ~0x10`（★这一次按下到此为止）", "③悬停（`(mask&0x20)==0` 才进）：滚轮键门 + Engine[388220]>=0 + set:ReDrawTextOnKey==1 ⇒ 跳过；否则 sub_403E70 给 label → 守卫 + 压 -3 + ip += 4*label + 清 bit31 + sub_4051A0", "③右键分支（`mask&0x20`）：掩码清 0；Engine[4*cur+489488]（0x7C 登记的取消/跳读）== -1 ⇒ 直接 return；否则置 0x6000000 并改写 effect_flags/返回点", "LABEL_44 尾部：Engine[388208] 非 0 时才跑自动消息计时器（sub_453BC0/sub_453BD0/sub_453A60）与 sub_453AF0 自动推进"],
+    "fields_used": ["Engine+699208(输入掩码 _this[174802])", "Engine+699204(effect_flags)", "Engine+51828(panelA 显示位)", "Engine+51848(命中游标)", "Engine+23008(热点条目数)", "Engine+21976(路由表基址 0x55D8)", "Engine+388220", "Engine+489488(取消/跳读 label)", "Engine+697620(config)"],
+    "unmodeled": ["sub_48E870/sub_48EB30（消息窗内文本推进）未分析", "sub_453BC0/sub_453BD0/sub_453A60/sub_453AF0 自动消息计时器未分析", "0x7C 的取消/跳读通路（Engine+489488 区）未分析", "Engine+388208/51828/51848/23008/388220/489488 未进 fields.json"],
+    "evidence": "raw 20206-20461",
+    "notes": "与 opcode-table 的 0x72/0xFA/0x101 同族：0xFA 会置 0x80000000 把主循环引到这里。emulator 的等价物 = Engine.serviceAdvanceWait()（src/vm/engine.ts），它**必须**用 InputManager.flushPending()（= sub_478090）而不是 flushHeld()（= sub_4780D0）——见 tickets/T-0027 与第二层 adv-input-pump-perframe。"
+  },
+  {
+    "addr": "0x478090",
+    "raw_name": "sub_478090",
+    "semantic_name": "inputBrushPending_478090",
+    "status": "ANALYZED",
+    "purpose": "★**消费刷**（吸取累计/挂起事件，读后清零）—— 与实时刷 sub_4780D0 相对。调用链里**没有** sub_477150（鼠标左右键的实时按住态）⇒ 鼠标左键的掩码位 bit4 只来自「按下事件累加器」，**一次按下只有一次寿命**。",
+    "signature_override": { "param0": "this(InputManager*)", "param1": "out_mask(uint32*)" },
+    "sub_behaviors": ["sub_477130(_this, a2)：*a2 |= _this[1159]（键按下挂起累加器）; _this[1159] = 0", "sub_477280(v3, a2)：消费手柄按钮挂起 _this[1158]，逐位 |= 1<<(_this[1125+i]+4) 并清该位", "sub_4774F0(_this, 0, a2)：手柄 POV/摇杆（含按下保持 _this[4*dev+4640]）", "sub_477C30(_this, a2)：*a2 |= _this[1710]（按钮/触摸累加器）; _this[1710] = 0", "_this[1157] 非 0 ⇒ *a2 |= 0x40（强制「确定/默认」位）"],
+    "fields_used": ["InputManager+1157", "InputManager+1158", "InputManager+1159", "InputManager+1710", "InputManager+1125+i", "InputManager+4*dev+4640"],
+    "unmodeled": [],
+    "evidence": "raw 92449-92463",
+    "notes": "调用方（全在 Engine 侧）：等待推进泵 sub_411BC0(raw 20238)、poll-input 0x101(sub_419CC0 raw 25069)、0xFA 后半(sub_4199B0 raw 24983)、eatAllInput sub_4053C0(raw 11052)、以及 raw 13934/13981/14064/18058/20001/20862 等消息/文本路径。emulator 对应物 = InputManager.flushPending()。"
+  },
+  {
+    "addr": "0x4780D0",
+    "raw_name": "sub_4780D0",
+    "semantic_name": "inputBrushHeld_4780D0",
+    "status": "ANALYZED",
+    "purpose": "★**实时刷**（读此刻仍按着的）—— 主循环帧循环用（ADV 分支 sub_411900 raw 20111、0xFF raw 25004、0xFA 前半 raw 24963）；含 sub_477150 的鼠标左右键**实时按住态** bit4/bit5。",
+    "signature_override": { "param0": "this(InputManager*)", "param1": "out_mask(uint32*)" },
+    "sub_behaviors": ["sub_4770A0(_this, a2)：键盘 GetAsyncKeyState 轮询（_this[1688] 开）→ mask |= 1<<_this[1176+VK]", "sub_477150(_this, a2)：鼠标左右键**实时按住态**（SM_SWAPBUTTON 可互换）⇒ 默认左 bit4 / 右 bit5", "sub_4772E0(_this, 0, a2)：手柄实时态（joyGetPosEx + POV）", "sub_477C50(_this, a2)：手势/备用设备位"],
+    "fields_used": ["InputManager+1688", "InputManager+1176+VK", "InputManager+1125/1126", "InputManager+1700/1711"],
+    "unmodeled": [],
+    "evidence": "raw 92465-92471",
+    "notes": "与 sub_478090 共用位约定（mouse bit4/5、手柄 bit(4+i)）但生命周期相反：读它不改任何状态，按住期间每帧都为真。emulator 对应物 = InputManager.flushHeld()。★使用场景绝不能互换（见 tickets/T-0027）。"
   }
 
 ]
