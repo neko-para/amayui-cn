@@ -1,21 +1,16 @@
 {
   "id": "T-0023",
   "type": "analysis",
-  "status": "open",
+  "status": "dropped",
   "priority": "P3",
   "area": "engine/opcodes",
   "title": "把 88 条\"md 已核对但数据层没有条目\"的 opcode 语义回填 analysis/（按族推进）",
-  "why": "CONTEXT.md 登记：241 条已核对里 88 条只活在 md 里，数据层查不到 ⇒ report.js --op / 能力缺口判定会漏掉它们。回填时每条仍要照 raw 复读一遍，不做\"从 md 抄进 JSON\"。",
+  "why": "本单原依据 CONTEXT.md 的登记（241 条已核对里 88 条只活在 md 里、数据层查不到）。CONTEXT.md 已被移除，其登记内容判定为过时信息 ⇒ 本单关闭。若将来仍要回填 opcode 语义，另开新单，直接以 analysis/ 与 md 现状为准。",
   "acceptance": [
     "按族回填（先消息窗/ADV 的 38 条），每条带 raw 行号与 status",
     "report.js --summary 的条数增长可核对；不回填\"从 md 抄\"的条目"
   ],
   "evidence": [
-    {
-      "file": "CONTEXT.md",
-      "anchor": "88 条",
-      "note": "问题登记（含族分布）"
-    },
     {
       "file": "analysis/functions.json",
       "anchor": "addr",
@@ -26,6 +21,19 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → dropped —— CONTEXT.md（本单唯一依据）已被移除、内容判定为过时信息（用户 2026-09-14 确认）⇒ 关单；不补历史票，将来若要回填另开新单"
     }
-  ]
+  ],
+  "droppedWhy": "CONTEXT.md（本单唯一依据）已被移除、内容判定为过时信息（用户 2026-09-14 确认）⇒ 关单；不补历史票，将来若要回填另开新单"
 }

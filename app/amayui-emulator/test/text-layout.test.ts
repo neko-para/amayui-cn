@@ -205,6 +205,25 @@ test('面名映射：剥竖排 "@" 前缀 + 未知面名回退并标记', () => 
   assert.equal(unk.unknown, true);
 });
 
+test('★resources.version=jp：日文面名落到未做 cnjp 替换的更纱黑体；Amayui CN 在 jp 下是错误配置', () => {
+  // 纯日文资源用 `Amayui CN`（cmap 把日文写法码位换成简体字形）会把原文也换成简体 ⇒ 必须换基底。
+  for (const face of ['ＭＳ ゴシック', '@ＭＳ ゴシック', 'メイリオ', 'ＭＳ 明朝', '游ゴシック', 'MS Gothic', 'Meiryo']) {
+    const r = resolveFace(face, 'jp');
+    assert.equal(r.family, 'Sarasa Gothic SC', `${face} 在 jp 下应落到更纱黑体`);
+    assert.equal(r.unknown, false, `${face} 是已知面名`);
+  }
+  // 未知面名在 jp 下回退到 jp 的默认字族（不是 Amayui CN）
+  assert.equal(resolveFace('存在しないフォント', 'jp').family, 'Sarasa Gothic SC');
+  assert.equal(resolveFace('存在しないフォント', 'jp').unknown, true);
+  // 显式 cnjp / 省略 version（默认）都保持现状
+  assert.equal(resolveFace('メイリオ', 'cnjp').family, 'Amayui CN');
+  assert.equal(resolveFace('メイリオ').family, 'Amayui CN');
+  // ★jp 下请求 `Amayui CN` = 错误配置（该面名只因汉化而存在）：**不做特殊处理** ⇒ 通用回退
+  const mis = resolveFace('Amayui CN', 'jp');
+  assert.equal(mis.family, 'Sarasa Gothic SC');
+  assert.equal(mis.unknown, true, '走"表里没有 ⇒ 回退 + 记一次日志"的通用路径，不特判');
+});
+
 test('★字重解析：有真 Bold 面就用它（700 按 700 注册）；没有则退回 Regular 的 400 面', () => {
   // `Amayui CN` 2026-09 起有真 Bold 面（docs/font-build.md §8.7）⇒ 请求 700 = 真粗体，不再靠浏览器合成
   assert.deepEqual(fontFaceFor('Amayui CN', 700), { file: 'Amayui-CN_cnjp-Bold.ttf', weight: 700 });

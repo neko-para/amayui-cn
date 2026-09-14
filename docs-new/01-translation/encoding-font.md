@@ -16,6 +16,12 @@
 
 > **当前基底 = Sarasa Gothic SC**（更纱黑体 SC，OFL，官方 TTF 1.0.40，约 24MB；2026-08 起替换原 WenQuanYi 微米黑，见 `../00-overview/authority.md`）。
 
+> **emulator 侧分叉（T-0026）**：跑**纯日文资源**（`raw/`）时不要用 `Amayui CN` —— 它的 cmap 是
+> 为 SJIS 占位编码服务的（日文写法码位 → 简体字形），会把原文的日文码位也换成简体。
+> `emulator.config.json` 的 `resources.version` 控制这一点：`jp` → 未做 cnjp 替换的
+> `res/fonts/SarasaGothicSC`（正是 `Amayui CN` 的基底）；`cnjp` → `Amayui CN`。
+> 见 `../04-app/emulator.md` §8。
+
 | 文件 | 说明 |
 |---|---|
 | `res/fonts/Amayui-CN_cnjp.ttf` | **当前分发字体**（Sarasa SC 基底 cnjp 替换版，族名 Amayui CN，声明 Shift-JIS 932 码页，23MB） |

@@ -3,7 +3,8 @@
  * `src/emulatorOptionsFile.ts`（node-only 读取）。
  *
  * 背景（用户要求）：跑回归/截图时 `SYSTEM4 → LOGO → INIT → TITLE` 里的 LOGO（版权页 + LOGO.MPG）
- * 纯粹是等待 ⇒ 需要一个"当作版权页已经看过"的开关。目前**只有一个选项** `boot.showLogo`。
+ * 纯粹是等待 ⇒ 需要一个"当作版权页已经看过"的开关。选项有两节：`boot.showLogo` 与
+ * `resources`（`version` = 资源版本 → 字体策略；`path` = 资源根，相对 config 所在目录）。
  *
  * 引擎依据（`docs-new/03-engine/flow-control.md` §10）：
  *  - `load-show-logo`(0x130) `sub_42F7A0` 把 `_this[96983]` 写回操作数（raw 39346）；
@@ -26,10 +27,14 @@ import {
   EMULATOR_OPTIONS_ENV,
   EMULATOR_OPTIONS_FILE,
   LOGO_FLAG_FIELD,
+  RESOURCE_VERSIONS,
   applyEmulatorOptions,
+  applyEmulatorOptionsToEngine,
+  normalizeEmulatorOptions,
   parseEmulatorOptions,
 } from '../src/emulatorOptions.js';
-import { describeEmulatorOptions, emulatorOptionsOf, loadEmulatorOptions, resolveOptionsPath } from '../src/emulatorOptionsFile.js';
+import { describeEmulatorOptions, emulatorOptionsOf, loadEmulatorOptions, resolveOptionsPath, resourceDirOf } from '../src/emulatorOptionsFile.js';
+import { RESOURCE_DIR_ENV, decideResourceDir, describeResourcesLine } from '../src/arch/resourceDir.js';
 import { Engine } from '../src/vm/engine.js';
 import { StubNative } from '../src/vm/stubNative.js';
 import { InputManager } from '../src/vm/input.js';
@@ -230,3 +235,121 @@ test('E3：showLogo=false ⇒ scriptTrail 不含 LOGO，且仍到达 SN0000 首�
 
 // ★"默认会经过 LOGO"的反向断言不在这里再跑一遍 —— `test/game-start-chain.test.ts` 的 E3 已经跑了一次
 //   默认链路，那条断言就加在那里（省一次 ~3.7s 的整链运行）。
+
+// ---------------------------------------------------------------------------
+// T-0026 `resources` 段：version（字体策略） + path（资源根，共用前缀）
+// ---------------------------------------------------------------------------
+
+test('resources 默认值 = 当前行为：version=cnjp、path 缺省（⇒ install/）', () => {
+  assert.equal(DEFAULT_EMULATOR_OPTIONS.resources.version, 'cnjp', '默认资源根 install/ = 汉化版 ⇒ cnjp');
+  assert.equal(DEFAULT_EMULATOR_OPTIONS.resources.path, undefined);
+  assert.deepEqual([...RESOURCE_VERSIONS], ['jp', 'cnjp']);
+  const r = parseEmulatorOptions('{}');
+  assert.equal(r.options.resources.version, 'cnjp');
+  assert.equal(r.options.resources.path, undefined);
+});
+
+test('parseEmulatorOptions：resources.version 两值合法、path 收非空字符串；两节可只给一个', () => {
+  const jp = parseEmulatorOptions('{"resources":{"version":"jp"}}');
+  assert.equal(jp.options.resources.version, 'jp');
+  assert.deepEqual(jp.problems, []);
+  const cn = parseEmulatorOptions('{"resources":{"version":"cnjp","path":"raw"}}');
+  assert.equal(cn.options.resources.version, 'cnjp');
+  assert.equal(cn.options.resources.path, 'raw');
+  assert.deepEqual(cn.problems, []);
+  // 只给 boot ⇒ resources 取默认；只给 resources ⇒ boot 取默认（早前的实现在 boot 缺省时会直接 return）
+  assert.equal(parseEmulatorOptions('{"boot":{"showLogo":false}}').options.resources.version, 'cnjp');
+  assert.equal(parseEmulatorOptions('{"resources":{"version":"jp"}}').options.boot.showLogo, true);
+});
+
+test('parseEmulatorOptions：非法 resources → problem + 默认值（不许静默）', () => {
+  const badVersion = parseEmulatorOptions('{"resources":{"version":"JP"}}');
+  assert.equal(badVersion.options.resources.version, 'cnjp', '大小写不匹配 ⇒ 默认值');
+  assert.match(badVersion.problems.join(' '), /"resources\.version" 必须是 "jp"\/"cnjp"/);
+
+  const emptyPath = parseEmulatorOptions('{"resources":{"path":"   "}}');
+  assert.equal(emptyPath.options.resources.path, undefined);
+  assert.match(emptyPath.problems.join(' '), /"resources\.path" 必须是非空字符串/);
+
+  const notObject = parseEmulatorOptions('{"resources":"jp"}');
+  assert.equal(notObject.options.resources.version, 'cnjp');
+  assert.match(notObject.problems.join(' '), /"resources" 必须是对象/);
+
+  assert.match(parseEmulatorOptions('{"resources":{"ver":"jp"}}').problems.join(' '), /未知键 "resources\.ver"/);
+  assert.match(parseEmulatorOptions('{"fonts":{}}').problems.join(' '), /未知顶层键 "fonts"/);
+});
+
+test('★normalizeEmulatorOptions：半份选项（历史写法只有 boot）补全为合法完整选项', () => {
+  // 测试/库调用方手写的 `{ boot: { showLogo: false } }` 不走 tsc（test/ 被 tsconfig 排除）
+  // ⇒ 消费端一律先 normalize，避免"少一个节"变成运行时崩溃。
+  const n = normalizeEmulatorOptions({ boot: { showLogo: false } });
+  assert.equal(n.boot.showLogo, false);
+  assert.equal(n.resources.version, 'cnjp');
+  assert.equal(n.resources.path, undefined);
+  assert.deepEqual(normalizeEmulatorOptions(undefined), DEFAULT_EMULATOR_OPTIONS);
+  assert.equal(normalizeEmulatorOptions({ resources: { version: 'nope' } }).resources.version, 'cnjp');
+  assert.equal(normalizeEmulatorOptions({ resources: { path: '  ' } }).resources.path, undefined);
+});
+
+test('applyEmulatorOptionsToEngine：resources.version 落到 Engine.resourceVersion（含可核对日志）', () => {
+  const e = new Engine(new StubNative(() => {}), new InputManager());
+  assert.equal(e.resourceVersion, 'cnjp', 'Engine 构造默认 = 当前行为');
+  const lines = applyEmulatorOptionsToEngine(e, parseEmulatorOptions('{"resources":{"version":"jp"}}').options);
+  assert.equal(e.resourceVersion, 'jp');
+  assert.match(lines.join(' '), /resources\.version=jp/);
+  // 半份输入也不崩（内部走 normalize），并回到默认策略
+  applyEmulatorOptionsToEngine(e, { boot: { showLogo: true } });
+  assert.equal(e.resourceVersion, 'cnjp');
+});
+
+test('decideResourceDir：CLI > 环境变量 > resources.path > 默认 install/（各来源基准正确）', () => {
+  const R = path.resolve('/repo');
+  const CFG = path.resolve('/elsewhere/cfg');
+  const NO_ENV = {} as NodeJS.ProcessEnv;
+
+  const d0 = decideResourceDir(R, { env: NO_ENV });
+  assert.equal(d0.dir, path.join(R, 'install'));
+  assert.equal(d0.source, 'default');
+
+  const d1 = decideResourceDir(R, { env: NO_ENV, configResourcePath: 'raw', configDir: CFG });
+  assert.equal(d1.dir, path.join(CFG, 'raw'), '相对基准 = config 所在目录');
+  assert.equal(d1.source, 'config');
+
+  const abs = path.resolve('/abs/res');
+  assert.equal(decideResourceDir(R, { env: NO_ENV, configResourcePath: abs, configDir: CFG }).dir, abs, '绝对路径直接采用');
+
+  const d3 = decideResourceDir(R, { env: { [RESOURCE_DIR_ENV]: 'raw' } as NodeJS.ProcessEnv, configResourcePath: 'other', configDir: CFG });
+  assert.equal(d3.dir, path.join(R, 'raw'));
+  assert.equal(d3.source, 'env', '环境变量压过 resources.path');
+
+  const d4 = decideResourceDir(R, {
+    cli: 'install',
+    env: { [RESOURCE_DIR_ENV]: 'raw' } as NodeJS.ProcessEnv,
+    configResourcePath: 'other',
+    configDir: CFG,
+  });
+  assert.equal(d4.dir, path.join(R, 'install'));
+  assert.equal(d4.source, 'cli', 'CLI 压过一切');
+  assert.equal(decideResourceDir(R, { cli: '   ', env: NO_ENV }).source, 'default', '空白 = 未设置');
+});
+
+test('resourceDirOf：resources.path 的相对基准 = 生效的 config 文件所在目录（AMAYUI_EMULATOR_CONFIG 换路径时随之改变）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'amayui-res-'));
+  try {
+    const cfgDir = path.join(dir, 'cfg');
+    fs.mkdirSync(cfgDir);
+    fs.writeFileSync(path.join(cfgDir, EMULATOR_OPTIONS_FILE), '{"resources":{"version":"jp","path":"raw"}}', 'utf8');
+    const loaded = loadEmulatorOptions(cfgDir, {} as NodeJS.ProcessEnv);
+    assert.equal(loaded.path, path.join(cfgDir, EMULATOR_OPTIONS_FILE));
+    const d = resourceDirOf(loaded, path.resolve('/repo'), { env: {} as NodeJS.ProcessEnv });
+    assert.equal(d.dir, path.join(cfgDir, 'raw'), '基准 = config 所在目录，不是仓库根');
+    assert.equal(d.source, 'config');
+    // ★验收：同一行同时打印 path 与 version（防"换了 path 忘改 version"）
+    const line = describeResourcesLine(loaded.options, d);
+    assert.match(line, /version=jp/);
+    assert.match(line, /path=.*raw/);
+    assert.match(line, /来源=config: raw/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

@@ -171,6 +171,15 @@ export class Engine {
    *    renderer 在 boot 前调用 applyConfigToEngine。`field` 一律是 dword 下标（= handler 的 `_this[K]` 空间）。 */
   engineValues = new Map<number, number>([[96983, 1]]);
 
+  /**
+   * **字体面名解析策略**：这套资源是纯日文（`jp`）还是 ShiftJIS 编码的中文（`cnjp`）。
+   *
+   * 由 `emulator.config.json` 的 `resources.version` 决定（`applyEmulatorOptionsToEngine` 写入），
+   * `resolveFace` 按它选面名表（见 `src/text/fontSet.ts`）。默认 `cnjp` = 当前行为。
+   * ★这里**不是**引擎字段（真引擎没有这个概念），所以不放 `engineValues`。
+   */
+  resourceVersion: import('../emulatorOptions.js').ResourceVersion = 'cnjp';
+
   /** 启动加载的 SYS4REG.INI 解析结果（未加载时 null）。供 opcode 直接读键（如 0x131 读 `message:MesWinAlpha`）。 */
   config: import('../engineConfig.js').EngineConfig | null = null;
 

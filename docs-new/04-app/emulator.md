@@ -217,22 +217,43 @@ npm run save:dump      # SAVE.DAT 解析
   也不该让"我改了它"变成"别人跑不过测试"（2026-09 由守卫误报发现并修正）。
 - **路径**：默认 `<仓库根>/emulator.config.json`；可用环境变量 **`AMAYUI_EMULATOR_CONFIG`** 换成任意路径
   （绝对值，或相对仓库根）—— 例：`$env:AMAYUI_EMULATOR_CONFIG='.tmp/opt-skip-logo.json'`。
-- **目前的全部选项**：
+- **目前的全部选项**（两节：`boot` / `resources`）：
 
 | 键 | 类型 | 默认 | 含义 |
 |---|---|---|---|
 | `boot.showLogo` | boolean | `true` | `false` = **启动时预设 LOGO 显示标记**（`_this[96983] = 0`）⇒ cold boot **不进** `LOGO.txt`（版权页 + `LOGO.MPG`），`SYSTEM4` 直接落到 `INIT → TITLE` |
+| `resources.version` | `"jp"` \| `"cnjp"` | `"cnjp"` | **这套资源是哪一版**，决定字体面名解析策略：`cnjp`（ShiftJIS 编码的中文资源）→ `Amayui CN`；`jp`（纯日文资源）→ 未做 cnjp 替换的**更纱黑体** `res/fonts/SarasaGothicSC` |
+| `resources.path` | string（可省） | 无（⇒ `install/`） | **资源根在哪**；相对路径以**生效的 config 文件所在目录**为基准，绝对路径直接采用 |
 
 - **为什么"预设标记"就是正确的跳过方式**：`load-show-logo`(0x130) 读 `_this[96983]`（`sub_42F7A0` raw 39346），
-  `src/SYSTEM4.txt:144-146` 据此 `jcc`；置 0 的正是 LOGO 自己的 `exit`（`exit-script` `sub_428A60` raw 35207）
+  `src/SYSTEM4.txt:144-146` 据此 `jcc`；置 0 的正是 LOGO 自己的 `exit`（`exit-script` sub_428A60 raw 35207）
   与「GAMEOVER 回标题」走的路径 ⇒ 不是自造旁路。详见 `../03-engine/flow-control.md` §10。
 - **实测收益**：TITLE 之后第一帧的 renderer 时钟 **6333ms → 922ms**（省 ≈5.4s；wall 41.5s → 37.0s，
   含 electron 构建），日志里 `-> LOGO.BIN` 消失而 GAMESTART/SN0000 照常到达。
 - **刻意的近似**：真机播 LOGO 时 `SYSTEM4` 的 `ip0..143` 会跑两遍（LOGO 的 `exit` 重载根脚本再跑一遍），
   预设 0 时只跑一遍；这些指令是赋值/建表，实测链路完整（`test/emulator-options.test.ts` 断言仍到达
   SN0000 首文案 ip=901）。若某天发现"少跑一遍"有副作用，就在能力台账登记后改成"跑一遍再跳"。
-- **不该被它影响的**：`npm test` —— 库入口一律 `opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS`，
-  只有 CLI 入口（`run.ts` / `report.ts` / `opInventory.ts` / `diagText.ts` / Electron `boot.ts`）才读文件。
+
+### `resources` 段（T-0026）：版本决定字体、路径决定资源根
+
+- **为什么需要 `resources.version`**：字体策略（`src/text/fontSet.ts`）原先只有**一条 cnjp 政策** ——
+  所有引擎面名都落到 `Amayui CN`。那是**为 SJIS 占位编码服务的**字体（cmap 把日文写法码位换成简体字形，
+  见 `../01-translation/encoding-font.md`）⇒ 拿它跑**纯日文资源**会把原文的日文码位也换成简体
+  （`说/説`、`为/為` 同形替换肉眼可见），且**不报错、只是显示不对**。`jp` 改走
+  `res/fonts/SarasaGothicSC`（正是 `Amayui CN` 的**基底**，只差没做 cmap 替换；仍**不依赖 OS 字体**）。
+  落点：`Engine.resourceVersion`（`applyEmulatorOptionsToEngine` 写入）→ `msgwin` 的两个 `resolveFace` 调用。
+- **`jp` 下请求 `Amayui CN` 面名**：**错误配置**（该面名只因汉化而存在）；**不做特殊处理**，
+  走通用回退（默认字族 + 一条 `unknown` 日志）。
+- **资源根优先序**（唯一权威 = `src/arch/resourceDir.ts` 的 `decideResourceDir`）：
+  `CLI --resources` > `AMAYUI_RESOURCE_DIR` > `resources.path` > 默认 `install/`。
+  环境变量/CLI 是单次调用的临时覆盖（既有用法照旧），配置里的是持久默认值。
+- **两个键独立、必须配套**：换路径**不会**自动换版本（路径名不可靠，不做猜测）⇒ 入口把两者
+  **同一行**打进日志（`resources: version=… path=…（来源=…）`），让"换了 `path` 忘改 `version`"当场可见。
+- **`resources.path` 的相对基准 = 生效的 config 文件所在目录**（不是仓库根、不是 cwd）：
+  `AMAYUI_EMULATOR_CONFIG` 把 options 文件指到别处时基准随之改变（`resourceDirOf` 用 `path.dirname(loaded.path)`）。
+  库入口（`runGameStartChain` 等）**不读** config 文件，只认显式 `resourceDir` / 传进来的 `emulatorOptions`。
+- **不该被它影响的**：`npm test` —— 库入口一律 `normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS)`，
+  只有 CLI 入口（`run.ts` / `report.ts` / `opInventory.ts` / `diagText.ts` / Electron 主进程 `paths.ts`）才读文件。
   守卫：`test/emulator-options.test.ts`「库入口不得 import node-only 读取模块」+ `test/game-start-chain.test.ts`
   断言默认仍经过 LOGO。**新增选项时**：同步更新本表 + `src/emulatorOptions.ts` 文件头的表 + 在
   `test/emulator-options.test.ts` 加一条（拼错的键必须报 problem，不许静默）。

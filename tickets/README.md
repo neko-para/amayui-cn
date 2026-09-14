@@ -7,11 +7,11 @@
 
 ## 概览
 
-共 **25** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **13** · ✅ done **12** · 🚫 dropped **0**（P0 5 / P1 5）
+共 **26** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **13** · 🚫 dropped **1**（P0 5 / P1 5）
 
-按域：`emulator/frame-loop` 9 · `emulator/render` 5 · `emulator/audio` 1 · `emulator/input` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/adv` 1 · `emulator/vm` 1 · `emulator/msgwin` 1 · `emulator/test` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
+按域：`emulator/frame-loop` 9 · `emulator/render` 6 · `emulator/audio` 1 · `emulator/input` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/adv` 1 · `emulator/vm` 1 · `emulator/msgwin` 1 · `emulator/test` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
 
-## ⬜ open（13）
+## ⬜ open（12）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -26,10 +26,9 @@
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | — | — | — |
 | [`T-0022`](./T-0022/ticket.json) | P3 | tooling | `repo` | 跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等） | 2 | — | — | — |
-| [`T-0023`](./T-0023/ticket.json) | P3 | analysis | `engine/opcodes` | 把 88 条"md 已核对但数据层没有条目"的 opcode 语义回填 analysis/（按族推进） | 2 | — | — | — |
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | — | `notes.md` | — |
 
-## ✅ done（12）
+## ✅ done（13）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -44,7 +43,14 @@
 | [`T-0011`](./T-0011/ticket.json) | P1 | bug | `emulator/frame-loop` | 两份 chain 无条件清 0x400 且从不推进动画窗 ⇒ E3 证据与产品路径不同源 | 2 | — | — | T-0001 |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0013`](./T-0013/ticket.json) | P2 | refactor | `emulator/hosts` | 宿主能力面入桥：needsRender / animationsDone / preloadImage 不在 NativeBridge 也不在 nativeT… | 2 | `app/amayui-emulator/test/native-tap.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0026`](./T-0026/ticket.json) | P2 | req | `emulator/render` | emulator.config.json 增加 resources 段（共用前缀）：resources.version（jp/cnjp）决定字体策略 + re… | 10 | `app/amayui-emulator/test/emulator-options.test.ts` `app/amayui-emulator/test/text-layout.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
+
+## 🚫 dropped（1）
+
+| id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
+|---|---|---|---|---|---|---|---|---|
+| [`T-0023`](./T-0023/ticket.json) | P3 | analysis | `engine/opcodes` | 把 88 条"md 已核对但数据层没有条目"的 opcode 语义回填 analysis/（按族推进） | 2 | — | — | — |
 
 ## 怎么用（30 秒）
 

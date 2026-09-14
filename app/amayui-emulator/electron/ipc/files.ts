@@ -15,11 +15,10 @@ import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
 import { parseIni } from '../../src/engineConfig.js';
-import { resolveOptionsPath } from '../../src/emulatorOptionsFile.js';
 import { unionUsedFileIds } from '../../src/vm/saveData.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
-import { FONT_DIR, REPO_ROOT, RESOURCE_DIR, SYSTEM_PATHS } from '../paths.js';
+import { EMULATOR_OPTIONS, FONT_DIR, REPO_ROOT, RESOURCE_DIR, SYSTEM_PATHS, describeResourceDir } from '../paths.js';
 
 /** 音频流式协议名（`amayui-audio://<id>`；见 `docs/13-audio-plan.md` §3.3）。 */
 export const AUDIO_SCHEME = 'amayui-audio';
@@ -30,10 +29,11 @@ const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR, log: (m) => c
 /** 玩家数据的 overlay 层（`SYS4REG.INI` + `SAVE\SAVE.DAT`）。 */
 const systemFiles = new OverlayDir(SYSTEM_PATHS, { log: (m) => console.log(`[main] ${m}`) });
 
-/** 启动摘要：写清这次的 base/overlay 是哪两份目录。 */
+/** 启动摘要：写清这次的 base/overlay 是哪两份目录、资源根/资源版本各是什么。 */
 export function logSystemPaths(): void {
   console.log(`[main] system dir (base) -> ${SYSTEM_PATHS.baseDir}`);
   console.log(`[main] system dir (overlay) -> ${SYSTEM_PATHS.overlayDir}`);
+  console.log(`[main] ${describeResourceDir()}`);
 }
 
 /** 防丢键棘轮（与 `NodeFileSource.saveConfig` 同口径）：新文本的键数不得少于当前生效的那份。 */
@@ -89,18 +89,11 @@ export function registerFileIpc(): void {
   });
 
   // 外置选项文件 `emulator.config.json`（**只读**；渲染进程无 fs ⇒ 由主进程读文本、渲染侧解析）。
+  // ★主进程在 `paths.ts` 已经读过一次（资源根要用 `resources.path`）⇒ 这里直接回那份文本，不二次读盘。
   // 不存在是正常情况（返回 exists=false），渲染侧据此用默认值；解析/校验在 src/emulatorOptions.ts。
   ipcMain.handle('read-emulator-options', () => {
-    const p = resolveOptionsPath(REPO_ROOT);
-    try {
-      const text = fs.readFileSync(p, 'utf8');
-      console.log(`[main] emulator options -> ${p} (${text.length} bytes)`);
-      return { path: p, exists: true, text };
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code !== 'ENOENT') console.log(`[main] emulator options: 读取失败 ${p}：${(err as Error).message}`);
-      return { path: p, exists: false, text: '' };
-    }
+    console.log(`[main] emulator options -> ${EMULATOR_OPTIONS.path} (exists=${EMULATOR_OPTIONS.exists})`);
+    return { path: EMULATOR_OPTIONS.path, exists: EMULATOR_OPTIONS.exists, text: EMULATOR_OPTIONS.text ?? '' };
   });
 
   // ---- SAVE.DAT（`save-int`/`save-string` 表的持久化；设置界面的开关靠它跨会话保留）----

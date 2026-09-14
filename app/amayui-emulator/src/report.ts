@@ -19,7 +19,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
-import { resolveResourceDir } from './arch/resourceDir.js';
+import { decideResourceDir, describeResourcesLine } from './arch/resourceDir.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData } from './vm/interpreter.js';
 import { DropRecorder, withNativeTap } from './vm/nativeTap.js';
@@ -28,12 +28,11 @@ import type { NativeBridge } from './vm/native.js';
 import { runFrameLoop, type FrameLoopOptions } from './frame/loop.js';
 import type { FrameBranch } from './frame/loop.js';
 import type { FrameHost } from './frame/host.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from './emulatorOptions.js';
-import { emulatorOptionsOf } from './emulatorOptionsFile.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from './emulatorOptions.js';
+import { loadEmulatorOptions, describeEmulatorOptions, resourceDirOf } from './emulatorOptionsFile.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
-const DEFAULT_RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 const OUT_DIR = path.join(REPO_ROOT, '.tmp');
 
 /** 一帧的"指令"：引擎的帧时钟/刷新/停靠锁。遇到它们 ⇒ 推进一次虚拟时钟 + 驱动一次场景窗。 */
@@ -52,8 +51,13 @@ export interface ReportOptions {
   frameMs?: number;
   /** 每帧最多跑多少条指令（防一条脚本里没有帧指令时报告跑飞）。 */
   maxStepsPerFrame?: number;
-  /** 资源根目录（默认 `install/` = 汉化版，见 `arch/resourceDir.ts`）。 */
+  /** 资源根目录（**最高优先**：显式给出就压过环境变量与 `resources.path`，见 `arch/resourceDir.ts`）。 */
   resourceDir?: string;
+  /**
+   * `emulatorOptions.resources.path` 的相对基准（= 生效的 `emulator.config.json` 所在目录）。
+   * 省略 = 仓库根（仅当选项不是从文件读来的兜底）；CLI 入口会显式传 config 的 `dirname`。
+   */
+  configDir?: string;
   /** 是否解析图像尺寸（`0x208` getter 用；需要 AGF 解码器）。 */
   resolveImages?: boolean;
   /** 是否把 JSONL/JSON 写到磁盘（测试里设 false 只取内存结果）。 */
@@ -104,11 +108,21 @@ export interface SceneReport {
 
 /** 执行一次场景并产出报告（纯函数式：不写盘，除非 `write !== false`）。 */
 export async function runSceneReport(opt: ReportOptions): Promise<{ report: SceneReport; jsonl: string[]; snapshotText: string }> {
-  const resourceDir = opt.resourceDir ?? DEFAULT_RESOURCE_DIR;
+  const options = normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 资源根：`opt.resourceDir`（CLI `--resources`）> 环境变量 > `resources.path` > 默认 install/。
+  const resourceDecision = decideResourceDir(REPO_ROOT, {
+    ...(opt.resourceDir ? { cli: opt.resourceDir } : {}),
+    env: process.env,
+    ...(options.resources.path
+      ? { configResourcePath: options.resources.path, configDir: opt.configDir ?? REPO_ROOT }
+      : {}),
+  });
+  const resourceDir = resourceDecision.dir;
   const name = opt.name ?? 'scene-report';
   const frameMs = opt.frameMs ?? 16;
   const maxStepsPerFrame = opt.maxStepsPerFrame ?? 4096;
   const src = new NodeFileSource({ resourceDir });
+  opt.onLog?.(`[options] ${describeResourcesLine(options, resourceDecision)}`);
 
   // 图像尺寸解析（可选）：动态载入仓库根的 AGF 解码器；失败则退回"未解析"（并记缺口）。
   let imageSize: ((imgid: number) => { w: number; h: number } | null) | undefined;
@@ -140,7 +154,7 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
   e.fileSource = src;
   // 外置选项（`emulator.config.json`）：省略 = 真游戏行为（播 LOGO）。**必须在装载脚本之前**套用
   // （SYSTEM4 开头 `load-show-logo` 就据 `_this[96983]` 决定是否 `call-script LOGO`）。只在 CLI 入口读文件。
-  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  applyEmulatorOptionsToEngine(e, options);
 
   const boot = await src.readScript(opt.script);
   if (!boot) throw new Error(`无法装载脚本索引 ${opt.script}`);
@@ -343,11 +357,17 @@ async function main(): Promise<void> {
   };
   const ops = parseOps(arg('ops'));
   if (ops) opts.ops = ops;
-  // 外置选项文件（可选）：`boot.showLogo=false` 可跳过 LOGO/版权页（省启动等待）。
-  opts.emulatorOptions = emulatorOptionsOf(REPO_ROOT);
-  // `--resources <dir>` 指定资源根（默认 install/ = 汉化版）；`--raw` 为旧名，保留兼容。
+  // 外置选项文件（可选）：`boot.showLogo=false` 跳过 LOGO/版权页（省启动等待）；
+  // `resources.version`/`resources.path` 决定字体策略与资源根。
+  const loaded = loadEmulatorOptions(REPO_ROOT);
+  for (const l of describeEmulatorOptions(loaded)) console.log(l);
+  opts.emulatorOptions = loaded.options;
+  // ★`resources.path` 的相对基准 = 生效的 config 文件所在目录（`AMAYUI_EMULATOR_CONFIG` 换路径时随之改变）。
+  opts.configDir = path.dirname(loaded.path);
+  // `--resources <dir>` 最高优先（`--raw` 为旧名，保留兼容）。
   const resDir = arg('resources') ?? arg('raw');
   if (resDir) opts.resourceDir = resDir;
+  console.log(`[options] ${describeResourcesLine(loaded.options, resourceDirOf(loaded, REPO_ROOT, resDir ? { cli: resDir } : {}))}`);
 
   console.log(`[report] script=${opts.script} steps=${opts.steps} frame-ms=${opts.frameMs} ops=${arg('ops') ?? '全部'}`);
   const { report } = await runSceneReport(opts);

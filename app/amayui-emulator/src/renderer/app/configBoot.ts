@@ -7,7 +7,7 @@
  * 失败不致命：找不到/读不动 INI 时只记一行 trace，引擎字段沿用构造默认值。
  */
 import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, parseEmulatorOptions } from '../../emulatorOptions.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, parseEmulatorOptions } from '../../emulatorOptions.js';
 import { decodeSaveData, encodeSaveData } from '../../vm/saveData.js';
 import type { Engine } from '../../vm/engine.js';
 
@@ -90,24 +90,30 @@ export async function loadEngineConfig(e: Engine, trace: (line: string) => void)
  * 而选项文件与 INI 存不存在无关。也必须在**装载首个脚本之前**调用 —— `src/SYSTEM4.txt:144-146` 的
  * `load-show-logo` 在脚本一开始就据 `_this[96983]` 决定要不要 `call-script LOGO`。
  *
- * 目前只有一个选项 `boot.showLogo`；见 `src/emulatorOptions.ts` 的文件头（含引擎依据与"刻意的近似"）。
+ * 目前有两个节：`boot.showLogo`（LOGO/版权页）与 `resources.version`（字体面名解析策略，
+ * 落到 `Engine.resourceVersion`）；见 `src/emulatorOptions.ts` 的文件头。
+ * ★`resources.path`（资源根）**不在**这里生效：它必须建 `FileSource` 之前决定，由主进程在
+ * `electron/paths.ts` 里解析（`decideResourceDir`），渲染进程只负责 `version`。
  */
 export async function loadEmulatorOptionsFile(e: Engine, trace: (line: string) => void): Promise<void> {
   try {
     const hit = await window.api?.readEmulatorOptions?.();
     if (!hit) {
       trace('[options] 该 preload 没有 readEmulatorOptions 通道 ⇒ 用默认值');
-      for (const n of applyEmulatorOptions(e.engineValues, DEFAULT_EMULATOR_OPTIONS)) trace(`[options] ${n}`);
+      for (const n of applyEmulatorOptionsToEngine(e, DEFAULT_EMULATOR_OPTIONS)) trace(`[options] ${n}`);
       return;
     }
     if (!hit.exists) {
-      trace(`[options] 未找到 ${hit.path}（用默认值：boot.showLogo=${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}）`);
+      trace(
+        `[options] 未找到 ${hit.path}（用默认值：boot.showLogo=${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}` +
+          ` resources.version=${DEFAULT_EMULATOR_OPTIONS.resources.version}）`,
+      );
     } else {
       trace(`[options] ${hit.path}`);
     }
     const { options, problems } = parseEmulatorOptions(hit.exists ? hit.text : '');
     for (const p of problems) trace(`[options] ⚠ ${p}`);
-    for (const n of applyEmulatorOptions(e.engineValues, options)) trace(`[options] ${n}`);
+    for (const n of applyEmulatorOptionsToEngine(e, options)) trace(`[options] ${n}`);
   } catch (err) {
     trace(`[options] 加载失败：${(err as Error).message}`);
   }

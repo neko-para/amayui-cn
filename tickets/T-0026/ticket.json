@@ -1,0 +1,112 @@
+{
+  "title": "emulator.config.json 增加 resources 段（共用前缀）：resources.version（jp/cnjp）决定字体策略 + resources.path 指定资源根（相对 config）",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "资源根是二选一的（默认 install/ = 汉化版；AMAYUI_RESOURCE_DIR=raw 切原版日文），但没有任何地方记录「当前这套资源是哪一版、在哪」：字体策略在 src/text/fontSet.ts 里被硬编码成单一政策 —— FACE_MAP 把所有引擎面名（メイリオ / ＭＳ ゴシック / ＭＳ 明朝 / 游ゴシック…）都指向 Amayui CN，DEFAULT_FAMILY 也是 Amayui CN。那是 cnjp 政策：Amayui-CN_cnjp.ttf 的 cmap 把日文写法码位换成简体字形（为 SJIS 占位编码服务，见 docs-new/01-translation/encoding-font.md）。一旦用 AMAYUI_RESOURCE_DIR=raw 跑纯日文资源，同一张 cmap 会把原文的日文码位也换成简体字形 ⇒ 原版文本字形错（说/説、为/為 这类同形替换直接可见），而且不报错、只是显示不对。同时资源根本身现在也只由环境变量/CLI 选择、没进配置。因此把「资源」收进一个共用前缀的 resources 段：resources.version（jp/cnjp）说明「是哪一版」并驱动字体分叉，resources.path（相对 config 目录）说明「在哪」并驱动资源根；优先序固定为 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > 默认 install/。",
+  "acceptance": [
+    "emulator.config.json 新增一个 resources 段（两个键共用同一前缀）：resources.version（两取值：jp = 纯日文资源 / cnjp = ShiftJIS 编码的中文资源）与 resources.path（资源根路径，相对路径以生效的 config 文件所在目录为基准）；并同步 emulator.config.example.json、src/emulatorOptions.ts 文件头的选项表与 docs-new/04-app/emulator.md §8 的选项表",
+    "resources.path 的优先序固定为 CLI --resources > 环境变量 AMAYUI_RESOURCE_DIR > resources.path > 默认 install/，且日志里能看出实际生效的是哪一个来源",
+    "相对路径基准 = 生效的 config 文件所在目录（不是仓库根、不是 cwd）：用 AMAYUI_EMULATOR_CONFIG 指向别处时基准随之改变；绝对路径直接采用（与 AMAYUI_RESOURCE_DIR 同一套约定）",
+    "缺省值 = 当前行为（version 缺省 cnjp、path 缺省不写 ⇒ install/，与默认资源根一致）；非法取值 / 类型不对 / 未知键 ⇒ 走既有「报 problem + 用默认值」路径（不许静默）",
+    "字体策略随 resources.version 分叉：jp ⇒ 引擎面名落到工程自带（不依赖 OS 字体）的更纱黑体 res/fonts/SarasaGothicSC，即 Sarasa Gothic SC 字族 Regular+Bold（未做 cnjp 替换的基底；已定：不用 OS 安装的 Sarasa、也不用未解包的 SarasaGothicJ）；cnjp ⇒ 与现状逐字一致（所有面名 → Amayui CN）",
+    "resources.path 真正驱动资源根：设置后 Electron / headless / CLI 读到的脚本与素材来自该目录（不再是 install/），并有可核对证据（同一 imgid 的位图 sha1 或脚本正文差异）",
+    "日志同一行打印生效的 resources.path 与 resources.version（便于核对两者是否配套 —— 换了 path 却忘改 version 正是本单要防的错）",
+    "两侧都生效且可核对：Electron 渲染进程（经 IPC 拿选项）与 headless/CLI 入口（emulatorOptionsFile.ts）选出同一资源根与同一字族",
+    "回归可核对：cnjp 路径的既有测试与 G4 关键行不变；jp 路径至少有一条可核对证据（如 AMAYUI_RESOURCE_DIR=raw 或 resources.path 指向 raw + version=jp 的截图或字形抽查）",
+    "test/emulator-options.test.ts 覆盖：缺省、两个合法值、非法值报 problem、resources.path 的相对基准与优先序；并按 docs-new/04-app/emulator.md「新增选项时」的清单走完"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/emulator-options.test.ts",
+    "app/amayui-emulator/test/text-layout.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/arch/resourceDir.ts",
+      "anchor": "decideResourceDir",
+      "note": "资源根唯一权威：CLI > env > resources.path > 默认 install/；纯函数、不读文件",
+      "line": 90
+    },
+    {
+      "file": "app/amayui-emulator/src/emulatorOptions.ts",
+      "anchor": "resources: {",
+      "note": "resources 段两键（version/path）与默认值 cnjp",
+      "line": 79
+    },
+    {
+      "file": "app/amayui-emulator/src/emulatorOptionsFile.ts",
+      "anchor": "resourceDirOf",
+      "note": "config 相对基准 = dirname(loaded.path)（AMAYUI_EMULATOR_CONFIG 换路径时随之改变）"
+    },
+    {
+      "file": "app/amayui-emulator/src/text/fontSet.ts",
+      "anchor": "FACE_MAPS",
+      "note": "按 resources.version 分两张面名表：jp → Sarasa Gothic SC，cnjp → Amayui CN；jp 表故意不含 AMAYUI CN",
+      "line": 82
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "resourceVersion",
+      "note": "Engine.resourceVersion（非引擎字段）——字体策略的落点"
+    },
+    {
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "resourceDirOf",
+      "note": "headless CLI：选项在建 FileSource 之前读，path 决定资源根"
+    },
+    {
+      "file": "app/amayui-emulator/electron/paths.ts",
+      "anchor": "RESOURCE_DECISION",
+      "note": "Electron 主进程只用一份已读选项定资源根，并供 IPC 复用"
+    },
+    {
+      "file": "emulator.config.example.json",
+      "anchor": "resources",
+      "note": "入库示例已含 resources 段（version=cnjp = 默认行为）"
+    },
+    {
+      "file": "docs-new/04-app/emulator.md",
+      "anchor": "resources.version",
+      "note": "§8 选项表 + resources 段说明（优先序/相对基准/日志同打两值）"
+    }
+  ],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md",
+      "docs-new/01-translation/encoding-font.md",
+      "docs-new/00-overview/authority.md"
+    ],
+    "analysis": [],
+    "tickets": []
+  },
+  "notes": "背景与设计取舍见 notes.md。核心动机：fontSet.ts 的字体政策是 cnjp 单一政策，而资源根已经可以切到纯日文（raw）——两者不一致时错的是字形，不报错。",
+  "id": "T-0026",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：acceptance —— 接受用户决策：jp 用工程自带 SarasaGothicSC"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：title, why, acceptance, evidence —— 补充需求：resources.path（相对 config）+ 两键共用 resources 前缀；优先序 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > install/"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests, evidence —— 实现完成：resources 段（version 驱动字体分叉 / path 驱动资源根）+ 入口接线 + 测试"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → doing —— 开工"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "doing → done —— 实现 + 8 条新测试 + E1/E2/E3 实测见 changes.md（该单验收全部满足）"
+    }
+  ]
+}

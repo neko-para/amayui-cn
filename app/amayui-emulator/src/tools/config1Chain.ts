@@ -14,7 +14,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { NodeAudioHost } from '../audio/nodeAudioHost.js';
-import { resolveResourceDir } from '../arch/resourceDir.js';
+import { decideResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
 import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
 import { Engine } from '../vm/engine.js';
@@ -29,15 +29,13 @@ import { HeadlessScene } from '../renderer/headlessScene.js';
 import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import { dec } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
 import { FIELD_MSG_DEFAULT_WIN, FIELD_VERTICAL } from '../vm/engineFieldIds.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
-/** 资源根 = `install/`（汉化版）；`AMAYUI_RESOURCE_DIR=raw` 可切回原版。 */
-const RESOURCE_DIR = resolveResourceDir(ROOT);
 /** 玩家数据（`SYS4REG.INI`）：系统存档目录 + overlay（读 overlay → 真游戏那份）。 */
 const SYSTEM = resolveSystemPaths(ROOT);
 const SYSTEM_FILES = new OverlayDir(SYSTEM);
@@ -282,7 +280,13 @@ export interface ChainOptions {
 }
 
 export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
-  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
+  const options = normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 资源根：`AMAYUI_RESOURCE_DIR` > `resources.path`（相对基准 = 仓库根；本库不读 config 文件）> 默认 install/。
+  const resourceDir = decideResourceDir(ROOT, {
+    env: process.env,
+    ...(options.resources.path ? { configResourcePath: options.resources.path, configDir: ROOT } : {}),
+  }).dir;
+  const src = new NodeFileSource({ resourceDir });
   const input = new InputManager();
   // ★音频（`tickets/T-0006`）：真 `AudioEngine` + headless 宿主（真字节 + 容器头推时长，不出声）。
   //   不给宿主时所有音频意图都会进闸门 A 的「意图被丢弃」清单（修前就是这样 ⇒ 链路上看不到发声时机）。
@@ -302,9 +306,9 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   e.fileSource = src;
   e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
-  // 外置选项（`emulator.config.json`）：library 省略时 = 真游戏行为（播 LOGO）；只有 CLI 入口读文件
-  // （理由见 `gameStartChain.ts` 同名字段：测试结果不能取决于开发机上的一个 JSON）。
-  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 外置选项（`emulator.config.json`）：`boot.showLogo` + `resources.version`（字体面名解析策略）。
+  // library 省略时 = 真游戏行为（播 LOGO）；只有 CLI 入口读文件（理由见 `gameStartChain.ts` 同名字段）。
+  applyEmulatorOptionsToEngine(e, options);
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
   loadScriptData(e, boot.data, boot.name);

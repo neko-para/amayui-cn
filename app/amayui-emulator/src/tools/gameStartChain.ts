@@ -28,7 +28,7 @@
 import assert from 'node:assert/strict';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
 import { NodeAudioHost } from '../audio/nodeAudioHost.js';
-import { resolveResourceDir } from '../arch/resourceDir.js';
+import { decideResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
 import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
 import { Engine, type Frame } from '../vm/engine.js';
@@ -44,15 +44,13 @@ import { HeadlessScene } from '../renderer/headlessScene.js';
 import { calcDiffuse, meshColor } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { applyConfigToEngine, parseIni } from '../engineConfig.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
 
-/** 资源根 = `install/`（汉化版）；`AMAYUI_RESOURCE_DIR=raw` 可切回原版。 */
-const RESOURCE_DIR = resolveResourceDir(ROOT);
 /** 玩家数据（`SYS4REG.INI` / `SAVE.DAT`）：系统存档目录 + overlay（读 overlay → 真游戏那份）。 */
 const SYSTEM = resolveSystemPaths(ROOT);
 const SYSTEM_FILES = new OverlayDir(SYSTEM);
@@ -213,7 +211,14 @@ export interface GameStartOptions {
  * 跑一遍该链路。**不写任何玩家数据**（不注入 `onConfigChanged`/`onSaveDataChanged`）。
  */
 export async function runGameStartChain(opt: GameStartOptions = {}): Promise<GameStartResult> {
-  const src = new NodeFileSource({ resourceDir: RESOURCE_DIR });
+  const options = normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 资源根：`AMAYUI_RESOURCE_DIR` > `resources.path`（相对基准 = 仓库根；本库不读 config 文件，
+  // 从文件读选项的 CLI 入口自己算好再传 emulatorOptions/环境变量）> 默认 install/。
+  const resourceDir = decideResourceDir(ROOT, {
+    env: process.env,
+    ...(options.resources.path ? { configResourcePath: options.resources.path, configDir: ROOT } : {}),
+  }).dir;
+  const src = new NodeFileSource({ resourceDir });
   const input = new InputManager();
   // ★音频（`tickets/T-0006`/`T-0003`）：给宿主一个 `NodeAudioHost` ⇒ headless 也有**真 `AudioEngine`**
   //   （真字节 + 容器头推时长、不出声），帧驱动每帧的 tick 会把"延迟 SE 到期 / 语音排队 / BGM 淡变"推起来。
@@ -232,10 +237,11 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   e.fileSource = src;
   e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
-  // 外置选项（`emulator.config.json`）：目前只有 `boot.showLogo`（false = 预设 `_this[96983]=0` 跳过 LOGO）。
+  // 外置选项（`emulator.config.json`）：`boot.showLogo`（false = 预设 `_this[96983]=0` 跳过 LOGO）
+  // + `resources.version`（字体面名解析策略）。
   // ★这条链路的**测试不得受本机配置文件影响** ⇒ library 调用一律 `opt.emulatorOptions ?? 默认值`，
   //   只有 CLI 入口（`opInventory.ts`）才去读文件。必须在 `loadScriptData` 之前套用（SYSTEM4 开头就查它）。
-  applyEmulatorOptions(e.engineValues, opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  applyEmulatorOptionsToEngine(e, options);
 
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');

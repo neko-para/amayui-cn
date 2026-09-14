@@ -53,6 +53,12 @@ $env:AMAYUI_RESOURCE_DIR='raw'; npm run report -- --steps 200000
 npm run report -- --resources install --steps 200000      # 旧名 --raw 仍兼容
 ```
 
+★优先序（唯一权威 = `src/arch/resourceDir.ts` 的 `decideResourceDir`）：
+**`CLI --resources` > `AMAYUI_RESOURCE_DIR` > `emulator.config.json` 的 `resources.path` > 默认 `install/`**。
+`resources.path` 的相对基准 = **生效的 config 文件所在目录**（`AMAYUI_EMULATOR_CONFIG` 换路径时随之改变）。
+换资源根时**记得同步 `resources.version`**（`cnjp` = 汉化版 → `Amayui CN`；`jp` = 纯日文 → 更纱黑体
+`res/fonts/SarasaGothicSC`）—— 两者独立、入口会同一行打印（见 `docs-new/04-app/emulator.md` §8）。
+
 实测差异（`raw` vs `install` 同一 imgid 的位图 sha1）：`SO009A/SO009B`（设置界面素材，汉化）
 不同，`SO010/SO004`（未汉化）相同 ⇒ 换根确实换了素材，而不是"看着像"。
 随之而来的一条编码事实：汉化把简体字映射成 **cp932 可编码的日文写法占位**

@@ -5,7 +5,8 @@
  * 原先散在 IPC 处理器里，改一处布局要在处理器之间找。集中后只有这一处需要维护。
  */
 import * as path from 'node:path';
-import { resolveResourceDir } from '../src/arch/resourceDir.js';
+import { describeResourcesLine } from '../src/arch/resourceDir.js';
+import { loadEmulatorOptions, resourceDirOf } from '../src/emulatorOptionsFile.js';
 import { resolveSystemPaths } from '../src/arch/systemPaths.js';
 
 /**
@@ -15,10 +16,26 @@ import { resolveSystemPaths } from '../src/arch/systemPaths.js';
 export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 
 /**
- * 游戏资源目录：默认 **`install/`（汉化版）** —— 松散 BIN / 打过补丁的 ALF 归档 / SYS4INI 索引。
- * 可用 `AMAYUI_RESOURCE_DIR` 覆盖（对比原版：`AMAYUI_RESOURCE_DIR=raw`）。见 `src/arch/resourceDir.ts`。
+ * **外置选项（`emulator.config.json`）在主进程只读一次**。
+ *
+ * 为什么在这里读而不是各 IPC 处理器各读一遍：资源根必须在建 `FileSource` 之前定下来
+ * （`resources.path`），而渲染进程要从同一份文本里拿 `boot.showLogo`/`resources.version`
+ * ⇒ 读一次、两边共用（`read-emulator-options` 直接回这份 `text`）。
+ * ⚠️ 进程存活期间改文件不会热重载（渲染进程本来也只在 boot 时读一次）。
  */
-export const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
+export const EMULATOR_OPTIONS = loadEmulatorOptions(REPO_ROOT);
+
+/**
+ * 游戏资源目录：**`CLI --resources`（此处无）> `AMAYUI_RESOURCE_DIR` > `resources.path` > 默认 `install/`**。
+ * `resources.path` 的相对基准 = 生效的 config 文件所在目录（见 `src/arch/resourceDir.ts` 的 `decideResourceDir`）。
+ */
+export const RESOURCE_DECISION = resourceDirOf(EMULATOR_OPTIONS, REPO_ROOT);
+export const RESOURCE_DIR = RESOURCE_DECISION.dir;
+
+/** 启动摘要里的一行：生效的资源根 + 资源版本（同一行，便于核对两者是否配套）。 */
+export function describeResourceDir(): string {
+  return describeResourcesLine(EMULATOR_OPTIONS.options, RESOURCE_DECISION);
+}
 
 /**
  * **玩家数据**（`SYS4REG.INI` + `SAVE\SAVE.DAT`）= 系统存档目录 + overlay 一对目录：

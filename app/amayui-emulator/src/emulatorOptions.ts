@@ -9,11 +9,28 @@
  * 建 3 张全屏 mesh → `poll-input`/`wait` 等 0x400 门 → `play-movie` → `exit`）。跑回归/截图时这段
  * 纯粹是等待，没有任何被测逻辑 ⇒ 需要一个"当作版权页已经看过"的开关来省掉它。
  *
- * ## 目前只有一个选项
+ * ## 目前有两个节（`boot` / `resources`）
  *
  * | 键 | 类型 | 默认 | 含义 |
  * |---|---|---|---|
  * | `boot.showLogo` | boolean | `true` | `false` = **启动时预设 LOGO 显示标记**（`_this[96983] = 0`）⇒ cold boot **不进** `LOGO.txt`，直接 `INIT → TITLE` |
+ * | `resources.version` | `"jp"` \| `"cnjp"` | `"cnjp"` | **这套资源是哪一版**；决定字体面名解析策略（见下） |
+ * | `resources.path` | string（可省） | 无（⇒ `install/`） | **资源根在哪**；相对路径以**生效的 config 文件所在目录**为基准 |
+ *
+ * ## `resources` 段：为什么需要它（两个键共用前缀，别只改一半）
+ *
+ * 资源根原先只由 `AMAYUI_RESOURCE_DIR` / CLI `--resources` 选，**没有任何地方记录"当前这套是哪一版"**；
+ * 而字体策略（`src/text/fontSet.ts`）是**单一 cnjp 政策**：所有引擎面名都落到 `Amayui CN`。
+ * 那是为 SJIS 占位编码服务的字体（cmap 把日文写法码位换成简体字形）—— 拿它跑**纯日文资源**
+ * 会把原文的日文码位也换成简体（`说/説`、`为/為` 同形替换肉眼可见），且**不报错、只是显示不对**。
+ *
+ * ⇒ `resources.version` 显式说明"是哪一版"，驱动字体分叉：`jp` → 未做 cnjp 替换的更纱黑体
+ * （`res/fonts/SarasaGothicSC`），`cnjp` → `Amayui CN`；`resources.path` 显式说明"在哪"。
+ * **优先序**（唯一权威在 `arch/resourceDir.ts` 的 `decideResourceDir`）：
+ * `CLI --resources` > 环境变量 `AMAYUI_RESOURCE_DIR` > `resources.path` > 默认 `install/`。
+ *
+ * ⚠️ `resources.path` 与 `resources.version` 是**两个独立键**：换路径不会自动换版本
+ * （路径名不可靠，不做猜测）。入口会**同一行**打印两者，让"换了 path 忘改 version"当场可见。
  *
  * ## 为什么"预设标记"就是正确的跳过方式（依据）
  * `docs-new/03-engine/flow-control.md` §10 + `analysis/fields.json` 的 `logo_enabled`(0x5EB5C)：
@@ -53,10 +70,60 @@ export interface EmulatorOptions {
      */
     showLogo: boolean;
   };
+  /** 资源版本 + 资源根（两键共用 `resources` 前缀；优先序见文件头）。 */
+  resources: {
+    /**
+     * `jp` = 纯日文资源（字体走未做 cnjp 替换的更纱黑体）；
+     * `cnjp` = ShiftJIS 编码的中文资源（字体走 `Amayui CN`）。
+     */
+    version: ResourceVersion;
+    /**
+     * 资源根路径；**可省**（省略 ⇒ 默认 `install/`）。相对路径以**生效的 config 文件所在目录**为基准，
+     * 绝对路径直接采用。真正解析在 `arch/resourceDir.ts` 的 `decideResourceDir`（CLI/环境变量优先于它）。
+     */
+    path?: string;
+  };
 }
 
-/** 全部默认值 = **真游戏行为**（构造 `sub_415640` 置 1 ⇒ 播 LOGO）。不带配置文件时就是它。 */
-export const DEFAULT_EMULATOR_OPTIONS: EmulatorOptions = { boot: { showLogo: true } };
+/** `resources.version` 的取值：纯日文 / ShiftJIS 编码的中文。 */
+export type ResourceVersion = 'jp' | 'cnjp';
+
+/** 全部合法取值（解析时用来校验；顺序 = 文档顺序）。 */
+export const RESOURCE_VERSIONS: readonly ResourceVersion[] = ['jp', 'cnjp'];
+
+/** 全部默认值 = **真游戏行为**（构造 `sub_415640` 置 1 ⇒ 播 LOGO；默认资源根 `install/` = 汉化版 ⇒ cnjp）。 */
+export const DEFAULT_EMULATOR_OPTIONS: EmulatorOptions = {
+  boot: { showLogo: true },
+  resources: { version: 'cnjp' },
+};
+
+/** 解析是否成功（`version` 非法时保持默认值，只上浮一条 problem）。 */
+function isResourceVersion(v: unknown): v is ResourceVersion {
+  return typeof v === 'string' && (RESOURCE_VERSIONS as readonly string[]).includes(v);
+}
+
+/**
+ * 选项的**宽松输入形状**：允许"半份选项"（只有 `boot`、或键类型不对）。
+ *
+ * 为什么需要它：`EmulatorOptions` 是**必填完整**类型，但测试与库调用方常手写字面量
+ * （历史写法 `{ boot: { showLogo: false } }`，没有 `resources`）—— 那些调用点不走 `tsc`
+ * （测试被 tsconfig 排除），于是"少一个节"会变成运行时崩溃而不是编译错误。`normalizeEmulatorOptions`
+ * 把任何半份输入补成完整、合法的选项（缺失/非法 = 默认值），消费端一律先过它。
+ */
+export interface EmulatorOptionsInput {
+  boot?: { showLogo?: boolean };
+  resources?: { version?: string; path?: string };
+}
+
+/** 把宽松输入补成完整选项（缺失/非法一律取默认值；`path` 只保留非空字符串）。 */
+export function normalizeEmulatorOptions(input?: EmulatorOptionsInput | null): EmulatorOptions {
+  const showLogo = typeof input?.boot?.showLogo === 'boolean' ? input.boot.showLogo : DEFAULT_EMULATOR_OPTIONS.boot.showLogo;
+  const rawVersion = input?.resources?.version;
+  const version: ResourceVersion = isResourceVersion(rawVersion) ? rawVersion : DEFAULT_EMULATOR_OPTIONS.resources.version;
+  const rawPath = input?.resources?.path;
+  const path = typeof rawPath === 'string' && rawPath.trim().length > 0 ? rawPath : undefined;
+  return { boot: { showLogo }, resources: { version, ...(path !== undefined ? { path } : {}) } };
+}
 
 export interface ParseEmulatorOptionsResult {
   options: EmulatorOptions;
@@ -66,7 +133,10 @@ export interface ParseEmulatorOptionsResult {
 
 /** 深度克隆默认值（避免调用方改到全局常量）。 */
 function cloneDefaults(): EmulatorOptions {
-  return { boot: { showLogo: DEFAULT_EMULATOR_OPTIONS.boot.showLogo } };
+  return {
+    boot: { showLogo: DEFAULT_EMULATOR_OPTIONS.boot.showLogo },
+    resources: { version: DEFAULT_EMULATOR_OPTIONS.resources.version },
+  };
 }
 
 /**
@@ -96,24 +166,63 @@ export function parseEmulatorOptions(text: string): ParseEmulatorOptionsResult {
   }
   for (const key of Object.keys(root as Record<string, unknown>)) {
     if (key.startsWith('$')) continue; // `$comment` 之类的说明键：允许、不算未知
-    if (key !== 'boot') problems.push(`未知顶层键 "${key}"（已忽略；本文件目前只认 "boot"）`);
+    if (key !== 'boot' && key !== 'resources') {
+      problems.push(`未知顶层键 "${key}"（已忽略；本文件目前只认 "boot"/"resources"）`);
+    }
   }
+
+  // ---- boot 节 ----
   const boot = (root as Record<string, unknown>)['boot'];
-  if (boot === undefined) return { options, problems };
-  if (boot === null || typeof boot !== 'object' || Array.isArray(boot)) {
-    problems.push('"boot" 必须是对象 ⇒ 该节用默认值');
-    return { options, problems };
-  }
-  for (const key of Object.keys(boot as Record<string, unknown>)) {
-    if (key.startsWith('$')) continue;
-    if (key !== 'showLogo') problems.push(`未知键 "boot.${key}"（已忽略；本文件目前只认 "boot.showLogo"）`);
-  }
-  const showLogo = (boot as Record<string, unknown>)['showLogo'];
-  if (showLogo !== undefined) {
-    if (typeof showLogo !== 'boolean') {
-      problems.push(`"boot.showLogo" 必须是 true/false（拿到 ${JSON.stringify(showLogo)}）⇒ 用默认值 ${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}`);
+  if (boot !== undefined) {
+    if (boot === null || typeof boot !== 'object' || Array.isArray(boot)) {
+      problems.push('"boot" 必须是对象 ⇒ 该节用默认值');
     } else {
-      options.boot.showLogo = showLogo;
+      for (const key of Object.keys(boot as Record<string, unknown>)) {
+        if (key.startsWith('$')) continue;
+        if (key !== 'showLogo') problems.push(`未知键 "boot.${key}"（已忽略；本文件目前只认 "boot.showLogo"）`);
+      }
+      const showLogo = (boot as Record<string, unknown>)['showLogo'];
+      if (showLogo !== undefined) {
+        if (typeof showLogo !== 'boolean') {
+          problems.push(`"boot.showLogo" 必须是 true/false（拿到 ${JSON.stringify(showLogo)}）⇒ 用默认值 ${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}`);
+        } else {
+          options.boot.showLogo = showLogo;
+        }
+      }
+    }
+  }
+
+  // ---- resources 节（`version` 驱动字体策略；`path` 驱动资源根）----
+  const resources = (root as Record<string, unknown>)['resources'];
+  if (resources !== undefined) {
+    if (resources === null || typeof resources !== 'object' || Array.isArray(resources)) {
+      problems.push('"resources" 必须是对象（如 `{"resources":{"version":"jp"}}`）⇒ 该节用默认值');
+    } else {
+      for (const key of Object.keys(resources as Record<string, unknown>)) {
+        if (key.startsWith('$')) continue;
+        if (key !== 'version' && key !== 'path') {
+          problems.push(`未知键 "resources.${key}"（已忽略；本文件目前只认 "resources.version"/"resources.path"）`);
+        }
+      }
+      const version = (resources as Record<string, unknown>)['version'];
+      if (version !== undefined) {
+        if (!isResourceVersion(version)) {
+          problems.push(
+            `"resources.version" 必须是 ${RESOURCE_VERSIONS.map((v) => `"${v}"`).join('/')}` +
+              `（拿到 ${JSON.stringify(version)}）⇒ 用默认值 "${DEFAULT_EMULATOR_OPTIONS.resources.version}"`,
+          );
+        } else {
+          options.resources.version = version;
+        }
+      }
+      const resPath = (resources as Record<string, unknown>)['path'];
+      if (resPath !== undefined) {
+        if (typeof resPath !== 'string' || resPath.trim().length === 0) {
+          problems.push(`"resources.path" 必须是非空字符串（拿到 ${JSON.stringify(resPath)}）⇒ 用默认资源根`);
+        } else {
+          options.resources.path = resPath;
+        }
+      }
     }
   }
   return { options, problems };
@@ -136,4 +245,29 @@ export function applyEmulatorOptions(values: Map<number, number>, options: Emula
       ? `boot.showLogo=true ⇒ _this[${LOGO_FLAG_FIELD}]=1（cold boot 播 LOGO/版权页，真游戏行为）`
       : `boot.showLogo=false ⇒ 预设 _this[${LOGO_FLAG_FIELD}]=0（跳过 LOGO/版权页；与 LOGO 自身的 exit-script、GAMEOVER 回标题同一条路径 —— SYSTEM4.txt:144-146 将直接落到 :149 INIT / :150 TITLE）`,
   ];
+}
+
+/**
+ * `applyEmulatorOptions` 的**引擎版**：除了写引擎字段，还把 `resources.version` 落到
+ * `Engine.resourceVersion`（字体面名解析策略，`src/text/fontSet.ts` 按它取表）。
+ *
+ * 为什么单独一个函数而不是改 `applyEmulatorOptions` 的签名：后者是纯"值 → 字段"的映射，
+ * 被测试直接用来喂一个裸 `Map`；这里多认 `Engine` 上的策略字段，调用方一律是"建好引擎之后"。
+ *
+ * ⚠️ `resources.path` **不在这里套用**：资源根必须在**建 `FileSource` 之前**决定
+ * （见 `arch/resourceDir.ts` 的 `decideResourceDir`），而本函数的调用时机在引擎建好之后。
+ */
+export function applyEmulatorOptionsToEngine(
+  e: { engineValues: Map<number, number>; resourceVersion: ResourceVersion },
+  optionsInput: EmulatorOptionsInput,
+): string[] {
+  const options = normalizeEmulatorOptions(optionsInput);
+  const lines = applyEmulatorOptions(e.engineValues, options);
+  e.resourceVersion = options.resources.version;
+  lines.push(
+    options.resources.version === 'jp'
+      ? 'resources.version=jp ⇒ 字体面名落到未做 cnjp 替换的更纱黑体（res/fonts/SarasaGothicSC）'
+      : 'resources.version=cnjp ⇒ 字体面名落到 Amayui CN（SJIS 占位编码的简体还原字体）',
+  );
+  return lines;
 }

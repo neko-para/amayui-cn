@@ -14,6 +14,7 @@ import {
   type EmulatorOptions,
   type ParseEmulatorOptionsResult,
 } from './emulatorOptions.js';
+import { decideResourceDir, type ResourceDirDecision } from './arch/resourceDir.js';
 
 /**
  * 解析选项文件路径：环境变量 `AMAYUI_EMULATOR_CONFIG`（绝对路径，或相对仓库根）优先，
@@ -32,6 +33,8 @@ export interface LoadedEmulatorOptions extends ParseEmulatorOptionsResult {
   path: string;
   /** 文件是否存在并读到了内容。 */
   exists: boolean;
+  /** 读到的原文（仅 `exists=true` 时有）—— Electron 主进程靠它把同一份内容交给渲染进程，避免二次读盘。 */
+  text?: string;
   /** 读文件本身失败时的原因（权限/目录等）；`exists=false` 时为 undefined。 */
   readError?: string;
 }
@@ -59,7 +62,7 @@ export function loadEmulatorOptions(repoRoot: string, env: NodeJS.ProcessEnv = p
       readError: (err as Error).message,
     };
   }
-  return { path: p, exists: true, ...parseEmulatorOptions(text) };
+  return { path: p, exists: true, text, ...parseEmulatorOptions(text) };
 }
 
 /** 便捷：只要选项值（不关心路径/问题）。 */
@@ -67,11 +70,32 @@ export function emulatorOptionsOf(repoRoot: string, env: NodeJS.ProcessEnv = pro
   return loadEmulatorOptions(repoRoot, env).options;
 }
 
+/**
+ * **用已读到的选项文件决定资源根**（CLI / Electron 主进程用）—— 把 `resources.path` 接进
+ * `decideResourceDir` 的第三档，且**相对基准 = 该 config 文件所在目录**（不是仓库根、不是 cwd）。
+ *
+ * ⚠️ 库入口（`runGameStartChain` 等）**不要**用它：那会让测试取决于开发机上的一个 JSON。
+ * 它们用 `decideResourceDir` 显式传 `configResourcePath` + `configDir`，或干脆只认显式 `resourceDir`。
+ */
+export function resourceDirOf(
+  loaded: LoadedEmulatorOptions,
+  repoRoot: string,
+  opt: { cli?: string; env?: NodeJS.ProcessEnv } = {},
+): ResourceDirDecision {
+  const cfg = loaded.options.resources.path;
+  return decideResourceDir(repoRoot, {
+    ...(opt.cli ? { cli: opt.cli } : {}),
+    env: opt.env ?? process.env,
+    ...(cfg ? { configResourcePath: cfg, configDir: path.dirname(loaded.path) } : {}),
+  });
+}
+
 /** 一行式日志（存在/不存在 + 问题），供各入口直接打。 */
 export function describeEmulatorOptions(loaded: LoadedEmulatorOptions): string[] {
   const lines: string[] = [];
+  const defaults = `boot.showLogo=${loaded.options.boot.showLogo} resources.version=${loaded.options.resources.version}`;
   if (!loaded.exists) {
-    lines.push(`[options] 未找到 ${loaded.path}（用默认值：boot.showLogo=${loaded.options.boot.showLogo}）`);
+    lines.push(`[options] 未找到 ${loaded.path}（用默认值：${defaults}）`);
   } else {
     lines.push(`[options] ${loaded.path}`);
   }

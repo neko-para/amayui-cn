@@ -108,7 +108,7 @@ export function globalTextStyle(e: Engine): {
   const base = defaultWinStyle();
   return {
     main: {
-      family: resolveFace(m.font.mainFace).family,
+      family: resolveFace(m.font.mainFace, e.resourceVersion).family,
       size: m.font.mainSize,
       weight: m.font.mainBold ? 700 : 400,
       fill: hex6(v(21664, 0xffffff)),
@@ -168,7 +168,7 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
 export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
   const m = e.msgwin;
   const core = globalTextStyle(e);
-  const resolvedRuby = resolveFace(m.font.rubyFace);
+  const resolvedRuby = resolveFace(m.font.rubyFace, e.resourceVersion);
   return {
     main: core.main,
     ruby: {

@@ -21,10 +21,10 @@ import { loadScriptData } from '../vm/interpreter.js';
 import { DropRecorder, withNativeTap } from '../vm/nativeTap.js';
 import { audioBootIntents } from '../vm/handlers/audio.js';
 import { NodeFileSource } from '../arch/nodeFileSource.js';
-import { resolveResourceDir } from '../arch/resourceDir.js';
+import { decideResourceDir, describeResourcesLine } from '../arch/resourceDir.js';
 import { resolveSystemPaths } from '../arch/systemPaths.js';
 import { applyConfigToEngine, parseIni } from '../engineConfig.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
+import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import { HeadlessScene } from '../renderer/headlessScene.js';
 import { headlessFrameHost } from '../renderer/headlessFrameHost.js';
 import { NodeAudioHost } from '../audio/nodeAudioHost.js';
@@ -62,7 +62,17 @@ export interface HeadlessBoot {
 /** 建好引擎与宿主，但**不跑帧**（调用方自己用 `runScenario`/`runFrameLoop` 跑）。 */
 export async function bootHeadless(o: HeadlessBootOptions = {}): Promise<HeadlessBoot> {
   const log = o.log ?? ((): void => {});
-  const resourceDir = o.resourceDir ?? resolveResourceDir(REPO_ROOT);
+  const options = normalizeEmulatorOptions(o.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 资源根：显式 `resourceDir` > `AMAYUI_RESOURCE_DIR` > `resources.path` > `install/`。
+  // ★这里 `resources.path` 的相对基准取仓库根（选项不是本函数读来的 ⇒ 不知道 config 文件在哪）；
+  //   从文件读选项的 CLI 入口请自己算好 `resourceDir` 再传进来（见 `emulatorOptionsFile.ts` 的 `resourceDirOf`）。
+  const resourceDecision = decideResourceDir(REPO_ROOT, {
+    ...(o.resourceDir ? { cli: o.resourceDir } : {}),
+    env: process.env,
+    ...(options.resources.path ? { configResourcePath: options.resources.path, configDir: REPO_ROOT } : {}),
+  });
+  log(`[options] ${describeResourcesLine(options, resourceDecision)}`);
+  const resourceDir = resourceDecision.dir;
   const withSystem = o.system !== false;
   const src = new NodeFileSource({
     resourceDir,
@@ -89,8 +99,8 @@ export async function bootHeadless(o: HeadlessBootOptions = {}): Promise<Headles
   } else {
     log('[config] 没有 SYS4REG.INI（引擎字段用默认值）');
   }
-  // ② 外置选项（必须在装载脚本之前：`SYSTEM4` 开头就查 `boot.showLogo`）。
-  for (const n of applyEmulatorOptions(e.engineValues, o.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS)) log(`[options] ${n}`);
+  // ② 外置选项（必须在装载脚本之前：`SYSTEM4` 开头就查 `boot.showLogo`；`resources.version` 决定字体表）。
+  for (const n of applyEmulatorOptionsToEngine(e, options)) log(`[options] ${n}`);
   // ③ SAVE.DAT（`save-int`/`save-string` 表；同样必须在 `loadScriptData` 之前）。
   if (withSystem) {
     const bytes = await e.fileSource?.readSaveData?.();

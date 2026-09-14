@@ -2,7 +2,7 @@
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from './arch/nodeFileSource.js';
-import { resolveResourceDir } from './arch/resourceDir.js';
+import { describeResourcesLine } from './arch/resourceDir.js';
 import { OverlayDir } from './arch/overlay.js';
 import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/systemPaths.js';
 import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
@@ -14,15 +14,20 @@ import { OPCODE_TABLE, type BinInstruction } from './script/bin.js';
 import { runFrameLoop } from './frame/loop.js';
 import type { FrameHost } from './frame/host.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
-import { applyEmulatorOptions } from './emulatorOptions.js';
-import { describeEmulatorOptions, loadEmulatorOptions } from './emulatorOptionsFile.js';
+import { applyEmulatorOptionsToEngine } from './emulatorOptions.js';
+import { describeEmulatorOptions, loadEmulatorOptions, resourceDirOf } from './emulatorOptionsFile.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
-// 资源根 = `install/`（汉化版）；对比原版用 `AMAYUI_RESOURCE_DIR=raw`（见 arch/resourceDir.ts）
-const RESOURCE_DIR = resolveResourceDir(REPO_ROOT);
 
 async function main() {
+  // ★外置选项（`emulator.config.json`）要在**建 FileSource 之前**读：`resources.path` 决定资源根
+  //   （优先序 CLI > AMAYUI_RESOURCE_DIR > resources.path > install/，见 arch/resourceDir.ts）。
+  const loaded = loadEmulatorOptions(REPO_ROOT);
+  for (const l of describeEmulatorOptions(loaded)) console.log(l);
+  const resourceDir = resourceDirOf(loaded, REPO_ROOT);
+  console.log(`[options] ${describeResourcesLine(loaded.options, resourceDir)}`);
+
   // ★玩家数据（`SYS4REG.INI` / `SAVE\SAVE.DAT`）走「系统存档目录 + overlay」：
   //   读 overlay → base（真游戏），写只写 overlay ⇒ 能继承真游戏设置，又不会写坏它。
   //   `--no-save-config` / `--no-save-data` 可关回写（关掉后完全不写盘）。
@@ -32,7 +37,7 @@ async function main() {
   const overlay = new OverlayDir(system);
   console.log(`[overlay] ${describeSystemPaths(system)}`);
   const src = new NodeFileSource({
-    resourceDir: RESOURCE_DIR,
+    resourceDir: resourceDir.dir,
     ...(saveConfig || saveData ? { system } : {}),
     log: (m) => console.log(`[overlay] ${m}`),
   });
@@ -60,14 +65,9 @@ async function main() {
     console.log('[config] overlay/base 都没有 SYS4REG.INI（引擎字段用默认值）');
   }
 
-  // 外置选项（`emulator.config.json`，可选；`AMAYUI_EMULATOR_CONFIG` 可换路径）：
-  // 目前只有一个开关 `boot.showLogo` —— false 时预设 `_this[96983]=0` 跳过 LOGO/版权页（省启动等待）。
+  // 外置选项 → 引擎：`boot.showLogo`（LOGO/版权页开关）+ `resources.version`（字体面名解析策略）。
   // ★必须在装载脚本之前套用：SYSTEM4 的 `load-show-logo`（`src/SYSTEM4.txt:144-146`）在开头就据它分派。
-  {
-    const loaded = loadEmulatorOptions(REPO_ROOT);
-    for (const l of describeEmulatorOptions(loaded)) console.log(l);
-    for (const n of applyEmulatorOptions(e.engineValues, loaded.options)) console.log(`[options] ${n}`);
-  }
+  for (const n of applyEmulatorOptionsToEngine(e, loaded.options)) console.log(`[options] ${n}`);
 
   // 装载 SAVE.DAT（`save-int`/`save-string` 表）—— 必须在装载脚本之前：
   // `SYSTEM4.txt:71` 的 `load-int (global 5)` 决定走 LOADCONFIG（恢复设置）还是 INITCONFIG（写默认值）。

@@ -25,7 +25,19 @@
  * 历史错误：`メイリオ`（`$1$INITCONFIG0.txt:18` 设给 `bbb`，即消息窗主字体）被映射到
  * `MS Gothic`，于是 ADV 正文实际用 WenQuanYi 渲染（日志实证
  * `[font] MS Gothic#400 ← MSGothic_WenQuanYi_cnjp.ttf（4880KB）`）。
+ *
+ * ## ★字体政策按资源版本分叉（2026-09，`emulator.config.json` 的 `resources.version`）
+ *
+ * 上面那条"一切面名 → `Amayui CN`"只是 **`cnjp`（ShiftJIS 编码的中文资源）** 的政策。
+ * `Amayui CN` 的 cmap 是**为占位编码服务的**（日文写法码位 → 简体字形），拿它渲染**纯日文资源**
+ * 会把原文的日文码位也换成简体（`说/説`、`为/為` 同形替换肉眼可见），且**不报错、只是显示不对**。
+ * ⇒ `resources.version = 'jp'` 时改走**未做 cnjp 替换**的更纱黑体（工程自带的
+ * `res/fonts/SarasaGothicSC`，正是 `Amayui CN` 的基底 ⇒ 两者只差"有没有做 cmap 替换"）。
+ *
+ * ★`resources.version = 'jp'` 下请求 `Amayui CN` 面名 = **错误配置**（该面名只因汉化而存在）：
+ * **不做特殊处理**，走通用回退（默认字族 + 一条 `unknown` 日志）—— 见 `FACE_MAPS.jp`。
  */
+import type { ResourceVersion } from '../emulatorOptions.js';
 
 /**
  * 一个内置字族：`family` = 注册进 `document.fonts` 的名字，`file` = `res/fonts/` 下的相对路径。
@@ -65,36 +77,73 @@ export const BUILTIN_FAMILIES: BuiltinFamily[] = [
   },
 ];
 
+/** 汉化随包字体族名（`cnjp` 的落地字族）。 */
+export const CNJP_FAMILY = 'Amayui CN';
+/** 更纱黑体 SC（`jp` 的落地字族；也是 `Amayui CN` 的**基底**，只差没做 cnjp cmap 替换）。 */
+export const SARASA_FAMILY = 'Sarasa Gothic SC';
+
 /**
- * 引擎面名 → 内置字族。键一律**大写、去空格**后比较。
+ * 引擎面名 → 内置字族（按 `resources.version` 分两张表）。键一律**大写、去空格**后比较。
  *
- * ★取值依据**汉化随包字体就是 `Amayui CN` 一族**（`patch/patch.config.json` 同步它的 Regular+Bold
+ * `cnjp`：取值依据**汉化随包字体就是 `Amayui CN` 一族**（`patch/patch.config.json` 同步它的 Regular+Bold
  * 两个文件），且汉化说明要求把所有字体分类都设为 `Amayui CN`
  * ⇒ 引擎侧的这些日文面名在汉化环境里**都渲染成 Amayui CN**，映射到别的字族就是错。
  * （旧 WenQuanYi 线的 `MSGothic_WenQuanYi_cnjp.ttf` 已废弃，不再有对应字族。）
+ *
+ * `jp`：纯日文资源 ⇒ 落到**未做 cnjp 替换**的更纱黑体，不再经 `Amayui CN` 的 cmap 置换日文码位。
+ * ★该表**故意不含 `AMAYUI CN`**：纯日文资源下请求该面名是**错误配置**，不做特殊处理
+ * （走通用回退 = 默认字族 `Sarasa Gothic SC` + 一条 `unknown` 日志）。
  *
  * 参考（引擎侧事实）：`$1$INITCONFIG0.txt:18-27` 把 `bbb/bbf=メイリオ`、`bbc/bbe=ＭＳ ゴシック`、
  * `bbd=游ゴシック` 写进全局字符串，脚本用 `set-font`(0x1A5)/`i2fe`(0x2FE) 取用；
  * `0x1A5` 的 handler（`sub_4328F0` raw 41385-41400）对**不在可选字体表内**的名字只打警告、
  * 仍然把名字写进 `Font+1260` ⇒ 名字本身不决定渲染器，落到哪个内置字族才是重写侧的事。
  */
-const FACE_MAP: Record<string, string> = {
-  // 引擎默认的注音面（`sub_465390` raw 78875 硬编码 "ＭＳ ゴシック"）与 CONFIG 的可选面。
-  ＭＳゴシック: 'Amayui CN',
-  MSGOTHIC: 'Amayui CN',
-  ＭＳ明朝: 'Amayui CN', // 随包无 Mincho 面 ⇒ 同渲染为 Amayui CN
-  MSMINCHO: 'Amayui CN',
-  メイリオ: 'Amayui CN', // ★消息窗主字体（bbb/bbf）—— 历史上被误映射到 WenQuanYi 的 `MS Gothic`
-  MEIRYO: 'Amayui CN',
-  游ゴシック: 'Amayui CN', // 同上（Yu Gothic）
-  YUGOTHIC: 'Amayui CN',
-  AMAYUICN: 'Amayui CN',
-  'AMAYUI CN': 'Amayui CN',
-  SARASAGOTHICSC: 'Sarasa Gothic SC',
+const FACE_MAPS: Record<ResourceVersion, Record<string, string>> = {
+  cnjp: {
+    // 引擎默认的注音面（`sub_465390` raw 78875 硬编码 "ＭＳ ゴシック"）与 CONFIG 的可选面。
+    ＭＳゴシック: CNJP_FAMILY,
+    MSGOTHIC: CNJP_FAMILY,
+    ＭＳ明朝: CNJP_FAMILY, // 随包无 Mincho 面 ⇒ 同渲染为 Amayui CN
+    MSMINCHO: CNJP_FAMILY,
+    メイリオ: CNJP_FAMILY, // ★消息窗主字体（bbb/bbf）—— 历史上被误映射到 WenQuanYi 的 `MS Gothic`
+    MEIRYO: CNJP_FAMILY,
+    游ゴシック: CNJP_FAMILY, // 同上（Yu Gothic）
+    YUGOTHIC: CNJP_FAMILY,
+    AMAYUICN: CNJP_FAMILY,
+    'AMAYUI CN': CNJP_FAMILY,
+    SARASAGOTHICSC: SARASA_FAMILY,
+  },
+  jp: {
+    // 日文面名 → 未做 cnjp 替换的更纱黑体（`AMAYUI CN` 见上：错误配置，故意不列）。
+    ＭＳゴシック: SARASA_FAMILY,
+    MSGOTHIC: SARASA_FAMILY,
+    ＭＳ明朝: SARASA_FAMILY,
+    MSMINCHO: SARASA_FAMILY,
+    メイリオ: SARASA_FAMILY,
+    MEIRYO: SARASA_FAMILY,
+    游ゴシック: SARASA_FAMILY,
+    YUGOTHIC: SARASA_FAMILY,
+    SARASAGOTHICSC: SARASA_FAMILY,
+  },
 };
 
-/** 默认字族（表里查不到时的回退；也是随包 `message:Font` 的值）。 */
-export const DEFAULT_FAMILY = 'Amayui CN';
+/** 兼容旧引用：`cnjp`（默认政策）的面名表。 */
+export const FACE_MAP = FACE_MAPS.cnjp;
+
+/** 各版本查不到面名时的回退字族。 */
+const DEFAULT_FAMILIES: Record<ResourceVersion, string> = {
+  cnjp: CNJP_FAMILY,
+  jp: SARASA_FAMILY,
+};
+
+/** 默认字族（`cnjp` 政策；也是随包 `message:Font` 的值）。 */
+export const DEFAULT_FAMILY = DEFAULT_FAMILIES.cnjp;
+
+/** 某个资源版本的默认字族（回退目标）。 */
+export function defaultFamilyOf(version: ResourceVersion): string {
+  return DEFAULT_FAMILIES[version];
+}
 
 /** 把引擎面名规范化成查表键：剥 `'@'` 前缀（GDI 竖排字体）、去首尾空白与内部空格、转大写。 */
 export function normalizeFace(name: string): string {
@@ -109,11 +158,20 @@ export interface FaceResolution {
   unknown: boolean;
 }
 
-/** 引擎面名 → 内置字族（未知则回退 `DEFAULT_FAMILY` 并标 `unknown`）。 */
-export function resolveFace(engineFace: string): FaceResolution {
-  if (!engineFace) return { family: DEFAULT_FAMILY, unknown: true };
-  const hit = FACE_MAP[normalizeFace(engineFace)];
-  return hit ? { family: hit, unknown: false } : { family: DEFAULT_FAMILY, unknown: true };
+/**
+ * 引擎面名 → 内置字族（未知/空则回退该版本的默认字族并标 `unknown`）。
+ *
+ * `version` 省略 = `'cnjp'`（保持既有调用方/测试的行为不变）；渲染侧一律显式传
+ * `Engine.resourceVersion`（由 `emulator.config.json` 的 `resources.version` 决定）。
+ */
+export function resolveFace(engineFace: string, version: ResourceVersion = 'cnjp'): FaceResolution {
+  // 运行时兜底：`version` 来自 `Engine.resourceVersion`，理论上一定合法，但"半份选项/手写字面量"
+  // 的历史调用点不走 tsc ⇒ 非法值一律按 cnjp（= 当前行为），绝不让查表返回 undefined 崩在渲染路径上。
+  const table = FACE_MAPS[version] ?? FACE_MAPS.cnjp;
+  const fallback = DEFAULT_FAMILIES[version] ?? DEFAULT_FAMILIES.cnjp;
+  if (!engineFace) return { family: fallback, unknown: true };
+  const hit = table[normalizeFace(engineFace)];
+  return hit ? { family: hit, unknown: false } : { family: fallback, unknown: true };
 }
 
 /**
