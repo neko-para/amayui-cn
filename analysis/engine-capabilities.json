@@ -3101,7 +3101,7 @@
         "status": "partial",
         "evidence": "E3",
         "guard": "test/op-a4-a6.test.ts",
-        "note": "2026-09 A4 落地：`handlers/gfx-state.ts`（进 `OPS`）。**建模 2 条**：`0x238` → `engineValues[92338]/[92339]`、`0x258` → `Engine.texSlotFlags`（bit0|bit1）。**宿主缝 11 条**：`native.resetPrimTransform` / `setPrimTransform4` / `blitSlotToSlot` / `commitGraphics` / `clearTransitions` / `setDrawModeBlock` / `setDrawEntryParam` / `setSlotParams` / `setMeshEntryAttr` / `release3DSlot` / `set3DColor`，两个宿主（headlessScene / pixiBackend）都走共享层 `scene/ops.ts` 的新 `sc*` 并落进 `SceneState.render4`。★**仍为 partial 的原因（已登记缺口）**：`render4` 目前只**记录**，Pixi 管线尚未逐条消费（变换复位/槽→槽 blit/Clear/转场表/绘制模式/网格属性/3D 颜色对画面的实际影响待接入；3D 一族在本作重写侧无 3D 管线）。另：这 13 条**不在** TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 8 例单元测试锁定。"
+        "note": "2026-09 A4 落地：handlers/gfx-state.ts（进 OPS）。建模 2 条：0x238 → engineValues[92338]/[92339]、0x258 → Engine.texSlotFlags（bit0|bit1）。宿主缝 11 条：resetPrimTransform、setPrimTransform4、blitSlotToSlot、commitGraphics、clearTransitions、setDrawModeBlock、setDrawEntryParam、setSlotParams、setMeshEntryAttr、release3DSlot、set3DColor；两个宿主（headlessScene / pixiBackend）都走共享层 scene/ops.ts 的 sc* 并落进 SceneState.render4。★2026-09 修（tickets/T-0028）：**0x256 不再是「只记录」** —— 它是 sub_4ACD10 的「对 [op1, op1+op2) 区间内已存在的绘制项做立即平移」（+0x68=1 + 平移 work 矩阵 +0x16C + 置脏）；DRAWCHARM.txt:182-186 正是靠它在收起态（global 1399==1）把侧边栏 21 个槽推 +0x6e；只记录不生效会让每次重绘都画回基准位（表现为「进 ADV 侧边栏即展开」）。现 scSetSlotParams 保留 A4 记录并真应用平移。★仍为 partial 的原因：render4 的其余项（变换复位 / 槽→槽 blit / Clear / 转场表 / 绘制模式 / 网格属性 / 3D 颜色）目前只记录，Pixi 管线尚未逐条消费；3D 一族在本作重写侧无 3D 管线。另：这 13 条不在 TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 op-a4-a6.test.ts 的 9 例单元测试锁定。"
       }
     },
     {

@@ -617,10 +617,47 @@ export function scSetDrawEntryParam(s: SceneState, entry: number, value: number)
   s.render4.entryParams.set(entry, value);
 }
 
-/** `0x256` 按 id 找 DrawItem 并写 2 int + 3 float（`sub_4ACD10`）。 */
-export function scSetSlotParams(s: SceneState, slot: number, a: number, x: number, y: number, z: number): void {
+/**
+ * `0x256` **按 id 区间立即平移**（`sub_425C30` → `sub_4ACD10`，raw 33120 / 131733）。
+ *
+ * 引擎体（逐行核对）：
+ * ```
+ * v9  = lower_bound(items, op1)            // 区间左端 = 第一个 id ≥ op1 的项
+ * v19 = lower_bound(items, op1 + op2)      // ★op2 是 **count**（区间 [op1, op1+op2)），不是"某个参数"
+ * for (v = v9; v != v19; v = next(v)) {
+ *     it = find(v.id);  *(it + 104) = 1;                        // +0x68「用世界矩阵」
+ *     D3DXMatrixTranslation(it + 364, f3, f4, f5);              // +0x16C = 平移 **work** 矩阵（立即）
+ *     Scene[11627] = 1;                                         // 置脏
+ * }
+ * ```
+ * ⇒ 语义 = **对区间内已存在的绘制项做一次立即平移**（与 `0x1FF` 单参版同一原语，区别只是区间 + 只碰已存在项）。
+ *
+ * ★为什么必须真做（`tickets/T-0028`）：这是"收起侧边栏"的**唯一静态摆位手段** ——
+ *   `DRAWCHARM.txt:182-186` 在 `global 1399 == 1`（收起）时对 `0x19835` 起 0x15 个槽执行
+ *   `i256 <槽> 15 6e 0 0`（+110px 推到屏右外）；只记录不生效 ⇒ 任何一次重绘（进场景/翻页）都会把
+ *   侧边栏画回基准位 `x=0x49c`（= 看起来"被 hover 展开"）。LOCK（`global 139a != 0` ⇒ `1399 = 2`）
+ *   会跳过这条分支 ⇒「无视 hover 始终展开」。
+ */
+export function scSetSlotParams(
+  s: SceneState,
+  handle: number,
+  count: number,
+  x: number,
+  y: number,
+  z: number,
+): SetterOutcome {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
-  s.render4.slotParams.set(slot, [a, x, y, z]);
+  // A4 族的"记录"仍然保留（报告/digest 的 `render4.slotParams` 要能看到脚本下发的原值）。
+  s.render4.slotParams.set(handle, [count, x, y, z]);
+  // ★应用：只碰**已存在**的项（引擎是容器区间遍历 ⇒ 不会凭空建项），逐项写 work+target 平移。
+  let applied = 0;
+  for (let h = handle; h < handle + Math.max(0, count); h++) {
+    const it = s.drawItems.get(h);
+    if (!it) continue;
+    applyDrawTranslation(it, x, y, z);
+    applied++;
+  }
+  return applied > 0 ? 'applied' : 'created-gated';
 }
 
 /** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。 */

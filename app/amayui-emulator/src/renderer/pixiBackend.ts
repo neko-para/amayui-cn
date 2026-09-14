@@ -388,10 +388,13 @@ export class PixiBackend implements NativeBridge {
     scSetDrawEntryParam(this.scene, entry, value);
   }
 
-  /** `0x256` 按 id 的绘制项参数。 */
-  setSlotParams(slot: number, a: number, x: number, y: number, z: number): void {
+  /** `0x256` **按 id 区间立即平移**（`sub_4ACD10`）：`[slot, slot+count)` 内已存在的项写 work+target 平移（`tickets/T-0028`）。 */
+  setSlotParams(slot: number, count: number, x: number, y: number, z: number): void {
     this.#markDirty();
-    scSetSlotParams(this.scene, slot, a, x, y, z);
+    const o = scSetSlotParams(this.scene, slot, count, x, y, z);
+    this.#pushLog(
+      `setSlotParams slot=0x${slot.toString(16)} count=0x${count.toString(16)} t=(${x},${y},${z})${o === 'applied' ? '' : ` [${o}]`}`,
+    );
   }
 
   /** `0x321` MeshEntry 属性。 */

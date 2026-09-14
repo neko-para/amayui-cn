@@ -112,15 +112,23 @@ const op_set_draw_entry_param: OpHandler = (c) => {
   c.native.setDrawEntryParam?.(entry, value);
 };
 
-/** `0x256`（sub_425C30 raw 33120-33135）：按 id 找 DrawItem 并写 2 int + 3 float。 */
+/**
+ * `0x256`（sub_425C30 raw 33120-33135）→ `sub_4ACD10`（raw 131733）：
+ * **按 id 区间做立即平移** —— `op1` = 起始 handle、`op2` = **count**（区间 `[op1, op1+op2)`）、
+ * `op3/4/5` = 平移 x/y/z（float）。引擎对区间内**已存在**的绘制项执行
+ * `+0x68 = 1`（用世界矩阵）+ `D3DXMatrixTranslation(+0x16C, …)`（写 **work** 矩阵，立即生效）+ 置脏。
+ *
+ * ★不是"随便写几个字段"：`DRAWCHARM.txt:182-186` 用它把收起态的侧边栏 21 个槽整体推 +0x6e
+ *   （= 唯一的"收起摆位"手段）。宿主缝 `setSlotParams` 必须真的应用平移，见 `tickets/T-0028`。
+ */
 const op_set_slot_params: OpHandler = (c) => {
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const a = readIntOperand(e, c.frame, c.instr, 2);
+  const handle = readIntOperand(e, c.frame, c.instr, 1);
+  const count = readIntOperand(e, c.frame, c.instr, 2);
   const x = readFloatOperand(e, c.frame, c.instr, 3);
   const y = readFloatOperand(e, c.frame, c.instr, 4);
   const z = readFloatOperand(e, c.frame, c.instr, 5);
-  c.native.setSlotParams?.(slot, a, x, y, z);
+  c.native.setSlotParams?.(handle, count, x, y, z);
 };
 
 /** `0x321`（sub_426BD0 raw 33839-33850）：MeshEntry 属性（`entry[op2 + 7] = op3`）。 */

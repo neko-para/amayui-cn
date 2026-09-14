@@ -1,0 +1,176 @@
+{
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/adv",
+  "title": "ADV 侧边栏进入时即呈「hover 展开」外观：状态位与 16 槽平移不一致，手动 hover 移开后自愈",
+  "why": "现象（用户 2026-09 实测）：进入 ADV 场景后右侧侧边栏**默认就处于展开态**，把光标移开后恢复收起，此后 hover 正常。\n\n**根因（已修）**：`0x256` 没被真正实现 —— 引擎语义 = `sub_425C30` → `sub_4ACD10`（raw 33120/131733）：**对 `[op1, op1+op2)` 区间内已存在的绘制项做一次立即平移**（`+0x68=1` + 平移 **work** 矩阵 `+0x16C` + 置脏）；emulator 一直把它当 A4 族的\"只记录\"（写进 `SceneState.render4.slotParams`）**从不移动图元**。而 `DRAWCHARM.txt:182-186` 正是靠它在**收起态**给侧边栏 21 个槽套 `(0x6e,0,0)`：`eq (global 1399) 1` → `i256 (local-int 0) 15 6e 0 0`。⇒ 只记录不生效 ⇒ 每次重绘（进场景/翻页）都把侧边栏画回基准位 `x=0x49c`（= 看起来\"被 hover 展开\"）；首次悬停条带触发 `c74`（`i220 → 0`，视觉无变化）把 `global 1399` 抬到 2，再移开触发 `e78`（`i220 → 0x6e`）才真正收起 —— 与用户描述完全一致。\n\n**LOCK 开关（用户提示）**：`global 139a`（侧边栏右下 (1189,573) 按钮的 click handler `SN0000.txt:232`：`sub (global-int 139a) 1 (global-int 139a)` —— dst 与第二个源**同槽** ⇒ 实际是 **取反 `139a = 1 - 139a`（0↔1 开关）**）。`139a != 0`（LOCK ON）⇒ ① 场景启动 `1399 = 2`；② `SN0000.txt:64-66` **不登记全屏收起热点**（⇒ 无视 hover）；③ `DRAWCHARM.txt:183-184` **跳过**那条 `i256` ⇒ 停在基准可见位 = 「LOCK 恒展开」。**LOCK 逻辑本身没错**，缺的是它旁边那条 `i256` 的实现。\n\n**排查过程中的两个结论（都留档在 notes.md）**：① 产品路径（Electron，jp 资源）已用截图复现，且 headless 与 Electron **逐帧 digest 相等**（G3 `npm run replay`，3069 帧）⇒ 不存在\"宿主不一致\"，最初\"headless 没问题\"是我探针错了两处（把 `19834` 当十进制、只跑 30 帧、只看派发）；② 候选 A（进入时合成 hover-enter）/ B（LOCK 已开、`139a == 1`）已被数据排除：复现截图光标在 (811,605) 且 `routes` 全程 `{count:7,cursor:-1,hover:-1}`、`139a = 0`。",
+  "acceptance": [
+    "进入 ADV 场景（序章 SN0000 与常规 `$1$SC*`）、不碰鼠标 ⇒ 侧边栏为**收起**态（E4：evidence/fix-7-sn0000-first-text-collapsed.png；对照修复前 evidence/t0028-7-sn0000-first-text.png）",
+    "悬停条带 ⇒ 展开且条目高亮；移开 ⇒ 收起（E4：evidence/fix-9 / fix-10）—— 无回归",
+    "收起摆位的机制落库：`0x256` = 区间立即平移（functions.json 的 0x425C30 + 第二层 gfx-prim-mesh-and-render-state 的 note）",
+    "守卫生效且先红后绿：app/amayui-emulator/test/op-a4-a6.test.ts 的『★A4 0x256：对 [handle, handle+count) 内已存在的项做立即平移』（改回\"只记录\"即红）",
+    "LOCK（`139a != 0` ⇒ `1399 = 2` + 不登记全屏热点 + 跳过 `i256`）的语义写进 notes.md / 台账，供下次对照"
+  ],
+  "evidence": [
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 49c 0 64 281 label_00000c74 label_00000e74 label_00000e74",
+      "line": 63,
+      "note": "展开态下的侧边栏条热点：enter = label_00000c74 = 展开 handler（leave/click 是空 ret）"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 0 0 500 2d0 label_00000e78 label_00001074 label_00001074",
+      "line": 66,
+      "note": "展开态下的全屏热点：enter = label_00000e78 = 收起 handler —— 用户「hover 移开后正常」走的就是它"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 4ce e9 32 104 label_00000c74 label_00000e74 label_00000e74",
+      "line": 74,
+      "note": "★收起态下的热点集合完全不同：只有 (0x4ce,0xe9) 50×260 的展开标签 —— 所以「热点表按状态分两套」，状态位错了整张表就错"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "eq (local-int 0) (global-int 1399) 1",
+      "line": 123,
+      "note": "侧边栏条 enter 的守卫：只在 1399==1（收起）时执行展开动画"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "eq (local-int 0) (global-int 1399) 2",
+      "line": 162,
+      "note": "全屏 enter 的守卫：只在 1399==2（展开）时执行收起动画"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i220 (local-int 0) 0 c8 0 0 0",
+      "line": 136,
+      "note": "展开 = 16 槽平移到 x=0"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i220 (local-int 0) 0 c8 6e 0 0",
+      "line": 175,
+      "note": "收起 = 16 槽平移到 x=0x6e（推出屏右）—— 进入时应当就是这个效果"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "sub (global-int 139a) 1 (global-int 139a)",
+      "line": 232,
+      "note": "★`139a`（LOCK）在全工程唯一的写入形式：`139a = 1 - 139a`（dst 与 src2 同槽 ⇒ **0↔1 取反**），334 处 = 每个 ADV 脚本的侧边栏 LOCK 按钮。LOCK ON（1）⇒ 启动置 1399=2 + 不登记全屏收起热点 + 跳过 i256"
+    },
+    {
+      "file": "src/$1$SC0330.txt",
+      "anchor": "mov (global-int 1399) 1",
+      "line": 1075,
+      "note": "常规场景的启动段：默认收起"
+    },
+    {
+      "file": "src/$1$SC0330.txt",
+      "anchor": "jcc (global-int 139a) ffffffff label_00003d3c",
+      "line": 1076,
+      "note": "★`139a != 0` ⇒ 落到下一句 `mov 1399 2`（启动即展开）；该段内没有任何 i220 摆位置"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/panel.ts",
+      "anchor": "function showPanel",
+      "line": 52,
+      "note": "面板首次显示时的命中测试（= 引擎 sub_404020）—— 候选 A 的入口"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/route.ts",
+      "anchor": "this.hover = -1;",
+      "line": 345,
+      "note": "0x93/sub_403EF0 复位会把 hover 清 -1 ⇒ 下一次命中测试必然产生一次 labelA（两段式状态机的第一半）"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "jcc (global-int 1399) ffffffff label_0000bb20",
+      "line": 3101,
+      "note": "★定因关键门：b884 在 1399≠0（收起/展开都算）时继续往下 → 调 DRAWCHARM 画侧边栏"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "call-script 46  // DRAWCHARM",
+      "line": 3102,
+      "note": "侧边栏 19 槽的唯一绘制入口"
+    },
+    {
+      "file": "src/DRAWCHARM.txt",
+      "anchor": "draw-texture (local-int 0) 11 (local-int 3) (local-int 5) 50 2f 49c 234",
+      "line": 24,
+      "note": "★条目的基准 dst x = 0x49c（可见位）——「看起来展开」就是这个基准位置，不是 hover 造成的"
+    },
+    {
+      "file": "src/DRAWCHARM.txt",
+      "anchor": "detach-texture 19834 19",
+      "line": 6,
+      "note": "DRAWCHARM 每次先删 19 个槽再画（与 0x1F7 删除语义一致）"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/replay.ts",
+      "anchor": "engine 段逐帧相等",
+      "line": 101,
+      "note": "★G3 回放器的判据：同一份时钟+输入下 headless 与 Electron 的 engine 段必须逐帧相等（本次实测相等）"
+    },
+    {
+      "file": "src/DRAWCHARM.txt",
+      "anchor": "i256 (local-int 0) 15 6e 0 0",
+      "line": 186,
+      "note": "★★缺的那一步：对 [0x19835, +0x15) 的 21 个槽做 +0x6e 立即平移 = 收起摆位"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "j_D3DXMatrixTranslation(v13 + 364, LODWORD(v15), LODWORD(v16), LODWORD(v17));",
+      "line": 131789,
+      "note": "0x256 的引擎体 sub_4ACD10：逐项写平移 work 矩阵（+0x16C=364）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "export function scSetSlotParams(",
+      "line": 641,
+      "note": "修复点：保留 A4 记录 + 对区间内已存在项应用平移"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "applyDrawTranslation(it, x, y, z);",
+      "line": 657,
+      "note": "复用 0x1FF 的同一原语（work+target 都写 ⇒ 无窗时立即生效）"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-a4-a6.test.ts",
+      "anchor": "★A4 0x256：对 [handle",
+      "line": 140,
+      "note": "回归锁（先红后绿）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md"
+    ],
+    "analysis": [
+      "adv-advance-route-table"
+    ],
+    "tickets": [
+      "T-0016",
+      "T-0007"
+    ]
+  },
+  "notes": "定因=0x256（区间立即平移）未实现；LOCK 开关 = `global 139a`（非错误源）。修复实现见 changes.md，排查全过程（含 G3 复核与 A/B 排除）见 notes.md；证据截图在 evidence/（t0028-* = 修复前，fix-* = 修复后）。★本票是 T-0016 验收 1 的收窄复现。",
+  "id": "T-0028",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— 修复：0x256 区间立即平移（scSetSlotParams 真应用）+ 守卫先红后绿 + E4 截图（进场景即收起）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-a4-a6.test.ts"
+  ]
+}

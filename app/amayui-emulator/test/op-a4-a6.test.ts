@@ -18,6 +18,8 @@ import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import { im, instr, str } from './harness.js';
+import { newSceneState } from '../src/renderer/scene/state.js';
+import { scEnsureItem, scSetSlotParams } from '../src/renderer/scene/ops.js';
 
 /** 立即数 float：`raw` 必须是 **IEEE 位模式**（`readFloatOperand` 走 `floatBits(raw)`）。 */
 const fm = (v: number): BinArg =>
@@ -125,6 +127,33 @@ test('A4 0x258：纹理槽标志对（bit0/bit1，两张镜像表同值 ⇒ 一�
   assert.equal(e.texSlotFlags.get(5), 1);
   run(0x258, [im(999), im(0xff)]);
   assert.equal(e.texSlotFlags.get(999), 3, '只取低两位（引擎只判 bit0/bit1）');
+});
+
+/**
+ * ★★`0x256` 必须**真的移动图元**（`tickets/T-0028`）★★
+ *
+ * 引擎 `sub_4ACD10`：`op1`=起始 handle、`op2`=**count**（区间 `[op1, op1+op2)`），对区间内**已存在**的
+ * 绘制项写 `+0x68=1` + 平移 work 矩阵（立即）。`DRAWCHARM.txt:182-186` 在 `global 1399 == 1`（收起）
+ * 时用 `i256 0x19835 15 6e 0 0` 把侧边栏 21 个槽推到屏右外 —— 只记录不生效 ⇒ 每次重绘都画回基准位
+ * `x=0x49c`（看起来"被 hover 展开"）。
+ */
+test('★A4 0x256：对 [handle, handle+count) 内已存在的项做立即平移（含区间外不动 / 不补建 / 记录仍保留）', () => {
+  const s = newSceneState();
+  for (const h of [0x19835, 0x19836, 0x19837, 0x19850]) scEnsureItem(s, h);
+  const o = scSetSlotParams(s, 0x19835, 3, 0x6e, 0, 0);
+  assert.equal(o, 'applied');
+  for (const h of [0x19835, 0x19836, 0x19837]) {
+    const it = s.drawItems.get(h)!;
+    assert.deepEqual(
+      { work: it.transWork.x, target: it.transTarget.x, useWorld: it.useWorld },
+      { work: 0x6e, target: 0x6e, useWorld: true },
+      `0x${h.toString(16)} 应被平移 +0x6e（work 与 target 都写：无窗时求值走 target）`,
+    );
+  }
+  assert.equal(s.drawItems.get(0x19850)!.transWork.x, 0, '区间外的项不得被动');
+  assert.equal(s.drawItems.has(0x19834), false, '区间内不存在的 handle 不补建（引擎按容器区间遍历）');
+  assert.deepEqual(s.render4.slotParams.get(0x19835), [3, 0x6e, 0, 0], 'A4 族的记录仍保留（报告/digest 用）');
+  assert.equal(s.dirty, true);
 });
 
 // ---------------------------------------------------------------------------

@@ -365,9 +365,16 @@ export class HeadlessScene implements NativeBridge {
     scSetDrawEntryParam(this.scene, entry, value);
   }
 
-  /** `0x256` 按 id 的绘制项参数。 */
-  setSlotParams(slot: number, a: number, x: number, y: number, z: number): void {
-    scSetSlotParams(this.scene, slot, a, x, y, z);
+  /**
+   * `0x256` **按 id 区间立即平移**（`sub_4ACD10`）：`slot` + `count` 定义区间 `[slot, slot+count)`，
+   * 对区间内**已存在**的绘制项写 work+target 平移。★收起侧边栏就靠它（`tickets/T-0028`）。
+   */
+  setSlotParams(slot: number, count: number, x: number, y: number, z: number): void {
+    this.outcome(
+      scSetSlotParams(this.scene, slot, count, x, y, z),
+      'setSlotParams',
+      `slot=0x${slot.toString(16)} count=0x${count.toString(16)} t=(${x},${y},${z})`,
+    );
   }
 
   /** `0x321` MeshEntry 属性。 */

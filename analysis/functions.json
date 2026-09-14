@@ -6323,15 +6323,15 @@
   {
     "addr": "0x425C30",
     "raw_name": "sub_425C30",
-    "semantic_name": "setDrawItemTriple_425C30",
+    "semantic_name": "setDrawItemRangeTranslation_425C30",
     "op": "0x256",
     "status": "ANALYZED",
-    "purpose": "sub_4ACD10(Scene, op1=handle, op2, f3, f4, f5)：给绘制项设 3 个 float",
-    "sub_behaviors": ["f7=readFloat(5), f6=readFloat(4), f5=readFloat(3), v4=readInt(2), v2=readInt(1)", "sub_4ACD10(Scene, v2, v4, f5, f6, f7)"],
+    "purpose": "op 0x256：**按 id 区间做立即平移** —— op1=起始 handle、op2=**count**（区间 [op1, op1+op2)）、op3/4/5=平移 x/y/z(float)。引擎体 sub_4ACD10（raw 131733）：lower_bound(op1) 到 lower_bound(op1+op2) 遍历容器，对**已存在**的绘制项写 +104(=+0x68)=1（用世界矩阵）+ D3DXMatrixTranslation(+364=+0x16C, x,y,z)（平移 work 矩阵，立即生效）+ Scene[11627]=1（置脏）。",
+    "sub_behaviors": "lower_bound(op1) 与 lower_bound(op1+op2) 定出区间（op2 = count，不是普通参数）,逐项 +0x68=1 并写 +0x16C 的平移 work 矩阵,只碰容器里已存在的项（不建项）,置脏 Scene[11627]",
     "fields_used": ["Scene DrawItem 表的项"],
-    "unmodeled": ["sub_4ACD10 写入的具体 float 三元组语义"],
+    "unmodeled": "",
     "evidence": "raw 33120-33135 + 131733-…",
-    "notes": "纯渲染侧；语料 src/DRAWCHARM.txt:150 ★2026-09 A4 落地：emulator `op_set_slot_params` → `native.setSlotParams`。语料 5 处。"
+    "notes": "★这是「收起侧边栏」的唯一静态摆位手段：DRAWCHARM.txt:182-186 在 global 1399==1（收起）时对 0x19835 起 0x15 个槽执行 i256 <槽> 15 6e 0 0（+110px 推出屏右）。LOCK（global 139a != 0 ⇒ 1399=2）跳过该分支 ⇒ 无视 hover 恒展开。emulator 2026-09 修（tickets/T-0028）：此前只记进 SceneState.render4.slotParams（当 A4『只记录』），导致任何重绘都把侧边栏画回基准位 x=0x49c（表现为『进入场景即被 hover 展开』）；现由 scSetSlotParams 对区间内已存在项应用 work+target 平移（applyDrawTranslation）。"
   },
   {
     "addr": "0x425D20",
