@@ -1,0 +1,46 @@
+{
+  "title": "engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红",
+  "type": "tooling",
+  "priority": "P3",
+  "area": "emulator/test",
+  "why": "engine-config.test.ts:65-85 与 :87-102 从 %LOCALAPPDATA%\\Eushully\\<game>\\SYS4REG.INI（**真游戏那份玩家数据**）读文本，并断言具体取值（message:MessageSpeed=5、sound:Music=2、message:Font=Amayui CN、MesWinAlpha=8…）。实测（2026-09）：玩家在真游戏里改了设置（或真游戏重写该 INI）后，base 的 MessageSpeed 由 5 变成 50，两条测试当场变红 —— 而我们代码一行都没改。这类断言把「测试」绑在「开发机上某个可变文件」上，既不可复现也会误报（与 tickets/T-0026 讨论过的 resources.path『测试不得受开发机配置影响』同款纪律）。",
+  "acceptance": [
+    "两条测试不再断言玩家 INI 的**具体取值**：改为断言『结构 + 稳定事实』（分节集合；键存在且类型可解析；applyConfigToEngine 后关键字段 = 该 INI 里同名键的**读回值**）",
+    "具体数值（MessageSpeed=5 / Music=2 / Font=Amayui CN…）移到显式的**夹具 INI**（FALLBACK_INI 那条路已存在），并在用真 INI 的分支里只做『读出的值 == 解析出的值』的自洽断言",
+    "给出可复现判据：把临时 INI（或夹具）喂进去时，两条测试在『base 文件被改/不存在』两种情况下都绿；记录 before/after（当前 base MessageSpeed=50 时也不应有的失败）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/engine-config.test.ts",
+      "anchor": "assert.equal(cfgInt(cfg, 'message:messagespeed'), 5);",
+      "line": 77,
+      "note": "直接断言真游戏玩家 INI 的具体取值（本次实测被玩家改成 50 ⇒ 红）"
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-config.test.ts",
+      "anchor": "assert.equal(get(21668), 5, 'message:MessageSpeed=5",
+      "line": 97,
+      "note": "同上（applyConfigToEngine 那条）"
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/systemPaths.ts",
+      "anchor": "baseDir",
+      "note": "base 是**真游戏**的玩家数据目录（读 overlay→base、只写 overlay）⇒ 测试直接读它 = 让结果取决于开发机状态"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0026",
+      "T-0031"
+    ]
+  },
+  "notes": "2026-09 发现路径：做 T-0033 时跑 npm run verify，这两条红；核对后确认是**玩家数据被改**（base SYS4REG.INI 的 mtime 与 MessageSpeed 都变了），与本轮代码改动无关 —— 但按台账纪律要开票，不许放着不管。",
+  "id": "T-0034",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    }
+  ]
+}

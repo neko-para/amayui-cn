@@ -253,6 +253,11 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     } else if (e.textRevealing) {
       opt.onGate?.('text-reveal', e);
       obs?.onGate?.({ ...obsMid(), branch: 'text-reveal' });
+      // ★引擎 `sub_409400` 的**输入出口**（raw 13931-13946）：逐字还没显完时点击 ⇒ 立刻把整页贴完
+      //   （**不推进页面**）。★必须在 `serviceTextReveal` **之前**：引擎在同一函数里先看输入、再贴一个字。
+      //   修前这条路径整个缺失 ⇒ 逐字期间的点击既不贴完、也不被消费，等文字自然显完后被等待泵当成"推进"
+      //   ⇒ 用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」（`tickets/T-0033`）。
+      e.serviceRevealAdvanceInput();
       e.serviceTextReveal(nowMs);
     } else if (gates.advance !== 'ignore' && e.awaitingAdvance) {
       opt.onGate?.('advance', e);

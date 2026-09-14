@@ -72,6 +72,66 @@ test('stopReason：跑满上限 = cap（frames=上限、steps 按每帧派发数
   assert.equal(stepsSeen, 2, 'onStep 每条一次');
 });
 
+/**
+ * ★★**逐字期间的点击由「贴完整页」出口消费，不得攒成后续帧的推进**（`tickets/T-0033`）★★
+ *
+ * 用户实测：ADV 页里快速多次点击 ⇒ emulator 要等第一句逐字显完才播第二句。
+ * 修前本驱动把 `textRevealing` 分支排在推进分支之前、且那条分支**完全不消费输入** ⇒
+ * 逐字期间的点击留在输入边沿里，等文字自然显完后被等待泵当成"推进"（一次点击干了两件事）。
+ * 引擎依据：`sub_409400` 第二半（raw 13931-13946）在逐字期间就把这次点击用掉（贴完整页）。
+ */
+test('★逐字期间点击：贴完整页、不派发；再点一次才推进（T-0033）', async () => {
+  const e = mk([
+    instr(0x6e, [im(0), { type: 2, raw: 0, str: 'こんにちは世界' } as unknown as BinArg]),
+    instr(0x94), // 面板已显示（等待泵的门控）
+    instr(0x72, [im(0)]), // 逐字开始（武装）+ 等待门
+    pollInput(),
+    pollInput(),
+  ]);
+  e.engineValues.set(21668, 50); // message:MessageSpeed = 50ms（否则 0 ⇒ 同步排空）
+  const { host, advance } = mkHost();
+  const opts = {
+    gates: { anim: 'wait' as const, sleep: 'wait' as const, advance: 'pump' as const },
+    services: { winReveal: false, charGrid: false },
+    advFrame: false,
+    maxStepsPerFrame: 100,
+    maxFrames: 1,
+    audio: 'never' as const,
+    onFrameEnd: advance,
+  };
+  // ① 跑到"逐字中"（产品门档：文本段落间的 sleep 让步也照走）
+  let guard = 0;
+  while (!e.textRevealing && guard++ < 120) await runFrameLoop(e, host, opts);
+  assert.equal(e.textRevealing, true, '应在逐字中（0x72 武装后开始）');
+  const w = e.msgwin.resolveWin(0);
+  const st = e.msgwin.reveal.get(w)!;
+  assert.ok(st.total > 3, `文本应有多字（实际 ${st.total}）`);
+  assert.ok(st.shown < st.total, `此刻未显完（${st.shown}/${st.total}）`);
+  const ipAtGate = e.curScript().ip;
+
+  // ② 逐字期间点一次左键 ⇒ 本帧只"贴完整页"，不派发任何指令
+  e.input.setCursor(10, 10);
+  e.input.pressMouse(0);
+  const r1 = await runFrameLoop(e, host, opts);
+  assert.equal(e.msgwin.reveal.get(w)!.shown, st.total, '★文本立即整页贴完');
+  assert.equal(e.textRevealing, false, '不再逐字');
+  assert.equal(r1.steps, 0, '★逐字期间的点击不派发任何指令');
+  assert.equal(e.curScript().ip, ipAtGate, '★页不推进（ip 不动）');
+
+  // ③ 该次点击已被消费 ⇒ 后续帧不得再被等待泵当成推进
+  e.input.releaseMouse(0);
+  const r2 = await runFrameLoop(e, host, opts);
+  assert.equal(r2.steps, 0, '★那次点击不得在后续帧变成"推进"');
+  assert.equal(e.curScript().ip, ipAtGate, '页仍停在门后');
+
+  // ④ 再点一次 ⇒ 才推进（无热点 ⇒ 窗内推进文本 ⇒ 门清掉后尾两条派发到脚本尾）
+  e.input.setCursor(10, 10);
+  e.input.pressMouse(0);
+  const r3 = await runFrameLoop(e, host, { ...opts, maxFrames: 8 });
+  assert.equal(r3.stopReason, 'script-end', '第二次点击后脚本应能跑完');
+  assert.equal(r3.steps, 2, '尾两条 0x101 被派发');
+});
+
 test('stopReason：until 在帧开头生效 ⇒ frames 记"已跑完的帧数"、本帧一条都不派发', async () => {
   const e = mk([pollInput(), pollInput()]);
   const { host, advance } = mkHost();

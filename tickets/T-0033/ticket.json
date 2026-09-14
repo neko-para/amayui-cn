@@ -1,0 +1,80 @@
+{
+  "title": "ADV 逐字显现期间的点击不生效：点击被攒到显完之后当成「推进」⇒ 快速点击要等整句逐字完才跳下一句",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/adv",
+  "why": "用户实测（2026-09）：ADV 页面里快速多次点击时，emulator 会**等第一句逐字显完之后**才播第二句。引擎的期望行为是：① 逐字过程中点击 ⇒ 当前句**立即整页贴完**（不推进）；② 再点一次 ⇒ 切到下一句并开始逐字；③ 再点 ⇒ 跳过下一句的逐字。定因（读反编译体）：引擎文本泵 `sub_409400`（raw 13780-13970）在第二半（raw 13931-13946）有**输入出口** —— 消费刷取掩码后，若 `mask & 0x10`（**左键**）或滚轮键位命中（`message:AdvanceMesOnWheel` & 1）或滚轮累加器 `Engine[7796] < 0`（读后清、下滚）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20(Font, 当前窗)` 直到整页贴完**，并把掩码清 0（这次点击被消费）；它**不清 bit31**（等待门仍在）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。emulator 现状：帧驱动把 `textRevealing` 分支排在等待推进分支**之前**（src/frame/loop.ts），而 `serviceTextReveal` 完全不看输入 ⇒ 逐字期间 `serviceAdvanceWait` 从不被调用 ⇒ 点击留在输入边沿里不被消费；等文字自然显完后，等待泵把这条**陈旧的点击**当成推进输入 ⇒ 表现为「点击被攒到显完之后才生效（推进一页）」，且逐字期间点击没有『立即贴完』的效果。即使把泵接上也不对：`serviceAdvanceWait` 在派发前会先 `finishCharReveal()`（清 bit30）**再继续派发 labelC/页内推进** —— 一次点击干了两件事，与引擎的『只贴完、不推进』不同。",
+  "acceptance": [
+    "逐字期间一次左键点击 ⇒ 当前页文本**立即整页贴完**，且**不推进**（脚本 ip 不动、不发 label、页数不变）",
+    "该次点击被**消费**：紧随其后的帧不得再把它当推进输入（引擎 raw 13942 的 `*v6 = 0`）",
+    "贴完用的是普通泵语义：**不清 bit30**（▼ 图标继续闪），与 `finishCharReveal()`（清 bit30）区分开",
+    "逐字期间**右键不生效**、滚轮上滚不生效（引擎 raw 13935 只认 `mask & 0x10` + 滚轮键位 + 下滚）",
+    "贴完之后再点一次 ⇒ 才推进到下一句（并重新开始逐字）—— 即 点击/点击/点击 = 贴完/下一句/跳过下一句",
+    "E3（真实语料）：SN0000 首句逐字期间注入一次点击 ⇒ 文本立即变整页、页数不变；再点一次才推进"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "result = sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484));",
+      "line": 13944,
+      "note": "★输入出口：点击 ⇒ `do … while (!result)` 自旋把整页贴完（raw 13931-13946）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(_this + 388212) = 1;",
+      "line": 13941,
+      "note": "置「玩家要求立即贴完」标志（下一次调用顺带清等待门计时器 + 置强制冻结，raw 13910-13915）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( (v35 & 0x20000000) != 0 )",
+      "line": 21176,
+      "note": "主循环分支顺序：逐字标志在等待门之前 ⇒ 逐字期间不派发脚本、也不进等待泵"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "} else if (e.textRevealing) {",
+      "note": "驱动分支：逐字分支在推进分支之前（修前这里不消费输入）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "serviceRevealAdvanceInput()",
+      "note": "修复点：逐字期间的输入出口（只吃左键/滚轮下滚、贴完不清 bit30、消费该次点击）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "if ((mask & 0x10) !== 0 && panel.cursorValid()) {",
+      "note": "★对照：等待泵在派发前会 finishCharReveal（清 bit30）**并继续推进** ⇒ 不能直接用它实现逐字期间的点击"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md"
+    ],
+    "tickets": [
+      "T-0016",
+      "T-0027"
+    ]
+  },
+  "notes": "与 T-0016（逐字被重放）同属『逐字/门指令状态机』一族，但现象与定因不同：T-0016 是门指令重跑不幂等，本票是逐字期间的输入出口缺失。",
+  "id": "T-0033",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— 守卫（单元 + 驱动）+ E3 真实语料见 changes.md；残余见 notes.md"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts"
+  ]
+}

@@ -256,6 +256,64 @@ test('★重跑 0x72（悬停 ret 回到门指令）不得重启已显完的逐�
   assert.equal(e.msgwin.revealedOf(8), 0, '文本变了 ⇒ 重新逐字（内容版本判据不能把新内容也挡掉）');
 });
 
+/**
+ * ★★**逐字显现期间的点击 = 立刻把整页贴完（且不推进页面）**（`tickets/T-0033`，用户实测：
+ * 「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）★★
+ *
+ * 引擎 `sub_409400` 的第二半（raw 13931-13946）是**逐字期间的输入出口**：
+ * 消费刷取掩码 → 左键（`mask & 0x10`）/滚轮键位/下滚 ⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、
+ * **自旋 `sub_45BE20(Font, 当前窗)` 到整页贴完**、把掩码清 0（这次点击被消费）。
+ * 它**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。
+ */
+test('★逐字期间点击：立刻整页贴完、不推进、消费该次点击、不清 bit30（T-0033）', () => {
+  const { e, step } = mk();
+  e.engineValues.set(21668, 50); // message:MessageSpeed = 50ms（否则 0 ⇒ 同步排空，看不见逐字）
+  showPanel(step); // 等待泵被 Engine[51828] 门控 ⇒ 先显示面板
+  step(0x6e, [im(0), str('こんにちは世界')]);
+  step(0x72, [im(0)]); // 逐字开始 + 置等待门
+  const w = e.msgwin.resolveWin(0);
+  const st = e.msgwin.reveal.get(w)!;
+  assert.equal(e.textRevealing, true, '应在逐字中');
+  assert.equal(e.awaitingAdvance, true, '等待门已置（页还没结束）');
+  assert.ok(st.total > 3, `文本应有多字（实际 ${st.total}）`);
+  assert.ok(st.shown < st.total, `刚开始 ⇒ 未显完（${st.shown}/${st.total}）`);
+
+  // ① 逐字期间点一次左键
+  moveAndClick(e, 10, 10);
+  assert.equal(e.serviceRevealAdvanceInput(), true, '逐字期间的左键应由「贴完整页」出口消费');
+  assert.equal(e.msgwin.reveal.get(w)!.shown, st.total, '★文本立即整页贴完');
+  assert.equal(e.textRevealing, false, '不再逐字');
+  assert.equal(e.awaitingAdvance, true, '★等待门仍在 ⇒ 页**不推进**');
+  assert.notEqual((e.effectFlags & 0x40000000) >>> 0, 0, '★不清 bit30（▼ 继续闪；与 finishCharReveal 区分）');
+  // ② 这次点击已被消费 ⇒ 紧随其后的等待泵不得把它当推进
+  assert.equal(e.serviceAdvanceWait(), false, '★同一次点击不得顺带推进一页');
+  assert.equal(e.awaitingAdvance, true, '页仍在等待玩家的**下一次**点击');
+
+  // ③ 再点一次 ⇒ 才推进（没有热点 ⇒ 引擎走"窗内推进文本"，不动脚本 ip）
+  moveAndClick(e, 10, 10);
+  assert.equal(e.serviceAdvanceWait(), true, '第二次点击才被等待泵处理');
+});
+
+test('★逐字期间右键不生效、滚轮上滚不生效（引擎只认 mask&0x10 + 滚轮键位 + 下滚）', () => {
+  const { e, step } = mk();
+  e.engineValues.set(21668, 50);
+  step(0x6e, [im(0), str('こんにちは世界')]);
+  step(0x72, [im(0)]);
+  assert.equal(e.textRevealing, true);
+
+  moveAndClick(e, 10, 10, 1); // 右键
+  assert.equal(e.serviceRevealAdvanceInput(), false, '右键在逐字期间什么都不做（等待泵才是 0x50）');
+  assert.equal(e.textRevealing, true, '仍在逐字');
+
+  e.input.addWheel(120); // 上滚（引擎单位：一格 ±120，上滚为正）
+  assert.equal(e.serviceRevealAdvanceInput(), false, '上滚不贴完');
+  assert.equal(e.textRevealing, true, '仍在逐字');
+
+  e.input.addWheel(-120); // 下滚
+  assert.equal(e.serviceRevealAdvanceInput(), true, '下滚应贴完整页');
+  assert.equal(e.textRevealing, false);
+});
+
 test('等待推进门：无输入时不放行；有鼠标按下沿时放行并清位', () => {
   const { e, step } = mk();
   showPanel(step); // ★引擎等待泵被 `Engine[51828]`（panelA[7463]）门控，先显示面板

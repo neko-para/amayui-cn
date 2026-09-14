@@ -575,6 +575,62 @@ export class Engine {
   }
 
   /**
+   * **逐字显现期间的「推进输入」出口**（引擎 `sub_409400` 的第二半，raw 13931-13946）——
+   * 逐字还没显完时点击 ⇒ **立刻把整页贴完**（`do sub_45BE20(...) while (!done)` 自旋到完成），
+   * 并且**不推进页面**（不清 bit31、不派发 label）。
+   *
+   * 逐行依据（`sub_409400` 走到"没有任何窗还挂着"之后的 else 分支）：
+   * ```c
+   * else {
+   *   *v6 = 0; sub_478090(Engine+1032, Engine+699208);        // ★消费刷（只吃挂起事件）
+   *   if ( (*(_BYTE *)v6 & 0x10) != 0                        // ★**左键**（掩码 bit4；不是等待泵的 0x50）
+   *     || (Conf(message:AdvanceMesOnWheel) & 1) != 0
+   *        && ((1 << Conf(set:WheelKeyDown)) & *v6) != 0
+   *     || (v8 = Engine[7796], Engine[7796] = 0, v8 < 0) )   // 滚轮累加器读后清、<0 = 下滚
+   *   { clear 0x20000000; Engine[388212] = 1; *v6 = 0;
+   *     do result = sub_45BE20(Font, Engine[489484]); while (!result); }   // ★自旋到整页贴完
+   *   else { Sleep(MessageSpeed) / 定时器; sub_45BE20(...); }
+   * }
+   * ```
+   * ★三条与 emulator 有关的取舍：
+   *  1. **只吃左键**（`0x10`）：右键在逐字期间什么都不做（等待泵才是 `0x50` = 左右都算）；
+   *  2. **不动 bit30**：引擎这里用的是普通泵 `sub_45BE20`（不是 `sub_45A940(..., -2, 0)`）
+   *     ⇒ ▼ 图标继续闪；所以这里**不**用 `finishCharReveal()`（那会清 bit30）；
+   *  3. `Engine[388212] = 1` 与下一次调用的"顺带把等待门计时器清零 + 置强制冻结"（raw 13910-13915，
+   *     条件 `Engine[667856] == 1` = `set:DrawMode`）⇒ emulator 用 `skipWaitGate()` 等价实现；
+   *     随包 INI 里 `DrawMode=0`（实测），所以本机这条通常不触发。
+   *
+   * @returns `true` = 本次点击被"贴完整页"消费掉了（调用方本帧不要再当推进处理）。
+   */
+  serviceRevealAdvanceInput(): boolean {
+    if (!this.msgwin.isRevealing()) return false;
+    const im = this.input;
+    const mask = im.flushPending(); // 引擎 sub_478090（消费刷）
+    const wheelDown = im.consumeWheelDelta() < 0; // 引擎 Engine[7796] 读后清、<0 = 下滚
+    const wheelCfg = this.config;
+    const wheelKeyBit = wheelCfg ? cfgInt(wheelCfg, 'set:wheelkeydown', -1) : -1;
+    const wheelKeyHit =
+      wheelCfg !== null &&
+      wheelKeyBit >= 0 &&
+      wheelKeyBit < 32 &&
+      (mask & (1 << wheelKeyBit)) !== 0 &&
+      (cfgInt(wheelCfg, 'message:advancemesonwheel', 0) & 1) !== 0;
+    if ((mask & 0x10) === 0 && !wheelKeyHit && !wheelDown) return false;
+
+    // ★自旋到整页贴完（`do sub_45BE20 while (!done)` 的等价物）：把每个还有余量的窗一次贴满。
+    //   注意**不清 bit30**（▼ 继续闪），所以不走 `finishCharReveal()`。
+    for (const win of [...this.msgwin.reveal.keys()]) {
+      this.msgwin.finishReveal(win);
+      this.#publishReveal(win);
+    }
+    im.consumeEdges(); // 引擎 `*v6 = 0`：这次点击不再留给等待泵（否则下一帧会顺带推进一页）
+    // 引擎 raw 13910-13915：DrawMode == 1 时顺带把等待门计时器清零 + 置强制冻结
+    // （`Scene+369360 & 2` 那一格全工程无置位点，恒为 0 ⇒ 条件只剩 DrawMode）。
+    if (this.config && cfgInt(this.config, 'set:drawmode', 0) === 1) this.skipWaitGate();
+    return true;
+  }
+
+  /**
    * **逐字显现服务**（引擎 `sub_409400` raw 13780-13970 的等价物）。
    *
    * 引擎：每帧对每个"正在显示"的窗调一次 `sub_45BE20(font, win)`（推进一步），
