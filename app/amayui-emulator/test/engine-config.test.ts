@@ -4,6 +4,11 @@
  * 事实来源：raw 23649-23745（启动装载后灌引擎字段）、sub_4900F0（路径）/ sub_4963E0（解析）/
  *   sub_4957F0（按 "section:key" 取整型）、0xC0 `sub_42E510`（`_this[174713]`）/ 0x131 `sub_42F7D0`
  *   （直接读 `message:MesWinAlpha`）/ 0x2CE `sub_430A20`（`_this[167990]!=0` ← `display:ScreenMode`）。
+ *
+ * ★**取值断言一律用夹具 INI**（`tickets/T-0034`）：真游戏的 `SYS4REG.INI` 是**玩家数据**，
+ *   玩家改一次设置（或真游戏自己重写）就会变 ⇒ 断言它的具体取值会让测试随开发机状态变红
+ *   （实测：`MessageSpeed` 由 5 被改成 50，两条断言当场红，而代码一行未改）。
+ *   真 INI 只用来做「结构 + 自洽」断言（键在 ⇒ 写进引擎字段的值必须等于读出来的同一个值）。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,32 +28,39 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 /**
  * 玩家数据的 base 那侧：**真游戏的** `SYS4REG.INI`（`%LOCALAPPDATA%\Eushully\<game>\`）。
- * 本工程已不再往仓库里放 INI 副本 —— 读的是系统存档目录（overlay → base，见 `src/arch/systemPaths.ts`）。
+ * ★只用于「结构 + 自洽」断言 —— 具体取值属**玩家数据**，见文件头与 `tickets/T-0034`。
  */
 const INI = path.join(resolveSystemPaths(ROOT).baseDir, INI_FILE);
 const HAS_REAL_INI = fs.existsSync(INI);
-/** 没装游戏时（CI/别的机器）用一份形状相同的最小 INI，让"灌字段"这类断言仍然有意义。 */
-const FALLBACK_INI = [
+/** 真 INI 的文本（不存在 ⇒ null）。 */
+function realIniText(): string | null {
+  return HAS_REAL_INI ? fs.readFileSync(INI, 'utf8') : null;
+}
+/**
+ * **夹具 INI**（确定性）：所有「取值」断言都读它 ⇒ 任何机器上结果一致。
+ *
+ * ★数值刻意与真游戏默认值**不同**（`Music=3` 而不是 2、`MessageSpeed=7` 而不是 5/50、`MesWinAlpha=6` 而不是 8）
+ *   ⇒ 「某处不小心读了真 INI」会当场断言失败，而不是碰巧通过（这正是本票要防的漂移）。
+ */
+const FIXTURE_INI = [
   '[display]',
   'ScreenMode=1',
   'FullScreenBit=32',
   '[sound]',
-  'Music=2',
-  'Voice=1',
+  'Sound=1',
+  'Music=3',
+  'Voice=2',
   'SE=1',
   '[message]',
   'Font=Amayui CN',
-  'MesWinAlpha=8',
-  'MessageSpeed=5',
+  'RMouseEvent=1',
+  'MesWinAlpha=6',
+  'MessageSpeed=7',
   'MessageFade=250',
   '[system]',
   'UseMMX=1',
   '',
 ].join('\r\n');
-/** 当前生效的 INI 文本（真游戏那份优先）。 */
-function iniText(): string {
-  return HAS_REAL_INI ? fs.readFileSync(INI, 'utf8') : FALLBACK_INI;
-}
 
 test('parseIni：分节 / 数字 / 字符串 / 空值 / 大小写不敏感', () => {
   const cfg = parseIni(
@@ -62,42 +74,87 @@ test('parseIni：分节 / 数字 / 字符串 / 空值 / 大小写不敏感', () 
   assert.equal(cfgStr(cfg, 'message:savebmppath'), '', '空值保留为空串');
 });
 
-test('真实 SYS4REG.INI（真游戏 base 那侧）：解析出关键键（本工程不再持有仓库副本）', (t) => {
-  if (!HAS_REAL_INI) {
-    t.skip(`本机没有真游戏 ${INI}`);
-    return;
-  }
-  const cfg = parseIni(iniText());
-  // 真游戏这份是**引擎自己写的**：只有 display/sound/message/system 四节；
-  // `[set]` 那节由引擎退出时按配置注册表写，本作安装没有 ⇒ 版本号走 emulator 缺省（见下）。
+test('夹具 INI：解析出关键键（确定性 —— 取值断言不再读玩家数据，T-0034）', () => {
+  const cfg = parseIni(FIXTURE_INI);
   assert.deepEqual([...cfg.sections].sort(), ['display', 'message', 'sound', 'system']);
   assert.equal(cfgInt(cfg, 'display:screenmode'), 1);
-  assert.equal(cfgInt(cfg, 'sound:music'), 2);
-  assert.equal(cfgInt(cfg, 'message:meswinalpha'), 8);
-  assert.equal(cfgInt(cfg, 'message:messagespeed'), 5);
+  assert.equal(cfgInt(cfg, 'sound:music'), 3);
+  assert.equal(cfgInt(cfg, 'message:meswinalpha'), 6);
+  assert.equal(cfgInt(cfg, 'message:messagespeed'), 7);
   assert.equal(cfgInt(cfg, 'message:messagefade'), 250);
   assert.equal(cfgStr(cfg, 'message:font'), 'Amayui CN');
-  assert.equal(cfgInt(cfg, 'sound:voice'), 1);
+  assert.equal(cfgInt(cfg, 'sound:voice'), 2);
   assert.equal(cfgInt(cfg, 'sound:se'), 1);
-  // `[set] GameVersion` 不在真 INI 里 ⇒ 取 emulator 缺省（= 被模拟的 amayui_107.exe 的 FileVersion）。
+  // `[set] GameVersion` 不在 INI 里 ⇒ 取 emulator 缺省（= 被模拟的 amayui_107.exe 的 FileVersion）。
   assert.equal(cfgStr(cfg, 'set:gameversion', DEFAULT_GAME_VERSION), '1.07.0019');
   assert.equal(cfgStr(cfg, 'set:verregpos', ''), '', '没有 VerRegPos ⇒ 不会去查注册表 DisplayVersion');
 });
 
-test('applyConfigToEngine：按绑定写入引擎字段（含 display:ScreenMode 布尔化）', () => {
-  const cfg = parseIni(iniText());
+/**
+ * **真游戏 INI：只断言"结构与自洽"，不断言玩家的具体取值**（`tickets/T-0034`）。
+ *
+ * 玩家改一次设置（或真游戏自己重写）就会改这份文件 ⇒ 断言 `MessageSpeed=5` 这类**取值**必然红；
+ * 但「引擎自己写的四节俱在」「键在 ⇒ 灌进引擎字段的值 = 读出来的同一个值」是**稳定事实**，可以断言。
+ */
+test('真实 SYS4REG.INI：结构 + 「配置→字段」自洽（不断言玩家取值，T-0034）', (t) => {
+  const text = realIniText();
+  if (text === null) {
+    t.skip(`本机没有真游戏 ${INI}`);
+    return;
+  }
+  const cfg = parseIni(text);
+  // ① 结构：引擎自己写的那四节必须在（`[set]` 由引擎退出时按配置注册表写，本作安装没有）
+  for (const s of ['display', 'sound', 'message', 'system']) {
+    assert.ok(cfg.sections.includes(s), `真 INI 应有 [${s}] 节；实际 ${cfg.sections.join(',')}`);
+  }
+  // ② 引擎**总会写**的那批键必须在，且取值可解析（不断言等于多少）
+  for (const k of [
+    'display:screenmode',
+    'sound:music',
+    'sound:se',
+    'sound:voice',
+    'message:font',
+    'message:messagespeed',
+    'message:messagefade',
+    'message:meswinalpha',
+  ]) {
+    assert.ok(cfg.values.has(k), `真 INI 应有 ${k}（引擎每次退出都会写）`);
+  }
+  assert.ok(cfgInt(cfg, 'message:messagespeed', -1) >= 0, 'MessageSpeed 应是可解析的整数');
+  assert.ok(cfgStr(cfg, 'message:font').length > 0, '字体名不应为空');
+
+  // ③ ★自洽：每个绑定键在 INI 里 ⇒ 灌进引擎字段的值必须 = **读出来的那个值**（经 map 变换）
+  const values = new Map<number, number>([[96983, 1]]);
+  applyConfigToEngine(cfg, values);
+  for (const b of CONFIG_FIELD_BINDINGS) {
+    const raw = cfgInt(cfg, b.key, NaN);
+    if (Number.isNaN(raw)) continue; // 该键不在这份 INI 里 ⇒ 跳过（不做"必须存在"的要求）
+    const want = b.map ? b.map(raw) : raw;
+    assert.equal(values.get(b.field), want, `${b.key}=${raw} ⇒ _this[${b.field}] 应为 ${want}（不断言具体数值，只要求一致）`);
+  }
+  // ④ MessageSpeed 与 MesWinAlpha 必须落在**不同**字段（历史误绑会让后者顶掉前者）
+  const ms = cfgInt(cfg, 'message:messagespeed', NaN);
+  const alpha = cfgInt(cfg, 'message:meswinalpha', NaN);
+  if (!Number.isNaN(ms)) assert.equal(values.get(21668), ms, 'message:MessageSpeed 必须落在 21668');
+  assert.notEqual(21668, CONFIG_FIELD_BINDINGS.find((b) => b.key === 'message:meswinalpha')?.field ?? -1, '21668 不得绑给 MesWinAlpha');
+  void alpha;
+});
+
+test('applyConfigToEngine：按绑定写入引擎字段（夹具 INI，含 display:ScreenMode 布尔化）', () => {
+  const cfg = parseIni(FIXTURE_INI);
   const values = new Map<number, number>([[96983, 1]]); // 构造默认
   const applied = applyConfigToEngine(cfg, values);
   const get = (f: number): number | undefined => values.get(f);
 
-  assert.equal(get(174713), 2, 'sound:Music=2 → _this[174713]（0xC0 读）');
+  assert.equal(get(174713), 3, 'sound:Music=3 → _this[174713]（0xC0 读）');
   assert.equal(get(167990), 1, 'display:ScreenMode=1 → _this[167990]（0x2CE 读，布尔化）');
   // ★message:MesWinAlpha **不进任何字段**（引擎只由 0x131/0x141 按名直读直写配置）。
-  //   21668×4 = 86672 = Font+1376 = message:MessageSpeed ⇒ 历史误绑会让 MesWinAlpha=8 顶掉 MessageSpeed=5。
-  assert.equal(get(21668), 5, 'message:MessageSpeed=5 → _this[21668]（0x7F 读）；不得被 MesWinAlpha 覆盖');
+  //   21668×4 = 86672 = Font+1376 = message:MessageSpeed ⇒ 历史误绑会让 MesWinAlpha 顶掉 MessageSpeed。
+  //   夹具刻意让两者不同（7 vs 6）⇒ 误绑会立刻显形。
+  assert.equal(get(21668), 7, 'message:MessageSpeed=7 → _this[21668]（0x7F 读）；不得被 MesWinAlpha=6 覆盖');
   assert.equal(get(80106), 250, 'message:MessageFade=250 → _this[80106]（0x2EE 写）');
   assert.equal(get(20980), 1, 'sound:SE=1（下标 20980 = raw 字节 83920）');
-  assert.equal(get(21293), 1, 'sound:Voice=1（下标 21293 = raw 字节 85172）');
+  assert.equal(get(21293), 2, 'sound:Voice=2（下标 21293 = raw 字节 85172）');
   assert.equal(get(96983), 1, '无关字段不受影响（LOGO 开关）');
   assert.ok(applied.length >= 8, `应写入至少 8 个字段（实际 ${applied.length}）`);
 
@@ -165,23 +222,23 @@ function nOp(opcode: number, slots: number[], types?: number[]): ScriptBinary {
   };
 }
 
-test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不再是 0 / no-op）', async () => {
-  const cfg = parseIni(iniText());
+test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（夹具 INI，不再是 0 / no-op）', async () => {
+  const cfg = parseIni(FIXTURE_INI);
   const e = new Engine(new StubNative(() => {}));
   e.config = cfg;
   applyConfigToEngine(cfg, e.engineValues);
   const read = (slot: number): number => asI32(dec(e.key, e.curScript().locals.int.get(slot) ?? 0));
 
-  // 0xC0 → _this[174713] = sound:Music = 2（注册在 NATIVE_OPS 表，故 kind='native'；语义已由本 handler 实现）
+  // 0xC0 → _this[174713] = sound:Music = 3（注册在 NATIVE_OPS 表，故 kind='native'；语义已由本 handler 实现）
   loadScriptIntoFrame(e.curScript(), oneOp(0xc0, 1), 'TEST.BIN');
   let t = await stepOnce(e);
   assert.notEqual(t.handlerKind, 'unimplemented');
-  assert.equal(read(1), 2);
+  assert.equal(read(1), 3);
 
-  // 0x131 → **直接读配置** message:MesWinAlpha = 8（不读任何 Engine 字段）
+  // 0x131 → **直接读配置** message:MesWinAlpha = 6（不读任何 Engine 字段）
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 2), 'TEST.BIN');
   await stepOnce(e);
-  assert.equal(read(2), 8);
+  assert.equal(read(2), 6);
 
   // 0x141 → 直写配置 message:MesWinAlpha（>0x10 时报错不写）。0x131 应读回刚写的值。
   //
@@ -200,9 +257,9 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（不�
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 11), 'TEST.BIN');
   await stepOnce(e);
   assert.equal(read(11), 9, 'op1 > 0x10 ⇒ 报错不写，配置保持原值');
-  // 复位成 INI 里的 8，避免影响后续断言
+  // 复位成夹具 INI 里的 6，避免影响后续断言
   loadScriptIntoFrame(e.curScript(), oneOp(0x141, 9), 'TEST.BIN');
-  setLocal(9, 8);
+  setLocal(9, 6);
   await stepOnce(e);
 
   // 0x2CE → _this[167990]!=0 → 1
@@ -264,7 +321,7 @@ test('消息窗字段一族（0x80 setter / 0x7F getter / 0x300 / 0x301）：真
 });
 
 test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemented / native / engine-internal）', async () => {
-  const cfg = parseIni(iniText());
+  const cfg = parseIni(FIXTURE_INI);
   // [opcode, argc, 期望 handlerKind]
   // 分类规则：能完整建模（哪怕不产出画面）⇒ 'implemented'；经 NativeBridge 落宿主 ⇒ 'native'；
   //           引擎内部且 emulator 无事可做 ⇒ 'engine-internal'（纯 no-op）。

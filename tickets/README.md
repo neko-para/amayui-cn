@@ -7,11 +7,11 @@
 
 ## 概览
 
-共 **34** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **13** · ✅ done **20** · 🚫 dropped **1**（P0 5 / P1 8）
+共 **34** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **21** · 🚫 dropped **1**（P0 5 / P1 8）
 
 按域：`emulator/frame-loop` 9 · `emulator/render` 7 · `emulator/adv` 3 · `emulator/input` 2 · `emulator/test` 2 · `emulator/boot` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/vm` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `emulator/tools` 1
 
-## ⬜ open（13）
+## ⬜ open（12）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -27,9 +27,8 @@
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | — | `notes.md` | — |
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
-| [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | — | — | — |
 
-## ✅ done（20）
+## ✅ done（21）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -53,6 +52,7 @@
 | [`T-0028`](./T-0028/ticket.json) | P2 | bug | `emulator/adv` | ADV 侧边栏进入时即呈「hover 展开」外观：状态位与 16 槽平移不一致，手动 hover 移开后自愈 | 5 | `app/amayui-emulator/test/op-a4-a6.test.ts` | `notes.md` `changes.md` `repro.md` evidence/(7) | — |
 | [`T-0031`](./T-0031/ticket.json) | P2 | bug | `emulator/boot` | 首次运行（无 SYS4REG.INI）时配置注册表改动不落盘：引擎字段层（消息速度/淡入、声音开关、音乐、显示模式、右键行为）重启即回默认 | 5 | `app/amayui-emulator/test/config-version-substr.test.ts` | `notes.md` `changes.md` evidence/(3) | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
+| [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |
 
 ## 🚫 dropped（1）
 
