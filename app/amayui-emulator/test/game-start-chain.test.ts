@@ -314,6 +314,15 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
   );
   // 悬停的**两段式**（进入 labelA / 离开 labelB、一帧只给一个）由 `test/route-dispatch.test.ts` 判据①③
   // 用合成表钉死；这里只证明"headless 真的走到了那条代码路径"（上面四条）。
+  // ⑦ ★`tickets/T-0016`（用户实测：ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进）：
+  //   悬停 label 的 `ret` 回到门指令重跑 `0x72`（引擎 `sub_405360(-3)`），而引擎的 `0x72` 只重装 ▼ 与
+  //   等待门（raw 28539-28555）、**不碰文字游标** ⇒ 整条真实链路上"文字重放"必须为 0。
+  //   判据在 `runGameStartChain` 的 `revealRestarts`（内容版本不变而显现游标变小 = 重放）。
+  assert.equal(
+    r.revealRestarts,
+    0,
+    `悬停/重跑门指令不得把整页文字重放；实际重放 ${r.revealRestarts} 次（派发序列 ${JSON.stringify(r.dispatches.slice(0, 6))}）`,
+  );
 });
 
 /**

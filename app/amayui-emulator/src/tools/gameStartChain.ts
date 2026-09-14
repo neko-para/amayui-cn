@@ -170,6 +170,15 @@ export interface GameStartResult {
    * 脚本用 `i242 <handle> 1` 把它排除出池挂起位（见 `scPoolPending`）。
    */
   gateWaits: { script: string; ip: number; timerMs: number; waitedMs: number }[];
+  /**
+   * **文字逐字显现被"重放"的次数**（`tickets/T-0016`）：同一窗在**内容没变**的情况下显现游标被重置。
+   *
+   * 依据：悬停 label 带返回点（`sub_405360(Engine, -3)`）⇒ label 的 `ret` 回到门指令重跑 `0x72`；
+   * 引擎的 `0x72` 不碰文字游标（raw 28539-28555），所以"重跑"必须幂等。
+   * 判据 = `revealedOf(win)` 在 `contentRevOf(win)` 不变时变小（内容变了 = 新页/新文本，不算重放）。
+   * ★正常链路里必须恒为 0；用户实测症状（ADV 页右侧悬停 ⇒ 中间文字不断重放）在这里落成可数指标。
+   */
+  revealRestarts: number;
   /** `routes.cursor` / `shown` 的变化轨迹（去重相邻同值）——"游标真的会随光标变"。 */
   cursorTrail: { cursor: number; shown: number }[];
   /** 本链路用的等待门策略：`'pump'` = 真泵（与产品同源）/`'force'` = 旧旁路（对照用）。 */
@@ -309,6 +318,21 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
   const gateWaits: { script: string; ip: number; timerMs: number; waitedMs: number }[] = [];
   /** 正在等待的那一段（未闭合）。 */
   let gateOpen: { script: string; ip: number; timerMs: number; at: number } | null = null;
+  /**
+   * **文字重放计数**（`tickets/T-0016`）：`revealedOf(win)` 在内容版本不变时变小 ⇒ 重放一次。
+   * 内容变了（新页 / 新 show-text）会让 `contentRevOf` 变化 ⇒ 那是正常的重新逐字，不计。
+   */
+  let revealRestarts = 0;
+  const lastReveal = new Map<number, { shown: number; rev: number }>();
+  const sampleReveal = (): void => {
+    for (const win of e.msgwin.reveal.keys()) {
+      const shown = e.msgwin.revealedOf(win);
+      const rev = e.msgwin.contentRevOf(win);
+      const prev = lastReveal.get(win);
+      if (prev && prev.rev === rev && shown >= 0 && prev.shown >= 0 && shown < prev.shown) revealRestarts++;
+      lastReveal.set(win, { shown, rev });
+    }
+  };
   const closeGate = (nowMs: number): void => {
     if (!gateOpen) return;
     gateWaits.push({
@@ -345,6 +369,8 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     onFrameEnd: (eng, now) => {
       // `0x400` 位本帧被清掉 ⇒ 门放行 ⇒ 闭合这一段
       if (gateOpen && (eng.waitFlags & 0x400) === 0) closeGate(now);
+      // ★文字重放采样（T-0016）：内容没变而显现游标变小 ⇒ 记一次
+      sampleReveal();
     },
     onUnknown: (err, frame, instr) => {
       const key = err.opcode;
@@ -571,6 +597,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     dispatches,
     cursorTrail,
     gateWaits,
+    revealRestarts,
     advancePolicy: opt.advance ?? 'pump',
     clockMs: harness.clock,
     steps,

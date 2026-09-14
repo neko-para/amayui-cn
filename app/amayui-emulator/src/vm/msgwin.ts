@@ -394,6 +394,47 @@ export class MsgWindow {
   readonly reveal = new Map<number, RevealState>();
 
   /**
+   * 每窗的**文本内容版本号**：任何改写该窗文本的操作 +1
+   * （`appendText` / `addRuby` / `endLine` / `beginNewMessage`）。
+   *
+   * 用途 = `0x72` 的"这一页是否已经武装过显现"判据（见 `revealArmed`）。
+   */
+  readonly #contentRev = new Map<number, number>();
+  /** 每窗**最后一次武装显现时**的内容版本号（`undefined` = 从未武装）。 */
+  readonly #armedRev = new Map<number, number>();
+  /** 每窗**最后一次记页时**的内容版本号（同一页重跑门指令不重复计数，见 `finishPage`）。 */
+  readonly #pageDoneRev = new Map<number, number>();
+
+  /** 该窗当前的内容版本号。 */
+  contentRevOf(win: number): number {
+    return this.#contentRev.get(win) ?? 0;
+  }
+
+  /**
+   * **该窗这一页的文本是否已经武装过显现**（内容没变过 ⇒ 已武装）。
+   *
+   * ★为什么必须有这一格（`tickets/T-0016`，用户实测）：等待推进泵里派发的**悬停 label 带返回点**
+   * （引擎 `sub_405360(Engine, -3)`）⇒ label 体的 `ret` **正好回到门指令重跑**（`0x72`）。
+   * 引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：查字格数、置等待门、武装 ▼（bit30 + `[107704]=0`）
+   * —— **根本不碰文字游标**（`win+132` 由 `sub_45BE20` 泵推进、由 `0x71`/`sub_45EC60` 复位）。
+   * 而本模型把"启动显现"放在 `0x72` 里 ⇒ 若不加这道门，**每次悬停都会把整页文字从头重放**
+   * （实测：ADV 页右侧侧边栏悬停 ⇒ 文字重放、页不推进）。
+   */
+  revealArmed(win: number): boolean {
+    return this.#armedRev.get(win) === this.contentRevOf(win);
+  }
+
+  /** 记下"这一页的显现已武装"（`0x72` 调用；跳读/立即显示完也算武装过）。 */
+  markRevealArmed(win: number): void {
+    this.#armedRev.set(win, this.contentRevOf(win));
+  }
+
+  /** 内容变了 ⇒ 版本号 +1（下一次 `0x72` 才会重新武装显现）。 */
+  #bumpContent(win: number): void {
+    this.#contentRev.set(win, this.contentRevOf(win) + 1);
+  }
+
+  /**
    * 开始逐字显现。
    *
    * `speedMs <= 0` ⇒ **立即显示完**（引擎：`if (!Engine[21668])` 走同步排空 `sub_46CBF0`）。
@@ -643,6 +684,7 @@ export class MsgWindow {
       // 下一段文本入队时再按**当时的**全局样式钉一次（`show-text` 会重设）。
       s.fontStyle = null;
     }
+    this.#bumpContent(win); // 清场 = 内容变了 ⇒ 下一道 `0x72` 要重新武装显现
     // 引擎把显现游标 `win+132` 复位到 0；本模型里"没有状态"= 全部显示，
     // 内容已清空 ⇒ 删掉状态即可（下次 show-text 会重新决定）。
     this.reveal.delete(win);
@@ -652,6 +694,7 @@ export class MsgWindow {
   appendText(i: number, text: string): void {
     const s = this.slot(this.resolveWin(i));
     const last = s.segments[s.segments.length - 1];
+    this.#bumpContent(this.resolveWin(i));
     // 引擎把同一行的多段 show-text 拼成一行（`end-text-line` 才断行），这里照做。
     if (last && !last.lineEnded) {
       last.text += text;
@@ -669,6 +712,7 @@ export class MsgWindow {
    */
   addRuby(i: number, base: string, ruby: string): void {
     const s = this.slot(this.resolveWin(i));
+    this.#bumpContent(this.resolveWin(i));
     let last = s.segments[s.segments.length - 1];
     if (!last || last.lineEnded) {
       last = { text: '', ruby: [], lineEnded: false };
@@ -681,6 +725,7 @@ export class MsgWindow {
   /** `end-text-line`：结束当前行。`i` = op1（0 ⇒ 默认窗）。 */
   endLine(i: number): void {
     const s = this.slot(this.resolveWin(i));
+    this.#bumpContent(this.resolveWin(i));
     const last = s.segments[s.segments.length - 1];
     if (last) last.lineEnded = true;
   }
@@ -718,10 +763,19 @@ export class MsgWindow {
       .join('\n');
   }
 
-  /** 一页结束（`wait-for-input`）：清显示态并计页数。 */
-  finishPage(): void {
+  /**
+   * 一页结束（`wait-for-input`）：清显示态并计页数。
+   *
+   * ★**同一页只记一次**：门指令会被"悬停 label 的 `ret`"重跑（引擎 `sub_405360(-3)`），
+   * 而 `pages` 是**页数**（诊断/`digest` 用），重跑不该把它加上去（`tickets/T-0016` 实测：
+   * 悬停一次页面计数会 0→1→2）。判据 = 该窗内容版本号（见 `contentRevOf`）。
+   */
+  finishPage(win: number): void {
     this.showing = 0;
     this.alt = 0;
+    if (this.#pageDoneRev.get(win) === this.contentRevOf(win)) return; // 这一页已经记过
+
+    this.#pageDoneRev.set(win, this.contentRevOf(win));
     this.pages++;
   }
 

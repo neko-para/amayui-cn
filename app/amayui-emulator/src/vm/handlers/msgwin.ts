@@ -447,7 +447,10 @@ const op_message_show: OpHandler = (c) => {
  *     sub_453A90(Engine+430600);             // 重启节拍（周期 = 0x73 op10）
  * }
  * ```
- * ⇒ 每次 `wait-for-input` 都**重新武装逐字**。文本内容与注音由 `show-text` 提前写入本窗。
+ * ⇒ 每次 `wait-for-input` 都**重新武装 ▼ 字格**（bit30 + `Engine[107704]=0` + 重启节拍）；
+ * **文字**的显现游标（`win+132`）不在这里动 —— 它由 `sub_45BE20` 泵推进、由 `0x71`/`sub_45EC60` 复位。
+ * 文本内容与注音由 `show-text` 提前写入本窗。
+ * ★所以本 handler 只在"这一页的文本还没武装过显现"时才启动显现（`revealArmed`，见其说明）。
  */
 const op_wait_for_input: OpHandler = (c) => {
   const e = c.e;
@@ -463,9 +466,12 @@ const op_wait_for_input: OpHandler = (c) => {
   // ★0 = "已预备、等本页逐字显完再起步"：引擎主循环里文字泵（sub_409400 的 `while(!sub_45BE20) Sleep`）
   //   是自旋的 —— 一页没贴完就走不到 raw 20887-20895 的图标分支 ⇒ 图标天然出现在文字之后。
   m.cellNextAt = 0;
-  if (!m.isRevealing(w)) {
+  if (!m.isRevealing(w) && !m.revealArmed(w)) {
     const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments });
     const total = laid.glyphCount;
+    // ★武装记账（`tickets/T-0016`）：这一页的文本从此算"已武装过" ⇒ 门指令**重跑**（悬停 label 的
+    //   `ret` 正好回到门指令）不会再启动一次显现。引擎的 `0x72` 本来就不碰文字游标（raw 28539-28555）。
+    m.markRevealArmed(w);
     if (m.skipping !== 0 || m.skipMode !== 0) m.finishReveal(w);
     else {
       // ★文字逐字 = **正常泵**（引擎 `sub_45BE20` 一步一个字、节拍 `message:MessageSpeed`）——
@@ -484,7 +490,7 @@ const op_wait_for_input: OpHandler = (c) => {
   if (advanceReveal(e)) return; // 仍在显示中 ⇒ 不挂起（引擎在 LABEL_17 之前就 return）
   clearAdv(e);
   // 引擎：`if (!122496 && !(mask & 0x40))` —— 0x40 = 「跳读中」（Engine[1415] 合成）
-  if (m.alt === 0 && m.skipMirror === 0) m.finishPage();
+  if (m.alt === 0 && m.skipMirror === 0) m.finishPage(w);
   if ((e.effectFlags & ADV_ACTIVE) === 0) {
     e.input.consumeEdges(); // 引擎 sub_478090(Engine+258, …)
     e.awaitingAdvance = true; // ★ effect_flags |= 0x80000000

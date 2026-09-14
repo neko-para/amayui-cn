@@ -184,6 +184,12 @@ test('判据③：悬停派发带返回点 → label 里 ret 回到 wait-for-inp
   // label 末尾的 `ret` 回到门指令（test 脚本下标 3）
   await stepOnce(e); // 执行下标 4 的 i005 ret
   assert.equal(f.ip, 3, '★ret 后回到 wait-for-input 那条指令（引擎 sub_41A9B0）');
+  // ★★ 重跑门指令**不得**把这一页再"推进"一次（`tickets/T-0016`）：
+  //    引擎 `0x72` 重跑只做三件事（查字格数 / 置等待门 / 武装 ▼，raw 28539-28555），
+  //    页计数与文字游标都不动；用户实测症状 = ADV 页右侧悬停 ⇒ 中间文字不断重放、页不推进。
+  await stepOnce(e); // 重跑门指令（真实的悬停路径就是这样回来的）
+  assert.equal(e.msgwin.pages, pages, '★重跑门指令不得再记一页（悬停不推进页）');
+  assert.equal(e.msgwin.textOf(8), textBefore, '★重跑门指令不得改动文本');
 });
 
 // ---------------------------------------------------------------------------

@@ -48,7 +48,7 @@
 | [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
-| [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 8 | 6 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
+| [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 9 | 6 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
 | [`SP2563`](./SP2563.md) | `SP2563.BIN` | 剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。 | 2 | 2 | 🟠 部分 | — |
 | [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 5 | 2 | 🟠 部分 | `test/save-data.test.ts` |
 | [`TITLE`](./TITLE.md) | `TITLE.BIN` | 标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 … | 8 | 10 | 🟠 部分 | `test/config-version-substr.test.ts` `test/title-exit.test.ts` `test/game-start-chain.test.ts` |

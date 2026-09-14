@@ -3275,7 +3275,7 @@
     "semantic_name": "op_wait_for_input_41EEF0",
     "op": "0x72",
     "status": "PARTIAL",
-    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 与 0x71 同构地按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽；★末尾 LABEL_17（raw 28539-28554）还是**逐字渲染的启动点**：Engine[122371] = 窗 → sub_45A940(Font, 窗, -1, Engine+107705) 查询（把 win+92 写进模数槽）→ 置 bit31 等待门 → 若 bit30 未置则置 0x40000000 + Engine[107704] = 0 + sub_453A90(Engine+430600) 重启节拍。",
+    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽；★末尾 LABEL_17（raw 28539-28555）**不是文字显现的启动点**（2026-09 订正）：它做三件事 —— Engine[122371] = 窗、sub_45A940(Font, 窗, -1, Engine+107705) 查字格数、置 bit31 等待门；若 bit30 未置则置 0x40000000 + Engine[107704] = 0 + sub_453A90(Engine+430600) 重启**▼ 字格节拍**。文字的逐字游标（FontVWindow+132）由 sub_45BE20 泵推进、由 0x71/sub_45EC60 复位，0x72 一概不动 ⇒ **门指令重跑（悬停 label 的 ret）不会重放文字**。",
     "sub_behaviors": "[\"sub_4780D0(Engine+258,&mask)；mask |= 0x40 if Engine+1415\",\"未显示完（!122455 && !(mask&0x40)）⇒ 清 0x8000000 + 冲 3 个消息槽 sub_4BB840(Engine+21032, i, slot, ..., +122505 区)\",\"仍激活 ⇒ 再刷一次输入并置 effect_flags |= 0x80000000（bit31），清输入掩码\",\"★LABEL_17：Engine[122371] = 窗（当前消息窗）+ Engine[107705] = win+92（sub_45A940 的 -1 查询 = 字格数/模数）\",\"★LABEL_17：若 effect_flags & 0x40000000 == 0 ⇒ |= 0x40000000（逐字模式）+ Engine[107704] = 0（游标归零）+ sub_453A90(Engine+430600)（重启节拍）—— 即每次 wait-for-input 都重新武装逐字\"]",
     "fields_used": ["Engine+699204", "Engine+122455", "Engine+122496", "Engine+1415", "Engine+97050", "Engine+174405(config)", "Engine+122505 区(3 槽)"],
     "unmodeled": "[\"同 0x71：文本对象与消息槽区未建模\",\"sub_4780D0/sub_4BB840/sub_48E870/sub_48F000\",\"Engine+21032（消息回调容器）\"]",
@@ -7001,6 +7001,18 @@
     "unmodeled": ["Scene+46528 bit1 的含义（反编译里只有这一处读、没有置位点）"],
     "evidence": "raw 12789-12801；调用点 = 门被玩家输入跳过 raw 21135、ADV 分支每帧 raw 21161",
     "notes": "emulator 实现 = Engine.skipWaitGate（T-0024）；「冻结让窗立刻算结束」目前只在池挂起位的锁存里折算，绘制期收尾见 capabilities 的 scene-freeze-flag"
+  },
+  {
+    "addr": "0x405360",
+    "raw_name": "sub_405360",
+    "semantic_name": "pushReturnPoint_405360",
+    "status": "ANALYZED",
+    "purpose": "**压返回点**：把 a2 + 当前帧的指令流偏移写进该帧的返回栈，并把栈顶 +1（引擎的 call/派发原语）。调用方用 a2 = -3 表示「回到门指令」——`wait-for-input`(0x72) 长 3 dword，故 -3 + 偏移正好等于门指令的 dword 偏移。",
+    "sub_behaviors": ["写 frames[cur].retStack[top] = a2 + ((ip - ip_base) >> 2)", "栈顶指针 +1（frames[cur] + 97153 那个格）"],
+    "fields_used": ["frames[cur].retStack", "frames[cur].ip", "frames[cur].ip_base"],
+    "unmodeled": [],
+    "evidence": "raw 11030-11041；调用点：悬停/点击/等待泵 20228-20232 / 20284-20292 / 20328-20332，面板显示态 13670/14045/14088/20180/20195",
+    "notes": "emulator 的等价物 = Engine.dispatchWithReturn(label, offsetDwords)（见 src/vm/engine.ts 的说明：-3 正好回到门指令）。★它是「悬停 label 的 ret 回到门指令重跑」这条常态行为的机制来源（tickets/T-0016）"
   }
 
 ]

@@ -213,6 +213,49 @@ test('★0x72 wait-for-input：结束一页并置等待推进门（bit31），�
   assert.equal(e.advActive, false, 'ADV 应保持清除');
 });
 
+/**
+ * ★★**重跑门指令不得把整页文字重放**（`tickets/T-0016`，用户实测：ADV 页右侧悬停 ⇒ 中间文字不断重放、页不推进）★★
+ *
+ * 机制：等待推进泵派发的**悬停 label 带返回点**（引擎 `sub_405360(Engine, -3)`，raw 20328-20332）
+ * ⇒ label 体的 `ret` **正好回到门指令重跑**（见 `route-dispatch.test.ts` 判据③）。
+ * 引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：查字格数（`sub_45A940(..., -1, 107705)`）、
+ * 置等待门（bit31）、武装 ▼（bit30 + `Engine[107704]=0` + 重启节拍）—— **文字游标 `win+132` 由
+ * `sub_45BE20` 泵推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动**。
+ * 所以"重跑门指令"必须幂等：既不能重启显现（否则整页重放），也不能重复记页。
+ */
+test('★重跑 0x72（悬停 ret 回到门指令）不得重启已显完的逐字显现', () => {
+  const { e, step } = mk();
+  e.engineValues.set(21668, 50); // message:MessageSpeed = 50ms（否则 0 ⇒ 同步排空、看不见逐字）
+  step(0x6e, [im(8), str('こんにちは世界')]); // 文本入队（内容版本 +1）
+  step(0x72, [im(8)]); // 门指令：武装并开始逐字
+  let shown = e.msgwin.revealedOf(8);
+  assert.equal(shown, 0, '刚武装 ⇒ 一个字都还没贴出');
+
+  // 推进显现到结束（一帧一个字；节拍取 0 ⇒ 下限一帧）
+  let t = e.nowMs + 1000;
+  for (let i = 0; i < 200 && e.msgwin.isRevealing(8); i++, t += 1000) e.msgwin.tickRevealWin(8, t, 0);
+  shown = e.msgwin.revealedOf(8);
+  assert.equal(e.msgwin.isRevealing(8), false, '显现应已结束');
+  assert.ok(shown > 0, `显现必须真的推进过（实际 ${shown}）`);
+
+  // ★重跑门指令（悬停 label 的 ret 就是这样回来的）——不得重放
+  step(0x72, [im(8)]);
+  assert.equal(e.msgwin.revealedOf(8), shown, '★重跑门指令不得把文字从头重放（修前会回到 0）');
+
+  // 正对照一：新一页（0x71 清场 + 新文本）必须重新逐字
+  step(0x71, [im(8)]);
+  step(0x6e, [im(8), str('次のページ')]);
+  step(0x72, [im(8)]);
+  assert.equal(e.msgwin.revealedOf(8), 0, '新一页的内容版本变了 ⇒ 必须重新武装逐字');
+
+  // 正对照二：同一页里再来一条 show-text（内容变了）也必须重新逐字
+  let t2 = e.nowMs + 1000;
+  for (let i = 0; i < 200 && e.msgwin.isRevealing(8); i++, t2 += 1000) e.msgwin.tickRevealWin(8, t2, 0);
+  step(0x6e, [im(8), str('追加')]);
+  step(0x72, [im(8)]);
+  assert.equal(e.msgwin.revealedOf(8), 0, '文本变了 ⇒ 重新逐字（内容版本判据不能把新内容也挡掉）');
+});
+
 test('等待推进门：无输入时不放行；有鼠标按下沿时放行并清位', () => {
   const { e, step } = mk();
   showPanel(step); // ★引擎等待泵被 `Engine[51828]`（panelA[7463]）门控，先显示面板

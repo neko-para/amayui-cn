@@ -354,6 +354,21 @@ int __thiscall sub_403EF0(_DWORD *_this) {
 - 语义：**整表清空 + 复位控件轨道** —— 用于**场景/模式切换**（旧的绘制项整体作废），**并非每帧执行**。**引擎的 draw-item 容器在帧间持久**，脚本用 `draw-texture`(add) 与 `detach-texture count=1`(remove) 增量维护。
 - `sub_403E70`（9917）：控件 enter/leave 轨道跟踪器（`[959]`=当前、`[7468]`=新、`[7466]`=改变旗标），返回 `_this[old+359]`(leave 槽)/`_this[new+259]`(enter 槽)。这是系统级控件 UI 的 enter/leave 派发框架；**TITLE 菜单本身的 hover 高亮并不走它**，TITLE 用下面 §14.6 的脚本自维护。
 
+### 14.5b ★派发 label 的返回点 = 门指令（`ret` 回到门指令重跑）—— 门指令必须幂等
+
+`sub_405360`（raw 11030-11041）**压返回点**：`retStack[top] = a2 + ((ip - ip_base) >> 2)`。等待泵/主循环派发 label 时一律传 **`a2 = -3`**
+（悬停 raw 20328-20332、键命中 20303-20308、坐标点击 20284-20292、面板显示态点击 13670/14045/14088/20180/20195），
+而 `wait-for-input`(0x72) 长 **3 dword** ⇒ label 体末尾的 `ret` **正好回到门指令重跑**。
+
+⇒ **凡是能被悬停/点击 label 的 `ret` 重跑的指令都必须幂等**。最容易踩的一处 = 逐字显现的"启动"：
+`0x72` 的尾段（raw 28539-28555）只做三件事 —— `Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、
+置 bit31 等待门；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 字格节拍**。
+**文字的逐字游标 `FontVWindow+132` 由 `sub_45BE20` 泵推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动**
+⇒ 重跑门指令**不会**重放文字。emulator 曾把"启动逐字"放在 `0x72` 里、且只判"当前是否在显现" ⇒
+**每次悬停都把整页文字从头重放**（`tickets/T-0016` 用户实测：ADV 页右侧悬停 ⇒ 中间文字不断重放、页不推进；
+E3 实测 `revealRestarts = 2` → 修后 0）。常态行为条目见 `engine-capabilities.md` 的 `hover-ret-reruns-gate-op`。
+
+
 ### 14.6 「hover 回退」的真实机制（src/TITLE.txt + engine 双确认）
 
 **TITLE 的 hover 高亮是脚本自维护的「滚动两态（3f8=旧 / 3f7=新）」机制，回退由 `detach-texture <old_normal> 1` 移除图元实现。**

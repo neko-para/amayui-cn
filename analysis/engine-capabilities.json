@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 108,
-    "modeled-verified": 30,
+    "total": 109,
+    "modeled-verified": 31,
     "modeled-unverified": 5,
     "partial": 24,
     "absent": 24,
@@ -2193,39 +2193,6 @@
       ]
     },
     {
-      "id": "text-reveal-pump-409400",
-      "subsystem": "帧循环",
-      "name": "逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒）",
-      "trigger": "effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时",
-      "engine": {
-        "fns": [
-          "sub_409400",
-          "sub_45BE20",
-          "sub_453AF0",
-          "sub_453B60",
-          "sub_45A940",
-          "sub_4051A0"
-        ],
-        "raw": "13780-13970"
-      },
-      "reads": [
-        "Engine+86672（= Font+1376 = message:MessageSpeed）",
-        "Engine+699204（effect_flags）",
-        "FontVWindow+132（已显现到的**字**游标）",
-        "FontVWindow+44/48（24B 字记录向量 begin/end）",
-        "FontVWindow+92/+96（网格列数）",
-        "Font+235128（= message:MessageFade）"
-      ],
-      "whySilent": "它是\"每帧替脚本推进文字\"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。",
-      "confidence": "confirmed",
-      "emulator": {
-        "status": "modeled-verified",
-        "evidence": "E3",
-        "guard": "test/adv-msgwin.test.ts",
-        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。"
-      }
-    },
-    {
       "id": "msgwin-offscreen-surface-lifecycle",
       "subsystem": "消息窗",
       "name": "每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出",
@@ -3144,6 +3111,64 @@
         "evidence": "E3",
         "guard": "test/op-a5.test.ts",
         "note": "2026-09 A5 落地：`handlers/panel.ts`（`0x93`/`0x94`/`0x97`）、`handlers/engine-fields.ts`（`0xD9`/`0xAD`/`0x1AD`/`0x1B1`）、`handlers/audio.ts`（`0x1BC`/`0x1C9`，经 `NATIVE_OPS` 发 `voice-reset` 意图）。`0xAD` 的定点乘用 `BigInt` 复刻（`274877907 * t >> 38`）；`0x97` 经宿主缝 `native.fillPanelRect` 落 `SceneState.render4.panelRects`。★已登记缺口：`0x1C9` 的**驱动文件装载与窗口坐标下发**（重写侧 Web Audio 无驱动层）。★这批收口后，TITLE→SN0000 链路上采集到的 25 条**全部**已转真实现（链路上不再有任何 `ENGINE_INTERNAL_OPS`）。"
+      }
+    },
+    {
+      "id": "hover-ret-reruns-gate-op",
+      "subsystem": "输入",
+      "name": "悬停/点击 label 的返回点 = 门指令（ret 回到门指令重跑）",
+      "trigger": "等待泵派发 label 一律用 sub_405360(Engine, -3)：悬停（raw 20328-20332）、键命中（20303-20308）、坐标点击（20284-20292）、面板显示态点击（13670/14045/14088/20180/20195）。label 体跑完 ret ⇒ ip 回到门指令（0x72 长 3 dword，-3 + 偏移 = 门指令的 dword 偏移）⇒ **门指令被重跑**；重跑后门指令照常置 bit31、脚本继续挂起。",
+      "engine": {
+        "fns": [
+          "sub_405360",
+          "sub_41EEF0"
+        ],
+        "raw": "11030-11041"
+      },
+      "reads": [
+        "frames[cur].retStack",
+        "effect_flags(174801)"
+      ],
+      "whySilent": "重跑本身是设计的一部分（引擎每帧重进门指令、等待门照常置位），所以**不幂等只在玩家操作时才显形**：文字显现被重新武装（整页重放）、页计数虚增、▼ 节拍重启；引擎不报错、脚本也读不到差别。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/game-start-chain.test.ts",
+        "note": "已建模：Engine.dispatchWithReturn(label, -3)（src/vm/engine.ts）+ 门指令幂等。★T-0016 修的是**幂等那一半**：0x72 只在「这一页的内容还没武装过显现」时才启动逐字（MsgWindow.revealArmed，键 = 内容版本号 contentRevOf），并且 finishPage 同一页只记一次 —— 修前悬停侧边栏会让整页文字重放（E3 实测 revealRestarts 2 → 0）。守卫：test/adv-msgwin.test.ts（重跑 0x72 不得重放）、test/route-dispatch.test.ts 判据③（ret 回到门指令 + 重跑不推进页）、test/game-start-chain.test.ts（真实语料 revealRestarts === 0）。★仍未建模：面板显示态那条出口（0x800000/0x10000000 路径的 sub_404120，emulator 走另一支）没有同等的幂等守卫。"
+      }
+    },
+    {
+      "id": "text-reveal-pump-409400",
+      "subsystem": "帧循环",
+      "name": "逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒）",
+      "trigger": "effect_flags & 0x40000000（0x72/0x1CE 置位）或 0x71/0x72 后由消息泵接管时",
+      "engine": {
+        "fns": [
+          "sub_409400",
+          "sub_45BE20",
+          "sub_453AF0",
+          "sub_453B60",
+          "sub_45A940",
+          "sub_4051A0"
+        ],
+        "raw": "13780-13970"
+      },
+      "reads": [
+        "Engine+86672（= Font+1376 = message:MessageSpeed）",
+        "Engine+699204（effect_flags）",
+        "FontVWindow+132（已显现到的**字**游标）",
+        "FontVWindow+44/48（24B 字记录向量 begin/end）",
+        "FontVWindow+92/+96（网格列数）",
+        "Font+235128（= message:MessageFade）"
+      ],
+      "whySilent": "它是\"每帧替脚本推进文字\"的常态行为：缺了它，要么文字一次性全出（没有逐字效果），要么永远停在第一行而脚本已挂在 wait-for-input 上 —— 两种都不抛错。它也解释了「进入等待输入态时每帧空转上万条指令」的症状来源。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/adv-msgwin.test.ts",
+        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。"
       }
     }
   ]
