@@ -8,10 +8,10 @@ import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/sy
 import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
-import { loadScriptData } from './vm/interpreter.js';
+import { loadScriptData, type StepTrace } from './vm/interpreter.js';
 import { audioBootIntents } from './vm/handlers/audio.js';
 import { OPCODE_TABLE, type BinInstruction } from './script/bin.js';
-import { runFrameLoop } from './frame/loop.js';
+import { runFrameLoop, type FrameLoopOptions } from './frame/loop.js';
 import type { FrameHost } from './frame/host.js';
 import { formatIni, parseIni, applyConfigToEngine } from './engineConfig.js';
 import { applyEmulatorOptionsToEngine } from './emulatorOptions.js';
@@ -19,6 +19,70 @@ import { describeEmulatorOptions, loadEmulatorOptions, resourceDirOf } from './e
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..'); // app/amayui-emulator/src -> 仓库根
+
+/**
+ * **CLI 的帧驱动口径**（`tickets/T-0012`：本文件原来那份循环的四处漂移在 B2 已收敛，本函数把它们
+ * 抽成**可导出的纯函数**，守卫才能用合成脚本驱动"真的这份配置"）。
+ *
+ * 修前的四处（都已在 B2 处理）：
+ *  - **C3** 逐字分支排在 `serviceWinReveal` **之前**、且两者永不同帧 ⇒ 现在用驱动的产品顺序；
+ *  - **C1** 时钟只在逐字分支里 `+= 16`（其余时间**冻结** ⇒ `sleep` 门永不满足）⇒ 现在每帧末推进；
+ *  - **C4** 没有 `serviceCharGrid` / `advActive` 分支 ⇒ 现在按产品打开（`advFrame: true` + 两个服务）；
+ *  - **G3** 没有 `0x400`/`SLEEP` 门 ⇒ 现在吃驱动统一后的门。
+ *
+ * ★`gates.anim` 仍是 `'clear'`（**不是**产品档 `'wait'`）：本 CLI 的宿主是 `StubNative`
+ * （**没有场景模型**），`host.poolPending` 无从计算 ⇒ `'wait'` 只能靠 `0x238` 计时器放行；
+ * `src/frame/host.ts` 已声明"未实现 `poolPending` ⇒ 驱动按'池不挂起'处理"。这是**宿主能力缺口**
+ * （`tickets/T-0013`），守卫里**不得**把它断言成 `'wait'`（见 `test/run-cli-loop.test.ts` 的棘轮）。
+ */
+export interface RunLoopWiring {
+  /** `STEPS=n`（0 = 不限）。 */
+  maxSteps: number;
+  /** 已执行条数（`until` 与 `stopAfterStep` 都看它）。 */
+  executed: () => number;
+  /** 每条指令**之前**（`stepOnce` 之后帧/ip 可能已变 ⇒ 这里先抓住当前指令）。 */
+  beforeStep: (instr: BinInstruction | undefined) => void;
+  /** 每条指令**之后**（计数 + 打印）。 */
+  afterStep: (t: StepTrace, e: Engine) => void;
+  /** 等待推进门被访问（headless 无输入源 ⇒ 驱动自动放行）。 */
+  onAdvanceGate: (e: Engine) => void;
+  /** 未实现指令 / 其它异常：打印并停。 */
+  onFatal: (message: string) => void;
+  /** 帧末：推进虚拟时钟。 */
+  advanceClock: () => void;
+}
+
+/** 见 `RunLoopWiring`。 */
+export function runLoopOptions(w: RunLoopWiring): FrameLoopOptions {
+  const atLimit = (): boolean => w.maxSteps !== 0 && w.executed() >= w.maxSteps;
+  return {
+    gates: { anim: 'clear', sleep: 'wait', advance: 'force' },
+    services: { winReveal: true, charGrid: true },
+    advFrame: true,
+    maxStepsPerFrame: 20000,
+    onStepStart: (_frame, instr) => w.beforeStep(instr),
+    onStep: (t, e) => w.afterStep(t, e),
+    onGate: (branch, e) => {
+      // ★驱动在 `gates.advance === 'force'` 时**自己也会**调一次 `forceAdvance()`（`frame/loop.ts:271`），
+      //   这里再调一次是原实现的形态。**幂等**（`forceAdvance` 开头 `if (!this.awaitingAdvance) return null`，
+      //   第一次调用就把位清掉）⇒ 第二次是空操作。保留它是为了**零行为变更**：这一次调用才真正
+      //   完成跳转，`markScript()` 依赖它的返回值（见 `tickets/T-0012/notes.md` 的"顺带发现"）。
+      if (branch === 'advance') w.onAdvanceGate(e);
+    },
+    onUnknown: (err) => {
+      w.onFatal(err.message);
+      return 'stop';
+    },
+    onError: (err) => {
+      w.onFatal((err as Error).message);
+      return 'stop';
+    },
+    // ★`STEPS=n` 必须**逐条**生效：只在帧开头判 `until` 时，一帧能派发 20000 条 ⇒ `STEPS=300` 会跑成 20000 条。
+    until: atLimit,
+    stopAfterStep: atLimit,
+    onFrameEnd: () => w.advanceClock(),
+  };
+}
 
 async function main() {
   // ★外置选项（`emulator.config.json`）要在**建 FileSource 之前**读：`resources.path` 决定资源根
@@ -135,31 +199,16 @@ async function main() {
     }
   };
   markScript();
-  /**
-   * **帧驱动配置**（`tickets/T-0002` 的 G3/C1/C3/C4：本文件原来那份循环的四处漂移在这里收敛）。
-   *
-   * 修前的四处（都已在 B2 处理）：
-   *  - **C3** 逐字分支排在 `serviceWinReveal` **之前**、且两者永不同帧 ⇒ 现在用驱动的产品顺序；
-   *  - **C1** 时钟只在逐字分支里 `+= 16`（其余时间**冻结** ⇒ `sleep` 门永不满足）⇒ 现在每帧末推进；
-   *  - **C4** 没有 `serviceCharGrid` / `advActive` 分支 ⇒ 现在按产品打开（`advFrame: true` + 两个服务）；
-   *  - **G3** 没有 `0x400`/`SLEEP` 门 ⇒ 现在吃驱动统一后的门。
-   *
-   * ★`gates.anim` 仍传 `'clear'`：本 CLI 的宿主是 `StubNative`（**没有场景模型**），
-   * `host.poolPending` 无从计算 ⇒ 传 `'wait'` 只能靠 `0x238` 计时器放行（而本 CLI 的虚拟时钟不按真实节奏走）。
-   * 这是**宿主能力缺口**（登记在 `tickets/T-0013`：能力面要入桥，驱动才能统一询问"这个宿主能不能报池挂起位"）。
-   */
   const host: FrameHost = { now: () => clock };
   /** 打印用：`stepOnce` 之后帧/ip 可能已变，所以在 step **之前**抓住当前指令。 */
   let lastInstr: BinInstruction | undefined;
-  const result = await runFrameLoop(e, host, {
-    gates: { anim: 'clear', sleep: 'wait', advance: 'force' },
-    services: { winReveal: true, charGrid: true },
-    advFrame: true,
-    maxStepsPerFrame: 20000,
-    onStepStart: (_frame, instr) => {
+  const result = await runFrameLoop(e, host, runLoopOptions({
+    maxSteps,
+    executed: () => executed,
+    beforeStep: (instr) => {
       lastInstr = instr;
     },
-    onStep: (trace) => {
+    afterStep: (trace) => {
       executed++;
       if (trace.handlerKind === 'engine-internal' || trace.handlerKind === 'native' || trace.handlerKind === 'user-stub') {
         cfg++;
@@ -180,27 +229,17 @@ async function main() {
           ` [${(instr?.args ?? []).map((a) => (a.type === 2 ? `"${a.str}"` : `0x${a.raw.toString(16)}`)).join(' ')}]`,
       );
     },
-    onGate: (branch) => {
-      if (branch === 'advance') {
-        advanceWaits++;
-        if (e.forceAdvance() !== null) markScript();
-      }
+    onAdvanceGate: (eng) => {
+      advanceWaits++;
+      if (eng.forceAdvance() !== null) markScript();
     },
-    onUnknown: (err) => {
-      console.error(`\n[stop] ${err.message}`);
-      return 'stop';
+    onFatal: (message) => {
+      console.error(`\n[stop] ${message}`);
     },
-    onError: (err) => {
-      console.error(`\n[stop] ${(err as Error).message}`);
-      return 'stop';
-    },
-    until: () => maxSteps !== 0 && executed >= maxSteps,
-    // ★`STEPS=n` 必须**逐条**生效：只在帧开头判 `until` 时，一帧能派发 20000 条 ⇒ `STEPS=300` 会跑成 20000 条
-    stopAfterStep: () => maxSteps !== 0 && executed >= maxSteps,
-    onFrameEnd: () => {
+    advanceClock: () => {
       clock += 1000 / 60;
     },
-  });
+  }));
   if (result.stopReason === 'script-end') console.log(`  ip ${e.curScript().ip} 越界, 停止`);
   else if (result.stopReason === 'reset') console.log('\n[reset] exit-script(0x9) 全量清栈/重置（回到干净根态）');
   else if (result.stopReason === 'exit') console.log('\n[abort] abort(0x1)/程序退出');
@@ -209,7 +248,15 @@ async function main() {
   await src.dispose?.();
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// ★仅在**直接执行**时跑 CLI（被 import 时不跑）：`tickets/T-0012` 的守卫要 import 本文件、
+//   用合成脚本驱动 `runLoopOptions()` 这一份真配置 —— 修前这里是无条件 `main()`（没有测试面，
+//   这正是本票"守卫一直没补"的真实卡点）。守卫形态与 `report.ts` 的同名检查一致。
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]).replace(/\.(ts|js)$/, '') === fileURLToPath(import.meta.url).replace(/\.(ts|js)$/, '')
+) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

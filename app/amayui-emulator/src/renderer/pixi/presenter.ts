@@ -21,7 +21,27 @@ import {
   type Item,
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
+import { walkBlendSequence, type BlendEnv, type BlendState } from '../scene/blend.js';
 import type { TextureCache } from './textureCache.js';
+
+/**
+ * 抽象混合档 → Pixi 的 `BLEND_MODES`（`tickets/T-0017`）。
+ *
+ * ★为什么是这张表（Pixi 的颜色是**预乘**的）：
+ *  - `'add'`    = `[ONE, ONE]`      ⇔ 引擎 `(SRCALPHA, ONE)`（预乘后等价）
+ *  - `'normal'` = `[ONE, ONE_MINUS_SRC_ALPHA]` ⇔ 引擎 `(SRCALPHA, INVSRCALPHA)`
+ *  - `'subtract'` = `max(0, dst − src·sa)` ⇔ 引擎 `BLENDOP_REVSUBTRACT + (SRCALPHA, ONE)`（公式一致）
+ *  - `'none'`   = 关混合（dst = src）≈ 引擎 `(ONE, ZERO)`；**唯一近似**：α<255 时 Pixi 写的是预乘色，
+ *    引擎写的是未预乘的 `tex×diffuse`（要彻底对齐需要非预乘的着色路径，登记在 `tickets/T-0017`）。
+ */
+const PIXI_BLEND: Record<BlendState, string> = {
+  normal: 'normal',
+  add: 'add',
+  // ★两个字面量名是**自定义档**（`pixiBackend.ts` 的 `installD3DBlendModes` 注册到 `blendModesMap`）：
+  //   Pixi 内建的 `'none'` 是 `[0, 0]` = **画黑**，不是引擎的 `(ONE, ZERO)`「覆盖」。
+  none: 'd3d-opaque',
+  subtract: 'd3d-rev-subtract',
+};
 
 /** 合成诊断摘要的节流间隔（ms）。 */
 const SUMMARY_MS = 500;
@@ -70,7 +90,7 @@ export class ScenePresenter {
     const items = [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
-    const drawItem = (it: Item): void => {
+    const drawItem = (it: Item, blendMode: BlendState): void => {
       // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
       //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
       //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
@@ -112,6 +132,8 @@ export class ScenePresenter {
       }
       spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
       spr.alpha = alpha / 255; // diffuse alpha 淡入
+      // ★混合档（`tickets/T-0017`）：逐项复刻引擎的 blend 状态机（含"值 2 的门控"与"mesh 之后留 (ONE,ZERO)"）
+      spr.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
       this.drawRoot.addChild(spr);
       drawn++;
     };
@@ -125,7 +147,7 @@ export class ScenePresenter {
     //     没有顶点缓冲的 mesh **不画**。
     //   旧实现把**每个** mesh 画成 `width=VIEW_W; tint=0x000000` 的全屏不透明黑，且忽略
     //   RGB（永远黑），于是 SN0000 序章被"50% 黑幕"涂成整屏黑（背景与首文案一起消失）。
-    const drawMesh = (m: typeof meshes[number]): void => {
+    const drawMesh = (m: typeof meshes[number], blendMode: BlendState): void => {
       if ((m.flags & 1) === 0 || m.verts.length < 3) return; // 无几何 ⇒ 引擎不画
       const state = calcDiffuse(m, clock);
       const color = meshColor(m, state);
@@ -166,17 +188,37 @@ export class ScenePresenter {
           g.poly(pts).fill({ color: tri & 0xffffff, alpha: ((tri >>> 24) & 0xff) / 255 });
         }
       }
+      g.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
       this.drawRoot.addChild(g);
     };
 
     // 三路归并（键 = item.layer / text.layer / mesh.handle；等键按 item→text→mesh）
-    const entries: { key: number; order: 0 | 1 | 2; draw: () => void }[] = [
-      ...items.map((it) => ({ key: it.layer, order: 0 as const, draw: () => drawItem(it) })),
-      ...texts.map((t) => ({ key: t.layer, order: 1 as const, draw: () => void this.drawRoot.addChild(t.sprite) })),
-      ...meshes.map((m) => ({ key: m.handle, order: 2 as const, draw: () => drawMesh(m) })),
+    // ★`kind`/`blend` 是给混合状态机用的（`tickets/T-0017`）：必须与**绘制顺序**一致 —— 引擎的
+    //   blend state 是全局的、会泄漏（见 `scene/blend.ts` 头部第 2 条）。
+    const entries: {
+      key: number;
+      order: 0 | 1 | 2;
+      kind: 'item' | 'mesh';
+      blend: number;
+      draw: (mode: BlendState) => void;
+    }[] = [
+      ...items.map((it) => ({ key: it.layer, order: 0 as const, kind: 'item' as const, blend: it.blend, draw: (m: BlendState) => drawItem(it, m) })),
+      // 文本在引擎里就是一个 DrawItem（`+0x30` 不会被 `0x203` 写 ⇒ 恒 0 ⇒ "不改状态"）：
+      //   `src/SYSTEM4.txt:69 i213 8 19a28 1f4` 建的文本项 id = 0x19a28 = 105000。
+      ...texts.map((t) => ({ key: t.layer, order: 1 as const, kind: 'item' as const, blend: 0, draw: (m: BlendState) => { t.sprite.blendMode = PIXI_BLEND[m] as never; this.drawRoot.addChild(t.sprite); } })),
+      ...meshes.map((m) => ({ key: m.handle, order: 2 as const, kind: 'mesh' as const, blend: m.blend, draw: (mode: BlendState) => drawMesh(m, mode) })),
     ];
     entries.sort((a, b) => a.key - b.key || a.order - b.order);
-    for (const e of entries) e.draw();
+    const env: BlendEnv = {
+      renderTargetSlot: scene.render4.renderTargetSlot,
+      slotMode: (slot) => scene.render4.slotModes.get(slot),
+    };
+    const modes = walkBlendSequence(
+      entries.map((e) => ({ kind: e.kind, blend: e.blend })),
+      env,
+      scene.render4.sceneBlend,
+    );
+    for (let i = 0; i < entries.length; i++) entries[i]!.draw(modes[i]!);
     return drawn;
   }
 

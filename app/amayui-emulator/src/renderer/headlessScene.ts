@@ -53,6 +53,9 @@ import {
   scSet3DColor,
   scMsgWinClear,
   scMsgWinClearAll,
+  scSetRenderTarget,
+  scSetSlotMode,
+  scSetSceneBlend,
   scMsgWinSync,
   scSnapshot,
   snapshotToText,
@@ -208,10 +211,21 @@ export class HeadlessScene implements NativeBridge {
     this.proceduralSlots.delete(slot);
   }
 
+  /** `0x20D` 设置渲染目标（`tickets/T-0017`：混合选择子值 2 的门控依据）。 */
+  setRenderTarget(slot: number): void {
+    scSetRenderTarget(this.scene, slot);
+  }
+
+  /** `0x33F` op1 场景默认混合（`Scene+1260`）。 */
+  setSceneBlend(blend: number): void {
+    scSetSceneBlend(this.scene, blend);
+  }
+
   createTexture(slot: number, _w: number, _h: number, _mode: number): void {
     // 引擎：释放旧纹理对象并**新建**一张程序化纹理 ⇒ 该槽不再指向已绑定的文件图像，
     // 且槽上的直绘文本随新表面一起消失（`0x204` 是往"已有表面"上叠字）。
     this.proceduralSlots.add(slot);
+    scSetSlotMode(this.scene, slot, _mode); // ★纹理创建模式（`CTexture+1048`）：混合门控只认 mode 1
     scCreateTextureReset(this.scene, slot);
     if (_w > 0 && _h > 0) this.slotSize.set(slot, { w: _w, h: _h }); // 新建表面尺寸（0x208 getter 用）
     this.note('createTexture(程序化纹理内容由 draw-string 直绘，未生成位图)', `slot=${slot} ${_w}x${_h}`);

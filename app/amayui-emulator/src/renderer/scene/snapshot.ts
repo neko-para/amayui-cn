@@ -128,6 +128,12 @@ export interface SceneSnapshot {
     meshAttrs: [number, number, number][];
     released3D: number[];
     color3D: number[];
+    /** `0x20D` 当前渲染目标槽（-1 = 后台缓冲）。 */
+    renderTargetSlot: number;
+    /** `0x1F8` op4：每个纹理槽的创建模式。 */
+    slotModes: [number, number][];
+    /** `0x33F` op1：场景默认混合选择子。 */
+    sceneBlend: number;
   };
   counts: {
     drawItems: number;
@@ -221,6 +227,11 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
       ),
       released3D: [...s.render4.released3D],
       color3D: [...s.render4.color3D],
+      // ★`tickets/T-0017`：这三条**渲染器真的消费**（`pixi/presenter.ts` 的混合状态机）——
+      //   值 2 的门控就靠"当前渲染目标槽 + 该槽的创建模式"判定（引擎 raw 123110-123115）。
+      renderTargetSlot: s.render4.renderTargetSlot,
+      slotModes: [...s.render4.slotModes.entries()].map(([k, v]) => [k, v] as [number, number]),
+      sceneBlend: s.render4.sceneBlend,
     },
     drawItems,
     meshes,
@@ -289,7 +300,9 @@ export function snapshotToText(snap: SceneSnapshot): string {
         ` flags=0x${m.flags.toString(16)}${m.pending ? ' P' : ''}`,
     );
   }
-  // A4 记录族 + 0x203 混合模式：**只在有内容时打一行**（避免空快照变化；渲染器未消费，属缺口账本）
+  // A4 记录族：**只在有内容时打一行**（避免空快照变化）。
+  // ★其中 `renderTargetSlot`/`slotModes`/`sceneBlend` 三条**已被渲染器消费**（`tickets/T-0017` 的
+  //   混合状态机：值 2 的门控 + 场景默认档），其余仍是"只记录"（缺口账本）。
   {
     const r4 = snap.render4;
     const parts: string[] = [];
@@ -304,7 +317,11 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.meshAttrs.length) parts.push(`meshAttrs=${JSON.stringify(r4.meshAttrs)}`);
     if (r4.released3D.length) parts.push(`released3D=${JSON.stringify(r4.released3D)}`);
     if (r4.color3D.length) parts.push(`color3D=${JSON.stringify(r4.color3D)}`);
-    if (parts.length) L.push(`render4（只记录，渲染器未消费） ${parts.join(' ')}`);
+    // ★这三条是**混合状态机**的输入（渲染器真的读它们，`tickets/T-0017`）
+    if (r4.renderTargetSlot >= 0) parts.push(`renderTargetSlot=${r4.renderTargetSlot}`);
+    if (r4.slotModes.length) parts.push(`slotModes=${JSON.stringify(r4.slotModes)}`);
+    if (r4.sceneBlend) parts.push(`sceneBlend=${r4.sceneBlend}`);
+    if (parts.length) L.push(`render4（A4 记录族；renderTargetSlot/slotModes/sceneBlend 已被混合状态机消费） ${parts.join(' ')}`);
   }
   // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
   for (const w of snap.msgWins) {

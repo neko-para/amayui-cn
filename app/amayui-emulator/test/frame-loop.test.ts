@@ -189,7 +189,8 @@ test("★0x400 门：'clear' 清位且该帧不派发；'ignore' 不看它（位
     assert.equal(e.waitFlags & 0x400, 0, "'clear' 把 0x400 清掉了");
   }
   // 'ignore'：位一直留着 ⇒ **内批的"遇门即停"仍然生效** ⇒ 每帧只放行 1 条 ⇒ 晚一帧到脚本尾
-  //   （这正是 `report.ts` 的现状：它没有 0x400 分支，于是"动画等待位"变成"每帧一条"的节流器）
+  //   （★`tickets/T-0010` 后已无入口用这一档：`report.ts` 修前是它，现在是 `'wait'` + 门分支记帧。
+  //     保留这一档是因为它是驱动契约的一部分：`ignore` = "不看这一位"，与 `clear`/`wait` 语义不同。）
   {
     const e = mk(script());
     const { host, advance } = mkHost();
@@ -197,7 +198,7 @@ test("★0x400 门：'clear' 清位且该帧不派发；'ignore' 不看它（位
     assert.equal(r.stopReason, 'script-end');
     assert.equal(r.steps, 3);
     assert.equal(r.frames, 3, "'ignore' 下每帧只放行 1 条 ⇒ 第 4 帧才到脚本尾");
-    assert.notEqual(e.waitFlags & 0x400, 0, "'ignore' 不动这一位（report.ts 的现状）");
+    assert.notEqual(e.waitFlags & 0x400, 0, "'ignore' 不动这一位（不看 = 不清）");
   }
 });
 

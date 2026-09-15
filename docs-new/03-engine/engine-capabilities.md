@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 37 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 38 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 24 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **115** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **116** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -27,7 +27,7 @@
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 10 |
 | 消息窗 | 27 | 15 |
-| 渲染 | 24 | 11 |
+| 渲染 | 25 | 11 |
 | 资源 | 16 | 4 |
 | 转场 | 4 | 3 |
 | 输入 | 4 | 0 |
@@ -151,6 +151,7 @@
 | `save-slot-thumbnail-bmp` | 资源 | 存档缩略图：SAVE%2.2d.STH = 320x180 24bpp BMP（0x1AE 按 op3 纹理槽写 / 0x1AF 按 op3 纹理槽读） | ✅ 已核验 | E4 · `test/save-thumb.test.ts` |
 | `bold-is-lfweight-face-mapping` | 消息窗 | 加粗 = 一次 lfWeight=700 的字体映射请求（引擎不做合成加粗，配置里也没有独立的「粗体面」键） | ✅ 已核验 | E2 · `test/font-bold-face.test.ts` |
 | `text-line-pitch-font-1380` | 消息窗 | 换行步进 = 字号 + 行间距 Font+1380（i08b）—— 注音不压上一行的唯一来源 | ✅ 已核验 | E2 · `test/text-layout.test.ts` |
+| `drawitem-mesh-blend-selector` | 渲染 | DrawItem+0x30 / MeshEntry[9] 的 alpha 混合选择子（0/1/2/3 一套枚举） | ✅ 已核验 | E2 · `test/blend-mode.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

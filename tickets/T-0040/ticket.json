@@ -1,0 +1,61 @@
+{
+  "title": "测试期窗口贴屏幕边缘打开（不居中、不抢焦点）：shot/record 默认开启，--centered 可关",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/tools",
+  "why": "用户要求（2026-09）：跑测试（E4 截图 `npm run shot` / 录制 `npm run record`）时，主窗口每次都弹到屏幕**正中**并把焦点抢走，反复打断手头的事。需要：测试期把窗口摆到屏幕**下缘**（只留标题栏可见）、**不抢焦点**。",
+  "acceptance": [
+    "新增档位 `AMAYUI_WINDOW_EDGE`：空/0/off/center = 保持原来的居中弹出；1/on/bottom = 贴下缘；top/left/right = 对应边。默认档 = 只留 32px（标题栏量级）可见、另一方向居中",
+    "`tools/shot.cjs` 与 `tools/record.cjs` 默认打开贴边档（在 require `dist/electron/main.cjs` **之前**设环境变量，因为窗口模块加载期读它），`--centered` 可单次恢复居中",
+    "贴边档下窗口不抢焦点：构造时 `show: false` + `skipTaskbar: true`，随后 `setPosition()` + `showInactive()`（避免先在中间闪一下）",
+    "主进程启动时打印一行 `[window] 贴边档=… 位置=(x,y) 可用区=… 窗口=…`（便于核对真的贴边了）",
+    "几何是纯函数（`src/arch/windowPlacement.ts`，不依赖 Electron）并有单测：四条边、负坐标副屏、窗口比标题栏还矮、档位解析",
+    "非测试运行（`npm run electron` / `npm run electron:dev`，不设该环境变量）行为**不变**：仍然居中弹出"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/arch/windowPlacement.ts",
+      "anchor": "export function computeEdgePosition(",
+      "note": "纯几何：只留 TITLEBAR_PX 可见 + 另一方向居中（不依赖 Electron，可单测）"
+    },
+    {
+      "file": "app/amayui-emulator/electron/windows.ts",
+      "anchor": "const WINDOW_EDGE: WindowEdge | null = edgeFromEnv(process.env);",
+      "note": "主窗口与控制窗都走同一档：show:false + skipTaskbar + setPosition + showInactive"
+    },
+    {
+      "file": "app/amayui-emulator/tools/shot.cjs",
+      "anchor": "if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';",
+      "note": "★必须在 require main.cjs 之前设（窗口模块加载期读环境变量）"
+    },
+    {
+      "file": "app/amayui-emulator/test/window-edge.test.ts",
+      "anchor": "T-0040 贴下缘：只留标题栏可见",
+      "note": "守卫：四条边/负坐标/极矮窗口/档位解析"
+    }
+  ],
+  "notes": "实测（2026-09，`npm run shot -- --gamestart --name t17edge2`）：\n```\n[window] 贴边档=bottom 位置=(224,1085) 可用区=1728x1084@(0,33) 窗口=1280x720（只留 32px 可见；showInactive 不抢焦点）\n[window] 贴边档=bottom 位置=(614,1085) 可用区=1728x1084@(0,33) 窗口=500x720（只留 32px 可见；showInactive 不抢焦点）\n```\n可用区下缘 = 33+1084 = 1117 ⇒ y=1085 = 1117−32 ⇒ 只有标题栏在屏内、窗口其余部分在屏幕下方。截图（`capturePage`）不受位置影响，仍与居中时逐像素一致。",
+  "id": "T-0040",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— 已实现并实测：贴边档+不抢焦点+位置日志；纯几何单测 5 条；--centered 可关"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/window-edge.test.ts"
+  ]
+}

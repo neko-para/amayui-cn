@@ -1,35 +1,47 @@
 {
   "id": "T-0014",
   "type": "tooling",
-  "status": "open",
-  "priority": "P2",
+  "status": "done",
+  "priority": "P3",
   "area": "emulator/deadcode",
   "title": "删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBackend 的 waitFlags 镜像",
   "why": "第 6 份帧循环（interpreter.run）全仓无导入者；Engine.pickHoverLabel 在 src 里零调用者（悬停重构后的遗留）；两处 waitFlags 一份是死状态、一份是永久粘滞的开关。留着会误导后来人（也会让\"到底有几份循环\"数不清）。",
   "acceptance": [
-    "删除上述四处，且 npm run verify 全绿（无测试依赖它们）",
-    "如果某处其实有用，改为显式接线并补注释（不许\"看着像死代码就删\"）"
+    "四条死代码/死状态的现状已全部核查并收口：① interpreter.run() 已在 B1 删除；② HeadlessScene.waitFlags 已在 T-0008 删除（现为空实现）；③ PixiBackend 的 waitFlags 镜像已在 T-0008 删除并有源码棘轮；④ ★本次删除 Engine.pickHoverLabel()，门面挪到 test/harness.ts 的 pickHoverLabel(e)",
+    "覆盖不许丢：adv-msgwin + route-dispatch 共 44 条断言全绿（含 hoverDispatchAllowed() 的三条门控与两段式状态机），条数与修前一致",
+    "源码棘轮：test/anim-window-done.test.ts 剥注释后断言 src/vm/engine.ts 无 pickHoverLabel、且产品路径的 hoverDispatchAllowed() + routes.nextHoverLabel() 仍在",
+    "npx tsc -p tsconfig.json --noEmit 干净（src/ 里无该 API）"
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "hoverDispatchAllowed(): boolean {",
+      "note": "产品路径的悬停门控 + 那一对调用的真身（serviceAdvanceWait 内联；测试门面在 test/harness.ts）"
+    },
+    {
+      "file": "app/amayui-emulator/test/harness.ts",
+      "anchor": "export function pickHoverLabel(e: Engine): number {",
+      "note": "T-0014 把引擎上那个只被测试调用的门面挪到这里（逐字复刻产品路径的两行）"
+    },
+    {
+      "file": "app/amayui-emulator/test/anim-window-done.test.ts",
+      "anchor": "源码棘轮：引擎不许保留",
+      "note": "剥注释后 engine.ts 不得出现 pickHoverLabel，且产品路径那一对调用必须还在"
+    },
+    {
       "file": "app/amayui-emulator/src/vm/interpreter.ts",
       "anchor": "loadScriptData",
-      "note": "本文件现在只剩 stepOnce / loadScriptData / formatOperands —— `interpreter.run()`（第 6 份帧循环）已在 B1 删除"
+      "note": "本文件现在只剩 stepOnce / loadScriptData / formatOperands —— interpreter.run()（第 6 份帧循环）已在 B1 删除"
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "唯一一份",
-      "note": "唯一的帧循环现在在这里（`runFrameLoop`）"
-    },
-    {
-      "file": "app/amayui-emulator/src/vm/engine.ts",
-      "anchor": "pickHoverLabel",
-      "note": "引擎上的悬停包装：**只有测试**在调它（src/ 零调用者）；它只是 `hoverDispatchAllowed()` + `routes.nextHoverLabel()`"
+      "note": "唯一的帧循环现在在这里（runFrameLoop）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
-      "anchor": "waitFlags",
-      "note": "headless 宿主的 waitFlags 是死状态（写后无读者）；pixi 那份镜像见 T-0008"
+      "anchor": "无副作用：门状态由 Engine.waitFlags 管",
+      "note": "headless 宿主的 waitFlags 是死状态（写后无读者）—— 已在 T-0008 删除，现在是空实现"
     }
   ],
   "history": [
@@ -40,6 +52,26 @@
     {
       "at": "2026-09-14",
       "what": "B1 删掉 interpreter.run()/RunResult（本票第 1 项完成）；第 2/3 项按 notes 里的实测情况改归：pickHoverLabel 是测试门面（单独改），waitFlags 归 T-0008"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：priority"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— ①–③ 已在 B1/T-0008 落地；本次删掉 Engine.pickHoverLabel（门面挪 test/harness），44/44 绿 + 源码棘轮"
     }
   ],
   "notes": "（2026-09-14 B1）三项的准确情况，别照原描述盲删：\n1. `interpreter.run()` / `RunResult` **已删**（全仓无导入者，且没有任何每帧服务）——这是 B1 的一部分。\n2. `Engine.pickHoverLabel()` **只被测试调用**（`adv-msgwin.test.ts` 5 处 + `route-dispatch.test.ts` 5 处）。它不是纯死代码，而是\"产品路径已改走 `serviceAdvanceWait` 内部\"之后留下的**测试门面**；删它要同步改写那 10 条断言（并会丢掉这 10 条里对 `hoverDispatchAllowed()` 门控的覆盖）⇒ 单独一次小改动做，别混在 B1 里。\n3. `PixiBackend.waitFlags` 的粘滞是**缺陷**不是死代码 ⇒ 归 T-0008（needsRender 判据），删字段要跟它一起做。",
@@ -48,5 +80,10 @@
       "T-0008",
       "T-0001"
     ]
-  }
+  },
+  "tests": [
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/route-dispatch.test.ts",
+    "app/amayui-emulator/test/anim-window-done.test.ts"
+  ]
 }

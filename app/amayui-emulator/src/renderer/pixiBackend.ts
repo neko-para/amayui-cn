@@ -68,6 +68,9 @@ import {
   scClearTransitions,
   scSetDrawModeBlock,
   scSetDrawEntryParam,
+  scSetRenderTarget,
+  scSetSlotMode,
+  scSetSceneBlend,
   scSetSlotParams,
   scSetMeshEntryAttr,
   scRelease3DSlot,
@@ -169,6 +172,7 @@ export class PixiBackend implements NativeBridge {
     b.drawRoot = stage.drawRoot;
     b.unit = stage.unit;
     b.presenter = new ScenePresenter(b.drawRoot, b.textures, b.unit, (m) => b.#pushLog(m));
+    installD3DBlendModes(stage.app);
     // 内置字族按需加载（TextLayer 在光栅化前调 ensureFont）；加载完成会 bump
     // fontVersion()，TextLayer 据此重画一次用 fallback 画出来的文本。
     b.textLayer = new TextLayer((m) => b.#pushLog(m));
@@ -307,9 +311,24 @@ export class PixiBackend implements NativeBridge {
   }
 
   /** `0x1F8` create-texture：见 `TextureCache.create`（槽旧纹理失效后重取 / 新建空白表面）。 */
+  /** `0x20D` 设置渲染目标（`tickets/T-0017`：混合选择子值 2 的门控依据）。 */
+  setRenderTarget(slot: number): void {
+    this.#markDirty();
+    scSetRenderTarget(this.scene, slot);
+    this.#pushLog(`setRenderTarget slot=${slot}${slot < 0 ? '（后台缓冲）' : ''}`);
+  }
+
+  /** `0x33F` op1 场景默认混合（`Scene+1260`）。 */
+  setSceneBlend(blend: number): void {
+    this.#markDirty();
+    scSetSceneBlend(this.scene, blend);
+    this.#pushLog(`setSceneBlend ${blend}`);
+  }
+
   createTexture(slot: number, w: number, h: number, mode: number): void {
     this.#markDirty();
     this.textures.create(slot, w, h, mode);
+    scSetSlotMode(this.scene, slot, mode); // ★纹理创建模式（`CTexture+1048`）：混合门控只认 mode 1
     scCreateTextureReset(this.scene, slot);
   }
 
@@ -952,4 +971,35 @@ export class PixiBackend implements NativeBridge {
   #markDirty(): void {
     this.sceneDirty = true;
   }
+}
+
+/**
+ * **把引擎的两个 D3D 混合组合注册进 Pixi 的 WebGL 混合表**（`tickets/T-0017`）。
+ *
+ * 为什么必须注册：Pixi 内置档里**没有**等价项，而且 `'none'` 是 `[0, 0]`（**画黑**，不是"覆盖"）——
+ * 2026-09 实测：把引擎的 `(ONE, ZERO)` 映射成 `'none'` 会让序章整屏变黑（背景与侧栏一起消失）。
+ * 自定义名走**普通路径**（不在 `BLEND_MODE_FILTERS` 里 ⇒ 不进高级 filter pass），
+ * 由 `GlStateSystem.setBlendMode` 查 `blendModesMap` 应用；名字必须先注册，否则会**静默回落 `normal`**。
+ *
+ * 因子按 Pixi 的**预乘**约定取（与引擎的未预乘 D3D 组合等价）：
+ *  - `d3d-opaque`      = `[ONE, ZERO]`          ⇔ 引擎 `SRCBLEND=ONE(2)` / `DESTBLEND=ZERO(1)`
+ *    （选择子 2 与 mesh 画完留下的状态；`BLENDOP=ADD`）
+ *  - `d3d-rev-subtract` = `[ONE, ONE, ONE, ONE, FUNC_REVERSE_SUBTRACT, FUNC_REVERSE_SUBTRACT]`
+ *    ⇔ 引擎 `BLENDOP=REVSUBTRACT(3)` + `SRCALPHA(5)` / `ONE(2)` ⇒ `dst − color·α`
+ *    （预乘后源 = `color·α` ⇒ 源因子 ONE）
+ */
+function installD3DBlendModes(app: Application): void {
+  // ★类型：`app.renderer` 是 `Renderer | CanvasRenderer` 联合，只有 WebGL 后端有 `state`/`gl`
+  //   ⇒ 用结构化断言取（拿不到就是非 WebGL 后端，直接返回）。
+  const r = app.renderer as unknown as {
+    gl?: { ONE: number; ZERO: number; FUNC_REVERSE_SUBTRACT: number };
+    state?: { blendModesMap?: Record<string, number[]> };
+  };
+  const ONE = r.gl?.ONE ?? 1;
+  const ZERO = r.gl?.ZERO ?? 0;
+  const FUNC_REVERSE_SUBTRACT = r.gl?.FUNC_REVERSE_SUBTRACT ?? 0x800b;
+  const map = r.state?.blendModesMap;
+  if (!map) return; // 非 WebGL 后端（未来 WebGPU）⇒ 保持内置档，presenter 的名字会静默回落 normal
+  map['d3d-opaque'] = [ONE, ZERO];
+  map['d3d-rev-subtract'] = [ONE, ONE, ONE, ONE, FUNC_REVERSE_SUBTRACT, FUNC_REVERSE_SUBTRACT];
 }

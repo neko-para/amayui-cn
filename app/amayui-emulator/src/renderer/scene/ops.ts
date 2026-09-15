@@ -702,3 +702,32 @@ export function scSet3DColor(s: SceneState, r: number, g: number, b: number, a: 
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.color3D = [r, g, b, a];
 }
+
+/**
+ * `0x20D` **设置渲染目标**（`sub_423770` raw 31594-31602 → `sub_4A50C0` raw 124819-124912）：
+ * `op1` = 纹理槽（引擎里 `-1` = 回到后台缓冲；`sub_4A50C0(…, 0xFFFFFFFF)` 就是这个语义）。
+ *
+ * ★**不是普通记录**：它决定 `0x203`/`0x322` 混合选择子**值 2 的门控**（见 `scene/blend.ts`）
+ * —— 只有"当前渲染目标槽的纹理是 mode-1 离屏表面"时才用 `(ONE,ZERO)` 覆盖。
+ */
+export function scSetRenderTarget(s: SceneState, slot: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  s.render4.renderTargetSlot = slot;
+}
+
+/**
+ * `0x1F8` create-texture 的 op4 = 该槽的**创建模式**（引擎 `sub_4A2C10` → `sub_48AC40` raw 107026
+ * 写 `CTexture+1048`）。mode 1/2 = `Usage=D3DUSAGE_RENDERTARGET` + `Pool=DEFAULT`（离屏渲染目标），
+ * 其余 = MANAGED 普通纹理。混合门控只认 **1**（raw 123111 / 119381 的 `== 1`）。
+ */
+export function scSetSlotMode(s: SceneState, slot: number, mode: number): void {
+  // ★它也影响画面：mode 1 是"值 2 混合门控"的成立条件（`scene/blend.ts`）⇒ 与其它变更型 op 一样置脏。
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  s.render4.slotModes.set(slot, mode);
+}
+
+/** `0x33F` op1 = 场景默认混合选择子（引擎 `Scene+1260`；消费点 `sub_4535F0` raw 65858-65889）。 */
+export function scSetSceneBlend(s: SceneState, blend: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  s.render4.sceneBlend = blend;
+}

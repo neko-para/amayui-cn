@@ -1076,7 +1076,7 @@ export class Engine {
   }
 
   /**
-   * **悬停判定**（引擎 `sub_411BC0` raw 20315-20339 的前半：`v9 = sub_403E70(routes)`）。
+   * **悬停分支的门控**（引擎 `sub_411BC0` raw 20315-20339 的前半：`v9 = sub_403E70(routes)`）。
    *
    * ★**不在这里做命中测试**：游标由鼠标移动事件（`sub_4B8D50` → `InputManager.onCursorMove`
    * → `routes.hitTest`）或面板首次显示（`sub_404020`）更新。
@@ -1092,23 +1092,17 @@ export class Engine {
    * ⇒ 随包 INI **缺** `set:ReDrawTextOnKey`（= 0）且 `i1bb 0` 期间（`97055 = 0x80000000 < 0`）时，
    * **悬停派发是生效的**（规格 §D.1 把它写反了，这里按汇编订正）。
    *
-   * 返回 −1 = 本帧没有游标变化（或没有热点、门控拦住）。
-   */
-  pickHoverLabel(): number {
-    if (!this.hoverDispatchAllowed()) return -1;
-    const label = this.routes.nextHoverLabel(); // 引擎 sub_403E70
-    return label === 0xffffffff ? -1 : label;
-  }
-
-  /**
-   * 悬停分支的门控（raw 20315-20320 的整体条件；见 `pickHoverLabel` 的汇编核对）。
-   *
    * 整体条件（`sub_411BC0` 的 `if (~((mask & 0x20) == 0 && …))`，raw 20315-20321）：
    * ```
    * (mask & 0x20) != 0          → 跳过整个悬停/推进段（右键走 20365 的"取消/跳读"通路）
    * 或 (mask & 滚轮键位) != 0 且 Engine[388220] >= 0 且 Conf(set:ReDrawTextOnKey) == 1 → 跳过
    * ```
    * 其余情况**都走悬停派发**（`sub_403E70`，20324）。
+   *
+   * ★消费点只有两处、都是**同一对调用**（`if (!hoverDispatchAllowed()) …; routes.nextHoverLabel()`）：
+   * 产品路径 = `serviceAdvanceWait()`（本文件 `:994-995`）；测试 = `test/harness.ts` 的
+   * `pickHoverLabel(e)` 门面。修前引擎上还挂着一个 `pickHoverLabel()` 方法（只被测试调用），
+   * `tickets/T-0014` 把它删掉了 —— 引擎不该为测试保留产品路径不走的方法。
    */
   hoverDispatchAllowed(): boolean {
     // `(mask & 0x20)` = 鼠标**右**键（`sub_477150` 的 bit5）⇒ 右击时整段悬停/推进被跳过。

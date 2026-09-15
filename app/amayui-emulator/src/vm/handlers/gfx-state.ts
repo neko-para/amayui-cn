@@ -175,7 +175,39 @@ const op_set_3d_color: OpHandler = (c) => {
   c.native.set3DColor?.(((rgb >>> 0) & 0xff) / 255, ((rgb >>> 8) & 0xff) / 255, ((rgb >>> 16) & 0xff) / 255, alpha);
 };
 
-/** A4 族（真实现：2 条建模 + 11 条宿主缝）。 */
+
+/**
+ * `0x20D` **设置渲染目标**（`sub_423770` raw 31594-31602，argc=1）：`op1` → `sub_4A50C0(Scene, op1)`
+ * （raw 124819-124912）。引擎里 `-1` = 回到后台缓冲（同函数 raw 127911 / 25284 的 `0xFFFFFFFF` 用法）。
+ *
+ * ★**它不是"渲染侧记录"就完了**：`0x203`/`0x322` 的混合选择子**值 2 是门控的** ——
+ * 只有"当前渲染目标槽指向的纹理创建模式 == 1"（= 正在往 mode-1 离屏表面画）时才设 `(ONE,ZERO)` 覆盖，
+ * 否则**什么都不设**（沿用当前混合）。见 `renderer/scene/blend.ts` 与 `tickets/T-0017`。
+ * 语料用量：841 处（`i20d 2` / `i20d (local-int 0)`）。
+ */
+const op_set_render_target: OpHandler = (c) => {
+  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.setRenderTarget?.(slot);
+};
+
+/**
+ * `0x33F` **设置场景混合/颜色**（`sub_427A90` raw 34411-34448，argc=3）。
+ *
+ * 引擎：`v7 = Engine[93384]`（Scene）；`*(v7+1260) = op1`（**场景默认混合选择子**，消费点
+ * `sub_4535F0` raw 65858-65889 —— 注意那里 `== 2` 时**没有门控**，无条件 `(ONE,ZERO)`）；
+ * `*(v7+1264) = (α<<24)|(rgb&0xFFFFFF)`，其中 α=op2（>255 钳 255；<0 ⇒ 取 op1 所指绘制项当前 α）、
+ * rgb=op3（<0 ⇒ 取该项当前色）。
+ * ★**颜色那半未建模**：它在 raw 65904-65907 被下发给效果对象（`Scene+1036` vtable+12 =
+ * 混合常量 + `Scene+1040` vtable+20 = `Scene+1264`），是**效果通路的 shader 常量**，emulator 没有
+ * 这条通路（登记在 `tickets/T-0017` 的未收敛项）。本 handler 只承载混合选择子（它会真的改变画面）。
+ * 语料用量：1 处（`src/SETWEATHER.txt:80 i33f 1 ff ffffff`）。
+ */
+const op_set_scene_blend: OpHandler = (c) => {
+  const blend = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.setSceneBlend?.(blend);
+};
+
+/** A4 族（真实现：2 条建模 + 13 条宿主缝；★`0x20D`/`0x33F` 是 `T-0017` 加的）。 */
 export const GFX_STATE_OPS: OpTable = [
   [0x1fc, op_reset_prim_transform], // 复位图元变换
   [0x1fe, op_prim_transform4], // 图元变换 4 浮点
@@ -190,4 +222,6 @@ export const GFX_STATE_OPS: OpTable = [
   [0x321, op_set_mesh_entry_attr], // MeshEntry 属性
   [0x32a, op_release_3d_slot], // 释放 3D 模型槽
   [0x32d, op_set_3d_color], // 3D 颜色
+  [0x20d, op_set_render_target], // ★设置渲染目标（T-0017：混合选择子值 2 的门控依据）
+  [0x33f, op_set_scene_blend], // ★场景默认混合选择子（Scene+1260）
 ];

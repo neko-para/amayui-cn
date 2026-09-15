@@ -82,6 +82,21 @@ export interface SceneState {
     released3D: number[];
     /** `0x32D` 3D 颜色 [r,g,b,a]（各 0..1）。 */
     color3D: number[];
+    /**
+     * `0x20D` **当前渲染目标纹理槽**（引擎 `Scene+46456`；`-1` = 后台缓冲）。
+     *
+     * ★**它不只是记录**：`0x203`/`0x322` 的混合选择子**值 2 是门控的** —— 只有当这个槽指向的纹理
+     * 是 **mode-1 离屏表面**时才用 `(ONE,ZERO)` 覆盖，否则沿用当前混合（引擎 raw 123110-123115 /
+     * 119381-119386）。见 `scene/blend.ts` 与 `tickets/T-0017`。
+     */
+    renderTargetSlot: number;
+    /** `0x1F8` 的 op4 = 每个纹理槽的**创建模式**（引擎 `CTexture+1048`；mode 1/2 = 离屏渲染目标）。 */
+    slotModes: Map<number, number>;
+    /**
+     * `0x33F` op1 = **场景默认混合选择子**（引擎 `Scene+1260`，消费点 `sub_4535F0` raw 65858-65889）。
+     * 未下发时 = `0`（→ 普通 alpha），与 emulator 既有行为一致。
+     */
+    sceneBlend: number;
   };
 }
 
@@ -107,6 +122,10 @@ export function newSceneState(): SceneState {
       meshAttrs: new Map<number, Map<number, number>>(),
       released3D: [],
       color3D: [1, 1, 1, 1],
+      // -1 = 后台缓冲（引擎 `sub_4A50C0(…, 0xFFFFFFFF)` 就是"回到后台缓冲"）。
+      renderTargetSlot: -1,
+      slotModes: new Map<number, number>(),
+      sceneBlend: 0,
     },
   };
 }

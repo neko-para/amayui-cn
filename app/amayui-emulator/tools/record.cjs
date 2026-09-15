@@ -46,6 +46,9 @@ process.env.AMAYUI_RECORD = '1';
 process.env.AMAYUI_SCENARIO_NAME = spec.name ?? 'scenario';
 process.env.AMAYUI_SCENARIO_SCRIPT = String(spec.boot?.script ?? 0);
 
+// ★测试期"贴边开窗"（`tickets/T-0040`，与 shot.cjs 同）：必须在 require main.cjs **之前**设。
+if (!argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
+
 // 关掉后台节流（与 shot.cjs 同因：窗口不在前台时 rAF 会被降到极低频）。
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');

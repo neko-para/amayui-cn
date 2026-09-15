@@ -25,7 +25,7 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { parseScriptBytes } from '../src/script/bin.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr } from './harness.js';
+import { im, instr, pickHoverLabel } from './harness.js';
 
 /** 造一个可被 `labelMap` 解析的最小脚本：指令的 dword index 按下标推（每条 1+2*argc dword）。 */
 function mkScript(instructions: BinInstruction[]): ScriptBinary {
@@ -112,17 +112,17 @@ test('判据①：enter/leave 两段式 —— 进入发 labelA、离开发 labe
   OPS.get(0x90)!(makeCtx(e, e.curScript(), instr(0x90, [im(200), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
 
   e.input.setCursor(50, 50); // 鼠标移动 ⇒ sub_403C50
-  assert.equal(e.pickHoverLabel(), 0xaa, '进入 h0 ⇒ labelA');
-  assert.equal(e.pickHoverLabel(), -1, '同位置（无移动）⇒ 什么都不发');
+  assert.equal(pickHoverLabel(e), 0xaa, '进入 h0 ⇒ labelA');
+  assert.equal(pickHoverLabel(e), -1, '同位置（无移动）⇒ 什么都不发');
 
   e.input.setCursor(250, 50); // h0 → h1
-  assert.equal(e.pickHoverLabel(), 0xbb, '先发旧项的 labelB（离开）');
-  assert.equal(e.pickHoverLabel(), 0xaa, '下一帧补发新项的 labelA（进入）—— 一次调用只给一个 label');
-  assert.equal(e.pickHoverLabel(), -1, '之后稳定');
+  assert.equal(pickHoverLabel(e), 0xbb, '先发旧项的 labelB（离开）');
+  assert.equal(pickHoverLabel(e), 0xaa, '下一帧补发新项的 labelA（进入）—— 一次调用只给一个 label');
+  assert.equal(pickHoverLabel(e), -1, '之后稳定');
 
   e.input.setCursor(900, 900); // 走出所有热点
-  assert.equal(e.pickHoverLabel(), 0xbb, '离开所有热点 ⇒ labelB');
-  assert.equal(e.pickHoverLabel(), -1, '之后稳定');
+  assert.equal(pickHoverLabel(e), 0xbb, '离开所有热点 ⇒ labelB');
+  assert.equal(pickHoverLabel(e), -1, '之后稳定');
 });
 
 // ---------------------------------------------------------------------------

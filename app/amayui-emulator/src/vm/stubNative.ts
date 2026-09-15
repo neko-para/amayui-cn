@@ -55,6 +55,12 @@ export class StubNative implements NativeBridge {
   createTexture(slot: number, w: number, h: number, mode: number): void {
     this.log(`[native:stub] createTexture slot=${slot} ${w}x${h} mode=${mode}`);
   }
+  setRenderTarget(slot: number): void {
+    this.log(`[native:stub] setRenderTarget slot=${slot}`);
+  }
+  setSceneBlend(blend: number): void {
+    this.log(`[native:stub] setSceneBlend ${blend}`);
+  }
   setScale(handle: number, sx: number, sy: number, sz: number): void {
     this.log(`[native:stub] setScale h=0x${handle.toString(16)} (${sx},${sy},${sz})`);
   }

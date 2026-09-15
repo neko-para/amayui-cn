@@ -1,0 +1,42 @@
+{
+  "title": "闸门 C 的死写检测把注释里的 .field 当成「读」⇒ 一句文档注释就能让棘轮静默失效",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/test",
+  "why": "2026-09（研究 T-0017 时实际踩到并复现）：src/tools/deadWrites.ts 的 countAccess() 按行正则 `\\.\\s*<field>\\b` 统计读写，**不区分注释**。我在 src/renderer/drawitem/model.ts 的文档注释里写了一句「见 MeshObj.blend」，npm run check:dead-writes 立刻从「当前死写 2 个」变成「当前死写 0 个 + 基线已过期（Item.blend MeshObj.blend 现在有消费者了）」。两个后果：① 把**已登记的能力缺口**误报成已修（报告与 formatReport 的 fixed 列表都失真）；② 对**没有反向断言**的字段，一句注释就能把新出现的死写静默洗成「有人读」，棘轮形同虚设。注意 test/no-dead-writes.test.ts 的第 2 条断言（Item.blend 应被判为死写）恰好会因此变红 —— 那是巧合（只有 blend 这两个字段有反向断言），而且失败信息指向「应被判为死写」，不会告诉人「注释不该算读」。",
+  "acceptance": [
+    "countAccess 统计前剥掉注释（`//` 行与 `/* */` 块；至少覆盖 `/** */` 文档注释），使注释里出现 .field 不影响任何字段的读写计数",
+    "新增守卫：构造一段含 .field 的注释文本，断言读数不变（或等价地：断言 findDeadWrites 对「注释里提到字段」不敏感）",
+    "回归：npm run check:dead-writes 仍报 Item.blend / MeshObj.blend 为死写（2 个）、test/no-dead-writes.test.ts 全绿；src/renderer/drawitem/model.ts 里的说明文字不再影响结论",
+    "把结论写进 src/tools/deadWrites.ts 顶部「局限」段（现在只写了『静态分析无法识别下标/动态键访问』，没写『注释会被算成读』）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/tools/deadWrites.ts",
+      "anchor": "只认属性访问",
+      "note": "countAccess 的读写统计口径：逐行跑正则、注释未剥离（本轮实测：加一句注释即可让两个字段从 dead 变 alive）"
+    },
+    {
+      "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
+      "anchor": "死写检测自身有效",
+      "note": "★T-0017 之后这条改成**合成输入**（真实模型已无死写字段）—— 原来的反向断言是 Item.blend 应被判为死写"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/drawitem/model.ts",
+      "anchor": "混合模式选择子",
+      "note": "本轮在这里写了一句含 .blend 的注释 ⇒ 复现入口（现已改成不含 .blend 的措辞）"
+    }
+  ],
+  "id": "T-0039",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    }
+  ]
+}

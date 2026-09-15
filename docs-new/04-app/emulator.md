@@ -177,6 +177,7 @@ npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt
 npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未实现"清单）
 npm run diag:text      # 文本可见性诊断（为什么画面上没有字）
 npm run shot -- --gamestart [--name X] # **G4** E4 自动截图（先 build:electron；★时序等日志标记，不睡固定秒数）
+npm run shot -- --gamestart --centered # 同上，但窗口**居中弹出**（默认测试期贴屏幕下缘、不抢焦点，见 `T-0040`）
 npm run scenario -- --scenario tools/scenarios/gamestart.json [--out X.jsonl]  # headless 跑一份 Scenario
 npm run record -- --scenario tools/scenarios/gamestart.json --out X.jsonl.gz   # **G3 录制端**（Electron，真输入）
 npm run replay -- X.jsonl.gz           # **G3** 把录下来的时钟+输入在 headless 复现，逐帧比 digest
@@ -202,6 +203,9 @@ npm run save:dump      # SAVE.DAT 解析
 - **G1 确定性**：`npm test`（同 Scenario 两次跑 ⇒ digest 逐字节相同）。
 - **G3 回放等价**：`npm run record -- --scenario … --out X.gz && npm run replay -- X.gz`（**本地**；约 1 分钟）。
 - **G4 观感**：`npm run shot -- --gamestart --name X` + 与上一份对照截图/关键行比对。
+  ★**测试期窗口不再居中打扰**（`T-0040`）：`shot`/`record` 默认把窗口摆到**屏幕下缘**（只留标题栏、
+  `skipTaskbar`、`showInactive()` 不抢焦点），加 `--centered`（或 `AMAYUI_WINDOW_EDGE=0`）可单次恢复居中；
+  主进程启动时会打一行 `[window] 贴边档=bottom 位置=(…) …` 供核对。
   ★**只有这几行是"关键行"**（逐条比对过，见 `tickets/T-0004/changes.md`）：`-> TITLE.BIN` / `-> GAMESTART.BIN` /
   `-> SN0000.BIN` / `gate 0x400 cleared|WAIT` / `=== text reveal done ===` / `=== ADV cleared … ===` /
   `[hover-label] …` / `=== advance-wait handled … ===`。

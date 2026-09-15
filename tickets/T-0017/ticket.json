@@ -1,14 +1,19 @@
 {
   "id": "T-0017",
   "type": "req",
-  "status": "open",
+  "status": "done",
   "priority": "P2",
   "area": "emulator/render",
   "title": "消费 Item.blend / MeshObj.blend（引擎的混合模式选择子 → Pixi blendMode）",
   "why": "引擎里 +0x30 与 mesh entry[9] 是混合模式选择子，D3D 侧消费者（sub_4AEEA0 / sub_49E390）已读清，emulator 只送达未消费 ⇒ 混合模式不生效，两条留在死写基线里。",
   "acceptance": [
-    "按引擎枚举把值映射到 PIXI.BLEND_MODES，并用淡出/叠加场景截图对照（E4）",
-    "完成后从 dead-writes 基线删除 Item.blend / MeshObj.blend（闸门更严）"
+    "选择子语义按引擎建模并接线：`DrawItem+0x30`（0x203 op2）与 `MeshEntry[9]`（0x322 op2）是同一套 4 值枚举 —— 1=(SRCALPHA,ONE) 加算 / 2=门控 (ONE,ZERO) 覆盖 / 3=BLENDOP_REVSUBTRACT+(SRCALPHA,ONE) / 0=draw-item「不改」·mesh「显式 SRCALPHA+INVSRCALPHA」；场景默认（`Scene+1260`，0x33F op1）2 档**无门控**",
+    "★值 2 的门控按引擎实现：`0x20D`（设置渲染目标，此前 emulator **完全没有**这条指令，语料 841 处）写 `Scene+46456`；`0x1F8` 的 op4 写槽创建模式（`CTexture+1048`）；门 = 当前渲染目标槽存在 **且模式恰好 == 1**（mode 2 不算）",
+    "渲染器真的消费：`pixi/presenter.ts` 把每项的档写进 `spr.blendMode`/`g.blendMode`（文本精灵按 draw-item 规则）；`pixiBackend.installD3DBlendModes()` 注册两个自定义档 d3d-opaque=[ONE,ZERO] / d3d-rev-subtract（★Pixi 内建 none=[0,0] 是画黑，实测踩过）",
+    "闸门 C 收口：Item.blend / MeshObj.blend 从死写基线移除（known 清空），npm run check:dead-writes 报 0 死写；守卫 test/blend-mode.test.ts 10 条（选择子表 / 门控 / 场景默认 / 泄漏档 / 默认档 / 端到端：0x1F8+0x20D+0x33F+0x203+0x322 走真 handler 到场景模型 → 混合档）",
+    "E4 回归：默认档下 TITLE/GAMESTART 两张**静态帧**与修前行为（强制 normal）**逐字节相同**；序章首文案帧内容正确（天空+侧栏+正文）",
+    "★**未兑现项（诚实登记，转 T-0041 后续）**：正例 E4（走到真的 selector=1/2 的站点并对照加算/覆盖画面）本次**没做到**——`--gamestart` 路线到不了那些站点（语料里 1/2 的站点在 ALCHEMY/CGMODE/FIELD/HMODE 等界面）。已有的是端到端单测（E2）与静态帧零回归，不是真机对照",
+    "★未收敛（转 T-0041）：引擎 blend state 的「泄漏」读法与真机可见行为矛盾（照做会让 TITLE 的 logo 透明区变黑）；默认档按真机可见行为，泄漏档保留在 BlendWalkOptions.leakStateAcrossEntries（默认 false）"
   ],
   "evidence": [
     {
@@ -31,6 +36,21 @@
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— 选择子+门控已建模并接线（含新实现的 0x20D/0x33F/槽模式）；守卫 test/blend-mode.test.ts（10 条含端到端）；静态帧零回归；泄漏读法的矛盾另开 T-0041"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/blend-mode.test.ts"
   ]
 }

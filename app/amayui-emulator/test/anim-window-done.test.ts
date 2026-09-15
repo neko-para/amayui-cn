@@ -180,3 +180,25 @@ test('T-0008：宿主**不得**再用自己的 waitFlags 镜像做渲染判据�
     );
   }
 });
+
+/**
+ * ★**源码棘轮：引擎不许保留"只有测试在调"的门面方法**（`tickets/T-0014`）。
+ *
+ * 修前 `Engine.pickHoverLabel()` 在 `src/` 里**零调用者**（产品路径早已把那一对调用内联进
+ * `serviceAdvanceWait()`），只剩测试在调 —— 引擎为一个"产品不走"的路径保留了 API。
+ * `T-0014` 把门面挪到 `test/harness.ts`（`pickHoverLabel(e)`，逐字复刻那一对调用）。
+ * 这里剥注释后再查，免得把"记录这段历史的注释"误判成回归。
+ */
+test('T-0014：`Engine` 不得再挂"只被测试调用"的悬停门面（`pickHoverLabel`，源码棘轮）', () => {
+  const engineSrc = stripComments(fs.readFileSync(path.join(HERE, '..', 'src', 'vm', 'engine.ts'), 'utf8'));
+  assert.equal(
+    /pickHoverLabel/.test(engineSrc),
+    false,
+    'Engine 不应有 pickHoverLabel（产品路径用 `serviceAdvanceWait`；测试门面在 test/harness.ts）',
+  );
+  // 产品路径那一对调用必须还在（删门面不许把产品路径一起删掉）
+  assert.ok(
+    /hoverDispatchAllowed\(\)/.test(engineSrc) && /nextHoverLabel\(\)/.test(engineSrc),
+    '引擎里必须仍有 hoverDispatchAllowed() + routes.nextHoverLabel() 这一对（产品悬停派发的真身）',
+  );
+});

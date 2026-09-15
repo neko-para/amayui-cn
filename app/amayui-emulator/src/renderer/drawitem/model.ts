@@ -105,7 +105,11 @@ export interface Item {
 }
 
 /**
- * mesh（元素2 = MeshEntry，60 字节）**自己的**颜色动画窗：`+36 start / +40 delay / +44 dur`。
+ * mesh（元素2 = MeshEntry，60 字节）**自己的**颜色动画窗：`+40 start(entry[10]) / +44 delay(entry[11]) / +48 dur(entry[12])`。
+ * ★`+36`（= `entry[9]`）**不是**窗的一部分，它是**混合模式选择子**（见本接口下方的 blend 字段）。
+ *   raw 依据：`sub_4AE330` raw 132834-132843 写 `[10]=0 / [11]=a3(delay) / [12]=a4(dur)`；
+ *   绘制期 `sub_4AF1C0` raw 133533-133538 读 `v40[10]`（起点，为 0 则锁存 `Scene+46500`）/`[11]`/`[12]`。
+ *   （2026-09 订正：此前写 `+36 start / +40 delay / +44 dur`，整体错了一个 int。）
  * ★与 DrawItem 的窗布局不同 —— 元素2 有自己独立的起点（引擎 raw 133509-133511 锁存），
  *   而 DrawItem 的 5 个窗共享 `+0x34` 一个起点。
  */
@@ -160,7 +164,10 @@ export interface MeshObj {
    * 消费点 = `sub_4AF1C0` raw 133617 `sub_49E390(…, entry[9])`，其中 `a8 = entry[9]` 走
    * `if (a8==1) SetRenderState(19,5)/(20,2)` / `a8==2` / `a8==3 ·(171,3)` 等分支
    * （`sub_49E390` raw 119370-119399）。**emulator 未接**（与 `Item` 的 blend 字段同一类缺口，
-   * 见 `dead-writes.baseline.json` 与能力台账 `drawitem.mix-mode`）。语料里恒为 0。
+   * 见 `dead-writes.baseline.json` 与能力台账 `drawitem.mix-mode`）。
+   * ★2026-09 订正：此前这里写"语料里恒为 0"是**错的** —— 实测 `set-vertex-color` 3919 处里
+   *   `0` × 2373、`1` × 28、变量 `(global-int 4fd1)` × 1518，而 `4fd1` 有 28 处被 `mov … 1`
+   *   ⇒ 运行期确实会出现 `1`（加算）。见 `tickets/T-0017/notes.md` 的语料统计。
    */
   blend: number;
 }

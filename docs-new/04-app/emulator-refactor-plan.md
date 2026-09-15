@@ -111,6 +111,33 @@
 
 ## 9. 变更记录
 
+- 2026-09（第 12 轮，四张 P2 收口 + 两条新票）：
+  - ★**`T-0010` report 的门档**：`reportLoopOptions()` 抽成可导出纯函数；`anim`/`sleep` 由 `'ignore'` 改为
+    `'wait'`（引擎语义）**并给门分支记帧**（`0x400`/`sleep` 分支本帧不派发、只有时钟前进，raw 21109-21152）
+    —— 漏记即"永远到不了 `sleepUntil`"（实测挂死）。守卫 `test/scene-report.test.ts`（含"阈值陷阱"：
+    report 自己的帧边界阈值 4096 ≠ 驱动的 `maxStepsPerFrame` 1）。script 0 的 `frames/clockMs` 修前后**逐项一致**。
+  - ★**`T-0012` CLI 守卫**：`run.ts` 加"仅直接执行才跑 `main()`"守卫并把驱动口径抽成 `runLoopOptions()`
+    ——修前它无条件跑 `main()`，**测试连 import 都会把 CLI 跑起来**（这就是守卫一直没补的真实卡点）。
+    守卫 `test/run-cli-loop.test.ts`（6 条：C1 时钟/C3 顺序/C4 服务与 ADV/`STEPS` 逐条/与 `PRODUCT_FRAME_POLICY`
+    的棘轮/子进程冒烟）。`STEPS=300` 输出逐字不变。
+  - **`T-0014` 死代码**：①–③（`interpreter.run()` / `HeadlessScene.waitFlags` / `PixiBackend` 镜像）已在
+    B1/`T-0008` 落地；本次删掉 `Engine.pickHoverLabel()`（门面挪到 `test/harness.ts` 的 `pickHoverLabel(e)`，
+    44 条断言一条不丢）+ 源码棘轮（`test/anim-window-done.test.ts`）。
+  - ★★**`T-0017` 混合选择子**：`DrawItem+0x30` / `MeshEntry[9]` / 场景默认（`Scene+1260`）**同一套 4 值枚举**
+    （`1` 加算 / `2` 门控覆盖 / `3` REVSUBTRACT / `0` 默认），值 2 的门控 = "当前渲染目标槽的纹理创建模式 == 1"。
+    **补齐两条此前完全没实现的指令**：`0x20D set-render-target`（语料 841 处）、`0x33F set-scene-blend`；
+    `0x1F8` 的 op4（`CTexture+1048`）也进模型。宿主侧 `pixiBackend.installD3DBlendModes()` 注册
+    `d3d-opaque=[ONE,ZERO]`、`d3d-rev-subtract=[…FUNC_REVERSE_SUBTRACT]`（★Pixi 内建 `'none'` 是 `[0,0]` =
+    **画黑**，实测踩过）。闸门 C 基线清空。守卫 `test/blend-mode.test.ts`（10 条含"指令→模型→混合档"端到端）。
+    ★实施中发现"引擎 blend state 会泄漏"这条读法与真机可见行为**矛盾**（照做会把 TITLE 的 logo 透明区写成黑）
+    ⇒ 默认按真机可见行为，泄漏档完整保留在 `BlendWalkOptions.leakStateAcrossEntries`（默认 false），
+    另开 `T-0041` 追踪"合并段入口由谁重设 blend 状态"。
+  - **`T-0039`（新，tooling）**：闸门 C 的 `countAccess` **不剥注释** ⇒ 一句文档注释就能让棘轮静默失效
+    （研究 `T-0017` 时实测踩到并复现；已加复现输出）。
+  - **`T-0040`（新，tooling，done）**：测试期窗口**贴屏幕下缘**打开（只留标题栏）+ `skipTaskbar` +
+    `showInactive()` 不抢焦点（`AMAYUI_WINDOW_EDGE` 档位；`shot`/`record` 默认开启，`--centered` 可关）；
+    纯几何在 `src/arch/windowPlacement.ts`，守卫 `test/window-edge.test.ts`（5 条）。
+
 - 2026-09（`tickets/T-0037` + `T-0038`，逐字显现的两处引擎语义落地）：
   ① **注音随本文词末字显现**：引擎把注音记录 push 在本文词**最后一个字**的 24B 记录之后、并给该记录标
      `[+0]=1`，显现 `do { 贴 } while (上一记录[+0])` ⇒ 一步 = 本文末字 + 它的注音

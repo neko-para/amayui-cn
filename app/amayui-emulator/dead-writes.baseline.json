@@ -1,13 +1,12 @@
 {
-  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但当前没有任何渲染消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。",
-  "known": ["Item.blend", "MeshObj.blend"],
-  "reason": {
-    "Item.blend": "引擎 DrawItem+0x30 = 混合模式（`0x203` 的 op2 → `sub_4ACF60` raw 131878 `*(v5+48)=a3`）。★2026-09：**送达链路已修**（handler 读 op2 → native 三参 → `applyDrawColorAlpha(it, from, blend)`；此前 op2 被静默丢弃、`blend` 恒 0）。**渲染器仍未消费** ⇒ 混合模式不生效（缺口见 analysis/engine-capabilities.json 的 drawitem.mix-mode）。修法：按引擎 +0x30 的取值映射到 PIXI.BLEND_MODES。",
-    "MeshObj.blend": "引擎 MeshEntry[9] = 网格绘制的 alpha 混合模式选择子，由 `0x322` 的 op2 写入（`set-vertex-color <h> <mode> <α> <rgb>`），消费者是 D3D 侧的 `sub_49E390(…, entry[9])`（raw 133617 → 119370-119399 的 SetRenderState 19/20/171 分支）。emulator 的 mesh 走 Pixi Graphics 普通 alpha 合成 ⇒ 这个选择子未接（与 Item.blend 同一类缺口）。语料实测恒为 0（默认），故画面无差异；修法：按 entry[9] 的 1/2/3 分支映射到 Pixi blendMode（add/multiply 等）。"
-  },
+  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但当前没有任何渲染消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。★2026-09：`Item.blend`/`MeshObj.blend` 已在 tickets/T-0017 接上消费者（场景混合状态机），基线清空。",
+  "known": [],
+  "reason": {},
   "_removed": {
     "Item.pivotZ": "pivot 的 z 分量：`itemPivotLocal` 现在会连同 z 一起换算（presenter 只消费 x/y），不再是『写了没人读』。",
     "Item.posZ": "描画位置的 z：同上，已由 `itemPivotLocal` 消费。",
-    "Item.useWorld": "★DrawItem+0x68『用世界矩阵』标志：2026 接入世界矩阵门（引擎 raw 123055 `if (Scene+46532) …`，而 `Scene+46532 ← DrawItem+0x68`）后，presenter 用它决定 pivot/缩放/旋转/平移是否参与合成 ⇒ 不再是冗余字段。"
+    "Item.useWorld": "★DrawItem+0x68『用世界矩阵』标志：2026 接入世界矩阵门（引擎 raw 123055 `if (Scene+46532) …`，而 `Scene+46532 ← DrawItem+0x68`）后，presenter 用它决定 pivot/缩放/旋转/平移是否参与合成 ⇒ 不再是冗余字段。",
+    "Item.blend": "引擎 `DrawItem+0x30` = 混合模式（`0x203` 的 op2）。★2026-09 已消费：`tickets/T-0017` —— `scene/blend.ts` 的 `walkBlendSequence` 逐项复刻引擎的 blend 状态机（选择子 0/1/2/3 → normal/add/none/subtract，值 2 受「当前渲染目标槽的纹理创建模式 == 1」门控），`pixi/presenter.ts` 把它写到 `spr.blendMode`。引擎依据：`sub_4A2D50` raw 123089-123121（送达 `sub_4AEEA0` raw 133443）。守卫：`test/blend-mode.test.ts`。",
+    "MeshObj.blend": "引擎 `MeshEntry[9]` = 网格绘制的 alpha 混合选择子（`0x322` 的 op2；`sub_4AE2C0` raw 132815 `v5[9]=a3`），消费者 `sub_49E390`（raw 133617 送达 → raw 119369-119399）。★2026-09 已消费：`tickets/T-0017` —— 同 `Item.blend` 的一套枚举（mesh 的 `0` 档是**显式** normal，且画完把状态留在 `(ONE,ZERO)`，raw 119474-119476）。★同时订正：此前这里写「语料实测恒为 0，故画面无差异」是错的 —— 实测 `0x322` op2 = `0`×2373 / `1`×28 / 变量 `(global-int 4fd1)`×1518（`4fd1` 有 28 处被 `mov … 1`）⇒ 加算真的会出现。守卫：`test/blend-mode.test.ts`。"
   }
 }

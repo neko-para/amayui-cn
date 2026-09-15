@@ -354,7 +354,7 @@
 | 0x20A | 1 |  | sub_423620 | 仅映射 |  |
 | 0x20B | 7 |  | sub_423690 | 已核对 | **纯色+α 填充(渐变/压黑覆盖原语)**：读 op1=纹理、op2..op5=矩形(op4=op2+宽,op5=op3+高)、op6=α(>255 钳 255)、op7=颜色；`sub_4A4C70` 走纹素 vtable(+24) 填充。handler=sub_423690（raw .c 31569） |
 | 0x20C | 0 |  | sub_41A1A0 | 已核对 | **绘图帧控制**：帧计时（timeGetTime 写 `_this[92333/92334]`）+ 调图形子系统 `sub_4B4040(_this+80708)`、`_this[168998]=0`。handler=sub_41A1A0（raw .c 25258）。方向：渲染/帧控制 |
-| 0x20D | 1 |  | sub_423770 | 仅映射 |  |
+| 0x20D | 1 | set-render-target | sub_423770 | 已核对 | **设置渲染目标**：读 op1=纹理槽 → `sub_4A50C0(Scene, op1)`（raw 124819-124912；`-1`/`0xFFFFFFFF` = 回到后台缓冲，同函数 raw 127911/25284 的用法）。★**它有读者**：`0x203`/`0x322` 混合选择子的**值 2 是门控的** —— 只有「当前渲染目标槽（`Scene+46456`）指向的纹理创建模式 == 1」时才设 `(ONE,ZERO)` 覆盖（`sub_4A2D50` raw 123110-123115 / `sub_49E390` raw 119381-119386；模式由 `0x1F8` 的 op4 写进 `CTexture+1048`）。语料 841 处（`i20d 2` / `i20d (local-int 0)`）。emulator：`op_set_render_target` → `scene.render4.renderTargetSlot`（`tickets/T-0017`） |
 | 0x20E | 0 |  | sub_41A200 | 已核对 | **图形提交**：`sub_41A200` —— `if (Engine[80684]==1 && Engine[92322]==-1)` 时 `sub_4A50C0(Scene, 0x26)`（压渲染状态 38）+ `sub_498B60(Engine+321572)`（设备 `Clear(0,0,3,0,1.0,0)` = 清 target+z）+ `sub_4A50C0(Scene,-1)`；**两条路径最后都会**再调一次 `sub_498B60`。handler=sub_41A200（raw 25277-25287）。语料 **786 处 / 342 个脚本**。emulator：`OPS` 的 `op_commit_graphics` → `native.commitGraphics`（记录次数；重写侧每帧自绘，不需要 Clear）。 |
 | 0x20F | 3 |  | sub_4237B0 | 已核对 | **play-movie**：读 op1=movie资源id、op2=slot、op3=模式/音量；构造/复用 `[4*slot+378688]` movie 对象，`sub_454FA0` 取路径、`sub_488DC0` 装载（失败抛「…」）、`sub_489230` 绑定、`sub_4054D0` 求播放模式、`sub_408350` 求音量、`sub_4885A0` 设音量、`sub_4883A0` 启动；置 `_this[699204]\|=0x2000`、`_this[675972]=1`。handler=sub_4237B0（raw .c 31605） |
 | 0x210 | 1 |  | sub_423980 | 仅映射 |  |
@@ -549,7 +549,7 @@
 | 0x33C | - |   | sub_427950 | 仅映射 |  |
 | 0x33D | 3 |  | sub_4279B0 | 仅映射 |  |
 | 0x33E | 5 |  | sub_427A00 | 仅映射 |  |
-| 0x33F | 3 |  | sub_427A90 | 仅映射 |  |
+| 0x33F | 3 | set-scene-blend | sub_427A90 | 已核对 | **设置场景默认混合/颜色**：读 op1 → `Scene+1260`（**场景默认混合选择子**，消费点 `sub_4535F0` raw 65858-65889，注意那里 `== 2` 时**没有门控**、无条件 `(ONE,ZERO)`）；op2 = α（>255 钳 255；<0 ⇒ 取 op1 所指绘制项当前 α）、op3 = 颜色（<0 ⇒ 取该项当前色）→ `Scene+1264` = `(α<<24)|(rgb&0xFFFFFF)`（raw 65904-65907 下发给效果对象的 shader 常量）。★emulator 只建模混合选择子（`scene.render4.sceneBlend`，`tickets/T-0017`）；**颜色那半的效果通路未建模**（登记在该票）。语料 1 处（`src/SETWEATHER.txt:80 i33f 1 ff ffffff`） |
 | 0x340 | 1 |  | sub_427B60 | 已核对 | **渲染状态下发**：写状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22，设备在 raw 122124 重放）。handler=sub_427B60 → sub_49A2D0（raw 116869） |
 | 0x341 | 2 |  | sub_427BA0 | 已核对 | **Live2D 模型加载**：读 op1（文件名/资源 id）、op2 → `sub_4559C0(资源表, 主窗口, op1, &dwBytes)` 读文件进内存 → `sub_455560` 建句柄 → `sub_4A1860(Engine+322832, 资源表, op1, hFile, dwBytes, op2)`；失败 ⇒ `sub_455C60` 释放 + **抛异常**。**PARTIAL**（内部未建模；桩实现不得抛）。handler=sub_427BA0（raw .c 34461） |
 | 0x342 | 1 |  | sub_427C70 | 已核对 | **销毁 Live2D 模型实例槽**：`objects[op1]`（`Scene+55812`+4·op1，**10 槽**）非空则 `sub_4785E0` 析构 + `operator delete` + 置 0。handler=sub_427C70 → sub_4A1A60（raw 121745）。（旧称"释放图形资源槽"为误） |

@@ -201,6 +201,8 @@ export const BRIDGE_METHODS = [
   'setScaleAnim',
   'setString',
   'setTexture',
+  'setSceneBlend',
+  'setRenderTarget',
   'setTextureTransform',
   'setTextureObjectFloat',
   'setTextureObjectParam',

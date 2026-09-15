@@ -131,6 +131,18 @@ export interface NativeBridge {
    *  emulator 建模为"该槽的图像缓存失效并重取"（见 PixiBackend）。 */
   createTexture?(slot: number, w: number, h: number, mode: number): void;
   /**
+   * 0x20D **设置渲染目标**（`sub_423770` raw 31594-31602 → `sub_4A50C0` raw 124819-124912）：
+   * `op1` = 纹理槽；引擎里 `-1` = 回到后台缓冲。
+   * ★它决定 `0x203`/`0x322` 混合选择子**值 2 的门控**（`tickets/T-0017`，见 `renderer/scene/blend.ts`）。
+   */
+  setRenderTarget?(slot: number): void;
+  /**
+   * 0x33F op1 = **场景默认混合选择子**（引擎 `Scene+1260` → 消费点 `sub_4535F0` raw 65858-65889）。
+   * ★raw 65907 还会把 op2/op3 组出的颜色（`Scene+1264`）下发给效果对象 —— 那条**效果通路** emulator
+   * 未建模（登记在 `tickets/T-0017`），本方法只承载混合选择子。
+   */
+  setSceneBlend?(blend: number): void;
+  /**
    * 0x204 draw-string（sub_423390 → `sub_456710`）：把一整串文本**直绘进纹理槽** `slot`（GDI 路径）。
    * `(x, y)` = 文本左上角（引擎在 `Font+201680 == 1` 时会再加一次 ascent 修正）。
    * 宿主只负责光栅化：用 `style` 把 `text` 画到该槽的表面（保留原有像素，不清底）。

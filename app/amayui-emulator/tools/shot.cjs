@@ -11,6 +11,7 @@
  *   npm run shot -- --gallery        # 回想 → BGM 鉴赏（第三个按钮）：验证曲目列表能列出来
  *   npm run shot -- --gamestart      # 右上角 Game Start → 配置界面 ゲーム開始 → SN0000 首文案
  *   npm run shot -- --name mycase    # 产物前缀（默认 shot）
+ *   npm run shot -- --centered       # 恢复"窗口居中弹出"（默认测试期贴屏幕下缘、不抢焦点，见 `T-0040`）
  *
  * 产物：`<仓库根>/.tmp/<name>-<步骤>.png`（每步一张）+ 主进程 stdout。
  *
@@ -28,6 +29,11 @@ const path = require('node:path');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
+
+// ★测试期"贴边开窗"（`tickets/T-0040`）：默认把窗口摆到屏幕**下缘**（只留标题栏）、不抢焦点，
+//   免得每次弹到正中打断手头的事。必须**在 require main.cjs 之前**设（主进程模块加载期读它）；
+//   `--centered` 或 `AMAYUI_WINDOW_EDGE=0` 可单次恢复"居中弹出"。
+if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
 
 require('../dist/electron/main.cjs'); // 真实主进程：建窗口 + 注册 IPC（脚本/图像/配置）
 

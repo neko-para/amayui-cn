@@ -147,6 +147,40 @@ sprite.position = pivot + t          sprite.pivot = pivot − pos
 `test/config1-chain.test.ts`（真语料跑完整序列，断言中段**渲染出来的**左边缘回到轨道 x）。
 上/下盖没有变换指令 ⇒ 纯 2D 路径，不受影响（这正是"只有中段漂"的原因）。
 
+## 4.6 alpha 混合选择子：`DrawItem+0x30` / `MeshEntry[9]` / 场景默认（2026-09，`T-0017`）
+
+**同一套 4 值枚举**，三条同族路径各自消费（判定全是 `cmp 1/2/3` 的 if 链、无跳转表）：
+
+| 值 | D3D 组合 | 语义 | draw-item（`sub_4A2D50` raw 123089-123121） | mesh/model（`sub_49E390` raw 119369-119399 / `sub_49E700` raw 119512-119578） |
+|---|---|---|---|---|
+| `0` / ≥4 | — / `SRCALPHA+INVSRCALPHA` | 默认 | **一个 blend state 都不设**（继承当前） | **显式**设 `(19,5)(20,6)` |
+| `1` | `SRCALPHA(5)` / `ONE(2)` | 加算 | 设 | 设 |
+| `2` | `ONE(2)` / `ZERO(1)`，**门控** | 覆盖 | 设 | 设 |
+| `3` | `BLENDOP_REVSUBTRACT(3)` + `(5)`/`(2)` | 减算（`dst − src·sa`） | 设 | 设 |
+
+- **写入**：`0x203` 的 op2 → `DrawItem+0x30`（`sub_4ACF60` raw 131878）；`0x322` 的 op2 → `MeshEntry[9]`（`sub_4AE2C0` raw 132815）；
+  场景默认 = `0x33F` op1 → `Scene+1260`（`sub_427A90` raw 34442-34444）。
+- **送达**：draw-item 见 `sub_4AEEA0` raw 133443（第 6 参 = 元素 `+0x30`）；mesh 见 `sub_4AF1C0` raw 133617（第 8 参 = `entry[9]`）。
+- ★**值 2 是有门控的**：只有当 `Scene+46456`（当前渲染目标槽，由 `0x20D` 写）指向的纹理其 `CTexture+1048`
+  （创建模式，由 `0x1F8` 的 op4 写）**== 1**（= 往 mode-1 离屏表面画）时才设 `(ONE,ZERO)`；否则**什么都不设**。
+- ★**场景默认那一档没有门控**：`sub_4535F0` 的 `Scene+1260 == 2` 分支无条件 `(ONE,ZERO)`（raw 65861-65869）。
+- ★**两处 `DESTBLEND` 的寄存器实参被 Hex-Rays 丢了**，由 `engine/天结_unpacked.exe_utf8.lst` 逐指令解出
+  （`.text:004A3191 push 1`、`.text:004A31BB push 2`）——凡「`.c` 里实参只剩 `(v10, 20)`」都应去 `.lst` 取。
+
+### 未收敛：合并段的 blend 状态由谁重设？（`T-0041`）
+读代码会得到"状态泄漏"：draw-item 的 `0` 不重置、mesh 画完留 `(ONE,ZERO)`（raw 119474-119476 /
+`.lst:0049E681`-`0049E6AF`）、`sub_4535F0` 尾部也是 `(ONE,ZERO)`（`.lst:00453777`-`00453791`），
+而 2D 合并段（`sub_4B06D0` raw 134417-136734）里**没有任何** SetRenderState。
+但把它照原样搬进 emulator 会**明显错**（TITLE 的 logo 透明区被写成黑、背景被覆盖）⇒ 与真机截图矛盾，
+说明"每项重设 blend 状态"的那一处还没找到。⇒ emulator 侧默认按**真机可见行为**（每项从场景默认开始），
+把"泄漏"档完整保留在 `renderer/scene/blend.ts` 的 `BlendWalkOptions.leakStateAcrossEntries`（默认 false）。
+
+### Pixi 落地（`T-0017`）
+`blendModesMap` 里注入两个自定义档：`d3d-opaque = [ONE, ZERO]`、`d3d-rev-subtract = [ONE,ONE,ONE,ONE,FUNC_REVERSE_SUBTRACT,FUNC_REVERSE_SUBTRACT]`
+（Pixi 的源是**预乘**的 ⇒ 引擎的 `(SRCALPHA,ONE)` = `'add'`、`(SRCALPHA,INVSRCALPHA)` = `'normal'`、
+`REVSUBTRACT+(SRCALPHA,ONE)` = 这里的 `d3d-rev-subtract`）。★**不要用 Pixi 内建的 `'none'`**：
+它是 `[0, 0]` = **画黑**，不是引擎的 `(ONE,ZERO)`「覆盖」（实测踩过）。
+
 ## 5. 交叉引用
 
 - 纹理 slot↔AGF 映射见 `./resource-loading.md`；渲染壳工程见 `../04-app/emulator.md`。

@@ -1,7 +1,7 @@
 {
   "id": "T-0012",
   "type": "bug",
-  "status": "open",
+  "status": "done",
   "priority": "P2",
   "area": "emulator/frame-loop",
   "title": "run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive",
@@ -13,18 +13,33 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/run.ts",
-      "anchor": "runFrameLoop(e, host",
-      "note": "run.ts 已接共享帧驱动（G3/C1/C3/C4 一次性收敛）"
+      "anchor": "export function runLoopOptions(w: RunLoopWiring): FrameLoopOptions {",
+      "note": "T-0012 把 CLI 的驱动口径抽成可导出的纯函数（守卫的前提）"
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
-      "anchor": "stopAfterStep: () => maxSteps !== 0",
-      "note": "STEPS=n 逐条生效（修前只在帧开头判 ⇒ STEPS=300 会跑成 20000）"
+      "anchor": "仅在**直接执行**时跑 CLI",
+      "note": "直执行守卫：修前是无条件 main() ⇒ 测试连 import 都会把 CLI 跑起来（这就是守卫一直没补的真实卡点）"
+    },
+    {
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "stopAfterStep: atLimit,",
+      "note": "STEPS=n 逐条生效（修前 cap 只在帧边界判 ⇒ STEPS=300 会跑成 20000 条）"
+    },
+    {
+      "file": "app/amayui-emulator/src/run.ts",
+      "anchor": "gates: { anim: 'clear', sleep: 'wait', advance: 'force' }",
+      "note": "CLI 门档：anim=clear 是 StubNative 缺 poolPending 的补偿（T-0013），棘轮里已显式化"
+    },
+    {
+      "file": "app/amayui-emulator/test/run-cli-loop.test.ts",
+      "anchor": "棘轮：CLI 的门档/服务开关只允许",
+      "note": "与 session.ts 的 PRODUCT_FRAME_POLICY 逐项比对，只允许 anim/advance 两处宿主缺口"
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "stopAfterStep?(t: StepTrace, e: Engine)",
-      "note": "逐条停是驱动新能力（B2 加）"
+      "note": "逐条停是驱动能力（B2 加）"
     }
   ],
   "blockedBy": [
@@ -38,7 +53,22 @@
     {
       "at": "2026-09-14",
       "what": "B2 第 2 批：代码已接驱动并实测 STEPS 生效；守卫待补（CLI 无测试面）⇒ 保持 doing"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— 抽 runLoopOptions + 直执行守卫；守卫 test/run-cli-loop.test.ts（6 条，含子进程冒烟；已验证去掉修法即红）；STEPS=300 输出逐字不变"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
     }
   ],
-  "notes": "（2026-09-14 B2 第 2 批）代码已修：run.ts 现在经 runFrameLoop 跑 —— 产品顺序 + 每帧时钟 + 两个每帧服务 + ADV 分支 + 门。\n- 实测：STEPS=300 恰好 300 条（修前 20000 条：cap 只在帧边界判；这正是新加的 stopAfterStep 解决的）。\n- 仍 doing：守卫待补。run.ts 是 CLI（只被 npm run run 调用，没有测试面）⇒ 按纪律不能标 done。\n  两条候选：① 把它的驱动配置抽成可导出的常量/函数，用单测断言\"= 产品语义\"；② 给 CLI 写一个 spawnSync 冒烟测试（注意沙箱下\"捕获子进程管道输出\"可能被拒，需 stdio: ignore + 退出码判据）。已登记进 T-0020（测试结构）。"
+  "notes": "（2026-09-14 B2 第 2 批）代码已修：run.ts 现在经 runFrameLoop 跑 —— 产品顺序 + 每帧时钟 + 两个每帧服务 + ADV 分支 + 门。\n- 实测：STEPS=300 恰好 300 条（修前 20000 条：cap 只在帧边界判；这正是新加的 stopAfterStep 解决的）。\n- 仍 doing：守卫待补。run.ts 是 CLI（只被 npm run run 调用，没有测试面）⇒ 按纪律不能标 done。\n  两条候选：① 把它的驱动配置抽成可导出的常量/函数，用单测断言\"= 产品语义\"；② 给 CLI 写一个 spawnSync 冒烟测试（注意沙箱下\"捕获子进程管道输出\"可能被拒，需 stdio: ignore + 退出码判据）。已登记进 T-0020（测试结构）。",
+  "tests": [
+    "app/amayui-emulator/test/run-cli-loop.test.ts"
+  ]
 }

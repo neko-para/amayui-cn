@@ -1,0 +1,45 @@
+{
+  "title": "未收敛：2D 合并段的 blend 状态由谁重设（引擎「状态泄漏」读法与真机可见行为矛盾）",
+  "type": "analysis",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "`T-0017` 实现混合选择子时读出一条「状态泄漏」链，但照做与真机可见行为**矛盾**（必须查清才能决定哪一档是对的）：\n\n**读法（raw + `.lst` 逐指令）**：① draw-item 路径的 `0`/≥4 **不重置** blend state（`sub_4A2D50` raw 123100-123117 直接跳 LABEL_42）⇒ 前一个 `1/2/3` 项的档会被继承；② mesh/model 画完后**显式留下** `BLENDOP=ADD` + `(ONE,ZERO)`（`sub_49E390` raw 119474-119476，`.lst:0049E681`-`0049E6AF`）；③ `sub_4535F0` 尾部也是 `(ONE,ZERO)`（`.lst:00453777`-`.00453791`）；④ 而 2D 合并段 `sub_4B06D0`（raw 134417-136734）里**零** SetRenderState、也不调 `sub_4535F0`（该函数只在 present `sub_4B4040` 的 136828+ 与 3D/效果段被调）。⇒ 逐字照做 ⇒ 前一个 `1/2/3` 项（或任何 mesh）之后的 `0` 项都该是「覆盖/加算」。\n\n**实测矛盾（E4）**：把「泄漏」档打开后，**TITLE 整屏错**——logo 的透明区被写成黑、背景被覆盖（`.tmp/t17fix2-0-title.png` 2.0MB vs 正确的 `.tmp/t17before-0-title.png` 3.4MB）；序章同类。Pixi 的源是**预乘**的，`[ONE,ZERO]` 会把 α=0 写成黑 ⇒ 症状比 D3D 更重，但真机上 TITLE 的 logo 透明区本来就该透出背景 ⇒ **真机那次绘制用的不是 `(ONE,ZERO)`**。\n\n⇒ 引擎里**必然还有一处「每项/每帧重设 blend 状态」**（或 2D 项走的不是 `sub_4A2D50` 的 `a6` 通道），只是没找到调用点。查清之前，emulator 默认按真机可见行为跑（每项从场景默认开始），把泄漏档留在 `BlendWalkOptions.leakStateAcrossEntries`（默认 false）。",
+  "acceptance": [
+    "在反编译里找到「2D 绘制项每项（或每帧合并段入口）重设 blend state」的那一处（raw 行号 + `.lst` 逐指令），或者证否它存在（例如证明 2D 项走的是另一条绘制路径、其 `a6` 不来自 `DrawItem+0x30`）",
+    "给出结论：真机上「前一个 `1/2/3` 项之后的 `0` 项」与「mesh 之后的 `0` 项」实际是什么档；并解释 `sub_4535F0` 尾部 `(ONE,ZERO)`（`.lst:00453777`-`00453791`）的意图（它到底给谁用）",
+    "据结论决定 `BlendWalkOptions.leakStateAcrossEntries` 的默认值与实现：要么打开泄漏档并修好 Pixi 侧（若真机确实泄漏），要么把「逐项从默认开始」写成引擎事实并删掉/改写泄漏档的说明",
+    "判据（E4）：TITLE（静态帧，两次同码运行逐字节一致）与序章首文案在**两种档位**下的截图与真机对照——错的那一档必须能被这一对照区分出来；并把对照图/结论落进本票",
+    "结论同步 `docs-new/03-engine/rendering.md` §4.6 的「未收敛」段与 `analysis/engine-capabilities.json` 的 `drawitem-mesh-blend-selector` note"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/blend.ts",
+      "anchor": "leakStateAcrossEntries",
+      "note": "泄漏档的完整实现（默认 false）+ 矛盾说明都在这里"
+    },
+    {
+      "file": "app/amayui-emulator/test/blend-mode.test.ts",
+      "anchor": "状态泄漏：draw-item 的 0 继承前一个",
+      "note": "泄漏档有守卫（显式开档时才生效）；默认档另有断言"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "LABEL_42:",
+      "note": "draw-item 选择子分支的汇合点：0/≥4 不设任何 blend state"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v24 = sub_49E310(v20, v10, a4, a5, a6);",
+      "note": "mesh 画完之后的收尾：`.lst:0049E681`-`0049E6AF` = BLENDOP=ADD + (ONE,ZERO)"
+    }
+  ],
+  "notes": "本票是 `T-0017` 实施时**新发现**的未收敛项（`T-0017` 本身按真机可见行为交付）。\n\n对照材料（都在 `.tmp/`，只作过程记录）：\n- `t17before-0-title.png`（把混合档强制 normal = 修前行为，TITLE 正确）3.4MB；\n- `t17fix2-0-title.png`（泄漏档打开）2.0MB —— logo 变成黑底方块、背景被覆盖；\n- `t17v2-0-title.png` / `t17v2-6-gamestart.png`（默认档）与 `t17before` **逐字节相同** ⇒ 默认档没有引入回归；\n- 同一份代码跑两次（`t17fix2` vs `t17fix3`）：静态帧（TITLE/GAMESTART/两处 hover）逐字节一致、淡入中途的帧（7/8）会差 ⇒ **比对必须以静态帧为准**（这条经验也值得记住）。",
+  "id": "T-0041",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    }
+  ]
+}

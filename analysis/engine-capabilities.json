@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 115,
-    "modeled-verified": 37,
+    "total": 116,
+    "modeled-verified": 38,
     "modeled-unverified": 5,
     "partial": 24,
     "absent": 24,
@@ -3363,6 +3363,40 @@
         "evidence": "E2",
         "guard": "test/text-layout.test.ts",
         "note": "实现：`MsgWinStyle.lineSpacing`（`globalTextStyle` 读 `engineValues[21669]`，缺省 = 引擎初值 6）+ `layoutWindow` 的换行 `lineStartY += size + st.lineSpacing`；注音 y 也按引擎的 +1（非 D3D）。守卫：`test/text-layout.test.ts`（ADV `i08b 10` ⇒ 行距 46 / 默认 36；不变量「注音顶 ≥ 上一行底部」）+ `test/engine-field-store.test.ts`（0x8B → `globalTextStyle().lineSpacing`，未写时 6）。★未做：D3D 路径（`set:DrawMode=1`）按「行号 × (字号+行距)」给每行 DrawItem 定位 —— 本机 INI 无 `[set]` 段 ⇒ DrawMode=0，不适用。"
+      }
+    },
+    {
+      "id": "drawitem-mesh-blend-selector",
+      "subsystem": "渲染",
+      "name": "DrawItem+0x30 / MeshEntry[9] 的 alpha 混合选择子（0/1/2/3 一套枚举）",
+      "trigger": "脚本 `0x203` 的 op2（→ DrawItem`+0x30`）与 `0x322` 的 op2（→ MeshEntry[9]）写入；绘制时按选择子设 D3D blend state",
+      "engine": {
+        "fns": [
+          "sub_4A2D50",
+          "sub_49E390",
+          "sub_49E700",
+          "sub_4535F0",
+          "sub_4AEEA0",
+          "sub_4AF1C0",
+          "sub_4ACF60",
+          "sub_4AE2C0"
+        ],
+        "raw": "119347-123121"
+      },
+      "reads": [
+        "DrawItem+0x30",
+        "MeshEntry[9]",
+        "Scene+1260",
+        "Scene+46456",
+        "CTexture+1048"
+      ],
+      "whySilent": "不消费 = 不报错：值照样写进模型、VM 照常推进，只是混合模式不生效（画面差异只在半透明/加算/覆盖的场合显现）——这正是闸门 C 抓的『实现了但没效果』形态",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/blend-mode.test.ts",
+        "note": "2026-09 已建模（`tickets/T-0017`）：`renderer/scene/blend.ts` 的 `walkBlendSequence()` 逐项复刻引擎的 blend 状态机 —— 选择子 `0/1/2/3` → `normal/add/none/subtract`；★值 2 受门控（`Scene+46456` 当前渲染目标槽的纹理创建模式 `== 1`）；★draw-item 的 `0` 是「不改状态」、mesh/model 的 `0` 是显式 `normal`，且 mesh 画完**把状态留在 (ONE,ZERO)**（raw 119474-119476，`.lst:0049E681`-`0049E6AF`）——这条\"状态泄漏\"已完整实现在 `walkBlendSequence` 的 `leakStateAcrossEntries` 档里，但**默认关闭**：照它跑会把 TITLE 的 logo 透明区写成黑（Pixi 源预乘）、序章背景被覆盖，与真机截图矛盾 ⇒ 「合并段入口/逐项由谁重设 blend 状态」这块源码还没读通（未收敛，见票据）。为此补齐了 `0x20D set-render-target`（此前 emulator **完全没有**这条指令，语料 841 处）/`0x33F` 场景默认混合（`Scene+1260`）/`0x1F8` 的 op4 槽创建模式（`CTexture+1048`）。宿主侧 `pixi/presenter.ts` 把每项的档写进 `spr.blendMode`/`g.blendMode`；`pixiBackend.ts` 的 `installD3DBlendModes()` 往 `blendModesMap` 注入两个自定义档 `d3d-opaque=[ONE,ZERO]`、`d3d-rev-subtract=[ONE,ONE,ONE,ONE,FUNC_REVERSE_SUBTRACT,FUNC_REVERSE_SUBTRACT]`（★Pixi 内建的 `none` 是 `[0,0]` = **画黑**，不是覆盖；实测踩过）。★近似与未收敛：(1) Pixi 的 `none`（关混合）与 D3D `(ONE,ZERO)` 在 α<255 时不同（Pixi 写预乘色）；(2) draw-item 路径末尾那条追加覆盖（raw 123117-123121 条件里的「持有者 +1164」）语义未定 ⇒ `BlendEnv.holder1164Is1` 默认 false；(3) 合并段**入口**的 blend 档在引擎里没有显式设置点 ⇒ emulator 取场景默认。★语料并非恒 0（`0x203` op2：`2`×420 / `1`×33；`0x322` op2：`1`×28；`4fd1` 有 28 处被 `mov … 1`）⇒ 有可见差异，不是整理项。"
       }
     }
   ]

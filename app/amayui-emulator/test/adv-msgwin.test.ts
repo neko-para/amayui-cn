@@ -29,7 +29,7 @@ import { revealInterval } from '../src/vm/msgwin.js';
 import { layoutWindow } from '../src/text/layout.js';
 import { styleOfWin } from '../src/vm/handlers/msgwin.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
-import { im, instr, str } from './harness.js';
+import { im, instr, str, pickHoverLabel } from './harness.js';
 
 /** 本帧 int 槽（type 0x9）—— 只有池操作数能做**写目标**，立即数不行。 */
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
@@ -532,21 +532,21 @@ test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 l
   //   命中测试（raw 20324 只调 `sub_403E70`）。
   // ① 从"无"进入 h0 ⇒ 直接发 h0 的 labelA
   e.input.setCursor(50, 50);
-  assert.equal(e.pickHoverLabel(), 0xaa, '进入热点 ⇒ labelA（无"离开"前项）');
+  assert.equal(pickHoverLabel(e), 0xaa, '进入热点 ⇒ labelA（无"离开"前项）');
   // ② 同一位置（无移动）⇒ 游标没变，什么都不发
-  assert.equal(e.pickHoverLabel(), -1, '游标未变 ⇒ 不重发');
+  assert.equal(pickHoverLabel(e), -1, '游标未变 ⇒ 不重发');
   // ③ h0 → h1：本帧发 h0 的 labelB（离开），下一帧才发 h1 的 labelA（进入）
   e.input.setCursor(250, 50);
-  assert.equal(e.pickHoverLabel(), 0xbb, 'A→B：先发旧项的 labelB（离开）');
-  assert.equal(e.pickHoverLabel(), 0xaa, '下一帧补发新项的 labelA（进入）');
-  assert.equal(e.pickHoverLabel(), -1, '之后稳定不再发');
+  assert.equal(pickHoverLabel(e), 0xbb, 'A→B：先发旧项的 labelB（离开）');
+  assert.equal(pickHoverLabel(e), 0xaa, '下一帧补发新项的 labelA（进入）');
+  assert.equal(pickHoverLabel(e), -1, '之后稳定不再发');
   // ④ 走出所有热点 ⇒ 发 h1 的 labelB
   e.input.setCursor(900, 900);
-  assert.equal(e.pickHoverLabel(), 0xbb, '离开所有热点 ⇒ 旧项 labelB');
-  assert.equal(e.pickHoverLabel(), -1, '之后稳定不再发');
+  assert.equal(pickHoverLabel(e), 0xbb, '离开所有热点 ⇒ 旧项 labelB');
+  assert.equal(pickHoverLabel(e), -1, '之后稳定不再发');
   // ⑤ 没有光标（headless）⇒ 无移动、游标保持 ⇒ 不派发
   e.input.setCursor(0, 0, false);
-  assert.equal(e.pickHoverLabel(), -1, '无游标/无变化 ⇒ 不派发（headless 不受影响）');
+  assert.equal(pickHoverLabel(e), -1, '无游标/无变化 ⇒ 不派发（headless 不受影响）');
 });
 
 test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只给 label，不动 ip/等待门', () => {
@@ -558,7 +558,7 @@ test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只�
   OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
   const ipBefore = f.ip;
   e.input.setCursor(50, 50); // 鼠标移动 ⇒ 命中测试（引擎 sub_4B8D50）
-  assert.equal(e.pickHoverLabel(), 0xaa);
+  assert.equal(pickHoverLabel(e), 0xaa);
   assert.equal(f.ip, ipBefore, '判定阶段绝不改 ip（label 由泵当**带返回点的子程序**派发）');
   assert.equal(e.awaitingAdvance, true, '悬停判定本身不清等待门（清位在泵的派发点 raw 20334）');
 });
