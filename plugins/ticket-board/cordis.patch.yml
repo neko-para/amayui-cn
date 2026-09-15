@@ -1,0 +1,10 @@
+# @amayui/ticket-board bundle patch.
+# Inserts the plugin row over the empty profile root. The row names this
+# package, whose Host half serves the ticket ledger over `/dsh-tickets/api/*`
+# (a static bundle has no `harness.handle`/`host.call` pairing, so Client↔Host
+# is plain HTTP). The same package carries `dsh.client` metadata, so the web
+# modules node also serves and loads its browser half: the session-header
+# 「📋 需求单」 button plus the full-screen priority-grouped modal.
+- insert:
+    - id: amayui-ticket-board
+      name: '@amayui/ticket-board'
