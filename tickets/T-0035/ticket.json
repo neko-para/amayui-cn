@@ -5,10 +5,11 @@
   "area": "emulator/render",
   "why": "用户实测（2026-09）：与真游戏对照，emulator 里**很多地方**的文字都比引擎渲染的更粗，且白色看着更亮。引擎真源：抗锯齿由 `set:EnableAntiFont` 门控 `message:UseAntiFont` 后写进 `Font+1352`（raw 23649-23656 → sub_4155B0 raw 22409-22422 会重建字体并清字形缓存）；本机 overlay 的 SYS4REG.INI 里 `set:EnableAntiFont=0`（base 那份没有 [set] 段）⇒ **引擎实际是无抗锯齿渲染**，而渲染侧 canvas 永远开 AA（灰度边缘=笔画变胖、白字边缘发亮）。另有两条待核对：`set:Menu_UseAntiFont=0`（菜单文本的另一把开关）与 `message:AntiFontLevel`（raw 23653 写 Engine+303796，该字段全库**无读者** ⇒ 是死写、不该照抄）。",
   "acceptance": [
-    "逐条核对引擎的字体配置链（面名/字号/lfWeight/抗锯齿/描边档与偏移/填充与描边色）与 emulator 的对应实现，给出『一致/不一致』结论并落 docs-new/03-engine/adv-text-rendering.md 与 analysis/engine-capabilities.json",
-    "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化）；== 1 时保留 AA —— 已实现并有守卫（但它不是本票观感问题的主因，实测开/关几乎无差别）",
-    "★**主因待判定**：模拟器用真 Bold 面渲染 lfWeight=700，实测比真机重 ~1.3×（笔画）/1.5×（墨迹）；真机落在我们 Regular 与 Bold 之间、偏向 Regular。需按 notes.md 的三条假说（GDI 只看到 Regular / GDI 渲染更细 / ADV 用了别的 HFONT）之一收敛，并给出与真机一致的观感",
-    "收敛手段：加 fonts.bold 策略开关请用户 A/B；若确属光栅化差异则改 DPR/笔画取整策略；两条都要有守卫",
+    "逐条核对引擎的字体配置链（面名/字号/lfWeight/抗锯齿/描边档与偏移/填充与描边色）与 emulator 的对应实现，给出『一致/不一致』结论并落 docs-new/03-engine/adv-text-rendering.md 与 analysis/engine-capabilities.json —— 已完成：加粗链见 bold-is-lfweight-face-mapping（引擎的加粗只是 lfWeight=700 的请求，落哪一面由 GDI 族内选面决定，无合成加粗、无粗体面配置键）",
+    "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化）；== 1 时保留 AA —— 已实现并有守卫（实测开/关几乎无差别，不是本票观感问题的主因）",
+    "★**主因已判定（第 5 轮）**：真机 ADV 实测墨迹覆盖率 0.257 落在 Regular 档（独立复现 0.209-0.241）而不是 Bold 档（0.345-0.379；两面差 1.46-1.59×、跨光栅器噪声 ≤8%）⇒ 真机那次 i2bd 1 的 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面）⇒ 「emulator 更粗」的基准不成立（参照图来自加粗未生效的真机）。DPR/取整撑胖笔画的假说已用同一测量排除（38px 设备网格并不比 1× 无 AA 更胖）",
+    "真机侧收尾复核（等用户有环境）：① 游戏字体选择器里 Amayui CN 出现一条还是两条；② 重装两份 + 重启 FontCache/电脑 + 完全退出游戏后，ADV 应从 ~0.25 跳到 ~0.35-0.40（同一台词同一方法）",
+    "可选（非修 bug，由用户决定）：fonts.bold: face|regular 只在模拟器里复现「加粗未生效的真机」；原版日文游戏 ADV 用 メイリオ Bold，故 regular 与「对照原版」方向相反",
     "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）—— 已修"
   ],
   "id": "T-0035",
@@ -45,18 +46,30 @@
     {
       "at": "2026-09-15",
       "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance, links"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance, evidence"
     }
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/src/configRegistry.ts",
       "anchor": "set:EnableAntiFont",
-      "note": "两把 AA 开关都在配置表里（set:EnableAntiFont / message:UseAntiFont / set:Menu_UseAntiFont），但渲染侧一处都没读"
+      "note": "两把 AA 开关都在配置表里（set:EnableAntiFont / message:UseAntiFont / set:Menu_UseAntiFont）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "不用 `strokeText` 的原因",
-      "note": "描边已按引擎机制实现；但整条 raster 没有任何 AA 门（canvas 永远开 AA）"
+      "note": "描边已按引擎机制实现（多画几遍是描边、不是加粗）"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -65,18 +78,40 @@
     },
     {
       "file": "docs-new/03-engine/adv-text-rendering.md",
-      "anchor": "抗锯齿开关",
-      "note": "Font+1352 的字段表与证据行"
+      "anchor": "字重（加粗）落在哪",
+      "note": "第 4 轮新增小节：面名唯一来源 message:Font / 字重只有 0x2BD 的 700+0 / sub_459F40 只重建不合成 / 决策权在 GDI 族内选面 / 字体选择器候选表是族列表"
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
-      "anchor": "weight: m.font.mainBold ? 700 : 400",
-      "note": "字重只在 0x2BD 之后才 700（默认 400）；核对引擎 lfWeight 的默认与来源"
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "aMessageFont",
+      "note": "加粗不由面名决定：面名唯一来源 GetConfigString(message:Font) → sub_465390 → Font+1260（注册 raw 111454-111458）；全库 7 个带 Font 的配置键里没有粗体面键"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "EnumFontFamiliesExA",
+      "note": "字体选择器候选表 Font+201664 = EnumFontFamiliesExA 的族列表（Proc 滤 lfCharSet==0x86 且非光栅；sub_45F6C0 再用探针字删缺字族）⇒ 粗体不是独立条目；真机列表一条/两条 = 判定两面有没有配成一族的零成本探针"
+    },
+    {
+      "file": "app/amayui-emulator/test/font-bold-face.test.ts",
+      "anchor": "usWeightClass",
+      "note": "随包两份 TTF 同族名 + 400/700 + 码页含 932（棘轮）；res/fonts 与 LFS oid 一致 ⇒ 分发的那份就是这个"
+    },
+    {
+      "file": "docs/font-build.md",
+      "anchor": "重启 `FontCache` 服务",
+      "note": "第 5 轮：真机上「加粗会真的变粗」只在两面被认到同一族时成立；实测反例 + 安装/缓存前提（重启 FontCache/电脑、清掉缺 932 的旧版）已写进 §8.7"
+    },
+    {
+      "file": "src/CONFIG1.txt",
+      "anchor": "set-font (global-string bbd)",
+      "note": "非 ADV 的设置行文本显式 i2bd 0（20px / bbd·bbe / i078 1 / i1a4 0 0 / i261 0）；说明文 bbf 与 ADV 预览 bbb 才是 i2bd 1 ⇒ 「装上 700 后非 ADV 没变」是引擎的正常行为（脚本台账 CONFIG1 的 layout/gotchas 已记）"
     }
   ],
   "links": {
     "analysis": [
-      "text-style-scope-queue-time"
+      "text-style-scope-queue-time",
+      "bold-is-lfweight-face-mapping",
+      "text-font-rebuild-cascade"
     ],
     "tickets": [
       "T-0036"

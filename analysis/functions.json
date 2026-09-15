@@ -3442,11 +3442,11 @@
     "semantic_name": "op_text_attr_toggle_426200",
     "op": "0x2BD",
     "status": "ANALYZED",
-    "purpose": "文本属性开关：op1 非 0 ⇒ 文本对象 `+218516 = 700` 且 `+1248 = 700`；否则两者置 0；随后 sub_459F40(文本对象) 重排文本。",
+    "purpose": "主字重开关（op 0x2BD）：op1 非 0 ⇒ Font+218516（当前字重）与 Font+1248（主模板 lfWeight）都写 700，否则都写 0；随后 sub_459F40(Font) **重建 GDI 字体对象**（不是文本重排）。引擎只有这一条加粗通路：不做合成加粗、不换面，700 交给 GDI 的族内选面",
     "sub_behaviors": ["写文本对象两个属性槽（218516 / 1248）为 700 或 0", "调 sub_459F40 触发文本重排"],
     "fields_used": ["Engine+85296(文本对象; dword 写法 Engine[21324])"],
     "unmodeled": ["700 的语义（字体像素高/行高？）未定", "sub_459F40 未分析"],
-    "evidence": "raw 33385-33401",
+    "evidence": "raw 33385-33402; 78854（初值 0）; 71171（CreateFontIndirectA 带 lfWeight）",
     "notes": ""
   },
   {
@@ -3596,7 +3596,7 @@
     "raw_name": "sub_465390",
     "semantic_name": "text_subsystem_initialize_465390",
     "status": "ANALYZED",
-    "purpose": "文本子系统 Initialize：注入 dd 模块/Renderer/Scene（+1032/+1036/+1040）、写主/注音 LOGFONTA 初值（-24/-12、-8/-4、面 \"ＭＳ ゴシック\"、竖排 2700）、建 10 个窗口、调 sub_459F40/sub_45A6E0 重建字体",
+    "purpose": "文本子系统 Initialize + 字体模板建立：注入 dd 模块/Renderer/Scene（+1032/+1036/+1040）；用参数 Source 写主 LOGFONTA 的面名 Font+1260（调用方传的正是配置 message:Font，raw 23666），主模板初值 lfHeight/lfWidth=-24/-12、lfWeight=0(FW_DONTCARE)、打包 lfItalic/lfCharSet=0x1000000；注音模板 = qmemcpy 主模板后改 -8/-4 + 面 \"ＭＳ ゴシック\"（Font+1320）+ escapement 2700 竖排变体；最后 sub_459F40/sub_45A6E0 重建字体。★面名只有这一个入口（+ 运行时 op 0x1A5/0x2FE）——配置表里没有\"粗体面名\"键，加粗只由 lfWeight 表达",
     "sub_behaviors": ["+1032=dd 模块, +1036=Renderer, +1040=Scene", "+1232=-24/+1236=-12, +1292=-8/+1296=-4, +201684=24, +218584=8", "+101972/+102032 = 主/注音模板 + escapement 2700（竖排）", "+1360=0xFFFFFF, +1364/+1368=0, +1372=1", "sub_459F40 重建主字体、sub_45A6E0 重建注音、sub_455D20 建 10 窗口、+1228=1"],
     "fields_used": ["Font+1032..+1040", "Font+1232/+1292/+101972/+102032", "Font+1360..+1372", "Font+1228"],
     "unmodeled": ["+1252=0x1000000 的用途", "win[0]+200/+204 的批量写入语义"],

@@ -92,6 +92,7 @@ AGE 的文本是**「GDI 把整串（或逐字）画进"每窗一张的离屏表
 | `+1168/+1172` | 注音字体的 `TEXTMETRICA` / `tmAscent` | 71232 |
 | `+1228` | **默认窗口索引**（初值 1） | 78899；73150 |
 | `+1232/+1236/+1248/+1260` | 主 `LOGFONTA` / `lfWidth` / **`lfWeight`** / `lfFaceName`（来自 `message:Font`） | 78859-78862；23666 |
+| `+1252` | 主模板 `LOGFONTA` 偏移 +20 的打包 dword（`lfItalic`/`lfUnderline`/`lfStrikeOut`/`lfCharSet` 四字节）：初值 `0x1000000` = 前三者 0 + **`lfCharSet=1`（`DEFAULT_CHARSET`）**；`sub_459F40` 建的每个即席 LOGFONT 都照抄这个打包值（注音模板由 `qmemcpy` 继承） | 78866；68747/68785/69789 |
 | `+1292/+1296/+1308/+1320` | 注音 `LOGFONTA` / `lfWidth` / `lfWeight` / face | 78873-78875 |
 | `+1352` | **抗锯齿开关**（`set:EnableAntiFont` 为真时取 `message:UseAntiFont`；≠0 ⇒ 不取 surface DC、走软件贴字） | 22413；67953；86028 |
 | `+1356` | 文本绘制/縁取り模式；`==1` 走 `sub_474BD0`/`sub_474F60`/`sub_4757F0`；`>=3` 的注音底带分支**成品不可达**（唯一写入 raw 78779 `=1`） | 78779；68058 |
@@ -113,6 +114,23 @@ AGE 的文本是**「GDI 把整串（或逐字）画进"每窗一张的离屏表
 
 `Font` 与 `Engine` 直接字段的重合（换算关系，便于与 `engine.hpp` 对照）：
 `Font+1376 = Engine+86672 = Engine[21668]`，`Font+235128 = Engine+320424`，`Font+1044 = Engine+86340 = Engine[21585]`。
+
+### 字重（加粗）落在哪：**面名 × `lfWeight` 的分工**（2026-09，为 T-0035 核对）
+
+**一句话**：引擎的「加粗」= 把 `lfWeight = 700` **请求**交给 GDI 的**族内选面**；引擎自己**不做任何合成加粗**（不双画、不改 `lfWidth`、不换面），配置里也**没有「粗体面名」键** —— 所以「粗不粗」最终由**系统里那个族有没有粗体面**决定。台账条目 `bold-is-lfweight-face-mapping`。
+
+| 跳 | 事实 | 证据（raw） |
+|---|---|---|
+| 面名 | **只有一个来源键**：`message:Font`（注册时缺省值 `"ＭＳ ゴシック"`）→ `sub_465390` 写 `Font+1260`（注音面硬编码同一串到 `Font+1320`）。运行时另有 `0x1A5`（`sub_4328F0`，不校验）与 `0x2FE`（`sub_432DD0`，校验白名单）能改面名。★全库带 `Font` 的配置键只有 7 个（`set:AntiFontVersion`/`set:UseProportionalFont`/`message:Font`/`message:AntiFontLevel`/`message:UseAntiFont`/`set:EnableAntiFont`/`set:Menu_UseAntiFont`），**没有**任何一个是粗体面 | 111454-111458；23666；78868；41802/41812 |
+| 字重 | **只有一个表达**：`0x2BD` ⇒ `Font+1248`（主模板 `lfWeight`）与 `Font+218516`（当前字重）都写 **700**，否则都写 **0**；`0x2BE` 同理写注音 `Font+1308`/`+218588`。初值 **0 = `FW_DONTCARE`**（不是 400） | 33385-33402 / 33405-33422；78854 |
+| 重建 | `sub_459F40`（主）/`sub_45A6E0`（注音）把模板 `qmemcpy` 成 8 + 4 个即席 `LOGFONT`（含竖排 `'@'` 面、escapement 2700/1800 变体、面 `"AGE Extend"` 的变体），逐个 `CreateFontIndirectA`；`lfWeight` 一路照抄 | 70941-71191 / 71192+ |
+| 落笔 | 排版时把**当前字重**烘进窗样式记录（读 `Font+218516` → 写窗对象 `+188`）；绘制取 `Font+1084`（主）/`Font+1096`（注音）后 `TextOutA`。★描边档 3 会连画 **5 次** `TextOutA`，那是**描边**、不是加粗 | 75335 / 74094 / 68090/68485；68095-68120 |
+
+**推论（对 T-0035 直接有用）**：
+
+1. 「引擎内部不会尝试直接加粗、只有用户选了粗体字体才会粗」**只有一半成立**：引擎确实**不合成**，但它**确实请求 700**；请求落到哪一面由 GDI 决定 —— 这与补丁说明第 6 步「两份额名同为 `Amayui CN`、系统按 Regular/Bold 两面配对；只装一份时『加粗』那部分文本不会变粗」是同一件事。
+2. 因此**唯一能把「真机偏细」归因到引擎机制**的情形是：该机 GDI **没有把两份配成一族**（于是 700 静默退回常体）。同一份事实在真机上有个**零成本探针**：游戏字体选择器的候选表 `Font+201664`（`0x2DC`/`0x2DD`/`0x2DE`）是 `EnumFontFamiliesExA` 的**族**列表（`Proc` 滤 `lfCharSet == 0x86` 且非光栅；`sub_45F6C0` 再用探针字 `Font+218524` 删掉缺字形的族），**一个族一条** —— 真机列表里 `Amayui CN` 出现**一条** ⇒ 两面的确配成族（700 会选到 Bold，偏细只能归因光栅化）；出现**两条** ⇒ 该机没配对（700 退回常体，假设 (a) 成立） | 74146-74171；74724；75028-75100 |
+3. 本工程随包的两份 TTF：`name ID 1` 都是 `Amayui CN`，`OS/2.usWeightClass` = 400 / 700，`ulCodePageRange1` 一致（含 cp932）⇒ 在 Windows 上按定义就配成一族；`test/font-bold-face.test.ts` 把这个前提钉成了棘轮。
 
 ---
 
@@ -454,6 +472,14 @@ AA 灰度级 `+218500`、字形度量探针（参考字「激」`0x8C83` → `+2
 > 同口径）。台账：`text-aa-config-gate`；守卫 `test/text-aa.test.ts`。
 > ★`message:AntiFontLevel`（raw 23653 → `Engine+303796`）与 `set:Menu_UseAntiFont` 在渲染侧**没有读者**
 > ⇒ 是死写，别当"AA 档位"照抄。
+
+> ★**加粗（2026-09，`tickets/T-0035` 第 3 轮）：引擎的加粗是"700 的请求"，不是"合成"。**
+> 见 §1 的「字重（加粗）落在哪」。重写侧现状与引擎**同构**：`0x2BD` 的 700 落到 `Amayui CN` 族里
+> 声明为 700 的那一面（`fontSet.ts` 的 `fontFaceFor` + `raster.ts` 只写 `ctx.font = <weight> <size>px <family>`），
+> 既不合成加粗、也不会把 Regular 登记成 700；守卫 `test/font-bold-face.test.ts`（读 TTF 的 name/OS-2/head 表）。
+> 因此**尚未收敛的"真机笔画更细 ~1.3×"不能归因到"引擎不加粗"**：要么该机 GDI 没把两份 TTF 配成一族
+> （零成本探针：真机字体选择器里 `Amayui CN` 出现一条还是两条，见 §1 推论 2），要么同一面在 GDI 的光栅
+> 网格拟合下确实更细（改 DPR/笔画取整策略）。台账：`bold-is-lfweight-face-mapping`。
 
 **第二层（指令枚举不出来的常态行为）**：本次新增台账条目见
 `analysis/engine-capabilities.json` 的 `msgwin-*`/`text-*` 系列（reveal 泵、DrawMode 分流、字体重建级联、

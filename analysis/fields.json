@@ -223,7 +223,7 @@
   {"offset":"0x15200","type":"LOGFONTA","name":"logfont_main","scope":"Font","meaning":"主字体模板（+1236=lfWidth / +1248=lfWeight / +1260=lfFaceName）","evidence":"raw 78859-78862","status":"confirmed"},
   {"offset":"0x15204","type":"int32_t","name":"lf_width_main","scope":"Font","meaning":"主字体 lfWidth（= -字号/2 = -12；GDI 对 DBCS 按半角解释 ⇒ 全角 1em / 半角 0.5em）","evidence":"raw 24068; 68065/68070","status":"confirmed"},
   {"offset":"0x15210","type":"int32_t","name":"lf_weight_main","scope":"Font","meaning":"主字体 lfWeight（0 或 700；op 0x2BD）","evidence":"raw 71171; 33393","status":"confirmed"},
-  {"offset":"0x15214","type":"int32_t","name":"font_flag_1252","scope":"Font","meaning":"Initialize 置 0x1000000（语义未展开）","evidence":"raw 78866","status":"tentative"},
+  {"offset":"0x15214","type":"int32_t","name":"lf_italic_charset_main","scope":"Font","meaning":"主模板 LOGFONTA 偏移 +20 的打包 dword（lfItalic/lfUnderline/lfStrikeOut/lfCharSet 四字节）：Initialize 置 0x1000000 = 前三者 0 + lfCharSet=1(DEFAULT_CHARSET)。sub_459F40 及所有即席 LOGFONT 都照抄这个打包值（raw 68747/68785/69789/70140），注音模板由 qmemcpy 继承同一值","evidence":"raw 78866; 68747/68785/69789","status":"confirmed"},
   {"offset":"0x1521C","type":"char[32]","name":"face_name_main","scope":"Font","meaning":"主字体面名（配置 message:Font）；为空则 sub_459F40 直接 return ⇒ 字体重建不发生","evidence":"raw 70984/78868","status":"confirmed"},
 
   {"offset":"0x15224","type":"int32_t[13]","name":"ruby_layout_block","scope":"FontVWindow","stride":"0x12C","meaning":"注音布局块 13 dword（op 0x25C → sub_456510）","evidence":"raw 68370; 72394","status":"confirmed"},
@@ -286,7 +286,7 @@
   {"offset":"0x46120","type":"int32_t","name":"tm_ascent_main","scope":"Font","meaning":"主字体 tmAscent（D3DX 路径基线）","evidence":"raw 70990; 68173","status":"confirmed"},
   {"offset":"0x461A8","type":"int32_t","name":"drawing_ruby_flag","scope":"Font","meaning":"「正在用小号字体画（a9）」运行标志","evidence":"raw 68043/68054","status":"confirmed"},
   {"offset":"0x4A2B4","type":"int32_t","name":"aa_gray_level","scope":"Font","meaning":"AA 灰度级（==1 ⇒ GGO_GRAY8 / 否则 GGO_GRAY4）","evidence":"raw 86030; 87234","status":"confirmed"},
-  {"offset":"0x4A2C4","type":"int32_t","name":"lf_weight_probe","scope":"Font","meaning":"探针/变体字体的 lfWeight（0 或 700）","evidence":"raw 78954; 68743/68781","status":"confirmed"},
+  {"offset":"0x4A2C4","type":"int32_t","name":"lf_weight_probe","scope":"Font","meaning":"**当前字重**（与 +1248 同步写：op 0x2BD 非 0 ⇒ 两处都 700，否则都 0）：sub_459F40 之外所有即席 LOGFONT（测量/直绘/竖排变体）都从这里取 lfWeight","evidence":"raw 78954; 33393-33399; 68743/68781/69780/69981/70128","status":"confirmed"},
   {"offset":"0x4A2C8","type":"int32_t","name":"apply_aspect_to_advance","scope":"Font","meaning":"是否对步进应用纵横比缩放","evidence":"raw 86069; 84003","status":"confirmed"},
   {"offset":"0x4A308","type":"int32_t","name":"ruby_size","scope":"Font","meaning":"注音字号基准（初值 8；op 0x197）","evidence":"raw 78879; 24105","status":"confirmed"},
   {"offset":"0x4A30C","type":"int32_t","name":"lf_weight_ruby_mirror","scope":"Font","meaning":"注音 lfWeight 镜像（op 0x2BE）","evidence":"raw 33413; 71240","status":"confirmed"},

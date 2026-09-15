@@ -79,7 +79,12 @@ export interface DrawStringStyle {
   family: string;
   /** 字号 px（引擎 `Font+201684`，`0x75` 写）。 */
   size: number;
-  /** 字重（400/700；引擎的加粗是"再画一遍"，见 raster 的说明）。 */
+  /**
+   * 字重（400/700）。引擎侧 `0x2BD` 只是把 `Font+1248`/`+218516` 的 `lfWeight` 写成 700 或 0，
+   * 再交给 **GDI 的族内选面**（`CreateFontIndirectA`）—— 引擎**不做**合成加粗；
+   * "同一串多画几遍"是**描边**档位（`Font+1372`），见 `raster.ts` 的对照表。
+   * 证据：`engine/天结_unpacked.exe_utf8.c` raw 33385-33402 / 70941-71191 / 68095-68120。
+   */
   weight: number;
   /** 填充色 `#rrggbb`（引擎 `Font+1360`，`0x76` 写）。 */
   fill: string;

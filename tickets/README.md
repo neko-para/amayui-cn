@@ -15,7 +15,7 @@
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 5 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 6 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
 
 ## ⬜ open（11）
 

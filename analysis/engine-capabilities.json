@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 113,
-    "modeled-verified": 35,
+    "total": 114,
+    "modeled-verified": 36,
     "modeled-unverified": 5,
     "partial": 24,
     "absent": 24,
@@ -3298,6 +3298,40 @@
         "evidence": "E4",
         "guard": "test/save-thumb.test.ts",
         "note": "实现（tickets/T-0036）：新增 src/vm/bmp.ts（decodeBmp/encodeBmp，24bpp BI_RGB、自底向上、行 4 字节对齐、BGR↔RGBA；不信 bfSize/biSizeImage）；0x1AF 把解出的像素经 native.setSlotPixels(op3, w, h, rgba) 写进脚本 create-texture 出来的那个槽，0x1AE 经 native.getSlotPixels(op3) 反读像素再 encodeBmp 写盘（Pixi 侧 = TextureCache canvas 表面的 getImageData/putImageData；headless 侧 getSlotPixels 返回 null ⇒ 退回自描述空块、setSlotPixels 只记尺寸）。守卫 test/save-thumb.test.ts：编解码往返（含奇数宽度行对齐、自顶向下、截断/压缩/非 BMP 如实返回 null）、E4 真 SAVE00.STH（320x180、像素非常量、bfSize+14=文件长度）、0x1AF 写进 op3 槽且像素逐点一致、缺文件=1/解不出=2、0x1AE→0x1AF 往返；E3 test/save-slot-chain.test.ts 追加：真语料进存档列表后确有一张 320x180 缩略图被装进纹理槽。★仍未做：DrawMode==1 的截图分支（sub_4A5260/sub_49E9D0）未建模（本机 DrawMode=0；两条分支产物都是 BMP，宿主侧行为一致）。"
+      }
+    },
+    {
+      "id": "bold-is-lfweight-face-mapping",
+      "subsystem": "消息窗",
+      "name": "加粗 = 一次 lfWeight=700 的字体映射请求（引擎不做合成加粗，配置里也没有独立的「粗体面」键）",
+      "trigger": "脚本执行 0x2BD（主）/0x2BE（注音）：op1 非 0 ⇒ 主模板 Font+1248 与「当前字重」Font+218516 都写 700（注音 = Font+1308/+218588），否则都写 0；随后 sub_459F40 / sub_45A6E0 用该模板 CreateFontIndirectA 重建 HFONT（主 8 个 / 注音 4 个）。排版时把当前字重烘进窗样式记录（sub_45FF00 raw 75119+ 读 Font+218516 → sub_45E870 raw 74094 写窗对象 +188），绘制再按 +188 非 0 ⇒ lfWeight 700 重建并 SelectObject Font+1084（主）/Font+1096（注音）后 TextOutA；所有即席 LOGFONT（测量/直绘/竖排变体）一律从 Font+218516 取字重。",
+      "engine": {
+        "fns": [
+          "sub_426200",
+          "sub_426260",
+          "sub_459F40",
+          "sub_45E870",
+          "sub_45FF00",
+          "sub_455ED0",
+          "sub_465390"
+        ],
+        "raw": "33385-33422"
+      },
+      "reads": [
+        "Font+1248(主模板 lfWeight, 初值 0=FW_DONTCARE)",
+        "Font+218516(当前字重)",
+        "Font+1308/+218588(注音字重)",
+        "Font+1260(唯一面名来源)",
+        "Font+1084/+1096(文本用的 HFONT)",
+        "窗对象+188(窗样式里的加粗位)"
+      ],
+      "whySilent": "★这条没有「报错」形态：700 只是**请求**，最终选到哪一面由 GDI 的族内选面决定 —— 该族没有粗体面就静默用常体（GDI 不合成、不警告），同族名 + usWeightClass 400/700 两份都在才真的粗（补丁说明第 6 步说的就是这件事）。于是两种错法都静默：(a) 宿主在「请求 700」之外再自行合成加粗（CSS font-synthesis / 描边式加粗 / 把 Bold 文件登记成另一个族再走「选了粗体才粗」）⇒ 比真机粗一档；(b) 只登记一面或把 Bold 当独立字族 ⇒ i2bd 静默失效。另两条同源事实：配置表里**不存在**粗体面名键（面名只有 message:Font 一处，raw 111454-111458 注册、缺省 \"ＭＳ ゴシック\"，raw 23666 取值），所以「加粗」不可能靠换面名实现；字体选择器的候选表 Font+201664（op 0x2DC/0x2DD/0x2DE）是 EnumFontFamiliesExA 的**族**列表（Proc raw 74146-74171 滤 lfCharSet==0x86 且非光栅，sub_45F6C0 raw 75028-75100 再用探针字剔掉没有该字形的族）⇒ 一个族一条，**粗体不会作为独立条目出现**；若真机列表里真的出现两条，那恰好证明该机的 Bold 面没和 Regular 配成一族（= 假设 (a)）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/font-bold-face.test.ts",
+        "note": "重写侧等价物：fontSet.ts 的 BUILTIN_FAMILIES 把 Amayui CN 登记成同族的 400/700 两面（fontFaceFor 只按文件自己声明的字重修注册、绝不把 Regular 登记成 700），raster.ts 只写 ctx.font = <weight> <size>px <family> ⇒ 700 落到真 Bold 面、浏览器不再合成，与 GDI 的族内选面同构。守卫 test/font-bold-face.test.ts 读 TTF 的 name/OS-2/head 表钉住「同族名 + usWeightClass 700 + 码页含 932 + Bold 确实更重」。★结论（2026-09-15，T-0035 第 5 轮）：真机的“更细”不是本条的偏差 —— 用第三个光栅器（FreeType）对同一句台词复现票里的墨迹度量：Regular 0.209-0.241 / Bold 0.345-0.379（与 emulator 侧 0.220-0.245 / 0.330-0.398 互相印证，跨光栅器噪声 ≤8%；两面差 1.46-1.59×），而真机实测 0.257 落在 Regular 档 ⇒ 真机那次 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面），说明该机的安装/缓存状态没让两份 TTF 配成一族（见 docs/font-build.md §8.5.2/§8.6：装完要重启 FontCache/电脑；缺 932 码页声明的旧版会让日文 locale 下的选面看不到 Bold）。★同时排除：DPR 1.25 + 阈值化的路径（38px 设备网格 0.221/0.350）并不比 1× 无 AA（0.241/0.379）更胖 —— “按逻辑像素 1× 光栅化 + 整数对齐”不是这条症状的解。"
       }
     }
   ]
