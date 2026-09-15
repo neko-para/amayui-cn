@@ -6,13 +6,13 @@
   "why": "用户实测（2026-09）：与真游戏对照，emulator 里**很多地方**的文字都比引擎渲染的更粗，且白色看着更亮。引擎真源：抗锯齿由 `set:EnableAntiFont` 门控 `message:UseAntiFont` 后写进 `Font+1352`（raw 23649-23656 → sub_4155B0 raw 22409-22422 会重建字体并清字形缓存）；本机 overlay 的 SYS4REG.INI 里 `set:EnableAntiFont=0`（base 那份没有 [set] 段）⇒ **引擎实际是无抗锯齿渲染**，而渲染侧 canvas 永远开 AA（灰度边缘=笔画变胖、白字边缘发亮）。另有两条待核对：`set:Menu_UseAntiFont=0`（菜单文本的另一把开关）与 `message:AntiFontLevel`（raw 23653 写 Engine+303796，该字段全库**无读者** ⇒ 是死写、不该照抄）。",
   "acceptance": [
     "逐条核对引擎的字体配置链（面名/字号/lfWeight/抗锯齿/描边档与偏移/填充与描边色）与 emulator 的对应实现，给出『一致/不一致』结论并落 docs-new/03-engine/adv-text-rendering.md 与 analysis/engine-capabilities.json",
-    "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化，与引擎 GDI/dd 路径的锯齿字形一致）；== 1 时保留 AA —— 显式读配置，不再由浏览器默认决定",
-    "antiAlias 只能由 set:EnableAntiFont 门控 message:UseAntiFont 决定；message:AntiFontLevel / set:Menu_UseAntiFont 不得影响渲染（引擎里它们是死写，有守卫钉住）",
-    "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）；有脚本显式设过时以脚本为准",
-    "守卫：test/text-aa.test.ts（两键门五种组合 / 样式携带 / 阈值化边缘 alpha 只取 {0,255} 且颜色不动）"
+    "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化）；== 1 时保留 AA —— 已实现并有守卫（但它不是本票观感问题的主因，实测开/关几乎无差别）",
+    "★**主因待判定**：模拟器用真 Bold 面渲染 lfWeight=700，实测比真机重 ~1.3×（笔画）/1.5×（墨迹）；真机落在我们 Regular 与 Bold 之间、偏向 Regular。需按 notes.md 的三条假说（GDI 只看到 Regular / GDI 渲染更细 / ADV 用了别的 HFONT）之一收敛，并给出与真机一致的观感",
+    "收敛手段：加 fonts.bold 策略开关请用户 A/B；若确属光栅化差异则改 DPR/笔画取整策略；两条都要有守卫",
+    "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）—— 已修"
   ],
   "id": "T-0035",
-  "status": "done",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-14",
@@ -36,6 +36,14 @@
     },
     {
       "at": "2026-09-14",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "done → doing —— E4 未通过：用户实测字体没有变化 ⇒ 抗锯齿不是可见主因，转查字体资产/图片文字路径"
+    },
+    {
+      "at": "2026-09-15",
       "what": "改字段：acceptance"
     }
   ],

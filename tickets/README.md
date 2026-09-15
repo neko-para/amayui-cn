@@ -7,9 +7,15 @@
 
 ## 概览
 
-共 **36** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **11** · ✅ done **24** · 🚫 dropped **1**（P0 5 / P1 10）
+共 **36** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **11** · ✅ done **23** · 🚫 dropped **1**（P0 5 / P1 10）
 
 按域：`emulator/frame-loop` 9 · `emulator/render` 8 · `emulator/adv` 3 · `emulator/input` 2 · `emulator/vm` 2 · `emulator/test` 2 · `emulator/boot` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `emulator/tools` 1
+
+## 🔜 doing（1）
+
+| id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
+|---|---|---|---|---|---|---|---|---|
+| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 5 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
 
 ## ⬜ open（11）
 
@@ -27,7 +33,7 @@
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
 
-## ✅ done（24）
+## ✅ done（23）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -44,7 +50,6 @@
 | [`T-0027`](./T-0027/ticket.json) | P1 | bug | `emulator/input` | ADV 等待推进门把「按住态」当成新按下：一次点击连翻多页、按住即每帧推进 | 6 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/input.test.ts` | `notes.md` `changes.md` `repro.md` | — |
 | [`T-0030`](./T-0030/ticket.json) | P1 | bug | `emulator/boot` | 首次运行（overlay 里没有 SYS4REG.INI）时 SAVE.DAT 既不装载也不回写 ⇒ 设置/侧栏编辑永远还原 | 6 | `app/amayui-emulator/test/save-data.test.ts` | `notes.md` `changes.md` evidence/(4) | — |
 | [`T-0033`](./T-0033/ticket.json) | P1 | bug | `emulator/adv` | ADV 逐字显现期间的点击不生效：点击被攒到显完之后当成「推进」⇒ 快速点击要等整句逐字完才跳下一句 | 6 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` `changes.md` | — |
-| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 5 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0036`](./T-0036/ticket.json) | P1 | bug | `emulator/vm` | 存档界面右侧缩略图不显示：0x1AF 只校验长度、没把 .STH 里的 BMP 装进 op3 指定的纹理槽 | 4 | `app/amayui-emulator/test/save-thumb.test.ts` `app/amayui-emulator/test/save-slot.test.ts` `app/amayui-emulator/test/save-slot-chain.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0013`](./T-0013/ticket.json) | P2 | refactor | `emulator/hosts` | 宿主能力面入桥：needsRender / animationsDone / preloadImage 不在 NativeBridge 也不在 nativeT… | 2 | `app/amayui-emulator/test/native-tap.test.ts` | `notes.md` `changes.md` | — |
