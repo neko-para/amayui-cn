@@ -18,6 +18,7 @@ import { OverlayDir, type OverlaySide } from './overlay.js';
 import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
 import { unionUsedFileIds } from '../vm/saveData.js';
+import { slotRelPath, slotThumbRelPath } from '../vm/saveSlot.js';
 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
@@ -147,6 +148,61 @@ export class NodeFileSource implements FileSource {
   async writeSaveData(data: Uint8Array): Promise<void> {
     if (!this.#overlay) return;
     await this.#overlay.write(SAVE_DAT_REL, data);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 存档槽（`SAVE%2.2d.DAT` / `.STH`；`tickets/T-0018`）—— 与 SAVE.DAT 同纪律：
+  //   读 overlay → base，写/删**只碰 overlay**（真存档槽在 base，永不覆盖）。
+  // ---------------------------------------------------------------------------
+
+  /** 读一个槽的整份字节（overlay → base；都没有 ⇒ null）。 */
+  async readSaveSlot(slot: number): Promise<Uint8Array | null> {
+    const hit = await this.readSystemFile(slotRelPath(slot));
+    return hit ? hit.data : null;
+  }
+
+  /** 写一个槽（只写 overlay）。 */
+  async writeSaveSlot(slot: number, data: Uint8Array): Promise<void> {
+    if (!this.#overlay) return;
+    const p = await this.#overlay.write(slotRelPath(slot), data);
+    this.#log(`[slot] 写入槽 ${slot} → ${p}（${data.length} 字节）`);
+  }
+
+  /** 删一个槽（两个文件都试；返回各自是否删掉了）。 */
+  async deleteSaveSlot(slot: number): Promise<{ dat: boolean; sth: boolean }> {
+    return { dat: await this.#removeOverlayFile(slotRelPath(slot)), sth: await this.#removeOverlayFile(slotThumbRelPath(slot)) };
+  }
+
+  /** 复制一个槽（`op2` → `op3`）：先取源（overlay → base），再写到目标槽的 overlay。 */
+  async copySaveSlot(from: number, to: number): Promise<{ dat: boolean; sth: boolean }> {
+    const d = await this.readSaveSlot(from);
+    const t = await this.readSlotThumb(from);
+    if (d) await this.writeSaveSlot(to, d);
+    if (t) await this.writeSlotThumb(to, t);
+    return { dat: d !== null, sth: t !== null };
+  }
+
+  /** 读 `.STH`（overlay → base）。 */
+  async readSlotThumb(slot: number): Promise<Uint8Array | null> {
+    const hit = await this.readSystemFile(slotThumbRelPath(slot));
+    return hit ? hit.data : null;
+  }
+
+  /** 写 `.STH`（只写 overlay）。 */
+  async writeSlotThumb(slot: number, data: Uint8Array): Promise<void> {
+    if (!this.#overlay) return;
+    await this.#overlay.write(slotThumbRelPath(slot), data);
+  }
+
+  /** 删 overlay 里的一份文件（不存在也算成功 —— 引擎的 `DeleteFileA` 语义由调用方判）。 */
+  async #removeOverlayFile(rel: string): Promise<boolean> {
+    if (!this.#overlay) return false;
+    try {
+      await fs.unlink(this.#overlay.overlayFile(rel));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async readFile(p: string): Promise<Uint8Array> {

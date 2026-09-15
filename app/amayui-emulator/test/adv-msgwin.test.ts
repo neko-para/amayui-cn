@@ -154,6 +154,8 @@ test('★文本进入渲染模型与快照：窗 9 的排版结果可在报告�
     weight: 400,
     fill: '#ffffff',
     outline: '#000000',
+    // ★抗锯齿（`Font+1352` = `Engine[21662]`；`tickets/T-0035`）：没灌配置时引擎字段是 0 = 锯齿字形
+    antiAlias: false,
   });
   assert.equal(frame.style.outlineMode, 1);
   assert.equal(frame.style.outlineDx, 2);

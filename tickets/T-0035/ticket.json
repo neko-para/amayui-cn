@@ -1,0 +1,80 @@
+{
+  "title": "文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "用户实测（2026-09）：与真游戏对照，emulator 里**很多地方**的文字都比引擎渲染的更粗，且白色看着更亮。引擎真源：抗锯齿由 `set:EnableAntiFont` 门控 `message:UseAntiFont` 后写进 `Font+1352`（raw 23649-23656 → sub_4155B0 raw 22409-22422 会重建字体并清字形缓存）；本机 overlay 的 SYS4REG.INI 里 `set:EnableAntiFont=0`（base 那份没有 [set] 段）⇒ **引擎实际是无抗锯齿渲染**，而渲染侧 canvas 永远开 AA（灰度边缘=笔画变胖、白字边缘发亮）。另有两条待核对：`set:Menu_UseAntiFont=0`（菜单文本的另一把开关）与 `message:AntiFontLevel`（raw 23653 写 Engine+303796，该字段全库**无读者** ⇒ 是死写、不该照抄）。",
+  "acceptance": [
+    "逐条核对引擎的字体配置链（面名/字号/lfWeight/抗锯齿/描边档与偏移/填充与描边色）与 emulator 的对应实现，给出『一致/不一致』结论并落 docs-new/03-engine/adv-text-rendering.md 与 analysis/engine-capabilities.json",
+    "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化，与引擎 GDI/dd 路径的锯齿字形一致）；== 1 时保留 AA —— 显式读配置，不再由浏览器默认决定",
+    "antiAlias 只能由 set:EnableAntiFont 门控 message:UseAntiFont 决定；message:AntiFontLevel / set:Menu_UseAntiFont 不得影响渲染（引擎里它们是死写，有守卫钉住）",
+    "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）；有脚本显式设过时以脚本为准",
+    "守卫：test/text-aa.test.ts（两键门五种组合 / 样式携带 / 阈值化边缘 alpha 只取 {0,255} 且颜色不动）"
+  ],
+  "id": "T-0035",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence, links"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— 两键门 + 阈值化（无 AA 字形）；守卫 test/text-aa.test.ts；E4 观感待用户确认（见 changes.md）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：acceptance"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/configRegistry.ts",
+      "anchor": "set:EnableAntiFont",
+      "note": "两把 AA 开关都在配置表里（set:EnableAntiFont / message:UseAntiFont / set:Menu_UseAntiFont），但渲染侧一处都没读"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/text/raster.ts",
+      "anchor": "不用 `strokeText` 的原因",
+      "note": "描边已按引擎机制实现；但整条 raster 没有任何 AA 门（canvas 永远开 AA）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "aSetEnableantif",
+      "note": "引擎真源：set:EnableAntiFont 门控 message:UseAntiFont → sub_4155B0(Font, v) → Font+1352"
+    },
+    {
+      "file": "docs-new/03-engine/adv-text-rendering.md",
+      "anchor": "抗锯齿开关",
+      "note": "Font+1352 的字段表与证据行"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "weight: m.font.mainBold ? 700 : 400",
+      "note": "字重只在 0x2BD 之后才 700（默认 400）；核对引擎 lfWeight 的默认与来源"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "text-style-scope-queue-time"
+    ],
+    "tickets": [
+      "T-0036"
+    ]
+  },
+  "tests": [
+    "app/amayui-emulator/test/text-aa.test.ts"
+  ]
+}

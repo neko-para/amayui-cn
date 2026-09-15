@@ -34,7 +34,6 @@ function drawGlyph(
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.globalAlpha = 1;
-
   switch (st.outlineMode) {
     case 0:
       ctx.fillStyle = spec.fill;
@@ -76,6 +75,76 @@ function drawGlyph(
 }
 
 /**
+ * ★**无 AA 字形化（阈值化 alpha）** —— `tickets/T-0035`。
+ *
+ * 引擎的抗锯齿由 `Font+1352`（= `Engine[21662]`）决定：`set:EnableAntiFont` 门不过（本机两处 INI 都是）
+ * ⇒ `Font+1352` 恒 0 ⇒ 引擎走 **GDI/dd 的 `TextOutA` 整串绘制**，字形是**锯齿**的：
+ * 每个像素要么是纯填充/描边色、要么完全没有（不存在"半透明边缘"）。
+ *
+ * canvas 没有"关掉文字 AA"的开关（`imageSmoothingEnabled` 只管图像缩放），所以这里按引擎的**结果**
+ * 对齐：画完之后把 alpha 通道阈值化（`>= cut` 记满不透明，否则全透明），颜色不动。
+ * 阈值 128 ≈ GDI 在 50% 覆盖率处取整的判据；于是边缘不再产生灰边/白晕
+ * —— 那正是"字比引擎粗、白色比引擎亮"的来源。
+ *
+ * @returns 被改写的像素数（测试与诊断用）。
+ */
+export function thresholdAlpha(ctx: CanvasRenderingContext2D, w: number, h: number, cut = 128): number {
+  const pw = Math.max(1, Math.ceil(w));
+  const ph = Math.max(1, Math.ceil(h));
+  const img = ctx.getImageData(0, 0, pw, ph);
+  const d = img.data;
+  let changed = 0;
+  for (let i = 3; i < d.length; i += 4) {
+    const a = d[i]!;
+    if (a === 0 || a === 255) continue;
+    d[i] = a >= cut ? 255 : 0;
+    changed++;
+  }
+  if (changed) ctx.putImageData(img, 0, 0);
+  return changed;
+}
+
+/**
+ * ★**无 AA 时把字形画进独立图层、阈值化后再合成**（`tickets/T-0035`）。
+ *
+ * 为什么要独立图层，而不是直接对目标画布阈值化：GDI 的锯齿字形是"**覆盖到的像素写不透明色、
+ * 没覆盖到的像素原样不动**"。若直接阈值化目标画布，会连带处理**背景**（窗口底色可能带 alpha，
+ * 将来建模后更明显）以及槽里已有的像素（`draw-string` 是"往已有表面上叠字"）——
+ * 那些像素的 alpha 不属于"字形覆盖率"，不该被改。
+ *
+ * 分层之后：图层里只有字形（描边副本 + 填充，彼此覆盖关系与引擎同序），阈值化只作用于字形覆盖率；
+ * 合成时 `source-over` ⇒ 覆盖率 ≥ 50% 的像素用纯色**替换**底层，其余保持底层原样（引擎同结果）。
+ *
+ * @param target 目标画布 ctx（调用方已设好 `res` 变换）
+ * @param physW/physH 物理像素尺寸（= 逻辑 × res）
+ * @param draw   把字形画进给定 ctx 的回调（该 ctx 已设好与 target 相同的 `res` 变换）
+ * @returns 被阈值化改写的像素数（测试/诊断用）
+ */
+export function drawAliasedLayer(
+  target: CanvasRenderingContext2D,
+  physW: number,
+  physH: number,
+  res: number,
+  draw: (ctx: CanvasRenderingContext2D) => void,
+  cut = 128,
+): number {
+  if (typeof document === 'undefined') return 0; // 非浏览器宿主：不该走到这里
+  const layer = document.createElement('canvas');
+  layer.width = Math.max(1, Math.ceil(physW));
+  layer.height = Math.max(1, Math.ceil(physH));
+  const lctx = layer.getContext('2d');
+  if (!lctx) return 0;
+  lctx.setTransform(res, 0, 0, res, 0, 0);
+  draw(lctx);
+  const changed = thresholdAlpha(lctx, layer.width, layer.height, cut);
+  target.save();
+  target.setTransform(1, 0, 0, 1, 0, 0); // 图层按物理像素 1:1 贴回
+  target.drawImage(layer, 0, 0);
+  target.restore();
+  return changed;
+}
+
+/**
  * 把一个消息窗的排版结果光栅化到**新建的 canvas**（尺寸 = 窗口尺寸 × `res`）。
  *
  * @param revealed 已显示到的字形总数（跨行累计；`>= frame.glyphCount` 即全部显示）
@@ -99,16 +168,24 @@ export function rasterFrame(frame: TextFrame, revealed: number, res = 1): HTMLCa
     ctx.fillRect(0, 0, w, h);
   }
 
-  let start = 0;
-  for (const line of frame.lines) {
-    const n = visibleInLine(line, start, revealed);
-    for (let i = 0; i < n; i++) {
-      const g = line.glyphs[i];
-      if (g) drawGlyph(ctx, g.ch, g.x, g.y, st.main, st);
+  /** 把这一页字形画进给定 ctx（抗锯齿开着时直接画到目标，关着时画进独立图层）。 */
+  const drawGlyphs = (c: CanvasRenderingContext2D): void => {
+    let start = 0;
+    for (const line of frame.lines) {
+      const n = visibleInLine(line, start, revealed);
+      for (let i = 0; i < n; i++) {
+        const g = line.glyphs[i];
+        if (g) drawGlyph(c, g.ch, g.x, g.y, st.main, st);
+      }
+      // 注音随本文一起出现（引擎把注音与本文成对处理：24B 记录 +0 种类）
+      if (n > 0) for (const rg of line.ruby) drawGlyph(c, rg.ch, rg.x, rg.y, st.ruby, st);
+      start += line.glyphs.length;
     }
-    // 注音随本文一起出现（引擎把注音与本文成对处理：24B 记录 +0 种类）
-    if (n > 0) for (const rg of line.ruby) drawGlyph(ctx, rg.ch, rg.x, rg.y, st.ruby, st);
-    start += line.glyphs.length;
-  }
+  };
+
+  // ★抗锯齿（`Font+1352`）：引擎没开 AA ⇒ 字形画进独立图层 + 阈值化再合成（`tickets/T-0035`）。
+  //   一次阈值化整页（而不是逐字）⇒ 描边副本与填充的相互覆盖关系与引擎一致（引擎就是同一表面叠加）。
+  if (st.main.antiAlias) drawGlyphs(ctx);
+  else drawAliasedLayer(ctx, canvas.width, canvas.height, res, drawGlyphs);
   return canvas;
 }

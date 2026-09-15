@@ -1,31 +1,134 @@
 {
   "id": "T-0018",
   "type": "req",
-  "status": "open",
+  "status": "done",
   "priority": "P2",
   "area": "emulator/vm",
-  "title": "实现 0x1A0（读档：SAVE%2.2d.DAT + sub_438120）",
-  "why": "refactor-plan §9 登记：这是存档侧下一个大缺口 —— 读档路径未实现，LOAD DATA 走不通。",
+  "title": "实现存档槽链路（0x19E 存 / 0x1A1 读 / 0x1A0 读头 / 0x19F 短读 / 0x1AB 删 / 0x1AC 复制 / 0x1AE·0x1AF .STH）",
+  "why": "refactor-plan §9 登记：这是存档侧下一个大缺口 —— 读档路径未实现，LOAD DATA 走不通。★2026-09 订正：票面原本写「0x1A0 读档」，但引擎里 0x1A0 只**读头**（292 B，不装载），真正读档的是 **0x1A1**（sub_42DDE0），存档是 **0x19E**（sub_42D980）—— 旧注把 0x1A1 当成了存档。于是本票扩成整条槽链路，并一路做到「真语料点进 Load Data 列表、零未实现 opcode」。",
   "acceptance": [
-    "0x1A0 按引擎语义装载指定槽位的存档（含 sub_438120 的解密/表还原）",
-    "新增守卫：构造/读取一个存档后，脚本 `load-int/load-string` 能取回登记的值"
+    "0x1A0 读槽头（292 B）：op1 = 0/1/2 + 年/月/日/时/分/秒 + 游玩秒数（头 +280），字段偏移与真槽逐项一致（E4：47 个 SAVE??.DAT 的本机真槽）",
+    "0x19E 存档 / 0x1A1 读档 / 0x19F 短读：读档后脚本 load-int / load-string 能取回存档时登记的值（两张表 + 全局 int 池 + 帧 ip + 游玩秒数）",
+    "★0x1A1 **不写任何操作数**（引擎 sub_42DDE0 函数体无 sub_42B4B0；调度器 raw 21217 丢弃 C 返回值）；0x19E / 0x19F / 0x1A0 才写 op1",
+    "0x1AB / 0x1AC 的结果码 0/1/2 与引擎逐字对齐（只有第二份文件失败 = 2，不是 1）；0x1AE / 0x1AF 的 .STH 做不透明往返",
+    "槽文件读写只走 overlay（读 overlay→base、写只写 overlay）⇒ 真存档槽字节不变",
+    "★E3（真语料）：TITLE 右上角菜单第 1 项 Load Data → SAVE.BIN 列表，路径上零未实现 opcode、真的读了真槽（0..999）、且不写任何槽；Electron 侧 IPC 通道（read/write/delete/copy/read-slot-thumb/write-slot-thumb）已接通"
   ],
   "evidence": [
     {
-      "file": "docs-new/04-app/emulator.md",
-      "anchor": "0x1A0",
-      "note": "缺口登记处（待办/已知缺口节）"
+      "file": "app/amayui-emulator/src/vm/saveSlot.ts",
+      "anchor": "SLOT_STATE_MAGIC",
+      "note": "★新增：槽路径（SAVE%2.2d.DAT/.STH）+ 292 B 头解析（parseSlotHeader，E4 逐字段）+ 本工程状态块（AMYS1\\n + JSON）+ SLOT_GAPS"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "SAVE_SLOT_OPS",
+      "note": "★新增：8 条 opcode 的 handler（0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF）"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-slot.test.ts",
+      "anchor": "★0x1A1 不写操作数",
+      "note": "★新增守卫（10 条）：E4 真槽头、0x1A0 往返、0x19E→0x1A1 往返、结果码、.STH、overlay 只读不写 base、0x1A1 保真度"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
+      "anchor": "TITLE → Load Data → SAVE.BIN",
+      "note": "★新增 E3 链路守卫：真语料点进 Load Data 列表，路径零未实现 opcode、读了 0..999 真槽、不写任何槽"
+    },
+    {
+      "file": "app/amayui-emulator/test/wheel.test.ts",
+      "anchor": "★0x2E5：读水平滚轮增量",
+      "note": "★新增 E2 守卫：0x2E5 与 0x10D 是两个独立累加器（互不消费、读后清零、方向符号）"
     },
     {
       "file": "app/amayui-emulator/src/vm/saveData.ts",
-      "anchor": "decodeSaveData",
-      "note": "已有的存档格式层（可复用）"
+      "anchor": "可选尾块",
+      "note": "★扩展：encodeSaveData/parsePayload 支持可选尾块；并修掉读侧没吃掉尾部块首个 dword 的 bug（状态块前多 4 个 0 字节）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "水平滚轮增量累加器",
+      "note": "★新增：hwheelDelta + addHWheel/consumeHWheelDelta（对位引擎 Engine[1950]/byte 0x1E78），且进 snapshot/restore"
+    },
+    {
+      "file": "app/amayui-emulator/electron/ipc/files.ts",
+      "anchor": "read-save-slot",
+      "note": "★新增：主进程槽 IPC（read/write/delete/copy/read-slot-thumb/write-slot-thumb；只写 overlay，槽号 0..999）"
+    },
+    {
+      "file": "docs-new/03-engine/save-data.md",
+      "anchor": "存档槽链路",
+      "note": "★文档：§7 槽链路机制（opcode 表 + ENC 不变量 + 游玩秒数记账 + 语料用量 + SLOT_GAPS）"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "读档（LOAD，全量）",
+      "note": "★订正：0x1A1 = 读档（旧注『存档到槽位』为误，存档是 0x19E）；补齐 0x190/0x19E/0x19F/0x1A0/0x1AB/0x1AC/0x1AE/0x1AF，另补 0x2E5"
+    },
+    {
+      "file": "docs-new/03-engine/input-system.md",
+      "anchor": "两个滚轮累加器",
+      "note": "★文档 §15：0x10D 竖直 / 0x2E5 水平两个累加器的 raw 依据与真实用例"
+    },
+    {
+      "file": "docs-new/04-app/emulator.md",
+      "anchor": "存档槽",
+      "note": "缺口登记处：已从『0x1A0 未实现』改为『链路已通 + SLOT_GAPS』"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "save-slot-chain",
+      "note": "★第二层：能力条目（触发/缺失时静默/读的字段/emulator E3，guard=test/save-slot-chain.test.ts）；另有 input-wheel-two-accumulators"
+    },
+    {
+      "file": "src/$1$SC0330.txt",
+      "anchor": "i1a1 (global-int f7ffd) (global-int f8019)",
+      "note": "★真实用例（第三层 SC0330 条目）：i1a0 存在性判定、i1a1 q-load、i19e+i1ae 存槽与缩略图纹理"
     }
   ],
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：title, acceptance"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：why, notes"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— 整条槽链路实现 + 10 条守卫；引擎真源与两处保真度订正（0x1A1 不写操作数、0x1AC 第二份失败 = 2）见 notes.md，实测见 changes.md"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：why, tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-slot.test.ts",
+    "app/amayui-emulator/test/save-slot-chain.test.ts",
+    "app/amayui-emulator/test/wheel.test.ts",
+    "app/amayui-emulator/test/save-data.test.ts"
+  ],
+  "notes": "为什么是「一整条链」：脚本侧一次存档/读档要用到 0x1A0（列表显示前逐槽读头判存在性）、0x1A1（装载）、0x19E（写）、0x1AE（写 .STH 缩略图）；少一条就表现成「界面能画但点不动/点不动菜单」。真实用例见 src/$1$SC0330.txt:532-545、571-582、17533-17596。★引擎保真度上的两个坑：① 0x1A1 **不写任何操作数**（raw 21217 的调度器丢弃返回值、sub_42DDE0 不调 sub_42B4B0）—— emulator 早先写了 op1 = 状态码，会污染脚本的占位槽（真脚本给 (global-int f7ffd)）；② 0x1AC「只有第二份文件（.STH）失败」的返回码是 **2** 不是 1。★本工程的槽是私有扩展（同一容器 + format 0 明文 payload + 尾块状态 AMYS1\\\\n + JSON），引擎读不了我们的槽、我们只读引擎槽的头 + 头里的游玩秒数（SLOT_GAPS 记了 5 条边界）。"
 }

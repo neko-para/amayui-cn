@@ -182,6 +182,8 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
 
   let frames = 0;
   let steps = 0;
+  /** 上一帧的时钟（累加游玩时长用；见 `Engine.playSeconds`）。 */
+  let prevNowMs: number | null = null;
   let lastScript = opt.initialScript ?? e.curScript().name;
 
   /** 帧内观察（`frameIndex` = 正在处理的帧号）。 */
@@ -311,6 +313,13 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
 
     if (stop !== null) return finish({ frames, steps, stopReason: stop });
     frames++;
+    // ★**游玩时长**（引擎存档头 +280 的 i32；`tickets/T-0018`）：按帧增量累加。
+    //   单帧增量 > 1 s 的部分不计 —— 调试暂停/长 `sleep` 不是"游玩时间"（引擎那份是累计量，见 `Engine.playSeconds`）。
+    if (prevNowMs !== null) {
+      const delta = nowMs - prevNowMs;
+      if (delta > 0 && delta <= 1000) e.playSeconds += delta / 1000;
+    }
+    prevNowMs = nowMs;
     // ★音频帧泵（D5）：**每完整帧恰好一次**，且**先于**合成 —— 引擎 raw 20645-20646 就在 present 段里，
     //   产品路径的 `session.#present()`（texturesIdle → audio tick → present）也是这个次序。
     //   撞脚本尾/退出/重置的那一帧**不算完整帧** ⇒ 不发（与 session 的 `break outer` 一致）。

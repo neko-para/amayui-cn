@@ -222,6 +222,23 @@ export class HeadlessScene implements NativeBridge {
     scDrawString(this.scene, slot, x, y, text, style.fill);
   }
 
+  /**
+   * `0x1AE` 写 `.STH` 缩略图：headless **没有画布** ⇒ 返回 null（调用方退化成"空块"）。
+   * ★取舍是显式的：headless 只做状态/布局，像素级产物（缩略图）由 PixiBackend 负责。
+   */
+  getSlotPixels(_slot: number): { w: number; h: number; rgba: Uint8Array } | null {
+    return null;
+  }
+
+  /**
+   * `0x1AF` 读 `.STH` 缩略图：headless 只记尺寸（供 E3 断言"缩略图确实被解出并写进了该槽"），不存像素。
+   */
+  setSlotPixels(slot: number, w: number, h: number, _rgba: Uint8Array): void {
+    this.slotSize.set(slot, { w, h });
+    this.proceduralSlots.add(slot);
+    this.note('setSlotPixels(.STH 缩略图 → 纹理槽，headless 只记尺寸)', `slot=${slot} ${w}x${h}`);
+  }
+
   getTextureSize(slot: number): { w: number; h: number } {
     const imgid = this.slotImgid.get(slot);
     if (imgid === undefined || this.proceduralSlots.has(slot)) {

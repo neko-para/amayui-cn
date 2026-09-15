@@ -320,6 +320,17 @@ export class PixiBackend implements NativeBridge {
     this.textures.drawString(slot, x, y, text, style);
   }
 
+  /** `0x1AE` 写 `.STH` 缩略图：读该槽画布的像素（`tickets/T-0036`）。 */
+  getSlotPixels(slot: number): { w: number; h: number; rgba: Uint8Array } | null {
+    return this.textures.getSlotPixels(slot);
+  }
+
+  /** `0x1AF` 读 `.STH` 缩略图：把像素铺进该槽画布（`tickets/T-0036`）。 */
+  setSlotPixels(slot: number, w: number, h: number, rgba: Uint8Array): void {
+    this.#markDirty();
+    this.textures.setSlotPixels(slot, w, h, rgba);
+  }
+
   /**
    * `0x1FD`（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（输入按 **100** 格除，`dbl_5201F0 = 100.0`）。
    * 走共享模型层 `scSetScale`（"缺失即建项"，引擎 `sub_4AAA50` 语义）。

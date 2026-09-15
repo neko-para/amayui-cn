@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 31 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 35 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 24 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **109** | 需要关注（非 n/a 且非已核验）= **53** |
+| **合计** | **113** | 需要关注（非 n/a 且非已核验）= **53** |
 
 ## 按子系统
 
@@ -26,11 +26,11 @@
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 10 |
-| 消息窗 | 24 | 15 |
+| 消息窗 | 25 | 15 |
 | 渲染 | 24 | 11 |
-| 资源 | 14 | 4 |
+| 资源 | 16 | 4 |
 | 转场 | 4 | 3 |
-| 输入 | 3 | 0 |
+| 输入 | 4 | 0 |
 
 ## 全部条目
 
@@ -145,6 +145,10 @@
 | `single-field-timers-audio-device` | 帧循环 | A5：单行字段写 / 秒计时器 / 消息面 / 音频设备（9 条） | ✅ 已核验 | E3 · `test/op-a5.test.ts` |
 | `hover-ret-reruns-gate-op` | 输入 | 悬停/点击 label 的返回点 = 门指令（ret 回到门指令重跑） | ✅ 已核验 | E3 · `test/game-start-chain.test.ts` |
 | `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
+| `save-slot-chain` | 资源 | 存档槽链路：SAVE%2.2d.DAT（0x19E 存 / 0x1A1 读 / 0x1A0 读头 / 0x19F 短读 / 0x1AB 删 / 0x1AC 复制）与 .STH 状态块（0x1AE/0x1AF） | ✅ 已核验 | E3 · `test/save-slot-chain.test.ts` |
+| `input-wheel-two-accumulators` | 输入 | 两个滚轮累加器：竖直（WM_MOUSEWHEEL）与水平（WM_MOUSEHWHEEL）各自独立、各自一次性消费 | ✅ 已核验 | E2 · `test/wheel.test.ts` |
+| `text-aa-config-gate` | 消息窗 | 文本抗锯齿是一把配置门：只有 set:EnableAntiFont 为真才读 message:UseAntiFont 写 Font+1352 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
+| `save-slot-thumbnail-bmp` | 资源 | 存档缩略图：SAVE%2.2d.STH = 320x180 24bpp BMP（0x1AE 按 op3 纹理槽写 / 0x1AF 按 op3 纹理槽读） | ✅ 已核验 | E4 · `test/save-thumb.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

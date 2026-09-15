@@ -297,6 +297,8 @@ _this[30*cur + 95805] = 0;
 | 0x13F | check-bit | sub_42FB40 | `op1 = ((1<<op3) & op2)!=0`（位检查） |
 | 0x135/0x136 | bit-set/bit-reset | sub_42F8B0/sub_42F920 | `op1\|=/\&= ~(1<<op2)` |
 | 0x2FC | （UI 命中） | sub_431BA0 | 用鼠标坐标判定 UI 命中项 |
+| 0x10D | read-mouse-wheel | sub_42EF50 | 读**竖直**滚轮增量（`_this[1949]`/byte 0x1E74）→ 立即清零 → op1（一格 ±120，上滚正） |
+| 0x2E5 | （读水平滚轮） | sub_4310D0 | 读**水平**滚轮增量（`_this[1950]`/byte 0x1E78）→ 立即清零 → op1（一格 ±120，右滚正） |
 
 ## 14. 菜单派发与「hover 无法回退」的逆向分析（TITLE.txt）
 
@@ -399,3 +401,32 @@ E3 实测 `revealRestarts = 2` → 修后 0）。常态行为条目见 `engine-c
 ### 14.7 未打通缺口
 
 菜单点击链在 `0xA1~0xA3` 之后还会命中**未实现的 `0x80`（u0041AF00, sub_41F690）** 等指令（诊断：点击后 cur 变化前在 `@0x280` 处 `unimplemented opcode 0x80`）。「点击选中」要真正走通需继续补这些后续 opcode。
+
+> ★2026-09 更新：`0x80` 早已实现（`handlers/msgwin.ts` 的 `op_set_default_window` = 默认窗索引，
+> `0x6E/0x6F/0x196` 的 `op1=0` 指它），上面那条诊断是当时的状态。同一条实测方法现在用来验**存档槽**
+> 菜单链：`SYSTEM4 → LOGO → TITLE →（菜单第 1 项 Load Data）→ SAVE.BIN`，路径上零未实现 opcode
+> （唯一缺的 `0x2E5` 已补，见 §15），守卫 `test/save-slot-chain.test.ts`（`tickets/T-0018`）。
+
+## 15. 两个滚轮累加器：`0x10D`（竖直）与 `0x2E5`（水平）
+
+`WM_MOUSEWHEEL`(`0x20A`) 与 `WM_MOUSEHWHEEL`(`0x20E`) 在 WndProc 里写**两个不同的累加器**
+（raw 141582 与 raw 141610），读端也是两条指令 —— 不能合成一个：
+
+```text
+0x20A → _this[1949] (byte 0x1E74)   ── 0x10D (sub_42EF50, raw 39114-39122)  读并清零 → op1
+0x20E → _this[1950] (byte 0x1E78)   ── 0x2E5 (sub_4310D0, raw 40342-40350)  读并清零 → op1
+```
+
+- 两条都是 **`v2 = _this[N]; _this[N] = 0; writeIntOperand(1, v2);`** 的形状（一次性消费）。
+- 值语义：自上次读取以来该轴的 `+= (short)HIWORD(wParam)` 累计；**一格 = ±120**（`WHEEL_DELTA`）。
+  方向：竖直**上滚正/下滚负**（`0x10D`，脚本 `gr (local 403) 0` 判上滚）；水平**右滚正/左滚负**（`0x2E5`）。
+- ★`0x20E` 还有一条前置分支（raw 141588）：当 `(Engine+699204 & 0x90100000) != 0`（= 玩家把"横滚"当按键用）
+  时**不累加**，改为派发 `set:HWheelKeyUp` / `set:HWheelKeyDown`（raw 141594-141602）。emulator 未建模这组键绑定。
+- **真实用例**（`src/SAVE.txt:204-205`，存档/读档列表）：同一次轮询里先 `read-mouse-wheel (local 14)`
+  再 `i2e5 (local 15)`，之后分别按这两个局部量翻页 ⇒ **只实现竖直那个会让列表横向翻页失效**（旧状态：
+  `0x2E5` 是"仅映射"、命中即硬报错）。emulator 侧 `InputManager` 有 `wheelDelta` / `hwheelDelta`
+  两个累加器（`addWheel` / `addHWheel`，都进 `snapshot()`/`restore()` 回放），渲染侧 `wheel` 事件把
+  `deltaY` 取负喂第一个、`deltaX` 原样喂第二个。守卫：`test/wheel.test.ts`（两条互不消费）+ 真语料链路
+  `test/save-slot-chain.test.ts`（TITLE → Load Data → SAVE.BIN，零未实现 opcode）。
+- 竖直滚轮与消息泵的耦合（ADV 推进分支只认 `<0`，raw 13938）见本文档前面章节；水平滚轮在引擎里
+  **没有**泵侧读者（只有 `0x2E5` 自己）。

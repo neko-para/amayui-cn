@@ -113,6 +113,9 @@ export function globalTextStyle(e: Engine): {
       weight: m.font.mainBold ? 700 : 400,
       fill: hex6(v(21664, 0xffffff)),
       outline: hex6(v(21665, 0x000000)),
+      // ★抗锯齿（`Font+1352` = Engine[21662]，`tickets/T-0035`）：引擎只认 `set:EnableAntiFont`
+      //   门控后的 `message:UseAntiFont`；没配就是 0 = 锯齿字形（GDI/dd 路径）。
+      antiAlias: (v(21662, 0) & 1) !== 0,
     },
     outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
     outlineDx: v(21670, base.outlineDx),
@@ -177,6 +180,8 @@ export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
       weight: m.font.rubyBold ? 700 : 400,
       fill: core.main.fill,
       outline: core.main.outline,
+      // 注音与正文共用同一个 `Font+1352`（引擎只有一把 AA 开关）
+      antiAlias: core.main.antiAlias,
     },
     outlineMode: core.outlineMode,
     outlineDx: core.outlineDx,
@@ -1256,6 +1261,7 @@ const op_draw_string: OpHandler = (c) => {
     outlineMode: st.outlineMode,
     outlineDx: st.outlineDx,
     outlineDy: st.outlineDy,
+    antiAlias: st.main.antiAlias,
   });
 };
 
@@ -1324,6 +1330,7 @@ const op_draw_number_string: OpHandler = (c) => {
     outlineMode: st.outlineMode,
     outlineDx: st.outlineDx,
     outlineDy: st.outlineDy,
+    antiAlias: st.main.antiAlias,
   });
 };
 

@@ -44,6 +44,29 @@ const op_read_mouse_wheel: OpHandler = (c) => {
 };
 
 /**
+ * `0x2E5`（`sub_4310D0` raw 40342-40350）：**读水平滚轮增量（一次性消费）→ op1**。
+ *
+ * 引擎体逐字：
+ * ```
+ * _this[30 * _this[95776] + 95805] = 3;   // 指令码
+ * v2 = _this[1950];                       // byte 7800 = 水平滚轮累加器
+ * _this[1950] = 0;                        // ★读后清零
+ * return sub_42B4B0(_this, 1, v2);        // 写 op1
+ * ```
+ * 累加侧 = WndProc 的 `case 0x20E`（WM_MOUSEHWHEEL，raw 141585-141611）：**只有**在
+ * `(Engine+699204 & 0x90100000) == 0`（= 没把横滚当按键用；否则走 `set:HWheelKeyUp/Down` 派发）
+ * 时才 `*(_DWORD *)(dword_55E1BC + 7800) += SHIWORD(wParam)`（一格 ±120）。
+ *
+ * ★与 `0x10D`（竖直滚轮，`Engine[1949]` / byte 7796）是**两个独立累加器**：真脚本 `src/SAVE.txt:204-205`
+ * 在同一次轮询里先 `read-mouse-wheel (local 14)`（竖直）再 `i2e5 (local 15)`（水平），
+ * 随后 `jcc (local 15) label_00001f7c` 按横滚切换页 —— **跳过它会让整页横向翻页失效**（旧状态是"未实现"）。
+ * 语料：`i2e5` 只出现在 `src/SAVE.txt:205/304`（存档/读档列表的横滚翻页）。
+ */
+const op_read_mouse_hwheel: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeHWheelDelta());
+};
+
+/**
  * `mouse-callback` (0xCC, sub_421980)：注册鼠标跳转目标。op2=label。
  *
  * 引擎（raw 30317-30325）：
@@ -209,6 +232,7 @@ export const INPUT_OPS: OpTable = [
   [0x108, op_read_mouse_button], // read-mouse-button：读鼠标按钮值 → op1
   [0x109, op_read_mouse_pos], // read-mouse-pos：读鼠标位置 → op1=X, op2=Y
   [0x10d, op_read_mouse_wheel], // read-mouse-wheel：读鼠标滚轮增量（一次性消费）→ op1
+  [0x2e5, op_read_mouse_hwheel], // 读水平滚轮增量（一次性消费）→ op1（存档/读档列表的横滚翻页）
   [0xcc, op_mouse_callback],
   [0xfb, op_joy_callback],
   [0xff, op_input_reset],

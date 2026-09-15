@@ -504,6 +504,14 @@ DrawItem = `Scene+1032` 的 map 值，**740 字节**；元素内偏移 = f32 下
 - 脚本用法（40+ 菜单/列表）：进入时 `read-mouse-wheel` 丢弃残量 → 主循环 `read-mouse-wheel (local 403)` + `jcc (local 403) <翻页label>`。
 - 测试：`test/wheel.test.ts`（读后清零 / 累加 / 负方向 / 不被 consumeEdges 清）。
 
+**`0x2E5`（水平滚轮）要点**（分析见 `analysis/functions.json` 的 `op_read_mouse_hwheel_4310D0`）：
+
+- 引擎里竖直/水平是**两个独立累加器**：`WM_MOUSEWHEEL`(0x20A) → `_this[1949]`(0x1E74)，`WM_MOUSEHWHEEL`(0x20E) → `_this[1950]`(0x1E78)（raw 141582 / 141610）。
+- `0x2E5`（`sub_4310D0` raw 40342-40350）= 同一个形状的读并清零，只是读 `_this[1950]`；**方向：右滚正 / 左滚负**（DOM `deltaX` 同向，不取负）。
+- ★不能把两者合成一个累加器：真脚本 `src/SAVE.txt:204-205` 在同一次轮询里先 `read-mouse-wheel (local 14)` 再 `i2e5 (local 15)`，分别管竖直/横向翻页。
+- 渲染窗：`wheel` 事件把 `deltaX` 原样 `input.addHWheel()`（与 `-e.deltaY` 分开喂）。
+- 测试：`test/wheel.test.ts`（两条互不消费）+ 真语料链路 `test/save-slot-chain.test.ts`（TITLE → Load Data → SAVE.BIN）。
+
 ---
 
 ## 缺口可见性：三闸门 + 场景执行报告（2026 新增）

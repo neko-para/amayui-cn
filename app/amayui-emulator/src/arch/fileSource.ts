@@ -76,6 +76,23 @@ export interface FileSource {
    * 与 `saveConfig` 同样：**不实现 = 不落盘**（测试默认如此，避免改动仓库里的存档）。
    */
   writeSaveData?(data: Uint8Array): Promise<void> | void;
+  /**
+   * **存档槽**（`SAVE%2.2d.DAT`；`tickets/T-0018`）：读一个槽的整份字节（overlay → base，不存在 ⇒ null）。
+   *
+   * 调用方 = `0x1A0`（只取前 292 B 头）与 `0x1A1`/`0x19F`（读档）；路径由 `saveSlot.slotRelPath(slot)` 给出。
+   * **不实现 = 读档链路不可用**（`op1` 恒为 1 = 「打不开」）。
+   */
+  readSaveSlot?(slot: number): Promise<Uint8Array | null>;
+  /** 写一个槽（**只写 overlay**，与 `writeSaveData` 同纪律）。调用方 = `0x19E`（存档）。 */
+  writeSaveSlot?(slot: number, data: Uint8Array): Promise<void> | void;
+  /** 删一个槽的 `.DAT` 与 `.STH`（`0x1AB`）。返回是否删掉了 `.DAT`（engine 的 `op1` = 0/1/2 由调用方合成）。 */
+  deleteSaveSlot?(slot: number): Promise<{ dat: boolean; sth: boolean }>;
+  /** 复制一个槽的两个文件（`0x1AC`）。 */
+  copySaveSlot?(from: number, to: number): Promise<{ dat: boolean; sth: boolean }>;
+  /** 读 `.STH`（`0x1AF`；本工程只做不透明往返）。 */
+  readSlotThumb?(slot: number): Promise<Uint8Array | null>;
+  /** 写 `.STH`（`0x1AE`）。 */
+  writeSlotThumb?(slot: number, data: Uint8Array): Promise<void> | void;
   /** 释放资源（宿主关闭文件句柄等）。 */
   dispose?(): Promise<void>;
 }

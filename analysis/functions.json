@@ -4832,7 +4832,7 @@
     "sub_behaviors": ["ReadFile(292) + 魔数/标题/版本校验", "ReadFile(20) → [n, crc1, crc2, key1, key2]", "CRC 校验（对密文）", "sub_436E90 解密", "a7≥2 时 sub_436A80 解压 + 内部 CRC 校验"],
     "fields_used": ["Engine+21968/21972（存档版本）"],
     "evidence": "raw 44855-45091",
-    "notes": "★CRC（两种）与 Crypt 已在 emulator 逐字实现，并被真存档（format=3）验证通过：test/save-data.test.ts 的 E4。"
+    "notes": "emulator：src/vm/saveData.ts 的 decodeSaveData（引擎 format 1..3 走 Crypt + LZSS + parseTables）。★读侧顺手把**头 +280（游玩秒数）**存进容器 _this[260]（raw 45085），随后 sub_4380F0 用它做记账：0x1A1/0x19F/0x190 装载后引擎靠这条把游玩时长接续下去。"
   },
   {
     "addr": "0x436DE0",
@@ -4917,14 +4917,14 @@
   {
     "addr": "0x42DDE0",
     "raw_name": "sub_42DDE0",
-    "semantic_name": "op_save_slot_42DDE0",
+    "semantic_name": "op_load_slot_42DDE0",
     "op": "0x1A1",
     "status": "ANALYZED",
-    "purpose": "存档到槽位：读 op2=槽号 → 建 SAVE%02d.DAT → sub_410160 写整个游戏状态 → 写完后把引擎 int 池重新 ENC 混淆",
-    "sub_behaviors": ["CreateFileA(\"%s\\SAVE%2.2d.DAT\")", "set:SaveVersion1/2 决定格式", "sub_410160(this, ver2, file, ver1, \"set:SaveVersion2\", 1, 1)", "对 _this[95744] 起的 pool_int 逐项 ENC"],
-    "fields_used": ["Engine[95738]（pool_int 计数）", "Engine[95744]（pool_int）", "Engine[97059]（ENC key）"],
-    "evidence": "raw 38407-38440",
-    "notes": "emulator **未实现**（存档槽菜单未接）；但引擎在写槽之后会顺带 sub_40AAE0 写系统存档（raw 17687）⇒ 系统级设置也因此落盘。"
+    "purpose": "读档（LOAD，全量）：op2=槽号 → CreateFileA RO → sub_410160(...,a6=1,a7=1) 装载整份状态（两张表 + 全局池 + 帧 + 字体）→ 把 pool_int 整体 ENC；★**不写任何操作数**（函数体无 sub_42B4B0，且调度器丢弃 C 返回值）",
+    "sub_behaviors": "[\"CreateFileA(%s\\\\SAVE%2.2d.DAT, GENERIC_READ, OPEN_EXISTING)；打不开 ⇒ return 1（不写 op1）\",\"sub_410160(Engine, ver2, hFile, ver1, set:SaveVersion, 1, 1) 装载\",\"for(i=0;i<Engine[95738]+1;i++) pool_int[i] = ENC(pool_int[i])（raw 38433-38438）\",\"★全程不调 sub_42B4B0 ⇒ 操作数 1 不被写（真脚本给 (global-int f7ffd) 只是占位）\"]",
+    "fields_used": "[\"Engine[95738]（pool_int 计数）\",\"Engine[95744]（pool_int）\",\"Engine[97059]（ENC key）\",\"Engine+174405（版本查询对象）\"]",
+    "evidence": "raw 38407-38440；调度器丢弃返回值 raw 21217；语料 335 次（src/.txt:579，前一行 comment savemesskip q-load）",
+    "notes": "emulator 已实现（handlers/save-slot.ts）。★旧注（semantic_name op_save_slot_42DDE0 / purpose 存档到槽位）是**误**：存档是 0x19E（sub_42D980）；这条只读档。★与 0x19F 的差别：0x19F 写 op1、这条不写；0x190 是同内核的任意路径版。"
   },
   {
     "addr": "0x430DF0",
@@ -7013,6 +7013,191 @@
     "unmodeled": [],
     "evidence": "raw 11030-11041；调用点：悬停/点击/等待泵 20228-20232 / 20284-20292 / 20328-20332，面板显示态 13670/14045/14088/20180/20195",
     "notes": "emulator 的等价物 = Engine.dispatchWithReturn(label, offsetDwords)（见 src/vm/engine.ts 的说明：-3 正好回到门指令）。★它是「悬停 label 的 ret 回到门指令重跑」这条常态行为的机制来源（tickets/T-0016）"
+  },
+  {
+    "addr": "0x42D980",
+    "raw_name": "sub_42D980",
+    "semantic_name": "op_save_slot_42D980",
+    "op": "0x19E",
+    "status": "ANALYZED",
+    "purpose": "存档（SAVE）：op2=槽号 → 拼 %s\\SAVE%2.2d.DAT（sub_408A40 取存档目录）→ 文件已存在则先 sub_438120 读头（头读不出时才弹 sub_406650(...,0x34) 确认框，选否则 op1=1 中止）→ CreateFileA(CREATE_ALWAYS) → sub_40CD10 写整份状态 → op1 = 写入结果",
+    "sub_behaviors": ["CreateFileA(FileName, GENERIC_READ, OPEN_EXISTING) 先探文件是否存在", "sub_438120 读 292 字节头；头不合法且确认框返回 7（否）⇒ CloseHandle + op1=1", "CreateFileA(..., 0x40000000, 0, 0, 2=CREATE_ALWAYS, 0x8000020) 失败 ⇒ sub_40A4C0 弹错框 aE + op1=1", "sub_40CD10(Engine, hFile, SaveVersion2, set:SaveVersion2) 写状态；其成功分支顺带 sub_40AAE0 刷新系统存档（raw 17687）", "op1 = sub_40CD10 的返回码（0 = 成功）"],
+    "fields_used": ["Engine+120*cur+383220（指令码 5）", "Engine+20764（SAVE 容器对象）", "Engine+382688（引擎版本串）", "Engine+698912（标题串）", "Engine+387924（窗口）"],
+    "evidence": "raw 38287-38331；存档目录拼装 sub_408A40；确认框调用 raw 38310；写状态 sub_40CD10 raw 17676-17707",
+    "notes": "emulator 已实现（handlers/save-slot.ts）。★真正的存档 opcode 是这条，不是 0x1A1（旧注把两者弄反）。宿主无对话框 ⇒ 恒等于玩家点了是（SLOT_GAPS ③）。"
+  },
+  {
+    "addr": "0x42DB10",
+    "raw_name": "sub_42DB10",
+    "semantic_name": "op_load_slot_short_42DB10",
+    "op": "0x19F",
+    "status": "ANALYZED",
+    "purpose": "读档（短版）：op2=槽号 → CreateFileA(GENERIC_READ, OPEN_EXISTING) → sub_410160(Engine, ver2, hFile, ver1, set:SaveVersion, a6=0, a7=0)（不还原字体/额外块）→ 把 pool_int 整体 ENC → op1 = sub_410160 的结果",
+    "sub_behaviors": ["打不开 ⇒ op1=1 直接返回", "sub_410160(...,0,0)：a6=0 跳过带字体的那几个块、a7=0 跳过 sub_45F1B0", "写完后 for(i=0;i<Engine[95738]+1;i++) pool_int[i] = ENC(pool_int[i])（raw 38360-38361）", "op1 = v7 = sub_410160 的返回码（注意与 0x1A1 不同：这条**写** op1）"],
+    "fields_used": ["Engine[95738]（pool_int 计数）", "Engine[95744]（pool_int）", "Engine[97059]（ENC key）", "Engine+174405（版本查询对象）"],
+    "evidence": "raw 38334-38363",
+    "notes": "emulator 已实现（与 0x1A1 同一实现；a6/a7 那两层未单独建模 ⇒ SLOT_GAPS）。语料 0 次出现（src/*.txt 无 i19f）。"
+  },
+  {
+    "addr": "0x42DC70",
+    "raw_name": "sub_42DC70",
+    "semantic_name": "op_read_slot_header_42DC70",
+    "op": "0x1A0",
+    "status": "ANALYZED",
+    "purpose": "读槽头（292 B，不装载状态）：op2=槽号 → CreateFileA RO（打不开 ⇒ op1=1）→ sub_438120 读头：成功 ⇒ op1=0 + op3..op8 = 年/月/日/时/分/秒 + op9 = 游玩秒数；头坏 ⇒ op1=2",
+    "sub_behaviors": ["指令码 19 记进 Engine+120*cur+383220", "CreateFileA(FileName, 0x80000000, 0, 0, 3=OPEN_EXISTING, 0x8000020)", "sub_438120(Engine+20764, hFile, Engine+382688, Engine+698912, v5) 读 292 字节头到栈上 v5[66]", "成功：sub_42B4B0 依次写 op3..op8 = v6/v7/v8/v9/v10/v11（6 个 u16，★第三个是 +0x116 ⇒ 跳过头里 +268 的 wDayOfWeek）、op9 = v12（+0x120 的 i32 = 游玩秒数）、op1=0", "失败：op1=2"],
+    "fields_used": ["Engine+20764（SAVE 容器）", "Engine+382688（引擎版本串）", "Engine+698912（标题串）", "Engine+120*cur+383220"],
+    "evidence": "raw 38365-38404；读头 sub_438120 raw 45106-45149",
+    "notes": "emulator 已实现（handlers/save-slot.ts，字段偏移 264/266/270/272/274/276/280 与真槽 E4 逐项对齐）。"
+  },
+  {
+    "addr": "0x42DFC0",
+    "raw_name": "sub_42DFC0",
+    "semantic_name": "op_delete_slot_42DFC0",
+    "op": "0x1AB",
+    "status": "ANALYZED",
+    "purpose": "删槽：DeleteFileA(SAVE%2.2d.DAT) 失败 ⇒ op1=1；DeleteFileA(SAVE%2.2d.STH) 失败 ⇒ op1=2；都成功 ⇒ 0",
+    "sub_behaviors": ["指令码 5 记进 Engine+30*Engine[95776]+95805", "v4 = !DeleteFileA(DAT)", "if (!DeleteFileA(STH)) v4 = 2", "op1 = v4"],
+    "fields_used": ["Engine+30*Engine[95776]+95805", "Engine[95776]（当前存档页/槽页索引）"],
+    "evidence": "raw 38463-38483；语料 1 处",
+    "notes": "emulator 已实现；宿主层删槽只删 overlay（arch/nodeFileSource.ts），base 那份不动。"
+  },
+  {
+    "addr": "0x42E0A0",
+    "raw_name": "sub_42E0A0",
+    "semantic_name": "op_copy_slot_42E0A0",
+    "op": "0x1AC",
+    "status": "ANALYZED",
+    "purpose": "复制槽（op2 → op3）：CopyFileA(DAT) 失败 ⇒ op1=1；CopyFileA(STH) 失败 ⇒ op1=2；都成功 ⇒ 0",
+    "sub_behaviors": ["指令码 7", "ExistingFileName = %s\\SAVE%2.2d.DAT（op2）、NewFileName = 同模板（op3）", "v5 = !CopyFileA(DAT, DAT, 0)", "STH 同模板；if (!CopyFileA(STH, STH, 0)) v5 = 2（★第二份失败是 2 不是 1）", "op1 = v5"],
+    "fields_used": ["Engine+30*Engine[95776]+95805", "Engine[95776]"],
+    "evidence": "raw 38486-38513；语料 2 处",
+    "notes": "emulator 已实现（结果码 0/1/2 与引擎逐字对齐，守卫 test/save-slot.test.ts 覆盖只第二份失败的 2）。"
+  },
+  {
+    "addr": "0x42E1F0",
+    "raw_name": "sub_42E1F0",
+    "semantic_name": "op_write_slot_thumb_42E1F0",
+    "op": "0x1AE",
+    "status": "ANALYZED",
+    "purpose": "写 .STH（槽状态块）：op2=槽号、op3=块选择子 → CreateFileA(SAVE%2.2d.STH, CREATE_ALWAYS) 失败 ⇒ op1=1；内容 = Engine+1978 容器序列化（Engine[166964]==1 时走截图分支）失败 ⇒ 2、成功 ⇒ 0",
+    "sub_behaviors": ["CreateFileA(FileName, 0x40000000, 0, 0, 2, 0x8000020)", "Engine[166964]==1：CloseHandle 后 sub_4A5260(Engine+322832, FileName, op3)（截图/图像分支）", "否则 sub_43BF20(Engine+1978, op3, handle) 序列化容器（Engine+1978 起 = 1978*4 字节偏移的块容器）", "op1 = 0 / 2（打开失败恒 1）"],
+    "fields_used": "[\"Engine+7912（`_this + 1978` dword 偏移 = 字节 7912：状态块容器）\",\"Engine[166964]（截图分支开关）\",\"Engine+322832（`_this + 80708` dword 偏移：截图对象）\"]",
+    "evidence": "raw 38515-38550；语料 337 处（与 0x19E 配对）",
+    "notes": "emulator 只做不透明往返（写自描述小块，能读回来；内容布局未解析 ⇒ SLOT_GAPS ④）。★偏移写法：raw 里 _this + 1978/_this + 80708 是 **dword 索引**（_this 为 _DWORD*）⇒ 字节 7912 / 322832。"
+  },
+  {
+    "addr": "0x42E320",
+    "raw_name": "sub_42E320",
+    "semantic_name": "op_read_slot_thumb_42E320",
+    "op": "0x1AF",
+    "status": "ANALYZED",
+    "purpose": "读 .STH：CreateFileA(SAVE%2.2d.STH, GENERIC_READ, OPEN_EXISTING) 失败 ⇒ op1=1；sub_40BF20(Engine+1978, op3, -1, handle, size) 反序列化失败 ⇒ 2、成功 ⇒ 0",
+    "sub_behaviors": ["Engine[166964]==1：sub_49E9D0(Engine+322832, handle, op3, 0, 0)", "否则 GetFileSize + sub_40BF20(Engine+1978, op3, -1, handle, size)", "op1 = 0 / 2"],
+    "fields_used": "[\"Engine+7912（`_this + 1978` dword 偏移：状态块容器）\",\"Engine[166964]（截图分支开关）\",\"Engine+322832（`_this + 80708` dword 偏移：截图对象）\"]",
+    "evidence": "raw 38553-38594；语料 1 处",
+    "notes": "emulator 只做不透明往返（校验 4 字节长度前缀即可 ⇒ SLOT_GAPS ④）。偏移同 0x1AE：_this + 1978 是 dword 索引 = 字节 7912。"
+  },
+  {
+    "addr": "0x42D830",
+    "raw_name": "sub_42D830",
+    "semantic_name": "op_load_slot_by_path_42D830",
+    "op": "0x190",
+    "status": "ANALYZED",
+    "purpose": "读档（任意路径版）：op2 → sub_454FA0(Engine+170023, op2) 拼路径 → CreateFileA RO（打不开 ⇒ op1=1）→ sub_410160(...,a6=1,a7=1) 全量装载；成功路径不写 op1",
+    "sub_behaviors": ["路径来自 sub_454FA0(Engine+680092 相关路径构建器, op2)，不是 SAVE%%2.2d.DAT 模板", "sub_410160(...,1,1) 与 0x1A1 同一内核", "成功 ⇒ return CloseHandle(FileA)（★不写 op1）"],
+    "fields_used": ["Engine+170023（路径构建对象）", "Engine+174405（版本查询）"],
+    "evidence": "raw 38243-38264；语料 0 次出现",
+    "notes": "emulator 未实现（语料 0 次；只实现槽版 0x1A1）。"
+  },
+  {
+    "addr": "0x438120",
+    "raw_name": "sub_438120",
+    "semantic_name": "slot_read_header_438120",
+    "status": "ANALYZED",
+    "purpose": "读槽/存档的 292 字节头：ReadFile 满 292 → 校验魔数（S4SD 或 S3SD，按 Engine+698904 字节决定）与引擎版本串（strcmp）→ 成功返 1 并取走 +280 的 i32（容器 [260]）；失败返 0",
+    "sub_behaviors": "[\"ReadFile(hFile, buf, 292)；不足 292 ⇒ 0\",\"魔数按 dword_55E1BC+698904 的两个字节二选一（S4SD 或 S3SD）\",\"版本串 strcmp((char*)&Buffer[2] = 头 +4, a4 = Engine+382688)\",\"成功 ⇒ qmemcpy(a5, Buffer, 292)：**把整份头交给调用方**（0x1A0 用栈上 v5[66]，sub_410160 用 v99），失败 ⇒ sub_4034C0 报错串 + 返 0\"]",
+    "fields_used": "[\"（无 _this 字段写入：头落在调用方缓冲）\"]",
+    "evidence": "raw 45106-45149",
+    "notes": "emulator 对应 parseSlotHeader（src/vm/saveSlot.ts）：ReadFile 292 + 魔数 S4SD/S3SD + 版本 strcmp + +264/266/270/272/274/276/280 字段，E4 用 47 个真槽逐项对齐。★_this[260] = 头 +280 不在本函数里，而在容器载荷读侧 sub_437980（raw 45085）。"
+  },
+  {
+    "addr": "0x4380F0",
+    "raw_name": "sub_4380F0",
+    "semantic_name": "save_container_playtime_4380F0",
+    "status": "ANALYZED",
+    "purpose": "存档容器的游玩秒数记账：[259] = [260]（上一份存档的 +280）、[258] = timeGetTime()/1000（本次会话起点）",
+    "sub_behaviors": ["_this[259] = _this[260]", "_this[258] = timeGetTime() / 1000（274877907 幻数除法）", "写侧随后算 _this[1036]-_this[1032]+timeGetTime()/1000 填头 +280（raw 44812）"],
+    "fields_used": ["Container+1032（= [258] 会话起点秒）", "Container+1036（= [259] 已累计秒）", "Container+1040（= [260] 文件里上一份 +280）"],
+    "evidence": "raw 45094-45103；配合 sub_437980 raw 45085（载荷读侧把 +280 存进容器 [260]）与 raw 44812（写头时算 +280）",
+    "notes": "emulator：Engine.playSeconds（src/frame/loop.ts 按帧累加；读引擎格式槽时用头 +280 接上）。"
+  },
+  {
+    "addr": "0x410160",
+    "raw_name": "sub_410160",
+    "semantic_name": "load_state_from_file_410160",
+    "status": "PARTIAL",
+    "purpose": "从已打开的存档文件装载整份游戏状态（0x1A1/0x19F/0x190 的装载内核）：读 292 头（sub_438120）+ 载荷（sub_437980）→ 按 set:SaveVersion1(a4) 分支把各块搬回 Engine（池/帧栈/场景/字符串块…）→ a6 控制带字体的块、a7 控制 sub_45F1B0（额外块/图像）",
+    "sub_behaviors": ["sub_438120(Engine+20764, hFile, Engine+382688, Engine+698912, buf)：失败返 -1", "v8 = 载荷 dword 数（a4==2/3 时 v99[60]/4 + 1）；operator new[](4*v8) + sub_437980 读载荷", "a6 != 0 时才做带字体的那几块（raw 19462 / 19499 / 19651）", "a7 && a4 >= 2 ⇒ sub_45F1B0(Engine+85296, hFile)（额外块）", "a4==1：逐项 ENC 着搬进 pool_int（raw 19488-19490）；a4==2/3：直接 memcpy（raw 19624 / 19747）"],
+    "fields_used": ["Engine+20764（SAVE 容器）", "Engine+382976（pool_int 基址 = Engine[95744]）", "Engine+382952/382956/382960/382964/382968/382972（各池计数）", "Engine+388236（ENC key）", "Engine+85296（额外块对象）"],
+    "evidence": "raw 19276-19850（函数体跨越约 570 行）",
+    "notes": "emulator 不解析引擎槽载荷（SLOT_GAPS ①）：只读头 + 两张表（本工程格式）+ 游玩秒数。载荷块布局的完整还原是后续工作。"
+  },
+  {
+    "addr": "0x40CD10",
+    "raw_name": "sub_40CD10",
+    "semantic_name": "save_state_to_file_40CD10",
+    "status": "PARTIAL",
+    "purpose": "把整份游戏状态写进已打开的存档文件（0x19E 的写入内核）：按 set:SaveVersion1/2 估算载荷大小 → 序列化各块（池/帧栈/场景/字符串…）→ sub_437480 写容器（头 + 块 + 载荷 + 双 CRC）→ 成功后 sub_457CE0 + sub_40AAE0 刷新系统存档",
+    "sub_behaviors": ["switch(a3 = SaveVersion1)：a3==1 按 a4(10/20) 估大小；a3==2 用 Engine[166963]（当前帧，见 0x1AD）拼各计数", "sub_437480(Engine+20764, hFile, Engine+95672, Engine+698912, buf, v118, a3, a4) 写容器（★a3/a4 就是头 +284 format 与 +288 aux）", "成功 ⇒ sub_457CE0(Engine+85296, hFile) + sub_40AAE0(Engine) 写 SAVE.DAT/RT.DAT（raw 17686-17687）", "失败 ⇒ sub_40A4C0 弹错框 aE，返回 2/4"],
+    "fields_used": ["Engine+166963（0x1AD 记的当前帧）", "Engine+20764（SAVE 容器）", "Engine+698912（标题串）", "Engine+96981（窗口）"],
+    "evidence": "raw 16876-17707（约 830 行）；写容器 sub_437480 raw 44685-…；系统存档刷新 raw 17687",
+    "notes": "emulator 用自己的 container（format 0 明文 + 尾块状态）写槽，不还原引擎载荷布局（SLOT_GAPS ①）；但保留了\"存槽也会刷新系统存档\"这条语义（0x19E handler 不动 SAVE.DAT，因为本工程设置本来就走 overlay 的 SAVE.DAT 写入时机）。"
+  },
+  {
+    "addr": "0x4310D0",
+    "raw_name": "sub_4310D0",
+    "semantic_name": "op_read_mouse_hwheel_4310D0",
+    "op": "0x2E5",
+    "status": "ANALYZED",
+    "purpose": "读水平滚轮增量（一次性消费）→ op1：v2 = Engine[1950]；Engine[1950] = 0；writeIntOperand(1, v2)",
+    "sub_behaviors": ["指令码 3 记进 Engine+30*Engine[95776]+95805", "取 Engine[1950]（byte 7800）后立即清零", "op1 = 该值"],
+    "fields_used": ["Engine+7800（水平滚轮累加器；WndProc case 0x20E 累加）"],
+    "evidence": "raw 40342-40350；累加侧 raw 141585-141611（WM_MOUSEHWHEEL，仅 Engine+699204 & 0x90100000 == 0 时累加）；语料 src/SAVE.txt:205/304",
+    "notes": "emulator 已实现（handlers/input.ts 的 op_read_mouse_hwheel + InputManager.consumeHWheelDelta/addHWheel；渲染侧 wheel 事件把 deltaX 灌进水平累加器）。与 0x10D（竖直，Engine[1949]/byte 7796）是两个独立累加器 —— 真脚本同一次轮询里两条都读，跳过 0x2E5 会让列表横向翻页失效。"
+  },
+  {
+    "addr": "0x43E9F0",
+    "raw_name": "sub_43E9F0",
+    "semantic_name": "ddReadBmp_43E9F0",
+    "status": "PARTIAL",
+    "purpose": "把 BMP 文件读进指定槽的 dd 表面（读侧 0x1AF 的真正解码器）：先校验魔数 19778(=BM)，再读 DIB 头与像素",
+    "sub_behaviors": ["operator new(0x540) 造 dd 对象（sub_403630），sub_4036B0 读 14 字节文件头", "*((_WORD *)v7 + 2) == 19778（= 0x4D42 = BM）才继续，否则报 関数：ddReadBmp エラー 并返回 0", "sub_403700 读 DIB 头 + 像素；宽/高/bpp 取自 DIB 头（不信 bfSize）"],
+    "fields_used": ["（该槽的 dd 表面；由 sub_40BF20 的 a2 选择）"],
+    "evidence": "raw 49926-…；调用链 0x1AF sub_42E320 raw 38582 → sub_40BF20 raw 16076",
+    "notes": "emulator 对应 src/vm/bmp.ts 的 decodeBmp（24bpp BI_RGB、自底向上、行 4 字节对齐、BGR→RGBA）。★引擎写出的 bfSize 比文件小 14 字节（raw 47894），解码不许信它。"
+  },
+  {
+    "addr": "0x43BF20",
+    "raw_name": "sub_43BF20",
+    "semantic_name": "ddWriteBmp_43BF20",
+    "status": "PARTIAL",
+    "purpose": "把指定槽的 dd 表面写成 BMP 文件（写侧 0x1AE 的真正序列化器）：BM + 40 字节 DIB + 24bpp 位、行按 32 bit 对齐",
+    "sub_behaviors": ["*((_WORD *)v5 + 2) = 19778（BM）；offBits = 54", "v8 = 24 * 宽（按 32 bit 向上取整）⇒ 行字节数；像素字节数 = v8/8 * 高", "DIB：v5[5] = 40、v5[6] = 宽、v5[7] = 高、*((_WORD *)v5 + 17) = 24（bpp）", "★bfSize 写的是 像素字节数 + 40（raw 47894）——漏算自己的 14 字节文件头（E4：文件 172,854 而头里 172,840）"],
+    "fields_used": ["该槽的 dd 表面尺寸（v7[1114] 宽 / v7[1115] 高）"],
+    "evidence": "raw 47838-…；调用链 0x1AE sub_42E1F0 raw 38546（DrawMode != 1 分支）",
+    "notes": "emulator 对应 src/vm/bmp.ts 的 encodeBmp（写正确 bfSize；读侧不看该字段）。"
+  },
+  {
+    "addr": "0x40BF20",
+    "raw_name": "sub_40BF20",
+    "semantic_name": "load_surface_from_file_40BF20",
+    "status": "ANALYZED",
+    "purpose": "把已打开的文件读进 a2 号槽的表面：先释放该槽旧对象（sub_40BEB0），再 sub_43E9F0 按 BMP 解码；成功记 a3（-1 = 文件来的）",
+    "sub_behaviors": ["sub_40BEB0(_this, a2)：先清该槽旧表面", "sub_43E9F0((int)_this, a2, a4 /*hFile*/, a5 /*size*/)：BMP 解码进该槽", "成功 ⇒ _this[3*a2 + 2077] = a3、[3*a2 + 2079] = 0、返回 1；失败 ⇒ [3*a2+2077] = -1、返回 0"],
+    "fields_used": ["Container+3*slot+2077/2079（该槽的表面句柄与来源标记）"],
+    "evidence": "raw 16072-16087；调用点 0x1AF raw 38582",
+    "notes": "0x1AF 的 op1 = 0/2 就由本函数的 1/0 决定（打开文件失败另算 1）。"
   }
 
 ]

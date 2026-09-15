@@ -77,9 +77,11 @@ export function attachMouseInput(
     trace(`[input] up btn=${e.button}`);
   });
 
-  // 滚轮：喂给 InputManager.wheelDelta（0x10D 读并清零）。
+  // 滚轮：喂给 InputManager.wheelDelta（0x10D 读并清零）与 hwheelDelta（0x2E5 读并清零）。
   // 方向/单位对齐引擎 WM_MOUSEWHEEL 的 `+= (short)HIWORD(wParam)`：**每格 ±120、上滚正**；
   // 而 DOM WheelEvent.deltaY 在"下滚"时为正 → 取负。
+  // ★水平滚轮（WM_MOUSEHWHEEL = 0x20E，raw 141585-141611）是**另一个累加器**（`Engine[1950]`）：
+  //   方向与 DOM `deltaX` 同向（右滚正），不取负；存档/读档列表（`src/SAVE.txt:204-205`）用它翻页。
   let lastWheelLog = 0;
   window.addEventListener(
     'wheel',
@@ -88,10 +90,15 @@ export function attachMouseInput(
       input.setCursor(x, y, true);
       const d = -e.deltaY;
       input.addWheel(d);
+      if (e.deltaX) input.addHWheel(e.deltaX);
       const now = performance.now();
       if (now - lastWheelLog > WHEEL_LOG_MS) {
         lastWheelLog = now;
-        trace(`[input] wheel raw=${e.deltaY} -> ${d} sum=${input.wheelDelta} (${x},${y})`);
+        trace(
+          `[input] wheel raw=${e.deltaY} -> ${d} sum=${input.wheelDelta}` +
+            (e.deltaX ? ` | hraw=${e.deltaX} hsum=${input.hwheelDelta}` : '') +
+            ` (${x},${y})`,
+        );
       }
     },
     { passive: true },

@@ -14,6 +14,7 @@ import { CanvasSource, Texture } from 'pixi.js';
 import type { Item } from '../drawItem.js';
 import type { DrawStringStyle } from '../../vm/native.js';
 import { drawStringGlyphs } from '../../text/layout.js';
+import { drawAliasedLayer } from '../text/raster.js';
 
 /**
  * **延迟销毁队列**：纹理不能"说销毁就销毁" —— 见 `TextureCache.collectGarbage` 的说明。
@@ -268,16 +269,26 @@ export class TextureCache {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     // 位置/描边副本由 `text/layout.drawStringGlyphs` 决定（引擎语义，可单测）；这里只执行绘制
-    for (const g of drawStringGlyphs(text, x, y, style.size, style.outlineMode, style.outlineDx, style.outlineDy)) {
-      ctx.globalAlpha = g.alpha;
-      ctx.fillStyle = g.role === 'fill' ? style.fill : style.outline;
-      ctx.fillText(g.ch, g.x, g.y);
-    }
-    ctx.globalAlpha = 1;
+    const paint = (c: CanvasRenderingContext2D): void => {
+      c.font = `${style.weight} ${style.size}px "${style.family}"`;
+      c.textAlign = 'left';
+      c.textBaseline = 'top';
+      c.globalAlpha = 1;
+      for (const g of drawStringGlyphs(text, x, y, style.size, style.outlineMode, style.outlineDx, style.outlineDy)) {
+        c.globalAlpha = g.alpha;
+        c.fillStyle = g.role === 'fill' ? style.fill : style.outline;
+        c.fillText(g.ch, g.x, g.y);
+      }
+      c.globalAlpha = 1;
+    };
+    // ★抗锯齿（引擎 `Font+1352`，`tickets/T-0035`）：引擎没开 AA ⇒ 字形画进独立图层 + 阈值化再合成
+    //   （不触碰该槽里已有的像素：`draw-string` 的语义是"往已有表面上叠字"）。
+    if (style.antiAlias) paint(ctx);
+    else drawAliasedLayer(ctx, cs.canvas.width, cs.canvas.height, cs.res, paint);
     ctx.setTransform(1, 0, 0, 1, 0, 0); // 交还单位变换（同一 ctx 后续可能被别的路径用）
     cs.tex.source.update(); // 通知 Pixi 重新上传这张 canvas
     this.log(
-      `drawString slot=${slot} (${x},${y}) @${cs.res}x w=${style.weight} ${JSON.stringify(text)}`,
+      `drawString slot=${slot} (${x},${y}) @${cs.res}x w=${style.weight}${style.antiAlias ? '' : ' no-aa'} ${JSON.stringify(text)}`,
     );
   }
 
@@ -300,6 +311,65 @@ export class TextureCache {
       }）`,
     );
     return { w: 0, h: 0 };
+  }
+
+  /**
+   * **读一个纹理槽的像素**（`0x1AE` 写 `.STH` 缩略图；`tickets/T-0036`）。
+   *
+   * 引擎把该槽的 surface 写成 BMP（`sub_43BF20` raw 47838）；只有 `create-texture` 出来的槽在宿主侧
+   * 是 canvas（见 `create`）⇒ 只有它们能读回像素。返回的 `rgba` 是**顶行在前**（BMP 的自底向上
+   * 由 `vm/bmp.ts` 负责翻转），并已按物理像素（DPR）取值 ⇒ 尺寸就是 `cs.w/h` 的逻辑尺寸。
+   */
+  getSlotPixels(slot: number): { w: number; h: number; rgba: Uint8Array } | null {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) return null;
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return null;
+    const img = ctx.getImageData(0, 0, cs.canvas.width, cs.canvas.height);
+    // 画布是物理像素（逻辑 × res）；这里按逻辑尺寸**逐点取样**（DPR=1 时就是原样），
+    // 保证写出的 BMP 尺寸 = 脚本 `create-texture` 给的那对（引擎的 surface 尺寸同口径）。
+    const w = cs.w;
+    const h = cs.h;
+    const out = new Uint8Array(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      const sy = Math.min(cs.canvas.height - 1, Math.floor(y * cs.res));
+      for (let x = 0; x < w; x++) {
+        const sx = Math.min(cs.canvas.width - 1, Math.floor(x * cs.res));
+        const s = (sy * cs.canvas.width + sx) * 4;
+        const d = (y * w + x) * 4;
+        out[d] = img.data[s]!;
+        out[d + 1] = img.data[s + 1]!;
+        out[d + 2] = img.data[s + 2]!;
+        out[d + 3] = img.data[s + 3]!;
+      }
+    }
+    return { w, h, rgba: out };
+  }
+
+  /**
+   * **把像素写进一个纹理槽**（`0x1AF` 读 `.STH` 缩略图；`tickets/T-0036`）。
+   * 只对 `create-texture` 出来的槽生效（引擎那条链也是"该槽的 surface"）；槽不存在就忽略。
+   */
+  setSlotPixels(slot: number, w: number, h: number, rgba: Uint8Array): void {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) {
+      this.log(`setSlotPixels slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径）`);
+      return;
+    }
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return;
+    const img = new ImageData(new Uint8ClampedArray(rgba), w, h);
+    // 物理像素铺满（DPR 缩放由画布自身的 resolution 承担，与 create-texture/draw-string 同口径）
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    tmp.getContext('2d')?.putImageData(img, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cs.canvas.width, cs.canvas.height);
+    ctx.imageSmoothingEnabled = false; // 缩略图按原尺寸铺（不放大、不插值）
+    ctx.drawImage(tmp, 0, 0, w, h, 0, 0, cs.canvas.width, cs.canvas.height);
+    cs.tex.source.update();
+    this.log(`setSlotPixels slot=${slot} ${w}x${h}（.STH 缩略图 → 纹理槽）`);
   }
 
   /** `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。 */

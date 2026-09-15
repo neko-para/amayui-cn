@@ -231,5 +231,16 @@ export function applyConfigToEngine(
     engineValues.set(b.field, value);
     applied.push({ field: b.field, value, key });
   }
+  // ---- ★两键门：抗锯齿（`tickets/T-0035`）----
+  // 引擎 raw 23649-23656：**只有** `set:EnableAntiFont` 非 0 时才去读 `message:UseAntiFont`，
+  // 并 `sub_4155B0(Font, v)`（raw 22409-22422 写 `Font+1352`）。门不过 ⇒ `Font+1352` 保持初始化值 **0**
+  // （raw 78755）⇒ 引擎走 GDI/dd 的**锯齿字形**路径（`TextOutA` 整串一次，无 AA）。
+  // 字段：`Font+1352` ⇒ `Engine+85296+1352` ⇒ dword 下标 `(85296+1352)/4 = 21662`（与 21664/21665/21667 同族）。
+  // ★另两个键**不参与渲染**、别照抄：`message:AntiFontLevel`（raw 23653 写 `Engine+303796`，该字段全库无读者）、
+  //   `set:Menu_UseAntiFont`（只被配置表读写，渲染侧无读者）。
+  const aaGate = cfg.values.has('set:enableantifont') ? cfgInt(cfg, 'set:enableantifont', 0) !== 0 : false;
+  const aaOn = aaGate && cfgInt(cfg, 'message:useantifont', 0) !== 0;
+  engineValues.set(21662, aaOn ? 1 : 0);
+  applied.push({ field: 21662, value: aaOn ? 1 : 0, key: 'font:antialias' });
   return applied;
 }

@@ -40,6 +40,22 @@ contextBridge.exposeInMainWorld('api', {
   audioStreamBase: 'amayui-audio://audio/',
   /** 已使用文件标志（`SAVE.DAT` 的鉴赏/解锁块；两侧并集）。 */
   readSaveFlags: (): Promise<number[] | null> => ipcRenderer.invoke('read-save-flags'),
+  // ---- 存档槽（`tickets/T-0018`）：`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH` ----
+  /** 读一个存档槽 `SAVE\SAVE%2.2d.DAT` 的整份字节（overlay → base；没有返回 null）。 */
+  readSaveSlot: (slot: number): Promise<Uint8Array | null> => ipcRenderer.invoke('read-save-slot', slot),
+  /** 写一个存档槽（主进程**只写 overlay**）。 */
+  writeSaveSlot: (slot: number, data: Uint8Array): Promise<void> => ipcRenderer.invoke('write-save-slot', slot, data),
+  /** 删槽的 `.DAT` + `.STH`（只删 overlay）。 */
+  deleteSaveSlot: (slot: number): Promise<{ dat: boolean; sth: boolean } | null> =>
+    ipcRenderer.invoke('delete-save-slot', slot),
+  /** 复制槽（源 overlay→base、目标只写 overlay）。 */
+  copySaveSlot: (from: number, to: number): Promise<{ dat: boolean; sth: boolean } | null> =>
+    ipcRenderer.invoke('copy-save-slot', from, to),
+  /** 读槽的 `.STH` 状态块/缩略图字节。 */
+  readSlotThumb: (slot: number): Promise<Uint8Array | null> => ipcRenderer.invoke('read-slot-thumb', slot),
+  /** 写槽的 `.STH`（只写 overlay）。 */
+  writeSlotThumb: (slot: number, data: Uint8Array): Promise<void> =>
+    ipcRenderer.invoke('write-slot-thumb', slot, data),
   /** 音乐表（SYS4INI 尾部：曲号 → 文件 id）；VM 的 0x1D6/0x1D7/0x1D8 与 BGM 解析用它。 */
   musicTable: () => ipcRenderer.invoke('music-table'),
   /** 读内置字体文件字节（`res/fonts/` 下相对路径）。返回 null 表示不存在。 */

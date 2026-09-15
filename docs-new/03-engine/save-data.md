@@ -6,6 +6,8 @@
 > 数据层：能力台账 `save-data-tables-persistence`；函数结论 `sub_40AAE0/sub_40AEE0/sub_438320/sub_438940/
 > sub_437480/sub_437980/sub_436DE0/sub_436E90/sub_436A80/sub_434F60/sub_434FE0/sub_42DF40/sub_433A70`。
 > 守卫：`app/amayui-emulator/test/save-data.test.ts`（含真存档 E4）。
+> **存档槽链路**（`SAVE%2.2d.DAT` + `.STH`，opcode `0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF`）见 §7：
+> 真源 `src/vm/saveSlot.ts` + `src/vm/handlers/save-slot.ts`，守卫 `app/amayui-emulator/test/save-slot.test.ts`。
 
 ## 0. 一句话结论
 
@@ -68,7 +70,9 @@ CHECKCONFIG      i2de 字体名→下标（装不上 ⇒ 回退默认并重新 s
 偏移 8    0xE8 字节 标题串（游戏名，装载时 strcmp 校验）
 偏移 240    4 字节  载荷的**逻辑字节数**（未压缩口径）
 偏移 264   16 字节  SYSTEMTIME(local)（存档时间）
-偏移 280    4 字节  stamp（timeGetTime()/1000 派生的单调时刻）
+偏移 280    4 字节  累计**游玩秒数**（i32；写侧 raw 44812 `v24 = [1036] - [1032] + timeGetTime()/1000`
+                     = "上次存档里的 +280" − "本次会话开始时刻(s)" + "现在(s)"；装载时 raw 45085 把 +280
+                     存进容器 [260]、raw 45099 令 [259] = [260]、[258] = now）
 偏移 284    4 字节  format：1 = 加密未压缩 / 2 = 加密+压缩 / ≥3 = 再带额外块 + int 块模幂
 偏移 288    4 字节  aux（引擎传的 a8）
 偏移 292   20 字节  [载荷 dword 数 N][CRC1][CRC2][Crypt key1][Crypt key2]
@@ -181,7 +185,7 @@ SAVE.DAT (160,640 B) format=3
 | int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（也不需要：鉴赏进度只要"槽值非 0"） |
 | 扩展包 flag 块（§3.5 的块 B：跨包线性下标 + 256 项换算表） | ❌ 未解（基础版 BGM/CG 全是本体 id ⇒ 不影响本机实测；布局已记在 §3.5） |
 | `RT.DAT`（ADV 回看状态） | ❌ 未建模 |
-| 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ❌ 未实现（菜单未接） |
+| 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ✅ 已实现（`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x19F` 短读 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH`）；真槽（format 1..3）只读头 + 接游玩秒数，状态主体仍是缺口（§7 + `SLOT_GAPS`）；守卫 `test/save-slot.test.ts` |
 
 **玩家数据怎么落地（overlay）**——引擎的"系统存档目录"里既有存档也有配置，emulator 对它的**一切访问**走同一层：
 
@@ -198,7 +202,56 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 - **看存档内容**：`npm run save:dump`（取系统存档目录的 `SAVE\SAVE.DAT`，按 overlay → base 命中并打印是哪一侧；
   可 `npm run save:dump -- <文件>` 指定某个存档槽）。
 
-## 7. 相关
+## 7. 存档槽链路（`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头…）
+
+存档槽与 `SAVE.DAT` **共用同一个容器**（写 `sub_437480`、读头 `sub_438120`、载荷 `sub_438320`/`sub_438940`），
+但载荷内容不同：`SAVE.DAT` 的载荷是「已使用文件块 + 两张表」，槽的载荷是**引擎自己的整份状态**
+（`sub_410160` 序列化：帧栈 / 全局池 / 场景 / 字体 / 额外块），所以**不能**拿 `SAVE.DAT` 的表布局去解槽。
+
+| opcode | 引擎（raw .c） | 语义 | emulator |
+|---|---|---|---|
+| `0x19E` | sub_42D980 38287-38331 | 存档到槽（已存在且头**读不出**时才弹确认框，选否则 `op1 = 1`） | ✅ `handlers/save-slot.ts` |
+| `0x19F` | sub_42DB10 38334-38363 | 读档（短：`sub_410160(…,0,0)`），**写 op1** | ✅（`a6/a7` 两层未单独建模） |
+| `0x1A0` | sub_42DC70 38365-38404 | 读槽头 292 B：`op1` = 0/1/2、`op3..op8` = 年/月/日/时/分/秒（跳过 `+268` 星期）、`op9` = 游玩秒数 | ✅ |
+| `0x1A1` | sub_42DDE0 38407-38440 | 读档（全量）；★**不写任何操作数** | ✅ |
+| `0x1AB` | sub_42DFC0 38463-38483 | 删槽（`op1`：`.DAT` 失败 1 / `.STH` 失败 2） | ✅ |
+| `0x1AC` | sub_42E0A0 38486-38513 | 复制槽（同上两个结果码） | ✅ |
+| `0x1AE`·`0x1AF` | sub_42E1F0 / sub_42E320 38515-38594 | 写 / 读 `.STH` **缩略图**（op3 = 纹理槽；产物是 320×180 24bpp BMP：写经 `sub_43BF20`、读经 `sub_40BF20`→`sub_43E9F0` ddReadBmp） | ✅ 按 `src/vm/bmp.ts` 真解/真写（`tickets/T-0036`） |
+
+- 路径：`%s\SAVE%2.2d.DAT`（`sub_408A40` 取系统存档目录；`%2.2d` = 精度 2 ⇒ **补 0**，真槽就是 `SAVE00.DAT`）。
+  本工程落到 overlay：`SAVE/SAVE00.DAT` + `SAVE/SAVE00.STH`（`src/vm/saveSlot.ts` 的 `slotRelPath`/`slotThumbRelPath`）。
+- **`0x1A1` 不写操作数**（与 `0x1A0`/`0x19E`/`0x19F` 不同）：`sub_42DDE0` 函数体里没有 `sub_42B4B0`，
+  且调度器 `(*(void (__thiscall **)(int))(_this + 4 * opcode + 675996))(_this)`（raw 21217）**丢弃 C 返回值**
+  ⇒ 脚本给的 `(global-int f7ffd)` 只是占位；"读档成没成"要靠先 `0x1A0` 验头。
+  ★旧注"`0x1A1` = 存档到槽位"是**误**（存档是 `0x19E`）。
+- 装载后引擎还会把 `pool_int`（`_this[95744]`，`_this[95738]+1` 个 dword）**整体 ENC 一遍**
+  （raw 38433-38438 / 38360-38361，`ENC(a) = ROL4(key ^ ROR4(a,7), 21)`、key = `_this[97059]`）
+  ⇒ **运行时池必须是 ENC 态**。emulator 的对应物是 `Engine.globals.int`（存 ENC 值）+ `Engine.key`
+  （`src/vm/operand.ts` 的 `enc`/`dec`）。★"文件里那份池是明文还是已被 ENC 过"按 `set:SaveVersion1` 分支不同
+  （`sub_410160` raw 19488-19490 的 a4==1 分支读时即 ENC、raw 19624/19747 的 a4==2/3 分支直接 memcpy），
+  这一层属于槽载荷的未解部分（`SLOT_GAPS`）；本工程只对齐上面那条不变量。
+- **游玩秒数**（头 `+280`）在装载时被接回：引擎把 `+280` 存进容器 `[260]`、令 `[259] = [260]`、`[258] = now`
+  （raw 45085 / 45099），下次存档写 `[1036] - [1032] + timeGetTime()/1000`（raw 44812）。
+  emulator：`Engine.playSeconds`（`src/frame/loop.ts` 按帧累加；读引擎格式槽时用头的 `+280` 接上）。
+- 语料用量（`src/*.txt`，941 个脚本）：`i19e` 337 / `i1a0` 339 / `i1a1` 335 / `i1ae` 337 / `i1ab` 1 /
+  `i1ac` 2 / `i1af` 1；`i19f`·`i190`·`i0aa`·`i0ab`·`i0ac` **0 次**（`0x190` = "任意路径读档"，本作用不到）。
+  ★列表界面的**横向翻页**另用 `0x2E5`（水平滚轮；`src/SAVE.txt:205/304` 各一次）——它与 `0x10D` 是
+  引擎里**两个独立累加器**，见 [`input-system.md`](./input-system.md) §15。
+- **E3（菜单链路）**：真语料 `SYSTEM4 → LOGO → TITLE →（右上角菜单第 1 项 Load Data）→ SAVE.BIN` 跑通，
+  路径上**零未实现 opcode**，且列表真的经 `FileSource.readSaveSlot` 读了真玩家槽
+  （实测 120 次、槽号去重后覆盖 **0..999** ⇒ 引擎没有"只接受两位槽号"的限制，`%2.2d` 只补位不截断）；
+  该死链路只读不写。守卫 `app/amayui-emulator/test/save-slot-chain.test.ts`（`tickets/T-0018`）。
+- **本工程的槽 = 同一容器 + `format = 0` 明文 payload + 尾块状态**（`src/vm/saveSlot.ts` 的 `SlotStateBlock`：
+  魔数 `AMYS1\n` + JSON，装 `Engine.key` / `cur` / 每帧 `scriptId`+`ip`+返回栈 / 全局池 / 游玩秒数）。
+  这是**私有扩展**：引擎不会读它（真槽没有这一段）⇒ "引擎能读我们的槽"不成立，反过来我们只读引擎槽的头。
+  尾块的定位依赖 §3 那个 `u32`（引擎的 `trailerDwords`，本工程写 0 当"空尾部块"）——读侧必须先吃掉它，
+  否则状态块前面会多 4 个 `00` 字节（`T-0018` 实测踩过）。
+- `SLOT_GAPS`（诚实边界，别当保证）：① 真槽（format 1..3）的状态主体没解析（只接游玩秒数 + 空表）；
+  ② 只还原"当前帧 + 调用栈上的帧"；③ `0x19E` 的覆盖确认框没建模（宿主无对话框 ⇒ 恒等于"点了是"）；
+  ④ `.STH` 已解（320×180 24bpp BMP；`tickets/T-0036`），仍未做的是 DrawMode==1 的截图分支；
+  ⑤ 按名读档族（`0x190`/`0x0AA`/`0x0AB`/`0x0AC`）未实现（语料 0 次）。
+
+## 8. 相关
 
 - 引擎级配置（另一套）：`engine-config-registry-persistence` + `docs-new/03-engine/opcode-table.md` 的
   `0x0C5/0x0C7/0x131/0x141/0x1B5/0x1B8/0x1B9/0x2CC/0x2CD/0x2E6/0x2E7/0x2EA/0x2EB`。

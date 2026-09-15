@@ -89,6 +89,11 @@ export interface DrawStringStyle {
   outlineMode: 0 | 1 | 2 | 3;
   outlineDx: number;
   outlineDy: number;
+  /**
+   * ★抗锯齿（引擎 `Font+1352` = `Engine[21662]`；`tickets/T-0035`）。
+   * `false` = 引擎的 GDI/dd 锯齿字形路径（本机 INI 的实际取值）⇒ 宿主须把边缘阈值化，别用 canvas 的 AA。
+   */
+  antiAlias: boolean;
 }
 
 export interface NativeBridge {
@@ -126,6 +131,22 @@ export interface NativeBridge {
    * 宿主只负责光栅化：用 `style` 把 `text` 画到该槽的表面（保留原有像素，不清底）。
    */
   drawString?(slot: number, x: number, y: number, text: string, style: DrawStringStyle): void;
+  /**
+   * **读一个纹理槽的像素**（`0x1AE` 写 `SAVE%2.2d.STH` 缩略图用；`tickets/T-0036`）。
+   *
+   * 引擎那条链是 `sub_43BF20(Engine+1978, op3, handle)`（raw 47838）= 把该槽的 surface 写成 BMP。
+   * 宿主侧只有"canvas 表面"能读回像素：`create-texture` 出来的槽就是一张 canvas（见 TextureCache）。
+   * 返回 `null` = 该槽没有可读表面（headless、或该槽不是程序化纹理）⇒ 调用方写一个空块。
+   */
+  getSlotPixels?(slot: number): { w: number; h: number; rgba: Uint8Array } | null;
+  /**
+   * **把像素写进一个纹理槽**（`0x1AF` 读 `.STH` 缩略图用；`tickets/T-0036`）。
+   *
+   * 引擎那条链是 `sub_40BF20(Engine+1978, op3, -1, handle, size)`（raw 16072）→
+   * `sub_43E9F0`（raw 49926，ddReadBmp）把 BMP 解进该槽的 dd 表面。宿主把 `rgba`（顶行在前）铺进
+   * 该槽的画布即可；该槽不存在（没先 `create-texture`）⇒ 宿主可忽略（引擎那条 `&&` 门也直接返回）。
+   */
+  setSlotPixels?(slot: number, w: number, h: number, rgba: Uint8Array): void;
   /** 0x1FD（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（无动画窗）。op2/3/4 = sx/sy/sz（**÷100**，`dbl_5201F0`）。
    *  引擎写 `DrawItem+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 work 矩阵）。 */
   setScale?(handle: number, sx: number, sy: number, sz: number): void;

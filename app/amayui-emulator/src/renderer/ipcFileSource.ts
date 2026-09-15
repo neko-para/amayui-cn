@@ -59,6 +59,42 @@ export class IpcFileSource implements FileSource {
     return (await window.api.readSaveFlags?.()) ?? null;
   }
 
+  // ---- 存档槽（`tickets/T-0018`；`0x19E`/`0x1A1`/`0x1A0`/`0x1AB`/`0x1AC`/`0x1AE`/`0x1AF`）----
+  // ★这些方法在旧 preload（未更新）时可能缺失 ⇒ 返回 null/不做事 = 引擎"打不开该槽"的行为
+  //   （脚本会把它当空槽画出来），而不是抛错。
+
+  /** 读一个槽的整份字节（overlay → base；没有返回 null）。 */
+  async readSaveSlot(slot: number): Promise<Uint8Array | null> {
+    const r = await window.api.readSaveSlot?.(slot);
+    return r ? new Uint8Array(r) : null;
+  }
+
+  /** 写一个槽（主进程**只写 overlay**）。 */
+  async writeSaveSlot(slot: number, data: Uint8Array): Promise<void> {
+    await window.api.writeSaveSlot?.(slot, data);
+  }
+
+  /** 删一个槽的 `.DAT` + `.STH`（只删 overlay）。 */
+  async deleteSaveSlot(slot: number): Promise<{ dat: boolean; sth: boolean }> {
+    return (await window.api.deleteSaveSlot?.(slot)) ?? { dat: false, sth: false };
+  }
+
+  /** 复制槽（源 overlay→base、目标只写 overlay）。 */
+  async copySaveSlot(from: number, to: number): Promise<{ dat: boolean; sth: boolean }> {
+    return (await window.api.copySaveSlot?.(from, to)) ?? { dat: false, sth: false };
+  }
+
+  /** 读槽的 `.STH`（状态块/缩略图）。 */
+  async readSlotThumb(slot: number): Promise<Uint8Array | null> {
+    const r = await window.api.readSlotThumb?.(slot);
+    return r ? new Uint8Array(r) : null;
+  }
+
+  /** 写槽的 `.STH`（只写 overlay）。 */
+  async writeSlotThumb(slot: number, data: Uint8Array): Promise<void> {
+    await window.api.writeSlotThumb?.(slot, data);
+  }
+
   async dispose(): Promise<void> {
     /* IPC 无句柄需清理，保持接口对齐。 */
   }

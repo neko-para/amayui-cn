@@ -1,0 +1,82 @@
+{
+  "title": "存档界面右侧缩略图不显示：0x1AF 只校验长度、没把 .STH 里的 BMP 装进 op3 指定的纹理槽",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "用户实测（2026-09）：存档列表右侧应该有一张缩略图，现在出不来。链路真源：src/SAVE.txt:2086-2095 先 `create-texture (local 21c6) 140 b4 0`（320x180），再 `i1af (local 12) (local 219) (local 21c6)`（op1=状态、op2=槽号、**op3=纹理槽**），`eq (local 21c6) (local 12) 0` + `jcc` 判成功后才 `draw-texture ... 0 0 140 b4 452`。引擎侧 `0x1AF`（sub_42E320 raw 38553-38594）在 DrawMode!=1 时走 `sub_40BF20(Engine+1978, op3, -1, hFile, size)`（raw 16072）→ `sub_43E9F0`（raw 49926，函数里报错串写的就是 ddReadBmp）**按 BMP 读**：先校验魔数 `19778`（= 0x4D42 = \"BM\"）再 ddReadBmp 进该槽的 dd 表面。而 emulator 的 `op_slot_thumb_read` 只读 4 字节长度前缀校验就返回 —— **完全忽略 op3 与图像内容** ⇒ 脚本拿到 op1=0 但纹理槽仍是空的 ⇒ 右侧缩略图永远不显示。旁证（E4）：本机 47 个 `SAVE??.STH` **全部** 172,854 字节 = 320x180x3（172,800）+ 54 字节 BMP 头，文件头就是 `42 4d`（BM）、DIB 40、宽 320、高 180、bpp 24。",
+  "acceptance": [
+    "0x1AF 按引擎语义**把 .STH 解出的像素写进 op3 指定的纹理槽**：识别 BMP（24bpp、自底向上、行 4 字节对齐、BGR→RGBA），op1 仍为 0/1/2（0 成功 / 1 打不开 / 2 解不出）",
+    "0x1AE 反向：把 op3 纹理槽的内容编码为 BMP 写进 .STH（本工程自己存的槽也带真缩略图），与 0x1AF 往返一致",
+    "守卫：① 合成引擎上 0x1AE→0x1AF 往返断言像素逐点一致 + 尺寸 320x180；② E4：本机真 `SAVE00.STH` 经解码头/像素断言（宽度 320/高度 180/BMP 魔数/像素非常量）；③ E3：真语料 Load Data 列表里 0x1AF 命中时，纹理槽被填（像素非空）",
+    "记录结论：functions.json（0x1AF/0x1AE 的 op3 语义与 sub_40BF20/sub_43E9F0/sub_43BF20 条目）、opcode-table 两行订正、capabilities 的 save-slot-chain 更新"
+  ],
+  "id": "T-0036",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-14",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：evidence, links"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-14",
+      "what": "open → done —— .STH = 320x180 BMP，op3 = 纹理槽；0x1AE/0x1AF 真解真写；守卫 test/save-thumb.test.ts + E3 链路"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "i1af (local-int 12) (local-int 219) (local-int 21c6)",
+      "note": "★op3 = 纹理槽：先 create-texture 320x180，i1af 装图，判 op1==0 后 draw-texture 到界面"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/bmp.ts",
+      "anchor": "export function decodeBmp",
+      "note": "★新增：.STH = 24bpp BMP 解码/编码（不信 bfSize；E4 真槽 172,854 B）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "op_slot_thumb_read",
+      "note": "0x1AF 把解出的像素写进 op3 纹理槽（旧实现忽略 op3）"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-thumb.test.ts",
+      "anchor": "decodeBmp",
+      "note": "★守卫（6 条）：编解码边界 / E4 真槽 / op3 语义 / 结果码 / 往返"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
+      "anchor": "列表里的缩略图",
+      "note": "★E3：真语料进列表后确有 320x180 缩略图装进纹理槽"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "ddReadBmp",
+      "note": "引擎真源：sub_43E9F0（raw 49926）校验 19778(=BM) 后 ddReadBmp 进该槽表面；0x1AF 经 sub_40BF20（raw 16072）调用"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "save-slot-chain"
+    ],
+    "tickets": [
+      "T-0018"
+    ]
+  },
+  "tests": [
+    "app/amayui-emulator/test/save-thumb.test.ts",
+    "app/amayui-emulator/test/save-slot.test.ts",
+    "app/amayui-emulator/test/save-slot-chain.test.ts"
+  ]
+}

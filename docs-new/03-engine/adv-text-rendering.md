@@ -441,9 +441,19 @@ if ( **(BYTE **)ArgList )                       // 83571：还有字符
 | P1 | `0x83` `0x1C5` `0x2C2` `0x2F3` `0x2DE` | no-op | **回写操作数** ⇒ 静默错误 |
 
 **已知存在但按用户口径「只记录、不追效果」的字体内部配置**（第 7 项 R7b）：
-抗锯齿开关 `Font+1352`（随包 `set:EnableAntiFont` 缺失 ⇒ 引擎实为关闭）、AA 灰度级 `+218500`、
-字形度量探针（参考字「激」`0x8C83` → `+201704`）、内存字形缓存（hashtable `+3444` / 位图 `+3524`/`+3528` / 计数 `+19908`）、
-`lfWidth = lfHeight/2` 的具体取值与 `+201680` 度量模式分支。这些**不影响可读性**，重写时用浏览器字体光栅器即可。
+AA 灰度级 `+218500`、字形度量探针（参考字「激」`0x8C83` → `+201704`）、内存字形缓存
+（hashtable `+3444` / 位图 `+3524`/`+3528` / 计数 `+19908`）、`lfWidth = lfHeight/2` 的具体取值与
+`+201680` 度量模式分支。这些**不影响可读性**，重写时用浏览器字体光栅器即可。
+
+> ★**订正（2026-09，`tickets/T-0035`）：抗锯齿开关 `Font+1352` 不属于上面那一类 —— 它是看得见的。**
+> 用户实测"文字比引擎粗、白色更亮"，根因就是宿主 canvas 永远开 AA（灰边让笔画发胖、白字边缘发亮），
+> 而引擎在本机（base INI 无 `[set]` 段、overlay `EnableAntiFont=0`）走的是 `TextOutA` 整串**锯齿**字形。
+> 现在 emulator 已按引擎的两键门实现：`applyConfigToEngine` 里 `set:EnableAntiFont` 门控
+> `message:UseAntiFont` → 字段 `21662`（= `Font+1352`）→ `FontSpec.antiAlias`，渲染侧
+> `renderer/text/raster.ts` 的 `thresholdAlpha` 在关闭时把边缘 alpha 阈值化（消息窗与 `0x204` 直绘两条路径
+> 同口径）。台账：`text-aa-config-gate`；守卫 `test/text-aa.test.ts`。
+> ★`message:AntiFontLevel`（raw 23653 → `Engine+303796`）与 `set:Menu_UseAntiFont` 在渲染侧**没有读者**
+> ⇒ 是死写，别当"AA 档位"照抄。
 
 **第二层（指令枚举不出来的常态行为）**：本次新增台账条目见
 `analysis/engine-capabilities.json` 的 `msgwin-*`/`text-*` 系列（reveal 泵、DrawMode 分流、字体重建级联、

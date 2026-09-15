@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 109,
-    "modeled-verified": 31,
+    "total": 113,
+    "modeled-verified": 35,
     "modeled-unverified": 5,
     "partial": 24,
     "absent": 24,
@@ -2635,7 +2635,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/save-data.test.ts",
-        "note": "实现：src/vm/saveData.ts（头 + 20 字节块 + 表结构；两种 CRC 按引擎 sub_436D50/sub_436D00 逐字实现）+ src/vm/crc32.ts + src/vm/lzss.ts（AGE LZSS）+ Engine.onSaveDataChanged → FileSource.writeSaveData。玩家数据落在 overlay 层（src/arch/systemPaths.ts + src/arch/overlay.ts）：base = 真游戏的系统存档目录，overlay = 同级的 ….overlay，读 overlay → base、写只写 overlay ⇒ 既能继承玩家真存档，又永不覆盖真存档。E3 两条分支都在真语料上验证：有存档 ⇒ LOADCONFIG（值恢复）；无存档 ⇒ INITCONFIG（默认值 + global 5 = 1 登记）。★2026-09 修（tickets/T-0030）：**宿主接线曾把这条能力整段跳过** —— renderer/app/configBoot.ts 的 loadEngineConfig 在读不到 SYS4REG.INI 时提前 return，而 SAVE.DAT 的装载与回写接线写在该 return 之后 ⇒ 首次运行（overlay 两份文件都没有）时表不装载、回写不挂：SYSTEM4.txt:71 load-int (global 5) 恒为 0 ⇒ 每次启动都 INITCONFIG+INITCHARM 覆盖玩家数据，且 save-int 改动永不落盘（死循环）。现拆成 loadConfigIni + attachSaveDataPersistence（后者无条件执行，io.write 可注入），守卫 test/save-data.test.ts 增加『无 INI 也要装载+回写』一例。★仍未做：int 块的逐元素模幂混淆（sub_499650）、存档槽 SAVEnn.DAT / RT.DAT（overlay 已就位，接上即可）。"
+        "note": "实现：src/vm/saveData.ts（头 + 20 字节块 + 表结构；两种 CRC 按引擎 sub_436D50/sub_436D00 逐字实现）+ src/vm/crc32.ts + src/vm/lzss.ts（AGE LZSS）+ Engine.onSaveDataChanged → FileSource.writeSaveData。玩家数据落在 overlay 层（src/arch/systemPaths.ts + src/arch/overlay.ts）：base = 真游戏的系统存档目录，overlay = 同级的 ….overlay，读 overlay → base、写只写 overlay ⇒ 既能继承玩家真存档，又永不覆盖真存档。E3 两条分支都在真语料上验证：有存档 ⇒ LOADCONFIG（值恢复）；无存档 ⇒ INITCONFIG（默认值 + global 5 = 1 登记）。★2026-09 修（tickets/T-0030）：宿主接线曾把这条能力整段跳过（loadEngineConfig 在读不到 SYS4REG.INI 时提前 return，SAVE.DAT 的装载与回写接线在其后）⇒ 首次运行表不装载、回写不挂；现拆成 loadConfigIni + attachSaveDataPersistence（后者无条件执行，io.write 可注入），守卫 test/save-data.test.ts 增加「无 INI 也要装载+回写」一例。★仍未做：int 块的逐元素模幂混淆（sub_499650）、RT.DAT（ADV 续玩状态）。存档槽 SAVEnn.DAT 在 2026-09 已接上（见 save-slot-chain 条目）。"
       }
     },
     {
@@ -3169,6 +3169,135 @@
         "evidence": "E3",
         "guard": "test/adv-msgwin.test.ts",
         "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。\n★2026-09（`tickets/T-0033`，用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）：**逐字期间有一个专门的输入出口**。文本泵 `sub_409400` 的第二半（raw 13931-13946）在「没有 0x300 闸门槽活跃」时处理**当前窗**（`Engine[489484]`）：消费刷取掩码后，若 `mask & 0x10`（**只认左键**；等待泵才是 `0x50`）或滚轮键位命中（`message:AdvanceMesOnWheel & 1`）或滚轮累加器 `Engine[7796] < 0`（读后清）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20` 到整页贴完**、把掩码清 0（这次点击被消费）；**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。下一次调用见 `388212` 时再自旋一次，并在 `Engine[667856] == 1`（`set:DrawMode`）时清等待门计时器 + 置强制冻结（raw 13910-13915）。⇒ emulator：`Engine.serviceRevealAdvanceInput()`（帧驱动在 `textRevealing` 分支里、`serviceTextReveal` 之前调用）；验收 = 点击／点击／点击 ⇒ 贴完／下一句／跳过下一句的逐字。守卫：`test/adv-msgwin.test.ts`（逐字期间左键 ⇒ 整页 + 不推进 + 消费 + 不清 bit30；右键／上滚不生效）、`test/frame-loop.test.ts`（驱动层：点击帧不派发、后续帧不得攒成推进）。E3（真实语料）：点击后 1 帧 `shown` 0 → 52/52、ip／pages 不变、bit30 保持。\n"
+      }
+    },
+    {
+      "id": "save-slot-chain",
+      "subsystem": "资源",
+      "name": "存档槽链路：SAVE%2.2d.DAT（0x19E 存 / 0x1A1 读 / 0x1A0 读头 / 0x19F 短读 / 0x1AB 删 / 0x1AC 复制）与 .STH 状态块（0x1AE/0x1AF）",
+      "trigger": "脚本在存档/读档界面（SAVE.BIN，1201 行）里调：存档 0x19E（sub_42D980）→ CreateFileA(CREATE_ALWAYS) + sub_40CD10 写状态；读档 0x1A1（sub_42DDE0）或短读 0x19F（sub_42DB10）→ sub_410160 装载；列表显示前逐个 0x1A0（sub_42DC70）读 292 字节头（年/月/日/时/分/秒 + 游玩秒数）；存档后立刻 0x1AE 写 .STH 状态块。路径 = %s\\SAVE%2.2d.DAT（sub_408A40 取系统存档目录；%2.2d 精度 2 ⇒ 补 0）",
+      "engine": {
+        "fns": [
+          "sub_42D980",
+          "sub_42DB10",
+          "sub_42DC70",
+          "sub_42DDE0",
+          "sub_42DFC0",
+          "sub_42E0A0",
+          "sub_42E1F0",
+          "sub_42E320",
+          "sub_42D830",
+          "sub_438120",
+          "sub_4380F0",
+          "sub_410160",
+          "sub_40CD10",
+          "sub_437980",
+          "sub_437480"
+        ],
+        "raw": "38243-38594"
+      },
+      "reads": [
+        "Engine+20764（SAVE 容器：+1032 会话起点秒 / +1036 累计秒 / +1040 文件里的 +280）",
+        "Engine+698904（魔数分支 S4SD/S3SD）",
+        "Engine+382688（引擎版本串，头 +4）",
+        "Engine+698912（标题串，头 +8）",
+        "头 +240 载荷逻辑字节数 / +264 SYSTEMTIME / +280 游玩秒数 / +284 format",
+        "Engine[95744]（pool_int）/ Engine[95738]（计数）/ Engine[97059]（ENC key）",
+        "Engine[166964]（.STH 截图分支开关）/ Engine+7912（.STH 状态块容器）"
+      ],
+      "whySilent": "这条链缺失时**不报错、只是读档界面空空**：0x1A0 打不开文件就返回 op1=1、脚本把它当成「空槽」照常画列表；0x1A1 打不开只 return 1（连 op1 都不写，调度器丢弃返回值）⇒ 玩家看到的是「点了读档没反应」。更隐蔽的是**游玩秒数**：头 +280 不接的话读档后计时从 0 重新开始，游戏不报任何错。反过来，写侧只碰 overlay（本工程）时真存档不会被覆盖；若真去写 base，玩家丢档也没有任何提示。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/save-slot-chain.test.ts",
+        "note": "实现（tickets/T-0018）：src/vm/saveSlot.ts（槽路径/292 字节头解析/本工程状态块 SlotStateBlock）+ src/vm/handlers/save-slot.ts（8 条 opcode）+ arch/fileSource.ts·nodeFileSource.ts 的 readSaveSlot/writeSaveSlot/deleteSaveSlot/copySaveSlot/readSlotThumb/writeSlotThumb（读 overlay→base、写只写 overlay）。本工程的槽 = 同一容器 + format 0 明文 payload + 尾块状态（AMYS1\\n + JSON：key/cur/帧 ip+返回栈/全局池/游玩秒数）⇒ 引擎读不了我们的槽，我们只读引擎槽的头 + 那份头的 +280。E2 守卫 test/save-slot.test.ts（10 条）：E4 真槽 SAVE00.DAT 的头逐字段对齐文件 mtime + format=3；0x1A0 往返与 1/2 两个错误码；0x19E→0x1A1 往返（load-int/load-string 取回值、全局池 DEC、ip、游玩秒数）；0x1AB/0x1AC 的 0/1/2 结果码；0x1AE/0x1AF .STH 往返；NodeFileSource 只写 overlay（真槽字节不变）；槽路径 %2.2d 补 0。★残留缺口（SLOT_GAPS）：真槽（format 1..3）状态主体未解析、只还原当前帧+调用栈上的帧、0x19E 覆盖确认框未建模、.STH 只不透明往返、按名读档族（0x190/0x0AA/0x0AB/0x0AC）未实现（语料 0 次）。 ★E3（tickets/T-0018 收尾）：真语料走 TITLE → 右上角菜单第 1 项 Load Data → SAVE.BIN 列表（test/save-slot-chain.test.ts）—— 路径上**零未实现 opcode**、真的经 fileSource 读了 120 次真槽（去重后 0..999 全覆盖）、且**没有任何写/删/复制**（列表界面只读）。这一步顺手补上了 0x2E5（水平滚轮，见台账 input-wheel-two-accumulators）。 ★2026-09（tickets/T-0036）：`.STH` 不再是\"不透明往返\" —— 它就是 **320x180 24bpp BMP**，0x1AE/0x1AF 的 op3 是**纹理槽**（写/读该槽的位图）；解码见 src/vm/bmp.ts，细节与守卫见台账 save-slot-thumbnail-bmp。"
+      }
+    },
+    {
+      "id": "input-wheel-two-accumulators",
+      "subsystem": "输入",
+      "name": "两个滚轮累加器：竖直（WM_MOUSEWHEEL）与水平（WM_MOUSEHWHEEL）各自独立、各自一次性消费",
+      "trigger": "WndProc 收到 0x20A 时 Engine[1949](byte 0x1E74) += (short)HIWORD(wParam)（raw 141582）；收到 0x20E 且 (Engine+699204 与 0x90100000) 为 0 时 Engine[1950](byte 0x1E78) += (short)HIWORD(wParam)（raw 141610）。脚本侧读端是两条指令：0x10D(sub_42EF50 raw 39114) 读竖直并清零到 op1；0x2E5(sub_4310D0 raw 40342) 读水平并清零到 op1",
+      "engine": {
+        "fns": [
+          "sub_42EF50",
+          "sub_4310D0",
+          "sub_411900"
+        ],
+        "raw": "39114-39122"
+      },
+      "reads": [
+        "Engine+7796（竖直滚轮残量；0x10D 读并清零）",
+        "Engine+7800（水平滚轮残量；0x2E5 读并清零）",
+        "Engine+699204（横滚当按键的模式位）"
+      ],
+      "whySilent": "两个轴共用一条指令的实现会静默丢一半交互：只实现 0x10D 时，横向翻页的脚本（src/SAVE.txt:204-205 先 read-mouse-wheel (local 14) 再 i2e5 (local 15)）读到的永远是 0，列表只响应竖直滚轮，不报错、不打日志。反过来把两者合成一个累加器会让竖直滚动顺带触发横向翻页（同一格被两个读者各消费一次）。Engine+699204 那条分支（横滚当按键）未建模时，玩家把横滚绑成按键的情形会表现为滚了没反应。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/wheel.test.ts",
+        "note": "实现（tickets/T-0018）：InputManager.wheelDelta 与 hwheelDelta 两个累加器（addWheel/addHWheel，都进 snapshot/restore 回放）加 consumeWheelDelta/consumeHWheelDelta（读时消费，不被 consumeEdges 擦除），handlers/input.ts 的 0x10D 与 0x2E5；渲染侧 wheel 事件把 deltaY 取负喂竖直、deltaX 原样喂水平（inputAttach.ts）。守卫 test/wheel.test.ts：两条互不消费、读后清零、方向符号。E3：真语料走 TITLE 到 Load Data 到 SAVE.BIN 的列表路径（test/save-slot-chain.test.ts），零未实现 opcode。未建模：Engine+699204 的横滚当按键分支与 set:HWheelKeyUp/Down 绑定。"
+      }
+    },
+    {
+      "id": "text-aa-config-gate",
+      "subsystem": "消息窗",
+      "name": "文本抗锯齿是一把配置门：只有 set:EnableAntiFont 为真才读 message:UseAntiFont 写 Font+1352",
+      "trigger": "启动读配置（raw 23649-23656）：if GetConfig(set:EnableAntiFont) 为真才 GetConfig(message:UseAntiFont) 并 sub_4155B0(Font, v)（raw 22409-22422：写 Font+1352 = Engine[21662]、重建字体、清字形缓存）。Font+1352 == 0 走 GDI/dd 的 TextOutA 整串锯齿字形；非 0 走软件 AA 字形（Font+3524/+3528 的 1/4 强度位图）",
+      "engine": {
+        "fns": [
+          "sub_4155B0",
+          "sub_459F40",
+          "sub_474BD0",
+          "sub_474F60",
+          "sub_4757F0"
+        ],
+        "raw": "22409-22422"
+      },
+      "reads": [
+        "Font+1352（AA 开关；= Engine[21662]）",
+        "配置 set:EnableAntiFont / message:UseAntiFont"
+      ],
+      "whySilent": "这条门缺失或照抄错时的症状只有字看着不对，不报错、不影响脚本状态：把 message:UseAntiFont 当开关直接用（跳过 set:EnableAntiFont 门）则本机 base INI 连 [set] 段都没有而 message:UseAntiFont=1，会误判成引擎开 AA，于是宿主用 canvas 抗锯齿（灰边）画字，字形发胖、白色边缘发亮，与真机对照就是字比引擎粗。反向（明明开着却按锯齿渲染）会让文字显得毛糙。另两个看起来相关的键是死写、不该照抄：message:AntiFontLevel（raw 23653 写 Engine+303796，全库无读者）与 set:Menu_UseAntiFont（只被配置表读写、渲染侧无读者）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/text-aa.test.ts",
+        "note": "实现（tickets/T-0035）：applyConfigToEngine 里按引擎两键门算 Font+1352（= engineValues 21662）；renderer/text/raster.ts 的 thresholdAlpha 在 antiAlias 为 false 时把画布 alpha 阈值化（大于等于 128 记满、否则全清，颜色不动），对齐 GDI 锯齿字形；textureCache.drawString（0x204/0x205 直绘路径）同口径。样式经 FontSpec.antiAlias 与 DrawStringStyle.antiAlias 从字段带到渲染侧（入队时钉住，与其它全局样式同规则）。守卫 test/text-aa.test.ts：两键门五种组合（含缺键/缺段）、AntiFontLevel 与 Menu_UseAntiFont 不影响、样式携带、阈值化语义与幂等。"
+      }
+    },
+    {
+      "id": "save-slot-thumbnail-bmp",
+      "subsystem": "资源",
+      "name": "存档缩略图：SAVE%2.2d.STH = 320x180 24bpp BMP（0x1AE 按 op3 纹理槽写 / 0x1AF 按 op3 纹理槽读）",
+      "trigger": "存档后紧跟一条 0x1AE（语料 337 处，与 0x19E 配对）：src/$1$SC0330.txt:17590-17595 先 create-texture e 140 b4 2 造 320x180 离屏纹理、再 i1ae (global-int 1396) (global-int f8019) e；列表/读档界面 0x1AF：src/SAVE.txt:2086-2095 先 create-texture (local 21c6) 140 b4 0、再 i1af (local 12) (local 219) (local 21c6)、判 op1==0 后 draw-texture ... 0 0 140 b4 452 ... 画到右侧",
+      "engine": {
+        "fns": [
+          "sub_42E1F0",
+          "sub_42E320",
+          "sub_43BF20",
+          "sub_40BF20",
+          "sub_43E9F0",
+          "sub_4A5260",
+          "sub_49E9D0"
+        ],
+        "raw": "38515-38594"
+      },
+      "reads": [
+        "Engine[166964]（DrawMode：==1 走截图/图像分支 sub_4A5260 / sub_49E9D0，否则走 dd 位图分支 sub_43BF20 / sub_40BF20）",
+        "Engine+7912（op3 指向的纹理/表面容器）",
+        "BMP 头：魔数 19778(BM) / 宽 @18 / 高 @22 / bpp @28 / 数据偏移 @10"
+      ],
+      "whySilent": "缺了它**不报错、只是那张图不出来**：0x1AF 只要返回 op1=0 脚本就照常往下画，画到的是一块空纹理（dd 表面没被填）⇒ 列表右侧一片空白/透明；反过来 0x1AE 写出的 .STH 若不是 BMP，真机/后续读侧解不出同样静默（引擎 ddReadBmp 只打一行错误串、返回 0）。★还有个隐蔽陷阱：引擎写出的 BMP 头里 bfSize 比真实文件小 14 字节（raw 47894 写像素数+40，漏了自己的 14 字节文件头；E4：文件 172,854 而头里写 172,840）⇒ 解码若信 bfSize 会截断/误判，必须按 DIB 头的宽高算。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E4",
+        "guard": "test/save-thumb.test.ts",
+        "note": "实现（tickets/T-0036）：新增 src/vm/bmp.ts（decodeBmp/encodeBmp，24bpp BI_RGB、自底向上、行 4 字节对齐、BGR↔RGBA；不信 bfSize/biSizeImage）；0x1AF 把解出的像素经 native.setSlotPixels(op3, w, h, rgba) 写进脚本 create-texture 出来的那个槽，0x1AE 经 native.getSlotPixels(op3) 反读像素再 encodeBmp 写盘（Pixi 侧 = TextureCache canvas 表面的 getImageData/putImageData；headless 侧 getSlotPixels 返回 null ⇒ 退回自描述空块、setSlotPixels 只记尺寸）。守卫 test/save-thumb.test.ts：编解码往返（含奇数宽度行对齐、自顶向下、截断/压缩/非 BMP 如实返回 null）、E4 真 SAVE00.STH（320x180、像素非常量、bfSize+14=文件长度）、0x1AF 写进 op3 槽且像素逐点一致、缺文件=1/解不出=2、0x1AE→0x1AF 往返；E3 test/save-slot-chain.test.ts 追加：真语料进存档列表后确有一张 320x180 缩略图被装进纹理槽。★仍未做：DrawMode==1 的截图分支（sub_4A5260/sub_49E9D0）未建模（本机 DrawMode=0；两条分支产物都是 BMP，宿主侧行为一致）。"
       }
     }
   ]

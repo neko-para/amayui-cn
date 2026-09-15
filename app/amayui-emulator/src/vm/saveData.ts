@@ -101,6 +101,11 @@ export interface SaveDataDecoded extends SaveDataHeader {
   tables: SaveDataTables;
   /** 「已使用文件」标志（FileDB 的鉴赏/解锁表；见 `SaveDataUsage`）。 */
   usage: SaveDataUsage;
+  /**
+   * **可选尾块**（本工程扩展；`tickets/T-0018`）：`buildPayload` 在最后那个 `u32 0` 之后追加的原始字节。
+   * 存档槽用它携带 VM 状态（见 `src/vm/saveSlot.ts` 的 `SlotStateBlock`）；`SAVE.DAT` 不写、因此通常没有。
+   */
+  trailing?: Uint8Array;
 }
 
 export type SaveDataParseResult =
@@ -146,7 +151,7 @@ function readCString(bytes: Uint8Array, at: number): { text: string; next: numbe
  * （= 记录区字节数/4 + 1，引擎用它在读侧定位尾部块）。少这 4 字节不丢信息、也不影响引擎语义，
  * 但读侧必须用 `parseTables(..., engineLayout: false)` 走本工程布局——见 `parsePayload`。
  */
-function buildPayload(t: SaveDataTables, used?: Iterable<number>): Uint8Array {
+function buildPayload(t: SaveDataTables, used?: Iterable<number>, trailing?: Uint8Array): Uint8Array {
   const ints = [...t.ints.entries()];
   const strs = [...t.strings.entries()];
   const parts: Uint8Array[] = [];
@@ -189,6 +194,9 @@ function buildPayload(t: SaveDataTables, used?: Iterable<number>): Uint8Array {
     push(new Uint8Array([0]));
   }
   push(u32(0));
+  // 可选的**尾块**（本工程扩展：存档槽用它带 VM 状态；`SAVE.DAT` 不写）。
+  // 引擎那份布局的尾块由 `trailerDwords` 定位，本工程布局的读侧在最后那个 `u32 0` 之后按剩余字节取它。
+  if (trailing && trailing.length) push(trailing);
   const total = parts.reduce((n, p) => n + p.length, 0);
   const out = new Uint8Array(total);
   let at = 0;
@@ -200,7 +208,9 @@ function buildPayload(t: SaveDataTables, used?: Iterable<number>): Uint8Array {
 }
 
 /** 解析**本工程格式**的明文主体（`buildPayload` 写的布局：无 `trailerDwords`，见其文档）。 */
-function parsePayload(bytes: Uint8Array): { tables: SaveDataTables; usage: SaveDataUsage } | { error: string } {
+function parsePayload(
+  bytes: Uint8Array,
+): { tables: SaveDataTables; usage: SaveDataUsage; trailing?: Uint8Array } | { error: string } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let at = 0;
   const need = (n: number): boolean => at + n <= bytes.length;
@@ -235,7 +245,14 @@ function parsePayload(bytes: Uint8Array): { tables: SaveDataTables; usage: SaveD
     strings.set(k.text, v.text);
     at = v.next;
   }
-  return { tables: { ints, strings }, usage: { usedFileIds, layout: 'emulator' } };
+  // ★记录区之后的**尾部块**：本工程按"低版本引擎样式"写 1 个 dword（恒 0，见 `buildPayload`）——
+  // 读侧必须**吃掉**它，否则它会连同后面的本工程扩展块一起被当成 `trailing`
+  // （`tickets/T-0018` 实测：存档槽读档拿不到状态块，`decodeSlotState` 看到的是 "\0\0\0\0AMYS1\n…"）。
+  // 老版本写的文件可能没有这 4 字节 ⇒ 只在够长时跳过（两种文件都能读）。
+  if (need(4)) at += 4;
+  // ★可选尾块（本工程扩展，见 `buildPayload`）：引擎布局由 `trailerDwords` 定位，本工程布局就是剩余字节。
+  const trailing = at < bytes.length ? bytes.subarray(at) : undefined;
+  return { tables: { ints, strings }, usage: { usedFileIds, layout: 'emulator' }, ...(trailing ? { trailing } : {}) };
 }
 
 /**
@@ -253,10 +270,15 @@ export function encodeSaveData(input: {
   /** 存盘时刻（引擎写 SYSTEMTIME(local)；这里允许注入便于测试）。 */
   now?: Date;
   stamp?: number;
+  /**
+   * **可选尾块**（本工程扩展；`tickets/T-0018`）：原样追加在 payload 末尾（读侧见 `SaveDataDecoded.trailing`）。
+   * 存档槽用它带 VM 状态；`SAVE.DAT` 不传。
+   */
+  trailing?: Uint8Array;
 }): Uint8Array {
   const title = input.title ?? 'AmayuiEmulator';
   const engineVersion = input.engineVersion ?? SAVE_ENGINE_VERSION;
-  const body = buildPayload(input.tables, input.usedFileIds);
+  const body = buildPayload(input.tables, input.usedFileIds, input.trailing);
   const crc1 = crc32MsbFirst(body);
   const crc2 = crc32(body);
   const now = input.now ?? new Date();
@@ -267,13 +289,18 @@ export function encodeSaveData(input: {
   writeAscii(hv, 4, engineVersion, 4);
   writeAscii(hv, 8, title, 0xe8);
   hv.setUint32(240, body.length >>> 0, true); // 逻辑字节数（= 主体长度）
-  hv.setUint16(264, now.getFullYear(), true);
-  hv.setUint16(266, now.getMonth() + 1, true);
-  hv.setUint16(268, now.getDay(), true);
-  hv.setUint16(270, now.getHours(), true);
-  hv.setUint16(272, now.getMinutes(), true);
-  hv.setUint16(274, now.getSeconds(), true);
-  hv.setUint32(280, (input.stamp ?? 0) >>> 0, true);
+  // SYSTEMTIME（local，8×u16 = 偏移 264..280）：★2026-09 订正（`tickets/T-0018`）——
+  // 原先漏写 `wDay`（把 hour 塞进了 270），于是 `0x1A0` 读出来的是"年/月/星期/时/分/秒/空"
+  // （真存档实测：264=2026、266=5、268=星期 5、270=日 8、272=时 23、274=分 55、276=秒 13 ✓）。
+  hv.setUint16(264, now.getFullYear(), true); // wYear
+  hv.setUint16(266, now.getMonth() + 1, true); // wMonth
+  hv.setUint16(268, now.getDay(), true); // wDayOfWeek
+  hv.setUint16(270, now.getDate(), true); // wDay
+  hv.setUint16(272, now.getHours(), true); // wHour
+  hv.setUint16(274, now.getMinutes(), true); // wMinute
+  hv.setUint16(276, now.getSeconds(), true); // wSecond
+  hv.setUint16(278, now.getMilliseconds(), true); // wMilliseconds
+  hv.setUint32(280, (input.stamp ?? 0) >>> 0, true); // 游玩秒数（引擎同格；`0x1A0` 的 op9）
   hv.setUint32(284, SAVE_FORMAT_PLAIN, true);
   hv.setUint32(288, 0, true);
 
@@ -545,7 +572,15 @@ export function decodeSaveData(bytes: Uint8Array): SaveDataParseResult {
     void crc2File;
     const parsed = parsePayload(payload.subarray(8));
     if ('error' in parsed) return { ok: false, reason: parsed.error, header };
-    return { ok: true, data: { ...header, tables: parsed.tables, usage: parsed.usage } };
+    return {
+      ok: true,
+      data: {
+        ...header,
+        tables: parsed.tables,
+        usage: parsed.usage,
+        ...(parsed.trailing ? { trailing: parsed.trailing } : {}),
+      },
+    };
   }
 
   const ex = extractEnginePayload(bytes, header);

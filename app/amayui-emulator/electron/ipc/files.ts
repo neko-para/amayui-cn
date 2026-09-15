@@ -24,7 +24,13 @@ import { EMULATOR_OPTIONS, FONT_DIR, REPO_ROOT, RESOURCE_DIR, SYSTEM_PATHS, desc
 export const AUDIO_SCHEME = 'amayui-audio';
 
 // 主进程侧的资源读取；log 把「扩展包扫描/注册」等一次性诊断写进主进程日志（与 logSystemPaths 同风格）
-const fileSource = new NodeFileSource({ resourceDir: RESOURCE_DIR, log: (m) => console.log(`[main] ${m}`) });
+// ★`system` 也给它：存档槽族（`tickets/T-0018`）走同一个 NodeFileSource 的 overlay 层，
+//   避免"资源源"与"玩家数据源"两套 overlay 实现漂移。
+const fileSource = new NodeFileSource({
+  resourceDir: RESOURCE_DIR,
+  system: SYSTEM_PATHS,
+  log: (m) => console.log(`[main] ${m}`),
+});
 
 /** 玩家数据的 overlay 层（`SYS4REG.INI` + `SAVE\SAVE.DAT`）。 */
 const systemFiles = new OverlayDir(SYSTEM_PATHS, { log: (m) => console.log(`[main] ${m}`) });
@@ -136,6 +142,49 @@ export function registerFileIpc(): void {
     const { ids, layouts } = unionUsedFileIds(bufs.map((b) => new Uint8Array(b)));
     console.log(`[main] save flags -> ${ids.length} 个（${layouts.join(' + ')}）`);
     return ids;
+  });
+
+  // ---- 存档槽族（`SAVE\SAVE%2.2d.DAT` + `.STH`；`tickets/T-0018`）----
+  // 引擎侧对应 `0x1A0` 读头 / `0x1A1` 读档 / `0x19E` 存档 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH`。
+  // ★写/删**只碰 overlay**（真游戏那份槽一个字节都不动）；读 overlay → base（⇒ 能直接读玩家的真存档槽）。
+  //   `slot` 由脚本给（`SAVE%2.2d` 会把 0 补成 `00`、999 原样打印 ⇒ 见下面的范围注释）。
+  // ★范围 0..999 是实测出来的：`SAVE.BIN` 的列表**逐槽读 0..999**（1000 项；2026-09 探针：
+  //   点「Load Data」进列表后 `0x1A0` 读了 120 次、槽号去重后正好 0..999 全覆盖）。
+  //   引擎侧没有范围校验（`%2.2d` 只补位不截断 ⇒ 槽 999 就是 `SAVE999.DAT`），这里做整数与范围校验
+  //   只为"路径一定是 SAVE\SAVE<数字>.DAT"，避免负数/NaN 拼出奇怪的路径。
+  const slotOk = (slot: unknown): slot is number =>
+    typeof slot === 'number' && Number.isInteger(slot) && slot >= 0 && slot <= 999;
+
+  ipcMain.handle('read-save-slot', async (_e, slot: number) => {
+    if (!slotOk(slot)) return null;
+    const b = await fileSource.readSaveSlot(slot);
+    if (!b) return null;
+    console.log(`[main] save slot ${slot} -> ${b.length} bytes`);
+    return Buffer.from(b); // Buffer 经 IPC 到达渲染进程即 Uint8Array
+  });
+  ipcMain.handle('write-save-slot', async (_e, slot: number, data: Uint8Array) => {
+    if (!slotOk(slot) || !data || data.length === 0) return null;
+    await fileSource.writeSaveSlot(slot, Buffer.from(data));
+    console.log(`[main] save slot ${slot} <- ${data.length} bytes（只写 overlay）`);
+    return null;
+  });
+  ipcMain.handle('delete-save-slot', async (_e, slot: number) => {
+    if (!slotOk(slot)) return null;
+    return await fileSource.deleteSaveSlot(slot);
+  });
+  ipcMain.handle('copy-save-slot', async (_e, from: number, to: number) => {
+    if (!slotOk(from) || !slotOk(to)) return null;
+    return await fileSource.copySaveSlot(from, to);
+  });
+  ipcMain.handle('read-slot-thumb', async (_e, slot: number) => {
+    if (!slotOk(slot)) return null;
+    const b = await fileSource.readSlotThumb(slot);
+    return b ? Buffer.from(b) : null;
+  });
+  ipcMain.handle('write-slot-thumb', async (_e, slot: number, data: Uint8Array) => {
+    if (!slotOk(slot) || !data || data.length === 0) return null;
+    await fileSource.writeSlotThumb(slot, Buffer.from(data));
+    return null;
   });
 
   // 读内置字体文件（`res/fonts/<file>`）。**白名单式**：拒绝任何含 `..` 或绝对路径的请求。

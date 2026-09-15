@@ -103,6 +103,87 @@ test('InputManager：滚轮是"读时消费"，不被 consumeEdges() 擦除', ()
   assert.equal(input.wheelDelta, 0);
 });
 
+// ---------------------------------------------------------------------------
+// 0x2E5：**水平**滚轮（引擎 `_this[1950]` / byte 7800，WndProc 的 WM_MOUSEHWHEEL 累加）
+// ---------------------------------------------------------------------------
+
+/** 造一个最小 v4 脚本：一条指令 `0x2E5 <local-int slot>`。 */
+function hwheelScript(slot: number): ScriptBinary {
+  const instr: BinInstruction = {
+    opcode: 0x2e5,
+    name: 'read-mouse-hwheel',
+    argc: 1,
+    args: [{ type: T_LOCAL_INT, raw: slot }],
+    byteOffset: HEADER_LEN,
+    index: 0,
+  };
+  return {
+    signature: 'SYS4450 ',
+    isVer5: false,
+    headerLen: HEADER_LEN,
+    localVars: [0, 0, 0, 0, 0, 0],
+    subHeaderLength: 0,
+    tables: [
+      { length: 0, offset: 1 },
+      { length: 0, offset: 1 },
+      { length: 0, offset: 1 },
+    ],
+    instructions: [instr],
+    labelTargets: new Set<number>(),
+    raw: new Uint8Array(HEADER_LEN + 12),
+  };
+}
+
+test('★0x2E5：读水平滚轮增量（一次性消费），与 0x10D 是**两个独立累加器**', async () => {
+  const input = new InputManager();
+  const e = new Engine(new StubNative(() => {}), input);
+  const slot = 5;
+  const read = (): number => asI32(dec(e.key, e.curScript().locals.int.get(slot) ?? 0));
+
+  // 两个累加器各自累加：竖直 +240、水平 +120（右滚）
+  input.addWheel(240);
+  input.addHWheel(120);
+  assert.equal(input.wheelDelta, 240);
+  assert.equal(input.hwheelDelta, 120);
+
+  // 0x10D 只消费竖直的那一份，不碰水平
+  loadScriptIntoFrame(e.curScript(), wheelScript(slot), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(), 240, '0x10D = 竖直增量');
+  assert.equal(input.hwheelDelta, 120, '★0x10D 不得消费水平累加器');
+
+  // 0x2E5 只消费水平的那一份，不碰竖直
+  input.addWheel(120);
+  loadScriptIntoFrame(e.curScript(), hwheelScript(slot), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(), 120, '0x2E5 = 水平增量');
+  assert.equal(input.hwheelDelta, 0, '★读后必须清零');
+  assert.equal(input.wheelDelta, 120, '★0x2E5 不得消费竖直累加器');
+
+  // 再读（期间无横滚）→ 0：`src/SAVE.txt:204-205` 就是靠它判"本帧有没有横滚"
+  loadScriptIntoFrame(e.curScript(), hwheelScript(slot), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(), 0);
+
+  // 左滚为负（方向与 DOM `deltaX` 同向：右滚正）
+  input.addHWheel(-120);
+  loadScriptIntoFrame(e.curScript(), hwheelScript(slot), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(), -120);
+});
+
+test('InputManager：水平滚轮也不被 consumeEdges() 擦除，且进快照/回放', () => {
+  const input = new InputManager();
+  input.addHWheel(120);
+  input.consumeEdges();
+  assert.equal(input.hwheelDelta, 120, '横滚同样是"读时消费"，不随按下沿清');
+  const snap = input.snapshot();
+  assert.equal(snap.hwheelDelta, 120, '快照要带上水平累加器（回放同一帧的读取必须逐次相同）');
+  const restored = new InputManager();
+  restored.restore(snap);
+  assert.equal(restored.hwheelDelta, 120);
+});
+
 /** 造一个最小 v4 脚本：一条指令 + 若干操作数（每条操作数 8 字节）。 */
 function oneInstr(opcode: number, args: { type: number; raw: number }[]): ScriptBinary {
   return {

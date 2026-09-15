@@ -27,6 +27,8 @@ export interface InputSnapshot {
   buttons: number;
   pressLatch: number;
   wheelDelta: number;
+  /** 水平滚轮累加器（`0x2E5` 读它并清零；引擎 `_this[1950]`）。 */
+  hwheelDelta: number;
   mouseEdge: number;
   joyEdge: number[];
   keyEdge: number;
@@ -71,6 +73,17 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
    * 否则轮询期间未读就丢（引擎里只有 0x10D 与消息泵的 ADV 分支会清零）。
    */
   wheelDelta = 0;
+
+  /**
+   * **水平滚轮增量累加器**（对位引擎 `_this[1950]` / byte 7800）。
+   *
+   * 引擎侧：WM_MOUSEHWHEEL(`0x20E`) 且**不在**「横滚当按键」模式（`Engine+699204 & 0x90100000 == 0`，raw 141588）
+   * 时 `+= (short)HIWORD(wParam)`（raw 141610）；`0x2E5`（`sub_4310D0` raw 40342-40350）读它并**立即清零**。
+   * 与竖直滚轮（`wheelDelta` = `_this[1949]`）是**两个独立的累加器**：真实脚本 `src/SAVE.txt:204-205`
+   * 先 `read-mouse-wheel (local 14)` 再 `i2e5 (local 15)`，两者互不影响。
+   * 单位与方向：一格 = ±120（`WHEEL_DELTA`），**右滚为正 / 左滚为负**（DOM `deltaX` 同向，不再取反）。
+   */
+  hwheelDelta = 0;
 
   // --- 按下沿（自上次消费以来新按下）---
   /** 鼠标按钮按下沿（bit0=左、bit1=右）。get-input-type(0xCD)/0x100 依此派发。 */
@@ -208,6 +221,14 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
     this.wheelDelta = (this.wheelDelta + (delta | 0)) | 0;
   }
 
+  /**
+   * 注入**水平**滚轮增量（渲染器 wheel 事件的 `deltaX`；见 `hwheelDelta` 的说明）。
+   * 方向与 DOM 一致：右滚为正、左滚为负，一格 = ±120（引擎单位）。
+   */
+  addHWheel(delta: number): void {
+    this.hwheelDelta = (this.hwheelDelta + (delta | 0)) | 0;
+  }
+
   // ---------- VM 读取（0x108 / 0x109）----------
 
   readX(): number {
@@ -236,6 +257,16 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   consumeWheelDelta(): number {
     const v = this.wheelDelta;
     this.wheelDelta = 0;
+    return v;
+  }
+
+  /**
+   * **读并清零水平滚轮增量**（`0x2E5` 语义 = 引擎 `v2 = _this[1950]; _this[1950] = 0;`，raw 40347-40348）。
+   * 返回值：自上次读取以来累计的水平滚轮增量（0 = 期间没有横滚；右滚正 / 左滚负，一格 ±120）。
+   */
+  consumeHWheelDelta(): number {
+    const v = this.hwheelDelta;
+    this.hwheelDelta = 0;
     return v;
   }
 
@@ -335,6 +366,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
       buttons: this.buttons,
       pressLatch: this.pressLatch,
       wheelDelta: this.wheelDelta,
+      hwheelDelta: this.hwheelDelta,
       mouseEdge: this.mouseEdge,
       joyEdge: [...this.joyEdge],
       keyEdge: this.keyEdge,
@@ -358,6 +390,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
     this.buttons = s.buttons;
     this.pressLatch = s.pressLatch;
     this.wheelDelta = s.wheelDelta;
+    this.hwheelDelta = s.hwheelDelta;
     this.mouseEdge = s.mouseEdge;
     this.joyEdge = [...s.joyEdge];
     this.keyEdge = s.keyEdge;

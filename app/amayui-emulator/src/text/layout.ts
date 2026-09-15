@@ -38,6 +38,14 @@ export interface FontSpec {
   fill: string;
   /** 描边/阴影色 `#rrggbb`（引擎 `Font+1364`，op `0x77`）。 */
   outline: string;
+  /**
+   * ★**抗锯齿**（引擎 `Font+1352` = `Engine[21662]`；`tickets/T-0035`）。
+   *
+   * `false` = 引擎的 GDI/dd 路径：字形**锯齿**（每像素非 0 即满不透明）。
+   * `true` = 软件 AA 字形路径（只有 `set:EnableAntiFont` 门通过且 `message:UseAntiFont` 非 0 才会出现）。
+   * 本机两处 INI（真游戏 base 连 `[set]` 段都没有、本工程 overlay `EnableAntiFont=0`）⇒ 恒 `false`。
+   */
+  antiAlias: boolean;
 }
 
 /** 一个消息窗的几何 + 样式（引擎 `FontVWindow` + `Font` 的绘制相关字段）。 */
@@ -314,10 +322,12 @@ export function defaultWinStyle(): MsgWinStyle {
     align: 0,
     alignWidth: 0,
     outlineMode: 1,
-    outlineDx: 2,
-    outlineDy: 2,
-    main: { family: 'Amayui CN', size: 30, weight: 400, fill: '#ffffff', outline: '#000000' },
-    ruby: { family: 'Amayui CN', size: 10, weight: 400, fill: '#ffffff', outline: '#000000' },
+    // ★引擎的**初始化值**是 1/1（raw 78780-78781 `Font+1384/+1388 = 1`；`0x1A4` 之后由脚本改写）。
+    //   早前这里是 2/2（错把某个脚本值当默认）⇒ 未显式设过偏移的文本描边副本会偏出去 2px。
+    outlineDx: 1,
+    outlineDy: 1,
+    main: { family: 'Amayui CN', size: 30, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
+    ruby: { family: 'Amayui CN', size: 10, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
     background: null,
     itemId: 0,
   };

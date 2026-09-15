@@ -42,6 +42,22 @@ declare global {
        * 主进程把 overlay 与 base **两侧取并集**（进度是单调集合 ⇒ 不因 overlay 里的旧副本丢进度）。
        */
       readSaveFlags?(): Promise<number[] | null>;
+      // ---- 存档槽（`0x19E`/`0x1A1`/`0x1A0`/`0x1AB`/`0x1AC`/`0x1AE`/`0x1AF`；`tickets/T-0018`）----
+      /**
+       * 读一个存档槽 `SAVE\SAVE%2.2d.DAT` 的整份字节（overlay → base；都没有返回 null）。
+       * ★主进程只读、渲染侧只解头/状态块；真游戏那份槽永远不被改写。
+       */
+      readSaveSlot?(slot: number): Promise<Uint8Array | null>;
+      /** 写一个存档槽（**只写 overlay**）。 */
+      writeSaveSlot?(slot: number, data: Uint8Array): Promise<void>;
+      /** 删一个槽的 `.DAT` + `.STH`（只删 overlay，base 那份不动 ⇒ 引擎语义下"删了又继承回来"）。 */
+      deleteSaveSlot?(slot: number): Promise<{ dat: boolean; sth: boolean } | null>;
+      /** 复制槽（`0x1AC`）：源读 overlay→base、目标只写 overlay。 */
+      copySaveSlot?(from: number, to: number): Promise<{ dat: boolean; sth: boolean } | null>;
+      /** 读槽的 `.STH` 状态块/缩略图字节（overlay → base）。 */
+      readSlotThumb?(slot: number): Promise<Uint8Array | null>;
+      /** 写槽的 `.STH`（只写 overlay）。 */
+      writeSlotThumb?(slot: number, data: Uint8Array): Promise<void>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
        * **按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节**
