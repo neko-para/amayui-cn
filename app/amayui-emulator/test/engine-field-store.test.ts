@@ -12,6 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { StubNative } from '../src/vm/native.js';
+import { globalTextStyle } from '../src/vm/handlers/msgwin.js';
 import { Engine } from '../src/vm/engine.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
@@ -109,6 +110,13 @@ test('0x78 / 0x8B / 0x1A4 / 0x252 / 0x261 / 0x2EE / 0x2DB / 0x24E / 0x10F：写�
     const r = await run(opcode, vals);
     assert.equal(r.get(field), want, `0x${opcode.toString(16)} → _this[${field}]`);
   }
+
+  // ★0x8B 的消费端（`tickets/T-0038`）：它是**行间距** `Font+1380`，排版换行步进 =
+  //   字号 + 本字段（`sub_46AF90` raw 82674-82690）。写了没人读 = 注音压上一行（静默）。
+  const r8b = await run(0x8b, [0x10]);
+  assert.equal(globalTextStyle(r8b.e).lineSpacing, 0x10, '0x8B 的值必须被排版路径读到（行间距）');
+  const fresh = new Engine(new StubNative(() => {}));
+  assert.equal(globalTextStyle(fresh).lineSpacing, 6, '未写时用引擎 Initialize 初值 6（raw 78858）');
 });
 
 test('0xFE / 0x107 / 0x10B：按键绑定表（含随操作数变化的字段号与 ≤0x1F 约束）', async () => {

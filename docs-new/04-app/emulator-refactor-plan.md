@@ -111,6 +111,20 @@
 
 ## 9. 变更记录
 
+- 2026-09（`tickets/T-0037` + `T-0038`，逐字显现的两处引擎语义落地）：
+  ① **注音随本文词末字显现**：引擎把注音记录 push 在本文词**最后一个字**的 24B 记录之后、并给该记录标
+     `[+0]=1`，显现 `do { 贴 } while (上一记录[+0])` ⇒ 一步 = 本文末字 + 它的注音
+     （raw 83988-83997 / 72427-72435）。模型侧新增 `TextLine.ruby[].from`（= 末字在本行里的序号）与
+     `visibleRubyInLine`；`renderer/text/raster.ts` 用它替换旧的「该行有 ≥1 字就把整行注音画出来」
+     （用户实测的"逐字期间注音提前出现"）。
+  ② **行距参与换行步进**：换行 = 字号 + `Font+1380`（`sub_46AF90` raw 82674-82690；初值 6、`i08b`/0x8B 写，
+     ADV 标准前导 `i08b 10` = 16 ⇒ 46px）。新增 `MsgWinStyle.lineSpacing`（`globalTextStyle` 读
+     `engineValues[21669]`）⇒ 注音不再压上一行（用户实测）。顺带订正语义错：`Font+1380` 曾被记成
+     「第四色 `color_extra2`」、opcode 表的 `0x8B` 只写「消息窗字段」（`fields.json` 改名 `line_spacing`、
+     `functions.json` 补 `0x8B`/`0x46AF90` 两条、`adv-text-rendering.md` 与 `engine-capabilities.json` 的
+     `text-line-pitch-font-1380` 同步）。守卫：`test/text-layout.test.ts`（行距 46/36 + 「注音顶 ≥ 上一行底部」
+     不变量 + 注音随末字可见）、`test/engine-field-store.test.ts`（`0x8B` → `globalTextStyle().lineSpacing`）。
+     注音 y 同时按引擎补了非 D3D 路径的 `+1`（`sub_465A20`）。
 - 2026-09（`tickets/T-0024`，`npm run verify` 全绿 498/498）：**`0x400` 等待门的真值落地**
   （`sub_407E20` = 池挂起位 + `0x238` 装载的等待计时器）—— `Engine.gatePending/serviceWaitGate/skipWaitGate`
   + `gateWaitStart/gateWaitMs/scenePending/sceneFreeze`；`0x238` handler 改名 `op_load_wait_timer`（旧名

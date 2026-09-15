@@ -7198,6 +7198,30 @@
     "fields_used": ["Container+3*slot+2077/2079（该槽的表面句柄与来源标记）"],
     "evidence": "raw 16072-16087；调用点 0x1AF raw 38582",
     "notes": "0x1AF 的 op1 = 0/2 就由本函数的 1/0 决定（打开文件失败另算 1）。"
+  },
+  {
+    "addr": "0x46AF90",
+    "raw_name": "sub_46AF90",
+    "semantic_name": "line_feed_46AF90",
+    "status": "PARTIAL",
+    "purpose": "换行步进（line feed）：把文本项的最后一条 24B 记录当作「新行」的载体 —— 新行 x = 窗+28（win[7]），y += 字号 + Font+1380（v6=Font+201680 度量模式：0 ⇒ -Font+1232 / 1 ⇒ Font+201684 / 2 ⇒ Font+201684，都再加 Font+1380），并 +1 行号/计数；随后按当前全局样式 push 一行样式记录（sub_45C610/sub_45E870 一族）",
+    "sub_behaviors": ["新行 x = win+28", "y += 字号 + Font+1380", "++行号 / ++win[71]", "按当前样式重建行记录"],
+    "fields_used": ["Font+201680(度量模式)", "Font+201684(字号)", "Font+1232(主 lfHeight)", "Font+1380(行间距)", "Font+218516(字重)", "Font+1360/+1364/+1368/+1372/+1384/+1388(样式)", "win+44/+48(24B 记录表)", "win+28(行首 x)"],
+    "unmodeled": ["sub_45C610/sub_45E870 的行记录细节", "sub_4691D0（另一条换行分支）"],
+    "evidence": "raw 82668-82760",
+    "notes": "行距 = 字号 + Font+1380 是「注音不压上一行」的唯一来源（tickets/T-0038）"
+  },
+  {
+    "addr": "0x41FBF0",
+    "raw_name": "sub_41FBF0",
+    "semantic_name": "op_set_line_spacing_41FBF0",
+    "op": "0x8B",
+    "status": "ANALYZED",
+    "purpose": "**行间距**：读 op1 写 Font+1380（= Engine[21669]）。换行步进 sub_46AF90 用「字号 + 本字段」；初值 6；ADV 标准样式前导写 i08b 10（=16）",
+    "sub_behaviors": ["op1 → Font+1380"],
+    "fields_used": ["Font+1380(line_spacing)"],
+    "evidence": "raw 29021-29030",
+    "notes": "旧口径把 Font+1380 当「第四色」是错的（tickets/T-0038 订正）"
   }
 
 ]

@@ -256,7 +256,7 @@
   {"offset":"0x15288","type":"COLORREF","name":"color_extra1","scope":"Font","meaning":"第三色（初值 0；op 0x81）","evidence":"raw 78893; 28804","status":"confirmed"},
   {"offset":"0x1528C","type":"int32_t","name":"outline_mode","scope":"Font","meaning":"描边/阴影模式（初值 1；作为 a8 传给 sub_455ED0：0 无 / 1 单向投影 / 2 1-4 强度副本 / 3 多向描边）","evidence":"raw 78894; 68193","status":"confirmed"},
   {"offset":"0x15290","type":"int32_t","name":"message_speed","scope":"Font","meaning":"message:MessageSpeed（ms；= Engine+86672 = Engine[21668]）；op 0x74 写 / 0x7F 读；既作显现节拍 Sleep 又作淡入定时器间隔","evidence":"raw 23736-23738; 78753; 13954; 28648","status":"confirmed"},
-  {"offset":"0x15294","type":"int32_t","name":"color_extra2","scope":"Font","meaning":"第四色（Initialize 初值 6；op 0x8B）","evidence":"raw 78858; 29027","status":"confirmed"},
+  {"offset":"0x15294","type":"int32_t","name":"line_spacing","scope":"Font","meaning":"★**行间距**（不是颜色）：换行步进 = 字号(Font+201684) + 本字段 —— sub_46AF90 raw 82674-82690；初值 6（raw 78858），op 0x8B（sub_41FBF0 raw 29021-29030）写，ADV 前导写 i08b 10 = 16","evidence":"raw 78858(初值 6); 82674-82690(换行步进); 29027(op 0x8B 唯一写入); 71734/77464/81493(逐行定位)","status":"confirmed"},
   {"offset":"0x15298","type":"int32_t","name":"outline_dx","scope":"Font","meaning":"描边偏移 dx（初值 1；op 0x1A4 的 op2）","evidence":"raw 78780; 29149","status":"confirmed"},
   {"offset":"0x1529C","type":"int32_t","name":"outline_dy","scope":"Font","meaning":"描边偏移 dy（初值 1；op 0x1A4 的 op1）","evidence":"raw 78781; 29150","status":"confirmed"},
   {"offset":"0x152A0","type":"COLORREF","name":"color_extra3","scope":"Font","meaning":"第五色（初值 0；op 0x1B1）","evidence":"raw 78766; 29161","status":"confirmed"},

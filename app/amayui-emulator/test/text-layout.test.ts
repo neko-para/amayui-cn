@@ -13,6 +13,7 @@ import {
   sjisBytes,
   textWidth,
   visibleInLine,
+  visibleRubyInLine,
   type MsgWinInput,
 } from '../src/text/layout.js';
 import { fontFaceFor, fontFileList, normalizeFace, resolveFace } from '../src/text/fontSet.js';
@@ -105,7 +106,64 @@ test('注音：居中于本文词上方一个注音字高', () => {
   // 居中：注音左右端点相对本文词左右端点各内缩 (60-30)/2 = 15
   assert.equal(rx0, 0 + 15);
   assert.equal(rxEnd, 60 - 15);
-  assert.equal(line.ruby[0].y, -10); // 本文行上方一个注音字高
+  // 本文行上方一个注音字高（`Font+1292` = -注音字号）+ 引擎在非 D3D 路径的 +1
+  // （sub_465A20：`ruby.y = 行 y + Font+1292`，随后 `if (DrawMode != 1 && !Font+218600) ++y`）
+  assert.equal(line.ruby[0].y, -9);
+});
+
+test('★注音随本文词的**末字**显现（不是整行一开头就全亮）—— tickets/T-0037', () => {
+  // 本文「天結」二字（字号 30）+ 注音「あまゆ」；引擎把注音记录挂在本文词**最后一个字**的
+  // 24B 记录之后并给该记录标 [+0]=1，显现循环 do { 贴 } while (上一记录[+0]) ⇒ 一步 = 末字 + 注音。
+  const f = layoutWindow(9, input({ text: '天結い', ruby: [['天結', 'あまゆ']], style: { wrapRight: 1000 } }));
+  const line = f.lines[0];
+  assert.equal(line.ruby.length, 3);
+  assert.deepEqual(
+    line.ruby.map((g) => g.from),
+    [2, 2, 2],
+    '注音的可见点 = 本文词末字在本行里的序号（「結」= 2）',
+  );
+  // 逐字：第 1 个字（天）显现时**一个注音都不该有**；第 2 个字（結）显现时注音整组出现
+  assert.equal(visibleRubyInLine(line, 0).length, 0);
+  assert.equal(visibleRubyInLine(line, 1).length, 0, '★「天」显现时注音不得提前出现');
+  assert.equal(visibleRubyInLine(line, 2).length, 3);
+  assert.equal(visibleRubyInLine(line, 3).length, 3, '后一个字不影响注音');
+});
+
+test('★换行步进 = 字号 + 行间距（Font+1380 / i08b）—— tickets/T-0038', () => {
+  // 引擎 sub_46AF90：`v7 = 字号 + Font+1380`，随后 `*(新行 y) += v7`。
+  // ADV 标准样式前导是 `i075 1e`(30px) + `i08b 10`(=16) ⇒ 行距 46px。
+  const text = 'あいうえおかきくけこ'; // 10 字 × 30px，wrapRight=120 ⇒ 每行 4 字
+  const adv = layoutWindow(
+    9,
+    input({ text, style: { wrapRight: 120, wrapBottom: 720, lineSpacing: 0x10 } }),
+  );
+  assert.deepEqual(
+    adv.lines.map((l) => l.y),
+    [0, 46, 92],
+    '★ADV（i08b 10 = 16）：行距 = 30 + 16 = 46',
+  );
+  const def = layoutWindow(9, input({ text, style: { wrapRight: 120, wrapBottom: 720 } }));
+  assert.deepEqual(
+    def.lines.map((l) => l.y),
+    [0, 36, 72],
+    '默认行间距 = 引擎 Initialize 初值 6（raw 78858）⇒ 36',
+  );
+  // ★不变量：注音（画在行顶上方一个注音字高）不得压进上一行的字格
+  const withRuby = layoutWindow(
+    9,
+    input({
+      text: 'あいうえ天結', // 每行 4 字（wrapRight=120）⇒ 第二行 = 「天結」+ 它的注音
+      ruby: [['天結', 'あまゆ']],
+      style: { wrapRight: 120, wrapBottom: 720, lineSpacing: 0x10 },
+    }),
+  );
+  const [l0, l1] = withRuby.lines;
+  assert.ok(l0 && l1, '应换出两行');
+  assert.equal(l1.ruby.length, 3, '注音配在第二行的本文词上');
+  assert.ok(
+    l1.ruby[0]!.y >= l0.y + withRuby.style.main.size,
+    `注音顶 ${l1.ruby[0]!.y} 必须在上一行底部 ${l0.y + withRuby.style.main.size} 之下`,
+  );
 });
 
 test('注音：跨行不配对（引擎把注音挂在行记录上）', () => {

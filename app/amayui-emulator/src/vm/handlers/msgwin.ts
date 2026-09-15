@@ -102,6 +102,8 @@ export function globalTextStyle(e: Engine): {
   outlineMode: 0 | 1 | 2 | 3;
   outlineDx: number;
   outlineDy: number;
+  /** 行间距（`Font+1380` = Engine[21669]；op `0x8B`）；换行步进 = 字号 + 本值。 */
+  lineSpacing: number;
 } {
   const m = e.msgwin;
   const v = (k: number, d: number): number => e.engineValues.get(k) ?? d;
@@ -120,6 +122,9 @@ export function globalTextStyle(e: Engine): {
     outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
     outlineDx: v(21670, base.outlineDx),
     outlineDy: v(21671, base.outlineDy),
+    // ★行间距（`Font+1380` = Engine[21669]，初值 6；op `0x8B`/`i08b` 写，ADV 前导写 16）：
+    //   换行步进 = 字号 + 本值（`sub_46AF90` raw 82674-82690）⇒ 少了它注音会压到上一行（`tickets/T-0038`）。
+    lineSpacing: v(21669, base.lineSpacing),
   };
 }
 
@@ -153,6 +158,7 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     outlineMode: core.outlineMode,
     outlineDx: core.outlineDx,
     outlineDy: core.outlineDy,
+    lineSpacing: core.lineSpacing,
     main: core.main,
     // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
     ruby: core.ruby,
@@ -186,6 +192,7 @@ export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
     outlineMode: core.outlineMode,
     outlineDx: core.outlineDx,
     outlineDy: core.outlineDy,
+    lineSpacing: core.lineSpacing,
     // 引擎 `Font+235108` bit0（0x261 写）；未写时用随包 INI 的默认值
     vertical: ((e.engineValues.get(80101) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
   };

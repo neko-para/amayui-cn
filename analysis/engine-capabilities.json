@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 114,
-    "modeled-verified": 36,
+    "total": 115,
+    "modeled-verified": 37,
     "modeled-unverified": 5,
     "partial": 24,
     "absent": 24,
@@ -3332,6 +3332,37 @@
         "evidence": "E2",
         "guard": "test/font-bold-face.test.ts",
         "note": "重写侧等价物：fontSet.ts 的 BUILTIN_FAMILIES 把 Amayui CN 登记成同族的 400/700 两面（fontFaceFor 只按文件自己声明的字重修注册、绝不把 Regular 登记成 700），raster.ts 只写 ctx.font = <weight> <size>px <family> ⇒ 700 落到真 Bold 面、浏览器不再合成，与 GDI 的族内选面同构。守卫 test/font-bold-face.test.ts 读 TTF 的 name/OS-2/head 表钉住「同族名 + usWeightClass 700 + 码页含 932 + Bold 确实更重」。★结论（2026-09-15，T-0035 第 5 轮）：真机的“更细”不是本条的偏差 —— 用第三个光栅器（FreeType）对同一句台词复现票里的墨迹度量：Regular 0.209-0.241 / Bold 0.345-0.379（与 emulator 侧 0.220-0.245 / 0.330-0.398 互相印证，跨光栅器噪声 ≤8%；两面差 1.46-1.59×），而真机实测 0.257 落在 Regular 档 ⇒ 真机那次 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面），说明该机的安装/缓存状态没让两份 TTF 配成一族（见 docs/font-build.md §8.5.2/§8.6：装完要重启 FontCache/电脑；缺 932 码页声明的旧版会让日文 locale 下的选面看不到 Bold）。★同时排除：DPR 1.25 + 阈值化的路径（38px 设备网格 0.221/0.350）并不比 1× 无 AA（0.241/0.379）更胖 —— “按逻辑像素 1× 光栅化 + 整数对齐”不是这条症状的解。"
+      }
+    },
+    {
+      "id": "text-line-pitch-font-1380",
+      "subsystem": "消息窗",
+      "name": "换行步进 = 字号 + 行间距 Font+1380（i08b）—— 注音不压上一行的唯一来源",
+      "trigger": "每次换行/逐行定位：超右边界时 sub_46AF90（raw 82668-82760）执行 `v7 = 字号 + Font+1380` 再 `*(新行 24B 记录 - 16) += v7`（度量模式 0/1/2 都同样加 Font+1380）；Font+1380 初值 6（Initialize raw 78858），脚本用 op 0x8B（sub_41FBF0 raw 29021-29030）写，ADV 标准样式前导写 `i08b 10`（=16）⇒ 30+16 = 46px。而注音由 sub_465A20 放在**行顶上方一个注音字高**（`ruby.y = 行 y + Font+1292`，Font+1292 = −注音字号；非 D3D 且 Font+218600（全库只读 ⇒ 恒 0）时再 +1）。D3D 路径（DrawMode=1）另按「行号 × (字号 + Font+1380)」给每行 DrawItem 定位（raw 71734/71943/72403/77464/77895/78686/80280/80723/81493）。",
+      "engine": {
+        "fns": [
+          "sub_46AF90",
+          "sub_41FBF0",
+          "sub_465A20",
+          "sub_46BE30"
+        ],
+        "raw": "82674-82690"
+      },
+      "reads": [
+        "Font+1380(行间距，初值 6)",
+        "Font+201684(主字号)",
+        "Font+1232(主 lfHeight)",
+        "Font+1292(注音 lfHeight = −注音字号)",
+        "Font+218600(恒 0)",
+        "win+44/+48(24B 逐字记录表)"
+      ],
+      "whySilent": "漏掉行距**不报错、不崩**：换行照旧、字数照旧，只是**注音压进上一行的字里**（用户实测 `tickets/T-0038`）。反向的错法同样静默：把 Font+1380 当颜色（本字段曾被记成「第四色 color_extra2」、opcode 表只写「消息窗字段」）或用固定行高，就会在「有注音的行」与「脚本改过 i08b 的页」上表现错，而其它一切正常 ⇒ 只能靠观感或本条清单发现。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/text-layout.test.ts",
+        "note": "实现：`MsgWinStyle.lineSpacing`（`globalTextStyle` 读 `engineValues[21669]`，缺省 = 引擎初值 6）+ `layoutWindow` 的换行 `lineStartY += size + st.lineSpacing`；注音 y 也按引擎的 +1（非 D3D）。守卫：`test/text-layout.test.ts`（ADV `i08b 10` ⇒ 行距 46 / 默认 36；不变量「注音顶 ≥ 上一行底部」）+ `test/engine-field-store.test.ts`（0x8B → `globalTextStyle().lineSpacing`，未写时 6）。★未做：D3D 路径（`set:DrawMode=1`）按「行号 × (字号+行距)」给每行 DrawItem 定位 —— 本机 INI 无 `[set]` 段 ⇒ DrawMode=0，不适用。"
       }
     }
   ]

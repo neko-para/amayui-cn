@@ -85,6 +85,18 @@ export interface MsgWinStyle {
   /** 描边偏移 dx/dy（引擎 `Font+1384`/`+1388`，op `0x1A4`）—— 两种字体共用。 */
   outlineDx: number;
   outlineDy: number;
+  /**
+   * **行间距**（引擎 `Font+1380`，初值 6；op `0x8B` 写 —— ADV 标准样式前导是 `i08b 10` = 16）。
+   *
+   * ★换行步进 = **字号 + 本字段**（`sub_46AF90` raw 82674-82690：`v7 = v8 + Font+1380`；
+   * 同族读取点 raw 71734/71943/72403/77464/77895/78686/80280/80723/81493 都是
+   * 「行号 × (字号 + Font+1380)」）。**不是**颜色 —— 旧口径把它记成「第四色」是错的
+   * （`tickets/T-0038`）。
+   *
+   * 为什么必须有它：注音画在**行顶上方**一个注音字高（`sub_465A20`：`ruby.y = 行 y + Font+1292(=-注音字号)`），
+   * 行距只给字号时注音就压进上一行的字里 —— 用户实测的「振假名与前一行重叠」。
+   */
+  lineSpacing: number;
   /** 主字体（引擎 `Font` 的 `+1232/+1236/+1248/+1260` 一族）。 */
   main: FontSpec;
   /** 注音字体（引擎 `Font` 的 `+1292/+1296/+1308/+1320` 一族）。 */
@@ -132,6 +144,8 @@ export interface FontStyleSnapshot {
   outlineMode: 0 | 1 | 2 | 3;
   outlineDx: number;
   outlineDy: number;
+  /** 行间距（引擎 `Font+1380`）：换行步进 = 字号 + 本值 —— 见 `MsgWinStyle.lineSpacing`。 */
+  lineSpacing: number;
   /** 竖排是全局的（`Font+235108`，`0x261`），同样按入队时刻钉住。 */
   vertical: boolean;
 }
@@ -202,6 +216,16 @@ export interface RubyGlyph {
   ch: string;
   x: number;
   y: number;
+  /**
+   * **该注音何时可见**：它所属本文词**末字**在本行里的字符序号（1-based，= `Glyph.i`）。
+   *
+   * 引擎语义（`sub_46BE30` raw 83988-83997 的收尾）：本文词的字逐个 push 成 24B 记录后，
+   * 把**最后一个**那条标 `[+0] = 1`，再把注音自己的记录 push 在它后面；
+   * 显现 `sub_45BE20`（raw 72427-72435）是 `do { 贴该记录 } while (上一记录[+0])`
+   * ⇒ **一步 = 本文末字 + 它的注音**（同一帧贴出）。
+   * 少了这个门控，注音会在整行刚开头时就把整行注音一起亮出来（用户实测，`tickets/T-0037`）。
+   */
+  from: number;
 }
 
 /** 一行（水平）或一列（垂直）。 */
@@ -326,6 +350,9 @@ export function defaultWinStyle(): MsgWinStyle {
     //   早前这里是 2/2（错把某个脚本值当默认）⇒ 未显式设过偏移的文本描边副本会偏出去 2px。
     outlineDx: 1,
     outlineDy: 1,
+    // ★引擎 Initialize 初值 6（raw 78858 `Font+1380 = 6`）；脚本用 `i08b`（op 0x8B）改写，
+    //   ADV 标准样式前导写的是 `i08b 10`（= 16）⇒ 行距 30+16 = 46px。
+    lineSpacing: 6,
     main: { family: 'Amayui CN', size: 30, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
     ruby: { family: 'Amayui CN', size: 10, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
     background: null,
@@ -379,10 +406,16 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
     chars = [];
   };
 
-  /** 换行；返回 false = 已越过下边界（引擎报「文字がウインドウ内に収まりません」并停，raw 83720-83728）。 */
+  /**
+   * 换行；返回 false = 已越过下边界（引擎报「文字がウインドウ内に収まりません」并停，raw 83720-83728）。
+   *
+   * ★步进 = **字号 + 行间距**（`Font+1380`）：引擎在 `sub_46AF90`（raw 82674-82690）里
+   * `v7 = v8 + Font+1380` 再 `*(新行记录 - 16) += v7`。只加字号会让注音（画在行顶上方
+   * 一个注音字高）压到上一行 —— `tickets/T-0038`。
+   */
   const wrap = (): boolean => {
     flush();
-    lineStartY += size;
+    lineStartY += size + st.lineSpacing;
     if (lineStartY + size > st.wrapBottom) return false; // `win+40`
     penX = lineStartX;
     penY = lineStartY;
@@ -415,7 +448,13 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   return { win, style: st, lines, glyphCount, revealed };
 }
 
-/** 注音摆位：居中于本文词**上方**一个注音字高（引擎以本文词宽为基准，`sub_4572A0` raw 68886）。 */
+/**
+ * 注音摆位：居中于本文词**上方**一个注音字高（引擎以本文词宽为基准，`sub_4572A0` raw 68886）。
+ *
+ * 可见时机（`from`）：引擎把注音记录挂在本文词**末字**的 24B 记录之后并给那条记录标 `[+0]=1`
+ * （raw 83988-83997），显现循环 `do { 贴 } while (上一记录[+0])`（raw 72427-72435）于是
+ * 在同一步里贴出「本文末字 + 注音」⇒ `from` = 本文词末字在本行里的序号（`tickets/T-0037`）。
+ */
 function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle): void {
   if (line.text.length === 0) return;
   const rSize = st.ruby.size;
@@ -430,9 +469,12 @@ function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle): v
     const x0 = first.x;
     const x1 = last.x + advance(last.ch, st.main.size);
     let rx = x0 + (x1 - x0 - textWidth(ruby, rSize)) / 2;
-    const ry = first.y - rSize;
+    // 引擎：`ruby.y = 行 y + Font+1292`（Font+1292 = **-注音字号** ⇒ 行顶上方一个注音字高），
+    // 且非 D3D 路径（DrawMode != 1）且 `Font+218600 == 0`（全库只读不写 ⇒ 恒 0）时再 **+1**
+    // （sub_465A20 raw 79089-79091 一带；`Font+218600` 初值 raw 78772）。
+    const ry = first.y - rSize + 1;
     for (const ch of ruby) {
-      line.ruby.push({ ch, x: rx, y: ry });
+      line.ruby.push({ ch, x: rx, y: ry, from: last.i });
       rx += advance(ch, rSize);
     }
   }
@@ -465,4 +507,16 @@ function applyAlign(line: TextLine, st: MsgWinStyle): void {
 export function visibleInLine(line: TextLine, lineStartIndex: number, revealed: number): number {
   const n = revealed - lineStartIndex;
   return n <= 0 ? 0 : n >= line.glyphs.length ? line.glyphs.length : n;
+}
+
+/**
+ * 本行该画出的注音字形（逐字显现期间）。
+ *
+ * 引擎的一步显现 = 「本文词的**末字** + 它的注音」（`sub_45BE20` 的 `do { 贴 } while (上一记录[+0])`，
+ * raw 72427-72435；注音记录由 `sub_46BE30` 收尾 push，raw 83988-83997）
+ * ⇒ 注音的 `from` ≤ 本行已显现字数时才画。少了这道门，整行注音会在该行刚出现第一个字时就全亮
+ * （用户实测，`tickets/T-0037`）。
+ */
+export function visibleRubyInLine(line: TextLine, revealedInLine: number): RubyGlyph[] {
+  return line.ruby.filter((g) => g.from <= revealedInLine);
 }

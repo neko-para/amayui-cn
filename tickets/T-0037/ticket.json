@@ -1,0 +1,62 @@
+{
+  "title": "ADV 逐字显现期间注音（振假名）提前显示：注音没有和它本文词的**末字**同步出现",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/adv",
+  "why": "用户实测（2026-09）：ADV 逐字显现过程中，振假名比它对应的本文词先出现（整行注音一开始就在）。引擎语义：排版时把注音自己的 24B 记录 push 在本文词**最后一个字**记录之后，并把那个字记录标 [0]=1（raw 83988-83997：*(win[48]-24)=1 + sub_465A20）；显现循环 do { 贴该记录 } while (上一记录[+0]) 因此在**同一步**里把「本文末字 + 注音」一起贴出（raw 72427-72435）。emulator 现在只要该行有 ≥1 个字显现就把该行**全部**注音画出来（raster.ts 的 if (n > 0) for (const rg of line.ruby)）⇒ 注音整行提前亮。",
+  "acceptance": [
+    "逐字显现期间：某行的注音只在它的本文词**末字**已经显现的那一帧才出现（同一帧贴出，与引擎 do/while 语义一致）",
+    "整段显现完成（revealed >= glyphCount）时全部注音都在；跨行的本文词不发生注音错配（引擎把注音挂在行记录上）",
+    "有守卫（模型层可断言的函数 + 至少一条测试），并在 docs-new/03-engine/adv-text-rendering.md §3.3 写清「注音随本文词末字贴出」"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/text/raster.ts",
+      "anchor": "for (const rg of visibleRubyInLine(line, n))",
+      "note": "修复后：注音按 from（本文词末字序号）门控；旧代码是 if (n > 0) for (const rg of line.ruby)（整行提前亮）"
+    },
+    {
+      "file": "app/amayui-emulator/src/text/layout.ts",
+      "anchor": "export function visibleRubyInLine",
+      "note": "模型层可断言的门控函数（守卫 test/text-layout.test.ts 的『注音随本文词的末字显现』）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_465A20(_this, v5, lpString",
+      "note": "引擎的行尾 push（raw 83988-83997）：本文词最后一个 24B 记录标 [+0]=1，注音记录紧跟其后"
+    },
+    {
+      "file": "docs-new/03-engine/adv-text-rendering.md",
+      "anchor": "注音跟着本字一起贴",
+      "note": "§3.3 的贴出循环 do/while 语义（raw 72427-72435）：一步 = 本文末字 + 它的注音"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "text-reveal-pump-409400",
+      "text-line-pitch-font-1380"
+    ],
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md"
+    ]
+  },
+  "id": "T-0037",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence, tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— 注音按本文词末字门控；守卫 test/text-layout.test.ts；见 changes.md"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/text-layout.test.ts"
+  ]
+}

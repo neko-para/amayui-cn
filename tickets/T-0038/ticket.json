@@ -1,0 +1,70 @@
+{
+  "title": "ADV 行距没实现：换行步进少了 Font+1380（i08b），注音压到上一行字上",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/adv",
+  "why": "用户实测（2026-09）：ADV 里注音（振假名）与前一行文字重叠 —— 行高算小了。引擎真源：换行步进 = 字号 + Font+1380（sub_46AF90 raw 82674-82690：v7 = v8 + *(Font+1380)，随后 *(新行记录-16) += v7；同族读取点 raw 71734/71943/72403/77464/77895/78686/80280/80723/81493 全是「行号 × (字号+Font+1380)」）。Font+1380 初值 6（raw 78858），由 op 0x8B（sub_41FBF0 raw 29021-29030）写；ADV 标准样式前导写的是 i08b 10（=16）⇒ 真机行距 = 30+16 = 46px，而注音画在行顶上方 10px（sub_465A20：ruby.y = 行 y + Font+1292(=-ruby 字号) (+1)）。emulator 的 layout.ts 只写 lineStartY += size（30）⇒ 注音落进上一行的字里。附带问题：analysis/fields.json 把 Font+1380 记成「第四色 color_extra2」、opcode 表也只写「消息窗字段」，语义错。",
+  "acceptance": [
+    "换行步进 = 字号 + Font+1380（emulator：engineValues[21669]，默认 6）；ADV 标准前导（i075 1e + i08b 10）下行距 = 46px，注音不再与上一行重叠",
+    "analysis/fields.json 的 Font+0x15294 改名为 line_spacing 并写清语义/读取点；docs-new/03-engine/opcode-table.md 的 0x8B 行订正为「行间距」；docs-new/03-engine/adv-text-rendering.md 的 Font 字段表与 §3.1/§4 同步",
+    "第二层台账新增「行距参与换行步进」条目（含 whySilent：漏了只表现成注音与上一行重叠，不报错）",
+    "有守卫：layout 层的行距断言 + 至少一条把 i08b(0x8B) 接到行距的测试"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/text/layout.ts",
+      "anchor": "lineStartY += size + st.lineSpacing;",
+      "note": "修复后：换行步进 = 字号 + 行间距（旧代码是 lineStartY += size）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "lineSpacing: v(21669, base.lineSpacing),",
+      "note": "0x8B（21669）→ 全局样式 → 快照 → 排版；守卫 test/engine-field-store.test.ts"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v7 = v8 + *(_DWORD *)(_this + 1380);",
+      "note": "换行步进 = 字号 + Font+1380（sub_46AF90 raw 82674-82690）"
+    },
+    {
+      "file": "analysis/fields.json",
+      "anchor": "\"name\":\"line_spacing\"",
+      "note": "订正后：Font+0x15294 = 行间距（行距字段），不再是 color_extra2 第四色"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "**行间距（`Font+1380`",
+      "note": "0x8B 的语义已订正为行间距（含行距=字号+本字段与 ADV 前导 i08b 10 的说明）"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "text-line-pitch-font-1380",
+      "text-style-scope-queue-time"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/adv-text-rendering.md"
+    ]
+  },
+  "id": "T-0038",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence, tests"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → done —— 行距接入换行步进（Font+1380/i08b）+ 语义订正；守卫 text-layout / engine-field-store；见 changes.md"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/text-layout.test.ts",
+    "app/amayui-emulator/test/engine-field-store.test.ts"
+  ]
+}

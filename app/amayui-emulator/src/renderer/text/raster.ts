@@ -19,7 +19,13 @@
  * ★不用 `strokeText` 的原因：canvas 的描边是**沿轮廓居中**的（内外各半），
  * 视觉上比引擎的"偏移副本"更粗、且会把字面吃掉一半 —— 那正是"字重看着过重"的来源。
  */
-import { visibleInLine, type FontSpec, type MsgWinStyle, type TextFrame } from '../../text/layout.js';
+import {
+  visibleInLine,
+  visibleRubyInLine,
+  type FontSpec,
+  type MsgWinStyle,
+  type TextFrame,
+} from '../../text/layout.js';
 
 /** 逐档描边（引擎 `Font+1372` → `sub_455ED0` 的 `a8`）。 */
 function drawGlyph(
@@ -177,8 +183,9 @@ export function rasterFrame(frame: TextFrame, revealed: number, res = 1): HTMLCa
         const g = line.glyphs[i];
         if (g) drawGlyph(c, g.ch, g.x, g.y, st.main, st);
       }
-      // 注音随本文一起出现（引擎把注音与本文成对处理：24B 记录 +0 种类）
-      if (n > 0) for (const rg of line.ruby) drawGlyph(c, rg.ch, rg.x, rg.y, st.ruby, st);
+      // 注音与本文**末字**同步出现（引擎：注音记录紧跟本文词末字的 24B 记录、该记录标 [+0]=1，
+      // 显现循环 do { 贴 } while (上一记录[+0]) ⇒ 一步 = 本文末字 + 注音）。见 `visibleRubyInLine`。
+      for (const rg of visibleRubyInLine(line, n)) drawGlyph(c, rg.ch, rg.x, rg.y, st.ruby, st);
       start += line.glyphs.length;
     }
   };
