@@ -95,6 +95,18 @@ export class IpcFileSource implements FileSource {
     await window.api.writeSlotThumb?.(slot, data);
   }
 
+  /**
+   * **按统一文件 id 读原始字节**（`FileSource.readById` 的渲染进程实现）。
+   *
+   * ★为什么必须补这一条：Live2D 的 `0x341`/`0x345`/`0x34E` 由 `live2d/assetLoader` 直接调
+   * `Engine.fileSource.readById` —— 渲染进程缺它，装载链就整条哑掉（槽保持为空 ⇒ 572B 节点
+   * 按引擎门控整块不出画，**不报错**）。旧 preload 没有该通道时返回 null 同上。
+   */
+  async readById(id: number): Promise<{ name: string; data: Uint8Array } | null> {
+    const r = await window.api.readById?.(id);
+    return r ? { name: r.name, data: new Uint8Array(r.data) } : null;
+  }
+
   async dispose(): Promise<void> {
     /* IPC 无句柄需清理，保持接口对齐。 */
   }

@@ -21,29 +21,6 @@ const op_light_enable: OpHandler = (c) => {
 };
 
 /**
- * `0x342`（sub_427C70, raw 34491）：**销毁 Live2D 模型实例槽**（不是"释放图形资源槽"）。
- * 引擎：读 op1 → `sub_4A1A60(Scene, op1)`：`v3 = objects[op1]`（Scene+55812+4·op1，10 槽），
- * 非空则 `sub_4785E0`（槽对象析构：释放纹理/子对象）+ `operator delete` + 置 0。
- */
-const op_destroy_l2d_slot: OpHandler = (c) => {
-  const slotIdx = readIntOperand(c.e, c.frame, c.instr, 1);
-  c.native.destroyL2DSlot?.(slotIdx);
-};
-
-/**
- * `0x352`（sub_4283B0, raw 34780）：**Live2D 槽参数设置**（原判为"图形子系统"过泛）。
- * 引擎：读 op1=槽号(0..9)、op2、op3 → `sub_4A1AC0(Scene, op1, op2, op3)`：
- * `v4 = objects[op1]`，按 op2 选 `sub_478540`（置**待纹理 ID**：标志 +24、值 +28）
- * 或 `sub_478560`（置**待动作 ID**：标志 +25、值 +32）。
- */
-const op_l2d_slot_set: OpHandler = (c) => {
-  const slotIdx = readIntOperand(c.e, c.frame, c.instr, 1);
-  const sel = readIntOperand(c.e, c.frame, c.instr, 2);
-  const value = readIntOperand(c.e, c.frame, c.instr, 3);
-  c.native.l2dSlotSet?.(slotIdx, sel, value);
-};
-
-/**
  * `0x23D`（sub_41A300, raw 25320）：**销毁 movie/纹理槽 42..999**（958 次循环）。
  * 对 `Engine+4*(94714+k)`（CMovieToTexture 族）调 `sub_488FB0` + vtable[0](obj,1) 析构，
  * 并对 Scene 调 `sub_49E980(Scene, i)` 卸对应网格/纹理槽。
@@ -99,8 +76,9 @@ export const GFX_MISC_OPS: OpTable = [
   [0x248, op_set_render_cfg_248], // dword_55052C = op1（渲染配置全局）
   [0x32f, op_light_enable], // D3D 灯光开关（LightEnable）
   [0x340, op_set_render_state], // 渲染状态下发（设备 vtable+228）
-  [0x342, op_destroy_l2d_slot], // 销毁 Live2D 模型实例槽
-  [0x352, op_l2d_slot_set], // Live2D 槽参数（待纹理 ID / 待动作 ID）
+  // ★`0x342`/`0x352` **已移出本表**（2026-09）：它们属 Live2D 族（`handlers/live2d.ts` 的 `LIVE2D_OPS`）。
+  //   留在这里时虽然被后注册的 `LIVE2D_OPS` 覆盖（`handlers/index.ts` 的顺序），但两个只调**没人实现**的
+  //   宿主缝的"影子 handler"会让**闸门 A** 报假缺口（实测：控制窗显示 `destroyL2DSlot`/`l2dSlotSet` 未实现）。
 ];
 
 /** 图形子系统的 native 转发。 */

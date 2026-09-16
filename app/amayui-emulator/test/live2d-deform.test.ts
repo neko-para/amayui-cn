@@ -125,19 +125,119 @@ test('deform：pickPivot 的组合下标口径（params[0] 最快变化）', () 
     ],
   };
   const at = (a: number, b: number) => pickPivot(pm, (n) => (n === 'A' ? a : b));
-  assert.equal(at(0, 0).indexA, 0, 'A=0,B=0 ⇒ 0');
-  assert.equal(at(5, 0).indexA, 1, 'A 走一档 ⇒ +1（A 是最快变化位）');
-  assert.equal(at(10, 0).indexA, 2);
-  assert.equal(at(0, 1).indexA, 3, 'B 走一档 ⇒ +3（stride = A 的档数）');
-  assert.equal(at(10, 1).indexA, 5);
-  // 落在中间 ⇒ 插值到下一档
+  /** 只有一个角点（= 所有参数都落在关键帧上）时它的下标。 */
+  const only = (a: number, b: number): number => {
+    const p = at(a, b);
+    assert.equal(p.corners.length, 1, `A=${a},B=${b} 应只有一个角点`);
+    assert.equal(p.m, 0);
+    return p.corners[0]!.index;
+  };
+  assert.equal(only(0, 0), 0, 'A=0,B=0 ⇒ 0');
+  assert.equal(only(5, 0), 1, 'A 走一档 ⇒ +1（A 是最快变化位）');
+  assert.equal(only(10, 0), 2);
+  assert.equal(only(0, 1), 3, 'B 走一档 ⇒ +3（stride = A 的档数）');
+  assert.equal(only(10, 1), 5);
+  // 落在中间 ⇒ 插值到下一档（m = 1：两个角点、权重 (1-t, t)）
   const mid = at(2.5, 0);
-  assert.equal(mid.indexA, 0);
-  assert.equal(mid.indexB, 1);
-  assert.ok(Math.abs(mid.t - 0.5) < 1e-9);
+  assert.equal(mid.m, 1);
+  assert.deepEqual(mid.corners.map((c) => c.index), [0, 1]);
+  assert.ok(Math.abs(mid.corners[1]!.weight - 0.5) < 1e-9);
   // 越界夹紧
-  assert.equal(at(-100, 0).indexA, 0);
-  assert.equal(at(1000, 0).indexA, 2);
+  assert.equal(only(-100, 0), 0);
+  assert.equal(only(1000, 0), 2);
+});
+
+test('★deform：多参数同时插值（m ≥ 2）按 2^m 角点做多线性混合', () => {
+  // 为什么必须钉住：本作语料**常态**触发 m ≥ 2 —— 例 `B_MY_PARTS_ARM_LEFT.00` 有 3 个参数
+  // （PARAM_KAO / PARAM_KAKUSYUKU / PARAM_ARM），而 PARAM_KAKUSYUKU 的 .MTN 曲线只有 1 个采样
+  // （恒 −23，落在其区间 [−100,0] 内部 ⇒ frac 恒 0.77）⇒ 永远至少 2 维带权重。
+  // 旧实现只为"第一个 frac>0 的维度"插值、其余取整档 ⇒ 结果在另一维的 frac 归零时**跳变**
+  // ⇒ 用户实测"翅膀与背手整体同步卡顿、头眼流畅"（它们共享同一个父变形器）。
+  const pm = {
+    params: [
+      { kind: 'paramPivots' as const, paramId: { kind: 'id' as const, idClass: 'param' as const, name: 'A' }, pivotCount: 2, pivotValues: [0, 10] },
+      { kind: 'paramPivots' as const, paramId: { kind: 'id' as const, idClass: 'param' as const, name: 'B' }, pivotCount: 2, pivotValues: [0, 10] },
+    ],
+  };
+  const pick = pickPivot(pm, (n) => (n === 'A' ? 2.5 : 7.5)); // frac = 0.25 / 0.75
+  assert.equal(pick.m, 2, '两维都在区间内部 ⇒ m = 2');
+  assert.equal(pick.corners.length, 4, '2^m = 4 个角点');
+  const w = new Map(pick.corners.map((c) => [c.index, c.weight]));
+  // 下标 = i_A·1 + i_B·2；权重 = ∏(bit ? frac : 1−frac)
+  assert.ok(Math.abs(w.get(0)! - 0.75 * 0.25) < 1e-12, '(0,0) → 0.1875');
+  assert.ok(Math.abs(w.get(1)! - 0.25 * 0.25) < 1e-12, '(1,0) → 0.0625');
+  assert.ok(Math.abs(w.get(2)! - 0.75 * 0.75) < 1e-12, '(0,1) → 0.5625');
+  assert.ok(Math.abs(w.get(3)! - 0.25 * 0.75) < 1e-12, '(1,1) → 0.1875');
+  assert.ok(Math.abs([...w.values()].reduce((a, b) => a + b, 0) - 1) < 1e-12, '权重和应为 1');
+
+  // 端到端：一个只平移的变形器，originX = 0 / 100 / 200 / 300（按上面 4 个角点的顺序）
+  const ent = (originX: number) => ({
+    kind: 'affineEnt' as const,
+    originX,
+    originY: 0,
+    scaleX: 1,
+    scaleY: 1,
+    rotationDeg: 0,
+    reflectX: false,
+    reflectY: false,
+  });
+  const model = {
+    kind: 'model' as const,
+    params: [],
+    parts: [
+      {
+        kind: 'parts' as const,
+        locked: false,
+        visible: true,
+        id: { kind: 'id' as const, idClass: 'parts' as const, name: 'P' },
+        deformers: [
+          {
+            kind: 'bdAffine' as const,
+            id: { kind: 'id' as const, idClass: 'base' as const, name: 'B' },
+            targetId: null,
+            pivotManager: pm,
+            pivotOpacities: [1, 1, 1, 1],
+            affines: [ent(0), ent(100), ent(200), ent(300)],
+          },
+        ],
+        drawables: [
+          {
+            kind: 'drawData' as const,
+            id: { kind: 'id' as const, idClass: 'draw' as const, name: 'D' },
+            targetId: { kind: 'id' as const, idClass: 'base' as const, name: 'B' },
+            pivotManager: null,
+            averageDrawOrder: 0,
+            pivotDrawOrders: [],
+            pivotOpacities: [],
+            clipId: null,
+            textureNo: 0,
+            pointCount: 3,
+            polygonCount: 1,
+            indexArray: [0, 1, 2],
+            pivotPoints: [[0, 0, 1, 0, 0, 1]],
+            uvs: [0, 0, 1, 0, 0, 1],
+            optionFlag: 0,
+            colorGroupNo: null,
+            colorCompositionType: 0,
+            culling: true,
+          },
+        ],
+      },
+    ],
+    canvasWidth: 100,
+    canvasHeight: 100,
+    stats: { version: 10, objects: 0, byTag: {}, bytesRead: 0, bytesTotal: 0, eofMarker: true },
+  } as unknown as MocModel;
+
+  const st = newParamState(model);
+  st.set('A', 2.5);
+  st.set('B', 7.5);
+  const frame = evaluateModel(model, st);
+  const x = frame.parts[0]!.drawables[0]!.points[0]!;
+  // 精确多线性：0·0.1875 + 100·0.0625 + 200·0.5625 + 300·0.1875 = 175
+  assert.ok(Math.abs(x - 175) < 1e-9, `顶点 x 应为 175（多线性混合），实际 ${x}`);
+  // ★旧实现（只插第一维、第二维取整档）会得到 25 —— 差 150 px，正是"跳变"的量级
+  assert.ok(Math.abs(x - 25) > 1, '不得退回"只插一个维度"的旧口径');
 });
 
 test('deform：真实模型求值（BM021A）—— 顶点数/有限性/参数驱动形变', () => {

@@ -209,4 +209,4 @@ LAYOUT:{X,Y,ANCHOR_X,ANCHOR_Y,SCALE_X,SCALE_Y}=值   # ★动作自带布局：T
 - **每帧调用序列**（`sub_4783D0` → `sub_4BCB50` → update/draw）→ `live2d.md` §5。
 - **`0x346`–`0x351`**（572B 节点 setter / 纹理乘色 / 命名参数 / 队列复位）在本作语料里 **0 次**，
   但登记在 `opcode-table.md` 与 `live2d.md` §3（引擎能力边界，不能当不存在）。
-- 数据层：`analysis/functions.json`（L2D 条目族）、`analysis/engine-capabilities.json`（5 条 Live2D 能力）。
+- 数据层：`analysis/functions.json`（L2D 条目族）、`analysis/engine-capabilities.json`（6 条 Live2D 能力）。

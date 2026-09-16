@@ -60,6 +60,15 @@ declare global {
       writeSlotThumb?(slot: number, data: Uint8Array): Promise<void>;
       image(id: number): Promise<{ name: string; width: number; height: number; data: Uint8Array } | null>;
       /**
+       * **按统一资源 id 取原始字节**（`{name, data}`；取不到返回 null）。
+       *
+       * 与 `image` 的分工：`image` 只走 AGF 解码（普通 PNG / `.MOC` / `.MTN` 都会返回 null）；
+       * 本通道是**不解释的字节**，由渲染侧按类型自己解 —— Live2D 的 `.MOC`/`.MTN` 与纹理 PNG
+       * 全靠它（`FileSource.readById` 的渲染进程实现）。
+       * 旧 preload 可能没有此通道 ⇒ 调用点用 `?.` 降级成"取不到"（= 槽保持为空、节点不出画）。
+       */
+      readById?(id: number): Promise<{ name: string; data: Uint8Array } | null>;
+      /**
        * **按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节**
        * （SE=`RIFF` PCM16 WAV / BGM·语音=`OggS` Vorbis；实测见 `docs/13-audio-plan.md` §1）。
        * ★BGM 传的是**文件名**（曲号 → `BGM031.OGG`，见 `docs-new/03-engine/sound-system.md` §5）；

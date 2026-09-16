@@ -11,19 +11,19 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 40 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 41 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 8 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 28 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 22 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **124** | 需要关注（非 n/a 且非已核验）= **58** |
+| **合计** | **125** | 需要关注（非 n/a 且非已核验）= **58** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
 | 3D | 17 | 2 |
-| Live2D | 5 | 2 |
+| Live2D | 6 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 10 |
 | 消息窗 | 29 | 16 |
@@ -160,6 +160,7 @@
 | `live2d-enabled-config-flag` | Live2D | Live2D 开关（`global a9d0`）与静态贴图回落 | 🟠 部分 | E1 |
 | `l2d-node-draw-gate` | Live2D | 572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
 | `live2d-node-draw-advance` | Live2D | L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
+| `live2d-mesh-batches` | Live2D | Live2D 出画几何：顶点/UV/索引流 + 画布居中摆放 + 归并成三角批次 | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -179,7 +180,7 @@
 - **缺失时为什么静默**：脏标志为 0 或 `Scene+1056==0` 时内部各分支自然不成立，函数正常返回，无日志
 - **引擎**：sub_4B4040, sub_4B06D0 @ raw 136742-136966
 - **读的字段**：Scene+46508, Scene+46516, Scene+46512, Scene+46500, Scene+1860, Scene+46456, Scene+46676, Scene+1056
-- **emulator 现状**：只实现四路归并里的两路（DrawItem + MeshEntry 黑罩）；两张 572B 节点表完全没建模 ⇒ 特效/精灵层缺失
+- **emulator 现状**：四路归并里的三路已接（DrawItem + MeshEntry 黑罩 + **Live2D 572B 立绘节点**，见 live2d-mesh-batches）；另一张 572B 节点表（特效/精灵层）仍未建模 ⇒ 该层缺失。
 
 ### `scene-dirty-flag-lifecycle`（partial）
 
@@ -269,7 +270,7 @@
 - **缺失时为什么静默**：回置标记只是让项保留，帧末 `Scene+46508` 归 0 时下一帧重来，无报错
 - **引擎**：sub_4B06D0, sub_4B0360, sub_4AAD40, sub_40DC30, sub_4AAEC0 @ raw 136361-136718
 - **读的字段**：Scene+1032, Scene+1064, Scene+1080, Scene+1096, Scene+46500
-- **emulator 现状**：按 layer 排序绘制等价于归并顺序，但没有 |0x10000「绘制中」标志回置与两趟重排
+- **emulator 现状**：四路归并里的 **Live2D 那一路（Scene+1096 的 572B 立绘节点）已接**：节点 key（= 0x344 的 op1）与 DrawItem 的 handle、MeshEntry 的 handle 同键比较、取小先画，等键次序 item→text→mesh→节点（raw 135586-135614）；TITLE 的静态立绘 draw-texture 14 与 L2D 支的 i344 14 占**同一个归并槽**。仍未建模：另一张 572B 节点表（特效/精灵层）与 |0x10000「绘制中」标志回置与两趟重排。
 
 ### `transition-table-flush`（absent）
 

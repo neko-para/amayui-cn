@@ -232,10 +232,6 @@ export interface NativeBridge {
   drawCgNumber?(id: number, rec: readonly number[], value: number, x: number, y: number, digits: number, flags: number): void;
   /** 0x32F（sub_4272B0 → `sub_49A150`）：**D3D 灯光开关** `LightEnable(idx, on)`（idx=0..9；同族 sub_49A080=SetLight）。 */
   setLight?(idx: number, on: boolean): void;
-  /** 0x342（sub_427C70 → `sub_4A1A60`）：**销毁 Live2D 模型实例槽**（Scene+55812 的 10 槽，析构 + delete + 置 0）。 */
-  destroyL2DSlot?(slot: number): void;
-  /** 0x352（sub_4283B0 → `sub_4A1AC0`）：Live2D 槽参数——按 `sel` 置**待纹理 ID**(+24/+28) 或**待动作 ID**(+25/+32)。 */
-  l2dSlotSet?(slot: number, sel: number, value: number): void;
   /** 0x23D（sub_41A300）：**销毁 movie/纹理槽 42..999**（CMovieToTexture 族析构 + Scene 卸槽）。 */
   releaseMovieSlots?(): void;
   /** 0x32B（sub_41A4A0）：**清 D3DX 网格层级槽表**（Scene+50708 区 1000 槽，逐项 delete）。 */
@@ -345,25 +341,15 @@ export interface NativeBridge {
   setTranslationAnim?(handle: number, delay: number, dur: number, x: number, y: number, z: number): void;
   /** 0x239（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。op2=delay、op3=dur、op4=总帧数、op5=列数、op6=标志(bit0=保持末帧)。 */
   setFlipbook?(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void;
-  /** 0x344（sub_427CB0 旧解；**已订正为 0x344 = 建/绑 572B 立绘节点**，见 `handlers/live2d.ts`）。 */
-  setTextureTransform?(handle: number, value: number): void;
-  // ---- Live2D（`0x341`–`0x352`；语义与语料见 `handlers/live2d.ts` 的对照表）----
   /**
-   * `0x341` 装 `.MOC`：`op1` = 统一文件 id、`op2` = 实例槽（0..9）。
+   * ★**Live2D 没有宿主缝**（`0x341`/`0x345`/`0x34E` 的装载全在 VM 层 handler 里完成）。
    *
-   * 宿主职责：按 id 读文件字节 → `parseMoc` → `scL2dLoadModel(engine, slot, id, model)`。
-   * 引擎侧**读失败会抛异常**（「L2Dモデルファイル %s の読み込みに失敗しました」，raw 34488）；
-   * 重写侧的失败通道在宿主（`FileSource` 是异步接口）。
+   * 为什么不留 `l2dLoadModel?` 之类的可选方法：那三个 handler 必须**同步语义等价**（引擎在
+   * `0x341` 里直接读文件+解析，紧随的 `i344` 就要看到模型），所以它们 `await` 共享层的
+   * `live2d/assetLoader`（两个宿主同一份实现）。旧的宿主缝既没人实现、又会让**闸门 A** 报出
+   * 假的「意图被丢弃」（2026-09 实测：控制窗显示 `l2dLoadModel`/`l2dStartMotion` 未实现，
+   * 而模型其实已经装好了）⇒ 已删除。
    */
-  l2dLoadModel?(fileId: number, slot: number): void;
-  /** `0x345` 装纹理：`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号。 */
-  l2dBindTexture?(fileId: number, slot: number, textureNo: number): void;
-  /**
-   * `0x34E` 装 `.MTN`：`op1` = 文件 id、`op2` = 动作槽(0/1)、`op3` = 实例槽、`op4` = 循环位。
-   *
-   * 宿主职责：按 id 读文本 → `parseMtn` → `scL2dStartMotion(...)`（**装载即入队**）。
-   */
-  l2dStartMotion?(fileId: number, slot: number, motionSlot: number, loop: boolean): void;
   /** 0x352（sub_4283B0）：图形子系统 `sub_4A1AC0(_this+80708, op1, op2, op3)`（按 op2 选 sub_478560/sub_478540）。 */
   gfxSubsystem?(a2: number, a3: number, a4: number): void;
   /** 0x1F6（sub_41A130）：`sub_4AB7A0(_this+80708)` —— 整批释放绘制项/网格（保留纹理槽）。 */

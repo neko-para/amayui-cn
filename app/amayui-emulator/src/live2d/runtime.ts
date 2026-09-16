@@ -54,6 +54,17 @@ export interface L2dHost {
   readonly l2dSlots: Map<number, L2dInstance>;
   readonly l2dNodes: Map<number, L2dNode>;
   readonly l2dMotionCache: Map<number, Mtn>;
+  /**
+   * **按统一文件 id 取字节**的窄缝（可选）：出画侧要它把纹理 PNG 解码成宿主纹理。
+   *
+   * 为什么挂在宿主上而不是另开一条参数：`Engine.fileSource` 本来就结构化满足它
+   * （`FileSource.readById`），而"槽里有没有模型"这个绘制判据也在同一个对象上
+   * （见 `SceneState.l2dHost` 的说明）—— 两件事同源，接线就不会分叉。
+   *
+   * ★缺省/未实现 ⇒ **纹理不出画**（几何与快照照常）：这与引擎"`0x345` 取不到文件 ⇒
+   * 纹理号无图"是同一条静默语义（不给占位块，否则会把"没装载"伪装成"装载错了"）。
+   */
+  readonly fileSource?: { readById?(id: number): Promise<{ name: string; data: Uint8Array } | null> } | null;
 }
 
 function ensureSlot(host: L2dHost, slot: number): L2dInstance {
@@ -228,8 +239,13 @@ export function l2dNodeTranslationWin(
  *
  * 引擎判据：`节点+0 bit0` 且 `节点+4` 指向的实例**非空**（`if (v28[v29[1] + 13953])`，raw 134320）。
  * ★槽空 ⇒ **整块不出画、无日志无错误** —— 这是"脚本在跑、画面什么都没有"的成因。
+ *
+ * 参数只声明"读得到 `l2dSlots`"⇒ `L2dHost` / `L2dRenderHost` / `L2dSnapshotHost` 都能传。
  */
-export function l2dNodeDrawable(host: L2dHost, node: L2dNode): boolean {
+export function l2dNodeDrawable(
+  host: { readonly l2dSlots: Map<number, L2dInstance> },
+  node: L2dNode,
+): boolean {
   if ((node.flags & 1) === 0) return false;
   const inst = host.l2dSlots.get(node.slot);
   return !!inst?.model;

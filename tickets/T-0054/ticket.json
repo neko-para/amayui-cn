@@ -71,6 +71,43 @@
       "file": "docs-new/03-engine/live2d.md",
       "anchor": "2.0.06 for DirectX",
       "note": "本次评估的落点：系统能力清单 / 资产口径 / 三条重写路线（本节即\"Live2D 系统的大致能力\"与依赖评估的正文）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "j_D3DXMatrixTranslation(v31, LODWORD(v26), LODWORD(v24), 0.0);",
+      "line": 134376,
+      "note": "摆放：v26 = −0.5·画布宽、v24 = 0.5·显示高 − 0.5·画布高（dbl_51D7F8 = 0.5，raw 4197）⇒ 净效果 = 画布中心对齐屏幕中心"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(float *)(v11 + 8 * i) = *(float *)(*(_DWORD *)(_this + 60) + 8 * i);",
+      "line": 153067,
+      "note": "UV 流直接从 `.moc` 的 `+60 uvs` 原样 memcpy（不翻转）⇒ Pixi 侧直接用 `dd.uvs`"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4B0360((_DWORD *)_this, (int)&savedregs, (int)v217, v365 + 588, v68);",
+      "line": 135610,
+      "note": "572B 立绘节点走同一次四路归并，归并键 = 节点 map key（= `0x344` 的 op1）；等键次序 item→mesh→节点"
+    },
+    {
+      "file": "app/amayui-emulator/src/live2d/render.ts",
+      "anchor": "export function l2dBatches(",
+      "note": "出画几何的**唯一**实现：快照与 Pixi 合成同源（门控 + 求值 + VISIBLE 覆盖 + 画布居中 + 按纹理号分组）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
+      "anchor": "const l2dBatchList = scene.l2dHost ? l2dBatches(scene.l2dHost, this.viewW, this.viewH) : [];",
+      "note": "L2D = 第四类图元：批次按节点 key 与 item/text/mesh 四路归并，每批一个 Pixi Mesh"
+    },
+    {
+      "file": ".tmp/l2dfix-0-title.png",
+      "note": "★E4（2026-09-17）：TITLE 的 Live2D 支在真界面出画 —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、`[present …] l2d={槽1 节点1 可画1 纹理3}`。复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`"
+    },
+    {
+      "file": "app/amayui-emulator/src/live2d/moc.ts",
+      "anchor": "const UTF8 = new TextDecoder('utf-8');",
+      "note": "★真机静默失败 ①：字符串解码曾用 Node 的 `Buffer`，而 `src/live2d/**` 跑在渲染进程（无 Node 集成）⇒ 解析抛异常、槽空、立绘不出画，而 tsx 下的守卫全绿。守卫：`test/live2d-render.test.ts` 的「渲染器安全」源码棘轮"
     }
   ],
   "links": {
@@ -118,6 +155,20 @@
     {
       "at": "2026-09-16",
       "what": "open → doing —— 用户拍板：按自研（C）实施 + 参考源纪律（规范优先/资产实证兜底/反汇编仅 oracle）；开始 M1"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "M1 收尾（渲染最后一公里）：新增 live2d/render.ts（出画几何 = 快照与绘制同源）、pixi/l2dTextures.ts（普通 PNG → Pixi 纹理）、presenter 第四类图元（四路归并）、Electron readById 通道（真实运行时装载链此前是断的）；快照导出批次/三角形/纹理来源；新增守卫 test/live2d-render.test.ts（6 条，含真资产 E3）；能力台账 +1（live2d-mesh-batches=modeled-verified/E3）；顺带收敛「pivotPoints 是局部坐标」。M3（a9d0 真读 / slot-probe）与 E4 仍未做。"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "真机联调：修两个\"只有真机才暴露\"的静默失败 —— ① moc.ts 用 Node 的 Buffer 解字符串（渲染进程无 Node 集成）⇒ 加渲染器安全源码棘轮；② 出画批次按纹理号合并、alpha 取最小值 ⇒ op=0 的网格把整张角色纹理压透明 ⇒ 改为一网格一批（7 条守卫）；③ 删掉 Live2D 的宿主缝（l2dLoadModel/l2dBindTexture/l2dStartMotion/destroyL2DSlot/l2dSlotSet/setTextureTransform）与两处被覆盖的死 handler（gfx-misc 的 0x342/0x352、gfx-texture 的 0x344 旧解）⇒ 控制窗不再报假缺口。E4 已取得（.tmp/l2dfix-0-title.png 角色完整出画）⇒ live2d-mesh-batches 升 E4。M3 仍未做。"
     }
+  ],
+  "tests": [
+    "test/live2d-moc.test.ts",
+    "test/live2d-deform.test.ts",
+    "test/live2d-chain.test.ts",
+    "test/live2d-render.test.ts"
   ]
 }

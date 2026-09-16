@@ -83,6 +83,7 @@ import type { L2dHost } from '../live2d/runtime.js';
 import { setupPixiStage } from './pixi/appSetup.js';
 import { attachMouseInput } from './pixi/inputAttach.js';
 import { ScenePresenter } from './pixi/presenter.js';
+import { L2dTextureStore, type L2dByteSource } from './pixi/l2dTextures.js';
 import { TextLayer } from './pixi/textLayer.js';
 import type { MsgWinInput } from '../text/layout.js';
 import { fontFailures } from './text/fontLoader.js';
@@ -122,6 +123,20 @@ export class PixiBackend implements NativeBridge {
   private textLayer!: TextLayer;
 
   /**
+   * **Live2D 纹理库**（统一文件 id → Pixi 纹理；`tickets/T-0054`）。
+   *
+   * 与 `textures`（引擎纹理槽）分开：L2D 的纹理是**普通 PNG** 且绑定关系是
+   * "模型内纹理号 → 文件 id"，既不过 AGF 解码也不占引擎槽号（见 `pixi/l2dTextures.ts`）。
+   */
+  #l2dTextures!: L2dTextureStore;
+  /**
+   * 纹理库的字节来源（`Engine.fileSource`；在 `attachL2dHost` 里接上）。
+   * 用"延迟解析"的闭包包一层，是因为纹理库要在 `create()` 里就装进 presenter，
+   * 而 `Engine` 要到之后才建好（装配顺序见 `renderer/app/session.ts`）。
+   */
+  #l2dByteSource: L2dByteSource | null = null;
+
+  /**
    * **场景模型**（与 `HeadlessScene` 共用 `sceneModel.ts` 的同一份语义）：
    * 建/删项、5 个窗、"缺失即建项"、bit0 门控都在那边实现，本类只负责画到 Pixi。
    * 这样"报告说对、画面不对"这类最难查的漂移就不可能发生。
@@ -134,9 +149,15 @@ export class PixiBackend implements NativeBridge {
    * 为什么是方法而不是 public 字段：`scene` 是 private（本类唯一的场景模型），而 L2D 的三张表
    * 挂在 `Engine` 上（VM 层，两个宿主共享唯一一份）⇒ 需要一条"把 Engine 交给场景"的窄缝。
    * 调用时机：`Engine` 建好之后立即（同 `e.fileSource = src` 那一步）。
+   *
+   * ★同时把 `Engine.fileSource` 接成**纹理字节来源**：没有它，L2D 的纹理 PNG 解不出来
+   * （几何照算、快照照报，但屏幕上一片不画 —— 与"槽空"症状相同）。旧宿主/测试不提供
+   * `fileSource` 时保持 `null`，语义 = "该宿主不支持按 id 直读资源"（`FileSource.readById` 的口径）。
    */
   attachL2dHost(host: L2dHost): void {
     this.scene.l2dHost = host;
+    const fs = host.fileSource;
+    this.#l2dByteSource = fs?.readById ? { readById: (id) => fs.readById!(id) } : null;
   }
 
   /**
@@ -187,7 +208,15 @@ export class PixiBackend implements NativeBridge {
     b.stage = stage.stage;
     b.drawRoot = stage.drawRoot;
     b.unit = stage.unit;
-    b.presenter = new ScenePresenter(b.drawRoot, b.textures, b.unit, (m) => b.#pushLog(m));
+    // L2D 纹理库（延迟解析字节来源：`Engine` 还没建，见 `#l2dByteSource` 的说明）。
+    // ★`onReady` 里 `#markDirty()`：纹理是异步到的，到货那一刻必须让下一帧重新合成，
+    //   否则"装载完成"这件事永远不会变成画面（表现为立绘晚很久才出现或永不出现）。
+    b.#l2dTextures = new L2dTextureStore(
+      { readById: (id) => b.#l2dByteSource?.readById(id) ?? Promise.resolve(null) },
+      (m) => b.#pushLog(m),
+      () => b.#markDirty(),
+    );
+    b.presenter = new ScenePresenter(b.drawRoot, b.textures, b.unit, (m) => b.#pushLog(m), width, height, b.#l2dTextures);
     installD3DBlendModes(stage.app);
     // 内置字族按需加载（TextLayer 在光栅化前调 ensureFont）；加载完成会 bump
     // fontVersion()，TextLayer 据此重画一次用 fallback 画出来的文本。
@@ -303,9 +332,12 @@ export class PixiBackend implements NativeBridge {
    * 引擎 `set-texture` 是同步读文件+解码，重写侧走 IPC 异步 ⇒ 不等就会"新文本压在旧背景上"。
    */
   async texturesIdle(): Promise<void> {
-    if (this.textures.pendingCount === 0) return;
+    // ★L2D 纹理也要等：它们在 `advanceModel` 里发起（见 `#ensureL2dTextures`），
+    //   不等就会画出"几何有了、贴图还没到"的一帧（整块立绘看起来是空的）。
+    const pendingL2d = this.#l2dTextures.pendingCount;
+    if (this.textures.pendingCount === 0 && pendingL2d === 0) return;
     this.#barriers++;
-    await this.textures.waitIdle();
+    await Promise.all([this.textures.waitIdle(), this.#l2dTextures.waitIdle()]);
     this.#markDirty();
   }
 
@@ -844,6 +876,27 @@ export class PixiBackend implements NativeBridge {
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);
     if (drawn.length > 0) this.#l2dDrawnKeys = drawn;
+    // ★Live2D 纹理：在本帧**开头**发起载入，帧末的 `texturesIdle`（`session.#present` 的次序 =
+    //   推进模型 → 屏障 → 合成）就能在同一帧里等到它们 ⇒ 与引擎 `0x345` 的同步装载同观感。
+    this.#ensureL2dTextures();
+  }
+
+  /**
+   * 把**所有活实例槽**上已绑定的纹理号发起载入（幂等）。
+   *
+   * 为什么按槽而不是"按本帧要画的批次"：批次的纹理号要先把几何求值一遍才知道，那等于每帧
+   * 算两遍；而"槽里绑了哪几张图"是现成的（`L2dInstance.textures`），且一个槽的纹理最多 10 张。
+   * 与引擎的口径一致：`0x345` 一执行，纹理就属于该槽（不管当前动作看不看得见它）。
+   */
+  #ensureL2dTextures(): void {
+    const host = this.scene.l2dHost;
+    if (!host) return;
+    const ids: number[] = [];
+    for (const inst of host.l2dSlots.values()) {
+      if (!inst.model) continue;
+      for (const [no, fileId] of inst.textures) if (no >= 0) ids.push(fileId);
+    }
+    if (ids.length > 0) this.#l2dTextures.ensure(ids);
   }
 
   /**

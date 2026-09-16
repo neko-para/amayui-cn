@@ -229,6 +229,16 @@ export class MocParseError extends Error {
 
 type Raw = unknown;
 
+/**
+ * 字符串解码器（**唯一一份**）。
+ *
+ * `.moc` 里的字符串是 UTF-8 字节（ID 形如 `PARAM_EYE_L_OPEN` / `D_FACE.00`）。
+ * ★这里**不能用 Node 的 `Buffer`**：`src/live2d/**` 全部由 Electron **渲染进程**加载
+ * （无 Node 集成）⇒ 那会是 "Buffer is not defined" 的运行时炸弹，而 tsx 下的测试看不出来。
+ * 守卫：`test/live2d-render.test.ts` 的「渲染器安全」一条（源码棘轮）。
+ */
+const UTF8 = new TextDecoder('utf-8');
+
 class Reader {
   pos = 0;
   private readonly objects: Raw[] = [];
@@ -325,7 +335,12 @@ class Reader {
     this.need(n, 'string');
     const bytes = this.buf.subarray(this.pos, this.pos + n);
     this.pos += n;
-    return Buffer.from(bytes).toString('utf8');
+    // ★**不要用 Node 的 `Buffer`**：这一层在 Electron **渲染进程**里跑（没有 Node 集成），
+    //   `Buffer` 是未定义全局 ⇒ `new MocParseError` 之前就抛 "Buffer is not defined"，
+    //   被 `loadModelIntoSlot` 记成"模型解析失败 ⇒ 槽保持为空"，于是**立绘永不出现**。
+    //   而 Node 侧的测试（tsx）有 `Buffer` ⇒ 全绿，抓不到这个分叉（实测踩过）。
+    //   `TextDecoder` 在两处都是标准全局。
+    return UTF8.decode(bytes);
   }
 
   /** 内联 i32 数组（O: `sub_4C14E0` raw 147268-147337）。 */

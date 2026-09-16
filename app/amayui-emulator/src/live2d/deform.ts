@@ -21,10 +21,17 @@
  *  - 插值是**分区间线性** `w = (x − V[k−1]) / (V[k] − V[k−1])`（raw 155228），端点用 ε=1e-4 吸附（raw 5442）；
  *    超界**不夹紧数值**，而是"钳到端点关键帧 + 置 changed 标志"（raw 155186/155193/155214）。
  *
- *  ⚠**本作语料的多参数插值不可达**（E）：`params.length ≥ 2` 的网格只有 97 个，且这些参数的取值
- *  总是落在**端值**上 ⇒ 任何时刻至多一个参数处在区间内部（`m ≤ 1`，即只有 2 个角点）。
- *  因此本实现只处理"一个参数插值 + 其余取整档"，与 SDK 在 `m ≤ 1` 时**等价**；
- *  `m ≥ 2` 分支（`2^m` 角点混合）在本作不可达，未实现（写在各自函数注释里）。
+ * ### ★多参数同时插值（`m ≥ 2`）**在本作是常态** —— 曾经的"不可达"结论是错的
+ * 2026-09 实测纠正：先前只统计了**网格自身**的 `pivotManager`（那里确实最多 1 维），
+ * 但多参数 manager 挂在**变形器**上。例：`B_MY_PARTS_ARM_LEFT.00` 有 3 个参数
+ * `PARAM_KAO(3) / PARAM_KAKUSYUKU(3) / PARAM_ARM(3)`（∏=27），而 `PARAM_KAKUSYUKU` 的
+ * `.MTN` 曲线**只有 1 个采样**（恒 −23），落在它自己的区间 `[−100, 0]` 内部 ⇒ `frac = 0.77` **恒定**。
+ * ⇒ 任何时刻都至少有 2 个维度带插值权重。
+ * 只为"第一个 frac>0 的维度"插值、其余维度取整档（旧实现）会让结果在
+ * `PARAM_KAO` 的 frac 归零时**在两个近似之间跳变** —— 症状 = 用户实测的
+ * **"翅膀与背手整体同步卡顿、而头眼流畅"**（它们共享同一个父变形器，所以同步）。
+ * 现在按 SDK 的 `2^m` 角点做多线性混合：`weight = ∏_k (bit_k ? frac_k : 1 − frac_k)`
+ * （raw 156321-156441），`m ≤ 1` 时与旧的"单维 lerp"**逐位一致**。
  */
 
 import type {
@@ -102,30 +109,43 @@ export function pivotCombos(pm: MocPivotManager | null | undefined): number {
 }
 
 /**
- * 参数值 → 组合下标 + 各维插值权重。
+ * 参数值 → **`2^m` 个角点**（组合下标 + 权重）。
  *
  * 下标口径：`idx = Σ i_k · stride_k`，`stride_0 = 1` ⇒ **`params[0]` 是最快变化的一位**
  * （O: `sub_4CAB10` raw 155298/155351 从 1 起逐参数累乘 `pivotCount`）。
  *
- * ★**与 SDK 的等价性（`m ≤ 1`）**：SDK 的 `calcPivotValue` 返回"落在两个关键值之间的参数个数 m"，
- * 然后枚举 `2^m` 个角点、权重 = `∏_k (bit_k ? frac_k : 1 − frac_k)`（通用分支 raw 156321-156441）。
- * 本函数只取**一个** frac ≠ 0 的维度做线性插值 ⇒ 当 `m ≤ 1` 时两者结果**逐位公式相同**；
- * 而 E 实测本作语料 `m ≥ 2` 不可达（`params.length ≥ 2` 的网格只有 97 个，其取值总是端值）⇒
- * 对本作全部资产**等价**。`m ≥ 2` 的多角点混合未实现（本作不可达，写在这里以免被误当"已支持"）。
+ * ★**多线性混合（`m ≥ 2` 也correctly处理）**：SDK 的 `calcPivotValue` 给出"落在两个关键值之间的
+ * 参数个数 m"，然后枚举 `2^m` 个角点、权重 = `∏_k (bit_k ? frac_k : 1 − frac_k)`
+ * （通用分支 raw 156321-156441）。这里增量地构造这些角点：
+ *
+ * ```
+ * corners ← [{0, 1}]
+ * for k: corners ← { c + i_k·stride_k , w·(1−f_k) } ∪ (f_k > 0 ? { c + (i_k+1)·stride_k , w·f_k } : ∅)
+ * ```
+ *
+ * `f_k = 0`（该参数正好落在关键帧上）时不产生第二个角点 ⇒ **`m ≤ 1` 时与本文件旧实现的
+ * "单维 lerp"逐位一致**（旧实现只是把这条通用公式在 `m ≤ 1` 上的特例写死了）。
  */
+export interface PivotCorner {
+  /** 组合下标（`Σ (i_k + bit_k) · stride_k`）。 */
+  index: number;
+  /** 该角点的权重（所有角点之和 = 1）。 */
+  weight: number;
+}
+
 export interface PivotPick {
-  /** 组合下标（第 A 个关键帧）。 */
-  indexA: number;
-  /** 插值目标（`t > 0` 时有效；否则等于 indexA）。 */
-  indexB: number;
-  /** 插值权重 0..1。 */
-  t: number;
+  /** `2^m` 个角点（`Σ weight = 1`）；`m = 0` ⇒ 只有 1 个、权重 1。 */
+  corners: PivotCorner[];
   /** 每维的档位下标（诊断/测试用）。 */
   dims: number[];
+  /** 每维的插值分数（诊断/测试用）。 */
+  fracs: number[];
+  /** 有插值权重的维度数 = SDK 的 `m`（诊断/测试用）。 */
+  m: number;
 }
 
 /**
- * 在一维关键值数组里找"落点"：返回**左端档位下标** `i` 与权重 `t ∈ [0,1)`，
+ * 在一维关键值数组里找"落点"：返回**左端档位下标** `i` 与分数 `t ∈ [0,1)`，
  * 使 `v = lerp(values[i], values[i+1], t)`；`v` 夹在 `[values[0], values[last]]`。
  *
  * ★`v` 恰好落在某个关键值上时必须回到"该档的 `t = 0`"（否则 3 档以上会误插值：
@@ -145,7 +165,7 @@ function locate(values: number[], v: number): { i: number; t: number } {
   return { i, t: b > a ? (v - a) / (b - a) : 0 };
 }
 
-/** 把每维档位下标折成组合下标（`params[0]` 最快变化）。 */
+/** 每维的档位下标数组（旧口径；已被 `pickPivot` 的角点取代，仅作诊断保留）。 */
 function flatten(params: MocParamPivots[], dims: number[]): number {
   let idx = 0;
   let stride = 1;
@@ -156,7 +176,47 @@ function flatten(params: MocParamPivots[], dims: number[]): number {
   return idx;
 }
 
-/** 按参数取值表挑出关键帧下标（见 `PivotPick` 的口径说明）。 */
+/** 把下标夹进数组范围（引擎不检查越界；本实现夹紧以免读到 `undefined`）。 */
+function clampIdx(i: number, len: number): number {
+  return i < 0 ? 0 : i >= len ? len - 1 : i;
+}
+
+/** 按角点权重做多线性混合（数组逐分量；`m = 0` 时原样返回）。 */
+function blendPoints(arrs: number[][], corners: PivotCorner[]): number[] {
+  if (arrs.length === 0) return [];
+  if (corners.length === 1) return arrs[clampIdx(corners[0]!.index, arrs.length)] ?? [];
+  const first = arrs[clampIdx(corners[0]!.index, arrs.length)]!;
+  const out = new Array<number>(first.length).fill(0);
+  for (const c of corners) {
+    const a = arrs[clampIdx(c.index, arrs.length)];
+    if (!a) continue;
+    const w = c.weight;
+    for (let i = 0; i < out.length; i++) out[i] = out[i]! + (a[i] ?? 0) * w;
+  }
+  return out;
+}
+
+/** 按角点权重混合标量（`m = 0` 时就是那一个值）。 */
+function blendScalars(values: number[], corners: PivotCorner[], fallback: number): number {
+  if (values.length === 0) return fallback;
+  let s = 0;
+  for (const c of corners) s += (values[clampIdx(c.index, values.length)] ?? fallback) * c.weight;
+  return s;
+}
+
+/** 按角点权重混合关键帧矩阵（**逐元素**加权和；`m = 1` 时 = 旧的 `affineLerp`）。 */
+function blendAffines(affines: MocAffineEnt[], corners: PivotCorner[]): Affine {
+  if (affines.length === 0) return AFFINE_IDENTITY;
+  if (corners.length === 1) return affineEntToMatrix(affines[clampIdx(corners[0]!.index, affines.length)]!);
+  const out: number[] = [0, 0, 0, 0, 0, 0];
+  for (const c of corners) {
+    const m = affineEntToMatrix(affines[clampIdx(c.index, affines.length)]!);
+    for (let i = 0; i < 6; i++) out[i] = out[i]! + m[i]! * c.weight;
+  }
+  return out as unknown as Affine;
+}
+
+/** 按参数取值表挑出 `2^m` 个角点（见 `PivotPick` 的口径说明）。 */
 export function pickPivot(
   pm: MocPivotManager | null | undefined,
   paramValue: (name: string) => number,
@@ -164,26 +224,31 @@ export function pickPivot(
   const params = (pm?.params ?? []).filter((p) => !!p.paramId) as (MocParamPivots & {
     paramId: NonNullable<MocParamPivots['paramId']>;
   })[];
-  if (params.length === 0) return { indexA: 0, indexB: 0, t: 0, dims: [] };
+  if (params.length === 0) return { corners: [{ index: 0, weight: 1 }], dims: [], fracs: [], m: 0 };
 
   const dims: number[] = [];
-  let t = 0;
-  let tDim = -1;
-  for (let k = 0; k < params.length; k++) {
-    const p = params[k]!;
-    const v = paramValue(p.paramId.name);
-    const hit = locate(p.pivotValues, v);
+  const fracs: number[] = [];
+  let m = 0;
+  for (const p of params) {
+    const hit = locate(p.pivotValues, paramValue(p.paramId.name));
     dims.push(hit.i);
-    if (hit.t > 0 && tDim < 0) {
-      t = hit.t;
-      tDim = k;
-    }
+    fracs.push(hit.t);
+    if (hit.t > 0) m++;
   }
-  const indexA = flatten(params, dims);
-  if (tDim < 0) return { indexA, indexB: indexA, t: 0, dims };
-  const next = dims.slice();
-  next[tDim] = Math.min(next[tDim]! + 1, params[tDim]!.pivotCount - 1);
-  return { indexA, indexB: flatten(params, next), t, dims };
+  let corners: PivotCorner[] = [{ index: 0, weight: 1 }];
+  let stride = 1;
+  for (let k = 0; k < params.length; k++) {
+    const f = fracs[k]!;
+    const base = dims[k]! * stride;
+    const next: PivotCorner[] = [];
+    for (const c of corners) {
+      next.push({ index: c.index + base, weight: c.weight * (1 - f) });
+      if (f > 0) next.push({ index: c.index + base + stride, weight: c.weight * f });
+    }
+    corners = next;
+    stride *= params[k]!.pivotCount;
+  }
+  return { corners, dims, fracs, m };
 }
 
 // ───────────────────────────── BDBoxGrid（贝塞尔曲面） ─────────────────────────────
@@ -300,13 +365,11 @@ function lerp(a: number, b: number, t: number): number {
 
 /** 取某变形器的关键帧矩阵（带插值）；`affines` 为空（无关键帧）⇒ 单位阵。 */
 function bdAffineMatrix(d: MocBdAffine, state: ParamState): Affine {
+  if (d.affines.length === 0) return AFFINE_IDENTITY;
   const n = pivotCombos(d.pivotManager);
-  if (n <= 1 || d.affines.length === 1) return d.affines.length ? affineEntToMatrix(d.affines[0]!) : AFFINE_IDENTITY;
+  if (n <= 1 || d.affines.length === 1) return affineEntToMatrix(d.affines[0]!);
   const pick = pickPivot(d.pivotManager, (name) => state.get(name));
-  const a = d.affines[Math.min(pick.indexA, d.affines.length - 1)] ?? d.affines[0]!;
-  if (pick.t === 0 || pick.indexA === pick.indexB) return affineEntToMatrix(a);
-  const b = d.affines[Math.min(pick.indexB, d.affines.length - 1)] ?? a;
-  return affineLerp(affineEntToMatrix(a), affineEntToMatrix(b), pick.t);
+  return blendAffines(d.affines, pick.corners);
 }
 
 /** 取某变形器的关键帧不透明度（带插值）。 */
@@ -314,9 +377,7 @@ function bdOpacity(d: MocDeformer, state: ParamState): number {
   if (d.pivotOpacities.length === 0) return 1;
   if (d.pivotOpacities.length === 1) return d.pivotOpacities[0]!;
   const pick = pickPivot(d.pivotManager, (name) => state.get(name));
-  const a = d.pivotOpacities[Math.min(pick.indexA, d.pivotOpacities.length - 1)] ?? 1;
-  const b = d.pivotOpacities[Math.min(pick.indexB, d.pivotOpacities.length - 1)] ?? a;
-  return lerp(a, b, pick.t);
+  return blendScalars(d.pivotOpacities, pick.corners, 1);
 }
 
 /** 取某变形器的关键帧网格（带插值）。 */
@@ -324,12 +385,7 @@ function bdBoxGridPoints(d: MocBdBoxGrid, state: ParamState): number[] {
   if (d.pivotPoints.length === 0) return [];
   if (d.pivotPoints.length === 1) return d.pivotPoints[0]!;
   const pick = pickPivot(d.pivotManager, (name) => state.get(name));
-  const a = d.pivotPoints[Math.min(pick.indexA, d.pivotPoints.length - 1)] ?? d.pivotPoints[0]!;
-  const b = d.pivotPoints[Math.min(pick.indexB, d.pivotPoints.length - 1)] ?? a;
-  if (pick.t === 0 || pick.indexA === pick.indexB || a === b) return a;
-  const out = new Array<number>(a.length);
-  for (let i = 0; i < a.length; i++) out[i] = lerp(a[i]!, b[i] ?? a[i]!, pick.t);
-  return out;
+  return blendPoints(d.pivotPoints, pick.corners);
 }
 
 /** 取某网格的关键帧顶点（带插值）。 */
@@ -337,26 +393,15 @@ function drawDataPoints(d: MocDrawData, state: ParamState): number[] {
   if (d.pivotPoints.length === 0) return [];
   if (d.pivotPoints.length === 1) return d.pivotPoints[0]!;
   const pick = pickPivot(d.pivotManager, (name) => state.get(name));
-  const a = d.pivotPoints[Math.min(pick.indexA, d.pivotPoints.length - 1)] ?? d.pivotPoints[0]!;
-  const b = d.pivotPoints[Math.min(pick.indexB, d.pivotPoints.length - 1)] ?? a;
-  if (pick.t === 0 || pick.indexA === pick.indexB || a === b) return a;
-  const out = new Array<number>(a.length);
-  for (let i = 0; i < a.length; i++) out[i] = lerp(a[i]!, b[i] ?? a[i]!, pick.t);
-  return out;
+  return blendPoints(d.pivotPoints, pick.corners);
 }
 
 /** 取某网格的关键帧绘制序 / 不透明度。 */
 function drawDataOrder(d: MocDrawData, state: ParamState): { order: number; opacity: number } {
   const pick = pickPivot(d.pivotManager, (name) => state.get(name));
-  const idxA = Math.min(pick.indexA, Math.max(0, d.pivotDrawOrders.length - 1));
-  const idxB = Math.min(pick.indexB, Math.max(0, d.pivotDrawOrders.length - 1));
-  const order =
-    d.pivotDrawOrders.length === 0
-      ? d.averageDrawOrder
-      : lerp(d.pivotDrawOrders[idxA] ?? d.averageDrawOrder, d.pivotDrawOrders[idxB] ?? d.averageDrawOrder, pick.t);
-  const opacity =
-    d.pivotOpacities.length === 0 ? 1 : lerp(d.pivotOpacities[idxA] ?? 1, d.pivotOpacities[idxB] ?? 1, pick.t);
-  return { order, opacity };
+  const order = blendScalars(d.pivotDrawOrders, pick.corners, d.averageDrawOrder);
+  const opacity = blendScalars(d.pivotOpacities, pick.corners, 1);
+  return { order: d.pivotDrawOrders.length === 0 ? d.averageDrawOrder : order, opacity };
 }
 
 /**

@@ -31,6 +31,11 @@ contextBridge.exposeInMainWorld('api', {
   writeSaveData: (data: Uint8Array) => ipcRenderer.invoke('write-save-data', data),
   /** 按统一资源 id 取一张图（AGF 解码后的 RGBA Uint8Array + 尺寸）。返回 null 表示无法解析。 */
   image: (id: number) => ipcRenderer.invoke('image', id),
+  /**
+   * 按统一资源 id 取**原始字节**（`{name, data}`；取不到 null）。
+   * Live2D 的 `.MOC` / `.MTN` / 纹理 PNG 走这条（`image` 只会解 AGF，对 PNG/二进制必然失败）。
+   */
+  readById: (id: number) => ipcRenderer.invoke('read-by-id', id),
   /** 按统一资源 id（数字）或文件名（字符串）取一段音频的原始字节（SE = RIFF PCM16 / BGM·语音 = Ogg Vorbis）。 */
   audio: (key: number | string) => ipcRenderer.invoke('audio', key),
   /**

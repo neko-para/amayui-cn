@@ -39,8 +39,8 @@
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "async texturesIdle(): Promise<void> {",
-      "line": 285,
-      "note": "纹理帧屏障：等本帧新绑定到位再 present（异步装载的兜底）"
+      "line": 334,
+      "note": "纹理帧屏障：等本帧新绑定到位再 present（异步装载的兜底）；2026-09-17 起也等 Live2D 纹理（T-0054）"
     }
   ],
   "links": {
@@ -61,6 +61,10 @@
     {
       "at": "2026-09-14",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "刷新 texturesIdle 证据行号（T-0054 在 pixiBackend.ts 插入代码导致漂移）"
     }
   ]
 }

@@ -15,7 +15,7 @@
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | — | `notes.md` | — |
+| [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
 
 ## ⬜ open（10）
 

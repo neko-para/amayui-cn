@@ -217,6 +217,21 @@ export function registerFileIpc(): void {
     return { name: r.name, width: img.width, height: img.height, data: img.rgba };
   });
 
+  /**
+   * **按统一资源 id 取原始字节**（`{name, data}`；取不到返回 null）。
+   *
+   * ★为什么不能复用上面的 `image`：那条通道会立刻走 `decodeAgfRgba`，而 Live2D 的纹理是
+   * **普通 PNG**（引擎走 `D3DXCreateTextureFromFileInMemory`，见 `docs-new/03-engine/live2d.md`）
+   * ⇒ AGF 解码器对它必然返回 null。`.MOC` / `.MTN` 同理不是图像。
+   * 渲染侧拿字节后自己按类型解（`IpcFileSource.readById` → `live2d/assetLoader` / `pixi/l2dTextures`）。
+   */
+  ipcMain.handle('read-by-id', async (_e, id: number) => {
+    const r = await fileSource.readById(id);
+    if (!r) return null;
+    // Buffer 经 structured clone 到 renderer 变 Uint8Array（同 'font'/'audio' 通道的口径）
+    return { name: r.name, data: Buffer.from(r.data.buffer, r.data.byteOffset, r.data.byteLength) };
+  });
+
   // 音乐表（SYS4INI 尾部：曲号 → 文件 id + 包内分组表）。VM 的 0x1D6/0x1D7/0x1D8 与 BGM 曲号解析用它。
   ipcMain.handle('music-table', async () => await fileSource.musicTables());
 

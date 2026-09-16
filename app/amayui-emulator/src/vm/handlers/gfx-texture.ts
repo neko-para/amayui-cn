@@ -24,14 +24,6 @@ const op_get_texture_size: OpHandler = (c) => {
 
 
 
-/** `0x344`（sub_427CB0, raw 34507）：**纹理槽变换**：读 op1/op2 → `sub_4AFBF0(_this+80708, op1, op2)`
- *  （`_this+274` 的 map：置 `|=1` 与 `[+4]=op2`）。emulator 无该 map → 记录式转发。 */
-const op_set_texture_transform: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
-  c.native.setTextureTransform?.(handle, value);
-};
-
 /**
  * `0x249`（`sub_425310` raw 32717-32768）：**按统一 id 把纹理载入槽 `op2`（带颜色 `op3`）**。
  *

@@ -866,7 +866,8 @@
       "invariants": [
         "版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）",
         "菜单 5 项的命中盒 = base `5[i]`/`69[i]` + 盒 156×156（`cd[i]`）⇒ 第 0 项（**右上角 Game Start**）中心 = (1102+78, 294+78) = **(1180, 372)**",
-        "`a9d0 != 0` ⇒ **不建** 572B 节点、只 `set-texture 5273 5`（SO004A 静态图）；`a9d0 == 0` ⇒ 装 MOC+TEX+MTN 并建节点 14 → 槽 0"
+        "`a9d0 != 0` ⇒ **不建** 572B 节点、只 `set-texture 5273 5`（SO004A 静态图）；`a9d0 == 0` ⇒ 装 MOC+TEX+MTN 并建节点 14 → 槽 0",
+        "L2D 支的立绘与静态支的 `draw-texture 14 5` 占**同一个归并槽 0x14**（572B 节点 key = `0x344` 的 op1 = 图元 handle）；TITLE.MOC 的画布恰好 1280×720 = 视口 ⇒ 画布居中平移为 (0,0)、**模型坐标即屏幕坐标**"
       ],
       "gotchas": [
         "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
@@ -886,7 +887,8 @@
           "live2d-enabled-config-flag",
           "lazy-live2d-slot",
           "l2d-node-draw-gate",
-          "live2d-node-draw-advance"
+          "live2d-node-draw-advance",
+          "live2d-mesh-batches"
         ],
         "functions": [
           "0x434830",
@@ -913,11 +915,12 @@
         "test/config-version-substr.test.ts",
         "test/title-exit.test.ts",
         "test/game-start-chain.test.ts",
-        "test/live2d-chain.test.ts"
+        "test/live2d-chain.test.ts",
+        "test/live2d-render.test.ts"
       ],
       "status": "partial",
-      "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png；Live2D 支：src/TITLE.txt:526-557（分叉 + 装载）、552-556（i352/i34e）、589-590（i344 建节点）；E3 断言见 test/live2d-chain.test.ts（用真实 TITLE.MOC/TITLE00.PNG/TITLE.MTN 走同一条 0x341/0x345/0x352/0x34E/0x344 链）",
-      "notes": "版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。 Live2D 支（526-557 / 589-590）已读并落库：`a9d0` 门控、MOC/纹理/MTN 的统一文件 id 实测为 0x4f9e=TITLE.MOC / 0x4f9f=TITLE00.PNG / 0x5274=TITLE.MTN。未读：SETL2DMOC 家族正文、L2D 支的点击/演出细节。"
+      "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png；Live2D 支：src/TITLE.txt:526-557（分叉 + 装载）、552-556（i352/i34e）、589-590（i344 建节点）；E3 断言见 test/live2d-chain.test.ts（用真实 TITLE.MOC/TITLE00.PNG/TITLE.MTN 走同一条 0x341/0x345/0x352/0x34E/0x344 链）；E3 断言见 test/live2d-render.test.ts（装载 TITLE.MOC + 绑 0x4f9f/0x4fa0/0x4fa1 + 建节点 0x14 后，`l2dBatches` 的几何自洽且与快照同源）",
+      "notes": "版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。 Live2D 支（526-557 / 589-590）已读并落库：`a9d0` 门控、MOC/纹理/MTN 的统一文件 id 实测为 0x4f9e=TITLE.MOC / 0x4f9f=TITLE00.PNG / 0x5274=TITLE.MTN。未读：SETL2DMOC 家族正文、L2D 支的点击/演出细节。 出画（2026-09 收尾）：出画几何在 `app/amayui-emulator/src/live2d/render.ts` 一处实现（画布居中 + 按纹理号分组 + 第四路归并键 = 节点 key），Pixi 侧只把 positions/uvs/indices 塞进 MeshGeometry，快照导出的是同一份 ⇒ 报告与画面不可能漂移。"
     },
     {
       "id": "INITCONFIG",

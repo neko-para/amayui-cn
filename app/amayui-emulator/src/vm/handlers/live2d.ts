@@ -203,17 +203,18 @@ export const LIVE2D_OPS: OpTable = [
  * ★**handler 是 async 的，并且 await 文件读取**（`stepOnce` 会 await handler）：这与引擎的**同步**
  * 读文件 + 解析等价 —— 脚本在 `0x341` 的下一条指令就能依赖"模型已在槽里"。若改成 fire-and-forget
  * 的宿主缝，TITLE 的 `i341 … i344 14 0`（紧接着建节点）会看到空槽 ⇒ 节点整块不出画（且不报错）。
- * 宿主缝（`native.l2dLoadModel`）仍是**可选**的：测试/无文件环境不实现它也能跑（只是没有模型）。
+ *
+ * ★**没有宿主缝**（曾有过 `native.l2dLoadModel?.()`）：那条缝没有宿主实现，只会在**闸门 A**
+ * 报一条假的「意图被丢弃」（实测控制窗显示 `l2dLoadModel` 未实现，而模型其实已装好）⇒ 已删。
  */
 const op_l2d_load_model: OpHandler = async (c) => {
   const id = readIntOperand(c.e, c.frame, c.instr, 1);
   const slot = slotOf(readIntOperand(c.e, c.frame, c.instr, 2));
   const src = assetSource(c);
   if (src) await loadModelIntoSlot(src, c.e, id, slot, (m) => c.native.log(m));
-  c.native.l2dLoadModel?.(id, slot);
 };
 
-/** `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。 */
+/** `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。同上：无宿主缝。 */
 const op_l2d_bind_texture: OpHandler = async (c) => {
   const id = readIntOperand(c.e, c.frame, c.instr, 1);
   const slot = slotOf(readIntOperand(c.e, c.frame, c.instr, 2));
@@ -222,10 +223,9 @@ const op_l2d_bind_texture: OpHandler = async (c) => {
   l2dBindTexture(c.e, slot, id, texNo);
   const src = assetSource(c);
   if (src) await bindTextureToSlot(src, c.e, id, slot, texNo, (m) => c.native.log(m));
-  c.native.l2dBindTexture?.(id, slot, texNo);
 };
 
-/** `0x34E` 装 `.MTN`（`op1` = 文件 id、`op2` = 动作槽、`op3` = 实例槽、`op4` = 循环位）。 */
+/** `0x34E` 装 `.MTN`（`op1` = 文件 id、`op2` = 动作槽、`op3` = 实例槽、`op4` = 循环位）。同上：无宿主缝。 */
 const op_l2d_start_motion: OpHandler = async (c) => {
   const id = readIntOperand(c.e, c.frame, c.instr, 1);
   const motionSlot = readIntOperand(c.e, c.frame, c.instr, 2);
@@ -233,17 +233,16 @@ const op_l2d_start_motion: OpHandler = async (c) => {
   const loop = readIntOperand(c.e, c.frame, c.instr, 4) !== 0;
   const src = assetSource(c);
   if (src) await startMotionOnSlot(src, c.e, id, slot, motionSlot, loop, (m) => c.native.log(m));
-  c.native.l2dStartMotion?.(id, slot, motionSlot, loop);
 };
 
 /**
  * 把 `Engine.fileSource` 适配成 Live2D 资产源。
  *
  * `FileSource.readById` 是**可选**能力（Electron 渲染侧经 IPC、Node 侧直接读 ALF 切片）⇒
- * 宿主没实现时返回 `null`：调用方跳过装载（槽保持为空 ⇒ 节点不出画，与引擎门控一致），
- * 但**仍然**调宿主缝（宿主可能自己会读文件）。
+ * 宿主没实现时返回 `null`：装载被跳过（槽保持为空 ⇒ 节点不出画，与引擎门控一致），
+ * 并记一条日志说明"该宿主不支持按 id 直读资源"。
  */
-function assetSource(c: { e: { fileSource: FileSource | null } }): Live2dAssetSource | null {
+function assetSource(c: { e: { fileSource: FileSource | null }; native: { log(m: string): void } }): Live2dAssetSource | null {
   const fs = c.e.fileSource;
   if (!fs?.readById) return null;
   return { loadById: (id) => fs.readById!(id) };

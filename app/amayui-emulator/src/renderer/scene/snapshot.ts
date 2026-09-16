@@ -8,8 +8,9 @@ import type { Item, MeshObj } from '../drawItem.js';
 import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor } from '../drawItem.js';
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
-import { evaluateModel, flattenDrawOrder } from '../../live2d/deform.js';
+import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import type { L2dInstance, L2dNode } from '../../live2d/runtime.js';
+import { VIEW_H, VIEW_W } from '../viewport.js';
 
 /**
  * mesh 顶点几何的外接矩形（屏幕像素）。`null` = 没有几何（引擎 `sub_4AF1C0` 的 `flags & 1` 门不画）。
@@ -132,10 +133,17 @@ export interface SceneSnapshot {
       slot: number;
       /** ★出画门控（引擎 raw 134320）：`flags & 1` 且槽里有模型。 */
       drawable: boolean;
-      /** 本帧求值出的网格数（`已判定可画` 且节点指向的槽有模型时才算；否则 0）。 */
-      meshes: number;
+      /** 本帧算出的**三角批次数**（按纹理号分组；`已判定可画` 且槽有模型时才算，否则 0）。 */
+      batches: number;
+      /** 本帧算出的三角形总数。 */
+      triangles: number;
       /** 变形后顶点的外接矩形（画布坐标；`null` = 没求值）。 */
       rect: { x: number; y: number; w: number; h: number } | null;
+      /**
+       * 逐批次的纹理来源（★"几何算出来了但一块都画不出"的唯一可诊断信号：
+       * `fileId === null` = `0x345` 没绑上，非 null 但宿主里没就绪 = 还在载入/解码失败）。
+       */
+      tex: { no: number; fileId: number | null; vertices: number; triangles: number; alpha: number }[];
     }[];
   } | null;
   /**
@@ -195,27 +203,16 @@ export interface L2dSnapshotHost {
 }
 
 /** 变形后顶点的外接矩形（画布坐标）。 */
-function l2dRect(points: number[]): { x: number; y: number; w: number; h: number } | null {
-  if (points.length < 4) return null;
-  let x0 = Infinity;
-  let y0 = Infinity;
-  let x1 = -Infinity;
-  let y1 = -Infinity;
-  for (let i = 0; i < points.length; i += 2) {
-    x0 = Math.min(x0, points[i]!);
-    x1 = Math.max(x1, points[i]!);
-    y0 = Math.min(y0, points[i + 1]!);
-    y1 = Math.max(y1, points[i + 1]!);
-  }
-  if (!Number.isFinite(x0) || !Number.isFinite(y0)) return null;
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
-}
 
 /**
- * 导出 Live2D 运行态（槽 + 节点 + **每个可画节点的变形几何**）。
+ * 导出 Live2D 运行态（槽 + 节点 + **每个可画节点这一帧的三角批次**）。
  *
- * ★这里**求值**（`evaluateModel`）而不是导出原始数组：与 `scSnapshot` 对 DrawItem 的动画窗求值同一条哲学
- * —— 快照记的是"这一帧长什么样"。求值只在 `l2dNodeDrawable` 为真时做（槽空 ⇒ 不算，与引擎同一条门控）。
+ * ★这里用 `l2dBatches`（`live2d/render.ts`）而不是自己求值一遍：那条路径**就是 Pixi 合成用的
+ * 同一条**（含画布居中平移、按纹理号分组、`VISIBLE:` 覆盖）⇒ "报告里的立绘"与"屏幕上的立绘"
+ * 不可能漂移。求值只在 `l2dNodeDrawable` 为真时做（槽空 ⇒ 不算，与引擎同一条门控 raw 134320）。
+ *
+ * ★摆放用**固定显示尺寸** `VIEW_W/VIEW_H`（不用宿主实际画布）：快照要跨宿主逐字节可比
+ * （两宿主 digest 的口径），而引擎里这个尺寸来自渲染目标、同一场景下是常量。
  */
 function l2dSnapshot(host: L2dSnapshotHost | null | undefined): SceneSnapshot['l2d'] {
   if (!host) return null;
@@ -225,32 +222,56 @@ function l2dSnapshot(host: L2dSnapshotHost | null | undefined): SceneSnapshot['l
     .map((i) => ({
       slot: i.slot,
       modelId: i.modelId,
-      textures: [...i.textures.entries()].sort((a, b) => a[0] - b[0]),
+      textures: [...i.textures.entries()].filter(([no]) => no >= 0).sort((a, b) => a[0] - b[0]),
       motion: i.current?.motion.name ?? null,
       loop: i.current?.loop ?? false,
       elapsedMs: Math.round(i.current?.elapsedMs ?? 0),
     }));
+  const batches = l2dBatches(host, VIEW_W, VIEW_H);
+  const byKey = new Map<number, L2dMeshBatch[]>();
+  for (const b of batches) {
+    const list = byKey.get(b.key);
+    if (list) list.push(b);
+    else byKey.set(b.key, [b]);
+  }
   const nodes = [...host.l2dNodes.values()]
     .sort((a, b) => a.key - b.key)
     .map((n) => {
       const drawable = (n.flags & 1) !== 0 && !!host.l2dSlots.get(n.slot)?.model;
-      let meshes = 0;
+      const list = byKey.get(n.key) ?? [];
+      let triangles = 0;
       let rect: { x: number; y: number; w: number; h: number } | null = null;
-      if (drawable) {
-        const inst = host.l2dSlots.get(n.slot)!;
-        const model = inst.model!;
-        const frame = evaluateModel(model, {
-          get: (name) => inst.params.get(name) ?? 0,
-        });
-        const flat = flattenDrawOrder(frame);
-        meshes = flat.length;
-        const all: number[] = [];
-        for (const { dd } of flat) all.push(...dd.points);
-        rect = l2dRect(all);
+      for (const b of list) {
+        triangles += b.triangleCount;
+        rect = rect ? unionRect(rect, b.rect) : { ...b.rect };
       }
-      return { key: n.key, slot: n.slot, drawable, meshes, rect };
+      return {
+        key: n.key,
+        slot: n.slot,
+        drawable,
+        batches: list.length,
+        triangles,
+        rect,
+        tex: list.map((b) => ({
+          no: b.textureNo,
+          fileId: b.textureFileId,
+          vertices: b.vertexCount,
+          triangles: b.triangleCount,
+          alpha: b.opacity,
+        })),
+      };
     });
   return { slots, nodes };
+}
+
+/** 两个外接矩形的并（快照里"这个节点这一帧占多大"）。 */
+function unionRect(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number } {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
 }
 
 /** 生成确定性快照（按 handle 排序；不依赖遍历顺序）。 */
@@ -450,7 +471,13 @@ export function snapshotToText(snap: SceneSnapshot): string {
     }
     for (const n of snap.l2d.nodes) {
       const r = n.rect ? `(${Math.round(n.rect.x)},${Math.round(n.rect.y)},${Math.round(n.rect.w)},${Math.round(n.rect.h)})` : '无几何';
-      L.push(`l2d-node key=0x${n.key.toString(16)} slot=${n.slot} 可绘制=${n.drawable ? 1 : 0} 网格=${n.meshes} rect=${r}`);
+      // ★批次行是"算出来了但画不出"的唯一可诊断信号：`tex=` 里的 `fileId=null` = `0x345` 没绑上，
+      //   非 null = 该文件 id 的纹理（宿主侧）还没就绪或解码失败（`pixi/l2dTextures.ts`）。
+      const tex = n.tex.map((t) => `${t.no}:${t.fileId === null ? 'null' : '0x' + t.fileId.toString(16)}/${t.triangles}△`).join(',') || '-';
+      L.push(
+        `l2d-node key=0x${n.key.toString(16)} slot=${n.slot} 可绘制=${n.drawable ? 1 : 0}` +
+          ` 批次=${n.batches} 三角=${n.triangles} rect=${r} tex=[${tex}]`,
+      );
     }
   }
   return L.join('\n') + '\n';

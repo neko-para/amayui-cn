@@ -77,12 +77,6 @@ export class StubNative implements NativeBridge {
   setLight(idx: number, on: boolean): void {
     this.log(`[native:stub] setLight idx=${idx} on=${on}`);
   }
-  destroyL2DSlot(slot: number): void {
-    this.log(`[native:stub] destroyL2DSlot slot=${slot}`);
-  }
-  l2dSlotSet(slot: number, sel: number, value: number): void {
-    this.log(`[native:stub] l2dSlotSet slot=${slot} sel=${sel} v=${value}`);
-  }
   releaseMovieSlots(): void {
     this.log('[native:stub] releaseMovieSlots (42..999)');
   }
@@ -193,9 +187,6 @@ export class StubNative implements NativeBridge {
   }
   setFlipbook(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void {
     this.log(`[native:stub] setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}`);
-  }
-  setTextureTransform(handle: number, value: number): void {
-    this.log(`[native:stub] setTextureTransform h=0x${handle.toString(16)} v=${value}`);
   }
   gfxSubsystem(a2: number, a3: number, a4: number): void {
     this.log(`[native:stub] gfxSubsystem op1=${a2} op2=${a3} op3=${a4}`);

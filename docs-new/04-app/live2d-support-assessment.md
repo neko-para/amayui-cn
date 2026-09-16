@@ -133,6 +133,12 @@
 | **M2 动作** | `.MTN` 解析 + 队列 fade/循环 + `0x34E`/`0x352` 绑定语义 + `0x350` 复位 | acceptance #3 |
 | **M3 集成** | 10 槽重画判据 + `a9d0` 门控 + 静图回落对照 + headless E3 + 文档订正 | acceptance #4/#5/#6 |
 
+> **进度（2026-09-17）**：**M1（含"渲染最后一公里"）与 M2 已完成**，**M3 与 E4 未做**。
+> 落点：出画几何 `app/amayui-emulator/src/live2d/render.ts`（快照与绘制同源）；
+> L2D 纹理 `src/renderer/pixi/l2dTextures.ts`（普通 PNG）；`presenter.ts` 第四类图元（四路归并）；
+> Electron `readById` 通道；守卫 `test/live2d-render.test.ts`。当前进度快照见仓库根 `CONTEXT.md`，
+> 细节见 `tickets/T-0054/notes.md`。
+
 ---
 
 ## 6. 待拍板 / 待确认

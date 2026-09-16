@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 124,
-    "modeled-verified": 40,
+    "total": 125,
+    "modeled-verified": 41,
     "modeled-unverified": 8,
     "partial": 28,
     "absent": 22,
@@ -159,7 +159,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/draw-item-slot-coverage.test.ts",
-        "note": "只实现四路归并里的两路（DrawItem + MeshEntry 黑罩）；两张 572B 节点表完全没建模 ⇒ 特效/精灵层缺失"
+        "note": "四路归并里的三路已接（DrawItem + MeshEntry 黑罩 + **Live2D 572B 立绘节点**，见 live2d-mesh-batches）；另一张 572B 节点表（特效/精灵层）仍未建模 ⇒ 该层缺失。"
       }
     },
     {
@@ -752,7 +752,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/draw-item-slot-coverage.test.ts",
-        "note": "按 layer 排序绘制等价于归并顺序，但没有 |0x10000「绘制中」标志回置与两趟重排"
+        "note": "四路归并里的 **Live2D 那一路（Scene+1096 的 572B 立绘节点）已接**：节点 key（= 0x344 的 op1）与 DrawItem 的 handle、MeshEntry 的 handle 同键比较、取小先画，等键次序 item→text→mesh→节点（raw 135586-135614）；TITLE 的静态立绘 draw-texture 14 与 L2D 支的 i344 14 占**同一个归并槽**。仍未建模：另一张 572B 节点表（特效/精灵层）与 |0x10000「绘制中」标志回置与两趟重排。"
       }
     },
     {
@@ -3620,6 +3620,42 @@
         "guard": "test/live2d-chain.test.ts",
         "note": "已建模（2026-09，T-0054 M2）：`live2d/runtime.ts` 的 `l2dAdvance(host, deltaMs, nodeKeys)` 只在**绘制节点时**被调用（不做独立逐帧 tick）；`mtn.ts` 的 `advanceMotion` 按 `$fps` 取曲线、按 `$fadein/$fadeout` 混算淡入淡出（O: sub_4783D0 → sub_4BCB50 raw 92578-92615）。守卫 test/live2d-chain.test.ts（E3：不传节点 ⇒ 不推进；传节点 ⇒ 参数变化）。**缺口**：宿主合成循环还没把\"绘制节点\"与 l2dAdvance 接起来。"
       }
+    },
+    {
+      "id": "live2d-mesh-batches",
+      "subsystem": "Live2D",
+      "name": "Live2D 出画几何：顶点/UV/索引流 + 画布居中摆放 + 归并成三角批次",
+      "trigger": "每帧合成时，572B 节点通过「节点 bit0 且槽里真有模型」的门控后：取参数真值 → 求变形几何 → 按纹理号分组成三角批次 → 与 DrawItem / MeshEntry 按同一个键（节点 key = 0x344 的 op1）归并出画",
+      "engine": {
+        "fns": [
+          "sub_4B0360",
+          "sub_4783D0",
+          "sub_4C8BC0",
+          "sub_4C8620",
+          "sub_4C1EA0",
+          "sub_478490",
+          "sub_4784B0"
+        ],
+        "raw": "134277-134396"
+      },
+      "reads": [
+        "Scene+1096（572B 节点表）",
+        "ModelImpl+12/+16（画布宽高）",
+        "DrawData+60（uvs）",
+        "DrawData+52（indexArray）",
+        "DrawData+32（textureNo）",
+        "DrawData+64（混合选择子）",
+        "DrawData optionFlag bit5（关剔除）"
+      ],
+      "whySilent": "缺这一段**不报错、只表现不对**：脚本照跑、槽照建、节点照判「可画」（门控 raw 134320 只判槽里有没有模型，不判【画没画出来】）⇒ 屏幕上什么都没有。而「没建节点 / 槽是空的 / 几何算错 / 纹理没绑」四种故障在画面上**症状完全相同**（都是一片空白、无日志）。所以必须有可断言的批次几何，以及「这一批用的是哪个纹理文件 id」。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/live2d-render.test.ts",
+        "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。"
+      },
+      "evidence": "E4"
     }
   ]
 }
