@@ -39,6 +39,7 @@ import {
 } from '../drawItem.js';
 import type { SceneState } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
+import { l2dAdvance, l2dNodeDrawable } from '../../live2d/runtime.js';
 
 /**
  * `0x1FB` draw-texture：建/覆盖一个 DrawItem（等价引擎 `sub_4ACE50`），并置 bit0（可绘制）。
@@ -845,4 +846,30 @@ export function clampScaledBlit(
 export function scSetSceneBlend(s: SceneState, blend: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.sceneBlend = blend;
+}
+
+/**
+ * **每帧推进 Live2D 动作**（= 引擎"绘制 572B 节点那一次调用"里的 `sub_4BCB50`）。
+ *
+ * ★为什么是"共享层的一个 tick"而不是各宿主自己算：引擎里**动作推进与出画是同一次调用**
+ * （`sub_4B0360` → `sub_4783D0`；能力条目 `live2d-node-draw-advance`，raw 92578-92615），
+ * 而且**只有"这一帧真的要画的节点"才推进** —— 槽空/节点没建的 L2D 不消耗时间轴。
+ * 两个宿主（Pixi / headless）都必须经这里推进，否则"报告里的立绘"与"画面上的立绘"会处在
+ * 动作时间轴的不同位置（同类漂移见 `sceneModel.ts` 顶部）。
+ *
+ * @param nowMs 本帧时钟（与 `scAdvance` 同一个 `clockMs`；`dirty` 由本函数自己置）
+ * @returns 参与本帧推进的节点 key（诊断/报告用；空数组 = 本帧没有可画的 L2D 节点）
+ */
+export function scL2dTick(s: SceneState, nowMs: number): number[] {
+  const host = s.l2dHost;
+  if (!host) return [];
+  const delta = s.l2dLastMs < 0 ? 0 : Math.max(0, nowMs - s.l2dLastMs);
+  s.l2dLastMs = nowMs;
+  if (delta === 0) return [];
+  // 只有"这一帧真的会画"的节点才推进（引擎同一条门控：槽里得有模型）
+  const drawn = [...host.l2dNodes.values()].filter((n) => l2dNodeDrawable(host, n)).map((n) => n.key);
+  if (drawn.length === 0) return [];
+  const overrides = l2dAdvance(host, delta, drawn);
+  if (overrides.size > 0) s.dirty = true;
+  return drawn;
 }

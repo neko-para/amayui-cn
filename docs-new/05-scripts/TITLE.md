@@ -21,6 +21,9 @@
 | `304-315` | `menu-bind 0 label_00001184` | 菜单表重建 + 派发：`menu-bind -1/0/1/2/3/4` 分别绑「无悬停 / Game Start / Load Data / Room / Option / Quit」，`menu-dispatch (local 3f7)` 按当前悬停项跳转 |
 | `316-330` | `call-script 526b` | ★第 0 项 = Game Start：`call-script 526b`(GAMESTART) → 回来按 `global 0`（1=已选开始游戏）决定继续进 INITGAME 还是留在标题 |
 | `95-102` | `i12e (local-int 3f5) (local-int 1) (local-int 3f0) (local-int 3f1) (local-int cd) (local-int 5) (local-int 69) (local-int 0)` | 鼠标悬停命中：`0x12E` 用 `cd`(盒 156×156) + `5`/`69`(baseX/baseY) + `local 0`(count=5) 逐个判点在矩形内 ⇒ 写回 `local 3f5`/`3f7`（−1 = 无） |
+| `526-557` | `mov (global-int f8c46) 4f9e` | ★标题立绘：`jcc (global-int a9d0)` 分叉 —— **!=0 走静态贴图回落**（`set-texture 5273 5` = SO004A，`i208 5` 取尺寸后按 (宽/2, 高) 摆位，526-530 / 581-587）；**==0 走 Live2D**：`mov f8c46 = 4f9e`（TITLE.MOC 文件 id）、`mov f8c47 = 0`（实例槽）→ 循环 20 次 `lookup-array (global 708ab6) (global f807f)` + 间接 `call-script`（544-548，表里是 SETL2DMOC 家族）→ 回来 `i352 0 0 0`（预置待绑纹理号 0）+ `i34e 5274 0 0 1`（装 TITLE.MTN：动作槽 0、实例槽 0、循环 1）→ `label_000024a4`（**只有 L2D 支会走到**）`i344 14 0` 建 572B 立绘节点（key 14、L2D 槽 0） |
+| `552-556` | `i34e 5274 0 0 1` | L2D 装载收尾：`i352 0 0 0` = 预置"待绑纹理号 0"（`0x352` op2==0 ⇒ 纹理号）→ `i34e 5274 0 0 1` = 装 `.MTN`（文件 id 0x5274 = TITLE.MTN、动作槽 0、实例槽 0、循环位 1）；★**装载即入队**（引擎 `sub_4BCA20(queue, motion, 1)`），推进则绑在节点绘制那一次调用上。 |
+| `589-590` | `i344 14 0` | ★L2D 支独有：`i344 14 0` = 在 `Scene+1096` 取/建 572B 立绘节点（key 14）、**`record[1] = 0` = L2D 实例槽号**（不是纹理槽号）。引擎 `sub_4B0360` 只在"该槽真有模型"时才画这个节点 ⇒ 这一条是"标题立绘出画"的最后一步。 |
 
 ## 关键槽 / 局部量
 
@@ -37,38 +40,60 @@
 | `local-int 0` | `i12e` 的 count（= 5 个菜单项） |
 | `local-int 3f7 / 3f5 / 3f6` | 当前/新/上次悬停项下标（3f7 是 `menu-dispatch` 的键） |
 | `mouse-callback 槽` | `mouse-callback 10 label_00000460`：槽操作数是十六进制 = 0x10 ⇒ `0xCD` 的推进间隔 16ms（tickets/T-0047） |
+| `global f8c46` | 本次要装的 **MOC 文件 id**（TITLE = 0x4f9e = TITLE.MOC） |
+| `global f8c47` | 本次要装的 **L2D 实例槽号**（TITLE = 0） |
+| `global f807f / 708ab6` | 间接 call-script 的下标 / 脚本指针表（表里是 SETL2DMOC 家族） |
+| `572B 立绘节点 key 14` | `i344 14 0` 建：node key 14 → L2D 槽 0 |
 
 ## 不变量（拿它做回归断言）
 
 - 版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）
 - 菜单 5 项的命中盒 = base `5[i]`/`69[i]` + 盒 156×156（`cd[i]`）⇒ 第 0 项（**右上角 Game Start**）中心 = (1102+78, 294+78) = **(1180, 372)**
+- `a9d0 != 0` ⇒ **不建** 572B 节点、只 `set-texture 5273 5`（SO004A 静态图）；`a9d0 == 0` ⇒ 装 MOC+TEX+MTN 并建节点 14 → 槽 0
 
 ## 坑（踩过一次，别再踩）
 
 - ★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）
 - `0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）
 - ★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位
+- ★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）；旧文档写"纹理槽变换"会让整套节点/槽接线对不上
+- ★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`
 
 ## 缺口
 
 - 菜单命中/派发（`i12e`/`0xa2`/`0xa3`）与背景演出未逐段读（layout 列出的只是版本号这一段）
+- L2D 分支的 SETL2DMOC 家族（`src/SETL2DMOC.txt` 与 `$n$` 变体，560+ 处 `i34x`）未逐段读 —— 只需知道它是"MOC ↔ 纹理对照表"；`$n$` 变体是否只覆盖 `f8c46` 的 `$n$` 前缀 MOC 未核
 
 ## 相关
 
 - 引擎常态能力：`engine-config-registry-persistence`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`texture-bind-synchronous-then-query`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`live2d-enabled-config-flag`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`lazy-live2d-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`l2d-node-draw-gate`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`live2d-node-draw-advance`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x434830`（见 `analysis/functions.json`）
 - 函数结论：`0x433FD0`（见 `analysis/functions.json`）
 - 函数结论：`0x4311F0`（见 `analysis/functions.json`）
 - 函数结论：`0x424970`（见 `analysis/functions.json`）
 - 函数结论：`0x426420`（见 `analysis/functions.json`）
+- 函数结论：`0x427BA0`（见 `analysis/functions.json`）
+- 函数结论：`0x427CB0`（见 `analysis/functions.json`）
+- 函数结论：`0x427CF0`（见 `analysis/functions.json`）
+- 函数结论：`0x428200`（见 `analysis/functions.json`）
+- 函数结论：`0x4283B0`（见 `analysis/functions.json`）
+- 函数结论：`0x4A1860`（见 `analysis/functions.json`）
+- 函数结论：`0x4B0360`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/opcode-table.md`
 - 主题文档：`docs-new/03-engine/scene-start-flow.md`
+- 主题文档：`docs-new/03-engine/live2d.md`
+- 主题文档：`docs-new/03-engine/live2d-moc-format.md`
 - 守卫测试：`app/amayui-emulator/test/config-version-substr.test.ts`
 - 守卫测试：`app/amayui-emulator/test/title-exit.test.ts`
 - 守卫测试：`app/amayui-emulator/test/game-start-chain.test.ts`
+- 守卫测试：`app/amayui-emulator/test/live2d-chain.test.ts`
 
 ## 证据与备注
 
-- 证据：src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png
-- 备注：版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。
+- 证据：src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png；Live2D 支：src/TITLE.txt:526-557（分叉 + 装载）、552-556（i352/i34e）、589-590（i344 建节点）；E3 断言见 test/live2d-chain.test.ts（用真实 TITLE.MOC/TITLE00.PNG/TITLE.MTN 走同一条 0x341/0x345/0x352/0x34E/0x344 链）
+- 备注：版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。 Live2D 支（526-557 / 589-590）已读并落库：`a9d0` 门控、MOC/纹理/MTN 的统一文件 id 实测为 0x4f9e=TITLE.MOC / 0x4f9f=TITLE00.PNG / 0x5274=TITLE.MTN。未读：SETL2DMOC 家族正文、L2D 支的点击/演出细节。

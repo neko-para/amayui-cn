@@ -32,6 +32,7 @@ import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, ite
 import {
   newSceneState,
   scAdvance,
+  scL2dTick,
   scPoolPending,
   sceneNeedsRender,
   scClearDrawContainer,
@@ -78,6 +79,7 @@ import {
   scSet3DColor,
   type SceneState,
 } from './sceneModel.js';
+import type { L2dHost } from '../live2d/runtime.js';
 import { setupPixiStage } from './pixi/appSetup.js';
 import { attachMouseInput } from './pixi/inputAttach.js';
 import { ScenePresenter } from './pixi/presenter.js';
@@ -127,6 +129,17 @@ export class PixiBackend implements NativeBridge {
   private scene: SceneState = newSceneState();
 
   /**
+   * **挂上 Live2D 运行态宿主**（`Engine`；`tickets/T-0054`）。
+   *
+   * 为什么是方法而不是 public 字段：`scene` 是 private（本类唯一的场景模型），而 L2D 的三张表
+   * 挂在 `Engine` 上（VM 层，两个宿主共享唯一一份）⇒ 需要一条"把 Engine 交给场景"的窄缝。
+   * 调用时机：`Engine` 建好之后立即（同 `e.fileSource = src` 那一步）。
+   */
+  attachL2dHost(host: L2dHost): void {
+    this.scene.l2dHost = host;
+  }
+
+  /**
    * 渲染/模型时钟（ms，引擎 `this[46500]` 的等价物）。
    * ★2026-09（`tickets/T-0008` 的 D1）：**由调用方按 Engine 的 `nowMs` 传入**（`present(nowMs)` /
    * `advanceModel(nowMs)`）—— 修前这里是"`performance.now() - wallStart`"这样一个**独立时间域**，
@@ -144,6 +157,8 @@ export class PixiBackend implements NativeBridge {
    * 时钟（那就是修前那个"两个时间域"）。只有在**没人注入**时（旧调用点/测试）才退回 `performance.now()`。
    */
   #clockInjected = false;
+  /** 本帧 `scL2dTick` 判定"真的要画"的 Live2D 节点 key（诊断用；绘制侧据此只画这些节点）。 */
+  #l2dDrawnKeys: number[] = [];
   /** 纹理帧屏障真实等待过的次数（进 `FrameDigest.host` 段；不参与两宿主比较）。 */
   #barriers = 0;
   /** 收到的音频意图条数（含每帧 `tick`）。 */
@@ -825,6 +840,10 @@ export class PixiBackend implements NativeBridge {
     //   而 `present` 会被 `needsRender` 跳过（窗恰好结束的那一帧 `pending` 已为假）⇒ 那一帧的
     //   收尾就永远不会发生，两宿主的 digest 会分叉 —— 正是 G3 要抓的东西。
     scAdvance(this.scene, nowMs);
+    // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
+    //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
+    const drawn = scL2dTick(this.scene, nowMs);
+    if (drawn.length > 0) this.#l2dDrawnKeys = drawn;
   }
 
   /**

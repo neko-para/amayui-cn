@@ -315,6 +315,9 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   const native = scene;
   engineRef = e;
   e.fileSource = src;
+  // ★Live2D 运行态（T-0054）：槽/节点/动作三张表在 Engine 上，挂给场景宿主以便
+  //   ① 帧末推进动作（scL2dTick，两宿主同一份）；② 快照能导出节点与出画判据。
+  scene.scene.l2dHost = e;
   e.config = parseIni(effectiveIniText());
   applyConfigToEngine(e.config, e.engineValues);
   // 外置选项（`emulator.config.json`）：`boot.showLogo` + `resources.version`（字体面名解析策略）。
@@ -786,5 +789,4 @@ function collectConfigRows(native: HeadlessScene): ConfigRow[] {
 function uninplementedPush(list: string[], err: NotImplementedOp): void {
   list.push(`0x${err.opcode.toString(16)} ${err.name} @${err.scriptName}`);
 }
-
 

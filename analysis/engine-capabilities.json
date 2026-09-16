@@ -18,9 +18,9 @@
   "counts": {
     "total": 124,
     "modeled-verified": 40,
-    "modeled-unverified": 5,
-    "partial": 27,
-    "absent": 26,
+    "modeled-unverified": 8,
+    "partial": 28,
+    "absent": 22,
     "n/a-known": 26,
     "needsAttention": 58
   },
@@ -1040,7 +1040,7 @@
         "status": "absent",
         "evidence": "E1",
         "guard": "",
-        "note": "emulator 未建模 L2D：0x341/0x345/0x34E 仍是 stubSubsystem（app/amayui-emulator/src/vm/handlers/stubs.ts）⇒ 这条重画理由永远为假。不报错，只是少了「上一帧还有 L2D 在动」的刷新依据（见 T-0054）"
+        "note": "仍未做（T-0054 M3）：引擎 `sub_40BE10` 的重画判据里有一项是\"10 个 L2D 槽里有没有活的模型\"（有 ⇒ 强制重画）。运行态现在有了（`Engine.l2dSlots`，2026-09），但**判据还没接进 `sceneNeedsRender`** ⇒ 站在 L2D 立绘前不动时可能不重画。另注：`Engine.l2dSlots` 在 VM 层，而 `sceneNeedsRender` 是共享场景层函数，接线时要把宿主可见的\"槽非空\"信号传进去（见 tickets/T-0054 acceptance #4）。"
       }
     },
     {
@@ -1375,10 +1375,10 @@
       "whySilent": "旧槽为空时跳过释放；`ReadFile` 失败只 return 0，无日志",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E1",
-        "guard": "",
-        "note": "同上：10 槽表在 emulator 里不存在，装载指令是桩 ⇒ 立绘永不出现、旧实例也不会被销毁（无报错、无日志）。签名 (Scene, 资源表, 文件id, hFile, 字节数, 槽号)（见 T-0054）"
+        "status": "modeled-unverified",
+        "evidence": "E3",
+        "guard": "test/live2d-chain.test.ts",
+        "note": "已实现（2026-09，T-0054 M1）：Engine.l2dSlots 就是引擎 Scene+55812 的 10 槽表；attachModel 在装模型时把参数与部件显隐重置回模型缺省（= 引擎 sub_4A1860 里 槽非空先析构再建 的惰性重建语义），0x342 销毁槽。守卫 test/live2d-chain.test.ts（E3：真实 TITLE.MOC/TITLE.MTN 装进槽 0，断言 modelId / 参数缺省 / 部件显隐 / 纹理绑定 / 销毁后节点不可画）。缺口：渲染器还没消费 l2dSlots 出画，故只算 modeled-unverified。"
       }
     },
     {
@@ -3561,10 +3561,10 @@
       "whySilent": "开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
+        "status": "partial",
         "evidence": "E1",
         "guard": "",
-        "note": "emulator 未读 a9d0；0x341/0x345/0x34E 是桩 ⇒ 无论开关取哪一支都没有 L2D 输出（静态回落支的 set-texture 是正常实现）。重写时这条门控与 L2D 本体要一起做（见 T-0054）"
+        "note": "部分实现（2026-09，T-0054 M2）：`i341/i345/i34E` 已从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），所以\"L2D 支\"本身已经能装载。**缺口**：`global a9d0` 仍没有被真读（M3）—— 门控分叉在脚本侧（`jcc (global-int a9d0)`）本来就会走对，但重写侧没有任何地方把该开关映射成\"跳过 L2D 装载\"的引擎行为，也没有 E3/E4 对照。`why:` 见触发段：缺 L2D 时静默（静态回落支自己有 set-texture，画面照样有）。"
       }
     },
     {
@@ -3588,10 +3588,10 @@
       "whySilent": "槽为空 ⇒ 整个节点静默不出画，无日志、无错误串；而 `0x346`–`0x34D` 那族 setter 照样写节点与脏位 ⇒ 症状是「脚本在跑、变换在写，画面什么都没有」",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E1",
-        "guard": "",
-        "note": "emulator 把 0x346–0x34D 记成 op_engine_internal(no-op)（handlers/stubs.ts）—— 在 L2D 未建模前恰好等价（无模型 ⇒ 无输出），但 572B 节点表本身也没建；L2D 落地时必须一起补（见 T-0054）"
+        "status": "modeled-unverified",
+        "evidence": "E3",
+        "guard": "test/live2d-chain.test.ts",
+        "note": "已建模（2026-09，T-0054 M1）：`live2d/runtime.ts` 的 `l2dNodeDrawable(host, node)` 逐字复刻引擎门控（`节点+0 bit0` 且 `节点+4` 指向的槽**真有模型**才算可画；O: sub_4B0360 raw 134310-134346）。守卫 test/live2d-chain.test.ts（E3：真实 TITLE 资产 ⇒ 有模型时可画、`0x342` 销毁后不可画）。**缺口**：两个宿主（Pixi / headless 报告）的合成路径还没调用它 ⇒ 只是\"判据已实现\"，不是\"出画已生效\"。"
       }
     },
     {
@@ -3615,10 +3615,10 @@
       "whySilent": "不画就不推进：实现成「装载后画静态首帧」不会报任何错，只是动作永不动；反之若另起一个每帧 tick 而与出画次数不一致，动作速度会漂 ⇒ 必须把推进绑在节点绘制这一次调用上",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E1",
-        "guard": "",
-        "note": "emulator 无 L2D 节点绘制路径；网格路径（0x320 create-mesh → Pixi）已存在，L2D 的变形三角网可复用同一场景层（见 T-0054）"
+        "status": "modeled-unverified",
+        "evidence": "E3",
+        "guard": "test/live2d-chain.test.ts",
+        "note": "已建模（2026-09，T-0054 M2）：`live2d/runtime.ts` 的 `l2dAdvance(host, deltaMs, nodeKeys)` 只在**绘制节点时**被调用（不做独立逐帧 tick）；`mtn.ts` 的 `advanceMotion` 按 `$fps` 取曲线、按 `$fadein/$fadeout` 混算淡入淡出（O: sub_4783D0 → sub_4BCB50 raw 92578-92615）。守卫 test/live2d-chain.test.ts（E3：不传节点 ⇒ 不推进；传节点 ⇒ 参数变化）。**缺口**：宿主合成循环还没把\"绘制节点\"与 l2dAdvance 接起来。"
       }
     }
   ]

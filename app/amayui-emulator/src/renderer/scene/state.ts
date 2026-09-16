@@ -3,6 +3,8 @@
  */
 import type { Item, MeshObj } from '../drawItem.js';
 import type { TextFrame } from '../../text/layout.js';
+import type { L2dHost } from '../../live2d/runtime.js';
+
 
 /** 场景模型状态（= `Scene` 在 emulator 侧的可见部分）。 */
 export interface SceneState {
@@ -49,6 +51,18 @@ export interface SceneState {
    * （与消息窗的"入队时钉住"相对），记下来才能回归"角色名颜色溢到 ADV 样例窗"这类问题。
    */
   slotText: Map<number, { x: number; y: number; text: string; fill: string }[]>;
+  /**
+   * **Live2D 运行态宿主**（`Engine` 结构化满足 `L2dHost`；调用方在 Engine 建好后挂上）。
+   *
+   * 为什么是"挂一个引用"而不是把三张表搬进 `SceneState`：那三张表（10 实例槽 / 572B 节点 /
+   * 动作缓存）是**VM 指令直接读写**的（`0x341`–`0x352`），而 `SceneState` 是**两个宿主各自持有**
+   * 一份（Pixi 一份、headless 一份）。表若放进 `SceneState` 就有两份镜像；挂引用则两边读同一份，
+   * 而"节点指向的槽有没有模型"又是**绘制判据**（引擎 raw 134320）⇒ 一致性是硬要求。
+   * `null` = 该宿主没接 L2D（快照 `l2d` 段为 `null`，`scL2dTick` 空转）。
+   */
+  l2dHost: L2dHost | null;
+  /** `scL2dTick` 上一次的时钟（`-1` = 还没 tick 过 ⇒ 首帧 delta = 0）。 */
+  l2dLastMs: number;
   /**
    * **A4 族的渲染状态记录**（2026-09 落地）。
    *
@@ -110,6 +124,8 @@ export function newSceneState(): SceneState {
     msgRev: new Map<number, number>(),
     msgRanges: new Map<number, { base: number; count: number }[]>(),
     slotText: new Map<number, { x: number; y: number; text: string; fill: string }[]>(),
+    l2dHost: null,
+    l2dLastMs: -1,
     render4: {
       primReset: null,
       primTransform: new Map<number, number[]>(),

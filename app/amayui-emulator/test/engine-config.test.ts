@@ -363,8 +363,9 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
     [0x2da, 8, 'implemented'], // CG 数字条记录登记（7 dword/条）
     [0x25b, 1, 'implemented'], // 消息态图像：_this[92381] = op1（真实现字段写入）
     // 纯 no-op 插桩（控制窗「真·忽略」栏）
-    [0x346, 0, 'engine-internal'],
-    [0x349, 4, 'engine-internal'],
+    // ★2026-09：原先用 0x346/0x349（当时是 no-op），两条现已是 Live2D 真实现 ⇒ 换 0x324（3D 效果管理器销毁，仍是 engine-internal）。
+    [0x324, 0, 'engine-internal'],
+    [0x324, 4, 'engine-internal'],
   ];
   for (const [opcode, argc, kind] of cases) {
     const e = new Engine(new StubNative(() => {}));

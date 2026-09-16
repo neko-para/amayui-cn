@@ -142,6 +142,10 @@ const DECLARED_HOST_DIVERGENCE = [
 const NON_BRIDGE = {
   'pixiBackend.ts': [
     'advanceModel',
+    // ★`attachL2dHost`（`tickets/T-0054`）：装配缝 —— 把 `Engine`（L2D 三张表的持有者）交给宿主的
+    //   **场景模型**。它不是"VM 让宿主做事"（opcode 一条都不调它），而是 `e.fileSource = src` 那一类
+    //   装配步骤；调用方是装配层（`boot.ts`）。入桥会把"装配"混进"VM 能调什么"。
+    'attachL2dHost',
     'debugAudio',
     'debugItemState',
     'digestHostCounters',

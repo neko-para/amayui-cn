@@ -152,7 +152,9 @@ const op_detach_texture: OpHandler = (c) => {
 export const GFX_TEXTURE_OPS: OpTable = [
   [0x1f8, op_create_texture], // 创建程序化纹理（释放旧槽对象）→ native.createTexture
   [0x208, op_get_texture_size], // 纹理尺寸 getter（写回 op2/op3）→ native.getTextureSize
-  [0x344, op_set_texture_transform], // 纹理槽变换 → native.setTextureTransform
+  // ★`0x344` **已移出本表**（2026-09 语义订正）：它不是"纹理槽变换"，而是**建/绑 572B 立绘节点**
+  //   （`sub_427CB0` → `sub_4AFBF0` raw 133937-133947：`record[0] |= 1`、**`record[1] = slot`**）。
+  //   现归 `handlers/live2d.ts` 的 `LIVE2D_OPS`。留在本表时 `i344 14 0`（TITLE）会被当成纹理变换。
   [0x249, op_load_texture_by_id], // ★按统一 id 载纹理入槽（带颜色；先释放旧槽）→ native.bindTexture
   [0x245, op_texture_obj_float], // 纹理对象浮点参数 → native.setTextureObjectFloat
   [0x246, op_texture_obj_param], // 纹理对象子对象参数 → native.setTextureObjectParam

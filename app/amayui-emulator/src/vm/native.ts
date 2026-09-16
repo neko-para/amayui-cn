@@ -345,8 +345,25 @@ export interface NativeBridge {
   setTranslationAnim?(handle: number, delay: number, dur: number, x: number, y: number, z: number): void;
   /** 0x239（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。op2=delay、op3=dur、op4=总帧数、op5=列数、op6=标志(bit0=保持末帧)。 */
   setFlipbook?(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void;
-  /** 0x344（sub_427CB0）：纹理槽变换 `sub_4AFBF0(_this+80708, handle, value)`（置 map 项 `|=1`、`[+4]=value`）。 */
+  /** 0x344（sub_427CB0 旧解；**已订正为 0x344 = 建/绑 572B 立绘节点**，见 `handlers/live2d.ts`）。 */
   setTextureTransform?(handle: number, value: number): void;
+  // ---- Live2D（`0x341`–`0x352`；语义与语料见 `handlers/live2d.ts` 的对照表）----
+  /**
+   * `0x341` 装 `.MOC`：`op1` = 统一文件 id、`op2` = 实例槽（0..9）。
+   *
+   * 宿主职责：按 id 读文件字节 → `parseMoc` → `scL2dLoadModel(engine, slot, id, model)`。
+   * 引擎侧**读失败会抛异常**（「L2Dモデルファイル %s の読み込みに失敗しました」，raw 34488）；
+   * 重写侧的失败通道在宿主（`FileSource` 是异步接口）。
+   */
+  l2dLoadModel?(fileId: number, slot: number): void;
+  /** `0x345` 装纹理：`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号。 */
+  l2dBindTexture?(fileId: number, slot: number, textureNo: number): void;
+  /**
+   * `0x34E` 装 `.MTN`：`op1` = 文件 id、`op2` = 动作槽(0/1)、`op3` = 实例槽、`op4` = 循环位。
+   *
+   * 宿主职责：按 id 读文本 → `parseMtn` → `scL2dStartMotion(...)`（**装载即入队**）。
+   */
+  l2dStartMotion?(fileId: number, slot: number, motionSlot: number, loop: boolean): void;
   /** 0x352（sub_4283B0）：图形子系统 `sub_4A1AC0(_this+80708, op1, op2, op3)`（按 op2 选 sub_478560/sub_478540）。 */
   gfxSubsystem?(a2: number, a3: number, a4: number): void;
   /** 0x1F6（sub_41A130）：`sub_4AB7A0(_this+80708)` —— 整批释放绘制项/网格（保留纹理槽）。 */

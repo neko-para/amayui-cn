@@ -69,19 +69,14 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   0x1F6 整批清绘制容器 / 0x1F7 删区间 / 0x1F8 建纹理 / 0x1F9 绑定 / 0x1FA 释放 / 0x1FB 画图元 /
   //   0x1FF 图元平移 / 0x202·0x203 颜色 / 0x208 纹理尺寸 getter / 0x217 pivot / 0x219 描画位置 /
   //   0x21E·0x21F·0x220·0x239 四个动画窗 / 0x23B CG 数字条 / 0x2DA CG 记录 / 0x25B 消息态图像 /
-  //   0x32F 灯光 / 0x340 渲染状态 / 0x342 Live2D 槽 / 0x344 纹理槽变换 / 0x352 图形子系统。
-  // 此处只留**emulator 无对应模型**的 —— `0x346`–`0x34E` 是 `Scene+1096` 的 572 字节
-  // 「变换 / Live2D 立绘节点」setter 族（元素 `+4` 指向 Live2D 槽，消费方 `sub_4B0360` 只在
-  // 该槽真有模型时才出画）⇒ 无模型时天然无输出，no-op 安全；`0x34E` 读文件失败会抛异常，
-  // 这里按"不抛"处理（见 `.tmp/re-misc-gfx.md` §1）。
-  [0x346, op_engine_internal], // 复位全部变换为单位阵 → sub_427DD0
-  [0x347, op_engine_internal], // 缩放（百分数 /100）→ sub_427E10
-  [0x348, op_engine_internal], // 缩放 + 汇总参数 → sub_427EA0
-  [0x349, op_engine_internal], // 平移（像素）→ sub_427F30
-  [0x34a, op_engine_internal], // 基础平移偏移 +8/+12/+16 → sub_427FB0
-  [0x34b, op_engine_internal], // 缩放目标矩阵 + 窗1 → sub_428030（置 pending Scene+46516）
-  [0x34c, op_engine_internal], // 旋转目标矩阵 + 轴角 + 窗2 → sub_4280D0（置 pending）
-  [0x34d, op_engine_internal], // 平移目标矩阵 + 窗3 → sub_428170（置 pending）
+  //   0x32F 灯光 / 0x340 渲染状态。
+  // ★`0x342` / `0x344` / `0x346`–`0x352`（**Live2D 全族**）**已从本表移出**（2026-09，T-0054）：
+  //   它们是 `handlers/live2d.ts` 的 `LIVE2D_OPS` / `LIVE2D_NATIVE_OPS` 真实现，运行态落在
+  //   `Engine.l2dSlots` / `Engine.l2dNodes`（= `Scene+55812` 的 10 槽与 `Scene+1096` 的 572B 节点）。
+  //   ★当时的理由"无模型时天然无输出 ⇒ no-op 安全"**只对画面成立、对模型不成立**：
+  //   `0x346`–`0x34D` 是**节点字段的写入**（`0x344` 更是"建节点 + 绑槽"），跳过 ⇒ 节点表永远是空的，
+  //   后来真有模型时（M1 之后）也没有任何节点可画 —— 正是"脚本在跑、画面什么都没有"的第二个成因。
+  //   同一批还包含 `0x341`/`0x345`/`0x34E`（原先在 `STUB_NATIVE_OPS`）。
   // ★0x326/0x325 属 **3D 天气/粒子效果管理器**（见本文件 0x324 处的说明）：
   //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
   //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
@@ -213,9 +208,9 @@ export const STUB_NATIVE_OPS: OpTable = [
    * 其中只有 `_SetNameLenMax@20` 有行为实现（脚本侧唯一用到；消费者 = `Engine.agerc.nameLenMax`）。
    * 详见 `docs-new/03-engine/agerc-module.md` 与 `agerc-internals.md`。
    */
-  [0x341, stubSubsystem], // L2D 模型加载（无界面 stub）
-  [0x345, stubSubsystem], // 图形模型加载（无界面 stub）
-  [0x34e, stubSubsystem], // 图形模型加载（无界面 stub）
+  // ★`0x341` / `0x345` / `0x34E`（Live2D 装载族）**已从本表移出**（2026-09）：它们是
+  //   `handlers/live2d.ts` 的 `LIVE2D_NATIVE_OPS` 真实现（宿主读 `.MOC`/PNG/`.MTN` + 共享层建槽）。
+  //   当 stub 时的后果正是 T-0054 的现象：三处界面的立绘**永不出现且不报错**。
   // ★`0x204` draw-string 已升为 `MSGWIN_OPS` 真实现（handler 交出"位置 + 文本 + 全局样式"，
   //   宿主把字直绘进该纹理槽的表面）。漏掉它的症状是"设置界面中间一片纯白"，见 handlers/msgwin.ts。
   // ★`0x205` 数字直绘（GDI 数字文本 → 纹理槽）**已转真实现**（2026-09）：同 `handlers/msgwin.ts`

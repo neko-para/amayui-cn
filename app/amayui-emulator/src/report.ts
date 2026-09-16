@@ -240,6 +240,9 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
   const e = new Engine(native);
   engineRef.e = e;
   e.fileSource = src;
+  // ★Live2D 运行态（T-0054）：槽/节点/动作三张表在 Engine 上，挂给场景宿主以便
+  //   ① 帧末推进动作（scL2dTick，两宿主同一份）；② 快照能导出节点与出画判据。
+  headless.scene.l2dHost = e;
   // 外置选项（`emulator.config.json`）：省略 = 真游戏行为（播 LOGO）。**必须在装载脚本之前**套用
   // （SYSTEM4 开头 `load-show-logo` 就据 `_this[96983]` 决定是否 `call-script LOGO`）。只在 CLI 入口读文件。
   applyEmulatorOptionsToEngine(e, options);

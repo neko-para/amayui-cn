@@ -1,6 +1,7 @@
 /** 引擎状态：全局数组池 + 每脚本帧（40 个）。干净建模（ADR-003），不复刻字节大块。 */
 import type { ScriptBinary } from '../script/bin.js';
 import type { FileSource } from '../arch/fileSource.js';
+import type { L2dInstance, L2dNode, Mtn } from '../live2d/runtime.js';
 import type { NativeBridge } from './native.js';
 import { InputManager } from './input.js';
 import { MsgWindow } from './msgwin.js';
@@ -1158,5 +1159,19 @@ export class Engine {
     f.ip = p;
     return true;
   }
+
+  // ───────────────────────────── Live2D 运行态（`0x341`–`0x352`） ─────────────────────────────
+  /**
+   * **10 个 L2D 实例槽**（引擎 `Scene+55812` 起；键 = 槽号 0..9）。
+   *
+   * 为什么放在 `Engine` 而不是 `SceneState`：这两张表由 **VM 指令直接读写**（不经宿主缝），
+   * 且"节点指向的槽有没有模型"本身就是**绘制判据**（引擎 raw 134320）—— 放在 VM 层就只有一份，
+   * 两个宿主（Pixi / headless）读的是同一份；而 `SceneState` 是两个宿主各自持有的。
+   */
+  readonly l2dSlots: Map<number, L2dInstance> = new Map();
+  /** **572B 立绘节点**（引擎 `Scene+1096`；键 = map key）。 */
+  readonly l2dNodes: Map<number, L2dNode> = new Map();
+  /** 已解析的 `.MTN` 缓存（按文件 id）。 */
+  readonly l2dMotionCache: Map<number, Mtn> = new Map();
 }
 

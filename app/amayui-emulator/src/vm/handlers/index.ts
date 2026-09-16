@@ -30,6 +30,7 @@ import { GFX_CG_OPS } from './gfx-cg.js';
 import { GFX_TEXTURE_OPS, GFX_TEXTURE_NATIVE_OPS } from './gfx-texture.js';
 import { GFX_ITEM_OPS, GFX_ITEM_NATIVE_OPS } from './gfx-item.js';
 import { GFX_MISC_OPS, GFX_MISC_NATIVE_OPS } from './gfx-misc.js';
+import { LIVE2D_OPS, LIVE2D_NATIVE_OPS } from './live2d.js';
 import { MENU_OPS } from './menu.js';
 import { INPUT_OPS } from './input.js';
 import { AUDIO_OPS } from './audio.js';
@@ -56,6 +57,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...GFX_TEXTURE_OPS,
   ...GFX_ITEM_OPS,
   ...GFX_MISC_OPS,
+  ...LIVE2D_OPS, // 0x342/0x344/0x346–0x352：Live2D 实例槽 + 572B 立绘节点（纯 VM 状态）
   ...MENU_OPS,
   ...INPUT_OPS,
   ...MUSIC_TABLE_OPS, // 0x1D6/0x1D7/0x1D8：音乐表（写 op1，纯 VM 状态）
@@ -71,6 +73,7 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...GFX_TEXTURE_NATIVE_OPS,
   ...GFX_ITEM_NATIVE_OPS,
   ...GFX_MISC_NATIVE_OPS,
+  ...LIVE2D_NATIVE_OPS, // 0x341/0x345/0x34E：装 .MOC / 纹理 / .MTN（宿主读文件后回调共享层）
   ...AUDIO_OPS,
   ...STUB_NATIVE_OPS,
 ]);

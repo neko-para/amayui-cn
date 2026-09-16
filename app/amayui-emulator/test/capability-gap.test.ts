@@ -51,8 +51,9 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
 
 test('被忽略的 no-op 指令收到立即数实参 ⇒ 记能力缺口（gap）', async () => {
   const e = new Engine(new StubNative(() => {}));
-  // 0x346 = op_engine_internal（纯 no-op），argc=1
-  loadScriptIntoFrame(e.curScript(), script(0x346, [{ type: T_IMM, raw: 0x1f4 }]), 'TEST.BIN');
+  // ★2026-09 改用 0x324：本条要的是"被忽略的 no-op 收到实参"，而原先用的 0x346/0x349
+  //   已是 Live2D 真实现（`handlers/live2d.ts`）⇒ 必须挑一条**仍然是** engine-internal 的。
+  loadScriptIntoFrame(e.curScript(), script(0x324, [{ type: T_IMM, raw: 0x1f4 }]), 'TEST.BIN');
   const t = await stepOnce(e);
   assert.equal(t.handlerKind, 'engine-internal');
   assert.ok(t.gap, '收到实参 0x1f4（>1）⇒ 应记为能力缺口');
@@ -63,7 +64,7 @@ test('被忽略的 no-op 指令只有 0/1 实参 ⇒ 视为空转，不记缺口
   const e = new Engine(new StubNative(() => {}));
   loadScriptIntoFrame(
     e.curScript(),
-    script(0x349, [
+    script(0x324, [
       { type: T_IMM, raw: 0 },
       { type: T_IMM, raw: 1 },
     ]),
@@ -76,7 +77,7 @@ test('被忽略的 no-op 指令只有 0/1 实参 ⇒ 视为空转，不记缺口
 test('指针/字符串操作数一律算缺口（脚本传了真实对象）', async () => {
   const e = new Engine(new StubNative(() => {}));
   e.globals.ptr.set(0x10, { scope: 'global', kind: 'int', index: 0x200, stride: 4 });
-  loadScriptIntoFrame(e.curScript(), script(0x346, [{ type: T_GLOBAL_PTR, raw: 0x10 }]), 'TEST.BIN');
+  loadScriptIntoFrame(e.curScript(), script(0x324, [{ type: T_GLOBAL_PTR, raw: 0x10 }]), 'TEST.BIN');
   const t = await stepOnce(e);
   assert.ok(t.gap, '指针操作数 ⇒ 缺口');
   assert.deepEqual(t.gap!.operands, ['g-int*#16'], '指针型只写槽号（不解引用）');

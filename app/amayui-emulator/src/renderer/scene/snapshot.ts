@@ -8,6 +8,8 @@ import type { Item, MeshObj } from '../drawItem.js';
 import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor } from '../drawItem.js';
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
+import { evaluateModel, flattenDrawOrder } from '../../live2d/deform.js';
+import type { L2dInstance, L2dNode } from '../../live2d/runtime.js';
 
 /**
  * mesh 顶点几何的外接矩形（屏幕像素）。`null` = 没有几何（引擎 `sub_4AF1C0` 的 `flags & 1` 门不画）。
@@ -112,6 +114,31 @@ export interface SnapshotMsgWin {
 export interface SceneSnapshot {
   clock: number;
   /**
+   * **Live2D 的 572B 立绘节点 + 10 个实例槽**（引擎 `Scene+1096` / `Scene+55812`）。
+   *
+   * ★导出的意义（T-0054）：`l2dNodeDrawable` 的判据是"节点指向的槽**真有模型**"（引擎 raw 134320），
+   * 而"有没有模型"本身**不可从画面断言**（槽空 ⇒ 整块不出画，无日志无错误）⇒ 必须落进快照，
+   * 才能区分"没建节点" / "建了节点但槽是空的" / "有模型但没出画"这三种**症状相同**的故障。
+   *
+   * `null` = 宿主没提供 Live2D 运行态（`scSnapshot` 的第三参缺省）。
+   */
+  l2d: {
+    /** 非空实例槽（按槽号排序；`hasModel` 恒真，列出的是"活的"那些）。 */
+    slots: { slot: number; modelId: number | null; textures: [number, number][]; motion: string | null; loop: boolean; elapsedMs: number }[];
+    /** 572B 立绘节点（按 key 排序）。 */
+    nodes: {
+      key: number;
+      /** `+4`：L2D 实例槽号。 */
+      slot: number;
+      /** ★出画门控（引擎 raw 134320）：`flags & 1` 且槽里有模型。 */
+      drawable: boolean;
+      /** 本帧求值出的网格数（`已判定可画` 且节点指向的槽有模型时才算；否则 0）。 */
+      meshes: number;
+      /** 变形后顶点的外接矩形（画布坐标；`null` = 没求值）。 */
+      rect: { x: number; y: number; w: number; h: number } | null;
+    }[];
+  } | null;
+  /**
    * **A4 族的渲染状态记录**（`0x1FC/0x1FE/0x207/0x20E/0x224/0x229/0x242/0x256/0x321/0x32A/0x32D/0x97`）。
    * 渲染器尚未逐条消费（见 `analysis/engine-capabilities.json`），但**导出到快照**才能断言
    * "脚本确实下发了这个状态"，也才能在未来接线时对照。
@@ -156,8 +183,78 @@ export interface SceneSnapshot {
 
 const hex8 = (v: number): string => '#' + (v >>> 0).toString(16).padStart(8, '0');
 
+/**
+ * `scSnapshot` 需要的 Live2D 侧信息（结构化类型：`Engine` 直接满足，无需 import VM 层）。
+ *
+ * 只声明"读得到什么"，不声明"谁提供" —— 这样共享场景层不必依赖 `vm/engine.ts`（依赖方向保持
+ * `vm → renderer`，不反向）。
+ */
+export interface L2dSnapshotHost {
+  readonly l2dSlots: Map<number, L2dInstance>;
+  readonly l2dNodes: Map<number, L2dNode>;
+}
+
+/** 变形后顶点的外接矩形（画布坐标）。 */
+function l2dRect(points: number[]): { x: number; y: number; w: number; h: number } | null {
+  if (points.length < 4) return null;
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    x0 = Math.min(x0, points[i]!);
+    x1 = Math.max(x1, points[i]!);
+    y0 = Math.min(y0, points[i + 1]!);
+    y1 = Math.max(y1, points[i + 1]!);
+  }
+  if (!Number.isFinite(x0) || !Number.isFinite(y0)) return null;
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/**
+ * 导出 Live2D 运行态（槽 + 节点 + **每个可画节点的变形几何**）。
+ *
+ * ★这里**求值**（`evaluateModel`）而不是导出原始数组：与 `scSnapshot` 对 DrawItem 的动画窗求值同一条哲学
+ * —— 快照记的是"这一帧长什么样"。求值只在 `l2dNodeDrawable` 为真时做（槽空 ⇒ 不算，与引擎同一条门控）。
+ */
+function l2dSnapshot(host: L2dSnapshotHost | null | undefined): SceneSnapshot['l2d'] {
+  if (!host) return null;
+  const slots = [...host.l2dSlots.values()]
+    .filter((i) => !!i.model)
+    .sort((a, b) => a.slot - b.slot)
+    .map((i) => ({
+      slot: i.slot,
+      modelId: i.modelId,
+      textures: [...i.textures.entries()].sort((a, b) => a[0] - b[0]),
+      motion: i.current?.motion.name ?? null,
+      loop: i.current?.loop ?? false,
+      elapsedMs: Math.round(i.current?.elapsedMs ?? 0),
+    }));
+  const nodes = [...host.l2dNodes.values()]
+    .sort((a, b) => a.key - b.key)
+    .map((n) => {
+      const drawable = (n.flags & 1) !== 0 && !!host.l2dSlots.get(n.slot)?.model;
+      let meshes = 0;
+      let rect: { x: number; y: number; w: number; h: number } | null = null;
+      if (drawable) {
+        const inst = host.l2dSlots.get(n.slot)!;
+        const model = inst.model!;
+        const frame = evaluateModel(model, {
+          get: (name) => inst.params.get(name) ?? 0,
+        });
+        const flat = flattenDrawOrder(frame);
+        meshes = flat.length;
+        const all: number[] = [];
+        for (const { dd } of flat) all.push(...dd.points);
+        rect = l2dRect(all);
+      }
+      return { key: n.key, slot: n.slot, drawable, meshes, rect };
+    });
+  return { slots, nodes };
+}
+
 /** 生成确定性快照（按 handle 排序；不依赖遍历顺序）。 */
-export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
+export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost | null): SceneSnapshot {
   const drawItems: SnapshotItem[] = [...s.drawItems.values()]
     .sort((a, b) => a.handle - b.handle)
     .map((it) => {
@@ -202,6 +299,7 @@ export function scSnapshot(s: SceneState, clock: number): SceneSnapshot {
   const drawable = drawItems.filter((d) => d.drawable);
   return {
     clock,
+    l2d: l2dSnapshot(l2d),
     counts: {
       drawItems: drawItems.length,
       drawableItems: drawable.length,
@@ -338,6 +436,22 @@ export function snapshotToText(snap: SceneSnapshot): string {
   // `0x204` 直绘进纹理槽的文本（CONFIG1 的设置行就是这么做出来的）
   for (const t of snap.slotText) {
     L.push(`slot-text slot=${t.slot} 条数=${t.count} 例=${JSON.stringify(t.sample)}`);
+  }
+  // ── Live2D（`tickets/T-0054`）：只在有内容时打 ──────────────────────────────
+  // ★为什么要进快照：`l2dNodeDrawable` 的判据（槽里真有模型）**不可从画面断言** ——
+  //   槽空/节点没建/有模型但没画，三种故障在截图上都是"什么都没有、也没有报错"。
+  if (snap.l2d) {
+    for (const s of snap.l2d.slots) {
+      const tex = s.textures.map(([no, id]) => `${no}→0x${id.toString(16)}`).join(',') || '-';
+      L.push(
+        `l2d-slot ${s.slot} model=0x${(s.modelId ?? 0).toString(16)} 纹理=[${tex}]` +
+          ` motion=${s.motion ?? '-'} loop=${s.loop ? 1 : 0} t=${s.elapsedMs}ms`,
+      );
+    }
+    for (const n of snap.l2d.nodes) {
+      const r = n.rect ? `(${Math.round(n.rect.x)},${Math.round(n.rect.y)},${Math.round(n.rect.w)},${Math.round(n.rect.h)})` : '无几何';
+      L.push(`l2d-node key=0x${n.key.toString(16)} slot=${n.slot} 可绘制=${n.drawable ? 1 : 0} 网格=${n.meshes} rect=${r}`);
+    }
   }
   return L.join('\n') + '\n';
 }

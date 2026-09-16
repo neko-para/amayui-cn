@@ -53,6 +53,9 @@ export async function bootApp(): Promise<BootedApp | null> {
   const e = new Engine(native, input);
   engineRef.e = e;
   e.fileSource = src;
+  // ★Live2D 运行态（T-0054）：槽/节点/动作三张表在 Engine 上，挂给场景宿主以便
+  //   ① 帧末推进动作（scL2dTick，两宿主同一份）；② 快照能导出节点与出画判据。
+  pixi.attachL2dHost(e);
 
   traceLog.line('=== amayui emulator boot ===');
 

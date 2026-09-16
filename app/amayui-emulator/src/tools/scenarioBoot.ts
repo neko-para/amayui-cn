@@ -88,6 +88,9 @@ export async function bootHeadless(o: HeadlessBootOptions = {}): Promise<Headles
   const e = new Engine(withNativeTap(scene as object, drops) as HeadlessScene);
   engineRef.e = e;
   e.fileSource = src;
+  // ★Live2D 运行态（T-0054）：槽/节点/动作三张表在 Engine 上，挂给场景宿主以便
+  //   ① 帧末推进动作（scL2dTick，两宿主同一份）；② 快照能导出节点与出画判据。
+  scene.scene.l2dHost = e;
 
   // ① SYS4REG.INI → config + 引擎字段（`boot.ts` 的同一步；只读，不回写）。
   const ini = withSystem ? await src.readConfig() : null;

@@ -59,6 +59,7 @@ import {
   scSetSceneBlend,
   scMsgWinSync,
   scSnapshot,
+  scL2dTick,
   snapshotToText,
   newSceneState,
   type SceneSnapshot,
@@ -553,6 +554,9 @@ export class HeadlessScene implements NativeBridge {
   /** `FrameHost.advanceModel`：把模型推进到本帧时钟（headless 没有渲染，这就是"合成"的全部内容）。 */
   advanceModel(nowMs: number): void {
     this.advance(nowMs);
+    // ★Live2D：动作推进**只在"这一帧真要画的节点"上**发生（引擎 `sub_4783D0` → `sub_4BCB50`）——
+    //   与上面 `advance` 同一个时钟域，两个宿主共用 `scL2dTick` 一份实现（T-0054）。
+    scL2dTick(this.scene, nowMs);
   }
 
   /**
@@ -584,7 +588,7 @@ export class HeadlessScene implements NativeBridge {
    * 之后若模型没再变、也没有窗在跑，`needsRender()` 就应当回到 false。
    */
   snapshot(): SceneSnapshot {
-    const s = scSnapshot(this.scene, this.clockMs);
+    const s = scSnapshot(this.scene, this.clockMs, this.scene.l2dHost);
     this.scene.dirty = false;
     return s;
   }

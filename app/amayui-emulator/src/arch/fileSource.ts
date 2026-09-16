@@ -34,8 +34,7 @@ export class MissingAppendPackError extends Error {
 
 export interface FileSource {
   /** 读整个文件字节（任意路径）。 */
-  readFile(path: string): Promise<Uint8Array>;
-  /**
+  readFile(path: string): Promise<Uint8Array>;  /**
    * 按"call-script 索引"取回一个脚本（含文件名）。
    * index 高字节 0 -> SYS4INI base；高字节 n -> APPENDnn（低 24 位 = 包内编号）。
    * 返回 null 表示无法解析/读不到；**扩展包缺失时抛 `MissingAppendPackError`**（引擎语义）。
@@ -93,6 +92,14 @@ export interface FileSource {
   readSlotThumb?(slot: number): Promise<Uint8Array | null>;
   /** 写 `.STH`（`0x1AE`）。 */
   writeSlotThumb?(slot: number, data: Uint8Array): Promise<void> | void;
+  /**
+   * **按统一文件 id 读出原始字节**（含文件名）。
+   *
+   * 用途：资源直读（Live2D 的 `.MOC`/`.MTN`/PNG、其它非脚本二进制）。id 口径见
+   * `docs-new/03-engine/resource-loading.md` §1（`pack# << 24 | idx`）。**不实现 = 该宿主
+   * 不支持按 id 直读资源**（Live2D 装载会退化为"槽保持为空 ⇒ 节点不出画"，与引擎同一条门控）。
+   */
+  readById?(id: number): Promise<{ name: string; data: Uint8Array } | null>;
   /** 释放资源（宿主关闭文件句柄等）。 */
   dispose?(): Promise<void>;
 }

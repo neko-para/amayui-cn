@@ -13,13 +13,31 @@
  * "moc" + u8 version + 对象图 +（version>=8）EOF 标识（大端 u32 = 0x88888888）
  * ```
  * ## 对象图（O: `sub_4C7220` raw 152026-152322）
- * `<varint 类型标签><载荷>`；**每个**对象（含 null / 字符串 / 数组）按**后序**进 refno 表；
+ * `<varint 类型标签><载荷>`；**每个**对象（含 null / 字符串 / 数组 / 复合结构）按**后序**进 refno 表；
  * 标签 33 = 引用：`u8 33` + **大端 i32** 下标（只能引用已读过的对象）。
+ *
+ * ★**"每个对象都进表"是硬要求**（2026-09 实证订正）：`sub_4C7220` 在每次读完对象后都会
+ * `table[count++] = obj`（raw 152637-152639 / 152319），**不分类型**。曾经只对少部分 kind 调 `reg()`，
+ * 后果是 `AffineEnt`(69) / `ParamPivots`(67) / `PivotManager`(66) / `PartsData`(133) / `DrawData`(70)
+ * 在表里是**空洞** ⇒ 所有指向它们的 refno 解析成 `undefined`（症状：`BDAffine.affines` 恒空、
+ * `PivotManager.params` 恒空，**而字节流仍恰好读完**，所以字节级检查抓不到）。详见 `live2d-moc-format.md` §2.4。
+ *
+ * ★**复合对象必须自带 `kind` 判别字段**：`readAffineEnt()` 曾经返回没有 `kind` 的对象，
+ * 于是 `filter(kind === 'affineEnt')` 把它全滤掉（同上症状）。凡进 `this.objects` 的复合结构都要有 `kind`。
+ *
  * ## 数值编码
  *  - 变长整数：**大端 base-128**（首字节 = 高 7 位；最高位 1 = 继续；≤4 字节）
  *  - 定宽数值：**大端**（i32/f32/f64）
  *  - 字符串：varint 字节长度 + 原始字节（实测全 ASCII；去重靠 refno）
  *  - 位读取：字节内 MSB→LSB（O: `sub_4C6E30` raw 151829-151853）；每次读对象前重置位游标
+ *
+ * ## 关键帧组合数（`∏ pivotCount`）
+ * `DrawData` / `BDAffine` / `BDBoxGrid` 的 `pivotManager` 是**每对象一个**的 PivotManager
+ * （O: `sub_4CA9B0` raw 155011-155019 只读一个对象），其 `params` 是 `ParamPivots` 列表；
+ * 组合数 = `∏ pivotCount`，而下面这些数组的长度**恒等于**它（全 335 个模型实测，`test/live2d-moc.test.ts`）：
+ * `DrawData.pivotPoints / pivotDrawOrders / pivotOpacities`、`BDAffine.affines / pivotOpacities`、
+ * `BDBoxGrid.pivotPoints`。**这是"pivots 解析正确"的强证据** —— 三者长度必须同时对上。
+ * 下标口径（`params[0]` 最快变化）与插值见 `live2d-moc-format.md` §3。
  */
 
 // ───────────────────────────── 类型标签（O: 工厂 sub_4CA280 raw 154663-154764） ─────────────────────────────
@@ -69,6 +87,7 @@ export interface MocId {
 
 /** ParamPivots：某参数上的关键值列表（O: `sub_4CDE00` raw 157837-157849）。 */
 export interface MocParamPivots {
+  kind: 'paramPivots';
   paramId: MocId | null;
   pivotCount: number;
   pivotValues: number[];
@@ -81,6 +100,7 @@ export interface MocPivotManager {
 }
 
 export interface MocAffineEnt {
+  kind: 'affineEnt';
   originX: number;
   originY: number;
   scaleX: number;
@@ -144,10 +164,18 @@ export interface MocDrawData {
   /** `pointCount*2` 个 UV */
   uvs: number[];
   optionFlag: number;
+  /**
+   * `optionFlag & 1` ⇒ 后随一个 i32（O: raw 153314；v≥8）。
+   *
+   * ⚠**命名存疑**（2026-09）：原以为它是"颜色组号"，但绘制侧真正的混合选择器读的是
+   * `(optionFlag >> 1) & 0xF`（raw 147934-147975 的 `v38 = v37 - 1` 四分支）；
+   * 而 `& 1` 多读的这个 i32 在 `.c` 里**没有读者**。⇒ 保留字段（字节必须读），但**不要**把它
+   * 当"颜色组"用；混合走 `colorCompositionType`。
+   */
   colorGroupNo: number | null;
-  /** `(optionFlag & 30) >> 1`：0 正常 / 1 加算 / 2 乘算 */
+  /** `(optionFlag & 30) >> 1`：0 正常 / 1 加算 / 2 乘算（O: raw 147934-147975）。 */
   colorCompositionType: number;
-  /** `optionFlag & 32` ⇒ 不剔除 */
+  /** `optionFlag & 32` ⇒ **关背面剔除**（O: raw 147824-147828，`D3DRS_CULLMODE = NONE`）。 */
   culling: boolean;
 }
 
@@ -336,6 +364,10 @@ class Reader {
       if (idx < 0 || idx >= this.objects.length) this.fail(`illegal refno ${idx} (objects=${this.objects.length})`);
       return this.objects[idx];
     }
+    // ★refno 表是**后序**：每个对象（含 null / 字符串 / 数组 / 复合结构）都必须在**载荷读完后**进表。
+    //   曾经只对部分 kind（id/字符串/数组…）调 reg()，导致 `AffineEnt`/`ParamPivots`/`PivotManager`
+    //   /`PartsData`/`DrawData`/`BDBoxGrid` 在表里是空洞 ⇒ 所有指向它们的 refno 解析成 `undefined`
+    //   （症状：`BDAffine.affines` 恒为空、`PivotManager.params` 恒为空，而字节流仍恰好读完）。
     return this.reg(this.make(tag), String(tag));
   }
 
@@ -380,10 +412,13 @@ class Reader {
         return { kind: 'doubleArray', items: out };
       }
       case MOC_TAG.drawDataId:
+        return { kind: 'id', idClass: 'draw' satisfies MocIdClass, name: this.str() } satisfies MocId;
       case MOC_TAG.baseDataId:
+        return { kind: 'id', idClass: 'base' satisfies MocIdClass, name: this.str() } satisfies MocId;
       case MOC_TAG.paramId:
+        return { kind: 'id', idClass: 'param' satisfies MocIdClass, name: this.str() } satisfies MocId;
       case MOC_TAG.partsDataId:
-        return this.reg<MocId>({ kind: 'id', idClass: idClassOf(tag), name: this.str() }, `id:${idClassOf(tag)}`);
+        return { kind: 'id', idClass: 'parts' satisfies MocIdClass, name: this.str() } satisfies MocId;
       case MOC_TAG.modelImpl:
         return this.readModel();
       case MOC_TAG.paramDefSet:
@@ -463,7 +498,7 @@ class Reader {
     const paramId = this.object() as MocId | null;
     const pivotCount = this.i32();
     const pivotValues = asFloatArray(this.object());
-    return { paramId, pivotCount, pivotValues };
+    return { kind: 'paramPivots', paramId, pivotCount, pivotValues };
   }
 
   private readAffineEnt(): MocAffineEnt {
@@ -478,14 +513,15 @@ class Reader {
       reflectX = this.u8() !== 0;
       reflectY = this.u8() !== 0;
     }
-    return { originX, originY, scaleX, scaleY, rotationDeg, reflectX, reflectY };
+    return { kind: 'affineEnt', originX, originY, scaleX, scaleY, rotationDeg, reflectX, reflectY };
   }
 
   private readBdAffine(): MocBdAffine {
     const id = this.object() as MocId | null;
     const targetId = this.object() as MocId | null;
     const pivotManager = this.object() as MocPivotManager | null;
-    const affines = asArray(this.object()).filter(
+    const rawAffines = this.object();
+    const affines = asArray(rawAffines).filter(
       (a): a is MocAffineEnt => !!a && (a as { kind?: string }).kind === 'affineEnt',
     );
     const pivotOpacities = this.version >= 10 ? this.floatArrayInline() : [];
@@ -510,7 +546,7 @@ class Reader {
     const averageDrawOrder = this.i32();
     const pivotDrawOrders = this.intArrayInline();
     const pivotOpacities = this.floatArrayInline();
-    const clipId = this.version >= 11 ? (this.object() as MocId | null) : null;
+    const clipId = null; // v≥11 的 clipId **本作不存在**（v>10 被引擎直接拒绝，raw 143882/143912）
     const textureNo = this.i32();
     const pointCount = this.i32();
     const polygonCount = this.i32();
@@ -586,7 +622,10 @@ export function parseMoc(bytes: Uint8Array): MocModel {
     throw new MocParseError('bad magic (expected "moc")', 0, bytes.length);
   }
   const version = bytes[3]!;
-  if (version > 11) throw new MocParseError(`unsupported moc version ${version} (max 11)`, 3, bytes.length);
+  // ★版本上限 = 10（O: `sub_4BD560` raw 143882 `if (v5 <= 10)`；越限 raw 143912 打
+  //   "Illegal data version ( available : 10 …)" 并返回 2000）⇒ **不存在 v≥11 的对象分支**，
+  //   故没有 clipId 之类的 v11 字段（曾经按社区 SDK 写了 `version>=11` 分支，本作永不执行）。
+  if (version > 10) throw new MocParseError(`unsupported moc version ${version} (SDK 2.0.06 accepts ≤10)`, 3, bytes.length);
 
   const rv = new Reader(bytes, version);
   rv.pos = 4;
