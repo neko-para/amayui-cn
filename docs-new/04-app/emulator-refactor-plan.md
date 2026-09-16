@@ -125,10 +125,24 @@
   - 守卫 `test/input.test.ts`：合成用例（空掩码 ⇒ 跳 `joyJump[SetKeyTotal]`、bit≥上界不派发、压返回点）
     + CHARMEDIT 端到端（SetKeyTotal=12 ⇒ 右键关闭并离开 `CHARMEDIT.BIN`；=7 ⇒ 被 `jcc (local b)` 挡回）。
     真启动链实测 `Engine[517]=12`。`npm run verify` 全绿（563 测试）。
-  - 同轮发现、**本单不改**：`0xCD` 的节流间隔 `Engine[429812]` 其实由 `mouse-callback`(0xCC) 的 op1 写入
-    （`sub_453A60` raw 66101-66113，旧注"全工程无写入"漏了它）⇒ 真机 `mouse-callback 10` = 10ms 节流；
-    emulator 的 `advanceThrottle` 仍恒 0。改它要同步改三处冻结时钟的 headless 测试 ⇒ 已单独开单 **`T-0047`**
-    （含「打开节流后只有 title-exit ×2 + route-dispatch ⑦b 失败」的实测清单与落地顺序；文档 opcode-table 0xCC/0xCD 与 input-system §6a/§7b 已按引擎事实改写并标注现状）。
+  - 同轮发现、当时**不改**：`0xCD` 的节流间隔 `Engine[429812]` 其实由 `mouse-callback`(0xCC) 的 op1 写入
+    （`sub_453A60` raw 66101-66113，旧注"全工程无写入"漏了它）⇒ 真机 `mouse-callback 10`（**十六进制** = 0x10）= **16ms**、
+    `32`（= 0x32）= **50ms**。当时 emulator 的 `advanceThrottle` 恒 0 ⇒ 已单独开单 **`T-0047`**（见下一条记录）。
+
+- 2026-09（`tickets/T-0047`，`0xCD` 的节流间隔落地：真机 16ms / 50ms 两档）：
+  - 修复：`op_mouse_callback` 把 op1 写进 `InputManager.advanceThrottle`（`slot > 0 ? slot : 1`，对齐
+    `sub_453A60` 的 `a2 ? a2 : 1`）。★操作数是**十六进制**：全语料 50 个登记 `mouse-callback` 的脚本分两档 ——
+    `10`（= 0x10 = **16ms** ≈ 一帧）29 个（TITLE/CHARMEDIT/SAVE/CONFIG1/ALLMAP/HISTORY…）、
+    `32`（= 0x32 = **50ms** ≈ 20fps）22 个（GAMESTART/ROOM/MMODE/FIELD/SHOP…）⇒ 两类的输入轮询率本来就不同。
+    `advActive`(`0x8000000`) 的 OR 短路只让 ADV 路径旁路节流（这一点也把 0xCD 的旧注一并订正了）。
+  - 守卫侧的连带修正（**不改断言**，只让虚拟时钟真的走）：`test/title-exit.test.ts` 的 `run()` 现在把
+    `sleep n` 也计入虚拟时间（引擎 `sleep n`(n<10) = `Sleep(n)` ms，raw 30288）；`test/route-dispatch.test.ts`
+    判据⑦b 在直接调 0xCD 前把 `nowMs` 推过窗口，并断言 `0xCC → advanceThrottle === 0x10`；
+    `test/input.test.ts` 的 CHARMEDIT 用例同样按 1ms/指令推进时钟，并断言节流值。实测：打开节流后失败的
+    正是这几处（外加 **T-0035 的一条证据锚点悬空** —— 旧 `docs/font-build.md` 已被 6cf11a79 的旧 `docs/` 清理删掉，
+    锚点改指 `tickets/T-0035/notes.md` 的同段内容）。
+  - 文档：opcode-table 0xCC/0xCD、input-system §6a/§7b、capability `adv-input-pump-perframe` 都从"已知偏差"改成"已建模"，
+    并写明 headless 守卫"冻结时钟 ⇒ 派发消失"这个坑。
 
 - 2026-09（第 12 轮，四张 P2 收口 + 两条新票）：
   - ★**`T-0010` report 的门档**：`reportLoopOptions()` 抽成可导出纯函数；`anim`/`sleep` 由 `'ignore'` 改为

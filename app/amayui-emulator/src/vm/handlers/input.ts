@@ -78,12 +78,11 @@ const op_read_mouse_hwheel: OpHandler = (c) => {
  * `Engine[107674]` 是 `0xCD`（`sub_41ACD0` raw 25861）跳转前的**脚本身份守卫**要比对的那一格。
  *
  * ★**op1（"槽"）就是 `0xCD` 的节流间隔**（`tickets/T-0047`）：`sub_453A60(this, a2)` 写
- * `this[6] = a2 ? a2 : 1`（raw 66105-66110），而 `Engine+107447` 的 `[6]` = 字节 `429812`
- * —— 那正是 `0xCD` 读的 `_this[429812]`。故"旧注：该字段全工程无写入 ⇒ 恒不节流"是**错的**：
- * 注册 `mouse-callback 10`（TITLE/CHARMEDIT 等）后，`get-input-type` 的推进间隔就是 **10ms**。
- * ⚠**emulator 现状（2026-09，T-0047）**：`advanceThrottle` 仍**恒 0**（不节流）——那是该字段的
- * 旧口径，也是"每次 `get-input-type` 都派发"这一**故意的偏差**（headless 测试用冻结时钟驱动，
- * 一上 10ms 节流就必须同时改测试的时钟模型）。改它要单独做（`tickets/T-0047` 已单独开单），本单只修 0x100 的默认键分支。
+ * `this[6] = a2 ? a2 : 1`（raw 66101-66113），而 `Engine+107447` 的 `[6]` = 字节 `429812`
+ * —— 那正是 `0xCD` 读的 `_this[429812]`（raw 25842）。故"旧注：该字段全工程无写入 ⇒ 恒不节流"
+ * 是**错的**：注册 `mouse-callback 10`（**十六进制** = 0x10；TITLE/CHARMEDIT/SAVE/CONFIG1 等 29 个脚本）后
+ * `get-input-type` 的推进间隔是 **16ms**（≈一帧），而 GAMESTART/ROOM/MMODE/FIELD 等 22 个登记 `32` = 0x32 ⇒ **50ms**
+ * （`advActive` = `0x8000000` 的 OR 短路只让 ADV 路径旁路节流）。
  */
 const op_mouse_callback: OpHandler = (c) => {
   const slot = readIntOperand(c.e, c.frame, c.instr, 1);
@@ -91,6 +90,8 @@ const op_mouse_callback: OpHandler = (c) => {
   c.e.input.mouseSlot = slot;
   c.e.input.mouseJump = target;
   c.e.input.mouseJumpOwner = c.frame.scriptId; // = Engine[107674]
+  // `sub_453A60` 的 `this[6] = a2 ? a2 : 1`：槽 0 ⇒ 间隔 1ms（不是 0）；这就是 0xCD 的推进间隔。
+  c.e.input.advanceThrottle = slot > 0 ? slot : 1;
 };
 
 /**
@@ -187,7 +188,7 @@ const op_poll_input: OpHandler = (c) => {
  * 引擎：`if (now - lastAdvance >= throttle || adv_active)` 才推进（throttle=_this[429812]，adv_active=effect_flags&0x8000000）。
  * ★**throttle 真机不是 0**：它就是**最后一次 `mouse-callback`（0xCC）的 op1**（`sub_453A60` 把
  *  `Engine[107447+6]` = 字节 429812 写成 `op1 ? op1 : 1`，raw 66101-66113）；TITLE/CHARMEDIT 等
- *  都登记 `mouse-callback 10` ⇒ 真机推进间隔 10ms。旧注"全工程无写入 ⇒ 恒不节流"是错的；
+ *  都登记 `mouse-callback 10`（= 0x10）⇒ 真机推进间隔 **16ms**（登记 `32` 的脚本是 50ms）。旧注"全工程无写入 ⇒ 恒不节流"是错的；
  *  ⚠emulator 仍按 0（不节流）跑 = **已知偏差**，见 `tickets/T-0047`（改它要同步改 headless 时钟模型）。
  * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
  * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */

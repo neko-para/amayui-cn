@@ -36,6 +36,7 @@
 | `local-int 69` | `i12e` 的 baseY 数组 = [0x126, 0x192, 0x1e5, 0x21f, 0x22a]（294/402/485/543/554） |
 | `local-int 0` | `i12e` 的 count（= 5 个菜单项） |
 | `local-int 3f7 / 3f5 / 3f6` | 当前/新/上次悬停项下标（3f7 是 `menu-dispatch` 的键） |
+| `mouse-callback 槽` | `mouse-callback 10 label_00000460`：槽操作数是十六进制 = 0x10 ⇒ `0xCD` 的推进间隔 16ms（tickets/T-0047） |
 
 ## 不变量（拿它做回归断言）
 

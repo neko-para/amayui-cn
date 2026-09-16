@@ -218,10 +218,11 @@ pm run shot -- --gamestart 产出的 `.tmp/<name>-9-sn0000-hover-out.png`（1600
 - 资产侧：随包两份 TTF 的 `name ID 1` 同为 `Amayui CN`、`OS/2.usWeightClass` 400/700、码页含 932；
   `res/fonts/Amayui-CN_cnjp-Bold.ttf` 与提交里的 LFS oid 一致（sha256 `6f336fad…`）⇒ **分发的那份就是这个**，
   在 Windows 上按定义能配成一族。守卫 `test/font-bold-face.test.ts`。
-- ⇒ 真机没粗只剩**安装/缓存状态**这一类原因：仓库自己的 `docs/font-build.md` §8.5.2 / §8.6 就写着这个坑 ——
-  「安装后若仍不生效：完全退出游戏 + **重启 FontCache 服务（或重启电脑）** 再测」；
+- ⇒ 真机没粗只剩**安装/缓存状态**这一类原因：**安装/缓存前提**就是下面这条 ——
+  「安装后若仍不生效：完全退出游戏 + **重启 FontCache 服务（或重启电脑）** 再测」
+  （旧 `docs/font-build.md` §8.5.2/§8.6 是这段前提的原始出处，该文件已随旧 `docs/` 树在 6cf11a79 清理，正文见本节）；
   另外 `%LOCALAPPDATA%\Microsoft\Windows\Fonts\` 里若留着旧版（如缺 932 码页声明的早期构建，
-  见 §8.6 的 `.tmp/font-backup/*.sarasa-nocp.bak`），游戏（日文 locale ⇒ `lfCharSet=DEFAULT_CHARSET` ⇒ 932 字符集选面）
+  见 `.tmp/font-backup/*.sarasa-nocp.bak`），游戏（日文 locale ⇒ `lfCharSet=DEFAULT_CHARSET` ⇒ 932 字符集选面）
   就看不到 Bold 面。
 
 ### 真机侧的两个零成本复核（等有环境时）
@@ -334,7 +335,7 @@ pwsh -NoProfile -File tools/font-face-probe.ps1 -Face "MS Gothic" -CharsetProbe 
 
 - 本机 = 真机（用户 2026-09-15 确认）+ 两份 TTF 都装好 ⇒ 真机 ADV 的 `i2bd 1` 文本**本该**是 Bold。
 - 第 5 轮那张「真机 0.257 ≈ Regular」的参照图，最可能是 **Bold 面生效之前**拍的（Bold 面 2026-09 才加入分发；
-  装完还要重启 FontCache/电脑 + 完全退出游戏，见 `docs/font-build.md` §8.5.2/§8.6）⇒「emulator 更粗」的参照基准过期。
+  装完还要重启 FontCache/电脑 + 完全退出游戏，见本文件上面那条安装/缓存前提）⇒「emulator 更粗」的参照基准过期。
 - 收口动作（不需要新分析）：按验收第 4 条②，在**当前**状态下重拍同帧对照 —— 真机 ADV（`i2bd 1` 的同一句台词）
   应与模拟器的 0.33-0.40 同档；若真机仍停在 ~0.25，再回到探针查该进程的字体状态。
 

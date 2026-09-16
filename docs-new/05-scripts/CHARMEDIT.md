@@ -49,7 +49,7 @@
 - ★右键关闭（`label_00001820` 的 `jcc (local b)`）依赖 **0x100 在掩码为空时派发「默认键」处理器**：`joy-callback c` 槽 = `Engine[517]`(SetKeyTotal)，由 `src/SYSTEM4.txt:86` 的 `i0fe c` 置 12。emulator 曾把 0x100 的空掩码分支当成「无输入就落回」⇒ b 永远 1 ⇒ 右键被挡回（用户报「右键无反应，只能点閉じる」，tickets/T-0046）
 - 脚本里的 `212` 是 **local 0x212**（=530），不是 local 212(0xd4)；两者都在用，读脚本时极易看错
 - `local a`（鼠标锁存）与 `local b`（键盘/手柄「有键按住」）是两个独立标志，别混
-- `mouse-callback 10` 的 10 是 **0xCD 的推进间隔 ms**（`sub_453A60`），不是「鼠标事件类型」
+- `mouse-callback 10` 的操作数是**十六进制**：0x10 = **16ms** = `0xCD` 的推进间隔（`sub_453A60`），不是「鼠标事件类型」。同族两档：TITLE/CHARMEDIT/SAVE/CONFIG1 等 29 个脚本写 `10`（16ms ≈ 一帧），GAMESTART/ROOM/MMODE/FIELD 等 22 个写 `32`（= 0x32 = 50ms）—— 建模后两类的输入轮询率不同（tickets/T-0047）
 
 ## 缺口
 

@@ -14,7 +14,7 @@ import { dec } from '../src/vm/bits.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { instr, mkEngine } from './harness.js';
+import { im, instr, mkEngine } from './harness.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
@@ -244,6 +244,22 @@ test('★0x100 默认键分支：掩码为空 ⇒ 跳 joyJump[SetKeyTotal]（下
   assert.equal(dispatch(), 1, 'SetKeyTotal=12 ⇒ bit7 落在扫描范围内 ⇒ 跳 joyJump[7]');
 });
 
+/** `0xCC` 的 op1 = `0xCD` 的推进间隔（`tickets/T-0047`）：操作数是十六进制，两档语料 + 槽 0 的 `? : 1`。 */
+test('★0xCC → 0xCD 节流：op1 是十六进制（0x10=16ms / 0x32=50ms），槽 0 ⇒ 1ms', () => {
+  const e = mkEngine([instr(0xcc, [im(0x10), im(0x2)]), instr(0xcc, [im(0x32), im(0x2)]), instr(0xcc, [im(0), im(0x2)])]);
+  const f = e.curScript();
+  const reg = (slot: number): void => {
+    OPS.get(0xcc)!(makeCtx(e, f, instr(0xcc, [im(slot), im(0x2)]), e.native, () => {}));
+  };
+  assert.equal(e.input.advanceThrottle, 0, '未注册：0xCD 不节流（引擎 bss 0）');
+  reg(0x10); // TITLE/CHARMEDIT/SAVE/CONFIG1…（29 个脚本）
+  assert.equal(e.input.advanceThrottle, 0x10, '`mouse-callback 10` = 0x10 ⇒ 16ms（≈一帧）');
+  reg(0x32); // GAMESTART/ROOM/MMODE/FIELD…（22 个脚本）
+  assert.equal(e.input.advanceThrottle, 0x32, '`mouse-callback 32` = 0x32 ⇒ 50ms（≈20fps）');
+  reg(0);
+  assert.equal(e.input.advanceThrottle, 1, '★槽 0 ⇒ 1ms（`sub_453A60` 的 `a2 ? a2 : 1`，不是 0）');
+});
+
 /** CHARMEDIT 端到端：右键 = 关闭（`src/CHARMEDIT.txt` 的 `label_00000760` → `label_00001820`）。 */
 async function charmeditRightClick(
   setKeyTotal: number,
@@ -264,6 +280,15 @@ async function charmeditRightClick(
   /** 主循环头 = 唯一那条 `get-input-type`（`label_0000070c`）。 */
   const mainLoopIp = script.instructions.findIndex((i) => i.opcode === 0xcd);
   assert.notEqual(mainLoopIp, -1, 'CHARMEDIT 应含 get-input-type（主循环头）');
+  // ★`0xCD` 是**时间节流门**：间隔 = 最后一次 `mouse-callback` 的 op1（CHARMEDIT 是 0x10 = 16ms，
+  //   `tickets/T-0047`）⇒ 时钟不走的测试里鼠标回调一次都不会被派发。这里按"每条指令 1ms"推进
+  //   虚拟时间（真机上轮询循环由 `sleep 1` 主导）。
+  const step = async (): Promise<void> => {
+    e.nowMs += 1;
+    await stepOnce(e);
+  };
+
+  assert.equal(input.advanceThrottle, 0, '注册前：0xCD 不节流（引擎 bss 0）');
 
   // ① 跑到**初始化之后的主循环**（初始化含整套绘制，约 6k 步）——`local b`(=0x11) 由
   //    `label_00000f04` 置 1，随后由默认键处理器（`joy-callback c`）清 0（仅当 SetKeyTotal=12）。
@@ -272,17 +297,18 @@ async function charmeditRightClick(
   for (; steps < 60_000; steps++) {
     if (local(0xb) === 1) sawB1 = true;
     if (e.curScript().ip === mainLoopIp && steps >= 8000) break;
-    await stepOnce(e);
+    await step();
   }
   assert.ok(steps < 60_000, '应在步数预算内进入主循环');
   const bAtPress = local(0xb);
   assert.equal(local(0xa), 0, '此时不应有鼠标按下锁存');
+  assert.equal(input.advanceThrottle, 0x10, '★初始化末尾的 `mouse-callback 10`（十六进制）= 0xCD 间隔 16ms（tickets/T-0047）');
 
   // ② 右键按下 → 等脚本把右键记进"按下锁存"（`local a`(=10) bit1）
   input.pressMouse(1);
   let latched = false;
   for (let i = 0; i < 20_000 && e.curScript().name === 'CHARMEDIT.BIN'; i++) {
-    await stepOnce(e);
+    await step();
     if ((local(0xa) & 2) !== 0) {
       latched = true;
       break;
@@ -294,7 +320,7 @@ async function charmeditRightClick(
   input.releaseMouse(1);
   let exit11 = 0;
   for (let i = 0; i < 20_000 && e.curScript().name === 'CHARMEDIT.BIN'; i++) {
-    await stepOnce(e);
+    await step();
     if (local(0x11) === 1) exit11 = 1;
   }
   const out = { closed: e.curScript().name !== 'CHARMEDIT.BIN', bAtPress, exit11, sawB1 };

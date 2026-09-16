@@ -1889,7 +1889,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "2026-09 修（T-0027）：★等待推进泵 serviceAdvanceWait 必须用**消费刷**（引擎 sub_411BC0 raw 20238 调的 sub_478090：吸取挂起事件、读后即清）—— 其调用链无 sub_477150 ⇒ 一次按下只推进一页；ADV 分支 serviceAdv（sub_411900 raw 20111）才用**实时刷** sub_4780D0（含鼠标按住态）。emulator 已把唯一的 flush() 拆成 flushPending()/flushHeld() 并按 raw 归属逐个消费者：泵/0x101/0xFA 后半/eatAllInput/hoverDispatchAllowed 走消费刷，serviceAdv/0x100/0xFF/0xFA 前半走实时刷。守卫 test/adv-msgwin.test.ts（按住 10 帧只推进 1 页 + down/up 同帧不丢 + ADV 分支仍读按住态）与 test/input.test.ts（两把刷子语义 + syncButtons 自愈）。仍未建模：sub_403DD0（方向键/翻页键移动游标）与 panelB 的 sub_4040A0（见 adv-advance-route-table 的登记缺口）。"
+        "note": "2026-09 修（T-0027）：★等待推进泵 serviceAdvanceWait 必须用**消费刷**（引擎 sub_411BC0 raw 20238 调的 sub_478090：吸取挂起事件、读后即清）—— 其调用链无 sub_477150 ⇒ 一次按下只推进一页；ADV 分支 serviceAdv（sub_411900 raw 20111）才用**实时刷** sub_4780D0（含鼠标按住态）。emulator 已把唯一的 flush() 拆成 flushPending()/flushHeld() 并按 raw 归属逐个消费者：泵/0x101/0xFA 后半/eatAllInput/hoverDispatchAllowed 走消费刷，serviceAdv/0x100/0xFF/0xFA 前半走实时刷。★2026-09（T-0047）补：0xCD 的推进间隔（= 最后一次 0xCC 的 op1，十六进制 `10`=16ms / `32`=50ms）也已建模（InputManager.advanceThrottle）；headless 守卫必须让虚拟时钟前进（sleep n = n ms），否则相邻 get-input-type 落在同一窗口内 ⇒ 派发消失。守卫 test/adv-msgwin.test.ts（按住 10 帧只推进 1 页 + down/up 同帧不丢 + ADV 分支仍读按住态）、test/input.test.ts（两把刷子语义 + syncButtons 自愈 + 0xCC/0xCD 节流）与 test/route-dispatch.test.ts（0xCC 后 advanceThrottle === 0x10）。仍未建模：sub_403DD0（方向键/翻页键移动游标）与 panelB 的 sub_4040A0（见 adv-advance-route-table 的登记缺口）。"
       }
     },
     {

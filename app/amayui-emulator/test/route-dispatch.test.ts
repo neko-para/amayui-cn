@@ -271,6 +271,10 @@ test('判据⑦b：`0xCC` 注册的 mouse-callback 在另一个脚本里派发 �
     const h = OPS.get(0xcc)!;
     h(makeCtx(e, f, instr(0xcc, [im(0x10), im(0x40)]), e.native, () => {}));
     assert.equal(input.mouseJumpOwner, 0x100, '0xCC 记录注册时的脚本身份');
+    assert.equal(input.advanceThrottle, 0x10, '★0xCC 的 op1 = 0xCD 的推进间隔（tickets/T-0047）');
+    // ★`0xCD` 是**时间节流门**：`now - lastAdvance >= throttle` 才推进（throttle 刚被 0xCC 置成 16ms）。
+    //   真机上 `timeGetTime()` 一直在走；本用例直接调 handler ⇒ 必须自己把时钟推过那个窗口。
+    e.nowMs += input.advanceThrottle;
     f.labelMap.set(0x40, 1);
     // 切到另一个脚本（不同 scriptId）⇒ 守卫必须抛
     f.scriptId = 0x200;

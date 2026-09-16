@@ -119,11 +119,25 @@
 
   {"offset":"0x55E1BC","type":"Engine*","name":"engine","scope":"global","meaning":"全局游戏/Engine 对象基址（原 dword_55E1BC；访问按字节偏移）","evidence":"global.cpp；全引擎用 engine + 字节偏移","status":"confirmed"},
 
+  {"offset":"0x0","type":"char[4]","name":"save_magic","meaning":"存档容器魔数：本作 \"S4SD\"（SYS4 系）；旧格式 \"S3SD\"（由 `Engine+698904` 的 2 字符与 `Str1`=\"S4\" 比较选择）","scope":"SaveHeader","evidence":"sub_438120 raw 45117-45121（Buffer[0] 与 Destination 比）","status":"confirmed"},
+
   {"offset":"0x004","type":"int32_t","name":"arc_count","scope":"AAIFileDB","meaning":"包内归档条数（官方 5 个包都是 1：APPEND0n.ALF）","evidence":"实测 install/APPEND0n.AAI；raw 7924-7933","status":"confirmed"},
+
+  {"offset":"0x4","type":"char[4]","meaning":"引擎版本串（本作 \"460B\"），写侧来自 Engine+382688；★`sub_438120` 不做校验（它的 a3 参数从不使用），只由调用方自己看","name":"save_engine_version","scope":"SaveHeader","evidence":"docs-new/03-engine/save-data.md §3；sub_438120 raw 45106（a3 未使用）","status":"confirmed"},
+
   {"offset":"0x008","type":"int32_t","name":"file_count","scope":"AAIFileDB","meaning":"包内文件条数（678 / 261 / 1689 / 425 / 918）","evidence":"实测 install/APPEND0n.AAI；raw 7934-7952","status":"confirmed"},
+
+  {"offset":"0x8","type":"char[0xE8]","name":"save_game_name","meaning":"游戏名字符串（`set:GameName`）；读头时与 `Engine+698912` strcmp 校验 —— 不符即\"このゲームのセーブデータではありません\"","scope":"SaveHeader","evidence":"sub_438120 raw 45123（&Buffer[2] 与 a4 比）","status":"confirmed"},
+
   {"offset":"0x00C","type":"uaddr","name":"header","scope":"AAIFileDB","meaning":"268 字节 AAI 头原样副本：@0 魔数(S3AI/S4AI/S3AC/S4AC) @4 版本 3 字节 @8 版本串(strcmp 与 SYS4INI 相等) @264 包号","evidence":"raw 7882 (sub_454800 读 0x10C)；raw 7883-7898 (魔数门 + 版本串比对)","status":"confirmed"},
+
+  {"offset":"0x108","type":"SYSTEMTIME(16B)","name":"save_time","meaning":"存档时间（本地时间）：+264 wYear / +266 wMonth / +268 wDayOfWeek / +270 wDay / +272 wHour / +274 wMinute / +276 wSecond / +278 wMilliseconds。`0x1A0` 只取前 7 个里的 6 个（**跳过 +268 星期**）写进 op3..op8","scope":"SaveHeader","evidence":"sub_42DC70 raw 38390-38395（v6..v11 的栈偏移 = 264/266/270/272/274/276，268 处正好是没被取的 wDayOfWeek）","status":"confirmed"},
+
   {"offset":"0x114","type":"int32_t","name":"pack_number","scope":"AAIFileDB","meaning":"★包号 = 头 @264（位于头副本区内 ⇒ 不需要单独字段）；sub_455750 直接读它决定写入 FileDB.packs 的哪一槽","evidence":"raw 67769 (_this[v6[69] + 3082])；实测 @264 = 1..5","status":"confirmed"},
   {"offset":"0x118","type":"uaddr","name":"archive_paths","scope":"AAIFileDB","meaning":"包内归档路径表（256 字节/条）；官方包 = APPEND0n.ALF","evidence":"raw 7929-7932；raw 7987","status":"confirmed"},
+
+  {"offset":"0x118","type":"int32_t","name":"save_play_seconds","meaning":"累计游玩秒数（写侧 = 上次存档的 +280 − 本次会话起点 + 现在；装载时接进容器 [260]→[259]）；`0x1A0` 写 op9","scope":"SaveHeader","evidence":"sub_42DC70 raw 38396（v12 = ebp-0x210 ⇒ 偏移 280）；save-data.md §3","status":"confirmed"},
+
   {"offset":"0x11C","type":"uaddr","name":"files","scope":"AAIFileDB","meaning":"包内文件项表（80 字节/条 = name[64] + archiveIndex@64 + fileIndex@68 + offset@72 + length@76）；名字形如 $n$NAME","evidence":"raw 7940-7955；raw 7977-7996","status":"confirmed"},
 
   {"offset":"0x408","type":"int32_t","name":"arc_count","scope":"FileDB","meaning":"归档路径条数（TOC 第一段计数）；每条的路径串 256 字节","evidence":"raw 67272-67282 (sub_454D30)；raw 67837-67846 (sub_4559C0 越界检查)","status":"confirmed"},

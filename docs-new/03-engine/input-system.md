@@ -135,7 +135,7 @@ return sub_453A60(_this + 107447, v2);     // 节流对象 [this+2]=1, [this+5]=
 ```
 ⇒ **一条 `mouse-callback <slot> <label>` 注册**：`op2`(label) 存进 `_this[107664]`，`op1`(slot) 存进节流对象 `_this+107447`（`_this[107453]`）。
 
-> ★**`<slot>` 的真正身份 = `0xCD` 的节流间隔（ms）**（`tickets/T-0047`）：`sub_453A60` 把 `[6]` 写成 `a2 ? a2 : 1`，而 `_this+107447` 的 `[6]` = 字节 `429812` —— 正是 `sub_41ACD0`（0xCD）读的那一格。语料：TITLE/CHARMEDIT/各菜单都登记 `mouse-callback 10` ⇒ **`get-input-type` 的推进间隔 = 10ms**（脚本主循环 `sleep 1` 空转时约每 10ms 派发一次鼠标回调）。`_this[107664]`（鼠标跳转目标）**只被 0xCC 写、只被 0xCD 读**；没有任何"按下才派发"的门 —— 派发完全由脚本自己的轮询决定。
+> ★**`<slot>` 的真正身份 = `0xCD` 的节流间隔（ms）**（`tickets/T-0047`）：`sub_453A60` 把 `[6]` 写成 `a2 ? a2 : 1`，而 `_this+107447` 的 `[6]` = 字节 `429812` —— 正是 `sub_41ACD0`（0xCD）读的那一格。语料：**29 个脚本登记 `mouse-callback 10`（操作数是十六进制 = 0x10）⇒ 推进间隔 16ms**（≈一帧；TITLE/CHARMEDIT/SAVE/CONFIG1…），**22 个登记 `32` = 0x32 ⇒ 50ms**（≈20fps；GAMESTART/ROOM/MMODE/FIELD…）。`_this[107664]`（鼠标跳转目标）**只被 0xCC 写、只被 0xCD 读**；没有任何"按下才派发"的门 —— 派发完全由脚本自己的轮询决定。
 
 ### 6b. `joy-callback`（0xFB，sub_421B80）— raw.c 30400
 ```c
@@ -181,8 +181,9 @@ if (_this[429812] <= v3 || (effect_flags & 0x8000000) != 0) {
     _this[120*cur + 383220] = 0;
 }
 ```
-⇒ **`get-input-type` = 消息/ADV 的"点击推进"门**。`_this[429812]`（节流间隔）= **最后一次 `mouse-callback`(0xCC) 的 op1**（见 §6a；只有从未登记过回调时才是 bss 0）⇒ 登记 `mouse-callback 10` 的脚本每 **10ms** 才推进一次；"adv 激活"（`0x8000000`）是 OR 兜底（ADV 中恒真 ⇒ 那条路径不节流）。在此条件下把脚本推进到**鼠标回调注册的跳转目标**（若注册过，**并先压返回点**），否则原样返回。
-> ⚠**emulator 现状（2026-09，`tickets/T-0047`）**：`advanceThrottle` 仍**恒 0**（不节流）—— 旧注"该字段全工程无写入"是错的（漏了 `sub_453A60`）。这条偏差单独处理（`tickets/T-0047`；headless 测试用冻结时钟驱动，改它要同步改时钟模型），本单只修 0x100。
+⇒ **`get-input-type` = 消息/ADV 的"点击推进"门**。`_this[429812]`（节流间隔）= **最后一次 `mouse-callback`(0xCC) 的 op1**（见 §6a；只有从未登记过回调时才是 bss 0）⇒ 登记 `mouse-callback 10` 的脚本每 **16ms** 才推进一次（登记 `32` 的每 50ms）；"adv 激活"（`0x8000000`）是 OR 兜底（ADV 中恒真 ⇒ 那条路径不节流）。在此条件下把脚本推进到**鼠标回调注册的跳转目标**（若注册过，**并先压返回点**），否则原样返回。
+> ★**emulator 已建模（2026-09，`tickets/T-0047`）**：`op_mouse_callback` 把 op1 写进 `InputManager.advanceThrottle`（`slot > 0 ? slot : 1`，对齐 `sub_453A60`），`getInputType` 按它节流；守卫 `test/route-dispatch.test.ts`（0xCC 后 `advanceThrottle === 0x10`）与 `test/input.test.ts`。
+> ⚠**headless 守卫的坑**：虚拟时钟必须真的走（`sleep n` = n ms、整帧 = 16ms）—— 冻结时钟会让相邻 `get-input-type` 落在同一窗口内、鼠标回调一次都不跑（T-0047 实测：title-exit ×2 + route-dispatch ⑦b + CHARMEDIT 用例就是被这个抓住的）。
 **它不"返回输入类型值"** —— 旧表把它记为"取输入类型/判输入模式"仅据名称推断，未读体；实读体后确认其是**推进+跳转**，"无输入"对应"未注册跳转目标→原地不跳/回退"。
 
 ### 7c. 消息跳读派发：`sub_419AF0`（0x100）— raw.c 25011

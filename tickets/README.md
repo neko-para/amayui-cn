@@ -7,15 +7,14 @@
 
 ## 概览
 
-共 **47** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **8** · ✅ done **38** · 🚫 dropped **1**（P0 5 / P1 13）
+共 **47** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **39** · 🚫 dropped **1**（P0 5 / P1 13）
 
 按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/adv` 5 · `emulator/input` 4 · `emulator/test` 4 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1
 
-## ⬜ open（8）
+## ⬜ open（7）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0047`](./T-0047/ticket.json) | P2 | bug | `emulator/input` | 0xCD 的节流间隔（Engine[429812]）没建模：它的真身是 mouse-callback(0xCC) 的 op1，emulator 恒 0 ⇒ 输… | 5 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/title-exit.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | — | — | — |
@@ -24,7 +23,7 @@
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
 
-## ✅ done（38）
+## ✅ done（39）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -61,6 +60,7 @@
 | [`T-0041`](./T-0041/ticket.json) | P2 | analysis | `emulator/render` | 未收敛：2D 合并段的 blend 状态由谁重设（引擎「状态泄漏」读法与真机可见行为矛盾） | 5 | `app/amayui-emulator/test/blend-mode.test.ts` | — | — |
 | [`T-0042`](./T-0042/ticket.json) | P2 | bug | `emulator/render` | ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化） | 4 | `app/amayui-emulator/test/text-aa.test.ts` `app/amayui-emulator/test/draw-string.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0046`](./T-0046/ticket.json) | P2 | bug | `emulator/input` | CHARMEDIT（ADV 右侧菜单的编辑界面）在 emulator 里右键无反应：0x100 漏了「掩码为空 ⇒ 派发默认键槽（SetKeyTotal）」这… | 5 | `app/amayui-emulator/test/input.test.ts` | — | — |
+| [`T-0047`](./T-0047/ticket.json) | P2 | bug | `emulator/input` | 0xCD 的节流间隔（Engine[429812]）没建模：它的真身是 mouse-callback(0xCC) 的 op1，emulator 恒 0 ⇒ 输… | 5 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/title-exit.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` | — | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |

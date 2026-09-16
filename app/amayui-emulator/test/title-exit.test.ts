@@ -43,7 +43,13 @@ async function makeRt(src: NodeFileSource, boot: { data: Uint8Array; name: strin
   loadScriptData(e, boot.data, boot.name);
   return { e, input, clock: 0 };
 }
-/** 跑到 TITLE 的输入轮询循环；返回停止原因（null=跑满步数）。 */
+/** 跑到 TITLE 的输入轮询循环；返回停止原因（null=跑满步数）。
+ *
+ * ★**时钟必须真的走**（`tickets/T-0047`）：`0xCD get-input-type` 的推进间隔 = 最后一次
+ * `mouse-callback`(0xCC) 的 op1（TITLE 是 0x10 = 16ms，见 `docs-new/03-engine/input-system.md` §6a/§7b）。
+ * 旧版只在 `FRAME_OPS` 上推进虚拟时钟 ⇒ 菜单轮询循环里相邻的 `get-input-type` 落在**同一个
+ * 16ms 窗口**内、鼠标回调（hover 命中/点击派发）一次都不跑。这里把 `sleep n` 也计入虚拟时间：
+ * 引擎 `sleep n`(n<10) 就是 `Sleep(n)` **毫秒**（raw 30288），TITLE 的轮询循环正是 `sleep 1`。 */
 async function run(rt: Rt, n: number): Promise<string | null> {
   for (let i = 0; i < n; i++) {
     const f = rt.e.curScript();
@@ -60,6 +66,8 @@ async function run(rt: Rt, n: number): Promise<string | null> {
     if (FRAME_OPS.has(t.opcode)) {
       rt.clock += 16;
       (rt.e.native as HeadlessScene).advance(rt.clock);
+    } else if (t.opcode === 0xc8) {
+      rt.clock += 1; // `sleep n`(n<10) = Sleep(n) ms（引擎 raw 30288）
     }
   }
   return null;

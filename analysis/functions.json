@@ -1288,7 +1288,7 @@
     "fields_used": ["this->input_advance_time", "this->input_advance_throttle", "this->effect_flags", "this->mouse_jump_target", "this->frames[cur].ip/arity"],
     "unmodeled": "[\"Engine+430656/430696 语义未定\",\"+388772 区（帧返回栈）未进 fields.json\"]",
     "evidence": "raw 25827-25876",
-    "notes": "★修正：ADV 位在此处的作用只是**让节流条件恒真**（而 429812 本就恒 0，故 ADV 位无额外影响）；emulator 的 advanceThrottle=0 结论正确，advActive 传参不影响结果。"
+    "notes": "★订正（T-0047）：`Engine[429812]`（节流间隔）**不是恒 0** —— 它是最后一次 `mouse-callback`(0xCC) 的 op1（`sub_453A60` 写，操作数十进制/十六进制见 0xCC 条目：`10`=16ms、`32`=50ms）。因此 `effect_flags & 0x8000000`（ADV 激活）这一位的作用是**在 ADV 里旁路节流**（ADV 每次调用都推进），不是\"无额外影响\"。emulator 已按此建模（`InputManager.advanceThrottle`，tickets/T-0047）。"
   },
   {
     "addr": "0x421980",
@@ -1296,13 +1296,13 @@
     "semantic_name": "op_mouse_callback_421980",
     "op": "0xCC",
     "status": "PARTIAL",
-    "purpose": "mouse-callback：注册鼠标跳转目标——op2(label) 存入 mouse_jump_target(_this[430656])，op1(槽/率) 存入节流对象 _this+107447 的 `[6]`（**= 字节 429812 = 0xCD `get-input-type` 的推进间隔**，`sub_453A60` 写 `op1?op1:1`；故 TITLE/CHARMEDIT 的 `mouse-callback 10` ⇒ 10ms 节流）。不是 hook 函数指针、不是回调",
+    "purpose": "mouse-callback：注册鼠标跳转目标——op2(label) 存入 mouse_jump_target(_this[430656])，op1(槽/率) 存入节流对象 _this+107447 的 `[6]`（**= 字节 429812 = 0xCD `get-input-type` 的推进间隔**，`sub_453A60` 写 `op1?op1:1`；操作数是**十六进制** ⇒ TITLE/CHARMEDIT/SAVE/CONFIG1 的 `mouse-callback 10` = 0x10 = **16ms**，GAMESTART/ROOM/MMODE/FIELD 的 `32` = 0x32 = **50ms**）。不是 hook 函数指针、不是回调",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["设 frame.arity=5", "mouse_jump_target = readIntOperand(op2)", "记录当前脚本 depth(_this+107674)", "readIntOperand(op1) → sub_453A60(_this+107447, v) 起节流计时器"],
     "fields_used": ["this->mouse_jump_target", "this->frames[cur].arity", "this->_this[107674]"],
     "unmodeled": ["_this+107447 节流对象内部字段"],
     "evidence": "raw 30317-30337(opcode-table 已核对)",
-    "notes": "仅记跳转目标 + 节流速率，不回调。TITLE：mouse-callback 10 label → 悬停/点击菜单处理"
+    "notes": "仅记跳转目标 + 节流速率，不回调。TITLE：mouse-callback 10（= 0x10 ⇒ 0xCD 节流 16ms）label → 悬停/点击菜单处理"
   },
   {
     "addr": "0x421B80",
@@ -7020,11 +7020,11 @@
     "semantic_name": "op_read_slot_header_42DC70",
     "op": "0x1A0",
     "status": "ANALYZED",
-    "purpose": "读槽头（292 B，不装载状态）：op2=槽号 → CreateFileA RO（打不开 ⇒ op1=1）→ sub_438120 读头：成功 ⇒ op1=0 + op3..op8 = 年/月/日/时/分/秒 + op9 = 游玩秒数；头坏 ⇒ op1=2",
+    "purpose": "读槽头（292 B，**不装载任何状态**）：唯一输入 `op2` = 槽号 → 拼 `%s\\SAVE%2.2d.DAT`（`sub_408A40` 取存档目录）→ `CreateFileA` 只读 ⇒ 打不开 ⇒ **op1 = 1**；否则 `sub_438120` 读完并校验 292 B 头 ⇒ 成功 **op1 = 0** + `op3..op8` = 年/月/日/时/分/秒（头 `+264` 的 SYSTEMTIME：★跳过 `+268` 的 `wDayOfWeek`，也跳过末尾的 `wMilliseconds`）+ `op9` = 游玩秒数（`+280` i32）；头坏（魔数不符 / 游戏名不符 / 读错误 / 长度≠292 四种原因**合并**）⇒ **op1 = 2**。★写序：`op3..op9` **先**、`op1` **最后**；失败（1/2）时 `op3..op9` **原样不动** ⇒ 脚本必须先读 op1。★与 0x1A1/0x19F 不同：**没有 `pool_int` 重新 ENC**（不装载状态，无此需要）。输出走通用写端 `sub_42B4B0` ⇒ 传**引用**操作数（`(local-ptr N)`/`(global-ptr N)`）时是**写进数组元素**（语料 `src/SAVE.txt:80` 正是这样按槽填七张表）。`_this[30*cur+95805] = 19` = 本指令的 dword 长度（1+2×9）⇒ argc = 9",
     "sub_behaviors": ["指令码 19 记进 Engine+120*cur+383220", "CreateFileA(FileName, 0x80000000, 0, 0, 3=OPEN_EXISTING, 0x8000020)", "sub_438120(Engine+20764, hFile, Engine+382688, Engine+698912, v5) 读 292 字节头到栈上 v5[66]", "成功：sub_42B4B0 依次写 op3..op8 = v6/v7/v8/v9/v10/v11（6 个 u16，★第三个是 +0x116 ⇒ 跳过头里 +268 的 wDayOfWeek）、op9 = v12（+0x120 的 i32 = 游玩秒数）、op1=0", "失败：op1=2"],
     "fields_used": ["Engine+20764（SAVE 容器）", "Engine+382688（引擎版本串）", "Engine+698912（标题串）", "Engine+120*cur+383220"],
     "evidence": "raw 38365-38404；读头 sub_438120 raw 45106-45149",
-    "notes": "emulator 已实现（handlers/save-slot.ts，字段偏移 264/266/270/272/274/276/280 与真槽 E4 逐项对齐）。"
+    "notes": "handler=sub_42DC70（raw 38365-38404）。头解析器 = `sub_438120`（raw 45105-45149：292 B、魔数 S4SD/S3SD、`+8` 游戏名 strcmp）。状态码语义：0 = 可读（有存档）/ 1 = 打不开（= 空槽）/ 2 = 有文件但头坏 ⇒ 「有没有存档」判 op1==0 即可，但 UI 想区分\\\"空槽\\\"与\\\"坏档\\\"时用 1 vs 2。emulator 侧见 `handlers/save-slot.ts`（ledger 已标已实现；本单只做语义分析，未改代码）"
   },
   {
     "addr": "0x42DFC0",
@@ -7091,11 +7091,11 @@
     "raw_name": "sub_438120",
     "semantic_name": "slot_read_header_438120",
     "status": "ANALYZED",
-    "purpose": "读槽/存档的 292 字节头：ReadFile 满 292 → 校验魔数（S4SD 或 S3SD，按 Engine+698904 字节决定）与引擎版本串（strcmp）→ 成功返 1 并取走 +280 的 i32（容器 [260]）；失败返 0",
+    "purpose": "读槽/存档的 292 字节头（ReadHeader）：`ReadFile` 满 292 才继续 → ① 魔数 `Buffer[0]` 必须是 \"S4SD\" 或 \"S3SD\"（按 `Engine+698904` 的 2 字符与 `Str1`=\"S4\" 比较来选）② `+8` 的字符串必须 == `a4`（调用方传的**游戏名**缓冲 = `set:GameName` 写到的 `Engine+698912`）⇒ 两者都过就把**整 292 字节** `qmemcpy` 进调用方的 `a5` 并返 1；否则把错误文本写进对象（\"セーブデータではありません\" / \"このゲームのセーブデータではありません\" / \"読み込みエラー ERRORCODE = %d\"）返 0。★参数 `a3`（`Engine+382688` = 引擎版本串缓冲）**函数体里从未使用** —— 版本串只由调用方从考回的 292 字节里自己看（`+4`）",
     "sub_behaviors": "[\"ReadFile(hFile, buf, 292)；不足 292 ⇒ 0\",\"魔数按 dword_55E1BC+698904 的两个字节二选一（S4SD 或 S3SD）\",\"版本串 strcmp((char*)&Buffer[2] = 头 +4, a4 = Engine+382688)\",\"成功 ⇒ qmemcpy(a5, Buffer, 292)：**把整份头交给调用方**（0x1A0 用栈上 v5[66]，sub_410160 用 v99），失败 ⇒ sub_4034C0 报错串 + 返 0\"]",
     "fields_used": "[\"（无 _this 字段写入：头落在调用方缓冲）\"]",
     "evidence": "raw 45106-45149",
-    "notes": "emulator 对应 parseSlotHeader（src/vm/saveSlot.ts）：ReadFile 292 + 魔数 S4SD/S3SD + 版本 strcmp + +264/266/270/272/274/276/280 字段，E4 用 47 个真槽逐项对齐。★_this[260] = 头 +280 不在本函数里，而在容器载荷读侧 sub_437980（raw 45085）。"
+    "notes": "handler=sub_438120（raw 45105-45149）。三个调用点：0x19E 存档前探头（raw 38223）、0x1A1 读档前（38309）、0x1A0 读头本身（38388）；`Engine+382688` 那个参数在三个调用点都传了、函数体里没用。★状态只有 1/0（成功/失败）——四种失败原因由日志文本区分，调用方拿不到"
   },
   {
     "addr": "0x4380F0",
