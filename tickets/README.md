@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **47** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **39** · 🚫 dropped **1**（P0 5 / P1 13）
+共 **48** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **40** · 🚫 dropped **1**（P0 5 / P1 13）
 
-按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/adv` 5 · `emulator/input` 4 · `emulator/test` 4 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1
+按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/input` 5 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1
 
 ## ⬜ open（7）
 
@@ -23,7 +23,7 @@
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
 
-## ✅ done（39）
+## ✅ done（40）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -61,6 +61,7 @@
 | [`T-0042`](./T-0042/ticket.json) | P2 | bug | `emulator/render` | ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化） | 4 | `app/amayui-emulator/test/text-aa.test.ts` `app/amayui-emulator/test/draw-string.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0046`](./T-0046/ticket.json) | P2 | bug | `emulator/input` | CHARMEDIT（ADV 右侧菜单的编辑界面）在 emulator 里右键无反应：0x100 漏了「掩码为空 ⇒ 派发默认键槽（SetKeyTotal）」这… | 5 | `app/amayui-emulator/test/input.test.ts` | — | — |
 | [`T-0047`](./T-0047/ticket.json) | P2 | bug | `emulator/input` | 0xCD 的节流间隔（Engine[429812]）没建模：它的真身是 mouse-callback(0xCC) 的 op1，emulator 恒 0 ⇒ 输… | 5 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/title-exit.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` | — | — |
+| [`T-0048`](./T-0048/ticket.json) | P2 | req | `emulator/input` | 实现 0x10A（`i10a`：把光标移到虚拟屏坐标）—— 此前不在任何表里，命中即 NotImplementedOp；语料 1678 处、ADV 侧边栏悬停… | 5 | `app/amayui-emulator/test/input.test.ts` | `changes.md` | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |

@@ -258,10 +258,51 @@ const op_hover_hittest: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, idx);
 };
 
+/**
+ * `0x10A`（`i10a`，`sub_421EA0` raw 30530-30598）：**把光标移到虚拟屏坐标 (op1 = X, op2 = Y)**。
+ *
+ * 引擎体（raw 30546-30597）：
+ * ```
+ * Point.x = readIntOperand(1); Point.y = readIntOperand(2);   // 虚拟屏坐标（与 0x109 读出的同一空间）
+ * sub_498350(显示对象, &v14, &v13);                            // 取显示对象位置偏移
+ * if (!Engine[167990]) {                                      // = display:ScreenMode（窗口模式才做映射）
+ *     ... 按 699168/699172 的虚拟分辨率与实际尺寸算 X/Y 缩放 ...
+ *     if (GetConfig(...VirtualFullScreenType)==2) { ...透视缩放... } else { Point += 偏移; }
+ * }
+ * ClientToScreen(hwnd, &Point);                               // 客户区 → 屏幕
+ * return SetCursorPos(Point.x, Point.y);                      // ★移动系统光标
+ * ```
+ * ⇒ 它是 `0x109 read-mouse-pos` 的**逆**（0x109 客户区→虚拟，本指令虚拟→客户区→屏幕）。
+ *
+ * ★语料 1678 处，四种用途（都**不是**"存档"）：
+ *  ① **ADV 侧边栏钉住/放出**（1470 处）：`i10a 4c4 (global-int 13a0)` / `i10a 479 (global-int 13a0)`
+ *     —— x = 0x4c4 = 1220（栏内）或 0x479 = 1145（栏外），y = `global 13a0` = 上一行 `read-mouse-pos`
+ *     刚读到的**当前光标 Y**。侧栏出现/收起时把光标钉进/钉出侧栏，避免 hover 状态机在边界抖动
+ *     （`src/SC5450.txt:713-793` 的 `f7ffb` 状态机；SN0000 等 330+ 个剧情脚本同型）。
+ *  ② **光标位置记忆**：`SBUNKI.txt:129-139` / `BUNKI.txt:149-159` —— 配置位（`global a9cd` bit0）开着就
+ *     `i10a (local 92)(local 93)` 恢复上次位置，否则 `read-mouse-pos` 读真实位置。
+ *  ③ **拖动越界回夹**：`ALLMAP.txt:531/558/583/610` 把拖出地图区的光标 `i10a (local 0)(local 1)` 按回去。
+ *  ④ **对话框居中**：`SELSTAGE.txt:42` 的 `i10a 388 d3`（= (904, 211) 硬编码位置）。
+ *
+ * ★emulator 映射：浏览器**不能**移动真实系统光标 ⇒ 等价物是把**引擎侧光标**设为 (x, y)
+ * （`InputManager.setCursor`）。可见后果与引擎一致：之后 `0x109` 读回 (x,y)，hover/`0x12E` 用新位置
+ * （`setCursor` 触发 `onCursorMove` = 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试 —— 而引擎的
+ * `SetCursorPos` 正是靠 WM_MOUSEMOVE 让脚本看见这次移动）；位置没变则不重算（引擎同样不会产生移动消息）。
+ * 真机那层虚拟→屏幕缩放只在 `display:VirtualFullScreenType == 2` 时生效（随包 INI 无此键 ⇒ 1:1）。
+ * ⚠宿主缺口（已写进台账）：真实光标停在原地，玩家一动鼠标就会被 `mousemove` 覆盖回真实位置 ——
+ * 这是"宿主没有 `SetCursorPos`"的必然，不是语义偏差。
+ */
+const op_set_mouse_pos: OpHandler = (c) => {
+  const x = readIntOperand(c.e, c.frame, c.instr, 1);
+  const y = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.e.input.setCursor(x, y, true);
+};
+
 /** 鼠标/键盘/手柄输入（真实现：读操作数 / 注册跳转目标 / 派发）。 */
 export const INPUT_OPS: OpTable = [
   [0x108, op_read_mouse_button], // read-mouse-button：读鼠标按钮值 → op1
   [0x109, op_read_mouse_pos], // read-mouse-pos：读鼠标位置 → op1=X, op2=Y
+  [0x10a, op_set_mouse_pos], // i10a：把光标移到虚拟坐标 (op1, op2)（0x109 的逆；ADV 侧边栏钉光标用）
   [0x10d, op_read_mouse_wheel], // read-mouse-wheel：读鼠标滚轮增量（一次性消费）→ op1
   [0x2e5, op_read_mouse_hwheel], // 读水平滚轮增量（一次性消费）→ op1（存档/读档列表的横滚翻页）
   [0xcc, op_mouse_callback],

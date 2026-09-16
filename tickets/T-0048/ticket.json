@@ -1,0 +1,76 @@
+{
+  "title": "实现 0x10A（`i10a`：把光标移到虚拟屏坐标）—— 此前不在任何表里，命中即 NotImplementedOp；语料 1678 处、ADV 侧边栏悬停依赖它",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/input",
+  "why": "`0x10A`（`sub_421EA0`）的语义是 **`ClientToScreen` + `SetCursorPos`**：把虚拟屏坐标 (op1, op2) 反算成屏幕坐标并移动系统光标 —— 即 `0x109 read-mouse-pos` 的**逆**。它与存档无关（最初的猜测不成立）：语料 **1678 处**里 1470 处是 ADV 侧边栏把光标**钉进/钉出**栏内（`i10a 4c4 (global-int 13a0)` = x 1220 栏内 / `i10a 479 (global-int 13a0)` = x 1145 栏外，y 取上一行 `read-mouse-pos` 读到的当前 Y），其余是「恢复上次光标位置」（SBUNKI/BUNKI，配置位 `global a9cd` bit0）、拖动越界回夹（ALLMAP）与对话框居中（SELSTAGE:42）。但 emulator 的 `INPUT_OPS`/`NATIVE_OPS`/`ENGINE_INTERNAL_OPS` **三张表都没有它** ⇒ 按 ADR-005「查不到就硬报错」，任何走到侧栏开合（或光标记忆/回夹/居中）的脚本都会抛 `NotImplementedOp` —— 这是 1678 处语料里第一个会真正踩到的输入指令。",
+  "acceptance": [
+    "`0x10A` 进 `INPUT_OPS` 真实现（`op_set_mouse_pos`）：读 op1/op2（经 `readIntOperand` ⇒ 引用操作数穿引取值，覆盖 `ALLMAP.txt:793` 的 `(local-ptr N)` 形态）并把**引擎侧光标**设为 (x, y)",
+    "可见后果与引擎一致：之后 `0x109` 读回同一 (x,y)；位置变化时触发一次 `onCursorMove`（= 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试 —— `SetCursorPos` 正是靠 WM_MOUSEMOVE 让脚本看见移动），位置不变则不触发（引擎同样不产生移动消息）",
+    "`OPS.has(0x10a) === true` 且 `ENGINE_INTERNAL_OPS.has(0x10a) === false`（★不得拿 no-op 桩糊过去），守卫 `test/input.test.ts` 断言 `handlerKind === 'implemented'` + 0x10A→0x109 往返",
+    "宿主缺口写进台账：浏览器不能移动真实系统光标（真实光标停在原地、下一次 `mousemove` 覆盖回来）；真机那层虚拟→屏幕缩放只在 `display:VirtualFullScreenType == 2` 时生效（随包 INI 无此键 ⇒ 1:1）",
+    "`cd app/amayui-emulator && npm run verify` 全绿（565 测试）；`docs-new/03-engine/opcode-table.md` 的 0x10A 行由「仅映射」转「已核对」并重生成 `scripts/asm/opcodes.json`"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return SetCursorPos(Point.x, Point.y);",
+      "note": "0x10A 的落点（raw 30597）：前面是 readIntOperand(1)/(2) → 显示对象偏移 → ClientToScreen"
+    },
+    {
+      "file": "src/SC5450.txt",
+      "anchor": "i10a 4c4 (global-int 13a0)",
+      "note": "ADV 侧边栏钉光标：`read-mouse-pos (global-int 139f) (global-int 13a0)` 刚读到当前 Y，再把 x 钉到 0x4c4=1220（栏内）；`i10a 479`（1145）是放出"
+    },
+    {
+      "file": "src/ALLMAP.txt",
+      "anchor": "i10a (local-ptr 0) (local-ptr 1)",
+      "note": "引用操作数形态：坐标来自 lookup-array 的数组元素（readIntOperand 穿引）"
+    },
+    {
+      "file": "src/SELSTAGE.txt",
+      "anchor": "i10a 388 d3",
+      "note": "对话框居中：硬编码 (0x388, 0xd3) = (904, 211)"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "const op_set_mouse_pos: OpHandler",
+      "note": "实现点：`input.setCursor(x, y, true)`"
+    },
+    {
+      "file": "app/amayui-emulator/test/input.test.ts",
+      "anchor": "★0x10A：把光标移到 (op1, op2)",
+      "note": "守卫：真实现（非 no-op）+ 命中测试时机 + 0x10A→0x109 往返"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/input.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "adv-input-pump-perframe",
+      "SC0330"
+    ],
+    "tickets": [
+      "T-0016",
+      "T-0047"
+    ]
+  },
+  "status": "done",
+  "notes": "为什么值得单独一单：① 它是 `0x109` 的逆，语义（移动系统光标）与「存档」无关、容易误判；② 1678 处语料 ⇒ 侧栏/光标记忆/回夹/居中四条路径都会踩；③ emulator 侧的「真实现」与「宿主缺口」要分开说清（引擎侧坐标/hover 生效，真实光标不动）。★未做（可另开）：给 0x10A 起助记符名（`set-mouse-pos`）需要走 `amayui-mnemonic-rename` 全流程（改表 → 生成 opcodes.json → rename-mnemonics.mjs 机械替换 src/data 的 1678 行 → 重建 + 重生成台账），本单只做实现与语义落库。",
+  "id": "T-0048",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— open → done：`0x10A` 进 `INPUT_OPS` 真实现（`op_set_mouse_pos` = `input.setCursor(op1, op2, true)`；引用操作数经 readIntOperand 穿引）。语义核对：引擎 = 虚拟屏坐标 →（窗口模式下的虚拟→客户区映射，仅 `display:VirtualFullScreenType==2` 才缩放，随包 INI 无此键）→ `ClientToScreen` → **`SetCursorPos`**（raw 30546-30597）⇒ 0x109 的逆。语料 1678 处的四种用途（ADV 侧栏钉光标 1470 / 光标位置记忆 / ALLMAP 拖动回夹 / SELSTAGE 对话框居中）与宿主缺口（浏览器不能移动真实系统光标；下一次 mousemove 覆盖回来）都已落台账。守卫 test/input.test.ts（真实现非 no-op + onCursorMove 命中时机 + 0x10A→0x109 往返）；opcode-table 0x10A 行「仅映射」→「已核对」并已 `node scripts/asm/build-opcodes.js` 重生成；npm run verify 565 测试全绿。"
+    }
+  ]
+}

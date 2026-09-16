@@ -448,6 +448,11 @@
           "anchor": "i1ae (global-int 1396) (global-int f8019) e",
           "lines": "17533-17596",
           "what": "★**存档 + 缩略图**的完整真实用例：`i19e (global-int 1396) (global-int f8019)` 存槽（`op1 = 1396` 是真输出槽，17535 用 `eq … 1396 0` 判成功）→ 造 224×180 离屏纹理（`create-texture e 140 b4 2` + `i032 2 e …`）→ `i1ae (global-int 1396) (global-int f8019) e` 把**纹理槽 `e` 当 op3（块选择子）**写进 `.STH` → `release-texture e`。★这就是引擎 `sub_42E1F0` 里 `Engine[166964] == 1` 那条\"截图分支\"（`sub_4A5260`）的真实调用面：`.STH` 装的是存档缩略图。"
+        },
+        {
+          "anchor": "i10a 4c4 (global-int 13a0)",
+          "lines": "711-793",
+          "what": "★**ADV 侧边栏的 hover 状态机 + 光标钉住**：`label_00002954/2a70/2b3c/2c40` 四段按 `f7ffb`（侧栏状态 2/3/…d）分派；进入/保持侧栏后用 `i10a 4c4 (global-int 13a0)` 把光标钉到 x=1220（栏内）、离开时用 `i10a 479 (global-int 13a0)` 钉到 x=1145（栏外）——y 取上一行 `read-mouse-pos (global-int 139f) (global-int 13a0)` 刚读到的**当前 Y**（`139f`/`13a0` = 光标 X/Y）。没有这条 warp，侧栏一出现光标就落在栏外 ⇒ hover 立刻又收起（抖动）"
         }
       ],
       "slots": [
@@ -478,7 +483,8 @@
       "gotchas": [
         "`0x218`（pivot getter）/ `0x21A`（描画位置 getter）在 emulator **未注册** ⇒ 命中即硬报错；剧情路径大量使用这个惯用法（全库 i217 有 3353 处）",
         "★存档槽族的状态码语义**不一致**：`0x1A0`/`0x19E`/`0x19F` 写 `op1`，`0x1A1` **不写**（引擎 `sub_42DDE0` 函数体无 `sub_42B4B0`，且调度器 raw 21217 丢弃 C 返回值）⇒ 读 `i1a1` 的 `op1` 只会拿到陈旧值/池值（本脚本给的 `f7ffd` 就是占位）。要判定\"读档成没成\"必须先用 `0x1A0` 验头。",
-        "★`i1a0` 的存在性探针（532-545）：状态读 `f7ffd`、槽号来自 `f8019`（= `0x3de + load-int 1390`）、其余 7 个输出全丢进**丢弃槽** `f7ffe` ⇒ 只关心「这个槽有没有存档」（`eq (global-int f7ffd) 0`）；全语料 334 处同型块（tickets/台账见 analysis/functions.json 的 0x42DC70）"
+        "★`i1a0` 的存在性探针（532-545）：状态读 `f7ffd`、槽号来自 `f8019`（= `0x3de + load-int 1390`）、其余 7 个输出全丢进**丢弃槽** `f7ffe` ⇒ 只关心「这个槽有没有存档」（`eq (global-int f7ffd) 0`）；全语料 334 处同型块（tickets/台账见 analysis/functions.json 的 0x42DC70）",
+        "★ADV 侧栏的稳定靠 `0x10A` 把光标**钉进栏内**（`i10a 4c4 (global-int 13a0)`）：`global 139f/13a0` = `read-mouse-pos` 的光标 X/Y，x=0x4c4=1220 在 T-0016 的侧栏条热点（0x49c..0x500）里；symmetric 的 `i10a 479`（1145）用于放出（tickets/T-0048；0x10A 语义见 analysis/functions.json 的 0x421EA0）"
       ],
       "gaps": [
         "0x218 / 0x21A 未实现（会阻塞剧情脚本路径）",

@@ -219,6 +219,7 @@ _this[30*cur + 95805] = 0;
 |---|---|---|---|
 | **0x108** (`u00415E70`, sub_42EDC0) | raw.c 39047 | `op1 = 鼠标按钮值`（`sub_477220`，左=bit0/右=bit1，随 SWAP） | L79/80 `u00415E70 (local 3f2)` |
 | **0x109** (`u00415EC0`, sub_42EE10) | raw.c 39057 | `op1=虚屏X, op2=虚屏Y`（`sub_4771D0`→`GetCursorPos`+`ScreenToClient`→`sub_498350`/`sub_403500` 虚拟映射） | L39 `u00415EC0 (local 404)(local 405)`，L79 读 `(local 3f0)(local 3f1)` |
+| **0x10A**（`i10a`, sub_421EA0） | raw.c 30530-30598 | **把光标移到虚拟屏坐标**：`op1=X, op2=Y`（与 `0x109` 读出的同一空间）→ 窗口模式下做虚拟→客户区映射 → `ClientToScreen` → **`SetCursorPos`** ⇒ `0x109` 的**逆**。★语料 1678 处：ADV 侧边栏用 `i10a 4c4 (global-int 13a0)`/`i10a 479 (global-int 13a0)`（x=1220 栏内 / 1145 栏外，y = 刚读到的当前 Y）把光标**钉进/钉出**侧栏、`SBUNKI`/`BUNKI` 用它实现「恢复上次光标位置」、`ALLMAP` 用它把拖出边界的拖动光标夹回来、`SELSTAGE:42` 用它把光标居中到对话框。emulator：`op_set_mouse_pos`（设引擎侧光标；★宿主无 `SetCursorPos`） | — |
 
 - `0x109` 若 `Point` 为 (-100000,-100000)（鼠标未初始化/出窗口），写 op1=-100000、op2=Point.y；否则 `sub_498350`(坐标变换)、`sub_403500`(虚拟显示映射，用 `_this[699168]/[699172]` 分辨率、`_this+697620` 显示对象、`_this[107707..107710]` 裁剪) 后写 op1=X、op2=Y。
 - **TITLE 用法**（src/TITLE.txt）：

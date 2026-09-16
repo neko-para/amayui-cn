@@ -7261,6 +7261,19 @@
     "fields_used": ["Engine+0x814 (set_key_total)"],
     "evidence": "raw 30444-30456",
     "notes": "handler=sub_421CA0"
+  },
+  {
+    "addr": "0x421EA0",
+    "raw_name": "sub_421EA0",
+    "semantic_name": "op_set_mouse_pos_421EA0",
+    "op": "0x10A",
+    "status": "ANALYZED",
+    "purpose": "把光标移到虚拟屏坐标（op1 = X, op2 = Y）—— `0x109 read-mouse-pos` 的**逆**：`Point=(op1,op2)` → `sub_498350(显示对象,&v14,&v13)` 取偏移 → `if (!Engine[167990] 即 display:ScreenMode)` 才做虚拟→客户区映射（按 699168/699172 的虚拟分辨率与实际尺寸算缩放，缩放只在 `display:VirtualFullScreenType==2` 时应用）→ `ClientToScreen(hwnd,&Point)` → **`SetCursorPos(Point.x, Point.y)`**（raw 30588-30597）。无输出操作数（也不回写 op1/op2）",
+    "sub_behaviors": ["读 op1/op2（各经 sub_41BF50，引用操作数会穿引取值）", "取显示对象偏移", "窗口模式下的虚拟→客户区映射（含可选缩放）", "ClientToScreen", "SetCursorPos"],
+    "fields_used": ["Engine+699168 (虚拟宽)", "Engine+699172 (虚拟高)", "Engine+167990 (display:ScreenMode)", "Engine+321572 (显示对象)", "Engine+387924 (hwnd)"],
+    "unmodeled": ["display:VirtualFullScreenType 分支（随包 INI 无此键 ⇒ 不生效）", "sub_498350 的显示对象偏移（emulator 无窗口/客户区概念）"],
+    "evidence": "raw 30530-30598；语料 1678 处（`src/SC5450.txt:713-793` 的 ADV 侧边栏钉光标、`SBUNKI/BUNKI` 的光标记忆、`ALLMAP:531` 的拖动回夹、`SELSTAGE:42` 的对话框居中）",
+    "notes": "emulator：`handlers/input.ts` 的 `INPUT_OPS[0x10a] = op_set_mouse_pos` ⇒ `InputManager.setCursor(x, y, true)`（= 设引擎侧光标 + 触发 `onCursorMove`，对应引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试；位置不变则不重算，与 SetCursorPos 不产生移动消息一致）。★宿主缺口：浏览器不能移动真实系统光标 ⇒ 真实光标停在原地、下一次 `mousemove` 会覆盖回真实位置（已登记）。守卫 `test/input.test.ts`"
   }
 
 ]

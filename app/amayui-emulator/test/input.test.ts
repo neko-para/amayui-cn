@@ -12,9 +12,9 @@ import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
 import { makeCtx } from '../src/vm/step.js';
-import { OPS } from '../src/vm/ops.js';
+import { ENGINE_INTERNAL_OPS, OPS } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { im, instr, mkEngine } from './harness.js';
+import { im, instr, loc, mkEngine } from './harness.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
@@ -242,6 +242,38 @@ test('★0x100 默认键分支：掩码为空 ⇒ 跳 joyJump[SetKeyTotal]（下
   e.input.consumeEdges();
   e.input.pressJoy(3);
   assert.equal(dispatch(), 1, 'SetKeyTotal=12 ⇒ bit7 落在扫描范围内 ⇒ 跳 joyJump[7]');
+});
+
+// ---------------------------------------------------------------------------
+// ★`0x10A`（`i10a`）：把光标移到虚拟坐标 —— `0x109` 的逆（`tickets/T-0048`）
+//
+// 引擎 `sub_421EA0`（raw 30530-30598）= `ClientToScreen` + **`SetCursorPos`** ⇒ 移动系统光标。
+// emulator 的等价物 = 设 `InputManager` 的（引擎侧）光标；可见后果与引擎一致：之后 `0x109` 读回同一
+// 位置、hover/`0x12E` 用新位置（`setCursor` 触发 `onCursorMove` = 引擎 WM_MOUSEMOVE 里的命中测试）。
+// 语料 1678 处；最主要的是 ADV 侧边栏的"钉住/放出"：`i10a 4c4 (global-int 13a0)` / `i10a 479 (global-int 13a0)`。
+// ---------------------------------------------------------------------------
+test('★0x10A：把光标移到 (op1, op2)（0x109 的逆）—— 触发一次 WM_MOUSEMOVE 等价命中测试，且是**真实现**', async () => {
+  const e = mkEngine([instr(0x10a, [im(0x4c4), im(0x2d0)]), instr(0x109, [loc(0), loc(1)])]);
+  assert.ok(OPS.has(0x10a), '0x10A 必须在已实现表里（此前不在任何表 ⇒ 命中即 NotImplementedOp 硬报错）');
+  assert.ok(!ENGINE_INTERNAL_OPS.has(0x10a), '★不得是 engine-internal 的 no-op 桩');
+
+  /** `onCursorMove` 的调用 = 引擎 WM_MOUSEMOVE 里的 `sub_403C50`（命中测试的唯一时机之一）。 */
+  const moves: [number, number][] = [];
+  e.input.onCursorMove = (x, y) => moves.push([x, y]);
+
+  e.input.setCursor(500, 300, true); // 先模拟"玩家把光标停在栏外"
+  moves.length = 0;
+  const t1 = await stepOnce(e);
+  assert.equal(t1.handlerKind, 'implemented', '0x10A 走真实现');
+  assert.deepEqual([e.input.readX(), e.input.readY()], [0x4c4, 0x2d0], '引擎侧光标被移到 (0x4c4, 0x2d0)');
+  assert.deepEqual(moves, [[0x4c4, 0x2d0]], '位置变了 ⇒ 触发一次命中测试（SetCursorPos 靠 WM_MOUSEMOVE 让脚本看见）');
+
+  // 位置没变 ⇒ 不再触发（引擎把光标设到同一点都不产生移动消息）
+  moves.length = 0;
+  await stepOnce(e); // 0x109：把它读回 local 0/1
+  assert.deepEqual(moves, [], '没有移动 ⇒ 不重算命中');
+  assert.equal(dec(e.key, e.curScript().locals.int.get(0) ?? -1), 0x4c4, '★往返：0x10A 之后 0x109 读回同一 X');
+  assert.equal(dec(e.key, e.curScript().locals.int.get(1) ?? -1), 0x2d0, '★往返：…同一 Y');
 });
 
 /** `0xCC` 的 op1 = `0xCD` 的推进间隔（`tickets/T-0047`）：操作数是十六进制，两档语料 + 槽 0 的 `? : 1`。 */
