@@ -13,9 +13,9 @@
 
 | 行区间 | 锚点（必须出现在该区间内） | 职责 |
 |---|---|---|
-| `579-596` | `i2eb (local-string 0)` | ★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7) |
-| `587-589` | `i2c7 (local-string 1) (local-string 0) 2 2` | 第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」） |
-| `590-592` | `i2c7 (local-string 1) (local-string 0) 5 4` | 第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」） |
+| `597-614` | `i2eb (local-string 0)` | ★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7) |
+| `601-603` | `i2c7 (local-string 1) (local-string 0) 2 2` | 第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」） |
+| `604-606` | `i2c7 (local-string 1) (local-string 0) 5 4` | 第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」） |
 | `6-19` | `copy-local-array (local-int cd) [0 9c 0 9c]` | 菜单几何数据表：`25d/261/265/269/26d` 是 5 项的四邻接矩形表（`menu-bind` 的悬停导航），`cd`..`dd` 是 5 个 size 盒（`i12e` 用，全是 `[0,0x9c,0,0x9c]`），`5`/`69` 是 baseX/baseY 数组（每项的命中盒左上角） |
 | `41-64` | `mouse-callback 10 label_00000460` | 手柄/鼠标回调注册（`0xFB` 一列 + `0xCC`）与主循环：`get-input-type` 后按 `local 3fc`（输入类型 1/2/3）分派到 0x388c / 0x184 / 0x154 |
 | `304-315` | `menu-bind 0 label_00001184` | 菜单表重建 + 派发：`menu-bind -1/0/1/2/3/4` 分别绑「无悬停 / Game Start / Load Data / Room / Option / Quit」，`menu-dispatch (local 3f7)` 按当前悬停项跳转 |

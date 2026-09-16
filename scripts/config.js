@@ -12,6 +12,15 @@ export const RAW_DIR = path.join(ROOT_DIR, 'raw');
 // install 可运行测试树（全量真拷贝）
 export const INSTALL_DIR = path.join(ROOT_DIR, 'install');
 
+// 原始数据（ALF）**解包根**：默认 = install（与游戏同布局的可运行测试树，里面本应含 DATA1-8/ 解包子目录）。
+// ★这是**只读基**：AGF 注入的底图、`patch-menu.js` 的未修改 AGERC.DLL、"还原原图"的来源都在
+//   `<解包根>/DATA1/` 下 —— **汇编产物只写 install 根**，绝不往这里写（见 `scripts/translate.js`）。
+// 某些机器/checkout 的 install 里没有解包子目录（省空间），解包树放在别处（本工程常见：`raw-parts/`，
+// 由 `node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN` 生成）⇒ 用环境变量指过去：
+//   AMAYUI_ORIG_DATA_DIR=raw-parts npm run patch-menu
+export const ORIG_DATA_ROOT = path.resolve(ROOT_DIR, process.env.AMAYUI_ORIG_DATA_DIR ?? 'install');
+export const ORIG_DATA1_DIR = path.join(ORIG_DATA_ROOT, 'DATA1');
+
 // data：只读比较基线（原始日文，不再修改）；src：可编辑开发源（含翻译语法）
 export const SRC_DIR = path.join(ROOT_DIR, 'src');
 export const DATA_DIR = path.join(ROOT_DIR, 'data');

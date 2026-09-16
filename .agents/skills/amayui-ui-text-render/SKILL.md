@@ -27,12 +27,13 @@ description: 汉化《天結いキャッスルマイスター》(Amayui Castle M
 
 | 路径 | 说明 |
 |---|---|
-| `install\DATA1\<NAME>.AGF` | **原始 AGF**（引擎 ALF 内容，未修改，作注入底）。 |
+| `<原始解包根>\DATA1\<NAME>.AGF` | **原始 AGF**（引擎 ALF 内容，未修改，作注入底）。解包根默认 `install`；若 install 里没有解包子目录，用 `AMAYUI_ORIG_DATA_DIR` 指向别处（本工程常见 `raw-parts`，见 `docs-new/00-overview/conventions.md` §3.1）。 |
 | `install\<NAME>.AGF` | **overlay AGF**（注入产物，引擎读取优先于 ALF）。**这是安装目标**。 |
 | `patch\AGF\<NAME>.AGF` | 补丁包同步副本（= install overlay）。 |
 | `patch\patch.config.json` | 补丁同步清单（新增文件在此登记，`dst` 用 `AGF/<NAME>.AGF`）。 |
 
-> 还原原始图：从 `install\DATA1\<NAME>.AGF` 复制覆盖 install 根即可。
+> 还原原始图：从 `<原始解包根>\DATA1\<NAME>.AGF` 复制覆盖 install 根即可。
+> ★**只有 install 根是安装目标**；`DATA1\` 是原始解包树（只读基），任何时候都不往里写产物。
 
 ### 1.3 文档（docs/images）——处理前必查
 

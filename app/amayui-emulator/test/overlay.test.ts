@@ -177,6 +177,18 @@ test('NodeFileSource：配置回写的防丢键棘轮比的是**当前生效**�
 // 目录解析：base/overlay 的唯一解析点
 // ---------------------------------------------------------------------------
 
+/**
+ * **平台原生**的绝对路径（同一段逻辑在两侧各取一份）。
+ *
+ * ★为什么必须这样写（`tickets/T-0043`①）：`resolveSystemPaths` 用的是 **host 平台**的 `path` 语义
+ * （`path.isAbsolute`/`path.dirname`，Node 约定）。用 Windows 写法（`D:\game`）在 POSIX 上断言，
+ * 测到的就不是"绝对路径被原样采用"，而是"`D:\game` 在 POSIX 上算相对名" —— 那不是被测逻辑的缺陷，
+ * 于是这两个用例在 macOS/Linux 上**必红**。平台各取一份之后，两侧都在测同一件事：
+ * 绝对路径 ⇒ 原样 normalize；相对路径 ⇒ 按仓库根解析。
+ */
+const WIN = process.platform === 'win32';
+const native = (winPath: string, posixPath: string): string => (WIN ? winPath : posixPath);
+
 test('resolveSystemPaths：默认 = %LOCALAPPDATA%\\Eushully\\<game> 与其同级 .overlay', () => {
   const p = resolveSystemPaths(REPO, { LOCALAPPDATA: 'C:\\Users\\x\\AppData\\Local' } as NodeJS.ProcessEnv);
   assert.equal(p.baseDir, path.join('C:\\Users\\x\\AppData\\Local', 'Eushully', DEFAULT_SYSTEM_DIR_NAME));
@@ -184,22 +196,38 @@ test('resolveSystemPaths：默认 = %LOCALAPPDATA%\\Eushully\\<game> 与其同�
 });
 
 test('resolveSystemPaths：AMAYUI_SYSTEM_DIR / AMAYUI_OVERLAY_DIR 覆盖（相对路径按仓库根解析）', () => {
+  const absBase = native('D:\\game', '/d/game');
   const p = resolveSystemPaths(REPO, {
     LOCALAPPDATA: 'C:\\Users\\x\\AppData\\Local',
-    [SYSTEM_DIR_ENV]: 'D:\\game',
+    [SYSTEM_DIR_ENV]: absBase,
     [OVERLAY_DIR_ENV]: 'my-overlay',
   } as NodeJS.ProcessEnv);
-  assert.equal(p.baseDir, 'D:\\game');
-  assert.equal(p.overlayDir, path.join(REPO, 'my-overlay'));
+  assert.equal(p.baseDir, path.normalize(absBase), '绝对路径 ⇒ 原样采用（平台原生写法）');
+  assert.equal(p.overlayDir, path.join(REPO, 'my-overlay'), '相对路径 ⇒ 按仓库根解析');
 });
 
 test('resolveSystemPaths：旧 AMAYUI_SAVE_DIR（指向 SAVE/ 子目录）按"上一级 = base"兼容', () => {
+  const save = native('C:\\Games\\Tianjie\\SAVE', '/c/Games/Tianjie/SAVE');
+  const base = native('C:\\Games\\Tianjie', '/c/Games/Tianjie');
   const p = resolveSystemPaths(REPO, {
     LOCALAPPDATA: 'C:\\Users\\x\\AppData\\Local',
-    AMAYUI_SAVE_DIR: 'C:\\Games\\Tianjie\\SAVE',
+    AMAYUI_SAVE_DIR: save,
   } as NodeJS.ProcessEnv);
-  assert.equal(p.baseDir, 'C:\\Games\\Tianjie');
-  assert.equal(p.overlayDir, 'C:\\Games\\Tianjie' + OVERLAY_SUFFIX);
+  assert.equal(p.baseDir, base, '旧口径指的是 SAVE/ 子目录 ⇒ base = 它的上一级');
+  assert.equal(p.overlayDir, base + OVERLAY_SUFFIX);
+});
+
+test('resolveSystemPaths：非本平台的"绝对路径"写法按相对路径处理（host 平台语义；POSIX 专属）', (t) => {
+  if (WIN) {
+    t.skip('POSIX 专属断言（Windows 上 D:\\game 本来就是绝对路径）');
+    return;
+  }
+  const p = resolveSystemPaths(REPO, { [SYSTEM_DIR_ENV]: 'D:\\game' } as NodeJS.ProcessEnv);
+  assert.equal(
+    p.baseDir,
+    path.join(REPO, 'D:\\game'),
+    'POSIX 上 `D:\\game` 不是绝对路径 ⇒ 按仓库根解析（上面两个用例因此必须给平台原生写法）',
+  );
 });
 
 test('resolveSystemPaths：没有 LOCALAPPDATA（非 Windows/CI）退到仓库 .tmp 下，不抛', () => {

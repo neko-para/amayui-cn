@@ -18,7 +18,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CONFIG_XY, runConfig1Chain, type ChainResult } from '../src/tools/config1Chain.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { CONFIG_XY, chainResourceDir, runConfig1Chain, type ChainResult } from '../src/tools/config1Chain.js';
 import { itemRenderPlacement, makeItem } from '../src/renderer/drawItem.js';
 
 /** 链路很重（数百万条指令）⇒ 所有用例共享同一次运行结果。 */
@@ -46,7 +48,31 @@ test('★CONFIG1 链路：LOGO → TITLE → CONFIG → CONFIG1，无未实现 o
  */
 const CN_SAMPLE = '天俟神俣ＳＡＭＰＬＥ'; // 简体原文「天结神缘ＳＡＭＰＬＥ」
 
-test('★CONFIG1 的 ADV 样例窗口：文案与注音被正确记录', async () => {
+/**
+ * ★**本地化产物是否已安装**（`tickets/T-0043`②）。
+ *
+ * 这两条断言期望的是**编译后的汉化 BIN**（译文在汇编时映射成 cp932 占位码位）。新 checkout 的
+ * `install/` 里没有这些松散 BIN 时，链路会**静默**回落到 `DATA*.ALF` 里的**日文原版** ——
+ * 于是断言不符，但那是"环境缺产物"而不是回归。这里显式判一次：缺产物 ⇒ 给出构建命令（skip/诊断），
+ * **不**让它冒充回归、也不让它静默通过。
+ */
+const LOCALIZED_ARTIFACTS = ['CONFIG.BIN', 'CONFIG1.BIN'];
+function localizedConfigMissing(): string | null {
+  const dir = chainResourceDir();
+  const absent = LOCALIZED_ARTIFACTS.filter((f) => !fs.existsSync(path.join(dir, f)));
+  if (!absent.length) return null;
+  return (
+    `${dir} 里没有本地化产物 ${absent.join(', ')}（链路会读到 DATA*.ALF 里的日文原版）；` +
+    '先跑 `cd scripts && node translate.js assemble CONFIG1 CONFIG`（或全量 assemble + npm run prune-install）'
+  );
+}
+
+test('★CONFIG1 的 ADV 样例窗口：文案与注音被正确记录', async (t) => {
+  const miss = localizedConfigMissing();
+  if (miss) {
+    t.skip(miss);
+    return;
+  }
   const r = await chain();
   // 正文 = 《天结》(display-furigana 的本文词) + 《神缘ＳＡＭＰＬＥ》(show-text)
   assert.equal(r.text, CN_SAMPLE, '样例文案（注音词的本文也算正文）');
@@ -55,7 +81,7 @@ test('★CONFIG1 的 ADV 样例窗口：文案与注音被正确记录', async (
   assert.equal(r.msgField, 1, 'i261 1 → 消息窗配置 _this[80101] = 1');
 });
 
-test('★CONFIG1 的 ADV 样例窗口：排版结果进入渲染模型（一行横排 / 30px / 注音 10px）', async () => {
+test('★CONFIG1 的 ADV 样例窗口：排版结果进入渲染模型（一行横排 / 30px / 注音 10px）', async (t) => {
   const r = await chain();
   const w = r.sampleWin;
   assert.ok(w, '窗 9 应产生过排版结果（脚本的 ADV 样例文案）');
@@ -69,20 +95,27 @@ test('★CONFIG1 的 ADV 样例窗口：排版结果进入渲染模型（一行�
   // ★正文 = `display-furigana` 的本文词 + `show-text` 的文本
   //   （引擎把 0x196 的 op2 也当要铺排的文本：sub_46BE30(obj, part, op2, op3, flag)）
   //   10 字 × 30px = 300px ≤ 824 ⇒ **一行横排**，注音在本文词上方。
-  assert.deepEqual(
-    w.lines.map((l) => l.text),
-    [CN_SAMPLE],
-  );
+  const missText = localizedConfigMissing();
+  if (missText) {
+    // 几何/样式断言与文案无关，照跑；只有"文本内容"这三条需要本地化产物
+    t.diagnostic(`未跑文案断言：${missText}`);
+  } else {
+    assert.deepEqual(
+      w.lines.map((l) => l.text),
+      [CN_SAMPLE],
+    );
+  }
   assert.equal(w.lines[0]!.width, w.glyphCount * w.mainSize, '一行宽 = 字数 × 字高（全角 1em）');
   assert.ok(w.glyphCount >= 4, `字数应不少于 4，实际 ${w.glyphCount}`);
   // ★默认（无逐字显现状态）必须"全部显示"：曾因把模型的 -1 当 0 处理，导致所有窗口空白
   assert.equal(w.revealed, w.glyphCount, '无显现状态 ⇒ 全部显示（否则画面空白）');
-  assert.equal(w.lines[0]!.ruby, 2, '注音与本文词同长（汉化版把 あまゆ 改成了 天结）');
+  // 注音条数也依赖文案本身（汉化版把 あまゆ 改成 天结 ⇒ 2；日文原版是 3）⇒ 同样按产物条件断言
+  if (!missText) assert.equal(w.lines[0]!.ruby, 2, '注音与本文词同长（汉化版把 あまゆ 改成了 天结）');
   assert.equal(w.vertical, true, '标志在模型里，但流向仍是横向（见下一条用例）');
 
   // ★快照里能看见文字本身 —— "让文本可观测"的验收点
   assert.match(r.snapshotText, /text win=9 rect=\(324,570,824,120\)/);
-  assert.ok(r.snapshotText.includes(CN_SAMPLE), '快照文本应含样例文案');
+  if (!missText) assert.ok(r.snapshotText.includes(CN_SAMPLE), '快照文本应含样例文案');
 });
 
 test('★文本不会被图元盖住：层序取引擎的 DrawItem id 起点（0x213 写的 win+104）', async () => {

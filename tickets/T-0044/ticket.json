@@ -1,0 +1,65 @@
+{
+  "title": "BTL/FIELD/HISTORY/MENU/SELBOMB/TITLE 的 src 缺 label 定义行 ⇒ assemble 骨架校验红、这 6 个脚本的汉化 BIN 一直没构建出来",
+  "type": "bug",
+  "priority": "P1",
+  "area": "translation/src",
+  "why": "opcode 改名/补语义时（★`33541de1 feat: menu related instr label` 等）**只重新反汇编了 `data/` 基线**：`menu-bind`/`menu-dispatch` 的操作数从裸地址变成 label 引用后，反汇编会额外产出 `label_00000370` 这类**定义行**。`src/` 没跟着同步 ⇒ 6 个脚本里出现**悬空的 label 引用**（`menu-bind 0 label_00000370` 却找不到定义）⇒ ①`translate.js` 的骨架校验直接红（MENU：基线 254 行 → 当前 245 行）；②即便绕过骨架校验，汇编器也会抛 `Unknown label reference`。后果不只是「构建报错」：这 6 个脚本的**汉化 BIN 一直缺席**，游戏/模拟器在菜单 MENU、标题 TITLE、战斗 BTL、地图 FIELD、历史 HISTORY、选择炸弹 SELBOMB 这几处**悄悄回退到 ALF 里的日文原版**，没有任何报错（静默降级）。2026-09-16 全量构建时被骨架校验抓住。",
+  "acceptance": [
+    "六个脚本的控制行与 `data/` 基线**逐行一致**（`node scripts/translate.js assemble <ID>` 骨架校验通过）",
+    "六个脚本的**译文不丢**：assemble 回读验证 `N/N`（实测 BTL 0/0、FIELD 27/27、HISTORY 0/0、MENU 4/4、SELBOMB 0/0、TITLE 0/0）",
+    "全量构建通过：`cd scripts && node translate.js assemble` = 成功 941/941、失败 0（实测 12.5s）",
+    "棘轮：`cd scripts && npm run check-skeleton` 秒级复核「src 的控制行序列 == data 基线」，今后 opcode 改名/重反汇编后不同步会立刻红"
+  ],
+  "evidence": [
+    {
+      "file": "src/MENU.txt",
+      "anchor": "menu-bind 0 label_00000370",
+      "note": "改动前：只有引用、没有定义（`grep '^label_00000370$' src/MENU.txt` 为空）⇒ 骨架少 9 行、汇编器 Unknown label reference"
+    },
+    {
+      "file": "data/MENU.txt",
+      "anchor": "label_00000370",
+      "note": "基线侧（重反汇编后）有定义行；6 个脚本共缺 54 行、**全是** `label_*` 定义（BTL 3 / FIELD 14 / HISTORY 9 / MENU 9 / SELBOMB 5 / TITLE 14）"
+    },
+    {
+      "file": "scripts/check-skeleton.mjs",
+      "anchor": "function skeleton(text)",
+      "note": "新增棘轮：src 与 data 的控制行序列必须逐行相同（译文行不参与比较），失败时给出首个差异"
+    },
+    {
+      "file": "scripts/translate.js",
+      "anchor": "const skelErr = checkSkeleton(script, lines, path.join(DATA_DIR,",
+      "note": "事故的守卫点：骨架校验逐行比对 data 基线；本轮改成返回错误（而不是 process.exit）以支持全量构建汇总"
+    },
+    {
+      "file": "scripts/resync-control-lines.mjs",
+      "anchor": "const LABEL_ONLY = /^label_[0-9a-f]+$/;",
+      "note": "补齐工具链的缺口：把 data 里新增的控制行（label_* 定义）插回 src 且**保留译文**（`sync-data-to-src.js --apply` 会整文件重置、把译文丢掉）"
+    }
+  ],
+  "tests": [
+    "scripts/check-skeleton.mjs"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/01-translation/format-toolchain.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0043"
+    ]
+  },
+  "notes": "修法：把 data 里新增的**控制行**（全是 `label_*` 定义）按位置插回 src，**保留译文**；★不能用 `scripts/sync-data-to-src.js --apply` —— 它的策略是「骨架不一致就整文件用 data 重置」，会把这 6 个脚本的译文全丢掉（MENU 的「要返回标题画面吗？」等）。补齐这件事的工具是 `scripts/resync-control-lines.mjs`（`npm run resync-control-lines [-- --apply]`，默认只报告；前提是\"src 控制行是 data 的子序列且缺的全是 label_*\"，否则拒绝改）；长期棘轮是 `scripts/check-skeleton.mjs`。",
+  "id": "T-0044",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— 六个脚本的 label 定义已按 data 基线插回（保留译文）；assemble 骨架校验通过、回读 N/N；全量构建 941/941；新增 scripts/check-skeleton.mjs 棘轮"
+    }
+  ]
+}

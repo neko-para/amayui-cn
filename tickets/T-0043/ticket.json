@@ -3,18 +3,18 @@
   "type": "tooling",
   "priority": "P3",
   "area": "emulator/test",
-  "why": "2026-09-16 在 macOS 上跑 `npm test` 时发现两条与改动无关的常红守卫（都在 T-0042 第 3 轮排查中被 `git stash` 复跑确认为**既有**红）：①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 断言里直接写 Windows 绝对路径（`AMAYUI_SYSTEM_DIR=D:\\game`、`AMAYUI_SAVE_DIR=C:\\Games\\Tianjie\\SAVE`），POSIX 上 `path.resolve/path.join` 把 `C:\\...` 当相对名 ⇒ actual 变成仓库根下的路径，断言必然失败；②`test/config1-chain.test.ts` 的两条 ADV 样例文案断言期望**本地化产物**（`天俟神俣ＳＡＭＰＬＥ`），而新 checkout 的 `install/` 只有 2017 原版 `DATA*.ALF` 里的日文 BIN（读到 `天結いキャッスルマイスターＳＡＭＰＬＥ`）⇒ 不先跑 assemble 就红；③补跑 `node scripts/translate.js assemble <ID>` 时，第二步 `copyFileSync(.tmp/<ID>.BIN → install/DATA1/<ID>.BIN)` 因该目录不存在而 ENOENT（虽然松散 `install/<ID>.BIN` 已经写出、守卫也已转绿）⇒ 退出码非 0，脚本流程无法在非 Windows 布局上正常收尾。影响：本机（macOS）`npm test` 永远有红，守卫的可信度被稀释（分不清'我改坏了'还是'环境缺产物'）。",
+  "why": "2026-09-16 在 macOS 上跑 `npm test` 时发现两条与改动无关的常红守卫（都在 T-0042 第 3 轮排查中被 `git stash` 复跑确认为**既有**红）：①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 断言里直接写 Windows 绝对路径（`AMAYUI_SYSTEM_DIR=D:\\game`、`AMAYUI_SAVE_DIR=C:\\Games\\Tianjie\\SAVE`），POSIX 上 `path.resolve/path.join` 把 `C:\\...` 当相对名 ⇒ actual 变成仓库根下的路径，断言必然失败；②`test/config1-chain.test.ts` 的两条 ADV 样例文案断言期望**本地化产物**（`天俟神俣ＳＡＭＰＬＥ`），而新 checkout 的 `install/` 只有 2017 原版 `DATA*.ALF` 里的日文 BIN（读到 `天結いキャッスルマイスターＳＡＭＰＬＥ`）⇒ 不先跑 assemble 就红；③（**已解决**：删掉该拷贝）补跑 `node scripts/translate.js assemble <ID>` 时，第二步 `copyFileSync(.tmp/<ID>.BIN → install/DATA1/<ID>.BIN)` 因该目录不存在而 ENOENT（虽然松散 `install/<ID>.BIN` 已经写出、守卫也已转绿）⇒ 退出码非 0，脚本流程无法在非 Windows 布局上正常收尾。影响：本机（macOS）`npm test` 永远有红，守卫的可信度被稀释（分不清'我改坏了'还是'环境缺产物'）。",
   "acceptance": [
-    "①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 在**非 Windows** 上不再报红：按平台 `t.skip` 并写明原因，或把断言改成 path-flavor 无关的形式（例如用 `path.win32`/`path.posix` 各测一遍纯函数）",
-    "②`test/config1-chain.test.ts` 在缺本地化产物时**给出明确信号**而不是静默读原版：要么测试内自建（调用 assembler 把 src/<ID>.txt 编成松散 BIN），要么在缺 `install/<ID>.BIN` 时 skip 并提示 `node scripts/translate.js assemble <ID>`",
-    "③`node scripts/translate.js assemble <ID>` 不再因 `install/DATA1/` 不存在而失败：按目录存在与否跳过第二份拷贝（或先 `mkdirSync(..., { recursive: true })`），并在末尾照常打印回读验证结果",
-    "收尾判据：本机 `cd app/amayui-emulator && npm test` 不再有'与改动无关'的红（全绿，或全是被显式 skip 并带原因）"
+    "①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 在**非 Windows** 上不再报红（**已解决**：改成「平台原生绝对路径」断言 —— `native(win, posix)` 两侧各取一份，测的都是\"绝对路径原样采用 / 相对路径按仓库根解析\"；另加一条 **POSIX 专属**用例把\"host 平台语义（`D:\\game` 在 POSIX 上算相对名）\"钉住，说明上面两条为何必须这样写。实测 macOS：13 条 / 12 通过 / 0 红（1 条 skip=本机没有真存档目录），改前是 2 红）",
+    "②`test/config1-chain.test.ts` 在缺本地化产物时**给出明确信号**而不是静默读原版（**已解决**：新增 `chainResourceDir()`（`config1Chain.ts` 导出，与链路同口径）+ `localizedConfigMissing()` 守卫 —— 缺 `install/CONFIG*.BIN` 时第一条文案用例 `t.skip(构建命令)`、第二条保留几何/样式断言并用 `t.diagnostic` 说明\"文案断言未跑\"。实测：有产物 10/10；把 `install/CONFIG{,_1}.BIN` 临时移走 = 9 通过 / 1 skip / **0 红**）",
+    "③`node scripts/translate.js assemble <ID>` 与 \\`install/DATA1\\` 解耦（**已解决**：用户确认\"从来没有把文件安装到 install/DATA1 这种操作\"，因此**删掉**了那次拷贝 —— 安装目标只有 `install/` 根；原始解包树是只读基，读它的工具改用可配置解包根 `AMAYUI_ORIG_DATA_DIR`（默认 `install`））",
+    "收尾判据：本机 `cd app/amayui-emulator && npm test` 不再有\"与改动无关\"的红（**已达成**：559 条 / 0 红；8 条 skip 都带明确 skip 原因，例如\"本机没有真存档目录\"）"
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/test/overlay.test.ts",
-      "anchor": "AMAYUI_SAVE_DIR: 'C:\\\\Games\\\\Tianjie\\\\SAVE'",
-      "note": "POSIX 上 path.resolve 把 C:\\Games\\Tianjie 当相对名 ⇒ baseDir 变成 <repo>/C:\\Games\\Tianjie（actual = 仓库根）"
+      "anchor": "const native = (winPath: string, posixPath: string): string => (WIN ? winPath : posixPath);",
+      "note": "① 的修法：两条断言改用平台原生绝对路径（win `D:\\game` / posix `/d/game`）⇒ 两侧都在测\"绝对路径原样采用\"，只是不再把\"Windows 写法在 POSIX 上算相对名\"当成缺陷"
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
@@ -23,8 +23,28 @@
     },
     {
       "file": "scripts/translate.js",
-      "anchor": "for (const dir of [INSTALL_DIR, path.join(INSTALL_DIR, 'DATA1')]) {",
-      "note": "assemble 的第二份拷贝目标 install/DATA1/ 在本 checkout 不存在 ⇒ ENOENT（第一份松散 install/<ID>.BIN 已写出）"
+      "anchor": "// 安装：**只写 install 根**",
+      "note": "订正：删掉 `install/DATA1/` 那一份拷贝 —— 解包树是**只读基**（AGF 注入底图 / patch-menu 的未修改 AGERC.DLL / 还原来源），从来不是安装目标"
+    },
+    {
+      "file": "scripts/config.js",
+      "anchor": "export const ORIG_DATA1_DIR = path.join(ORIG_DATA_ROOT, 'DATA1');",
+      "note": "原始数据解包根（默认 install；`AMAYUI_ORIG_DATA_DIR=raw-parts` 可指向别处的解包树）—— 只给读原始数据的工具用"
+    },
+    {
+      "file": "scripts/translate.js",
+      "anchor": "function assembleAll()",
+      "note": "全量构建入口（无脚本名时）：逐脚本汇编 + 末尾汇总成功/失败清单（实测 941/941、12.5s）"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "export function chainResourceDir(emulatorOptions?: EmulatorOptions): string {",
+      "note": "② 的修法：把\"生效资源根\"导出（与链路同一份解析），测试用它判定本地化产物是否已安装"
+    },
+    {
+      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "anchor": "function localizedConfigMissing(): string | null {",
+      "note": "②：缺 install/CONFIG*.BIN ⇒ 第一条用例 skip、第二条用 t.diagnostic 说明文案断言未跑（给出构建命令），不静默读 ALF 原版"
     }
   ],
   "links": {
@@ -34,13 +54,21 @@
       "T-0034"
     ]
   },
-  "notes": "同族历史：T-0034（engine-config.test.ts 直接读真游戏 base 的 SYS4REG.INI ⇒ 玩家一改设置就红）—— 都是'守卫依赖环境/产物'。本票是它在另外两处的同类。③的现场：`node scripts/translate.js assemble CONFIG1` 写出 install/CONFIG1.BIN 后在 install/DATA1 上 ENOENT；补跑 CONFIG/CONFIG2 同样。跑完这三条后 test/config1-chain.test.ts 10/10 绿（2026-09-16 实测）。",
+  "notes": "同族历史：T-0034（engine-config.test.ts 直接读真游戏 base 的 SYS4REG.INI ⇒ 玩家一改设置就红）—— 都是'守卫依赖环境/产物'。本票是它在另外两处的同类。③的现场：`node scripts/translate.js assemble CONFIG1` 写出 install/CONFIG1.BIN 后在 install/DATA1 上 ENOENT；补跑 CONFIG/CONFIG2 同样。跑完这三条后 test/config1-chain.test.ts 10/10 绿（2026-09-16 实测）。\n\n★2026-09-16 收尾：①②③ 都已解决（①平台化路径断言 ②产物缺失显式 skip/诊断 ③删掉\"往 install/DATA1 装\"的错误操作并从 res/images 补 AGF 的真源口径），本机 npm test 0 红。",
   "id": "T-0043",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-16",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— ①②③ 全部解决：①平台原生路径断言（macOS 12/12 绿）②config1-chain 缺产物时显式 skip/诊断（0 红）③删掉往 install/DATA1 装的错误操作 + res/images 作为 AGF overlay 真源；本机 npm test 559 条 0 红"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/overlay.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts"
   ]
 }

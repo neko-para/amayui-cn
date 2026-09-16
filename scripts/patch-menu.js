@@ -17,15 +17,16 @@
 // SetMenuItemInfoA 仅 2 处调用（开关项），故全局换 W 版本安全。
 //
 // 用法：node patch-menu.js
-//   - 源：install/DATA1/AGERC.DLL（未修改的 849KB 版本）
+//   - 源：<原始解包根>/DATA1/AGERC.DLL（未修改的 849KB 版本；解包根默认 install，
+//         可用 AMAYUI_ORIG_DATA_DIR 指向别处，例如本机 `AMAYUI_ORIG_DATA_DIR=raw-parts`）
 //   - 输出：install/AGERC.DLL（覆盖运行用副本，原文件先备份到 .tmp）
 import fs from 'node:fs';
 import path from 'node:path';
 import iconv from 'iconv-lite';
-import { ROOT_DIR, INSTALL_DIR } from './config.js';
+import { ROOT_DIR, INSTALL_DIR, ORIG_DATA1_DIR } from './config.js';
 
 // 每个编辑项：offset = 字符串起始文件偏移；from = 原文（UTF-16 单元数即槽位长度）；
-// to = 译文（单元数必须 <= 原文）。偏移来自 install/DATA1/AGERC.DLL（未修改版）。
+// to = 译文（单元数必须 <= 原文）。偏移来自 <原始解包根>/DATA1/AGERC.DLL（未修改版）。
 //
 // 结构备注：FONT 110 = 主菜单模板（0xC66C4..0xC6E30），FONT 124 = 调试菜单模板
 // （0xC6E30..0xC6F70）。弹层 = pre 字(0x0001/0x0081) + 标题；FONT 110 菜单项 =
@@ -90,7 +91,7 @@ const EDITS = [
 ];
 
 // 运行时菜单覆盖（见文件头注释）：ANSI 串→UTF-16LE + A 导入→W 导入。
-// 偏移基于 install/DATA1/AGERC.DLL（未修改版）；from 用 cp932 校验原文。
+// 偏移基于 <原始解包根>/DATA1/AGERC.DLL（未修改版）；from 用 cp932 校验原文。
 const RUNTIME_MENU_EDITS = [
   { offset: 0x66200, slotEnd: 0x66210, from: 'ﾃﾞﾊﾞｯｸﾞ(&D)', to: '调试(&D)', outEnc: 'utf16le' },
   { offset: 0x66328, slotEnd: 0x66344, from: 'ﾒｯｾｰｼﾞｳｲﾝﾄﾞｳを消す(&H)', to: '隐藏消息窗口(&H)', outEnc: 'utf16le' },
@@ -101,7 +102,7 @@ const RUNTIME_MENU_EDITS = [
 
 const PAD = '\u200B'; // 零宽空格
 
-const SRC = path.join(INSTALL_DIR, 'DATA1', 'AGERC.DLL');
+const SRC = path.join(ORIG_DATA1_DIR, 'AGERC.DLL');
 const DST = path.join(INSTALL_DIR, 'AGERC.DLL');
 const TMP = path.join(ROOT_DIR, '.tmp');
 const BAK = path.join(TMP, 'AGERC.dll.pre-patch.bak');
@@ -125,6 +126,11 @@ function toUtf16le(text) {
 function main() {
   if (!fs.existsSync(SRC)) {
     console.error(`source not found: ${SRC}`);
+    console.error(
+      '  这是**原始解包树**里的未修改 AGERC.DLL（只读基）。解包根默认 install（含 DATA1/）；' +
+        '若 install 里没有解包子目录，用环境变量指向别处，例如：' +
+        '`AMAYUI_ORIG_DATA_DIR=raw-parts npm run patch-menu`',
+    );
     process.exit(1);
   }
   if (!fs.existsSync(DST)) {
@@ -137,7 +143,7 @@ function main() {
     console.log(`backup -> ${BAK}`);
   }
 
-  const data = fs.readFileSync(SRC); // 从未修改的 DATA1 版本开始
+  const data = fs.readFileSync(SRC); // 从未修改的 DATA1 版本开始（只读基）
   for (const { offset, from, to } of EDITS) {
     const fromBytes = toUtf16le(from);
     const cur = data.subarray(offset, offset + fromBytes.length);

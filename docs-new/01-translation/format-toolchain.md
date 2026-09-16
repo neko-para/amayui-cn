@@ -42,12 +42,22 @@
 
 ```bash
 node scripts/alf/unpack_alf.mjs SYS4INI.BIN                 # ALF 解包（Node 跨平台版，推荐）
-node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN
+node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN   # 解包根可放别处（见下面 AMAYUI_ORIG_DATA_DIR）
+cd scripts && node translate.js assemble                   # **全量构建**：src/*.txt → install/ 根（松散 overlay）
+cd scripts && node translate.js assemble SC0000            # 单脚本
+cd scripts && npm run prune-install [-- --apply [--restore-agf]]  # 全量构建后收口：按 install-manifest.json + 「有无译文」把清单外的纯重建 BIN 清掉，缺的 AGF overlay 从 res/images 补进 install 根
+cd scripts && npm run check-skeleton                       # **骨架棘轮**：src 的控制行必须与 data 基线逐行一致（秒级）
+cd scripts && npm run resync-control-lines [-- --apply]     # 骨架不一致时：把 data **新增的控制行**（label_* 定义等）插回 src，**保留译文**（默认只报告）
 node scripts/asm/cli.js -e sjis -d SC0000.BIN SC0000.txt    # 反汇编（Node 版，推荐）
 node scripts/asm/cli.js -e sjis -a SC0000.txt SC0000.BIN    # 重汇编
 node scripts/asm/cli.js -e sjis -x SC0000.BIN               # 往返校验（逐字节 equal）
 node scripts/agf/cli.js extract <AGF...> --out <目录>      # AGF→PNG（Node 版）
 ```
+
+> ★**安装目标只有 `install/` 根**（松散 overlay，引擎「松散优先于 ALF」）；`install/DATA1-8/`（或 `raw-parts/DATA1-8/`）
+> 是 **ALF 的原始解包树 = 只读基**（AGF 注入底图 / `patch-menu` 的未修改 AGERC.DLL / 还原来源），
+> **不要把汇编或注入产物写进去**。需要读这份原始数据的工具用**解包根**（默认 `install`）：
+> `AMAYUI_ORIG_DATA_DIR=raw-parts npm run patch-menu`。详见 [`00-overview/conventions.md` §3.1](../00-overview/conventions.md)。
 
 > ⚠️ 旧 `age-asm.exe` 用 ANSI 接收路径（ACP=936），含日文/中文绝对路径会被搅乱；
 > **Node 版 `scripts/asm/cli.js` 无此问题**（UTF-8 处理路径），无需 ASCII 别名 junction。

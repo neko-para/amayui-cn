@@ -61,7 +61,7 @@ description: 直接执行《天結いキャッスルマイスター》汉化工�
 3. **构建校验**：
    - 在 `scripts` 目录运行 `npm run assemble -- <脚本>`，必须通过
      （骨架校验 / SJIS / 回读验证；Node 版 age-asm 跨平台，任何平台均可运行），
-     产物写入 install 根 + DATA1。
+     产物**只写入 `install/` 根**（松散 overlay，引擎优先于 ALF）；★**不写 `install/DATA1/`**（那是 ALF 的原始解包树，只读基）。
    - 若尚未构建 install 树 / 无法运行游戏验证：改用本地校验（`reflow-apply.js --check`、
      `find-untranslated.js`、宽度/结构检查，见 `references/verify.md`），
      并在项目根 `PENDING.md` 登记该脚本（完全新翻译与修改均登记）。

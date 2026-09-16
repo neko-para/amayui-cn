@@ -50,19 +50,24 @@ menu-bind 6 label_000008a0
 menu-bind 7 label_00000ab8
 menu-bind 8 label_00000ae4
 menu-dispatch (global-int f801a) label_00000b10
+label_00000370
 call-script 5111  // FELLOW
 jmp label_00000b10
+label_00000388
 call-script 35  // INFO
 mov (global-int f801a) 0
 jmp label_00000b10
+label_000003b4
 mov (global-int f7ff0) 0
 call-script 33  // SAVE
 mov (global-int f801a) 0
 jmp label_00000b10
+label_000003f4
 mov (global-int f7ff0) 1
 call-script 33  // SAVE
 mov (global-int f801a) 0
 jmp label_00000b10
+label_00000434
 call-script 34  // CONFIG
 mov (global-int f801a) 0
 eq (local-int 6) (global-int 0) 2
@@ -71,6 +76,7 @@ fill-zero (global-int 14c8ff) 64
 
 label_000004a0
 jmp label_00000b10
+label_000004ac
 and (local-int 6) (global-int a9cc) 1
 jcc (local-int 6) ffffffff label_000006ac
 mov (global-int f8fa5) 7
@@ -120,6 +126,7 @@ detach-texture 30d40 1
 poll-input
 exit-script
 jmp label_00000b10
+label_000008a0
 and (local-int 6) (global-int a9cc) 2
 jcc (local-int 6) ffffffff label_00000aa0
 mov (global-int f8fa5) 7
@@ -146,9 +153,11 @@ jmp label_00000b10
 label_00000aa0
 call-script 37  // QUIT
 jmp label_00000b10
+label_00000ab8
 call-script 31  // HISTORY
 mov (global-int f801a) 0
 jmp label_00000b10
+label_00000ae4
 call-script 5249  // INFOFA
 mov (global-int f801a) 0
 jmp label_00000b10

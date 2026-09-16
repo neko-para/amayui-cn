@@ -22,8 +22,9 @@ const LITERAL_RE = /(@?)"([^"]*)"/g;
 const SET_STRING_RE = /^set-string \(global-string ([0-9a-f]+)\) (@?)"(.+)"$/;
 
 function usage() {
-  console.log('用法: node translate.js <assemble> [脚本名，如 OPINIT1]');
-  console.log('  assemble   src/<脚本>.txt（含翻译语法）→ 预处理展开 → 骨架校验 → 汇编 → 安装 → 回读验证');
+  console.log('用法: node translate.js assemble [脚本名，如 OPINIT1]');
+  console.log('  assemble <脚本>   src/<脚本>.txt（含翻译语法）→ 预处理展开 → 骨架校验 → 汇编 → 安装到 install/ 根 → 回读验证');
+  console.log('  assemble          **全量构建**：对 src/*.txt 逐个做上面这套，末尾汇总成功/失败清单');
 }
 
 // ---------- 语法解析 ----------
@@ -73,53 +74,55 @@ function skeleton(lines) {
     .filter((l) => l && !l.startsWith('//') && !TEXT_INSTR.test(l));
 }
 
+/** 骨架校验：**返回**错误文本（不再 process.exit，便于全量构建逐脚本汇总）。 */
 function checkSkeleton(script, curLines, baselinePath) {
   if (!fs.existsSync(baselinePath)) {
     console.log(`[warn ] 无基线 ${baselinePath}，跳过骨架校验`);
-    return;
+    return null;
   }
   const base = skeleton(fs.readFileSync(baselinePath, 'utf8').split(/\r\n|\r|\n/));
   const cur = skeleton(curLines);
   if (base.length !== cur.length) {
-    console.error(`[FAIL] ${script} 骨架行数变化：基线 ${base.length} → 当前 ${cur.length}`);
+    let detail = '';
     for (let i = 0; i < Math.min(base.length, cur.length); i++) {
       if (base[i] !== cur[i]) {
-        console.error(`  首个差异 #${i}\n    基线: ${base[i]}\n    当前: ${cur[i]}`);
+        detail = `\n  首个差异 #${i}\n    基线: ${base[i]}\n    当前: ${cur[i]}`;
         break;
       }
     }
-    process.exit(1);
+    return `[FAIL] ${script} 骨架行数变化：基线 ${base.length} → 当前 ${cur.length}${detail}`;
   }
   for (let i = 0; i < base.length; i++) {
     if (base[i] !== cur[i]) {
-      console.error(`[FAIL] ${script} 控制行被改动 #${i}\n  基线: ${base[i]}\n  当前: ${cur[i]}`);
-      process.exit(1);
+      return `[FAIL] ${script} 控制行被改动 #${i}\n  基线: ${base[i]}\n  当前: ${cur[i]}`;
     }
   }
+  return null;
 }
 
 // ---------- 命令 ----------
-function assemble(script) {
+/**
+ * 汇编**一个**脚本并安装（`src/<ID>.txt` → `install/<ID>.BIN`）。
+ *
+ * ★不再 `process.exit`：返回 `{ ok, error? }`，让单脚本模式与**全量构建**共用同一段逻辑
+ * （全量要逐脚本汇总失败清单，不能被第一个失败打断）。
+ */
+function assembleOne(script, opts = {}) {
   const srcPath = path.join(SRC_DIR, `${script}.txt`);
-  if (!fs.existsSync(srcPath)) {
-    console.error('[FAIL] src 文件不存在:', srcPath);
-    process.exit(1);
-  }
+  if (!fs.existsSync(srcPath)) return { ok: false, error: `[FAIL] src 文件不存在: ${srcPath}` };
   const src = fs.readFileSync(srcPath, 'utf8');
   const { lines, eol, problems } = preprocess(src);
   if (problems.length) {
-    console.error('[FAIL] 存在无法映射的字符：');
-    for (const p of problems) console.error('  ', p);
-    process.exit(1);
+    return { ok: false, error: `[FAIL] 存在无法映射的字符：\n  ${problems.join('\n  ')}` };
   }
 
-  checkSkeleton(script, lines, path.join(DATA_DIR, `${script}.txt`));
+  const skelErr = checkSkeleton(script, lines, path.join(DATA_DIR, `${script}.txt`));
+  if (skelErr) return { ok: false, error: skelErr };
 
   const plain = lines.join(eol);
   const bad = validateSjis(plain);
   if (bad.length) {
-    console.error('[FAIL] 展开后仍含不可 SJIS 编码字符：', bad.slice(0, 20).join(', '));
-    process.exit(1);
+    return { ok: false, error: `[FAIL] 展开后仍含不可 SJIS 编码字符：${bad.slice(0, 20).join(', ')}` };
   }
 
   fs.mkdirSync(path.join(ROOT_DIR, '.tmp'), { recursive: true });
@@ -130,13 +133,12 @@ function assemble(script) {
   fs.writeFileSync(asciiPlain, plain, 'utf8');
   fs.writeFileSync(asciiOut, bin);
 
-  // 安装：install 根 + install/DATA1（松散覆盖）
-  const installed = [];
-  for (const dir of [INSTALL_DIR, path.join(INSTALL_DIR, 'DATA1')]) {
-    const dst = path.join(dir, `${script}.BIN`);
-    fs.copyFileSync(asciiOut, dst);
-    installed.push(dst);
-  }
+  // 安装：**只写 install 根**（松散 overlay；引擎/模拟器的文件查找都是"松散优先于 ALF"）。
+  // ★不写 install/DATA1/：那是 ALF 的**原始解包树**（AGF 注入底图、patch-menu 的 AGERC.DLL 来源、
+  //   以及"还原原图"的来源），是**只读基**，从来不是汇编产物的安装目标。
+  const dst = path.join(INSTALL_DIR, `${script}.BIN`);
+  fs.copyFileSync(asciiOut, dst);
+  const installed = [dst];
 
   // 回读验证：反汇编后应包含所有展开的译文
   const check = disassembleScript(bin, null, 932);
@@ -152,11 +154,38 @@ function assemble(script) {
   let verified = 0;
   for (const t of uniq) if (check.includes(t)) verified++;
   const size = fs.statSync(asciiOut).size;
-  console.log(`[assemble] ${script}.BIN -> ${installed.join(', ')} (${size} bytes)，骨架校验通过，回读验证 ${verified}/${uniq.length} 处译文`);
-  if (verified !== uniq.length) {
-    console.error('[warn] 部分译文未在回读文件中找到，请检查');
-    process.exit(1);
+  if (opts.quiet) {
+    console.log(`[ok  ] ${script}.BIN (${size} bytes) 回读 ${verified}/${uniq.length}`);
+  } else {
+    console.log(`[assemble] ${script}.BIN -> ${installed.join(', ')} (${size} bytes)，骨架校验通过，回读验证 ${verified}/${uniq.length} 处译文`);
   }
+  if (verified !== uniq.length) {
+    return { ok: false, error: `[warn] ${script}: 部分译文未在回读文件中找到（${verified}/${uniq.length}），请检查` };
+  }
+  return { ok: true, size, verified, uniq: uniq.length, installed };
+}
+
+/** **全量构建**：把 `src/*.txt` 逐个汇编进 `install/` 根（松散 overlay，引擎优先于 ALF）。 */
+function assembleAll() {
+  const ids = fs
+    .readdirSync(SRC_DIR)
+    .filter((f) => f.endsWith('.txt'))
+    .map((f) => f.slice(0, -4))
+    .sort();
+  console.log(`[build] 全量构建：${ids.length} 个脚本 → ${INSTALL_DIR}`);
+  const t0 = Date.now();
+  const failed = [];
+  for (let i = 0; i < ids.length; i++) {
+    const r = assembleOne(ids[i], { quiet: true });
+    if (!r.ok) {
+      failed.push({ id: ids[i], error: r.error });
+      console.error(`[FAIL] ${ids[i]}`);
+    }
+  }
+  const secs = ((Date.now() - t0) / 1000).toFixed(1);
+  console.log(`[build] 完成：成功 ${ids.length - failed.length}/${ids.length}，失败 ${failed.length}，用时 ${secs}s`);
+  for (const f of failed) console.error(`${f.id}: ${f.error}`);
+  if (failed.length) process.exit(1);
 }
 
 const cmd = process.argv[2];
@@ -164,5 +193,15 @@ if (!cmd) {
   usage();
   process.exit(1);
 }
-if (cmd === 'assemble') assemble(process.argv[3]);
-else usage();
+if (cmd === 'assemble') {
+  const target = process.argv[3];
+  if (target) {
+    const r = assembleOne(target);
+    if (!r.ok) {
+      console.error(r.error);
+      process.exit(1);
+    }
+  } else {
+    assembleAll();
+  }
+} else usage();

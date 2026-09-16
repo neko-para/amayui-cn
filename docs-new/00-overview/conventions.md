@@ -5,7 +5,7 @@
 ```
 E:\Games\Eushully\天結\
 ├── raw\        软连接(junction) → 游戏本体（只读参照，勿写）
-├── install\    可运行测试树（与本体完全独立的全量真拷贝，含 DATA1-8 解包子目录）
+├── install\    可运行测试树（与本体完全独立的全量真拷贝；解包子目录 DATA1-8\ 视机器可有可无，见 §3.1）
 ├── data\       只读比较基线（941 个反汇编 txt，原始日文，不再修改）
 ├── src\        可编辑开发源（941 个 txt，含翻译语法；翻译真值）
 ├── scripts\    Node.js 工程脚本（setup/verify/manifest/translate/agf/uimap/re）
@@ -66,6 +66,22 @@ E:\Games\Eushully\天結\
 
 `config.js` 中排除：`天结.exe`（心愿屋汉化壳，方案 B 弃用）、`*.dmp`（崩溃转储）、
 `AGE-EXTEND.TTF`（引擎内置字体，已确认移除后回退系统字体设置，无需外挂）。
+
+### 3.1 install 根 vs 原始解包树（DATA1-8\）—— 别把产物装进解包树
+
+- **汇编/注入的产物只有一个安装目标：`install\` 根下的同名松散文件**（`install\<脚本>.BIN`、
+  `install\<NAME>.AGF`、`install\AGERC.DLL` …）。引擎与 emulator 的文件查找都是「**松散优先于 ALF**」，
+  所以根下的松散文件就是对归档的 overlay。
+- `install\DATA1-8\`（以及 `raw-parts\DATA1-8\`）是 **ALF 的原始解包树**，是**只读基**：
+  AGF 注入的底图、`patch-menu.js` 的未修改 `AGERC.DLL`、「还原原图」（复制回来覆盖根）的来源都在这里。
+  ★**从来不把产物写进 DATA1-8\**（历史上 `translate.js` 曾多拷一份到 `install/DATA1/`，那是错的，已移除）。
+  解包树也不进 manifest（`install-manifest.json` 只统计 install 顶层文件）。
+- 有些机器/checkout 的 `install\` 里没有解包子目录（省空间），解包树放在别处。需要**读**原始解包数据的工具
+  用可配置的**解包根**（默认 `install`，环境变量 `AMAYUI_ORIG_DATA_DIR` 覆盖；本工程常见值 `raw-parts`，
+  由 `node scripts/alf/unpack_alf.mjs --out raw-parts raw/SYS4INI.BIN` 生成）：
+  ```bash
+  AMAYUI_ORIG_DATA_DIR=raw-parts npm run patch-menu   # 未修改的 DATA1/AGERC.DLL 来源
+  ```
 
 ## 4. 数据完整性（manifest）
 

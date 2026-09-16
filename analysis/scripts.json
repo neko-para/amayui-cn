@@ -718,17 +718,17 @@
       "layout": [
         {
           "anchor": "i2eb (local-string 0)",
-          "lines": "579-596",
+          "lines": "597-614",
           "what": "★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7)"
         },
         {
           "anchor": "i2c7 (local-string 1) (local-string 0) 2 2",
-          "lines": "587-589",
+          "lines": "601-603",
           "what": "第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」）"
         },
         {
           "anchor": "i2c7 (local-string 1) (local-string 0) 5 4",
-          "lines": "590-592",
+          "lines": "604-606",
           "what": "第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」）"
         },
         {

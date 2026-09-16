@@ -8383,6 +8383,7 @@ menu-bind 2e label_00029aa0
 menu-bind 2f label_00029aa0
 menu-bind 30 label_00029aa0
 menu-dispatch (local-int 3001) label_00029d78
+label_00024fc4
 jcc (global-int 51004a) ffffffff label_00024fe4
 ret
 
@@ -8445,6 +8446,7 @@ jmp label_00029d78
 label_000253cc
 call label_000303c0
 jmp label_00029d78
+label_000253e4
 jcc (global-int 51004a) ffffffff label_00025404
 ret
 
@@ -8493,6 +8495,7 @@ jmp label_00029d78
 label_000256f4
 call label_000303c0
 jmp label_00029d78
+label_0002570c
 jcc (global-int 51004a) ffffffff label_0002572c
 ret
 
@@ -8511,6 +8514,7 @@ add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
+label_0002583c
 eq (local-int 819f) (global-int 56d69) 1
 jcc (local-int 819f) ffffffff label_000259c8
 and (local-int 819f) (global-int b224) 1
@@ -8557,6 +8561,7 @@ mov (global-int 5108a9) 1
 call label_0002a0d0
 call-script 3994  // DRAWCHP
 jmp label_00029d78
+label_00025b2c
 jcc (global-int 51004a) ffffffff label_00025b4c
 ret
 
@@ -8673,6 +8678,7 @@ call label_00032e20
 call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
+label_00026474
 jcc (global-int 51004a) ffffffff label_00026494
 ret
 
@@ -8784,6 +8790,7 @@ call label_00032e20
 call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
+label_00026d18
 lookup-array-2d (local-ptr 3) (global-int 4a5f0) (global-int b222) 32 (global-int 56d63)
 jcc (local-ptr 3) ffffffff label_00026f58
 jcc (global-int 51004a) ffffffff label_00026d8c
@@ -8912,6 +8919,7 @@ call label_00032204
 call label_000392b0
 call-script 3994  // DRAWCHP
 jmp label_00029d78
+label_00027528
 jcc (global-int 51004a) ffffffff label_00027548
 ret
 
@@ -8926,6 +8934,7 @@ mov (local-int 819a) (local-ptr 3)
 call label_0003e160
 call-script 50e5  // RECOVER
 jmp label_00029d78
+label_00027620
 jcc (global-int 51004a) ffffffff label_00027640
 ret
 
@@ -8982,6 +8991,7 @@ jmp label_000279b4
 
 label_000279b4
 jmp label_00029d78
+label_000279c0
 jcc (global-int 51004a) ffffffff label_000279e0
 ret
 
@@ -9325,11 +9335,13 @@ add (global-int f8dfc) (global-int f8dfc) 1
 call-script 50e3  // MES
 call label_00006850
 jmp label_00029d78
+label_00029284
 jcc (global-int 51004a) ffffffff label_000292a4
 ret
 
 label_000292a4
 jmp label_00029d78
+label_000292b0
 jcc (global-int 51004a) ffffffff label_000292d0
 ret
 
@@ -9366,6 +9378,7 @@ lookup-array (local-ptr 3) (global-int 5b7e6) (local-int 2fd7)
 lookup-array (local-ptr 4) (global-int 5b7e6) (local-int 2fd7)
 add (local-ptr 3) (local-ptr 4) (local-int 80ec)
 jmp label_00029d78
+label_000295b8
 jcc (global-int 51004a) ffffffff label_000295d8
 ret
 
@@ -9430,6 +9443,7 @@ call-script 220  // COMMITDR
 
 label_00029a94
 jmp label_00029d78
+label_00029aa0
 jcc (global-int 51004a) ffffffff label_00029ac0
 ret
 

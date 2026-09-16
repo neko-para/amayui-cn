@@ -8,7 +8,12 @@
 cd E:\Games\Eushully\天結\scripts
 npm run assemble -- <SCRIPT>
 ```
-必须输出“骨架校验通过，回读验证 N/M 处译文”并写入 install 根 + DATA1。
+必须输出“骨架校验通过，回读验证 N/M 处译文”并**写入 `install/` 根**（松散 overlay，引擎优先于 ALF）。
+
+> ★**不写 `install/DATA1/`**：那是 ALF 的**原始解包树**（只读基 —— AGF 注入底图、`patch-menu` 的未修改
+> AGERC.DLL、"还原原图"的来源）。汇编产物只有一个安装目标：`install/<脚本>.BIN`。
+> 需要原始解包数据的工具有一个可配置的解包根（默认 `install`，可用 `AMAYUI_ORIG_DATA_DIR` 指向别处，
+> 例如本机解包在 `raw-parts/` ⇒ `AMAYUI_ORIG_DATA_DIR=raw-parts npm run patch-menu`）。
 
 - `npm run` 只认同级 `package.json`：**工程根没有 `package.json`，必须在 `scripts` 目录执行**
   （在根执行报 `ENOENT … Could not read package.json`）。

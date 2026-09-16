@@ -49,7 +49,9 @@ description: 对《天結いキャッスルマイスター》汉化工程中**�
    - `node reflow-apply.js --check <脚本>`：0 差异（幂等）；
    - 在 **`scripts` 目录**运行 `npm run assemble -- <脚本>`（`package.json` 只存在于 `scripts\`，
      工程根没有；在根执行 `npm run` 会 ENOENT 报 `Could not read package.json`），必须通过
-     （骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，任何平台均可运行），产物写入 install 根 + DATA1；
+     （骨架校验/SJIS/回读验证；Node 版 age-asm 跨平台，任何平台均可运行），产物**只写入 `install/` 根**
+     （松散 overlay，引擎/模拟器的查找都是"松散优先于 ALF"）；★**不写 `install/DATA1/`** —— 那是 ALF 的
+     原始解包树（只读基：AGF 注入底图、patch-menu 的未修改 AGERC.DLL）；
      若尚未构建 install 树，按 translate 技能登记 PENDING.md；
    - 注：回读验证应为 `N/N`（exit 0）。历史上曾出现 `N<M` 假阴性，根因是 `decodeCp932` 把
      CP932 的 IBM 扩展汉字区（0xFA40–0xFCFC，简体占位字所在）误并入游戏外字线性段，已于

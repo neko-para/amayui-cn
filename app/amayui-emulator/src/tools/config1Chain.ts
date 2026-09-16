@@ -279,13 +279,24 @@ export interface ChainOptions {
   emulatorOptions?: EmulatorOptions;
 }
 
-export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
-  const options = normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
-  // 资源根：`AMAYUI_RESOURCE_DIR` > `resources.path`（相对基准 = 仓库根；本库不读 config 文件）> 默认 install/。
-  const resourceDir = decideResourceDir(ROOT, {
+/**
+ * **生效资源根**（与 `runConfig1Chain` 同口径：`AMAYUI_RESOURCE_DIR` > `resources.path` > 默认 `install/`）。
+ *
+ * 导出给测试用：判断"本地化产物（`install/<ID>.BIN`）是否已安装"——否则链路会**静默**读到 ALF 里的
+ * 日文原版，让"文案断言"变成环境问题而不是回归（`tickets/T-0043`②）。
+ */
+export function chainResourceDir(emulatorOptions?: EmulatorOptions): string {
+  const options = normalizeEmulatorOptions(emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  return decideResourceDir(ROOT, {
     env: process.env,
     ...(options.resources.path ? { configResourcePath: options.resources.path, configDir: ROOT } : {}),
   }).dir;
+}
+
+export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResult> {
+  const options = normalizeEmulatorOptions(opt.emulatorOptions ?? DEFAULT_EMULATOR_OPTIONS);
+  // 资源根：`AMAYUI_RESOURCE_DIR` > `resources.path`（相对基准 = 仓库根；本库不读 config 文件）> 默认 install/。
+  const resourceDir = chainResourceDir(opt.emulatorOptions);
   const src = new NodeFileSource({ resourceDir });
   const input = new InputManager();
   // ★音频（`tickets/T-0006`）：真 `AudioEngine` + headless 宿主（真字节 + 容器头推时长，不出声）。
