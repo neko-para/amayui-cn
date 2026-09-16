@@ -94,6 +94,40 @@ const op_blit_slot_to_slot: OpHandler = (c) => {
   c.native.blitSlotToSlot?.(src, dst, [x, y, x + w, y + h], [dx, dy, dx + w, dy + h]);
 };
 
+/**
+ * **`0x32`**（`i032`，`sub_41E2D0` raw 27955-28008）：**槽→槽的缩放转送**（引擎名 **StretchTexture**）。
+ *
+ * 十个操作数：`op1` = 源槽、`op2` = 目标槽、`op3..6` = 源矩形 `(x, y, w, h)`、`op7..10` = 目标矩形。
+ * 引擎把两对 (x,y,w,h) 先化开成 `[x1,y1,x2,y2]`（raw 27974-27983），再按 `set:DrawMode` 分两条路
+ * （`Engine[166964]`，raw 27982）：
+ *  - `== 0`（GDI）→ 文本/2D 对象 vtable+64 的同名转送；
+ *  - `!= 0`（D3D）→ `sub_4A87A0(Scene, 源槽, 目标槽, &源矩形, &目标矩形)`（raw 127933-128129）：
+ *    两个矩形各自按所在 **surface 的边界**夹取（一侧被夹时另一侧按比例跟随），再缩放转送；
+ *    源/目标 surface 不存在 ⇒ 打「コピー元/コピー先テクスチャが作成されていません． TEXTURE=%d」并返回 0。
+ *
+ * ★语料 **337 处，形态完全一致**：`i032 2 e 0 0 500 2d0 0 0 140 b4` —— 把**全屏槽 2** 的
+ * `(0,0,1280,720)` 缩成**槽 0xe** 的 `(0,0,320,180)`；上下文是
+ * `create-texture 2 500 2d0 2` → `i20d 2`（以槽 2 为渲染目标）→ `i20e` → `i20c` → 还原渲染目标 →
+ * `create-texture e 140 b4 2` → **本指令** → `i1ae … e`（把槽 0xe 写成 `.STH` 缩略图）⇒
+ * **存档缩略图的"缩屏"这一步**（`src/SC5450.txt:3009-3021` 等 337 个 ADV 脚本同型）。
+ * emulator：与 `0x207` 共用宿主缝 `blitSlotToSlot`（Pixi 在两张画布间 `drawImage`；
+ * headless 只把这次下发记进 `scene.render4.blits`）。守卫 `test/op-032-stretch-texture.test.ts`。
+ */
+const op_stretch_texture: OpHandler = (c) => {
+  const srcSlot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const dstSlot = readIntOperand(c.e, c.frame, c.instr, 2);
+  const x = readIntOperand(c.e, c.frame, c.instr, 3);
+  const y = readIntOperand(c.e, c.frame, c.instr, 4);
+  const w = readIntOperand(c.e, c.frame, c.instr, 5);
+  const h = readIntOperand(c.e, c.frame, c.instr, 6);
+  const dx = readIntOperand(c.e, c.frame, c.instr, 7);
+  const dy = readIntOperand(c.e, c.frame, c.instr, 8);
+  const dw = readIntOperand(c.e, c.frame, c.instr, 9);
+  const dh = readIntOperand(c.e, c.frame, c.instr, 10);
+  // 引擎把 (x,y,w,h) 化开成 [x1,y1,x2,y2]（raw 27976-27983）
+  c.native.blitSlotToSlot?.(srcSlot, dstSlot, [x, y, x + w, y + h], [dx, dy, dx + dw, dy + dh]);
+};
+
 /** `0x20E`（sub_41A200 raw 25277-25287）：图形提交（渲染状态 38 包裹 + 设备 Clear）。 */
 const op_commit_graphics: OpHandler = (c) => {
   const e = c.e;
@@ -211,7 +245,8 @@ const op_set_scene_blend: OpHandler = (c) => {
 export const GFX_STATE_OPS: OpTable = [
   [0x1fc, op_reset_prim_transform], // 复位图元变换
   [0x1fe, op_prim_transform4], // 图元变换 4 浮点
-  [0x207, op_blit_slot_to_slot], // 槽→槽 StretchRect
+  [0x207, op_blit_slot_to_slot], // 槽→槽 StretchRect（同尺寸）
+  [0x32, op_stretch_texture], // ★i032：槽→槽**缩放**转送（StretchTexture；存档缩略图的缩屏步）
   [0x20e, op_commit_graphics], // 图形提交（Clear）
   [0x224, op_clear_transitions], // 清转场表
   [0x229, op_set_draw_mode], // 绘制模式 5 元组

@@ -289,8 +289,9 @@ const op_hover_hittest: OpHandler = (c) => {
  * （`setCursor` 触发 `onCursorMove` = 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试 —— 而引擎的
  * `SetCursorPos` 正是靠 WM_MOUSEMOVE 让脚本看见这次移动）；位置没变则不重算（引擎同样不会产生移动消息）。
  * 真机那层虚拟→屏幕缩放只在 `display:VirtualFullScreenType == 2` 时生效（随包 INI 无此键 ⇒ 1:1）。
- * ⚠宿主缺口（已写进台账）：真实光标停在原地，玩家一动鼠标就会被 `mousemove` 覆盖回真实位置 ——
- * 这是"宿主没有 `SetCursorPos`"的必然，不是语义偏差。
+ * ⚠**宿主缺口**（单独一票 `tickets/T-0053`）：真实光标停在原地，玩家一动鼠标就会被 `mousemove` 覆盖回真实位置 ——
+ * 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos` 那半件做不到），不是语义偏差：
+ * 引擎侧坐标/hover 仍然生效（脚本逻辑正确），缺的是"玩家看见光标跳过去"。
  */
 const op_set_mouse_pos: OpHandler = (c) => {
   const x = readIntOperand(c.e, c.frame, c.instr, 1);

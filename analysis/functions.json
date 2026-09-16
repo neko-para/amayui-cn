@@ -7299,6 +7299,31 @@
     "unmodeled": ["sub_40C910 / sub_40C310 / sub_4A8AF0（哈希表节点建/写/搬，emulator 用 JS Map 语义等价）"],
     "evidence": "raw 131084-131143；调用点唯一（0x214 handler raw 31787）",
     "notes": "唯一调用者 = 0x214（grep 全 .c：声明 + 31787 + 定义）。emulator：`scSwapItems`（renderer/scene/ops.ts）原地交换字段、保留 Item 对象身份（渲染侧按 handle 的缓存不失效），`handle`/`layer` 不参与交换（层序 = map key）"
+  },
+  {
+    "addr": "0x41E2D0",
+    "raw_name": "sub_41E2D0",
+    "semantic_name": "op_stretch_texture_41E2D0",
+    "op": "0x32",
+    "status": "ANALYZED",
+    "purpose": "**槽→槽的缩放转送**（引擎名 StretchTexture）：读 op1=源槽、op2=目标槽、op3..6=源矩形 (x,y,w,h)、op7..10=目标矩形 (x,y,w,h)（raw 27974-27983 化开成两个 `[x1,y1,x2,y2]`），再按 `set:DrawMode`（`Engine[166964]`，raw 27982）分两条路：==0（GDI）→ 文本/2D 对象 vtable+64 的同名转送；!=0（D3D）→ `sub_4A87A0(Scene, 源槽, 目标槽, &源矩形, &目标矩形)`。无输出操作数",
+    "sub_behaviors": ["读 10 个操作数并化开两个矩形", "按 Engine[166964] 选 GDI/D3D 通路", "D3D 通路交 Scene 的 sub_4A87A0（夹取 + 缩放转送）"],
+    "fields_used": ["Engine+166964 (set:DrawMode)", "Engine+7912 (文本/2D 对象)", "Engine+322832 (Scene)"],
+    "unmodeled": ["GDI 通路的文本对象 vtable+64"],
+    "evidence": "raw 27955-28008；语料 337 处形态一致 `i032 2 e 0 0 500 2d0 0 0 140 b4`（src/SN0000.txt:3171-3184、SC5450.txt:3009-3021 等）",
+    "notes": "emulator：`GFX_STATE_OPS[0x32] = op_stretch_texture` → 与 0x207 共用宿主缝 `blitSlotToSlot`（Pixi 在两张画布间 drawImage；headless 只记 `scene.render4.blits`）。守卫 test/op-032-stretch-texture.test.ts（tickets/T-0050）"
+  },
+  {
+    "addr": "0x4A87A0",
+    "raw_name": "sub_4A87A0",
+    "semantic_name": "scene_stretch_texture_4A87A0",
+    "status": "ANALYZED",
+    "purpose": "**StretchTexture（缩放转送）**：在两条 surface 记录之间按矩形缩放转送。① 目标表面记录置位（`&_this[20*a3+1880] = 1`）；② **源/目标表面指针为空**分别打「関数：StretchTexture エラー：コピー元/コピー先テクスチャが作成されていません． TEXTURE=%d」并返回 0；③ 两个矩形各自按所在 surface 的边界夹取（surface 边界 = 记录 dword 263/264/265/266 = `x1,y1,x2,y2`），**一侧被夹时另一侧按比例跟随**（位移量 `(int)` 截断，raw 128005-128097）；④ `sub_4A7990` 取源矩形 → `sub_4A42C0` 缩放画进目标表面",
+    "sub_behaviors": ["目标记录置位", "源/目标表面存在性检查 + 两条错误串", "两个矩形按各自 surface 边界夹取（比例跟随、int 截断）", "取源矩形 → 缩放画进目标"],
+    "fields_used": ["Scene+42456 (表面指针表, 4 字节步长)", "Scene+1880 (表面记录表, 20 字节步长)", "surface[263..266] (x1,y1,x2,y2)"],
+    "unmodeled": ["sub_4A7990 / sub_4A42C0（D3D 侧取图与缩放绘制的实现细节）"],
+    "evidence": "raw 127933-128129（夹取在 128005-128097，转送在 128125-128127）",
+    "notes": "emulator：`clampScaledBlit`（renderer/scene/ops.ts，纯函数、可单测）+ `TextureCache.blitSlotToSlot`（画布间 drawImage；缩放用平滑插值——引擎采样器 `SetSamplerState(0,5,2)` = MINFILTER LINEAR，raw 93927）。唯一调用者 = 0x32 的 D3D 分支"
   }
 
 ]

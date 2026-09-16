@@ -767,6 +767,80 @@ export function scSetSlotMode(s: SceneState, slot: number, mode: number): void {
   s.render4.slotModes.set(slot, mode);
 }
 
+/**
+ * `0x32`（`i032`，`sub_41E2D0` → `sub_4A87A0` raw 127933-128129，引擎里叫 **StretchTexture**）：
+ * **两个矩形按比例夹取到各自 surface 的边界内**（一侧被夹时另一侧**按比例跟随**）。
+ *
+ * 引擎逐句（raw 128005-128097）：
+ * ```
+ * v16 = srcW / dstW;                       // 横向比例（dst 侧被夹时用来挪源码）
+ * if (dst.x1 < dstSurface.x1) { src.x1 += (dstSurface.x1 - dst.x1) * v16; dst.x1 = dstSurface.x1; }
+ * if (dst.x2 > dstSurface.x2) { src.x2 += v16 * (dstSurface.x2 - dst.x2); dst.x2 = dstSurface.x2; }
+ * v21 = srcH / dstH;                       // 纵向同理
+ * ... 然后对**源** surface 做同一件事（夹源码时按比例挪目标码）
+ * ```
+ * ★夹取的位移量与引擎一样**先 `(int)` 截断再加回**（矩形在引擎里就是 int，raw 128016/128023/128032/128039…）。
+ * ⇒ 传入的矩形是 `[x1, y1, x2, y2]`（**不是 w/h**），surface 边界 = `[0, 0, w, h]`（`create-texture` 给的尺寸）。
+ * 返回 `null` = 退化输入（宽或高 ≤ 0 ⇒ 引擎会除零得 inf/nan，这里显式判掉、不转送）。
+ */
+export function clampScaledBlit(
+  srcBounds: [number, number, number, number],
+  dstBounds: [number, number, number, number],
+  srcRect: [number, number, number, number],
+  dstRect: [number, number, number, number],
+): { src: [number, number, number, number]; dst: [number, number, number, number] } | null {
+  const src = [...srcRect] as [number, number, number, number];
+  const dst = [...dstRect] as [number, number, number, number];
+  const dstW = dst[2] - dst[0];
+  const dstH = dst[3] - dst[1];
+  const srcW0 = src[2] - src[0];
+  const srcH0 = src[3] - src[1];
+  if (dstW <= 0 || dstH <= 0 || srcW0 <= 0 || srcH0 <= 0) return null;
+  // ① 目标矩形夹到目标 surface（源码按比例跟随）
+  const kx = srcW0 / dstW;
+  if (dst[0] < dstBounds[0]) {
+    src[0] += Math.trunc((dstBounds[0] - dst[0]) * kx); // 引擎 `(int)(…)` 截断（矩形是 int）
+    dst[0] = dstBounds[0];
+  }
+  if (dst[2] > dstBounds[2]) {
+    src[2] += Math.trunc(kx * (dstBounds[2] - dst[2]));
+    dst[2] = dstBounds[2];
+  }
+  const ky = srcH0 / dstH;
+  if (dst[1] < dstBounds[1]) {
+    src[1] += Math.trunc((dstBounds[1] - dst[1]) * ky);
+    dst[1] = dstBounds[1];
+  }
+  if (dst[3] > dstBounds[3]) {
+    src[3] += Math.trunc(ky * (dstBounds[3] - dst[3]));
+    dst[3] = dstBounds[3];
+  }
+  // ② 源矩形夹到源 surface（目标码按比例跟随）
+  const srcW = src[2] - src[0];
+  const srcH = src[3] - src[1];
+  if (srcW <= 0 || srcH <= 0) return null;
+  const bx = (dst[2] - dst[0]) / srcW;
+  if (src[0] < srcBounds[0]) {
+    dst[0] += Math.trunc((srcBounds[0] - src[0]) * bx);
+    src[0] = srcBounds[0];
+  }
+  if (src[2] > srcBounds[2]) {
+    dst[2] += Math.trunc(bx * (srcBounds[2] - src[2]));
+    src[2] = srcBounds[2];
+  }
+  const by = (dst[3] - dst[1]) / srcH;
+  if (src[1] < srcBounds[1]) {
+    dst[1] += Math.trunc((srcBounds[1] - src[1]) * by);
+    src[1] = srcBounds[1];
+  }
+  if (src[3] > srcBounds[3]) {
+    dst[3] += Math.trunc(by * (srcBounds[3] - src[3]));
+    src[3] = srcBounds[3];
+  }
+  if (src[2] - src[0] <= 0 || src[3] - src[1] <= 0 || dst[2] - dst[0] <= 0 || dst[3] - dst[1] <= 0) return null;
+  return { src, dst };
+}
+
 /** `0x33F` op1 = 场景默认混合选择子（引擎 `Scene+1260`；消费点 `sub_4535F0` raw 65858-65889）。 */
 export function scSetSceneBlend(s: SceneState, blend: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）

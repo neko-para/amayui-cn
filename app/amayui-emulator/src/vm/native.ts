@@ -196,8 +196,17 @@ export interface NativeBridge {
   resetPrimTransform?(handle: number): void;
   /** `0x1FE`（sub_423060 → `sub_4AC660`）：**图元变换 4 浮点**（op2..op5 原样，不除 100）。 */
   setPrimTransform4?(handle: number, a: number, b: number, c: number, d: number): void;
-  /** `0x207`（sub_423480 → `sub_4A3980`）：**槽→槽 StretchRect**（同尺寸源/目标矩形，各 4 个 int）。 */
-  blitSlotToSlot?(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): void;
+  /**
+   * **槽 → 槽转送**（源/目标矩形各 4 个 int，`[x1,y1,x2,y2]`；宿主返回「是否真的转了像素」，headless 只记模型）：
+   *  - `0x207`（`sub_423480` → `sub_4A3980`）：**同尺寸** StretchRect；
+   *  - `0x32`（`i032`，`sub_41E2D0` → `sub_4A87A0` raw 127933-128129，引擎名 **StretchTexture**）：**缩放**
+   *    转送，且两个矩形各自按所在 surface 的边界**夹取**（一侧被夹时另一侧按比例跟随，见
+   *    `renderer/scene/ops.ts` 的 `clampScaledBlit`）。源/目标 surface 不存在 ⇒ 引擎分别打
+   *    「コピー元/コピー先テクスチャが作成されていません． TEXTURE=%d」。
+   *    语料 `i032 2 e 0 0 500 2d0 0 0 140 b4`（337 处）＝ 全屏槽 2 缩成 320×180 的槽 0xe ⇒ 存档缩略图
+   *    （随后 `0x1AE` 写 .STH）。
+   */
+  blitSlotToSlot?(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean | void;
   /** `0x20E`（sub_41A200）：**图形提交**——包一层渲染状态 38 后对设备做 `Clear(0,0,3,0,1.0,0)`（清 target+z）。 */
   commitGraphics?(): void;
   /** `0x224`（sub_41A290 → `sub_4AA180`）：**清转场表**（Scene+1048 的转场容器）。 */

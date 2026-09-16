@@ -149,11 +149,6 @@ export class StubNative implements NativeBridge {
     return false;
   }
 
-  /** `0x214`：交换两条绘图项记录（键不动）。桩没有场景模型 ⇒ 只记一行、返回 false（= 没真换）。 */
-  swapItems(a: number, b: number): boolean {
-    this.log(`[native:stub] swapItems 0x${a.toString(16)} ↔ 0x${b.toString(16)}`);
-    return false;
-  }
   setWaitFlag(mask: number): void {
     this.log(`[native:stub] setWaitFlag 0x${mask.toString(16)}`);
   }

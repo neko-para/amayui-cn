@@ -392,11 +392,18 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setPrimTransform4 h=0x${handle.toString(16)} (${a},${b},${c},${d})`);
   }
 
-  /** `0x207` 槽→槽 StretchRect。 */
-  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): void {
+  /**
+   * 槽→槽转送：`0x207`（同尺寸 StretchRect）/ `0x32`（`i032` 缩放 StretchTexture）。
+   * 模型侧记一条（`scene.render4.blits`），像素由 `TextureCache` 在两张画布之间 `drawImage`（带夹取）。
+   */
+  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean {
     this.#markDirty();
     scBlitSlotToSlot(this.scene, srcSlot, dstSlot, srcRect, dstRect);
-    this.#pushLog(`blitSlotToSlot ${srcSlot}→${dstSlot} src=[${srcRect}] dst=[${dstRect}]`);
+    const ok = this.textures.blitSlotToSlot(srcSlot, dstSlot, srcRect, dstRect);
+    this.#pushLog(
+      `blitSlotToSlot ${srcSlot}→${dstSlot} src=[${srcRect}] dst=[${dstRect}]${ok ? '' : '【未转送：槽没有表面】'}`,
+    );
+    return ok;
   }
 
   /** `0x20E` 图形提交（清 target+z；Pixi 每帧自绘 ⇒ 只记数）。 */

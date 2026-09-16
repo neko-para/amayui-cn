@@ -1,0 +1,76 @@
+{
+  "title": "实现 0x32（`i032`：槽→槽的缩放转送 / StretchTexture）—— 存档缩略图的「缩屏」这一步，此前不在任何表里（命中即 NotImplementedOp）",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "`0x32`（`sub_41E2D0` → D3D 分支 `sub_4A87A0` raw 127933-128129）是引擎的 **StretchTexture**：10 个操作数 = op1 源槽、op2 目标槽、op3..6 源矩形 (x,y,w,h)、op7..10 目标矩形；引擎把两对化开成 `[x1,y1,x2,y2]` 后按 `set:DrawMode`（`Engine[166964]`）分路（0 = GDI 由文本/2D 对象转送、1 = D3D 由 Scene 转送），并把两个矩形**各自按所在 surface 的边界夹取**（一侧被夹时另一侧按比例跟随、位移量 int 截断），源/目标 surface 不存在则分别打「コピー元/コピー先テクスチャが作成されていません．TEXTURE=%d」。★语料 **337 处、形态完全一致**：`i032 2 e 0 0 500 2d0 0 0 140 b4` —— 上下文是 `create-texture 2`（1280×720 全屏槽）→ `i20d 2`（渲染目标）→ `i20e` → `i20c` → 还原渲染目标 → `create-texture e`（320×180）→ **本指令** → `i1ae … e`（写 `.STH`）⇒ **存档缩略图的『缩屏』这一步**。此前 `0x32` 不在 `OPS`/`NATIVE_OPS`/`ENGINE_INTERNAL_OPS` 任何一张表里 ⇒ 走到存档缩略图流水线就抛 `NotImplementedOp`；而宿主侧 `0x1AE` 拿不到槽像素时会退化写出占位块（`AMYTH1` 自描述空块）⇒ 缩略图一直是假的。",
+  "acceptance": [
+    "`0x32` 进 `GFX_STATE_OPS` 真实现（`op_stretch_texture`）：读 10 个操作数 → 化开 `[x, y, x+w, y+h]` → 与 `0x207` **共用**宿主缝 `blitSlotToSlot(src, dst, srcRect[4], dstRect[4])`（不新增重复接口）",
+    "引擎的矩形夹取按 raw 逐句实现（`clampScaledBlit`，纯函数）：目标矩形夹到目标 surface 时源码按比例跟随、源码夹到源 surface 时目标码按比例跟随，位移量按引擎的 `(int)` 截断；退化输入（宽/高 ≤ 0）返回 null（引擎会除零）",
+    "Pixi 宿主真的做像素：`TextureCache.blitSlotToSlot` 在两张画布间 `drawImage`（源/目标各自乘自己的 DPR；缩放用平滑插值 —— 引擎采样器 `SetSamplerState(0,5,2)` = MINFILTER LINEAR，raw 93927）；任一槽没有 `create-texture` 出来的表面 ⇒ 不转送并打引擎那两句错误串；headless 只把下发记进 `scene.render4.blits` 并返回 false（调用方不据此报错）",
+    "守卫 `test/op-032-stretch-texture.test.ts`：① `clampScaledBlit` 五组（语料形态不夹取 / 目标左越界 / 目标右下越界 / 源越界 / 退化 ⇒ null，含 int 截断的期望值）；② 端到端 —— 合成脚本里逐字照抄语料那条 `i032`，断言 `scene.render4.blits === [{srcSlot:2,dstSlot:14,srcRect:[0,0,1280,720],dstRect:[0,0,320,180]}]`、`handlerKind === 'implemented'`、`OPS.has(0x32)` 且 `!ENGINE_INTERNAL_OPS.has(0x32)`",
+    "`cd app/amayui-emulator && npm run verify` 全绿；`docs-new/03-engine/opcode-table.md` 的 0x32 行由「仅映射」转「已核对」并重生成 `scripts/asm/opcodes.json`"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v16 = (double)v12 / (double)(v15 - *a5);",
+      "note": "StretchTexture 的横向比例（raw 128013）：目标矩形被夹时用它把源码按比例挪动"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "char aStretchtexture[]",
+      "note": "引擎名与错误串：コピー元/コピー先テクスチャが作成されていません．TEXTURE=%d（raw 5175-5176）"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
+      "note": "337 处同型的存档缩略图流水线（3171-3184）：全屏槽 2 → 320×180 的槽 0xe，随后 i1ae 写 .STH"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "export function clampScaledBlit",
+      "note": "夹取实现（纯函数，可单测）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
+      "anchor": "blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean",
+      "note": "像素实现点：两张画布之间 drawImage（平滑插值）"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-032-stretch-texture.test.ts",
+      "anchor": "★0x32 的矩形夹取",
+      "note": "守卫（夹取 5 组 + 端到端）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-032-stretch-texture.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "scene-frame-commit",
+      "SN0000"
+    ],
+    "tickets": [
+      "T-0036",
+      "T-0049"
+    ]
+  },
+  "status": "done",
+  "notes": "★与 `0x207` 的关系：`0x207`（`sub_4A3980`）是**同尺寸**槽→槽 StretchRect，`0x32` 是它的**缩放**兄弟；两者的宿主缝本来就是同一个 `blitSlotToSlot`，但此前 Pixi/headless 两侧都只记日志、**不做像素** ⇒ 本单顺手把这条缝补成真实现（画布间 drawImage），所以 `0x207` 的视觉效果也一并落地。★未做/待验：① GDI 分支（`Engine[166964] == 0`，文本/2D 对象 vtable+64）没建模（emulator 走 D3D 等价路径，与其余渲染一致）；② 缩放插值用的是「引擎采样器 = MINFILTER LINEAR」这一条证据（raw 93927），若真机缩略图明显更锐（point）再回来改；③ **E4 未做**：headless 无画布 ⇒ 端到端只能验到模型层；「存档缩略图真的变成截图」要在 Electron 里存一次档看 `.STH`（`getSlotPixels` 路径，T-0036 已有读回）。",
+  "id": "T-0050",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— open → done：`0x32` 进 `GFX_STATE_OPS`（`op_stretch_texture`），与 `0x207` 共用宿主缝 `blitSlotToSlot`；`clampScaledBlit` 按 raw 128005-128097 实现两个矩形的按比例夹取（int 截断），`TextureCache.blitSlotToSlot` 在两张画布间 drawImage（平滑插值，依据 raw 93927 的 MINFILTER=LINEAR；源/目标表面缺失时不转送并打引擎那两句错误串）。★顺手把 0x207/0x32 共同的宿主缝从\"只记日志\"补成真像素。守卫 test/op-032-stretch-texture.test.ts（夹取 5 组 + 语料形态端到端）；opcode-table 0x32「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x41E2D0 / 0x4A87A0；save-data.md §7 补了缩略图流水线那 9 行；SN0000 台账补 3171-3184 段与坑。npm run verify 569 测试全绿。★E4 未做（headless 无画布）：要在 Electron 里存一次档看 .STH 是否变成真截图。"
+    }
+  ]
+}

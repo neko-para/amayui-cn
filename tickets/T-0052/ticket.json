@@ -1,0 +1,66 @@
+{
+  "title": "键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/input",
+  "why": "引擎的**实时刷** `sub_4780D0` 每次都调 `sub_4770A0`：遍历 0..255 个 VK，`GetAsyncKeyState(v2) & 0xFF00` 命中就 `mask |= 1 << _this[1176+v2]`（raw 91551-91570）。那张 VK→虚拟位表由 `sub_476AA0` 的 7 个默认 VK（`_this[1632]=38` VK_UP / `[1637]=39` VK_RIGHT / `[1640]=40` VK_DOWN / `[1635]=37` VK_LEFT / `[1460]=13` VK_RETURN / `[1489]=32` VK_SPACE / `[1446]=8` VK_BACK，raw 91344-91415）经 `sub_477DD0` 填成 **0..6**（raw 92394-92400：`_this[_this[1446]+1176] = 6` 等）⇒ **掩码位 0..6 = 7 个可配置键**（`InputManager` 文件头也是这个口径）。但 emulator 只把键盘记进 `keyEdge`（`src/vm/input.ts` 的字段注释写着『本任务仅登记，不驱动跳转』），`flushHeld()`/`flushPending()` **都不把 0..6 并进掩码** ⇒ 后果是静默的：脚本里 `joy-callback 0..4`（光标上下左右 + 确认，菜单/界面最常用的一族）永远不触发、`0x100` 的键盘派发永远扫不到键盘位 ⇒ **emulator 实际上只能纯鼠标操作**；T-0048 的 E3（ADV 侧栏槽位处理器把光标钉进栏内，走 `pickByKey`）也因此无法验证。",
+  "acceptance": [
+    "建模 VK→虚拟位表（引擎 `_this[1176+VK]`）：默认 7 项 = VK 38/39/40/37/13/32/8 → 位 0..6（其余 VK = −1/未映射）；表可由 `0x107`/`0x10B`/`0x10C` 那族『按键绑定』指令改写（先只做默认值即可，改写路径记为缺口）",
+    "键盘事件（宿主 KeyboardEvent）→ 掩码位 0..6：按下沿与按住态都进（与鼠标同样的两把刷子语义：`flushPending` 只给按下沿、`flushHeld` 含按住态），并把 `keyEdge` 换成真实位",
+    "E3：在真实 ADV 场景里用键盘把侧栏菜单走一遍（↑/↓ 移动、Enter 确认、BackSpace 取消）——`joy-callback 0..4` 的 handler 必须被派发到（可先用 SN0000/菜单脚本的既有 label 断言）",
+    "不破坏鼠标路径：`npm run verify` 全绿（现有 0..c 的鼠标/手柄语义与 `test/input.test.ts` 的两把刷子断言不能变）",
+    "配套更新：`docs-new/03-engine/input-system.md` §5/§7 标注 emulator 现状（键盘位已接入/仍缺的部分）、`capabilities.js` 补一条『键盘→掩码位』能力（现无任何条目提到键盘）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*a2 |= 1 << *v3;",
+      "note": "引擎键盘刷 `sub_4770A0`（raw 91551-91570，这一行在 91563）：每个 VK 经 `_this[1176+VK]`（=`*v3`）映射成掩码位"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[1632] = 38;",
+      "note": "7 个默认 VK 的其中一条（raw 91412；同族 91344/91356/91375/91415）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[_this[1446] + 1176] = 6;",
+      "note": "Input 构造把 7 个 VK 填成虚拟位 0..6（raw 92394-92400）"
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "joy-callback 0 label_000008ec",
+      "note": "TITLE 登记的 joy-callback 0（同族 1..4 见 TITLE.txt:40-44；GAMESTART/CONFIG1 等同型）——当前在 emulator 里不可达"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "keyEdge = 0;",
+      "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6"
+    }
+  ],
+  "tests": [],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "adv-input-pump-perframe",
+      "key-dispatch-default-slot"
+    ],
+    "tickets": [
+      "T-0027",
+      "T-0048",
+      "T-0051"
+    ]
+  },
+  "status": "open",
+  "notes": "范围提示：本票只做『键盘 → 掩码位 0..6』这一条链（含默认绑定表）；**不改**掩码位含义、不动鼠标/手柄路径、不做按键绑定 UI（`0x107`/`0x10B`/`0x10C` 的写入路径若要做，另开）。★它同时是 `T-0051` 第 5 条（0x10A 的 E3）的前置。★为什么之前没做：`T-0027` 的粒度只到『两把刷子』，当时把键盘记为『仅登记』（`src/vm/input.ts` 的字段注释），而掩码位的消费者（`joy-callback`）在纯鼠标操作下看不出来 ⇒ 一直静默。",
+  "id": "T-0052",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    }
+  ]
+}

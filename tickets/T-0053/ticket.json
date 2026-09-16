@@ -1,0 +1,65 @@
+{
+  "title": "0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/hosts",
+  "why": "`0x10A`（`i10a`，`sub_421EA0` raw 30530-30598）在引擎里是 **`ClientToScreen` + `SetCursorPos`**：把虚拟屏坐标反算成屏幕坐标后**移动系统光标**（全库三处 `SetCursorPos`：raw 30597 = 本指令，11863 / 141138 = 「把光标居中」）。T-0048 已把**引擎侧**那半件建模好（`op_set_mouse_pos` → `InputManager.setCursor`：之后 `0x109` 读回 (x,y)、`onCursorMove` 触发 WM_MOUSEMOVE 等价的命中测试 ⇒ **脚本逻辑是对的**）；但**宿主侧那半件做不到** —— 浏览器与 Electron 都没有移动真实系统光标的 API（`Input.dispatchMouseEvent`/`sendInputEvent` 只是合成事件，读回的光标仍在原地）。后果是静默的「半失效」：玩家一动物理鼠标，`mousemove` 就把引擎侧坐标覆盖回真实位置 ⇒ 依赖「钉住光标」的观感（ADV 侧栏随键盘导航把光标钉进栏内、`SBUNKI`/`BUNKI` 的恢复上次位置、`ALLMAP` 的拖动回夹、`SELSTAGE:42` 的对话框居中）只生效到下一次鼠标移动为止。本票是这条缺口的**唯一归口**：先记录 + 评估替代路线，再决定做不做。",
+  "acceptance": [
+    "把这条缺口作为**可查询**的常态能力留在第二层：`analysis/engine-capabilities.json` 有 `host-cursor-warp`（subsystem=输入，engine=sub_421EA0 raw 30530-30598，emulator.status=partial，guard=test/input.test.ts，whySilent 写明「脚本可读状态不受影响、只有观感缺失 + 下一次 mousemove 覆盖」）—— 本票创建时已完成",
+    "回链：`op_set_mouse_pos` 的注释、`docs-new/03-engine/opcode-table.md` 的 0x10A 行、`docs-new/03-engine/input-system.md` §8/§10、`tickets/T-0048` 的 notes 都指向本票（不再只写「已写进台账」）—— 本票创建时已完成",
+    "**评估四条替代路线并写进本票（含代价与改动面）**：① 原生模块 / `node-ffi` 调 `SetCursorPos`(Win) / `CGWarpMouseCursorPosition`(mac)：能真正复现引擎行为，代价 = 引原生依赖 + 双平台代码 + 打包签名；② 自绘软件光标（画布 `cursor:none` + 按 `input.x/y` 画箭头，真实鼠标只作**位移增量**输入；`0x10A` 的位移直接作用在软件光标上）：纯 Web、无依赖，代价 = 光标越出画布/多显示器边界要处理、要与 pointer lock 配合才能无限移动、点击落点必须与视觉一致（命中测试已用引擎侧坐标 ⇒ 天然一致）；③ pointer lock + 合成移动：最接近「锁住并挪动」，代价 = 需要用户手势、改变交互模型（Esc 才退出）、`movementX/Y` 只能相对累积（绝对 warp 要自己积分）；④ 明确不实现并写 `droppedWhy`。",
+    "**选定路线并落地，或明确关票**：选 ① / ② / ③ 中的一条 ⇒ 拆出实现票（含守卫：`0x10A` 之后软件光标/真实光标位置与 `input.readX/Y` 一致，且三条语料用途各自的观感变化）；选 ④ ⇒ 本票 `status=dropped` 且 `droppedWhy` 写清「观感缺失可接受 + 为何不值得引原生依赖」。",
+    "无论选哪条：**不许让「看起来已实现」的成分留着** —— `0x10A` 的单元守卫（`test/input.test.ts` 的往返/命中时机断言）保持不变，且本票结论要与第二层 `host-cursor-warp` 的 `emulator.note` 同步（改状态或补「选定的路线」）。"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return SetCursorPos(Point.x, Point.y);",
+      "note": "0x10A 的宿主侧动作（raw 30597）：引擎在这里移动**系统光标**；宿主没有对应 API"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "SetCursorPos(*(_DWORD *)(_this + 699168) / 2, *(_DWORD *)(_this + 699172) / 2);",
+      "note": "另两处 SetCursorPos 之一（raw 11863「把光标居中」；另一处 raw 141138）—— 全库仅三处，口径一致"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "const op_set_mouse_pos: OpHandler",
+      "note": "已落地的引擎侧那半件（`input.setCursor`）+ 标注了本票"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "onCursorMove?: (x: number, y: number) => void;",
+      "note": "宿主缺口为什么只是观感问题：命中测试走引擎侧坐标（`Engine` 把它接到 `routes.hitTest`）"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "host-cursor-warp",
+      "note": "第二层的可查询缺口（本票创建时新增）"
+    }
+  ],
+  "tests": [],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0048",
+      "T-0051",
+      "T-0052"
+    ]
+  },
+  "status": "open",
+  "notes": "为什么值得留一张票而不是只在注释里写一句：① 它是**宿主能力**问题（不是 VM 语义），换宿主（Electron 加原生模块、或换 WebView）就可能变可做 ⇒ 需要一个能被「下次换宿主」时重新评估的归口；② 四条语料用途（1470 处 ADV 侧栏钉光标 + 光标位置记忆 + 拖动回夹 + 对话框居中）里，前两条的**设计意图**就是「玩家看得见光标被挪过去」，观感缺失会让这些界面显得键盘与鼠标不同步；③ T-0051 第 5 条（用键盘走 ADV 侧栏）验证时一定会撞上它 ⇒ 票与票之间要能互相指。★当前状态：引擎侧已建模、守卫已绿（T-0048 done）；本票只跟踪**宿主侧**这条缺口与其决策。",
+  "id": "T-0053",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    }
+  ]
+}

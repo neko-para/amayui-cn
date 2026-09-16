@@ -232,6 +232,24 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
   （`op8`（秒）丢进 `local-int 2175`）。② **存在性探针**（334 处，各 ADV/剧情脚本的公共块，如 `$1$SC0330.txt:532-545`）：
   `i1a0 (global-int f7ffd) (global-int f8019) (global-int f7ffe)×7` —— 状态读 `f7ffd`、槽号来自 `f8019`、
   其余 7 个输出全丢进**丢弃槽** `f7ffe`，随后 `eq (global-int f7ffd) 0` 判"这个槽有没有存档"。
+- ★**缩略图的"缩屏"这一步 = `0x32`（`i032`，引擎名 StretchTexture）**：`.STH` 的 320×180 BMP
+  不是引擎自己缩的，而是**脚本**先建两张纹理槽再转送 —— 337 个 ADV 脚本里的同一段（`src/SN0000.txt:3171-3184`、
+  `src/SC5450.txt:3009-3021`）：
+  ```
+  create-texture 2 500 2d0 2      // 槽 2 = 1280×720（500/2d0 = 十六进制）
+  i20d 2                          // 以槽 2 为渲染目标
+  i20e                            // （把画面/场景提交进该表面）
+  i20c                            // 帧刷新
+  sub 0 = -1 ; i20d (local 0)     // 还原渲染目标（-1 = 后台缓冲）
+  create-texture e 140 b4 2       // 槽 0xe = 320×180
+  i032 2 e 0 0 500 2d0 0 0 140 b4 // ★把槽 2 的 (0,0,1280,720) 缩放转送到槽 0xe 的 (0,0,320,180)
+  release-texture 2               // 释放全屏槽
+  i1ae (global 1396) (global f8019) e   // 把槽 0xe 写成 <槽>.STH
+  release-texture e
+  ```
+  ⇒ 引擎侧：`0x20D`（渲染目标）+ `0x20E`（提交）+ `0x32`（缩放转送）+ `0x1AE`（写 BMP）。
+  `0x32` 的语义与夹取见 `opcode-table.md`；emulator 侧像素由宿主做（Pixi 在两张画布间 `drawImage`），
+  模型侧记在 `scene.render4.blits`（守卫 `test/op-032-stretch-texture.test.ts`，`tickets/T-0050`）。
 - **`0x1A1` 不写操作数**（与 `0x1A0`/`0x19E`/`0x19F` 不同）：`sub_42DDE0` 函数体里没有 `sub_42B4B0`，
   且调度器 `(*(void (__thiscall **)(int))(_this + 4 * opcode + 675996))(_this)`（raw 21217）**丢弃 C 返回值**
   ⇒ 脚本给的 `(global-int f7ffd)` 只是占位；"读档成没成"要靠先 `0x1A0` 验头。

@@ -7,11 +7,11 @@
 
 ## 概览
 
-共 **49** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **41** · 🚫 dropped **1**（P0 5 / P1 13）
+共 **53** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **42** · 🚫 dropped **1**（P0 5 / P1 13）
 
-按域：`emulator/render` 11 · `emulator/frame-loop` 9 · `emulator/input` 5 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1
+按域：`emulator/render` 12 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/hosts` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1
 
-## ⬜ open（7）
+## ⬜ open（10）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -22,8 +22,11 @@
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | — | `notes.md` | — |
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
+| [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | — | — |
+| [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | — | — |
+| [`T-0053`](./T-0053/ticket.json) | P3 | req | `emulator/hosts` | 0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现 | 5 | — | — | — |
 
-## ✅ done（41）
+## ✅ done（42）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -63,6 +66,7 @@
 | [`T-0047`](./T-0047/ticket.json) | P2 | bug | `emulator/input` | 0xCD 的节流间隔（Engine[429812]）没建模：它的真身是 mouse-callback(0xCC) 的 op1，emulator 恒 0 ⇒ 输… | 5 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/title-exit.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` | — | — |
 | [`T-0048`](./T-0048/ticket.json) | P2 | req | `emulator/input` | 实现 0x10A（`i10a`：把光标移到虚拟屏坐标）—— 此前不在任何表里，命中即 NotImplementedOp；语料 1678 处、ADV 侧边栏悬停… | 5 | `app/amayui-emulator/test/input.test.ts` | `changes.md` | — |
 | [`T-0049`](./T-0049/ticket.json) | P2 | req | `emulator/render` | 实现 0x214（`i214`：交换两条绘图项记录）—— 此前不在任何表里，命中即 NotImplementedOp；语料 229 处、ADV 收场块依赖它 | 5 | `app/amayui-emulator/test/op-214-swap-items.test.ts` | — | — |
+| [`T-0050`](./T-0050/ticket.json) | P2 | req | `emulator/render` | 实现 0x32（`i032`：槽→槽的缩放转送 / StretchTexture）—— 存档缩略图的「缩屏」这一步，此前不在任何表里（命中即 NotImple… | 5 | `app/amayui-emulator/test/op-032-stretch-texture.test.ts` | — | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |

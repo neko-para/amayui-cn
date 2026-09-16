@@ -1,0 +1,73 @@
+{
+  "title": "真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标",
+  "type": "analysis",
+  "priority": "P3",
+  "area": "emulator/verify",
+  "why": "最近三单（T-0048 `0x10A`、T-0049 `0x214`、T-0050 `0x32`）都是「语义已按 raw 钉死 + 单元/模型级守卫已绿，但**真机或真界面上的可见行为没有被确认**」：headless 没有画布/没有键盘掩码位/到不了章节深处的块，所以 E3/E4 都缺。E4 的证据只有在 Electron 宿主 + 一次真实操作里才能拿到，且其中有两条**可能反过来推翻实现选择**（缩放插值 linear vs point；0x207/0x32 的像素路径此前从未跑过）。这份清单就是这些验证动作的唯一归口，做完一条关一条。",
+  "acceptance": [
+    "**0x32 · 存档缩略图（E4，主项）**：在 Electron 里正常玩到能存档（或走 SAVE 界面的存档流程）⇒ 生成的 `SAVE/<槽>.STH` 是**真截图**（320×180、内容 = 存档瞬间的画面），而不再是 `AMYTH1` 占位块；SAVE 界面能把它显示出来。判据：`getSlotPixels(0xe)` 拿到的像素不是占位块（可直接打开 `.STH` 看 BMP 内容）。来源：T-0050。",
+    "**0x32 · 缩放插值**：把真机（或本工程自产的引擎格式档）某个 `.STH` 与其对应画面帧对照：若缩略图**明显块状/锐利** ⇒ 引擎用的是 point ⇒ 把 `TextureCache.blitSlotToSlot` 的 `imageSmoothingEnabled` 改回 false（并把依据写进 opcode-table 0x32 行）；若平滑 ⇒ 现状（linear，依据 raw 93927 的 `SetSamplerState(0,5,2)`）正确、本条关闭。来源：T-0050 的 notes ②。",
+    "**0x207（同尺寸槽→槽转送）像素落地**：三处能亲眼看到贴片有内容（此前宿主缝只记日志 ⇒ 目标表面是空的/旧的）：`src/REACH.txt:1941-1942`（移动范围条带 1280×14）、`src/DRAWMINIMAP.txt:246` 等（小地图 5×5 贴片）、`src/BTL.txt`（战场贴片）。来源：T-0050（顺带把这条缝补成真实现）。",
+    "**0x214（交换绘图项记录，E3）**：走到用它的换场收场（`src/SC0000.txt:6885-6895` 一类块所在的章节），两个立绘槽的内容应当**对调**（外观/位置互换、**绘制次序不变**）；`src/BUNKIMOVE.txt:43-77` 的武器移动演出（10 个图元一组对调）也应正确。来源：T-0049（无 E3）。",
+    "**0x10A（侧栏槽位钉光标，E3）**：用键盘/手柄在 ADV 侧栏里操作时，鼠标光标应被钉进栏内（x=1220、Y 保持）⇒ 随后鼠标驱动的 hover 与键盘选择一致。★**前置缺口**：emulator 目前不合成键盘掩码位（0..6）⇒ `pickByKey` 路由不可达，这条**要等 T-0052**（键盘掩码位接入）落地后才能验证。来源：T-0048 的 changes.md。"
+  ],
+  "evidence": [
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
+      "note": "第 1 条：337 处同型的缩略图缩屏流水线（3171-3184），随后 i1ae 写 .STH"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
+      "anchor": "blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean",
+      "note": "第 1/2/3 条的实现点：两张画布间 drawImage（平滑插值；槽没有表面则不转送）"
+    },
+    {
+      "file": "src/REACH.txt",
+      "anchor": "i207 c2 c3 0 10 500 e 0 2bb",
+      "note": "第 3 条：同尺寸转送的一处语料（移动范围条带 1280×14）"
+    },
+    {
+      "file": "src/SC0000.txt",
+      "anchor": "i214 (local-int 0) (local-int 1)",
+      "note": "第 4 条：ADV 收场块的换位（两套立绘句柄基址第 i 个互换）"
+    },
+    {
+      "file": "src/BUNKIMOVE.txt",
+      "anchor": "i214 (local-int 8) (local-int 9)",
+      "note": "第 4 条：武器移动演出的 10 个一组对调"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 (local-int 0) (local-int 1) 1 1 ffffffff ffffffff label_00002954",
+      "note": "第 5 条：侧栏槽位注册在**屏幕外的 1×1 热点** ⇒ 只能由 pickByKey（键盘/手柄掩码位）派发"
+    }
+  ],
+  "tests": [],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/rendering.md"
+    ],
+    "analysis": [
+      "SN0000",
+      "scene-frame-commit"
+    ],
+    "tickets": [
+      "T-0048",
+      "T-0049",
+      "T-0050",
+      "T-0052"
+    ]
+  },
+  "status": "open",
+  "notes": "怎么用这张票：每条 acceptance 都是一次具体的人工操作 + 一个可判定的观察；做完把结论写进 `changes.md`（新条目放最上方）并按结果决定是否要改实现（第 2 条与第 3 条都可能反过来改代码）。★为什么它们没能在自动化里覆盖：headless 没有画布（第 1/2/3 条）、没有键盘掩码位（第 5 条）、到不了章节深处的块（第 4 条，boot SN0000 跑 2500 帧实测 0 次 `i214`）——都已在各自票据里写明，不在本票重复分析。",
+  "id": "T-0051",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    }
+  ]
+}

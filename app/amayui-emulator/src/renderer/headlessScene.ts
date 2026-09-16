@@ -372,9 +372,13 @@ export class HeadlessScene implements NativeBridge {
     scSetPrimTransform4(this.scene, handle, a, b, c, d);
   }
 
-  /** `0x207` 槽→槽 StretchRect。 */
-  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): void {
+  /**
+   * 槽→槽转送（`0x207` / `0x32`）：headless **没有画布** ⇒ 只把这次下发记进模型
+   * （`scene.render4.blits`），返回 false（= 没转像素）。像素级产物由 `PixiBackend` 负责。
+   */
+  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean {
     scBlitSlotToSlot(this.scene, srcSlot, dstSlot, srcRect, dstRect);
+    return false;
   }
 
   /** `0x20E` 图形提交（状态包裹 + 设备 Clear）。 */

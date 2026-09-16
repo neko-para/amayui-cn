@@ -15,6 +15,7 @@ import type { Item } from '../drawItem.js';
 import type { DrawStringStyle } from '../../vm/native.js';
 import { drawStringGlyphs, TEXT_FILL_ALPHA } from '../../text/layout.js';
 import { drawAliasedLayer, drawGlyphPassesOnSurface, type GlyphPass } from '../text/raster.js';
+import { clampScaledBlit } from '../scene/ops.js';
 
 /**
  * **延迟销毁队列**：纹理不能"说销毁就销毁" —— 见 `TextureCache.collectGarbage` 的说明。
@@ -382,6 +383,64 @@ export class TextureCache {
       }
     }
     return { w, h, rgba: out };
+  }
+
+  /**
+   * **槽 → 槽转送**（`0x207` 同尺寸 StretchRect / `0x32` 缩放 StretchTexture）。
+   *
+   * 两个槽都必须是 `create-texture` 出来的画布槽（引擎口径：surface 不存在就报错、不转送），
+   * 矩形经 `clampScaledBlit` 按各自 surface 的边界夹取（`[0,0,w,h]`），再 `drawImage` 缩放。
+   * ★缩放用**平滑插值**：引擎这条路径是"取源矩形 → 缩放画进目标 surface"（`sub_4A7990` +
+   * `sub_4A42C0`，raw 128125-128127），而引擎设的采样器是 `D3DSAMP_MINFILTER=LINEAR`
+   * （raw 93927 的 `SetSamplerState(0, 5, 2)`）⇒ 不是 point。
+   * @returns 是否真的转了像素（任一槽没有画布 ⇒ false）
+   */
+  blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean {
+    const srcCs = this.#canvasSlots.get(srcSlot);
+    const dstCs = this.#canvasSlots.get(dstSlot);
+    if (!srcCs || !dstCs) {
+      // 引擎 `sub_4A87A0` raw 127987-128003：分别打「コピー元/コピー先テクスチャが作成されていません」
+      this.log(
+        `blitSlotToSlot ${srcSlot}→${dstSlot} 被忽略：` +
+          (srcCs ? '' : `源槽 ${srcSlot} 没有表面（コピー元テクスチャが作成されていません）`) +
+          (!srcCs && !dstCs ? '；' : '') +
+          (dstCs ? '' : `目标槽 ${dstSlot} 没有表面（コピー先テクスチャが作成されていません）`),
+      );
+      return false;
+    }
+    const sx = srcRect[0] ?? 0;
+    const sy = srcRect[1] ?? 0;
+    const dx = dstRect[0] ?? 0;
+    const dy = dstRect[1] ?? 0;
+    const raw = { src: [sx, sy, srcRect[2] ?? sx, srcRect[3] ?? sy], dst: [dx, dy, dstRect[2] ?? dx, dstRect[3] ?? dy] };
+    const c = clampScaledBlit([0, 0, srcCs.w, srcCs.h], [0, 0, dstCs.w, dstCs.h], raw.src as [number, number, number, number], raw.dst as [number, number, number, number]);
+    if (!c) {
+      this.log(`blitSlotToSlot ${srcSlot}→${dstSlot} 被忽略：矩形退化 src=[${raw.src}] dst=[${raw.dst}]`);
+      return false;
+    }
+    const ctx = dstCs.canvas.getContext('2d');
+    if (!ctx) return false;
+    // 画布是物理像素（逻辑 × res）⇒ 用 1:1 变换、各边自己乘 res（源与目标的 res 可能不同）
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      srcCs.canvas,
+      c.src[0] * srcCs.res,
+      c.src[1] * srcCs.res,
+      (c.src[2] - c.src[0]) * srcCs.res,
+      (c.src[3] - c.src[1]) * srcCs.res,
+      c.dst[0] * dstCs.res,
+      c.dst[1] * dstCs.res,
+      (c.dst[2] - c.dst[0]) * dstCs.res,
+      (c.dst[3] - c.dst[1]) * dstCs.res,
+    );
+    dstCs.tex.source.update();
+    const clipped = c.src.join() !== raw.src.join() || c.dst.join() !== raw.dst.join();
+    this.log(
+      `blitSlotToSlot ${srcSlot}→${dstSlot} src=(${c.src.join(',')}) dst=(${c.dst.join(',')})` +
+        (clipped ? '（被 surface 边界夹取）' : ''),
+    );
+    return true;
   }
 
   /**

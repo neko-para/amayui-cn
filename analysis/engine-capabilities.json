@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 120,
+    "total": 121,
     "modeled-verified": 40,
     "modeled-unverified": 5,
-    "partial": 26,
+    "partial": 27,
     "absent": 23,
     "n/a-known": 26,
-    "needsAttention": 54
+    "needsAttention": 55
   },
   "entries": [
     {
@@ -3514,6 +3514,31 @@
         "evidence": "E2",
         "guard": "test/input.test.ts",
         "note": "2026-09（tickets/T-0046）修：旧实现把 else 分支写成「无输入就落回」⇒ 默认键处理器永不运行。现按 raw 25047 用 `Engine[517]`(SetKeyTotal) 当下标派发，并把掩码扫描上界也收到 `[517]`（raw 25029-25037）；两条分支都按 raw 25039-25040 / 25052 压返回点（handler 末尾的 ret 才能回到 0x100 之后，否则会落进 handler 的下一句）。`Engine[517]` 初值 7 = Input 构造 `sub_477DD0` raw 92385（`_this[259]=7`，Input = Engine+258）；开机后 `src/SYSTEM4.txt:86` 的 `i0fe c` 置 12。"
+      }
+    },
+    {
+      "id": "host-cursor-warp",
+      "subsystem": "输入",
+      "name": "把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos）",
+      "trigger": "脚本执行 `0x10A`（`i10a`）时：引擎 `sub_421EA0` 把虚拟坐标反算成屏幕坐标后调 `SetCursorPos`",
+      "engine": {
+        "fns": [
+          "sub_421EA0"
+        ],
+        "raw": "30530-30598"
+      },
+      "reads": [
+        "Engine+699168 (客户区宽)",
+        "Engine+699172 (客户区高)",
+        "Engine+167990 (display:ScreenMode)"
+      ],
+      "whySilent": "宿主能不能移动**真实系统光标**不影响任何脚本可读的状态：`0x10A` 之后 `0x109` 读回的是**引擎侧**坐标、`hover`/`0x12E` 命中测试用的也是它 ⇒ 脚本逻辑照跑、不报错；缺的只是玩家看得见的那一下（光标在屏幕上跳过去）。★反过来还会静默地「半失效」：玩家一动物理鼠标，`mousemove` 就把引擎侧坐标覆盖回真实位置，于是依赖「钉住光标」的观感（ADV 侧栏随键盘导航把光标钉进栏内、`SBUNKI`/`BUNKI` 的恢复上次位置、`ALLMAP` 的拖动回夹、`SELSTAGE` 的对话框居中）只生效到下一次鼠标移动。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/input.test.ts",
+        "note": "emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。"
       }
     }
   ]
