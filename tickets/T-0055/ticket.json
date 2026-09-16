@@ -1,0 +1,122 @@
+{
+  "title": "实现 0xD3/0xD4/0xD5「阶梯动画时间表」：把一段代码按时间轴分多次执行（存档动画 / 回想缓动 / 战斗入场 / 经验条）",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "why": "用户点名要求实现 `SAVE.txt` 里存档路径上的三条指令 `i0d3`/`i0d4`/`i0d5`。它们是**一套小语言**（不是三条孤立指令）：脚本先声明一张「时刻 → 入口 label」的时间表，然后由**主循环**在到点时把 `pc` 直接指到表里那个 label 上（脚本体 `ret` 回到 `i0d5` 自身，于是循环继续），全部条目走完脚本才往下走。\n\n引擎接线（raw 逐行核对）：`0xD3`=清表（`sub_42AC40` raw 36668）、`0xD4`=追加条目（`sub_42E940` raw 38801，时刻**跨多次调用累计**）、`0xD5`=起表 + 置 `effect_flags & 0x40` 门（`sub_42ACC0` raw 36689，**本条不前进**）、消费者 = `sub_408F10`（raw 13612-13684，主循环 raw 21154-21156 在 `flags & 0x40` 时每遍调它）。\n\n**缺失时的症状（完全静默）**：三条被当 no-op 跳过 ⇒ 脚本一路落到 `i0d5` 之后的 `ret`，整段阶梯动画瞬间跳过、状态照旧推进、无任何报错。语料 **7 处**（`SAVE.txt:1644-1647`、`HISTORY.txt:955-959`、`ADDEXP.txt:106-110`、`BTL.txt:3431-3436 / 3963-3967 / 4435-4439 / 4816-4821`），其中 `i0d4` 共 20 次、`i0d3`/`i0d5` 各 7 次；受影响的是**存档列表滚动、回想列表缓动、战斗单位入场、经验条推进**四类可见动画。\n\n反向风险（实现错了也不容易发现）：`0x40` 置位期间主循环**不派发任何脚本指令** ⇒ 门若不被正确放行，界面会永久卡死；而 `i0d5` 的「本条不前进」若漏掉，会把 `i0d5` 变成死循环。",
+  "acceptance": [
+    "`0xD3`/`0xD4`/`0xD5` 三条从「仅映射」升为**真实现**（`OPS` 表 `implemented`）：清表 / 追加条目（时刻跨调用累计、`op2<=0` 不追加）/ 起表（只在 `index==0` 时刷输入+记脚本身份+起计时器+排序）+ 置 `0x40` 门且**本条不前进**",
+    "**消费者 `sub_408F10` 被建模**：`now - t0 >= t` 才算到点（引擎 `Sleep(v6)` 把时钟精确推到 t）；未到点 ⇒ **本帧不派发任何指令**；到点 ⇒ 清门 + 压返回点（`i0d5` 自身的 dword 偏移）+ `pc` 指向条目入口",
+    "**两条易错口径按 raw 对齐**：① 派发次数 = **条目数 − 1**（`index < 写游标`，最后一条是收尾哨兵）；② 「已落后」⇒ 走条目第 4 个操作数（`tail`），否则第 3 个（`body`）—— 下一条也已过期时选 `tail`",
+    "**帧循环接线**：`frame/loop.ts` 新增 `stage` 门档（`'wait'` 默认按时间表 / `'ignore'` 不做时间判定），`STAGE_GATE` 同时进派发批的 break 条件（否则 `i0d5` 会被反复重执行）；`report.ts` 的帧边界把 `stage` 记为「占一帧」（否则虚拟时钟不前进、时间表永不推进）",
+    "**守卫**：`test/stage-loop.test.ts`（11 条）覆盖状态模型（累计/游标/边界）、到点与「落后」入口、未到点不消费、`stage:'ignore'` 零时钟可跑完、脚本身份守卫，以及 **E3 真语料**：`SAVE.BIN` 的 `label_0000706c` 段（32 条目）实测 **31 次派发**、末条到期于 **481 ms**、摊在 **31 帧**上（塌成一帧即判失败）",
+    "**文档与台账同步**：`opcode-table.md` 三行转「已核对」+ `engine-reset-mainloop.md` §B.6（机制长文）+ `analysis/functions.json` 4 条（`0x408F10` 与三个 handler）+ `fields.json` 5 条（`stage_entries`/`stage_index`/`stage_build_cursor`/`stage_exit_label`/`stage_script_id`）+ 能力台账 1 条 `stage-stepper-0x40-gate`（E3）+ `scripts.json` 的 SAVE 条目补时间表子块",
+    "**顺带修正两处既有不一致**：`script/bin.ts` 的 `labelTargets` 对 `0xD4` 的 label 操作数由 `[0]` 改为 `[2,3]`（与 `scripts/asm/age-shared.mjs` 的 `x>=2` 同口径）；重新生成 `scripts/asm/opcodes.json`（`0xD3/0xD4/0xD5` 的状态列 + 上一单遗留的 `0x34F/0x350/0x351` 的 argc/状态）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "int __thiscall sub_42ACC0(int _this)",
+      "line": 36689,
+      "note": "0xD5 = 起表 + 置 0x40 门；`95805` 先置 0（本条不前进）再按 `index < 写游标` 决定是否置门 —— 「派发次数 = 条目数 − 1」的出处"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_408F10(_this);",
+      "line": 21156,
+      "note": "主循环里 0x40 那一支只有两句（`if ((flags & 0x40) == 0) break;` + 本行），但它是三条指令的整套运行时"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v8 = (*(_DWORD *)(_this + 430676) - *(_DWORD *)(_this + 430672)) >> 4 > v7 + 1",
+      "line": 13656,
+      "note": "「已落后」判据：还有下一条 **且** 下一条的时刻也已过 ⇒ `dword[2+v8]` 取第 4 个操作数（tail）而不是第 3 个（body）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v21 = v2 + sub_41BF50(v1, 1);",
+      "line": 38843,
+      "note": "0xD4 的时刻**跨调用累计**：`v2` = 上一条记录的 dword0（表空时为 0）⇒ 多条 i0d4 天然接成一条时间轴"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "i0d4 10 1e label_000070c8 label_000070d4",
+      "line": 1645,
+      "note": "存档动画时间表：30 条 × 16 ms + `i0d4 1 2` 收尾哨兵 + `i0d5 ffffffff`（1644-1647，由 :928 的 `call label_0000706c` 进入）"
+    },
+    {
+      "file": "src/HISTORY.txt",
+      "anchor": "i0d4 10 4 label_00003a8c label_00003aa8",
+      "line": 956,
+      "note": "回想列表缓动：`body` = `call tail; call label_3d0c; ret`、`tail` = 推进计数 + 重排 ⇒ **7 条只派发 6 次**，正对应 `local 492` 从 0 数到 5 的取样点"
+    },
+    {
+      "file": "src/BTL.txt",
+      "anchor": "i0d4 (local-int 1034) (local-int 1035) label_00012074 label_0001233c",
+      "line": 3432,
+      "note": "步长/条数是**变量**（每单位错开一步的入场）；`body` 内部还有一条 `jcc … label_0001233c` 直接跳到 `tail` ⇒ 印证 tail = 公共收尾"
+    },
+    {
+      "file": "docs-new/03-engine/engine-reset-mainloop.md",
+      "anchor": "### B.6 阶梯动画时间表",
+      "note": "机制长文（小语言 / 调度器逐行 / 两条易错口径 / emulator 对应）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/stageLoop.ts",
+      "anchor": "export function runStageService(",
+      "note": "`sub_408F10` 的等价物：输入刷 → 时间表判定 → 脚本身份守卫 → 压返回点 + 设 pc + 清门"
+    },
+    {
+      "file": "app/amayui-emulator/test/stage-loop.test.ts",
+      "anchor": "SAVE.BIN 的 label_0000706c 段",
+      "note": "★E3：真语料实测 31 次派发 / 481 ms / 31 帧（时间表必须摊在多帧，塌成一帧即失败）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/engine-reset-mainloop.md",
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/flow-control.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json#stage-stepper-0x40-gate",
+      "analysis/functions.json#0x408F10",
+      "analysis/functions.json#0x42AC40",
+      "analysis/functions.json#0x42E940",
+      "analysis/functions.json#0x42ACC0",
+      "analysis/functions.json#0x405360",
+      "analysis/fields.json#0x69250",
+      "analysis/fields.json#0x69264",
+      "analysis/scripts.json#SAVE"
+    ],
+    "tickets": []
+  },
+  "notes": "过程笔记见 notes.md。要点：① 三条指令是**一套小语言**，只实现其中一条没有意义；② 真正的难点不在 handler 而在**帧循环的门**（`0x40` 置位期间整个脚本停摆）；③ 两条口径（派发次数 = 条目数 − 1、到点 = 时钟推到 t）都是逐行核对 raw 得出的，写错都会表现为「动画不对但一切正常」。",
+  "id": "T-0055",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建（用户要求：实现 SAVE.txt 存档路径上的 i0d3/i0d4/i0d5）"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "反编译读通：三条 handler + 消费者 sub_408F10 + 主循环 0x40 门 + 计时器 sub_453A90/453BB0 + 压返回点 sub_405360；确认「派发次数 = 条目数 − 1」与「落后 ⇒ op4」两条口径"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "实现：新增 src/vm/stageLoop.ts（StageLoop + runStageService）、src/vm/handlers/stage.ts（0xD3/0xD4/0xD5）、Engine.stage/serviceStageLoop、frame/loop.ts 的 stage 门档、report.ts 帧边界；顺带修 script/bin.ts 的 0xD4 label 操作数 [0]→[2,3]、重生成 opcodes.json"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "守卫 test/stage-loop.test.ts 11 条全绿（含 E3 真语料 31 次派发/481ms/31 帧）；全仓 598 测试 597 通过 0 失败；文档/台账同步（opcode-table 3 行、mainloop §B.6、functions 4 条、fields 5 条、capabilities 1 条、scripts SAVE 子块）⇒ open → done"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：tests"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/stage-loop.test.ts"
+  ]
+}

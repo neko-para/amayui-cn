@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 41 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 42 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 8 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 28 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 22 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **125** | 需要关注（非 n/a 且非已核验）= **58** |
+| **合计** | **126** | 需要关注（非 n/a 且非已核验）= **58** |
 
 ## 按子系统
 
@@ -25,7 +25,7 @@
 | 3D | 17 | 2 |
 | Live2D | 6 | 2 |
 | 声音 | 6 | 1 |
-| 帧循环 | 15 | 10 |
+| 帧循环 | 16 | 10 |
 | 消息窗 | 29 | 16 |
 | 渲染 | 26 | 11 |
 | 资源 | 16 | 4 |
@@ -161,6 +161,7 @@
 | `l2d-node-draw-gate` | Live2D | 572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
 | `live2d-node-draw-advance` | Live2D | L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
 | `live2d-mesh-batches` | Live2D | Live2D 出画几何：顶点/UV/索引流 + 画布居中摆放 + 归并成三角批次 | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
+| `stage-stepper-0x40-gate` | 帧循环 | 阶梯动画时间表（0x40 门 + sub_408F10 调度器） | ✅ 已核验 | E3 · `test/stage-loop.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -171,7 +172,7 @@
 - **缺失时为什么静默**：门不满足时整条 `sub_4B4040` 调用被跳过，画面保持上一帧且无任何诊断输出
 - **引擎**：sub_412290, sub_40BE10 @ raw 20740-20760
 - **读的字段**：Engine+667856, Engine+667860, Engine+699204, Engine+369332, Scene+46508
-- **emulator 现状**：2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates 三档（anim/sleep/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。
+- **emulator 现状**：2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 ffect_flags 门（0x400/0x1000000…）与主循环里 
 
 ### `scene-frame-commit`（partial）
 

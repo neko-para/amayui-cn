@@ -48,7 +48,7 @@
 | [`MMODE`](./MMODE.md) | `MMODE.BIN` | **BGM 鑑賞界面**（回想第三个按钮）：三列 × 13 行的曲目列表（已收集显示曲名、未收集显示 `UNKNOWN`）+ 底部播放控制（上一首/暂停/下… | 4 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
 | [`MUINIT`](./MUINIT.md) | `MUINIT.BIN` | **BGM 曲目元数据表**（无画面）：填三张 1-based 表 —— `12265c[1..36]` = 统一文件 id、`1226c0[1..36]`… | 1 | 3 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
 | [`ROOM`](./ROOM.md) | `ROOM.BIN` | **回想（EU-ROOM）菜单**：一张背景 + 四个按钮（CG鑑賞 / シーン回想 / BGM鑑賞 / 情報画面），每个按钮旁显示 `回収数` 与 `回収… | 5 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
-| [`SAVE`](./SAVE.md) | `SAVE.BIN` | 存档/读档界面（SAVE）：槽列表（每行用 `0x1A0` 读头拿状态/日期/游玩秒数）+ 存/读/删/复制与备注输入。 | 2 | 6 | 🟠 部分 | — |
+| [`SAVE`](./SAVE.md) | `SAVE.BIN` | 存档/读档界面（SAVE）：槽列表（每行用 `0x1A0` 读头拿状态/日期/游玩秒数）+ 存/读/删/复制与备注输入。 | 3 | 6 | 🟠 部分 | — |
 | [`SC0330`](./SC0330.md) | `$1$SC0330.BIN` | 剧情脚本（本篇章节）：大量角色立绘的变换/表情/位置调整 + 文本推进。 | 5 | 5 | 🟠 部分 | — |
 | [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |

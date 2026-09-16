@@ -34,6 +34,7 @@
  * 不在 B1 范围内 —— 把那套顺序编码进共享驱动等于把缺陷固化。它随 B2 一起改。
  */
 import { SLEEP_GATE, type Engine, type Frame } from '../vm/engine.js';
+import { STAGE_GATE } from '../vm/stageLoop.js';
 import { NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
 import { ExitScript, ScriptReset } from '../vm/ops.js';
 import type { BinInstruction } from '../script/bin.js';
@@ -53,6 +54,14 @@ export interface FrameLoopGates {
   /** `sleep(0xC8)` / `0x6E` 后的节流门：`'wait'` 等 `nowMs >= sleepUntil`；`'clear'` 直接清；`'ignore'` 不看。 */
   sleep?: 'wait' | 'clear' | 'ignore';
   /**
+   * **阶梯动画门**（`0x40`；`0xD5 i0d5` 置位，引擎主循环 raw 21154-21156 由 `sub_408F10` 放行）：
+   *  - `'wait'`（默认，与引擎同源）：按时间表判定 —— 到点 ⇒ 清门 + 把 `ip` 指到条目 label 后照常派发；
+   *    未到点 ⇒ **本帧不派发任何指令**（引擎那里是 `Sleep(1)` 后 return）；
+   *  - `'ignore'`：不看时间（恒"到点"）⇒ 每帧推进一步。供时钟粒度/虚拟时钟可能与
+   *    `0xD4` 的 step 同量级的入口用（否则时间表可能永远不推进）。
+   */
+  stage?: 'wait' | 'ignore';
+  /**
    * 等待推进门（`0x72 wait-for-input` 的 bit31）：
    *  - `'pump'`（产品）：`serviceAdvanceWait()`（键命中/点击/悬停三条出口都在引擎内部）；
    *  - `'force'`：`forceAdvance()`（headless 现状；**与真泵刻意不同**，见 `Engine.forceAdvance`）；
@@ -62,7 +71,7 @@ export interface FrameLoopGates {
 }
 
 /** 本帧走了哪条分支（引擎主循环的不同段；观察者与调用方记账用）。 */
-export type FrameBranch = 'anim' | 'sleep' | 'text-reveal' | 'advance' | 'adv' | 'batch';
+export type FrameBranch = 'anim' | 'sleep' | 'stage' | 'text-reveal' | 'advance' | 'adv' | 'batch';
 
 export interface FrameLoopOptions {
   gates?: FrameLoopGates;
@@ -173,6 +182,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     anim: opt.gates?.anim ?? 'wait',
     sleep: opt.gates?.sleep ?? 'wait',
     advance: opt.gates?.advance ?? 'pump',
+    stage: opt.gates?.stage ?? 'wait',
   };
   const services = { winReveal: opt.services?.winReveal ?? true, charGrid: opt.services?.charGrid ?? true };
   const maxSteps = opt.maxStepsPerFrame ?? Number.POSITIVE_INFINITY;
@@ -242,12 +252,24 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     if (services.charGrid) e.serviceCharGrid(nowMs);
 
     let stop: StopReason | null = null;
+    /** 本帧是否按常规派发一批。`stage` 门到点时也走同一条派发路径（只是分支记账不同）。 */
+    let batch = false;
     if (gates.anim !== 'ignore' && (e.waitFlags & 0x400) !== 0) {
       opt.onGate?.('anim', e);
       obs?.onGate?.({ ...obsMid(), branch: 'anim' });
       // 引擎主循环 raw 21109-21152：`!sub_407E20(pool)` ⇒ 清门放行；否则本帧什么都不派发
       // （玩家可跳过那条路在 raw 21113-21135，本驱动的 `skipWaitGate()` 出口见下）。
       if (gates.anim === 'clear' || e.serviceWaitGate(nowMs)) e.waitFlags &= ~0x400;
+    } else if ((e.waitFlags & STAGE_GATE) !== 0) {
+      opt.onGate?.('stage', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'stage' });
+      // ★**阶梯动画门**（引擎主循环 raw 21154-21156：`if ((flags & 0x40) == 0) break; sub_408F10(_this);`）：
+      //   到点 ⇒ `serviceStageLoop` 清 `0x40` 并把 `pc` 指到时间表里的 label ⇒ 本帧按常规派发那一段
+      //   （脚本体 `ret` 回到 `i0d5`，还有条目就再置门 ⇒ 下面这批的 break 条件会在这里收住）；
+      //   未到点 ⇒ 本帧**什么都不派发**（引擎那里 `Sleep(1)` 后 return，门保持置位）。
+      //   `gates.stage === 'ignore'` = 不做时间判定（恒到点，每帧一步）——给时钟粒度与
+      //   `0xD4` 的 step 同量级的 headless 入口用，否则时间表可能永远不推进。
+      batch = e.serviceStageLoop(nowMs, gates.stage === 'ignore');
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
       obs?.onGate?.({ ...obsMid(), branch: 'sleep' });
@@ -290,6 +312,10 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     } else {
       opt.onGate?.('batch', e);
       obs?.onGate?.({ ...obsMid(), branch: 'batch' });
+      batch = true;
+    }
+
+    if (batch) {
       // 常规：派发一批，遇门/等待/脚本尾即停
       for (let k = 0; k < maxSteps; k++) {
         const f = e.curScript();
@@ -307,7 +333,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
           stop = r;
           break;
         }
-        if ((e.waitFlags & (0x400 | SLEEP_GATE)) !== 0 || e.awaitingAdvance) break;
+        // ★`STAGE_GATE` 也在这里收住：`i0d5` 是时间表的回边（脚本体 `ret` 回到它，它再置门）
+        //   ⇒ 本帧这一批到此为止，下一帧由上面的 stage 分支继续问时间表（引擎同序）。
+        if ((e.waitFlags & (0x400 | SLEEP_GATE | STAGE_GATE)) !== 0 || e.awaitingAdvance) break;
       }
     }
 

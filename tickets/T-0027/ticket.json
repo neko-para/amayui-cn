@@ -46,13 +46,13 @@
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "const mask = im.flushPending();",
-      "line": 931,
+      "line": 972,
       "note": "等待推进泵（serviceAdvanceWait）只消费挂起事件（flushPending = sub_478090）⇒ 按住期间不再每帧放行（修复点）"
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "const mask = im.flushHeld();",
-      "line": 549,
+      "line": 590,
       "note": "ADV 分支（serviceAdv）保留实时刷（sub_4780D0）—— 拆刷子时不许把它一起改掉"
     },
     {

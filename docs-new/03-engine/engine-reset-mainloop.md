@@ -309,7 +309,7 @@ emulator 只用到 **3 位**（`0x400`、`0x8000000`、`0x20000000`），其余�
 | `0x8` | 系统效果类动画（`sub_441E10`，systemEffects 配置门） | `[未建模]` |
 | `0x10` | 同上，走 `sub_444350` | `[未建模]` |
 | `0x20` | `sub_453870/453AB0(429900)` 计时 | `[未建模]` |
-| `0x40` | 触发 `sub_408F10`；`[未建模]` | `[未建模]` |
+| `0x40` | **阶梯动画时间表**：触发 `sub_408F10`（置位期间**不派发任何脚本指令**） | `[已实现]` `STAGE_GATE`（`0xD5` 置位）/ `Engine.serviceStageLoop` + `frame/loop.ts` 的 `stage` 分支，见 §B.6 |
 | `0x80` | `sub_447810` 系统效果 | `[未建模]` |
 | `0x100` | `sub_447330` 系统效果 | `[未建模]` |
 | `0x200` | `sub_453B60(430012)/sub_489D10` 计时；`[未建模]` | `[未建模]` |
@@ -355,6 +355,41 @@ emulator 对**最内层正常路径**（`effect_flags==0`）已用干净模型�
 - **对象数组**：`+378688`(1000 个场景对象)、`+378684`(电影对象)、`+4*v18+675996`(opcode handler 表，675996=0xA50CC)。
 - **帧/返回**：`+120*cur+383128`(ip)、`+120*cur+383220`(arity)、`+4*v26+489648`(返回地址)、`+489812`、`+430712`、`v28[95796]/[95781]/[95782]`(帧内部槽)。
 
+### B.6 阶梯动画时间表（`0x40` 门 + `sub_408F10` 调度器）
+
+主循环里 `0x40` 的那一支（raw 21154-21156）**只有两句**，但它是三条脚本指令的整套运行时：
+
+```c
+if ( (v35 & 0x40) == 0 ) break;
+sub_408F10(_this);                       // raw 13612-13684
+```
+
+脚本侧的小语言（全语料 7 处形态完全一致，见 `opcode-table.md` 的 0xD3/0xD4/0xD5 行）：
+
+```
+i0d3                                   ; 清表（写游标 = -1、下标 = 0、打断 label = -1）
+i0d4 <step> <count> <body> <tail>      ; 追加 count 条，时刻 = 上一条 + step（★跨多次调用继续累计）
+i0d4 1 2 <tail> <tail>                 ; 收尾哨兵（见下"派发次数 = 条目数 − 1"）
+i0d5 ffffffff                          ; 起表：起计时器 + 排序 + 置 0x40 门；**本条不前进**
+```
+
+`sub_408F10` 每次被调用做两件事：
+
+1. **输入刷**（raw 13626-13639）：`sub_478090(input, Engine+699208)` 消费刷 → 掩码非 0 且 `i0d5` 登记过打断 label（`_this+430668 != -1`）⇒ 把 `pc` 指到它并清门。**本作 7/7 处 op1 = `ffffffff`** ⇒ 这一支不可达，只表现为"阶梯动画期间挂起输入被吃掉"。
+2. **时间表判定**（raw 13641-13683）：`v4 = sub_453BB0(timer)`（= `timeGetTime() - 起点`，ms）→ `v6 = 表[index].t - v4`
+   - `v6 >= 50` ⇒ `Sleep(1)` 后 return（**本遍什么都不派发**，门保持置位 ⇒ 主循环下一遍再问）；
+   - `v6 < 50` ⇒ `if (v6 > 0) Sleep(v6)`（把时钟**精确推到**目标时刻）→ 清 `0x40` → 压返回点（`sub_405360(_this, 0)`，压的是 **`i0d5` 自身**的 dword 偏移）→ `pc = ip_base + 4*表[index].入口` → `++index` → `Sleep(0)`。
+   - 入口选哪个：`v8 = (还有下一条) && (下一条.t - v4 < 0)`；`v8 = 1`（**已经落后**）⇒ 用记录的第 4 个操作数（`tail`），否则用第 3 个（`body`）。语料里 `body` 是"重活 + 公共尾"，`tail` 就是那个**公共尾**（`BTL.txt:3484-3513` 的 `label_00012074` 里甚至有一条 `jcc … label_0001233c` 直接跳到 `tail`）⇒ 掉帧时省掉重活、只把计数追上。
+
+两条必须注意的口径：
+
+* **派发次数 = 条目数 − 1**。`i0d5` 的判据是 `index < 写游标`（写游标 = 条目数 − 1）⇒ 走到最后一条时脚本就往下走了。`HISTORY` 写 7 条、实际派发 6 次，正对应 `local 492` 从 0 数到 5 的缓动取样点（`HISTORY.txt:955-959`、`:973-980` 的 `sub … 5` / `div … 5`）。
+* **脚本体靠 `ret` 回到 `i0d5`**：调度器压的返回点就是 `i0d5` 自己，所以脚本体末尾必须是 `ret`（`SAVE.txt` 的 `label_000070d4` = `add …1; ret`）。`i0d5` 因此会被执行 N+1 次：每次判"还有条目 ⇒ 再置门、不前进"，最后一次判"没有了 ⇒ 前进"，脚本才继续。
+
+`sub_408F10` 还会在派发前校验**脚本身份**：`frames[cur][95796] == 起表时记下的 430708`，不等则 `Depth が不正です %s != %s` + 抛 `Command_ShowMessage`（时间表不能活得比它的脚本长）。
+
+**emulator 对应**：`src/vm/stageLoop.ts`（状态 + `runStageService` = `sub_408F10`）、`src/vm/handlers/stage.ts`（0xD3/0xD4/0xD5）、`Engine.serviceStageLoop`、`frame/loop.ts` 的 `stage` 门分支（`gates.stage: 'wait' | 'ignore'`）。守卫 `test/stage-loop.test.ts`（含真语料 E3：`SAVE.BIN` 的 `label_0000706c` 段实测 31 次派发、481 ms、摊在 31 帧上）。
+
 ---
 
 ## Part C · emulator 对照汇总（现状 vs 引擎）
@@ -364,7 +399,7 @@ emulator 对**最内层正常路径**（`effect_flags==0`）已用干净模型�
 | `sub_40DF10` 复位 `cur/effect_flags/global_slot/call_ret/bool_flag` | `Engine` 构造默认 `cur=0`；`op_exit_script` 清 `effectFlags=0/cur=0/callRet=-1/globalSlot=0` | `engine_bool_flag`(0xA30D4) **未建模**；若要 0x21B/0x247 需在 reset/构造中同步清 0 |
 | `sub_40DF10` 重建渲染/文本/输入/队列栈/电影/1000 对象 | 无对应（干净建模，ADR-003） | 不需要复刻（平台/子系统） |
 | `sub_412290` 消息泵 / 定时 / Win32 分发 / 电影 | 无对应（renderer 提供帧循环与输入事件） | 不需要复刻；但注意 renderer 承担了“present/输入”职责 |
-| `sub_412290` effect_flags 多级状态机（~24 位开关） | 只用 `0x400/0x8000000/0x20000000` 三位 | **大量位未建模**（见 B.3），后续实现易漏 |
+| `sub_412290` effect_flags 多级状态机（~24 位开关） | 只用 `0x40/0x400/0x8000000/0x20000000` 四位 | **大量位未建模**（见 B.3），后续实现易漏 |
 | `sub_412290` opcode 派发 + ip 推进 | `stepOnce` 已抽象实现 | 无明显缺口；error 派发语义略异 |
 | `sub_412290` 1000 个场景对象动画/命中/结束 | 无场景图 | 不需要复刻（渲染侧） |
 | 输入读取（`sub_478090`/`sub_477220`） | `InputManager.flush()/readButtons()` | 已对齐（输入抽象） |
@@ -374,7 +409,7 @@ emulator 对**最内层正常路径**（`effect_flags==0`）已用干净模型�
 ## Part D · 后续实现风险点（用户重点）
 
 1. **`engine_bool_flag`(0xA30D4) 未落进 emulator**：`0x21B` 写 `_this[166965]=(op1!=0)`、`0x247` 写回 op1、`sub_40DF10` 清 0、`sub_412290` LABEL_56 门控。四个引用点都已证据化，但 emulator 尚无该字段。建议：`Engine.engineValues` 增加 `166965` 项，`0x21B/0x247` 建模，复位时清 0（与 `0x148/0x149` 的 `global_slot_97058` 同类做法）。
-2. **`effect_flags` 位掩码巨大**：主循环的 `0x1/0x8/0x10/0x20/0x40/0x80/0x100/0x200/0x800/0x1000/0x2000/0x4000/0x400000/0x1000000/0x100000/0x4000000/0x40000000/0x10000000/0x2000000/0x800000` 全部 `[未建模]`。若只做脚本 VM，多数位对应的“系统效果/电影/渲染/消息”是平台职责，**可按“记录+跳过”**；但 `0x4000000`（跳转/call 还原帧栈）与 `0x2400`（LABEL_56 推进）是**脚本语义**，更接近 VM 层，需注意是否复用现成的 `retStack`/`cur` 建模。
+2. **`effect_flags` 位掩码巨大**：主循环的 `0x1/0x8/0x10/0x20/0x80/0x100/0x200/0x800/0x1000/0x2000/0x4000/0x400000/0x1000000/0x100000/0x4000000/0x40000000/0x10000000/0x2000000/0x800000` 全部 `[未建模]`（`0x40` 已完成，见 §B.6）。若只做脚本 VM，多数位对应的“系统效果/电影/渲染/消息”是平台职责，**可按“记录+跳过”**；但 `0x4000000`（跳转/call 还原帧栈）与 `0x2400`（LABEL_56 推进）是**脚本语义**，更接近 VM 层，需注意是否复用现成的 `retStack`/`cur` 建模。
 3. **`draw-mode`(0xA30D0) 与 `engine_bool_flag` 的 LABEL_56 联动**：`*(`_this+667856`)==1` 才进入推进判定，`0xA30D0` 目前 `[字段未知]`，若要精确复刻 LABEL_56 需先确认它的生产者（`sub_423170` 的 opcode 族写入的地方）。
 4. **多处“成对 get/set 槽”**：`0x148/0x149`(`global_slot_97058`)、`0x21B/0x247`(`engine_bool_flag`)、`0x149/0x1A3` 等都是脚本可读写的引擎槽，各自 `[字段未知]` 只在需要时补，避免一次性铺开。
 5. **主循环与 emulator 的映射边界**：emulator 的“主循环”是 `run()`/`stepOnce()`（脚本执行），**不是** `sub_412290` 的帧状态机。因此对比时应把 `sub_412290` 视为「平台外壳（消息泵/渲染/电影）+ 引擎帧处理（effect_flags 状态机）+ 脚本执行（LABEL_216）」。脚本执行部分已实现；其余两段按“平台职责”记录即可。
@@ -383,7 +418,7 @@ emulator 对**最内层正常路径**（`effect_flags==0`）已用干净模型�
 
 ## 参考
 - `analysis/fields.json`：`engine_bool_flag`(0xA30D4)、`cur_script`、`effect_flags`、`global_slot_97058`、`call_ret`。
-- `analysis/functions.json`：`sub_423C20`(`0x21B`)、`sub_430810`(`0x247`)、`sub_40DF10`(`engineInitReset`)、`sub_412290`(`mainLoopFlow`)、`readIntOperand_41BF50`、`writeIntOperand_42B4B0`。
+- `analysis/functions.json`：`sub_423C20`(`0x21B`)、`sub_430810`(`0x247`)、`sub_40DF10`(`engineInitReset`)、`sub_412290`(`mainLoopFlow`)、`readIntOperand_41BF50`、`writeIntOperand_42B4B0`、`stageStepper_408F10`、`op_stage_{reset,add,run}_42A{C40,E940,CC0}`（§B.6）。
 - `docs-new/03-engine/opcode-table.md`：0x21B / 0x247。
 - `docs-new/03-engine/field-97058-timer-dialog.md`：同类字段/函数联动的既有文档（风格参考）。
 - emulator：`app/amayui-emulator/src/vm/{engine,interpreter,ops,input}.ts`、`src/run.ts`（仅用于对照现状，非真源）。

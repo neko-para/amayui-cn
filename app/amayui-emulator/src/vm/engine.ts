@@ -9,6 +9,7 @@ import { PANEL_BASE } from './handlers/panel.js';
 import { RoutePanel } from './route.js';
 import type { PanelField } from './route.js';
 import { TextItemTable } from './textItems.js';
+import { StageLoop, runStageService } from './stageLoop.js';
 import { TEXT_BASE_GATE } from './handlers/text-items.js';
 import { cfgInt } from '../engineConfig.js';
 import { emitWin, messageSpeedOf, winStyle } from './handlers/msgwin.js';
@@ -304,7 +305,8 @@ export class Engine {
   cgDigits = new Map<number, number[]>();
 
   /** 引擎 `_this[174801]` effect_flags 位掩码：
-   *  0x400 = 动画等待门（0x21C wait）、0x20000000 = sleep(0xC8) 门、0x8000000 = ADV/消息激活。
+   *  0x400 = 动画等待门（0x21C wait）、0x20000000 = sleep(0xC8) 门、0x8000000 = ADV/消息激活、
+   *  **0x40 = 阶梯动画调度门（0xD5 `i0d5` 置位，由 `serviceStageLoop` = 引擎 `sub_408F10` 放行）**。
    *  `waitFlags` 是它的旧别名；`advActive` 是 0x8000000 位的推导（见下方 getter）。 */
   effectFlags = 0;
 
@@ -495,6 +497,28 @@ export class Engine {
     this.sceneFreeze = true;
     this.gateWaitStart = 0;
     this.gateWaitMs = 0;
+  }
+
+  /**
+   * **阶梯动画调度器**（`0xD3`/`0xD4`/`0xD5` 的引擎侧状态；逐行 raw 锚点见 `./stageLoop.ts`）。
+   *
+   * 引擎里它是散在 `_this` 上的五格 + 一个 `std::vector`（`430668`/`430688`/`430692`/`430672..`），
+   * 这里收成一个对象；消费者是下面的 `serviceStageLoop`。
+   */
+  stage = new StageLoop();
+
+  /**
+   * **阶梯动画调度服务**（引擎 `sub_408F10`，raw 13612-13684；主循环 raw 21154-21156 在
+   * `effect_flags & 0x40` 时每遍调用它）。
+   *
+   * 到点 ⇒ 清 `0x40`、把当前帧 `ip` 指向时间表里的 label（并压返回点 = `i0d5` 自身）
+   * ⇒ 本帧按常规派发那一段；未到点 ⇒ 返回 `false`，调用方**本帧什么都不派发**（门保持置位）。
+   *
+   * @param ignoreTime headless/tracer 档：不做时间判定（恒到点）—— 那些入口的时钟粒度可能与
+   *                   `0xD4` 的 step 同量级，按真实时间会退化成"每帧一步"甚至不推进。
+   */
+  serviceStageLoop(nowMs: number, ignoreTime = false): boolean {
+    return runStageService(this, nowMs, ignoreTime);
   }
 
   /** 墙钟毫秒（= 引擎 timeGetTime()）；由渲染帧循环(renderer)或测试注入。0xCD(get-input-type) 节流用。 */

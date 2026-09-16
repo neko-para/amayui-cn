@@ -404,6 +404,7 @@ call-script 5264  // TITLE
 
 ### 11.5 异步/延迟派发
 - `i143`(0x143)=**消费侧**：扫 `FileDB.packs`（基址 `0xA90C4` = `FileDB+0x3028`；旧名 `request_register`）→`queueScript(40FC90)` 入 `dispatch_queue(0x796DC)`→`dispatchQueuedScripts(40FB60)` 弹出一条（正→帧37装载 / 负→恢复帧）。**语义 = 逐个派发已安装扩展包的 `$n$AUTORUN.BIN`（`n<<24` = 包内文件 #0）**，唯一调用点 `INIT2.txt:140`。`-10` 哨兵链逐条派发；`0x1F5`(帧倒计)/`0x7C`(嵌套返回+一次性派发)/`exit -10`/`queueScript` 均为派发触发点。
+- `0xD3`/`0xD4`/`0xD5` = **按时间表分次派发（"阶梯动画"）**：`i0d3` 清表、`i0d4 <step> <count> <body> <tail>` 追加条目（时刻跨调用累计）、`i0d5` 起表并置 `effect_flags & 0x40`（**本条不前进**）⇒ 主循环 raw 21154-21156 每遍调 `sub_408F10`，到点就把 `pc` 指到条目入口（脚本体 `ret` 回到 `i0d5`，于是"循环"）。与 §11.4 的跳转不同：**派发时机由时钟决定，不由脚本决定**。机制长文见 [engine-reset-mainloop.md](./engine-reset-mainloop.md) §B.6。
 
 ### 11.6 预装帧协作
 - SYSTEM4 `load-frame`(0x6) 预装 `DRAWTOOLTIP(26)/DRAWORN(28)/ATSEEK(29)/SETROUTE(30)/MVSEEK(31)` → 游戏脚本 `call-frame <帧号>`(0x8) 调用 → 跑完 `exit` 返回调用帧。**`0xAE` 是「存档续档」机制**（读存档版本、续档回到存档时活跃脚本帧、或载入对应场景脚本），**与预装帧无关**。
@@ -413,6 +414,7 @@ call-script 5264  // TITLE
 |---|---|---|
 | exit(0x2)/call-script(0x3)/ret(0x5)/exit-script(0x9)/jmp(0x8C)/jcc(0xA0)/call-frame(0x8)/i143(0x143) | 已读体确证 | —— |
 | call(0x8F) | 已读体确证（本表新增，入数据层） | 返回地址编码 `((ip-start)>>2+3)` 精确语义 |
+| 0xD3/0xD4/0xD5(阶梯动画时间表) | 已读体确证（handler + 消费者 `sub_408F10` + 主循环 `0x40` 门）+ **E3 真语料** | 输入打断 label 支（语料 7/7 = -1，不可达）；`Depth が不正です` 抛异常未复刻（emulator 记日志 + 放弃该表） |
 | 0xAE(版本分支) | 已读体（**已定性=存档续档**） | 目标帧=存档时活跃场景脚本帧（快照 `_this[140457]/[151210]/[129624]` 首字段，由 `sub_40CD10` 一族存档时写入）；**与预装帧 26/28–31 无关**；快照写入方/存档流程未全展开 |
 | `sub_40EA00`(release frame) | **未建模** | 帧释放/复用生命周期 |
 | `sub_410160`(save-version load, 置 -11) | **未建模** | save-version 装载体 |

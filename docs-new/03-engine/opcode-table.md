@@ -191,9 +191,9 @@
 | 0xD0 | 1 |  | sub_42E910 | 仅映射 |  |
 | 0xD1 | 0 |  | sub_419940 | 仅映射 |  |
 | 0xD2 | 1 |  | sub_421A50 | 仅映射 |  |
-| 0xD3 | 0 |  | sub_42AC40 | 仅映射 |  |
-| 0xD4 | 4 |  | sub_42E940 | 仅映射 |  |
-| 0xD5 | 1 |  | sub_42ACC0 | 仅映射 |  |
+| 0xD3 | 0 |  | sub_42AC40 | 已核对 | **阶梯动画时间表：清空**（机制长文见 [engine-reset-mainloop.md](./engine-reset-mainloop.md) §B.6）。`_this[107672] = -1`（写游标）、`_this[107667] = -1`（输入打断 label）、`_this[107673] = 0`（当前下标）、`begin == end`（清 16 字节记录的 vector）。`95805 = 1` ⇒ 本条只前进自己。handler=sub_42AC40（raw 36668-36685）。语料 **7 处**（`SAVE` / `HISTORY` / `ADDEXP` / `BTL`×4，形态全同）。emulator：`OPS` 的 `op_stage_reset`（`vm/stageLoop.ts` + `vm/handlers/stage.ts`），守卫 `test/stage-loop.test.ts` |
+| 0xD4 | 4 |  | sub_42E940 | 已核对 | **阶梯动画时间表：追加条目**。op1 = 与**上一条**的间隔 ms（第一条相对起表时刻）、op2 = 条目数、op3 = 到点入口 label、**op4 = "已落后于时间表"时改用的入口 label**。★操作数 3/4 是 label（反汇编器一侧 `scripts/asm/age-shared.mjs` 的 `isLabelArgument` 早已按 `opcode===0xD4 && x>=2` 渲染；`script/bin.ts` 的 `labelTargets` 也随之修正为 `[2,3]`）。每条 16B 记录 `{t = 上一条 t + op1, 100, op3, op4}`，时刻**跨多次 `i0d4` 继续累计**（raw 38838-38845）⇒ 语料靠它把"重活 N 次 + 收尾 2 次"拼成一条时间轴。`op2 <= 0` ⇒ 不追加。handler=sub_42E940（raw 38801-38905）。语料 **20 处**：`SAVE.txt:1645-1646`、`HISTORY.txt:956-958`、`ADDEXP.txt:107-109`、`BTL.txt:3432-3434 / 3964-3966 / 4436-4438 / 4817-4819`。emulator：`op_stage_add`，守卫 `test/stage-loop.test.ts` |
+| 0xD5 | 1 |  | sub_42ACC0 | 已核对 | **阶梯动画时间表：起表 + 置 `0x40` 门**。op1 = 输入打断 label（**全语料 7/7 处 = `ffffffff`**，即不打断）。三段：① `95805 = 0` ⇒ **本条不前进** —— `i0d5` 就是时间表的**循环回边**（脚本体 `ret` 回到它）；② **只在 `index == 0` 时**：刷输入（`sub_478090` 消费刷 + `sub_477220`）、记 op1 与 `frames[cur][95796]`（脚本身份，供 `sub_408F10` 的 `Depth が不正です` 校验）、`sub_453A90` 起 ms 计时器、`sub_42A180` 按时刻排序；③ `index < 写游标` ⇒ `effect_flags \|= 0x40`（调度器接管），否则 `95805 = 3` 让脚本往下走。★**派发次数 = 条目数 − 1**（最后一条是"收尾哨兵"，只负责让 ③ 在正确时刻失效 —— `HISTORY` 写 `4+1+2=7` 条而实际派发 6 次，正好对应 `local 492` 从 0 数到 5 的缓动取样点）。handler=sub_42ACC0（raw 36689-36727）；**消费者** `sub_408F10`（raw 13612-13684，主循环 raw 21154-21156 在 `flags & 0x40` 时每遍调它）。emulator：`op_stage_run` + `frame/loop.ts` 的 `stage` 门分支，守卫 `test/stage-loop.test.ts`（含真语料 E3：SAVE.BIN 实测 31 次派发 / 481 ms） |
 | 0xD6 | 6 |  | sub_42EB80 | 仅映射 |  |
 | 0xD7 | 1 |  | sub_421AF0 | 仅映射 |  |
 | 0xD8 | 2 |  | sub_421AA0 | 仅映射 |  |

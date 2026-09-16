@@ -151,7 +151,7 @@ export interface ReportLoopWiring {
 export function reportLoopOptions(w: ReportLoopWiring): FrameLoopOptions {
   /** 门分支与前两条"占一帧"的分支一样：本帧不派发、只让时钟前进。 */
   const consumesFrame = (b: FrameBranch): boolean =>
-    b === 'anim' || b === 'sleep' || b === 'text-reveal' || b === 'advance';
+    b === 'anim' || b === 'sleep' || b === 'text-reveal' || b === 'advance' || b === 'stage';
   /** 见 `ReportLoopWiring.boundaryEverySteps`（★不是驱动的 `maxStepsPerFrame`）。 */
   const boundaryEverySteps = w.boundaryEverySteps ?? 4096;
   let branch: FrameBranch = 'batch';

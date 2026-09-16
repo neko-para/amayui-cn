@@ -10868,5 +10868,61 @@
     ],
     "evidence": "raw 34677-34696",
     "notes": "语料 1 文件。emulator 见 live2d/runtime.ts 的 l2dNodeTranslationWin。"
+  },
+  {
+    "addr": "0x408F10",
+    "raw_name": "sub_408F10",
+    "semantic_name": "stageStepper_408F10",
+    "status": "ANALYZED",
+    "purpose": "阶梯动画时间表的**消费者/调度器**（主循环 raw 21154-21156 在 `effect_flags & 0x40` 时每遍调它）：① 刷输入（`sub_478090` 消费刷进 Engine+699208，有输入且 430668 登记了打断 label 则把 pc 指过去并清门）；② 读计时器 `sub_453BB0`(= now - 起点 ms)，取表[index]，`v6 = t - elapsed`：>=50 ⇒ Sleep(1) 后 return（本遍不派发）；<50 ⇒ `Sleep(v6)` 把时钟推到目标时刻、清 0x40、压返回点（`sub_405360(this,0)`）、`pc = ip_base + 4*入口`、++index。入口 = `v8 ? 记录[3] : 记录[2]`，`v8 = (还有下一条) && (下一条.t - elapsed < 0)` = 已落后。派发前校验 `frames[cur][95796] == 430708`，不等抛 ShowMessage「Depth が不正です %s != %s」。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["刷输入(消费刷) → Engine+699208；有输入且 430668 != -1 ⇒ pc = base+4*430668 且清 0x40", "计时器 sub_453BB0(Engine+429928) = timeGetTime() - 起点", "未到点(v6>=50) ⇒ Sleep(1) 后返回，门保持置位（主循环本遍不派发任何脚本指令）", "到点(v6<50) ⇒ Sleep(v6) → 清 0x40 → 压 i0d5 的偏移(sub_405360) → pc = 表[index] 的入口 → ++index", "落后判据 v8 ⇒ 选记录 dword2(body) 还是 dword3(tail)", "Depth 校验：frames[cur][95796] != 430708 ⇒ 抛 Command_ShowMessage", "表用完（(end-begin)>>4 <= index）⇒ 什么都不做（脚本在 i0d5 处已继续推进）"],
+    "fields_used": ["this->effect_flags (699204, bit 0x40)", "this->stage_exit_label (430668)", "this->stage_entries (430672/430676/430680 = std::vector begin/end/cap)", "this->stage_index (430692)", "this->stage_script_id (430708)", "this->input_state (699208)", "this->frames[cur_script].script_id (95796)"],
+    "unmodeled": ["Sleep(v6) 的真实睡眠（emulator 帧粒度 ⇒ 等价为「帧时钟到点才算到点」）", "Depth 校验的抛异常（emulator 记一行日志 + 放弃该表，不把异常抛进会话）"],
+    "evidence": "raw 13612-13684（sub_408F10 全文）；主循环调用点 raw 21154-21156；配套 sub_453A90(66115)/sub_453BB0(66215)/sub_405360(11031)/sub_42A180(36219)",
+    "notes": "★主循环里 `0x40` 那一支只有两句，但它是 0xD3/0xD4/0xD5 三条指令的整套运行时。两条口径必须记住：① **派发次数 = 条目数 − 1**（`i0d5` 的 `index < 写游标`，写游标 = 条目数 − 1）；② 到点的净效果是「等时钟推到 t 再派发」（`Sleep(v6)`），所以 emulator 用「帧时钟 >= t」等价。emulator 对应 `src/vm/stageLoop.ts` 的 `runStageService` + `Engine.serviceStageLoop` + `frame/loop.ts` 的 stage 分支；守卫 `test/stage-loop.test.ts`。详见 docs-new/03-engine/engine-reset-mainloop.md §B.6。"
+  },
+  {
+    "addr": "0x42AC40",
+    "raw_name": "sub_42AC40",
+    "semantic_name": "op_stage_reset_42AC40",
+    "op": "0xd3",
+    "status": "ANALYZED",
+    "purpose": "op 0xD3（argc 0）：**清空阶梯动画时间表**。`95805=1`；写游标 `_this[107672](byte 430688) = -1`；输入打断 label `_this[107667](430668) = -1`；当前下标 `_this[107673](430692) = 0`；若 `begin(430672) != end(430676)` 则把 end 拉回 begin（清 vector），返回旧 end（调用方不消费）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["95805 = 1（本条只前进自己）", "写游标 = -1 / 打断 label = -1 / 下标 = 0", "begin == end（清 16B 记录的 std::vector）"],
+    "fields_used": ["this->stage_build_cursor (430688)", "this->stage_exit_label (430668)", "this->stage_index (430692)", "this->stage_entries (430672/430676)"],
+    "unmodeled": ["返回值（旧 end 指针，调用方零消费）"],
+    "evidence": "raw 36668-36685",
+    "notes": "与 0xD4(追加) / 0xD5(起表) 组成一套「时间表」小语言，机制见 docs-new/03-engine/engine-reset-mainloop.md §B.6。语料 7 处（SAVE / HISTORY / ADDEXP / BTL×4）。emulator: OPS 的 op_stage_reset（src/vm/handlers/stage.ts → src/vm/stageLoop.ts 的 StageLoop.reset）。"
+  },
+  {
+    "addr": "0x42E940",
+    "raw_name": "sub_42E940",
+    "semantic_name": "op_stage_add_42E940",
+    "op": "0xd4",
+    "status": "ANALYZED",
+    "purpose": "op 0xD4（argc 4）：**向阶梯动画时间表追加条目**。`95805=9`；`n = readIntOperand(2)`（条目数）；若 n>0：循环 n 次，每次 `t = 上一条的 dword0 + readIntOperand(1)`（第一条的基准是 0 ⇒ t = op1），记录 = `{t, 100, readIntOperand(3), readIntOperand(4)}`，按 t 有序插入 vector 并把写游标 `_this[107672]` +1。op1 = 间隔 ms、op3 = 到点入口 label、op4 = 「已落后」时改用的入口 label（操作数 3/4 是 label，反汇编器 `isLabelArgument` 对 0xD4 的 `x>=2` 就是它）。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["95805 = 9（1 + 2*4）", "n = op2；n <= 0 ⇒ 循环体一次都不执行", "t 相对**上一条**累计（v2 = 上一条的 dword0；cursor == -1 时 v2 = 0）", "记录 = {t, 100, op3, op4}（dword1 恒 100）", "有序插入（sub_428580 插入 + sub_428810/42A0B0 扩容；追加本身升序 ⇒ 恒插在末尾）", "写游标 _this[107672] 每条 +1"],
+    "fields_used": ["this->stage_entries (430672/430676/430680)", "this->stage_build_cursor (430688)"],
+    "unmodeled": ["插入排序/扩容细节（emulator 用数组 push + 起表时一次稳定排序）"],
+    "evidence": "raw 38801-38905",
+    "notes": "语料 20 处：SAVE.txt:1645-1646、HISTORY.txt:956-958、ADDEXP.txt:107-109、BTL.txt:3432-3434/3964-3966/4436-4438/4817-4819。★步长/条数可以是**变量**（BTL 用 `(local-int 1034)/(local-int 1035)` 做「每个单位错开一步」的入场）。emulator: op_stage_add → StageLoop.add。"
+  },
+  {
+    "addr": "0x42ACC0",
+    "raw_name": "sub_42ACC0",
+    "semantic_name": "op_stage_run_42ACC0",
+    "op": "0xd5",
+    "status": "ANALYZED",
+    "purpose": "op 0xD5（argc 1）：**起表 + 置 0x40 门**。① 先把本帧槽状态置 0（`95805=0` ⇒ **本条不前进**，`i0d5` 就是时间表的循环回边）；② 只在 `_this[430692](index) == 0` 时：`v2 = Engine+699208` → `sub_478090`(消费刷) → `sub_477220`(鼠标键按下 ⇒ `_this[7792]=1`) → 清 `*v2`；记 `_this[430668] = readIntOperand(1)`（输入打断 label）；`430704/430708 = frames[cur][95796]`（脚本身份）；`sub_453A90(Engine+429928)` 起 ms 计时器；`sub_42A180(begin, end, (end-begin)>>4)` 按 t 排序；③ `index < _this[430688]`（写游标 = 条目数 − 1）⇒ `effect_flags |= 0x40`（不给 95805 ⇒ 不前进），否则 `95805 = 3` 让脚本往下走。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["95805 先置 0（不前进），后面按判据改成 3", "index == 0 时才做一次性 setup（刷输入 / 记打断 label / 记脚本身份 / 起计时器 / 排序）", "index < 写游标 ⇒ effect_flags |= 0x40；否则 95805 = 3（脚本继续）", "★派发次数 = 条目数 − 1（走完最后一条时 index == 写游标 ⇒ 不再置门）"],
+    "fields_used": ["this->stage_index (430692)", "this->stage_build_cursor (430688)", "this->stage_exit_label (430668)", "this->stage_script_id (430704/430708)", "this->effect_flags (699204)", "this->input_state (699208)", "this->timer (429928)"],
+    "unmodeled": ["sub_477220 的鼠标键按下锁存 _this[7792]/[1948]（唯一读者在 WndProc 鼠标移动路径，emulator 不建模消息泵）"],
+    "evidence": "raw 36689-36727（sub_42ACC0 全文）；消费者 sub_408F10 raw 13612-13684；主循环 raw 21154-21156",
+    "notes": "★op1 是输入打断 label，**全语料 7/7 处 = ffffffff**（`i0d5 ffffffff`）⇒ 打断支不可达，只表现为「阶梯动画期间挂起输入被吃掉」。emulator: op_stage_run（置 STAGE_GATE + `c.jump(c.frame.ip)` = 停在同一条指令）。"
   }
+
 ]

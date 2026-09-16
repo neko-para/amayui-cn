@@ -148,7 +148,11 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
       case 0xfb:
         return [0];
       case 0xd4:
-        return [0];
+        // ★`0xD4` 的 label 是**操作数 3 与 4**（不是操作数 1）：反汇编器一侧的同一口径见
+        //   `scripts/asm/age-shared.mjs` 的 `isLabelArgument`（`opcode === 0xD4 && x >= 2`）。
+        //   旧值 `[0]` 把"间隔 ms"当成了 label —— 该集合此前只被工具读，VM 不受影响（`frame.labelMap`
+        //   是**全部**指令下标），但会让 label 目标集合漏掉 i0d4 的两个真实目标。
+        return [2, 3];
       case 0x90:
         return [];
       case 0x7b:

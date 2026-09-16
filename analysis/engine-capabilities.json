@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 125,
-    "modeled-verified": 41,
+    "total": 126,
+    "modeled-verified": 42,
     "modeled-unverified": 8,
     "partial": 28,
     "absent": 22,
@@ -128,7 +128,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/frame-loop.test.ts",
-        "note": "2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates 三档（anim/sleep/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。"
+        "note": "2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 \u001bffect_flags 门（0x400/0x1000000…）与主循环里 "
       }
     },
     {
@@ -3656,6 +3656,42 @@
         "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。"
       },
       "evidence": "E4"
+    },
+    {
+      "id": "stage-stepper-0x40-gate",
+      "subsystem": "帧循环",
+      "name": "阶梯动画时间表（0x40 门 + sub_408F10 调度器）",
+      "trigger": "脚本 `i0d5`(0xD5) 置 `effect_flags`(Engine+699204) 的 `0x40` 位；主循环每遍 `if (flags & 0x40) sub_408F10(_this)`",
+      "engine": {
+        "fns": [
+          "sub_42AC40",
+          "sub_42E940",
+          "sub_42ACC0",
+          "sub_408F10",
+          "sub_405360",
+          "sub_453A90",
+          "sub_453BB0"
+        ],
+        "raw": "13612-13684"
+      },
+      "reads": [
+        "Engine+699204",
+        "Engine+430668",
+        "Engine+430672",
+        "Engine+430688",
+        "Engine+430692",
+        "Engine+430708",
+        "Engine+699208",
+        "frames[cur]+95796"
+      ],
+      "whySilent": "门置位期间主循环**不派发任何脚本指令**（`Sleep(1)` 后重试）⇒ 时间表不被消费时界面只是「卡住/动画不推进」，没有任何报错；反过来，若 0xD3/0xD4/0xD5 被当 no-op 跳过，脚本会一路落到 `i0d5` 之后的 `ret`，**整段阶梯动画瞬间跳过、状态照旧推进**，同样不报错。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/stage-loop.test.ts",
+        "note": "2026-09 实现：`src/vm/stageLoop.ts`（`StageLoop` 状态 + `runStageService` = `sub_408F10`）、`src/vm/handlers/stage.ts`（0xD3 `reset` / 0xD4 `add` / 0xD5 `run`，0xD5 用 `c.jump(c.frame.ip)` 表达「本条不前进」）、`Engine.serviceStageLoop`、`frame/loop.ts` 的新门分支（`gates.stage: 'wait' | 'ignore'`，默认 `'wait'`；`STAGE_GATE` 同时进了派发批的 break 条件，否则 `i0d5` 会被反复重执行）。两条口径按 raw 逐行对齐：① **派发次数 = 条目数 − 1**（`index < 写游标`；HISTORY 写 7 条派发 6 次，正对应 `local 492` 0..5 的缓动取样）；② 到点 = **帧时钟 >= t**（引擎的 `Sleep(v6)` 把时钟精确推到 t，帧粒度下等价；`v6 >= 50` 那一档只是「一次别睡太久」）。守卫 E3：`SAVE.BIN` 的 `label_0000706c` 段（`i0d3`+`i0d4`×2+`i0d5`，32 条目）实测 **31 次派发**、最后一条到期于 **481 ms**、摊在 **31 帧**上；另有三条合成脚本守卫锁「落后入口 `op4`」「未到点不消费」「`stage:'ignore'` 零时钟也能跑完」。★未建模（已登记）：输入打断 label 支（全语料 7/7 = -1，不可达）、`sub_477220` 的 `_this[7792]/[1948]` 锁存（唯一读者在 WndProc 鼠标路径）、`Depth が不正です` 的抛异常（emulator 记日志 + 放弃该表，不把异常抛进会话）。"
+      }
     }
   ]
 }
