@@ -20,21 +20,88 @@ import type { Engine } from '../engine.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../ops.js';
 
-/** 从槽文件里恢复状态（`0x1A1` / `0x19F`）。返回引擎的结果码（0 成功 / 1 打不开 / 2 解析失败）。 */
-export async function loadSlotIntoEngine(e: Engine, slot: number): Promise<number> {
+/**
+ * **读档 = 一次控制转移，不是一次普通函数调用**（`tickets/T-0056`）。
+ *
+ * 引擎 `sub_410160` 在**全量档**（`a6=1`，即 `0x1A1`/`0x190`）里做了这些事（raw 19464-19476）：
+ * ```
+ * qmemcpy(Engine+84088, Engine+497416, 0x28);   // 把存档里的字体/消息窗状态拷回
+ * sub_4B5090(Engine+82876);                     // 文本/窗口子系统复位
+ * sub_403EF0(Engine+51904); sub_403EF0(Engine+21976);   // 两张面板复位（路由表清空）
+ * v20 = sub_455000(FileDB, String2);            // ★解析**存档里记录的脚本名**
+ * Engine[383120] = 1;                           // 「正在读档」门（`0xAE` 读它）
+ * Engine[383104] = 0;                           // ★cur = 0（回到根帧）
+ * if (v20 < 0) { sub_40F750(Engine, 1, 10); return 0; }   // 解析不出 ⇒ 另走装载
+ * ... 装载 v20 到帧 0（LABEL_136）
+ * ```
+ * ⇒ **调用方脚本被放弃**：SAVE.BIN 那类界面脚本不会在 `0x1A1` 之后继续跑。
+ *
+ * ★这不是"实现细节"，而是**必须**的：不转移的话，调用方脚本会带着"上一个子脚本（如 SBUNKI，
+ * id 54）留下的鼠标回调身份"继续跑它的 `get-input-type` 主循环 ⇒ 命中 `0xCD` 的
+ * `Depth が不正です` 守卫并**硬报错**（实测症状：存档界面点一个槽 → 确认"要读取吗" → 报错）。
+ * 脚本作者自己也清楚这一点：**存档**路径（`SAVE.txt:1153 mov (local-int e) 4`）会显式让主循环
+ * **重新登记**回调，而**读档**路径（`label_000039cc` → `ret`）没有 —— 它依赖的就是这里的控制转移。
+ *
+ * emulator 的边界（见 `SLOT_GAPS`）：本工程**不解析存档里记录的那个脚本名**（真槽的状态主体布局未分析）
+ * ⇒ 退回"重载根脚本 0、由启动链接管"（与 `exit-script` 同口径）。可续档的本工程格式（带状态块）
+ * 不走这里 —— 那条路能直接按 `scriptId/ip` 续上，见 `loadSlotIntoEngine`。
+ */
+async function transferToRootAfterLoad(e: Engine): Promise<void> {
+  // 面板 + 文本/窗口复位（raw 19466-19468）。panelB（`Engine+21976`）在 emulator 未建模。
+  e.routes.reset(); // = sub_403EF0(panelA)
+  e.msgwin.reset(); // ≈ sub_4B5090（文本/窗口对象复位）
+  e.native.msgWinClearAll?.(); // 宿主侧文本图层同清（与 exit-script 同口径）
+  // 「正在读档」门：`0xAE`（存档版本分支）读的就是它。语料里 `0xAE` 出现 0 次 ⇒ 这里只如实置位。
+  e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
+  e.cur = 0; // ★引擎 `Engine[383104] = 0`
+  // 引擎在这里装载**存档记录的脚本**；本工程解析不了那一块 ⇒ 重载根脚本、让启动链重新接管。
+  const boot = await e.fileSource?.readScript?.(0);
+  if (!boot) {
+    // 根脚本都读不到：保持 `cur = 0`（帧 0 原样），不假装装载成功。
+    e.native.log('[slot-load] 读档后读不到根脚本 0 ⇒ 只切回帧 0（缺口见 SLOT_GAPS）');
+    return;
+  }
+  loadScriptIntoFrame(e.frames[0]!, parseScriptBytes(boot.data), boot.name, 0);
+  e.native.log('[slot-load] 控制转移：cur=0 + 重载根脚本（引擎此处装载存档记录的脚本；见 SLOT_GAPS）');
+}
+
+/** 「正在读档」门：`Engine+383120`（元素 95780）。`0xAE`（`handlers/frame.ts`）读它。 */
+export const LOAD_IN_PROGRESS_FLAG = 95780;
+
+/** `loadSlotIntoEngine` 的结果：状态码 + 是否发生了控制转移（`transferredTo = null` = 没有转移）。 */
+export interface SlotLoadOutcome {
+  /** 0 成功 / 1 打不开 / 2 解析失败（与引擎 `sub_410160` 的返回同尺度）。 */
+  code: number;
+  /** 转移后应当落到的 ip（引擎 `cur = 0` ⇒ 根脚本的 ip）；`null` = 不转移，调用方继续跑。 */
+  transferredTo: number | null;
+}
+
+/** 从槽文件里恢复状态（`0x1A1` / `0x19F`）。返回状态码 + 是否控制转移（见 `transferToRootAfterLoad`）。 */
+export async function loadSlotIntoEngine(
+  e: Engine,
+  slot: number,
+  opts: { full?: boolean } = {},
+): Promise<SlotLoadOutcome> {
+  const full = opts.full ?? true; // `0x1A1`/`0x190` 是 a6=1（全量）；`0x19F` 是 a6=0（不转移）
   const fs = e.fileSource;
-  if (!fs?.readSaveSlot) return 1;
+  if (!fs?.readSaveSlot) return { code: 1, transferredTo: null };
   const bytes = await fs.readSaveSlot(slot);
-  if (!bytes) return 1;
+  if (!bytes) return { code: 1, transferredTo: null };
   const parsed = parseSlotFile(bytes);
-  if (!parsed.ok) return 2;
-  const { tables, usage, state } = parsed.data;
+  if (!parsed.ok) return { code: 2, transferredTo: null };
+  const { tables, usage, state, engineFormat } = parsed.data;
 
   // ① 两张表（`load-int`/`load-string` 的数据源）与「已使用文件」标志 —— 引擎 `sub_410160` 的还原内容之一。
-  e.applySaveDataTables(tables);
-  e.setUsedFileIds(usage.usedFileIds);
+  //   ★**只有真读出来才写**：引擎格式（真游戏）槽的这两块未解析（`SLOT_GAPS`）⇒ `tables`/`usedFileIds`
+  //   都是空的；拿空数据覆盖会把当前的 SAVE.DAT 表（含 `global 5`「已初始化」标志）与「已使用文件」标志
+  //   （回想/CG/BGM 解锁的依据）**洗掉**。修前就是这样（读一次真槽 ⇒ 已初始化标志归零 ⇒ 下次启动重走
+  //   INITCONFIG、鉴赏列表全空）。
+  if (!engineFormat) {
+    e.applySaveDataTables(tables);
+    e.setUsedFileIds(usage.usedFileIds);
+  }
 
-  // ② 本工程状态块（真游戏槽没有 ⇒ 到这里为止；见 `SLOT_GAPS`）。
+  // ② 本工程状态块（**只有我们自己写的槽才有**：真游戏槽、以及早期没写尾块的槽都是 null，见 `SLOT_GAPS`）。
   if (state) {
     e.key = state.key >>> 0;
     e.globals.int = new Map(state.globals.int);
@@ -57,14 +124,20 @@ export async function loadSlotIntoEngine(e: Engine, slot: number): Promise<numbe
     }
     e.cur = state.cur;
     e.playSeconds = state.playSeconds;
-  } else {
-    // ③ 引擎格式的槽（真游戏写的）：状态主体未解析（`SLOT_GAPS`），但**游玩秒数在头里**（`+280`）
-    // ⇒ 至少把它接上：引擎装载时把 `+280` 存进容器 `[260]`、再把 `[259] = [260]`、`[258] = now`
-    // （raw 45085 / 45099），下次存档算的是 `[1036] - [1032] + timeGetTime()/1000`（raw 44812）——
-    // 不接的话读真槽再存档会让 +280 从 0 重新开始。
-    e.playSeconds = parsed.data.header.playSeconds;
+    return { code: 0, transferredTo: null }; // 能直接续档 ⇒ 不转移（本工程格式的既定口径）
   }
-  return 0;
+  // ③ 引擎格式的槽（真游戏写的）/ 没有状态块的槽：状态主体未解析（`SLOT_GAPS`），但**游玩秒数在头里**（`+280`）
+  // ⇒ 至少把它接上：引擎装载时把 `+280` 存进容器 `[260]`、再把 `[259] = [260]`、`[258] = now`
+  // （raw 45085 / 45099），下次存档算的是 `[1036] - [1032] + timeGetTime()/1000`（raw 44812）——
+  // 不接的话读真槽再存档会让 +280 从 0 重新开始。
+  e.playSeconds = parsed.data.header.playSeconds;
+  // ★**续不上就必须控制转移**（见 `transferToRootAfterLoad`）：本工程格式没有状态块时同样续不上。
+  //   不转移 ⇒ 调用方脚本继续跑 ⇒ `0xCD` 的脚本身份守卫会因"上一个子脚本留下的鼠标回调身份"硬报错。
+  if (full) {
+    await transferToRootAfterLoad(e);
+    return { code: 0, transferredTo: e.curScript().ip };
+  }
+  return { code: 0, transferredTo: null }; // `0x19F`（a6=0）：引擎此处**不**转移（语料 0 处）
 }
 
 /** 把当前状态写进一个槽（`0x19E`）。返回引擎的结果码（0 成功 / 1 写不了 / 2 失败）。 */
@@ -144,14 +217,21 @@ const op_slot_read_header: OpHandler = async (c) => {
 const op_slot_load: OpHandler = async (c) => {
   const e = c.e;
   const slot = readIntOperand(e, c.frame, c.instr, 2);
-  await loadSlotIntoEngine(e, slot); // 失败静默（引擎同：`return 1` 被调度器丢弃）
+  // 失败静默（引擎同：`sub_410160` 的返回值被调度器丢弃）。
+  const { transferredTo } = await loadSlotIntoEngine(e, slot, { full: true });
+  // ★控制转移（引擎 `sub_410160` 的 a6=1 段）：`cur` 已切到根脚本并重载 ⇒ 本帧从它的 ip 继续，
+  //   调用方脚本（SAVE.BIN 一类）到此被放弃。**必须 `jump`**：不跳的话 `stepOnce` 会把
+  //   `e.curScript()`（= 刚重载的根脚本）的 ip 从 0 自增到 1，吃掉根脚本的第一条指令。
+  if (transferredTo !== null) c.jump(transferredTo);
 };
 
 /** `0x19F`（`sub_42DB10` raw 38334-38363）：读档（`a6=a7=0`：不还原字体/额外块）。★写 op1（引擎 raw 38362）。 */
 const op_slot_load_short: OpHandler = async (c) => {
   const e = c.e;
   const slot = readIntOperand(e, c.frame, c.instr, 2);
-  writeIntOperand(e, c.frame, c.instr, 1, await loadSlotIntoEngine(e, slot));
+  // a6=0 ⇒ 引擎此处**不转移**（只还原两张表；语料 0 处）。
+  const { code } = await loadSlotIntoEngine(e, slot, { full: false });
+  writeIntOperand(e, c.frame, c.instr, 1, code);
 };
 
 /**

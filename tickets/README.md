@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **55** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **43** · 🚫 dropped **1**（P0 5 / P1 13）
+共 **56** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **44** · 🚫 dropped **1**（P0 5 / P1 14）
 
-按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/vm` 3 · `emulator/hosts` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1
+按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1
 
 ## 🔜 doing（1）
 
@@ -32,7 +32,7 @@
 | [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | — | — |
 | [`T-0053`](./T-0053/ticket.json) | P3 | req | `emulator/hosts` | 0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现 | 5 | — | — | — |
 
-## ✅ done（43）
+## ✅ done（44）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -54,6 +54,7 @@
 | [`T-0037`](./T-0037/ticket.json) | P1 | bug | `emulator/adv` | ADV 逐字显现期间注音（振假名）提前显示：注音没有和它本文词的**末字**同步出现 | 3 | `app/amayui-emulator/test/text-layout.test.ts` | `changes.md` | — |
 | [`T-0038`](./T-0038/ticket.json) | P1 | bug | `emulator/adv` | ADV 行距没实现：换行步进少了 Font+1380（i08b），注音压到上一行字上 | 4 | `app/amayui-emulator/test/text-layout.test.ts` `app/amayui-emulator/test/engine-field-store.test.ts` | `changes.md` | — |
 | [`T-0044`](./T-0044/ticket.json) | P1 | bug | `translation/src` | BTL/FIELD/HISTORY/MENU/SELBOMB/TITLE 的 src 缺 label 定义行 ⇒ assemble 骨架校验红、这 6 个脚本… | 4 | `scripts/check-skeleton.mjs` | — | — |
+| [`T-0056`](./T-0056/ticket.json) | P1 | bug | `emulator/vm` | 读档崩在 `Depth が不正です 51 != 54`（读档不是普通还原，而是控制转移）+ 该错误在控制面版看不到 | 6 | `app/amayui-emulator/test/slot-load-transfer.test.ts` `app/amayui-emulator/test/control-error-banner.test.ts` `app/amayui-emulator/test/save-slot-chain.test.ts` `app/amayui-emulator/test/save-slot.test.ts` | `notes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |

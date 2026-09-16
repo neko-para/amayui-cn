@@ -185,7 +185,7 @@ SAVE.DAT (160,640 B) format=3
 | int 块（存档槽）的模幂还原 `sub_499650` | ❌ 未实现（也不需要：鉴赏进度只要"槽值非 0"） |
 | 扩展包 flag 块（§3.5 的块 B：跨包线性下标 + 256 项换算表） | ❌ 未解（基础版 BGM/CG 全是本体 id ⇒ 不影响本机实测；布局已记在 §3.5） |
 | `RT.DAT`（ADV 回看状态） | ❌ 未建模 |
-| 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ✅ 已实现（`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x19F` 短读 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH`）；真槽（format 1..3）只读头 + 接游玩秒数，状态主体仍是缺口（§7 + `SLOT_GAPS`）；守卫 `test/save-slot.test.ts` |
+| 存档槽（`0x1A1` `sub_42DDE0` / `SAVE%02d.DAT`） | ✅ 已实现（`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x19F` 短读 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH`）；真槽（format 1..3）只读头 + 接游玩秒数，状态主体仍是缺口（§7 + `SLOT_GAPS`）；**`0x1A1` 的控制转移已实现**（§7.1，`tickets/T-0056`）；守卫 `test/save-slot.test.ts` + `test/save-slot-chain.test.ts` + `test/slot-load-transfer.test.ts` |
 
 **玩家数据怎么落地（overlay）**——引擎的"系统存档目录"里既有存档也有配置，emulator 对它的**一切访问**走同一层：
 
@@ -279,7 +279,49 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 - `SLOT_GAPS`（诚实边界，别当保证）：① 真槽（format 1..3）的状态主体没解析（只接游玩秒数 + 空表）；
   ② 只还原"当前帧 + 调用栈上的帧"；③ `0x19E` 的覆盖确认框没建模（宿主无对话框 ⇒ 恒等于"点了是"）；
   ④ `.STH` 已解（320×180 24bpp BMP；`tickets/T-0036`），仍未做的是 DrawMode==1 的截图分支；
-  ⑤ 按名读档族（`0x190`/`0x0AA`/`0x0AB`/`0x0AC`）未实现（语料 0 次）。
+  ⑤ 按名读档族（`0x190`/`0x0AA`/`0x0AB`/`0x0AC`）未实现（语料 0 次）；
+  ⑥ ★**读档续不到存档当时的场景位置** —— 见 §7.1（本工程不解析真槽里"存档记录的脚本名 + 帧 ip 表"）。
+
+### 7.1 ★读档不是"恢复两张表"，而是**控制转移**（`tickets/T-0056`）
+
+`0x1A1`（全量档 `a6=1`）的装载内核 `sub_410160` 在搬完各块之后**还会换掉当前脚本**（raw 19464-19476）：
+
+```c
+qmemcpy(Engine+84088, Engine+497416, 0x28);          // 字体/消息窗状态拷回
+sub_4B5090(Engine+82876);                            // 文本/窗口子系统复位
+sub_403EF0(Engine+51904); sub_403EF0(Engine+21976);  // 两张面板复位（路由表清空）
+v20 = sub_455000(FileDB, String2);                   // ★解析**存档里记录的脚本名**
+Engine[383120] = 1;                                  // 「正在读档」门（0xAE 读它）
+Engine[383104] = 0;                                  // ★cur = 0（回根帧）
+if (v20 < 0) { sub_40F750(Engine, 1, 10); return 0; } // 解析不出 ⇒ 另走装载
+... LABEL_136：把 v20 装进帧 0
+```
+
+⇒ **调用方脚本被放弃**：SAVE.BIN 那类界面脚本不会在 `0x1A1` 之后继续被派发。
+`0x19F`（`a6=0` 短读）**不**走这一段（语料 0 处）。
+
+**脚本侧的两条口径正好印证**（这也是"漏了会崩"的原因）：
+
+| 路径 | 收尾 | 为什么 |
+|---|---|---|
+| **存档**（`src/SAVE.txt:1148-1154`） | `… mov (local-int e) 4` + `ret` | `e = 4` ⇒ 主循环跳回 `label_00000e60` **重新登记**全部回调（含 `mouse-callback`） |
+| **读档**（`label_000039cc`，`src/SAVE.txt:921-936`） | `i1a1 …` + `ret` | 不需要重登记 —— 脚本系统已被上面的控制转移复位 |
+
+`mouse-callback`(0xCC) 的 **owner 是全局一格、每次登记都改写**（`sub_421980` raw 30323：`Engine[107674] = frames[cur][95796]`），
+而 `get-input-type`(0xCD) 派发前要用它比对（raw 25861）⇒ 若"读档后调用方接着跑"，
+它就会带着**上一个子脚本**（确认框 `SBUNKI.BIN`，id 54，`SBUNKI.txt:118`）留下的身份去比对，
+撞上 `Depth が不正です 51 != 54`。emulator 修前正是这样（把读档当普通还原）⇒ 用户实测的崩溃。
+
+**emulator 实现**（`src/vm/handlers/save-slot.ts` 的 `transferToRootAfterLoad`）：面板/文本复位 + 置
+`Engine+383120` 门 + `cur = 0` + **重载根脚本 0**（引擎那里装的是存档记录的脚本名；本工程解析不了那一块，
+见 `SLOT_GAPS ⑥`）⇒ 启动链重新接管。**本工程格式**（带状态块的槽）仍直接续档、不转移；
+`0x19F` 同样不转移。守卫 `app/amayui-emulator/test/slot-load-transfer.test.ts`（E3：真槽 + 真资源根，
+读档后启动链重新跑到 TITLE 且不抛错）。
+
+★**顺带修的数据破坏**：真槽的两张表与「已使用文件」标志**未解析**（`parseSlotFile` 对 format 1..3 返回
+`engineFormat: true` + 空表）⇒ 修前 `applySaveDataTables(空表)` + `setUsedFileIds(空集)` 会把当前
+`SAVE.DAT` 的表（含 §1 的 `global 5`「已初始化」标志）与解锁标志**洗掉且无报错**；现在只在真读出来时才写。
+
 
 ## 8. 相关
 

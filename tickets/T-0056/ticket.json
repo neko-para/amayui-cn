@@ -1,0 +1,121 @@
+{
+  "title": "读档崩在 `Depth が不正です 51 != 54`（读档不是普通还原，而是控制转移）+ 该错误在控制面版看不到",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "用户实测（`npm run boot:time` 的日志）：存档界面点一个槽 → 确认「要读取吗？」→ **立刻** `[error] Depth が不正です 51 != 54（跨脚本派发 label：热点/回调注册于脚本 id 54，当前 51 SAVE.BIN）`。两个症状：① 读档本身崩了；② **控制面版什么都没显示**，只能翻 `.tmp/amayui-emulator.log`。\n\n根因（raw 逐行核对）：\n1. `SAVE.txt:219` 登记 `mouse-callback 10 label_00001104`（owner = 51 SAVE.BIN）；\n2. 确认框 `call-script 36` → `SBUNKI.txt:118` 又登记一次 `mouse-callback`（owner = **54 SBUNKI**）；\n3. SBUNKI `exit` 后回 SAVE.BIN，**它不会重新登记**；\n4. SAVE.BIN 主循环再调 `get-input-type`(0xCD) ⇒ `Engine.guardScriptIdentity` 比对 `54 != 51` ⇒ 抛。\n\n引擎里第 4 步**不可达**：`0x1A1` 的装载内核 `sub_410160` 在 a6=1 段（raw 19464-19476）里 `Engine[383120] = 1` + **`cur = 0`** + 装载**存档记录的脚本** ⇒ **调用方脚本被放弃**。旁证：脚本作者在**存档**路径显式 `mov (local-int e) 4`（`SAVE.txt:1153`）让主循环重新登记回调，而**读档**路径（`label_000039cc` → `ret`）没有 —— 依赖的就是这次控制转移。emulator 此前把读档当「恢复两张表」，于是调用方接着跑，带着子脚本留下的回调身份撞上守卫。\n\n症状②的根因（与控制面版无关的一处小缺陷）：`#onError` 确实上报了错误，但状态上报是**幂等快照**（`notifyStatus()` 不带 override 时 `error: undefined`），而 `run()` 收尾**必再上报一次** ⇒ ⚠️ 横幅在毫秒级被自己擦掉。",
+  "acceptance": [
+    "**读档 = 控制转移**（引擎 `sub_410160` a6=1，raw 19464-19476）：读档成功后 `cur = 0`、置「正在读档」门（`Engine+383120`，`0xAE` 读它）、重载根脚本并从其开头继续；**调用方脚本不再前进**（那一枪打不出来）",
+    "**边界不动**：本工程格式（带状态块）的槽仍**直接续档**（`cur`/`ip`/返回栈/全局池照旧恢复，不转移）；`0x19F`（a6=0 短读，语料 0 处）也**不转移** —— 与引擎同口径",
+    "**顺带修数据破坏**：引擎格式（真游戏）槽的两张表与「已使用文件」标志**未解析**（空）⇒ 不再拿空数据覆盖当前 SAVE.DAT 表与鉴赏解锁标志（修前读一次真槽就把 `global 5`「已初始化」洗成 0、回想/CG/BGM 解锁标志清空）",
+    "**控制面版能看到硬错误**：错误文本**粘住**（`#errorText`），之后每次状态上报都带着它，直到有更明确的文本（override / 暂停提示）或显式清除（跳过未知指令）；`run()` 收尾那一次上报不再擦掉横幅",
+    "**守卫**：`test/slot-load-transfer.test.ts`（3 条；E3 用**真存档槽 + 真资源根**：读档后启动链重新跑到 TITLE 且不抛错；外加边界两条与脚本侧口径棘轮）与 `test/control-error-banner.test.ts`（3 条：优先级纯函数 + 复刻「收尾上报擦掉横幅」的回归 + `session.ts` 接线源码棘轮）",
+    "**台账/文档同步**：`analysis/functions.json#0x410160` 记「a6=1 段是控制转移」；能力台账 `save-slot-chain` 追加 T-0056 段；`SLOT_GAPS` 改写（把「读档无法续到场景位置」作为**明确缺口**写清）；`docs-new/03-engine/save-data.md` 增一节"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(a1 + 383120) = 1;",
+      "line": 19470,
+      "note": "a6=1 段：置「正在读档」门 + 下一行 `Engine[383104] = 0`（cur = 0）+ `sub_455000` 解析存档记录的脚本名 ⇒ **控制转移**（调用方脚本被放弃）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( v6[95796] != *(_DWORD *)(_this + 430696) )",
+      "line": 25861,
+      "note": "0xCD（get-input-type）的脚本身份守卫：`frames[cur][95796]` 与 `mouse-callback` 登记时的 owner 不等 ⇒ 抛 `Depth が不正です` —— 报错点"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[107674] = _this[30 * _this[95776] + 95796];",
+      "line": 30323,
+      "note": "0xCC（mouse-callback）**每次登记都改写 owner** ⇒ 子脚本（SBUNKI）一登记，父脚本（SAVE.BIN）的登记就失效"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "mouse-callback 10 label_00001104",
+      "line": 219,
+      "note": "SAVE.BIN 的登记（owner 51）；主循环在 223 行 `get-input-type` ⇒ 报错点"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "mov (local-int e) 4",
+      "line": 1153,
+      "note": "★**存档**路径显式让主循环重新登记回调（`e=4` → `label_00000e60`）；**读档**路径没有这一句 ⇒ 它依赖引擎的控制转移"
+    },
+    {
+      "file": "src/SBUNKI.txt",
+      "anchor": "mouse-callback 10 label_000009f8",
+      "line": 118,
+      "note": "确认框脚本把 owner 改成 54（raw 0x26f = 623；日志里的 `mouseJump=0x26f` 就是它）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "async function transferToRootAfterLoad(e: Engine): Promise<void> {",
+      "note": "控制转移的实现（面板/文本复位 + 置门 + `cur=0` + 重载根脚本）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "error: controlErrorText(errorOverride, this.#errorText, paused),",
+      "note": "控制面版横幅：每次上报都带上粘住的错误文本（修前 `error: errorOverride ?? autoError` ⇒ 收尾那次上报把它擦成 undefined）"
+    },
+    {
+      "file": "app/amayui-emulator/test/slot-load-transfer.test.ts",
+      "anchor": "读真游戏槽 ⇒ 控制转移到根脚本",
+      "note": "★E3 守卫：真槽 + 真资源根，读档后启动链重新跑到 TITLE 且不报错；顺带锁「不拿空表覆盖 SAVE.DAT 表」"
+    },
+    {
+      "file": ".tmp/amayui-emulator.log",
+      "anchor": "[error] Depth が不正です 51 != 54",
+      "note": "用户实测现场（boot harness 日志；读档 YES 分支的 SE/绘图/阶梯动画之后立刻报错）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/engine-reset-mainloop.md",
+      "docs-new/03-engine/input-system.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json#save-slot-chain",
+      "analysis/functions.json#0x410160",
+      "analysis/functions.json#0x41ACD0",
+      "analysis/functions.json#0x421980",
+      "analysis/scripts.json#SAVE"
+    ],
+    "tickets": [
+      "T-0018"
+    ]
+  },
+  "notes": "过程笔记见 notes.md（含「为什么引擎不会崩」的完整推导：脚本侧 `e=4` 重登记 vs 控制转移两条口径）。★残余缺口（已写进 `SLOT_GAPS`）：真槽里「存档记录的脚本名 + 帧 ip 表」没有解析 ⇒ 读档后落到**根脚本（启动链 → 标题）**，**不能续到存档当时的场景位置**；那是 T-0018 的剩余工作。",
+  "id": "T-0056",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建（用户报：加载存档立刻报 Depth が不正です 51 != 54，且控制面版没显示）"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "定位：0xCC 每次登记改写 owner（SBUNKI 54 覆盖 SAVE 51）+ 引擎 0x1A1/a6=1 段是控制转移（cur=0 + 装载存档记录的脚本）+ emulator 未实现该转移 ⇒ 调用方脚本继续跑 ⇒ 撞 0xCD 守卫"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "修 ①：handlers/save-slot.ts 实现控制转移（transferToRootAfterLoad；cur=0 + 置「正在读档」门 + 重载根脚本），并停止用空表覆盖 SAVE.DAT 表/已使用文件标志；新增守卫 test/slot-load-transfer.test.ts（3 条，E3 真槽）"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "修 ②：控制面版横幅粘住硬错误（session.ts 的 #errorText + 纯函数 controlErrorText）；新增守卫 test/control-error-banner.test.ts（3 条）"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "台账/文档：functions.json#0x410160、能力台账 save-slot-chain、SLOT_GAPS、docs-new/03-engine/save-data.md；全仓 604 测试 603 通过 0 失败 ⇒ open → done"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-transfer.test.ts",
+    "app/amayui-emulator/test/control-error-banner.test.ts",
+    "app/amayui-emulator/test/save-slot-chain.test.ts",
+    "app/amayui-emulator/test/save-slot.test.ts"
+  ]
+}

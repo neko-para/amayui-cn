@@ -60,6 +60,25 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+/**
+ * **控制窗 ⚠️ 横幅的文本**（纯函数，便于守卫；`tickets/T-0056`）。
+ *
+ * 优先级：本次上报的显式文本 > 「停在未知指令」的暂停提示 > **粘住的错误文本**。
+ *
+ * ★为什么要有"粘住"这一档：`notifyStatus()` 不带 override 时会上报 `undefined`，而错误之后
+ * 至少还有一次不带 override 的上报（`run()` 收尾）⇒ 横幅会被立刻擦掉，用户只能去翻日志。
+ * 状态上报是**幂等的快照**（每次都发全量字段），所以这里必须由调用方把"当前仍然成立的错误"传进来。
+ */
+export function controlErrorText(
+  override: string | undefined,
+  sticky: string | undefined,
+  paused: { opcode: number; name: string; script: string } | null | undefined,
+): string | undefined {
+  if (override) return override;
+  if (paused) return `停在未知指令 0x${paused.opcode.toString(16)} (${paused.name}) @ ${paused.script}`;
+  return sticky;
+}
+
 export class RendererSession {
   readonly #status: RenderStatus;
   readonly #traceLog: TraceLog;
@@ -101,6 +120,16 @@ export class RendererSession {
   #waiting = false;
   #sleeping = false;
   #err: unknown = null;
+  /**
+   * **粘住的错误文本**（`tickets/T-0056`）—— 控制窗那条 ⚠️ 横幅的内容。
+   *
+   * 为什么必须粘住：`notifyStatus()` 不带 override 时会上报 `error: undefined`，而**错误之后**
+   * 至少还有一次不带 override 的上报（`run()` 收尾的"最终态"），于是横幅会被**立刻擦掉** ——
+   * 实测症状：「一执行加载就命中 `Depth が不正です`，但控制面版上什么都没有，我是看日志才发现的」。
+   * ⇒ 硬错误一旦发生就记在这里，直到有更明确的文本（override / 暂停态）或显式清除（跳过未知指令、
+   * 重启会话）为止。
+   */
+  #errorText: string | undefined;
   #lastInputLog = 0; // 节流：[input-state] 诊断打印
   #lastStatusSend = 0; // 节流：向控制窗上报状态的间隔(ms)
 
@@ -149,10 +178,6 @@ export class RendererSession {
    */
   notifyStatus(errorOverride?: string): void {
     const paused = this.#pausedOp;
-    // 暂停中且没有更具体的错误文本时，用一句可读提示（控制窗的按钮/清单同时给出精确位置）。
-    const autoError = paused
-      ? `停在未知指令 0x${paused.opcode.toString(16)} (${paused.name}) @ ${paused.script}`
-      : undefined;
     window.api?.sendRendererStatus?.({
       bin: this.#status.scriptName,
       ignored: this.#telemetry.ignoredList(),
@@ -168,7 +193,7 @@ export class RendererSession {
         jsonlLines: this.#jsonl.lines,
         frames: this.#frames,
       },
-      error: errorOverride ?? autoError,
+      error: controlErrorText(errorOverride, this.#errorText, paused),
       pendingUnknown: paused ?? undefined,
     });
   }
@@ -205,6 +230,7 @@ export class RendererSession {
     // ★清暂停点 ⇒ `#waitForResume` 的等待循环结束 ⇒ 外层重新进入驱动（同一条指令重试）。
     this.#pausedOp = null;
     this.#err = null;
+    this.#errorText = undefined; // 暂停已解除 ⇒ 粘住的文本也作废（避免横幅留着一句过期的话）
     this.#status.ip = this.#e.curScript().ip;
     this.notifyStatus();
     this.#traceLog.flush();
@@ -462,7 +488,9 @@ export class RendererSession {
     this.#err = err;
     const emsg = (err as Error).message;
     this.#native.log(`[error] ${emsg}`);
-    // 其它硬错误（非「未知指令」）：立即上报控制窗展示，然后停
+    // 其它硬错误（非「未知指令」）：立即上报控制窗展示，然后停。
+    // ★同时**粘住**文本（见 `#errorText`）：收尾那次不带 override 的上报会把横幅擦掉。
+    this.#errorText = emsg;
     this.notifyStatus(emsg);
     this.#traceLog.flush();
     return 'stop';
