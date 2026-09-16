@@ -581,9 +581,43 @@ dst = α·255 + (1−α)·(填充之下已经画好的东西：描边)
 `Font+1352 == 0` ⇒ 1bpp。但 **1bpp 分支的 `v18/v31` 恒满 ⇒ 输出纯白 255**，与实测 α<1 不可能同时成立
 ⇒ 引擎运行期走的是**覆盖率路径**。产品侧以**像素判据**为准（emulator 的 `antiAlias = true`）。
 
-emulator 实现：`src/renderer/text/raster.ts` 把描边副本按不透明画、**填充那一遍**用
-`ctx.globalAlpha = TEXT_FILL_ALPHA`（`src/text/layout.ts`，= 225/255）⇒ 即 canvas 的
-`dst = α·C + (1−α)·dst`。同屏 OPTION 对照：字体样例文字 255 → **225**（真机 226-228）。
-残留：设置界**行标签**仍偏亮（252 vs 真机 ~230）—— `CONFIG1.txt:2747-2748` 把该元素填充与描边都设成
-`ffffff`，α 合成的 backdrop 于是是白描边；真机 ~230 说明该元素实际描边是暗色（或它不走那两行），待读元素归属。
-台账：`text-glyph-coverage-alpha-composite`。
+### 9.1 写入语义的第二半：`A = max(A_dst, α)`（目标透明时字按 α 落到**场景**上）
+
+α 不只是"混合权重"，它还会被**写进目标表面的 alpha 通道**（`sub_46D9F0` 的 32bpp 分支，
+机器码 0x46DDC0-0x46DE7E 逐条核对；`0x80808081` 魔数 `>>7` = 除 255）：
+
+```text
+if (α == 255)        pixel = C | 0xFF000000          // 满覆盖 ⇒ 纯色不透明
+else if (A_dst == 0) pixel = C | (α<<24)             // RGB = C 原样、A = α
+else                 RGB = (C·α + D·(255−α))/255     // D = 表面已有像素
+                     A   = max(A_dst, α)             // ★取 max，不是 source-over 的累加
+```
+
+⇒ 目标表面**不透明**时（消息窗表面有底色 ⇒ `A_dst = 255`）这条退化成"RGB 按 α 混合、A 恒 255"
+（上面 §9 的公式就是它）；目标表面**透明**时（`0x204` draw-string 的槽表面是
+`create-texture` 出来的空白 **A8R8G8B8**，`sub_48AC40` raw 107006-107070）表面 alpha 就等于覆盖率 α，
+随后 `draw-texture` 按它合成 ⇒ 字落在 `α·RGB + (1−α)·场景`。两条独立旁证：
+
+- 槽里**没被字涂到的像素 A=0**（RGB 也 0）⇒ 若贴出时不认 alpha，设置界每行都会出现**黑块**；
+  真机看不到黑块 ⇒ 贴出确实在用表面 alpha；
+- 设置界**行标签**（`CONFIG1.txt:2743-2760` 的 bbd 样式：`i076 ffffff` + `i077 ffffff` + `i078 1`，
+  **填充与描边都是白**）贴在深色行底板（≈`(65,47,40)`）上 ⇒ `α·255+(1−α)·底板` = **(233,231,230) 暖**
+  —— 与真机实测区间 **226-234（暖）**一致；若按不透明合成则应是纯白 255。
+  `set-font`(0x1A5) 只换**面名**、**不动颜色**（`sub_4328F0`），所以"描边是暗色"这条假设不成立，
+  该元素也没有别的绘制路径（`grep draw-string src/CONFIG1.txt` 只有这几处）——**元素归属已确证**。
+
+emulator 实现（`src/renderer/text/raster.ts`，常量 `TEXT_FILL_ALPHA` 在 `src/text/layout.ts`）：
+
+| 路径 | 目标表面 | 做法 |
+|---|---|---|
+| 消息窗 `rasterFrame` | 不透明（有底色） | 描边副本不透明先画 + **填充那一遍** `ctx.globalAlpha = TEXT_FILL_ALPHA` ⇒ canvas 的 `dst = α·C + (1−α)·dst`（与引擎等价） |
+| 纹理槽 `0x204` | 透明 | `drawGlyphPassesOnSurface` **逐像素复现引擎的写入**（`engineGlyphPixel`：`A = max(A_dst, α)`、`A_dst==0 ⇒ RGB=C`、否则 `(C·α+D·(255−α))/255`）—— canvas 的 `source-over` 会把描边遍 + 填充遍的 alpha 累加成 1，正是"行标签纯白"的来源 |
+
+同屏 OPTION 对照（本机 Electron 截图实测）：字体样例文字 255 → **225**（真机 226-228）；
+设置界**行标签** 255 → **(233,231,230) 暖**（真机区间 226-234 暖）；ADV 正文 255 → 225
+（真机 229-232 暖 —— 这一档的差是**颜色来源**问题：真机填充的 backdrop 是暖暗色 ≈`(63,32,16)`，
+emulator 用黑描边/黑窗底，沿 `T-0035` 的配置色面）。
+
+台账：`text-glyph-coverage-alpha-composite`（写入语义 + 两条路径的现状）、
+`glyph-raster-direct-to-slot`（`0x204` 不是 GDI：`sub_456710` 体内没有 `TextOutA`，它走
+`sub_471180`/`sub_46F2D0` 的同一套覆盖率路径）。

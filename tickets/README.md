@@ -7,18 +7,17 @@
 
 ## 概览
 
-共 **42** 张：🔜 doing **2** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **30** · 🚫 dropped **1**（P0 5 / P1 12）
+共 **43** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **31** · 🚫 dropped **1**（P0 5 / P1 12）
 
-按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/adv` 5 · `emulator/test` 3 · `emulator/input` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
+按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/input` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
 
-## 🔜 doing（2）
+## 🔜 doing（1）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 8 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
-| [`T-0042`](./T-0042/ticket.json) | P2 | bug | `emulator/render` | ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化） | 4 | — | `notes.md` `changes.md` | — |
 
-## ⬜ open（9）
+## ⬜ open（10）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -31,8 +30,9 @@
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | — | `notes.md` | — |
 | [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
+| [`T-0043`](./T-0043/ticket.json) | P3 | tooling | `emulator/test` | 两条守卫在本机必红：overlay 断言 Windows 绝对路径、config1-chain 依赖本地化 BIN 产物（assemble 还会因 insta… | 4 | — | `notes.md` | — |
 
-## ✅ done（30）
+## ✅ done（31）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -63,6 +63,7 @@
 | [`T-0028`](./T-0028/ticket.json) | P2 | bug | `emulator/adv` | ADV 侧边栏进入时即呈「hover 展开」外观：状态位与 16 槽平移不一致，手动 hover 移开后自愈 | 5 | `app/amayui-emulator/test/op-a4-a6.test.ts` | `notes.md` `changes.md` `repro.md` evidence/(7) | — |
 | [`T-0031`](./T-0031/ticket.json) | P2 | bug | `emulator/boot` | 首次运行（无 SYS4REG.INI）时配置注册表改动不落盘：引擎字段层（消息速度/淡入、声音开关、音乐、显示模式、右键行为）重启即回默认 | 5 | `app/amayui-emulator/test/config-version-substr.test.ts` | `notes.md` `changes.md` evidence/(3) | — |
 | [`T-0040`](./T-0040/ticket.json) | P2 | tooling | `emulator/tools` | 测试期窗口贴屏幕边缘打开（不居中、不抢焦点）：shot/record 默认开启，--centered 可关 | 6 | `app/amayui-emulator/test/window-edge.test.ts` | — | — |
+| [`T-0042`](./T-0042/ticket.json) | P2 | bug | `emulator/render` | ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化） | 4 | `app/amayui-emulator/test/text-aa.test.ts` `app/amayui-emulator/test/draw-string.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |

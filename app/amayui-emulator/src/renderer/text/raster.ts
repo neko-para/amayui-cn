@@ -164,6 +164,146 @@ export function drawAliasedLayer(
   return changed;
 }
 
+/** 一遍字形绘制（引擎 `sub_471180` 的一趟 `sub_46D9F0`）：一个字 + 它的颜色与强度。 */
+export interface GlyphPass {
+  ch: string;
+  /** 逻辑坐标（与 `drawStringGlyphs` 同一坐标系）。 */
+  x: number;
+  y: number;
+  /** 该遍的颜色（`#rrggbb`）。 */
+  color: string;
+  /** 该遍的强度系数（档位 2 的"同位 1/4 副本" = 0.25，其余 1）。 */
+  weight: number;
+}
+
+/**
+ * ★**引擎的字形单像素写入**（`sub_46D9F0` 32bpp 分支；机器码 0x46DDC0-0x46DE7E 逐条核对）。
+ *
+ * ```text
+ *   if (α == 255)        pixel = C | 0xFF000000          // 满覆盖 ⇒ 纯色不透明
+ *   else if (A_dst == 0) pixel = C | (α<<24)             // RGB = C **原样**、A = α
+ *   else                 RGB = (C·α + D·(255−α))/255     // D = 表面已有像素（`0x80808081` 魔数除法）
+ *                        A   = max(A_dst, α)             // ★取 max，**不是**累加
+ * ```
+ *
+ * ★`A = max` 这一条是"往**透明**表面画字"的关键：`create-texture` 出来的槽表面是空白
+ * A8R8G8B8，引擎把覆盖率 α 留在它的 alpha 上，之后 `draw-texture` 按该 alpha 合成 ⇒ 字落在
+ * `α·RGB + (1−α)·场景`。canvas 的 `source-over` 会把描边遍与填充遍的 alpha **累加**（≈1），
+ * 于是白字会画成不透明纯白 —— 这正是 `tickets/T-0042` 的残留
+ * （设置界行标签 255 vs 真机 226-234 暖）。
+ *
+ * @param d RGBA 字节数组（`ImageData.data`）
+ * @param i 该像素在 `d` 里的下标
+ * @param alpha 覆盖率对应的 α（0..255）
+ */
+export function engineGlyphPixel(
+  d: Uint8ClampedArray,
+  i: number,
+  r: number,
+  g: number,
+  b: number,
+  alpha: number,
+): void {
+  const da = d[i + 3]!;
+  if (alpha >= 255 || da === 0) {
+    d[i] = r;
+    d[i + 1] = g;
+    d[i + 2] = b;
+  } else {
+    const inv = 255 - alpha;
+    d[i] = Math.round((r * alpha + d[i]! * inv) / 255);
+    d[i + 1] = Math.round((g * alpha + d[i + 1]! * inv) / 255);
+    d[i + 2] = Math.round((b * alpha + d[i + 2]! * inv) / 255);
+  }
+  d[i + 3] = Math.max(da, alpha);
+}
+
+/**
+ * ★**把字形逐遍写进一张"透明表面"—— 引擎 `sub_46D9F0`（32bpp 分支）的写入语义**（`tickets/T-0042`）。
+ *
+ * 引擎自己光栅化字形时，**每一遍**（先描边副本、后填充）都按覆盖率 α 写目标表面（raw 84873-85011，
+ * 机器码 0x46DDC0-0x46DE7E 逐条核对）：
+ *
+ * ```text
+ *   α = 255·cov/17                     // GGO_GRAY4 覆盖率；满覆盖 = 240，实测平台（cov=15）= 225
+ *   if (α == 255)              pixel = C | 0xFF000000
+ *   else if (A_dst == 0)       pixel = C | (α<<24)          // RGB = C **原样**、A = α
+ *   else                       RGB = (C·α + D·(255−α))/255  // D = 表面已有像素
+ *                              A   = max(A_dst, α)
+ * ```
+ *
+ * ★为什么必须逐像素做而不能用 canvas 的 `globalAlpha`：`source-over` 会把多遍的 alpha **累加**
+ * （描边 + 填充 ⇒ ≈1 而不是 α），而引擎取的是 `max` —— 于是"往**透明**表面画字"时（`0x204`
+ * draw-string 的槽表面就是 `create-texture` 出来的空白 A8R8G8B8），canvas 会把字画成**不透明**、
+ * 引擎却把覆盖率 α 留在表面 alpha 上，再由 `draw-texture` 按它合成 ⇒ 字落到
+ * `α·RGB + (1−α)·场景`。设置界行标签（白填充 + 白描边 + 档 1）因此真机是 `225 + (30/255)·底板`
+ * ≈ **(233,231,230) 暖灰**，而 canvas 直接画是纯白 255（就是 `T-0042` 的残留）。
+ *
+ * 反过来说，**目标不透明时**（消息窗表面有底色 ⇒ `A_dst = 255`）这条写入退化成"RGB 按 α 混合、
+ * A 恒 255"，与 canvas 的直接绘制等价 —— 所以本函数只用在**透明表面**（槽）路径上。
+ *
+ * @param target 目标画布 ctx（`getImageData`/`putImageData` 用设备像素，不受 ctx 变换影响）
+ * @param opts.res        设备像素比（逻辑 → 物理）
+ * @param opts.font       `ctx.font` 字串
+ * @param opts.passes     按引擎顺序排好的各遍字形（先所有描边副本，后填充）
+ * @param opts.alphaMax   满覆盖时的 α（AA 开 = `TEXT_FILL_ALPHA`；关 = 1，此时退化为"不透明写"）
+ * @param opts.box        逻辑坐标包围盒（含描边偏移；调用方已按字形位置算好）
+ * @returns 被写过的像素数（测试/诊断用）
+ */
+export function drawGlyphPassesOnSurface(
+  target: CanvasRenderingContext2D,
+  opts: {
+    res: number;
+    font: string;
+    passes: GlyphPass[];
+    alphaMax: number;
+    box: { x: number; y: number; w: number; h: number };
+  },
+): number {
+  if (typeof document === 'undefined') return 0; // 非浏览器宿主：不该走到这里
+  const { res, box } = opts;
+  const px = Math.max(0, Math.round(box.x * res));
+  const py = Math.max(0, Math.round(box.y * res));
+  const cw = Math.max(1, Math.round(box.w * res));
+  const chh = Math.max(1, Math.round(box.h * res));
+  if (opts.passes.length === 0) return 0;
+
+  const dst = target.getImageData(px, py, cw, chh);
+  const d = dst.data;
+  let written = 0;
+
+  for (const pass of opts.passes) {
+    // 这一遍的**覆盖率**：单独画一张透明图层取它的 alpha（图层里只有这一个字形/颜色）
+    const layer = document.createElement('canvas');
+    layer.width = cw;
+    layer.height = chh;
+    const lc = layer.getContext('2d');
+    if (!lc) continue;
+    lc.setTransform(res, 0, 0, res, -px, -py); // 用逻辑坐标画
+    lc.font = opts.font;
+    lc.textAlign = 'left';
+    lc.textBaseline = 'top';
+    lc.globalAlpha = 1;
+    lc.fillStyle = pass.color;
+    lc.fillText(pass.ch, pass.x, pass.y);
+    const cov = lc.getImageData(0, 0, cw, chh).data;
+
+    const cr = parseInt(pass.color.slice(1, 3), 16);
+    const cg = parseInt(pass.color.slice(3, 5), 16);
+    const cb = parseInt(pass.color.slice(5, 7), 16);
+    for (let i = 0; i < d.length; i += 4) {
+      const c = cov[i + 3]!;
+      if (c === 0) continue;
+      const a = Math.round(opts.alphaMax * c * pass.weight);
+      if (a <= 0) continue;
+      engineGlyphPixel(d, i, cr, cg, cb, a);
+      written++;
+    }
+  }
+  if (written) target.putImageData(dst, px, py);
+  return written;
+}
+
 /**
  * 把一个消息窗的排版结果光栅化到**新建的 canvas**（尺寸 = 窗口尺寸 × `res`）。
  *

@@ -124,7 +124,7 @@
 | `msgwin-char-reveal-grid` | 消息窗 | 字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
 | `gfx-texture-load-sync` | 资源 | 纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位 | ✅ 已核验 | E2 · `test/texture-frame-barrier.test.ts` |
 | `drawitem-world-matrix-composition` | 渲染 | DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门 | ✅ 已核验 | E2 · `test/draw-item-scale.test.ts` |
-| `gdi-direct-text-to-slot` | 消息窗 | GDI 整串直绘到纹理槽（0x204 draw-string → sub_456710） | ✅ 已核验 | E2 · `test/draw-string.test.ts` |
+| `glyph-raster-direct-to-slot` | 消息窗 | 字形光栅化（GetGlyphOutline + 覆盖率 α）直绘到纹理槽（0x204 draw-string → sub_456710） | ✅ 已核验 | E2 · `test/draw-string.test.ts` |
 | `script-frame-local-pool-lifecycle` | 帧循环 | 脚本帧局部池的生命周期：每次载入重建（`sub_40ED40` 建池 + local_int 填 enc_zero） | ✅ 已核验 | E3 · `test/config1-chain.test.ts` |
 | `text-style-scope-queue-time` | 消息窗 | 文本样式的**消费时机与作用域**：排版入队时把字体/颜色烘进该窗离屏表面，此后改全局样式不回溯 | ✅ 已核验 | E3 · `test/text-style-snapshot.test.ts` |
 | `engine-config-registry-persistence` | 资源 | 引擎配置注册表（SYS4REG.INI）：启动装载 → 脚本读写 → 写盘 | ✅ 已核验 | E3 · `test/config-version-substr.test.ts` |
@@ -154,7 +154,7 @@
 | `drawitem-mesh-blend-selector` | 渲染 | DrawItem+0x30 / MeshEntry[9] 的 alpha 混合选择子（0/1/2/3 一套枚举） | ✅ 已核验 | E2 · `test/blend-mode.test.ts` |
 | `text-face-source-memory-vs-system` | 消息窗 | 正文面名的来源：引擎只注册一份内存字体（游戏自带的 AGE-EXTEND.TTF / 面 'AGE Extend'），message:Font 指定的正文面由**系统字体表**解析 | ➖ n/a | E1 |
 | `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | 🟠 部分 | E4 · `test/draw-string.test.ts` |
-| `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成到已画好的描边上（"白字"永不纯白的机制） | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
+| `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——"白字"永不纯白、"往透明表面画字"偏灰 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

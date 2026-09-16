@@ -79,3 +79,54 @@ npx tsc --noEmit            → 干净
 npm test                    → 554/554 绿（含新增的覆盖率 α 守卫）
 npm run shot -- --centered --name t0042d → .tmp/t0042d-1-config1.png（1600x902 纯客户区）
 ```
+
+## 第 3 次变更（2026-09-16）：把「往**透明**槽表面画字」改成引擎的逐像素写入（`A = max(A_dst, α)`）
+
+**动机**：第 2 次变更只复现了覆盖率 α 的**混合权重**那一半（`dst = (C·α + D·(255−α))/255`），
+于是"目标不透明"的消息窗路径对了，但"目标**透明**"的 `0x204` 纹理槽路径错了 ——
+canvas 的 `source-over` 会把描边遍 + 填充遍的 alpha **累加**（≈1），而引擎取 `max(A_dst, α)`
+⇒ 表面 alpha 正好等于覆盖率 α，贴出时再按它合成。设置界行标签因此停在纯白 255（真机 226-234 暖）。
+
+**元素归属（上轮遗留的"下一步"）**：行标签 = `CONFIG1.txt:2743-2760`（bbd：`i075 14` +
+`i076 ffffff` + `i077 ffffff` + `i078 1`），`set-font`(0x1A5) 只换面名不动颜色 ⇒
+"描边是暗色""不走那两行"两条猜测都排除（详见 notes 第 3 轮）。
+
+**改动**（`app/amayui-emulator`）：
+
+| 文件 | 改动 |
+|---|---|
+| `src/renderer/text/raster.ts` | 新增 `engineGlyphPixel`（引擎 `sub_46D9F0` 32bpp 分支的单像素写入：`A_dst==0 ⇒ RGB=C, A=α`；否则 `(C·α+D·(255−α))/255`、`A=max(A_dst,α)`）与 `drawGlyphPassesOnSurface`（逐遍取覆盖率、逐像素写目标；只用于**透明**表面） |
+| `src/renderer/pixi/textureCache.ts` | `drawString` 的 AA 路径改走 `drawGlyphPassesOnSurface`（`alphaMax = TEXT_FILL_ALPHA`，按字形包围盒裁区域）；关闭 AA 时仍走 `drawAliasedLayer`（1bpp ⇒ α 恒满 = 不透明，与原行为一致） |
+| `test/text-aa.test.ts` | 新增 4 条守卫：`A_dst=0 ⇒ A=α`、多遍 `A=max`（**不是**累加）、不透明表面只按 α 混合、满覆盖 ⇒ 纯色 |
+
+**判据（本机 Electron 截图；默认贴屏幕下缘不抢焦点，`T-0040`）**：
+
+| 量 | 第 2 次（只做混合权重） | **第 3 次** | 真机（上轮记录） |
+|---|---|---|---|
+| 设置界行标签 | 255 纯白（1770 px） | **(233,231,230) 暖**（0 个 255） | 226-234（暖） |
+| 行值文本 | 255 纯白 | **(233,231,230) 暖** | 同量级 |
+| 消息窗样例文字 | 225 | **225（未变）** | 226-228 |
+| 全屏 diff | — | 只有 9 条行文本带（+ 行值）变化 | — |
+
+```text
+npx tsc -p tsconfig.json --noEmit              → 干净
+npx tsx --test test/text-aa.test.ts            → 10/10 绿
+npm test                                        → 558 条 / 548 绿 / 2 红（红的是 overlay.test.ts 的 2 条
+                                                  resolveSystemPaths：它们断言 Windows 绝对路径 'D:\game' /
+                                                  'C:\Games\Tianjie'，POSIX 上 path.resolve 当相对名 ⇒ 必红；
+                                                  与本次变更无关（git stash 复跑同样是这 2 条），已开 T-0043）
+npm run check:dead-writes                       → 无新增死写
+npm run shot -- --name t0042i / t0042j          → .tmp/t0042i-1-config1.png（日文原版 BIN）、
+                                                  .tmp/t0042j-1-config1.png（本地化 BIN，见下）
+```
+
+★**环境坑（本轮踩到，已开 `T-0043`）**：`install/` 里没有本地化的松散 `CONFIG*.BIN`（只有 2017 原版
+`DATA*.ALF` 里的日文 BIN）⇒ `test/config1-chain.test.ts` 的两条样例文案断言本来是**红**的（读到的
+`天結いキャッスルマイスターＳＡＭＰＬＥ` 就是 ALF 里的原版）。跑 `node scripts/translate.js assemble CONFIG1|CONFIG|CONFIG2`
+把松散 BIN 写到 `install/`（②`install/DATA1/` 那一步会 ENOENT —— 见 T-0043）之后，两条转绿，
+**并且行标签的实测与上面完全一致**（(233,231,230) 暖；两张截图 diff 只有样例预览那一带，因为文案换了语言）
+⇒ 结论与 BIN 的新旧/语言无关，只取决于样式块与槽表面 alpha。
+★收尾：这三个临时 BIN 已按用户确认**删除**（`install -> raw` 符号链接，raw 原本不带它们、未覆盖日文数据；见 `T-0043` notes）⇒ 本机 `config1-chain` 的两条样例文案断言回到红（= T-0043 的状态），本条结论只依赖样式块 + 槽表面 alpha，与 BIN 语言/新旧无关。
+
+**残留（写进 acceptance 第 4 条）**：ADV 正文 225 vs 真机 229-232（暖）—— 机制已对，差的是
+**颜色来源**（真机填充的 backdrop ≈ `(63,32,16)`，模拟器是黑描边/黑窗底），归 `T-0035`。

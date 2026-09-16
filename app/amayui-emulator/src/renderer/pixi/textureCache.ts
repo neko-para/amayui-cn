@@ -13,8 +13,8 @@
 import { CanvasSource, Texture } from 'pixi.js';
 import type { Item } from '../drawItem.js';
 import type { DrawStringStyle } from '../../vm/native.js';
-import { drawStringGlyphs } from '../../text/layout.js';
-import { drawAliasedLayer } from '../text/raster.js';
+import { drawStringGlyphs, TEXT_FILL_ALPHA } from '../../text/layout.js';
+import { drawAliasedLayer, drawGlyphPassesOnSurface, type GlyphPass } from '../text/raster.js';
 
 /**
  * **延迟销毁队列**：纹理不能"说销毁就销毁" —— 见 `TextureCache.collectGarbage` 的说明。
@@ -269,12 +269,14 @@ export class TextureCache {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     // 位置/描边副本由 `text/layout.drawStringGlyphs` 决定（引擎语义，可单测）；这里只执行绘制
+    const glyphs = drawStringGlyphs(text, x, y, style.size, style.outlineMode, style.outlineDx, style.outlineDy);
+    const font = `${style.weight} ${style.size}px "${style.family}"`;
     const paint = (c: CanvasRenderingContext2D): void => {
-      c.font = `${style.weight} ${style.size}px "${style.family}"`;
+      c.font = font;
       c.textAlign = 'left';
       c.textBaseline = 'top';
       c.globalAlpha = 1;
-      for (const g of drawStringGlyphs(text, x, y, style.size, style.outlineMode, style.outlineDx, style.outlineDy)) {
+      for (const g of glyphs) {
         c.globalAlpha = g.alpha;
         c.fillStyle = g.role === 'fill' ? style.fill : style.outline;
         c.fillText(g.ch, g.x, g.y);
@@ -283,8 +285,44 @@ export class TextureCache {
     };
     // ★抗锯齿（引擎 `Font+1352`，`tickets/T-0035`）：引擎没开 AA ⇒ 字形画进独立图层 + 阈值化再合成
     //   （不触碰该槽里已有的像素：`draw-string` 的语义是"往已有表面上叠字"）。
-    if (style.antiAlias) paint(ctx);
-    else drawAliasedLayer(ctx, cs.canvas.width, cs.canvas.height, cs.res, paint);
+    if (style.antiAlias) {
+      // ★覆盖率 α 路径（`tickets/T-0042`）：槽表面是 `create-texture` 的**空白 A8R8G8B8**，引擎把
+      //   每遍的覆盖率 α 写进它的 alpha（`A = max(A_dst, α)`）⇒ 之后 `draw-texture` 按该 alpha 合成，
+      //   字落在 `α·RGB + (1−α)·场景` 上。canvas 的 `source-over` 会把描边+填充的 alpha **累加**
+      //   （≈1 ⇒ 纯白），所以这里逐像素复现引擎的写入（见 `drawGlyphPassesOnSurface`）。
+      const passes: GlyphPass[] = glyphs.map((g) => ({
+        ch: g.ch,
+        x: g.x,
+        y: g.y,
+        color: g.role === 'fill' ? style.fill : style.outline,
+        weight: g.alpha,
+      }));
+      if (passes.length) {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const p of passes) {
+          x0 = Math.min(x0, p.x);
+          y0 = Math.min(y0, p.y);
+          x1 = Math.max(x1, p.x + style.size);
+          y1 = Math.max(y1, p.y + style.size);
+        }
+        // 包围盒 clamp 到画布（逻辑尺寸 = cs.w/h），再留 1px 余量给边缘覆盖率
+        x0 = Math.max(0, Math.floor(x0) - 1);
+        y0 = Math.max(0, Math.floor(y0) - 1);
+        x1 = Math.min(cs.w, Math.ceil(x1) + 1);
+        y1 = Math.min(cs.h, Math.ceil(y1) + 1);
+        if (x1 > x0 && y1 > y0) {
+          drawGlyphPassesOnSurface(ctx, {
+            res: cs.res,
+            font,
+            passes,
+            alphaMax: TEXT_FILL_ALPHA,
+            box: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 },
+          });
+        }
+      }
+    } else {
+      drawAliasedLayer(ctx, cs.canvas.width, cs.canvas.height, cs.res, paint);
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0); // 交还单位变换（同一 ctx 后续可能被别的路径用）
     cs.tex.source.update(); // 通知 Pixi 重新上传这张 canvas
     this.log(

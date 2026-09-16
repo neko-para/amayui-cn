@@ -276,7 +276,7 @@
 | 0x1A2 | 1 | save-int | sub_434F60 | 已核对 | **save-int**：读 op1 得值+索引，`wsprintfA("%c%8.8x",3,idx)` 生成键，`sub_434D00(_this+5452, key, &val)` 插入（sub_429020 找槽、sub_40C210 存键）。handler=sub_434F60（raw .c 42920）。★**设置界面的开关就是靠它持久化**：`INITCONFIG0..5` 逐个 `save-int (global a9ce)`，引擎再把这张表写进 `SAVE.DAT`（见 [`save-data.md`](./save-data.md)） |
 | 0x1A3 | 1 | load-int | sub_42DF40 | 已核对 | **load-int**：`sub_418A30(1)` 读 op1 索引 → 键 `"%c%8.8x",3,idx` → `sub_428E00(key)` 全局字符串表查询（命中取 `*v3`、未命中=0）→ `writeIntOperand_42B4B0(1,val)` 写回 op1。（写操作数故 VM 可见）handler=sub_42DF40（raw .c 38442）。★`LOADCONFIG` 用 29 次 load-int/load-string 把 `SAVE.DAT` 里的用户设置读回全局（见 [`save-data.md`](./save-data.md)） |
 | 0x1A4 | 2 |  | sub_41FE60 | 已核对 | **消息窗字段**：读 op1/op2 写 `_this[21670]/[21671]`。handler=sub_41FE60（raw .c 29141） |
-| 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。handler=sub_433290（raw .c 41802） |
+| 0x1A5 | 1 | set-font | sub_433290 | 已核对 | **set-font**：读 op1 字符串，调 `sub_4328F0(_this+21324, str)` 设字体。fire-and-forget。★**只换「字体面名」**（+ 由当前主字号 `Font+201684` 推 lfHeight/lfWidth、维护可选面名列表、`sub_459F40` 重建字形缓存），**不碰 `Font+1360/+1364/+1372`（填充色/描边色/描边档）** —— 所以样式块里 `i076/i077` 先于它执行也不会被覆盖（`T-0042` 排查；函数条目 0x433290，raw 41345-41560）。handler=sub_433290（raw .c 41802） |
 | 0x1A6 | 2 | halve-strlen | sub_42D110 | 已核对 | **halve-strlen**：`op1 = strlen(op2) >> 1`（`sub_41B640(2)` 读 op2 → `strlen` → `writeIntOperand_42B4B0(1, len>>1)`）。handler=sub_42D110（raw .c 37975），纯 |
 | 0x1A7 | 1 | comment | sub_4191B0 | 已核对 | nop（dev 注释，无副作用） |
 | 0x1A8 | 0 | dev_ukn | sub_419690 | 已核对 | nop（dev 未知指令，通常空实现） |

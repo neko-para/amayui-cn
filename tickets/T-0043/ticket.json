@@ -1,0 +1,46 @@
+{
+  "title": "两条守卫在本机必红：overlay 断言 Windows 绝对路径、config1-chain 依赖本地化 BIN 产物（assemble 还会因 install/DATA1 缺失报错）",
+  "type": "tooling",
+  "priority": "P3",
+  "area": "emulator/test",
+  "why": "2026-09-16 在 macOS 上跑 `npm test` 时发现两条与改动无关的常红守卫（都在 T-0042 第 3 轮排查中被 `git stash` 复跑确认为**既有**红）：①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 断言里直接写 Windows 绝对路径（`AMAYUI_SYSTEM_DIR=D:\\game`、`AMAYUI_SAVE_DIR=C:\\Games\\Tianjie\\SAVE`），POSIX 上 `path.resolve/path.join` 把 `C:\\...` 当相对名 ⇒ actual 变成仓库根下的路径，断言必然失败；②`test/config1-chain.test.ts` 的两条 ADV 样例文案断言期望**本地化产物**（`天俟神俣ＳＡＭＰＬＥ`），而新 checkout 的 `install/` 只有 2017 原版 `DATA*.ALF` 里的日文 BIN（读到 `天結いキャッスルマイスターＳＡＭＰＬＥ`）⇒ 不先跑 assemble 就红；③补跑 `node scripts/translate.js assemble <ID>` 时，第二步 `copyFileSync(.tmp/<ID>.BIN → install/DATA1/<ID>.BIN)` 因该目录不存在而 ENOENT（虽然松散 `install/<ID>.BIN` 已经写出、守卫也已转绿）⇒ 退出码非 0，脚本流程无法在非 Windows 布局上正常收尾。影响：本机（macOS）`npm test` 永远有红，守卫的可信度被稀释（分不清'我改坏了'还是'环境缺产物'）。",
+  "acceptance": [
+    "①`test/overlay.test.ts` 的两条 `resolveSystemPaths` 在**非 Windows** 上不再报红：按平台 `t.skip` 并写明原因，或把断言改成 path-flavor 无关的形式（例如用 `path.win32`/`path.posix` 各测一遍纯函数）",
+    "②`test/config1-chain.test.ts` 在缺本地化产物时**给出明确信号**而不是静默读原版：要么测试内自建（调用 assembler 把 src/<ID>.txt 编成松散 BIN），要么在缺 `install/<ID>.BIN` 时 skip 并提示 `node scripts/translate.js assemble <ID>`",
+    "③`node scripts/translate.js assemble <ID>` 不再因 `install/DATA1/` 不存在而失败：按目录存在与否跳过第二份拷贝（或先 `mkdirSync(..., { recursive: true })`），并在末尾照常打印回读验证结果",
+    "收尾判据：本机 `cd app/amayui-emulator && npm test` 不再有'与改动无关'的红（全绿，或全是被显式 skip 并带原因）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/overlay.test.ts",
+      "anchor": "AMAYUI_SAVE_DIR: 'C:\\\\Games\\\\Tianjie\\\\SAVE'",
+      "note": "POSIX 上 path.resolve 把 C:\\Games\\Tianjie 当相对名 ⇒ baseDir 变成 <repo>/C:\\Games\\Tianjie（actual = 仓库根）"
+    },
+    {
+      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "anchor": "const CN_SAMPLE = '天俟神俣ＳＡＭＰＬＥ';",
+      "note": "期望值来自本地化 BIN（install/CONFIG.BIN + install/CONFIG1.BIN 的松散覆盖）；ALF 里的原版 BIN 是日文 ⇒ 新 checkout 必红"
+    },
+    {
+      "file": "scripts/translate.js",
+      "anchor": "for (const dir of [INSTALL_DIR, path.join(INSTALL_DIR, 'DATA1')]) {",
+      "note": "assemble 的第二份拷贝目标 install/DATA1/ 在本 checkout 不存在 ⇒ ENOENT（第一份松散 install/<ID>.BIN 已写出）"
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0034"
+    ]
+  },
+  "notes": "同族历史：T-0034（engine-config.test.ts 直接读真游戏 base 的 SYS4REG.INI ⇒ 玩家一改设置就红）—— 都是'守卫依赖环境/产物'。本票是它在另外两处的同类。③的现场：`node scripts/translate.js assemble CONFIG1` 写出 install/CONFIG1.BIN 后在 install/DATA1 上 ENOENT；补跑 CONFIG/CONFIG2 同样。跑完这三条后 test/config1-chain.test.ts 10/10 绿（2026-09-16 实测）。",
+  "id": "T-0043",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    }
+  ]
+}

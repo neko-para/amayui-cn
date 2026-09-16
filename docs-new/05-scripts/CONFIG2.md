@@ -52,7 +52,7 @@
 ## 相关
 
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
-- 引擎常态能力：`gdi-direct-text-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`glyph-raster-direct-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`audio-module-topology-and-volume-routing`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x42F560`（见 `analysis/functions.json`）

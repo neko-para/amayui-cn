@@ -25,9 +25,10 @@
 | `2976-2990` | `label_0000cab8` | 拖动拇指：按鼠标 y 反算 5620（并 clamp 到 5624） |
 | `3132-3138` | `label_0000d860` | 退出：detach-texture 121000 区间（0x3e8 个）+ exit |
 | `872-908` | `call-script 51d3  // INITCONFIG0` | 「初始化本页」路径：按当前分类（12721e）分别 `call-script 51d3/51d4/51d5/51d7/51d9`（= INITCONFIG0..5，把该页设置写回默认并 save-int 登记），随后 INITREGINPUT(51da) + CHECKCONFIG(51db) 收尾（940-944 是「初始化全部」路径） |
-| `2746-2756` | `set-font (global-string bbd)` | 设置行「参数文字」样式块（受样式代号记忆门控制：只有 3f36 != 9 时才设）：i075 14（20px）+ set-font bbd + ★i2bd 0（设置行**不加粗**）+ i078 1（单向描边）+ i1a4 0 0（无偏移）+ i261 0（横排）→ 3f36 = 9 |
+| `2743-2760` | `set-font (global-string bbd)` | 设置行「参数文字/数值」（bbd）样式块 + 行文本直绘：★`i075 14`/`i076 ffffff`/`i077 ffffff` 在记忆门**之外**（每帧都执行）⇒ 行标签与行值是**白填充 + 白描边**；门内（3f36 != 9）才 `set-font bbd` + ★`i2bd 0`（不加粗）+ `i078 1`（单向描边）+ `i1a4 0 0`（无偏移）+ `i261 0`（横排）→ 3f36 = 9。随后 `draw-string c4 5 (7fe) 串` 把标签直绘进槽 196（值文本在 2770-2773，同一样式） |
 | `2800-2810` | `set-font (global-string bbe)` | 设置行「参数数字」样式块（3f36 != 15 才设）：同一套参数但换 bbe 面，仍 ★i2bd 0 → 3f36 = 15 |
 | `3025-3046` | `set-font (global-string bbf)` | 说明文（bbf）样式块：i075 1e + ★i2bd **1**（说明文是加粗的）+ i197 8 + i078 3 + i1a4 1 1 + i260 2 2 2 2 + i261 1 → 3f36 = 8；随后两条 draw-string（0x204）画进 create-texture c5 的表面（3043/3045） |
+| `2870-2880` | `draw-texture (local-int 57c4) c4 0` | 把槽 196 的**行切片**（628×30 逻辑）贴到行上：引擎按槽表面的 **alpha** 合成 ⇒ 覆盖率 α 在这里生效（未涂到的像素 A=0 ⇒ 透出底板，所以真机/模拟器都看不到黑块） |
 
 ## 关键槽 / 局部量
 
@@ -52,6 +53,7 @@
 - 可见行序 = 按 i12f 的 B[x]+C[x] 升序排出的索引序，且**与 A 的初始内容无关**
 - 拇指三段首尾相接：上盖底边 = 中段顶边、中段底边 = 下盖顶边
 - 行描述符的 type ≥ 1（= 0 时数值贴片源 Y = −31 越界，那一行就只剩背景带）
+- 行标签/行值所在的槽 196 表面：字形像素 alpha = 覆盖率 α（225/255）而**不是** 255 ⇒ 贴到行底板上字落在 α·255+(1−α)·底板 ≈ (233,231,230) 暖灰，且整个元件**不存在纯白 255 像素**（真机同口径）
 
 ## 坑（踩过一次，别再踩）
 
@@ -61,6 +63,8 @@
 - ★本页的行文本走 `draw-string`（0x204）⇒ 它**立即**消费当时的全局样式（与消息窗的「入队时钉住」正相反）；用户可改的字体/颜色设置正是靠这一点立刻生效
 - ★「初始化本页」= 调用 INITCONFIG*（写默认值 + 登记），不是"重画界面"：误当无害重载会把玩家在该页的设置清掉
 - ★**加粗是按文本块显式开关的、不跟着面走**：设置行（bbd/bbe）写 `i2bd 0`（20px），说明文（bbf）与 ADV 预览（bbb）写 `i2bd 1`；`global 3f36` 是样式代号记忆门（2/8/9/15），代号不变就不重设。⇒ 系统里装/不装粗体面**只会影响 i2bd 1 的那些文本**：真机「只装 400 时设置行是 400、之后装上 700 也没变」是**正常**的（T-0035 第 4 轮判定依据）
+- ★设置行（bbd）的填充与描边**都是 ffffff**（2747-2748）⇒ 行标签/行值看起来"偏暗发暖"**不是取色问题**：可见值 = `α·255+(1−α)·底板`（α=225/255、底板≈(65,47,40) ⇒ (233,231,230)）。要动的是**槽表面的 alpha 合成**（capabilities `text-glyph-coverage-alpha-composite` / 函数 0x46D9F0），不要去改颜色
+- `set-font`（0x1A5 → sub_4328F0）只换**字体面名**（+ 由当前字号推 lfHeight/lfWidth）、**不碰 Font+1360/1364/1372**（functions 0x433290）⇒ 样式块里 i076/i077 先于它执行也不会被覆盖；记忆门 3f36 只管 set-font/i2bd/i078/i1a4/i261，颜色三步每帧重设
 
 ## 缺口
 
@@ -69,7 +73,7 @@
 ## 相关
 
 - 引擎常态能力：`drawitem-world-matrix-composition`（见 `docs-new/03-engine/engine-capabilities.md`）
-- 引擎常态能力：`gdi-direct-text-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`glyph-raster-direct-to-slot`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`script-frame-local-pool-lifecycle`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`msgwin-window-reveal-gate-300`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
@@ -94,4 +98,4 @@
 ## 证据与备注
 
 - 证据：src/CONFIG1.txt 的区间见 layout；运行期断言见 test/config1-chain.test.ts 的 sort12f / configRows / scrollThumb / slotText 四项
-- 备注：未读：左列重绘 label_000050f0 的细节、详情/说明区的**非样式部分**（翻页/裁剪/与 c5 表面的合成）、底部按钮与 0x1b5 一族的配置回写路径。★说明文区的样式块已读（3025-3046）。
+- 备注：未读：左列重绘 label_000050f0 的细节、详情/说明区的**非样式部分**（翻页/裁剪/与 c5 表面的合成）、底部按钮与 0x1b5 一族的配置回写路径。★说明文区的样式块已读（3025-3046）。 ★本页行/值文本的样式归属与可见亮度机制已确证（2743-2760 + 2870-2880；`T-0042`）：行标签不是"描边是暗色"、也不是"不走那两行"，而是**白填充+白描边 + 槽表面覆盖率 α** 合成到底板上。

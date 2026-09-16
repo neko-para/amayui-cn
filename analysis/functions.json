@@ -7238,6 +7238,44 @@
     "unmodeled": ["raw 23655 之后剩余的配置应用段", "sub_4559C0/sub_455560 的 FileSource 细节", "sub_418E30 的语义"],
     "evidence": "raw 23466-23660（已读 23586-23654）",
     "notes": "调用点只有启动处 raw 142315 一处。★要点：全库只有这一个 AddFontMemResourceEx（raw 23643），且只注册配置表的第一项 —— 本工程 install/SYS4INI.BIN 里唯一的 .TTF 名是 AGE-EXTEND.TTF（随包散文件 install/AGE-EXTEND.TTF，面名 AGE Extend，raw 4455/71097-71099）⇒ 正文面名 message:Font（汉化版 Amayui CN）不在进程内注册，由系统字体表解析。"
+  },
+  {
+    "addr": "0x433290",
+    "raw_name": "sub_433290",
+    "semantic_name": "set_font_face_433290",
+    "op": "0x1A5",
+    "status": "PARTIAL",
+    "purpose": "set-font（0x1A5）：**只按面名换字体面**（不换颜色/描边）—— 调 sub_4328F0(Engine+21324, 名)",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["面名不在可选列表（sub_428990<0）且不是 AGE-EXTEND ⇒ 只记警告、不中断", "lfHeight/lfWidth 由当前主字号 Font+201684 推（+1232/-字号、+1236/2、注音 +101972/+101976）", "写面名 +1260（32B）与 @面名 +102000（竖排版面）", "维护可选字体名列表（+101832 / +200492 两个 vector）", "sub_459F40 重建 GDI 字形缓存"],
+    "fields_used": ["Font+201684", "Font+1232", "Font+1236", "Font+101972", "Font+101976", "Font+1260", "Font+102000", "Font+101832", "Font+200492"],
+    "unmodeled": ["+21324 面名容器与两个 vector 之外的字段"],
+    "evidence": "raw 41345-41560（sub_4328F0 本体）；handler raw 41802-41808",
+    "notes": "★**不碰 Font+1360/+1364/+1372**（填充色/描边色/描边档）⇒「set-font 会不会把 i076/i077 的颜色覆盖掉」的疑问到此为止：不会（T-0042 排查）。"
+  },
+  {
+    "addr": "0x46D9F0",
+    "raw_name": "sub_46D9F0",
+    "semantic_name": "glyph_composite_46D9F0",
+    "status": "PARTIAL",
+    "purpose": "把一张字形覆盖率位图（GGO_GRAY4/GRAY8/1bpp）按**逐像素 α** 合成进目标表面：dst = (C·α + D·(255−α))/255，A = max(A_dst, α)",
+    "signature_override": { "param0": "this(Engine*)", "param3": "a4=字形记录(int*)", "param8": "a9=颜色(COLORREF)" },
+    "sub_behaviors": ["16bpp 分支（dword_5518C0==16）：RGB444 nibble 合成", "32bpp 分支：A_dst==0 ⇒ RGB=C、A=α；否则 RGB 按 α 混合、A=max(A_dst,α)", "α = 255·cov/17（GGO_GRAY4）/ 255·cov/65（GGO_GRAY8，Font+218500==1）；AA 关（Font+1352==0）时 α 恒满 0/255", "α==255 ⇒ 直接写 C|0xFF000000", "越界像素裁剪（矩形 v38/v39/v40/v41）"],
+    "fields_used": ["Font+1352", "Font+218500", "Scene+1040(设备)", "dword_5518C0(表面位深)"],
+    "unmodeled": ["16bpp 分支的 444 通道细节（本工程走 32bpp）"],
+    "evidence": "raw 84818-85030；32bpp 分支机器码 0x46DDC0-0x46DE7E（0x80808081 魔数 >>7 = /255；esi=α、edi=max(A_dst,α)）",
+    "notes": "★A = max（不是 source-over 的累加）⇒ 往**透明**表面画字时表面 alpha = 覆盖率 α，贴出时再按它合成（槽 0x204 路径）。调用方 sub_471180 raw 87429-87474：档 1 = 描边副本一趟 + 填充一趟；档 3 = 圆环 n 趟；档 2 = 额外一趟。"
+  },
+  {
+    "addr": "0x48AC40",
+    "raw_name": "sub_48AC40",
+    "semantic_name": "ctexture_create_48AC40",
+    "status": "ANALYZED",
+    "purpose": "CTexture::Create（vtable+12）：建程序化纹理表面；mode 0 ⇒ D3DXCreateTexture(A8R8G8B8, D3DPOOL_MANAGED)",
+    "sub_behaviors": ["mode 1/2 ⇒ D3DUSAGE_RENDERTARGET + D3DPOOL_DEFAULT（渲染目标表面）", "mode 0（create-texture 常见档）⇒ Usage=0、D3DFMT_A8R8G8B8(21)、D3DPOOL_MANAGED(1)", "格式按 dword_5518C0（位深）在 A8R8G8B8(21)/A4R4G4B4(26) 间选"],
+    "fields_used": ["CTexture+1040/+1044(宽高)", "CTexture+260..+267", "dword_5518C0"],
+    "evidence": "raw 107006-107070；调用链 0x1F8 → sub_4A2C10 raw 122838-122895 → sub_48AB20 raw 106917",
+    "notes": "★A8R8G8B8 ⇒ 槽表面**有 alpha 通道**（= 「覆盖率 α 留在表面 alpha 上、draw-texture 按它合成」的前提；未涂到的像素 A=0 ⇒ 贴出时透出底板，真机设置界看不到黑块）。"
   }
 
 ]

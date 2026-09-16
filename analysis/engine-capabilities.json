@@ -2488,14 +2488,16 @@
       }
     },
     {
-      "id": "gdi-direct-text-to-slot",
+      "id": "glyph-raster-direct-to-slot",
       "subsystem": "消息窗",
-      "name": "GDI 整串直绘到纹理槽（0x204 draw-string → sub_456710）",
-      "trigger": "脚本显式调用 0x204；且该纹理槽需已有 create-texture(0x1F8) 建出来的表面（三个门：槽对象存在／可锁定／串非空）",
+      "name": "字形光栅化（GetGlyphOutline + 覆盖率 α）直绘到纹理槽（0x204 draw-string → sub_456710）",
+      "trigger": "脚本显式调用 0x204；且该纹理槽需已有 create-texture(0x1F8) 建出来的表面（三个门：槽对象存在／可锁定／串非空）。★不是 GDI：`sub_456710` 体内**没有 TextOutA**，它按 `Font+1372` 走 `sub_471180`（带描边，逐遍 `sub_46D9F0`）或 `sub_46F2D0`（无描边）—— 与自己画的字形同一条覆盖率路径（id 里的 GDI 是早期误判）",
       "engine": {
         "fns": [
           "sub_423390",
-          "sub_456710"
+          "sub_456710",
+          "sub_471180",
+          "sub_46D9F0"
         ],
         "raw": "31454-31467"
       },
@@ -2508,15 +2510,16 @@
         "Font+1364",
         "Font+1372",
         "Font+201680",
-        "Font+201712"
+        "Font+201712",
+        "dword_5518C0（表面位深：16/32bpp 两条合成分支）"
       ],
-      "whySilent": "★缺了不报错，只是那串字永远不出现：宿主没有『往离屏槽画字』的能力时，create-texture 出来的空表面只能被当作一张程序化纹理渲染（emulator 早前退化成 1×1 白纹理占位）⇒ CONFIG1 设置界面中间一片纯白（用户实测）。它也不属于消息窗文本：不排版、不换行、不建窗，直接叠在槽的像素上（保留原有像素、不清底）。",
+      "whySilent": "★缺了不报错，只是那串字永远不出现：宿主没有『往离屏槽画字』的能力时，create-texture 出来的空表面只能被当作一张程序化纹理渲染（emulator 早前退化成 1×1 白纹理占位）⇒ CONFIG1 设置界面中间一片纯白（用户实测）。它也不属于消息窗文本：不排版、不换行、不建窗，直接叠在槽的像素上（保留原有像素、不清底）。 ★另一条静默陷阱（T-0042）：槽表面是 A8R8G8B8 且**未涂到的像素 A=0** —— 引擎把每遍的覆盖率 α 写进表面 alpha（`A = max(A_dst, α)`），贴出时按它合成（真机设置界看不到黑块即此故）。宿主若用 canvas 的 `source-over` 画（描边遍 + 填充遍的 alpha 累加 ≈1），字会变成**不透明纯白**：不报错，只是白字比真机亮/不暖。",
       "confidence": "confirmed",
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/draw-string.test.ts",
-        "note": "handler 只交出『位置 + 文本 + 全局样式快照』（与 msgWinSync 同一分工），宿主把字光栅化进该槽：Pixi 侧用 create-texture 给的空白 canvas 就地画字并 update 纹理；headless 侧把文本记进 scene.slotText（快照可断言）。字形推进与描边副本是纯函数 text/layout.drawStringGlyphs（可单测）。E3 活证据：CONFIG1 槽 196 上 14 条行文本，见 test/config1-chain.test.ts。"
+        "note": "handler 只交出『位置 + 文本 + 全局样式快照』（与 msgWinSync 同一分工），宿主把字光栅化进该槽：Pixi 侧用 create-texture 给的空白 canvas 就地画字并 update 纹理；headless 侧把文本记进 scene.slotText（快照可断言）。字形推进与描边副本是纯函数 text/layout.drawStringGlyphs（可单测）。E3 活证据：CONFIG1 槽 196 上 14 条行文本，见 test/config1-chain.test.ts。 ★T-0042 第 3 次变更：槽路径改为**逐像素复现引擎的写入**（`drawGlyphPassesOnSurface` / `engineGlyphPixel`，`A = max(A_dst, α)`）⇒ 行标签从纯白 255 变成 `α·255+(1−α)·底板` = **(233,231,230) 暖**（与真机记录区间 226-234 暖一致，见 `tickets/T-0042/changes.md` 第 3 次变更）。 （`sub_456710` 本体 raw 68470-68494；`sub_471180` raw 87103-87480。）"
       }
     },
     {
@@ -3456,21 +3459,24 @@
     },
     {
       "id": "text-glyph-coverage-alpha-composite",
-      "name": "文字字形按覆盖率 α 合成到已画好的描边上（\"白字\"永不纯白的机制）",
+      "name": "文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——\"白字\"永不纯白、\"往透明表面画字\"偏灰",
       "subsystem": "渲染",
-      "trigger": "任何由引擎自己光栅化的文字（消息窗正文、`0x204/0x205` 直绘进纹理槽、注音）：`sub_46F2D0` 调 `GetGlyphOutline` 取覆盖率位图后，逐像素交 `sub_46D9F0` 写目标表面",
-      "whySilent": "缺这条 ⇒ 把描边/填充当不透明纯色画：白字落到 255（真机是 α·255+(1-α)·描边 ≈ 226-233），并且因为 1bpp 阈值化把覆盖率斜坡切掉 ⇒ 字看着更粗、边缘更硬（`tickets/T-0035`/`T-0042`）",
+      "trigger": "任何由引擎自己光栅化的文字（消息窗正文、`0x204/0x205` 直绘进纹理槽、注音）：`sub_46F2D0`/`sub_471180` 调 `GetGlyphOutline` 取覆盖率位图后，逐遍交 `sub_46D9F0` 写目标表面",
+      "whySilent": "缺这条 ⇒ 把描边/填充当不透明纯色画：白字落到 255（真机是 α·255+(1-α)·描边 ≈ 226-233），并且因为 1bpp 阈值化把覆盖率斜坡切掉 ⇒ 字看着更粗、边缘更硬（`tickets/T-0035`/`T-0042`） ★第二半（T-0042 第 3 轮补）：引擎写的是 `A = max(A_dst, α)` **不是** `source-over` 的累加 —— 目标透明时（`0x204` 的槽表面）表面 alpha 就等于覆盖率 α，`draw-texture` 再按它合成 ⇒ 白字落到 `α·255+(1−α)·底板`（暖灰）。宿主若用 canvas 直接画 ⇒ alpha 累加成 1 ⇒ 纯白，白字偏亮且丢暖调，同样不报错。",
       "reads": [
         "Font+1352（AA 档：≠0 ⇒ GGO_GRAY4/GRAY8 覆盖率路径，=0 ⇒ GGO_BITMAP 1bpp）",
         "Font+218500（=1 时用 GGO_GRAY8 ⇒ 除数 65，否则 GGO_GRAY4 ⇒ 除数 17）",
         "Font+1360 / Font+1364（填充色 / 描边色，作为每遍的 C）",
         "dword_5518C0（目标表面位深：16 ⇒ RGB444 nibble 分支，否则 32bpp 真 α 分支）",
-        "Font+1408/1412/1416（字形位图缓冲与其字节数）"
+        "Font+1408/1412/1416（字形位图缓冲与其字节数）",
+        "目标表面的 alpha 通道（写入 `A = max(A_dst, α)`；`A_dst==0` ⇒ RGB=C、A=α）"
       ],
       "engine": {
         "fns": [
           "sub_46F2D0",
-          "sub_46D9F0"
+          "sub_471180",
+          "sub_46D9F0",
+          "sub_48AC40"
         ],
         "raw": "84891-85011"
       },
@@ -3479,7 +3485,7 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/text-aa.test.ts",
-        "note": "emulator 侧 = raster 内「描边副本不透明先画 + 填充那一遍 `ctx.globalAlpha = TEXT_FILL_ALPHA(225/255)`」（`src/renderer/text/raster.ts`，常量在 `src/text/layout.ts`），即 canvas 的 `dst = α·C+(1−α)·dst`。α 推导：`v30 = 255*cov/17`（raw 84893-84898），实测平台对应 cov=15 ⇒ 225；满覆盖 16 ⇒ 240（仍 <255）。同屏 OPTION 对照：样例文字 255→225（真机 226-228）；残留：设置界行标签 252 vs 真机 ~230（该元素 `CONFIG1.txt:2747-2748` 把填充与描边都设成 ffffff ⇒ backdrop 是白描边，真机侧应是暗色/不走那两行，待读元素归属）。★配置门冲突：`set:EnableAntiFont` 内建默认 0（raw 491880/111707）且真机 INI 无 `[set]` 段 ⇒ 推导为 1bpp；但 1bpp 分支的 α 恒满 ⇒ 输出纯白，与实测 α<1 不可能同时成立 ⇒ 运行期走覆盖率路径，产品侧以像素判据取 antiAlias=true"
+        "note": "emulator 侧（`src/renderer/text/raster.ts`，常量 `TEXT_FILL_ALPHA` 在 `src/text/layout.ts`）：①**消息窗**（目标不透明）＝ 描边副本不透明先画 + 填充那遍 `ctx.globalAlpha = TEXT_FILL_ALPHA`，与引擎的\"RGB 按 α 混合、A 恒 255\"等价；②**纹理槽**（`0x204`，目标透明）＝ `drawGlyphPassesOnSurface` 逐像素复现引擎写入（`engineGlyphPixel`：`A = max(A_dst, α)`、`A_dst==0 ⇒ RGB=C`、否则 `(C·α+D·(255−α))/255`）。α 推导：`v30 = 255*cov/17`（raw 84893-84898），实测平台对应 cov=15 ⇒ 225；满覆盖 16 ⇒ 240（仍 <255）。同屏 OPTION 对照：样例文字 255→225（真机 226-228）；设置界行标签 255→**(233,231,230) 暖**（真机记录区间 226-234 暖，`tickets/T-0042`）—— 该元素归属已确证是 `CONFIG1.txt:2743-2760`（bbd：i075 14 + i076/i077 都 ffffff + i078 1；`set-font`(0x1A5) 只换面名、不动颜色）。残留：ADV 正文 225 vs 真机 229-232（暖）—— 现在是**颜色来源**问题：真机填充的 backdrop 是暖暗色 (~(63,32,16))，emulator 用黑描边/黑窗底 ⇒ 沿 `T-0035` 的配置色面。★配置门冲突：`set:EnableAntiFont` 内建默认 0（raw 491880/111707）且真机 INI 无 `[set]` 段 ⇒ 推导为 1bpp；但 1bpp 分支的 α 恒满 ⇒ 输出纯白，与实测 α<1 不可能同时成立 ⇒ 运行期走覆盖率路径，产品侧以像素判据取 antiAlias=true （相关 raw：`sub_471180` 87429-87474；`sub_48AC40` 107006-107070。）"
       }
     }
   ]
