@@ -167,13 +167,34 @@ sprite.position = pivot + t          sprite.pivot = pivot − pos
 - ★**两处 `DESTBLEND` 的寄存器实参被 Hex-Rays 丢了**，由 `engine/天结_unpacked.exe_utf8.lst` 逐指令解出
   （`.text:004A3191 push 1`、`.text:004A31BB push 2`）——凡「`.c` 里实参只剩 `(v10, 20)`」都应去 `.lst` 取。
 
-### 未收敛：合并段的 blend 状态由谁重设？（`T-0041`）
-读代码会得到"状态泄漏"：draw-item 的 `0` 不重置、mesh 画完留 `(ONE,ZERO)`（raw 119474-119476 /
-`.lst:0049E681`-`0049E6AF`）、`sub_4535F0` 尾部也是 `(ONE,ZERO)`（`.lst:00453777`-`00453791`），
-而 2D 合并段（`sub_4B06D0` raw 134417-136734）里**没有任何** SetRenderState。
-但把它照原样搬进 emulator 会**明显错**（TITLE 的 logo 透明区被写成黑、背景被覆盖）⇒ 与真机截图矛盾，
-说明"每项重设 blend 状态"的那一处还没找到。⇒ emulator 侧默认按**真机可见行为**（每项从场景默认开始），
-把"泄漏"档完整保留在 `renderer/scene/blend.ts` 的 `BlendWalkOptions.leakStateAcrossEntries`（默认 false）。
+### ✅ 已收敛：合并段的 blend 状态由 **ID3DXSprite 的 Begin/End** 重设（`T-0041`，2026-09-16）
+
+读代码会一度得到"状态泄漏"：draw-item 的 `0` 不重置（raw 123100-123117 跳 LABEL_42）、mesh 画完留
+`(ONE,ZERO)`（raw 119474-119476 / `.lst:0049E681`-`0049E6AF`）、`sub_4535F0` 尾部也是 `(ONE,ZERO)`
+（`.lst:00453777`-`00453791`），而 2D 合并段（`sub_4B06D0` raw 134417-136734）里"没有任何 SetRenderState"。
+**最后一条是 grep 假象**：本引擎的 `SetRenderState`/`SetSamplerState` 全是**设备 vtable 间接调用**
+（`(*(*(device)+228))(...)` / `+276`；228 = 57×4 = `IDirect3DDevice9::SetRenderState` 的槽），符号 grep 看不到。
+
+真正的重设点是**每项一次 `ID3DXSprite::Begin`** —— `sub_4A2D50`（2D draw-item 绘制）在设置任何状态**之前**
+先 `SetTransform` 再 `Begin(16)`：
+
+| 环节 | raw | 事实 |
+|---|---|---|
+| 精灵对象 | 122816-122823 `sub_4A2BA0` | `j_D3DXCreateSprite(device, &Scene+42452)` ⇒ `Scene+42452` 就是 **`ID3DXSprite*`**（「関数：CSprite エラー」只是包装命名） |
+| **每项的开始** | **123087-123088** | `(sprite+20) = SetTransform(matrix)` → `(sprite+32) = Begin(16)`；`16 = D3DXSPRITE_ALPHABLEND` ⇒ D3DXSprite 在 Begin 时按自身默认设 render state（`ALPHABLENDENABLE=TRUE`、`SRCBLEND=SRCALPHA`、`DESTBLEND=INVSRCALPHA`、采样器） |
+| 引擎的每项覆盖 | 123090-123120 | **Begin 之后**才设采样器（`+276` = SetSamplerState：MIN/MAG=LINEAR、MIP=NONE）、`SetRenderState(15 /*ALPHATESTENABLE*/, 0)`，再按选择子设 blend：`1` ⇒ `(19,5)+(20,2)`；`3` ⇒ `(171,3)+(19,5)+(20,2)`；`2` ⇒ 门控 `(19,2)+(20,1)`；**`0`/≥4 不设** ⇒ 落到 **sprite 的默认**（正常 alpha 混合） |
+| 绘制 | 123208 / 123224（`CTexture` vtable+20 = `sub_48AE60`） | `sub_48AE60` 把 (texture, rect, center, pos, color) 转给 **`sprite+36` = Draw**（⇒ 这份 D3DX 的槽序：Begin=32 / Draw=36） |
+| 每项的收尾 | 123250 | `sprite+44`（`End`/`Flush`） |
+
+⇒ **结论**：① 真机上「前一个 `1/2/3` 项之后的 `0` 项」= **sprite 默认（`SRCALPHA`/`INVSRCALPHA`）**，**不继承**前一项；
+② 「mesh 之后的 `0` 项」同理（下一项的 `Begin` 先重设默认）；③ `sub_4535F0`/mesh 留下的 `(ONE,ZERO)`
+只对**不走 sprite 的路径**（mesh/3D）有意义；④ `sub_49E390`（mesh 的纹理四边形，唯一调用点 raw 133617）
+与 `sub_49E700`（DrawModel）在选择子 `0`/≥4 时**显式**设 `(19,5)+(20,6=INVSRCALPHA)`
+（raw 119397-119400、119521-119540）—— mesh 侧本来就不泄漏。
+
+⇒ emulator 侧：**默认档（每项从默认开始）就是引擎事实**；`BlendWalkOptions.leakStateAcrossEntries`
+保留为**实验开关**（按"字面读法"复刻那个并不存在的泄漏），默认 false。E4 交叉验证：打开泄漏档会把 TITLE 的
+logo 透明区写成黑（与真机矛盾），关闭档与 `t17before` 逐字节相同（`T-0017` 的截图对照）。
 
 ### Pixi 落地（`T-0017`）
 `blendModesMap` 里注入两个自定义档：`d3d-opaque = [ONE, ZERO]`、`d3d-rev-subtract = [ONE,ONE,ONE,ONE,FUNC_REVERSE_SUBTRACT,FUNC_REVERSE_SUBTRACT]`

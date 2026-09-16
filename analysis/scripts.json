@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 23,
-    "analyzed": 9,
-    "partial": 13,
+    "total": 25,
+    "analyzed": 10,
+    "partial": 14,
     "stub": 1
   },
   "entries": [
@@ -192,6 +192,11 @@
           "anchor": "draw-texture (local-int 57c4) c4 0",
           "lines": "2870-2880",
           "what": "把槽 196 的**行切片**（628×30 逻辑）贴到行上：引擎按槽表面的 **alpha** 合成 ⇒ 覆盖率 α 在这里生效（未涂到的像素 A=0 ⇒ 透出底板，所以真机/模拟器都看不到黑块）"
+        },
+        {
+          "anchor": "label_0000dc98",
+          "lines": "3196-3213",
+          "what": "★**文本颜色的配置派生**（`i076/i077/i078/i1a4` 的唯一真源）：`f807b=ffffff`/`f807c=0` 是初值 → 按 `a9dd` 位 1/2 从**逐角色配色表** `adcd[14acda]` 取描边色/填充色 → 按 `a9de` 选描边档（=0 ⇒ `f8079=1`/`f807a=0`/**`f807c=f807b`**；≠0 ⇒ `f8079=3`/`f807a=1` 四向 1/1）→ `i076 f807b` / `i077 f807c` / `i078 f8079` / `i1a4 f807a f807a` 应用。真机 `a9dd=2`/`a9de=1` ⇒ **描边纯黑 0**、填充 = 配色色（暖白）"
         }
       ],
       "slots": [
@@ -249,7 +254,8 @@
         "可见行序 = 按 i12f 的 B[x]+C[x] 升序排出的索引序，且**与 A 的初始内容无关**",
         "拇指三段首尾相接：上盖底边 = 中段顶边、中段底边 = 下盖顶边",
         "行描述符的 type ≥ 1（= 0 时数值贴片源 Y = −31 越界，那一行就只剩背景带）",
-        "行标签/行值所在的槽 196 表面：字形像素 alpha = 覆盖率 α（225/255）而**不是** 255 ⇒ 贴到行底板上字落在 α·255+(1−α)·底板 ≈ (233,231,230) 暖灰，且整个元件**不存在纯白 255 像素**（真机同口径）"
+        "行标签/行值所在的槽 196 表面：字形像素 alpha = 覆盖率 α（225/255）而**不是** 255 ⇒ 贴到行底板上字落在 α·255+(1−α)·底板 ≈ (233,231,230) 暖灰，且整个元件**不存在纯白 255 像素**（真机同口径）",
+        "行标签样式块（2746-2748）把填充与描边都写成**立即数 ffffff**，与 `a9dd`/`a9de` 派生的 `f807b/f807c` 无关（那两条每帧重设）"
       ],
       "gotchas": [
         "**切分类 = 退出 + 重入**（7dd=1 → exit → CONFIG.BIN 再 call-script）⇒ 帧局部池必须重建，否则 local5620 从上一页泄漏、拇指顶算到轨道外（实测：滚动条溢出轨道）",
@@ -259,7 +265,8 @@
         "★「初始化本页」= 调用 INITCONFIG*（写默认值 + 登记），不是\"重画界面\"：误当无害重载会把玩家在该页的设置清掉",
         "★**加粗是按文本块显式开关的、不跟着面走**：设置行（bbd/bbe）写 `i2bd 0`（20px），说明文（bbf）与 ADV 预览（bbb）写 `i2bd 1`；`global 3f36` 是样式代号记忆门（2/8/9/15），代号不变就不重设。⇒ 系统里装/不装粗体面**只会影响 i2bd 1 的那些文本**：真机「只装 400 时设置行是 400、之后装上 700 也没变」是**正常**的（T-0035 第 4 轮判定依据）",
         "★设置行（bbd）的填充与描边**都是 ffffff**（2747-2748）⇒ 行标签/行值看起来\"偏暗发暖\"**不是取色问题**：可见值 = `α·255+(1−α)·底板`（α=225/255、底板≈(65,47,40) ⇒ (233,231,230)）。要动的是**槽表面的 alpha 合成**（capabilities `text-glyph-coverage-alpha-composite` / 函数 0x46D9F0），不要去改颜色",
-        "`set-font`（0x1A5 → sub_4328F0）只换**字体面名**（+ 由当前字号推 lfHeight/lfWidth）、**不碰 Font+1360/1364/1372**（functions 0x433290）⇒ 样式块里 i076/i077 先于它执行也不会被覆盖；记忆门 3f36 只管 set-font/i2bd/i078/i1a4/i261，颜色三步每帧重设"
+        "`set-font`（0x1A5 → sub_4328F0）只换**字体面名**（+ 由当前字号推 lfHeight/lfWidth）、**不碰 Font+1360/1364/1372**（functions 0x433290）⇒ 样式块里 i076/i077 先于它执行也不会被覆盖；记忆门 3f36 只管 set-font/i2bd/i078/i1a4/i261，颜色三步每帧重设",
+        "★`f807b/f807c` 的**值**由本脚本 `label_0000dc98`（:3196-3213）按 `a9dd`（位 1=描边色 / 位 2=填充色）从 `adcd[当前角色]` 派生；真机 `a9dd=2` 只置**填充**色 ⇒ **描边是纯黑 0**，别把真机文字的暖调归给\"描边色\"（见 `docs-new/03-engine/adv-text-rendering.md` §10；这也是 T-0035 第 8 轮\"暖暗描边\"假设被排除的依据）"
       ],
       "gaps": [
         "数值型行的**数字文本**走 0x205（GDI 数字绘制）——emulator 未实现（当前只画得出文本型的行值）"
@@ -1975,6 +1982,125 @@
       "status": "stub",
       "evidence": "src/INITGAME.txt:1-18；调用点见 src/GAMESTART.txt:1338 与 test/game-start-chain.test.ts 的 reachedInitGame",
       "notes": "只登记「谁调它 / 它在链路里的位置」；正文未读（stub）。"
+    },
+    {
+      "id": "CVINIT",
+      "file": "src/CVINIT.txt",
+      "bin": "CVINIT.BIN",
+      "role": "逐角色「配音/配色/名字」表的初始化：把游戏内建的默认值写进 `14a8f1 + n` 等一组并行全局表，并写角色名串。",
+      "entry": "由 `INIT2`（`src/INIT2.txt:93 call-script 5217 // CVINIT`）调用；`INIT2` 又由 `SYSTEM4:124` 调用 ⇒ **每次启动**都会重建这张默认表。",
+      "layout": [
+        {
+          "anchor": "mov (global-int 14a8f1) ffffff",
+          "lines": "6-14",
+          "what": "第 0 条 =「ナレーション|旁白」：`14a8f1+0 = ffffff`（默认配色）、`14b894+0 = 3e8`、串 `1116a` = 角色名（含汉化）、`14bc7c+0`/`14c064+0`/`14c065+0` 为其它逐角色字段"
+        },
+        {
+          "anchor": "mov (global-int 14a8f4) ffffff",
+          "lines": "26-32",
+          "what": "下一条角色（「一般女性/普通女性」）：同构的 6 行一组（配色 / 数值 / 两条名字串 / 两个字段）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 14a8f1 + n",
+          "what": "第 n 个角色的**默认配色**（进 `adcd` 的来源；多数 ffffff，26 条彩色）"
+        },
+        {
+          "key": "global 14b894 + n",
+          "what": "逐角色数值字段（本票只确认它存在，语义未读）"
+        },
+        {
+          "key": "global 14bc7c / 14c064 / 14c065 + n",
+          "what": "逐角色其它字段（未读）"
+        },
+        {
+          "key": "string 1116a + …",
+          "what": "角色名字串（含汉化译文）"
+        }
+      ],
+      "invariants": [
+        "每个角色占连续 6 行（mov 配色 / mov 数值 / set-string ×2 / mov ×2）",
+        "配色默认表与真机 SAVE.DAT 解出的 `adcd` 非白条目值一致（ffe100/84b1ff/dcdcc6/71d8ff/d3c3/4dbf67/2c9bdd/d15e4b…）"
+      ],
+      "gotchas": [
+        "★这张表是**默认值**，不是玩家数据：`INITCONFIG4` 只在首次运行（`SYSTEM4.txt:71` 的键 5 == 0）或玩家点「初始化」时把它拷进 `adcd`"
+      ],
+      "gaps": [
+        "257 行里其余字段（14b894/14bc7c/14c064/14c065 的语义、语音 id 关联）未读"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/save-data.md"
+        ]
+      },
+      "guards": [],
+      "status": "partial",
+      "evidence": "src/CVINIT.txt:6-40（本轮抽读）；配色表值与真机 SAVE.DAT 解表结果逐条对照见 docs-new/03-engine/adv-text-rendering.md §10.2b",
+      "notes": "本轮为回答「没有 SAVE.DAT 时默认值从哪来」而读（T-0035 第 10 轮）。"
+    },
+    {
+      "id": "INITCONFIG4",
+      "file": "src/INITCONFIG4.txt",
+      "bin": "INITCONFIG4.BIN",
+      "role": "「角色配色」页的初始化：把三张 1000 条并行表按引擎内建默认值重建并写进 SAVE.DAT。",
+      "entry": "由 `INITCONFIG`（全体初始化，`src/INITCONFIG.txt:10 call-script 51df`）与 `CONFIG2.txt:821`（角色设定页的初始化）调用；首次运行时由 `SYSTEM4.txt:78 call-script 51dc // INITCONFIG` 间接触发（门 = 键 5 == 0）。",
+      "layout": [
+        {
+          "anchor": "fill-zero (global-int 3b4e) 3e8",
+          "lines": "6-8",
+          "what": "`3b4e[0..999] = 0`；`a9e5[0..999] = 0x2710`（`set-array-to`）"
+        },
+        {
+          "anchor": "save-int (local-ptr 0)",
+          "lines": "15-26",
+          "what": "1000 次循环：`save-int` 写 `3b4e[i]`、`a9e5[i]`；`adcd[i] = 14a8f1[i]`（其值为 0 时 `adcd[i] -= 1` 表「未设」），再 `save-int`"
+        },
+        {
+          "anchor": "lookup-array (local-ptr 0) (global-int 14a8f1) (local-int 0)",
+          "lines": "20-24",
+          "what": "默认配色的来源表（`CVINIT` 写）——**这一条就是「没有 SAVE.DAT 也有默认值」的机制**"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 3b4e / a9e5 / adcd（各 1000 条）",
+          "what": "角色配色页的三张并行表：标志位 / 数值 / 颜色"
+        },
+        {
+          "key": "global 14a8f1（1000 条）",
+          "what": "引擎内建默认配色（`CVINIT` 写）"
+        },
+        {
+          "key": "global 5",
+          "what": "「已初始化」标志（`SYSTEM4.txt:71` 的门；本脚本不碰它，由 SYSTEM4 写）"
+        }
+      ],
+      "invariants": [
+        "`adcd[i]` 要么 = `14a8f1[i]`（>0），要么 = 原值 −1（≤0 ⇒ 消费方 `CONFIG1/CHECKCONFIG` 判 `<=0` 时**跳过**调色覆盖、保留 `ffffff`）",
+        "三张表各 1000 条、键 = `\\x03` + hex8(global 地址)"
+      ],
+      "gotchas": [
+        "★这是**首次运行**默认值的唯一来源；`SAVE.DAT` 里那 1000 条 `adcd` 就是它 `save-int` 的结果（emulator overlay 实测齐全：1000/1000，26 条非白）"
+      ],
+      "gaps": [
+        "`3b4e`/`a9e5` 在 UI 上的语义（哪一列是标志、哪一列是数值）未读"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/save-data.md"
+        ]
+      },
+      "guards": [],
+      "status": "analyzed",
+      "evidence": "src/INITCONFIG4.txt 全文（28 行）；对照 docs-new/03-engine/adv-text-rendering.md §10.2b 与 emulator overlay SAVE.DAT 解表",
+      "notes": "本轮为回答「没有 SAVE.DAT 时默认值从哪来」而读（T-0035 第 10 轮）。"
     }
   ]
 }

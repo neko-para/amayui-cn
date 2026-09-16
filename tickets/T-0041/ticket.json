@@ -5,41 +5,53 @@
   "area": "emulator/render",
   "why": "`T-0017` 实现混合选择子时读出一条「状态泄漏」链，但照做与真机可见行为**矛盾**（必须查清才能决定哪一档是对的）：\n\n**读法（raw + `.lst` 逐指令）**：① draw-item 路径的 `0`/≥4 **不重置** blend state（`sub_4A2D50` raw 123100-123117 直接跳 LABEL_42）⇒ 前一个 `1/2/3` 项的档会被继承；② mesh/model 画完后**显式留下** `BLENDOP=ADD` + `(ONE,ZERO)`（`sub_49E390` raw 119474-119476，`.lst:0049E681`-`0049E6AF`）；③ `sub_4535F0` 尾部也是 `(ONE,ZERO)`（`.lst:00453777`-`.00453791`）；④ 而 2D 合并段 `sub_4B06D0`（raw 134417-136734）里**零** SetRenderState、也不调 `sub_4535F0`（该函数只在 present `sub_4B4040` 的 136828+ 与 3D/效果段被调）。⇒ 逐字照做 ⇒ 前一个 `1/2/3` 项（或任何 mesh）之后的 `0` 项都该是「覆盖/加算」。\n\n**实测矛盾（E4）**：把「泄漏」档打开后，**TITLE 整屏错**——logo 的透明区被写成黑、背景被覆盖（`.tmp/t17fix2-0-title.png` 2.0MB vs 正确的 `.tmp/t17before-0-title.png` 3.4MB）；序章同类。Pixi 的源是**预乘**的，`[ONE,ZERO]` 会把 α=0 写成黑 ⇒ 症状比 D3D 更重，但真机上 TITLE 的 logo 透明区本来就该透出背景 ⇒ **真机那次绘制用的不是 `(ONE,ZERO)`**。\n\n⇒ 引擎里**必然还有一处「每项/每帧重设 blend 状态」**（或 2D 项走的不是 `sub_4A2D50` 的 `a6` 通道），只是没找到调用点。查清之前，emulator 默认按真机可见行为跑（每项从场景默认开始），把泄漏档留在 `BlendWalkOptions.leakStateAcrossEntries`（默认 false）。",
   "acceptance": [
-    "在反编译里找到「2D 绘制项每项（或每帧合并段入口）重设 blend state」的那一处（raw 行号 + `.lst` 逐指令），或者证否它存在（例如证明 2D 项走的是另一条绘制路径、其 `a6` 不来自 `DrawItem+0x30`）",
-    "给出结论：真机上「前一个 `1/2/3` 项之后的 `0` 项」与「mesh 之后的 `0` 项」实际是什么档；并解释 `sub_4535F0` 尾部 `(ONE,ZERO)`（`.lst:00453777`-`00453791`）的意图（它到底给谁用）",
-    "据结论决定 `BlendWalkOptions.leakStateAcrossEntries` 的默认值与实现：要么打开泄漏档并修好 Pixi 侧（若真机确实泄漏），要么把「逐项从默认开始」写成引擎事实并删掉/改写泄漏档的说明",
-    "判据（E4）：TITLE（静态帧，两次同码运行逐字节一致）与序章首文案在**两种档位**下的截图与真机对照——错的那一档必须能被这一对照区分出来；并把对照图/结论落进本票",
-    "结论同步 `docs-new/03-engine/rendering.md` §4.6 的「未收敛」段与 `analysis/engine-capabilities.json` 的 `drawitem-mesh-blend-selector` note"
+    "**已找到**（2026-09-16）：「每项重设 blend state」的那一处 = **每项一次 `ID3DXSprite::Begin`**。`sub_4A2D50`（2D draw-item）在设任何状态**之前**调 `(sprite+20)=SetTransform` + `(sprite+32)=Begin(16)`（raw **123087-123088**；`16 = D3DXSPRITE_ALPHABLEND` ⇒ D3DX 在 Begin 时按自身默认设 `ALPHABLENDENABLE=TRUE` + `SRCALPHA`/`INVSRCALPHA` + 采样器），引擎的选择子覆盖发生在那**之后**（raw 123090-123120），收尾 `sprite+44`（raw 123250）。`Scene+42452` 就是 `ID3DXSprite*`（`sub_4A2BA0` raw 122816-122823 用 `j_D3DXCreateSprite` 建）；绘制入口 = `CTexture` vtable+20 = `sub_48AE60` → `sprite+36` = Draw。★同时订正原前提：**「合并段零 SetRenderState」是 grep 假象** —— 本引擎的 `SetRenderState`/`SetSamplerState` 全是设备 vtable 间接调用（`+228` = 57×4、`+276`）。",
+    "**结论**：①「前一个 `1/2/3` 项之后的 `0` 项」= **sprite 默认（`SRCALPHA`/`INVSRCALPHA`，即 normal）**，不继承前一项；②「mesh 之后的 `0` 项」同理（下一项 Begin 先重设默认）；③ `sub_4535F0` 与 mesh 留下的 `(ONE,ZERO)` 只对**不走 sprite 的路径**（mesh/3D）有意义 —— mesh 侧 `sub_49E390`（raw 119397-119400）与 `sub_49E700`（raw 119521-119540）在选择子 `0`/≥4 时**显式**设 `(19,5)+(20,6=INVSRCALPHA)`。",
+    "**决定**：`BlendWalkOptions.leakStateAcrossEntries` **保持默认 false**（= 引擎事实），该开关降级为**实验开关**（复刻那个并不存在的泄漏，用于解释 E4 对照）；`blend.ts` 的两处说明已按机制改写。",
+    "**判据（E4）**：`T-0017` 的对照仍然成立 —— 打开泄漏档 ⇒ TITLE 的 logo 透明区被写成黑（与真机矛盾）；关闭档（默认）⇒ 与 `t17before` 逐字节相同。本票新增 `test/blend-mode.test.ts` 的 「★T-0041：2D draw-item 每项都从默认开始」把结论钉住（含泄漏档的对照序列）。",
+    "**已同步**：`docs-new/03-engine/rendering.md` §4.6 标题从「未收敛」改为「✅ 已收敛」（含 raw 表）；`analysis/engine-capabilities.json` 的 `drawitem-mesh-blend-selector` note 已补机制与锚点。"
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/renderer/scene/blend.ts",
-      "anchor": "leakStateAcrossEntries",
-      "note": "泄漏档的完整实现（默认 false）+ 矛盾说明都在这里"
-    },
-    {
-      "file": "app/amayui-emulator/test/blend-mode.test.ts",
-      "anchor": "状态泄漏：draw-item 的 0 继承前一个",
-      "note": "泄漏档有守卫（显式开档时才生效）；默认档另有断言"
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "(*(void (__stdcall **)(_DWORD, int))(**(_DWORD **)(_this + 42452) + 32))(*(_DWORD *)(_this + 42452), 16);",
+      "note": "★重设点：每项一次 `Begin(16 = D3DXSPRITE_ALPHABLEND)`（前一行是 SetTransform）—— D3DXSprite 在 Begin 时按自身默认设 blend/采样器状态，引擎的选择子覆盖在其后"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "LABEL_42:",
-      "note": "draw-item 选择子分支的汇合点：0/≥4 不设任何 blend state"
+      "note": "draw-item 选择子 0/≥4 自己\"什么都不设\"（raw 123100-123117）⇒ 落到 Begin 设的 sprite 默认"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
-      "anchor": "v24 = sub_49E310(v20, v10, a4, a5, a6);",
-      "note": "mesh 画完之后的收尾：`.lst:0049E681`-`0049E6AF` = BLENDOP=ADD + (ONE,ZERO)"
+      "anchor": "int __thiscall sub_48AE60(_DWORD *_this, int a2, int a3, int a4, int a5, int a6)",
+      "note": "CTexture vtable+20 = 把 (texture, rect, center, pos, color) 转给 `sprite+36` = ID3DXSprite::Draw"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/blend.ts",
+      "anchor": "leakStateAcrossEntries",
+      "note": "默认 false = 引擎事实；开关降级为实验档（说明已按 T-0041 改写）"
+    },
+    {
+      "file": "app/amayui-emulator/test/blend-mode.test.ts",
+      "anchor": "★T-0041：2D draw-item 每项都从默认开始",
+      "note": "守卫：默认档下 `0` 不继承前一项/mesh 的尾状态；泄漏档序列同时钉住（用于对照）"
     }
   ],
-  "notes": "本票是 `T-0017` 实施时**新发现**的未收敛项（`T-0017` 本身按真机可见行为交付）。\n\n对照材料（都在 `.tmp/`，只作过程记录）：\n- `t17before-0-title.png`（把混合档强制 normal = 修前行为，TITLE 正确）3.4MB；\n- `t17fix2-0-title.png`（泄漏档打开）2.0MB —— logo 变成黑底方块、背景被覆盖；\n- `t17v2-0-title.png` / `t17v2-6-gamestart.png`（默认档）与 `t17before` **逐字节相同** ⇒ 默认档没有引入回归；\n- 同一份代码跑两次（`t17fix2` vs `t17fix3`）：静态帧（TITLE/GAMESTART/两处 hover）逐字节一致、淡入中途的帧（7/8）会差 ⇒ **比对必须以静态帧为准**（这条经验也值得记住）。",
+  "notes": "本票是 `T-0017` 实施时**新发现**的未收敛项（`T-0017` 本身按真机可见行为交付）。\n\n对照材料（都在 `.tmp/`，只作过程记录）：\n- `t17before-0-title.png`（把混合档强制 normal = 修前行为，TITLE 正确）3.4MB；\n- `t17fix2-0-title.png`（泄漏档打开）2.0MB —— logo 变成黑底方块、背景被覆盖；\n- `t17v2-0-title.png` / `t17v2-6-gamestart.png`（默认档）与 `t17before` **逐字节相同** ⇒ 默认档没有引入回归；\n- 同一份代码跑两次（`t17fix2` vs `t17fix3`）：静态帧（TITLE/GAMESTART/两处 hover）逐字节一致、淡入中途的帧（7/8）会差 ⇒ **比对必须以静态帧为准**（这条经验也值得记住）。\n\n★2026-09-16 收敛：原\"读法\"与 E4 的矛盾根源是把**设备 vtable 间接调用**当成不存在(SetRenderState = `(*(*(device)+228))`，228 = 57×4)。真正的每项重设 = `ID3DXSprite::Begin(16)`（raw 123087-123088）。默认档（每项从默认开始）就是引擎事实，无需改动产品行为。",
   "id": "T-0041",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-15",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— 收敛：每项重设 = ID3DXSprite::Begin(16)（raw 123087-123088）；'合并段零 SetRenderState' 是 vtable 间接调用的 grep 假象；默认档 false = 引擎事实，新增守卫与文档/台账同步"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/blend-mode.test.ts"
   ]
 }

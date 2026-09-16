@@ -95,3 +95,16 @@ npm run shot -- --gamestart --name aabold     # 临时强制 AA 路径（已改�
    「只有 Regular 面（GDI 回退）」还是「真 Bold 但渲染更细」。
 2. 若属后者：改光栅化（DPR 下的笔画取整策略）。
 3. 若都不像：读引擎 `sub_459F40` 重建的 HFONT 集合与 ADV 绘制用的句柄（假说 (c)）。
+
+## 2026-09-16
+
+## 第 10 轮（2026-09-16，macOS）：配置色链读通 + 「内部尺寸+放大」证伪
+
+- **新增/更新的真源**：`docs-new/03-engine/adv-text-rendering.md` §10（a9dd/a9de → f807b/f807c/f8079/f807a 派生链、
+  两条路径的合成口径、(\u03b1, 填充色) 待判项）；CONFIG1 台账 layout 3196-3213 + gotcha + invariant；
+  能力台账 `text-glyph-coverage-alpha-composite` 的 note。
+- **结论**：① 「暖暗描边」假设排除（真机 a9dd=2 ⇒ 描边纯黑）；② 「引擎内部尺寸渲染+放大」**证伪**
+  （Font+218592/218596 只在 display:VirtualFullScreenType==2 时≠1，真机无该键 ⇒ 恒 1.0，
+  且缩放站点全在 DrawMode==1 门内 ⇒ 没有'只缩文字'分支）；③ 填充/描边色差 = **数据**（逐角色配色表 adcd），
+  不是渲染缺陷；④ 剩余'更粗'与'更亮'同源（填充亮度）+ 光栅器斜坡差（GDI vs canvas2D，有界记录）。
+- **产品代码零改动**（机制优先：不为拟合指标改渲染）；本机复现脚本 `.tmp/t0035-metrics.py`。

@@ -22,13 +22,17 @@
  * 1. **值 2 是门控的**：只有"当前渲染目标槽（`Scene+46456`，由 `0x20D` 写）指向的纹理创建模式
  *    （`CTexture+1048`，由 `0x1F8` 的 op4 写）== 1"（= 正在往 **mode-1 离屏表面**画）时才设 `(ONE,ZERO)`；
  *    否则**什么都不设**（沿用当前状态）。raw 119381-119386 / 123110-123115。
- * 2. **引擎是全局 state 机、会泄漏**（读代码如此）：draw-item 路径的 `0`/≥4 **不重置** blend state
- *    （raw 123100-123117 直接跳 LABEL_42）⇒ 一个 `1`/`2`/`3` 的项之后的 `0` 项**继承**它；
- *    mesh/model 路径画完后**显式留下** `BLENDOP=ADD` + `(ONE,ZERO)`（raw 119474-119476，
- *    `.lst:0049E681`-`0049E6AF`）⇒ 其后所有 draw-item 的 `0` 项都继承"覆盖"。
- *    ★但**这一条与真机可见行为矛盾**（照做会把 TITLE 的 logo 透明区写成黑、序章背景被覆盖）
- *    ⇒ `walkBlendSequence` 把它放在 `BlendWalkOptions.leakStateAcrossEntries`（**默认 false**），
- *    完整实现、可开关、并登记为未收敛项（详见 `BlendWalkOptions` 的说明与 `tickets/T-0017`）。
+ * 2. ★**"全局 state 机会泄漏"这条读法已被证否**（`T-0041`，2026-09-16）：draw-item 的 `0`/≥4 确实
+ *    **自己**不设 blend state（raw 123100-123117 跳 LABEL_42），但**每项一次 `ID3DXSprite::Begin`**
+ *    会先把状态重设成 sprite 自身的默认 —— `sub_4A2D50` 在设任何状态**之前**调
+ *    `(sprite+20)=SetTransform` + `(sprite+32)=Begin(16)，flags = D3DXSPRITE_ALPHABLEND`（raw 123087-123088），
+ *    之后才设采样器/`ALPHATESTENABLE`/选择子（raw 123090-123120，全部是设备 vtable 间接调用 `+228`/`+276`
+ *    ⇒ 符号 grep 看不到"合并段里的 SetRenderState"）⇒ 选择子 `0` 落到 **sprite 默认（SRCALPHA/INVSRCALPHA）**，
+ *    mesh 留下的 `(ONE,ZERO)`（raw 119474-119476）**不会**传给后续 draw-item。
+ *    ⇒ 真机就是"**每项从默认开始**"；`leakStateAcrossEntries` 因此只是**实验开关**（复刻那个并不存在的
+ *    泄漏，用来解释 T-0017 的 E4 对照为什么必须关掉它），**默认 false 才是引擎事实**。
+ *    mesh 侧另有显式默认：`sub_49E390`（raw 119397-119400）与 `sub_49E700`（raw 119521-119540）在
+ *    选择子 `0`/≥4 时设 `(19,5)+(20,6=INVSRCALPHA)`。
  *
  * ## 与 Pixi 的对应（宿主侧映射，见 `pixi/presenter.ts`）
  * Pixi 的颜色是**预乘**的 ⇒ `D3D(SRCALPHA, ONE)` = `'add'`、`(SRCALPHA, INVSRCALPHA)` = `'normal'`、
@@ -129,10 +133,11 @@ export interface BlendEntry {
  * 顺序 = presenter 的三路归并顺序（引擎 `sub_4B06D0` 同序）。初始档 = 场景默认
  * （`Scene+1260`；未设 `0x33F` 时 = `'normal'`，与 emulator 既有行为一致）。
  *
- * ★**入口档是一个"未确认"**：2D 合并段（raw 134417-136734）内**没有任何** SetRenderState 调用，
- * 也不调 `sub_4535F0` ⇒ 引擎进入合并时用的是**上一帧留下的**状态（3D 效果段 `sub_4535F0` 尾部是
- * `(ONE,ZERO)`，但它在合并**之后**）。emulator 取场景默认（= `'normal'`）——这条差异登记在
- * `tickets/T-0017/notes.md` 的"未确认"，要靠真机对照才能定。
+ * ★**每项的入口档 = `ID3DXSprite::Begin(16)` 设的默认**（`T-0041` 已定论）：2D 合并段
+ * （raw 134417-136734）自己确实不设状态，但**每个 draw-item 的绘制函数**都包在
+ * `SetTransform + Begin(16)` … `(sprite+44)` 里（raw 123087-123088 / 123250）⇒ 每项都从
+ * sprite 默认（正常 alpha 混合）开始；`sub_4535F0` 的 `(ONE,ZERO)` 只影响不走 sprite 的路径。
+ * emulator 取场景默认（= `'normal'`）与之等价。
  */
 export function walkBlendSequence(
   entries: readonly BlendEntry[],
@@ -163,18 +168,21 @@ export function walkBlendSequence(
 /**
  * `walkBlendSequence` 的档位。
  *
- * ★★**`leakStateAcrossEntries` 默认 `false`（= 每个条目从场景默认重新开始）—— 这是"与真机一致"的那一档，
- * 而**不是**"读代码得出"的那一档。** 冲突与依据（`tickets/T-0017`，2026-09 实测）：
- *  - **代码读法**：draw-item 的 `0` 不重置 blend state（raw 123100-123117）、mesh 画完还把状态留在
- *    `(ONE,ZERO)`（raw 119474-119476，`.lst:0049E681`-`0049E6AF`）、`sub_4535F0` 尾部也是 `(ONE,ZERO)`
- *    （`.lst:00453777`-`00453791`）、而 2D 合并段（`sub_4B06D0` raw 134417-136734）里**没有任何**
- *    SetRenderState ⇒ 逐字照做的话，前一个 `1/2/3` 项（或任何 mesh）之后的 `0` 项都会"继承"那个档。
- *  - **实测矛盾**：照做之后 **TITLE 整屏错**（logo 的透明区被写成黑、背景被覆盖：Pixi 的源是**预乘**的，
- *    `(ONE,ZERO)` 会把 α=0 写成黑），序章也出现同类现象；而"每项从场景默认开始"这一档与
- *    真机截图一致（同一场景的 E4 对照见票据）。
- *  ⇒ 结论：**"合并段入口/逐项的 blend 状态由谁重设"这一块我还没读通**（引擎里必然还有一处每项重设，
- *  只是没找到调用点）。在此之前：默认按**真机可见行为**跑；把"泄漏"这条引擎逻辑**完整保留并在
- *  `leakStateAcrossEntries: true` 下可用**（不是删掉、也不是忽略），并把它登记为票据的未收敛项。
+ * ★★**`leakStateAcrossEntries` 默认 `false`（= 每个条目从默认重新开始）—— 这就是引擎事实**，
+ * 依据已由 `T-0041` 在 2026-09-16 读通（raw 锚点见下）：
+ *  - 2D draw-item 的 blend 由**每项一次 `ID3DXSprite::Begin(16)`**（flags = D3DXSPRITE_ALPHABLEND）重设：
+ *    `sub_4A2D50` 在设任何状态**之前**调 `(sprite+20)=SetTransform` + `(sprite+32)=Begin(16)`
+ *    （raw 123087-123088），随后才设采样器 / `ALPHATESTENABLE` / 选择子（raw 123090-123120；
+ *    **全是设备 vtable 间接调用** `+228`/`+276` ⇒ 符号 grep 看不到"合并段里的 SetRenderState"）；
+ *    收尾调 `sprite+44`（raw 123250）。⇒ 选择子 `0`/≥4（自己什么都不设）落到 **sprite 默认
+ *    （`SRCALPHA`/`INVSRCALPHA`）**，前一项的档与 mesh 留下的 `(ONE,ZERO)`（raw 119474-119476）
+ *    **都不会**传给后续 draw-item。
+ *  - mesh 侧另有显式默认：`sub_49E390`（raw 119397-119400）与 `sub_49E700`（raw 119521-119540）
+ *    在选择子 `0`/≥4 时设 `(19,5)+(20,6=INVSRCALPHA)`。
+ *  - 曾经的"读法冲突"来自把 vtable 间接调用当成不存在：`SetRenderState` = `(*(*(device)+228))`，
+ *    228 = 57×4 = `IDirect3DDevice9::SetRenderState` 的槽。
+ *  ⇒ 默认档 = `'normal'`（每项从默认开始）；`leakStateAcrossEntries: true` 只作为**实验开关**
+ *  （复刻那个并不存在的泄漏，用来解释 T-0017 的 E4 对照为什么必须关掉它）。
  */
 export interface BlendWalkOptions {
   /**

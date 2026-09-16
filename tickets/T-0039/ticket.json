@@ -5,10 +5,10 @@
   "area": "emulator/test",
   "why": "2026-09（研究 T-0017 时实际踩到并复现）：src/tools/deadWrites.ts 的 countAccess() 按行正则 `\\.\\s*<field>\\b` 统计读写，**不区分注释**。我在 src/renderer/drawitem/model.ts 的文档注释里写了一句「见 MeshObj.blend」，npm run check:dead-writes 立刻从「当前死写 2 个」变成「当前死写 0 个 + 基线已过期（Item.blend MeshObj.blend 现在有消费者了）」。两个后果：① 把**已登记的能力缺口**误报成已修（报告与 formatReport 的 fixed 列表都失真）；② 对**没有反向断言**的字段，一句注释就能把新出现的死写静默洗成「有人读」，棘轮形同虚设。注意 test/no-dead-writes.test.ts 的第 2 条断言（Item.blend 应被判为死写）恰好会因此变红 —— 那是巧合（只有 blend 这两个字段有反向断言），而且失败信息指向「应被判为死写」，不会告诉人「注释不该算读」。",
   "acceptance": [
-    "countAccess 统计前剥掉注释（`//` 行与 `/* */` 块；至少覆盖 `/** */` 文档注释），使注释里出现 .field 不影响任何字段的读写计数",
-    "新增守卫：构造一段含 .field 的注释文本，断言读数不变（或等价地：断言 findDeadWrites 对「注释里提到字段」不敏感）",
-    "回归：npm run check:dead-writes 仍报 Item.blend / MeshObj.blend 为死写（2 个）、test/no-dead-writes.test.ts 全绿；src/renderer/drawitem/model.ts 里的说明文字不再影响结论",
-    "把结论写进 src/tools/deadWrites.ts 顶部「局限」段（现在只写了『静态分析无法识别下标/动态键访问』，没写『注释会被算成读』）"
+    "`countAccess` 统计前剥掉注释（`//` 行与块注释，含 `/** */` 文档注释）—— **已实现**：新增导出函数 `stripCommentsAndStrings`（`src/tools/deadWrites.ts`），带引号状态扫描器，不误伤 `'…//…'`/模板串/`http://`，并保行结构；★同时把**字符串字面量内容**也剥掉（否则 `log('Item.blend 未消费')` 同样能洗活死写）",
+    "新增守卫 —— **已实现**：`test/no-dead-writes.test.ts` 第 3 条「死写检测对注释/字符串免疫」（合成 model+consumer：文档注释/行注释/字符串/URL 里出现字段名 ⇒ 读数不变；把唯一真读改成注释 ⇒ 该字段回到死写）",
+    "回归 —— **已达成**：`npm run check:dead-writes` = 当前死写 0 / 基线 0（★T-0017 之后真实模型已无死写，原 acceptance 里\"仍报 Item.blend/MeshObj.blend 2 个\"已过期：那 2 个字段现在有消费者了）；`test/no-dead-writes.test.ts` 3/3 绿",
+    "结论写进 `src/tools/deadWrites.ts` 顶部「局限」段 —— **已写**（注释/字符串不算读 + 为什么：一句文档注释就能把已登记的能力缺口洗成\"已修\"，实测现场见本票 why）"
   ],
   "evidence": [
     {
@@ -25,10 +25,20 @@
       "file": "app/amayui-emulator/src/renderer/drawitem/model.ts",
       "anchor": "混合模式选择子",
       "note": "本轮在这里写了一句含 .blend 的注释 ⇒ 复现入口（现已改成不含 .blend 的措辞）"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/deadWrites.ts",
+      "anchor": "export function stripCommentsAndStrings(src: string): string {",
+      "note": "修法：统计前剥注释与字符串内容（保行结构、不误伤 URL/模板串）"
+    },
+    {
+      "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
+      "anchor": "死写检测对注释/字符串免疫",
+      "note": "守卫：注释/字符串里的字段名不改变读数；唯一真读改成注释后必须回到死写"
     }
   ],
   "id": "T-0039",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-15",
@@ -37,6 +47,14 @@
     {
       "at": "2026-09-15",
       "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— countAccess 统计前剥注释+字符串（stripCommentsAndStrings）；新增守卫 test/no-dead-writes.test.ts 第 3 条；check:dead-writes 0/0、3 测试全绿；局限段已写"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/no-dead-writes.test.ts"
+  ],
+  "notes": "\n\n★2026-09-16 收尾：四条 acceptance 全部达成（见上）；顺带把字符串字面量也纳入剥离范围。"
 }

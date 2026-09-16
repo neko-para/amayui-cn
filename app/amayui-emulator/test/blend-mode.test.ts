@@ -111,6 +111,36 @@ test('★T-0017 门控在真实序列里生效：mode-1 渲染目标里画高亮
     '泄漏档：第二个 0 项继承覆盖');
 });
 
+test('★T-0041：2D draw-item 每项都从默认开始 —— `0` 不继承前一项、也不继承 mesh 的 (ONE,ZERO)', () => {
+  // 引擎机制：每项一次 `ID3DXSprite::Begin(16)`（raw 123087-123088）按 sprite 默认重设 blend，
+  // 引擎的选择子覆盖发生在那之后（raw 123090-123120）⇒ 缺省档 = 引擎事实。
+  const seq = walkBlendSequence(
+    [
+      { kind: 'item', blend: 1 }, // 加算（自成一档）
+      { kind: 'item', blend: 0 }, // ⇒ 必须是 normal（不是 add）
+      { kind: 'mesh', blend: 0 }, // mesh 画完引擎把状态留在 (ONE,ZERO)
+      { kind: 'item', blend: 0 }, // ⇒ 仍必须是 normal（不是 none）
+    ],
+    env(),
+    0,
+  );
+  // mesh 那一项自己**显式**设默认（`sub_49E390` raw 119397-119400：选择子 0 ⇒ (19,5)+(20,6)）⇒ 'normal'
+  assert.deepEqual(seq, ['add', 'normal', 'normal', 'normal'], '每项从默认开始（sprite 的 Begin 重设）');
+  // 实验开关（复刻"字面读法"的泄漏）仍然可用，但它**不是**真机行为
+  const leaked = walkBlendSequence(
+    [
+      { kind: 'item', blend: 1 },
+      { kind: 'item', blend: 0 },
+      { kind: 'mesh', blend: 0 },
+      { kind: 'item', blend: 0 },
+    ],
+    env(),
+    0,
+    { leakStateAcrossEntries: true },
+  );
+  assert.deepEqual(leaked, ['add', 'add', 'normal', 'none'], '泄漏档（默认关闭；仅用于对照实验）');
+});
+
 test('T-0017 入口档 = 场景默认（`0x33F` 未下发时 = normal，与 emulator 既有行为一致）', () => {
   assert.deepEqual(walkBlendSequence([{ kind: 'item', blend: 0 }], env(), 0), ['normal']);
   assert.deepEqual(walkBlendSequence([{ kind: 'item', blend: 0 }], env(), 1), ['add'], '场景默认加算 ⇒ 首个 0 项就加算');

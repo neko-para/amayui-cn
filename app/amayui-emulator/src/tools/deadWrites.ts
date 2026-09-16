@@ -15,9 +15,13 @@
  * 用 `dead-writes.baseline.json` 做 **ratchet**：基线内的已知死写不报错（它们已被登记为能力缺口），
  * **新增**死写则测试失败 ⇒ 保证"不会越写越多没人看的字段"。
  *
- * 局限（已知，写在这里免得被当成保证）：静态分析无法识别通过下标/动态键访问的消费者，
- * 因此**只用来防新增**，不作为"这个字段一定没人用"的证明；运行时版本（给 Item 套 Proxy 统计 get）
- * 是更准的后续手段，但成本高、只在 debug 模式下才值得开。
+ * 局限（已知，写在这里免得被当成保证）：
+ *  - 静态分析无法识别通过下标/动态键访问的消费者 ⇒ **只用来防新增**，不作为"这个字段一定没人用"的证明；
+ *    运行时版本（给 Item 套 Proxy 统计 get）是更准的后续手段，但成本高、只在 debug 模式下才值得开；
+ *  - ★**注释不算读**（`tickets/T-0039`）：统计前会剥掉 `//` 行注释与块注释（含文档注释）。修之前是逐行跑
+ *    正则、注释里的 `.field` 会被算成"有人读" —— 一句文档注释就能把**已登记的能力缺口**洗成"已修"
+ *    （实测：在 `model.ts` 里写一句「见 MeshObj.blend」即让两个字段从 dead 变 alive）。
+ *    剥注释用带字符串/引号状态的小扫描器（不误伤 `'…//…'`、模板串、`http://`），并保持行结构不变。
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -142,6 +146,83 @@ function countAccess(src: string, field: string): { writes: number; reads: numbe
   return { writes, reads };
 }
 
+/**
+ * **剥掉注释与字符串内容**（`tickets/T-0039`）：`//` 行注释、`/* … *\/` 块注释（含 `/** *\/` 文档注释）
+ * 里的字段名不算"访问"；**字符串字面量的内容**同理（否则一句 `log('Item.blend 未消费')` 也能把死写洗活）。
+ * 带引号状态的小扫描器：不误伤 `'…//…'`、模板串、`http://`（`:` 后的 `//` 保留），
+ * 并**保持行结构**（注释/模板串里的换行原样留下）——因为下游统计是按行跑的。
+ */
+export function stripCommentsAndStrings(src: string): string {
+  let out = '';
+  let i = 0;
+  let mode: 'code' | 'line' | 'block' = 'code';
+  let quote: string | null = null;
+  while (i < src.length) {
+    const c = src[i]!;
+    const n = src[i + 1];
+    if (mode === 'line') {
+      if (c === '\n') {
+        mode = 'code';
+        out += c;
+      }
+      i++;
+      continue;
+    }
+    if (mode === 'block') {
+      if (c === '*' && n === '/') {
+        mode = 'code';
+        i += 2;
+      } else {
+        if (c === '\n') out += c; // 保留行数
+        i++;
+      }
+      continue;
+    }
+    if (quote) {
+      if (c === '\\') {
+        i += 2; // 转义序列整体丢弃
+        continue;
+      }
+      if (c === '\n') {
+        out += c; // 模板串里的换行要留（保行结构）
+        i++;
+        continue;
+      }
+      if (c === quote) {
+        quote = null;
+        out += c; // 保留收尾引号（配对，便于人读）
+      }
+      i++;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      quote = c;
+      out += c;
+      i++;
+      continue;
+    }
+    if (c === '/' && n === '/') {
+      // `http://` 这类 URL（前一非空字符是 `:`）不算注释起始
+      if (out.trimEnd().endsWith(':')) {
+        out += c;
+        i++;
+        continue;
+      }
+      mode = 'line';
+      i += 2;
+      continue;
+    }
+    if (c === '/' && n === '*') {
+      mode = 'block';
+      i += 2;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
 /** 扫描并产出报告。 */
 export function findDeadWrites(rootDir: string, files: string[] = DEFAULT_SCAN): DeadWriteReport {
   const sources = new Map<string, string>();
@@ -150,11 +231,12 @@ export function findDeadWrites(rootDir: string, files: string[] = DEFAULT_SCAN):
     if (fs.existsSync(p)) sources.set(f, fs.readFileSync(p, 'utf8'));
   }
   const model = sources.get(MODEL_FILE) ?? '';
-  // 剔除诊断函数：它们读字段只为报告，不算"渲染消费"
-  const all = stripFunctions([...sources.values()].join('\n'), DIAGNOSTIC_FNS);
+  // 剔除诊断函数：它们读字段只为报告，不算"渲染消费"（这一步要看文档注释，必须在剥注释之前）
+  // ★顺序要紧：先 stripFunctions（靠 `/**` 找函数头）→ 再 stripComments（`T-0039`：注释不算读）。
+  const all = stripCommentsAndStrings(stripFunctions([...sources.values()].join('\n'), DIAGNOSTIC_FNS));
   const report: DeadWriteReport = { alive: [], dead: [], files: [...sources.keys()] };
   for (const iface of ['Item', 'MeshObj']) {
-    for (const field of interfaceFields(model, iface)) {
+    for (const field of interfaceFields(stripCommentsAndStrings(model), iface)) {
       const { writes, reads } = countAccess(all, field);
       const entry: DeadWrite = { id: `${iface}.${field}`, writes, reads };
       if (writes > 0 && reads === 0) report.dead.push(entry);

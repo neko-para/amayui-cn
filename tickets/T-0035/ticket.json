@@ -11,11 +11,11 @@
     "真机侧收尾复核（等用户有环境；★判定只能直接问 GDI，字体选择器里出现几条**不算证据** —— 第 6 轮实测：两面都装好的机器上候选表同样只有一条）：① 在真机上跑 tools/font-face-probe.ps1：face=Amayui CN 的 lfWeight=400 与 700 取回**同一份**（同 name/同 sha256）⇒ 700 被静默退回常体（假设 (a) 成立）；取回**不同份**（如 id6=Amayui-CN-Bold）⇒ 700 确实落在 Bold 面，则第 5 轮据 0.257 得出的「真机用 Regular 面」需重测（同帧同缩放，并核对那句台词在 src 里确实是 i2bd 1）；② 重装两份 + 重启 FontCache/电脑 + 完全退出游戏后，ADV 应从 ~0.25 跳到 ~0.35-0.40（同一台词同一方法）",
     "可选（非修 bug，由用户决定）：fonts.bold: face|regular 只在模拟器里复现「加粗未生效的真机」；原版日文游戏 ADV 用 メイリオ Bold，故 regular 与「对照原版」方向相反",
     "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）—— 已修",
-    "★第 8 轮后剩下的两项（都已定位到机制，待对齐）：① **填充色**：ADV 正文的填充色来自 `i076 (global-int f807b)`，而 `f807b` 由 CONFIG1 `label_0000dc98` 按 `adcd[14acda]`（逐角色配色表，LOADCONFIG 从 SAVE.DAT load-int 回来）覆盖 —— 本机实测 ≈230，emulator 停在 `mov f807b ffffff` 的默认 ⇒ 见 T-0042；② **输出软硬**：引擎的输出边缘更软（非设备分辨率硬边），需确认引擎是否「内部尺寸渲染 + 整体放大」（引擎 LOGFONT 的 `lfHeight = 字号 × Font+218596`，raw 71055 的缩放因子），并决定 emulator 是否照做或记为已知差异",
-    "★字重收尾（第 9 轮量化）：修复文字白电平后 ADV 墨迹/字 560.7 → 436.9（引擎 414.6，+5.4%）、单字 E 的 bbox/游程与引擎一致（51x27 / 中位 5）⇒ 字号与字重**选择**都对；残余只有**软化**：引擎边缘 中间/核心 0.17 而 emulator 0.06 ⇒ 固定阈值下笔画差 1px（4 vs 5）。判据 = 让 emulator 的文字走「内部尺寸渲染 + 双线性放大」后，边缘比 → 0.15-0.18、游程中位 → 4、墨迹/字 → ~415（同一句台词同一口径）"
+    "★第 8 轮后剩下的两项（**第 10 轮全部定位**）：① **填充色**：ADV 正文走 `i076 (global f807b)` / `i077 (global f807c)` / `i078 (global f8079)` / `i1a4 (global f807a)`（`src/SN0000.txt:486-500`），四个全局由 `CONFIG1.txt:3196-3213` `label_0000dc98` 按 `a9dd`（位 1=描边色 / 位 2=填充色）+ `a9de`（=0 单向+偏移0+描边色=填充色；≠0 四向 3+偏移 1/1）从**逐角色配色表 `adcd[14acda]`** 派生 （同构副本见 `CHECKCONFIG.txt:52-82`、`CONFIG2.txt` `label_00007178`；数据由 `LOADCONFIG.txt:34-49` 从 SAVE.DAT 三张 1000 条表 load 回来）。真机 `a9dd=2`/`a9de=1` ⇒ **描边纯黑 0**、填充 = 配色色（暖白）⇒ 第 8 轮\"暖暗描边\"假设**排除**。emulator 的颜色链**逐项一致**（`npm run diag:text` = 填充 #ffffff / 描边 #000000 / mode 3 / 1,1），差的只是**数据**（overlay 的 `adcd` 全白）⇒ 要复现真机观感就把真机 SAVE.DAT 的配色表放进 overlay（T-0030/T-0031 链路）；② **输出软硬**：见上面第 9 条（证伪 + 归因）。",
+    "★字重收尾（第 9 轮量化）+ **第 10 轮订正**：修白电平后 ADV 墨迹/字 560.7 → 436.9（引擎 414.6，+5.4%）、单字 E bbox/游程一致 ⇒ 字号与字重**选择**都对。第 10 轮用两条引擎侧取证否掉了\"引擎=内部尺寸渲染+整体放大\"：`Font+218592/218596` 只在 `display:VirtualFullScreenType == 2` 时≠1（内建默认 0，真机 INI 无该键）⇒ 恒 1.0，且坐标缩放站点**全部**包在 `if (DrawMode == 1)` 内（真机 DrawMode = 0）⇒ 既无整帧放大、也**没有\"只缩文字\"的分支**（raw 78765/78967-79030/111500-111502/114505-114800/75942-75960/73133-73180）。⇒ 剩下的\"更粗/更软\"归因：**填充亮度**（真机逐角色配色暖白 ≈241-247 vs 模拟器纯白，= 本条 ① 的同一个数据差，边缘像素更亮 ⇒ 超过\"亮度>170\"阈值的像素更多 ⇒ 墨迹 +5.4%、游程 5 vs 4）+ **光栅器斜坡差**（GDI `lfHeight`/`GGO_GRAY4`/grid-fit vs canvas2D `em`/FreeType，有界，canvas2D 无法复现）。⇒ **决定不做\"照指标拟合\"的改法**（机制优先；T-0042 第 1 次变更的教训）。"
   ],
   "id": "T-0035",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-14",
@@ -76,6 +76,10 @@
     {
       "at": "2026-09-15",
       "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "doing → done —— 第 10 轮收口：颜色链读通（CONFIG1 label_0000dc98 + adcd/ad9de 派生；'暖暗描边'排除）；'内部尺寸+放大'证伪（Font+218592/218596 恒 1.0、缩放只在 DrawMode==1）；剩余差异 = 配置配色数据（adcd）+ 光栅器斜坡（GDI vs canvas2D，有界记录）；产品代码零改动（机制优先）"
     }
   ],
   "evidence": [
@@ -147,16 +151,26 @@
   ],
   "links": {
     "analysis": [
-      "text-style-scope-queue-time",
+      "text-glyph-coverage-alpha-composite",
       "bold-is-lfweight-face-mapping",
-      "text-font-rebuild-cascade"
+      "text-face-source-memory-vs-system",
+      "text-style-scope-queue-time"
     ],
     "tickets": [
       "T-0036",
       "T-0042"
+    ],
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md",
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/message-config-gates.md"
     ]
   },
   "tests": [
-    "app/amayui-emulator/test/text-aa.test.ts"
+    "app/amayui-emulator/test/text-aa.test.ts",
+    "app/amayui-emulator/test/text-style-snapshot.test.ts",
+    "app/amayui-emulator/test/font-bold-face.test.ts",
+    "app/amayui-emulator/test/text-layout.test.ts",
+    "app/amayui-emulator/test/draw-string.test.ts"
   ]
 }

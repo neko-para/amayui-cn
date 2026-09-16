@@ -56,3 +56,50 @@ test('死写检测自身有效：合成模型里"只写不读"的字段必须被
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+/**
+ * ★**注释/字符串里的字段名不算"读"**（`tickets/T-0039`）。
+ *
+ * 复现的现场：在 `src/renderer/drawitem/model.ts` 的文档注释里写一句「见 MeshObj.blend」，
+ * `npm run check:dead-writes` 立刻把两个**已登记的能力缺口**报成"已修"（dead → alive）——
+ * 报告与 `fixed` 列表一起失真，而"没有反向断言"的字段从此可以被一句注释静默洗白。
+ * 修法：`stripCommentsAndStrings` 在统计前剥掉 `//`/块注释（含文档注释）与字符串字面量内容。
+ */
+test('死写检测对注释/字符串免疫：注释里提到字段名，不改变读数', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dead-writes-comment-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'src', 'renderer', 'drawitem'), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, 'src', 'renderer', 'drawitem', 'model.ts'),
+      'export interface Item {\n  onlyWritten: number;\n}\n',
+    );
+    fs.writeFileSync(
+      path.join(dir, 'src', 'renderer', 'consumer.ts'),
+      [
+        'export const x = { onlyWritten: 1 };',
+        '/** 说明：这里**不**消费 {@link Item.onlyWritten}（文档注释） */',
+        '// 行注释里提到 x.onlyWritten 也不算读',
+        "export const msg = 'log: x.onlyWritten 未消费';",
+        "export const url = 'http://example.com/x.onlyWritten';",
+        'export const y = x.onlyWritten; // ← 唯一真读（下面断言靠它做对照）',
+      ].join('\n'),
+    );
+    const report = findDeadWrites(dir, ['src/renderer/drawitem/model.ts', 'src/renderer/consumer.ts']);
+    const entry = [...report.alive, ...report.dead].find((d) => d.id === 'Item.onlyWritten');
+    assert.ok(entry, '字段应被扫到');
+    assert.equal(entry!.reads, 1, `只有代码里的那一次访问算读（注释/字符串都不算），实际 ${entry!.reads}`);
+
+    // 反面：把**唯一**那次真读也改成注释 ⇒ 必须回到"死写"
+    fs.writeFileSync(
+      path.join(dir, 'src', 'renderer', 'consumer.ts'),
+      ['export const x = { onlyWritten: 1 };', '// x.onlyWritten 只出现在注释里'].join('\n'),
+    );
+    const report2 = findDeadWrites(dir, ['src/renderer/drawitem/model.ts', 'src/renderer/consumer.ts']);
+    assert.ok(
+      report2.dead.map((d) => d.id).includes('Item.onlyWritten'),
+      `注释不算读 ⇒ 该字段必须是死写（实际死写：${report2.dead.map((d) => d.id).join(' ') || '无'}）`,
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
