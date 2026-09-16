@@ -65,12 +65,14 @@ docs-new/
 │   ├── stub-reaudit-2026-09.md ← **已 stub 指令的复评台账**：57 条 stub 逐条判据（42 要实现 / 14 排除（视频·Live2D·键盘输入）/ 1 真·空）+ 批次进度（**A1–A6 全部完成**：44 条转真实现，`ENGINE_INTERNAL_OPS` 48 → **14**；A6 = AGERC 接口解锁存档/读档界面）+ **§4 逐条状态总表（由代码实算）**
 │   ├── agerc-module.md       ← **AGERC.DLL 模块接口**：引擎启动时硬编码加载 + `set:RCVersion` 版本锁 + 脚本侧 `0x14B/0x14C/0x14D`（全语料唯一调用点 `SAVE.txt:7-9`，21 个导出清单）+ 汉化宽字符串证据 + 反汇编 UTF-8 转写规则 + 17 个地图导出「本作不可达」结论
 │   ├── agerc-internals.md    ← **AGERC.DLL 内部能力地图**：反编译覆盖率（122 体=100%，`// idb` 全是 jmp thunk）+ exe⇄DLL 服务定位器（`_GetClassObject@4`/`AGE:reg`/`AGE:IAGEService`）+ 配置键全集与换算陷阱 + 顶部菜单 38 命令 + 对话框资源表 + 截图/注册码/硬件采集 + 多边形碰撞微引擎 + emulator 建模/忽略清单
+│   ├── live2d.md             ← **Live2D 子系统**（内嵌 SDK 2.0.06 for DirectX / .MOC+.MTN+PNG 口径 / 10 槽 + 76B 实例 + 572B 立绘节点 / opcode 面 / 能力·缺失面 / 重写三路线摘要）
 │   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
 │   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
 │                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog
 ├── 04-app/                   ← app 工具
 │   ├── README.md             ← 三子工程总览（独立、不引用 app/*/docs）
 │   ├── emulator.md           ← amayui-emulator
+│   ├── live2d-support-assessment.md ← **Live2D 支持评估**：系统能力速查 / ★要不要引依赖库（Cubism 5 ❌、Cubism 2.1 运行时 ⚠️、自研移值 ✅）/ 工作量 / 分阶段计划 / 待拍板项
 │   ├── inspector.md          ← amayui-inspector
 │   └── toolkit.md            ← amayui-toolkit
 └── 05-scripts/               ← **脚本台账**（第三层数据层 `analysis/scripts.json` 的生成物，勿手改）

@@ -7,9 +7,15 @@
 
 ## 概览
 
-共 **53** 张：🔜 doing **0** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **42** · 🚫 dropped **1**（P0 5 / P1 13）
+共 **54** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **42** · 🚫 dropped **1**（P0 5 / P1 13）
 
-按域：`emulator/render` 12 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/hosts` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1
+按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/test` 4 · `emulator/hosts` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1
+
+## 🔜 doing（1）
+
+| id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
+|---|---|---|---|---|---|---|---|---|
+| [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | — | `notes.md` | — |
 
 ## ⬜ open（10）
 

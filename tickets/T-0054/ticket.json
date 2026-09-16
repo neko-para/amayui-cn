@@ -1,0 +1,123 @@
+{
+  "title": "Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "引擎内嵌的是 **Live2D SDK 2.0.06 for DirectX**（Cubism 2.x 世代，非 moc3）：模型 `.MOC`（二进制）+ 动作 `.MTN`（文本）+ 纹理 PNG（走 D3DX 直读），引擎按「10 个实例槽 + 76 字节实例 + 572 字节立绘节点」接线，脚本用 `0x341/0x342/0x345/0x349/0x34D/0x34E/0x352` 驱动。三处真实用例：标题画面（src/TITLE.txt:533-554，槽 0 + moc 4f9e + mtn 5274）、角色资料页（src/INFOEN.txt:1589-1606）、战斗立绘（src/BTL.txt:1635-1637）。\n\nemulator 现状：这族指令是 `stubSubsystem`（0x341/0x345/0x34E）与 `op_engine_internal`（0x346–0x34D），`stub-reaudit-2026-09.md` §3 把 Live2D 归为「排除项」。后果：① 三处界面里的人物立绘永不出现且**不报错**（572B 节点本就有「槽空则整块不出画」的门控，raw 134320）；② `global a9d0` 这条 Live2D 开关没人读 ⇒ 「L2D 支 / `SO004A` 静态回落支」的分叉无从生效；③ 能力台账 live2d-slot-probe / lazy-live2d-slot 恒为 absent。\n\n本次已完成的评估（**专门文档**：docs-new/04-app/live2d-support-assessment.md）：**资产不需要 `.model.json`**（引擎逐文件装载）、**不需要 moc3 转换**、SDK 侧只需 moc 解析 + 变形 + 纹理 + mtn + 队列 fade 这一小块（参考语料 = 反编译 0x4BC120–0x4C5FC0 的 273 个函数体 ≈ 40 KB）。是否引入外部库有一条**待用户拍板的许可项**（Live2D 专有运行时 `live2d.min.js` 的再分发）。",
+  "acceptance": [
+    "**路线与参考源纪律定案（已达成，留档）**：路线 = **C 自研移值**（用户 2026-09-16 拍板）；评估文档 §3.5 写明参考源纪律 —— **公开规范优先**（`.mtn`/ID/变形器语义查官方文档）、**资产实证兜底**（`.moc` 字节布局无公开规范 ⇒ 用 335 个样本的不变量逼格式）、**反汇编只当 oracle**（不逐行搬运 SDK 结构与标识符）",
+    "**M1 静态姿态（格式实证 + 资源直读 + 节点变换）**：① 产出 `docs-new/03-engine/live2d-moc-format.md`（每条格式事实标注来源：官方规范 / 资产实证 / 反汇编 oracle / 社区交叉验证）；② **全量 335 个 `.MOC` 的解析不变量测试**（节数/计数/偏移自洽、UV∈[0,1]、索引不越界、画布尺寸有限）；③ 从游戏资源读 `.MOC` + 对应 PNG 纹理与 `.MTN`（**不依赖 `.model.json`、不依赖网络 CDN、不改 raw 资源**）并在 Electron 里逐帧出画，位置/缩放/旋转/图层序受 `0x346`–`0x34D` 的 572B 立绘节点控制",
+    "**M2 语义对齐（装载 / 绑定 / 推进）**：`0x341`(op2=实例槽) / `0x342`(销毁-重建) / `0x345`(op2=槽, op3=纹理号) / `0x352`(op2==0 → 纹理号、!=0 → 动作号) / `0x34E`(op2=动作槽 0/1、op3=槽、op4=循环位，「装载即入队」) 全部按 raw 实现；`0x350` 复位队列可用；**动作推进必须绑在节点绘制那一次调用上**（不得另起独立 tick），`.MTN` 的 `$fps/$fadein/$fadeout` 决定速度与淡入淡出 —— 对应能力条目 `live2d-node-draw-advance`",
+    "**M3 集成与门控**：`Scene+55812` 的 10 槽接进 `sub_40BE10` 的重画判据（`live2d-slot-probe`）；`global a9d0` 被真读（==0 → L2D、!=0 → 静态贴图回落），TITLE/BTL/INFOEN 两条支路都能跑通（`live2d-enabled-config-flag`）",
+    "**E3/E4 + 守卫 + 台账上调**：headless 下 TITLE 与 INFOEN 的 L2D 路径可复现（帧 digest 或 572B 节点快照，**不得依赖 WebGL**）；≥1 张 Electron 真界面截图（E4）并与 `a9d0 != 0` 的静图回落支对照；新增守卫测试填进 `tests[]`；把 3 条 Live2D 能力条目从 `absent/E1` 上调（按实际证据级别），两层守卫测试全绿",
+    "**文档同步**：`docs-new/03-engine/opcode-table.md` 的 `0x345` 语义订正为「L2D 纹理装载」、`0x34F/0x350/0x351` 三行由「仅映射」转「已核对」；`stub-reaudit-2026-09.md` 的 Live2D 排除项加一行改判注记（指向本单）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "Live2D version %s for %s",
+      "line": 143532,
+      "note": "版本口径的唯一硬证据：SDK 打印 2.0.06 / DirectX（常量在 raw 5307-5308）⇒ Cubism 2.x，moc3 路线不适用"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "BOOL __thiscall sub_4A1860(_DWORD *_this, int a2, int a3, HANDLE hFile, SIZE_T dwBytes, DWORD NumberOfBytesRead)",
+      "line": 121665,
+      "note": "装载模型进实例槽：签名末参 = 槽号 0..9 ⇒ 0x341 的 op2 就是槽（旧文档只写\"文件名/资源 id、op2\"）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "LODWORD(v28[LODWORD(v29[1]) + 13953])",
+      "line": 134320,
+      "note": "572B 立绘节点的出画门控：节点+4 指向的 L2D 槽非空才出画 ⇒ 缺 L2D 时\"静默不出画\""
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4BCB50((_DWORD *)_this[3], *_this);",
+      "line": 92603,
+      "note": "动作推进（队列写参数）发生在绘制函数 sub_4783D0 里 ⇒ 没有独立逐帧 tick（live2d-node-draw-advance）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*((_BYTE *)_this + 23)",
+      "line": 92605,
+      "note": "眨眼门控位：唯一读取点；全代码无写入点 ⇒ EyeBlinkMotion 被构造但永不更新（重写可先不实现眨眼）"
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "mov (global-int f8c46) 4f9e",
+      "line": 533,
+      "note": "标题立绘：f8c46 = 要装的 MOC 文件 id、f8c47 = 槽号（533-534），随后经数组 708ab6 间接 call-script SETL2DMOC（544-548）"
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "i34e 5274 0 0 1",
+      "line": 554,
+      "note": "0x34E 参数形态：mtn=5274、动作槽 0、实例槽 0、循环 1；前一行 i352 0 0 0 = 预置纹理号"
+    },
+    {
+      "file": "src/BTL.txt",
+      "anchor": "i352 (local-int d) 0 0",
+      "line": 1635,
+      "note": "战斗立绘：槽号是局部量（d），说明槽是动态分配的（不是固定 0）"
+    },
+    {
+      "file": "src/INITCONFIG0.txt",
+      "anchor": "mov (global-int a9d0) 0",
+      "line": 12,
+      "note": "Live2D 开关默认 0（= 默认开；TITLE/BTL/INFOEN 用 jcc 判它，==0 走 L2D）"
+    },
+    {
+      "file": "docs-new/03-engine/live2d.md",
+      "anchor": "2.0.06 for DirectX",
+      "note": "本次评估的落点：系统能力清单 / 资产口径 / 三条重写路线（本节即\"Live2D 系统的大致能力\"与依赖评估的正文）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/live2d-support-assessment.md",
+      "docs-new/03-engine/live2d.md",
+      "docs-new/03-engine/resource-loading.md",
+      "docs-new/03-engine/rendering.md",
+      "docs-new/03-engine/stub-reaudit-2026-09.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json#live2d-enabled-config-flag",
+      "analysis/engine-capabilities.json#live2d-node-draw-advance",
+      "analysis/engine-capabilities.json#l2d-node-draw-gate",
+      "analysis/engine-capabilities.json#live2d-slot-probe",
+      "analysis/engine-capabilities.json#lazy-live2d-slot",
+      "analysis/functions.json#0x4A1860",
+      "analysis/functions.json#0x478640",
+      "analysis/functions.json#0x4B0360"
+    ],
+    "tickets": [
+      "T-0051"
+    ]
+  },
+  "notes": "评估已完成并单独成文：**docs-new/04-app/live2d-support-assessment.md**（系统能力 / 要不要引依赖库 / 工作量 / 分阶段计划 / 待拍板）；引擎语义长文见 docs-new/03-engine/live2d.md；本单的过程笔记只留决策记录与 acceptance 对照。\n★待用户决策：是否接受把 Live2D 专有运行时（Cubism 2.1 的 `live2d.min.js`）随补丁再分发 —— 路线 B 的可行性取决于此；路线 C（自研移值）没有这个许可问题但工作量最大。",
+  "id": "T-0054",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：why, links, notes"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → doing —— 用户拍板：按自研（C）实施 + 参考源纪律（规范优先/资产实证兜底/反汇编仅 oracle）；开始 M1"
+    }
+  ]
+}

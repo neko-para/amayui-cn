@@ -1,0 +1,184 @@
+# 03-engine · Live2D 子系统（Cubism 2.0.06 for DirectX）
+
+> 状态：**引擎侧语义已钉死（raw 行号齐）；重写侧（emulator）完全没有建模**。
+> 「要不要引入外部库、怎么分阶段做」的评估与决议在 `tickets/T-0054`（本页只写**引擎是什么**）。
+> 相关数据层：`analysis/functions.json` 的 L2D 条目族（`report.js --find live2d`）、
+> `analysis/engine-capabilities.json` 的 5 条 `subsystem=Live2D` 条目。
+
+---
+
+## 1. 版本与资产口径（先记住这一条）
+
+| 事实 | 证据 |
+|---|---|
+| 内嵌的是 **Live2D SDK 2.0.06 for DirectX**（Cubism **2.x** 世代，D3D9 后端） | `sub_4BFDA0("Live2D version %s for %s", a2006, aDirectx_0)`（raw 143532）；常量 `a2006="2.0.06"` / `aDirectx_0="DirectX"`（raw 5307-5308）；初始化入口 `Live2D__init` = `sub_4BCDC0`（raw 143517-143541） |
+| 模型 = `.MOC`（**二进制**，首 4 字节 `6d 6f 63 0a` = `"moc"`+格式字节；随后是 `0x81` 前缀变长编码） | 335 个 `raw-parts/**/*.MOC` 实测同头（如 `$1$BM900A.MOC`）；解析在 SDK 的 `sub_4BD560`（由 `sub_4BD0A0` 调用，raw 143648-143667） |
+| 动作 = `.MTN`（**文本**：`# Live2D Animator Motion Data` / `$fps=30` / `$fadein=1000` / `$fadeout=1000` / `参数名=值,值,…`） | 330 个 `raw-parts/**/*.MTN` 实测同头（如 `$1$BM900A.MTN`）；解析在 `sub_4BE490`（raw 144631 起） |
+| 纹理 = 普通图片（PNG），**不是**引擎的 AGF | 引擎走 `D3DXCreateTextureFromFileInMemory`（`sub_478370` raw 92566-92576）⇒ 内容必须是 D3DX 认得的格式；资产与 MOC 同前缀（`$1$BM900A.MOC` ↔ `$1$BM900A01.PNG`） |
+| 没有 `.model.json` / `model3.json` / `.exp.json` / `physics.json` | 引擎是「脚本逐文件装载」（见 §3）；二进制里也没有物理/表情/姿势/口型同步的类（§4） |
+
+> ⇒ 任何按 **moc3** 设计的现成 SDK（Cubism 3/4/5）都**吃不了**本作资产；任何按 `.model.json` 组织的包装库都要先自己补一份 manifest。
+
+文件 id 口径（`resource-loading.md` 的统一 id 空间）：脚本里用十六进制文件 id（如 `4f9e` = 某个 MOC、`4f9f` = 它的第 1 张纹理、`5274` = 一个 MTN）。两个全局槽是这套装载的"参数"：
+
+- `global f8c46` = 这次要装的 **MOC 文件 id**；
+- `global f8c47` = 这次要装的 **L2D 实例槽号（0..9）**。
+
+`src/SETL2DMOC.txt`（及 `$1$`–`$5$` 变体）就是这张对照表：按 `f8c46` 分支，先 `i341 <moc> (global-int f8c47)`，再若干个 `i345 <纹理> (global-int f8c47) <纹理号>`（`src/SETL2DMOC.txt:6-27`）。
+
+---
+
+## 2. 引擎接线：10 槽 + 76 字节实例 + 572 字节立绘节点
+
+```
+Scene+55812 .. Scene+55848   10 个 L2D 实例槽（每个 4 字节指针，空 = 该槽没模型）
+  └─ 实例（operator new(0x4C) = 76 字节，sub_478270 raw 92523-92553）
+       +0  ALive2DModel*（Live2DModelD3D）
+       +4  / +8   两条已载动作（Live2D Motion，动作槽 0 / 1）
+       +12 MotionQueueManager（20 字节）
+       +16 EyeBlinkMotion（104 字节）
+       +20 循环位（本次动作是否循环）
+       +21/+22 待播位（动作槽 0 / 1 已装载、等待提交）
+       +23 眨眼门控位（★全代码无写入点 ⇒ 永不生效）
+       +24/+28 待绑纹理号（标志 + 值）   +25/+32 待绑动作号（标志 + 值）
+       +36+4*i  10 张 D3D 纹理指针（i=0..9）
+
+Scene+1096   572 字节「立绘 / 变换节点」表（与 DrawItem / MeshEntry 并列的第三种节点）
+       +0  flags（bit0 存在 / bit1 目标变换 pending / bit16 绘制中）
+       +4  L2D 槽号（0..9）★ 这张表的绘制完全依赖它
+```
+（`sub_4A1860` raw 121664-121700、`sub_478270` raw 92523-92553、`sub_4B0360` raw 134277-134406；572B 节点的字段清单见 `opcode-table.md` 的 `0x346`–`0x34D` 行。）
+
+两条容易踩的门：
+
+1. ★**572B 节点只在 `节点+4` 指向的槽真有模型时出画**（`if (LODWORD(v28[LODWORD(v29[1]) + 13953]))`，raw 134320）。
+   槽空 ⇒ 节点整块不出画，**无日志无错误**；而 `0x346`–`0x34D` 那族 setter 照样写节点与脏位 ⇒ 症状是"脚本在跑、变换在写，画面什么都没有"。
+2. ★**动作推进与出画是同一次调用**（`sub_4B0360` → `sub_4783D0`，raw 92578-92615）：提交待播动作 → `sub_4BCB50` 推进队列并写参数 → model 的 update + draw。
+   引擎**没有**独立的 L2D 逐帧 tick ⇒ 只画不推进 = 动作永不动（同样不报错）。
+
+**开关**：`global a9d0` 是"Live2D 关"标志。TITLE / BTL / INFOEN 都先判它：**`== 0` 走 Live2D、`!= 0` 走静态贴图回落**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 `SO004A`）。默认值 `INITCONFIG0` 写 0（= 默认开），由 `CONFIG1` 的设置项改写、`LOADCONFIG` 读回。
+⇒ 这就是 `resource-loading.md` 里 `SO004A … Live2D（暂不管）` 那一行的真身：**它是 Live2D 关掉时的替身图**。
+
+---
+
+## 3. opcode 面（语料实际用量）
+
+| opcode | 语义 | handler（raw） | 语料用量（`src/*.txt`） |
+|---|---|---|---|
+| `0x341` | 装 `.MOC`：op1=文件 id、**op2=实例槽** | `sub_427BA0` → `sub_4A1860`（34460） | 6 文件 |
+| `0x342` | 销毁实例槽：op1=槽 | `sub_427C70` → `sub_4A1A60`（34496） | 3 文件 |
+| `0x345` | 装纹理：op1=文件 id、**op2=槽**、**op3=模型内纹理号** | `sub_427CF0` → `sub_4A1970`（34518） | 6 文件 |
+| `0x346` | 节点复位（全部变换 → 单位阵） | `sub_427DD0`（34556） | 0 |
+| `0x347` | 节点缩放（百分数 /100） | `sub_427E10`（34567） | 0 |
+| `0x348` | 节点缩放 + 汇总参数 | `sub_427EA0`（34584） | 0 |
+| `0x349` | 节点平移（像素） | `sub_427F30`（34602） | 2 文件 |
+| `0x34A` | 节点基础平移偏移（+8/+12/+16） | `sub_427FB0`（34618） | 0 |
+| `0x34B` | 缩放目标矩阵 + 窗1 delay/dur | `sub_428030`（34634） | 0 |
+| `0x34C` | 旋转目标矩阵 + 轴/角（度）+ 窗2 | `sub_4280D0`（34655） | 0 |
+| `0x34D` | 平移目标矩阵 + 窗3 | `sub_428170`（34677） | 1 文件 |
+| `0x34E` | 装 `.MTN`：op1=文件 id、**op2=动作槽(0/1)**、**op3=实例槽**、**op4=循环位** | `sub_428200` → `sub_4A19F0`（34697） | 3 文件 |
+| `0x34F` | 纹理乘色：op1=槽、op2<0 ⇒ 取纹理色记录 | `sub_428400`（34793） | 0 |
+| `0x350` | 复位动作队列 | `sub_4282E0`（34736） | 0 |
+| `0x351` | 命名参数：op1=槽、op2=参数名串、op3=0..255 → 值/255 | `sub_428320`（34746） | 0 |
+| `0x352` | 待绑定值：op1=槽、**op2==0 → 纹理号 / op2!=0 → 动作号**、op3=值 | `sub_4283B0` → `sub_4A1AC0`（34780） | 3 文件 |
+
+用到的脚本只有三处"界面"：**TITLE**（标题立绘，`src/TITLE.txt:533-554`）、**INFOEN**（角色资料页，`src/INFOEN.txt:1589-1606`）、**BTL**（战斗立绘，`src/BTL.txt:1635-1637, 2669-2671`），加上 `SETL2DMOC` 家族（MOC↔纹理对照表，被上述三处间接 `call-script`：它们把脚本指针放在数组 `global 708ab6` 里按下标调用，如 `src/TITLE.txt:544-548`）。
+
+`0x346`–`0x351` 在语料里几乎不用，但**必须登记为能力面**——它们是「引擎能做什么」的边界（参数/纹理色/队列复位），写重实现时不能把它们当不存在。
+
+---
+
+## 4. 运行时能力清单（SDK 里有什么、本作用了什么）
+
+**有（对应类名可在 `engine/…_utf8.c` 的 weak vftable 常量里查到，raw 5295-5430）**：
+
+| 能力 | 类 | 引擎是否用到 |
+|---|---|---|
+| 模型装载/绘制 | `ALive2DModel` / `Live2DModelD3D` / `ModelContext` / `ModelImpl` / `DrawParam_D3D` | ✅ 核心 |
+| 部件/绘制数据/基数据/参数定义/枢轴 | `PartsData` / `DrawData*` / `BaseData*` / `ParamDefFloat` / `ParamDefSet` / `PivotManager` / `ParamPivots` | ✅（由 `sub_4BD560` 内部使用） |
+| 变形（仿射 + 方格变形） | `AffineEnt` / `BDAffine` / `BDAffineContext` / `BDBoxGrid` / `LDAffineTransform` | ✅（绘制时内部使用） |
+| SDK 内存持有 | `MemoryHolderFixed` / `MemoryHolderTmp` / `MemoryHolderSocket` / `MemoryParam` / `MHPageHeader*` | ✅（SDK 内部） |
+| 动作（含 fade in/out、循环、队列） | `Live2DMotion` / `Motion` / `AMotion` / `MotionQueueManager` / `MotionQueueEnt` | ✅ 用（两条动作槽 + 队列） |
+| 自动眨眼 | `EyeBlinkMotion`（写 `PARAM_EYE_L_OPEN` / `PARAM_EYE_R_OPEN`） | ❌ **实际不生效**（见下） |
+| 命名参数 | `setParamFloat`（`sub_4BD4D0`） | ⚠️ 通道在（`0x351`），语料 0 次 |
+| 纹理乘色 | `sub_4BD150` → `DrawParam_D3D` | ⚠️ 通道在（`0x34F`），语料 0 次 |
+
+**没有（二进制里不存在该类/字符串）**：
+
+- 物理（`Physics` 类 0 命中）——Cubism 2 的物理是可选源码，本作没编进去；
+- 表情（`Expression` / `.exp.json`）、姿势（`Pose`）、口型同步（`LipSync`）——同样 0 命中；
+- 任何 Cubism 3+ 的东西（moc3 / model3.json / motion3.json / `live2dcubismcore`）。
+
+★**眨眼是"有类无触发"**：`EyeBlinkMotion` 实例在建模实例时就构造（raw 92542），但唯一调用点 `sub_4B0360`/`sub_4783D0` 的 `if (实例+23) sub_4BC550(...)`（raw 92605）里，**实例+23 全代码没有写入点**（ctor 只把 +20..+24 清 0）⇒ 该分支永不进入。静态结论（E1），真机对照未做。
+
+---
+
+## 5. 装载 → 绑定 → 推进 → 绘制（一次节点绘制的完整链）
+
+```
+装载（脚本指令驱动）
+  0x341 ─▶ sub_4A1860(Scene, 资源表, 文件id, hFile, 字节数, 槽)
+             ├ 槽非空 ⇒ sub_4785E0 析构旧实例 + delete（惰性重建）
+             ├ GlobalAlloc+ReadFile 读文件字节（失败 return 0，无日志）
+             ├ operator new(0x4C) + sub_478270 建实例（首调触发 Live2D__init）
+             └ sub_478330 装模型：sub_4BD0A0(bytes,len) → 实例+0；把设备写进 model 的 ModelContext+144
+        （失败 ⇒ 0x341 handler 抛 "L2Dモデルファイル %s の読み込みに失敗しました"，raw 34488）
+  0x345 ─▶ sub_4A1970 ─▶ sub_478370：D3DXCreateTextureFromFileInMemory → 实例+36+4*纹理号 → sub_4BD070(model, 号, tex)
+  0x34E ─▶ sub_4A19F0 ─▶ sub_478640：sub_4BE490 解析 .MTN → 动作槽 +4/+8
+             ├ 绑定 0x352 预置的纹理号/动作号（写进 motion+4/+8 后清标志）
+             ├ sub_4BCA20(queue, motion, 1) ★装载即入队
+             └ sub_4784D0(循环位 op4)：实例+20 与 motion+36
+  0x352 ─▶ sub_4A1AC0 ─▶ sub_478540（待纹理号）/ sub_478560（待动作号）：只置位，等下一次 0x34E 绑
+  0x342 ─▶ sub_4A1A60：析构 + delete + 槽置 0
+
+绘制（每帧，走四路归并的 572B 节点这一路）
+  sub_4B0360(节点)
+    ├ 门控：节点+0 bit0 且 节点+4 指向的实例非空（否则整块跳过）
+    ├ 正交矩阵（设备宽高）+ 平移（用模型画布宽/高 = ModelContext+12/+16 摆锚点）
+    ├ 叠乘手工矩阵（节点+10610 存在时）/ 缩放 / 旋转 / 平移 目标矩阵
+    └ sub_4783D0(实例, 设备)
+         ├ +21/+22 待播位 ⇒ sub_4BCA20 提交（+20 循环位则重播）
+         ├ sub_4BCB50(queue, model)：推进时间轴 → 写参数（fade in/out 混算）★"动作在动"的唯一来源
+         ├ +23 ⇒ 眨眼（本作永不生效）
+         └ model vtable +8 / +12（update / draw）
+    └ sub_4A1D50(Scene)：恢复 D3D 渲染态
+```
+
+补充：`0x34B/0x34C/0x34D` 那族 setter 只写节点里的"目标矩阵 + 窗(delay/dur)"并置 `Scene+46516` pending；真正的矩阵叠乘发生在 `sub_4B0360` 里（raw 134378-134387）。
+
+---
+
+## 6. 未读 / 未解（本页的边界）
+
+- `.MOC` 二进制解析细节（`sub_4BD560` 及 0x4C5xxx 一带的 `BReader`/`ISerializableV2` 读法）——只读到"入口 + 失败语义"；
+- `.MTN` 解析细节（`sub_4BE490`）：只确证了文本头与"参数曲线"这一层；
+- 变形/绘制的逐像素语义（`DrawParam_D3D`、`DDTexture`、`BDAffine` 的顶点生成）——**没有读**；
+- 572B 节点的 4 组窗口（+28/+48、+32/+52、+36/+56、+40/+60）与颜色（+68）的插值推进细节；
+- `AvatarPartsItem`（SDK 里的另一个类，raw 5429）在本作是否可达，未查；
+- E4（真机/真界面截图对照）未做。
+
+> 参考语料规模：Live2D SDK 段在反编译里是 `0x4BC120`–`0x4C5FC0`、**273 个函数体（≈40 KB 代码）**。若走"自研移值"路线，这就是要读/要译的参考面（我们实际只需要其中一小块：moc 解析 + 变形 + 纹理 + .mtn + 队列 fade）。
+
+---
+
+## 7. 重写侧：要不要引外部库（只留结论，评估正文在别处）
+
+> ★**评估正文（四条判定标准 / 三条路线比对 / 许可与 headless 取舍 / 工作量 / 分阶段计划）在
+> `docs-new/04-app/live2d-support-assessment.md`** —— 本页只写"引擎是什么"，不重复重写侧的论证。
+
+一句话结论：**Cubism 5 不可行**（只吃 `.moc3`，要先把 335 个 `.moc` 人工转格式）；
+**Cubism 2.1 的 `live2d.min.js` 可做一次性对照**但不宜进主干（专有运行时再分发 + headless 不可用）；
+**推荐自研移值**（直接吃 `.MOC/.MTN/PNG`、无新依赖、可 headless、与既有场景层同构，且反编译里就有 2.0.06 的完整参考）。
+
+> **【已拍板 2026-09-16】按自研（C）实施**；参考源纪律 = **规范优先**（`.mtn`/ID/变形器语义查官方文档）/ **资产实证兜底**（`.moc` 字节布局**没有公开规范** ⇒ 用 335 个样本逼出不变量）/ **反汇编只当 oracle**（不逐行搬运 SDK 结构）。详见评估文档 §3.5。
+
+---
+
+## 8. 相关
+
+- `docs-new/04-app/live2d-support-assessment.md`：**重写侧评估正文**（依赖路线 / 工作量 / 计划 / 待拍板）；
+- `resource-loading.md`：统一文件 id、`SO004A` = Live2D 关时的静态替身图；
+- `rendering.md`：四路归并（DrawItem / MeshEntry / 572B 节点 / …）的层序口径；
+- `opcode-table.md` 的 `0x341`–`0x352` 行（**注**：`0x345` 的旧描述"图形/3D 模型加载"应订正为"L2D 纹理装载"；`0x34F/0x350/0x351` 三行仍是"仅映射"）；
+- `stub-reaudit-2026-09.md` §3 把 Live2D 归为"排除项"——本页与 `tickets/T-0054` 把该判断**改判为"要做"**；
+- 数据层：`analysis/functions.json`（L2D 条目族）、`analysis/engine-capabilities.json`（`live2d-slot-probe` / `lazy-live2d-slot` / `live2d-enabled-config-flag` / `l2d-node-draw-gate` / `live2d-node-draw-advance`）。

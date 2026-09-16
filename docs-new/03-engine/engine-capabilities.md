@@ -14,16 +14,16 @@
 | `modeled-verified` | 40 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 27 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 23 | 引擎有、emulator 完全没有 |
+| `absent` | 26 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **121** | 需要关注（非 n/a 且非已核验）= **55** |
+| **合计** | **124** | 需要关注（非 n/a 且非已核验）= **58** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
 | 3D | 17 | 2 |
-| Live2D | 2 | 2 |
+| Live2D | 5 | 5 |
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 10 |
 | 消息窗 | 29 | 16 |
@@ -73,7 +73,7 @@
 | `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | 🟡 已建模未核验 | E1 · `test/scene-report.test.ts` |
 | `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ❌ 缺失 | E0 |
 | `script-frame-refresh-opcode-20c` | 帧循环 | opcode 0x20C 脚本帧刷新并提交 | ✅ 已核验 | E2 · `test/engine-config.test.ts` |
-| `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ❌ 缺失 | E0 |
+| `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ❌ 缺失 | E1 |
 | `vertex-buffer-lock-scale` | 渲染 | 顶点缓冲 Lock/Unlock + 视口缩放改写 | ❌ 缺失 | E0 |
 | `world-matrix-identity-refresh` | 3D | 每帧世界/投影矩阵复位与链乘 | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
 | `sprite-2d-draw-layer` | 渲染 | 无脚本/标题态额外 2D 层绘制 | ❌ 缺失 | E0 |
@@ -86,7 +86,7 @@
 | `lazy-texture-slot` | 资源 | CTexture 槽（1000）释放-重建 | 🟡 已建模未核验 | E2 · `test/texture-slot-resolve.test.ts` |
 | `lazy-mesh-slot` | 3D | mesh 槽（1000）释放-重建 + 惰性分配器单例 | ➖ n/a | E1 |
 | `lazy-mesh-alloc-hierarchy-singleton` | 3D | D3DX 网格加载分配器单例 | ➖ n/a | E1 |
-| `lazy-live2d-slot` | Live2D | Live2D 槽（10）释放-重建 | ❌ 缺失 | E0 |
+| `lazy-live2d-slot` | Live2D | Live2D 槽（10）释放-重建 | ❌ 缺失 | E1 |
 | `lazy-vram-query-32` | 资源 | 显存容量查询惰性缓存（32 位） | ➖ n/a | E1 |
 | `lazy-vram-query-64` | 资源 | 显存容量查询惰性缓存（64 位 QWORD） | ➖ n/a | E1 |
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
@@ -157,6 +157,9 @@
 | `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——"白字"永不纯白、"往透明表面画字"偏灰 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
 | `key-dispatch-default-slot` | 输入 | 0x100 空掩码时的「默认键」槽派发（下标 = SetKeyTotal） | ✅ 已核验 | E2 · `test/input.test.ts` |
 | `host-cursor-warp` | 输入 | 把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos） | 🟠 部分 | E2 · `test/input.test.ts` |
+| `live2d-enabled-config-flag` | Live2D | Live2D 开关（`global a9d0`）与静态贴图回落 | ❌ 缺失 | E1 |
+| `l2d-node-draw-gate` | Live2D | 572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画） | ❌ 缺失 | E1 |
+| `live2d-node-draw-advance` | Live2D | L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick） | ❌ 缺失 | E1 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -307,11 +310,11 @@
 ### `live2d-slot-probe`（absent）
 
 - **能力**：Live2D 10 槽探测（强制重画理由之一）
-- **触发**：`Scene+55812..55848` 任一非零
+- **触发**：`Scene+55812..55848` 任一非零（探测本体 raw 121777-121790；调用点 sub_40BE10 = raw 16025）
 - **缺失时为什么静默**：全为 0 时返回 0，只是少一条重画理由，无报错
-- **引擎**：sub_4A1AF0, sub_40BE10 @ raw 121778-121790
+- **引擎**：sub_4A1AF0, sub_40BE10 @ raw 121777-121790
 - **读的字段**：Scene+55812, Scene+55848
-- **emulator 现状**：Live2D 未建模（10 槽）
+- **emulator 现状**：emulator 未建模 L2D：0x341/0x345/0x34E 仍是 stubSubsystem（app/amayui-emulator/src/vm/handlers/stubs.ts）⇒ 这条重画理由永远为假。不报错，只是少了「上一帧还有 L2D 在动」的刷新依据（见 T-0054）
 
 ### `vertex-buffer-lock-scale`（absent）
 
@@ -354,9 +357,9 @@
 - **能力**：Live2D 槽（10）释放-重建
 - **触发**：Live2D 模型载入路径进入 `sub_4A1860(Scene, …, slotIdx, …)`
 - **缺失时为什么静默**：旧槽为空时跳过释放；`ReadFile` 失败只 return 0，无日志
-- **引擎**：sub_4A1860, sub_478270 @ raw 121665-121695
+- **引擎**：sub_4A1860, sub_478270, sub_478330 @ raw 121664-121700
 - **读的字段**：Scene+55812, Scene+1860
-- **emulator 现状**：Live2D 未建模
+- **emulator 现状**：同上：10 槽表在 emulator 里不存在，装载指令是桩 ⇒ 立绘永不出现、旧实例也不会被销毁（无报错、无日志）。签名 (Scene, 资源表, 文件id, hFile, 字节数, 槽号)（见 T-0054）
 
 ### `lazy-movie-object`（absent）
 
@@ -617,3 +620,30 @@
 - **引擎**：sub_421EA0 @ raw 30530-30598
 - **读的字段**：Engine+699168 (客户区宽), Engine+699172 (客户区高), Engine+167990 (display:ScreenMode)
 - **emulator 现状**：emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。
+
+### `live2d-enabled-config-flag`（absent）
+
+- **能力**：Live2D 开关（`global a9d0`）与静态贴图回落
+- **触发**：TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）
+- **缺失时为什么静默**：开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障
+- **引擎**：sub_4209B0 @ raw 29615-29639
+- **读的字段**：global a9d0(Live2D 关标志), global f8c46(要装的 MOC 文件 id), global f8c47(L2D 槽号)
+- **emulator 现状**：emulator 未读 a9d0；0x341/0x345/0x34E 是桩 ⇒ 无论开关取哪一支都没有 L2D 输出（静态回落支的 set-texture 是正常实现）。重写时这条门控与 L2D 本体要一起做（见 T-0054）
+
+### `l2d-node-draw-gate`（absent）
+
+- **能力**：572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画）
+- **触发**：绘制 `Scene+1096` 的 572 字节节点时：节点 +0 的 bit0（存在）且 **节点 +4 指向的 L2D 槽非空** ⇒ 才摆矩阵出画（消费方 `sub_4B0360`，raw 134316-134321）
+- **缺失时为什么静默**：槽为空 ⇒ 整个节点静默不出画，无日志、无错误串；而 `0x346`–`0x34D` 那族 setter 照样写节点与脏位 ⇒ 症状是「脚本在跑、变换在写，画面什么都没有」
+- **引擎**：sub_4B0360, sub_4A1D50 @ raw 134277-134406
+- **读的字段**：Scene+1096(572B 节点表), 节点+0(flags bit0=存在), 节点+4(L2D 槽号), Scene+55812(10 个 L2D 实例槽)
+- **emulator 现状**：emulator 把 0x346–0x34D 记成 op_engine_internal(no-op)（handlers/stubs.ts）—— 在 L2D 未建模前恰好等价（无模型 ⇒ 无输出），但 572B 节点表本身也没建；L2D 落地时必须一起补（见 T-0054）
+
+### `live2d-node-draw-advance`（absent）
+
+- **能力**：L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick）
+- **触发**：绘制 572B 节点时 `sub_4B0360` → `sub_4783D0`：提交待播动作（+21/+22 → `sub_4BCA20`）→ `sub_4BCB50` 队列推进并写参数 → （+23 才眨眼）→ model 的 update + draw。装载（0x34E → `sub_478640`）**即入队**
+- **缺失时为什么静默**：不画就不推进：实现成「装载后画静态首帧」不会报任何错，只是动作永不动；反之若另起一个每帧 tick 而与出画次数不一致，动作速度会漂 ⇒ 必须把推进绑在节点绘制这一次调用上
+- **引擎**：sub_4783D0, sub_4BCA20, sub_4BCB50, sub_478640 @ raw 92578-92615
+- **读的字段**：L2D实例+0(model) / +4,+8(两条已载动作) / +12(MotionQueueManager) / +16(EyeBlinkMotion) / +20(循环位) / +21,+22(待播位) / +23(眨眼门控) / +24,+28(待纹理号) / +25,+32(待动作号) / +36+4*i(10 张 D3D 纹理), Scene+55812(10 个 L2D 实例槽)
+- **emulator 现状**：emulator 无 L2D 节点绘制路径；网格路径（0x320 create-mesh → Pixi）已存在，L2D 的变形三角网可复用同一场景层（见 T-0054）

@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 121,
+    "total": 124,
     "modeled-verified": 40,
     "modeled-unverified": 5,
     "partial": 27,
-    "absent": 23,
+    "absent": 26,
     "n/a-known": 26,
-    "needsAttention": 55
+    "needsAttention": 58
   },
   "entries": [
     {
@@ -1022,13 +1022,13 @@
       "id": "live2d-slot-probe",
       "subsystem": "Live2D",
       "name": "Live2D 10 槽探测（强制重画理由之一）",
-      "trigger": "`Scene+55812..55848` 任一非零",
+      "trigger": "`Scene+55812..55848` 任一非零（探测本体 raw 121777-121790；调用点 sub_40BE10 = raw 16025）",
       "engine": {
         "fns": [
           "sub_4A1AF0",
           "sub_40BE10"
         ],
-        "raw": "121778-121790"
+        "raw": "121777-121790"
       },
       "reads": [
         "Scene+55812",
@@ -1038,9 +1038,9 @@
       "confidence": "confirmed",
       "emulator": {
         "status": "absent",
-        "evidence": "E0",
+        "evidence": "E1",
         "guard": "",
-        "note": "Live2D 未建模（10 槽）"
+        "note": "emulator 未建模 L2D：0x341/0x345/0x34E 仍是 stubSubsystem（app/amayui-emulator/src/vm/handlers/stubs.ts）⇒ 这条重画理由永远为假。不报错，只是少了「上一帧还有 L2D 在动」的刷新依据（见 T-0054）"
       }
     },
     {
@@ -1363,9 +1363,10 @@
       "engine": {
         "fns": [
           "sub_4A1860",
-          "sub_478270"
+          "sub_478270",
+          "sub_478330"
         ],
-        "raw": "121665-121695"
+        "raw": "121664-121700"
       },
       "reads": [
         "Scene+55812",
@@ -1375,9 +1376,9 @@
       "confidence": "confirmed",
       "emulator": {
         "status": "absent",
-        "evidence": "E0",
+        "evidence": "E1",
         "guard": "",
-        "note": "Live2D 未建模"
+        "note": "同上：10 槽表在 emulator 里不存在，装载指令是桩 ⇒ 立绘永不出现、旧实例也不会被销毁（无报错、无日志）。签名 (Scene, 资源表, 文件id, hFile, 字节数, 槽号)（见 T-0054）"
       }
     },
     {
@@ -3539,6 +3540,85 @@
         "evidence": "E2",
         "guard": "test/input.test.ts",
         "note": "emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。"
+      }
+    },
+    {
+      "id": "live2d-enabled-config-flag",
+      "subsystem": "Live2D",
+      "name": "Live2D 开关（`global a9d0`）与静态贴图回落",
+      "trigger": "TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）",
+      "engine": {
+        "fns": [
+          "sub_4209B0"
+        ],
+        "raw": "29615-29639"
+      },
+      "reads": [
+        "global a9d0(Live2D 关标志)",
+        "global f8c46(要装的 MOC 文件 id)",
+        "global f8c47(L2D 槽号)"
+      ],
+      "whySilent": "开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 未读 a9d0；0x341/0x345/0x34E 是桩 ⇒ 无论开关取哪一支都没有 L2D 输出（静态回落支的 set-texture 是正常实现）。重写时这条门控与 L2D 本体要一起做（见 T-0054）"
+      }
+    },
+    {
+      "id": "l2d-node-draw-gate",
+      "subsystem": "Live2D",
+      "name": "572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画）",
+      "trigger": "绘制 `Scene+1096` 的 572 字节节点时：节点 +0 的 bit0（存在）且 **节点 +4 指向的 L2D 槽非空** ⇒ 才摆矩阵出画（消费方 `sub_4B0360`，raw 134316-134321）",
+      "engine": {
+        "fns": [
+          "sub_4B0360",
+          "sub_4A1D50"
+        ],
+        "raw": "134277-134406"
+      },
+      "reads": [
+        "Scene+1096(572B 节点表)",
+        "节点+0(flags bit0=存在)",
+        "节点+4(L2D 槽号)",
+        "Scene+55812(10 个 L2D 实例槽)"
+      ],
+      "whySilent": "槽为空 ⇒ 整个节点静默不出画，无日志、无错误串；而 `0x346`–`0x34D` 那族 setter 照样写节点与脏位 ⇒ 症状是「脚本在跑、变换在写，画面什么都没有」",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 把 0x346–0x34D 记成 op_engine_internal(no-op)（handlers/stubs.ts）—— 在 L2D 未建模前恰好等价（无模型 ⇒ 无输出），但 572B 节点表本身也没建；L2D 落地时必须一起补（见 T-0054）"
+      }
+    },
+    {
+      "id": "live2d-node-draw-advance",
+      "subsystem": "Live2D",
+      "name": "L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick）",
+      "trigger": "绘制 572B 节点时 `sub_4B0360` → `sub_4783D0`：提交待播动作（+21/+22 → `sub_4BCA20`）→ `sub_4BCB50` 队列推进并写参数 → （+23 才眨眼）→ model 的 update + draw。装载（0x34E → `sub_478640`）**即入队**",
+      "engine": {
+        "fns": [
+          "sub_4783D0",
+          "sub_4BCA20",
+          "sub_4BCB50",
+          "sub_478640"
+        ],
+        "raw": "92578-92615"
+      },
+      "reads": [
+        "L2D实例+0(model) / +4,+8(两条已载动作) / +12(MotionQueueManager) / +16(EyeBlinkMotion) / +20(循环位) / +21,+22(待播位) / +23(眨眼门控) / +24,+28(待纹理号) / +25,+32(待动作号) / +36+4*i(10 张 D3D 纹理)",
+        "Scene+55812(10 个 L2D 实例槽)"
+      ],
+      "whySilent": "不画就不推进：实现成「装载后画静态首帧」不会报任何错，只是动作永不动；反之若另起一个每帧 tick 而与出画次数不一致，动作速度会漂 ⇒ 必须把推进绑在节点绘制这一次调用上",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "absent",
+        "evidence": "E1",
+        "guard": "",
+        "note": "emulator 无 L2D 节点绘制路径；网格路径（0x320 create-mesh → Pixi）已存在，L2D 的变形三角网可复用同一场景层（见 T-0054）"
       }
     }
   ]
