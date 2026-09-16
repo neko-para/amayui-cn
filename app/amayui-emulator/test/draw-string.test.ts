@@ -98,6 +98,8 @@ test('★0x204：读 op1..op4 并把「位置 + 文本 + 全局样式」交给�
   assert.equal(calls.length, 1, '应把整串交给宿主一次');
   assert.deepEqual([calls[0]!.slot, calls[0]!.x, calls[0]!.y, calls[0]!.text], [196, 5, 6, '窗口顕示']);
   assert.equal(calls[0]!.style.size, 30, '字号取全局主字号（Font+201684）');
+  // ★文字偏灰 = **覆盖率 α 合成**（tickets/T-0042）：样式里保持脚本原色，
+  //   压暗发生在 raster 的合成阶段（`globalAlpha = TEXT_FILL_ALPHA` over 描边）。
   assert.equal(calls[0]!.style.fill, '#ffffff');
   assert.equal(calls[0]!.style.outline, '#000000');
   assert.equal(calls[0]!.style.outlineMode, 3);
@@ -227,3 +229,4 @@ test('★程序化槽画布尺寸 = ceil(逻辑 × DPR)（与消息窗 rasterFra
   // 与消息窗路径同一条公式：日志里 615×115 的窗纹理 = 逻辑 492×92 @1.25
   assert.deepEqual(canvasPixelSize(492, 92, 1.25), { cw: 615, ch: 115 }, '与 [text] 纹理尺寸口径一致');
 });
+

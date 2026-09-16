@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 116,
-    "modeled-verified": 38,
+    "total": 119,
+    "modeled-verified": 39,
     "modeled-unverified": 5,
-    "partial": 24,
-    "absent": 24,
-    "n/a-known": 25,
-    "needsAttention": 53
+    "partial": 26,
+    "absent": 23,
+    "n/a-known": 26,
+    "needsAttention": 54
   },
   "entries": [
     {
@@ -2202,9 +2202,9 @@
           "sub_45D660",
           "sub_43C8D0",
           "sub_43B070",
-          "sub_43D870",
           "sub_43B460",
           "sub_43B4C0",
+          "sub_455DB0",
           "sub_45BE20"
         ],
         "raw": "73132-73193"
@@ -2215,14 +2215,17 @@
         "FontVWindow+4(目标表面=0)",
         "Font+1032(dd 模块)",
         "Font+1104(surface DC)",
-        "Font+1400(已锁表面号)"
+        "Font+1400(已锁表面号)",
+        "Font+1352(AA 门；=0 时走 GDI 直画表面)",
+        "dd+1540(像素格式掩码/移位)",
+        "dd+8056(显示 bpp)"
       ],
       "whySilent": "表面生命周期错位不会报错：少重建 ⇒ 几何仍按旧尺寸（文字位置/换行全偏）；少清底 ⇒ 上一页文字叠在下面；少 ReleaseDC ⇒ 表面被 GDI 锁住、后端读不到像素（画面停留在旧内容）。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
+        "status": "partial",
         "evidence": "E0",
-        "note": "缺口：emulator 无\"每窗离屏表面\"概念，也没有 DC 取/还配对。重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」，因此需要等价的\"窗口内容整体重画\"时机（文本变化 / 显现游标变化 / 几何变化 / 清场）。"
+        "note": "缺口：emulator 无\"每窗离屏表面\"概念，也没有 DC 取/还配对；重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」。★2026-09 已读到的部分（T-0042 第 8 轮延伸，均为 raw 反编译确证）：① `sub_455DB0`（raw 67944-67964）—— **AA 门（`Font+1352`）为 0 时**，文字由 GDI 直接画进该窗表面的 DC（`sub_43B460` 锁表面 → `SelectObject(HFONT)` → `SetBkMode(TRANSPARENT)`）；**AA 开时这个函数什么都不做**（走另一条 AA 路径）。② 表面创建 `sub_43C8D0`（raw 48229-48343）：`dwFlags = 7`（CAPS|WIDTH|HEIGHT，**不带像素格式** ⇒ 随显示格式）、`dwCaps = 0x840`（OFFSCREENPLAIN|SYSTEMMEMORY）；贴出用**源色键**（`sub_43B070` raw 47136-47157 → 表面 vtable+116，flag 8 = DDCKEY_SRCBLT）。③ `sub_45D660`（raw 73132-73193）在 `DrawMode != 1` 时建/重设表面并设色键；raw 47895-47989 的 ddCaptureScreen 显示按掩码/移位转换（16bpp 时白 → 248）。★仍未定位：**文字层在成片时被按 α≈0.855 合成**（实测：真机文字核心 (233,230,228)、α 三通道 0.838/0.856/0.866、核心最亮 232-235；emulator α=1.000、核心 255）。已排除：配置色（真机 SAVE.DAT 的 adcd 全表无 0xE6E6E6）、AA、缩放/滤波（任何内部尺寸×放大组合都留 255）、整帧色调曲线（文字描边黑未被抬起）。**最可能是「行淡入色窗被冻在中途」**（窗口失活时帧循环暂停）—— 见 `msgwin-line-fade-window` 与本条第 ④ 点。④ 每行色窗：raw 72336-72348 `sub_4ACF60(item, rec[66], rec[67/68])` 设起始色 + `sub_4AD0C0(item, 0, speed×fade/100, -1)` 设时长（125ms）、终点 0xFFFFFFFF。本工程这条只差\"接到消息窗行上\"（`msgwin-line-fade-window` 的 note 亦如此写）。"
       }
     },
     {
@@ -3325,13 +3328,13 @@
         "Font+1084/+1096(文本用的 HFONT)",
         "窗对象+188(窗样式里的加粗位)"
       ],
-      "whySilent": "★这条没有「报错」形态：700 只是**请求**，最终选到哪一面由 GDI 的族内选面决定 —— 该族没有粗体面就静默用常体（GDI 不合成、不警告），同族名 + usWeightClass 400/700 两份都在才真的粗（补丁说明第 6 步说的就是这件事）。于是两种错法都静默：(a) 宿主在「请求 700」之外再自行合成加粗（CSS font-synthesis / 描边式加粗 / 把 Bold 文件登记成另一个族再走「选了粗体才粗」）⇒ 比真机粗一档；(b) 只登记一面或把 Bold 当独立字族 ⇒ i2bd 静默失效。另两条同源事实：配置表里**不存在**粗体面名键（面名只有 message:Font 一处，raw 111454-111458 注册、缺省 \"ＭＳ ゴシック\"，raw 23666 取值），所以「加粗」不可能靠换面名实现；字体选择器的候选表 Font+201664（op 0x2DC/0x2DD/0x2DE）是 EnumFontFamiliesExA 的**族**列表（Proc raw 74146-74171 滤 lfCharSet==0x86 且非光栅，sub_45F6C0 raw 75028-75100 再用探针字剔掉没有该字形的族）⇒ 一个族一条，**粗体不会作为独立条目出现**；若真机列表里真的出现两条，那恰好证明该机的 Bold 面没和 Regular 配成一族（= 假设 (a)）。",
+      "whySilent": "★这条没有「报错」形态：700 只是**请求**，最终选到哪一面由 GDI 的族内选面决定 —— 该族没有粗体面就静默用常体（GDI 不合成、不警告），同族名 + usWeightClass 400/700 两份都在才真的粗（补丁说明第 6 步说的就是这件事）。于是两种错法都静默：(a) 宿主在「请求 700」之外再自行合成加粗（CSS font-synthesis / 描边式加粗 / 把 Bold 文件登记成另一个族再走「选了粗体才粗」）⇒ 比真机粗一档；(b) 只登记一面或把 Bold 当独立字族 ⇒ i2bd 静默失效。另两条同源事实：配置表里**不存在**粗体面名键（面名只有 message:Font 一处，raw 111454-111458 注册、缺省 \"ＭＳ ゴシック\"，raw 23666 取值），所以「加粗」不可能靠换面名实现；字体选择器的候选表 Font+201664（op 0x2DC/0x2DD/0x2DE）是 EnumFontFamiliesExA 的**族**列表（Proc raw 74146-74171 滤 lfCharSet==0x86 且非光栅，sub_45F6C0 raw 75028-75100 再用探针字剔掉没有该字形的族）⇒ 一个族一条，**粗体不会作为独立条目出现**。★实测订正（2026-09，T-0035 第 6 轮）：装了同族两面的机器上候选表**同样只有一条**（本机 `Amayui CN` = 1 条，而同一台机器上 `lfWeight=700` 经 `GetFontData` 确证取到 `id6=Amayui-CN-Bold`；全库 2925 条枚举记录里同一个 face 名从不以两种字重出现）⇒「出现一条」**不能**反推「两面配成了一族」（Bold 缺失/被字符集或缓存挡住时也是一条）；只有「出现两条」才是没配对的证据（那要求两面的族名不同，如 `Yu Gothic UI` / `Yu Gothic UI Semibold`）。判定 700 落到哪一面要用 `tools/font-face-probe.ps1`（建 HFONT → GetFontData 取回实际选中的那份字体 → sha256 / name 表 id6 比对；对照组 MS Gothic 无 Bold 面 ⇒ 两次取到同一份，证明这种静默可见）。",
       "confidence": "confirmed",
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/font-bold-face.test.ts",
-        "note": "重写侧等价物：fontSet.ts 的 BUILTIN_FAMILIES 把 Amayui CN 登记成同族的 400/700 两面（fontFaceFor 只按文件自己声明的字重修注册、绝不把 Regular 登记成 700），raster.ts 只写 ctx.font = <weight> <size>px <family> ⇒ 700 落到真 Bold 面、浏览器不再合成，与 GDI 的族内选面同构。守卫 test/font-bold-face.test.ts 读 TTF 的 name/OS-2/head 表钉住「同族名 + usWeightClass 700 + 码页含 932 + Bold 确实更重」。★结论（2026-09-15，T-0035 第 5 轮）：真机的“更细”不是本条的偏差 —— 用第三个光栅器（FreeType）对同一句台词复现票里的墨迹度量：Regular 0.209-0.241 / Bold 0.345-0.379（与 emulator 侧 0.220-0.245 / 0.330-0.398 互相印证，跨光栅器噪声 ≤8%；两面差 1.46-1.59×），而真机实测 0.257 落在 Regular 档 ⇒ 真机那次 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面），说明该机的安装/缓存状态没让两份 TTF 配成一族（见 docs/font-build.md §8.5.2/§8.6：装完要重启 FontCache/电脑；缺 932 码页声明的旧版会让日文 locale 下的选面看不到 Bold）。★同时排除：DPR 1.25 + 阈值化的路径（38px 设备网格 0.221/0.350）并不比 1× 无 AA（0.241/0.379）更胖 —— “按逻辑像素 1× 光栅化 + 整数对齐”不是这条症状的解。"
+        "note": "重写侧等价物：fontSet.ts 的 BUILTIN_FAMILIES 把 Amayui CN 登记成同族的 400/700 两面（fontFaceFor 只按文件自己声明的字重修注册、绝不把 Regular 登记成 700），raster.ts 只写 ctx.font = <weight> <size>px <family> ⇒ 700 落到真 Bold 面、浏览器不再合成，与 GDI 的族内选面同构。守卫 test/font-bold-face.test.ts 读 TTF 的 name/OS-2/head 表钉住「同族名 + usWeightClass 700 + 码页含 932 + Bold 确实更重」。★结论（2026-09-15，T-0035 第 8 轮；第 5/7 轮的「真机退回常体」已作废 —— 那是跨渲染管线直接比绝对墨迹造成的口径错误）：把**这台机器的填充色（实测核心亮度 230-231，来自配置色 `adcd[14acda]`，不是纯白）**与**输出软化（真机边缘 中间/核心 = 0.17，与「内部尺寸渲染 → 放大 1.25×」的参考图 0.18 一致；emulator 阈值化后是硬边 0.06）**计进去之后，真机的笔画形态与 GDI 的 **700** 档重合（中位笔画 4 / 归一化 0.104 / 边缘 0.17 vs 参考图 4 / 0.107 / 0.18；常体档是 3 / 0.080 / 0.30）⇒ 真机同样在用 Bold 面，本条的选面实现**与引擎一致、无需改**。残余（未归因）：墨迹/字 417 vs 参考 486（−14%），与字重无关。另两条本轮核实的绘制真源：① `sub_455ED0` raw 68091-68128 **先画描边、后画填充**（档位 3 = 描边色 4 次偏移 TextOutA，再填充色 1 次中心）⇒ 不存在「描边啃掉填充一圈」的减法；② ADV 正文填充色由脚本 `i076 (global-int f807b)` 写入，`f807b` 经 CONFIG1 `label_0000dc98`（`src/CONFIG1.txt:3197-3213`）按 `adcd[14acda]`（逐角色配色表，LOADCONFIG 从 SAVE.DAT load-int 回来）覆盖 ⇒ 是**用户配置色**而非 Font+1360 的默认 0xFFFFFF（另见 T-0042）。★第 6 轮订正（2026-09-15）：**「字体选择器里只有一条 Amayui CN」不能当作「Bold 已生效/未生效」的证据** —— 在本机（HKCU 字体项齐全、`lfWeight=700` 经 `tools/font-face-probe.ps1` 确证取到 id6=Amayui-CN-Bold、sha256 6f336fad… 与随包 `res/fonts/Amayui-CN_cnjp-Bold.ttf` 一致）上，候选表仍然只报一条 ⇒ 真机侧的判定必须换用该探针（400/700 取到同一份 = 静默退回常体；取到不同份 = 700 确实落在 Bold 面），或按 T-0035 的验收第 2 条重装 + 重启 FontCache 后重量覆盖率。"
       }
     },
     {
@@ -3397,6 +3400,86 @@
         "evidence": "E2",
         "guard": "test/blend-mode.test.ts",
         "note": "2026-09 已建模（`tickets/T-0017`）：`renderer/scene/blend.ts` 的 `walkBlendSequence()` 逐项复刻引擎的 blend 状态机 —— 选择子 `0/1/2/3` → `normal/add/none/subtract`；★值 2 受门控（`Scene+46456` 当前渲染目标槽的纹理创建模式 `== 1`）；★draw-item 的 `0` 是「不改状态」、mesh/model 的 `0` 是显式 `normal`，且 mesh 画完**把状态留在 (ONE,ZERO)**（raw 119474-119476，`.lst:0049E681`-`0049E6AF`）——这条\"状态泄漏\"已完整实现在 `walkBlendSequence` 的 `leakStateAcrossEntries` 档里，但**默认关闭**：照它跑会把 TITLE 的 logo 透明区写成黑（Pixi 源预乘）、序章背景被覆盖，与真机截图矛盾 ⇒ 「合并段入口/逐项由谁重设 blend 状态」这块源码还没读通（未收敛，见票据）。为此补齐了 `0x20D set-render-target`（此前 emulator **完全没有**这条指令，语料 841 处）/`0x33F` 场景默认混合（`Scene+1260`）/`0x1F8` 的 op4 槽创建模式（`CTexture+1048`）。宿主侧 `pixi/presenter.ts` 把每项的档写进 `spr.blendMode`/`g.blendMode`；`pixiBackend.ts` 的 `installD3DBlendModes()` 往 `blendModesMap` 注入两个自定义档 `d3d-opaque=[ONE,ZERO]`、`d3d-rev-subtract=[ONE,ONE,ONE,ONE,FUNC_REVERSE_SUBTRACT,FUNC_REVERSE_SUBTRACT]`（★Pixi 内建的 `none` 是 `[0,0]` = **画黑**，不是覆盖；实测踩过）。★近似与未收敛：(1) Pixi 的 `none`（关混合）与 D3D `(ONE,ZERO)` 在 α<255 时不同（Pixi 写预乘色）；(2) draw-item 路径末尾那条追加覆盖（raw 123117-123121 条件里的「持有者 +1164」）语义未定 ⇒ `BlendEnv.holder1164Is1` 默认 false；(3) 合并段**入口**的 blend 档在引擎里没有显式设置点 ⇒ emulator 取场景默认。★语料并非恒 0（`0x203` op2：`2`×420 / `1`×33；`0x322` op2：`1`×28；`4fd1` 有 28 处被 `mov … 1`）⇒ 有可见差异，不是整理项。"
+      }
+    },
+    {
+      "id": "text-face-source-memory-vs-system",
+      "subsystem": "消息窗",
+      "name": "正文面名的来源：引擎只注册一份内存字体（游戏自带的 AGE-EXTEND.TTF / 面 'AGE Extend'），message:Font 指定的正文面由**系统字体表**解析",
+      "trigger": "启动应用配置时（sub_417800，仅由 raw 142315 调用一次）：取配置字体文件索引表的第 [0] 项 → FileSource 打开/读取整份 → AddFontMemResourceEx（raw 23606-23643）。全库**只有这一个** AddFontMemResourceEx 调用点。",
+      "reads": [
+        "Engine+489824(字体文件索引表)",
+        "Engine+489840(文件名表)",
+        "Engine+320360(注册句柄)",
+        "Engine+320328(注册标志)",
+        "Font+1260(message:Font 面名)"
+      ],
+      "whySilent": "★这条决定「真机选面」能不能用别处推断：进程内注册的只有游戏自带的那一份（本工程 install/SYS4INI.BIN 里唯一的 .TTF 名 = AGE-EXTEND.TTF，以散文件 install/AGE-EXTEND.TTF 随包，面名 'AGE Extend'，raw 4455 / 71097-71099），而 message:Font 指定的正文面（汉化版 = 'Amayui CN'）**不在进程内注册** ⇒ 由系统字体表解析 ⇒ 系统里那一族的 400/700 两面是否配对，就是真机 700 能否落到 Bold 面的唯一依据（探针：tools/font-face-probe.ps1）。缺失/装错时**不报错**：GDI 静默退回常体，而且字体选择器也看不出来 —— EnumFontFamiliesExA 每族每字符集只报一条代表面（与进程内注册的内存字体也无关）。",
+      "engine": {
+        "fns": [
+          "sub_417800"
+        ],
+        "raw": "23466-23660"
+      },
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "n/a-known",
+        "evidence": "E1",
+        "note": "why: 这是宿主（Windows/GDI）的字体解析行为，重写侧不做进程内字体注册 —— 模拟器按路径直接加载随包 TTF 建 FontFace（fontSet.ts），不存在「内存字体 vs 系统字体」的分叉。因此「真机用哪一面」只能在真机上用 tools/font-face-probe.ps1 探，不能由模拟器或选择器条目数推断。"
+      }
+    },
+    {
+      "id": "text-white-level-on-composite",
+      "subsystem": "消息窗",
+      "name": "引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位",
+      "trigger": "所有由引擎自己绘制的文字（ADV 正文、设置界行标签、字体样例预览、直绘串）；同一屏的美术图（按钮面、局部化 UI 图、ON/OFF 图）**不受影响**。取色链读到绘制之前：绘制用的是 Font+1360（= 脚本全局 f807b，序章为 0xFFFFFF，raw 79666 行路径 / raw 79259-79273 ADV 路径都是逐字传该字段）⇒ 这一档发生在 GDI 画完之后的合成里，不在颜色链上。",
+      "engine": {
+        "fns": [
+          "sub_455ED0",
+          "sub_43C8D0",
+          "sub_45E870"
+        ],
+        "raw": "68011-68129"
+      },
+      "reads": [
+        "Font+1360(填充色)",
+        "Font+1364(描边色)"
+      ],
+      "whySilent": "★缺失时完全静默：宿主把文字画成 255 纯白，而引擎成片是 ≈226-232 ⇒ 观感上「文字更白更粗」（正是 T-0035/T-0042 用户实测的症状），没有任何报错或日志；只有把**同屏截图逐区域比对**才看得出来 —— 且很容易误判成字重/字体问题（T-0035 前几轮就误判过）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E4",
+        "note": "★实测（T-0042）：引擎 vs emulator 同屏（OPTION 系统设定）逐区域比对 —— 引擎画的文字核心恒 226-232，其中字体样例预览横跨「亮天空→暗照片」（背景 7→49）时核心只动 0.3 ⇒ 是**常数压暗**，不是与场景的 alpha 混合、也不是重采样；而美术图（米白按钮面 (254,243,229) 在两边是 9542 vs 9553 px、纯白高光 374/374）逐像素一致 ⇒ 不是整帧色调曲线。已排除：`message:MesWinAlpha`（用户实测 0/32 都无变化）、配置色 `adcd`（真机 SAVE.DAT 全表 1000 条无 0xE4/0xE6）、AA 门（`Font+1352`）、`set:DrawMode`（引擎缺省 0，两边一致）、缩放/滤波（任何内部尺寸×放大组合都留 255）、调色板（引擎里没有调色板 API）、窗对象颜色对 op（0x25E/0x25F/0x131/0x141 全库脚本零使用）。**机制仍未定位**（写在 T-0042 的 acceptance）；当前 emulator 按实测值对齐：`src/vm/handlers/msgwin.ts` 的 `TEXT_WHITE_LEVEL = 0.89`（并给出黑仍为黑），守卫：test/draw-string.test.ts（0x204 直绘的填色断言）、test/adv-msgwin.test.ts、test/text-style-snapshot.test.ts（rgbOf 同口径；三处都钉住 0xFFFFFF → #e3e3e3）。",
+        "guard": "test/draw-string.test.ts"
+      }
+    },
+    {
+      "id": "text-glyph-coverage-alpha-composite",
+      "name": "文字字形按覆盖率 α 合成到已画好的描边上（\"白字\"永不纯白的机制）",
+      "subsystem": "渲染",
+      "trigger": "任何由引擎自己光栅化的文字（消息窗正文、`0x204/0x205` 直绘进纹理槽、注音）：`sub_46F2D0` 调 `GetGlyphOutline` 取覆盖率位图后，逐像素交 `sub_46D9F0` 写目标表面",
+      "whySilent": "缺这条 ⇒ 把描边/填充当不透明纯色画：白字落到 255（真机是 α·255+(1-α)·描边 ≈ 226-233），并且因为 1bpp 阈值化把覆盖率斜坡切掉 ⇒ 字看着更粗、边缘更硬（`tickets/T-0035`/`T-0042`）",
+      "reads": [
+        "Font+1352（AA 档：≠0 ⇒ GGO_GRAY4/GRAY8 覆盖率路径，=0 ⇒ GGO_BITMAP 1bpp）",
+        "Font+218500（=1 时用 GGO_GRAY8 ⇒ 除数 65，否则 GGO_GRAY4 ⇒ 除数 17）",
+        "Font+1360 / Font+1364（填充色 / 描边色，作为每遍的 C）",
+        "dword_5518C0（目标表面位深：16 ⇒ RGB444 nibble 分支，否则 32bpp 真 α 分支）",
+        "Font+1408/1412/1416（字形位图缓冲与其字节数）"
+      ],
+      "engine": {
+        "fns": [
+          "sub_46F2D0",
+          "sub_46D9F0"
+        ],
+        "raw": "84891-85011"
+      },
+      "confidence": "confirmed-by-pixels",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/text-aa.test.ts",
+        "note": "emulator 侧 = raster 内「描边副本不透明先画 + 填充那一遍 `ctx.globalAlpha = TEXT_FILL_ALPHA(225/255)`」（`src/renderer/text/raster.ts`，常量在 `src/text/layout.ts`），即 canvas 的 `dst = α·C+(1−α)·dst`。α 推导：`v30 = 255*cov/17`（raw 84893-84898），实测平台对应 cov=15 ⇒ 225；满覆盖 16 ⇒ 240（仍 <255）。同屏 OPTION 对照：样例文字 255→225（真机 226-228）；残留：设置界行标签 252 vs 真机 ~230（该元素 `CONFIG1.txt:2747-2748` 把填充与描边都设成 ffffff ⇒ backdrop 是白描边，真机侧应是暗色/不走那两行，待读元素归属）。★配置门冲突：`set:EnableAntiFont` 内建默认 0（raw 491880/111707）且真机 INI 无 `[set]` 段 ⇒ 推导为 1bpp；但 1bpp 分支的 α 恒满 ⇒ 输出纯白，与实测 α<1 不可能同时成立 ⇒ 运行期走覆盖率路径，产品侧以像素判据取 antiAlias=true"
       }
     }
   ]

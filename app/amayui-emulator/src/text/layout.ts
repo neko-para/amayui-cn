@@ -39,14 +39,26 @@ export interface FontSpec {
   /** 描边/阴影色 `#rrggbb`（引擎 `Font+1364`，op `0x77`）。 */
   outline: string;
   /**
-   * ★**抗锯齿**（引擎 `Font+1352` = `Engine[21662]`；`tickets/T-0035`）。
+   * ★**抗锯齿**（引擎 `Font+1352` = `Engine[21662]`；`tickets/T-0035`/`T-0042`）。
    *
-   * `false` = 引擎的 GDI/dd 路径：字形**锯齿**（每像素非 0 即满不透明）。
-   * `true` = 软件 AA 字形路径（只有 `set:EnableAntiFont` 门通过且 `message:UseAntiFont` 非 0 才会出现）。
-   * 本机两处 INI（真游戏 base 连 `[set]` 段都没有、本工程 overlay `EnableAntiFont=0`）⇒ 恒 `false`。
+   * `false` = 1bpp 字形路径（每像素非 0 即满 ⇒ 纯色）；`true` = 覆盖率字形路径
+   * （`GetGlyphOutline` 的 `GGO_GRAY4/GRAY8` 位图 + `sub_46D9F0` 的逐像素 α 合成）。
+   *
+   * ★2026-09（`T-0042`）以**像素判据**为准取 `true`：配置门（`set:EnableAntiFont` 默认 0）
+   * 推导出的是 1bpp，但 1bpp 路径的 α 恒满 ⇒ 引擎文字应是纯白 255，而真机实测是
+   * `α·255+(1-α)·描边` 的 `(233,230,228)`（且描边有 3px 斜坡）⇒ 只可能来自覆盖率路径。
+   * 见 `TEXT_FILL_ALPHA`。
    */
   antiAlias: boolean;
 }
+
+/**
+ * 引擎字形合成的**填充覆盖率上限**（`sub_46D9F0` raw 84893-84898）：
+ * `v30 = 255 * cov / 17`（`GGO_GRAY4`，cov ≤ 16）⇒ 满覆盖 = 240；实测真机文字平台
+ * （序章旁白 `(233,230,228)`、字体样例 `(227,227,227)`）对应 `cov = 15` ⇒ **225/255**，
+ * 即"白字"永不不透明 —— 这就是"引擎文字偏灰"的机制。
+ */
+export const TEXT_FILL_ALPHA = 225 / 255;
 
 /** 一个消息窗的几何 + 样式（引擎 `FontVWindow` + `Font` 的绘制相关字段）。 */
 export interface MsgWinStyle {
@@ -353,8 +365,8 @@ export function defaultWinStyle(): MsgWinStyle {
     // ★引擎 Initialize 初值 6（raw 78858 `Font+1380 = 6`）；脚本用 `i08b`（op 0x8B）改写，
     //   ADV 标准样式前导写的是 `i08b 10`（= 16）⇒ 行距 30+16 = 46px。
     lineSpacing: 6,
-    main: { family: 'Amayui CN', size: 30, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
-    ruby: { family: 'Amayui CN', size: 10, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: false },
+    main: { family: 'Amayui CN', size: 30, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: true },
+    ruby: { family: 'Amayui CN', size: 10, weight: 400, fill: '#ffffff', outline: '#000000', antiAlias: true },
     background: null,
     itemId: 0,
   };

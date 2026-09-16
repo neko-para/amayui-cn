@@ -152,10 +152,12 @@ test('★文本进入渲染模型与快照：窗 9 的排版结果可在报告�
     family: 'Amayui CN',
     size: 30,
     weight: 400,
+    // ★文字偏灰 = **覆盖率 α 合成**（tickets/T-0042，2026-09）：样式里保留脚本原色（纯白），
+    //   压暗由 raster 的 `globalAlpha = TEXT_FILL_ALPHA(225/255)` over 描边 复现。
     fill: '#ffffff',
     outline: '#000000',
-    // ★抗锯齿（`Font+1352` = `Engine[21662]`；`tickets/T-0035`）：没灌配置时引擎字段是 0 = 锯齿字形
-    antiAlias: false,
+    // ★抗锯齿（`Font+1352`）：配置门推导为 0，但**实测像素只可能来自覆盖率路径** ⇒ 取 true（T-0042）。
+    antiAlias: true,
   });
   assert.equal(frame.style.outlineMode, 1);
   assert.equal(frame.style.outlineDx, 2);
@@ -849,3 +851,4 @@ test('★0x1D2（文本项记录表 push）：OPS 真实现、push 一条记录�
   step(0x1d2, [im(3), im(4)]);
   assert.equal(e.textItems.records.length, 2, 'i1bb 1 后恢复记账');
 });
+

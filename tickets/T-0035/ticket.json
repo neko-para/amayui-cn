@@ -7,10 +7,12 @@
   "acceptance": [
     "逐条核对引擎的字体配置链（面名/字号/lfWeight/抗锯齿/描边档与偏移/填充与描边色）与 emulator 的对应实现，给出『一致/不一致』结论并落 docs-new/03-engine/adv-text-rendering.md 与 analysis/engine-capabilities.json —— 已完成：加粗链见 bold-is-lfweight-face-mapping（引擎的加粗只是 lfWeight=700 的请求，落哪一面由 GDI 族内选面决定，无合成加粗、无粗体面配置键）",
     "set:EnableAntiFont == 0 时文本按**无 AA** 渲染（字形画进独立图层并把覆盖率阈值化）；== 1 时保留 AA —— 已实现并有守卫（实测开/关几乎无差别，不是本票观感问题的主因）",
-    "★**主因已判定（第 5 轮）**：真机 ADV 实测墨迹覆盖率 0.257 落在 Regular 档（独立复现 0.209-0.241）而不是 Bold 档（0.345-0.379；两面差 1.46-1.59×、跨光栅器噪声 ≤8%）⇒ 真机那次 i2bd 1 的 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面）⇒ 「emulator 更粗」的基准不成立（参照图来自加粗未生效的真机）。DPR/取整撑胖笔画的假说已用同一测量排除（38px 设备网格并不比 1× 无 AA 更胖）",
-    "真机侧收尾复核（等用户有环境）：① 游戏字体选择器里 Amayui CN 出现一条还是两条；② 重装两份 + 重启 FontCache/电脑 + 完全退出游戏后，ADV 应从 ~0.25 跳到 ~0.35-0.40（同一台词同一方法）",
+    "【★第 8 轮订正：本条前半（第 5 轮「真机退回了常体」）与第 7 轮的「真机更像常体」**同样作废** —— 跨渲染管线的绝对墨迹不能直接比；把那台机器的填充色（≈230）与输出软化计进去后，真机落在 Bold 档，见 notes 第 8 轮】★**主因已判定（第 5 轮）**：真机 ADV 实测墨迹覆盖率 0.257 落在 Regular 档（独立复现 0.209-0.241）而不是 Bold 档（0.345-0.379；两面差 1.46-1.59×、跨光栅器噪声 ≤8%）⇒ 真机那次 i2bd 1 的 lfWeight=700 **静默退回了常体**（族里没有可用的 Bold 面）⇒ 「emulator 更粗」的基准不成立（参照图来自加粗未生效的真机）。DPR/取整撑胖笔画的假说已用同一测量排除（38px 设备网格并不比 1× 无 AA 更胖）。★第 6 轮（2026-09-15）存疑：在同一台两面都装好的机器上，GDI 对 700 经 tools/font-face-probe.ps1 确证选到 id6=Amayui-CN-Bold ⇒ 「真机那次退回常体」必须按下面第 4 条在真机上用探针（而不是字体选择器条目数）复核后才能定案；第 6 轮补（引擎侧核对）：全库唯一的 `AddFontMemResourceEx`（`sub_417800` raw 23643）只注册游戏自带的 `AGE-EXTEND.TTF`（面 `AGE Extend`）—— `message:Font` 指定的正文面**不在进程内注册**，由**系统字体表**解析（台账 `text-face-source-memory-vs-system`）⇒ 在这台机器上（两面都装好、探针确证 700 → `Amayui-CN-Bold`）真机本应渲染成 Bold ⇒ 第 5 轮的 0.257 很可能是 **Bold 面生效之前**拍的参照（安装/缓存时刻差），必须按第 4 条重拍同帧对照后才能定案；★第 7 轮（2026-09-15，用户三图 + GDI 同款参考渲染）：emulator 与 GDI 的 Amayui CN **Bold** 三项重合（墨迹/字 561 vs 544、归一化笔画 0.134 vs 0.132、边缘 中间/核心 0.06 vs 0.06，IoU 0.891），而真机（老/新汉化）在**初版对比口径**下显得偏常体；★第 8 轮订正：把「填充色 ≈230（配置色，不是纯白）」与「引擎输出更软（内部尺寸渲染后放大）」计进去后，真机的笔画形态指标（中位笔画 4、归一化 0.104、边缘 0.17）与「GDI 700 + 填充230 + 放大1.25×」的 4 / 0.107 / 0.18 重合，而常体档是 3 / 0.080 / 0.30 ⇒ **真机也是 Bold 档，emulator 的选面没错**（残余：墨迹/字 417 vs 486，−14%，归因未定）⇒ **本票的症状成立但根因不在字体资产、也不在 emulator 的选面**：落差在引擎绘制合成那一侧；另实测真机文本白度 230-231 而 emulator 255（独立票 T-0042）",
+    "真机侧收尾复核（等用户有环境；★判定只能直接问 GDI，字体选择器里出现几条**不算证据** —— 第 6 轮实测：两面都装好的机器上候选表同样只有一条）：① 在真机上跑 tools/font-face-probe.ps1：face=Amayui CN 的 lfWeight=400 与 700 取回**同一份**（同 name/同 sha256）⇒ 700 被静默退回常体（假设 (a) 成立）；取回**不同份**（如 id6=Amayui-CN-Bold）⇒ 700 确实落在 Bold 面，则第 5 轮据 0.257 得出的「真机用 Regular 面」需重测（同帧同缩放，并核对那句台词在 src 里确实是 i2bd 1）；② 重装两份 + 重启 FontCache/电脑 + 完全退出游戏后，ADV 应从 ~0.25 跳到 ~0.35-0.40（同一台词同一方法）",
     "可选（非修 bug，由用户决定）：fonts.bold: face|regular 只在模拟器里复现「加粗未生效的真机」；原版日文游戏 ADV 用 メイリオ Bold，故 regular 与「对照原版」方向相反",
-    "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）—— 已修"
+    "描边偏移的默认值 = 引擎初值 1/1（不是 2/2）—— 已修",
+    "★第 8 轮后剩下的两项（都已定位到机制，待对齐）：① **填充色**：ADV 正文的填充色来自 `i076 (global-int f807b)`，而 `f807b` 由 CONFIG1 `label_0000dc98` 按 `adcd[14acda]`（逐角色配色表，LOADCONFIG 从 SAVE.DAT load-int 回来）覆盖 —— 本机实测 ≈230，emulator 停在 `mov f807b ffffff` 的默认 ⇒ 见 T-0042；② **输出软硬**：引擎的输出边缘更软（非设备分辨率硬边），需确认引擎是否「内部尺寸渲染 + 整体放大」（引擎 LOGFONT 的 `lfHeight = 字号 × Font+218596`，raw 71055 的缩放因子），并决定 emulator 是否照做或记为已知差异",
+    "★字重收尾（第 9 轮量化）：修复文字白电平后 ADV 墨迹/字 560.7 → 436.9（引擎 414.6，+5.4%）、单字 E 的 bbox/游程与引擎一致（51x27 / 中位 5）⇒ 字号与字重**选择**都对；残余只有**软化**：引擎边缘 中间/核心 0.17 而 emulator 0.06 ⇒ 固定阈值下笔画差 1px（4 vs 5）。判据 = 让 emulator 的文字走「内部尺寸渲染 + 双线性放大」后，边缘比 → 0.15-0.18、游程中位 → 4、墨迹/字 → ~415（同一句台词同一口径）"
   ],
   "id": "T-0035",
   "status": "doing",
@@ -58,6 +60,22 @@
     {
       "at": "2026-09-15",
       "what": "改字段：acceptance, evidence"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance, evidence"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "改字段：evidence"
     }
   ],
   "evidence": [
@@ -105,6 +123,26 @@
       "file": "src/CONFIG1.txt",
       "anchor": "set-font (global-string bbd)",
       "note": "非 ADV 的设置行文本显式 i2bd 0（20px / bbd·bbe / i078 1 / i1a4 0 0 / i261 0）；说明文 bbf 与 ADV 预览 bbb 才是 i2bd 1 ⇒ 「装上 700 后非 ADV 没变」是引擎的正常行为（脚本台账 CONFIG1 的 layout/gotchas 已记）"
+    },
+    {
+      "file": "tools/font-face-probe.ps1",
+      "anchor": "EnumLikeEngine",
+      "note": "新增探针：① 按引擎 Proc 口径（lfCharSet==0x86 且非光栅、OUT_TT_ONLY_PRECIS）枚举候选表；② 建 HFONT 后用 GetFontData 取回 GDI 实际选中的那份字体，比 sha256 与 name 表 id6。本机实测：候选表 Amayui CN = 1 条，而 lfWeight=700 → id6=Amayui-CN-Bold（sha256 6f336fad… = 随包 Bold 文件的 oid）；对照 MS Gothic（无 Bold 面）400/700 取回同一份"
+    },
+    {
+      "file": "docs-new/03-engine/adv-text-rendering.md",
+      "anchor": "「真机偏细」的探针已被实测修正",
+      "note": "§1 推论 2/3 订正：「候选表里只有一条」不能反推「两面配成了一族」（装好两面的机器上也只有一条）；判定要用 tools/font-face-probe.ps1。同一结论已写进 ledger 的 bold-is-lfweight-face-mapping（whySilent + emulator.note）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "AddFontMemResourceEx(v67",
+      "note": "全库唯一的进程内字体注册点（sub_417800 raw 23643）：只注册配置字体表第 [0] 项，即游戏自带的 AGE-EXTEND.TTF（面 AGE Extend）⇒ message:Font 正文面由系统字体表解析"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "text-face-source-memory-vs-system",
+      "note": "第二层新条目：正文面名的来源（内存字体 vs 系统字体）与其静默形态；决定了真机选面必须用 GetFontData 探针判定"
     }
   ],
   "links": {
@@ -114,7 +152,8 @@
       "text-font-rebuild-cascade"
     ],
     "tickets": [
-      "T-0036"
+      "T-0036",
+      "T-0042"
     ]
   },
   "tests": [

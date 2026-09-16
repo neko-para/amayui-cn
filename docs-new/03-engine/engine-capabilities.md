@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 38 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 39 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 24 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 24 | 引擎有、emulator 完全没有 |
-| `n/a-known` | 25 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **116** | 需要关注（非 n/a 且非已核验）= **53** |
+| `partial` | 26 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 23 | 引擎有、emulator 完全没有 |
+| `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
+| **合计** | **119** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
@@ -26,8 +26,8 @@
 | Live2D | 2 | 2 |
 | 声音 | 6 | 1 |
 | 帧循环 | 15 | 10 |
-| 消息窗 | 27 | 15 |
-| 渲染 | 25 | 11 |
+| 消息窗 | 29 | 16 |
+| 渲染 | 26 | 11 |
 | 资源 | 16 | 4 |
 | 转场 | 4 | 3 |
 | 输入 | 4 | 0 |
@@ -115,7 +115,7 @@
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
 | `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
-| `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | ❌ 缺失 | E0 |
+| `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | 🟠 部分 | E0 |
 | `msgwin-line-fade-window` | 消息窗 | 行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
 | `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |
 | `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
@@ -152,6 +152,9 @@
 | `bold-is-lfweight-face-mapping` | 消息窗 | 加粗 = 一次 lfWeight=700 的字体映射请求（引擎不做合成加粗，配置里也没有独立的「粗体面」键） | ✅ 已核验 | E2 · `test/font-bold-face.test.ts` |
 | `text-line-pitch-font-1380` | 消息窗 | 换行步进 = 字号 + 行间距 Font+1380（i08b）—— 注音不压上一行的唯一来源 | ✅ 已核验 | E2 · `test/text-layout.test.ts` |
 | `drawitem-mesh-blend-selector` | 渲染 | DrawItem+0x30 / MeshEntry[9] 的 alpha 混合选择子（0/1/2/3 一套枚举） | ✅ 已核验 | E2 · `test/blend-mode.test.ts` |
+| `text-face-source-memory-vs-system` | 消息窗 | 正文面名的来源：引擎只注册一份内存字体（游戏自带的 AGE-EXTEND.TTF / 面 'AGE Extend'），message:Font 指定的正文面由**系统字体表**解析 | ➖ n/a | E1 |
+| `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | 🟠 部分 | E4 · `test/draw-string.test.ts` |
+| `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成到已画好的描边上（"白字"永不纯白的机制） | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -514,14 +517,14 @@
 - **读的字段**：FontVWindow+36/+40(右/下边界), FontVWindow+44/+48(24B 行记录), FontVWindow+208(120B 文本记录), Font+201684(字号), Font+1236(字宽), Font+218592/+218596(缩放)
 - **emulator 现状**：缺口：逐字 GetTextExtentPoint32A 量宽、右/下边界硬断、注音配对（24B 记录 +0 种类 / +20 组 ID）与按比例缩短都未建模。★引擎的等宽网格（lfWidth = 字高/2 ⇒ 全角 1em / 半角 0.5em）使排版可退化为纯算术，不需要浏览器度量。★引擎**无**禁则、**无** 0x0A 换行处理。
 
-### `msgwin-offscreen-surface-lifecycle`（absent）
+### `msgwin-offscreen-surface-lifecycle`（partial）
 
 - **能力**：每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出
 - **触发**：0x70 设窗几何时重建；0x71 开始时填底色；显现阶段逐行/逐字贴出
 - **缺失时为什么静默**：表面生命周期错位不会报错：少重建 ⇒ 几何仍按旧尺寸（文字位置/换行全偏）；少清底 ⇒ 上一页文字叠在下面；少 ReleaseDC ⇒ 表面被 GDI 锁住、后端读不到像素（画面停留在旧内容）。
-- **引擎**：sub_45D660, sub_43C8D0, sub_43B070, sub_43D870, sub_43B460, sub_43B4C0, sub_45BE20 @ raw 73132-73193
-- **读的字段**：FontVWindow+20/+24(w/h), FontVWindow+12/+16(屏幕偏移), FontVWindow+4(目标表面=0), Font+1032(dd 模块), Font+1104(surface DC), Font+1400(已锁表面号)
-- **emulator 现状**：缺口：emulator 无"每窗离屏表面"概念，也没有 DC 取/还配对。重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」，因此需要等价的"窗口内容整体重画"时机（文本变化 / 显现游标变化 / 几何变化 / 清场）。
+- **引擎**：sub_45D660, sub_43C8D0, sub_43B070, sub_43B460, sub_43B4C0, sub_455DB0, sub_45BE20 @ raw 73132-73193
+- **读的字段**：FontVWindow+20/+24(w/h), FontVWindow+12/+16(屏幕偏移), FontVWindow+4(目标表面=0), Font+1032(dd 模块), Font+1104(surface DC), Font+1400(已锁表面号), Font+1352(AA 门；=0 时走 GDI 直画表面), dd+1540(像素格式掩码/移位), dd+8056(显示 bpp)
+- **emulator 现状**：缺口：emulator 无"每窗离屏表面"概念，也没有 DC 取/还配对；重写方案里这一层被替换为「纯排版模型 + canvas2D 光栅化成纹理」。★2026-09 已读到的部分（T-0042 第 8 轮延伸，均为 raw 反编译确证）：① `sub_455DB0`（raw 67944-67964）—— **AA 门（`Font+1352`）为 0 时**，文字由 GDI 直接画进该窗表面的 DC（`sub_43B460` 锁表面 → `SelectObject(HFONT)` → `SetBkMode(TRANSPARENT)`）；**AA 开时这个函数什么都不做**（走另一条 AA 路径）。② 表面创建 `sub_43C8D0`（raw 48229-48343）：`dwFlags = 7`（CAPS|WIDTH|HEIGHT，**不带像素格式** ⇒ 随显示格式）、`dwCaps = 0x840`（OFFSCREENPLAIN|SYSTEMMEMORY）；贴出用**源色键**（`sub_43B070` raw 47136-47157 → 表面 vtable+116，flag 8 = DDCKEY_SRCBLT）。③ `sub_45D660`（raw 73132-73193）在 `DrawMode != 1` 时建/重设表面并设色键；raw 47895-47989 的 ddCaptureScreen 显示按掩码/移位转换（16bpp 时白 → 248）。★仍未定位：**文字层在成片时被按 α≈0.855 合成**（实测：真机文字核心 (233,230,228)、α 三通道 0.838/0.856/0.866、核心最亮 232-235；emulator α=1.000、核心 255）。已排除：配置色（真机 SAVE.DAT 的 adcd 全表无 0xE6E6E6）、AA、缩放/滤波（任何内部尺寸×放大组合都留 255）、整帧色调曲线（文字描边黑未被抬起）。**最可能是「行淡入色窗被冻在中途」**（窗口失活时帧循环暂停）—— 见 `msgwin-line-fade-window` 与本条第 ④ 点。④ 每行色窗：raw 72336-72348 `sub_4ACF60(item, rec[66], rec[67/68])` 设起始色 + `sub_4AD0C0(item, 0, speed×fade/100, -1)` 设时长（125ms）、终点 0xFFFFFFFF。本工程这条只差"接到消息窗行上"（`msgwin-line-fade-window` 的 note 亦如此写）。
 
 ### `msgwin-line-fade-window`（partial）
 
@@ -594,3 +597,12 @@
 - **引擎**：sub_422F80, sub_423060, sub_423480, sub_41A200, sub_41A290, sub_423FE0, sub_4248C0, sub_4251A0, sub_425C30, sub_425D20, sub_426BD0, sub_426F80, sub_427040, sub_4AC470, sub_4AC660, sub_4A3980, sub_498B60, sub_4AA180, sub_49A690, sub_49A6C0, sub_49A6F0, sub_4AD9A0, sub_4ACD10, sub_4AE280, sub_4A0750, sub_499DF0 @ raw 31303-31345
 - **读的字段**：DrawItem 变换字段（`+104`、`+132..+164`）, Scene 纹理槽表（槽→槽 blit）, Scene+1048（转场容器）, Scene[278]/[279] 与 Scene[286..288]（绘制模式）, Engine[92338]/[92339]（画布尺寸对）, DrawItem `+720`（与相邻对象 `+504`）, Scene+1872/+21872 的两张纹理槽标志镜像表, Scene+1064（网格属性表）, Scene[op1 + 12677]（3D 模型槽）
 - **emulator 现状**：2026-09 A4 落地：handlers/gfx-state.ts（进 OPS）。建模 2 条：0x238 → engineValues[92338]/[92339]、0x258 → Engine.texSlotFlags（bit0|bit1）。宿主缝 11 条：resetPrimTransform、setPrimTransform4、blitSlotToSlot、commitGraphics、clearTransitions、setDrawModeBlock、setDrawEntryParam、setSlotParams、setMeshEntryAttr、release3DSlot、set3DColor；两个宿主（headlessScene / pixiBackend）都走共享层 scene/ops.ts 的 sc* 并落进 SceneState.render4。★2026-09 修（tickets/T-0028）：**0x256 不再是「只记录」** —— 它是 sub_4ACD10 的「对 [op1, op1+op2) 区间内已存在的绘制项做立即平移」（+0x68=1 + 平移 work 矩阵 +0x16C + 置脏）；DRAWCHARM.txt:182-186 正是靠它在收起态（global 1399==1）把侧边栏 21 个槽推 +0x6e；只记录不生效会让每次重绘都画回基准位（表现为「进 ADV 侧边栏即展开」）。现 scSetSlotParams 保留 A4 记录并真应用平移。★仍为 partial 的原因：render4 的其余项（变换复位 / 槽→槽 blit / Clear / 转场表 / 绘制模式 / 网格属性 / 3D 颜色）目前只记录，Pixi 管线尚未逐条消费；3D 一族在本作重写侧无 3D 管线。另：这 13 条不在 TITLE→SN0000 与 CONFIG1 两条可复跑链路上（实测 0 命中），主要由场景/战斗脚本使用，正确性由 op-a4-a6.test.ts 的 9 例单元测试锁定。
+
+### `text-white-level-on-composite`（partial）
+
+- **能力**：引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位
+- **触发**：所有由引擎自己绘制的文字（ADV 正文、设置界行标签、字体样例预览、直绘串）；同一屏的美术图（按钮面、局部化 UI 图、ON/OFF 图）**不受影响**。取色链读到绘制之前：绘制用的是 Font+1360（= 脚本全局 f807b，序章为 0xFFFFFF，raw 79666 行路径 / raw 79259-79273 ADV 路径都是逐字传该字段）⇒ 这一档发生在 GDI 画完之后的合成里，不在颜色链上。
+- **缺失时为什么静默**：★缺失时完全静默：宿主把文字画成 255 纯白，而引擎成片是 ≈226-232 ⇒ 观感上「文字更白更粗」（正是 T-0035/T-0042 用户实测的症状），没有任何报错或日志；只有把**同屏截图逐区域比对**才看得出来 —— 且很容易误判成字重/字体问题（T-0035 前几轮就误判过）。
+- **引擎**：sub_455ED0, sub_43C8D0, sub_45E870 @ raw 68011-68129
+- **读的字段**：Font+1360(填充色), Font+1364(描边色)
+- **emulator 现状**：★实测（T-0042）：引擎 vs emulator 同屏（OPTION 系统设定）逐区域比对 —— 引擎画的文字核心恒 226-232，其中字体样例预览横跨「亮天空→暗照片」（背景 7→49）时核心只动 0.3 ⇒ 是**常数压暗**，不是与场景的 alpha 混合、也不是重采样；而美术图（米白按钮面 (254,243,229) 在两边是 9542 vs 9553 px、纯白高光 374/374）逐像素一致 ⇒ 不是整帧色调曲线。已排除：`message:MesWinAlpha`（用户实测 0/32 都无变化）、配置色 `adcd`（真机 SAVE.DAT 全表 1000 条无 0xE4/0xE6）、AA 门（`Font+1352`）、`set:DrawMode`（引擎缺省 0，两边一致）、缩放/滤波（任何内部尺寸×放大组合都留 255）、调色板（引擎里没有调色板 API）、窗对象颜色对 op（0x25E/0x25F/0x131/0x141 全库脚本零使用）。**机制仍未定位**（写在 T-0042 的 acceptance）；当前 emulator 按实测值对齐：`src/vm/handlers/msgwin.ts` 的 `TEXT_WHITE_LEVEL = 0.89`（并给出黑仍为黑），守卫：test/draw-string.test.ts（0x204 直绘的填色断言）、test/adv-msgwin.test.ts、test/text-style-snapshot.test.ts（rgbOf 同口径；三处都钉住 0xFFFFFF → #e3e3e3）。

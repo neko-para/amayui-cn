@@ -7,15 +7,16 @@
 
 ## 概览
 
-共 **41** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **30** · 🚫 dropped **1**（P0 5 / P1 12）
+共 **42** 张：🔜 doing **2** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **30** · 🚫 dropped **1**（P0 5 / P1 12）
 
-按域：`emulator/frame-loop` 9 · `emulator/render` 9 · `emulator/adv` 5 · `emulator/test` 3 · `emulator/input` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
+按域：`emulator/render` 10 · `emulator/frame-loop` 9 · `emulator/adv` 5 · `emulator/test` 3 · `emulator/input` 2 · `emulator/vm` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/hosts` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1
 
-## 🔜 doing（1）
+## 🔜 doing（2）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 6 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0035`](./T-0035/ticket.json) | P1 | bug | `emulator/render` | 文本比引擎渲染更粗、白色更亮：抗锯齿/字重/描边与引擎的字体配置面（set:EnableAntiFont 等）不一致 | 8 | `app/amayui-emulator/test/text-aa.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0042`](./T-0042/ticket.json) | P2 | bug | `emulator/render` | ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化） | 4 | — | `notes.md` `changes.md` | — |
 
 ## ⬜ open（9）
 

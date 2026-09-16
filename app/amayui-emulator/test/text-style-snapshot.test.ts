@@ -70,9 +70,19 @@ function mk(): {
  * `0x76` 的操作数是 COLORREF(BGR)，引擎（与 `ENGINE_FIELD_STORE`）把它翻成 RGB 存字段
  * ⇒ 期望的 `#rrggbb` 要按同一个变换算出来，别把 BGR 字面量当成 RGB。
  */
+/**
+ * 引擎 COLORREF(BGR) → **期望的文字填充色** `#rrggbb`。
+ *
+ * ★**不再**按"文字白电平"压色（`tickets/T-0042` 2026-09 定位：引擎文字的"偏灰"来自
+ * raster 的**覆盖率 α 合成** `dst = (C*α + dst*(255-α))/255`，样式里保留脚本原色）
+ * —— 这样下面的断言仍然只比较**颜色的相对变化**（入队钉住 / 不回溯 / 直绘立即消费）。
+ */
 const rgbOf = (v: number): string => {
   const rgb = (((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff)) >>> 0;
-  return '#' + (rgb & 0xffffff).toString(16).padStart(6, '0');
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 };
 const win9Fill = (scene: HeadlessScene): string | undefined => scene.scene.msgWins.get(9)?.style.main.fill;
 
@@ -81,6 +91,7 @@ test('★入队时钉住：先设全局色再 show-text ⇒ 该窗用入队那�
   step(0x76, [im(0x563412)]); // BGR ⇒ RGB 0x123456
   step(0x71, [im(9)]); // 开始新消息（清窗 9）
   step(0x6e, [im(9), str('神缘ＳＡＭＰＬＥ')]);
+  // ★样式里保留脚本原色（偏灰由 raster 的覆盖率 α 合成负责，见 tickets/T-0042）
   assert.equal(win9Fill(scene), '#123456', '窗 9 的填充色应 = 入队时的全局色（BGR 0x563412 ⇒ RGB 0x123456）');
 });
 

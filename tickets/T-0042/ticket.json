@@ -1,0 +1,88 @@
+{
+  "title": "ADV 正文白度：emulator 画 255 纯白，真机实测核心亮度约 230-231（且不随背景变化）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "用户原始抱怨「emulator 的文字白色看着更亮」经三图同口径量化成立（tickets/T-0035/notes.md 第 7 轮）：同一句台词、同一断行下，真机（老汉化与新汉化都一样）文本核心亮度 230-231，逐行背景中位 69-76 都相同时白度不变 ⇒ 不是背景透出；emulator 是 255 纯白。★**2026-09-16 机制定位完成**：引擎自己光栅化字形 —— `sub_46F2D0`（raw 86146）用 `GetGlyphOutline` 取覆盖率位图（`GGO_GRAY4/GRAY8`，raw 86028-86038 按 `Font+1352` 选档），交 `sub_46D9F0`（32bpp 分支 raw 84956-85011）逐像素合成 `dst = (C·α + dst·(255−α))/255`，**α = 255·cov/17 ≤ 240**（满覆盖 240、实测平台对应 cov=15 即 225）⇒ **填充永不不透明**，「白字」落在 `α·255 + (1−α)·描边色` 上：序章旁白 `225 + (30/255)·(63,32,16) = (232,229,227)` ≈ 实测 (233,230,228) ✔；样例文字 backdrop≈黑 ⇒ 227 ✔。这条同时解释**偏灰**（α<1）、**偏粗**（覆盖率在边缘有斜坡，1bpp 阈值化会把它切掉）、**逐元素差异**（cov/描边色不同）与「与背景无关」（backdrop 是描边，不是场景背景）。★附带真机事实（本轮）：真机游戏目录 = registry ExePath `E:\\Games\\Eushully\\天結いキャッスルマイスター\\`；真机 SYS4REG.INI（`%LOCALAPPDATA%\\Eushully\\揤寢偄僉儍僢僗儖儅僀僗僞乕\\`，959B，只有 display/sound/message/system）`Font=Amayui CN`/`UseAntiFont=1`/`MessageFade=250`/`MessageSpeed=25`/`MesWinAlpha=8`/`FullScreenBit=32`；真机 SAVE.DAT 与工程 overlay 同值（a9db=0、a9dd=2、a9de=1、a9df/a9e0/a9e1=192/160/128、adcd=0xFFFFFF）；字体 `AGE-EXTEND.TTF` unitsPerEm=256/无位图 strike，Amayui CN = 改名的 Sarasa Gothic SC。",
+  "acceptance": [
+    "★机制已定位（2026-09-16）：引擎自己光栅化字形 —— `sub_46F2D0`（raw 86146）用 `GetGlyphOutline` 取**覆盖率位图**（`v62 = 5/6` = `GGO_GRAY4/GRAY8`，raw 86028-86038 按 `Font+1352` 选，关时 `1` = 1bpp），交 `sub_46D9F0`（32bpp 分支 raw 84956-85011）逐像素合成 `dst = (C·α + dst·(255−α))/255`，**α = 255·cov/17 ≤ 240** ⇒ **填充永不不透明**，「白字」必然落在 `α·255+(1−α)·描边色` 上。判据：序章旁白描边实测 (63,32,16) ⇒ `225 + (30/255)·dst = (232,229,227)` ≈ 真机实测 **(233,230,228)**；样例文字 backdrop≈黑 ⇒ 227 ✔。已排除：截图色调曲线、配置色 adcd（真机 SAVE.DAT 全表无 0xE6E6E6）、GDI 的 AA/ClearType（同字体同字号三档 lfQuality 直测核心都是 255）、缩放/滤波、描边先后、激活/非激活、模糊、脚本窗 alpha（op 0x25E/0x25F/0x131/0x141 全库零使用）",
+    "结论落 analysis/engine-capabilities.json（新条目或现有消息窗条目）与 docs-new/03-engine/adv-text-rendering.md —— 已落：新增 glyph-coverage-alpha-composite（含 16bpp/32bpp 分支、GGO 档位、α 量化）",
+    "emulator 侧按结论对齐：★第 1 次（2026-09-15）按实测白电平乘 0.89；★**第 2 次（2026-09-16）改为机制实现** —— 删掉常数乘色，改在 raster 侧「描边不透明先画 + 填充按 `globalAlpha = TEXT_FILL_ALPHA(225/255)` 叠上去」（= 引擎的 `dst = α·C+(1−α)·dst`），并把样式里的填充/描边恢复为脚本/config 原色；`antiAlias` 按**像素判据**取 true（配置门推导为 0 与实测 α<1 不可能同时成立）。守卫 = `test/text-aa.test.ts` 的「覆盖率 α 落在 (233,230,228)」+ 更新后的填色断言 + npm test 554/554。同屏实测：OPTION 样例文字 255→**225**（真机 226-228）、ADV 正文 255→**225/0 个纯白**（真机 229-232）、艺术面逐像素一致",
+    "残留（下一步）：设置界**行标签**仍偏亮（模拟器 252 vs 真机 ~230、暖）。`CONFIG1.txt:2747-2748` 把该元素填充与描边都设成 `ffffff` ⇒ α 合成的 backdrop 是白描边；真机落点说明其描边实际是暗色（或该元素不走那两行）⇒ 待读该元素归属"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v18 = v17 >> 4;",
+      "note": "★机制站点：字形合成器 `sub_46D9F0` 的覆盖率→α 量化（GGO_GRAY4 ⇒ v30 = 255*cov/17，raw 84893-84898；32bpp 分支 84956-85011 写 `dst = (C*v31 + dst*(255-v31))/255`）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "GlyphOutline = (int *)GetGlyphOutline(*(_DWORD *)(_this + 1108), (unsigned __int16)v14, v62, v76, 0, 0, v75);",
+      "note": "字形位图来源与档位（`v62` 在 raw 86028-86038 定：Font+1352≠0 ⇒ 5/6 = GGO_GRAY4/GRAY8，否则 1 = 1bpp）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/text/raster.ts",
+      "anchor": "const fillAlpha = spec.antiAlias ? TEXT_FILL_ALPHA : 1;",
+      "note": "第 2 次变更的实现点：描边不透明、填充按覆盖率 α 叠加（= 引擎的 α 合成）"
+    },
+    {
+      "file": "app/amayui-emulator/src/text/layout.ts",
+      "anchor": "export const TEXT_FILL_ALPHA = 225 / 255;",
+      "note": "α 常量（255·15/17 / 255，对应实测平台 cov=15）"
+    },
+    {
+      "file": "tickets/T-0035/notes.md",
+      "anchor": "文本白峰值",
+      "note": "三图同口径实测：真机（老/新汉化）文本核心亮度 230-231 且不随局部背景变化，emulator 为 255 纯白"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/saveData.ts",
+      "anchor": "extractEnginePayload",
+      "note": "真机 SAVE.DAT（format=3）可解：a9dd=2 / a9de=1 / adcd=默认调色板（ffffff…，无 0xE6E6E6）⇒ 排除「配置色=230」"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "aMessageMeswina",
+      "note": "op 0x131 GetMesWinAlpha 是唯一读 message:MesWinAlpha 的地方，但全库脚本零使用 ⇒ α 不是脚本设的"
+    }
+  ],
+  "notes": "来源 = T-0035 第 7 轮的三图量化（老汉化 / 新汉化 / emulator，用户提供）。复现：python .tmp/measure-final.py（.tmp 为临时区，数字与口径写在 T-0035 notes 第 7 轮里）。",
+  "id": "T-0042",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-15",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "补：机制定位（f807b ← adcd[14acda]，CONFIG1 label_0000dc98）+ 两条真源锚点"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "定位：排除 6 条假设，锁定未建模的离屏表面贴出路径；真机 SAVE.DAT 成功解码"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "open → doing —— 定位：排除 6 条假设（截图色调曲线/合成 alpha/配置色/AA/描边顺序/模糊缩放），锁定未建模的 msgwin-offscreen-surface-lifecycle（E0）"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "确证 α≈0.855 为稳定态合成；排除激活/非激活与脚本窗 alpha；给出 MesWinAlpha 定源实验"
+    },
+    {
+      "at": "2026-09-15",
+      "what": "第 1 次变更：按实测文字白电平 0.89 对齐 emulator 取色（机制仍待查，见 acceptance 第 1 条）"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "★机制定位完成：填充按「字形覆盖率 α」合成到已画好的描边上（sub_46F2D0 的 GGO 覆盖率位图 + sub_46D9F0 的 dst=(C*α+dst*(255-α))/255，α=255*cov/17≤240）⇒ 白字必然偏灰；第 2 次变更改为机制实现（raster 侧 globalAlpha）+ antiAlias 以像素判据取 true；真机/模拟器同屏 OPTION 对照：样例文字 255→225（真机 226-228）。残留：行标签仍偏亮（252 vs 230），已写进 acceptance"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0035"
+    ]
+  }
+}

@@ -3900,7 +3900,8 @@
     "purpose": "DrawMode==1 带描边的逐字绘制：SJIS 解码循环 + 每字 GetGlyphOutline（格式按 Font+218500/+1352 选 1/5/6）+ 软件合成进 Scene 的该窗纹理；描边档 1=单向偏移、2=同位置 1/4 强度副本、3=按 360/(8r) 角度圆环扫描",
     "sub_behaviors": ["每字 GGO + sub_46D9F0 逐像素写", "内存字形位图缓存 hashtable Font+3444 / +3524 / +3528", "外字 0xF042/0xF043 走 sub_4A3980 DrawTexture"],
     "fields_used": ["Font+218516/+218500/+218520/+201704/+1352/+3444/+3524"],
-    "unmodeled": ["sub_46D9F0 像素合成细节", "sub_46ECC0 圆环角度表"],
+    "unmodeled": ["sub_46ECC0 圆环角度表"],
+    "notes": "★`sub_46D9F0` 已解析（2026-09-16，tickets/T-0042）：覆盖率位图逐像素 `dst=(C*alpha+dst*(255-alpha))/255`，alpha=255*cov/17（GGO_GRAY4；GRAY8 用 /65）⇒ 满覆盖 240、实测平台 225 ⇒ 「白字永不纯白」。见 analysis/engine-capabilities.json 的 text-glyph-coverage-alpha-composite",
     "evidence": "raw 87102-87745"
   },
   {
@@ -3910,8 +3911,10 @@
     "status": "PARTIAL",
     "purpose": "DrawMode==1 无描边逐字绘制：SJIS 解码 + 每字 GetGlyphOutline + 基线修正（tmAscent）+ 写入该窗纹理；不使用字形缓存（每次重新 GGO）",
     "fields_used": ["Font+1172/+201712/+201704/+201684", "Font+218500/+218596"],
-    "unmodeled": ["sub_46D9F0 像素合成细节"],
-    "evidence": "raw 85933-86357"
+    "sub_behaviors": ["每字 GGO（`v62` = 5/6/1，raw 86028-86038）+ `sub_46D9F0` 逐像素覆盖率合成", "AA 开时行步长 = 每像素 1 字节（raw 86163-86164），关时 1bpp 位平面（raw 86165-86166）"],
+    "unmodeled": [],
+    "evidence": "raw 85933-86357",
+    "notes": "★`sub_46D9F0` 像素合成已解析（2026-09-16，tickets/T-0042）：`v30 = 255*cov/17`（raw 84893-84898），32bpp 分支 `dst = (C*v31 + dst*(255-v31))/255`（raw 84996-85011）⇒ alpha ≤ 240（cov=16）/ 225（实测平台 cov=15）⇒ 「白字永不纯白」；16bpp 分支 raw 84873-84953 走 RGB444 nibble"
   },
   {
     "addr": "0x4742F0",
@@ -7222,6 +7225,19 @@
     "fields_used": ["Font+1380(line_spacing)"],
     "evidence": "raw 29021-29030",
     "notes": "旧口径把 Font+1380 当「第四色」是错的（tickets/T-0038 订正）"
+  },
+  {
+    "addr": "0x417800",
+    "raw_name": "sub_417800",
+    "semantic_name": "startup_apply_config_and_register_mem_font_417800",
+    "status": "PARTIAL",
+    "purpose": "启动应用配置：按 set:CreateObject 关掉一批对象创建回调，再把游戏自带的唯一一份字体注册成进程内存字体，并应用两键 AA 门",
+    "signature_override": { "param0": "a1(Engine*)" },
+    "sub_behaviors": ["按 set:CreateObject 位掩码把 256*4 组对象创建回调换成 sub_418E30（raw 23586-23605）", "取 Engine+489824 的 [0]（配置里的字体文件索引）→ 存在性检查 → FileSource 读取整份 → AddFontMemResourceEx（raw 23606-23643）", "两键门：set:EnableAntiFont 非 0 才读 message:UseAntiFont → sub_4155B0(Font,v)（raw 23649-23652）", "message:AntiFontLevel 死写 Engine+303796（raw 23653）"],
+    "fields_used": ["Engine+489824(字体文件索引表)", "Engine+489840(文件名表)", "Engine+320328/0x4E348", "Engine+320360/0x4E368", "Font+1352"],
+    "unmodeled": ["raw 23655 之后剩余的配置应用段", "sub_4559C0/sub_455560 的 FileSource 细节", "sub_418E30 的语义"],
+    "evidence": "raw 23466-23660（已读 23586-23654）",
+    "notes": "调用点只有启动处 raw 142315 一处。★要点：全库只有这一个 AddFontMemResourceEx（raw 23643），且只注册配置表的第一项 —— 本工程 install/SYS4INI.BIN 里唯一的 .TTF 名是 AGE-EXTEND.TTF（随包散文件 install/AGE-EXTEND.TTF，面名 AGE Extend，raw 4455/71097-71099）⇒ 正文面名 message:Font（汉化版 Amayui CN）不在进程内注册，由系统字体表解析。"
   }
 
 ]

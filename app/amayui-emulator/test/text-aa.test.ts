@@ -12,7 +12,8 @@
  * 本机现状：真游戏 base 的 SYS4REG.INI 连 `[set]` 段都没有（`GetConfig` 返 0），本工程 overlay 写的是
  * `EnableAntiFont=0` ⇒ **两边都是无 AA**。而 canvas 永远开 AA（灰边）⇒ 字看着更粗、白字边缘更亮。
  *
- * 本文件钉三件事：① 配置门的两键语义；② 样式把它带到渲染侧；③ 阈值化本身的行为。
+ * 本文件钉四件事：① 配置门的两键语义（**字段**仍按配置推导）；② 样式侧的 AA 判据以**实测像素**
+ * 为准（恒 true，见下）；③ 阈值化本身的行为；④ 覆盖率 α 合成（`TEXT_FILL_ALPHA`）。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,6 +22,7 @@ import { Engine } from '../src/vm/engine.js';
 import { applyConfigToEngine, parseIni } from '../src/engineConfig.js';
 import { globalTextStyle } from '../src/vm/handlers/msgwin.js';
 import { thresholdAlpha } from '../src/renderer/text/raster.js';
+import { TEXT_FILL_ALPHA } from '../src/text/layout.js';
 
 /** `Font+1352` = `Engine+85296+1352` ⇒ dword 下标 `(85296+1352)/4`。 */
 const AA_FIELD = 21662;
@@ -49,13 +51,17 @@ test('★配置门：message:AntiFontLevel 与 set:Menu_UseAntiFont 不得影响
   assert.equal(values.get(AA_FIELD), 0, 'AntiFontLevel/Menu_UseAntiFont 不是 AA 开关');
 });
 
-test('★样式携带：globalTextStyle().main.antiAlias 来自字段 21662（默认 false = 锯齿）', () => {
+test('★样式携带：main.antiAlias 恒 true —— 由**像素判据**定，不再跟随字段 21662（T-0042）', () => {
+  // 引擎侧 `Font+1352` 的推导（raw 23649 门 + raw 491880 的默认 0）指向"无 AA"，但那条路径的
+  // 合成结果是**纯色**（`sub_46D9F0` 的 1bpp 分支 v18/v31 恒满 ⇒ 白 255），与真机实测的
+  // `α·255+(1-α)·描边 = (233,230,228)`（α<1、边缘 3px 斜坡）**互相矛盾** ⇒ 运行期走的是
+  // 覆盖率路径。样式因此恒 true，压暗由 raster 的覆盖率 α 合成负责。
   const e = new Engine(new StubNative(() => {}));
-  assert.equal(globalTextStyle(e).main.antiAlias, false, '未灌配置时引擎字段是 0（raw 78755 的初值）');
+  assert.equal(globalTextStyle(e).main.antiAlias, true, '默认即覆盖率路径');
+  e.engineValues.set(AA_FIELD, 0);
+  assert.equal(globalTextStyle(e).main.antiAlias, true, '字段 21662 = 0 也不改判据（实测像素优先）');
   e.engineValues.set(AA_FIELD, 1);
   assert.equal(globalTextStyle(e).main.antiAlias, true);
-  e.engineValues.set(AA_FIELD, 0);
-  assert.equal(globalTextStyle(e).main.antiAlias, false);
 });
 
 test('★阈值化：AA 关闭时边缘 alpha 只取 {0,255}（GDI 锯齿字形），颜色不动', () => {
@@ -97,4 +103,21 @@ test('阈值化：本来就是 0/255 的像素不产生改写（幂等 + 不白�
   } as unknown as CanvasRenderingContext2D;
   assert.equal(thresholdAlpha(ctx, 2, 1), 0);
   assert.equal(written, false);
+});
+
+test('★覆盖率 α：白字落在 α·255+(1-α)·描边上，正好是真机实测的 (233,230,228)', () => {
+  // 引擎 `sub_46D9F0`（raw 84893-84898 / 84996-85011）：α = 255·cov/17，cov=15 ⇒ 225。
+  assert.equal(TEXT_FILL_ALPHA, 225 / 255, 'α 常量 = 255*15/17 / 255');
+  const a = TEXT_FILL_ALPHA;
+  const blend = (dst: number): number => a * 255 + (1 - a) * dst;
+  // 序章旁白：描边实测 ≈ (63,32,16)（真机像素剖面）⇒ 引擎侧实测量 **(233,230,228)**。
+  // 整数截断/描边实际取值有 ±1~2 的差，这里只钉"模型落在实测值上"。
+  const got = [blend(63), blend(32), blend(16)];
+  const want = [233, 230, 228];
+  for (let i = 0; i < 3; i++) {
+    assert.ok(Math.abs(got[i]! - want[i]!) <= 2, `通道 ${i}: α 合成 ${got[i]!.toFixed(1)} ≈ 实测 ${want[i]}`);
+  }
+  // 满覆盖上限（cov=16 ⇒ 240）也不到 255 ⇒ "白字永不纯白"
+  const maxA = 255 * 16 / 17 / 255;
+  assert.ok(Math.round(maxA * 255) < 255, '覆盖率达上限也不产生纯白');
 });

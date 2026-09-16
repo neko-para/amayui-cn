@@ -49,6 +49,17 @@ cmake --build build --config Release
 cd tools/alf && cl /O2 /EHsc unpack_alf/unpack_alf.cpp lzss/lzss.cpp /Fe:unpack_alf.exe /link Shlwapi.lib
 ```
 
+## 字体「面」探针（T-0035）
+
+- `font-face-probe.ps1` —— 只问 GDI 能回答的两个问题（Windows；不需要装 Node）：
+  - `-List`：照抄**引擎字体选择器的枚举口径**（`EnumFontFamiliesExA` + `lfCharSet=0x86` +
+    `lfOutPrecision=OUT_TT_ONLY_PRECIS`；回调只收非光栅且 `lfCharSet==0x86`，即引擎 `Proc` raw 74146-74171），
+    列出候选表条目。★该列表**每族每字符集只给一条**（代表面），与族内装了几种字重无关 ——
+    「`Amayui CN` 出现一条」**不能**用来判断 Bold 面在不在。
+  - 默认：对 `face` + `lfWeight=400/700` 各建一次 `HFONT`，用 `GetFontData` 取回 GDI **实际选中的那份字体数据**，
+    比 sha256 与 `name` 表 `id6`（PostScript 名唯一）⇒ 取出同一份 = 700 被静默退回常体；不同份 = 落到了 Bold 面。
+- 用法与实测结论见脚本头注释、`tickets/T-0035/notes.md` 第 6 轮、`docs-new/03-engine/adv-text-rendering.md` §1。
+
 ## 注意
 
 - `unpack_alf.exe` 解包时会在当前目录写入 `lzssdata.bin`/`lzssdata2.bin` 调试文件（可删除）。

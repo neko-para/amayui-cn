@@ -20,6 +20,7 @@
  * 视觉上比引擎的"偏移副本"更粗、且会把字面吃掉一半 —— 那正是"字重看着过重"的来源。
  */
 import {
+  TEXT_FILL_ALPHA,
   visibleInLine,
   visibleRubyInLine,
   type FontSpec,
@@ -39,18 +40,28 @@ function drawGlyph(
   ctx.font = `${spec.weight} ${spec.size}px "${spec.family}"`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.globalAlpha = 1;
+  // ★**填充用覆盖率 α 画**（引擎 `sub_46D9F0` raw 84996-85011：`dst = (C*α + dst*(255-α))/255`，
+  //   α = 255*cov/17 ≤ 225/240）。canvas 的 `globalAlpha` 正是这个 `dst = α*C + (1-α)*dst`
+  //   合成 —— 满覆盖像素落在 `225 + (30/255)*描边`，正是真机实测的 `(233,230,228)`。
+  //   描边副本照旧**不透明**（引擎先画描边、覆盖率只作用于填充那一遍）。
+  //   ★只有覆盖率路径才压 α：1bpp 路径（`v62 = 1`）的合成是 `v18/v31` 恒满 ⇒ 纯色 255。
+  const fillAlpha = spec.antiAlias ? TEXT_FILL_ALPHA : 1;
+  ctx.globalAlpha = fillAlpha;
   switch (st.outlineMode) {
     case 0:
       ctx.fillStyle = spec.fill;
       ctx.fillText(ch, x, y);
+      ctx.globalAlpha = 1;
       return;
     case 1: {
       // 单向投影：引擎在同一位置先用描边色画一遍偏移副本（raw 68091-68100）
+      ctx.globalAlpha = 1;
       ctx.fillStyle = spec.outline;
       ctx.fillText(ch, x + st.outlineDx, y + st.outlineDy);
+      ctx.globalAlpha = fillAlpha;
       ctx.fillStyle = spec.fill;
       ctx.fillText(ch, x, y);
+      ctx.globalAlpha = 1;
       return;
     }
     case 2: {
@@ -67,14 +78,17 @@ function drawGlyph(
       // 四次对角偏移副本（引擎 raw 68101-68121 的四次 TextOutA），再居中画填充
       const { outlineDx: dx, outlineDy: dy } = st;
       if (dx !== 0 || dy !== 0) {
+        ctx.globalAlpha = 1;
         ctx.fillStyle = spec.outline;
         ctx.fillText(ch, x + dx, y + dy);
         ctx.fillText(ch, x - dx, y - dy);
         ctx.fillText(ch, x + dx, y - dy);
         ctx.fillText(ch, x - dx, y + dy);
       }
+      ctx.globalAlpha = fillAlpha;
       ctx.fillStyle = spec.fill;
       ctx.fillText(ch, x, y);
+      ctx.globalAlpha = 1;
       return;
     }
   }

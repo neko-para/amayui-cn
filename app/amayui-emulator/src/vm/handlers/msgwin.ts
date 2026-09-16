@@ -88,6 +88,27 @@ export function setConfigValue(e: Engine, key: string, value: number): void {
 const hex6 = (rgb: number): string => '#' + (rgb & 0xffffff).toString(16).padStart(6, '0');
 
 /**
+ * ★**引擎文字"偏灰"的真正机制 = 字形覆盖率合成**（`tickets/T-0042`，2026-09 定位）。
+ *
+ * 引擎自己光栅化字形：`sub_46F2D0` 取 `GetGlyphOutline` 的**覆盖率位图**（raw 86146：
+ * `v62 = 5`/`6` = `GGO_GRAY4/GRAY8_BITMAP`，AA 关时才是 `1` = `GGO_BITMAP`），
+ * 交给合成器 `sub_46D9F0` 逐像素写目标表面（32bpp 分支 raw 84956-85011）：
+ *
+ * ```text
+ * v29 = 255 * cov                       // 覆盖率 0..16（GRAY4）
+ * v30 = v29 / 17  (或 /65 for GRAY8)    // ← 满覆盖 16 ⇒ 240，永不为 255
+ * dst = (C * v30 + dst * (255 - v30)) / 255   // 与**已经画好的描边**混合
+ * ```
+ *
+ * ⇒ **填充永不不透明**：满覆盖也只在 0.88~0.94 之间，于是"白字"落在
+ * `α·255 + (1-α)·描边色` 上 —— 实测 `(233,230,228)`（序章旁白，描边≈`(63,32,16)`）
+ * 正好等于 `(255·225 + dst·30)/255`；而模拟器此前把描边色/填充色**当成不透明纯色**画，
+ * 所以"字更白、更粗"。**这条同时解释了偏灰与偏粗**（覆盖率在边缘还有斜坡）。
+ *
+ * 数值常量与"为什么按覆盖率路径画"的判据放在 `text/layout.ts` 的 `TEXT_FILL_ALPHA`。
+ */
+
+/**
  * **全局文本样式**（不依赖任何窗几何）—— 引擎 `Font` 对象上那几个"当前字体/颜色/描边"字段的快照。
  *
  * 用途：任何"直绘文本"的指令（`0x204` draw-string → `sub_456710(Font, 槽, 串, x, y)`）
@@ -113,11 +134,14 @@ export function globalTextStyle(e: Engine): {
       family: resolveFace(m.font.mainFace, e.resourceVersion).family,
       size: m.font.mainSize,
       weight: m.font.mainBold ? 700 : 400,
+      // ★填充/描边**不再压暗颜色**：引擎的"偏灰"是字形覆盖率的合成结果（见上 `TEXT_FILL_ALPHA`），
+      //   由光栅化侧按 `globalAlpha` 复现 ⇒ 这里必须给出脚本/config 的**原色**。
       fill: hex6(v(21664, 0xffffff)),
       outline: hex6(v(21665, 0x000000)),
-      // ★抗锯齿（`Font+1352` = Engine[21662]，`tickets/T-0035`）：引擎只认 `set:EnableAntiFont`
-      //   门控后的 `message:UseAntiFont`；没配就是 0 = 锯齿字形（GDI/dd 路径）。
-      antiAlias: (v(21662, 0) & 1) !== 0,
+      // ★抗锯齿（`Font+1352` = Engine[21662]，`tickets/T-0035`）：配置门（`set:EnableAntiFont`）
+      //   在真机 INI 里是关的，但**实测像素只可能来自覆盖率路径**（1bpp 路径的 α 恒满 ⇒ 255）。
+      //   ⇒ 以"像素判据"为准开 AA；配置门的推导见 `TEXT_FILL_ALPHA` 的注释。
+      antiAlias: true,
     },
     outlineMode: (v(21667, base.outlineMode) & 3) as 0 | 1 | 2 | 3,
     outlineDx: v(21670, base.outlineDx),
