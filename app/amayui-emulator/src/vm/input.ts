@@ -141,9 +141,12 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   // --- get-input-type(0xCD) 节流态（引擎 _this[429808]/[429812]）---
   /** 上次推进时刻（ms）。0xCD 据此判节流。 */
   lastAdvance = 0;
-  /** 节流间隔（ms；引擎 `_this[429812]`）。**核实：该字段全工程只在 0xCD(raw 25842) 读、从无写入 → bss 初值 0**，
-   *  故引擎 `_this[429812] <= (now-lastAdvance)` 恒真 → **get-input-type 实际不节流（每次调用都推进）**。
-   *  emulator 旧值 200 会引入 ~200ms 输入迟滞，与引擎不一致 → 置 0。 */
+  /** 节流间隔（ms；引擎 `_this[429812]` = `Engine+107447` 计时对象的 `[6]`）。
+   * ★引擎语义 = **最后一次 `mouse-callback`(0xCC) 的 op1**：`sub_453A60(obj, op1)` 写
+   *   `obj[6] = op1 ? op1 : 1`（raw 66101-66113）；TITLE/CHARMEDIT 等都登记 `mouse-callback 10`
+   *   ⇒ 真机间隔 **10ms**。旧注"全工程无写入 ⇒ 恒不节流"漏了 `sub_453A60`。
+   * ⚠**emulator 现状 = 恒 0（不节流）**：这是**已知偏差**（`tickets/T-0047`）——headless 测试
+   *   用冻结时钟驱动，改它必须同时改它们的时钟模型，故与本单的 0x100 修复分开做。 */
   advanceThrottle = 0;
   /** 触点标识（0x2FC 的 op5，引擎触摸项 dwID）。为 1 表示"有触点"。 */
   touchId = 0;
@@ -425,7 +428,9 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
    * get-input-type(0xCD) 的推进门（引擎 sub_41ACD0 语义）：
    * `if (now - lastAdvance >= advanceThrottle || advActive)` → 刷新 lastAdvance，返回注册的 mouseJump 目标；
    * 否则返回 null（不推进）。
-   * 引擎 `_this[429812]`(throttle) 从未写入 = 0 → 条件恒真 → **始终推进**；advActive(0x8000000) 只是 OR 兜底（实际恒真）。
+   * 引擎 `_this[429812]`(throttle) = **最后一次 `mouse-callback` 的 op1**（见字段注释，真机 10ms）；
+   * emulator **当前恒 0** ⇒ 条件恒真（不节流）——已知偏差，见 `tickets/T-0047`。
+   * advActive(0x8000000) 是 OR 兜底。
    * **不读取/不消费 mouse/joy 按下沿或 mouseMoved**——触发只由时间节流或 ADV 激活决定（与鼠标是否移动/按下无关）。
    * 未注册鼠标目标(==-1/0xFFFFFFFF) → 返回 null（引擎：弹返回栈、原地不跳）。
    */

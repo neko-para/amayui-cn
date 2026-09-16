@@ -111,6 +111,25 @@
 
 ## 9. 变更记录
 
+- 2026-09（`tickets/T-0046`，`0x100` 的「默认键」分支 —— 用户报「CHARMEDIT 右键无反应」）：
+  - 症状：`CHARMEDIT`（ADV 右侧菜单打开的编辑界面）真机可右键关闭，emulator 下右键无反应、只能点底部「閉じる」。
+  - 根因（脚本侧读通了才定位到 VM）：脚本**收到了**右键（`local a` 的 bit1 被置上、抬起时确实走到关闭路径
+    `label_00001820`），但关闭被 `jcc (local b)` 挡回。`local b` 是"有键按住"标志，只由 `joy-callback c` 清 0；
+    而槽 `c` 不是物理键 —— `src/SYSTEM4.txt:86` 的 `i0fe c` 把 `Engine[517]`（SetKeyTotal）设为 12，`0x100`
+    在**输入掩码为 0** 时要拿 `Engine[517]` **当下标**查 `joy-callback` 表、跑「默认键」处理器
+    （raw 25050-25062）。emulator 把这条分支写成了"无输入就落回" ⇒ 默认键处理器永不运行 ⇒ `b` 恒 1。
+  - 修复（`src/vm/handlers/input.ts` 的 `op_input_dispatch`）：① 掩码为空 ⇒ 用 `Engine[517]` 当下标派发；
+    ② 掩码非空的扫描上界收到 `[517]`（raw 25029-25037）；③ **两条分支都压返回点**（raw 25039-25040 / 25052）
+    —— 此前非空分支也没压，handler 末尾的 `ret` 会落进 handler 的下一句。`Engine[517]` 初值 7 按 Input 构造
+    （`sub_477DD0` raw 92385）建模。
+  - 守卫 `test/input.test.ts`：合成用例（空掩码 ⇒ 跳 `joyJump[SetKeyTotal]`、bit≥上界不派发、压返回点）
+    + CHARMEDIT 端到端（SetKeyTotal=12 ⇒ 右键关闭并离开 `CHARMEDIT.BIN`；=7 ⇒ 被 `jcc (local b)` 挡回）。
+    真启动链实测 `Engine[517]=12`。`npm run verify` 全绿（563 测试）。
+  - 同轮发现、**本单不改**：`0xCD` 的节流间隔 `Engine[429812]` 其实由 `mouse-callback`(0xCC) 的 op1 写入
+    （`sub_453A60` raw 66101-66113，旧注"全工程无写入"漏了它）⇒ 真机 `mouse-callback 10` = 10ms 节流；
+    emulator 的 `advanceThrottle` 仍恒 0。改它要同步改三处冻结时钟的 headless 测试 ⇒ 已单独开单 **`T-0047`**
+    （含「打开节流后只有 title-exit ×2 + route-dispatch ⑦b 失败」的实测清单与落地顺序；文档 opcode-table 0xCC/0xCD 与 input-system §6a/§7b 已按引擎事实改写并标注现状）。
+
 - 2026-09（第 12 轮，四张 P2 收口 + 两条新票）：
   - ★**`T-0010` report 的门档**：`reportLoopOptions()` 抽成可导出纯函数；`anim`/`sleep` 由 `'ignore'` 改为
     `'wait'`（引擎语义）**并给门分支记帧**（`0x400`/`sleep` 分支本帧不派发、只有时钟前进，raw 21109-21152）

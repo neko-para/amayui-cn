@@ -13,14 +13,14 @@
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 25** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 26** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 10 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 14 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 15 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 1 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **25** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **26** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -31,6 +31,7 @@
 |---|---|---|---|---|---|---|
 | [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | `test/append-packs.test.ts` |
 | [`AUTORUN3`](./AUTORUN3.md) | `$3$AUTORUN.BIN` | **扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$… | 4 | 4 | 🟠 部分 | `test/music-table.test.ts` `test/append-packs.test.ts` |
+| [`CHARMEDIT`](./CHARMEDIT.md) | `CHARMEDIT.BIN` | ADV 右侧菜单打开的编辑界面：一张 43 项（0x2b）的 3 行网格 + 底部「閉じる」；左键选中/拖动交换、光标键移动、右键关闭。 | 11 | 8 | 🟠 部分 | `test/input.test.ts` |
 | [`CHECKCONFIG`](./CHECKCONFIG.md) | `CHECKCONFIG.BIN` | **设置的自检与修复**：校验 5 个字体面名是否还装得上（`0x2DE` 字体名→下标），装不上就回退默认并重新 `save-string`；末尾按 a9… | 7 | 3 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`CONFIG`](./CONFIG.md) | `CONFIG.BIN` | 「OPTION（设置）」的常驻父脚本：左侧分类切换（按当前分类 call-script CONFIG1 / CONFIG2）、消息显示预览（0x300 逐行… | 6 | 4 | ✅ 已分析 | `test/config1-chain.test.ts` `test/text-style-snapshot.test.ts` |
 | [`CONFIG1`](./CONFIG1.md) | `CONFIG1.BIN` | 设置界面的**分类页主体**（本地化后的「系统设定」等页）：左侧分类列表 + 中部设置行（背景带 / 数值贴片 / 帮助图标 / 按 kind 的控件族）+… | 17 | 12 | ✅ 已分析 | `test/config1-chain.test.ts` `test/draw-string.test.ts` `test/draw-item-scale.test.ts` `test/text-style-snapshot.test.ts` |
@@ -52,7 +53,7 @@
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
 | [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 10 | 6 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
 | [`SP2563`](./SP2563.md) | `SP2563.BIN` | 剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。 | 2 | 2 | 🟠 部分 | — |
-| [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 5 | 2 | 🟠 部分 | `test/save-data.test.ts` |
+| [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 6 | 3 | 🟠 部分 | `test/save-data.test.ts` |
 | [`TITLE`](./TITLE.md) | `TITLE.BIN` | 标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 … | 8 | 10 | 🟠 部分 | `test/config-version-substr.test.ts` `test/title-exit.test.ts` `test/game-start-chain.test.ts` |
 
 ## 怎么用（流程）

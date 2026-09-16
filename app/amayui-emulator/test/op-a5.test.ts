@@ -122,6 +122,11 @@ test('A5 0x91/0x92：面板显示态（effect_flags 0x800000）+ sub_404020；0x
 test('0xFB + 0x100：跳转表按**输入掩码位**索引（= op1，不偏移；b∈{4,5} 也不走 mouseJump）', () => {
   const { e, run } = mk();
   const f = e.curScript(); // ★`0x100` 在**当前帧**查 labelMap（不是测试里那个 `new Frame()`）
+  // ★扫描上界 = `Engine[517]`（SetKeyTotal；raw 25033-25039 的 `while (++v6 < v7)`，v7 = `[517]`）：
+  //   下标 ≥ SetKeyTotal 的槽**不参与**掩码扫描（它们只能作为"默认键"被取到，见下一条测试）。
+  //   真机由 `SYSTEM4.txt:86` 的 `i0fe c` 置 12；本合成引擎没跑脚本 ⇒ 是引擎默认 7（Input 构造
+  //   `sub_477DD0` raw 92385）⇒ bit 7 会被上界挡掉。这里照真机设 12（本用例正好要覆盖 bit 7）。
+  e.engineValues.set(517, 12);
   f.labelMap.set(0x500, 3);
   f.labelMap.set(0x511, 5);
   f.labelMap.set(0x522, 6);

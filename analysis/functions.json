@@ -1296,24 +1296,11 @@
     "semantic_name": "op_mouse_callback_421980",
     "op": "0xCC",
     "status": "PARTIAL",
-    "purpose": "op mouse-callback：注册鼠标跳转目标——op2(label) 存入 mouse_jump_target(_this[430656])，op1(槽/率) 存入节流对象 _this+107447(_this[107453])；不是 hook 函数指针、不是回调",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "设 frame.arity=5",
-      "mouse_jump_target = readIntOperand(op2)",
-      "记录当前脚本 depth(_this+107674)",
-      "readIntOperand(op1) → sub_453A60(_this+107447, v) 起节流计时器"
-    ],
-    "fields_used": [
-      "this->mouse_jump_target",
-      "this->frames[cur].arity",
-      "this->_this[107674]"
-    ],
-    "unmodeled": [
-      "_this+107447 节流对象内部字段"
-    ],
+    "purpose": "mouse-callback：注册鼠标跳转目标——op2(label) 存入 mouse_jump_target(_this[430656])，op1(槽/率) 存入节流对象 _this+107447 的 `[6]`（**= 字节 429812 = 0xCD `get-input-type` 的推进间隔**，`sub_453A60` 写 `op1?op1:1`；故 TITLE/CHARMEDIT 的 `mouse-callback 10` ⇒ 10ms 节流）。不是 hook 函数指针、不是回调",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 frame.arity=5", "mouse_jump_target = readIntOperand(op2)", "记录当前脚本 depth(_this+107674)", "readIntOperand(op1) → sub_453A60(_this+107447, v) 起节流计时器"],
+    "fields_used": ["this->mouse_jump_target", "this->frames[cur].arity", "this->_this[107674]"],
+    "unmodeled": ["_this+107447 节流对象内部字段"],
     "evidence": "raw 30317-30337(opcode-table 已核对)",
     "notes": "仅记跳转目标 + 节流速率，不回调。TITLE：mouse-callback 10 label → 悬停/点击菜单处理"
   },
@@ -1423,25 +1410,11 @@
     "semantic_name": "op_dispatch_msg_skip_419AF0",
     "op": "0x100",
     "status": "PARTIAL",
-    "purpose": "op 消息跳读派发：扫 input_state_mask 最低按下位，按该位在 本脚本节 _this[33*cur+107725+bit] 的 label 压返回地址跳转；未注册该键则弹栈返回；掩码=0 时走默认键(SetKeyTotal=_this[517]) 检查",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "设 frame.arity=1",
-      "input_state_mask 非 0 则自扫描游标(_this[cur+122287]) 找最低置位",
-      "压返回地址到每帧返回栈",
-      "无注册键(_this[33*cur+107725+bit]==-1) 弹栈返回",
-      "有则 ip=str_table+4*label 跳转"
-    ],
-    "fields_used": [
-      "this->input_state_mask",
-      "this->_this[517](SetKeyTotal)",
-      "this->frames[cur].ip"
-    ],
-    "unmodeled": [
-      "掩码=0 的默认键检查分支"
-    ],
+    "purpose": "消息/按键跳读派发：扫 input_state_mask 最低按下位（★上界 = SetKeyTotal `_this[517]`，raw 25029-25037），按该位在本脚本节 `_this[33*cur+107725+bit]` 的 label 压返回地址（`((ip-ip_base)>>2)+1`，raw 25039-25040）后跳转；该槽未注册(−1) 则弹栈返回。★**掩码 == 0 时走另一条分支**（raw 25050-25062）：取 `v4 = _this[517]`（SetKeyTotal，raw 25054）**当下标**查同一张表 ⇒ 派发\"默认键\"处理器（菜单脚本的 `joy-callback <SetKeyTotal>`；`SYSTEM4.txt:86` 的 `i0fe c` ⇒ 12）。两条分支都会先压返回点（空掩码那条在 raw 25052）",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["设 frame.arity=1", "input_state_mask 非 0 则自扫描游标(_this[cur+122287]) 找最低置位", "压返回地址到每帧返回栈", "无注册键(_this[33*cur+107725+bit]==-1) 弹栈返回", "有则 ip=str_table+4*label 跳转"],
+    "fields_used": ["this->input_state_mask", "this->_this[517](SetKeyTotal)", "this->frames[cur].ip"],
+    "unmodeled": ["掩码=0 的默认键检查分支"],
     "evidence": "raw 25012-25050+",
     "notes": "与 0xFB(joy-callback) 登记的每脚本把手表衔接；SetKeyTotal 做扫描上限/默认键"
   },
@@ -7276,6 +7249,18 @@
     "fields_used": ["CTexture+1040/+1044(宽高)", "CTexture+260..+267", "dword_5518C0"],
     "evidence": "raw 107006-107070；调用链 0x1F8 → sub_4A2C10 raw 122838-122895 → sub_48AB20 raw 106917",
     "notes": "★A8R8G8B8 ⇒ 槽表面**有 alpha 通道**（= 「覆盖率 α 留在表面 alpha 上、draw-texture 按它合成」的前提；未涂到的像素 A=0 ⇒ 贴出时透出底板，真机设置界看不到黑块）。"
+  },
+  {
+    "addr": "0x421CA0",
+    "raw_name": "sub_421CA0",
+    "semantic_name": "op_set_key_total_421CA0",
+    "op": "0xFE",
+    "status": "ANALYZED",
+    "purpose": "SetKeyTotal：读 op1；>0x1F 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写 `Engine[517] = op1`。★该字段同时是 `0x100` 在**掩码为空**时派发的「默认键」槽下标（菜单脚本登记的 `joy-callback 0..c` 最后一个）。本作全语料只有 `src/SYSTEM4.txt:86` 的 `i0fe c` 一处 ⇒ 默认键槽 = 12",
+    "sub_behaviors": ["读 op1", "范围校验(<=0x1F)", "写 Engine[517]"],
+    "fields_used": ["Engine+0x814 (set_key_total)"],
+    "evidence": "raw 30444-30456",
+    "notes": "handler=sub_421CA0"
   }
 
 ]

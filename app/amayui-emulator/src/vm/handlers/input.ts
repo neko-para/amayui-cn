@@ -76,6 +76,14 @@ const op_read_mouse_hwheel: OpHandler = (c) => {
  * sub_453A60(Engine+107447, read(1));             // 节流对象（op1 = 槽）
  * ```
  * `Engine[107674]` 是 `0xCD`（`sub_41ACD0` raw 25861）跳转前的**脚本身份守卫**要比对的那一格。
+ *
+ * ★**op1（"槽"）就是 `0xCD` 的节流间隔**（`tickets/T-0047`）：`sub_453A60(this, a2)` 写
+ * `this[6] = a2 ? a2 : 1`（raw 66105-66110），而 `Engine+107447` 的 `[6]` = 字节 `429812`
+ * —— 那正是 `0xCD` 读的 `_this[429812]`。故"旧注：该字段全工程无写入 ⇒ 恒不节流"是**错的**：
+ * 注册 `mouse-callback 10`（TITLE/CHARMEDIT 等）后，`get-input-type` 的推进间隔就是 **10ms**。
+ * ⚠**emulator 现状（2026-09，T-0047）**：`advanceThrottle` 仍**恒 0**（不节流）——那是该字段的
+ * 旧口径，也是"每次 `get-input-type` 都派发"这一**故意的偏差**（headless 测试用冻结时钟驱动，
+ * 一上 10ms 节流就必须同时改测试的时钟模型）。改它要单独做（`tickets/T-0047` 已单独开单），本单只修 0x100 的默认键分支。
  */
 const op_mouse_callback: OpHandler = (c) => {
   const slot = readIntOperand(c.e, c.frame, c.instr, 1);
@@ -90,7 +98,7 @@ const op_mouse_callback: OpHandler = (c) => {
  *
  * 引擎：`Engine[33*cur + 107725 + op1] = op2`（raw 30417；越界抛 `set:keyjump`）。
  * **op1 就是「输入掩码位」本身**（不是按钮序号）—— 这一点由配对读端钉死：`0x100` 的
- * `sub_419AF0`（raw 25033/25042）扫掩码里最低的置位 `v6`，再查 `Engine[32*cur + 107725 + cur + v6]`
+ * `sub_419AF0`（raw 25029-25037/25042）扫掩码里最低的置位 `v6`，再查 `Engine[32*cur + 107725 + cur + v6]`
  * = `Engine[33*cur + 107725 + v6]`（同一张表、同一个索引），**中间没有任何 ±4 偏移**。
  *
  * ★2026-09 修（用户报 #1「切界面后按钮停在 hover 态」）：旧实现把 op1 当**按钮序号**存到
@@ -130,20 +138,40 @@ const op_input_reset: OpHandler = (c) => {
  *
  * ★扫描游标（`Engine[cur+122287]`）：emulator 用"消费边沿"近似"每个位只派发一次"
  * （`consumeEdges()`），因为刷子不保持 `Engine[699208]` 的持久掩码。
+ *
+ * ★★**掩码为空时派发"默认键"**（`tickets/T-0046`）★★ —— 引擎 raw 25050-25062 的 `else` 分支
+ * **不是"无输入就落回"**：它取 `v4 = _this[517]`（= `SetKeyTotal`，见 0xFE）当**下标**，
+ * 查同一张 `Engine[33*cur+107725+v4]` 表，命中就跳 —— 即"**没有任何键按下时跑「默认键」处理器**"。
+ * 语料证据：`src/SYSTEM4.txt:86` 的 `i0fe c`（全工程唯一一处 SetKeyTotal）⇒ 默认键槽 = **12**；
+ * 而菜单/界面脚本一律登记 `joy-callback 0..c`（13 个）—— 第 13 个（下标 12、不是任何物理键）
+ * 就是默认键槽。例：`CHARMEDIT` 的 `joy-callback c → label_000016f0`（清"有键按住"标志 `local b`），
+ * 鼠标右键关闭界面（`label_00001820` 的 `jcc (local b)`）**依赖它**；漏掉这条 ⇒ 右键永远无反应。
+ * 同理扫描上界是 `[517]`（raw 25029-25037：`v6 = _this[cur+122287]`、`v7 = _this[517]`、`while (++v6 < v7)`）——
+ * 下标 ≥ SetKeyTotal 的槽**不参与**掩码扫描（它们只能作为默认键被取到）。
  */
 const op_input_dispatch: OpHandler = (c) => {
   // 引擎 `sub_419AF0`（0x100，raw 25009）**不调用刷子**，直接读 ADV 分支（`sub_411900` raw 20111）用
   //   `sub_4780D0` 填好的 `_this[174802]` ⇒ 掩码含**按住态**。故这里用实时刷。
-  const mask = c.e.input.flushHeld();
-  if (mask === 0) return; // 无输入，落回（引擎 raw 25050-25052 的 else 分支：压返回点 +1 后弹回）
-  let b = 0;
-  while (b < 32 && ((mask >> b) & 1) === 0) b++;
-  if (b >= 32) return;
-  const t = c.e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
+  const e = c.e;
+  const mask = e.input.flushHeld();
+  // SetKeyTotal（0xFE 写 `Engine[517]`；引擎默认值 7 = Input 构造 `sub_477DD0` raw 92385 的 `_this[259]=7`）
+  const keyTotal = e.engineValues.get(517) ?? 7;
+  let b: number;
+  if (mask === 0) {
+    b = keyTotal; // ★默认键槽（raw 25054 `v4 = result[517]`）
+  } else {
+    b = 0;
+    while (b < keyTotal && ((mask >> b) & 1) === 0) b++;
+    if (b >= keyTotal) return; // 只有 ≥ SetKeyTotal 的位被按下 ⇒ 引擎同样不派发
+  }
+  const t = e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
   if (t === -1 || t === 0xffffffff) return;
   const p = labelPos(c.frame, t);
   if (p !== null) {
-    c.e.input.consumeEdges();
+    e.input.consumeEdges();
+    // ★压返回点（引擎两条分支都压 `((ip-ip_base)>>2)+1`，raw 25039-25040 / 25052）：
+    //   handler 末尾的 `ret` 靠它回到**本指令之后** —— 不压就会"落进 handler 的下一句"。
+    c.frame.retStack.push((c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
     c.jump(p);
   }
 };
@@ -157,8 +185,10 @@ const op_poll_input: OpHandler = (c) => {
 
 /** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进"门。
  * 引擎：`if (now - lastAdvance >= throttle || adv_active)` 才推进（throttle=_this[429812]，adv_active=effect_flags&0x8000000）。
- * **核实：`_this[429812]` 全工程无写入 → bss 0 → 条件恒真 → 引擎 get-input-type 实际不节流（始终推进）**；
- *   emulator 旧 200ms 节流会引入 ~200ms 输入迟滞，故 advanceThrottle=0（见 input.ts）。
+ * ★**throttle 真机不是 0**：它就是**最后一次 `mouse-callback`（0xCC）的 op1**（`sub_453A60` 把
+ *  `Engine[107447+6]` = 字节 429812 写成 `op1 ? op1 : 1`，raw 66101-66113）；TITLE/CHARMEDIT 等
+ *  都登记 `mouse-callback 10` ⇒ 真机推进间隔 10ms。旧注"全工程无写入 ⇒ 恒不节流"是错的；
+ *  ⚠emulator 仍按 0（不节流）跑 = **已知偏差**，见 `tickets/T-0047`（改它要同步改 headless 时钟模型）。
  * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
  * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */
 const op_get_input_type: OpHandler = (c) => {

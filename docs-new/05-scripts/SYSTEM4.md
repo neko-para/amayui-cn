@@ -18,6 +18,7 @@
 | `120-130` | `i075 1e` | 全局主字号 30（0x75） |
 | `71-84` | `load-int (global-int 5)` | ★配置装载分支：`load-int (global 5)` 读 SAVE.DAT 里的「已初始化」标志 —— 有 ⇒ 73 行 `call-script 5258 LOADCONFIG`（load-int/load-string 把用户设置读回 global）+ 74 行 LOADCHARM；没有 ⇒ 78 行 `call-script 51dc INITCONFIG`（写默认值 + save-int/save-string 登记）+ 79 行 INITCHARM + 80/81 行 `mov (global 5) 1` + `save-int (global 5)`；两条路径都汇到 84 行 `call-script 51db CHECKCONFIG`（校验字体名，装不上就回退默认并重新 save-string） |
 | `476-480` | `label_00001ec8` | 子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正） |
+| `86-86` | `i0fe c` | ★全工程唯一一处 SetKeyTotal（`0xFE`）：`i0fe c` ⇒ `Engine[517] = 12`。它就是 `0x100` 在**掩码为空**时派发的「默认键」槽下标（菜单脚本登记的 13 个 `joy-callback 0..c` 的最后一个）——见 tickets/T-0046 与 docs-new/03-engine/input-system.md §7c |
 
 ## 关键槽 / 局部量
 
@@ -25,6 +26,7 @@
 |---|---|
 | `win 1..8` | 启动阶段批量清场的消息窗 |
 | `global 5` | 「已初始化」标志（save-int 持久化在 SAVE.DAT；= SYSTEM4 的两条分支判据） |
+| `Engine 517 (SetKeyTotal)` | 86 行 `i0fe c` 写 12：默认键槽下标（0x100 空掩码分支用它查 joy-callback 表） |
 
 ## 不变量（拿它做回归断言）
 

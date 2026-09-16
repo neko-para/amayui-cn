@@ -11,6 +11,10 @@ import { StubNative } from '../src/vm/native.js';
 import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
+import { makeCtx } from '../src/vm/step.js';
+import { OPS } from '../src/vm/ops.js';
+import { HeadlessScene } from '../src/renderer/headlessScene.js';
+import { instr, mkEngine } from './harness.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
@@ -195,4 +199,118 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   assert.equal(e.waitFlags & SLEEP_GATE, 0, 'SLEEP_GATE 应被清（放行）');
 
   await src.dispose?.();
+});
+
+// ---------------------------------------------------------------------------
+// ★`0x100` 的「默认键」分支（`tickets/T-0046`）
+//
+// 引擎 `sub_419AF0`（raw 25012-25066）有**两条**分支：
+//   掩码非 0 → 从游标起扫最低置位（上界 = `Engine[517]` = SetKeyTotal）→ 跳 `joy-callback` 登记的目标；
+//   掩码 == 0 → 取 `v4 = Engine[517]`（**SetKeyTotal 本身当下标**）查同一张表 ⇒ "没有任何键按下时
+//              跑「默认键」处理器"。旧 emulator 把它当成"无输入就落回" ⇒ 默认键处理器永不运行。
+// 为什么这条静默致命：菜单/界面脚本一律登记 `joy-callback 0..c`（13 个槽）——第 13 个（下标 =
+// `SYSTEM4.txt:86` 的 `i0fe c` = 12）就是默认键槽，负责清"有键按住"状态；`CHARMEDIT` 的鼠标右键
+// 关闭（`label_00001820` 的 `jcc (local b)`）依赖它 ⇒ 漏掉就表现为"右键无反应"。
+// ---------------------------------------------------------------------------
+
+/** 合成脚本跑 `0x100`：空掩码 ⇒ 跳 `joyJump[SetKeyTotal]`，并压好返回点。 */
+test('★0x100 默认键分支：掩码为空 ⇒ 跳 joyJump[SetKeyTotal]（下标 = Engine[517]）且压返回点', () => {
+  // mkEngine 把第 i 条指令的 `index` 设为 i ⇒ label 值 = 数组下标（labelMap 由 loadScriptIntoFrame 建）
+  const e = mkEngine([instr(0x100, []), instr(0x5, []), instr(0x5, [])]);
+  const f = e.curScript();
+  const dispatch = (): number | null => {
+    const ctx = makeCtx(e, f, instr(0x100, []), e.native, () => {});
+    OPS.get(0x100)!(ctx);
+    return ctx._nextIp;
+  };
+
+  e.engineValues.set(517, 12); // 真机值（SYSTEM4 `i0fe c`）
+  e.input.joyJump[12] = 2;
+  e.input.joyJump[7] = 1;
+  e.input.consumeEdges(); // 掩码空
+  assert.equal(dispatch(), 2, '★空掩码 ⇒ 派发默认键槽 12（不是"无输入就落回"）');
+  assert.equal(f.retStack.pop(), 1, '★压了返回点 = 当前指令 index + 1（handler 的 ret 靠它回来）');
+
+  // 上界：下标 ≥ SetKeyTotal 的槽**不参与**掩码扫描（它们只能作为默认键被取到）
+  e.engineValues.set(517, 7);
+  e.input.consumeEdges();
+  e.input.pressJoy(3); // 手柄按钮 3 ⇒ 掩码 bit 7
+  assert.equal(e.input.flushHeld() & 0x80, 0x80, '掩码确实是 bit7');
+  assert.equal(dispatch(), null, 'bit7 ≥ SetKeyTotal(7) ⇒ 不派发（旧实现会误派发）');
+  // 同一次按下，把上界抬到 12（真机值）后就该派发到 joyJump[7]
+  e.engineValues.set(517, 12);
+  e.input.consumeEdges();
+  e.input.pressJoy(3);
+  assert.equal(dispatch(), 1, 'SetKeyTotal=12 ⇒ bit7 落在扫描范围内 ⇒ 跳 joyJump[7]');
+});
+
+/** CHARMEDIT 端到端：右键 = 关闭（`src/CHARMEDIT.txt` 的 `label_00000760` → `label_00001820`）。 */
+async function charmeditRightClick(
+  setKeyTotal: number,
+): Promise<{ closed: boolean; bAtPress: number; exit11: number; sawB1: boolean }> {
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
+  const input = new InputManager();
+  const e = new Engine(new HeadlessScene(), input);
+  e.fileSource = src;
+  const r = await src.readScript(0x2d); // 0x2d = CHARMEDIT.BIN（docs-new/02-data/scripts-control.md §2）
+  assert.ok(r, '应读到 CHARMEDIT.BIN');
+  loadScriptData(e, r.data, r.name);
+  // 真机由 `SYSTEM4.txt:86` 的 `i0fe c` 写 `Engine[517] = 12`；本用例直接 boot CHARMEDIT ⇒ 手动摆好
+  e.engineValues.set(517, setKeyTotal);
+  input.setCursor(640, 360, true);
+
+  const script = e.curScript().script!;
+  const local = (i: number): number => dec(e.key, e.curScript().locals.int.get(i) ?? 0);
+  /** 主循环头 = 唯一那条 `get-input-type`（`label_0000070c`）。 */
+  const mainLoopIp = script.instructions.findIndex((i) => i.opcode === 0xcd);
+  assert.notEqual(mainLoopIp, -1, 'CHARMEDIT 应含 get-input-type（主循环头）');
+
+  // ① 跑到**初始化之后的主循环**（初始化含整套绘制，约 6k 步）——`local b`(=0x11) 由
+  //    `label_00000f04` 置 1，随后由默认键处理器（`joy-callback c`）清 0（仅当 SetKeyTotal=12）。
+  let sawB1 = false;
+  let steps = 0;
+  for (; steps < 60_000; steps++) {
+    if (local(0xb) === 1) sawB1 = true;
+    if (e.curScript().ip === mainLoopIp && steps >= 8000) break;
+    await stepOnce(e);
+  }
+  assert.ok(steps < 60_000, '应在步数预算内进入主循环');
+  const bAtPress = local(0xb);
+  assert.equal(local(0xa), 0, '此时不应有鼠标按下锁存');
+
+  // ② 右键按下 → 等脚本把右键记进"按下锁存"（`local a`(=10) bit1）
+  input.pressMouse(1);
+  let latched = false;
+  for (let i = 0; i < 20_000 && e.curScript().name === 'CHARMEDIT.BIN'; i++) {
+    await stepOnce(e);
+    if ((local(0xa) & 2) !== 0) {
+      latched = true;
+      break;
+    }
+  }
+  assert.ok(latched, '右键按下应被 CHARMEDIT 记进 local a 的 bit1');
+  // ③ 松开右键 → 关闭路径 `label_00001820` 的 `jcc (local b)` 决定是否 `local 11 = 1`（= 退出）；
+  //    随后主循环读到 11==1 才真正 `jmp label_00004e14` 离开本脚本 ⇒ 跑到"离开"或预算耗尽。
+  input.releaseMouse(1);
+  let exit11 = 0;
+  for (let i = 0; i < 20_000 && e.curScript().name === 'CHARMEDIT.BIN'; i++) {
+    await stepOnce(e);
+    if (local(0x11) === 1) exit11 = 1;
+  }
+  const out = { closed: e.curScript().name !== 'CHARMEDIT.BIN', bAtPress, exit11, sawB1 };
+  await src.dispose?.();
+  return out;
+}
+
+test('★CHARMEDIT：右键关闭 —— 依赖 0x100 的默认键分支（SetKeyTotal=12 ⇒ 关；默认 7 ⇒ 不关）', async () => {
+  const ok = await charmeditRightClick(12); // 真机（SYSTEM4 的 `i0fe c`）
+  assert.equal(ok.sawB1, true, '初始化应先把"有键按住"标志 local b 置 1');
+  assert.equal(ok.bAtPress, 0, '★默认键处理器（joy-callback c）应把它清成 0');
+  assert.equal(ok.exit11, 1, '右键松开后脚本应置退出标志 local 11 = 1');
+  assert.equal(ok.closed, true, '★右键应关闭 CHARMEDIT（离开 CHARMEDIT.BIN）');
+
+  const ng = await charmeditRightClick(7); // 引擎默认（没有 SYSTEM4 的 `i0fe c`）⇒ 默认键槽 = 7 = 空处理器
+  assert.equal(ng.bAtPress, 1, '默认键槽 7 的处理器不碰 local b ⇒ 仍为 1');
+  assert.equal(ng.exit11, 0, 'local 11 不应被置 1');
+  assert.equal(ng.closed, false, '★默认键槽不对 ⇒ 右键被 `jcc (local b)` 挡回（本单修的就是这条）');
 });

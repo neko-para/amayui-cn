@@ -169,7 +169,13 @@ export class Engine {
    *  ★**启动时由 SYS4REG.INI 填充**：见 `src/engineConfig.ts` 的 `CONFIG_FIELD_BINDINGS`（如 174713←sound:Music、
    *    167990←display:ScreenMode、21668←message:MessageSpeed、80106←message:MessageFade），
    *    renderer 在 boot 前调用 applyConfigToEngine。`field` 一律是 dword 下标（= handler 的 `_this[K]` 空间）。 */
-  engineValues = new Map<number, number>([[96983, 1]]);
+  engineValues = new Map<number, number>([
+    [96983, 1],
+    // 517 = SetKeyTotal（0xFE）：Input 构造函数 `sub_477DD0`（raw 92385）写 `_this[259] = 7`
+    // （Input 对象 = `Engine + 258` ⇒ Input[259] = Engine[517]）。它同时是 **0x100 在掩码为空时的
+    // "默认键"槽下标**（`tickets/T-0046`）——开机后 `SYSTEM4.txt:86` 的 `i0fe c` 会把它改成 12。
+    [517, 7],
+  ]);
 
   /**
    * **字体面名解析策略**：这套资源是纯日文（`jp`）还是 ShiftJIS 编码的中文（`cnjp`）。

@@ -184,8 +184,8 @@
 | 0xC9 | 0 |  | sub_4198A0 | 仅映射 |  |
 | 0xCA | 0 |  | sub_4198E0 | 仅映射 |  |
 | 0xCB | 1 |  | sub_42E8E0 | 仅映射 |  |
-| 0xCC | 2 | mouse-callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、[6]=op1）。按下匹配时 get-input-type(0xCD) 跳到 `_this[107664]`。handler=sub_421980（raw .c 30317） |
-| 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（节流间隔，**全工程无写入 → bss 0 → 实际不节流**，或 `(effect_flags&0x8000000)` 激活即推进）；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827）。emulator `advanceThrottle=0`（对齐引擎无节流） |
+| 0xCC | 2 | mouse-callback | sub_421980 | 已核对 | **注册鼠标跳转目标**（非函数指针）：读 op2→`_this[107664]`、`_this[107674]=cur[]depth`；op1→`sub_453A60(_this+107447, op1)`（节流对象[2]=1、[5]=timeGetTime、**[6]=op1 ? op1 : 1**）。★`[6]` = 字节 `429812` —— **就是 `0xCD` 读的节流间隔**（`sub_453A60` raw 66101-66113）⇒ TITLE/CHARMEDIT 的 `mouse-callback 10` = **10ms**。脚本主循环每次 `get-input-type`(0xCD) 就跳到 `_this[107664]`（与「是否按下」无关：`[107664]` 只被 0xCC 写、只被 0xCD 读）。handler=sub_421980（raw .c 30317） |
+| 0xCD | 0 | get-input-type | sub_41ACD0 | 已核对 | **消息/ADV"点击推进"门**：置 `_this[120*cur+383220]=1`；`timeGetTime()-_this[429808]` 与 `_this[429812]`（**节流间隔 = 最后一次 `mouse-callback`(0xCC) 的 op1**，见 0xCC；只有从未登记过回调时才是 bss 0）比较，或 `(effect_flags&0x8000000)` 激活即推进；读 `_this[430656]`(=鼠标目标)。==-1 则回退不跳，否则 depth 校验后 `_this[120*cur+383128]=..+4*目标` 跳转（**先压返回点**）。**不"返回输入类型"**。handler=sub_41ACD0（raw .c 25827）。⚠emulator 现状仍 `advanceThrottle=0`（不节流）= 已知偏差，见 `tickets/T-0047` |
 | 0xCE | 3 |  | sub_4219E0 | 仅映射 |  |
 | 0xCF | 0 |  | sub_41AE40 | 仅映射 |  |
 | 0xD0 | 1 |  | sub_42E910 | 仅映射 |  |
@@ -203,9 +203,9 @@
 | 0xFB | 2 | joy-callback | sub_421B80 | 已核对 | **注册手柄跳转目标**（非 `sub_453A60`！）：校验 op1∈[0,32)（越界抛 `set-keyjump`）、`_this[33*cur+107725+op1]=op2`（把手表）。`sub_419AF0`(0x100) 扫掩码最低位、按此表跳 label。handler=sub_421B80（raw .c 30400）。⚠️ 修正旧「sub_453A60(_this+107454, op1)」——该写法属 0xCE(sub_4219E0) |
 | 0xFC | 0 |  | sub_419A70 | 仅映射 |  |
 | 0xFD | 2 |  | sub_421C10 | 仅映射 |  |
-| 0xFE | 1 |  | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。handler=sub_421CA0（raw .c 30444） |
+| 0xFE | 1 |  | sub_421CA0 | 已核对 | **SetKeyTotal**：读 op1；若 `op1>0x1F` 抛 ShowMessage「SetKeyTotalの引数が不正です．」，否则写引擎字段 `_this[517]`。★该字段**同时是 `0x100` 在掩码为空时派发的「默认键」槽下标**（raw 25054 取 `v4 = _this[517]` 查 `joy-callback` 表），也是掩码扫描的上界（raw 25029-25037）。Input 构造默认 7（`sub_477DD0` raw 92385），本作全语料只有 `src/SYSTEM4.txt:86` 的 `i0fe c` ⇒ **12**。handler=sub_421CA0（raw .c 30444） |
 | 0xFF | 0 |  | sub_419A90 | 已核对 | **复位输入/ADV 状态**：`Engine[174802] = 0` → `sub_4780D0(Engine+1032, Engine+174802)`（读输入态）；`Engine[cur+122287] = 0`；`Engine[cur+122327] = Engine[517]`（把字段灌进当前帧槽）。handler=sub_419A90（raw .c 24998） |
-| 0x100 | 0 |  | sub_419AF0 | 已核对 | **消息跳读/按键推进派发**：`v2=_this[174802]`(输入掩码)；非 0→从 `_this[cur+122287]` 起扫最低按下位（上限 `_this[517]`=SetKeyTotal），push 推进量、查 `_this[33*cur+107725+bit]`，==-1 回退否则跳 `4*登记值`；掩码 0→检查默认键 `_this[517]`。handler=sub_419AF0（raw .c 25011） |
+| 0x100 | 0 |  | sub_419AF0 | 已核对 | **按键/默认键派发**：`v2=_this[174802]`(输入掩码)，**两条分支都先压返回点** `((ip-ip_base)>>2)+1`（raw 25039-25040 / 25052）：① **掩码非 0** → 从游标 `_this[cur+122287]` 起扫**最低**置位（**上界 `_this[517]`=SetKeyTotal**，raw 25029-25037），查 `_this[33*cur+107725+bit]`（`joy-callback` 表），==-1 则弹栈回退、否则跳 `4*登记值`；② ★**掩码 == 0** → 取 `v4 = _this[517]`（SetKeyTotal **本身当下标**，不是上界）查同一张表 ⇒ 派发「**默认键**」处理器（raw 25050-25062）。handler=sub_419AF0（raw .c 25012）。★②长期被漏实现 ⇒ 依赖它的界面**静默卡住**（`CHARMEDIT` 右键关闭被 `jcc (local b)` 挡回；tickets/T-0046，emulator 已修，守卫 `test/input.test.ts`） |
 | 0x101 | 0 | poll-input | sub_419CC0 | 已核对 | **刷输入掩码并复位**：`sub_478090(_this+258,_this+174802)` 刷累计事件进掩码 → 清 `_this[174801]` 的 0x8000000 位 → `_this[174802]=0`、`_this[122367]=1`、`_this[122370]=0`。供同批 `check-bit`/位检查读，随即清零。handler=sub_419CC0（raw .c 25069）。旧 label `u00415BF0` |
 | 0x102 | 3 |  | sub_421D00 | 仅映射 |  |
 | 0x103 | 1 |  | sub_421DE0 | 仅映射 |  |

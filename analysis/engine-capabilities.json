@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 119,
-    "modeled-verified": 39,
+    "total": 120,
+    "modeled-verified": 40,
     "modeled-unverified": 5,
     "partial": 26,
     "absent": 23,
@@ -3486,6 +3486,34 @@
         "evidence": "E2",
         "guard": "test/text-aa.test.ts",
         "note": "emulator 侧（`src/renderer/text/raster.ts`，常量 `TEXT_FILL_ALPHA` 在 `src/text/layout.ts`）：①**消息窗**（目标不透明）＝ 描边副本不透明先画 + 填充那遍 `ctx.globalAlpha = TEXT_FILL_ALPHA`，与引擎的\"RGB 按 α 混合、A 恒 255\"等价；②**纹理槽**（`0x204`，目标透明）＝ `drawGlyphPassesOnSurface` 逐像素复现引擎写入（`engineGlyphPixel`：`A = max(A_dst, α)`、`A_dst==0 ⇒ RGB=C`、否则 `(C·α+D·(255−α))/255`）。α 推导：`v30 = 255*cov/17`（raw 84893-84898），实测平台对应 cov=15 ⇒ 225；满覆盖 16 ⇒ 240（仍 <255）。同屏 OPTION 对照：样例文字 255→225（真机 226-228）；设置界行标签 255→**(233,231,230) 暖**（真机记录区间 226-234 暖，`tickets/T-0042`）—— 该元素归属已确证是 `CONFIG1.txt:2743-2760`（bbd：i075 14 + i076/i077 都 ffffff + i078 1；`set-font`(0x1A5) 只换面名、不动颜色）。残留：ADV 正文 225 vs 真机 229-232（暖）—— 现在是**颜色来源**问题：真机填充的 backdrop 是暖暗色 (~(63,32,16))，emulator 用黑描边/黑窗底 ⇒ 沿 `T-0035` 的配置色面。★配置门冲突：`set:EnableAntiFont` 内建默认 0（raw 491880/111707）且真机 INI 无 `[set]` 段 ⇒ 推导为 1bpp；但 1bpp 分支的 α 恒满 ⇒ 输出纯白，与实测 α<1 不可能同时成立 ⇒ 运行期走覆盖率路径，产品侧以像素判据取 antiAlias=true （相关 raw：`sub_471180` 87429-87474；`sub_48AC40` 107006-107070。） ★★两条路径的**合成口径不同**（`T-0035` 第 10 轮）：①`0x204` 槽 = A8R8G8B8 纹理 ⇒ 逐像素 α ⇒ `α·表面RGB + (1−α)·场景`（**两次** α，行标签 233 ∈ 真机 226-234 ✔）；②消息窗 = dd 路径用**色键**填面+贴出 （`sub_43B070` 是\"设色键\"不是\"填底色\"；填面是 `sub_43E260`）⇒ 不看 alpha ⇒ `α·填充色`（**一次** α）。★**订正（T-0035 第 10 轮，用户提问驱动）**：两侧的**填充色都是白** —— 逐角色配色表 `adcd` 的默认值来自引擎内建表（`CVINIT` 写 `14a8f1+n`；首次运行由 `INITCONFIG4` 拷进 `adcd` 并 `save-int`，门 = `SYSTEM4.txt:71-82` 的键 5），旁白用的 `adcd[0..3] = ffffff`；emulator 的 overlay SAVE.DAT实测**三张表齐全**（`3b4e` 1000/1000、`a9e5` 1000/1000、`adcd` 1000/1000 含 26 条非白，值与 `CVINIT` 一致）。⇒ 真机 233 暖 vs emulator 225 中性，只剩\"**填充之下垫的是底板还是描边**\"：脚本画的底板（`SN0000.txt:3090-3098`，黑@75% ⇒ 文字背后 ≈`(63,32,16)`）给出 `α·255+(1−α)·底板 = 232.4` ✓，而 emulator 的 canvas 把描边画成不透明整块 ⇒ 225。**判别**：`f807d` 的三个值 `192/160/128` 是**背景整体遮罩**的透明度（用户 2026-09-16 确认），不是文字层 alpha ⇒ 切档只改文字背后的遮罩深度：核心亮度明显跟着变（3 级以上）⇒ 填充之下是遮罩后的场景（引擎侧），不变 ⇒ 是描边（emulator 现状）；在那之前不改 `TEXT_FILL_ALPHA`。另：真机 `a9dd=2` ⇒ `f807c=0`（**描边是黑**），\"暖暗描边\"假设已排除（见 adv-text-rendering.md §10）。"
+      }
+    },
+    {
+      "id": "key-dispatch-default-slot",
+      "subsystem": "输入",
+      "name": "0x100 空掩码时的「默认键」槽派发（下标 = SetKeyTotal）",
+      "trigger": "脚本每次执行 `0x100`（`i100`）：`sub_419AF0` 读到输入掩码 `Engine[174802] == 0` 时走 else 分支",
+      "engine": {
+        "fns": [
+          "sub_419AF0",
+          "sub_421B80",
+          "sub_421CA0",
+          "sub_477DD0"
+        ],
+        "raw": "25012-25066"
+      },
+      "reads": [
+        "Engine+174802",
+        "Engine+517",
+        "frames[cur]+107725"
+      ],
+      "whySilent": "「没有任何键按下」是常态分支，漏掉它不报错：脚本登记的 `joy-callback <SetKeyTotal>` 处理器永不运行，依赖它维持的状态就静默卡住。实例（用户报「右键无反应」）：`src/CHARMEDIT.txt` 的 `joy-callback c`（c = SetKeyTotal = 12）负责把「有键按住」标志 local b 清 0，而鼠标右键关闭要过 `label_00001820` 的 `jcc (local b)` ⇒ b 永远是 1 ⇒ 右键被挡回，点界面底部「閉じる」却仍正常（那条走确认分派）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/input.test.ts",
+        "note": "2026-09（tickets/T-0046）修：旧实现把 else 分支写成「无输入就落回」⇒ 默认键处理器永不运行。现按 raw 25047 用 `Engine[517]`(SetKeyTotal) 当下标派发，并把掩码扫描上界也收到 `[517]`（raw 25029-25037）；两条分支都按 raw 25039-25040 / 25052 压返回点（handler 末尾的 ret 才能回到 0x100 之后，否则会落进 handler 的下一句）。`Engine[517]` 初值 7 = Input 构造 `sub_477DD0` raw 92385（`_this[259]=7`，Input = Engine+258）；开机后 `src/SYSTEM4.txt:86` 的 `i0fe c` 置 12。"
       }
     }
   ]

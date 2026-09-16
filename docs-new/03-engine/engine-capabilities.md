@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 39 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 40 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 26 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 23 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **119** | 需要关注（非 n/a 且非已核验）= **54** |
+| **合计** | **120** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
@@ -30,7 +30,7 @@
 | 渲染 | 26 | 11 |
 | 资源 | 16 | 4 |
 | 转场 | 4 | 3 |
-| 输入 | 4 | 0 |
+| 输入 | 5 | 0 |
 
 ## 全部条目
 
@@ -155,6 +155,7 @@
 | `text-face-source-memory-vs-system` | 消息窗 | 正文面名的来源：引擎只注册一份内存字体（游戏自带的 AGE-EXTEND.TTF / 面 'AGE Extend'），message:Font 指定的正文面由**系统字体表**解析 | ➖ n/a | E1 |
 | `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | 🟠 部分 | E4 · `test/draw-string.test.ts` |
 | `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——"白字"永不纯白、"往透明表面画字"偏灰 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
+| `key-dispatch-default-slot` | 输入 | 0x100 空掩码时的「默认键」槽派发（下标 = SetKeyTotal） | ✅ 已核验 | E2 · `test/input.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

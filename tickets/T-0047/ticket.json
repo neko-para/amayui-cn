@@ -1,0 +1,84 @@
+{
+  "title": "0xCD 的节流间隔（Engine[429812]）没建模：它的真身是 mouse-callback(0xCC) 的 op1，emulator 恒 0 ⇒ 输入派发比真机快 ~10×",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/input",
+  "why": "引擎事实（两层证据都在 raw 里）：`mouse-callback`(0xCC) 把 op1 交给节流对象 `Engine+107447`（`sub_421980` raw 30325 `return sub_453A60(_this + 107447, v2);`），而 `sub_453A60` 写 `this[6] = a2 ? a2 : 1`（raw 66110）——`Engine+107447` 的 `[6]` 就是字节 `429812`，正是 `0xCD`（`sub_41ACD0` raw 25842 `if (*(_DWORD *)(_this + 429812) <= v3 || (effect_flags & 0x8000000))`）读的**推进间隔**。所以 TITLE/CHARMEDIT 等登记的 `mouse-callback 10` 在真机上是 **10ms 节流**；`advActive`(`0x8000000`) 的 OR 只让 ADV 路径旁路节流。emulator 的 `InputManager.advanceThrottle` 恒 0、`op_mouse_callback` 也不写它，依据是一句**错的**旧注（「该字段全工程只在 0xCD 读、从无写入 ⇒ bss 0」——漏了 `sub_453A60` 这条写入链）。后果：脚本主循环（`get-input-type` + `sleep 1`）里鼠标回调/hover 的处理频率比真机高约一个数量级；凡是按「回调被调用几次」推进状态的脚本状态机（去抖、默认键/joy 派发、`local 10` 之类的空转计数）节奏都与真机不同。目前没有已确认的用户可见症状（ADV 里被 `advActive` 掩盖，菜单里表现为「更灵敏」），所以是**保真度**问题而非功能缺失；但它和 T-0046 是同一段代码里两条独立的偏差，必须分开改（一条改逻辑、一条改时序）。",
+  "acceptance": [
+    "`op_mouse_callback`（0xCC）把 op1 落到 `InputManager.advanceThrottle = slot > 0 ? slot : 1`（对齐 `sub_453A60` 的 `a2 ? a2 : 1`），`mouseSlot` 语义不变",
+    "从未登记过 `mouse-callback` 的脚本仍不节流（bss 0）—— 与引擎一致；`0xCD` 的 `advActive` 短路保持不变",
+    "受影响的 headless 守卫改为「时钟会前进」的口径：`test/title-exit.test.ts` 的 `run()` 不能只在 `FRAME_OPS` 上推进 `rt.clock`（那会让相邻的 `get-input-type` 落在同一个 10ms 窗口内）；`test/route-dispatch.test.ts` 判据⑦b 显式把 `e.nowMs` 推到节流窗外。★不许把断言改成「跳过派发」——原守卫要覆盖的可见行为（TITLE 点击退出、跨脚本派发必须抛）一个都不能少",
+    "修前/修后对照记录在案：打开节流后实测只有 `test/title-exit.test.ts`（2 条）与 `test/route-dispatch.test.ts` 判据⑦b 失败，其余全绿（`test/input.test.ts` 的 TITLE 用例因为 `e.nowMs = 200` 而天然过窗）",
+    "`cd app/amayui-emulator && npm run verify` 全绿；`docs-new/03-engine/opcode-table.md`（0xCC/0xCD 行）与 `input-system.md`（§6a/§7b）里「emulator 现状仍恒 0 = 已知偏差」的标注改成已实现 + 守卫"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return sub_453A60(_this + 107447, v2);",
+      "note": "0xCC（raw 30325）：把 op1 交给 `Engine+107447` 的节流对象 ⇒ 它写的就是 0xCD 读的那一格"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[6] = result;",
+      "note": "`sub_453A60`（raw 66110）：`result = a2 ? a2 : 1; _this[6] = result` —— 槽 0 ⇒ 间隔 1ms（不是 0）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( *(_DWORD *)(_this + 429812) <= v3",
+      "note": "0xCD（raw 25842）：这一格就是推进间隔；`429812` = `(107447 + 6) * 4`"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "advanceThrottle = 0;",
+      "note": "现状：恒 0（注释已改成「引擎语义 = 最后一次 mouse-callback 的 op1；emulator 是已知偏差」）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "c.e.input.mouseSlot = slot;",
+      "note": "修复点：这里要同时写 `advanceThrottle`"
+    },
+    {
+      "file": "app/amayui-emulator/test/title-exit.test.ts",
+      "anchor": "rt.clock += 16;",
+      "note": "冻结时钟的典型：只在 FRAME_OPS 上推进 ⇒ 上节流后相邻 `get-input-type` 落在同一窗口内、派发消失"
+    },
+    {
+      "file": "app/amayui-emulator/test/route-dispatch.test.ts",
+      "anchor": "const h = OPS.get(0xcc)!;",
+      "note": "判据⑦b 直接调 `OPS.get(0xcd)`：`nowMs` 与 `lastAdvance` 都是 0，一上 10ms 节流就不再抛「Depth が不正です」"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "节流间隔 = 最后一次",
+      "note": "文档已按引擎事实改写，并把 emulator 现状标成「已知偏差，见 tickets/T-0046」——本单落地后要改成已实现"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/input.test.ts",
+    "app/amayui-emulator/test/title-exit.test.ts",
+    "app/amayui-emulator/test/route-dispatch.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "adv-input-pump-perframe",
+      "key-dispatch-default-slot"
+    ],
+    "tickets": [
+      "T-0046",
+      "T-0027"
+    ]
+  },
+  "status": "open",
+  "notes": "为什么单独开单：T-0046 修的是 0x100 的分支逻辑（可见症状 = 右键无反应），本单改的是 0xCD 的节流时序；夹在一起会让「行为变了」归因不清，而且本单必须同时改三处测试的时钟模型（属 T-0020「收敛测试结构」的同一类问题 —— 那三处都是自造帧循环/冻结时钟）。建议落地顺序：① 写 `advanceThrottle`（一行）② 跑全量测试拿到失败清单（预期就是上面那三处）③ 逐个把它们的时钟改成「按帧/按指令批前进」，**不改断言** ④ 更新文档与 capability 台账（`adv-input-pump-perframe` 的 note 里补一句节流已建模）。",
+  "id": "T-0047",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    }
+  ]
+}

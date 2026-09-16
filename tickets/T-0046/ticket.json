@@ -1,0 +1,84 @@
+{
+  "title": "CHARMEDIT（ADV 右侧菜单的编辑界面）在 emulator 里右键无反应：0x100 漏了「掩码为空 ⇒ 派发默认键槽（SetKeyTotal）」这条分支",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/input",
+  "why": "用户报：真机上 CHARMEDIT 可以右键关闭，emulator 下右键无反应、只能点界面底部的「閉じる」。根因不在渲染也不在鼠标读取：脚本确实收到了右键（`local a` 的 bit1 被置上、右键抬起走到了关闭路径 `label_00001820`），但关闭动作被 `jcc (local b)` 挡回 —— `local b` 是「有键按住」标志，只由 `joy-callback c` 清 0。而槽 c 不是任何物理键：`src/SYSTEM4.txt:86` 的 `i0fe c` 把 `Engine[517]`（SetKeyTotal）设成 12，`0x100`（`sub_419AF0`）在**输入掩码为 0** 时要拿 `Engine[517]` **当下标**去查 `joy-callback` 表、跑「默认键」处理器 —— emulator 把这条分支写成了「无输入就落回」，于是默认键处理器永不运行、`b` 恒为 1、右键永远被挡回。这条缺失对其它界面同样静默（凡依赖默认键槽维持状态的都会卡）。",
+  "acceptance": [
+    "`0x100` 的两条分支都按 raw 25012-25066 实现：掩码非 0 → 从游标扫最低置位（上界 = `Engine[517]`）；掩码 == 0 → 用 `Engine[517]` 当下标派发「默认键」",
+    "两条分支都压返回点（`((ip-ip_base)>>2)+1`）：handler 末尾的 `ret` 必须回到 0x100 之后，而不是落进 handler 的下一句",
+    "`Engine[517]` 的初值按 Input 构造（`sub_477DD0` raw 92385 的 `_this[259]=7`）建模为 7；`SYSTEM4.txt:86` 的 `i0fe c` 仍会把它改成 12",
+    "★可见行为：`CHARMEDIT`（index 0x2d）里右键按下→抬起 ⇒ 离开 CHARMEDIT.BIN（`local 0x11=1` ⇒ 主循环跳 `label_00004e14`）；SetKeyTotal=7（没有 SYSTEM4 那条）时**不**离开 —— 用后者证明修的是「默认键槽」而不是硬编码 12",
+    "`cd app/amayui-emulator && npm run verify` 全绿（含 tsc/测试/死写棘轮）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v4 = result[517];",
+      "note": "0x100 的 else 分支（raw 25047）：掩码 == 0 时取 SetKeyTotal 当下标查同一张 joy-callback 表 ⇒ 派发「默认键」。两条分支各有一处压返回点（raw 25039-25040 / 25052）"
+    },
+    {
+      "file": "src/SYSTEM4.txt",
+      "anchor": "i0fe c",
+      "note": "全语料唯一一处 SetKeyTotal（86 行）⇒ 默认键槽 = 12；菜单/界面脚本登记的 `joy-callback 0..c` 最后一个槽就是它"
+    },
+    {
+      "file": "src/CHARMEDIT.txt",
+      "anchor": "jcc (local-int b) ffffffff label_00001840",
+      "note": "关闭门（0x1820）：`b != 0` 直接 ret；`b == 0` 才走到 1884 置 `local 0x11 = 1`（退出）"
+    },
+    {
+      "file": "src/CHARMEDIT.txt",
+      "anchor": "joy-callback c label_000016f0",
+      "note": "默认键槽 c 的处理器：`mov (local-int b) 0` —— 唯一把 b 清 0 的地方（`joy-callback 4`/关闭收尾把它置 1）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "b = keyTotal;",
+      "note": "修复点：掩码为空时用 `Engine[517]` 当下标派发；扫描上界也收到 `[517]`；两分支都 push 返回点"
+    },
+    {
+      "file": "app/amayui-emulator/test/input.test.ts",
+      "anchor": "★CHARMEDIT：右键关闭",
+      "note": "守卫：SetKeyTotal=12 ⇒ 右键关闭；=7 ⇒ 被 `jcc (local b)` 挡回（证明依赖默认键槽本身，不是硬编码）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/input.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/input-system.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "key-dispatch-default-slot",
+      "CHARMEDIT"
+    ],
+    "tickets": [
+      "T-0027",
+      "T-0047"
+    ]
+  },
+  "notes": "同一轮顺手查到、**本单不改**的一条偏差（已单独开单 **tickets/T-0047**）：`0xCD` 的节流间隔 `Engine[429812]` 被 `mouse-callback`(0xCC) 的 op1 写入（`sub_453A60` raw 66101-66113），TITLE/CHARMEDIT 的 `mouse-callback 10` ⇒ 真机 10ms；emulator 的 `advanceThrottle` 仍恒 0（旧注「全工程无写入」漏了 `sub_453A60`）。改它会让三处用冻结时钟驱动的 headless 测试（title-exit / route-dispatch ⑦b）失去输入派发，需要同步改它们的时钟模型 ⇒ 见 T-0047（含失败清单与落地顺序）。文档（opcode-table 0xCC/0xCD、input-system §6a/§7b）已按引擎事实改写并标注 emulator 现状。",
+  "id": "T-0046",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— open → done：0x100 的「掩码为空 ⇒ 派发默认键槽（Engine[517]=SetKeyTotal）」分支已实现（+ 两分支都压返回点、扫描上界收到 [517]），Engine[517] 初值 7 按 Input 构造建模。守卫 test/input.test.ts：合成用例（空掩码跳 joyJump[SetKeyTotal]、bit≥上界不派发、压返回点）+ CHARMEDIT 端到端（SetKeyTotal=12 ⇒ 右键关闭离开脚本；=7 ⇒ 被 jcc (local b) 挡回）。真启动链实测 Engine[517]=12（SYSTEM4 i0fe c）；npm run verify 全绿 563 测试。另一条相关偏差（0xCD 节流间隔 = mouse-callback 的 op1；emulator 仍恒 0）已写进 notes，单独处理。"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：links, notes"
+    }
+  ]
+}
