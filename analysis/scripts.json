@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 27,
+    "total": 28,
     "analyzed": 10,
-    "partial": 16,
+    "partial": 17,
     "stub": 1
   },
   "entries": [
@@ -2331,6 +2331,70 @@
       "status": "partial",
       "evidence": "src/SAVE.txt:67-81（列表行填充 + `i1a0` 引用形态）/ 83-110（邻居表）；引擎侧见 analysis/functions.json 的 0x42DC70 与 0x438120",
       "notes": "未读：存/读/删/复制按钮的处理、备注输入（`i14b`/`set-agerc-export`）、退出与返回 ADV 的路径。"
+    },
+    {
+      "id": "BUNKIMOVE",
+      "file": "src/BUNKIMOVE.txt",
+      "bin": "BUNKIMOVE.BIN",
+      "role": "武器画面的「移动」演出子脚本（`BUNKI` 的演出段）：把一组立绘/图元在**两套句柄基址之间批量搬运/交换**，再逐项设色淡出，最后 `poll-input; wait; exit` 交回。",
+      "entry": "由 `src/BUNKI.txt:136/822` 的 `call-script 51c1` 调起（SBUNKI 的对应脚本是 `$?$SBUNKIMOVE`）；本脚本自己 `exit`（演出型子脚本，不是常驻界面）。",
+      "layout": [
+        {
+          "anchor": "i214 (local-int 8) (local-int 9)",
+          "lines": "43-77",
+          "what": "★搬运循环：`local 2 = 0x1adb0`（基址）→ 对每个下标 i（上限 `global f8c50`）把 **10 个**源句柄 `local 2 + 0x64*k`（k=0..9，步长 0x64=100）与目标句柄 `0x1adb0 + 0x6a4 + k`（连续 10 个）用 `i214` **两两互换**；随后 `jmp label_00000b94`"
+        },
+        {
+          "anchor": "poll-input",
+          "lines": "344-347",
+          "what": "收尾：`poll-input; wait; exit`（演出型子脚本的标准退出：清输入 → 让一帧 → 退出交回调用方）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local 2",
+          "what": "源句柄基址（0x1adb0；某分支里 +1）"
+        },
+        {
+          "key": "local 8 / local 9",
+          "what": "`i214` 的两个 handle（源 = `local 2 + 0x64*k`；目标 = `0x1adb0 + 0x6a4 + k`）"
+        },
+        {
+          "key": "global f8c50 / f8c51",
+          "what": "循环上限 / 特殊下标（`local 0 == f8c51` 时跳另一分支 `label_000005e0`）"
+        },
+        {
+          "key": "句柄族 0x1adb0+…",
+          "what": "本演出用的图元：连续段 `+0x6a4..0x6ad` 与按 100 步长排开的另一组"
+        }
+      ],
+      "invariants": [
+        "搬运是 `i214`（**交换**）而不是复制 ⇒ 跑完一轮后两套句柄的内容对调（回程再跑一次就能还原）",
+        "循环上限来自 `global f8c50`（调用方在进本脚本前设好）"
+      ],
+      "gotchas": [
+        "★`i214` 是**交换**（整条 740 字节记录互换、键不动）：所以这一段的语义是「把两组图元对调」，不是「搬过去」；成对使用才能还原（tickets/T-0049）",
+        "`local 8/9` 是**句柄**而不是索引：源侧按 0x64 步长（100）散开、目标侧连续（+0x6a4+k）"
+      ],
+      "gaps": [
+        "只读了搬运循环（43-77）与收尾（344-347）；中间的分支（label_000005e0 / label_00002140 的淡出、`set-draw-color` 的 `local 4` 取值）未读"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [
+          "0x423AE0",
+          "0x4ABEF0"
+        ],
+        "docs": [
+          "docs-new/03-engine/rendering.md"
+        ]
+      },
+      "guards": [
+        "test/op-214-swap-items.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/BUNKIMOVE.txt:43-77（10×`i214` 搬运循环）/ 344-347（poll-input; wait; exit）；引擎侧见 analysis/functions.json 的 0x423AE0 / 0x4ABEF0",
+      "notes": "未读：`label_000005e0` 与 `label_00002140` 两条分支（淡出/设色）、以及调用方 BUNKI 传进来的状态。"
     }
   ]
 }

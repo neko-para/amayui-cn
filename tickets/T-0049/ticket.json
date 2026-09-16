@@ -1,0 +1,85 @@
+{
+  "title": "实现 0x214（`i214`：交换两条绘图项记录）—— 此前不在任何表里，命中即 NotImplementedOp；语料 229 处、ADV 收场块依赖它",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "`0x214`（`sub_423AE0` → `sub_4ABEF0`）的语义是**交换两条绘图项记录**：op1/op2 是两个 handle，引擎在**绘图项表**（Scene+1032）里把 key=op1 与 key=op2 的 **740 字节记录整块 `qmemcpy` 互换**（raw 131135-131139）并置脏位 `Scene[11627]=1`。⇒ **键（handle）不动**，换的是纹理槽 `+4`、源矩形 `+8..+20`、描画位置 `+36..+44`、pivot、5 个动画窗、颜色、矩阵、flipbook 全套参数；而**绘制次序不变**（层序 = map key，见 `rendering.md` 的归并说明）。一侧缺键 ⇒ 引擎先建一条全 0 记录（flags 无 bit0 ⇒ 不画）再搬；两侧都缺 ⇒ 只置脏位，**没有错误串**（是合法无操作）。★只碰绘图项表，网格表（+1064）**不动** —— 与 0x21D CopyScene（两张表都拷）不同。但 emulator 的 `OPS`/`NATIVE_OPS`/`ENGINE_INTERNAL_OPS` **三张表都没有它** ⇒ 按 ADR-005「查不到就硬报错」，任何走到 ADV 章节收场（或 BUNKIMOVE 的搬运段）的路径都会抛 `NotImplementedOp`。",
+  "acceptance": [
+    "`0x214` 进 `GFX_ITEM_OPS` 真实现（`op_swap_items`）：读 op1/op2 两个 handle（经 `readIntOperand`）→ `native.swapItems` → `scSwapItems` 原地交换字段、**保留两个 Item 对象的身份**（渲染侧按 handle 的缓存不必失效）",
+    "键与层序不动：`handle`/`layer` 不参与交换 ⇒ 交换后两图绘制次序不变、参数对调；一侧缺键 ⇒ 与「一条全 0 记录」交换；两侧都缺 / 同一个键 ⇒ 合法无操作且不报错（引擎无错误串）",
+    "`scSwapItems` 置 `SceneState.dirty`；Pixi 宿主另 `#markDirty()`；**不解除留帧**（交换不是「新内容建立」，与 `copyScene` 刻意不同，注释写明理由）",
+    "守卫 `test/op-214-swap-items.test.ts`：① 模型级——整份互换（tex/源矩形/位置/blend/entryParam/动画窗）、键与层序不动、对象身份不变、脏位置位、缺键/同键/双缺三态；② 端到端——合成脚本两条 `draw-texture` + `i214` + 两条 `0x215` 读回，断言纹理槽对调且 `handlerKind === 'implemented'`（★不得是 no-op 桩）",
+    "`cd app/amayui-emulator && npm run verify` 全绿；`docs-new/03-engine/opcode-table.md` 的 0x214 行由「仅映射」转「已核对」并重生成 `scripts/asm/opcodes.json`"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "qmemcpy((void *)sub_4AAD40(v4, &a2), v10 + 4, 0x2E4u);",
+      "note": "交换的实锤（raw 131135）：把 b 的 740 字节记录拷进 a 的槽，下一句反向 —— 键不动"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[11627] = 1;",
+      "note": "交换后置脏位（raw 131139/131108/131131/131852 同型：Scene 的『要重画』标志）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "int *__thiscall sub_423AE0(int *_this)",
+      "note": "0x214 的 handler（raw 31779-31788）：读 op2/op1 两个 handle → `sub_4ABEF0(Scene, op1, op2)`；语义全在 sub_4ABEF0"
+    },
+    {
+      "file": "src/SC0000.txt",
+      "anchor": "i214 (local-int 0) (local-int 1)",
+      "note": "ADV 收场块的用法（6328/6350/6890/10080/13000）：两套立绘句柄基址（global f8023..f8028）第 i 个互换，紧接着脚本把自己的记账表 3f54 两列也换掉"
+    },
+    {
+      "file": "src/BUNKIMOVE.txt",
+      "anchor": "i214 (local-int 8) (local-int 9)",
+      "note": "批量搬运段（43-77）：10 个一组、源侧按 0x64 步长、目标侧连续 —— 语义是『对调』不是『搬过去』"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "export function scSwapItems",
+      "note": "实现点：原地交换字段、保留对象身份、handle/layer 不换"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-214-swap-items.test.ts",
+      "anchor": "★0x214 模型：整份互换记录",
+      "note": "守卫（模型级 + 端到端）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-214-swap-items.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/rendering.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "scene-frame-commit",
+      "BUNKIMOVE"
+    ],
+    "tickets": [
+      "T-0048",
+      "T-0017"
+    ]
+  },
+  "status": "done",
+  "notes": "同轮顺带订正了 `rendering.md` 两处口径（由本单的 raw 复读逼出来的）：① 归并的 sort-key 是**表节点字节 +12 处的 key**（= handle = 层序），不是『项的 +12』——记录 `+12` 其实是源矩形 top（`sub_4ACE50` raw 131830-131833）；② `draw-texture` 记录 `+4 = op2 = 纹理槽`（`0x215` 用 `sub_4ADC20` 读它），不是『LAYER』；层序就是 map key。`i214` 的『整块互换但次序不变』正是『层序不在记录里』的反证。★未做：没有 E3 端到端（ADV 收场块在章节深处、BUNKIMOVE 需要武器画面状态；headless 里 boot SN0000 跑 2500 帧都到不了那些块），语义已由模型级 + VM 级守卫钉死。",
+  "id": "T-0049",
+  "history": [
+    {
+      "at": "2026-09-16",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "改字段：links"
+    },
+    {
+      "at": "2026-09-16",
+      "what": "open → done —— open → done：0x214 进 `GFX_ITEM_OPS`（`op_swap_items` → `native.swapItems` → `scSwapItems`；Pixi 与 headless 两个宿主 + stubNative + nativeTap 白名单都接上）。语义按 raw 复读钉死：整条 740 字节记录互换、键(handle)/层序不动、缺键先建全 0 记录、两侧都缺只置脏位（无错误串）、只碰绘图项表（网格表不动）。守卫 test/op-214-swap-items.test.ts（模型级 9 条 + VM 级端到端 4 条）；opcode-table 0x214「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x423AE0 / 0x4ABEF0；台账新增 BUNKIMOVE（partial，含 43-77 的 10×i214 搬运段）；rendering.md 订正了两处口径（sort-key = 表节点 +12 的 key；记录 +4 = 纹理槽）。npm run verify 566 测试全绿。★无 E3：ADV 收场块在章节深处、BUNKIMOVE 需武器画面状态（headless boot SN0000 跑 2500 帧都到不了）。"
+    }
+  ]
+}

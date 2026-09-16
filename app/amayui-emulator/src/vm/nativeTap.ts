@@ -189,6 +189,7 @@ export const BRIDGE_METHODS = [
   'setDrawColor',
   'setDrawColorAlpha',
   'copyScene',
+  'swapItems',
   'setDrawPivot',
   'setDrawPos',
   'setDrawTranslation',

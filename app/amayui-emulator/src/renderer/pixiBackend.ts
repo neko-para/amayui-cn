@@ -50,6 +50,7 @@ import {
   scSetDrawColor,
   scSetDrawColorAlpha,
   scCopyItem,
+  scSwapItems,
   scSetDrawPivot,
   scSetDrawPos,
   scSetDrawTranslation,
@@ -691,6 +692,18 @@ export class PixiBackend implements NativeBridge {
   setWaitFlag(mask: number): void {
     this.#markDirty();
     this.#pushLog(`setWaitFlag 0x${mask.toString(16)}（宿主不保存镜像；门状态见 Engine.waitFlags）`);
+  }
+
+  /**
+   * `0x214`（`sub_423AE0` → `sub_4ABEF0`）：**交换两条绘图项记录**（键不动）。
+   * 与 `copyScene` 不同：只碰绘图项表、引擎无错误串（两侧都不存在也只是置脏位）；
+   * 也**不解除留帧**（交换不是"新内容建立"，见 `#releaseFrameHold` 的说明）。
+   */
+  swapItems(a: number, b: number): boolean {
+    const swapped = scSwapItems(this.scene, a, b);
+    this.#markDirty();
+    this.#pushLog(`swapItems 0x${a.toString(16)} ↔ 0x${b.toString(16)}${swapped ? '' : '（两侧都不存在）'}`);
+    return swapped;
   }
 
   /**

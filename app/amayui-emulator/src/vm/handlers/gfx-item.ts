@@ -361,6 +361,32 @@ const op_copy_scene: OpHandler = (c) => {
 };
 
 /**
+ * **`0x214`**（`sub_423AE0` raw 31779-31788 → `sub_4ABEF0` raw 131084-131143）：**交换两条绘图项记录**。
+ *
+ * 引擎体极短：
+ * ```
+ * obj = Engine + 80708;                    // = Scene（绘制对象，byte 322832）
+ * v4 = readIntOperand(2); v2 = readIntOperand(1);
+ * sub_4ABEF0(obj, v2, v4);                 // ★op1/op2 是「两个 handle」，没有别的操作数
+ * ```
+ * `sub_4ABEF0`：在绘图项表（`obj+1032` = `_this+258` dwords）里把 **key=op1 与 key=op2 的记录整块互换**
+ * （`qmemcpy` 两条 × 0x2E4 = 740 字节，raw 131135-131139），并置脏位 `obj[11627] = 1`；
+ * 某一侧缺键 ⇒ 先 `sub_40C910` 建一条全 0 记录（`flags` 无 bit0 ⇒ 不画）再搬；两侧都缺 ⇒ 只置脏位。
+ * ⇒ **键（handle）不动**：纹理槽 / 源矩形 / 描画位置 / pivot / 5 个动画窗 / 颜色 / 矩阵 / flipbook 全换，
+ * **绘制次序不变**（层序 = map key，见 `draw-texture` 的注释）。
+ * ★只碰绘图项表；网格表（`obj+1064`）不动 —— 与 `0x21D` CopyScene（两张表都拷）不同。
+ * ★引擎没有任何错误串 ⇒ 两侧都不存在是**合法无操作**，emulator 不得把它当失败。
+ *
+ * 语料 229 处：ADV 各脚本的收场块把两套立绘句柄基址（`global f8023..f8028`）里第 i 个互换，
+ * 再把脚本自己的记账表 `3f54` 的两列也换掉（`$1$SC0330.txt:6324-6336`、`SC0000.txt:6885-6895` 同型）。
+ */
+const op_swap_items: OpHandler = (c) => {
+  const a = readIntOperand(c.e, c.frame, c.instr, 1); // 引擎先读 op2 再读 op1（顺序无语义影响）
+  const b = readIntOperand(c.e, c.frame, c.instr, 2);
+  c.native.swapItems?.(a, b);
+};
+
+/**
  * 绘制项位置/变换/颜色/几何。
  *
  * ★两张表的分界**不是**"有没有转发 native"（这些全都转发），而是**注册在哪个 handler 表**：
@@ -376,6 +402,7 @@ export const GFX_ITEM_OPS: OpTable = [
   [0x1f6, op_clear_draw_container], // 整批释放绘制项/网格 → native.clearDrawContainer
   [0x1fd, op_set_scale], // 3D 缩放变换（百分数）→ native.setScale
   [0x1ff, op_set_draw_translation], // DrawItem 像素平移（+0x68 用世界矩阵 / +0x16C work 矩阵）→ native
+  [0x214, op_swap_items], // i214：交换两条绘图项记录（键不动；只碰绘图项表）→ native.swapItems
   [0x21d, op_copy_scene], // CopyScene（源项 → 目标 handle 整份复制）→ native.copyScene
   // ---- 查询族（回写操作数；见文件头「查询指令族」说明）----
   [0x215, op_get_draw_texture_slot], // op1 = DrawItem(op2).纹理槽号 / −1

@@ -154,6 +154,47 @@ export function scCopyItem(s: SceneState, srcHandle: number, dstHandle: number):
   return { copied: true, drawItem: !!srcItem, mesh: !!srcMesh };
 }
 
+/**
+ * `i214`（`0x214`，`sub_423AE0` → `sub_4ABEF0` raw 131084-131143）：**交换两条绘图项记录**。
+ *
+ * 引擎（"两张都在" 的分支，raw 131135-131139）：
+ * ```
+ * qmemcpy(record(a2), record(b2), 0x2E4);   // 整块 740 字节互换
+ * qmemcpy(record(b2), v15（= 原 a2 的记录）, 0x2E4);
+ * obj[11627] = 1;                           // ★置脏位
+ * ```
+ * ⇒ **键（handle）不动、记录内容整份互换**：纹理槽 `+4`、源矩形 `+8..+20`、描画位置 `+36..+44`、
+ * pivot、5 个动画窗、颜色、矩阵、flipbook… 全换。★`draw-texture` 的 `sub_4ACE50`（raw 131817-131840）
+ * 写的就是这些格，**没有**把 handle/层序写进记录（层序 = map key，见 `draw-texture` 的 handler 注释）
+ * ⇒ 交换后两图的**绘制次序不变**，换的是"长什么样、画在哪"。
+ *
+ * 缺键的分支（raw 131103-131132）：先 `sub_40C910` 建一条**全 0 记录**（flags 无 bit0 ⇒ 不画）再搬 ⇒
+ * 等价于"与一条空记录交换"；**两个键都不存在**时引擎只置脏位、什么都不搬。
+ * ★只碰**绘图项表**（Scene+1032 = `_this+258` dwords）；网格表（+1064 = `+266`）不动 ——
+ * 这一点与 `0x21D` CopyScene（两张表都拷）不同。
+ *
+ * 语料 229 处的用法：ADV 脚本的收场块把两套立绘句柄基址（`global f8023..f8028`）里第 i 个
+ * **互换**，紧接着把脚本自己的记账表 `3f54` 的两列也换掉（`$1$SC0330.txt:6324-6336`、`SC0000.txt:6885-6895` 等同型）。
+ *
+ * emulator 实现：**原地交换字段**（保留两个 `Item` 对象的身份）—— 渲染侧按 handle 缓存的资源
+ * 不必失效，语义与引擎"记录内存原地互拷"一致；`handle`/`layer`（= map key）不参与交换。
+ */
+export function scSwapItems(s: SceneState, a: number, b: number): boolean {
+  s.dirty = true; // ★引擎两条分支都置 _this[11627] = 1
+  if (a === b) return false; // 同一个键：引擎两次 memcpy 互相覆盖，净效果不变
+  const ia = s.drawItems.get(a) ?? makeDefaultItem(a); // 引擎缺键 ⇒ 先建全 0 记录（sub_40C910）
+  const ib = s.drawItems.get(b) ?? makeDefaultItem(b);
+  const had = s.drawItems.has(a) || s.drawItems.has(b);
+  s.drawItems.set(a, ia); // 缺键分支也把建出来的记录落进表（引擎 sub_4AAD40 会插入）
+  s.drawItems.set(b, ib);
+  const snap = { ...ia }; // ia 的字段快照（嵌套对象引用随之转手，两边各自独占）
+  const ka = a;
+  const kb = b;
+  Object.assign(ia, ib, { handle: ka, layer: ka });
+  Object.assign(ib, snap, { handle: kb, layer: kb });
+  return had;
+}
+
 /** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {
   const drawItems = s.drawItems.size;
   const meshes = s.meshes.size;

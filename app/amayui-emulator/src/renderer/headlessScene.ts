@@ -27,6 +27,7 @@ import {
   scSetDrawColor,
   scSetDrawColorAlpha,
   scCopyItem,
+  scSwapItems,
   scSetDrawPivot,
   scDrawString,
   scCreateTextureReset,
@@ -425,6 +426,13 @@ export class HeadlessScene implements NativeBridge {
 
   setDrawColor(handle: number, delay: number, dur: number, to: number): void {
     this.outcome(scSetDrawColor(this.scene, handle, delay, dur, to), 'setDrawColor', `handle=0x${handle.toString(16)}`);
+  }
+
+  /** `0x214`：交换两条绘图项记录（键不动；只碰绘图项表）。引擎无错误串 ⇒ 不当作失败。 */
+  swapItems(a: number, b: number): boolean {
+    const swapped = scSwapItems(this.scene, a, b);
+    this.log(`[scene] swapItems 0x${a.toString(16)} ↔ 0x${b.toString(16)}${swapped ? '' : '（两侧都不存在 ⇒ 只置脏位）'}`);
+    return swapped;
   }
 
   /** `0x21D` CopyScene：源项（+网格）整份复制到目标 handle。源不存在 ⇒ false（引擎打错误串）。 */

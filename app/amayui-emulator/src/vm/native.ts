@@ -288,6 +288,13 @@ export interface NativeBridge {
    */
   copyScene?(srcHandle: number, dstHandle: number): boolean;
   /**
+   * **`0x214`**（`sub_423AE0` → `sub_4ABEF0` raw 131084-131143）：**交换两条绘图项记录**
+   * （740 字节整块互换，**键不动**）。缺键的一侧引擎先建一条全 0 记录；两个键都不存在时只置脏位。
+   * ★只碰绘图项表（Scene+1032）；网格表不动（与 `copyScene` 不同）。
+   * @returns 是否至少有一侧原本存在（= 真的换到了内容）
+   */
+  swapItems?(a: number, b: number): boolean;
+  /**
    * 0x217（sub_423B20, raw 31791）：**对象变换 pivot** `sub_4ACF20(_this+80708, handle, f2, f3, f4)`。
    * 引擎：`sub_4AAA50` 保证 key 存在 → `map[key]` → 写元素下标 `6/7/8` = DrawItem`+24/+28/+32`
    * = **回転/拡大縮小の中心（pivot）**；`sub_49AA30` 绘制期用 `T(-pivot) → 动画矩阵 → T(+pivot)` 夹住。

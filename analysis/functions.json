@@ -7274,6 +7274,31 @@
     "unmodeled": ["display:VirtualFullScreenType 分支（随包 INI 无此键 ⇒ 不生效）", "sub_498350 的显示对象偏移（emulator 无窗口/客户区概念）"],
     "evidence": "raw 30530-30598；语料 1678 处（`src/SC5450.txt:713-793` 的 ADV 侧边栏钉光标、`SBUNKI/BUNKI` 的光标记忆、`ALLMAP:531` 的拖动回夹、`SELSTAGE:42` 的对话框居中）",
     "notes": "emulator：`handlers/input.ts` 的 `INPUT_OPS[0x10a] = op_set_mouse_pos` ⇒ `InputManager.setCursor(x, y, true)`（= 设引擎侧光标 + 触发 `onCursorMove`，对应引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试；位置不变则不重算，与 SetCursorPos 不产生移动消息一致）。★宿主缺口：浏览器不能移动真实系统光标 ⇒ 真实光标停在原地、下一次 `mousemove` 会覆盖回真实位置（已登记）。守卫 `test/input.test.ts`"
+  },
+  {
+    "addr": "0x423AE0",
+    "raw_name": "sub_423AE0",
+    "semantic_name": "op_swap_draw_items_423AE0",
+    "op": "0x214",
+    "status": "ANALYZED",
+    "purpose": "**交换两条绘图项记录**：读 op2 再读 op1（顺序无语义影响），两个操作数都是 **handle**（op1 = a、op2 = b），随后 `sub_4ABEF0(Engine+80708 = Scene, op1, op2)`。无输出操作数",
+    "sub_behaviors": ["读 op1/op2 两个 handle", "调 Scene 的交换子程序 sub_4ABEF0"],
+    "fields_used": ["Engine+322832 (Scene/绘制对象)"],
+    "unmodeled": [],
+    "evidence": "raw 31779-31788",
+    "notes": "handler=sub_423AE0；语义全在 sub_4ABEF0（见该条）。emulator：`GFX_ITEM_OPS[0x214] = op_swap_items` → `native.swapItems` → `scSwapItems`，守卫 test/op-214-swap-items.test.ts（tickets/T-0049）"
+  },
+  {
+    "addr": "0x4ABEF0",
+    "raw_name": "sub_4ABEF0",
+    "semantic_name": "scene_swap_item_records_4ABEF0",
+    "status": "ANALYZED",
+    "purpose": "**把绘图项表（Scene+1032 = `_this+258` dwords）里 key=a2 与 key=b2 的记录整块互换**：`qmemcpy(record(a2), record(b2), 0x2E4)` + 反向一次（raw 131135-131139），随后置脏位 `Scene[11627] = 1`。记录 = **740 字节**的 DrawItem（`+0` flags、`+4` 纹理槽、`+8..+20` 源矩形、`+24..+32` pivot、`+36..+44` 描画位置、动画窗、颜色、矩阵、`+720` entryParam…）⇒ 交换后**键(handle)不动**，换的是「长什么样、画在哪、怎么动」。★只碰绘图项表；网格表（Scene+1064 = `+266`）不动 —— 与 0x21D CopyScene（两张表都拷，sub_4AC0D0 raw 131146）不同",
+    "sub_behaviors": ["在两个键上查表（sub_459EA0 = find，容器 end = `_this[259]`）", "两侧都在 ⇒ 整块 740 字节互换", "一侧缺键 ⇒ 先 sub_40C910 建一条全 0 记录（flags 无 bit0 ⇒ 不画）再搬（sub_40C310 / sub_4A8AF0 参与）", "两侧都缺 ⇒ 只置脏位（无错误串）", "置脏位 `Scene[11627] = 1`"],
+    "fields_used": ["Scene+1032 (绘图项表)", "Scene+1036 (表的 end 哨兵)", "Scene+11627 (脏位, byte 46508)"],
+    "unmodeled": ["sub_40C910 / sub_40C310 / sub_4A8AF0（哈希表节点建/写/搬，emulator 用 JS Map 语义等价）"],
+    "evidence": "raw 131084-131143；调用点唯一（0x214 handler raw 31787）",
+    "notes": "唯一调用者 = 0x214（grep 全 .c：声明 + 31787 + 定义）。emulator：`scSwapItems`（renderer/scene/ops.ts）原地交换字段、保留 Item 对象身份（渲染侧按 handle 的缓存不失效），`handle`/`layer` 不参与交换（层序 = map key）"
   }
 
 ]
