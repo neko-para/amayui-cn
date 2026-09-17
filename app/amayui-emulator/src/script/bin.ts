@@ -39,6 +39,20 @@ export interface ScriptBinary {
   localVars: number[]; // 6 个
   subHeaderLength: number;
   tables: { length: number; offset: number }[]; // 3 个
+  /**
+   * **三张表的实际内容**（头部 0x24/0x28、0x2c/0x30、0x34/0x38 的 {len, offset} 指向的 dword 数组）。
+   *
+   * 它们是**有序 dword 偏移表**（`scripts/asm/reassembler.mjs:212-225` 的组装侧、`age-shared.mjs:261-266`
+   * 的读取侧）：
+   *  - `[0]` = 所有 **`0x71`（显示消息）** 指令的 dword 偏移 —— 存档的"消息点"下标就查这张表；
+   *  - `[1]` = 所有 **`0x3`（call-script）** 指令的 dword 偏移 —— 存档里"停在被调用脚本上"的帧查这张；
+   *  - `[2]` = 所有 **`0x8F`（call）** 指令的 dword 偏移。
+   *
+   * 为什么必须解出来（`tickets/T-0059`）：读档时存档只记 **表下标**（`sub_40CD10` 写过：
+   * `frames[k][259]` = 该帧 ip 在表 A 里的下标、`[260]` = 在表 B 里的下标），`0xAE`（`sub_4192F0`）
+   * 用 `ip = ip_base + 4*表[下标]` 还原 ⇒ 没有这张表就续不到存档当时的消息。
+   */
+  ipTables: number[][];
   instructions: BinInstruction[];
   /** label 目标值(index) -> 指令的 index；等价于"哪些 index 是某 label 的目标" */
   labelTargets: Set<number>;
@@ -226,6 +240,18 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
     for (let d = 0; d < dwords; d++) dwordToInstr[ins.index + d] = i;
   }
 
+  // 三张表的实际内容（dword 偏移数组；越界的项直接丢掉 —— 宁可少一项也不要明知越界还给出错位的 ip）。
+  const ipTables: number[][] = tables.map((t) => {
+    const out: number[] = [];
+    if (t.length <= 0 || t.offset <= 0) return out;
+    for (let i = 0; i < t.length; i++) {
+      const at = headerLen + 4 * (t.offset + i);
+      if (at + 4 > bin.length) break;
+      out.push(v.u32(at) | 0);
+    }
+    return out;
+  });
+
   return {
     signature,
     isVer5,
@@ -233,6 +259,7 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
     localVars,
     subHeaderLength,
     tables,
+    ipTables,
     instructions,
     labelTargets,
     dwordToInstr,

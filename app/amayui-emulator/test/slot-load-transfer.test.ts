@@ -14,8 +14,9 @@
  * emulator 此前把它当普通"恢复两张表"，于是调用方接着跑 ⇒ 撞上守卫。
  *
  * 本守卫锁两件事：
- *  - **真游戏（引擎格式）槽**：读档后 `cur` 切到根帧、根脚本被重载、ip 落到根脚本起点，
- *    且**调用方帧不再前进** ⇒ 那一枪打不出来（下面用"接着跑帧循环不抛"钉死）；
+ *  - **真游戏（引擎格式）槽**：读档后 `cur` 切到根帧、帧 0 = 存档记录的脚本（`tickets/T-0059` 之后
+ *    真的**续跑**到存档帧的脚本，不再停在启动链）、且**调用方帧不再前进** ⇒ 那一枪打不出来
+ *    （下面用"接着跑帧循环不抛"钉死；对与本票无关的 ADV 场景缺口宽容）；
  *  - **本工程格式（能直接续档）**：不转移（既有口径不变）。
  */
 import { test } from 'node:test';
@@ -68,6 +69,7 @@ function mkScriptBinary(ops: { op: number; args: BinArg[] }[]): ScriptBinary {
     localVars: [0, 0, 0, 0, 0, 0],
     subHeaderLength: 0,
     tables: [],
+    ipTables: [[], [], []],
     instructions,
     labelTargets: new Set<number>(),
     dwordToInstr,
@@ -145,10 +147,22 @@ test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载）
   // ★真游戏槽的两张表**未解析**（`SLOT_GAPS`）⇒ 不得拿空表覆盖现有的 SAVE.DAT 表。
   assert.equal(e.saveDataTables().ints.get(FLAG_KEY), 1, '现有 SAVE.DAT 表（含「已初始化」标志）必须保住');
 
-  // ★真·回归断言：继续跑帧循环（真资源根 ⇒ SYSTEM4 的启动链），**不得抛出那条守卫错误**。
+  // ★真·回归断言：继续跑帧循环，**不得抛出那条守卫错误**（修前这里就是 `Depth が不正です 51 != 54`）。
+  // ★T-0059 之后这条链会**真的续跑到存档帧的脚本**（不再停在启动链）⇒ 后续会踩到 ADV 场景机制里
+  //   与本票无关的未实现 opcode（实测 `RESETREIGNAN.BIN` 的 0x231）⇒ 这里对"未实现 opcode"宽容
+  //   （`onUnknown: 'continue'`），只钉住"不再撞 SAVE.BIN 的脚本身份守卫、也没有别的错误"。
   let clock = 0;
   const host: FrameHost = { now: () => clock };
   const trail: string[] = [e.curScript().name];
+  const unknown: string[] = [];
+  // 走完栈就停（读档门 1 → 0）——本守卫要证的是"不再撞守卫"而不是把整段 ADV 场景跑完。
+  let sawGate = false;
+  let frames = 0;
+  const done = (): boolean => {
+    const g = e.engineValues.get(LOAD_IN_PROGRESS_FLAG) ?? 0;
+    if (g === 1) sawGate = true;
+    return (sawGate && g === 0) || frames >= 40;
+  };
   const r = await runFrameLoop(e, host, {
     gates: { anim: 'clear', sleep: 'ignore', advance: 'ignore' },
     services: { winReveal: false, charGrid: false },
@@ -157,17 +171,31 @@ test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载）
     maxFrames: 400,
     present: 'never',
     audio: 'never',
+    until: done,
+    onUnknown: (err, frame) => {
+      unknown.push(`0x${err.opcode.toString(16)}@${frame.name}`);
+      return 'continue';
+    },
     onScriptChange: (name) => {
       if (trail[trail.length - 1] !== name) trail.push(name);
     },
     onFrameEnd: () => {
+      frames++;
       clock += 1000 / 60;
     },
   });
-  assert.notEqual(r.stopReason, 'error', '读档后的启动链不得报错（修前这里就是 Depth が不正です）');
+  assert.notEqual(r.stopReason, 'error', '读档后的链路不得报错（修前这里就是 Depth が不正です）');
   assert.ok(
     trail.some((n) => n.startsWith('SYSTEM4')) && !trail.includes('CALLER.BIN'),
-    `启动链应从根脚本重新走（轨迹 ${trail.slice(0, 6).join(' → ')}）`,
+    `控制转移后从根脚本重新走（轨迹 ${trail.slice(0, 6).join(' → ')}）`,
+  );
+  void unknown;
+  const hist = new Map<string, number>();
+  for (const u of unknown) hist.set(u, (hist.get(u) ?? 0) + 1);
+  const top = [...hist.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  t.diagnostic(
+    `控制转移后轨迹：${trail.slice(0, 6).join(' → ')}（走栈完成=${sawGate && (e.engineValues.get(LOAD_IN_PROGRESS_FLAG) ?? 0) === 0}，` +
+      `被跳过的未实现 opcode ${unknown.length} 个；最高频 ${top.map(([k, n]) => `${k}×${n}`).join(' ')}）`,
   );
 });
 

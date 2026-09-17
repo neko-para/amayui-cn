@@ -31,8 +31,9 @@
  *
  * 复用 `saveData.ts` 的容器（`format = 0` = 本工程明文格式 ⇒ 与引擎的 1..3 互不误读），
  * payload = 「已使用文件」块 + 两张表 + **可选尾块**（`SaveDataDecoded.trailing`）= 本模块的
- * `SlotStateBlock`（JSON，见下）。⇒ 引擎写的真槽也能被**读**（格式 1..3 的容器解析已实现，
- * 但真槽的**状态主体**是引擎自己的池/块布局 ⇒ 只还原两张表，缺口见 `SLOT_GAPS`）。
+ * `SlotStateBlock`（JSON，见下）。⇒ 引擎写的真槽也能被**读**：`format = 3` 的状态主体由
+ * `src/vm/engineSlot.ts` 解析（帧记录 + 三个池 + 三张 ip 表 ⇒ 能真的续跑，见 `tickets/T-0059`），
+ * `format = 1/2` 的旧布局仍只读头（缺口见 `SLOT_GAPS`）。
  */
 import {
   SAVE_BLOCK_BYTES,
@@ -212,22 +213,23 @@ export function buildSlotFile(input: {
 /** 一个槽被读出来的全部内容。 */
 export interface SlotReadResult {
   header: SlotHeader;
-  /** 两张表（**只有本工程格式的槽**才有；引擎槽的状态主体布局未分析，见 `SLOT_GAPS`）。 */
+  /** 两张表（**只有本工程格式的槽**才有；引擎槽的两张表在 `SAVE.DAT` 里，槽自己那份是池，见 `SLOT_GAPS`）。 */
   tables: SaveDataTables;
   usage: SaveDataUsage;
-  /** 本工程状态块（真游戏槽里没有 ⇒ null：只还原两张表，见 `SLOT_GAPS`）。 */
+  /** 本工程状态块（真游戏槽里没有 ⇒ null：真槽的状态主体由 `engineSlot.ts` 走另一条路，见 `SLOT_GAPS`）。 */
   state: SlotStateBlock | null;
-  /** `true` = 这是**引擎写**的槽（format 1..3）：只能读头，状态/表未解析。 */
+  /** `true` = 这是**引擎写**的槽（format 1..3）：本模块不解析它的 payload（交给 `engineSlot.ts`）。 */
   engineFormat: boolean;
 }
 
 /**
  * 读一个槽文件的全部内容。
  *
- * ★**引擎格式（format 1..3）的槽只读头**：真槽的 payload 是引擎自己的状态主体（池/帧/块），
+ * ★**引擎格式（format 1..3）的槽在这里只读头**：真槽的 payload 是引擎自己的状态主体（帧镜像 + 池 + ip 表），
  * 两张表在其中的偏移与 `SAVE.DAT` 不同（`SAVE.DAT` 的 payload 是"标志块 + 两张表"，槽不是）
  * ⇒ 直接套 `decodeSaveData` 会解错（E4 实测：`SAVE00.DAT` 报"字符串记录越界"）。
- * 那是 `SLOT_GAPS` 里登记的缺口；这里如实返回 `engineFormat: true` + 空表，不假装读到了配置。
+ * 状态主体由 `src/vm/engineSlot.ts` 按 `sub_410160`/`sub_40CD10` 的 `a4 == 3` 布局解析
+ * （`tickets/T-0059`；`format = 1/2` 的旧布局仍未解析 ⇒ 见 `SLOT_GAPS`）。
  */
 export function parseSlotFile(
   bytes: Uint8Array,
@@ -276,8 +278,16 @@ export function hasSlotHeader(bytes: Uint8Array | null): boolean {
 
 /** `SLOT_GAPS`：本票已知但未做的部分（读档链路的诚实边界，勿当成保证）。 */
 export const SLOT_GAPS: readonly string[] = [
-  '真游戏槽（format 1..3）的**状态主体**没有解析：只还原头里的游玩秒数与「已使用文件」头信息；引擎那份的池/帧/场景块布局未分析（★两张表与「已使用文件」标志因此**不写**——拿空数据覆盖会洗掉当前 SAVE.DAT 的表与鉴赏解锁标志，见 `handlers/save-slot.ts`）。',
-  '★**读档无法续到存档当时的场景位置**：引擎在 `sub_410160` 的 a6=1 段里解析**存档记录的脚本名**并把它装进帧 0（`cur = 0`，raw 19470-19476；= 控制转移，调用方脚本被放弃 —— emulator 已按此实现），还按存档里的帧 ip 表恢复各帧（`0xAE` 那条链路）。本工程不解析那些块 ⇒ 读档后只能回到**根脚本 + 启动链**（`tickets/T-0056`）。',
+  '真游戏槽的 `format = 3`（SaveVersion1=3）**已解析并可续跑**：帧记录（脚本 id / 返回栈 / 消息点下标 / call-script 下标）、' +
+    'int/float/string 三个池、三张全局 ip 表、100 个解码图槽、1000 条 20 B 记录都解得出来（`src/vm/engineSlot.ts`，' +
+    '两个内层 CRC 都校验；本机 47 个真槽全过）。★**`format = 1/2` 的旧布局仍未解析**（引擎 `sub_410160` 的 a4=1/2 段：' +
+    '263 步长 / 1052 字节帧头等各不相同）⇒ 那些槽退回"重载根脚本"。',
+  '★**续跑已实现**（`tickets/T-0059`）：`0x1A1` 解出状态主体 → 还原池 + 帧记录 + 装载记录 0 的脚本（`cur = 0`）→ ' +
+    '脚本入口的 `i0ae`（`0xAE`）按记录逐帧落 ip/装脚本，直到 `cur == savedCur` 收尾。仍未做的：' +
+    '① **跳过 `CALLBACK_LOAD.BIN` 那一跳**（引擎把回调装进帧 0、靠它 `exit` 时的 `frames[0][95795] == -11` 再 `sub_40F750(3)` 装记录 0 的脚本；' +
+    'emulator 能直接装帧脚本 ⇒ 直接装，回调的副产物：charm/LOADCHARM 绘制管线、savemesskip 复位**不复现**）；' +
+    '② 存档里的 **100 个解码图槽（ImageDB）+ 1000 条记录 + 尾部的图像重载清单**已解码但**未应用**（emulator 的纹理由脚本的 ' +
+    '`set-texture`/宿主按 id 惰性解码重建）；③ 镜像里那 40 B 消息窗/字体状态（`Engine+84088`）未还原（emulator 的 msgwin 有自己的状态）。',
   '本工程槽只存**当前帧 + 栈上未结束的帧**（scriptId/name/ip/retStack）与全局池；场景（纹理/绘制项）靠脚本重跑重建。',
   '`0x19E` 的「覆盖确认框」未建模（无对话框宿主 ⇒ 直接覆盖；引擎在打不开或头不合法时会 `sub_406650(...)==7` 弹框）。',
   '`.STH` = **320×180 24bpp BMP**（`tickets/T-0036` 已解：`0x1AE`/`0x1AF` 的 `op3` 是纹理槽，写/读该槽的位图，见 `src/vm/bmp.ts`）；仍未做的是 DrawMode==1 的截图分支（`sub_4A5260`/`sub_49E9D0`，本机 DrawMode=0）。',

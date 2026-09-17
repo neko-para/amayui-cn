@@ -15,6 +15,9 @@ import { SLEEP_GATE } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG } from '../../configRegistry.js';
+import { parseScriptBytes } from '../../script/bin.js';
+import { loadScriptIntoFrame } from '../ops.js';
+import { resolveSlotResumeIp, resolveSlotRetStack } from '../engineSlot.js';
 import type { OpTable } from './shared.js';
 
 /** 把「指令的 dword 偏移」换成「指令数组下标」并跳转（引擎里 ip 就是 dword 偏移，重写侧是下标）。 */
@@ -183,61 +186,120 @@ const op_redisplay_text: OpHandler = (c) => {
 };
 
 /**
- * `0xAE`（`sub_4192F0` raw 24634-24773）：**存档版本分支** —— 读档时把当前帧的 ip 重算到
- * 存档记录的位置，然后切帧/装载。
+ * `0xAE`（`sub_4192F0` raw 24634-24773）：**存档版本分支** —— 读档时把每帧的 ip 重算到存档记录的位置，
+ * 并逐帧把**存档里那批脚本**装载起来，直到走到存档帧才收尾（`tickets/T-0059`）。
  *
  * 引擎形状（三段几乎同构，只有**步长与槽位**不同）：
  * ```c
- * if (!_this[95780]) return;                    // ★门控：只有读档流程置 1
+ * _this[30*cur+95805] = 1;                       // 本指令步长 = 1
+ * if (!_this[95780]) return;                     // ★门控：只有读档流程置 1
  * sv1 = GetConfig("set:SaveVersion1"); sv2 = GetConfig("set:SaveVersion2");
  * // sv1==1 && sv2==20 → 263*cur 槽位组；sv1==2 → 261*cur 组；sv1==3 → 261*cur 另一组
- * v = _this[stride*cur + A];                    // A = 130199 / 141030 / 156783（"存档侧下标"）
- * if (v >= 0)     ip = *(base + 4*_this[30*cur+95800] + 4*v)   // 正下标 → 用 95800 那张表
- * else if (w>=0)  ip = *(base + 4*_this[30*cur+95798] + 4*w)   // 负下标 → 用 95798 那张表（w = A-1 槽）
- * _this[30*cur+95782] = _this[30*cur+95781] + 4*ip;            // 帧 ip
- * _this[30*cur+95803/95804] = 已执行指令记数（版本 2/3 才有）
- * if (cur == _this[savedCurSlot]) { _this[95776] = savedCur; _this[95777] = savedRet; _this[95780] = 0; [v2: _this[97054]=1] }
- * else { _this[95777] = cur; _this[95776] = cur + 1; return sub_40F750(_this, mode, sv2); }
+ * v = _this[261*cur + 156783];                   // 记录[260] = 「0x3 call-script 表」下标
+ * if (v >= 0)     { ip = ipBase + 4*表B[v];  95805 = 3; }   // 表 B = `frames[cur][95800]`
+ * else if (w>=0)  { ip = ipBase + 4*表A[w];  95805 = 0; }   // 表 A = `frames[cur][95798]`；w = 记录[259]（0x71 消息表下标）
+ * if (cur == _this[151210] = savedCur) { _this[95777] = _this[151211]; _this[95780] = 0; [v2: _this[97054]=1] }
+ * else { _this[95777] = cur; _this[95776] = cur + 1; return sub_40F750(_this, 3, sv2); }   // 装载记录[cur+1] 的脚本并切帧
  * ```
- * `95780` = 帧 0 的 `+0x10`（"正在读档"标志）；`sub_40F750(Engine, mode, ver)` = 装载/初始化目标帧的脚本。
  *
- * **emulator 的取舍（明确记录，不假装实现）**：
- *  - **门控路径（`95780 == 0`）与引擎完全一致** —— 这也是唯一在真机上可达的路径
- *    （语料 `iae` **0 处**；只有读档流程才会把门置 1）；
- *  - 置位后的分支需要**存档侧的两张 ip 指针表**（`[30*cur+95798]/[95800]` 指向的数组）与
- *    `sub_40F750` 的帧装载，而 emulator **尚无读档装载**（不读存档里的帧 ip 表）⇒ 这里只做
- *    「按版本选组 → 判定是否已回到存档帧 → 清门」这一层，**帧 ip 重算与帧装载记为缺口并写日志**。
- *    一旦将来实现读档装载，补上的是这两处（槽位常量已在下面列出）。
+ * ★**两个分支的步长差异就是"续到哪里"**（本实现按它决定落点）：
+ *  - `95805 = 3`（记录命中 `0x3` 表）：该帧停在一条 **call-script**（长 3 dword）上 ⇒ 续跑从**它的下一条**开始
+ *    （调用点本身不重放；被调脚本的返回栈已在装载时恢复）；
+ *  - `95805 = 0`（记录命中 `0x71` 表）：该帧停在一条 **显示消息** 上 ⇒ 续跑**重放这条消息**
+ *    （不重放的话玩家会跳过存档当时正显示的那句话）。
+ *
+ * `95780` = 「正在读档」门（`ENGINE_FIELD.loadInProgress`）；`sub_40F750(Engine, 3, sv2)` = 装载记录里的脚本帧。
+ * 每帧的 `i0ae` 都出现在**脚本入口**（例：`src/$1$SC0330.txt:1003`、`src/SYSTEM4.txt:143`）⇒ 走栈是
+ * "装下一帧 → 它从入口跑 → 入口的 `i0ae` 再落 ip/再走下一帧"这样链式推进的。
+ *
+ * 语料：`i0ae` **339 处**（此前文档写"0 处"是漏计，见 `tickets/T-0059` 的订正）。
  */
-const SAVE_VERSION_BRANCH: Record<number, { stride: number; idxSlot: number; savedCur: number; savedRet: number; mode: number; setLoadFlag?: boolean; sv2?: number }> = {
-  // sv1=1 且 sv2=20
-  1: { stride: 263, idxSlot: 130199, savedCur: 129624, savedRet: 129625, mode: 1, sv2: 20 },
-  // sv1=2
-  2: { stride: 261, idxSlot: 141030, savedCur: 140457, savedRet: 140458, mode: 2, setLoadFlag: true },
-  // sv1=3
-  3: { stride: 261, idxSlot: 156783, savedCur: 151210, savedRet: 151211, mode: 3 },
+const SAVE_VERSION_BRANCH: Record<number, { mode: number; setLoadFlag?: boolean; sv2?: number }> = {
+  // sv1=1 且 sv2=20（引擎槽位：263 步长、savedCur/savedRet = `129624`/`129625`、ip 下标 = `130199`）
+  1: { mode: 1, sv2: 20 },
+  // sv1=2（261 步长、`140457`/`140458`、`141030`）
+  2: { mode: 2, setLoadFlag: true },
+  // sv1=3（261 步长、`151210`/`151211`、`156783`）—— 本机真槽（47 个）全是这一支
+  3: { mode: 3 },
 };
 
-const op_save_version_branch: OpHandler = (c) => {
+const op_save_version_branch: OpHandler = async (c) => {
   const e = c.e;
   if ((e.engineValues.get(ENGINE_FIELD.loadInProgress) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
   const sv1 = e.config ? cfgInt(e.config, CFG.setSaveVersion1, 0) : 0;
   const sv2 = e.config ? cfgInt(e.config, CFG.setSaveVersion2, 0) : 0;
   const spec = SAVE_VERSION_BRANCH[sv1];
   if (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2)) return;
-  const cur = e.cur;
-  const savedCur = e.engineValues.get(spec.savedCur) ?? -1;
-  if (savedCur === cur) {
-    // 引擎：已回到存档记录的帧 ⇒ 收尾（清读档门；版本 2 还会置 97054=1）
-    e.engineValues.set(ENGINE_FIELD.callRet, e.engineValues.get(spec.savedRet) ?? 0);
+  const resume = e.saveResume;
+  if (!resume) {
+    // 门开着但没有续跑记录：只可能是旧布局（sv1 = 1/2，本模块不解析）或装载失败留下的门。
+    // 引擎在这种情况下会去读自己那份帧镜像；emulator 没有那份镜像 ⇒ **清门收场**（免得后续 339 处
+    // `i0ae` 一直走"读档中"分支），并如实记一次日志。
     e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
-    if (spec.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
+    c.log(`0xAE: 门开着但没有续跑记录（sv1=${sv1}/sv2=${sv2}）⇒ 清门（旧布局未解析，见 SLOT_GAPS）`);
     return;
   }
+  const cur = e.cur;
+  const rec = resume.frames[cur];
+  const frame = e.frames[cur];
+  if (!rec || !frame) {
+    e.saveResume = null;
+    e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    return;
+  }
+
+  // ① 按记录重算**本帧**的 ip（用本帧那份脚本自己的两张表；引擎 raw 24706-24723）。
+  let landed: number | null = null;
+  if (frame.script) {
+    const ip = resolveSlotResumeIp(frame.script, rec);
+    if (ip) {
+      // 引擎：ipB 分支 95805 = 3 ⇒ ip 之后进 3 个 dword（= 调用点的下一条）；ipA 分支 95805 = 0 ⇒ 停在该指令。
+      landed = ip.advance ? ip.instr + 1 : ip.instr;
+      frame.ip = landed;
+    } else {
+      c.log(`0xAE: 帧 ${cur} 的落点下标越界（call=${rec.callIdx} msg=${rec.messageIdx}，脚本 ${frame.name}）`);
+    }
+  }
+
+  // ② 已回到存档帧 ⇒ 收尾（引擎 LABEL_26：`95777 = savedRet; 95780 = 0;`，版本 2 另置 `97054 = 1`）。
+  if (cur === resume.savedCur) {
+    e.engineValues.set(ENGINE_FIELD.callRet, resume.savedRet);
+    e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    if (spec.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
+    e.saveResume = null;
+    c.log(`0xAE: 续跑收尾 —— cur=${cur} 落点=${landed ?? '（保持原 ip）'}（${frame.name}），读档门已清`);
+    if (landed !== null) c.jump(landed);
+    return;
+  }
+
+  // ③ 还没到存档帧 ⇒ `sub_40F750(3)`：把记录里**下一帧**的脚本装进 `cur+1`、恢复它的返回栈，然后切过去。
+  //    （引擎把 `95776 = cur+1`，下一轮由新帧入口的 `i0ae` 再落 ip —— 所以这里**不设**新帧的 ip。）
+  const nextRec = resume.frames[cur + 1];
+  const nextFrame = e.frames[cur + 1];
+  if (!nextRec || !nextFrame) {
+    e.saveResume = null;
+    e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    return;
+  }
+  const src = await e.fileSource?.readScript?.(nextRec.scriptId);
+  if (!src) {
+    e.saveResume = null;
+    e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    c.log(`0xAE: 帧 ${cur + 1} 的脚本 0x${nextRec.scriptId.toString(16)} 读不到 ⇒ 中止续跑（读档门已清）`);
+    return;
+  }
+  const nextScript = parseScriptBytes(src.data);
+  loadScriptIntoFrame(nextFrame, nextScript, src.name, nextRec.scriptId);
+  const ret = resolveSlotRetStack(nextScript, nextRec);
+  nextFrame.retStack = ret.retStack;
+  nextFrame.caller = nextRec.returnFrame;
+  e.markFileUsed(nextRec.scriptId);
+  e.cur = cur + 1;
   c.log(
-    `0xAE: 读档版本分支 sv1=${sv1}/sv2=${sv2}（slot ${spec.stride}*${cur}+${spec.idxSlot}）—— ` +
-      `存档 ip 指针表与帧装载未建模，帧 ip 重算/切帧跳过（缺口已登记）`,
+    `0xAE: 续跑走栈 ${cur} → ${cur + 1}：装载 ${src.name}(id=0x${nextRec.scriptId.toString(16)})` +
+      `（返回帧=${nextRec.returnFrame}，返回栈 ${ret.retStack.length} 层${ret.dropped ? `，丢 ${ret.dropped}` : ''}）`,
   );
+  c.jump(-1); // 控制流已转到新帧（它从入口 ip=0 开始跑）
 };
 
 /** 帧计时/时钟 + sleep/等待门 + 文本重显示/存档版本分支（真实现；native.frameTick 转发）。 */

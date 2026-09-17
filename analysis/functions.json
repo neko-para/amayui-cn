@@ -6,30 +6,12 @@
     "op": "0x6",
     "status": "PARTIAL",
     "purpose": "构造并装载一个脚本帧（读脚本文件 → 解码 → 建帧局部池/返回栈）",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "打开脚本文件(sub_4559C0/sub_455560)",
-      "读头/校验版本",
-      "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)",
-      "迭代填 local_int[i]=enc_zero"
-    ],
-    "fields_used": [
-      "this->cur_script",
-      "this->frames[cur_script].local_int",
-      "this->frames[cur_script].local_int_count",
-      "this->enc_zero",
-      "this->call_ret"
-    ],
-    "unmodeled": [
-      "_this+0xA609C(字符串表)",
-      "_this+387924(FileSource)",
-      "frames[cur]+0x40..0x54(返回栈)",
-      "_this+4*cur+388612/489488/489648"
-    ],
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["打开脚本文件(sub_4559C0/sub_455560)", "读头/校验版本", "建局部池(local_int/float/string/ptr/float_ptr 计数+基址)", "迭代填 local_int[i]=enc_zero"],
+    "fields_used": ["this->cur_script", "this->frames[cur_script].local_int", "this->frames[cur_script].local_int_count", "this->enc_zero", "this->call_ret"],
+    "unmodeled": ["_this+0xA609C(字符串表)", "_this+387924(FileSource)", "frames[cur]+0x40..0x54(返回栈)", "_this+4*cur+388612/489488/489648"],
     "evidence": "raw 18577-18874",
-    "notes": "★载入 = 一次新调用：本函数读脚本后**建局部池并把 local_int 填 enc_zero**（local_float/string 同）⇒ 帧槽被复用时（脚本 exit 后被 call-script 再次调回来最典型）看不见上一次的局部量。emulator 侧对应 loadScriptIntoFrame 的 frame.locals.clear()（见 app/amayui-emulator/src/vm/handlers/control.ts）。漏掉它会静默泄漏：CONFIG1 切分类后滚动起点 local5620 从上一页漏过来 ⇒ 滚动条溢出轨道（2026 实测）。全局池不经本函数，故跨脚本状态（如上次选的分类 12721e）照旧保留。"
+    "notes": "★本函数还从脚本头 0x24..0x38 建**每帧的三张 ip 表**（383188/383192/383196/383200/383204/383208 = _this[95797..95802]）：表1 = 0x71（显示消息）、表2 = 0x3（call-script）、表3 = 0x8F（call）指令的 dword 偏移表（表项 = 相对 headerLen 的 dword 偏移，实测 64/64 命中；组装侧见 scripts/asm/reassembler.mjs:212-225）。表位置/长度的头字段同样**相对 headerLen**（表值也相对它）⇒ ip = ip_base + 4*表项。★装载后 ip 指针 = ip 基址（raw 18847：383128 ← 383124）⇒ 帧从脚本 dword 0 开始跑（脚本入口那条 i0ae 就是读档续跑的落点，见 0xAE）。emulator：script/bin.ts 的 ScriptBinary.ipTables + engineSlot.resolveSlotResumeIp（tickets/T-0059）。"
   },
   {
     "addr": "0x41A820",
@@ -2738,27 +2720,13 @@
     "semantic_name": "op_version_branch_4192F0",
     "op": "0xAE",
     "status": "PARTIAL",
-    "purpose": "op 0xAE：存档版本分支。经 _this+174405 对象读 set:SaveVersion(1/2/3/20) 与 set:SaveVersion_0；按版本重算当前帧 ip(_this[30*cur+95782/95803/95804])、设状态槽；版本2/3 时若 cur==_this[140457]/[151210] 则切换 cur(=目标帧)、否则 cur=cur+1 并 sub_40F750 装载；版本20 类似(_this[129624])。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "读存档版本 set:SaveVersion",
-      "按版本重算帧ip/状态槽",
-      "切 cur 到目标帧(140457/151210/129624)",
-      "否则 cur+1 并 sub_40F750 装载"
-    ],
-    "fields_used": [
-      "this->_this[140457/151210](版本2/3目标帧)",
-      "this->cur_script",
-      "this->_this+174405(配置对象)"
-    ],
-    "unmodeled": [
-      "版本->目标帧/装载映射细节",
-      "_this[140457/151210/129624] 写入方"
-    ],
-    "evidence": "raw 24634-24773 (sub_4192F0)",
-    "notes": "★已定性：是「存档续档」机制，**不是**预装帧启动路径。读 set:SaveVersion(1/2/3)+set:SaveVersion_0(20)；若 cur==快照帧(_this[140457]/[151210]/[129624] 首字段=存档时活跃帧号) 则切 cur 续档；否则 cur=cur+1 并 sub_40F750→loadScriptFrame 载入对应场景脚本(按 261/263*cur+… 跳转表定 ip)。快照结构由 sub_40CD10 一族在存档时写入(memset 0xA804/0xF624)，目标帧=存档时活跃场景脚本帧，非预装帧(26/28-31, 那是 i008 启动的)。_this[95780]=门、_this[97054]=续档标志、_this[95777]=call_ret。 ★2026-09 A2/A3 落地：emulator `handlers/frame.ts` 的 `op_save_version_branch` —— **门控路径（Engine[95780]==0）与引擎逐字一致**；置位后按 `set:SaveVersion1/2` 选组（1+20 / 2 / 3）并处理「已回到存档帧」的收尾。★缺口（已登记 unmodeled）：存档侧的帧 ip 指针表与 `sub_40F750` 的帧装载未建模（emulator 无读档装载）。语料 0 处。"
+    "purpose": "op 0xAE：存档版本分支（读档续跑的核心，语料 339 处）。顶部先置 frames[cur][95805]=1（步长），门控 _this[95780]==0 直接返回；否则经 _this+174405 读 set:SaveVersion1/2，按版本(1+20 / 2 / 3)选帧记录槽位组，用记录里的两个下标落 ip：记录[260]>=0 ⇒ ip = 表B[记录[260]] 且 95805=3（落到调用点的下一条）；否则记录[259]>=0 ⇒ ip = 表A[记录[259]] 且 95805=0（重放这条消息）。cur == savedCur（151210/140457/129624）⇒ 95777=savedRet、95780=0、[版本2]97054=1；否则 95777=cur、95776=cur+1 并 sub_40F750(3, sv2) 装载下一帧。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读存档版本 set:SaveVersion", "按版本重算帧ip/状态槽", "切 cur 到目标帧(140457/151210/129624)", "否则 cur+1 并 sub_40F750 装载"],
+    "fields_used": ["this->_this[140457/151210](版本2/3目标帧)", "this->cur_script", "this->_this+174405(配置对象)"],
+    "unmodeled": ["版本->目标帧/装载映射细节", "_this[140457/151210/129624] 写入方"],
+    "evidence": "raw 24634-24773（io 分支 24665-24700、sv1==3 分支 24702-24736）",
+    "notes": "★订正：旧文档写『语料 0 处』是漏计 —— i0ae 实际 339 处（脚本入口都有它：src/SYSTEM4.txt:143、src/\\\\.txt:1003，形如 label: i0ae / 循环）。表 A/B/C = 当前帧那份脚本自己的三张表（0x71 消息 / 0x3 call-script / 0x8F call，见 loadScriptFrame_40ED40 与 script/bin.ts 的 ipTables）。emulator 已按同形状实现（handlers/frame.ts 的 op_save_version_branch + Engine.saveResume）。"
   },
   {
     "addr": "0x41AB80",
@@ -9723,32 +9691,22 @@
     "raw_name": "sub_410160",
     "semantic_name": "load_state_from_file_410160",
     "status": "PARTIAL",
-    "purpose": "从已打开的存档文件装载整份游戏状态（0x1A1/0x19F/0x190 的装载内核）：读 292 头（sub_438120）+ 载荷（sub_437980）→ 按 set:SaveVersion1(a4) 分支把各块搬回 Engine（池/帧栈/场景/字符串块…）→ a6 控制带字体的块、a7 控制 sub_45F1B0（额外块/图像）",
+    "purpose": "从已打开的存档文件装载整份游戏状态（0x1A1/0x19F/0x190 的装载内核）：读 292 头（sub_438120）+ 载荷（sub_437980，置乱 sub_436E90 + LZSS sub_436A80 + 两个内层 CRC）→ 按 set:SaveVersion1(a4) 分支把各块搬回 Engine。★a4==3（本作真槽，raw 19703-19927）：帧镜像 memcpy 到 Engine+604840（长度 1044*savedCur+22296）、池块（ints/floats/strings + 三张全局 ip 表）到 382976/382984/382992/383000/383008/383016、按 flag==1 重载 100 个解码图槽（sub_4559C0+sub_40BF20）、1000 条 20B 记录；收尾 698852=镜像[2]、40B 拷回 84088、msgwin/面板复位、383120=1（读档门）、383104=0（cur）、帧 0 ← CALLBACK_LOAD.BIN。",
     "sub_behaviors": ["sub_438120(Engine+20764, hFile, Engine+382688, Engine+698912, buf)：失败返 -1", "v8 = 载荷 dword 数（a4==2/3 时 v99[60]/4 + 1）；operator new[](4*v8) + sub_437980 读载荷", "a6 != 0 时才做带字体的那几块（raw 19462 / 19499 / 19651）", "a7 && a4 >= 2 ⇒ sub_45F1B0(Engine+85296, hFile)（额外块）", "a4==1：逐项 ENC 着搬进 pool_int（raw 19488-19490）；a4==2/3：直接 memcpy（raw 19624 / 19747）"],
     "fields_used": ["Engine+20764（SAVE 容器）", "Engine+382976（pool_int 基址 = Engine[95744]）", "Engine+382952/382956/382960/382964/382968/382972（各池计数）", "Engine+388236（ENC key）", "Engine+85296（额外块对象）"],
-    "evidence": "raw 19276-19850（函数体跨越约 570 行）",
-    "notes": "emulator 不解析引擎槽载荷（SLOT_GAPS ①）：只读头 + 两张表（本工程格式）+ 游玩秒数。载荷块布局的完整还原是后续工作。\n★2026-09（tickets/T-0056）：**a6=1 的那一段是「控制转移」而不是普通还原**（raw 19464-19476）—— `qmemcpy(Engine+84088, Engine+497416, 0x28)`（字体/消息窗状态）+ `sub_4B5090`（文本/窗口复位）+ `sub_403EF0` ×2（两张面板复位）+ `sub_455000(FileDB, String2)` 解析**存档里记录的脚本名** + `Engine[383120] = 1`（「正在读档」门，`0xAE` 读它）+ **`Engine[383104] = 0`（cur = 0）** + 把该脚本装进帧 0。⇒ **调用方脚本被放弃**：SAVE.BIN 那类界面脚本不会在 `0x1A1` 之后继续跑。这一点是**必须**的（不是细节）：脚本作者在**存档**路径显式 `mov (local-int e) 4`（`SAVE.txt:1153`）让主循环重登记鼠标回调，而**读档**路径（`label_000039cc` → `ret`）没有 —— 它依赖的就是这次转移；不转移的话调用方会带着上一个子脚本（SBUNKI，id 54）留下的 `mouse-callback` 身份继续跑主循环 ⇒ 撞上 `0xCD` 的 `Depth が不正です` 守卫硬报错（用户实测）。emulator 已按此实现（`handlers/save-slot.ts` 的 `transferToRootAfterLoad`，守卫 `test/slot-load-transfer.test.ts`）：本工程不解析存档记录的脚本名 ⇒ 退回\"重载根脚本 0、由启动链接管\"。`0x19F`（a6=0）**不转移**（语料 0 处）。"
+    "evidence": "raw 19340-19927（a4==1: 19423-19620、a4==2: 19581-19697、a4==3: 19703-19927）",
+    "notes": "a4==3 的字段布局（帧镜像/池块/图像清单）与 emulator 的解析见 docs-new/03-engine/save-data.md §7.2 与 app/amayui-emulator/src/vm/engineSlot.ts（tickets/T-0059）。★两个内层 CRC 都覆盖 body（文件里那 8 字节头），本机 47 个真槽全过。"
   },
   {
     "addr": "0x40CD10",
     "raw_name": "sub_40CD10",
     "semantic_name": "save_state_to_file_40CD10",
     "status": "PARTIAL",
-    "purpose": "把整份游戏状态写进已打开的存档文件（0x19E 的写入内核）：按 set:SaveVersion1/2 估算载荷大小 → 序列化各块（池/帧栈/场景/字符串…）→ sub_437480 写容器（头 + 块 + 载荷 + 双 CRC）→ 成功后 sub_457CE0 + sub_40AAE0 刷新系统存档",
-    "sub_behaviors": [
-      "switch(a3 = SaveVersion1)：a3==1 按 a4(10/20) 估大小；a3==2 用 Engine[166963]（当前帧，见 0x1AD）拼各计数",
-      "sub_437480(Engine+20764, hFile, Engine+95672, Engine+698912, buf, v118, a3, a4) 写容器（★a3/a4 就是头 +284 format 与 +288 aux）",
-      "成功 ⇒ sub_457CE0(Engine+85296, hFile) + sub_40AAE0(Engine) 写 SAVE.DAT/RT.DAT（raw 17686-17687）",
-      "失败 ⇒ sub_40A4C0 弹错框 aE，返回 2/4"
-    ],
-    "fields_used": [
-      "Engine+166963（0x1AD 记的当前帧）",
-      "Engine+20764（SAVE 容器）",
-      "Engine+698912（标题串）",
-      "Engine+96981（窗口）"
-    ],
-    "evidence": "raw 16876-17707（约 830 行）；写容器 sub_437480 raw 44685-…；系统存档刷新 raw 17687",
-    "notes": "emulator 用自己的 container（format 0 明文 + 尾块状态）写槽，不还原引擎载荷布局（SLOT_GAPS ①）；但保留了\"存槽也会刷新系统存档\"这条语义（0x19E handler 不动 SAVE.DAT，因为本工程设置本来就走 overlay 的 SAVE.DAT 写入时机）。"
+    "purpose": "把整份游戏状态写进已打开的存档文件（0x19E 的写入内核）：按 set:SaveVersion1/2 估算载荷大小 → 序列化各块（池/帧栈/场景/字符串…）→ sub_437480 写容器（头 + 块 + 载荷 + 双 CRC）。★a4==3（raw 17464-17672）：memcpy(_this+151210, …, 1044*v124+22296) 写帧镜像（镜像[0]=savedCur、[1]=savedRet；+21252+1044k 起是第 k 帧记录：脚本 id/返回栈（写成表C下标）/表A下标[259]/表B下标[260]（末帧强制 -1）），随后写池块 {ints,floats,strings,表A/B/C 长度}（int 池元素按 DEC 写成明文）与图像清单 {740,count,…}。",
+    "sub_behaviors": ["switch(a3 = SaveVersion1)：a3==1 按 a4(10/20) 估大小；a3==2 用 Engine[166963]（当前帧，见 0x1AD）拼各计数", "sub_437480(Engine+20764, hFile, Engine+95672, Engine+698912, buf, v118, a3, a4) 写容器（★a3/a4 就是头 +284 format 与 +288 aux）", "成功 ⇒ sub_457CE0(Engine+85296, hFile) + sub_40AAE0(Engine) 写 SAVE.DAT/RT.DAT（raw 17686-17687）", "失败 ⇒ sub_40A4C0 弹错框 aE，返回 2/4"],
+    "fields_used": ["Engine+166963（0x1AD 记的当前帧）", "Engine+20764（SAVE 容器）", "Engine+698912（标题串）", "Engine+96981（窗口）"],
+    "evidence": "raw 16877-17707（a4==3: 17464-17672）",
+    "notes": "写侧与读侧槽位一一对应（帧记录 261 dword / 镜像前导 21252 B / 池块 24 B 头）；emulator 不实现写引擎格式（只写自己的 format=0 槽），但解析侧按写侧口径实现（docs-new/03-engine/save-data.md §7.2）。"
   },
   {
     "addr": "0x4310D0",
@@ -10911,6 +10869,18 @@
     "unmodeled": ["sub_477220 的鼠标键按下锁存 _this[7792]/[1948]（唯一读者在 WndProc 鼠标移动路径，emulator 不建模消息泵）"],
     "evidence": "raw 36689-36727（sub_42ACC0 全文）；消费者 sub_408F10 raw 13612-13684；主循环 raw 21154-21156",
     "notes": "★op1 是输入打断 label，**全语料 7/7 处 = ffffffff**（`i0d5 ffffffff`）⇒ 打断支不可达，只表现为「阶梯动画期间挂起输入被吃掉」。emulator: op_stage_run（置 STAGE_GATE + `c.jump(c.frame.ip)` = 停在同一条指令）。"
+  },
+  {
+    "addr": "0x40F750",
+    "raw_name": "sub_40F750",
+    "semantic_name": "restoreFrameFromSaveRecord_40F750",
+    "status": "ANALYZED",
+    "purpose": "按存档帧记录恢复一个脚本帧（读档续跑的\"装载一帧\"）：a2=1/2/3 选版本（a3=10/20 细分），只对 a2==3 走 261 步长那组 —— 用 _this[261*cur+156524] 的脚本 id 调 sub_40ED40 装载脚本、用 [156782]/[156783]（0x71 消息表 / 0x3 call-script 表下标）把 ip 指针写进 frames[cur][95803]/[95804]、按 [156525] 的深度把返回栈按 表C[下标]+3 还原",
+    "sub_behaviors": ["a2==3：sub_40ED40(脚本 id) 装载当前帧脚本", "ip 指针 ← 表B[记录[260]]（95804）/ 表A[记录[259]]（95803）", "返回栈 ← 表C[记录[3+j]] + 3，深度 = 记录[2]", "末尾 sub_4380F0(_this+5191)（秒计时器推进，同 0xAD）"],
+    "fields_used": ["save_frame_record_base(0x98DB0)", "frame_ip_table_A(0x5D8C8)", "cur_script"],
+    "unmodeled": ["sub_4380F0（秒计时器，属 0xAD 那条链）"],
+    "evidence": "raw 18876-18951（a2==3 在 18933-18947）",
+    "notes": "★ip 的\"值\"来自表里那一格（表项 = dword 偏移），不是下标本身；0xAE 的落点分支与这里共用同一批槽位。emulator 的对应物 = engineSlot.resolveSlotResumeIp/resolveSlotRetStack + loadScriptIntoFrame（tickets/T-0059）。"
   }
 
 ]

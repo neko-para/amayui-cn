@@ -361,6 +361,11 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.stage.reset();
   // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
   c.e.engineValues.set(ENGINE_FIELD.logoEnabled, 0);
+  // ★读档续跑现场随整体复位作废（`tickets/T-0059`）：引擎的整块复位（`sub_40DF10`）会清掉
+  //   `95780`（读档门）与 `151210` 起的帧镜像；不清的话「新开一局」的第一个 `i0ae` 会走到
+  //   **上一局存档的帧栈**上（脚本入口都有 `i0ae`，339 处）。
+  c.e.saveResume = null;
+  c.e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
   // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。
   if (!c.e.fileSource) throw new ExitScript();
   const boot = await c.e.fileSource.readScript(0);

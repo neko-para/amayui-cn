@@ -143,16 +143,28 @@ test('0xAE：非读档流程（门控 0）严格 no-op；门控置位时按版�
   step(0xae);
   assert.equal(JSON.stringify([...e.engineValues]), before, 'Engine[95780]==0 ⇒ 引擎直接返回，不写任何字段');
 
-  // 门控置位 + sv1=2：cur 已等于存档记录的帧 ⇒ 清门（版本 2 还会置 97054）
+  // 门控置位 + **续跑记录**（`tickets/T-0059`：savedCur/savedRet 现在来自槽里解析出的帧镜像，
+  // 即 `Engine.saveResume`；旧实现拿 `engineValues` 当镜像的替身，那两格其实从没人写过）：
+  // cur 已等于存档记录的帧 ⇒ 收尾（版本 2 还会置 97054）。
   e.config = { values: new Map([['set:saveversion1', 2], ['set:saveversion2', 2]]), sections: [], order: new Map() };
   e.cur = 5;
   e.engineValues.set(95780, 1);
-  e.engineValues.set(140457, 5); // savedCur
-  e.engineValues.set(140458, 9); // savedRet
+  e.saveResume = {
+    savedCur: 5,
+    savedRet: 9,
+    // 帧镜像里记录 0..savedCur 都在（引擎写档时就是这么铺的）
+    frames: Array.from({ length: 6 }, () => ({ returnFrame: -1, scriptId: 0, retIdx: [], messageIdx: -1, callIdx: -1 })),
+  };
   step(0xae);
   assert.equal(e.engineValues.get(95780), 0);
   assert.equal(e.engineValues.get(95777), 9);
   assert.equal(e.engineValues.get(97054), 1);
+
+  // 门开着但**没有续跑记录**（旧布局 sv1=1/2 的槽解析不出记录）⇒ 清门收场，免得后续 339 处 `i0ae` 一直走读档分支。
+  e.engineValues.set(95780, 1);
+  e.saveResume = null;
+  step(0xae);
+  assert.equal(e.engineValues.get(95780), 0, '无记录 ⇒ 清门（不留悬空门）');
 
   // sv1=1 但 sv2 ≠ 20 ⇒ 不匹配该分支（引擎只在 sv2==20 时走版本 1）
   e.engineValues.set(95780, 1);

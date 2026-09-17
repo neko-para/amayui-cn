@@ -1,0 +1,96 @@
+{
+  "title": "真游戏槽（format=3）读档续跑：解状态主体（帧记录+三个池）并让 0xAE 走栈",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户诉求「实际加载存档」：T-0056 只做到读档后控制转移到根脚本（回到启动链/标题），玩家点「继续」并不能回到存档当时的场景位置。引擎的机制（sub_410160 的 a4=3 段 + 脚本侧 0xAE）此前记为缺口 SLOT_GAPS ⑥。",
+  "acceptance": [
+    "真 SAVE00.DAT 经 0x1A1 装载后：cur=0、帧 0 = SYSTEM4.BIN、Engine.saveResume 就绪、三个池（int 非零项/float/string）与 header +280 游玩秒数还原",
+    "帧 0 入口的 i0ae 执行后：帧 0 ip 落到记录[260] 指的 0x3 call-script 的下一条、cur=1、帧 1 装载记录[1] 的脚本且返回栈 = 表 C 下标 + 3",
+    "帧 1 入口的 i0ae 执行后：ip 落到记录[259] 指的 0x71 消息指令（重放）、95780=0、95777=savedRet、saveResume=null",
+    "本机 47 个真槽全部解出（两个内层 CRC 全过）且每帧记录的落点 opcode 与语义自洽（末帧 0x71、调用方帧 0x3）",
+    "i0ae 语料计数订正为 339 处（文档与台账不再写「0 处」）",
+    "npm run verify 绿（typecheck + 全测试 + 死写检查）"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/engine-slot.test.ts",
+    "app/amayui-emulator/test/slot-load-resume.test.ts",
+    "app/amayui-emulator/test/slot-load-transfer.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/engineSlot.ts",
+      "anchor": "parseEngineSlotBody",
+      "note": "状态主体解析（帧镜像/池/三张表/图像清单）+ 两个内层 CRC"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
+      "anchor": "resolveSlotResumeIp",
+      "note": "0xAE 的两条落点分支与走栈"
+    },
+    {
+      "file": "app/amayui-emulator/src/script/bin.ts",
+      "anchor": "ipTables",
+      "note": "脚本头三张表（0x71/0x3/0x8F）的实际内容"
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-slot.test.ts",
+      "anchor": "落点 opcode 与语义自洽",
+      "note": "E4：真槽逐帧落点自洽"
+    },
+    {
+      "file": "docs-new/03-engine/save-data.md",
+      "anchor": "### 7.2",
+      "note": "布局与续跑链路的主题文档"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "存档版本分支指令（读档续跑）",
+      "note": "0xAE 行：两条分支步长差异 + 语料订正"
+    },
+    {
+      "file": "analysis/functions.json",
+      "anchor": "restoreFrameFromSaveRecord_40F750",
+      "note": "第一层：按帧记录恢复脚本帧"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "save-slot-chain",
+      "note": "第二层：存档槽链路的 emulator 判定已更新"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "0x410160",
+      "0x40CD10",
+      "0x40F750",
+      "0x4192F0",
+      "0x40ED40",
+      "save-slot-chain"
+    ],
+    "tickets": [
+      "T-0056",
+      "T-0018"
+    ]
+  },
+  "id": "T-0059",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "open → doing —— 开工：解析 + 实现 + 守卫已落地（见 notes.md / changes.md）"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "doing → done —— 守卫与 E3/E4 证据见 changes.md；npm run verify 绿"
+    }
+  ]
+}

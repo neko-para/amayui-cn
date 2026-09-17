@@ -137,6 +137,19 @@ export class Engine {
   /** 当前帧深度（cur_script） */
   cur = 0;
   frames: Frame[] = [];
+
+  /**
+   * **读档续跑记录**（`tickets/T-0059`）：装载**引擎格式**的真槽（`0x1A1`/`0x19F`）时由
+   * `handlers/save-slot.ts` 写入，`0xAE`（`handlers/frame.ts`）逐帧消费，收尾清空。
+   *
+   * 为什么需要它：存档只记"哪一帧、哪张表的下标"（`frames[k][259]/[260]`），真正的 ip 要拿
+   * **帧里那份脚本自己的**两张表（`0x71` 消息表 / `0x3` call-script 表）换算，而这张换算
+   * 发生在**脚本侧的 `0xAE`**（`sub_4192F0`）里 —— 它按 `cur` 逐帧走栈（`sub_40F750(3)` 装载下一帧），
+   * 直到 `cur == savedCur` 才清「正在读档」门。
+   *
+   * `null` = 没有进行中的续跑（此时 `0xAE` 与引擎一样**直接返回**，不改任何帧状态）。
+   */
+  saveResume: import('./engineSlot.js').EngineSlotResume | null = null;
   globals = new GlobalArrays();
   native: NativeBridge;
   fileSource: FileSource | null = null;

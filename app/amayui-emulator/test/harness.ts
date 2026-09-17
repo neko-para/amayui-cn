@@ -49,6 +49,7 @@ export function mkEngine(ops: BinInstruction[], name = 'FAKE.BIN'): Engine {
     localVars: [0, 0, 0, 0, 0, 0],
     subHeaderLength: 0,
     tables: [],
+    ipTables: [[], [], []],
     instructions: ops.map((o, i) => ({ ...o, index: i })),
     labelTargets: new Set(),
     raw: new Uint8Array(0),

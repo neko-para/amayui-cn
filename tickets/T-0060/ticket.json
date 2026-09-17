@@ -1,0 +1,46 @@
+{
+  "title": "0x231（sub_4243F0，argc 4）未实现：真槽续跑后的 ADV 场景在 RESETREIGNAN.BIN 上死循环",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/ops",
+  "why": "T-0059 让真槽读档真的续跑之后，续跑链第一次走到这段 ADV 场景机制就撞上 0x231：test/slot-load-transfer.test.ts 的诊断显示 RESETREIGNAN.BIN 反复命中 0x231（一次 90 帧的运行里 33 万次），把循环条件卡死（当成 no-op 跳过时退出条件永不成立）。语料 25 处；opcode 表里 0x231 = sub_4243F0、状态仅映射（第一层无函数条目）。",
+  "acceptance": [
+    "读 sub_4243F0 的体内语义并把结论写进 analysis/functions.json（第一层）",
+    "按引擎语义实现 0x231（OPS 或 NATIVE_OPS）并给合成单测（E2）",
+    "真槽续跑链（test/slot-load-resume.test.ts 的端到端段）不再命中 0x231，且轨迹能继续推进"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/slot-load-transfer.test.ts",
+      "anchor": "被跳过的未实现 opcode",
+      "note": "诊断行：最高频 0x231@RESETREIGNAN.BIN×333434"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "| 0x231 | 4 |",
+      "note": "opcode 表：仅映射（handler=sub_4243F0）"
+    },
+    {
+      "file": "analysis/functions.json",
+      "anchor": "0x410160",
+      "note": "第一层暂无 0x4243F0 条目（--op 0x231 查不到）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0059"
+    ]
+  },
+  "id": "T-0060",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建"
+    }
+  ]
+}

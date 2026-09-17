@@ -276,11 +276,11 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
   这是**私有扩展**：引擎不会读它（真槽没有这一段）⇒ "引擎能读我们的槽"不成立，反过来我们只读引擎槽的头。
   尾块的定位依赖 §3 那个 `u32`（引擎的 `trailerDwords`，本工程写 0 当"空尾部块"）——读侧必须先吃掉它，
   否则状态块前面会多 4 个 `00` 字节（`T-0018` 实测踩过）。
-- `SLOT_GAPS`（诚实边界，别当保证）：① 真槽（format 1..3）的状态主体没解析（只接游玩秒数 + 空表）；
-  ② 只还原"当前帧 + 调用栈上的帧"；③ `0x19E` 的覆盖确认框没建模（宿主无对话框 ⇒ 恒等于"点了是"）；
+- `SLOT_GAPS`（诚实边界，别当保证）：① 真槽 `format = 3` 的状态主体**已解析并可续跑**（见 §7.2），
+  `format = 1/2` 的旧布局仍只读头；② 只还原"当前帧 + 调用栈上的帧"；③ `0x19E` 的覆盖确认框没建模（宿主无对话框 ⇒ 恒等于"点了是"）；
   ④ `.STH` 已解（320×180 24bpp BMP；`tickets/T-0036`），仍未做的是 DrawMode==1 的截图分支；
   ⑤ 按名读档族（`0x190`/`0x0AA`/`0x0AB`/`0x0AC`）未实现（语料 0 次）；
-  ⑥ ★**读档续不到存档当时的场景位置** —— 见 §7.1（本工程不解析真槽里"存档记录的脚本名 + 帧 ip 表"）。
+  ⑥ 续跑跳过了引擎的 `CALLBACK_LOAD.BIN` 那一跳、且存档里的解码图槽/图像重载清单**已解码未应用**（见 §7.2 末）。
 
 ### 7.1 ★读档不是"恢复两张表"，而是**控制转移**（`tickets/T-0056`）
 
@@ -312,15 +312,73 @@ if (v20 < 0) { sub_40F750(Engine, 1, 10); return 0; } // 解析不出 ⇒ 另走
 它就会带着**上一个子脚本**（确认框 `SBUNKI.BIN`，id 54，`SBUNKI.txt:118`）留下的身份去比对，
 撞上 `Depth が不正です 51 != 54`。emulator 修前正是这样（把读档当普通还原）⇒ 用户实测的崩溃。
 
-**emulator 实现**（`src/vm/handlers/save-slot.ts` 的 `transferToRootAfterLoad`）：面板/文本复位 + 置
-`Engine+383120` 门 + `cur = 0` + **重载根脚本 0**（引擎那里装的是存档记录的脚本名；本工程解析不了那一块，
-见 `SLOT_GAPS ⑥`）⇒ 启动链重新接管。**本工程格式**（带状态块的槽）仍直接续档、不转移；
-`0x19F` 同样不转移。守卫 `app/amayui-emulator/test/slot-load-transfer.test.ts`（E3：真槽 + 真资源根，
-读档后启动链重新跑到 TITLE 且不抛错）。
+**emulator 实现**（`src/vm/handlers/save-slot.ts`）：面板/文本复位 + 置 `Engine+383120` 门 + `cur = 0` +
+**把存档记录的脚本装进帧 0** —— `format = 3` 的真槽能解出记录 0 的脚本 id（见 §7.2），
+`format = 1/2` 等解不出的情形退回**重载根脚本 0**（`transferToRootAfterLoad`，启动链重新接管）。
+`0x19F`（`a6=0`）不转移。守卫 `app/amayui-emulator/test/slot-load-transfer.test.ts`（E3：真槽 + 真资源根，
+读档后启动链重新跑到 TITLE 且不抛错）与 `test/slot-load-resume.test.ts`（§7.2 的续跑）。
 
-★**顺带修的数据破坏**：真槽的两张表与「已使用文件」标志**未解析**（`parseSlotFile` 对 format 1..3 返回
-`engineFormat: true` + 空表）⇒ 修前 `applySaveDataTables(空表)` + `setUsedFileIds(空集)` 会把当前
-`SAVE.DAT` 的表（含 §1 的 `global 5`「已初始化」标志）与解锁标志**洗掉且无报错**；现在只在真读出来时才写。
+★**顺带修的数据破坏**：真槽的两张表与「已使用文件」标志**不在槽里**（`parseSlotFile` 对 format 1..3 返回
+`engineFormat: true` + 空表；那两张表在 `SAVE.DAT` 里，槽里对应的是**池**）⇒ 修前
+`applySaveDataTables(空表)` + `setUsedFileIds(空集)` 会把当前 `SAVE.DAT` 的表（含 §1 的 `global 5`「已初始化」标志）
+与解锁标志**洗掉且无报错**；现在只在真读出来时才写。
+
+### 7.2 ★真槽（`format = 3`）的状态主体与**续跑**（`tickets/T-0059`）
+
+槽的 payload 是引擎自己的整份状态，**被 `sub_436E90` 置乱 + LZSS 压过**，与 `SAVE.DAT` 的表布局无关。
+解码链（`src/vm/engineSlot.ts` 逐条实现，本机 47 个真槽全过）：
+
+```text
+292 B 头（+240 = payload 逻辑字节数、+284 = format=3、+288 = aux=SaveVersion2=20）
+ 20 B 块：{storedDwords, ?, ?, seed1, seed2}
+  置乱流：storedDwords 个 dword（= 2×逻辑 dword）—— sub_436E90：out = a2 ^ (lo/a3 + (hi/a3)<<16)，
+          a2 += 0x0B0B0B0B、a3 = (a3 + 2818) & 0xFFFF（★a3 是 u16 会绕回；两个存储 dword 必须能被 a3 整除）
+  前 3 个逻辑 dword：{解压后字节数, 同上, 压缩流字节数}；其后是 LZSS 流（sub_436A80 = util/lzss.ts）
+  解压结果前 2 个 dword：两个内层 CRC（msb-first 与普通，**都覆盖其后全部 body**）
+```
+
+body（`a4 == 3` 布局，`sub_410160` raw 19703-19927 读 / `sub_40CD10` raw 17465-17632 写）：
+
+| 段 | 长度 | 内容 |
+|---|---|---|
+| 帧镜像 | `1044*savedCur + 22296` | +0 savedCur（走栈目标）/ +4 savedRet / +8 `Engine[174713]` / +12..51 `Engine+84088`（40 B 消息窗态）/ +52..1251 100 个**解码图槽**（每槽 12 B：id/flag/param）/ +1252..21251 1000 条 20 B 记录 / +21252+1044k **第 k 帧记录**（261 dword） |
+| 帧记录 | 每条 1044 B | `[0]` 返回帧（`frames[k][95795]`）/ `[1]` **脚本统一 id** / `[2]` 返回栈深度 / `[3..]` 返回栈 = **表 C 下标** / `[259]` = **`0x71` 消息表下标** / `[260]` = **`0x3` call-script 表下标**（**末帧恒 −1**） |
+| 池块 | 24 B + 数据 | `{intsCount, floatsCount, stringsCount, 表A len, 表B len, 表C len}` + int 池（**定长稀疏数组**，本机 1,015,792 项 = 4 MB，`(global-int f8019)` 这类大下标就是它的下标）+ float 池 + 字符串区长度 + NUL 结尾串 + 三张**全局** ip 表 |
+| 图像清单 | 可变 | `{740, count, (1 dword + 740 B)×count, 2 dword + 740 B}` —— 读档时按 id 重新解码图像（`sub_4559C0`） |
+
+**三个池在文件里是明文**（引擎的 `ENC`/`DEC` 只发生在内存侧：`ENC(x) = ROL(key ^ ROR(x,7),21)`、
+`DEC(x) = ROR(key ^ ROL(x,11),25)`，`key` = 每次启动 `rand()` 派生的 `_this[97059]`）⇒ 装载时直接读、
+不需要密钥（`sub_40CD10` 写进文件的就是 `DEC(内存值)` = 明文）。★**但写回内存时 `int` 池必须再 `ENC` 一遍**
+（`0x1A1` 的 raw 38433-38438 就是干这个的），因为读侧一律 `DEC` 还原 ⇒ 少这一步**不报错**、只是续跑后
+**所有全局量都读成垃圾**（实测：漏了它，续跑链会提前停在 `SETADVFLAG.BIN`；补上后能继续走到 `SETGARDEN.BIN`）。
+`float`/`string` 池没有这层（引擎直接读 `*(float*)(pool+4*i)` 与字符串指针）。
+
+**续跑链路**（引擎口径 → emulator 落点）：
+
+```text
+sub_410160 收尾：cur = 0、Engine[95780] = 1（读档门）、帧 0 ← CALLBACK_LOAD.BIN
+CALLBACK_LOAD exit 时 frames[0][95795] == -11 ⇒ sub_41A820 走「按存档版本重装」→ sub_40F750(3, sv2)
+sub_40F750(3)：帧[cur] ← 记录[cur] 的脚本（sub_40ED40）、返回栈 ← 表C[下标]+3、ip 指向脚本入口（95782 = 95781）
+脚本入口的 i0ae（0xAE，语料 **339 处**）：ip ← 表B[记录[260]]（命中则 95805 = 3 ⇒ 落到**调用点的下一条**）
+                                    否则 ip ← 表A[记录[259]]（95805 = 0 ⇒ **重放这条消息**）
+                                    cur == savedCur ⇒ 95777 ← savedRet、95780 = 0（收尾）
+                                    否则 95776 = cur+1 + sub_40F750(3)（装下一帧）
+```
+
+⇒ **落点语义**：末帧停在一条 `0x71`（显示消息）⇒ 续跑重放存档当时那句话；更早的帧停在一条 `0x3`
+（call-script）⇒ 续跑从**它的下一条**开始（调用点不重放，返回栈已由装载恢复）。
+
+emulator 侧：`src/vm/engineSlot.ts`（解析）+ `handlers/save-slot.ts`（`restoreEngineSlot`：还原池/帧记录、
+装帧 0）+ `handlers/frame.ts` 的 `op_save_version_branch`（`0xAE` 真实现）+ `Engine.saveResume`。
+**已知偏离**（`SLOT_GAPS ⑥`）：① 跳过 `CALLBACK_LOAD.BIN` 那一跳（emulator 能直接装帧脚本；引擎因为装载
+发生在帧派发里才要绕回调）⇒ 回调的副产物（charm/LOADCHARM 绘制管线、savemesskip 复位）不复现；
+② 存档里的解码图槽与图像重载清单**已解码未应用**（emulator 的纹理由脚本 `set-texture` + 宿主按 id 惰性解码重建）；
+③ 镜像里那 40 B 消息窗态未还原（emulator 的 msgwin 有自己的状态）。
+
+**E4/E3 证据**：47 个真槽的两个内层 CRC 全过，且**每帧记录的落点 opcode 与语义自洽**
+（末帧 = `0x71`、调用方帧 = `0x3`，共 11 帧实测）—— 守卫 `test/engine-slot.test.ts`；
+真 `SAVE00.DAT` 装载后帧 0 = `SYSTEM4.BIN`、第一步走栈真的把存档帧脚本装进帧 1 —— 守卫
+`test/slot-load-resume.test.ts`。
 
 
 ## 8. 相关

@@ -15,7 +15,9 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
 import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb } from '../saveSlot.js';
+import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
 import { decodeBmp, encodeBmp } from '../bmp.js';
+import { enc } from '../bits.js';
 import type { Engine } from '../engine.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../ops.js';
@@ -77,6 +79,88 @@ export interface SlotLoadOutcome {
   transferredTo: number | null;
 }
 
+/**
+ * **真游戏槽（引擎格式 3）的续跑装载**（`tickets/T-0059`）—— 逐条对齐 `sub_410160` 的 a4=3 段。
+ *
+ * 引擎那份 `sub_410160` 做的事（raw 19703-19927）与本函数的对应关系：
+ *
+ * | 引擎 | 这里 |
+ * |---|---|
+ * | `memcpy(Engine+604840, Src, 1044*n+22296)`（帧镜像） | `decodeEngineSlot` 解析出帧记录（不建镜像） |
+ * | 池块 → `Engine+382976/382984/382992`（int/float/string 池） | `e.globals.int/float/str`（**文件里就是明文**） |
+ * | 100 个解码图槽 + 1000 条 20 B 记录（`sub_4559C0` 按 id 重载图像） | 记「已使用文件」（`markFileUsed`）；**图像本身不重载**（见 `SLOT_GAPS`） |
+ * | `Engine[698852] = 镜像[2]` | `engineValues.musicField`（`_this[174713]`） |
+ * | 面板/文本复位（`sub_4B5090`/`sub_403EF0`×2） | `routes.reset()`/`msgwin.reset()`（与 `transferToRootAfterLoad` 同口径） |
+ * | `Engine[383120] = 1`（读档门）、`Engine[383104] = 0`（cur） | `loadInProgress = 1`、`e.cur = 0` |
+ * | 帧 0 ← `CALLBACK_LOAD.BIN`；它 `exit` 时 `frames[0][95795] == -11` ⇒ `sub_40F750(3)` 再装 **记录 0 的脚本** | 直接装记录 0 的脚本（**省掉回调那一跳**，见 `SLOT_GAPS` 的偏离说明） |
+ * | 各帧脚本/ip/返回栈由脚本侧 `0xAE` 走栈恢复 | `e.saveResume` + `handlers/frame.ts` 的 `0xAE`（忠实实现） |
+ *
+ * 返回 `true` = 续跑已就绪（调用方只需把控制交给帧 0 的入口）。
+ */
+async function restoreEngineSlot(e: Engine, bytes: Uint8Array): Promise<boolean> {
+  const dec = decodeEngineSlot(bytes);
+  if (!dec.ok) {
+    e.native.log(`[slot-load] 真槽状态主体未解析（${dec.reason}）⇒ 退回"重载根脚本"（见 SLOT_GAPS）`);
+    return false;
+  }
+  const p: EngineSlotPayload = dec.payload;
+  const frame0 = p.frames[0];
+  const fs = e.fileSource;
+  if (!frame0 || !fs?.readScript) return false;
+  const boot = await fs.readScript(frame0.scriptId);
+  if (!boot) {
+    e.native.log(`[slot-load] 记录 0 的脚本 0x${frame0.scriptId.toString(16)} 读不到 ⇒ 退回"重载根脚本"`);
+    return false;
+  }
+  const script = parseScriptBytes(boot.data);
+
+  // ① 三个池（**文件里是明文**：引擎的 ENC/DEC 只发生在内存侧，见 `analysis/fields.json` 的 DEC/ENC 口径）。
+  //    ★int 池必须 **ENC** 后再进 `Engine.globals.int` —— 引擎在 `0x1A1` 里读完池后正是**整体 ENC 一遍**
+  //    （raw 38433-38438：`pool[i] = ENC(key, pool[i])`，`key = _this[97059]`），而操作数读取侧一律
+  //    `DEC(key, ...)`（`operand.ts` 的 `readIntOperand`）⇒ 存明文会让续跑后的**所有全局量读成垃圾**。
+  //    float/string 池没有这层（引擎直接读 `*(float*)(pool+4*i)` / 字符串指针）。
+  //    int 池是**定长稀疏数组**（本机真槽 1,015,792 项、非零 ~1.2 万）⇒ 只装非零项（读侧缺省即 0）。
+  e.globals.int.clear();
+  for (let i = 0; i < p.ints.length; i++) {
+    const v = p.ints[i]!;
+    if (v !== 0) e.globals.int.set(i, enc(e.key, v));
+  }
+  e.globals.float.clear();
+  for (let i = 0; i < p.floats.length; i++) if (p.floats[i] !== 0) e.globals.float.set(i, p.floats[i]!);
+  e.globals.str.clear();
+  for (let i = 0; i < p.strings.length; i++) if (p.strings[i] !== '') e.globals.str.set(i, p.strings[i]!);
+
+  // ② 这一批图像/记录是存档当时"按统一 id 打开过"的文件 ⇒ 引擎的 FileDB「已使用」表里会有它们
+  //    （`0x19D` 的鉴赏/解锁判据读的就是那张表）。槽本身不存标志表（那份在 `SAVE.DAT`）⇒ 这里只补记。
+  for (const s of p.images) if (s.id >= 0) e.markFileUsed(s.id);
+  for (const r of p.records) if (r.id >= 0) e.markFileUsed(r.id);
+
+  // ③ 面板 / 文本复位（引擎 raw 19913-19915；与 `transferToRootAfterLoad` 同一口径）。
+  e.routes.reset();
+  e.msgwin.reset();
+  e.native.msgWinClearAll?.();
+
+  // ④ 帧 0 ← 记录 0 的脚本（= 引擎 `sub_40F750(3)`：装脚本 + 恢复返回栈；**ip 不设** ——
+  //    目标脚本入口那条 `i0ae` 会按记录把 ip 落到存档位置，见 `handlers/frame.ts`）。
+  const frame = e.frames[0]!;
+  loadScriptIntoFrame(frame, script, boot.name, frame0.scriptId);
+  const ret = resolveSlotRetStack(script, frame0);
+  frame.retStack = ret.retStack;
+  frame.caller = frame0.returnFrame;
+  e.cur = 0;
+
+  // ⑤ 读档门 + 续跑记录（`0xAE` 消费）。
+  e.engineValues.set(ENGINE_FIELD.musicField, p.pre8); // 引擎 `Engine[698852] = 镜像[2]`
+  e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
+  e.saveResume = { savedCur: p.savedCur, savedRet: p.savedRet, frames: p.frames };
+  e.native.log(
+    `[slot-load] 真槽续跑就绪：帧 0 = ${boot.name}(id=0x${frame0.scriptId.toString(16)})、savedCur=${p.savedCur}、` +
+      `池 int=${p.ints.length}/float=${p.floats.length}/str=${p.strings.length}、帧记录 ${p.frames.length} 条` +
+      `${ret.dropped ? `（返回栈丢 ${ret.dropped} 项）` : ''}`,
+  );
+  return true;
+}
+
 /** 从槽文件里恢复状态（`0x1A1` / `0x19F`）。返回状态码 + 是否控制转移（见 `transferToRootAfterLoad`）。 */
 export async function loadSlotIntoEngine(
   e: Engine,
@@ -102,7 +186,24 @@ export async function loadSlotIntoEngine(
     e.setUsedFileIds(usage.usedFileIds);
   }
 
-  // ② 本工程状态块（**只有我们自己写的槽才有**：真游戏槽、以及早期没写尾块的槽都是 null，见 `SLOT_GAPS`）。
+  // ② 引擎格式（真游戏槽，`format >= 1`）：解**状态主体**（帧记录 + 三个池）→ 交 `0xAE` 走栈续跑。
+  //    ★这是 `tickets/T-0059` 的落地：能解出来就**真的续到存档当时的脚本与消息**（不再退回根脚本）。
+  //    解不出来（旧布局 1/2、坏档、脚本资源缺失）⇒ 如实退回"重载根脚本"，见 ④。
+  if (engineFormat) {
+    e.playSeconds = parsed.data.header.playSeconds; // 头 +280（引擎装载时也会带上）
+    if (await restoreEngineSlot(e, bytes)) {
+      // 帧 0 = 记录 0 的脚本，从**它的入口**继续跑（引擎 `sub_40F750(3)` 装载后的位置就是入口）；
+      // 入口那条 `i0ae` 会把 ip 落到存档位置并逐帧走栈。
+      return { code: 0, transferredTo: 0 };
+    }
+    if (full) {
+      await transferToRootAfterLoad(e);
+      return { code: 0, transferredTo: e.curScript().ip };
+    }
+    return { code: 0, transferredTo: null };
+  }
+
+  // ③ 本工程状态块（**只有我们自己写的槽才有**：真游戏槽、以及早期没写尾块的槽都是 null，见 `SLOT_GAPS`）。
   if (state) {
     e.key = state.key >>> 0;
     e.globals.int = new Map(state.globals.int);
@@ -127,8 +228,8 @@ export async function loadSlotIntoEngine(
     e.playSeconds = state.playSeconds;
     return { code: 0, transferredTo: null }; // 能直接续档 ⇒ 不转移（本工程格式的既定口径）
   }
-  // ③ 引擎格式的槽（真游戏写的）/ 没有状态块的槽：状态主体未解析（`SLOT_GAPS`），但**游玩秒数在头里**（`+280`）
-  // ⇒ 至少把它接上：引擎装载时把 `+280` 存进容器 `[260]`、再把 `[259] = [260]`、`[258] = now`
+  // ④ 本工程格式但**没有状态块**的槽（早期写的 / 只存了两张表）：状态主体缺失 ⇒ 续不上，只能靠头里的
+  // **游玩秒数**（`+280`）接上：引擎装载时把 `+280` 存进容器 `[260]`、再把 `[259] = [260]`、`[258] = now`
   // （raw 45085 / 45099），下次存档算的是 `[1036] - [1032] + timeGetTime()/1000`（raw 44812）——
   // 不接的话读真槽再存档会让 +280 从 0 重新开始。
   e.playSeconds = parsed.data.header.playSeconds;

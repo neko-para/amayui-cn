@@ -15,10 +15,11 @@
 |---|---|---|
 | `28-42` | `i071 8` | 启动即逐个 i071 1..8（清/开 8 个消息窗） |
 | `40-44` | `i073 1 37a 6e c 0 0 23 23 a 64` | 窗 1 的字格设置（0x73 的 10 个操作数：格尺寸/格数/节拍 0x64=100ms）——引擎『逐字显现』的入口 |
-| `120-130` | `i075 1e` | 全局主字号 30（0x75） |
 | `71-84` | `load-int (global-int 5)` | ★配置装载分支：`load-int (global 5)` 读 SAVE.DAT 里的「已初始化」标志 —— 有 ⇒ 73 行 `call-script 5258 LOADCONFIG`（load-int/load-string 把用户设置读回 global）+ 74 行 LOADCHARM；没有 ⇒ 78 行 `call-script 51dc INITCONFIG`（写默认值 + save-int/save-string 登记）+ 79 行 INITCHARM + 80/81 行 `mov (global 5) 1` + `save-int (global 5)`；两条路径都汇到 84 行 `call-script 51db CHECKCONFIG`（校验字体名，装不上就回退默认并重新 save-string） |
-| `476-480` | `label_00001ec8` | 子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正） |
 | `86-86` | `i0fe c` | ★全工程唯一一处 SetKeyTotal（`0xFE`）：`i0fe c` ⇒ `Engine[517] = 12`。它就是 `0x100` 在**掩码为空**时派发的「默认键」槽下标（菜单脚本登记的 13 个 `joy-callback 0..c` 的最后一个）——见 tickets/T-0046 与 docs-new/03-engine/input-system.md §7c |
+| `120-130` | `i075 1e` | 全局主字号 30（0x75） |
+| `141-150` | `label_00000b00` | ★读档续跑的**落点入口**（label_00000b00）：i0ae（0xAE）在读档流程里把本帧 ip 重算到存档位置并切到存档帧 —— 若没有它，下面两行会把玩家送回 LOGO/TITLE（call-script 5262 LOGO / 5263 INIT / 5264 TITLE）。load-show-logo 读 Engine[96983]（exit-script 置 0 ⇒ 回标题后跳过 LOGO） |
+| `476-480` | `label_00001ec8` | 子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正） |
 
 ## 关键槽 / 局部量
 
