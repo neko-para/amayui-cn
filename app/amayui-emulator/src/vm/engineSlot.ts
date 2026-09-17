@@ -89,6 +89,22 @@ export interface EngineSlotFrame {
   messageIdx: number;
   /** `0x3`（call-script）表下标（记录[260]）；-1 = 不是调用点（末帧恒 -1）。 */
   callIdx: number;
+  /**
+   * **直接落点**（本工程槽 `format = 0` 专用；引擎真槽没有这一格）。
+   *
+   * 引擎的存档记录存的是"**表下标**"（`[259]`/`[260]`），落点要拿帧里那份脚本的两张表换算；
+   * 而本工程槽存的就是 emulator 的**指令下标** ⇒ 直接落这里。`0xAE` 见到它就跳过表换算
+   * （也不做 `95805 = 3` 那种"前进 3 dword"——存下来的就是"该执行的那条"）。
+   */
+  instr?: number;
+  /**
+   * **直接返回栈**（本工程槽 `format = 0` 专用）：emulator 口径的"返回点 dword 偏移"数组
+   * （= `Frame.retStack`，`op_call` 压的是 `指令.index + 3`）。
+   *
+   * 引擎真槽用的是 `retIdx`（表 C 下标，靠 `resolveSlotRetStack` 换算）；本工程槽直接存 emulator 的值
+   * ⇒ 走栈装载时用它覆盖脚本装载时的空栈。
+   */
+  retStack?: number[];
 }
 
 /** 一个「解码图槽」（镜像 +52+12k）。 */

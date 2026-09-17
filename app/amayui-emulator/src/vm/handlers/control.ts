@@ -366,6 +366,10 @@ const op_exit_script: OpHandler = async (c) => {
   //   **上一局存档的帧栈**上（脚本入口都有 `i0ae`，339 处）。
   c.e.saveResume = null;
   c.e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+  // ★`0x1AD` 记的"存档帧"也要作废（`tickets/T-0061`）：它按引擎口径只在 `i1ad` 时更新，
+  //   而新一局的脚本要到进主循环前才 `i1ad` ⇒ 不清的话"回标题 → 新开一局 → 立刻存档"会按
+  //   **上一局**的帧号退栈（存出一份指向错误帧的档）。
+  c.e.engineValues.set(ENGINE_FIELD.storedCur, -1);
   // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。
   if (!c.e.fileSource) throw new ExitScript();
   const boot = await c.e.fileSource.readScript(0);

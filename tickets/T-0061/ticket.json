@@ -1,0 +1,69 @@
+{
+  "title": "存档退栈 + 读档转移：从 ADV 存档菜单存/读档不得停在菜单上",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户实测：进第一个 ADV 场景后存档，槽文件写出（SAVE70.DAT）成功，但**读档后停在存档界面**（没有回到 ADV 场景）。根因两条（都在本工程 format=0 槽这条链上）：① 存档没按引擎口径退栈 —— 引擎写入内核 sub_40CD10 的 case 3 用 _this[166963]（= 0x1AD `i1ad` 记的帧）而不是当时的 cur，每个 ADV 脚本都在进主循环前 i1ad（src/$1$SC0330.txt:44-46；语料 1100 处/337 脚本）⇒ 引擎存的是 ADV 帧，我们存的是菜单帧；② 读档没有放弃调用方 —— 引擎 sub_410160 的 a6=1 段把 cur=0 并换掉脚本（raw 19464-19476），我们此前对本工程格式「不转移」⇒ SAVE.BIN 继续跑、菜单留在屏上。",
+  "acceptance": [
+    "存档写出的槽 cur = i1ad（0x1AD）记的帧（未调用过 i1ad 时退回 cur），帧记录只铺 0..该帧",
+    "帧记录带帧号 index（引擎按帧号铺镜像）与返回帧链 caller（引擎记录 [0]）",
+    "读档后 cur = 状态块的 cur、落在记的 ip、且**调用方帧的 ip 不前进**（控制转移）",
+    "老槽（无 index/caller 字段）按数组序归位且不炸",
+    "守卫 test/slot-save-resume.test.ts + test/slot-load-transfer.test.ts 全绿；npm run verify 绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-save-resume.test.ts",
+    "app/amayui-emulator/test/slot-load-transfer.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "按 0x1AD 记录的帧退栈",
+      "note": "存档退栈（storedCur 优先）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "控制转移",
+      "note": "读档转移控制（放弃调用方）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/saveSlot.ts",
+      "anchor": "index?: number;",
+      "note": "帧记录带帧号与 caller"
+    },
+    {
+      "file": "docs-new/03-engine/save-data.md",
+      "anchor": "### 7.3",
+      "note": "契约表：退栈/转移/帧号/返回帧链"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ],
+    "analysis": [
+      "0x40CD10",
+      "0x410160"
+    ],
+    "tickets": [
+      "T-0018",
+      "T-0059"
+    ]
+  },
+  "id": "T-0061",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "open → doing —— 退栈/转移已实现并守卫"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "doing → done —— 退栈/转移/帧号/返回帧链已实现并守卫；用户那份 SAVE70 的 E4 实证见 notes.md"
+    }
+  ]
+}

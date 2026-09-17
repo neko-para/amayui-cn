@@ -17,6 +17,8 @@ import {
   scAnimationsPending,
   sceneNeedsRender,
   scClearDrawContainer,
+  scClearMeshSlots,
+  scClearSlotRecords,
   scConfigureDrawItem,
   scGetDrawItemPos,
   scGetDrawItemPivot,
@@ -324,6 +326,19 @@ export class HeadlessScene implements NativeBridge {
 
   clearDrawContainer(): void {
     scClearDrawContainer(this.scene);
+  }
+
+  /** `0x32B`（sub_41A4A0）：清网格槽表（headless 只有模型 ⇒ 清 `scene.meshes`）。 */
+  clearMeshSlots(): void {
+    const n = scClearMeshSlots(this.scene);
+    if (n > 0) this.log(`clearMeshSlots: 释放 meshes=${n}`);
+  }
+
+  /** `0x259`（sub_41A3A0）：清绘制记录账本（`drawItems` + 窗口文本；保留网格与纹理对象）。 */
+  clearSlotRecords(): void {
+    const n = scClearSlotRecords(this.scene);
+    this.slotImgid.clear(); // 记录里的「槽→文件名 id」也一并清（引擎同：只清记录不 delete 对象）
+    if (n > 0) this.log(`clearSlotRecords：释放绘制记录 drawItems=${n}（保留网格/纹理对象）`);
   }
 
   setDrawPos(handle: number, x: number, y: number, z: number): void {

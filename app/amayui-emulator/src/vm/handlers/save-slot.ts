@@ -14,7 +14,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
-import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb } from '../saveSlot.js';
+import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
 import { decodeBmp, encodeBmp } from '../bmp.js';
 import { enc } from '../bits.js';
@@ -51,8 +51,11 @@ import { ENGINE_FIELD } from '../engineFieldIds.js';
  */
 async function transferToRootAfterLoad(e: Engine): Promise<void> {
   // 面板 + 文本/窗口复位（raw 19466-19468）。panelB（`Engine+21976`）在 emulator 未建模。
-  e.routes.reset(); // = sub_403EF0(panelA)
-  e.msgwin.reset(); // ≈ sub_4B5090（文本/窗口对象复位）
+  // ★注：`sub_4B5090` 在台账里是「设备重建后重装 SE」（`se_reload_all_4B5090`）⇒ 下面这两行**不是**它的等价物，
+  //   而是"把屏上那份文本/窗口状态清掉"的**观测等价物**（引擎另用镜像里那 40 B 窗口态 + 面板复位做到同一件事，
+  //   见 `docs-new/03-engine/save-data.md` §7.3）。
+  e.routes.reset(); // = sub_403EF0(panelA)：面板命中区/路由表复位
+  e.msgwin.reset(); // 文本窗口对象复位（清屏上残留的文本）
   e.native.msgWinClearAll?.(); // 宿主侧文本图层同清（与 exit-script 同口径）
   // 「正在读档」门：`0xAE`（存档版本分支）读的就是它。语料里 `0xAE` 出现 0 次 ⇒ 这里只如实置位。
   e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
@@ -136,6 +139,10 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array): Promise<boolean>
   for (const r of p.records) if (r.id >= 0) e.markFileUsed(r.id);
 
   // ③ 面板 / 文本复位（引擎 raw 19913-19915；与 `transferToRootAfterLoad` 同一口径）。
+  //   ★**不**在这里整批清绘制项（`tickets/T-0063`）：ADV 场景的绘制是**一次性**的
+  //   （实测 SN0000/SC0330 主循环之后的 17000 行里只有 14~16 处 `draw-texture`、2~3 处 `i20c`），
+  //   读档时清掉就再也画不回来。引擎靠的是"**续跑的脚本从入口重跑一遍**"（场景 init 重画背景、
+  //   并在 init 里 `i259` 清掉上一场留下的绘制记录）——emulator 现在与本工程槽共用同一条路（见下）。
   e.routes.reset();
   e.msgwin.reset();
   e.native.msgWinClearAll?.();
@@ -209,24 +216,77 @@ export async function loadSlotIntoEngine(
     e.globals.int = new Map(state.globals.int);
     e.globals.float = new Map(state.globals.float);
     e.globals.str = new Map(state.globals.str);
-    // 帧：按 scriptId 重新读回脚本字节再落 ip/返回栈（引擎的 `0xAE` 会按存档版本重算 ip，
-    // 本工程写的是**绝对 ip**，无需重算；`0xAE` 仍在 `handlers/frame.ts` 里独立实现）。
-    for (let i = 0; i < state.frames.length && i < e.frames.length; i++) {
-      const f = state.frames[i]!;
-      const frame = e.frames[i]!;
-      if (frame.scriptId !== f.scriptId || !frame.script) {
-        // 脚本不在该帧里（跨实例读档的常见情形）⇒ 按 scriptId 重读；
-        // 读不到（资源缺失）⇒ 保留现有脚本，只清 ip，避免"读档后跑到别的脚本里"。
-        const sb = await fs.readScript?.(f.scriptId);
-        if (sb) loadScriptIntoFrame(frame, parseScriptBytes(sb.data), sb.name || f.name, f.scriptId);
-        else frame.name = f.name || frame.name;
-      }
-      frame.ip = f.ip;
-      frame.retStack = [...f.retStack];
+    // 面板 / 文本复位（引擎 `sub_410160` 装载段：`sub_403EF0`×2 面板复位 + 镜像里那 40 B 窗口态）。
+    e.routes.reset();
+    e.msgwin.reset();
+    e.native.msgWinClearAll?.();
+    const legacy = state.frames.some((f) => f.index === undefined || f.caller === undefined);
+    if (legacy) {
+      e.native.log(
+        '[slot-load] 这个槽是修 T-0061 之前写的（没有帧号/返回帧链）⇒ 只能按数组序归位、返回帧按当前实例；' +
+          '若续档落点不对（例如停在存档菜单上），请用新版本**重新存一次**',
+      );
     }
-    e.cur = state.cur;
+    // ★**与引擎同一条续跑路**（`tickets/T-0063`）：每个存档帧都按 scriptId **装到入口（ip = 0）**，
+    //   然后把"该帧要落的指令"放进 `saveResume`，由脚本入口那条 `i0ae`（`0xAE`）自己落 ip、逐帧走栈，
+    //   走到 `savedCur` 收尾 —— 而不是直接把 `cur`/`ip` 摆到存档位置。
+    //   为什么必须这样：ADV 场景的绘制是**一次性**的（实测 SN0000/SC0330 主循环之后的 17000 行里只有
+    //   14~16 处 `draw-texture`），引擎读档后靠"**场景脚本从入口重跑**"把背景重画、并在场景 init 里
+    //   `i259`（清绘制记录）落掉上一场（这里是存档列表）留下的图形。直接落 ip 会跳过 init ⇒
+    //   界面残留 + 背景不重画（2026-09 用户实测：存档界面压在 ADV 上）。
+    const resumeFrames: import('../engineSlot.js').EngineSlotFrame[] = [];
+    let seq = 0;
+    let loadedAny = false;
+    for (const f of state.frames) {
+      const i = f.index ?? seq++;
+      const frame = e.frames[i];
+      if (!frame) continue;
+      if (f.scriptId >= 0) {
+        const sb = await fs.readScript?.(f.scriptId);
+        if (sb) {
+          loadScriptIntoFrame(frame, parseScriptBytes(sb.data), sb.name || f.name, f.scriptId);
+          loadedAny = true;
+        } else {
+          e.native.log(`[slot-load] 帧 ${i} 的脚本 0x${f.scriptId.toString(16)} 读不到 ⇒ 续跑会跳过这一帧`);
+        }
+      }
+      frame.retStack = [...f.retStack];
+      if (f.caller !== undefined) frame.caller = f.caller;
+      // 落点 = 存档时那条指令本身（本工程槽存的是**指令下标**，不是引擎的表下标 ⇒ `instr` 直落）
+      resumeFrames[i] = {
+        returnFrame: f.caller ?? -1,
+        scriptId: f.scriptId,
+        retIdx: [],
+        messageIdx: -1,
+        callIdx: -1,
+        instr: f.ip,
+        retStack: [...f.retStack],
+      };
+    }
+    // 数组下标 = 帧号（稀疏处留空；`0xAE` 走栈时跳过没有 `instr` 的格子）
+    resumeFrames.length = Math.max(resumeFrames.length, state.cur + 1);
     e.playSeconds = state.playSeconds;
-    return { code: 0, transferredTo: null }; // 能直接续档 ⇒ 不转移（本工程格式的既定口径）
+    // `0x1AD`（`i1ad`）那格跟进到续档后的帧；续跑完成前先不设，收尾时再设（见 `0xAE`）。
+    if (loadedAny && resumeFrames.length > 0) {
+      e.cur = 0; // 引擎：`Engine[383104] = 0`，从**帧 0 的入口**开始跑（`sub_40F750(3)` 装载后的位置）
+      e.saveResume = { savedCur: state.cur, savedRet: e.engineValues.get(ENGINE_FIELD.callRet) ?? 0, frames: resumeFrames };
+      e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
+      if (full) {
+        e.native.log(
+          `[slot-load] 本工程槽续跑就绪：帧 0 = ${e.frames[0]?.name}（从入口跑），savedCur=${state.cur}，` +
+            `逐帧落点已入队（脚本入口的 i0ae 会走栈）`,
+        );
+        return { code: 0, transferredTo: 0 };
+      }
+      return { code: 0, transferredTo: null }; // `0x19F`（a6=0）：引擎此处不转移（语料 0 处）
+    }
+    // 一个帧都装不上（资源缺失）⇒ 退回"重载根脚本"（并如实记日志）
+    e.native.log('[slot-load] 本工程槽的帧一个都没装上 ⇒ 退回"重载根脚本"（见 SLOT_GAPS）');
+    if (full) {
+      await transferToRootAfterLoad(e);
+      return { code: 0, transferredTo: e.curScript().ip };
+    }
+    return { code: 0, transferredTo: null };
   }
   // ④ 本工程格式但**没有状态块**的槽（早期写的 / 只存了两张表）：状态主体缺失 ⇒ 续不上，只能靠头里的
   // **游玩秒数**（`+280`）接上：引擎装载时把 `+280` 存进容器 `[260]`、再把 `[259] = [260]`、`[258] = now`
@@ -246,12 +306,37 @@ export async function loadSlotIntoEngine(
 export async function saveSlotFromEngine(e: Engine, slot: number): Promise<number> {
   const fs = e.fileSource;
   if (!fs?.writeSaveSlot) return 1;
-  const state = {
+  // ★**存档要退到哪一帧由脚本说了算**（`tickets/T-0061`）：引擎的写入内核 `sub_40CD10` 的
+  //   case 3 是 `v10 = _this[166963]; if (v10 < 0) v10 = _this[95776];` —— 而 `_this[166963]`
+  //   就是 `0x1AD`（`i1ad`，`sub_4196F0` raw 24806：`storedCur = cur`，语料 **1100 处 / 337 个脚本**）。
+  //   每个 ADV 脚本都在进主循环前 `i1ad`（例 `src/$1$SC0330.txt:44-46`：`call 场景初始化` → `i1ad` → `jmp 主循环`）
+  //   ⇒ 玩家从**存档菜单**里存盘时，`cur` 是菜单帧、而内存里那格仍是 ADV 帧 ⇒ **引擎存的是 ADV 帧**
+  //   （= 玩家说的"自动退栈"）。emulator 修前存的是 `e.cur`（菜单帧）⇒ 读档会停在菜单上。
+  const storedCur = e.engineValues.get(ENGINE_FIELD.storedCur) ?? -1;
+  const resumeCur = storedCur >= 0 && storedCur < e.frames.length ? storedCur : e.cur;
+  if (storedCur >= 0 && storedCur !== e.cur) {
+    e.native.log(
+      `[slot-save] 按 0x1AD 记录的帧退栈：cur=${e.cur} → 存 ${resumeCur}（引擎 sub_40CD10 的 _this[166963]）`,
+    );
+  }
+  const frames: SlotFrameState[] = [];
+  for (let i = 0; i <= resumeCur && i < e.frames.length; i++) {
+    const f = e.frames[i]!;
+    // ★**0..resumeCur 每一帧都写**（哪怕是空帧，`scriptId = -1`）：续跑是"从帧 0 的入口逐帧走栈"，
+    //   缺一格就走不下去（引擎的帧镜像同理：记录 `0..savedCur` 连续铺）。
+    frames.push({
+      index: i,
+      scriptId: f.script ? f.scriptId : -1,
+      name: f.name,
+      ip: f.ip,
+      retStack: [...f.retStack],
+      caller: f.caller, // ★返回帧链（引擎帧记录的 `[0]`）：不存的话续跑后 `exit` 会退回错帧
+    });
+  }
+  const state: SlotStateBlock = {
     key: e.key >>> 0,
-    cur: e.cur,
-    frames: e.frames
-      .filter((f) => f.script !== null)
-      .map((f) => ({ scriptId: f.scriptId, name: f.name, ip: f.ip, retStack: [...f.retStack] })),
+    cur: resumeCur,
+    frames,
     globals: {
       int: [...e.globals.int.entries()],
       float: [...e.globals.float.entries()],

@@ -228,8 +228,6 @@ const op_save_version_branch: OpHandler = async (c) => {
   if ((e.engineValues.get(ENGINE_FIELD.loadInProgress) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
   const sv1 = e.config ? cfgInt(e.config, CFG.setSaveVersion1, 0) : 0;
   const sv2 = e.config ? cfgInt(e.config, CFG.setSaveVersion2, 0) : 0;
-  const spec = SAVE_VERSION_BRANCH[sv1];
-  if (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2)) return;
   const resume = e.saveResume;
   if (!resume) {
     // 门开着但没有续跑记录：只可能是旧布局（sv1 = 1/2，本模块不解析）或装载失败留下的门。
@@ -239,6 +237,12 @@ const op_save_version_branch: OpHandler = async (c) => {
     c.log(`0xAE: 门开着但没有续跑记录（sv1=${sv1}/sv2=${sv2}）⇒ 清门（旧布局未解析，见 SLOT_GAPS）`);
     return;
   }
+  // ★本工程槽（`format = 0`）的记录是"**直接落点**"（`instr`，指令下标）⇒ 不需要存档版本分支选组
+  //   （那套 `sv1/sv2` 只管引擎帧记录的表下标槽位），所以版本不匹配也照样走；
+  //   引擎真槽仍按 `set:SaveVersion1/2` 严格选组（raw 24660-24703）。
+  const direct = resume.frames.every((f) => !f || f.instr !== undefined);
+  const spec = SAVE_VERSION_BRANCH[sv1];
+  if (!direct && (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2))) return;
   const cur = e.cur;
   const rec = resume.frames[cur];
   const frame = e.frames[cur];
@@ -250,7 +254,11 @@ const op_save_version_branch: OpHandler = async (c) => {
 
   // ① 按记录重算**本帧**的 ip（用本帧那份脚本自己的两张表；引擎 raw 24706-24723）。
   let landed: number | null = null;
-  if (frame.script) {
+  if (rec.instr !== undefined) {
+    // 本工程槽（`tickets/T-0063`）：记录里直接存了 emulator 的**指令下标** ⇒ 直落、不换算、不前进。
+    landed = rec.instr;
+    frame.ip = landed;
+  } else if (frame.script) {
     const ip = resolveSlotResumeIp(frame.script, rec);
     if (ip) {
       // 引擎：ipB 分支 95805 = 3 ⇒ ip 之后进 3 个 dword（= 调用点的下一条）；ipA 分支 95805 = 0 ⇒ 停在该指令。
@@ -265,7 +273,9 @@ const op_save_version_branch: OpHandler = async (c) => {
   if (cur === resume.savedCur) {
     e.engineValues.set(ENGINE_FIELD.callRet, resume.savedRet);
     e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
-    if (spec.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
+    // `0x1AD`（`i1ad`）那格跟进到续档后的帧（本工程槽的 `savedCur`）；引擎那边的脚本入口会自己 `i1ad`。
+    e.engineValues.set(ENGINE_FIELD.storedCur, cur);
+    if (spec?.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
     e.saveResume = null;
     c.log(`0xAE: 续跑收尾 —— cur=${cur} 落点=${landed ?? '（保持原 ip）'}（${frame.name}），读档门已清`);
     if (landed !== null) c.jump(landed);
@@ -274,30 +284,42 @@ const op_save_version_branch: OpHandler = async (c) => {
 
   // ③ 还没到存档帧 ⇒ `sub_40F750(3)`：把记录里**下一帧**的脚本装进 `cur+1`、恢复它的返回栈，然后切过去。
   //    （引擎把 `95776 = cur+1`，下一轮由新帧入口的 `i0ae` 再落 ip —— 所以这里**不设**新帧的 ip。）
-  const nextRec = resume.frames[cur + 1];
-  const nextFrame = e.frames[cur + 1];
-  if (!nextRec || !nextFrame) {
+  //    ★中间可能有**空帧**（本工程槽允许 `scriptId = -1` 的格子：预装帧/空槽）⇒ 往后找到第一个真帧。
+  let next = cur + 1;
+  while (next < resume.frames.length && (resume.frames[next]?.scriptId ?? -1) < 0 && resume.frames[next]?.instr === undefined) {
+    next++;
+  }
+  const nextRec = resume.frames[next];
+  const nextFrame = e.frames[next];
+  if (!nextRec || !nextFrame || next > resume.savedCur) {
+    // 走不到存档帧（记录缺失/越界）⇒ 清门收场，避免悬着（不是正常路径，记日志）
     e.saveResume = null;
     e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    c.log(`0xAE: 帧 ${next} 没有可装载的记录（savedCur=${resume.savedCur}）⇒ 中止续跑（读档门已清）`);
     return;
   }
   const src = await e.fileSource?.readScript?.(nextRec.scriptId);
   if (!src) {
     e.saveResume = null;
     e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
-    c.log(`0xAE: 帧 ${cur + 1} 的脚本 0x${nextRec.scriptId.toString(16)} 读不到 ⇒ 中止续跑（读档门已清）`);
+    c.log(`0xAE: 帧 ${next} 的脚本 0x${nextRec.scriptId.toString(16)} 读不到 ⇒ 中止续跑（读档门已清）`);
     return;
   }
   const nextScript = parseScriptBytes(src.data);
   loadScriptIntoFrame(nextFrame, nextScript, src.name, nextRec.scriptId);
-  const ret = resolveSlotRetStack(nextScript, nextRec);
-  nextFrame.retStack = ret.retStack;
+  // 返回栈：本工程槽直接带 emulator 口径的值（`retStack`）；引擎真槽用表 C 下标换算（`retIdx`）。
+  if (nextRec.retStack) {
+    nextFrame.retStack = [...nextRec.retStack];
+  } else {
+    const ret = resolveSlotRetStack(nextScript, nextRec);
+    if (ret.retStack.length > 0) nextFrame.retStack = ret.retStack;
+  }
   nextFrame.caller = nextRec.returnFrame;
   e.markFileUsed(nextRec.scriptId);
-  e.cur = cur + 1;
+  e.cur = next;
   c.log(
-    `0xAE: 续跑走栈 ${cur} → ${cur + 1}：装载 ${src.name}(id=0x${nextRec.scriptId.toString(16)})` +
-      `（返回帧=${nextRec.returnFrame}，返回栈 ${ret.retStack.length} 层${ret.dropped ? `，丢 ${ret.dropped}` : ''}）`,
+    `0xAE: 续跑走栈 ${cur} → ${next}：装载 ${src.name}(id=0x${nextRec.scriptId.toString(16)})` +
+      `（返回帧=${nextRec.returnFrame}，返回栈 ${nextFrame.retStack.length} 层）`,
   );
   c.jump(-1); // 控制流已转到新帧（它从入口 ip=0 开始跑）
 };

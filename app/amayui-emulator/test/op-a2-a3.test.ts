@@ -166,8 +166,14 @@ test('0xAE：非读档流程（门控 0）严格 no-op；门控置位时按版�
   step(0xae);
   assert.equal(e.engineValues.get(95780), 0, '无记录 ⇒ 清门（不留悬空门）');
 
-  // sv1=1 但 sv2 ≠ 20 ⇒ 不匹配该分支（引擎只在 sv2==20 时走版本 1）
+  // sv1=1 但 sv2 ≠ 20 ⇒ **引擎真槽**（表下标记录）不匹配该分支（引擎只在 sv2==20 时走版本 1）⇒ 门保持
   e.engineValues.set(95780, 1);
+  e.saveResume = {
+    savedCur: 1,
+    savedRet: 9,
+    // 表下标记录（`instr` 未定义）= 引擎真槽那条路 ⇒ 才需要版本分支严格选组
+    frames: Array.from({ length: 2 }, () => ({ returnFrame: -1, scriptId: 0, retIdx: [], messageIdx: -1, callIdx: -1 })),
+  };
   e.config.values.set('set:saveversion1', 1);
   e.config.values.set('set:saveversion2', 2);
   step(0xae);

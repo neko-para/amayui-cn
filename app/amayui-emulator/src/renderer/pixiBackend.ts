@@ -36,6 +36,8 @@ import {
   scPoolPending,
   sceneNeedsRender,
   scClearDrawContainer,
+  scClearMeshSlots,
+  scClearSlotRecords,
   scMsgWinClear,
   scMsgWinClearAll,
   scMsgWinSync,
@@ -822,9 +824,48 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} 文本窗=${wins}→0（保留纹理槽）`);
   }
 
+  /** `0x32B`（sub_41A4A0）：清网格槽表（引擎逐项 delete；emulator = 清 `scene.meshes`）。 */
+  clearMeshSlots(): void {
+    const n = scClearMeshSlots(this.scene);
+    if (n > 0) this.#pushLog(`clearMeshSlots: 释放 meshes=${n}`);
+    this.#markDirty();
+  }
+
+  /** `0x259`（sub_41A3A0）：清绘制记录账本（`drawItems` + 窗口文本；保留网格与纹理对象）。 */
+  clearSlotRecords(): void {
+    const n = scClearSlotRecords(this.scene);
+    this.textures.clearSlotRecords(); // 记录里的「槽→文件名 id」也一并清（引擎同：只清记录不 delete 对象）
+    if (n > 0) this.#pushLog(`clearSlotRecords: 释放绘制记录 drawItems=${n}（保留网格/纹理对象）`);
+    this.#markDirty();
+  }
+
   /** `0x20C`（sub_41A1A0 → `sub_4B4040(_this+80708)`）：帧刷新。渲染循环自行 present，这里只标脏。 */
   frameTick(): void {
     this.#markDirty();
+    const slot = this.scene.render4.renderTargetSlot;
+    if (slot < 0) return;
+    try {
+      this.present(); // 与渲染循环同一条合成路径（文本层 + 字格 + drawRoot）
+      // ★必须给**屏幕矩形**：`extract` 默认按 target 的 local bounds 出图，而 drawRoot/stage 的子节点
+      //   可能落在视口之外（宽背景、屏外精灵…）⇒ 那样得到的画布比屏幕大、内容整体错位，
+      //   再被 `i032` 缩进 320×180 就是"素材拼贴 + 各处缩放不一致"（2026-09 用户实测的混乱缩略图）。
+      const frame = new Rectangle(0, 0, this.app.screen.width, this.app.screen.height);
+      const canvas = this.app.renderer.extract.canvas({
+        target: this.stage,
+        frame,
+        resolution: 1, // 槽画布自己按 DPR 承担缩放；这里要的是逻辑尺寸的整帧
+      }) as HTMLCanvasElement;
+      // 取整张画布（万一宿主忽略了 `frame`，画布尺寸会≠屏幕 ⇒ 记一条日志便于定位，别静默拼贴）
+      const aspect = canvas.width / Math.max(1, canvas.height);
+      if (Math.abs(aspect - frame.width / frame.height) > 0.05) {
+        this.#pushLog(
+          `[render-target] 捕获画布 ${canvas.width}x${canvas.height} 与屏幕 ${frame.width}x${frame.height} 宽高比不符（extract 可能忽略了 frame）`,
+        );
+      }
+      this.textures.captureCanvasIntoSlot(slot, canvas, canvas.width, canvas.height);
+    } catch (err) {
+      this.#pushLog(`[render-target] 把帧捕获进槽 ${slot} 失败：${String(err)}`);
+    }
   }
 
   // ---- 动画求值 / 渲染驱动 ---- //

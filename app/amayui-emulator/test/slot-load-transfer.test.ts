@@ -36,6 +36,7 @@ import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { LOAD_IN_PROGRESS_FLAG } from '../src/vm/handlers/save-slot.js';
 import { runFrameLoop } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
+import { buildScriptBin } from './engineSlotFixtures.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -199,7 +200,7 @@ test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载）
   );
 });
 
-test('★边界：本工程格式（带状态块）仍直接续档，不转移', async () => {
+test('★边界：本工程格式（带状态块）续档走同一套「入口 → i0ae 落点」（`tickets/T-0063` 订正）', async () => {
   const { buildSlotFile } = await import('../src/vm/saveSlot.js');
   const native = new StubNative(() => {});
   const e = new Engine(native);
@@ -211,20 +212,29 @@ test('★边界：本工程格式（带状态块）仍直接续档，不转移',
     state: {
       key: 0,
       cur: 0,
-      frames: [{ scriptId: 51, name: 'CALLER.BIN', ip: 0, retStack: [] }],
+      frames: [{ index: 0, scriptId: 51, name: 'CALLER.BIN', ip: 1, retStack: [], caller: -1 }],
       globals: { int: [], float: [], str: [] },
       playSeconds: 7,
     },
   });
+  // 该帧的脚本要能读回来（续跑会把它**装到入口**，再等 i0ae 落点）
+  const frameBin = buildScriptBin([
+    { op: 0xae, args: [] },
+    { op: 0x71, args: [{ type: 0, raw: 1 }] },
+  ]);
   e.fileSource = {
     readSaveSlot: async (s: number) => (s === 3 ? bytes : null),
+    readScript: async (id: number) => (id === 51 ? { index: 51, name: 'CALLER.BIN', data: frameBin } : null),
   } as unknown as Engine['fileSource'];
   const instr0 = caller.script!.instructions[0]!;
-  await OPS.get(0x1a1)!(makeCtx(e, caller, instr0, e.native, () => {}));
-  assert.equal(e.cur, 0, '本工程格式：cur 取自状态块');
-  assert.equal(e.engineValues.get(LOAD_IN_PROGRESS_FLAG), undefined, '不置「正在读档」门 ⇒ 没转移');
+  const ctx = makeCtx(e, caller, instr0, e.native, () => {});
+  await OPS.get(0x1a1)!(ctx);
+  assert.equal(e.cur, 0, '本工程格式：逐帧走栈从帧 0 开始');
+  assert.equal(e.engineValues.get(LOAD_IN_PROGRESS_FLAG), 1, '置「正在读档」门 ⇒ 脚本入口的 i0ae 会走栈');
   assert.equal(e.playSeconds, 7, '状态块的游玩秒数被还原（= 走了续档那条路）');
-  assert.equal(e.curScript().name, 'CALLER.BIN', '调用方会话继续（不重载根脚本）');
+  assert.equal(e.curScript().name, 'CALLER.BIN', '帧 0 = 状态块里那一帧的脚本（本例恰好也是 CALLER.BIN）');
+  assert.equal(ctx._nextIp, 0, '★必须 `jump(0)`：帧 0 从**入口**跑（不跳的话 stepOnce 会吃掉入口第一条）');
+  assert.equal(caller.ip, 0, '★调用方（帧 2 的 SAVE.BIN）被放弃：它的 ip 不前进');
 });
 
 test('★E3：真语料 —— SAVE.BIN 的读档路径**不**重登记鼠标回调，存档路径**重登记**（脚本侧口径棘轮）', () => {

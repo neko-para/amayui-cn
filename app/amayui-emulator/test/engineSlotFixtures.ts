@@ -12,6 +12,7 @@
  *  - 容器：292 B 头 + 20 B 块 + `sub_436E90` 置乱流（LZSS 压 + 两个内层 CRC）。
  */
 import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
+import { OPCODE_TABLE } from '../src/opcodes.js';
 import {
   SLOT_IMAGE_PRELUDE_BYTES,
   SLOT_IMAGE_SLOTS_AT,
@@ -32,6 +33,13 @@ export function buildScriptBin(ops: FakeOp[]): Uint8Array {
   const marks: { idx: number; op: number }[] = [];
   let dword = 0;
   for (const o of ops) {
+    // ★必须与真 opcode 表的 argc 一致：`parseScriptBytes` 按**真表**取参数个数，
+    //   少了/多了都会把后面的字节当操作数读（表现为越界 RangeError，像极了 fixture 写错）。
+    const def = OPCODE_TABLE.find((e) => e.opcode === o.op);
+    if (!def) throw new Error(`buildScriptBin: 未知 opcode 0x${o.op.toString(16)}`);
+    if (def.argc !== o.args.length) {
+      throw new Error(`buildScriptBin: 0x${o.op.toString(16)}（${def.name}）需要 ${def.argc} 个操作数，给了 ${o.args.length}`);
+    }
     marks.push({ idx: dword, op: o.op });
     code.push(o.op);
     for (const a of o.args) code.push(a.type, a.raw);

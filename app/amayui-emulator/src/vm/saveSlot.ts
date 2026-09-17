@@ -144,11 +144,25 @@ export function parseSlotHeader(bytes: Uint8Array, engineVersion = SAVE_ENGINE_V
 
 /** 一帧的存档快照（`Frame` 的可恢复子集）。 */
 export interface SlotFrameState {
+  /**
+   * **帧号**（`frames[]` 的下标）。
+   *
+   * 为什么要存它（`tickets/T-0061`）：引擎的帧记录是**按帧号铺的**（镜像里 `+21252+1044*k` 就是第 k 帧），
+   * 读侧 `sub_40F750` 也按帧号装载 ⇒ 帧号必须原样带过来。旧实现只写"有脚本的帧"、读侧按数组序归位
+   * ⇒ 一旦中间有空帧就会整体错位（写进另一个帧槽）。
+   * 老槽（本字段出现之前写的）没有它 ⇒ 读侧退化为"按数组序"（见 `loadSlotIntoEngine`）。
+   */
+  index?: number;
   /** 统一文件 id（引擎 `frames[cur][95796]`；读档时用它重新读回脚本字节）。 */
   scriptId: number;
   name: string;
   ip: number;
   retStack: number[];
+  /**
+   * **返回帧号**（引擎帧记录的 `[0]` = `frames[cur][95795]`）：该帧 `exit`(0x2) 时回到哪一帧（-1 = 无）。
+   * 不存它 ⇒ 续跑后的 `exit` 会退回**当前实例里那一格碰巧留下的值**（跨实例读档几乎必错）。
+   */
+  caller?: number;
 }
 
 /**

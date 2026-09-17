@@ -208,6 +208,40 @@ export function scSwapItems(s: SceneState, a: number, b: number): boolean {
   return { drawItems, meshes };
 }
 
+/**
+ * `0x32B`（`sub_41A4A0` raw 25411）：**清 D3DX 网格层级槽表**（`Scene+50708` 区，1000 槽）。
+ *
+ * 引擎逐项 `sub_4A0750 → sub_479A50` + delete 释放那些网格对象（与 `0x23D`/`0x259` 都不同族）。
+ * emulator 的网格对象就在 `scene.meshes` 里 ⇒ 等价物 = 整表清掉（真语料唯一调用点是
+ * `src/TITLE.txt:810-814` 的标题界面收尾：`i1f6` → release-texture → `i23d` → **`i32b`** → `ret`）。
+ */
+export function scClearMeshSlots(s: SceneState): number {
+  const n = s.meshes.size;
+  s.meshes.clear();
+  s.dirty = true;
+  return n;
+}
+
+/**
+ * `0x259`（`sub_41A3A0` raw 25357）：**清两张 1000×2 组 5 dword 记录表**（主/影 `_this[81174]`/`[86174]`，
+ * 共 20000 字节；`tickets/T-0063`）。每项字段 0 = 该槽绑定的**统一文件 id**（读档时用它按 id 重载图像，
+ * 见 `sub_410160` raw 19878-19893）、另有 +8/+12 两个绘制字段 ⇒ 它就是**绘制记录的账本**。
+ *
+ * 引擎口径 = 「只清记录、不 delete 对象」⇒ emulator 侧：清 `scene.drawItems`（含文本行 —— D3D 路径下
+ * 正文行本身就是 DrawItem）+ 清窗口文本，**保留**网格（那是 `0x32B` 的表）与纹理对象/画布。
+ *
+ * ★为什么这条很关键：每个 ADV 场景**开头**都会调它一次（语料 517 处，`src/$1$SC0330.txt:7`）——
+ * 引擎读档后是"场景脚本从入口重跑"（`sub_40F750(3)` 装载 rec[cur] 的脚本 ⇒ 入口 ip=0），
+ * 于是这一条会把**上一场（例如存档列表）留下的绘制记录**落掉、随后 init 再画一遍自己的场景。
+ */
+export function scClearSlotRecords(s: SceneState): number {
+  const n = s.drawItems.size;
+  s.drawItems.clear();
+  scMsgWinClearAll(s);
+  s.dirty = true;
+  return n;
+}
+
 /** `0x320` create-mesh 的载荷（`handlers/gfx-item.ts` 从操作数数组读好后送进来）。 */
 export interface MeshSpec {
   handle: number;

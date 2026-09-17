@@ -36,6 +36,7 @@ import {
 import { encodeSaveData } from '../src/vm/saveData.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { buildScriptBin } from './engineSlotFixtures.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -89,7 +90,15 @@ function memoryFs(): FileSource & { slots: Map<number, Uint8Array>; thumbs: Map<
     slots,
     thumbs,
     readFile: async () => new Uint8Array(0),
-    readScript: async () => null,
+    readScript: async (id: number) => ({
+      index: id,
+      name: 'SAVE.BIN',
+      // 续跑会**装脚本**（`tickets/T-0063`：帧要装到入口再由 i0ae 落点）⇒ 给一份最小可用脚本
+      data: buildScriptBin([
+        { op: 0xae, args: [] },
+        { op: 0x71, args: [{ type: 0, raw: 1 }] },
+      ]),
+    }),
     readSaveSlot: async (s) => slots.get(s) ?? null,
     writeSaveSlot: async (s, d) => void slots.set(s, d),
     deleteSaveSlot: async (s) => ({ dat: slots.delete(s), sth: thumbs.delete(s) }),
@@ -229,7 +238,12 @@ test('★0x19E 存档 → 0x1A1 读档：两张表（load-int/load-string）、�
   assert.equal(b.e.globals.float.get(0x41), 1.5);
   assert.equal(b.e.globals.str.get(0x42), 'こんにちは');
   assert.equal(b.e.playSeconds, 3661, '游玩秒数取整后写进槽（3661.5 ⇒ 3661）');
-  assert.equal(b.e.curScript().ip, 3, '当前帧 ip 应恢复到存档时的值');
+  // ★续跑改成"引擎那条路"（`tickets/T-0063`）：读档把帧装到**入口**、把落点放进 `saveResume`，
+  //   由脚本入口那条 `i0ae` 落 ip/走栈 ⇒ 这里断言"入队 + 帧 0 从入口跑"，落点在 `0xAE` 时生效。
+  assert.equal(b.e.cur, 0, 'cur = 0（引擎 `Engine[383104] = 0`：从帧 0 入口开始走栈）');
+  assert.equal(b.e.curScript().ip, 0, '帧 0 被装到入口');
+  assert.ok(b.e.saveResume, '续跑记录已入队（脚本入口的 i0ae 会用）');
+  assert.equal(b.e.saveResume!.frames[0]!.instr, 3, '落点 = 存档时那条指令（3）');
 });
 
 test('0x1AB 删槽 / 0x1AC 复制槽 / 0x1AE·0x1AF 的 .STH 往返', async () => {

@@ -7,14 +7,16 @@
 
 ## 概览
 
-共 **60** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **48** · 🚫 dropped **1**（P0 5 / P1 16）
+共 **63** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **49** · 🚫 dropped **1**（P0 5 / P1 19）
 
-按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `emulator/save-slot` 1 · `emulator/ops` 1
+按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 3 · `emulator/save-slot` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `emulator/ops` 1 · `renderer/scene` 1
 
-## 🔜 doing（1）
+## 🔜 doing（3）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
+| [`T-0062`](./T-0062/ticket.json) | P1 | bug | `renderer/scene` | 存档缩略图全黑：0x20D 渲染目标窗口里的 0x20C 必须把整帧画进该槽 | 3 | — | `notes.md` `changes.md` evidence/(2) | — |
+| [`T-0063`](./T-0063/ticket.json) | P1 | bug | `emulator/save-slot` | 读档后存档界面残留在 ADV 上；并补齐被忽略的 clearMeshSlots / clearSlotRecords | 4 | `app/amayui-emulator/test/slot-save-resume.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
 
 ## ⬜ open（10）
@@ -32,7 +34,7 @@
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | — | — |
 | [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | — | — |
 
-## ✅ done（48）
+## ✅ done（49）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -57,6 +59,7 @@
 | [`T-0056`](./T-0056/ticket.json) | P1 | bug | `emulator/vm` | 读档崩在 `Depth が不正です 51 != 54`（读档不是普通还原，而是控制转移）+ 该错误在控制面版看不到 | 6 | `app/amayui-emulator/test/slot-load-transfer.test.ts` `app/amayui-emulator/test/control-error-banner.test.ts` `app/amayui-emulator/test/save-slot-chain.test.ts` `app/amayui-emulator/test/save-slot.test.ts` | `notes.md` | — |
 | [`T-0057`](./T-0057/ticket.json) | P1 | refactor | `emulator/core` | emulator 实现审计与治理：消除『同一语义多处真源 / 魔法字段下标 / 临时补丁 / 静默错值』，把配置键、引擎字段与帧宿主收敛成单一建模 | 7 | `app/amayui-emulator/test/config-keys.test.ts` `app/amayui-emulator/test/engine-field-ids.test.ts` `app/amayui-emulator/test/engine-field-store.test.ts` `app/amayui-emulator/test/op-a2-a3.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/audio-opcodes.test.ts` | `notes.md` `changes.md` `design.md` | — |
 | [`T-0059`](./T-0059/ticket.json) | P1 | req | `emulator/save-slot` | 真游戏槽（format=3）读档续跑：解状态主体（帧记录+三个池）并让 0xAE 走栈 | 6 | `app/amayui-emulator/test/engine-slot.test.ts` `app/amayui-emulator/test/slot-load-resume.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0061`](./T-0061/ticket.json) | P1 | bug | `emulator/save-slot` | 存档退栈 + 读档转移：从 ADV 存档菜单存/读档不得停在菜单上 | 5 | `app/amayui-emulator/test/slot-save-resume.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |

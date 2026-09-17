@@ -469,6 +469,47 @@ export class TextureCache {
     this.log(`setSlotPixels slot=${slot} ${w}x${h}（.STH 缩略图 → 纹理槽）`);
   }
 
+  /**
+   * **把宿主合成的整帧写进某个纹理槽** —— `0x20D`（设渲染目标）+ `0x20C`（帧刷新）那条链
+   * （`tickets/T-0061`；脚本用它做存档缩略图：`create-texture 2 500 2d0 2` → `i20d 2` → `i20e` → `i20c`
+   * → `i20d -1` → `create-texture e 140 b4 2` → `i032 2 e …` → `i1ae … e`）。
+   *
+   * 引擎侧：`i20d` 把渲染目标切到该槽的 surface，`i20c`（`sub_4B4040` 帧刷新）就把**这一帧的场景**
+   * 画进那个 surface；emulator 的绘制是"按保留模型每帧重新合成"⇒ 等价物就是"合成一次、把结果拷进该槽的画布"。
+   * 与 `setSlotPixels` 同口径：只对 `create-texture` 出来的槽生效；物理像素由目标画布自身的 resolution 承担。
+   */
+  captureCanvasIntoSlot(slot: number, src: CanvasImageSource, srcW: number, srcH: number): boolean {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) {
+      this.log(`captureCanvasIntoSlot slot=${slot} 被忽略：该槽没有 create-texture 出来的表面`);
+      return false;
+    }
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return false;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cs.canvas.width, cs.canvas.height);
+    ctx.imageSmoothingEnabled = true; // 引擎这条路径的采样器是 LINEAR（见 blitSlotToSlot 的说明）
+    ctx.drawImage(src, 0, 0, Math.max(1, srcW), Math.max(1, srcH), 0, 0, cs.canvas.width, cs.canvas.height);
+    cs.tex.source.update();
+    this.log(`captureCanvasIntoSlot slot=${slot} ← 合成帧 ${srcW}x${srcH} → ${cs.canvas.width}x${cs.canvas.height}`);
+    return true;
+  }
+
+  /**
+   * `0x259`（`sub_41A3A0`）：**清槽记录表**（引擎清的是两张 1000×2 组 5 dword 记录表 —— 主/影
+   * `_this[81174]`/`[86174]`，每项字段 0 = 该槽绑定的**统一文件 id**；`tickets/T-0063`）。
+   *
+   * 引擎口径是「**只清记录、不 delete 对象**」⇒ 这里只丢 `槽 → imgid` 的登记，**保留**纹理对象与
+   * `create-texture` 出来的画布（`slotTex`/`#canvasSlots`）⇒ 已经在画的东西不会因此消失
+   * （`resolve()` 仍能给出 tex ✓），而尺寸查询/重取缓存要等脚本重新绑定。
+   */
+  clearSlotRecords(): number {
+    const n = this.#slotImgid.size;
+    this.#slotImgid.clear();
+    this.log(`clearSlotRecords：丢掉 ${n} 条 槽→imgid 记录（保留纹理对象/画布）`);
+    return n;
+  }
+
   /** `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。 */
   release(slot: number): void {
     this.slotTex.delete(slot);
