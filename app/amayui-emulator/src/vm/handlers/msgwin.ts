@@ -40,6 +40,8 @@ import {
 } from '../../text/layout.js';
 import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
@@ -198,7 +200,7 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
  * 与 `globalTextStyle` 的区别：这里把注音字体与竖排一起收进来，正好是"一次排版要用到的全部样式"，
  * 而几何（位置/尺寸/换行/对齐/层序）**不在**其中 —— 那些是逐窗字段，必须实时。
  */
-export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
+function globalFontSnapshot(e: Engine): FontStyleSnapshot {
   const m = e.msgwin;
   const core = globalTextStyle(e);
   const resolvedRuby = resolveFace(m.font.rubyFace, e.resourceVersion);
@@ -218,7 +220,7 @@ export function globalFontSnapshot(e: Engine): FontStyleSnapshot {
     outlineDy: core.outlineDy,
     lineSpacing: core.lineSpacing,
     // 引擎 `Font+235108` bit0（0x261 写）；未写时用随包 INI 的默认值
-    vertical: ((e.engineValues.get(80101) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
+    vertical: ((e.engineValues.get(ENGINE_FIELD.verticalText) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
   };
 }
 
@@ -277,7 +279,7 @@ function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
   const g = e.msgwin.gridOf(win);
   if (!g || !g.gate || g.cells <= 0 || g.cellW <= 0 || g.cellH <= 0) return undefined;
   const geom = e.msgwin.geom(win);
-  const followText = e.engineValues.get(21672) === 1 || (geom.x <= 0 && geom.y <= 0 && geom.w >= 640 && geom.h >= 360);
+  const followText = e.engineValues.get(ENGINE_FIELD.followTextMode) === 1 || (geom.x <= 0 && geom.y <= 0 && geom.w >= 640 && geom.h >= 360);
   let x = g.textX + geom.x;
   let y = g.textY + geom.y;
   if (followText) {
@@ -325,10 +327,10 @@ export function emitAllWins(e: Engine): void {
 }
 
 /** `message:ReadTextSkip` 当前取值：运行期覆盖（0x1CA 写入）优先，否则用启动配置，缺省 0。 */
-export function readTextSkipOf(e: Engine): number {
+function readTextSkipOf(e: Engine): number {
   const m = e.msgwin;
   if (m.readTextSkip !== null) return m.readTextSkip;
-  return e.config ? cfgInt(e.config, 'message:readtextskip', 0) : 0;
+  return e.config ? cfgInt(e.config, CFG.messageReadTextSkip, 0) : 0;
 }
 
 /**
@@ -349,7 +351,7 @@ export function readTextSkipOf(e: Engine): number {
  * ⇒ 任何一处漏掉回退（或改了键名）都会让"速度旋钮"只在部分路径生效。
  */
 export function messageSpeedOf(e: Engine): number {
-  return e.engineValues.get(21668) ?? (e.config ? cfgInt(e.config, 'message:messagespeed', 0) : 0);
+  return e.engineValues.get(ENGINE_FIELD.messageSpeed) ?? (e.config ? cfgInt(e.config, CFG.messageMessageSpeed, 0) : 0);
 }
 
 /**
@@ -497,7 +499,7 @@ const op_wait_for_input: OpHandler = (c) => {
   // ★这条查询同时是"**▼ 图标动画的武装**"：模数 = 精灵表格数 op9；`sub_453A90` 重启节拍 ⇒ 帧号归零。
   const grid = m.gridOf(w);
   m.charTotal = grid ? grid.cells : 0;
-  e.engineValues.set(107705, m.charTotal);
+  e.engineValues.set(ENGINE_FIELD.charModulus, m.charTotal);
   m.cellK = 0;
   // ★0 = "已预备、等本页逐字显完再起步"：引擎主循环里文字泵（sub_409400 的 `while(!sub_45BE20) Sleep`）
   //   是自旋的 —— 一页没贴完就走不到 raw 20887-20895 的图标分支 ⇒ 图标天然出现在文字之后。
@@ -515,7 +517,7 @@ const op_wait_for_input: OpHandler = (c) => {
       m.beginReveal(w, total, e.nowMs, messageSpeedOf(e));
       m.charMode = total > 0;
       m.charCursor = 0;
-      e.engineValues.set(107704, 0);
+      e.engineValues.set(ENGINE_FIELD.charCursor, 0);
       e.effectFlags |= CHAR_REVEAL_ACTIVE;
     }
   }
@@ -620,11 +622,11 @@ const op_char_reveal_switch: OpHandler = (c) => {
   const m = e.msgwin;
   const v = readIntOperand(e, c.frame, c.instr, 1);
   m.charModeArg = v;
-  e.engineValues.set(107706, v);
+  e.engineValues.set(ENGINE_FIELD.charModeArg, v);
   if (v !== 0) {
     m.charMode = true;
     m.charCursor = 0;
-    e.engineValues.set(107704, 0);
+    e.engineValues.set(ENGINE_FIELD.charCursor, 0);
     e.effectFlags |= CHAR_REVEAL_ACTIVE;
     // `sub_453A90`：重启节拍 ⇒ 已有显现状态的下一次推进点按当前节拍重排（不补走欠账）
     for (const [, st] of m.reveal) {
@@ -1028,7 +1030,7 @@ const op_align: OpHandler = (c) => {
 const op_set_default_window: OpHandler = (c) => {
   const e = c.e;
   const win = readIntOperand(e, c.frame, c.instr, 1);
-  e.engineValues.set(21631, win);
+  e.engineValues.set(ENGINE_FIELD.defaultWindow, win);
   e.msgwin.defaultWin = win;
 };
 
@@ -1088,8 +1090,8 @@ const op_font_list_name: OpHandler = (c) => {
  */
 const op_set_message_speed: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
-  c.e.engineValues.set(21668, v);
-  setConfigValue(c.e, 'message:messagespeed', v);
+  c.e.engineValues.set(ENGINE_FIELD.messageSpeed, v);
+  setConfigValue(c.e, CFG.messageMessageSpeed, v);
 };
 
 /**
@@ -1104,7 +1106,7 @@ const op_set_message_speed: OpHandler = (c) => {
  * 值会被后续 `0x1B5` 改写而还原不回去。
  */
 const op_set_message_speed_field: OpHandler = (c) => {
-  c.e.engineValues.set(21668, readIntOperand(c.e, c.frame, c.instr, 1));
+  c.e.engineValues.set(ENGINE_FIELD.messageSpeed, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
 /** `0x1B9 <idx> <ms>`（sub_41FF60 raw 29191-29220）：`message:AutoMessageTime{idx}`（自动翻页基础时长）。 */
@@ -1121,12 +1123,12 @@ const op_set_auto_message_pitch: OpHandler = (c) => {
 
 /** `0x2E8 <v>`（sub_4265E0 raw 33565-33577）：`message:AutoMessageOption`。 */
 const op_set_auto_message_option: OpHandler = (c) => {
-  setConfigValue(c.e, 'message:automessageoption', readIntOperand(c.e, c.frame, c.instr, 1));
+  setConfigValue(c.e, CFG.messageAutoMessageOption, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
 /** `0x2CD <v>`（sub_426390 raw 33463-33475）：`message:AdvanceMesOnWheel`（滚轮是否推进消息）。 */
 const op_set_advance_mes_on_wheel: OpHandler = (c) => {
-  setConfigValue(c.e, 'message:advancemesonwheel', readIntOperand(c.e, c.frame, c.instr, 1));
+  setConfigValue(c.e, CFG.messageAdvanceMesOnWheel, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
 /**
@@ -1141,7 +1143,7 @@ const op_set_advance_mes_on_wheel: OpHandler = (c) => {
 const op_set_main_size: OpHandler = (c) => {
   const e = c.e;
   const size = readIntOperand(e, c.frame, c.instr, 1);
-  e.engineValues.set(71745, size); // Font+201684 / 4
+  e.engineValues.set(ENGINE_FIELD.fontSize, size); // Font+201684 / 4
   e.msgwin.font.mainSize = size;
 };
 
@@ -1149,7 +1151,7 @@ const op_set_main_size: OpHandler = (c) => {
 const op_set_ruby_size: OpHandler = (c) => {
   const e = c.e;
   const size = readIntOperand(e, c.frame, c.instr, 1);
-  e.engineValues.set(75970, size); // Font+218584 / 4
+  e.engineValues.set(ENGINE_FIELD.rubySize, size); // Font+218584 / 4
   e.msgwin.font.rubySize = size;
 };
 
@@ -1171,7 +1173,7 @@ const op_set_ruby_face: OpHandler = (c) => {
 const op_set_main_bold: OpHandler = (c) => {
   const e = c.e;
   const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
-  e.engineValues.set(75953, on ? 700 : 0); // Font+218516 / 4
+  e.engineValues.set(ENGINE_FIELD.fontWeight, on ? 700 : 0); // Font+218516 / 4
   e.msgwin.font.mainBold = on;
 };
 
@@ -1179,7 +1181,7 @@ const op_set_main_bold: OpHandler = (c) => {
 const op_set_ruby_bold: OpHandler = (c) => {
   const e = c.e;
   const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
-  e.engineValues.set(75971, on ? 700 : 0); // Font+218588 / 4
+  e.engineValues.set(ENGINE_FIELD.rubyWeight, on ? 700 : 0); // Font+218588 / 4
   e.msgwin.font.rubyBold = on;
 };
 
@@ -1211,7 +1213,7 @@ const op_vertical_rect_pad: OpHandler = (c) => {
  * 按名直读直写、**不落任何字段**（见 `engineConfig.ts` 的说明）。这里读字段是对的，不要改成读配置表。
  */
 const op_get_message_speed: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(21668) ?? 0);
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(ENGINE_FIELD.messageSpeed) ?? 0);
 };
 
 /** `0x300`（sub_426990）：对象旗标 `_this[122466+v] |= op2`（保留 bit16）、`_this[122476+v] = op3`。 */
@@ -1336,7 +1338,7 @@ const op_draw_number_string: OpHandler = (c) => {
   const width = readIntOperand(e, c.frame, c.instr, 5);
   const flags = readIntOperand(e, c.frame, c.instr, 6);
   // 引擎：cy = Engine[71744] ? Engine[71745] : -Engine[21632]（= 一个全角格宽）
-  const cy = (e.engineValues.get(71744) ?? 0) !== 0 ? e.engineValues.get(71745) ?? 0 : -(e.engineValues.get(21632) ?? 0);
+  const cy = (e.engineValues.get(ENGINE_FIELD.fontMetricsMode) ?? 0) !== 0 ? e.engineValues.get(ENGINE_FIELD.fontSize) ?? 0 : -(e.engineValues.get(ENGINE_FIELD.logfontMain) ?? 0);
   const cell = formatNumberCell(value, width, flags);
   const halfWidth = (flags & 0x10000) !== 0;
   // 引擎的 x 前进量（全角/半角与对齐方式三档）

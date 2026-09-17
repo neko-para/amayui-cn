@@ -110,13 +110,6 @@ const op_load_string: OpHandler = (c) => {
   writeStringOperand(c.e, c.frame, c.instr, 1, str);
 };
 
-// ---- 引擎全局时间阈值槽 `_this[97058]`（0x148 读 / 0x149 写，get/set 对；见 analysis/sub_42FEC0/sub_4229A0）----
-// 引擎里该槽被 sub_4B9240 用作「光标贴顶/Alt→弹系统对话框」的去抖时长；
-// **emulator 暂无对应逻辑使用此值**，仅为让 0x148/0x149 可执行（原 0x148 未映射会抛 NotImplementedOp）而建模为固定变量读写。
-/** 0x149 (sub_4229A0)：`op1 → _this[97058]`（写）。 */
-
-// 系统调用 opcode -> 走 NativeBridge（记录即可，无界面）。后续按需逐个转真。
-
 /** ★注意：`0x2DE` **不是**字符串资源 id 查询，而是**字体名→字体表下标**（见 `handlers/msgwin.ts`）：
  *  引擎 `sub_430DF0`（raw 40251-40261）→ `sub_428990(textobj, 串)` 在 `Font+201664` 的字体名向量里
  *  线性查名并返回下标/-1。原实现按助记符猜成 `stringResourceId`，会让 `$1$CHECKCONFIG` 的

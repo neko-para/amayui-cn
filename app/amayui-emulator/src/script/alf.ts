@@ -11,7 +11,7 @@
  *   - `S?IN`（SYS4INI）/ `S?AI`（APPEND）= 头之后**整段直读**（`GetFileSize - headerSize`）。
  *   官方发售的 6 个索引文件都是压缩形态（S4IC / S4AC），但直读形态必须认（否则引擎能读、我们读不了）。
  */
-import { unlzss } from './lzss.js';
+import { unlzss } from '../util/lzss.js';
 import { ByteView, decodeAnsi } from '../util/bytes.js';
 
 const ARCENTRY = 256; // S4TOCARCENTRY.filename[256]

@@ -67,18 +67,6 @@ export function affineApply(m: Affine, x: number, y: number): { x: number; y: nu
   return { x: m[0] * x + m[2] * y + m[4], y: m[1] * x + m[3] * y + m[5] };
 }
 
-/** 逐分量线性插值（`t = 0` ⇒ a，`t = 1` ⇒ b）。 */
-export function affineLerp(a: Affine, b: Affine, t: number): Affine {
-  return [
-    a[0] + (b[0] - a[0]) * t,
-    a[1] + (b[1] - a[1]) * t,
-    a[2] + (b[2] - a[2]) * t,
-    a[3] + (b[3] - a[3]) * t,
-    a[4] + (b[4] - a[4]) * t,
-    a[5] + (b[5] - a[5]) * t,
-  ];
-}
-
 /**
  * `AffineEnt` → 矩阵。
  *

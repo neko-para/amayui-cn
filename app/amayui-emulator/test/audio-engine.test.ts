@@ -306,7 +306,7 @@ test('0xBB 关 SE 会把在播的 SE 通道全部停掉', async () => {
 
 test('语音与 BGM 重叠：策略打开时压低 BGM，语音收尾后恢复', async () => {
   const { host, eng } = mk({ durations: { 162: 0.2 } });
-  eng.setPolicy(true, true); // set:KeepMusicVoice=1 + sound:MusicFadeOnVoicePlaying=1
+  eng.setPolicy(true, true); // set:KeepMusicVolume=1 + sound:MusicFadeOnVoicePlaying=1
   eng.bgmPlay(18, true);
   await eng.idle();
   const bgm = host.plays.at(-1)!;

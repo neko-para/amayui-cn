@@ -38,7 +38,7 @@ import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { INI_FILE, resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { InputManager } from '../src/vm/input.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
-import { ExitScript, ScriptReset } from '../src/vm/ops.js';
+import { ExitScript } from '../src/vm/ops.js';
 import {
   applyConfigToEngine,
   cfgInt,
@@ -357,7 +357,7 @@ test('★E3：启动链跑到 TITLE 后，版本号数字条画的是 1/0/7/0/0/
     try {
       t = await stepOnce(e);
     } catch (err) {
-      if (err instanceof ExitScript || err instanceof ScriptReset) break;
+      if (err instanceof ExitScript) break;
       throw err;
     }
     if (FRAME_OPS.has(t.opcode)) {

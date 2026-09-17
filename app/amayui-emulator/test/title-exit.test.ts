@@ -22,7 +22,7 @@ import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { Engine } from '../src/vm/engine.js';
 import { InputManager } from '../src/vm/input.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
-import { ExitScript, ScriptReset } from '../src/vm/ops.js';
+import { ExitScript } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec } from '../src/vm/bits.js';
 
@@ -60,7 +60,6 @@ async function run(rt: Rt, n: number): Promise<string | null> {
       t = await stepOnce(rt.e);
     } catch (err) {
       if (err instanceof ExitScript) return 'EXIT';
-      if (err instanceof ScriptReset) return 'RESET';
       return `error: ${(err as Error).message}`;
     }
     if (FRAME_OPS.has(t.opcode)) {

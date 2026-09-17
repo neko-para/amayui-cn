@@ -133,3 +133,42 @@ test('0xFE / 0x107 / 0x10B：按键绑定表（含随操作数变化的字段号
   const d = await run(0x107, [0x20, 0x55]);
   assert.equal(d.get(0x20 + 551), undefined, '键位越界应不写');
 });
+
+test('0x106 / 0x201 / 0x130：字段 getter 读**真实字段**，不再伪造常量 0（T-0057 R4）', async () => {
+  /** 跑一条 getter 指令（op1 是写目标），返回读回的 op1。 */
+  const readBack = async (op: number, field: number, value: number): Promise<number> => {
+    const e = new Engine(new StubNative(() => {}));
+    e.key = 0x12345678;
+    if (value !== 0) e.engineValues.set(field, value);
+    const { sc, slots } = mkScript(op, [0]);
+    slots.forEach((slot) => e.globals.int.set(slot, 0));
+    loadScriptIntoFrame(e.curScript(), sc, 'TEST.BIN');
+    await stepOnce(e);
+    return asI32(dec(e.key, e.globals.int.get(slots[0]!) ?? 0));
+  };
+  // 0x106 → _this[550]（raw 39043）；0x201 → _this[166964]（DrawMode，raw 39862）
+  assert.equal(await readBack(0x106, 550, 42), 42, '0x106 必须回写 _this[550] 的值');
+  assert.equal(await readBack(0x201, 166964, 1), 1, '0x201 必须回写 DrawMode（_this[166964]）');
+  // 0x130 → _this[96983]（load-show-logo）
+  assert.equal(await readBack(0x130, 96983, 7), 7, '0x130 必须回写 _this[96983] 的值');
+});
+
+test('0x53 / 0x54：整除与取模是 **C 截断语义**（-5 % 3 = -2），除零按引擎抛错（T-0057 R4）', async () => {
+  const calc = async (op: number, l: number, r: number): Promise<number> => {
+    const e = new Engine(new StubNative(() => {}));
+    e.key = 0x12345678;
+    const { sc, slots } = mkScript(op, [0, l, r]);
+    slots.forEach((slot, i) => e.globals.int.set(slot, enc(e.key, [0, l, r][i]!)));
+    loadScriptIntoFrame(e.curScript(), sc, 'TEST.BIN');
+    await stepOnce(e);
+    return asI32(dec(e.key, e.globals.int.get(slots[0]!) ?? 0));
+  };
+  assert.equal(await calc(0x53, -7, 2), -3, 'div 截断（C 语义）');
+  assert.equal(await calc(0x54, -5, 3), -2, 'mod 符号跟随被除数（C 的 %），不是 floored 的 1');
+  assert.equal(await calc(0x54, 5, 3), 2);
+  const zero = new Engine(new StubNative(() => {}));
+  const { sc, slots } = mkScript(0x54, [0, 1, 0]);
+  slots.forEach((slot) => zero.globals.int.set(slot, 0));
+  loadScriptIntoFrame(zero.curScript(), sc, 'TEST.BIN');
+  await assert.rejects(() => stepOnce(zero), /除零|模数为 0/, '除零/模零走引擎的异常路径，不再静默得 0/NaN');
+});

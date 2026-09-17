@@ -30,6 +30,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readFloatOperand, readIntOperand } from '../operand.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -49,8 +50,8 @@ const op_load_wait_timer: OpHandler = (c) => {
   const v = readIntOperand(e, c.frame, c.instr, 1);
   e.gateWaitStart = 0; // Engine[92338]：起点清零 ⇒ 下一帧由 sub_407E20 锁存
   e.gateWaitMs = v; // Engine[92339]：时长（ms）
-  e.engineValues.set(92338, 0);
-  e.engineValues.set(92339, v);
+  e.engineValues.set(ENGINE_FIELD.waitTimerStart, 0);
+  e.engineValues.set(ENGINE_FIELD.waitTimerMs, v);
 };
 
 /** `0x258`（sub_425D20 raw 33156-33185）：纹理槽标志对（bit0/bit1 各写两张镜像表）。 */
@@ -130,10 +131,8 @@ const op_stretch_texture: OpHandler = (c) => {
 
 /** `0x20E`（sub_41A200 raw 25277-25287）：图形提交（渲染状态 38 包裹 + 设备 Clear）。 */
 const op_commit_graphics: OpHandler = (c) => {
-  const e = c.e;
   // 引擎：`if (Engine[80684] == 1 && Engine[92322] == -1)` 才做状态包裹，但**两条路径都会**调 `sub_498B60`。
   c.native.commitGraphics?.();
-  void e;
 };
 
 /** `0x224`（sub_41A290 raw 25301-25305）：清转场表。 */

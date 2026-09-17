@@ -527,11 +527,6 @@ export class RendererSession {
         window.api?.closeWindow?.();
         break;
       }
-      if (r.stopReason === 'reset') {
-        // native.log 已同时进 HUD+文件；不再另加一条 trace（避免同事件双行）。
-        this.#native.log('=== exit-script teardown (reset) ===');
-        break;
-      }
       // error / script-end / until / cap / step-stop：收尾。
       break;
     }

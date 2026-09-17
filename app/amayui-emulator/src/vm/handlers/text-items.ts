@@ -33,18 +33,19 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { ITEM_TEXT } from '../textItems.js';
 import type { Engine } from '../engine.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
-/** `Engine[97055]`（`Font+3364` 之外的记账开关；`0` = 记账、`0x80000000` = 暂停记账）。 */
-export const TEXT_BASE_GATE = 97055;
+/** `Engine[97055]`（`0` = 记账、`0x80000000` = 暂停记账）。★唯一真源 = `ENGINE_FIELD.textBaseGate`。 */
+export const TEXT_BASE_GATE = ENGINE_FIELD.textBaseGate;
 
 /** 默认窗（`Font[307]`；`0x80` set-default-window 写 `Engine[21631]`）。 */
 export function defaultWin(e: Engine): number {
-  return e.engineValues.get(21631) ?? 0;
+  return e.engineValues.get(ENGINE_FIELD.defaultWindow) ?? 0;
 }
 
 /** `i1bb 0` 期间（`Engine[97055] != 0`）不记账 —— 三个 push 点共用。 */
-export function textRecordingEnabled(e: Engine): boolean {
+function textRecordingEnabled(e: Engine): boolean {
   return (e.engineValues.get(TEXT_BASE_GATE) ?? 0) === 0;
 }
 
@@ -54,7 +55,7 @@ export function textRecordingEnabled(e: Engine): boolean {
  */
 export function pushVoiceRecord(e: Engine, id: number, loop: number, sel: number): void {
   if (!textRecordingEnabled(e)) return;
-  e.textItems.pushVoice(defaultWin(e), id, loop, sel, e.engineValues.get(5053 + sel) ?? 0);
+  e.textItems.pushVoice(defaultWin(e), id, loop, sel, e.engineValues.get(ENGINE_FIELD.voiceSelBase + sel) ?? 0);
 }
 
 /** `0x1BB`（`sub_420000` raw 29223-29242）：**SetTB** —— 文本项记账开关。 */

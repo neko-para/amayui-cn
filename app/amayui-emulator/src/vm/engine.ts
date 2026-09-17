@@ -12,6 +12,7 @@ import { TextItemTable } from './textItems.js';
 import { StageLoop, runStageService } from './stageLoop.js';
 import { TEXT_BASE_GATE } from './handlers/text-items.js';
 import { cfgInt } from '../engineConfig.js';
+import { CFG } from '../configRegistry.js';
 import { emitWin, messageSpeedOf, winStyle } from './handlers/msgwin.js';
 import { FIELD_CHAR_CURSOR, FIELD_WIN_REVEAL_GATE } from './engineFieldIds.js';
 import { layoutWindow } from '../text/layout.js';
@@ -591,7 +592,7 @@ export class Engine {
     const skipBit = m.skipMirror !== 0;
 
     // 取消消息键三态机（引擎门控：GetConfig("set:CancelMessageKey")）
-    if (this.config && cfgInt(this.config, 'set:cancelmessagekey', 0) !== 0) {
+    if (this.config && cfgInt(this.config, CFG.setCancelMesSkipOnClick, 0) !== 0) {
       const bit = 0x10; // 掩码 bit4 = 鼠标左键
       if ((mask & bit) !== 0) {
         const was1 = m.cancelStage === 1;
@@ -649,13 +650,13 @@ export class Engine {
     const mask = im.flushPending(); // 引擎 sub_478090（消费刷）
     const wheelDown = im.consumeWheelDelta() < 0; // 引擎 Engine[7796] 读后清、<0 = 下滚
     const wheelCfg = this.config;
-    const wheelKeyBit = wheelCfg ? cfgInt(wheelCfg, 'set:wheelkeydown', -1) : -1;
+    const wheelKeyBit = wheelCfg ? cfgInt(wheelCfg, CFG.setWheelKeyDown, -1) : -1;
     const wheelKeyHit =
       wheelCfg !== null &&
       wheelKeyBit >= 0 &&
       wheelKeyBit < 32 &&
       (mask & (1 << wheelKeyBit)) !== 0 &&
-      (cfgInt(wheelCfg, 'message:advancemesonwheel', 0) & 1) !== 0;
+      (cfgInt(wheelCfg, CFG.messageAdvanceMesOnWheel, 0) & 1) !== 0;
     if ((mask & 0x10) === 0 && !wheelKeyHit && !wheelDown) return false;
 
     // ★自旋到整页贴完（`do sub_45BE20 while (!done)` 的等价物）：把每个还有余量的窗一次贴满。
@@ -667,7 +668,7 @@ export class Engine {
     im.consumeEdges(); // 引擎 `*v6 = 0`：这次点击不再留给等待泵（否则下一帧会顺带推进一页）
     // 引擎 raw 13910-13915：DrawMode == 1 时顺带把等待门计时器清零 + 置强制冻结
     // （`Scene+369360 & 2` 那一格全工程无置位点，恒为 0 ⇒ 条件只剩 DrawMode）。
-    if (this.config && cfgInt(this.config, 'set:drawmode', 0) === 1) this.skipWaitGate();
+    if (this.config && cfgInt(this.config, CFG.setDrawMode, 0) === 1) this.skipWaitGate();
     return true;
   }
 
@@ -1076,11 +1077,11 @@ export class Engine {
     if ((mask & 0x50) !== 0) return true;
     const cfg = this.config;
     if (!cfg) return false;
-    const wheelKey = cfgInt(cfg, 'set:wheelkeydown', 0);
+    const wheelKey = cfgInt(cfg, CFG.setWheelKeyDown, 0);
     if (wheelKey < 0 || wheelKey >= 32) return false;
     if ((mask & (1 << wheelKey)) === 0) return false;
     if ((this.effectFlags & 0x100000) !== 0) return false; // 跳读中 ⇒ 不按滚轮推进
-    return (cfgInt(cfg, 'message:advancemesonwheel', 0) & 1) !== 0;
+    return (cfgInt(cfg, CFG.messageAdvanceMesOnWheel, 0) & 1) !== 0;
   }
 
   /**
@@ -1088,7 +1089,7 @@ export class Engine {
    * **非 0 ⇒ 派发 label 前不调 `sub_4051A0`**（「光标模式：不要自动收尾逐字显现」）。
    */
   controlDisableCursor(): number {
-    return this.config ? cfgInt(this.config, 'set:controldisibiecursor', 0) : 0;
+    return this.config ? cfgInt(this.config, CFG.setControlDisibleCursor, 0) : 0;
   }
 
   /**
@@ -1139,13 +1140,13 @@ export class Engine {
     // `(mask & 0x20)` = 鼠标**右**键（`sub_477150` 的 bit5）⇒ 右击时整段悬停/推进被跳过。
     if ((this.input.flushPending() & 0x20) !== 0) return false;
     const cfg = this.config;
-    const wheelUp = cfg ? cfgInt(cfg, 'set:wheelkeyup', 0) : 0;
-    const wheelDown = cfg ? cfgInt(cfg, 'set:wheelkeydown', 0) : 0;
+    const wheelUp = cfg ? cfgInt(cfg, CFG.setWheelKeyUp, 0) : 0;
+    const wheelDown = cfg ? cfgInt(cfg, CFG.setWheelKeyDown, 0) : 0;
     const wheelBits = (1 << (wheelUp & 31)) | (1 << (wheelDown & 31));
     if ((this.input.flushPending() & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
     if (((this.engineValues.get(TEXT_BASE_GATE) ?? 0) | 0) < 0) return true; // `i1bb 0`（0x80000000，有符号为负）⇒ 悬停
     if (!cfg) return true;
-    return cfgInt(cfg, 'set:redrawtextonkey', 0) !== 1; // redraw==1 ⇒ **跳过**悬停
+    return cfgInt(cfg, CFG.setReDrawTextOnKey, 0) !== 1; // redraw==1 ⇒ **跳过**悬停
   }
 
   /**

@@ -9,11 +9,20 @@
  *  - `SLEEP_GATE` sleep(0xC8) 帧让步；
  *  - `0x8000000` ADV/消息激活态（见 adv.ts）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import { SLEEP_GATE } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
+
+/** 把「指令的 dword 偏移」换成「指令数组下标」并跳转（引擎里 ip 就是 dword 偏移，重写侧是下标）。 */
+function jumpToDword(c: StepCtx, dword: number): void {
+  const idx = c.frame.script?.dwordToInstr[dword];
+  if (idx === undefined) throw new Error(`跳转目标 dword 偏移 ${dword} 不在脚本映像里（${c.frame.name}）`);
+  c.jump(idx);
+}
 
 /**
  * **渲染/帧循环一族（真实现，状态建模）** —— 逐条读 handler 体（raw 25194-25236 / 34507 等）：
@@ -28,32 +37,40 @@ import type { OpTable } from './shared.js';
  */
 const op_frame_tick: OpHandler = (c) => {
   const e = c.e;
-  if (!e.engineValues.get(107438)) {
-    e.engineValues.set(107438, 1);
-    e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
-    e.engineValues.set(92333, e.nowMs | 0);
+  if (!e.engineValues.get(ENGINE_FIELD.frameTickLock)) {
+    e.engineValues.set(ENGINE_FIELD.frameTickLock, 1);
+    e.engineValues.set(ENGINE_FIELD.clockPrev, e.engineValues.get(ENGINE_FIELD.clock) ?? 0);
+    e.engineValues.set(ENGINE_FIELD.clock, e.nowMs | 0);
   } else {
-    e.engineValues.set(107439, (e.engineValues.get(107439) ?? 0) + 1);
+    e.engineValues.set(ENGINE_FIELD.frameCount, (e.engineValues.get(ENGINE_FIELD.frameCount) ?? 0) + 1);
   }
 };
 
-/** `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清停靠标志（`_this[429752]=0`）；派发脚本队列（`dispatchNextRequest` 已建模；本条尚未接线）。 */
+/**
+ * `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清**帧计时停靠锁**（`_this[107438]`）。
+ *
+ * ★T-0057 R3 修正：raw 的 `*(_DWORD *)(_this + 429756)` 是**字节**偏移 ⇒ dword 下标 = `429756/4 = 107439`，
+ * 与 `0x1F4`（`sub_41A090` 的 `_this[107439]/[107438]`）**是同一对字段**。此前把字节偏移当
+ * `engineValues` 的键，结果是"帧计数只增不减 + 停靠锁永不释放 + 0x1F4 再不刷新时钟"（静默）。
+ */
 const op_frame_countdown: OpHandler = (c) => {
   const e = c.e;
-  const left = e.engineValues.get(429756) ?? 0;
+  const left = e.engineValues.get(ENGINE_FIELD.frameCount) ?? 0;
   if (left > 0) {
-    e.engineValues.set(429756, left - 1);
+    e.engineValues.set(ENGINE_FIELD.frameCount, left - 1);
   } else {
-    e.engineValues.set(429752, 0);
+    e.engineValues.set(ENGINE_FIELD.frameTickLock, 0);
+    // 引擎此处还会 `sub_40FB60(_this)` 派发脚本队列（`dispatch_in_progress` 为 0 时）——
+    // emulator 的队列派发走 `dispatchNextRequest`（control.ts，`0x143` 的路径），本条尚未接线（T-0057 记录）。
   }
 };
 
 /** `0x20C`（sub_41A1A0, raw 25259）：每帧刷时钟 + `sub_4B4040(_this+80708)`（帧刷新）。 */
 const op_frame_present: OpHandler = (c) => {
   const e = c.e;
-  if (!e.engineValues.get(107438)) {
-    e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
-    e.engineValues.set(92333, e.nowMs | 0);
+  if (!e.engineValues.get(ENGINE_FIELD.frameTickLock)) {
+    e.engineValues.set(ENGINE_FIELD.clockPrev, e.engineValues.get(ENGINE_FIELD.clock) ?? 0);
+    e.engineValues.set(ENGINE_FIELD.clock, e.nowMs | 0);
   }
   c.native.frameTick?.();
 };
@@ -67,8 +84,8 @@ const op_frame_present: OpHandler = (c) => {
  */
 const op_frame_clock: OpHandler = (c) => {
   const e = c.e;
-  e.engineValues.set(92334, e.engineValues.get(92333) ?? 0);
-  e.engineValues.set(92333, e.nowMs | 0);
+  e.engineValues.set(ENGINE_FIELD.clockPrev, e.engineValues.get(ENGINE_FIELD.clock) ?? 0);
+  e.engineValues.set(ENGINE_FIELD.clock, e.nowMs | 0);
 };
 
 const op_set_wait_flag: OpHandler = (c) => {
@@ -97,25 +114,25 @@ const op_sleep: OpHandler = (c) => {
  * 引擎体只有两句（外加每步元数据）：
  * ```c
  * _this[30*cur + 95805] = 5;                       // 操作数记数（2 个操作数）
- * _this[cur + 122372] = op1;                       // 主回退点：帧 ip 的**指令下标**
+ * _this[cur + 122372] = op1;                       // 主回退点：op1 = label 的 **dword 偏移**
  * _this[cur + 122412] = op2;                       // 备用回退点
  * ```
  * **两个读者**（这就是它不能当 no-op 的原因）：
  *  - `0x199`（`sub_418FC0` raw 24492-24529，argc 0）：「**重显示文本**」——按模式位 `Engine[122452] & 0x4000000`
  *    选主/备用游标，把 `frame.ip` 直接设回它（`ip = base + 4*游标`），并挂起本帧（操作数记数置 0 = 不前进）；
  *  - 主循环 `sub_409700`（raw 14001-14008）：`effect_flags & 0x20` 分支下同样回退到主游标。
- * ⇒ 游标值 = **指令下标**（不是字节偏移），emulator 可直接当 `jump(idx)` 用。
+ * ⇒ 游标值与脚本里 `label_XXX` 同空间 = **dword 偏移**（引擎 `ip = ip_base + 4*游标`）。
+ *   ★T-0057 订正：本文件此前把它当"指令数组下标"直接 `jump()` —— 下标与 dword 偏移**不等**
+ *   （每条多操作数指令都会拉开差），真语料 `$1$SC0330.txt:42` 的 `i07b label_000036a4` + 后续 `i199`
+ *   会跳到错位指令。现在统一经 `dwordToInstr` 换算（与 `call`/`ret` 同口径）。
  * 缺省值 `-1`（引擎在装载/读档时把这两个数组初始化成 -1，raw 18639-18640）。
  *
- * 语料：`i7b` **0 处**（全 941 脚本）；仍实现，因为它是「文本重显示」链的一半。
+ * 语料：`i07b` 在 `$1$SC03xx/SC08xx/SG*` 等脚本里有使用（此前注释写"0 处"是漏计）。
  */
-const REWIND_MAIN_BASE = 122372;
-const REWIND_ALT_BASE = 122412;
-
 const op_set_rewind_cursor: OpHandler = (c) => {
   const e = c.e;
-  e.engineValues.set(REWIND_MAIN_BASE + e.cur, readIntOperand(e, c.frame, c.instr, 1));
-  e.engineValues.set(REWIND_ALT_BASE + e.cur, readIntOperand(e, c.frame, c.instr, 2));
+  e.engineValues.set(ENGINE_FIELD.rewindMainBase + e.cur, readIntOperand(e, c.frame, c.instr, 1));
+  e.engineValues.set(ENGINE_FIELD.rewindAltBase + e.cur, readIntOperand(e, c.frame, c.instr, 2));
 };
 
 /**
@@ -128,7 +145,7 @@ const op_set_rewind_cursor: OpHandler = (c) => {
  *     _this[30*cur + 95805] = 0;                          // 不前进（handler 自己定了 ip）
  *     v4 = effect_flags; effect_flags = 0;
  *     _this[122452] = v4 | 0x6000000;                     // 记下旧 flags 并进入"重画"模式
- *     _this[122453] = frame_ip_index + 1;                 // 重画后要跳回的**下一条**
+ *     _this[122453] = ((ip - ip_base) >> 2) + 1;          // 重画后要跳回的**下一条**（dword 偏移 + 1）
  *     _this[107678] = frame[+0x50];                       // 记脚本 id（emulator 未建模 ⇒ 略）
  *     frame.ip = base + 4*_this[cur + 122372];            // ★回退
  *   }
@@ -139,29 +156,29 @@ const op_set_rewind_cursor: OpHandler = (c) => {
  * }
  * ```
  * 语料 **668 处 / 334 个脚本**（此前**根本不在任何表里 ⇒ 命中即硬报错**）。典型序列：
- * `i7b <idx> -1`（设回退点）… 若干条 … `i199`（重显示同一段文本）。
+ * `i7b <label> -1`（设回退点）… 若干条 … `i199`（重显示同一段文本）。
  */
 const op_redisplay_text: OpHandler = (c) => {
   const e = c.e;
   const cur = e.cur;
-  const mode = e.engineValues.get(122452) ?? 0;
-  e.engineValues.set(174802, 0);
+  const mode = e.engineValues.get(ENGINE_FIELD.redisplayMode) ?? 0;
+  e.engineValues.set(ENGINE_FIELD.inputStateMask, 0);
   if ((mode & 0x4000000) === 0) {
-    const target = e.engineValues.get(REWIND_MAIN_BASE + cur) ?? -1;
+    const target = e.engineValues.get(ENGINE_FIELD.rewindMainBase + cur) ?? -1;
     if (target !== -1) {
       const saved = e.effectFlags;
       e.effectFlags = 0;
-      e.engineValues.set(122452, (saved | 0x6000000) | 0);
-      // 引擎存 ((ip-base)>>2)+1 = 当前指令下标 + 1（重画完成后由主循环跳回它继续）
-      e.engineValues.set(122453, c.frame.ip + 1);
-      c.jump(target); // 指令下标（引擎 ip = base + 4*target）
+      e.engineValues.set(ENGINE_FIELD.redisplayMode, (saved | 0x6000000) | 0);
+      // 引擎 `sub_418FC0` raw 24513：`((ip - ip_base) >> 2) + 1` = **当前指令的 dword 偏移 + 1**。
+      e.engineValues.set(ENGINE_FIELD.redisplayReturn, (c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
+      jumpToDword(c, target);
     }
     return;
   }
-  const alt = e.engineValues.get(REWIND_ALT_BASE + cur) ?? -1;
+  const alt = e.engineValues.get(ENGINE_FIELD.rewindAltBase + cur) ?? -1;
   if (alt !== -1) {
-    e.engineValues.set(122452, ((mode & 0xf9ffffff) | 0x2000000) | 0);
-    c.jump(alt);
+    e.engineValues.set(ENGINE_FIELD.redisplayMode, ((mode & 0xf9ffffff) | 0x2000000) | 0);
+    jumpToDword(c, alt);
   }
 };
 
@@ -203,18 +220,18 @@ const SAVE_VERSION_BRANCH: Record<number, { stride: number; idxSlot: number; sav
 
 const op_save_version_branch: OpHandler = (c) => {
   const e = c.e;
-  if ((e.engineValues.get(95780) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
-  const sv1 = e.config ? cfgInt(e.config, 'set:saveversion1', 0) : 0;
-  const sv2 = e.config ? cfgInt(e.config, 'set:saveversion2', 0) : 0;
+  if ((e.engineValues.get(ENGINE_FIELD.loadInProgress) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
+  const sv1 = e.config ? cfgInt(e.config, CFG.setSaveVersion1, 0) : 0;
+  const sv2 = e.config ? cfgInt(e.config, CFG.setSaveVersion2, 0) : 0;
   const spec = SAVE_VERSION_BRANCH[sv1];
   if (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2)) return;
   const cur = e.cur;
   const savedCur = e.engineValues.get(spec.savedCur) ?? -1;
   if (savedCur === cur) {
     // 引擎：已回到存档记录的帧 ⇒ 收尾（清读档门；版本 2 还会置 97054=1）
-    e.engineValues.set(95777, e.engineValues.get(spec.savedRet) ?? 0);
-    e.engineValues.set(95780, 0);
-    if (spec.setLoadFlag) e.engineValues.set(97054, 1);
+    e.engineValues.set(ENGINE_FIELD.callRet, e.engineValues.get(spec.savedRet) ?? 0);
+    e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    if (spec.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
     return;
   }
   c.log(
@@ -226,12 +243,12 @@ const op_save_version_branch: OpHandler = (c) => {
 /** 帧计时/时钟 + sleep/等待门 + 文本重显示/存档版本分支（真实现；native.frameTick 转发）。 */
 export const FRAME_OPS: OpTable = [
   [0x1f4, op_frame_tick], // 帧计时（+帧计数 / 刷时钟）
-  [0x1f5, op_frame_countdown], // 帧倒计 → 清停靠标志（脚本队列派发未建模）
+  [0x1f5, op_frame_countdown], // 帧倒计 → 清帧计时停靠锁（脚本队列派发未接线，见 T-0057）
   [0x20c, op_frame_present], // 每帧刷时钟 + native.frameTick()
-  [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → _this[92333]/[92334]）
-  [0x7b, op_set_rewind_cursor], // 设本帧「重显示」回退游标（_this[cur+122372]/[cur+122412]）
+  [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → ENGINE_FIELD.clock/clockPrev）
+  [0x7b, op_set_rewind_cursor], // 设本帧「重显示」回退游标（rewindMainBase/rewindAltBase，值为 dword 偏移）
   [0x199, op_redisplay_text], // ★重显示文本（0x7B 的读取端；668 处，原先命中即硬报错）
-  [0xae, op_save_version_branch], // 存档版本分支（门控 Engine[95780]；帧 ip 重算=已登记缺口）
+  [0xae, op_save_version_branch], // 存档版本分支（门控 loadInProgress；帧 ip 重算=已登记缺口）
 ];
 
 /** 帧让步 / 等待门（native 转发）。 */

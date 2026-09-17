@@ -331,7 +331,6 @@ export async function runSceneReport(opt: ReportOptions): Promise<{ report: Scen
     );
     // 驱动的 stopReason → 本文件原来的字符串（顺序与 error 分支各自写过 stopReason，这里只兜底）
     if (r.stopReason === 'exit') stopReason = 'exit-script';
-    else if (r.stopReason === 'reset') stopReason = 'reset';
     else if (r.stopReason === 'until' && scriptEnded) stopReason = 'script-end';
     else if (r.stopReason === 'until') stopReason = 'steps-limit';
   }

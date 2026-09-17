@@ -37,17 +37,11 @@
  * 文件头带随机密钥校验：`sub_404B20` 写 `key ^ 0x87912345`）；emulator 目前只做**会话内**
  * 打点（不读 `$$SAVE.DAT`）⇒ 全新会话的鉴赏进度从零开始累积（与真机"新档"一致，但不会继承玩家的旧档）。
  */
-import type { OpHandler, StepCtx } from '../step.js';
+import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
+import { cfgInt } from '../../engineConfig.js';
+import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
-
-/** 读配置里的整数（键统一小写，与 `parseIni` 口径一致）。 */
-function cfgInt(c: StepCtx, key: string): number {
-  const v = c.e.config?.values.get(key);
-  if (v === undefined) return 0;
-  const n = Number(v);
-  return Number.isFinite(n) ? n | 0 : 0;
-}
 
 /**
  * `0x19D`：`op1 ← 统一文件 id op2 是否已被打开过`（0/1）。
@@ -57,8 +51,8 @@ function cfgInt(c: StepCtx, key: string): number {
 const op_file_used_query: OpHandler = (c) => {
   const id = readIntOperand(c.e, c.frame, c.instr, 2);
   if ((id & 0xff000000) !== 0) {
-    const v1 = cfgInt(c, 'set:saveversion1');
-    const v2 = cfgInt(c, 'set:saveversion2');
+    const v1 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion1, 0) : 0;
+    const v2 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion2, 0) : 0;
     if (v1 < 3 || (v1 === 3 && v2 < 10)) {
       writeIntOperand(c.e, c.frame, c.instr, 1, 0);
       return;

@@ -142,3 +142,90 @@ export const CONFIG_REGISTRY_KEYS: readonly RegistryKey[] = [
 export const CONFIG_REGISTRY_DEFAULTS: ReadonlyMap<string, number | string> = new Map(
   CONFIG_REGISTRY_KEYS.map((k) => [k.key.toLowerCase(), k.def]),
 );
+
+// ---------------------------------------------------------------------------
+// 键名常量（T-0057 R1）—— 读取侧**只允许**用这些常量，不得手打 `section:key`
+// ---------------------------------------------------------------------------
+
+/**
+ * **配置键名常量表**。
+ *
+ * 为什么要有它（T-0057 实测的静默缺陷）：`cfgInt(cfg, 'set:keepmusicvoice')` 这样的**手打键名**
+ * 在键拼错时不会报错 —— 只是永远读不到值、恒走 fallback。实测三个键就是这么错的
+ * （`set:keepmusicvoice` / `set:cancelmessagekey` / `set:controldisibiecursor` 在 raw 里 0 次），
+ * 而它们对应的真键（`set:KeepMusicVolume` / `set:CancelMesSkipOnClick` / `set:ControlDisibleCursor`）
+ * **一直躺在下面这张表里没人用**。
+ *
+ * 纪律：`src/**` 里出现的配置键必须是本表的成员（动态键见 `DYNAMIC_INI_KEY_PATTERNS`）——
+ * `test/config-keys.test.ts` 会静态扫全仓把关。
+ */
+export const CFG = {
+  // ---- sound ----
+  soundMusic: 'sound:Music',
+  soundSound: 'sound:Sound',
+  soundVoice: 'sound:Voice',
+  soundSE: 'sound:SE',
+  soundMovie: 'sound:Movie',
+  soundMusicFadeOnVoicePlaying: 'sound:MusicFadeOnVoicePlaying',
+  /** 语音在播时给 BGM 让路（引擎 `sub_420CC0` raw 29769：判据是 **`== 1`**，不是"非 0"）。 */
+  soundKeepMusicVolume: 'set:KeepMusicVolume',
+  // ---- message ----
+  messageMessageSpeed: 'message:MessageSpeed',
+  messageMessageFade: 'message:MessageFade',
+  messageMesWinAlpha: 'message:MesWinAlpha',
+  messageUseAntiFont: 'message:UseAntiFont',
+  messageRMouseEvent: 'message:RMouseEvent',
+  messageReadTextSkip: 'message:ReadTextSkip',
+  messageAdvanceMesOnWheel: 'message:AdvanceMesOnWheel',
+  messageAutoMessageTime0: 'message:AutoMessageTime0',
+  messageAutoMessageTime1: 'message:AutoMessageTime1',
+  messageAutoMessagePitch0: 'message:AutoMessagePitch0',
+  messageAutoMessagePitch1: 'message:AutoMessagePitch1',
+  messageAutoMessageOption: 'message:AutoMessageOption',
+  // ---- set ----
+  setEnableAntiFont: 'set:EnableAntiFont',
+  /** 取消消息键三态机的门（raw 20115：**非 0** 即开；`== 2` 只是门内的一条额外收尾分支）。 */
+  setCancelMesSkipOnClick: 'set:CancelMesSkipOnClick',
+  setControlDisibleCursor: 'set:ControlDisibleCursor',
+  setDrawMode: 'set:DrawMode',
+  setWheelKeyUp: 'set:WheelKeyUp',
+  setWheelKeyDown: 'set:WheelKeyDown',
+  setReDrawTextOnKey: 'set:ReDrawTextOnKey',
+  setSaveVersion1: 'set:SaveVersion1',
+  setSaveVersion2: 'set:SaveVersion2',
+  setGameVersion: 'set:GameVersion',
+  // ---- display / system ----
+  displayScreenMode: 'display:ScreenMode',
+  displayForceScreen: 'display:ForceScreen',
+  systemEffectSkipOnClick: 'system:EffectSkipOnClick',
+} as const;
+
+/** `sound:Volume0..4`（引擎 raw 111519 用 `sprintf("sound:Volume%d")` 生成 ⇒ 动态键）。 */
+export function cfgSoundVolumeKey(category: number): string {
+  if (category < 0 || category > 4) throw new Error(`sound:Volume 类别越界：${category}`);
+  return `sound:volume${category}`;
+}
+
+/**
+ * **动态键**（引擎用 `sprintf` 拼名，无法列进键表）—— 静态守卫的显式白名单。
+ * 每条都要写明来源，否则"白名单"会变成绕过守卫的后门。
+ */
+export const DYNAMIC_INI_KEY_PATTERNS: readonly RegExp[] = [
+  /^sound:volume[0-4]$/, // raw 111519 `sprintf_s(..., "sound:Volume%d")`
+  /^debug:debugoutflag\d+$/, // raw 的 DebugOutFlag 循环注入（键表头注已声明）
+];
+
+/** 该键是否在权威键表里（大小写不敏感）。 */
+export function isRegistryKey(key: string): boolean {
+  return CONFIG_REGISTRY_DEFAULTS.has(key.toLowerCase());
+}
+
+/** 该键是否命中动态键白名单。 */
+export function isDynamicIniKey(key: string): boolean {
+  return DYNAMIC_INI_KEY_PATTERNS.some((re) => re.test(key.toLowerCase()));
+}
+
+// 模块加载期自检：`CFG` 的每一项都必须在键表里（否则是"新造的键"，当即失败而不是静默）。
+for (const [name, key] of Object.entries(CFG)) {
+  if (!isRegistryKey(key)) throw new Error(`configRegistry: CFG.${name} = "${key}" 不在权威键表里`);
+}

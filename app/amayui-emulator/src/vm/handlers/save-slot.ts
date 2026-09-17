@@ -14,11 +14,12 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
-import { decodeSlotState, parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb } from '../saveSlot.js';
+import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb } from '../saveSlot.js';
 import { decodeBmp, encodeBmp } from '../bmp.js';
 import type { Engine } from '../engine.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../ops.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 
 /**
  * **读档 = 一次控制转移，不是一次普通函数调用**（`tickets/T-0056`）。
@@ -66,7 +67,7 @@ async function transferToRootAfterLoad(e: Engine): Promise<void> {
 }
 
 /** 「正在读档」门：`Engine+383120`（元素 95780）。`0xAE`（`handlers/frame.ts`）读它。 */
-export const LOAD_IN_PROGRESS_FLAG = 95780;
+export const LOAD_IN_PROGRESS_FLAG = ENGINE_FIELD.loadInProgress;
 
 /** `loadSlotIntoEngine` 的结果：状态码 + 是否发生了控制转移（`transferredTo = null` = 没有转移）。 */
 export interface SlotLoadOutcome {
@@ -370,5 +371,3 @@ export const SAVE_SLOT_OPS: OpTable = [
   [0x1af, op_slot_thumb_read], // 读 .STH
 ];
 
-/** 让 `decodeSlotState` 的导入不被摇树掉（诊断/测试会用；`saveSlot.ts` 里已导出）。 */
-export { decodeSlotState };

@@ -34,10 +34,8 @@ import type { OpTable } from './shared.js';
 
 /** 语料里唯一会被加载的模块：文件 id `0x5250` = 21072（`src/SAVE.txt:7 i14b 5250`）。 */
 export const AGERC_FILE_ID = 0x5250;
-export const AGERC_MODULE_NAME = 'AGERC.DLL';
+const AGERC_MODULE_NAME = 'AGERC.DLL';
 
-/** 引擎里消息窗 HWND 的字段下标（`Engine[96981]` = byte 387924；`0x14D` 的实参首项）。 */
-export const ENGINE_MSG_HWND_FIELD = 96981;
 
 /** AGERC.DLL 的 21 个导出（PE 导出表实读，`docs-new/03-engine/agerc-internals.md` §2）。 */
 export const AGERC_EXPORTS: readonly string[] = [

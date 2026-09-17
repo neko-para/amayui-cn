@@ -111,7 +111,7 @@ const op_set_array_to: OpHandler = (c) => {
  * 实测用例：`CONFIG1.txt:1178 i12f (local 7ff) (local 179f) (local 273f) (local 561f)`（n=15）
  * —— `36df` 是描述符源表、`179f` 是主键（`(type顺序<<16)|value顺序`）、`273f` 是次键（该页全 0）。
  */
-export const op_sort_index_arrays: OpHandler = (c) => {
+const op_sort_index_arrays: OpHandler = (c) => {
   const { e, frame } = c;
   const a = refFromOperand(e, frame, c.instr, 1); // A：索引数组（排序对象 + 写回目标）
   const b = refFromOperand(e, frame, c.instr, 2); // B：主键数组（**按 A 里存的索引取值**）

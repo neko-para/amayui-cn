@@ -29,7 +29,7 @@ Voice=1
 Music=1
 MusicFadeOnVoicePlaying=1
 [set]
-KeepMusicVoice=1
+KeepMusicVolume=1
 `;
 
 
@@ -89,7 +89,7 @@ test('BGM：0xB7 循环 / 0xB9 一次 / 0xBF 带策略 / 0xBC 模式 / 0xC2 淡�
   assert.deepEqual(native.last, { kind: 'bgm-play', bgm: 18, loop: true });
   assert.ok(
     native.intents.some((i) => i.kind === 'policy' && i.keepMusicVoice && i.fadeOnVoice),
-    '0xBF 会先下发 set:KeepMusicVoice / sound:MusicFadeOnVoicePlaying 策略',
+    '0xBF 会先下发 set:KeepMusicVolume / sound:MusicFadeOnVoicePlaying 策略',
   );
   step(0xbc, [im(1)]); // i0bc 1 ⇒ 模式 0（关）
   assert.deepEqual(native.last, { kind: 'bgm-mode', mode: 0 });
@@ -170,7 +170,7 @@ test('启动灌值：audioBootIntents 把 SYS4REG.INI 的音量/开关/策略翻
   assert.ok(intents.some((i) => i.kind === 'bgm-mode' && i.mode === 1), 'sound:Music >= 0 ⇒ 开');
   assert.ok(
     intents.some((i) => i.kind === 'policy' && i.keepMusicVoice && i.fadeOnVoice),
-    'set:KeepMusicVoice / sound:MusicFadeOnVoicePlaying ⇒ policy',
+    'set:KeepMusicVolume / sound:MusicFadeOnVoicePlaying ⇒ policy',
   );
 });
 

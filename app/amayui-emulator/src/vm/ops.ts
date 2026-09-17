@@ -21,7 +21,6 @@ export {
   ENGINE_INTERNAL_OPS,
   REGISTRY_NAMES,
   ExitScript,
-  ScriptReset,
   loadScriptIntoFrame,
 } from './handlers/index.js';
 export type { OpTable } from './handlers/shared.js';

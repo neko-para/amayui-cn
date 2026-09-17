@@ -23,7 +23,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/stubNative.js';
 import { NotImplementedOp, loadScriptData, stepOnce } from '../src/vm/interpreter.js';
-import { ExitScript, loadScriptIntoFrame, ScriptReset } from '../src/vm/ops.js';
+import { ExitScript, loadScriptIntoFrame } from '../src/vm/ops.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { resolveSystemPaths } from '../src/arch/systemPaths.js';
@@ -245,7 +245,7 @@ test('★E3：真实语料下 SETMEMOIR 能把「已播放过的 BGM」标成解
           native.advance(clock);
         }
       } catch (err) {
-        if (err instanceof ExitScript || err instanceof ScriptReset) return;
+        if (err instanceof ExitScript) return;
         if (err instanceof NotImplementedOp) {
           throw new Error(`这条路径上不该再有未知指令：0x${err.opcode.toString(16)} @ ${err.scriptName}`);
         }

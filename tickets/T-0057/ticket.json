@@ -1,0 +1,130 @@
+{
+  "title": "emulator 实现审计与治理：消除『同一语义多处真源 / 魔法字段下标 / 临时补丁 / 静默错值』，把配置键、引擎字段与帧宿主收敛成单一建模",
+  "type": "refactor",
+  "priority": "P1",
+  "area": "emulator/core",
+  "why": "对 app/amayui-emulator 做了一次跨层只读审计（VM 核心 / opcode handlers / 渲染宿主 / 入口与工具 / arch·text·audio·live2d），发现的问题不是零散缺陷，而是四类同型病：①同一引擎事实在 2~3 处各存一份（脏位、默认窗、等待计时器、窗显现闸门、配置键、引擎字段），靠人工同步、已发生静默漂移；②裸字段下标/偏移与 dword 索引混用（实测 0x1F5 用字节偏移当 engineValues 键，导致停靠锁/帧计数成对逻辑失效、引擎时钟字段冻结）；③为让某条链路或某个测试通过而留下的临时补丁（配置键拼错后恒读默认值、getter 恒写 0、floored 取模、猴补宿主、只在注释里说明的探针）；④死码与假注释（ScriptReset 永不抛出、stub switch 全死分支、只写不读模型状态、注释描述已不存在的 B1 规划）。这些缺失都『不报错、只表现不对』，正是本工程花大力气建三层台账要防的那类。",
+  "acceptance": [
+    "R1 配置键单一真源：configRegistry.ts 导出 CFG 键常量；修正 3 个幽灵键（set:KeepMusicVolume / set:CancelMesSkipOnClick(==2 语义) / set:ControlDisibleCursor）；handler 与 Engine 不再手打 section:key；新增 test/config-keys.test.ts 静态守卫（src 中出现的中段:键字面量必须命中键表或显式动态白名单）",
+    "R2 引擎字段单一真源：engineFieldIds.ts 升格为带语义注释的 ENGINE_FIELD 常量表，src/vm/** 内 engineValues 的数字键全部替换为常量（消除 68 处裸字面量）；守卫 test/engine-field-ids.test.ts 断言常量取值与语义锚点",
+    "R3 修 0x1F5 的字节偏移/dword 下标混用（raw sub_41A0E0 用字节 429756/429752 = dword 107439/107438），与 0x1F4 的帧计数/停靠锁成对；守卫断言 i1f4 累加、i1f5 递减到 0 清停靠锁、时钟字段恢复刷新",
+    "R4 消除静默错值：0x106/0x201 从『恒写 0』改为读真实引擎字段（Engine[550] / Engine[166964]，依据 opcode-table + raw 39043/39862）；op_mod 改回 C 截断语义（-5 % 3 = -2）；cfg 取值实现统一为 engineConfig 的唯一一份（删 handlers 内两处私有副本）",
+    "R5 删临时物与死码：src/tools/t0042c-colors.ts；LZSS 两份合一（仅保留一份实现）；ScriptReset 死信号及其驱动/测试分支；stubs.ts 的 7 个死 switch 分支；零引用导出（保守清单）",
+    "R6 npm run verify 全绿：预红项 ticket-ledger.test.ts 的 T-0054 证据锚点改到仓内稳定文件（不再指 .tmp/），typecheck + 全部测试 + 死写棘轮通过",
+    "R7 文档同步：tickets/README.md 重建；docs-new/04-app/emulator-refactor-plan.md §9 加本轮条目；opcode-table 的 0x106/0x201/0x1F5/取模语义按订正更新；本票 notes.md 记录全部审计发现（含未在本轮实施的后继项）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
+      "anchor": "frameTickLock: 107438,",
+      "note": "R2 的单一真源：0x1F5 的字节偏移 429756/429752 就是这里的 frameCount/frameTickLock（×4）"
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-field-ids.test.ts",
+      "anchor": "0x1F4 / 0x1F5：停靠锁 + 帧计数 + 时钟刷新成对",
+      "note": "R3 的守卫：i1f4 累加 frameCount、i1f5 递减并在 0 时释放停靠锁、此后 i1f4 恢复刷时钟（修前时钟冻在第一帧）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v1 = *(_DWORD *)(_this + 429756);",
+      "line": 25221,
+      "note": "0x1F5 原始体：字节 429756 递减、为 0 时清字节 429752 —— 与 0x1F4 的 _this[107439]/[107438] 同一对格"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "char aSetKeepmusicvo[20] = \"set:KeepMusicVolume\";",
+      "line": 4411,
+      "note": "0xBF 的真键（raw 29769 以 == 1 读它）；旧实现写的 set:keepmusicvoice 在 raw 里 0 次 ⇒ BGM 让路永不生效"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "char aSetCancelmessk[25] = \"set:CancelMesSkipOnClick\";",
+      "line": 4346,
+      "note": "set:cancelmessagekey 的真键（raw 20115 的门是「非 0」；== 2 只是门内收尾分支）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "char aSetControldisi[25] = \"set:ControlDisibleCursor\";",
+      "line": 4348,
+      "note": "set:controldisibiecursor 的真键（raw 20246/20335）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return sub_42B4B0((int)_this, 1, _this[550]);",
+      "line": 39043,
+      "note": "0x106 应读 Engine[550]；同形 0x201 → Engine[166964]（raw 39862 = DrawMode）"
+    },
+    {
+      "file": "app/amayui-emulator/src/configRegistry.ts",
+      "anchor": "export const CFG = {",
+      "note": "R1：键名常量表（CFG）+ 动态键白名单 + 模块加载期自检"
+    },
+    {
+      "file": "app/amayui-emulator/test/config-keys.test.ts",
+      "anchor": "src 里的每个配置键字面量都必须在权威键表",
+      "note": "R1 的守卫（先剥注释，避免 T-0039 的「注释让棘轮失效」）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
+      "anchor": "const ENGINE_FIELD_GET: Map<number, number>",
+      "note": "R4：字段 getter 表；没有依据的 getter 一律抛错，不再伪造 0"
+    },
+    {
+      "file": "app/amayui-emulator/src/util/lzss.ts",
+      "anchor": "export function unlzss",
+      "note": "R5：LZSS 两份实现合一（原 src/vm/lzss.ts + src/script/lzss.ts 删除）"
+    },
+    {
+      "file": "tickets/T-0057/notes.md",
+      "anchor": "## 1. 类 A：同一语义多处真源",
+      "note": "全量发现清单（A/B/C/D/E 五类，含未在本轮实施的后继项）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md",
+      "docs-new/04-app/emulator-refactor-plan.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "analysis/fields.json",
+      "analysis/functions.json"
+    ],
+    "tickets": [
+      "T-0013",
+      "T-0019",
+      "T-0022",
+      "T-0042",
+      "T-0054"
+    ]
+  },
+  "notes": "本票是一次跨层审计的落点：结论与逐条 proposed model 见 notes.md（全部发现，含未在本轮实施的后继项），设计决策见 design.md，实施记录见 changes.md。",
+  "id": "T-0057",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-17",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "open → done —— R1-R7 全部落地；npm run verify 全绿（603 pass/0 fail/9 skip，612 条）；票据自检 57 张通过"
+    },
+    {
+      "at": "2026-09-17",
+      "what": "改字段：tests"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/config-keys.test.ts",
+    "app/amayui-emulator/test/engine-field-ids.test.ts",
+    "app/amayui-emulator/test/engine-field-store.test.ts",
+    "app/amayui-emulator/test/op-a2-a3.test.ts",
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/audio-opcodes.test.ts"
+  ]
+}

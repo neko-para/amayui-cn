@@ -61,9 +61,6 @@ export function effectiveIniText(files: { readTextSync(rel: string): { text: str
 }
 /** `SAVE.DAT` 相对系统存档目录的路径（引擎在这里放"设置 + 存档槽共用"的那份）。 */
 export const SAVE_DAT_REL = path.join('SAVE', 'SAVE.DAT');
-/** 存档子目录名（`SAVEnn.DAT` / `RT.DAT` 都在这下面）。 */
-export const SAVE_SUBDIR = 'SAVE';
-
 /** base + overlay 一对目录。 */
 export interface SystemPaths {
   /** 真游戏的系统存档目录（**只读**的一方）。 */

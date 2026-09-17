@@ -11,10 +11,11 @@
  * 与引擎 DWORD 下标空间隔离。
  */
 import type { OpHandler } from '../step.js';
-import type { Engine } from '../engine.js';
 import { setConfigValue } from './msgwin.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const op_write_global_slot: OpHandler = (c) => {
@@ -28,22 +29,34 @@ const op_read_global_slot: OpHandler = (c) => {
 
 // ---- 控制流 ----
 
-/** 0x106/0x130/0x131/0x201/0x2DC 等：引擎配置 getter（读 `_this[字段]` 写 op1）。 */
+/**
+ * **引擎字段 getter 表**（opcode → 要读回的 `_this[K]`）。
+ *
+ * ★T-0057 R4：旧实现把 0x106/0x201 挂在 `NATIVE_OPS`（对外是"已实现"）里却 `v = 0` 伪造返回值 ——
+ * 那正是 ADR-005 点名的"静默旧值/静默 0"型缺陷（脚本拿到的是假答案，且没有任何痕迹）。
+ * 现在没有依据的 getter **不进表**：查不到就抛 `NotImplementedOp`，不猜。
+ */
+const ENGINE_FIELD_GET: Map<number, number> = new Map<number, number>([
+  [0x106, ENGINE_FIELD.engineField550], // raw 39043：`sub_42B4B0(_this, 1, _this[550])`
+  [0x130, ENGINE_FIELD.logoEnabled], // load-show-logo：`_this[96983]`
+  [0x201, ENGINE_FIELD.drawMode], // raw 39862：`sub_42B4B0(_this, 1, _this[166964])`（DrawMode）
+]);
+
+/** 0x106/0x130/0x131/0x201 等：引擎字段/配置 getter（读 `_this[字段]` 写 op1）。 */
 const op_get_engine_value: OpHandler = (c) => {
-  let v = 0;
-  if (c.instr.opcode === 0x130) {
-    // 0x130(load-show-logo)：读 `_this[96983]`（构造=1 播版权页；exit-script 置 0）。
-    //   SYSTEM4 据此决定是否 `call-script LOGO`。
-    v = c.e.engineValues.get(96983) ?? 0;
-  } else if (c.instr.opcode === 0x131) {
+  let v: number;
+  if (c.instr.opcode === 0x131) {
     // 0x131（sub_42F7D0，raw 39350-39356）：**直接读配置注册表** `message:MesWinAlpha` 写 op1
     //   （`v2 = GetConfig(_this[174405], "message:MesWinAlpha")`）。
     //   ★它**不读任何 Engine 字段** —— 不要回退到 `engineValues`，那里没有这个键的值
     //   （历史上曾把 21668 当成"消息窗 α"，而 21668×4 = 86672 = Font+1376 = message:MessageSpeed）。
-    v = c.e.config ? cfgInt(c.e.config, 'message:meswinalpha', 0) : 0;
+    v = c.e.config ? cfgInt(c.e.config, CFG.messageMesWinAlpha, 0) : 0;
   } else {
-    // 其余 getter（0x106/0x201/0x2DC…）：对应引擎字段尚未逐一定位 → 保持 0（与旧行为一致）。
-    v = 0;
+    const field = ENGINE_FIELD_GET.get(c.instr.opcode);
+    if (field === undefined) {
+      throw new Error(`0x${c.instr.opcode.toString(16)}: 引擎字段 getter 未定位（不写伪造值；见 T-0057 R4）`);
+    }
+    v = c.e.engineValues.get(field) ?? 0;
   }
   writeIntOperand(c.e, c.frame, c.instr, 1, v);
 };
@@ -54,7 +67,7 @@ const op_get_engine_value: OpHandler = (c) => {
  *   写回侧是 0xC3（sub_420F10）。CONFIG.txt 用 `i0c0 (local-int 2)` 读系统值。
  */
 const op_get_music_field: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(174713) ?? 0);
+  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(ENGINE_FIELD.musicField) ?? 0);
 };
 
 /**
@@ -63,7 +76,7 @@ const op_get_music_field: OpHandler = (c) => {
  *   CONFIG1.txt:1459/1702 读它，且 **1702 的结果立刻被 `ne` 消费** → 当 no-op 跳过会让分支走错。
  */
 const op_get_screen_mode: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(167990) ?? 0) !== 0 ? 1 : 0);
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(ENGINE_FIELD.screenMode) ?? 0) !== 0 ? 1 : 0);
 };
 
 /**
@@ -78,61 +91,48 @@ const op_get_screen_mode: OpHandler = (c) => {
  * 规格：`{ 操作数序号(1-based) → [目标字段] }`；`transform` 可选（如布尔化、位组装）。
  */
 interface FieldStoreSpec {
-  /** 操作数序号 → 目标 `_this[K]` 字段。 */
+  /** 操作数序号 → 目标 `_this[K]` 字段（键必须是 `ENGINE_FIELD.*`，不得是裸数字）。 */
   map: Record<number, number>;
   /** 取到的值变换（默认原样）。 */
   transform?: (v: number) => number;
-  /**
-   * 字段写入之后的**副作用钩子**（可选）。
-   *
-   * ★历史：`0x76`/`0x77`/`0x78`/`0x8b`/`0x1a4`/`0x261` 曾在这里 `emitAllWins` —— 那是错的：
-   * 这些是**字体/颜色全局字段**，引擎只在**排版入队时**消费它们，写入本身不重绘已排版的窗
-   * （详见 `ENGINE_FIELD_STORE` 上方那段注释）。现在没有指令用它，保留设施以备真正的
-   * "写入即需重发"的字段。
-   */
-  after?: (e: Engine) => void;
 }
 const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldStoreSpec>([
   // ---- 消息窗（メッセージウィンドウ）属性/几何 ----
-  // ★这些是**全局字体/颜色/描边/竖排**字段（`Font+1360/+1364/+1368/+1380/+1372/+1384/+1388/+235108`）。
-  //   它们**不在写入时重绘任何已排版的窗** —— 引擎在**排版那一刻**就把字形连颜色画进该窗的离屏表面
-  //   （`sub_46BE30` → `sub_455ED0`），此后只改全局字段不会回溯；`0x75/0x76/0x77/…` 里那次
-  //   `sub_459F40` 只是**重建 GDI 字体对象/字宽**，不重画字形。
-  //   ⇒ 早前在这里挂 `after: emitAllWins`（把新样式立刻发布给所有窗）正是用户实测的
-  //   「设置页面角色名的颜色溢到下方 ADV 样例窗」的根因；样式改由**入队时钉住**
-  //   （`MsgSlot.fontStyle`，见 `FontStyleSnapshot`）。脚本要换样式重画时会重新 `i071`+`show-text`。
-  [0x76, { map: { 1: 21664 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 填充色（BGR→RGB）
-  [0x77, { map: { 1: 21665 }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 描边色
-  [0x78, { map: { 1: 21667 } }], // 描边档位
-  [0x8b, { map: { 1: 21669 } }], // 第三色
-  [0x1a4, { map: { 1: 21670, 2: 21671 } }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)
-  [0x252, { map: { 1: 92323 } }], // 消息系统配置
-  [0x261, { map: { 1: 80101 } }], // 竖排标志（Font+235108）
-  [0x2ee, { map: { 1: 80106 } }], // 消息派发
-  [0x2db, { map: { 1: 71744 } }], // 文本属性（引擎随后 sub_459F40 重排文本）
-  [0x25b, { map: { 1: 92381 } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由它在引擎里写；见 0x25A 的说明）
+  // ★这些是**全局字体/颜色/描边/竖排**字段。它们**不在写入时重绘任何已排版的窗** ——
+  //   引擎在**排版那一刻**就把字形连颜色画进该窗的离屏表面（`sub_46BE30` → `sub_455ED0`），
+  //   此后只改全局字段不会回溯；脚本要换样式重画时会重新 `i071`+`show-text`。
+  //   （历史上曾在这里挂 `after: emitAllWins`，正是用户实测「角色名颜色溢到 ADV 样例窗」的根因。）
+  [0x76, { map: { 1: ENGINE_FIELD.colorFill }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 填充色（BGR→RGB）
+  [0x77, { map: { 1: ENGINE_FIELD.colorOutline }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 描边色
+  [0x78, { map: { 1: ENGINE_FIELD.outlineMode } }], // 描边档位
+  [0x8b, { map: { 1: ENGINE_FIELD.lineSpacing } }], // **行间距**（Font+1380；旧注"第三色"是错的）
+  [0x1a4, { map: { 1: ENGINE_FIELD.outlineDx, 2: ENGINE_FIELD.outlineDy } }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)
+  [0x252, { map: { 1: ENGINE_FIELD.msgSystemConfig } }], // 消息系统配置
+  [0x261, { map: { 1: ENGINE_FIELD.verticalText } }], // 竖排标志（Font+235108）
+  [0x2ee, { map: { 1: ENGINE_FIELD.messageFade } }], // 消息淡入
+  [0x2db, { map: { 1: ENGINE_FIELD.fontMetricsMode } }], // 文本属性（引擎随后 sub_459F40 重排文本）
+  [0x25b, { map: { 1: ENGINE_FIELD.msgMediaImageId } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由它在引擎里写）
   // ---- 数据/配置/标志 ----
-  [0x21b, { map: { 1: 166965 }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
-  [0x24e, { map: { 1: 92340 } }],
-  [0x1cf, { map: { 1: 122504 } }], // 消息跳读态（引擎 sub_4213C0：_this[122504] = op1）
-  [0x10f, { map: { 1: 122369 } }],
+  [0x21b, { map: { 1: ENGINE_FIELD.engineBool }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
+  [0x24e, { map: { 1: ENGINE_FIELD.msgField92340 } }],
+  [0x1cf, { map: { 1: ENGINE_FIELD.skipReadState } }], // 消息跳读态（引擎 sub_4213C0：_this[122504] = op1）
+  [0x10f, { map: { 1: ENGINE_FIELD.frameField122369 } }],
   // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
-  [0xfe, { map: { 1: 517 } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存）
-  [0x107, { map: { 2: -1 } }], // SetKey：_this[op1+551]=op2 —— 字段随 op1 变，见下方专用 handler
+  [0xfe, { map: { 1: ENGINE_FIELD.setKeyTotal } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存；见 T-0057 后继）
 ]);
 
-/** `0x107`（SetKey）：`_this[op1 + 551] = op2`（op1=键位 ≤0x1F）。 */
+/** `0x107`（SetKey）：`_this[op1 + keyTableBase] = op2`（op1=键位 ≤0x1F）。 */
 const op_set_key: OpHandler = (c) => {
   const key = readIntOperand(c.e, c.frame, c.instr, 1);
   const value = readIntOperand(c.e, c.frame, c.instr, 2);
-  if (key <= 0x1f) c.e.engineValues.set(key + 551, value);
+  if (key <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTableBase, value);
 };
 
-/** `0x10B`（SetKey 另一表）：`_this[op2 + 1383] = op1`（op1=值 ≤0x1F）。 */
+/** `0x10B`（SetKey 另一表）：`_this[op2 + keyTable2Base] = op1`（op1=值 ≤0x1F）。 */
 const op_set_key2: OpHandler = (c) => {
   const value = readIntOperand(c.e, c.frame, c.instr, 1);
   const key = readIntOperand(c.e, c.frame, c.instr, 2);
-  if (value <= 0x1f) c.e.engineValues.set(key + 1383, value);
+  if (value <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTable2Base, value);
 };
 
 /** `ENGINE_FIELD_STORE` 的统一 handler。 */
@@ -140,16 +140,14 @@ const op_engine_field_store: OpHandler = (c) => {
   const spec = ENGINE_FIELD_STORE.get(c.instr.opcode);
   if (!spec) return;
   for (const [nStr, field] of Object.entries(spec.map)) {
-    if (field < 0) continue; // 动态字段由专用 handler 处理
     const v = readIntOperand(c.e, c.frame, c.instr, Number(nStr));
     c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
   }
-  spec.after?.(c.e);
 };
 
 /** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
 const op_get_engine_bool: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(166965) ?? 0) !== 0 ? 1 : 0);
+  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(ENGINE_FIELD.engineBool) ?? 0) !== 0 ? 1 : 0);
 };
 
 /**
@@ -158,7 +156,7 @@ const op_get_engine_bool: OpHandler = (c) => {
  * 修掉先前误用 `ENGINE_INTERNAL_OPS` 里 no-op 的问题：那样会让本指令**不写 op1**。
  */
 const op_get_effect_skip: OpHandler = (c) => {
-  const v = c.e.config ? cfgInt(c.e.config, 'system:effectskiponclick', 1) : 1;
+  const v = c.e.config ? cfgInt(c.e.config, CFG.systemEffectSkipOnClick, 1) : 1;
   writeIntOperand(c.e, c.frame, c.instr, 1, v);
 };
 
@@ -189,12 +187,12 @@ const op_get_effect_skip: OpHandler = (c) => {
 const op_set_meswin_alpha: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
   if (v > 0x10) return; // 引擎：op1 > 0x10 ⇒ 报错并返回（不写配置）
-  setConfigValue(c.e, 'message:meswinalpha', v); // 统一走 setConfigValue ⇒ 一样会通知落盘
+  setConfigValue(c.e, CFG.messageMesWinAlpha, v); // 统一走 setConfigValue ⇒ 一样会通知落盘
 };
 
 export const op_set_engine_flag_174812: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
-  c.e.engineValues.set(174812, v);
+  c.e.engineValues.set(ENGINE_FIELD.scriptEngineFlag, v);
 };
 
 /**
@@ -213,9 +211,9 @@ export const op_set_engine_flag_174812: OpHandler = (c) => {
  */
 const op_set_skip_read_state: OpHandler = (c) => {
   const e = c.e;
-  const state = e.engineValues.get(122504) ?? 0;
-  if ((state & 0x10000) !== 0) e.engineValues.set(122504, 0);
-  if (((e.engineValues.get(122504) ?? 0) & 1) === 0) e.engineValues.set(122503, 1);
+  const state = e.engineValues.get(ENGINE_FIELD.skipReadState) ?? 0;
+  if ((state & 0x10000) !== 0) e.engineValues.set(ENGINE_FIELD.skipReadState, 0);
+  if (((e.engineValues.get(ENGINE_FIELD.skipReadState) ?? 0) & 1) === 0) e.engineValues.set(ENGINE_FIELD.skipReadActive, 1);
 };
 
 /**
@@ -237,8 +235,8 @@ const op_set_skip_read_state: OpHandler = (c) => {
 const op_set_media_movie: OpHandler = (c) => {
   const e = c.e;
   const v = readIntOperand(e, c.frame, c.instr, 1);
-  e.engineValues.set(92379, 1); // 模式 1 = 影片
-  e.engineValues.set(92380, v);
+  e.engineValues.set(ENGINE_FIELD.mediaMode, 1); // 模式 1 = 影片
+  e.engineValues.set(ENGINE_FIELD.mediaId, v);
   // 引擎：模式变化时（92377 == 0）与"非全屏"时各下发一次 Scene 图层；宿主无影片子系统 ⇒ 只记字段。
 };
 
@@ -250,9 +248,9 @@ const op_set_media_movie: OpHandler = (c) => {
 const op_clear_flag_1000: OpHandler = (c) => {
   const e = c.e;
   e.effectFlags &= ~0x1000;
-  if ((e.engineValues.get(124350) ?? 0) !== 0) {
+  if ((e.engineValues.get(ENGINE_FIELD.dispatchInProgress) ?? 0) !== 0) {
     // 引擎：`if (_this[124350]) _this[95779] &= ~0x1000;`（124350 = 脚本派发中标志）
-    e.engineValues.set(95779, (e.engineValues.get(95779) ?? 0) & ~0x1000);
+    e.engineValues.set(ENGINE_FIELD.dispatchSavedFlags, (e.engineValues.get(ENGINE_FIELD.dispatchSavedFlags) ?? 0) & ~0x1000);
   }
 };
 
@@ -271,20 +269,20 @@ const op_clear_flag_1000: OpHandler = (c) => {
  */
 const op_seconds_timer: OpHandler = (c) => {
   const e = c.e;
-  e.engineValues.set(5450, e.engineValues.get(5451) ?? 0);
+  e.engineValues.set(ENGINE_FIELD.timerSecondsPrev, e.engineValues.get(ENGINE_FIELD.timerSeconds) ?? 0);
   const ms = BigInt(e.nowMs | 0);
-  e.engineValues.set(5449, Number((274877907n * ms) >> 38n) | 0);
+  e.engineValues.set(ENGINE_FIELD.timerMsDiv1000, Number((274877907n * ms) >> 38n) | 0);
 };
 
 /** `0x1AD`（sub_4196F0 raw 24806）：`Engine[166963] = cur`（存档序列化用的"当前帧"记忆；语料 1100 处）。 */
 const op_store_cur_166963: OpHandler = (c) => {
-  c.e.engineValues.set(166963, c.e.cur);
+  c.e.engineValues.set(ENGINE_FIELD.storedCur, c.e.cur);
 };
 
 /** `0x1B1`（sub_41FEA0 raw 29155）：`Engine[21672] = op1`。 */
 const op_set_field_21672: OpHandler = (c) => {
   const e = c.e;
-  e.engineValues.set(21672, readIntOperand(e, c.frame, c.instr, 1));
+  e.engineValues.set(ENGINE_FIELD.followTextMode, readIntOperand(e, c.frame, c.instr, 1));
 };
 
 /** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。

@@ -16,34 +16,20 @@
 import type { OpHandler } from '../step.js';
 import type { OpTable } from './shared.js';
 
-const stubSubsystem: OpHandler = (c) => {
-  const name = c.instr.name;
-  const args = c.instr.args.map((a) => a.raw);
-  switch (c.instr.opcode) {
-    case 0xb4:
-      c.native.playSound?.(args[0] ?? 0, args[1] ?? 0);
-      break;
-    case 0xbf:
-      c.native.playBgm?.(args[0] ?? 0);
-      break;
-    case 0xc4:
-      c.native.playVoice?.(args[0] ?? 0);
-      break;
-    case 0x1fb:
-      c.native.drawTexture?.(args);
-      break;
-    case 0x1f9:
-      c.native.setTexture?.(args);
-      break;
-    case 0xcd:
-      c.native.getInputType?.();
-      break;
-    case 0xc8:
-      c.native.sleep?.(args[0] ?? 0);
-      break;
-    default:
-      c.native.unhandled?.(c.instr.opcode, name);
-  }
+/**
+ * **唯一还留在「宿主无对应子系统」表里的指令**：记录后放行、不阻塞 VM。
+ *
+ * ★T-0057 R5：这里原有一个 `switch (opcode)` 覆盖 0xB4/0xBF/0xC4/0x1FB/0x1F9/0xCD/0xC8 —— 那 7 条
+ * **早已各自转真实现**（音频 → `AUDIO_OPS`、图形 → `GFX_*_NATIVE_OPS`、输入 → `INPUT_OPS`、
+ * sleep → `FRAME_NATIVE_OPS`），所以每个 `case` 都是死码；唯一活的 0x308 恰好落到 `default`。
+ * 现在只剩这一条路径。
+ *
+ * ⚠已知缺口（不在本轮）：`0x308` 的引擎体是「读 op1 → `sub_407B20` → 写 `_this[1954]`」
+ * （opcode-table.md:518），emulator 只发一句 `unhandled`，**没有读 op1、也没有写 1954**。
+ * 要补它得先读 raw `sub_407B20` 的语义（见 T-0057 notes 的 C2）。
+ */
+const op_stub_unhandled: OpHandler = (c) => {
+  c.native.unhandled?.(c.instr.opcode, c.instr.name);
 };
 
 /**
@@ -192,7 +178,7 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
 export const STUB_NATIVE_OPS: OpTable = [
   // ★`0xB4`（SE 装载）/ `0xBF`（play-bgm）/ `0xC4`（play-voice）已从本表移出：
   //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
-  [0x308, stubSubsystem], // 输入触摸注册（图形/子系统副作用，丢弃）
+  [0x308, op_stub_unhandled], // 输入触摸注册（⚠op1/`_this[1954]` 未建模，见 handler 注释）
   /**
    * ★`0x14B` / `0x14C` / `0x14D`（**AGERC 模块接口**）**已全部转真实现（2026-09，A6）**：
    * 见 `handlers/agerc.ts`（`AGERC_OPS`，进 `OPS`）+ 模型 `Engine.agerc`。

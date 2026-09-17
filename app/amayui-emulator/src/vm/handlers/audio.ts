@@ -38,8 +38,10 @@ import { readIntOperand } from '../operand.js';
 import { ADV_ACTIVE } from '../engine.js';
 import { pushVoiceRecord } from './text-items.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
-import { VOLUME_MAX } from '../../audio/audioEngine.js';
 import { setConfigValue } from './msgwin.js';
+import { cfgEquals, cfgInt } from '../../engineConfig.js';
+import { CFG, cfgSoundVolumeKey } from '../../configRegistry.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { resolveBgmResource } from './music-table.js';
 import type { OpTable } from './shared.js';
 
@@ -133,9 +135,12 @@ const op_bgm_slot: OpHandlerLike = (c) => {
  * 跳读态在时**不做**"给语音让路"的暂停 ⇒ 这里把 `fadeOnVoice` 一并按它收敛，让宿主行为与真机一致。
  */
 const op_play_bgm: OpHandlerLike = (c) => {
-  const keep = cfgBool(c, 'set:keepmusicvoice', false);
-  const skipRead = (c.e.engineValues.get(122503) ?? 0) !== 0;
-  const fadeOnVoice = cfgBool(c, 'sound:musicfadeonvoiceplaying', false) && !skipRead;
+  // ★键名曾是拼错的 'set:keepmusicvoice'（raw 0 次）⇒ 恒读 fallback、BGM 让路永不生效；
+  //   且引擎判据是 **== 1**（raw 29769-29777），不是"非 0"（T-0057 R1）。
+  const cfg = c.e.config;
+  const keep = cfg ? cfgEquals(cfg, CFG.soundKeepMusicVolume, 1) : false;
+  const skipRead = (c.e.engineValues.get(ENGINE_FIELD.skipReadActive) ?? 0) !== 0;
+  const fadeOnVoice = (cfg ? cfgEquals(cfg, CFG.soundMusicFadeOnVoicePlaying, 1) : false) && !skipRead;
   emit(c, { kind: 'policy', keepMusicVoice: keep, fadeOnVoice });
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200 并 sub_489E50(Music,100)（推进淡出）
@@ -145,20 +150,10 @@ const op_play_bgm: OpHandlerLike = (c) => {
   emit(c, bgmPlayIntent(c, bgm, true));
 };
 
-/** 读一个布尔配置（缺省 false；键统一小写，与 `parseIni` 的口径一致）。 */
-function cfgBool(c: StepCtx, key: string, fallback: boolean): boolean {
-  if (!c.e.config) return fallback;
-  const map = c.e.config.values;
-  const v = map.get(key);
-  if (v === undefined) return fallback;
-  const n = Number(v);
-  return Number.isFinite(n) ? n !== 0 : v !== '' && v !== '0';
-}
-
 /** `0xBB`：SE 总开关（引擎 `sub_408D90`：与现状比较后写配置 `sound:SE`，关时停 0..9 通道）。 */
 const op_se_enable: OpHandlerLike = (c) => {
   const on = readIntOperand(c.e, c.frame, c.instr, 1) !== 0;
-  setConfigValue(c.e, 'sound:se', on ? 1 : 0);
+  setConfigValue(c.e, CFG.soundSE, on ? 1 : 0);
   emit(c, { kind: 'enable', target: 'se', on });
 };
 
@@ -170,9 +165,9 @@ const op_bgm_mode: OpHandlerLike = (c) => {
   const raw = readIntOperand(c.e, c.frame, c.instr, 1);
   if (raw < 1 || raw > 3) return; // 引擎：op1 不在 1..3 时不动作
   const a2 = raw - 1; // 0 = 关；1/2 = 开（两种模式）
-  const cur = cfgNum(c, 'sound:music', 0);
-  if (a2 !== 0 && cur < 0) setConfigValue(c.e, 'sound:music', cur + 3);
-  else if (a2 === 0 && cur >= 0) setConfigValue(c.e, 'sound:music', cur - 3);
+  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMusic, 0) : 0;
+  if (a2 !== 0 && cur < 0) setConfigValue(c.e, CFG.soundMusic, cur + 3);
+  else if (a2 === 0 && cur >= 0) setConfigValue(c.e, CFG.soundMusic, cur - 3);
   emit(c, { kind: 'bgm-mode', mode: a2 });
 };
 
@@ -264,17 +259,17 @@ const op_voice_factor_prepare: OpHandlerLike = (c) => {
 const op_clear_message_sound_fields: OpHandlerLike = (c) => {
   const e = c.e;
   for (let ch = 0; ch < 3; ch++) {
-    e.engineValues.set(21315 + ch, 0);
-    e.engineValues.set(122505 + ch, 0);
+    e.engineValues.set(ENGINE_FIELD.voiceChannelStateBase + ch, 0);
+    e.engineValues.set(ENGINE_FIELD.voiceRegBase + ch, 0);
     emit(c, { kind: 'voice-reset', ch });
   }
-  e.engineValues.set(21318, 0);
-  e.engineValues.set(21319, 0);
-  e.engineValues.set(21320, 0);
-  e.engineValues.set(122501, 0);
-  e.engineValues.set(122508, 0);
-  e.engineValues.set(122509, 0);
-  e.engineValues.set(122510, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + 1, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + 2, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceRegSingle, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceRegFlagBase, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceRegFlagBase + 1, 0);
+  e.engineValues.set(ENGINE_FIELD.voiceRegFlagBase + 2, 0);
 };
 
 /**
@@ -289,8 +284,8 @@ const op_clear_message_sound_fields: OpHandlerLike = (c) => {
  */
 const op_audio_device_init: OpHandlerLike = (c) => {
   const e = c.e;
-  e.engineValues.set(18656, readIntOperand(e, c.frame, c.instr, 2));
-  e.engineValues.set(18660, readIntOperand(e, c.frame, c.instr, 3));
+  e.engineValues.set(ENGINE_FIELD.audioDeviceField0, readIntOperand(e, c.frame, c.instr, 2));
+  e.engineValues.set(ENGINE_FIELD.audioDeviceField1, readIntOperand(e, c.frame, c.instr, 3));
   c.log('0x1C9: 音频设备/驱动初始化 —— 设备文件装载与窗口坐标下发未建模（重写侧无驱动层，缺口已登记）');
 };
 
@@ -303,15 +298,6 @@ const op_voice_factor_apply: OpHandlerLike = (c) => {
   });
 };
 
-/** 读一个整数配置（缺省 0）。 */
-function cfgNum(c: StepCtx, key: string, fallback: number): number {
-  if (!c.e.config) return fallback;
-  const v = c.e.config.values.get(key);
-  if (v === undefined) return fallback;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
 /**
  * `0xC6`：设音量 —— op1 = 类别（0 = 主 / 1 = BGM / 2 = SE / 3 = 语音 / 4 = 影片）、op2 = 值。
  * 引擎同时把值写进配置 `sound:Volume0..4`（所以设置界面的滑块改完能持久化），越界走报错分支不写。
@@ -320,7 +306,7 @@ const op_set_volume: OpHandlerLike = (c) => {
   const category = readIntOperand(c.e, c.frame, c.instr, 1);
   const value = readIntOperand(c.e, c.frame, c.instr, 2);
   if (category < 0 || category > 4) return; // 引擎：sprintf("setVolume") 报错，不写
-  setConfigValue(c.e, `sound:volume${category}`, value);
+  setConfigValue(c.e, cfgSoundVolumeKey(category), value);
   emit(c, { kind: 'volume', category, value });
 };
 
@@ -357,8 +343,6 @@ export const AUDIO_OPS: OpTable = [
   [0x1c9, op_audio_device_init], // 音频设备/驱动初始化 + `Engine[18656]/[18660]`（0 处；装载=已登记缺口）
 ];
 
-/** 音频族用到的量程常量（导出便于测试断言，避免测试里写魔法数）。 */
-export const AUDIO_VOLUME_MAX = VOLUME_MAX;
 export type { AudioBus };
 
 /**
@@ -374,26 +358,28 @@ export function audioBootIntents(cfg: { values: Map<string, number | string> } |
   if (!cfg) return [];
   const out: AudioIntent[] = [];
   const num = (key: string): number | null => {
-    const v = cfg.values.get(key);
+    // ★键一律小写查（`parseIni` 的存储口径；CFG.* 常量保留引擎原始大小写）。
+    const v = cfg.values.get(key.toLowerCase());
     if (v === undefined) return null;
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   };
   for (let category = 0; category <= 4; category++) {
-    const v = num(`sound:volume${category}`);
+    const v = num(cfgSoundVolumeKey(category));
     if (v !== null) out.push({ kind: 'volume', category, value: v });
   }
-  const keep = num('set:keepmusicvoice');
-  const fade = num('sound:musicfadeonvoiceplaying');
+  const keep = num(CFG.soundKeepMusicVolume);
+  const fade = num(CFG.soundMusicFadeOnVoicePlaying);
   if (keep !== null || fade !== null) {
-    out.push({ kind: 'policy', keepMusicVoice: (keep ?? 0) !== 0, fadeOnVoice: (fade ?? 0) !== 0 });
+    // 与 `op_play_bgm` 同口径：引擎 raw 29769-29777 的判据是 **== 1**，不是「非 0」。
+    out.push({ kind: 'policy', keepMusicVoice: keep === 1, fadeOnVoice: fade === 1 });
   }
   // 三条总开关（引擎用 sound:SE / sound:Voice / sound:Music 决定各模块 `[261]`）
-  const se = num('sound:se');
+  const se = num(CFG.soundSE);
   if (se !== null) out.push({ kind: 'enable', target: 'se', on: se !== 0 });
-  const voice = num('sound:voice');
+  const voice = num(CFG.soundVoice);
   if (voice !== null) out.push({ kind: 'enable', target: 'voice', on: voice !== 0 });
-  const music = num('sound:music');
+  const music = num(CFG.soundMusic);
   if (music !== null) out.push({ kind: 'bgm-mode', mode: music >= 0 ? 1 : 0 });
   return out;
 }

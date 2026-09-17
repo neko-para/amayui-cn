@@ -34,7 +34,7 @@
  *   所以头的形状与校验口径与引擎一致，将来补上 payload 变换即可互通。
  */
 import { crc32, crc32MsbFirst } from './crc32.js';
-import { unlzss } from './lzss.js';
+import { unlzss } from '../util/lzss.js';
 
 /** 容器魔数：引擎按 `strncmp(Str1, engine+698904, 2)` 二选一（`aS4sd`/`aS3sd`）。 */
 export const SAVE_MAGIC = 'S4SD';

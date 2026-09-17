@@ -595,19 +595,6 @@ class Reader {
 
 // ───────────────────────────── 小工具 ─────────────────────────────
 
-function idClassOf(tag: number): MocIdClass {
-  switch (tag) {
-    case MOC_TAG.drawDataId:
-      return 'draw';
-    case MOC_TAG.baseDataId:
-      return 'base';
-    case MOC_TAG.paramId:
-      return 'param';
-    default:
-      return 'parts';
-  }
-}
-
 function asArray(v: Raw): Raw[] {
   const o = v as { kind?: string; items?: Raw[] } | null;
   return o && o.kind === 'objectArray' ? (o.items ?? []) : [];

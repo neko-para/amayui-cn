@@ -183,6 +183,8 @@ export interface GameStartResult {
   cursorTrail: { cursor: number; shown: number }[];
   /** 本链路用的等待门策略：`'pump'` = 真泵（与产品同源）/`'force'` = 旧旁路（对照用）。 */
   advancePolicy: 'pump' | 'force';
+  /** 悬停离开后把页面推回去用了多少帧（T-0057：此前算出来被 `void` 丢弃，意图丢失）。 */
+  hoverLeaveFrames: number;
   /** 与真实链路无关的内部时钟（ms），仅诊断。 */
   clockMs: number;
   /** 执行过的指令数（仅 `onStep` 未开时也统计）。 */
@@ -296,7 +298,6 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
 
   const unknown = new Map<number, UnknownOp>();
   const scriptTrail: string[] = [];
-  let clock = 0;
   let steps = 0;
   let firstTextIp = -1;
   let firstText = '';
@@ -436,8 +437,6 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       }
     },
   });
-  void clock;
-  void harness;
 
   const name = (): string => e.curScript().name;
   const hover = (): number => dec(e.key, e.curScript().locals.int.get(0x3f7) ?? -99);
@@ -530,12 +529,11 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
         moveTo(c, p.x, p.y);
       },
     );
-  let pumpFrames = 0;
+  let hoverLeaveFrames = 0;
   if (reachedSn0000 && (opt.advance ?? 'pump') === 'pump') {
     await run(3000, () => e.awaitingAdvance, undefined, { advance: 'pump' });
-    pumpFrames = await run(1200, () => hoverLeft > 0, undefined, { advance: 'pump' });
+    hoverLeaveFrames = await run(1200, () => hoverLeft > 0, undefined, { advance: 'pump' });
   }
-  void pumpFrames;
 
   const items = [...scene.scene.drawItems.values()];
   const result: GameStartResult = {
@@ -602,6 +600,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     gateWaits,
     revealRestarts,
     advancePolicy: opt.advance ?? 'pump',
+    hoverLeaveFrames,
     clockMs: harness.clock,
     steps,
   };

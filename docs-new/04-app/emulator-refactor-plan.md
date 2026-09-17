@@ -111,6 +111,36 @@
 
 ## 9. 变更记录
 
+- 2026-09（`tickets/T-0057`，**emulator 实现审计与治理**：`npm run verify` 全绿 **603 pass / 0 fail**（612 条，含新增 8 条守卫））：
+  跨层只读审计（VM 核心 / opcode handler / 渲染宿主 / 入口与工具 / 支撑子系统）把问题归成**四类同型病**并逐条落进
+  本票的 `notes.md`（A 多处真源、B 魔法下标、C 临时补丁、D 重复实现、E 死码/假注释，共 80+ 条，含未实施的后继项）。
+  本轮实施的是"能被守卫机械拦住"的那一半：
+  - ★**R3（真 bug）**：`0x1F5` 把 raw 的**字节**偏移 `429756/429752` 当 `engineValues` 键，而 `0x1F4` 用的是
+    dword 下标 `107439/107438`（同一对格）⇒ 帧计数只增不减、停靠锁永不释放、引擎时钟字段**冻在第一帧**。
+    改为 dword 下标常量；守卫 `test/engine-field-ids.test.ts`（i1f4×2 → count=1、i1f5 递减到 0 释放锁、此后 i1f4 恢复刷时钟）。
+  - ★**R2（单一真源）**：`engineFieldIds.ts` 升格为 `ENGINE_FIELD` 常量表（60+ 字段，逐条带语义/写者/读者），
+    `src/vm/**` 的 **68 处裸字面量键清零**；新增 ratchet 守卫（再出现裸数字键即红）。
+    顺带删掉 `ENGINE_FIELD_STORE` 里的死 spec（`0x107` 的 `map:{2:-1}`）、`field < 0` 分支与无人使用的 `after` 钩子。
+  - ★**R1（配置键单一真源）**：`configRegistry.ts` 新增 `CFG` 键常量 + 动态键白名单 + 加载期自检；
+    修掉三个**幽灵键**（raw 里 0 次）：`set:keepmusicvoice`→`set:KeepMusicVolume`（判据 `== 1`，raw 29769）、
+    `set:cancelmessagekey`→`set:CancelMesSkipOnClick`、`set:controldisibiecursor`→`set:ControlDisibleCursor`；
+    新增 `cfgBool/cfgEquals` 到 `engineConfig.ts` 并删掉 handler 里两份私有 INI 取值副本；
+    守卫 `test/config-keys.test.ts`（静态扫 `section:key` 字面量，**先剥注释**）。
+  - **R4（静默错值）**：`0x106/0x201` 从"恒写 0"改为读 `Engine[550]` / `Engine[166964]`（DrawMode），
+    表 `ENGINE_FIELD_GET`；`0x53/0x54` 改回 **C 截断语义**（`-5 % 3 = -2`）且除零统一抛错（原来 div 静默 0、mod 静默 NaN、random 抛）。
+  - **R5（临时物/死码）**：删 `src/tools/t0042c-colors.ts`（T-0042 的一次性探针）；LZSS 两份实现合一到 `src/util/lzss.ts`；
+    删 `ScriptReset`（`new` 0 处的死信号）及其驱动/4 个测试分支与 `StopReason='reset'`；`stubs.ts` 的 7 个死 switch 分支；
+    一批零引用导出（`FACE_MAP`/`DEFAULT_FAMILY`/`defaultFamilyOf`/`SAVE_SUBDIR`/`affineLerp`/`idClassOf`/
+    `PANEL_FIELD`/`AUDIO_VOLUME_MAX`/`ENGINE_MSG_HWND_FIELD`）、悬空注释与 `void` 假引用；
+    `gameStartChain` 的 `pumpFrames` 接回 `GameStartResult.hoverLeaveFrames`。
+  - **R6**：修掉预红项（`T-0054`/`T-0056` 的 evidence 指向 `.tmp/` ⇒ 临时目录一清测试就红）——证据改锚仓内文件
+    （`tickets/<ID>/notes.md`），并按棘轮刷新 `T-0031`/`T-0057` 的漂移锚点。
+  - **R7**：`analysis/fields.json` 补 `frame_tick_lock`/`frame_count`（字节 429752/429756）；`opcode-table.md` 的
+    `0x54/0x1F4/0x1F5/0x201` 行加订正注；看板重建。
+  - **未实施（已定位，见 `T-0057/notes.md`）**：最高杠杆是 **6 份 headless boot 装配收敛**（两份 chain 不装 SAVE.DAT ⇒
+    E3 走的支与产品不同）与 **脏位/present 单一真源**（A1–A4：Pixi 私有 `sceneDirty` 与共享 `SceneState.dirty`
+    各一份、`drawCgNumber` 等 7 个 op 漏标脏、presenter 二次推进动画窗、headless 脏位永不被消费）。
+
 - 2026-09（`tickets/T-0046`，`0x100` 的「默认键」分支 —— 用户报「CHARMEDIT 右键无反应」）：
   - 症状：`CHARMEDIT`（ADV 右侧菜单打开的编辑界面）真机可右键关闭，emulator 下右键无反应、只能点底部「閉じる」。
   - 根因（脚本侧读通了才定位到 VM）：脚本**收到了**右键（`local a` 的 bit1 被置上、抬起时确实走到关闭路径

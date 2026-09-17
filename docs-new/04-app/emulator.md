@@ -11,7 +11,7 @@
 
 | 项 | 值 | 校验方式 |
 |---|---|---|
-| 测试 | **476 条** node:test | `npm test` |
+| 测试 | **612 条** node:test（603 pass / 0 fail / 9 skip） | `npm test` |
 | 类型 | 3 个 tsconfig 全干净 | `npm run typecheck` |
 | 死写棘轮 | 基线 2 条（`Item.blend` / `MeshObj.blend`） | `npm run check:dead-writes` |
 | 一条命令全绿 | `npm run verify` = typecheck + test + dead-writes | — |
@@ -78,9 +78,15 @@
 - **单步派发**：`interpreter.stepOnce` 读一条指令 → 查 `OPS → NATIVE_OPS → ENGINE_INTERNAL_OPS` → 未命中抛 `NotImplementedOp`。
   操作数读取集中在 `operand.ts`（`readIntOperand` 对 int 槽过 DEC；`readFloatOperand` 的立即数是 IEEE 位模式）；
   引用（指针/数组/lea）集中在 `ref.ts`（`Ref={scope,kind,index,stride}`，读解引用、写写穿）。
-- **字段即事实**：引擎字段写进 `Engine.engineValues`（稀疏 `Map<number,number>`，键 = `_this[K]` 的 K）；
+- **字段即事实**：引擎字段写进 `Engine.engineValues`（稀疏 `Map<number,number>`，键 = `_this[K]` 的 **dword 下标**）；
   有结构的那部分再建强类型视图（`Engine.msgwin` / `routes` / `textItems` / `agerc` / `texSlotFlags` …）。
   两者的关系是"字段是真源、视图是投影"，不允许只有视图没有字段。
+  ★**键必须来自 `src/vm/engineFieldIds.ts` 的 `ENGINE_FIELD` 表**（T-0057 R2）：反编译里 `_this[K]`（dword）与
+  `*(_DWORD*)(_this+N)`（字节）两套口径相差 4 倍，误用不报错只表现不对（实测 `0x1F5` 把字节 `429756/429752`
+  当键 ⇒ 停靠锁永不释放、时钟冻在第一帧）。`test/engine-field-ids.test.ts` 既钉关键取值、也 ratchet"不得再出现裸数字键"。
+- **配置键即事实**：`SYS4REG.INI` 的键名必须来自 `configRegistry.ts` 的 `CFG` 常量（T-0057 R1）——
+  手打键名拼错不会报错、只恒读 fallback（实测 `set:keepmusicvoice` 等在 raw 里 0 次 ⇒ BGM 让路永不生效）。
+  精确判据用 `cfgEquals`（引擎大量 `== 1`/`== 2`，不是"非 0"）；`test/config-keys.test.ts` 静态扫全仓把关。
 - **场景模型**：`SceneState`（drawItems / meshes / msgWins / texSlots / render4 诊断袋）是**持久**的；
   指令只**配置对象**，`present()` 每帧按模型合成（引擎式"配置 + 每帧合成"，与指令流解耦）。
 - **动画两套、正交**：DrawItem 用整数式 diffuse-alpha 窗（5 个窗共享起点）；Mesh 用浮点 `CalcDiffuse`

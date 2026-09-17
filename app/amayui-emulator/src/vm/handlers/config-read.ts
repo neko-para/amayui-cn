@@ -25,6 +25,7 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
 import { cfgInt, cfgStr, DEFAULT_GAME_VERSION } from '../../engineConfig.js';
 import type { OpTable } from './shared.js';
+import { CFG } from '../../configRegistry.js';
 
 /** 读配置整数键（缺省 0，与引擎 `GetConfig` 缺省一致）。 */
 function cfg(c: StepCtx, key: string): number {
@@ -59,18 +60,18 @@ const CFG_READ: Record<number, CfgReadSpec> = {
   0xc7: {
     operand: 2,
     selector: 1,
-    keys: { 1: 'sound:music', 2: 'sound:se', 3: 'sound:voice', 4: 'sound:movie' },
+    keys: { 1: CFG.soundMusic, 2: CFG.soundSE, 3: CFG.soundVoice, 4: CFG.soundMovie },
     bool: true,
     onBadSelector: 'skip',
   },
   // message:AutoMessageTime0/1 → op2（op1 = 0/1）
-  0x1b8: { operand: 2, selector: 1, keys: { 0: 'message:automessagetime0', 1: 'message:automessagetime1' }, onBadSelector: 'skip' },
+  0x1b8: { operand: 2, selector: 1, keys: { 0: CFG.messageAutoMessageTime0, 1: CFG.messageAutoMessageTime1 }, onBadSelector: 'skip' },
   // message:AdvanceMesOnWheel → op1
-  0x2cc: { operand: 1, key: 'message:advancemesonwheel' },
+  0x2cc: { operand: 1, key: CFG.messageAdvanceMesOnWheel },
   // message:AutoMessagePitch0/1 → op2（op1 = 0/1）
-  0x2e6: { operand: 2, selector: 1, keys: { 0: 'message:automessagepitch0', 1: 'message:automessagepitch1' }, onBadSelector: 'skip' },
+  0x2e6: { operand: 2, selector: 1, keys: { 0: CFG.messageAutoMessagePitch0, 1: CFG.messageAutoMessagePitch1 }, onBadSelector: 'skip' },
   // message:AutoMessageOption → op1
-  0x2ea: { operand: 1, key: 'message:automessageoption' },
+  0x2ea: { operand: 1, key: CFG.messageAutoMessageOption },
 };
 
 const op_cfg_read: OpHandler = (c) => {
@@ -110,7 +111,7 @@ const op_cfg_read: OpHandler = (c) => {
  * + `i23b`(CG 数字条) 画成 "Version 1.07.0019"。
  */
 const op_cfg_read_string: OpHandler = (c) => {
-  const ini = c.e.config ? cfgStr(c.e.config, 'set:gameversion', DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
+  const ini = c.e.config ? cfgStr(c.e.config, CFG.setGameVersion, DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
   writeStringOperand(c.e, c.frame, c.instr, 1, ini);
 };
 

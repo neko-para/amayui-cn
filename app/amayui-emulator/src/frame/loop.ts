@@ -36,7 +36,7 @@
 import { SLEEP_GATE, type Engine, type Frame } from '../vm/engine.js';
 import { STAGE_GATE } from '../vm/stageLoop.js';
 import { NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
-import { ExitScript, ScriptReset } from '../vm/ops.js';
+import { ExitScript } from '../vm/ops.js';
 import type { BinInstruction } from '../script/bin.js';
 import type { FrameHost } from './host.js';
 import { buildFrameDigest } from './digest.js';
@@ -108,7 +108,7 @@ export interface FrameLoopOptions {
   onStep?(t: StepTrace, e: Engine): void | Promise<void>;
   /** 未实现指令的策略；默认 `'throw'`。 */
   onUnknown?(err: NotImplementedOp, frame: Frame, instr: BinInstruction | undefined): 'continue' | 'stop' | 'throw';
-  /** 其它异常的策略（`ExitScript`/`ScriptReset` 不经过这里，它们由驱动直接停）。默认 `'throw'`。 */
+  /** 其它异常的策略（`ExitScript` 不经过这里，它由驱动直接停）。默认 `'throw'`。 */
   onError?(err: unknown): 'stop' | 'continue' | 'throw';
   /** 脚本切换（只在"派发批"里检查，与现有各家的做法一致）。 */
   onScriptChange?(name: string, e: Engine): void;
@@ -161,7 +161,7 @@ export interface FrameLoopOptions {
 }
 
 /** 驱动为什么停下来（调用方据此还原各自的返回语义）。 */
-export type StopReason = 'until' | 'step-stop' | 'cap' | 'script-end' | 'exit' | 'reset' | 'unknown' | 'error';
+export type StopReason = 'until' | 'step-stop' | 'cap' | 'script-end' | 'exit' | 'unknown' | 'error';
 
 export interface FrameLoopResult {
   /** 已完整跑完的帧数。 */
@@ -202,7 +202,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
   const obsEnd = (nowMs: number): FrameObservation => ({ frameIndex: frames - 1, nowMs, frames, steps, e });
 
   /** 派发一条指令的结果（`'ok'` 之外都表示"整轮结束"，由调用方还原语义）。 */
-  type DispatchResult = 'ok' | 'exit' | 'reset' | 'unknown' | 'error' | 'step-stop';
+  type DispatchResult = 'ok' | 'exit' | 'unknown' | 'error' | 'step-stop';
 
   /** 派发一条指令。 */
   const dispatch = async (): Promise<DispatchResult> => {
@@ -215,7 +215,6 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       t = await stepOnce(e);
     } catch (err) {
       if (err instanceof ExitScript) return 'exit';
-      if (err instanceof ScriptReset) return 'reset';
       if (err instanceof NotImplementedOp) {
         const what = obs?.onUnknown?.(err, 'unknown') ?? opt.onUnknown?.(err, frame, instr) ?? 'throw';
         if (what === 'throw') throw err;

@@ -4,7 +4,7 @@
  * 这一族是**唯一**会改写 `ip` / `cur` 的地方，因此 `StepCtx.jump()` 的语义在此定义：
  * `jump(index)` = 下一指令下标；`jump(-1)` = 「控制流已转移，不要自动推进」。
  *
- * `ExitScript` / `ScriptReset` 是**解释器信号**（用异常穿越 handler 边界到 stepOnce 调用方），
+ * `ExitScript` 是**解释器信号**（用异常穿越 handler 边界到 stepOnce 调用方），
  * 不是错误 —— 见 interpreter.run 的捕获。
  */
 import type { OpHandler, StepCtx } from '../step.js';
@@ -12,6 +12,7 @@ import { readIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Frame } from '../engine.js';
 import { labelPos } from './shared.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
 const op_jmp: OpHandler = (c) => {
@@ -315,13 +316,6 @@ export class ExitScript extends Error {
   }
 }
 
-/** exit-script 后的"重置到根"信号（清空了所有脚本帧 + 全局数组）。 */
-export class ScriptReset extends Error {
-  constructor() {
-    super('script reset (exit-script teardown)');
-  }
-}
-
 /** exit-script (0x9)：全量 teardown → 置 `_this[96983]`(byte 387932)=0 → 重载根脚本 INDEX0 并继续。
  *  引擎 sub_428A60 语义：释放 40 帧 + 清全局内存池 + 引擎整体复位(sub_40DF10) + `_this[387932]=0` +
  *  `sub_40ED40(0,…)` 重载根脚本 0 并继续。GAMEOVER 依赖它回到标题界面。
@@ -366,7 +360,7 @@ const op_exit_script: OpHandler = async (c) => {
   //   不清的话，退到标题再进一个"没写 i0d3 就走到 i0d5"的脚本会带着上一次的下标 ⇒ setup 被跳过。
   c.e.stage.reset();
   // ★ 引擎 exit-script 置 _this[96983]=0 → GAMEOVER 回标题后 load-show-logo 读 0，SYSTEM4 跳过 LOGO/版权页。
-  c.e.engineValues.set(96983, 0);
+  c.e.engineValues.set(ENGINE_FIELD.logoEnabled, 0);
   // 重载根脚本 INDEX0（0=SYSTEM4 引导）；根脚本缺失/加载失败 → 程序退出（同引擎 Command_Exit 语义）。
   if (!c.e.fileSource) throw new ExitScript();
   const boot = await c.e.fileSource.readScript(0);

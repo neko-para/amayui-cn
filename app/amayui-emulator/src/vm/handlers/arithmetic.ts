@@ -21,8 +21,24 @@ function binOp(apply: (l: number, r: number) => number): OpHandler {
 const op_add = binOp((l, r) => (l + r) | 0);
 const op_sub = binOp((l, r) => (l - r) | 0);
 const op_mul = binOp((l, r) => Math.imul(l, r));
-const op_div = binOp((l, r) => Math.trunc(l / r));
-const op_mod = binOp((l, r) => ((l % r) + r) % r); // C 的 % 对负数是剩余（符号跟随被除数）；AGE 语义按需在 M1 定
+/**
+ * 整除 / 取模的共享原语（T-0057 R4）。
+ *
+ * - **C 的截断语义**：JS 的 `%` 本身就是"符号跟随被除数"（与 C 相同）⇒ `-5 % 3 = -2`。
+ *   旧实现写的是 floored 版 `((l%r)+r)%r`（`-5 % 3 = 1`），与注释和 `opcode-table.md:81` 都相反。
+ * - **除零抛错**：引擎会抛除零异常；旧实现 `div` 静默得 0、`mod` 静默得 NaN，
+ *   而同文件的 `random` 却抛 —— 同一族三种处理。现在三条统一走这里。
+ */
+function intDiv(l: number, r: number): number {
+  if (r === 0) throw new Error("div: 除数为 0（引擎会抛除零异常）");
+  return Math.trunc(l / r);
+}
+function intMod(l: number, r: number): number {
+  if (r === 0) throw new Error("mod: 模数为 0（引擎会抛除零异常）");
+  return (l % r) | 0;
+}
+const op_div = binOp(intDiv);
+const op_mod = binOp(intMod);
 const op_and = binOp((l, r) => l & r);
 const op_or = binOp((l, r) => l | r);
 const op_sar = binOp((l, r) => l >> (r & 31));

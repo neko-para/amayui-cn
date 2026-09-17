@@ -78,6 +78,8 @@ export interface RouteEntry {
 export type PanelField = (k: number, v?: number) => number | undefined;
 
 /** 引擎上限：`sub_403B30` 的 `if (count >= 100) return 0;`（9748-9749）。 */
+import { ENGINE_FIELD } from './engineFieldIds.js';
+
 export const ROUTE_MAX = 100;
 
 /** 面板对象在 `_this` 里的基址（dword 下标）：`Engine+0x55D8` = `_this + 5494`。 */
@@ -92,8 +94,8 @@ const PANEL_BASE = 5494;
  * （raw 24596-24599、24607），不是从 `panelA` 基址算出来的 —— 但只要它们是「同一份状态」，
  * 写一处就必须对另一处可见（否则 `0x93` 与泵的门控会各看各的）。
  */
-const ENGINE_SHOWN = 12957;
-const ENGINE_CLOSE_PENDING = 12956;
+const ENGINE_SHOWN = ENGINE_FIELD.panelShown;
+const ENGINE_CLOSE_PENDING = ENGINE_FIELD.panelClosePending;
 
 /**
  * 点击热点面板（引擎 `Engine+0x55D8` 的 CBunki 对象）。

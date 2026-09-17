@@ -36,6 +36,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import type { Engine } from '../engine.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
 /** 面板对象在 `_this` 里的基址（dword 下标）：`Engine+0x55D8` = `_this + 5494`。 */
@@ -128,7 +129,7 @@ const op_panel_show: OpHandler = (c) => {
   const p = e.routes;
   if (p.closePending !== 0) {
     p.closePending = 0;
-    e.engineValues.set(12958, 0);
+    e.engineValues.set(ENGINE_FIELD.panelResetFlag, 0);
     return;
   }
   e.effectFlags = (e.effectFlags & 0xf77fffff) | 0x800000;
@@ -144,7 +145,7 @@ const op_panel_show_fallback: OpHandler = (c) => {
   const p = e.routes;
   if (p.closePending !== 0) {
     p.closePending = 0;
-    e.engineValues.set(12958, 0);
+    e.engineValues.set(ENGINE_FIELD.panelResetFlag, 0);
     return;
   }
   e.effectFlags = (e.effectFlags & 0xf77fffff) | 0x800000;
@@ -161,5 +162,3 @@ export const PANEL_OPS: OpTable = [
   [0x97, op_message_surface_rect],
 ];
 
-/** 供测试/台账引用：面板字段下标（`_this[PANEL_FIELD(k)]`）。 */
-export const PANEL_FIELD = F;

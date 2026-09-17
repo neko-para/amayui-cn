@@ -372,10 +372,10 @@ test('★等待推进门：down+up 落在同一帧也不丢（消费刷保留按
   assert.equal(advanced, 0, '按下沿已被消费 ⇒ 后续帧不得再放行');
 });
 
-test('★ADV 分支仍吃「实时按住态」（sub_4780D0）：set:CancelMessageKey 下按住 ⇒ 三态机进 stage2', () => {
+test('★ADV 分支仍吃「实时按住态」（sub_4780D0）：set:CancelMesSkipOnClick 下按住 ⇒ 三态机进 stage2', () => {
   const { e, step } = mk();
   e.config = {
-    values: new Map([['set:cancelmessagekey', '1']]),
+    values: new Map([['set:cancelmesskiponclick', '1']]), // parseIni 存小写键（CFG 常量保留引擎原始大小写）
     sections: [],
     order: new Map(),
   } as unknown as Engine['config'];

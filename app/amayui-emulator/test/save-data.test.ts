@@ -35,7 +35,7 @@ import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { InputManager } from '../src/vm/input.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
-import { unlzss } from '../src/vm/lzss.js';
+import { unlzss } from '../src/util/lzss.js';
 import {
   SAVE_FORMAT_PLAIN,
   SAVE_HEADER_BYTES,
@@ -453,7 +453,7 @@ test('★E3：真语料启动链 —— 有 SAVE.DAT 走 LOADCONFIG（恢复设�
   const { loadScriptData, stepOnce } = await import('../src/vm/interpreter.js');
   const { resolveResourceDir } = await import('../src/arch/resourceDir.js');
   const { dec } = await import('../src/vm/bits.js');
-  const { ExitScript, ScriptReset } = await import('../src/vm/ops.js');
+  const { ExitScript } = await import('../src/vm/ops.js');
   const src = new NodeFileSource({ resourceDir: resolveResourceDir(REPO) });
   const boot = await src.readScript(0);
   assert.ok(boot, '应能读到 index 0 = SYSTEM4.BIN');
@@ -474,7 +474,7 @@ test('★E3：真语料启动链 —— 有 SAVE.DAT 走 LOADCONFIG（恢复设�
       try {
         await stepOnce(e);
       } catch (err) {
-        if (err instanceof ExitScript || err instanceof ScriptReset) break;
+        if (err instanceof ExitScript) break;
         throw err;
       }
       const now = e.curScript().name;

@@ -39,7 +39,6 @@
     {
       "file": "app/amayui-emulator/src/engineConfig.ts",
       "anchor": "export const CONFIG_FIELD_BINDINGS",
-      "line": 158,
       "note": "INI 键 → 引擎字段的 8 条绑定（引擎字段层的唯一启动来源）"
     },
     {
@@ -68,9 +67,8 @@
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
-      "anchor": "setConfigValue(c.e, 'message:messagespeed', v);",
-      "line": 1093,
-      "note": "我们的 0x1B5 确实写了注册表（内存）⇒ 缺的只是落盘那一步"
+      "anchor": "setConfigValue(c.e, CFG.messageMessageSpeed, v);",
+      "note": "我们的 0x1B5 确实写了注册表（内存）⇒ 缺的只是落盘那一步（T-0057 R1 改为经 `CFG.messageMessageSpeed` 常量引用，语义不变）"
     },
     {
       "file": "src/INITREGMES.txt",

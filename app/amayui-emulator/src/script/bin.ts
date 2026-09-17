@@ -240,4 +240,5 @@ export function parseScriptBytes(bin: Uint8Array): ScriptBinary {
   };
 }
 
-export { OPCODE_TABLE as OPCODE_TABLE };
+/** opcode → { name, argc }（本文件用的**Map 视图**，见文件头；`run.ts` 依赖它做诊断名）。 */
+export { OPCODE_TABLE };

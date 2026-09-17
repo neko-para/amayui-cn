@@ -241,7 +241,6 @@ async function main() {
     },
   }));
   if (result.stopReason === 'script-end') console.log(`  ip ${e.curScript().ip} 越界, 停止`);
-  else if (result.stopReason === 'reset') console.log('\n[reset] exit-script(0x9) 全量清栈/重置（回到干净根态）');
   else if (result.stopReason === 'exit') console.log('\n[abort] abort(0x1)/程序退出');
 
   console.log(`\n[done] 共执行 ${executed} 条指令（其中引擎内部/子系统 ${cfg} 条已插桩跳过；等待推进门自动放行 ${advanceWaits} 次）。cur=${e.cur} caller=${e.curScript().caller}`);

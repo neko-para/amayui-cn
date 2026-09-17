@@ -369,3 +369,12 @@ cd app/amayui-emulator && npm run verify
 - 数据层：`analysis/functions.json`（`report.js --find live2d`）、`analysis/engine-capabilities.json`（`capabilities.js --subsystem Live2D`）、`analysis/scripts.json`（`scripts.js --id TITLE`）
 - 相关票：**T-0051**（E4 真界面待验证清单 —— 本单的 E4 项可挂在那里）
 - 被本单改判的旧结论：`docs-new/03-engine/stub-reaudit-2026-09.md` §1.2（Live2D 一行已划掉并注明改判理由）
+
+## E4 记录（2026-09-17；★证据不放 `.tmp/`，见 T-0057 R6）
+
+`.tmp/l2dfix-0-title.png` 是临时产物（gitignore，会被清理）⇒ T-0054 的 E4 证据改为锚在本文件：
+
+> **TITLE 的 Live2D 支在真界面出画** —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。
+> 同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、
+> `[present …] l2d={槽1 节点1 可画1 纹理3}`。
+> 复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`（产物落 `.tmp/`，只作一次性目视，不进证据）。

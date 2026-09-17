@@ -101,8 +101,9 @@
       "note": "L2D = 第四类图元：批次按节点 key 与 item/text/mesh 四路归并，每批一个 Pixi Mesh"
     },
     {
-      "file": ".tmp/l2dfix-0-title.png",
-      "note": "★E4（2026-09-17）：TITLE 的 Live2D 支在真界面出画 —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、`[present …] l2d={槽1 节点1 可画1 纹理3}`。复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`"
+      "file": "tickets/T-0054/notes.md",
+      "anchor": "TITLE 的 Live2D 支在真界面出画",
+      "note": "★E4（2026-09-17，锚在 notes.md 的 E4 记录节）：TITLE 的 Live2D 支在真界面出画 —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、`[present …] l2d={槽1 节点1 可画1 纹理3}`。复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`"
     },
     {
       "file": "app/amayui-emulator/src/live2d/moc.ts",

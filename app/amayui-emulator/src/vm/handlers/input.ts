@@ -10,6 +10,7 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
 import { readRef, refAt } from '../ref.js';
 import { labelPos } from './shared.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
 // ---- 鼠标/输入子系统 opcodes（已读 handler 体；语义见 ../docs-new/03-engine/input-system.md）----
@@ -156,7 +157,7 @@ const op_input_dispatch: OpHandler = (c) => {
   const e = c.e;
   const mask = e.input.flushHeld();
   // SetKeyTotal（0xFE 写 `Engine[517]`；引擎默认值 7 = Input 构造 `sub_477DD0` raw 92385 的 `_this[259]=7`）
-  const keyTotal = e.engineValues.get(517) ?? 7;
+  const keyTotal = e.engineValues.get(ENGINE_FIELD.setKeyTotal) ?? 7;
   let b: number;
   if (mask === 0) {
     b = keyTotal; // ★默认键槽（raw 25054 `v4 = result[517]`）

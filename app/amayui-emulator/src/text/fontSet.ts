@@ -128,22 +128,11 @@ const FACE_MAPS: Record<ResourceVersion, Record<string, string>> = {
   },
 };
 
-/** 兼容旧引用：`cnjp`（默认政策）的面名表。 */
-export const FACE_MAP = FACE_MAPS.cnjp;
-
 /** 各版本查不到面名时的回退字族。 */
 const DEFAULT_FAMILIES: Record<ResourceVersion, string> = {
   cnjp: CNJP_FAMILY,
   jp: SARASA_FAMILY,
 };
-
-/** 默认字族（`cnjp` 政策；也是随包 `message:Font` 的值）。 */
-export const DEFAULT_FAMILY = DEFAULT_FAMILIES.cnjp;
-
-/** 某个资源版本的默认字族（回退目标）。 */
-export function defaultFamilyOf(version: ResourceVersion): string {
-  return DEFAULT_FAMILIES[version];
-}
 
 /** 把引擎面名规范化成查表键：剥 `'@'` 前缀（GDI 竖排字体）、去首尾空白与内部空格、转大写。 */
 export function normalizeFace(name: string): string {

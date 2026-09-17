@@ -76,35 +76,47 @@ test('注册表棘轮：A2/A3 的每条都落在真实现表里，且不在 ENGI
 // A2
 // ---------------------------------------------------------------------------
 
-test('0x7B → 0x199：设置/读取本帧「重显示」回退游标（含备用游标与模式位）', () => {
+test('0x7B → 0x199：设置/读取本帧「重显示」回退游标（值是 **dword 偏移**，跳转须经 dwordToInstr）', () => {
   const { e, f, trace } = mk();
   e.cur = 3;
+  // 造一份最小脚本映像：`dwordToInstr` 把 dword 偏移映射到指令数组下标。
+  //   ★T-0057 订正：`0x7B` 存的是脚本 label 的 dword 偏移（引擎 `ip = base + 4*游标`），
+  //   旧实现把它当数组下标直接 jump ⇒ 真语料 `$1$SC0330.txt:42` 的 `i07b label_000036a4` 会跳错位。
+  const script = {
+    instructions: [{ index: 10 }],
+    dwordToInstr: new Array<number>(200).fill(-1),
+  };
+  script.dwordToInstr[42] = 7;
+  script.dwordToInstr[77] = 9;
+  f.script = script as unknown as Frame['script'];
+  f.ip = 0;
   // 0x7B <主游标> <备用游标>
   OPS.get(0x7b)!(makeCtx(e, f, instr(0x7b, [im(42), im(77)]), e.native, () => {}));
   assert.equal(e.engineValues.get(122372 + 3), 42);
   assert.equal(e.engineValues.get(122412 + 3), 77);
 
-  // 0x199：模式位未置 ⇒ 用主游标，并把当前 ip+1 存进 122453、清 effect_flags
+  // 0x199：模式位未置 ⇒ 用主游标，把 `当前指令 dword 偏移 + 1` 存进 122453、清 effect_flags
   e.effectFlags = 0x123;
-  f.ip = 10;
   const r = trace(0x199);
-  assert.equal(r.next, 42, '0x199 应跳到主回退游标（引擎 ip = base + 4*游标）');
+  assert.equal(r.next, 7, '0x199 应跳到主回退游标经 dwordToInstr 换算出的数组下标');
   assert.equal(e.effectFlags, 0, '0x199 会清 effect_flags（旧值存进 122452）');
   assert.equal(e.engineValues.get(122452), (0x123 | 0x6000000) | 0);
-  assert.equal(e.engineValues.get(122453), 11);
+  assert.equal(e.engineValues.get(122453), 11, '引擎存 ((ip-ip_base)>>2)+1 = 指令 dword 偏移 10 + 1');
 
   // 模式位已置 ⇒ 用备用游标，且只改 122452 的两位
   e.engineValues.set(122452, 0x6000000);
   const r2 = trace(0x199);
-  assert.equal(r2.next, 77, '模式位 0x4000000 已置时用备用游标');
+  assert.equal(r2.next, 9, '模式位 0x4000000 已置时用备用游标');
   assert.equal(e.engineValues.get(122452), (0x6000000 & 0xf9ffffff) | 0x2000000);
 
   // 游标缺省 -1 ⇒ 不动控制流、不改 ip
   const { e: e2, f: f2, trace: t2 } = mk();
-  f2.ip = 5;
+  const script2 = { instructions: [{ index: 0 }], dwordToInstr: new Array<number>(10).fill(-1) };
+  f2.script = script2 as unknown as Frame['script'];
+  f2.ip = 0;
   const r3 = t2(0x199);
   assert.equal(r3.next, null, '无游标时 0x199 不得改控制流');
-  assert.equal(f2.ip, 5);
+  assert.equal(f2.ip, 0);
 });
 
 test('0x1BB SetTB：1 ⇒ 记账、0 ⇒ 暂停、其它 ⇒ 按引擎同文抛错', () => {
