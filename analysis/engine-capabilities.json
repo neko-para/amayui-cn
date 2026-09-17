@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 126,
-    "modeled-verified": 42,
+    "modeled-verified": 43,
     "modeled-unverified": 8,
-    "partial": 28,
+    "partial": 27,
     "absent": 22,
     "n/a-known": 26,
-    "needsAttention": 58
+    "needsAttention": 57
   },
   "entries": [
     {
@@ -3536,10 +3536,10 @@
       "whySilent": "宿主能不能移动**真实系统光标**不影响任何脚本可读的状态：`0x10A` 之后 `0x109` 读回的是**引擎侧**坐标、`hover`/`0x12E` 命中测试用的也是它 ⇒ 脚本逻辑照跑、不报错；缺的只是玩家看得见的那一下（光标在屏幕上跳过去）。★反过来还会静默地「半失效」：玩家一动物理鼠标，`mousemove` 就把引擎侧坐标覆盖回真实位置，于是依赖「钉住光标」的观感（ADV 侧栏随键盘导航把光标钉进栏内、`SBUNKI`/`BUNKI` 的恢复上次位置、`ALLMAP` 的拖动回夹、`SELSTAGE` 的对话框居中）只生效到下一次鼠标移动。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
-        "evidence": "E2",
-        "guard": "test/input.test.ts",
-        "note": "emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。"
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/native-win32.test.ts",
+        "note": "emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。\n★2026-09 落地（`tickets/T-0058`；缺口票 `T-0053` 选路线 ①）：**宿主侧那半件已实现并核验** —— 新增 N-API 原生模块 `native/win32-input`（CMake + C++17 + node-addon-api；`src/win32_input.cc`）。\n链路 = 渲染进程（虚拟→客户区，用 `pixi/inputAttach.ts` 的同一套 canvas rect 的逆）→ IPC `set-system-cursor` → 主进程 `electron/nativeAddon.ts`（内容区原点 `BrowserWindow.getContentBounds()` + **DIP→物理** `screen.dipToScreenPoint()`）→ `.node` 的 `SetCursorPos`。\n**降级**：模块没构建 / 非 Windows 时全函数返回 null/false，主进程只记一行诊断，退化成「只改引擎侧光标」（旧行为）—— 模拟器不会因为缺原生模块起不来。\n两处真机核验：① `native/win32-input/tools/smoke.cjs`（`AMAYUI_WIN32_INPUT_MOVE_TEST=1`：+3px 后读回一致、再复位）；② `app/amayui-emulator/tools/verify-cursor.cjs`（真实 Electron 宿主：DIP(447,390) → 物理(559,488) → 读回一致 → 复位；本机 125% 缩放 ⇒ 少了 DIP→物理那一跳就会偏左上）。\n产品宿主核验：`tools/boottime.cjs` 的日志第 2 行 `[native] win32-input available=true …` ⇒ `.node` 在 `electron.exe` 里加载成功（延迟加载钩子生效）。\n★仍是缺口：`ShowCursor` 的两处（raw 4108/139344）与另两处「光标居中」（raw 11863/141138）**没有**接线（本作只在 0x10A 这条路上需要）；三条语料用途的**观感**（ADV 侧栏钉光标 1470 处 / 光标位置记忆 / 拖动回夹 / 对话框居中）需要人在真界面里看一次（`tickets/T-0051` 的 E4 清单已列 `0x10A 侧栏钉光标`）。"
       }
     },
     {

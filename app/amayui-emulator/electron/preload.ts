@@ -105,6 +105,13 @@ contextBridge.exposeInMainWorld('api', {
   controlSkipOp: (opcode: number) => ipcRenderer.send('control-skip-op', opcode),
   /** 渲染窗→主：上报状态（供主进程转发给控制窗）。 */
   sendRendererStatus: (s: ControlStatus) => ipcRenderer.send('renderer-status', s),
+  /**
+   * 渲染窗→主：**把真实系统光标挪到客户区坐标 (clientX, clientY)**（引擎 `0x10A` 的宿主侧动作）。
+   *
+   * 主进程补上内容区原点（`getContentBounds`）并做 DIP→物理（`screen.dipToScreenPoint`），
+   * 最后落到 `native/win32-input` 的 `SetCursorPos`；原生模块缺失时静默降级（只改引擎侧光标）。
+   */
+  setSystemCursor: (clientX: number, clientY: number) => ipcRenderer.send('set-system-cursor', clientX, clientY),
 
   // ---- 主 → 窗口 的推送 ----
   /**

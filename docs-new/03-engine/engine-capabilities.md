@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 42 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 43 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 8 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 28 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 27 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 22 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **126** | 需要关注（非 n/a 且非已核验）= **58** |
+| **合计** | **126** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
@@ -30,7 +30,7 @@
 | 渲染 | 26 | 11 |
 | 资源 | 16 | 4 |
 | 转场 | 4 | 3 |
-| 输入 | 6 | 1 |
+| 输入 | 6 | 0 |
 
 ## 全部条目
 
@@ -156,7 +156,7 @@
 | `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | 🟠 部分 | E4 · `test/draw-string.test.ts` |
 | `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——"白字"永不纯白、"往透明表面画字"偏灰 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
 | `key-dispatch-default-slot` | 输入 | 0x100 空掩码时的「默认键」槽派发（下标 = SetKeyTotal） | ✅ 已核验 | E2 · `test/input.test.ts` |
-| `host-cursor-warp` | 输入 | 把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos） | 🟠 部分 | E2 · `test/input.test.ts` |
+| `host-cursor-warp` | 输入 | 把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos） | ✅ 已核验 | E3 · `test/native-win32.test.ts` |
 | `live2d-enabled-config-flag` | Live2D | Live2D 开关（`global a9d0`）与静态贴图回落 | 🟠 部分 | E1 |
 | `l2d-node-draw-gate` | Live2D | 572 字节「立绘 / 变换节点」的出画门控（只有 L2D 槽真有模型才出画） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
 | `live2d-node-draw-advance` | Live2D | L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
@@ -604,15 +604,6 @@
 - **引擎**：sub_455ED0, sub_43C8D0, sub_45E870 @ raw 68011-68129
 - **读的字段**：Font+1360(填充色), Font+1364(描边色)
 - **emulator 现状**：★实测（T-0042）：引擎 vs emulator 同屏（OPTION 系统设定）逐区域比对 —— 引擎画的文字核心恒 226-232，其中字体样例预览横跨「亮天空→暗照片」（背景 7→49）时核心只动 0.3 ⇒ 是**常数压暗**，不是与场景的 alpha 混合、也不是重采样；而美术图（米白按钮面 (254,243,229) 在两边是 9542 vs 9553 px、纯白高光 374/374）逐像素一致 ⇒ 不是整帧色调曲线。已排除：`message:MesWinAlpha`（用户实测 0/32 都无变化）、配置色 `adcd`（真机 SAVE.DAT 全表 1000 条无 0xE4/0xE6）、AA 门（`Font+1352`）、`set:DrawMode`（引擎缺省 0，两边一致）、缩放/滤波（任何内部尺寸×放大组合都留 255）、调色板（引擎里没有调色板 API）、窗对象颜色对 op（0x25E/0x25F/0x131/0x141 全库脚本零使用）。**机制仍未定位**（写在 T-0042 的 acceptance）；当前 emulator 按实测值对齐：`src/vm/handlers/msgwin.ts` 的 `TEXT_WHITE_LEVEL = 0.89`（并给出黑仍为黑），守卫：test/draw-string.test.ts（0x204 直绘的填色断言）、test/adv-msgwin.test.ts、test/text-style-snapshot.test.ts（rgbOf 同口径；三处都钉住 0xFFFFFF → #e3e3e3）。
-
-### `host-cursor-warp`（partial）
-
-- **能力**：把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos）
-- **触发**：脚本执行 `0x10A`（`i10a`）时：引擎 `sub_421EA0` 把虚拟坐标反算成屏幕坐标后调 `SetCursorPos`
-- **缺失时为什么静默**：宿主能不能移动**真实系统光标**不影响任何脚本可读的状态：`0x10A` 之后 `0x109` 读回的是**引擎侧**坐标、`hover`/`0x12E` 命中测试用的也是它 ⇒ 脚本逻辑照跑、不报错；缺的只是玩家看得见的那一下（光标在屏幕上跳过去）。★反过来还会静默地「半失效」：玩家一动物理鼠标，`mousemove` 就把引擎侧坐标覆盖回真实位置，于是依赖「钉住光标」的观感（ADV 侧栏随键盘导航把光标钉进栏内、`SBUNKI`/`BUNKI` 的恢复上次位置、`ALLMAP` 的拖动回夹、`SELSTAGE` 的对话框居中）只生效到下一次鼠标移动。
-- **引擎**：sub_421EA0 @ raw 30530-30598
-- **读的字段**：Engine+699168 (客户区宽), Engine+699172 (客户区高), Engine+167990 (display:ScreenMode)
-- **emulator 现状**：emulator 现状：引擎侧那半件已建模（`op_set_mouse_pos` = `InputManager.setCursor(op1, op2, true)`，`0x109` 往返 + `onCursorMove` 命中时机都有守卫）；**宿主侧那半件做不到** —— 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos`）。★候选替代路线与代价见 `tickets/T-0053`（原生模块调 `SetCursorPos`/`CGWarpMouseCursorPosition`；自绘软件光标 + `cursor:none`；pointer lock 合成移动）。★引擎全库只有三处 `SetCursorPos`：0x10A（raw 30597）与另两处「把光标居中」（raw 11863 / 141138，`Engine[699168]/2, Engine[699172]/2`）。
 
 ### `live2d-enabled-config-flag`（partial）
 

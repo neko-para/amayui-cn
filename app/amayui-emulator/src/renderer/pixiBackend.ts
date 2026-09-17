@@ -882,6 +882,26 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * **把真实系统光标挪到「引擎虚拟坐标 `(x, y)`」处**（`NativeBridge.setSystemCursor`；引擎 `0x10A`）。
+   *
+   * 渲染进程只做**虚拟 → 客户区**这一跳（`pixi/inputAttach.ts` 的 `toVirtual` 的逆，用同一个
+   * `canvas.getBoundingClientRect()` ⇒ 两向换算永远互为逆运算，不会各算一套）；客户区 → 屏幕、
+   * 以及 DIP → 物理都由主进程做（`electron/nativeAddon.ts` 的注释里有完整三跳）。
+   *
+   * ★没有 `window.api.setSystemCursor`（旧 preload / 非 Electron 宿主）时**什么都不做** ——
+   * 引擎侧坐标已经由 `InputManager.setCursor` 生效，脚本逻辑不受影响，少的是"玩家看见光标跳过去"。
+   */
+  setSystemCursor(x: number, y: number): void {
+    const rect = this.app.canvas.getBoundingClientRect();
+    const cw = rect.width || VIEW_W;
+    const ch = rect.height || VIEW_H;
+    window.api?.setSystemCursor?.(
+      Math.round(rect.left + (x / VIEW_W) * cw),
+      Math.round(rect.top + (y / VIEW_H) * ch),
+    );
+  }
+
+  /**
    * 把**所有活实例槽**上已绑定的纹理号发起载入（幂等）。
    *
    * 为什么按槽而不是"按本帧要画的批次"：批次的纹理号要先把几何求值一遍才知道，那等于每帧

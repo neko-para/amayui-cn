@@ -260,6 +260,21 @@ export interface NativeBridge {
   /** 全部清空（`op_exit_script` 的 `msgwin.reset()`）。 */
   msgWinClearAll?(): void;
 
+  /**
+   * **把系统的真实光标挪到「引擎虚拟坐标 `(x, y)`」对应的屏幕位置**（引擎 `0x10A` 的宿主侧动作）。
+   *
+   * 引擎在 `sub_421EA0`（raw 30530-30598）里就是 `ClientToScreen` + **`SetCursorPos`**：
+   * 参数是**虚拟屏坐标**，宿主负责换算到屏幕（Electron 主进程用
+   * `BrowserWindow.getContentBounds()` + `screen.dipToScreenPoint()`，见 `electron/nativeAddon.ts`）。
+   *
+   * ★两种宿主天生做不到 / 不需要做：
+   *  - **浏览器**没有移动真实光标的 API（合成事件不改真实光标）⇒ Electron 侧靠原生模块补齐
+   *    （`native/win32-input`，`tickets/T-0053`）；
+   *  - **headless 宿主**（`StubNative`/`HeadlessScene`）没有光标这回事 ⇒ 实现为**显式 no-op**
+   *    （而不是"缺缝"：那会让闸门 A 把每次 `i10a` 都记成宿主缺口 —— 语料 1678 处，纯噪声）。
+   */
+  setSystemCursor?(x: number, y: number): void;
+
   // ---- Plan A：类型化渲染配置（严格 flag 校验） ----
   configureDrawItem?(cfg: DrawItemConfig): void;
   bindTexture?(imgid: number, slot: number): void;

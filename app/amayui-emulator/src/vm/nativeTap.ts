@@ -39,6 +39,8 @@ export interface DroppedIntent {
 /** 未实现方法的「为什么缺失不会报错」说明表（键 = 方法名）。 */
 const WHY: Record<string, string> = {
   setLight: 'D3D 灯光开关：不实现 ⇒ 依赖灯光的 3D 元素亮度恒定，无报错',
+  setSystemCursor:
+    '真实系统光标移动（引擎 0x10A 的 SetCursorPos）：不实现 ⇒ 引擎侧坐标照旧生效，只有"玩家看见光标跳过去"缺失（一动鼠标就被 mousemove 覆盖），无报错',
   releaseMovieSlots: '销毁 movie/纹理槽 42..999：不实现 ⇒ 后续引用的图元仍画旧图，无报错',
   clearMeshSlots: '清 D3DX 网格层级槽：不实现 ⇒ 旧网格残留，无报错',
   clearSlotRecords: '清两张 1000×2 记录表：不实现 ⇒ 记录表残留，无报错',
@@ -196,6 +198,7 @@ export const BRIDGE_METHODS = [
   'setScale',
   'setScaleAnim',
   'setString',
+  'setSystemCursor',
   'setTexture',
   'setSceneBlend',
   'setRenderTarget',

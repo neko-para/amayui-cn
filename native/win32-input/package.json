@@ -1,0 +1,24 @@
+{
+  "name": "amayui-win32-input",
+  "version": "0.1.0",
+  "private": true,
+  "description": "《天結いキャッスルマイスター》模拟器的宿主侧 Win32 能力（N-API 原生模块）：移动真实光标、读光标/虚拟屏/键态",
+  "license": "UNLICENSED",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "configure": "cmake-js configure",
+    "build": "cmake-js build --release",
+    "build:debug": "cmake-js build --debug",
+    "rebuild": "cmake-js rebuild --release",
+    "clean": "cmake-js clean",
+    "smoke": "node tools/smoke.cjs"
+  },
+  "devDependencies": {
+    "cmake-js": "^8.0.0",
+    "node-addon-api": "^8.9.2"
+  }
+}

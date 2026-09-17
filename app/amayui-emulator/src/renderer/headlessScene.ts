@@ -533,6 +533,18 @@ export class HeadlessScene implements NativeBridge {
     scMsgWinClearAll(this.scene);
   }
 
+  /**
+   * **真实系统光标**（`NativeBridge.setSystemCursor`，引擎 `0x10A` 的宿主侧）：headless 没有光标这回事
+   * ⇒ **显式 no-op**（`tickets/T-0053` / `T-0058`）。
+   *
+   * ★为什么不是"不实现这条缝"：缝缺了会被 `NativeTap`（闸门 A）记成"宿主未实现"的缺口，而 `i10a`
+   * 全库 1678 处 ⇒ 控制窗的缺口清单会被这一条噪声灌满。"headless 没有真实光标"是**宿主属性**，
+   * 不是缺口（对照 Electron 宿主：那条真的调 `SetCursorPos`）。
+   */
+  setSystemCursor(_x: number, _y: number): void {
+    /* 无真实光标可动；引擎侧坐标由 InputManager.setCursor 生效 */
+  }
+
   /** `0x20C`/`0x23C`：推进时钟并驱动所有动画窗（= `present()` 的"模型部分"）。 */
   frameTick(): void {
     this.frameTicks++;

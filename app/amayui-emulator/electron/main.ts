@@ -6,7 +6,8 @@
  *  - `logging.ts` 诊断落盘（异步流 + 关窗同步兜底）；
  *  - `windows.ts` 两个窗口的创建与消息转发；
  *  - `ipc/files.ts`   资源读取（脚本 / 文件 / 配置 / 图像 AGF 解码 / SAVE.DAT）；
- *  - `ipc/control.ts` 控制面（重启 / 关窗 / 强制关闭 / trace / 桩跳过 / 状态转发）。
+ *  - `ipc/control.ts` 控制面（重启 / 关窗 / 强制关闭 / trace / 桩跳过 / 状态转发）；
+ *  - `nativeAddon.ts` **宿主侧原生能力**（`native/win32-input`：真移动系统光标，引擎 `0x10A`）。
  *
  * 本文件不再直接写文件、不解析路径、不内联 IPC 处理器。
  */
@@ -14,6 +15,7 @@ import { app, BrowserWindow } from 'electron';
 import { initLogFile, registerLogIpc } from './logging.js';
 import { logSystemPaths, registerAudioProtocol, registerAudioScheme, registerFileIpc } from './ipc/files.js';
 import { registerControlIpc } from './ipc/control.js';
+import { initNativeAddon, registerNativeIpc } from './nativeAddon.js';
 import { windows } from './windows.js';
 
 // ★音频：必须在 app ready **之前**做两件事
@@ -29,6 +31,10 @@ app.whenReady().then(() => {
   registerAudioProtocol();
   registerLogIpc();
   registerControlIpc();
+  // ★原生能力（`native/win32-input`）：必须在 `registerLogIpc()` **之后** —— 它的一行状态诊断要写进
+  //   同一个日志文件（在那之前 logAppender 是空实现）。缺模块时它自己降级，不影响启动。
+  initNativeAddon();
+  registerNativeIpc();
 
   windows.createGame();
   windows.createControl();

@@ -285,19 +285,23 @@ const op_hover_hittest: OpHandler = (c) => {
  *  ③ **拖动越界回夹**：`ALLMAP.txt:531/558/583/610` 把拖出地图区的光标 `i10a (local 0)(local 1)` 按回去。
  *  ④ **对话框居中**：`SELSTAGE.txt:42` 的 `i10a 388 d3`（= (904, 211) 硬编码位置）。
  *
- * ★emulator 映射：浏览器**不能**移动真实系统光标 ⇒ 等价物是把**引擎侧光标**设为 (x, y)
- * （`InputManager.setCursor`）。可见后果与引擎一致：之后 `0x109` 读回 (x,y)，hover/`0x12E` 用新位置
+ * ★emulator 的**引擎侧**那半件：把**引擎侧光标**设为 (x, y)（`InputManager.setCursor`）—— 它才是
+ * 命中测试与 `0x109` 的真源。可见后果与引擎一致：之后 `0x109` 读回 (x,y)，hover/`0x12E` 用新位置
  * （`setCursor` 触发 `onCursorMove` = 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试 —— 而引擎的
  * `SetCursorPos` 正是靠 WM_MOUSEMOVE 让脚本看见这次移动）；位置没变则不重算（引擎同样不会产生移动消息）。
  * 真机那层虚拟→屏幕缩放只在 `display:VirtualFullScreenType == 2` 时生效（随包 INI 无此键 ⇒ 1:1）。
- * ⚠**宿主缺口**（单独一票 `tickets/T-0053`）：真实光标停在原地，玩家一动鼠标就会被 `mousemove` 覆盖回真实位置 ——
- * 浏览器/Electron 没有移动真实系统光标的 API（引擎的 `SetCursorPos` 那半件做不到），不是语义偏差：
- * 引擎侧坐标/hover 仍然生效（脚本逻辑正确），缺的是"玩家看见光标跳过去"。
+ * ★**宿主缺口已在 Electron 侧补上**（`tickets/T-0053` / `T-0058`）：渲染进程把这次移动经 IPC 交给主进程，
+ * 主进程用 `native/win32-input` 的 `SetCursorPos`（**真**移动系统光标）+ `screen.dipToScreenPoint()`
+ * 做 DIP→物理换算。浏览器/headless 宿主没有真实光标 ⇒ 各自的 `setSystemCursor` 是显式 no-op
+ * （不是"缺缝"，否则闸门 A 会把 1678 处 `i10a` 全记成缺口）。
  */
 const op_set_mouse_pos: OpHandler = (c) => {
   const x = readIntOperand(c.e, c.frame, c.instr, 1);
   const y = readIntOperand(c.e, c.frame, c.instr, 2);
   c.e.input.setCursor(x, y, true);
+  // 宿主侧那半件：把**真实光标**也挪过去（引擎 `sub_421EA0` 的 `ClientToScreen` + `SetCursorPos`）。
+  // ★坐标是**引擎虚拟坐标**，换算（虚拟→客户区→屏幕、DIP→物理）由宿主做。
+  c.native.setSystemCursor?.(x, y);
 };
 
 /** 鼠标/键盘/手柄输入（真实现：读操作数 / 注册跳转目标 / 派发）。 */

@@ -13,6 +13,12 @@
 
 node_modules
 
+# 原生模块的 CMake 构建产物（`.node`/obj/vcxproj）**不进版本库**：
+# 本仓的分发口径是「按需构建」（见 native/win32-input/README.md 的「打包」一节）——缺了它模拟器照旧能跑
+# （加载器降级 + 一行诊断），所以不必像 npm 包那样把二进制塞进 git。
+/native/*/build/
+/native/*/prebuilds/
+
 *exe_extracted
 
 /patch/BIN

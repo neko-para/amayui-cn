@@ -208,4 +208,12 @@ export class StubNative implements NativeBridge {
   frameTick(): void {
     /* 每帧调用，stub 不记日志（避免刷屏） */
   }
+
+  /**
+   * **真实系统光标**（引擎 `0x10A` 的宿主侧）：stub 宿主没有光标 ⇒ 显式 no-op
+   * （`tickets/T-0053` / `T-0058`）。★不实现会被闸门 A 记成宿主缺口，而 `i10a` 全库 1678 处 ⇒ 纯噪声。
+   */
+  setSystemCursor(_x: number, _y: number): void {
+    /* 无光标可动 */
+  }
 }

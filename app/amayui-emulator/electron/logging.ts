@@ -121,3 +121,15 @@ export function registerLogIpc(): void {
 
 /** `will-quit` 的排空只做一次（否则 `app.quit()` 会再触发一轮）。 */
 let flushed = false;
+
+/**
+ * **主进程写一行诊断**（写进与渲染进程同一个 `.tmp/amayui-emulator.log`）。
+ *
+ * 为什么需要它：主进程侧的事件（原生模块加载状态、IPC 收到的坐标换算失败……）以前只能 `console.log`
+ * 到终端；而"光标怎么不动"这类问题恰恰是**主进程侧**的，终端一关就没了证据。
+ * ★必须在 `registerLogIpc()` **之后**调用：在那之前 `logAppender` 是空实现（只进 console）。
+ */
+export function logMainLine(line: string): void {
+  console.log(line);
+  logAppender.write(line);
+}

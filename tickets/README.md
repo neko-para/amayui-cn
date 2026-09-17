@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **57** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **45** · 🚫 dropped **1**（P0 5 / P1 15）
+共 **58** 张：🔜 doing **1** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **47** · 🚫 dropped **1**（P0 5 / P1 15）
 
-按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1
+按域：`emulator/render` 13 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1
 
 ## 🔜 doing（1）
 
@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|---|---|---|
 | [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
 
-## ⬜ open（10）
+## ⬜ open（9）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -30,9 +30,8 @@
 | [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | — | — |
 | [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | — | — |
-| [`T-0053`](./T-0053/ticket.json) | P3 | req | `emulator/hosts` | 0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现 | 5 | — | — | — |
 
-## ✅ done（45）
+## ✅ done（47）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -76,11 +75,13 @@
 | [`T-0049`](./T-0049/ticket.json) | P2 | req | `emulator/render` | 实现 0x214（`i214`：交换两条绘图项记录）—— 此前不在任何表里，命中即 NotImplementedOp；语料 229 处、ADV 收场块依赖它 | 5 | `app/amayui-emulator/test/op-214-swap-items.test.ts` | — | — |
 | [`T-0050`](./T-0050/ticket.json) | P2 | req | `emulator/render` | 实现 0x32（`i032`：槽→槽的缩放转送 / StretchTexture）—— 存档缩略图的「缩屏」这一步，此前不在任何表里（命中即 NotImple… | 5 | `app/amayui-emulator/test/op-032-stretch-texture.test.ts` | — | — |
 | [`T-0055`](./T-0055/ticket.json) | P2 | req | `emulator/vm` | 实现 0xD3/0xD4/0xD5「阶梯动画时间表」：把一段代码按时间轴分多次执行（存档动画 / 回想缓动 / 战斗入场 / 经验条） | 7 | `app/amayui-emulator/test/stage-loop.test.ts` | `notes.md` | — |
+| [`T-0058`](./T-0058/ticket.json) | P2 | req | `emulator/hosts` | 建一个可复用的宿主侧原生模块工程（CMake + C++ + node-addon-api）：先落地 0x10A 的真实光标移动，后续宿主能力都走它 | 6 | `app/amayui-emulator/test/native-win32.test.ts` `app/amayui-emulator/test/input.test.ts` | — | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `changes.md` | — |
 | [`T-0043`](./T-0043/ticket.json) | P3 | tooling | `emulator/test` | 两条守卫在本机必红：overlay 断言 Windows 绝对路径、config1-chain 依赖本地化 BIN 产物（assemble 还会因 insta… | 4 | `app/amayui-emulator/test/overlay.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` | `notes.md` | — |
 | [`T-0045`](./T-0045/ticket.json) | P3 | tooling | `tooling/repo` | 全量构建会把 941 个脚本全装进 install/：需要一个按 install-manifest 收口的工具（prune-install） | 4 | `scripts/prune-install.mjs` | — | — |
+| [`T-0053`](./T-0053/ticket.json) | P3 | req | `emulator/hosts` | 0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现 | 5 | `app/amayui-emulator/test/native-win32.test.ts` | — | — |
 
 ## 🚫 dropped（1）
 

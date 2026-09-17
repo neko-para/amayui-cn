@@ -73,6 +73,7 @@ docs-new/
 │   ├── README.md             ← 三子工程总览（独立、不引用 app/*/docs）
 │   ├── emulator.md           ← amayui-emulator
 │   ├── live2d-support-assessment.md ← **Live2D 支持评估**：系统能力速查 / ★要不要引依赖库（Cubism 5 ❌、Cubism 2.1 运行时 ⚠️、自研移值 ✅）/ 工作量 / 分阶段计划 / 待拍板项
+│   ├── native-addon.md       ← **宿主侧原生模块**（N-API）：何时才该加 / CMake+cmake-js 选型 / 加载与降级 / ★二进制打包（asarUnpack·prebuildify）/ 排障
 │   ├── inspector.md          ← amayui-inspector
 │   └── toolkit.md            ← amayui-toolkit
 └── 05-scripts/               ← **脚本台账**（第三层数据层 `analysis/scripts.json` 的生成物，勿手改）
