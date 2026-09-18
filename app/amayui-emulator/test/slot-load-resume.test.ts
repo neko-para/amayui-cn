@@ -160,6 +160,61 @@ test('★续跑装载：池 + 帧记录 + 帧 0（记录 0 的脚本）+ 读档�
   assert.equal(e.saveResume, null, '续跑记录消费完即清');
 });
 
+test('★真槽续跑不依赖 INI 的 `[set]` 段：`sv1/sv2` 取自**槽文件头**（`tickets/T-0065`）', async () => {
+  // 复现：把真存档复制进来后，玩家的 `SYS4REG.INI` 里**根本没有 `[set]` 段**（实测）——
+  // 旧写法 `cfgInt(cfg, 'set:SaveVersion1', 0)` 得到 0，而 0 不在 `SAVE_VERSION_BRANCH` 里
+  // ⇒ `0xAE` 直接返回 ⇒ 走栈不发生 ⇒ 一路跑回 TITLE（用户实测症状）。
+  // 现在 `sv1/sv2` 由 `loadSlotIntoEngine` 从**被读的那份槽自己的容器头**（+284/+288）带进续跑记录。
+  const rootBin = buildScriptBin([
+    { op: 0xae, args: [] },
+    { op: 0x03, args: [{ type: 0, raw: 101 }] },
+  ]);
+  const gameBin = buildScriptBin([
+    { op: 0xae, args: [] },
+    { op: 0x71, args: [{ type: 0, raw: 1 }] },
+    { op: 0x05, args: [] },
+    { op: 0x8f, args: [{ type: 0, raw: 0x40 }] },
+  ]);
+  const body = buildBody({
+    savedCur: 1,
+    savedRet: 5,
+    pre8: 0,
+    frames: [
+      { returnFrame: -1, scriptId: 100, retIdx: [], messageIdx: -1, callIdx: 0 },
+      { returnFrame: 0, scriptId: 101, retIdx: [0], messageIdx: 0, callIdx: -1 },
+    ],
+    ints: [],
+    floats: [],
+    strings: [],
+    ipTables: [[], [], []],
+  });
+  // ★容器头声明 sv1=3 / sv2=20（真槽就是这样：`sub_40CD10` 把 `set:SaveVersion1/2` 写进头）
+  const bytes = buildSlotFile(body, { ...SEEDS, format: 3, aux: 20 });
+  const scripts = new Map([
+    [100, { name: 'ROOT.BIN', data: rootBin }],
+    [101, { name: 'GAME.BIN', data: gameBin }],
+  ]);
+
+  const e = new Engine(new StubNative(() => {}));
+  e.config = parseIni('[display]\nScreenMode=1\n'); // ★刻意**没有** `[set]` 段（= 玩家 INI 的实测形态）
+  e.fileSource = fakeFileSource(bytes, scripts);
+  const { parseScriptBytes } = await import('../src/script/bin.js');
+  const { loadScriptIntoFrame } = await import('../src/vm/ops.js');
+  const caller = buildScriptBin([{ op: 0x1a1, args: [{ type: 0x9, raw: 0x10 }, { type: 0, raw: 0 }] }]);
+  loadScriptIntoFrame(e.frames[2]!, parseScriptBytes(caller), 'SAVE.BIN', 51);
+  e.cur = 2;
+  await run(e, 2, 0);
+
+  assert.ok(e.saveResume, '续跑记录已入队');
+  assert.equal(e.saveResume!.sv1, 3, '★sv1 取自槽头（不是 INI）');
+  assert.equal(e.saveResume!.sv2, 20, '★sv2 取自槽头');
+  // 帧 0 入口的 `i0ae`：sv1=3 分支 ⇒ 落 ip + 走栈到帧 1（旧写法在这里什么都不做）
+  await run(e, 0, 0);
+  assert.equal(e.cur, 1, '★走栈发生了（旧写法：sv1=0 没有分支 ⇒ 卡在帧 0）');
+  assert.equal(e.frames[1]!.name, 'GAME.BIN', '帧 1 装上了存档记录里的脚本');
+  assert.equal(e.frames[0]!.ip, 2, '帧 0 落在 call-script 的下一条');
+});
+
 test('0xAE 的门关着 ⇒ 不动任何帧状态（与引擎的门控路径逐字一致）', async () => {
   const e = mkEngine();
   const frame = e.frames[0]!;

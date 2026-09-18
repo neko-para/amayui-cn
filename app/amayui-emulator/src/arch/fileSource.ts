@@ -69,6 +69,15 @@ export interface FileSource {
    */
   readSaveFlags?(): Promise<number[] | null>;
   /**
+   * 读**两侧** `SAVE.DAT` 的原始字节（overlay 在前、base 在后；缺的那侧不出现）—— 供调用方**按 key 并表**。
+   *
+   * 与 `readSaveData` 分开的理由（`tickets/T-0069`）：那份只取"优先级最高的文件"，而 `SAVE.DAT` 里还有一批
+   * **按槽**的记录（槽标题/状态/日期…），旧版本写的 overlay 副本会缺这些键 ⇒ 存档列表没标题、点不进读档。
+   * 引擎的表是**单调增长**的（从不删键）⇒ 两侧并集与引擎语义一致。
+   * 不实现 = 退回 `readSaveData` 那一份（单文件行为，与修前相同）。
+   */
+  readSaveDataBoth?(): Promise<Uint8Array[]>;
+  /**
    * 写 `SAVE.DAT`（整份字节；由 `saveData.encodeSaveData` 序列化）。
    *
    * 调用方是 `Engine.onSaveDataChanged`（脚本 `save-int`/`save-string` 改了表）。

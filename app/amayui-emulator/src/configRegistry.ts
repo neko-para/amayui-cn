@@ -143,6 +143,18 @@ export const CONFIG_REGISTRY_DEFAULTS: ReadonlyMap<string, number | string> = ne
   CONFIG_REGISTRY_KEYS.map((k) => [k.key.toLowerCase(), k.def]),
 );
 
+/**
+ * 某个配置键的**引擎内建默认值**（注册表缺键时 `GetConfig` 返回的就是它；非 int 键/未知键 ⇒ 0）。
+ *
+ * 为什么要这个函数（`tickets/T-0065`）：INI 是**玩家数据**，允许整个缺某个键（实测：把真存档复制进来后
+ * `SYS4REG.INI` 里**根本没有 `[set]` 段**）。此前的读法一律写成 `cfgInt(cfg, key, 0)` —— 缺键就得到 0，
+ * 而 0 往往**不等于**引擎的默认值（例：`set:SaveVersion1` 的默认是 1），于是分支选错、**不报错**。
+ */
+export function registryDefault(key: string): number {
+  const v = CONFIG_REGISTRY_DEFAULTS.get(key.toLowerCase());
+  return typeof v === 'number' ? v : 0;
+}
+
 // ---------------------------------------------------------------------------
 // 键名常量（T-0057 R1）—— 读取侧**只允许**用这些常量，不得手打 `section:key`
 // ---------------------------------------------------------------------------

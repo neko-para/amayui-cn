@@ -8,7 +8,7 @@
  */
 import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, parseEmulatorOptions } from '../../emulatorOptions.js';
-import { decodeSaveData, encodeSaveData } from '../../vm/saveData.js';
+import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from '../../vm/saveData.js';
 import type { Engine } from '../../vm/engine.js';
 
 /**
@@ -176,7 +176,15 @@ export async function loadSaveData(e: Engine, trace: (line: string) => void): Pr
       trace(`[save] 无法解析 SAVE.DAT：${r.reason}`);
       return;
     }
-    e.applySaveDataTables(r.data.tables);
+    // ★**按 key 并表**（`tickets/T-0069`）：overlay 那份可能由旧版本写过、缺了**按槽**的记录
+    //   （槽标题 `\x05000004xx`、状态、日期…）⇒ 不并表就会出现"存档列表没标题、点不进读档"。
+    //   真游戏那份（base）补缺键；引擎的表是单调增长的（从不删键）⇒ 并集与引擎语义一致。
+    const both = await e.fileSource?.readSaveDataBoth?.();
+    const m = mergeSaveDataFallbacks(r.data.tables, (both ?? []).slice(1), trace);
+    e.applySaveDataTables(m.tables);
+    if (m.added > 0 || m.failed > 0) {
+      trace(`[save] 并表：补 ${m.added} 个键${m.failed ? `（${m.failed} 份解不出来）` : ''} ⇒ int=${m.tables.ints.size} str=${m.tables.strings.size}`);
+    }
     // ★「已使用文件」标志（FileDB 的鉴赏/解锁表）：引擎在装载 SAVE.DAT 时一并还原（raw 15202-15238）
     //   ⇒ 回想界面的「回収数/回収率」与 BGM 鑑賞列表跨会话保留（不是每个存档槽各自一份）。
     //   优先用 `readSaveFlags()`（主进程把 overlay 与 base **两侧取并集**）；没有该 API 时退回本文件里的那份。

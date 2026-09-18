@@ -222,25 +222,21 @@ export function scClearMeshSlots(s: SceneState): number {
   return n;
 }
 
-/**
- * `0x259`（`sub_41A3A0` raw 25357）：**清两张 1000×2 组 5 dword 记录表**（主/影 `_this[81174]`/`[86174]`，
- * 共 20000 字节；`tickets/T-0063`）。每项字段 0 = 该槽绑定的**统一文件 id**（读档时用它按 id 重载图像，
- * 见 `sub_410160` raw 19878-19893）、另有 +8/+12 两个绘制字段 ⇒ 它就是**绘制记录的账本**。
- *
- * 引擎口径 = 「只清记录、不 delete 对象」⇒ emulator 侧：清 `scene.drawItems`（含文本行 —— D3D 路径下
- * 正文行本身就是 DrawItem）+ 清窗口文本，**保留**网格（那是 `0x32B` 的表）与纹理对象/画布。
- *
- * ★为什么这条很关键：每个 ADV 场景**开头**都会调它一次（语料 517 处，`src/$1$SC0330.txt:7`）——
- * 引擎读档后是"场景脚本从入口重跑"（`sub_40F750(3)` 装载 rec[cur] 的脚本 ⇒ 入口 ip=0），
- * 于是这一条会把**上一场（例如存档列表）留下的绘制记录**落掉、随后 init 再画一遍自己的场景。
+/*
+ * ★口径纠错（`tickets/T-0063`）：`0x259`（`sub_41A3A0` raw 25357-25376）**不是**"清绘制记录" ——
+ * 它的引擎体就是一趟 `v2 = 1000` 的循环，把主/影两张槽表（`_this[81176]`/`[86176]`，步长 5 dword）
+ * 每条的 **[0]/[1] 两个 dword 清 0**：
+ * ```c
+ * result = _this + 86176;
+ * do { *(result - 5000) = 0; *result = 0; *(result - 4999) = 0; result[1] = 0;
+ *      result += 5; --v2; } while (v2);
+ * ```
+ * ⇒ 清的是**槽记录**（"槽 → 统一文件 id"那一格 + 邻居），**不碰绘制项、也不 delete 纹理对象**
+ * （引擎绘制走 CTexture 对象表 `_this[op2+94672]`，与这份记录无关 ⇒ 清记录**不会**让画面空掉）。
+ * 本仓一度把它实现成"清 `scene.drawItems`"，于是每个 ADV 场景入口的 `i259`（`src/SN0000.txt:7`、
+ * 语料 517 处）会把**刚画好的场景**一起清掉 ⇒ 读档后屏幕上什么都不剩（GUI 的留帧机制继续显示上一屏
+ * = 玩家看到的"回到标题界面"）。宿主侧的落实见 `TextureCache.clearSlotRecords` / `HeadlessScene.clearSlotRecords`。
  */
-export function scClearSlotRecords(s: SceneState): number {
-  const n = s.drawItems.size;
-  s.drawItems.clear();
-  scMsgWinClearAll(s);
-  s.dirty = true;
-  return n;
-}
 
 /** `0x320` create-mesh 的载荷（`handlers/gfx-item.ts` 从操作数数组读好后送进来）。 */
 export interface MeshSpec {

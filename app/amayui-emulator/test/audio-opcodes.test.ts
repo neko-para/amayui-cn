@@ -80,7 +80,7 @@ test('SE：0xB4 (id, 通道) / 0xB5·0xBA (通道, 循环位) / 0xB6 / 0x2BF (�
 });
 
 test('BGM：0xB7 循环 / 0xB9 一次 / 0xBF 带策略 / 0xBC 模式 / 0xC2 淡变', () => {
-  const { native, step } = mini();
+  const { e, native, step } = mini();
   step(0xb7, [im(0x29)]); // i0b7 29（CONFIG1 的 BGM 预览）
   assert.deepEqual(native.last, { kind: 'bgm-play', bgm: 0x29, loop: true });
   step(0xb9, [im(0x20)]); // i0b9 20
@@ -91,10 +91,62 @@ test('BGM：0xB7 循环 / 0xB9 一次 / 0xBF 带策略 / 0xBC 模式 / 0xC2 淡�
     native.intents.some((i) => i.kind === 'policy' && i.keepMusicVoice && i.fadeOnVoice),
     '0xBF 会先下发 set:KeepMusicVolume / sound:MusicFadeOnVoicePlaying 策略',
   );
+  // ★0xBC（`sub_408CF0` raw 13521-13534）：存 id → 改配置 → `sub_489B50`（停 + 清 id）→ 装回 id →
+  //   `sub_489F80(Music, 0, Music[261])` 用当前循环位重播 ⇒ 三条意图，不是一条。
   step(0xbc, [im(1)]); // i0bc 1 ⇒ 模式 0（关）
-  assert.deepEqual(native.last, { kind: 'bgm-mode', mode: 0 });
+  assert.deepEqual(
+    native.intents.slice(-3).map((i) => i.kind),
+    ['bgm-mode', 'bgm-stop', 'bgm-play'],
+    '0xBC = 切模式 + 停一次 + 重播当前曲（引擎 sub_408CF0 的三步）',
+  );
+  assert.deepEqual(native.intents.at(-2), { kind: 'bgm-stop' });
+  assert.deepEqual(native.intents.at(-1), { kind: 'bgm-play', bgm: 18, loop: true });
+  // `0xC2 0 <step>`：目标 0 ⇒ 先把当前曲 id 清掉（`sub_489D10` raw 106317-106318），再下发淡变。
   step(0xc2, [im(0), im(100)]);
   assert.deepEqual(native.last, { kind: 'bgm-fade', value: 0, step: 100 });
+  assert.equal(e.engineValues.get(174713), 0, '淡到 0 ⇒ 当前曲 id 已清（0xC0 从此读到 0）');
+});
+
+test('★BGM 运行态（`Music[259]` = `_this[174713]`）：0xB7 0 = 重播当前曲、0xC3 = 登记曲号不播、0xB8 清 0', () => {
+  const { e, native, step } = mk();
+  // ① 起播 `play-bgm 12` ⇒ 运行态当前曲 id = 18
+  step(0xbf, [im(18)]);
+  assert.equal(e.engineValues.get(174713), 18, '0xBF 起播时写当前曲 id（引擎 sub_489C20 的 `Music[259] = a2`）');
+  assert.equal(e.engineValues.get(174715), 1, '0xBF 同时置循环位（`Music[261]` = `_this[174715]`）');
+
+  // ② `i0b7 0` ⇒ **重播当前曲**（不是"播曲号 0"）：引擎 `sub_489F80` 的 `a2 == 0 && Music[259] != 0` 分支
+  step(0xb7, [im(0)]);
+  assert.deepEqual(native.last, { kind: 'bgm-play', bgm: 18, loop: true }, '★i0b7 0 重播当前曲（语料 30 处全是这一形）');
+  assert.equal(e.engineValues.get(174715), 1, '0xB7 恒写循环位 = 1');
+
+  // ③ `i0b9 0` ⇒ 同样重播当前曲、但循环位 = 0
+  step(0xb9, [im(0)]);
+  assert.deepEqual(native.last, { kind: 'bgm-play', bgm: 18, loop: false });
+  assert.equal(e.engineValues.get(174715), 0, '0xB9 恒写循环位 = 0');
+
+  // ④ `i0c3 6`：**只登记曲号，不播**（`sub_420F10` 只有 `Music[259] = op1`）
+  const before = native.intents.length;
+  step(0xc3, [im(6)]);
+  assert.equal(native.intents.length, before, '0xC3 不发任何意图（引擎只写字段）');
+  assert.equal(e.engineValues.get(174713), 6, '0xC3 写当前曲 id');
+
+  // ⑤ `i0c2 <音量> <步长>`（目标非 0）⇒ **把刚登记的曲放起来**（`sub_489D10` 的起播分支）
+  step(0xc2, [im(10000), im(2500)]);
+  assert.deepEqual(
+    native.intents.slice(-2),
+    [{ kind: 'bgm-play', bgm: 6, loop: false }, { kind: 'bgm-fade', value: 10000, step: 2500 }],
+    '★"i0c3 登记 + i0c2 淡入"习语里真正起播的那一步',
+  );
+
+  // ⑥ `i0b8`：停 + **清当前曲 id**（`sub_489B50` 的第一件事）
+  step(0xb8);
+  assert.deepEqual(native.last, { kind: 'bgm-stop' });
+  assert.equal(e.engineValues.get(174713), 0, '★0xB8 清当前曲 id（读档 BGM 还原链靠"存档里的 id"补回来）');
+
+  // ⑦ 清掉之后再 `i0b7 0` ⇒ 引擎走 `sub_489B50`（`Music[259] == 0`）⇒ 不发起播意图
+  const afterStop = native.intents.length;
+  step(0xb7, [im(0)]);
+  assert.equal(native.intents.length, afterStop, '当前曲 id 为 0 ⇒ `i0b7 0` 不重播（引擎同分支）');
 });
 
 function mini(): { e: Engine; native: RecordingNative; step: (op: number, args?: BinArg[]) => void } {

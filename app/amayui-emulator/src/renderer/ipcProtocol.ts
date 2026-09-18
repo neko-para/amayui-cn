@@ -42,6 +42,14 @@ declare global {
        * 主进程把 overlay 与 base **两侧取并集**（进度是单调集合 ⇒ 不因 overlay 里的旧副本丢进度）。
        */
       readSaveFlags?(): Promise<number[] | null>;
+      /**
+       * **两侧** `SAVE.DAT` 的原始字节（overlay 在前、base 在后；缺的那侧不出现）。
+       *
+       * 为什么与 `readSaveData` 并存（`tickets/T-0069`）：那份只取优先级最高的一个文件，而 `SAVE.DAT` 里还有
+       * 一批**按槽**的记录（槽标题/状态/日期…）—— 旧版本写的 overlay 副本会缺这些键 ⇒ 存档列表没标题、
+       * 读档点不动。渲染侧按 key 并表（`saveData.mergeSaveDataFallbacks`），所以主进程只负责把两份都给出来。
+       */
+      readSaveDataBoth?(): Promise<(Uint8Array | number[])[]>;
       // ---- 存档槽（`0x19E`/`0x1A1`/`0x1A0`/`0x1AB`/`0x1AC`/`0x1AE`/`0x1AF`；`tickets/T-0018`）----
       /**
        * 读一个存档槽 `SAVE\SAVE%2.2d.DAT` 的整份字节（overlay → base；都没有返回 null）。

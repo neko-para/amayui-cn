@@ -14,10 +14,11 @@ import { readIntOperand } from '../operand.js';
 import { SLEEP_GATE } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
-import { CFG } from '../../configRegistry.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../ops.js';
 import { resolveSlotResumeIp, resolveSlotRetStack } from '../engineSlot.js';
+import { applySlotPresentation } from './save-slot.js';
 import type { OpTable } from './shared.js';
 
 /** 把「指令的 dword 偏移」换成「指令数组下标」并跳转（引擎里 ip 就是 dword 偏移，重写侧是下标）。 */
@@ -226,9 +227,21 @@ const SAVE_VERSION_BRANCH: Record<number, { mode: number; setLoadFlag?: boolean;
 const op_save_version_branch: OpHandler = async (c) => {
   const e = c.e;
   if ((e.engineValues.get(ENGINE_FIELD.loadInProgress) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
-  const sv1 = e.config ? cfgInt(e.config, CFG.setSaveVersion1, 0) : 0;
-  const sv2 = e.config ? cfgInt(e.config, CFG.setSaveVersion2, 0) : 0;
   const resume = e.saveResume;
+  // ★`sv1/sv2` 的取值顺序（`tickets/T-0065`）：
+  //   ① **续跑记录里那份**（= 被读的那份槽自己在容器头里声明的版本，`loadSlotIntoEngine` 从 +284/+288 带进来）
+  //      —— 它决定这份槽的帧记录布局，必须优先；
+  //   ② 配置 `set:SaveVersion1/2`；
+  //   ③ 配置注册表的**默认值**（`set:SaveVersion1/2` 的 def）—— 玩家数据里 `[set]` 段可能整个不存在
+  //      （实测：把真存档复制进来后 INI 没有 `[set]`）⇒ 旧写法 `cfgInt(..., 0)` 会得到 0，
+  //      而 0 不在 `SAVE_VERSION_BRANCH` 里 ⇒ **整个走栈不发生**、读档一路跑回 TITLE。
+  const sv1 = resume?.sv1 ?? (e.config ? cfgInt(e.config, CFG.setSaveVersion1, registryDefault(CFG.setSaveVersion1)) : 0);
+  const sv2 = resume?.sv2 ?? (e.config ? cfgInt(e.config, CFG.setSaveVersion2, registryDefault(CFG.setSaveVersion2)) : 0);
+  // ★**走栈期间把读档装好的画面反复装回**（`tickets/T-0069`）：本指令在每个走栈步都会执行一次
+  //   （每帧脚本入口），而这一帧里场景入口的初始化可能已经把画面改成"刚进场景"的样子
+  //   （`create-mesh` 重建遮罩 + 重播淡入）⇒ 这里当场盖回存档当时那份。
+  //   引擎不需要这一步：它的后备缓冲从不清，旧像素一直压着那些一次性绘制。
+  if (e.loadHold) applySlotPresentation(e, e.loadHold);
   if (!resume) {
     // 门开着但没有续跑记录：只可能是旧布局（sv1 = 1/2，本模块不解析）或装载失败留下的门。
     // 引擎在这种情况下会去读自己那份帧镜像；emulator 没有那份镜像 ⇒ **清门收场**（免得后续 339 处
@@ -277,6 +290,9 @@ const op_save_version_branch: OpHandler = async (c) => {
     e.engineValues.set(ENGINE_FIELD.storedCur, cur);
     if (spec?.setLoadFlag) e.engineValues.set(ENGINE_FIELD.loadDoneFlag, 1);
     e.saveResume = null;
+    // ★收尾这一刻**松手**（`tickets/T-0069`）：画面已在上面装回（= 存档当时那份），此后脚本自己的绘制
+    //   （落点重放那句话、后续演出）要如实可见 ⇒ 不再往回复原。
+    e.loadHold = null;
     c.log(`0xAE: 续跑收尾 —— cur=${cur} 落点=${landed ?? '（保持原 ip）'}（${frame.name}），读档门已清`);
     if (landed !== null) c.jump(landed);
     return;

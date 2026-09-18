@@ -1,0 +1,74 @@
+{
+  "title": "读档后 BGM 丢失：补齐音乐运行态（当前曲 id）与引擎 CALLBACK_LOAD 的 i0b7 0 重播",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户实测（T-0063 的读档症状修完之后）：在 SN0000 序章存档 → 读档 → 画面/文字/遮罩/侧边栏都正常了，但该场景的长背景音乐（play-bgm d = BGM013，318 s）没了，而音效/语音仍在。根因有两半：① 引擎的 BGM 运行态是 Music 模块内联在 Engine 里的 [259]（当前曲 id；写侧 raw 17469-17471 存进存档镜像 [2]、读档 raw 19911 装回），emulator 却把 0xC0/0xC3 的那一格当成配置 sound:Music（engineConfig 的绑定），运行期从不维护它；② 引擎读档最后一跳是帧 0 ← CALLBACK_LOAD.BIN，它开头就 i0b7 0（= 重播当前曲，sub_489F80 的 a2==0 分支），而 emulator 整跳跳过 ⇒ SAVE.txt:934 的 i0b8（停 BGM 并清 id）之后没人把它放回来；同时读档落点是存档那句话（0x71 表下标），场景的 play-bgm 在消息循环之前（实测 SN0000：i0ae=指令737、play-bgm=752、落点=794）⇒ 续跑那一遍必然跳过它 ⇒ 整场静音直到下一处 BGM 变更。",
+  "acceptance": [
+    "读档后目标场景的 BGM 立刻响起（与存档当时同一首、循环）：本工程槽与真槽两条路都覆盖",
+    "音乐运行态只有一处真源：engineValues[174713]（当前曲 id）/ [174715]（循环位），由 0xB7/0xB9/0xBF/0xC3/0xB8 维护；配置 sound:Music 不再写它",
+    "0xB7 0 / 0xB9 0 / 0xBF 0 按引擎语义「重播当前曲」（不是播曲号 0）；0xC3 = 登记曲号不播；0xC2 目标 0 清 id、目标非 0 起播当前曲",
+    "存档状态块带当前曲 id，读档把它装回并重播（无 BGM 的档不发意图）",
+    "npm run verify 全绿（含新增的 BGM 运行态/读档重播守卫）"
+  ],
+  "evidence": [
+    {
+      "file": "src/CALLBACK_LOAD.txt",
+      "anchor": "i0b7 0",
+      "line": 20,
+      "note": "引擎读档回调里重播当前曲的那条（0 = 重播，见 sub_489F80 raw 106357-106369）"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "i0b8",
+      "line": 934,
+      "note": "玩家确认读档时先停 BGM（sub_489B50 同时清 Music[259]）"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "play-bgm d",
+      "line": 1022,
+      "note": "场景的 BGM 起播在消息循环之前 ⇒ 续跑落点（存档那句话）会跳过它"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "replaySavedBgm",
+      "note": "读档末尾补的 CALLBACK_LOAD 等价物"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/audio.ts",
+      "anchor": "bgmReplayIntent",
+      "note": "0xB7/0xB9/0xBF/0xC3/0xC2 的运行态维护与重播意图"
+    },
+    {
+      "file": "app/amayui-emulator/test/slot-save-resume.test.ts",
+      "anchor": "BGM 还原",
+      "note": "存档↔读档往返 + 重播意图断言"
+    }
+  ],
+  "notes": "旧档（修前存的）里那一格是配置值（本机 Music=2）⇒ 读档会尝试播曲号 2（= OP.BIN）并失败静音，日志可见；用新版本重存一次即可。",
+  "id": "T-0064",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "open → doing —— 根因=两半（运行态字段 + CALLBACK_LOAD 的 i0b7 0）；实现已落，待用户实机重存验证"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "doing → done —— 用户实测：读档后音乐播放正常（SN0000 的 BGM013 复原）"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "改字段：tests"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-save-resume.test.ts",
+    "app/amayui-emulator/test/audio-opcodes.test.ts"
+  ]
+}

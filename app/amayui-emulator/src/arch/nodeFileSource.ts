@@ -142,6 +142,26 @@ export class NodeFileSource implements FileSource {
   }
 
   /**
+   * 读**两侧** `SAVE.DAT` 的原始字节（overlay 在前、base 在后；缺的那侧不出现）—— 见 `FileSource` 的说明。
+   *
+   * 为什么不能让 `readSaveData` 直接返回合并结果：那是**字节**（还可能是引擎加密格式），"按 key 并表"
+   * 只能在解出表之后做（`saveData.mergeSaveDataTables`）⇒ 这里只负责把两份都给出来。
+   */
+  async readSaveDataBoth(): Promise<Uint8Array[]> {
+    if (!this.#overlay) return [];
+    const out: Uint8Array[] = [];
+    for (const p of [this.#overlay.overlayFile(SAVE_DAT_REL), this.#overlay.baseFile(SAVE_DAT_REL)]) {
+      try {
+        const b = await fs.readFile(p);
+        out.push(new Uint8Array(b.buffer, b.byteOffset, b.byteLength));
+      } catch {
+        /* 该侧没有 */
+      }
+    }
+    return out;
+  }
+
+  /**
    * 写 `SAVE.DAT`：**只写 overlay**（真存档在 base，读时优先 overlay ⇒
    * "继承玩家真存档 + 之后的改动落到我们自己的目录"两件事同时成立）。
    */

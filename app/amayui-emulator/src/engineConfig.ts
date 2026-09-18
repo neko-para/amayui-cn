@@ -5,12 +5,17 @@
  *  - 路径：`sub_4900F0` 拼 `[base]\SYS4REG.INI`（`set:UseAppDataFolder`→AppData，否则游戏目录；EXE 名前缀决定 SYS4/SYS3）。
  *  - 解析：`sub_4963E0` 打开逐行读（`[` 开头=分节），`sub_4957F0/sub_495950` 按 `"section:key"` 取值。
  *  - 装载后**灌进引擎字段**（raw 23649-23745 + 各 opcode handler），脚本再用 opcode 读这些字段：
- *      0xC0  `sub_42E510`  → `_this[174713]` ← `sound:Music`（写回侧 0xC3 `sub_420F10`）
+ *      0xC0  `sub_42E510`  → **读** `_this[174713]`（= `Music[259]`，**当前曲 id**，写回侧 0xC3 `sub_420F10`）
  *      0x131 `sub_42F7D0`  → **直读配置** `message:MesWinAlpha`（不落任何字段；写回侧 0x141 `sub_4228C0` 直写配置）
  *      0x2CE `sub_430A20`  → `_this[167990]` ← `display:ScreenMode`（raw 11980 `... = GetConfig(aDisplayScreenm) != 0`）
  *      0x11D `sub_42F810`  → 读 `display:ForceScreen`
  *  - 本模块只做「解析 INI + 给字段赋值」；**emulator 无声音/显示子系统**，故声音类键只建模取值供脚本读，
  *    不驱动任何实际输出（与「引擎内部插桩」同一取舍，见 README 的 0.10D/输入章节说明）。
+ *  - ★**174713/174715 不是配置字段**（2026-09 订正，`tickets/T-0064`）：它们是 Music 模块内联在 Engine 里的
+ *    **运行态**（`Music[259]` 当前曲 id / `Music[261]` 循环位，`Engine+697816` = dword 174454）——
+ *    由 `0xB7/0xB9/0xBF/0xC3` 写、`0xB8` 清、存档镜像 `[2]` 带走、读档装回后由 `i0b7 0` 重播
+ *    （见 `handlers/audio.ts` 的 `bgmReplayIntent`）。配置 `sound:Music` 落的是**字节 699240 = 下标 174810**
+ *    （raw 23676-23678），与它无关 —— 修前把两者绑在一起 ⇒ 每次启动都会把"当前曲 id"覆写成配置值。
  */
 
 import { CFG, CONFIG_REGISTRY_KEYS } from './configRegistry.js';
@@ -217,11 +222,11 @@ export interface ConfigFieldBinding {
  *   「handler 读的字段」对不上（`engineValues` 按数字键取，取不到就静默得到 0）。
  */
 export const CONFIG_FIELD_BINDINGS: ConfigFieldBinding[] = [
-  // ⚠待专项复核：raw 23676-23678 把 sound:Music 写进**字节 699240**（= 下标 174810，
-  //   见 raw 13223/13229 的 `v1[174810]`）；而 0xC0(`sub_42E510`) 读的是 `_this[174713]`，
-  //   后者是**运行期音乐状态**（raw 13521/13531/29857 读写）。这里保留 174713 以维持 0xC0 的
-  //   既有取值，但两处语义需要在音频子系统专项里对齐（属**非渲染**范围）。
-  { key: CFG.soundMusic, field: 174713, note: '0xC0 getter / 0xC3 setter 读写的音乐字段（raw 38618/38622）；⚠raw 的配置写入目标是字节 699240=下标 174810，待专项复核' },
+  // ★`sound:Music` **不在这里**（2026-09 订正，`tickets/T-0064`）：曾绑到 174713，而 174713 是 Music 模块
+  //   的运行态「当前曲 id」（`Music[259]`，`0xC0` 读 / `0xC3` 写 / `0xB7`·`0xBF` 起播时写 / `0xB8` 清 0），
+  //   不是配置值 ⇒ 每次启动 `applyConfigToEngine` 都会把它覆写成 `Music=2` 这类配置数字，症状是
+  //   「存档里记的"当前曲"是配置值」+「读档 BGM 还原播错曲/没声」。配置落点见 `sound:Sound`（下标 174810）。
+  //   0xC0 现在读的就是运行态那一格（正确语义：脚本问"现在放的是哪首"）。
   { key: CFG.displayScreenMode, field: 167990, map: (v) => (v !== 0 ? 1 : 0), note: '0x2CE 显示模式 getter（raw 11980 `= GetConfig(display:ScreenMode) != 0`）' },
   // ★文本路径：21668×4 = 86672 = Font+1376。op 0x74 写、0x7F 读（i07f 全工程 210 处）；
   //   既是逐字显现的 Sleep 节拍（raw 13954），又是淡入定时器间隔（raw 28382/28763）。

@@ -1,0 +1,49 @@
+{
+  "title": "真槽读档后画面未还原：只有消息窗与右侧栏，背景与 ADV 窗不再出现",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用真存档（format=3，79 号槽 = 真游戏在 SN0000 第一句话存的）读档，续跑与 BGM 都对了之后实测：模型里 drawItems=25 / meshes=1 / msgWins=7~8 —— 那 25 条是 DRAWCHARM 画的**右侧 charm 侧栏**，**没有背景**（NOVEL 的背景是 draw-texture 0x186a0，层序 100000）也没有 ADV 窗框。判据：读档后连跑 200 帧（advance=force）**一次都没有** layer<=0x19000 的绘制。原因：真槽的容器里**没有绘制项**（只有 100 个「解码图槽」(12B) + 1000 条 20B 纹记录，见 engineSlot.ts 的 images/records —— emulator 解析了但**未应用**，SLOT_GAPS ②），而 emulator 槽靠 SlotStateBlock.present 快照还原画面；真槽这条路缺等价物。引擎那边应当由「续跑后的脚本重画」补齐（NOVEL 的背景在 #41-43 的子程序里，进入条件受 global 4fd9/708ad6/708ada 等标志约束），需要走查这些标志与 0x71 消息重放路径到底谁负责重画，再决定是「等价还原」还是「按引擎标志重画」。",
+  "acceptance": [
+    "真槽读档后背景/ADV 窗在有限帧内出现，且与存档当时一致（帧数上限由引擎语义定）",
+    "要能说明引擎靠哪条路径重画（脚本子程序 / 消息重放 / 1000 条纹记录的 param），并给出 raw 行号锚点",
+    "守卫：真实 format=3 槽（本机 SAVE00/79）+ 合成槽都能断言「背景绘制项出现」；npm run verify 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/engineSlot.ts",
+      "anchor": "images: EngineSlotImageSlot[]",
+      "note": "真槽只带 100 图像槽 + 1000 纹记录，没有绘制项"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "100 个解码图槽",
+      "note": "表里写明：图像本身不重载（SLOT_GAPS ②）"
+    },
+    {
+      "file": "src/NOVEL.txt",
+      "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
+      "line": 43,
+      "note": "ADV 背景的绘制点（层序 100000，纹理槽 0x48）—— 续跑落点在它之后 ⇒ 必须有人重画"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0059",
+      "T-0063",
+      "T-0065"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "探针（已删）：读档后逐帧打印模型计数与所有 configureDrawItem 调用；200 帧内只有 DRAWCHARM.BIN 的侧栏项。",
+  "id": "T-0066",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    }
+  ]
+}

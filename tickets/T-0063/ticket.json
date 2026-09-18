@@ -5,34 +5,39 @@
   "area": "emulator/save-slot",
   "why": "用户实测（T-0061 之后）：读档已经能续到 ADV（点击能推进）但**存档界面仍覆盖在 ADV 背景上**，控制面板同时提示忽略了 clearMeshSlots / clearSlotRecords。核对结论：① 残留**不是**那两个被忽略的调用直接造成的 —— i32b(0x32B) 全语料只有 1 处（src/TITLE.txt:810-814 的标题界面收尾）、i259(0x259) 517 处（每个 ADV 场景开头/收尾），都不在 0x1A1 读档链上；② 真正的成因是**读档没有落掉旧 UI 的绘制项**：引擎 sub_410160 的装载段调 sub_403EF0(panelA/panelB) 复位两张面板（面板自带它那批绘制项 ⇒ UI 图层随面板消失），而 emulator 的绘制项是**共用一张表**（scene.render4.drawItems，面板/菜单/场景都往里放）⇒ routes.reset() 清不掉图形，且本工程格式那条路此前连 routes/msgwin 复位都没有。",
   "acceptance": [
-    "两条读档路（真槽 format=3 与本工程 format=0）都走引擎那条续跑路：帧按 scriptId 装到**入口**、落点入 saveResume、由脚本入口的 i0ae(0xAE) 落 ip 并逐帧走栈到 savedCur 收尾",
-    "本工程槽因此**重跑场景 init**：ADV 背景重画、i259(0x259) 落掉上一场（存档列表）留下的绘制记录 ⇒ 读档后不再有界面残留",
-    "0x259 在宿主侧落地（不再是 ignored）：清 scene.drawItems + 窗口文本、保留网格与纹理对象（引擎口径：只清记录不 delete 对象）；0x32B 清 scene.meshes",
-    "守卫 test/slot-save-resume.test.ts（续跑入队+落点、0x259 清记录、老槽兼容）与 test/slot-load-transfer.test.ts 全绿；npm run verify 绿"
+    "两条读档路（真槽 format=3 与本工程 format=0）都走引擎那条续跑路：帧按 scriptId 装到入口、落点入 saveResume、由入口 i0ae(0xAE) 落 ip 并逐帧走栈到 savedCur 收尾",
+    "本工程槽的存档带 texSlots（槽→统一文件 id）与 present（场景呈现态快照）两段；读档时先 bindTexture 逐条重取图、再 restorePresent 装回画面（否则读档后空白、GUI 留帧让玩家看到\"回到标题界面\"）",
+    "0x259 只清槽记录（不碰绘制项/网格/纹理对象），0x32B 清网格：两条缝在宿主侧落地（控制面板不再报忽略）",
+    "守卫 test/slot-save-resume.test.ts（退栈 / 续跑入队+落点 / 呈现态快照跨引擎往返 / 0x259 口径 / 老槽兼容）与 test/slot-load-transfer.test.ts 全绿；npm run verify 绿"
   ],
   "tests": [
     "app/amayui-emulator/test/slot-save-resume.test.ts"
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/src/renderer/scene/present.ts",
+      "anchor": "export function scSnapshotPresent",
+      "note": "呈现态快照/还原（读档把画面装回去的共享实现）"
+    },
+    {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "与引擎同一条续跑路",
-      "note": "本工程槽也走引擎那条路：帧装到入口 + saveResume 入队 + 0xAE 落点走栈"
+      "note": "本工程槽也走引擎那条路：帧装到入口 + saveResume 入队 + 0xAE 落点走栈；并把 texSlots/present 装回"
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
-      "anchor": "export function scClearSlotRecords",
-      "note": "0x259 的真实语义：清绘制记录（drawItems + 窗口文本，保留网格/纹理对象）"
+      "anchor": "口径纠错",
+      "note": "0x259 的真实语义（清槽记录，不碰绘制项）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "clearMeshSlots(): void",
-      "note": "0x32B 宿主实现（清 scene.meshes）"
+      "anchor": "snapshotPresent(): unknown",
+      "note": "宿主侧缝：取快照"
     },
     {
-      "file": "src/TITLE.txt",
-      "anchor": "i32b",
-      "note": "0x32B 的唯一调用点（标题界面收尾：i1f6 → i23d → i32b）"
+      "file": "src/NOVEL.txt",
+      "anchor": "call-script (global-int 1394)",
+      "note": "NOVEL 在指令 123 把控制交给场景脚本；背景绘制在指令 43（落点 124 之前的实测证据）"
     }
   ],
   "links": {
@@ -51,7 +56,7 @@
     ]
   },
   "id": "T-0063",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-17",
@@ -68,6 +73,18 @@
     {
       "at": "2026-09-17",
       "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "doing → done —— 用户实测四条症状（中心无文字/背景不动/遮罩消失/侧边栏不 hover）已全部正常；后续发现的读档 BGM 丢失另开 T-0064"
     }
   ]
 }

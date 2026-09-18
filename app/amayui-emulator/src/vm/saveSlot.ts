@@ -97,7 +97,17 @@ export interface SlotHeader {
   second: number;
   /** **游玩秒数**（头 +280 i32；E4：随存档时间单调递增）。 */
   playSeconds: number;
+  /**
+   * 头 +284（引擎写侧的 `a4` = **`set:SaveVersion1`**）：本工程写 `SAVE_FORMAT_PLAIN = 0`，
+   * 真槽写 1/2/3 ⇒ 这个字段同时是"容器载荷的变换口径"与"**存档版本号**"
+   * （`0xAE` 按它选帧记录的槽位组，见 `EngineSlotResume.sv1`）。
+   */
   format: number;
+  /**
+   * 头 +288（引擎写侧的 `a8` = **`set:SaveVersion2`**）：本工程写 0，真槽实测 0/10/20。
+   * 与 `format` 一起决定读档走栈的槽位组（`sv1 == 1` 时还要 `sv2 == 20`）。
+   */
+  aux: number;
 }
 
 /** 读头结果：`code` 与 `0x1A0` 写进 `op1` 的三态一致（0 成功 / 1 打不开 / 2 头校验失败）。 */
@@ -138,6 +148,7 @@ export function parseSlotHeader(bytes: Uint8Array, engineVersion = SAVE_ENGINE_V
       second: dv.getUint16(276, true),
       playSeconds: dv.getInt32(280, true),
       format: dv.getUint32(284, true),
+      aux: dv.getUint32(288, true),
     },
   };
 }
@@ -163,6 +174,11 @@ export interface SlotFrameState {
    * 不存它 ⇒ 续跑后的 `exit` 会退回**当前实例里那一格碰巧留下的值**（跨实例读档几乎必错）。
    */
   caller?: number;
+  /**
+   * **本帧最后一次 `0x71`（开始消息）的指令下标**（`tickets/T-0063`）。
+   * 读档时作为**末帧**的落点 ⇒ 重放存档当时那句话；`undefined`/`-1` ⇒ 退回 `ip`。
+   */
+  lastMsgIp?: number;
 }
 
 /**
@@ -184,6 +200,24 @@ export interface SlotStateBlock {
   };
   /** 游玩秒数（与头 +280 同一个值；引擎那份在还原时也会带上）。 */
   playSeconds: number;
+  /**
+   * **纹理槽绑定记录**（槽号 → 统一文件 id；引擎 `_this[81174]` 那两张 1000×2 组 5 dword 表里的一格）。
+   * 读档时按它 `bindTexture` 让宿主重新取图（引擎也是按存档里的记录 `sub_4559C0`+`sub_4A3800` 重装的）。
+   */
+  texSlots?: [number, number][];
+  /**
+   * **场景呈现态快照**（绘制项/网格/消息窗文本/槽模式…；见 `renderer/scene/present.ts`）。
+   *
+   * 为什么必须存（`tickets/T-0063`）：ADV 场景的背景/立绘是**一次性**画出来的，而读档续跑会从各帧的
+   * 入口跑到各自的 `i0ae` 就跳过去（`NOVEL.BIN` 在指令 43 画背景、落点却是 124）⇒ 只还原帧栈/池的话
+   * 读档后画面上什么都没有（GUI 留帧 ⇒ 玩家看到"回到标题界面"）。引擎的等价物 = 存档里的绘制记录。
+   */
+  present?: unknown;
+  /**
+   * **ADV/场景的 VM 侧状态**（热点区/消息窗标量态/文本项账本/阶梯动画表/引擎字段；
+   * 见 `src/vm/advState.ts`）。引擎读档时也会把这些搬回去（`sub_410160` 装载段 + `sub_45F1B0`）。
+   */
+  adv?: import('./advState.js').AdvStateJson;
 }
 
 /** 把状态块编成尾块字节（`SLOT_STATE_MAGIC` + JSON）。 */
@@ -299,7 +333,8 @@ export const SLOT_GAPS: readonly string[] = [
   '★**续跑已实现**（`tickets/T-0059`）：`0x1A1` 解出状态主体 → 还原池 + 帧记录 + 装载记录 0 的脚本（`cur = 0`）→ ' +
     '脚本入口的 `i0ae`（`0xAE`）按记录逐帧落 ip/装脚本，直到 `cur == savedCur` 收尾。仍未做的：' +
     '① **跳过 `CALLBACK_LOAD.BIN` 那一跳**（引擎把回调装进帧 0、靠它 `exit` 时的 `frames[0][95795] == -11` 再 `sub_40F750(3)` 装记录 0 的脚本；' +
-    'emulator 能直接装帧脚本 ⇒ 直接装，回调的副产物：charm/LOADCHARM 绘制管线、savemesskip 复位**不复现**）；' +
+    'emulator 能直接装帧脚本 ⇒ 直接装。★回调的副产物里**只有 BGM 重播（`CALLBACK_LOAD.txt:20` 的 `i0b7 0`）已被显式补上**' +
+    '（`handlers/save-slot.ts` 的 `replaySavedBgm`，`tickets/T-0064`）；charm/LOADCHARM 绘制管线、savemesskip 复位、10 个 SE 通道重装**仍不复现**）；' +
     '② 存档里的 **100 个解码图槽（ImageDB）+ 1000 条记录 + 尾部的图像重载清单**已解码但**未应用**（emulator 的纹理由脚本的 ' +
     '`set-texture`/宿主按 id 惰性解码重建）；③ 镜像里那 40 B 消息窗/字体状态（`Engine+84088`）未还原（emulator 的 msgwin 有自己的状态）。',
   '本工程槽只存**当前帧 + 栈上未结束的帧**（scriptId/name/ip/retStack）与全局池；场景（纹理/绘制项）靠脚本重跑重建。',

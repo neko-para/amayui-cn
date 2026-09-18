@@ -1,0 +1,52 @@
+{
+  "title": "真 SAVE.DAT 解析失败：字符串区/尾部块的自校验窗口过严（记录区 4481 vs 声明 4480）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-data",
+  "why": "用户把真游戏存档复制进来后实测：鉴赏进度整份读不出来（E4 守卫红）。原因：parseTables 的结构自校验只认上界 4*(trailerDwords-1)，而引擎写侧用的是**未补齐**的字符串字节数做整除（sub_438320 raw 45294 的 v46 = SizeInBytes/4），读侧又用 v28 = &v20[v34 + 2]（raw 45606）按 dword 对齐定位下一块 ⇒ 记录区可以比 4*(v34-1) 长 1..4 字节。真存档实测：记录区 4481 字节、声明 1121（= 4481/4+1）⇒ 旧口径直接报「字符串表与尾部块长度不符」，整份 SAVE.DAT 读不出（症状是回想/CG/BGM 鉴赏进度全丢）。",
+  "acceptance": [
+    "合法窗口 = 4*(trailerDwords-1) .. 4*trailerDwords（写侧整除下界 + 读侧对齐块尾上界），并以 raw 45294 / 45606 锚定",
+    "本机真 SAVE.DAT（format=3）能解出配置键与鉴赏进度；合成 format=1 载荷同样能解",
+    "缺 trailerDwords 的旧布局仍如实报错（不许静默丢键）；npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-data.test.ts",
+    "app/amayui-emulator/test/gallery-bgm-list.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/saveData.ts",
+      "anchor": "floorBytes",
+      "note": "自校验窗口改为 4*(v34-1)..4*v34"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-data.test.ts",
+      "anchor": "Math.floor(recBytes / 4) + 1",
+      "note": "合成载荷按写侧整除口径造 trailerDwords"
+    },
+    {
+      "file": "docs-new/03-engine/save-data.md",
+      "anchor": "trailerDwords",
+      "line": 96,
+      "note": "§3 载荷布局（已按窗口订正）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "发现方式：T-0064/0065 让用户把真存档复制进 base 目录后，本机 E4 守卫（真 SAVE.DAT）第一次见到「记录区不是 4 的倍数」的样本。",
+  "id": "T-0068",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "open → done —— 窗口改为 4*(v34-1)..4*v34；守卫 save-data.test.ts + gallery-bgm-list.test.ts（真存档 E4）"
+    }
+  ]
+}

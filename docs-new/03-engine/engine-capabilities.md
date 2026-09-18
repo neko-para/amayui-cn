@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 43 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 44 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 8 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 27 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 22 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 26 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **126** | 需要关注（非 n/a 且非已核验）= **57** |
+| **合计** | **127** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
@@ -24,7 +24,7 @@
 |---|---|---|
 | 3D | 17 | 2 |
 | Live2D | 6 | 2 |
-| 声音 | 6 | 1 |
+| 声音 | 7 | 1 |
 | 帧循环 | 16 | 10 |
 | 消息窗 | 29 | 16 |
 | 渲染 | 26 | 11 |
@@ -162,6 +162,7 @@
 | `live2d-node-draw-advance` | Live2D | L2D 的「动作推进」与「出画」是同一次调用（没有独立的逐帧 tick） | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
 | `live2d-mesh-batches` | Live2D | Live2D 出画几何：顶点/UV/索引流 + 画布居中摆放 + 归并成三角批次 | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
 | `stage-stepper-0x40-gate` | 帧循环 | 阶梯动画时间表（0x40 门 + sub_408F10 调度器） | ✅ 已核验 | E3 · `test/stage-loop.test.ts` |
+| `music-runtime-current-track-lifecycle` | 声音 | BGM 运行态「当前曲 id」的生命周期（起播/停/换曲/存档/读档重播） | ✅ 已核验 | E2 · `test/slot-save-resume.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

@@ -447,6 +447,9 @@ const op_message_show: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
   const slot = readIntOperand(e, c.frame, c.instr, 1); // 窗索引（0 ⇒ 默认窗；1/2/7/8/9…）
+  // ★记下"本帧最后一次开始消息"的位置（`tickets/T-0063`）：本工程槽读档时用它当落点
+  //   ⇒ 存档当时那句话会被**重放**（引擎帧记录里那一格 `[259]` 就是 `0x71` 表下标，语义一致）。
+  c.frame.lastMsgIp = c.frame.ip;
   m.lastArg = slot;
   m.alt = 0;
   const w = m.resolveWin(slot);

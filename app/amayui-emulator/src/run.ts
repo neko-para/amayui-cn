@@ -5,7 +5,7 @@ import { NodeFileSource } from './arch/nodeFileSource.js';
 import { describeResourcesLine } from './arch/resourceDir.js';
 import { OverlayDir } from './arch/overlay.js';
 import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/systemPaths.js';
-import { decodeSaveData, encodeSaveData } from './vm/saveData.js';
+import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from './vm/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, type StepTrace } from './vm/interpreter.js';
@@ -143,7 +143,11 @@ async function main() {
     } else {
       const r = decodeSaveData(hit.data);
       if (r.ok) {
-        e.applySaveDataTables(r.data.tables);
+        // ★按 key 并表（`tickets/T-0069`）：overlay 那份可能缺**按槽**的记录（标题/状态/日期）
+        //   ⇒ 不并表会出现"存档列表没标题、点不进读档"。`readSaveDataBoth` 的第一份就是 overlay（= hit）。
+        const both = await src.readSaveDataBoth?.();
+        const m = mergeSaveDataFallbacks(r.data.tables, (both ?? []).slice(1), (s) => console.log(s));
+        e.applySaveDataTables(m.tables);
         // ★鉴赏/解锁进度（FileDB 的「已使用文件」表）：两侧并集（overlay 那份可能是旧版本写的空块）
         const merged = await src.readSaveFlags();
         const flags = merged && merged.length > 0 ? merged : [...r.data.usage.usedFileIds];

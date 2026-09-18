@@ -124,6 +124,25 @@ export function registerFileIpc(): void {
   });
 
   /**
+   * **两侧** `SAVE.DAT` 的原始字节（overlay 在前、base 在后；缺的那侧不出现）。
+   *
+   * 为什么不让渲染侧直接读 base：渲染进程没有 fs（只能经 IPC）。而"按 key 并表"必须在**解出表之后**做
+   * （加密格式在 `src/vm/saveData.ts` 里解）⇒ 主进程只把两份字节交出去（`tickets/T-0069`）。
+   */
+  ipcMain.handle('read-save-data-both', async () => {
+    const out: Buffer[] = [];
+    for (const p of [systemFiles.overlayFile(SAVE_DAT_REL), systemFiles.baseFile(SAVE_DAT_REL)]) {
+      try {
+        out.push(fs.readFileSync(p));
+      } catch {
+        /* 该侧没有 */
+      }
+    }
+    console.log(`[main] save data both -> ${out.map((b) => b.length).join(' + ') || '（都没有）'}`);
+    return out;
+  });
+
+  /**
    * 「已使用文件」标志（`SAVE.DAT` 开头的 int 块 = FileDB 的鉴赏/解锁表）：**两侧取并集**。
    *
    * 与 `read-save-data` 的区别：那个只返回优先级最高的那一份；标志是**单调集合**（引擎只会加、不会删），

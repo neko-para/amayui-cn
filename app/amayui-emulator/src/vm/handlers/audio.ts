@@ -16,8 +16,9 @@
  * | `0xB6` | SE 停止/释放 | `se-stop` |
  * | `0x2BF` | 延迟播 SE（循环标志 + 毫秒） | `se-delay` |
  * | `0xB7` / `0xB9` / `0xBF` | BGM 当前槽播（循环 / 不循环）/ play-bgm | `bgm-play` |
- * | `0xBB` / `0xBC` | SE 总开关 / BGM 模式开关 | `enable` / `bgm-mode` |
- * | `0xC2` | BGM 淡变 | `bgm-fade` |
+ * | `0xC3` | 写音乐运行态「当前曲 id」（**不播**） | （无意图；只改 `Music[259]`） |
+ * | `0xBB` / `0xBC` | SE 总开关 / BGM 模式开关 | `enable` / `bgm-mode`（+ 停一次再重播当前曲） |
+ * | `0xC2` | BGM 淡变（目标 0 ⇒ 清当前曲 id；目标非 0 ⇒ 起播当前曲） | `bgm-fade`（可能先 `bgm-play`） |
  * | `0xC4` / `0x1BD` | 播语音（通道 0，循环位 0 / 1） | `voice-play`（ADV 位在时 `voice-defer`） |
  * | `0x2F4` | 播语音（id, 附带, 通道） | 同上（通道 = op3） |
  * | `0x2C0` / `0x2F5` | 语音排队（带延迟、指定通道） | `voice-queue` |
@@ -89,6 +90,10 @@ const op_se_stop: OpHandlerLike = (c) => {
  * 试听切换时也各停一次（`:462`/`:552`）。
  */
 const op_bgm_stop: OpHandlerLike = (c) => {
+  // ★`sub_489B50` 的第一件事就是 `Music[259] = 0`（raw 106185）—— 即"停"同时**清当前曲 id**。
+  //   这一点是读档 BGM 还原链的一半：`SAVE.txt:934 i0b8`（确认读档后）清掉 id，读档再把存档里的
+  //   id 装回（raw 19911 = 镜像 `[2]`），最后 `CALLBACK_LOAD.BIN:20 i0b7 0` 用它重播。
+  setMusicId(c.e, 0);
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200
     emit(c, { kind: 'bgm-fade', value: 0, step: 100 }); // 引擎：sub_489E50(Music, 100) 推进淡出
@@ -114,16 +119,70 @@ const op_se_delay: OpHandlerLike = (c) => {
  * ⇒ `sub_454960` 写 FileDB 的已使用表）—— 这正是「回想 → BGM 鉴赏」里曲子被解锁的唯一途径（见
  * `handlers/resource-usage.ts` 的 `0x19D`）。
  */
-function bgmPlayIntent(c: StepCtx, bgm: number, loop: boolean): AudioIntent {
-  const res = resolveBgmResource(c.e, bgm);
-  if (res && 'id' in res) c.e.markFileUsed(res.id);
+function bgmPlayIntent(e: StepCtx['e'], bgm: number, loop: boolean): AudioIntent {
+  const res = resolveBgmResource(e, bgm);
+  if (res && 'id' in res) e.markFileUsed(res.id);
   return res ? { kind: 'bgm-play', bgm, loop, res } : { kind: 'bgm-play', bgm, loop };
 }
 
-/** `0xB7`（循环）/ `0xB9`（不循环）：在 BGM 当前槽播曲（引擎 `sub_489F80`）。 */
+/**
+ * **读档时重播存档里的当前曲**（引擎 `CALLBACK_LOAD.BIN:20` 的 `i0b7 0` 的等价物）。
+ *
+ * 引擎的完整链条（见 `docs-new/03-engine/save-data.md` §7.7、`sound-system.md` §5）：
+ * ```
+ * 存档：镜像[2] = Music[259]（当前曲 id；写侧 raw 17469-17471）
+ * 读档：Engine[174713] = 镜像[2]（raw 19911）+ 帧 0 ← CALLBACK_LOAD.BIN
+ * CALLBACK_LOAD：`i0b7 0` ⇒ sub_489F80(Music, 0, 1) ⇒ 曲 id 非 0 ⇒ 重新起播该曲（循环位 = 1）
+ * ```
+ * ★**为什么必须补这一跳**：读档落点是"存档当时那句话"（`0xAE` 的 `0x71` 表下标），而场景的
+ * `play-bgm` 通常在**进入消息循环之前**（实测 `SN0000.BIN`：`i0ae` = 指令 737、`play-bgm d` = 752、
+ * 落点 = 794）⇒ 续跑那一遍会**跳过 play-bgm**，而 `SAVE.txt:934` 又刚把 BGM 停掉 ⇒ 读档后整场没音乐。
+ * 引擎靠这里重播；emulator 此前跳过了 `CALLBACK_LOAD` 这一跳（`SLOT_GAPS ⑥`）⇒ BGM 丢了。
+ *
+ * `loop` 恒为 `true`：`sub_489F80` 的第一件事就是 `Music[261] = a3`，而 `CALLBACK_LOAD` 传的是 1。
+ */
+export function bgmReplayIntent(e: StepCtx['e'], id: number): AudioIntent {
+  return bgmPlayIntent(e, id, true);
+}
+
+/** 音乐运行态：当前曲 id（`Music[259]` = `_this[174713]`）。 */
+function musicId(e: StepCtx['e']): number {
+  return e.engineValues.get(ENGINE_FIELD.musicField) ?? 0;
+}
+function setMusicId(e: StepCtx['e'], id: number): void {
+  e.engineValues.set(ENGINE_FIELD.musicField, id);
+}
+/** 音乐运行态：循环位（`Music[261]` = `_this[174715]`）。 */
+function musicLoop(e: StepCtx['e']): boolean {
+  return (e.engineValues.get(ENGINE_FIELD.musicLoopField) ?? 0) !== 0;
+}
+function setMusicLoop(e: StepCtx['e'], loop: boolean): void {
+  e.engineValues.set(ENGINE_FIELD.musicLoopField, loop ? 1 : 0);
+}
+
+/**
+ * `0xB7`（循环）/ `0xB9`（不循环）：在 BGM 当前槽播曲（引擎 `sub_489F80` raw 106352-106372）。
+ *
+ * ```c
+ * _this[261] = a3;            // 循环位
+ * if (a2) { _this[259] = a2; goto PLAY; }
+ * if (_this[259]) goto PLAY;  // ★a2 == 0 ⇒ **重播当前曲**
+ * sub_489B50(_this);          // 当前曲也没有 ⇒ 停
+ * ```
+ * ★**`i0b7 0` 不是"播曲号 0"而是"重播当前曲"**（语料里 0xB7 的 30 处全是 `i0b7 0`）。这条习语出现在
+ * 两处：① `CALLBACK_LOAD.txt:20`（读档还原 BGM，见 `bgmReplayIntent`）；② 各 ADV 场景换曲：
+ * `i0b8`（停并清 id）→ `i0b7 0`（置循环位）→ `i0c3 <新曲号>`（登记新曲，不播）→
+ * `i0c2 <目标音量> <步长>`（淡入 ⇒ `sub_489D10` 见"音量为 0 且曲 id 非 0"就起播）——
+ * 例 `src/SC0010.txt:1648-1652`（`i0c3 35`）。修前把它当曲号 0 发出去 ⇒ 换曲习语整条静音。
+ */
 const op_bgm_slot: OpHandlerLike = (c) => {
-  const bgm = readIntOperand(c.e, c.frame, c.instr, 1);
-  emit(c, bgmPlayIntent(c, bgm, c.instr.opcode === 0xb7));
+  const loop = c.instr.opcode === 0xb7;
+  setMusicLoop(c.e, loop);
+  const arg = readIntOperand(c.e, c.frame, c.instr, 1);
+  const id = arg !== 0 ? arg : musicId(c.e);
+  if (id === 0) return; // 引擎：当前曲 id 也是 0 ⇒ sub_489B50（此刻本来就没在播）
+  if (arg !== 0) setMusicId(c.e, arg);
+  emit(c, bgmPlayIntent(c.e, id, loop));
 };
 
 /**
@@ -146,8 +205,19 @@ const op_play_bgm: OpHandlerLike = (c) => {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200 并 sub_489E50(Music,100)（推进淡出）
     emit(c, { kind: 'bgm-fade', value: 0, step: 100 });
   }
-  const bgm = readIntOperand(c.e, c.frame, c.instr, 1);
-  emit(c, bgmPlayIntent(c, bgm, true));
+  // ★`sub_489C20(Music, op1, 1)`（raw 106225-106253）：`Music[261] = 1` 恒执行；`op1 == 0` 时与
+  //   `0xB7 0` 同义（当前曲 id 非 0 ⇒ 重播，否则 `sub_489B50` 停）；同曲同循环已在播 ⇒ 什么都不做
+  //   （宿主 `bgmPlay` 里那条 `#bgm.bgm === bgm && playback && loop` 就是它）。
+  setMusicLoop(c.e, true);
+  const arg = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (arg === 0) {
+    const cur = musicId(c.e);
+    if (cur !== 0) emit(c, bgmPlayIntent(c.e, cur, true));
+    else emit(c, { kind: 'bgm-stop' }); // 引擎：sub_489B50
+    return;
+  }
+  setMusicId(c.e, arg);
+  emit(c, bgmPlayIntent(c.e, arg, true));
 };
 
 /** `0xBB`：SE 总开关（引擎 `sub_408D90`：与现状比较后写配置 `sound:SE`，关时停 0..9 通道）。 */
@@ -158,26 +228,68 @@ const op_se_enable: OpHandlerLike = (c) => {
 };
 
 /**
- * `0xBC`：BGM 开关/模式（引擎 `sub_408CF0(op1-1)`）：op1 = 1..3；把 `sound:Music` 的值 **±3** 写回
+ * `0xBC`：BGM 开关/模式（引擎 `sub_420DC0` → `sub_408CF0(op1-1)`）：把 `sound:Music` 的值 **±3** 写回
  * （`< 0` 视为关），并通知宿主切换 BGM 开关。
+ *
+ * ★操作数口径按 raw 收（`sub_420DC0` raw 29893-29801：`result = op1; if (result <= 2) sub_408CF0(result-1)`）：
+ * op1 ≤ 2 才动作，`a2 = op1 - 1`（a2 = 0 = 关；a2 ≠ 0（含 −1）= 开）。opcode-table 旧写的"1..3"与 raw
+ * 不一致（多算了 3、漏了 0），语料 0 处 ⇒ 按 raw 实现。
+ *
+ * ★引擎在开关切换时**停一次再重播当前曲**（`sub_408CF0` raw 13521-13534）：
+ * `v6 = Music[259]` → 改配置 → `sub_489B50`（停 + 清 id）→ `Music[259] = v6`（装回）→
+ * `sub_489F80(Music, 0, Music[261])`（用当前循环位重播）。所以这里补 `bgm-stop` + 重播；
+ * 关模式时宿主 `#enabled.bgm = false`（`bgm-play` 只记 id 不起播）⇒ 语义仍正确。
  */
 const op_bgm_mode: OpHandlerLike = (c) => {
   const raw = readIntOperand(c.e, c.frame, c.instr, 1);
-  if (raw < 1 || raw > 3) return; // 引擎：op1 不在 1..3 时不动作
-  const a2 = raw - 1; // 0 = 关；1/2 = 开（两种模式）
+  if (raw > 2) return; // 引擎：`result <= 2` 才动作
+  const a2 = raw - 1; // 0 = 关；其余（含 −1/1）= 开
   const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMusic, 0) : 0;
   if (a2 !== 0 && cur < 0) setConfigValue(c.e, CFG.soundMusic, cur + 3);
   else if (a2 === 0 && cur >= 0) setConfigValue(c.e, CFG.soundMusic, cur - 3);
   emit(c, { kind: 'bgm-mode', mode: a2 });
+  const id = musicId(c.e);
+  const loop = musicLoop(c.e);
+  emit(c, { kind: 'bgm-stop' });
+  if (id !== 0) emit(c, bgmPlayIntent(c.e, id, loop));
 };
 
-/** `0xC2`：BGM 淡变到 op1（0..10000），每帧推进 op2。 */
+/**
+ * `0xC2`：BGM 淡变到 op1（0..10000），每帧推进 op2（引擎 `sub_489D10`/`sub_489E50`）。
+ *
+ * ★两处必须一起做（`sub_489D10` raw 106287-106318 的副作用）：
+ *  - **目标为 0 ⇒ 立刻清当前曲 id**（raw 106317-106318 `if (!Music[265]) Music[259] = 0`；
+ *    `Music[265]` 就是这里写的目标）；
+ *  - **目标非 0 且曲 id 非 0 ⇒ 起播当前曲**（raw 106291-106316：音量为 0 或槽没在播时 `setPosition(0)`
+ *    + `play(Music[259], Music[261])`）—— 这是"`i0c3 <曲号>` 登记 + `i0c2 <音量> <步长>` 淡入"习语里
+ *    **真正把曲放起来**的那一步（宿主的 `bgmPlay` 自带同曲同循环不重启 ⇒ 正在播时不会被打断）。
+ */
 const op_bgm_fade: OpHandlerLike = (c) => {
-  emit(c, {
-    kind: 'bgm-fade',
-    value: readIntOperand(c.e, c.frame, c.instr, 1),
-    step: readIntOperand(c.e, c.frame, c.instr, 2),
-  });
+  const value = readIntOperand(c.e, c.frame, c.instr, 1);
+  const step = readIntOperand(c.e, c.frame, c.instr, 2);
+  const id = musicId(c.e);
+  if (value <= 0) setMusicId(c.e, 0);
+  else if (id !== 0) emit(c, bgmPlayIntent(c.e, id, musicLoop(c.e)));
+  emit(c, { kind: 'bgm-fade', value, step });
+};
+
+/**
+ * `0xC3`（`sub_420F10` raw 29844-29859）：**写运行期音乐字段** —— `Music[259] = op1`（**不播**）。
+ *
+ * ```c
+ * if ((_this[174801] & 0x200) != 0) { _this[174801] &= ~0x200; sub_489E50(Music, 100); } // 同 0xB7 的序
+ * _this[174713] = sub_41BF50(_this, 1);                                                  // 登记曲号
+ * ```
+ * 语料 30 处，**全部**紧跟 `i0b7 0`（如 `src/SC0010.txt:1649-1650`：`i0b7 0` / `i0c3 35`）——
+ * 即"先置循环位、再登记新曲、最后由 `i0c2` 淡入起播"。修前它**不在任何表里**（命中即硬报错），
+ * 凡走这条习语的场景（SC0000/SC0010/SC0130/… 共 30 处）都会中断。
+ */
+const op_set_music_field: OpHandlerLike = (c) => {
+  if ((c.e.effectFlags & 0x200) !== 0) {
+    c.e.effectFlags &= ~0x200;
+    emit(c, { kind: 'bgm-fade', value: 0, step: 100 });
+  }
+  setMusicId(c.e, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
 /** `0xC4`（循环位 0）/ `0x1BD`（循环位 1）：播语音到通道 0（ADV 位在时寄存）。 */
@@ -327,6 +439,7 @@ export const AUDIO_OPS: OpTable = [
   [0xbb, op_se_enable],
   [0xbc, op_bgm_mode],
   [0xc2, op_bgm_fade],
+  [0xc3, op_set_music_field], // 写 Music[259]（当前曲 id，不播）；30 处，全在"换曲淡入"习语里
   [0xc4, op_play_voice],
   [0x1bd, op_play_voice],
   [0x2f4, op_voice_play_slot],

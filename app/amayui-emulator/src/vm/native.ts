@@ -238,6 +238,13 @@ export interface NativeBridge {
   clearMeshSlots?(): void;
   /** 0x259（sub_41A3A0）：清两张 1000×2 组 5-DWORD 记录表（只清记录、不 delete 对象）。 */
   clearSlotRecords?(): void;
+  /**
+   * **取场景「呈现态」快照**（`tickets/T-0063`）：读档要还原画面（引擎存了绘制/槽记录并在读档时重放）。
+   * 实现方返回 JSON 可序列化的纯数据（见 `renderer/scene/present.ts` 的 `PresentSnapshot`）。
+   */
+  snapshotPresent?(): unknown;
+  /** **还原场景呈现态快照**（`0x1A1` 读档时由 VM 交回宿主；引擎读档也会用存档里的记录重画）。 */
+  restorePresent?(snap: unknown): void;
   /** 0x340（sub_427B60 → `sub_49A2D0`）：下发渲染状态（设备 vtable+228，状态 #22）。 */
   setRenderState?(state: number, value: number): void;
   setFont?(args: number[]): void;

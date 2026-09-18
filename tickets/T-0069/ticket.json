@@ -1,0 +1,61 @@
+{
+  "title": "存档列表没有标题、读档点不进去：overlay 的 SAVE.DAT 缺「按槽」的记录（需要两侧并表）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-data",
+  "why": "用户实测（把真存档复制进来之后）：emulator 里刚保存时槽是有标题的（标题写在 SAVE.DAT 的字符串表里、按槽号为键，见 src/SAVE.txt:1102-1139 的 save-string/save-int），但一打开读档界面就**整列没有标题**，而且**点槽进不了读档**（脚本把每行当空槽）。根因：本工程 overlay 目录里那份 SAVE.DAT 可能由**旧版本**写过，而旧版本只把自己改过的键写回去 —— 实测本机 overlay 那份只剩 int=3049 / str=8（真游戏 base 那份是 int=5439 / str=248，槽标题（键 05000004xx）＝「序章」「１章」… 全在 base 里）。读侧 overlay 优先 ⇒ 列表拿不到标题与每槽的状态/日期 ⇒ 既没标题也点不进去。引擎的表是**单调增长**的（从不删键）⇒ 两侧并集与引擎语义一致（与既有的 usedFileIds 并集同口径）。",
+  "acceptance": [
+    "启动装 SAVE.DAT 时把其余几份（base 真游戏那份）的表**按 key 补缺**进 overlay 那份（同名键 overlay 优先）：renderer/configBoot.ts、tools/scenarioBoot.ts、run.ts 三处都走同一条 mergeSaveDataFallbacks",
+    "文件源补 readSaveDataBoth（Node 直读两侧；Electron 新 IPC read-save-data-both），旧 preload 缺失时退回单文件行为",
+    "并表后「按槽」的键（槽标题/状态/日期）都在：本机实测 int 3049→5444 / str 8→251；守卫覆盖 merge 的单元语义（同名以 primary 为准、fallback 补缺、坏份只计数）",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-data.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/saveData.ts",
+      "anchor": "export function mergeSaveDataFallbacks",
+      "note": "按 key 并表（primary 覆盖、fallback 补缺）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
+      "anchor": "mergeSaveDataFallbacks",
+      "note": "启动装载点的并表调用"
+    },
+    {
+      "file": "app/amayui-emulator/electron/ipc/files.ts",
+      "anchor": "read-save-data-both",
+      "note": "主进程交出两侧原始字节（渲染侧解表后合并）"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "save-string (local-string-ptr 0)",
+      "line": 1115,
+      "note": "槽标题/状态按槽号写进 SAVE.DAT 的那一段"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0059",
+      "T-0065"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "并表是单调的（不会删键）⇒ 下一次保存写回的 overlay 副本就带上全部键，问题自愈；真游戏 base 那份始终不动。",
+  "id": "T-0069",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "open → done —— 并表 + readSaveDataBoth；守卫 test/save-data.test.ts"
+    }
+  ]
+}

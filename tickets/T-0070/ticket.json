@@ -1,0 +1,55 @@
+{
+  "title": "读档画面被二次播放：走栈期间场景入口重跑（重建遮罩 + 重播淡入）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-render",
+  "why": "用户实测：读档时先出现带遮罩的背景（= 画面快照，正确），随后又像「刚进游戏」一样从无遮罩背景渐变到有遮罩 —— 也就是同一次读档里画面被播了两遍。根因：续跑是「帧 0 从入口重跑 → 入口 i0ae 落 ip」，这一路上**场景入口的初始化会重跑**（NOVEL/SN0000 的 create-mesh 重建遮罩 + set-vertex-color-alpha 重播淡入），而快照里的遮罩 mesh 是同一个 handle ⇒ 被新 mesh 覆盖成 alpha=0 再动画回来。引擎不会这样：它的后备缓冲**从不清**（ClearTarget 被恒 0 的 Scene+46460&1 守卫），旧像素一直压着那些一次性绘制。",
+  "acceptance": [
+    "读档后到走栈收尾之前，画面保持 = 存档当时的快照（场景入口重跑的中间画面不呈现）",
+    "收尾（cur == savedCur）那一刻松手：此后脚本自己的绘制（落点重放那句话、后续演出）如实可见",
+    "实现走同一条 applySlotPresentation（装载点与走栈步共用），免得两处漂移；真槽（无快照）行为不变",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-save-resume.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "export function applySlotPresentation",
+      "note": "装载点与走栈步共用的画面装回实现"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
+      "anchor": "applySlotPresentation(e, e.loadHold)",
+      "note": "0xAE 每个走栈步把快照装回"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "loadHold",
+      "note": "走栈期间要反复装回的画面（收尾清空）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0063",
+      "T-0069"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "探针实测（本工程槽 70）：走栈帧 0..4 期间 drawItems=7 meshes=2 恒为快照；收尾后立刻变成脚本自己画的 26 项。",
+  "id": "T-0070",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "open → done —— loadHold + applySlotPresentation；守卫 test/slot-save-resume.test.ts"
+    }
+  ]
+}

@@ -43,3 +43,15 @@ this.textures.captureCanvasIntoSlot(slot, canvas, frame.width, frame.height);
 ### 判据
 - 工具：`node src/tools/slotThumbPng.ts <SAVE70.DAT> out.png` ⇒ 看图应与当时画面一致（不再是拼贴）。
 - 待用户在 GUI 里存档一次目视确认（本机 headless 无画布，只能验到写盘/解码那一段）。
+
+## 2026-09-18
+
+## 证据锚点复位（2026-09-19）
+
+本票的 evidence 曾被改写成 T-0063 的锚点（\enderer/scene/ops.ts\ 的 0x259「口径纠错」、\pixiBackend.ts\ 的
+\snapshotPresent(): unknown\）—— 两者都与缩略图无关（是读档画面快照那条线的证据）。核对后确认
+**原始四条锚点至今都还在**（\pixiBackend.ts\ 的 \captureCanvasIntoSlot\ = frameTick 当场合成 + 屏幕矩形捕获、
+\	extureCache.ts\ 的 \captureCanvasIntoSlot(slot: number\、\slotThumbPng.ts\ 的 \ncodePng\、
+\src/\\.txt:17591\ 的 \i032 2 e 0 0 500 2d0 0 0 140 b4\）⇒ 已复位，并把 note 写清各自对应的那一环。
+
+状态仍为 \doing\：判据 3 的 GUI 目视已由用户确认通过，但本票还没有**自动化守卫**（\	ests[]\ 为空 ⇒ 不能置 done）。

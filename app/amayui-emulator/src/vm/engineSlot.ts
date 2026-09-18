@@ -471,6 +471,19 @@ export interface EngineSlotResume {
   savedRet: number;
   /** 逐帧记录（下标 = 帧号）。 */
   frames: EngineSlotFrame[];
+  /**
+   * **这份槽自己声明的存档版本**（`set:SaveVersion1/2` 的等价物 = 容器头 +284/+288，由写侧
+   * `sub_40CD10(Engine, file, sv1, "set:SaveVersion2")` 写进去）。
+   *
+   * ★为什么必须由**文件**带：`0xAE`（`sub_4192F0`）按 `sv1/sv2` 选帧记录的槽位组（263/261 步长三套），
+   * 选错 ⇒ 整个走栈不发生。引擎那份 `sv1/sv2` 来自配置注册表（`GetConfig("set:SaveVersion1")`），而注册表
+   * 的值又是启动时从 `SAVE.DAT`/`$$SAVE.DAT` 的**头**（raw 15024-15203 读到字段 21968/21972）得来的 ——
+   * 所以"以文件为准"与引擎同源；而**玩家数据里 `[set]` 段可能整个不存在**（实测：把真存档复制进来后
+   * `SYS4REG.INI` 没有 `[set]` ⇒ `cfgInt(..., 0)` 得到 0 ⇒ `0xAE` 没有可用分支 ⇒ 读档不续跑、一路跑回
+   * TITLE，`tickets/T-0065`）。
+   */
+  sv1?: number;
+  sv2?: number;
 }
 
 /**

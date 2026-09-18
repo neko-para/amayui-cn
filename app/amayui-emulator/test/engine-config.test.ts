@@ -2,8 +2,9 @@
  * 引擎配置（SYS4REG.INI）加载 + 配置类 opcode 的取值测试。
  *
  * 事实来源：raw 23649-23745（启动装载后灌引擎字段）、sub_4900F0（路径）/ sub_4963E0（解析）/
- *   sub_4957F0（按 "section:key" 取整型）、0xC0 `sub_42E510`（`_this[174713]`）/ 0x131 `sub_42F7D0`
- *   （直接读 `message:MesWinAlpha`）/ 0x2CE `sub_430A20`（`_this[167990]!=0` ← `display:ScreenMode`）。
+ *   sub_4957F0（按 "section:key" 取整型）、0xC0 `sub_42E510`（读运行态 `_this[174713]` = 当前曲 id）/
+ *   0x131 `sub_42F7D0`（直接读 `message:MesWinAlpha`）/ 0x2CE `sub_430A20`（`_this[167990]!=0` ←
+ *   `display:ScreenMode`）。
  *
  * ★**取值断言一律用夹具 INI**（`tickets/T-0034`）：真游戏的 `SYS4REG.INI` 是**玩家数据**，
  *   玩家改一次设置（或真游戏自己重写）就会变 ⇒ 断言它的具体取值会让测试随开发机状态变红
@@ -146,7 +147,9 @@ test('applyConfigToEngine：按绑定写入引擎字段（夹具 INI，含 displ
   const applied = applyConfigToEngine(cfg, values);
   const get = (f: number): number | undefined => values.get(f);
 
-  assert.equal(get(174713), 3, 'sound:Music=3 → _this[174713]（0xC0 读）');
+  // ★`sound:Music` **不落任何字段**（T-0064）：174713 是 Music 模块的运行态「当前曲 id」，
+  //   不是配置值 —— 绑在一起会让每次启动把"现在放的是哪首"覆写成配置数字（读档 BGM 还原会播错曲）。
+  assert.equal(get(174713), undefined, '★sound:Music 不得写进 _this[174713]（那是运行态当前曲 id）');
   assert.equal(get(167990), 1, 'display:ScreenMode=1 → _this[167990]（0x2CE 读，布尔化）');
   // ★message:MesWinAlpha **不进任何字段**（引擎只由 0x131/0x141 按名直读直写配置）。
   //   21668×4 = 86672 = Font+1376 = message:MessageSpeed ⇒ 历史误绑会让 MesWinAlpha 顶掉 MessageSpeed。
@@ -156,7 +159,7 @@ test('applyConfigToEngine：按绑定写入引擎字段（夹具 INI，含 displ
   assert.equal(get(20980), 1, 'sound:SE=1（下标 20980 = raw 字节 83920）');
   assert.equal(get(21293), 2, 'sound:Voice=2（下标 21293 = raw 字节 85172）');
   assert.equal(get(96983), 1, '无关字段不受影响（LOGO 开关）');
-  assert.ok(applied.length >= 8, `应写入至少 8 个字段（实际 ${applied.length}）`);
+  assert.ok(applied.length >= 7, `应写入至少 7 个字段（实际 ${applied.length}；T-0064 起 sound:Music 不在其中）`);
 
   // 幂等：重复应用结果一致
   const applied2 = applyConfigToEngine(cfg, values);
@@ -229,11 +232,16 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（夹�
   applyConfigToEngine(cfg, e.engineValues);
   const read = (slot: number): number => asI32(dec(e.key, e.curScript().locals.int.get(slot) ?? 0));
 
-  // 0xC0 → _this[174713] = sound:Music = 3（注册在 NATIVE_OPS 表，故 kind='native'；语义已由本 handler 实现）
+  // 0xC0 → **运行态音乐字段** `_this[174713]`（= `Music[259]` 当前曲 id）。
+  //   ★它不是配置值：夹具 INI 的 `sound:Music=3` **不得**出现在这里（T-0064）。
   loadScriptIntoFrame(e.curScript(), oneOp(0xc0, 1), 'TEST.BIN');
   let t = await stepOnce(e);
   assert.notEqual(t.handlerKind, 'unimplemented');
-  assert.equal(read(1), 3);
+  assert.equal(read(1), 0, '未起播过任何 BGM ⇒ 当前曲 id = 0（不是夹具 INI 的 Music=3）');
+  e.engineValues.set(174713, 0x12); // 假装 `play-bgm 12` 起播过
+  loadScriptIntoFrame(e.curScript(), oneOp(0xc0, 1), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(1), 0x12, '★0xC0 读的是运行态当前曲 id');
 
   // 0x131 → **直接读配置** message:MesWinAlpha = 6（不读任何 Engine 字段）
   loadScriptIntoFrame(e.curScript(), oneOp(0x131, 2), 'TEST.BIN');

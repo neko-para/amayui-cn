@@ -99,12 +99,17 @@ trailerDwords × u32                           ← 尾部块（3.10+ 放 a9/a10/
 ```
 
 - ⚠**字符串记录区从 `strCount` 之后 8 字节起**，不是 4 字节：读侧 `sub_438940` raw 45564-45566 是
-  `v23 = *v20; v34 = v20[1]; v24 = (char *)(v20 + 2)`，`v34` 就是那个 `trailerDwords`，
-  记录区按 dword 对齐（`4×(v34-1)` 字节，尾部补零）。
+  `v23 = *v20; v34 = v20[1]; v24 = (char *)(v20 + 2)`，`v34` 就是那个 `trailerDwords`。
   **少跳这 4 字节不会报错**：第 1 条会被读成乱码键，并且**静默丢掉最后一条记录**——
   天結真存档里最后一条恰好是字体键 `\x05…bbf`（CONFIG 第 3 行字体），于是表现为
-  「五个字体项里第三个回退到默认字体」。emulator 侧 `src/vm/saveData.ts` 的 `parseTables(…, engineLayout)`
-  按引擎布局读，并用 `记录区字节数 ∈ [声明区-3, 声明区]` 做**结构自校验**（宁可如实报错，也不静默丢键）。
+  「五个字体项里第三个回退到默认字体」。
+- ★**`trailerDwords` 的合法窗口 = `4×(v34−1)` … `4×v34`**（2026-09 订正）：写侧用的是**未补齐**的
+  字符串字节数做整除（raw 45294 `v46 = SizeInBytes/4`），而读侧用 `v28 = &v20[v34 + 2]`（raw 45606）
+  按 dword 对齐定位下一块 ⇒ 记录区可以比 `4×(v34−1)` 长 1..4 字节（尾巴补零）。
+  实测真 `SAVE.DAT`：记录区 4481 字节 ⇒ 声明 1121（= 4481/4+1 整除）。
+  旧口径只认上界 `4×(v34−1)` ⇒ 遇到"记录区不是 4 的倍数"的真存档会**误判解析失败**
+  （症状：鉴赏进度整份读不出来）。emulator 侧 `src/vm/saveData.ts` 的 `parseTables(…, engineLayout)`
+  用这个窗口做**结构自校验**（宁可如实报错，也不静默丢键）。
 - 写盘触发：**关窗**（`WM_CLOSE`，除非 `set:NoSaveDat`；raw 141189）与**存档槽保存之后**
   （`sub_40CD10` 内 raw 17687 → `sub_40AAE0`）；装载：启动（raw 142107）。
   写的都是 `$$SAVE.DAT` → 改名，旧文件留 `SAVE.BAK`。
@@ -280,7 +285,8 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
   `format = 1/2` 的旧布局仍只读头；② 只还原"当前帧 + 调用栈上的帧"；③ `0x19E` 的覆盖确认框没建模（宿主无对话框 ⇒ 恒等于"点了是"）；
   ④ `.STH` 已解（320×180 24bpp BMP；`tickets/T-0036`），且 §7.3 的渲染目标帧捕获已接（仍需 GUI 目视确认）；
   ⑤ 按名读档族（`0x190`/`0x0AA`/`0x0AB`/`0x0AC`）未实现（语料 0 次）；
-  ⑥ 续跑跳过了引擎的 `CALLBACK_LOAD.BIN` 那一跳、且存档里的解码图槽/图像重载清单**已解码未应用**（见 §7.2 末）。
+  ⑥ 续跑跳过了引擎的 `CALLBACK_LOAD.BIN` 那一跳、且存档里的解码图槽/图像重载清单**已解码未应用**（见 §7.2 末）——
+  该跳里**对本工程有观测意义的那一步（BGM 重播 `i0b7 0`）已补**（§7.7），其余（10 个 SE 通道重装/`LOADCHARM`/消息跳过复位）仍未做。
 
 ### 7.1 ★读档不是"恢复两张表"，而是**控制转移**（`tickets/T-0056`）
 
@@ -371,7 +377,8 @@ sub_40F750(3)：帧[cur] ← 记录[cur] 的脚本（sub_40ED40）、返回栈 �
 emulator 侧：`src/vm/engineSlot.ts`（解析）+ `handlers/save-slot.ts`（`restoreEngineSlot`：还原池/帧记录、
 装帧 0）+ `handlers/frame.ts` 的 `op_save_version_branch`（`0xAE` 真实现）+ `Engine.saveResume`。
 **已知偏离**（`SLOT_GAPS ⑥`）：① 跳过 `CALLBACK_LOAD.BIN` 那一跳（emulator 能直接装帧脚本；引擎因为装载
-发生在帧派发里才要绕回调）⇒ 回调的副产物（charm/LOADCHARM 绘制管线、savemesskip 复位）不复现；
+发生在帧派发里才要绕回调）⇒ 回调的副产物里**只有 BGM 重播（`i0b7 0`，§7.7）被显式补上**（`replaySavedBgm`），
+charm/LOADCHARM 绘制管线、savemesskip 复位、10 个 SE 通道重装仍不复现；
 ② 存档里的解码图槽与图像重载清单**已解码未应用**（emulator 的纹理由脚本 `set-texture` + 宿主按 id 惰性解码重建）；
 ③ 镜像里那 40 B 消息窗态未还原（emulator 的 msgwin 有自己的状态）。
 
@@ -417,25 +424,129 @@ target 的 local bounds 出图，而舞台子节点可能落在视口之外（�
 ### 7.4 读档为什么必须"**让脚本从入口重跑**"（`tickets/T-0063`）
 
 引擎 `sub_40F750(3)` 装载 rec[cur] 的脚本时，`sub_40ED40` 把帧 ip 设成**脚本入口**（raw 18847：`95782 = 95781`），
-随后由入口那条 `i0ae`（`0xAE`）把 ip 落到存档位置 ⇒ **读档 = 场景脚本从 dword 0 重跑一遍**：
-先跑 init（重画背景/角色、并调用 `i259` 落掉上一场的绘制记录），再跳到存档那条消息。
-
-实测为什么非这样不可（本机 `src/SN0000.txt` / `src/$1$SC0330.txt`）：**ADV 场景的绘制是一次性的** ——
-主循环标签（`label_000037f0`）之后的 2827 / 17703 行里只有 **14~16 处 `draw-texture`、2~3 处 `i20c`**，
-而 `i1f4`（帧计时）有 30/313 处 ⇒ 循环只跑输入/文本，**不会重画背景**。而 `0x259`
-（`sub_41A3A0`，每个场景开头都调一次，语料 517 处，`src/$1$SC0330.txt:7`）清的就是**绘制记录账本**
-（两张 1000×2 组 5 dword 表，字段 0 = 图像的统一文件 id —— 读档按它重载图像，raw 19878-19893）
-⇒ 「存档界面残留在 ADV 上」与「背景不重画」其实是**同一个原因**：直接落 ip 会跳过 init。
-
+随后由入口那条 `i0ae`（`0xAE`）把 ip 落到存档位置 ⇒ **读档 = 场景脚本从 dword 0 重跑一遍**。
 emulator 侧因此把**本工程槽（`format = 0`）也接到引擎那条路上**（`tickets/T-0061` 的"直接摆 `cur`/`ip`"已作废）：
 装载时把每个存档帧按 scriptId **装到入口**、把落点（本工程槽存的是**指令下标** ⇒ `saveResume.frames[k].instr`）
 与返回栈放进 `Engine.saveResume`，`cur = 0` + 置读档门，然后由脚本入口的 `i0ae` 逐帧走栈到 `savedCur` 收尾。
-两条读档路（真槽 / 本工程槽）差别只剩"落点怎么表示"（表下标 vs 指令下标）。
 
-`0x32B`（`sub_41A4A0`，清 D3DX 网格层级槽表；语料只有 1 处 = `src/TITLE.txt:810-814` 的标题界面收尾）
-与 `0x259` 这两条宿主缝此前被 `nativeTap` 记成"忽略"，现已落地：
-`clearMeshSlots` 清 `scene.meshes`；`clearSlotRecords` 清 `scene.drawItems` + 窗口文本，
-**保留**网格与纹理对象（引擎口径「只清记录、不 delete 对象」）。
+### 7.5 ★读档还必须把**画面**装回去（`tickets/T-0063`）
+
+"从入口重跑"只能重建**流程**，重建不了**画面**：ADV 的背景/立绘是**一次性**画出来的，而每帧的落点都
+在那些绘制**之后**。实测 `NOVEL.BIN`（0x5268，ADV 场景的外层）：
+
+```text
+指令 21   i0ae                    ← 落点入口
+指令 39   set-texture …           ← 场景贴图
+指令 43   draw-texture 186a0 …    ← ★背景
+指令 123  call-script <场景>       ← 把控制交给场景脚本（SN0000）
+指令 124  i0f4 …                  ← ★帧 1 的存档落点（113 行之前那些绘制全被跳过）
+```
+
+`SN0000.BIN` 从入口到主循环（`label_000037f0` 的 `i0ae`）之间**一处 `draw-texture` 都没有** ⇒
+只还原帧栈/池的话，读档后**画面上什么都没有**；而宿主 GUI 有"留帧"机制（`HOLD_MAX_FRAMES`）
+⇒ 屏上继续显示上一屏 —— 玩家看到的就是**"读档后回到标题界面"**（点击还能推进 ADV，因为流程已经续上了）。
+
+引擎为此在存档里带了**绘制/槽记录**（`_this[81174]`/`[86174]` 两张 1000×2 组 5 dword 表，20000 字节：
+每条 = 统一文件 id + 参数；读档时 raw 19843-19910 按它逐条 `sub_4559C0` + `sub_4A3800` 把图像装回槽）。
+emulator 的等价物是 `SlotStateBlock` 里的两段：
+
+| 段 | 内容 | 读档时 |
+|---|---|---|
+| `texSlots` | `[槽号, 统一文件 id][]`（= VM 的 `Engine.texSlots`） | 还原 `e.texSlots` + 逐条 `native.bindTexture(imgid, slot)`（宿主按 id 取图） |
+| `present` | 场景**呈现态快照**：`drawItems` / `meshes` / `msgWins`（消息窗文本）/ `msgRanges` / `slotText` / `slotModes`（见 `renderer/scene/present.ts`） | `native.restorePresent(snapshot)` ⇒ 模型先清后装、每个窗 `msgRev` 递增以触发重新光栅化 |
+| `adv` | **VM 侧状态**（见 `src/vm/advState.ts`）：`engineValues`（除读档流程自用的 `cur`/`callRet`/读档门/收尾标志）、热点区 `routes.entries`、消息窗标量态、文本项账本 `textItems.records`、阶梯动画表 `StageLoop` | `restoreAdvState`（在清空之后、续跑脚本继续之前） |
+| `adv.fields` 里的 BGM 两格 | 运行态「当前曲 id」`_this[174713]` / 循环位 `[174715]`（真槽对应帧镜像 `[2]`；见 §7.7） | `restoreAdvState` 装回后由 `replaySavedBgm` **重播该曲**（= 引擎 `CALLBACK_LOAD.BIN:20` 的 `i0b7 0`） |
+| `loadHold`（不在槽里） | 装载点装好的那份画面快照本身（`present` + `texSlots`） | `0xAE` **每个走栈步**重新 `applySlotPresentation`，收尾才松手 —— 见 §7.8 |
+| `frames[].lastMsgIp` | 本帧最后一次 `0x71`（开始消息）的指令下标 | **末帧**的落点优先用它 ⇒ 重放存档当时那句话（引擎帧记录里那一格就是 `0x71` 表下标） |
+
+顺序很重要：**先还原快照/VM 态，再让续跑脚本继续跑** —— 模型以 handle 为键，脚本重画同一个 handle 是覆盖而不是叠加。
+读档还会 `routes.reset()` + `msgwin.reset()`（清掉旧 UI 的窗口/热点），所以那批状态**必须**由存档带回来 ——
+否则实测症状是：侧边栏 hover 不展开（热点区没了）、ADV 窗遮罩不对（窗口标量态没了）、
+背景不再移动（阶梯动画表没了）、面板/淡入开关位被复位（`engineValues` 被清）。
+（`0x259` 那条"清记录"也因此必须只清**槽记录**、不能清绘制项 —— 见 §7.6。）
+
+### 7.6 `0x259`（`i259`）到底清什么（口径纠错）
+`sub_41A3A0`（raw 25357-25376）的完整体是一趟 `v2 = 1000` 的循环：
+
+```c
+result = _this + 86176;                       // 影表；主表 = result - 5000（= 81176）
+do { *(result - 5000) = 0;  *result = 0;      // 两表的 [0]
+     *(result - 4999) = 0;  result[1] = 0;    // 两表的 [1]
+     result += 5; --v2; } while (v2);          // 步长 5 dword × 1000 条
+```
+
+⇒ 它清的是**槽记录**（"槽 → 统一文件 id"那一格 + 邻居），**不碰绘制项、也不 delete 纹理对象**
+（引擎绘制走 CTexture 对象表 `_this[op2+94672]`，与这份记录无关）。语料 517 处，每个 ADV 场景开头
+都调一次（`src/SN0000.txt:7`）—— 所以它**不是**"清屏"，把它实现成清 `drawItems` 会**在每个场景开头
+把刚画好的画面清掉**（本仓一度如此，症状正是"读档后什么都不剩"）。
+
+### 7.7 ★读档还要把 **BGM** 放回去（`tickets/T-0064`）
+
+画面之外还有一样东西会"跟着存档走"：**音乐运行态**。
+
+```text
+存档（sub_40CD10 a4==3）: 帧镜像[2] = Music 模块的 [259]（当前曲 id；raw 17469-17471）
+读档（sub_410160 a4==3）: Engine[698852] = 镜像[2]（raw 19911 ⇒ 把当前曲 id 装回模块[259]）
+                          帧 0 ← CALLBACK_LOAD.BIN
+CALLBACK_LOAD.BIN:20     : `i0b7 0` ⇒ sub_489F80(Music, 0, 1) ⇒ 曲 id 非 0 ⇒ **重新起播该曲**（循环）
+```
+
+★为什么"不补这一跳 ⇒ 读档后整场没 BGM"（2026-09 用户实测）：
+
+1. `src/SAVE.txt:934` 在 `i1a1`（读档）**前一条**就是 `i0b8`：`sub_489B50` 停播**并清 `Music[259]`**
+   （运行态当前曲 id 归零）；
+2. 读档落点是"存档当时那句话"（`0xAE` 用 `0x71` 表下标），而场景的 `play-bgm` 在**消息循环之前** ——
+   实测 `SN0000.BIN`：`i0ae` = 指令 737、`play-bgm d`（曲号 13 = `BGM013.OGG`，318 s）= 752、落点 = 794
+   ⇒ 续跑那一遍**必然跳过**它；
+3. 于是只有 `CALLBACK_LOAD` 用**存档里的 id** 重播才能把音乐放回来。
+
+emulator 的对应物：`engineValues[174713]`（当前曲 id）/ `[174715]`（循环位）是唯一真源
+（`0xB7/0xB9/0xBF/0xC3` 写、`0xB8`/`0xC2`(目标 0) 清；**不再**由配置 `sound:Music` 灌值 ——
+配置落字节 `0xAAB10` 而不是 `0xAA9E4`）；本工程槽把它随 `adv.fields` 存走，读档末尾由
+`handlers/save-slot.ts` 的 `replaySavedBgm` 发一条 `bgm-play{id, loop:true}`（真槽走 `pre8` 那一格）。
+细节与 opcode 语义见 `sound-system.md` §5/§5.1。
+
+★**旧档注意**：修前存的槽里那一格是配置值（本机 `sound:Music=2`）⇒ 读档会尝试播曲号 2（= `OP.BIN`）
+并静默失败（日志 `[slot-load] BGM 还原：重播存档里的当前曲 #2`）—— 用新版本重存一次即可。
+
+
+### 7.8 ★走栈期间要"按住"读档画面（`tickets/T-0070`）
+
+读档的画面快照装好之后，**续跑本身会再演一遍场景入口**：续跑是"帧 0 从入口重跑 → 入口 `i0ae` 落 ip"，
+而场景入口的初始化在这条路上会重跑（`create-mesh` 重建遮罩、`set-vertex-color-alpha` 重播淡入）——
+快照里的遮罩 mesh 与新建的是**同一个 handle** ⇒ 被覆盖成 alpha=0 再动画回来。
+
+玩家实测症状：**先出现带遮罩的背景（快照，正确）→ 又像刚进游戏一样从无遮罩渐变到有遮罩**（画面被播两遍）。
+
+引擎没有这个问题：它的后备缓冲**从不清**（`ClearTarget` 被恒 0 的 `Scene+46460 & 1` 守卫），
+旧像素一直压着那些一次性绘制。emulator 的等价物 = `Engine.loadHold`：
+
+```text
+读档（本工程槽）  : applySlotPresentation(present + texSlots) 并挂 e.loadHold = 同一份
+每个走栈步（0xAE）: if (e.loadHold) applySlotPresentation(e, e.loadHold)   // 把重跑产生的中间画面盖回快照
+收尾（cur==savedCur）: 上面已盖回一次 ⇒ 清 e.loadHold（此后脚本自己的绘制如实可见）
+```
+
+真槽（没有快照）不挂 `loadHold` ⇒ 行为不变（它的画面缺口见 `T-0066`）。
+
+### 7.9 ★`SAVE.DAT` 的两张表要**按 key 并表**读（`tickets/T-0069`）
+
+`SAVE.DAT` 里除了配置值，还有一批**按槽**的记录（`save-string`/`save-int` 以槽号为键：槽标题
+`\x05000004xx`、状态、年月日时分、游玩秒数…，见 `src/SAVE.txt:1102-1139`）。
+本工程 overlay 目录里那份可能由**旧版本**写过，而旧版本只把自己改过的键写回去 ——
+实测本机 overlay 那份只剩 **int 3049 / str 8**，而真游戏 base 那份是 **int 5439 / str 248**
+（槽标题「序章」「１章」… 全在 base 里）。读侧是"overlay 优先"⇒ 列表**整列没有标题**、
+点槽也进不了读档（脚本按空槽处理）。
+
+引擎的表是**单调增长**的（从不删键）⇒ 两侧并集与引擎语义一致（与既有的 `usedFileIds` 并集同口径）：
+
+```text
+启动装 SAVE.DAT: 解 overlay 那份 → mergeSaveDataFallbacks(表, 其余几份) → applySaveDataTables
+                 （同名键 overlay 优先，base 只补缺键；实测补回 2638 个键 ⇒ int 5444 / str 251）
+文件源          : readSaveDataBoth()（Node 直读两侧 / Electron 新 IPC `read-save-data-both`）
+```
+
+并表是单调的 ⇒ 下一次保存写回的 overlay 副本就带上全部键，问题自愈；真游戏 base 那份始终不动。
 
 
 ## 8. 相关

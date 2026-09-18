@@ -16,6 +16,8 @@ import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
 import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
+import { restoreAdvState, snapshotAdvState } from '../advState.js';
+import { bgmReplayIntent } from './audio.js';
 import { decodeBmp, encodeBmp } from '../bmp.js';
 import { enc } from '../bits.js';
 import type { Engine } from '../engine.js';
@@ -74,6 +76,57 @@ async function transferToRootAfterLoad(e: Engine): Promise<void> {
 /** 「正在读档」门：`Engine+383120`（元素 95780）。`0xAE`（`handlers/frame.ts`）读它。 */
 export const LOAD_IN_PROGRESS_FLAG = ENGINE_FIELD.loadInProgress;
 
+/**
+ * **读档时要装回的「画面」**（`tickets/T-0063` 的 `present` + 纹理槽记录）。
+ *
+ * ★为什么要单独成对象（`tickets/T-0069` 的第二次变更）：读档后的续跑是"帧 0 从入口重跑 → 入口 `i0ae` 落 ip"
+ * —— 这一路上**场景入口的初始化会重跑**（`create-mesh` 重建遮罩、`set-vertex-color-alpha` 重新拉一遍淡入）。
+ * 画面快照本来已经把"存档当时的成片"装好了，于是玩家看到的是：
+ * **先出现带遮罩的背景（快照）→ 又重新播一遍"刚进场景"的无遮罩 → 遮罩淡入**。
+ * 引擎那边不会这样：它的后备缓冲**从不清**，旧像素一直在，重跑的那些一次性绘制被旧像素盖着。
+ * ⇒ emulator 的等价物是**在走栈期间把这份快照反复装回**（`Engine.loadHold`，由 `0xAE` 每个走栈步执行），
+ * 收尾那一刻才松手（此后脚本自己的绘制照常可见）。
+ */
+export interface SlotPresentation {
+  /** 呈现态快照（`SlotStateBlock.present`）。 */
+  present?: unknown;
+  /** 纹理槽记录（`SlotStateBlock.texSlots`）。 */
+  texSlots?: [number, number][];
+}
+
+/** 把一份画面装回宿主（读档装载点与走栈期间**共用同一份实现**，避免两处漂移）。 */
+export function applySlotPresentation(e: Engine, hold: SlotPresentation): void {
+  if (hold.texSlots) {
+    e.texSlots = new Map(hold.texSlots);
+    for (const [slot, imgid] of hold.texSlots) if (imgid >= 0) e.native.bindTexture?.(imgid, slot);
+  }
+  if (hold.present) e.native.restorePresent?.(hold.present);
+}
+
+/**
+ * **读档后把 BGM 放回去**（引擎 `CALLBACK_LOAD.BIN:20` 的 `i0b7 0` 的等价物，`tickets/T-0064`）。
+ *
+ * 引擎的链条（证据：raw 17469-17471 / 19911 / 106352-106372、`src/CALLBACK_LOAD.txt:20`）：
+ * ```
+ * 存档：镜像[2] = Music[259]（当前曲 id）        读档：Engine[174713] = 镜像[2]（raw 19911）
+ *      帧 0 ← CALLBACK_LOAD.BIN ⇒ `i0b7 0` ⇒ sub_489F80(Music, 0, 1) ⇒ 曲 id 非 0 ⇒ 重新起播（循环）
+ * ```
+ * ★为什么非有不可：读档落点是"存档当时那句话"（`0xAE` 用 `0x71` 表下标），而场景的 `play-bgm` 在
+ * **进消息循环之前**（实测 `SN0000.BIN`：`i0ae` = 指令 737、`play-bgm d` = 752、落点 = 794）⇒ 续跑那一遍
+ * 会跳过它；同时 `SAVE.txt:934 i0b8`（玩家确认读档时）已经 `sub_489B50` 停掉并清掉了当前曲 id
+ * ⇒ **不补这一跳，读档后整场没有 BGM**（2026-09 用户实测，直到下一处 BGM 变更）。
+ *
+ * emulator 此前整跳 `CALLBACK_LOAD` 都不做（`SLOT_GAPS ⑥`）⇒ 这里只补它对本工程有观测意义的那一步。
+ * 曲 id 取自 `engineValues[musicField]`：真槽由 `restoreEngineSlot` 从镜像 `[2]` 装回，
+ * 本工程槽由状态块的 `adv.fields` 装回 —— 两条路都在恢复之后调用本函数。
+ */
+function replaySavedBgm(e: Engine): void {
+  const id = e.engineValues.get(ENGINE_FIELD.musicField) ?? 0;
+  if (id <= 0) return; // 引擎：`Music[259] == 0` ⇒ `sub_489B50`（本就没在播，不必发意图）
+  e.native.audio?.(bgmReplayIntent(e, id));
+  e.native.log(`[slot-load] BGM 还原：重播存档里的当前曲 #${id}（引擎 CALLBACK_LOAD.BIN:20 的 i0b7 0）`);
+}
+
 /** `loadSlotIntoEngine` 的结果：状态码 + 是否发生了控制转移（`transferredTo = null` = 没有转移）。 */
 export interface SlotLoadOutcome {
   /** 0 成功 / 1 打不开 / 2 解析失败（与引擎 `sub_410160` 的返回同尺度）。 */
@@ -100,7 +153,7 @@ export interface SlotLoadOutcome {
  *
  * 返回 `true` = 续跑已就绪（调用方只需把控制交给帧 0 的入口）。
  */
-async function restoreEngineSlot(e: Engine, bytes: Uint8Array): Promise<boolean> {
+async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2: number): Promise<boolean> {
   const dec = decodeEngineSlot(bytes);
   if (!dec.ok) {
     e.native.log(`[slot-load] 真槽状态主体未解析（${dec.reason}）⇒ 退回"重载根脚本"（见 SLOT_GAPS）`);
@@ -159,12 +212,18 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array): Promise<boolean>
   // ⑤ 读档门 + 续跑记录（`0xAE` 消费）。
   e.engineValues.set(ENGINE_FIELD.musicField, p.pre8); // 引擎 `Engine[698852] = 镜像[2]`
   e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
-  e.saveResume = { savedCur: p.savedCur, savedRet: p.savedRet, frames: p.frames };
+  // ★`sv1/sv2` = **这份槽自己声明的存档版本**（容器头 +284/+288）：`0xAE` 按它选帧记录的槽位组，
+  //   而玩家 INI 可能整个缺 `[set]` 段（`tickets/T-0065`）⇒ 以文件为准（引擎那份是启动时从 SAVE.DAT 头读进
+  //   字段 21968/21972 再供 `GetConfig` 用的，同源）。
+  e.saveResume = { savedCur: p.savedCur, savedRet: p.savedRet, frames: p.frames, sv1, sv2 };
   e.native.log(
     `[slot-load] 真槽续跑就绪：帧 0 = ${boot.name}(id=0x${frame0.scriptId.toString(16)})、savedCur=${p.savedCur}、` +
       `池 int=${p.ints.length}/float=${p.floats.length}/str=${p.strings.length}、帧记录 ${p.frames.length} 条` +
       `${ret.dropped ? `（返回栈丢 ${ret.dropped} 项）` : ''}`,
   );
+  // ⑥ 引擎在这一步之后还会把帧 0 交给 `CALLBACK_LOAD.BIN`，它开头就 `i0b7 0`（重播刚装回的当前曲）
+  //    —— 见 `replaySavedBgm`。本工程直接装记录 0 的脚本，所以要显式补这一下。
+  replaySavedBgm(e);
   return true;
 }
 
@@ -198,7 +257,9 @@ export async function loadSlotIntoEngine(
   //    解不出来（旧布局 1/2、坏档、脚本资源缺失）⇒ 如实退回"重载根脚本"，见 ④。
   if (engineFormat) {
     e.playSeconds = parsed.data.header.playSeconds; // 头 +280（引擎装载时也会带上）
-    if (await restoreEngineSlot(e, bytes)) {
+    // ★把**文件自己声明的存档版本**交给续跑（头 +284 = `set:SaveVersion1`、+288 = `set:SaveVersion2`）：
+    //   `0xAE` 按它选帧记录的槽位组；玩家 INI 缺 `[set]` 段时这是唯一可靠的来源（`tickets/T-0065`）。
+    if (await restoreEngineSlot(e, bytes, parsed.data.header.format, parsed.data.header.aux)) {
       // 帧 0 = 记录 0 的脚本，从**它的入口**继续跑（引擎 `sub_40F750(3)` 装载后的位置就是入口）；
       // 入口那条 `i0ae` 会把 ip 落到存档位置并逐帧走栈。
       return { code: 0, transferredTo: 0 };
@@ -252,20 +313,40 @@ export async function loadSlotIntoEngine(
       }
       frame.retStack = [...f.retStack];
       if (f.caller !== undefined) frame.caller = f.caller;
-      // 落点 = 存档时那条指令本身（本工程槽存的是**指令下标**，不是引擎的表下标 ⇒ `instr` 直落）
+      // 落点 = 存档时那条指令本身（本工程槽存的是**指令下标**，不是引擎的表下标 ⇒ `instr` 直落）。
+      // ★**末帧**（`i === state.cur`）优先落在"存档当时那句话"（`lastMsgIp`）⇒ 重放它，屏幕上立刻有文字
+      //   （引擎同语义：帧记录里那一格就是 `0x71` 表下标）。更早的帧按原 ip 继续（它们停在调用点之后）。
+      const landing = i === state.cur && (f.lastMsgIp ?? -1) >= 0 ? f.lastMsgIp! : f.ip;
       resumeFrames[i] = {
         returnFrame: f.caller ?? -1,
         scriptId: f.scriptId,
         retIdx: [],
         messageIdx: -1,
         callIdx: -1,
-        instr: f.ip,
+        instr: landing,
         retStack: [...f.retStack],
       };
     }
     // 数组下标 = 帧号（稀疏处留空；`0xAE` 走栈时跳过没有 `instr` 的格子）
     resumeFrames.length = Math.max(resumeFrames.length, state.cur + 1);
     e.playSeconds = state.playSeconds;
+    // ★**把画面也装回去**（`tickets/T-0063`）：纹理槽记录 → `texSlots` + 宿主 `bindTexture`（按 id 取图），
+    //   呈现态快照 → 宿主模型。**在续跑脚本继续跑之前**做：脚本若重画同一个 handle 会覆盖（模型以 handle 为键），
+    //   所以"先还原、再让脚本继续"不会叠加。
+    //   ★同时把它挂成 `e.loadHold`（`tickets/T-0069`）：走栈期间场景入口会重跑（重建遮罩 + 重播淡入），
+    //   每个走栈步由 `0xAE` 把这份快照装回，收尾才松手 —— 否则玩家会看到"快照（带遮罩）→ 又播一遍无遮罩→淡入"。
+    const hold: SlotPresentation = {
+      ...(state.texSlots ? { texSlots: state.texSlots } : {}),
+      ...(state.present ? { present: state.present } : {}),
+    };
+    applySlotPresentation(e, hold);
+    e.loadHold = hold.present || hold.texSlots ? hold : null;
+    // ★VM 侧状态（热点区/消息窗态/文本项/阶梯动画/引擎字段）—— 放在清空之后、续跑脚本继续之前：
+    //   热点区装回去 ⇒ 侧边栏 hover 才有反应；窗口/阶梯动画装回去 ⇒ 遮罩与"会动的东西"才在。
+    if (state.adv) restoreAdvState(e, state.adv);
+    // ★BGM（`tickets/T-0064`）：`adv.fields` 里那一格（`_this[174713]` = 当前曲 id）刚装回来 ⇒ 重播它
+    //   （引擎由 `CALLBACK_LOAD.BIN:20` 的 `i0b7 0` 做同一件事，见 `replaySavedBgm`）。
+    replaySavedBgm(e);
     // `0x1AD`（`i1ad`）那格跟进到续档后的帧；续跑完成前先不设，收尾时再设（见 `0xAE`）。
     if (loadedAny && resumeFrames.length > 0) {
       e.cur = 0; // 引擎：`Engine[383104] = 0`，从**帧 0 的入口**开始跑（`sub_40F750(3)` 装载后的位置）
@@ -331,6 +412,7 @@ export async function saveSlotFromEngine(e: Engine, slot: number): Promise<numbe
       ip: f.ip,
       retStack: [...f.retStack],
       caller: f.caller, // ★返回帧链（引擎帧记录的 `[0]`）：不存的话续跑后 `exit` 会退回错帧
+      lastMsgIp: f.lastMsgIp, // ★本帧最后一次 0x71（开始消息）的位置：末帧读档时用它重放那句话
     });
   }
   const state: SlotStateBlock = {
@@ -343,6 +425,12 @@ export async function saveSlotFromEngine(e: Engine, slot: number): Promise<numbe
       str: [...e.globals.str.entries()],
     },
     playSeconds: Math.floor(e.playSeconds),
+    // ★纹理槽记录 + 场景呈现态快照（`tickets/T-0063`）：引擎的存档里也有这两样
+    //   （1000×2 组 5 dword 的槽/绘制记录 ⇒ 读档按它重装图像并重放画面）；不存 ⇒ 读档后画面空白。
+    texSlots: [...e.texSlots.entries()],
+    present: e.native.snapshotPresent?.() ?? null,
+    // ★VM 侧那批"读档不会自己回来"的状态（热点区/消息窗标量态/文本项账本/阶梯动画表/引擎字段）
+    adv: snapshotAdvState(e),
   };
   const bytes = buildSlotFile({
     tables: e.saveDataTables(),

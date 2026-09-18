@@ -13,22 +13,22 @@
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "captureCanvasIntoSlot",
-      "note": "0x20C 当场合成 + 按屏幕矩形捕获到渲染目标槽"
+      "note": "0x20C（frameTick）当场合成一次并按**屏幕矩形**捕获到渲染目标槽（aspect 不符会记日志）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "captureCanvasIntoSlot(slot: number",
-      "note": "整帧 → 槽画布的写入端"
+      "note": "整帧 → 槽画布的写入端（按 DPR 承担缩放）"
     },
     {
       "file": "app/amayui-emulator/src/tools/slotThumbPng.ts",
       "anchor": "encodePng",
-      "note": ".STH(BMP) → PNG；本票的看图判据工具"
+      "note": ".STH(BMP) → PNG：本票 E4 的看图工具"
     },
     {
       "file": "src/$1$SC0330.txt",
       "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
-      "note": "脚本侧截图链（全屏槽 → 320×180 缩屏转送）"
+      "note": "脚本侧截图链（全屏槽 2 → 320×180 槽 e 的缩屏转送）"
     }
   ],
   "links": {
@@ -57,6 +57,14 @@
     },
     {
       "at": "2026-09-17",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-18",
       "what": "改字段：evidence"
     }
   ]

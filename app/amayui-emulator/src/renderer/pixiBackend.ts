@@ -37,7 +37,9 @@ import {
   sceneNeedsRender,
   scClearDrawContainer,
   scClearMeshSlots,
-  scClearSlotRecords,
+  scSnapshotPresent,
+  scRestorePresent,
+  type PresentSnapshot,
   scMsgWinClear,
   scMsgWinClearAll,
   scMsgWinSync,
@@ -831,11 +833,23 @@ export class PixiBackend implements NativeBridge {
     this.#markDirty();
   }
 
-  /** `0x259`（sub_41A3A0）：清绘制记录账本（`drawItems` + 窗口文本；保留网格与纹理对象）。 */
+  /**
+   * `0x259`（sub_41A3A0 raw 25357-25376）：清 1000×2 条**槽记录**的前两个 dword
+   * （"槽 → 统一文件 id" + 邻居）。**不碰绘制项、不 delete 对象** ⇒ 只丢记录（`tickets/T-0063`）。
+   */
   clearSlotRecords(): void {
-    const n = scClearSlotRecords(this.scene);
-    this.textures.clearSlotRecords(); // 记录里的「槽→文件名 id」也一并清（引擎同：只清记录不 delete 对象）
-    if (n > 0) this.#pushLog(`clearSlotRecords: 释放绘制记录 drawItems=${n}（保留网格/纹理对象）`);
+    this.textures.clearSlotRecords();
+  }
+
+  /** 取场景呈现态快照（`tickets/T-0063`：读档还原画面用；模型是纯数据 ⇒ 直接深拷贝）。 */
+  snapshotPresent(): unknown {
+    return scSnapshotPresent(this.scene);
+  }
+
+  /** 还原场景呈现态快照（读档）：模型换掉后置脏，文本层按 `msgRev` 重新光栅化。 */
+  restorePresent(snap: unknown): void {
+    const r = scRestorePresent(this.scene, snap as PresentSnapshot);
+    this.#pushLog(`restorePresent：绘制项 ${r.drawItems} / 网格 ${r.meshes} / 文本窗 ${r.msgWins}`);
     this.#markDirty();
   }
 

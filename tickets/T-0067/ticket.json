@@ -1,0 +1,45 @@
+{
+  "title": "保存时存档页面闪一帧（瞬间露出 ADV 界面）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "用户实测（T-0064 之后仍在）：在 ADV 场景里存档时，存档页面会消失一瞬间并露出 ADV 界面。机制假设：引擎的 present **从不清后备缓冲**（ClearTarget 被恒 0 的 Scene+46460&1 守卫），一次性绘制的内容与旧像素一直留在屏上；而 emulator 每帧从模型**整屏重组**，于是「脚本撤掉 UI、稍后才重画」的中间帧会被如实呈现。现有的补偿是 pixiBackend 的帧保持（holdFrames / HOLD_MAX_FRAMES=60），但 configureDrawItem（每条 draw-texture）会**无条件**解除保持 ⇒ 存档流程里任何一次新绘制都会解除保持。需要先拿到用户复现时的 frame-hold / present 日志确认是哪一步解除的。",
+  "acceptance": [
+    "存档全流程（进入存档页 → 选槽 → 确认 → 写盘 → 回到列表）没有任何一帧展示「UI 缺失」的画面",
+    "改动有 before/after 的日志或截图证据；不破坏既有修复（T-0063 的留帧口径、T-0062 的缩略图捕获）",
+    "npm run verify 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "releaseFrameHold",
+      "note": "每条 draw-texture 都无条件解除留帧（怀疑点）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "holdFrameAfterCurtainDrop",
+      "note": "满屏幕布被撤时置 60 帧留帧"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "detach-texture 30d40 1",
+      "line": 1079,
+      "note": "存档流程里的撤图点（背景选择页的副本）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0062",
+      "T-0063"
+    ]
+  },
+  "notes": "复现时请把控制面板里保存动作前后约 30 行日志发我（含 frame-hold / present / detachTexture 行）—— 那能直接定位是哪一步解除了留帧。",
+  "id": "T-0067",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    }
+  ]
+}

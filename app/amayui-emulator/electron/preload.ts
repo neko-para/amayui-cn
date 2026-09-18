@@ -45,6 +45,8 @@ contextBridge.exposeInMainWorld('api', {
   audioStreamBase: 'amayui-audio://audio/',
   /** 已使用文件标志（`SAVE.DAT` 的鉴赏/解锁块；两侧并集）。 */
   readSaveFlags: (): Promise<number[] | null> => ipcRenderer.invoke('read-save-flags'),
+  /** 两侧 `SAVE.DAT` 的原始字节（overlay 在前；渲染侧按 key 并表，见 `tickets/T-0069`）。 */
+  readSaveDataBoth: (): Promise<Uint8Array[]> => ipcRenderer.invoke('read-save-data-both'),
   // ---- 存档槽（`tickets/T-0018`）：`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH` ----
   /** 读一个存档槽 `SAVE\SAVE%2.2d.DAT` 的整份字节（overlay → base；没有返回 null）。 */
   readSaveSlot: (slot: number): Promise<Uint8Array | null> => ipcRenderer.invoke('read-save-slot', slot),

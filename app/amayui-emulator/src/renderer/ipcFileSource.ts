@@ -59,6 +59,15 @@ export class IpcFileSource implements FileSource {
     return (await window.api.readSaveFlags?.()) ?? null;
   }
 
+  /**
+   * 两侧 `SAVE.DAT` 的原始字节（overlay 在前；`tickets/T-0069` 的并表用）。
+   * 旧 preload 没有该通道 ⇒ 返回空数组（调用方退回单文件行为）。
+   */
+  async readSaveDataBoth(): Promise<Uint8Array[]> {
+    const list = await window.api.readSaveDataBoth?.();
+    return (list ?? []).map((b) => new Uint8Array(b));
+  }
+
   // ---- 存档槽（`tickets/T-0018`；`0x19E`/`0x1A1`/`0x1A0`/`0x1AB`/`0x1AC`/`0x1AE`/`0x1AF`）----
   // ★这些方法在旧 preload（未更新）时可能缺失 ⇒ 返回 null/不做事 = 引擎"打不开该槽"的行为
   //   （脚本会把它当空槽画出来），而不是抛错。

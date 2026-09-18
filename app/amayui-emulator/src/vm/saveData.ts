@@ -431,7 +431,9 @@ function engineKey(bytes: Uint8Array, at: number): string {
  *                                             ≥3 格式 = `[key^0x87912345][key2][槽值…]`（槽下标 = 统一文件 id）
  * u32 recCount ; recCount × { key[12]; u32 }   ← ★str→int 表（配置值就在这里）
  * u32 strCount
- * u32 trailerDwords                        ← ★引擎专有：= 记录区字节数/4 + 1（`sub_438320` 写 `v16[1] = v46 + 1`）
+ * u32 trailerDwords                        ← ★引擎专有：= 记录区字节数/4 + 1（`sub_438320` 写 `v16[1] = v46 + 1`，
+ *                                              `v46 = SizeInBytes/4` 整除）；读侧 `sub_438940` raw 45606 用
+ *                                              `&v20[v34 + 2]` 定位下一块 ⇒ 对齐块尾 = 4 × v34
  * strCount × { key\0 value\0 }             ← str→str 表（字体名等）
  * 尾部块（`trailerDwords` 个 dword；3.10+ 才有内容，低版本仅首个 dword = 0）
  * ```
@@ -442,7 +444,7 @@ function engineKey(bytes: Uint8Array, at: number): string {
  * 少跳这 4 字节不会报错，只会把第 1 条记录读成乱码键、并**静默丢掉最后一条记录**
  * （天結真存档里最后一条恰好是字体键 `\x05…bbf`，见 `docs-new/03-engine/save-data.md` §3）。
  * 因此这里顺带用 `trailerDwords` 做**结构自校验**：读满 `strCount` 条之后，记录区字节数必须落在
- * `4 × (trailerDwords - 1)` 之内（引擎按 dword 对齐，尾部最多补 3 字节零）——对不上就如实报错。
+ * `4 × (trailerDwords − 1)` … `4 × trailerDwords` 之间（写侧整除、读侧按 dword 块对齐）——对不上就如实报错。
  */
 function parseTables(
   data: Uint8Array,
@@ -504,11 +506,20 @@ function parseTables(
     at = v.next;
   }
   if (engineLayout && strCount > 0) {
-    // 引擎把记录区按 dword 对齐（`v46 = SizeInBytes/4`）⇒ 实际记录字节数只允许比声明区短 0..3 字节（尾部补零）
-    const declared = 4 * (trailerDwords - 1);
+    // ★自校验的窗口 = 写侧下界 .. 读侧块尾（2026-09 订正，`tickets/T-0065` 的邻票发现）：
+    //  - **写侧**（`sub_438320`）写 `v16[1] = v46 + 1`，其中 `v46 = SizeInBytes/4`（**整除**）
+    //    ⇒ 记录区字节数 ∈ `[4*(trailerDwords-1), 4*(trailerDwords-1)+3]`（下界）；
+    //  - **读侧**（`sub_438940` raw 45606）用 `v28 = &v20[v34 + 2]` 定位下一块（`v20` 指向 strCount）
+    //    ⇒ 对齐后的块尾 = `4*trailerDwords`（上界）。
+    // 旧实现只认下界（`actual > 4*(trailerDwords-1)` 即报错）⇒ 真存档里出现"记录区 4481 > 声明 4480"
+    // （记录区不是 4 的倍数）时会**误判成解析失败**，整份 SAVE.DAT 读不出来（鉴赏进度全丢）。
+    const floorBytes = 4 * (trailerDwords - 1);
+    const blockBytes = 4 * trailerDwords;
     const actual = at - recordsAt;
-    if (actual > declared || declared - actual > 3) {
-      return { error: `字符串表与尾部块长度不符（记录区 ${actual} 字节，尾部块声明 ${declared} 字节）` };
+    if (actual < floorBytes || actual > blockBytes) {
+      return {
+        error: `字符串表与尾部块长度不符（记录区 ${actual} 字节，尾部块允许 ${floorBytes}..${blockBytes} 字节）`,
+      };
     }
   }
   return { tables: { ints, strings }, usage: { usedFileIds, layout: newStyle ? 'engine-new' : 'engine-old' } };
@@ -531,6 +542,52 @@ export function unionUsedFileIds(buffers: Iterable<Uint8Array>): { ids: number[]
     for (const id of r.data.usage.usedFileIds) ids.add(id);
   }
   return { ids: [...ids].sort((a, b) => a - b), layouts };
+}
+
+/**
+ * **两张表按 key 取并集**：`primary` 覆盖同名键，`fallback` 只补**缺**键（返回新 Map，不改入参）。
+ *
+ * 为什么必须并集（`tickets/T-0069`，2026-09 用户实测）：`SAVE.DAT` 里除了配置值，还有一批**按槽**的记录
+ * （`save-string`/`save-int` 以槽号为键：槽标题 `\x05000004xx`、状态、年月日时分、游玩秒数…，
+ * 见 `src/SAVE.txt:1102-1139`）。本工程的 overlay 那份可能由**旧版本**写过，而旧版本只把自己改过的键写回去
+ * ⇒ 缺的键会让存档列表**整列没有标题**、点槽也进不了读档（脚本按"空槽"处理）。
+ * 引擎自己从不删键（表是单调增长的）⇒ "两侧并集"与引擎语义一致（同 `unionUsedFileIds` 的口径）。
+ */
+export function mergeSaveDataTables(primary: SaveDataTables, fallback: SaveDataTables): SaveDataTables {
+  const ints = new Map(fallback.ints);
+  for (const [k, v] of primary.ints) ints.set(k, v);
+  const strings = new Map(fallback.strings);
+  for (const [k, v] of primary.strings) strings.set(k, v);
+  return { ints, strings };
+}
+
+/**
+ * 把**其余几份** `SAVE.DAT`（真游戏那份 base）的表补进 `primary`（overlay 那份）里缺的键。
+ *
+ * 调用方：启动时装 `SAVE.DAT` 的三处（`renderer/app/configBoot.ts`、`tools/scenarioBoot.ts`、`src/run.ts`）。
+ * 解不出来的份只计数、不抛（真档坏了不该拦住启动）。
+ */
+export function mergeSaveDataFallbacks(
+  primary: SaveDataTables,
+  others: Iterable<Uint8Array>,
+  log?: (m: string) => void,
+): { tables: SaveDataTables; added: number; failed: number } {
+  let tables = primary;
+  let added = 0;
+  let failed = 0;
+  for (const b of others) {
+    const r = decodeSaveData(b);
+    if (!r.ok) {
+      failed++;
+      continue;
+    }
+    const merged = mergeSaveDataTables(tables, r.data.tables);
+    const before = tables.ints.size + tables.strings.size;
+    added += merged.ints.size + merged.strings.size - before;
+    tables = merged;
+    log?.(`[save] 并入另一份 SAVE.DAT（${r.data.usage.layout}）：int=${r.data.tables.ints.size} str=${r.data.tables.strings.size}`);
+  }
+  return { tables, added, failed };
 }
 
 /** payload 内的两个 CRC dword（引擎/本工程都在主体前留 8 字节）。 */

@@ -1,0 +1,51 @@
+{
+  "title": "真槽（format=3）读档不续跑、直接跑回 TITLE：sv1/sv2 依赖玩家 INI 的 [set] 段",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户把真存档复制进来（并移除了 overlay）后实测：79 号槽（真游戏存的 SN0000 第一句话）一加载就回到 TITLE。根因：0xAE（sub_4192F0）按 GetConfig(set:SaveVersion1/2) 选帧记录的槽位组，而引擎的 INI 导出（sub_490590 的 53 条）**不含**这两个键 ⇒ 真玩家的 SYS4REG.INI 里根本没有 [set] 段（实测如此）；emulator 的旧写法 cfgInt(cfg, key, 0) 于是得到 0，0 不在 SAVE_VERSION_BRANCH{1,2,3} 里 ⇒ 0xAE 直接返回、走栈完全不发生、读档门永远开着 ⇒ 帧 0（SYSTEM4）一路跑完启动链并进 TITLE。引擎侧这两个值来自启动时对 SAVE.DAT/$$SAVE.DAT 头的扫描（raw 15024-15203 读进字段 21968/21972），也就是**以存档文件为准**。",
+  "acceptance": [
+    "被读的那份槽自己在容器头（+284/+288）声明的 sv1/sv2 优先于 INI：loadSlotIntoEngine 把它们放进 saveResume，0xAE 用它选组",
+    "INI 缺 [set] 段时仍能续跑（合成槽 + 真 SAVE00/79 都覆盖）",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-resume.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "sv1/sv2",
+      "note": "读档把槽头声明的版本带进续跑记录"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
+      "anchor": "registryDefault",
+      "note": "0xAE 的 sv1/sv2 取值顺序：续跑记录 → INI → 注册表默认"
+    },
+    {
+      "file": "app/amayui-emulator/src/configRegistry.ts",
+      "anchor": "export function registryDefault",
+      "note": "配置注册表的内建默认值访问器（缺键时 GetConfig 返回的就是它）"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "i1a1 (local-int 12) (local-int 214)",
+      "line": 935,
+      "note": "读档入口（真存档槽 79 就是在这里进来的）"
+    }
+  ],
+  "notes": "用真槽 79 复现：修复前帧循环 400 帧的轨迹是 SYSTEM4→INITCONFIG*→INIT2→SCINIT→CTINIT→…→TITLE#46；修复后 0xAE 六帧内走栈完成并收尾在 SN0000.BIN 落点 794（= 第一句话，与 emulator 槽的 lastMsgIp 一致）。",
+  "id": "T-0065",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-18",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-18",
+      "what": "open → done —— 槽头带版本 + 注册表默认兜底；守卫 test/slot-load-resume.test.ts"
+    }
+  ]
+}

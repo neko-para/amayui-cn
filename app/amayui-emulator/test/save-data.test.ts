@@ -44,6 +44,8 @@ import {
   decodeSaveData,
   encodeSaveData,
   isEngineSave,
+  mergeSaveDataFallbacks,
+  mergeSaveDataTables,
   readSaveHeader,
 } from '../src/vm/saveData.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
@@ -178,8 +180,10 @@ function engineBody(
     parts.push(rec);
   }
   parts.push(u32(t.strings.size));
-  // ★引擎在 strCount 之后还写一个 `trailerDwords = 记录区字节数/4 + 1`（`sub_438320` raw 45293-45295），
-  // 读侧 `sub_438940` 用 `v24 = (char *)(v20 + 2)` 跳过它 ⇒ 记录区从 strCount 之后 **8** 字节起。
+  // ★引擎在 strCount 之后还写一个 `trailerDwords = 记录区字节数/4 + 1`（`sub_438320` raw 45293-45295 的
+  //   `v16[1] = v46 + 1`，`v46 = SizeInBytes/4` 是**整除**）—— 用的是**未补齐**的字符串字节数：
+  //   真存档实测「记录区 4481 字节 ⇒ 声明 1121 = 4481/4 + 1（整除）」。读侧 `sub_438940` raw 45606 用
+  //   `v28 = &v20[v34 + 2]` 定位下一块（按 dword 对齐）⇒ 解析器的合法窗口 = `4*(v34-1)` … `4*v34`。
   const enc = new TextEncoder();
   const recParts: Uint8Array[] = [];
   let recBytes = 0;
@@ -189,14 +193,14 @@ function engineBody(
       recBytes += p.length;
     }
   }
-  const recPadded = (recBytes + 3) & ~3; // 引擎记录区按 dword 对齐（`v46 = SizeInBytes/4`）
+  const recPadded = (recBytes + 3) & ~3; // 记录区按 dword 对齐（尾部补零）
   const rec = new Uint8Array(recPadded);
   let recAt = 0;
   for (const p of recParts) {
     rec.set(p, recAt);
     recAt += p.length;
   }
-  if (!opts?.legacyNoTrailer) parts.push(u32(recPadded / 4 + 1));
+  if (!opts?.legacyNoTrailer) parts.push(u32(Math.floor(recBytes / 4) + 1)); // ★整除（未补齐的字节数）
   parts.push(rec);
   parts.push(u32(0)); // 尾部块（本测试只放终止符 dword）
   const total = parts.reduce((n, p) => n + p.length, 0);
@@ -294,6 +298,51 @@ test('★引擎格式：记录区与尾部块声明不符 ⇒ 如实失败（宁
   const r = decodeSaveData(bytes);
   assert.equal(r.ok, false);
   if (!r.ok) assert.match(r.reason, /字符串表与尾部块长度不符/);
+});
+
+test('★并表（T-0069）：overlay 缺的键由 base 那份补上，同名键以 overlay 为准', () => {
+  // 背景：旧版本写的 overlay 副本只写了自己改过的键 ⇒ 存档列表缺「按槽」的记录（标题/状态/日期），
+  // 表现为「列表没标题、点不进读档」。引擎的表是单调增长的（从不删键）⇒ 两侧并集与引擎语义一致。
+  const primary = {
+    ints: new Map<string, number>([
+      ['\x0300000005', 1],
+      ['\x0300000006', 9],
+    ]),
+    strings: new Map<string, string>([['\x0500000bbb', 'メイリオ']]),
+  };
+  const base = {
+    ints: new Map<string, number>([
+      ['\x0300000005', 0], // 同名：overlay 优先
+      ['\x0300000007', 7],
+    ]),
+    strings: new Map<string, string>([
+      ['\x0500000442', '序章'], // ★按槽的标题（overlay 缺）
+      ['\x0500000443', '１章'],
+    ]),
+  };
+  const m = mergeSaveDataTables(primary, base);
+  assert.equal(m.ints.get('\x0300000005'), 1, '同名键以 primary（overlay）为准');
+  assert.equal(m.ints.get('\x0300000006'), 9, 'primary 独有的键保留');
+  assert.equal(m.ints.get('\x0300000007'), 7, '★fallback（base）独有的键补进来');
+  assert.equal(m.strings.get('\x0500000442'), '序章', '★槽标题从 base 补回来');
+  assert.equal(m.strings.get('\x0500000bbb'), 'メイリオ', 'primary 的字符串不被覆盖');
+  assert.equal(primary.strings.size, 1, '不改入参');
+
+  // `mergeSaveDataFallbacks`：从**原始字节**解出其余几份并补键（解不出来的只计数）
+  // ★用 ASCII 值：引擎格式那份按 **SJIS** 解码（`parseTables(..., shiftJis: true)`），
+  //   夹具是 `TextEncoder`（UTF-8）⇒ 日文标签过不了字节往返（纯 Map 那半段不受影响）。
+  const baseAscii = {
+    ints: new Map<string, number>([['\x0300000007', 7]]),
+    strings: new Map<string, string>([['\x0500000442', 'Prologue']]),
+  };
+  const r = mergeSaveDataFallbacks(primary, [makeEngineSave(baseAscii)]);
+  assert.equal(r.added, 2, '补进 1 个 int + 1 个 string');
+  assert.equal(r.failed, 0);
+  assert.equal(r.tables.ints.get('\x0300000007'), 7);
+  assert.equal(r.tables.strings.get('\x0500000442'), 'Prologue', '★按槽的标题从另一份补回来');
+  const bad = mergeSaveDataFallbacks(primary, [new Uint8Array([1, 2, 3])]);
+  assert.equal(bad.failed, 1, '坏的一份只计数、不抛');
+  assert.equal(bad.tables.ints.get('\x0300000005'), 1, 'primary 不受影响');
 });
 
 test('unlzss：与 ALF 工具同算法（用压缩过的构造数据往返验证）', () => {

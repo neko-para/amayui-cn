@@ -116,6 +116,13 @@ export class Frame {
    *  - 文本排版把它当"脚本深度"传给 `sub_48F000`/`sub_48EB30`。
    */
   scriptId = -1;
+  /**
+   * **本帧最后一次 `0x71`（message-show，"开始一段新消息"）的指令下标**（`tickets/T-0063`）。
+   *
+   * 用途单一：本工程槽读档时把落点选在**存档当时那句话**上（重放它 ⇒ 屏幕上立刻有文字），
+   * 与引擎帧记录里的 `[259]`（`0x71` 表下标）同语义。`-1` = 本帧还没显示过消息。
+   */
+  lastMsgIp = -1;
 }
 
 /** 全局 variant 数组（索引为 VM 抽象索引，非进程地址）。用 Map 稀疏存储。 */
@@ -150,6 +157,17 @@ export class Engine {
    * `null` = 没有进行中的续跑（此时 `0xAE` 与引擎一样**直接返回**，不改任何帧状态）。
    */
   saveResume: import('./engineSlot.js').EngineSlotResume | null = null;
+
+  /**
+   * **走栈期间要反复装回的画面**（`tickets/T-0069`）—— 读档装了画面快照之后挂上，`0xAE` 每个走栈步装回一次，
+   * 收尾（`cur === savedCur`）那一刻松手。
+   *
+   * 为什么需要：续跑是"帧 0 从入口重跑"，一路上场景入口的初始化会重跑（`create-mesh` 重建遮罩、
+   * `set-vertex-color-alpha` 重播淡入）⇒ 玩家看到"快照（带遮罩）→ 无遮罩 → 遮罩淡入"的二次播放。
+   * 引擎不会：它的后备缓冲从不清，旧像素压着那些一次性绘制。emulator 的等价物就是这份 hold。
+   * `null` = 没有 hold（真槽没有快照；或已读档完成）。
+   */
+  loadHold: import('./handlers/save-slot.js').SlotPresentation | null = null;
   globals = new GlobalArrays();
   native: NativeBridge;
   fileSource: FileSource | null = null;

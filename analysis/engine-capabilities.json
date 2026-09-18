@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 126,
-    "modeled-verified": 43,
+    "total": 127,
+    "modeled-verified": 44,
     "modeled-unverified": 8,
     "partial": 27,
     "absent": 22,
@@ -3691,6 +3691,38 @@
         "evidence": "E3",
         "guard": "test/stage-loop.test.ts",
         "note": "2026-09 实现：`src/vm/stageLoop.ts`（`StageLoop` 状态 + `runStageService` = `sub_408F10`）、`src/vm/handlers/stage.ts`（0xD3 `reset` / 0xD4 `add` / 0xD5 `run`，0xD5 用 `c.jump(c.frame.ip)` 表达「本条不前进」）、`Engine.serviceStageLoop`、`frame/loop.ts` 的新门分支（`gates.stage: 'wait' | 'ignore'`，默认 `'wait'`；`STAGE_GATE` 同时进了派发批的 break 条件，否则 `i0d5` 会被反复重执行）。两条口径按 raw 逐行对齐：① **派发次数 = 条目数 − 1**（`index < 写游标`；HISTORY 写 7 条派发 6 次，正对应 `local 492` 0..5 的缓动取样）；② 到点 = **帧时钟 >= t**（引擎的 `Sleep(v6)` 把时钟精确推到 t，帧粒度下等价；`v6 >= 50` 那一档只是「一次别睡太久」）。守卫 E3：`SAVE.BIN` 的 `label_0000706c` 段（`i0d3`+`i0d4`×2+`i0d5`，32 条目）实测 **31 次派发**、最后一条到期于 **481 ms**、摊在 **31 帧**上；另有三条合成脚本守卫锁「落后入口 `op4`」「未到点不消费」「`stage:'ignore'` 零时钟也能跑完」。★未建模（已登记）：输入打断 label 支（全语料 7/7 = -1，不可达）、`sub_477220` 的 `_this[7792]/[1948]` 锁存（唯一读者在 WndProc 鼠标路径）、`Depth が不正です` 的抛异常（emulator 记日志 + 放弃该表，不把异常抛进会话）。"
+      }
+    },
+    {
+      "id": "music-runtime-current-track-lifecycle",
+      "subsystem": "声音",
+      "name": "BGM 运行态「当前曲 id」的生命周期（起播/停/换曲/存档/读档重播）",
+      "trigger": "0xB7/0xB9/0xBF 起播、0xC3 登记、0xB8 停、0xC2 淡变（目标 0）各自改 Music 模块的 [259]（dword 174713 = 字节 0xAA9E4，模块内联在 0xAA5D8）；存档时写进帧镜像 [2]（raw 17469-17471）、读档时装回（raw 19911）并由帧 0 的 CALLBACK_LOAD.BIN 开头那条 i0b7 0 重播。相关 raw：0xB7 29719-29734、0xB8 24817-24829、0xBF 29754-29780、0xC3 29844-29859、0xBC 13515-13543",
+      "engine": {
+        "fns": [
+          "sub_489F80",
+          "sub_489C20",
+          "sub_489B50",
+          "sub_489D10",
+          "sub_420C00",
+          "sub_420F10",
+          "sub_419720",
+          "sub_408CF0"
+        ],
+        "raw": "106185-106372"
+      },
+      "reads": [
+        "Engine+698852",
+        "Engine+698860",
+        "Engine+16953"
+      ],
+      "whySilent": "少了这一格**不报错、也不走错脚本分支**：起播/换曲照旧（听感只在「读档后」和「i0b7 0 / i0c3 + i0c2 习语」上体现）。症状是「读档后整场没有 BGM，直到下一处 BGM 变更」——SAVE.txt:934 的 i0b8 先把曲停掉并清 id，而读档落点是存档那句话（0x71 表下标），场景的 play-bgm 在消息循环之前（SN0000：i0ae=737、play-bgm=752、落点=794）⇒ 续跑那一遍必然跳过它；只有把「存档里的 id」与「CALLBACK_LOAD 的重播」串起来才看得见。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/slot-save-resume.test.ts",
+        "note": "已实现：engineValues[174713]/[174715] 作为唯一真源（0xB7/0xB9/0xBF/0xC3/0xB8/0xC2 维护）、存档状态块随 adv.fields 带走、读档末尾 replaySavedBgm（= CALLBACK_LOAD 的 i0b7 0）。缺口：CALLBACK_LOAD 的其余步骤（10 个 SE 通道重装、LOADCHARM/魅力显示、消息跳过复位）仍未等价实现 —— 见 tickets/T-0064 与 SLOT_GAPS。"
       }
     }
   ]

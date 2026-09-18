@@ -13,14 +13,14 @@
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 28** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 29** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 10 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 17 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 18 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 1 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **28** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **29** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -32,6 +32,7 @@
 | [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | `test/append-packs.test.ts` |
 | [`AUTORUN3`](./AUTORUN3.md) | `$3$AUTORUN.BIN` | **扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$… | 4 | 4 | 🟠 部分 | `test/music-table.test.ts` `test/append-packs.test.ts` |
 | [`BUNKIMOVE`](./BUNKIMOVE.md) | `BUNKIMOVE.BIN` | 武器画面的「移动」演出子脚本（`BUNKI` 的演出段）：把一组立绘/图元在**两套句柄基址之间批量搬运/交换**，再逐项设色淡出，最后 `poll-inp… | 2 | 4 | 🟠 部分 | `test/op-214-swap-items.test.ts` |
+| [`CALLBACK_LOAD`](./CALLBACK_LOAD.md) | `CALLBACK_LOAD.BIN` | 引擎读档收尾装载到帧 0 的**回调脚本**（名字在引擎里是全局常量 `String2[] = "CALLBACK_LOAD.BIN"`，raw 4342）… | 10 | 6 | 🟠 部分 | `test/slot-save-resume.test.ts` |
 | [`CHARMEDIT`](./CHARMEDIT.md) | `CHARMEDIT.BIN` | ADV 右侧菜单打开的编辑界面：一张 43 项（0x2b）的 3 行网格 + 底部「閉じる」；左键选中/拖动交换、光标键移动、右键关闭。 | 11 | 8 | 🟠 部分 | `test/input.test.ts` |
 | [`CHECKCONFIG`](./CHECKCONFIG.md) | `CHECKCONFIG.BIN` | **设置的自检与修复**：校验 5 个字体面名是否还装得上（`0x2DE` 字体名→下标），装不上就回退默认并重新 `save-string`；末尾按 a9… | 7 | 3 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`CONFIG`](./CONFIG.md) | `CONFIG.BIN` | 「OPTION（设置）」的常驻父脚本：左侧分类切换（按当前分类 call-script CONFIG1 / CONFIG2）、消息显示预览（0x300 逐行… | 6 | 4 | ✅ 已分析 | `test/config1-chain.test.ts` `test/text-style-snapshot.test.ts` |

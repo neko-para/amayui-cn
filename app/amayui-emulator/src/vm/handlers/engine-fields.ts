@@ -63,8 +63,12 @@ const op_get_engine_value: OpHandler = (c) => {
 
 /**
  * 0xC0（sub_42E510, raw 38618）：读引擎音乐字段 `_this[174713]` → op1
- *   （`sub_42B4B0(_this, 1, _this[174713])`）。该字段由启动时 `sound:Music` 填充（raw 23678-23681），
- *   写回侧是 0xC3（sub_420F10）。CONFIG.txt 用 `i0c0 (local-int 2)` 读系统值。
+ *   （`sub_42B4B0(_this, 1, _this[174713])`）。
+ *
+ * ★这一格是 **Music 模块的运行态「当前曲 id」**（= `Music[259]`，模块内联在 `Engine+174454`），
+ *   **不是**配置 `sound:Music`（那个落字节 699240 = 下标 174810）：由 `0xB7`/`0xB9`/`0xBF`/`0xC3` 写、
+ *   `0xB8` 清 0、存档镜像 `[2]` 带走、读档装回后由 `i0b7 0` 重播（`tickets/T-0064`；改前曾把它当配置值，
+ *   见 `engineConfig.ts` 的同条说明）。CONFIG.txt 用 `i0c0 (local-int 2)` 读"现在放的是哪首"。
  */
 const op_get_music_field: OpHandler = (c) => {
   writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(ENGINE_FIELD.musicField) ?? 0);
