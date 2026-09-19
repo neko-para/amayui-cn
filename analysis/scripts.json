@@ -2563,8 +2563,8 @@
         "`i0b7 0` 的语义是**重播当前曲**（不是播曲号 0）：emulator 修前当曲号 0 发 ⇒ 读档还原与换曲习语全静音（`tickets/T-0064`）"
       ],
       "gaps": [
-        "emulator 整跳跳过本脚本（`SLOT_GAPS ⑥`），只等价实现了 BGM 重播（`handlers/save-slot.ts` 的 `replaySavedBgm`）",
-        "未实现：10 个 SE 通道重装、LOADCHARM/魅力绘制、消息跳过复位、global 14acd9/14acda 一族状态恢复"
+        "emulator 已接（`tickets/T-0072`）：读档时按名装进帧 0（返回帧 -11 哨兵），它 exit 时 `handlers/control.ts` 的 `op_exit` 走 -11 分支装记录 0 的脚本 —— BGM 重播仍由 `replaySavedBgm` 补一次",
+        "本脚本用到的最后两条「仅映射」指令已登记（`tickets/T-0072`）：`0x137`（`i137 0`，ResetStack —— int 栈家族全库只此 1 处、无人压栈 ⇒ 观测等价 no-op）与 `0x244`（`i244`，批量清 `flags & 2` 绘制项的 `anim_start` —— emulator 先 no-op，窗推进语义不完全同构，缺口如实记着）。登记后整条读档链 **零未实现指令**（headless 实测）"
       ],
       "links": {
         "capabilities": [
@@ -2585,7 +2585,11 @@
       ],
       "status": "partial",
       "evidence": "src/CALLBACK_LOAD.txt:6-20（BGM 重播）/41-76（SE 通道）/124-173（charm 表）；引擎侧 raw 4342（全局名常量）、19916（按名装帧 0）、17469-17471 + 19911（当前曲 id 存档往返）、25749 附近的 -11 出口",
-      "notes": "读了全文 375 行；未深读 `call-script 51c3`（LOADCHARM）与 `46`（DRAWCHARM）的内部。"
+      "notes": "读了全文 375 行；未深读 `call-script 51c3`（LOADCHARM）与 `46`（DRAWCHARM）的内部。★read档链路实测（headless）：`CALLBACK_LOAD → SYSTEM4 → … → NOVEL → SN0000`（落点 794）；接它之前 ADV 文字会落进 1 号窗（(190,557) 小矩形），接上后与「正常走到同一句话」一致 = 8 号窗 (0,0,1280,720)。"
     }
   ]
 }
+
+
+
+

@@ -8287,25 +8287,15 @@
   {
     "addr": "0x425D20",
     "raw_name": "sub_425D20",
-    "semantic_name": "setTextureSlotFlags_425D20",
+    "semantic_name": "op_set_image_slot_flags_425D20",
     "op": "0x258",
     "status": "ANALYZED",
-    "purpose": "按 op2 的 bit0/bit1 置纹理槽的两个标志位（Scene[5*slot+468/+469] 与 Scene[5*slot+5468/+5469]）",
-    "sub_behaviors": [
-      "v2 = readIntOperand(2)",
-      "result = &Scene[5*op1]",
-      "bit0 → result[468]/result[5468] = 0/1",
-      "bit1 → result[469]/result[5469] = 0/1"
-    ],
-    "fields_used": [
-      "Scene+1864 起的 5-dword/槽记录（+468/+469 = 字节 +1872/+1876）",
-      "Scene+21872 起的平行表（+5468/+5469）"
-    ],
-    "unmodeled": [
-      "这两个标志位的渲染消费者"
-    ],
-    "evidence": "raw 33156-33185",
-    "notes": "不写操作数 ⇒ engine-internal。语料 SC0000/SN0000 开头各 30+ 条 `i258 <slot> 1` ★2026-09 A4 落地（**建模**）：emulator `op_set_slot_flags` 写 `Engine.texSlotFlags`（值 = bit0|bit1<<1，两张镜像表同值）。这是本批用量最大的一条：**11356 处 / 334 个脚本**。"
+    "purpose": "i258：给「图像槽」打\"读档要重载\"的标记（op2 位1 → +8、位2 → +12；同时写活表与镜像表，读档时 sub_410160 就按这两位决定重载哪些槽）",
+    "sub_behaviors": ["v2 = readIntOperand(2)", "result = &Scene[5*op1]", "bit0 → result[468]/result[5468] = 0/1", "bit1 → result[469]/result[5469] = 0/1"],
+    "fields_used": "Engine+0x4F458 图像槽表（+0x1D0/+0x1D4 相对槽首 = +8/+12）,Engine+0x54278 图像槽表镜像（+0x2228/+0x222C = 镜像槽首 +8/+12）",
+    "unmodeled": ["这两个标志位的渲染消费者"],
+    "evidence": "raw 33156-33185（result = &_this[5*op1+80708]；result[468]/[469] 与 result[5468]/[5469] 各写 0/1）",
+    "notes": "与 0x259（sub_41A3A0 在两表上把 +8/+12 清 0）、0x1F9（loadImageIntoSlot_4A3800 写 +0/+4）配对"
   },
   {
     "addr": "0x426F80",
@@ -10830,6 +10820,80 @@
     "unmodeled": ["sub_4380F0（秒计时器，属 0xAD 那条链）"],
     "evidence": "raw 18876-18951（a2==3 在 18933-18947）",
     "notes": "★ip 的\"值\"来自表里那一格（表项 = dword 偏移），不是下标本身；0xAE 的落点分支与这里共用同一批槽位。emulator 的对应物 = engineSlot.resolveSlotResumeIp/resolveSlotRetStack + loadScriptIntoFrame（tickets/T-0059）。"
+  },
+  {
+    "addr": "0x4A3800",
+    "raw_name": "sub_4A3800",
+    "semantic_name": "loadImageIntoSlot_4A3800",
+    "status": "ANALYZED",
+    "purpose": "把一份图像文件解码进「图像槽」index（1000 槽之一），并把 {id, param} 写回槽表 —— 0x1F9 set-texture 与读档重建共用这一条路",
+    "sub_behaviors": ["sub_49E9D0 解析文件并建可绘制对象（按 a6 选类）", "槽表 [5*slot+466]=id（a6 时写 -1）、[5*slot+467]=param、[5*slot+470]=0", "失败：槽表 [5*slot+466] = -1"],
+    "fields_used": ["Engine+322832 图像槽对象", "Engine+324696 槽表（20 B/槽）", "Engine+365288 对象指针表"],
+    "unmodeled": ["sub_48AB20 / sub_43A5C0 两个对象类的差异"],
+    "evidence": "raw 123368-123389；汇编 0x4A3800 写 [eax+748h]/[eax+74Ch]/[eax+0B58h]",
+    "notes": "读档侧唯一调用点 raw 19887（flag==1 && id>=0）；0x1F9 的两个调用点 raw 31232（a6=0）/32757（a6=1）。★+8/+12 的\"要重载\"标记由 0x258（sub_425D20）写、0x259 清"
+  },
+  {
+    "addr": "0x49E9D0",
+    "raw_name": "sub_49E9D0",
+    "semantic_name": "imageObjectFactory_49E9D0",
+    "status": "PARTIAL",
+    "purpose": "图像/可绘制对象工厂：读文件头（BM 走 sub_403700，否则按 1..2 段 LZSS 解压 sub_436A80），按 a5 选类（sub_43A5C0 / sub_48AB20）建对象挂到 Engine+365288[slot]，再调其 vtable+28 装载",
+    "sub_behaviors": ["先释放该槽旧对象（_this[slot+10614] 的 vtable[0]）", "魔数判断：*((_WORD*)obj+2) == 19778 = BM", "LZSS 解压两段", "对象挂表 + vtable+28(hFile 容器, …, param)"],
+    "fields_used": ["Engine+365288 对象指针表（4 B/槽，0..999）", "Engine+42456 相对 322832"],
+    "unmodeled": ["sub_4015E0/sub_401610 等动画/序列子对象", "vtable+28 装载细节"],
+    "evidence": "raw 119605-119771；sub_49ED60 的 0x3E7 上界校验说明槽号 0..999",
+    "notes": "与 sub_40BF20（100 个纹理槽的 AGF 装载）是两套槽空间；本作读档实测只走这一条"
+  },
+  {
+    "addr": "0x499BC0",
+    "raw_name": "sub_499BC0",
+    "semantic_name": "resetImageSlotTables_499BC0",
+    "status": "ANALYZED",
+    "purpose": "把图像槽表整块复位：清 20 KB 槽表 → 每槽 [0]=-1 → 拷进镜像表（Engine+344696）→ 两表的 +8/+12 置 0",
+    "sub_behaviors": ["memset(Engine+324696, 0, 0x4E20)", "1000 次 [5i]=-1", "memcpy(Engine+344696, Engine+324696, 0x4E20)", "两表 +8/+12 置 0"],
+    "fields_used": ["Engine+324696 槽表", "Engine+344696 槽表镜像"],
+    "evidence": "raw 116333-116367",
+    "notes": "与 0x259（sub_41A3A0，只清 +8/+12）配对"
+  },
+  {
+    "addr": "0x426910",
+    "raw_name": "sub_426910",
+    "semantic_name": "op_set_field_426910",
+    "op": "0x2FA",
+    "status": "ANALYZED",
+    "purpose": "0x2FA：把 op1 存进 Engine[1951]（byte 0x1E7C）—— 全库只用一次（CALLBACK_LOAD.txt:18 的 i2fa 0），而该字段在反编译里没有任何读取点",
+    "sub_behaviors": ["ip 前进 3 dword", "Engine[1951] = op1"],
+    "fields_used": ["Engine+0x1E7C"],
+    "unmodeled": [],
+    "evidence": "raw 33717-33726",
+    "notes": "★这条的缺失不是少一个 no-op 而是**脚本解析/执行卡死**：三张 handler 表都查不到 ⇒ NotImplementedOp ⇒ 跳过策略下每帧重试同一格（tickets/T-0073）。观测等价 no-op 见 emulator 的 ENGINE_INTERNAL_OPS"
+  },
+  {
+    "addr": "0x4222B0",
+    "raw_name": "sub_4222B0",
+    "semantic_name": "op_reset_stack_4222B0",
+    "op": "0x137",
+    "status": "PARTIAL",
+    "purpose": "0x137：按 op1（0..10）复位调用栈；>10 打 ResetStack 错误串",
+    "sub_behaviors": ["ip 前进 3 dword", "op1 > 0xA ⇒ 错误串 aResetstack + 走错误出口", "否则复位对应数量的栈"],
+    "fields_used": ["Engine+383220 ip 前进量"],
+    "unmodeled": ["复位的究竟是哪几张栈（帧返回栈/派发栈）"],
+    "evidence": "raw 30703-30720",
+    "notes": "CALLBACK_LOAD.txt 里 i137 0 只调一次；emulator 目前按未实现跳过（tickets/T-0072 的收尾缺口之一）"
+  },
+  {
+    "addr": "0x41A370",
+    "raw_name": "sub_41A370",
+    "semantic_name": "op_scene_call_41A370",
+    "op": "0x244",
+    "status": "STUB",
+    "purpose": "0x244（argc 0）：sub_4AD9F0(Engine+322832, 2) —— 对图像/对象子系统的一次调用（模式 2）",
+    "sub_behaviors": ["ip 前进 1 dword", "sub_4AD9F0(Engine+322832, 2)"],
+    "fields_used": [],
+    "unmodeled": ["sub_4AD9F0 模式 2 的语义"],
+    "evidence": "raw 25349-25355",
+    "notes": "CALLBACK_LOAD 的 label_000007bc 段里出现一次；emulator 按未实现跳过（tickets/T-0072）"
   }
 
 ]

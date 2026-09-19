@@ -12,6 +12,7 @@ import { readIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Frame } from '../engine.js';
 import { labelPos } from './shared.js';
+import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
@@ -118,8 +119,33 @@ const op_exit: OpHandler = async (c) => {
     c.e.cur = caller;
     c.e.callRet = caller;
     c.jump(-1); // 控制流已转移，不再自动推进
+  } else if (caller === -11 && c.e.saveResume?.pendingRecord0) {
+    // ★引擎 `sub_41A820` 的 **-11** 分支（raw 25649-25658）：`CALLBACK_LOAD.BIN` 跑完 ⇒ `_this[95777] = -1`
+    //   后 `sub_40F750(sv1, sv2)` ⇒ 把**记录 0 的脚本**装进帧 0（入口 ip=0，随后由它的 `i0ae` 走栈）。
+    //   这一跳的用途见 `tickets/T-0072`（上一画面收尾：ADV 退出 / 渲染目标 / 释放 2000 个句柄 / SE·语音复位）。
+    const resume = c.e.saveResume;
+    resume.pendingRecord0 = false;
+    const rec0 = resume.frames[0];
+    const fs = c.e.fileSource;
+    const src = rec0 && fs?.readScript ? await fs.readScript(rec0.scriptId) : null;
+    if (rec0 && src) {
+      const frame = c.e.frames[c.e.cur]!;
+      frame.caller = -1; // 引擎：`_this[95777] = -1` 先置，再由 sub_40ED40 写进帧记录的 [0]
+      loadScriptIntoFrame(frame, parseScriptBytes(src.data), src.name, rec0.scriptId);
+      frame.retStack = resolveSlotRetStack(frame.script!, rec0).retStack;
+      c.e.callRet = -1;
+      c.e.markFileUsed(rec0.scriptId);
+      c.log(`0x2(exit): CALLBACK_LOAD 收尾 ⇒ 装载记录 0 的脚本 ${src.name}(id=0x${rec0.scriptId.toString(16)})，从入口跑`);
+      c.jump(0);
+      return;
+    }
+    // 记录 0 读不到（资源缺失）⇒ 如实中止续跑，不假装成功
+    c.e.saveResume = null;
+    c.e.engineValues.set(ENGINE_FIELD.loadInProgress, 0);
+    c.log('0x2(exit): CALLBACK_LOAD 收尾时读不到记录 0 的脚本 ⇒ 中止续跑（读档门已清）');
+    return;
   } else {
-    // caller<0：-1=无调用层（程序退出）；-10/-11 为续跑/存档哨兵（M1 细化，先按程序退出）
+    // caller<0：-1=无调用层（程序退出）；-10 = 派发哨兵（上面已处理）
     throw new ExitScript();
   }
 };

@@ -1,0 +1,55 @@
+{
+  "title": "0x2FA 未实现 ⇒ CALLBACK_LOAD.BIN 每帧空转卡死（读档收尾那一跳接不上）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/opcodes",
+  "why": "接引擎的「读档时帧 0 先跑 CALLBACK_LOAD.BIN」那一跳时（`tickets/T-0072`），headless 实测**读档被卡死**：轨迹只有 `CALLBACK_LOAD.BIN`、40 帧后 ip 停在同一条、`drawItems=0`。定位：那条是 `i2fa`（`0x2FA`，`sub_426910`）——它在 `scripts/asm/opcodes.json` 里有（argc=1），但 emulator 的 `OPS`/`NATIVE_OPS`/`ENGINE_INTERNAL_OPS` **三张表都查不到它** ⇒ 命中即 `NotImplementedOp` ⇒ 在「跳过未知指令」策略下每帧重试同一格（不前进也不报错）。全库 `i2fa` 只出现 **1 次**，就是 `src/CALLBACK_LOAD.txt:18`。",
+  "acceptance": [
+    "`0x2FA` 进 `ENGINE_INTERNAL_OPS`（引擎体 `_this[1951] = op1`，而该字段在反编译里没有任何读取点 ⇒ 观测等价 no-op；不建模成 `engineValues` 字段，否则变成死写）",
+    "`CALLBACK_LOAD.BIN` 能跑到它的 `exit`（headless：stopReason=exit）",
+    "`docs-new/03-engine/opcode-table.md` 的 `0x2FA` 行由「仅映射」改成「已核对」并把上面那条后果写进去",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-resume.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "[0x2fa, op_engine_internal]",
+      "note": "新登记：写 Engine[1951]（无人读）⇒ 观测等价 no-op"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[1951] = result;",
+      "note": "raw 33724：全文件里该字段唯一的引用（只写不读）"
+    },
+    {
+      "file": "src/CALLBACK_LOAD.txt",
+      "anchor": "i2fa 0",
+      "note": "全库唯一一次使用；它在读档回调的第 18 行"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0072"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "同类隐患：`opcode-table.md` 里标「仅映射」的其它 opcode 若被脚本用到，也会以同样方式卡死（不报错、只空转）。CALLBACK_LOAD 自己还剩 `0x137`（`i137 0`，ResetStack）与 `0x244`（`i244`，`sub_4AD9F0` 模式 2）两条未实现 —— 它们现在靠跳过策略绕过；要完全按引擎跑回调还得补这两条（已记在 `tickets/T-0072`）。",
+  "id": "T-0073",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 0x2FA 进 ENGINE_INTERNAL_OPS + opcode-table 行改「已核对」；CALLBACK_LOAD 实测能跑到 exit（stopReason=exit，无被跳过指令）"
+    }
+  ]
+}

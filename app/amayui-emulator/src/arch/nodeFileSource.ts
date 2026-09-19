@@ -56,7 +56,7 @@ export class NodeFileSource implements FileSource {
   #packNumbers: number[] = [];
   #appendsLoaded = false;
   /** 文件名（小写）→ 条目；`readByName` 用（惰性建表，见 `#nameLookup`）。 */
-  #nameIndex: Map<string, { entry: Sys4FileEntry; archives: string[] }> | null = null;
+  #nameIndex: Map<string, { entry: Sys4FileEntry; archives: string[]; index: number }> | null = null;
   /** SYS4INI 尾部的音乐表（惰性装载；见 `musicTables`）。 */
   #music: MusicTables | null = null;
   #log: (msg: string) => void;
@@ -387,21 +387,33 @@ export class NodeFileSource implements FileSource {
   }
 
   /** 名字 → 条目（惰性建表：本体 + 已装载扩展包；扩展包先装载以保证表完整）。 */
-  async #nameLookup(name: string): Promise<{ entry: Sys4FileEntry; archives: string[] } | null> {
+  async #nameLookup(name: string): Promise<{ entry: Sys4FileEntry; archives: string[]; index: number } | null> {
     const base = await this.#loadBaseIndex();
     await this.#loadAppends();
     if (!this.#nameIndex) {
-      const m = new Map<string, { entry: Sys4FileEntry; archives: string[] }>();
-      for (const e of base.files) m.set(e.name.toLowerCase(), { entry: e, archives: base.archives });
-      for (const pack of this.#packs.values()) {
-        for (const e of pack.files) {
+      const m = new Map<string, { entry: Sys4FileEntry; archives: string[]; index: number }>();
+      base.files.forEach((e, i) => m.set(e.name.toLowerCase(), { entry: e, archives: base.archives, index: i }));
+      for (const [packNumber, pack] of this.#packs) {
+        pack.files.forEach((e, i) => {
           const k = e.name.toLowerCase();
-          if (!m.has(k)) m.set(k, { entry: e, archives: pack.archives });
-        }
+          if (!m.has(k)) m.set(k, { entry: e, archives: pack.archives, index: (packNumber << 24) | i });
+        });
       }
       this.#nameIndex = m;
     }
     return this.#nameIndex.get(name.trim().toLowerCase()) ?? null;
+  }
+
+  /**
+   * **按文件名取回一个脚本**（= 引擎 `sub_455000(FileDB, name)` 的等价物，读档时用来装 `CALLBACK_LOAD.BIN`）。
+   * 与 `readScript(id)` 同一条读取路径，只是用名字换到统一 id；命中不了的扩展包条目仍按"松散文件优先"读。
+   */
+  async readScriptByName(name: string): Promise<ScriptBytes | null> {
+    const hit = await this.#nameLookup(name);
+    if (!hit) return null;
+    const data = await this.#readEntry(hit.entry, hit.archives);
+    if (!data) return null;
+    return { index: hit.index, name: hit.entry.name, data };
   }
 
   /** 条目 + 区间 → 字节（松散文件优先）。 */

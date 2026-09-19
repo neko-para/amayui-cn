@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('api', {
   // ---- 资源读取（渲染窗）----
   /** 按 call-script 索引读一个脚本（返回 {index,name,data:number[]} | null）。 */
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
+  /** 按文件名读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；返回 {index,name,data:number[]} | null）。 */
+  readScriptByName: (name: string) => ipcRenderer.invoke('read-script-by-name', name),
   /** 读任意文件原始字节（number[]）。 */
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
   /** 已装载的扩展包包号（升序；主进程扫 *.AAI 后按文件头 @264 注册的结果），供 0x143 派发 $n$AUTORUN。 */

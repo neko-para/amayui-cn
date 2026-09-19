@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 127,
-    "modeled-verified": 44,
+    "total": 130,
+    "modeled-verified": 47,
     "modeled-unverified": 8,
     "partial": 27,
     "absent": 22,
@@ -3723,6 +3723,92 @@
         "evidence": "E2",
         "guard": "test/slot-save-resume.test.ts",
         "note": "已实现：engineValues[174713]/[174715] 作为唯一真源（0xB7/0xB9/0xBF/0xC3/0xB8/0xC2 维护）、存档状态块随 adv.fields 带走、读档末尾 replaySavedBgm（= CALLBACK_LOAD 的 i0b7 0）。缺口：CALLBACK_LOAD 的其余步骤（10 个 SE 通道重装、LOADCHARM/魅力显示、消息跳过复位）仍未等价实现 —— 见 tickets/T-0064 与 SLOT_GAPS。"
+      }
+    },
+    {
+      "id": "load-restores-image-slots-and-scoped-pools",
+      "subsystem": "存档槽",
+      "name": "读档装载：按槽表重建图像 + int 池只覆盖 0..池长",
+      "trigger": "0x1A1（或 0x190）走到 sub_410160 的 a4==3 段（每次读档一次）",
+      "engine": {
+        "fns": [
+          "sub_410160",
+          "sub_4A3800",
+          "sub_49E9D0",
+          "sub_40BF20",
+          "sub_41ED80"
+        ],
+        "raw": "19705-19927"
+      },
+      "reads": [
+        "Engine+0x93AA8 镜像（+52 纹理槽表 / +1252 图像槽表）",
+        "Engine+0x4F458 图像槽表",
+        "Engine+0x54278 图像槽表镜像",
+        "Engine+0x5D7E8 池计数",
+        "Engine+0x5D800 池指针",
+        "Engine+0x14878 消息窗 40B（镜像 +12 拷回）"
+      ],
+      "whySilent": "两件事都不报错、只表现不对：①不重建图像槽 ⇒ 续跑路上 draw-texture 指向空槽（ADV 文字在、背景/立绘全空）；②把 int 池整体 clear 再填 ⇒ 池外下标（ADV 场景用的 global 708ada = 7,375,578、global f8c48 = 1,018,952，而池长只有 1,015,792）被清成 0 ⇒ 背景/网格参数读成 0。两者都不会抛、也不会在日志里出现。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/slot-load-resume.test.ts",
+        "note": "引擎那一段的两条已照做（按槽表装回 + 对 flag==1 的 bindTexture；int 池只覆盖 0..池长）。同一段里的 CALLBACK_LOAD.BIN 那一跳也已接（tickets/T-0072，见能力条 load-runs-callback-before-record0）。"
+      }
+    },
+    {
+      "id": "load-runs-callback-before-record0",
+      "subsystem": "存档槽",
+      "name": "读档时帧 0 先跑 CALLBACK_LOAD.BIN（上一个画面的收尾），它 exit 后才装记录 0 的脚本",
+      "trigger": "每次真槽读档（sub_410160 的 a4==3 段末尾，raw 19916-19927）",
+      "engine": {
+        "fns": [
+          "sub_410160",
+          "sub_41A820",
+          "sub_40F750",
+          "sub_455000"
+        ],
+        "raw": "19916-19927"
+      },
+      "reads": [
+        "Engine[95777] 返回帧哨兵 -11",
+        "Engine[97059]",
+        "global 3f36 / 3f51..3f53 / 4fd7"
+      ],
+      "whySilent": "少了这一跳**不报错、只表现不对**：上个场景的 ADV/消息窗状态（global 3f36、SetTB 门、跳读态、10 个 SE 通道、语音通道）没有复位 ⇒ 续跑的场景 init 走「已初始化」分支，第一条消息落进**默认窗口**（实测 win1 (190,557,880x148) 而不是 win8 (0,0,1280,720)），画面只剩一小条；`detach-texture 110000 2000`（释放上一个画面的 2000 个句柄）也不做，旧绘制项留在模型里。两者都不抛异常。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/slot-load-resume.test.ts",
+        "note": "已接：装载点按名装 CALLBACK_LOAD.BIN 进帧 0（返回帧 -11），op_exit 的 -11 分支装记录 0 的脚本；按名读的通道 = FileSource.readScriptByName（Node + Electron IPC）。该脚本自身还剩 0x137/0x244 两条未实现（跳过策略绕过，tickets/T-0072）。"
+      }
+    },
+    {
+      "id": "scene-teardown-on-load-point",
+      "subsystem": "渲染",
+      "name": "读档装载点清上一屏的绘制项与网格（引擎靠对象析构 + 场景 init 的 i1f6/i32b，续跑那一遍被跳过）",
+      "trigger": "每次真槽读档（sub_410160 装完槽表之后）",
+      "engine": {
+        "fns": [
+          "sub_410160",
+          "sub_4AB7A0",
+          "sub_41A4A0"
+        ],
+        "raw": "19744-19927"
+      },
+      "reads": [
+        "Scene draw_item_container（Engine+408）",
+        "Scene mesh_container（Engine+428）"
+      ],
+      "whySilent": "少了它**不报错、只表现不对**：上一屏（标题/读档菜单）的绘制项留在模型里，而它们引用的纹理槽刚被读档换成新图 ⇒ 画出一屏拼贴（2026-09 用户实测：上半屏标题、下半屏序章背景、读档菜单压在最上层）。引擎不会露出这些项：它把上一屏的 CMesh/纹理对象析构掉了（绘制项指向空对象 ⇒ 画不出），且场景 init 的 i1f6/i32b 会整批清容器 —— 但**读档续跑落点在主循环里，那一遍 i1f6 被跳过**（NOVEL 的 i0ae 在 dword 29 就把 ip 跳到 628，越过 dword≈262 的 i1f6），所以 emulator 必须在装载点显式做同一件事。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E4",
+        "guard": "test/slot-load-resume.test.ts",
+        "note": "装载点调 native.clearDrawContainer() + clearMeshSlots()（与 0x1F6/0x32B 同一条缝）。E4：GUI 实拍（shot --load 79）读档后画面只剩 ADV 场景（背景+立绘+文字），标题与菜单残留消失。"
       }
     }
   ]

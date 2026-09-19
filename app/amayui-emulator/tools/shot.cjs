@@ -70,6 +70,11 @@ const MMODE_XY = [1018, 450];
  */
 const GAME_START_XY = [1180, 372];
 const START_GAME_XY = [811, 605];
+/**
+ * TITLE 菜单第 **1** 项 = 「Load Data」：同一张 `i12e` 数据表（`TITLE.txt:100`）的第 1 项
+ * = baseX `local 5[1] = 0x3e0`、baseY `local 69[1] = 0x192`、盒 156×156 ⇒ 中心 (1070,480)。
+ */
+const LOAD_MENU_XY = [1070, 480];
 /** 左侧分类列表第 i 项的中心（贴片画在 (24, 106+50i)，190×26）。 */
 const tabXY = (i) => [120, 106 + 50 * i];
 
@@ -89,7 +94,26 @@ async function waitLog(marker, timeoutMs = 120000) {
 }
 
 function gameWin() {
-  return BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.getContentSize()[0] === 1280) ?? null;
+  const all = BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed());
+  // 主进程日志里的 `窗口=1280x720` 是**请求尺寸**；`getContentSize()` 取到的是实际内容区
+  // （贴边档/边框会让它不等于 1280）⇒ 按"宽 ≥1200 的那个"认，并在找不到时把候选项打出来。
+  const hit = all.find((w) => w.getContentSize()[0] >= 1200);
+  if (hit) return hit;
+  if (all.length > 0) {
+    console.log('[shot] 候选窗口：' + all.map((w) => `${w.getContentSize().join('x')}`).join(' / '));
+  }
+  return null;
+}
+
+/** 等游戏窗口出现（主进程建窗是异步的；固定 `sleep(2000)` 在慢机器上会扑空 ⇒ "未找到游戏窗口"）。 */
+async function waitGameWin(timeoutMs = 60000) {
+  const t0 = Date.now();
+  for (;;) {
+    const w = gameWin();
+    if (w) return w;
+    if (Date.now() - t0 > timeoutMs) return null;
+    await sleep(500);
+  }
 }
 
 async function click(win, [x, y]) {
@@ -121,7 +145,7 @@ async function shot(win, step) {
 (async () => {
   await app.whenReady();
   await sleep(2000);
-  const win = gameWin();
+  const win = await waitGameWin();
   if (!win) {
     console.error('[shot] 未找到游戏窗口');
     app.quit();
@@ -146,6 +170,68 @@ async function shot(win, step) {
     await sleep(4000);
     await shot(win, '5-bgm-list');
     console.log('[shot] 完成（gallery）');
+    app.quit();
+    return;
+  }
+
+  // ---- --load：右上角菜单「Load Data」→ 读档列表 → 「LOAD」按钮 → 确认 → 读档后的画面 ----
+  // 用途：读档链路的 E4 目视回归（"读档后画面到底是什么"）。
+  //   ★载入的是**列表当前选中的槽**（列表会记住上次的页/光标，机器相关）：
+  //     `--back N` 先用左侧大箭头回退 N 个「百」页（页号按钮 0..90 是十位），默认 0 = 不动列表
+  //     —— 此时底部信息面板显示的就是即将载入的槽，`11-load-list.png` 上可核。
+  //   ★坐标系：`sendInputEvent` 与 `capturePage` **不是同一套**（实测 DPR 1.2523 + 标题栏偏移）；
+  //     `toSend` 由"点 (640,325) → 命中第 4 行、点 (640,547) → 命中第 8 行"两点标定。
+  if (argv.includes('--load')) {
+    const slot = argOf('load', '79');
+    await click(win, LOAD_MENU_XY); // TITLE 菜单第 1 项 = Load Data
+    const okSave = await waitLog('-> SAVE.BIN', 30000);
+    console.log(`[shot] SAVE.BIN=${okSave}`);
+    await sleep(4000);
+    const toSend = (ix, iy) => [Math.round((ix + 28.4) / 0.955), Math.round((iy + 28.4) / 0.955)];
+    // ★页号行（image y≈19）是**十位**选择器：「70」⇒ 显示 070..079，且此时底部面板的当前槽就是 079。
+    //   x 与 y 的换算**不是同一个比例**（实测：send 850 命中「60」）⇒ 允许一次给多个候选，
+    //   逐个点+截图，人工核对哪一张到了 07x（pageCal 前缀）。
+    const pageXs = String(argOf('page', '0'))
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    for (let i = 0; i < pageXs.length; i++) {
+      await click(win, [pageXs[i], toSend(0, 19)[1]]);
+      await sleep(2500);
+      await shot(win, `11-pageCal-${i}-x${pageXs[i]}`);
+    }
+    // ★页号按钮那一行很薄、命不中 ⇒ 用左侧大箭头逐页回退（每步移动一个「百」），每步截图可核。
+    const backPages = Number(argOf('back', '0'));
+    for (let i = 0; i < backPages; i++) {
+      await click(win, toSend(30, 296)); // 左翻页箭头
+      await sleep(2000);
+      await shot(win, `11-load-page-${i}`);
+    }
+    await shot(win, '11-load-list');
+    await click(win, toSend(130, 575)); // 左下「LOAD」按钮（加载当前选中槽）
+    const okDlg = await waitLog('SBUNKIMOVE.BIN', 15000);
+    console.log(`[shot] 确认框=${okDlg}`);
+    await sleep(2500);
+    await shot(win, '12-load-confirm');
+    if (okDlg) {
+      await click(win, toSend(530, 266)); // 确认框「是」
+      // ★判据用日志里的 `savedCur=2`（= 槽 79 的特征），而不是笼统的 `[slot-load]`：
+      //   否则"载入了别的槽"会被当成成功。
+      const okLoad = (await waitLog('savedCur=2', 25000)) || (await waitLog('[slot-load]', 5000));
+      console.log(`[shot] slot-load=${okLoad}（槽 ${slot}）`);
+      if (!okLoad) {
+        const l = fs.readFileSync(LOG, 'utf8').split('\n').filter((x) => x.includes('[slot-load]'));
+        console.log(`[shot] ★实际载入的槽：${l[l.length - 1] ?? '（无）'}`);
+      }
+    }
+    await sleep(1500);
+    await shot(win, '13-load-right-after');
+    await sleep(6000);
+    await shot(win, '14-load-6s');
+    await click(win, [640, 450]); // 推进一步
+    await sleep(4000);
+    await shot(win, '15-load-next');
+    console.log('[shot] 完成（load）');
     app.quit();
     return;
   }

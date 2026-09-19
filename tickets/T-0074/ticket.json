@@ -1,0 +1,71 @@
+{
+  "title": "读档装载点「清绘制项」的引擎依据复核：引擎在装载点什么都不清（27 个 callee 全查）⇒ 该刀降级为近似，并登记真正缺口",
+  "type": "analysis",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户要求「先查引擎是不是真的这么做，而不是为了解决问题凭空解决」。逐行复核 `0x1A1` 装载路径（派发表项 = 字节 677664，`0x71` = 676448 处算出）后确认：`sub_410160`（raw 19276-19936）的 **27 个被调函数**里**没有任何**清绘制容器的调用（无 `sub_4AB7A0`/`sub_41A130`/`sub_40BF80`）；唯一的整批释放是 raw 19378-19389 的两段**配置门**（① `CreateObject&2 && AutoFreeTexture&2 ⇒ for i<1000 sub_49E980(Scene,i)`；② `CreateObject&2 ⇒ sub_40BFE0(Scene+1064)+sub_4A9D10(+1096)+sub_4A1A60`），而引擎默认 `set:CreateObject = 1`（raw 111733）/`set:AutoFreeTexture = 0`（raw 111742）⇒ 两段 `& 2` 都为假 ⇒ **都不执行**（本机 `SYS4REG.INI` 的 `[set]` 也没有 `AutoFreeTexture`）。`sub_40ED40`（装脚本进帧）与 `sub_4192F0`（`i0ae`，只调 `sub_40F750` 重装帧）同样不清、**不重建任何绘制项**。装载路径里唯一的「屏幕级复位」是 raw 19913-19915 的两个输出显示态复位 `sub_403EF0(Engine+51904 / +21976)`（对象族 `sub_403D70/403E70/404D E0/404E00/404E20/403AE0/403F40`；`sub_404E20` 里是 HWND/GetClientRect ⇒ 是**输出显示态**，不是绘制项容器）。⇒ `T-0072` 的 `clearDrawContainer()`+`clearMeshSlots()` **不是引擎行为**；而引擎恰恰靠「上一屏残留的绘制项 + 重建后的槽对象」把画面还原回来（绘制期解析 `Scene[slot+10614]` 对象指针：写 119748/119760、读 132604/133817/133892；槽表 `Scene[5*slot+466]`：写 123377/123379、释放写 -1 于 119594；`Scene[+5466]` 是它的快照表，写 33166-33172，也是存档 dump 的来源），整批清掉会连**载荷项**一起清掉 —— 这正是 2026-09 用户实测「清掉后背景只剩上一屏残留像素」的成因。",
+  "acceptance": [
+    "`docs-new/03-engine/save-data.md` §7.10 偏离表第 4 行改为「⚠️ emulator 侧近似，非引擎行为复刻」，并写明 27 callee / 两段配置门 / 默认配置 / 显示态复位 / 载荷项机制",
+    "`app/amayui-emulator/src/vm/handlers/save-slot.ts` ②c 注释同步更正（旧注释「引擎会把上一屏的 CMesh/纹理对象析构掉」是错的：那是配置门且默认关闭）",
+    "把静态未决点登记清楚：真机上「上一屏（标题/读档菜单）的残留项是否可见」需要真游戏实测，或以 `sub_403EF0` 家族/SAVE.BIN 自身的 `detach-texture 1d4c0 bb8`（SAVE.txt:1676，读档路径不执行）为线索继续查",
+    "npm run verify 全绿"
+  ],
+  "tests": [],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "②c ⚠️**emulator 侧近似**",
+      "note": "注释已更正为「27 callee / 两段配置门默认关闭 / 显示态复位 / 载荷项」"
+    },
+    {
+      "file": "docs-new/03-engine/save-data.md",
+      "anchor": "⚠️ **emulator 侧近似，非引擎行为复刻**",
+      "note": "§7.10 偏离表第 4 行的新口径"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_49E980((_DWORD *)(a1 + 322832), i);",
+      "note": "raw 19381：装载路径里唯一的「整批释放 1000 个槽对象」，门在上一行（CreateObject&2 && AutoFreeTexture&2）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_434D00(v2, aSetAutofreetex, &v13);",
+      "note": "raw 111742：默认值 0 ⇒ 上面那道门恒为假"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_403EF0((_DWORD *)(a1 + 51904));",
+      "note": "raw 19914：装载路径里唯一的屏幕级复位 = 输出显示态（另一个是 a1+21976）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v5[v30 + 10614] = (int)v19;",
+      "note": "raw 119748：`sub_4A3800` 把槽对象指针写进 Scene[slot+10614]；绘制期读它 ⇒ 「重建槽对象」才是画面回来的机制"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "char String2[] = \"CALLBACK_LOAD.BIN\"; // idb",
+      "note": "raw 4342：装载末尾 `sub_455000(Engine+680092, String2)` + `sub_40ED40` 装进帧 0 的确定是 CALLBACK_LOAD.BIN（＝加载进度回调，其 12 处 draw-texture 用的都是槽 0x11）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0072",
+      "T-0066",
+      "T-0071"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "复核范围与结论：① `0x2FA` 等价 no-op 成立（`_this[1951]` 全文件只有 raw 33724 一次写、无读）；② `0x137`（整型栈复位，同族 `0x138`/`0x13B..0x13D`，emulator 未建该栈）与 `0x244`（`sub_41A370 → sub_4AD9F0(Scene,2)` 遍历绘制项复位 `flags&2` 者的窗）是**未建模缺口**，不是等价 no-op（语料各 1 处；`opcode-table.md` / 偏离表第 3 行已按此措辞）；③ CALLBACK_LOAD 那一跳是引擎行为（已在对的位置）；④ 载荷项机制与「槽对象指针表」的关系写进 §7.10。留待实测的点：真机从标题读档的瞬间，上一屏（标题/菜单）的项是否可见 —— 静态读不出「谁清了它们」，候选是各屏自己的 `i1f6`/`detach-texture`（SAVE.BIN 的 `detach-texture 1d4c0 bb8` 在 `i1a1` 之后、读档路径不执行）与 `sub_403EF0` 家族。",
+  "id": "T-0074",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    }
+  ]
+}

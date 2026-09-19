@@ -12,6 +12,8 @@ declare global {
   interface Window {
     api: {
       readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
+      /** 按**文件名**读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；旧 preload 没有它时按缺口降级）。 */
+      readScriptByName?(name: string): Promise<{ index: number; name: string; data: number[] } | null>;
       readFile(path: string): Promise<number[]>;
       /**
        * **已装载的扩展包包号（升序）** —— 主进程扫资源根下的 `*.AAI`、按文件头 @264 的包号注册后的结果。

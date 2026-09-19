@@ -1,0 +1,79 @@
+{
+  "title": "真槽读档后：上一个画面的绘制项没被丢掉（TITLE 残留在上半屏、ADV 文字落到错误窗口）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-render",
+  "why": "用户实测（槽 079，读档后截图）：① 读档界面（LOAD 列表 + Now Loading）与 TITLE 的背景残留在画面上；② 画面上半是 TITLE、下半才是 SN0000 的背景；③ ADV 文字跑到左下角而不是 ADV 窗里。\n日志取证（`.tmp/amayui-emulator.log`）：读档本身成功（`[slot-load] 真槽续跑就绪 savedCur=2`、`重建存档里的图像槽 1 个 槽4←0xb37`、BGM #13 重播、走栈 0→1→2、收尾落点 794）。**收尾后的最后一帧模型里 TITLE 的绘制项仍在**：可见项里有 `10:a255 100:a255 110..119 200:a255 201:a255 300:a255 303/304/306/308:a255`（对照 `src/TITLE.txt` 的 `draw-texture a 4 … / 64 4 / 6e 4 / 76 4 / 77 4 / c8 4 / c9 4 / 12c..135 4`），而 ADV 窗自己的项（111..117、211..215、120xxx/121xxx）也在 —— 两套叠在一起。\n根因（引擎口径）：`sub_410160` **不碰绘制项容器**（`Engine+408`），它依赖 `CALLBACK_LOAD.BIN` 那一跳做「上一个画面的收尾」。`src/CALLBACK_LOAD.txt` 逐条：`i088 0` / `i1ca 0` / **`i19b`（ADV 退出）** / `mov (global-int 3f36) 0` / **`i20d -1`（渲染目标回后台缓冲）** / `i20e` / **`detach-texture 1adb0 7d0`（释放 2000 个句柄）** / `i324` / `i2fa 0` / `i0b7 0`（BGM 重播）/ `i2f6 0..2`（语音通道复位）/ `i0b6 0..9`（SE 通道停）/ 3f51..3f53 的「消息跳过」记账。emulator **整跳这个脚本**（`SLOT_GAPS ⑥`，只补了 BGM 重播）⇒ 上面这些收尾一个都没做。",
+  "acceptance": [
+    "真槽读档时按引擎跑 `CALLBACK_LOAD.BIN`（帧 0 ← 它、返回帧 = -11；它结束后由 -11 分支装记录 0 的脚本），而不是直接装记录 0 并跳 ip 0",
+    "读档收尾后模型里不再有上一个画面（TITLE / 读档菜单）的绘制项；ADV 文字落在与「正常走到同一句话」相同的窗口",
+    "守卫：headless 的 A/B（正常走到 SN0000 首句 = drawItems 26 / meshes 2 / msgWins {win8,(0,0,1280,720)}；读档到 = 修复后应与之一致）",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-resume.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "src/CALLBACK_LOAD.txt",
+      "anchor": "detach-texture 1adb0 7d0",
+      "note": "读档回调里丢掉上一个画面的那一步（还有 ADV 退出 i19b、渲染目标 i20d -1）"
+    },
+    {
+      "file": "src/SAVE.txt",
+      "anchor": "i1a1 (local-int 12) (local-int 214)",
+      "note": "读档调用点；SAVE.BIN 自己的收尾（`detach-texture 1d4c0 bb8`，SAVE.txt:1676）在 i1a1 之后 ⇒ 读档路径不执行"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "引擎在这一步之后还会把帧 0 交给",
+      "note": "emulator 曾在这里只补 BGM 重播，整跳 CALLBACK_LOAD"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "重建存档里的图像槽 ${rebind.length} 个",
+      "note": "T-0071 的两条修复已生效（日志：槽 4 ← 0xb37）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "②c ⚠️**emulator 侧近似**",
+      "note": "装载点 clearDrawContainer()+clearMeshSlots()；2026-09 复核（`tickets/T-0074`）确认**不是引擎行为**（`sub_410160` 的 27 个被调函数里没有清容器；唯一的整批释放被默认配置门 `CreateObject&2 && AutoFreeTexture&2` 关掉）⇒ 降级为 emulator 侧近似，待用仮想ディスプレイ/载荷项机制替代"
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/fileSource.ts",
+      "anchor": "readScriptByName?(name: string)",
+      "note": "按名读脚本的通道已备好（Node + Electron IPC 两侧都实现了），是接 CALLBACK_LOAD 那一跳的前提"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0066",
+      "T-0071",
+      "T-0070"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "本次试接的结论（重要）：把「帧 0 ← CALLBACK_LOAD.BIN（返回帧 -11）+ exit 时装记录 0」接上之后，**读档会卡死**——headless 实测轨迹只有 `CALLBACK_LOAD.BIN`、40 帧后 ip 停在数组下标 12（= dword 38 = `i2fa 0`，`0x2FA`/`sub_426910` 在 opcode-table 里只标了「仅映射」、语义未建模）⇒ 已回退到「直接装记录 0 的脚本」，只留下按名读的通道。**所以本票的第一步其实是：先给 `0x2FA` 建模**（看 `sub_426910` 在 CALLBACK_LOAD 里那一步做什么），再按引擎接回调。第二步（若 ① 之后 TITLE 的项仍在）：查 `sub_410160` 第一步那两段被配置门控的释放（`set:CreateObject & 2` ⇒ 释放全部 1000 个图像槽 + 10 个 L2D 槽 + 两个容器）。用户截图里的 Now Loading 横幅说明那一张是**读档过程中的瞬态**，steady state 见日志最后一次 `[present]`（无 190xxx 菜单项，但 TITLE 的 10/100/118/119/200/201/300+ 仍在）。★同日收口：装载点补 clearDrawContainer()+clearMeshSlots() ⇒ **E4 实拍**（npm run shot -- --load 79）读档后画面只剩 ADV 场景（背景 + 立绘 + 文字），标题/菜单残留全部消失。根因记在能力条 scene-teardown-on-load-point：引擎把上一屏的 CMesh/纹理析构掉、且场景 init 的 i1f6 会整批清容器，但**读档续跑落点在主循环里 ⇒ 那一遍 i1f6 被 i0ae 跳过**（NOVEL dword 29 → 628，越过 dword≈262 的 i1f6）。 ★收尾清单更新（同日）：CALLBACK_LOAD 用到的最后两条「仅映射」指令已登记 —— `0x137`（`i137 0`，ResetStack：int 栈家族全库只此 1 处、`i138`/`i13b`/`i13c`/`i13d` 全 0 处 ⇒ 观测等价 no-op）与 `0x244`（`i244`，批量清 `flags & 2` 绘制项的 `anim_start`；emulator 先 no-op 并如实记下「窗推进语义不完全同构」这个缺口）。登记后 headless 实测整条读档链**零未实现指令**：`CALLBACK_LOAD → LOADCHARM → SYSTEM4 → … → NOVEL → SN0000`（落点 917 / 收尾落点 794），ADV 文字回到 8 号窗 (0,0,1280,720)。\n★2026-09 复核更正（tickets/T-0074）：上面「引擎把上一屏的 CMesh/纹理对象析构掉」**不成立** —— 那两段释放被配置门控（set:CreateObject & 2 / AutoFreeTexture & 2），而引擎默认值 = 1 / 0（raw 111733 / 111742）⇒ 装载路径**什么都不清**（sub_410160 的 27 个被调函数全查过；i0ae 也只调 sub_40F750 重装帧、不重建绘制项）。因此装载点的 clearDrawContainer()+clearMeshSlots() 只是 emulator 侧近似；引擎实际靠「上一屏残留的绘制项 + 重建后的槽对象（Scene[slot+10614] / Scene[5*slot+466]）」还原画面 ⇒ 整批清掉会清掉载荷项（用户实测：清后背景只剩上一屏残留像素）。CALLBACK_LOAD 那一跳与槽表重装仍是引擎行为，保留。",
+  "id": "T-0072",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建（用户读档截图 + 日志取证）"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 先补 0x2FA（T-0073）让 CALLBACK_LOAD 能跑到底，再按引擎接：装载点按名装回调进帧 0（返回帧 -11）+ op_exit 的 -11 分支装记录 0；守卫 test/slot-load-resume.test.ts 的 E3 断言这一跳"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "done → open —— 2026-09 复核（tickets/T-0074）：装载点 clearDrawContainer()+clearMeshSlots() 已确认不是引擎行为（sub_410160 的 27 个被调函数里没有清容器；唯一的整批释放是 raw 19378-19389 的两段配置门，默认 set:CreateObject=1 / set:AutoFreeTexture=0 ⇒ 都不执行；i0ae 只重装帧、不重建绘制项）。本票的 CALLBACK_LOAD 半边保留，'丢掉上一个画面的绘制项' 半边降级为 emulator 侧近似，真做法需要 仮想ディスプレイ/载荷项 机制，见 T-0074。"
+    }
+  ]
+}

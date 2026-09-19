@@ -1,0 +1,66 @@
+{
+  "title": "真槽读档没装回「槽 → 图像」表，也没保住池外全局（画面缺图 / 续跑读到 0）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-load",
+  "why": "把 `sub_410160` 的 a4==3 装载段逐条读完之后，发现 emulator 漏了两件引擎必做的事（两件都不报错、只表现不对）：\n① **图像槽表没装回**：存档的帧镜像里有两张表 —— 100×12 B 的「纹理槽」（+52）与 1000×20 B 的「图像槽」（+1252，`{id, param, flag@+8, ?, ?}`）。引擎在装载末尾按它们**重新解码图像**（`sub_40BF20` / `sub_4559C0`+`sub_4A3800`→`sub_49E9D0`），而 `flag == 1 && id >= 0` 的条目就是「必须重载」的那些。emulator 此前只做 `markFileUsed` ⇒ 续跑路上任何 `draw-texture … <槽> …` 都指向空槽。实测槽 79：该表要求 **槽 4 ← 2871 = `BG050ABL.AGF`**（序章背景），修复前 `Engine.texSlots` 里根本没有 4。\n② **int 池被整份清空**：引擎的还原是 `memset(pool, 0, 4*count + 4)` + `memcpy(pool, fileInts, 4*count)` —— 只动 `0..count` 这一段，**`count` 以上的下标保留进程里的旧值**。而 ADV 场景大量使用**池外**的引擎全局：实测 `NOVEL.BIN` 用 `global 708ada`(7,375,578)、`global 708ad6`、`NOVEL/SN0000` 用 `global f8c48`/`f8c4c`(1,018,952)，而 81 个真槽的 int 池长度**全是 1,015,792**。emulator 用 `globals.int.clear()` 全清 ⇒ 读档后这些全局读成 0（背景/网格参数全丢）。",
+  "acceptance": [
+    "装载真槽时：按 1000 条图像槽表 `e.texSlots.set(槽, id)`（id >= 0），并对 `flag == 1 && id >= 0` 的条目调宿主 `bindTexture(id, 槽)`；100 条纹理槽同理（本作实测全零，仍照实现）",
+    "装载真槽时：int 池只覆盖 `0..池长` 这一段（池内旧值被文件的 0 清掉），**池长以上的下标原样保留**",
+    "两条都要有一条日志说清重建了几个槽、池外下标不动（不然又是「不报错只表现不对」）",
+    "守卫覆盖：合成槽断言 texSlots/bindTexture 的集合 + 池外下标存活；真槽 79 实测 `texSlots` 出现 槽 4 ← 0xb37",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-resume.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "重建存档里的图像槽",
+      "note": "装载时按两张表装回槽并重绑标了 flag 的条目"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "只覆盖池内下标，不得清掉池外下标",
+      "note": "int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engineSlot.ts",
+      "anchor": "flag: number;",
+      "note": "20 B 记录的第 3 个字段 = 「读档要重载」标志（`sub_410160` raw 19877 判 == 1）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "memcpy(*(void **)(a1 + 382976), v56 + 6, 4 * *v56);",
+      "note": "raw 19747：int 池只 memcpy count 个（上一行 memset 也只清 count+1）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4A3800(",
+      "note": "raw 19887：1000 条图像槽的重建入口（flag == 1 && id >= 0）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0059",
+      "T-0066"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "实证（本机 81 个真槽）：100 条纹理槽表**全是零**（flag 从不置 1）⇒ 那一段在本作里等价空操作；1000 条图像槽表每个槽有 0–3 条 `flag == 1 && id >= 0`，全是场景大图（`BG*`/`CS*`/`EV*`/`AE*` AGF）。槽 79 = 1 条：`rec4 = {id=2871, param=0, flag=1}` = `BG050ABL.AGF`。A/B 对照（headless）：同一句话「正常走到」= drawItems 26 / meshes 2（含 NOVEL 的背景四边形 103000）/ texSlots 9；「读档到」= drawItems 25 / meshes 1 / texSlots 5（修复后）。仍未复现引擎的那一格：`i0ae` 落在主循环里 ⇒ NOVEL 的 init（`create-mesh 103000` 那张全屏四边形）不会重跑 —— 引擎靠「后备缓冲从不清 + 上一个画面的绘制项还活着」兜住，emulator 的单模型做不到（见 T-0066）。",
+  "id": "T-0071",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 两张表装回 + int 池只覆盖池内；守卫 test/slot-load-resume.test.ts 的「★读档只覆盖池内下标 + 装回『槽 → 图像』表」"
+    }
+  ]
+}

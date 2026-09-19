@@ -477,3 +477,4 @@ function isAxisAlignedQuad(m: { verts: { x: number; y: number }[] }): boolean {
     (v) => (v.x === x || v.x === x + w) && (v.y === y || v.y === y + h) && w > 0 && h > 0,
   );
 }
+

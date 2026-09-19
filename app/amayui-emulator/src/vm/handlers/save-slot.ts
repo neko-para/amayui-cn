@@ -175,9 +175,16 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   //    （raw 38433-38438：`pool[i] = ENC(key, pool[i])`，`key = _this[97059]`），而操作数读取侧一律
   //    `DEC(key, ...)`（`operand.ts` 的 `readIntOperand`）⇒ 存明文会让续跑后的**所有全局量读成垃圾**。
   //    float/string 池没有这层（引擎直接读 `*(float*)(pool+4*i)` / 字符串指针）。
-  //    int 池是**定长稀疏数组**（本机真槽 1,015,792 项、非零 ~1.2 万）⇒ 只装非零项（读侧缺省即 0）。
-  e.globals.int.clear();
-  for (let i = 0; i < p.ints.length; i++) {
+  //    int 池是**定长稀疏数组**（本机 81 个真槽全是 1,015,792 项 = 4 MB）⇒ 只装非零项（读侧缺省即 0）。
+  //    ★★**只覆盖池内下标，不得清掉池外下标**（`tickets/T-0071`）：引擎的还原是
+  //    `memset(pool, 0, 4*count + 4)` + `memcpy(pool, fileInts, 4*count)`（raw 19705/19747）——
+  //    它只动 `0..count` 这一段，**`count` 以上的下标原样保留进程里的旧值**。
+  //    这不是细节：ADV 场景大量使用**池外**的引擎全局（实测 `SN0000`/`NOVEL` 用 `global 708ada`
+  //    = 7,375,578、`global f8c48` = 1,018,952，而池长只有 1,015,792）—— 读档时它们必须是"当时那份
+  //    进程状态"，用 `clear()` 全清会让续跑读到 0（背景/网格参数全丢）。
+  const poolCount = p.ints.length;
+  for (const k of [...e.globals.int.keys()]) if (k <= poolCount) e.globals.int.delete(k);
+  for (let i = 0; i < poolCount; i++) {
     const v = p.ints[i]!;
     if (v !== 0) e.globals.int.set(i, enc(e.key, v));
   }
@@ -191,6 +198,60 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   for (const s of p.images) if (s.id >= 0) e.markFileUsed(s.id);
   for (const r of p.records) if (r.id >= 0) e.markFileUsed(r.id);
 
+  // ②b ★**把「槽 → 图像」登记装回去，并重新解码引擎标了"要重载"的那些**（`tickets/T-0071`）。
+  //     引擎 `sub_410160`（raw 19843-19910）在装载末尾干的就是这件事，两段：
+  //       ① 100 个**纹理槽**（镜像 +52，12 B/条 {id, flag@+4, param}）：
+  //          循环 0..99，`flag == 1 && id >= 0` 时 `sub_40BF20(Engine+7912, 槽, id, 数据, 名)`
+  //          —— 把该 AGF 重新解码进纹理槽。★实证：本机 81 个真槽该表**全零**（flag 从不置 1），
+  //          所以这一段在本作里等价于空操作；仍然照实现（非空时如实重绑 + 记日志）。
+  //       ② 1000 个**图像槽**（镜像 +1252，20 B/条 {id, param, flag@+8, ?, ?}）：
+  //          循环 0..999，`flag == 1 && id >= 0` 时
+  //          `sub_4559C0`（解析 id）→ `sub_455560`（取字节）→ `sub_4A3800(Engine+322832, id, 数据, 槽, param, 0)`
+  //          —— 该条同时把 id/param 写回槽表（`[5*slot+466/467]`），也就是 `0x1F9`（`set-texture`）写的那张表。
+  //     ★为什么非做不可：读档续跑落点**跳过了场景的 init**（`i0ae` 落在主循环里），而 init 里那些
+  //       `set-texture <背景大图> <槽>` 就再也不会执行 ⇒ 不装回去的话，续跑路上任何
+  //       `draw-texture … <槽> …` 都指向空槽（实测槽 79 = `BG050ABL.AGF`(2871) 该在槽 4 上，
+  //       而修复前 `texSlots` 里根本没有 4）。
+  const rebind: { slot: number; id: number }[] = [];
+  for (let slot = 0; slot < p.records.length; slot++) {
+    const r = p.records[slot]!;
+    if (r.id >= 0) e.texSlots.set(slot, r.id); // 槽登记（= 引擎的 `[5*slot+466]`）
+    if (r.flag === 1 && r.id >= 0) rebind.push({ slot, id: r.id });
+  }
+  const texRebind: { slot: number; id: number }[] = [];
+  for (let slot = 0; slot < p.images.length; slot++) {
+    const s = p.images[slot]!;
+    if (s.flag === 1 && s.id >= 0) texRebind.push({ slot, id: s.id });
+  }
+  // ②c ⚠️**emulator 侧近似**（不是引擎行为的复刻；2026-09 复核 `tickets/T-0072` 的遗留争议所得）：
+  //     引擎的装载路径**不清绘制容器** —— `sub_410160`（raw 19276-19936）全部 **27 个**被调函数里
+  //     没有任何清容器调用（无 `sub_4AB7A0`/`sub_41A130`/`sub_40BF80`），唯一的整批释放是 raw
+  //     19378-19389 的两段**配置门**：
+  //       ① `Get(set:CreateObject)&2 && Get(set:AutoFreeTexture)&2 ⇒ for i<1000: sub_49E980(Scene,i)`
+  //          （释放 1000 个**槽对象**，不是绘制项）；
+  //       ② `Get(set:CreateObject)&2 ⇒ sub_40BFE0(Scene+1064) + sub_4A9D10(Scene+1096) + sub_4A1A60(Scene,j)`
+  //          （清两个**网格**容器 + 10 个 3D 槽）。
+  //     而引擎默认 `set:CreateObject = 1`（raw 111733）/`set:AutoFreeTexture = 0`（raw 111742）
+  //     ⇒ 两段的 `& 2` 都为假 ⇒ **都不执行**（本机 `SYS4REG.INI` 的 `[set]` 里也没有 `AutoFreeTexture`）。
+  //     装载路径里唯一的"屏幕级复位"是 raw 19913-19915 的两个**仮想ディスプレイ**复位
+  //     `sub_403EF0(Engine+51904)` / `sub_403EF0(Engine+21976)`（该对象族 = `sub_403D70/403E70/
+  //     404D E0/404E00/404E20/403AE0/403F40`，语料串 `aDisplayVirtual`）——emulator 没有这个子系统，
+  //     而"上一屏不再被合成"总得有个落点，才在这里用"清绘制项/网格"来近似它。
+  //     ★代价（已实测）：引擎恰恰靠**上一屏残留的绘制项 + 重建后的槽对象**把画面还原回来
+  //     （绘制期解析 `Scene[slot+10614]` 对象指针 + `Scene[5*slot+466]` 槽表；`i0ae` 只调 `sub_40F750`
+  //     重装帧，**不重建任何绘制项**）⇒ 整批清掉会连"本该显示背景/立绘的那一项"一起清掉
+  //     （2026-09 用户实测：清掉后背景只剩上一屏的残留像素/点上才出文字）。真正的修法是补
+  //     仮想ディスプレイ（plane 合成）子系统，而不是长期留着这一刀。
+  e.native.clearDrawContainer?.();
+  e.native.clearMeshSlots?.();
+  for (const { slot, id } of [...rebind, ...texRebind]) e.native.bindTexture?.(id, slot);
+  if (rebind.length || texRebind.length) {
+    e.native.log(
+      `[slot-load] 重建存档里的图像槽 ${rebind.length} 个 + 纹理槽 ${texRebind.length} 个：` +
+        `${[...rebind, ...texRebind].map((r) => `槽${r.slot}←0x${r.id.toString(16)}`).join(' ')}`,
+    );
+  }
+
   // ③ 面板 / 文本复位（引擎 raw 19913-19915；与 `transferToRootAfterLoad` 同一口径）。
   //   ★**不**在这里整批清绘制项（`tickets/T-0063`）：ADV 场景的绘制是**一次性**的
   //   （实测 SN0000/SC0330 主循环之后的 17000 行里只有 14~16 处 `draw-texture`、2~3 处 `i20c`），
@@ -200,13 +261,37 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   e.msgwin.reset();
   e.native.msgWinClearAll?.();
 
-  // ④ 帧 0 ← 记录 0 的脚本（= 引擎 `sub_40F750(3)`：装脚本 + 恢复返回栈；**ip 不设** ——
-  //    目标脚本入口那条 `i0ae` 会按记录把 ip 落到存档位置，见 `handlers/frame.ts`）。
+  // ④ 帧 0 的装载 —— 引擎的**两条路**（raw 19916-19927，`tickets/T-0072`）：
+  //    引擎先把帧 0 交给 **`CALLBACK_LOAD.BIN`**（返回帧 = **-11** 哨兵）；它 `exit` 时 `sub_41A820`
+  //    见到 -11 ⇒ `_this[95777] = -1` 后 `sub_40F750(sv1, sv2)` 才把**记录 0 的脚本**装进帧 0。
+  //    那一跳是"上一个画面的收尾"：`i19b`（ADV 退出）、`i20d -1`（渲染目标回后台缓冲）、
+  //    `detach-texture 110000 2000`（释放 2000 个句柄）、`i324`、`i2fa 0`、`i2f6 0..2`、`i0b6 0..9`、
+  //    `i0b7 0`（BGM 重播）、3f51..3f53 的跳过记账（`src/CALLBACK_LOAD.txt` 逐条）。
+  //    能按名解析到它 ⇒ 照引擎走；解析不到（宿主没给按名读的通道）⇒ 退回"直接装记录 0"（`SLOT_GAPS ⑥`）。
   const frame = e.frames[0]!;
-  loadScriptIntoFrame(frame, script, boot.name, frame0.scriptId);
-  const ret = resolveSlotRetStack(script, frame0);
-  frame.retStack = ret.retStack;
-  frame.caller = frame0.returnFrame;
+  let pendingRecord0 = false;
+  const callback = await e.fileSource?.readScriptByName?.('CALLBACK_LOAD.BIN');
+  if (callback) {
+    loadScriptIntoFrame(frame, parseScriptBytes(callback.data), callback.name, callback.index);
+    frame.retStack = [];
+    frame.caller = -11; // ★引擎哨兵：-11 = "装载回调跑完 ⇒ 装记录 0 的脚本"（sub_41A820 raw 25649-25658）
+    pendingRecord0 = true;
+    e.native.log(
+      `[slot-load] 真槽装载：帧 0 ← ${callback.name}（引擎 sub_410160 raw 19916 的 CALLBACK_LOAD 那一跳；` +
+        `它 exit 后再装记录 0 = ${boot.name}），savedCur=${p.savedCur}、帧记录 ${p.frames.length} 条`,
+    );
+  } else {
+    loadScriptIntoFrame(frame, script, boot.name, frame0.scriptId);
+    const ret = resolveSlotRetStack(script, frame0);
+    frame.retStack = ret.retStack;
+    frame.caller = frame0.returnFrame;
+    e.native.log('[slot-load] 按名读不到 CALLBACK_LOAD.BIN ⇒ 直接装记录 0 的脚本（引擎那一跳未复现，见 T-0072）');
+    e.native.log(
+      `[slot-load] 真槽续跑就绪：帧 0 = ${boot.name}(id=0x${frame0.scriptId.toString(16)})、savedCur=${p.savedCur}、` +
+        `池 int=${p.ints.length}/float=${p.floats.length}/str=${p.strings.length}、帧记录 ${p.frames.length} 条` +
+        `${ret.dropped ? `（返回栈丢 ${ret.dropped} 项）` : ''}`,
+    );
+  }
   e.cur = 0;
 
   // ⑤ 读档门 + 续跑记录（`0xAE` 消费）。
@@ -215,12 +300,7 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   // ★`sv1/sv2` = **这份槽自己声明的存档版本**（容器头 +284/+288）：`0xAE` 按它选帧记录的槽位组，
   //   而玩家 INI 可能整个缺 `[set]` 段（`tickets/T-0065`）⇒ 以文件为准（引擎那份是启动时从 SAVE.DAT 头读进
   //   字段 21968/21972 再供 `GetConfig` 用的，同源）。
-  e.saveResume = { savedCur: p.savedCur, savedRet: p.savedRet, frames: p.frames, sv1, sv2 };
-  e.native.log(
-    `[slot-load] 真槽续跑就绪：帧 0 = ${boot.name}(id=0x${frame0.scriptId.toString(16)})、savedCur=${p.savedCur}、` +
-      `池 int=${p.ints.length}/float=${p.floats.length}/str=${p.strings.length}、帧记录 ${p.frames.length} 条` +
-      `${ret.dropped ? `（返回栈丢 ${ret.dropped} 项）` : ''}`,
-  );
+  e.saveResume = { savedCur: p.savedCur, savedRet: p.savedRet, frames: p.frames, sv1, sv2, pendingRecord0 };
   // ⑥ 引擎在这一步之后还会把帧 0 交给 `CALLBACK_LOAD.BIN`，它开头就 `i0b7 0`（重播刚装回的当前曲）
   //    —— 见 `replaySavedBgm`。本工程直接装记录 0 的脚本，所以要显式补这一下。
   replaySavedBgm(e);
@@ -644,4 +724,5 @@ export const SAVE_SLOT_OPS: OpTable = [
   [0x1ae, op_slot_thumb_write], // 写 .STH
   [0x1af, op_slot_thumb_read], // 读 .STH
 ];
+
 

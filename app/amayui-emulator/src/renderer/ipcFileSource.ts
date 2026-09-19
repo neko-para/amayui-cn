@@ -22,6 +22,13 @@ export class IpcFileSource implements FileSource {
     return { index: r.index, name: r.name, data: new Uint8Array(r.data) };
   }
 
+  /** 按文件名读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；见 `tickets/T-0072`）。 */
+  async readScriptByName(name: string): Promise<ScriptBytes | null> {
+    const r = await window.api.readScriptByName?.(name);
+    if (!r) return null;
+    return { index: r.index, name: r.name, data: new Uint8Array(r.data) };
+  }
+
   /**
    * 已装载的扩展包包号（主进程侧扫 `*.AAI` + 读文件头得到的）。
    *

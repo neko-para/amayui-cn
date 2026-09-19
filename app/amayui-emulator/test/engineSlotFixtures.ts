@@ -15,6 +15,7 @@ import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
 import { OPCODE_TABLE } from '../src/opcodes.js';
 import {
   SLOT_IMAGE_PRELUDE_BYTES,
+  SLOT_IMAGE_RECORDS_AT,
   SLOT_IMAGE_SLOTS_AT,
   lzssLiterals,
   scrambleSlotPayload,
@@ -79,6 +80,11 @@ export function buildBody(opt: {
   strings: string[];
   ipTables: [number[], number[], number[]];
   images?: { at: number; id: number; flag: number; param: number }[];
+  /**
+   * 1000 条 20 B 的**图像槽表**（镜像 +1252，`{id, param, flag@+8, …}`）—— `0x1F9`（`set-texture`）写的那张表。
+   * `flag == 1 && id >= 0` 的条目是引擎读档时要**重新解码**的（见 `tickets/T-0071`）。
+   */
+  records?: { at: number; id: number; flag: number; param: number; u12?: number; u16?: number }[];
 }): Uint8Array {
   const imageBytes = 1044 * opt.savedCur + 22296;
   const enc = new TextEncoder();
@@ -98,6 +104,14 @@ export function buildBody(opt: {
     dv.setInt32(at, img.id, true);
     dv.setInt32(at + 4, img.flag, true);
     dv.setInt32(at + 8, img.param, true);
+  }
+  for (const rec of opt.records ?? []) {
+    const at = SLOT_IMAGE_RECORDS_AT + 20 * rec.at;
+    dv.setInt32(at, rec.id, true);
+    dv.setInt32(at + 4, rec.param, true);
+    dv.setInt32(at + 8, rec.flag, true);
+    dv.setInt32(at + 12, rec.u12 ?? 0, true);
+    dv.setInt32(at + 16, rec.u16 ?? 0, true);
   }
   for (let k = 0; k < opt.frames.length; k++) {
     const f = opt.frames[k]!;

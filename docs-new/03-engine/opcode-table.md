@@ -232,7 +232,7 @@
 | 0x134 | 3 |  | sub_42F810 | 仅映射 |  |
 | 0x135 | 2 | bit-set | sub_42F8B0 | 已核对 | `op1 \|= (1<<op2)`（置位；op2=bit 位，>0x1F 报错 `setbit`）。handler=sub_42F8B0（raw .c 39402） |
 | 0x136 | 2 | bit-reset | sub_42F920 | 已核对 | `op1 &= ~(1<<op2)`（复位；op2=bit 位，>0x1F 报错 `rembit`）。handler=sub_42F920（raw .c 39424） |
-| 0x137 | 1 |  | sub_4222B0 | 仅映射 |  |
+| 0x137 | 1 |  | sub_4222B0 | 已核对 | **ResetStack(n)**：`Engine+388292[n]`（= `_this[97073+n]`）上的 **int 栈对象**删掉再 `new(0x14)`+`sub_407BD0` 建一个空栈（`{vftable, cap=256, step=256, buf=new[](0x400), top=-1}`；push = `0x138`→`sub_409D40`、pop = `sub_41A520`）。★本作可当 no-op：整个 int 栈家族在 941 个脚本里**只有 `i137` 1 处**（`src/CALLBACK_LOAD.txt:18`），`i138`/`i13b`/`i13c`/`i13d` 全 0 处 ⇒ 没人压过栈，"删空栈+建空栈" ≡ 不做。emulator：`ENGINE_INTERNAL_OPS`（`tickets/T-0072`） |
 | 0x138 | 2 |  | sub_4223A0 | 仅映射 |  |
 | 0x139 | 3 |  | sub_42F990 | 仅映射 |  |
 | 0x13A | 6 |  | sub_422410 | 仅映射 |  |
@@ -409,7 +409,7 @@
 | 0x241 | 5 |  | sub_424FA0 | 仅映射 |  |
 | 0x242 | 2 |  | sub_4251A0 | 已核对 | **写 DrawItem `+720`**：`sub_4AD9A0(Scene, op1, op2)` —— 经 `sub_4AAD40(Scene+258)` 取该 DrawItem 写 `+720`，并 `sub_4AAEC0(Scene+270)` 取相邻对象写 `+504`。handler=sub_4251A0（raw 32649-32658）。语料 **350 处 / 205 个脚本**。emulator：`OPS` 的 `op_set_draw_entry_param` → `native.setDrawEntryParam`。 |
 | 0x243 | 0 |  | sub_41B180 | 仅映射 |  |
-| 0x244 | 0 |  | sub_41A370 | 仅映射 |  |
+| 0x244 | 0 |  | sub_41A370 | 已核对 | **批量清绘制项的动画窗起点**：`sub_4AD9F0(Engine+322832, 2)` 遍历 Scene 的三张绘制项链表（`+1036`/`+1084`/`+1100`），对 `flags & 2` 的项把 `anim_start`(`+52`) 或 `+24` 清 0（raw 132364-132503）。语料 1 处（`CALLBACK_LOAD.txt` 的 `i244`）。emulator：`ENGINE_INTERNAL_OPS` no-op（我们的 `animStart` 窗推进语义不完全同构，如实记缺口，`tickets/T-0072`） |
 | 0x245 | 2 |  | sub_4251E0 | 已核对 | **纹理对象的浮点参数**：`obj = Engine[op1+94672]`（CTexture 表），存在则 `sub_4081B0(obj, op2 / dbl_51FB50)`。handler=sub_4251E0（raw 32661-32676）。语料 0 处。emulator：`OPS` 的 `op_texture_obj_float` → 宿主缝 `native.setTextureObjectFloat`。 |
 | 0x246 | 2 |  | sub_425250 | 已核对 | **纹理对象子对象的 `vtable+56` 调用**：`obj = Engine[op1+94672]`，若 `*(obj+1084) == dword_52839C`（类型判定）则用 `op2 / dbl_5201F0`（÷100）调用 `(*(obj+1044))+56`。handler=sub_425250（raw 32680-32700）。语料 0 处。emulator：`OPS` 的 `op_texture_obj_param` → 宿主缝 `native.setTextureObjectParam`。 |
 | 0x247 | 1 |  | sub_430810 | 已核对 | **读引擎布尔标志写回操作数**：`op1 = (Engine[166965] != 0)`（0/1）。与设置方 `0x21B`（sub_423C20）成对，构成脚本可读写的引擎级布尔寄存器；handler=sub_430810（raw .c 40034-40038） |
@@ -501,7 +501,7 @@
 | 0x2F7 | 1 |  | sub_426890 | 已核对 | **置语音通道状态位**：`Engine[21315+op1] = 1`（Voice 模块 `[283+ch]`；0x2F6 清、0x2F4/0xC4/0x1BD 按 bit0/bit16 二态切换）。全库 **28122** 处。handler=sub_426890（raw .c 33694-33703） |
 | 0x2F8 | 2 |  | sub_4268D0 | 已核对 | **设语音通道 pan（左右平衡）**：读 op1=语音通道（0..2，映射设备通道 op1+12）、op2=pan（±10000，0=中央） → `sub_4B6940(Engine+18664, op1+12, op2)`：**对称钳制 ±10000** 写 `设备[375+op1+12]`，`sub_4B6350`→`sub_4B7110` 下发到 `IDirectSoundBuffer::SetPan`（>14 报 `dsSetPan`）。★判据：`sub_4B7110` 的错误串是「左右相対ボリューム変更に失敗しました」(vtable+64=SetPan)，且 SetVolume 的值域是 [-10000,0] 而非对称。★`SYSTEM4.txt:476-480` 的子程序 `i2f8 0 0 / 1 0 / 2 0` = 把三路语音 pan 复位到中央；全库 op2 **14642/14642 恒为 0**（全库 14644 处）。handler=sub_4268D0（raw .c 33705-33715）。emulator：`op_engine_internal` 空操作 |
 | 0x2F9 | 7 |  | sub_431AA0 | 仅映射 |  |
-| 0x2FA | 1 |  | sub_426910 | 仅映射 |  |
+| 0x2FA | 1 |  | sub_426910 | 已核对 | **写 `Engine[1951]`**（byte 7804）：`_this[1951] = op1`（raw 33722-33725）。★全库只出现 **1 次**——`src/CALLBACK_LOAD.txt:18` 的 `i2fa 0`；而该字段在反编译里**没有任何读取点** ⇒ 观测等价 no-op。emulator：`ENGINE_INTERNAL_OPS` 的 `op_engine_internal`（`tickets/T-0073`）。★**这条当初缺失的后果不是"少一个 no-op"，而是脚本被解析错位**：`i2fa` 在 `scripts/asm/opcodes.json` 里 argc=1，但 emulator 侧三张 handler 表都查不到它 ⇒ 命中即 `NotImplementedOp` ⇒ 在 `CALLBACK_LOAD.BIN` 里卡死（ip 停在同一格、帧循环空转） |
 | 0x2FB | 1 |  | sub_431B60 | 仅映射 |  |
 | 0x2FC | 5 |  | sub_431BA0 | 已核对 | **读 UI 触摸/触点**：`sub_477980` 从触摸事件缓冲（`Engine+6780`、条数 `Engine[6776]`、40B/项）取触点并 `ScreenToClient`；有触点写 op1=1/op2=X/op3=Y/op4=触点旗标/op5=项[3]，无触点写 op1=0。**PARTIAL**（缓冲填充来源未建模）；handler=sub_431BA0（raw .c 40776-40826） |
 | 0x2FD | 6 |  | sub_431CF0 | 仅映射 |  |
@@ -608,3 +608,4 @@
 | 0x398 | 3 |  | Amayui 2 |
 | 0x399 | 7 |  | Tenmei no Conquista |
 | 0x39B | 5 |  | Amayui 2 |
+

@@ -215,6 +215,81 @@ test('★真槽续跑不依赖 INI 的 `[set]` 段：`sv1/sv2` 取自**槽文件
   assert.equal(e.frames[0]!.ip, 2, '帧 0 落在 call-script 的下一条');
 });
 
+test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/T-0071`）', async () => {
+  // 两条引擎口径（`sub_410160` raw 19705/19747 与 19843-19910）：
+  //  ① int 池的还原是 `memset(pool, 0, 4*count + 4)` + `memcpy(pool, fileInts, 4*count)` —— **只动 `0..count`**，
+  //     `count` 以上的下标保留进程里的旧值。ADV 场景大量用**池外**的引擎全局（实测 `global 708ada` = 7,375,578、
+  //     `global f8c48` = 1,018,952，而池长只有 1,015,792）⇒ 用 `clear()` 全清会让它们读成 0（背景/网格参数全丢）。
+  //  ② 1000 条 20 B 的**图像槽表**要装回 `Engine.texSlots`（= `0x1F9` `set-texture` 写的那张表），
+  //     并且 `flag == 1 && id >= 0` 的条目要**重新解码**（宿主 `bindTexture`）—— 读档续跑跳过了场景 init，
+  //     那些 `set-texture <背景大图> <槽>` 不会再执行（实测槽 79：槽 4 ← `BG050ABL.AGF`）。
+  const rootBin = buildScriptBin([{ op: 0xae, args: [] }]);
+  const scriptId = 100;
+  const body = buildBody({
+    savedCur: 0,
+    savedRet: -1,
+    pre8: 0,
+    frames: [{ returnFrame: -1, scriptId, retIdx: [], messageIdx: -1, callIdx: -1 }],
+    ints: [0, 7], // 池长 2：下标 0..1
+    floats: [],
+    strings: [],
+    ipTables: [[], [], []],
+    // 100 个纹理槽里只有 3 号槽标了"要重载"
+    images: [{ at: 3, id: 0x999, flag: 1, param: 0 }],
+    // 1000 个图像槽：4 号标了重载、12 号没标（只登记不重载）
+    records: [
+      { at: 4, id: 0x888, flag: 1, param: 0 },
+      { at: 12, id: 0x777, flag: 0, param: 0 },
+      { at: 20, id: -1, flag: 1, param: 0 },
+    ],
+  });
+  const bytes = buildSlotFile(body, { ...SEEDS, format: 3, aux: 20 });
+
+  const logs: string[] = [];
+  const native = new StubNative((m) => logs.push(m));
+  const bound: [number, number][] = [];
+  (native as unknown as { bindTexture: (id: number, slot: number) => void }).bindTexture = (id, slot) =>
+    bound.push([id, slot]);
+  const e = new Engine(native);
+  // 只提供"读槽 3 / 读脚本"两个能力（`fakeFileSource` 只认槽 0，这里要读槽 3）。
+  e.fileSource = {
+    readSaveSlot: async (s: number) => (s === 3 ? bytes : null),
+    readScript: async (id: number) => (id === scriptId ? { index: id, name: 'ROOT.BIN', data: rootBin } : null),
+  } as unknown as Engine['fileSource'];
+  // 读档前的"当前进程状态"：池外下标（200 万，远超池长 2）必须有值；池内下标 0 也要有旧值（应被文件覆盖成 0）。
+  const { enc } = await import('../src/vm/bits.js');
+  e.globals.int.set(2_000_000, enc(e.key, 424242));
+  e.globals.int.set(0, enc(e.key, 1234));
+
+  const { parseScriptBytes } = await import('../src/script/bin.js');
+  const { loadScriptIntoFrame } = await import('../src/vm/ops.js');
+  const caller = buildScriptBin([{ op: 0x1a1, args: [{ type: 9, raw: 0x10 }, { type: 0, raw: 3 }] }]);
+  loadScriptIntoFrame(e.frames[2]!, parseScriptBytes(caller), 'SAVE.BIN', 51);
+  e.cur = 2;
+  await run(e, 2, 0);
+
+  const { dec } = await import('../src/vm/bits.js');
+  assert.equal(dec(e.key, e.globals.int.get(2_000_000) ?? 0), 424242, '★池外下标（> 池长）必须原样保留');
+  assert.equal(e.globals.int.get(0), undefined, '池内下标 0 被文件里的 0 覆盖（引擎的 memset 段）');
+  assert.equal(dec(e.key, e.globals.int.get(1) ?? 0), 7, '池内下标 1 = 文件里的值');
+
+  assert.equal(e.texSlots.get(4), 0x888, '★图像槽 4 ← 存档里的 id');
+  assert.equal(e.texSlots.get(12), 0x777, '图像槽 12 也登记（flag = 0 ⇒ 不重载）');
+  assert.equal(e.texSlots.get(20), undefined, 'id < 0 的空槽不登记');
+  assert.deepEqual(
+    bound.sort((a, b) => a[1] - b[1]),
+    [
+      [0x999, 3],
+      [0x888, 4],
+    ],
+    '★只有标了 flag == 1 的槽（纹理槽 3、图像槽 4）走宿主重新解码',
+  );
+  assert.ok(
+    logs.some((m) => m.includes('重建存档里的图像槽 1 个 + 纹理槽 1 个')),
+    `要有"重建图像槽"的日志（实际 ${logs.filter((m) => m.includes('slot-load')).join(' | ')}）`,
+  );
+});
+
 test('0xAE 的门关着 ⇒ 不动任何帧状态（与引擎的门控路径逐字一致）', async () => {
   const e = mkEngine();
   const frame = e.frames[0]!;
@@ -259,10 +334,41 @@ test('★E3：真 SAVE00.DAT ⇒ 帧 0 = SYSTEM4.BIN，且第一步走栈真的�
   await run(e, 1, 0);
 
   assert.equal(e.cur, 0, '读档后 cur = 0');
-  assert.match(e.curScript().name, /^SYSTEM4\.BIN$/, `帧 0 应是真根脚本（实际 ${e.curScript().name}）`);
+  // ★引擎的**第一步**不是装记录 0，而是把帧 0 交给 `CALLBACK_LOAD.BIN`（`sub_410160` raw 19916-19918，
+  //   返回帧 = **-11** 哨兵）；它 `exit` 时 `sub_41A820` 见 -11 才 `sub_40F750` 装记录 0（`tickets/T-0072`）。
+  //   那一跳做的是"上一个画面的收尾"：ADV 退出(`i19b`)、渲染目标回后台缓冲(`i20d -1`)、
+  //   释放 2000 个句柄(`detach-texture 110000 2000`)、SE/语音通道复位、`global 3f36 = 0`…
+  //   ⇒ 少了它，续跑就带着上一场的 ADV/消息窗状态（实测：ADV 文字落进 1 号窗而不是 8 号窗）。
+  assert.match(e.curScript().name, /^CALLBACK_LOAD\.BIN$/, `帧 0 应是读档回调（实际 ${e.curScript().name}）`);
+  assert.equal(e.frames[0]!.caller, -11, '★返回帧 = -11 哨兵（`sub_41A820` 那条分支的入口条件）');
   assert.equal(e.engineValues.get(ENGINE_FIELD.loadInProgress), 1, '读档门置位');
   assert.ok(e.saveResume, '续跑记录就绪');
+  assert.ok(e.saveResume!.pendingRecord0, '★回调还没跑 ⇒ "exit 时装记录 0"的标志挂着');
   assert.equal(e.saveResume!.savedCur, payload.savedCur);
+
+  // ---- 跑回调到它 `exit`：-11 分支把记录 0 的脚本装进帧 0（等价于引擎 CALLBACK_LOAD 那一跳收尾）----
+  {
+    let clock0 = 0;
+    const host0: FrameHost = { now: () => clock0 };
+    await runFrameLoop(e, host0, {
+      gates: { anim: 'clear', sleep: 'ignore', advance: 'ignore' },
+      advFrame: false,
+      maxStepsPerFrame: 20000,
+      maxFrames: 10,
+      present: 'never',
+      audio: 'never',
+      // ★用**逐条**停止条件：回调 exit 那一刻就把记录 0 的脚本装进帧 0 并 jump(0)，
+      //   帧边界判会太迟（SYSTEM4 会在同一帧里继续跑完启动链）。
+      stopAfterStep: () => e.curScript().name.startsWith('SYSTEM4'),
+      onUnknown: () => 'continue',
+      onFrameEnd: () => {
+        clock0 += 1000 / 60;
+      },
+    });
+  }
+  assert.match(e.curScript().name, /^SYSTEM4\.BIN$/, `回调收尾后帧 0 = 记录 0 的脚本（实际 ${e.curScript().name}）`);
+  assert.equal(e.frames[0]!.caller, -1, '引擎此处 `_this[95777] = -1` ⇒ 帧 0 的返回帧归 -1');
+  assert.equal(e.saveResume!.pendingRecord0, false, '标志消费掉');
 
   // 真脚本里找入口的 i0ae（`SYSTEM4.txt:143`）并执行它 ⇒ 走栈第一步。
   const root = e.frames[0]!.script!;

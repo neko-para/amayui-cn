@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **70** 张：🔜 doing **2** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **55** · 🚫 dropped **1**（P0 5 / P1 25）
+共 **74** 张：🔜 doing **2** · ⛔ blocked **0** · ⬜ open **14** · ✅ done **57** · 🚫 dropped **1**（P0 5 / P1 29）
 
-按域：`emulator/render` 14 · `emulator/frame-loop` 9 · `emulator/input` 6 · `emulator/save-slot` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `emulator/ops` 1 · `renderer/scene` 1 · `emulator/save-render` 1
+按域：`emulator/render` 14 · `emulator/frame-loop` 9 · `emulator/save-slot` 7 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 4 · `emulator/test` 4 · `emulator/hosts` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `emulator/ops` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1
 
 ## 🔜 doing（2）
 
@@ -18,11 +18,13 @@
 | [`T-0062`](./T-0062/ticket.json) | P1 | bug | `renderer/scene` | 存档缩略图全黑：0x20D 渲染目标窗口里的 0x20C 必须把整帧画进该槽 | 3 | — | `notes.md` `changes.md` evidence/(2) | — |
 | [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
 
-## ⬜ open（12）
+## ⬜ open（14）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0066`](./T-0066/ticket.json) | P1 | bug | `emulator/save-slot` | 真槽读档后画面未还原：只有消息窗与右侧栏，背景与 ADV 窗不再出现 | 3 | — | — | — |
+| [`T-0066`](./T-0066/ticket.json) | P1 | bug | `emulator/save-slot` | 真槽读档后画面未还原：只有消息窗与右侧栏，背景与 ADV 窗不再出现 | 3 | — | `notes.md` | — |
+| [`T-0072`](./T-0072/ticket.json) | P1 | bug | `emulator/save-render` | 真槽读档后：上一个画面的绘制项没被丢掉（TITLE 残留在上半屏、ADV 文字落到错误窗口） | 4 | `app/amayui-emulator/test/slot-load-resume.test.ts` | `notes.md` | — |
+| [`T-0074`](./T-0074/ticket.json) | P1 | analysis | `emulator/save-slot` | 读档装载点「清绘制项」的引擎依据复核：引擎在装载点什么都不清（27 个 callee 全查）⇒ 该刀降级为近似，并登记真正缺口 | 4 | — | — | — |
 | [`T-0060`](./T-0060/ticket.json) | P2 | req | `emulator/ops` | 0x231（sub_4243F0，argc 4）未实现：真槽续跑后的 ADV 场景在 RESETREIGNAN.BIN 上死循环 | 3 | — | — | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | — | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
@@ -35,7 +37,7 @@
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | — | — |
 | [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | — | — |
 
-## ✅ done（55）
+## ✅ done（57）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -67,6 +69,8 @@
 | [`T-0068`](./T-0068/ticket.json) | P1 | bug | `emulator/save-data` | 真 SAVE.DAT 解析失败：字符串区/尾部块的自校验窗口过严（记录区 4481 vs 声明 4480） | 3 | `app/amayui-emulator/test/save-data.test.ts` `app/amayui-emulator/test/gallery-bgm-list.test.ts` | — | — |
 | [`T-0069`](./T-0069/ticket.json) | P1 | bug | `emulator/save-data` | 存档列表没有标题、读档点不进去：overlay 的 SAVE.DAT 缺「按槽」的记录（需要两侧并表） | 4 | `app/amayui-emulator/test/save-data.test.ts` | — | — |
 | [`T-0070`](./T-0070/ticket.json) | P1 | bug | `emulator/save-render` | 读档画面被二次播放：走栈期间场景入口重跑（重建遮罩 + 重播淡入） | 4 | `app/amayui-emulator/test/slot-save-resume.test.ts` | — | — |
+| [`T-0071`](./T-0071/ticket.json) | P1 | bug | `emulator/save-load` | 真槽读档没装回「槽 → 图像」表，也没保住池外全局（画面缺图 / 续跑读到 0） | 5 | `app/amayui-emulator/test/slot-load-resume.test.ts` | — | — |
+| [`T-0073`](./T-0073/ticket.json) | P1 | bug | `emulator/opcodes` | 0x2FA 未实现 ⇒ CALLBACK_LOAD.BIN 每帧空转卡死（读档收尾那一跳接不上） | 4 | `app/amayui-emulator/test/slot-load-resume.test.ts` | — | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |

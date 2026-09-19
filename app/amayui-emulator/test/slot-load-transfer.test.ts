@@ -138,10 +138,12 @@ test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载）
   const instr0 = caller.script!.instructions[0]!;
   await OPS.get(0x1a1)!(makeCtx(e, caller, instr0, e.native, () => {}));
 
-  // ★控制转移：cur 切到帧 0、根脚本（SYSTEM4）被重载、从它的开头继续。
+  // ★控制转移：cur 切到帧 0，帧 0 先装**读档回调** `CALLBACK_LOAD.BIN`（引擎 raw 19916-19918，返回帧 = -11
+  //   哨兵）；它 `exit` 后 `sub_41A820` 的 -11 分支才把记录 0 的脚本（SYSTEM4）装进帧 0（`tickets/T-0072`）。
   assert.equal(e.cur, 0, '★读档后 cur = 0（引擎 `Engine[383104] = 0`，raw 19471）');
-  assert.equal(e.curScript().ip, 0, '从根脚本开头继续');
-  assert.match(e.curScript().name, /^SYSTEM4\.BIN$/, `帧 0 应是重载的根脚本（实际 ${e.curScript().name}）`);
+  assert.equal(e.curScript().ip, 0, '从帧 0 脚本入口继续');
+  assert.match(e.curScript().name, /^CALLBACK_LOAD\.BIN$/, `帧 0 应是读档回调（实际 ${e.curScript().name}）`);
+  assert.equal(e.frames[0]!.caller, -11, '★返回帧 = -11 哨兵（`sub_41A820` 那条分支的入口条件）');
   assert.equal(e.engineValues.get(LOAD_IN_PROGRESS_FLAG), 1, '置「正在读档」门（raw 19470；`0xAE` 读它）');
   assert.equal(caller.ip, 0, '★调用方帧的 ip 不前进（它后面的 0xCD 不会被派发）');
   assert.equal(caller.scriptId, 51, '调用方帧原样留着（引擎也不清帧）');

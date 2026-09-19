@@ -116,10 +116,26 @@ export interface EngineSlotImageSlot {
   param: number;
 }
 
-/** 一条 20 B 记录（镜像 +1252+20k；语义未完全确证，读档时按 id 重新解码）。 */
+/** 一条 20 B 记录（镜像 +1252+20k）—— 引擎的**图像槽表**（`set-texture`/`0x1F9` 的槽登记 + `draw-texture` 的解析源）。 */
 export interface EngineSlotRecord {
+  /**
+   * 该槽里那张图的统一文件 id（`sub_4A3800` 的 `[5*slot+466]`；< 0 = 空槽）。
+   * ★这就是 `set-texture <imgid> <槽> <param>`（`0x1F9`，`sub_422CB0`）写进去的那一格 ——
+   * 读档后脚本会用同一个槽号去 `draw-texture`，所以**必须装回 `Engine.texSlots`**（`tickets/T-0071`）。
+   */
   id: number;
+  /** `set-texture` 的第 3 操作数（`[5*slot+467]`）。 */
   param: number;
+  /**
+   * **读档时要重新解码该槽**的标志（`[5*slot+468]`，`sub_410160` raw 19877 判 `== 1` 才重载）。
+   * 实证（本机 81 个真槽）：只有"场景大图"（`BG*`/`CS*`/`EV*`/`AE*` 这类 AGF）会被标记，
+   * 每个槽 0–3 条；`SO0xx`（窗口 UI）不标 —— 它们由脚本自己在续跑路上重新 `set-texture`。
+   */
+  flag: number;
+  /** `[5*slot+469]`（语义未确证；本机真槽恒 0）。 */
+  unknown12: number;
+  /** `[5*slot+470]`（`sub_4A3800` 写 0、其它载入/释放路径写 1；语义未确证）。 */
+  unknown16: number;
 }
 
 /** 池块里被解码出来的全部内容。 */
@@ -338,7 +354,13 @@ export function parseEngineSlotBody(body: Uint8Array): EngineSlotParseResult {
   const records: EngineSlotRecord[] = [];
   for (let k = 0; k < 1000; k++) {
     const at = SLOT_IMAGE_RECORDS_AT + 20 * k;
-    records.push({ id: i32(dv, at), param: i32(dv, at + 4) });
+    records.push({
+      id: i32(dv, at),
+      param: i32(dv, at + 4),
+      flag: i32(dv, at + 8),
+      unknown12: i32(dv, at + 12),
+      unknown16: i32(dv, at + 16),
+    });
   }
 
   // ---- 池块（镜像之后） ----
@@ -484,6 +506,14 @@ export interface EngineSlotResume {
    */
   sv1?: number;
   sv2?: number;
+  /**
+   * **还没跑 `CALLBACK_LOAD.BIN` 那一跳**（`tickets/T-0072`）。
+   *
+   * 引擎在 `sub_410160` 末尾把帧 0 交给 `CALLBACK_LOAD.BIN`（返回帧 = **-11** 哨兵），它跑完 `exit` 时
+   * `sub_41A820` 见到 -11 ⇒ `_this[95777] = -1` + `sub_40F750(sv1, sv2)` ⇒ 才把**记录 0 的脚本**装进帧 0。
+   * 本标志 = "帧 0 里现在跑的是那个回调，它 `exit` 时要装记录 0"（`handlers/control.ts` 的 `op_exit` 消费）。
+   */
+  pendingRecord0?: boolean;
 }
 
 /**

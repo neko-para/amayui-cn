@@ -44,6 +44,44 @@ const op_engine_internal: OpHandler = () => {
 };
 
 export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
+  /**
+   * `0x2FA`（`sub_426910` raw 33722-33725）：`_this[1951] = op1`（= `Engine+0x1E7C`）。
+   *
+   * ★为什么是 no-op 而不是建模那个字段：该字段在**整份反编译里没有任何读取点**（`grep 1951` 只有这一处写），
+   *   所以"写进 `engineValues`"只会变成一条没人读的死写（`npm run check:dead-writes` 会拦）。
+   *
+   * ★为什么非有不可（`tickets/T-0073`）：全库只出现 **1 次**（`src/CALLBACK_LOAD.txt:18` 的 `i2fa 0`），
+   *   而 `CALLBACK_LOAD.BIN` 正是**读档时"上一个画面收尾"那一跳**（ADV 退出 `i19b` / 渲染目标 `i20d -1` /
+   *   `detach-texture 110000 2000` / SE 与语音通道复位…）。这条不在三张表里 ⇒ 命中即 `NotImplementedOp`
+   *   ⇒ 在"跳过未知指令"策略下**每帧死循环重试同一条**（ip 不前进），CALLBACK_LOAD 永远跑不完
+   *   ⇒ 引擎那一跳接不上（实测：40 帧后轨迹只有 `CALLBACK_LOAD.BIN`、`drawItems=0`）。
+   */
+  [0x2fa, op_engine_internal], // Engine[1951] 写（无人读）→ sub_426910
+  /**
+   * `0x137`（`sub_4222B0` raw 30711-30729）：**ResetStack(n)**（n = op1，0..10）——
+   * 把 `Engine+388292[n]`（= `_this[97073+n]`）上那个 **int 栈对象**删掉、再 `operator new(0x14)` +
+   * `sub_407BD0` 建一个新的空栈（`{vftable, cap=256, step=256, buf=new[](0x400), top=-1}`）。
+   *
+   * ★为什么本作可以当 no-op：整个 int 栈家族（`0x137` 复位 / `0x138` push → `sub_409D40` /
+   *   `0x13B`–`0x13D` 家族）在 941 个脚本里**只有 `i137` 出现 1 次**（`src/CALLBACK_LOAD.txt:18` 的 `i137 0`），
+   *   `i138`/`i13b`/`i13c`/`i13d` **全为 0 处** ⇒ 没有任何脚本往这 11 个栈里压过值，
+   *   "删掉一个空栈再建一个空栈"与"什么都不做"观测等价。
+   * ★但它**非有不可**：不登记 ⇒ 命中即 `NotImplementedOp` ⇒ 产品在 CALLBACK_LOAD 里停下报
+   *   "停在未知指令 0x137 (i137)"（2026-09 用户实测），读档收尾那一跳走不完（`tickets/T-0072`）。
+   */
+  [0x137, op_engine_internal], // ResetStack(n)：删+建空栈（本作无人压栈）→ sub_4222B0
+  /**
+   * `0x244`（`sub_41A370` raw 25349-25355，**argc 0**）：`sub_4AD9F0(Engine+322832, 2)` ——
+   * 遍历 Scene 的三张绘制项链表（`+1036`/`+1084`/`+1100`），对 **`flags & 2`** 的项把
+   * `anim_start`（`+52`，`sub_4AAD40` 路径）或 `+24`（`sub_4AAEC0` 路径）**清 0**
+   * —— 即"**把所有带 bit1 的绘制项的动画窗起点清掉**（= 停掉它们正在跑的窗）"。
+   *
+   * ★emulator 当 no-op 的边界（如实记缺口）：我们的绘制项模型**有** `animStart`，但窗的推进是
+   *   `advance(t)` 按项自己的 `animStart/animDelay` 算的，语义与引擎的"清 anim_start"不完全同构；
+   *   而且这条的可见效果只影响**已经在跑的动画窗**（读档路径上首次调用），先不猜语义
+   *   （见 `tickets/T-0072` 的收尾清单）。★同样非有不可：不登记就会在 CALLBACK_LOAD 里硬停下。
+   */
+  [0x244, op_engine_internal], // Scene 绘制项 anim_start 批量清（mask 2）→ sub_41A370/sub_4AD9F0
   // ============ 声音 子系统 ============
   // ★**已全部转真实现**（2026-09）：`0xB4/0xB5/0xBA/0xB6/0xB7/0xB9/0xBB/0xBC/0xBF/0xC2/0xC4/0xC6/0x1BD/
   //   0x2BF/0x2C0/0x2F4/0x2F5/0x2F6/0x2F7/0x2F8/0x2FF/0x302` 见 `handlers/audio.ts`（`AUDIO_OPS`，落在

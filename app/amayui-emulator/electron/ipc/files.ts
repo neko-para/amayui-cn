@@ -61,6 +61,15 @@ export function registerFileIpc(): void {
     if (!r) return null;
     return { index: r.index, name: r.name, data: Array.from(r.data) };
   });
+  /**
+   * 按**文件名**读一个脚本（读档时要按名装载 `CALLBACK_LOAD.BIN`，见 `tickets/T-0072`）。
+   * 与 `read-script` 同一条读取路径，只是用名字换统一 id（引擎 `sub_455000(FileDB, name)`）。
+   */
+  ipcMain.handle('read-script-by-name', async (_e, name: string) => {
+    const r = await fileSource.readScriptByName(name);
+    if (!r) return null;
+    return { index: r.index, name: r.name, data: Array.from(r.data) };
+  });
   // 读任意文件（原始字节）
   ipcMain.handle('read-file', async (_e, p: string) => {
     const b = await fileSource.readFile(p);

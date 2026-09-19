@@ -41,6 +41,16 @@ export interface FileSource {
    */
   readScript(index: number): Promise<ScriptBytes | null>;
   /**
+   * **按文件名取回一个脚本**（可选）。
+   *
+   * 调用方只有一个：读档时引擎要按名装载 `CALLBACK_LOAD.BIN`
+   * （`sub_410160` raw 19916 的 `sub_455000(FileDB, String2)`，`String2 = "CALLBACK_LOAD.BIN"`）——
+   * 那一跳负责"上一个画面的收尾"（`src/CALLBACK_LOAD.txt`：`i19b` ADV 退出、`i20d -1` 渲染目标、
+   * `detach-texture 1adb0 7d0` 释放 2000 个句柄、SE/语音通道复位…），见 `tickets/T-0072`。
+   * **不实现 = 退回"直接装记录 0 的脚本"**（`SLOT_GAPS ⑥`）。
+   */
+  readScriptByName?(name: string): Promise<ScriptBytes | null>;
+  /**
    * **已装载的扩展包包号（升序）**，= 引擎 `FileDB.packs` 的非空槽（`sub_455750` 按 AAI 头 @264 注册）。
    *
    * 调用方是 `0x143`（`i143`，见 `src/vm/handlers/control.ts` 的 `op_dispatch_script_requests`）：
