@@ -1,0 +1,994 @@
+{
+  "source": "opcodes",
+  "kept": [
+    {
+      "id": "op-2-01",
+      "kind": "gap-as-noop",
+      "severity": "P0",
+      "claim": "0x2E9（745）在 opcode-table.md:487 只标「仅映射」、语义列空；emulator 三张注册表（OPS / NATIVE_OPS / ENGINE_INTERNAL_OPS）都没有它。语料 480 处 / 330 个脚本使用 `i2e9`（含 ADV 主流程），命中即 interpreter.ts:166 抛 NotImplementedOp。",
+      "actual": "handler 体 sub_426620（raw 33580-33587）真实写引擎字段：`result = sub_41BF50(_this,1); _this[122464] = result;`（= 字节 489856），且该字段有读点：raw 20392 / 20420 / 28569 / 28579 / 13714 / 13720 都用它做时间基准，复位路径 raw 17987 把它清 0 ⇒ 不是「只写不读」的观测等价 no-op。emulator 全库搜不到 0x2e9 / 745 / 122464。",
+      "evidence": "raw 33580-33587（体 + 注册表项 23182 = 675996+4*745）；raw 17987、20392、20420、28569、28579、13714、13720；docs-new/03-engine/opcode-table.md:487；app/amayui-emulator/src/vm/interpreter.ts:162-166；app/amayui-emulator/src/frame/loop.ts:218-222；src/$1$SC0330.txt:18203-18205；语料 `^\\s*i2e9\\b` = 480 行 / 330 文件",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts:44-83（三表拼装，无 0x2e9）",
+      "fix": "补 [0x2e9, op_store_field_122464]：读 op1 写 ENGINE_FIELD.msgTimeBase = 122464（该字段被 6 处当时间基准读，不能只当 no-op 桩）。"
+    },
+    {
+      "id": "op-4-01",
+      "kind": "gap-as-noop",
+      "severity": "P0",
+      "claim": "op 0x228（552, sub_430650）在 emulator 里没有实现（三张注册表都没有），可它是会回写操作数的 getter，语料 1097 处且每次都被脚本立即分支读取。",
+      "actual": "handler 体 raw 39973-39988：`v2=readInt(2); if(!sub_4AA060(Scene,v2,&v6,&v5,&v4)) return writeInt(1,1); else { writeFloat(3,v6); writeFloat(4,v5); writeFloat(5,v4); return writeInt(1,0); }` ⇒ op1=成功标志、op3/op4/op5=三个 float。语料 i228 = 1097 处，SC0500.txt:1359 紧接着 `eq (local-int 0) (global-int 1396) 0` 读 op1 槽。emulator 全树 grep 0x228 = 0 命中 ⇒ 命中即 NotImplementedOp，op1/op3/4/5 保持旧值 ⇒ 分支读错。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:39973-39988（体，注册 ctor 使 (0x430650-0x400000)/4+基址 = 0x228）；docs-new/03-engine/opcode-table.md:384；src/SC0500.txt:1358-1360；语料 `^\\s*i228\\b` = 1097；app/amayui-emulator/src/vm/interpreter.ts:166；app/amayui-emulator/src/renderer/app/session.ts:466-485；emulator 全树 grep 0x228 = 0",
+      "code": "// 引擎 raw 39982-39987\nif ( !sub_4AA060((int)(_this + 80708), v2, &v6, (int)&v5, (int)&v4) ) return sub_42B4B0((int)_this, 1, 1);\nsub_42BA00(_this, 3, v6); sub_42BA00(_this, 4, v5); sub_42BA00(_this, 5, v4);\nreturn sub_42B4B0((int)_this, 1, 0);",
+      "fix": "按体实现 0x228：op1 = (sub_4AA060(Scene,op2,..) ? 0 : 1)，成功时 op3/4/5 = 三个 float（场景查询，等价 native 缝 + 缺省全 0）。"
+    },
+    {
+      "id": "op-1/0x191-fabs-missing",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "opcode 0x191 在索引/文档里是「仅映射」、emulator 注册点为空。",
+      "actual": "handler 体 sub_42CEC0（raw 37896-37906）= `v3 = readFloatOperand(2); v4 = fabs(v3); writeFloatOperand(1, v4)`：op1 = |op2|，纯 VM 可见计算。emulator 三张表都没有 0x191，而语料有 13 处 i191 ⇒ 命中即 NotImplementedOp，或在用户桩策略下被 no-op 跳过 ⇒ op1 保留旧值。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 22802（表项 677600 = 675996+4*0x191）、37896-37906；语料 i191 = 13（BTL 2 / CGVIEWER 2 / FIELD 2 / INFOPL 1 / SELACT 5 / SELFORT 1）；emulator 全 src 无 0x191",
+      "code": "app/amayui-emulator/src/vm/handlers/arithmetic.ts",
+      "fix": "注册 [0x191, (c) => writeFloatOperand(c.e, c.frame, c.instr, 1, Math.abs(readFloatOperand(c.e, c.frame, c.instr, 2)))]。"
+    },
+    {
+      "id": "op-2-02",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "0x23F（575）在 opcode-table.md:407 只标「仅映射」；emulator 未注册；语料 3 处 i23f。",
+      "actual": "handler 体 sub_4307B0（raw 40019-40030）是会回写 op1 的 getter：`v2 = _this[op2 + 94672]; if (!v2) return sub_42B4B0(_this, 1, -1); v3 = sub_4080B0(v2) * dbl_51FB50; return sub_42B4B0(_this, 1, (int)v3);`。未实现时 op1 保持旧值（当 no-op）或硬报错，两者都与引擎不符，且脚本把 op1 当输出用。docs/tickets 里都查不到 0x23F。",
+      "evidence": "raw 40019-40030（体）、raw 23102（注册 678296 = 675996+4*575）；src/BTL.txt:3843 `i23f (local-ptr 0) (local-int b)`；src/FIELD.txt:13720/:13758 `i23f (local-int 80e8) 2a`；FIELD.txt:13738 mov → :13720 i23f → :13721 `i238 (local-int 80e8)`；docs-new/03-engine/opcode-table.md:407；emulator grep 0x23f 无注册；tickets 全库无 0x23F",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts（三表无 0x23f）",
+      "fix": "实现该 getter（需要 `_this[+94672]` 对象表与 `sub_4080B0` 的量纲），或至少登记一条带语料锚点的缺口单。"
+    },
+    {
+      "id": "op-2-03",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "0x1D1（465）仅映射；emulator 未注册；语料 1 处（HISTORY.txt:1314）。",
+      "actual": "handler 体 sub_420310（raw 29354-29370）读 5 个操作数后调 `sub_4675A0((int)(_this + 21324), v2, v4, v5, v6, v7, v8)`，其中 v8 = `_this + 21032`，`_this+21324` 是 Font 基址，sub_4675A0 体（raw 80313 起）确为 GDI 文本绘制动作 ⇒ 是文本/字体绘制族。跳过它会把 HISTORY 的回看行整段丢掉；报错则 HISTORY 脚本在该处停。",
+      "evidence": "raw 29354-29371（体，29364 argc=5）、raw 22873（注册 677856 = 675996+4*465）；raw 80313-80319/80372（sub_4675A0 为 GDI 文本绘制）；src/HISTORY.txt:1314 `i1d1 (local-int 4a9) (local-int 94) 40 0 0`；emulator 全库无 0x1d1",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts（三表无 0x1d1）",
+      "fix": "按 text-items/msgwin 同族实现（HISTORY 是回看页的数据源），或在 tickets 里登记并让闸门 A 显式报缺口。"
+    },
+    {
+      "id": "op-2-04",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "0x32C（812）仅映射；emulator 未注册；语料 4 处（SETWEATHER.txt:18/27/69/74）。",
+      "actual": "handler 体 sub_426FC0（raw 34013-34029）读 6 个 float 操作数后 `sub_499CE0(Scene, a2, a3, _this, v5..v10)`——3D 效果/天气族参数下发。与同族 0x325/0x326（已在 stubs.ts 作 engine-internal 建模）不同，它一次写 6 个浮点参数；未注册 ⇒ SETWEATHER 脚本命中即 NotImplementedOp。",
+      "evidence": "raw 34013-34030（体，34022 argc=6）、raw 23228（注册 679244 = 675996+4*812）；src/SETWEATHER.txt:18/27/69/74；app/amayui-emulator/src/vm/handlers/stubs.ts:104-108（0x325/0x326 已登记，无 0x32c）",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "fix": "按 0x325/0x326 的方式登记（建模或至少 engine-internal + 闸门 A 留痕），并补语料锚点。"
+    },
+    {
+      "id": "op-3-002",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "索引里 0x233(sub_424510)、0x23A(sub_4306F0)、0x243(sub_41B180)、0x337(sub_427680) 是「仅映射 / 已核对」但 emulator 一条都没登记，而 handler 体会回写脚本操作数（对 VM 可观测）。",
+      "actual": "0x23A 体 raw 39990-40001 回写 op1（`v2 = _this[read(2)+91322]; if (v2) return sub_42B4B0(_this,1, *(v2+1068)!=0); else return sub_42B4B0(_this,1,0);`）；0x233 体 raw 32166-32182 读 op3/4/5 三个 float 后 `sub_4AD7B0`；0x243 体 raw 26016-26031 是状态门/复位。语料 i243 = 341 行 / 338 文件、i233 = 5、i23a = 1（BTL.txt:3460）、i337 = 0 ⇒ 命中即 NotImplementedOp 并整轮硬停（run.ts:72-75 / session.ts:466-479 均 stop + 致命错误）。",
+      "evidence": "raw 39990-40001（0x23A）、32166-32182（0x233）、26016-26031（0x243）、34271-34285（0x337/4 参）；构造表 23090/23097/23106/23239；src/BTL.txt:3460、src/SC0000.txt:16195、src/SC0010.txt:34541、src/SC0500.txt:8875/:19414；emulator handlers/index.ts:44-83 无这四条",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts:44-83",
+      "fix": "至少把 0x23A（回写 op1）与 0x233 补成真实现；0x243 的状态门要么建模、要么在 stubs.ts 里带上 raw 依据登记为 engine-internal。"
+    },
+    {
+      "id": "op-3-003",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "索引里 0x307(sub_426AE0) 与 0x243(sub_41B180) 的 status 是「仅映射」，emulator 也没有这两条；但它们读写的是 emulator 已经建模的引擎状态。",
+      "actual": "0x307 体 raw 33794-33805：`(*(Engine[174405]+12))(Engine+174405, \"system:EffectSkipOnClick\", v3)` = SetConfig('system:EffectSkipOnClick')，正是 emulator 已实现的 0x306 `op_get_effect_skip` 的唯一写入端；emulator 只登记 getter ⇒ 脚本设过的值读不回来。语料 i307 3 处。0x243 的状态门见 op-3-002。",
+      "evidence": "raw 33794-33805、raw 4349（`char aSystemEffectsk[25] = \"system:EffectSkipOnClick\";`）、raw 40953（0x306 同键）；构造表 23212；app/amayui-emulator/src/vm/handlers/engine-fields.ts:334（只有 getter）、:162-165、configRegistry.ts:86；src/CONFIG1.txt:2130、:2145、src/INITREGINPUT.txt:6 `i307 1`；emulator 全库无 0x307",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:334",
+      "fix": "0x307 按 raw 33794 直写配置注册表（与 0x306 成对，写在同一个 CFG.systemEffectSkipOnClick 键上）。"
+    },
+    {
+      "id": "op-4-04",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "op 0x25 (37, sub_41D590) 在 emulator 没有任何注册，但脚本语料有 4 处使用（STAGERAID.txt）。",
+      "actual": "语料 `i025 1 2 28` 4 处：src/STAGERAID.txt:677/723/883/939。handler 体 raw 27393-27430 读 op1/op2/op3：若 `effect_flags & 0x8000000` 则 `sub_441060(Engine+1978, op2, 0)`，否则置 `effect_flags |= 8`、按 op3 设节拍、`sub_441410(...)` 并刷输入。emulator 全树 grep 0x25 仅注释命中 ⇒ 命中即 NotImplementedOp。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:27393-27430；docs-new/03-engine/opcode-table.md:58；src/STAGERAID.txt:677/723/883/939；app/amayui-emulator/src/vm/handlers/stage.ts:79-81；emulator 全树 grep 0x25 仅注释",
+      "code": "app/amayui-emulator/src/vm/handlers/stage.ts:79-81",
+      "fix": "登记 0x25 为真实现或至少 no-op 桩，避免 STAGERAID 路径硬停。"
+    },
+    {
+      "id": "op-5-003",
+      "kind": "gap-as-noop",
+      "severity": "P3",
+      "claim": "status 为「仅映射」的 0x134/0x144/0x147/0x2FD（原 finding）与 0x026/0x0BE/0x2DF/0x2E1（op-5-004，已并入）在 src/*.txt 里确实被使用，而 emulator 四条表都不含它们 ⇒ 命中即 NotImplementedOp 硬停；台账把它们的语料处数错记为 0。",
+      "actual": "0x134 语料 5 处（ATSEEK.txt:22、BOMBSEEK.txt:254、CALCREVISE.txt:475、MVSEEK.txt:144、SETROOM.txt:155）、体 raw 39359-39398 是队列出队 + 上限 0xA 校验；0x144 = 1（SAVE.txt:560）、0x147 = 1（CONFIGCV.txt:380）、0x2FD = 4（ALLMAP.txt:361、CGVIEWER.txt:94、FIELD.txt:1286、REIGN.txt:468）；0x026 = 1（src/SC0000.txt:13127 `i026 2 f 10 1`，序章脚本，会直接打断序章）、体 raw 27432-27464 带范围校验；0x0BE/0x2DF/0x2E1 语料 0 处。命中点都在 SEEK/设定/鉴赏/地图界面路径或序章，可达性未跑运行时验证。",
+      "evidence": "raw 23001（0x134 → 677228）、23017（0x144）、23020（0x147）、23202（0x2FD）、22754（0x026 → 676148）、22928（0x0BE）、23172/23174（0x2DF/0x2E1）；raw 39359-39398、27432-27464、38608-38616；src/ATSEEK.txt:22、BOMBSEEK.txt:254、CALCREVISE.txt:475、MVSEEK.txt:144、SETROOM.txt:155、SAVE.txt:560、CONFIGCV.txt:380、ALLMAP.txt:361、CGVIEWER.txt:94、FIELD.txt:1286、REIGN.txt:468、SC0000.txt:13127；emulator handlers 全目录对 0x134/0x144/0x147/0x2fd/0x26 0 命中；interpreter.ts:162-166",
+      "code": "app/amayui-emulator/src/vm/interpreter.ts:162-166",
+      "fix": "把 0x134（5 处，全部是 SEEK/load 路径）与 0x026（序章）优先补成真实现或显式桩；台账把这几条的语料处数按实测改正（0 → 5/1/1/4/1）。"
+    },
+    {
+      "id": "op-6-01",
+      "kind": "host-invented",
+      "severity": "P2",
+      "claim": "op 843（0x34B，handler=sub_428030，emulator live2d.ts:191 op_l2d_node_scale_win）：文档/索引称「缩放目标矩阵（百分数 /100）+ 窗1 delay/dur = +32/+52」，操作数被描述成「handle + 缩放窗参数」。（op6-02 为同一处重复条目，已并入本条。）",
+      "actual": "handler 体是整数/浮点混排：op1=key、op2/op3 = int（delay/dur）、op4/op5/op6 = float 缩放量（`sub_41C300(_this,4..6)/dbl_5201F0`，÷100）→ `sub_4B0030(Scene, key, op2, op3, sx, sy, sz)`；消费者把 op2 写元素 +32、op3 写 +52，三个 float 用 D3DXMatrixScaling 写目标缩放矩阵并置 pending。emulator 按 (key, percent=op2, delay=op3, dur=op4) 解析，把 op2（delay）当缩放百分数，完全丢弃 op4/op5/op6。语料 i34b = 0 处 ⇒ 当前不可见。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 34643-34650（逐字）、raw 4430（dbl_5201F0 = 100.0）、raw 134143/134163/134165/134168/134172（消费者：+32/+52/+76/D3DXMatrixScaling(+144)）；docs-new/03-engine/opcode-table.md:564；app/amayui-emulator/src/vm/handlers/live2d.ts:125-129（28 处 optInt、0 处 readFloatOperand）；app/amayui-emulator/src/live2d/runtime.ts:199-201；语料 i34b = 0",
+      "code": "const op_l2d_node_scale_win: OpHandler = (c) => {\n  const key = optInt(c, 1);\n  if (key === undefined) return;\n  l2dNodeScaleWin(c.e, key, optInt(c, 2) ?? 100, optInt(c, 3) ?? 0, optInt(c, 4) ?? 0);\n};",
+      "fix": "0x34B 必须读成 key=op1(int), delay=op2(int), dur=op3(int), sx/sy/sz = readFloatOperand(op4/5/6)/100；l2dNodeScaleWin 签名改为 (key, sx, sy, sz, delay, dur)。同一族 0x347/0x348 应一并按「前 1/2 个 int + 后 3/4 个 float」重排。"
+    },
+    {
+      "id": "op-6-05",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "op 424（0x1A8 dev_ukn，handler=sub_419690，status=已核对，emulator=control.ts:420 op_dev_ukn）：文档/JSON 语义写「nop（dev 未知指令，通常空实现）」，emulator 也实现为空函数。",
+      "actual": "handler 体真实写引擎状态：`result = _this[95776]; _this[30 * result + 95805] = 1; return result;` —— 把当前帧的指令步长槽置 1。该槽是活的：主循环 raw 20165 用它推进 ip（全文件对 95805 的唯一读取点）。本条恰好把该槽置成与 0 操作数指令相同的值，故当前不产生分叉；但「nop/空实现」这个依据本身是错的，且 stubs.ts:189 把「唯一一条体内什么都不做的指令」挂在 0xAF 上——0xAF 真实登记为 sub_419690（raw 22898）、体与 0x1A8 相同。",
+      "evidence": "raw 24775-24783（sub_419690 体全文）、raw 20165（唯一读取点）、raw 22898（0xAF = sub_419690）；docs-new/03-engine/opcode-table.md:158、:282；app/amayui-emulator/src/vm/handlers/stubs.ts:188-196；app/amayui-emulator/src/vm/handlers/control.ts:336,420；interpreter.ts:185",
+      "code": "const op_dev_ukn: OpHandler = () => undefined;",
+      "fix": "把语义改为「写当前帧步长槽 95805 = 1（对 ip 推进与 0 操作数等价，故无外部可观测差异）」；同时删掉 stubs.ts 里「唯一一条体内什么都不做的指令」这一错误断言。"
+    },
+    {
+      "id": "op-6-07",
+      "kind": "unclear",
+      "severity": "P2",
+      "claim": "op 188（0xBC BGM 开关/模式，handler=sub_420DC0，emulator=audio.ts:440 op_bgm_mode）：索引给出具体行为——「把 sound:Music 的值 ±3 写回 → sub_489B50 停 → 装回 → sub_489F80 重播，并把 Engine[174712] 记为新模式值」。",
+      "actual": "handler 体只有 4 行：`95805=3; result = read(1); if (result <= 2) return sub_408CF0(_this, result-1); return result;`。「±3/停/装回/重播/174712」全部在 sub_408CF0（raw 13514-13543）里，索引只引了 handler 体行号 29792-29802，未给 sub_408CF0 的行号；且 Engine[174712] 在 emulator 里没有任何写入/读取点。",
+      "evidence": "raw 29792-29802（handler 体全文）；raw 13514-13543（sub_408CF0：写配置 aSoundMusic ±3 → sub_489B50 → `_this[174713]=v6` → `_this[174712]=v4` → sub_489F80）；app/amayui-emulator/src 内 174712 命中 0",
+      "code": "app/amayui-emulator/src/vm/handlers/audio.ts:440",
+      "fix": "把索引/文档的 raw 引用补成「handler raw 29792-29802 + sub_408CF0 raw 13515-13543」；若要建模 Engine[174712]，需先在 engineFieldIds.ts 登记该字段并写明读者。"
+    },
+    {
+      "id": "op-7-0x20b-doc-semantics-but-unimplemented",
+      "kind": "gap-as-noop",
+      "severity": "P1",
+      "claim": "opcode-table.md:355 把 0x20B 标为「已核对」并给出细节语义，但 emulator 无任何注册（不在三张 OpTable）⇒ 命中即 NotImplementedOp；语料 204 处 / 187 文件。同类未注册缺口已并入本条：0x235（158 处 / 52 文件，sub_424630）、0x028（32 处 / 15 文件，sub_41D860）、0x132/0x133（5/10 处，ATSEEK/BOMBSEEK/CALCREVISE/MVSEEK/SETROOM）、0x0C1/0x2CF/0x32E（各 1 处）、0x7C local-ret（668 处 / 334 文件，已在 flow-control.md:427 披露）。",
+      "actual": "0x20B：handlers/*.ts 里 332 个 `[<数字>,` 表项键中无 523；全仓 grep 0x20b 只有 tools/opInventory.ts:67 的展示表；interpreter.ts:162-166 查不到即抛 NotImplementedOp（renderer 会话是停下等桩，不是静默跳过）。doc 括注「op4=op2+宽」与体不符：raw 31581-31584 为 `v9 = op2 + op4`、`v10 = op3 + op5` ⇒ op4/op5 是宽/高。其余并入条目：0x235 锚点应为 raw 32203-32219（非 finding 原引的 32067 = 0x22E/sub_424290）、0x028 体 raw 27500-27514 argc=4、0x132/0x133 体 raw 30647-30680/30683-30699、0x0C1/0x2CF/0x32E 体 raw 24831/33477/34057、0x7C 体 raw 25779-25824 与文档一致且缺口已在 flow-control.md:427 披露。",
+      "evidence": "app/amayui-emulator/src/vm/handlers/index.ts:44-84（表项键 332 个，无 523/565/40/306/307/193/719/814/124）；app/amayui-emulator/src/vm/interpreter.ts:61-68,162-166；app/amayui-emulator/src/renderer/app/session.ts:224,467-469；app/amayui-emulator/src/tools/opInventory.ts:67；engine/天结_unpacked.exe_utf8.c raw 31569-31592、32203-32219、27500-27514、30647-30680、30683-30699、24831-24842、33477-33491、34057-34091、25778-25824；docs-new/03-engine/opcode-table.md:355,397,61,230,231,176,461,535；docs-new/03-engine/flow-control.md:427；语料 i20b=204/187、i235=158/52、i028=32/15、i132=5、i133=10、i0c1=i2cf=i32e=1、local-ret=668/334",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts:44-84",
+      "fix": "按体实现 0x20B（矩形 fill + op6 钳 255 + 颜色 op7）并订正 op4/op5 括注；其余未注册条目按语料量级排期补实现或显式登记缺口票。"
+    },
+    {
+      "id": "op-10-010",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "0x251（op 593，sub_425A10，12 实参 → sub_4AFA30）在 emulator 三张注册表里一处也没有，而语料大量使用它；同类未注册缺口已并入本条：0x1B3（sub_40C660 追加 CRLF）、0x231（25 处）、0x22C（6 处）、0x36（5 处）。",
+      "actual": "0x251：handler 体 raw 33041-33054 逐字（`95805 = 25` ⇒ argc=12、读 op1..op12 → `sub_4AFA30`）；未注册 ⇒ interpreter.ts:166 抛 NotImplementedOp 硬停；语料 44 处 / 21 文件，含 src/SC0000.txt:1356 的正常渲染路径（1338 create-texture / 1340 draw-texture / 1356 i251 紧接 jcc 分支）。0x1B3 体 raw 36560-36565 为 `sub_40C660(_this + 124336, asc_51EE84=\"\\r\\n\", 2)`，doc:293 标「已核对」而 emulator 无 0x1b3，两处调用（SYSTEM4.txt:466 其后 abort、FIELD.txt:9911「不正処理発生」）属错误分支；0x231/0x22C/0x36 同样未注册。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 33041-33054、36560-36565、4319-4320；docs-new/03-engine/opcode-table.md:425,293,74,388,393；app/amayui-emulator/src/vm/interpreter.ts:61-68,166；app/amayui-emulator/src/vm/handlers/index.ts:44-81；emulator 全树对 0x251/0x1b3/0x231/0x22c/0x36 = 0 命中；语料 i251=44、i1b3=2、i231=25、i22c=6、i036=5；src/SC0000.txt:1356、src/AIM.txt:89、src/$3$SC2840.txt:4228、src/ALLMAP.txt:1290、src/LOOK.txt:107、src/$3$SC2340.txt:1986",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts:44-81",
+      "fix": "至少把 0x1B3（追加 \"\\r\\n\" 到文本缓冲）补成真实现，并把 0x251/0x231/0x22C/0x36 按「命中即停」登记进缺口台账（含可执行路径与语料量级）。"
+    },
+    {
+      "id": "op-1/0x232-drawitem-color-missing",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "opcode 0x232 在索引/文档里是「仅映射」、emulator 注册点为空。",
+      "actual": "handler 体 sub_424440（raw 32141-32164）是 DrawItem 颜色/透明度写入：读 op1=handle、op2、op3、op4 —— `v2>255 ⇒ 255`、`v2<0 ⇒ sub_4ADD60(Scene,op1)>>24`、`v3<0 ⇒ sub_4ADD60(Scene,op1)`，再 `sub_4AD730(Scene, op1, op2, packed ARGB)`；被调方取/建 DrawItem、置脏 `_this[11627]=1`、`+544 = delay`、`+576 = ARGB` ⇒ 场景可见的绘制属性。emulator 无任何注册，语料 8 处 i232。",
+      "evidence": "raw 23089（注册 678244 = 675996+4*0x232）、32131-32164、132241-132257；docs-new/03-engine/opcode-table.md:394；语料 i232 = 8（FIELD 1 / SC0100 1 / SC0620 2 / SC1620 1 / SC2210 1 / SC3000 2）；emulator 全 src 无 0x232",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-item.ts",
+      "fix": "补 0x232（读 op1..op4 → 渲染侧 DrawItem 颜色/alpha 写入，含 op3/op4 为负时按 sub_4ADD60 取回当前值的分支），或至少登记为已知缺口而不是硬报错。"
+    },
+    {
+      "id": "op-2-05",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "0x1F9 set-texture：文档与引擎表都是 argc=3、op3=color，但 emulator 的 op_set_texture 完全不读 op3。",
+      "actual": "引擎 handler 体 raw 31222-31232 读 op1(imgid)、op2(slot)、op3(color)，并做变换 `v7 = (op3 & 0xFFFFFF) | 0xFF000000`（负值 ⇒ 0），再 `sub_4A3800(Scene, imgid, hFile, slot, v7, 0)`；该色被存进槽记录 `v7[467] = a5`（raw 123380）。emulator gfx-texture.ts:125-134 只读操作数 1/2，`native.bindTexture?.(imgid, slot)` 也只有两参 ⇒ op3 及其变换整体丢失（语料 1096 处 set-texture 都带第 3 个操作数）；vm/engineSlot.ts:127-128 的 `param` 字段只在读档路径有生产者。",
+      "evidence": "raw 31222-31232（逐字）、raw 123368-123381（`sub_49E9D0(_this, hFile, a4, a5, a6)`、`v7[467] = a5`）；app/amayui-emulator/src/vm/handlers/gfx-texture.ts:125-134；app/amayui-emulator/src/vm/native.ts:287；app/amayui-emulator/src/vm/engineSlot.ts:127-128,352,359；语料 `^\\s*set-texture\\b` = 1096",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts:125-134",
+      "fix": "读 op3 并按引擎口径变换后交给宿主（native.bindTexture(imgid, slot, color)），至少把变换后的值写进槽模型（slot+467 的等价字段）。"
+    },
+    {
+      "id": "op-2-10",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "0x2 exit：emulator 在 `caller === -11 && !saveResume?.pendingRecord0` 时抛 ExitScript（整个程序退出）；引擎的 -11 分支从不退出。",
+      "actual": "引擎 sub_41A820 的 -11 分支（raw 25645-25660）：`_this[95777] = -1` → 读配置 set:SaveVersion1 并写回 → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → return。sub_40F750（raw 18877-18951）按 a2 分派：a2==2 装载记录脚本并恢复 ip/返回栈，a2==3 同族，a2==1 且 a3∉{10,20} 时什么都不做 —— 三条路径都不做程序退出。emulator control.ts:122-150 只在 pendingRecord0 为真时走装载分支，否则抛 ExitScript；引擎对 set:SaveVersion1/2 的配置读改写（raw 25651-25658）在 emulator 完全没有对应实现。",
+      "evidence": "raw 25645-25660（-11 分支全文）、18877-18951（sub_40F750 的 a2/a3 分派）、19577/19695（-11 由存档/读档装载路径写入 ⇒ 可达）；app/amayui-emulator/src/vm/handlers/control.ts:110-150（:122 条件、:147-149 else 抛 ExitScript）",
+      "code": "app/amayui-emulator/src/vm/handlers/control.ts:147",
+      "fix": "把 -11 的兜底从「程序退出」改成「按 sub_40F750 的语义：无记录 ⇒ 不动作」，并补 set:SaveVersion1/2 的读改写。"
+    },
+    {
+      "id": "op-3-004",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "文档/索引 0x196 display-furigana 的 semantics 写「分三路：① MessageSpeed == 0 或 ADV 位已置 ⇒ sub_46CBF0；② 否则 sub_46BE30 …；③ Engine[489988] & 1 置位时纯 sub_46BE30」。",
+      "actual": "handler 体的外层门是 `v7 = (*(_BYTE *)(_this + 489988) & 1) == 0;`（raw 29071），该 byte 偏移 = 下标 122497 = 0x304 写的文本块标志；MessageSpeed（`_this[86672]`）是里层条件（raw 29075）。文档第①②路未注外层门（文档原文是三路并列、第③路自带门，并非断言①②无条件成立）。emulator 侧 op_display_furigana（msgwin.ts:564-574）只做 captureFontStyle/addRuby/emitWin，完全没有任何路径设置 effect_flags 的 0x20000000/0x10000 位、也不起节拍定时器（raw 29093/29108）。",
+      "evidence": "raw 29071（489988/4 = 122497）、29075-29081、29088-29095（`|= 0x20000000` + sub_453A60）、29104-29109（`|= 0x10000`）；docs-new/03-engine/opcode-table.md:264；app/amayui-emulator/src/vm/handlers/msgwin.ts:564-574；对照 msgwin.ts:410-414、engine.ts:22（SLEEP_GATE）；语料 i196 = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:564-574",
+      "fix": "把文档第①②路的条件补上外层门 `Engine[122497] & 1`、MessageSpeed 归入里层；emulator 若暂不建模节拍，至少在注释里写明 effect_flags 0x20000000/0x10000 与 sub_453A60 节拍未实现。"
+    },
+    {
+      "id": "op-4-05",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "op 0x22D (557)、0x234 (564)、0x329 (809) 三条都不在 emulator 的注册表里，而语料各有 5/4/1 处使用。",
+      "actual": "0x22D：体 raw 32048-32064 读 op1/op2(int)+op3/4/5(float 且先 ÷100) → `sub_49A870`；语料 5 处。0x234：体 raw 32185-32201 读 3 个 float（不除）→ `sub_4AD850`；语料 4 处。0x329：体 raw 33966-34000 装载 mesh（sub_4559C0/sub_455560/sub_4A0640），失败抛「メッシュファイル %s の読み込みに失敗しました」；语料 1 处。三者 grep 在 emulator src 全树只命中 `+0x234` 类结构体注释 ⇒ 命中即 NotImplementedOp 硬停。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:32048-32064、32185-32201、33966-34000；src/FIELD.txt:2277/2998/3023、src/$5$SC0370.txt×2、src/SC0000.txt:16096/16192、src/SC1620.txt×2、src/SETWEATHER.txt:56；emulator 全树 grep 三条 hex 仅注释",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts",
+      "fix": "至少登记为 no-op 桩（避免硬停），0x22D/0x234 可按 0x21E/0x220 的 native 动画窗缝实现。"
+    },
+    {
+      "id": "op-4-06",
+      "kind": "host-invented",
+      "severity": "P2",
+      "claim": "emulator 的 op_set_draw_color_alpha 用它自己发明的 `(alpha & 0xff)` 组装 alpha，并整段丢掉引擎的 clamp 与「<0 回退取当前色」两条分支。",
+      "actual": "代码 gfx-item.ts:334-341：`const argb = ((alpha & 0xff) << 24) | (color & 0xffffff); c.native.setDrawColorAlpha?.(handle, argb, blend);`，注释却自称「op3=alpha(clamp/回退)、op4=color(回退)」。引擎体 raw 31419-31451：`v2<=255` 且 `v2<0` ⇒ `v2 = sub_4ADD60(Scene,op1)>>24`；`v2>255 ⇒ 255`；`v3<0 ⇒ v3 = sub_4ADD60(Scene, op1)`。⇒ op3≥256 时 emulator 给 α=0（引擎 255）；op3/op4<0 时丢回退。语料 7637 处 set-draw-color-alpha，静态实参 alpha>255 / <0 / color<0 均 0 处 ⇒ 潜在边界错。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:31429-31450；app/amayui-emulator/src/vm/handlers/gfx-item.ts:334-341；语料 `^\\s*set-draw-color-alpha\\b` = 7637 + 实参扫描 0 处越界",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-item.ts:340",
+      "fix": "补 `if (alpha > 255) alpha = 255;` 与 `<0 ⇒ 取当前色/当前 α`（需 native 提供当前色 getter，对应 sub_4ADD60）。"
+    },
+    {
+      "id": "op-6-09",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "op 522（0x20A，handler=sub_423620，emulator=msgwin.ts:1452 op_window_relayout）：索引只写「仅映射」（无已知语义），但 handler 体内有两条具体效果。",
+      "actual": "体 raw 31553-31565 是：`sub_45AD30(_this+21324, op1)`（重排该窗文本）→ `v3 = _this[124350] ? _this[95779] : _this[174801]` → 若 `(v3 & 0x40000000)` 再 `sub_45A940(_this+21324, op1, _this[107704], 0)`（用当前逐字游标重贴）。emulator 只调 emitWin（重发布 segments + 当前 revealed 游标），把引擎的两次调用合并成一次发布；索引把本条标成「仅映射」掩盖了这一点。",
+      "evidence": "raw 31553-31565（逐字）、raw 107704 命中行 = 28552/29338/31562；app/amayui-emulator/src/vm/handlers/msgwin.ts:656-670；docs-new/03-engine/opcode-table.md 与 .tmp/opcode-index.json op 522 均为「仅映射」、semantics 空",
+      "code": "const op_window_relayout: OpHandler = (c) => {\n  const e = c.e;\n  const m = e.msgwin;\n  const win = m.resolveWin(readIntOperand(e, c.frame, c.instr, 1));\n  emitWin(e, win);\n};",
+      "fix": "把 0x20A 从「仅映射」升为已核对并写清两条效果；emulator 侧要么显式调用一次 layoutWindow 重排，要么在注释里写明「emit 的宿主通道必定重排，故与 sub_45AD30 等价」。"
+    },
+    {
+      "id": "op-6-10",
+      "kind": "unclear",
+      "severity": "P2",
+      "claim": "op 50（0x32 StretchTexture，handler=sub_41E2D0，emulator=gfx-state.ts:248 op_stretch_texture）：文档给出「按 set:DrawMode 分两路 + 两矩形按所在 surface 边界夹取、一侧被夹时另一侧按比例跟随 + surface 缺失时打错误串返回 0」。",
+      "actual": "handler 体只有分路（raw 27982-28006）：`v3 = (_this[667856] == 0)`；==0 ⇒ 走 vtable+64（源/目标槽 + 4 个化开后的矩形角点），!=0 ⇒ `sub_4A87A0(Scene, op1, op2, &src4, &dst4)`；夹取/跟随/错误串都不在 handler 体内（属 sub_4A87A0 raw 127933-128129 或更下层）。emulator gfx-state.ts:117-130 只读 10 个操作数并直接下发 blitSlotToSlot，不读 Engine[166964]（读 166964 的是另一条 op 0x30B，raw 39862）。两条支路的表层裁剪/错误串未建模属实，但「文档缺口」这一层不成立。",
+      "evidence": "raw 27982（分路开关）、27989-28000（GDI 支路实参）、28006（D3D 支路）、39862（读 166964 的是 0x30B）；docs-new/03-engine/opcode-table.md:70；app/amayui-emulator/src/vm/handlers/gfx-state.ts:99-130（无 166964 引用）",
+      "code": "c.native.blitSlotToSlot?.(srcSlot, dstSlot, [x, y, x + w, y + h], [dx, dy, dx + dw, dy + dh]);",
+      "fix": "在索引/emulator 注释里把两条支路标注为「各自表层裁剪未建模」，或在宿主缝补一次「按槽尺寸夹取 + 等比跟随」；并明确 Engine[166964] 在 emulator 中不参与分路的原因。"
+    },
+    {
+      "id": "op-7-0x235-unimplemented-158-uses",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "opcode-table.md:397 / 索引：0x235（op 565，sub_424630，argc=5）状态「仅映射」、语义列为空、emulator 无注册。",
+      "actual": "handler 体 raw 32203-32219（32212 arity=11 ⇒ argc=5），emulator 全树 grep 无 0x235 ⇒ 命中即 NotImplementedOp；语料 158 处 / 52 文件，既没有实现也没有缺口登记。★原 finding 的 evidence/code/fix 把锚点写成 raw 32067（那是 0x22E / sub_424290 的体），正确锚点是 32203-32219。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:32067-32068（sub_424290 = 0x22E）、32203-32219（sub_424630）；docs-new/03-engine/opcode-table.md:397；app/amayui-emulator/src/vm/handlers/index.ts:44-84（332 个表项键无 565）；语料 i235 = 158/52 文件",
+      "code": "engine/天结_unpacked.exe_utf8.c:32203",
+      "fix": "先读 sub_424630（raw 32203-32219）定性 → 决定实现或登记缺口；在 opcode-table 该行补 emulator 状态。"
+    },
+    {
+      "id": "op-8-F3",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "文档 opcode-table.md:226（0x12E 悬停命中）称「先用 sub_42AEA0 取 op2/op5/op6/op7 的操作数地址、sub_41BF50 取 op1/op3/op4/op8 的值并缓存进全局 dword_55D5xx；再从 `base + 16*(op1+1)` 起遍历矩形表」。",
+      "actual": "raw 39199-39252 逐行：`dword_55D588 = sub_42AEA0(_this, 7) + 4*op1 + 4`（raw 39217）、`dword_55D58C = sub_42AEA0(_this, 6) + 4*op1 + 4`（raw 39215）、`dword_55D57C = dword_55D590 + 16*op8`（39222）、`dword_55D568 = dword_55D590 + 16*(op1+1)`（39230）；后续比较用 `dword_55D588 += 4` / `dword_55D58C += 4`（39245-39246）按 4 字节步进。⇒ 参与比较的 x/y 平面基址是 `sub_42AEA0(6|7) + 4*op1 + 4`，不是 16*(op1+1)（后者只对 16 字节记录游标成立）。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:39214-39217（55D58C/55D588 = sub_42AEA0(6/7) + 4*op1 + 4）、39222、39230、39242（4 项 OR 比较的实际取址）、39245-39247、36757（sub_42AEA0 定义 = 操作数地址）；docs-new/03-engine/opcode-table.md:226",
+      "code": "",
+      "fix": "把该句改为「size 盒数组基址 = sub_42AEA0(7) + 4*op1 + 4；遍历上界 = 基址+16*count；每步 4 字节；首项下标 = op1+1」。"
+    },
+    {
+      "id": "op-8-F4",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "emulator op_hover_hittest（input.ts:236-260）按 `for (i = 0; i < count; i++)` 遍历全部 count 个矩形，命中即 break。",
+      "actual": "引擎在进入循环前有一道表边界门：`if (dword_55D568 >= (unsigned)dword_55D57C) return sub_42B4B0(_this, 1, -1);`（raw 39231-39232），循环内每步之后还有第二道（raw 39248-39249），且首项是 op1+1 而不是 0（raw 39230）。emulator 完全没有这两道门，恒把 count 个条目扫完，也从不消费 op1。语料 47 处 i12e（CONFIG1/TITLE/GAMESTART/FIELD），op1 多为 1 ⇒ 跳过前缀的语义分歧真实存在。★原 finding 的 fix「box 下标 = i*4、start = op1+1」与体不符：按 4 字节步进线性化后命中记录 op1+i 的盒与 x/y 下标 i−1 配对。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:39230-39232、39247-39249（两道边界门）、39251（返回记录下标）、39214-39217+39245-39246（差一个元素）；app/amayui-emulator/src/vm/handlers/input.ts:236-260；语料 `^i12e` = 47 处（CONFIG1.txt:137/740、TITLE.txt:100、GAMESTART.txt:115、FIELD.txt:1381）",
+      "code": "app/amayui-emulator/src/vm/handlers/input.ts:236-260",
+      "fix": "按引擎加两道边界门与首项 op1+1，并注意盒平面与 x/y 平面相差一个元素（不要照搬 i*4 的线性化）。"
+    },
+    {
+      "id": "op-8-F10",
+      "kind": "gap-as-noop",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:528（0x327 Set3DEffect_rain_）称「当前根本没注册 handler ⇒ 命中即 NotImplementedOp（故意不上桩）」。",
+      "actual": "未注册核实无误（stubs.ts 全表无 0x327，任何 OPS/NATIVE_OPS 表也没有），语料 1 处（src/SETWEATHER.txt:20）；命中后 stepOnce 抛 NotImplementedOp ⇒ VM 停在该指令。体有真实可观察效果：raw 33956-33964 `sub_426E70 → sub_453280(Engine[373536], op1)` 重建 Rain 对象。该缺口已被显式登记为「不实现」，唯一命中点不在启动链。",
+      "evidence": "raw 33956-33964（sub_426E70 → sub_453280 重建 Rain）；app/amayui-emulator/src/vm/handlers/stubs.ts:150-152（显式说明未注册、故意不上桩）；interpreter.ts:166；src/SETWEATHER.txt:20（`i327 (global-int 4fdc)`，全仓唯一 1 处）；docs-new/03-engine/opcode-table.md:528",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:150-152",
+      "fix": "保持显式登记即可；若要消除硬停，可在 SETWEATHER 路径上登记用户桩或提供可接受的降级。"
+    },
+    {
+      "id": "op-9-op805-325-noop-but-writes-effect-manager-fields",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "op 805 (0x325) 在 emulator 里是 no-op：stubs.ts:108 `[0x325, op_engine_internal]`（emuNoop=true）；文档同口径（engine-capabilities.md:584「0x324/0x325/0x326 是 ENGINE_INTERNAL_OPS 的纯 no-op」）。",
+      "actual": "handler 体写出真实引擎字段：raw 33931-33937 `v2 = read(2); result = read(1); v4 = _this[93384]; *(v4+1244) = v2; *(v4+1240) = result;`。这两个字段有读取点：sub_4535F0 读作效果销毁阈值（raw 65890 `a2 >= *(int*)(_this+1240)`、65897 `a2 >= *(int*)(_this+1244)`），未到阈值就不销毁效果并置 +1248 状态位。语料：src/SETWEATHER.txt:19/38/79。",
+      "evidence": "raw 33924-33938（sub_426DC0）；raw 65842-65897（sub_4535F0 读 +1240/+1244 并置 +1248）；raw 65366-65393（sub_453150 清 _this[312]）；app/amayui-emulator/src/vm/handlers/stubs.ts:104-108、:149-152；src/SETWEATHER.txt:19,38,79；.tmp/opcode-index.json op=805（emuNoop=true, bodyLine=33924）",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:108",
+      "fix": "给 0x325 一个真实实现（至少把 op1/op2 落到模型化的效果管理器槽），或在 ENGINE_INTERNAL_OPS 注释里明确「已知会写 +0x4D8/+0x4DC 且这两格被销毁判据读」。"
+    },
+    {
+      "id": "op-9-op840-348-is-rotation-not-scale",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "op 840 (0x348) 被文档与 emulator 一致地当作「节点缩放 + 一个额外汇总参数」（docs live2d.md:73；live2d.ts:104-108 只取 op1=key、op2=percent；live2d.ts:187-188 把 0x348 映射到同一 handler；runtime.ts:174-180 把 percent/100 写进 node.scale）。（op840-348-emulator-drops-three-floats 为同一处，已并入本条。）",
+      "actual": "handler 体是轴角旋转 setter，不是缩放：raw 34592-34598 sub_427EA0 把 op2/op3/op4 读成 float（旋转轴向量）、op5 读成 float（角度），调 sub_4AFE90；sub_4AFE90（raw 134058-134099）写轴 `+464/+468/+472`、角 `+488`、`(v7+76)=1`，末行 `j_D3DXMatrixRotationAxis(+208)`（v17 = 角×π/180，raw 4713/4637）。对照 0x347 = sub_427E10（raw 34567-34579）才是缩放（÷100 → j_D3DXMatrixScaling(+80)）。语料 i348/i347 各 0 处，属休眠错。",
+      "evidence": "raw 34583-34599（sub_427EA0，34592 操作数计数 11）、134058-134099（125 行见上）、4713/4637/4430（π、180.0、100.0）、34567-34579 与 134035-134053（0x347 缩放）；app/amayui-emulator/src/vm/handlers/live2d.ts:103-108,187-188；app/amayui-emulator/src/live2d/runtime.ts:174-180；docs-new/03-engine/live2d.md:73；语料 i348/i347 = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/live2d.ts:104-108,187-188; app/amayui-emulator/src/live2d/runtime.ts:174-180",
+      "fix": "emulator 把 0x348 单独注册：读 op1=key、op2/3/4=轴(float)、op5=角(float)，落 node 的 rotation（与 0x34C 同形），不要复用 op_l2d_node_scale；docs live2d.md:73 语义同步改为「节点旋转（轴+角）」。"
+    },
+    {
+      "id": "op-10-001",
+      "kind": "host-invented",
+      "severity": "P2",
+      "claim": "0x2E7（op 743）文档「op1==1 ⇒ SetConfig(\"message:AutoMessagePitch1\", op2)、0 ⇒ …Pitch0，其它值报错」；emulator 把任意「非 1」的 idx 静默映射成 Pitch0。",
+      "actual": "引擎只承认 0/1：`if (read(1)) { if (read(1)==1) SetConfig(Pitch1) else { sprintf_s(aGetautomespi); sub_4034D0(...) } } else SetConfig(Pitch0)` ⇒ idx≥2 走报错分支且不写任何配置键。emulator 的 `idx === 1 ? 1 : 0` 把 idx=2..N 静默写成 message:automessagepitch0，既无报错也改了配置值。语料 i2e7 只有 idx 0/1（4 处）。",
+      "evidence": "raw 33542-33562（33545 `== 1`、33553 `sprintf_s(...,aGetautomespi)`、33561 aMessageAutomes_2）、raw 4310/4313/4435；docs-new/03-engine/opcode-table.md:485；app/amayui-emulator/src/vm/handlers/msgwin.ts:1121-1125",
+      "code": "const op_set_auto_message_pitch: OpHandler = (c) => {\n  const idx = readIntOperand(c.e, c.frame, c.instr, 1);\n  setConfigValue(c.e, `message:automessagepitch${idx === 1 ? 1 : 0}`, readIntOperand(c.e, c.frame, c.instr, 2));\n};",
+      "fix": "按引擎两段式：idx===0 写 …pitch0、idx===1 写 …pitch1，其余 idx 抛 `GetAutoMesPiの引数が不正です．`（不得回退到 pitch0）。"
+    },
+    {
+      "id": "op-10-002",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "0x6E（op 110）emulator：`if (advanceReveal(e)) setAdv(e); else clearAdv(e); ... if (speed > 0) { sleepUntil=now+speed; effectFlags |= SLEEP_GATE }` —— 只要 MessageSpeed>0 就置等待门（注释自称照抄引擎「节流」分支）。",
+      "actual": "引擎的节流分支带 ADV 位前置条件：`if (!_this[21668] || (_this[174801] & 0x8000000) != 0) { sub_46CBF0(...) } else { sub_46BE30(...); _this[174801] |= 0x20000000; sub_453A60(_this+107643, _this[21668]) }`（raw 28361-28382）。ADV 位已置时引擎走同步排空、既不置 0x20000000 也不起计时器；而 emulator 刚 setAdv(e) 后仍无条件置 SLEEP_GATE ⇒ 跳读/自动模式下每段文本多等 MessageSpeed ms。sub_46CBF0 真身（raw 83999-84009）确无 Sleep/计时器。",
+      "evidence": "raw 28361/28368/28380/28382；raw 83999-84009（sub_46CBF0 无 Sleep）；raw 66101-66111（sub_453A60 起计时器）；raw 23736-23738（message:MessageSpeed → _this[21668]）、raw 4277；app/amayui-emulator/src/vm/handlers/msgwin.ts:406-414；app/amayui-emulator/src/vm/engine.ts:22,31,560-565；app/amayui-emulator/src/frame/loop.ts:272,293",
+      "code": "if (advanceReveal(e)) setAdv(e); else clearAdv(e);\nconst speed = messageSpeedOf(e);\nif (speed > 0) {\n  e.sleepUntil = e.nowMs + Math.max(1, speed);\n  e.effectFlags |= SLEEP_GATE;\n}",
+      "fix": "把 SLEEP_GATE/计时器放进 `!advActive(e)` 分支（与 raw 28361 同构）；ADV 位已置时只做同步排空。"
+    },
+    {
+      "id": "op-10-003",
+      "kind": "host-invented",
+      "severity": "P2",
+      "claim": "0x2FC（op 764）文档/引擎：无触点时「写 op1=0」（其余操作数不动）；emulator 除 op1=0 外还写 op2=X、op3=Y、op4=0、op5=0。",
+      "actual": "引擎 `if (!sub_477980(...)) return sub_42B4B0((int)_this, 1, 0);`（raw 40798-40799）—— 无触点路径只写 op1，op2..op5 保持调用前的值；有触点路径（raw 40821-40825）才写 op2..op5 且经 sub_498350/sub_403500 变换。emulator input.ts:221-225 在（恒）无触点路径仍写 5 个槽，与它自己 :219 的注释直接矛盾。语料 44 处 i2fc 全部紧跟 read-mouse-pos 覆写 op2/op3 ⇒ 现有语料下不可观测（仅 STATUS:231 的 op4/op5 槽为 write-only）。",
+      "evidence": "raw 40798-40799、40802、40818、40821-40825；docs-new/03-engine/opcode-table.md:506；app/amayui-emulator/src/vm/handlers/input.ts:216-226；src/TITLE.txt:73,79、src/AIM.txt:116,122、src/SAVE.txt:242,248、src/STATUS.txt:231",
+      "code": "writeIntOperand(c.e, c.frame, c.instr, 1, 0);\nwriteIntOperand(c.e, c.frame, c.instr, 2, im.readX());\nwriteIntOperand(c.e, c.frame, c.instr, 3, im.readY());\nwriteIntOperand(c.e, c.frame, c.instr, 4, 0);\nwriteIntOperand(c.e, c.frame, c.instr, 5, 0);",
+      "fix": "无触点路径只写 op1=0 并返回（op2..op5 保持不动）；坐标继续由 0x109/read-mouse-pos 提供。"
+    },
+    {
+      "id": "op-1/0x100-push-return-point",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "文档 0x100 语义：「两条分支都先压返回点 `((ip-ip_base)>>2)+1`」；emulator 的规格注释同 claim，并据此无条件压 `index+1`。",
+      "actual": "引擎只有「掩码 == 0」的 else 分支压 `((ip-ip_base)>>2)+1`（raw 25052）；「掩码 != 0」分支压的是 `(ip-ip_base)>>2`——没有 +1（raw 25039-25040）。主循环是「先按 frame 取 opcode 调 handler、之后才 `ip += 4*length`」⇒ handler 执行期 ip 仍指当前指令，故 if 分支压的就是 0x100 自身下标；ret（raw 25713-25716 `ip = ip_base + 4*v2`）把它当指令下标用 ⇒ 真按键分支返回 0x100 本身（重新扫下一个按住位），else 分支才返回下一条。emulator 两条路径都压 index+1 ⇒ 一次通过 0x100 最多派发一个按键。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 25038-25052（两分支压栈值差异）、raw 25064、raw 20161-20165（handler 后 ip += 4*length）、raw 25703-25727（ret 消费）；app/amayui-emulator/src/vm/handlers/input.ts:174-177；src/script/bin.ts:31-32、63-69；docs-new/03-engine/opcode-table.md:208、docs-new/03-engine/input-system.md:214",
+      "code": "app/amayui-emulator/src/vm/handlers/input.ts:176",
+      "fix": "把「掩码 != 0」分支压入的返回点改成当前指令的 dword 下标本身（不 +1），并在注释里写明两条分支的不对称。"
+    },
+    {
+      "id": "op-7-0x305-flags-not-cleared",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "op_text_block_end（0x305，msgwin.ts:694-703）：注释只说引擎语义 = `win+132 = win+296` → ReadTextSkip/ADV 判定 → `while(!sub_45BE20)` → 必要时排空/清 ADV；实现里没有任何对 `m.flags`（= Engine[122497]）的写。",
+      "actual": "handler 体在每一条出口路径都把 Engine[122497] 清 0：raw 26083（LABEL_12）、26095、26099 都是 `*(_DWORD *)(_this + 489988) = 0;`。emulator 侧 `m.flags` 全仓只有两处写：msgwin.ts:680 `m.flags = 1`（0x304）与 vm/msgwin.ts:786 `this.flags = 0`（只在 reset() 里）。⇒ 一次 0x304/0x305 之后、直到下一次 exit-script 0x9 或读档为止，`m.flags & 1` 恒为真，后续 0x6E show-text 永远走 msgwin.ts:389 的注音分支。语料 i304/i305 各 137 处。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c raw 26083 / 26095 / 26099（清 489988）与 25392（0x304 写 1）；app/amayui-emulator/src/vm/handlers/msgwin.ts:389,680,694-703,739-745；app/amayui-emulator/src/vm/msgwin.ts:345,786；app/amayui-emulator/src/vm/handlers/control.ts:379（exit-script 0x9 全量 teardown）；app/amayui-emulator/src/vm/handlers/save-slot.ts:60,261,362；语料 i304=i305=137；text/layout.ts:488（空注音不产生字形 ⇒ 画面暂不变）",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:694",
+      "fix": "在 op_text_block_end 里补 `m.flags = 0`（对齐 raw 26083/26095/26099），或至少清掉 bit0。"
+    },
+    {
+      "id": "op-2-06",
+      "kind": "host-invented",
+      "severity": "P3",
+      "claim": "0x1A0 读槽头：文档明确强调引擎「写序 op3..op9 先、op1 最后」，emulator 的实现顺序相反（先写 op1 = 0，再写 op3..op9）。",
+      "actual": "引擎 sub_42DC70：成功分支依次写 op3..op9，最后才 `sub_42B4B0(_this, 1, 0)`（raw 38390-38397）；失败分支 raw 38387 先写 op1=1。emulator save-slot.ts:551-559 先 `writeIntOperand(...,1,0)` 再写 3..9。两者只在 op1 与 op3..op9 指向同一槽时结果不同；语料里操作数互不别名（SAVE.txt:80、SC0000.txt:539）⇒ 潜在分歧、不可观测。",
+      "evidence": "raw 38381-38403（op3..op9 先、op1 最后；失败分支 38387）；app/amayui-emulator/src/vm/handlers/save-slot.ts:551-559；src/SAVE.txt:80、src/SC0000.txt:539",
+      "code": "app/amayui-emulator/src/vm/handlers/save-slot.ts:551",
+      "fix": "把 op1 的写入挪到 op3..op9 之后（与文档/引擎一致）。"
+    },
+    {
+      "id": "op-2-07",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x197（注音字号）文档写「读 op1 调 sub_418680(Font, op1) 写 Font+218584 … 再 **sub_459F40()** 重建字体对象」。",
+      "actual": "handler sub_41FDD0（raw 29117-29124）体只有 `v2 = read(1); sub_418680(_this + 21324, v2);`。sub_418680（raw 24085-24154）写 `_this[54646] = a2`（= Font+218584）后，末尾 raw 24153 调的是 sub_45A6E0（注音字体重建，其体 raw 71228/71240 正是用 Font+218584），不是 sub_459F40（主字体重建，由 0x2BD 调用，raw 33401，另一条 0x2BE 用 sub_45A6E0，raw 33421）。⇒ 具体函数名错误；重建确实发生，只是经由 sub_418680 间接调用。",
+      "evidence": "raw 29117-29124、24085-24154（24108 写 218584、24153 `sub_45A6E0`）、71193+71228/71240、33401 vs 33421；docs-new/03-engine/opcode-table.md:265 与 :444",
+      "code": "",
+      "fix": "把 0x197 条目的「再 sub_459F40() 重建」改为「sub_418680 末尾 sub_45A6E0 重建注音字体（同 0x2BE）」。"
+    },
+    {
+      "id": "op-2-08",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "0x2F8（语音 pan）文档「已知语义」末尾写「emulator：op_engine_internal 空操作」，与代码现状（真实现）不一致。",
+      "actual": "emulator audio.ts:450 注册 `[0x2f8, op_voice_pan]`（AUDIO_OPS → NATIVE_OPS），实现见同文件 340-346（读 op1=ch、op2=pan 后 emit voice-pan intent），stubs 的 ENGINE_INTERNAL_OPS 里没有 0x2F6/0x2F8。引擎侧文档是对的：raw 33706-33715 读 op2/op1 后 `sub_4B6940(_this+4666, op1+12, op2)`，sub_4B6940 raw 139065-139089 判 ch<15、pan 对称钳制 ±10000、写 `_this[a2+375]`。",
+      "evidence": "app/amayui-emulator/src/vm/handlers/audio.ts:340-346 与 :450；app/amayui-emulator/src/vm/handlers/index.ts:71-81；engine/天结_unpacked.exe_utf8.c:33706-33715、139065-139089；docs-new/03-engine/opcode-table.md:502",
+      "code": "docs-new/03-engine/opcode-table.md:502",
+      "fix": "更新 0x2F8 文档语义列：emulator 已实现 op_voice_pan（NATIVE_OPS），并说明宿主侧是否真的钳制/下发 pan。"
+    },
+    {
+      "id": "op-2-09",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "0x2F8 文档写「（>14 报 dsSetPan）」——引擎该分支实际打的是 dsSetVolume 串。",
+      "actual": "sub_4B6940 的越界分支（ch >= 15）是 `wsprintfA(_this + 2, aDssetvolumeSou); sub_4034C0(...)`（raw 139083-139087），`aDssetvolumeSou` 定义 = \"関数：dsSetVolume エラー：不正なSound番号です\\r\\n\"（raw 5214）；pan 下发失败串另在 sub_4B7110（raw 139426，挂在 vtable+64=SetPan）。",
+      "evidence": "raw 139083-139087（越界分支用 aDssetvolumeSou）、5214（串定义）、139415-139426（sub_4B7110 的 dsbSetPan 串）、138753/139420（vtable+64 = SetPan 调用链）、138731/139056（同串的 volume 族使用者）；docs-new/03-engine/opcode-table.md:502",
+      "code": "docs-new/03-engine/opcode-table.md:502",
+      "fix": "改为「>14 报 dsSetVolume エラー：不正なSound番号です（引擎串名与 pan 不一致，vtable+64=SetPan 的失败串另在 sub_4B7110）」。"
+    },
+    {
+      "id": "op-2-11",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x1D3 文档给的 raw 锚点「handler=sub_42D4A0（raw .c 38096-38113）」指向别的函数体。",
+      "actual": "sub_42D4A0 的函数头注释在 raw 38112、体 38113-38128；38091-38096 属 sub_42D410、38098-38110 属 sub_42D440。语义本身经核对是对的（`v3 = sub_457960(Font,&v7,op3,op4,op5); write(1, v3!=0); write(2, v7)`，op3 未被使用），只是锚点错。",
+      "evidence": "raw 38112（`//----- (0042D4A0)`）、38113-38128、38091-38096、38098-38110、22875（注册 677864 = 675996+4*467）、69329-69363（sub_457960 扫描逻辑）；app/amayui-emulator/src/vm/textItems.ts:134-146；docs-new/03-engine/opcode-table.md:325",
+      "code": "docs-new/03-engine/opcode-table.md:325",
+      "fix": "把 0x1D3 的 raw 引用改为 38112-38128。"
+    },
+    {
+      "id": "op-2-12",
+      "kind": "unclear",
+      "severity": "P3",
+      "claim": "0x6F end-text-line：引擎把第 3 个实参 Engine[97055] 当门用（`if (a3 >= 0)` 才封行/记录），emulator 的 op_end_text_line 丢掉该实参、无条件结束当前行。",
+      "actual": "handler sub_41ECE0（raw 28388-28398）读 op1 后调 `sub_46AF90(Font, op1, _this[97055])`；sub_46AF90 在 a3<0 时跳过 `sub_4691A0`（raw 82726-82729，另一支 raw 82665-82668 的内部同样有 `if (a3 >= 0)`，raw 81549-81553）。emulator msgwin.ts:418-423 只读操作数 1 + `endLine(slot)` + emitWin，不读 97055（同目录 0x1D2/0x1BB 走 textRecordingEnabled 门）。仍缺：证明 emulator 的 lineEnded 与引擎「记录表封行」是同一条通路（若前者同时承担显示换行，照搬门会错误压掉换行）。语料 i1bb 470 处（i1bb 0 = 234）、end-text-line 44591 处。",
+      "evidence": "raw 28388-28398、82658-82668、82710-82731、81524-81553；app/amayui-emulator/src/vm/handlers/msgwin.ts:418-423；app/amayui-emulator/src/vm/msgwin.ts:698,715-731；app/amayui-emulator/src/vm/handlers/text-items.ts:18-49 与 engineFieldIds.ts:170-171；语料 `^\\s*i1bb\\b`=470、`^\\s*end-text-line\\b`=44591",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:420",
+      "fix": "先确认 emulator 的 lineEnded 与引擎记录表封行的对应关系；若二者同路，endLine 应带门（a3<0 时不封记录但仍换行需分开建模）；若不同路，在注释里写明「引擎第 3 实参门控的是记录表而非显示换行」。"
+    },
+    {
+      "id": "op-3-007",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 0x259（op_clear_slot_records）写「清两张 1000×2 组 5-DWORD 槽记录表（Engine+86176 起、步长 5 dword），每项写 +8/+12，共 4000 dword=16KB」。",
+      "actual": "handler 体 raw 25357-25376 的循环每轮写条目相对 0/4/8/12 四个 dword（两组各 1000 项、步长 5 dword），不是「每项 +8/+12」；跨度/步长/不 delete 对象的描述正确，4000 dword=16KB 在被写 dword 数口径下也对。索引的 emulator.file 少写了 `app/amayui-emulator/` 前缀与 `src/` 段。",
+      "evidence": "raw 25357-25376（25363 `result = _this + 86176`、25364 `v2 = 1000`、25367-25370 四处写 0、25371 `result += 5`）、23128（注册 678400 = 675996+4*601）；docs-new/03-engine/opcode-table.md:433；app/amayui-emulator/src/vm/handlers/gfx-misc.ts:75",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-misc.ts:75",
+      "fix": "把「每项写 +8/+12」改成「每项写条目内 0/4/8/12 四个 dword」。"
+    },
+    {
+      "id": "op3-008",
+      "kind": "cross-source-mismatch",
+      "severity": "P2",
+      "claim": "0x305（GetMesWinAlpha）在索引/文档里写「handler=sub_42F7D0（raw .c 39350-39356）」，暗示体是「读 op1..」，而语义句写「按名直读配置注册表，不读任何 Engine 字段」。",
+      "actual": "体 raw 39350-39357 根本不读任何操作数（0 个 sub_41BF50，只有 `sub_42B4B0(_this,1,v2)` 写 op1）；语义句正确、emulator 实现也一致。真正的问题是索引局部 opcode 编号漂移：.tmp/opcode-index.json 里 op=305 的 handler=sub_42F7D0、handlerCtorLine=22998，而 raw 22998 = 677216 = 675996+4*0x131 ⇒ 同一 handler 在索引里同时出现在 op=305 与 op=131；opcodes.json 的 opcode=305 同样写 sub_42F7D0。文档 opcode-table.md:515 的 0x305 正主是 sub_41B1C0（其体 raw 26034-26045）。",
+      "evidence": "raw 39350-39357（无 sub_41BF50）；.tmp/opcode-index.json op=305（handler=sub_42F7D0、ctorLine=22998、semantics=GetMesWinAlpha）与 op=131；raw 22998 = 677216 = 675996+4*0x131；docs-new/03-engine/opcode-table.md:515；raw 26033-26045（0x305 = sub_41B1C0）；app/amayui-emulator/src/vm/handlers/engine-fields.ts:46-62,328；configRegistry.ts:47",
+      "code": ".tmp/opcode-index.json (op=305)",
+      "fix": "把该行措辞改成「0 输入操作数、1 输出操作数」；并修索引的局部 opcode 编号漂移（0x305/0x306/0x307 的 handler 实为 0x131/0x132/0x133）。"
+    },
+    {
+      "id": "op3-009",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "索引里 0x860、0x904、0x923 三行（handler 字段是字符串 \"Fuukan no Gransesta\" / \"Tenmei no Conquista\" / \"Amayui 2\"，handlerFromTable/bodyLine 全为 null）把别的游戏标题当成了 handler 名。已并入同类：op-5-002（0x35F/0x38F）、op6-11（780/864/912）、op-7-0x353-0x361-0x391-phantom-handler-names（0x353/0x361/0x391），根源都是索引生成器把「归属作品（age-shared 注释）」列当 handler。",
+      "actual": "这三个字符串在本引擎反编译文件里一次都不出现（grep 0 命中）；构造表 `*(_DWORD *)(_this + 67xxxx)` 全部落点在 670000..679396，最大 opcode = 850 ⇒ 860/904/923 的表项字节（679436/679612/679688）在 raw 里不存在。同类：780/864/912 的表项地址 677916/678252/678444 零命中（op6-11 引的 raw 23051/23135 实为 op 524 与 op 608，属把别的 op 的行号当证据）；0x35F/0x38F 与 0x353/0x361/0x391 同因（主表 7 列 / 回退表 5 列，固定下标取列错位）。",
+      "evidence": ".tmp/opcode-index.json：op=860/904/923、op=0x35f/0x38f、op=780/864/912、op=851/865/913 各行（handler 为作品名、handlerFromTable=null）；grep `Fuukan no Gransesta|Tenmei no Conquista|Amayui 2|Hyakusen` 于 engine/天结_unpacked.exe_utf8.c 与 4 个 .lst = 0 命中；grep `\\(_this \\+ 67[0-9]{4}\\) = ` 命中偏移最大 679396 ⇒ opcode 最大 850；raw 22722（memset32 填默认 sub_418E30）、23051（676... = op 524）、23135（= op 608）；docs-new/03-engine/opcode-table.md:577,584,593,603,585,594,604,579-581；.tmp/index-opcodes.mjs:35-47（`line.split('|')` + 固定下标 c[3]/c[5]/c[6]）",
+      "code": ".tmp/index-opcodes.mjs:35-47",
+      "fix": "索引按本构建表（675996 + 4*op）取值、不跨构建抓注释；按表头列数分派（或只吃第一张表）；把这些行的 handler 置空并标注「本构建未注册（默认 handler）」。"
+    },
+    {
+      "id": "op-4-03",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 0x10C 行把错误串写成「set-keymulti 引数不正」。",
+      "actual": "引擎串是 `\"SetKeyMultiの引数が不正です．\"`（raw 4420），由 raw 30628-30630 的 `_CxxThrowException(pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__)` 抛出；文档引的既非原文也非可靠译名（同族 0x137 的串是「ResetStackの引数が不正です．」raw 4423，格式一致）。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:4420、30628-30630、4423；docs-new/03-engine/opcode-table.md:220",
+      "code": "docs-new/03-engine/opcode-table.md:220",
+      "fix": "引原文串或改用「（原文 SetKeyMultiの引数が不正です．）」。"
+    },
+    {
+      "id": "op-4-07",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "op 0x34A 的 op2/op3/op4 在引擎里是浮点操作数，emulator 用整数读取器读同一槽（live2d.ts 的 optInt/readIntOperand）。",
+      "actual": "引擎体 raw 34617-34631：`*(float *)&v4 = sub_41C300(_this, 2); ...(3); ...(4); v2 = sub_41BF50(_this, 1); sub_4AFFF0(Scene, v2, v4, v5, v6)`（同族 0x34B 的 `/dbl_5201F0` 佐证 sub_41C300 是 float 读）。emulator live2d.ts:118-122 用 `optInt`（:69-72 走 readIntOperand），对 float 槽取 `| 0`，与引擎不同；同族 0x349/0x34B 同样用 optInt。语料 i34a = 0 处 ⇒ 无当前可见影响。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:34617-34631（0x34A 体）、34634-34651（0x34B 的 /100 佐证）；app/amayui-emulator/src/vm/handlers/live2d.ts:69-72、118-122；app/amayui-emulator/src/vm/operand.ts:194-202、215-247；docs-new/03-engine/opcode-table.md:563；语料 i34a = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/live2d.ts:118-122",
+      "fix": "0x34A–0x34D 的 op2..op4（及 34C 的轴/角）改用 readFloatOperand；缺失实参的缺省逻辑保留。"
+    },
+    {
+      "id": "op-4-09",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "op 0x137 (311) 行状态为「已核对」却没有任何 raw 行引用（rawCited=false），而同一邻域的 0x10B/0x10C/0x10F 行都带 handler=sub_XXXXXX（raw .c NNNNN）。",
+      "actual": "内容经逐点复核是对的、只缺锚点：体 raw 30703-30730（`v2=read(1); if(v2>0xA) 报 aResetstack; v4=_this[4*v2+388292]; if(v4) (**v4)(v4,1); v5=operator new(0x14); _this[4*v3+388292]= v5? sub_407BD0(v5):0`），sub_407BD0 raw 12622-12631（`_this[1]=256; _this[2]=256; *_this=&Stack_int___vftable_; _this[3]=operator new[](0x400u); _this[4]=-1;`）与文档的 `{vftable, cap=256, step=256, buf=new[](0x400), top=-1}` 完全一致；语料 i137=1（CALLBACK_LOAD.txt:108）、i138/i13b/i13c/i13d 各 0。",
+      "evidence": "docs-new/03-engine/opcode-table.md:235（无 raw 引用）、:220（同表有 raw 的对照）；engine/天结_unpacked.exe_utf8.c:30703-30730、12622-12631；src/CALLBACK_LOAD.txt:108",
+      "code": "docs-new/03-engine/opcode-table.md:235",
+      "fix": "补锚点：`handler=sub_4222B0（raw .c 30704）`（并给 sub_407BD0 raw 12623）。"
+    },
+    {
+      "id": "op-4-10",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 0x71 行把三个 flag 写成无条件效果：「读 op1 文本调 sub_45EC60(...)，经 sub_48E870/sub_48F000 渲染；置 flag `_this[174801]|=0x8000000`、`_this[122455]=1`、`_this[122496]=0`」。",
+      "actual": "体 raw 28418-28462 是三路分支：只有 message:ReadTextSkip（raw 4277）非 0 且 sub_48F000 返回非 0 时才写那三个 flag（raw 28442-28444）；else 只写 `122496 = 0` 并在 `!97050` 时清 `122455 = 0`。同体还有文档未记的效果：`95803 = (95782-95781) >> 2`、`qmemcpy(_this+4355, _this+4055, 0x4B0)`、`memcpy(_this+86174, _this+81174, 0x4E20)`、`sub_48FFB0(_this+80107)`、`sub_45EC60(_this+21324, op1, _this[97055])`。",
+      "evidence": "raw 28418-28462（gate 在 28432，flag 写点 28442-28444）、4277；docs-new/03-engine/opcode-table.md:110",
+      "code": "docs-new/03-engine/opcode-table.md:110",
+      "fix": "把 flag 段写成「ReadTextSkip 门 × sub_48F000 结果」的条件式并补上 95803/两段 memcpy/sub_48FFB0。"
+    },
+    {
+      "id": "op-4-11",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "op 0x2EE 在 emulator 只实现「读 op1 写 `_this[80106]`」，但体里还有一半是写配置注册表。",
+      "actual": "体 raw 33590-33603：`v2=read(1); v3=_this[174405]; _this[80106]=v2; v4=read(1); return (*(v3+12))(_this+174405, aMessageMessage_0, v4);`，`aMessageMessage_0` raw 4380 = \"message:MessageFade\" ⇒ 引擎同时 SetConfig(message:MessageFade)。emulator engine-fields.ts:301/:116 只写字段、不写配置键；0x2ED 的同键 getter（raw 40401-40409）因此会读到旧值（语料 i2ed = 0）。文档 opcode-table.md:492 把该键写成「\"message\"+op1」，与体不符。",
+      "evidence": "raw 33590-33603、4380、40401-40409；app/amayui-emulator/src/vm/handlers/engine-fields.ts:116,301；docs-new/03-engine/opcode-table.md:492；语料 i2ed = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:301",
+      "fix": "补 `setConfigValue(CFG.messageMessageFade, op1)`，并把文档的字符串口径改为 message:MessageFade。"
+    },
+    {
+      "id": "op-4-12",
+      "kind": "host-invented",
+      "severity": "P3",
+      "claim": "emulator 把 0x20F 的语义缩成「op1=movieId」，丢弃 op2 与 op3（gfx-misc.ts:65-69 的注释与实现都只读 op1）。",
+      "actual": "体 raw 31604-31662：`v2 = read(2)`（slot，用于 `_this[4*v2+378688]` 的 movie 对象构造/复用与装载）、`read(1)`（资源 id → sub_454FA0 取路径）、`v9 = read(3)` → sub_4054D0 求播放模式。emulator 只 `c.native.playMovie?.(id)` ⇒ op2/op3 与按 slot 复用/装载失败抛错全部丢失。文档 opcode-table.md:359 反而写全了。语料 i20f = 0 处。",
+      "evidence": "raw 31626、31636、31654（0x20F 体内四段）；app/amayui-emulator/src/vm/handlers/gfx-misc.ts:65-69、86；docs-new/03-engine/opcode-table.md:359；语料 i20f = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-misc.ts:65-69",
+      "fix": "把 op2/op3 透传给 native（或注释写明「本作语料 0 处，故意只取 op1」并去掉 `op1=movieId` 的排他口气）。"
+    },
+    {
+      "id": "op-4-13",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "三方（文档 / 生成的 scripts/asm/opcodes.json / emulator）存在状态与名称漂移；同类 op-6-12（0x309/0x339 的 argc 为 null 或 `-`）已并入本条。",
+      "actual": "① 状态为系统性过期而非孤例：docs-new/03-engine/opcode-table.md 标「已核对」共 333 行，scripts/asm/opcodes.json 只有 124 条（该 json 的 status 抄 docs 第 5 列，自 2026-09-17 后未重生成）；具体如 opcode 311（0x137，doc:235）与 762（0x2FA，doc:504）在 json 里仍是「仅映射」。② 名称：opcodes.json 的 opcode 527 有 `\"name\":\"play-movie\"`，doc:359 名称列为空（该名来自 make_defs，需人工回填）。③ argc 缺口：0x309 体首 raw 40979 `= 11` ⇒ argc=5，0x339 体首 raw 34319 `= 15` ⇒ argc=7，而 docs:546 的 0x339 argc 写作 `-`、索引两条均为 null、opcodes.json 也留空。",
+      "evidence": "docs-new/03-engine/opcode-table.md:235、504、359、546；scripts/asm/opcodes.json（opcode 311/762 的 status、527 的 name）；scripts/asm/build-opcodes.js:38-47,93-110；engine/天结_unpacked.exe_utf8.c:40957-41008（0x309）、34308-34328（0x339）；app/amayui-emulator/src/tools/opInventory.ts:70；比对计数：docs「已核对」333 行 vs json 124 条",
+      "code": "scripts/asm/opcodes.json",
+      "fix": "重跑 scripts/asm/build-opcodes.js 刷 status；人工回填 0x20F 名称到文档；按体首步长补 0x309 → argc 5、0x339 → argc 7。"
+    },
+    {
+      "id": "op-5-001",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "0x308（i308）＝「输入触摸注册」（doc:518 标『已核对』），emulator 以 `op_stub_unhandled` 记录后放行（stubs.ts:219）。",
+      "actual": "handler 体 sub_426B20（raw 33808-33815）读 op1（体首 raw 33812 另写 arity 槽 = 3）后 `sub_407B20(dword_55E1BC, _this[96981], v2)`；sub_407B20（raw 12580-12618）的副作用全部落在宿主/全局（LoadLibraryA/GetProcAddress/导出调用/FreeLibrary），唯一结构化写 `_this[1954] = a3` 全文件只有 raw 12605/12610/12615 三处写、0 处读 ⇒ 观测等价死写成立。该桩确实不读 op1、不写 1954。语料规模：i308 = 31279 行 / 345 个脚本（i308 1 = 30753、i308 0 = 526）。",
+      "evidence": "raw 33808-33815（33812 = arity 槽写）、12580-12618；grep `_this[1954]` = 12605/12610/12615 仅写无读；app/amayui-emulator/src/vm/handlers/stubs.ts:5,27-28,219、:191-196（0xAF 的 arity 槽豁免口径）；app/amayui-emulator/src/vm/handlers/index.ts:44-83；interpreter.ts:61-67；语料 31279/345；src/$1$SC0330.txt:1133-1145",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:219",
+      "fix": "把 31279/345 的语料量级与「本桩确实不读 op1、不写 1954」写进 stubs.ts:219 的注记；doc:518 的『已核对』不必降级。"
+    },
+    {
+      "id": "op-5-005",
+      "kind": "gap-as-noop",
+      "severity": "P3",
+      "claim": "0x244（op 580，语料 1 处 src/CALLBACK_LOAD.txt:127）注册为 `op_engine_internal` 纯 no-op（stubs.ts:84），文档 semantics 说它「批量清绘制项的动画窗起点」。",
+      "actual": "handler 体确实有真实副作用：sub_41A370（raw 25349-25354）= arity 槽写 1 + `sub_4AD9F0(_this + 80708, 2)`；sub_4AD9F0（raw 132364-132504）遍历 Scene 的三张绘制项链表（+1036/+1084/+1100）对 `flags & 2` 的项清 anim_start（132403 清 +52、132440/132478 清 +24）。但 emulator 的 animWindow.ts:23-32 的 animStart 锁存（对齐引擎 raw 117437-117438）与 :60-77 的窗末归零就是该窗的推进模型，标准情形下与引擎清 anim_start 的后果趋同，残差只剩 flags 与 mask 2 的边界。",
+      "evidence": "raw 23107（注册 678316 = 675996+4*0x244）、25349-25354、132364-132504、117437-117438；app/amayui-emulator/src/vm/handlers/stubs.ts:73-84、:5、:191-196；app/amayui-emulator/src/renderer/drawitem/animWindow.ts:23-32,60-77；src/CALLBACK_LOAD.txt:127",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:84",
+      "fix": "在 stubs.ts 顶部第 5 行的通判上加限定（不含每条 handler 都做的 arity/帧状态槽写；0x244 的残差只在 flags 与 mask 2 不一致的项上）。"
+    },
+    {
+      "id": "op-5-006",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x14B（op 331）semantics 引用的错误串写作「`%sを読み込み出来ません．ERRORCODE = %d`」。",
+      "actual": "handler 体 raw 31082 的真实字面量是 `\"%sを読み込み出来ません．\\r\\n\\r\\nERRORCODE = %d\"`，文档漏掉 `\\r\\n\\r\\n`（同一串在 raw 23618/39751 亦为同一形式）。该条其余复述（FreeLibrary 旧句柄 31070-31071 → 31074 取名 → LoadLibraryA 31075 → 存回 Engine+490072 31076 → 失败 GetLastError 31079 + 抛 65543）与体逐行吻合；emulator agerc.ts:56-75 与体一致。",
+      "evidence": "raw 31082、31067-31087、23618、39751、23024（注册 677320 = 675996+4*0x14b）；docs-new/03-engine/opcode-table.md:255；app/amayui-emulator/src/vm/handlers/agerc.ts:56-75",
+      "code": "docs-new/03-engine/opcode-table.md:255",
+      "fix": "文档引用按原文补 `\\r\\n\\r\\n`；或改为「ShowMessage(65543)」而不逐字引串。"
+    },
+    {
+      "id": "op-5-007",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "opcode-table.md 0x14B 行的错误串写法与 0x2C7 行「起点落在 2 字节字的第二字节 ⇒ start++/len--」等细节均被标为已核实。",
+      "actual": "0x2C7（op 711）的体逐字核对与文档一致：raw 42298-42299 用 `v3 >= v13 || v4 <= 0` 判空串；raw 42319-42337 的起点修正用「上一字节是 SJIS 前导字节」的翻转型判据（命中则 ++v15/--v14），raw 42341-42359 的末字节修正同理；raw 42360 `sub_429F60` 取子串、42362 写 op1。体给出的后果与文档「起点落在第二字节/末字节是首字节」逐项等价（两条警告串 raw 4457/4458），真正值得补的只是「翻转型前导字节标记 + 逐字节扫」这一层机制描述。语料 i2c7 = 3。",
+      "evidence": "raw 42298-42299、42319-42337、42341-42359、42360/42362、4457/4458、23148（注册 678840 = 675996+4*0x2c7）；docs-new/03-engine/opcode-table.md:453；app/amayui-emulator/src/vm/handlers/strings.ts:37-54；语料 i2c7 = 3（src/TITLE.txt:598 等）",
+      "code": "docs-new/03-engine/opcode-table.md:453",
+      "fix": "把「第二字节」的表述改成体里的实际判据（翻转型前导字节标记 + 逐字节扫），以免实现者照文档写出仅在「起点恰为第二字节」时才对的分支。"
+    },
+    {
+      "id": "op-5-008",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "op 82（0x52 mul）在 .tmp/opcode-index.json 里 `rawCited: false`（= 语义里没有 raw 引用），但 status 为「已核对」。",
+      "actual": "handler 体存在且行号正确（sub_42C660 raw 37548-37558：`v2 = read(3); v3 = read(2); return sub_42B4B0(this, 1, v3 * v2)`），语义「op1 = op2 * op3」正确——只是 rawCited 由「semantics 文本里是否出现 raw 字样」机械判定（.tmp/index-opcodes.mjs:86），短语义行必然漏判。op 91（0x5B ne）同理（raw 37654-37664）。两条在 emulator 都是真实现（arithmetic.ts:114/123）。★原 finding 的「语料各 8493/5833 处」无法用其在口径复现（语料写的是裸助记符 mul/ne，不是 i52/i5b）。",
+      "evidence": "raw 22774（676324 = 675996+4*0x52 → sub_42C660）、22783（676360 → sub_42C8C0）、37548-37558、37654-37664；.tmp/index-opcodes.mjs:86；.tmp/opcode-index.json op=0x52/0x5b（rawCited=false、status=已核对、bodyLine=37548/37654）；app/amayui-emulator/src/vm/handlers/arithmetic.ts:114,123",
+      "code": ".tmp/index-opcodes.mjs:86",
+      "fix": "索引的 rawCited 改成「handlerBodyLine 非空 + 语义里出现 raw」的或运算，或在语义行统一补 raw 锚点。"
+    },
+    {
+      "id": "op-5-009",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x1D8（op 472）semantics 以「…⇒ `(组号<<24) | …`」收尾，句子在数字后直接中断。",
+      "actual": "handler 体 raw 38757-38771 只给出 `v4 = (*(vtable+60))(PCM, op2, op3); write op1 = v4`（取值顺序先 op3 后 op2，与 doc:330 相符）；真正的追加/填洞在 sub_48A1B0（raw 106467-106506，106488 返回 `(a2 << 24) | (((末-首)>>2) - 1)`、106503 填回下标）。doc:330 的数值口径其实完整（「组内元素 ≤1 ⇒ 追加；>1 ⇒ 从下标 1 起填第一个 0 槽」），只是公式后缺说明。语料唯一调用点 src/$3$AUTORUN.txt:68。",
+      "evidence": "raw 22950（677884 = 675996+4*0x1d8）、38757-38771、106467-106506；docs-new/03-engine/opcode-table.md:330；src/$3$AUTORUN.txt:68（`i1d8 (global-int 70801e) 1 30003b2`）；app/amayui-emulator/src/vm/handlers/music-table.ts:114-139,145",
+      "code": "docs-new/03-engine/opcode-table.md:330",
+      "fix": "补完该句（低位 = 组内新长度 − 1 / 填洞时为槽下标），或直接引用 music-table.ts:114-139 的实现说明。"
+    },
+    {
+      "id": "op6-03",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "op 803（0x323 set-vertex-color-alpha，handler=sub_426CF0，emulator=gfx-item.ts:419 op_set_vertex_color_alpha）：emulator 注释称 `op2=窗起点(delay)、op3=时长(count)`，即带动画窗的顶点色 alpha。",
+      "actual": "handler 体里 op1=绘制项/网格 id、op4=alpha、op5=rgb（负数 ⇒ 取当前 state0 的对应通道，alpha>255 夹到 255），op2/op3 是原样透传给 sub_4AE330 的显式实参（写入元素 [11]/[12]），体里没有任何窗起点/时长的换算。emulator 把 op2/op3 命名并当作 delay/count 传进宿主，字段落点其实一致（renderer/scene/ops.ts:443-455），但语义标签与依据都错。emulator 的 delay/dur 确实被消费（setters.ts:159-162 → eval.ts:215-228 的 calcDiffuse），与「窗」解释自洽，故属注释/参数名缺体依据。",
+      "evidence": "raw 33918-33921、132834-132843（`v7[11] = a3; v8[12] = a4; result[14] = a5; _this[11627] = 1;`）；app/amayui-emulator/src/vm/handlers/gfx-item.ts:313-324；app/amayui-emulator/src/renderer/scene/ops.ts:439-455；app/amayui-emulator/src/renderer/drawitem/setters.ts:159-162；eval.ts:215-228；docs-new/03-engine/opcode-table.md:524",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-item.ts:313-324",
+      "fix": "把注释/参数名改成「op2/op3 = 透传实参（写元素 [11]/[12]），op4=alpha（>255 夹 255、<0 回退当前 alpha）、op5=rgb（<0 回退当前 rgb）」，并明确该指令没有动画窗。"
+    },
+    {
+      "id": "op6-06",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "op 445（0x1BD，handler=sub_4212C0，emulator=audio.ts:444 op_play_voice）：索引/文档称 `Engine[21315]` 状态位的清 0 条件是 `(v&0x10000)`。",
+      "actual": "handler 体（raw 30031-30034）条件是 `(v2 & 0x10000) != 0 || (v2 & 1) != 0` —— 还包含 bit0。docs-new/03-engine/opcode-table.md:303 写的正是完整的 `(v&0x10000)||(v&1)`，被截断成 `(v&0x10000)` 的是 .tmp/opcode-index.json 的 semantics 串（该 JSON 内 `||` 出现 0 次、docs 内 1 次）。emulator audio.ts:60-63 只 emit voice-defer/voice-play，不建模 21315/21318/122505/122508 四格状态。",
+      "evidence": "raw 30031-30043（逐字；30035-30043 的 Engine[21318] 是单条件 + bit0 的不对称写法）；docs-new/03-engine/opcode-table.md:303；.tmp/opcode-index.json op 445 semantics（截断）；app/amayui-emulator/src/vm/handlers/audio.ts:60-63,296-303；app/amayui-emulator/src/audio/audioEngine.ts:367-371,400-410；engineFieldIds.ts:214-223",
+      "code": ".tmp/opcode-index.json (op=445)",
+      "fix": "修索引生成物（不是文档）；若要 emulator 与引擎同构，op_play_voice 的 ADV 分支还应写 voiceChannelStateBase(21315) 与 voiceRegBase(122505)/voiceRegFlagBase(122508)。"
+    },
+    {
+      "id": "op7-0x305-wrong-raw-anchor",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "emulator 注释里的 raw 锚点引到了别的函数。已并入同类：op-10-009（msgwin.ts:673 给 0x304 写的 sub_41A420 raw 24610-24625）、op-7-0x235（evidence/code/fix 写 raw 32067 = 0x22E/sub_424290）。",
+      "actual": "0x305：msgwin.ts:687 写「sub_41B1C0 raw 25096-25170」，而 raw 25096-25170 落在 sub_419D20 内（注释 25084、体至 25163）；sub_41B1C0 的注释在 26033、签名 26034、体止于 26102。0x304：msgwin.ts:673 写「sub_41A420 raw 24610-24625」，而 24611/24612 属 sub_419260（0x96 的 handler，doc:147 明确写 raw 24612-24624），sub_41A420 的注释在 25385、体 25386-25399。两条的描述内容本身与体一致，只是行号引用无效。",
+      "evidence": "app/amayui-emulator/src/vm/handlers/msgwin.ts:673,687；engine/天结_unpacked.exe_utf8.c:25084-25085、25096、26033-26034、26102、24603-24624、25385-25399；docs-new/03-engine/opcode-table.md:147；.tmp/opcode-index.json op=773 bodyLine=26033 / op=772 bodyLine=25385",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:687",
+      "fix": "把 0x305 的注释改成 raw 26034-26102、0x304 的改成 raw 25385-25400。"
+    },
+    {
+      "id": "op7-0x30a-noop-vs-body",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "stubs.ts:174 把 `0x30a` 登记为纯 no-op：`[0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7`；文件头 stubs.ts:5 声明「表里每一条都不读操作数、不写 VM 可见状态、不改控制流」。",
+      "actual": "handler 体（raw 33825-33835）为：`95805=5; v2 = op2; result = op1; if (op1 > 0x1F || op2 > 7) _CxxThrowException(Command_ShowMessage「SetGesKey」); _this[op2+1969] = op1;` —— 读两个操作数、写一个引擎字段、且可抛 ShowMessage。该行注释没有给任何 raw 行号。缓解事实：`grep \\b1969\\b` 全文件仅 1 处（就是这条写），字段无读取点；语料只有 src/SYSTEM4.txt:110 `i30a 6 5`（两参都在范围内）⇒ 今天无可观测差异。",
+      "evidence": "raw 33818、33825-33835、4436（`SetGesKeyの引数が不正です．`）；app/amayui-emulator/src/vm/handlers/stubs.ts:5,174,211-212、:31-44；src/SYSTEM4.txt:110；grep `1969|7876` 仅 33834 一处写、无读",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:174",
+      "fix": "把注释改成「体内读 op1/op2、写 _this[op2+1969]（全文件无读取点）、越界时抛 ShowMessage「SetGesKey」⇒ 对 VM 不可观测」并附 raw 33825-33835。"
+    },
+    {
+      "id": "op7-0x53-div-zero-throw-invented",
+      "kind": "unclear",
+      "severity": "P3",
+      "claim": "arithmetic.ts:32-35 `intDiv` 在除数为 0 时 `throw new Error(\"div: 除数为 0（引擎会抛除零异常）\")`，并在注释里断言「引擎会抛除零异常」；文档 opcode-table.md:80 的 0x53 语义只有 `op1 = op2 / op3`（无 raw 引用）。",
+      "actual": "handler 体（raw 37560-37570）是裸 `v3 / v2`，体内没有任何除零检查，也没有 ShowMessage 分支（与 0x60 random raw 37714-37737 的显式 aRandom0 + throw 形成对照）。但 x86 上整数除零必然触发 #DE（C 层 UB），emulator 的 throw 是对硬件故障的合理建模，项目文档自己对同族 0x54（doc:81）也写着「除数为 0 ⇒ 引擎抛除零异常」⇒ 无可核证据的只是「引擎侧可观察响应」（SEH 弹窗？崩溃？）。",
+      "evidence": "raw 37560-37570（0x53 裸除）、37714-37737（0x60 有检查）；app/amayui-emulator/src/vm/handlers/arithmetic.ts:24-41；docs-new/03-engine/opcode-table.md:80-81；.tmp/opcode-index.json op=83（rawCited=false）",
+      "code": "app/amayui-emulator/src/vm/handlers/arithmetic.ts:33",
+      "fix": "把注释里的断言降级为「引擎侧为裸除法，除零后果未核实」；0x53 文档行补 raw 37561-37570。"
+    },
+    {
+      "id": "op7-0x135-bitset-signed-guard",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "arithmetic.ts:78-83 `op_bit_set`：`const bit = readIntOperand(...,2); if (bit > 0x1f) throw ...; writeIntOperand(1, v | (1 << bit))`（有符号比较）。",
+      "actual": "handler 体把 op2 存进 unsigned int 再比较：raw 39404 `unsigned int v2;`、39411 `if ( v2 > 0x1F )` ⇒ 负的 op2 会被当成巨大无符号数而走 raw 39413-39414 的 aSetbit 报错分支。emulator 的有符号判断对负值不成立，随后 JS `1 << -1` 按 5 位掩码变成 `1 << 31` ⇒ 不报错且置上第 31 位，与引擎相反。语料 bit-set 1640 处、bit-reset 244、check-bit 176，逐行扫描无负数值实参（0..15）⇒ 仅边界缺口。",
+      "evidence": "raw 39402-39421（39404 unsigned、39411 比较、39413-39414 报错分支）；app/amayui-emulator/src/vm/handlers/arithmetic.ts:78-95；app/amayui-emulator/src/vm/operand.ts:215-248（219/226/238 有符号装载）；语料 bit-set=1640、bit-reset=244、check-bit=176、负值 token=0",
+      "code": "app/amayui-emulator/src/vm/handlers/arithmetic.ts:80",
+      "fix": "判据改为无符号语义：`if ((bit >>> 0) > 0x1f) throw`（0x136 / 0x13F 同）。"
+    },
+    {
+      "id": "op7-0x21e-stale-div256-comment",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "gfx-item.ts:398 表项注释：`[0x21e, op_set_scale_matrix], // 缩放动画窗（窗1；sx/sy/sz ÷256）`。",
+      "actual": "文档已明确订正为 ÷100：doc:374「★订正：旧文档写 ÷256（把 dbl_5201F0 误记为 256.0）——它是 100.0」；引擎 raw 4430 `double dbl_5201F0 = 100.0;`、raw 31846-31864 三处 `sub_41C300(_this, 4/5/6) / dbl_5201F0`；同一 emulator 文件的实现也已经是 ÷100（gfx-item.ts:128-130），只有这一条表项注释残留旧值。",
+      "evidence": "app/amayui-emulator/src/vm/handlers/gfx-item.ts:8-10,116-132,398；engine/天结_unpacked.exe_utf8.c raw 4430、31846-31864；docs-new/03-engine/opcode-table.md:374",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-item.ts:398",
+      "fix": "把该行注释的 ÷256 改成 ÷100（实现无需改）。"
+    },
+    {
+      "id": "op7-0x92-step0-not-modeled",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 0x92 语义「同 0x91，但先写回退 label Engine[12961] = op2 …，再 sub_404020(panelA, op1)」；emulator op_panel_show_fallback（panel.ts:143-154）照此执行后正常返回（ip 前进一步）。",
+      "actual": "handler 体（raw 29546-29568）是「if (_this[12956]) { 12956=0; 12958=0; } else { effect_flags 置 0x800000; 12961 = op2; sub_404020(panelA, op1); **95805 = 0**; }」——进入 else 分支时本指令不前进（引擎停在 0x92 上等面板输入）。全文件对 arity 槽 95805 的唯一读取点是主派发循环 raw 20165 ⇒ arity=0 时 ip 加 0、下轮重跑同一条；同族 0x91（raw 29521-29543）else 分支同样 95805=0。语料 i092 = 0 处。",
+      "evidence": "raw 29521-29543（0x91）、29546-29568（0x92，29565 `= 0`）、20161-20165（唯一 arity 读取点）；app/amayui-emulator/src/vm/handlers/panel.ts:118-154；docs-new/03-engine/opcode-table.md:143；语料 i092=0",
+      "code": "app/amayui-emulator/src/vm/handlers/panel.ts:143",
+      "fix": "在 0x92/0x91 的行注释与 opcode-table 行里补「未命中输入时 95805=0 ⇒ 停在本指令」，并注明 emulator 因缺 sub_4098E0 通路而按顺序推进。"
+    },
+    {
+      "id": "op7-0x7c-local-ret-unimplemented",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "0x7C `local-ret`（op 124，sub_41AB80，argc=0）状态「已核对」、语义完整，但索引 emulator=[]。",
+      "actual": "未在 emulator 任何 OpTable 中（grep `0x7c` 仅两处注释：vm/engine.ts:115、test/adv-msgwin.test.ts:495）⇒ 命中即 NotImplementedOp。语料 668 处 / 334 个脚本。该缺口已由文档披露（docs-new/03-engine/flow-control.md:427「仍未实现：local-ret(0x7C)、0xAE」）⇒ 不是编造；文档语义本身与体一致（raw 25779-25824 逐条核对通过：489808&0x2000000 门 / 帧[95796]==430712 / ip=帧起始+4*489812 / 清 489808·81776·81768·51848·51840 / 387940 时 sub_40FB60）。",
+      "evidence": "scripts/asm/opcodes.json:746-752；.tmp/opcode-index.json op=124（bodyLine=25778）；engine/天结_unpacked.exe_utf8.c:25778-25824；app/amayui-emulator/src/vm/engine.ts:115；test/adv-msgwin.test.ts:495；docs-new/03-engine/flow-control.md:427；语料 local-ret=668/334",
+      "code": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "fix": "无文档侧动作（已披露）；实现时按 raw 25779-25824。"
+    },
+    {
+      "id": "op8-F1",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:324（0x1D2 文本项）称 handler sub_420380（raw 29374-29386）「不回写操作数」。",
+      "actual": "handler 体第 2 行就写 arity/状态槽：raw 29379 `_this[30 * _this[95776] + 95805] = 5;`（该槽由 raw 20165 用于推进 ip）。「不回写脚本操作数」这一半成立（体无 sub_42B4B0 / sub_433310 调用），但「不写引擎状态」被同一体否定；同类漏注在 0x213(raw 31765)/0x1B9(raw 29199)/0x1A6(raw 37979) 等处普遍存在，且 emulator 本不建模 arity ⇒ 对 emulator 零可观测影响。",
+      "evidence": "raw 29379（逐字）、20165（唯一读取点）；docs-new/03-engine/opcode-table.md:324,328,329,330,372,157；docs-new/03-engine/stub-reaudit-2026-09.md:152；app/amayui-emulator/src/vm/handlers/text-items.ts:122",
+      "code": "app/amayui-emulator/src/vm/handlers/text-items.ts:122",
+      "fix": "把该行改成「不回写脚本操作数（但仍写引擎 arity/状态槽 = 5，raw 29379）」，与同表其它条目口径一致。"
+    },
+    {
+      "id": "op8-F2",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:81（0x54 mod）给出一条具体引擎行为：「除数为 0 ⇒ 引擎抛除零异常」，emulator 据此实现。",
+      "actual": "sub_42C6E0（raw 37572-37582）体内没有任何除零检查、没有 _CxxThrowException、没有异常对象表引用，全文只有 `return sub_42B4B0((int)_this, 1, v3 % v2);`；emulator 的 intMod 由此补出 `if (r === 0) throw`（arithmetic.ts:36-41）。但 `%` 除零在 C 里是 UB、MSVC/x86 编译成 idiv，除数 0 触发 CPU #DE（本作是 C++/SEH 进程，raw 13155 有 _CxxThrowException）⇒ 两者可观测后果同为致命终止，不存在「emulator 会抛而引擎不会」的分歧；可保留的只是「文档把 [推测] 写成断定」这一层。",
+      "evidence": "raw 37572-37582（体逐字）、13155（同工程 SEH/C++ 异常机制）；docs-new/03-engine/opcode-table.md:81；app/amayui-emulator/src/vm/handlers/arithmetic.ts:32-41",
+      "code": "app/amayui-emulator/src/vm/handlers/arithmetic.ts:36-41",
+      "fix": "把「引擎抛除零异常」降级为「[推测]（body 无检查；x86 idiv 除零为 CPU #DE）」，并说明 emulator 的 throw 是等价近似而非引擎语义原样。"
+    },
+    {
+      "id": "op8-F5",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:363（0x213）「消息窗对象字段：读 op1=对象下标、op2/op3；对象非空写 `+104=op2`、`+108=op3`」。",
+      "actual": "handler sub_423A80（raw 31765-31775）读操作数逆序：`v2 = read(3); v3 = read(2);`，写入 `*(v5+104)=v3`（=op2）、`*(v5+108)=v2`（=op3）——数值等价，但文档「读 op2/op3」的顺序与体不符；体首 arity 槽 raw 31765 未提。★原 finding 的「handler 命名三方不一致」不成立：文档写引擎函数名 sub_423A80，emulator 注释（msgwin.ts:866-867）与 .tmp/opcode-index.json:6576 都写 op_msgwin_obj_range，互相一致。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:31765-31775；docs-new/03-engine/opcode-table.md:363；app/amayui-emulator/src/vm/handlers/msgwin.ts:866-874,1485；.tmp/opcode-index.json:6576",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:1485",
+      "fix": "文档补上读取顺序与状态槽。"
+    },
+    {
+      "id": "op8-F6",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:336（create-texture）称「先释放该槽的 movie 播放器对象（`_this[slot+94672]` = pool[13964+slot]，…）」。",
+      "actual": "handler sub_422C20 只有 `v2 = sub_41BF50(_this, 1); v3 = (_DWORD *)_this[v2 + 94672];`（raw 31172-31173），即 `Engine + 4*(94672+slot)` 的直接数组下标，通篇没有名为 pool 的结构、也没有 13964 字面量。文档多处使用「4 字节元素 array 视图」的池约定（如 doc:365 `Engine[5*op2+81174]`、doc:318 `Engine[122455]`），故该注记不是凭空发明，只是术语未在该行就地定义。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:31171-31189、31162；docs-new/03-engine/opcode-table.md:336,365,318",
+      "code": "docs-new/03-engine/opcode-table.md:336",
+      "fix": "就地给出 pool 的定义（4 字节元素 array 视图）或直接写 `_this[94672+slot]`。"
+    },
+    {
+      "id": "op8-F7",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:288（0x1AE 写 .STH 缩略图）断言产物格式与大小：「两者产物都是 BMP（\"BM\" + 40 字节 DIB + 24bpp，行按 32 bit 对齐；E4：真槽 .STH 恒 172,854 字节 = 54 + 320×180×3）」。",
+      "actual": "handler 体（raw 38516-38550）只做 CreateFileA(SAVE%2.2d.STH) 与二选一调 sub_4A5260 / sub_43BF20，BMP 编码与 54/320×180×3/172854 都不在体内。但格式并非纯黑盒：配对读回指令 0x1AF（doc:289）走 ddReadBmp 并校验魔数 19778 = \"BM\"，且 320×180 也有语料旁证（create-texture … 140 b4 2）。真正待补的只是「172854/24bpp/行对齐 32bit」这类纯文件尺寸常量的出处标注。",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:38516-38550（38531 CreateFileA、38537-38546 两分支）；docs-new/03-engine/opcode-table.md:288,289；app/amayui-emulator/src/vm/handlers/save-slot.ts:644",
+      "code": "app/amayui-emulator/src/vm/handlers/save-slot.ts:644",
+      "fix": "把 172854/24bpp/行对齐那段标成「对真实 .STH 的采样观测」，或补 sub_4A5260 / sub_43BF20 的 raw 行号与 DIB 头写入点。"
+    },
+    {
+      "id": "op8-F8",
+      "kind": "unclear",
+      "severity": "P2",
+      "claim": "文档 opcode-table.md:435（0x25B）称「失败抛 Command_ShowMessage_Exception「画像ファイル %s の読み込みに失敗しました」（影响控制流）」，并把 op1 的用途标为 [推测]。",
+      "actual": "handler sub_425E20 体（raw 33211-33221）只有 `_this[92379]=2; _this[92381]=op1; if(!_this[167990]) sub_408440(_this, op1);` —— 不检查返回值、体内无异常对象；异常在 sub_408440 内部（raw 13147-13155）。更关键：全文件 `92381` 只有 raw 33214 一处写入、0 处读取，`92379` 只有 11128/33196/33213 三处写入、0 处读取 ⇒ 两个字段是纯死写。emulator 只写 ENGINE_FIELD.msgMediaImageId（无消费方，仅测试断言读取），不建模加载与异常。",
+      "evidence": "raw 33211-33221、13147-13155；`92381` 全文件命中 = 33214（1 处）、`92379` = 11128/33196/33213（3 处），均写无读；app/amayui-emulator/src/vm/handlers/engine-fields.ts:118；engineFieldIds.ts:147；test/op-a2-a3.test.ts:134,137（仅断言）",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:118",
+      "fix": "文档补上「异常来自 sub_408440（raw 13155），本 handler 不检查返回值」与「92379/92381 全文件只写不读（观测等价 no-op）」；emulator 若继续建模这两个字段，按 check:dead-writes 的口径记为死写。"
+    },
+    {
+      "id": "op8-F9",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:500（0x2F6 复位语音通道）结尾写「emulator：op_engine_internal 空操作」。",
+      "actual": "emulator 早已是真实现：AUDIO_OPS 注册 `[0x2f6, op_voice_reset]`（audio.ts:448），handler 体 `emit(c, { kind: 'voice-reset', ch: readIntOperand(...,1) })`（audio.ts:330-332）；ENGINE_INTERNAL_OPS（stubs.ts:46-213）内无 0x2f6。属纯文档记账。",
+      "evidence": "app/amayui-emulator/src/vm/handlers/audio.ts:25,330-332,448；app/amayui-emulator/src/vm/handlers/stubs.ts:46,150（全表无 0x2f6）；docs-new/03-engine/opcode-table.md:500",
+      "code": "docs-new/03-engine/opcode-table.md:500",
+      "fix": "把该句改成「emulator：AUDIO_OPS 的 op_voice_reset → voice-reset 意图（宿主音频引擎执行）」。"
+    },
+    {
+      "id": "op8-F12",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 opcode-table.md:299（0x1B9）称「INITREGMES 用 `i1b9 0 5dc`（=1500ms）/ `i1b9 1 9c4`（=2500ms）设默认」中的默认值 1500/2500 由本指令建立。",
+      "actual": "handler sub_41FF60（raw 29192-29220）只把 op2 透传给配置注册表：op1==0 → message:AutoMessageTime0、op1==1 → message:AutoMessageTime1、其它值走报错串（raw 4344/4408 区）；体里没有任何 1500/2500 常量。文档原句其实是语料语句转写（脚本确实用这两条指令写入这两个值），歧义只在未点明默认值来自语料/配置注册表初值。另体首 raw 29199 写状态槽 = 5（指针形式），文档未提。",
+      "evidence": "raw 29192-29220（29199 状态槽、29200/29202 读 op1、29206 aMessageAutomes_0、29210-29211 报错、29218 aMessageAutomes_3）；raw 4309/4312/4408；docs-new/03-engine/opcode-table.md:299；app/amayui-emulator/src/vm/handlers/msgwin.ts:1465",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:1465",
+      "fix": "把 1500/2500 的归属改写为「语料 INITREGMES.txt 的两处调用写入的初值」，与本 handler 解耦；补状态槽。"
+    },
+    {
+      "id": "op9-op137-index-emulator-points-at-png-signature-byte",
+      "kind": "cross-source-mismatch",
+      "severity": "P2",
+      "claim": ".tmp/opcode-index.json 给 op 137 的 emulator 列是 `app/amayui-emulator/src/tools/slotThumbPng.ts:54`、handler 名 `0x50`。",
+      "actual": "该处是 PNG 魔数常量 `Buffer.from([0x89,0x50,0x4e,0x47,...])` —— 0x50 是 PNG 签名里的 'P' 字节，不是 opcode；op 137 的十进制是 0x89，正好被镜像扫到。真实情况：op 137 = 0x89（raw 22838 `*(_DWORD *)(_this + 676544) = sub_41FB00;`），handler sub_41FB00（raw 28980-28994，读 op3/op2/op4-字符串/op1）在 emulator 根本没有实现。",
+      "evidence": ".tmp/opcode-index.json op=137（emulator[0] = slotThumbPng.ts:54, handler '0x50'）；app/amayui-emulator/src/tools/slotThumbPng.ts:53-54；engine/天结_unpacked.exe_utf8.c:22838（676544 = 675996+4*137）、28980-28994；emulator grep '0x89|0x137|0x41FB00' 仅 slotThumbPng.ts:54",
+      "code": ".tmp/opcode-index.json (op=137)",
+      "fix": "索引生成器对 emulator 列加「只认 OPS/NATIVE_OPS 注册点或指令助记符」的白名单，去掉 slotThumbPng.ts:54 这条假映射。"
+    },
+    {
+      "id": "op9-op200-sleep-direct-path-not-modeled",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档把 sleep 的两条路总结成「本质都暂停≈n ms」，emulator 的 op_sleep 直接 `sleepUntil = nowMs + Math.max(1,n)`（handlers/frame.ts:107-113）。",
+      "actual": "handler 体里两条路不等价：`v3 < 10` 走 `Sleep(v3)`（raw 30311，进程级睡眠，不写 effect_flags）；`v3 >= 10` 才 `_this[174801] |= 1`（帧率节流 bit）+ `sub_453A60(...)`（raw 30304-30307）。emulator 对两条路都只置 sleepUntil，不区分，n<10 时也不置 effect_flags bit0，并用 `Math.max(1,n)` 自造下限（n=0 时引擎是 Sleep(0)）。★原 finding 称「语料全是 sleep 1f4 ⇒ 低值分支踩不到」不成立：src/*.txt 中 sleep 共 385 行，其中 `sleep 1f4` 334、`sleep 1` 38、`sleep 0` 12、`sleep 10` 1 ⇒ 51 处落在 n<10 的裸 Sleep 路。",
+      "evidence": "raw 30287-30314（30304 if v3>=10、30306 `_this[174801] |= 1u`、30307 sub_453A60、30311 Sleep(v3)）；app/amayui-emulator/src/vm/handlers/frame.ts:101-113；语料统计：sleep 总计 385 行 = 1f4×334 + 1×38 + 0×12 + 10×1；src/$1$SC0330.txt:573",
+      "code": "app/amayui-emulator/src/vm/handlers/frame.ts:107-113",
+      "fix": "在注释里写明「n<10 的真 Sleep 路不建模」；若要更贴，按 n>=10 置 effect_flags bit0 映射节流路。"
+    },
+    {
+      "id": "op9-op265-doc-attributes-fields-to-this",
+      "kind": "name-inference",
+      "severity": "P3",
+      "claim": "0x109 的文档语义写「sub_403500(虚拟显示映射，用 `_this[699168/699172]` 分辨率)」。",
+      "actual": "handler 体用的是全局引擎单例 dword_55E1BC：raw 39095-39096 `v13 = *(float *)(dword_55E1BC + 699172); v12 = *(float *)(dword_55E1BC + 699168);`（该函数里 _this 另有 +80393/167990/107707-107710 等用法）。raw 39111 的 `// 55E1BC: using guessed type int dword_55E1BC;` 确认它是全局。写回方向正确（op1 = x raw 39107、op2 = y raw 39108；早退分支 raw 39079-39083 写 op1=-100000 / op2=Point.y）。",
+      "evidence": "raw 39077-39111（39095-39096 dword_55E1BC、39088 sub_498350、39090、39098-39101、39104、39107-39108、39079-39083）；.tmp/opcode-index.json op=265 semantics",
+      "code": ".tmp/opcode-index.json (op=265 semantics)",
+      "fix": "文档改为 `dword_55E1BC[699168/699172]`（全局单例），或注明是同一对象。"
+    },
+    {
+      "id": "op9-op170-doc-createfile-constants-wrong",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x0AA 文档语义写「CreateFileA(名, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, 0)」。",
+      "actual": "handler 体 raw 38160 是 `CreateFileA(v3, 0x40000000u, 0, 0, 2u, 0x8000020u, 0)`：访问权限 = GENERIC_WRITE（文档对）、disposition = 2 = CREATE_ALWAYS（文档对），但 flags/attributes = 0x8000020 = FILE_ATTRIBUTE_TEMPORARY(0x100) | FILE_FLAG_SEQUENTIAL_SCAN(0x8000000)，文档只写了前半。失败路 raw 38161-38163 是 `sub_40A4C0((int *)_this, *(HWND *)(_this + 387924), aE, 5)`（raw 264 原型带 HWND），不是 sprintf 拼串。",
+      "evidence": "raw 38148-38173（38160 CreateFileA 常量、38161-38163 失败路）、4331（aE 文本）、264（sub_40A4C0 原型带 HWND）；.tmp/opcode-index.json op=170 semantics；docs-new/03-engine/opcode-table.md",
+      "code": ".tmp/opcode-index.json (op=170 semantics)",
+      "fix": "补上 FILE_FLAG_SEQUENTIAL_SCAN，并把失败路描述改成 sub_40A4C0(..., aE, 5)。"
+    },
+    {
+      "id": "op9-op500-index-emulator-maps-frameTick-onto-dock-lock",
+      "kind": "unclear",
+      "severity": "P3",
+      "claim": ".tmp/opcode-index.json 的 op=500（0x1F4）emulator 列写 frame.ts:345 handler=op_frame_tick；frame.ts:345 的实际注册是 `[0x1f4, op_frame_tick]`，而 line 42 的注释自述语义为「帧计时」。",
+      "actual": "handler 体（sub_41A090，raw 25193-25212）确认是停靠锁/帧计时：`95805=1; if (_this[107438]) ++_this[107439]; else { _this[107438]=1; _this[92334]=_this[92333]; _this[92333]=timeGetTime(); }`，与 emulator 实现（frame.ts:42-51）一致。真正对不上的是标签口径：0x1F4 = 帧计时+停靠锁（脚本的帧轮询入口），0x20C = 每帧刷时钟+宿主 present（frame.ts:347 注册在 OPS 内，经 FRAME_OPS 拼入）。★原 finding 称「0x20C 不在 OPS 表里」不成立。语料 i1f4 = 66510 处 / 370 文件。",
+      "evidence": "raw 25193-25212；app/amayui-emulator/src/vm/handlers/frame.ts:42-51,343-352；app/amayui-emulator/src/vm/handlers/index.ts:28,56；app/amayui-emulator/src/report.ts:38-39；app/amayui-emulator/src/vm/engineFieldIds.ts:36,38；app/amayui-emulator/src/vm/handlers/stubs.ts:92；docs-new/03-engine/opcode-table.md:332,356；语料 i1f4 = 66510/370",
+      "code": "app/amayui-emulator/src/vm/handlers/frame.ts:345",
+      "fix": "统一 0x1F4/0x20C 的标签：0x1F4 = 帧计时+停靠锁（脚本的帧轮询入口），0x20C = 每帧刷时钟+宿主 present。"
+    },
+    {
+      "id": "op9-op255-input-reset-second-half-unmodeled",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "op 255（0xFF，sub_419A90）status=已核对、rawCited=true，语义列出三件事：`Engine[174802]=0`、`sub_4780D0(Engine+1032, Engine+174802)`、`Engine[cur+122287]=0`、`Engine[cur+122327]=Engine[517]`。",
+      "actual": "emulator 只实现了中间那件（input.ts:126-130 的 op_input_reset 仅 flushHeld，而 flushHeld 会重算并写 inputMask，等价于 174802=0 下重刷掩码）。真正纯缺失的是帧槽复制那一格：raw 25007 `_this[frames[95776] + 122327] = _this[517]`，emulator 侧无任何 122327/122287 的写入。文档 opcode-table.md:207 的语义描述本身与体内一致，问题只在未标注哪些部分未建模。",
+      "evidence": "raw 24997-25009（25003 `_this[174802]=0`、25004 sub_4780D0、25005 `[cur+122287]=0`、25007 `[cur+122327]=_this[517]`）；app/amayui-emulator/src/vm/handlers/input.ts:126-130；app/amayui-emulator/src/vm/input.ts:323-333；docs-new/03-engine/opcode-table.md:207",
+      "code": "app/amayui-emulator/src/vm/handlers/input.ts:126-130",
+      "fix": "在语义列/实现注释里写明「帧槽复制 [cur+122327]=Engine[517] 未建模（emulator 用 flushHeld 近似 174802 的重置）」，或补上该帧槽复制。"
+    },
+    {
+      "id": "op9-op415-doc-overstates-modeling",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "op 415（0x19F）文档语义先写「同 0x1A1，但 sub_410160(...,a6=0,a7=0)（不还原字体/额外块）」，末尾又写「a6/a7 那两层未单独建模 ⇒ SLOT_GAPS」——同一条里既说按 a6=0 建模、又说未建模。",
+      "actual": "引擎侧：raw 38346-38362 确为 0x19F 全量语义（38347 op2=槽号、38358 `sub_410160(..., 0, 0)`、38362 写 op1）；sub_410160 的两个门确实不同（raw 19462-19468 的 a6 门跳过 40B 镜像 qmemcpy 与 sub_4B5090/sub_403EF0×2；raw 19419-19422 的 a7 门 → sub_45F1B0）。emulator save-slot.ts:583-590 以 `{full:false}` 调 loadSlotIntoEngine，而 saveSlot.ts:338-352 里 full 只决定兜底路径是否 transferToRootAfterLoad（engineFormat 真槽不论 full 都走 restoreEngineSlot）⇒ 用 full 近似 a6 掩盖了机制差异，文档没写清近似关系。",
+      "evidence": "raw 38334-38363（38358、38362）、38407-38439（0x1A1 的 `sub_410160(...,1,1)`）、19419-19422、19462-19468、19930-19932；app/amayui-emulator/src/vm/handlers/save-slot.ts:583-590；app/amayui-emulator/src/vm/saveSlot.ts:310-352（316 full 定义、338-352 分支）；.tmp/opcode-index.json op=415 semantics",
+      "code": "app/amayui-emulator/src/vm/handlers/save-slot.ts:583-590",
+      "fix": "把语义列改为「emulator 以 full:false（不转移回根）近似 a6=0；a6/a7 的字体/额外块语义未建模」。"
+    },
+    {
+      "id": "op-10-004",
+      "kind": "host-invented",
+      "severity": "P3",
+      "claim": "0x1CE（op 462）v==0 收尾分支：emulator 对 `m.reveal` 里所有窗 `finishReveal`（整段收尾）。",
+      "actual": "引擎只对单个窗 Engine[122371] 调 `sub_45A940(_this+21324, _this[122371], -2, 0)`（raw 29347），且仅在 `effect_flags & 0x100000 == 0` 时。emulator msgwin.ts:647-653 的 `for (const win of m.reveal.keys()) m.finishReveal(win)` 会把别的窗也一起贴完；多窗并存在本实现里可实现（beginReveal 按 win 建档、engine.ts:838-846 逐 win 推进）⇒ 一帧内多窗挂着显现状态时与引擎不同。",
+      "evidence": "raw 29337、29343-29349（29347 `sub_45A940(_this + 21324, _this[122371], -2, 0)`）、28365（122371 由 0x6E 写入）；app/amayui-emulator/src/vm/handlers/msgwin.ts:386,647-653；app/amayui-emulator/src/vm/msgwin.ts:445-457；app/amayui-emulator/src/vm/engine.ts:838-846",
+      "code": "app/amayui-emulator/src/vm/handlers/msgwin.ts:647-653",
+      "fix": "限定到 Engine[122371] 对应的窗（emulator 的 m.lastArg 镜像），而不是遍历全部 reveal 状态。"
+    },
+    {
+      "id": "op-10-005",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "0x326（op 806）文档：「sub_418340(Scene, op1, f2, op3, op4)……对纹理槽 op4 惰性建共享 ID3DXEffect……sub_453330(管理器, op1, f2, op3, 纹理对象, effect)」。",
+      "actual": "handler 体的操作数角色与文档不符：`v5=readInt(2); v4=readInt(4); v3=readFloat(3); v2=readInt(1); sub_418340(Scene, v2, v3, v4, v5)` ⇒ 第 2 个实参是 float(op3)，第 5 个实参 a5 = op2 才是纹理槽：sub_418340 用 `_this + 4*a5 + 42456` 找纹理、错误串 `TEXTURE=%d` 打的也是 a5，并把 (a2=op1, a3=float op3, a4=op4, 纹理对象, effect) 交给 sub_453330 ⇒ 「纹理槽 = op4」在体内没有支持。",
+      "evidence": "raw 33949-33953；raw 23919 `*(_DWORD *)(_this + 4 * a5 + 42456)`、23934-23935 `sub_453330(..., a2, a3, a4, v7, v8)`、23942-23943 `\"...TEXTURE=%d\\r\\n\", a5`；docs-new/03-engine/opcode-table.md:527",
+      "code": "docs-new/03-engine/opcode-table.md:527",
+      "fix": "文档改成与体一致：纹理槽 = op2、float 实参 = op3、第 4 个实参 = op4。"
+    },
+    {
+      "id": "op-10-006",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "0x205（op 517）文档同一格里前半写「op6=格式标志（bit0x10000 全角、bit1 居中、bit2 左对齐、bit3 正数带 +）」。",
+      "actual": "引擎的取向正相反：`if ((v10 & 0x10000) == 0) sub_41A6C0((const char *)v21 + v13);`（raw 12314-12315）—— bit16 未置位时才把 ASCII 转 SJIS 全角（sub_41A6C0 raw 25548-25590 是真身：'0'(0x30)→0xA3B0 等）⇒ bit16 = 半角。同一格末尾的「★订正」已写明，但前面旧表述没删 ⇒ 同行自相矛盾（emulator 取的是正确的一侧）；另 bit4/bit5（值为 0 时 +/−）在文档完全没写，体里有（raw 12250 `a6 & 0x10`、12256 `a6 & 0x20`）。",
+      "evidence": "raw 12314-12315、12242/12250/12256、25548-25590；docs-new/03-engine/opcode-table.md:349；app/amayui-emulator/src/vm/handlers/msgwin.ts:1320-1326,1346-1360",
+      "code": "docs-new/03-engine/opcode-table.md:349",
+      "fix": "删掉「bit0x10000 全角」，统一写成「bit16 = 半角（未置位时才转全角）」并补 bit4/bit5。"
+    },
+    {
+      "id": "op-10-007",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "文档语义列在 .tmp/opcode-index.json 的 semantics 里被 `|` 截断（op 87 的 `op1 = op2 \\`、op 110 停在「并置 Engine[122497]」、op 517 停在「居中 start*cy/4」）。",
+      "actual": "两种成因：(1) 文档表格缺陷——opcode-table.md:107 的 `Engine[122497] |= 0x10000` 与 :349 的 `start*cy/4`|`/2` 未转义竖线（GFM 在行内 code span 里同样按 `|` 切格）；(2) 索引生成器缺陷——:84 的 0x57 行已正确转义为 `op1 = op2 \\| op3`，但 .tmp/index-opcodes.mjs:37 直接 `line.split('|')`（无反转义），索引仍在该处断开。",
+      "evidence": "docs-new/03-engine/opcode-table.md:84,107,349；.tmp/index-opcodes.mjs:36-47（:37 split('|')）；.tmp/opcode-index.json op=87/110/517 的 semantics",
+      "code": ".tmp/index-opcodes.mjs:37",
+      "fix": "0x6E/0x205 行内的 `|` 写成 `\\|`（或改用「or」/「、」措辞）；索引生成器对 `\\|` 做反转义而不是当列分隔符。"
+    },
+    {
+      "id": "op-10-008",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "台账/文档行仍是「仅映射 + 空语义」：opcode-table.md:158 `| 0xAF | 0 | | sub_419690 | 仅映射 | |`、:514 `| 0x304 | 0 | | sub_41A420 | 仅映射 | |`。",
+      "actual": "两条在 emulator 侧都已有据可查：0xAF 在 stubs.ts:188-196 逐字给出体全文并引 raw 24775-24783（体只写 arity 槽，no-op 结论成立）；0x304 在 msgwin.ts:672-684 真实现（`Engine[122497]=1` + `win+296=win+132`），体 raw 25385-25400 逐条吻合，语料 i304 = 137 处。⇒ 不是行为错，而是文档/索引与实现、语料脱节（0x304 至今没有任何文档语义）。",
+      "evidence": "raw 24775-24783（0xAF 体）、25385-25400（25392 `_this[122497] = 1`、25398 `*(_DWORD *)(result + 296) = *(_DWORD *)(result + 132)`）；docs-new/03-engine/opcode-table.md:158,514；app/amayui-emulator/src/vm/handlers/stubs.ts:188-196；app/amayui-emulator/src/vm/handlers/msgwin.ts:672-684,1453；语料 `^\\s*i304\\b` = 137（首例 src/$1$SG0331.txt:1719）",
+      "code": "docs-new/03-engine/opcode-table.md:514",
+      "fix": "把 0x304 的语义补进 opcode-table.md 并把状态改「已核对」；0xAF 至少标注「已读体：仅写 arity 槽」。"
+    },
+    {
+      "id": "op-1/0x1C9-engine-field-offset-4x",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 0x1C9：「Engine[18656] = op2、Engine[18660] = op3」；emulator 同编号：audioDeviceField0: 18656 / audioDeviceField1: 18660（engineFieldIds.ts 的编号是 dword 下标）。",
+      "actual": "sub_420160 的首参声明是 `int _this`（raw 29291），因此 raw 29308-29309 的 `*(_DWORD *)(_this + 18656/18660)` 是字节偏移 = dword 下标 4664/4665。同函数内部自证：raw 29300 的 `*(_DWORD *)(_this + 120 * *(_DWORD *)(_this + 383104) + 383220)` 与全文件 `_this[30*frame + 95805]` 逐字节一致（4*95776 = 383104、4*95805 = 383220）。全 .c 里 18656/18660 只有 raw 29308-29309 两处写、无读点，emulator 只在 audio.ts:399-400 写 ⇒ 当前无可见后果。",
+      "evidence": "raw 22867（注册 677824 = 675996+4*0x1C9）、29291、29300-29309、22589（对照 logoEnabled: 96983）；app/amayui-emulator/src/vm/engineFieldIds.ts:74,224-227；app/amayui-emulator/src/vm/handlers/audio.ts:397-401；docs-new/03-engine/opcode-table.md:315",
+      "code": "app/amayui-emulator/src/vm/engineFieldIds.ts:225",
+      "fix": "把 audioDeviceField0/1 改成 4664/4665，或显式标注这两个 id 是字节偏移，并把文档写成 `Engine+18656`。"
+    },
+    {
+      "id": "op-1/0xBF-config-key-name",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "文档 0xBF（play-bgm）：「按 `set:KeepMusicVoice` / `sound:MusicFadeOnVoicePlaying(Volume)` 决定 sub_489C00 渐隐」。",
+      "actual": "handler 体（raw 29769-29778）实际查的三个键串是：raw 4411 `set:KeepMusicVolume`、raw 4279 `sound:MusicFadeOnVoicePlaying`、raw 4278 `sound:MusicFadeOnVoicePlayingVolume`。全 .c grep KeepMusic 只有 raw 4411 一处 ⇒ 不存在名为 set:KeepMusicVoice 的配置键。emulator 功能路径已用正确键（configRegistry.ts:183 + audio.ts:200），但注释/标识符里仍散落旧名（audioEngine.ts:21/543/545、configRegistry.ts:168、engine-fields.ts:210）。",
+      "evidence": "raw 22929（注册 676760 = 675996+4*0xBF）、29769-29778、4278-4279、4411；docs-new/03-engine/opcode-table.md:174,305；app/amayui-emulator/src/configRegistry.ts:183、168；app/amayui-emulator/src/vm/handlers/audio.ts:196-203；app/amayui-emulator/src/engineConfig.ts:98",
+      "code": "docs-new/03-engine/opcode-table.md:174",
+      "fix": "把文档 0xBF 行的 set:KeepMusicVoice 改成 set:KeepMusicVolume，并补上第三个键 sound:MusicFadeOnVoicePlayingVolume；顺带清理 emulator 侧的旧名注释。"
+    },
+    {
+      "id": "op-1/0x60-random-divzero-comment",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "emulator 的 op_random 注释/错误串：`random: 模数为 0（引擎会抛除零异常）`。",
+      "actual": "handler 体（raw 37721-37737）在 op2==0 时不做除法：先 `sub_42B4B0(_this,1,0)`（op1 = 0），再 `sub_408050(buf,1024,aRandom0)`（raw 4439 = \"RANDOMの最大値が0になっています．\"），然后 `_CxxThrowException(..., Command_ShowMessage)` —— 抛的是显示消息异常，不是除零异常。文档 opcode-table.md:93 的语义描述是对的；emulator 直接 throw 且未先写 op1=0。",
+      "evidence": "raw 22788（注册 676380 = 675996+4*0x60）、37721-37737、4439；docs-new/03-engine/opcode-table.md:93；app/amayui-emulator/src/vm/handlers/arithmetic.ts:97-102",
+      "code": "app/amayui-emulator/src/vm/handlers/arithmetic.ts:99",
+      "fix": "把错误串改成「op2==0：引擎写 op1=0 后抛 Command_ShowMessage（格式串 aRandom0）」，并考虑先写 op1=0 再抛。"
+    },
+    {
+      "id": "op-1/0x141-unsigned-compare",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 0x141：「op1 > 0x10 时报错，否则 SetConfig('message:MesWinAlpha', op1)」；emulator `if (v > 0x10) return;`（有符号比较）。",
+      "actual": "raw 31005-31017 是 `if ( (unsigned int)sub_41BF50((_DWORD *)_this, 1) > 0x10 )` —— 无符号比较 ⇒ 负的 op1（如 -1）走报错分支、不写配置；emulator 的 readIntOperand 全程有符号化（operand.ts:219/226/238），会放过 -1 并把 message:MesWinAlpha 写成 -1。语料 i141 = 0 处 ⇒ 目前无可见后果。",
+      "evidence": "raw 23014（注册 677280 = 675996+4*0x141）、31005-31017；app/amayui-emulator/src/vm/handlers/engine-fields.ts:186-195；app/amayui-emulator/src/vm/operand.ts:215-244；docs-new/03-engine/opcode-table.md:245；语料 i141 = 0",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:193",
+      "fix": "比较前按无符号归一：`if ((v >>> 0) > 0x10) return;`。"
+    },
+    {
+      "id": "op-1/0x34F-negative-color-branch",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "文档 0x34F：「op2=颜色（op2 < 0 ⇒ 取该槽的纹理色记录）」；emulator 的 runtime 注释同样写「op2 < 0 ⇒ 取纹理色记录」。",
+      "actual": "handler 体 raw 34793-34822 确有取回分支：`v2 = read(2); if (v2 < 0) v2 = sub_4ADD60(_this + 322832, read(1));`，随后按 dbl_520448 = 255.0（raw 4437）把三字节转 float 再调 sub_4A0790。emulator 端没有任何取回：live2d.ts:152-157 直接把 op2 原值传下去，runtime.ts:146-148 把负值当颜色存进 textures 的乘色记录。语料 i34f = 0 处 ⇒ 潜在缺陷。",
+      "evidence": "raw 23263（注册 679384 = 675996+4*0x34F）、34793-34822、4437；docs-new/03-engine/opcode-table.md:568；app/amayui-emulator/src/vm/handlers/live2d.ts:152-157；app/amayui-emulator/src/live2d/runtime.ts:146-149；app/amayui-emulator/src/live2d/render.ts:175,216-220；语料 i34f = 0",
+      "code": "app/amayui-emulator/src/live2d/runtime.ts:147",
+      "fix": "在 handler 里实现 `if (op2 < 0) op2 = 该项当前纹理色`（宿主侧查询），或删掉注释里的取回声明并登记为缺口。"
+    },
+    {
+      "id": "op-1/0x2CA-argc-blank",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "文档 0x2CA 行：`| 0x2CA | - | | sub_430990 | 仅映射 |`（argc 留空），索引同为 argc: null。",
+      "actual": "handler 体 sub_430990（raw 40086-40099）里 `95805 = 3` ⇒ 1+2*argc = 3 ⇒ argc = 1（对照 bin.ts:63 口径）；它取 `_this[5082]`、经 sub_418470（raw 23977-24006）算比值后由 `sub_42B4B0(_this, 1, v3)` 写 op1 —— 是写 op1，不是「读 operand 1」（原 finding 该括号写反）。本分片其余 50 条有体的行都满足 95805 == 1+2*argc，0x2CA 是唯一留空的一条。语料 i2ca = 0 处。",
+      "evidence": "raw 23151（注册 678852 = 675996+4*0x2CA）、40086-40099、23977-24006；docs-new/03-engine/opcode-table.md:456（:457 的 0x2CB 亦为 `-` 但无体）；app/amayui-emulator/src/script/bin.ts:63；语料 i2ca = 0",
+      "code": "docs-new/03-engine/opcode-table.md:456",
+      "fix": "把 0x2CA 的 argc 填 1，并把语义写成「读配置/对象比值后写 op1」。"
+    },
+    {
+      "id": "op-3-001",
+      "kind": "gap-as-noop",
+      "severity": "P3",
+      "claim": "opcode 261（0x105，handler sub_421E20）在索引里只是「仅映射」、无语义；emulator 三张表都没有 0x105。",
+      "actual": "handler 体是脚本侧输入掩码写入端：raw 30505-30513 `result = sub_41BF50(_this,1); _this[122246] = result;`，而 `_this[122246]` 在引擎里有读取点（raw 25132 的帧推进/跳转派发主循环按位判 ip 走向）⇒ 不是 no-op。但 opcode 261 因 name 为空、助记符为裸地址式 `u...`，从未被任何脚本使用：`i105` = 0 行 / 0 文件（原 finding 统计的 `i261` = 1048 行 / 388 文件其实是 opcode 0x261 = 609 竖排标志，与 0x105 无关）⇒ 该缺口在 emulator 里看不见。",
+      "evidence": "raw 30505-30513（体）、raw 25132（`_this[122246]` 唯一读点）、raw 22982（`*(_DWORD *)(_this + 677040) = sub_421E20;`，677040/4 = 0x105）；app/amayui-emulator/src/vm/handlers/index.ts:44-83（无 0x105）；scripts/rename-unmnemonic-opcodes.js:5-11,71（`'i' + opcode.toString(16)`）；语料 `i105` = 0，`i261` = 1048/388",
+      "code": "app/amayui-emulator/src/vm/handlers/index.ts:44-83",
+      "fix": "按 raw 30505 落地为真实现写引擎字段（ENGINE_FIELD.inputJumpMask = 122246）；因语料 0 处，优先级可低于同族缺口。"
+    },
+    {
+      "id": "op-4-02",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "op 0x10C (268, SetKeyMulti) 被注册成无条件 no-op（stubs.ts:173），但它写入的表正是引擎每帧输入扫描读的那张「VK→输入掩码位」表。",
+      "actual": "handler 体 raw 30617-30633：`v2=readInt(2); result=readInt(1); if(result>0x1F) throw aSetkeymulti; _this[_this[v2+1690]+1434]=result;`；Input 子对象在 Engine+1032（raw 22461），其构造 memset `_this+1176`(255) 与 `_this+1432`(0)（raw 92379-92382）；读取端 raw 91550-91569 每帧按该表置位掩码，随后由 0x100 派发。emulator 侧没有键盘输入模型：InputManager 只有鼠标/手把通道，keyEdge 只有写点无写入者，DOM 桥也没有 keydown/keyup ⇒ 键掩码 bit0..6 永远不可能被置位，该 no-op 今天观测等价（stubs.ts:172 注释已如实登记「emulator 无按键表」）。语料 i10c = 11 处，全在 SYSTEM4.txt:87-97。",
+      "evidence": "raw 30617-30633、22461、92379-92382、91550-91569；docs-new/03-engine/opcode-table.md:220；src/SYSTEM4.txt:87-97；app/amayui-emulator/src/vm/handlers/stubs.ts:172-173；app/amayui-emulator/src/vm/input.ts:301-311,323-333,337-342；app/amayui-emulator/src/renderer/pixi/inputAttach.ts:1-109（无 keydown/keyup）；app/amayui-emulator/src/vm/handlers/input.ts:160-178",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:173",
+      "fix": "若将来补键盘事件源，需同步建模按键表（key index → Input[1432+key] → 位号），并去掉 op_engine_internal 的无条件 no-op 定性。"
+    },
+    {
+      "id": "op-1/0x324-noop-frees-effect-objects",
+      "kind": "gap-as-noop",
+      "severity": "P3",
+      "claim": "emulator 把 0x324 注册为 op_engine_internal（纯 no-op），其表头声明「表里每一条都不读操作数、不写 VM 可见状态、不改控制流」。",
+      "actual": "handler 体 sub_41A470（raw 25402-25407）尾调 `sub_453530(_this[93384])`；sub_453530 是 thunk（lst 135088-135092 → jmp sub_453150），真身 sub_453150（raw 65366-65393）对 `_this[258]/[259]/[260]` 各析构并置 0、再清 `_this[312]` ⇒ 释放三个存活对象 + 改状态。但表头自带判据（stubs.ts:13-14）明写以 VM 态（全局/局部 int·float·string·ptr、帧、IP、cur）为准，本条不读操作数、不回写、不改 ip/cur ⇒ 按该表口径注册合规；且该缺口早已入账（opcode-table.md:525「待实现」、stub-reaudit-2026-09.md:92/184、engine-capabilities.md:580-584 自述无 3D 粒子子系统）。原 finding 的语料行号有小错：src/CALLBACK_LOAD.txt 的 i324 在第 17 行（SETWEATHER.txt:7、SYSTEM4.txt:17 正确）。",
+      "evidence": "raw 23220（679212 = 675996+4*0x324）、25402-25407、65366-65393；engine/天结_unpacked.exe_utf8.lst:135088-135092；app/amayui-emulator/src/vm/handlers/stubs.ts:4-5,13-14,136-152；docs-new/03-engine/opcode-table.md:525；docs-new/03-engine/stub-reaudit-2026-09.md:92,184；docs-new/03-engine/engine-capabilities.md:580-584；src/CALLBACK_LOAD.txt:17、src/SETWEATHER.txt:7、src/SYSTEM4.txt:17",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:149",
+      "fix": "把表头「纯 no-op」的表述收窄到 VM 态口径，并在 0x324 条目注明「引擎侧会销毁三个效果对象 + 清 [312]；emulator 无该子系统，登记为缺口」。"
+    },
+    {
+      "id": "op7-0x353-0x361-0x391-phantom-handler-names",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "opcode-table.md:585/594/604 与索引给 0x353 / 0x361 / 0x391 标注「归属作品 = Fuukan no Gransesta / Amayui 2」，索引行更把该字段当成 handler 值。",
+      "actual": "这些归属作品串在任何引擎产物里都不存在（engine/天结_unpacked.exe_utf8.c 与 4 个 .lst 全文对 Fuukan/Gransesta/Hyakusen/Tenmei/Amayui 2 的匹配数均为 0）。表本身的行为可核对：raw 22722 `memset32((void *)(_this + 675996), (int)sub_418E30, 0x400u)` ⇒ 0..1023 全填默认，这三条不在构造函数里被覆盖（679400/679456/679648 零命中）⇒ 「本引擎未实现、回退默认」成立，「age-shared 注释」这一出处无可核证据。",
+      "evidence": "docs-new/03-engine/opcode-table.md:575-610（585/594/604）；raw 22722；engine 目录（含 4 个 .lst）对 5 个关键词 0 命中；679400/679456/679648 零赋值；.tmp/opcode-index.json op=851（handler=\"Fuukan no Gransesta\", handlerFromTable=null）",
+      "code": "docs-new/03-engine/opcode-table.md:585",
+      "fix": "把「age-shared 注释」标注为未核实来源（或给出实际出处）；索引生成器不要把「归属作品」列写进 handler 字段。"
+    }
+  ],
+  "dropped": [
+    {
+      "id": "op3-005",
+      "reason": "被反证：文档对 0x346 的括注（「本条：把全部变换复位为单位阵、+76 = 0」）与体 sub_427DD0 → sub_4AFC40 完全一致；那段 +28/+48/+32/+52 字段表是 0x346–0x352 七行逐字共用的「572B 节点布局」总表，finding 把它从共享表里截一句、离开上下文读成了「本条字段」，属误读（正确处置只剩「共享布局表不逐条区分读写」的 P3 记账建议）。"
+    },
+    {
+      "id": "op3-006",
+      "reason": "被反证：主张的前提「op_window_geometry 同时挂在 0x70 与 0x1C2 两处」不存在——索引里引用 msgwin.ts:1458 与 handler=op_window_geometry 的行只有 op=112，op=450 的 emulator 字段是空数组、semantics 也是空串；属把 op=112 的 emulator 行挂到了 op=450 上的误读（0x1C2 体确实写窗对象 +8、emulator 确实未登记 0x1C2，但这只够 P3 记账）。"
+    },
+    {
+      "id": "op-4-08",
+      "reason": "被反证：前提「_this[92340] 全文件只出现 1 次 ⇒ 无读取点」源自尺度错误（sub_4258C0 的首参是 `_DWORD *_this`，raw 32959，故 92340 是 dword 下标 = 字节 369360）。字节 369360 在同一 Command 对象上有 5 处读取（raw 13910/13923/21114/26023/26090，按 `& 2`/`& 1` 判分支）⇒ 「无人读、观测等价 no-op」不成立；文档 opcode-table.md:422 的「配置字段」定性不该改判，engineFieldIds.ts:138 的「读取端只有这一条」注释反倒应修正。"
+    },
+    {
+      "id": "op6-04",
+      "reason": "被反证：核心断言「handler 体只读 op1..op7 共 7 个操作数」与 raw 直接相反——raw 27142 就是 `v11 = sub_41BF50(_this, 8);`，第 8 个操作数作为 BYREF 实参传给 vtable（raw 27151-27164 尾部 `&v11`），与兄弟 0x1BF（raw 27189/27215）同构 ⇒ argc=8 有体依据、步长 17 自洽；该 finding 的修复建议（改成 7 / 标注 argc 待定）会引入错误。"
+    },
+    {
+      "id": "op6-08",
+      "reason": "被反证：读取端（0x199，raw 24516 `result = v6[95781] + 4 * _this[v5 + 122372]`、raw 24525 同式）本身就带 `4*` 换算，索引也已指出读者与 4 倍换算、emulator 同样按 `4*游标` 换算（frame.ts:154/178/185 的 jumpToDword）⇒「索引与读取端语义冲突」不成立，不产生任何实现分歧。"
+    },
+    {
+      "id": "op6-13",
+      "reason": "被反证：「ENC 与文档/emulator 公式不一致」不成立——raw 39850 `__ROL4__(_this[97059] ^ __ROR4__(v3[v8++], 7), 21)` 逐位等于 `rol32(key ^ ror32(a,7), 21)`（异或可交换，x86 xor 无方向语义），即 bits.ts:19-21 的 enc；DEC 侧 raw 39836 同等于 bits.ts:15-17 的 dec，key 亦同源（ref.ts:78/102）。「读一次写一次 vs 只写一次」也不构成分歧（引擎同样先 DEC 缓冲再 ENC 回写同一脚本数组，raw 39829/39846）。"
+    },
+    {
+      "id": "op325-offsets-swapped-and-module-mislabeled",
+      "reason": "被反证：decompiled raw 33932-33936 与 IDA 清单 engine/天结_unpacked.exe_utf8.lst:61794-61822 同时钉死「op1 → +0x4D8、op2 → +0x4DC」，与被判为「写反了」的文档（opcode-table.md:526、stub-reaudit-2026-09.md:93）以及 emulator 注释（stubs.ts:106）三方一致 ⇒ 真正被写反的是 finding 自己的理解（附带的清单行号 61815-618FD 也确在该清单内）。"
+    },
+    {
+      "id": "op598-operand-read-order",
+      "reason": "被反证：文档没错——sub_4ACD10 的原型（raw 2467）为 `(Scene, a2, a3, float a4, float a5, float a6)`，调用处 v2..v7 = read(1..5)，故 op1→a2、op2→a3、op3→a4(f3)…与 opcode-table.md:430 逐字相符；且 sub_41BF50/sub_41C300 都是无副作用的操作数取值器（地址 = 指令基址 + 8*opN，彼此独立）⇒ 读序 5→4→3→2→1 与 1→2→3→4→5 取值完全相同，不存在顺序敏感。"
+    },
+    {
+      "id": "op200-doc-field-index-wrong",
+      "reason": "被反证：被指控的文本不存在——.tmp/opcode-index.json op=200 的 semantics 与 frame.ts:101-104 都只写 `_this[6]=n`，没有 `(Engine+107440)[6]` 这种前缀写法；而 `_this[6]=n` 恰是 sub_453A60 自身的行为（raw 66110 `_this[6] = result;`，其 this 即节流对象），描述无误。"
+    }
+  ],
+  "unclear": []
+}

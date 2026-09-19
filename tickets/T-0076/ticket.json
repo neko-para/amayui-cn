@@ -1,0 +1,88 @@
+{
+  "title": "emulator 零注册的引擎指令（P0/P1 共 21 条）：命中即硬停或让脚本读到陈旧操作数",
+  "type": "bug",
+  "priority": "P0",
+  "area": "emulator/ops",
+  "why": "审计（docs-new/03-engine/audit-2026-09-opcodes.md）确认：下列指令在引擎里都有真实 handler 体，而 emulator 三张注册表（OPS / NATIVE_OPS / ENGINE_INTERNAL_OPS）里没有它们 ⇒ 命中即 `NotImplementedOp`（`run.ts:72-75` / `renderer/app/session.ts:466-485` 停下等人工桩），或按桩跳过 ⇒ 操作数保持旧值让后续 `eq/jcc` 走错分支。它们都在真实脚本路径上：0x2E9（480 处/330 脚本，体写 `_this[122464]` = ADV 时间基准字段，7 个读点）、0x228（1097 处，回写 op1/op3/op4/op5 的 getter）、0x20B（204 处/187 文件）、0x235（158 处）、0x028（32 处）、0x132/0x133、0x0C1/0x2CF/0x32E、0x7C local-ret（668 处/334 文件）、0x243（341 行/338 文件）、0x233、0x23A（回写 op1）、0x337、0x307（`0x306` getter 的唯一写入端）、0x23F（回写 op1）、0x1D1（HISTORY 回看的数据源）、0x32C（SETWEATHER 6 浮点）、0x025（STAGERAID 4 处）、0x191（`op1=|op2|`，13 处）、0x222（SETPOLYGON/INFOxx 10 处，被 capabilities 台账误标 n/a-known）。",
+  "acceptance": [
+    "每条按三种处置之一落地：① 真实现；② 按 `stubs.ts:150-152` 的纪律登记为带 raw 依据的 engine-internal；③ 在 ticket 与本文件中显式登记为缺口（禁止静默 no-op 或静默跳过）",
+    "优先补「会回写操作数」的 getter（它们让脚本分支直接走错）：0x228、0x23F、0x23A、0x191、0x2E9",
+    "0x307 与 0x306 成对：写同一个 `system:EffectSkipOnClick` 配置键（并核对 0x306 的 `cfgInt(...,1)` 回退值与 `configRegistry.ts:86` 的 `def: 0` 不一致）",
+    "守卫：新增覆盖棘轮测试 —— 上述助记符在语料里出现时，emulator 要么已注册、要么在显式缺口名单里（名单变更必须同时改测试）",
+    "同批核对 capabilities 台账：`render-3d-layer-dual-commit`（0x222）从 n/a-known 改成 absent/partial",
+    "npm run verify 全绿"
+  ],
+  "tests": [],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "anchor": "### op-2-01 — 0x2E9 未实现，ADV 时间基准字段永不写入",
+      "note": "P0 首条：0x2E9 体写 Engine[122464]（字节 489856），emulator 全库无 0x2e9/745/122464"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[122464] = result;",
+      "note": "raw 33586：0x2E9 的体（唯一写点）；该字段另有 6 处读取点（20392/20420/28569/28579/13714/13720）与 1 处复位（17987）"
+    },
+    {
+      "file": "src/$1$SC0330.txt",
+      "anchor": "i2e9 0",
+      "note": "语料 480 处/330 脚本；ADV 主流程站点"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( !sub_4AA060((int)(_this + 80708), v2, &v6, (int)&v5, (int)&v4) )",
+      "note": "raw 39982：0x228 getter 体（op1=成功标志、op3/4/5=三个 float）"
+    },
+    {
+      "file": "src/SC0500.txt",
+      "anchor": "i228 (global-int 1396) (global-int f8025) (global-int f803b) (global-int f803c) (global-int f803d)",
+      "note": "语料 1097 处；下一行 `eq` 直接读 op1 槽 ⇒ 未实现时分支走错"
+    },
+    {
+      "file": "src/STAGERAID.txt",
+      "anchor": "i025 1 2 28",
+      "note": "0x025 的 4 处站点（STAGERAID）；体 raw 27393-27430 还会刷输入"
+    },
+    {
+      "file": "src/SETWEATHER.txt",
+      "anchor": "i32c 0 4 (local-int 5) 0 1 0",
+      "note": "0x32C 站点；同族 0x325/0x326 已在 stubs.ts 登记，本条约 6 浮点"
+    },
+    {
+      "file": "src/HISTORY.txt",
+      "anchor": "i1d1 (local-int 4a9) (local-int 94) 40 0 0",
+      "note": "0x1D1：HISTORY 回看的数据源（体 raw 29354-29371 调 sub_4675A0 的 GDI 文本族）"
+    },
+    {
+      "file": "src/INITREGINPUT.txt",
+      "anchor": "i307 1",
+      "note": "0x307 = SetConfig(\"system:EffectSkipOnClick\")，开机写入；emulator 只登记了 getter 0x306"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "//----- (00423EC0)",
+      "note": "0x222 的 handler 体（尾调用 sub_4B4460）；语料 10 处，台账误标 n/a-known"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0075",
+      "T-0078"
+    ],
+    "docs": [
+      "docs-new/03-engine/audit-2026-09.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "处置纪律提醒：`stubs.ts:150-152` 明写「登记成 no-op 反而把缺口藏起来」——因此 0x243/0x233/0x337 这类『有体但影响面不明』的指令，宁可登记成带 raw 依据的 engine-internal 并在报告里留缺口，也不要静默跳过。另：0x7C(local-ret) 的缺口早在 flow-control.md:427 披露过，只需按 raw 25778-25824 实现。",
+  "id": "T-0076",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    }
+  ]
+}

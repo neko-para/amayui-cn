@@ -1,0 +1,62 @@
+{
+  "title": "capabilities 台账失真 11 条（P0 2 / P1 7 / P2 2）：status/evidence/note 与代码和引擎都不符",
+  "type": "docs",
+  "priority": "P1",
+  "area": "analysis/engine-capabilities",
+  "why": "审计（docs-new/03-engine/audit-2026-09-capabilities.md）逐条核对 analysis/engine-capabilities.json 的 130 条后确认 11 条 P0/P1 失真，它们的共同危害是「让后续开发者/agent 基于错误前提工作」：① `l2d-node-draw-gate` 说两宿主没调用该判据，实际 Pixi（presenter.ts:265/348）与 headless（scene/snapshot.ts:230）每帧都在消费；② `render-3d-layer-dual-commit` 把 opcode `0x222` 标成 n/a-known「3D 未建模」，实际 emulator 未注册且语料 10 处 ⇒ 命中即 NotImplementedOp；③ `gfx-prim-mesh-and-render-state` 还在写「0x238 画布尺寸对」与「11 条只记录」（0x238 真身 = 0x400 等待门计时器，0x207 已由 TextureCache 真转送）；④ `renderer-state-reset-each-frame`：sub_498B60 实为 `IDirect3DDevice9::Clear`（有 ClearTarget 错误串与 return 1/0 检查），且门极性反（帧头读 bit1）；⑤ `scene-3d-effect-level-writer`：Scene+46668 是 2D 绘制循环的分支门，不是「3D 未建模」；⑥ `scene-flag-46528-bits`：bit2 的语义与极性写反，且缺进入门（`flags&2` 且 `flags&1`）；⑦ `single-field-timers-audio-device`：raw 只覆盖 14 个 fns 里的 4 个，note 引的 `fillPanelRect` 缝在实现里不存在（真实现是 panel.ts:108 的 bindKeyBit），自称 E3 的 guard 实为合成单测；⑧ `text-aa-config-gate`：字段 21662 在渲染侧无消费者（msgwin.ts:146 写死 true），guard 反而断言了「不跟随字段」；⑨ `text-font-rebuild-cascade`（含 `lazy-gdi-font-set`）：7 条字体参数面 + 面名映射/竖排都已落地并有断言，台账仍 absent/E0「完全没接」；⑩ `scene-3d-effect-level-writer` 与 ⑪ `scene-capture-target-flag-46680`（engine.fns 引的是 FillTexture，真身是 CaptureTexture sub_4A4DC0）。",
+  "acceptance": [
+    "11 条按报告逐条改 `status` / `evidence` / `trigger` / `reads` / `emulator.note` / `emulator.guard`，并把 raw 行号补进 `engine.raw`（区间要覆盖它引用的每个 fns）",
+    "凡 note 说「已实现」的，必须有能证明该行为的断言测试（只 import 不算）；反之凡 guard 不成立的，evidence 降级到 E1/E2",
+    "`0x222` 与其它「引擎有、emulator 无」的条目不得用 n/a-known 掩盖（改 absent/partial 并指向 T-0076）",
+    "重跑 `node scripts/build-capabilities.mjs` 刷新 docs-new/03-engine/engine-capabilities.md（生成物勿手改）",
+    "`node .agents/skills/amayui-engine-analysis/scripts/capabilities.js . --validate` 通过；npm run verify 全绿"
+  ],
+  "tests": [],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/audit-2026-09-capabilities.md",
+      "anchor": "### renderer-state-reset-each-frame — sub_498B60 是 ClearTarget，不是「纯状态复位」",
+      "note": "P1 条：台账 whySilent 与函数体相反（有错误串 + return 1/0 检查），门极性也反"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "//----- (00498B60)",
+      "note": "sub_498B60 体：IDirect3DDevice9::Clear + ClearTarget 错误串 + return 1/0"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[92339] = result;",
+      "note": "raw 32309-32310：0x238 写的是 0x400 等待门的起点/时长（不是「画布尺寸对」）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "antiAlias: true,",
+      "note": "渲染侧写死 AA=true；字段 21662(aaEnabled) 全库无使用点 ⇒ 台账 note 的「从字段带到渲染侧」不成立"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v112 = *(_DWORD *)(v113 + 46512);",
+      "note": "raw 117440-117449：Scene+46528 bit2 的真实语义（台账把极性写成相反）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0075",
+      "T-0076",
+      "T-0079"
+    ],
+    "docs": [
+      "docs-new/03-engine/audit-2026-09-capabilities.md",
+      "docs-new/03-engine/engine-capabilities.md"
+    ]
+  },
+  "notes": "流程教训（写进报告的方法节）：台账的「已实现/未实现」必须与代码+守卫测试双向核对 —— 本次两侧都出现：既把「已接线」写成缺口（l2d-node-draw-gate / text-font-rebuild-cascade），也把「命中即停的缺口」写成 n/a-known（render-3d-layer-dual-commit / scene-3d-effect-level-writer）。另有 6 条待查（材料不足）与 4 条已排除误报，见报告末节。",
+  "id": "T-0078",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    }
+  ]
+}
