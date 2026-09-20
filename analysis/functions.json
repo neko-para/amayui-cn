@@ -2827,19 +2827,12 @@
     "op": "0x306",
     "status": "ANALYZED",
     "purpose": "op 0x306：`op1 = GetConfig(\"system:EffectSkipOnClick\")` —— 纯配置 getter（点击跳过特效开关）。",
-    "signature_override": {
-      "param0": "this(Engine*)"
-    },
-    "sub_behaviors": [
-      "读配置注册表 system:EffectSkipOnClick（sub_4957F0 口径）",
-      "writeIntOperand(1, 值)"
-    ],
-    "fields_used": [
-      "this->config_registry(_this[174405])"
-    ],
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["读配置注册表 system:EffectSkipOnClick（sub_4957F0 口径）", "writeIntOperand(1, 值)"],
+    "fields_used": ["this->config_registry(_this[174405])"],
     "unmodeled": [],
     "evidence": "raw 40948-40951 (sub_431FC0)",
-    "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按引擎构造默认 1。"
+    "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按**引擎内建默认 0**（注册表对象构造 sub_491880 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw 111578-111579），与 configRegistry.ts 的 def: 0 一致；旧注「构造默认 1」是错的，见 tickets/T-0076 acceptance #3）"
   },
   {
     "addr": "0x42F560",

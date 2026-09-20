@@ -372,6 +372,21 @@ export interface NativeBridge {
   setVertexColorAlpha?(handle: number, delay: number, count: number, alpha: number, rgb: number): void;
   /** 0x203 set-draw-color-alpha：置 from 色（ARGB）。 */
   setDrawColorAlpha?(handle: number, from: number, blend: number): void;
+  /**
+   * **绘制项的当前色（ARGB，`DrawItem+0x60`）** —— 引擎 `sub_4ADD60`（raw 132579-132588）的对应物。
+   *
+   * 引擎逐字：`sub_459EA0(Scene+1032, &v4, &handle)` 查绘制项表；**查不到 ⇒ 返回 −1**；
+   * 否则 `return *(_DWORD *)(sub_4AAD40(Scene+1032, &handle) + 96)` —— 读的就是本工程的 `Item.from`
+   * （`+0x60` ARGB，`0x203` 自己写的那一格）。
+   *
+   * 为什么必须是**宿主缝**：`0x203`（`sub_4232C0` raw 31419-31451）在 `op3(α) < 0` / `op4(color) < 0`
+   * 时要把这两格**回退成"该项当前值"**（α 取 `>> 24`、颜色取整个 ARGB），而"当前值"只存在于宿主场景里
+   * ——这与 `0x322`/`0x323` 的负值回退（`scene/ops.ts` 的 `vertexColorArg`）是同一条纪律。
+   * 返回 −1 时 **`0x203` 的行为与引擎一致**：`(unsigned)−1 >> 24 = 255`（α）、颜色 = `0xFFFFFF`。
+   *
+   * ★只给 `0x203` 用（`0x33f` 的同类回退写的是 `Scene+1264`，那条通路仍未建模，见 T-0017）。
+   */
+  getDrawItemColor?(handle: number): number;
   /** 0x1F7 detach-texture（sub_422BC0）：删单/区间图元。op1=handle、op2=count；count≤1 删单，count>1 删 [handle,handle+count)。 */
   detachTexture?(handle: number, count: number): void;
   /** 0x202 set-draw-color：置 delay/count/to 色，置动画位。 */

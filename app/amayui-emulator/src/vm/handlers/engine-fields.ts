@@ -15,7 +15,7 @@ import { setConfigValue } from './msgwin.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
-import { CFG } from '../../configRegistry.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const op_write_global_slot: OpHandler = (c) => {
@@ -163,12 +163,20 @@ const op_get_engine_bool: OpHandler = (c) => {
 };
 
 /**
- * **`0x306`（sub_431FC0, raw 40948）：`op1 = GetConfig("system:EffectSkipOnClick")`**
- * —— 纯配置 getter（「点击跳过特效」开关，构造默认 1、配置文件可覆盖为 0）。
+ * **`0x306`（sub_431FC0, raw 40948-40951）：`op1 = GetConfig("system:EffectSkipOnClick")`**
+ * —— 纯配置 getter（「点击跳过特效」开关）。
  * 修掉先前误用 `ENGINE_INTERNAL_OPS` 里 no-op 的问题：那样会让本指令**不写 op1**。
+ *
+ * ★内建默认 = **0**，不是 1（`tickets/T-0076` acceptance #3 的核对项，以体为准）：
+ * 注册表对象构造 `sub_491880` 里同一形状的写法是「先把默认值放 `v13`，再 `sub_434D00(v2, key, &v13)`」，
+ * 而 `system:EffectSkipOnClick` 那两行是 **`v13 = 0;` + `sub_434D00(v2, aSystemEffectsk, &v13);`**
+ * （raw **111578-111579**）⇒ 与 `configRegistry.ts` 的 `def: 0` 一致。
+ * 旧代码把缺配置时的兜底写成字面量 `1`（且注释自称「构造默认 1」），那是错的 ——
+ * 现改为向注册表取（`registryDefault`），保证「兜底 = 唯一真源」不会再各自漂移。
  */
 const op_get_effect_skip: OpHandler = (c) => {
-  const v = c.e.config ? cfgInt(c.e.config, CFG.systemEffectSkipOnClick, 1) : 1;
+  const def = registryDefault(CFG.systemEffectSkipOnClick);
+  const v = c.e.config ? cfgInt(c.e.config, CFG.systemEffectSkipOnClick, def) : def;
   writeIntOperand(c.e, c.frame, c.instr, 1, v);
 };
 

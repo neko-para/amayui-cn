@@ -1,0 +1,49 @@
+{
+  "title": "0x1d0 回想页索引表 + 写端 0x70/0x71：HISTORY/CONFIG/REPLAYVOICE 的回看数据源",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/msgwin",
+  "why": "分诊（`tickets/T-0093/deferred-triage-report.md` A 段 #7）把 0x1d0 归为 deferred 28 条里少见的「① 现在就能做」：体 `raw 38105-38109`，被调 `sub_459860`（raw 70629-70724）**零 GDI / 零字体度量调用**（逐行核过），只碰 `Font[841]`（72 B/条、+40 = flags）、`Font[845]`（8 B/条页表）、`Font[846]`/`Font[860]`，按带符号步数 `a4` + 掩码 `a5 = 2` 步进 ⇒ 语义 = 「回看页索引表·带步数读出」（op1 = 页窗口号、op2 = 该页在记录表的起始下标，失败 `-1/-1`）。\n★此前把这一族标成「GDI 文本度量族」是**整条归口错**（轮 4 已订正标签），但它仍被 deferred —— 卡点不是度量，而是**写端未建模**：不连写端（页表是怎么被填的）一起做，读端恒 `-1/-1`（= 永远空回看）。\n语料：HISTORY 3 / CONFIG 1 / REPLAYVOICE 1。",
+  "acceptance": [
+    "先读写端：`0x70`（`sub_45D660` raw 73181 起）/ `0x71`（`sub_45EC60` raw 74267 起）的体，确定页表（`Font[845]`）与记录表（`Font[841]` + 72 B/条、`+40` = flags）的写入形状与不变量",
+    "实现 0x1d0 读端（op1/op2/op3 → `sub_459860` 语义）与写端按体落地；给出「页表 → 回看页」的模型（能过 `check:dead-writes`：模型必须有真消费者 —— 回看页渲染或至少 HISTORY 场景断言）",
+    "守卫：HISTORY（或合成指令）证明写满一页后读端返回非 `-1/-1`，且步数/掩码语义与体一致",
+    "若写端读完后判定需要 GDI 文本页渲染器（`sub_4675A0`，1210 行）才能收口，则**降级为有据 partial/deferred** 并写明前置（不许硬接）",
+    "npm run verify 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "analysis/opcode-gaps.json",
+      "anchor": "\"mnemonic\": \"i1d0\"",
+      "note": "0x1d0 的 deferred 条目（含「零 GDI」的订正与失败返回 -1/-1）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "//----- (0042D440)",
+      "note": "0x1d0 的 handler 体定义头（raw 38098 起）；被调 sub_459860 在 raw 70629-70724"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0085",
+      "T-0076"
+    ],
+    "docs": [
+      "docs-new/03-engine/route-c-text-metrics-2026-09.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "分诊报告 A 段 #7 + §D-4（写端体未读 = 唯一前置）。★动手第一件事 = 读 `sub_45D660`/`sub_45EC60`。",
+  "id": "T-0095",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why"
+    }
+  ]
+}

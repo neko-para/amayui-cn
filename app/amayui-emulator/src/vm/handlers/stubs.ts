@@ -123,6 +123,41 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    *   raw 126541-126545 创建）+ 三个效果槽 + `sub_4535F0` 帧推进，再建模 `+0x4D8`/`+0x4DC`/`+0x4E0`。
    */
   [0x325, op_engine_internal], // Effect3D 管理器 [+0x4D8]/[0x4DC] = op1/op2（帧推进 sub_4535F0 读作销毁判据）→ sub_426DC0
+  /**
+   * ★**SETWEATHER 族 5 条**（`tickets/T-0093`，2026-09 轮 6）：`0x327` / `0x328` / `0x329` / `0x32C` / `0x32E`。
+   *
+   * **为什么必须登记（而不是留在 `deferred` / 硬停）**：`SETWEATHER` 是**被剧情脚本调用**的
+   * （`call-script 47 // SETWEATHER`：`src/SC0500.txt:26212`、`SC0070:29136`、`SC2060:28374,30048`、
+   * `SC4000:4359`、`SC4160:5752`、`SC5450:3573`、`SC5530:4181`、`src/$1$SC4330.txt:4993` …），
+   * 而这 5 条此前**不在任何表里** ⇒ 每次走到 SETWEATHER 就 `NotImplementedOp` 硬停（整段剧情走不完）。
+   *
+   * **凭据（逐条读体 + 机械扫描，不是"看起来安全"）**：
+   *   - `0x327`（`sub_426E70` raw 33956-33964，argc 1）：读 op1 → `sub_453280(Engine[93384], op1)` =
+   *     **释放 Effect3D 管理器旧对象并重建**（同 0x324/0x325/0x326 那个管理器）。
+   *   - `0x328`（`sub_432300` raw 41080-41113，argc 3）：读 op1=handle、op2=网格 id **数组基址**、op3=数量
+   *     → 逐个 `DEC` 到临时数组 → `sub_4183F0(Scene, op1, 数组, op3)`（3D 网格）。
+   *   - `0x329`（`sub_426EB0` raw 33966-34000，argc 2）：读 op1=统一资源 id、op2=槽 → FileDB 解析 +
+   *     `sub_455560` 取字节 → `sub_4A0640(Engine+322832, …)` **装载 mesh**；失败抛
+   *     「メッシュファイル %s の読み込みに失敗しました」（与 `0x326` 同款错误串处理）。
+   *   - `0x32C`（`sub_426FC0` raw 34012-34030，argc 6）：读 **6 个 float** → `sub_499CE0(Scene, …)` =
+   *     3D 相机/天气参数面（`Scene+41960..41984` + `D3DXMatrixLookAtLH` + 设备 `SetTransform`）。
+   *   - `0x32E`（`sub_427110` raw 34057-34113，argc 11）：op9=α（夹 255）、op10=RGB（逐通道 × `dbl_51FA60`
+   *     归一化）、op1/op2 + op3..op8 六个 float + op11 → `sub_49A080(Scene, …)`（3D 图元/效果）。
+   *
+   * **为什么不建模**：这 5 条**全部落在 emulator 没有的 3D 子系统**（Effect3D 管理器 / 3D 网格 /
+   * 3D 相机与天气参数）⇒ 实现它们就要先造假的管理器/设备（纪律禁止）。**且它们对 VM 不可观测**：
+   * 逐条机械扫描确认体内**没有** `sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0`（不回写操作数）、
+   * 不改 ip/cur（只写长度槽）⇒ 跳过与"读了再丢"对脚本可观测行为一致；后者还会引入**死读**
+   * （与 `0x1D3`/`0x1D4`/`0x2F3` 同一条纪律）。
+   * ★扩展点 = 先建 3D 子系统（Effect3D 管理器 `sub_4530B0` + 三效果槽 + `sub_4535F0` 帧推进；
+   * 3D 层/网格表 `Scene+80708` 的 `sub_4AAA50`/`sub_4AAEC0`），再逐条接线。
+   * 台账：`analysis/opcode-gaps.json` 的 5 条由 `deferred` 改为 `engine-internal`。
+   */
+  [0x327, op_engine_internal], // Effect3D：释放+重建管理器（sub_453280）→ sub_426E70
+  [0x328, op_engine_internal], // 3D 网格：DEC 数组 → sub_4183F0(Scene, handle, ids, n) → sub_432300
+  [0x329, op_engine_internal], // mesh 装载（FileDB + sub_4A0640；失败抛 メッシュファイル 错误串）→ sub_426EB0
+  [0x32c, op_engine_internal], // 3D 相机/天气：6 个 float → sub_499CE0(Scene, …) → sub_426FC0
+  [0x32e, op_engine_internal], // 3D 图元/效果：α/RGB 归一化 + 6 float → sub_49A080(Scene, …) → sub_427110
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
   // 这里的每条都**确认过 handler 体不写 VM 可见态**（不回写操作数、不改 ip/cur）。
   // 「字段/状态可建模」的都在 `msgwin.ts` 的 `MSGWIN_OPS`（OPS 表，engine-first）：
@@ -234,12 +269,18 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 0xAE（sub_4192F0）**已转真实现**（2026-09）：见 handlers/frame.ts 的 op_save_version_branch
   //   —— 存档版本分支（读档时把帧 ip 重算到存档记录的位置）。语料 0 处调用，但**会改控制流**，不能当 no-op。
   /**
-   * `0xAF`（`sub_419690`，raw 24775-24783）：**唯一一条"体内什么都不做"的指令**。
+   * `0xAF`（注册项 raw 22898：`_this + 676696 = 675996 + 4*0xAF` → `sub_419690`）。
    *
-   * 体全文 = `result = _this[95776]; _this[30*result + 95805] = 1; return result;`
-   * —— 只把当前指令的操作数个数置 1（派发器的 arity 槽）并返回当前脚本下标：
-   * **不写任何引擎字段、不回写操作数、不改 ip/cur**。⇒ 归 `engine-internal` 是**有依据的**，
-   * 不是"没读体就丢进去"（对照本文件顶部声明的判据）。
+   * ★**订正（审计 `op-6-05`）**：此前这里写「**唯一一条"体内什么都不做"的指令**」是**错的**。
+   * `sub_419690` 的体（raw 24775-24783）＝
+   * `result = _this[95776]; _this[30*result + 95805] = 1; return result;`
+   * —— **写当前帧的指令步长槽**（`95805`；唯一读者 = 主循环 raw 20165 `ip += 4 * 该槽`）
+   * ⇒ 指令占 1 个 dword、ip 前进 4 字节；**与 `0x1A8` 的体逐字相同**
+   * （`0x1A8` 的 handler 同样是 `sub_419690`，见 control.ts 的 `op_dev_ukn`）。
+   *
+   * 对 emulator 仍不可观测（该槽未建模：ip 推进由 `interpreter.stepOnce` 直接 `+1`），故仍归
+   * `engine-internal`；但依据必须写成"体内只写派发器的步长槽"，**不是**"体内什么都不做"
+   * （对照本文件顶部声明的判据）。
    */
   [0xaf, op_engine_internal],
   // 0x143（i143）**已转真实现**：见 handlers/control.ts 的 op_dispatch_script_requests

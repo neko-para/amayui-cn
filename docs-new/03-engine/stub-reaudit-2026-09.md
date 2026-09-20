@@ -8,6 +8,14 @@
 > 每条 opcode 的 handler 结论在 `opcode-table.md` 与第一层 `analysis/functions.json`。
 > 逐脚本的用法在第三层 `analysis/scripts.json`。
 
+> ★**轮 6（2026-09）订正**：本文里 `0x327`/`0x328`「根本没注册 ⇒ 命中即硬报错」以及 §1.1 的
+> 「A4b 3D 天气效果族待做」**已过期** —— `0x327`/`0x328` 连同同族的 `0x329`/`0x32C`/`0x32E`
+> 五条已按「有据 no-op」登记进 `ENGINE_INTERNAL_OPS`（**缺消费端**：emulator 没有 Effect3D / 3D 网格 /
+> mesh / 3D 相机 / 3D 图元子系统；逐条机械扫描确认体内**无操作数写原语**）。
+> 理由是 `SETWEATHER` **由剧情脚本调用**（`call-script 47`），让它硬停会让整段剧情走不完。
+> 处置见 `analysis/opcode-gaps.json`、`src/vm/handlers/stubs.ts` 的块注释与 `tickets/T-0093`；
+> 守卫 `test/op-327-32e-setweather-noop.test.ts`。以下 §0/§1 的计数按当时口径保留。
+
 ## 0. 口径与总量
 
 | 项 | 数量 | 说明 |

@@ -1,0 +1,54 @@
+{
+  "title": "P2/P3 定点小修批：0x2EE 补 SetConfig(message:MessageFade) + 0x141/0x135 无符号口径 + operand 未写槽 enc_zero 口径 + fields.json Engine/0x408 scope",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "why": "分诊（`tickets/T-0093/deferred-triage-report.md` B 段 + §D）逐条读体+读码后确认的四项定点问题（都是「小、可机械验证」）：\n① **0x2EE**（`engine-fields.ts`）：emulator 只写字段，体 `raw 33590-33603` 还写 `SetConfig(message:MessageFade)` ⇒ 现状「重启后回默认」（审计 `op-4-11`，cross-source-mismatch）。\n② **0x141**：emulator 用有符号 `>0x10`，体 raw 31005 是 **unsigned** 比较；**0x135**：emulator 有符号 + 抛 JS 异常，体 raw 39409 unsigned + 打错误串。两条**语料都是 0 处** ⇒ 不可见，但口径错（审计 P2/P3）。\n③ **`readIntOperand` 对「脚本从未写过的槽」给 `dec(key, 0)`**：引擎装载脚本时把 local_int 整块填 `enc_zero`（`loadScriptFrame_40ED40`，`fields.json` 0x5EC90）⇒ 未写槽读 **0**；emulator 在读真存档（key ≠ 0）时会读到**垃圾**。轮 6 只在 `0x12E` 本地用 `hasRefValue` 绕开（`ref.ts` 已有先例），**全局口径未对齐**。\n④ **`analysis/fields.json` 同时有 `Engine/0x408 draw_item_container` 与 `Scene/0x408 draw_item_map`**：分诊读体确认 `Engine+1032 = Input 管理器`（`sub_406C70` raw 11993 把 hWnd 交给 `sub_478050(_this+258,…)`；`sub_477220` raw 91632 `GetAsyncKeyState`；`opcode-table.md` 的 0x10C 行也这么写），而绘制项 map 在 **`Scene+1032`**（`sub_4AAA50` raw 130039，`_this` = `0x223` 在 raw 31957 传的 `_this+80708`）⇒ 倾向 `Engine/0x408` 那条是**错 scope 的重复条目**。",
+  "acceptance": [
+    "① 0x2EE 按 raw 33590-33603 补 `SetConfig(message:MessageFade)`（经 `setConfigValue`，与读侧同一注册表），并加守卫断言写后读回",
+    "② 0x141 改按 unsigned 比较、0x135 改按 unsigned + 与引擎同形的错误路径（或写明为什么 emulator 侧可观测等价），各加合成指令守卫",
+    "③ operand 未写槽的全局口径：先确证「local_int 装载时填 enc_zero」这条（`fields.json` 0x5EC90 + `loadScriptFrame_40ED40`），再决定是改 `readIntOperand` 还是保留本地 `hasRefValue` —— **两个只能留一个**，并把判据写进注释 + 守卫（不许两套口径并存）",
+    "④ 复核 `Engine/0x408` 与 `Scene/0x408` 两条字段条目：读 `sub_406C70`/`sub_4AAA50` 的体确认 scope，错的删掉或在 `fields.json` 里改 scope（用 `report.js --field-edit`），并在 `docs-new/03-engine/runtime-memory.md` 订正",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
+      "anchor": "op_set_meswin_alpha",
+      "note": "同族直写配置的写法先例（0x141）；0x2EE 缺 SetConfig 的对照点"
+    },
+    {
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "anchor": "| op-4-11 | cross-source-mismatch |",
+      "note": "0x2EE 的审计条（raw 33590-33603；字符串常量 4380）"
+    },
+    {
+      "file": "analysis/fields.json",
+      "anchor": "draw_item_container",
+      "note": "④ 的被复核对象：Engine/0x408 与 Scene/0x408 的 scope 之争"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0077",
+      "T-0057"
+    ],
+    "docs": [
+      "docs-new/03-engine/runtime-memory.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md"
+    ]
+  },
+  "notes": "来源 = 轮 6 分诊报告（`tickets/T-0093/deferred-triage-report.md` B 段 + §D-1）。★③ 是「同一语义两处口径」类问题（T-0057 的同族），最容易被两套实现都留下。",
+  "id": "T-0097",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why, notes"
+    }
+  ]
+}

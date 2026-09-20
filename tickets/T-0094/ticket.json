@@ -1,0 +1,49 @@
+{
+  "title": "0x196 display-furigana 的第①②路 MessageSpeed 节流半边未建模（6341 处语料，会少等一拍）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/adv",
+  "why": "轮 6 按体给 `0x196` 接上了**外层门**（`Engine[489988] & 1`，raw 29071：bit0 未置走第①②路、已置走第③路）与第③路的 `flags |= 0x10000` / `lastArg = op1`（raw 29104-29109）。\n但第①②路的另一半仍未建模：raw 29088-29095 的 `sub_46BE30` 成功后 `effect_flags |= 0x20000000` + 起节拍定时器 `sub_453A60(_this + 430572, MessageSpeed)`（raw 29093/29095）。\n★**审计原文「语料 i196 = 0 处」是错的**：那只是助记符字面量的计数；`display-furigana` 在 `src/*.txt` 里有 **6341 处**（如 `src/CONFIG.txt:174`）⇒ 这是**真实可观测**的节奏缺口（每处注音比引擎少等一拍 MessageSpeed），不是「反正不可观测」。\n现状已用**棘轮测试**钉住（`test/op-3-004-furigana-outer-gate.test.ts` 的第 3 条「缺口棘轮」），补上会变红 ⇒ 改成正向断言即为完成判据。",
+  "acceptance": [
+    "按 raw 29075-29095 实现第①②路：MessageSpeed==0 或 ADV 位已置 ⇒ `sub_46CBF0` 语义（同步排空，无计时器）；否则 `sub_46BE30` + `effect_flags |= 0x20000000` + 节拍计时器（按 emulator 既有的 `sleepUntil`/`SLEEP_GATE` 机制落，而不是新造一个平行机制）",
+    "把 `test/op-3-004-furigana-outer-gate.test.ts` 的「缺口棘轮」断言翻成正向行为断言（并保留「不许退回未建模」的棘轮）",
+    "E3：用一份真实含 `display-furigana` 的脚本（如 CONFIG/CONFIG1）跑到该指令，断言注音出现时机与 MessageSpeed 的关系（或给出场景级不变量）",
+    "订正 `docs-new/03-engine/audit-2026-09-opcodes.md` 的 op-3-004「语料 i196 = 0」为「助记符 `i196` = 0，但名字形式 `display-furigana` = 6341 处」",
+    "npm run verify 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "op_display_furigana",
+      "note": "已接外层门 + bit16 + lastArg；第①②路的 effect_flags 0x20000000 与节拍定时器未建模（注释里已写）"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts",
+      "anchor": "缺口棘轮",
+      "note": "把缺口钉住的棘轮断言 —— 完成本票时改成正向断言"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(_this + 489988) |= 0x10000u;",
+      "note": "第③路（raw 29108）已建模；第①②路在 raw 29088-29095（`sub_46BE30` + `|= 0x20000000` + `sub_453A60`）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0077"
+    ],
+    "docs": [
+      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "来源 = 轮 6 子代理按体实现 0x196 时的发现（并订正了审计文档的语料计数错误）。★先 grep `//----- (0041FC20)` 定义头再读体。",
+  "id": "T-0094",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

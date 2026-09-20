@@ -1,13 +1,49 @@
-# 03-engine · 交接文档（2026-09，目标轮 47+ 结束时）
+# 03-engine · 交接文档（2026-09，**轮 6 收口后 · 已暂停**）
 
 > 用途：**新会话直接照此续跑**。真源与纪律都在这里；详细体实证在 `audit-2026-09.md` §6，
-> 批次总账在 `repair-plan-2026-09.md` §2c（历史）、**§2d（轮 47+）与 §2e（轮 4）**。
+> 批次总账在 `repair-plan-2026-09.md` §2c（历史）、§2d（轮 47+）、§2e（轮 4）、§2f（轮 5）与 **§2g（轮 6，最新）**。
+> ⏸ **本次暂停点见下面的「暂停点」节**（状态 / 下一位第一件事 / 半成品清单 / 纪律提醒）。
 > **唯一权威 = 引擎反编译** `engine/天结_unpacked.exe_utf8.c`。
 >
 > **★怎么交接（只需这一份）**：新会话的提示里给一句
 > 「读 `docs-new/03-engine/handoff-2026-09.md`，按它继续推进；开工前先看 §3.0 的会话级前置」即可 ——
 > 三层数据层（`analysis/*.json`）、四份台账、票据、规格文档**全在仓库里**，不需要另外搬。
-> 但 **§3.0 那三条是会话级的（沙箱权限 / 点名加载技能 / 并发写纪律），文档本身保证不了**，必须一并交代。
+> **并发/多 agent 纪律也已经进仓库了**（三个技能各有一节「★多 agent 并行纪律」）；§3.0 只留「会话级」那两条：沙箱权限 + 点名加载技能。
+> ★**给子代理（subagent）派活时**：它们**会**拿到同一份技能目录与 `skill` 工具（实测），照 §3.0-3 的三种 prompt 模板交代即可。
+
+---
+
+## ⏸ 暂停点（2026-09 · 轮 6 结束时；**用户要求暂停任务**）
+
+**现在的状态 = 干净可续跑，没有任何"在飞"的写操作**：
+- 三个子代理（2×IMPLEMENTATION + 1×ANALYSIS-ONLY）**全部已收工**，它们的结论已由 owner 合并进台账/票据/文档；临时工作记录（`.tmp/triage`、`.tmp/t77`）里**有价值的两份已归档进票据目录**：
+  `tickets/T-0093/deferred-triage-report.md`（deferred + P2/P3 分诊全文）与 `tickets/T-0077/l2d-and-hover-report.md`（Live2D 节点族 + `0x12E` 的体实证）。
+- 工作树**未提交**（本工程纪律：**不做 git 提交**，只写文件）：**52 个文件 = 36 改 + 16 新增**；无 `*.tmpdir` 残留（`edit`/`write` 都落盘了）。
+- 四份台账与全部生成物**已同步、刚复核过**：`gaps --check` ✓（deferred **24** = 284 处语料）、`capabilities --validate` ✓（134 条）、`scripts --validate` ✓（30 条）、`tickets --validate` ✓（97 张）、看板守卫 `test/ticket-ledger.test.ts` 5/5 ✓。
+- 最后一次全量：`npm run verify` = **837 tests / 825 pass / 12 skip / 0 fail**，死写 **0**。
+
+**★下一位的第一件事（复制即用）**：
+```bash
+cd app/amayui-emulator && npm run verify        # 必须全绿（≈40s；若全红且错在 spawn EPERM 先看 §3.0-1）
+cd ../.. && node scripts/build-opcode-gaps.mjs --check   # 缺口台账漂移（exit 1 = 有人直接改过 JSON）
+node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --list --open | head -30
+```
+
+**本轮已落地**（细节 §6.7 与 `repair-plan-2026-09.md` §2g）：`T-0077`/`T-0076`/`T-0084` 三票 done；
+B7 P2 首批 4 条（`0x6E`/`0x1A8`·`0xAF`/`0x20A`/`0x196`）；**`T-0093` 第①半**（SETWEATHER 族 5 条 ⇒ 不再硬停）；
+deferred 全量分诊（口径订正 + 29 条重排）；缺口台账 deferred 28 → 24、有据 no-op 8 → 13。
+
+**半成品 / 明确未做（别当已完成）**：
+1. **`T-0093` 保持 `doing`**：第①半（SETWEATHER 5 条）已 done 并带守卫；**第②半 `0x147`/`0x2f2` 纯几何命中测试未做**（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion` → op1，零宿主缝，各 1 处语料）。
+2. **`T-0094`（P1）**：`0x196` 第①②路的 `effect_flags |= 0x20000000` + `sub_453A60` 节拍半边**未建模**（语料 **6341 处** `display-furigana`；现由 `test/op-3-004-furigana-outer-gate.test.ts` 的「缺口棘轮」钉住，补上即改成正向断言）。
+3. **`T-0091`**：转场类别 3 的精确核、`[4]` 非 `create-texture` 槽、`Scene+46508·46512·46516` 三标志本身、**E4 像素级可达路径**（`SN0000` 的 `i250` 在 line 3036 之后）。
+4. **`T-0092`**：`0x02` 的 `-11` 分支无记录 0 时 emulator 抛 `ExitScript`，引擎**不退出**（审计 `op-2-10`）。
+5. **待人工决策**：`T-0088`（无 GUI 时 AGERC cmd 8 返回什么的产品策略）。
+6. **未收敛的读法**：`T-0041`（blend state「泄漏」与真机可见行为矛盾）、`T-0054` Live2D 的矩阵合成器（`T-0096`）。
+
+**两条纪律提醒（本轮踩过的）**：
+- **语料计数口径**：台账 `mnemonic` 不补零而 `src/*.txt` 是 `i` + 三位（`i28` vs `i028`）⇒ 自己 grep 时两种写法都要数（否则漏 9 条约 70 处）。
+- **「语料 0 处」只对助记符字面量成立**：`0x196` 就是反例（`i196` = 0，但 `display-furigana` = 6341 处）⇒ 判定重要性前先按 `opcodes.json` 的 `name`/`aliases` 一起查。
 
 ---
 
@@ -16,25 +52,27 @@
 按 `docs-new/03-engine/repair-plan-2026-09.md` 的批次（B0…B7）推进 emulator 修复：
 **每次只按引擎 raw 证据改 → 带守卫测试 → 同步 opcode-table/三层台账/票据 → `npm run verify` 全绿收口。**
 
-**★本轮的里程碑：B3「语料用到但零注册的指令」的**未审视**缺口清零**（`unimplemented` 35 → **0**，语料 203 → 0）。
+**★本轮（轮 6）的里程碑：B4 收口（`T-0077` done）+ P0 `T-0076` done + P2 `T-0084` done + B7 首批（`0x6E`/`0x1A8`·`0xAF`/`0x20A`/`0x196`）+ deferred 全量分诊** ——
+`ALLOW_UNDERRUN` 里最后一条「确认是 bug」清零（`0x12E` 按体重写）、Live2D 节点族 7 条按体订正（★`0x348` 是**轴角旋转不是缩放**；真语料 `i34d` 12 处此前 delay/dur 与平移分量整体错位）、`0x306` 的引擎内建默认订正为 **0**（raw 111578-111579）。细节 §6.7 与 `repair-plan-2026-09.md` §2g。
+（上一段里程碑：轮 5/6 的读档画面 = 「存档那一屏」，宿主缝 `native.restoreDrawItems` ⇒ `T-0083`/`T-0066`/`T-0072`/`T-0074`/`T-0090` 全 done，见 §6.6/§7。）
 
-> ⚠ **这不是"都实现了"** —— `deferred`（31 条）**都不在任何注册表里** ⇒ 其语义**不会被执行**
+> ⚠ **这不是"都实现了"** —— `deferred`（**24 条 = 284 处语料**）**都不在任何注册表里** ⇒ 其语义**不会被执行**
 > （严格模式命中即抛 `NotImplementedOp`；诊断模式跳过并计入"被跳过的未实现 opcode"）。
-> `implemented` 与 `deferred` 的差别只是"已经从『没人看过』变成『看过、读过体、写清了扩展点』"。
-> **★残留规模（按语料实测）：31 条 = 312 处调用点**，最大三档 `0x140`(181) / `0x28`(32) / `0x86`(16)，
-> 本次新判定的 6 条 = `0x22a`(2)+`0x22c`(6)+`0x22d`(5)+`0x22f`(7)+`0x1c4`(1)+`0x23a`(1)。
-> **下一步的重点 = 让这些 `deferred` 从"语义不执行"变成"有模型"**（见 §5；三条公共前置模型能一次解锁多条）。
+> `implemented` 与 `deferred` 的差别只是"已经从『没人看过』变成『看过、读过体、写清了扩展点』"；
+> 另有 **13 条**是 `engine-internal` 的**有据 no-op**（含本轮新登记的 SETWEATHER 族 5 条 —— 它们**不再硬停**，但 3D 效果本身没做）。
+> **★残留规模（按语料实测，轮 6 分诊后）：24 条 = 284 处调用点**，最大四档 `0x140`(181, ★全在 DEBUG 路径) / `0x28`(32) / `0x86`(16) / `0x222`(10)。
+> **下一步的重点 = 让这些 `deferred` 从"语义不执行"变成"有模型"**（见 §5）。
 
 ## 1. 当前状态（可直接复核，勿凭记忆）
 
 | 项 | 值 | 复核命令 |
 |---|---|---|
-| 测试 | **771 tests / 759 pass / 12 skip / 0 fail**（12 skip 全是"本机没有某样东西"：真游戏 base 目录 / `native/win32-input` 未构建 / 没有 live2d 资源；见 §3.0 的环境构造） | `cd app/amayui-emulator && npm run verify`（≈40s，含 typecheck + 死写检测） |
+| 测试 | **837 tests / 825 pass / 12 skip / 0 fail**（12 skip 全是"本机没有某样东西"：真游戏 base 目录 / `native/win32-input` 未构建 / 没有 live2d 资源；见 §3.0 的环境构造） | `cd app/amayui-emulator && npm run verify`（≈40s，含 typecheck + 死写检测） |
 | 死写 | **0** | 同上（`check:dead-writes` 扫 `Item`/`MeshObj` 字段） |
-| 缺口台账 | **未实现 0（语料 0）/ unjustified no-op 0 / 有据 no-op 8 / 已实现 34 / deferred 28**（共 70 条；轮 5 新增 `0x24D` 类别 1 = 语料 0 处）★「未实现 0」= 语料用到的零注册指令**已全部定性**（不再有"没人看过"的）；`deferred` **28** 条（**292 处语料**；轮 5 新增的 `0x24D` 是语料 0 处）**仍会硬停** | `node scripts/build-opcode-gaps.mjs`（写模式）／`--check`（CI 口径，exit 1 即漂移） |
-| 能力台账（第二层） | **133 条**：已核验 48 / 已建模未核验 7 / 部分 33 / 缺失 21 / n/a 24 | `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --root . --validate` |
-| 票据 | **88 张**（doing 4 / open 19 / done 64 / dropped 1） | `.agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --validate` + `node scripts/build-tickets.mjs` |
-| 批次 | **B0 ✅ B1 ✅ B2 两步（剩计划层）B3 ✅（缺口清零）B4 剩 3（2 条为已披露偏差）B5 (A)(B)(C) ✅ B6 ✅ B7 未开始**；**轮 5（2026-09）：`T-0084` 转场渲染**——窗口模型 + 12 种条带几何 + 类别 0/2 的**离屏槽**合成已落地（缺口台账/能力台账计数不变；详见 `repair-plan-2026-09.md` §2f） | `repair-plan-2026-09.md` §2d / §2f |
+| 缺口台账 | **未实现 0（语料 0）/ unjustified no-op 0 / 有据 no-op 13 / 已实现 34 / deferred 24**（共 71 条；轮 5 新增 `0x24D`、轮 6 新增 `0x337`，两者语料均 0 处）★「未实现 0」= 语料用到的零注册指令**已全部定性**（不再有"没人看过"的）；`deferred` **24** 条（**284 处语料**；轮 5 新增的 `0x24D` 与轮 6 新增的 `0x337` 都是语料 0 处）**仍会硬停** | `node scripts/build-opcode-gaps.mjs`（写模式）／`--check`（CI 口径，exit 1 即漂移） |
+| 能力台账（第二层） | **134 条**：已核验 **49** / 已建模未核验 7 / 部分 **33** / 缺失 21 / n/a 24（轮 6：`clock-read-transition-window` 由 `partial/E2` → **`modeled-verified/E3`**；`frame-render-gate-mainloop` 补 ADV-before-sleep 的体依据） | `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --root . --validate` |
+| 票据 | **97 张**（doing 4 / open 20 / done 72 / dropped 1）★轮 6 收口 `T-0077`（P1）/`T-0076`（P0）/`T-0084`（P2）；新增 `T-0091`~`T-0097` | `.agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --validate` + `node scripts/build-tickets.mjs` |
+| 批次 | **B0 ✅ B1 ✅ B2 两步（剩计划层）B3 ✅（缺口清零）B4 ✅（轮 6 收口，剩 Live2D 矩阵合成器 ⇒ `T-0096`）B5 (A)(B)(C) ✅ + 轮 5/6 读档画面收口（`restoreDrawItems`）✅ B6 ✅ B7 进行中（轮 6：P2 首批 4 条 + SETWEATHER 族 5 条登记 + 分诊出 5 张新票）**；**轮 5（2026-09）：`T-0084` 转场渲染**——窗口模型 + 12 种条带几何 + 类别 0/2 的**离屏槽**合成已落地（缺口台账/能力台账计数不变；详见 `repair-plan-2026-09.md` §2f） | `repair-plan-2026-09.md` §2d / §2f |
 
 ## 2. 真源与生成物（**生成物一律手改禁止**）
 
@@ -55,12 +93,17 @@
    **那不是测试失败，是沙箱**。本会话实测：必须给到 `danger-full-access` 才能跑 `npm run verify`。
    ⇒ 新会话若一上来 `verify` 全红且错在 `spawn EPERM`，先解决权限，**不要**去改测试。
    （临时绕法：单文件直接用 `node --env-file=test/options.test.env --import tsx test/xxx.test.ts` 跑在进程内，不起子进程。）
-2. **加载技能**：本仓库的技能是**按需加载**的（`.agents/skills/*`）。开工时在提示里点名它们，否则新会话不会读到纪律：
+2. **加载技能**：本仓库的技能是**按需加载**的（`.agents/skills/*`）。开工时在提示里点名它们，否则新会话不会读到纪律
+   （★**子代理不点名也会拿到同一份目录**：目录注入挂在 `agent/pre-step`、对每个 agent 各发一次 —— 实测子代理报告里列出了全部 8 个技能并真的加载了其中几个；
+   但**正文改动不触发重新注入** ⇒ 技能刚改过时要提醒它「重新 `skill` 一次」）：
    `amayui-engine-analysis`（三层数据层 + 缺口/能力台账）、`amayui-script-analysis`（脚本台账流程）、
    `amayui-ticket-ledger`（票据台账）、`amayui-script-translate` / `amayui-script-update`（翻译相关）、
    `batch-task-runner`（批量）、`amayui-ui-text-render`（UI 图片文字）、`amayui-mnemonic-rename`（助记符改名）。
-3. **并发写纪律（本轮踩过 3 次）**：`--set` 的**值里不要写 ASCII 逗号**（会被当数组分隔符）、
-   note 里引用短语用「」而不是 ASCII 引号（会截断 JSON）；**多 agent 并行时对既有文件只用 `edit` 定点替换，绝不用 `write` 整文件重写**。
+3. **并发写纪律 → 已进仓库**：见三个技能的「★多 agent 并行纪律」节（单写者表 / 三种子代理 prompt 模板 / 锚点 ABI / validate 红分类 / 共享资源串行化）。
+   工具侧已加固：**`--set-json`**（值里带 ASCII 逗号时不再被拆成数组）、**`--recount`**（直接改过 JSON 后修 `counts`）、
+   **`--anchors-in <file>`**（改文件前查「谁锚在这」）；三工具写入已是**原子写**（tmp+rename），`--validate` 改为**比磁盘上的 `counts`**（此前比刚重算的副本 ⇒ 陈旧查不出来）。
+   仍然成立的两条人肉纪律：**对既有共享文件只用 `edit` 定点替换、不用 `write` 整文件重写**；**`npm run shot` / `verify` 同一时刻只跑一个**
+   （`shot` 会覆盖同一个 `.tmp/amayui-emulator.log`，而它是证据源）。
 4. **环境要自己构造**（2026-09 系统变更后：本机**没有真游戏安装**）：读档链 E4 用的 079 存档不在默认
    overlay 里，样本在仓库 `cache/`（`SAVE79.DAT`/`SAVE79.STH`）⇒ **按 `cache/README.md` 复制到
    `<repo>/.tmp/appdata/Eushully/天結いキャッスルマイスター.overlay/SAVE/` 并把 mtime 拨回
@@ -105,53 +148,56 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 16. **★语料量 ≠ 重要性：先看那批命中是不是在「门后/DEBUG 路径」上**。实测教训：`0x140` 以 **181 处**排在
     `deferred` 榜首、连着两轮被列为"最值得先做的一条"，读体后发现它**全在 DEBUG 路径**（`global 708ad6 == 1`
     才进，该全局全语料唯一写点 = `TITLE.txt:462` 的 DEBUG 菜单）⇒ 正常剧情零影响。
-    ⇒ 排优先级时**必须**先 `Select-String` 看实参形态是否高度一致 + 追一下"进这条分支的门是什么"，
+    ⇒ 排优先级时**必须**先 `Select-String` 看实参形态是否高度一致 + 追一下「进这条分支的门是什么」，
     否则会把力气花在只有开发者菜单才会走到的指令上。
+17. **★锚点不是注释，是跨文件/跨 agent 的 ABI**（轮 5 实测）：`ticket.json` 的 `evidence[].anchor` 与 `analysis/scripts.json` 的 `layout[].anchor`
+    要求**别人正在改的文件**里存在那个字面串。改任何被锚定的文件（**源码注释、机制文档的表格行都算**）之前先跑
+    `tickets.js --anchors-in <file>` 与 `scripts.js --anchors-in <file>`；能保留就把旧串留在标题/引用里，不能保留就**在报告里申报**（由台账 owner retarget）。
+    ★**不许用「删证据 / 降 status / 删条目」来消红**。（实测收益：`--anchors-in save-slot.ts` 一次列出 17 条锚点 —— 此前只能人工列举「必须保留的 4 个串」；它还当场暴露了两条说明过时的证据。）
+18. **★「不在被调函数里」≠「引擎没做」**（轮 5 最贵的一课）：`sub_410160` 的 27 个 callee 确实都不清绘制容器，但清容器是它**自己的行内语句**（raw 19810-19820）。
+    ⇒ 结论必须落在**函数体文本**上（含行内循环/内联语句），不能只审调用图。
+19. **`--validate` 绿 ≠ 数据层对**：直到轮 5，两个工具都在拿**刚重算过的副本**比 `counts` ⇒ 磁盘上的陈旧**检测不出来**（实测踩过 `partial 18→19`、`modeled-verified 48`）。
+    现在改为比磁盘并提示 `--recount`。同理：**生成物（`*.md`）只在结算时由台账 owner build 一次**，别的 agent 不跑 build（会用陈旧输入覆盖别人的结果）。
+20. **派子代理的三件套**（详见三个技能的同名节）：① 角色（ANALYSIS-ONLY / IMPLEMENTATION / LEDGER-OWNER）；② **路径白名单**（可写哪些、禁写 `analysis/`·`tickets/`·`docs-new/`）；
+    ③ **必保字面串**（锚点）+ 退出判据（`npm run verify` + E4）。★ANALYSIS-ONLY 的 prompt **必须**写明「即使你加载了某技能，也**跳过**它的落库步骤」——
+    否则子代理会在「技能要求落库」与「只读分析」之间自行取舍（实测原话如此）。
 
-## 5. 剩余工作（按性价比排序）
+## 5. 剩余工作（按性价比排序；**轮 6 后已重排**）
 
-> **残留规模（先看这个再挑活）**：`deferred` **27 条 = 292 处语料调用点**（轮 4 把 `0x22a`/`0x22c`/`0x22d`/`0x22f`
-> 四条转成 implemented ⇒ 从 31 条 / 312 处降下来），其语义目前都不执行。
-> **★但语料量会误导 —— 要按「是否在关键路径」折算**：原先排在第一的 `0x140`(**181**)
-> 经读体确证**全在 DEBUG 路径**（`global 708ad6 == 1` 才进，该全局唯一写点 = `TITLE.txt:462` 的 DEBUG 菜单）
-> ⇒ **正常剧情零影响**（见 `T-0088`）。折算后真正值得先做的是：
-> `0x28`(32) / `0x86`(16) / `0x222`(10) / `0x87`(9) / `0x236`(6) / `0x36`(5) / `0x1d0`(5) /
-> `0x25`(4) / `0x2fd`(4) / `0x32c`(4)，其余 16 条各 ≤1。
-> `0x140` 顺带被**推翻旧理由**：`dword_55E1B4` 不是"运行时解析、静态定不了"，它**就是 `AGERC.DLL!_ShowDialog@12`**
-> 这个 `__stdcall` 函数指针（首参 = 请求码），静态可枚举调用方 `−1/2/3/4/8/9/10`；真正卡住它的
-> 是"返回值只能由真人点选 + 两张运行时表未建模 + 无对话框宿主缝" ⇒ 处置见 `T-0088`（含一个**产品策略**待定）。
+> ★**轮 6 已收口、不要再当待办**：`T-0077`（B4，13 处凭空/错读）/ `T-0076`（P0）/ `T-0084`（P2 转场，剩项转 `T-0091`）；
+> B4 的 Live2D 半边（节点矩阵合成器）转 `T-0096`。**B4 不再是"进行中"**。
 
-### 5.1 三条"公共前置模型"（做完能一次解锁多条）
+### 5.1 下一步按性价比
 
-| # | 前置模型 | 解锁 | 依据 / 起手 |
+| # | 活 | 票 | 为什么 / 起手 |
 |---|---|---|---|
-| **1** | **平面/离屏合成**（路线 D） | `T-0066`（冷启动层序，**用户已指示"后续再处理"**）、`T-0084`（转场扫描带，规格已在手）、让 (B) 的 `ownerFrame` 近似退役 | `0x20D`/`0x20E` 的"画进哪个平面"；`scene/ops.ts` + presenter |
-| **2** | ✅ **已完成（轮 4）**：Scene 世界矩阵 + 层号 20..29 的合成级 | `0x22a`/`0x22c`/`0x22d`/`0x22f` **4 条已 implemented**（`op_scene_scale`/`op_scene_translation`/`op_scene_axis_scale`/`op_scene_axis_translation`；新宿主缝 4 条、五处同步；守卫 `test/op-22a-22f-scene-world.test.ts` 13 条 + `op-22a-22f-scene-xform.test.ts` 12 条；第二层新条目 `scene-layer-xform-compose-20-29`） | 消费端 = `sub_4A1E90`（raw 122130-122157）→ `sub_49AA30` → 合成 Scene 世界矩阵。★**层号门的读法（上一轮记反了，已订正）**：RenderScene raw 133403 的 `if` 判据是 `(unsigned)(layer − 20) > 9` ⇒ **落在区间外**的项拿**完整**世界矩阵；**真正只作用于 20..29 层的是同一处的 `else` 支**（raw 133411-133438：`D3DXMatrixDecompose` 后**只把 2D 缩放与平移**装回 work 矩阵）。左右序 = `work ← work · sceneWorld`（行向量约定）⇒ `屏幕点 ← 屏幕点 × (sx,sy) + (tx,ty)`（缩放绕屏幕原点、平移**不被**该项自身缩放放大 —— 写反会变成 `pos·sx + tx·sx`，已设棘轮） |
-| **3** | **混合模式消费端**（`T-0017`） | `0x33f`、`Item.blend`/`MeshObj.blend`、以及"引擎状态泄漏"那条未收敛结论 | `Item.blend` 已有写入端、缺 Pixi `blendMode` 消费 |
+| **1** | ✅（轮 6 已完成第①半）**SETWEATHER 族 5 条登记为 `engine-internal` 有据 no-op**；剩 `0x147`/`0x2f2` 纯几何命中 | `T-0093`（P1，doing） | ★**用户可见 + 机械可验证**：`SETWEATHER` 由剧情脚本 `call-script 47` 调用（SC0500:26212 / SC0070:29136 / SC2060:28374,30048 / SC4000:4359 / SC4160:5752 / SC5450:3573 / SC5530:4181 / `$1$SC4330`:4993 …），而 `0x327/0x328/0x329/0x32C/0x32E` 三张表都没有 ⇒ **每次走到 SETWEATHER 就 NotImplementedOp 硬停**。五条体内机械扫描**无 `sub_42B4B0`/`sub_42BA00`（不回写操作数）**，同族 `0x324/0x325/0x326` 已在 `stubs.ts` 同口径登记。同批可做 **`0x147`/`0x2f2` 纯几何命中测试**（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion` → op1，**零宿主缝**，各 1 处语料）。 |
+| **2** | **`0x196` 第①②路的 MessageSpeed 节流半边** | `T-0094`（P1） | **6341 处** `display-furigana`（★审计原文「语料 i196 = 0」只是助记符字面量，已订正）⇒ 每处注音比引擎少等一拍。外层门与第③路轮 6 已接，现由棘轮测试钉住（`test/op-3-004-furigana-outer-gate.test.ts`），补上即翻正向断言。 |
+| **3** | **`0x1d0` + 写端 `0x70`/`0x71`（回想页表）** | `T-0095`（P2） | deferred 里少见的「① 现在就能做」：`sub_459860`（raw 70629-70724）**零 GDI**（轮 4 已订正「GDI 文本度量族」的错归口）。卡点 = 写端未读 ⇒ 动手第一件事 = 读 `sub_45D660`（raw 73181）/ `sub_45EC60`（raw 74267）。语料 HISTORY 3 / CONFIG 1 / REPLAYVOICE 1。 |
+| **4** | **P2/P3 定点小修批** | `T-0097`（P2） | `0x2EE` 补 `SetConfig(message:MessageFade)`（审计 `op-4-11`，重启后回默认）；`0x141`/`0x135` 的**无符号**口径（体 raw 31005 / 39409；语料 0 处）；**operand 未写槽读 `enc_zero`** 的全局口径（引擎装载时整块填 `enc_zero`，轮 6 只在 `0x12E` 本地绕开 ⇒ 两套口径只能留一个）；`fields.json` 的 `Engine/0x408` scope 复核（分诊读体：`Engine+1032 = Input 管理器`，绘制项 map 在 `Scene+1032`）。 |
+| **5** | **Live2D 节点矩阵合成器 `sub_4A07F0`** | `T-0096`（P2） | 轮 6 把节点族 7 条改对了操作数/落点，但**消费端未实现** ⇒ `L2dNode.scale/rotation/translate/wins` 有值而无消费者（`l2dNodeTransform` 恒单位变换）。体 = raw **121131-121520**。 |
+| **6** | **转场渲染剩余四项** | `T-0091`（P3） | 类别 3 的 `(2L+1)²` 核逐点权重、`[4]` 指向非 `create-texture` 槽、`Scene+46508·46512·46516` 三标志本身、**E4 像素级可达路径**（`i250` 在 `SN0000` line 3036 之后；178 个含 `i223` 的脚本前 12 个 ×3000 帧零命中）。 |
 
-### 5.2 单点但边界清晰
+### 5.2 仍是「卡子系统」的大块（分诊结论：都指名了 emulator 没有的东西）
 
-- **`T-0084` 转场扫描带**：★**规格已在手**（`docs-new/03-engine/transition-render-spec-2026-09.md`）。**轮 5 已落地窗口模型 + 12 种条带几何 + 类别 0/2 的离屏合成**（`scene/transition.ts` + `TextureCache.composeIntoSlot`；守卫 `sc-transition-window`(11)/`sc-transition-geometry`(10)/`transition-render-wiring`(4)/`transition-corpus-e3`(1)）。
-  **★规格 S4 的近似是错的（已订正）**：`[4]` **不是"整屏"**，是**渲染目标层**（`sub_4A50C0(_this, v384[4])` raw 136174/134937/135824）—— 语料里那是脚本自己 `create-texture` 出来的离屏槽，随后由引用它的绘制项呈现（`src/SC0000.txt:1337-1339`）。**所以 T-0084 的渲染端与「路线 D：平面/离屏合成」同源**（本轮先把"画进离屏槽"这条腿打通了）。
-  **仍缺**：类别 1 `0x24D`（§3.5 U2 未确证）、类别 3 `0x250`/`0x251`（**78 处语料**，需要真模糊 —— emulator 没有 filter）、`[4]` 指向非 `create-texture` 槽、`Scene+46508/46512/46516` 三个标志本身。★另有两条已订正：窗口门**不是** `0x400`（那是脚本等待门计时器），应接 `Scene+46508 → needsRender`；消费端区间是 raw **134417-136734**。
-- ✅ **`T-0085` `set:BlankExtentMode`（轮 4 已完成）**：门与公式接线，mode 0 与旧纯算术逐字等价；★仍缺**宿主字形度量来源**（GDI `GetTextExtentPoint32A` 的等价物）⇒ mode 1 显式回退并把 `blankExtentFallback` 置真（缺口可见）；两种候选来源写在 `text/layout.ts` 文件尾。`0x204` 直绘与绘制期"无轮廓字"两点未接。
-- **`0x1c4`**：需要**音频侧对外回读缝**（"语音总线是否占线"）；`AudioEngine` 有内部判据但 `NativeBridge` 只有 intent 方向，且 VM/音频跨进程 ⇒ 先定缝的形状。
-- **`0x23a`**：先确证 `Engine+91322` 表的元素类型（全反编译仅 2 处读、**无写点**；与 `94672` 的 L2D 实例槽表**不是**同一张），再建 `+1068` 状态格与其消费者。
-- **`T-0088` `0x140`/AGERC 对话框**：★**181 处全在 DEBUG 路径**（`global 708ad6 == 1`，唯一写点 `TITLE.txt:462`）⇒ 正常剧情零影响。卡点是"返回值只能由真人点选 + 两张运行时表未建模 + 无宿主缝"，且**含一个待定产品策略**（无 GUI 时 cmd 8 返回什么）。
+- **DDraw/2D 缝（7 条 / 45 处剧情语料，回报最大）**：`0x28`(32)/`0x25`(4)/`0x26`/`0x2b`/`0x36`(5)/`0x82`/`0x85` —— 卡点 = `sub_441060`/`sub_443B20`（`Engine+7912`）「哪张 surface / 什么混合」。
+- **宿主光标（2 条 / 25 处）**：`0x86`(16)/`0x87`(9) —— `sub_4B8C70`（raw 140780）= `SetCursor`、`sub_4B8660`（raw 140395）= reapply cursor；体已读全，**缝最小**（或按有据 no-op 登记）。
+- **其它**：Scene 拾取层 `0x222`(10)（需先建 `KNOWN_DRAW_ITEM_FLAGS` 的 `0x10000` 位 + `Scene[12676]`）；mesh 对象族 `0x236`(6)/`0x241`/`0x329`；输入点击队列 `0x2fd`(4)（`sub_477A60`，emulator 无 click 队列）；GDI 文本 `0x1d1`；AGERC `0x140`(181, DEBUG)/`0x144`（**cmd 10**，会回写两个串）；音频回读 `0x1c4`；模型未确证 `0x23a`。**语料 0 处**：`0x24d`/`0x82`/`0x85`/`0x26`/`0x2b`。
 
 ### 5.3 批次尾巴
 
-- **B2 计划层**（`T-0082`）：handler 只消费 `c.args` 的声明式操作数计划。★第一层已备好 **`frames[].len_slot`（`Engine 0x5D8F4`，`N = 2*argc+1`）**，可直接用它自动核验 argc；两条守卫（`opcode-operands`/`opcode-arity`）已经把"口径漂移"挡住，计划层是进一步收敛。
-- **B4 剩余**：`0x34B`/`0x348`（L2D 节点缩放由标量扩三分量；语料 **0 处** ⇒ 维持**已披露偏差**）、`0x323`（等 B2 计划层）。
-- **B7 P2/P3（218 条）**：按 **影响可见行为 > 回写操作数 > 纯记账** 排序，分批。
-- **`ALLOW_UNDERRUN` 最后一条真 bug**：`0x12e`（悬停命中：遍历 count 个矩形、op2 未按体读）。
+- **B2 计划层**（`T-0082`）：handler 只消费 `c.args` 的声明式操作数计划。第一层已备好 `frames[].len_slot`（`Engine 0x5D8F4`，`N = 2*argc+1`）；两条守卫（`opcode-operands`/`opcode-arity`）已挡住口径漂移。
+- **B7 P2/P3（218 条）**：分诊已把**代码侧且影响可见行为**的挑出来并入 `T-0097`；其余多为**纯文档措辞**类（`no-evidence`/`overreach`），按 影响可见行为 > 回写操作数 > 纯记账 分批。
+- **`T-0075`**（文档×实现审计，P1 open）与 **`T-0076` 已 done** 的分工：前者是审计本身，剩余 P3 条目按上面处理。
+- **`T-0092`**：`0x02` 的 `-11` 分支无记录 0 时 emulator 抛 `ExitScript`，引擎**不退出**（审计 `op-2-10`）。
 
 ### 5.4 已知的小尾巴
 
-- `tickets/` 里 2 条 evidence 行号漂移警告（都在 `src/renderer/scene/ops.ts`）—— 刷新 `line` 字段即可，不影响红绿。
-- `analysis/opcode-gaps.json` 的 `counts` 现在由工具维护：**改了 disposition 一定要跑写模式**（`node scripts/build-opcode-gaps.mjs`），否则 `--check` 与守卫测试都会红（这是刻意的）。
+- `--validate` 的行号漂移警告已清零（轮 6 刷新了 `T-0085` 的 evidence 行号）。
+- `analysis/opcode-gaps.json` 的 `counts` 由工具维护：**改了 disposition 一定要跑写模式**（`node scripts/build-opcode-gaps.mjs`），否则 `--check` 与守卫测试都会红。
+- ★**语料计数口径**：台账 `mnemonic` 不补零、`src/*.txt` 是 `i` + 三位 ⇒ 自己 grep 时**两种写法都要数**（否则会漏 `i028`/`i086`/`i025`/`i036`/`i087` 共 9 条 / 约 70 处）。
 
-## 6. 本段（轮 47+）已完成的关键成果（可直接引用）
+## 6. 已完成的关键成果（可直接引用；轮 47+ / 轮 4 / 轮 5+6）
 
 **★B3 缺口清零（未实现 35 → 0 / 语料 203 → 0）**，实现 14 → **34**，deferred 11 → **27**，unjustified 4 → 0。
 
@@ -198,12 +244,82 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 - ★**顺带订正**：`transition-render-spec` §2.3 曾把**类别 0** 的 `[13]` 来源记为 `a10`；实为 `a10` 只属**类别 1 的写入端 `sub_4ADEE0`**（12 参，raw 132679），类别 0 的 `sub_4ADDB0`（`a2..a9`）**不写 `[13]`**。已订正。
 - **仍记缺口**：`sub_4ADDB0` 头部的惰性（重）建纹理层分支（`sub_4A2C10` 的 `0x460` 对象内部）未读完 ⇒ 未建模（属渲染端缺口）。
 
-## 7. `T-0066`（读档画面残留）—— 状态：**用户已指示"后续再处理"**
+### 6.6 轮 5/6 收口：读档画面 = 存档那一屏（`T-0083`/`T-0066`/`T-0072`/`T-0074`/`T-0090` 全部 done）
 
-- 已知：冷启动从 TITLE 读档时那块**橄榄灰大板是引擎自身行为** —— `NOVEL.txt:42-55` 的背景分支依赖**池外全局** `708ad6`/`708ada`（`T-0071`），全局为 0 时引擎走 `create-texture + i20b #808080` 的占位分支；`NOVEL.txt:29` 的 `i0ae` 又**早于**背景绘制（`:55`）⇒ 走栈收尾不会重跑它，背景只能来自**载荷项**。
-  - ★**2026-09 轮 5 订正（源码级）**：① 那条背景分支的门是 `(global-int 3f90) != 0`，而 `3f90` 在整个语料里**只被写成 0** ⇒ 该分支（以及 SYSTEM4 里同构的一块）**从不执行**，「橄榄灰大板 = 引擎占位」只在本机 `4fd9`/`3f90` 组合下成立、需按存档重判；
-    ② **「载荷项」的真身找到了**：存档 body 末段就是绘制项清单 `{u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}`，装载段 `sub_410160` 先清 `Scene+0x408` 容器再逐条还原（raw 19810-19832：`sub_49A300` 默认初始化 + `memcpy` + `sub_40C910`/`sub_40C310`）⇒ 上面第 128 行让 `ownerFrame` 退役的判据已经成立（不必再等平面/离屏合成）；见 `analysis/engine-capabilities.json` 的 `save-load-drawitem-clear-and-restore` 与 `tickets/T-0083`。
-- **待办**：热路径复验（进 SN0000 首句 → 菜单存档 → 从菜单读回该槽）—— 正确 ⇒ 走路线 D（平面/层序）；不正确 ⇒ 把 `slot-load-screen` 的 A/B 从合成脚本升级为**真脚本版**（同一份 SN0000：正常跑到第 794 句 vs 从槽 79 读档到它，比 `drawItems`/`meshes`/`msgWins`/`texSlots`）。
+**① 症状**：`--load 79` 后背景「完全混乱、很多图元缩放错误」—— 实为 TITLE 残留项画出的「天空碎片阶梯」+ 一块橄榄灰板。
+
+**② 判定（源码级，按用户要求不依赖真机）**：装载点**行内清** `Scene+0x408` 并**从 body 还原绘制项清单**（raw 19810-19832，细节见 §7）；
+`0xAE` 的 ip 直落语义 ⇒ SN0000 的 738..793 被跳过（含唯一的场景起始背景绘制）。
+**键对表**：背景键 = `f8023[层]`（`INIT2.txt:6-17` = 0x18A88…0x19258）**≫** TITLE 的 max **0x135**；
+而 TITLE 的项在 Load Data 分支（`TITLE.txt:333-341`）**没有任何清理**、且**全部建在槽 4**（`TITLE.txt:526`）
+⇒ 装载段重绑 `槽 4 ← 0xB37`（BG050ABL 2048×1152）后，它们按**标题屏的源矩形**去采样那张图 = 阶梯
+（5 块 156×156 菜单板在 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)）+ `0x64` 那条源 y=1161 越过图高 1152 的灰块。
+
+**③ 解析器真 bug**：清单条目步长 = `1 + size` dword = **2964 B**（引擎 `&v67[4*hFile]`），旧代码写 `1 + size/4`（744 B）⇒ 第 2..69 条 handle 全落在第 0 条记录里（垃圾），
+这也是它一直没被消费的原因之一。真槽 79 解出 **69 条**：`0x18A88`（背景，flags=3、tex=4、src (0,0)-(2048,1152)、pos (−768,−272)）
++ `0x19835..0x19840`（ADV 侧栏，tex=17）+ `0x19A28..0x19A62`（消息窗字格，tex=28）。
+
+**④ 实现**：`src/vm/engineDrawItem.ts`（新：740 B → `Item`；★4×4 矩阵必须按 **D3DX 写入位置**取分量 —— 缩放 = 对角线 `+0/+20/+40`、平移 = 第 4 行 `+48/+52/+56`；
+按「连续 3 个 f32」读会得到 `(1,0,0)`/`(0,0,0)` 而**静默画错**；读取端自证 = `0x228`/`sub_4AA060` 的 `D3DXMatrixDecompose`）；
+`engineSlot.ts` 步长修正 + `imageReload` → `drawItems`；装载点宿主缝 **`native.restoreDrawItems(items)`**（清上一屏 + 装清单，两宿主 + 桩 + tap 对称；
+**不**调 `clearDrawContainer` —— 引擎的 clear 只走 `Scene+0x408`（= 字节 1032），而那个缝连网格一起清）；`ownerFrame`/`dropFrameItems`/`#holdFrames` 降级为「body 无清单」的回退。
+
+**⑤ E4**：`npm run shot -- --load 79` → 日志 `restoreDrawItems: 清掉上一屏 172 项、按存档装回 69 项`；
+阶梯/灰块消失、背景 = BG050ABL（截图 `tickets/T-0083/evidence/after-itemrestore-*.png`；修前对照 `tickets/T-0090/evidence/`）。
+
+**⑥ `T-0090`（Live2D 泄漏）**：`l2dResetHost` + 装载点调用 + 一行日志；守卫 `test/slot-load-l2d-reset.test.ts`(2)。
+★定位价值：修完 L2D 后阶梯**仍在** ⇒ 才把根因锁定到「上一屏绘制项残留」（阶梯 ≠ Live2D）。
+
+**⑦ 台账/文档**：第二层 新增 `save-load-drawitem-clear-and-restore`（modeled-verified/E4）+ 订正 `scene-teardown-on-load-point`（**原始实现是对的，(B) 步删错了**）；
+第一层 补 `Scene/0x40C`（树根）、`Scene/0x410`（计数）；第三层 新增 `NOVEL` 条目 + `SN0000`/`TITLE`/`INIT2`/`SYSTEM4` 的行区间/不变量/坑；
+`save-data.md` §7.10 第 4 行**重写**（旧结论「装载路径不清绘制容器」被推翻）、`repair-plan` §2f、本文件 §7。
+
+**⑧ 流程/工具加固（多 agent 并行）**：三个技能各加「★多 agent 并行纪律」节（单写者表 / 三种子代理 prompt 模板 / 锚点 ABI / validate 红分类 / 共享资源串行化；
+三份同源 + `test/agent-workflow.test.ts` 逐字节守卫）；三工具新增 `--set-json` / `--recount` / `--anchors-in`，写入改**原子写**，`--validate` 改比**磁盘上的 counts**。
+守卫：`test/engine-draw-item-decode.test.ts`(3)、`engine-slot.test.ts`(+3)、`slot-load-screen.test.ts`（重写 3）、`agent-workflow.test.ts`(5)。
+
+### 6.7 轮 6 收口：B4 + B7 首批 + 三票 done（详见 `repair-plan-2026-09.md` §2g）
+
+**① `T-0077`（P1）done**：`ALLOW_UNDERRUN` 的「确认是 bug」清零（`0x12E` 按体重写：首项 `op1+1`、两道边界门、四点判据、平面按记录下标步进、margin 基址==记录基址⇒跳过 —— 删条目后守卫仍绿 = 机械证明）；
+Live2D 节点族 7 条按体订正（**`0x348` 是轴角旋转不是缩放**；补窗门 `record[0]&1`；真语料 **`i34d` 12 处（BTL）此前 delay/dur 与平移分量整体错位**）；
+`0x203` 补 clamp + 负值回退（新宿主缝 `native.getDrawItemColor` = `sub_4ADD60`，五处同步）；`0x323` 命名订正。
+
+**② `T-0076`（P0）done**：21 条全部有处置；★**`system:EffectSkipOnClick` 的引擎内建默认 = 0**（raw 111578-111579），而 `0x306` 的兜底、测试、文档都写着 1 ⇒ 三处订正（兜底改向 `registryDefault()` 取）；`0x337` 补登记 `deferred`（3D 层节点平移，语料 0 处）。
+
+**③ `T-0084`（P2）done**：能力台账 `clock-read-transition-window` → `modeled-verified/E3`（E3 = `test/transition-corpus-e3.test.ts`）；剩余四项转 `T-0091`。
+
+**④ B7 P2 首批**：`0x6E`（ADV 位已置 ⇒ 同步排空、不装 SLEEP_GATE；帧循环 ADV 分支上移到 sleep 门之前，体依据 raw 21158 vs 21176）、
+`0x1A8`/`0xAF`（体 = 写当前帧步长槽 `95805 = 1`，两者同一个 handler `sub_419690`）、`0x20A`（两条效果的等价性论证 + 守卫）、
+`0x196`（外层门 `Engine[122497] & 1` + 第③路；★订正审计的 `i196` 语料计数——名字形式 `display-furigana` 有 **6341 处**，第①②路节流半边 ⇒ `T-0094`）。
+
+**⑤ deferred 分诊**（analysis-only 子代理，报告 `.tmp/triage/report.md`）：口径订正 + 全 29 条重排 + 逐条「能不能现在做」判定 ⇒
+真正可做的只有 SETWEATHER 族 5 条与 `0x147`/`0x2f2`；派生 `T-0093`~`T-0097`。
+
+**⑥ 守卫**：`op-10-002-adv-sleep-order`(5)、`op-6-05-step-slot`(4)、`op-6-09-window-relayout`(3)、`op-3-004-furigana-outer-gate`(3)、
+`op-12e-hover-hittest`(8)、`l2d-node-transform-ops`(10)、`op-203-draw-color-alpha`(9)；`opcode-operands` 白名单删 4 条（`0x12e`/`0x347`/`0x348`/`0x34b`）后仍绿。
+`npm run verify` = **837 tests / 825 pass / 12 skip / 0 fail**，死写 **0**。
+
+**⑦ 追加（同一轮）：`T-0093` 第①半落地** —— SETWEATHER 族 `0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 登记为 `ENGINE_INTERNAL_OPS` 有据 no-op（缺消费端 = 无 Effect3D / 3D 网格 / mesh / 3D 相机 / 3D 图元；逐条机械扫描确认**体内无操作数写原语**）⇒ **每次走到 `SETWEATHER` 不再硬停**；守卫 `test/op-327-32e-setweather-noop.test.ts`(3)；缺口台账 `deferred` 29 → **24**、有据 no-op 8 → **13**。
+
+## 7. ✅ `T-0066`（读档画面残留）—— 状态：**已收口（轮 5/6）**
+
+**结论（源码级）**：引擎读档后画面上是「**存档那一屏的绘制项**」，机制在 `sub_410160` 里，分两半：
+
+1. **清**：raw **19810-19820** 整批销毁 `Scene+0x408` 容器的树（`sub_40BB60` 释放 + `operator delete`），并复位哨兵/计数（`Scene+0x40C` 树根、`Scene+0x410` 计数）。
+   ★它是**行内语句**，不在那 27 个被调函数里 —— 这正是 (B) 步误判的根源（见 §4-18）。
+2. **装**：body 末段 `{u32 740、u32 count、(u32 handle + 2960 B 记录区) × count}`（条目步长 = `1 + 740` dword = 2964 B，引擎 raw 19828 `&v67[4*hFile]`），
+   raw **19822-19832** 逐条 `sub_49A300`（740 B 记录默认初始化，raw 116879）+ `memcpy` + `sub_40C910`/`sub_40C310` 插回容器。
+
+配套两条订正：
+- `0xAE`（`sub_4192F0` raw 24634-24731）把帧 ip **直接置**成记录落点（`95781 + 4*table[idx]`，步长 `95805` 记 0/3）⇒ 帧自己的 `i0ae` 与落点之间**被跳过**。
+  SN0000：`i0ae` = 指令 737、落点 = 794 ⇒ 738..793 不执行，而**全文件唯一的场景起始背景绘制就在带内**（指令 756/757/758 = line 1025-1027）⇒「引擎靠脚本重跑把背景重画」是错的。
+- `NOVEL.txt:55` 的 `draw-texture 186a0` 在 `(global-int 3f90) != 0` 门后，而 **`3f90` 全语料只被写成 0** ⇒ 那条分支（与 SYSTEM4 里同构的一块）**从不执行**（handle 0x186A0 从未被画出）。
+
+**残留（有据，已登记）**：① `animStart` 是引擎**绝对时钟**（`timeGetTime` 族毫秒），body 里没有锚点可换算 ⇒ 还原后各窗判「未开始」= 冻结在存档当时的 work 矩阵；
+② 旋转通道（`+0xEC`/`+0x12C` 矩阵与 `+0x1EC..+0x208` 轴角）逐字段偏移未确证 ⇒ 未还原；③ body 尾部 `{2 dword + 740 B}`（`Scene+0x458`/`0x45C`/`0x460`，本机槽 79 全 0）未解析。
+
+**热路径复验（建议做，但已非阻塞）**：进 SN0000 首句 → 菜单存档 → 从菜单读回该槽。正确 ⇒ 收尾；不正确 ⇒ 把 `slot-load-screen` 的 A/B 升级为**真脚本版**
+（同一份 SN0000：正常跑到第 794 句 vs 从槽 79 读档到它）。
 
 ## 8. 工具速查
 
@@ -219,6 +335,9 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 | 真机截图回归 | `npm run shot -- --load 79 --name X --page 870,900`；日志 `.tmp/amayui-emulator.log` |
 | 引擎反编译 | `engine/天结_unpacked.exe_utf8.c`（**唯一权威**；函数头 `//----- (0040xxxx)`）；thunk 查 `…utf8.lst` |
 | 票据 | `node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --show T-00NN` / `--note` / `--set-status` / `--validate` |
+| ★改文件前查锚点 | `tickets.js --anchors-in <file>`（谁锚在这）· `scripts.js --anchors-in <file>`（脚本 layout 锚点） |
+| ★台账安全写 | `--set-json k='<json>'`（值含 ASCII 逗号时必须用它）· `--recount`（直接改过 JSON 后修 counts；`--validate` 现比磁盘） |
+| ★多 agent / 子代理纪律 | 三个技能的「★多 agent 并行纪律」节（单写者表 + 三种 prompt 模板）；守卫 `test/agent-workflow.test.ts` |
 | 两宿主对称 | 改宿主行为必须同时改 `headlessScene.ts`（测试/报告用）与 `pixiBackend.ts`（Electron GUI 用） |
 
 ## 9. 不要做的事
@@ -229,4 +348,6 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 - **不照抄筛体/规格文档的推断当结论**（先读体；本轮已实证 13 处错，含 2 处整条归口错）；
 - 不改真实游戏数据（base `SAVE.DAT` / AGF 等只读；写入只落 `.overlay`）；
 - 不在没有消费者的情况下往 `Item`/`MeshObj` 加字段，也不往"引擎没有的合成级"硬接；
+- **不用「删证据 / 降 status / 删条目」来消 `--validate` 的红**（锚点漂移就 retarget、`counts` 陈旧就 `--recount` + rebuild，见 §4-17/19）；
+- 不把「清容器不在被调函数里」当成「引擎没清」（结论只认函数体文本，见 §4-18）；
 - 做 git 提交（只写文件）。

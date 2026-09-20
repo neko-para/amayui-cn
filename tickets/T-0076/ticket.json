@@ -12,7 +12,18 @@
     "同批核对 capabilities 台账：`render-3d-layer-dual-commit`（0x222）从 n/a-known 改成 absent/partial",
     "npm run verify 全绿"
   ],
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/opcode-gaps.test.ts",
+    "app/amayui-emulator/test/op-20b-fill-texture.test.ts",
+    "app/amayui-emulator/test/op-191-fabs.test.ts",
+    "app/amayui-emulator/test/op-23f-slot-size.test.ts",
+    "app/amayui-emulator/test/ops-142-12f-306.test.ts",
+    "app/amayui-emulator/test/engine-config.test.ts",
+    "app/amayui-emulator/test/op-a2-a3.test.ts",
+    "app/amayui-emulator/test/draw-item-loop-anim.test.ts",
+    "app/amayui-emulator/test/op-132-134-queue.test.ts",
+    "app/amayui-emulator/test/op-24f-250-251-transitions.test.ts"
+  ],
   "evidence": [
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
@@ -78,7 +89,7 @@
   },
   "notes": "处置纪律提醒：`stubs.ts:150-152` 明写「登记成 no-op 反而把缺口藏起来」——因此 0x243/0x233/0x337 这类『有体但影响面不明』的指令，宁可登记成带 raw 依据的 engine-internal 并在报告里留缺口，也不要静默跳过。另：0x7C(local-ret) 的缺口早在 flow-control.md:427 披露过，只需按 raw 25778-25824 实现。",
   "id": "T-0076",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
@@ -87,6 +98,18 @@
     {
       "at": "2026-09-19",
       "what": "open → doing —— B1 开工：0x2E9（ADV 自动翻页行基准 _this[122464]，ENGINE_FIELD_STORE + autoMessageBaseline 字段）与 0x228（绘制项当前平移 getter，宿主缝 getDrawItemTranslation）已落地；新增守卫 test/game-start-chain.test.ts 的 0x228 用例与 test/engine-field-store.test.ts 的 0x2E9 用例；opcode-table.md 两行已补语义与 emulator 现状。0x2E9 的消费端（自动翻页）仍是缺口，已在该行与字段注释里标明。"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "doing → done —— 轮 6 收口：验收逐条核对通过；① 21 条全部有处置（18 条 implemented / 0x28·0x2cf·0x32e·0x23a·0x1d1·0x32c·0x25·0x222 共 8 条 deferred 带扩展点）；② 会回写操作数的 getter 0x228/0x23f/0x191/0x2E9 已实现；0x23a 因 `_this+91322` 表在 emulator 侧无对应物而 deferred（扩展点写在该条 note）；③ 0x307/0x306 成对 + **核对出真不一致并修掉**：`system:EffectSkipOnClick` 的引擎内建默认 = **0**（注册表对象构造 `sub_491880` 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`，raw 111578-111579），而 0x306 handler 的「缺配置兜底」写成字面量 1、测试也断言 1 ⇒ 改为向 `registryDefault()` 取，测试改断言 0 并新增「配置值 1 必须压过默认」一条；④ 覆盖棘轮 = `test/opcode-gaps.test.ts`（+ 各条专项守卫，见 tests[]）；⑤ capabilities 的 `render-3d-layer-dual-commit` 已由 n/a-known 改 absent/E1（带 T-0076 note）；⑥ 顺带登记本轮最后一条「无注册也无登记」的静默项 `0x337`（3D 层节点平移，体 raw 34271-34285 → `sub_4AE8E0` raw 133084-133105；语料 0 处）为 deferred ⇒ 缺口台账 deferred 28 → 29"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：history"
     }
   ]
 }

@@ -1,0 +1,65 @@
+{
+  "title": "SETWEATHER 族 5 条登记为 engine-internal 有据 no-op + 0x147/0x2f2 纯几何命中测试（deferred → 不硬停）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/ops",
+  "why": "分诊（`tickets/T-0093/deferred-triage-report.md` A 段）确认：deferred 28 条里真正「现在就能做」的只有两组，其余 22 条都指名了 emulator 没有的子系统。\n① **SETWEATHER 族 5 条（0x327/0x328/0x329/0x32C/0x32E）**：`SETWEATHER` 是**被剧情脚本调用**的（`call-script 47 // SETWEATHER`：SC0500:26212 / SC0070:29136 / SC2060:28374,30048 / SC4000:4359 / SC4160:5752 / SC5450:3573 / SC5530:4181 / `$1$SC4330`:4993 …），而 emulator 三张表都没有这 5 条 ⇒ **每次走到 SETWEATHER 就 NotImplementedOp 硬停**。这 5 条体内机械扫描**无 `sub_42B4B0`/`sub_42BA00`（不回写操作数）**，且同族 0x324/0x325/0x326 已在 `stubs.ts` 按「有据 no-op」登记（Effect3D / 3D 相机参数面，emulator 无该子系统）⇒ 同口径处置即可，且**修完不再硬停**（用户可见）。\n② **0x147 / 0x2f2 = 纯几何命中测试**（0x147 体 `CreatePolygonRgn`+`PtInRegion`→op1；0x2f2 体 `CreateEllipticRgnIndirect`+`PtInRegion`→op1；DEC = ror32(key^rol32(x,11),25)），**零宿主缝**、各 1 处语料（CONFIGCV / REIGN）。",
+  "acceptance": [
+    "0x327/0x328/0x329/0x32C/0x32E 五条：逐条读体确证「不回写操作数」后，登记进 `ENGINE_INTERNAL_OPS`（带 raw 行号依据与「体里真实效果是什么、为什么不建模」）+ `analysis/opcode-gaps.json` 的 `disposition: engine-internal`，并重跑 `node scripts/build-opcode-gaps.mjs`（写模式）与 `--check`",
+    "守卫：五条各自「命中即不再抛 NotImplementedOp」，且记为「被跳过的 engine-internal」而不是「被跳过的未实现」；`test/opcode-gaps.test.ts` 全绿",
+    "0x147/0x2f2 按体实现（读 op1..op6 → DEC → 区域命中 → 写 op1 命中/未命中），各配一条合成指令守卫（断言命中与未命中两条路径）",
+    "若 0x147/0x2f2 判定需要宿主缝（区域裁剪），改为有据 deferred 并写明扩展点（不许半修）",
+    "npm run verify 全绿；缺口台账 `deferred` 计数按实际回填"
+  ],
+  "evidence": [
+    {
+      "file": "analysis/opcode-gaps.json",
+      "anchor": "\"mnemonic\": \"i32c\"",
+      "note": "SETWEATHER 族之一（0x32C）的 deferred 条目 —— 本票要把这一族的处置改成 engine-internal"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "[0xaf, op_engine_internal]",
+      "note": "同族已登记的「有据 no-op」先例（0x324/0x325/0x326 就在这个表里）"
+    },
+    {
+      "file": "src/SETWEATHER.txt",
+      "anchor": "i32c 0 4 (local-int 5) 0 1 0",
+      "note": "0x32C 的语料站点 —— 证明 SETWEATHER 走得到这五条"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0076"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-gaps.md"
+    ]
+  },
+  "notes": "分诊报告 = `tickets/T-0093/deferred-triage-report.md` A 段（已归档进票据目录）。★纪律：note 必须写清「哪一行体证明不碰 VM」，否则就是把缺口重新藏起来。",
+  "id": "T-0093",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— ① **SETWEATHER 族 5 条已落地**（本票主体、用户可见）：`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 登记进 `ENGINE_INTERNAL_OPS`（`stubs.ts` 带块注释：逐条体的被调 + 为什么不建模 + 扩展点）+ 缺口台账 5 条 `deferred → engine-internal`（有据 no-op 8 → **13**、deferred 29 → **24**）；守卫 `test/op-327-32e-setweather-noop.test.ts`(3)：① 五条都在 `ENGINE_INTERNAL_OPS`；② 带非平凡实参跑一步**不抛错**且 ip 照常 +1；③ 台账里这五条是 `engine-internal` 且带票（防止有人把硬停改回来）；凭据（不是\"看起来安全\"）：逐条机械扫描五个体，`sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0` **零命中**（不回写操作数）、不改 ip/cur ⇒ 跳过与\"读了再丢\"对脚本可观测行为一致（后者还会引入死读）；`opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 加 5 条（理由 = 缺消费端：emulator 无 3D 子系统；★不是引擎死读 —— 引擎确实消费这些操作数）；文档同步：`opcode-table.md` 的 5 行（0x329/0x32C/0x32E 由「仅映射」升「已核对」并写清语义 + emulator 现状；0x327/0x328 的「根本没注册 handler」段落划掉并订正）+ `scripts/asm/opcodes.json` 重建；② **仍未做**：`0x147`/`0x2f2` 纯几何命中测试（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion` → op1，各 1 处语料）—— 本票保持 doing 直到它落地"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why, notes"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-327-32e-setweather-noop.test.ts",
+    "app/amayui-emulator/test/opcode-gaps.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts"
+  ]
+}

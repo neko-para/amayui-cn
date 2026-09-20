@@ -111,6 +111,26 @@
 
 ## 9. 变更记录
 
+- 2026-09（轮 6，**B4 收口 + B7 首批**；`npm run verify` 全绿 **834 tests / 822 pass / 12 skip / 0 fail**，死写 0）：
+  引擎侧修复批（`tickets/T-0077`/T-0076/T-0084 + B7 P2 首批），emulator 侧的行为改动共四处：
+  - ★**配置默认值单一真源**：`0x306`（`system:EffectSkipOnClick` getter）的「缺配置兜底」写成字面量 `1`，而
+    注册表 `configRegistry.ts` 的 `def: 0` 才是引擎内建默认（注册表对象构造 `sub_491880` 的
+    `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`，raw 111578-111579）⇒ 兜底改为向 `registryDefault()` 取
+    （不再各自漂移）；`test/ops-142-12f-306.test.ts` 的 (a) 断言由 1 改 0、(b) 改成正向「配置值 1 必须压过默认」。
+  - ★**ADV 门次序**（`tickets/T-0094` 的前半）：`op_show_text` 的 `SLEEP_GATE` 加 `ADV_ACTIVE` 前置条件
+    （体 raw 28361 的 else 才装计时器），`frame/loop.ts` 的 ADV 分支按主循环次序（raw 21158 早于 21176）
+    上移到 sleep 门之前 ⇒ 修掉「跳读/自动模式下每段文本多等 MessageSpeed ms」。
+  - **`0x1A8`/`0xAF` 依据订正**：体是「写当前帧步长槽 `95805 = 1`」（两 opcode 同一个 handler `sub_419690`），
+    不是「体内什么都不做」；实现仍是 no-op（该槽未建模 ⇒ 观测等价），但注释与 `stubs.ts` 的错误断言已改。
+  - **新宿主缝 `native.getDrawItemColor`**（= `sub_4ADD60`，读 `Item.from` = `DrawItem+0x60`，查不到 −1）：
+    `0x203` 的「`α<0` / `color<0` ⇒ 取当前色」回退需要它 ⇒ 按先例五处同步
+    （`native.ts` + `headlessScene.ts` + `pixiBackend.ts` + `stubNative.ts` + `nativeTap` 白名单）。
+  另：Live2D 节点族 7 条（`0x347`–`0x34D`）按体改对操作数类型/顺序/落点（★`0x348` 由「缩放」改为**轴角旋转**、
+  `scale` 扩三分量、补窗门 `record[0] & 1`）；`0x12E` 悬停命中按体重写（`ALLOW_UNDERRUN` 的最后一条
+  「确认是 bug」条目删除后守卫仍绿）。台账/文档同步：缺口台账 `deferred` 28 → 29、能力台账
+  `clock-read-transition-window` → `modeled-verified/E3`、`frame-render-gate-mainloop` 补 ADV-before-sleep 依据。
+  细节：`docs-new/03-engine/repair-plan-2026-09.md` §2g 与 `handoff-2026-09.md` §6.7。
+
 - 2026-09（`tickets/T-0057`，**emulator 实现审计与治理**：`npm run verify` 全绿 **603 pass / 0 fail**（612 条，含新增 8 条守卫））：
   跨层只读审计（VM 核心 / opcode handler / 渲染宿主 / 入口与工具 / 支撑子系统）把问题归成**四类同型病**并逐条落进
   本票的 `notes.md`（A 多处真源、B 魔法下标、C 临时补丁、D 重复实现、E 死码/假注释，共 80+ 条，含未实施的后继项）。

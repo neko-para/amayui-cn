@@ -438,6 +438,15 @@ export class HeadlessScene implements NativeBridge {
     return scGetDrawItemTranslation(this.scene, handle);
   }
 
+  /**
+   * 绘制项**当前色**（`DrawItem+0x60` = 本工程 `Item.from`）—— 引擎 `sub_4ADD60`（raw 132579-132588）。
+   * **项不存在 ⇒ −1**（引擎原样）；`0x203` 的 `op3<0`/`op4<0` 回退靠它（`setDrawColorAlpha` 会覆写它，
+   * 所以回退必须在写入之前读，见 `handlers/gfx-item.ts` 的 `op_set_draw_color_alpha`）。
+   */
+  getDrawItemColor(handle: number): number {
+    return this.scene.drawItems.get(handle)?.from ?? -1;
+  }
+
   setDrawTranslation(handle: number, x: number, y: number, z: number): void {
     scSetDrawTranslation(this.scene, handle, x, y, z);
   }

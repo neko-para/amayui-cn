@@ -173,6 +173,7 @@ export const BRIDGE_METHODS = [
   'getInputType',
   'getDrawItemPos',
   'getDrawItemPivot',
+  'getDrawItemColor',
   'fillSlotRect',
   'getDrawItemTexSlot',
   'getDrawItemTranslation',

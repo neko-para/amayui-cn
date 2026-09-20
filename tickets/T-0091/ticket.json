@@ -1,0 +1,55 @@
+{
+  "title": "转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E4 可达路径",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "`T-0084` 已按验收收口（窗口模型 + 12 种条带几何 + 类别 0/2/3 的离屏合成 + E3 真语料断言，能力台账 `clock-read-transition-window` 已由 partial 升为 modeled-verified/E3），但其中四项**仍未建模**、且都在 `T-0084` 的验收范围之外，若不单列票据就会被「已 done」掩盖：① **类别 3 的模糊核只做了累积近似** —— emulator 未复刻引擎 `(2L+1)²` 核（`sub_4A0120`）的逐点权重与 SlideBlur 的采样密度（现用 CPU 回退常数采样数 33 / 中心权重 3，raw 126180-126183），类型/快照/注释三处都带 `approximate` 标记；② **`[4]` 指向非 `create-texture` 槽**的情形没有画布表面可写（宿主只处理脚本 `create-texture` 出来的槽）；③ **`Scene+46508` / `46512` / `46516` 三个标志本身未建模** —— 现只把 46508 等价折进 `sceneNeedsRender` 的第三项、46512 的「立即收尾」折进窗口模型，标志的生命周期（谁置/谁清/何时清）没有独立模型；④ **E4 像素级对照缺失** —— 本机没有冷启动可跑到 `i223`/`i24f` 的路径（178 个含 i223 的脚本前 12 个 × 3000 帧零命中；`--load 79` 只到 SN0000，`i250` 在 line 3036 之后）。",
+  "acceptance": [
+    "① 类别 3：在 `scTransitionBlurPlan`/`scTransitionBlurOffsets` 上按 `sub_4A0120`（raw 待补）复刻逐点权重与 SlideBlur 采样密度，或在票据里给出「不复刻」的引擎依据并撤掉三处 `approximate` 标记之一（不许两者并存含糊）",
+    "② `[4]` 指向非 create-texture 槽：按 `sub_4A50C0` 的体判据（目标层不存在时引擎怎么走）实现或登记为有据缺口，并加守卫固定行为",
+    "③ `Scene+46508/46512/46516`：读体确证三者的写入端/清除端，建独立字段模型（不再是「折进 needsRender 第三项」的等价物），并把 `sceneNeedsRender` 改为读模型",
+    "④ E4：找到或造出一条**真实脚本**可达的转场路径（记录进本票 notes.md：脚本名 + 行号 + 到达方式），`npm run shot` 截图归档 `tickets/T-0091/evidence/`；若确认不可达，把「为什么不可达」写成可复核的判据（脚本清单 + 试跑帧数 + 停在哪句）",
+    "npm run verify 全绿；四份台账 `--validate` 绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
+      "anchor": "export function scTransitionBlurPlan(",
+      "note": "类别 3 的近似实现点（逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat；核权重未复刻）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#renderRangeCanvas(handles: ReadonlySet<number>)",
+      "note": "子集离屏合成宿主缝 —— `[4]` 非 create-texture 槽时没有画布表面可写（缺口 ②）"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "clock-read-transition-window",
+      "note": "第二层条目：已升 modeled-verified/E3，剩余四项写在该条 emulator.note 的「仍未建模（有据缺口）」节"
+    },
+    {
+      "file": "app/amayui-emulator/test/transition-corpus-e3.test.ts",
+      "anchor": "★E3（真语料）：SC0010 的 i250/i251 让转场窗真的起来",
+      "note": "现有的场景级证据（E3）——本票的 E4 是其像素级补充"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0084"
+    ],
+    "docs": [
+      "docs-new/03-engine/transition-render-spec-2026-09.md"
+    ],
+    "analysis": [
+      "clock-read-transition-window"
+    ]
+  },
+  "id": "T-0091",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

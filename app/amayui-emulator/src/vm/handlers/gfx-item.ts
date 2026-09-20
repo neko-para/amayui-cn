@@ -484,12 +484,20 @@ const op_set_vertex_color: OpHandler = (c) => {
 };
 /**
  * `0x323` set-vertex-color-alpha（`sub_426CF0` raw 33888-33921，argc=5）：
- * op1=handle、op2=窗起点(delay)、op3=时长(count)、op4=alpha、op5=rgb（同样有负值回退）。
+ * `op4` = α、`op5` = rgb（与 `0x322` 同款 clamp / 负值回退：α>255⇒255、α<0⇒当前 α、rgb<0⇒当前 rgb；
+ * 规整在 `scene/ops.ts` 的 `vertexColorArg`），`op2`/`op3` 由 handler **原样透传**给被调
+ * `sub_4AE330(Scene, op1, op2, op3, argb)`（raw 132826-132846）—— **不是** handler 自己解释成
+ * delay/count：在被调体里 `[10] = 0`（窗起点）、`[11] = op2`、`[12] = op3`、`[14] = argb`、`flags |= 2`
+ * （与 `0x22D`/`0x234` 同形的「窗起点 + 两个窗参数」写入）。负值回退取的是 `sub_4AE3C0(Scene, op1)`
+ * = **多边形记录 `[13]`**（raw 132848-132856；`Scene+1064` 那张表，emulator 侧对应 `mesh.state0`）。
+ * ★审计 P2 `op-4-05` 的订正点（`tickets/T-0077`）：读顺序按体是 **op4/op5 先、再 op1/op2/op3**；
+ * `delay`/`count` 只是**被调记录字段**的名字，handler 侧只做透传 —— 这条写在这里，免得下次又被
+ * 读成「handler 把 op2 当 delay」。语料 `i323` **0 处** ⇒ 用合成指令守（`test/mesh-vertex-quad.test.ts`）。
  */
 const op_set_vertex_color_alpha: OpHandler = (c) => {
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const count = readIntOperand(c.e, c.frame, c.instr, 3);
+  const delay = readIntOperand(c.e, c.frame, c.instr, 2); // 透传 → sub_4AE330 的 record[11]
+  const count = readIntOperand(c.e, c.frame, c.instr, 3); // 透传 → sub_4AE330 的 record[12]
   const alpha = readIntOperand(c.e, c.frame, c.instr, 4);
   const rgb = readIntOperand(c.e, c.frame, c.instr, 5);
   c.native.setVertexColorAlpha?.(handle, delay, count, alpha, rgb);
@@ -503,13 +511,34 @@ const op_set_draw_color: OpHandler = (c) => {
   const b = readIntOperand(c.e, c.frame, c.instr, 5);
   c.native.setDrawColor?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
 };
+/**
+ * ★`0x203` set-draw-color-alpha（`sub_4232C0` raw 31419-31451，argc 4）：
+ * `op1` = handle、`op2` = blend（`DrawItem+0x30`）、`op3` = α、`op4` = 颜色（RGB）。
+ *
+ * 引擎逐字（`v2 = op3`、`v3 = op4`）：
+ * ```
+ * raw 31431-31442  if (α <= 255) { if (α < 0) α = (unsigned)sub_4ADD60(Scene, handle) >> 24; }
+ *                  else α = 255;
+ * raw 31443-31447  if (color < 0) color = sub_4ADD60(Scene, handle);      // 整份 ARGB（含 α）
+ * raw 31450        sub_4ACF60(Scene, handle, op2, (α & 0xff) << 24 | (color & 0xffffff))
+ * ```
+ * `sub_4ADD60`（raw 132579-132588）= 按 handle 查绘制项、**查不到返回 −1**、否则读 `DrawItem+0x60`
+ * （= 本工程 `Item.from`，`0x203` 自己写的那格）⇒ 所以回退必须在**写入之前**取。
+ *
+ * ★2026-09 按体订正（审计 P2 `op-4-06`，`tickets/T-0077`）：旧实现只有自造的 `(alpha & 0xff)`，
+ *  ⇒ `op3 ≥ 256` 时给 α = 0（引擎 = 255）、`op3 < 0` / `op4 < 0` 时丢掉整个回退分支。
+ */
 const op_set_draw_color_alpha: OpHandler = (c) => {
-  // 0x203 (sub_4232C0)：op1=handle, op2=blend(+48), op3=alpha(clamp/回退), op4=color(回退) → ARGB。
   const handle = readIntOperand(c.e, c.frame, c.instr, 1);
   const blend = readIntOperand(c.e, c.frame, c.instr, 2); // → DrawItem+0x30（引擎 raw 131878）
-  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
-  const color = readIntOperand(c.e, c.frame, c.instr, 4);
-  const argb = ((alpha & 0xff) << 24) | (color & 0xffffff);
+  let alpha = readIntOperand(c.e, c.frame, c.instr, 3);
+  let color = readIntOperand(c.e, c.frame, c.instr, 4);
+  // 回退源（`sub_4ADD60`）：本宿主缝**读的是绘制项当前色**，不是参数；项不存在 ⇒ −1（引擎原样）。
+  const current = (): number => c.native.getDrawItemColor?.(handle) ?? -1;
+  if (alpha > 255) alpha = 255; // raw 31439-31442
+  else if (alpha < 0) alpha = current() >>> 24; // raw 31433-31437（`(unsigned)x >> 24` ⇒ x = −1 时 255）
+  if (color < 0) color = current(); // raw 31443-31447
+  const argb = (((alpha & 0xff) << 24) | (color & 0xffffff)) >>> 0; // raw 31450 的位拼装
   c.native.setDrawColorAlpha?.(handle, argb, blend);
 };
 

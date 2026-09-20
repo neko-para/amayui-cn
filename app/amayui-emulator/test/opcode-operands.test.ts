@@ -48,6 +48,15 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x30a': 'engine-internal no-op（键位注册；emulator 无按键表）',
   '0x325': 'engine-internal no-op（有据：体写 Effect3D 管理器 [+0x4D8]/[+0x4DC] 的销毁判据，emulator 无 Effect3D 子系统）',
   '0x326': 'engine-internal no-op；体建 ID3DXEffect 并重建 Snow（3D 子系统缺口 ⇒ T-0076）',
+  // ★SETWEATHER 族 5 条（`tickets/T-0093`，轮 6）：体内**没有**任何操作数写原语（逐条机械扫描过
+  //   `sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0`），且**引擎确实读**这些操作数 ——
+  //   所以这里是「缺消费端（emulator 无 3D 子系统）」的有据豁免，**不是**引擎死读。
+  //   不补"读了再丢"的死读（同 `0x1D3`/`0x1D4`/`0x2F3` 的纪律）；扩展点写在 stubs.ts 的块注释里。
+  '0x327': 'engine-internal no-op（缺消费端：体 = 释放+重建 Effect3D 管理器 `sub_453280(Engine[93384], op1)`）',
+  '0x328': 'engine-internal no-op（缺消费端：体 = DEC 网格 id 数组 → `sub_4183F0(Scene, handle, ids, n)`，3D 网格）',
+  '0x329': 'engine-internal no-op（缺消费端：体 = FileDB + `sub_4A0640` 装载 mesh，失败抛 メッシュファイル 错误串）',
+  '0x32c': 'engine-internal no-op（缺消费端：体 = 6 个 float → `sub_499CE0(Scene, …)`，3D 相机/天气参数面）',
+  '0x32e': 'engine-internal no-op（缺消费端：体 = α/RGB 归一化 + 6 float → `sub_49A080(Scene, …)`，3D 图元/效果）',
   '0x1a7': '`comment`：引擎体就是 nop（dev 注释）',
   // ---- 合成指令下的"提前返回"（不是漏读：真实脚本路径带真实上下文）----
   '0x2fc': '引擎语义如此：无触点路径只写 op1 后立即 return（op2..op5 保持不动；raw 40798-40799）—— emulator 恒无触点',
@@ -62,8 +71,11 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x1c9': '音频设备初始化：合成指令里 native 未建模 ⇒ 提前返回',
   '0xc7': 'config 读取带 selector：合成指令给的 selector=0 非法 ⇒ 按 onBadSelector:skip 不写 op2（引擎同）',
   '0x228': '项不存在 ⇒ 走引擎的失败分支（只写 op1=1，不写 op3/4/5）—— 真实路径项存在时三者都写',
-  // ---- 确认是 bug，按票排期（修完请从这里删掉，测试会自动要求它通过）----
-  '0x12e': '悬停命中：审计 P2 `op-8-F3/F4`（遍历 count 个矩形、op2 未按体读）⇒ T-0077',
+  // ★`0x12e`（悬停命中）已按体修复（审计 P2 `op-8-F3`/`op-8-F4`，`tickets/T-0077`）：
+  //   现在读 op1(起始下标)/op2(margin)/op3/op4/op5/op6/op7/op8 全部 8 格 ⇒ 条目已删（删后本测试仍绿 = 修好的机械证明）。
+  // ★`0x347`/`0x348`/`0x34b`（Live2D 节点族）同样已按体修复（审计 P2/P1 `op-9-op840`/`op-6-01`，`tickets/T-0077`）：
+  //   0x347 读 op1..op4（三分量 float ÷100）、0x348 读 op1..op5（轴+角 float）、0x34b 读 op1..op6
+  //   （delay/dur int + 三分量 float ÷100）⇒ 三条白名单条目一并删除。
   // ---- 核体后判定为「引擎也不消费该格」的有据豁免（不是待修 bug）----
   // ★`0x1D3`/`0x1D4`/`0x2F3` 的共同事实：`sub_457960`/`sub_457A20` 的**第 3 形参 `a3` 在函数体里
   //   一次都没出现**（raw 69328-69364 / 69366-69406，逐字核过：`sub_457A20` 只写 `*a2/*a3/*a4` = 其
@@ -74,9 +86,6 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x1d4': '引擎体的 arg[3] 是死读：sub_42D510 raw 38141 读 op3 ⇒ 传 sub_457A20 第 3 形参 a5（raw 38142），该形参在 69366-69406 全函数体未出现 ⇒ 引擎不消费；op4=起始下标（选择器恒 0）',
   '0x2f3': '引擎体的 arg[4] 是死读：sub_431A10 raw 40736 读 op4 ⇒ 传 sub_457A20 第 3 形参 a5（raw 40737），该形参在 69366-69406 全函数体未出现 ⇒ 引擎不消费；op5=起始下标 / op6=选择器',
   '0x33f': '★核体后有据豁免（缺消费端，不是"未定论"）：sub_427A90 raw 34423-34446 **三格全读**——op2=α（>255 钳 255；<0 ⇒ 由 op1 索取的绘制项当前 α，raw 34430 sub_4ADD60 读 DrawItem+96）、op3=颜色（<0 ⇒ 该项当前色，raw 34440）→ 写 `Scene+1264`，由效果通路 raw 65904-65907 下发成 shader 混合常量。emulator **没有绘制项 `Item.+96` 当前 α/当前色模型、也没有 Scene+1264 的效果常量通路** ⇒ 无处安放该值（写个只写不读的字段即死写）⇒ 缺消费端，回链 T-0017（混合模式/效果通路票）',
-  '0x347': 'Live2D 节点指令：op3/op4 未读 ⇒ 审计 P2 已列（与 0x34B 同族）⇒ T-0077',
-  '0x348': '★审计 P2：`0x348` 实为轴角旋转（轴 +464/468/472、角 +488），emulator 只碰 1/2 ⇒ T-0077',
-  '0x34b': '★审计 P2/P1：`0x34B` 把 op2 当缩放百分数、丢 op4..op6 ⇒ T-0077',
 };
 
 /**

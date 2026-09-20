@@ -289,9 +289,11 @@
 
 **声明**：文档/索引 0x196 display-furigana 写「分三路：① MessageSpeed == 0 或 ADV 位已置 ⇒ sub_46CBF0；② 否则 sub_46BE30 …；③ Engine[489988] & 1 置位时纯 sub_46BE30」。
 
-**实际**：handler 体的外层门是 `v7 = (*(_BYTE *)(_this + 489988) & 1) == 0;`（raw 29071，该 byte 偏移 = 下标 122497 = 0x304 写的文本块标志）；MessageSpeed（`_this[86672]`）是里层条件（raw 29075）。文档原文三路并列、第③路自带门，故真实缺陷只是①②未注外层门。emulator 侧 `op_display_furigana`（`msgwin.ts:564-574`）只做 captureFontStyle/addRuby/emitWin，全仓 effect_flags 写入点中无任何一处设 0x20000000（0x196 用）或 0x10000，也不起节拍定时器（raw 29093/29108）。语料 i196 = 0。
+**实际**：handler 体的外层门是 `v7 = (*(_BYTE *)(_this + 489988) & 1) == 0;`（raw 29071，该 byte 偏移 = 下标 122497 = 0x304 写的文本块标志）；MessageSpeed（`_this[86672]`）是里层条件（raw 29075）。文档原文三路并列、第③路自带门，故真实缺陷只是①②未注外层门。emulator 侧 `op_display_furigana`（`msgwin.ts:564-574`）只做 captureFontStyle/addRuby/emitWin，全仓 effect_flags 写入点中无任何一处设 0x20000000（0x196 用）或 0x10000，也不起节拍定时器（raw 29093/29108）。
 
-**证据**：`engine/天結_unpacked.exe_utf8.c:29071`（489988/4 = 122497）、`:29075-29081`、`:29088-29095`、`:29104-29109`；`docs-new/03-engine/opcode-table.md:264`；`app/amayui-emulator/src/vm/handlers/msgwin.ts:564-574`、对照 `:410-414` 与 `engine.ts:22`；语料 i196 = 0。
+> ★**订正（轮 6，`tickets/T-0077`/`T-0094`）**：本文写的「语料 i196 = 0」**只对助记符字面量 `i196` 成立**；该指令在本作里几乎只用**名字形式 `display-furigana`** 出现 —— `src/*.txt` 里共 **6341 处**（例：`src/CONFIG.txt:174`）⇒ ①②路的 `effect_flags |= 0x20000000` + `sub_453A60` 节拍**是真实可观测的节奏缺口**（每处注音比引擎少等一拍 MessageSpeed），不是「反正不可观测」。轮 6 已接**外层门**与第③路（`flags |= 0x10000`、`lastArg = op1`），第①②路的节流半边仍缺 ⇒ 已用棘轮测试钉住并开 `tickets/T-0094`。
+
+**证据**：`engine/天結_unpacked.exe_utf8.c:29071`（489988/4 = 122497）、`:29075-29081`、`:29088-29095`、`:29104-29109`；`docs-new/03-engine/opcode-table.md:264`；`app/amayui-emulator/src/vm/handlers/msgwin.ts:564-574`、对照 `:410-414` 与 `engine.ts:22`；★语料计数**已订正**（见上）：助记符 `i196` = 0，但名字形式 `display-furigana` = **6341 处**。
 
 **建议处置**：文档把第①②路补上外层门 `Engine[122497] & 1`、MessageSpeed 归入里层；emulator 若暂不建模节拍，至少在注释里写明 effect_flags 0x20000000/0x10000 与 `sub_453A60` 节拍未实现。
 

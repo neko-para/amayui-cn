@@ -333,6 +333,23 @@ export function loadScriptIntoFrame(
 // ---- 杂项 ----
 
 const op_comment: OpHandler = () => undefined;
+
+/**
+ * `0x1A8`（助记符 `dev_ukn`）：**不是空实现** —— 引擎 handler `sub_419690`（raw 24775-24783）的体是
+ * ```c
+ * result = _this[95776];                 // 当前帧下标
+ * _this[30 * result + 95805] = 1;        // ★写"当前帧的指令步长槽" = 1 个 dword
+ * return result;
+ * ```
+ * 该槽（`frames[cur] + 0x74`）在全文件**唯一**的读取点是主循环 raw 20165：
+ * `_this[30*cur + 95782] += 4 * _this[30*cur + 95805]`（95782 = ip）⇒ 写 1 表示 **ip 前进 4 字节
+ * = 1 条指令**，与 0 操作数指令的取值相同，也正是 emulator `interpreter.stepOnce` 的默认推进
+ * （`curFrame.ip += 1`）。emulator **不建模**该槽（它只是派发器的内部计数器）⇒ 本 handler 对 VM
+ * 不可观测，但**依据必须写成"写步长槽"**，不能写成"体内什么都不做"。
+ *
+ * ★订正（审计 `op-6-05`）：`0xAF` 的 handler 也是 `sub_419690`（raw 22898；`676696 = 675996 + 4*0xAF`），
+ * 体与本条**逐字相同** ⇒ "唯一一条体内什么都不做的指令"这句话对两者都不成立（见 stubs.ts 的订正）。
+ */
 const op_dev_ukn: OpHandler = () => undefined;
 
 /** 解释器专用信号：脚本 exit (0x2，顶层无调用层=程序退出) / exit-script (0x9，全量重置)。 */
@@ -534,7 +551,7 @@ export const CONTROL_OPS: OpTable = [
   [0x3, op_call_script],
   [0x143, op_dispatch_script_requests], // i143：派发已装载扩展包的 $n$AUTORUN（见上）
   [0x1a7, op_comment],
-  [0x1a8, op_dev_ukn],
+  [0x1a8, op_dev_ukn], // dev_ukn：引擎体 = 写当前帧步长槽 `95805 = 1`（sub_419690 raw 24775-24783；见上）
   [0x1, op_abort],
   [0x2, op_exit],
   [0x9, op_exit_script],

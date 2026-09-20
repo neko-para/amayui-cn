@@ -158,18 +158,22 @@ test('★0x12F 不变量：结果只取决于 B/C，与 A 里的**残留内容**
   assert.deepEqual([...expectations[0]!].sort((x, y) => x - y), [0, 1, 2, 3, 4]);
 });
 
-test('0x306：op1 = 配置 `system:EffectSkipOnClick`（SYS4REG.INI 缺该键时取引擎构造默认 1）', async () => {
+test('0x306：op1 = 配置 `system:EffectSkipOnClick`（SYS4REG.INI 缺该键时取引擎内建默认 0）', async () => {
   const e = new Engine(new StubNative(() => {}));
   const read = (slot: number): number => dec(e.key, e.curScript().locals.int.get(slot) ?? 0);
 
-  // (a) 未加载配置 → 默认 1（与引擎构造 sub_415640 的默认一致）
+  // (a) 未加载配置 → 内建默认 0
+  //     ★体依据（`tickets/T-0076` acceptance #3 的核对项）：注册表对象构造 `sub_491880` 的写法是
+  //     「先把默认值放 `v13`，再 `sub_434D00(v2, key, &v13)`」，而这一键是
+  //     `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw 111578-111579）⇒ 默认 0，
+  //     与 `configRegistry.ts` 的 `def: 0` 一致。此前这里断言 1（注释自称「构造默认 1」）是错的。
   loadScriptIntoFrame(e.curScript(), script(0x306, [{ type: 0x9, raw: 5 }]), 'TEST.BIN');
   await stepOnce(e);
-  assert.equal(read(5), 1);
+  assert.equal(read(5), 0);
 
-  // (b) 配置文件里显式给 0 → 读 0
-  e.config = { values: new Map([['system:effectskiponclick', 0]]), sections: ['system'] };
+  // (b) 配置文件里显式给 1 → 读 1（配置值必须压过内建默认；取 1 才能与 (a) 的 0 区分开）
+  e.config = { values: new Map([['system:effectskiponclick', 1]]), sections: ['system'] };
   loadScriptIntoFrame(e.curScript(), script(0x306, [{ type: 0x9, raw: 6 }]), 'TEST.BIN');
   await stepOnce(e);
-  assert.equal(read(6), 0);
+  assert.equal(read(6), 1);
 });

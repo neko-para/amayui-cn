@@ -620,6 +620,14 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * 绘制项**当前色**（`DrawItem+0x60` = 本工程 `Item.from`）—— 引擎 `sub_4ADD60`（raw 132579-132588）。
+   * **项不存在 ⇒ −1**（引擎原样）；`0x203` 的 `op3<0`/`op4<0` 回退靠它（必须在 `setDrawColorAlpha` 覆写前读）。
+   */
+  getDrawItemColor(handle: number): number {
+    return this.scene.drawItems.get(handle)?.from ?? -1;
+  }
+
+  /**
    * `0x23B`（sub_424970）：**按 CG 数字条画数值**。
    * 忠实复刻引擎几何（raw 32381-32503）：先按 `[id, id+digits)` 删 DrawItem/Mesh，再逐位建 DrawItem。
    * 记录 `rec`：`[0]` 纹理槽、`[1]` x0、`[2]` y0、`[3]` 单字宽、`[4]` 字高、`[5]` 字内空隙、`[6]` 字距。

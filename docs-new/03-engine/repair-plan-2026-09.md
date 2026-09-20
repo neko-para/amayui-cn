@@ -213,3 +213,28 @@ node scripts/build-opcode-gaps.mjs --check       # ★CI 口径：md 陈旧或 c
    - ⇒（第三层）`src/vm/engineSlot.ts` 的 `imageReload` 就是这份清单（只留 handle、740 B 记录被丢、无消费者）——**正解 = 解析 740 B 记录 + 新的还原宿主缝 + 恢复装载点的清容器**；`ownerFrame`/`dropFrameItems` 降级为「body 里没有清单」时的回退。
      实现与 E4 见 `tickets/T-0083/changes.md`；第二层条目 = `save-load-drawitem-clear-and-restore`。
 
+---
+
+## 2g. 轮 6（2026-09）产出一览：B4 收口 + B7 首批 + 三票 done + deferred 分诊
+
+> **口径**：本轮只按引擎体改（每处注释带 raw 行号），并把做不到的部分写成有据缺口 + 票据。
+> 出口判据 = `npm run verify` 全绿（**834 tests / 822 pass / 12 skip / 0 fail**，死写 **0**）
+> + 四份台账 `--validate` 绿 + `build-*-gaps/tickets/scripts/capabilities` 生成物同步。
+
+| 线 | 结果 |
+|---|---|
+| **B4 / `T-0077`（P1）→ done** | 13 处「凭空实现 / 错读操作数」全部落地。① **`0x12E`** 按体重写：首项 = 记录下标 **`op1+1`**、**两道边界门**（raw 39230-32 首项 ≥ 上界 ⇒ 写 `op1 = -1`；循环尾 39248-49）、四点判据 `(A|B|C|D) >= 0`（39242；margin 全 0 ⇒ 记录布局 `[xmin,xmax,ymin,ymax]`）、x/y 平面按**记录下标 j** 步进（39245-46）、**margin 基址 == 记录基址 ⇒ 跳过该记录**（39239-44）⇒ `ALLOW_UNDERRUN` 里**最后一条「确认是 bug」条目已删除且守卫仍绿**（机械证明）。② **Live2D 节点族 7 条**按体订正：★`0x348` **是轴角旋转不是缩放**（轴 `+464/468/472`、角 `+488`，`sub_4AFE90` raw 134058-134100）⇒ 单独注册、不再复用缩放 handler；`0x347/0x349/0x34A/0x34B/0x34C/0x34D` 的 int/float 与 delay/dur/分量顺序全部改对（`0x34B` = op2/op3 **int** delay/dur + op4..op6 **float** 三分量）；补窗门 `record[0] & 1`（raw 134157/134202/134254）。**真语料收益**：`i34d` **12 处（BTL）** 此前 delay/dur 与平移分量**整体错位**。③ **`0x203`** 补 clamp（`α>255 ⇒ 255`）与负值回退（`α<0 ⇒ 当前 α`、`color<0 ⇒ 当前 ARGB`，写入前取）—— 新宿主缝 `native.getDrawItemColor`（= `sub_4ADD60`，读 `Item.from` = `DrawItem+0x60`，五处同步）。④ **`0x323`** 的裸命名订正（op2/op3 只是透传给 `sub_4AE330` 的**记录窗参数**字段，raw 132826-132846；clamp/回退在 `scene/ops.ts` 的 `vertexColorArg`）。 |
+| **`T-0076`（P0）→ done** | 21 条全部有处置（18 implemented / 8 deferred 带扩展点）。★**核对出并修掉一处真不一致**：`system:EffectSkipOnClick` 的引擎内建默认 = **0** —— 注册表对象构造 `sub_491880` 的写法是「先把默认值放 `v13`，再 `sub_434D00(v2, key, &v13)`」，而这一键是 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw **111578-111579**）⇒ 与 `configRegistry.ts` 的 `def: 0` 一致；而 `0x306` 的「缺配置兜底」写成字面量 **1**、测试断言 1、文档写「构造默认 1」⇒ **三处一并订正**（兜底改为向 `registryDefault()` 取）。本轮最后一条「无注册也无登记」的静默项 **`0x337`**（3D 层节点平移，体 raw 34271-34285 → `sub_4AE8E0` raw 133084-133105；语料 0 处）补登记为 `deferred`。 |
+| **`T-0084`（P2）→ done** | 验收逐条核对：窗口/条带/类别 0·2·3 离屏合成有守卫；`needsRender` 接上 `Scene+46508`；**E3 = `test/transition-corpus-e3.test.ts`**（真语料 SC0010 的 `i250`/`i251` 让窗口真的起来、到点清空整表）。能力台账 `clock-read-transition-window` 由 **`partial/E2` → `modeled-verified/E3`**。剩余四项（类别 3 精确核 / `[4]` 非 `create-texture` 槽 / `Scene+46508·46512·46516` 三标志本身 / E4 可达路径）转 **`T-0091`** —— 不许用 done 掩盖。 |
+| **B7 P2 首批** | `0x6E`（ADV 位已置 ⇒ **同步排空、不装 SLEEP_GATE**；帧循环 ADV 分支按主循环次序 `0x8000000`(21158) 早于 `0x20000000`(21176) 上移到 sleep 门之前）；`0x1A8`/`0xAF`（体 = **写当前帧步长槽 `95805 = 1`**，两者是**同一个 handler `sub_419690`** ⇒「唯一一条体内什么都不做的指令」不成立）；`0x20A`（两条效果的**等价性论证** + 守卫，不是把两次调用并成一次）；`0x196`（接外层门 `Engine[122497] & 1` + 第③路 `flags |= 0x10000`/`lastArg`；★**顺带订正审计文档**：`i196` = 0 只是**助记符字面量**，名字形式 `display-furigana` 实际 **6341 处**；第①②路的 `effect_flags |= 0x20000000` + 节拍半边仍缺 ⇒ **`T-0094`**）。守卫 4 个新文件共 15 条 + 3 个新文件共 27 条（T-0077）。 |
+| **deferred 分诊（analysis-only 子代理）** | deferred 29 条按语料重排。★**口径订正**：台账 `mnemonic` **不补零**（`i28`/`i86`/`i25`/`i36`/`i87`）而 `src/*.txt` 是 **`i` + 三位**（`i028`/`i086`/…）⇒ 只按台账写法 grep 会把 **9 条算成 0 处**（两种写法都数后 = **292 处**，与 §5 一致）。结论 = 真正「现在就能做」的只有 **SETWEATHER 族 5 条**（`0x327/0x328/0x329/0x32C/0x32E` 登记为 `engine-internal` 有据 no-op 后**不再硬停**；`SETWEATHER` 由剧情脚本 `call-script 47` 调用）与 **`0x147`/`0x2f2` 纯几何命中测试**（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion`，零宿主缝）；其余 22 条都指名子系统（DDraw/2D 7 条 45 处、宿主光标 2 条 25 处、mesh、GDI 文本、AGERC、音频回读、Scene 拾取层…）。★另独立复核了 `0x140` 的 DEBUG 门（`708ad6 == 1`，唯一写点 `TITLE.txt:462`）⇒ 正常剧情零影响。 |
+| **计数** | 缺口台账 `deferred` 28 → **24**（+`0x337` 登记；−5 条 SETWEATHER 族转 `engine-internal`）、有据 no-op 8 → **13**；能力台账 **134 条**（已核验 48 → **49** / 部分 34 → **33**）；票据 90 → **97**（`T-0077`/`T-0076`/`T-0084` done；新增 `T-0091`~`T-0097`）；测试 792 → **837**（+45）。 |
+| **派生票** | `T-0091` 转场剩余四项（P3）· `T-0092` `0x02` 的 `-11` 兜底（P3）· `T-0093` SETWEATHER 5 条 + `0x147`/`0x2f2`（P1）· `T-0094` `0x196` 第①②路节流（P1）· `T-0095` `0x1d0` + `0x70`/`0x71`（P2）· `T-0096` Live2D 节点矩阵合成器 `sub_4A07F0`（P2）· `T-0097` P2/P3 定点小修批（P2） |
+
+**下一轮的入口**（按本轮结果重排）：
+1. ✅ **B4 已收口**（`T-0077` done）—— 剩下的 Live2D 半边是 **`T-0096`**（节点矩阵合成器 `sub_4A07F0`，raw 121131-121520）。
+2. ✅ **`T-0093` 的第①半已完成（轮 6）**：SETWEATHER 族 5 条（`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E`）已登记为 `ENGINE_INTERNAL_OPS` 有据 no-op ⇒ **每次走到 SETWEATHER 不再硬停**（守卫 `test/op-327-32e-setweather-noop.test.ts`(3)；台账 no-op 8 → 13、deferred 29 → 24）。**剩第②半**：`0x147`/`0x2f2` 纯几何命中测试（零宿主缝，各 1 处语料）。
+3. **`T-0094`（P1）**：`0x196` 第①②路的 MessageSpeed 节流半边（**6341 处** `display-furigana`；现由棘轮测试钉住，补上即翻正向断言）。
+4. **`T-0095`**：`0x1d0` + 写端 `0x70`/`0x71`（回想页表，HISTORY/CONFIG/REPLAYVOICE）。
+5. **B7 继续**：`T-0097` 的定点小修（`0x2EE` / `0x141`·`0x135` 无符号口径 / operand 未写槽 `enc_zero` 口径 / `fields.json` 的 `Engine/0x408` scope）。
+6. **`T-0091`**（转场剩余四项，含 E4 可达路径）与 **`T-0088`**（AGERC 产品策略，待人工决策）仍开。

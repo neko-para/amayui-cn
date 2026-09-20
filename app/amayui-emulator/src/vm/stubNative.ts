@@ -183,6 +183,11 @@ export class StubNative implements NativeBridge {
     this.log(`[native:stub] getDrawItemTranslation h=0x${handle.toString(16)} → undefined（桩无场景）`);
     return undefined;
   }
+  /** 绘制项当前色（`sub_4ADD60` 的对应物）。桩返回 −1（= 引擎查表失败 ⇒ `0x203` 回退成 α=255/白）。 */
+  getDrawItemColor(handle: number): number {
+    this.log(`[native:stub] getDrawItemColor h=0x${handle.toString(16)} → -1（桩无场景）`);
+    return -1;
+  }
   setDrawPos(handle: number, x: number, y: number, z: number): void {
     this.log(`[native:stub] setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
   }

@@ -13,14 +13,14 @@
  * | `0x342` | `i342 <slot>` | VM | 销毁实例槽 |
  * | `0x344` | `i344 <key> <slot>` | VM | **建/绑 572B 立绘节点**（`record[1] = slot`）★旧文档写错 |
  * | `0x345` | `i345 <texId> <slot> <texNo>` | 宿主 | 装纹理（D3DX 直读 ⇒ 资产是 PNG） |
- * | `0x346` | `i346 <key>` | VM | 节点复位（全部变换 → 单位阵） |
- * | `0x347` | `i347 <key> <percent>` | VM | 节点缩放（百分数 /100） |
- * | `0x348` | `i348 <key> <percent> …` | VM | 同 347 + 额外汇总参数 |
- * | `0x349` | `i349 <key> <x> <y> <z>` | VM | 节点平移（像素） |
- * | `0x34A` | `i34a <key> <x> <y> <z>` | VM | 基础平移偏移（`+8/+12/+16`） |
- * | `0x34B` | … | VM | 缩放目标矩阵 + 窗1 delay/dur |
- * | `0x34C` | … | VM | 旋转目标 + 轴/角（度）+ 窗2 |
- * | `0x34D` | … | VM | 平移目标 + 窗3 |
+ * | `0x346` | `i346 <key>` | VM | 节点复位（4 个变换矩阵 → 单位阵；**保留** flags/slot/baseOffset） |
+ * | `0x347` | `i347 <key> <sx> <sy> <sz>` | VM | 立即缩放（三分量 **float** ÷100 → `record+80`） |
+ * | `0x348` | `i348 <key> <ax> <ay> <az> <deg>` | VM | ★立即**旋转**（轴角 float，角**度**）—— 旧实现误当缩放 |
+ * | `0x349` | `i349 <key> <x> <y> <z>` | VM | 节点平移（三分量 float，像素 → `record+336`） |
+ * | `0x34A` | `i34a <key> <x> <y> <z>` | VM | 基础平移偏移（三分量 float → `record[2..4]` = `+8/+12/+16`） |
+ * | `0x34B` | `i34b <key> <delay> <dur> <sx> <sy> <sz>` | VM | 缩放目标窗（窗1；delay/dur=int、三分量 float ÷100） |
+ * | `0x34C` | `i34c <key> <delay> <dur> <ax> <ay> <az> <deg>` | VM | 旋转目标窗（窗2；轴/角 float） |
+ * | `0x34D` | `i34d <key> <delay> <dur> <x> <y> <z>` | VM | 平移目标窗（窗3；三分量 float） |
  * | `0x34E` | `i34e <mtnId> <motionSlot> <slot> <loop>` | 宿主 | 装 `.MTN`；**装载即入队** |
  * | `0x34F` | `i34f <slot> <color>` | VM | 纹理乘色（`op2 < 0` ⇒ 取纹理色记录） |
  * | `0x350` | `i350 <slot>` | VM | 复位动作队列 |
@@ -31,10 +31,16 @@
  * 直接读写，且"节点指向的槽有没有模型"就是绘制判据（引擎 raw 134320）⇒ 只有一份才不会两宿主漂移。
  *
  * 语料用量：`SETL2DMOC` 家族（560+192 处）+ `BTL` 27 + `INFOEN` 5 + `TITLE` 2 + `INFOIT` 1；
- * `0x346`–`0x351` 在本作语料里 **0 次**，但都登记为能力面（重实现不能当它们不存在）。
+ * `0x346`/`0x347`/`0x348`/`0x34A`/`0x34B`/`0x34C` 在本作语料里 **0 次**，但都登记为能力面
+ * （重实现不能当它们不存在）；`0x349`（7 处）与 `0x34D`（12 处，BTL）**真被使用** ⇒ 操作数口径必须对。
+ *
+ * ★**未实现的消费端（诚实登记）**：这 7 条写的字段要经引擎的节点矩阵合成器 `sub_4A07F0`
+ * （raw 121131-121520，含逐窗求值/颜色/`D3DXMatrix*` 组合）才会出现在画面上；emulator 的
+ * `live2d/render.ts` 仍按单位变换出画（`l2dNodeTransform`）。本作语料对节点只有 `0x344`
+ * （TITLE `i344 14 0`）真的建节点，故当前不可观测；缺口写在这里，不假装支持。
  */
 import type { OpHandler } from '../step.js';
-import { readIntOperand, readStringOperand } from '../operand.js';
+import { readFloatOperand, readIntOperand, readStringOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
 import type { Engine, Frame } from '../engine.js';
 import type { BinInstruction } from '../../script/bin.js';
@@ -44,6 +50,7 @@ import {
   l2dDestroySlot,
   l2dNodeBaseOffset,
   l2dNodeReset,
+  l2dNodeRotation,
   l2dNodeRotationWin,
   l2dNodeScale,
   l2dNodeScaleWin,
@@ -70,6 +77,23 @@ function optInt(c: { e: Engine; frame: Frame; instr: BinInstruction }, n: number
   if (c.instr.args.length < n) return undefined;
   return readIntOperand(c.e, c.frame, c.instr, n);
 }
+
+/**
+ * 读第 `n` 个**浮点**操作数；缺操作数时返回 `undefined`（理由同 `optInt`）。
+ *
+ * 为什么这一族必须用浮点读（审计 `op-9-op840`，`tickets/T-0077`）：引擎 `0x347`–`0x34D` 的
+ * 变换分量一律走 `sub_41C300`（浮点读，raw 26655 起），而 `sub_41C300` 对 int 型操作数是
+ * **int → float 转换**、对 float 型是位模式直读。emulator 旧实现用 `optInt` ⇒ 脚本给 float 立即数/
+ * 浮点槽时读到的是**位模式**（把 1.0 读成 0x3F800000 = 1065353216）。`readFloatOperand` 的
+ * 语义与 `sub_41C300` 对齐（int 型退化到 `readIntOperand`，即同一个整数当浮点用）。
+ */
+function optFloat(c: { e: Engine; frame: Frame; instr: BinInstruction }, n: number): number | undefined {
+  if (c.instr.args.length < n) return undefined;
+  return readFloatOperand(c.e, c.frame, c.instr, n);
+}
+
+/** 引擎 `dbl_5201F0` = 100.0（raw 4430）：`0x347` 的三个分量与 `0x34B` 的三个分量都要 ÷100。 */
+const PERCENT = 100;
 
 /** 槽号：引擎的 10 个实例槽是 `Scene+55812 .. +55852`；引擎不做范围检查（越界即错表）⇒ 原值透传。 */
 function slotOf(v: number): number {
@@ -100,53 +124,103 @@ const op_l2d_node_reset: OpHandler = (c) => {
   if (key !== undefined) l2dNodeReset(c.e, key);
 };
 
-/** `0x347` / `0x348` 节点缩放（百分数 /100；348 的额外 op3 语义未细读 ⇒ 只做缩放）。 */
+/**
+ * `0x347` **立即节点缩放**（`sub_427E10` raw 34567-34580，argc 4）：`op1` = key(int)、
+ * `op2/op3/op4` = **float** 三分量，各 ÷100（`dbl_5201F0` = 100.0，raw 4430）⇒ `sub_4AFE20`。
+ */
 const op_l2d_node_scale: OpHandler = (c) => {
   const key = optInt(c, 1);
-  const percent = optInt(c, 2);
-  if (key !== undefined && percent !== undefined) l2dNodeScale(c.e, key, percent);
+  if (key === undefined) return;
+  l2dNodeScale(
+    c.e,
+    key,
+    (optFloat(c, 2) ?? 0) / PERCENT,
+    (optFloat(c, 3) ?? 0) / PERCENT,
+    (optFloat(c, 4) ?? 0) / PERCENT,
+  );
 };
 
-/** `0x349` 节点平移（像素）。 */
+/**
+ * ★ `0x348` **立即节点旋转（轴角）**（`sub_427EA0` raw 34583-34599，argc 5）——
+ * `op1` = key(int)、`op2/op3/op4` = 轴（float，**不除 100**）、`op5` = 角度（float，**度**）⇒ `sub_4AFE90`。
+ *
+ * ★旧实现把 `0x348` 与 `0x347` 注册成同一个 `op_l2d_node_scale`（"缩放 + 一个额外汇总参数"），
+ * 审计 `op-9-op840-348-is-rotation-not-scale` 订正：真身写轴 `+464/+468/+472`、角 `+488`，
+ * 末行 `j_D3DXMatrixRotationAxis(record+208, axis, deg*π/180)`。
+ */
+const op_l2d_node_rotation: OpHandler = (c) => {
+  const key = optInt(c, 1);
+  if (key === undefined) return;
+  l2dNodeRotation(
+    c.e,
+    key,
+    [optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0],
+    optFloat(c, 5) ?? 0,
+  );
+};
+
+/** `0x349` 节点平移（`sub_427F30` raw 34602-34615，argc 4）：`op2..op4` = **float** 像素（旧实现读 int）。 */
 const op_l2d_node_translate: OpHandler = (c) => {
   const key = optInt(c, 1);
   if (key === undefined) return;
-  l2dNodeTranslate(c.e, key, optInt(c, 2) ?? 0, optInt(c, 3) ?? 0, optInt(c, 4) ?? 0);
+  l2dNodeTranslate(c.e, key, optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0);
 };
 
-/** `0x34A` 基础平移偏移。 */
+/** `0x34A` 基础平移偏移（`sub_427FB0` raw 34618-34631，argc 4）：`op2..op4` = **float**（写到 `record[2..4]`）。 */
 const op_l2d_node_base_offset: OpHandler = (c) => {
   const key = optInt(c, 1);
   if (key === undefined) return;
-  l2dNodeBaseOffset(c.e, key, optInt(c, 2) ?? 0, optInt(c, 3) ?? 0, optInt(c, 4) ?? 0);
+  l2dNodeBaseOffset(c.e, key, optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0);
 };
 
-/** `0x34B` 缩放目标窗（窗1）。 */
+/**
+ * `0x34B` 缩放目标窗（窗1；`sub_428030` raw 34633-34651，argc 6）：
+ * `op1` = key(int)、`op2` = delay(int)、`op3` = dur(int)、`op4/op5/op6` = 缩放三分量（float，各 ÷100）。
+ *
+ * ★函数名保留历史名 `op_l2d_node_scale_win`（跨文件锚点 ABI，见 `tickets/T-0077` 的实现约束）：
+ * 名字没改，改的是它读的操作数与落点 —— 旧实现读 `(percent=op2, delay=op3, dur=op4)` 且丢掉 op5/op6。
+ */
 const op_l2d_node_scale_win: OpHandler = (c) => {
   const key = optInt(c, 1);
   if (key === undefined) return;
-  l2dNodeScaleWin(c.e, key, optInt(c, 2) ?? 100, optInt(c, 3) ?? 0, optInt(c, 4) ?? 0);
+  l2dNodeScaleWin(
+    c.e,
+    key,
+    optInt(c, 2) ?? 0,
+    optInt(c, 3) ?? 0,
+    (optFloat(c, 4) ?? 0) / PERCENT,
+    (optFloat(c, 5) ?? 0) / PERCENT,
+    (optFloat(c, 6) ?? 0) / PERCENT,
+  );
 };
 
-/** `0x34C` 旋转目标窗（窗2；角单位 = 度）。 */
+/** `0x34C` 旋转目标窗（窗2；`sub_4280D0` raw 34655-34674，argc 7）：`op2` = delay(int)、`op3` = dur(int)、`op4..op6` = 轴（float）、`op7` = 角（float，度）。 */
 const op_l2d_node_rotation_win: OpHandler = (c) => {
   const key = optInt(c, 1);
   if (key === undefined) return;
   l2dNodeRotationWin(
     c.e,
     key,
-    [optInt(c, 2) ?? 0, optInt(c, 3) ?? 0, optInt(c, 4) ?? 1],
-    optInt(c, 5) ?? 0,
-    optInt(c, 6) ?? 0,
-    optInt(c, 7) ?? 0,
+    optInt(c, 2) ?? 0,
+    optInt(c, 3) ?? 0,
+    [optFloat(c, 4) ?? 0, optFloat(c, 5) ?? 0, optFloat(c, 6) ?? 1],
+    optFloat(c, 7) ?? 0,
   );
 };
 
-/** `0x34D` 平移目标窗（窗3）。 */
+/** `0x34D` 平移目标窗（窗3；`sub_428170` raw 34677-34694，argc 6）：`op2` = delay(int)、`op3` = dur(int)、`op4..op6` = 平移三分量（float，像素）。 */
 const op_l2d_node_translation_win: OpHandler = (c) => {
   const key = optInt(c, 1);
   if (key === undefined) return;
-  l2dNodeTranslationWin(c.e, key, optInt(c, 2) ?? 0, optInt(c, 3) ?? 0, optInt(c, 4) ?? 0, optInt(c, 5) ?? 0, optInt(c, 6) ?? 0);
+  l2dNodeTranslationWin(
+    c.e,
+    key,
+    optInt(c, 2) ?? 0,
+    optInt(c, 3) ?? 0,
+    optFloat(c, 4) ?? 0,
+    optFloat(c, 5) ?? 0,
+    optFloat(c, 6) ?? 0,
+  );
 };
 
 /** `0x34F` 纹理乘色。 */
@@ -184,11 +258,11 @@ export const LIVE2D_OPS: OpTable = [
   [0x342, op_l2d_destroy_slot], // 销毁实例槽
   [0x344, op_l2d_create_node], // ★建/绑 572B 立绘节点（语义已订正）
   [0x346, op_l2d_node_reset], // 节点复位
-  [0x347, op_l2d_node_scale], // 节点缩放
-  [0x348, op_l2d_node_scale], // 节点缩放 + 汇总参数
-  [0x349, op_l2d_node_translate], // 节点平移
-  [0x34a, op_l2d_node_base_offset], // 基础平移偏移
-  [0x34b, op_l2d_node_scale_win], // 缩放目标窗（窗1）
+  [0x347, op_l2d_node_scale], // 立即缩放（三分量 float ÷100 → record+80）
+  [0x348, op_l2d_node_rotation], // ★立即旋转（轴角 float；旧实现误注册成"缩放"）
+  [0x349, op_l2d_node_translate], // 节点平移（三分量 float）
+  [0x34a, op_l2d_node_base_offset], // 基础平移偏移（三分量 float）
+  [0x34b, op_l2d_node_scale_win], // 缩放目标窗（窗1：delay/dur int + 三分量 float ÷100）
   [0x34c, op_l2d_node_rotation_win], // 旋转目标窗（窗2）
   [0x34d, op_l2d_node_translation_win], // 平移目标窗（窗3）
   [0x34f, op_l2d_texture_mul_color], // 纹理乘色

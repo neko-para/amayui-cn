@@ -428,10 +428,20 @@ const op_show_text: OpHandler = (c) => {
   // 引擎 sub_41EB20：`sub_48F000` 非 0（仍在显示）才置 ADV，否则清 122455（并保持 ADV 清除）
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
-  // 引擎（`Engine[21668]` = message:MessageSpeed 非 0 分支）：每段文本之间按该毫秒数节流
-  //   ⇒ 帧让步（与 SLEEP_GATE 同义）。为 0 时引擎走同步排空（此处即"无节流"）。
+  // ★引擎 `sub_41EB20` 的 LABEL_11（raw 28361）是**带前置条件**的分支，不是无条件节流：
+  //   `if (!_this[21668] || (_this[174801] & 0x8000000) != 0) { sub_46CBF0(...) }`
+  //   —— MessageSpeed（`Engine[21668]`）为 0 **或 ADV 位已置**（raw 28358 刚置）⇒ **同步排空**。
+  //   `sub_46CBF0` 真身 raw 83999-84009 只有 `sub_46BE30` + `while(!sub_45BE20)` 自旋：
+  //   **体内既没有 Sleep、也不装计时器**。
+  //   **只有 else**（MessageSpeed 非 0 且 ADV 未置）才 raw 28380 `_this[174801] |= 0x20000000`
+  //   + raw 28382 `sub_453A60(_this+430572, _this[21668])`（计时器）⇒ 那一支才是"每段之间按该
+  //   毫秒数节流"（emulator 用 `sleepUntil`；计时器对象本身见文件头"不做的部分"）。
+  // ★订正（审计 `op-10-002`）：此前无条件按 `speed > 0` 置门。可是上面 `advanceReveal()` 为真时
+  //   刚刚 `setAdv`（raw 28358 的等价物：本模型把"仍在显示中"记为 ADV）⇒ 随后仍装门就等于
+  //   **对已经置 ADV 的情况多等 MessageSpeed ms**（跳读/自动模式下每段文本各多等一拍）。
+  //   raw 28361 的 `(_this[174801] & 0x8000000) != 0` 正是排除这一情况的那一项。
   const speed = messageSpeedOf(e);
-  if (speed > 0) {
+  if (speed > 0 && (e.effectFlags & ADV_ACTIVE) === 0) {
     e.sleepUntil = e.nowMs + Math.max(1, speed);
     e.effectFlags |= SLEEP_GATE;
   }
@@ -583,7 +593,37 @@ const op_poll_msg_advance: OpHandler = (c) => {
   }
 };
 
-/** `0x196 display-furigana`（sub_41FC20 raw 29032-29060）：在消息文本里插注音。 */
+/**
+ * `0x196 display-furigana`（sub_41FC20 raw 29032-29113）：在消息文本里插注音。
+ *
+ * 引擎体的三步（raw 行号）：
+ *  1. raw 29055-29070：把 **op3** 的字符串拷进栈缓冲 `v20`（之后作为 `a4` 交给 `sub_46CBF0`/`sub_46BE30`），
+ *     并算**外层门** `v7 = (*(_BYTE *)(_this + 489988) & 1) == 0`（raw 29071）。
+ *     489988/4 = 下标 **122497** = `msgwin.flags`（bit0 由 `0x304` 置、由 `0x305` 清，见本文件那两个 handler）。
+ *  2. `v7` 为真（**文本块位未置**，raw 29073-29097）：MessageSpeed/ADV 两分支 ——
+ *     raw 29075 `if (!_this[86672] || (_this[699204] & 0x8000000) != 0)` ⇒ raw 29081 `sub_46CBF0`
+ *     （同步排空，体内无 Sleep）；否则 raw 29088 `sub_46BE30` + raw 29093 `effect_flags |= 0x20000000`
+ *     + raw 29095 `sub_453A60(_this+430572, MessageSpeed)`（计时器）。
+ *  3. `v7` 为假（**文本块位已置**，即 `0x304`…`0x305` 之间）：raw 29104 `sub_46BE30`，
+ *     成功则 raw 29108 `_this[489988] |= 0x10000` + raw 29109 `_this[489484] = op1`。
+ *
+ * emulator：`captureFontStyle` + `addRuby` + `emitWin` 是"入队 + 发布"的等价物；
+ * raw 29077/29094/29109 的 `_this[489484] = op1`（= `msgwin.lastArg`，见其字段说明）在此照写。
+ *
+ * ★**订正（审计 `op-3-004`）**：此前本 handler 只做入队，**外层门整个丢了** ⇒ `0x304`…`0x305`
+ *   之间（注音/内嵌模式）与之外走的是同一条路。现在按 raw 29071 接上：`m.flags & 1` 置位时走第③路。
+ *
+ * ★**未建模（有据缺口，不静默跳过）**：
+ *  - 第①②路的 `effect_flags |= 0x20000000` + `sub_453A60(Engine+430572, MessageSpeed)` **节流半边**
+ *    （与 `0x6E` 的 raw 28380/28382 同形；`0x6E` 那边已实现，此处**故意留缺口**）。
+ *    后果：注音入队后 emulator **不会**等 MessageSpeed ms（比引擎快一拍）。
+ *    ★规模订正：审计的"语料 `i196` = 0 处"只对**助记符字面量**成立；`display-furigana` 在
+ *    `src/*.txt` 里有 **6341 处**（如 `CONFIG.txt:174`），它们后面紧跟 `show-text`（其节流由 `0x6E`
+ *    承担）⇒ 差异是"每处注音最多少等一拍"，不是零。
+ *  - `sub_46BE30` 的字形排版/光栅化半边（本模块文件头"不做的部分"）；
+ *  - raw 26045（`0x305` 的 `(flags & 0x10001) == 0x10001`）是 bit16 的**读者** —— 它不在本 handler，
+ *    且 emulator 的 `0x305` 目前不查这一位（属既有缺口，登记在此以免被当成"没人读"）。
+ */
 const op_display_furigana: OpHandler = (c) => {
   const e = c.e;
   const slot = readIntOperand(e, c.frame, c.instr, 1);
@@ -594,6 +634,9 @@ const op_display_furigana: OpHandler = (c) => {
   e.msgwin.addRuby(slot, readStringOperand(e, c.frame, c.instr, 2), readStringOperand(e, c.frame, c.instr, 3));
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
+  // raw 29071 的外层门：bit0 置位（`0x304` 已开文本块）⇒ 走引擎第③路（raw 29104-29109）。
+  if ((e.msgwin.flags & 1) !== 0) e.msgwin.flags |= 0x10000; // raw 29108（bit16；读者见 raw 26045）
+  e.msgwin.lastArg = slot; // raw 29077 / 29094 / 29109：`_this[489484] = op1`（= `msgwin.lastArg`）
 };
 
 // ---------------------------------------------------------------------------
@@ -679,16 +722,43 @@ const op_char_reveal_switch: OpHandler = (c) => {
 /**
  * `0x20A <win>`（sub_423620 raw 31546-31566）：**按当前状态重排并重画该窗文本**。
  *
- * 引擎：`sub_45AD30(Font, win)`（重排该窗文本）+ 若 `(effect_flags|Engine[95779]) & 0x40000000`
- * 则用**当前** `Engine[107704]` 调 `sub_45A940(Font, win, k, 0)` 重贴当前字格（游标不动）。
+ * 引擎体（raw 31553-31565）有**两条**效果，按序：
+ *  ① raw 31553 `_this[30*cur + 95805] = 3`（步长槽）
+ *     然后 raw 31555 `sub_45AD30(Font, win)` = **重排该窗文本**（raw 71481-…；体内先读
+ *     `win+132`（显现游标）到 `Font+1396`（raw 71533-71534），再按 24B/条 文本记录
+ *     （`(end-begin)/24 - 1`，raw 71538）重排成行/字形）；
+ *  ② raw 31556-31559 `v3 = _this[124350] ? _this[95779] : _this[174801]`，若 `(v3 & 0x40000000) != 0`
+ *     （bit30 = 逐字显现中）则 raw 31562-31564 用**当前** `_this[107704]`（字格游标）
+ *     调 `sub_45A940(Font, win, k, 0)` **重贴第 k 格**（`sub_45A940` raw 71380-71413：
+ *     `a3 >= 0` 时按 `k % cols` / `k / cols` 算字格坐标重贴；`-1`/`-2` 才是查询/收尾哨兵）
+ *     —— **游标不动、内容不变**，只是把当前那一格再贴一次。
+ *
+ * ## emulator 选②：把"两条效果"折进 `emitWin`，在这里写明**为什么等价**（不空口）
+ *  - ①的对应物 = **宿主通道的重排**：`emitWin` → `native.msgWinSync(win, input)` →
+ *    `renderer/scene/ops.ts` 的 `scMsgWinSync`（两个宿主共用这一个函数：
+ *    `headlessScene.msgWinSync` 与 pixi 都调它）**每次同步都无条件跑一次 `layoutWindow(win, input)`**
+ *    ⇒ 重排是 emit 通道的固有步骤，且**排在"贴格"之前**（与引擎 raw 31555 → 31564 同序）。
+ *    等价性的关键前提是"input 带的是**活**的 segments"——守卫断言：`emitWin` 交给宿主的
+ *    `input.segments` **就是** `m.slot(win).segments` 这个数组本身（引用相同），
+ *    因此宿主那次重排 == 引擎 `sub_45AD30` 的输出。
+ *  - ②的对应物 = `emitWin` 载荷里的 `cell: cellFrameOf(e, w)`（同上文件）：它**正好**以
+ *    `(effectFlags & CHAR_REVEAL_ACTIVE) !== 0`（bit30）为门，`k = m.cellK % g.cells`
+ *    （**当前**字格游标，取模但不自增）⇒ 与 raw 31556-31564 的条件与取值逐一对应。
+ *  - 未建模：raw 31556 的 `_this[124350] ? _this[95779] : _this[174801]` 这个**选择器**——
+ *    emulator 只读 `effectFlags`（= `_this[174801]`）；`124350`/`95779` 两条备选位未建模
+ *    （`124350` 的语义未定；两者的取值差异未做语料统计 ⇒ 登记为缺口，不假装等价）。
+ *  - `sub_45AD30` 内部"把记录重排后写回 win 的记录向量"这一步不落回 `m.slot().segments`
+ *    （emulator 的 segments 是脚本侧真源，重排只发生在 `layoutWindow` 的返回值里）⇒ 若将来
+ *    出现"引擎重排后 segments 顺序变了、而 emulator 的 layout 与之一致"的分叉，需在此补显式重排。
+ *
  * 脚本侧 1011 处；★这条过去**未注册**（命中即 `NotImplementedOp` 硬报错）。
  */
 const op_window_relayout: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
   const win = m.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
-  // 引擎在逐字模式下会在此用**当前** `Engine[107704]` 重贴同一格 ⇒ 游标不变、内容不变：
-  // 重写侧只需按当前游标重新发布一次（`emitWin` 走同一份 `revealedOf`）。
+  // 重排（宿主 `scMsgWinSync` 内）+ 按当前游标/当前字格重贴（`emitWin` 的 `revealed` / `cell`）
+  // 一次做完 ⇒ 游标不动、内容不变（见上方①/②的逐条对应）。
   emitWin(e, win);
 };
 

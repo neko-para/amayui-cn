@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 48 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 49 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 34 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 33 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 21 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **134** | 需要关注（非 n/a 且非已核验）= **62** |
+| **合计** | **134** | 需要关注（非 n/a 且非已核验）= **61** |
 
 ## 按子系统
 
@@ -30,7 +30,7 @@
 | 消息窗 | 30 | 18 |
 | 渲染 | 29 | 13 |
 | 资源 | 17 | 4 |
-| 转场 | 4 | 3 |
+| 转场 | 4 | 2 |
 | 输入 | 6 | 0 |
 
 ## 全部条目
@@ -61,7 +61,7 @@
 | `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
-| `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | 🟠 部分 | E2 · `test/sc-transition-window.test.ts` |
+| `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | ✅ 已核验 | E3 · `test/transition-corpus-e3.test.ts` |
 | `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ❌ 缺失 | E0 |
 | `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
 | `render-3d-layer-dual-commit` | 3D | 3D 层对偶逐帧提交 | ❌ 缺失 | E1 |
@@ -182,6 +182,7 @@
 - **引擎**：sub_412290, sub_40BE10 @ raw 20740-20760
 - **读的字段**：Engine+667856, Engine+667860, Engine+699204, Engine+369332, Scene+46508
 - **emulator 现状**：2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 ffect_flags 门（0x400/0x1000000…）与主循环里 
+★2026-09 轮 6（`tickets/T-0093` 的 B7 首批）：**ADV 分支在 sleep 门之前**。引擎主循环次序 = `0x400` 等待门（raw 21109）→ `0x40`（21154）→ **ADV 循环 `0x8000000`（21158）** → **节流/自旋 `0x20000000`（21176 → `sub_409400`，内含 `Sleep(Engine[86672])`，raw 13954）**；ADV 位不清就**走不到**节流支，且 `0x6E` 只有「MessageSpeed ≠ 0 且 ADV 位未置」才装计时器（raw 28361 的 else：28380/28382）。emulator 的对应改动 = runFrameLoop 里 adv 档移到 sleep 门之前、`op_show_text` 的 SLEEP_GATE 加 `ADV_ACTIVE` 前置条件（守卫 `test/op-10-002-adv-sleep-order.test.ts`）。旧实现把 sleep 门排在 adv 之前且无条件装门 ⇒ 跳读/自动模式每段多等 MessageSpeed ms。
 
 ### `scene-frame-commit`（partial）
 
@@ -263,15 +264,6 @@
 - **引擎**：sub_412290, sub_41A090, sub_41A2C0, sub_41A1A0 @ raw 20750-20751
 - **读的字段**：Engine+369332, Engine+369336, Engine+107438
 - **emulator 现状**：2026-09 更新（T-0004/D1）：时钟已是**单一时间域** —— 驱动每帧读 host.now() 写进 Engine.nowMs，宿主（pixi）经 advanceModel(nowMs) 接收，不再自己算 performance.now()-wallStart（旧 note 里的『present 用墙钟』已过期）。守卫 test/frame-loop.test.ts（每帧时钟前进/冻结档）+ test/frame-digest.test.ts（时钟进 digest）。★仍 partial：没有引擎的『时钟冻结门』（Engine+107438 非零时只递增 107439）。
-
-### `clock-read-transition-window`（partial）
-
-- **能力**：转场窗口进度与扫描带绘制
-- **触发**：过渡表 `Scene+1048` 存在记录且 `Scene+46512` 为 0
-- **缺失时为什么静默**：窗口超时后把记录 `[3]` 清 0 并 `sub_49E170` 收尾，正常流程无日志
-- **引擎**：sub_4B06D0 @ raw 134417-136734
-- **读的字段**：Scene+1048, Scene+46500, Scene+46512, Scene+46516, Scene+42600(层36), Scene+42604(层37), Scene+1032, Scene+46668(着色器档)
-- **emulator 现状**：★记录表（Scene+1048）已建模（2026-09 T-0076 的 B3 补；写入端 0x223/0x24D/0x24F/0x250/0x251 逐格照抄 + 0x224 清空 + 快照导出）。★轮 5（T-0084）落地四件：①**窗口模型**（首帧锁存 [1]、按 clock 算 t/off、到点杀记录、一遍绘完没有在途转场就清空整表 —— 引擎 raw 134867-134871 / 136840-136841）落在 scene/transition.ts 并由两个宿主的 advanceModel 共用；②**12 种盲帘条带几何**（纯函数，表驱动守卫 test/sc-transition-geometry.test.ts）；③**运行期进度进快照**（render4.transitionProgress —— 刻意与写入端记录分开：引擎就地改 [1]/[3] 而 emulator 的记录表被整条 deepEqual 断言）；④**渲染端落了类别 0（交叉淡化）、类别 2（盲帘）、类别 3（插值模糊，累积近似）**，且都是**画进记录 [4] 的离屏槽**（引擎 sub_4A50C0 的第二参 v384[4]，raw 136174/134937/135824；语料实证 src/SC0000.txt:1337-1339）—— 宿主侧 = TextureCache.composeIntoSlot。★两处订正（以体为准）：**Scene+42600 / 42604 就是层 36 / 37**（层表基址 42456 + 4*36，raw 10993 的索引循环坐实），不存在另设的双缓冲屏幕层；类别 3 的 Tex0 是**层 36 的纹理**（raw 135883），不是 layer[[4]]。★**类别 3 是「参数确证 + 像素已披露近似」**：scTransitionBlurPlan 逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat（含 CenterU/V 归一化），采样数取引擎 CPU 回退常数 33、中心权重 3（raw 126180-126183）、径向步长 Length/(|center|*16)（dbl_51D7E8=16.0）；**未复刻**引擎的 (2L+1)² 核（sub_4A0120）逐点权重与 SlideBlur 的采样密度 ⇒ 类型/快照/注释三处都带 approximate 标记。**仍未实现（有据缺口）**：类别 1 0x24D（语料 0 处 + 规格 §3.5 U2 未确证 ⇒ 已在 analysis/opcode-gaps.json 记 deferred）；[4] 指向非 create-texture 槽的情形（没有画布表面）；类别 3 的**源层**（规格 §7 的 U3：层 36 只在类别 0/1 的 item 重绘 raw 136014-136176 里被填、那段还在类别 3 之后）与 sub_4B06D0 的控制流嵌套（U4）；Scene+46508/46512/46516 三个标志本身未建模（只等价折进 sceneNeedsRender 的第三项）。★轮 5 续：**U3/U4 读 asm 收敛**（反编译那段不可信）：真身的循环是 `for (v60=0;v60<2;++v60){ SetTarget(36+v60); Clear; BeginScene; 把该趟的 item 画进去; EndScene; }`（0x4B1232 循环体 / 0x4B179B 回跳），两趟跑完才 `SetTarget([4])` + 窗口判定 + `switch([13])`（0x4B17A1-0x4B1829，12 个 case 是**所有类别共用**的分派、`def_4B1832` 是公共落点）；**36/37 装的就是记录的两条 item 区间**（第 0 趟画区间 A=起点 [5]、第 1 趟画区间 B=起点 [6]，两趟都排除另一条，raw 135577/135591/135605，且先 Clear 再画 ⇒ 那两层上只有这两组项）⇒ **转场的可见范围只覆盖这两组项**（emulator 现在仍按整屏快照画，已把缺口量出来：`scTransitionRangeRects` + 快照 `transitionProgress[].ranges`）；★**类别 3 被显式跳过这一趟**（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 引擎的模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**。另订正：`Scene+46668` 不是「美术质量档」而是 **D3D 着色器档**（0/1/2，设备创建时定，raw 126550-126568），它同时门住 D3DX effect（>=1 / >=2）、层 36/37 的 format、以及 item 重绘（<2）。★轮 5 再续：**类别 0/2 的源已从「整屏快照」改成「记录那两条 item 区间的离屏子集」**（引擎 36/37 的真身）—— presenter 新增 `renderItemSubset`（与主合成共用 `itemSprite` 一份画法，防两套画法漂移）、pixi 宿主新增 `#renderRangeCanvas`（按项集合每帧缓存）+ `scTransitionRangeHandles`；**删掉 `#transOld`「上一帧整屏快照」那套概念**。类别 3 仍用本帧屏幕合成（对引擎读陈旧 scratch 的有意改正）。守卫：test/transition-render-wiring.test.ts(6，含 presenter 级子集渲染 + 写端→区间选择端到端)。**E4 缺口**：本机无冷启动可跑到 i223/i24f 的路径（试了 178 个含 i223 的脚本的前 12 个 ×3000 帧，均未进转场）⇒ 这条路只有 E2。
 
 ### `render-range-clip-by-index`（absent）
 

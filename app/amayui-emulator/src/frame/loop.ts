@@ -269,6 +269,30 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       //   `gates.stage === 'ignore'` = 不做时间判定（恒到点，每帧一步）——给时钟粒度与
       //   `0xD4` 的 step 同量级的 headless 入口用，否则时间表可能永远不推进。
       batch = e.serviceStageLoop(nowMs, gates.stage === 'ignore');
+      // ★**ADV 分支必须排在 `sleep` 门之前**（订正审计 `op-10-002`）。引擎主循环的次序是：
+      //   raw 21109/21154 的 `0x400`/`0x40` 门 → raw 21158 `if ((v35 & 0x8000000) == 0) break;`
+      //   的 **ADV 循环**（`sub_411900` + 池冻结 + `Sleep(0)`）→ 只有 ADV 位**清掉**才 break 到
+      //   raw 21176 `if ((v35 & 0x20000000) != 0) { sub_409400(_this); … }`（MessageSpeed 节流 / 逐字泵）。
+      //   修前 `sleep` 门排在 ADV 之前 ⇒ ADV 位与 `SLEEP_GATE`（同为 `0x20000000`）同时置位时，
+      //   帧循环先空等 MessageSpeed ms 而不服务 ADV（跳读/自动模式每段文本多等一拍）。
+    } else if (opt.advFrame === true && e.advActive) {
+      opt.onGate?.('adv', e);
+      obs?.onGate?.({ ...obsMid(), branch: 'adv' });
+      e.serviceAdv();
+      // 引擎 raw 21158-21161：ADV 分支每帧 `sub_411900(...)` 之后紧跟 `sub_407EA0(pool)` ——
+      // 置强制冻结并清等待计时器（`tickets/T-0024`）。★放在 `serviceAdv()` 之后与引擎同序。
+      e.skipWaitGate();
+      if (opt.advErrors === 'swallow') {
+        // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
+        try {
+          await dispatch();
+        } catch {
+          /* 吞掉：与 `gameStartChain`/`config1Chain` 的 `catch {}` 一致 */
+        }
+      } else {
+        const r = await dispatch();
+        if (r !== 'ok') stop = r;
+      }
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
       obs?.onGate?.({ ...obsMid(), branch: 'sleep' });
@@ -290,24 +314,6 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
         opt.onAdvanceWait?.(handled, e);
         obs?.onAdvanceWait?.({ ...obsMid(), handled });
       } else e.forceAdvance();
-    } else if (opt.advFrame === true && e.advActive) {
-      opt.onGate?.('adv', e);
-      obs?.onGate?.({ ...obsMid(), branch: 'adv' });
-      e.serviceAdv();
-      // 引擎 raw 21158-21161：ADV 分支每帧 `sub_411900(...)` 之后紧跟 `sub_407EA0(pool)` ——
-      // 置强制冻结并清等待计时器（`tickets/T-0024`）。★放在 `serviceAdv()` 之后与引擎同序。
-      e.skipWaitGate();
-      if (opt.advErrors === 'swallow') {
-        // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
-        try {
-          await dispatch();
-        } catch {
-          /* 吞掉：与 `gameStartChain`/`config1Chain` 的 `catch {}` 一致 */
-        }
-      } else {
-        const r = await dispatch();
-        if (r !== 'ok') stop = r;
-      }
     } else {
       opt.onGate?.('batch', e);
       obs?.onGate?.({ ...obsMid(), branch: 'batch' });

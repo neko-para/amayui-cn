@@ -8,7 +8,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
-import { readRef, refAt } from '../ref.js';
+import { readRef, refAt, hasRefValue, type Ref } from '../ref.js';
 import { labelPos } from './shared.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
@@ -244,37 +244,87 @@ const op_get_mouse_state: OpHandler = (c) => {
 };
 
 /**
- * 0x12E (u0041E940, sub_42F230)：鼠标悬停命中（point-in-rect），**几何完全来自脚本数据**。
- * 引擎：op2=margin 数组、op3=x、op4=y、op5=size 盒数组（每项 4 值 dx0/dx1/dy0/dy1）、op6=base X 数组、op7=base Y 数组、op8=count。
- * 逐项判定：`dx0 <= (x - baseX[i]) <= dx1 && dy0 <= (y - baseY[i]) <= dy1` → 命中项 i（写回 op1），否则 -1。
+ * 0x12E (u0041E940, sub_42F230 raw 39199-39252)：鼠标悬停命中（point-in-rect），**几何完全来自脚本数据**。
+ *
+ * 引擎体逐条（行号 = `engine/天结_unpacked.exe_utf8.c`；汇编对照 `engine/天结_unpacked.exe.lst:76677` 起）：
+ * ```
+ * raw 39211  _this[30*cur+95805] = 17                       // arity 槽 ⇒ argc = 8（有据）
+ * raw 39212  dword_55D594 = sub_42AEA0(this, 2)             // op2 = **4 个连续 int** 的基址（margin）
+ * raw 39213  dword_55D590 = sub_42AEA0(this, 5)             // op5 = 记录表基址（每记录 16 字节 = 4 个 int）
+ * raw 39214-17  dword_55D58C = sub_42AEA0(this, 6) + 4*op1 + 4   // op6 = x 平面，首项 = 下标 op1+1
+ * raw 39217  dword_55D588 = sub_42AEA0(this, 7) + 4*op1 + 4      // op7 = y 平面，同样首项 = op1+1
+ * raw 39218-20  dword_55D584 = op3(x)、dword_55D580 = op4(y)、v4 = op8(count)
+ * raw 39221-29  margin m[0..3] = op2 起 4 个 int（逐个 DEC 解码）
+ * raw 39222  dword_55D57C = 记录表基址 + 16*count            // 遍历上界（指针）
+ * raw 39230  dword_55D568 = 记录表基址 + 16*(op1+1)          // ★首项偏移 = op1+1（不是 0）
+ * raw 39231-32  if (记录指针 >= 上界) return writeInt(1, -1) // ★第一道边界门
+ * raw 39236-37  dx = op3 - x平面[j]、dy = op4 - y平面[j]      // 两平面按 **记录下标** 步进（+4 字节）
+ * raw 39239-44  if (margin 基址 != 记录基址) { 四项判据全 ≥ 0 ⇒ 命中 }
+ *               //    地址相同 ⇒ **跳过**该记录的比较（不是命中、也不是退出）
+ * raw 39245-47  两平面指针 += 4；记录指针 += 16
+ * raw 39248-49  if (记录指针 >= 上界) return writeInt(1, -1) // ★第二道边界门
+ * raw 39251      命中 ⇒ writeInt(1, (记录指针-基址)>>2 / 4 = 记录下标 j)
+ * ```
+ * 四项判据（raw 39242；`(A|B|C|D) >= 0` 是编译器把四个 `>= 0` 折成一个符号位测试）：
+ * `m1 + dx - S0 >= 0 && m3 + dy - S2 >= 0 && S1 - dx - m0 >= 0 && S3 - dy - m2 >= 0`
+ * （`S0..S3` = 记录里 4 个 DEC 后的 int；`m0..m3` = op2 起的 margin）⇒
+ * `dx ∈ [S0 - m1, S1 - m0]`、`dy ∈ [S2 - m3, S3 - m2]`；margin 全 0 时记录布局 = `[xmin, xmax, ymin, ymax]`。
+ *
+ * ★2026-09 按体订正（审计 `op-8-F3`/`op-8-F4`，`tickets/T-0077`）。旧实现（a）恒从 i=0 遍历 count 条、
+ * 从不消费 op1；（b）没有两道边界门；（c）把 op2 的 margin 整个丢掉；（d）把 x/y 平面按下标 **4i** 取
+ * （体是 **i**，两平面与记录表按同一个记录下标 j 同步步进）。
+ *
  * 实例（TITLE `u0041E940(local3f5)(local1)(local3f0)(local3f1)(localcd)(local5)(local69)(local0)`）：
- *   baseX=local5[i]、baseY=local69[i]、size=local cd/d1/d5/d9/dd（每项 [0,0x9c,0,0x9c]）、count=local0=5。
+ * margin = local 1..4、记录表 = local 0xcd（每项 4 格 = 16 字节）、x 平面 = local 5+、y 平面 = local 0x69+、
+ * count = local 0；`op1` = 起始记录下标（写回命中下标 / -1）。
  * 说明：不在此模拟/写死任何按钮坐标；命中矩形完全由脚本的数据数组决定。
  */
 const op_hover_hittest: OpHandler = (c) => {
+  /**
+   * 读一个池槽，**未写过的槽按引擎口径读 0**。
+   *
+   * 为什么这条指令必须补这个 0：引擎装载脚本时把局部 int 池整块填成 `enc_zero`
+   * （`loadScriptFrame_40ED40`，`analysis/functions.json`；`enc_zero` = `ENC(0)`，raw 388240）⇒
+   * **没被脚本写过的局部量读出来就是 0**。而 `0x12E` 的 margin/盒表/平面正是"脚本只登记基址、
+   * 值可能不写"的数组（TITLE/CONFIG1/GAMESTART 的 margin 都是 `local 1..4`，全脚本一次都没写过）。
+   * emulator 的池是稀疏 Map：`readRef` 对缺失槽给的是 `dec(key, 0)`，**key ≠ 0 时就是垃圾**
+   * （key 只在读真存档时被设成存档里的 key，见 `handlers/save-slot.ts`）⇒ 那会让悬停盒整体漂移。
+   * `hasRefValue` 就是为这个场景准备的（见 `ref.ts` 的说明）。
+   */
+  const rd = (r: Ref): number => (hasRefValue(c.e, c.frame, r) ? readRef(c.e, c.frame, r) : 0);
+  const start = readIntOperand(c.e, c.frame, c.instr, 1); // op1 = 起始记录下标
+  const margin = refFromOperand(c.e, c.frame, c.instr, 2); // op2 → 4 个连续 int
   const x = readIntOperand(c.e, c.frame, c.instr, 3);
   const y = readIntOperand(c.e, c.frame, c.instr, 4);
+  const box = refFromOperand(c.e, c.frame, c.instr, 5); // op5 → 每记录 4 个 int
+  const planeX = refFromOperand(c.e, c.frame, c.instr, 6); // op6 → 每记录 1 个 int
+  const planeY = refFromOperand(c.e, c.frame, c.instr, 7);
   const count = readIntOperand(c.e, c.frame, c.instr, 8);
-  const sizeRef = refFromOperand(c.e, c.frame, c.instr, 5); // size 盒数组
-  const bxRef = refFromOperand(c.e, c.frame, c.instr, 6); // base X 数组
-  const byRef = refFromOperand(c.e, c.frame, c.instr, 7); // base Y 数组
-  let idx = -1;
-  for (let i = 0; i < count; i++) {
-    const r = i * 4;
-    const dx0 = readRef(c.e, c.frame, refAt(sizeRef, r + 0));
-    const dx1 = readRef(c.e, c.frame, refAt(sizeRef, r + 1));
-    const dy0 = readRef(c.e, c.frame, refAt(sizeRef, r + 2));
-    const dy1 = readRef(c.e, c.frame, refAt(sizeRef, r + 3));
-    const bx = readRef(c.e, c.frame, refAt(bxRef, i));
-    const by = readRef(c.e, c.frame, refAt(byRef, i));
-    const px = x - bx;
-    const py = y - by;
-    if (px >= dx0 && px <= dx1 && py >= dy0 && py <= dy1) {
-      idx = i;
-      break;
-    }
+  const m0 = rd(refAt(margin, 0));
+  const m1 = rd(refAt(margin, 1));
+  const m2 = rd(refAt(margin, 2));
+  const m3 = rd(refAt(margin, 3));
+  /** 两道边界门（raw 39231-32 / 39248-49）：写 op1 = -1。 */
+  const miss = (): void => writeIntOperand(c.e, c.frame, c.instr, 1, -1);
+  /** 记录 j 是否命中（四点判据 raw 39242；`margin` 与记录基址相同 ⇒ 体跳过该记录）。 */
+  const hits = (j: number): boolean => {
+    const rec = refAt(box, 4 * j); // 记录 = 4 个 int（16 字节）
+    if (rec.scope === margin.scope && rec.kind === margin.kind && rec.index === margin.index) return false;
+    const s0 = rd(refAt(rec, 0));
+    const s1 = rd(refAt(rec, 1));
+    const s2 = rd(refAt(rec, 2));
+    const s3 = rd(refAt(rec, 3));
+    const dx = x - rd(refAt(planeX, j)); // ★两个平面按下标 j（不是 4j）
+    const dy = y - rd(refAt(planeY, j));
+    return m1 + dx - s0 >= 0 && m3 + dy - s2 >= 0 && s1 - dx - m0 >= 0 && s3 - dy - m2 >= 0;
+  };
+  let j = start + 1; // raw 39230：首项 = op1 + 1
+  if (j >= count) return miss(); // raw 39231-39232（引擎是指针无符号比较，两者同步长 ⇒ 等价）
+  for (;;) {
+    if (hits(j)) return writeIntOperand(c.e, c.frame, c.instr, 1, j); // raw 39251：返回记录下标
+    j += 1;
+    if (j >= count) return miss(); // raw 39248-39249
   }
-  writeIntOperand(c.e, c.frame, c.instr, 1, idx);
 };
 
 /**

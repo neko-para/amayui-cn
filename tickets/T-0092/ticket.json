@@ -1,0 +1,53 @@
+{
+  "title": "0x02 exit 的 -11 分支：无记录 0 时 emulator 抛 ExitScript，引擎不退出（审计 P2 op-2-10）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/vm",
+  "why": "审计 `op-2-10`（`docs-new/03-engine/audit-2026-09-opcodes.md`）：引擎 `sub_41A820` 的 **-11** 分支（raw 25645-25660）是 `_this[95777] = -1` → 读配置 `set:SaveVersion1` 并写回 → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → `return`；\n而 `sub_40F750`（raw 18877-18951）三条路径**都不做程序退出**（a2==2 / a2==3 装载记录并恢复 ip/返回栈；a2==1 且 a3∉{10,20} 什么都不做）。\nemulator `app/amayui-emulator/src/vm/handlers/control.ts` 只在 `c.e.saveResume?.pendingRecord0` 为真时走装载分支，否则落进 `else` 抛 `ExitScript`（= 程序退出）⇒ **与引擎语义相反**。\n-11 由存档/读档装载路径写入（raw 19577、19695）⇒ 可达；一旦命中，emulator 会把「一次控制转移」误当成「整个程序退出」（静默地错，不报错）。\n另：引擎该分支对 `set:SaveVersion1/2` 的读改写在 emulator 也没有对应实现。",
+  "acceptance": [
+    "把 `caller === -11` 的兜底改成按 `sub_40F750` 的语义：**无记录 0 ⇒ 不做任何动作**（不抛 ExitScript），并说明此时帧 ip / caller 应落成什么（按体 raw 25645-25660 + 18877-18951 给出）",
+    "补 `set:SaveVersion1` / `set:SaveVersion2` 的读改写（或写明为什么不需要——必须给体依据）",
+    "守卫：合成/真脚本用例断言「caller=-11 且无记录 0」不抛 ExitScript、且不改变程序运行状态；若判定该路径在 emulator 不可达，则把「为什么不可达」写成可复核判据并降级为注释（不许两者含糊）",
+    "npm run verify 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "anchor": "### op-2-10 — 0x02 exit 的 -11 分支被 emulator 当成「整个程序退出」",
+      "note": "审计条目：声明 / 实际 / 证据 / 建议处置"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "anchor": "caller === -11",
+      "note": "错读点：无记录 0 时落进 else ⇒ throw ExitScript（引擎不退出）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_40F750((_DWORD *)_this, v5, (int)aSetSaveversion_0);",
+      "note": "0x02 的 -11 分支（sub_41A820 体 raw 25647-25659）：`_this[383108] = -1` → 读 `set:SaveVersion1` → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → **return**（既不抛异常也不退出）；`sub_40F750` 体见 raw 18877-18951"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0059",
+      "T-0061"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md"
+    ]
+  },
+  "notes": "来源 = 审计 P2（`op-2-10`），此前没有被任何票据承接（`T-0079` 只把 `flow-control.md` 的措辞改成「已实现」，没有核 -11 的兜底分支）。★定位提示：先 grep `//----- (0041A820)` 与 `//----- (0040F750)` 的定义头再读体。",
+  "id": "T-0092",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    }
+  ]
+}
