@@ -22,6 +22,7 @@ import {
   scActiveTransitions,
   scTransitionBlurOffsets,
   scTransitionBlurPlan,
+  scTransitionRangeRects,
   scTransitionTargetRect,
   scTransitionTick,
   scTransitionsPending,
@@ -332,4 +333,41 @@ test('★非类别 3 ⇒ `scTransitionBlurPlan` 返回 null（类别 0/2 不许�
   scTransitionTick(s, 0);
   const rt = s.render4.transitionRuntime.get(0)!;
   assert.equal(scTransitionBlurPlan(s.render4.transitions.get(0)!, rt, { w: 1280, h: 720 }), null);
+});
+
+test('★两条 item 区间：引擎 36/37 装的就是它们（raw 136014-136176 的两趟重绘）', () => {
+  const s = newSceneState();
+  // 区间 A = [0x100, 0x103)、区间 B = [0x200, 0x201)
+  const rec = fadeRecord(0, 1000);
+  rec[5] = 0x100;
+  rec[7] = 3;
+  rec[6] = 0x200;
+  rec[8] = 1;
+  const mk = (h: number, x: number, y: number, w: number, hh: number): void => {
+    scConfigureDrawItem(s, {
+      handle: h, layer: h, tex: 1, srcX: 0, srcY: 0, srcW: w, srcH: hh, dstX: x, dstY: y,
+    });
+    s.drawItems.get(h)!.posX = x;
+    s.drawItems.get(h)!.posY = y;
+  };
+  mk(0x100, 0, 0, 1280, 720);
+  mk(0x101, 300, 100, 200, 200);
+  mk(0x200, 640, 360, 400, 300);
+  mk(0x300, 0, 0, 10, 10); // 两条区间都不含 ⇒ 不许进任何一条
+  const r = scTransitionRangeRects(s, rec);
+  assert.equal(r.countA, 2);
+  assert.equal(r.countB, 1);
+  assert.deepEqual(r.a, { x: 0, y: 0, w: 1280, h: 720 }, '区间 A = 其项矩形的并集');
+  assert.deepEqual(r.b, { x: 640, y: 360, w: 400, h: 300 });
+  // 空区间 ⇒ null（不是 0x0 的假矩形）
+  const r2 = scTransitionRangeRects(s, { ...rec, 6: 0x900, 8: 4 });
+  assert.equal(r2.b, null);
+  assert.equal(r2.countB, 0);
+  // 快照里看得见（缺口可见：emulator 还没据它裁剪）
+  const s2 = newSceneState();
+  s2.render4.transitions.set(1, rec);
+  scTransitionTick(s2, 0);
+  const p = scSnapshot(s2, 0, null).render4.transitionProgress[0]!;
+  assert.ok(p.ranges);
+  assert.equal(p.ranges.countA, 0, '快照用的是它自己的场景（这里没有那两个项）');
 });

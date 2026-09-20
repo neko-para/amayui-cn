@@ -212,16 +212,22 @@ export function scSwapItems(s: SceneState, a: number, b: number): boolean {
 }
 
 /**
- * **丢掉"某一帧画的"绘制项**（`tickets/T-0083` 的 (B) 步；引擎 `sub_403EF0` 那个"平面复位"的近似物）。
+ * **丢掉"某一帧画的"绘制项**（`tickets/T-0083` 的 (B) 步；**降级为 fallback**，见下方订正）。
+ *
+ * ★2026-09 订正：引擎装载路径**真的会整批替换绘制项**（`sub_410160` raw 19810-19832：先 delete-walk
+ * 清 `Scene+1032`、再从存档 body 的 740 B 记录清单逐条插回）⇒ 引擎真槽读档**不需要**这个近似
+ * （`engineSlot.ts` 的 `drawItems` 一解出来就走 `scRestoreDrawItems`）。本函数只剩两种场合：
+ *  ① **实测**：本工程自己的槽（`format = 0`）与旧布局（`sv1 = 1/2`）的 body 里没有那份清单；
+ *  ② 清单**解析失败**（`drawItems === null`）—— 那时宁可留着上一屏，也不清空。
  *
  * 引擎依据（raw 9958-9971）：`sub_403EF0` 对一个 仮想ディスプレイ 对象只做
  * `_this[258] = 0`（**项数清零**）、`_this[959] = -1`、`_this[960] = 0`、`_this[7464/7466/7467/7468] = 0/-1`，
  * 构造函数 `sub_403F40` 另加几个 `SetRectEmpty` —— 装载路径在 raw 19913-19915 对
- * `Engine+51904`/`Engine+21976` 各调一次 ⇒ **上一屏那一层 UI 整体不再组成**（它的项表空了）。
+ * `Engine+51904`/`Engine+21976` 各调一次 ⇒ 那一层 UI 不再组成（**注意**：那两次复位的是
+ * 「仮想ディスプレイ」（点击热点/路由表 + 游标），不是绘制项容器 —— `tickets/T-0083` 的以体订正）。
  *
  * emulator 是单一扁平绘制表、没有"平面"对象 ⇒ 用 `Item.ownerFrame`（谁画的）近似"哪一层"：
- * 被读档放弃的那个**调用方帧**画出来的项 = 那一层，装载点把它们丢掉；
- * ADV 场景自己画的项（另一帧/更早的帧）原样保留。**这是近似，登记在 `SLOT_GAPS` 与 `T-0083`。**
+ * 被读档放弃的那个**调用方帧**画出来的项 = 那一层，装载点把它们丢掉。
  */
 export function scDropFrameItems(s: SceneState, frame: number): { items: number; handles: number[] } {
   const handles: number[] = [];
@@ -229,6 +235,28 @@ export function scDropFrameItems(s: SceneState, frame: number): { items: number;
   for (const h of handles) s.drawItems.delete(h);
   if (handles.length > 0) s.dirty = true;
   return { items: handles.length, handles };
+}
+
+/**
+ * **用存档里的绘制项清单整批替换绘制项**（`tickets/T-0083`）—— 引擎 `sub_410160` raw 19810-19832 的等价物。
+ *
+ * 引擎那一段的两半：① delete-walk 释放 `Scene+1032`（那个 map）的全部结点、复位哨兵、`size = 0`；
+ * ② 对清单每条 `sub_49A300`-式默认构造 + `memcpy` 740 B + `sub_40C910`/`sub_40C310` 插入。
+ * ⇒ 语义就是"**先清后装**"（与 `scRestorePresent` 同型），所以这里也一次做完，不拆成两个宿主调用。
+ *
+ * ★**只碰绘制项**：引擎的清场只走 `Scene+1032` 那棵树（`*(a1+323868)`），**网格容器（`Scene+1064`）
+ * 一个结点都不动** ⇒ 本函数**不**调 `scClearMeshSlots`（这正是它不能直接用 `scClearDrawContainer`
+ * 的原因 —— 后者会把网格一起清掉，与体不符）。文本窗另有 `scMsgWinClearAll`，而装载点的 ③ 步
+ * 本来就会 `msgwin.reset()` + `msgWinClearAll`，这里不重复。
+ */
+export function scRestoreDrawItems(s: SceneState, items: readonly Item[]): { cleared: number; installed: number } {
+  const cleared = s.drawItems.size;
+  // ★与 `scConfigureDrawItem` 同一道闸（`assertFlags`）：还原出来的 flags 也是从字节里读的，
+  //   读错一个偏移就会变成"不认识的位" ⇒ 这里**硬中断**比静默画错好（真槽 79 的 69 条只有 0b001/0b011）。
+  for (const it of items) assertFlags('drawitem', it.handle, it.flags);
+  s.drawItems = new Map(items.map((it) => [it.handle, it])); // 先清后装（引擎同：清容器 → 逐条插回）
+  s.dirty = true;
+  return { cleared, installed: s.drawItems.size };
 }
 
 /** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {

@@ -201,6 +201,8 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 ## 7. `T-0066`（读档画面残留）—— 状态：**用户已指示"后续再处理"**
 
 - 已知：冷启动从 TITLE 读档时那块**橄榄灰大板是引擎自身行为** —— `NOVEL.txt:42-55` 的背景分支依赖**池外全局** `708ad6`/`708ada`（`T-0071`），全局为 0 时引擎走 `create-texture + i20b #808080` 的占位分支；`NOVEL.txt:29` 的 `i0ae` 又**早于**背景绘制（`:55`）⇒ 走栈收尾不会重跑它，背景只能来自**载荷项**。
+  - ★**2026-09 轮 5 订正（源码级）**：① 那条背景分支的门是 `(global-int 3f90) != 0`，而 `3f90` 在整个语料里**只被写成 0** ⇒ 该分支（以及 SYSTEM4 里同构的一块）**从不执行**，「橄榄灰大板 = 引擎占位」只在本机 `4fd9`/`3f90` 组合下成立、需按存档重判；
+    ② **「载荷项」的真身找到了**：存档 body 末段就是绘制项清单 `{u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}`，装载段 `sub_410160` 先清 `Scene+0x408` 容器再逐条还原（raw 19810-19832：`sub_49A300` 默认初始化 + `memcpy` + `sub_40C910`/`sub_40C310`）⇒ 上面第 128 行让 `ownerFrame` 退役的判据已经成立（不必再等平面/离屏合成）；见 `analysis/engine-capabilities.json` 的 `save-load-drawitem-clear-and-restore` 与 `tickets/T-0083`。
 - **待办**：热路径复验（进 SN0000 首句 → 菜单存档 → 从菜单读回该槽）—— 正确 ⇒ 走路线 D（平面/层序）；不正确 ⇒ 把 `slot-load-screen` 的 A/B 从合成脚本升级为**真脚本版**（同一份 SN0000：正常跑到第 794 句 vs 从槽 79 读档到它，比 `drawItems`/`meshes`/`msgWins`/`texSlots`）。
 
 ## 8. 工具速查

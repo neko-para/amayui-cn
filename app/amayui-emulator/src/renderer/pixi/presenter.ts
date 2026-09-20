@@ -153,63 +153,13 @@ export class ScenePresenter {
     const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
     const drawItem = (it: Item, blendMode: BlendState): void => {
-      // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
-      //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
-      //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
-      if ((it.flags & 1) === 0) return;
-      const color = itemColor(it, clock);
-      const alpha = (color >> 24) & 0xff;
-      if (alpha <= 0) return; // 全透明跳过
-
-      // ★纹理解析：**槽号 = DrawItem`+4`**（`draw-texture` 的 op2）。`it.layer`/`it.handle` 是层序键。
-      const { tex, imgid } = this.textures.resolve(it);
-      const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
-      const spr = tex ? cropSprite(tex, rect) : this.#placeholder(it);
-      if (!tex && imgid === undefined) {
-        this.log(`[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`);
-      }
-      // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
-      //
-      // ★**世界矩阵门**（引擎 `sub_4A2D50` raw 123055）：`if (Scene+46532) 乘上该项的世界矩阵`，
-      //   而 `Scene+46532 ← DrawItem+0x68`（raw 133391）。`+0x68` 只由变换类指令置位
-      //   （`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220`；`0x201` 颜色的 `0x202` 不置）。
-      //   ⇒ 未置位的项走**纯 2D 路径**：只有描画位置 + 源矩形尺寸，pivot/缩放/旋转/平移**一律不参与**。
-      //   漏掉这个门就会把"从没设过 pivot"的项按 pivot=(0,0) 反算成 `-pos`，把项推出画面
-      //   （CONFIG1 滚动条的上/下盖正好是这种项）。
-      //
-      // ★**bit2 强制有效**（2026-09，B3）：引擎在 B 层命中时 raw 133395 把 `Scene+46532` 强制置 1
-      //   （`sub_49BCC0` 算出的矩阵必须参与合成）⇒ 判据是 `itemUsesWorld(it)` 而不是裸 `it.useWorld`。
-      if (itemUsesWorld(it)) {
-        // 世界矩阵（`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220` 置位）：引擎 `sub_49AA30` 行向量序
-        // `T(-pivot)·S·R·Tt·T(+pivot)` 作用在"已建在描画位置上"的四边形 ⇒
-        // `v' = S·R·(v − pivot) + t + pivot`，其中 `pivot` 由 `0x217` **原样**写入（绝对值）。
-        // Pixi 的 `screen(l) = position + S·R·(l − sprite.pivot)` 要与它逐项相等，必须
-        // **同时**取 `position = pivot + t`、`sprite.pivot = pivot − pos`（见 `itemRenderPlacement`）。
-        // ★历史上这里位置用的是 `pos`：只有 `pivot == pos` 时才等价 ⇒ 一旦脚本给出偏离 pos 的
-        //   绝对 pivot（`CONFIG1` 滚动条中段的 `707ffa + 32e`），缩放项就整体平移 `(pivot − pos)`。
-        const pl = applySceneXformToPlacement(scene, it.layer, itemRenderPlacement(it, clock));
-        spr.pivot.set(pl.pivot.x, pl.pivot.y);
-        spr.scale.set(pl.scale.x, pl.scale.y);
-        spr.rotation = pl.rotRad;
-        spr.position.set(pl.position.x, pl.position.y);
-      } else {
-        // ★无世界矩阵的项也**照样**吃 Scene 那一级（引擎 raw 133407 的乘法在 `Scene+46532` 门**之外**：
-        //   那一门只管项自己的 work 矩阵，Scene 世界矩阵是另一个矩阵）。引擎里"没设过变换"的项
-        //   work = 单位阵·sceneWorld = sceneWorld，屏幕上就是"描画位置被 Scene 平移推走"。
-        const pl = applySceneXformToPlacement(scene, it.layer, {
-          position: { x: it.posX, y: it.posY },
-          scale: { x: 1, y: 1 },
-        });
-        spr.position.set(pl.position.x, pl.position.y);
-        if (pl.scale.x !== 1 || pl.scale.y !== 1) spr.scale.set(pl.scale.x, pl.scale.y);
-      }
-      spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
-      spr.alpha = alpha / 255; // diffuse alpha 淡入
-      // ★混合档（`tickets/T-0017`）：逐项复刻引擎的 blend 状态机（含"值 2 的门控"与"mesh 之后留 (ONE,ZERO)"）
-      spr.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
+      const spr = this.itemSprite(scene, it, clock, blendMode);
+      if (!spr) return;
       this.drawRoot.addChild(spr);
       drawn++;
     };
+    // 画法本体已抽成类方法（`itemSprite`）—— 与「子集离屏合成」（`renderItemSubset`）共用一份，
+    // 否则转场的 scratch 层与主合成会各画一套（`tickets/T-0084` 的路线 D 第一块）。
 
     // 2) meshes（顶点色四边形）：按 handle 升序，叠在图之上。
     //
@@ -413,6 +363,111 @@ export class ScenePresenter {
     const presentMs = performance.now() - tPresent0;
     const lastDt = this.#dt.length > 0 ? this.#dt[this.#dt.length - 1]! : 0;
     if (lastDt > this.#slow.dt) this.#slow = { dt: lastDt, presentMs, batches: l2dBatchList.length };
+    return drawn;
+  }
+
+  /**
+   * **画一个绘制项 → Sprite**（`present` 与「子集离屏合成」共用**唯一一份**）。
+   *
+   * 为什么必须共用：转场的 scratch 层（引擎 36/37）装的**就是**记录那两条 item 区间里的项
+   * （raw 136014-136176 的两趟重绘）—— 若子集渲染另写一套画法，"主画面"与"转场用的那一层"
+   * 迟早会漂移（本工程已有多次同类事故）。`null` = 该项不该画（`flags & 1` 门 / 全透明）。
+   */
+  itemSprite(scene: SceneState, it: Item, clock: number, blendMode: BlendState): Sprite | null {
+      // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
+      //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
+      //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
+      if ((it.flags & 1) === 0) return null;
+      const color = itemColor(it, clock);
+      const alpha = (color >> 24) & 0xff;
+      if (alpha <= 0) return null; // 全透明跳过
+
+      // ★纹理解析：**槽号 = DrawItem`+4`**（`draw-texture` 的 op2）。`it.layer`/`it.handle` 是层序键。
+      const { tex, imgid } = this.textures.resolve(it);
+      const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
+      const spr = tex ? cropSprite(tex, rect) : this.#placeholder(it);
+      if (!tex && imgid === undefined) {
+        this.log(`[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`);
+      }
+      // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
+      //
+      // ★**世界矩阵门**（引擎 `sub_4A2D50` raw 123055）：`if (Scene+46532) 乘上该项的世界矩阵`，
+      //   而 `Scene+46532 ← DrawItem+0x68`（raw 133391）。`+0x68` 只由变换类指令置位
+      //   （`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220`；`0x201` 颜色的 `0x202` 不置）。
+      //   ⇒ 未置位的项走**纯 2D 路径**：只有描画位置 + 源矩形尺寸，pivot/缩放/旋转/平移**一律不参与**。
+      //   漏掉这个门就会把"从没设过 pivot"的项按 pivot=(0,0) 反算成 `-pos`，把项推出画面
+      //   （CONFIG1 滚动条的上/下盖正好是这种项）。
+      //
+      // ★**bit2 强制有效**（2026-09，B3）：引擎在 B 层命中时 raw 133395 把 `Scene+46532` 强制置 1
+      //   （`sub_49BCC0` 算出的矩阵必须参与合成）⇒ 判据是 `itemUsesWorld(it)` 而不是裸 `it.useWorld`。
+      if (itemUsesWorld(it)) {
+        // 世界矩阵（`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220` 置位）：引擎 `sub_49AA30` 行向量序
+        // `T(-pivot)·S·R·Tt·T(+pivot)` 作用在"已建在描画位置上"的四边形 ⇒
+        // `v' = S·R·(v − pivot) + t + pivot`，其中 `pivot` 由 `0x217` **原样**写入（绝对值）。
+        // Pixi 的 `screen(l) = position + S·R·(l − sprite.pivot)` 要与它逐项相等，必须
+        // **同时**取 `position = pivot + t`、`sprite.pivot = pivot − pos`（见 `itemRenderPlacement`）。
+        // ★历史上这里位置用的是 `pos`：只有 `pivot == pos` 时才等价 ⇒ 一旦脚本给出偏离 pos 的
+        //   绝对 pivot（`CONFIG1` 滚动条中段的 `707ffa + 32e`），缩放项就整体平移 `(pivot − pos)`。
+        const pl = applySceneXformToPlacement(scene, it.layer, itemRenderPlacement(it, clock));
+        spr.pivot.set(pl.pivot.x, pl.pivot.y);
+        spr.scale.set(pl.scale.x, pl.scale.y);
+        spr.rotation = pl.rotRad;
+        spr.position.set(pl.position.x, pl.position.y);
+      } else {
+        // ★无世界矩阵的项也**照样**吃 Scene 那一级（引擎 raw 133407 的乘法在 `Scene+46532` 门**之外**：
+        //   那一门只管项自己的 work 矩阵，Scene 世界矩阵是另一个矩阵）。引擎里"没设过变换"的项
+        //   work = 单位阵·sceneWorld = sceneWorld，屏幕上就是"描画位置被 Scene 平移推走"。
+        const pl = applySceneXformToPlacement(scene, it.layer, {
+          position: { x: it.posX, y: it.posY },
+          scale: { x: 1, y: 1 },
+        });
+        spr.position.set(pl.position.x, pl.position.y);
+        if (pl.scale.x !== 1 || pl.scale.y !== 1) spr.scale.set(pl.scale.x, pl.scale.y);
+      }
+      spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
+      spr.alpha = alpha / 255; // diffuse alpha 淡入
+      // ★混合档（`tickets/T-0017`）：逐项复刻引擎的 blend 状态机（含"值 2 的门控"与"mesh 之后留 (ONE,ZERO)"）
+      spr.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
+      return spr;
+  }
+
+  /**
+   * ★**子集离屏合成**（`tickets/T-0084` 的路线 D 第一块）：把**指定的那组绘制项**画进给定容器。
+   *
+   * 引擎依据：`sub_4B06D0` 在转场前跑两趟 ——
+   * `for (v60 = 0; v60 < 2; ++v60) { SetTarget(36+v60); Clear; BeginScene; 把该趟的 item 画进去; EndScene; }`
+   * （raw 136014-136176；asm 循环体 `0x4B1232`、回跳 `0x4B179B`）。第 0 趟画区间 A（记录 `[5]` 起）、
+   * 第 1 趟画区间 B（记录 `[6]` 起），两趟都排除另一条区间（raw 135577/135591/135605），
+   * 且**先 Clear 再画** ⇒ **转场的可见范围只覆盖这两组项**（其余是透明）。
+   * 层序与混合与主合成同口径（`walkBlendSequence` + 项自己的 `blend`）。
+   *
+   * @returns 真的画出来的项数（0 = 该层空白 —— 引擎那层就是 `Clear` 后的透明）
+   */
+  renderItemSubset(
+    scene: SceneState,
+    clock: number,
+    handles: ReadonlySet<number>,
+    into: Container,
+  ): number {
+    const items = [...scene.drawItems.values()]
+      .filter((it) => handles.has(it.handle))
+      .sort((a, b) => a.layer - b.layer || a.handle - b.handle);
+    const env: BlendEnv = {
+      renderTargetSlot: scene.render4.renderTargetSlot,
+      slotMode: (slot) => scene.render4.slotModes.get(slot),
+    };
+    const modes = walkBlendSequence(
+      items.map((it) => ({ kind: 'item' as const, blend: it.blend })),
+      env,
+      scene.render4.sceneBlend,
+    );
+    let drawn = 0;
+    for (let i = 0; i < items.length; i++) {
+      const spr = this.itemSprite(scene, items[i]!, clock, modes[i]!);
+      if (!spr) continue;
+      into.addChild(spr);
+      drawn++;
+    }
     return drawn;
   }
 

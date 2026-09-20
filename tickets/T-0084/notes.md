@@ -86,3 +86,72 @@
 
 **仍缺（诚实记账）**：类别 3 的**源层**（U3）与 `sub_4B06D0` 的控制流嵌套（U4）；
 `[4]` 指向非 `create-texture` 槽；`Scene+46508/46512/46516` 三个标志本身。
+
+## 2026-09-20
+
+### 轮 5 续 2：U3/U4 读 asm 收敛（以列为准，反编译那段不可信）
+
+**结论（全部有 asm 地址，不是 C 推断）**
+
+1. **真身的循环形状**：`for (v60 = 0; v60 < 2; ++v60) { SetTarget(36+v60); Clear; BeginScene; <该趟的 item 重绘>; EndScene; }`
+   （循环体 `0x4B1232`、回跳 `0x4B179B jl 0x4B1232`、`EndScene` 在 `0x4B1780`）。反编译在 raw 134923-135516 把它恢复成
+   `while(1){ … if(BeginScene) break; … }` **是错的** —— 这就是规格 §7 的 U4 那个「自相矛盾」（`if(BeginScene) break`
+   与 `if(!BeginScene) draw` 并存）。`BeginScene` 失败走的是另一条路（`0x4B17DB jz loc_4B3F6B`），**不是**"失败就去画条带"。
+2. **两趟跑完之后**才 `SetTarget([4])` + 窗口判定 + `switch([13])`（`0x4B17A1-0x4B1829`）。那个 `switch` 的 12 个 case 是
+   **所有类别共用**的分派（`def_4B1832` 是公共落点：`0x4B36EA`/`0x4B3797` 都 `jmp` 它），类别 0/3 的块夹在 case 之间
+   （类别 3 的窗口/插值在 `0x4B3190-0x4B3272`，CPU 模糊调用在 `0x4B3792`）。
+3. ★**36/37 装的是记录的两条 item 区间**（U3 收敛）：第 0 趟画区间 A（起点 `[5]`）、第 1 趟画区间 B（起点 `[6]`），
+   两趟都排除另一条区间（raw 135577/135591/135605），且**先 Clear 再画** ⇒ 那两层上**只有这两组项**（其余透明）
+   ⇒ **转场的可见范围只覆盖这两组项，不是整屏**。
+4. ★**类别 3 被显式跳过这一趟**：`0x4B318A: cmp eax, 3` / `jnz loc_4B379C` ⇒ `[0] == 3` 永远不进重绘
+   ⇒ **引擎的模糊读的是陈旧 scratch**。所以 emulator「源取本帧屏幕合成」是**有意的改正**（已在代码注释、
+   规格 §7 与 `TransitionBlurPlan` 的偏差披露里写明），不是猜。
+5. **`Scene+46668` 不是「美术质量档」而是 D3D 着色器档**（0/1/2，设备创建时由 caps 决定，raw 126550-126561），
+   它同时决定：①D3DX effect 用不用（`>= 1` raw 136199 / `>= 2` raw 135834）；②层 36/37 建出来的 format（raw 126563-126568）；
+   ③**item 重绘走不走**（`< 2` 才走，raw 135518/136024）。
+
+**本轮落地**
+
+- 第一层补 4 个字段（此前 `Scene` 作用域缺了它们）：`0xB5A4 transition_clock_ms`、`0xB5B0 transition_immediate_finish`、
+  `0xB5B4 transition_pending`、`0xB64C d3d_shader_model`；并把 `TransitionRecord/0x00` 由 `kind` 改名为 `category`、
+  meaning 重写（旧文写「0 = 无效/默认」，而 `0x223` 写的 0 就是**类别 0 = 淡入淡出**）。
+- 新增 `scTransitionRangeRects` + 快照 `transitionProgress[].ranges = {a, b, countA, countB}`：**把"引擎只画那两组项"
+  这件事量出来**（纯函数 + 守卫）。**没有**据此改绘制 —— 因为引擎那两趟的**上界**在体里不是 `[5]+[7]`（判据是
+  "键 ≥ 起点 且 不在另一条区间内"），本函数按写端声明的"起点 + 跨度"取，属"按写端意图"的读法；真要生效需要
+  "只画子集项"的离屏合成（= 路线 D / `T-0066`）。
+- 规格 `transition-render-spec-2026-09.md`：§1.2 表订正「双缓冲屏幕层」、§3.4 的 `Tex0` 订正、§7 的 U3/U4 改写为已收敛、
+  并补 `Scene+46668` 的真义。
+
+**仍缺**：U2（类别 1 的可见效果 / `SetRandomFade` 族）、U1（1px 级 UV 修正）、U5/U6；
+以及"按两条区间裁剪绘制"（等路线 D）。
+
+## 2026-09-20
+
+### 轮 5 续 3：路线 D 第一块 —— **子集离屏合成**（类别 0/2 的源换成引擎的真身）
+
+**动机（U3 的直接推论）**：引擎的 scratch 层 36/37 **不是**"上一帧整屏"，而是把**记录那两条 item 区间**里的项
+现画进那一层（两趟重绘，raw 136014-136176）。所以之前"old = 上一帧整屏快照 / new = 本帧整屏"这套概念
+**本身就是错的**：它把只有两组项参与的过程画成了整屏溶解。
+
+**落地**
+
+- `presenter.ts`：把绘制项画法抽成 **`itemSprite(scene, it, clock, blendMode)`**（唯一一份），
+  `present` 与新增的 **`renderItemSubset(scene, clock, handles, into)`** 共用 —— 防"主画面"与"转场那一层"
+  两套画法漂移（本工程已有多次同类事故）。既有 presenter 测试（live2d/场景变换/网格）全绿。
+- `scene/transition.ts`：新增 **`scTransitionRangeHandles(s, rec)`**（区间 A = `[5]` 起 `[7]` 跨度、
+  B = `[6]` 起 `[8]` 跨度；跨度 ≤ 0 ⇒ 空集 = 引擎那层 `Clear` 后的透明）；`scTransitionRangeRects` 改为复用它。
+- `pixiBackend.ts`：新增 **`#renderRangeCanvas(handles)`**（`renderItemSubset` → `extract.canvas`，
+  按**项集合**每帧缓存）；`#compositeTransitions` 里类别 0 = 铺 A + 以 `t` 叠 B（**先 Clear**，引擎
+  raw 136174-136175 就是这么做的）、类别 2 = 条带从 A/B 取；**删除 `#transOld`**（旧帧快照）与其在
+  `advanceModel` 的抓帧逻辑。类别 3 仍用本帧屏幕（对引擎读陈旧 scratch 的有意改正）。
+
+**守卫**
+
+- `test/transition-render-wiring.test.ts` 增 2 条：①**presenter 级**——`renderItemSubset` 只画选中的项、
+  按 layer 升序、空集合画 0 个，且主合成仍画全部（没改动主路径）；②**端到端**——用**语料形态的 `i223` 实参**
+  跑真 handler，断言 op3/op4/op5/op6 正好落进 `[5]/[7]/[6]/[8]`，且区间选择正好命中那两个项、快照里 `ranges` 一致。
+  源码棘轮同步改成"必须走子集 + 不许再有 `#transOld`"。
+
+**★E4 缺口（如实记）**：本机**没有**一条冷启动就能跑到 `i223`/`i24f` 的脚本路径 —— 试了 178 个含 `i223` 的脚本的
+**前 12 个**（各 3000 帧），全部停在等待里、一个转场都没进；`--load 79` 只到 SN0000（它的 `i250` 在 3026 行之后）。
+⇒ 子集这条路目前只有 **E2**（presenter 级 + 端到端棘轮），像素级 E4 待有可达路径再补。

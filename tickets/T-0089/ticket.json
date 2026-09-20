@@ -1,0 +1,46 @@
+{
+  "title": "模块环：handlers/save-slot → vm/ops → handlers/index → handlers/save-slot（直接先 import save-slot 会踩 TDZ）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/vm",
+  "why": "`vm/handlers/save-slot.ts` 既 `import { loadScriptIntoFrame } from \"../ops.js\"`，又被 `vm/handlers/index.ts` 以 `...SAVE_SLOT_OPS` 顶层展开；而 `vm/ops.ts` 又要从 `handlers/index.js` 取注册表 ⇒ 三者成环。ESM 的求值顺序决定它**是否**抛：入口侧若先求值 `ops`（既有测试与产品的姿势）就没事；若某个模块**先** import `save-slot`（实测：新写一个只 import `engine`/`headlessScene`/`save-slot` 的测试文件），`handlers/index.ts:66` 展开时 `SAVE_SLOT_OPS` 还在 TDZ ⇒ `ReferenceError: Cannot access SAVE_SLOT_OPS before initialization`（模块级抛错，测试文件整片红，看起来像\"测试坏了\"）。2026-09 在给装载点加 L2D 复位守卫时实测踩到。",
+  "acceptance": [
+    "环被打破或显式隔离：`save-slot.ts` 不再从 `ops.js` 取值（或 `ops.ts` 不再从 `handlers/index.js` 取值；或把 `SAVE_SLOT_OPS` 的组装移到一个不依赖 `ops` 的层）",
+    "守卫：新增一个**只 import save-slot + engine** 的最小测试文件（不 import ops）也必须能跑起来（现在会 TDZ）",
+    "若选择保留环：在 `handlers/index.ts` 与 `save-slot.ts` 两处写清\"必须先 import ops\"的口径，并有一条守卫钉住（否则下一个新测试文件又会踩）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/index.ts",
+      "anchor": "...SAVE_SLOT_OPS",
+      "line": 66,
+      "note": "顶层展开 ⇒ 求值顺序敏感"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "import { loadScriptIntoFrame } from '../ops.js';",
+      "note": "环的这条边（save-slot → ops）"
+    },
+    {
+      "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
+      "anchor": "必须先 import `vm/ops.js`",
+      "note": "实测踩到后写下的口径注释"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0021"
+    ],
+    "docs": [],
+    "analysis": []
+  },
+  "notes": "与 `T-0021`（消 A1 分层违规）同族：本质是 `vm/ops` 与 `vm/handlers` 互相依赖。",
+  "id": "T-0089",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

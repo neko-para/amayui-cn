@@ -609,3 +609,69 @@ export function scTransitionTargetRect(s: SceneState, rec: TransitionRecord): Tr
   if (!it) return null;
   return { x: Math.trunc(it.posX), y: Math.trunc(it.posY), w: it.srcW, h: it.srcH };
 }
+
+/** 两条 item 区间（写端 `[5]`/`[7]` 与 `[6]`/`[8]`）在**当前模型**里对应的屏幕矩形。 */
+export interface TransitionRangeRects {
+  /** 区间 A（`[5]` 起、`[7]` 跨度）覆盖的绘制项矩形并集；`null` = 一个都不在模型里。 */
+  a: TransitionRect | null;
+  /** 区间 B（`[6]` 起、`[8]` 跨度）。 */
+  b: TransitionRect | null;
+  /** 命中 A 的绘制项数 / 命中 B 的。 */
+  countA: number;
+  countB: number;
+}
+
+/**
+ * ★**转场的两条 item 区间**（`[5]`/`[7]` 与 `[6]`/`[8]`）—— 引擎的 36/37 装的就是这两组项。
+ *
+ * 依据（`sub_4B06D0` 的**两趟 scratch 重绘**，raw 136014-136176 / asm `0x4B379C` 起）：
+ * `for (v60 = 0; v60 < 2; ++v60) { SetTarget(36+v60); Clear; BeginScene; 把该趟的 item 画进去; EndScene; }`
+ * —— 第 0 趟画区间 A（起点 `[5]`）、第 1 趟画区间 B（起点 `[6]`），两趟都**排除另一条区间**；
+ * 两趟之前先 `SetTarget(36+v60)` + `Clear`，所以那一层上**只有这两组项**（其余是透明）。
+ * ⇒ 转场的可见范围**只覆盖这两组项**，不是整屏（emulator 现在用整屏快照 ⇒ 见下面的缺口）。
+ *
+ * ★**为什么只导出、还没有拿它裁剪绘制**：①引擎那两趟的**上界**在体里不是 `[5]+[7]`
+ * （判据是"键 ≥ 起点 且 不在另一条区间内"，raw 135577/135591/135605），本函数按**写端的声明**
+ * （起点 + 跨度）取，属"按写端意图"的读法；②它要真正生效需要"只画子集项"的离屏合成
+ * （= 路线 D / `T-0066`）。所以本轮先把它**量出来**（进快照），下一步再决定要不要据它裁剪。
+ */
+export function scTransitionRangeHandles(
+  s: SceneState,
+  rec: TransitionRecord,
+): { a: Set<number>; b: Set<number> } {
+  const pick = (start: number, span: number): Set<number> => {
+    const out = new Set<number>();
+    if (span <= 0) return out; // 写端没写这一条（如 0x250/0x251 不写 [6]/[8]）⇒ 该层是空白
+    const end = start + span;
+    for (const handle of s.drawItems.keys()) if (handle >= start && handle < end) out.add(handle);
+    return out;
+  };
+  return { a: pick(at(rec, 5), at(rec, 7)), b: pick(at(rec, 6), at(rec, 8)) };
+}
+
+/**
+ * 两条区间对应的屏幕矩形（**并集**）+ 命中项数。宿主拿它做离屏子集合成的尺寸参考/诊断；
+ * 真正的合成用 `scTransitionRangeHandles`（要的是项集合，不是矩形）。
+ */
+export function scTransitionRangeRects(s: SceneState, rec: TransitionRecord): TransitionRangeRects {
+  const { a, b } = scTransitionRangeHandles(s, rec);
+  const box = (handles: Set<number>): TransitionRect | null => {
+    if (handles.size === 0) return null;
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    for (const h of handles) {
+      const it = s.drawItems.get(h);
+      if (!it) continue;
+      const x = Math.trunc(it.posX);
+      const y = Math.trunc(it.posY);
+      x0 = Math.min(x0, x);
+      y0 = Math.min(y0, y);
+      x1 = Math.max(x1, x + it.srcW);
+      y1 = Math.max(y1, y + it.srcH);
+    }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  };
+  return { a: box(a), b: box(b), countA: a.size, countB: b.size };
+}

@@ -19,6 +19,7 @@ import {
   scClearDrawContainer,
   scClearMeshSlots,
   scDropFrameItems,
+  scRestoreDrawItems,
   scSnapshotPresent,
   scRestorePresent,
   type PresentSnapshot,
@@ -87,6 +88,7 @@ import {
   type SceneState,
 } from './sceneModel.js';
 import type { DrawItemConfig, DrawItemLoopRequest, DrawStringStyle, MeshCreateSpec, NativeBridge } from '../vm/native.js';
+import type { Item } from './drawItem.js';
 import { AudioEngine, type AudioHost, type AudioIntent } from '../audio/audioEngine.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
@@ -362,6 +364,16 @@ export class HeadlessScene implements NativeBridge {
       this.log(`dropFrameItems: 丢掉帧 ${frame} 画的绘制项 ${r.items} 个（handle ${r.handles.join(',')}）`);
     }
     return r.items;
+  }
+
+  /** 用存档里的绘制项清单整批替换绘制项（引擎真槽读档；见 `native.restoreDrawItems` 的依据说明）。 */
+  restoreDrawItems(items: readonly Item[]): number {
+    const r = scRestoreDrawItems(this.scene, items);
+    this.log(
+      `restoreDrawItems: 清掉上一屏 ${r.cleared} 项、按存档装回 ${r.installed} 项` +
+        `（handle ${items.slice(0, 8).map((it) => `0x${it.handle.toString(16)}`).join(',')}${items.length > 8 ? ',…' : ''}）`,
+    );
+    return r.installed;
   }
 
   clearDrawContainer(): void {

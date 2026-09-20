@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 133,
+    "total": 134,
     "modeled-verified": 48,
     "modeled-unverified": 7,
-    "partial": 33,
+    "partial": 34,
     "absent": 21,
     "n/a-known": 24,
-    "needsAttention": 61
+    "needsAttention": 62
   },
   "entries": [
     {
@@ -691,7 +691,7 @@
         "Scene+42600(层36)",
         "Scene+42604(层37)",
         "Scene+1032",
-        "Scene+46668"
+        "Scene+46668(着色器档)"
       ],
       "whySilent": "窗口超时后把记录 `[3]` 清 0 并 `sub_49E170` 收尾，正常流程无日志",
       "confidence": "confirmed",
@@ -699,7 +699,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/sc-transition-window.test.ts",
-        "note": "★记录表（Scene+1048）已建模（2026-09 T-0076 的 B3 补；写入端 0x223/0x24D/0x24F/0x250/0x251 逐格照抄 + 0x224 清空 + 快照导出）。★轮 5（T-0084）落地四件：①**窗口模型**（首帧锁存 [1]、按 clock 算 t/off、到点杀记录、一遍绘完没有在途转场就清空整表 —— 引擎 raw 134867-134871 / 136840-136841）落在 scene/transition.ts 并由两个宿主的 advanceModel 共用；②**12 种盲帘条带几何**（纯函数，表驱动守卫 test/sc-transition-geometry.test.ts）；③**运行期进度进快照**（render4.transitionProgress —— 刻意与写入端记录分开：引擎就地改 [1]/[3] 而 emulator 的记录表被整条 deepEqual 断言）；④**渲染端落了类别 0（交叉淡化）、类别 2（盲帘）、类别 3（插值模糊，累积近似）**，且都是**画进记录 [4] 的离屏槽**（引擎 sub_4A50C0 的第二参 v384[4]，raw 136174/134937/135824；语料实证 src/SC0000.txt:1337-1339）—— 宿主侧 = TextureCache.composeIntoSlot。★两处订正（以体为准）：**Scene+42600 / 42604 就是层 36 / 37**（层表基址 42456 + 4*36，raw 10993 的索引循环坐实），不存在另设的双缓冲屏幕层；类别 3 的 Tex0 是**层 36 的纹理**（raw 135883），不是 layer[[4]]。★**类别 3 是「参数确证 + 像素已披露近似」**：scTransitionBlurPlan 逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat（含 CenterU/V 归一化），采样数取引擎 CPU 回退常数 33、中心权重 3（raw 126180-126183）、径向步长 Length/(|center|*16)（dbl_51D7E8=16.0）；**未复刻**引擎的 (2L+1)² 核（sub_4A0120）逐点权重与 SlideBlur 的采样密度 ⇒ 类型/快照/注释三处都带 approximate 标记。**仍未实现（有据缺口）**：类别 1 0x24D（语料 0 处 + 规格 §3.5 U2 未确证 ⇒ 已在 analysis/opcode-gaps.json 记 deferred）；[4] 指向非 create-texture 槽的情形（没有画布表面）；类别 3 的**源层**（规格 §7 的 U3：层 36 只在类别 0/1 的 item 重绘 raw 136014-136176 里被填、那段还在类别 3 之后）与 sub_4B06D0 的控制流嵌套（U4）；Scene+46508/46512/46516 三个标志本身未建模（只等价折进 sceneNeedsRender 的第三项）。"
+        "note": "★记录表（Scene+1048）已建模（2026-09 T-0076 的 B3 补；写入端 0x223/0x24D/0x24F/0x250/0x251 逐格照抄 + 0x224 清空 + 快照导出）。★轮 5（T-0084）落地四件：①**窗口模型**（首帧锁存 [1]、按 clock 算 t/off、到点杀记录、一遍绘完没有在途转场就清空整表 —— 引擎 raw 134867-134871 / 136840-136841）落在 scene/transition.ts 并由两个宿主的 advanceModel 共用；②**12 种盲帘条带几何**（纯函数，表驱动守卫 test/sc-transition-geometry.test.ts）；③**运行期进度进快照**（render4.transitionProgress —— 刻意与写入端记录分开：引擎就地改 [1]/[3] 而 emulator 的记录表被整条 deepEqual 断言）；④**渲染端落了类别 0（交叉淡化）、类别 2（盲帘）、类别 3（插值模糊，累积近似）**，且都是**画进记录 [4] 的离屏槽**（引擎 sub_4A50C0 的第二参 v384[4]，raw 136174/134937/135824；语料实证 src/SC0000.txt:1337-1339）—— 宿主侧 = TextureCache.composeIntoSlot。★两处订正（以体为准）：**Scene+42600 / 42604 就是层 36 / 37**（层表基址 42456 + 4*36，raw 10993 的索引循环坐实），不存在另设的双缓冲屏幕层；类别 3 的 Tex0 是**层 36 的纹理**（raw 135883），不是 layer[[4]]。★**类别 3 是「参数确证 + 像素已披露近似」**：scTransitionBlurPlan 逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat（含 CenterU/V 归一化），采样数取引擎 CPU 回退常数 33、中心权重 3（raw 126180-126183）、径向步长 Length/(|center|*16)（dbl_51D7E8=16.0）；**未复刻**引擎的 (2L+1)² 核（sub_4A0120）逐点权重与 SlideBlur 的采样密度 ⇒ 类型/快照/注释三处都带 approximate 标记。**仍未实现（有据缺口）**：类别 1 0x24D（语料 0 处 + 规格 §3.5 U2 未确证 ⇒ 已在 analysis/opcode-gaps.json 记 deferred）；[4] 指向非 create-texture 槽的情形（没有画布表面）；类别 3 的**源层**（规格 §7 的 U3：层 36 只在类别 0/1 的 item 重绘 raw 136014-136176 里被填、那段还在类别 3 之后）与 sub_4B06D0 的控制流嵌套（U4）；Scene+46508/46512/46516 三个标志本身未建模（只等价折进 sceneNeedsRender 的第三项）。★轮 5 续：**U3/U4 读 asm 收敛**（反编译那段不可信）：真身的循环是 `for (v60=0;v60<2;++v60){ SetTarget(36+v60); Clear; BeginScene; 把该趟的 item 画进去; EndScene; }`（0x4B1232 循环体 / 0x4B179B 回跳），两趟跑完才 `SetTarget([4])` + 窗口判定 + `switch([13])`（0x4B17A1-0x4B1829，12 个 case 是**所有类别共用**的分派、`def_4B1832` 是公共落点）；**36/37 装的就是记录的两条 item 区间**（第 0 趟画区间 A=起点 [5]、第 1 趟画区间 B=起点 [6]，两趟都排除另一条，raw 135577/135591/135605，且先 Clear 再画 ⇒ 那两层上只有这两组项）⇒ **转场的可见范围只覆盖这两组项**（emulator 现在仍按整屏快照画，已把缺口量出来：`scTransitionRangeRects` + 快照 `transitionProgress[].ranges`）；★**类别 3 被显式跳过这一趟**（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 引擎的模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**。另订正：`Scene+46668` 不是「美术质量档」而是 **D3D 着色器档**（0/1/2，设备创建时定，raw 126550-126568），它同时门住 D3DX effect（>=1 / >=2）、层 36/37 的 format、以及 item 重绘（<2）。★轮 5 再续：**类别 0/2 的源已从「整屏快照」改成「记录那两条 item 区间的离屏子集」**（引擎 36/37 的真身）—— presenter 新增 `renderItemSubset`（与主合成共用 `itemSprite` 一份画法，防两套画法漂移）、pixi 宿主新增 `#renderRangeCanvas`（按项集合每帧缓存）+ `scTransitionRangeHandles`；**删掉 `#transOld`「上一帧整屏快照」那套概念**。类别 3 仍用本帧屏幕合成（对引擎读陈旧 scratch 的有意改正）。守卫：test/transition-render-wiring.test.ts(6，含 presenter 级子集渲染 + 写端→区间选择端到端)。**E4 缺口**：本机无冷启动可跑到 i223/i24f 的路径（试了 178 个含 i223 的脚本的前 12 个 ×3000 帧，均未进转场）⇒ 这条路只有 E2。"
       }
     },
     {
@@ -3221,7 +3221,7 @@
         "status": "modeled-verified",
         "evidence": "E4",
         "guard": "test/save-slot-chain.test.ts",
-        "note": "★2026-09（tickets/T-0059）：**真槽（format=3）现在真的能续跑** —— 新增 src/vm/engineSlot.ts 解析状态主体（帧镜像/三个池/三张全局 ip 表/100 个解码图槽/1000 条记录；两个内层 CRC 都校验且本机 47 个真槽全过）＋ handlers/save-slot.ts 的 restoreEngineSlot（还原池与帧记录＋把记录 0 的脚本装进帧 0）＋ handlers/frame.ts 的 0xAE 真实现（按记录用**帧里那份脚本自己的** 0x71 消息表/0x3 call-script 表落 ip；cur == savedCur 时收尾写 95777 = savedRet 并清读档门）＋ Engine.saveResume。落点语义：末帧停在 0x71 ⇒ 重放存档当时那句话；更早的帧停在 0x3 ⇒ 从它的下一条继续。守卫 test/engine-slot.test.ts（合成槽往返＋CRC 负例＋落点换算＋47 个真槽的落点自洽）与 test/slot-load-resume.test.ts（真 SAVE00 装载后帧 0 = SYSTEM4.BIN 且第一步走栈真的把存档帧脚本装进帧 1）。★仍存缺口：跳过引擎的 CALLBACK_LOAD.BIN 那一跳（charm 绘制管线与 savemesskip 复位不复现）；解码图槽与图像重载清单已解未应用；format = 1/2 旧布局未解析。"
+        "note": "★2026-09（tickets/T-0059）：**真槽（format=3）现在真的能续跑** —— 新增 src/vm/engineSlot.ts 解析状态主体（帧镜像/三个池/三张全局 ip 表/100 个解码图槽/1000 条记录；两个内层 CRC 都校验且本机 47 个真槽全过）＋ handlers/save-slot.ts 的 restoreEngineSlot（还原池与帧记录＋把记录 0 的脚本装进帧 0）＋ handlers/frame.ts 的 0xAE 真实现（按记录用**帧里那份脚本自己的** 0x71 消息表/0x3 call-script 表落 ip；cur == savedCur 时收尾写 95777 = savedRet 并清读档门）＋ Engine.saveResume。落点语义：末帧停在 0x71 ⇒ 重放存档当时那句话；更早的帧停在 0x3 ⇒ 从它的下一条继续。守卫 test/engine-slot.test.ts（合成槽往返＋CRC 负例＋落点换算＋47 个真槽的落点自洽）与 test/slot-load-resume.test.ts（真 SAVE00 装载后帧 0 = SYSTEM4.BIN 且第一步走栈真的把存档帧脚本装进帧 1）。★仍存缺口：跳过引擎的 CALLBACK_LOAD.BIN 那一跳（charm 绘制管线与 savemesskip 复位不复现）；解码图槽「已解未应用」，而 body 末段那份 `{740、count、(handle+740B)×count}` **就是绘制项清单**（不是「图像重载清单」）—— 装载点必须清 `Scene+0x408` 容器的旧项再逐条还原它，见 save-load-drawitem-clear-and-restore；format = 1/2 旧布局未解析。"
       }
     },
     {
@@ -3791,27 +3791,30 @@
     {
       "id": "scene-teardown-on-load-point",
       "subsystem": "渲染",
-      "name": "读档装载点清上一屏的绘制项与网格（引擎靠对象析构 + 场景 init 的 i1f6/i32b，续跑那一遍被跳过）",
+      "name": "读档装载点清空绘制项容器 + 从存档 body 还原绘制项清单（raw 19806-19832）",
       "trigger": "每次真槽读档（sub_410160 装完槽表之后）",
       "engine": {
         "fns": [
           "sub_410160",
-          "sub_4AB7A0",
-          "sub_41A4A0"
+          "sub_49A300",
+          "sub_40C910",
+          "sub_40C310",
+          "sub_40BB60"
         ],
-        "raw": "19744-19927"
+        "raw": "19806-19832"
       },
       "reads": [
-        "Scene draw_item_container（Engine+408）",
-        "Scene mesh_container（Engine+428）"
+        "Engine+323864 = Scene+0x408（绘制项容器：+0 计数 / +4 树根 / +8 size）",
+        "Engine+323872 = Scene+0x410（容器元素数）",
+        "file body 末段 {u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}"
       ],
-      "whySilent": "少了它**不报错、只表现不对**：上一屏（标题/读档菜单）的绘制项留在模型里，而它们引用的纹理槽刚被读档换成新图 ⇒ 画出一屏拼贴（2026-09 用户实测：上半屏标题、下半屏序章背景、读档菜单压在最上层）。引擎不会露出这些项：它把上一屏的 CMesh/纹理对象析构掉了（绘制项指向空对象 ⇒ 画不出），且场景 init 的 i1f6/i32b 会整批清容器 —— 但**读档续跑落点在主循环里，那一遍 i1f6 被跳过**（NOVEL 的 i0ae 在 dword 29 就把 ip 跳到 628，越过 dword≈262 的 i1f6），所以 emulator 必须在装载点显式做同一件事。",
+      "whySilent": "★★不报错、只让画面完全不对，而且方向与直觉相反：不清+不还原时，上一屏（TITLE/菜单）的绘制项留在容器里，而装载段紧接着按存档重绑槽表（`records[4].flag==1 ⇒ 槽 4 ← 0xB37 = BG050ABL`）⇒ 残留项当场改画成存档那张图：TITLE 的 6 个引用槽 4 的项按各自的源矩形去采样 2048×1152 的 BG050ABL ⇒ 5 块 156×156 菜单板在 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554) 排成「天空碎片阶梯」，0x64 那条的源 y=1161 已越过图高 1152（灰块）。引擎读档后画面上是**存档那一屏的绘制项**（含 SN0000 背景项 handle 0x18A88、slot 4、src (0,0,2048,1152) @ dst (0,0)；键 101000 ≫ TITLE 的 0x135 ⇒ 天然盖住一切）。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "modeled-verified",
+        "status": "partial",
         "evidence": "E4",
         "guard": "test/slot-load-resume.test.ts",
-        "note": "装载点调 native.clearDrawContainer() + clearMeshSlots()（与 0x1F6/0x32B 同一条缝）。E4：GUI 实拍（shot --load 79）读档后画面只剩 ADV 场景（背景+立绘+文字），标题与菜单残留消失。"
+        "note": "★2026-09 轮 5 订正（tickets/T-0083）：本条的**原始实现是对的** —— 装载点调 clearDrawContainer() + clearMeshSlots() 并有 E4（读档后只剩 ADV 场景）。随后 (B) 步以「sub_410160 的 27 个被调函数里没有清容器」为由删掉了这一刀、换成 Item.ownerFrame + dropFrameItems ⇒ 残留回归（用户报的阶梯）。源码证明 (B) 的前提错：清容器是 **sub_410160 行内**做的（不在被调函数里）—— raw 19810-19820 先整批销毁绘制项容器的树（sub_40BB60 + operator delete）并把哨兵/计数复位，raw 19822-19832 再对 body 里每条 {handle, 740B} 调 sub_49A300 默认初始化 + memcpy + sub_40C910/sub_40C310 插回容器。⇒ 正解 = **恢复 clearDrawContainer/clearMeshSlots + 新增 body 绘制项清单的解析与还原**（后者才是「存档那一屏的背景/立绘回来了」的来源）；ownerFrame 那套只留作 body 无清单时的回退。src/vm/engineSlot.ts 早把清单解析出来了（imageReload → 应改名 drawItems）却只留 handle、无消费者。"
       }
     },
     {
@@ -3917,6 +3920,36 @@
         "evidence": "E2",
         "guard": "test/op-22a-22f-scene-world.test.ts",
         "note": "2026-09 落地（tickets/T-0076）：写端 = OPS 的 `op_scene_scale``op_scene_translation``op_scene_axis_scale``op_scene_axis_translation` 四条；模型 = `SceneState.sceneXform`；消费端 = `scene/ops.ts` 的 `applySceneXformToPlacement`（层号判据 `sceneLayerAffected` 就是半开区间 [20,30)）加 `pixi/presenter.ts` 的归并循环（item/text/mesh 三路都吃）加 headless 快照的 `scene-xform` 行（逐项 before→after）。★左右序按体：`work ← work · sceneWorld`（行向量序）⇒ 屏幕点 ← 屏幕点 × (sx,sy) + (tx,ty)；缩放绕屏幕原点、平移不被项自身缩放放大。★缺口（登记在此条而非假装已覆盖）：引擎「层号 ∉ [20,30) 时把完整 3D 世界矩阵乘进 work 矩阵」那一支、以及变换记录的动画窗（`Scene+1120` 的 bit1 走 A 层窗插值）emulator 未建 —— 语料 20 处四条指令全是立即值、且 20..29 支里窗也会被替换成立即装矩阵。★守卫 test/op-22a-22f-scene-world.test.ts（写端口径 + 层号判据 + 叠加序 + 快照 before→after）与 test/op-22a-22f-scene-xform.test.ts（体账棘轮）。"
+      }
+    },
+    {
+      "id": "save-load-drawitem-clear-and-restore",
+      "subsystem": "资源",
+      "name": "读档装载点：清空绘制项容器 + 还原存档里的绘制项清单（Scene+1032）",
+      "trigger": "`0x1A1`/`0x190` 读档 → `sub_410160`（raw 19806-19832）：池块之后，file body 还有一段 `{u32 recordBytes=740, u32 count, (u32 handle + 740 B DrawItem 记录) × count}`；装载时先**整批销毁**绘制项容器的树（`sub_40BB60` 释放 + `operator delete`，raw 19810-19820）并把哨兵/计数复位（`*(Engine+323868+0)=root`、`root->next=root`、`root->prev=root`、`Engine+323872`=size=0），再对每条 `sub_49A300(Scene,scratch)`（740 B 记录默认初始化，raw 116879）+ `memcpy(scratch, p, 740)` + `sub_40C910(Engine+323864,&handle)`（按键查/建节点）+ `sub_40C310(...,node,record)`（赋值）",
+      "engine": {
+        "fns": [
+          "sub_410160",
+          "sub_49A300",
+          "sub_40C910",
+          "sub_40C310",
+          "sub_40BB60"
+        ],
+        "raw": "19806-19832"
+      },
+      "reads": [
+        "Engine+323864 = Scene+0x408（绘制项容器：+0 计数 / +4 树根 / +8 size）",
+        "Engine+323872 = Scene+0x410（容器元素数）",
+        "file body 末段 {u32 740, u32 count, (u32 handle + 2960 B 记录区) × count} —— ★条目步长 = 1+size = 741 dword = 2964 B（引擎 raw 19828 `v97 = &v67[4*hFile]`），只有记录区的前 740 B 被 memcpy 进内存里的 DrawItem",
+        "尾部 {u32 @Scene+0x458, u32 @Scene+0x45C, 740 B 记录 @Scene+0x460}（语义未确证；本机槽 79 全 0）"
+      ],
+      "whySilent": "★★这条**不报错、只是画面完全不对**，而且方向与直觉相反：不清+不还原时，**上一屏（TITLE/菜单）的绘制项会留在容器里**，而装载段紧接着按存档把槽表重绑（`records[4].flag==1 ⇒ 槽 4 ← 0xB37 = BG050ABL`）⇒ 那些残留项**当场改画成存档那张图**：TITLE 的 6 个全屏/菜单项引用槽 4，于是按各自的源矩形去采样 2048×1152 的 BG050ABL —— 156×156 的 5 块菜单板在 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554) 排成阶梯（用户报的「天空碎片阶梯」），0x64 那条的源 y=1161 已越过图高 1152（灰色块）。引擎读档后画面上是**存档那一屏的绘制项**（含 SN0000 的背景项 handle 0x18A88、slot 4、src (0,0,2048,1152) @ dst (0,0)，键 101000 ≫ TITLE 的 0x135 ⇒ 天然盖住一切）。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E4",
+        "guard": "test/engine-slot.test.ts",
+        "note": "★2026-09 轮 5 落地（tickets/T-0083）：`src/vm/engineDrawItem.ts`（新）= 740 B 记录 → `Item`（偏移表以体为准；4×4 矩阵按 **D3DX 写入位置**取分量：缩放 = 对角线 `+0/+20/+40`、平移 = 第 4 行 `+48/+52/+56` —— 按「连续 3 个 f32」读会得到 (1,0,0)/(0,0,0) 而静默画错，读取端自证 = `0x228`/`sub_4AA060` 的 `D3DXMatrixDecompose`；B 层通道步长 **4**（`+524+4i`/`+544+4i`））；`engineSlot.ts` 的清单解析改名 `drawItems` 并**修正步长**：`1 + size`（2964 B，引擎 `&v67[4*hFile]`）而不是 `1 + size/4`（744 B —— 旧写法下第 2..69 条 handle 全是垃圾）；装载点经新宿主缝 `native.restoreDrawItems(items)` 一步做完「清上一屏 + 装存档清单」（两个宿主对称）。E4（`npm run shot -- --load 79`）：日志 `restoreDrawItems: 清掉上一屏 172 项、按存档装回 69 项（handle 0x18a88,0x19835,…）`，阶梯/灰块消失、背景 = BG050ABL（截图归档 `tickets/T-0083/evidence/after-itemrestore-*.png`）。★保留的有据缺口：`animStart` 是**引擎绝对时钟**（`timeGetTime` 族毫秒），body 里没有锚点可换算 ⇒ 逐字还原后各窗判为「未开始」= 冻结在存档当时的 work 矩阵（如实写在该模块头）；旋转通道（`+0xEC`/`+0x12C` 矩阵与 `+0x1EC..+0x208` 轴角）逐字段偏移未确证 ⇒ 未还原；body 尾部 `{2 dword + 740 B}` 未解析；`ownerFrame`/`dropFrameItems` 降级为「body 无清单」时的回退。"
       }
     }
   ]

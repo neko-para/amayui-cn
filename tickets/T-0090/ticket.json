@@ -1,0 +1,65 @@
+{
+  "title": "真槽读档后上一个画面的 Live2D 仍活着并被画（TITLE 的 node 0x14 画进 SN0000 ⇒ 背景「完全混乱、很多图元缩放错误」）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/save-slot",
+  "why": "用户实测（`npm run shot -- --load 79`）：读档进 SN0000 后画面背景完全混乱、一大堆位置/缩放都不对的图元。\n\n**实测定位（2026-09，headless 探针 + 真机截图）**：\n- 读档后场景里的绘制项**只有 25 个**，全部在右缘（`x = 1148..1224` = 右侧栏；`ownerFrame=3`），**一项背景都没有**；另有 3 张满屏 mesh（`0x0`/`0x19640`/`0x30d40`）。\n- 真正在画的\"立绘/天空件\"来自 **Live2D**，而且挂着的是**上一个画面的**：`TITLE.txt:590` 的 `i344 14 0` 建的 node `0x14` + 它的模型（60 个批次，含 `D_MY_PARTS_SORA_*` 这种满屏件）+ 一条动作缓存；而 **`SN0000.txt` 里一条 L2D 指令都没有**。\n- 根因：装载点只按 `ownerFrame` 丢掉被放弃调用链的**绘制项**，**完全没碰 L2D 运行态**；而存档槽的 body 布局（`vm/engineSlot.ts`：帧镜像 + 三个池 + 三张 ip 表 + 图像清单）**没有任何 L2D 字段** ⇒ 装载后进程里的 L2D 状态**必然属于上一个执行链**。引擎在同一段复位显示容器（raw 19913-19915 的两次 `sub_403EF0`）⇒ 那一层没了，立绘节点不再出画。",
+  "acceptance": [
+    "装载点清 L2D 运行态（模型/实例槽/立绘节点/动作缓存），且**清了多少**要有一条日志（静默清掉会让人以为画面自己好了）",
+    "守卫 `test/slot-load-l2d-reset.test.ts`：装载前造出 TITLE 那种 node `0x14` + 一个实例槽 + 一条动作缓存 ⇒ 装载后三者都为 0，且有一条日志；没有 L2D 时**不记**日志",
+    "E4：`npm run shot -- --load 79` 的读档画面不再出现上一个画面的立绘/天空件（截图留 `tickets/T-0090/evidence/`）",
+    "★如实登记副作用：对\"存档时场景本来就有立绘\"的槽，立绘同样会没 —— 但引擎也救不回来（L2D 不在存档里），属既有 `SLOT_GAPS` 缺口，写进 notes.md"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/live2d/runtime.ts",
+      "anchor": "export function l2dResetHost",
+      "note": "★唯一的清空入口（含为什么必须清的引擎/容器依据）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "清掉上一个执行链的 L2D 运行态",
+      "note": "装载点调用点 + 日志"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engineSlot.ts",
+      "anchor": "[图像清单]",
+      "note": "★存档 body 布局：没有 L2D 字段（本条结论的容器依据）"
+    },
+    {
+      "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
+      "anchor": "读档后不许再挂着上一个画面的立绘节点/实例槽",
+      "note": "★守卫"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0066",
+      "T-0072",
+      "T-0083"
+    ],
+    "docs": [
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "同族的 T-0072/T-0083 是**绘制项**那条路；本条是**Live2D**那条路（同一类泄漏、不同容器）。",
+  "id": "T-0090",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— 装载点清 L2D 已落地（守卫 2 条 + E4 已核）；剩 E4 截图归档与文档同步"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "done：l2dResetHost + 装载点调用 + 一行日志；守卫 test/slot-load-l2d-reset.test.ts(2)；E4 截图归档 evidence/（after-l2d-fix-*）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-l2d-reset.test.ts"
+  ]
+}

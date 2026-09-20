@@ -9,6 +9,7 @@
 import type { InputManager } from './input.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { AudioIntent } from '../audio/audioEngine.js';
+import type { Item } from '../renderer/drawItem.js';
 
 /**
  * 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 A 层动画窗 | **bit2 B 层周期/循环动画**。
@@ -474,17 +475,30 @@ export interface NativeBridge {
   /**
    * **丢掉"某一帧画的"绘制项**（emulator 侧的近似，**不是引擎 opcode**）——读档装载点用，返回丢掉的项数。
    *
-   * 依据：引擎的装载路径复位两个**仮想ディスプレイ**对象（`sub_403EF0`，raw 19913-19915），
-   * 其体（raw 9958-9971）就是 `_this[258] = 0`（**项数清零**）+ 游标/矩形复位 ⇒ 上一屏那一层 UI
-   * **整体不再组成**。emulator 没有"平面"对象 ⇒ 用"这一项是哪一帧画的"（`Item.ownerFrame`）近似那一层：
-   * 装载点丢掉**被放弃的调用方帧**画出来的项（菜单/列表），ADV 场景自己画的项保留。
-   * 见 `tickets/T-0083` 的 (B) 步与 `SLOT_GAPS` 的近似登记。
+   * ★2026-09 订正：**降级为 fallback**。引擎真槽的 body 里带着**绘制项清单**（`sub_410160`
+   * raw 19810-19832：清 `Scene+1032` → 从清单逐条插回）⇒ 那份清单读出来时装载点走
+   * `restoreDrawItems`，本方法只在"body 里没有清单"（本工程槽/旧布局）或"清单解析失败"时兜底。
+   *
+   * 早先的依据（`sub_403EF0` 复位两个**仮想ディスプレイ**）已被推翻：那两次复位动的是
+   * **点击热点/路由表 + 游标**（`Engine+0x55D8`/`0xCAC0`，raw 9958-9971），**不碰绘制项容器**
+   * ⇒ 它解释不了"上一屏的项为什么该消失"。见 `tickets/T-0083` 的以体订正。
    */
   dropFrameItems?(frame: number): number;
   /**
+   * **用存档里的绘制项清单整批替换绘制项**（emulator 侧的宿主缝，**不是引擎 opcode**）——引擎真槽读档用。
+   *
+   * 依据 = `sub_410160` raw 19810-19832：先把 `Scene+1032`（绘制项 map）delete-walk 清空 + 哨兵复位 +
+   * `size = 0`，再把清单里每条 `memcpy` 进 740 B 元素并插回 ⇒ **上一屏的项一个不留，画面 = 存档当时**。
+   * 记录体的解码在 VM 层（`vm/engineDrawItem.ts`，740 B 逐字段），宿主只负责"先清后装"这一下。
+   * 返回装进去的项数（宿主日志用；`pixiBackend`/`headlessScene` 两个实现必须同语义）。
+   *
+   * ★**不动网格容器**（引擎的清场只走 `Scene+1032` 那棵树，`Scene+1064` 的网格一个结点都不动）。
+   */
+  restoreDrawItems?(items: readonly Item[]): number;
+  /**
    * **告诉宿主"现在正在执行哪一帧"**（emulator 记账，**不是引擎 opcode**）——每条指令派发前由
    * `interpreter.ts` 调一次。用途：所有**建项路径**（`0x1FB` 之外的文本/`ensure` 建项）都要记
-   * `Item.ownerFrame`，而建项发生在宿主的共享场景层、看不到 VM 的 `e.cur`（`tickets/T-0083` 的 (B) 步）。
+   * `Item.ownerFrame`，而建项发生在宿主的共享场景层、看不到 VM 的 `e.cur`（`tickets/T-0083`）。
    */
   setCurrentFrame?(frame: number): void;
   /**

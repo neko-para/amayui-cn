@@ -10,6 +10,7 @@
  */
 import type { DrawItemConfig, MeshCreateSpec, NativeBridge } from './native.js';
 import type { MsgWinInput } from '../text/layout.js';
+import type { Item } from '../renderer/drawItem.js';
 
 /** 把一条音频意图压成一行（headless 日志/测试断言用）。 */
 export function formatAudioIntent(intent: import('../audio/audioEngine.js').AudioIntent): string {
@@ -240,6 +241,12 @@ export class StubNative implements NativeBridge {
   dropFrameItems(frame: number): number {
     this.log(`[native:stub] dropFrameItems frame=${frame}（读档点：丢掉被放弃调用方那一层 UI）`);
     return 0;
+  }
+
+  /** 用存档清单整批替换绘制项（桩无画布 ⇒ 只留痕；见 `native.restoreDrawItems` 的依据说明）。 */
+  restoreDrawItems(items: readonly Item[]): number {
+    this.log(`[native:stub] restoreDrawItems ${items.length} 项（读档点：清 Scene+1032 后按存档插回）`);
+    return items.length;
   }
 
   clearDrawContainer(): void {

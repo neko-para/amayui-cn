@@ -48,7 +48,10 @@
  *   u32         stringsBlobDwords（字符串区总长，含 NUL）
  *   strings     stringsCount 个 NUL 结尾串（`sub_40C210` 装进 28 B 步长的池）
  *   u32 × n     三张 ip 表：A（`0x71` 消息表）/ B（`0x3` call-script 表）/ C（`0x8F` call 表）
- * [图像清单]  `{740, count, (1 dword + 740 B) × count, 2 dword + 740 B}`（读档时按 id 重新解码图像）
+ * [图像清单]  ★名字沿用旧口径，**内容其实是绘制项清单**：`{u32 740, u32 count, (u32 handle + 740 B 记录 + 2220 B 未用区) × count}`
+ *              —— 每条占 **2964 B**（引擎 `v97 = &v67[4 * hFile]`，raw 19831）；装载时**清空 `Scene+1032`**
+ *              再逐条插回（raw 19810-19832）⇒ 画面 = 存档当时的场景（`tickets/T-0083`）
+ *              尾部另有 `{2 dword, 740 B 记录}`（raw 19833-19843），语义未确证 ⇒ **有意不解析**
  * ```
  *
  * ## 续跑怎么用（引擎侧链路，`tickets/T-0059`）
@@ -162,8 +165,40 @@ export interface EngineSlotPayload {
   images: EngineSlotImageSlot[];
   /** 1000 条 20 B 记录。 */
   records: EngineSlotRecord[];
-  /** 图像重载清单（`{740, count, …}`）；解析失败 ⇒ null（不致命）。 */
-  imageReload: { size: number; count: number; ids: number[] } | null;
+  /**
+   * **绘制项清单**（`{u32 记录字节数 = 740, u32 count, (u32 handle + 记录) × count}`）——
+   * 引擎装载时**清空 `Scene+1032` 的绘制项容器**（raw 19810-19825 的 delete-walk + 哨兵复位 + `size = 0`），
+   * 再把这份清单逐条插回去（raw 19826-19832：`sub_40C910` find-or-create + `sub_40C310` 赋值）
+   * ⇒ **画面 = 存档当时的场景**，上一屏的绘制项一个不留。
+   *
+   * ★**步长坑**：引擎推进指针的表达式是 `v97 = &v67[4 * hFile]`，`hFile` = 记录**字节数**（740）
+   * ⇒ 每条清单项占 `4 + 4*740 = 2964` 字节（`handle` 4 B + 740 B 记录 + 2220 B 未用区），
+   * 而 `memcpy` 只搬 `hFile` = 740 B 进元素。真槽 79 实证：69 条的 handle 落在 dword 下标 0/741/1482/…
+   * （= 每 2964 B 一条）上、多出来的 2220 B 全 0；早先按 `1 + size/4`（744 B）算步长 ⇒ 第 2 条起
+   * 读到的全是记录体内部的字节（实测得到 `0,0,0,0xb6,…`）。
+   *
+   * ★**尾部未解析**（有意，不猜）：清单之后还有
+   * `{u32 @Scene+0x458, u32 @Scene+0x45C, 740 B 记录 @Scene+0x460}`（raw 19833-19843；`Scene+0x460`
+   * = 第一层的 `xform_flags`），两个 dword 的语义未确证 ⇒ 本解析器到此为止。
+   * `size === 740` 的边界守卫也保证尾部不会被当成一条清单项。
+   *
+   * 解析失败（结构不符/越界）⇒ `null`：**不致命**，而且装载点见到 `null` 时必须**保持**旧行为
+   * （不整批清容器）—— 宁可留着上一屏，也不要因为一条读不出来的清单把画面清空。
+   *
+   * ★**改名的旧字段**：这里此前叫 `imageReload`（`{size, count, ids}`）—— 只留 handle、不做任何事，
+   * 而且步长按 `1 + size/4`（744 B/条）算错（真槽 79 从第 2 条起就串位）。2026-09 一并改名 + 改口径
+   * （`tickets/T-0083`）：现在的 `drawItems` 带 740 B 记录体、步长 `1 + size`，并且**真的被消费**
+   * （`handlers/save-slot.ts` 的 ②c → `decodeEngineDrawItem` → `native.restoreDrawItems`）。
+   */
+  drawItems: EngineSlotDrawItem[] | null;
+}
+
+/** 绘制项清单里的一条：handle + 740 B 记录（原样字节；解码见 `vm/engineDrawItem.ts`）。 */
+export interface EngineSlotDrawItem {
+  /** `Scene+1032` 那张 map 的 key（= 层序，越小越先画）。 */
+  handle: number;
+  /** 740 B 的 DrawItem 元素镜像（逐字节，`sub_410160` 原样 `memcpy` 进元素）。 */
+  record: Uint8Array;
 }
 
 export type EngineSlotParseResult =
@@ -422,16 +457,24 @@ export function parseEngineSlotBody(body: Uint8Array): EngineSlotParseResult {
   const ipTableC = readTable(ipCLen, 'ip 表 C');
   if (!ipTableA || !ipTableB || !ipTableC) return { ok: false, reason: '三张 ip 表超出 body' };
 
-  // ---- 图像重载清单（`{740, count, (1+740) dwords …}`）；结构不符只是解析不到，不影响续跑 ----
-  let imageReload: EngineSlotPayload['imageReload'] = null;
+  // ---- 绘制项清单（`{u32 size = 740, u32 count, (u32 handle + size B 记录) × count}`）----
+  //   ★结构不符只意味着"这份槽的清单读不出来"⇒ 保持 null，**不致命**（续跑照旧；装载点见 null
+  //     就退回旧行为、不清容器）。绝不因为解析失败就返回 `{ok:false}`：那会把整份槽判成坏档。
+  //   ★步长 = `1 + size` **dword**（= 2964 B/条），不是 `1 + size/4`（= 744 B/条）：
+  //     引擎的推进表达式是 `v97 = &v67[4 * hFile]`（raw 19831），`hFile` 就是这里读到的 `size`。
+  //     真槽 79 实证（`tickets/T-0083`）：handle 落在 dword 0/741/1482/…，按 744 B 会读到记录体内部。
+  let drawItems: EngineSlotPayload['drawItems'] = null;
   if (p + 8 <= body.length) {
     const size = i32(dv, p);
     const count = i32(dv, p + 4);
-    const stride = 1 + size / 4;
+    const stride = 1 + size; // dword 步长
     if (size === 740 && count >= 0 && count < 4096 && p + 8 + 4 * stride * count <= body.length) {
-      const ids: number[] = [];
-      for (let i = 0; i < count; i++) ids.push(i32(dv, p + 8 + 4 * stride * i));
-      imageReload = { size, count, ids };
+      const items: EngineSlotDrawItem[] = [];
+      for (let i = 0; i < count; i++) {
+        const at = p + 8 + 4 * stride * i;
+        items.push({ handle: i32(dv, at), record: body.subarray(at + 4, at + 4 + size) });
+      }
+      drawItems = items;
     }
   }
 
@@ -450,7 +493,7 @@ export function parseEngineSlotBody(body: Uint8Array): EngineSlotParseResult {
       ipTableC,
       images,
       records,
-      imageReload,
+      drawItems,
     },
   };
 }

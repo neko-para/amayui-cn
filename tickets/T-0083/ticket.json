@@ -3,46 +3,49 @@
   "type": "refactor",
   "priority": "P1",
   "area": "emulator/render",
-  "why": "审计确认两处都是**自己发明的机制**，且互相「救场」：① `#holdFrames`（`pixiBackend.ts`）在模型变空时保留旧像素最多 60 帧 —— 引擎没有这个概念：`sub_498B60` 是 `IDirect3DDevice9::Clear`（`ClearTarget`，有错误串与 `return 1/0` 检查，另有 6 处无门调用），引擎是每帧清渲染目标后**从模型重组**；② 装载点的 `clearDrawContainer()`+`clearMeshSlots()`（`save-slot.ts` ②c）没有引擎对应 —— `sub_410160` 的 27 个被调函数里没有任何清绘制容器的调用，唯一的整批释放被默认配置门（`set:CreateObject=1`/`set:AutoFreeTexture=0`）关掉，`i0ae` 也只重装帧、不重建绘制项。用户实测的因果链已经证明补丁路线走不通：清了菜单 ⇒ 背景变成上一屏残留像素（旧像素是 hold 留下的），点上才出文字。",
+  "why": "审计确认两处都是**自己发明的机制**，且互相「救场」：① `#holdFrames`（`pixiBackend.ts`）在模型变空时保留旧像素最多 60 帧 —— 引擎没有这个概念：`sub_498B60` 是 `IDirect3DDevice9::Clear`（`ClearTarget`，有错误串与 `return 1/0` 检查，另有 6 处无门调用），引擎是每帧清渲染目标后**从模型重组**；② 装载点的 `clearDrawContainer()`+`clearMeshSlots()`（`save-slot.ts` ②c）没有引擎对应 —— `sub_410160` 的 27 个被调函数里没有任何清绘制容器的调用，唯一的整批释放被默认配置门（`set:CreateObject=1`/`set:AutoFreeTexture=0`）关掉，`i0ae` 也只重装帧、不重建绘制项。用户实测的因果链已经证明补丁路线走不通：清了菜单 ⇒ 背景变成上一屏残留像素（旧像素是 hold 留下的），点上才出文字。\n\n★★2026-09 轮 5 订正（源码级，用户要求不依赖真机表现）：(B) 的**前提被推翻**，本票的 (B) 方向要改。「`sub_410160` 的 27 个被调函数里没有清容器」是对的，但**清容器是 `sub_410160` 自己行内做的** —— raw 19810-19820 先整批销毁绘制项容器的树（`sub_40BB60` 释放 + `operator delete`）并把哨兵/计数复位（`root->next=root`、`root->prev=root`、`size(Engine+323872)=0`），raw 19822-19832 再对 body 末段的 `{u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}` 逐条 `sub_49A300`（740 B 记录默认初始化，raw 116879）+ `memcpy` + `sub_40C910`/`sub_40C310`（按键查/建节点后赋值）插回容器。⇒ 引擎读档后画面上是**存档那一屏的绘制项**，不是上一屏的；`ownerFrame`/`dropFrameItems` 只是这条真机制的拙劣近似。同一轮还证实：`0xAE`（sub_4192F0 raw 24634-24731）是把帧 ip **直接置**成记录里的落点（`95782 = 95781 + 4*table[idx]`，`95805 = 0|3`）⇒ 帧自己的 `i0ae` 与落点之间的指令**被跳过**；SN0000 的 `i0ae` = 指令 737、落点 = 794（`i071 8`）⇒ 738..793（line 1004..1067）整段不执行，而**全文件唯一的场景起始背景绘制就在带内**（指令 756/757/758 = line 1025-1027：`mov f801d 0` / `mov f8006 b37` / `call label_0000e24c`）。所以「引擎靠脚本从入口重跑把背景重画」也是错的（save-slot.ts:319-322 的括注与 :441-442 都要订正）。",
   "acceptance": [
-    "去掉 `#holdFrames` 启发式（或改成只在引擎也会保留像素的场合生效），present 走「模型为空 ⇒ 按引擎清屏色清屏；模型非空 ⇒ 从模型重组」",
-    "撤销装载点的 `clearDrawContainer()`/`clearMeshSlots()`，改为引擎语义：**保留**绘制项 + 重建存档声明的槽（`flag==1`）；「上一屏不再合成」交给引擎真实机制（`sub_403EF0` 的两个输出显示态复位 / 脚本自己的 `i1f6`/`detach-texture`）",
-    "为「仮想ディスプレイ（输出显示态）」建立最小模型或明确登记为缺口（不得再用「清全部绘制项」代替）",
-    "A/B 守卫：**正常走到某句话** vs **读档到同一句话** 的场景级断言一致（绘制项集合、可见项、消息窗文本、背景来源）；读档后不再出现上一屏残留、也不出现「背景缺失」",
-    "E4 复核：真游戏从标题读档的瞬间行为（是否可见残留）作为对照依据写入 `T-0072`/`T-0074`",
-    "npm run verify 全绿"
+    "装载点恢复「清上一屏绘制项」：引擎 `sub_410160` raw 19810-19820 行内整批销毁 `Scene+0x408`（`Scene+0x40C` 树根 / `Scene+0x410` 计数）容器 —— 不再依赖 `Item.ownerFrame`/`dropFrameItems` 近似（那套降级为「body 里没有清单」时的回退）",
+    "解析并还原存档 body 末段的绘制项清单（`{740, count, (handle+740 B)×count}`）到共享场景模型（新宿主缝，pixi/headless 对称）：读档后画面 = **存档那一屏的项**（如 SN0000 的背景项 handle 0x18A88、slot 4、BG050ABL 2048×1152 全屏）",
+    "守卫：合成槽 + 真槽 79 的 A/B —— 读档后「上一屏的项一个不剩」且「存档清单里的项逐项在场（handle/tex/src/pos 相等）」",
+    "E4：`npm run shot -- --load 79` 截图里不再出现 TITLE 残留（阶梯/灰块），对照 `tickets/T-0090/evidence/` 的 before/after",
+    "订正三处已被源码推翻的注释与守卫判据：`save-slot.ts:319-322`（括注）、`save-slot.ts:441-442`、`present.ts` 头注；`test/slot-load-screen.test.ts` 的 (B)/(C) 判据按新机制改写",
+    "`npm run verify` 全绿"
   ],
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-screen.test.ts",
+    "app/amayui-emulator/test/engine-slot.test.ts"
+  ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/repair-plan-2026-09.md",
-      "anchor": "**RF-C 呈现 / 帧保留**",
-      "note": "重构判定：hold 与装载点 clear 互相救场，调参只会让症状搬家"
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "//----- (0049A300)",
+      "note": "★真机制：sub_49A300 = 740 B DrawItem 记录默认初始化（`*(a2)=0`、`*(a2+4)=0`、`SetRect(a2+8,0,0,0,0)`、`+24/+28/+32=0`、`+36/+40/+44=0`、`+52=0` …）；sub_410160 raw 19822-19832 对清单每条先调它再 memcpy+插回容器"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (00498B60)",
-      "note": "sub_498B60 = IDirect3DDevice9::Clear（ClearTarget）：引擎每帧清渲染目标，没有「保留旧像素」机制"
+      "note": "sub_498B60 = IDirect3DDevice9::Clear（ClearTarget）：引擎每帧清渲染目标，没有「保留旧像素」机制（hold 启发式无依据，仍要拆）"
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
-      "anchor": "丢掉被放弃的调用链",
-      "note": "(B) 落地后的装载点：那一刀（`clearDrawContainer()`+`clearMeshSlots()`）已撤销，改为只丢掉**被放弃的调用方帧**画的项（= 引擎 `sub_403EF0` 那个 仮想ディスプレイ 复位的近似）；②c 注释里有完整依据与实测残留"
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "save-load-drawitem-clear-and-restore",
+      "note": "第二层条目：装载点清容器 + 从 body 还原绘制项清单（含 whySilent：残留项被重绑后的槽 4 改画成堆 ⇒ 阶梯）"
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
-      "anchor": "②c ★**装载点不整批清绘制项**",
-      "note": "撤销那一刀处的注释（(B) 步）：27 callee 无清容器 + `sub_403EF0` 体（项数清零）+ `detach-texture 1adb0 7d0` 是立绘层的订正"
+      "file": "analysis/scripts.json",
+      "anchor": "label_0000e24c",
+      "note": "SN0000 唯一的背景/CG 层设置子程序：键 = f8023[层]（层 0 = 0x18A88，表在 INIT2.txt:6-17）、槽 = 3f54[层][0] = 4、图 = f8006（0xB37 = BG050ABL）；调用点指令 757 在**被跳过带**内"
     },
     {
-      "file": "app/amayui-emulator/test/slot-load-screen.test.ts",
-      "anchor": "★(B) 装载点不整批清容器",
-      "note": "(B)/(C) 的守卫：(B) 机械判据（不许整批清、只对 caller 帧 drop、菜单层消失/ADV 层与槽保留）+ (C) A/B 模型逐项相等"
+      "file": "src/TITLE.txt",
+      "anchor": "call-script 33  // SAVE",
+      "note": "Load Data 分支没有任何 detach/i1f6/release-texture ⇒ 打开读档菜单时标题项全活着；而 TITLE 全部美术建在槽 4 上（line 526 `set-texture 5272 4`）⇒ 重绑后整体改画"
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09.md",
-      "anchor": "| `save-slot.ts` 装载点 | `clearDrawContainer()`+`clearMeshSlots()`（无引擎对应；见 `tickets/T-0072`/`T-0074`）",
-      "note": "审计的「凭空实现专项清单」里的这条"
+      "file": "src/INIT2.txt",
+      "anchor": "mov (global-int f8023) 18a88",
+      "note": "CG 层句柄表 f8023..f802e = 0x18A88…（池外全局 ⇒ 真槽不还原、靠 INIT2 重跑），是「高层键盖住标题残留」的键来源"
     }
   ],
   "links": {
@@ -60,11 +63,19 @@
   },
   "notes": "为什么排在 B5：撤销 clear 之后画面会先变黑（模型里没有背景项），必须等 B2/B3 把「读档续跑路径上的指令语义」补齐、并按引擎语义重建槽之后，才能得到正确画面。先做 B0–B4 再动这里，避免又一次「修一处、坏一处」。",
   "id": "T-0083",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "源码级订正：(B) 的前提被推翻 —— sub_410160 行内清 Scene+0x408 并从 body 还原 740B 绘制项清单；acceptance 重写"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "done：源码级判定 + 实现落地 —— sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 新 engineDrawItem.ts + 清单步长修正(1+size) + 宿主缝 native.restoreDrawItems（清上一屏+装存档清单）；verify 787/775/12/0；E4 阶梯消失（evidence/after-itemrestore-*.png）"
     }
   ]
 }

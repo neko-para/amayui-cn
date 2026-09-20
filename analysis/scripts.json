@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 29,
+    "total": 30,
     "analyzed": 10,
-    "partial": 18,
+    "partial": 19,
     "stub": 1
   },
   "entries": [
@@ -550,6 +550,16 @@
           "anchor": "label_00001ec8",
           "lines": "476-480",
           "what": "子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正）"
+        },
+        {
+          "anchor": "call-script 5268  // NOVEL",
+          "lines": "444-448",
+          "what": "mode 分发器（`label_00001cb0`）：`global 0 == 6` ⇒ NOVEL。★真槽 79 的**帧 0 记录 callIdx=15** 正指这条 `call-script`（`0xAE` 按它走栈，见 capabilities 的 save-slot-chain）"
+        },
+        {
+          "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
+          "lines": "182-229",
+          "what": "★场景装配块（`label_00000d70`）：先 `eq (global 3f90) 0` + `jcc label_000013e0` ⇒ **3f90==0 时整块跳过**（detach 19258、槽 0x48 背景、`draw-texture 186a0`、`i1f6`、`i23d`、`create-mesh 19258`）；`4fd9 != 0` 时才走 `i1f6` 那一支"
         }
       ],
       "slots": [
@@ -572,7 +582,8 @@
       "gotchas": [
         "全库只有 27 处 `i073`（SYSTEM4.txt:41、NOVEL.txt:11/265、SN0000 各页）⇒ 只有序章/NOVEL/SYSTEM4 走引擎的『字格逐字』路径",
         "★顺序是「先 LOADCONFIG 再 INITCONFIG 分支」而不是都跑：INITCONFIG 会把选项**写回默认值**，跑错分支的后果是「玩家设置每次启动都被重置」且不报错",
-        "SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG"
+        "SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG",
+        "★`i1f6` 与 `draw-texture 186a0` 都在 `3f90`/`4fd9` 两个门之后，而 `3f90` 全语料恒 0、本机真槽 `4fd9` 也是 0 ⇒ **读档时不能指望 SYSTEM4 清画面或画背景**（清画面是 `sub_410160` 行内做的：`capabilities` 的 `save-load-drawitem-clear-and-restore`）"
       ],
       "gaps": [
         "音频族（0x2F8/0xB5 等）在 emulator 里是空操作 ⇒ 本脚本的「三路语音 pan 复位」子程序无实际效果"
@@ -669,6 +680,16 @@
           "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
           "lines": "3171-3184",
           "what": "★**存档缩略图的缩屏流水线**：`create-texture 2`（1280×720 全屏槽）→ `i20d 2`（设为渲染目标）→ `i20e` → `i20c` → `i20d -1`（还原）→ `create-texture e`（320×180）→ **`i032 2 e …` 缩放转送** → `release-texture 2` → `i1ae … e`（写 `.STH`）→ `release-texture e`。337 个 ADV 脚本同型（`tickets/T-0050`）"
+        },
+        {
+          "anchor": "label_000038e0",
+          "lines": "1003-1067",
+          "what": "★★读档续跑门 + **被跳过带**：`i0ae` = 指令 737（line 1003）、存档落点 = 指令 794（line 1068 `i071 8`，0x71 表「重放这条消息」）⇒ **指令 738..793（line 1004..1067）在读档时不执行** —— 序章开场序列整段在其中：`i238 157c`/`wait`、`play-bgm d`(1022)、`i1f4`+`mov (global-int f801d) 0`+`mov (global-int f8006) b37`(1025-1026)、**`call label_0000e24c`(1027) = 全文件唯一的场景起始背景绘制**、80 秒慢推 `i220`(1039)、`i242`(1045)"
+        },
+        {
+          "anchor": "label_0000e24c",
+          "lines": "3667-3729",
+          "what": "★★**CG/背景层设置**子程序（全文件唯一的背景绘制路径）：键 = `f8023[f801d]`（层 0 ⇒ **0x18A88**，表见 `src/INIT2.txt:6-17`）、槽 = `3f54[f801d][0]`（层 0 = 4）、图 = `f8006`（= 0xB37 = `BG050ABL.AGF` 2048×1152）、几何 = `i208` 取槽尺寸（2048×1152）+ pivot 回退算 dst（新项 ⇒ (0,0)）⇒ **src 全图 @ dst (0,0) 覆盖整屏**；写出点是 `set-texture`(3703) 与 `draw-texture`(3720)。调用点只有两处：指令 757（line 1027，**在被跳过带里**）与指令 1561（line 2043，剧情中途「换背景」块）"
         }
       ],
       "slots": [
@@ -695,12 +716,30 @@
         {
           "key": "win 8",
           "what": "序章正文窗（字格逐字的目标窗，也是首文案所在的窗）"
+        },
+        {
+          "key": "global f8023..f802c",
+          "what": "10 个 CG 层句柄 = 0x18A88/0x18A9C/0x18AEC/0x18B00/…/0x18B78（由 `src/INIT2.txt:6-17` 灌；**池外全局** ⇒ 真槽不还原、靠 INIT2 重跑）"
+        },
+        {
+          "key": "global f8006",
+          "what": "当前 CG/背景图 id（`mov f8006 b37` 在被跳过带里 ⇒ 冷启动读档时是**陈值**）"
+        },
+        {
+          "key": "global f801d",
+          "what": "CG 层号（0 = 背景；1 = 立绘层；2 = 中层）"
+        },
+        {
+          "key": "global 3f54",
+          "what": "「CG 层 → 纹理槽」约定表（`3f54[层][0]` = 槽号；层 0 = 4）"
         }
       ],
       "invariants": [
         "页序列：i304（文本块开始）→ show-text → i305（文本块结束）→ i073（设字格）→ wait-for-input → 点击 → i071（清场）",
         "SN0000 的第一条被汇编 show-text 在 ip = 901（= `src/SN0000.txt:1225`），页面 3 行 58 字，全部落在窗 8",
-        "开场两道 `wait` 门的驻留 = 脚本 `i238` 的值（`i238 0x157c` ⇒ 5500 ms、`i238 64` ⇒ 100 ms），与 80 000 ms 的慢推窗无关（真实语料实测见 `tickets/T-0024/changes.md` 的 gateWaits 表）"
+        "开场两道 `wait` 门的驻留 = 脚本 `i238` 的值（`i238 0x157c` ⇒ 5500 ms、`i238 64` ⇒ 100 ms），与 80 000 ms 的慢推窗无关（真实语料实测见 `tickets/T-0024/changes.md` 的 gateWaits 表）",
+        "**读档续跑路径 = 指令 0..103 ∪ {737}（共 105 条）**，逐 token 扫过 `scripts/asm/opcodes.json` 的全部相关 code：其中 `create-texture`/`set-texture`/`draw-texture`/`i1f6`/`i1fa`/`i214`/`i21d`/`i1fd`/`i1ff`/`i23d`/`i32b` **一条都没有**（唯一的 i1f4/i1f5 是绘制块标记）⇒ **读档路径上 SN0000 一个绘制项都不创建、也不删除**；背景项 0x18A88 的创建点在指令 2850，不在该路径上",
+        "SN0000 创建的绘制项键全部 ≥ **0x18A88**（≫ TITLE 的 0x135）⇒ 一旦被创建必然画在标题残留之上；最大键 = 0x30D40（200000，`create-mesh`）"
       ],
       "gotchas": [
         "★`src/SN0000.txt:1209-1223` 是 `/* 原文存档（对照用，不参与汇编） */` 注释块 —— 里面也有 show-text，**不能**拿它当「第一条文案」的锚点（会被注释误导）；判据要用「第一条被汇编的 show-text」或 ip=901",
@@ -708,7 +747,9 @@
         "★`i220 <handle> 0 13880 …`（80 000 ms 慢推）之后**必须**紧跟 `i242 <handle> 1`：引擎靠 `DrawItem+720` bit0 把这一项排除出池挂起位（`sub_49AA30` raw 117843-117844）⇒ `0x400` 等待门不会被整场慢推钉死（同时也让它不被「跳过」冻结截断，raw 117440-117442）。漏掉 `i242` ⇒ `wait` 会一直卡到平移结束（对照实测见 `tickets/T-0024` 的守卫）",
         "★侧边栏 UI 例程以 `wait` + `ret` 结尾（`label_00000c74` :121-155 / `label_00000e78` :160-196），而**悬停全走「带返回点 -3」的派发**（`sub_405360`）⇒ label 的 `ret` **回到门指令重跑**。所以门指令（`0x72`）与页记账必须**幂等**：`tickets/T-0016` 修前悬停右侧侧边栏会让中间的整页文字被重新逐字（重放）—— 实测「悬停 400 帧 ⇒ 重放 2 次、页计数 0→1→2」",
         "★ADV 正文的粗体来自这里（:491-492 的 i2bd 1，面名 = global-string bbb 即 ADV 字体分类），不是来自某条 show-text；但真机实测该页正文落在常体档（见 tickets/T-0035/notes.md 第 7 轮）⇒ 「脚本请求了 700」不等于「引擎画出来是粗体」，两者之间的落差在引擎绘制侧",
-        "★存档缩略图不是引擎自己缩的：`i032`（StretchTexture）把 1280×720 的全屏槽**缩放转送**到 320×180 的槽，随后 `i1ae` 才把它写成 `.STH` —— 缺 `i032` 的宿主只能写出占位缩略图（`tickets/T-0050`）"
+        "★存档缩略图不是引擎自己缩的：`i032`（StretchTexture）把 1280×720 的全屏槽**缩放转送**到 320×180 的槽，随后 `i1ae` 才把它写成 `.STH` —— 缺 `i032` 的宿主只能写出占位缩略图（`tickets/T-0050`）",
+        "★`0x259`（指令 1）清的是两张 1000 条 5-dword **槽记录镜像**（raw 25357 `sub_41A3A0`：`Engine+81176+5k`/`+86176+5k` 的 +0/+4），**不是绘制项容器**（`Scene+0x408`）—— 别把它当「清画面」",
+        "★被跳过带里的 `play-bgm d`(1022) ⇒ 读档后必须补播 BGM（`handlers/audio.ts:140` 的既有实现）"
       ],
       "gaps": [],
       "links": {
@@ -717,7 +758,8 @@
           "text-reveal-pump-409400",
           "texture-bind-synchronous-then-query",
           "mesh-vertex-quad-and-per-vertex-color",
-          "scene-pending-flag-0x400-gate"
+          "scene-pending-flag-0x400-gate",
+          "save-load-drawitem-clear-and-restore"
         ],
         "functions": [
           "0x41F250",
@@ -804,6 +846,21 @@
           "anchor": "i344 14 0",
           "lines": "589-590",
           "what": "★L2D 支独有：`i344 14 0` = 在 `Scene+1096` 取/建 572B 立绘节点（key 14）、**`record[1] = 0` = L2D 实例槽号**（不是纹理槽号）。引擎 `sub_4B0360` 只在\"该槽真有模型\"时才画这个节点 ⇒ 这一条是\"标题立绘出画\"的最后一步。"
+        },
+        {
+          "anchor": "set-texture 5272 4 (local-int 40d)",
+          "lines": "520-530",
+          "what": "★★标题画面**全部美术都建在纹理槽 4 上**（图 0x5272；静态立绘分支另用槽 5 = 0x5273）⇒ 读档按存档重绑槽 4（`records[4].flag==1 ⇒ 0xB37`）时，这些项**整体改画成存档那张图**"
+        },
+        {
+          "anchor": "call-script 33  // SAVE",
+          "lines": "333-341",
+          "what": "★Load Data 分支（`label_00001240`）：`play-sound-effect`/`i0b5`/两个全局 + `call-script 33`(SAVE.BIN) —— 前后**没有任何 detach/i1f6/release-texture** ⇒ 打开读档菜单时标题画面的绘制项全部活着"
+        },
+        {
+          "anchor": "draw-texture 12c 4 5a0 0 9c 9c 44e 126",
+          "lines": "634-638",
+          "what": "5 块菜单板（0x12C/0x12E/0x130/0x132/0x134，各 156×156、槽 4、源在 atlas 列 0x5A0）落成对角阶梯 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)；悬停副本 0x12D/0x12F/0x131/0x133/0x135 用 atlas 列 0x502、按需建删（lines 770-800）"
         }
       ],
       "slots": [
@@ -872,14 +929,17 @@
         "版本号三段 = `set:GameVersion` 的字节 [0,1) / [2,2) / [5,4) 各自 atoi 后按 1／2／4 位补零画出（例：1.07.0019 ⇒ 1 + 07 + 0019）",
         "菜单 5 项的命中盒 = base `5[i]`/`69[i]` + 盒 156×156（`cd[i]`）⇒ 第 0 项（**右上角 Game Start**）中心 = (1102+78, 294+78) = **(1180, 372)**",
         "`a9d0 != 0` ⇒ **不建** 572B 节点、只 `set-texture 5273 5`（SO004A 静态图）；`a9d0 == 0` ⇒ 装 MOC+TEX+MTN 并建节点 14 → 槽 0",
-        "L2D 支的立绘与静态支的 `draw-texture 14 5` 占**同一个归并槽 0x14**（572B 节点 key = `0x344` 的 op1 = 图元 handle）；TITLE.MOC 的画布恰好 1280×720 = 视口 ⇒ 画布居中平移为 (0,0)、**模型坐标即屏幕坐标**"
+        "L2D 支的立绘与静态支的 `draw-texture 14 5` 占**同一个归并槽 0x14**（572B 节点 key = `0x344` 的 op1 = 图元 handle）；TITLE.MOC 的画布恰好 1280×720 = 视口 ⇒ 画布居中平移为 (0,0)、**模型坐标即屏幕坐标**",
+        "TITLE 的绘制项键 **max = 0x135**（309）；`src/CALLBACK_LOAD.txt` 的四个 detach 区间（`1adb0 7d0`/`19640 2`/`19834 19`/`19708 6`）**都不含**任何 TITLE 键（逐个区间核对为空）"
       ],
       "gotchas": [
         "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
         "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）",
         "★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位",
         "★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）；旧文档写\"纹理槽变换\"会让整套节点/槽接线对不上",
-        "★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`"
+        "★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`",
+        "★`detach-texture 64 12c`（line 818，删 [100,400)）只在 **Game Start** 分支被调（line 320）；`i1f6`（line 810）只在 **Room** 分支（line 368）与退出路径（line 822）—— **Load Data 分支没有任何清理** ⇒ 不能假设「进菜单前标题项会被清」",
+        "★`0x5A0`/`0x502` 是 **atlas 源列**、`0x9E` 是 atlas 行距，不是屏幕坐标（曾据此误判「在屏外」；屏幕落点来自 line 16/17 的两张常量表）；同理 `0x64` 那条的源 y=1161 已越过 BG050ABL 的图高 1152"
       ],
       "gaps": [
         "菜单命中/派发（`i12e`/`0xa2`/`0xa3`）与背景演出未逐段读（layout 列出的只是版本号这一段）",
@@ -1282,6 +1342,11 @@
           "anchor": "call-script 510a",
           "lines": "165-183",
           "what": "场景/地图设置段（SETSTAGE/SETMAPTEX/SETHALLTEX/SETOBJ/DRAWMAP/RESETMAPAN/SETREIGNTEX/SETWEATHER），i143 之后才跑"
+        },
+        {
+          "anchor": "mov (global-int f8023) 18a88",
+          "lines": "6-17",
+          "what": "★★**CG/立绘层句柄表**：`f8023..f802e` = 0x18A88/0x18A9C/0x18AEC/0x18B00/0x18B14/0x18B28/0x18B3C/0x18B50/0x18B64/0x18B78/0x18B8C/0x19258（末项是全屏 mesh 键）。场景脚本用 `lookup-array (ptr) (global-int f8023) (层号)` 取（层 0 = 背景 = 0x18A88）。★这些是**池外全局**（> 0xF8000）⇒ 真槽装载不还原，必须靠本脚本在启动链里重灌"
         }
       ],
       "slots": [
@@ -1292,11 +1357,16 @@
         {
           "key": "global 708xxx 区",
           "what": "脚本 id 表（`mov (global-int 7088xx) 52xx` 一片）：本体脚本入口地址表"
+        },
+        {
+          "key": "global f8023..f802e",
+          "what": "12 个 CG/立绘层句柄（0x18A88 起；末项 0x19258 = 全屏 mesh 键）"
         }
       ],
       "invariants": [
         "`i143` 必须排在 40 张本体 INIT（:66-:105）**之后** —— 扩展包的 $n$AUTORUN 会再跑一遍同名的 $n$ 版本表覆盖同一批 globals，顺序就是语义",
-        "INIT2 由 `SYSTEM4.txt:124` 调用，是本体唯一的 INIT2 入口"
+        "INIT2 由 `SYSTEM4.txt:124` 调用，是本体唯一的 INIT2 入口",
+        "line 6-17 是整个语料里**唯一**写 `f8023..f802e` 的地方（`grep -rn 'mov (global-int f8023)' src/*.txt` 只有这一处）"
       ],
       "gotchas": [
         "本体 40 张 INIT 与扩展包的 $n$ 版本是**同构覆盖**关系（`$1$AUTORUN.txt:6-44` 与 `:66-105` 一一对应），所以「哪些内容属于扩展包」不能靠脚本名判断，要看它跑在哪一轮",
@@ -2586,10 +2656,78 @@
       "status": "partial",
       "evidence": "src/CALLBACK_LOAD.txt:6-20（BGM 重播）/41-76（SE 通道）/124-173（charm 表）；引擎侧 raw 4342（全局名常量）、19916（按名装帧 0）、17469-17471 + 19911（当前曲 id 存档往返）、25749 附近的 -11 出口",
       "notes": "读了全文 375 行；未深读 `call-script 51c3`（LOADCHARM）与 `46`（DRAWCHARM）的内部。★read档链路实测（headless）：`CALLBACK_LOAD → SYSTEM4 → … → NOVEL → SN0000`（落点 794）；接它之前 ADV 文字会落进 1 号窗（(190,557) 小矩形），接上后与「正常走到同一句话」一致 = 8 号窗 (0,0,1280,720)。"
+    },
+    {
+      "id": "NOVEL",
+      "file": "src/NOVEL.txt",
+      "bin": "NOVEL.BIN",
+      "role": "**ADV/NOVEL 场景的包装脚本**（SYSTEM4 的 mode 6 分支）：登记 ADV 消息窗图（槽 0xC）、画消息窗九宫格，再 `call-script (global-int 1394)` 进真正的场景脚本（本机 = SN0000）。",
+      "entry": "`src/SYSTEM4.txt:447 call-script 5268`（`global 0 == 6` 的 mode 分支）；本机真槽 79 的帧链 0=SYSTEM4 / 1=NOVEL / 2=SN0000（`0xAE` 走栈）。",
+      "layout": [
+        {
+          "anchor": "set-texture 5190 c (local-int 0)",
+          "lines": "6-11",
+          "what": "入口：登记消息窗图到槽 0xC + `i1b1 1` + `i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64`（消息窗九宫格）"
+        },
+        {
+          "anchor": "label_00000208",
+          "lines": "28-34",
+          "what": "★帧续跑门：命中 0x3 call 表 ⇒ 落到「调用点的下一条」；命中 0x71 消息表 ⇒ 重放该消息。`i0ae` 在 line 29，**背景块在它之后**"
+        },
+        {
+          "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
+          "lines": "32-58",
+          "what": "「恢复上一屏背景」块（画在 handle 0x186A0、槽 0x48）：门是 `(global-int 3f90) != 0`（见 invariants ⇒ 恒不执行）；3f90==0 时 `jcc label_0000088c` 整段跳过"
+        },
+        {
+          "anchor": "call-script (global-int 1394)",
+          "lines": "119-147",
+          "what": "`label_0000088c`：场景装配路径（字体/`i1f5`/`loadmesskip advset`）→ `call-script SN0000`（`global 1394` = 0x74）"
+        },
+        {
+          "anchor": "detach-texture 109a0 1",
+          "lines": "174-191",
+          "what": "ADV 收场：3f90 != 0 时 `i259`（清两张槽记录镜像）+ 区间 detach + `i1f6`"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 1394",
+          "what": "要 call 的场景脚本 id（本机 = 0x74 = SN0000）"
+        },
+        {
+          "key": "global 3f90",
+          "what": "「上一屏背景要不要恢复」门；全语料只被写成 0"
+        },
+        {
+          "key": "global 708ada / 708ad6",
+          "what": "池外全局：记住的背景图 id / 其相关门（真槽装载不还原）"
+        }
+      ],
+      "invariants": [
+        "`global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ line 32-58 那条「恢复背景」路径在正式脚本里恒不执行（handle 0x186A0 从未被真正画出）"
+      ],
+      "gotchas": [
+        "★`i0ae`（line 29）**早于**背景块（line 32-58）⇒ 读档续跑时那一块被跳过；「读档后背景由 NOVEL 重画」这个说法是**错的**（app/amayui-emulator/src/vm/handlers/save-slot.ts:319-322 的括注就是这么错的，见 tickets/T-0083）"
+      ],
+      "gaps": [
+        "`label_00001160`/`label_000013fc`/`label_000016a0`/`label_00001db4`/`label_00001e8c`/`label_00001eb4` 未逐段读"
+      ],
+      "links": {
+        "capabilities": [
+          "save-load-drawitem-clear-and-restore"
+        ],
+        "functions": [
+          "0x4192F0"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md"
+        ]
+      },
+      "guards": [],
+      "status": "partial",
+      "evidence": "src/NOVEL.txt 的行区间见 layout；帧链/落点见 emulator 的 [slot-load] 与 0xAE 日志（0xAE: 续跑走栈 1 → 2）",
+      "notes": "未读：gaps 列的子程序；`i073` 九宫格的参数逐项未核。"
     }
   ]
 }
-
-
-
-

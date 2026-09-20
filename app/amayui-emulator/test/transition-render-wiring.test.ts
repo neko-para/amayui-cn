@@ -26,7 +26,17 @@ import type { BinArg } from '../src/script/bin.js';
 import { im, instr } from './harness.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { scSnapshot } from '../src/renderer/scene/snapshot.js';
-import { scTransitionsPending, scTransitionTick } from '../src/renderer/scene/transition.js';
+import {
+  scTransitionRangeHandles,
+  scTransitionTick,
+  scTransitionsPending,
+} from '../src/renderer/scene/transition.js';
+import { Container, Sprite, Texture } from 'pixi.js';
+import { ScenePresenter } from '../src/renderer/pixi/presenter.js';
+import { TextureCache } from '../src/renderer/pixi/textureCache.js';
+import { newSceneState } from '../src/renderer/scene/state.js';
+import { scConfigureDrawItem, scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
+import { VIEW_H, VIEW_W } from '../src/renderer/viewport.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EMU = path.join(HERE, '..');
@@ -104,10 +114,22 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
     /TRANSITION_BLUR_CENTER_WEIGHT/.test(backend),
     '中心样本权重必须用引擎的常数 3（raw 126180-126183 的 `v34 = v65 == v33 ? 3 : 1`）',
   );
-  // 旧帧抓取必须发生在 advanceModel（present 之前），否则拿到的不是"上一帧"
+  // ★转场窗必须在 advanceModel 里推进（每帧一次，位于本帧 VM 步进之后、present 之前）
   const adv = backend.slice(backend.indexOf('advanceModel(nowMs: number)'), backend.indexOf('advanceModel(nowMs: number)') + 2000);
   assert.ok(adv.includes('scTransitionTick'), 'advanceModel 必须推进转场窗');
-  assert.ok(adv.includes('#captureStageCanvas'), 'advanceModel 必须抓「旧帧」（即上一帧合成结果）');
+  // ★类别 0/2 的源必须是「记录那两条 item 区间的离屏子集」（引擎 36/37 = 那两组项）
+  assert.ok(
+    backend.includes('scTransitionRangeHandles') && backend.includes('#renderRangeCanvas'),
+    '类别 0/2 必须用 renderItemSubset 现渲染那两条区间当源（引擎 36/37 就是它们，raw 136014-136176）',
+  );
+  assert.ok(
+    !backend.includes('#transOld'),
+    '★"上一帧整屏快照"那套概念必须已经删掉（转场的源是子集，不是整屏）',
+  );
+  assert.ok(
+    backend.includes('renderItemSubset'),
+    '子集渲染必须复用 presenter 的同一份画法（renderItemSubset）',
+  );
   // 转场活动帧不许被留帧早退
   assert.ok(
     /#holdFrames > 0 && !transPending/.test(backend),
@@ -141,4 +163,84 @@ test('★源码棘轮：`render4.transitionRuntime` 只被 `scene/transition.ts`
     ['ops.ts', 'state.ts', 'transition.ts'],
     '运行期表只该由 state（初值）/ transition（推进）/ ops（0x224 清表）三处碰',
   );
+});
+
+test('★子集离屏合成：`renderItemSubset` 只画选中的项（引擎 36/37 = 记录那两条区间）', () => {
+  const root = new Container();
+  const presenter = new ScenePresenter(root, new TextureCache(() => {}), Texture.WHITE, () => {}, VIEW_W, VIEW_H);
+  const scene = newSceneState();
+  const mk = (h: number, layer: number, x: number, y: number, w: number, hh: number): void => {
+    scConfigureDrawItem(scene, {
+      handle: h, layer, tex: 1, srcX: 0, srcY: 0, srcW: w, srcH: hh, dstX: x, dstY: y,
+    });
+  };
+  mk(0x100, 101000, 10, 20, 300, 200);
+  mk(0x101, 101001, 40, 60, 100, 100);
+  mk(0x200, 102000, 700, 400, 400, 300);
+  mk(0x300, 103000, 0, 0, 50, 50);
+
+  // 区间 A = [0x100, 0x103)、区间 B = [0x200, 0x201)
+  const rec = scTransitionDefaultRecord();
+  rec[5] = 0x100;
+  rec[7] = 3;
+  rec[6] = 0x200;
+  rec[8] = 1;
+  const handles = scTransitionRangeHandles(scene, rec);
+  assert.deepEqual([...handles.a].sort((a, b) => a - b), [0x100, 0x101]);
+  assert.deepEqual([...handles.b], [0x200], '区间外的 0x300 不许进任何一条');
+
+  const into = new Container();
+  const n = presenter.renderItemSubset(scene, 0, handles.a, into);
+  assert.equal(n, 2, '区间 A 的两项都要画出来');
+  assert.equal(into.children.length, 2);
+  // 层序：按 layer 升序（0x100 在前）
+  const xs = into.children.map((c) => (c as Sprite).position.x);
+  assert.deepEqual(xs, [10, 40], '按 layer 升序画（且位置与项一致）');
+
+  // 空集合 ⇒ 一个都不画（引擎那层就是 Clear 后的透明）
+  const empty = new Container();
+  assert.equal(presenter.renderItemSubset(scene, 0, new Set(), empty), 0);
+  assert.equal(empty.children.length, 0);
+
+  // ★同一份画法：主合成里的项数 = 全部可绘制项（这里是 4 张占位/精灵）
+  presenter.present(scene, 0, 0);
+  assert.equal(root.children.length, 4, '主合成仍画全部 4 项 ⇒ 子集渲染没有改动主路径');
+});
+
+test('★★写端 → 记录格 → 区间选择：`i223` 的 op3/op4/op5/op6 正好喂给那两条区间', () => {
+  // 这是"引擎 36/37 到底是什么"这条结论的**端到端**棘轮：写端的哪一个操作数进哪一格、
+  // 读端（`scTransitionRangeHandles`）按哪一格选项 —— 任一侧漂了这条就红。
+  // 语料形态：`i223 (local-int 0) (local-ptr 2) (local-int 3) 1 (local-ptr 4) 1 (global-int f8042) (global-int f8043)`
+  const native = new HeadlessScene({});
+  const e = new Engine(native);
+  const f = new Frame();
+  const h = OPS.get(0x223) ?? NATIVE_OPS.get(0x223);
+  assert.ok(h);
+  h!(makeCtx(e, f, instr(0x223, [im(9), im(3), im(0x100), im(1), im(0x200), im(1), im(0), im(500)]), native, () => {}));
+  const rec = native.scene.render4.transitions.get(9);
+  assert.ok(rec);
+  assert.equal(rec![5], 0x100, 'op3（a4）→ 区间 A 起点 = [5]');
+  assert.equal(rec![7], 1, 'op4（a5）→ 区间 A 跨度 = [7]');
+  assert.equal(rec![6], 0x200, 'op5（a6）→ 区间 B 起点 = [6]');
+  assert.equal(rec![8], 1, 'op6（a7）→ 区间 B 跨度 = [8]');
+  const mk = (handle: number): void => {
+    scConfigureDrawItem(native.scene, {
+      handle, layer: handle, tex: 1, srcX: 0, srcY: 0, srcW: 1280, srcH: 720, dstX: 0, dstY: 0,
+    });
+  };
+  mk(0x100);
+  mk(0x200);
+  mk(0x999); // 区间外
+  const hs = scTransitionRangeHandles(native.scene, rec!);
+  assert.deepEqual([...hs.a], [0x100], '区间 A 只命中它自己');
+  assert.deepEqual([...hs.b], [0x200], '区间 B 只命中它自己');
+  // 快照（报告/回归）里也看得见
+  scTransitionTick(native.scene, 0);
+  const p = scSnapshot(native.scene, 0, null).render4.transitionProgress[0]!;
+  assert.deepEqual(p.ranges, {
+    a: { x: 0, y: 0, w: 1280, h: 720 },
+    b: { x: 0, y: 0, w: 1280, h: 720 },
+    countA: 1,
+    countB: 1,
+  });
 });

@@ -21,6 +21,7 @@ import {
   scrambleSlotPayload,
   type EngineSlotFrame,
 } from '../src/vm/engineSlot.js';
+import { ENGINE_DRAW_ITEM_BYTES } from '../src/vm/engineDrawItem.js';
 
 export interface FakeOp {
   op: number;
@@ -85,15 +86,31 @@ export function buildBody(opt: {
    * `flag == 1 && id >= 0` 的条目是引擎读档时要**重新解码**的（见 `tickets/T-0071`）。
    */
   records?: { at: number; id: number; flag: number; param: number; u12?: number; u16?: number }[];
+  /**
+   * **绘制项清单**（`sub_410160` raw 19806-19832）——`[{740, count, (handle + 740 B 记录) × count}, 2 dword, 740 B]`。
+   *
+   * ★每条占 **2964 B**（`4 + 4*740`）：引擎的推进表达式 `v97 = &v67[4 * hFile]` 里 `hFile` = 记录**字节数**，
+   * 而 `memcpy` 只搬 740 B ⇒ 记录之后还有 2220 B 未用区（真槽 79 里全 0）。
+   * `record` 省略 ⇒ 全 0（`flags = 0` ⇒ 建了但不画，与引擎 `sub_49A300` 的默认一致）。
+   */
+  drawItems?: { handle: number; record?: Uint8Array }[];
+  /**
+   * **负例专用**：只改清单头部**写进去的**两个 dword（`{记录字节数, count}`），布局本身仍按 740 B 造
+   * ⇒ 用来造"结构不符 ⇒ 解析器必须返回 null 且不致命"的样本。
+   */
+  drawItemsHeader?: { size?: number; count?: number };
 }): Uint8Array {
   const imageBytes = 1044 * opt.savedCur + 22296;
   const enc = new TextEncoder();
   const strBlob = opt.strings.map((s) => [...enc.encode(s), 0]).flat();
   const intsLen = opt.ints.length;
   const ipLens = opt.ipTables.map((t) => t.length);
+  const items = opt.drawItems ?? null;
+  // 清单段：`{740, count}` + count×(4 + 4*740) + 尾部 `{2 dword, 740 B}`
+  const listBytes = items ? 8 + items.length * (4 + 4 * ENGINE_DRAW_ITEM_BYTES) + 8 + ENGINE_DRAW_ITEM_BYTES : 0;
   const total =
     imageBytes + 24 + 4 * intsLen + 4 * opt.floats.length + 4 + 4 * Math.ceil(strBlob.length / 4) +
-    4 * (ipLens[0]! + ipLens[1]! + ipLens[2]!);
+    4 * (ipLens[0]! + ipLens[1]! + ipLens[2]!) + listBytes;
   const out = new Uint8Array(total);
   const dv = new DataView(out.buffer);
   dv.setInt32(0, opt.savedCur, true);
@@ -143,10 +160,56 @@ export function buildBody(opt: {
     t.forEach((v, i) => dv.setInt32(p + 4 * i, v, true));
     p += 4 * t.length;
   }
+  // 绘制项清单（`sub_410160` raw 19806-19832）：`{740, count}` + 每条 `{handle, 740 B 记录, 2220 B 未用区}`
+  // + 尾部 `{2 dword, 740 B 记录}`。★步长 = `4 + 4*740`（引擎 `&v67[4 * hFile]`，`hFile` = 记录字节数）。
+  if (items) {
+    dv.setInt32(p, opt.drawItemsHeader?.size ?? ENGINE_DRAW_ITEM_BYTES, true);
+    dv.setInt32(p + 4, opt.drawItemsHeader?.count ?? items.length, true);
+    p += 8;
+    for (const it of items) {
+      dv.setInt32(p, it.handle, true);
+      if (it.record) {
+        if (it.record.length !== ENGINE_DRAW_ITEM_BYTES) throw new Error(`fixture: record 长度应为 ${ENGINE_DRAW_ITEM_BYTES}`);
+        out.set(it.record, p + 4);
+      }
+      p += 4 + 4 * ENGINE_DRAW_ITEM_BYTES; // 740 B 记录 + 2220 B 未用区（真槽 79 里全 0）
+    }
+    p += 8 + ENGINE_DRAW_ITEM_BYTES; // 尾部：两个 dword + 一条 740 B 记录（解析器有意不读）
+  }
   return out;
 }
 
 export const SEEDS = { seed1: 0x572c4a08, seed2: 0x266f };
+
+/** 造一条 740 B 的 DrawItem 记录（全 0 = 引擎 `sub_49A300` 的默认；`flags = 0` ⇒ 建了但不画）。 */
+export function newDrawItemRecord(): Uint8Array {
+  return new Uint8Array(ENGINE_DRAW_ITEM_BYTES);
+}
+
+/**
+ * 常用形状的 740 B 记录：可见 + 纹理槽 + 源矩形（left/top/right/bottom）+ 描画位置，
+ * 颜色取引擎默认的 `-1`（不透明白）。其余字段留 0（= `sub_49A300` 的默认）。
+ */
+export function drawItemRecord(o: {
+  tex: number;
+  src: [number, number, number, number];
+  pos?: [number, number];
+  flags?: number;
+}): Uint8Array {
+  const rec = newDrawItemRecord();
+  const dv = new DataView(rec.buffer);
+  dv.setUint32(0, o.flags ?? 1, true);
+  dv.setInt32(4, o.tex, true);
+  dv.setInt32(0x8, o.src[0], true);
+  dv.setInt32(0xc, o.src[1], true);
+  dv.setInt32(0x10, o.src[2], true);
+  dv.setInt32(0x14, o.src[3], true);
+  dv.setFloat32(0x24, o.pos?.[0] ?? 0, true);
+  dv.setFloat32(0x28, o.pos?.[1] ?? 0, true);
+  dv.setUint32(0x60, 0xffffffff, true);
+  dv.setUint32(0x64, 0xffffffff, true);
+  return rec;
+}
 
 /** 把 body 包成真槽容器（292 B 头 + 20 B 块 + 置乱流），口径同 `sub_437480`/`sub_436DE0`。 */
 export function buildSlotFile(

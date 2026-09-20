@@ -16,6 +16,7 @@
 | `66-105` | `call-script 51fc` | 40 张本体 INIT 表：`call-script 51fc..5223`（SCINIT…BTANINIT2），按调用顺序即装载顺序 |
 | `138-143` | `mov (global-int 122724) 5244` | 脚本 id 表末尾（:139）之后紧跟 ★`:140` 的 `i143`（0x143）：引擎遍历扩展包表槽 1..255、对每个非零槽把 `slot<<24` 排进请求队列并派发 ⇒ 该包的 `$n$AUTORUN.BIN`（包内文件 #0）开始执行（`i143` 本身只有 4 个字符、不满足锚点长度闸门，故锚点取同一段的边界行） |
 | `165-183` | `call-script 510a` | 场景/地图设置段（SETSTAGE/SETMAPTEX/SETHALLTEX/SETOBJ/DRAWMAP/RESETMAPAN/SETREIGNTEX/SETWEATHER），i143 之后才跑 |
+| `6-17` | `mov (global-int f8023) 18a88` | ★★**CG/立绘层句柄表**：`f8023..f802e` = 0x18A88/0x18A9C/0x18AEC/0x18B00/0x18B14/0x18B28/0x18B3C/0x18B50/0x18B64/0x18B78/0x18B8C/0x19258（末项是全屏 mesh 键）。场景脚本用 `lookup-array (ptr) (global-int f8023) (层号)` 取（层 0 = 背景 = 0x18A88）。★这些是**池外全局**（> 0xF8000）⇒ 真槽装载不还原，必须靠本脚本在启动链里重灌 |
 
 ## 关键槽 / 局部量
 
@@ -23,11 +24,13 @@
 |---|---|
 | `local 0 / 1 / 2 / 3` | i143 之后的表格修补循环（扫 0x3e8 项、比较 global adcd 与 14a8f1 两表） |
 | `global 708xxx 区` | 脚本 id 表（`mov (global-int 7088xx) 52xx` 一片）：本体脚本入口地址表 |
+| `global f8023..f802e` | 12 个 CG/立绘层句柄（0x18A88 起；末项 0x19258 = 全屏 mesh 键） |
 
 ## 不变量（拿它做回归断言）
 
 - `i143` 必须排在 40 张本体 INIT（:66-:105）**之后** —— 扩展包的 $n$AUTORUN 会再跑一遍同名的 $n$ 版本表覆盖同一批 globals，顺序就是语义
 - INIT2 由 `SYSTEM4.txt:124` 调用，是本体唯一的 INIT2 入口
+- line 6-17 是整个语料里**唯一**写 `f8023..f802e` 的地方（`grep -rn 'mov (global-int f8023)' src/*.txt` 只有这一处）
 
 ## 坑（踩过一次，别再踩）
 

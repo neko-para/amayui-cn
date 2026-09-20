@@ -21,38 +21,38 @@
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "clock-read-transition-window",
-      "note": "★第二层条目：转场窗口进度与扫描带/模糊绘制（partial/E2）",
+      "note": "★第二层条目：转场窗口 + 条带/模糊/子集离屏合成",
       "line": 676
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
+      "anchor": "scTransitionRangeHandles",
+      "note": "★记录那两条 item 区间的项集合（引擎 36/37 的真身，raw 136014-136176）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
+      "anchor": "renderItemSubset",
+      "note": "★子集离屏合成：与主合成共用 itemSprite 一份画法"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#renderRangeCanvas",
+      "note": "★宿主侧：把一段区间渲染成离屏画布（按项集合每帧缓存），类别 0/2 的源"
+    },
+    {
+      "file": "app/amayui-emulator/test/transition-render-wiring.test.ts",
+      "anchor": "★写端 → 记录格 → 区间选择",
+      "note": "★端到端棘轮：语料形态的 i223 实参 → 记录格 → 区间选择"
     },
     {
       "file": "analysis/opcode-gaps.json",
       "anchor": "类别 1（分块淡入淡出）写入端",
-      "note": "★本轮新登记的 0x24D（deferred）：语料 0 处 + U2 未确证，扩展点写在 note 里"
-    },
-    {
-      "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
-      "anchor": "scTransitionBands",
-      "note": "★12 种盲帘条带几何 + 窗口模型（消费端 sub_4B06D0 raw 134417-136734）"
-    },
-    {
-      "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
-      "anchor": "scTransitionBlurPlan",
-      "note": "★类别 3 的画法参数（raw 135837-135881）+ 累积近似的偏差披露"
-    },
-    {
-      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "composeIntoSlot(slot",
-      "note": "★渲染端：把转场结果画进记录 [4] 的离屏槽（引擎 sub_4A50C0(_this, v384[4]) raw 136174）"
+      "note": "0x24D（deferred）：语料 0 处 + U2 未确证，扩展点写在 note 里"
     },
     {
       "file": "app/amayui-emulator/test/sc-transition-window.test.ts",
       "anchor": "★类别 3 的画法参数逐条对应引擎的 SetTechnique/SetFloat",
       "note": "★类别 3 守卫：参数/归一化/采样几何/偏差标记"
-    },
-    {
-      "file": "app/amayui-emulator/test/sc-transition-geometry.test.ts",
-      "anchor": "old(36) 与 new(37) 的条带**互不重叠**",
-      "note": "★几何守卫：12 个 case 表驱动"
     }
   ],
   "links": {
@@ -86,6 +86,10 @@
     {
       "at": "2026-09-20",
       "what": "open → doing —— 轮 5 开工：窗口模型 + 条带几何 + 类别 0/2 离屏合成落地（见 notes.md）"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
     },
     {
       "at": "2026-09-20",

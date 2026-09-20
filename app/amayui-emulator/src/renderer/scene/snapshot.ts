@@ -9,7 +9,13 @@ import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTr
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
 import { SCENE_LAYER_HI, SCENE_LAYER_LO, applySceneXformToPlacement, sceneLayerAffected } from './ops.js';
-import { scTransitionBands, scTransitionBlurPlan, scTransitionOffset, scTransitionTargetRect } from './transition.js';
+import {
+  scTransitionBands,
+  scTransitionBlurPlan,
+  scTransitionOffset,
+  scTransitionRangeRects,
+  scTransitionTargetRect,
+} from './transition.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import type { L2dInstance, L2dNode } from '../../live2d/runtime.js';
 import { VIEW_H, VIEW_W } from '../viewport.js';
@@ -200,6 +206,17 @@ export interface SceneSnapshot {
       channels: number[];
       /** `[4]` 渲染目标层（-1 = 后台缓冲）。 */
       targetSlot: number;
+      /**
+       * ★**记录的两条 item 区间**（`[5]`/`[7]` 与 `[6]`/`[8]`）在当前模型里量到的屏幕矩形。
+       * 引擎的 scratch 层 36/37 装的就是这两组项（两趟重绘，raw 136014-136176）⇒ 转场的可见范围
+       * **只覆盖这两组项**。这里是"缺口可见"：emulator 目前仍按整屏快照画（等路线 D 的离屏子集合成）。
+       */
+      ranges: {
+        a: { x: number; y: number; w: number; h: number } | null;
+        b: { x: number; y: number; w: number; h: number } | null;
+        countA: number;
+        countB: number;
+      };
       /**
        * ★**类别 3（`0x250`/`0x251`）的画法参数**（`null` = 不是类别 3）。
        * 逐条对应引擎的 `SetTechnique` + `SetFloat`（raw 135837-135881）；`approximate` 恒真
@@ -451,6 +468,9 @@ export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost |
             oldBands: bands.filter((b) => b.src === 'old').length,
             channels: [...rt.channels] as number[],
             targetSlot: rec[4] ?? -1,
+            // ★记录的两条 item 区间在当前模型里量到的屏幕矩形（引擎 36/37 装的就是这两组项；
+            //   见 `scTransitionRangeRects`）。**只量、还没据它裁剪绘制** —— 那是路线 D 的活。
+            ranges: scTransitionRangeRects(s, rec),
             blur: blur
               ? {
                   technique: (blur.zoom ? 'Zoomblur' : 'Slideblur') as 'Zoomblur' | 'Slideblur',
@@ -574,7 +594,12 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.transitionProgress.length) {
       parts.push(
         `transitionProgress=${r4.transitionProgress
-          .map((p) => `${p.id}:cat${p.cat}${p.active ? ' A' : p.finished ? ' F' : ''} t=${p.t.toFixed(3)} off=${p.off} bands=${p.bands}/${p.oldBands} slot=${p.targetSlot}`)
+          .map(
+            (p) =>
+              `${p.id}:cat${p.cat}${p.active ? ' A' : p.finished ? ' F' : ''} t=${p.t.toFixed(3)} off=${p.off}` +
+              ` bands=${p.bands}/${p.oldBands} slot=${p.targetSlot}` +
+              ` ranges=A${p.ranges.a ? `${p.ranges.countA}项` : '空'}/B${p.ranges.b ? `${p.ranges.countB}项` : '空'}`,
+          )
           .join(' ')}`,
       );
     }

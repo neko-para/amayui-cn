@@ -22,8 +22,8 @@
  * 场景语义（建/删项、5 个窗、"缺失即建项"、bit0 门控）全部在 `sceneModel.ts`，
  * 与 `HeadlessScene` 共用同一份 —— 本类**不自己实现任何场景规则**。
  */
-import type { Application, Container, ContainerChild, Texture } from 'pixi.js';
-import { Rectangle, Sprite, Texture as PixiTexture } from 'pixi.js';
+import type { Application, ContainerChild, Texture } from 'pixi.js';
+import { Container, Rectangle, Sprite, Texture as PixiTexture } from 'pixi.js';
 import { assertFlags, type DrawItemLoopRequest, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
 import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
@@ -40,12 +40,14 @@ import {
   scTransitionTargetRect,
   scTransitionBlurPlan,
   scTransitionBlurOffsets,
+  scTransitionRangeHandles,
   TRANSITION_BLUR_CENTER_WEIGHT,
   scPoolPending,
   sceneNeedsRender,
   scClearDrawContainer,
   scClearMeshSlots,
   scDropFrameItems,
+  scRestoreDrawItems,
   scSnapshotPresent,
   scRestorePresent,
   type PresentSnapshot,
@@ -220,14 +222,13 @@ export class PixiBackend implements NativeBridge {
   /** 已经记过"源矩形被裁空"日志的窗（避免每帧刷屏）。 */
   #cellClippedWarned = new Set<number>();
   /**
-   * **转场用的「旧帧」快照**（`tickets/T-0084`）：窗口开启那一帧的**合成结果**，
-   * 对应引擎的两个屏幕层里的 `Scene+42600`（旧）/ `Scene+42604`（新），
-   * 由消费端 `sub_4B06D0` 当作 scratch 层 36/37 的源（raw 136251 / 136259 / 134974 / 134983）。
+   * **子集离屏合成**的每帧缓存（`tickets/T-0084` 的路线 D 第一块）：key = 项集合，value = 画布。
    *
-   * 生命周期 = 一次转场窗：`advanceModel` 里发现"有活动转场"且还没有快照时抓一帧；
-   * 转场表被清空（= 窗结束）时释放。抓取点是**本帧 `present` 之前**，所以拿到的正是上一帧的合成结果。
+   * 引擎的 scratch 层 36/37 装的就是记录那两条 item 区间里的项（raw 136014-136176 的两趟重绘，
+   * asm 循环体 `0x4B1232`）⇒ 转场的源是**那两组项的离屏合成**，不是"上一帧整屏"。
+   * 一帧内同一组项只渲染一次（多个记录可能指同一组），`present` 开头清空。
    */
-  #transOld: HTMLCanvasElement | null = null;
+  #rangeCache = new Map<string, { canvas: HTMLCanvasElement | null; drawn: number }>();
 
   static async create(
     status: RenderStatus,
@@ -985,6 +986,24 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * 用存档里的绘制项清单整批替换绘制项（引擎真槽读档；见 `native.restoreDrawItems` 的依据说明）。
+   *
+   * ★与 `dropFrameItems` 的差别：这里是**引擎的行为本身**（`sub_410160` raw 19810-19832 清 `Scene+1032`
+   * 再从清单插回），不是近似 ⇒ 上一屏（TITLE/菜单）的项一个不留，画面 = 存档当时的场景。
+   * 留帧的解除仍由装载点的 `releaseFrameHold`（(A) 步）负责 —— 那里在帧 0 启动**之前**，
+   * 所以下一帧就是"存档那份模型"，不会先闪一帧旧像素。
+   */
+  restoreDrawItems(items: readonly Item[]): number {
+    const r = scRestoreDrawItems(this.scene, items);
+    this.#markDirty();
+    this.#pushLog(
+      `restoreDrawItems: 清掉上一屏 ${r.cleared} 项、按存档装回 ${r.installed} 项` +
+        `（handle ${items.slice(0, 8).map((it) => `0x${it.handle.toString(16)}`).join(',')}${items.length > 8 ? ',…' : ''}）`,
+    );
+    return r.installed;
+  }
+
+  /**
    * 释放「留帧」（`tickets/T-0083` 的 (A) 步）：读档装载点调用 —— 引擎装载路径复位显示态，**不留旧像素**。
    */
   releaseFrameHold(): void {
@@ -1078,13 +1097,53 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * **把"记录的一段 item 区间"渲染成一张离屏画布** —— 引擎转场前那两趟 scratch 重绘的等价物。
+   *
+   * 引擎：`for (v60 = 0; v60 < 2; ++v60) { SetTarget(36+v60); Clear; BeginScene; 画该趟的项; EndScene; }`
+   * （raw 136014-136176 / asm `0x4B1232`）；第 0 趟 = 区间 A、第 1 趟 = 区间 B。这里用
+   * `presenter.renderItemSubset` 把同一组项画进一个临时容器，再 `extract.canvas` 取像素。
+   *
+   * 按**项集合**做 key 缓存（一帧内多个记录可能指同一组项）；空集合或一个项都画不出 ⇒
+   * `{canvas: null, drawn: 0}` —— 引擎那层就是 `Clear` 之后的**透明**（不是"整屏"）。
+   */
+  #renderRangeCanvas(handles: ReadonlySet<number>): { canvas: HTMLCanvasElement | null; drawn: number } {
+    if (handles.size === 0) return { canvas: null, drawn: 0 };
+    const key = [...handles].sort((a, b) => a - b).join(',');
+    const hit = this.#rangeCache.get(key);
+    if (hit) return hit;
+    let out: { canvas: HTMLCanvasElement | null; drawn: number } = { canvas: null, drawn: 0 };
+    try {
+      const c = new Container();
+      const drawn = this.presenter.renderItemSubset(this.scene, this.clockMs, handles, c);
+      if (drawn > 0) {
+        const frame = new Rectangle(0, 0, this.app.screen.width, this.app.screen.height);
+        const canvas = this.app.renderer.extract.canvas({ target: c, frame, resolution: 1 }) as HTMLCanvasElement;
+        out = { canvas, drawn };
+      } else {
+        out = { canvas: null, drawn: 0 };
+      }
+    } catch (err) {
+      this.#pushLog(`[transition] 子集离屏合成失败（${handles.size} 项）：${String(err)}`);
+    }
+    this.#rangeCache.set(key, out);
+    return out;
+  }
+
+  /**
    * **把本帧的转场结果画进记录 `[4]` 指定的那个离屏槽** —— 引擎 `sub_4B06D0` 的等价物。
    *
    * 引擎的次序（raw 136174 / 134937 / 135824 + 136250-136259 / 134947-135510）：
-   * `SetTarget([4])` → `Clear` → 从 36（旧）/ 37（新）取互补条带（类别 2）或整屏交叉淡化（类别 0）
-   * 画进去。`[4]` **不是屏幕**：语料里它是脚本 `create-texture` 出来的 1280×720 槽，随后由引用该槽的
+   * `SetTarget([4])` → `Clear` → 从 **36/37** 取互补条带（类别 2）或交叉淡化（类别 0）画进去。
+   * `[4]` **不是屏幕**：语料里它是脚本 `create-texture` 出来的 1280×720 槽，随后由引用该槽的
    * 绘制项呈现（`src/SC0000.txt:1337-1339`）⇒ emulator 的等价物就是"画进那个槽的画布"
    * （`TextureCache.composeIntoSlot`）。
+   *
+   * ★**36/37 是什么（轮 5 读 asm 定案）**：它们装的是**记录那两条 item 区间**里的项 ——
+   * `for (v60=0; v60<2; ++v60) { SetTarget(36+v60); Clear; BeginScene; 画该趟的项; EndScene; }`
+   * （raw 136014-136176，asm 循环体 `0x4B1232`）：第 0 趟 = 区间 A（`[5]` 起）、第 1 趟 = 区间 B（`[6]` 起），
+   * 两趟都排除另一条区间。⇒ **转场的可见范围只覆盖这两组项**，因此这里用
+   * `presenter.renderItemSubset` 现渲染两张**离屏子集**当源（`#renderRangeCanvas`），
+   * **不是**"上一帧整屏快照"（那套概念已删除）。
    *
    * **类别**：0 = 交叉淡化（`0x223`）、1 = 分块淡入淡出（`0x24D`，**未实现**）、2 = 盲帘（`0x24F`）、
    * 3 = 插值模糊（`0x250`/`0x251`，累积近似，见 `scTransitionBlurPlan` 的偏差披露）。
@@ -1095,32 +1154,31 @@ export class PixiBackend implements NativeBridge {
   #compositeTransitions(): void {
     const act = scActiveTransitions(this.scene);
     if (act.length === 0) return;
-    const old = this.#transOld;
-    if (!old) return;
-    const cur = this.#captureStageCanvas();
-    if (!cur) return;
     const sw = Math.max(1, this.app.screen.width);
     const sh = Math.max(1, this.app.screen.height);
+    // 类别 3 的源 = **本帧屏幕合成**（惰性抓；只有真的有类别 3 时才付这次抓帧的钱）。
+    let cur: HTMLCanvasElement | null = null;
+    const screenOnce = (): HTMLCanvasElement | null => {
+      if (!cur) cur = this.#captureStageCanvas();
+      return cur;
+    };
     for (const { id, rec, rt } of act) {
       const cat = rec[0] ?? 0;
       const slot = rec[4] ?? -1;
       if (cat !== 0 && cat !== 2 && cat !== 3) continue;
       let blurLog: string | null = null;
+      let srcLog = '';
       const ok = this.textures.composeIntoSlot(slot, (ctx, w, h) => {
-        if (cat === 0) {
-          // 类别 0 = 交叉淡化：36（旧）整屏不透明，再以 `alpha = t*255` 叠 37（新）。
-          ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, w, h);
-          ctx.globalAlpha = Math.min(1, Math.max(0, rt.t));
-          ctx.drawImage(cur, 0, 0, cur.width, cur.height, 0, 0, w, h);
-          ctx.globalAlpha = 1;
-          return;
-        }
         if (cat === 3) {
           // 类别 3 = 插值模糊（`0x250` SlideBlur / `0x251` ZoomBlur）。
           // ★参数逐条确证（raw 135837-135881）；**像素是累积近似** —— 见 `scTransitionBlurPlan` 的
           //   偏差披露（引擎走 D3DX effect 或逐像素 CPU 卷积，emulator 两者都没有）。
-          //   源取**本帧屏幕合成**：引擎读的是层 36 的纹理（raw 135883；`Scene+42600` 就是层 36），
-          //   而层 36 的填充路径未确证（规格 §7 的 U3/U4）⇒ 这条也写进票据。
+          //   ★源取**本帧屏幕合成** —— 这是**有意的改正**（不是猜）：引擎读的是层 36 的纹理
+          //   （raw 135883；`Scene+42600` 就是层 36），而层 36 只由那两趟 item 重绘填
+          //   （raw 136014-136176），类别 3 **被显式跳过那一趟**
+          //   （asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 引擎在类别 3 上读的是**陈旧 scratch**。
+          const src = screenOnce();
+          if (!src) return;
           const plan = scTransitionBlurPlan(rec, rt, { w, h });
           if (!plan) return;
           const off = scTransitionBlurOffsets(plan);
@@ -1132,8 +1190,8 @@ export class PixiBackend implements NativeBridge {
             ctx.save();
             if (off.kind === 'zoom') {
               // 绕中心的均匀缩放：采样 k 的比例 `1 + (k-half)*step` ⇒ 画的时候用它的**倒数**。
-              const s = 1 + (k - half) * off.step;
-              const inv = Math.abs(s) < 1e-6 ? 1 : 1 / s;
+              const sc = 1 + (k - half) * off.step;
+              const inv = Math.abs(sc) < 1e-6 ? 1 : 1 / sc;
               ctx.translate(off.cx, off.cy);
               ctx.scale(inv, inv);
               ctx.translate(-off.cx, -off.cy);
@@ -1142,7 +1200,7 @@ export class PixiBackend implements NativeBridge {
               ctx.translate(-(k - half) * off.dx, -(k - half) * off.dy);
             }
             ctx.globalAlpha = weight / total;
-            ctx.drawImage(cur, 0, 0, cur.width, cur.height, 0, 0, w, h);
+            ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, w, h);
             ctx.restore();
           }
           ctx.globalAlpha = 1;
@@ -1151,28 +1209,45 @@ export class PixiBackend implements NativeBridge {
             (plan.zoom
               ? `Center=(${plan.centerUPx},${plan.centerVPx}) 归一化=(${plan.centerU.toFixed(3)},${plan.centerV.toFixed(3)})`
               : `Angle=${plan.angle}`) +
-            ` 目标层=${w}x${h} 采样=${plan.samples}（近似）`;
+            ` 目标层=${w}x${h} 采样=${plan.samples}（近似；源=本帧屏幕）`;
           return;
         }
-        // 类别 2 = 盲帘擦除：Clear 之后把 36/37 的互补条带 1:1 画进去。
+        // ★类别 0/2 的源 = 记录那两条 item 区间的**离屏子集**（引擎 36 = A、37 = B）。
+        const handles = scTransitionRangeHandles(this.scene, rec);
+        const ra = this.#renderRangeCanvas(handles.a);
+        const rb = this.#renderRangeCanvas(handles.b);
+        srcLog = `源=A(${ra.drawn}项)/B(${rb.drawn}项)`;
+        if (cat === 0) {
+          // 类别 0 = 交叉淡化：36（区间 A）不透明铺上，再以 `alpha = t*255` 叠 37（区间 B）。
+          // ★必须先 `Clear`（引擎 raw 136174-136175 的 `SetTarget([4])` + Clear）——
+          //   那两层在区间外是**透明**的，不 Clear 会把上一次的残留留在槽里。
+          ctx.clearRect(0, 0, w, h);
+          if (ra.canvas) ctx.drawImage(ra.canvas, 0, 0, ra.canvas.width, ra.canvas.height, 0, 0, w, h);
+          if (rb.canvas) {
+            ctx.globalAlpha = Math.min(1, Math.max(0, rt.t));
+            ctx.drawImage(rb.canvas, 0, 0, rb.canvas.width, rb.canvas.height, 0, 0, w, h);
+            ctx.globalAlpha = 1;
+          }
+          return;
+        }
+        // 类别 2 = 盲帘擦除：Clear 之后把 A/B 的互补条带 1:1 画进去。
         ctx.clearRect(0, 0, w, h);
         const rect = scTransitionTargetRect(this.scene, rec);
         if (!rect) return; // 查不到目标绘制项 ⇒ 引擎把该记录杀成死记录并直接返回（raw 134890-134893）
         const kx = w / sw;
         const ky = h / sh;
         for (const b of scTransitionBands(rec, rt, this.clockMs, rect)) {
-          const src = b.src === 'old' ? old : cur;
+          const src = b.src === 'old' ? ra.canvas : rb.canvas;
+          if (!src) continue;
           ctx.drawImage(src, 0, 0, src.width, src.height, b.x * kx, b.y * ky, b.w * kx, b.h * ky);
         }
       });
       if (ok) {
         this.#pushLog(
           `[transition] id=0x${id.toString(16)} cat=${cat} t=${rt.t.toFixed(3)} → 槽 ${slot}` +
-            (cat === 0
-              ? '（交叉淡化：旧帧 + 新帧×t）'
-              : cat === 3
-                ? `（${blurLog ?? '插值模糊'}）`
-                : `（盲帘类型 ${rec[13]}）`),
+            (cat === 3
+              ? `（${blurLog ?? '插值模糊'}）`
+              : `（${cat === 0 ? '交叉淡化' : `盲帘类型 ${rec[13]}`}；${srcLog}）`),
         );
       }
     }
@@ -1226,15 +1301,10 @@ export class PixiBackend implements NativeBridge {
     //   （锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表 —— 引擎 `sub_4B06D0` +
     //   帧函数 raw 136840-136841）。放在 `scAdvance` 之后、本帧 `present` 之前：
     //   脚本本帧写的记录会被本帧这一次 tick 看到，不会"写了立刻被清掉"。
-    const trans = scTransitionTick(this.scene, nowMs);
-    // ★转场要"新旧两帧"：引擎的 36/37 = 两个屏幕层。这里在**本帧 present 之前**抓一帧当旧帧
-    //   （此刻 drawRoot 还是上一帧合成出来的内容）；窗结束（表被清）就释放。
-    if (scTransitionsPending(this.scene)) {
-      if (!this.#transOld) this.#transOld = this.#captureStageCanvas();
-    } else if (this.#transOld) {
-      this.#transOld = null;
-    }
-    if (trans.cleared) this.#transOld = null;
+    // ★转场窗：锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表。
+    //   ★不再需要"上一帧整屏快照"：转场的源是**记录那两条 item 区间的离屏子集**（引擎 36/37），
+    //   在 `#compositeTransitions` 里按需渲染（见 `#rangeCache`）。
+    scTransitionTick(this.scene, nowMs);
     // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);
@@ -1318,6 +1388,7 @@ export class PixiBackend implements NativeBridge {
       this.clockMs = performance.now() - this.wallStart;
     }
     this.#clockInjected = false; // 已消费本帧注入的时钟
+    this.#rangeCache.clear(); // 转场的子集离屏合成按帧缓存（见 #rangeCache）
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
     const textSprites = this.textLayer.sync(this.scene);
     // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），

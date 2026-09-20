@@ -1,24 +1,32 @@
 /**
- * **读档装载点的画面语义（B）与 A/B 模型一致（C）** —— `tickets/T-0083` 的 B5 步。
+ * **读档装载点的画面语义（装载点按存档替换绘制项）与 A/B 模型一致** —— `tickets/T-0083`。
  *
- * 背景（2026-09 用户实测症状）：TITLE → Load Data → 读档，画面变成「TITLE 背景 + ADV 遮罩」。
- * 引擎的装载路径（`sub_410160` raw 19276-19936）**不清绘制容器** —— 27 个被调函数里没有任何
- * `sub_4AB7A0`/`sub_41A130`/`sub_40BF80`；它靠两件事把画面弄对：
- *  ① **保留**上一屏的绘制项：装载路径刚按存档重建了槽表与纹理对象（②b），那些项当场指向存档里的图像
- *     （绘制期解析 `Scene[slot+10614]` 对象指针 + `Scene[5*slot+466]` 槽表）；
- *  ② 复位两个**仮想ディスプレイ**对象（raw 19913-19915 `sub_403EF0`；体 raw 9958-9971 =
- *     `_this[258] = 0` 项数清零 + `_this[959] = -1` + `_this[960] = 0` + 构造侧的 `SetRectEmpty`）
- *     ⇒ **上一屏那一层 UI 整体不再组成**（菜单/列表必须消失）。
+ * 背景（2026-09 用户实测症状）：TITLE → Load Data → 读档，画面上留着 TITLE 的菜单板与那条
+ * 「天空碎片阶梯」（handle 0x12C/0x12E/0x130/0x132/0x134，156×156）。
  *
- * emulator 是单一扁平绘制表、没有"平面"对象 ⇒ 用 `Item.ownerFrame`（"这一项是哪一帧画的"）近似 ②：
- * 装载点只丢掉**被放弃的调用方帧**画出来的项。本文件锁三件事：
- *  - 装载点**不得**整批清容器（`clearDrawContainer`/`clearMeshSlots` 都不许调）；
- *  - 调用方那层 UI 必须消失、ADV 层必须留下、存档声明的槽必须重建；
+ * ★2026-09 以体订正 —— 本文件此前的判据（"装载点不得整批清容器"）**是反的**：
+ * 引擎的装载路径**清空并重装绘制项容器**（`sub_410160` raw 19806-19832）：
+ *  ① delete-walk 释放 `Engine+323864` = **`Scene+1032`**（那张 740 B 绘制项 map）的全部结点，
+ *     复位哨兵（`head->next = head`/`head->prev = head`/`head->last = head`）+ `size(Engine+323872) = 0`；
+ *  ② 按存档 body 里那份清单逐条 `sub_49A300`（740 B 默认构造）→ `memcpy(scratch, p, 740)` →
+ *     `sub_40C910`（find-or-create）+ `sub_40C310`（赋值）插回。
+ * ⇒ **上一屏的绘制项一个不留，画面 = 存档当时的场景**。
+ * 而 raw 19913-19915 的两次 `sub_403EF0` 复位的是**两个 仮想ディスプレイ**（`Engine+0x55D8`/`0xCAC0`；
+ * 体 raw 9958-9971 = 点击热点/路由表 + 鼠标游标），**与绘制项无关** —— 旧注释把这两件事混成一条，
+ * 才推出"引擎靠保留上一屏的绘制项把画面还原回来"。
+ *
+ * 本文件锁四件事：
+ *  - 引擎真槽（body 里有可解析清单）⇒ 装载点必须**替换**绘制项：上一屏的项全部作废、存档那 N 项就位；
+ *  - **不动网格**：引擎的清场只走 `Scene+1032` 那棵树（`Scene+1064` 的网格一个结点都不动）
+ *    ⇒ `clearDrawContainer`/`clearMeshSlots` 都不许调（emulator 的 `clearDrawContainer` 会把网格一起清）；
+ *  - body **没有**清单（本工程槽 `format = 0`／旧布局）⇒ 退回 (B) 步的 `ownerFrame` 近似；
  *  - **A/B 一致**：同一份脚本"正常跑到某句话"与"读档落到同一句话"，模型逐项相等。
  *
- * ★实证（`npm run shot -- --load 79`，2026-09）：不丢调用方那层时，读档后存档列表整屏留在画面上
- * （handle ≥ `0x1d4c0` 约 131 项）；`CALLBACK_LOAD.BIN:16` 的 `detach-texture 1adb0 7d0`
- * = 释放 [0x1adb0, 0x1b580)，那一段是**立绘层**，删不掉列表（日志实测 `drawItems=0`）。
+ * ★实证（真槽 79，`SAVE79.DAT`）：清单 69 条，第 1 条就是 SN0000 的背景 —— handle `0x18A88`、
+ * slot 4、src (0,0,2048,1152)、dst (−768,−272)；第 2 条起 `0x19835…` 是 ADV 侧栏（正是 SN0000
+ * 自己 `detach-texture 19834 19` 的区间）。早先清单没被消费（且步长算错成 744 B/条）⇒ TITLE 那些项
+ * （handle 10..309，**全部**用槽 4）留在模型里，而 ②b 按存档把槽 4 重绑到 `BG050ABL`(2048×1152)
+ * ⇒ 它们按标题屏的源矩形采这张背景 = 用户看到的那条台阶与那块采样越界的灰板。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -29,12 +37,13 @@ import { makeCtx } from '../src/vm/step.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { parseScriptBytes } from '../src/script/bin.js';
-import { buildBody, buildScriptBin, buildSlotFile, SEEDS } from './engineSlotFixtures.js';
+import type { Item } from '../src/renderer/drawItem.js';
+import { buildBody, buildScriptBin, buildSlotFile, drawItemRecord, SEEDS } from './engineSlotFixtures.js';
 
 const im = (v: number): { type: number; raw: number } => ({ type: 0, raw: v });
 const loc = (v: number): { type: number; raw: number } => ({ type: 0x9, raw: v });
 
-/** 记账宿主：记下装载点调了哪些"整批/按帧"的容器操作，其余交给共享模型。 */
+/** 记账宿主：记下装载点调了哪些容器操作，其余交给共享模型。 */
 class Screen extends HeadlessScene {
   readonly calls: string[] = [];
   constructor() {
@@ -71,6 +80,10 @@ class Screen extends HeadlessScene {
     this.calls.push(`dropFrameItems:${frame}`);
     return super.dropFrameItems(frame);
   }
+  override restoreDrawItems(items: readonly Item[]): number {
+    this.calls.push(`restoreDrawItems:${items.length}`);
+    return super.restoreDrawItems(items);
+  }
 }
 
 /** 只提供"读槽 / 读脚本"的内存 FileSource。 */
@@ -91,8 +104,9 @@ async function run(e: Engine, frameIndex: number, ip: number): Promise<void> {
   await h!(makeCtx(e, frame, instr, e.native, () => {}));
 }
 
-test('★(B) 装载点不整批清容器：只丢被放弃调用方那层 UI，ADV 层与存档声明的槽都在', async () => {
+test('★真槽：装载点按存档**替换**绘制项（上一屏全部作废 + 存档那 2 项就位 + 网格不动）', async () => {
   // 引擎格式槽：1000 条图像槽记录里 4 号标了"要重载"、12 号只登记；纹理槽 3 号标了重载。
+  // 绘制项清单：2 条（handle 0x18a88 = 背景 / 0x19835 = ADV 侧栏），记录体按引擎 740 B 布局。
   const script = buildScriptBin([{ op: 0xae, args: [] }]);
   const body = buildBody({
     savedCur: 0,
@@ -108,32 +122,112 @@ test('★(B) 装载点不整批清容器：只丢被放弃调用方那层 UI，A
       { at: 4, id: 0x888, flag: 1, param: 0 },
       { at: 12, id: 0x777, flag: 0, param: 0 },
     ],
+    drawItems: [
+      { handle: 0x18a88, record: drawItemRecord({ tex: 4, src: [0, 0, 2048, 1152], pos: [-768, -272], flags: 3 }) },
+      { handle: 0x19835, record: drawItemRecord({ tex: 17, src: [182, 794, 316, 1530], pos: [1148, 0] }) },
+    ],
   });
   const bytes = buildSlotFile(body, { ...SEEDS, format: 3, aux: 20 });
 
   const screen = new Screen();
   const e = new Engine(screen);
   e.fileSource = fakeSource(3, bytes, 100, script);
-  // "上一屏"：ADV 层（帧 0/1 画的，handle 0x1ad00/0x1d300 = 立绘/场景层，**祖先帧 ⇒ 必须留下**）
-  // + 调用方菜单帧 2 画的 UI 层（0x1d4c0+）+ 它调出来的帧 3（`SBUNKI` 那类，0x1d500+ ⇒ 属于被放弃的链）。
+  // "上一屏"：TITLE 那层（帧 1 画的，handle 10 = 全屏背景、0x12C = 菜单板）—— 引擎里它们**必须消失**；
+  // 调用方菜单帧 2 画的 UI 层（0x1d4c0+）也一样；再放一项"不带 ownerFrame"的（取当前帧 = 2）。
+  screen.draw(0xa, 4, 1);
+  screen.draw(0x12c, 4, 1);
+  screen.draw(0x1d4c0, 7, 2);
+  screen.setCurrentFrame(2);
+  screen.configureDrawItem({ handle: 0x1d600, layer: 0x1d600, tex: 7, srcX: 0, srcY: 0, srcW: 1, srcH: 1, dstX: 0, dstY: 0 });
+  screen.setCurrentFrame(-1);
+  // 网格（ADV 的幕/遮罩就是 MeshObj）：装载点**不得**动它（引擎的清场只走 Scene+1032）。
+  screen.scene.meshes.set(0x19258, {
+    handle: 0x19258,
+    layer: 0x19258,
+    flags: 1,
+    state0: 0xffffffff,
+    state1: 0,
+    verts: [],
+    baseColors: [],
+    blend: 0,
+  } as never);
+
+  // 调用方 = 帧 2（SAVE/LOAD 菜单）：`0x1A1` 读档。
+  const caller = buildScriptBin([{ op: 0x1a1, args: [loc(0x10), im(3)] }]);
+  loadScriptIntoFrame(e.frames[2]!, parseScriptBytes(caller), 'SAVE.BIN', 51);
+  e.frames[3]!.caller = 2;
+  e.cur = 2;
+  await run(e, 2, 0);
+
+  // ---- 机械判据：替换（restoreDrawItems），不整批清容器、不走 (B) 近似 ----
+  assert.deepEqual(
+    screen.calls.filter((c) => c.startsWith('restoreDrawItems')),
+    ['restoreDrawItems:2'],
+    `★有清单时装载点必须按存档替换绘制项（实际 ${screen.calls.join(' ') || '（无）'}）`,
+  );
+  assert.ok(
+    !screen.calls.includes('clearDrawContainer'),
+    `装载点不得调 clearDrawContainer（它会把网格一起清；引擎的清场只走 Scene+1032，实际 ${screen.calls.join(' ')}）`,
+  );
+  assert.ok(!screen.calls.includes('clearMeshSlots'), '装载点不得调 clearMeshSlots');
+  assert.deepEqual(
+    screen.calls.filter((c) => c.startsWith('dropFrameItems')),
+    [],
+    '★body 里有清单 ⇒ 不走 (B) 步的 ownerFrame 近似',
+  );
+  assert.ok(screen.calls.includes('releaseFrameHold'), '装载点必须 releaseFrameHold（(A) 步：不留旧像素）');
+
+  // ---- 上一屏的项全部作废、存档那 2 项就位 ----
+  assert.deepEqual(
+    [...screen.scene.drawItems.keys()].sort((a, b) => a - b),
+    [0x18a88, 0x19835],
+    '★只剩存档清单里那两项（TITLE 的 0xa/0x12c、菜单帧的 0x1d4c0/0x1d600 全部作废）',
+  );
+  const bg = screen.scene.drawItems.get(0x18a88)!;
+  assert.equal(bg.tex, 4, '背景项的纹理槽 = 4（②b 刚把槽 4 重绑到存档里的图像）');
+  assert.deepEqual([bg.srcX, bg.srcY, bg.srcW, bg.srcH], [0, 0, 2048, 1152], '源矩形（left/top/right/bottom ⇒ 差）');
+  assert.deepEqual([bg.posX, bg.posY], [-768, -272]);
+  assert.equal(bg.flags, 3, 'flags 原样（bit0 可见 + bit1 A 层窗）');
+  assert.equal(bg.ownerFrame, -1, '还原出来的项不属于本进程任何帧（免得被 fallback 当成上一屏）');
+  assert.ok(screen.scene.meshes.has(0x19258), '网格不动（引擎的清场只走 Scene+1032 那棵树）');
+
+  // ---- 存档声明的槽重建（②b；与 `tickets/T-0071` 同口径）----
+  assert.equal(e.texSlots.get(4), 0x888, '★图像槽 4 ← 存档里的 id');
+  assert.equal(e.texSlots.get(12), 0x777, '图像槽 12 也登记（flag = 0 ⇒ 不重载）');
+  assert.equal(screen.slotImgid.get(4), 0x888, '图像槽 4 走宿主重新解码（flag == 1）');
+  assert.equal(screen.slotImgid.get(3), 0x999, '纹理槽 3 走宿主重新解码（flag == 1）');
+  assert.equal(screen.slotImgid.get(12), undefined, 'flag = 0 的槽不重载');
+  assert.ok(
+    screen.logs.some((m) => m.includes('按存档还原绘制项 2/2 项')),
+    `要有"按存档还原绘制项"的日志（实际 ${screen.logs.filter((m) => m.includes('slot-load')).join(' | ')}）`,
+  );
+});
+
+test('★body 里没有清单（本工程槽/旧布局）⇒ 退回 (B) 近似：只丢被放弃调用链那层 UI', async () => {
+  const script = buildScriptBin([{ op: 0xae, args: [] }]);
+  const body = buildBody({
+    savedCur: 0,
+    savedRet: -1,
+    pre8: 0,
+    frames: [{ returnFrame: -1, scriptId: 100, retIdx: [], messageIdx: -1, callIdx: -1 }],
+    ints: [],
+    floats: [],
+    strings: [],
+    ipTables: [[], [], []],
+  });
+  const bytes = buildSlotFile(body, { ...SEEDS, format: 3, aux: 20 });
+
+  const screen = new Screen();
+  const e = new Engine(screen);
+  e.fileSource = fakeSource(3, bytes, 100, script);
+  // ADV 层（帧 0/1 画的，**祖先帧 ⇒ 必须留下**）+ 调用方菜单帧 2 的 UI 层 + 它调出来的帧 3。
   screen.draw(0x1ad00, 4, 0);
   screen.draw(0x1d300, 7, 1);
   screen.draw(0x1d4c0, 7, 2);
   screen.draw(0x1d4c1, 7, 2);
   screen.draw(0x1d500, 7, 3);
-  // ★不带 `ownerFrame` 的建项路径（文本/`0x1FB` 之外的那些）：归属取"当前帧"（VM 每步下发）。
   screen.setCurrentFrame(2);
-  screen.configureDrawItem({
-    handle: 0x1d600,
-    layer: 0x1d600,
-    tex: 7,
-    srcX: 0,
-    srcY: 0,
-    srcW: 1,
-    srcH: 1,
-    dstX: 0,
-    dstY: 0,
-  });
+  screen.configureDrawItem({ handle: 0x1d600, layer: 0x1d600, tex: 7, srcX: 0, srcY: 0, srcW: 1, srcH: 1, dstX: 0, dstY: 0 });
   screen.setCurrentFrame(-1);
   screen.scene.meshes.set(0x19258, {
     handle: 0x19258,
@@ -146,27 +240,22 @@ test('★(B) 装载点不整批清容器：只丢被放弃调用方那层 UI，A
     blend: 0,
   } as never);
 
-  // 调用方 = 帧 2（SAVE/LOAD 菜单）：`0x1A1` 读档；帧 3 是它调出来的（`caller = 2`）。
   const caller = buildScriptBin([{ op: 0x1a1, args: [loc(0x10), im(3)] }]);
   loadScriptIntoFrame(e.frames[2]!, parseScriptBytes(caller), 'SAVE.BIN', 51);
   e.frames[3]!.caller = 2;
   e.cur = 2;
   await run(e, 2, 0);
 
-  // ---- (B) 的机械判据：装载点**没有**整批清容器 ----
-  assert.ok(
-    !screen.calls.includes('clearDrawContainer'),
-    `装载点不得调 clearDrawContainer（实际 ${screen.calls.join(' ') || '（无）'}）`,
+  assert.deepEqual(
+    screen.calls.filter((c) => c.startsWith('restoreDrawItems')),
+    [],
+    '没有清单 ⇒ 不能按存档替换（否则会把画面清空）',
   );
-  assert.ok(!screen.calls.includes('clearMeshSlots'), '装载点不得调 clearMeshSlots');
-  assert.ok(screen.calls.includes('releaseFrameHold'), '装载点必须 releaseFrameHold（(A) 步）');
   assert.deepEqual(
     screen.calls.filter((c) => c.startsWith('dropFrameItems')),
     ['dropFrameItems:2', 'dropFrameItems:3'],
     '★丢的是**被放弃的那条调用链**（caller 2 + 它调出来的 3），祖先帧 0/1 不碰',
   );
-
-  // ---- 被放弃那条链的 UI 消失、祖先层留下、网格不动 ----
   assert.deepEqual(
     [...screen.scene.drawItems.keys()].sort((a, b) => a - b),
     [0x1ad00, 0x1d300],
@@ -174,20 +263,13 @@ test('★(B) 装载点不整批清容器：只丢被放弃调用方那层 UI，A
       '祖先层（0x1ad00/0x1d300）保留',
   );
   assert.ok(screen.scene.meshes.has(0x19258), '网格容器不整批清（引擎装载路径没有网格清场）');
-
-  // ---- 存档声明的槽重建（②b；与 `tickets/T-0071` 同口径）----
-  assert.equal(e.texSlots.get(4), 0x888, '★图像槽 4 ← 存档里的 id');
-  assert.equal(e.texSlots.get(12), 0x777, '图像槽 12 也登记（flag = 0 ⇒ 不重载）');
-  assert.equal(screen.slotImgid.get(4), 0x888, '图像槽 4 走宿主重新解码（flag == 1）');
-  assert.equal(screen.slotImgid.get(3), 0x999, '纹理槽 3 走宿主重新解码（flag == 1）');
-  assert.equal(screen.slotImgid.get(12), undefined, 'flag = 0 的槽不重载');
   assert.ok(
-    screen.logs.some((m) => m.includes('丢掉被放弃的调用链（帧 2,3）画的 UI 绘制项 4 个')),
-    `要有"丢掉调用链那种 UI 层"的日志（实际 ${screen.logs.filter((m) => m.includes('slot-load')).join(' | ')}）`,
+    screen.logs.some((m) => m.includes('丢掉被放弃的调用链（帧 2,3）')),
+    `要有"退回 (B) 近似"的日志（实际 ${screen.logs.filter((m) => m.includes('slot-load')).join(' | ')}）`,
   );
 });
 
-test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，模型逐项相等', async () => {
+test('★A/B 一致：正常跑到某句话 vs 读档（按存档替换）落到同一句话，模型逐项相等', async () => {
   // 同一份脚本：0 = set-texture（背景槽）、1 = draw-texture（背景项）、2 = i0ae（续跑落点在此收尾）、
   // 3 = 显示消息（存档记录里的落点 = `0x71` 表[0]）。
   const script = buildScriptBin([
@@ -196,6 +278,7 @@ test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，�
     { op: 0xae, args: [] },
     { op: 0x71, args: [im(1)] },
   ]);
+  // 存档里的清单 = 场景当时那一项（就是 A 侧要还原的背景项，handle 0x1ad00、槽 4）。
   const body = buildBody({
     savedCur: 0,
     savedRet: -1,
@@ -205,6 +288,7 @@ test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，�
     floats: [],
     strings: [],
     ipTables: [[], [], []],
+    drawItems: [{ handle: 0x1ad00, record: drawItemRecord({ tex: 4, src: [0, 0, 0x500, 0x2d0] }) }],
   });
   const bytes = buildSlotFile(body, { ...SEEDS, format: 3, aux: 20 });
 
@@ -212,8 +296,7 @@ test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，�
   const sa = new Screen();
   const ea = new Engine(sa);
   ea.fileSource = fakeSource(3, bytes, 100, script);
-  sa.draw(0x1ad00, 4, 0); // "上一屏"就是同一个 ADV 场景（引擎保留它的项）
-  sa.draw(0x1d4c0, 7, 2); // 而菜单帧（调用方）那层必须消失
+  sa.draw(0x1d4c0, 7, 2); // 调用方菜单帧那层：必须被"按存档替换"清掉
   // ★网格（ADV 的遮罩/幕就是 MeshObj）：装载点**不得**动它（旧实现调 `clearMeshSlots()` ⇒ 这条会红）。
   sa.scene.meshes.set(0x19640, { handle: 0x19640, layer: 0x19640, flags: 1, state0: 0xffffffff, state1: 0, verts: [], baseColors: [], blend: 0 } as never);
   const caller = buildScriptBin([{ op: 0x1a1, args: [loc(0x10), im(3)] }]);
@@ -228,15 +311,15 @@ test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，�
   const sb = new Screen();
   const eb = new Engine(sb);
   loadScriptIntoFrame(eb.frames[0]!, parseScriptBytes(script), 'SN0000.BIN', 100);
-  sb.draw(0x1ad00, 4, 0);
+  sb.draw(0x1ad00, 4, 0); // 正常路：这一项是脚本自己 `draw-texture` 画的
   sb.scene.meshes.set(0x19640, { handle: 0x19640, layer: 0x19640, flags: 1, state0: 0xffffffff, state1: 0, verts: [], baseColors: [], blend: 0 } as never);
   await run(eb, 0, 0);
   await run(eb, 0, 1);
   await run(eb, 0, 2);
 
-  // ---- 判据：模型逐项相等（绘制项 / 纹理槽 / 落点）----
+  // ---- 判据：模型逐项相等（绘制项 / 网格 / 纹理槽 / 落点）----
   const keys = (s: Screen): number[] => [...s.scene.drawItems.keys()].sort((a, b) => a - b);
-  assert.deepEqual(keys(sa), keys(sb), '★绘制项集合一致（A = 保留的上一屏 + init 重画；B = 同一条路）');
+  assert.deepEqual(keys(sa), keys(sb), '★绘制项集合一致（A = 按存档还原 + init 重画；B = 同一条路）');
   // ★网格（幕/遮罩）也要一致且非空：装载路径**不清网格容器**（旧实现 `clearMeshSlots()` 会让 A 变空）。
   assert.deepEqual(
     [...sa.scene.meshes.keys()].sort((a, b) => a - b),
@@ -245,6 +328,15 @@ test('★(C) A/B 一致：正常跑到某句话 vs 读档落到同一句话，�
   );
   assert.deepEqual([...sa.scene.meshes.keys()], [0x19640], 'A 的网格还在（装载点没有整批清网格）');
   assert.deepEqual([...sa.scene.drawItems.keys()].sort((a, b) => a - b), [0x1ad00, 0x1ae00]);
+  // ★更强的一条：A 里那个**还原出来**的项与 B 里**脚本画出来**的那一项逐字段相等
+  //   （唯一允许的差别是 emulator 自己的记账格 `ownerFrame`）。
+  const iA = sa.scene.drawItems.get(0x1ad00)!;
+  const iB = sb.scene.drawItems.get(0x1ad00)!;
+  for (const k of ['tex', 'srcX', 'srcY', 'srcW', 'srcH', 'posX', 'posY', 'posZ', 'flags', 'from', 'to'] as const) {
+    assert.equal(iA[k], iB[k], `★还原项与脚本画出的项在 ${k} 上必须一致`);
+  }
+  assert.equal(iA.ownerFrame, -1, '还原项：ownerFrame = −1（引擎没有这一格）');
+  assert.equal(iB.ownerFrame, 0, '脚本画的项：ownerFrame = 画它的那一帧');
   // ★槽表是**定长 1000 项**（引擎的镜像表就是 1000 条），空槽在文件里是全 0 ⇒ 登记出来是 `slot → 0`。
   //   这里只比"有内容的那些格"（值非 0），否则会被 998 个空槽淹掉判据。
   const nz = (m: Map<number, number>): [number, number][] =>

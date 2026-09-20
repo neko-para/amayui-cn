@@ -16,6 +16,7 @@ import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
 import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
+import { decodeEngineDrawItem } from '../engineDrawItem.js';
 import { restoreAdvState, snapshotAdvState } from '../advState.js';
 import { bgmReplayIntent } from './audio.js';
 import { decodeBmp, encodeBmp } from '../bmp.js';
@@ -24,6 +25,7 @@ import type { Engine } from '../engine.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../ops.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { l2dResetHost } from '../../live2d/runtime.js';
 
 /**
  * **读档 = 一次控制转移，不是一次普通函数调用**（`tickets/T-0056`）。
@@ -229,51 +231,86 @@ async function restoreEngineSlot(
     const s = p.images[slot]!;
     if (s.flag === 1 && s.id >= 0) texRebind.push({ slot, id: s.id });
   }
-  // ②c ★**装载点不整批清绘制项**（`tickets/T-0083` 的 (B) 步）：只丢掉**被放弃的调用方那一层 UI**。
-  //     引擎的装载路径**不清容器** —— `sub_410160`（raw 19276-19936）全部 **27 个**被调函数里
-  //     没有任何清容器调用（无 `sub_4AB7A0`/`sub_41A130`/`sub_40BF80`），唯一的整批释放是 raw
-  //     19378-19389 的两段**配置门**：
-  //       ① `Get(set:CreateObject)&2 && Get(set:AutoFreeTexture)&2 ⇒ for i<1000: sub_49E980(Scene,i)`
-  //          （释放 1000 个**槽对象**，不是绘制项）；
-  //       ② `Get(set:CreateObject)&2 ⇒ sub_40BFE0(Scene+1064) + sub_4A9D10(Scene+1096) + sub_4A1A60(Scene,j)`
-  //          （清两个**网格**容器 + 10 个 3D 槽）。
-  //     而引擎默认 `set:CreateObject = 1`（raw 111733）/`set:AutoFreeTexture = 0`（raw 111742）
-  //     ⇒ 两段的 `& 2` 都为假 ⇒ **都不执行**（本机 `SYS4REG.INI` 的 `[set]` 里也没有 `AutoFreeTexture`）。
-  //     ★**保留绘制项才是引擎把画面还原回来的机制**：绘制期解析 `Scene[slot+10614]` 对象指针 +
-  //     `Scene[5*slot+466]` 槽表，而装载路径刚按存档把槽表与纹理对象重建（②b）⇒ 上一屏留下的那些
-  //     绘制项**当场指向存档里的图像**（实测槽 79：槽 4 ← `BG050ABL`(0xb37)）。
-  //     早先"整批清掉"的代价是实测过的（2026-09 用户实测：清掉后背景只剩上一屏的残留像素/点上才出文字）。
-  //     ★但**调用方那一层 UI 必须消失**：引擎在装载段复位两个**仮想ディスプレイ**对象
-  //     （raw 19913-19915 `sub_403EF0(Engine+51904)` / `(Engine+21976)`），其体（raw 9958-9971）是
-  //     `_this[258] = 0`（**项数清零**）+ `_this[959] = -1`/`[960] = 0` + 构造侧的 `SetRectEmpty`
-  //     ⇒ 上一屏那层 UI 整体不再组成。
-  //     emulator 是单一扁平绘制表、没有"平面"对象 ⇒ 用 `Item.ownerFrame`（谁画的）近似那一层：
-  //     丢掉**被放弃的那条调用链**（caller 帧 + 它调用出来的帧，见下）画的项，祖先帧画的项留下。
-  //     ★实证（2026-09，`npm run shot -- --load 79`）：不丢这一层时读档后**存档列表整屏留在画面上**
-  //     （handle 0x1d4c0.. ≈ 131 项，正是 SAVE.txt 自己声明的 UI 区间 `detach-texture 1d4c0 bb8`）；
-  //     而 CALLBACK_LOAD 的 `detach-texture 1adb0 7d0`（raw 见 `src/CALLBACK_LOAD.txt:16`）落在
-  //     [0x1adb0, 0x1b580) —— 那是**立绘层**，删不掉列表（日志实测 `drawItems=0`）。
-  //     ★这是近似，登记在 `SLOT_GAPS` 与 `tickets/T-0083`（真正的修法是补平面/离屏合成模型）。
-  // (B) 丢哪一层 = **被放弃的那条调用链**：caller 帧 + 它调用出来的帧（`caller` 链里含 caller 的帧）。
-  //     ★祖先帧**不碰**：读档前正在演的那场戏就是祖先（它的绘制项必须留下 —— (C) 守卫的 A/B 正是这条）。
-  //     实证（`npm run shot -- --load 79`，帧链 `0=SYSTEM4 1=TITLE 2=SAVE 3=SBUNKI 4=SBUNKIMOVE`）：
-  //     只丢 caller（2）时，列表的文字/行框仍在 —— 它们是 3/4 那两个被 SAVE 调出来的帧画的。
-  const droppedFrames = new Set<number>([callerFrame]);
-  for (let i = 0; i < e.frames.length; i++) {
-    let up = e.frames[i]?.caller ?? -1;
-    for (let guard = 0; up >= 0 && guard < 64; guard++) {
-      if (up === callerFrame) {
-        droppedFrames.add(i);
-        break;
+  // ②c ★**装载点不整批清绘制项** —— ★★2026-09 以体订正：(B) 步的**前提被推翻**，真机制是"清 + 还原"。
+  //
+  //     `sub_410160` raw 19806-19832 在图像清单之后**行内**干了这件事（此前整段被漏读）：
+  //       ① `v64 = *(a1+323868)+4` 起 delete-walk（`sub_40BB60` 释放 + `operator delete`）⇒ 清空
+  //          `Engine+323864` = **`Scene+1032`** = 那张 740 B 绘制项 map；
+  //          随后复位哨兵（`head->next = head`/`head->prev = head`/`head->last = head`）+ `size(Engine+323872) = 0`；
+  //       ② 对 body 里那份清单逐条：`handle = *(u32*)p` → `sub_49A300(Scene, scratch)`（740 B 默认构造）
+  //          → `memcpy(scratch, p, 740)` → `sub_40C910`（find-or-create）+ `sub_40C310`（赋值）
+  //       ⇒ **上一屏的绘制项一个不留，画面 = 存档当时的场景**。清单的步长是 `4 + 4*740 = 2964` B/条
+  //       （引擎 `v97 = &v67[4 * hFile]`，`hFile` = 740 = 记录**字节数**）—— 真槽 79 实证 69 条，
+  //       第 1 条就是 SN0000 的背景：handle `0x18A88`、slot 4、src (0,0,2048,1152)、dst (−768,−272)。
+  //
+  //     所以"装载点不清绘制项"是**错的**：清的是**绘制项 map**（`Scene+1032`），
+  //     而 raw 19913-19915 的两次 `sub_403EF0` 复位的是**两个 仮想ディスプレイ**（`Engine+0x55D8`/`0xCAC0`）
+  //     —— 那两份对象的体（raw 9958-9971）是**点击热点/路由表 + 鼠标游标**（`[258]` = 热点条目数），
+  //     **与绘制项无关**（第一层早已有条目）。旧注释把这两件事混成一条，才推出"靠保留上一屏的项还原画面"。
+  //
+  //     ★真槽 79 的错乱就是这么来的：清单没被消费（只读了 handle、步长还算错），上一屏（TITLE）的项留在
+  //     `scene.drawItems` 里，而 ②b 按存档把槽 4 重绑到 `BG050ABL`(2048×1152) ⇒ TITLE 那些项（全用槽 4）
+  //     按**标题屏的源矩形**采这张背景 = 「天空碎片阶梯」（handle 0x12C/0x12E/0x130/0x132/0x134，
+  //     156×156，dst (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)）+ 采样越界（`0x64` 的
+  //     src y=1161 > 图像高 1152）那块灰板。用户实测「背景渲染完全混乱、很多图元缩放错误」。
+  //
+  //     ★**只清绘制项、不动网格**：引擎的清场只走 `Scene+1032` 那棵树，`Scene+1064` 的网格容器
+  //     一个结点都不动 ⇒ 这里**不**调 `native.clearDrawContainer`（emulator 那个缝把网格一起清，
+  //     与体不符），而走新缝 `native.restoreDrawItems`（先清后装，只碰绘制项）。
+  //
+  //     ★**fallback 仍在**：本工程槽（`format = 0`）与旧布局（`sv1 = 1/2`）的 body 里没有这份清单，
+  //     清单也可能解析失败（`drawItems === null`）⇒ 那时退回 (B) 步的 `ownerFrame` 近似
+  //     （只丢**被放弃的那条调用链**画的项；`Item.ownerFrame` = emulator 记账，引擎没有这一格）。
+  //     宁可留着上一屏，也不要因为一条读不出来的清单把画面清空。
+  if (p.drawItems) {
+    const restored = p.drawItems.map((d) => decodeEngineDrawItem(d.handle, d.record));
+    const installed = e.native.restoreDrawItems?.(restored) ?? 0;
+    const shown = restored.slice(0, 8).map((it) => `0x${it.handle.toString(16)}`);
+    e.native.log(
+      `[slot-load] 按存档还原绘制项 ${installed}/${restored.length} 项（引擎 sub_410160 raw 19810-19832：清 Scene+1032 后逐条插回；` +
+        `handle ${shown.join(',')}${restored.length > shown.length ? ',…' : ''}）⇒ 上一屏的项全部作废`,
+    );
+  } else {
+    // (B) 丢哪一层 = **被放弃的那条调用链**：caller 帧 + 它调用出来的帧（`caller` 链里含 caller 的帧）。
+    //     ★祖先帧**不碰**：读档前正在演的那场戏就是祖先（它的绘制项必须留下 —— (C) 守卫的 A/B 正是这条）。
+    //     实证（2026-09，`npm run shot -- --load 79`，帧链 `0=SYSTEM4 1=TITLE 2=SAVE 3=SBUNKI 4=SBUNKIMOVE`）：
+    //     只丢 caller（2）时，列表的文字/行框仍在 —— 它们是 3/4 那两个被 SAVE 调出来的帧画的。
+    //     （旧实证：不丢这一层时读档后**存档列表整屏留在画面上**，handle 0x1d4c0.. ≈ 131 项，正是
+    //     SAVE.txt 自己声明的 UI 区间 `detach-texture 1d4c0 bb8`；而 CALLBACK_LOAD 的
+    //     `detach-texture 1adb0 7d0`（`src/CALLBACK_LOAD.txt:16`）落在 [0x1adb0, 0x1b580) —— 那是
+    //     **立绘层**，删不掉列表，日志实测 `drawItems=0`。）
+    const droppedFrames = new Set<number>([callerFrame]);
+    for (let i = 0; i < e.frames.length; i++) {
+      let up = e.frames[i]?.caller ?? -1;
+      for (let guard = 0; up >= 0 && guard < 64; guard++) {
+        if (up === callerFrame) {
+          droppedFrames.add(i);
+          break;
+        }
+        up = e.frames[up]?.caller ?? -1;
       }
-      up = e.frames[up]?.caller ?? -1;
+    }
+    let droppedUi = 0;
+    for (const f of [...droppedFrames].sort((a, b) => a - b)) droppedUi += e.native.dropFrameItems?.(f) ?? 0;
+    if (droppedUi > 0) {
+      e.native.log(
+        `[slot-load] 存档 body 没有可解析的绘制项清单 ⇒ 退回 (B) 近似：丢掉被放弃的调用链（帧 ${[...droppedFrames].sort((a, b) => a - b).join(',')}）画的 UI 绘制项 ${droppedUi} 个（见 tickets/T-0083）`,
+      );
     }
   }
-  let droppedUi = 0;
-  for (const f of [...droppedFrames].sort((a, b) => a - b)) droppedUi += e.native.dropFrameItems?.(f) ?? 0;
-  if (droppedUi > 0) {
+  // ★**L2D 运行态必须一起清**（`tickets/T-0090`）：存档的 body 布局里没有任何 L2D 字段
+  //   （`vm/engineSlot.ts` 的帧镜像/三个池/三张 ip 表/图像清单都没有模型或立绘节点表）
+  //   ⇒ 装载后进程里的 L2D 状态**必然属于上一个执行链**；引擎在同一段复位显示容器
+  //   （raw 19913-19915 的两次 `sub_403EF0`）⇒ 那一层没了，立绘节点也不再出画。
+  //   ★实测（槽 79）：不清的话读档后仍挂着 **TITLE 的 node 0x14 + 模型 + 60 批**
+  //   （`TITLE.txt:590` 的 `i344 14 0`），而 SN0000 一条 L2D 指令都没有 ⇒ 上一个画面的立绘/天空件
+  //   继续画在 SN0000 上（用户实测「背景渲染完全混乱、很多图元缩放错误」）。
+  //   ★这条对"存档时场景本来就有立绘"的槽意味着立绘也会没 —— 但引擎同样救不回来（L2D 不在存档里），
+  //   属 `SLOT_GAPS` 的既有缺口，不是本条引入的。
+  const l2dCleared = l2dResetHost(e);
+  if (l2dCleared.slots > 0 || l2dCleared.nodes > 0) {
     e.native.log(
-      `[slot-load] 丢掉被放弃的调用链（帧 ${[...droppedFrames].sort((a, b) => a - b).join(',')}）画的 UI 绘制项 ${droppedUi} 个（引擎：sub_403EF0 复位 仮想ディスプレイ）`,
+      `[slot-load] 清掉上一个执行链的 L2D 运行态：实例槽 ${l2dCleared.slots} 个 / 立绘节点 ${l2dCleared.nodes} 个（L2D 不在存档 body 里；见 tickets/T-0090）`,
     );
   }
   // ★诊断（读档画面残留定位用）：装载时进程里的帧链（残留属于哪一层要对着名字看）。
@@ -298,12 +335,16 @@ async function restoreEngineSlot(
   }
 
   // ③ 面板 / 文本复位（引擎 raw 19913-19915；与 `transferToRootAfterLoad` 同一口径）。
-  //   ★**不**在这里整批清绘制项（`tickets/T-0063`/`T-0083`）：ADV 场景的绘制是**一次性**的
-  //   （实测 SN0000/SC0330 主循环之后的 17000 行里只有 14~16 处 `draw-texture`、2~3 处 `i20c`）。
+  //   ★绘制项**已经在 ②c 处理完了**（有清单 ⇒ 按存档整批替换；没有 ⇒ 退回 (B) 近似），
+  //     这里不再碰绘制项（`tickets/T-0063`/`T-0083`）。
   //   ★续跑重跑到哪里（实测）：每帧从**入口**跑到它自己的 `i0ae` —— SN0000 的 `i0ae` 是指令 737、
-  //   存档落点是指令 794 ⇒ 入口到 737 之间的那段 init **会重跑**（`i259`、背景 `set-texture`/
-  //   `draw-texture`、`play-bgm` 都在其中），主循环之后的绘制不会重放 ⇒ 上一屏的绘制项必须保留
-  //   （②c 的依据之一）；emulator 现在与本工程槽共用同一条路（见下）。
+  //     存档落点是指令 794 ⇒ 入口到 737 之间的那段 init **会重跑**（`i259`、`play-bgm` 之类），
+  //     但 **738..793 被跳过**。★订正（以体为准）：那一带正是它**场景起始的背景设置** ——
+  //     指令 756/757/758 = `mov (global-int f801d) 0` / `mov (global-int f8006) b37` /
+  //     `call label_0000e24c`（背景画在 handle `f8023[f801d]`，`INIT2.txt:6-17` 给的是
+  //     `0x18A88…0x19258`，远高于 TITLE 的 0x135）⇒ **靠"init 重跑"根本没有把背景画出来**：
+  //     引擎是拿存档 body 里那份**绘制项清单**把画面补回来的（②c），`play-bgm` 那类副作用另有补丁
+  //     （见 `handlers/audio.ts`）。主循环之后的绘制不会重放。
   e.routes.reset();
   e.msgwin.reset();
   e.native.msgWinClearAll?.();
@@ -421,10 +462,14 @@ export async function loadSlotIntoEngine(
     // ★**与引擎同一条续跑路**（`tickets/T-0063`）：每个存档帧都按 scriptId **装到入口（ip = 0）**，
     //   然后把"该帧要落的指令"放进 `saveResume`，由脚本入口那条 `i0ae`（`0xAE`）自己落 ip、逐帧走栈，
     //   走到 `savedCur` 收尾 —— 而不是直接把 `cur`/`ip` 摆到存档位置。
-    //   为什么必须这样：ADV 场景的绘制是**一次性**的（实测 SN0000/SC0330 主循环之后的 17000 行里只有
-    //   14~16 处 `draw-texture`），引擎读档后靠"**场景脚本从入口重跑**"把背景重画、并在场景 init 里
-    //   `i259`（清绘制记录）落掉上一场（这里是存档列表）留下的图形。直接落 ip 会跳过 init ⇒
-    //   界面残留 + 背景不重画（2026-09 用户实测：存档界面压在 ADV 上）。
+    //   为什么必须这样：引擎的 `0xAE`（`sub_4192F0` raw 24634-24770）就是这条链式走栈
+    //   （`cur != savedCur` ⇒ `sub_40F750(3)` 装记录[cur+1] 的脚本；`cur == savedCur` ⇒ 收尾写 `95777`）。
+    //   ★订正（以体为准，`tickets/T-0083`）：**"场景脚本从入口重跑会把背景重画"是错的** ——
+    //   SN0000 的 `i0ae` = 指令 737、落点 = 794 ⇒ 738..793 被跳过，而那一带正是它的场景起始背景设置
+    //   （指令 756/757/758）。引擎读档后的画面来自存档 body 里的**绘制项清单**（引擎真槽：②c 的
+    //   `restoreDrawItems`）；本工程槽没有那份清单 ⇒ 靠 `applySlotPresentation`/`loadHold` 把
+    //   存档当时的呈现态装回来（`scene/present.ts`），`i259` 只负责落掉上一场的**槽记录**。
+    //   直接落 ip 会跳过 init ⇒ 界面残留 + 背景不重画（2026-09 用户实测：存档界面压在 ADV 上）。
     const resumeFrames: import('../engineSlot.js').EngineSlotFrame[] = [];
     let seq = 0;
     let loadedAny = false;

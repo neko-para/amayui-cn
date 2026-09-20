@@ -158,6 +158,7 @@ export const BRIDGE_METHODS = [
   'clearSlotRecords',
   'snapshotPresent',
   'restorePresent',
+  'restoreDrawItems',
   'releaseFrameHold',
   'setCurrentFrame',
   'configureDrawItem',

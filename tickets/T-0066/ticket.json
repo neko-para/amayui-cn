@@ -3,28 +3,28 @@
   "type": "bug",
   "priority": "P1",
   "area": "emulator/save-slot",
-  "why": "用真存档（format=3，79 号槽 = 真游戏在 SN0000 第一句话存的）读档，续跑与 BGM 都对了之后实测：模型里 drawItems=25 / meshes=1 / msgWins=7~8 —— 那 25 条是 DRAWCHARM 画的**右侧 charm 侧栏**，**没有背景**（NOVEL 的背景是 draw-texture 0x186a0，层序 100000）也没有 ADV 窗框。判据：读档后连跑 200 帧（advance=force）**一次都没有** layer<=0x19000 的绘制。原因：真槽的容器里**没有绘制项**（只有 100 个「解码图槽」(12B) + 1000 条 20B 纹记录，见 engineSlot.ts 的 images/records —— emulator 解析了但**未应用**，SLOT_GAPS ②），而 emulator 槽靠 SlotStateBlock.present 快照还原画面；真槽这条路缺等价物。引擎那边应当由「续跑后的脚本重画」补齐（NOVEL 的背景在 #41-43 的子程序里，进入条件受 global 4fd9/708ad6/708ada 等标志约束），需要走查这些标志与 0x71 消息重放路径到底谁负责重画，再决定是「等价还原」还是「按引擎标志重画」。",
+  "why": "用真存档（format=3，79 号槽 = 真游戏在 SN0000 第一句话存的）读档，续跑与 BGM 都对了之后实测：模型里 drawItems=25 / meshes=1 / msgWins=7~8 —— 那 25 条是 DRAWCHARM 画的**右侧 charm 侧栏**，**没有背景**（NOVEL 的背景是 draw-texture 0x186a0，层序 100000）也没有 ADV 窗框。判据：读档后连跑 200 帧（advance=force）**一次都没有** layer<=0x19000 的绘制。原因：真槽的容器里**没有绘制项**（只有 100 个「解码图槽」(12B) + 1000 条 20B 纹记录，见 engineSlot.ts 的 images/records —— emulator 解析了但**未应用**，SLOT_GAPS ②），而 emulator 槽靠 SlotStateBlock.present 快照还原画面；真槽这条路缺等价物。引擎那边应当由「续跑后的脚本重画」补齐（NOVEL 的背景在 #41-43 的子程序里，进入条件受 global 4fd9/708ad6/708ada 等标志约束），需要走查这些标志与 0x71 消息重放路径到底谁负责重画，再决定是「等价还原」还是「按引擎标志重画」。\n\n★★2026-09 轮 5 订正：本票原判「真槽的容器里**没有绘制项**」**是错的** —— body 末段就有绘制项清单 `{u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}`，引擎 `sub_410160` raw 19810-19832 先清 `Scene+0x408` 容器再把它逐条还原 （`sub_49A300` 默认初始化 + `memcpy` + `sub_40C910`/`sub_40C310` 插回）。所以「背景/ADV 窗不再出现」的根因不是「真槽不带画面」，而是 **emulator 不还原这份清单**（`src/vm/engineSlot.ts` 只把清单解析成 `imageReload.ids`（handle）就丢掉 740 B 记录，且无消费者）。同时订正「引擎靠脚本重画」的假设：`0xAE` 把 ip 直接置成落点（raw 24634-24731）⇒ SN0000 的 `i1ae`… 背景绘制（指令 757/758，在被跳过带 738..793 内）**不会被重跑**。",
   "acceptance": [
-    "真槽读档后背景/ADV 窗在有限帧内出现，且与存档当时一致（帧数上限由引擎语义定）",
-    "要能说明引擎靠哪条路径重画（脚本子程序 / 消息重放 / 1000 条纹记录的 param），并给出 raw 行号锚点",
-    "守卫：真实 format=3 槽（本机 SAVE00/79）+ 合成槽都能断言「背景绘制项出现」；npm run verify 全绿"
+    "真槽读档后画面 = **存档那一屏的绘制项**（来自 body 的 740 B 清单），与「正常走到同一句话」逐项一致（handle/tex/源矩形/落点/可见项集合）",
+    "说明引擎路径并给 raw 锚点：`sub_410160` 的清容器（raw 19810-19820）+ 清单还原（raw 19822-19832：`sub_49A300`/`sub_40C910`/`sub_40C310`），而不是「脚本重画」",
+    "守卫：真实 format=3 槽（本机 SAVE79）+ 合成槽都断言「背景绘制项出现」，且上一屏的项不再出现；`npm run verify` 全绿"
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
-      "anchor": "images: EngineSlotImageSlot[]",
-      "note": "真槽只带 100 图像槽 + 1000 纹记录，没有绘制项"
+      "anchor": "imageReload",
+      "note": "真槽 body **带**绘制项清单：这里解析成 {size:740, count, ids}（ids = handle），但 740 B 记录被丢弃且无消费者 ⇒ 这就是本票的根因（订正原 evidence 的「没有绘制项」）"
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
-      "anchor": "100 个解码图槽",
-      "note": "表里写明：图像本身不重载（SLOT_GAPS ②）"
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "save-load-drawitem-clear-and-restore",
+      "note": "第二层条目（源码级）：装载点清 Scene+0x408 + 从 body 还原清单"
     },
     {
-      "file": "src/NOVEL.txt",
-      "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
-      "line": 55,
-      "note": "ADV 背景的绘制点（层序 100000，纹理槽 0x48）—— 续跑落点在它之后 ⇒ 必须有人重画"
+      "file": "src/SN0000.txt",
+      "anchor": "label_0000e24c",
+      "line": 3667,
+      "note": "SN0000 的背景/CG 层设置子程序（键 0x18A88、槽 4、BG050ABL 全屏）；其唯一调用点在指令 757（line 1027）= 被跳过带内 ⇒ 读档后背景只能来自**还原的清单**"
     }
   ],
   "links": {
@@ -39,11 +39,23 @@
   },
   "notes": "探针（已删）：读档后逐帧打印模型计数与所有 configureDrawItem 调用；200 帧内只有 DRAWCHARM.BIN 的侧栏项。",
   "id": "T-0066",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-18",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "源码级订正：真槽 body 带 740B 绘制项清单，根因是 emulator 不还原该清单（原判「真槽没有绘制项」被推翻）；acceptance 重写"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "done：真槽 body 的 740B 绘制项清单被解析并还原（engineDrawItem.ts + restoreDrawItems）；真槽 79 解出 69 项（背景 0x18A88/slot 4/BG050ABL + 侧栏 tex 17 + 字格 tex 28）；E4 背景正确出现"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/engine-slot.test.ts",
+    "app/amayui-emulator/test/slot-load-screen.test.ts"
   ]
 }

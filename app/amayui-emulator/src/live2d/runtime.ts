@@ -102,6 +102,32 @@ export function l2dLoadModel(host: L2dHost, slot: number, modelId: number, model
   attachModel(ensureSlot(host, slot), modelId, model);
 }
 
+/**
+ * **清空 L2D 运行态**（装载点用；`tickets/T-0090`）。
+ *
+ * 依据（为什么装载点必须清，而不是"留着看会不会自己好"）：
+ *  - 存档槽的 body 布局**没有任何 L2D 字段** —— 帧镜像 + 三个池 + 三张 ip 表 + 图像清单
+ *    （见 `vm/engineSlot.ts` 的布局注释）里既没有模型、也没有 `Scene+1096` 的立绘节点表
+ *    ⇒ **装载后进程里的 L2D 状态必然属于上一个执行链**；
+ *  - 引擎在装载段复位显示容器（raw 19913-19915 的两次 `sub_403EF0`），那一层没了，立绘节点
+ *    也跟着不再出画。
+ *
+ * ★实测症状（槽 79，2026-09）：不清的话，读档后仍挂着 **TITLE 的 node `0x14` + 它的模型 + 60 个批次**
+ * （`TITLE.txt:590` 的 `i344 14 0` 建的），而 `SN0000` **一条 L2D 指令都没有** ⇒ 上一个画面的立绘/天空件
+ * （模型里有 `D_MY_PARTS_SORA_*` 这种满屏件）继续画在 SN0000 上 —— 用户实测「背景渲染完全混乱、
+ * 很多图元缩放错误」。
+ *
+ * @returns 被清掉的 {槽数, 节点数}（宿主拿去记一条日志 —— 静默清掉会让人以为是"画面自己好了"）
+ */
+export function l2dResetHost(host: L2dHost): { slots: number; nodes: number } {
+  const slots = host.l2dSlots.size;
+  const nodes = host.l2dNodes.size;
+  host.l2dSlots.clear();
+  host.l2dNodes.clear();
+  host.l2dMotionCache.clear();
+  return { slots, nodes };
+}
+
 /** **`0x342` 销毁实例槽**（`sub_427C70` → `sub_4A1A60` raw 121745）：`op1` = 槽。 */
 export function l2dDestroySlot(host: L2dHost, slot: number): boolean {
   return host.l2dSlots.delete(slot);
