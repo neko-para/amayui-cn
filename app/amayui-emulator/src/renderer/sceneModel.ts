@@ -19,5 +19,6 @@
 
 export * from './scene/state.js';
 export * from './scene/ops.js';
+export * from './scene/transition.js';
 export * from './scene/snapshot.js';
 export * from './scene/present.js';

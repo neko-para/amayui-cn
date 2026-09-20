@@ -7,11 +7,11 @@
 
 ## 概览
 
-共 **88** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **19** · ✅ done **64** · 🚫 dropped **1**（P0 7 / P1 37）
+共 **88** 张：🔜 doing **5** · ⛔ blocked **0** · ⬜ open **18** · ✅ done **64** · 🚫 dropped **1**（P0 7 / P1 37）
 
 按域：`emulator/render` 18 · `emulator/frame-loop` 9 · `emulator/save-slot` 7 · `emulator/input` 6 · `emulator/adv` 5 · `emulator/vm` 5 · `emulator/hosts` 4 · `emulator/test` 4 · `emulator/ops` 4 · `docs/03-engine` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/msgwin` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1
 
-## 🔜 doing（4）
+## 🔜 doing（5）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -19,8 +19,9 @@
 | [`T-0062`](./T-0062/ticket.json) | P1 | bug | `renderer/scene` | 存档缩略图全黑：0x20D 渲染目标窗口里的 0x20C 必须把整帧画进该槽 | 3 | — | `notes.md` `changes.md` evidence/(2) | — |
 | [`T-0082`](./T-0082/ticket.json) | P1 | refactor | `emulator/vm` | RF-A 操作数读取计划重构：per-opcode 计划层 + arity 槽（`frame.state[95805]`）建模 + argc 自动核验 | 6 | `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` | — |
 | [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
+| [`T-0084`](./T-0084/ticket.json) | P2 | req | `emulator/render` | 转场效果（i24f/i250/i251）只写了记录表，渲染端扫描带未实现 ⇒ 画面看不到任何转场 | 5 | `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/sc-transition-geometry.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` | — |
 
-## ⬜ open（19）
+## ⬜ open（18）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -32,7 +33,6 @@
 | [`T-0080`](./T-0080/ticket.json) | P1 | analysis | `docs/03-engine` | 修复总计划（2026-09）：按审计结论排序、区分「补实现 / 改实现 / 必须重构」 | 4 | — | — | — |
 | [`T-0083`](./T-0083/ticket.json) | P1 | refactor | `emulator/render` | RF-C 呈现/帧保留重构：去掉 hold 启发式 + 撤销装载点 clearDrawContainer，按引擎语义重做（并解 T-0072/T-0074） | 6 | — | `notes.md` `design.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | — | — | — |
-| [`T-0084`](./T-0084/ticket.json) | P2 | req | `emulator/render` | 转场效果（i24f/i250/i251）只写了记录表，渲染端扫描带未实现 ⇒ 画面看不到任何转场 | 5 | — | `notes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | — | — | — |

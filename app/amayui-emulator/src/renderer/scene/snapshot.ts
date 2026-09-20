@@ -9,6 +9,7 @@ import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTr
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
 import { SCENE_LAYER_HI, SCENE_LAYER_LO, applySceneXformToPlacement, sceneLayerAffected } from './ops.js';
+import { scTransitionBands, scTransitionBlurPlan, scTransitionOffset, scTransitionTargetRect } from './transition.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import type { L2dInstance, L2dNode } from '../../live2d/runtime.js';
 import { VIEW_H, VIEW_W } from '../viewport.js';
@@ -173,6 +174,50 @@ export interface SceneSnapshot {
     slotModes: [number, number][];
     /** `0x33F` op1：场景默认混合选择子。 */
     sceneBlend: number;
+    /**
+     * ★**转场窗的运行期进度**（`tickets/T-0084`；引擎 `sub_4B06D0`）。
+     *
+     * 与 `transitions`（脚本下发的**原始记录**）分开的原因见 `scene/transition.ts` 文件头：
+     * 引擎会把窗口起点 `[1]` 与"活动位" `[3]` 就地改在记录上，而那张记录在 emulator 里是
+     * **写入端守卫的 deepEqual 对象** ⇒ 运行期值一律走这里。
+     */
+    transitionProgress: {
+      id: number;
+      /** `[0]`：0 = 淡入淡出 / 1 = 分块淡入淡出 / 2 = 盲帘 / 3 = 插值模糊。 */
+      cat: number;
+      /** 运行时锁存的窗口起点（引擎 `[1]`）。 */
+      start: number;
+      active: boolean;
+      finished: boolean;
+      /** 类别 0/3 的进度（类别 2 恒 0）。 */
+      t: number;
+      /** 类别 2 的扫描位移（像素）。 */
+      off: number;
+      /** 本帧条带总数 / 其中来自"旧帧"的条数（类别 2）。 */
+      bands: number;
+      oldBands: number;
+      /** 类别 3 的四通道当前值（c0 Length / c1 CenterU / c2 CenterV / c3 Angle）。 */
+      channels: number[];
+      /** `[4]` 渲染目标层（-1 = 后台缓冲）。 */
+      targetSlot: number;
+      /**
+       * ★**类别 3（`0x250`/`0x251`）的画法参数**（`null` = 不是类别 3）。
+       * 逐条对应引擎的 `SetTechnique` + `SetFloat`（raw 135837-135881）；`approximate` 恒真
+       * （像素是累积近似，见 `scene/transition.ts` 的 `TransitionBlurPlan` 偏差披露）。
+       */
+      blur: {
+        technique: 'Zoomblur' | 'Slideblur';
+        /** `Length`（px）。 */
+        length: number;
+        /** SlideBlur 的角度（度）。 */
+        angle: number;
+        /** ZoomBlur 中心（归一化到目标层尺寸，raw 135846/135850）。 */
+        centerU: number;
+        centerV: number;
+        samples: number;
+        approximate: true;
+      } | null;
+    }[];
   };
   /**
    * ★**Scene 世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）**：它**只作用于层号 ∈ [20,30) 的项**
@@ -381,6 +426,46 @@ export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost |
       renderTargetSlot: s.render4.renderTargetSlot,
       slotModes: [...s.render4.slotModes.entries()].map(([k, v]) => [k, v] as [number, number]),
       sceneBlend: s.render4.sceneBlend,
+      // ★转场窗的**运行期进度**（`tickets/T-0084`）。**刻意是独立字段**：`transitions` 是写入端
+      //   逐格照抄引擎的脚本语义真源（那条被整条 `deepEqual` 断言），运行期的 `[1]`/`[3]` 改动
+      //   只活在这里（见 `scene/transition.ts` 文件头纪律 1）。
+      //   条带数/位移依赖 `[15]` 那张绘制项的矩形 ⇒ 用同一个纯函数现算，避免"快照/画面两套几何"。
+      transitionProgress: [...s.render4.transitions.entries()]
+        .map(([id, rec]) => {
+          const rt = s.render4.transitionRuntime.get(id);
+          if (!rt) return null;
+          const rect = scTransitionTargetRect(s, rec);
+          const bands = rect ? scTransitionBands(rec, rt, clock, rect) : [];
+          // ★类别 3 的画法参数（引擎 raw 135837-135881 的 `SetTechnique`/`SetFloat` 逐条）——
+          //   像素是**累积近似** ⇒ `approximate` 恒真，报告里看得见（沿用 `T-0085` 的"缺口可见"手法）。
+          const blur = scTransitionBlurPlan(rec, rt, { w: VIEW_W, h: VIEW_H });
+          return {
+            id,
+            cat: rec[0] ?? 0,
+            start: rt.start,
+            active: rt.active,
+            finished: rt.finished,
+            t: rt.t,
+            off: rect ? scTransitionOffset(rec, rt, clock, rect) : 0,
+            bands: bands.length,
+            oldBands: bands.filter((b) => b.src === 'old').length,
+            channels: [...rt.channels] as number[],
+            targetSlot: rec[4] ?? -1,
+            blur: blur
+              ? {
+                  technique: (blur.zoom ? 'Zoomblur' : 'Slideblur') as 'Zoomblur' | 'Slideblur',
+                  length: blur.length,
+                  angle: blur.angle,
+                  centerU: blur.centerU,
+                  centerV: blur.centerV,
+                  samples: blur.samples,
+                  approximate: blur.approximate,
+                }
+              : null,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null)
+        .sort((a, b) => a.id - b.id),
     },
     // ★Scene 世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）：导出锚 + **它在哪些项上真的生效**
     //   （`before`/`after` 逐项给，这样"只作用于层号 ∈ [20,30)"这句话可被断言，而不是只看写入点）。
@@ -486,6 +571,13 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.commits) parts.push(`commits=${r4.commits}`);
     if (r4.transitionClears) parts.push(`transitionClears=${r4.transitionClears}`);
     if (r4.transitions.length) parts.push(`transitions=${JSON.stringify(r4.transitions)}`);
+    if (r4.transitionProgress.length) {
+      parts.push(
+        `transitionProgress=${r4.transitionProgress
+          .map((p) => `${p.id}:cat${p.cat}${p.active ? ' A' : p.finished ? ' F' : ''} t=${p.t.toFixed(3)} off=${p.off} bands=${p.bands}/${p.oldBands} slot=${p.targetSlot}`)
+          .join(' ')}`,
+      );
+    }
     if (r4.drawMode.length) parts.push(`drawMode=${JSON.stringify(r4.drawMode)}`);
     if (r4.entryParams.length) parts.push(`entryParams=${JSON.stringify(r4.entryParams)}`);
     if (r4.slotParams.length) parts.push(`slotParams=${JSON.stringify(r4.slotParams)}`);

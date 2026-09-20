@@ -4,6 +4,7 @@
 import type { Item, MeshObj } from '../drawItem.js';
 import type { TextFrame } from '../../text/layout.js';
 import type { L2dHost } from '../../live2d/runtime.js';
+import type { TransitionRuntime } from './transition.js';
 
 
 /** 场景模型状态（= `Scene` 在 emulator 侧的可见部分）。 */
@@ -108,6 +109,16 @@ export interface SceneState {
      * ★仅**建模记录**：扫描带绘制与"窗口未到点挂起 `0x400` 门"未实现（见 `handlers/gfx-state.ts` 的扩展点）。
      */
     transitions: Map<number, number[]>;
+    /**
+     * ★**转场窗的运行时状态**（引擎把它就地写在记录的 `[1]`/`[3]` 上：起点锁存 raw 134867-134871、
+     * 到点清 `[3]` = 死记录）。emulator **刻意另存一份**：`transitions` 是写入端逐格照抄引擎的
+     * **脚本语义真源**，`test/op-24f-250-251-transitions.test.ts` 对它做整条 `deepEqual`
+     * ⇒ 运行期的时钟绝不能回写进去（见 `scene/transition.ts` 文件头纪律 1）。
+     *
+     * 生命周期 = `transitions`：`scTransitionTick` 在"一条都不活动"时把两者一起清掉
+     * （引擎 raw 136840-136841 的 `sub_4A9BE0(Scene+1048)`）。见 `tickets/T-0084`。
+     */
+    transitionRuntime: Map<number, TransitionRuntime>;
     /** `0x229` 绘制模式 5 元组（2 int + 3 float）。 */
     drawMode: number[];
     /** `0x242` DrawItem `+720`（entry → value）。 */
@@ -241,6 +252,7 @@ export function newSceneState(): SceneState {
       commits: 0,
       transitionClears: 0,
       transitions: new Map<number, number[]>(),
+      transitionRuntime: new Map<number, TransitionRuntime>(),
       drawMode: [0, 0, 0, 0, 0],
       entryParams: new Map<number, number>(),
       slotParams: new Map<number, number[]>(),

@@ -79,6 +79,7 @@ import {
   scMsgWinSync,
   scSnapshot,
   scL2dTick,
+  scTransitionTick,
   snapshotToText,
   newSceneState,
   type SceneSnapshot,
@@ -723,6 +724,9 @@ export class HeadlessScene implements NativeBridge {
   /** `FrameHost.advanceModel`：把模型推进到本帧时钟（headless 没有渲染，这就是"合成"的全部内容）。 */
   advanceModel(nowMs: number): void {
     this.advance(nowMs);
+    // ★转场窗（`tickets/T-0084`）：锁存起点（首帧 raw 134867-134871）/ 推进 t·off / 到点杀记录 /
+    //   "一条都不活动"时清空整张记录表（raw 136840-136841）。与 pixi 宿主共用 `scene/transition.ts`。
+    scTransitionTick(this.scene, nowMs);
     // ★Live2D：动作推进**只在"这一帧真要画的节点"上**发生（引擎 `sub_4783D0` → `sub_4BCB50`）——
     //   与上面 `advance` 同一个时钟域，两个宿主共用 `scL2dTick` 一份实现（T-0054）。
     scL2dTick(this.scene, nowMs);

@@ -48,6 +48,7 @@ import type { SceneState } from './state.js';
 import type { SceneXform, SceneXformKind } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
 import { l2dAdvance, l2dNodeDrawable } from '../../live2d/runtime.js';
+import { scTransitionsPending } from './transition.js';
 
 /**
  * `0x1FB` draw-texture：建/覆盖一个 DrawItem（等价引擎 `sub_4ACE50`），并置 bit0（可绘制）。
@@ -767,7 +768,10 @@ export function scPoolPending(s: SceneState, clock: number): boolean {
  * 而"门等待期间持续合成"是**帧驱动**的职责（产品路径在门分支里无条件 present）。
  */
 export function sceneNeedsRender(s: SceneState, clock: number, dirty: boolean): boolean {
-  return dirty || scAnimationsPending(s, clock);
+  // ★第三项：**有活动转场窗**（引擎 `Scene+46508` 的置位点之一就是转场消费端 raw 136718-136719
+  //   `if (46512 | 46516) 46508 = 1`，唯一读者 = `sub_40BE10` raw 16022 = needsRender）。
+  //   少了这一项，转场期间 `present:'needsRender'` 档会**停止合成**，条带/淡入淡出只画一帧。
+  return dirty || scAnimationsPending(s, clock) || scTransitionsPending(s);
 }
 // ---------------------------------------------------------------------------
 // 消息窗文本（引擎「每窗一张离屏表面 + 逐行显现」的等价物）
@@ -900,6 +904,9 @@ export function scClearTransitions(s: SceneState): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.transitionClears++;
   s.render4.transitions.clear();
+  // ★运行期窗状态必须跟着清（`tickets/T-0084`）：不清的话下一次同 id 写入会继承上一轮的锁存起点
+  //   （`scTransitionTick` 只在"一条都不活动"时清；`0x224` 是脚本显式清表，更该立刻清）。
+  s.render4.transitionRuntime.clear();
 }
 
 /** 引擎新建转场记录的默认值（`sub_49A640` raw 117059-117077）：24 格，其中 `[4] = -1`（= 后台缓冲）。

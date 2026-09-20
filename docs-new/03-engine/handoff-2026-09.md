@@ -29,12 +29,12 @@
 
 | 项 | 值 | 复核命令 |
 |---|---|---|
-| 测试 | **745 tests / 744 pass / 1 skip / 0 fail**（1 skip = 本机无真存档时才跑） | `cd app/amayui-emulator && npm run verify`（≈40s，含 typecheck + 死写检测） |
+| 测试 | **771 tests / 759 pass / 12 skip / 0 fail**（12 skip 全是"本机没有某样东西"：真游戏 base 目录 / `native/win32-input` 未构建 / 没有 live2d 资源；见 §3.0 的环境构造） | `cd app/amayui-emulator && npm run verify`（≈40s，含 typecheck + 死写检测） |
 | 死写 | **0** | 同上（`check:dead-writes` 扫 `Item`/`MeshObj` 字段） |
-| 缺口台账 | **未实现 0（语料 0）/ unjustified no-op 0 / 有据 no-op 8 / 已实现 34 / deferred 27**（共 69 条）★「未实现 0」= 语料用到的零注册指令**已全部定性**（不再有"没人看过"的）；`deferred` 27 条（**292 处语料**）**仍会硬停** | `node scripts/build-opcode-gaps.mjs`（写模式）／`--check`（CI 口径，exit 1 即漂移） |
+| 缺口台账 | **未实现 0（语料 0）/ unjustified no-op 0 / 有据 no-op 8 / 已实现 34 / deferred 28**（共 70 条；轮 5 新增 `0x24D` 类别 1 = 语料 0 处）★「未实现 0」= 语料用到的零注册指令**已全部定性**（不再有"没人看过"的）；`deferred` **28** 条（**292 处语料**；轮 5 新增的 `0x24D` 是语料 0 处）**仍会硬停** | `node scripts/build-opcode-gaps.mjs`（写模式）／`--check`（CI 口径，exit 1 即漂移） |
 | 能力台账（第二层） | **133 条**：已核验 48 / 已建模未核验 7 / 部分 33 / 缺失 21 / n/a 24 | `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --root . --validate` |
 | 票据 | **88 张**（doing 4 / open 19 / done 64 / dropped 1） | `.agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --validate` + `node scripts/build-tickets.mjs` |
-| 批次 | **B0 ✅ B1 ✅ B2 两步（剩计划层）B3 ✅（缺口清零）B4 剩 3（2 条为已披露偏差）B5 (A)(B)(C) ✅ B6 ✅ B7 未开始** | `repair-plan-2026-09.md` §2d |
+| 批次 | **B0 ✅ B1 ✅ B2 两步（剩计划层）B3 ✅（缺口清零）B4 剩 3（2 条为已披露偏差）B5 (A)(B)(C) ✅ B6 ✅ B7 未开始**；**轮 5（2026-09）：`T-0084` 转场渲染**——窗口模型 + 12 种条带几何 + 类别 0/2 的**离屏槽**合成已落地（缺口台账/能力台账计数不变；详见 `repair-plan-2026-09.md` §2f） | `repair-plan-2026-09.md` §2d / §2f |
 
 ## 2. 真源与生成物（**生成物一律手改禁止**）
 
@@ -61,6 +61,12 @@
    `batch-task-runner`（批量）、`amayui-ui-text-render`（UI 图片文字）、`amayui-mnemonic-rename`（助记符改名）。
 3. **并发写纪律（本轮踩过 3 次）**：`--set` 的**值里不要写 ASCII 逗号**（会被当数组分隔符）、
    note 里引用短语用「」而不是 ASCII 引号（会截断 JSON）；**多 agent 并行时对既有文件只用 `edit` 定点替换，绝不用 `write` 整文件重写**。
+4. **环境要自己构造**（2026-09 系统变更后：本机**没有真游戏安装**）：读档链 E4 用的 079 存档不在默认
+   overlay 里，样本在仓库 `cache/`（`SAVE79.DAT`/`SAVE79.STH`）⇒ **按 `cache/README.md` 复制到
+   `<repo>/.tmp/appdata/Eushully/天結いキャッスルマイスター.overlay/SAVE/` 并把 mtime 拨回
+   头里的存档时间**。★**不要**为了跑那几个 `SAVE00.*` 用例把 079 改名成 00、也不要自造
+   `base/SYS4REG.INI`/`base/SAVE/SAVE.DAT` —— 实测那样做会让 `config-version-substr` 与
+   `engine-config` 红在**与环境有关、与实现无关**的地方（细节与理由见 `cache/README.md`）。
 
 ```bash
 # ① 基线（必须全绿）
@@ -125,7 +131,9 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 
 ### 5.2 单点但边界清晰
 
-- **`T-0084` 转场扫描带**：★**规格已在手**（`docs-new/03-engine/transition-render-spec-2026-09.md`：`sub_4B06D0` 体全覆盖读过，24 格全表 + 窗口门 + 条带几何 + 四类别画法 + emulator 集成点 + 守卫方案；关键公式我已独立复核）。**这是当前"静默缺失"里最容易兑现的一条**（脚本已经在写记录，只是没人画）。✅ **前置 `T-0087` 已完成**（`0x223` 的类别 0 记录已写进 `Scene+1048` 记录表；此前写进无人读的 `Engine.itemRegions`，178 处语料的转场对渲染端不可见）。★另有两条已订正：窗口门**不是** `0x400`（那是脚本等待门计时器），应接 `Scene+46508 → needsRender`；消费端区间是 raw **134417-136734**。
+- **`T-0084` 转场扫描带**：★**规格已在手**（`docs-new/03-engine/transition-render-spec-2026-09.md`）。**轮 5 已落地窗口模型 + 12 种条带几何 + 类别 0/2 的离屏合成**（`scene/transition.ts` + `TextureCache.composeIntoSlot`；守卫 `sc-transition-window`(11)/`sc-transition-geometry`(10)/`transition-render-wiring`(4)/`transition-corpus-e3`(1)）。
+  **★规格 S4 的近似是错的（已订正）**：`[4]` **不是"整屏"**，是**渲染目标层**（`sub_4A50C0(_this, v384[4])` raw 136174/134937/135824）—— 语料里那是脚本自己 `create-texture` 出来的离屏槽，随后由引用它的绘制项呈现（`src/SC0000.txt:1337-1339`）。**所以 T-0084 的渲染端与「路线 D：平面/离屏合成」同源**（本轮先把"画进离屏槽"这条腿打通了）。
+  **仍缺**：类别 1 `0x24D`（§3.5 U2 未确证）、类别 3 `0x250`/`0x251`（**78 处语料**，需要真模糊 —— emulator 没有 filter）、`[4]` 指向非 `create-texture` 槽、`Scene+46508/46512/46516` 三个标志本身。★另有两条已订正：窗口门**不是** `0x400`（那是脚本等待门计时器），应接 `Scene+46508 → needsRender`；消费端区间是 raw **134417-136734**。
 - ✅ **`T-0085` `set:BlankExtentMode`（轮 4 已完成）**：门与公式接线，mode 0 与旧纯算术逐字等价；★仍缺**宿主字形度量来源**（GDI `GetTextExtentPoint32A` 的等价物）⇒ mode 1 显式回退并把 `blankExtentFallback` 置真（缺口可见）；两种候选来源写在 `text/layout.ts` 文件尾。`0x204` 直绘与绘制期"无轮廓字"两点未接。
 - **`0x1c4`**：需要**音频侧对外回读缝**（"语音总线是否占线"）；`AudioEngine` 有内部判据但 `NativeBridge` 只有 intent 方向，且 VM/音频跨进程 ⇒ 先定缝的形状。
 - **`0x23a`**：先确证 `Engine+91322` 表的元素类型（全反编译仅 2 处读、**无写点**；与 `94672` 的 L2D 实例槽表**不是**同一张），再建 `+1068` 状态格与其消费者。

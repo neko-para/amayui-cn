@@ -83,7 +83,7 @@
       "docStatus": "仅映射",
       "source": "was-gap",
       "disposition": "implemented",
-      "note": "给绘制项登记区域记录（9 dword，键=handle）：按引擎 sub_4ADDB0 逐格原样存进 Engine.itemRegions（[2]=op7 [3]=op8 [4]=op2槽 [5]=op3 [6]=op5 [7]=op4 [8]=op6）；B3 已实现，守卫 test/op-223-item-region.test.ts。★部分：惰性建纹理与渲染侧消费端仍未建模（记在本票）。★★订正（T-0087，2026-09）：本条**不是**「给绘制项登记区域记录」，而是『转场记录表 Scene+1048 · 类别 0（全屏交叉淡化）』的**写入端** —— `sub_4ADDB0` 的所有写入都经 `sub_4AAE10(_this + 262, &key)`，`_this + 262` = dword 下标 262 = 字节 1048，与 0x24f/0x250/0x251 **同一张表**；`[0] = 0` ⇒ 类别 0（帧渲染器 sub_4B06D0 按 [0] 分四派）。旧实现写进 emulator 私有的 Engine.itemRegions 属『数据对、容器错』：无生产读者（死模型）、渲染端不可见、记录长度 9 ≠ 引擎 24、默认格 [4] = -1 与 [9..12] = SetRect(0,0,0,0) 全丢（引擎先 sub_49A640 建 24 格默认记录再覆盖前 9 格）。现已改走 native.setTransition → scSetTransition（24 格默认记录为底逐格覆盖）并删除 Engine.itemRegions，守卫改为 test/op-223-transition-fade.test.ts（断言 [0] === 0、前 9 格逐格相等、长度 24、[9..13] 保持默认）。类别 0 的**渲染端**仍未建模（记在本票）",
+      "note": "给绘制项登记区域记录（9 dword，键=handle）：按引擎 sub_4ADDB0 逐格原样存进 Engine.itemRegions（[2]=op7 [3]=op8 [4]=op2槽 [5]=op3 [6]=op5 [7]=op4 [8]=op6）；B3 已实现，守卫 test/op-223-item-region.test.ts。★部分：惰性建纹理与渲染侧消费端仍未建模（记在本票）。★★订正（T-0087，2026-09）：本条**不是**「给绘制项登记区域记录」，而是『转场记录表 Scene+1048 · 类别 0（全屏交叉淡化）』的**写入端** —— `sub_4ADDB0` 的所有写入都经 `sub_4AAE10(_this + 262, &key)`，`_this + 262` = dword 下标 262 = 字节 1048，与 0x24f/0x250/0x251 **同一张表**；`[0] = 0` ⇒ 类别 0（帧渲染器 sub_4B06D0 按 [0] 分四派）。旧实现写进 emulator 私有的 Engine.itemRegions 属『数据对、容器错』：无生产读者（死模型）、渲染端不可见、记录长度 9 ≠ 引擎 24、默认格 [4] = -1 与 [9..12] = SetRect(0,0,0,0) 全丢（引擎先 sub_49A640 建 24 格默认记录再覆盖前 9 格）。现已改走 native.setTransition → scSetTransition（24 格默认记录为底逐格覆盖）并删除 Engine.itemRegions，守卫改为 test/op-223-transition-fade.test.ts（断言 [0] === 0、前 9 格逐格相等、长度 24、[9..13] 保持默认）。类别 0 的**渲染端**当时仍未建模（见本 note 末尾的轮 5（T-0084）补记：现已落地）。★轮 5（T-0084）：消费端**已落地一部分** —— 窗口模型（首帧锁存 [1]、算 t/off、到点杀记录、一遍绘完没有在途转场就清空整表）+ 类别 0 的 t 进快照 transitionProgress；**渲染端类别 0 已画进记录 [4] 的离屏槽**（引擎 sub_4A50C0 的第二参 raw 136174 —— 不是屏幕；语料实证 src/SC0000.txt:1337-1339）。守卫 test/sc-transition-window.test.ts / sc-transition-geometry.test.ts / transition-render-wiring.test.ts / transition-corpus-e3.test.ts",
       "ticket": "T-0076"
     },
     {
@@ -113,6 +113,19 @@
       "ticket": "T-0076"
     },
     {
+      "opcode": 589,
+      "mnemonic": "i24d",
+      "name": "",
+      "handler": "sub_4255E0",
+      "handlerBodyLine": 32840,
+      "argc": 12,
+      "docStatus": "仅映射",
+      "source": "corpus-unregistered",
+      "disposition": "deferred",
+      "note": "★语料 **0 处**（`grep -c i24d src/*.txt` = 0）⇒ 现在实现它没有任何可见收益。体内真实行为：`sub_4255E0`（raw 32840-32957）读 op1..op12 → `sub_4ADEE0`（raw 132637-132683）= 转场记录 `Scene+1048` 的**类别 1（分块淡入淡出）写入端**：`[0]=1`、`[13]=a10`（子类型）、`[9..12]=a6..a9`（裁剪矩形，`SetRect` 四元组）—— 与 `0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）同一条 `sub_4AAE10` 路径。**为什么 deferred**：消费端可见效果未确证（`transition-render-spec-2026-09.md` §3.5 的 U2 —— `sub_4B06D0` 里类别 1 走的是两趟 item 重绘 + `sub_4A2750([9..12])` 收尾，而「分块/随机」参数来自 `SetRandomFade` 族、不在 `sub_4B06D0` 内），且 emulator 的转场渲染目前只落类别 0/2/3。扩展点 = 先把 U2 读清（两趟重绘 + `sub_4A2750` + `SetRandomFade` 族的参数来源），再按 `scTransitionBands` 的同一套口径补类别 1；届时 handler 也要按 `0x223` 的先例注册成 `op_set_transition_block_fade`。见 `tickets/T-0084`。",
+      "ticket": "T-0084"
+    },
+    {
       "opcode": 593,
       "mnemonic": "i251",
       "name": "",
@@ -122,7 +135,7 @@
       "docStatus": "已核对",
       "source": "corpus-unregistered",
       "disposition": "implemented",
-      "note": "语料 44 处/21 文件 ★B3 已实现（handler op_set_transition_zoom_blur；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 33025-33055 = arity 槽 25（=2*12+1 ⇒ argc 12，与 .lst 的 push 0Ch…push 1 一致）+ 取 op1..op12 落 sub_4AFA30（raw 133860-133935）：先 sub_4AAAF0 确保转场记录存在（引擎 Scene+1048，96 字节 = 24 dword，键 = op1），再写 [0]=3/[1]=0/[2]=op11(延迟)/[3]=op12(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[7]=op4(跨度)/[13]=1/[16]=op5→[20]=op8、[17]=op6→[21]=op9、[18]=op7→[22]=op10、[19]=[23]=0。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 135803-136321）：[13]==1 ⇒ 效果对象收 ZoomBlur + CenterU/V（否则 SlideBlur，raw 135837-135858），[16..19]→[20..23] 四通道按窗口 t 插值（raw 135815-135821）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）",
+      "note": "语料 44 处/21 文件 ★B3 已实现（handler op_set_transition_zoom_blur；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 33025-33055 = arity 槽 25（=2*12+1 ⇒ argc 12，与 .lst 的 push 0Ch…push 1 一致）+ 取 op1..op12 落 sub_4AFA30（raw 133860-133935）：先 sub_4AAAF0 确保转场记录存在（引擎 Scene+1048，96 字节 = 24 dword，键 = op1），再写 [0]=3/[1]=0/[2]=op11(延迟)/[3]=op12(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[7]=op4(跨度)/[13]=1/[16]=op5→[20]=op8、[17]=op6→[21]=op9、[18]=op7→[22]=op10、[19]=[23]=0。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 135803-136321）：[13]==1 ⇒ 效果对象收 ZoomBlur + CenterU/V（否则 SlideBlur，raw 135837-135858），[16..19]→[20..23] 四通道按窗口 t 插值（raw 135815-135821）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）。★轮 5（T-0084）：窗口模型 + **四通道按 t 插值**（raw 135815-135821）已落地并进快照 transitionProgress；**但模糊本身仍未画**（emulator 没有 filter —— 如实跳过、不造假近似），所以本条的画面效果与 0x250 一样仍不可见。消费端区间订正为 **134417-136734**",
       "ticket": "T-0076"
     },
     {
@@ -135,7 +148,7 @@
       "docStatus": "已核对",
       "source": "corpus-unregistered",
       "disposition": "implemented",
-      "note": "语料 34 处/20 文件 ★B3 已实现（handler op_set_transition_slide_blur；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 32997-33023 = arity 槽 21（=2*10+1 ⇒ argc 10，与 .lst 的 push 0Ah…push 1 一致）+ 取 op1..op10 落 sub_4AF880（raw 133789-133858）：转场记录（Scene+1048，96 字节 = 24 dword，键 = op1）写 [0]=3/[1]=0/[2]=op9(延迟)/[3]=op10(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[7]=op4(跨度)/[13]=0/[16]=op5→[20]=op7、[19]=op6→[23]=op8、[17]=[18]=[21]=[22]=0。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 135803-136321）：[13]==0 ⇒ 效果对象收 SlideBlur（raw 135856-135858），[16..19]→[20..23] 四通道按窗口 t 插值（raw 135815-135821）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）",
+      "note": "语料 34 处/20 文件 ★B3 已实现（handler op_set_transition_slide_blur；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 32997-33023 = arity 槽 21（=2*10+1 ⇒ argc 10，与 .lst 的 push 0Ah…push 1 一致）+ 取 op1..op10 落 sub_4AF880（raw 133789-133858）：转场记录（Scene+1048，96 字节 = 24 dword，键 = op1）写 [0]=3/[1]=0/[2]=op9(延迟)/[3]=op10(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[7]=op4(跨度)/[13]=0/[16]=op5→[20]=op7、[19]=op6→[23]=op8、[17]=[18]=[21]=[22]=0。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 135803-136321）：[13]==0 ⇒ 效果对象收 SlideBlur（raw 135856-135858），[16..19]→[20..23] 四通道按窗口 t 插值（raw 135815-135821）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）。★轮 5（T-0084）：窗口模型 + **四通道按 t 插值**（raw 135815-135821）已落地并进快照 transitionProgress；**但模糊本身仍未画**（emulator 没有 filter —— 如实跳过、不造假近似），所以本条的画面效果与 0x251 一样仍不可见。消费端区间订正为 **134417-136734**",
       "ticket": "T-0076"
     },
     {
@@ -330,7 +343,7 @@
       "docStatus": "已核对",
       "source": "corpus-unregistered",
       "disposition": "implemented",
-      "note": "引擎 handler sub_4258F0（体起始 raw 32969）；★B3 已实现（handler op_set_blind_wipe；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 32969-32995 = arity 槽 21（=2*10+1 ⇒ argc 10，与 .lst 的 push 0Ah…push 1 一致）+ 取 op1..op10 落 sub_4AF6A0（raw 133703-133787）= 引擎错误串自证的名字 **SetBlindWipe**：转场记录（Scene+1048，96 字节 = 24 dword，键 = op1）写 [0]=2/[1]=0/[2]=op9(延迟)/[3]=op10(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[6]=op5/[7]=op4(跨度)/[8]=op6/[13]=op7(盲式类型)/[14]=op8(分割宽度)/[15]=op1(目标绘制项 handle)。两条边界的**方向相反**：类型按 unsigned 比 0xB，非法 ⇒ 只打「タイプが不正です．」**不写记录**；分割宽度 < 1 ⇒ 就地改成 (split=1, 延迟=0, 时长=0, 类型=-1) 后 **goto LABEL_4 照写**（引擎用负类型让渲染器立即中止，raw 134935-134936）。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 134856-135800：switch([13]) 各扫描带画法、[14] 分割宽度、[15] 经 sub_459EA0 查 Scene+1032）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）",
+      "note": "引擎 handler sub_4258F0（体起始 raw 32969）；★B3 已实现（handler op_set_blind_wipe；宿主缝 native.setTransition → SceneState.render4.transitions），守卫 test/op-24f-250-251-transitions.test.ts。体 raw 32969-32995 = arity 槽 21（=2*10+1 ⇒ argc 10，与 .lst 的 push 0Ah…push 1 一致）+ 取 op1..op10 落 sub_4AF6A0（raw 133703-133787）= 引擎错误串自证的名字 **SetBlindWipe**：转场记录（Scene+1048，96 字节 = 24 dword，键 = op1）写 [0]=2/[1]=0/[2]=op9(延迟)/[3]=op10(时长)/[4]=op2(工作纹理槽)/[5]=op3(起始绘制项 id)/[6]=op5/[7]=op4(跨度)/[8]=op6/[13]=op7(盲式类型)/[14]=op8(分割宽度)/[15]=op1(目标绘制项 handle)。两条边界的**方向相反**：类型按 unsigned 比 0xB，非法 ⇒ 只打「タイプが不正です．」**不写记录**；分割宽度 < 1 ⇒ 就地改成 (split=1, 延迟=0, 时长=0, 类型=-1) 后 **goto LABEL_4 照写**（引擎用负类型让渲染器立即中止，raw 134935-134936）。消费端 = 帧渲染器 sub_4B06D0 的转场窗（raw 134856-135800：switch([13]) 各扫描带画法、[14] 分割宽度、[15] 经 sub_459EA0 查 Scene+1032）。未建模（扩展点）= sub_4A2C10 的工作纹理对象、扫描带绘制与窗口门挂起（engine-capabilities 的 clock-read-transition-window）。★轮 5（T-0084）：消费端**已落地** —— 窗口模型 + **12 个 case 的条带几何全部按 raw 134947-135510 实现**（test/sc-transition-geometry.test.ts 表驱动）+ 类别 2 的条带**画进记录 [4] 的离屏槽**（不是屏幕）。未建模只剩 sub_4A2C10 的工作纹理对象本身与 [4] 指向非 create-texture 槽的情形。消费端区间订正为 **134417-136734**",
       "ticket": "T-0076"
     },
     {
@@ -907,13 +920,13 @@
     }
   ],
   "counts": {
-    "entries": 69,
+    "entries": 70,
     "byDisposition": {
       "unimplemented": 0,
       "engine-internal": 8,
       "engine-internal-unjustified": 0,
       "implemented": 34,
-      "deferred": 27
+      "deferred": 28
     }
   }
 }

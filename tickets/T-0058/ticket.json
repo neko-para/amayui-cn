@@ -14,9 +14,14 @@
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/electron/nativeAddon.ts",
+      "anchor": "[native] win32-input available=",
+      "note": "★主进程加载摘要：这一行就是原先记在 .tmp/amayui-emulator.log 里的实证落点（.tmp 是 gitignore 的临时区，不能当证据锚点）。日志实证本身是 .node 真产物可用时的运行时输出；守卫见 test/native-win32.test.ts。"
+    },
+    {
       "file": "native/win32-input/CMakeLists.txt",
       "anchor": "set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS \"/DELAYLOAD:node.exe\")",
-      "note": "★Windows + Electron 必需的延迟加载钩子（`node.lib` 的导入记录写的是 node.exe，而宿主是 electron.exe）"
+      "note": "★Windows + Electron 必需的延迟加载钩子（node.lib 的导入记录写的是 node.exe，而宿主是 electron.exe）"
     },
     {
       "file": "native/win32-input/src/win32_input.cc",
@@ -26,22 +31,22 @@
     {
       "file": "native/win32-input/index.js",
       "anchor": "function loadAddon(opts = {}) {",
-      "note": "唯一加载点：搜索链 + 降级（`available/reason`），门面让调用方零分支"
+      "note": "唯一加载点：搜索链 + 降级（available/reason），门面让调用方零分支"
     },
     {
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
       "anchor": "const phys =",
-      "note": "主进程三跳换算的最后一跳：`screen.dipToScreenPoint(dip)` —— 缺它则缩放 ≠ 100% 时光标挪到偏左上角"
+      "note": "主进程三跳换算的最后一跳：screen.dipToScreenPoint(dip) —— 缺它则缩放 ≠ 100% 时光标挪到偏左上角"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "setSystemCursor(x: number, y: number): void {",
-      "note": "渲染侧那跳：虚拟→客户区，用与 `attachMouseInput.toVirtual` **同一套** `getBoundingClientRect`（互为逆运算）"
+      "note": "渲染侧那跳：虚拟→客户区，用与 attachMouseInput.toVirtual 同一套 getBoundingClientRect（互为逆运算）"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "c.native.setSystemCursor?.(x, y);",
-      "note": "0x10A 的两半件：先 `input.setCursor`（引擎侧真源）再交给宿主缝（同一对坐标）"
+      "note": "0x10A 的两半件：先 input.setCursor（引擎侧真源）再交给宿主缝（同一对坐标）"
     },
     {
       "file": "app/amayui-emulator/test/native-win32.test.ts",
@@ -56,22 +61,17 @@
     {
       "file": "native/win32-input/tools/smoke.cjs",
       "anchor": "AMAYUI_WIN32_INPUT_MOVE_TEST",
-      "note": "模块级真机核验：默认只读；显式开环境变量才 +3px 并**必定复位**"
-    },
-    {
-      "file": ".tmp/amayui-emulator.log",
-      "anchor": "[native] win32-input available=true",
-      "note": "★产品宿主核验：`tools/boottime.cjs` 启动真实 Electron（electron.exe）后日志第 2 行即证明 `.node` 加载成功（延迟加载钩子生效）"
+      "note": "模块级真机核验：默认只读；显式开环境变量才 +3px 并必定复位"
     },
     {
       "file": "native/win32-input/README.md",
       "anchor": "## 打包（二进制怎么随应用走）",
-      "note": "打包方案成文（asar 不能放 .node / asarUnpack / extraResources / prebuildify / 签名 / 排障表）"
+      "note": "打包方案"
     },
     {
       "file": "docs-new/04-app/native-addon.md",
       "anchor": "## 5. 打包（二进制怎么随应用走）",
-      "note": "工程口径长文（何时才该加原生模块 / 目录与统一口径 / 选型 / 加载与降级 / 打包 / 排障）"
+      "note": "文档落点"
     }
   ],
   "links": {
@@ -112,6 +112,10 @@
     {
       "at": "2026-09-17",
       "what": "接入产品：NativeBridge.setSystemCursor 缝 + 0x10A 调用 + PixiBackend 换算 + IPC（preload/主进程）+ 主进程 nativeAddon.ts（三跳换算+诊断+降级）+ headless 显式 no-op + nativeTap 登记；守卫 test/native-win32.test.ts（7 条）；台账/文档：能力 host-cursor-warp 升 modeled-verified/E3、opcode-table 0x10A 行、input-system §10、docs-new/04-app/native-addon.md ⇒ open → done"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

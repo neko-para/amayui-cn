@@ -82,7 +82,7 @@
 # 0) 先确认基线全绿（约 40s）
 cd app/amayui-emulator && npm run verify          # 期望：722+ tests / 0 fail / 死写 0
 # 1) 缺口清单与处置现状（真源 + 生成物）
-node scripts/build-opcode-gaps.mjs               # 期望：未实现 0 / unjustified 0 / 有据 no-op 8 / 已实现 34 / deferred 27
+node scripts/build-opcode-gaps.mjs               # 期望：未实现 0 / unjustified 0 / 有据 no-op 8 / 已实现 34 / deferred 28（轮 5 起）
 node scripts/build-opcode-gaps.mjs --check       # ★CI 口径：md 陈旧或 counts 漂移都会 exit 1
 # 2) 单个 opcode 的体：先 grep 定义头，再读小节（例：0x1C4）
 #    Select-String -Path engine\天结_unpacked.exe_utf8.c -Pattern '//----- \(0042E8A0\)'
@@ -168,4 +168,38 @@ node scripts/build-opcode-gaps.mjs --check       # ★CI 口径：md 陈旧或 c
 | `T-0085` | ✅ **done**（门与公式接线；mode 0 逐字等价；缺度量来源 ⇒ **可见**回退；第二层 `partial/E2`） |
 | 派生票 | **`T-0087`**（P1，`0x223` 容器错位 —— 由规格复核发现，**已 done**：类别 0 记录改回 `Scene+1048` 记录表、死模型 `Engine.itemRegions` 删除、新守卫 `test/op-223-transition-fade.test.ts`）、**`T-0088`**（AGERC 对话框缝 + 待定产品策略，open） |
 | 计数 | 缺口台账：实现 30 → **34**、deferred 31 → **27**；能力台账 132 → **133** |
+
+---
+
+## 2f. 轮 5（2026-09）产出一览：`T-0084` 转场渲染（进行中）
+
+> **口径**：本轮**只做能由体直接确证的那部分**，并把"做不到的部分"写成有据缺口。
+> 出口判据 = `npm run verify` 全绿（**770 tests / 758 pass / 12 skip / 0 fail**，死写 0）
+> + 能力台账 `--validate` + 票据 `--validate`。
+
+| 线 | 结果 |
+|---|---|
+| **窗口模型** | ✅ `src/renderer/scene/transition.ts`（新）：首帧锁存 `[1]`、按 `clock` 算 `t`/`off`、到点杀记录、**一遍绘完没有在途转场就清空整表**（引擎 raw 134867-134871 / 136840-136841）。两个宿主的 `advanceModel` 共用 `scTransitionTick`；`sceneNeedsRender` 加第三项（引擎 `Scene+46508` ← raw 136718-136719，读者 `sub_40BE10` raw 16022） |
+| **运行期与写入端分离** | ✅ `render4.transitionRuntime` —— 引擎把 `[1]`/`[3]` **就地改在记录上**，而 emulator 的 `render4.transitions` 是写入端守卫的**整条 `deepEqual`** 对象 ⇒ 运行期值一律另存（`0x224` 清表时一起清） |
+| **条带几何** | ✅ `scTransitionBands`：**12 个 case 全部按 raw 134947-135510 实现**（case 1/3 的 `fadd 1.0`、case 4-7 的同步多带、case 8-11 的每带相位递增；`span()` **不做归一化** —— 引擎对 `left > right` 是直接丢弃）。表驱动守卫 `test/sc-transition-geometry.test.ts`(10) |
+| **类别 0/3 的参数** | ✅ 类别 0 的 `t`（raw 136189-136195）与类别 3 的四通道插值（raw 135815-135821，到期用终值）进快照 `render4.transitionProgress` |
+| **渲染端** | ✅ **类别 0（交叉淡化）/ 类别 2（盲帘）/ 类别 3（插值模糊，累积近似）**，且都**画进记录 `[4]` 的离屏槽**（`TextureCache.composeIntoSlot`）：旧帧 = 本帧 `present` **之前**的舞台快照、新帧 = `present` **之后**的快照；转场活动帧绕过 `#holdFrames` 早退。守卫 `test/transition-render-wiring.test.ts`(4) |
+| **类别 3（`0x250`/`0x251`，78 处语料）** | ✅ **参数确证 + 像素累积近似**：`scTransitionBlurPlan`（raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`，含 `CenterU/V` 归一化）+ `scTransitionBlurOffsets`（ZoomBlur = 绕中心均匀缩放、步长 `Length/(|center|*16)`；SlideBlur = 沿 `Angle` 平移、总长 `2*Length`）；采样数取引擎 CPU 回退常数 **33**、中心权重 **3**（raw 126180-126183）。**★已披露偏差**：引擎的 `(2L+1)²` 核（`sub_4A0120`）逐点权重未复刻 ⇒ 类型/快照/注释/票据四处都带 `approximate` 标记 |
+| ★**规格订正 3 处（以体为准）** | ① **`Scene+42600`/`42604` 就是层 36/37**（层表基址 `42456` + `4*36`，raw 10993 索引循环坐实）—— 规格 §1.2 记成「另设的双缓冲屏幕层」是错的；② 类别 3 的 `Tex0` 是**层 36 的纹理**（raw 135883），不是 `layer[[4]]`（§3.4 写错）；③ CPU 回退 `sub_4A62A0(this, 36, [4], …)` 的**源是 36、目标是 [4]**（raw 125960-126010 的 `v85 = a2` = 転送元），而调用点之前刚 `SetTarget(36)`+`Clear` 过 36 ⇒ 与 effect 路径**方向相反** |
+| **类别 1（`0x24D`）** | ✅ **有据 `deferred`**（**新登记台账条目** —— 此前它在 `opcode-gaps.json` 里**根本没有条目**，那本身就是一处「静默」）：`grep -c i24d src/*.txt` = **0 处**，体内真实行为已读清（`sub_4255E0`→`sub_4ADEE0` = 类别 1 写入端），但消费端可见效果未确证（§3.5 U2）⇒ 扩展点写在 note 里。缺口台账计数：deferred 27 → **28** |
+| ★**规格订正（S4）** | `transition-render-spec-2026-09.md` §6.1 S4 的「目标层 `[4]` 视为整屏」**是错的**：`[4]` 是**渲染目标层**。语料实证 `src/SC0000.txt:1337-1339` ⇒ 转场合成进**脚本自己建的离屏槽**。**这也是 T-0084 的渲染端与「路线 D：平面/离屏合成」同源的证据** |
+| **仍缺（有据）** | 类别 3 的**源层**（§7 的 U3：层 36 只在类别 0/1 的 item 重绘 raw 136014-136176 里被填、且那段在类别 3 之后）与 `sub_4B06D0` 的控制流嵌套（U4）；类别 1 的消费端可见效果（U2，但语料 0 处）；`[4]` 指向非 `create-texture` 槽；`Scene+46508/46512/46516` 三个标志本身未建模（只等价折进 `sceneNeedsRender`） |
+| 派生 | `T-0084` open → **doing**；能力台账 `clock-read-transition-window` 的 note 重写（`engine.raw` 订正为 134417-136734、`reads` 补 `Scene+1048`/`42600`/`42604`/`1032`） |
+
+**下一轮的入口**（按本轮结果重排）：
+1. **`T-0084` 的 U3/U4**（现在唯一卡住类别 3 的东西）：**层 36/37 的内容是谁填的** —— 已知它只在
+   类别 0/1 的 item 重绘（raw 136014-136176，被 `Scene+46668 < 2` 门住）里被填，而那段在类别 3 之后；
+   要读清 `sub_4B06D0` 的 `while(2)` 网与层 38（帧函数 raw 136790-136791 的 `SetTarget(38)`）的角色。
+   读清后类别 3 就能从"累积近似"升级成"按真源层模糊"，并且类别 0/2 也能用上记录的**两条 item key 区间**
+   （`[5]/[7]`、`[6]/[8]`）而不是整屏快照。
+2. **E4 证据**：本机还没到过 `i24F`（类别 2，6 站点）与 `i223`（类别 0，178 站点）的脚本路径 ——
+   需要一条能触发它们的可达路径（读档 79 只到 SN0000）。类别 3 的 78 处在 `SC0010` 上已被 E3 覆盖
+   （`test/transition-corpus-e3.test.ts`），但那是**模型级**证据。
+3. 路线 D（平面/离屏合成）与 `T-0066` —— 本轮把"转场画进离屏槽"这条腿打通了，
+   `0x20D`/`0x20E` 的"画进哪个平面"可以照同一条 `composeIntoSlot` 思路接。
 

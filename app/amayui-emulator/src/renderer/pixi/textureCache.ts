@@ -524,6 +524,45 @@ export class TextureCache {
   }
 
   /**
+   * **把一段 2D 合成画进某个程序化槽的表面**（转场用；`tickets/T-0084`）。
+   *
+   * 为什么需要它：引擎的转场消费端 `sub_4B06D0` 是**先 `sub_4A50C0(Scene, [4])` 把渲染目标切到
+   * 记录 `[4]` 指定的那一层、`Clear` 它，再把条带/淡入淡出画进去**（raw 136174 / 134937 / 135824）；
+   * 语料里那一层就是脚本自己 `create-texture` 出来的 1280×720 槽，随后由引用它的绘制项呈现
+   * （`src/SC0000.txt:1337-1339`：`create-texture (global-int 3f5f) 500 2d0 1` →
+   * `draw-texture … (global-int 3f5f) …` → `i251 … (global-int 3f5f) …`）。
+   * 所以 emulator 的等价物 = **把合成结果画进那个槽的画布**（而不是画在屏幕上）。
+   *
+   * 坐标口径与 `drawString` 一致：回调拿到的是**逻辑像素**上下文（物理 DPR 已折进 `setTransform`），
+   * `w`/`h` 是该槽的逻辑尺寸。画完 `source.update()` ⇒ 引用该槽的绘制项下一帧就是新内容。
+   *
+   * @returns 该槽没有 `create-texture` 出来的表面 ⇒ `false`（引擎那条链也是"surface 不存在就报错"）
+   */
+  composeIntoSlot(
+    slot: number,
+    draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void,
+  ): boolean {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) {
+      this.log(`composeIntoSlot slot=${slot} 被忽略：该槽没有 create-texture 出来的表面`);
+      return false;
+    }
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return false;
+    ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = true; // 引擎这条路径的采样器是 LINEAR（见 blitSlotToSlot）
+    draw(ctx, cs.w, cs.h);
+    // 复位（画布是复用的，别把状态留给下一位）
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    cs.tex.source.update();
+    return true;
+  }
+
+  /**
    * `0x259`（`sub_41A3A0`）：**清槽记录表**（引擎清的是两张 1000×2 组 5 dword 记录表 —— 主/影
    * `_this[81174]`/`[86174]`，每项字段 0 = 该槽绑定的**统一文件 id**；`tickets/T-0063`）。
    *

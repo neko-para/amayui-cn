@@ -61,7 +61,7 @@
 | `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
-| `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | 🟠 部分 | E2 · `test/op-24f-250-251-transitions.test.ts` |
+| `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | 🟠 部分 | E2 · `test/sc-transition-window.test.ts` |
 | `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ❌ 缺失 | E0 |
 | `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
 | `render-3d-layer-dual-commit` | 3D | 3D 层对偶逐帧提交 | ❌ 缺失 | E1 |
@@ -268,9 +268,9 @@
 - **能力**：转场窗口进度与扫描带绘制
 - **触发**：过渡表 `Scene+1048` 存在记录且 `Scene+46512` 为 0
 - **缺失时为什么静默**：窗口超时后把记录 `[3]` 清 0 并 `sub_49E170` 收尾，正常流程无日志
-- **引擎**：sub_4B06D0 @ raw 134856-136321
-- **读的字段**：Scene+46500, Scene+46512, Scene+46516
-- **emulator 现状**：★转场**记录表**（`Scene+1048`）已建模（2026-09，T-0076 的 B3 补）：`0x24F`/`0x250`/`0x251` 逐格写入（`handlers/gfx-state.ts`）+ `0x224` 清空（引擎 `sub_4A9BE0` raw 129282-129302 逐节点 delete）+ 导出 `scene/snapshot.ts` 的 `render4.transitions`（守卫 `test/op-24f-250-251-transitions.test.ts`）；**扫描带绘制与窗口进度本身仍未实现** ⇒ 各类 wipe/淡入淡出过场仍然不显示，`Scene+46508/46512/46516` 三个脏标志与「窗口未到点 ⇒ `0x400` 门挂起」的阻塞语义都没接。扩展点 = 在 `scene/ops.ts` 按 `render4.transitions` 的 24 格（`[1]` 起点 / `[2]` 延迟 / `[3]` 时长 / `[13]` 子类型 / `[14]` 条宽 / `[16..23]` 四通道）实现扫描带与门判据
+- **引擎**：sub_4B06D0 @ raw 134417-136734
+- **读的字段**：Scene+1048, Scene+46500, Scene+46512, Scene+46516, Scene+42600(层36), Scene+42604(层37), Scene+1032, Scene+46668
+- **emulator 现状**：★记录表（Scene+1048）已建模（2026-09 T-0076 的 B3 补；写入端 0x223/0x24D/0x24F/0x250/0x251 逐格照抄 + 0x224 清空 + 快照导出）。★轮 5（T-0084）落地四件：①**窗口模型**（首帧锁存 [1]、按 clock 算 t/off、到点杀记录、一遍绘完没有在途转场就清空整表 —— 引擎 raw 134867-134871 / 136840-136841）落在 scene/transition.ts 并由两个宿主的 advanceModel 共用；②**12 种盲帘条带几何**（纯函数，表驱动守卫 test/sc-transition-geometry.test.ts）；③**运行期进度进快照**（render4.transitionProgress —— 刻意与写入端记录分开：引擎就地改 [1]/[3] 而 emulator 的记录表被整条 deepEqual 断言）；④**渲染端落了类别 0（交叉淡化）、类别 2（盲帘）、类别 3（插值模糊，累积近似）**，且都是**画进记录 [4] 的离屏槽**（引擎 sub_4A50C0 的第二参 v384[4]，raw 136174/134937/135824；语料实证 src/SC0000.txt:1337-1339）—— 宿主侧 = TextureCache.composeIntoSlot。★两处订正（以体为准）：**Scene+42600 / 42604 就是层 36 / 37**（层表基址 42456 + 4*36，raw 10993 的索引循环坐实），不存在另设的双缓冲屏幕层；类别 3 的 Tex0 是**层 36 的纹理**（raw 135883），不是 layer[[4]]。★**类别 3 是「参数确证 + 像素已披露近似」**：scTransitionBlurPlan 逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat（含 CenterU/V 归一化），采样数取引擎 CPU 回退常数 33、中心权重 3（raw 126180-126183）、径向步长 Length/(|center|*16)（dbl_51D7E8=16.0）；**未复刻**引擎的 (2L+1)² 核（sub_4A0120）逐点权重与 SlideBlur 的采样密度 ⇒ 类型/快照/注释三处都带 approximate 标记。**仍未实现（有据缺口）**：类别 1 0x24D（语料 0 处 + 规格 §3.5 U2 未确证 ⇒ 已在 analysis/opcode-gaps.json 记 deferred）；[4] 指向非 create-texture 槽的情形（没有画布表面）；类别 3 的**源层**（规格 §7 的 U3：层 36 只在类别 0/1 的 item 重绘 raw 136014-136176 里被填、那段还在类别 3 之后）与 sub_4B06D0 的控制流嵌套（U4）；Scene+46508/46512/46516 三个标志本身未建模（只等价折进 sceneNeedsRender 的第三项）。
 
 ### `render-range-clip-by-index`（absent）
 

@@ -33,6 +33,14 @@ import {
   newSceneState,
   scAdvance,
   scL2dTick,
+  scTransitionTick,
+  scTransitionsPending,
+  scActiveTransitions,
+  scTransitionBands,
+  scTransitionTargetRect,
+  scTransitionBlurPlan,
+  scTransitionBlurOffsets,
+  TRANSITION_BLUR_CENTER_WEIGHT,
   scPoolPending,
   sceneNeedsRender,
   scClearDrawContainer,
@@ -211,6 +219,15 @@ export class PixiBackend implements NativeBridge {
   #cellSpritesCache = new Map<number, { sprite: Sprite; texture: Texture; k: number; src: number }>();
   /** 已经记过"源矩形被裁空"日志的窗（避免每帧刷屏）。 */
   #cellClippedWarned = new Set<number>();
+  /**
+   * **转场用的「旧帧」快照**（`tickets/T-0084`）：窗口开启那一帧的**合成结果**，
+   * 对应引擎的两个屏幕层里的 `Scene+42600`（旧）/ `Scene+42604`（新），
+   * 由消费端 `sub_4B06D0` 当作 scratch 层 36/37 的源（raw 136251 / 136259 / 134974 / 134983）。
+   *
+   * 生命周期 = 一次转场窗：`advanceModel` 里发现"有活动转场"且还没有快照时抓一帧；
+   * 转场表被清空（= 窗结束）时释放。抓取点是**本帧 `present` 之前**，所以拿到的正是上一帧的合成结果。
+   */
+  #transOld: HTMLCanvasElement | null = null;
 
   static async create(
     status: RenderStatus,
@@ -1043,8 +1060,125 @@ export class PixiBackend implements NativeBridge {
     }
   }
 
-  // ---- 动画求值 / 渲染驱动 ---- //
+  // ---- 转场（`tickets/T-0084`）---- //
 
+  /** 抓一帧**当前舞台的合成结果**（转场的新/旧帧来源；与 `frameTick` 同一条 `extract.canvas`）。 */
+  #captureStageCanvas(): HTMLCanvasElement | null {
+    try {
+      const frame = new Rectangle(0, 0, this.app.screen.width, this.app.screen.height);
+      return this.app.renderer.extract.canvas({
+        target: this.stage,
+        frame,
+        resolution: 1,
+      }) as HTMLCanvasElement;
+    } catch (err) {
+      this.#pushLog(`[transition] 抓帧失败：${String(err)}`);
+      return null;
+    }
+  }
+
+  /**
+   * **把本帧的转场结果画进记录 `[4]` 指定的那个离屏槽** —— 引擎 `sub_4B06D0` 的等价物。
+   *
+   * 引擎的次序（raw 136174 / 134937 / 135824 + 136250-136259 / 134947-135510）：
+   * `SetTarget([4])` → `Clear` → 从 36（旧）/ 37（新）取互补条带（类别 2）或整屏交叉淡化（类别 0）
+   * 画进去。`[4]` **不是屏幕**：语料里它是脚本 `create-texture` 出来的 1280×720 槽，随后由引用该槽的
+   * 绘制项呈现（`src/SC0000.txt:1337-1339`）⇒ emulator 的等价物就是"画进那个槽的画布"
+   * （`TextureCache.composeIntoSlot`）。
+   *
+   * **类别**：0 = 交叉淡化（`0x223`）、1 = 分块淡入淡出（`0x24D`，**未实现**）、2 = 盲帘（`0x24F`）、
+   * 3 = 插值模糊（`0x250`/`0x251`，累积近似，见 `scTransitionBlurPlan` 的偏差披露）。
+   *
+   * **仍未实现**：类别 1 `0x24D` —— 语料 **0 处**，且体里的可见效果与"分块/随机"参数来源未确证
+   * （规格 §3.5 的 U2）⇒ 如实跳过，登记在缺口台账（`analysis/opcode-gaps.json`）+ 票据 `T-0084`。
+   */
+  #compositeTransitions(): void {
+    const act = scActiveTransitions(this.scene);
+    if (act.length === 0) return;
+    const old = this.#transOld;
+    if (!old) return;
+    const cur = this.#captureStageCanvas();
+    if (!cur) return;
+    const sw = Math.max(1, this.app.screen.width);
+    const sh = Math.max(1, this.app.screen.height);
+    for (const { id, rec, rt } of act) {
+      const cat = rec[0] ?? 0;
+      const slot = rec[4] ?? -1;
+      if (cat !== 0 && cat !== 2 && cat !== 3) continue;
+      let blurLog: string | null = null;
+      const ok = this.textures.composeIntoSlot(slot, (ctx, w, h) => {
+        if (cat === 0) {
+          // 类别 0 = 交叉淡化：36（旧）整屏不透明，再以 `alpha = t*255` 叠 37（新）。
+          ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, w, h);
+          ctx.globalAlpha = Math.min(1, Math.max(0, rt.t));
+          ctx.drawImage(cur, 0, 0, cur.width, cur.height, 0, 0, w, h);
+          ctx.globalAlpha = 1;
+          return;
+        }
+        if (cat === 3) {
+          // 类别 3 = 插值模糊（`0x250` SlideBlur / `0x251` ZoomBlur）。
+          // ★参数逐条确证（raw 135837-135881）；**像素是累积近似** —— 见 `scTransitionBlurPlan` 的
+          //   偏差披露（引擎走 D3DX effect 或逐像素 CPU 卷积，emulator 两者都没有）。
+          //   源取**本帧屏幕合成**：引擎读的是层 36 的纹理（raw 135883；`Scene+42600` 就是层 36），
+          //   而层 36 的填充路径未确证（规格 §7 的 U3/U4）⇒ 这条也写进票据。
+          const plan = scTransitionBlurPlan(rec, rt, { w, h });
+          if (!plan) return;
+          const off = scTransitionBlurOffsets(plan);
+          const half = (plan.samples - 1) / 2;
+          const total = (plan.samples - 1) + TRANSITION_BLUR_CENTER_WEIGHT;
+          ctx.clearRect(0, 0, w, h);
+          for (let k = 0; k < plan.samples; k++) {
+            const weight = k === half ? TRANSITION_BLUR_CENTER_WEIGHT : 1;
+            ctx.save();
+            if (off.kind === 'zoom') {
+              // 绕中心的均匀缩放：采样 k 的比例 `1 + (k-half)*step` ⇒ 画的时候用它的**倒数**。
+              const s = 1 + (k - half) * off.step;
+              const inv = Math.abs(s) < 1e-6 ? 1 : 1 / s;
+              ctx.translate(off.cx, off.cy);
+              ctx.scale(inv, inv);
+              ctx.translate(-off.cx, -off.cy);
+            } else {
+              // 沿 Angle 的平移：采样位移 `(k-half)*(dx,dy)` ⇒ 画在**负位移**处。
+              ctx.translate(-(k - half) * off.dx, -(k - half) * off.dy);
+            }
+            ctx.globalAlpha = weight / total;
+            ctx.drawImage(cur, 0, 0, cur.width, cur.height, 0, 0, w, h);
+            ctx.restore();
+          }
+          ctx.globalAlpha = 1;
+          blurLog =
+            `${plan.zoom ? 'Zoomblur' : 'Slideblur'} Length=${plan.length} ` +
+            (plan.zoom
+              ? `Center=(${plan.centerUPx},${plan.centerVPx}) 归一化=(${plan.centerU.toFixed(3)},${plan.centerV.toFixed(3)})`
+              : `Angle=${plan.angle}`) +
+            ` 目标层=${w}x${h} 采样=${plan.samples}（近似）`;
+          return;
+        }
+        // 类别 2 = 盲帘擦除：Clear 之后把 36/37 的互补条带 1:1 画进去。
+        ctx.clearRect(0, 0, w, h);
+        const rect = scTransitionTargetRect(this.scene, rec);
+        if (!rect) return; // 查不到目标绘制项 ⇒ 引擎把该记录杀成死记录并直接返回（raw 134890-134893）
+        const kx = w / sw;
+        const ky = h / sh;
+        for (const b of scTransitionBands(rec, rt, this.clockMs, rect)) {
+          const src = b.src === 'old' ? old : cur;
+          ctx.drawImage(src, 0, 0, src.width, src.height, b.x * kx, b.y * ky, b.w * kx, b.h * ky);
+        }
+      });
+      if (ok) {
+        this.#pushLog(
+          `[transition] id=0x${id.toString(16)} cat=${cat} t=${rt.t.toFixed(3)} → 槽 ${slot}` +
+            (cat === 0
+              ? '（交叉淡化：旧帧 + 新帧×t）'
+              : cat === 3
+                ? `（${blurLog ?? '插值模糊'}）`
+                : `（盲帘类型 ${rec[13]}）`),
+        );
+      }
+    }
+  }
+
+  // ---- 动画求值 / 渲染驱动 ---- //
   /**
    * **本遍推进后池是否还挂着** —— `Scene+46516` 的等价物（引擎 `sub_49AA30` raw 117843-117844；`tickets/T-0024`）。
    * ★口径 = `scPoolPending`（mesh 窗 + draw item 5 窗，**排除 `+720` bit0 的元素**）：
@@ -1088,6 +1222,19 @@ export class PixiBackend implements NativeBridge {
     //   而 `present` 会被 `needsRender` 跳过（窗恰好结束的那一帧 `pending` 已为假）⇒ 那一帧的
     //   收尾就永远不会发生，两宿主的 digest 会分叉 —— 正是 G3 要抓的东西。
     scAdvance(this.scene, nowMs);
+    // ★转场窗（`tickets/T-0084`）：与 headless 共用 `scene/transition.ts` 一份推进器
+    //   （锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表 —— 引擎 `sub_4B06D0` +
+    //   帧函数 raw 136840-136841）。放在 `scAdvance` 之后、本帧 `present` 之前：
+    //   脚本本帧写的记录会被本帧这一次 tick 看到，不会"写了立刻被清掉"。
+    const trans = scTransitionTick(this.scene, nowMs);
+    // ★转场要"新旧两帧"：引擎的 36/37 = 两个屏幕层。这里在**本帧 present 之前**抓一帧当旧帧
+    //   （此刻 drawRoot 还是上一帧合成出来的内容）；窗结束（表被清）就释放。
+    if (scTransitionsPending(this.scene)) {
+      if (!this.#transOld) this.#transOld = this.#captureStageCanvas();
+    } else if (this.#transOld) {
+      this.#transOld = null;
+    }
+    if (trans.cleared) this.#transOld = null;
     // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);
@@ -1155,8 +1302,11 @@ export class PixiBackend implements NativeBridge {
    * @param waitFlags 仅用于诊断日志（`[present … wait=0x…]`）；传 `Engine.waitFlags`
    */
   present(nowMs?: number, waitFlags = 0): void {
+    // ★转场窗内**不许被留帧早退**：留帧是"屏上保留上一帧"的近似，而转场正是"这一帧要画东西"
+    //   （引擎的 `Scene+46508` 在转场期间恒为脏，raw 136718-136719）⇒ 早退会让条带/淡入淡出只画一帧。
+    const transPending = scTransitionsPending(this.scene);
     // 撤幕留帧：见 `#holdFrameAfterCurtainDrop`（不动舞台 ⇒ 屏上保留上一帧）
-    if (this.#holdFrames > 0) {
+    if (this.#holdFrames > 0 && !transPending) {
       this.#holdFrames--;
       this.#pushLog(`[frame-hold] 跳过本次 present（剩 ${this.#holdFrames} 帧）`);
       return;
@@ -1174,6 +1324,10 @@ export class PixiBackend implements NativeBridge {
     //   所以它画在最上层（层序给一个大值）。见 `MsgCellFrame`。
     const cellSprites = this.#cellSprites();
     this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites]);
+    // ★转场：把"旧帧 → 新帧"的合成结果画进记录 `[4]` 指定的那个**离屏槽**（引擎 `sub_4B06D0` 的
+    //   `sub_4A50C0(_this, v384[4])` + `Clear` + 条带/淡入淡出，raw 136174 / 134937 / 135824）。
+    //   放在 `presenter.present` 之后：此刻 stage 上就是本帧合成结果 = 引擎的"新"屏幕层。
+    if (transPending) this.#compositeTransitions();
     // ★舞台已换成新纹理 ⇒ 现在才是销毁旧纹理的安全时刻（否则 ticker 会去画已销毁的纹理 →
     //   WebGL 批次损坏 → 整屏只剩背景色，且此后不再恢复；见 TextureCache.collectGarbage 的说明）
     const gc = this.textures.collectGarbage();
