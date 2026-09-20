@@ -26,6 +26,18 @@ const JSON_PATH = path.join(ROOT, 'analysis', 'scripts.json');
 const OUT_DIR = path.join(ROOT, 'docs-new', '05-scripts');
 const SRC_DIR = path.join(ROOT, 'src');
 
+/** 原子写：同目录 tmp + `renameSync`（并发读者不会读到被截断的 md）。 */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
+
 const doc = JSON.parse(fs.readFileSync(JSON_PATH, 'utf8'));
 const entries = [...doc.entries].sort((a, b) => a.id.localeCompare(b.id));
 const srcTotal = fs.existsSync(SRC_DIR) ? fs.readdirSync(SRC_DIR).filter((f) => f.endsWith('.txt')).length : 0;
@@ -160,10 +172,10 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 const wanted = new Set();
 for (const e of entries) {
   const p = path.join(OUT_DIR, `${e.id}.md`);
-  fs.writeFileSync(p, pageFor(e), 'utf8');
+  writeFileAtomic(p, pageFor(e));
   wanted.add(path.basename(p));
 }
-fs.writeFileSync(path.join(OUT_DIR, 'README.md'), indexPage(), 'utf8');
+writeFileAtomic(path.join(OUT_DIR, 'README.md'), indexPage());
 wanted.add('README.md');
 // 删掉已经不在数据层里的旧页面（避免 md 目录留下"幽灵脚本"）
 for (const f of fs.readdirSync(OUT_DIR).filter((f) => f.endsWith('.md'))) {

@@ -55,7 +55,18 @@ function load(p) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
   catch (e) { console.warn(`[warn] 读取 ${p} 失败: ${e.message}`); return null; }
 }
-function writeJson(p, text) { fs.writeFileSync(p, text, 'utf8'); console.log(`[ok] 已写 ${p}`); }
+/** 原子写：同目录 tmp + `renameSync`（同文件系统内 rename 原子）⇒ 并发读者看不到被截断的 JSON。 */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
+function writeJson(p, text) { writeFileAtomic(p, text); console.log(`[ok] 已写 ${p}`); }
 
 // ===================== 查询 =====================
 function printSummary(fields, funcs) {

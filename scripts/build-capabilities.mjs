@@ -22,6 +22,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JSON_PATH = path.join(ROOT, 'analysis', 'engine-capabilities.json');
 const MD_PATH = path.join(ROOT, 'docs-new', '03-engine', 'engine-capabilities.md');
 
+/** 原子写：同目录 tmp + `renameSync`（并发读者不会读到被截断的 md）。 */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
+
 const doc = JSON.parse(fs.readFileSync(JSON_PATH, 'utf8'));
 const entries = doc.entries;
 const by = (s) => entries.filter((e) => e.emulator.status === s).length;
@@ -85,7 +97,7 @@ for (const e of entries.filter((x) => x.emulator.status === 'absent' || x.emulat
 }
 
 fs.mkdirSync(path.dirname(MD_PATH), { recursive: true });
-fs.writeFileSync(MD_PATH, L.join('\n'));
+writeFileAtomic(MD_PATH, L.join('\n'));
 console.log(`[ok] ${path.relative(ROOT, MD_PATH)} ← ${path.relative(ROOT, JSON_PATH)}（${entries.length} 条）`);
 console.log(
   `     已核验 ${by('modeled-verified')} / 已建模未核验 ${by('modeled-unverified')} / 部分 ${by('partial')} / 缺失 ${by('absent')} / n/a ${by('n/a-known')}`,

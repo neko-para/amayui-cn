@@ -19,6 +19,18 @@ const REPO = path.resolve(HERE, '..');
 const DIR = path.join(REPO, 'tickets');
 const OUT = path.join(DIR, 'README.md');
 
+/** 原子写：同目录 tmp + `renameSync`（并发读者不会读到被截断的看板）。 */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
+
 const STATUS_MARK = { open: '⬜', doing: '🔜', blocked: '⛔', done: '✅', dropped: '🚫' };
 const STATUS_ORDER = ['doing', 'blocked', 'open', 'done', 'dropped'];
 const PRIO_ORDER = { P0: 0, P1: 1, P2: 2, P3: 3 };
@@ -127,5 +139,5 @@ L.push('');
 L.push('> 改完票据要重跑 `build-tickets.mjs`，否则 `test/ticket-ledger.test.ts` 会红（与 `analysis/*.json` 的台账同一纪律）。');
 L.push('');
 
-fs.writeFileSync(OUT, L.join('\n'), 'utf8');
+writeFileAtomic(OUT, L.join('\n'));
 console.log(`[ok] tickets/README.md ← ${tickets.length} 张票（${STATUS_ORDER.map((s) => `${s} ${count(s)}`).join(' / ')}）`);

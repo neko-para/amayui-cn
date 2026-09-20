@@ -24,9 +24,13 @@
  *
  * ## 命令
  * 查询：`--list [--status S --area A --type T --priority P --open]` · `--show <ID>` · `--stats` · `--next-id`
+ *       `--anchors-in <文件>`（谁锚在这个文件上 —— 改被锚文件前先跑它；只读）
  * 写入：`--add '<json>'` · `--add-file <path>` · `--edit <ID> --set k=v | --set-json k=<json>`
  *       `--set-status <ID> <status> [--note '…']` · `--note <ID> --file changes.md --text '…'` · `--rm <ID> --yes`
+ *       `--recount`（重算账目并打 diff；票源 `ticket.json` 不含 `counts` 字段，见实现注释）
  * 自检：`--validate`（= `app/amayui-emulator/test/ticket-ledger.test.ts` 的同一套规则）
+ *
+ * ★值里带 ASCII 逗号/引号请用 `--set-json k=<json>`（值按 JSON 解析，失败会点名 key 并非零退出）。
  *
  * ## 硬性约定（`--validate` 会替你查）
  * 1. 文件夹名 = `T-\d{4}`，且必须与 `ticket.json.id` 一致；`tickets/` 下不许有野文件夹；
@@ -50,7 +54,7 @@ const KNOWN_DOCS = ['notes.md', 'changes.md', 'repro.md', 'design.md', 'evidence
 
 const VALUE_FLAGS = new Set([
   '--status', '--area', '--type', '--priority',
-  '--add', '--add-file', '--edit', '--set', '--set-json',
+  '--add', '--add-file', '--edit', '--set', '--set-json', '--anchors-in',
   '--note', '--file', '--text', '--root', '--rm', '--show',
   // ★带值的子命令（漏一个就会退化成布尔 ⇒ `id=true` 让 path.join 抛错，2026-09 实测踩到）
   '--set-status',
@@ -81,6 +85,41 @@ const DIR = path.join(root, 'tickets');
 // ---------------------------------------------------------------------------
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * 原子写：同目录 tmp + `renameSync`（同文件系统内 rename 原子）。
+ * 并发的守卫测试/看板渲染因此永远看不到被截断的 `ticket.json`。
+ */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
+/**
+ * 追加用 `O_APPEND`（`appendFileSync`），**不**走 tmp+rename。
+ * 理由：append **不截断**文件 ⇒ 并发读者看不到残缺内容；反过来"读旧文 + 整文件原子写回"会在
+ * 两个 agent 同时 `--note` 时丢掉一方（读-改-写竞态）。只有**截断式整文件重写**才需要 tmp+rename。
+ */
+function appendFile(file, text) {
+  fs.appendFileSync(file, text, 'utf8');
+}
+
+/** 路径归一：反斜杠→正斜杠、去 `./` 前缀、去尾斜杠。 */
+function normPath(p) {
+  return String(p).replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
+}
+/** 精确相等**或**互为后缀 ⇒ 命中（`src/SN0000.txt` 与绝对路径都能用）。 */
+function pathMatches(candidate, target) {
+  const c = normPath(candidate);
+  const t = normPath(target);
+  if (!c || !t) return false;
+  return c === t || c.endsWith('/' + t) || t.endsWith('/' + c);
+}
 
 function ticketDirs() {
   if (!fs.existsSync(DIR)) return [];
@@ -131,11 +170,11 @@ function nextId() {
 function writeTicket(t, extra) {
   const dir = path.join(DIR, t.id);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'ticket.json'), JSON.stringify(t, null, 2) + '\n', 'utf8');
+  writeFileAtomic(path.join(dir, 'ticket.json'), JSON.stringify(t, null, 2) + '\n');
   if (extra && extra.notes) {
     const f = path.join(dir, 'notes.md');
-    if (!fs.existsSync(f)) fs.writeFileSync(f, `# ${t.id} · ${t.title}\n\n`, 'utf8');
-    fs.appendFileSync(f, extra.notes.trimEnd() + '\n', 'utf8');
+    if (!fs.existsSync(f)) writeFileAtomic(f, `# ${t.id} · ${t.title}\n\n`);
+    appendFile(f, extra.notes.trimEnd() + '\n');
   }
 }
 
@@ -433,7 +472,16 @@ function cmdEdit() {
       process.exitCode = 2;
       return;
     }
-    setPath(t, kv.slice(0, i), JSON.parse(kv.slice(i + 1)));
+    const k = kv.slice(0, i);
+    let val;
+    try {
+      val = JSON.parse(kv.slice(i + 1));
+    } catch (err) {
+      console.error(`✗ --set-json 的 ${k} 值不是合法 JSON：${err.message}`);
+      process.exitCode = 2;
+      return;
+    }
+    setPath(t, k, val);
   }
   const changed = Object.keys(t).filter((k) => JSON.stringify(t[k]) !== JSON.stringify(before[k]));
   t.history = [...(t.history ?? []), { at: today(), what: `改字段：${changed.join(', ')}${typeof opt.note === 'string' ? ` —— ${opt.note}` : ''}` }];
@@ -485,9 +533,73 @@ function cmdNote() {
     return;
   }
   const f = path.join(dir, file);
-  if (!fs.existsSync(f)) fs.writeFileSync(f, `# ${id} · 过程文档（${file}）\n`, 'utf8');
-  fs.appendFileSync(f, `\n## ${today()}\n\n${text.trimEnd()}\n`, 'utf8');
+  if (!fs.existsSync(f)) writeFileAtomic(f, `# ${id} · 过程文档（${file}）\n`);
+  appendFile(f, `\n## ${today()}\n\n${text.trimEnd()}\n`);
   console.log(`✅ 追加到 tickets/${id}/${file}`);
+}
+
+/**
+ * `--anchors-in <文件>`：谁锚在这个文件上（**只读**）。
+ * 改任何"被锚定的文件"（源码注释、机制文档表格行都算）之前先跑它。
+ */
+function cmdAnchorsIn(target) {
+  const hits = [];
+  for (const dir of ticketDirs()) {
+    const t = readTicket(dir);
+    if (t.error) continue;
+    for (const [i, ev] of (Array.isArray(t.evidence) ? t.evidence : []).entries()) {
+      if (!ev || typeof ev.file !== 'string' || !pathMatches(ev.file, target)) continue;
+      const note = typeof ev.note === 'string' ? `  note=${JSON.stringify(ev.note)}` : '';
+      const line = typeof ev.line === 'number' ? `  line=${ev.line}` : '';
+      hits.push(`${t.id}  evidence[${i}]  anchor=${JSON.stringify(ev.anchor ?? null)}${line}${note}`);
+    }
+  }
+  for (const h of hits) console.log(h);
+  if (!hits.length) console.log('（无）');
+  console.log(`\n（${hits.length} 条）`);
+}
+
+/**
+ * `--recount`：重算账目并打 before/after diff。
+ *
+ * ★与另两个台账不同：票据真源 `tickets/<ID>/ticket.json` **没有 `counts` 字段**（票的 schema 里
+ *   不存在这个键，`--validate`/守卫也不查它）—— 票据的"统计"是**生成物** `tickets/README.md`
+ *   概览行里的那几个数，持有者是 `scripts/build-tickets.mjs`。所以这里**只读**重算 + 与看板对账，
+ *   不写任何文件；看板陈旧时的修法是 `node scripts/build-tickets.mjs`。
+ */
+function cmdRecount() {
+  const after = { total: 0 };
+  for (const s of STATUSES) after[s] = 0;
+  for (const t of allTickets()) {
+    if (t.error) continue;
+    after.total++;
+    if (after[t.status] !== undefined) after[t.status]++;
+  }
+  const before = boardCountsFromReadme();
+  if (!before) {
+    console.log('counts: 无法从 tickets/README.md 读出概览（尚未生成看板）');
+  } else {
+    const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])];
+    const diffs = keys.filter((k) => before[k] !== after[k]);
+    if (diffs.length === 0) console.log('counts: 无变化');
+    else for (const k of diffs) console.log(`counts: ${k} ${before[k]} → ${after[k]}`);
+  }
+  console.log('[next] 票据账目在看板上：node scripts/build-tickets.mjs');
+}
+
+/** 从生成物 `tickets/README.md` 的概览行里读出账目（票据真源不含 counts）。 */
+function boardCountsFromReadme() {
+  const f = path.join(DIR, 'README.md');
+  if (!fs.existsSync(f)) return null;
+  const text = fs.readFileSync(f, 'utf8');
+  const m = /共 \*\*(\d+)\*\* 张/.exec(text);
+  if (!m) return null;
+  const out = { total: Number(m[1]) };
+  for (const s of STATUSES) {
+    const r = new RegExp(`${s} \\*\\*(\\d+)\\*\\*`).exec(text);
+    if (r) out[s] = Number(r[1]);
+  }
+  return out;
 }
 
 function cmdRm() {
@@ -524,6 +636,10 @@ if (opt.validate) {
   }
 } else if (opt['next-id']) {
   console.log(nextId());
+} else if (opt.recount) {
+  cmdRecount();
+} else if (opt['anchors-in'] !== undefined) {
+  cmdAnchorsIn(opt['anchors-in']);
 } else if (opt.add !== undefined || opt['add-file'] !== undefined) {
   cmdAdd();
 } else if (opt.edit !== undefined) {

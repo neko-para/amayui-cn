@@ -393,3 +393,71 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - 本技能只描述**数据驱动的分析方案**；具体子系统（输入/渲染/版权页）结论若写入 `docs-new`，需与本数据层行号证据一致。
 - 三层的守卫测试都在 `app/amayui-emulator/test/`：`capability-ledger.test.ts`（第二层）、`script-ledger.test.ts`（第三层）；
   改完数据层记得 `build-*.mjs` 重生成 md，否则守卫的"md 与数据层同步"一项会红。
+
+## 8. ★多 agent 并行（subagent / workflow）纪律
+
+**为什么单列一节**：本技能的真源是**跨 agent 的共享可变文件**，而它们之间还有一层隐式依赖 —— 台账里的
+**锚点**（`tickets` 的 `evidence[].anchor`、`analysis/scripts.json` 的 `layout[].anchor`）要求**别人正在改的那些文件**里存在某个字面串。
+并行时踩的坑几乎全落在这两处。
+★**子代理会拿到与主 agent 相同的技能目录与 `skill` 工具**（实测：目录注入挂在 `dsh-tool-skill` 的 `agent/pre-step`，对每个 agent 各发一次；
+子代理实测报告里列出了全部 8 个技能并真的加载了本技能）⇒ 纪律必须写在这里，不能指望父 agent 每次口头交代。
+
+### 8.1 单写者原则（唯一硬规则）
+
+| 文件 | 允许的写者 | 生成物？ | 守卫 |
+|---|---|---|---|
+| `tickets/*/ticket.json`、`tickets/*/*.md` | **一个** owner（默认 = 主 agent） | 否 | `test/ticket-ledger.test.ts` |
+| `tickets/README.md` | **只有 owner** 在结算时跑 `node scripts/build-tickets.mjs` | 是 | 同上（"md 与数据层同步"一项） |
+| `analysis/scripts.json` / `analysis/engine-capabilities.json` / `analysis/fields.json` / `analysis/functions.json` | 每个文件**一个** owner（不同文件可以不同 agent，同一文件只能一个） | 否 | `test/script-ledger.test.ts` / `test/capability-ledger.test.ts` |
+| `docs-new/05-scripts/*.md`、`docs-new/03-engine/engine-capabilities.md` | 由对应台账的 owner 在**结算时** build | 是 | 同上 |
+| `src/*.txt`、`app/**`、`docs-new/03-engine/*.md`（叙述层） | 实现/翻译 agent；**改了必须在报告里申报"动过被锚定的文件"** | 否 | 锚点棘轮（两个台账 + `test/ticket-ledger.test.ts`） |
+
+子代理**默认对本技能的台账只读**；要它写台账，就把它在 prompt 里指定为该台账的**唯一 owner**，并且只给它这一份。
+
+### 8.2 三种子代理 prompt 模板（照抄进 prompt，缺一不可）
+
+1. **ANALYSIS-ONLY**（默认选它，最安全）
+   - 允许：读仓库任意处；中间物只写 `.tmp/<job>/`。
+   - 禁止：写 `analysis/`、`tickets/`、`docs-new/`、`app/`、`src/`、`scripts/`。
+   - ★**必须带这一句**：*"即使你加载了 `amayui-*-analysis` / `amayui-ticket-ledger` 等技能，也**跳过**它们的「读完必须更新台账/文档」步骤 —— 本次是只读分析，结论用报告交回。"*
+     （实测：不写这句，子代理会在"技能要求落库"与"分析只读"之间自行取舍，结果不可预期 —— 它加载了 `amayui-script-analysis` 后只能靠自觉跳过台账更新。）
+2. **IMPLEMENTATION**：给**路径所有权清单**（可写白名单 + 明确禁写 `analysis/`、`tickets/`、`docs-new/`）+ **必须保留的字面串**（= 锚点，见 8.3）+ 退出判据（`npm run verify` 全绿 + 实测 E4）。
+3. **LEDGER-OWNER**：整份台账独占；结算时自己 `build-*.mjs` + `--validate` + 对应守卫测试，并在报告里给**原始数字**。
+
+### 8.3 锚点是跨 agent 的 ABI
+
+锚点不是注释，是**契约**：它要求那个文件里**存在**那个字面串。改任何被锚定的文件（**源码注释与机制文档的表格行都算**）之前，先查谁锚在你这里：
+
+```bash
+node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --anchors-in <文件>        # 哪些票据锚在这个文件
+node .agents/skills/amayui-engine-analysis/scripts/scripts.js --anchors-in <文件>      # 哪些脚本条目的 layout 锚在这里
+```
+
+处理规则（★**不许用"删证据 / 降 status / 删条目"来消红**）：
+- 能保留 ⇒ 保留原串（重写注释时把旧串留在标题或引用里 —— 本会话就是这么保住 `②c ★**装载点不整批清绘制项**` 等 4 个串的）；
+- 不能保留 ⇒ **在报告里申报**（"我删掉了 `<文件>` 里的字符串 `S`"），由 owner retarget 到同义新串；
+- 见到红 ⇒ 先判类别再动手（8.4）。
+
+### 8.4 `--validate` 红的分类处置
+
+| 症状 | 真因 | 正确动作 |
+|---|---|---|
+| `evidence 锚点已消失` / `anchor 不在 lines 内` | 被锚文件被改（或被翻译 reflow / 换反编译版本） | retarget 到同义新串；**不要**删 evidence / 删条目 |
+| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | `--recount`（见 8.5）后重跑 `build-*.mjs` |
+| `--set` 写进去的值变成了数组 | 值里有 **ASCII 逗号**（`--set` 按逗号切分）—— 本会话踩过两次 | 改用 `--set-json '<json>'` |
+| `guards 指向的测试不存在` | 测试被改名/删除 | 先补测试再写回 `guards` |
+
+### 8.5 共享资源（并行时必须串行化）
+
+- `npm run shot` / `npm run verify`：**同一时刻只跑一个** —— 前者抢 Electron 窗口并**覆盖同一个 `.tmp/amayui-emulator.log`**（日志本身是证据来源），后者 CPU 密集会互相拖慢。
+- `.tmp/`：每个 job 一个子目录（`.tmp/<job>/`），别共用文件名；**证据要归档进 `tickets/<id>/evidence/`**（`.tmp/` 是 gitignore 的临时区，不许当证据落点）。
+- 生成物（`tickets/README.md`、`docs-new/**/*.md` 生成物）：**只在结算时由 owner build 一次**；其他 agent 不跑 build（避免用陈旧输入覆盖别人的结果）。
+
+> ★本节与另两个技能（`amayui-engine-analysis`、`amayui-script-analysis`）的同名节**同源**：改一处请三处同步（表头规则一致，只有"谁的台账"一段随技能不同）。
+
+### 8.6 落在本技能上的一条推论
+
+`analysis/*.json`（第一/二层）**天然适合"一人一份"**：`fields.json`/`functions.json` 与 `engine-capabilities.json` 是不同文件 ⇒
+可以让不同 agent 分别拥有（本会话：主 agent 独占全部台账，子代理只回报告）。
+但只要有两个 agent 同时改**同一个** JSON，`read → mutate → writeFileSync` 就会丢更新（工具不是原子的、也没有锁）⇒
+要么单写者，要么在 prompt 里显式串行化（"等我把这一份写完再动"）。

@@ -21,11 +21,17 @@
  *   node scripts.js --find <子串>              # 按 id/role/entry/slots/notes 模糊查
  *   node scripts.js --id <ID>                 # 精查单条（含 layout/slots 明细）
  *   node scripts.js --validate                # 离线自检（= test/script-ledger.test.ts 的规则）
+ *   node scripts.js --anchors-in <文件>        # 谁锚在这个文件上（layout[].anchor / 其 file 命中）
  *
  * 写入（写入后自动重算 counts，并提示重生成 md）：
  *   node scripts.js --add '<json>'
  *   node scripts.js --edit <ID> --set k=v [--set k=v ...]     # 支持点路径
+ *   node scripts.js --edit <ID> --set-json k=<json> [--set-json ...]   # 值按 JSON 解析，绕过逗号切分
+ *   node scripts.js --recount                 # 只重算 counts 并原子写回（就地修"陈旧 counts"）
  *   node scripts.js --rm <ID>
+ *
+ * ★值里带 ASCII 引号/逗号的结构化值（layout/slots）请用 `--set-json`（或 `--add` 整条 json）；
+ * `--set-json` 的解析失败会**响亮失败**（非零退出）并点名 key。
  *
  * 硬性约定（与 test/script-ledger.test.ts 一致，本工具 `--validate` 会替你查）：
  *  1. `file` 必须真实存在；每条 `layout[].lines` 形如 `"1136-1228"` 且落在文件行数内；
@@ -39,17 +45,18 @@ const fs = require('fs');
 const path = require('path');
 
 const VALUE_FLAGS = new Set([
-  // ★这里只放**带值**的开关；`--coverage/--summary/--index/--validate` 是布尔开关，
+  // ★这里只放**带值**的开关；`--coverage/--summary/--index/--validate/--recount` 是布尔开关，
   // 放进来会让它们把下一个参数当自己的值吃掉（`--coverage` 单独用会静默退化成默认报表）。
   '--find', '--id', '--status', '--sort',
-  '--add', '--edit', '--set', '--rm', '--root',
+  '--add', '--edit', '--set', '--set-json', '--anchors-in', '--rm', '--root',
 ]);
 function parseOpt(argv) {
-  const o = { set: [] };
+  const o = { set: [], setJson: [] };
   let rootVal = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--set') { o.set.push(argv[++i]); continue; }
+    if (a === '--set-json') { o.setJson.push(argv[++i]); continue; }
     if (a.startsWith('--')) {
       const k = a.slice(2);
       if (VALUE_FLAGS.has(a)) o[k] = argv[++i];
@@ -74,9 +81,20 @@ function load() {
   if (!fs.existsSync(FILE)) { console.error(`[err] 台账不存在：${FILE}`); process.exit(2); }
   return JSON.parse(fs.readFileSync(FILE, 'utf8'));
 }
+/** 原子写：同目录 tmp + `renameSync`（并发读者不会看到被截断的文件）。 */
+function writeFileAtomic(file, text) {
+  const tmp = `${file}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+  fs.writeFileSync(tmp, text, 'utf8');
+  try {
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.unlinkSync(tmp); } catch { /* 清理失败无所谓 */ }
+    throw err;
+  }
+}
 function save(doc) {
   recount(doc);
-  fs.writeFileSync(FILE, JSON.stringify(doc, null, 2) + '\n', 'utf8');
+  writeFileAtomic(FILE, JSON.stringify(doc, null, 2) + '\n');
   console.log(`[ok] 已写 ${FILE}`);
   console.log('[next] 重生成人可读文档：node scripts/build-scripts.mjs');
 }
@@ -117,6 +135,57 @@ function deepMerge(a, b) {
   }
   return a;
 }
+/** `--set-json k=<json>`：值整体按 JSON 解析（不按 ASCII 逗号切分）；解析失败点名 key 并非零退出。 */
+function parseKvJson(raws) {
+  const out = {};
+  for (const raw of raws) {
+    const eq = raw.indexOf('=');
+    if (eq < 0) { console.error(`[err] --set-json 要用 k=<json>：${raw}`); process.exit(2); }
+    const k = raw.slice(0, eq).trim();
+    let val;
+    try {
+      val = JSON.parse(raw.slice(eq + 1));
+    } catch (err) {
+      console.error(`[err] --set-json 的 ${k} 值不是合法 JSON：${err.message}`);
+      process.exit(2);
+    }
+    const parts = k.split('.');
+    let cur = out;
+    for (let i = 0; i < parts.length - 1; i++) cur = (cur[parts[i]] = cur[parts[i]] || {});
+    cur[parts[parts.length - 1]] = val;
+  }
+  return out;
+}
+
+// ===================== 锚点反查（--anchors-in） =====================
+/** 路径归一：反斜杠→正斜杠、去 `./` 前缀、去尾斜杠。 */
+function normPath(p) {
+  return String(p).replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
+}
+/** 精确相等**或**互为后缀 ⇒ 命中（`src/SN0000.txt` 与绝对路径都能用）。 */
+function pathMatches(candidate, target) {
+  const c = normPath(candidate);
+  const t = normPath(target);
+  if (!c || !t) return false;
+  return c === t || c.endsWith('/' + t) || t.endsWith('/' + c);
+}
+/** `--anchors-in <文件>`：谁锚在这个文件上（只读）。 */
+function cmdAnchorsIn(doc, target) {
+  const hits = [];
+  for (const e of doc.entries) {
+    // ① 该条目的真源 `file` 就是被问的文件 ⇒ 它的 layout 行区间**全都在读这个文件**；
+    // ② 或某条 anchor 的字面串本身指向被问的文件（锚点也可以是别的文件里的串）。
+    const byFile = e.file && pathMatches(e.file, target);
+    for (const [i, l] of (e.layout ?? []).entries()) {
+      if (!byFile && !(l.anchor && pathMatches(l.anchor, target))) continue;
+      const what = l.what ? `  what=${JSON.stringify(l.what)}` : '';
+      hits.push(`${e.id}  layout[${i}]  lines=${l.lines}  anchor=${JSON.stringify(l.anchor)}${what}`);
+    }
+  }
+  for (const h of hits) console.log(h);
+  if (!hits.length) console.log('（无）');
+  console.log(`\n（${hits.length} 条）`);
+}
 
 // ===================== 校验 =====================
 /** 行区间 "a-b" → [a,b]；不合法返回 null。 */
@@ -127,8 +196,8 @@ function parseRange(s) {
   const b = Number(m[2]);
   return a <= b ? [a, b] : null;
 }
-/** 返回问题列表（空 = 通过）。规则与 test/script-ledger.test.ts 一致。 */
-function validate(doc) {
+/** 返回 {problems, stale}（problems 空 = 通过）。规则与 test/script-ledger.test.ts 一致。 */
+function validate(doc, diskCounts) {
   const problems = [];
   const ids = new Set();
   const caps = fs.existsSync(CAPS) ? JSON.parse(fs.readFileSync(CAPS, 'utf8')).entries.map((e) => e.id) : [];
@@ -170,13 +239,29 @@ function validate(doc) {
       if (funcs.length && !funcs.includes(f)) at(`links.functions 里的 addr 不存在：${f}`);
     }
   }
-  recount(doc);
+  // ★与**磁盘上的** counts 比（不是与刚重算出来的比 —— 那样永远相等，查不出陈旧 counts）。
+  const before = diskCounts || {};
   const by = (s) => doc.entries.filter((e) => e.status === s).length;
+  let stale = false;
   for (const k of Object.keys(doc.statusEnum)) {
-    if (doc.counts[k] !== by(k)) problems.push(`counts.${k} 应为 ${by(k)}（实际 ${doc.counts[k]}）`);
+    if (before[k] !== by(k)) { problems.push(`counts.${k} 应为 ${by(k)}（实际 ${before[k]}）`); stale = true; }
   }
-  if (doc.counts.total !== doc.entries.length) problems.push(`counts.total 应为 ${doc.entries.length}`);
-  return problems;
+  if (before.total !== doc.entries.length) {
+    problems.push(`counts.total 应为 ${doc.entries.length}（实际 ${before.total}）`);
+    stale = true;
+  }
+  return { problems, stale };
+}
+
+/** `--recount`：只重算 counts 并原子写回（"手改过 JSON ⇒ counts 陈旧"的一键修复）。 */
+function cmdRecount(doc, diskCounts) {
+  const beforeCounts = diskCounts || {};
+  recount(doc);
+  const keys = [...new Set([...Object.keys(beforeCounts), ...Object.keys(doc.counts)])];
+  const diffs = keys.filter((k) => beforeCounts[k] !== doc.counts[k]);
+  if (diffs.length === 0) console.log('counts: 无变化');
+  else for (const k of diffs) console.log(`counts: ${k} ${beforeCounts[k]} → ${doc.counts[k]}`);
+  save(doc);
 }
 
 // ===================== 查询 =====================
@@ -213,13 +298,20 @@ function cmdFind(doc, q) {
 
 // ===================== 主流程 =====================
 const doc = load();
+// ★留一份"磁盘上的 counts"再重算：`--recount` 要打 before/after，`--validate` 要据此判陈旧。
+const countsOnDisk = doc.counts && typeof doc.counts === 'object' ? JSON.parse(JSON.stringify(doc.counts)) : null;
 if (opt.validate) {
-  const problems = validate(doc);
+  const { problems, stale } = validate(doc, countsOnDisk);
   if (problems.length) {
     console.error(`[fail] 脚本台账自检未通过：\n  - ${problems.join('\n  - ')}`);
+    if (stale) console.error('[next] counts 陈旧 ⇒ 跑 --recount 后重跑 build-*.mjs');
     process.exit(1);
   }
   console.log(`[ok] 台账自检通过（${doc.entries.length} 条）`);
+} else if (opt.recount) {
+  cmdRecount(doc, countsOnDisk);
+} else if (opt['anchors-in']) {
+  cmdAnchorsIn(doc, opt['anchors-in']);
 } else if (opt.coverage) {
   cmdCoverage(doc);
 } else if (opt.summary) {
@@ -242,6 +334,7 @@ if (opt.validate) {
   const e = doc.entries.find((x) => x.id === opt.edit);
   if (!e) { console.error(`[err] 没有 id=${opt.edit}`); process.exit(1); }
   deepMerge(e, parseKv(opt.set));
+  if (opt.setJson.length) deepMerge(e, parseKvJson(opt.setJson));
   save(doc);
 } else if (opt.rm) {
   const i = doc.entries.findIndex((x) => x.id === opt.rm);

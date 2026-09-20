@@ -38,7 +38,7 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "②c ★**装载点不整批清绘制项**",
-      "note": "装载点 clearDrawContainer()+clearMeshSlots() 已**撤销**（`tickets/T-0083` 的 (B) 步，2026-09）：引擎 `sub_410160` 不清容器，改按 仮想ディスプレイ 复位（raw 19913-19915 `sub_403EF0`；体 raw 9958-9971 = 项数清零/游标/矩形复位）的近似 —— 只丢掉**被放弃的调用方帧**画的绘制项（`Item.ownerFrame`），ADV 层的项保留"
+      "note": "★★2026-09 轮 5 订正：(B) 步的前提被源码推翻 —— 引擎装载点**确实**清绘制项容器，但是在 `sub_410160` **行内**做的（raw 19810-19820 销毁 `Scene+0x408` 的树 + 复位 `Scene+0x40C`/`0x410`），raw 19822-19832 再从 body 末段还原 740 B 绘制项清单。⇒ 装载点现走宿主缝 `native.restoreDrawItems(items)`（= 清上一屏 + 装存档清单）；`Item.ownerFrame`/`dropFrameItems` 只作「body 无清单」的回退。见 `tickets/T-0083` 与 capabilities 的 `save-load-drawitem-clear-and-restore`"
     },
     {
       "file": "app/amayui-emulator/src/arch/fileSource.ts",
