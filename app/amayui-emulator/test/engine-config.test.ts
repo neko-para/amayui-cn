@@ -270,6 +270,18 @@ test('配置类 opcode：0xC0 / 0x131 / 0x2CE 读到由 INI 填充的值（夹�
   setLocal(9, 6);
   await stepOnce(e);
 
+  // ★0x307 → 直写 `system:EffectSkipOnClick`（= 0x306 的**唯一写入端**；审计 P1 op-3-003）。
+  //   修前：只登记了 getter ⇒ 脚本 `i307 1` 之后 `i306` 仍读回 INI 默认值（开机写入 INITREGINPUT.txt:6 丢失）。
+  loadScriptIntoFrame(e.curScript(), oneOp(0x306, 12), 'TEST.BIN');
+  await stepOnce(e);
+  const before = read(12);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x307, 9), 'TEST.BIN');
+  setLocal(9, before === 0 ? 1 : 0); // 写一个与当前不同的值，才能证明"真的写进去了"
+  await stepOnce(e);
+  loadScriptIntoFrame(e.curScript(), oneOp(0x306, 13), 'TEST.BIN');
+  await stepOnce(e);
+  assert.equal(read(13), before === 0 ? 1 : 0, '0x307 写配置后 0x306 必须读回新值（同键同一份注册表）');
+
   // 0x2CE → _this[167990]!=0 → 1
   loadScriptIntoFrame(e.curScript(), oneOp(0x2ce, 3), 'TEST.BIN');
   await stepOnce(e);

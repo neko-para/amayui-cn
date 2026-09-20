@@ -1,0 +1,104 @@
+{
+  "title": "set:BlankExtentMode == 1 的空白字前进量口径未建模（GDI 量宽分支缺失）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/text",
+  "why": "引擎在「空白字（全角空格）前进多少」这件事上有一个配置门：`set:BlankExtentMode`（串在 raw 4280）== 1 时改用 `sub_404EE0`（raw 10716-10739）**逐字 GDI 量宽**，否则用字号当格宽（`Engine[71744] ? Engine[71745] : -Engine[21632]`）。emulator 侧 `src/text/layout.ts` 的 `advance()` 是纯算术 `sjisBytes(ch) * size / 2`，**没有这个分支**（`handlers/msgwin.ts:1362-1366` 与 `opcode-table.md` 的 0x205 行都已披露该缺口，但只活在注释里，没有票据/台账条目 ⇒ 静默）。危害面：玩家把该 INI 项设为 1 时，空格前进量与真机不同 ⇒ **逐字排版落点、换行位置、`0x205` 回写的 op2（x + 前进量）全部偏移**，而且不报错、只表现不对。随包默认值 = 0（`tickets/T-0031/evidence/generated-SYS4REG.ini:116` 的 `BlankExtentMode=0`）⇒ 默认配置下不可见，属潜伏缺口。",
+  "acceptance": [
+    "读 `sub_404EE0`（raw 10716-10739）与它的消费点（`sub_4072F0` raw 12224-12236 及 20+ 处字形路径），写清 mode == 1 时空白字前进量的确切口径（量什么、单位、与字号的关系）",
+    "核实 `set:BlankExtentMode` 的随包默认值，并据此给出判据：mode = 0 时 emulator 现状是否逐字等价（若等价 ⇒ 本票可降级为「仅非默认配置偏差」并写明触发方式）",
+    "若 mode = 1 确实改变画面：在 `src/text/layout.ts` 的 `advance()` 接上该分支（或按引擎口径改造），并同步 `handlers/msgwin.ts` 的 op2 回写",
+    "守卫测试（E2）：同一段文本在 mode = 0 与 mode = 1 下前进量/换行结果可分辨，且 mode = 0 的结果与改动前逐字相等（零回归）",
+    "把结论落进 `analysis/engine-capabilities.json`（门控标志属第二层）+ 票据回链；`docs-new/03-engine/route-c-text-metrics-2026-09.md` 的对应行订正为已建模"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/configRegistry.ts",
+      "anchor": "set:BlankExtentMode",
+      "line": 130,
+      "note": "配置项已注册（kind=int, def=0）——本票前没有任何读取点；现已在 CFG 表加常量并在 handlers/msgwin.ts 读取"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "set:BlankExtentMode == 1",
+      "line": 1366,
+      "note": "0x205 的 cy 口径：mode==1 时被逐字量宽覆盖（raw 12232-12235）；现经 text/layout.ts 的 numberCellExtent 表达"
+    },
+    {
+      "file": "docs-new/03-engine/route-c-text-metrics-2026-09.md",
+      "anchor": "set:BlankExtentMode",
+      "line": 282,
+      "note": "路线 C 复核定位的真落点（sub_404EE0 raw 10716-10739；消费点 raw 12224-12236）——§7 已按本票结论订正"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "aSetBlankextent",
+      "line": 4280,
+      "note": "引擎侧串常量（唯一权威）；读取点 20 余处"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "aSetBlankextent) == 1",
+      "line": 87272,
+      "note": "★mode==0 的空白字前进量公式（raw 87269-87280）= font_size / (全角?1:2) ⇒ 与 emulator 原纯算术逐字相等（本票第一个结论的锚点）"
+    },
+    {
+      "file": "app/amayui-emulator/src/text/layout.ts",
+      "anchor": "export function blankAdvance",
+      "line": 356,
+      "note": "门与公式的落点（BlankExtent/blankAdvance/numberCellExtent；无可度量时显式回退）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "function blankExtentOf",
+      "line": 264,
+      "note": "VM 侧唯一读取点（emitWin 逐次读配置 ⇒ 排版输入带 blankExtent）"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-205-blank-extent.test.ts",
+      "anchor": "assert.equal(fb.blankExtentFallback, true",
+      "line": 154,
+      "note": "E2 守卫：mode 0 冻结字面量零回归 + mode 1 可分辨 + 无度量时回退可见 + 接线"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/route-c-text-metrics-2026-09.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json"
+    ],
+    "tickets": [
+      "T-0076"
+    ]
+  },
+  "notes": "★本票由「扩展路线 C」的复核派生：路线 C 原定目标是 0x1d0/0x1d1，复核后发现那两条**不是度量族**（0x1d0 = 回看页索引表带步数读出、0x1d1 = GDI 文本页渲染器），真正的 GetTextExtent 缺口在这里。0x1d0/0x1d1 保持 deferred，理由与前提见 docs-new/03-engine/route-c-text-metrics-2026-09.md 与判定棘轮 test/op-1d0-1d1-text-metrics.test.ts。 ★本票落地（2026-09-20）：门与公式已接（src/text/layout.ts 的 BlankExtent/blankAdvance/numberCellExtent + handlers/msgwin.ts 的 blankExtentOf）；mode==0 与引擎的 font_size/(全角?1:2)（raw 87269-87280）逐字等价 ⇒ 原缺口降级为「仅非默认配置偏差」（触发方式 = 玩家把 INI 的 BlankExtentMode 设为 1）。★仍缺：宿主字体度量来源（GDI GetTextExtentPoint32A 的等价物）⇒ mode==1 显式回退为网格并把 TextFrame.blankExtentFallback 置真；要拿到什么与两种来源写在 src/text/layout.ts 文件尾「缺口」；0x204 直绘与绘制期「无轮廓字」未接。",
+  "id": "T-0085",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence, tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → done —— 落地（E2）：空白字前进量的门与公式已接 —— src/text/layout.ts 新增 BlankExtent/blankAdvance/numberCellExtent 与 MsgWinInput.blankExtent；handlers/msgwin.ts 的 emitWin 逐次读 CFG.setBlankExtentMode、0x205 的 cy 走 numberCellExtent。★第一结论：随包默认 0（tickets/T-0031/evidence/generated-SYS4REG.ini 第 116 行）且 mode==0 的引擎公式 = font_size / (全角?1:2)（raw 87269-87280）= 原纯算术 ⇒ 逐字等价、零回归（冻结字面量棘轮）。★仍缺（已显式登记）：宿主字体度量来源（GDI GetTextExtentPoint32A 的等价物）⇒ mode==1 按 measured:false 回退并把 TextFrame.blankExtentFallback 置真；要拿到什么与两种来源写在 src/text/layout.ts 文件尾「缺口」；0x204 直绘与绘制期「无轮廓字」两处未接。守卫 test/op-205-blank-extent.test.ts（7 断言）。能力台账条目 text-blank-extent-mode-gate 改 partial/E2。★建议后续票：给 BlankExtent.measure 接宿主 measureText 或自建 TTF hmtx 表。"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence, tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：notes"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-205-blank-extent.test.ts"
+  ]
+}

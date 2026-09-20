@@ -93,17 +93,17 @@ i12e <out> <?> <mouseX> <mouseY> <size盒数组> <baseX数组> <baseY数组> <co
 
 ### 3.2 可以安全跳过（handler 体**既不回写操作数、也不改 ip/cur**）—— 16 条
 
-已连同依据登记进 `ENGINE_INTERNAL_OPS`（`handlers/stubs.ts`）。四类理由：
+已连同依据登记进 `ENGINE_INTERNAL_OPS`（`handlers/stubs.ts`）。★2026-09 订正：这里的 16 条**早已全部转真实现**，`ENGINE_INTERNAL_OPS` 现在只剩 9 条（见 `docs-new/03-engine/opcode-gaps.md`）；下表保留作为"当时为什么可以跳过"的历史判据，但 `0x238`/`0xD9` 两类结论已被推翻（见下方订正行）。四类理由：
 
 | 理由 | opcode | 依据 |
 |---|---|---|
-| **死写**（写的字段全工程无读者） | `0x1B1`（`Engine[21672]`）、`0x238`（`Engine[92338]/[92339]`） | grep 全工程只写不读 |
+| **死写**（写的字段全工程无读者） | 仅 `0x1B1`（`Engine[21672]`） | grep 全工程只写不读（写点 raw 29161/18077） |
+| **等待门计时器加载**（**不是**死写；2026-09 订正） | `0x238`（`Engine[92338]/[92339]` = 等待门起点/时长） | raw 32303-32312；读者 `sub_407E20`（raw 12761-12786）与主循环 `0x400` 分支（raw 21109）；`SN0000.txt:1020` 的 `i238 157c` = 5500ms |
 | **引擎做了事，但 emulator 没有对应子系统**（消息面/转场表/3D） | `0x93` `0x94` `0x97`（消息窗面显示态与填矩形）、`0x224`（清 Scene 转场表）、`0x229`（绘制模式）、`0x256` `0x258` `0x242`（渲染侧字段）、`0x32A`（释放 3D 模型槽）、`0x32D`（3D 颜色） | 都是写渲染/3D 子系统状态，VM 不可观测 |
-| **标志位清写，无人读** | `0xD9`（清 `effect_flags` bit0x1000） | 全工程无 `& 0x1000` 的读者 |
+| **标志位清除**（**有读者**；2026-09 订正） | `0xD9`（清 `effect_flags` bit 0x1000） | 主派发循环 raw 20841 `if ((v24 & 0x1000) != 0)` 就是读者（随后判 `& 0x800` 并调 `sub_453B60`）；置位端 raw 30368、清除端 raw 24945 |
 | **emulator 的帧循环自己做了 / 无消费者** | `0x20E`（图形提交）、`0x1BC`（清消息/声音字段）、`0x1AD`（`Engine[166963] = cur`，唯一读者在存档序列化，emulator 不序列化该字段） | — |
 
-**机械闸门**：`test/game-start-chain.test.ts` 有一条棘轮 —— 把这 16 条各跑一遍（op1/op2 指向两个全局 int），
-断言两个全局量**一个字都没变**。一旦有人把它们改成"半实现"并开始回写，测试会红，提示应搬进 `OPS`。
+**机械闸门（2026-09 订正）**：`test/game-start-chain.test.ts` 里现有的是 **A5 的 7 条**名单棘轮（`A5_IMPLEMENTED` = `0x93/0x94/0x97/0xd9/0x1ad/0x1b1/0x1bc`）+ 注册表断言，**没有**"16 条不写操作数"的棘轮（那 16 条已不在 stub 表里）；"语料用到却未注册"的棘轮在 `test/opcode-gaps.test.ts`。
 
 ## 4. 该路径暴露的两个**渲染侧**缺口（与本任务的 opcode 工作正交）
 
@@ -167,7 +167,7 @@ SN0000 开场有一条 **80 秒**的背景横移动画窗，所以这个门会�
 | 层 | 证据 |
 |---|---|
 | E1 | 25 条 handler 体逐条读过（raw 行号见 `opcode-table.md` / `functions.json`） |
-| E2 | `test/game-start-chain.test.ts`：25 条登录棘轮 + 16 条"不写操作数"棘轮 + 9 条语义用例（含 `0x1B6↔0x1B7` 往返、`0x215/0x218/0x21A` 与场景模型往返） |
+| E2 | `test/game-start-chain.test.ts`：**三张名单棘轮**（`IMPLEMENTED_9` 9 条 + `A4_IMPLEMENTED` 9 条 + `A5_IMPLEMENTED` 7 条，各断言"已进 `OPS` 且不在 no-op 表"）+ 9 条语义用例（含 `0x1B6↔0x1B7` 往返、`0x215/0x218/0x21A` 与场景模型往返）★2026-09 订正：原文"16 条不写操作数棘轮"不存在（那 16 条早已转真实现）。 |
 | E3 | 同文件的 E3 用例：真实语料跑完整链路 ⇒ `titleHover=0`、进入 `GAMESTART`、`gameStartHover=0`、`gameStartResult=1`、`reachedInitGame`、进入 `SN0000`、**首文案 ip=901 且页面文本含该串**、路径上 `unknown=[]` |
 | E4 | `npm run shot -- --gamestart`：**2026-09 现状 = TITLE / GAMESTART / SN0000 序章都正常出图**（`.tmp/gsLayout-7-sn0000-first-text.png`）。它抓到的两个缺陷都已修：§4.1 纹理同步屏障、§4.2 mesh 全屏黑叠加块；另有"撤幕过渡帧闪一下"由 `pixiBackend.#holdFrameAfterCurtainDrop` 处理 |
 | 工具 | `npm run op:inventory -- --path start`（表 0 = 路径上未实现指令，表 1/2/3 同既有口径） |

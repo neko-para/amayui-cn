@@ -149,8 +149,12 @@ export class StubNative implements NativeBridge {
   releaseTexture(layer: number): void {
     this.log(`[native:stub] releaseTexture layer=${layer}`);
   }
-  playMovie(id: number): void {
-    this.log(`[native:stub] playMovie id=0x${id.toString(16)}`);
+  playMovie(id: number, slot: number, mode: number): void {
+    this.log(`[native:stub] playMovie id=0x${id.toString(16)} slot=${slot} mode=${mode}`);
+  }
+  /** `0x20B` FillTexture：桩无纹理槽表面 ⇒ 只留痕（引擎此时会打 FillTexture 错误串）。 */
+  fillSlotRect(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void {
+    this.log(`[native:stub] fillSlotRect slot=${slot} (${x},${y},${w}x${h}) argb=0x${(argb >>> 0).toString(16)} alpha=${alpha}`);
   }
   setDrawPivot(handle: number, x: number, y: number, z: number): void {
     this.log(`[native:stub] setDrawPivot h=0x${handle.toString(16)} (${x},${y},${z})`);
@@ -173,11 +177,32 @@ export class StubNative implements NativeBridge {
     this.log(`[native:stub] getDrawItemPos h=0x${handle.toString(16)} → (0,0,0)（桩无场景）`);
     return { x: 0, y: 0, z: 0 };
   }
+  /** `0x228` 绘制项当前平移（getter）。桩返回 `undefined`（= 引擎 `sub_4AA060` 查表失败 ⇒ op1=1）。 */
+  getDrawItemTranslation(handle: number): { x: number; y: number; z: number } | undefined {
+    this.log(`[native:stub] getDrawItemTranslation h=0x${handle.toString(16)} → undefined（桩无场景）`);
+    return undefined;
+  }
   setDrawPos(handle: number, x: number, y: number, z: number): void {
     this.log(`[native:stub] setDrawPos h=0x${handle.toString(16)} (${x},${y},${z})`);
   }
   setScaleAnim(handle: number, delay: number, dur: number, sx: number, sy: number, sz: number): void {
     this.log(`[native:stub] setScaleAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} s=(${sx},${sy},${sz})`);
+  }
+  /**
+   * `0x22A`/`0x22C`/`0x22D`/`0x22F`：**Scene 级世界矩阵**四条（只作用于层号 ∈ [20,30) 的项）。
+   * ★桩没有场景模型 ⇒ 按契约只留痕（真语义在共享层 `scene/ops.ts` 的 `scSetScene*`）。
+   */
+  setSceneScale(sx: number, sy: number, sz: number): void {
+    this.log(`[native:stub] setSceneScale (${sx},${sy},${sz})`);
+  }
+  setSceneTranslation(x: number, y: number, z: number): void {
+    this.log(`[native:stub] setSceneTranslation (${x},${y},${z})`);
+  }
+  setSceneAxisScale(a: number, b: number, sx: number, sy: number, sz: number): void {
+    this.log(`[native:stub] setSceneAxisScale a=${a} b=${b} s=(${sx},${sy},${sz})`);
+  }
+  setSceneAxisTranslation(a: number, b: number, x: number, y: number, z: number): void {
+    this.log(`[native:stub] setSceneAxisTranslation a=${a} b=${b} t=(${x},${y},${z})`);
   }
   setRotationAnim(handle: number, delay: number, dur: number, ax: number, ay: number, az: number, deg: number): void {
     this.log(`[native:stub] setRotationAnim h=0x${handle.toString(16)} d=${delay} dur=${dur} axis=(${ax},${ay},${az}) θ=${deg}`);
@@ -188,9 +213,35 @@ export class StubNative implements NativeBridge {
   setFlipbook(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void {
     this.log(`[native:stub] setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}`);
   }
+  /**
+   * B 层（bit2）周期/循环动画（`0x230`–`0x235`）：桩宿主只留痕。
+   * ★桩**不是**"少一个能力"：真语义在共享层 `scene/ops.ts`，桩没有场景模型 ⇒ 这里按契约返回 undefined。
+   */
+  setDrawItemLoop(req: import('./native.js').DrawItemLoopRequest): void {
+    this.log(`[native:stub] setDrawItemLoop ${req.op} h=0x${req.handle.toString(16)}`);
+  }
+  /** `0x244` 批量清 A 层窗起点：桩无场景 ⇒ 返回 0（= 没有命中的绘制项）。 */
+  clearDrawItemAnimStarts(mask: number): number {
+    this.log(`[native:stub] clearDrawItemAnimStarts mask=${mask} → 0（桩无场景）`);
+    return 0;
+  }
   gfxSubsystem(a2: number, a3: number, a4: number): void {
     this.log(`[native:stub] gfxSubsystem op1=${a2} op2=${a3} op3=${a4}`);
   }
+  /** 释放「留帧」：桩无画布 ⇒ 只留痕（引擎侧 = 装载点复位显示态 ⇒ 不留旧像素）。 */
+  releaseFrameHold(): void {
+    this.log('[native:stub] releaseFrameHold（读档点：不留旧像素）');
+  }
+
+  /** VM 每条指令派发前下发"正在执行哪一帧"（桩无模型 ⇒ 静默；记日志会每指令一行）。 */
+  setCurrentFrame(_frame: number): void {}
+
+  /** 丢掉"某一帧画的"绘制项（桩无画布 ⇒ 只留痕；见 `native.dropFrameItems` 的依据说明）。 */
+  dropFrameItems(frame: number): number {
+    this.log(`[native:stub] dropFrameItems frame=${frame}（读档点：丢掉被放弃调用方那一层 UI）`);
+    return 0;
+  }
+
   clearDrawContainer(): void {
     this.log('[native:stub] clearDrawContainer');
   }

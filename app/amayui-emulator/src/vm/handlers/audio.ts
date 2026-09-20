@@ -18,6 +18,8 @@
  * | `0xB7` / `0xB9` / `0xBF` | BGM 当前槽播（循环 / 不循环）/ play-bgm | `bgm-play` |
  * | `0xC3` | 写音乐运行态「当前曲 id」（**不播**） | （无意图；只改 `Music[259]`） |
  * | `0xBB` / `0xBC` | SE 总开关 / BGM 模式开关 | `enable` / `bgm-mode`（+ 停一次再重播当前曲） |
+ * | `0x1BA` | **SetSoundMode**：按 op1 类别（1 音乐 / 2 SE / 3 语音 / 4 影片）设该路声音的开关 | 同上面三条（复用同一批意图）+ 写 `sound:*` 配置 |
+ * | `0xC1` | **BGM 暂停/继续切换**（翻转 `Music[260]`，把新值下发给当前音源对象） | `bgm-pause` |
  * | `0xC2` | BGM 淡变（目标 0 ⇒ 清当前曲 id；目标非 0 ⇒ 起播当前曲） | `bgm-fade`（可能先 `bgm-play`） |
  * | `0xC4` / `0x1BD` | 播语音（通道 0，循环位 0 / 1） | `voice-play`（ADV 位在时 `voice-defer`） |
  * | `0x2F4` | 播语音（id, 附带, 通道） | 同上（通道 = op3） |
@@ -94,6 +96,7 @@ const op_bgm_stop: OpHandlerLike = (c) => {
   //   这一点是读档 BGM 还原链的一半：`SAVE.txt:934 i0b8`（确认读档后）清掉 id，读档再把存档里的
   //   id 装回（raw 19911 = 镜像 `[2]`），最后 `CALLBACK_LOAD.BIN:20 i0b7 0` 用它重播。
   setMusicId(c.e, 0);
+  setMusicPaused(c.e, false); // 引擎同一函数第二行：`Music[260] = 0`（raw 106186）⇒ 停播一律回到"非暂停"
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200
     emit(c, { kind: 'bgm-fade', value: 0, step: 100 }); // 引擎：sub_489E50(Music, 100) 推进淡出
@@ -161,6 +164,35 @@ function setMusicLoop(e: StepCtx['e'], loop: boolean): void {
 }
 
 /**
+ * 音乐运行态：**暂停位**（`Music[260]` = `_this[174714]`，见 `engineFieldIds.ts`）。
+ * 清 0 的三个点与引擎同一批：`sub_489B50`（停，raw 106186）、`sub_489F80`（起播，raw 106365）、
+ * `sub_489C20`（起播，raw 106240）。
+ */
+function setMusicPaused(e: StepCtx['e'], paused: boolean): void {
+  e.engineValues.set(ENGINE_FIELD.musicPaused, paused ? 1 : 0);
+}
+function musicPaused(e: StepCtx['e']): boolean {
+  return (e.engineValues.get(ENGINE_FIELD.musicPaused) ?? 0) !== 0;
+}
+
+/**
+ * `sound:Music` 的**运行态镜像 = 当前音源槽号**（`Music[258]`）。
+ *
+ * 引擎的绑定有两处：`sub_489970`（Music 构造，raw 106096）把 `Music[258]` 初始化成 **−1**；
+ * boot（raw 23678-23682）与声音重初始化（`sub_40A8A0` raw 14933-14937）各调一次
+ * `sub_489B40(Music, …, get(sound:Music))` ⇒ `Music[258] = sound:Music`。
+ * 槽号的含义由 `Music[269+slot]` 的对象决定：**−1 = NoMusic**（raw 106112-106114 三个槽都指向同一个
+ * NoMusic 单例）、0 = CD（`sub_404150`）、1 = MIDI（`sub_485D40`）、2 = PCM（`sub_48D970`，raw 106115-106132）。
+ * ⇒ 本工程把「≥ 0」当作"音源已选/音乐开"，与 `op_bgm_mode` 的 ±3 口径一致。
+ *
+ * 缺键按**负值**读（⇒ 视为开）：依据 `sub_405460`（raw 11090-11099）与 boot 的
+ * `if (get(sound:VolumeN) >= 0)` 判据 —— 引擎把缺键读成负数。
+ */
+function musicSourceSlot(e: StepCtx['e']): number {
+  return e.config ? cfgInt(e.config, CFG.soundMusic, -1) : -1;
+}
+
+/**
  * `0xB7`（循环）/ `0xB9`（不循环）：在 BGM 当前槽播曲（引擎 `sub_489F80` raw 106352-106372）。
  *
  * ```c
@@ -182,6 +214,7 @@ const op_bgm_slot: OpHandlerLike = (c) => {
   const id = arg !== 0 ? arg : musicId(c.e);
   if (id === 0) return; // 引擎：当前曲 id 也是 0 ⇒ sub_489B50（此刻本来就没在播）
   if (arg !== 0) setMusicId(c.e, arg);
+  setMusicPaused(c.e, false); // 引擎 sub_489F80 的起播分支：`Music[260] = 0`（raw 106364-106365）
   emit(c, bgmPlayIntent(c.e, id, loop));
 };
 
@@ -208,50 +241,206 @@ const op_play_bgm: OpHandlerLike = (c) => {
   // ★`sub_489C20(Music, op1, 1)`（raw 106225-106253）：`Music[261] = 1` 恒执行；`op1 == 0` 时与
   //   `0xB7 0` 同义（当前曲 id 非 0 ⇒ 重播，否则 `sub_489B50` 停）；同曲同循环已在播 ⇒ 什么都不做
   //   （宿主 `bgmPlay` 里那条 `#bgm.bgm === bgm && playback && loop` 就是它）。
+  //   ★`Music[261]` 的**旧值**要先取：`sub_489C20` 的"是否重起"判据用的是旧值（`Music[261] != a3`）。
+  const oldLoop = musicLoop(c.e);
   setMusicLoop(c.e, true);
   const arg = readIntOperand(c.e, c.frame, c.instr, 1);
   if (arg === 0) {
     const cur = musicId(c.e);
-    if (cur !== 0) emit(c, bgmPlayIntent(c.e, cur, true));
-    else emit(c, { kind: 'bgm-stop' }); // 引擎：sub_489B50
+    if (cur !== 0) {
+      setMusicPaused(c.e, false); // 引擎 sub_489C20 的 LABEL_5：起播前 `Music[260] = 0`（raw 106240）
+      emit(c, bgmPlayIntent(c.e, cur, true));
+    } else {
+      emit(c, { kind: 'bgm-stop' }); // 引擎：sub_489B50（它自己清 Music[260]/[259]）
+    }
     return;
   }
+  // ★`sub_489C20` 的清暂停只在"真的重起"时发生：判据是 `Music[259] != a2 || Music[261] != a3`（a3 恒 1）
+  //   ⇒ 同曲 + 原本就是循环时**不动 `Music[260]`**（已暂停的曲子被重新 play-bgm 同一首仍是暂停的）。
+  if (musicId(c.e) !== arg || !oldLoop) setMusicPaused(c.e, false);
   setMusicId(c.e, arg);
   emit(c, bgmPlayIntent(c.e, arg, true));
 };
 
-/** `0xBB`：SE 总开关（引擎 `sub_408D90`：与现状比较后写配置 `sound:SE`，关时停 0..9 通道）。 */
-const op_se_enable: OpHandlerLike = (c) => {
-  const on = readIntOperand(c.e, c.frame, c.instr, 1) !== 0;
+// ---------------------------------------------------------------------------
+// 声音开关（`0xBB` / `0xBC` / `0x1BA` 三个 handler 共用的四段体）
+// ---------------------------------------------------------------------------
+
+/**
+ * **引擎 `sub_408D90(Engine, a2)`（raw 13545-13571）= SE 总开关**。`0xBB`（a2 = op1）与
+ * `0x1BA op1=2`（a2 = op2，**原样**传进来）走同一段体：
+ * ```c
+ * v3 = Engine[20980];                       // SE 运行态（boot raw 23691 = get(sound:SE) != 0）
+ * if ((a2 != 0) == v3) return 0;            // ★与现状相同 ⇒ 直接返回：不写配置、不发意图
+ * if (v3) { 释放 SE 通道对象 0..9；Engine[20980] = 0; setConfig(sound:SE, 0); }
+ * else    {                        Engine[20980] = 1; setConfig(sound:SE, 1); }
+ * sub_406DF0(Engine, 2, a2);                // 影片播放器里依赖 SE 的那些跟着开关（未建模，见下）
+ * ```
+ * ⇒ `Engine[20980]` 与配置 `sound:SE` 是同一判据的两个副本（raw 23689-23691 / 14940-14942），
+ * 本工程只留配置这一份，故以 `cfgInt(sound:SE) != 0` 当"现状"。
+ *
+ * ★关闭时引擎逐个 `sub_4B60C0(SE, i)`（i = 0..9）**释放音效通道对象**；宿主等价物是
+ * `{kind:'enable', target:'se', on:false}` —— `AudioEngine.setEnabled` 会把 10 条 SE 通道全停掉。
+ * ★`sub_406DF0`（raw 12041-12110）遍历最多 1000 个影片播放器、把"依赖该类声音"的那些音轨一起开关 ——
+ * 影片层在重写侧未建模 ⇒ 不假装实现（缺口见 `analysis/opcode-gaps.json` 的 0x1BA 条目）。
+ */
+function switchSeEnable(c: StepCtx, a2: number): void {
+  const on = a2 !== 0;
+  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundSE, -1) !== 0 : true;
+  if (on === cur) return; // 引擎：(a2 != 0) == v3 ⇒ return 0
   setConfigValue(c.e, CFG.soundSE, on ? 1 : 0);
   emit(c, { kind: 'enable', target: 'se', on });
+}
+
+/**
+ * **引擎 `sub_408E20(Engine, a2)`（raw 13573-13599）= 语音总开关**（只有 `0x1BA op1=3` 会走到）：
+ * 与 `sub_408D90` 同构，运行态字段换成 `Engine[21293]`（boot raw 23693-23695 = `get(sound:Voice) != 0`，
+ * 与上文 `0xBB` 那条注释里 `0xC4` 的 `if (Engine[21293]) Engine[122501] = 1` 是同一个字段）。
+ * 关闭时释放 3 个语音通道对象（`sub_4B60C0(voice, i + 12)`，i = 0..2 ⇒ 设备通道 12/13/14）；
+ * 宿主等价物 = `{kind:'enable', target:'voice', on:false}`（`setEnabled` 会停掉 3 条语音通道）。
+ */
+function switchVoiceEnable(c: StepCtx, a2: number): void {
+  const on = a2 !== 0;
+  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundVoice, -1) !== 0 : true;
+  if (on === cur) return;
+  setConfigValue(c.e, CFG.soundVoice, on ? 1 : 0);
+  emit(c, { kind: 'enable', target: 'voice', on });
+}
+
+/**
+ * **引擎 `sub_408EB0(Engine, a2)`（raw 13601-13609）= 影片声音开关**（只有 `0x1BA op1=4` 会走到）：
+ * `if (a2 == get(sound:Movie)) return 0;` → `setConfig(sound:Movie, a2)` → `sub_406DF0(Engine, 4, a2)`。
+ *
+ * ★这里写 `sound:Movie` 是**有消费者**的：配置整份会被回写进 `SYS4REG.INI`（`run.ts` 的 `saveConfig`
+ * + `formatIni`），下次启动再被读（`configRegistry` 的 `sound:Movie`）。而
+ * `sub_406DF0` 的**影片播放器音轨下发**在重写侧没有对应物（影片层未建模）⇒ 只记账、不假装。
+ */
+function switchMovieEnable(c: StepCtx, a2: number): void {
+  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMovie, -1) : -1;
+  if (a2 === cur) return;
+  setConfigValue(c.e, CFG.soundMovie, a2);
+  c.log('0x1BA op1=4：写 sound:Movie（影片音轨）—— 引擎还会经 sub_406DF0(raw 12041-12110) 逐影片播放器下发，该层未建模');
+}
+
+/**
+ * **引擎 `sub_408CF0(Engine, a2)`（raw 13514-13543）= 音乐开关**。`0xBC`（a2 = op1 − 1）与
+ * `0x1BA op1=1`（a2 = op2，原样）走同一段体：
+ * ```c
+ * v6 = Music[259];                                  // 记住当前曲
+ * v3 = get(sound:Music);                            // 音源槽/音量：< 0 = 关
+ * if (a2) { if (v3 < 0) v4 = v3 + 3; }              // 开：−1 → 2（PCM，默认音源）
+ * else    { if (v3 >= 0) v4 = v3 - 3; }             // 关：≥ 0 → −3
+ * setConfig(sound:Music, v4); Music[258] = v4;      // 两个副本都写
+ * sub_489B50(Music);                                // 停（清 Music[259]/[260]）
+ * Music[259] = v6;                                  // 装回
+ * sub_489F80(Music, 0, Music[261]);                 // 用当前循环位重播
+ * sub_406DF0(Engine, 1, a2);
+ * ```
+ * ★`a2` 的语义是「**0 = 关 / 非 0 = 开**」，不是档位：`±3` 只把配置在正负之间搬。
+ * ⇒ 下发给宿主的 `bgm-mode.mode` 归一成 0/1（`audioBootIntents` 用的也是这个口径）。
+ */
+function switchMusicEnable(c: StepCtx, a2: number): void {
+  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMusic, 0) : 0;
+  if (a2 !== 0 && cur < 0) setConfigValue(c.e, CFG.soundMusic, cur + 3);
+  else if (a2 === 0 && cur >= 0) setConfigValue(c.e, CFG.soundMusic, cur - 3);
+  emit(c, { kind: 'bgm-mode', mode: a2 !== 0 ? 1 : 0 });
+  const id = musicId(c.e);
+  const loop = musicLoop(c.e);
+  emit(c, { kind: 'bgm-stop' });
+  setMusicPaused(c.e, false); // 引擎 sub_489B50 清 Music[260]（raw 106186）
+  if (id !== 0) emit(c, bgmPlayIntent(c.e, id, loop)); // 引擎 sub_489F80 起播分支再清一次（raw 106365）
+}
+
+/** `0xBB`：SE 总开关（`sub_420D90` raw 29782-29789：`sub_408D90(this, op1)`）。 */
+const op_se_enable: OpHandlerLike = (c) => {
+  switchSeEnable(c, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
 /**
- * `0xBC`：BGM 开关/模式（引擎 `sub_420DC0` → `sub_408CF0(op1-1)`）：把 `sound:Music` 的值 **±3** 写回
- * （`< 0` 视为关），并通知宿主切换 BGM 开关。
+ * `0xBC`：BGM 开关/模式（引擎 `sub_420DC0` → `sub_408CF0(op1-1)`）。
  *
- * ★操作数口径按 raw 收（`sub_420DC0` raw 29893-29801：`result = op1; if (result <= 2) sub_408CF0(result-1)`）：
+ * ★操作数口径按 raw 收（`sub_420DC0` raw 29797-29800：`result = op1; if (result <= 2) sub_408CF0(result-1)`）：
  * op1 ≤ 2 才动作，`a2 = op1 - 1`（a2 = 0 = 关；a2 ≠ 0（含 −1）= 开）。opcode-table 旧写的"1..3"与 raw
  * 不一致（多算了 3、漏了 0），语料 0 处 ⇒ 按 raw 实现。
  *
- * ★引擎在开关切换时**停一次再重播当前曲**（`sub_408CF0` raw 13521-13534）：
- * `v6 = Music[259]` → 改配置 → `sub_489B50`（停 + 清 id）→ `Music[259] = v6`（装回）→
- * `sub_489F80(Music, 0, Music[261])`（用当前循环位重播）。所以这里补 `bgm-stop` + 重播；
- * 关模式时宿主 `#enabled.bgm = false`（`bgm-play` 只记 id 不起播）⇒ 语义仍正确。
+ * ★引擎在开关切换时**停一次再重播当前曲**（见 `switchMusicEnable` 的引文）；关模式时宿主
+ * `#enabled.bgm = false`（`bgm-play` 只记 id 不起播）⇒ 语义仍正确。
  */
 const op_bgm_mode: OpHandlerLike = (c) => {
   const raw = readIntOperand(c.e, c.frame, c.instr, 1);
   if (raw > 2) return; // 引擎：`result <= 2` 才动作
-  const a2 = raw - 1; // 0 = 关；其余（含 −1/1）= 开
-  const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMusic, 0) : 0;
-  if (a2 !== 0 && cur < 0) setConfigValue(c.e, CFG.soundMusic, cur + 3);
-  else if (a2 === 0 && cur >= 0) setConfigValue(c.e, CFG.soundMusic, cur - 3);
-  emit(c, { kind: 'bgm-mode', mode: a2 });
-  const id = musicId(c.e);
-  const loop = musicLoop(c.e);
-  emit(c, { kind: 'bgm-stop' });
-  if (id !== 0) emit(c, bgmPlayIntent(c.e, id, loop));
+  switchMusicEnable(c, raw - 1);
+};
+
+/**
+ * **`0x1BA` SetSoundMode**（`sub_421200` raw 29985-30019，语料 11 处 / 2 文件）：op1 = 类别、op2 = 开关值。
+ *
+ * ```c
+ * frames[cur].state = 5;
+ * if      (op1 == 1) sub_408CF0(this, op2);   // 音乐
+ * else if (op1 == 2) sub_408D90(this, op2);   // SE
+ * else if (op1 == 3) sub_408E20(this, op2);   // 语音
+ * else if (op1 == 4) sub_408EB0(this, op2);   // 影片
+ * else { sprintf(buf, "SetSoundModeの引数が不正です．\r\n"); ShowMessage(buf); }   // raw 30016-30017
+ * ```
+ * ★与 `0xBB`/`0xBC` 的关系：那两条是**单类专用的窄指令**（`0xBB` = SE、`0xBC` = 音乐），本指令是**通用入口**，
+ * 四条分支逐字复用上面三个 helper（`0xBC` 传 `op1 − 1`、本指令音乐分支传 `op2` 原值 —— 这正是两者的差异）。
+ * ★语料只用到 op1 = 1/2/3（`CONFIG1.txt:1996-1998/2021-2023/2035/2061` 六处与
+ * `INITREGSOUND.txt:10-12` 三处开关音乐/SE/语音；`CONFIG1.txt:2035/2061` 的 op1 是变量 `(local-int 57c3)`
+ * ⇒ 就是设置界面那一行的类别），op1 = 4 与非法值在语料里 **0 处**。
+ * ★`frames[cur].state = 5` 与全族其它 handler 一样是引擎的"本帧执行态"，本工程整体不建模（见 `0xB4` 一族）。
+ */
+const op_set_sound_mode: OpHandlerLike = (c) => {
+  const kind = readIntOperand(c.e, c.frame, c.instr, 1);
+  // ★raw 里 op2 是**在每个分支内**各读一次（29996/30001/30006/30011），非法类别分支不读它；
+  //   这里统一在入口读一次：读操作数是纯取值（`readIntOperand_41BF50` 无副作用），对 VM 不可观测，
+  //   但统一读能让 `test/opcode-operands.test.ts` 的「1..argc 全被碰」口径守卫覆盖本指令。
+  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  switch (kind) {
+    case 1:
+      switchMusicEnable(c, value);
+      break;
+    case 2:
+      switchSeEnable(c, value);
+      break;
+    case 3:
+      switchVoiceEnable(c, value);
+      break;
+    case 4:
+      switchMovieEnable(c, value);
+      break;
+    default:
+      c.log(`0x1BA SetSoundMode：类别非法（op1=${kind}）—— 引擎显示「SetSoundModeの引数が不正です．」（raw 30016-30017），不写任何开关`);
+  }
+};
+
+/**
+ * **`0xC1`（`sub_419770` raw 24831-24842，0 操作数）= BGM 暂停/继续 翻转**（语料 1 处：`MMODE.txt:440`）。
+ *
+ * ```c
+ * frames[cur].state = 1;
+ * v1 = Music;                                  // _this + 174454（字节 697816）
+ * v2 = v1[258];                                // 当前音源槽 = sound:Music（见 musicSourceSlot）
+ * v1[260] = (v1[260] == 0);                    // ★翻转暂停位
+ * (*(v1[v2 + 269] vtable + 12))(v1[v2 + 269], v1[260]);   // ★后端 SetPause(新值)
+ * ```
+ * 后端对象 = `Music[269 + slot]`（构造见 `sub_489970` raw 106112-106132）：**−1 = NoMusic**
+ * （三个负槽都指向同一个 NoMusic 单例，其槽 3 = `sub_4350E0` 空桩）、0 = CD、1 = MIDI、2 = PCM。
+ * 抽象槽 3（vtable+12）在 `MusicBase::vftable`（0x528B7C）里是纯虚函数，三个实现分别是：
+ * `CD::Pause`（`sub_404580` raw 10241-10257，MCI 0x809 = PAUSE / 0x855 = RESUME）、
+ * `MIDI::Pause`（`sub_485DB0` raw 10309-10314，`mciSendString("pause midi")`，
+ * ★**恒发 pause、参数被忽略 ⇒ 该后端永远不恢复**，是引擎自身的不对称）、
+ * `PCM::SetPause`（`sub_48DA60` raw 108613-108624 → `sub_4B60C0`/`sub_4B6190`）。
+ *
+ * ★宿主等价物只有一件事：**暂停/继续当前 BGM** ⇒ `{kind:'bgm-pause', paused}`。音源槽（CD/MIDI/PCM）
+ * 在重写侧本来就收敛成 Web Audio 一条 BGM 通路（配置 `sound:Music` 仍照引擎写：`switchMusicEnable` 的 ±3），
+ * 所以这里不做"按槽分派"的假动作，只按槽号判"是否有后端"（`slot < 0` = NoMusic ⇒ 引擎那一步是空桩）。
+ */
+const op_bgm_pause_toggle: OpHandlerLike = (c) => {
+  const paused = !musicPaused(c.e);
+  setMusicPaused(c.e, paused);
+  if (musicSourceSlot(c.e) < 0) return; // NoMusic 槽：vtable+12 = sub_4350E0（空桩）
+  emit(c, { kind: 'bgm-pause', paused });
 };
 
 /**
@@ -438,6 +627,8 @@ export const AUDIO_OPS: OpTable = [
   [0xbf, op_play_bgm],
   [0xbb, op_se_enable],
   [0xbc, op_bgm_mode],
+  [0xc1, op_bgm_pause_toggle], // BGM 暂停/继续翻转（翻转 Music[260] → 后端 SetPause）；语料 1 处
+  [0x1ba, op_set_sound_mode], // SetSoundMode：op1 类别(1音/2SE/3语音/4影片) + op2 开关；语料 11 处
   [0xc2, op_bgm_fade],
   [0xc3, op_set_music_field], // 写 Music[259]（当前曲 id，不播）；30 处，全在"换曲淡入"习语里
   [0xc4, op_play_voice],

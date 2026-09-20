@@ -25,7 +25,7 @@
  * （`sub_403E70` + `set:WheelKeyUp/Down`）都不建模。本模块只忠实实现**状态机与控制流**，
  * 文本内容按槽保存（足够让 `wait-for-input` 的挂起/推进成立）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
@@ -33,6 +33,8 @@ import {
   advance,
   defaultWinStyle,
   layoutWindow,
+  numberCellExtent,
+  type BlankExtent,
   type FontSpec,
   type FontStyleSnapshot,
   type MsgCellFrame,
@@ -41,7 +43,7 @@ import {
 import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
-import { CFG } from '../../configRegistry.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
@@ -240,7 +242,28 @@ export function emitWin(e: Engine, win: number): void {
     //   `scDetachTexture` 靠它判"脚本删掉这窗的正文图元 ⇒ 画面上的字也该消失"（见其说明）。
     itemRanges: itemRangesOf(e, w),
     cell: cellFrameOf(e, w),
+    // ★`set:BlankExtentMode`（空白字前进量的门）：引擎在每个消费点现读配置
+    //   （raw 12230/85126/87272 … 全是 `GetConfig(..., aSetBlankextent) == 1`）⇒ 这里也逐次读，
+    //   不在 Engine 上缓存（脚本 `0x1B5` 一族的写配置指令会改它）。
+    blankExtent: blankExtentOf(e),
   });
+}
+
+/**
+ * `set:BlankExtentMode` 的**读取点**（引擎 raw 12230 / 85126 / 85366 / 85638 / 85812 / 86567 /
+ * 87272 / 87689 … 共 20 余处，判据一律是 **`== 1`**，不是"非 0"）。
+ *
+ * 口径（引擎 `sub_404EE0` raw 10716-10739 + 消费点）：`== 1` 时**空白字**（`0x20` / `0x8140` /
+ * 控制字，绘制期还含"无轮廓字"）的前进量改用 `GetTextExtentPoint32A` 逐字量宽；
+ * 否则用字号网格（raw 87279：`font_size / (全角?1:2)`）。
+ *
+ * ★**`measure` 故意不给**：emulator 没有字体度量缝（见 `text/layout.ts` 文件尾「缺口」）。
+ * ⇒ `mode == 1` 时布局会**显式回退**到网格并把 `TextFrame.blankExtentFallback` 置真（缺口可见）。
+ * 随包默认是 0（`tickets/T-0031/evidence/generated-SYS4REG.ini`）⇒ 默认配置下与引擎逐字等价。
+ */
+function blankExtentOf(e: Engine): BlankExtent {
+  const def = registryDefault(CFG.setBlankExtentMode);
+  return { mode: e.config ? cfgInt(e.config, CFG.setBlankExtentMode, def) : def };
 }
 
 /** 该窗在 Scene 里的 DrawItem 区间（引擎 `FontVWindow+104/+108` 与 `+276/+280`；count<=0 视为未登记）。 */
@@ -645,9 +668,9 @@ const op_char_reveal_switch: OpHandler = (c) => {
     return;
   }
   if ((e.effectFlags & CHAR_REVEAL_ACTIVE) !== 0) {
-    if ((e.effectFlags & 0x100000) === 0) {
-      for (const win of m.reveal.keys()) m.finishReveal(win);
-    }
+    // ★引擎（raw 29343-29349）只对 **`Engine[122371]`（= 当前窗）** 做一次 `sub_45A940(Font, 窗, -2, 0)`
+    //   （= 用当前游标重贴），而不是对所有 reveal 窗整段收尾（审计 P3 `op-10-004`：凭空扩大范围）。
+    if ((e.effectFlags & 0x100000) === 0) m.finishReveal(m.resolveWin(m.lastArg));
     e.endCharReveal();
     e.serviceTextReveal(e.nowMs);
   }
@@ -690,6 +713,13 @@ const op_text_block_begin: OpHandler = (c) => {
  *
  * 重写侧：`finishReveal`（= 整段显示完并 emit）就是"把余下的行贴出去"的等价物；
  * 行游标的存取由 `0x304`/`0x305` 的 `lineCursorSave` 承担。
+ *
+ * ★订正（审计 P2 `op-7-0x305-flags-not-cleared`，`tickets/T-0077`）：引擎的**三条出口**都清
+ * `Engine[489988]`（= dword `122497` = `msgwin.flags`）：raw 26083/26095（共享 `LABEL_12` 与等待门分支）
+ * 与 raw 26099（else 出口）。emulator 此前不清 ⇒ `0x304` 置 1 后**永久留在"注音/内嵌模式"**，
+ * 之后的 `show-text` 一直走 `sub_46BE30` 分支（文本表现错）。
+ * 引擎在出口处还顺手：置 `effect_flags |= 0x20000000` 并按 `Engine[86672]` 起 `sub_453A60`、
+ * 或清等待计时器三格（`369344/369352/369356`）—— 这两段 emulator 未建模（记在缺口台账）。
  */
 const op_text_block_end: OpHandler = (c) => {
   const e = c.e;
@@ -700,6 +730,8 @@ const op_text_block_end: OpHandler = (c) => {
   if (m.charMode) e.endCharReveal();
   e.serviceTextReveal(e.nowMs);
   emitWin(e, win);
+  // ★引擎三条出口都清 `Engine[122497]`（raw 26083/26095/26099）⇒ 文本块结束后必须退出"注音/内嵌模式"。
+  m.flags = 0;
 };
 
 
@@ -1112,16 +1144,41 @@ const op_set_message_speed_field: OpHandler = (c) => {
   c.e.engineValues.set(ENGINE_FIELD.messageSpeed, readIntOperand(c.e, c.frame, c.instr, 1));
 };
 
+/**
+ * 自动翻页的两个「**idx 二选一**」写入端（引擎体只在 0/1 时写配置，其它值走错误串分支且**不写任何键**）：
+ *  - `0x1B9`（`sub_41FF60` raw 29191-29220）：`idx == 0 → message:AutoMessageTime0`、`== 1 → …Time1`，
+ *    否则 `sprintf_s(aGetautomessp)` + `sub_4034D0`（打印错误串、不写配置）；
+ *  - `0x2E7`（`sub_426540` raw 33534-…）：同形状，键为 `message:AutoMessagePitch0/1`（错误串 `aGetautomespi`，raw 33553）。
+ *
+ * ★修前 emulator 用 `idx === 1 ? 1 : 0` ⇒ `idx >= 2` 被**静默写成 0 号键**（审计 P2 `op-10-001`：凭空回退）。
+ * 语料只有 0/1，但静默回退会让任何坏脚本静默改错设置。
+ */
+function setAutoMessageByIndex(c: StepCtx, kind: 'time' | 'pitch'): void {
+  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+  if (idx !== 0 && idx !== 1) {
+    c.log(`自动翻页 idx=${idx} 非法 ⇒ 按引擎走错误串分支（不写任何配置键）`);
+    return;
+  }
+  // ★键名走 `CFG.*` 常量（不要手打前缀拼接：`test/config-keys.test.ts` 静态扫全仓，前缀会被判成"幽灵键"）。
+  const key =
+    kind === 'time'
+      ? idx === 0
+        ? CFG.messageAutoMessageTime0
+        : CFG.messageAutoMessageTime1
+      : idx === 0
+        ? CFG.messageAutoMessagePitch0
+        : CFG.messageAutoMessagePitch1;
+  setConfigValue(c.e, key, readIntOperand(c.e, c.frame, c.instr, 2));
+}
+
 /** `0x1B9 <idx> <ms>`（sub_41FF60 raw 29191-29220）：`message:AutoMessageTime{idx}`（自动翻页基础时长）。 */
 const op_set_auto_message_time: OpHandler = (c) => {
-  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
-  setConfigValue(c.e, `message:automessagetime${idx === 1 ? 1 : 0}`, readIntOperand(c.e, c.frame, c.instr, 2));
+  setAutoMessageByIndex(c, 'time');
 };
 
-/** `0x2E7 <idx> <ms>`（sub_426540 raw 33534-...）：`message:AutoMessagePitch{idx}`（自动翻页每行附加时长）。 */
+/** `0x2E7 <idx> <ms>`（sub_426540 raw 33534-33562）：`message:AutoMessagePitch{idx}`（自动翻页每行附加时长）。 */
 const op_set_auto_message_pitch: OpHandler = (c) => {
-  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
-  setConfigValue(c.e, `message:automessagepitch${idx === 1 ? 1 : 0}`, readIntOperand(c.e, c.frame, c.instr, 2));
+  setAutoMessageByIndex(c, 'pitch');
 };
 
 /** `0x2E8 <v>`（sub_4265E0 raw 33565-33577）：`message:AutoMessageOption`。 */
@@ -1324,12 +1381,17 @@ const op_draw_string: OpHandler = (c) => {
  * - 数字从右往左填（`i = v11 … 0`，写 `buf[i + 符号位]`），`i == v11 || 剩余值 || bit0` 才写 ⇒ 前导零/空格。
  * - 符号写在 `buf[v19]`（`v19` = 最后写入的格）；`v11 < 0`（字段太窄）时写 `#`。
  * - **x 前进量**（`v13 = v19` = 首个字符所在格）：居中 = `v13*cy/4`（全角）/`v13*cy/2`（半角）；
- *   左对齐 = `0`；右对齐 = `v13*cy`（全角）/`v13*cy/2`（半角）。`cy` = 一个全角格宽
- *   （引擎取 `Engine[71744] ? Engine[71745] : -Engine[21632]`，即字号；`set:BlankExtentMode == 1`
- *   时改用 GDI 字宽量测 —— **那段字宽量测未建模**，见下方"缺口"）。
+ *   左对齐 = `0`；右对齐 = `v13*cy`（全角）/`v13*cy/2`（半角）。`cy` = 一个全角格宽：
+ *   默认取 `Engine[71744] ? Engine[71745] : -Engine[21632]`（字体度量模式 → 字号 / lfHeight，raw 12221-12225）；
+ *   **`set:BlankExtentMode == 1` 时整个 `cy` 被逐字量宽覆盖**（raw 12232-12235）：
+ *   半角 `cy = 2 × 量宽(0x20)`、全角 `cy = 量宽(0x8140)`（`sub_404EE0` raw 10716-10739）——
+ *   见 `text/layout.ts` 的 `numberCellExtent`。
  *
- * ## 缺口（明确记录）
- * `set:BlankExtentMode == 1` 分支用 `sub_404EE0` 量空格宽度；emulator 无 GDI 度量，统一用字号当格宽。
+ * ## 缺口（明确记录，`tickets/T-0085`）
+ * 门的**读取与公式**已接（`numberCellExtent`），但 `set:BlankExtentMode == 1` 需要的**字体度量来源**
+ * 在 emulator 里不存在（没有 GDI `GetTextExtentPoint32A` 的等价物）⇒ 该分支按 `measured: false`
+ * **显式回退**成默认的 `cy`（= 现状，`op2` 写回的值也因此不变），不编数。
+ * 要拿到什么、从哪来（宿主 `measureText` / 自建 TTF `hmtx` 表）写在 `src/text/layout.ts` 文件尾「缺口」。
  * 对"把数字排进离屏槽"的用量（INFO/ALCHEMY 等）只影响像素级位置，不影响脚本状态。
  */
 const op_draw_number_string: OpHandler = (c) => {
@@ -1340,10 +1402,13 @@ const op_draw_number_string: OpHandler = (c) => {
   const value = readIntOperand(e, c.frame, c.instr, 4);
   const width = readIntOperand(e, c.frame, c.instr, 5);
   const flags = readIntOperand(e, c.frame, c.instr, 6);
-  // 引擎：cy = Engine[71744] ? Engine[71745] : -Engine[21632]（= 一个全角格宽）
-  const cy = (e.engineValues.get(ENGINE_FIELD.fontMetricsMode) ?? 0) !== 0 ? e.engineValues.get(ENGINE_FIELD.fontSize) ?? 0 : -(e.engineValues.get(ENGINE_FIELD.logfontMain) ?? 0);
-  const cell = formatNumberCell(value, width, flags);
   const halfWidth = (flags & 0x10000) !== 0;
+  // 引擎：cy = Engine[71744] ? Engine[71745] : -Engine[21632]（= 一个全角格宽）
+  const gridCy = (e.engineValues.get(ENGINE_FIELD.fontMetricsMode) ?? 0) !== 0 ? e.engineValues.get(ENGINE_FIELD.fontSize) ?? 0 : -(e.engineValues.get(ENGINE_FIELD.logfontMain) ?? 0);
+  // ★`set:BlankExtentMode == 1` ⇒ cy 改由逐字量宽决定（raw 12232-12235）。没有度量来源时
+  //   `numberCellExtent` 返回原 `gridCy`（`measured: false`）⇒ 默认与改动前逐字相等。
+  const cy = numberCellExtent(halfWidth, gridCy, blankExtentOf(e)).cy;
+  const cell = formatNumberCell(value, width, flags);
   // 引擎的 x 前进量（全角/半角与对齐方式三档）
   const advance =
     (flags & 2) !== 0

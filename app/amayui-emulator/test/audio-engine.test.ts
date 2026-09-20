@@ -12,7 +12,7 @@ import { AudioEngine, VOLUME_MAX } from '../src/audio/audioEngine.js';
 import { FakeAudioHost } from './fakeAudioHost.js';
 
 /** 造一个「引擎 + 假宿主」；`durations` 可指定每个 id 的时长（秒）。 */
-function mk(opts: { durations?: Record<number, number>; cacheBytes?: number; streaming?: boolean; missing?: Array<number | string> } = {}): {
+function mk(opts: { durations?: Record<number, number>; cacheBytes?: number; streaming?: boolean; missing?: Array<number | string>; positionOf?: (id: number) => number } = {}): {
   host: FakeAudioHost;
   eng: AudioEngine;
   logs: string[];
@@ -23,6 +23,7 @@ function mk(opts: { durations?: Record<number, number>; cacheBytes?: number; str
     durationOf: (id) => opts.durations?.[id] ?? 1,
     streaming: opts.streaming ?? false,
     missing: new Set((opts.missing ?? []).map((k) => (typeof k === 'number' ? `id:` + k : k))),
+    positionOf: opts.positionOf,
   });
   const eng = new AudioEngine(host, { cacheBytes: opts.cacheBytes, log: (m) => logs.push(m) });
   return { host, eng, logs };
@@ -273,6 +274,34 @@ test('0xBC 模式 0 = 关（停 BGM）；0xC2 淡变到 0 会停', async () => {
   eng.tick(1016, false);
   eng.tick(1032, false);
   assert.equal(eng.debug().bgm!.playing, false, '淡到 0 ⇒ 停（引擎进度满且目标为 0 时 stop）');
+});
+
+test('★0xC1 BGM 暂停/继续：流式宿主走 `setPaused`；缓冲宿主「停播 + offsetSec 续播」', async () => {
+  // ① 流式（Electron 的常态路径）：暂停直达播放句柄，位置由 `<audio>` 自己保留
+  const s = mk({ streaming: true });
+  s.eng.bgmPlay(18, true);
+  const stream = s.host.streams.at(-1)!;
+  s.eng.bgmPause(true);
+  assert.deepEqual(stream.pauseHistory, [true], '暂停下达到流式句柄（不是 stop）');
+  assert.equal(stream.stopped, false, '暂停不释放播放（引擎 SetPause 保留位置）');
+  assert.equal(s.eng.debug().bgm!.paused, true);
+  s.eng.bgmPause(false);
+  assert.deepEqual(stream.pauseHistory, [true, false], '继续同样下达');
+  s.eng.bgmStop();
+  assert.equal(s.eng.debug().bgm!.paused, false, '停播清暂停位（引擎 `sub_489B50` raw 106186）');
+
+  // ② 缓冲宿主（没有 `setPaused`）：暂停 = 停播 + 记位置，继续 = 用 `offsetSec` 从原位续播
+  const b = mk({ positionOf: () => 12.5 });
+  b.eng.bgmPlay(18, true);
+  await b.eng.idle();
+  const first = b.host.plays.at(-1)!;
+  b.eng.bgmPause(true);
+  assert.equal(first.stopped, true, '宿主无 setPaused ⇒ 停播（位置已由 positionSec 记下）');
+  assert.equal(b.eng.debug().bgm!.playing, false);
+  assert.equal(b.eng.debug().bgm!.paused, true);
+  b.eng.bgmPause(false);
+  assert.equal(b.host.plays.length, 2, '继续 ⇒ 重新起播');
+  assert.equal(b.host.plays.at(-1)!.opts.offsetSec, 12.5, '从暂停位置续播（引擎 sub_4B5A30 的偏移等价物）');
 });
 
 test('★BGM 曲号按文件名解析（`BGM%03d.OGG`），不是统一文件 id', async () => {

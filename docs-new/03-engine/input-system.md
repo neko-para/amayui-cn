@@ -243,12 +243,14 @@ _this[30*cur + 95805] = 0;
 | **0xFE** (SetKeyTotal, sub_421CA0, raw.c ~300xx) | 主 `_this[517]` | 写"总键数/默认键"（`>0x1F` 抛 `SetKeyTotalの引数が不正`）。`sub_419AF0` 用它做扫描上限与默认检查。 |
 | **0x107** (u00415F **SetKey**, sub_421E50, raw.c 30114) | `_this[551+op1]=op2`（op1≤0x1F） | 键下标 op1 → 绑定值 op2。 |
 | **0x10B** (sub_422070, raw.c 30200) | `_this[op2+1383]=op1`（op1≤0x1F） | 键 index=op2，值=op1。 |
-| **0x10C** (SetKeyMulti, sub_4220B0, raw.c 30213) | `_this[_this[op1+1690]+1434]=op2`（op1≤0x1F） | 键群绑定。 |
+| **0x10C** (SetKeyMulti, sub_4220B0, raw.c 30616) | `_this[_this[op2+1690]+1434]=op1`（op1=位 ≤0x1F；op2=**键码**） | 把掩码位 op1 绑到"键码 op2 当前对应的 VK"：`Input = Engine+1032` ⇒ 等价 `Input[1176+Input[1432+键码]] = 位`。目标 `Input[1176+VK]` 就是 `sub_4770A0` 每帧读的 VK→位表，`Input[1432+键码] = VK` 由 `sub_476AA0`（raw 91325-91423）填默认（`src/SYSTEM4.txt:87-97` 用 `i10c 4 1c`=RETURN、`i10c 4 2c`='Z'…）。★订正：旧写 `_this[_this[op1+1690]+1434]=op2` **把两个操作数写反了**（`op1>0x1F` 才是抛错的那一格）。emulator 现状见 `analysis/opcode-gaps.json` 该条（deferred）。 |
 | **0x30A** (SetGesKey, sub_426B60, raw.c 33292) | `_this[op2+1969]=op1`（op1≤0x1F、op2≤7） | 手势键绑定（`GetGestureInfo` 相关）。 |
 | **0x109** (sub_42EE10) | 见 §8 | 读鼠标位置（非绑定）。 |
 | **0x10F** (sub_422120, raw.c 30232) | `_this[122369]` | 引擎控制字段（`u00415F10`）。 |
 
 > 这些绑定**只改"键码/位"对应**，不改变 `sub_4770A0` 的核心查询路径（`GetAsyncKeyState(键码)`→`_this[1176+键码]`→位）。真正的可配置键→位轴心是 `_this[1176+..]`（`sub_477DD0` 初始化）+ `_this[551+]`/`_this[1383+]` 等绑定槽。
+>
+> ★**raw 行号订正**（2026-09，按 `//----- (addr)` 定义头核对；上表旧行号整体偏旧）：`0x107`=`sub_421E50` **30516-30527**、`0x10B`=`sub_422070` **30603-30614**、`0x10C`=`sub_4220B0` **30616-30634**、`0x30A`=`sub_426B60` **33819 起**。`Input` 对象是 Engine 的内嵌成员（`Engine[258]` = 其 vftable，字节 `Engine+1032`）⇒ Engine 视角的 `_this[1434+k]`/`_this[1690+k]` 就是 Input 视角的 `_this[1176+k]`/`_this[1432+k]`（换算差 258）。
 
 ---
 

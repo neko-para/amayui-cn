@@ -165,6 +165,20 @@ function validate(doc) {
       const [, a, b] = /^(\d+)-(\d+)$/.exec(e.engine.raw);
       if (Number(a) > Number(b)) errs.push(`${e.id} 的 raw 区间应 a<=b`);
     }
+    if (!e.emulator || typeof e.emulator !== 'object') {
+      errs.push(`${e.id} 缺 emulator 对象`);
+      continue;
+    }
+    // ★类型先于语义：`emulator.note` 必须是字符串。
+    //   实测踩过：`capabilities.js --set emulator.note=a, b` 会把值按 ASCII 逗号拆成**数组**，
+    //   而旧版 validate 只查语义（只有 n/a-known 才读 note）⇒ 数组型 note 一路"校验通过"，
+    //   直到 test/capability-ledger.test.ts 才炸。现在两处口径一致（值里要写逗号请用全角、或传 JSON 字符串）。
+    if (typeof e.emulator.note !== 'string') {
+      errs.push(
+        `${e.id} 的 emulator.note 必须是字符串（当前 ${Array.isArray(e.emulator.note) ? '数组' : typeof e.emulator.note}）` +
+          ' —— ★--set 会把值里的 ASCII 逗号当数组分隔符',
+      );
+    }
     if (!doc.statusEnum[e.emulator.status]) errs.push(`${e.id} status 非法：${e.emulator.status}`);
     if (!doc.evidenceEnum[e.emulator.evidence]) errs.push(`${e.id} evidence 非法：${e.emulator.evidence}`);
     if (e.emulator.guard && !fs.existsSync(path.join(APP_DIR, e.emulator.guard))) {
@@ -173,7 +187,7 @@ function validate(doc) {
     if ((e.emulator.evidence === 'E2' || e.emulator.evidence === 'E3') && !e.emulator.guard) {
       errs.push(`${e.id} 声称 ${e.emulator.evidence} 却没有 guard`);
     }
-    if (e.emulator.status === 'n/a-known' && !e.emulator.note.includes('why:')) {
+    if (e.emulator.status === 'n/a-known' && typeof e.emulator.note === 'string' && !e.emulator.note.includes('why:')) {
       errs.push(`${e.id} 是 n/a-known，note 必须写 why:`);
     }
   }

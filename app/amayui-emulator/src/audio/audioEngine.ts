@@ -79,6 +79,16 @@ export interface AudioPlayback {
   setGain(gain: number): void;
   setPan(pan: number): void;
   setLoop(loop: boolean): void;
+  /**
+   * **暂停/继续**（可选；`0xC1` 的 BGM 暂停切换用它）。
+   *
+   * 引擎侧：`0xC1`（`sub_419770` raw 24831-24842）翻转 `Music[260]` 并把新值经当前音源对象的
+   * vtable+12（`MusicBase` 抽象槽 3 = `SetPause`）下发 —— CD 走 MCI 的 PAUSE/RESUME、PCM 走
+   * `sub_4B60C0`/`sub_4B6190`（都是**保留播放位置**的暂停）。
+   * 不实现的宿主（如一次性缓冲播放）由 `AudioEngine.bgmPause` 兜底：记下 `positionSec()` 后停播，
+   * 恢复时用 `play({offsetSec})` 从原位续播。
+   */
+  setPaused?(paused: boolean): void;
   /** 流式宿主（`<audio>`）用它报告播放位置；一次性缓冲宿主可不实现。 */
   positionSec?(): number;
 }
@@ -148,6 +158,7 @@ export type AudioIntent =
   | { kind: 'voice-factor-apply'; ch: number; value: number }
   | { kind: 'bgm-play'; bgm: number; loop: boolean; res?: AudioResource }
   | { kind: 'bgm-stop' }
+  | { kind: 'bgm-pause'; paused: boolean }
   | { kind: 'bgm-mode'; mode: number }
   | { kind: 'bgm-fade'; value: number; step: number }
   | { kind: 'enable'; target: AudioBus; on: boolean }
@@ -182,7 +193,7 @@ export interface AudioDebugState {
   se: Array<{ ch: number; loadedId: number; playing: boolean; loop: boolean; pan: number; gain: number; delayMs: number | null }>;
   voice: Array<{ ch: number; playing: boolean; id: number; loop: boolean; pan: number; factor: number; prepared: number | null; queued: number | null; deferred: number | null }>;
   /** BGM：`bgm` = 曲号（不是统一文件 id），`name` = 由曲号推出的文件名。 */
-  bgm: { bgm: number; name: string; playing: boolean; loop: boolean; enabled: boolean; mode: number; gain: number; fading: boolean } | null;
+  bgm: { bgm: number; name: string; playing: boolean; loop: boolean; enabled: boolean; mode: number; gain: number; fading: boolean; paused: boolean } | null;
   volumes: { master: number; bgm: number; se: number; voice: number; movie: number };
   enabled: { se: boolean; voice: boolean; bgm: boolean };
   cache: { clips: number; bytes: number; hits: number; misses: number };
@@ -217,9 +228,13 @@ export class AudioEngine {
     playback: AudioPlayback | null;
     loop: boolean;
     mode: number;
+    /** `0xC1` 的暂停位（引擎 `Music[260]`；起播/停播都会清）。 */
+    paused: boolean;
+    /** 宿主不支持 `setPaused` 时记下的暂停位置（秒），恢复时作 `offsetSec`。 */
+    pausePos: number;
     /** 淡变：从 `from` 走到 `to`（都是 0..1 的增益比例），进度 0..100。 */
     fade: { from: number; to: number; progress: number; step: number } | null;
-  } = { bgm: 0, clip: null, playback: null, loop: true, mode: 1, fade: null };
+  } = { bgm: 0, clip: null, playback: null, loop: true, mode: 1, paused: false, pausePos: 0, fade: null };
 
   #volumes = { master: VOLUME_MAX, bgm: VOLUME_MAX, se: VOLUME_MAX, voice: VOLUME_MAX, movie: VOLUME_MAX };
   #enabled = { se: true, voice: true, bgm: true };
@@ -269,6 +284,7 @@ export class AudioEngine {
       case 'voice-factor-apply': this.voiceFactorApply(intent.ch, intent.value); break;
       case 'bgm-play': this.bgmPlay(intent.bgm, intent.loop, intent.res); break;
       case 'bgm-stop': this.bgmStop(); break;
+      case 'bgm-pause': this.bgmPause(intent.paused); break;
       case 'bgm-mode': this.bgmMode(intent.mode); break;
       case 'bgm-fade': this.bgmFadeTo(intent.value, intent.step); break;
       case 'enable': this.setEnabled(intent.target, intent.on); break;
@@ -486,6 +502,53 @@ export class AudioEngine {
     this.#stopBgm();
   }
 
+  /**
+   * `0xC1`：**BGM 暂停/继续**（引擎 `sub_419770` → 当前音源对象 vtable+12 = `SetPause`）。
+   *
+   * 为什么不是"只记状态"：引擎那一步真的作用在音源对象上（CD 的 MCI PAUSE/RESUME、PCM 的
+   * `sub_4B60C0`/`sub_4B6190`），且**保留播放位置** ⇒ 这里也必须真的暂停/继续，否则
+   * `MMODE.txt:440` 的试听暂停按钮就是"点了没反应"。
+   *
+   * 两条路：
+   *  1. 宿主实现了 `setPaused`（流式 `<audio>` 宿主 —— BGM 的常态路径）⇒ 直接转发；
+   *  2. 没实现（一次性缓冲播放：`BufferPlayback`）⇒ 记 `positionSec()` 后停播，恢复时用
+   *     `play({offsetSec})` 从原位续播（引擎 `sub_4B5A30` 的"毫秒 → 偏移"等价物）。
+   *
+   * ★没在播时只记状态（引擎对 NoMusic 槽/未起播对象的调用本来就是空桩 `sub_4350E0`）。
+   */
+  bgmPause(paused: boolean): void {
+    const wasPaused = this.#bgm.paused;
+    this.#bgm.paused = paused;
+    const pb = this.#bgm.playback;
+    if (pb) {
+      if (pb.setPaused) {
+        pb.setPaused(paused);
+        this.#log(`[audio] BGM ${paused ? '暂停' : '继续'}（宿主 setPaused）`);
+        return;
+      }
+      if (!paused) return; // 有句柄且要"继续" ⇒ 本来就在放
+      this.#bgm.pausePos = pb.positionSec?.() ?? 0;
+      pb.stop();
+      this.#bgm.playback = null;
+      this.#log(`[audio] BGM 暂停 @${this.#bgm.pausePos.toFixed(2)}s（宿主无 setPaused ⇒ 停播 + 记位置）`);
+      return;
+    }
+    // 没有句柄：要么本来就没在播（只记状态），要么上一次是用兜底路径暂停的（现在要续播）。
+    if (!paused && wasPaused) {
+      const clip = this.#bgm.clip;
+      if (!clip) {
+        this.#log('[audio] BGM 继续失败：宿主无 setPaused 且没有可续播的缓冲（流式句柄应实现 setPaused）');
+        return;
+      }
+      this.#bgm.playback = this.#host.play(clip, {
+        loop: this.#bgm.loop, gain: this.#bgmGain(), pan: 0, offsetSec: this.#bgm.pausePos,
+      });
+      this.#log(`[audio] BGM 从 ${this.#bgm.pausePos.toFixed(2)}s 续播（宿主无 setPaused）`);
+      return;
+    }
+    this.#log(`[audio] BGM 暂停态 = ${paused}（当前没有在播的曲子 ⇒ 只记状态）`);
+  }
+
   /** `0xC2`：把 BGM 淡变到 `value`（0..10000），每帧推进 `step`（引擎 `sub_489D10`/`sub_489E50`）。 */
   bgmFadeTo(value: number, step: number): void {
     const to = clampVolume(value) / VOLUME_MAX;
@@ -634,7 +697,7 @@ export class AudioEngine {
         ? {
             bgm: this.#bgm.bgm, name: bgmFileName(this.#bgm.bgm), playing: this.#bgm.playback !== null,
             loop: this.#bgm.loop, enabled: this.#enabled.bgm, mode: this.#bgm.mode,
-            gain: this.#bgmGain(), fading: this.#bgm.fade !== null,
+            gain: this.#bgmGain(), fading: this.#bgm.fade !== null, paused: this.#bgm.paused,
           }
         : null,
       volumes: { ...this.#volumes },
@@ -773,6 +836,9 @@ export class AudioEngine {
     this.#bgm.playback = null;
     this.#bgm.clip = null;
     this.#bgm.fade = null;
+    // 引擎 `sub_489B50`（停）第二行就把暂停位清 0（raw 106186）⇒ 停播一律回到"非暂停"。
+    this.#bgm.paused = false;
+    this.#bgm.pausePos = 0;
   }
 
   /** 语音通道是否"在响"（引擎 `sub_404CB0` 的占线判定；这里用播放句柄 + 时长）。 */

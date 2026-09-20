@@ -6,37 +6,148 @@
  * 调用顺序必须是 `advanceWindows(it, clock)` → `itemColor/itemScale/...`，见 pixiBackend.present。
  */
 import type { Item, MeshObj, Vec3 } from './model.js';
-import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from './model.js';
+import { ITEM_FLAG_ANIM_LOOP, W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from './model.js';
 import { freezeWindow, winPhase, windowDone } from './animWindow.js';
 import { lerpArgbWindow, lerpArgbFloat, lerpVec3 } from './colorMath.js';
+
+// ---------------------------------------------------------------------------
+// **B 层（`Item.flags` bit2）周期/循环动画层** —— 消费端 = 引擎 `sub_49BCC0`（raw 117944-118365）
+//
+// **驱动点（对齐用）**：`sub_49BCC0` 的唯一调用者 = 渲染器 `sub_4AEEA0`（"逐 order 画一项"）
+// 的 raw 133394，而 `sub_4AEEA0` 由场景渲染主循环 `sub_4B06D0`（raw 134417-1367xx）在 8 个点调用
+// （raw 135581/135764/135986/136119/136292/136556/136660/136738）。两个时钟格都在 Scene 上：
+//  - `Scene+46500`（= `+0xB5A4`，dword `[11625]`）= **now**（本模块的 `clock` 就是它）；
+//  - `Scene+46504`（dword `[11626]`）= 换格通道判脏时用的另一个时间量（raw 118359-118360）。
+// 第一层台账 `analysis/functions.json` 另记：主循环按 `rec[0] = 1/2/3` 分派绘制类别 ⇒ 与
+// "绘图项/mesh/立绘节点三路归并"是同一段代码（见 `renderer/pixi/presenter.ts` 的归并说明）。
+//
+// 门（两级，缺一不可）：
+//  ① **bit2**（raw 133390：`(flags & 4) == 0 ⇒ 整层跳过`；命中时 raw 133395 还要强制
+//     `Scene+46532 = 1`（世界矩阵有效位）⇒ 见 `itemUsesWorld`）；
+//  ② **每通道 `period > 0`**（raw 118103 / 118135 / 118223 / 118234 / 118344）。
+//
+// 5 条通道（raw 行区间 / 起点槽 / 周期槽 / 波形）：
+//  | # | 通道 | 起点 | 周期 | 波形 | raw |
+//  |---|---|---|---|---|---|
+//  | 1 | 颜色往复 | `+524`(`+0x20C`) | `+544`(`+0x220`) | 三角 | 118102-118131（写**调用方局部** diffuse，不回写元素） |
+//  | 2 | 缩放往复 | `+528`(`+0x210`) | `+548`(`+0x224`) | 三角 | 118133-118220（`lerp(单位阵, +592(=+0x250), r)`） |
+//  | 3 | 匀速旋转 | `+532`(`+0x214`) | `+552`(`+0x228`) | **锯齿**（每周期一圈，raw 118227） | 118222-118230（轴 `+580/584/588`） |
+//  | 4 | 平移往复 | `+536`(`+0x218`) | `+556`(`+0x22C`) | 三角 | 118232-118341（`lerp(单位阵, +656(=+0x290), r)`） |
+//  | 5 | 贴图换格 | `+540`(`+0x21C`) | `+560`(`+0x230`) | **单调递增再取模**（不是三角） | 118343-118361（格数 `+568`、列数 `+572`） |
+//
+// 起点锁存：`if (!起点槽) 起点槽 = now`（raw 118105-118106 / 118137-118138 / 118225-118226 /
+// 118236-118237 / 118346-118347）；锁存值经渲染期整块回写（raw 133448 `qmemcpy(result, v26, 0x2E4)`）
+// 持久化到元素上 ⇒ **这里也把 `l.start` 写回模型**（不是纯查询）。
+// ---------------------------------------------------------------------------
+
+/**
+ * B 层某通道的**已过时间**（**有副作用**：起点槽为 0 时锁存 `clock`）。
+ * 返回 `null` = 该通道不跑（bit2 未置 / `period <= 0`）；否则返回 `clock − start`（≥ 0）。
+ *
+ * ★**不要在这里取模**：引擎对"往复/锯齿"通道取模（`raw 118107/118139/118227/118238` 的
+ * `(now−start) % period`），但**换格通道是除法**（raw 118348 `(now−start) / period`，单调递增）
+ * ⇒ 取模与分帧两件事各自在通道里做，共用一个"已过时间"才是忠实的。
+ */
+function loopElapsed(it: Item, idx: number, clock: number): number | null {
+  if (!(it.flags & ITEM_FLAG_ANIM_LOOP)) return null;
+  const l = it.loops[idx]!;
+  if (l.period <= 0) return null;
+  if (l.start === 0) l.start = clock; // raw 118105-118106 等：`if (!start) start = now`
+  return clock - l.start;
+}
+
+/**
+ * 三角波（**往复**通道颜色/缩放/平移共用）：`phase = (clock−start) % period`，
+ * 返回 `tri = phase < period/2 ? 2·phase : 2·(period−phase)` ∈ [0, period]（引擎 raw 118107-118111 /
+ * 118139-118143 / 118238-118242 的 `v19`；`period/2` 是整数除法，故用 `Math.floor`）。
+ *
+ * ★调用方必须传**已经取过模**的相位（引擎 `v18 = (now − start) % period`）。
+ *
+ * 浮点通道（缩放/平移）用 `tri/period` 作插值系数；**颜色通道是整数除法**
+ * （raw 118116：`(tri·target + (period−tri)·cur) / period`）⇒ 两者必须分开用，别把颜色也走浮点。
+ */
+export function loopTriangle(phase: number, period: number): number {
+  const half = Math.floor(period / 2);
+  return phase >= half ? 2 * (period - phase) : 2 * phase;
+}
+
+/** 三角波比值 `tri/period` ∈ [0,1]（浮点通道的插值系数）。 */
+export function loopTriangleRatio(phase: number, period: number): number {
+  return loopTriangle(phase, period) / period;
+}
+
+/** 逐通道整数插值（引擎 raw 118116-118129：`(tri·target + (period−tri)·cur) / period`，整数除法截断）。 */
+function loopArgb(base: number, target: number, tri: number, period: number): number {
+  const ch = (s: number): number => {
+    const cur = (base >>> s) & 0xff;
+    const to = (target >>> s) & 0xff;
+    return Math.trunc((tri * to + (period - tri) * cur) / period) & 0xff;
+  };
+  return (((ch(24) << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)) >>> 0) >>> 0;
+}
+
+/**
+ * **世界矩阵有效位**（引擎 `Scene+46532`）的 emulator 等价物。
+ *
+ * `Scene+46532 ← DrawItem+0x68`（raw 133391）；但 bit2 命中时 raw 133395 **强制置 1**
+ * （`sub_49BCC0` 算出的 B 层矩阵必须参与合成）⇒ 凡挂了 B 层的项一律走世界矩阵路径。
+ * 读取者 = 绘制期 raw 119573（`if (Scene+46532) D3DXMatrixMultiply(…)`）；
+ * emulator 侧的消费者 = `pixi/presenter.ts` 的 `if (it.useWorld)`（决定 pivot/缩放/旋转/平移是否参与合成）。
+ */
+export function itemUsesWorld(it: Item): boolean {
+  return it.useWorld || (it.flags & ITEM_FLAG_ANIM_LOOP) !== 0;
+}
 
 /**
  * draw-item 的 diffuse 色（full ARGB）。
  *
- * **求值器位置（实证，见文件头"逐帧求值器"一节）**：`sub_49AA30` 内 raw 117434-117483；
- * 由 DrawItem 渲染器 `sub_4AEEA0` 在 raw 133389 以 `a2 = 该 DrawItem` 调用，结果经
- * `a4`（= 调用方 `&v25` 的指针）写回，再于 raw 133443 作为 diffuse 交给纹理绘制。
+ * **求值器位置（实证，见文件头"逐帧求值器"一节）**：A 层 = `sub_49AA30` 内 raw 117434-117483
+ * （由 DrawItem 渲染器 `sub_4AEEA0` 在 raw 133389 以 `a2 = 该 DrawItem` 调用，结果经 `a4`
+ * （= 调用方 `&v25` 的指针）写回，再于 raw 133443 作为 diffuse 交给纹理绘制）；
+ * **B 层颜色往复** = `sub_49BCC0` raw 118102-118131（同样写调用方局部 ⇒ **不回写 `Item.from`**，
+ * 否则会污染 A 层基线色）。
  */
 export function itemColor(it: Item, clock: number): number {
+  let c = it.from >>> 0;
   if (it.flags & 2) {
     const p = winPhase(it, W_COLOR, clock);
     if (p.phase === 'active') {
       // we = clock − start − delay（winPhase 已保证 > 0）；dur > 0 由 winPhase 保证
       const w = it.wins[W_COLOR]!;
-      return lerpArgbWindow(it.from, it.to, clock - it.animStart - w.delay, w.dur);
+      c = lerpArgbWindow(it.from, it.to, clock - it.animStart - w.delay, w.dur);
     }
   }
-  return it.from >>> 0;
+  const elapsed = loopElapsed(it, W_COLOR, clock); // B 层（bit2）：颜色往复
+  if (elapsed !== null) {
+    const period = it.loops[W_COLOR]!.period;
+    c = loopArgb(c, it.loopTo, loopTriangle(elapsed % period, period), period); // raw 118107：先 %period
+  }
+  return c >>> 0;
 }
 
-/** 缩放（窗1 / `0x21E`）：延迟期保持 `scaleWork`，窗内 `scaleWork → scaleTarget` 逐分量插值。 */
+/**
+ * 缩放（窗1 / `0x21E`）：延迟期保持 `scaleWork`，窗内 `scaleWork → scaleTarget` 逐分量插值。
+ *
+ * B 层（`0x233`）在此之上**相乘**：引擎把 A 层矩阵与 B 层矩阵依次右乘（raw 118215-118216
+ * `D3DXMatrixMultiply(v79, v79, v88)`），两个都是缩放阵 ⇒ 分量相乘；B 层本身是
+ * `lerp(单位阵, +592, tri/period)`（raw 118147-118214）⇒ `1 + (loopScale − 1)·r`。
+ */
 export function itemScale(it: Item, clock: number): Vec3 {
+  let s: Vec3;
   if (it.flags & 2) {
     const p = winPhase(it, W_SCALE, clock);
-    if (p.phase === 'active') return lerpVec3(it.scaleWork, it.scaleTarget, p.t);
-    if (p.phase === 'before') return { ...it.scaleWork };
+    if (p.phase === 'active') s = lerpVec3(it.scaleWork, it.scaleTarget, p.t);
+    else if (p.phase === 'before') s = { ...it.scaleWork };
+    else s = it.scaleTarget;
+  } else {
+    s = it.scaleTarget;
   }
-  return it.scaleTarget;
+  const elapsed = loopElapsed(it, W_SCALE, clock); // B 层（bit2）：缩放往复
+  if (elapsed === null) return s;
+  const period = it.loops[W_SCALE]!.period;
+  const r = loopTriangleRatio(elapsed % period, period); // raw 118139：`(now−start) % period`
+  const L = it.loopScale;
+  return { x: s.x * (1 + (L.x - 1) * r), y: s.y * (1 + (L.y - 1) * r), z: s.z * (1 + (L.z - 1) * r) };
 }
 
 /**
@@ -89,17 +200,55 @@ export function itemRotationRad(it: Item, clock: number): number {
     if (p.phase === 'before') deg = it.rotWork.deg;
     else if (p.phase === 'active') deg = it.rotWork.deg + (it.rotTarget.deg - it.rotWork.deg) * p.t;
   }
+  deg += loopRotationDeg(it, clock); // B 层（bit2）：匀速旋转
   return (deg * Math.PI) / 180;
 }
 
-/** 平移（窗3 / `0x220`）：延迟期保持 `transWork`，窗内 `transWork → transTarget` 逐分量插值。 */
+/**
+ * B 层匀速旋转（`0x234`）的**角度增量**（度）。
+ *
+ * 引擎 raw 118222-118230：`if (+552 > 0) { 锁存 +532; angle = 360·((now−start) % +552)/+552;
+ * D3DXMatrixRotationAxis(…, 轴 = +580/584/588, angle·π/180) }` —— **锯齿**（每周期整一圈，不是往复）。
+ *
+ * ★二维投影（**披露的近似**）：emulator 的 sprite 只有**一个**旋转角，没有轴的概念
+ *   （A 层 `0x21F` 的 `rotTarget.axis` 也一直是"只存不用"，见 `itemRotationRad`）⇒ 这里用轴的 **z 分量符号**
+ *   决定方向（`axis.z < 0 ⇒ −`），即"屏幕平面内、绕 Z 轴"的那一支。
+ *   语料里 `i234 … 0 0 (local-int 2)` 的轴正是 `(0,0,±1)`（`src/SC0000.txt:16096/16192`、
+ *   `src/SC1620.txt:16351/16355`）⇒ 该近似覆盖真实用法。
+ *   ⚠D3D 左手系与 canvas 的手性差异**未逐项验证**：若实机方向相反，只需翻这里的符号（一处）。
+ */
+export function loopRotationDeg(it: Item, clock: number): number {
+  const elapsed = loopElapsed(it, W_ROT, clock);
+  if (elapsed === null) return 0;
+  const period = it.loops[W_ROT]!.period;
+  const dir = it.loopAxis.z < 0 ? -1 : 1;
+  return dir * 360 * ((elapsed % period) / period); // raw 118227：`(now−start) % period` ⇒ 锯齿
+}
+
+/**
+ * 平移（窗3 / `0x220`）：延迟期保持 `transWork`，窗内 `transWork → transTarget` 逐分量插值。
+ *
+ * B 层（`0x235`）在此之上**相加**：引擎的合成序是行向量右乘
+ * `… · S_B · R_B · T_B · T(pos)`（raw 118338 的 `D3DXMatrixMultiply(v79, v79, v88)` 之后仍有
+ * raw 118363 的 `T(pos)`）⇒ `T_B` 作用在"已经过 A 层/缩放/旋转的点"上、**不被缩放或旋转**
+ * （行向量序下 `v·S·T = v·S + t`）⇒ 屏幕空间里就是一个纯加法偏移，`lerp(0, +656 的平移分量, tri/period)`。
+ */
 export function itemTranslation(it: Item, clock: number): Vec3 {
+  let t: Vec3;
   if (it.flags & 2) {
     const p = winPhase(it, W_TRANS, clock);
-    if (p.phase === 'active') return lerpVec3(it.transWork, it.transTarget, p.t);
-    if (p.phase === 'before') return { ...it.transWork };
+    if (p.phase === 'active') t = lerpVec3(it.transWork, it.transTarget, p.t);
+    else if (p.phase === 'before') t = { ...it.transWork };
+    else t = it.transTarget;
+  } else {
+    t = it.transTarget;
   }
-  return it.transTarget;
+  const elapsed = loopElapsed(it, W_TRANS, clock); // B 层（bit2）：平移往复
+  if (elapsed === null) return t;
+  const period = it.loops[W_TRANS]!.period;
+  const r = loopTriangleRatio(elapsed % period, period); // raw 118238：`(now−start) % period`
+  const L = it.loopTrans;
+  return { x: t.x + L.x * r, y: t.y + L.y * r, z: t.z + L.z * r };
 }
 
 /**
@@ -111,6 +260,16 @@ export function itemTranslation(it: Item, clock: number): Vec3 {
  */
 export function itemSrcRect(it: Item, clock: number): { x: number; y: number; w: number; h: number } {
   const base = { x: it.srcX, y: it.srcY, w: it.srcW, h: it.srcH };
+  const rect = aWindowSrcRect(it, clock, base);
+  return loopSrcRect(it, clock, rect);
+}
+
+/** A 层（bit1 / `0x239`）的 flipbook 结果（原 `itemSrcRect` 的体，逐字保留）。 */
+function aWindowSrcRect(
+  it: Item,
+  clock: number,
+  base: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number } {
   if (it.fbFrames <= 0 || it.fbCols <= 0) return base;
   const p = winPhase(it, W_FLIPBOOK, clock);
   // 窗未配置 / 延迟期：窗已结束过则继续用保持的末帧（`fbHold`），否则用原始矩形
@@ -118,6 +277,41 @@ export function itemSrcRect(it: Item, clock: number): { x: number; y: number; w:
   if (p.phase === 'before') return base;
   const frame = p.phase === 'after' ? ((it.fbFlags & 1) !== 0 ? it.fbFrames - 1 : -1) : Math.floor(it.fbFrames * p.t);
   return rectOfFrame(it, base, frame); // frame < 0 ⇒ 复位
+}
+
+/**
+ * B 层（bit2 / `0x231`）的贴图换格循环 —— 在 A 层结果**之上累加**偏移。
+ *
+ * 引擎 raw 118343-118361 逐字（`v6` = 源矩形指针，A 层刚改过同一份）：
+ * ```
+ * if (+560 > 0) {
+ *   if (!(+540)) +540 = now;
+ *   frame = ((now − +540) / +560) % +568;      // ★整数除法 + 取模 ⇒ 单调递增、循环（不是三角波）
+ *   col = frame % +572;  row = frame / +572;
+ *   *v6 += col·srcW; v6[2] += col·srcW;        // 左/右都加 ⇒ 平移矩形，不改尺寸
+ *   v6[1] += row·srcH; v6[3] += row·srcH;
+ * }
+ * ```
+ * ★`+568`（格数）与 `+572`（列数）和 A 层**共用**；模式靠 bit1/bit2 区分 ⇒ 两层各走各的分支。
+ * ★若两层同时挂着，引擎就是**在 A 层的结果上再加一次偏移**（此处照做，不做"二选一"的猜测）。
+ */
+function loopSrcRect(
+  it: Item,
+  clock: number,
+  rect: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number } {
+  const elapsed = loopElapsed(it, W_FLIPBOOK, clock);
+  if (elapsed === null || it.fbFrames <= 0 || it.fbCols <= 0) return rect;
+  const loops = Math.floor(elapsed / it.loops[W_FLIPBOOK]!.period); // raw 118348：(now−start)/period（★除法）
+  const frame = loops % it.fbFrames; // raw 118350：% 格数
+  const col = frame % it.fbCols; // raw 118352
+  const row = Math.floor(frame / it.fbCols); // raw 118351
+  return {
+    x: rect.x + col * rect.w,
+    y: rect.y + row * rect.h,
+    w: rect.w,
+    h: rect.h,
+  };
 }
 
 /** 把帧序号换算成源矩形（`col = frame % cols`、`row = frame / cols`；`frame < 0` ⇒ 原始矩形）。 */

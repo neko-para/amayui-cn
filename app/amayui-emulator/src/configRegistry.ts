@@ -203,6 +203,12 @@ export const CFG = {
   setWheelKeyUp: 'set:WheelKeyUp',
   setWheelKeyDown: 'set:WheelKeyDown',
   setReDrawTextOnKey: 'set:ReDrawTextOnKey',
+  /**
+   * 空白字前进量的门（引擎 raw 12230 / 85126 / 87272 … 共 20 余处 `GetConfig(..., aSetBlankextent) == 1`）。
+   * `== 1` ⇒ 空白字（半角空格/全角空格/控制字）改成 GDI 逐字量宽；否则用字号网格。
+   * 随包默认 **0**（`tickets/T-0031/evidence/generated-SYS4REG.ini` 的 `BlankExtentMode=0`）⇒ 默认与网格等价。
+   */
+  setBlankExtentMode: 'set:BlankExtentMode',
   setSaveVersion1: 'set:SaveVersion1',
   setSaveVersion2: 'set:SaveVersion2',
   setGameVersion: 'set:GameVersion',

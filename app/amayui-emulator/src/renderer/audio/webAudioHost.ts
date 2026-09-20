@@ -341,6 +341,27 @@ class StreamPlayback implements AudioPlayback {
     this.#inner?.setLoop(loop);
   }
 
+  /**
+   * `0xC1` 的 BGM 暂停/继续：`<audio>` 原生 `pause()`/`play()`，**保留播放位置**
+   * （`positionSec()` 就是 `el.currentTime`）。这正是引擎 `SetPause` 的语义
+   * （CD 走 MCI PAUSE/RESUME、PCM 保留缓冲位置；见 `audioEngine.ts` 的 `bgmPause`）。
+   */
+  setPaused(paused: boolean): void {
+    if (this.#stopped) return;
+    try {
+      if (paused) {
+        this.el.pause();
+      } else {
+        void this.el.play().catch((err: Error) => {
+          this.log(`[audio] <audio>.play() 被拒（继续播放）：${err.message}（${this.url}）`);
+        });
+      }
+    } catch (err) {
+      this.log(`[audio] <audio> ${paused ? 'pause' : 'play'} 失败：${(err as Error).message}（${this.url}）`);
+    }
+    this.#inner?.setPaused?.(paused);
+  }
+
   positionSec(): number {
     return this.#inner?.positionSec?.() ?? this.el.currentTime ?? 0;
   }

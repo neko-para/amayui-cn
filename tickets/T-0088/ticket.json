@@ -1,0 +1,63 @@
+{
+  "title": "AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/hosts",
+  "why": "`0x140`（语料 181 处）的引擎体（handler `sub_42FBC0` raw 39570-39638）把 op2/op3 当两个字符串（有界拷进 256B 栈缓冲）、op4 当 int，然后 `ret = dword_55E1B4(8, Engine[96981] 消息窗 HWND, {buf2, buf3, op4})`，`op1 ← ret`（两个字符串缓冲的回写被丢弃 —— 引擎不回写操作数）。已静态确证 **`dword_55E1B4` = `AGERC.DLL!_ShowDialog@12`**（`LoadLibraryA` + `GetProcAddress` 装入，raw 109386-109427；取值 `sub_453870` raw 65952-65956），首参 = 请求码；cmd 8 的实现 = `AGERC.DLL` 的 `sub_10037B30`（`engine/AGERC.DLL_utf8.c` L1466-1578）→ `DialogBoxParamA(hInst, 8, hWnd, …)`：`op2` 等于 `LABEL` 时列出**当前脚本帧的标签表**（表 = `Engine[4*cur_frame+495964]`，三个访问器 `sub_476A10`/`sub_476A30`/`sub_4769F0`）并返回**选中标签的整数值**；否则列出**引擎文件表**（表 = `Engine+0xA609C`，访问器 `sub_476550`/`sub_476560`/`sub_476530`）按扩展名过滤；取消 ⇒ `EndDialog(0)`。\n\n⇒ 缺口有三层：① **返回值本质上是「用户选了什么」**，无真人（或等价的选择策略）就无法产生；② 两张运行时表（帧标签表、引擎文件表）在 emulator 里没有模型；③ 没有 AGERC 对话框宿主缝。\n★**它不是关键路径**：181 处语料形态高度一致（`i140 (global-int 1396) LABEL J (global-int 1396)`，另 1 处 `TITLE.txt:466` 用 `BIN` + `SC????.BIN`），且全部在 **DEBUG 路径**上 —— 入口 `SC0330.txt:46 jmp` 后由 `if (global 708ad6 == 1)` 决定，而 `708ad6 = 1` 在全语料**唯一写点 = `src/TITLE.txt:462`**（DEBUG 菜单选 `SC????.BIN` 试跑）⇒ 正常剧情**零影响**。",
+  "acceptance": [
+    "★先定**产品策略**（不许实现者私自决定）：无真实 GUI 时 cmd 8 返回什么 —— 候选：(a) 恒返回取消 0；(b) 由 `.overlay` 或配置指定一个固定返回值；(c) 在 Electron 宿主里真做对话框、headless 走 (a)。选定后写进本票 notes.md 与 docs-new/03-engine/agerc-internals.md",
+    "按选定策略实现 `0x140`：注册进 `handlers/agerc.ts` 的 `AGERC_OPS`（AGERC 族），回写 `op1 = ret`；不得回写 op2/op3（引擎丢弃它们）",
+    "把 `dword_55E1B4` 契约（请求码 −1/2/3/4/8/9/10 + 首参为请求码）落进第一层：`analysis/functions.json` 补调用方条目；`fields.json` 已新增 `global/0x55E1B4 agerc_showdialog` 与 `global/0x55E1B8 agerc_operatemenu`（核对即可）",
+    "若走 (c)：新增宿主缝（按先例五处同步）并给 headless 与 Electron 两侧的差异写清；若走 (a)/(b)：给守卫测试断言返回值与「不回写 op2/op3」",
+    "守卫测试（E2）：`i140` 的 `op1` 按选定策略回写；op2/op3 未被回写（操作数保持原值）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "dword_55E1B4(8",
+      "line": 39633,
+      "note": "0x140 的 handler 里 cmd=8 的调用点（首参 = 请求码）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "AGERC.DLL",
+      "line": 109386,
+      "note": "LoadLibraryA(AGERC.DLL) + GetProcAddress 装入 dword_55E1B4/_ShowDialog@12 与 dword_55E1B8/_OperateMenu@16"
+    },
+    {
+      "file": "docs-new/03-engine/agerc-internals.md",
+      "anchor": "_ShowDialog@12",
+      "line": 230,
+      "note": "对 emulator 的建模清单里这一行（已订正为「要建模（现状 = 未建模）」并补上静态确证）"
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "i140",
+      "line": 466,
+      "note": "唯一的 BIN 形态用例；同文件 462 行是 global 708ad6=1 的唯一写点（DEBUG 菜单）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/agerc-internals.md",
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "analysis": [
+      "analysis/opcode-gaps.json",
+      "analysis/functions.json",
+      "analysis/fields.json"
+    ],
+    "tickets": [
+      "T-0076"
+    ]
+  },
+  "notes": "★发现路径：复核 `0x140`（曾是「语料最大的一条 deferred」）时把 `dword_55E1B4` 的全部读写点查清 —— 它**不是**函数表/对象指针/模块基址，而是一个 `__stdcall` **函数指针**（写点 `sub_4BA890` raw 141984；取值 `sub_453870` raw 65952）。⇒ 旧台账理由「间接调外部服务（`dword_55E1B4` 运行时解析，静态定不了目标）⇒ 需真机观察/动态调试」**已被推翻**：目标是静态确定的，真正卡住的是「只能由真人点选 + 两张表未建模 + 无宿主缝」。\n未读到/不确定（沿用分析者披露）：① `0xDFC`（`SC0330.txt:1016`）身份未定（需按 `loadScriptFrame_40ED40` 的头部布局解 BIN 标签表 —— `install/$1$SC0330.BIN` 字符串段是混淆的）；② `sub_406220` 只读了开头 raw 11594-11615；③ `sub_455000`/`sub_454FA0` 未读体；④ AGERC 资源模板 8 的控件清单是从代码引用的 ID 反推的（`.rsrc` 未读）。",
+  "id": "T-0088",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

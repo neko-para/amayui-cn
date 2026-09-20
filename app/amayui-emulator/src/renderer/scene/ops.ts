@@ -14,18 +14,24 @@
 import type { DrawItemConfig, Item, MeshObj, MeshVertex } from '../drawItem.js';
 import { assertFlags } from '../../vm/native.js';
 import {
+  applyColorLoop,
   applyDrawColor,
   applyDrawColorAlpha,
+  applyDrawItemLoopReset,
   applyDrawPivot,
   applyDrawPos,
   applyDrawScale,
   applyDrawTranslation,
   applyFlipbook,
+  applyFlipbookLoop,
   applyMeshVertexColor,
   applyMeshVertexColorAlpha,
   applyRotationAnim,
+  applyRotationLoop,
   applyScaleAnim,
+  applyScaleLoop,
   applyTranslationAnim,
+  applyTranslationLoop,
   cgDigitItems,
   cloneItem,
   cloneMesh,
@@ -35,9 +41,11 @@ import {
   advanceWindows,
   calcDiffuse,
   itemAnimationsPending,
+  itemLoopAnimationsPending,
   meshWindowDone,
 } from '../drawItem.js';
 import type { SceneState } from './state.js';
+import type { SceneXform, SceneXformKind } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
 import { l2dAdvance, l2dNodeDrawable } from '../../live2d/runtime.js';
 
@@ -54,6 +62,11 @@ export function scConfigureDrawItem(s: SceneState, cfg: DrawItemConfig): Item {
   const existing = s.drawItems.get(cfg.handle);
   const it = existing ?? makeItem(cfg);
   it.layer = cfg.layer;
+  // ★"这一项是谁画的"是**覆盖语义**：每次 draw-texture 都刷新（与引擎覆盖整块元素同口径）。
+  //   显式给的优先；否则用**当前帧**（VM 每步下发的 `s.currentFrame`）—— 这样"哪些项属于上一屏"
+  //   对**所有**建项路径都成立，而不只是带 `ownerFrame` 的那一条（`tickets/T-0083` 的 (B) 步）。
+  const owner = cfg.ownerFrame ?? s.currentFrame;
+  if (owner >= 0) it.ownerFrame = owner;
   it.tex = cfg.tex; // 纹理槽号（op2）——渲染取纹理用它，不用 layer
   it.srcX = cfg.srcX;
   it.srcY = cfg.srcY;
@@ -85,6 +98,7 @@ export function scEnsureItem(s: SceneState, handle: number): { item: Item; creat
   const existing = s.drawItems.get(handle);
   if (existing) return { item: existing, created: false };
   const it = makeDefaultItem(handle);
+  if (s.currentFrame >= 0) it.ownerFrame = s.currentFrame; // 见 `SceneState.currentFrame`
   s.drawItems.set(handle, it);
   return { item: it, created: true };
 }
@@ -194,6 +208,26 @@ export function scSwapItems(s: SceneState, a: number, b: number): boolean {
   Object.assign(ia, ib, { handle: ka, layer: ka });
   Object.assign(ib, snap, { handle: kb, layer: kb });
   return had;
+}
+
+/**
+ * **丢掉"某一帧画的"绘制项**（`tickets/T-0083` 的 (B) 步；引擎 `sub_403EF0` 那个"平面复位"的近似物）。
+ *
+ * 引擎依据（raw 9958-9971）：`sub_403EF0` 对一个 仮想ディスプレイ 对象只做
+ * `_this[258] = 0`（**项数清零**）、`_this[959] = -1`、`_this[960] = 0`、`_this[7464/7466/7467/7468] = 0/-1`，
+ * 构造函数 `sub_403F40` 另加几个 `SetRectEmpty` —— 装载路径在 raw 19913-19915 对
+ * `Engine+51904`/`Engine+21976` 各调一次 ⇒ **上一屏那一层 UI 整体不再组成**（它的项表空了）。
+ *
+ * emulator 是单一扁平绘制表、没有"平面"对象 ⇒ 用 `Item.ownerFrame`（谁画的）近似"哪一层"：
+ * 被读档放弃的那个**调用方帧**画出来的项 = 那一层，装载点把它们丢掉；
+ * ADV 场景自己画的项（另一帧/更早的帧）原样保留。**这是近似，登记在 `SLOT_GAPS` 与 `T-0083`。**
+ */
+export function scDropFrameItems(s: SceneState, frame: number): { items: number; handles: number[] } {
+  const handles: number[] = [];
+  for (const [h, it] of s.drawItems) if (it.ownerFrame === frame) handles.push(h);
+  for (const h of handles) s.drawItems.delete(h);
+  if (handles.length > 0) s.dirty = true;
+  return { items: handles.length, handles };
 }
 
 /** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {
@@ -393,6 +427,140 @@ export function scSetFlipbook(s: SceneState, handle: number, delay: number, dur:
 }
 
 // ---------------------------------------------------------------------------
+// **`Item.flags` bit2（B 层：周期/循环动画层）** —— opcode `0x230`–`0x235` 的写入端。
+//
+// 与上面 A 层（`0x202`/`0x21E`/`0x21F`/`0x220`/`0x239`）的**三处关键差异**（依据 = 逐条读体）：
+//  ① **没有 `flags & 1` 门控** ⇒ 项不存在时会建一个 `flags = 0`（bit0 未置 ⇒ 不可见）的项并把动画配上，
+//     **不报错**（`sub_4AAA50` 的缺失即建项；三个写入端 raw 132227 / 132248 / 132272 / 132299 / 132328
+//     都没有 `& 1` 判断）⇒ 返回 `'created-applied'` 而不是 `'created-gated'`；
+//  ② 各通道的"起点槽"（`+524/528/532/536/540`）在写入时清 0 ⇒ **下一帧求值锁存 now**（重新计时），
+//     名字上像 delay 但**不是** delay（对比 A 层的 `+56..+72` 才是 delay）；
+//  ③ 波形与 A 层不同：颜色/缩放/平移是**三角波往复**，旋转是**每周期一圈的锯齿**，贴图换格是
+//     **单调递增再取模**（不是保持末帧）。
+//
+// 消费端 = `drawitem/eval.ts`（`flags & 4` 门 + 每通道 `period > 0` 门）；
+// 与等待门**无关**（池挂起位 `Scene+46516` 只在 A 层路径置位）⇒ 见 `scAnimationsPending` 的说明。
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x230`（`sub_4243B0` raw 32105-32113 → `sub_4AD580` raw 132151-132217）：**停全部 B 层通道**。
+ * 引擎 = `*v4 &= ~4u`（raw 132173）+ 循环清 `{540,544,548,552,556,560}`（raw 132174-132215）。
+ * ★**不置 Scene 脏位**（`sub_4AD580` 是全场唯一没有 `_this[11627] = 1` 的族成员）；
+ *   emulator 必须置脏：引擎每帧重画，emulator 只在脏/有动画时合成 ⇒ 不置脏会少一帧终态。
+ * ★**不碰** `+524/+528/+532/+536`（另 4 个起点槽）与 bit1/A 层 5 个窗（"停掉全部动画窗"的说法不准确）。
+ */
+export function scResetDrawItemLoop(s: SceneState, handle: number): SetterOutcome {
+  s.dirty = true; // ★与引擎的差异（引擎不置脏），理由见上
+  const { item, created } = scEnsureItem(s, handle);
+  applyDrawItemLoopReset(item);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x231`（`sub_4243F0` raw 32115-32129 → `sub_4AD690` raw 132219-132239）：**贴图换格循环**。
+ * `op1`=handle、`op2`=周期 ms（`+560`）、`op3`=总格数（`+568`）、`op4`=每行列数（`+572`）。
+ * ★`+568/+572` 与 A 层 `0x239` 共用（引擎如此）⇒ 两层分支都在 `eval.ts` 里（`aWindowSrcRect` / `loopSrcRect`）。
+ */
+export function scSetFlipbookLoop(s: SceneState, handle: number, period: number, frames: number, cols: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const { item, created } = scEnsureItem(s, handle);
+  applyFlipbookLoop(item, period, frames, cols);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x232`（`sub_424440` raw 32131-32164 → `sub_4AD730` raw 132241-132258）：**颜色往复**。
+ * `op2`=周期 ms（`+544`）、`op3`=**alpha**、`op4`=**rgb**（`+576` = `α<<24 | rgb`）。
+ *
+ * ★两个**回退分支**必须实现（handler raw 32144-32160，与 `0x322` 同型）：
+ *  - `op3 > 255` ⇒ alpha = 255；`op3 < 0` ⇒ alpha 取**当前色 `+96`（= `Item.from`）的 alpha**；
+ *  - `op4 < 0` ⇒ rgb 取**当前色 `+96` 的 rgb**。
+ *  引擎的 `sub_4ADD60`（raw 132583-132587）在项缺失时返回 **−1** ⇒ alpha = 0xff、rgb = 0xffffff；
+ *  emulator 的"缺失即建项"给的 `from` 默认就是 `0xffffffff` ⇒ 与引擎同值（无需特判）。
+ *  ★订正：旧注写"与 `0x202` 同一组字段"**不准确** —— `0x202` 写的是 A 层的 `+56`(delay)/`+76`(dur)/`+100`(TO)
+ *  （raw 131972-131976），本条的 `+576` 是**另一格**（B 层目标色）；两者语义相同、存储不同。
+ */
+export function scSetColorLoop(s: SceneState, handle: number, period: number, alpha: number, rgb: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const { item, created } = scEnsureItem(s, handle);
+  const cur = item.from >>> 0; // 引擎 `sub_4ADD60` = 元素 `+96`（工作色）
+  const a = alpha > 255 ? 255 : alpha < 0 ? (cur >>> 24) & 0xff : alpha & 0xff;
+  const c = rgb < 0 ? cur & 0xffffff : rgb & 0xffffff;
+  applyColorLoop(item, period, (((a & 0xff) << 24) | c) >>> 0);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x233`（`sub_424510` raw 32166-32182 → `sub_4AD7B0` raw 132260-132286）：**缩放往复**。
+ * `op2`=周期 ms（`+548`）、`op3/op4/op5` = sx/sy/sz（handler raw 32176-32178 **各 ÷100**，
+ * `dbl_5201F0`）→ `D3DXMatrixScaling(元素+592, …)`。
+ * ★订正：旧注写"图元尺寸动画"是**错的**；也不是"与 `0x21E` 同字段"——`0x21E` 写 A 层 `+60/+80/+0xAC`。
+ */
+export function scSetScaleLoop(s: SceneState, handle: number, period: number, sx: number, sy: number, sz: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const { item, created } = scEnsureItem(s, handle);
+  applyScaleLoop(item, period, sx, sy, sz);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x234`（`sub_4245B0` raw 32185-32201 → `sub_4AD850` raw 132289-132314）：**匀速旋转**。
+ * `op2`=周期 ms（`+552`）、`op3/op4/op5` = **旋转轴**（float，**不除**；`元素[145..147]` = `+580/584/588`）。
+ *
+ * ★★**订正（以体为准）**：旧注/筛体文档把本条记成"**平移窗（窗3）**、与 `0x220` 同字段、消费端
+ *   raw 118232-118238"——**与体不符**。`+532/+552/+580..588` 在消费端（raw 118222-118228）是
+ *   **旋转通道**（`D3DXMatrixRotationAxis`，角度 = `360·((now−start) % period)/period`）；
+ *   平移往复用的是 `+536/+556/+656`，那是 `0x235`（`sub_4AD900`）。语料也印证是旋转：
+ *   `i234 <h> 168 0 0 (local-int 2)` 的轴是 `(0,0,±1)`（`src/SC0000.txt:16096/16192`）。
+ */
+export function scSetRotationLoop(s: SceneState, handle: number, period: number, ax: number, ay: number, az: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const { item, created } = scEnsureItem(s, handle);
+  applyRotationLoop(item, period, ax, ay, az);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x235`（`sub_424630` raw 32203-32219 → `sub_4AD900` raw 132316-132343）：**平移往复**。
+ * `op2`=周期 ms（`+556`）、`op3/op4/op5` = 平移（float，**不除**；`D3DXMatrixTranslation(+656, …)`）。
+ * 语料形态：`i235 <h> 50 0 a 0`（50ms、纵向 10px 抖动）后紧跟 `i230 <h>` 关停。
+ */
+export function scSetTranslationLoop(s: SceneState, handle: number, period: number, x: number, y: number, z: number): SetterOutcome {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const { item, created } = scEnsureItem(s, handle);
+  applyTranslationLoop(item, period, x, y, z);
+  return created ? 'created-applied' : 'applied';
+}
+
+/**
+ * `0x244`（`sub_41A370` raw 25349-25355 → `sub_4AD9F0` raw 132364-132503）：**批量清 A 层动画窗起点**。
+ *
+ * 引擎逐字：`sub_4AD9F0(Scene, 2)` 遍历 **三张表**，对 `flags & 2`（mask = op2 = 2）的元素把它的
+ * 窗起点清 0：
+ *  - `Scene+1036`（绘制项，740B；`sub_4AAD40` 取元素）⇒ `*(elem + 52) = 0`（raw 132401-132403）
+ *    = **`+0x34` 全项共享的 A 层窗起点**（正是 `Item.animStart`）；
+ *  - `Scene+1084` / `Scene+1100`（两张 572B 表；`sub_4AAEC0` 取元素）⇒ `*(node + 24) = 0`
+ *    （raw 132438-132440 / 132476-132478）。后者 = `Engine.l2dNodes`（Live2D 立绘/变换节点）。
+ *
+ * emulator：**只实现绘制项那一支**（`animStart = 0` ⇒ 下一帧 `winPhase` 重新锁存 now，窗从头跑）。
+ * ★两张 572B 表**未实现**：`L2dNode`（`src/live2d/runtime.ts`）的窗口只有 `delay/dur`、
+ *   **没有"起点"字段**（引擎的 `+24` 在 emulator 侧不存在）⇒ 如实记缺口，不伪造一个没人读的格子。
+ *
+ * @param mask 引擎固定传 2（`sub_41A370` 的立即数）；保留参数是为了照抄体的形状。
+ * @returns 命中并清掉起点的绘制项数（= 引擎遍历里命中 `a2 & flags` 的项数）。
+ */
+export function scClearDrawItemAnimStarts(s: SceneState, mask: number): number {
+  let n = 0;
+  for (const it of s.drawItems.values()) {
+    if ((it.flags & mask) === 0) continue;
+    it.animStart = 0; // raw 132403：`*(elem + 52) = 0`
+    n++;
+  }
+  if (n > 0) s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（引擎另有 46508 脏位语义）
+  return n;
+}
+
+// ---------------------------------------------------------------------------
 // DrawItem 的**查询**族（getter；两个宿主共用一份语义 ⇒ 见 `headlessScene`/`pixiBackend` 的转发）
 //
 // ★为什么必须共享：这三条都是**会回写操作数**的 getter（`0x215`/`0x218`/`0x21A`），
@@ -416,6 +584,20 @@ export function scGetDrawItemPivot(s: SceneState, handle: number): { x: number; 
 export function scGetDrawItemPos(s: SceneState, handle: number): { x: number; y: number; z: number } {
   const it = s.drawItems.get(handle);
   return it ? { x: it.posX, y: it.posY, z: it.posZ } : { x: 0, y: 0, z: 0 };
+}
+
+/**
+ * `0x228`（`sub_430650` → `sub_4AA060`）：绘制项**当前平移**三元组 —— 引擎分解元素 `+0x16C`
+ * （平移 **work** 矩阵，即 `0x1FF`/`0x220` 写的那个）后取平移分量。
+ *
+ * ★与 `0x21A`（`+0x24` 描画位置）是两个不同的量：`0x21A` 是"项画在哪"，这里是"项被平移了多少"。
+ *   emulator 侧的对应字段就是 `Item.transWork`（`scSetDrawTranslation` 与平移窗推进都写它）。
+ * ★项不存在 ⇒ 返回 `undefined`（引擎 `sub_4AA060` 查表失败返回 0 ⇒ 调用方把 op1 写 1）；
+ *   注意这与"项存在但平移是 (0,0,0)"必须区分（后者 op1 写 0）。
+ */
+export function scGetDrawItemTranslation(s: SceneState, handle: number): { x: number; y: number; z: number } | undefined {
+  const it = s.drawItems.get(handle);
+  return it ? { x: it.transWork.x, y: it.transWork.y, z: it.transWork.z } : undefined;
 }
 
 /**
@@ -533,6 +715,11 @@ export function scAnimationsPending(s: SceneState, clock: number): boolean {
   for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
   // 极性：`itemAnimationsPending` = "**还有**窗没走完"（不需要取反）
   for (const it of s.drawItems.values()) if (it.flags & 2 && itemAnimationsPending(it, clock)) return true;
+  // ★B 层（bit2）周期/循环动画也是"还在动"⇒ 必须继续合成，否则画面上只有一个静止初相。
+  //   **但这一条只进合成判据，绝不进 `scPoolPending`（等待门）**：引擎的池挂起位 `Scene+46516`
+  //   只在 A 层（bit1）路径置位（raw 117844/133528），B 层永远不会"结束" ⇒ 接进等待门就是死等。
+  //   依据见 `itemLoopAnimationsPending` 与 `b3-bit2-model-spec-2026-09.md` §4.6。
+  for (const it of s.drawItems.values()) if (itemLoopAnimationsPending(it)) return true;
   return false;
 }
 
@@ -633,6 +820,31 @@ export function scDrawString(s: SceneState, slot: number, x: number, y: number, 
 export function scCreateTextureReset(s: SceneState, slot: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.slotText.delete(slot);
+  s.slotFills.delete(slot);
+}
+
+/**
+ * **`0x20B` FillTexture 的共享模型记录**（`sub_423690` → `sub_4A4C70`，raw 31569-31592）。
+ *
+ * 引擎往**纹理槽的表面**填一个纯色矩形（`op4/op5` 是宽/高、`op6` α 夹 255、`op7` RGB 组装成 `0xFFRRGGBB`）。
+ * Pixi 宿主把它真画进该槽的画布（`TextureCache.fillSlotRect`）；headless 用本函数记录，
+ * 使"报告里的模型"与"画面上的模型"同源（与 `scDrawString` 同一设计）。
+ */
+export function scFillSlotRect(
+  s: SceneState,
+  slot: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  argb: number,
+  alpha: number,
+): void {
+  s.dirty = true;
+  const list = s.slotFills.get(slot);
+  const rec = { x, y, w, h, argb, alpha };
+  if (list) list.push(rec);
+  else s.slotFills.set(slot, [rec]);
 }
 
 /** 全部清空（引擎 `op_exit_script` 的 `msgwin.reset()` 语义）。 */
@@ -678,10 +890,48 @@ export function scCommitGraphics(s: SceneState): void {
   s.render4.commits++;
 }
 
-/** `0x224` 清转场表（`sub_41A290` → `sub_4AA180`）。 */
+/**
+ * `0x224` 清转场表（`sub_41A290` → `sub_4AA180` → `sub_4A9BE0(Scene+1048)`）。
+ *
+ * ★`sub_4A9BE0`（raw 129282-129302）是**逐节点 delete + 复位头尾**（`_this[2] = 0`）⇒ 真的清空容器，
+ * 所以本层也清 `render4.transitions`（否则 `i251` 写的记录会在 `i224` 之后继续"存在"，与引擎分叉）。
+ */
 export function scClearTransitions(s: SceneState): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.transitionClears++;
+  s.render4.transitions.clear();
+}
+
+/** 引擎新建转场记录的默认值（`sub_49A640` raw 117059-117077）：24 格，其中 `[4] = -1`（= 后台缓冲）。
+ *
+ * ★偏差披露：`sub_49A640` 只写前 56 字节（`[0..13]`），`[14..23]` 在引擎里是**未初始化的栈残留**
+ * （`sub_4AAAF0` 用一个没有 memset 的 96 字节局部做默认记录）；本层按 0 起 —— 三条约会把要用的格写满
+ * （`0x24F` 不写 `[16..23]`，但类别 2 的渲染路径也不读那几格）。
+ */
+export function scTransitionDefaultRecord(): number[] {
+  const rec = new Array<number>(24).fill(0);
+  rec[4] = -1;
+  return rec;
+}
+
+/**
+ * **转场记录逐格写入**（`0x24F`/`0x250`/`0x251` → `handlers/gfx-state.ts`）：
+ * `writes` = `[[格下标, 值]…]`，与引擎的 `sub_4AAE10(Scene+1048, &id)[i] = v` 一一对应。
+ *
+ * 引擎语义（`sub_4AAAF0` + `sub_4AAE10`，raw 130052-130075 / 130197-130240）是"**确保记录存在再写格**"
+ * ⇒ 已存在的记录**只改被写的格**（其余保持上次的值），所以这里是合并而不是整条覆盖。
+ */
+export function scSetTransition(
+  s: SceneState,
+  id: number,
+  writes: ReadonlyArray<readonly [number, number]>,
+): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const rec = s.render4.transitions.get(id) ?? scTransitionDefaultRecord();
+  for (const [i, v] of writes) {
+    if (i >= 0 && i < rec.length) rec[i] = v | 0;
+  }
+  s.render4.transitions.set(id, rec);
 }
 
 /** `0x229` 绘制模式 5 元组（`sub_423FE0`：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。 */
@@ -876,6 +1126,135 @@ export function clampScaledBlit(
 export function scSetSceneBlend(s: SceneState, blend: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.sceneBlend = blend;
+}
+
+// ---------------------------------------------------------------------------
+// ★Scene 级世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）—— 只作用于层号 ∈ [20,30) 的项
+// ---------------------------------------------------------------------------
+
+/**
+ * **Scene 变换作用的层号区间**（引擎 RenderScene raw 133405 的判据 `(层号 − 20) > 9` 取反）：
+ * `层号 ∈ [SCENE_LAYER_LO, SCENE_LAYER_HI)` 的项走"被压成 2D"的支路，也就是**只有它们**
+ * 才真正受 `0x22A`/`0x22C`/`0x22D`/`0x22F` 影响（见 `scene/state.ts` 的 `sceneXform` 说明）。
+ */
+export const SCENE_LAYER_LO = 20;
+export const SCENE_LAYER_HI = 30;
+
+/** 该层号是否落在「Scene 变换只作用于我」的区间里（`[20,30)`）。 */
+export function sceneLayerAffected(layer: number): boolean {
+  return layer >= SCENE_LAYER_LO && layer < SCENE_LAYER_HI;
+}
+
+/** 一份"还没算 world·scene 的 work 矩阵"的 2D 结果（`itemRenderPlacement` 的形状）。 */
+type Affine2D = { position: { x: number; y: number }; scale: { x: number; y: number } };
+
+/**
+ * **把 Scene 世界矩阵按引擎的左右序叠加到一个绘制项的 work 矩阵结果上**。
+ *
+ * 左右序（按体，不凭直觉）：RenderScene raw 133407 是
+ * `D3DXMatrixMultiply(Scene+46536 /* dst *\/, Scene+46536 /* a *\/, Scene+46600 /* b *\/)`，
+ * 即 `work ← work · sceneWorld`。D3DX 的矩阵是**行向量**约定（`v' = v·M`）⇒
+ * `v·(work·sceneWorld) = (v·work)·sceneWorld` ⇒ **Scene 变换作用在"该项自己变换完"的点上**
+ * （屏幕空间），平移分量因此**不被该项的缩放旋转放大**。项自身的组合序仍是既有的
+ * `T(−pivot)·S·R·T(t)·T(pos)`（`itemRenderPlacement`），Scene 那一级**接在它后面**。
+ *
+ * 而在 `层号 ∈ [20,30)` 这一支里，引擎随后 `D3DXMatrixDecompose` 再**只装回 2D 缩放与平移**
+ * （raw 133411-133438 / 117748-117772：`v131` 的旋转项被清零），且**把旋转矩阵 `v120` 置成单位阵**
+ * （raw 117629-117631 + 117647-117662）—— 那个单位阵仍会被乘进最终合成（`sub_49AA30` 的
+ * LABEL_72，raw 117930），所以净效果就是：
+ * ```
+ * 屏幕点 ← (屏幕点 × (sx, sy)) + (tx, ty)
+ * ```
+ * ★**缩放是绕屏幕原点 (0,0) 的**（不是绕项的中心）—— 这是 `v·S` 的直接后果，不是近似。
+ * ★顺带结论：`0x22F` 的轴分量（→ `D3DXMatrixRotationAxis(a2+181, a2[184])`）**对 20..29 层
+ *   不产生任何影响**（它算出的旋转正是在这一支里被换成单位阵的那个 `v120`）。
+ *
+ * @returns **已叠加**的 `{position, scale}`；`layer` 不在区间内或从未下发过变换 ⇒ 原对象返回。
+ */
+export function applySceneXformToPlacement<T extends Affine2D>(s: SceneState, layer: number, pl: T): T {
+  if (!sceneLayerAffected(layer)) return pl;
+  const x = s.sceneXform;
+  if (!x) return pl;
+  const sx = x.kind === 'scale' ? x.scale.x : x.kind === 'axis-scale' ? x.axisScale.x : 1;
+  const sy = x.kind === 'scale' ? x.scale.y : x.kind === 'axis-scale' ? x.axisScale.y : 1;
+  const tx = x.kind === 'translate' ? x.translate.x : x.kind === 'axis-scale' ? x.axisTranslate.x : 0;
+  const ty = x.kind === 'translate' ? x.translate.y : x.kind === 'axis-scale' ? x.axisTranslate.y : 0;
+  return {
+    ...pl,
+    position: { x: pl.position.x * sx + tx, y: pl.position.y * sy + ty },
+    scale: { x: pl.scale.x * sx, y: pl.scale.y * sy },
+  };
+}
+
+/** 取（必要时新建）Scene 变换锚；`kind` 是本次指令设的种类（引擎 `Scene[306] = 1`）。 */
+function sceneXformOf(s: SceneState, kind: SceneXformKind): SceneXform {
+  s.sceneXform ??= {
+    kind,
+    scale: { x: 1, y: 1, z: 1 },
+    translate: { x: 0, y: 0, z: 0 },
+    axisScale: { x: 1, y: 1, z: 1 },
+    axisTranslate: { x: 0, y: 0, z: 0 },
+    maskA: null,
+    maskB: null,
+  };
+  s.sceneXform.kind = kind;
+  return s.sceneXform;
+}
+
+/**
+ * `0x22A`（`sub_424080` raw 32003-32016 → `sub_49A720` raw 117117-117126）：**Scene 级立即缩放**。
+ * 体内三条操作数**全是 float**（`sub_41C300`，**无 handle 查表**）、**各 ÷ `dbl_5201F0`(=100)**；
+ * 被调体写 `Scene[306] = 1`（变换种类）与 `D3DXMatrixScaling(Scene+307)`。
+ * ★语料 2 处（`FIELD.txt:14360` / `LOOK.txt:108`）都是 `i22a (global-int b234) (global-int b234) 64`
+ *   ⇒ 缩放 (1,1,1)。**指令仍然要真实现**（语料少不是不实现的理由）。
+ */
+export function scSetSceneScale(s: SceneState, sx: number, sy: number, sz: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const x = sceneXformOf(s, 'scale');
+  x.scale = { x: sx, y: sy, z: sz };
+}
+
+/**
+ * `0x22C`（`sub_424180` raw 32034-32046 → `sub_49A820` raw 117153-117162）：**Scene 级立即平移**。
+ * 三条操作数都是 float（`sub_41C300`，无查表）、**不除**（像素）；被调体写 `Scene[306] = 1` 与
+ * `D3DXMatrixTranslation(Scene+371)`。★与 `0x1FF`（改**某项**的 work 矩阵）**结构不同**：
+ * 这条改的是 Scene 自己的变换块。
+ */
+export function scSetSceneTranslation(s: SceneState, x: number, y: number, z: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const xf = sceneXformOf(s, 'translate');
+  xf.translate = { x, y, z };
+}
+
+/**
+ * `0x22D`（`sub_4241F0` raw 32048-32064 → `sub_49A870` raw 117165-117179）：**Scene 级带轴缩放**。
+ * `op1`/`op2` 走 **int** 池（`sub_41BF50`）→ `Scene[295]`/`Scene[300]`；`op3/4/5` 走 float 池、
+ * **各 ÷100** → `D3DXMatrixScaling(Scene+323)`；被调体还写 `Scene[280] |= 2`、`Scene[293] = 0`。
+ * ★语料 5 处：`i22d 0 258 (local-int 0) (local-int 1) 64` / `i22d 0 12c (global-int b234) (global-int b234) 64`
+ *   ⇒ `op1` 恒为 0、缩放恒 (1,1,1)。
+ */
+export function scSetSceneAxisScale(s: SceneState, a: number, b: number, sx: number, sy: number, sz: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const x = sceneXformOf(s, 'axis-scale');
+  x.axisScale = { x: sx, y: sy, z: sz };
+  x.maskA = a;
+  x.maskB = b;
+}
+
+/**
+ * `0x22F`（`sub_424330` raw 32087-32103 → `sub_49A9C0` raw 117222-117236）：**Scene 级带轴平移**。
+ * ★**以体订正筛体**：被调体写的是 **`D3DXMatrixTranslation(Scene+387)`**（`+323`/`D3DXMatrixScaling`
+ * 属 `0x22D` 的 `sub_49A870`，筛体把两条的被调体记混了）；`op3/4/5` 是浮点轴分量、**不除**。
+ * 被调体还写 `Scene[280] |= 2`、`Scene[293] = 0`、`Scene[297] = op1`、`Scene[302] = op2`。
+ * ★语料 7 处（`ALLMAP:1393` / `FIELD:2203,11436` / `LOOK:98` / `MOVERUIN:176` / `REIGN:1015` /
+ *   `SHOWALLMAP:150`），`op1` 恒为 0。
+ */
+export function scSetSceneAxisTranslation(s: SceneState, a: number, b: number, x: number, y: number, z: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const xf = sceneXformOf(s, 'axis-scale');
+  xf.axisTranslate = { x, y, z };
+  xf.maskA = a;
+  xf.maskB = b;
 }
 
 /**

@@ -176,6 +176,10 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   }
   e.currentOpcode = op; // 供 NativeTap（闸门 A）把"意图被丢弃"归因到指令
   frame.curDwordOffset = instr.index; // 调用点的 dword 偏移（引擎 `(ip - ip_base) >> 2`；派发返回点要用）
+  // ★把"正在执行哪一帧"下发给宿主模型（`tickets/T-0083` 的 (B) 步）：读档装载点要丢掉"被放弃那条
+  //   调用链画的东西"，而"谁画的"必须在**建项那一刻**记账（`Item.ownerFrame`）—— 建项发生在宿主的
+  //   共享场景层（`scene/ops.ts`），那里看不到 VM 的 `e.cur`，所以每条指令派发前同步一次。
+  e.native.setCurrentFrame?.(e.cur);
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
   await handler(ctx);
   // 注意：handler 可能改了 cur（call-script / ret），因此用"当前帧"来推进，而非 handler 前的 frame。

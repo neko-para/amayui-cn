@@ -38,8 +38,35 @@ export interface FakeAudioHostOptions {
   missing?: Set<string>;
   /** `decode` 返回 null 的 id 集合（模拟解码失败）。 */
   undecodable?: Set<number>;
+  /** 播放位置（秒）。缺省恒 0 —— 用于断言 `0xC1` 暂停后"从原位续播"的 `offsetSec`。 */
+  positionOf?: (id: number) => number;
   /** 记录日志（默认丢弃）。 */
   onLog?: (msg: string) => void;
+}
+
+/**
+ * 一次性缓冲播放句柄（对应真实宿主的 `BufferPlayback`）：**刻意不实现 `setPaused`** ——
+ * 真实 `AudioBufferSourceNode` 无法暂停后续播，所以 `AudioEngine.bgmPause` 会走"停播 + `offsetSec` 续播"
+ * 的兜底路径。`positionSec` 由 `FakeAudioHostOptions.positionOf` 决定，用来断言续播偏移。
+ */
+function fakeBufferPlayback(rec: FakePlay, positionOf: () => number): AudioPlayback {
+  return {
+    stop: (): void => {
+      rec.stopped = true;
+    },
+    setGain: (g: number): void => {
+      rec.gain = g;
+      rec.gainHistory.push(g);
+    },
+    setPan: (p: number): void => {
+      rec.pan = p;
+      rec.panHistory.push(p);
+    },
+    setLoop: (l: boolean): void => {
+      rec.loop = l;
+    },
+    positionSec: (): number => positionOf(),
+  };
 }
 
 /** 假宿主：全部操作可断言。 */
@@ -51,7 +78,7 @@ export class FakeAudioHost implements AudioHost {
   /** 全部 `play()` 记录（顺序 = 起播顺序）。 */
   readonly plays: FakePlay[] = [];
   /** `playStream(url)` 记录。 */
-  readonly streams: Array<{ url: string; res: string; opts: PlayOptions; stopped: boolean }> = [];
+  readonly streams: Array<{ url: string; res: string; opts: PlayOptions; stopped: boolean; paused: boolean; pauseHistory: boolean[] }> = [];
   readonly logs: string[] = [];
 
   #sizeOf: (id: number) => number;
@@ -59,6 +86,7 @@ export class FakeAudioHost implements AudioHost {
   #streaming: boolean;
   #missing: Set<string>;
   #undecodable: Set<number>;
+  #positionOf: (id: number) => number;
   #onLog: ((msg: string) => void) | null;
 
   constructor(opts: FakeAudioHostOptions = {}) {
@@ -67,6 +95,7 @@ export class FakeAudioHost implements AudioHost {
     this.#streaming = opts.streaming ?? false;
     this.#missing = opts.missing ?? new Set();
     this.#undecodable = opts.undecodable ?? new Set();
+    this.#positionOf = opts.positionOf ?? ((): number => 0);
     this.#onLog = opts.onLog ?? null;
   }
 
@@ -111,23 +140,7 @@ export class FakeAudioHost implements AudioHost {
       panHistory: [opts.pan],
     };
     this.plays.push(rec);
-    return {
-      stop: (): void => {
-        rec.stopped = true;
-      },
-      setGain: (g: number): void => {
-        rec.gain = g;
-        rec.gainHistory.push(g);
-      },
-      setPan: (p: number): void => {
-        rec.pan = p;
-        rec.panHistory.push(p);
-      },
-      setLoop: (l: boolean): void => {
-        rec.loop = l;
-      },
-      positionSec: (): number => 0,
-    };
+    return fakeBufferPlayback(rec, () => this.#positionOf(clip.id));
   }
 
   streamUrl(res: AudioResource): string | undefined {
@@ -136,7 +149,7 @@ export class FakeAudioHost implements AudioHost {
   }
 
   playStream(url: string, res: AudioResource, opts: PlayOptions): AudioPlayback {
-    const rec = { url, res: resLabel(res), opts: { ...opts }, stopped: false };
+    const rec = { url, res: resLabel(res), opts: { ...opts }, stopped: false, paused: false, pauseHistory: [] as boolean[] };
     this.streams.push(rec);
     return {
       stop: (): void => {
@@ -150,6 +163,10 @@ export class FakeAudioHost implements AudioHost {
       },
       setLoop: (l: boolean): void => {
         rec.opts = { ...rec.opts, loop: l };
+      },
+      setPaused: (paused: boolean): void => {
+        rec.paused = paused;
+        rec.pauseHistory.push(paused);
       },
       positionSec: (): number => 0,
     };

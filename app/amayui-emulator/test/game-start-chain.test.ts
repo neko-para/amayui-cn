@@ -258,6 +258,63 @@ test('0x215/0x218/0x21A：绘制项 → 纹理槽号 / pivot / 描画位置（�
   );
 });
 
+/**
+ * ★`0x228`（审计 P0 `op-4-01`；`docs-new/03-engine/audit-2026-09-opcodes.md`）：
+ * 引擎 `sub_430650` → `sub_4AA060`（raw 39973-39988 / 130115 起）：
+ * `op1 = 查表失败?1:0`、`op3/4/5 = 元素 +0x16C（平移 work 矩阵）的分解平移分量`。
+ * 语料 1097 处且每处紧跟 `eq … 0` + `jcc` 读 op1 ⇒ 未实现时命中即硬停、当桩则分支走错。
+ */
+test('★0x228：op1=成功标志、op3/4/5=绘制项当前**平移**（`+0x16C`），与 0x21A 的描画位置不是同一个量', () => {
+  const native = new HeadlessScene({});
+  const { e, run } = mk(native as unknown as StubNative);
+  const f = e.curScript();
+  const H = 0x18a9c;
+
+  // ① 项不存在 ⇒ op1 = 1（引擎 `sub_4AA060` 查表失败返回 0 ⇒ 调用方写 1），且 **op3/4/5 保持旧值**
+  f.locals.float.set(2, 777);
+  f.locals.float.set(3, 888);
+  f.locals.float.set(4, 999);
+  run(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]);
+  assert.equal(
+    readIntOperand(e, f, instr(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]), 1),
+    1,
+    '项不存在 ⇒ op1 = 1（失败）',
+  );
+  assert.deepEqual(
+    [3, 4, 5].map((n) => readFloatOperand(e, f, instr(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]), n)),
+    [777, 888, 999],
+    '★失败分支不写 op3/op4/op5（引擎在同一分支直接 return）',
+  );
+
+  // ② 建项（`0x1FB` 的宿主路径）+ 设描画位置：平移矩阵仍是 0 ⇒ op1=0 且三元组全 0
+  native.configureDrawItem({ handle: H, layer: 17, tex: 42, srcX: 0, srcY: 0, srcW: 100, srcH: 50, dstX: 300, dstY: 200 });
+  native.setDrawPos(H, 44, 55, 66);
+  run(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]);
+  assert.equal(readIntOperand(e, f, instr(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]), 1), 0, '项存在 ⇒ op1 = 0');
+  assert.deepEqual(
+    [3, 4, 5].map((n) => readFloatOperand(e, f, instr(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]), n)),
+    [0, 0, 0],
+    '★与 0x21A 的 (44,55,66) 不同：0x228 读的是平移矩阵（此处还是 0）',
+  );
+
+  // ③ `0x1FF` 立即像素平移 → 0x228 读回该三元组
+  native.setDrawTranslation(H, 12, 34, 56);
+  run(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]);
+  assert.deepEqual(
+    [3, 4, 5].map((n) => readFloatOperand(e, f, instr(0x228, [lInt(1), im(H), lFloat(2), lFloat(3), lFloat(4)]), n)),
+    [12, 34, 56],
+    '0x228 = 0x1FF 写的平移 work 矩阵',
+  );
+
+  // ④ 反过来：0x1FF 不影响 0x21A（描画位置仍是 0x219 写的值）—— 两个三元组互不串
+  run(0x21a, [im(H), lFloat(5), lFloat(6), lFloat(7)]);
+  assert.deepEqual(
+    [2, 3, 4].map((n) => readFloatOperand(e, f, instr(0x21a, [im(H), lFloat(5), lFloat(6), lFloat(7)]), n)),
+    [44, 55, 66],
+    '0x21A 读的是 +0x24（描画位置），不受 0x1FF 平移影响',
+  );
+});
+
 // ---------------------------------------------------------------------------
 // E3：真实语料走完整条链路
 // ---------------------------------------------------------------------------

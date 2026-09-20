@@ -101,6 +101,8 @@ test('源码棘轮：`scene/ops.ts` 里变更型 sc* 都要置脏，只读的白
     'scGetDrawItemPos', // getter
     'scGetDrawItemPivot', // getter
     'scGetDrawItemTexSlot', // getter
+    'scGetDrawItemTranslation', // getter（0x228：绘制项当前平移，`+0x16C` work 矩阵；响应 audit P0 op-4-01）
+    'scTransitionDefaultRecord', // 纯工厂：返回 24 格默认记录，不碰 SceneState（0x24F/0x250/0x251，`sub_49A640` raw 117059-117077）
   ];
   assert.deepEqual(
     readOnly.sort(),

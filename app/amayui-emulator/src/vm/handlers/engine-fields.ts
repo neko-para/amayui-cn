@@ -121,6 +121,14 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   [0x24e, { map: { 1: ENGINE_FIELD.msgField92340 } }],
   [0x1cf, { map: { 1: ENGINE_FIELD.skipReadState } }], // 消息跳读态（引擎 sub_4213C0：_this[122504] = op1）
   [0x10f, { map: { 1: ENGINE_FIELD.frameField122369 } }],
+  /**
+   * **`0x2E9`（`sub_426620` raw 33580-33587）**：`_this[122464] = op1` —— **ADV 自动翻页的行基准**。
+   * 该字段在引擎里有 6 个读取点（raw 28569/28579/20420/13714/13720 拿它算自动翻页时长，raw 17987 复位清 0）
+   * ⇒ 它**不是**"只写不读、可当 no-op"的字段（审计 P0 `op-2-01`：语料 480 处 / 330 脚本，
+   * 未实现时命中即 `NotImplementedOp`，ADV 主流程直接停）。字段语义与「消费端尚未实现」见
+   * `ENGINE_FIELD.autoMessageBaseline` 的注释与 `tickets/T-0076`。
+   */
+  [0x2e9, { map: { 1: ENGINE_FIELD.autoMessageBaseline } }],
   // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
   [0xfe, { map: { 1: ENGINE_FIELD.setKeyTotal } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存；见 T-0057 后继）
 ]);
@@ -192,6 +200,19 @@ const op_set_meswin_alpha: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
   if (v > 0x10) return; // 引擎：op1 > 0x10 ⇒ 报错并返回（不写配置）
   setConfigValue(c.e, CFG.messageMesWinAlpha, v); // 统一走 setConfigValue ⇒ 一样会通知落盘
+};
+
+/**
+ * **`0x307`（`sub_426AE0` raw 33794-33805，argc 1）：`SetConfig("system:EffectSkipOnClick", op1)`**
+ * —— `0x306`（同名键的 getter）的**唯一写入端**，与 `0x141`/`0x1CA` 同属「配置直写族」。
+ *
+ * ★为什么必须实现（审计 P1 `op-3-003`）：emulator 只登记了 getter ⇒ 脚本设过的值**读不回来**
+ * （`0x306` 每次都返回 INI 默认值）；语料含开机写入 `src/INITREGINPUT.txt:6 i307 1`、`src/CONFIG1.txt:2130/2145`。
+ * ⇒ 未知指令时会硬停（此前零注册，`tickets/T-0076` 的 B3）。
+ */
+const op_set_effect_skip: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  setConfigValue(c.e, CFG.systemEffectSkipOnClick, v); // 统一走 setConfigValue ⇒ 与 0x306 的读侧同一份注册表
 };
 
 export const op_set_engine_flag_174812: OpHandler = (c) => {
@@ -283,6 +304,27 @@ const op_store_cur_166963: OpHandler = (c) => {
   c.e.engineValues.set(ENGINE_FIELD.storedCur, c.e.cur);
 };
 
+/**
+ * `0xD0`（`id0`，`sub_42E910` 体起始 **raw 38790**，argc 1）：**op1 = 墙钟毫秒**（`timeGetTime()`）。
+ *
+ * 体全文（raw 38790-38798）：
+ * ```c
+ * _this[30 * _this[95776] + 95805] = 3;      // arity 槽 ⇒ argc 1
+ * Time = timeGetTime();
+ * return sub_42B4B0((int)_this, 1, Time);    // op1 ← 毫秒（= writeIntOperand(1, Time)）
+ * ```
+ * **无门控、无副作用**（与 `0xAD` 秒计时器同族：`engine-fields.ts` 的 `op_seconds_timer` 用的是
+ * **同一个** `timeGetTime()`；`0x23C` 帧毫秒时钟 `handlers/frame.ts` 也是）。
+ * ★披露：任务书写的 `Engine.wallClockMs` **在工程里不存在** —— `timeGetTime()` 的既有等价物是
+ *   **`Engine.nowMs`**（`engine.ts` 该字段：由驱动每帧开头把宿主墙钟写进去，产品 = `performance.now()`，
+ *   见 `frame/loop.ts` 的 `e.nowMs = host.now()` 与 `tickets/T-0008` 的单一时间域 D1）。
+ *   本实现按 `nowMs` 落（不新增同义字段，避免"有写无读"）。取整为有符号 32 位：引擎 `int Time` 收
+ *   `timeGetTime()` 的 DWORD 位模式，重写侧 `Math.trunc(...) | 0` 同口径。
+ */
+const op_wall_clock_ms: OpHandler = (c) => {
+  writeIntOperand(c.e, c.frame, c.instr, 1, Math.trunc(c.e.nowMs) | 0);
+};
+
 /** `0x1B1`（sub_41FEA0 raw 29155）：`Engine[21672] = op1`。 */
 const op_set_field_21672: OpHandler = (c) => {
   const e = c.e;
@@ -307,6 +349,7 @@ const op_set_field_21672: OpHandler = (c) => {
   [0x1cf, op_engine_field_store], // **消息跳读态**：`_this[122504] = op1`（sub_4213C0 raw 30069）
   [0x1bf, op_set_skip_read_state], // **跳读态置**：按 122504 置 `_this[122503]`（sub_419840 raw 24874）
   [0x10f, op_engine_field_store], // _this[122369]
+  [0x2e9, op_engine_field_store], // **ADV 自动翻页行基准**：_this[122464] = op1（raw 33584-33586；语料 480 处）
   [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
   [0x107, op_set_key], // _this[op1+551] = op2
   [0x10b, op_set_key2], // _this[op2+1383] = op1
@@ -319,6 +362,7 @@ const op_set_field_21672: OpHandler = (c) => {
   [0xad, op_seconds_timer], // 秒计时器推进（`_this[5449]` ← timeGetTime/1000）
   [0x1ad, op_store_cur_166963], // `_this[166963] = cur`（1100 处）
   [0x1b1, op_set_field_21672], // `_this[21672] = op1`
+  [0xd0, op_wall_clock_ms], // ★op1 = timeGetTime() 墙钟毫秒（`sub_42E910` raw 38790-38798；与 0xAD 同源时钟）
 ];
 
 /** 引擎字段/配置 getter（值来自配置注册表或其它子系统）。 */
@@ -332,6 +376,7 @@ export const ENGINE_FIELD_NATIVE_OPS: OpTable = [
   [0xc0, op_get_music_field], // 音乐字段 `_this[174713]`（由 sound:Music 填充）▶ op1
   [0x2ce, op_get_screen_mode], // 显示模式 `_this[167990]!=0`（由 display:ScreenMode 填充）▶ op1
   [0x306, op_get_effect_skip], // `system:EffectSkipOnClick` ▶ op1（纯配置 getter）
+  [0x307, op_set_effect_skip], // ★同键的写入端（语料 INITREGINPUT/CONFIG1；审计 P1 op-3-003）
   [0x141, op_set_meswin_alpha], // SetConfig message:MesWinAlpha（op1 > 0x10 报错；0x131 的写入端）
 ];
 

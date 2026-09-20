@@ -49,20 +49,21 @@ class RecordingNative extends StubNative {
   }
 }
 
-function mk(): { e: Engine; native: RecordingNative; step: (op: number, args?: BinArg[]) => void } {
+function mk(): { e: Engine; native: RecordingNative; step: (op: number, args?: BinArg[]) => void; logs: string[] } {
   const native = new RecordingNative();
   const e = new Engine(native);
   e.config = parseIni(INI);
   const f = new Frame();
+  const logs: string[] = [];
   const step = (op: number, args: BinArg[] = []): void => {
     const instr = {
       opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0,
     } as unknown as BinInstruction;
     const h = NATIVE_OPS.get(op);
     assert.ok(h, `0x${op.toString(16)} 应在 NATIVE_OPS（音频族真实现）里`);
-    h!(makeCtx(e, f, instr, native, () => {}));
+    h!(makeCtx(e, f, instr, native, (m) => logs.push(m)));
   };
-  return { e, native, step };
+  return { e, native, step, logs };
 }
 
 test('SE：0xB4 (id, 通道) / 0xB5·0xBA (通道, 循环位) / 0xB6 / 0x2BF (通道, 循环, 延迟ms)', () => {
@@ -169,6 +170,74 @@ test('0xBB 写配置 sound:SE 并下发开关；0xC6 写 sound:VolumeN 并下发
   assert.equal(native.intents.length, n, '类别越界不产生意图');
 });
 
+test('★0x1BA SetSoundMode：op1 = 1 音乐 / 2 SE / 3 语音 / 4 影片；四分支复用 0xBB/0xBC 的同一批体', () => {
+  const { e, native, step, logs } = mk();
+
+  // ① op1 = 1（音乐）：体 = `sub_408CF0(this, op2)`（raw 29994-29998）。★与 0xBC 的唯一差别是 a2 = op2 原值。
+  step(0x1ba, [im(1), im(1)]); // 开音乐（sound:Music = 1 ≥ 0 ⇒ 只切模式，不做 ±3）
+  assert.deepEqual(
+    native.intents.slice(-2),
+    [{ kind: 'bgm-mode', mode: 1 }, { kind: 'bgm-stop' }],
+    '音乐分支 = 切模式 + 停一次（此刻无当前曲 ⇒ 不重播）',
+  );
+  step(0x1ba, [im(1), im(0)]); // 关音乐：1 − 3 = −2
+  assert.deepEqual(native.intents.at(-2), { kind: 'bgm-mode', mode: 0 });
+  assert.equal(e.config!.values.get('sound:music'), -2, '关音乐 = `sound:Music` 减 3（引擎 ±3，raw 13525-13540）');
+
+  // ② op1 = 2（SE）：体 = `sub_408D90`（raw 13545-13571），关时释放 SE 通道 0..9
+  const n1 = native.intents.length;
+  step(0x1ba, [im(2), im(0)]);
+  assert.deepEqual(native.last, { kind: 'enable', target: 'se', on: false });
+  assert.equal(e.config!.values.get('sound:se'), 0);
+  step(0x1ba, [im(2), im(0)]); // 与现状相同 ⇒ 引擎 `(a2 != 0) == v3` 直接返回（raw 13552-13553）
+  assert.equal(native.intents.length, n1 + 1, '数值未变 ⇒ 早退：不写配置、不发第二条意图');
+
+  // ③ op1 = 3（语音）：体 = `sub_408E20`（raw 13573-13599），关时释放通道 12/13/14
+  step(0x1ba, [im(3), im(0)]);
+  assert.deepEqual(native.last, { kind: 'enable', target: 'voice', on: false });
+  assert.equal(e.config!.values.get('sound:voice'), 0);
+  step(0x1ba, [im(3), im(1)]);
+  assert.deepEqual(native.last, { kind: 'enable', target: 'voice', on: true });
+
+  // ④ op1 = 4（影片）：体 = `sub_408EB0`（raw 13601-13609）—— 只写 `sound:Movie`
+  const n2 = native.intents.length;
+  step(0x1ba, [im(4), im(1)]);
+  assert.equal(e.config!.values.get('sound:movie'), 1, '影片分支写配置（整份 INI 会回写，有消费者）');
+  assert.equal(native.intents.length, n2, '影片播放器音轨下发未建模 ⇒ 不发假意图（缺口已登记）');
+
+  // ⑤ 非法类别：`SetSoundModeの引数が不正です．`（raw 30016-30017）⇒ 什么都不写
+  step(0x1ba, [im(9), im(1)]);
+  assert.equal(native.intents.length, n2, '非法类别不产生意图');
+  assert.ok(logs.some((l) => l.includes('SetSoundMode')), `报错分支必须留痕：${logs.join(' | ')}`);
+});
+
+test('★0xC1 翻转 `Music[260]`（BGM 暂停位）并把新值下发宿主；起播/停播清 0；NoMusic 槽不下发', () => {
+  const { e, native, step } = mk();
+  step(0xbf, [im(18)]); // 先起播：Music[259] = 18
+  step(0xc1);
+  assert.deepEqual(native.last, { kind: 'bgm-pause', paused: true }, '首次 ⇒ 置暂停位并把新值下发');
+  assert.equal(e.engineValues.get(174714), 1, 'Music[260] = 1（`_this[174714]`）');
+  step(0xc1);
+  assert.deepEqual(native.last, { kind: 'bgm-pause', paused: false }, '★是翻转（不是单向置位）');
+  assert.equal(e.engineValues.get(174714), 0);
+
+  // 起播（`sub_489F80` raw 106365 / `sub_489C20` raw 106240）与停播（`sub_489B50` raw 106186）都清暂停位
+  step(0xc1);
+  assert.equal(e.engineValues.get(174714), 1);
+  step(0xb7, [im(0)]); // i0b7 0 = 重播当前曲
+  assert.equal(e.engineValues.get(174714), 0, '0xB7 重播 ⇒ 清暂停位');
+  step(0xc1);
+  step(0xb8); // i0b8 停
+  assert.equal(e.engineValues.get(174714), 0, '0xB8 停 ⇒ 清暂停位');
+
+  // 音源关掉（`sound:Music < 0`）⇒ 当前槽 = −1 = NoMusic，其 vtable+12（`sub_4350E0`）是空桩
+  e.config!.values.set('sound:music', -1);
+  const before = native.intents.length;
+  step(0xc1);
+  assert.equal(native.intents.length, before, 'NoMusic 槽 ⇒ 引擎那一步是空桩，不下发暂停意图');
+  assert.equal(e.engineValues.get(174714), 1, '但暂停位本身仍翻转（引擎先写 `Music[260]` 再调后端）');
+});
+
 test('语音：0xC4/0x1BD（通道 0）与 ADV 激活位分叉（寄存 vs 立即）', () => {
   const { e, native, step } = mk();
   step(0xc4, [im(162)]); // play-voice 162
@@ -228,8 +297,8 @@ test('启动灌值：audioBootIntents 把 SYS4REG.INI 的音量/开关/策略翻
 
 test('注册表分类棘轮：音频族全在 NATIVE_OPS，且不在另外两张表里', () => {
   const audioOps = [
-    0xb4, 0xb5, 0xb6, 0xb7, 0xb9, 0xba, 0xbb, 0xbc, 0xbf, 0xc2, 0xc4, 0xc6, 0x1bd,
-    0x2bf, 0x2c0, 0x2f4, 0x2f5, 0x2f6, 0x2f7, 0x2f8, 0x2ff, 0x302,
+    0xb4, 0xb5, 0xb6, 0xb7, 0xb9, 0xba, 0xbb, 0xbc, 0xc1, 0xbf, 0xc2, 0xc4, 0xc6, 0x1bd,
+    0x1ba, 0x2bf, 0x2c0, 0x2f4, 0x2f5, 0x2f6, 0x2f7, 0x2f8, 0x2ff, 0x302,
   ];
   for (const op of audioOps) {
     assert.ok(NATIVE_OPS.has(op), `0x${op.toString(16)} 应在 NATIVE_OPS`);

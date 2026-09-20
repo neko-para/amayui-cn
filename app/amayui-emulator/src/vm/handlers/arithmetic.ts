@@ -107,6 +107,19 @@ const op_int_to_float: OpHandler = (c) => {
   writeFloatOperand(c.e, c.frame, c.instr, 1, v);
 };
 
+/**
+ * **`0x191` fabs**（`sub_42CEC0` raw 37896-37906，argc 2）：`op1 = fabs(op2)`（**浮点**）。
+ *
+ * 体全文：`arity 槽 = 5`（⇒ argc 2）；`v3 = sub_41C300(_this, 2)`（浮点读）；`v4 = fabs(v3)`；
+ * `writeFloatOperand(1, v4)`（签名 `sub_42BA00`，raw 37131-37132）。
+ * ★语料 **13 处**（BTL / CGVIEWER / FIELD / INFOPL / SELACT / SELFORT）；此前零注册 ⇒ 命中即 `NotImplementedOp`
+ * （审计 P1 `op-1/0x191-fabs-missing`，`tickets/T-0076` 的 B3）。
+ */
+const op_fabs: OpHandler = (c) => {
+  const v = readFloatOperand(c.e, c.frame, c.instr, 2);
+  writeFloatOperand(c.e, c.frame, c.instr, 1, Math.abs(v));
+};
+
 /** 算术 / 位 / 比较 / 浮点 / 随机（VM 纯计算族）。 */
 export const ARITHMETIC_OPS: OpTable = [
   [0x50, op_add],
@@ -132,6 +145,7 @@ export const ARITHMETIC_OPS: OpTable = [
   [0x2d4, floatBinOp((l, r) => (r === 0 ? 0 : l % r))], // fmod
   [0x2d5, op_fmov], // 浮点 mov（op1 = op2）
   [0x2d6, op_int_to_float], // int→float（op1 = (float)op2）
+  [0x191, op_fabs], // ★fabs：op1 = |op2|（浮点；语料 13 处，此前零注册 ⇒ 命中即硬停；T-0076 的 B3）
   [0x60, op_random],
   [0x135, op_bit_set],
   [0x136, op_bit_reset],

@@ -18,11 +18,13 @@ import {
   sceneNeedsRender,
   scClearDrawContainer,
   scClearMeshSlots,
+  scDropFrameItems,
   scSnapshotPresent,
   scRestorePresent,
   type PresentSnapshot,
   scConfigureDrawItem,
   scGetDrawItemPos,
+  scGetDrawItemTranslation,
   scGetDrawItemPivot,
   scGetDrawItemTexSlot,
   scCreateMesh,
@@ -34,14 +36,26 @@ import {
   scSwapItems,
   scSetDrawPivot,
   scDrawString,
+  scFillSlotRect,
   scCreateTextureReset,
   scSetDrawPos,
   scSetDrawTranslation,
+  scSetSceneScale,
+  scSetSceneTranslation,
+  scSetSceneAxisScale,
+  scSetSceneAxisTranslation,
   scSetFlipbook,
   scSetRotationAnim,
   scSetScale,
   scSetScaleAnim,
   scSetTranslationAnim,
+  scResetDrawItemLoop,
+  scSetFlipbookLoop,
+  scSetColorLoop,
+  scSetScaleLoop,
+  scSetRotationLoop,
+  scSetTranslationLoop,
+  scClearDrawItemAnimStarts,
   scSetVertexColor,
   scSetVertexColorAlpha,
   // A4 族（2026-09）：图元/网格/纹理/渲染状态
@@ -50,6 +64,7 @@ import {
   scBlitSlotToSlot,
   scCommitGraphics,
   scClearTransitions,
+  scSetTransition,
   scSetDrawModeBlock,
   scSetDrawEntryParam,
   scSetSlotParams,
@@ -70,7 +85,7 @@ import {
   type SetterOutcome,
   type SceneState,
 } from './sceneModel.js';
-import type { DrawItemConfig, DrawStringStyle, MeshCreateSpec, NativeBridge } from '../vm/native.js';
+import type { DrawItemConfig, DrawItemLoopRequest, DrawStringStyle, MeshCreateSpec, NativeBridge } from '../vm/native.js';
 import { AudioEngine, type AudioHost, type AudioIntent } from '../audio/audioEngine.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
@@ -242,6 +257,11 @@ export class HeadlessScene implements NativeBridge {
     scDrawString(this.scene, slot, x, y, text, style.fill);
   }
 
+  /** `0x20B` FillTexture：往槽表面填纯色矩形 —— 记进共享模型（报告与 Pixi 同源；Pixi 才真画像素）。 */
+  fillSlotRect(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void {
+    scFillSlotRect(this.scene, slot, x, y, w, h, argb, alpha);
+  }
+
   /**
    * `0x1AE` 写 `.STH` 缩略图：headless **没有画布** ⇒ 返回 null（调用方退化成"空块"）。
    * ★取舍是显式的：headless 只做状态/布局，像素级产物（缩略图）由 PixiBackend 负责。
@@ -326,6 +346,23 @@ export class HeadlessScene implements NativeBridge {
     scDetachTexture(this.scene, handle, count);
   }
 
+  /** 释放「留帧」：headless 没有像素级留帧 ⇒ 显式 no-op（与 Pixi 同契约）。 */
+  releaseFrameHold(): void {}
+
+  /** VM 每条指令派发前下发"正在执行哪一帧"（建项归属用；见 `SceneState.currentFrame`）。 */
+  setCurrentFrame(frame: number): void {
+    this.scene.currentFrame = frame;
+  }
+
+  /** 丢掉"某一帧画的"绘制项（读档装载点用；见 `native.dropFrameItems` 的依据说明）。 */
+  dropFrameItems(frame: number): number {
+    const r = scDropFrameItems(this.scene, frame);
+    if (r.items > 0) {
+      this.log(`dropFrameItems: 丢掉帧 ${frame} 画的绘制项 ${r.items} 个（handle ${r.handles.join(',')}）`);
+    }
+    return r.items;
+  }
+
   clearDrawContainer(): void {
     scClearDrawContainer(this.scene);
   }
@@ -383,6 +420,11 @@ export class HeadlessScene implements NativeBridge {
     return scGetDrawItemPos(this.scene, handle);
   }
 
+  /** `0x228`（sub_4AA060）：绘制项当前**平移**三元组（`+0x16C` work 矩阵）；项不存在 ⇒ `undefined`（⇒ op1=1）。 */
+  getDrawItemTranslation(handle: number): { x: number; y: number; z: number } | undefined {
+    return scGetDrawItemTranslation(this.scene, handle);
+  }
+
   setDrawTranslation(handle: number, x: number, y: number, z: number): void {
     scSetDrawTranslation(this.scene, handle, x, y, z);
   }
@@ -390,6 +432,30 @@ export class HeadlessScene implements NativeBridge {
   /** `0x1FD` 立即缩放（走共享语义 ⇒ 报告与画面不会漂移）。 */
   setScale(handle: number, sx: number, sy: number, sz: number): void {
     scSetScale(this.scene, handle, sx, sy, sz);
+  }
+
+  // ---- ★Scene 级世界矩阵四条（`0x22A`/`0x22C`/`0x22D`/`0x22F`）：只作用于层号 ∈ [20,30) 的项 ----
+  //   共享层同一份语义（`scene/ops.ts` 的 `scSetScene*`）；headless 的消费点在快照
+  //   （`snapshotToText` 的 `scene-xform` 行 + `sceneXform` 段），Pixi 的消费点在合成（presenter）。
+
+  /** `0x22A` Scene 级立即缩放（三轴 ÷100）。 */
+  setSceneScale(sx: number, sy: number, sz: number): void {
+    scSetSceneScale(this.scene, sx, sy, sz);
+  }
+
+  /** `0x22C` Scene 级立即平移（像素，不除）。 */
+  setSceneTranslation(x: number, y: number, z: number): void {
+    scSetSceneTranslation(this.scene, x, y, z);
+  }
+
+  /** `0x22D` Scene 级带轴缩放（op1/op2 = int，op3/4/5 ÷100）。 */
+  setSceneAxisScale(a: number, b: number, sx: number, sy: number, sz: number): void {
+    scSetSceneAxisScale(this.scene, a, b, sx, sy, sz);
+  }
+
+  /** `0x22F` Scene 级带轴平移（op1/op2 = int，op3/4/5 不除）。 */
+  setSceneAxisTranslation(a: number, b: number, x: number, y: number, z: number): void {
+    scSetSceneAxisTranslation(this.scene, a, b, x, y, z);
   }
 
   // ---- A4 族（2026-09）：全部走共享场景语义（`scene/ops.ts` 的 `scXxx`）----
@@ -421,6 +487,11 @@ export class HeadlessScene implements NativeBridge {
   /** `0x224` 清转场表。 */
   clearTransitions(): void {
     scClearTransitions(this.scene);
+  }
+
+  /** `0x24F`/`0x250`/`0x251` 转场记录逐格写入（引擎 `Scene+1048` 的 24 格记录）。 */
+  setTransition(id: number, writes: ReadonlyArray<readonly [number, number]>): void {
+    scSetTransition(this.scene, id, writes);
   }
 
   /** `0x229` 绘制模式 5 元组。 */
@@ -519,6 +590,61 @@ export class HeadlessScene implements NativeBridge {
       'setFlipbook',
       `handle=0x${handle.toString(16)}`,
     );
+  }
+
+  /**
+   * **B 层（bit2）周期/循环动画**（`0x230`–`0x235`）：按 `req.op` 分派到共享层的 `scXxx`。
+   * ★六条都**没有 `flags & 1` 门控** ⇒ 不存在的项会被建出来（`flags = 0`，不可见）并配上动画。
+   */
+  setDrawItemLoop(req: DrawItemLoopRequest): void {
+    const p = `handle=0x${req.handle.toString(16)}`;
+    switch (req.op) {
+      case 'reset':
+        this.outcome(scResetDrawItemLoop(this.scene, req.handle), 'setDrawItemLoop.reset', p);
+        break;
+      case 'flipbook':
+        this.outcome(
+          scSetFlipbookLoop(this.scene, req.handle, req.period, req.frames, req.cols),
+          'setDrawItemLoop.flipbook',
+          `${p} period=${req.period} frames=${req.frames} cols=${req.cols}`,
+        );
+        break;
+      case 'color':
+        this.outcome(
+          scSetColorLoop(this.scene, req.handle, req.period, req.alpha, req.rgb),
+          'setDrawItemLoop.color',
+          `${p} period=${req.period} a=${req.alpha} rgb=0x${(req.rgb >>> 0).toString(16)}`,
+        );
+        break;
+      case 'scale':
+        this.outcome(
+          scSetScaleLoop(this.scene, req.handle, req.period, req.sx, req.sy, req.sz),
+          'setDrawItemLoop.scale',
+          `${p} period=${req.period} s=(${req.sx},${req.sy},${req.sz})`,
+        );
+        break;
+      case 'rotate':
+        this.outcome(
+          scSetRotationLoop(this.scene, req.handle, req.period, req.ax, req.ay, req.az),
+          'setDrawItemLoop.rotate',
+          `${p} period=${req.period} axis=(${req.ax},${req.ay},${req.az})`,
+        );
+        break;
+      case 'translate':
+        this.outcome(
+          scSetTranslationLoop(this.scene, req.handle, req.period, req.tx, req.ty, req.tz),
+          'setDrawItemLoop.translate',
+          `${p} period=${req.period} t=(${req.tx},${req.ty},${req.tz})`,
+        );
+        break;
+    }
+  }
+
+  /** **`0x244`**（`sub_41A370` → `sub_4AD9F0`）：清 `flags & mask` 的绘制项的 A 层窗起点（返回命中数）。 */
+  clearDrawItemAnimStarts(mask: number): number {
+    const n = scClearDrawItemAnimStarts(this.scene, mask);
+    this.log(`[scene] clearDrawItemAnimStarts mask=${mask} → ${n} 项（窗起点清 0 ⇒ 下一帧重新计时）`);
+    return n;
   }
 
   setVertexColor(handle: number, index: number, alpha: number, rgb: number): void {

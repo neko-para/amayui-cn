@@ -1,0 +1,78 @@
+{
+  "title": "0x249（load-texture-by-id）丢了引擎对颜色操作数的归一化：未强置 A=0xFF、负值未落 0",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "引擎 `sub_425310`（raw 32717-32768）在把颜色交给 `sub_4A3800`（raw 32757）之前做两步归一化：`v6 = sub_41BF50(op3)`；`if (v6 < 0) v7 = 0; else v7 = (u8)v6 | ((BYTE1(v6) | (((v6 >> 16) | 0xFF00) << 8)) << 8)`（raw 32750-32755）—— 即 **负值落 0、否则强置 A=0xFF** 后再拼成 `0xFFrrggbb`。emulator 的 `op_load_texture_by_id`（`handlers/gfx-texture.ts:48`）读 op3 后 `if (color >= 0) c.native.setTextureObjectParam?.(slot, color)`（同文件 :56）⇒ 两处偏差：①负值**不下发任何东西**（引擎下发 0）；②正值**原样透传**（引擎强制 A=0xFF，脚本给的 alpha 被忽略）。同族 `0x1f9` 已按 raw 修好（2026-09 B3 清尾，白名单条目已删）；本条是同一函数族里剩下的那一半。危害：带 alpha 的颜色操作数在纹理绑定上表现与真机不同（多/少一层透明），且不报错。",
+  "acceptance": [
+    "按 sub_425310 raw 32750-32757 把归一化补进 op_load_texture_by_id：op3 在 i32 域上小于 0 ⇒ 0；否则 0xFF000000 或上（op3 与 0x00FFFFFF）",
+    "复用或抽出与 0x1f9 同一处归一化逻辑（两处口径必须一致，不许各写一份）—— 已抽为 export 的 normalizeTextureColor",
+    "守卫测试（E2）：-1 ⇒ 0；0x00123456 ⇒ 0xFF123456；0x00abcdef ⇒ 0xFFabcdef；并单列断言 normalizeTextureColor(0x80123456) === 0（该值在 i32 域上是负数，引擎走 v7 = 0；.lst 的 sar ecx,10h 与 or ecx,0FF00h 佐证）",
+    "opcode-table.md 的 0x249 行补上归一化口径与 emulator 状态"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v6 = sub_41BF50((_DWORD *)_this, 3);",
+      "line": 32750,
+      "note": "引擎读 op3 作颜色，紧随的 32751-32755 是 <0⇒0 与强置 A=0xFF 的归一化"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts",
+      "anchor": "c.native.setTextureObjectParam?.(slot, normalizeTextureColor(color));",
+      "line": 78,
+      "note": "T-0086 修复后：op3 走与 0x1F9 共用的 normalizeTextureColor（负值⇒0 也下发、域内正值强置 A=0xFF）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts",
+      "anchor": "op_load_texture_by_id",
+      "line": 48,
+      "note": "0x249 的 handler（与已修好的 0x1f9 同族、同一宿主缝）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "tickets": [
+      "T-0077"
+    ]
+  },
+  "notes": "★由 `ALLOW_UNDERRUN` 清尾（2026-09 B3）派生：同一天里 0x1f9 的同一处漏读被修好，0x249 经复核确认同病。未逐行读到：`sub_4A3800`（Scene+322832 纹理载入）函数体，颜色参最终如何被纹理对象消费未确证 —— 本票只要求与引擎**调用点**口径一致，不要求复刻纹理对象内部。",
+  "id": "T-0086",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：evidence —— 订正 evidence[0] 的锚点：原串漏了 *（写成 (_DWORD)_this）⇒ 引擎文件里不存在、锚点棘轮红；已按 engine/天结_unpacked.exe_utf8.c:32750 逐字改正（该串在全文件出现 3 次：31225/32750/38767）。T-0086 的实现已完成（见 test/op-underun-fixups.test.ts）。"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：evidence —— T-0086 已实现（RF-A 清尾）：0x249 的 op3 现与 0x1F9 共用 normalizeTextureColor（gfx-texture.ts）。订正 evidence[1]（原锚点是修复前的旧行 if (color >= 0) ...，已消失）为修复后的行；守卫 test/op-underun-fixups.test.ts（含低 24 位全枚举位级比对）；opcode-table.md 0x249 行已更新。★任务书那条 op3 = 0x80123456 ⇒ 0xFF123456 与引擎语义不符：i32 域上 "
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：evidence —— 同步 evidence[1].note（原 note 还留着修复前的现状描述）"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 修复落地：归一化抽为 export 的 normalizeTextureColor（0x1f9 与 0x249 共用，与 raw 32750-32755 逐字等价，含低 24 位全枚举位级比对）；0x249 由「负值不下发 + 正值原样」改为无条件下发归一化值；0x1f9 改用同一函数。守卫 op-underun-fixups 6/6、op-a2-a3 12/12。★本票 acceptance 第 3 条原写「0x80123456 ⇒ 0xFF123456」是错的（该值在 i32 域上是负数 ⇒ 引擎给 0），已按 .lst（sar ecx,10h）订正为 -1 ⇒ 0 / 0x00123456 ⇒ 0xFF123456，并单列 0x80123456 === 0 的断言。另订正本票两处坏证据锚点（漏 * 与已被删除的旧行）。"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：acceptance"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-underun-fixups.test.ts",
+    "app/amayui-emulator/test/op-a2-a3.test.ts"
+  ]
+}

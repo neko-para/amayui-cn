@@ -24,7 +24,7 @@
  */
 import type { Application, Container, ContainerChild, Texture } from 'pixi.js';
 import { Rectangle, Sprite, Texture as PixiTexture } from 'pixi.js';
-import { assertFlags, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
+import { assertFlags, type DrawItemLoopRequest, type DrawStringStyle, type MeshCreateSpec, type NativeBridge } from '../vm/native.js';
 import type { InputManager } from '../vm/input.js';
 import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
 import { WebAudioHost } from './audio/webAudioHost.js';
@@ -37,6 +37,7 @@ import {
   sceneNeedsRender,
   scClearDrawContainer,
   scClearMeshSlots,
+  scDropFrameItems,
   scSnapshotPresent,
   scRestorePresent,
   type PresentSnapshot,
@@ -45,6 +46,7 @@ import {
   scMsgWinSync,
   scConfigureDrawItem,
   scGetDrawItemPos,
+  scGetDrawItemTranslation,
   scGetDrawItemPivot,
   scGetDrawItemTexSlot,
   scCreateMesh,
@@ -59,11 +61,23 @@ import {
   scSetDrawPivot,
   scSetDrawPos,
   scSetDrawTranslation,
+  scSetSceneScale,
+  scSetSceneTranslation,
+  scSetSceneAxisScale,
+  scSetSceneAxisTranslation,
   scSetFlipbook,
   scSetRotationAnim,
   scSetScale,
   scSetScaleAnim,
   scSetTranslationAnim,
+  // B 层（bit2）周期/循环动画（2026-09，B3）：0x230–0x235 + 0x244
+  scResetDrawItemLoop,
+  scSetFlipbookLoop,
+  scSetColorLoop,
+  scSetScaleLoop,
+  scSetRotationLoop,
+  scSetTranslationLoop,
+  scClearDrawItemAnimStarts,
   scSetVertexColor,
   scSetVertexColorAlpha,
   // A4 族（2026-09）：图元/网格/纹理/渲染状态
@@ -72,6 +86,7 @@ import {
   scBlitSlotToSlot,
   scCommitGraphics,
   scClearTransitions,
+  scSetTransition,
   scSetDrawModeBlock,
   scSetDrawEntryParam,
   scSetRenderTarget,
@@ -427,6 +442,39 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`setDrawTranslation h=0x${handle.toString(16)} (${x},${y},${z})${o === 'applied' ? '' : ' [建空项]'}`);
   }
 
+  // ---- ★Scene 级世界矩阵四条（`0x22A`/`0x22C`/`0x22D`/`0x22F`）----
+  //   与 HeadlessScene 同一份共享语义；**真正的消费者在 `ScenePresenter.present()`**：
+  //   归并循环里对 `layer ∈ [20,30)` 的项套用 `applySceneXformToPlacement`（= 引擎 RenderScene
+  //   raw 133411-133438 那条「只装回 2D 缩放与平移」的支路）。
+
+  /** `0x22A` Scene 级立即缩放（op1/2/3 各 ÷100；改的是 Scene 的变换块，不是某个 DrawItem）。 */
+  setSceneScale(sx: number, sy: number, sz: number): void {
+    this.#markDirty();
+    scSetSceneScale(this.scene, sx, sy, sz);
+    this.#pushLog(`setSceneScale (${sx},${sy},${sz}) [仅层 20..29]`);
+  }
+
+  /** `0x22C` Scene 级立即平移（像素，不除）。 */
+  setSceneTranslation(x: number, y: number, z: number): void {
+    this.#markDirty();
+    scSetSceneTranslation(this.scene, x, y, z);
+    this.#pushLog(`setSceneTranslation (${x},${y},${z}) [仅层 20..29]`);
+  }
+
+  /** `0x22D` Scene 级带轴缩放（op1/op2 = int → Scene[295]/[300]；op3/4/5 各 ÷100）。 */
+  setSceneAxisScale(a: number, b: number, sx: number, sy: number, sz: number): void {
+    this.#markDirty();
+    scSetSceneAxisScale(this.scene, a, b, sx, sy, sz);
+    this.#pushLog(`setSceneAxisScale a=${a} b=${b} s=(${sx},${sy},${sz}) [仅层 20..29]`);
+  }
+
+  /** `0x22F` Scene 级带轴平移（op1/op2 = int → Scene[297]/[302]；op3/4/5 不除）。 */
+  setSceneAxisTranslation(a: number, b: number, x: number, y: number, z: number): void {
+    this.#markDirty();
+    scSetSceneAxisTranslation(this.scene, a, b, x, y, z);
+    this.#pushLog(`setSceneAxisTranslation a=${a} b=${b} t=(${x},${y},${z}) [仅层 20..29]`);
+  }
+
   // ---- A4 族（2026-09）：与 HeadlessScene 走同一份共享语义（`scXxx`），只额外标脏/记日志 ----
 
   /** `0x1FC` 复位图元变换。 */
@@ -465,6 +513,16 @@ export class PixiBackend implements NativeBridge {
   /** `0x224` 清转场表。 */
   clearTransitions(): void {
     scClearTransitions(this.scene);
+  }
+
+  /**
+   * `0x24F`/`0x250`/`0x251` 转场记录逐格写入（引擎 `Scene+1048` 的 24 格记录）。
+   * ★仅记进场景模型 + 置脏：扫描带绘制尚未接线（见 `handlers/gfx-state.ts` 的扩展点）。
+   */
+  setTransition(id: number, writes: ReadonlyArray<readonly [number, number]>): void {
+    this.#markDirty();
+    scSetTransition(this.scene, id, writes);
+    this.#pushLog(`setTransition id=0x${id.toString(16)} writes=${JSON.stringify(writes)}`);
   }
 
   /** `0x229` 绘制模式 5 元组。 */
@@ -538,6 +596,11 @@ export class PixiBackend implements NativeBridge {
     return scGetDrawItemPos(this.scene, handle);
   }
 
+  /** `0x228`（sub_4AA060）：绘制项当前**平移**三元组（`+0x16C` work 矩阵）；项不存在 ⇒ `undefined`（⇒ op1=1）。 */
+  getDrawItemTranslation(handle: number): { x: number; y: number; z: number } | undefined {
+    return scGetDrawItemTranslation(this.scene, handle);
+  }
+
   /**
    * `0x23B`（sub_424970）：**按 CG 数字条画数值**。
    * 忠实复刻引擎几何（raw 32381-32503）：先按 `[id, id+digits)` 删 DrawItem/Mesh，再逐位建 DrawItem。
@@ -593,6 +656,53 @@ export class PixiBackend implements NativeBridge {
     const o = scSetFlipbook(this.scene, handle, delay, dur, frames, cols, flags);
     this.#assertItem(handle);
     this.#pushLog(`setFlipbook h=0x${handle.toString(16)} d=${delay} dur=${dur} frames=${frames} cols=${cols} flags=${flags}${o === 'applied' ? '' : ` [${o}]`}`);
+  }
+
+  /**
+   * **B 层（bit2）周期/循环动画**（`0x230`–`0x235`）：按 `req.op` 分派到共享层的 `scXxx`
+   * （与 `HeadlessScene.setDrawItemLoop` 逐字同一份语义）。
+   * ★六条都**没有 `flags & 1` 门控**（缺项会被建出来、配好动画、不报错）⇒ 六个 op 一律 `#assertItem`。
+   */
+  setDrawItemLoop(req: DrawItemLoopRequest): void {
+    this.#markDirty();
+    const h = `h=0x${req.handle.toString(16)}`;
+    let o: string;
+    let detail = '';
+    switch (req.op) {
+      case 'reset':
+        o = scResetDrawItemLoop(this.scene, req.handle);
+        break;
+      case 'flipbook':
+        o = scSetFlipbookLoop(this.scene, req.handle, req.period, req.frames, req.cols);
+        detail = ` period=${req.period} frames=${req.frames} cols=${req.cols}`;
+        break;
+      case 'color':
+        o = scSetColorLoop(this.scene, req.handle, req.period, req.alpha, req.rgb);
+        detail = ` period=${req.period} a=${req.alpha} rgb=0x${(req.rgb >>> 0).toString(16)}`;
+        break;
+      case 'scale':
+        o = scSetScaleLoop(this.scene, req.handle, req.period, req.sx, req.sy, req.sz);
+        detail = ` period=${req.period} s=(${req.sx},${req.sy},${req.sz})`;
+        break;
+      case 'rotate':
+        o = scSetRotationLoop(this.scene, req.handle, req.period, req.ax, req.ay, req.az);
+        detail = ` period=${req.period} axis=(${req.ax},${req.ay},${req.az})`;
+        break;
+      case 'translate':
+        o = scSetTranslationLoop(this.scene, req.handle, req.period, req.tx, req.ty, req.tz);
+        detail = ` period=${req.period} t=(${req.tx},${req.ty},${req.tz})`;
+        break;
+    }
+    this.#assertItem(req.handle);
+    this.#pushLog(`setDrawItemLoop ${req.op} ${h}${detail}${o === 'applied' ? '' : ` [${o}]`}`);
+  }
+
+  /** **`0x244`**（`sub_41A370` → `sub_4AD9F0`）：清 `flags & mask` 的绘制项的 A 层窗起点（返回命中数）。 */
+  clearDrawItemAnimStarts(mask: number): number {
+    this.#markDirty();
+    const n = scClearDrawItemAnimStarts(this.scene, mask);
+    this.#pushLog(`clearDrawItemAnimStarts mask=${mask} → ${n} 项（窗起点清 0 ⇒ 下一帧重新计时）`);
+    return n;
   }
 
   /**
@@ -785,9 +895,15 @@ export class PixiBackend implements NativeBridge {
     this.#pushLog(`releaseTexture layer=${layer}`);
   }
 
-  playMovie(id: number): void {
+  /** `0x20B` FillTexture：往槽表面填纯色矩形（走 TextureCache 的画布表面）。 */
+  fillSlotRect(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void {
     this.#markDirty();
-    this.#pushLog(`playMovie id=0x${id.toString(16)}`);
+    this.textures.fillSlotRect(slot, x, y, w, h, argb, alpha);
+  }
+
+  playMovie(id: number, slot: number, mode: number): void {
+    this.#markDirty();
+    this.#pushLog(`playMovie id=0x${id.toString(16)} slot=${slot} mode=${mode}`);
   }
 
   /**
@@ -811,6 +927,51 @@ export class PixiBackend implements NativeBridge {
   msgWinClearAll(): void {
     scMsgWinClearAll(this.scene);
     this.#markDirty();
+  }
+
+  /**
+   * VM 每条指令派发前下发"正在执行哪一帧"（建项归属用；见 `SceneState.currentFrame`）。
+   * 纯记账 ⇒ 不标脏（画面本身没变）。
+   */
+  setCurrentFrame(frame: number): void {
+    this.scene.currentFrame = frame;
+  }
+
+  /**
+   * 丢掉"某一帧画的"绘制项（读档装载点用；见 `native.dropFrameItems` 的依据说明）。
+   *
+   * ★与 `clearDrawContainer` 不同：**这里解除留帧**（`#releaseFrameHold`）—— 本次丢掉的是
+   * "上一屏那一层 UI"，剩下的模型（ADV 层）应当在下一帧如实呈现，不能让旧像素继续压着。
+   */
+  dropFrameItems(frame: number): number {
+    const r = scDropFrameItems(this.scene, frame);
+    this.#markDirty();
+    if (r.items > 0) {
+      this.#pushLog(`dropFrameItems: 丢掉帧 ${frame} 画的绘制项 ${r.items} 个（handle ${r.handles.join(',')}）`);
+    }
+    // ★诊断（读档画面残留定位用）：丢掉之后，剩下的绘制项按"哪一帧画的"分桶（`d` = 其中**可绘制**的）。
+    const census = new Map<number, { n: number; d: number }>();
+    for (const it of this.scene.drawItems.values()) {
+      const e = census.get(it.ownerFrame) ?? { n: 0, d: 0 };
+      e.n += 1;
+      if ((it.flags & 1) !== 0) e.d += 1;
+      census.set(it.ownerFrame, e);
+    }
+    if (census.size > 0) {
+      const s = [...census.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([f, e]) => `${f}:${e.n}${e.d !== e.n ? `/可绘制${e.d}` : ''}`)
+        .join(' ');
+      this.#pushLog(`dropFrameItems: 剩余绘制项按归属帧分桶 = {${s}}`);
+    }
+    return r.items;
+  }
+
+  /**
+   * 释放「留帧」（`tickets/T-0083` 的 (A) 步）：读档装载点调用 —— 引擎装载路径复位显示态，**不留旧像素**。
+   */
+  releaseFrameHold(): void {
+    this.#releaseFrameHold('读档装载点（引擎复位显示态 ⇒ 不留旧像素）');
   }
 
   clearDrawContainer(): void {

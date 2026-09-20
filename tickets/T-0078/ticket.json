@@ -52,11 +52,16 @@
   },
   "notes": "流程教训（写进报告的方法节）：台账的「已实现/未实现」必须与代码+守卫测试双向核对 —— 本次两侧都出现：既把「已接线」写成缺口（l2d-node-draw-gate / text-font-rebuild-cascade），也把「命中即停的缺口」写成 n/a-known（render-3d-layer-dual-commit / scene-3d-effect-level-writer）。另有 6 条待查（材料不足）与 4 条已排除误报，见报告末节。",
   "id": "T-0078",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 11 条 capabilities 失真全部修正完毕（两轮：轮 9 修 5 条 P0/P1；轮 10 修剩余 5 条 + 1 条 n/a why）。台账自检通过、看板已重生成、npm run verify 全绿。"
     }
-  ]
+  ],
+  "doneWhy": "11 条 capabilities P0/P1 失真全部按审计报告逐条修正（status/evidence/guard/note/trigger/raw），capabilities.js --validate 通过 + build-capabilities.mjs 重生成看板 + npm run verify 全绿（656/655/1skip/0fail）。"
 }

@@ -179,8 +179,8 @@ int sub_428A60(int _this) {
 
 ### 语义 / 状态
 - **全量 teardown → 回根**：释放 40 帧 → 清内存池 → flush 输入 → `sub_40DF10`（引擎整体复位）→ 释放对象 → 按配置复制窗口尺寸/释放纹理 → **重载根脚本 index 0**（`sub_40ED40(0, …)`）。 `[已实现]`（抽象）：emulator `op_exit_script` 清 40 帧 + 全局数组 + `cur=0` + `callRet=-1` + `effectFlags=0` + `throw ScriptReset`。
-- **emulator 缺口**：
-  - 引擎**重载根脚本 0 并继续跑**；emulator 停在 `ScriptReset`（由上层 `run` 捕获停止）。 `[未建模]`（若要在 reset 后继续，须仿引擎重载 index 0 + 循环）。
+- **emulator 现状（2026-09 订正）**：引擎**重载根脚本 0 并继续跑**，emulator 也已经这样做 —— `op_exit_script`（`control.ts:401-406`）读回根脚本 INDEX0、装进帧 0、`cur=0` 后 `jump(0)`，**不再停在 `ScriptReset`**（全 `app/amayui-emulator/src` 里已无 `ScriptReset` 这个符号）。 `[已实现]`
+  - 遗留缺口：
   - `sub_40DF10`（整体复位）、内存池/memflip、对象/纹理释放、`_this+676732` 回调 → `[平台无关/未建模]`。
 - **关键字段**：`cur`、`call_ret`、`draw-mode`(0xA30D0)、`_this[387932]`、`_this[699244]`、`_this[497380/497384]`、`sub_40ED40`（重载）。
 
@@ -424,4 +424,4 @@ call-script 5264  // TITLE
 | 负派发生产侧（主循环 `-v29`, `_this[430796]`） | **未定位** | `_this[430796]` 仅 reset 为 -1，无其它写入 → 疑非负请求来源 |
 | `sub_41C7C0`(0x6) 预装载校验（`388236/388240`） | 未解 | 脚本 key/版本校验语义 |
 | 帧 `arg`(383184)/帧设置细节（`sub_40ED40` 内） | 部分 | 局部池/`argc` 重建 |
-| emulator 侧缺口 | 部分 | **已实现**：`call-frame(0x8)`(op_call_frame，`test/call-frame.test.ts`)、`load-frame(0x6)`(op_load_into_frame)、`call(0x8F)`、`ret/exit/call-script/exit-script/jmp/jcc`、**`i143`(0x143) 扩展包 `$n$AUTORUN` 派发**(op_dispatch_script_requests，`test/append-packs.test.ts`)。**仍未实现**：`local-ret(0x7C)`、`0xAE`(存档续档)——依赖 ADV/waits/存档子系统，emulator 未建模，遇之抛 NotImplementedOp/engine-internal；`exit` 的 `-10` 只实现「派发哨兵」分支（`-11` 存档续档仍未建模） |
+| emulator 侧缺口 | 部分 | **已实现**：`call-frame(0x8)`(op_call_frame，`test/call-frame.test.ts`)、`load-frame(0x6)`(op_load_into_frame)、`call(0x8F)`、`ret/exit/call-script/exit-script/jmp/jcc`、**`i143`(0x143) 扩展包 `$n$AUTORUN` 派发**(op_dispatch_script_requests，`test/append-packs.test.ts`)。**2026-09 订正（原文的未完项现已全部落地）**：`local-ret(0x7C)` 已实现（`FRAME_OPS` 的 `op_redisplay_return`：`0x199` 重显示的返回端，含深度校验与 `effect_flags` 还原）；`0xAE`(存档续档) 已实现（`op_save_version_branch`）；`exit` 的 `-11` 分支已实现（`control.ts` 的 `caller === -11` 分支：装记录 0 的脚本并 `jump(0)`），`-10` 的派发哨兵分支同样在册 |

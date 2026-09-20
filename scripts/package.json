@@ -31,6 +31,8 @@
     "asm": "node asm/cli.js",
     "asm:build-opcodes": "node asm/build-opcodes.js",
     "tickets": "node build-tickets.mjs",
+    "gaps:build": "node build-opcode-gaps.mjs",
+    "gaps:check": "node build-opcode-gaps.mjs --check",
     "tickets:list": "node ../.agents/skills/amayui-ticket-ledger/scripts/tickets.js --list",
     "tickets:check": "node ../.agents/skills/amayui-ticket-ledger/scripts/tickets.js --validate"
   },

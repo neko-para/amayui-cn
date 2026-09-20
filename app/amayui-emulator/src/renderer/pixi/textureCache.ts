@@ -332,6 +332,34 @@ export class TextureCache {
   }
 
   /**
+   * **`0x20B` FillTexture**（`sub_423690` → `sub_4A4C70`，raw 31569-31592 / 124572 起）：
+   * 往**纹理槽的表面**上填一个纯色矩形（引擎的"涂一块底色/进度条底"原语）。
+   *
+   * 引擎语义（handler 逐字）：`op1=槽`、`op2/op3` = 左上角、`op4/op5` = **宽/高**（体里是 `x2 = x + op4`，
+   * 不是"矩形右下角"）、`op6` = α（`>255` 夹到 255）、`op7` = RGB（体里组装成 `0xFFRRGGBB`，A 固定 FF，α 另走 a5）。
+   * ★槽没有 `create-texture` 出来的表面时引擎打「FillTexture」错误串 ⇒ emulator 同样忽略并留痕（与 `drawString` 同口径）。
+   */
+  fillSlotRect(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void {
+    const cs = this.#canvasSlots.get(slot);
+    if (!cs) {
+      this.log(`fillSlotRect slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径：FillTexture 错误）`);
+      return;
+    }
+    const ctx = cs.canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0); // 逻辑坐标（同 drawString）
+    ctx.globalAlpha = Math.max(0, Math.min(255, alpha)) / 255;
+    ctx.fillStyle = `rgb(${(argb >>> 16) & 0xff}, ${(argb >>> 8) & 0xff}, ${argb & 0xff})`;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    cs.tex.source.update();
+    this.log(
+      `fillSlotRect slot=${slot} (${x},${y},${w}x${h}) color=#${(argb >>> 0).toString(16).padStart(8, '0')} alpha=${alpha}`,
+    );
+  }
+
+  /**
    * `0x208`（sub_4302E0 → `sub_49ED60`）：**纹理尺寸查询**（getter）。
    * 引擎读该槽 `CTexture` 的 `+1040`（宽）/`+1044`（高）；槽越界或未创建 → 0/0。
    * emulator：槽 → imgid → 已载入纹理的原始尺寸；未载入时返回 0/0（与引擎"槽为空"同口径），

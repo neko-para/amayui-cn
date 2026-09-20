@@ -78,11 +78,15 @@
   },
   "notes": "处置纪律提醒：`stubs.ts:150-152` 明写「登记成 no-op 反而把缺口藏起来」——因此 0x243/0x233/0x337 这类『有体但影响面不明』的指令，宁可登记成带 raw 依据的 engine-internal 并在报告里留缺口，也不要静默跳过。另：0x7C(local-ret) 的缺口早在 flow-control.md:427 披露过，只需按 raw 25778-25824 实现。",
   "id": "T-0076",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-19",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → doing —— B1 开工：0x2E9（ADV 自动翻页行基准 _this[122464]，ENGINE_FIELD_STORE + autoMessageBaseline 字段）与 0x228（绘制项当前平移 getter，宿主缝 getDrawItemTranslation）已落地；新增守卫 test/game-start-chain.test.ts 的 0x228 用例与 test/engine-field-store.test.ts 的 0x2E9 用例；opcode-table.md 两行已补语义与 emulator 现状。0x2E9 的消费端（自动翻页）仍是缺口，已在该行与字段注释里标明。"
     }
   ]
 }

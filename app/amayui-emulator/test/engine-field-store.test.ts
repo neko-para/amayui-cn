@@ -105,6 +105,9 @@ test('0x78 / 0x8B / 0x1A4 / 0x252 / 0x261 / 0x2EE / 0x2DB / 0x24E / 0x10F：写�
     [0x2db, [0x88], 71744, 0x88],
     [0x24e, [0x99], 92340, 0x99],
     [0x10f, [0xaa], 122369, 0xaa],
+    // ★0x2E9：ADV 自动翻页的「行基准」（审计 P0 `op-2-01`；语料 480 处 / 330 脚本）。
+    //   引擎 raw 33584-33586 `_this[122464] = op1`；消费端（自动翻页时长）emulator 尚未实现 ⇒ 见 T-0076。
+    [0x2e9, [0x1234], 122464, 0x1234],
   ];
   for (const [opcode, vals, field, want] of cases) {
     const r = await run(opcode, vals);

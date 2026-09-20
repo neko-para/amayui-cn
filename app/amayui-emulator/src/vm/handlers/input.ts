@@ -125,8 +125,9 @@ const op_joy_callback: OpHandler = (c) => {
 
 /** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
 const op_input_reset: OpHandler = (c) => {
-  // 引擎（raw 24992-25006）：`_this[174802]=0; sub_4780D0(...)` ⇒ **实时刷**（含按住态）
+  // 引擎（raw 24992-25006）：`_this[174802]=0; sub_4780D0(...)` ⇒ **实时刷**（含按住态）+ 扫描游标归零
   c.e.input.flushHeld();
+  c.e.engineValues.set(ENGINE_FIELD.keyScanCursor + c.e.cur, 0);
 };
 
 /**
@@ -155,27 +156,45 @@ const op_input_dispatch: OpHandler = (c) => {
   // 引擎 `sub_419AF0`（0x100，raw 25009）**不调用刷子**，直接读 ADV 分支（`sub_411900` raw 20111）用
   //   `sub_4780D0` 填好的 `_this[174802]` ⇒ 掩码含**按住态**。故这里用实时刷。
   const e = c.e;
+  const cur = e.cur;
   const mask = e.input.flushHeld();
   // SetKeyTotal（0xFE 写 `Engine[517]`；引擎默认值 7 = Input 构造 `sub_477DD0` raw 92385 的 `_this[259]=7`）
   const keyTotal = e.engineValues.get(ENGINE_FIELD.setKeyTotal) ?? 7;
-  let b: number;
-  if (mask === 0) {
-    b = keyTotal; // ★默认键槽（raw 25054 `v4 = result[517]`）
-  } else {
-    b = 0;
+  /** 压返回点（dword 偏移 = 指令的 `index`，缺映射时退化为 0，与旧实现同口径）：掩码分支压**本指令**、默认键分支压**下一条**。 */
+  const pushReturn = (plusOne: boolean): void => {
+    const idx = c.frame.script?.instructions[c.frame.ip]?.index ?? 0;
+    c.frame.retStack.push(idx + (plusOne ? 1 : 0));
+  };
+  if (mask !== 0) {
+    // ★掩码分支（raw 25029-25048）：从**扫描游标**开始找最低置位；派发后游标 = b+1，
+    //   压的返回点是**本指令**（无 +1）⇒ handler 的 `ret` 会回到 0x100 继续扫下一个键。
+    let b = e.engineValues.get(ENGINE_FIELD.keyScanCursor + cur) ?? 0;
+    // ★emulator 近似：引擎的游标复位在帧泵 `sub_4780D0`（每帧重建掩码）里，emulator 没有对应钩子；
+    //   这里用「**掩码变了 ⇒ 新一轮扫描**」近似（同一掩码状态下仍按引擎语义连续派发多个键）。
+    if (e.keyScanLastMask !== mask) {
+      e.keyScanLastMask = mask;
+      b = 0;
+    }
+    if (b >= keyTotal) return; // 引擎 raw 25031-25032：游标越界 ⇒ 直接返回（不派发）
     while (b < keyTotal && ((mask >> b) & 1) === 0) b++;
-    if (b >= keyTotal) return; // 只有 ≥ SetKeyTotal 的位被按下 ⇒ 引擎同样不派发
+    if (b >= keyTotal) return; // 引擎 raw 25035-25036：扫完没有置位 ⇒ 返回
+    e.engineValues.set(ENGINE_FIELD.keyScanCursor + cur, b + 1);
+    const t = e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
+    if (t === -1 || t === 0xffffffff) return;
+    const p = labelPos(c.frame, t);
+    if (p === null) return;
+    pushReturn(false);
+    c.jump(p);
+    return;
   }
-  const t = e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
+  // ★默认键分支（raw 25050-25062）：掩码为空时取 `b = Engine[517]`（SetKeyTotal）当**下标**查同一张表，
+  //   命中就跳；压的返回点是**下一条**（+1）—— 默认键处理器不该回头再扫。
+  const t = e.input.joyJump[keyTotal] ?? -1;
   if (t === -1 || t === 0xffffffff) return;
   const p = labelPos(c.frame, t);
-  if (p !== null) {
-    e.input.consumeEdges();
-    // ★压返回点（引擎两条分支都压 `((ip-ip_base)>>2)+1`，raw 25039-25040 / 25052）：
-    //   handler 末尾的 `ret` 靠它回到**本指令之后** —— 不压就会"落进 handler 的下一句"。
-    c.frame.retStack.push((c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
-    c.jump(p);
-  }
+  if (p === null) return;
+  pushReturn(true);
+  c.jump(p);
 };
 
 /** 0x101 (poll-input, sub_419CC0)：刷掩码后复位（清待处理输入）。 */
@@ -216,13 +235,12 @@ const op_get_input_type: OpHandler = (c) => {
 const op_get_mouse_state: OpHandler = (c) => {
   const im = c.e.input;
   im.touchId = 0; // 无触点（dwID=0）
-  // 无触点：仅写 op1=0。坐标/按钮由后续 read-mouse-pos(光标X/Y) + read-mouse-button(按钮) 提供（TITLE label_0000047c 的 no-touch 分支）。
-  // 注意：不要把「光标存在」当「触点存在」——那会误置 local 3f2=1(左键恒按下)，破坏 hover 高亮/回退。
+  // ★引擎（raw 40798-40799）在**无触点**路径上只写 op1=0 后立即 return：op2..op5 **保持不动**
+  //   （只有"有触点"路径才写 op2=虚屏X / op3=虚屏Y / op4=旗标 / op5=dwID）。
+  //   emulator 恒无触点（没有触摸缓冲）⇒ **只写 op1**（审计 P2 `op-10-003`：此前多写了 4 个槽）。
+  //   坐标/按钮由后续 read-mouse-pos（光标X/Y）+ read-mouse-button（按钮）提供；
+  //   不要把「光标存在」当「触点存在」——那会误置 local 3f2=1（左键恒按下），破坏 hover 高亮/回退。
   writeIntOperand(c.e, c.frame, c.instr, 1, 0);
-  writeIntOperand(c.e, c.frame, c.instr, 2, im.readX());
-  writeIntOperand(c.e, c.frame, c.instr, 3, im.readY());
-  writeIntOperand(c.e, c.frame, c.instr, 4, 0); // 无触点旗标
-  writeIntOperand(c.e, c.frame, c.instr, 5, 0); // 无触点 dwID
 };
 
 /**

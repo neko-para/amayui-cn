@@ -74,14 +74,14 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    * `0x244`（`sub_41A370` raw 25349-25355，**argc 0**）：`sub_4AD9F0(Engine+322832, 2)` ——
    * 遍历 Scene 的三张绘制项链表（`+1036`/`+1084`/`+1100`），对 **`flags & 2`** 的项把
    * `anim_start`（`+52`，`sub_4AAD40` 路径）或 `+24`（`sub_4AAEC0` 路径）**清 0**
-   * —— 即"**把所有带 bit1 的绘制项的动画窗起点清掉**（= 停掉它们正在跑的窗）"。
+   * —— 即"**把所有带 bit1 的绘制项的动画窗起点清掉**（= 让它们重新计时）"。
    *
-   * ★emulator 当 no-op 的边界（如实记缺口）：我们的绘制项模型**有** `animStart`，但窗的推进是
-   *   `advance(t)` 按项自己的 `animStart/animDelay` 算的，语义与引擎的"清 anim_start"不完全同构；
-   *   而且这条的可见效果只影响**已经在跑的动画窗**（读档路径上首次调用），先不猜语义
-   *   （见 `tickets/T-0072` 的收尾清单）。★同样非有不可：不登记就会在 CALLBACK_LOAD 里硬停下。
+   * ★**2026-09（B3）已从本表移出 ⇒ 真实现**（原先当 no-op 的理由"语义不完全同构"已不成立：
+   *   `Item.animStart` 就是引擎 `+52`，`scClearDrawItemAnimStarts` 逐字清它）。
+   *   见 `handlers/gfx-item.ts` 的 `op_clear_draw_item_anim_starts`（`GFX_ITEM_OPS`）。
+   *   缺口台账 `analysis/opcode-gaps.json` 的 `0x244` 也由 `engine-internal-unjustified`
+   *   改为 `implemented`。两张 572B 表（`Scene+1084/+1100`）的 `node+24` 仍未建模（如实记缺口）。
    */
-  [0x244, op_engine_internal], // Scene 绘制项 anim_start 批量清（mask 2）→ sub_41A370/sub_4AD9F0
   // ============ 声音 子系统 ============
   // ★**已全部转真实现**（2026-09）：`0xB4/0xB5/0xBA/0xB6/0xB7/0xB9/0xBB/0xBC/0xBF/0xC2/0xC4/0xC6/0x1BD/
   //   0x2BF/0x2C0/0x2F4/0x2F5/0x2F6/0x2F7/0x2F8/0x2FF/0x302` 见 `handlers/audio.ts`（`AUDIO_OPS`，落在
@@ -105,7 +105,24 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
   //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
   [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + 重建 Snow（自带 `Scene+46668>=1` 门槛）→ sub_426E10/sub_418340
-  [0x325, op_engine_internal], // 3D 效果管理器字段 [+0x4D8]/[+0x4DC] = op1/op2 → sub_426DC0
+  /**
+   * `0x325`（`sub_426DC0` raw 33924-33938，argc=2）：**Effect3D 管理器（`Engine[93384]` = 字节 `0x5B320`
+   * = `Scene+50704`）的 `[+0x4D8] = op1`、`[+0x4DC] = op2`**（汇编清单 61806-61820：
+   * `mov [esi+4D8h],eax` / `mov [esi+4DCh],edi`）；此外只置 arity 槽 `frames[cur]+0x74 = 5`。
+   *
+   * ★**体里真实效果**（已确证，2026-09）：这两格是**效果销毁判据** —— Effect3D 帧推进
+   *   `sub_4535F0`（raw 65890-65908）里 `a2 >= *(this+0x4D8)` 命中就经 vtable+12/+20 释放
+   *   `+1032`（= `[258]` Rain）；`a2 >= *(this+0x4DC)` 命中就释放 `+1036`/`+1040`（= `[259]` Snow /
+   *   `[260]` Leaf）并置旗标 `+0x4E0` 的 bit0/bit1。★旧台账注「raw 34000-34012」是邻居函数，已订正。
+   *
+   * ★**为什么不建模**（`analysis/opcode-gaps.json` 的 0x325 = `engine-internal`，有据 no-op）：
+   *   emulator **没有 Effect3D 子系统** —— 无管理器对象、无 Rain/Snow/Leaf（同族 0x326 同一口径），
+   *   也没有 `sub_4535F0` 帧推进 ⇒ 写这两个阈值在 emulator 里没有任何消费者（对 VM 也不可观测：
+   *   不写操作数、不改 ip/cur）。**不**为了"看起来对"造一个假的效果管理器。
+   *   扩展点 = 先建管理器（`sub_4530B0`，`operator new(0x4F4)`；在 Scene 初始化 `sub_4A6EE0`
+   *   raw 126541-126545 创建）+ 三个效果槽 + `sub_4535F0` 帧推进，再建模 `+0x4D8`/`+0x4DC`/`+0x4E0`。
+   */
+  [0x325, op_engine_internal], // Effect3D 管理器 [+0x4D8]/[0x4DC] = op1/op2（帧推进 sub_4535F0 读作销毁判据）→ sub_426DC0
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
   // 这里的每条都**确认过 handler 体不写 VM 可见态**（不回写操作数、不改 ip/cur）。
   // 「字段/状态可建模」的都在 `msgwin.ts` 的 `MSGWIN_OPS`（OPS 表，engine-first）：
@@ -146,7 +163,16 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ★`sub_453530` 在 IDA 清单里是 **thunk**（`; Attributes: thunk` → `jmp sub_453150`，见
   //   `engine/天结_unpacked.exe_utf8.lst` 135090-135093），**不是**外部符号 —— 曾经的"外部弱符号、
   //   无法逐行确证、按影片族排除"是**误判**（2026-09 复核纠正）。
-  [0x324, op_engine_internal], // 销毁 3D 效果管理器里的全部效果（Rain/Snow/Leaf）+ 清 [+0x4E0] → sub_41A470 →(thunk sub_453530)→ sub_453150
+  // ★**`0x324` 的体**（raw 25402-25407）= 只置 arity 槽 `frames[cur]+0x74 = 1` 再**尾调**
+  //   `sub_453530(Engine[93384])` ⇒ 真身 `sub_453150`（raw 65367-65393）：把 `[258]`/`[259]`/`[260]`
+  //   三个效果对象各自 `(**v)(v,1)` 虚析构后置 0，并把旗标 `[312]`（= `+0x4E0`）清 0
+  //   （`mov dword ptr [esi+4E0h], 0`，清单 135108）。对象就是 **Effect3D**：析构 `sub_4537A0`
+  //   （raw 65918-65923）先写 `*_this = &Effect3D___vftable_` 再调同一个 `sub_453150`。
+  // ★**为什么当 no-op 是有据的**（`analysis/opcode-gaps.json` 的 `0x324` = `engine-internal`）：
+  //   emulator 没有 Effect3D 子系统（无管理器、无 Rain/Snow/Leaf、无 `sub_4535F0` 帧推进）⇒
+  //   "释放三个效果 + 清旗标"对 VM（不写操作数、不改 ip/cur）与画面都不可观测。
+  //   扩展点 = 若将来做 Effect3D，先建 `Scene+50704` 管理器与三效果槽，再把本指令接到 `sub_453150`。
+  [0x324, op_engine_internal], // 销毁 Effect3D 的全部效果（Rain/Snow/Leaf）+ 清 [+0x4E0] → sub_41A470 →(thunk sub_453530)→ sub_453150
   // ★同族的 `0x327`（Set3DEffect**Rain**：`sub_426E70` → `sub_453280`）与 `0x328`（Set3DEffect**Leaf**：
   //   `sub_432300` → `sub_4183F0`，错误串 raw 23969）**目前根本没注册** ⇒ 命中即 `NotImplementedOp`。
   //   **故意不上桩**：它们是"该实现"的缺口，登记成 no-op 反而会把缺口藏起来（见 stub-reaudit §1.1 A4）。
@@ -170,7 +196,29 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 0x19A/0x1B6/0x1B7/0x1C7/0x1CC → handlers/msgwin.ts；0x215/0x216/0x218/0x21A → handlers/gfx-item.ts）。
   // 采集与逐条评估见 docs-new/03-engine/scene-start-flow.md。
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
-  [0x10c, op_engine_internal], // SetKeyMulti：_this[_this[op2+1690]+1434]=op1
+  /**
+   * `0x10C`（`sub_4220B0` raw 30616-30634，argc=2，**SetKeyMulti**）：
+   * `arity 槽 = 5` → `op1` = 掩码位（`>0x1F` 抛 ShowMessage「SetKeyMultiの引数が不正です．」）、
+   * `op2` = **键码** → 写 `Engine[1434+Engine[1690+op2]] = op1`（汇编清单 53610-53659：
+   * `mov edx,[esi+edi*4+1A68h]` / `mov [esi+edx*4+1668h],eax`）。
+   * 因 `Input` 是 Engine 的内嵌对象（`Input = Engine+1032` 字节，`Engine[258]` 即其 vftable，
+   * raw 92374-92380），等价于 `Input[1176 + Input[1432+op2]] = op1`：
+   *   - `Input[1176+VK]` = **VK→掩码位表**（引擎每帧 `sub_4770A0` raw 91551-91570 扫 0..255 个 VK，
+   *     `mask |= 1 << _this[1176+VK]`，落 `Engine[174802]` → `0x100`/`0x101`/ADV 派发）；
+   *   - `Input[1432+键码]` = **键码表**（`Input[1476] = 90` ⇒ 键码 `0x2c`='Z'、`Input[1460] = 13`
+   *     ⇒ 键码 `0x1c`=RETURN；默认值由 `sub_476AA0` raw 91325-91423 填，
+   *     `src/SYSTEM4.txt:87-97` 的 `i10c 4 1c` / `i10c 4 2c` 正对上）。
+   *
+   * ★**台账处置 = `engine-internal`（有据跳过；T-0077 验收 2 的两种处置之一）**，理由：体确有真实效果，
+   *   但 emulator **没有这条链路** —— 无键码表、无 `Input[1176+VK]`、宿主键盘也不进掩码
+   *   （`InputManager.keyEdge` 只登记，`flushHeld`/`flushPending` 不并 0..6）⇒ 本指令的写入在 emulator
+   *   里**一个消费者都没有**（同族 `0x30a`「键位注册」同一口径），对 VM 不可观测。
+   *   ★但引擎侧**确有**消费者（每帧 `sub_4770A0` ⇒ 输入掩码 ⇒ `0x100`/`joy-callback`）⇒
+   *   **一旦 `tickets/T-0052`（键盘掩码位 0..6）落地，本指令必须从 `ENGINE_INTERNAL_OPS` 移进 `OPS`**。
+   *   扩展点 = `handlers/input.ts` 的 `op_set_key_multi`（先落 `Input[1176+VK]` 默认 7 键→位 0..6
+   *   与 `Input[1432+键码]` 默认表）。
+   */
+  [0x10c, op_engine_internal], // SetKeyMulti：Input[1176+VK] = op1（VK = 键码表[op2]）→ sub_4220B0；有据跳过，见上
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
   // ============ 字符串 / 查表 / 配置 ============
   // 0x2C7（SBSubstr）与 0x2EB（GetConfig("set:GameVersion") → 字符串）**已转真实现**：

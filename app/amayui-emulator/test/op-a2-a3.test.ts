@@ -119,6 +119,59 @@ test('0x7B → 0x199：设置/读取本帧「重显示」回退游标（值是 *
   assert.equal(f2.ip, 0);
 });
 
+/**
+ * ★`0x7C` **local-ret**（`sub_41AB80` raw 25778-25824，argc 0）—— 「重显示调用」的**返回端**（`tickets/T-0076` 的 B3）。
+ *
+ * 引擎体：`mode = Engine[122452]`（= 字节 489808）；不在 `0x2000000` 模式 ⇒ 打 `aEnd.hwl` 抛 ShowMessage；
+ * 帧脚本身份 ≠ `Engine[107678]`（0x199 记下的）⇒ 「Depth が不正です」；否则
+ * `ip = ipBase + 4*Engine[122453]`、`effect_flags = mode & 0xFDFFFFFF`、`mode = 0`。
+ * 语料 **668 处 / 334 个脚本**，标准形态：`call label_X` → `i1ad` → `i199` → … → **`local-ret`**。
+ */
+test('★0x7C：结束重显示调用（回到 0x199 记下的位置 + 还原 effect_flags），深度不符/模式未置按引擎报错', () => {
+  const { e, f, trace } = mk();
+  const script = { instructions: [{ index: 10 }, { index: 20 }], dwordToInstr: new Array<number>(200).fill(-1) };
+  script.dwordToInstr[42] = 7;
+  script.dwordToInstr[77] = 9;
+  script.dwordToInstr[11] = 1; // ← 0x199 记下的"下一条"（dword 11）
+  f.script = script as unknown as Frame['script'];
+  f.ip = 0;
+  f.scriptId = 0x74; // 当前帧脚本身份
+
+  // ① 0x199 进入重显示 ⇒ 记 redisplayReturn/redisplayScriptId（引擎 raw 24513-24515）
+  OPS.get(0x7b)!(makeCtx(e, f, instr(0x7b, [im(42), im(77)]), e.native, () => {}));
+  e.effectFlags = 0x123;
+  const r = trace(0x199);
+  assert.equal(r.next, 7, '0x199 跳到主回退游标');
+  assert.equal(e.engineValues.get(122453), 11, '记下 ((ip-ip_base)>>2)+1');
+  assert.equal(e.engineValues.get(107678), 0x74, '记下当时的帧脚本身份（0x7C 的深度校验基准）');
+  // 再走一次 0x199（此时处于重显示模式）⇒ 置 0x2000000，0x7C 才允许返回
+  e.engineValues.set(122452, (e.engineValues.get(122452) ?? 0) | 0x2000000);
+
+  // ② 0x7C：回到 dword 11 对应的下标 1，并还原 flags（清掉 0x2000000）
+  const mode = e.engineValues.get(122452) ?? 0;
+  const r2 = trace(0x7c);
+  assert.equal(r2.next, 1, '0x7C 应回到 0x199 记下的"下一条"（dword 11 → 下标 1）');
+  assert.equal(e.effectFlags, (mode & 0xfdffffff) | 0, 'effect_flags 还原为 mode & ~0x2000000');
+  assert.equal(e.engineValues.get(122452), 0, 'redisplayMode 清零');
+
+  // ③ 模式未置（未处于重显示返回态）⇒ 按引擎同文报错
+  const { e: e2, f: f2, trace: t2 } = mk();
+  f2.script = script as unknown as Frame['script'];
+  assert.throws(() => t2(0x7c), /END\.HWL|END\.hwl|aEndhwl/i, '引擎打 aEnd.hwl 并抛 ShowMessage');
+
+  // ④ 深度不符 ⇒ 「Depth が不正です」（0x199 记 0x74，当前帧换成别的身份）
+  const { e: e3, f: f3, trace: t3 } = mk();
+  f3.script = script as unknown as Frame['script'];
+  f3.scriptId = 0x74;
+  f3.ip = 0;
+  OPS.get(0x7b)!(makeCtx(e3, f3, instr(0x7b, [im(42), im(77)]), e3.native, () => {})); // 先设回退游标
+  t3(0x199); // 写 redisplayScriptId（游标为 -1 时引擎不写 ⇒ 必须先设游标）
+  assert.equal(e3.engineValues.get(107678), 0x74, '基准身份已记下');
+  e3.engineValues.set(122452, 0x2000000);
+  f3.scriptId = 0x99;
+  assert.throws(() => t3(0x7c), /Depth が不正です/, '帧脚本身份必须等于 0x199 记下的那个');
+});
+
 test('0x1BB SetTB：1 ⇒ 记账、0 ⇒ 暂停、其它 ⇒ 按引擎同文抛错', () => {
   const { e, step } = mk();
   step(0x1bb, [im(0)]);
@@ -343,7 +396,9 @@ test('0x249 / 0x245 / 0x246：纹理槽绑定与对象参数转发', () => {
   step(0x246, [im(196), im(250)]);
   assert.deepEqual(calls, [
     ['bind', 0x5250, 196],
-    ['param', 196, 0x00ff00],
+    // ★`T-0086`：0x249 的 op3 经 `normalizeTextureColor` 归一化（引擎 sub_425310 raw 32750-32755：
+    //   A 通道强置 0xFF、负值落 0）—— 旧断言是"原样下发 0x00ff00"，那是修复前的不忠实口径。
+    ['param', 196, 0xff00ff00 | 0],
     ['float', 196, 500],
     ['param', 196, 250],
   ]);

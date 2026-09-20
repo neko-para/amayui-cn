@@ -15,25 +15,25 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "e.onConfigChanged = (c) => {",
-      "line": 71,
+      "line": 74,
       "note": "★回写接线：位于 loadConfigIni 内 ⇒ 无 INI 时不接线（本票要改的就是这条前提）"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "if (!e.config) {",
-      "line": 59,
+      "line": 61,
       "note": "SetConfig 等价物会**按需**造空注册表 ⇒ 技术上具备\"首次生成\"的条件"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "e.onConfigChanged?.(e.config);",
-      "line": 75,
+      "line": 77,
       "note": "写注册表后通知宿主（当前无 INI ⇒ 通知落空）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/boot.ts",
       "anchor": "audioBootIntents(e.config)",
-      "line": 76,
+      "line": 79,
       "note": "启动期音频设置依赖 INI；无 INI ⇒ 一律默认（这类现象用户可感知）"
     },
     {
@@ -62,7 +62,7 @@
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "function configRatchetOk",
-      "line": 40,
+      "line": 46,
       "note": "主进程防丢键棘轮：部分键集的安全性要靠它 + 默认值等价性来论证"
     },
     {
@@ -91,7 +91,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_434D00(v2, aSoundMusic, ArgList)",
-      "line": 111364,
+      "line": 111367,
       "note": "★键表+默认+顺序的权威来源：sub_491880 构造时逐条注入（实测 104 int + 17 string）"
     },
     {
@@ -121,7 +121,7 @@
     {
       "file": "app/amayui-emulator/src/engineConfig.ts",
       "anchor": "export function formatIni(cfg: EngineConfig): string {",
-      "line": 116,
+      "line": 144,
       "note": "★formatIni 重写：固定顺序全量导出（缺值写引擎默认；自定义键追加）"
     },
     {
@@ -133,13 +133,13 @@
     {
       "file": "app/amayui-emulator/test/config-version-substr.test.ts",
       "anchor": "formatIni：① 键表全量",
-      "line": 217,
+      "line": 228,
       "note": "新语义用例（自带 fixture，替代原先依赖本机真游戏 INI 的假红用例）"
     },
     {
       "file": "app/amayui-emulator/test/config-version-substr.test.ts",
       "anchor": "★无 INI 时也接线 onConfigChanged",
-      "line": 255,
+      "line": 266,
       "note": "回归锁：无 INI → 首改即全量落盘"
     }
   ],

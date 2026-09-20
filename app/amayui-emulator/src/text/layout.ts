@@ -5,6 +5,14 @@
  *  - **等宽网格**：`CreateFontIndirectA` 时强制 `lfWidth = lfHeight / 2`，GDI 对 DBCS 按半角解释
  *    ⇒ **全角字 = 1em、半角字 = 0.5em**（raw 71055-71060、24063-24068）。
  *    因此 `advance()` 是**纯算术**，不需要查浏览器度量 —— 排版完全确定、可在 Node 里断言。
+ *    ★**唯一的配置门 = `set:BlankExtentMode`**（串常量 raw 4280；随包默认 **0** ——
+ *    `tickets/T-0031/evidence/generated-SYS4REG.ini` 的 `BlankExtentMode=0`）：它**只改空白字**
+ *    （`0x20` / `0x8140` / 控制字节，以及绘制期 `GetGlyphOutline` 失败的字）的前进量：
+ *    `== 1` ⇒ 逐字 `GetTextExtentPoint32A` 量宽（`sub_404EE0` raw 10716-10739），
+ *    否则 ⇒ `font_size / (全角?1:2)`（raw 87269-87280 最直白；另见 `sub_4072F0` raw 12221-12236
+ *    与字形路径 raw 85126/85638/85812/86567/87269/… 共 20 余处，形态一致）。
+ *    ⇒ **mode == 0 与本文件的纯算术逐字相等**（这就是"随包默认下 emulator 已等价"的判据）；
+ *    mode == 1 需要**真实字体度量**，见 `BlankExtent` 与文件尾「缺口」。
  *  - **换行**：逐字累计，越过右/下边界即硬断（`sub_475CF0` raw 90427：`x > win+36` / `y > win+40`）。
  *    ★**没有禁则**（行首/行尾禁则表全文件不存在），★**没有换行符**（只认 `end-text-line` 0x6F）。
  *  - **注音**：与本文**配对**（引擎 24B 行记录 `+0` 种类 / `+20` 组 ID），用**独立小号字体**；
@@ -167,6 +175,11 @@ export interface MsgWinInput {
   style: MsgWinStyle;
   segments: readonly TextSegment[];
   /**
+   * **空白字前进量的配置门**（引擎 `set:BlankExtentMode`，raw 12230 一族；由 `handlers/msgwin.ts`
+   * 的 `emitWin` 从配置注册表读入）。`undefined` = 未接线（等同于 mode 0）。
+   */
+  blankExtent?: BlankExtent;
+  /**
    * **逐字显现游标**：只画前 N 个字形（跨行累计）；`undefined` / 负数 = 全部显示。
    *
    * 引擎对应物：文本先整段画进离屏表面，再由 `sub_409400` 按 `message:MessageSpeed`
@@ -264,6 +277,14 @@ export interface TextFrame {
   revealed: number;
   /** 本帧要画的字格图标（▼）；`undefined` = 这一帧没有（未武装/该窗没配字格）。 */
   cell?: MsgCellFrame;
+  /**
+   * ★**缺口可见标志**：本帧遇到了空白字、`blankExtent.mode === 1`、但**拿不到字体度量**
+   * （`BlankExtent.measure` 未提供或返回 `undefined`）⇒ 已按 mode 0 的网格回退。
+   *
+   * 为什么要有它：`set:BlankExtentMode == 1` 时引擎会走逐字 GDI 量宽，而 emulator 还没有度量来源
+   * —— 回退本身是必需的（否则要编数），但**必须能被观测**，不然就是"静默缺口"。只在为真时出现。
+   */
+  blankExtentFallback?: boolean;
 }
 
 /**
@@ -275,15 +296,122 @@ export function sjisBytes(ch: string): number {
   return c < 0x80 || (c >= 0xff61 && c <= 0xff9f) ? 1 : 2;
 }
 
-/** 引擎的推进量：`半角格数 × 0.5em`（`lfWidth = 字高/2`）。 */
-export function advance(ch: string, size: number): number {
-  return sjisBytes(ch) * size * 0.5;
+/** GDI `SIZE` 的等价物：`cx` = 字形像素宽、`cy` = 字体像素高（`GetTextExtentPoint32A` 的两个出参）。 */
+export interface GlyphExtent {
+  cx: number;
+  cy: number;
 }
 
-/** 一个字符串按引擎网格的总宽/总长。 */
-export function textWidth(s: string, size: number): number {
+/**
+ * **`set:BlankExtentMode` 门**（引擎：空白字前进量是否改用逐字量宽）。
+ *
+ * 引擎体（`sub_4072F0` raw 12221-12236；字形路径 raw 85126/85366/85638/85812/86567/87269/… 形态一致）：
+ * ```c
+ * if (GetConfig(engine, "set:BlankExtentMode") == 1) {     // ★判据是 == 1，不是"非 0"
+ *   sub_404EE0(ctx, &sz, sjis_char);                       // GetTextExtentPoint32A（raw 10716-10739）
+ *   pen += (sjis_char >= 0x100) ? sz.cy : sz.cx;           // 全角取**高**（DBCS 格是方的）、半角取宽
+ * } else {
+ *   pen += font_size / ((sjis_char >= 0x100) ? 1 : 2);     // = 等宽网格（raw 87279）
+ * }
+ * ```
+ * ⇒ mode 0（随包默认）**逐字等于**本文件的 `sjisBytes(ch) × size / 2`；mode 1 = 主机字体度量。
+ */
+export interface BlankExtent {
+  /** `set:BlankExtentMode`（引擎注册表默认 0）。只有 `=== 1` 才开门（同引擎的 `== 1`）。 */
+  mode: number;
+  /**
+   * mode == 1 时的度量来源（引擎 = `GetTextExtentPoint32A`，`sub_404EE0` raw 10716-10739）。
+   *
+   * ★**emulator 现状 = 没有这个来源**（纯 Node 层无字体度量；宿主缝见文件尾「缺口」）：
+   * `undefined` 或返回 `undefined` 时**显式回退**到 mode 0 网格，并把
+   * `TextFrame.blankExtentFallback` 置真 ⇒ 缺口可见，而不是静默编一个数。
+   *
+   * 宿主实现时的期望语义：对**一个** SJIS 字符返回 GDI `SIZE` 的等价物 —— `cx` = 该字形在当前
+   * 字体下的像素宽、`cy` = 字体像素高（≈ 请求的字号）；字体必须与**光栅化这一行用的同一**
+   * family/weight，因为引擎量的是度量 IC（`Font+1108` = Engine+0x15184）上当前选中的那支 HFONT
+   * （`font_metrics_mode != 0` 时先临时 `SelectObject(Font+201784)`，raw 10733-10737）。
+   */
+  measure?: (ch: string, size: number) => GlyphExtent | undefined;
+}
+
+/**
+ * 该字符是否走引擎的「空白字前进量」分支。
+ *
+ * 引擎的进入条件（raw 85083-85111 / 85352-85398 / 86555-86596 / 87255-87268，四处形态一致）：
+ * **SJIS 单字节 `0x20`（半角空格）**、**双字节 `0x8140`（全角空格）**、**单字节控制字（< `0x20`）**；
+ * 绘制路径另外还包括 `GetGlyphOutline` 返回 -1 的"无轮廓字"——那条在排版层**无法预知**
+ * （排版例程 `sub_46BE30` 用的是 `GetTextExtentPoint32A`，不是 `GetGlyphOutline`）⇒ 本函数不收。
+ */
+export function isBlankExtentChar(ch: string): boolean {
+  const c = ch.codePointAt(0) ?? 0;
+  return c === 0x20 || c === 0x3000 || c < 0x20;
+}
+
+/**
+ * 空白字前进量的完整结果：`value` + 是否**真的**用了 mode 1 的度量。
+ *
+ * `measured === false` 且 `blank.mode === 1` 且该字是空白字 ⇒ **回退**（无度量来源）；
+ * 调用方据此把 `TextFrame.blankExtentFallback` 置真（缺口可见）。
+ */
+export function blankAdvance(ch: string, size: number, blank?: BlankExtent): { value: number; measured: boolean } {
+  if (blank?.mode === 1 && isBlankExtentChar(ch)) {
+    const m = blank.measure?.(ch, size);
+    // 全角取高（raw 85129-85132/85641-85644/85817-85824 的 `psizl.cy`；DBCS 的格是方的）、半角取宽
+    if (m && (m.cx > 0 || m.cy > 0)) return { value: sjisBytes(ch) >= 2 ? m.cy : m.cx, measured: true };
+    return { value: sjisBytes(ch) * size * 0.5, measured: false };
+  }
+  return { value: sjisBytes(ch) * size * 0.5, measured: false };
+}
+
+/**
+ * 引擎的推进量：`半角格数 × 0.5em`（`lfWidth = 字高/2`）。
+ * 给了 `blank`（`set:BlankExtentMode`）且 mode == 1 时，**空白字**改走逐字量宽。
+ */
+export function advance(ch: string, size: number, blank?: BlankExtent): number {
+  return blankAdvance(ch, size, blank).value;
+}
+
+/**
+ * `0x205` 数字文本的**全角格宽**（引擎 `sub_4072F0` raw 12221-12236 里那个 `psizl.cy` 变量）。
+ *
+ * 引擎先算 `cy = font_metrics_mode ? Font+0x46104(字号) : -lfHeight`（raw 12221-12225），
+ * 再在 `set:BlankExtentMode == 1` 时**整个覆盖**它（raw 12232-12235）：
+ * `cy = 半角(flags bit16) ? 2 × 量宽(0x20) : 量宽(0x8140)` —— 串里每一格的前进量 = `cy`
+ * （`op6` bit1 居中时 `cy/2`、bit2 左对齐时 0；见 `handlers/msgwin.ts` 的 `0x205`）。
+ *
+ * mode == 0 时 `cy` 就是网格口径 ⇒ 内容不变（`measured: false`，零回归）。
+ */
+export function numberCellExtent(
+  halfWidth: boolean,
+  gridCy: number,
+  blank?: BlankExtent,
+): { cy: number; measured: boolean } {
+  if (blank?.mode === 1) {
+    // 量的是"空格字"（半角量 0x20、全角量 0x8140）：size 用网格格宽当尺度提示（GDI 那边字号已在字体里）
+    const m = blank.measure?.(halfWidth ? ' ' : '　', gridCy);
+    if (m && m.cx > 0) return { cy: halfWidth ? 2 * m.cx : m.cx, measured: true };
+  }
+  return { cy: gridCy, measured: false };
+}
+
+/**
+ * 字符串的 **Shift-JIS 字节长度** —— 即引擎 `strlen()`（`0x2C5` / `0x1A6`）看到的值。
+ *
+ * ★为什么单独有它：emulator 内部字符串是 JS 串，`.length` 是**字符数**（≈ 引擎的 `_mbstrlen`，即 `0x2C6`），
+ * 而引擎的 `strlen` 数的是**字节**：ASCII 与半角片假名 1 字节、其余 2 字节。
+ * 两者在纯 ASCII 下相等，一遇日文就分叉 ⇒ `0x2C5`（`op1 = strlen(op2)`）与 `0x1A6`（`op1 = strlen(op2) >> 1`）
+ * 都必须用字节长算（`tickets/T-0076` 的 B3 批次顺带订正了 `0x2C5` 此前用 `.length` 的问题）。
+ */
+export function sjisByteLength(s: string): number {
+  let n = 0;
+  for (const ch of s) n += sjisBytes(ch);
+  return n;
+}
+
+/** 一个字符串按引擎网格的总宽/总长（给了 `blank` 时空白字按 `set:BlankExtentMode` 口径）。 */
+export function textWidth(s: string, size: number, blank?: BlankExtent): number {
   let w = 0;
-  for (const ch of s) w += advance(ch, size);
+  for (const ch of s) w += advance(ch, size, blank);
   return w;
 }
 
@@ -385,6 +513,8 @@ export function defaultWinStyle(): MsgWinStyle {
 export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   const st = input.style;
   const size = st.main.size;
+  /** `set:BlankExtentMode` 门（`undefined` = 未接线，行为与 mode 0 相同）。 */
+  const blank = input.blankExtent;
 
   /** 收集全部注音对（跨段累计），配对时按行文本过滤。 */
   const pairs: [string, string][] = [];
@@ -411,7 +541,7 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
       width: Math.max(0, width),
       text: chars.join(''),
     };
-    pairRuby(line, pairs, st);
+    pairRuby(line, pairs, st, blank);
     applyAlign(line, st);
     lines.push(line);
     glyphs = [];
@@ -435,9 +565,13 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   };
 
   let outOfRoom = false;
+  // ★`set:BlankExtentMode == 1` 但拿不到字体度量 ⇒ 本帧有空白字时置真（见 TextFrame.blankExtentFallback）
+  let blankFallback = false;
   for (const seg of input.segments) {
     for (const ch of seg.text) {
-      const adv = advance(ch, size);
+      const r = blankAdvance(ch, size, blank);
+      if (!r.measured && blank?.mode === 1 && isBlankExtentChar(ch)) blankFallback = true;
+      const adv = r.value;
       if (penX + adv > st.wrapRight && glyphs.length > 0 && !wrap()) {
         outOfRoom = true;
         break;
@@ -457,7 +591,9 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   //   —— 2026 实测的"文字直接不显示"就是这个（模型对、画面空，属最难查的静默缺陷）。
   const rev = input.revealed ?? glyphCount;
   const revealed = rev < 0 ? glyphCount : rev >= glyphCount ? glyphCount : rev;
-  return { win, style: st, lines, glyphCount, revealed };
+  return blankFallback
+    ? { win, style: st, lines, glyphCount, revealed, blankExtentFallback: true }
+    : { win, style: st, lines, glyphCount, revealed };
 }
 
 /**
@@ -467,7 +603,7 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
  * （raw 83988-83997），显现循环 `do { 贴 } while (上一记录[+0])`（raw 72427-72435）于是
  * 在同一步里贴出「本文末字 + 注音」⇒ `from` = 本文词末字在本行里的序号（`tickets/T-0037`）。
  */
-function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle): void {
+function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle, blank?: BlankExtent): void {
   if (line.text.length === 0) return;
   const rSize = st.ruby.size;
   for (const [base, ruby] of pairs) {
@@ -479,15 +615,15 @@ function pairRuby(line: TextLine, pairs: [string, string][], st: MsgWinStyle): v
     const last = run[run.length - 1];
     if (!first || !last) continue;
     const x0 = first.x;
-    const x1 = last.x + advance(last.ch, st.main.size);
-    let rx = x0 + (x1 - x0 - textWidth(ruby, rSize)) / 2;
+    const x1 = last.x + advance(last.ch, st.main.size, blank);
+    let rx = x0 + (x1 - x0 - textWidth(ruby, rSize, blank)) / 2;
     // 引擎：`ruby.y = 行 y + Font+1292`（Font+1292 = **-注音字号** ⇒ 行顶上方一个注音字高），
     // 且非 D3D 路径（DrawMode != 1）且 `Font+218600 == 0`（全库只读不写 ⇒ 恒 0）时再 **+1**
     // （sub_465A20 raw 79089-79091 一带；`Font+218600` 初值 raw 78772）。
     const ry = first.y - rSize + 1;
     for (const ch of ruby) {
       line.ruby.push({ ch, x: rx, y: ry, from: last.i });
-      rx += advance(ch, rSize);
+      rx += advance(ch, rSize, blank);
     }
   }
 }
@@ -532,3 +668,54 @@ export function visibleInLine(line: TextLine, lineStartIndex: number, revealed: 
 export function visibleRubyInLine(line: TextLine, revealedInLine: number): RubyGlyph[] {
   return line.ruby.filter((g) => g.from <= revealedInLine);
 }
+
+// ---------------------------------------------------------------------------
+// 缺口（`tickets/T-0085`）：`set:BlankExtentMode == 1` 的**字体度量来源**
+// ---------------------------------------------------------------------------
+/**
+ * 门本身已接线（`MsgWinInput.blankExtent` ← `handlers/msgwin.ts` 的 `emitWin` 读
+ * `set:BlankExtentMode`），**但 mode == 1 需要的"字形度量来源"在 emulator 里还不存在** ——
+ * 这一节把"要拿到什么、从哪来"写死在这里，避免下次又从"只有一个数字不对"开始查。
+ *
+ * ## 引擎要的是什么
+ * `sub_404EE0`（raw 10716-10739）对**一个字符的 Shift-JIS 字节**（`0x8140` 全角空格要 2 字节、
+ * `0x20` 半角空格 1 字节，`strlen` 数的是字节数）调度量 IC（`Font+1108` = Engine+0x15184）上的
+ * `GetTextExtentPoint32A` ⇒ 出参 `SIZE{cx = 该字形像素宽, cy = 字体像素高}`。
+ * 量之前若 `font_metrics_mode`（Engine+0x46100）非 0，会先临时 `SelectObject` 那支
+ * 按纵横比缩放的字体（Engine+0x46168）并在量完还原（raw 10733-10737）。
+ * 消费点的用法（形态一致）：**全角取 `cy`**（DBCS 的格是方的）、**半角取 `cx`**；
+ * `0x205`（`sub_4072F0` raw 12232-12235）例外地只用 `cx`：全角 `cy = 量宽(0x8140)`、
+ * 半角 `cy = 2 × 量宽(0x20)`。
+ *
+ * ## emulator 缺的正是"宿主字体度量 API"
+ * `BlankExtent.measure` 是**唯一**的注入点（签名见其注释）。三种可选来源，按推荐序：
+ *  1. **宿主 canvas 度量**（首选，等价物最直接）：字体加载完（`renderer/text/fontLoader.ts`）后
+ *     `ctx.font = \`${weight} ${size}px ${family}\`` + `measureText(ch)` ⇒ `cx = width`、
+ *     `cy = size`（GDI 的 `cy` 就是字体像素高）。需要一条**从渲染宿主到 `MsgWinInput` 的缝**：
+ *     `MsgWinInput` 由 VM 的 `emitWin` 组装、宿主只读它 ⇒ 要么在渲染侧 sync 时补 `measure`
+ *     （`scMsgWinSync` 是唯一调用点），要么给 `native` 加一个 `measureText` 回调（`native.ts`
+ *     属别的票的范围）。**本票没有改 `renderer/**` 与 `native.ts`**（并发分工），故留空。
+ *  2. **自建度量表**：解析 `res/fonts/` 那两支 TTF 的 `hmtx`（advanceWidth）/`head`（unitsPerEm）
+ *     ⇒ `cx = advance × size / unitsPerEm`。纯 Node 可跑、可单测，但要知道字体文件与当前
+ *     family/weight 的对应（`fontSet.ts` 有表）。
+ *  3. **不实现**：保持 `measure` 为 `undefined`（现状）⇒ mode 1 下布局显式回退到 mode 0 网格，
+ *     `TextFrame.blankExtentFallback` 置真。**默认配置（INI 的 `BlankExtentMode=0`）下这与引擎
+ *     逐字等价**，所以这条只影响玩家手动把该项设成 1 的情况。
+ *
+ * ## 还有两处没接（同一张票的显式缺口，写法与理由）
+ *  - `0x204`（`drawStringGlyphs` → `native.drawString` → `renderer/pixi/textureCache`）：同一条 GDI
+ *    直绘缝（`sub_456710`），但 `drawString` 的宿主参数里没有 `blankExtent` ⇒ 未接线；
+ *  - **绘制期"无轮廓字"**：引擎在 `GetGlyphOutline` 返回 -1 时也走空白字分支（raw 85115/85808），
+ *    那是**光栅化时**才知道的信息（本模块只有排版，拿不到字形是否缺轮廓）⇒ 未建模。
+ *
+ * ## 还没读到、不确定的（不许沉默掩盖）
+ *  - 全角分支在 20 余处里有两种写法：多数用 `psizl.cy`（raw 85130/85642/85815），
+ *    `sub_471180` 那支（raw 87274-87279）**两种宽度都用 `psizl.cx`**，且开门的条件多一条
+ *    `font_metrics_mode <= 1`（raw 87269：度量模式 > 1 时即使 `BlankExtentMode == 1` 也走字号公式）。
+ *    本模块按多数写法（全角取 `cy`）实现、且没有 `font_metrics_mode` 输入 ⇒ 后一条未建模；
+ *    **语料里不可达**：`i2db` 全仓只有 **1 处**（值 `1`）⇒ `font_metrics_mode ∈ {0, 1}`，
+ *    条件恒真。差异留 E4。
+ *  - `sub_46DED0`（raw 85136-85140）与 `sub_46E3E0`/`sub_46FB90` 的 mode 0 写法方向不同
+ *    （`a4 -= tmHeight` vs `a3 -= 2*lfWidth`，后者因 `lfWidth` 为负而实际前进）；前一处的
+ *    `a4` 是竖排字体的 y 笔位（`a4 += tmHeight` 是正常字的前进）⇒ 空白字反向的具体原因未确证。
+ */

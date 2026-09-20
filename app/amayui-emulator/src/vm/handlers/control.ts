@@ -8,7 +8,7 @@
  * 不是错误 —— 见 interpreter.run 的捕获。
  */
 import type { OpHandler, StepCtx } from '../step.js';
-import { readIntOperand, operandArg } from '../operand.js';
+import { readIntOperand, writeIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Frame } from '../engine.js';
 import { labelPos } from './shared.js';
@@ -406,6 +406,123 @@ const op_exit_script: OpHandler = async (c) => {
   c.jump(0); // 控制流重定位到新根帧 ip=0，继续跑（而非停在 reset）
 };
 
+// ---------------------------------------------------------------------------
+// 通用 `Queue_int` 队族：0x132 重建 / 0x133 压入 / 0x134 弹出
+// 容器 = 引擎 `_this + 388252`(字节) 起的 11 个队列指针（`Engine[4*i+388252]`，i=0..10）⇒
+// emulator 的 `Engine.dispatchQueues`（见 `engine.ts` 该字段的注释：规模 11 的引擎证据、
+// `sub_407C50` 构造、`sub_409E10` push 的 FIFO 语义）。
+// 三条 handler 体都以此开头（arity 槽 = `2*argc+1`，引擎自带 argc 真源）：
+//   0x132 → `= 3`（argc 1）、0x133 → `= 5`（argc 2）、0x134 → `= 7`（argc 3）。
+// ★该槽（`_this + 120*cur + 383220`）是引擎派发器的内部计数器，emulator 不建模（与其它 handler 同）。
+// ---------------------------------------------------------------------------
+
+/**
+ * `0x132`（`i132`，`sub_422150` 体起始 **raw 30647**，argc 1）：**重建**第 op1 个 `Queue_int` 队。
+ *
+ * 引擎体（raw 30647-30681，真分支逐行）：
+ * ```c
+ * *(_DWORD *)(_this + 120*cur + 383220) = 3;      // arity 槽 ⇒ argc 1
+ * v2 = sub_41BF50(_this, 1);                       // op1（readIntOperand）
+ * if ( v2 > 0xA )  {                               // ★unsigned 比较（v2 是 unsigned int）
+ *     sub_408050(_this + 8, 1024, aResetq);        //   组错误串（aResetq = "RESETQ"）
+ *     sub_4034D0(_this, _this + 8);                //   打出错误串 —— **不动队列**（else 才动）
+ * } else {
+ *     v4 = *(_DWORD **)(_this + 4*v2 + 388252);    // 旧队列
+ *     if (v4) (**v4)(v4, 1);                       // 析构旧队列（vtable 槽 0 = 释放）
+ *     v5 = operator new(0x1Cu);                    // 新队列对象 28 字节
+ *     if (v5) { sub_407C50(v5); *(_DWORD *)(_this + 4*v3 + 388252) = v6; }  // ★v6 见下
+ *     else      *(_DWORD *)(_this + 4*v3 + 388252) = 0;
+ * }
+ * // 4221D8: variable 'v6' is possibly undefined
+ * ```
+ * ★`sub_407C50`（raw 12653-12663）= `vftable + buf=new[0x400]（**256** int）+ [4]=[5]=256（cap/step）
+ *   + [2]=[3]=0（rd/wr）` ⇒ **新队 = 空队**，旧内容整份丢弃。
+ * ★raw 30673 写回的 `v6` 是 Hex-Rays 把 `v5`（`operator new` 的返回值）误跟踪成的未定义量
+ *   （`// 4221D8: variable 'v6' is possibly undefined`）—— 该分支里 `v5` 非空且 `sub_407C50(v5)` 返回 void
+ *   ⇒ 写入的就是**新队列指针**。语义不受影响，emulator 直接写 `dispatchQueues[op1] = []`。
+ * ★`v2 > 0xA` 是 **unsigned** 比较 ⇒ 负数（如 -1 = 0xFFFFFFFF）也走错误串分支、不动队列。
+ *   重写侧照此用 `>>> 0` 比较（否则 `dispatchQueues[-1]` 会静默落到原型链上）。
+ */
+const op_queue_reset: OpHandler = (c) => {
+  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  if ((op1 >>> 0) > 0xa) {
+    // 引擎：`sub_408050(..., aResetq)` + `sub_4034D0` 打 "RESETQ" 错误串（raw 30661-30662），队列不动。
+    c.log(`0x132(RESETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不改任何队列`);
+    return;
+  }
+  c.e.dispatchQueues[op1] = []; // 析构旧队 + new(0x1C) + sub_407C50 ⇒ 空队（旧内容丢弃）
+};
+
+/**
+ * `0x133`（`i133`，`sub_422240` 体起始 **raw 30683**，argc 2）：**压入**第 op1 个队（值 = op2）。
+ *
+ * 引擎体（raw 30683-30701，真分支逐行）：
+ * ```c
+ * *(_DWORD *)(_this + 120*cur + 383220) = 5;       // arity 槽 ⇒ argc 2
+ * v2 = sub_41BF50(_this, 1);                        // op1
+ * if ( v2 > 0xA ) { sub_408050(..., aAddq); sub_4034D0(...); }   // "ADDQ" 错误串，不压
+ * else { v3 = sub_41BF50(_this, 2); sub_409E10(*(_DWORD *)(_this + 4*v2 + 388252), v3); }
+ * ```
+ * `sub_409E10`（raw 14280 起）= 顺序缓冲上的 push：`[3]`(wr) 处写入 `a2`、`wr++`；
+ * 缓冲将满（`[4]`(cap) 不 > `wr+2`）时按 `[5]`(step，构造时 256) **扩容**，或 `rd>0` 时就地把
+ * `rd` 起的内容 `memmove` 到头部并 `wr -= rd`、`rd = 0`（**压实**）后重试 ⇒ 净效果 = **FIFO push**。
+ * ⇒ emulator = `dispatchQueues[op1].push(op2)`（`number[]` 天然等价；扩容/压实是引擎的缓冲实现细节）。
+ * ★披露的口径差：引擎对**已析构（NULL）**的槽（teardown 后，raw 19204 置 0）会空指针解引用；
+ *   `dispatchQueues` 是 11 个常驻空数组 ⇒ 此处退化为"往空队压"。合法序列（先 `0x132`）行为一致。
+ */
+const op_queue_push: OpHandler = (c) => {
+  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  if ((op1 >>> 0) > 0xa) {
+    c.log(`0x133(ADDQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不压入`);
+    return;
+  }
+  c.e.dispatchQueues[op1]!.push(readIntOperand(c.e, c.frame, c.instr, 2));
+};
+
+/**
+ * `0x134`（`i134`，`sub_42F810` 体起始 **raw 39359**，argc 3）：**弹出**第 op1 个队
+ * ⇒ **op2 = 成功位，op3 = 值**（两条都用 `sub_42B4B0` = `writeIntOperand` 写回）。
+ *
+ * 引擎体（raw 39359-39399，真分支逐行）：
+ * ```c
+ * *(_DWORD *)(_this + 120*cur + 383220) = 7;       // arity 槽 ⇒ argc 3
+ * v2 = sub_41BF50(_this, 1);                        // op1
+ * if ( v2 > 0xA ) { sub_408050(..., aGetq); sub_4034D0(...); }   // "GETQ" 错误串，两个出参都不写
+ * else {
+ *   v3 = *(_DWORD **)(_this + 4*v2 + 388252);       // 队列
+ *   v4 = v3[2];                                     // rd
+ *   if ( v4 < v3[3] ) {                             // rd < wr ⇒ 非空
+ *     v5 = *(_DWORD *)(v3[1] + 4*v4);               //   v5 = buf[rd]
+ *     v7 = v4 + 1; v3[2] = v7;                      //   rd++
+ *     if ( v3[6] < v7 ) v3[6] = v7;                 //   更新 max（[6]）
+ *     v6 = 1;                                       //   成功位 = 1
+ *   } else { v5 = v8; v6 = 0; }                     // ★空：v5 = **未初始化栈残留**（v8），成功位 = 0
+ *   sub_42B4B0(_this, 2, v6);                       // op2 ← 成功位
+ *   sub_42B4B0(_this, 3, v5);                       // op3 ← 值
+ * }
+ * // 42F84D: variable 'v8' is possibly undefined
+ * ```
+ * ★★**披露的偏差**：队空分支里 `v5 = v8`（raw 39392）是 Hex-Rays 追踪到的**未初始化局部量**
+ *   （raw 39399 `// 42F84D: variable 'v8' is possibly undefined`）—— 引擎会把一段**栈残留**当值写进 op3。
+ *   emulator 取「空队 ⇒ op3 = 0」这一确定口径（不复制栈残留）。语料唯一使用点
+ *   `src/ATSEEK.txt:22-29` 是 `i134 0 (local-int 0) (local-int 1)` 后紧跟 `jcc (local-int 0)`
+ *   ⇒ **只读 op2**，op3 在队空时不构成可观测差异。此偏差同时记在
+ *   `analysis/opcode-gaps.json` 的 `0x134` note 与 `docs-new/03-engine/opcode-table.md` 该行。
+ * ★`sub_42B4B0` 的两条写回**只在 else 分支里** ⇒ `op1 > 0xA` 时 op2/op3 **都不写**（保持原值）。
+ */
+const op_queue_pop: OpHandler = (c) => {
+  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  if ((op1 >>> 0) > 0xa) {
+    c.log(`0x134(GETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，op2/op3 都不写`);
+    return;
+  }
+  const q = c.e.dispatchQueues[op1]!;
+  const v = q.shift(); // 引擎：`buf[rd]` + `rd++`（FIFO）
+  writeIntOperand(c.e, c.frame, c.instr, 2, v === undefined ? 0 : 1); // op2 = 成功位（引擎 raw 39395）
+  // ★偏差披露（见上方注释）：空队时引擎把未初始化栈残留写进 op3，这里写确定的 0。
+  writeIntOperand(c.e, c.frame, c.instr, 3, v === undefined ? 0 : v); // op3 = 值（引擎 raw 39396）
+};
+
 /** 控制流 + 脚本装载（唯一改写 ip/cur 的一族）。 */
 export const CONTROL_OPS: OpTable = [
   [0x8c, op_jmp],
@@ -421,5 +538,9 @@ export const CONTROL_OPS: OpTable = [
   [0x1, op_abort],
   [0x2, op_exit],
   [0x9, op_exit_script],
+  // ---- 通用 `Queue_int` 队族（引擎 `_this+388252` 起的 11 个队；语料：ATSEEK 等；`tickets/T-0076` 的 B3）----
+  [0x132, op_queue_reset], // 重建第 op1 个队（`sub_422150` raw 30647-30681；op1 > 0xA ⇒ "RESETQ" 错误串、不动队列）
+  [0x133, op_queue_push], // 压入 op2（`sub_422240` raw 30683-30701 → `sub_409E10` raw 14280 起；op1 > 0xA ⇒ "ADDQ"）
+  [0x134, op_queue_pop], // 弹出 ⇒ op2 = 成功位 / op3 = 值（`sub_42F810` raw 39359-39399；op1 > 0xA ⇒ "GETQ"）
 ];
 

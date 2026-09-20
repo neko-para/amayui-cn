@@ -34,12 +34,58 @@ export const W_ROT = 2;
 export const W_TRANS = 3;
 export const W_FLIPBOOK = 4;
 
+/**
+ * `Item.flags` 的位（引擎 740 字节元素 `+0`）。
+ *
+ * - `ITEM_FLAG_VISIBLE` = bit0：**可见/参与绘制**。读点 raw 133361（`sub_4AEEA0` 的绘制门）、
+ *   132512（`sub_4ADC20`：`& 1 == 0 ⇒ 纹理槽 −1`）；写点 `|= 1u`（如 `0x1FB` 的 `sub_4ACE50` raw 131826）。
+ * - `ITEM_FLAG_ANIM_WIN` = bit1：**A 层（一次性动画窗）已挂**。读点 raw 117436（`sub_49AA30` 的 A 层门）；
+ *   写点 = 5 个窗 setter（`sub_4AD0C0`/`4AD170`/`4AD250`/`4AD3C0`/`4AD4A0`，raw 131969-132133）。
+ * - `ITEM_FLAG_ANIM_LOOP` = bit2：**B 层（周期/循环动画层）已挂**。全反编译唯一读取点 = raw 133390
+ *   （`sub_4AEEA0`：`(flags & 4) == 0 ⇒ 跳过整层`；命中时 raw 133395 强制"世界矩阵有效"）；
+ *   写点 = `0x231`–`0x235` 五个 setter（raw 132229/132250/132274/132301/132330）；
+ *   清点 = `0x230`（`sub_4AD580` raw 132173）。
+ *   语义与 5 条通道的消费端见 `docs-new/03-engine/b3-bit2-model-spec-2026-09.md`。
+ */
+export const ITEM_FLAG_VISIBLE = 0b001;
+export const ITEM_FLAG_ANIM_WIN = 0b010;
+export const ITEM_FLAG_ANIM_LOOP = 0b100;
+
+/**
+ * **B 层（bit2）周期/循环通道**（引擎 `Item+524..+560` 的 5 组格子，下标复用 `W_*`）。
+ *
+ * ★与 A 层的 `AnimWin` 是**两套独立机制**（bit1 = 一次性过渡，bit2 = 无限周期），
+ *   `+568/+572`（flipbook 帧数/列数）由两层**共用**（见 `Item.fbFrames/fbCols`）。
+ *
+ * 每个通道只有"起点 + 周期"两格；`period > 0` = 该通道启用（引擎 raw 118103/118135/118223/118234/118344
+ * 的 `if (周期 > 0)`）。起点槽为 0 时**当帧锁存 now**（raw 118105-118106 / 118137-118138 / 118225-118226 /
+ * 118236-118237 / 118346-118347），锁存值经渲染期整块回写（raw 133448）持久化。
+ */
+export interface LoopWin {
+  /** 起点槽（`+524/+528/+532/+536/+540`）：0 ⇒ 求值当帧锁存 now。 */
+  start: number;
+  /** 周期 ms（`+544/+548/+552/+556/+560`）：`<= 0` ⇒ 本通道不跑。 */
+  period: number;
+}
+
 /** 一个 draw-item（引擎 740 字节元素）在 emulator 侧的建模。 */
 export interface Item {
   /** Scene map 的 key（= 图元 id = 绘制层序，越小越先画）。 */
   handle: number;
   /** 绘制层序（= handle；元素内部其实不存 layer，这里保留便于排序/诊断）。 */
   layer: number;
+  /**
+   * **画这一项的那一帧**（emulator 记账，引擎没有这一格；`-1` = 未知，例如构造器默认项）。
+   *
+   * 用途只有一个：**读档时把"被放弃的调用方"画的东西丢掉**（`tickets/T-0083` 的 (B) 步）。
+   * 依据：引擎 `sub_410160` 装载后废弃调用方脚本（`cur = 0`），而它在装载段复位两个
+   * **仮想ディスプレイ**对象（`sub_403EF0` raw 19913-19915 —— 体 raw 9958-9971：`_this[258] = 0`
+   * 项数清零、`_this[959] = -1`、`_this[960] = 0`、三个矩形 `SetRectEmpty`）⇒ 上一屏那层 UI
+   * **整体不再组成**。emulator 是单一扁平绘制表、没有"平面"概念 ⇒ 用"谁画的"近似那一层：
+   * 调用方帧画的项 = 那一层（菜单/列表），在读档装载点丢掉；ADV 场景自己画的项留下。
+   * 这不是引擎里的字段，是**缺口台账里登记的近似**（见 `SLOT_GAPS` 与 `tickets/T-0083`）。
+   */
+  ownerFrame: number;
   /** **纹理槽号**（引擎 DrawItem`+4`；由 `draw-texture` 的 **op2** 给出）。 */
   tex: number;
   /** 源矩形左上角（脚本 op3/op4；引擎元素里是 `+8/+0xC`）。 */
@@ -100,7 +146,20 @@ export interface Item {
   /** draw-texture 的目标位置（op7/op8；仅诊断，实际绘制位置取 `posX/posY`）。 */
   dstX: number;
   dstY: number;
-  /** bit0 存在 | bit1 动画启用。 */
+  /**
+   * **B 层（bit2）5 条周期通道**（`+524..+560`；下标复用 `W_*`）。见 `LoopWin` 的说明。
+   * `0x230` 清全部 `period` 与 `W_FLIPBOOK.start`；`0x231`–`0x235` 各配一条。
+   */
+  loops: LoopWin[];
+  /** `+576`：B 层颜色往复的**目标色**（ARGB；`0x232` 写，构造器默认 −1 = 不透明白）。 */
+  loopTo: number;
+  /** `+592`（16 f32 的缩放矩阵）：B 层缩放往复的**目标缩放**（`0x233` 写 `D3DXMatrixScaling`）。 */
+  loopScale: Vec3;
+  /** `+580/+584/+588`：B 层**匀速旋转**的轴（`0x234` 写，raw 132309-132311）。 */
+  loopAxis: Vec3;
+  /** `+656`（16 f32 的平移矩阵）：B 层平移往复的**目标平移**（`0x235` 写 `D3DXMatrixTranslation`）。 */
+  loopTrans: Vec3;
+  /** bit0 存在 | bit1 A 层动画窗 | bit2 B 层周期动画（见 `ITEM_FLAG_*`）。 */
   flags: number;
 }
 
@@ -183,9 +242,12 @@ export interface DrawItemConfig {
   srcH: number;
   dstX: number;
   dstY: number;
+  /** 画这一项的那一帧（`Item.ownerFrame` 的来源；缺省 = 未知）。 */
+  ownerFrame?: number;
 }
 
 const ZERO_WIN = (): AnimWin => ({ delay: 0, dur: 0, set: false });
+const ZERO_LOOP = (): LoopWin => ({ start: 0, period: 0 });
 
 /**
  * 新建一个 draw-item（等价引擎元素构造函数 `sub_49A300`）。
@@ -194,11 +256,16 @@ const ZERO_WIN = (): AnimWin => ({ delay: 0, dur: 0, set: false });
  * bit0 只由 `0x1FB` draw-texture（`sub_4ACE50` raw 131826 `|= 1u`）置上。
  * 这个区别很重要：任何"缺失即建项"的 setter（引擎 `sub_4AAA50`）建出的项都是 flags=0，
  * 渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361），所以这种项**不会出画**。
+ *
+ * ★B 层默认值照 `sub_49A300` raw 116995-117046：5 组起点/周期全 0、`+576 = -1`（不透明白）、
+ *   `+592` 缩放矩阵与 `+656` 平移矩阵 = 单位（⇒ `loopScale = (1,1,1)`、`loopTrans = (0,0,0)`）、
+ *   `+580` 轴 = 0。
  */
 export function makeItem(cfg: DrawItemConfig): Item {
   return {
     handle: cfg.handle,
     layer: cfg.layer,
+    ownerFrame: cfg.ownerFrame ?? -1,
     tex: cfg.tex,
     srcX: cfg.srcX,
     srcY: cfg.srcY,
@@ -229,6 +296,11 @@ export function makeItem(cfg: DrawItemConfig): Item {
     fbHold: -1,
     dstX: cfg.dstX,
     dstY: cfg.dstY,
+    loops: [ZERO_LOOP(), ZERO_LOOP(), ZERO_LOOP(), ZERO_LOOP(), ZERO_LOOP()],
+    loopTo: 0xffffffff, // 构造器 raw 117014：`+576 = -1`（不透明白）
+    loopScale: { x: 1, y: 1, z: 1 }, // raw 117008-117046：`+592` = 单位缩放矩阵
+    loopAxis: { x: 0, y: 0, z: 0 }, // raw 116995-117014：B 层字段清零
+    loopTrans: { x: 0, y: 0, z: 0 }, // `+656` = 单位平移矩阵
     flags: 0, // ★没有任何位 —— bit0 由 draw-texture(0x1FB) 置
   };
 }
@@ -275,12 +347,16 @@ export function cloneItem(it: Item, dstHandle: number): Item {
     handle: dstHandle,
     layer: dstHandle,
     wins: it.wins.map((w) => ({ ...w })),
+    loops: it.loops.map((l) => ({ ...l })),
     scaleWork: { ...it.scaleWork },
     scaleTarget: { ...it.scaleTarget },
     rotWork: { axis: { ...it.rotWork.axis }, deg: it.rotWork.deg },
     rotTarget: { axis: { ...it.rotTarget.axis }, deg: it.rotTarget.deg },
     transWork: { ...it.transWork },
     transTarget: { ...it.transTarget },
+    loopScale: { ...it.loopScale },
+    loopAxis: { ...it.loopAxis },
+    loopTrans: { ...it.loopTrans },
   };
 }
 

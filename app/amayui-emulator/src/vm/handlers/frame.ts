@@ -175,6 +175,8 @@ const op_redisplay_text: OpHandler = (c) => {
       e.engineValues.set(ENGINE_FIELD.redisplayMode, (saved | 0x6000000) | 0);
       // 引擎 `sub_418FC0` raw 24513：`((ip - ip_base) >> 2) + 1` = **当前指令的 dword 偏移 + 1**。
       e.engineValues.set(ENGINE_FIELD.redisplayReturn, (c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
+      // 引擎 raw 24515：`_this[107678] = frame[95796]` = **记下当时的帧脚本身份**（`0x7C` 用它做深度校验）。
+      e.engineValues.set(ENGINE_FIELD.redisplayScriptId, c.frame.scriptId);
       jumpToDword(c, target);
     }
     return;
@@ -184,6 +186,48 @@ const op_redisplay_text: OpHandler = (c) => {
     e.engineValues.set(ENGINE_FIELD.redisplayMode, ((mode & 0xf9ffffff) | 0x2000000) | 0);
     jumpToDword(c, alt);
   }
+};
+
+/**
+ * **`0x7C` local-ret**（`sub_41AB80` raw 25778-25824，argc 0）：**结束「重显示调用」并回到 0x199 记下的位置**。
+ *
+ * 引擎体逐字（`489808` = 字节形式，即 `_this[122452]` = 重显示模式字；`489812` = `_this[122453]`）：
+ * ```c
+ * if ((mode & 0x2000000) == 0) { arity=1; throw ShowMessage("END.HWL"); }   // ★不在"重显示返回"模式 ⇒ 报错
+ * if (frame[95796] != Engine[430712])  throw ShowMessage("Depth が不正です %s != %s");
+ * frame.ip = ip_base + 4 * Engine[489812];        // ← 回到 0x199 记下的"下一条"（dword 偏移）
+ * frame[arity] = 0;
+ * effect_flags = mode & 0xFDFFFFFF;               // ★恢复 0x199 之前保存的 flags（清掉 0x2000000）
+ * mode = 0;
+ * Engine[81776] = -1; Engine[81768] = 0; Engine[51848] = -1; Engine[51840] = 0;   // 两对"光标/选择"状态清零
+ * if (Engine[387940]) { Engine[387940] = 0; if (list.len == 1) sub_40FB60(this); } // 列表只剩 1 项时的收尾
+ * ```
+ * ★语料 **668 处 / 334 个脚本**（本作使用量第 3 的缺口）。典型成对形态（每脚本 2 处）：
+ * `call label_X` → `i1ad` → `i199`（进入重显示、跳到回退游标）→ … → **`local-ret`**（回到 `i199` 之后那条）。
+ * ⇒ 与 `0x199`（写端）严格成对：写端记 `redisplayReturn`/`redisplayScriptId`，本指令读回并清理。
+ *
+ * emulator：`jumpToDword(redisplayReturn)` + 还原 `effect_flags` + 清 `redisplayMode`；
+ * 未建模的三个字段（`81776/81768`、`51848/51840`、`387940` 的列表收尾）按既有判据跳过 —— 它们在
+ * 引擎里是「重显示期间的光标/选择暂存」，emulator 没有对应消费者（写进去会变成死写）。
+ */
+const op_redisplay_return: OpHandler = (c) => {
+  const e = c.e;
+  const mode = e.engineValues.get(ENGINE_FIELD.redisplayMode) ?? 0;
+  if ((mode & 0x2000000) === 0) {
+    throw new Error(
+      'END.HWL: 0x7C（local-ret）要求处于「重显示返回」模式（引擎 raw 25791-25796 打 aEndhwl 并抛 ShowMessage）',
+    );
+  }
+  const want = e.engineValues.get(ENGINE_FIELD.redisplayScriptId) ?? -1;
+  if (want !== -1 && c.frame.scriptId !== want) {
+    throw new Error(
+      `Depth が不正です ${c.frame.scriptId} != ${want}（0x7C raw 25799：当前帧脚本身份必须等于 0x199 记下的那个）`,
+    );
+  }
+  const ret = e.engineValues.get(ENGINE_FIELD.redisplayReturn) ?? -1;
+  if (ret !== -1) jumpToDword(c, ret);
+  e.effectFlags = (mode & 0xfdffffff) | 0; // 引擎：effect_flags = mode & 0xFDFFFFFF（清 0x2000000）
+  e.engineValues.set(ENGINE_FIELD.redisplayMode, 0);
 };
 
 /**
@@ -348,6 +392,7 @@ export const FRAME_OPS: OpTable = [
   [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → ENGINE_FIELD.clock/clockPrev）
   [0x7b, op_set_rewind_cursor], // 设本帧「重显示」回退游标（rewindMainBase/rewindAltBase，值为 dword 偏移）
   [0x199, op_redisplay_text], // ★重显示文本（0x7B 的读取端；668 处，原先命中即硬报错）
+  [0x7c, op_redisplay_return], // ★local-ret：结束重显示调用、回到 0x199 记下的位置（668 处；B3 补）
   [0xae, op_save_version_branch], // 存档版本分支（门控 loadInProgress；帧 ip 重算=已登记缺口）
 ];
 

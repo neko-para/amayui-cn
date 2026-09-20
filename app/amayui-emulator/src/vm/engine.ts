@@ -168,6 +168,25 @@ export class Engine {
    * `null` = 没有 hold（真槽没有快照；或已读档完成）。
    */
   loadHold: import('./handlers/save-slot.js').SlotPresentation | null = null;
+  /**
+   * **文本累加缓冲**（引擎 `Engine+497344`）—— `0x1B2`（追加字符串）/`0x1B3`（追加 `"\r\n"`）/
+   * `0x1B4`（取出整段并清空）三条指令共用的那个容器。
+   *
+   * 引擎依据：`sub_42A9B0`（raw 36550-36558，`sub_40C660(_this + 124336, 串, strlen)`）、
+   * `sub_42AA00`（raw 36560-36565，追加 `asc_51EE84` = `"\r\n"`，raw 4320）、
+   * `sub_428DB0`（raw 35322-35331，`sub_40B420(_this + 497344, 0, -1)` 取整段）。
+   * ★`124336`（= 该容器的元素下标）在**全反编译里只出现于这三处** ⇒ 没有别的读者/写者；
+   * 三条指令都不写操作数，所以本建模的观测面 = 日志（否则就是一处沉默的死写）。
+   */
+  textBuffer = '';
+  /**
+   * **程序化纹理槽的尺寸表**（emulator 记账，引擎没有这一格）：`0x1F8`（`create-texture`）建槽时记下
+   * `w/h`，`0x1FA`（`release-texture`）删掉。用途 = **`0x23F`**（`sub_4307B0` raw 40019-40031）读
+   * "槽 → 尺寸 ×1000、缺槽 ⇒ −1"。★引擎那条读的是节点对象上的 `sub_4080B0`（画布尺寸，vtable `+40`/`+68`），
+   * 而本文语料里 `0x23F` 的 `op2` 是**刚 create 出来的槽**（`src/FIELD.txt:13718-13721`，120×120），
+   * 故按"槽尺寸"建模；**宽/高归属在语料里不可分辨**（正方形），已在 `op_get_slot_size` 注释里披露。
+   */
+  texSizes = new Map<number, [number, number]>();
   globals = new GlobalArrays();
   native: NativeBridge;
   fileSource: FileSource | null = null;
@@ -196,6 +215,28 @@ export class Engine {
   /** 派发保存的现场（引擎 byte 383112/383116 = 派发前的 `cur` 与 `effect_flags`）；队列排空后还原。 */
   dispatchSavedCur = -1;
   dispatchSavedFlags = 0;
+
+  /**
+   * **通用 `Queue_int` 队族**（引擎 `_this + 388252`(字节) 起的 **11** 个队列指针，即
+   * `Engine[4*i + 388252]`，i=0..10；`0x132`/`0x133`/`0x134` 三条指令的容器）。
+   *
+   * 引擎证据：
+   *  - **规模 11**：构造/复位两处都按 11 个槽遍历 —— 引擎 init raw 18080-18096（`v15 = 10; do{ 析构旧 + new(0x1C) + sub_407C50 }while(--v27)`）
+   *    与 teardown raw 19204-19212（`v27 = 10; do{ 析构 + *v15++ = 0 }while(--v27)`）；
+   *    引擎构造函数同样构造（raw 22655 可见 `*(_DWORD *)(_this + 388252) = 0;`）。
+   *  - **队列对象**：`sub_407C50`（raw 12653-12663）= `vftable + buf = new[0x400]（256 int）+ cap[4]=256 + step[5]=256 + rd[2]=0 + wr[3]=0 + max[6]=0`；
+   *    push = `sub_409E10`（raw 14280-14320 起：顺序数组 + 满时按 step 扩容 / 就地把 `rd` 起的内容左移压实 ⇒ **FIFO**）、
+   *    pop 内联在 `0x134` 的 handler 体里（raw 39379-39396）。
+   *  ⇒ emulator 以 `number[]` 的 `shift`/`push` 复刻同一 FIFO 语义；引擎的环形缓冲/扩容/压实是**实现细节**，
+   *    脚本可观测的只有「长度 + 出队顺序 + 队空」。
+   *
+   * 默认值是 **11 个空队**（= 引擎构造后、尚未被 `0x132` 重建时的状态）。
+   * ★披露的口径差：引擎在 teardown/exit-script（raw 19204）把 11 个槽置 **NULL** —— 此后若不先 `0x132`
+   *   就 `0x133`，真引擎是空指针解引用（崩），重写侧则是往空队里 push（不崩）。脚本合法序列（先 `0x132`）
+   *   行为完全一致；这条容错已在 `handlers/control.ts` 的 `op_queue_push` 注释与
+   *   `analysis/opcode-gaps.json` 的 `0x133` note 里披露。
+   */
+  dispatchQueues: number[][] = Array.from({ length: 11 }, () => [] as number[]);
 
   /** 引擎配置字段（稀疏 _this 索引，fidelity 到 engine.cpp）。默认值与引擎构造函数一致：
    *  构造函数/初始化（engine.cpp 22404，字节偏移 387932 = _this[96983]）把 96983 置 1；另一处重置（34632）清 0。
@@ -414,6 +455,14 @@ export class Engine {
    * 读体：`sub_425D20` raw 33156-33185（`result[468]/[469]` 与 `result[5468]/[5469]` 两处同写）。
    */
   texSlotFlags = new Map<number, number>();
+  /**
+   * **emulator 侧的按键扫描近似**（`0x100` 用）：上一次派发时的输入掩码。
+   *
+   * 引擎的扫描游标（`Engine[cur+122287]`）由**帧泵** `sub_4780D0` 每帧复位；emulator 没有那个钩子，
+   * 于是用「掩码变了 ⇒ 新一轮扫描」近似（同一掩码状态下仍按引擎语义连续派发多个键）。
+   * ★这是 emulator 记账，不是引擎字段（引擎里没有这一格）。
+   */
+  keyScanLastMask = 0;
 
   /**
    * **AGERC 模块状态**（`0x14B`/`0x14C`/`0x14D` 的模型；**不加载任何原生库**）。

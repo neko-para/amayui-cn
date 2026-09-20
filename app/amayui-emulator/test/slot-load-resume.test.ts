@@ -288,6 +288,12 @@ test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/
     logs.some((m) => m.includes('重建存档里的图像槽 1 个 + 纹理槽 1 个')),
     `要有"重建图像槽"的日志（实际 ${logs.filter((m) => m.includes('slot-load')).join(' | ')}）`,
   );
+  // ★(A) 步（`tickets/T-0083`）：装载点必须**释放留帧** —— 引擎装载路径复位显示态（`sub_403EF0` raw 19913-19915），
+  //   没有"保留旧像素"的概念 ⇒ 读档瞬间屏上应是当前模型，不能是上一屏（TITLE/菜单）的旧像素。
+  assert.ok(
+    logs.some((m) => m.includes('releaseFrameHold')),
+    `装载点必须调用 releaseFrameHold（实际 ${logs.filter((m) => m.includes('frame-hold') || m.includes('releaseFrameHold')).join(' | ') || '（无）'}）`,
+  );
 });
 
 test('0xAE 的门关着 ⇒ 不动任何帧状态（与引擎的门控路径逐字一致）', async () => {

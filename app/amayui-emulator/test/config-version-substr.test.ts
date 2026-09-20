@@ -194,6 +194,17 @@ test('★0x2E7 写 / 0x2E6 读：AutoMessagePitch{0,1} 的闭环（设置界面 
   f.locals.int.set(0x57be, 999);
   step(0x2e6, [im(9), locInt(0x57be)]);
   assert.equal(f.locals.int.get(0x57be), 999, 'op1 ∉ {0,1} ⇒ 只报错、不写回');
+  // ★写入端同纪律（审计 P2 `op-10-001`）：`0x2E7` 的 op1 ∉ {0,1} ⇒ 走引擎错误串分支、**一个键都不写**。
+  //   修前是 `idx === 1 ? 1 : 0` ⇒ idx≥2 被静默写成 0 号键。
+  step(0x2e7, [im(2), im(777)]);
+  step(0x2e6, [im(0), locInt(0x57bf)]);
+  assert.equal(int(0x57bf), 1234, '非法 idx 不得改写 0 号键（应保持上一步写入的 1234）');
+  step(0x2e6, [im(1), locInt(0x57c0)]);
+  assert.equal(int(0x57c0), 56, '非法 idx 不得改写 1 号键');
+  // `0x1B9`（AutoMessageTime）同形状（raw 29191-29220）：非法 idx 不写任何键
+  step(0x1b9, [im(3), im(555)]);
+  step(0x1b8, [im(0), locInt(0x57c1)]);
+  assert.equal(int(0x57c1), 0, '0x1B9 非法 idx ⇒ 不写 AutoMessageTime0（保持 INI 初值）');
 });
 
 test('配置写会通知宿主（onConfigChanged）—— 这是"落盘"的唯一入口', () => {

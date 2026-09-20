@@ -63,6 +63,8 @@ docs-new/
 │   ├── gallery-and-unlock-flags.md ← **回想/鉴赏与解锁**：FileDB「已使用文件」哈希表 / `0x19D` / SETMEMOIR 的三套收集表 / `$$SAVE.DAT` / BGM 鑑賞列表
 │   ├── scene-start-flow.md   ← **新游戏开局链路**：TITLE 右上角 Game Start → GAMESTART → INITGAME/SETFATE → SN0000 首文案；两个点击点坐标的脚本来源 + 该路径 25 条缺失指令的逐条跳过评估 + 两个渲染侧缺口
 │   ├── audit-2026-09.md      ← **文档×实现 凭空/推测点审计总览**（2026-09）：opcode-table 574 行 + capabilities 130 条 + 17 份机制文档逐条与引擎反编译对照，含 3 份明细报告与 P0/P1 一览
+│   ├── repair-plan-2026-09.md ← **修复计划**（依据上条）：四处必须重构（操作数读取计划 / 缺口治理 / 呈现与帧保留 / 台账文档一致性）+ B0..B7 批次顺序与出口判据
+│   ├── opcode-gaps.md        ← **opcode 缺口台账（生成物）**：真源 `analysis/opcode-gaps.json`（`tickets/T-0081`）；语料用到却未注册（命中即硬停）+ 已注册为 no-op 但体内有真实效果，两类缺口逐条登记，守卫 `test/opcode-gaps.test.ts`
 │   ├── audit-2026-09-opcodes.md ← 上条的 opcode 明细（95 条：P0 2 / P1 8 / P2 28 / P3 57）
 │   ├── audit-2026-09-capabilities.md ← 上条的 capabilities 明细（84 条）
 │   ├── audit-2026-09-docs.md ← 上条的机制文档明细（67 条）

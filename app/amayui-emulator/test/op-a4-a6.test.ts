@@ -117,6 +117,30 @@ test('A4 0x238：写 Engine[92338]=0 / [92339]=op1', () => {
   assert.equal(e.engineValues.get(92339), 0x2d0);
 });
 
+/**
+ * ★`0x243`（`sub_41B180` raw 26016-26031，argc 0）—— **复位 `0x400` 等待门的计时器**（审计 P1 `op-3-002` 缺口，
+ * 语料 341 处 / 338 个脚本独立使用）。与 `0x238`（装）成对：`i238 N` + `wait` 等 N ms，`i243` 清掉它。
+ * 门控：`Engine[92340] & 2` 置位时引擎整段跳过（`0x24E` 写那个字段）。
+ */
+test('★0x243：清 0x400 等待门计时器（gateWaitStart/Ms + engineValues 第二视图），且受 Engine[92340] bit1 门控', () => {
+  const { e, run } = mk();
+  // 门控关闭（bit1 = 0）⇒ 清
+  run(0x238, [im(0x2d0)]); // 先装 720ms
+  e.gateWaitStart = 0x1234;
+  run(0x243, []);
+  assert.equal(e.gateWaitStart, 0, '起点清零');
+  assert.equal(e.gateWaitMs, 0, '时长清零');
+  assert.equal(e.engineValues.get(92338), 0, '第二视图同步（与 0x238 同口径）');
+  assert.equal(e.engineValues.get(92339), 0);
+  // 门控打开（bit1 = 1）⇒ 整段跳过（引擎同）
+  run(0x238, [im(0x2d0)]);
+  e.gateWaitStart = 0x1234;
+  e.engineValues.set(92340, 2);
+  run(0x243, []);
+  assert.equal(e.gateWaitStart, 0x1234, 'bit1 置位 ⇒ 不清起点');
+  assert.equal(e.gateWaitMs, 0x2d0, 'bit1 置位 ⇒ 不清时长');
+});
+
 test('A4 0x258：纹理槽标志对（bit0/bit1，两张镜像表同值 ⇒ 一个值表示）', () => {
   const { e, run } = mk();
   run(0x258, [im(5), im(3)]);

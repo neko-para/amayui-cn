@@ -1,0 +1,64 @@
+{
+  "title": "RF-A 操作数读取计划重构：per-opcode 计划层 + arity 槽（`frame.state[95805]`）建模 + argc 自动核验",
+  "type": "refactor",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "审计（`audit-2026-09-opcodes.md` P2 表 + `audit-2026-09.md` §3）列出 13 处「操作数类型/顺序/多写少写」错误：`0x34B` 把 `op2`(delay) 当缩放百分数并丢弃 `op4..op6` 三个 float；`0x203` 自造 `(alpha & 0xff)` 且丢掉 clamp 与「负值回退取当前色」；`0x100` 真按键分支返回点多加 1（体是 `(ip-ip_base)>>2`，无 `+1`）；`0x1A0` 写序与体相反；`0x2FC` 无触点路径多写 `op2..op5`；`0x1CE` 对全部窗整段收尾；`0x1F9` 丢第 3 操作数（颜色）；`0x305` 未清 `Engine[122497]`；`0x348` 把轴角旋转当缩放。同源问题还有 37 行「文档标已核对但无 raw 引用」与多处 argc 与体不符（`0x1E` 文档 8 / 体只读 7）。根因是**每个 handler 各自手写 `readXOperand` 顺序**，且引擎每条指令都写的 arity 槽 `_this[30*cur + 95805]` 在 emulator 侧没有建模 —— 于是「读几位、什么类型、写哪几位」没有任何单一真源，改一处就可能带出另一处。",
+  "acceptance": [
+    "引入 per-opcode **操作数计划**（声明 `argc` + 逐位类型 int/float/ptr/str + 读写方向），由共享层统一执行；handler 通过计划结果访问操作数，不再各自手写读取顺序（至少覆盖审计列出的 13 条与所有「已核对」行）",
+    "把引擎的 **arity 槽**（`_this[30*cur + 95805]`，每条 handler 都写 `2*argc + 1` 或等效值）建模为帧字段，并据此**自动核验**：文档 argc、计划 argc、handler 实际读位数三者必须一致（不一致即测试红）",
+    "顺带修掉 `0x1A0` 写序、`0x2FC` 多写、`0x203`、`0x100` 返回点、`0x1F9` 丢操作数，每条给出 raw 依据",
+    "等价性守卫：对已通过的 opcode 做 before/after 对照（同一合成脚本 ⇒ 同一结果），确保重构不改既有正确行为",
+    "`opcode-table.md` 的 argc 列全部有据（无据的行补 raw 行号或降级状态）",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/opcode-operands.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/repair-plan-2026-09.md",
+      "anchor": "**RF-A 操作数读取计划**",
+      "note": "重构判定：为什么逐条补丁会反复、目标形态（计划层 + arity 槽）"
+    },
+    {
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "anchor": "### op-6-01 — 0x34B 的操作数类型被整体错读（delay 当缩放百分数、三个 float 丢弃）",
+      "note": "操作数类型错位的最典型条"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[30 * _this[95776] + 95805] = 11;",
+      "note": "arity 槽的写法示例（0x228 的体；argc=5 ⇒ 2*5+1）：每条 handler 都写它，可做 argc 的自动核验真源"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0077",
+      "T-0080",
+      "T-0081"
+    ],
+    "docs": [
+      "docs-new/03-engine/repair-plan-2026-09.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "计划层不追求「一次性覆盖全部 574 条」，而是先覆盖：① 审计列出的 13 条错读；② 所有回写操作数的 getter 族；③ 新增实现。其余按批迁移（迁移期间允许两条路径并存，但**新写的 handler 必须走计划层**）。",
+  "id": "T-0082",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → doing —— B2 第一步（可机械化的那一半）落地：① 新增守卫 test/opcode-operands.test.ts —— 用 args 的 Proxy 记录每个已注册 opcode 到底碰了哪几格操作数，对照 scripts/asm/opcodes.json 的 argc 判「越界 / 漏读」；白名单 ALLOW_UNDERRUN 只许存量且每条写原因+票。② 覆盖 253 个语料 opcode / 300+ 注册项，查出 29 处漏读：其中 3 条与审计独立命中（0x1F9 丢颜色、0x20F 丢 op2/op3、0x34B 丢 op4..op6），其余为「无-op 桩 / 合成指令提前返回 / 待复核」三类（已逐条写明）。③ 顺手修掉 0x20F：按体（raw 31604-31670，arity=7 ⇒ argc=3）读 op1(id)/op2(影片槽)/op3(音量模式)，宿主缝 playMovie(id,slot,mode) 三处同步；白名单条目已删除（测试即证明修好）。剩余：把 handler 迁移到声明式操作数计划、arity 槽（95805）建模、以及白名单里其余条目逐条核体。"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：tests"
+    }
+  ]
+}

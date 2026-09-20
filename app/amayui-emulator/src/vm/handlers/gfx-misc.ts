@@ -63,9 +63,14 @@ const op_set_render_state: OpHandler = (c) => {
 };
 
 const op_play_movie: OpHandler = (c) => {
-  // 0x20F：op1=movieId。
+  // `0x20F`（`sub_4237B0` raw 31604-31670；arity 槽 = 7 ⇒ argc=3）：
+  //   op1 = 影片资源 id、op2 = **影片槽**（`[4*slot+378688]` 的对象表）、op3 = **音量/模式选择子**。
+  // ★此前只读 op1（op2/op3 被丢弃）—— 审计 P3 的「凭空/错读」条目（守卫 `test/opcode-operands.test.ts` 也据此报红）。
+  //   现在三个都照读并上报宿主缝；真正的播放/音量仍是缺口（emulator 无影片子系统）。
   const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  c.native.playMovie?.(id);
+  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  const mode = readIntOperand(c.e, c.frame, c.instr, 3);
+  c.native.playMovie?.(id, slot, mode);
 };
 
 /** 图形子系统的槽表/渲染配置（真实现）。 */

@@ -1,13 +1,20 @@
 /**
- * 绘制项（DrawItem / Mesh）族：位置、pivot、平移、缩放、颜色、以及**四个动画窗**。
+ * 绘制项（DrawItem / Mesh）族：位置、pivot、平移、缩放、颜色、以及**动画窗两层**。
  *
  * Plan A 的核心约定：指令只**配置对象**，渲染器每帧 `present()` 合成整个场景图，
  * 渲染与 VM 指令解耦。因此这里全部是「读操作数 → 写渲染器里的对象」的转发。
  *
- * 四个动画窗（引擎 DrawItem 的 `+48..+88` 窗槽，见 docs/08）：
+ * **A 层**（`Item.flags` bit1，一次性过渡动画窗；引擎 DrawItem 的 `+48..+88` 窗槽，见 docs/08）：
  *  - 窗1 `0x21E` 缩放（sx/sy/sz **÷100**）／窗2 `0x21F` 旋转（轴+角，**度**）
  *  - 窗3 `0x220` 平移（**不除**，像素）／窗4 `0x239` flipbook（帧数/列数/标志，bit0=保持末帧）
  * ★ 缩放的除数 100（`dbl_5201F0`）与平移到像素、旋转到度的差异，都是指令级的既有差异，切勿"统一"。
+ *
+ * **B 层**（`Item.flags` **bit2**，无限周期/循环动画层；引擎 `+524..+576`/`+592`/`+656`，2026-09 落地）：
+ *  - `0x230` 停全部 B 层通道／`0x231` 贴图换格循环／`0x232` 颜色往复
+ *  - `0x233` 缩放往复（**÷100**）／`0x234` **匀速旋转**（轴 + 周期，不除）／`0x235` 平移往复（不除）
+ *  - `0x244` 批量清 **A 层**窗起点（mask = 2）
+ * ★六条 setter **都没有 `flags & 1` 门控**（缺项即建、不报错）；消费端 = `drawitem/eval.ts`
+ *  （`flags & 4` 门 + 每通道 `period > 0` 门）；规格 = `docs-new/03-engine/b3-bit2-model-spec-2026-09.md`。
  */
 import type { OpHandler } from '../step.js';
 import type { Engine, Frame } from '../engine.js';
@@ -213,6 +220,83 @@ const op_set_draw_translation: OpHandler = (c) => {
   c.native.setDrawTranslation?.(handle, x, y, z);
 };
 
+// ---------------------------------------------------------------------------
+// ★Scene 级世界矩阵四条（`0x22A`/`0x22C`/`0x22D`/`0x22F`）—— 2026-09 落地
+//
+// 这四条**不是**"改某一个绘制项"，而是改 **Scene 自己的变换块**（引擎 `Scene+1120` 起的记录）：
+// 体内三条/五条操作数**没有任何 handle 查表**（`sub_41BF50` 只在 `0x22D`/`0x22F` 的 op1/op2 出现，
+// 且那两个 int 落进 `Scene[295]/[300]` 与 `[297]/[302]` 两个**轴/掩码格**，不是图元 id）。
+// 消费链（读体确证）：`sub_4A1E90` raw 122130-122157 → `sub_49AA30` raw 117239 起合成
+// **Scene 世界矩阵 `Scene+46600`** → RenderScene raw 133407 `D3DXMatrixMultiply(work, work, Scene+46600)`
+// → **只作用于「层号 ∈ [20,30)」的项**（raw 133405 的 `(层号 − 20) > 9` 取反那支）。
+// 落地形态 = `SceneState.sceneXform` + 两个宿主合成时的 `sceneXform2D`（见 `scene/state.ts`）。
+// ---------------------------------------------------------------------------
+
+/**
+ * **`0x22A`（sub_424080, raw 32003-32016）：Scene 级立即缩放**。
+ * 逐字：`arity 槽 = 7`；`v3/v4/v5 = readFloatOperand(1/2/3) / dbl_5201F0`（= **100.0**）
+ * → `sub_49A720(Engine+80708, v3, v4, v5)`；被调体（raw 117117-117126）=
+ * `Scene[306] = 1` + `D3DXMatrixScaling(Scene+307)` + `Scene[11627] = 1`（置脏）。
+ * ★**订正筛体**：`op1` **不是 handle**（三条读全是 `sub_41C300`，体内无 handle 查表）。
+ * 语料 2 处（`FIELD.txt:14360` / `LOOK.txt:108` ⇒ 缩放 (1,1,1)）。
+ */
+const op_scene_scale: OpHandler = (c) => {
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 1) / 100; // dbl_5201F0 = 100.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 2) / 100;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 3) / 100;
+  c.native.setSceneScale?.(sx, sy, sz);
+};
+
+/**
+ * **`0x22C`（sub_424180, raw 32034-32046）：Scene 级立即平移**。
+ * `arity 槽 = 7`；`v3/v4/v5 = readFloatOperand(1/2/3)`（**不除** = 像素）
+ * → `sub_49A820(Engine+80708, …)`；被调体（raw 117153-117162）= `Scene[306] = 1` +
+ * `D3DXMatrixTranslation(Scene+371)` + `Scene[11627] = 1`。
+ * ★**订正筛体**：`op1` 同样不是 handle；也**不是** `0x1FF` 的"同字段族"——`0x1FF` 改的是**某项**的
+ * work 矩阵（按 handle 查表），本条改的是 **Scene 自己的变换块**。
+ */
+const op_scene_translation: OpHandler = (c) => {
+  const x = readFloatOperand(c.e, c.frame, c.instr, 1);
+  const y = readFloatOperand(c.e, c.frame, c.instr, 2);
+  const z = readFloatOperand(c.e, c.frame, c.instr, 3);
+  c.native.setSceneTranslation?.(x, y, z);
+};
+
+/**
+ * **`0x22D`（sub_4241F0, raw 32048-32064）：Scene 级带轴缩放**。
+ * `arity 槽 = 11`；`v5/v6/v7 = readFloatOperand(3/4/5) / dbl_5201F0`（**÷100**）、
+ * `v4 = readIntOperand(2)`、`v2 = readIntOperand(1)` → `sub_49A870(Engine+80708, v2, v4, v5, v6, v7)`；
+ * 被调体（raw 117165-117179）= `Scene[280] |= 2`、`Scene[293] = 0`、`Scene[295] = op1`、
+ * `Scene[300] = op2`、`Scene[306] = 1`、`D3DXMatrixScaling(Scene+323)`、`Scene[11627]/[11629] = 1`。
+ * ★`op1`/`op2` 是**轴/掩码类 int**（语料 `i22d 0 258 …` / `i22d 0 12c …` 的 op1 恒为 0），不是 handle。
+ */
+const op_scene_axis_scale: OpHandler = (c) => {
+  const a = readIntOperand(c.e, c.frame, c.instr, 1);
+  const b = readIntOperand(c.e, c.frame, c.instr, 2);
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 3) / 100; // dbl_5201F0 = 100.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
+  c.native.setSceneAxisScale?.(a, b, sx, sy, sz);
+};
+
+/**
+ * **`0x22F`（sub_424330, raw 32087-32103）：Scene 级带轴平移**。
+ * `arity 槽 = 11`；`v5/v6/v7 = readFloatOperand(3/4/5)`（**不除** = 轴分量）、
+ * `v4 = readIntOperand(2)`、`v2 = readIntOperand(1)` → `sub_49A9C0(Engine+80708, v2, v4, v5, v6, v7)`；
+ * 被调体（raw 117222-117236）= `Scene[280] |= 2`、`Scene[293] = 0`、`Scene[297] = op1`、
+ * `Scene[302] = op2`、`Scene[306] = 1`、**`D3DXMatrixTranslation(Scene+387)`**、`Scene[11627]/[11629] = 1`。
+ * ★**以体订正筛体**：筛体记的是"`Scene+323` + `D3DXMatrixScaling`"——那是 **`0x22D` 的 `sub_49A870`**；
+ * 本条体内是 `+387` + **`D3DXMatrixTranslation`**（`sub_49A9C0` 里 `D3DXMatrixScaling` 一次都没有）。
+ */
+const op_scene_axis_translation: OpHandler = (c) => {
+  const a = readIntOperand(c.e, c.frame, c.instr, 1);
+  const b = readIntOperand(c.e, c.frame, c.instr, 2);
+  const x = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const y = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const z = readFloatOperand(c.e, c.frame, c.instr, 5);
+  c.native.setSceneAxisTranslation?.(a, b, x, y, z);
+};
+
 
 /**
  * **`0x1F6`（sub_41A130, raw 25239）：清/重置绘制容器** `sub_4AB7A0(_this+80708)`。
@@ -221,6 +305,94 @@ const op_set_draw_translation: OpHandler = (c) => {
  */
 const op_clear_draw_container: OpHandler = (c) => {
   c.native.clearDrawContainer?.();
+};
+
+/**
+ * **`0x228`（`sub_430650` raw 39973-39988，argc=5）：绘制项 → 它当前被平移了多少**（getter）。
+ *
+ * 引擎逐字：
+ * ```
+ * _this[30*cur + 95805] = 11;                    // arity 槽 = 11 ⇒ argc 5 有据
+ * v2 = readIntOperand(2);                        // op2 = 图元 handle
+ * if (!sub_4AA060(Scene, v2, &v6, &v5, &v4))     // 表（Scene+1032）里查项；查不到 ⇒ 返回 0
+ *     return writeInt(1, 1);                     // ★失败：op1 = 1，op3..5 不动
+ * writeFloat(3, v6); writeFloat(4, v5); writeFloat(5, v4);
+ * return writeInt(1, 0);                         // 成功：op1 = 0
+ * ```
+ * `sub_4AA060`（raw 130115 起）把元素 `+0x16C`（**平移 work 矩阵**）`D3DXMatrixDecompose` 后取平移分量
+ * ⇒ 本指令返回的是 `0x1FF`（立即平移）/ `0x220`（平移窗）写的那个量，**不是** `0x21A` 的描画位置（`+0x24`）。
+ *
+ * ★语料用法（`src/SC0500.txt:1358-1363`）：先 `i228` 取当前平移，再按返回值算 `i220` 的窗目标
+ *   （`add (local-int 0) 64 (global-int f803b)` = 平移 x + 100）⇒ 这是一种"从当前位置滑到位"的写法。
+ * ★为什么必须实现（审计 P0 `op-4-01`）：语料 **1097 处**，且每处后面紧跟 `eq ... 0` + `jcc` 读 op1；
+ *   未实现时命中即 `NotImplementedOp`，按桩跳过则 op1 留旧值 ⇒ 分支走错（静默逻辑错误）。
+ */
+const op_get_item_translation: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 2);
+  const t = c.native.getDrawItemTranslation?.(handle);
+  if (t === undefined) {
+    // 引擎失败分支：op1 = 1，且**不写** op3/op4/op5（保持旧值）
+    writeIntOperand(c.e, c.frame, c.instr, 1, 1);
+    return;
+  }
+  writeFloatOperand(c.e, c.frame, c.instr, 3, t.x);
+  writeFloatOperand(c.e, c.frame, c.instr, 4, t.y);
+  writeFloatOperand(c.e, c.frame, c.instr, 5, t.z);
+  writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+};
+
+/**
+ * **`0x223`**（`sub_423F00` raw 31936-31958 → `sub_4ADDB0` raw 132590-132635，argc 8）：
+ * **转场记录表 `Scene+1048` 的写入端 · 类别 0（全屏交叉淡化）**。`op1` = 记录键。
+ *
+ * 引擎逐字：
+ * ```
+ * _this[30 * cur + 95805] = 17;                    // arity 槽 ⇒ argc 8（有据）
+ * v10..v2 = read(8..1);                            // 引擎自 op8 **递减**读到 op1（v2=op1, v4=op2 … v10=op8）
+ * sub_4ADDB0(_this + 80708, v2, v4, v5, v6, v7, v8, v9, v10);   // Scene = Engine + 80708（dword）
+ * // sub_4ADDB0：
+ * //  ① sub_4AAAF0(Scene, op1) = 按 key=op1 **确保转场记录存在**
+ * //     （缺则先 sub_49A640 建 24 格默认记录：raw 117059-117077，[4] = -1、[9..12] = SetRect(0,0,0,0)）；
+ * //  ② 全部写入都经 `sub_4AAE10(_this + 262, &key)` —— `_this + 262` 是 **dword 下标 262 = 字节 1048**，
+ * //     即**转场记录表 `Scene+1048`**（与 0x24f/0x250/0x251 同一张表，raw 132618-132635）；
+ * //  ③ 写集：[0]=0、[1]=0、[2]=a8=op7、[3]=a9=op8、[4]=a3=op2、[5]=a4=op3、
+ * //          [7]=a5=op4、[6]=a6=op5、[8]=a7=op6；末尾 Scene[11627]=1（置脏）。
+ * ```
+ * `[0] = 0` ⇒ **类别 0 = 全屏交叉淡化**（帧渲染器 `sub_4B06D0` 按 `[0]` 分四类：0 淡入淡出 /
+ * 1 分块淡入淡出 / 2 盲帘 / 3 插值模糊；见 `docs-new/03-engine/transition-render-spec-2026-09.md` §2.2、§3.3）。
+ *
+ * ★**订正（`tickets/T-0087`）**：旧实现把这 9 个数存进 emulator 私有的 `Engine.itemRegions`
+ * （`Map<number, number[]>`）—— **数据对、容器错**：① 那是没有任何生产读者的「死模型」；
+ * ② 转场记录表 `render4.transitions` 才是 `0x24f`/`0x250`/`0x251` 走的容器 ⇒ 类别 0 的转场
+ * （语料 **178 处 / 178 文件**，每个脚本一处）对渲染端完全不可见；③ 手写 9 格数组连引擎的
+ * **记录长度（24）与默认值**都丢了。现改走同一条路径：`native.setTransition` → `scSetTransition`
+ * （`s.render4.transitions.get(id) ?? scTransitionDefaultRecord()` ⇒ 24 格默认 + 逐格覆盖）。
+ * ★类别 0 的**渲染端**仍未建模（记在 `tickets/T-0076`）。
+ */
+const op_set_transition_fade: OpHandler = (c) => {
+  const e = c.e;
+  // ★引擎**无条件读满 op1..op8**（`sub_41BF50` ×8，raw 31949-31956）**且在调用之前** ⇒ 先全读进局部量。
+  // 为什么不把 `readIntOperand` 直接写进下面可选调用的实参表：`f?.(…)` 在 `f` 为 `undefined` 时**不求值实参**
+  // ⇒ 宿主没有 `setTransition` 缝（`StubNative`）时整批操作数根本不会被读（`test/opcode-operands.test.ts` 会红）。
+  const key = readIntOperand(e, c.frame, c.instr, 1); // op1 = 记录键（引擎 a2）
+  const texSlot = readIntOperand(e, c.frame, c.instr, 2); // op2 → [4]（a3：工作纹理槽，兼惰性建层用）
+  const p3 = readIntOperand(e, c.frame, c.instr, 3); // op3 → [5]（a4）
+  const p4 = readIntOperand(e, c.frame, c.instr, 4); // op4 → [7]（a5）
+  const p5 = readIntOperand(e, c.frame, c.instr, 5); // op5 → [6]（a6）
+  const p6 = readIntOperand(e, c.frame, c.instr, 6); // op6 → [8]（a7）
+  const p7 = readIntOperand(e, c.frame, c.instr, 7); // op7 → [2] = 延迟 ms（a8）
+  const p8 = readIntOperand(e, c.frame, c.instr, 8); // op8 → [3] = 时长 ms（a9）
+  c.native.setTransition?.(key, [
+    [0, 0], // 类别 0 = 全屏交叉淡化（帧渲染器按 [0] 分派）
+    [1, 0], // 窗口起点：指令只写 0，首帧由消费端锁存
+    [2, p7],
+    [3, p8],
+    [4, texSlot],
+    [5, p3],
+    [6, p5], // ★[6] ← op5 与 [7] ← op4 是**交叉**的（raw 132628/132630），照引擎写
+    [7, p4],
+    [8, p6],
+  ]);
 };
 
 /**
@@ -387,6 +559,116 @@ const op_swap_items: OpHandler = (c) => {
 };
 
 /**
+ * **`0x230`（sub_4243B0, raw 32105-32113, argc=1）：停绘制项的 B 层（bit2）周期动画层**。
+ *
+ * 引擎体（raw 32110-32112）：`arity 槽 = 3`（⇒ argc 1）、`v2 = op1`（int，绘制项 handle）→
+ * `sub_4AD580(_this + 80708, v2)`。`sub_4AD580`（raw 132151-132217）体内真实分支：
+ * `*v4 &= ~4u`（raw 132173 清 bit2）+ 循环清 `{540,544,548,552,556,560}`（raw 132174-132215）。
+ * ★**没有 `flags & 1` 门控**（`sub_4AAA50` 缺失即建项 ⇒ 对不存在的 handle 也成功，不报错）；
+ * ★**不置 Scene 脏位**（该族唯一一条）—— emulator 侧由 `scResetDrawItemLoop` 置脏并写明这一差异。
+ */
+const op_reset_draw_item_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.native.setDrawItemLoop?.({ op: 'reset', handle });
+};
+
+/**
+ * **`0x231`（sub_4243F0, raw 32115-32129, argc=4）：贴图换格循环动画**。
+ * 引擎：op1=handle、op2=周期 ms（`+560`）、op3=总格数（`+568`）、op4=每行列数（`+572`）
+ * → `sub_4AD690`（raw 132219-132239：`|= 4u`、`+540=0`、`+560/568/572 = op2/3/4`、置脏）。
+ * ★`+568/+572` 与 A 层 `0x239` **共用**（两个分支都在 `eval.ts` 里）。
+ */
+const op_set_flipbook_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const period = readIntOperand(c.e, c.frame, c.instr, 2);
+  const frames = readIntOperand(c.e, c.frame, c.instr, 3);
+  const cols = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.setDrawItemLoop?.({ op: 'flipbook', handle, period, frames, cols });
+};
+
+/**
+ * **`0x232`（sub_424440, raw 32131-32164, argc=4）：颜色往复动画**。
+ * 引擎：op1=handle、op2=周期 ms（`+544`）、op3=**alpha**、op4=**rgb**（组装 `+576 = α<<24|rgb`）
+ * → `sub_4AD730`（raw 132241-132258）。raw 32144-32160 有 clamp/回退：`op3 > 255 ⇒ 255`、
+ * `op3 < 0`/`op4 < 0` ⇒ 取**当前色 `+96`**（`sub_4ADD60` raw 132583-132587，缺项返回 −1）
+ * —— 回退在 `scene/ops.ts` 的 `scSetColorLoop` 里做（只有它持有 `Item.from`）。
+ */
+const op_set_color_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const period = readIntOperand(c.e, c.frame, c.instr, 2);
+  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
+  const rgb = readIntOperand(c.e, c.frame, c.instr, 4);
+  c.native.setDrawItemLoop?.({ op: 'color', handle, period, alpha, rgb });
+};
+
+/**
+ * **`0x233`（sub_424510, raw 32166-32182, argc=5）：缩放往复动画**。
+ * 引擎：op1=handle、op2=周期 ms（`+548`）、op3/op4/op5 = sx/sy/sz（raw 32176-32178 **各 ÷100**，
+ * `dbl_5201F0`）→ `sub_4AD7B0`（raw 132260-132286：`|= 4u`、`+528=0`、`+548=op2`、
+ * `D3DXMatrixScaling(元素+592, …)`）。
+ * ★订正：旧注写"图元尺寸动画"**是错的**（那是 A 层 `0x21E` 的语义；本条是 B 层缩放通道）。
+ */
+const op_set_scale_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const period = readIntOperand(c.e, c.frame, c.instr, 2);
+  const sx = readFloatOperand(c.e, c.frame, c.instr, 3) / 100; // dbl_5201F0 = 100.0
+  const sy = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
+  const sz = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
+  c.native.setDrawItemLoop?.({ op: 'scale', handle, period, sx, sy, sz });
+};
+
+/**
+ * **`0x234`（sub_4245B0, raw 32185-32201, argc=5）：匀速旋转动画**。
+ * 引擎：op1=handle、op2=周期 ms（`+552`）、op3/op4/op5 = **旋转轴**（float，**不除**；写
+ * `元素[145..147]` = `+580/584/588`）→ `sub_4AD850`（raw 132289-132314）。
+ *
+ * ★★**订正（以体为准）**：旧注/筛体文档把本条记成"**平移窗（窗3）**、`+532=0` + `+552=op2` 是时长、
+ *   与 `0x220` 同字段"——**字段名对、结论错**：`+532/+552/+580..588` 在消费端（raw 118222-118228）
+ *   是**旋转通道**（`D3DXMatrixRotationAxis`，角度 = `360·((now−start) % period)/period`）。
+ *   平移往复是 `0x235`（`+536/+556/+656`）。语料印证：`src/SC0000.txt:16096` 的轴是 `(0,0,±1)`。
+ */
+const op_set_rotation_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const period = readIntOperand(c.e, c.frame, c.instr, 2);
+  const ax = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const ay = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const az = readFloatOperand(c.e, c.frame, c.instr, 5);
+  c.native.setDrawItemLoop?.({ op: 'rotate', handle, period, ax, ay, az });
+};
+
+/**
+ * **`0x235`（sub_424630, raw 32203-32219, argc=5）：平移往复（ping-pong）动画**。
+ * 引擎：op1=handle、op2=周期 ms（`+556`）、op3/op4/op5 = 位移（float，**不除**）→ `sub_4AD900`
+ * （raw 132316-132343：`|= 4u`、`+536=0`、`+556=op2`、`D3DXMatrixTranslation(元素+656, …)`）。
+ * 消费端 raw 118232-118341 = 三角波。
+ */
+const op_set_translation_loop: OpHandler = (c) => {
+  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const period = readIntOperand(c.e, c.frame, c.instr, 2);
+  const tx = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const ty = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const tz = readFloatOperand(c.e, c.frame, c.instr, 5);
+  c.native.setDrawItemLoop?.({ op: 'translate', handle, period, tx, ty, tz });
+};
+
+/**
+ * **`0x244`（sub_41A370, raw 25349-25355, argc=0）：批量清 A 层动画窗起点**。
+ *
+ * 引擎体极短：`arity 槽 = 1`（⇒ argc 0）、`return sub_4AD9F0(_this + 80708, 2)`。
+ * `sub_4AD9F0`（raw 132364-132503）遍历 **Scene 的三张表**，对 `(2 & flags) != 0` 的元素把窗起点清 0：
+ *  - `Scene+1036`（绘制项 740B）⇒ `*(elem + 52) = 0`（raw 132401-132403）= **`Item.animStart`**；
+ *  - `Scene+1084` / `Scene+1100`（两张 572B 表）⇒ `*(node + 24) = 0`（raw 132438-132440 / 132476-132478）。
+ *
+ * ★本条**不是** no-op（它此前被登记在 `ENGINE_INTERNAL_OPS`）；语义 = "让所有还挂着的 A 层动画窗
+ *   重新计时"（`winPhase` 下一帧重新锁存 now）。emu 侧落 `scClearDrawItemAnimStarts`。
+ * ★两张 572B 表**未建模**（`L2dNode` 没有"起点"字段）⇒ 如实记缺口（见 `scene/ops.ts` 的注释）。
+ * ★语料：全库仅 1 处（`src/CALLBACK_LOAD.txt:18` 的 `i244`，读档收尾那一跳）。
+ */
+const op_clear_draw_item_anim_starts: OpHandler = (c) => {
+  c.native.clearDrawItemAnimStarts?.(2); // 引擎立即数 2（raw 25353）
+};
+
+/**
  * 绘制项位置/变换/颜色/几何。
  *
  * ★两张表的分界**不是**"有没有转发 native"（这些全都转发），而是**注册在哪个 handler 表**：
@@ -399,16 +681,32 @@ export const GFX_ITEM_OPS: OpTable = [
   [0x21f, op_set_rotation_anim], // 旋转动画窗（窗2；轴+角度）→ native.setRotationAnim
   [0x220, op_set_translation_anim], // 平移动画窗（窗3）→ native.setTranslationAnim
   [0x239, op_set_flipbook], // flipbook 动画窗（窗4；帧数/列数/标志）→ native.setFlipbook
+  // ---- B 层（`Item.flags` bit2）周期/循环动画层（2026-09，B3；见 handlers/gfx-item.ts 各 handler 注释）----
+  [0x230, op_reset_draw_item_loop], // 停全部 B 层通道 → native.setDrawItemLoop({op:'reset'})
+  [0x231, op_set_flipbook_loop], // 贴图换格循环（周期/格数/列数）→ native.setDrawItemLoop({op:'flipbook'})
+  [0x232, op_set_color_loop], // 颜色往复（周期 + α/rgb，负值回退当前色）→ {op:'color'}
+  [0x233, op_set_scale_loop], // 缩放往复（周期 + sx/sy/sz ÷100）→ {op:'scale'}
+  [0x234, op_set_rotation_loop], // 匀速旋转（周期 + 轴，不除）→ {op:'rotate'}
+  [0x235, op_set_translation_loop], // 平移往复（周期 + 位移，不除）→ {op:'translate'}
+  [0x244, op_clear_draw_item_anim_starts], // 批量清 A 层窗起点（mask=2）→ native.clearDrawItemAnimStarts
   [0x1f6, op_clear_draw_container], // 整批释放绘制项/网格 → native.clearDrawContainer
   [0x1fd, op_set_scale], // 3D 缩放变换（百分数）→ native.setScale
   [0x1ff, op_set_draw_translation], // DrawItem 像素平移（+0x68 用世界矩阵 / +0x16C work 矩阵）→ native
+  // ---- ★Scene 级世界矩阵四条（2026-09）：改的是 Scene 自己的变换块，只作用于层号 ∈ [20,30) 的项 ----
+  [0x22a, op_scene_scale], // Scene 立即缩放（三 float ÷100）→ native.setSceneScale
+  [0x22c, op_scene_translation], // Scene 立即平移（三 float 不除）→ native.setSceneTranslation
+  [0x22d, op_scene_axis_scale], // Scene 带轴缩放（op1/2 int + 三 float ÷100）→ native.setSceneAxisScale
+  [0x22f, op_scene_axis_translation], // Scene 带轴平移（op1/2 int + 三 float 不除）→ native.setSceneAxisTranslation
   [0x214, op_swap_items], // i214：交换两条绘图项记录（键不动；只碰绘图项表）→ native.swapItems
   [0x21d, op_copy_scene], // CopyScene（源项 → 目标 handle 整份复制）→ native.copyScene
+  // ---- 转场记录表 `Scene+1048`（帧渲染器 `sub_4B06D0` 按 `[0]` 分四类；同表的 0x24F/0x250/0x251 在 gfx-state.ts）----
+  [0x223, op_set_transition_fade], // ★类别 0（全屏交叉淡化）写入端：键=op1、写 [0]=0/[1]=0/[2]=op7…[8]=op6 → native.setTransition
   // ---- 查询族（回写操作数；见文件头「查询指令族」说明）----
   [0x215, op_get_draw_texture_slot], // op1 = DrawItem(op2).纹理槽号 / −1
   [0x216, op_get_slot_imgid], // op1 = 纹理槽 op2 绑定的 imgid（Engine[5*slot+466]）
   [0x218, op_get_draw_pivot], // op2/3/4 = DrawItem(op1) 的 pivot (x,y,z)
   [0x21a, op_get_draw_pos], // op2/3/4 = DrawItem(op1) 的描画位置 (x,y,z)
+  [0x228, op_get_item_translation], // op1 = 成功标志、op3/4/5 = DrawItem(op2) 当前**平移**（`+0x16C` work 矩阵）
 ];
 
 /** 绘制项的 native 路由表（`handlerKind === 'native'`）。 */

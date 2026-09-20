@@ -14,13 +14,13 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
-      "anchor": "②c ⚠️**emulator 侧近似**",
-      "note": "注释已更正为「27 callee / 两段配置门默认关闭 / 显示态复位 / 载荷项」"
+      "anchor": "②c ★**装载点不整批清绘制项**",
+      "note": "注释已更正为「27 callee / 两段配置门默认关闭 / 显示态复位 / 载荷项」，并在 T-0083 的 (B) 步改为「只丢被放弃调用方帧画的项」（`dropFrameItems`）"
     },
     {
       "file": "docs-new/03-engine/save-data.md",
-      "anchor": "⚠️ **emulator 侧近似，非引擎行为复刻**",
-      "note": "§7.10 偏离表第 4 行的新口径"
+      "anchor": "改为引擎口径",
+      "note": "§7.10 偏离表第 4 行：从「装载点整批清容器（近似）」改为「只丢调用方帧那一层 + 实测残留分桶（`{-1:82, 1:18}`）」"
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",

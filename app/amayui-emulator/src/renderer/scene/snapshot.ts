@@ -8,6 +8,7 @@ import type { Item, MeshObj } from '../drawItem.js';
 import { calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor } from '../drawItem.js';
 import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from '../drawItem.js';
 import type { SceneState } from './state.js';
+import { SCENE_LAYER_HI, SCENE_LAYER_LO, applySceneXformToPlacement, sceneLayerAffected } from './ops.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import type { L2dInstance, L2dNode } from '../../live2d/runtime.js';
 import { VIEW_H, VIEW_W } from '../viewport.js';
@@ -147,7 +148,8 @@ export interface SceneSnapshot {
     }[];
   } | null;
   /**
-   * **A4 族的渲染状态记录**（`0x1FC/0x1FE/0x207/0x20E/0x224/0x229/0x242/0x256/0x321/0x32A/0x32D/0x97`）。
+   * **A4 族的渲染状态记录**（`0x1FC/0x1FE/0x207/0x20E/0x224/0x229/0x242/0x256/0x321/0x32A/0x32D/0x97`
+   * ＋`0x24F/0x250/0x251` 转场记录）。
    * 渲染器尚未逐条消费（见 `analysis/engine-capabilities.json`），但**导出到快照**才能断言
    * "脚本确实下发了这个状态"，也才能在未来接线时对照。
    */
@@ -157,6 +159,8 @@ export interface SceneSnapshot {
     blits: { srcSlot: number; dstSlot: number; srcRect: number[]; dstRect: number[] }[];
     commits: number;
     transitionClears: number;
+    /** `0x24F`/`0x250`/`0x251` 的转场记录（引擎 `Scene+1048`；`id → 24 格`）。 */
+    transitions: [number, number[]][];
     drawMode: number[];
     entryParams: [number, number][];
     slotParams: [number, number[]][];
@@ -170,6 +174,31 @@ export interface SceneSnapshot {
     /** `0x33F` op1：场景默认混合选择子。 */
     sceneBlend: number;
   };
+  /**
+   * ★**Scene 世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）**：它**只作用于层号 ∈ [20,30) 的项**
+   * （引擎 RenderScene raw 133403-133438；见 `scene/state.ts` 的 `sceneXform`）。
+   *
+   * 导出成快照的意义：这四条指令的**写端在 VM、消费端在合成**，中间隔着"层号判据"这一层 ——
+   * 只断言 `SceneState.sceneXform` 有值（写端）无法证明它真的作用到了哪一项上。
+   * 所以这里额外导出**每条受影响的绘制项的最终屏幕位置/缩放**（`items[]`），让"作用范围"可被断言。
+   * `null` = 四条指令一条都没下发过（此时该级等同于不存在，画面与接线前逐字节相同）。
+   */
+  sceneXform: {
+    kind: 'scale' | 'translate' | 'axis-scale';
+    scale: { x: number; y: number; z: number };
+    translate: { x: number; y: number; z: number };
+    axisScale: { x: number; y: number; z: number };
+    axisTranslate: { x: number; y: number; z: number };
+    maskA: number | null;
+    maskB: number | null;
+    /** 作用层号区间（引擎 raw 133405 的 `(层号 − 20) > 9` 取反）。 */
+    layers: [number, number];
+    /**
+     * 受影响的绘制项（层号 ∈ [20,30)**且** `flags & 1` 可绘制）：
+     * `before` = 不吃 Scene 变换的位置，`after` = 吃了之后的位置（两者相同 = 该项没被推动）。
+     */
+    items: { handle: number; layer: number; before: { x: number; y: number }; after: { x: number; y: number } }[];
+  } | null;
   counts: {
     drawItems: number;
     /** 可绘制项（`flags & 1`）—— 引擎渲染器真正会画的那些。 */
@@ -338,6 +367,7 @@ export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost |
       blits: s.render4.blits.map((b) => ({ srcSlot: b.srcSlot, dstSlot: b.dstSlot, srcRect: [...b.srcRect], dstRect: [...b.dstRect] })),
       commits: s.render4.commits,
       transitionClears: s.render4.transitionClears,
+      transitions: [...s.render4.transitions.entries()].map(([k, v]) => [k, [...v]] as [number, number[]]),
       drawMode: [...s.render4.drawMode],
       entryParams: [...s.render4.entryParams.entries()].map(([k, v]) => [k, v] as [number, number]),
       slotParams: [...s.render4.slotParams.entries()].map(([k, v]) => [k, [...v]] as [number, number[]]),
@@ -352,6 +382,31 @@ export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost |
       slotModes: [...s.render4.slotModes.entries()].map(([k, v]) => [k, v] as [number, number]),
       sceneBlend: s.render4.sceneBlend,
     },
+    // ★Scene 世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）：导出锚 + **它在哪些项上真的生效**
+    //   （`before`/`after` 逐项给，这样"只作用于层号 ∈ [20,30)"这句话可被断言，而不是只看写入点）。
+    sceneXform: s.sceneXform
+      ? {
+          kind: s.sceneXform.kind,
+          scale: { ...s.sceneXform.scale },
+          translate: { ...s.sceneXform.translate },
+          axisScale: { ...s.sceneXform.axisScale },
+          axisTranslate: { ...s.sceneXform.axisTranslate },
+          maskA: s.sceneXform.maskA,
+          maskB: s.sceneXform.maskB,
+          layers: [SCENE_LAYER_LO, SCENE_LAYER_HI] as [number, number],
+          items: [...s.drawItems.values()]
+            .filter((it) => (it.flags & 1) !== 0 && sceneLayerAffected(it.layer))
+            .sort((a, b) => a.handle - b.handle)
+            .map((it) => {
+              const before = { x: it.posX, y: it.posY };
+              const after = applySceneXformToPlacement(s, it.layer, {
+                position: before,
+                scale: { x: 1, y: 1 },
+              }).position;
+              return { handle: it.handle, layer: it.layer, before, after };
+            }),
+        }
+      : null,
     drawItems,
     meshes,
     msgWins: [...s.msgWins.values()]
@@ -430,6 +485,7 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.blits.length) parts.push(`blits=${r4.blits.length}`);
     if (r4.commits) parts.push(`commits=${r4.commits}`);
     if (r4.transitionClears) parts.push(`transitionClears=${r4.transitionClears}`);
+    if (r4.transitions.length) parts.push(`transitions=${JSON.stringify(r4.transitions)}`);
     if (r4.drawMode.length) parts.push(`drawMode=${JSON.stringify(r4.drawMode)}`);
     if (r4.entryParams.length) parts.push(`entryParams=${JSON.stringify(r4.entryParams)}`);
     if (r4.slotParams.length) parts.push(`slotParams=${JSON.stringify(r4.slotParams)}`);
@@ -441,6 +497,22 @@ export function snapshotToText(snap: SceneSnapshot): string {
     if (r4.slotModes.length) parts.push(`slotModes=${JSON.stringify(r4.slotModes)}`);
     if (r4.sceneBlend) parts.push(`sceneBlend=${r4.sceneBlend}`);
     if (parts.length) L.push(`render4（A4 记录族；renderTargetSlot/slotModes/sceneBlend 已被混合状态机消费） ${parts.join(' ')}`);
+  }
+  // ★Scene 世界矩阵（`0x22A`/`0x22C`/`0x22D`/`0x22F`）：只在四条指令真的下发过时打（保持空快照不变）。
+  //   ★它是**本轮唯一"写端在 VM、消费端在合成"**的一族 ⇒ 行里必须同时给出"作用到哪些层/哪些项"，
+  //   否则只看这一行无法区分"写进去了"与"真的动了画面"。
+  if (snap.sceneXform) {
+    const x = snap.sceneXform;
+    const mv = x.items
+      .map((it) => `0x${it.handle.toString(16)}:(${it.before.x},${it.before.y})→(${it.after.x},${it.after.y})`)
+      .join(' ');
+    L.push(
+      `scene-xform（只作用于层号 ∈ [${x.layers[0]},${x.layers[1]})） kind=${x.kind}` +
+        ` scale=(${x.scale.x},${x.scale.y},${x.scale.z}) translate=(${x.translate.x},${x.translate.y},${x.translate.z})` +
+        ` axisScale=(${x.axisScale.x},${x.axisScale.y},${x.axisScale.z})` +
+        ` axisTranslate=(${x.axisTranslate.x},${x.axisTranslate.y},${x.axisTranslate.z})` +
+        ` maskA=${x.maskA ?? '-'} maskB=${x.maskB ?? '-'} 受影响项=${x.items.length}${mv ? ` ${mv}` : ''}`,
+    );
   }
   // 消息窗文本：让「文字」从不可观测变成可 diff（此前报告里完全看不到文本）
   for (const w of snap.msgWins) {

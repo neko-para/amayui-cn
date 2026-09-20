@@ -21,25 +21,25 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/boot.ts",
       "anchor": "for (const imgid of PRELOAD_IMAGES) {",
-      "line": 78,
+      "line": 81,
       "note": "预载循环：await native.preloadImage(imgid)"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "bind(imgid: number, slot: number): void {",
-      "line": 174,
+      "line": 176,
       "note": "正统按需路径：缓存未命中即触发装载"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "void this.preloadImage(imgid).then(() => {",
-      "line": 183,
+      "line": 185,
       "note": "未命中时的异步装载（IPC 取图 + 解码）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "async texturesIdle(): Promise<void> {",
-      "line": 334,
+      "line": 339,
       "note": "纹理帧屏障：等本帧新绑定到位再 present（异步装载的兜底）；2026-09-17 起也等 Live2D 纹理（T-0054）"
     }
   ],

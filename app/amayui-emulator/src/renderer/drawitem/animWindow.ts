@@ -6,7 +6,7 @@
  * 这是引擎语义的一环（不是纯查询），调用方须按 `advanceWindows → 求值` 的顺序使用。
  */
 import type { Item } from './model.js';
-import { W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from './model.js';
+import { ITEM_FLAG_ANIM_LOOP, W_COLOR, W_FLIPBOOK, W_ROT, W_SCALE, W_TRANS } from './model.js';
 
 /** 窗相位。 */
 export type WinPhase = 'none' | 'before' | 'active' | 'after';
@@ -80,5 +80,22 @@ export function advanceWindows(it: Item, clock: number): boolean {
 export function itemAnimationsPending(it: Item, clock: number): boolean {
   if (!(it.flags & 2)) return false;
   for (let i = 0; i < 5; i++) if (!windowDone(it, i, clock)) return true;
+  return false;
+}
+
+/**
+ * **B 层（bit2）是否还在动** —— 用于"这一帧要不要继续合成"，**不是**等待门的判据。
+ *
+ * 为什么需要它：B 层是**无限周期**动画（`period > 0` 就一直动），而渲染侧只画被合成的那一帧
+ * ⇒ 与 A 层一样必须让帧驱动持续合成，否则画面上只有一个静止的初相。
+ *
+ * ★★它**绝不进 `scPoolPending` / `itemAnimationsPending`**：引擎的池挂起位 `Scene+46516` 只在
+ *   **A 层（bit1）** 路径置位（raw 117844、133528），`sub_49BCC0` 全程没有写它 ⇒ 把 B 层当
+ *   "pending"接进等待门会引入引擎没有的**卡帧/死等**（B 层永远不会"结束"）。
+ *   见 `docs-new/03-engine/b3-bit2-model-spec-2026-09.md` §4.6。
+ */
+export function itemLoopAnimationsPending(it: Item): boolean {
+  if (!(it.flags & ITEM_FLAG_ANIM_LOOP)) return false;
+  for (const l of it.loops) if (l.period > 0) return true;
   return false;
 }

@@ -10,10 +10,41 @@ import type { InputManager } from './input.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { AudioIntent } from '../audio/audioEngine.js';
 
-/** 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 颜色动画。bit2(&4, sub_49BCC0 分支) 未逐字解码 ⇒ 拒绝。 */
-export const KNOWN_DRAW_ITEM_FLAGS = 0b011;
+/**
+ * 已知 draw-item flag 位（引擎实测）：bit0 存在 | bit1 A 层动画窗 | **bit2 B 层周期/循环动画**。
+ *
+ * ★bit2 于 2026-09（B3）**逐字段解码完成**：唯一读取点 = 渲染器 `sub_4AEEA0` raw 133390
+ * （`(flags & 4) == 0 ⇒ 跳过整层`），命中时 raw 133395 强制"世界矩阵有效"；写点 = `0x231`–`0x235`
+ * 五个 setter（raw 132229/132250/132274/132301/132330）、清点 = `0x230`（raw 132173）；
+ * 5 条通道的消费端 = `sub_49BCC0` raw 117944-118365。
+ * 模型/求值 = `renderer/drawitem/model.ts`（`loops`/`loopTo`/`loopScale`/`loopAxis`/`loopTrans`）
+ * 与 `drawitem/eval.ts`；规格 = `docs-new/03-engine/b3-bit2-model-spec-2026-09.md`。
+ */
+export const KNOWN_DRAW_ITEM_FLAGS = 0b111;
 /** 已知 mesh flag 位：bit0 存在 | bit1 颜色动画。 */
 export const KNOWN_MESH_FLAGS = 0b011;
+
+/**
+ * **B 层（`Item.flags` bit2）周期/循环动画层的写入请求** —— `0x230`–`0x235` 六条的共用载荷。
+ *
+ * 为什么六条共用一个桥方法（而不是六个）：它们写的是**同一个机制**（同一个 bit2 + 同一组
+ * `+524..+576`/`+592`/`+656` 格子 + 同一个消费端 `drawitem/eval.ts`），工程里已有同样口径的先例
+ * （`setTransition` 承载 `0x24F`/`0x250`/`0x251`、`setTextureObjectParam` 承载 `0x246`/`0x249`）。
+ * 各 `op` 的字段偏移与 raw 依据见 `renderer/drawitem/setters.ts` 的 `apply*Loop*` 注释。
+ */
+export type DrawItemLoopRequest =
+  /** `0x230`（`sub_4AD580` raw 132151-132217）：停全部 B 层通道（清 bit2 + 5 个周期 + `+540` 起点槽）。 */
+  | { op: 'reset'; handle: number }
+  /** `0x231`（`sub_4AD690` raw 132219-132239）：贴图换格循环（`period`→`+560`、`frames`→`+568`、`cols`→`+572`）。 */
+  | { op: 'flipbook'; handle: number; period: number; frames: number; cols: number }
+  /** `0x232`（`sub_4AD730` raw 132241-132258）：颜色往复（`period`→`+544`、`alpha`/`rgb`→`+576`；负值 = 取当前色）。 */
+  | { op: 'color'; handle: number; period: number; alpha: number; rgb: number }
+  /** `0x233`（`sub_4AD7B0` raw 132260-132286）：缩放往复（`period`→`+548`、`sx/sy/sz`→`+592`，**已 ÷100**）。 */
+  | { op: 'scale'; handle: number; period: number; sx: number; sy: number; sz: number }
+  /** `0x234`（`sub_4AD850` raw 132289-132314）：匀速旋转（`period`→`+552`、轴→`+580/584/588`，**不除**）。 */
+  | { op: 'rotate'; handle: number; period: number; ax: number; ay: number; az: number }
+  /** `0x235`（`sub_4AD900` raw 132316-132343）：平移往复（`period`→`+556`、位移→`+656`，**不除**）。 */
+  | { op: 'translate'; handle: number; period: number; tx: number; ty: number; tz: number };
 
 /** 配置了不认识的 flag → 硬中断（与 NotImplementedOp 互补，杜绝静默误渲染）。 */
 export class UnknownFlagError extends Error {
@@ -49,6 +80,11 @@ export interface DrawItemConfig {
   dstY: number;
   /** 纹理号（仅日志；实际按 slot 绑定的 imgid 取图） */
   tex: number;
+  /**
+   * **画这一项的那一帧**（emulator 记账；引擎没有这一格）。读档装载点用它丢掉"被放弃的调用方那一层 UI"
+   * （`tickets/T-0083` 的 (B) 步）—— 语义与依据见 `renderer/drawitem/model.ts` 的 `Item.ownerFrame`。
+   */
+  ownerFrame?: number;
 }
 
 /**
@@ -168,6 +204,30 @@ export interface NativeBridge {
    *  引擎写 `DrawItem+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 work 矩阵）。 */
   setScale?(handle: number, sx: number, sy: number, sz: number): void;
   /**
+   * **`0x22A`（sub_424080 → `sub_49A720`）：Scene 级立即缩放**（`op1/2/3` 三个 float **各 ÷100**，
+   * **无 handle**）→ Scene 世界矩阵的缩放组（引擎 `D3DXMatrixScaling(Scene+307)` + `Scene[306] = 1`）。
+   *
+   * ★与 `setScale`（`0x1FD`，改**某个 DrawItem** 的 `+0x6C` work 矩阵）**不是一回事**：
+   * 本方法改的是 Scene 自己的变换块，只经 `sub_4A1E90` → `sub_49AA30` 合成进 `Scene+46600`，
+   * 再被 RenderScene 只作用于**层号 ∈ [20,30)** 的项（raw 133405 的 `(层号 − 20) > 9` 取反）。
+   */
+  setSceneScale?(sx: number, sy: number, sz: number): void;
+  /**
+   * **`0x22C`（sub_424180 → `sub_49A820`）：Scene 级立即平移**（`op1/2/3` 三个 float，**不除** = 像素）
+   * → Scene 世界矩阵的平移组（引擎 `D3DXMatrixTranslation(Scene+371)`）。作用范围同 `setSceneScale`。
+   */
+  setSceneTranslation?(x: number, y: number, z: number): void;
+  /**
+   * **`0x22D`（sub_4241F0 → `sub_49A870`）：Scene 级带轴缩放**：`op1`/`op2` 是 **int**（→ `Scene[295]`/`[300]`），
+   * `op3/4/5` 是 float **各 ÷100**（→ `D3DXMatrixScaling(Scene+323)`）。作用范围同 `setSceneScale`。
+   */
+  setSceneAxisScale?(a: number, b: number, sx: number, sy: number, sz: number): void;
+  /**
+   * **`0x22F`（sub_424330 → `sub_49A9C0`）：Scene 级带轴平移**：`op1`/`op2` 是 **int**（→ `Scene[297]`/`[302]`），
+   * `op3/4/5` 是浮点轴分量、**不除**（→ **`D3DXMatrixTranslation(Scene+387)`**，★以体订正过筛体的「Scaling」）。
+   */
+  setSceneAxisTranslation?(a: number, b: number, x: number, y: number, z: number): void;
+  /**
    * 0x1FF（sub_4230F0 → `sub_4AC750`）：**DrawItem 的像素平移**（op2/op3/op4 = x/y/z float，像素单位）。
    * 引擎：`DrawItem+0x68 = 1`（用世界矩阵）+ `D3DXMatrixTranslation(元素+0x16C, x,y,z)` 写**平移 work 矩阵**，
    * **立即生效、无动画窗**（与 0x220 写 target + 开窗不同）。对照：**平移用像素、缩放用百分数**。
@@ -211,6 +271,13 @@ export interface NativeBridge {
   commitGraphics?(): void;
   /** `0x224`（sub_41A290 → `sub_4AA180`）：**清转场表**（Scene+1048 的转场容器）。 */
   clearTransitions?(): void;
+  /**
+   * **转场（wipe）记录逐格写入**（`0x24F`/`0x250`/`0x251` → `sub_4AF6A0`/`sub_4AF880`/`sub_4AFA30`）：
+   * `id` = 记录键（引擎 `Scene+1048` 的 map key，来自 `op1`），`writes` = `[[格下标, 值]…]`，
+   * 与引擎的 `sub_4AAE10(Scene+1048, &id)[i] = v` 一一对应（记录 = 24 个 dword；已存在的记录只改被写的格）。
+   * 语义与未建模部分（扫描带绘制、`0x400` 门挂起）见 `handlers/gfx-state.ts` 的族注释。
+   */
+  setTransition?(id: number, writes: ReadonlyArray<readonly [number, number]>): void;
   /** `0x229`（sub_423FE0 → `sub_49A690/6C0/6F0`）：**绘制模式 5 元组**（op1/op2 两个 int + op3..op5 三个 float）。 */
   setDrawModeBlock?(a: number, b: number, x: number, y: number, z: number): void;
   /** `0x242`（sub_4251A0 → `sub_4AD9A0`）：**写 DrawItem `+720`**（同时写相邻对象的 `+504`）。 */
@@ -347,6 +414,16 @@ export interface NativeBridge {
    */
   getDrawItemPos?(handle: number): { x: number; y: number; z: number };
   /**
+   * **`0x228`**（`sub_430650` → `sub_4AA060`，raw 39973-39988 / 130115 起）：**绘制项当前「平移」三元组**（getter）。
+   *
+   * 引擎：按 key 在绘制项表（`Scene+1032`）里查项；**查不到 ⇒ `sub_4AA060` 返回 0**（⇒ 调用方把 op1 写 1），
+   * 查到则 `D3DXMatrixDecompose` 元素 **`+0x16C`（= 平移 work 矩阵）** 取出平移分量写进 a3/a4/a5。
+   * ★与 `0x21A`（`+0x24` 描画位置）**不是同一个量**：这里读的是 `0x1FF`（立即平移）/ `0x220`（平移窗）写的那个矩阵；
+   * 语料用法正是"取当前平移再在它基础上做动画"（`src/SC0500.txt:1358-1363`：`i228` 之后按返回值 +100/-y 起 `i220` 窗）。
+   * ⇒ 返回值用 `undefined` 表示"项不存在"（调用方写 op1=1），与"项存在但平移为 0"区分开。
+   */
+  getDrawItemTranslation?(handle: number): { x: number; y: number; z: number } | undefined;
+  /**
    * 0x219（sub_423BA0, raw 31807）：**描画位置** `sub_4ACEE0(_this+80708, handle, f2, f3, f4)`。
    * 引擎：与 `sub_4ACF20` 逐行同构，唯写元素下标 `9/10/11` = DrawItem`+36/+40/+44` = 描画位置 (x,y,z)；
    * 绘制期 `sub_4AEEA0` 把 `&v26[9]` 作第 5 参交 `sub_4A2D50` → `CTexture::Draw`。
@@ -364,6 +441,24 @@ export interface NativeBridge {
   /** 0x239（sub_424900 → `sub_4AD4A0`）：**flipbook 窗（窗4）**。op2=delay、op3=dur、op4=总帧数、op5=列数、op6=标志(bit0=保持末帧)。 */
   setFlipbook?(handle: number, delay: number, dur: number, frames: number, cols: number, flags: number): void;
   /**
+   * **B 层（`Item.flags` bit2）周期/循环动画层** —— `0x230`/`0x231`/`0x232`/`0x233`/`0x234`/`0x235` 六条。
+   *
+   * 载荷见 `DrawItemLoopRequest`；写入端 = 共享层 `scene/ops.ts` 的
+   * `scResetDrawItemLoop`/`scSetFlipbookLoop`/`scSetColorLoop`/`scSetScaleLoop`/`scSetRotationLoop`/
+   * `scSetTranslationLoop`（两个宿主都只转发、不各写一份语义）。
+   * ★六条**都没有 `flags & 1` 门控**：项不存在时会建一个 `flags = 0`（不可见）的项并把动画配上、不报错。
+   */
+  setDrawItemLoop?(req: DrawItemLoopRequest): void;
+  /**
+   * **`0x244`**（`sub_41A370` raw 25349-25355 → `sub_4AD9F0` raw 132364-132503）：
+   * 遍历绘制项，把 `flags & mask`（引擎固定 `mask = 2` = bit1）的项的 **A 层窗起点 `+52` 清 0**
+   * ⇒ 下一帧求值重新锁存 now（窗从头跑）。
+   * @returns 命中的绘制项数（引擎里是"命中 `a2 & flags` 的元素数"）。
+   * ★两张 572B 表（`Scene+1084`/`+1100`，后者 = `Engine.l2dNodes`）的 `node+24` 清 0 **未建模**
+   *   （`L2dNode` 没有"起点"字段）—— 见 `scene/ops.ts` 的 `scClearDrawItemAnimStarts` 注释。
+   */
+  clearDrawItemAnimStarts?(mask: number): number;
+  /**
    * ★**Live2D 没有宿主缝**（`0x341`/`0x345`/`0x34E` 的装载全在 VM 层 handler 里完成）。
    *
    * 为什么不留 `l2dLoadModel?` 之类的可选方法：那三个 handler 必须**同步语义等价**（引擎在
@@ -376,6 +471,31 @@ export interface NativeBridge {
   gfxSubsystem?(a2: number, a3: number, a4: number): void;
   /** 0x1F6（sub_41A130）：`sub_4AB7A0(_this+80708)` —— 整批释放绘制项/网格（保留纹理槽）。 */
   clearDrawContainer?(): void;
+  /**
+   * **丢掉"某一帧画的"绘制项**（emulator 侧的近似，**不是引擎 opcode**）——读档装载点用，返回丢掉的项数。
+   *
+   * 依据：引擎的装载路径复位两个**仮想ディスプレイ**对象（`sub_403EF0`，raw 19913-19915），
+   * 其体（raw 9958-9971）就是 `_this[258] = 0`（**项数清零**）+ 游标/矩形复位 ⇒ 上一屏那一层 UI
+   * **整体不再组成**。emulator 没有"平面"对象 ⇒ 用"这一项是哪一帧画的"（`Item.ownerFrame`）近似那一层：
+   * 装载点丢掉**被放弃的调用方帧**画出来的项（菜单/列表），ADV 场景自己画的项保留。
+   * 见 `tickets/T-0083` 的 (B) 步与 `SLOT_GAPS` 的近似登记。
+   */
+  dropFrameItems?(frame: number): number;
+  /**
+   * **告诉宿主"现在正在执行哪一帧"**（emulator 记账，**不是引擎 opcode**）——每条指令派发前由
+   * `interpreter.ts` 调一次。用途：所有**建项路径**（`0x1FB` 之外的文本/`ensure` 建项）都要记
+   * `Item.ownerFrame`，而建项发生在宿主的共享场景层、看不到 VM 的 `e.cur`（`tickets/T-0083` 的 (B) 步）。
+   */
+  setCurrentFrame?(frame: number): void;
+  /**
+   * **释放「留帧」**（emulator 侧的呈现策略，**不是引擎 opcode**）——读档装载点用。
+   *
+   * 依据：引擎的装载路径会复位两个**仮想ディスプレイ**（`sub_403EF0`，raw 19913-19915），
+   * 即"上一帧的显示态被丢弃"，引擎**没有**"保留旧像素"的概念（渲染目标每帧 `ClearTarget` 后从模型重组）。
+   * ⇒ 读档瞬间屏上应当是**当前模型**（= 保留下来的绘制项 + 重建后的槽），不能是上一屏（TITLE/菜单）的旧像素。
+   * 见 `tickets/T-0083` 的 (A) 步。
+   */
+  releaseFrameHold?(): void;
   /** 0x20C（sub_41A1A0）：每帧 `sub_4B4040(_this+80708)`（帧刷新；emulator 渲染循环自行 present，可选）。 */
   frameTick?(): void;
   /** 0x21C u00416270：置等待旗标位（0x400）。 */
@@ -383,7 +503,19 @@ export interface NativeBridge {
   /** 0x1FA release-texture：释放某 layer。 */
   releaseTexture?(layer: number): void;
   /** 0x20F play-movie：起播视频句柄。 */
-  playMovie?(id: number): void;
+  /**
+   * **`0x20F` play-movie**（`sub_4237B0` raw 31604-31670；arity 槽 = 7 ⇒ argc=3）：
+   * op1 = 影片资源 id（`sub_454FA0` 取名 → `sub_489230` 打开）、op2 = **影片槽**（对象表 `[4*slot+378688]`）、
+   * op3 = **音量/模式选择子**（`sub_4054D0`/`sub_405460` 解析 → `sub_4885A0(对象, Engine[20032]*v/10000)`）。
+   * ★emulator 没有影片子系统（video 不在重写范围）⇒ 三个操作数原样上报，播放本身仍是缺口。
+   */
+  playMovie?(id: number, slot: number, mode: number): void;
+  /**
+   * **`0x20B` FillTexture**（`sub_423690` → `sub_4A4C70`，raw 31569-31592 / 124572 起）：
+   * 往**纹理槽的表面**填一个纯色矩形。`op1=槽`、`op2/op3`=左上角、`op4/op5`=**宽/高**、
+   * `op6`=α（>255 夹 255）、`op7`=RGB（引擎组装成 `0xFFRRGGBB`，A 固定 FF）。
+   */
+  fillSlotRect?(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void;
   /**
    * 每帧渲染合成（由帧驱动在帧末按"是否需要渲染"调用；见 `src/frame/loop.ts`）。
    * @param nowMs 本帧时钟（引擎 `nowMs`）—— 单一时间域，见 `tickets/T-0008` 的 D1

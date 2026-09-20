@@ -1,0 +1,69 @@
+{
+  "title": "RF-B 缺口治理基建：缺口真源 + 生成 md + 守卫棘轮（未登记的硬停/no-op 即红）",
+  "type": "req",
+  "priority": "P0",
+  "area": "emulator/ops",
+  "why": "审计发现两类失败模式都没有机读清单、CI 也发现不了：① **21 条引擎有 handler 体、emulator 三张注册表全无** ⇒ 命中即 `NotImplementedOp`（`run.ts` / `renderer/app/session.ts` 停下等人工桩）；② `ENGINE_INTERNAL_OPS` 9 条里 **4 条体里有真实效果**（`0x244` 清绘制项动画窗 / `0x325` 写效果销毁判据 / `0x10C` 写引擎每帧扫描的按键表 / `0x324` 释放效果对象）却被当成无条件 no-op。两者都只能靠人读注释发现 ⇒ 每次审计都要重来一遍（本次 30+ 条就是这么翻出来的）。",
+  "acceptance": [
+    "新增缺口真源 `analysis/opcode-gaps.json`：逐条 {opcode, name, 语料命中数, 引擎 handler + raw 行号, 现状（未注册 / 注册为 no-op / 已实现但语义不符）, 处置（实现 / 依据充分的 engine-internal / 显式缺口 + 依据）, 关联票}",
+    "数据来源可复算：语料计数用 `grep -c '^\\s*iXXX\\b' src/*.txt`，注册状态读 emulator 三张表，raw 行号由 dispatch 表（字节 675996 + 4*op）推出 —— 写成脚本而不是手抄",
+    "生成物 `docs-new/03-engine/opcode-gaps.md`（看板：P0/P1 缺口 + 语料量排序 + 处置进度），与 `scripts/build-*.mjs` 同风格",
+    "守卫测试（`app/amayui-emulator/test/opcode-gaps.test.ts`）：① 语料用到但三张表都没有、且不在缺口表里的 opcode ⇒ 失败；② `ENGINE_INTERNAL_OPS` 的每条必须在缺口表里有「依据充分的 engine-internal」记录（含 raw 行号与「体里真实效果」说明）",
+    "审计的 21 条 P0/P1 缺口与 4 条可疑 no-op 全部入表（数据即 `audit-2026-09-opcodes.md` 的 P0/P1 节）",
+    "npm run verify 全绿"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/opcode-gaps.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/repair-plan-2026-09.md",
+      "anchor": "**RF-B 缺口治理**",
+      "note": "重构判定：为什么靠注释+人脑不行、目标形态"
+    },
+    {
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "anchor": "### op-3-002 — 0x243/0x233/0x23A/0x337 无注册也无登记，命中即整轮硬停",
+      "note": "未注册缺口的典型条（语料 i243 = 341 行 / 338 文件）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "[0x10c, op_engine_internal]",
+      "note": "可疑 no-op 的典型条：体写的是引擎每帧输入扫描读的 VK→掩码位表"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[_this[v2 + 1690] + 1434] = result;",
+      "note": "raw 30632：0x10C 的体（写按键盘表）—— 证明它不是「什么都不做」"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0075",
+      "T-0076",
+      "T-0080"
+    ],
+    "docs": [
+      "docs-new/03-engine/repair-plan-2026-09.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "命名与落点沿用既有三层数据层纪律：真源进 `analysis/`，md 是渲染物（勿手改），守卫进 `app/amayui-emulator/test/`，CLI/生成脚本与 `scripts/build-capabilities.mjs` 同风格。★本票是 B0，先于任何「补指令」工作：否则补完一批又会出现新的静默 no-op。",
+  "id": "T-0081",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— B0 完成：① analysis/opcode-gaps.json（真源，69 条：58 未实现 / 4 unjustified no-op / 5 有据 no-op / 2 已实现；语料累计 2394 次调用）；② scripts/build-opcode-gaps.mjs（可复算：语料按 iXX+名字两种写法统计、注册状态认 [op,handler] 与 0xNN:{…} 两种登记形态、引擎 dispatch 表推 handler 体行号；--check 供 CI）；③ 生成物 docs-new/03-engine/opcode-gaps.md；④ 守卫 test/opcode-gaps.test.ts（3 条：生成器校验+md 最新 / 与运行时三张表一致+未登记即红 / 审计 P0/P1 与 4 条 unjustified 不许缩水）。副产：修正两个统计口径（名字形式指令、对象键注册），发现 0x7C local-ret 668 处此前未被计入语料统计。"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "改字段：tests"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "title": "RF-C 呈现/帧保留重构：去掉 hold 启发式 + 撤销装载点 clearDrawContainer，按引擎语义重做（并解 T-0072/T-0074）",
+  "type": "refactor",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "审计确认两处都是**自己发明的机制**，且互相「救场」：① `#holdFrames`（`pixiBackend.ts`）在模型变空时保留旧像素最多 60 帧 —— 引擎没有这个概念：`sub_498B60` 是 `IDirect3DDevice9::Clear`（`ClearTarget`，有错误串与 `return 1/0` 检查，另有 6 处无门调用），引擎是每帧清渲染目标后**从模型重组**；② 装载点的 `clearDrawContainer()`+`clearMeshSlots()`（`save-slot.ts` ②c）没有引擎对应 —— `sub_410160` 的 27 个被调函数里没有任何清绘制容器的调用，唯一的整批释放被默认配置门（`set:CreateObject=1`/`set:AutoFreeTexture=0`）关掉，`i0ae` 也只重装帧、不重建绘制项。用户实测的因果链已经证明补丁路线走不通：清了菜单 ⇒ 背景变成上一屏残留像素（旧像素是 hold 留下的），点上才出文字。",
+  "acceptance": [
+    "去掉 `#holdFrames` 启发式（或改成只在引擎也会保留像素的场合生效），present 走「模型为空 ⇒ 按引擎清屏色清屏；模型非空 ⇒ 从模型重组」",
+    "撤销装载点的 `clearDrawContainer()`/`clearMeshSlots()`，改为引擎语义：**保留**绘制项 + 重建存档声明的槽（`flag==1`）；「上一屏不再合成」交给引擎真实机制（`sub_403EF0` 的两个输出显示态复位 / 脚本自己的 `i1f6`/`detach-texture`）",
+    "为「仮想ディスプレイ（输出显示态）」建立最小模型或明确登记为缺口（不得再用「清全部绘制项」代替）",
+    "A/B 守卫：**正常走到某句话** vs **读档到同一句话** 的场景级断言一致（绘制项集合、可见项、消息窗文本、背景来源）；读档后不再出现上一屏残留、也不出现「背景缺失」",
+    "E4 复核：真游戏从标题读档的瞬间行为（是否可见残留）作为对照依据写入 `T-0072`/`T-0074`",
+    "npm run verify 全绿"
+  ],
+  "tests": [],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/repair-plan-2026-09.md",
+      "anchor": "**RF-C 呈现 / 帧保留**",
+      "note": "重构判定：hold 与装载点 clear 互相救场，调参只会让症状搬家"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "//----- (00498B60)",
+      "note": "sub_498B60 = IDirect3DDevice9::Clear（ClearTarget）：引擎每帧清渲染目标，没有「保留旧像素」机制"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "丢掉被放弃的调用链",
+      "note": "(B) 落地后的装载点：那一刀（`clearDrawContainer()`+`clearMeshSlots()`）已撤销，改为只丢掉**被放弃的调用方帧**画的项（= 引擎 `sub_403EF0` 那个 仮想ディスプレイ 复位的近似）；②c 注释里有完整依据与实测残留"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "②c ★**装载点不整批清绘制项**",
+      "note": "撤销那一刀处的注释（(B) 步）：27 callee 无清容器 + `sub_403EF0` 体（项数清零）+ `detach-texture 1adb0 7d0` 是立绘层的订正"
+    },
+    {
+      "file": "app/amayui-emulator/test/slot-load-screen.test.ts",
+      "anchor": "★(B) 装载点不整批清容器",
+      "note": "(B)/(C) 的守卫：(B) 机械判据（不许整批清、只对 caller 帧 drop、菜单层消失/ADV 层与槽保留）+ (C) A/B 模型逐项相等"
+    },
+    {
+      "file": "docs-new/03-engine/audit-2026-09.md",
+      "anchor": "| `save-slot.ts` 装载点 | `clearDrawContainer()`+`clearMeshSlots()`（无引擎对应；见 `tickets/T-0072`/`T-0074`）",
+      "note": "审计的「凭空实现专项清单」里的这条"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0072",
+      "T-0074",
+      "T-0080",
+      "T-0078"
+    ],
+    "docs": [
+      "docs-new/03-engine/repair-plan-2026-09.md",
+      "docs-new/03-engine/save-data.md",
+      "docs-new/03-engine/audit-2026-09-capabilities.md"
+    ]
+  },
+  "notes": "为什么排在 B5：撤销 clear 之后画面会先变黑（模型里没有背景项），必须等 B2/B3 把「读档续跑路径上的指令语义」补齐、并按引擎语义重建槽之后，才能得到正确画面。先做 B0–B4 再动这里，避免又一次「修一处、坏一处」。",
+  "id": "T-0083",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-19",
+      "what": "创建"
+    }
+  ]
+}

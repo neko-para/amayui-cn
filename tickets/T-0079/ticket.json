@@ -48,11 +48,16 @@
   },
   "notes": "另有一条方法学提醒（审计报告末尾）：任何「按构造期地址反解 opcode」的分析都要先把该地址在构造函数里核对到赋值行 —— 本次核对后确认 0xFB..0x10F 全都有赋值（先前一个 agent 提出的『偏移漂移』结论不成立），而 opcode-table.md 里 30 行 status 为空的行是**别的 AGE 作品**的交叉引用（Amayui 2 / Tenmei / Fuukan / Hyakusen），不是本引擎的表项，属于正常设计。",
   "id": "T-0079",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-19",
+      "what": "open → done —— 9 条 P0/P1 机制文档订正完成（两轮：轮 11 修 5 条，轮 12 修余下 4 条）。每处都标注「2026-09 订正」与本仓库的真实出处（代码 file:line 或 raw 行号）。"
     }
-  ]
+  ],
+  "doneWhy": "9 条机制文档 P0/P1 陈旧全部按审计报告订正：flow-control.md（181 不停在 ScriptReset；422/427 i143、0xAE、0x7C、exit -11 均已实现）、scene-start-flow.md（96/105 16 条已转真实现+棘轮名单；100 0x238 是等待门计时器；102 0xD9 的位有读者；170 E2 三张名单棘轮的准确口径）、rendering.md:112 帧保留解除判据 = state0 高字节 alpha（#meshVisible）。npm run verify 全绿。"
 }

@@ -28,13 +28,13 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "await loadSaveData(e, trace);",
-      "line": 97,
+      "line": 98,
       "note": "SAVE.DAT 装载：现在位于 `attachSaveDataPersistence` 内，无条件执行"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "e.onSaveDataChanged = () => {",
-      "line": 115,
+      "line": 116,
       "note": "回写接线：同样在早退之后 ⇒ save-int 改动永不落盘"
     },
     {
@@ -70,13 +70,13 @@
     {
       "file": "app/amayui-emulator/src/renderer/ipcFileSource.ts",
       "anchor": "async writeSaveData(data: Uint8Array): Promise<void> {",
-      "line": 53,
+      "line": 60,
       "note": "渲染进程 → 主进程的写盘通道（本身没坏，只是没人调用它）"
     },
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "ipcMain.handle('write-save-data'",
-      "line": 112,
+      "line": 127,
       "note": "主进程写 overlay 的 save-data（日志 `[main] save data <- …` 是 E4 判据）"
     },
     {
@@ -88,7 +88,7 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "export async function attachSaveDataPersistence(",
-      "line": 90,
+      "line": 93,
       "note": "装载 + 回写接线收口在此（`io.write` 可注入 ⇒ 可单测）"
     },
     {

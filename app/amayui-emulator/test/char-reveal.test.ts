@@ -286,6 +286,7 @@ test('★0x304/0x305 文本块括号：保存/取回行游标 + 把余下的行�
   assert.equal(e.msgwin.flags, 1, 'Engine[122497] = 1（文本块内的注音/内嵌模式）');
   step(0x305, []); // 取回 + 把余下的行一次性贴出
   assert.equal(e.msgwin.revealedOf(8), 5, '0x305 的 `while(!sub_45BE20())` = 整段贴出');
+  assert.equal(e.msgwin.flags, 0, '★引擎三条出口都清 Engine[122497]（raw 26083/26095/26099）⇒ 文本块结束即退出注音模式');
   assert.equal(e.msgwin.charMode, false);
   assert.ok(native.scene.msgWins.has(8), '文本仍在渲染模型里（只是全部显示完）');
 });

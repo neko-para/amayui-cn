@@ -153,7 +153,13 @@ export interface SlotLoadOutcome {
  *
  * 返回 `true` = 续跑已就绪（调用方只需把控制交给帧 0 的入口）。
  */
-async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2: number): Promise<boolean> {
+async function restoreEngineSlot(
+  e: Engine,
+  bytes: Uint8Array,
+  sv1: number,
+  sv2: number,
+  callerFrame: number,
+): Promise<boolean> {
   const dec = decodeEngineSlot(bytes);
   if (!dec.ok) {
     e.native.log(`[slot-load] 真槽状态主体未解析（${dec.reason}）⇒ 退回"重载根脚本"（见 SLOT_GAPS）`);
@@ -223,8 +229,8 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
     const s = p.images[slot]!;
     if (s.flag === 1 && s.id >= 0) texRebind.push({ slot, id: s.id });
   }
-  // ②c ⚠️**emulator 侧近似**（不是引擎行为的复刻；2026-09 复核 `tickets/T-0072` 的遗留争议所得）：
-  //     引擎的装载路径**不清绘制容器** —— `sub_410160`（raw 19276-19936）全部 **27 个**被调函数里
+  // ②c ★**装载点不整批清绘制项**（`tickets/T-0083` 的 (B) 步）：只丢掉**被放弃的调用方那一层 UI**。
+  //     引擎的装载路径**不清容器** —— `sub_410160`（raw 19276-19936）全部 **27 个**被调函数里
   //     没有任何清容器调用（无 `sub_4AB7A0`/`sub_41A130`/`sub_40BF80`），唯一的整批释放是 raw
   //     19378-19389 的两段**配置门**：
   //       ① `Get(set:CreateObject)&2 && Get(set:AutoFreeTexture)&2 ⇒ for i<1000: sub_49E980(Scene,i)`
@@ -233,17 +239,56 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   //          （清两个**网格**容器 + 10 个 3D 槽）。
   //     而引擎默认 `set:CreateObject = 1`（raw 111733）/`set:AutoFreeTexture = 0`（raw 111742）
   //     ⇒ 两段的 `& 2` 都为假 ⇒ **都不执行**（本机 `SYS4REG.INI` 的 `[set]` 里也没有 `AutoFreeTexture`）。
-  //     装载路径里唯一的"屏幕级复位"是 raw 19913-19915 的两个**仮想ディスプレイ**复位
-  //     `sub_403EF0(Engine+51904)` / `sub_403EF0(Engine+21976)`（该对象族 = `sub_403D70/403E70/
-  //     404D E0/404E00/404E20/403AE0/403F40`，语料串 `aDisplayVirtual`）——emulator 没有这个子系统，
-  //     而"上一屏不再被合成"总得有个落点，才在这里用"清绘制项/网格"来近似它。
-  //     ★代价（已实测）：引擎恰恰靠**上一屏残留的绘制项 + 重建后的槽对象**把画面还原回来
-  //     （绘制期解析 `Scene[slot+10614]` 对象指针 + `Scene[5*slot+466]` 槽表；`i0ae` 只调 `sub_40F750`
-  //     重装帧，**不重建任何绘制项**）⇒ 整批清掉会连"本该显示背景/立绘的那一项"一起清掉
-  //     （2026-09 用户实测：清掉后背景只剩上一屏的残留像素/点上才出文字）。真正的修法是补
-  //     仮想ディスプレイ（plane 合成）子系统，而不是长期留着这一刀。
-  e.native.clearDrawContainer?.();
-  e.native.clearMeshSlots?.();
+  //     ★**保留绘制项才是引擎把画面还原回来的机制**：绘制期解析 `Scene[slot+10614]` 对象指针 +
+  //     `Scene[5*slot+466]` 槽表，而装载路径刚按存档把槽表与纹理对象重建（②b）⇒ 上一屏留下的那些
+  //     绘制项**当场指向存档里的图像**（实测槽 79：槽 4 ← `BG050ABL`(0xb37)）。
+  //     早先"整批清掉"的代价是实测过的（2026-09 用户实测：清掉后背景只剩上一屏的残留像素/点上才出文字）。
+  //     ★但**调用方那一层 UI 必须消失**：引擎在装载段复位两个**仮想ディスプレイ**对象
+  //     （raw 19913-19915 `sub_403EF0(Engine+51904)` / `(Engine+21976)`），其体（raw 9958-9971）是
+  //     `_this[258] = 0`（**项数清零**）+ `_this[959] = -1`/`[960] = 0` + 构造侧的 `SetRectEmpty`
+  //     ⇒ 上一屏那层 UI 整体不再组成。
+  //     emulator 是单一扁平绘制表、没有"平面"对象 ⇒ 用 `Item.ownerFrame`（谁画的）近似那一层：
+  //     丢掉**被放弃的那条调用链**（caller 帧 + 它调用出来的帧，见下）画的项，祖先帧画的项留下。
+  //     ★实证（2026-09，`npm run shot -- --load 79`）：不丢这一层时读档后**存档列表整屏留在画面上**
+  //     （handle 0x1d4c0.. ≈ 131 项，正是 SAVE.txt 自己声明的 UI 区间 `detach-texture 1d4c0 bb8`）；
+  //     而 CALLBACK_LOAD 的 `detach-texture 1adb0 7d0`（raw 见 `src/CALLBACK_LOAD.txt:16`）落在
+  //     [0x1adb0, 0x1b580) —— 那是**立绘层**，删不掉列表（日志实测 `drawItems=0`）。
+  //     ★这是近似，登记在 `SLOT_GAPS` 与 `tickets/T-0083`（真正的修法是补平面/离屏合成模型）。
+  // (B) 丢哪一层 = **被放弃的那条调用链**：caller 帧 + 它调用出来的帧（`caller` 链里含 caller 的帧）。
+  //     ★祖先帧**不碰**：读档前正在演的那场戏就是祖先（它的绘制项必须留下 —— (C) 守卫的 A/B 正是这条）。
+  //     实证（`npm run shot -- --load 79`，帧链 `0=SYSTEM4 1=TITLE 2=SAVE 3=SBUNKI 4=SBUNKIMOVE`）：
+  //     只丢 caller（2）时，列表的文字/行框仍在 —— 它们是 3/4 那两个被 SAVE 调出来的帧画的。
+  const droppedFrames = new Set<number>([callerFrame]);
+  for (let i = 0; i < e.frames.length; i++) {
+    let up = e.frames[i]?.caller ?? -1;
+    for (let guard = 0; up >= 0 && guard < 64; guard++) {
+      if (up === callerFrame) {
+        droppedFrames.add(i);
+        break;
+      }
+      up = e.frames[up]?.caller ?? -1;
+    }
+  }
+  let droppedUi = 0;
+  for (const f of [...droppedFrames].sort((a, b) => a - b)) droppedUi += e.native.dropFrameItems?.(f) ?? 0;
+  if (droppedUi > 0) {
+    e.native.log(
+      `[slot-load] 丢掉被放弃的调用链（帧 ${[...droppedFrames].sort((a, b) => a - b).join(',')}）画的 UI 绘制项 ${droppedUi} 个（引擎：sub_403EF0 复位 仮想ディスプレイ）`,
+    );
+  }
+  // ★诊断（读档画面残留定位用）：装载时进程里的帧链（残留属于哪一层要对着名字看）。
+  e.native.log(
+    `[slot-load] 装载时的帧链：${e.frames
+      .map((f, i) => (f.script ? `${i}=${f.name}(caller=${f.caller})` : null))
+      .filter((s): s is string => s !== null)
+      .join(' ')}`,
+  );
+  // ★(A) 步（`tickets/T-0083`）：装载点**释放留帧** —— 引擎装载路径复位显示态（`sub_403EF0` raw 19913-19915），
+  //   没有"保留旧像素"的概念（渲染目标每帧清后从模型重组）⇒ 读档瞬间屏上应是**当前模型**（= 上面保留下来的
+  //   绘制项 + 重建后的槽），不能让上一屏（TITLE/菜单）的旧像素继续压在画面上。
+  //   实测（2026-09 用户日志）：没有这一步时 `clearDrawContainer` 会把留帧重新拉到 60 帧，
+  //   于是"旧像素一直压着"+ 期间又建了满屏幕布 ⇒ 玩家看到的就是「TITLE 背景 + ADV 遮罩」。
+  e.native.releaseFrameHold?.();
   for (const { slot, id } of [...rebind, ...texRebind]) e.native.bindTexture?.(id, slot);
   if (rebind.length || texRebind.length) {
     e.native.log(
@@ -253,10 +298,12 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   }
 
   // ③ 面板 / 文本复位（引擎 raw 19913-19915；与 `transferToRootAfterLoad` 同一口径）。
-  //   ★**不**在这里整批清绘制项（`tickets/T-0063`）：ADV 场景的绘制是**一次性**的
-  //   （实测 SN0000/SC0330 主循环之后的 17000 行里只有 14~16 处 `draw-texture`、2~3 处 `i20c`），
-  //   读档时清掉就再也画不回来。引擎靠的是"**续跑的脚本从入口重跑一遍**"（场景 init 重画背景、
-  //   并在 init 里 `i259` 清掉上一场留下的绘制记录）——emulator 现在与本工程槽共用同一条路（见下）。
+  //   ★**不**在这里整批清绘制项（`tickets/T-0063`/`T-0083`）：ADV 场景的绘制是**一次性**的
+  //   （实测 SN0000/SC0330 主循环之后的 17000 行里只有 14~16 处 `draw-texture`、2~3 处 `i20c`）。
+  //   ★续跑重跑到哪里（实测）：每帧从**入口**跑到它自己的 `i0ae` —— SN0000 的 `i0ae` 是指令 737、
+  //   存档落点是指令 794 ⇒ 入口到 737 之间的那段 init **会重跑**（`i259`、背景 `set-texture`/
+  //   `draw-texture`、`play-bgm` 都在其中），主循环之后的绘制不会重放 ⇒ 上一屏的绘制项必须保留
+  //   （②c 的依据之一）；emulator 现在与本工程槽共用同一条路（见下）。
   e.routes.reset();
   e.msgwin.reset();
   e.native.msgWinClearAll?.();
@@ -265,7 +312,7 @@ async function restoreEngineSlot(e: Engine, bytes: Uint8Array, sv1: number, sv2:
   //    引擎先把帧 0 交给 **`CALLBACK_LOAD.BIN`**（返回帧 = **-11** 哨兵）；它 `exit` 时 `sub_41A820`
   //    见到 -11 ⇒ `_this[95777] = -1` 后 `sub_40F750(sv1, sv2)` 才把**记录 0 的脚本**装进帧 0。
   //    那一跳是"上一个画面的收尾"：`i19b`（ADV 退出）、`i20d -1`（渲染目标回后台缓冲）、
-  //    `detach-texture 110000 2000`（释放 2000 个句柄）、`i324`、`i2fa 0`、`i2f6 0..2`、`i0b6 0..9`、
+  //    `detach-texture 1adb0 7d0`（= 释放 [0x1adb0, 0x1adb0+0x7d0) 这 2000 个句柄）、`i324`、`i2fa 0`、`i2f6 0..2`、`i0b6 0..9`、
   //    `i0b7 0`（BGM 重播）、3f51..3f53 的跳过记账（`src/CALLBACK_LOAD.txt` 逐条）。
   //    能按名解析到它 ⇒ 照引擎走；解析不到（宿主没给按名读的通道）⇒ 退回"直接装记录 0"（`SLOT_GAPS ⑥`）。
   const frame = e.frames[0]!;
@@ -339,7 +386,10 @@ export async function loadSlotIntoEngine(
     e.playSeconds = parsed.data.header.playSeconds; // 头 +280（引擎装载时也会带上）
     // ★把**文件自己声明的存档版本**交给续跑（头 +284 = `set:SaveVersion1`、+288 = `set:SaveVersion2`）：
     //   `0xAE` 按它选帧记录的槽位组；玩家 INI 缺 `[set]` 段时这是唯一可靠的来源（`tickets/T-0065`）。
-    if (await restoreEngineSlot(e, bytes, parsed.data.header.format, parsed.data.header.aux)) {
+    // ★`callerFrame` = **执行这条读档指令的那一帧**（= 将要被放弃的调用方，通常是 SAVE/LOAD 菜单帧）：
+    //   装载点用它丢掉"调用方那一层 UI"（见 `restoreEngineSlot` 的 ②c）。
+    const callerFrame = e.cur;
+    if (await restoreEngineSlot(e, bytes, parsed.data.header.format, parsed.data.header.aux, callerFrame)) {
       // 帧 0 = 记录 0 的脚本，从**它的入口**继续跑（引擎 `sub_40F750(3)` 装载后的位置就是入口）；
       // 入口那条 `i0ae` 会把 ip 落到存档位置并逐帧走栈。
       return { code: 0, transferredTo: 0 };
@@ -548,7 +598,11 @@ const op_slot_read_header: OpHandler = async (c) => {
     writeIntOperand(e, c.frame, c.instr, 1, 2);
     return;
   }
-  writeIntOperand(e, c.frame, c.instr, 1, 0);
+  // ★**写序按引擎**（`sub_42DC70` raw 38390-38397，`tickets/T-0077` 的 B4 项）：成功分支里引擎
+  //   先写 `op3..op9`（年/月/日/时/分/秒 + 游玩秒数），**最后**才 `op1 = 0`；失败分支**只写 op1**
+  //   （`op1 = 1` 打不开 / `op1 = 2` 解析失败，raw 38387/38401）——两种失败都不碰 op3..op9。
+  //   此前 emulator 把 `op1 = 0` 写在了最前面（行为上多数脚本看不出来，但"读到 op1=0 时 op3..op9 是否已就绪"
+  //   这种观察是会露的）⇒ 现按体对齐。
   const h = head.header;
   writeIntOperand(e, c.frame, c.instr, 3, h.year);
   writeIntOperand(e, c.frame, c.instr, 4, h.month);
@@ -557,6 +611,7 @@ const op_slot_read_header: OpHandler = async (c) => {
   writeIntOperand(e, c.frame, c.instr, 7, h.minute);
   writeIntOperand(e, c.frame, c.instr, 8, h.second);
   writeIntOperand(e, c.frame, c.instr, 9, h.playSeconds);
+  writeIntOperand(e, c.frame, c.instr, 1, 0);
 };
 
 /**

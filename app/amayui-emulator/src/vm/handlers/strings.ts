@@ -8,11 +8,83 @@ import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, readStringOperand, writeStringOperand, readIndexOperand, readStringIndexOperand } from '../operand.js';
 import { atoi } from '../bits.js';
 import { sjisSubstr, sjisSubstrChars } from '../../text/sjis.js';
+import { sjisByteLength } from '../../text/layout.js';
 import type { OpTable } from './shared.js';
 
-const op_strlen: OpHandler = (c) => {
+/**
+ * `0x2C5`（`sub_430900` raw 40063-40071）：**`op1 = strlen(op2)`** —— 引擎的 `strlen` 数的是**字节**
+ * （SJIS：ASCII/半角片假名 1、其余 2）。★此前与 `0x2C6` 共用 `s.length`（字符数）⇒ 日文串长度一律偏小一半。
+ */
+const op_strlen_bytes: OpHandler = (c) => {
+  const s = readStringOperand(c.e, c.frame, c.instr, 2);
+  writeIntOperand(c.e, c.frame, c.instr, 1, sjisByteLength(s));
+};
+
+/** `0x2C6`（`sub_430940` raw 40073-40084）：**`op1 = _mbstrlen(op2)`** —— 多字节**字符数**。 */
+const op_strlen_chars: OpHandler = (c) => {
   const s = readStringOperand(c.e, c.frame, c.instr, 2);
   writeIntOperand(c.e, c.frame, c.instr, 1, s.length);
+};
+
+/**
+ * `0x1A6` **halve-strlen**（`sub_42D110` raw 37974-37982）：`op1 = strlen(op2) >> 1`。
+ *
+ * 体全文：`arity 槽 = 5`（⇒ argc=2）、`v2 = strlen(sub_41B640(_this, 2))`、`writeIntOperand(1, v2 >> 1)`。
+ * ⇒ 与 `0x2C5` 同为**字节**口径（除 2）：SJIS 2 字节字的串得到"字符数"，ASCII 串则是"字符数的一半"。
+ * ★语料 **217 处 / 215 个脚本**；此前未注册 ⇒ 命中即 `NotImplementedOp`（`tickets/T-0076`）。
+ */
+const op_halve_strlen: OpHandler = (c) => {
+  const s = readStringOperand(c.e, c.frame, c.instr, 2);
+  writeIntOperand(c.e, c.frame, c.instr, 1, sjisByteLength(s) >> 1);
+};
+
+/**
+ * **`0x1C8` to-string**（`sub_433820` raw 41989-42010，argc 2）：**`op1 = 十进制字符串(op2)`**。
+ *
+ * 体全文（逐行）：`arity 槽 = 5`；`v2 = sub_41BF50(_this, 2)`（读 op2）；
+ * `sub_408050(Buffer, 256, "%d", v2)`（★`%d` ⇒ **有符号十进制**、无前导零/空格）；
+ * 构造 `std::string` 后 `sub_433310(_this, 1, v3)`（写回 **op1 字符串**）。
+ * ★语料 11 处 / 6 个脚本（`opcode-gaps.md` 原记「仅映射/未读体」）⇒ 命中即 `NotImplementedOp`。
+ * `%d` 对齐 ⇒ 超过 2^31 的值按**有符号 32 位**打印（与引擎一致）。
+ */
+const op_to_string: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 2);
+  writeStringOperand(c.e, c.frame, c.instr, 1, String(v | 0));
+};
+
+/**
+ * **`0x1B2`**（`sub_42A9B0` raw 36550-36558，argc 1）：把 op1 的字符串**追加**到 `Engine+497344` 的文本缓冲。
+ *
+ * 体全文：`arity 槽 = 3`、`v2 = sub_41B9B0(_this, 1)`（取字符串指针）、
+ * `sub_40C660(_this + 124336, v2, strlen(v2))`（追加 n 字节 ⇒ 容器的 push_back）。
+ * ★语料 3 处（`opcode-gaps.md` 的未实现清单）。
+ */
+const op_text_append: OpHandler = (c) => {
+  c.e.textBuffer += readStringOperand(c.e, c.frame, c.instr, 1);
+};
+
+/**
+ * **`0x1B3`**（`sub_42AA00` raw 36560-36565，argc 0）：往同一个缓冲追加 `"\r\n"`。
+ *
+ * 体全文：`arity 槽 = 1`、`sub_40C660(_this + 124336, asc_51EE84, 2u)`；`asc_51EE84` 的值在同文件
+ * raw 4320（`char asc_51EE84[3] = "\r\n";`）⇒ 就是**两字节的 CRLF**（语料 2 处）。
+ */
+const op_text_append_crlf: OpHandler = (c) => {
+  c.e.textBuffer += '\r\n';
+};
+
+/**
+ * **`0x1B4`**（`sub_428DB0` raw 35322-35331，argc 0）：把文本缓冲**取出整段并清空**。
+ *
+ * 体全文：`*(_DWORD *)(_this + 120 * cur + 383220) = 1`（本指令长度槽 1 ⇒ argc 0）、
+ * `sub_4034F0(_this)`（派发/输出）、`sub_40B420(_this + 497344, 0, 0xFFFFFFFF)`（取 `[0, -1]` 整段）。
+ * ★不写任何操作数（语料 1 处）⇒ emulator 的观测面 = 一条日志 + 缓冲复位。
+ */
+const op_text_flush: OpHandler = (c) => {
+  if (c.e.textBuffer.length > 0) {
+    c.log(`0x1B4: 取出文本缓冲 ${c.e.textBuffer.length} 字符 ${JSON.stringify(c.e.textBuffer.slice(0, 120))}`);
+  }
+  c.e.textBuffer = '';
 };
 
 /** atoi (0x2ec)：`op1 = atoi(string op2)`（字符串→整数）。 */
@@ -118,8 +190,13 @@ const op_load_string: OpHandler = (c) => {
 
 /** 字符串处理 / 字符串表（真实现）。 */
 export const STRING_OPS: OpTable = [
-  [0x2c5, op_strlen],
-  [0x2c6, op_strlen],
+  [0x2c5, op_strlen_bytes], // strlen（**字节**口径；SJIS 日文 2 字节/字）
+  [0x2c6, op_strlen_chars], // _mbstrlen（字符数）
+  [0x1a6, op_halve_strlen], // halve-strlen：strlen(op2) >> 1（语料 217 处/215 脚本；B3 补）
+  [0x1b2, op_text_append], // 文本缓冲追加字符串（B3 补；raw 36550-36558）
+  [0x1b3, op_text_append_crlf], // 文本缓冲追加 CRLF（B3 补；raw 36560-36565）
+  [0x1b4, op_text_flush], // 文本缓冲取出整段并清空（B3 补；raw 35322-35331）
+  [0x1c8, op_to_string], // to-string：op1 = "%d" 的十进制字符串(op2)（B3 补；raw 41989-42010）
   [0x2c7, op_substr], // SBSubstr：字节起点/长度 + SJIS 全角边界修正
   [0x2c8, op_substr_chars], // 按「字符」取子串（_mbstrlen 计数；写回 op1 字符串）
   [0x2ec, op_atoi],

@@ -18,11 +18,13 @@ import {
   itemColor,
   itemRenderPlacement,
   itemSrcRect,
+  itemUsesWorld,
   meshColor,
   meshVertexColor,
   type Item,
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
+import { applySceneXformToPlacement, sceneLayerAffected } from '../scene/ops.js';
 import { walkBlendSequence, type BlendEnv, type BlendState } from '../scene/blend.js';
 import type { TextureCache } from './textureCache.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
@@ -174,7 +176,10 @@ export class ScenePresenter {
       //   ⇒ 未置位的项走**纯 2D 路径**：只有描画位置 + 源矩形尺寸，pivot/缩放/旋转/平移**一律不参与**。
       //   漏掉这个门就会把"从没设过 pivot"的项按 pivot=(0,0) 反算成 `-pos`，把项推出画面
       //   （CONFIG1 滚动条的上/下盖正好是这种项）。
-      if (it.useWorld) {
+      //
+      // ★**bit2 强制有效**（2026-09，B3）：引擎在 B 层命中时 raw 133395 把 `Scene+46532` 强制置 1
+      //   （`sub_49BCC0` 算出的矩阵必须参与合成）⇒ 判据是 `itemUsesWorld(it)` 而不是裸 `it.useWorld`。
+      if (itemUsesWorld(it)) {
         // 世界矩阵（`0x1FD`/`0x1FF`/`0x21E`/`0x21F`/`0x220` 置位）：引擎 `sub_49AA30` 行向量序
         // `T(-pivot)·S·R·Tt·T(+pivot)` 作用在"已建在描画位置上"的四边形 ⇒
         // `v' = S·R·(v − pivot) + t + pivot`，其中 `pivot` 由 `0x217` **原样**写入（绝对值）。
@@ -182,13 +187,21 @@ export class ScenePresenter {
         // **同时**取 `position = pivot + t`、`sprite.pivot = pivot − pos`（见 `itemRenderPlacement`）。
         // ★历史上这里位置用的是 `pos`：只有 `pivot == pos` 时才等价 ⇒ 一旦脚本给出偏离 pos 的
         //   绝对 pivot（`CONFIG1` 滚动条中段的 `707ffa + 32e`），缩放项就整体平移 `(pivot − pos)`。
-        const pl = itemRenderPlacement(it, clock);
+        const pl = applySceneXformToPlacement(scene, it.layer, itemRenderPlacement(it, clock));
         spr.pivot.set(pl.pivot.x, pl.pivot.y);
         spr.scale.set(pl.scale.x, pl.scale.y);
         spr.rotation = pl.rotRad;
         spr.position.set(pl.position.x, pl.position.y);
       } else {
-        spr.position.set(it.posX, it.posY);
+        // ★无世界矩阵的项也**照样**吃 Scene 那一级（引擎 raw 133407 的乘法在 `Scene+46532` 门**之外**：
+        //   那一门只管项自己的 work 矩阵，Scene 世界矩阵是另一个矩阵）。引擎里"没设过变换"的项
+        //   work = 单位阵·sceneWorld = sceneWorld，屏幕上就是"描画位置被 Scene 平移推走"。
+        const pl = applySceneXformToPlacement(scene, it.layer, {
+          position: { x: it.posX, y: it.posY },
+          scale: { x: 1, y: 1 },
+        });
+        spr.position.set(pl.position.x, pl.position.y);
+        if (pl.scale.x !== 1 || pl.scale.y !== 1) spr.scale.set(pl.scale.x, pl.scale.y);
       }
       spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
       spr.alpha = alpha / 255; // diffuse alpha 淡入
@@ -249,6 +262,15 @@ export class ScenePresenter {
         }
       }
       g.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
+      // ★Scene 世界矩阵那一级（引擎 raw 133407 的 `work ← work · Scene+46600`，只作用于层 20..29）：
+      //   mesh 的顶点是**屏幕像素坐标**，与绘制项走同一条式子
+      //   `屏幕点 ← 屏幕点 × (sx,sy) + (tx,ty)`。用 `Graphics` 自身的变换实现（绕屏幕原点缩放 +
+      //   平移），避免改动几何顶点（`0x322` 那条"顶点色"路径仍按原坐标求值）。
+      const xf = sceneXform2D(scene, m.layer);
+      if (xf) {
+        g.scale.set(xf.sx, xf.sy);
+        g.position.set(xf.tx, xf.ty);
+      }
       this.drawRoot.addChild(g);
     };
 
@@ -340,7 +362,23 @@ export class ScenePresenter {
       ...items.map((it) => ({ key: it.layer, order: 0 as const, kind: 'item' as const, blend: it.blend, draw: (m: BlendState) => drawItem(it, m) })),
       // 文本在引擎里就是一个 DrawItem（`+0x30` 不会被 `0x203` 写 ⇒ 恒 0 ⇒ "不改状态"）：
       //   `src/SYSTEM4.txt:69 i213 8 19a28 1f4` 建的文本项 id = 0x19a28 = 105000。
-      ...texts.map((t) => ({ key: t.layer, order: 1 as const, kind: 'item' as const, blend: 0, draw: (m: BlendState) => { t.sprite.blendMode = PIXI_BLEND[m] as never; this.drawRoot.addChild(t.sprite); } })),
+      ...texts.map((t) => ({ key: t.layer, order: 1 as const, kind: 'item' as const, blend: 0, draw: (m: BlendState) => {
+        t.sprite.blendMode = PIXI_BLEND[m] as never;
+        // ★消息窗文本正是**层号 20..29**（`textLayer.ts` 的 `20 + win` / `win + 104`）⇒ 它就是
+        //   Scene 世界矩阵的主要作用对象（引擎里文本本来就是 DrawItem，同样过 raw 133405 那道判据）。
+        //   ★**不能就地改 sprite.position/scale**：文本精灵是跨帧复用的（`TextLayer.#wins` 缓存），
+        //   就地改会让变换逐帧累乘。这里用一个临时 `Container` 承载那一级（sprite 的自身变换不动）。
+        const xf = sceneXform2D(scene, t.layer);
+        if (!xf) {
+          this.drawRoot.addChild(t.sprite);
+          return;
+        }
+        const wrap = new Container();
+        wrap.scale.set(xf.sx, xf.sy);
+        wrap.position.set(xf.tx, xf.ty);
+        wrap.addChild(t.sprite);
+        this.drawRoot.addChild(wrap);
+      } })),
       ...meshes.map((m) => ({ key: m.handle, order: 2 as const, kind: 'mesh' as const, blend: m.blend, draw: (mode: BlendState) => drawMesh(m, mode) })),
       // L2D 节点：引擎里它是**独立一张表**（不参与图元的 blend 状态机 —— `sub_4783D0` 自己设
       // D3D 状态，raw 92607-92613 收尾时也不把 blend 留在可复用的档上）⇒ `blend: 0`
@@ -454,8 +492,33 @@ export class ScenePresenter {
   }
 }
 
-function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): Sprite {
-  const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
+/**
+ * **Scene 世界矩阵在「层号 ∈ [20,30)」那一支的 2D 形式**（引擎 raw 133411-133438 的 `else` 支：
+ * `D3DXMatrixDecompose` 后**只把 2D 缩放与平移装回**；旋转那一项被显式置成**单位阵**
+ * `v120`（raw 117629-117631 + 117647-117662），而这个单位阵**仍会**被乘进最终合成
+ * （`sub_49AA30` 的 LABEL_72，raw 117930）⇒ 净效果就是纯 2D 缩放 + 平移）。
+ *
+ * 返回 `null` = 这一层不吃 Scene 变换（层号不在区间内）或四条指令一条都没下发过。
+ * 注意调用方**不能就地改跨帧复用的对象**（见文本精灵那处的说明）。
+ */
+function sceneXform2D(
+  scene: SceneState,
+  layer: number,
+): { sx: number; sy: number; tx: number; ty: number } | null {
+  if (!sceneLayerAffected(layer)) return null;
+  const x = scene.sceneXform;
+  if (!x) return null;
+  switch (x.kind) {
+    case 'scale':
+      return { sx: x.scale.x, sy: x.scale.y, tx: 0, ty: 0 };
+    case 'translate':
+      return { sx: 1, sy: 1, tx: x.translate.x, ty: x.translate.y };
+    case 'axis-scale':
+      return { sx: x.axisScale.x, sy: x.axisScale.y, tx: x.axisTranslate.x, ty: x.axisTranslate.y };
+  }
+}
+
+function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): Sprite {  const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
   const cropped = new Texture({ source: tex.source, frame });
   return new Sprite(cropped);
 }

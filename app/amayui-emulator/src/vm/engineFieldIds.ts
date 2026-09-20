@@ -48,8 +48,24 @@ export const ENGINE_FIELD = {
   redisplayMode: 122452,
   /** 重画完成后要跳回的**下一条指令的 dword 偏移**。 */
   redisplayReturn: 122453,
+  /**
+   * **进入重显示那一刻的帧脚本身份**（`_this[107678]` = 字节 430712；`0x199` 写、`0x7C` 读）。
+   *
+   * `0x7C`（`sub_41AB80` raw 25799）拿它与当前帧的脚本 id 比：
+   * 不等就抛「Depth が不正です %s != %s」（两个名字由文件 id 反查）⇒ 这是**重显示调用的深度校验**。
+   */
+  redisplayScriptId: 107678,
   /** 输入状态位掩码（`_this[174802]`，byte 699208；`0x199` 开头清零，回答"这一轮消费了哪些输入态"）。 */
   inputStateMask: 174802,
+  /**
+   * **每帧的按键扫描游标**（`_this[cur + 122287]`；`0x100` 读写、`0xFF` 复位）。
+   *
+   * `0x100`（`sub_419AF0` raw 25029-25037）从本游标开始扫掩码里**最低**的置位 `b`，
+   * 派发后写 `b + 1`；下一次进入 `0x100`（由它自己压的返回点）就继续往后扫
+   * ⇒ **一次 `0x100` 的执行可以派发多个按键**（`ret` 回到 `0x100` 再扫）。
+   * `b >= SetKeyTotal`（`Engine[517]`）时引擎直接返回、不派发。
+   */
+  keyScanCursor: 122287,
 
   // -------------------------------------------------------------------------
   // 读档 / 脚本派发（frame.ts、engine-fields.ts、save-slot.ts、engine.ts）
@@ -82,6 +98,17 @@ export const ENGINE_FIELD = {
   musicField: 174713,
   /** **音乐运行态·循环位**（`_this[174715]` = `Music[261]`）：`sub_489F80`/`sub_489C20` 的第一个动作。 */
   musicLoopField: 174715,
+  /**
+   * **音乐运行态·暂停位**（`_this[174714]` = `Music[260]`）：`0xC1`（`sub_419770` raw 24837-24841）翻转它，
+   * 并把**新值**经当前音源对象 `Music[269 + Music[258]]` 的 vtable+12（MusicBase 抽象槽 3 = `SetPause`：
+   * `engine/…lst` 的 `MusicBase::vftable` 0x528B7C 起 10 个纯虚槽，`CD`/`MIDI`/`PCM`/`NoMusic` 各有实现）下发。
+   *
+   * 清 0 的写者（**只有 `0xC1` 会置 1**）：`sub_489B50`（`0xB8` 停播，raw 106186）、`sub_489F80`
+   * （`0xB7`/`0xB9` 起播，raw 106365）、`sub_489C20`（`0xBF` 起播，raw 106240）。
+   * ★**没有脚本读它**（`0xC0` 读的是 `Music[259]` 当前曲 id）—— 它是「宿主可听」的暂停闩锁，
+   * 消费者 = `handlers/audio.ts` 的 `0xC1` → `{kind:'bgm-pause'}` → `renderer/audio/webAudioHost.ts`。
+   */
+  musicPaused: 174714,
   /** 显示模式（`_this[167990]`）：`display:ScreenMode` 填充；`0x2CE` 布尔化读。 */
   screenMode: 167990,
   /** 脚本可读写的引擎运行开关（`_this[174812]`）：`0x142` 写；构造/复位默认 1。 */
@@ -161,6 +188,18 @@ export const ENGINE_FIELD = {
   charModulus: 107705,
   /** `0x1CE` 的显现开关记账（`_this[107706]`）。 */
   charModeArg: 107706,
+  /**
+   * **ADV 自动翻页的「行基准」**（`_this[122464]` = 字节 489856；`0x2E9`（`sub_426620` raw 33584-33586）写）。
+   *
+   * 引擎读点（raw 28569 / 28579 / 20420 / 13714 / 13720；复位 raw 17987 清 0）：
+   * `v = (当前窗文本行数 − 1 − 本字段) * message:AutoMessageSpeed + message:AutoMessageMinTime`，
+   * 再 `if (v <= 100) v = 100` 交给 `sub_453A60`/`sub_453BD0` 计时 —— 即"从第几行起算自动翻页时长"。
+   * ⇒ **不是只写不读的死字段**（审计 `docs-new/03-engine/audit-2026-09-opcodes.md` 的 P0 `op-2-01`）。
+   *
+   * ★emulator 现状：自动翻页的**消费端尚未实现**（全库无 `message:AutoMessage*` 消费点）⇒ 本字段写入后
+   *   暂时无人读；`tickets/T-0076` 把「自动翻页」记为缺口。值本身必须照写，否则将来接上消费端时基线会漂。
+   */
+  autoMessageBaseline: 122464,
   /** 每窗「逐行贴出」闸门基址（`+win`）：bit0 闸门、bit16 已被泵接管（`0x300` 写）。 */
   winRevealGateBase: 122466,
   /** 每窗贴完后延时清场 ms 基址（`+win`；`0x300` op3 写）。 */
