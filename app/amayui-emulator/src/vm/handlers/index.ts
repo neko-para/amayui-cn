@@ -38,6 +38,7 @@ import { MUSIC_TABLE_OPS } from './music-table.js';
 import { RESOURCE_USAGE_OPS } from './resource-usage.js';
 import { SAVE_SLOT_OPS } from './save-slot.js';
 import { STAGE_OPS } from './stage.js';
+import { REGION_HITTEST_OPS } from './region-hittest.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -49,7 +50,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...CONFIG_READ_OPS,
   ...CONTROL_OPS,
   ...MSGWIN_OPS,
-  ...TEXT_ITEM_OPS, // 0x1BB/0x1D2/0x1D3/0x1D4/0x2F3：文本项记录表（回想/历史 + 语音重播的账本）
+  ...TEXT_ITEM_OPS, // 0x1BB/0x1D2/0x1D3/0x1D4/0x2F3：文本项记录表（回想/历史 + 语音重播的账本）；0x1D0/0x85：回看页索引表读出/清两表
   ...GFX_STATE_OPS, // A4：图元/网格/纹理/渲染状态 13 条（2 条建模 + 11 条宿主缝）
   ...AGERC_OPS, // A6：AGERC 模块接口 0x14B/0x14C/0x14D（模型化，不加载原生库）
   ...PANEL_OPS, // A5：消息面/面板表面 0x93/0x94/0x97
@@ -65,6 +66,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...RESOURCE_USAGE_OPS, // 0x19D：已使用文件查询（回想/CG/BGM 鉴赏的解锁判定，写 op1）
   ...SAVE_SLOT_OPS, // 0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF：存档槽链路（存档/读档/读头/删/复制/.STH）
   ...STAGE_OPS, // 0xD3/0xD4/0xD5：阶梯动画调度器（时间表 + 0x40 门；消费者是 frame/loop.ts 的 stage 分支）
+  ...REGION_HITTEST_OPS, // 0x147/0x2F2：GDI 区域命中测试（WINDING 多边形 / 内切椭圆，纯几何、零宿主缝）
 ]);
 
 /** 子系统 opcode → NativeBridge（`native`）。 */

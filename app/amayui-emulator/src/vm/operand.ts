@@ -11,8 +11,8 @@
  */
 import type { Engine, Frame } from './engine.js';
 import type { BinInstruction } from '../script/bin.js';
-import { dec, enc, i32, atoi } from './bits.js';
-import { isRef, readRef, writeRef, STRIDE_INT, STRIDE_STR, type Ref } from './ref.js';
+import { enc, atoi } from './bits.js';
+import { isRef, readRef, writeRef, decIntSlot, STRIDE_INT, STRIDE_STR, type Ref } from './ref.js';
 
 const TYPE_IMMEDIATE_INT = 0x0;
 const TYPE_IMMEDIATE_FLOAT = 0x1;
@@ -211,7 +211,11 @@ export function writeFloatOperand(e: Engine, frame: Frame, instr: BinInstruction
   }
 }
 
-/** 读第 n 个操作数为整数（int 槽过 DEC；指针型 = 解引用取所指值）。 */
+/** 读第 n 个操作数为整数（int 槽过 DEC；指针型 = 解引用取所指值）。
+ *
+ * ★int 槽的缺省（脚本从未写过的槽）由 `decIntSlot` 统一给出 **0**（引擎装载时整块填 `enc_zero`，
+ *   见 `ref.ts` 的判据）—— 不要在别处再写一套 `?? 0` / `hasRefValue` 的读口径。
+ */
 export function readIntOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): number {
   const a = operandArg(instr, n);
   switch (a.type) {
@@ -223,7 +227,7 @@ export function readIntOperand(e: Engine, frame: Frame, instr: BinInstruction, n
     case TYPE_LOCAL_STRING2:
       return atoi(a.str ?? String(frame.locals.str.get(a.raw) ?? ''));
     case TYPE_GLOBAL_INT:
-      return i32(dec(e.key, e.globals.int.get(a.raw) ?? 0));
+      return decIntSlot(e.key, e.globals.int.get(a.raw));
     case TYPE_GLOBAL_FLOAT:
       return (e.globals.float.get(a.raw) ?? 0) | 0;
     case TYPE_GLOBAL_STRING:
@@ -235,13 +239,13 @@ export function readIntOperand(e: Engine, frame: Frame, instr: BinInstruction, n
       // 指针操作数：解引用取所指处值（ADR-011）
       return readRef(e, frame, refFromOperand(e, frame, instr, n));
     case TYPE_LOCAL_INT:
-      return i32(dec(e.key, frame.locals.int.get(a.raw) ?? 0));
+      return decIntSlot(e.key, frame.locals.int.get(a.raw));
     case TYPE_LOCAL_FLOAT:
       return (frame.locals.float.get(a.raw) ?? 0) | 0;
     case TYPE_GLOBAL_INT_ARRAY:
-      return i32(dec(e.key, e.globals.int.get(a.raw) ?? 0));
+      return decIntSlot(e.key, e.globals.int.get(a.raw));
     case TYPE_LOCAL_INT_ARRAY:
-      return i32(dec(e.key, frame.locals.int.get(a.raw) ?? 0));
+      return decIntSlot(e.key, frame.locals.int.get(a.raw));
     default:
       throw new Error(`readIntOperand: unsupported type 0x${a.type.toString(16)} for opcode 0x${instr.opcode.toString(16)}`);
   }

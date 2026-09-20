@@ -330,7 +330,11 @@ export interface NativeBridge {
    * 宿主负责：排版在共享层 `scene/ops.ts` 里做（两宿主同一份语义），宿主只做光栅化/记录。
    */
   msgWinSync?(win: number, input: MsgWinInput): void;
-  /** 清空一个消息窗（引擎 `0x85` / `0x301` / `0x71` 开始新一段）。 */
+  /**
+   * 清空一个消息窗（引擎 `0x301`（删该窗绘制项区间）/ `0x71`（开始新一段）/ `sub_404F80`）。
+   * ★订正（`T-0095`）：这里曾写 `0x85` —— `0x85`（`sub_418F50` → `sub_45EBE0` raw 74182-74194）
+   * 清的是**回看页索引表 + 72B 记录表**两张 vector，**不碰**消息窗的绘制项。
+   */
   msgWinClear?(win: number): void;
   /** 全部清空（`op_exit_script` 的 `msgwin.reset()`）。 */
   msgWinClearAll?(): void;

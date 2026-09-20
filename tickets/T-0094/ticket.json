@@ -13,19 +13,24 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "note": "★轮 7 已完成：按体接上第①②路（raw 29071 外层门 / 29075 / 29093 / 29095）—— MessageSpeed!=0 且 ADV 未置 ⇒ effect_flags |= SLEEP_GATE(0x20000000) + sleepUntil = now + max(1,MessageSpeed)；复用 0x6E 的同一机制，未新造字段/机制。文档块已从「未建模（节流半边）」改写为已建模（含三具被调函数 raw 区间表 + 0x20000000 全生命周期）",
       "anchor": "op_display_furigana",
-      "note": "已接外层门 + bit16 + lastArg；第①②路的 effect_flags 0x20000000 与节拍定时器未建模（注释里已写）"
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts"
     },
     {
-      "file": "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts",
+      "note": "★轮 7 已翻正向：原第 3 条「断言尚未建模」删除，改为 L87 正向棘轮（必须装门且 sleepUntil == now+SPEED）+ L100/L113（ADV 已置 / MessageSpeed=0 ⇒ 不装门）+ L129 语料 6341 棘轮 + L238/L248 E3 时序；测试名保留「缺口棘轮」四字以不动本锚点",
       "anchor": "缺口棘轮",
-      "note": "把缺口钉住的棘轮断言 —— 完成本票时改成正向断言"
+      "file": "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts"
     },
     {
-      "file": "engine/天结_unpacked.exe_utf8.c",
+      "note": "第③路（raw 29108）已建模；第①②路在 raw 29075-29095（sub_46BE30 + |= 0x20000000 + sub_453A60），轮 7 已实现",
       "anchor": "*(_DWORD *)(_this + 489988) |= 0x10000u;",
-      "note": "第③路（raw 29108）已建模；第①②路在 raw 29088-29095（`sub_46BE30` + `|= 0x20000000` + `sub_453A60`）"
+      "file": "engine/天结_unpacked.exe_utf8.c"
+    },
+    {
+      "note": "轮 7 已在该节补「落地 + 三具体证 + 实测可观测时序」的订正段",
+      "anchor": "### op-3-004 — 0x196 漏注外层门，且 effect_flags/节拍半边未实现",
+      "file": "docs-new/03-engine/audit-2026-09-opcodes.md"
     }
   ],
   "links": {
@@ -39,11 +44,30 @@
   },
   "notes": "来源 = 轮 6 子代理按体实现 0x196 时的发现（并订正了审计文档的语料计数错误）。★先 grep `//----- (0041FC20)` 定义头再读体。",
   "id": "T-0094",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— 实现 + 守卫翻正向 + E3 已全部落地；审计文档订正已写。等结算的 npm run verify 全绿后转 done（见 changes.md）"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "doing → done —— ①②路节流半边已落地并实测可观测：msgwin.ts 的 op_display_furigana 按 raw 29071/29075/29093/29095 装 SLEEP_GATE + sleepUntil（复用 0x6E 同机制）；棘轮已翻正向（测试名保留「缺口棘轮」四字以不动锚点）；E3 用真 install/CONFIG1.BIN，MessageSpeed=40 ⇒ 66.7ms/处、=0 ⇒ 0ms；审计 op-3-004 与 opcode-table 0x196 行同步；主 agent 独立复跑 19/19；npm run verify 全绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts"
   ]
 }

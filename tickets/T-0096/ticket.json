@@ -3,24 +3,32 @@
   "type": "req",
   "priority": "P2",
   "area": "emulator/render",
-  "why": "轮 6 把 Live2D 节点族 7 条（0x347/0x348/0x349/0x34A/0x34B/0x34C/0x34D）按体改成正确的操作数类型/顺序/落点字段（含把 0x348 改为轴角旋转、`scale` 扩三分量、补窗门 `record[0] & 1`）。\n但**消费端** `sub_4A07F0`（raw 121131-121520，含逐窗插值 + 颜色 + `D3DXMatrix*` 组合）未实现 ⇒ `L2dNode` 的 `scale/rotation/translate/baseOffset/wins` 有值而**没有消费者**（`l2dNodeTransform` 恒单位变换）。缺口已写进 `live2d.ts`/`runtime.ts`/`render.ts` 三个文件的注释。\n当前画面不可观测的依据：语料只有 `0x344`（TITLE）建节点，`0x349`(7)/`0x34D`(12) 的键在 BTL 里能被 `0x344` 建出 —— 属**潜伏**，不是「无影响」；且这正是 `T-0054`（Live2D 支持）M2「语义对齐」的必做项。",
+  "why": "轮 6 把 Live2D 节点族 7 条（0x347/0x348/0x349/0x34A/0x34B/0x34C/0x34D）按体改成正确的操作数类型/顺序/落点字段（含把 0x348 改为轴角旋转、`scale` 扩三分量、补窗门 `record[0] & 1`）。\n但**消费端** `sub_4A07F0` 未实现 ⇒ `L2dNode` 的 `scale/rotation/translate/baseOffset/wins` 有值而**没有消费者**（`l2dNodeTransform` 恒单位变换）。缺口已写进 `live2d.ts`/`runtime.ts`/`render.ts` 三个文件的注释。\n★**轮 7 规格分析纠错**：票面旧写的「体 = raw 121131-121520」**是被截断的区间** —— 真身 = raw **121131-121655**（`.lst` `sub_4A07F0` 0x4A07F0–endp 004A1850）；被截掉的 121525-121655 正好是**第 4 个窗（平移）的全部求值** + **最终 6 次 `D3DXMatrixMultiply` 的组合序与 `T(+pivot)`** ⇒ 只按旧区间实现会丢组合序。\n当前画面不可观测的依据：语料只有 `0x344`（TITLE）建节点，`0x349`(7)/`0x34D`(12) 的键在 BTL 里能被 `0x344` 建出 —— 属**潜伏**，不是「无影响」；且这正是 `T-0054`（Live2D 支持）M2「语义对齐」的必做项。",
   "acceptance": [
-    "按体实现 `sub_4A07F0`（raw 121131-121520）的节点矩阵合成：窗插值（delay/dur/起点）、颜色通道、`D3DXMatrixScaling`/`RotationAxis`/`Translation` 与基础偏移的组合序（给出左右序判据）",
-    "`l2dNodeTransform` 由恒单位变换改为读合成结果；`render.ts` 用它出画（消费端真实，不许只写不读）",
-    "守卫：合成指令建节点 → 逐条窗指令 → 在若干 `clock` 下断言矩阵/位置（含窗末冻在终值、门 `record[0]&1` 未置时收不到窗）",
-    "与 `T-0054` 的 M2 对齐：把本票结果写回 `docs-new/03-engine/live2d-moc-format.md` / `live2d.md` 的对应节",
+    "按体实现 `sub_4A07F0`（★真身体 = raw **121131-121655**；票面旧写的 121131-121520 是被截断的区间，见 `tickets/T-0096/design.md` §0）的节点矩阵合成：4 个窗的插值（delay/dur + 起点锁存 `record+24`）、颜色通道、`D3DXMatrixScaling`/`RotationAxis`/`Translation` 与 base/pivot 的组合序",
+    "★组合式必须按体：`a3_out = a3_in · T(−p) · M_base(+508) · M_scale · M_rot · M_trans · T(+p)`（**右乘/追加**，D3DX 行向量；判据 = `.lst` 266233-266234 的 `push esi; push esi` ⇒ pOut = pM1·pM2）⇒ 对模型点（z≡0）：`q = (q0 − p)·(M_scale·M_rot) + p + t`，**pivot 是缩/旋转中心、t 不被旋转**；实现时注意引擎行向量 ↔ `Affine` 列向量要**取转置**",
+    "`l2dNodeTransform` 由恒单位变换改为读合成结果；`render.ts` 用它出画（消费端真实，不许只写不读）；落点 = `src/renderer/scene/ops.ts` 的 `scL2dTick`（它已拿到帧时钟与「本帧真的会画的节点」集合，与引擎「推进与出画同一次调用」同构）",
+    "守卫（E2）：合成指令建节点 → 逐条窗指令 → 在若干 `clock` 下断言矩阵/位置（含窗末冻在终值且 delay=dur 归零、门 `record[0]&1` 未置时收不到窗、左右序判据、旋转窗的非单位轴）；另加场景级不变量（E3）：TITLE（`src/TITLE.txt:590 i344 14 0`）的 `snapshot.l2d.nodes[].rect` **逐字节不变**（矩阵=I 的零回归）",
+    "★**验收修正（轮 7 规格分析 + 用户裁定）**：窗1（颜色）的**输出**被唯一调用方丢弃（raw 134347 立刻把颜色出参改写成槽下标），但 `sub_4A07F0` 在颜色窗分支里**仍有副作用**（吸附分支写 `color_from ← color_to`、`color_to = NAN`、`delay = dur = 0`；插值分支写 `*a4`）⇒ **函数不是无副作用的**。按用户裁定（「引擎丢弃结果**且**函数无副作用才可忽略，否则必须记录忽略情况」）：**必须登记被忽略的情况** —— 实现时把颜色窗的**记录副作用照体做**（from←to / to←NAN / delay=dur=0），`*a4` 因无消费者可丢；「丢什么、留什么」写进代码注释 + `design.md` §6.2，并加一条守卫断言『颜色窗吸附后 delay/dur 归零且 from←to』（副作用可观测），**不**为 `*a4` 的数值设验收；`+504.bit0` 的 alpha 强制 0 分支对 0x342-0x352 族**不可达**（唯一致写者是 +1080 族）",
+    "与 `T-0054` 的 M2 对齐：把本票结果写回 `docs-new/03-engine/live2d.md`（§2 补完整 572B 字段表、§5/§5.1 补组合式与 `world = T(居中)·nodeMatrix`）；`live2d-moc-format.md` 只需交叉引用一行",
+    "E4：TITLE 静态帧零回归**可无条件做**；INFOEN 正例可达性**未知**（须实测；照 `T-0091` 先例，不可达就如实登记 + E3 兜底）",
     "npm run verify 全绿"
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/live2d/render.ts",
       "anchor": "l2dNodeTransform",
-      "note": "当前恒单位变换 —— 本票的消费端落点"
+      "note": "当前恒单位变换 —— 本票的消费端落点（render.ts:137-139；消费点 182/199-205）",
+      "file": "app/amayui-emulator/src/live2d/render.ts"
     },
     {
-      "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (004A07F0)",
-      "note": "节点矩阵合成器的定义头（体 = raw 121131-121520）"
+      "note": "节点矩阵合成器的定义头；★真身体 = raw 121131-121655（票面旧写 121131-121520 是被截断的区间，被截掉的是平移窗 + 组合序）",
+      "file": "engine/天结_unpacked.exe_utf8.c"
+    },
+    {
+      "anchor": "## 1. `sub_4A07F0` 完整语义",
+      "note": "轮 7 只读规格分析全文（43KB）：签名/参数角色、4 个窗的求值三分支、组合式与左右序判据、572B 全字段表（含写者/读者 raw）、消费链与「矩阵去处 = D3D 世界矩阵」、emulator 现状差异（含 l2dNodeReset 偏差）、分档落地路径、风险与 10 条未确证项",
+      "file": "tickets/T-0096/design.md"
     }
   ],
   "links": {
@@ -35,11 +43,45 @@
   },
   "notes": "轮 6 子代理 T2 的诚实登记（明确缩小范围、不做凭空近似）。",
   "id": "T-0096",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— 实现 + 18 条新守卫 + E3 真资产零回归 + 外部 DLL oracle 对照全部落地，能力台账/文档/opcode-table 已同步；仅剩全量 npm run verify ⇒ done"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。合成器 nodeMatrix.ts + runtime/render/ops 接线、18 条新守卫（含 E3 真 TITLE 资产零回归）、外部 d3dx9_43.dll oracle 对照、四条\"未确证项\"钉死（dbl_51FB50=1000、a2[18]=0xFFFFFFFF、D3DX 内部归一化轴、pivot 不是不动点）、能力台账新增 live2d-node-matrix-compose（135 条）、live2d.md/opcode-table 同步"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/l2d-node-compose.test.ts",
+    "app/amayui-emulator/test/l2d-node-transform-ops.test.ts",
+    "app/amayui-emulator/test/live2d-render.test.ts",
+    "app/amayui-emulator/test/slot-load-l2d-reset.test.ts"
   ]
 }

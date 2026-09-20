@@ -172,9 +172,11 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   （后三条过去**根本不在任何表里** ⇒ 命中即硬报错）；记账开关 `0x1BB`（SetTB）。
   //   ⇒ 回想/历史（`HISTORY.txt`）与语音重播（`REPLAYVOICE.txt`）的数据源就此打通。
   //
-  //   ⚠同族里**仍未实现**的一条：`0x1D0`（sub_42D440 → sub_459860 raw 38099）读的是**另一张表**
-  //   （回看页索引表 `Font+3380`，8B/条 `{槽号, 回看下标}`）⇒ 写回 `o1/o2`；它不在本次批次里，**故意不上桩**。
-  //   证据：`src/CONFIG.txt:26-38`（CONFIG 屏配置项枚举：`i1d0` 取一段 → `i1d3` 查键 `-1` 的哨兵记录）。
+  //   ★`0x1D0`（sub_42D440 → sub_459860 raw 70629-70724）读的是同族的**另一张表**
+  //   （回看页索引表 `Font+3380`，8B/条 `{窗号, 起始记录下标}`）⇒ 写回 `o1/o2`。
+  //   **2026-09（`T-0095`）已转真实现**：`handlers/text-items.ts` 的 `[0x1d0, op_backlog_page_at]`
+  //   + `0x85` 清两表；页表的两个写端在 `handlers/msgwin.ts`（`0x70` raw 73186 无门 / `0x71` raw 74271 有门）。
+  //   语料 5 处：`src/CONFIG.txt:22`、`HISTORY.txt:31/761/1130`、`REPLAYVOICE.txt:13`。
   // ★`0x73`（字格+逐字节拍）与 `0x1CE`（逐字开关）已升为 `MSGWIN_OPS` 真实现 ——
   //   它们写的是窗对象的 `win+60..99` 字格块与 `effect_flags & 0x40000000`，
   //   是逐字显现的**可观测状态**（引擎主循环 raw 20887-20895 每帧消费），不能当 no-op。

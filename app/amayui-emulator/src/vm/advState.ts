@@ -13,11 +13,13 @@
  * 复位两张面板、`sub_45F1B0` 额外块…）⇒ emulator 用"存一份、读档装回"达到同一效果。
  *
  * 只搬**纯数据**（数字/字符串/数组）；Map 类容器（`routes` 的 entries、`textItems.records`、
- * `stage.entries` 都是数组 ✓）逐条拷。
+ * `textItems.pages`、`stage.entries` 都是数组 ✓）逐条拷。
+ * ★`T-0095` 补：回看页索引表 + 双游标（`textItems.pages`/`cursor`/`baseCursor`）也走这里 ——
+ * 引擎侧它们的持久化载体是 `SaveTextBuf.dat`（与 72B 记录表同一个缓冲区，raw 69553）。
  */
 import type { Engine } from './engine.js';
 import type { RouteEntry } from './route.js';
-import type { TextItemRecord } from './textItems.js';
+import type { BacklogPage, TextItemRecord } from './textItems.js';
 import type { StageEntry } from './stageLoop.js';
 
 /** 阶梯动画时间表（`StageLoop` 的可搬子集）。 */
@@ -32,6 +34,22 @@ export interface StageStateJson {
   resumeDword: number;
 }
 
+/**
+ * 回看页索引表 + 双游标（`T-0095`）。
+ *
+ * 引擎里这张表**是持久化的**：`SaveTextBuf.dat` 的缓冲区首 dword = 页条数、随后 8 B/条
+ * （写 `sub_457CE0` raw 69553/69572；读 `sub_45F1B0` 先清两表 raw 74482、再逐条 push raw 74490-74494），
+ * 缓冲区大小 = `44*记录条数 + 8*页条数`（raw 69553）⇒ 记录表与页表**同进同出**。
+ * emulator 不写 `SaveTextBuf.dat`，用本快照承担同一角色（与 `textItems` 的 72B 记录表并列）。
+ */
+export interface BacklogStateJson {
+  pages: BacklogPage[];
+  /** `Font[860]`（`Font+3440`）：当前读游标。 */
+  cursor: number;
+  /** `Font[859]`（`Font+3436`）：push 时刻的末项下标。 */
+  baseCursor: number;
+}
+
 /** ADV/场景的 VM 侧状态。 */
 export interface AdvStateJson {
   /** `engineValues`（引擎字段表）里除"读档流程自己用"的几格之外的全部。 */
@@ -40,6 +58,11 @@ export interface AdvStateJson {
   /** `MsgWindow` 的标量字段（数字；Map 类容器不进这里）。 */
   msgwin?: Record<string, number>;
   textItems?: TextItemRecord[];
+  /**
+   * 回看页索引表 + 双游标。★**可选**：`T-0095` 之前存的档没有这一格
+   * （装载时按"引擎读档会把表读成空"处理 —— 那也确实是旧档的等价语义，因为旧引擎侧没有模型）。
+   */
+  backlog?: BacklogStateJson;
   stage?: StageStateJson;
 }
 
@@ -57,6 +80,11 @@ export function snapshotAdvState(e: Engine): AdvStateJson {
     routes: e.routes.entries.map((r) => ({ ...r })),
     msgwin,
     textItems: e.textItems.records.map((r) => ({ ...r })),
+    backlog: {
+      pages: e.textItems.pages.map((p) => ({ ...p })),
+      cursor: e.textItems.cursor,
+      baseCursor: e.textItems.baseCursor,
+    },
     stage: {
       entries: st.entries.map((x) => ({ ...x })),
       cursor: st.cursor,
@@ -85,6 +113,12 @@ export function restoreAdvState(e: Engine, s: AdvStateJson): void {
   if (s.textItems) {
     e.textItems.records.length = 0;
     for (const r of s.textItems) e.textItems.records.push({ ...r });
+  }
+  if (s.backlog) {
+    e.textItems.pages.length = 0;
+    for (const p of s.backlog.pages) e.textItems.pages.push({ ...p });
+    e.textItems.cursor = s.backlog.cursor;
+    e.textItems.baseCursor = s.backlog.baseCursor;
   }
   if (s.stage) {
     const st = e.stage;

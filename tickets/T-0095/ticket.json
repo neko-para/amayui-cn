@@ -3,24 +3,31 @@
   "type": "req",
   "priority": "P2",
   "area": "emulator/msgwin",
-  "why": "分诊（`tickets/T-0093/deferred-triage-report.md` A 段 #7）把 0x1d0 归为 deferred 28 条里少见的「① 现在就能做」：体 `raw 38105-38109`，被调 `sub_459860`（raw 70629-70724）**零 GDI / 零字体度量调用**（逐行核过），只碰 `Font[841]`（72 B/条、+40 = flags）、`Font[845]`（8 B/条页表）、`Font[846]`/`Font[860]`，按带符号步数 `a4` + 掩码 `a5 = 2` 步进 ⇒ 语义 = 「回看页索引表·带步数读出」（op1 = 页窗口号、op2 = 该页在记录表的起始下标，失败 `-1/-1`）。\n★此前把这一族标成「GDI 文本度量族」是**整条归口错**（轮 4 已订正标签），但它仍被 deferred —— 卡点不是度量，而是**写端未建模**：不连写端（页表是怎么被填的）一起做，读端恒 `-1/-1`（= 永远空回看）。\n语料：HISTORY 3 / CONFIG 1 / REPLAYVOICE 1。",
+  "why": "分诊（`tickets/T-0093/deferred-triage-report.md` A 段 #7）把 0x1d0 归为 deferred 28 条里少见的「① 现在就能做」：体 `raw 38105-38109`，被调 `sub_459860`（raw 70629-70724）**零 GDI / 零字体度量调用**（逐行核过），只碰 `Font[841]`（72 B/条、+40 = flags）、`Font[845]`（8 B/条页表）、`Font[846]`/`Font[860]`，按带符号步数 `a4` + 掩码 `a5 = 2` 步进 ⇒ 语义 = 「回看页索引表·带步数读出」（op1 = 页窗口号、op2 = 该页在记录表的起始下标，失败 `-1/-1`）。\n★此前把这一族标成「GDI 文本度量族」是**整条归口错**（轮 4 已订正标签），但它仍被 deferred —— 卡点不是度量，而是**写端未建模**：不连写端（页表是怎么被填的）一起做，读端恒 `-1/-1`（= 永远空回看）。\n语料：HISTORY 3 / CONFIG 1 / REPLAYVOICE 1。\n★**轮 7 规格分析已收口前置**：写端逐行读完（`sub_45D660` raw 73133-73192 ／ `sub_45EC60` raw 74197-74281），页表 `Font+3380` 的**全部**写点已穷举 = 3 处（raw 73186 的 0x70 ／ 74271 的 0x71 ／ 74494 的读档 `sub_45F1B0`）；`0x1d0` 判定为**纯 VM 状态、零宿主缝、现在就能做**（输入是 emulator 自有数组、输出是操作数回写、两个写端都在 `OPS`、`0x85` 同为 VM 内部）⇒ **不再有卡点，建议按 implemented 落地**。全文见 `tickets/T-0095/design.md`（40KB）。",
   "acceptance": [
-    "先读写端：`0x70`（`sub_45D660` raw 73181 起）/ `0x71`（`sub_45EC60` raw 74267 起）的体，确定页表（`Font[845]`）与记录表（`Font[841]` + 72 B/条、`+40` = flags）的写入形状与不变量",
-    "实现 0x1d0 读端（op1/op2/op3 → `sub_459860` 语义）与写端按体落地；给出「页表 → 回看页」的模型（能过 `check:dead-writes`：模型必须有真消费者 —— 回看页渲染或至少 HISTORY 场景断言）",
-    "守卫：HISTORY（或合成指令）证明写满一页后读端返回非 `-1/-1`，且步数/掩码语义与体一致",
-    "若写端读完后判定需要 GDI 文本页渲染器（`sub_4675A0`，1210 行）才能收口，则**降级为有据 partial/deferred** 并写明前置（不许硬接）",
+    "★写端已读完（轮 7 规格分析，全文 tickets/T-0095/design.md）：0x70 = sub_41ED20 → sub_45D660（raw 73133-73192）、0x71 = sub_41ED80 → sub_45EC60（raw 74197-74281）；两条写端形状相同 = {窗号, 当前记录条数 = (Font[842]-Font[841])/72}，各 push 恰好 1 条（raw 73183-73190 / 74269-74274）；唯一差异 = 0x71 有 SetTB 门（a3 = Engine[97055] >= 0，raw 74267），0x70 的 a7 恒传 0（raw 28415）⇒ 无门、永远 push",
+    "按体实现 0x1d0 读端（sub_459860 raw 70629-70724）：op3 = 带符号相对步数（相对游标 Font[860]）、常量掩码 2、计格规则 = 页 start 在记录表范围内 且 (2 & 记录[start].flags) == 0 且去重；op1 = 窗号、op2 = 该页在 72B 记录表的起始下标；失败一律 -1/-1。纯 VM 状态、零宿主缝（输入是 emulator 自有数组、输出是操作数回写、两个写端都在 OPS）",
+    "连带按体修三处既有缺陷（同一批体证据）：① 0x71 的 SetTB 门在 emulator 没实现（m.textSlotArg 全库只被初始化、从未赋值 ⇒ 恒 0 ⇒ 门恒真）⇒ 改用 ENGINE_FIELD.textBaseGate；② 0x70（op_window_geometry）在引擎里也 push 页 + 置组首标记 Font[849+win]（raw 73186-73187）⇒ emulator 两件都没做；③ 0x85（sub_418F50 → sub_45EBE0 raw 74188-74193）= 清空记录表 + 页表两张 vector（不是 GDI 行/段容器）⇒ 纯 VM 可实现，opcode-gaps.json 里那条理由须一并订正",
+    "守卫 test/op-1d0-page-index.test.ts（并改写 test/op-1d0-1d1-text-metrics.test.ts 里「不许注册」的断言 —— 该文件自己写明实现了就改真行为断言）：push 形状 / 游标复位 / i1d0 步数 0 输出当前页 / 步数 -1 退回 / 步数 -99 越界 -1,-1 / 重复页去重 / 记录 flags bit1 跳过 / i1bb 0 期间 i071 不 push 而 i070 仍 push / i085 清空两表 / i1d0 的 op2 能直接喂给 i1d3。",
+    "E3：install/CONFIG.BIN 就是载体（emulator 解析器实测：426 条指令，含 0x1d0 一条且实参与 src/CONFIG.txt:22 逐字对应）—— ★但 CONFIG 自己只读页表（页由主 ADV 的 i071 填）⇒ 必须先播合成前奏 push 记录与页，否则 i1d0 合理返回 -1,-1（如实写清，不许假装全真实链路；要全真实就 boot install/CONFIG1.BIN 走到设置画面）",
+    "★不降级：0x1d1 的 GDI 文本页渲染器（sub_4675A0，1210 行）不是本票前置 —— 它是同子系统的渲染端（0x1d0 = 导航读端），继续留在 T-0085/route-c 的缺口里",
     "npm run verify 全绿"
   ],
   "evidence": [
     {
-      "file": "analysis/opcode-gaps.json",
-      "anchor": "\"mnemonic\": \"i1d0\"",
-      "note": "0x1d0 的 deferred 条目（含「零 GDI」的订正与失败返回 -1/-1）"
+      "file": "tickets/T-0095/design.md",
+      "anchor": "## 0. 结论速览",
+      "note": "轮 7 只读规格分析全文（40KB）：分派表双向核对、0x1d0 体/被调体逐行、写端 0x70/0x71 的 push 形状与门、清表 0x85、存档/读档持久化、内存归属与 fields.json 核对、emulator 现状差异（含 0x71 门写错）、落地路径、11 条守卫断言、E3 载体实测、语料两种写法计数、8 条未确证项"
     },
     {
-      "file": "engine/天结_unpacked.exe_utf8.c",
-      "anchor": "//----- (0042D440)",
-      "note": "0x1d0 的 handler 体定义头（raw 38098 起）；被调 sub_459860 在 raw 70629-70724"
+      "file": "analysis/fields.json",
+      "anchor": "\"name\":\"backlog_pages_begin\"",
+      "note": "页索引表 begin（Font/0x15A64）—— 本轮补全同族 end/cap（0x15A68/0x15A6C）并把写者证据补到 3 处（raw 73186/74271/74494）"
+    },
+    {
+      "file": "analysis/opcode-gaps.json",
+      "anchor": "\"mnemonic\": \"i1d0\"",
+      "note": "0x1d0 的 deferred 条目（本票落地后应改 implemented）；同族 0x85 的处置理由（「GDI 文本对象的行/段容器」）是错的，须一并订正"
     }
   ],
   "links": {
@@ -35,7 +42,7 @@
   },
   "notes": "分诊报告 A 段 #7 + §D-4（写端体未读 = 唯一前置）。★动手第一件事 = 读 `sub_45D660`/`sub_45EC60`。",
   "id": "T-0095",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
@@ -44,6 +51,40 @@
     {
       "at": "2026-09-20",
       "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— 实现 + 守卫(14/14) + E3 + 台账结算全部落地；仅剩结算的「npm run verify 全绿」这一步（当前被 T-0096 在飞的 4 条 Live2D 测试挡住）⇒ 转 done"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "doing → done —— 全量 npm run verify 绿（909/909 pass、0 fail、死写 0）⇒ 收口。实现（textItems/pages+双游标/pageAt+moveCursor+clearBacklog、0x1d0/0x85 进 OPS、0x70 无门 push+组首、0x71 真门）、14+5 条守卫、E3（install/CONFIG.BIN 426 条、下标 14、实参 local-int 5/6/7，含\"无前奏⇒合理 -1/-1\"的诚实对照）、缺口台账（deferred 22→20、已实现 36→38）+ opcode-table 四行 + 生成物 全部落地"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-1d0-page-index.test.ts",
+    "app/amayui-emulator/test/op-1d0-1d1-text-metrics.test.ts",
+    "app/amayui-emulator/test/registry-tables.test.ts",
+    "app/amayui-emulator/test/opcode-gaps.test.ts"
   ]
 }

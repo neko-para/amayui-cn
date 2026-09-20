@@ -47,7 +47,7 @@ import {
 import type { SceneState } from './state.js';
 import type { SceneXform, SceneXformKind } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
-import { l2dAdvance, l2dNodeDrawable } from '../../live2d/runtime.js';
+import { l2dAdvance, l2dComposeNodeAt, l2dNodeDrawable } from '../../live2d/runtime.js';
 import { scTransitionsPending } from './transition.js';
 
 /**
@@ -826,7 +826,12 @@ export function scMsgWinSync(s: SceneState, win: number, input: MsgWinInput): Te
   return frame;
 }
 
-/** 清空一个消息窗（引擎 `0x85` 清行队列 / `0x301` 删绘制项区间 / `0x71` 开始新一段）。 */
+/**
+ * 清空一个消息窗（引擎 `0x301` 删绘制项区间 / `0x71` 开始新一段 / `sub_404F80`）。
+ * ★订正（`T-0095`）：这里曾把 `0x85` 也列进来 —— `0x85`（`sub_418F50` → `sub_45EBE0` raw 74182-74194）
+ * 清的是**回看页索引表 + 72B 记录表**，与消息窗绘制项无关（`msgWinClear` 的调用者只有 `0x301` 与
+ * `engine.ts` 的 `sub_404F80` 那条路）。
+ */
 export function scMsgWinClear(s: SceneState, win: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.msgWins.delete(win);
@@ -1293,27 +1298,41 @@ export function scSetSceneAxisTranslation(s: SceneState, a: number, b: number, x
 }
 
 /**
- * **每帧推进 Live2D 动作**（= 引擎"绘制 572B 节点那一次调用"里的 `sub_4BCB50`）。
+ * **每帧推进 Live2D 动作 + 合成节点矩阵**（= 引擎"绘制 572B 节点那一次调用"里的 `sub_4BCB50`
+ * 与 `sub_4A07F0`）。
  *
- * ★为什么是"共享层的一个 tick"而不是各宿主自己算：引擎里**动作推进与出画是同一次调用**
- * （`sub_4B0360` → `sub_4783D0`；能力条目 `live2d-node-draw-advance`，raw 92578-92615），
- * 而且**只有"这一帧真的要画的节点"才推进** —— 槽空/节点没建的 L2D 不消耗时间轴。
+ * ★为什么是"共享层的一个 tick"而不是各宿主自己算：引擎里**动作推进、节点矩阵合成与出画是同一次调用**
+ * （`sub_4B0360` → `sub_4A07F0` raw 134341 → `sub_4783D0`；能力条目 `live2d-node-draw-advance`，
+ * raw 92578-92615），而且**只有"这一帧真的要画的节点"才推进** —— 槽空/节点没建的 L2D 不消耗时间轴。
  * 两个宿主（Pixi / headless）都必须经这里推进，否则"报告里的立绘"与"画面上的立绘"会处在
  * 动作时间轴的不同位置（同类漂移见 `sceneModel.ts` 顶部）。
  *
+ * ★2026-09（`tickets/T-0096`）新增**节点矩阵合成**：引擎的合成器 `sub_4A07F0`
+ * （raw 121131-121655）就在逐节点绘制里跑，所以这里同步跑一遍（写入 `node.matrix`，
+ * 由 `live2d/render.ts` 的 `l2dNodeTransform` 读走）⇒ 桌面端画面与无头快照仍然是同一份几何。
+ * 窗起点的锁存（`record+24 = 0 ⇒ now`，raw 121261-121265）也在这里发生 ⇒ **即使本帧 delta = 0
+ * 也必须跑合成器**（否则第一条窗指令的起点会晚一帧才锁存）。
+ *
  * @param nowMs 本帧时钟（与 `scAdvance` 同一个 `clockMs`；`dirty` 由本函数自己置）
- * @returns 参与本帧推进的节点 key（诊断/报告用；空数组 = 本帧没有可画的 L2D 节点）
+ * @returns 参与本帧推进与合成的节点 key（诊断/报告用；空数组 = 本帧没有可画的 L2D 节点）
  */
 export function scL2dTick(s: SceneState, nowMs: number): number[] {
   const host = s.l2dHost;
   if (!host) return [];
   const delta = s.l2dLastMs < 0 ? 0 : Math.max(0, nowMs - s.l2dLastMs);
   s.l2dLastMs = nowMs;
-  if (delta === 0) return [];
   // 只有"这一帧真的会画"的节点才推进（引擎同一条门控：槽里得有模型）
   const drawn = [...host.l2dNodes.values()].filter((n) => l2dNodeDrawable(host, n)).map((n) => n.key);
   if (drawn.length === 0) return [];
-  const overrides = l2dAdvance(host, delta, drawn);
-  if (overrides.size > 0) s.dirty = true;
+  if (delta > 0) {
+    const overrides = l2dAdvance(host, delta, drawn);
+    if (overrides.size > 0) s.dirty = true;
+  }
+  // ★节点矩阵合成：**每帧每节点一次**（与引擎同序：在出画之前）。帧级标志（`M[46512]` 的
+  //   winSkip / `M[46528] & 4` 的 alpha 门）emulator 暂无对应字段 ⇒ 用引擎缺省值（都 false）。
+  for (const key of drawn) {
+    const node = host.l2dNodes.get(key);
+    if (node) l2dComposeNodeAt(node, nowMs);
+  }
   return drawn;
 }

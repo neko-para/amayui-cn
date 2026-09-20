@@ -192,15 +192,25 @@ test('0x2C9：op1 = &数组[op3]（写指针），且按需扩容把**缺失槽*
   assert.equal(readIntOperand(e, frame, instr(0x9, [lInt(BASE)]), 1), 0);
 });
 
-test('★补 0 是有意义的：DEC key ≠ 0 时，缺失槽读出来**不是 0**（引擎那边是 ENC(0) ⇒ 0）', () => {
+test('★缺槽口径统一：key ≠ 0 时"从未写过的槽"也读 **0**（引擎那边是 `enc_zero`；T-0097 ③）', () => {
   const { e, run } = mk();
   const frame = e.curScript();
-  e.key = 0x12345678; // 真实运行期的 key（引擎从资源里取；测试里 M0 缺省是 0）
+  e.key = 0x12345678; // 真实运行期的 key（引擎从资源里取；读真存档时由 handlers/save-slot.ts 设回）
   const BASE = 0x90;
-  const absent = readIntOperand(e, frame, instr(0x9, [lInt(BASE)]), 1);
-  assert.notEqual(absent, 0, 'key≠0 时"从未写入的槽"会读成 dec(key,0) 的垃圾值');
+  // ★本条此前断言的是**相反**的东西（"key≠0 时缺槽读成 `dec(key,0)` 的垃圾值"）—— 那是修前
+  //   `readIntOperand` 的缺省写法 `?? 0` 造成的**口径错**（`dec(key,0) = ror32(key,25) ≠ 0`）。
+  //   引擎装载脚本时把 int 池整块填 `enc_zero`（`loadScriptFrame_40ED40` raw 18773-18781）⇒ 缺槽 = 0；
+  //   现在读侧统一走 `ref.ts` 的 `decIntSlot`（判据与棘轮见 `test/operand-missing-slot-zero.test.ts`）。
+  assert.equal(
+    readIntOperand(e, frame, instr(0x9, [lInt(BASE)]), 1),
+    0,
+    'key≠0 时"从未写入的槽"必须读 0（引擎：装载时整块填 `enc_zero`）',
+  );
   run(0x2c9, [lPtr(0), arr(0x8009, BASE), im(2)]);
   for (let k = 0; k <= 2; k++) {
+    // 0x2C9 的补 0 仍然有意义：引擎的**扩容**会逐个把新元素写成 ENC(0)（`sub_4344A0` raw 42526-42531）
+    // ⇒ emulator 也把槽**写实**（不只是"读的时候当 0"），此后 `.has()` / 写侧判据与引擎同形。
+    assert.equal(frame.locals.int.has(BASE + k), true, `槽 ${k} 应被 0x2C9 写实`);
     assert.equal(readIntOperand(e, frame, instr(0x9, [lInt(BASE + k)]), 1), 0, '补 0 后与引擎一致');
   }
 });

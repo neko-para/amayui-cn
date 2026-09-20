@@ -1,0 +1,42 @@
+{
+  "title": "文本/消息窗的两处遗留口径：默认窗有两个真源（i080 之前不一致）+ MsgWindow.textSlotArg 是死字段",
+  "type": "refactor",
+  "priority": "P3",
+  "area": "emulator/msgwin",
+  "why": "轮 8 实现 T-0095（0x1d0 回看页）时顺手读出的两处遗留，**今天都不可观测**，但属静默分歧/死代码：\n**D5 默认窗双真源**：`MsgWindow.defaultWin`（`src/vm/msgwin.ts`，初值 **1**，与引擎 `Font[307]` 初值一致，`resolveWin(0)` 用它）与 `handlers/text-items.ts` 的 `defaultWin(e)`（读 `engineValues.get(21631) ?? 0`，初值 **0**）是**两份**。`0x80` 同时写两者（`handlers/msgwin.ts`）⇒ 任何 `i080` 之后一致；但**在 `i080` 之前**，`i071 0`/`i070 0` push 的回看页 `win=1`，而 `i1d2` push 的记录 `win=0`。目前没有任何路径按 `win` 过滤记录 ⇒ 不可观测；一旦将来有路径按窗过滤，就会静默错配。\n**D6 死字段**：`MsgWindow.textSlotArg` 两处初始化、**零赋值、订正后零读取**（T-0095 之前它还被用来判一个恒真的门 `textSlotArg >= 0`，那是既有缺陷、已改成 `ENGINE_FIELD.textBaseGate`）⇒ 纯死代码；T-0095 只在注释里标为历史遗留并保留（怕影响按名快照的调用方）。",
+  "acceptance": [
+    "D5：让两处取「默认窗」的口径收敛成**一处** —— 首选让 `handlers/text-items.ts` 的 `defaultWin(e)` 读 `e.msgwin.defaultWin`（或在引擎初始化处把 `ENGINE_FIELD.defaultWindow` 播成 1，使 `?? 0` 不再生效）；判定前先确证引擎侧的唯一真源（`Font[307]` = `Font+1228`，raw 73148-73152 的 `if (!a2) a2 = *(Font+1228)`）",
+    "D5 守卫：合成指令在**任何 `i080` 之前** `i071 0` + `i1d2`，断言页与记录的 `win` **相同**（现在是 1 vs 0）",
+    "D6：删掉 `MsgWindow.textSlotArg` 及其两处初始化（先确证没有按名快照/回放调用方依赖它 —— `advState` 的按名序列化要核），或写明为什么必须保留（不许只留一句注释）",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0095/changes.md",
+      "anchor": "D5",
+      "note": "两处发现的出处（轮 8 实施者报告，含 D5/D6 的原文与判据）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "0x1D0",
+      "note": "T-0095 把 0x1D0 从「未实现」改成「已转真实现」的同批改动（说明本轮确实读了这一族）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0095"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md"
+    ]
+  },
+  "notes": "来源 = T-0095 的「新发现（规格未提）」两条（D5/D6）。★本轮只登记不修（用户口径：T-0099/T-0100 那批只登记；这两条同属顺手捡到的遗留）。",
+  "id": "T-0101",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

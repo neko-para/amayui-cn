@@ -1,0 +1,49 @@
+{
+  "title": "进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/adv",
+  "why": "**用户实测（轮 8）**原话两条：\n① 「从 SN0000 进入到 SC0000 后的 ADV 窗口背景是**白色**的，但是展开收起侧边栏菜单似乎刷新了界面导致其正确变成了**半透明黑色**」—— 即窗口的离屏表面/样式在场景切换后**没有被重新光栅化**，直到某个别的路径（侧边栏菜单）触发一次重绘才正确。\n② 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」—— 角色名文本的颜色不对（青色 ≈ 橘色的 R/B 互换，属可疑的通道顺序问题，但**必须先取证**再下结论）。\n★**当前假设（待验证，不许当结论）**：这两条很可能是**同一个根因**的可见面 —— 与同批修的「逐字不发布」同源：`Engine.serviceTextReveal` 修前漏掉了 `#publishReveal`（`tickets/T-0100` 的改动②）⇒ `msgWinSync` 在整段逐字期间**一次都不发生** ⇒ 宿主既不更新逐字，也可能不更新该窗的**底色/样式**（窗口背景与角色名同属一张窗纹理）。该发布已在本轮恢复（`adv-reveal-under-throttle.test.ts` 两条守卫 + 已证明的辨别力）⇒ **先请用户复验**这两条是否随之消失。",
+  "acceptance": [
+    "★第一步是**复验**（用户口径）：在逐字发布修复之后，① 进 SC0000 后 ADV 窗口背景是否仍为白色、② 阿瓦罗角色名是否仍为青色 —— 若都已正确 ⇒ 本票按「随 T-0100 的发布修复一并消除」关单，并把复验结论写进 `changes.md`",
+    "若 ① 仍在：取证 == 在 `textLayer.ts`/`pixiBackend` 侧确认「该窗的纹理是何时被创建/更新的」—— 白色 = 表面存在但底色没画（或画成默认色）。判据要落到**具体代码点**（`rasterFrame` 的底色来源、`emitWin` 的 style 快照、`scMsgWinSync` 的 rev 变化），不许只描述现象",
+    "若 ② 仍在：取证 == 把「橘色 vs 青色」的**通道顺序**查清（`0x76`/`0x77` 的 BGR→RGB 交换、`FontStyleSnapshot` 的入队时机、`rasterFrame` 的 fill/outline 取色），给出与引擎一致的判据（角色名用的是哪个颜色字段、期望值的来源）",
+    "两条都补守卫（场景级不变量优先：进 SC 后该窗的底色/角色名色 == 期望值；若只能 E4 目视，必须在票里写明为什么无法自动化）",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0100/changes.md",
+      "anchor": "坑 A",
+      "note": "同批修复的「逐字不发布」= 本条最可能的同源根因（修前 msgWinSync 在整段逐字期间一次都不发生）"
+    },
+    {
+      "file": "app/amayui-emulator/test/adv-reveal-under-throttle.test.ts",
+      "anchor": "逐步发布",
+      "note": "本轮恢复的发布路径守卫（含已证明的辨别力）；本票的复验基准"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textLayer.ts",
+      "anchor": "rasterFrame",
+      "note": "宿主侧光栅化点：窗口底色 + 逐字裁剪都在这条路上 ⇒ ① 的取证落点"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0100",
+      "T-0033"
+    ],
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md"
+    ]
+  },
+  "notes": "来源 = 用户轮 8 的 E4 实测原话（两条）。★纪律：先复验再动手 —— 极可能随 T-0100 的发布修复一并消失；不要在未复验前改渲染层。",
+  "id": "T-0102",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}

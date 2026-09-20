@@ -9,28 +9,31 @@
     "② `[4]` 指向非 create-texture 槽：按 `sub_4A50C0` 的体判据（目标层不存在时引擎怎么走）实现或登记为有据缺口，并加守卫固定行为",
     "③ `Scene+46508/46512/46516`：读体确证三者的写入端/清除端，建独立字段模型（不再是「折进 needsRender 第三项」的等价物），并把 `sceneNeedsRender` 改为读模型",
     "④ E4：找到或造出一条**真实脚本**可达的转场路径（记录进本票 notes.md：脚本名 + 行号 + 到达方式），`npm run shot` 截图归档 `tickets/T-0091/evidence/`；若确认不可达，把「为什么不可达」写成可复核的判据（脚本清单 + 试跑帧数 + 停在哪句）",
-    "npm run verify 全绿；四份台账 `--validate` 绿"
+    "npm run verify 全绿；四份台账 `--validate` 绿",
+    "★**第③项（Scene+46508/+46512/+46516 三标志本身）规格已完成（轮 7，只读分析，全文 `tickets/T-0091/design.md`）**：scope 已钉死（155 个出现点/83 函数**全部**是 Scene；基址 = `Engine+80708` dword = byte 322832 = **`Engine+0x4ED10`**；旧记 0x4ECD0 偏 64 字节，已全库订正）；语义 = `+46508` **present 脏位**（唯一读者 `sub_40BE10` raw 16022；置 1 90 处/清 0 4 处）、`+46512` **强制冻结**（所有窗当帧收尾 + 等待计时器立刻到期）、`+46516` **池挂起位**（且是转场记录表清空的门）",
+    "★**第③项的落地（两条真缺口，实现路径已在 design.md §5.3 给全）**：**G1** `+46512` 冻结没传进窗模型（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 加 freeze 形参、`frame/host.ts` 的 `advanceModel(nowMs, {freeze})`、两宿主转发；守卫 = `test/wait-gate-timer.test.ts` 加「起 3000ms 窗 → skipWaitGate → 同帧 advanceModel(freeze) 后三项 pending 全 false + work=target」，E3 = `SN0000:1043-1048` 的 `i238 64`+wait+跳过路径）；**G2** 转场表清空门错位（引擎 = `46516 == 0` 全场景，emulator = 「没有活动转场」）⇒ 改判 `active.length === 0 && !scPoolPending(s, clock)`，守卫加「转场到期那帧另有 mesh 窗在跑 ⇒ 表不能清」",
+    "★**第③项落地后**：把能力台账 `scene-dirty-flag-lifecycle` 从 partial 升回 modeled-verified（并补 G1/G2 的守卫），把 `Scene+46528` 三死位登记为「本 exe 无写者」（`Scene/0xB5C0 wait_gate_deadbits`）"
   ],
   "evidence": [
     {
+      "file": "tickets/T-0091/design.md",
+      "anchor": "## 0. 结论速览",
+      "note": "轮 7 第③项只读规格全文（47KB）：scope 判据 + 全量 155 行站点清单、三标志语义与精确计数、与转场主链的交汇、emulator 逐项等价性论证、G1/G2 落地路径与守卫、7 条未确证项"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( !*(_DWORD *)(_this + 46516) )",
+      "note": "★G2 的体依据（主 agent 独立核过）：帧末清转场表 Scene+1048 的唯一门 = Scene+46516 == 0（raw 136840-136841；同门第二处 raw 137181 用 v35[11629]）；而 46516 是**全场景**池挂起位（转场 134944 / 绘制项 117844 / mesh 133528 / 离屏槽 136695·136701 置 1）"
+    },
+    {
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
-      "anchor": "export function scTransitionBlurPlan(",
-      "note": "类别 3 的近似实现点（逐条对应 raw 135837-135881 的 SetTechnique/四个 SetFloat；核权重未复刻）"
+      "anchor": "rt.start, false",
+      "note": "★G1 的落点：immediateFinish 硬编码 false（transition.ts:557）—— 引擎的 Scene+46512 冻结传不进来"
     },
     {
-      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "#renderRangeCanvas(handles: ReadonlySet<number>)",
-      "note": "子集离屏合成宿主缝 —— `[4]` 非 create-texture 槽时没有画布表面可写（缺口 ②）"
-    },
-    {
-      "file": "analysis/engine-capabilities.json",
-      "anchor": "clock-read-transition-window",
-      "note": "第二层条目：已升 modeled-verified/E3，剩余四项写在该条 emulator.note 的「仍未建模（有据缺口）」节"
-    },
-    {
-      "file": "app/amayui-emulator/test/transition-corpus-e3.test.ts",
-      "anchor": "★E3（真语料）：SC0010 的 i250/i251 让转场窗真的起来",
-      "note": "现有的场景级证据（E3）——本票的 E4 是其像素级补充"
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "scTransitionsPending",
+      "note": "★G2 的**模块环陷阱**：ops.ts 已 import transition.ts（ops.ts:51），所以 transition.ts 不能再 import ops.ts 的 scPoolPending（会成环，参照 T-0089）⇒ 必须注入判据或把 scPoolPending 移到中立模块；且后者会碰 T-0096 正在改的 ops.ts ⇒ G2 排在 T-0096 之后"
     }
   ],
   "links": {
@@ -50,6 +53,18 @@
     {
       "at": "2026-09-20",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
     }
   ]
 }

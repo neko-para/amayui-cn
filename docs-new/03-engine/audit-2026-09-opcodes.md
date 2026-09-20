@@ -185,6 +185,13 @@
 
 **建议处置**：把 -11 的兜底改成「按 sub_40F750 语义：无记录 ⇒ 不动作」，并补 `set:SaveVersion1/2` 的读改写。
 
+> ★**订正（轮 7 / `tickets/T-0092` 落地复核）—— 本条已落地；且「写回」一句是误读**：
+> `app/amayui-emulator/src/vm/handlers/control.ts` 的 `op_exit` 已按 **listing** 实现 `-11` 支：`engineValues[95777] = -1`（= `ENGINE_FIELD.callRet`）→ 两次 `GetConfig` 取 `set:SaveVersion1/2`（`readSaveVersionPair`，接口 = 既有 `cfgInt` + `registryDefault`）→ 按 `sub_40F750` 的分派表（`sub40F750Branch`）得 `record`/`partial`/`none`；**无记录 0 时什么都不做、绝不抛 `ExitScript`**（旧的 `else` 兜底已删），既有 `pendingRecord0` 装载路径一字未动。守卫 `app/amayui-emulator/test/op-02-exit-minus11.test.ts`（5 条）。
+> ★★上面 `**实际**` 段的「读配置 `set:SaveVersion1` 并**写回**」**不成立** —— 权威是 listing `.lst:0041A85A`-`0041A88B`（`.c:25651-25658` 是 Hex-Rays **误渲染**：把两次 `[vtable+4]` 调用串成「get(key, 默认值)」，并把 `sub_40F750` 的第 3 实参显示成字符串常量）：
+> `push SV2str; [95777] = -1; call getter → R2; push R2; push SV1str; call getter → R1; push R1; call sub_40F750(this, R1, R2)`。
+> 两处 getter 都是 vtable 槽 **+4** = `sub_4904D0`（`.lst:241306`，`retn 4` ⇒ **单参** GetConfig，**只有读**）；写侧是槽 **+12** = `sub_492AB0` —— **本支一次都没调** ⇒ **没有写回**。`0041A877` 那个「多出来的 push」是跨过中间那次 call、留给 `sub_40F750` 的 **a3**（`arg_0 = [ebp+8]` / `arg_4 = [ebp+0Ch]`，`.lst:27067-27070`）。旁证：同型「提前 push 后面才用的实参」写法在 `0x42D5F4`（`.lst:73654-73670`）也出现，`.c:38169-38170` 同样把版本号渲染成字符串常量。⇒ 票据验收②按其允许的「或写明为什么不需要 —— 必须给体依据」落地。
+> ★**补充**：`-11` 的写入点全库只有 2 处（`.c:19577` = `LABEL_136`、`.c:19695` = `a4==2` 行内副本），但触发组有 4 类：`(a4=1, a5=10 且 a6≠0)`、`(a4=1, a5=20 且 a6≠0)`、`(a4=2, *)`、`(a4=3, *)` —— `a4==3`（本机真槽格式）在 `.c:19916-19927` `goto LABEL_136`，**共用写点①**；`(a4=1, a5=0)` 走 `.c:19441 goto LABEL_137`（根本不调 `sub_40F750`）；四种情况回调打不开时都退化成**当场直接** `sub_40F750(a4, a5)`（`.c:19474/19567/19700/19921`）—— 这是 emulator `save-slot.ts:371-382` 回退分支的引擎依据。
+
 ### op-1/0x100-push-return-point — 0x100 真按键分支的返回点被多加了 1
 
 **声明**：文档 0x100 语义「两条分支都先压返回点 `((ip-ip_base)>>2)+1`」；emulator 规格注释同 claim，并据此无条件压 `index+1`。
@@ -194,6 +201,9 @@
 **证据**：`engine/天结_unpacked.exe_utf8.c:25038-25052`、`:25064`、`:20161-20165`、`:25703-25727`；`app/amayui-emulator/src/vm/handlers/input.ts:174-177`；`src/script/bin.ts:31-32,63-69`；`docs-new/03-engine/opcode-table.md:208`、`docs-new/03-engine/input-system.md:214`。
 
 **建议处置**：把「掩码 != 0」分支压入的返回点改成当前指令的 dword 下标本身（不 +1），并在注释里写明两条分支的不对称。
+
+> ★**订正（轮 7 复核）—— 本条已落地，勿再当待办**：`app/amayui-emulator/src/vm/handlers/input.ts` 现在**已按两条分支不对称实现** —— `pushReturn(plusOne)`（现 `:163-167`）在**掩码分支**用 `pushReturn(false)`（压本指令、`ret` 回到 0x100 继续扫下一个键，现 `:186`）、**默认键分支**用 `pushReturn(true)`（压下一条，现 `:196`）；扫描游标也已建模（`ENGINE_FIELD.keyScanCursor` = `Engine[cur+122287]`，写入 `b+1`，现 `:181`）。落地经过见 `tickets/T-0077/notes.md` §「B4 第三条」。
+> 本条正文的 `**实际**` 段与 `证据` 里的 `input.ts:174-177` 是**审计当时的旧状态**（该段行号已漂），保留仅作历史；判据以代码为准。★**残留的近似（已登记，不是本条的缺口）**：引擎的扫描游标复位在帧泵 `sub_4780D0`（每帧重建掩码）里，emulator 没有对应钩子，改用「掩码变了 ⇒ 新一轮扫描」近似（`input.ts:172-177` 注释）。
 
 ### op-7-0x305-flags-not-cleared — 0x305 未清 Engine[122497]，之后 show-text 一直走注音分支
 
@@ -291,7 +301,10 @@
 
 **实际**：handler 体的外层门是 `v7 = (*(_BYTE *)(_this + 489988) & 1) == 0;`（raw 29071，该 byte 偏移 = 下标 122497 = 0x304 写的文本块标志）；MessageSpeed（`_this[86672]`）是里层条件（raw 29075）。文档原文三路并列、第③路自带门，故真实缺陷只是①②未注外层门。emulator 侧 `op_display_furigana`（`msgwin.ts:564-574`）只做 captureFontStyle/addRuby/emitWin，全仓 effect_flags 写入点中无任何一处设 0x20000000（0x196 用）或 0x10000，也不起节拍定时器（raw 29093/29108）。
 
-> ★**订正（轮 6，`tickets/T-0077`/`T-0094`）**：本文写的「语料 i196 = 0」**只对助记符字面量 `i196` 成立**；该指令在本作里几乎只用**名字形式 `display-furigana`** 出现 —— `src/*.txt` 里共 **6341 处**（例：`src/CONFIG.txt:174`）⇒ ①②路的 `effect_flags |= 0x20000000` + `sub_453A60` 节拍**是真实可观测的节奏缺口**（每处注音比引擎少等一拍 MessageSpeed），不是「反正不可观测」。轮 6 已接**外层门**与第③路（`flags |= 0x10000`、`lastArg = op1`），第①②路的节流半边仍缺 ⇒ 已用棘轮测试钉住并开 `tickets/T-0094`。
+> ★**订正（轮 6，`tickets/T-0077`/`T-0094`）**：本文写的「语料 i196 = 0」**只对助记符字面量 `i196` 成立**；该指令在本作里几乎只用**名字形式 `display-furigana`** 出现 —— `src/*.txt` 里共 **6341 处**（例：`src/CONFIG.txt:174`）⇒ ①②路的 `effect_flags |= 0x20000000` + `sub_453A60` 节拍**是真实可观测的节奏缺口**（每处注音比引擎少等一拍 MessageSpeed），不是「反正不可观测」。轮 6 已接**外层门**与第③路（`flags |= 0x10000`、`lastArg = op1`）；**第①②路的节流半边已于轮 7（`T-0094`）落地** —— `msgwin.ts` 的 `op_display_furigana` 在 `MessageSpeed != 0 && !advActive` 时装 `effect_flags |= SLEEP_GATE(0x20000000)` + `sleepUntil = now + max(1, MessageSpeed)`，**复用的是 `0x6E`（raw 28380/28382）同一个 `SLEEP_GATE`/`sleepUntil` 机制，未新造平行机制**。
+> 三具被调函数的体已查实：`sub_46BE30`（raw **83363-83995**）只排版、返回值 = 「本行有内容吗」（raw 83493-83497 空串 ⇒ 0）；`sub_46CBF0`（raw **83998-84010**）= 它 + `sub_45BE20` **行泵自旋**（"同步排空"排的就是行泵；**体内无 Sleep、无计时器**）；`sub_453A60(Engine+430572, ms)`（raw **66100-66112**）= 周期为 **ms** 的节拍计时器对象（`[2]`=tick、`[5]`=起算、`[6]`=周期，`a2?:1`），到期判定 `sub_453B60`（raw 66188-66212）未到点返回 -1。
+> `0x20000000` 的读者 = 主循环 raw **21176**，清位点 = `sub_409400` 内 raw **13892/13919/13940/13964**（每条都在 `sub_453B60 >= 0` 之后）。
+> ★**实测可观测**（不是"看起来应该会变"）：真产物 `install/CONFIG1.BIN` 的那段 `0x71 → 0x196 → 0x6E`（下标 2131）在帧循环里，`MessageSpeed=40` ⇒ 注音之后那条等 **66.7ms/处**、整段 1267ms；`MessageSpeed=0` ⇒ **0ms / 0 帧**。守卫 = `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` 的第 87 条（正向棘轮：装门且 `sleepUntil == now+SPEED`）与第 248 条（节拍代价随 MessageSpeed 的量化断言）。
 
 **证据**：`engine/天結_unpacked.exe_utf8.c:29071`（489988/4 = 122497）、`:29075-29081`、`:29088-29095`、`:29104-29109`；`docs-new/03-engine/opcode-table.md:264`；`app/amayui-emulator/src/vm/handlers/msgwin.ts:564-574`、对照 `:410-414` 与 `engine.ts:22`；★语料计数**已订正**（见上）：助记符 `i196` = 0，但名字形式 `display-furigana` = **6341 处**。
 
@@ -457,7 +470,7 @@
 | op-4-07 | cross-source-mismatch | 0x34A 的 op2..op4 是 float，emulator 用整数读 | raw 34617-34631；live2d.ts:118-122 |
 | op-4-09 | no-evidence | 0x137 标「已核对」却无 raw 锚点（内容正确） | doc:235；raw 30703-30730；12622-12631 |
 | op-4-10 | contradiction | 0x71 的三个 flag 实为门控条件，非无条件效果 | raw 28418-28462；doc:110 |
-| op-4-11 | cross-source-mismatch | 0x2EE 还写 SetConfig(message:MessageFade)，emulator 未写 | raw 33590-33603；4380 |
+| op-4-11 | cross-source-mismatch | ~~0x2EE 还写 SetConfig(message:MessageFade)，emulator 未写~~ **★轮 7 已修（`tickets/T-0097`）**：`handlers/engine-fields.ts` 新增 `op_set_message_fade` = 字段 + `setConfigValue(message:MessageFade)` 双写（守卫 `test/op-2ee-message-fade.test.ts`）。★另订正：opcode-table 原写「以 `"message"`+op1 派发」也是错的 —— 键名是常量 `"message:MessageFade"`（raw 4380）、值 = op1（同一操作数重读） | raw 33590-33603；4380 |
 | op-4-12 | host-invented | 0x20F 只保留 op1，丢弃 slot(op2)/模式(op3) | raw 31626/31636/31654；gfx-misc.ts:65-69 |
 | op-4-13 | cross-source-mismatch | docs「已核对」333 行 vs opcodes.json 124 条；0x309/0x339 argc 缺口 | doc:235,504,359,546；build-opcodes.js:38-47,93-110；raw 40979/34319 |
 | op-5-005 | gap-as-noop | 0x244 注册为 no-op，体确清 Scene 绘制项动画窗 | raw 25349-25354；132364-132504；stubs.ts:84 |

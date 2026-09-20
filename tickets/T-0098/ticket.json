@@ -1,0 +1,57 @@
+{
+  "title": "0x2ED（message:MessageFade 读侧）未注册 + 0x107/0x10B/0xFE 位号的有符号口径（引擎真抛、emulator 负数不抛而误写表）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/vm",
+  "why": "轮 7 收口 T-0097 时的两条派生发现（实施者报告 §1/§3）：\n① **`0x2ED` 是 `0x2EE` 的读侧**（`sub_431230` raw 40401-40409 `op1 = GetConfig(\"message:MessageFade\")`），而它**不在任何注册表里** ⇒ 真实脚本一旦读它就会 `NotImplementedOp` 硬停（语料 0 处 ⇒ 未爆）。T-0097 只按票面补了写侧（`0x2EE` 的字段 + `SetConfig` 双写）；读侧注册后即可用「真指令写 → 真指令读」闭环，比现在只靠配置注册表断言更强。\n② **同族 sign 的有符号口径**：`0x107`/`0x10B`/`0xFE`（raw 30421-30434 / 30616-30634 / 30443-30458）把 op1 读进 `unsigned int` 后 `> 0x1F`，且越界路径是 `_CxxThrowException(..., Command_ShowMessage)`（**真抛**）；emulator 用有符号 `key <= 0x1f` ⇒ **负数既不抛也不报错，还会照写表**（`1 << -1` = bit31）—— 与 `0x135`/`0x136`/`0x13F`（T-0097 已按 unsigned + 不抛的错误串分支订正）是同一类符号错，但**这三条的引擎行为是抛**，不能照抄 `c.log` 的做法。",
+  "acceptance": [
+    "按体实现 `0x2ED`：`1` 个操作数、写 op1、值 = `GetConfig(\"message:MessageFade\")`（走既有 `CFG_READ` + `CFG.messageMessageFade`），并加守卫断言「`i2ee v` 之后 `i2ed` 读回 v」（真指令闭环，不再只靠注册表）",
+    "按体订正 `0x107`/`0x10B`/`0xFE` 的位号口径：改成 **unsigned 比较**（`(v >>> 0) > 0x1f` ⇒ 越界），越界时**绝不许照写表**（现在 `1 << -1` 会写 bit31）。★**行为按用户裁定（轮 7）**：「**在控制面板展示并触发硬中断即可**」 —— 即复用既有通路：① 硬中断走解释器/观察者那条（`NotImplementedOp` + `frame/observer.ts` 的 `onUnknown` = `continue|stop|throw`）+ `vm/native.ts` 的「未知 flag 硬中断」先例；② 展示走 `renderer/app/session.ts` 的 `controlErrorText`（错误横幅 + sticky 上报，守卫 `test/control-error-banner.test.ts`）。**不许新造平行机制、不许静默**。守卫：负数与 `0x20` 两类越界 ⇒ ① 目标表不变 ② 展示/硬中断确实发生（断言错误文本或中断状态）",
+    "把 `analysis/opcode-gaps.json` 的 `0x2ED` 处置从 `unimplemented`/`deferred` 按实际改（并重跑 `node scripts/build-opcode-gaps.mjs`），`opcode-table.md` 的 `0x2ED` 行同步",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "| 0x2ED | 1 |",
+      "note": "0x2ED 的文档行（现记「仅映射」）—— 本票要按体实现并升级状态"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/arithmetic.ts",
+      "anchor": "bitIndexGate",
+      "note": "T-0097 引入的共用越界门（unsigned + 不抛）；★本票的 0x107/0x10B/0xFE 体是**真抛**，不能直接复用它的不抛行为，只能复用 unsigned 口径"
+    },
+    {
+      "file": "tickets/T-0097/raw-evidence.md",
+      "anchor": "0x2ED",
+      "note": "派生发现的出处（T-0097 实施者报告：0x2ED 读侧未注册 + 0x107/0x10B/0xFE 同族有符号口径）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0097",
+      "T-0057"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/audit-2026-09-opcodes.md"
+    ]
+  },
+  "notes": "来源 = 轮 7 的 T-0097 实施者报告（§1 的 0x2ED 建议 + §3 的 0x107/0x10B/0xFE 同族有符号口径）。★纪律：越界「真抛」与「打错误串」是两种体行为，别把 T-0097 的做法套过来。",
+  "id": "T-0098",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    }
+  ]
+}

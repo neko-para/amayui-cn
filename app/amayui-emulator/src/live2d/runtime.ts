@@ -8,6 +8,9 @@
  *
  * 三张表挂在 `Engine` 上（见 `vm/engine.ts` 的字段声明），本模块只提供操作它们的纯函数。
  */
+import type { Affine } from './deform.js';
+import { AFFINE_IDENTITY } from './deform.js';
+import { l2dComposeNode, makeNodeWindows, syncWindowsFromFields, type L2dNodeWindows } from './nodeMatrix.js';
 import type { MocModel } from './moc.js';
 import {
   advanceMotion,
@@ -19,7 +22,7 @@ import {
   type Mtn,
 } from './mtn.js';
 
-export type { L2dInstance, Mtn };
+export type { L2dInstance, Mtn, L2dNodeWindows };
 
 /**
  * **`Scene+1096` 的 572 字节「立绘 / 变换节点」**（`0x344` 建、`0x346`–`0x34D` 写）。
@@ -31,7 +34,12 @@ export type { L2dInstance, Mtn };
  *  - `+80` 的立即缩放是 `D3DXMatrixScaling(rec+80, sx, sy, sz)`（`sub_4AFE20` raw 134051）⇒ **三分量**；
  *  - `+464/+468/+472` 是**旋转轴**、`+488` 是角度（度）（`sub_4AFE90` raw 134085-134097）；
  *  - 窗1/2/3 的 delay/dur 落在 `+32/+52`、`+36/+56`、`+40/+60`，目标值落在 `+144`/`+272`/`+400`
- *    缩放矩阵 / `+476..+492` 轴角 / `+400` 平移（`sub_4B0030`/`sub_4B0110`/`sub_4B0280`）。
+ *    缩放矩阵 / `+476..492` 轴角 / `+400` 平移（`sub_4B0030`/`sub_4B0110`/`sub_4B0280`）。
+ *
+ * ★2026-09 按体补全（`tickets/T-0096`，`live2d/nodeMatrix.ts` 的 `sub_4A07F0` 直译）：
+ * 下面这些字段原先**缺失**（消费端因此做不出节点矩阵），现在按 572B 记录逐字段补上 ——
+ * `+24`(窗起点) / `+68..75`(颜色窗) / `+76`(矩阵有效位) / `+504`(alpha 门) / `+508`(基础矩阵)
+ * 与 `matrix`（合成结果）。★`+24` **不是倒计时**，是**窗口序列的绝对起点(ms)**（raw 121261-121265）。
  */
 export interface L2dNode {
   /** map key（`0x344` 的 op1）。 */
@@ -40,7 +48,7 @@ export interface L2dNode {
   flags: number;
   /** `+4`：L2D 实例槽（0..9）。 */
   slot: number;
-  /** `+8/+12/+16` 基础平移偏移（`0x34A`；引擎按 **float** 读，raw 121242-121246）。 */
+  /** `+8/+12/+16` **pivot**（缩/旋转中心，`0x34A`；引擎按 **float** 读，raw 121242-121246）。 */
   baseOffset: [number, number, number];
   /** `+80`：`0x347` 的立即缩放，**三分量**（百分数已 ÷100）。 */
   scale: [number, number, number];
@@ -48,12 +56,25 @@ export interface L2dNode {
   translate: [number, number, number];
   /** `+208`：`0x348` 的立即旋转（轴角；角度单位 = 度）。 */
   rotation: { axis: [number, number, number]; deg: number };
-  /** `0x34B/0x34C/0x34D` 的目标变换（delay/dur + 目标值）；受 `flags & 1` 门控。 */
-  wins: {
-    scale: { delay: number; dur: number; value: [number, number, number] };
-    rotation: { delay: number; dur: number; axis: [number, number, number]; deg: number };
-    translation: { delay: number; dur: number; value: [number, number, number] };
-  };
+  /** `0x34B/0x34C/0x34D` 的目标变换 + `+24` 起点 + `+68..75` 颜色窗；受 `flags & 1` 门控。 */
+  wins: L2dNodeWindows;
+  /**
+   * `+504` bit0：置位 ⇒ **本帧该节点 alpha 强制 0**（除非帧级 `(M[46528] & 4) != 0`）——
+   * 不是"窗门"（窗门是 `flags & 1`），全窗跑完时被合成器清掉（raw 121637）。
+   */
+  gate504: number;
+  /**
+   * `+76`：「本帧节点矩阵有效」位（`0x347`-`0x34D` 置 1、`0x346` 置 0）。★与 `flags` 是**两个不同的位**；
+   * 引擎在 `sub_4B0360` raw 134385 用它决定是否把节点矩阵右乘进世界矩阵。
+   */
+  matrixDirty: boolean;
+  /** `+508..571`：**基础矩阵**（`0x346` 复位成单位阵；`M_base`，raw 121649）。 */
+  matrixBase: Affine;
+  /**
+   * **合成结果**（引擎写进 `Scene+46536` 的那块，由 `sub_4A07F0` 每帧每节点算一次）。
+   * `matrixDirty` 为假时它是单位阵；坐标口径见 `live2d/nodeMatrix.ts` 头部。
+   */
+  matrix: Affine;
   /** `0x346` 复位计数（诊断；每次 `0x346` 递增）。 */
   resets: number;
 }
@@ -101,11 +122,12 @@ function makeNode(key: number, slot: number, flags: number): L2dNode {
     scale: [1, 1, 1],
     translate: [0, 0, 0],
     rotation: { axis: [0, 0, 1], deg: 0 },
-    wins: {
-      scale: { delay: 0, dur: 0, value: [1, 1, 1] },
-      rotation: { delay: 0, dur: 0, axis: [0, 0, 1], deg: 0 },
-      translation: { delay: 0, dur: 0, value: [0, 0, 0] },
-    },
+    // `+24` 起点 / `+28..60` delay·dur / `+68..115` 目标值 / `+464..492` 轴角 —— 全部走 `sub_49CA10`
+    wins: makeNodeWindows(),
+    gate504: 0, // `+504`（`sub_49CA10` 置 0）
+    matrixDirty: false, // `+76`
+    matrixBase: AFFINE_IDENTITY, // `+508..571`
+    matrix: AFFINE_IDENTITY, // 合成结果（= 引擎 `Scene+46536` 的初值：调用方每次预置单位阵）
     resets: 0,
   };
 }
@@ -129,13 +151,17 @@ function ensureNode(host: L2dHost, key: number): L2dNode {
  * 引擎逐字（以 `sub_4B0030` raw 134155-134161 为例）：
  * `sub_4AACA0(this, key)`（取不到就建）→ `if ((*rec & 1) == 0) return;` → `*rec |= 2; *(rec+24) = 0;`
  * ⇒ 返回 `null` = **本次窗口写入被门挡掉**（记录已建出来，但没配窗）。
- * ★未建模：`*(rec+24) = 0`（窗起点锁存）与 `*(rec+76) = 1`（待重算位）—— 引擎的窗口求值器
- * `sub_4A07F0`（raw 121131-121520）整体未实现，见 `live2d/render.ts` 的 `l2dNodeTransform` 说明。
+ * ★`*(rec+24) = 0` 是**清窗序列起点**（下一条窗指令重新锁存 now，raw 121261-121265）；
+ * `*(rec+76) = 1` 是**待重算位**（窗内插值也要重算 ⇒ 这里同步置上，`sub_4B0030` 那 5 处都写）。
+ * 合成器在 `live2d/nodeMatrix.ts`（`sub_4A07F0` raw 121131-121655 的直译）。
  */
 function winGate(host: L2dHost, key: number): L2dNode | null {
   const node = ensureNode(host, key);
   if ((node.flags & 1) === 0) return null;
   node.flags |= 2; // raw 134160（`*v9 |= 2u`）
+  node.wins.startedAtMs = 0; // raw 134161（`*(rec+24) = 0`）
+  node.wins.latched = false; // ★emulator 专有：把 `+24 = 0` 的"未锁存"语义写死（见 `L2dNodeWindows`）
+  node.matrixDirty = true; // raw 134168 等（`*(rec+76) = 1`）
   return node;
 }
 
@@ -234,15 +260,27 @@ export function l2dCreateNode(host: L2dHost, key: number, slot: number): L2dNode
   return node;
 }
 
-/** **`0x346` 节点复位**（`sub_427DD0` raw 34560-34564 → `sub_4AFC40` raw 133952-134032）：`+76 = 0`、4 个矩阵回单位。 */
+/**
+ * **`0x346` 节点复位**（`sub_427DD0` raw 34560-34564 → `sub_4AFC40` raw 133952-134032）：`+76 = 0`、4 个矩阵回单位。
+ *
+ * ★**只**复位 4 块矩阵 + `+76`（raw 133952-134032 逐字）：`+20..35`（缩放 from）、`+52..67`（旋转 from）、
+ * `+84..99`（平移 from）、`+127..142`（基础矩阵 `M_base`），以及 `+76 = 0`。
+ * 它**不碰** `+4`(slot)、`+8..16`(pivot)、`record[0]`(flags)、`+24`/delay/dur（`+28..60`）、颜色（`+68..75`）、
+ * 轴角（`+464..492`）、to 矩阵（`+144`/`+272`/`+400`）、`+504`。
+ *
+ * ★2026-09 订正（`tickets/T-0096`）：旧实现用 `makeNode()` **重建整个节点** ⇒ 把 `wins`
+ * （delay/dur/目标值/起点）也清掉了 —— 那是**偏差**（引擎语义 = 保留）。这里改成**只**改该改的字段，
+ * 并保留对象身份（节点不会被换掉，跨帧持有它的引用不会失效）。
+ */
 export function l2dNodeReset(host: L2dHost, key: number): L2dNode {
-  const cur = ensureNode(host, key);
-  const node = makeNode(key, cur.slot, cur.flags);
-  // 引擎复位只写 float 下标 20..35 / 52..67 / 84..99 / 127..142（4 个矩阵）⇒ **不碰**
-  // `+4`(slot)、`+8/+12/+16`(baseOffset)、`record[0]`(flags)（raw 133963-134029）。
-  node.baseOffset = cur.baseOffset;
-  node.resets = cur.resets + 1;
-  host.l2dNodes.set(key, node);
+  const node = ensureNode(host, key);
+  node.scale = [1, 1, 1]; // `+20..35` ← 单位阵（对角三元组）
+  node.rotation = { axis: [0, 0, 1], deg: 0 }; // `+52..67`
+  node.translate = [0, 0, 0]; // `+84..99`
+  node.matrixBase = AFFINE_IDENTITY; // `+127..142`
+  node.matrixDirty = false; // `+76 = 0`（raw 133961）
+  node.matrix = AFFINE_IDENTITY;
+  node.resets += 1;
   return node;
 }
 
@@ -255,6 +293,7 @@ export function l2dNodeReset(host: L2dHost, key: number): L2dNode {
 export function l2dNodeScale(host: L2dHost, key: number, sx: number, sy: number, sz: number): L2dNode {
   const node = ensureNode(host, key);
   node.scale = [sx, sy, sz];
+  node.matrixDirty = true; // `+76 = 1`（`0x347` raw 134048）
   return node;
 }
 
@@ -273,6 +312,7 @@ export function l2dNodeRotation(
 ): L2dNode {
   const node = ensureNode(host, key);
   node.rotation = { axis, deg };
+  node.matrixDirty = true; // `+76 = 1`（`0x348` raw 134119）
   return node;
 }
 
@@ -280,6 +320,7 @@ export function l2dNodeRotation(
 export function l2dNodeTranslate(host: L2dHost, key: number, x: number, y: number, z: number): L2dNode {
   const node = ensureNode(host, key);
   node.translate = [x, y, z];
+  node.matrixDirty = true; // `+76 = 1`（`0x349` raw 134119 同族；见 `sub_4AFF80`）
   return node;
 }
 
@@ -310,7 +351,10 @@ export function l2dNodeScaleWin(
 ): L2dNode | null {
   const node = winGate(host, key);
   if (!node) return null;
-  node.wins.scale = { delay, dur, value: [sx, sy, sz] };
+  syncWindowFromImmediate(node);
+  node.wins.scale.delay = delay; // `+32`（raw 134163）
+  node.wins.scale.dur = dur; // `+52`（raw 134165）
+  node.wins.scale.to = [sx, sy, sz];
   return node;
 }
 
@@ -331,7 +375,10 @@ export function l2dNodeRotationWin(
 ): L2dNode | null {
   const node = winGate(host, key);
   if (!node) return null;
-  node.wins.rotation = { delay, dur, axis, deg };
+  syncWindowFromImmediate(node);
+  node.wins.rotation.delay = delay; // `+36`（raw 134208）
+  node.wins.rotation.dur = dur; // `+56`（raw 134210）
+  node.wins.rotation.to = { axis, deg };
   return node;
 }
 
@@ -353,8 +400,23 @@ export function l2dNodeTranslationWin(
 ): L2dNode | null {
   const node = winGate(host, key);
   if (!node) return null;
-  node.wins.translation = { delay, dur, value: [x, y, z] };
+  syncWindowFromImmediate(node);
+  node.wins.translation.delay = delay; // `+40`（raw 134260）
+  node.wins.translation.dur = dur; // `+60`（raw 134262）
+  node.wins.translation.to = [x, y, z];
   return node;
+}
+
+/**
+ * **把节点的立即值灌进窗的 `from` 侧** —— 见 `nodeMatrix.ts` 的 `syncWindowsFromFields`
+ * （引擎里它们是同一块内存：`0x347`/`0x348`/`0x349` 写 `+20`/`+52`/`+84`，窗读的也是它）。
+ * 三个窗 setter 在写 `to` 之前都要先转一次（窗的 from = 这条窗指令之前节点当前的立即变换）。
+ *
+ * ★反向（合成器吸附后把 from 写回立即字段）由合成器自己在收尾处做（`syncWindowsBack`），
+ * 不在这里再暴露一个只有一处调用者的函数。
+ */
+export function syncWindowFromImmediate(node: L2dNode): void {
+  syncWindowsFromFields(node);
 }
 
 /**
@@ -372,6 +434,28 @@ export function l2dNodeDrawable(
   if ((node.flags & 1) === 0) return false;
   const inst = host.l2dSlots.get(node.slot);
   return !!inst?.model;
+}
+
+/**
+ * **跑一次节点矩阵合成器**（`sub_4A07F0`，raw 121131-121655）—— 逐节点、每帧一次。
+ *
+ * 唯一应当在**帧末、绘制之前**调用它（引擎里合成就发生在逐节点绘制里：`sub_4B0360` raw 134341）：
+ * `renderer/scene/ops.ts` 的 `scL2dTick` 是落点。返回值里的 `color` 是引擎的 `*a4`，
+ * **唯一调用方丢弃它**（raw 134347）⇒ 调用方不要读（见 `nodeMatrix.ts` 头部）。
+ *
+ * @param frame 帧级标志（`M[46512]` 的 winSkip / `M[46528] & 4` 的 alpha 门）—— emulator 暂无对应字段，
+ *              缺省 `false`（= 不跳过动画、不关 alpha 门），与引擎缺省一致。
+ * @param slot 实例槽：只用来读**当前 alpha**（引擎 `+64`/`+124` 那条休眠通道，本作语料不可达）；
+ *              不传 ⇒ 用引擎缺省 1.0。合成结果里的 `alpha` **当前没有消费端**
+ *              （`render.ts` 的批次 opacity 来自模型自己的 `pivotOpacities`），登记为未接线。
+ */
+export function l2dComposeNodeAt(
+  node: L2dNode,
+  nowMs: number,
+  frame?: { winSkip?: boolean; alphaGateDisabled?: boolean },
+  slot?: { alpha?: number },
+): { matrix: Affine; color: number; alpha: number; windowsFinished: boolean } {
+  return l2dComposeNode(node, nowMs, frame ?? {}, slot);
 }
 
 /**

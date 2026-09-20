@@ -1170,14 +1170,14 @@
     "status": "ANALYZED",
     "purpose": "绘制一个 DrawItem：把元素 qmemcpy 进局部副本 v26 → 用 +8/+0xC/+0x10/+0x14 的源矩形（left/top/right/bottom）与 +0x60 的工作色(full ARGB, 作 diffuse) 调 sub_49AA30 做动画驱动/矩阵合成 → sub_4A2D50 提交 CTexture::Draw(vtable+20)",
     "signature_override": {
-      "param0": "this(Engine*)"
+      "param0": "this(Scene*)"
     },
     "sub_behaviors": [
       "读绘制项(+258 表) 的 rect/uv/layer/工作色",
       "调 drawTexture_4A2D50(..., diffuse=item+96)"
     ],
     "fields_used": [
-      "this->draw_item_container",
+      "Scene+0x408 draw_item_map（体内 _this+258）",
       "DrawItem.*"
     ],
     "unmodeled": [
@@ -1193,23 +1193,11 @@
     "semantic_name": "setDrawColorAlpha_4ACF60",
     "status": "ANALYZED",
     "purpose": "op set-draw-color-alpha(0x203) 的下层：给绘制项写 混合模式(item+48) 与 起始工作色(item+96=FROM)，置脏旗标",
-    "signature_override": {
-      "param0": "this(Engine*)",
-      "param3": "color(FROM)"
-    },
-    "sub_behaviors": [
-      "绘制项(_this+258) sub_4AAD40 定位",
-      "item+48=blend(a3)",
-      "item+96=FROM(a4)",
-      "_this[11627]=1 脏"
-    ],
-    "fields_used": [
-      "this->draw_item_container",
-      "DrawItem.blend_mode",
-      "DrawItem.from_color"
-    ],
+    "signature_override": { "param0": "this(Scene*)", "param3": "color(FROM)" },
+    "sub_behaviors": ["绘制项(_this+258) sub_4AAD40 定位", "item+48=blend(a3)", "item+96=FROM(a4)", "_this[11627]=1 脏"],
+    "fields_used": ["Scene+0x408 draw_item_map（体内 _this+258）", "DrawItem.blend_mode", "DrawItem.from_color"],
     "evidence": "raw 131871-131883",
-    "notes": "与 setDrawColor_4AD0C0 配合：FROM=item+96, TO=item+100，逐帧对 item+96 做 from→to 插值"
+    "notes": "与 setDrawColor_4AD0C0 配合：FROM=item+96, TO=item+100，逐帧对 item+96 做 from→to 插值。 ★scope 订正（轮 7 / T-0097④）：raw 31415 `sub_4AD0C0(_this + 80708,…)` / raw 31450 `sub_4ACF60(_this + 80708,…)`（opcode handler 的 `_this` 是 Engine）⇒ 传进来的是 Scene（`Engine+0x4ED10`）；本函数体内 `_this + 258`（dword）/`_this + 1032`（byte）即绘制项 map，故 param0 = Scene，不是 Engine。"
   },
   {
     "addr": "0x4AD0C0",
@@ -1218,7 +1206,7 @@
     "status": "ANALYZED",
     "purpose": "op set-draw-color(0x202) 的下层：给绘制项置 颜色动画（item|=2、+52 起点清零、+56 延迟、+76 时长、+100=TO），置脏旗标",
     "signature_override": {
-      "param0": "this(Engine*)"
+      "param0": "this(Scene*)"
     },
     "sub_behaviors": [
       "item|=2 启用颜色动画",
@@ -1229,7 +1217,7 @@
       "_this[11627]=1 / _this[11629]=1 脏"
     ],
     "fields_used": [
-      "this->draw_item_container",
+      "Scene+0x408 draw_item_map（体内 _this+258）",
       "DrawItem.flags",
       "DrawItem.anim_start",
       "DrawItem.anim_delay",
@@ -1246,20 +1234,20 @@
     "status": "PARTIAL",
     "purpose": "绘图项表(_this+258) 的节点查找/插入：按句柄找到/新建绘制项节点并返回（绘制项归并、颜色/α 设置的第一步）",
     "signature_override": {
-      "param0": "this(Engine*)"
+      "param0": "this(std::map<uint32_t,DrawItem>*)"
     },
     "sub_behaviors": [
       "在 _this+258 表按句柄查找节点",
       "未命中则插入新节点"
     ],
     "fields_used": [
-      "this->draw_item_container"
+      "Scene+0x408 draw_item_map（arg0 = 容器基址本身）"
     ],
     "unmodeled": [
       "表节点懒初始化/树结构细节"
     ],
     "evidence": "raw 130154(定义)；setDrawColor/Alpha 与 renderPolygonMesh 均经它定位项",
-    "notes": "同族：mesh 表用 sub_40DC30(_this+266)；两者为绘制项/mesh 的持久场景图底座"
+    "notes": "同族：mesh 表用 sub_40DC30(_this+266)；两者为绘制项/mesh 的持久场景图底座。★scope 订正（轮 7 / T-0097④）：arg0 是容器本身（各调用点传 `Scene+1032`，如 raw 131877 `sub_4AAD40(_this + 258, &a2)` 而该处 `_this` 是 Scene），不是 Engine；原记 `this(Engine*)`。"
   },
   {
     "addr": "0x422E70",
@@ -1608,7 +1596,7 @@
       "count>1 → sub_4ABB60(_this+80708, op1, count)：4 容器 lower_bound(handle) 与 lower_bound(handle+count)，对 [begin,end) 逐结点 sub_4A8AF0(erase，经 sub_4AA1D0/sub_4AA330/sub_4AA3D0)，并销毁 +266/+267 每项 record(vtable 删[1]+operator delete[2]/[3]/[4])，置脏 _this[11627]=1 → 删 handle∈[handle,handle+count) 全部图元"
     ],
     "fields_used": [
-      "this->draw_item_container(_this+258/[1032])",
+      "Scene+0x408 draw_item_map（经 _this+0x4ED10 传入 sub_4AB950/sub_4ABB60）",
       "this->mesh_container(_this+266/[1064])",
       "this->_this+270/[1080]",
       "this->_this+274/[1096]",
@@ -3326,7 +3314,7 @@
     ],
     "fields_used": [
       "Engine+388332 cg_digit_records",
-      "Scene+1032 draw_item_container",
+      "Scene+1032 draw_item_map",
       "Scene+1064 mesh_container",
       "Scene+0x04 texture_slot(item)",
       "Scene+0x08 src_rect(item)",
@@ -11106,7 +11094,7 @@
     "purpose": "op 0x24F（argc 10）：写指令长度槽 21；依序读 op1..op10，调 sceneSetBlindWipe_4AF6A0(Scene, op1..op10) 写入 BlindWipe 转场记录；无返回值。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 21（=2*10+1）", "readIntOperand(op10..op1)（源码从 op10 起反向取值）", "sub_4AF6A0(_this+80708, op1..op10)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "Scene+0x418 transition_record_map"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "Scene+0x418 transition_record_map"],
     "evidence": "raw 32969-32995",
     "notes": "转场记录函数在别处另立条目（0x4AF6A0）。"
   },
@@ -11119,7 +11107,7 @@
     "purpose": "op 0x250（argc 10）：写指令长度槽 21；读 op1..op10 后调 sceneSlideBlur_4AF880(Scene, op1..op10) 写入 SlideBlur 转场记录；返回该函数返回值。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 21（=2*10+1）", "readIntOperand(op10..op1)", "sub_4AF880(_this+80708, op1..op10)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "Scene+0x418 transition_record_map"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "Scene+0x418 transition_record_map"],
     "evidence": "raw 32997-33023",
     "notes": "与 0x24F 同参数量，仅记录 [0]=3/[13]=0 与盲扫不同。"
   },
@@ -11132,7 +11120,7 @@
     "purpose": "op 0x251（argc 12）：写指令长度槽 25；读 op1..op12 后调 sceneZoomBlur_4AFA30(Scene, op1..op12) 写入 ZoomBlur 转场记录；返回该函数返回值。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 25（=2*12+1）", "readIntOperand(op12..op1)", "sub_4AFA30(_this+80708, op1..op12)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "Scene+0x418 transition_record_map"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "Scene+0x418 transition_record_map"],
     "evidence": "raw 33025-33055",
     "notes": "比 0x250 多两个操作数（op11/op12 作时间参数 [2]/[3]）。"
   },
@@ -11145,9 +11133,9 @@
     "purpose": "op 0x230（argc 1）：写指令长度槽 3；读 op1（handle）后调 sceneAnimWindowStopAll_4AD580(Scene, op1) 停掉该项全部 bit2 动画窗；无返回值（返回被调值 eax）。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 3（=2*1+1）", "readIntOperand(op1)", "sub_4AD580(_this+80708, op1)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "Scene+0x408 draw_item_map", "DrawItem+0x00 flags"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "Scene+0x408 draw_item_map", "DrawItem+0x00 flags"],
     "evidence": "raw 32105-32113",
-    "notes": "长槽 3 与 argc 1 相符（实测 0x24f argc10⇒21、0x251 argc12⇒25）。Scene = _this+80708 dword = Engine 字节 +0x4ECD0。"
+    "notes": "长槽 3 与 argc 1 相符（实测 0x24f argc10⇒21、0x251 argc12⇒25）。Scene = _this+80708 dword = Engine 字节 +0x4ED10。"
   },
   {
     "addr": "0x4243F0",
@@ -11158,7 +11146,7 @@
     "purpose": "op 0x231（argc 4）：写指令长度槽 9；读 op1(handle)/op2(周期)/op3(总格数)/op4(每行列数) 后调 sceneAnimFlipbookWindow_4AD690(Scene, op1, op2, op3, op4) ⇒ 置 bit2 flipbook 循环窗（贴图换格循环）。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 9（=2*4+1）", "readIntOperand(op4..op1)", "sub_4AD690(_this+80708, op1, op2, op3, op4)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "DrawItem+0x00 flags", "DrawItem+0x21C flipbook_win_start", "DrawItem+0x230 flipbook_win_period", "DrawItem+0x238 flipbook_win_frames", "DrawItem+0x23C flipbook_win_cols", "Scene+0xB5AC dirty_flag"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "DrawItem+0x00 flags", "DrawItem+0x21C flipbook_win_start", "DrawItem+0x230 flipbook_win_period", "DrawItem+0x238 flipbook_win_frames", "DrawItem+0x23C flipbook_win_cols", "Scene+0xB5AC dirty_flag"],
     "evidence": "raw 32115-32129",
     "notes": "与旧族 0x239（sceneAnimFlipbookWindow_4AD4A0，写 +0x48/+0x5C/+0x234 且门控 flags bit0）不同族，勿混。"
   },
@@ -11171,7 +11159,7 @@
     "purpose": "op 0x232（argc 4）颜色窗：写指令长度槽 9；op3=alpha（>255 夹 255；<0 ⇒ 取该项当前色 sub_4ADD60 的 >>24）、op4=rgb（<0 ⇒ 取该项当前色）、op2=时长、op1=handle，合成 argb=(alpha<<24)|(rgb&0xFFFFFF) 后调 sceneAnimColorWindow_4AD730(Scene, op1, op2, argb)。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": "[\"写 frames[cur].len_slot = 9（=2*4+1）\",\"readIntOperand(op3)=alpha、readIntOperand(op4)=rgb\",\"alpha>255 ⇒ alpha=255；alpha<0 ⇒ alpha=sub_4ADD60(Scene, op1)>>24（该项当前色 +0x60 的高字节）\",\"rgb<0 ⇒ rgb=getDrawItemColor_4ADD60(Scene, op1)（低 24 位）\",\"readIntOperand(op2)=时长、readIntOperand(op1)=handle\",\"argb = (alpha<<24)|((rgb>>16&0xFF)<<16)|((rgb>>8&0xFF)<<8)|(rgb&0xFF)\",\"sub_4AD730(_this+80708, op1, op2, argb)\"]",
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "Scene+0x408 draw_item_map", "DrawItem+0x60 from_color", "DrawItem+0x20C color_win_start", "DrawItem+0x220 color_win_dur", "DrawItem+0x240 color_win_target", "Scene+0xB5AC dirty_flag"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "Scene+0x408 draw_item_map", "DrawItem+0x60 from_color", "DrawItem+0x20C color_win_start", "DrawItem+0x220 color_win_dur", "DrawItem+0x240 color_win_target", "Scene+0xB5AC dirty_flag"],
     "evidence": "raw 32131-32164",
     "notes": "★颜色窗与 op 0x202（setDrawColor_4AD0C0）同字段族：起点色 = +0x60 from_color、目标色 = +0x240。★注意 sub_4ADD60 在项不存在时返回 -1（该分支会得到 alpha/rgb = 0xFF/0xFFFFFF）。"
   },
@@ -11184,7 +11172,7 @@
     "purpose": "op 0x233（argc 5）缩放窗：写指令长度槽 11；op3/op4/op5 为 float 且**除以 dbl_5201F0(=100)**、op2=时长、op1=handle ⇒ sceneAnimScaleWindow_4AD7B0(Scene, op1, op2, sx, sy, sz)。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 11（=2*5+1）", "readFloatOperand(op3/4/5) 各 / dbl_5201F0(=100)", "readIntOperand(op2)=时长、readIntOperand(op1)=handle", "sub_4AD7B0(_this+80708, op1, op2, f3, f4, f5)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "DrawItem+0x00 flags", "DrawItem+0x210 scale_win_start", "DrawItem+0x224 scale_win_dur", "DrawItem+0x250 scale_win_matrix"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "DrawItem+0x00 flags", "DrawItem+0x210 scale_win_start", "DrawItem+0x224 scale_win_dur", "DrawItem+0x250 scale_win_matrix"],
     "evidence": "raw 32166-32183",
     "notes": "★只有 0x233 做 /100：与 0x234/0x235 的「不除」是三族唯一的入参差别（脚本里 0x233 的倍率按百分数写）。"
   },
@@ -11197,7 +11185,7 @@
     "purpose": "op 0x235（argc 5）平移往复：写指令长度槽 11；op3/op4/op5 为 float **不除**、op2=周期、op1=handle ⇒ sceneAnimTranslatePingPong_4AD900(Scene, op1, op2, x, y, z)。",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 11（=2*5+1）", "readFloatOperand(op3/4/5)（不除）", "readIntOperand(op2)=周期、readIntOperand(op1)=handle", "sub_4AD900(_this+80708, op1, op2, x, y, z)"],
-    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ECD0)", "DrawItem+0x00 flags", "DrawItem+0x218 pan_win_start", "DrawItem+0x22C pan_win_dur", "DrawItem+0x290 pan_win_matrix"],
+    "fields_used": ["this->frames[cur].len_slot", "this->scene(+0x4ED10)", "DrawItem+0x00 flags", "DrawItem+0x218 pan_win_start", "DrawItem+0x22C pan_win_dur", "DrawItem+0x290 pan_win_matrix"],
     "evidence": "raw 32203-32219",
     "notes": "与 0x234 代码同形，唯 op2 语义为「周期」（往复一个来回）且写矩阵 0x290。"
   },
@@ -11210,7 +11198,7 @@
     "purpose": "op 0x234（argc 5）旋转窗：写指令长度槽 11；op3/op4/op5 为 float **不除**（旋转轴三元组）、op2=周期、op1=handle ⇒ sceneAnimRotateWindow_4AD850(Scene, op1, op2, ax, ay, az)。★订正：本条不是平移窗（旧名 op_anim_translate_window 与旧注「平移」是误）—— 消费端 raw 118228 用 D3DXMatrixRotationAxis 把该三元组当旋转轴，且角度 = 360 乘（now 减 start）对 period 取模再除 period ⇒ 匀速旋转；平移分量在 0x290 矩阵（0x235）里",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 11（=2*5+1）", "readFloatOperand(op3/4/5)（不除）", "readIntOperand(op2)=时长、readIntOperand(op1)=handle", "sub_4AD850(_this+80708, op1, op2, x, y, z)"],
-    "fields_used": "[\"this->frames[cur].len_slot\",\"this->scene(+0x4ECD0)\",\"DrawItem+0x00 flags\",\"DrawItem+0x214 rot_win_start\",\"DrawItem+0x228 rot_win_dur\",\"DrawItem+0x244 rot_win_axis\"]",
+    "fields_used": "[\"this->frames[cur].len_slot\",\"this->scene(+0x4ED10)\",\"DrawItem+0x00 flags\",\"DrawItem+0x214 rot_win_start\",\"DrawItem+0x228 rot_win_dur\",\"DrawItem+0x244 rot_win_axis\"]",
     "evidence": "raw 32185-32201",
     "notes": "写三分量 float（非矩阵）；op2 语义为「时长」。"
   },

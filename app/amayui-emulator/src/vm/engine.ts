@@ -739,12 +739,17 @@ export class Engine {
       (cfgInt(wheelCfg, CFG.messageAdvanceMesOnWheel, 0) & 1) !== 0;
     if ((mask & 0x10) === 0 && !wheelKeyHit && !wheelDown) return false;
 
-    // ★自旋到整页贴完（`do sub_45BE20 while (!done)` 的等价物）：把每个还有余量的窗一次贴满。
-    //   注意**不清 bit30**（▼ 继续闪），所以不走 `finishCharReveal()`。
-    for (const win of [...this.msgwin.reveal.keys()]) {
-      this.msgwin.finishReveal(win);
-      this.#publishReveal(win);
-    }
+    // ★自旋到整页贴完（`do sub_45BE20 while (!done)` 的等价物）：**只贴当前窗**。
+    //   引擎 raw 13943-13945：`do result = sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484)); while (!result);`
+    //   （`489484/4 = 122371` = 当前窗，由 `0x6E`/`0x71`/`0x72` 写：raw 28365/28381/28545）
+    //   ⇒ 引擎**只**把当前窗贴满，不碰别的窗。
+    //   ★修前这里遍历 `msgwin.reveal` 的**所有**键逐个发布 ⇒ 上一屏残留的窗会被重新贴回屏
+    //   （用户实测 `tickets/T-0100`：进 `SC0000` 后点一下 ⇒ 屏中央冒出序章 `SN0000` 的最后一页）。
+    //   窗的 `reveal` 条目**允许**残留（引擎同样保留 `win+132` 游标，`exit` 边界也不 reset），
+    //   但**不得被发布**。注意**不清 bit30**（▼ 继续闪），所以不走 `finishCharReveal()`。
+    const cur = this.msgwin.resolveWin(this.msgwin.lastArg);
+    this.msgwin.finishReveal(cur);
+    this.#publishReveal(cur);
     im.consumeEdges(); // 引擎 `*v6 = 0`：这次点击不再留给等待泵（否则下一帧会顺带推进一页）
     // 引擎 raw 13910-13915：DrawMode == 1 时顺带把等待门计时器清零 + 置强制冻结
     // （`Scene+369360 & 2` 那一格全工程无置位点，恒为 0 ⇒ 条件只剩 DrawMode）。
@@ -764,7 +769,17 @@ export class Engine {
    */
   serviceTextReveal(nowMs: number): boolean {
     const speed = messageSpeedOf(this);
-    const dirty = this.msgwin.tickReveal(nowMs, speed);
+    // ★引擎每帧只泵**当前窗**（ADV 支：raw 13907/13920/13944/13962 都只把 `Engine[122371]` 交给
+    //   `sub_45BE20`；`0x300` 闸门窗由 `serviceWinReveal` 那条支路单独负责，raw 13834-13888）
+    //   ⇒ 只推进/发布当前窗。修前 `tickReveal` 会推进并发布**所有** `reveal` 条目（含上一屏残留）
+    //   ⇒ 与 `tickets/T-0100` 同一类缺陷。
+    const cur = this.msgwin.resolveWin(this.msgwin.lastArg);
+    const dirty = this.msgwin.tickRevealWin(cur, nowMs, speed) ? [cur] : [];
+    // ★★**这一行不能少**（轮 8 实测踩过）：推进了游标就必须把它发布给宿主，否则**逐字看不见**
+    //   —— 游标在 VM 里照常走（`0x6E` 后约 `max(MessageSpeed, 一帧)`/字），但宿主只在
+    //   `msgWinSync` 时才重绘 ⇒ 屏上一直停在第 0 个字，直到别的路径（点击/收尾）发布一次
+    //   ⇒ 用户实测「必须等逐字完成后才直接展示出来」。E4 判据 = `[reveal] win=N 0/X` 之后
+    //   直接跳 `X/X`、中间态一个都没有（`textLayer.ts:104` 只在 revealed 变化时打印）。
     for (const win of dirty) this.#publishReveal(win);
     if (dirty.length > 0) {
       this.msgwin.showing = this.msgwin.isRevealing() ? 1 : 0;

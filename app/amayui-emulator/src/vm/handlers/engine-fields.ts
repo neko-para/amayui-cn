@@ -113,7 +113,8 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   [0x1a4, { map: { 1: ENGINE_FIELD.outlineDx, 2: ENGINE_FIELD.outlineDy } }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)
   [0x252, { map: { 1: ENGINE_FIELD.msgSystemConfig } }], // 消息系统配置
   [0x261, { map: { 1: ENGINE_FIELD.verticalText } }], // 竖排标志（Font+235108）
-  [0x2ee, { map: { 1: ENGINE_FIELD.messageFade } }], // 消息淡入
+  // ★`0x2EE` **不在这里**（`tickets/T-0097` ①）：它的体除了写 `_this[80106]` 还 `SetConfig("message:MessageFade")`
+  //   ⇒ 走专用 handler `op_set_message_fade`（只写字段会在重启后回默认值）。
   [0x2db, { map: { 1: ENGINE_FIELD.fontMetricsMode } }], // 文本属性（引擎随后 sub_459F40 重排文本）
   [0x25b, { map: { 1: ENGINE_FIELD.msgMediaImageId } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由它在引擎里写）
   // ---- 数据/配置/标志 ----
@@ -155,6 +156,35 @@ const op_engine_field_store: OpHandler = (c) => {
     const v = readIntOperand(c.e, c.frame, c.instr, Number(nStr));
     c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
   }
+};
+
+/**
+ * `0x2EE <ms>`（`sub_426650` raw 33590-33603）：**消息淡入时长 —— 字段 + 配置双写**。
+ *
+ * 体（逐行原文，`engine/天结_unpacked.exe_utf8.c`）：
+ * ```c
+ * _this[30 * _this[95776] + 95805] = 3;        // arity 槽 ⇒ argc 1
+ * v2 = sub_41BF50(_this, 1);                   // op1
+ * v3 = _this[174405];                          // 配置对象（= `_this + 697620`，字节 0xAA514）
+ * _this[80106] = v2;                           // ★Font+235128 = 消息淡入 ms
+ * v4 = sub_41BF50(_this, 1);                   // ★**同一个操作数再读一次**
+ * return (*(…)(v3 + 12))(_this + 174405, aMessageMessage_0, v4);   // SetConfig("message:MessageFade", op1)
+ * ```
+ * - 两次 `sub_41BF50` 的实参**都是 1**：清单 `.text:0042666D` / `.text:0042667C` 两条 `push 1`
+ *   （`engine/…_utf8.lst` 61030/61034）⇒ 写进字段的与交给 `SetConfig` 的是**同一个操作数**
+ *   （不是 op1/op2 两个操作数）。读取无副作用 ⇒ emulator 读一次、两处复用即等价。
+ * - `aMessageMessage_0` = `"message:MessageFade"`（raw 4380）；`+12` 是配置对象的 `SetConfig` 虚槽。
+ * - 与 `0x2EE` 成对的**读侧**是 `0x2ED`（`sub_431230` raw 40401-40409：`op1 = GetConfig("message:MessageFade")`；
+ *   调度表 `.text:0041701E` 把 `sub_431230` 装在 `0x2ED` 槽）。
+ *
+ * ★为什么必须补 `SetConfig`（审计 `op-4-11` / `tickets/T-0097` ①）：只写字段 ⇒ 值**不进配置注册表**
+ *   ⇒ 「重启后回默认」（`engineConfig.ts` 的 `CONFIG_FIELD_BINDINGS` 只在启动时把 INI 值灌进字段，
+ *   而字段本身不落盘）。同族先例：`0x1B5`（消息速度）也是"字段 + `SetConfig`"，`0x74` 才是只写字段那条。
+ */
+const op_set_message_fade: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  c.e.engineValues.set(ENGINE_FIELD.messageFade, v); // _this[80106]
+  setConfigValue(c.e, CFG.messageMessageFade, v); // ★与读侧（0x2ED / CONFIG_FIELD_BINDINGS）同一注册表
 };
 
 /** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
@@ -200,13 +230,23 @@ const op_get_effect_skip: OpHandler = (c) => {
  * 故它不会改变 emulator 的输出，但**必须写**（否则上游若加 getter，值会漂）。
  */
 /**
- * `0x141`（sub_4228C0 raw 30998-31016）：**SetMesWinAlpha** —— `op1 > 0x10` 时报错，
- * 否则 `SetConfig("message:MesWinAlpha", op1)`（**直写配置注册表，不进任何持久字段**）。
+ * `0x141`（sub_4228C0 raw 30999-31017）：**SetMesWinAlpha** —— 越界报错，否则
+ * `SetConfig("message:MesWinAlpha", op1)`（**直写配置注册表，不进任何持久字段**）。
  * 与 `0x131`（直读同名键）配对；`src/*.txt` 中两者均 0 次使用，但属同一「配置直读直写族」，不得当 no-op。
+ *
+ * ★**比较是 unsigned**（`tickets/T-0097` ②）：体 raw 31006 写作
+ * `if ( (unsigned int)sub_41BF50((_DWORD *)_this, 1) > 0x10 )` —— 负数（如 `-1` = `0xFFFFFFFF`）
+ * 同样**越界**，走 `sub_408050`/`sub_4034D0` 的错误串分支（**打错误串后继续**，不写配置）。
+ * 旧实现用有符号 `v > 0x10` ⇒ `-1` 被当成"≤ 0x10"**照写进配置**（口径错；语料 0 处 ⇒ 不可见但不对）。
+ * ★体也把同一个操作数读了两次（raw 31006 / 31014，同样只是重读）⇒ 读一次复用等价。
  */
 const op_set_meswin_alpha: OpHandler = (c) => {
   const v = readIntOperand(c.e, c.frame, c.instr, 1);
-  if (v > 0x10) return; // 引擎：op1 > 0x10 ⇒ 报错并返回（不写配置）
+  if ((v >>> 0) > 0x10) {
+    // 引擎：op1 > 0x10（无符号）⇒ 打错误串（`aGetmeswina`）并返回，**不写配置**
+    c.log(`0x141(SETMESWINALPHA): op1=${v}（无符号 ${v >>> 0}）> 0x10 ⇒ 按引擎走错误串分支（不写 ${CFG.messageMesWinAlpha}）`);
+    return;
+  }
   setConfigValue(c.e, CFG.messageMesWinAlpha, v); // 统一走 setConfigValue ⇒ 一样会通知落盘
 };
 
@@ -348,7 +388,7 @@ const op_set_field_21672: OpHandler = (c) => {
   [0x1a4, op_engine_field_store], // _this[21670]/[21671]
   [0x252, op_engine_field_store], // _this[92323]
   [0x261, op_engine_field_store], // _this[80101]
-  [0x2ee, op_engine_field_store], // _this[80106]
+  [0x2ee, op_set_message_fade], // _this[80106] **+ SetConfig("message:MessageFade")**（sub_426650 raw 33590-33603）
   [0x2db, op_engine_field_store], // _this[71744]
   [0x25b, op_engine_field_store], // 消息态图像（模式 2）：_this[92381] = op1（模式位 92379=2 由它在引擎里写；emulator 只存 id）
   [0x25a, op_set_media_movie], // 消息态影片（模式 1）：_this[92379]=1、[92380]=op1（Scene 下发=已登记缺口）

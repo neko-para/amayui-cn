@@ -1,0 +1,113 @@
+{
+  "title": "进入第一个 SC 场景后 SN0000 中心的文字没有被清除（用户实测；先记录、待后续验证）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/adv",
+  "why": "**用户实测（轮 7，E4）**：SN0000 路径能正确加载/保存、能进入第一个 SC 场景（`SC0000.BIN`），但进入后**屏幕中央仍留着 SN0000 的 ADV 正文**。\n\n**★轮 8 只读诊断已把根因钉死（全文 `tickets/T-0100/design.md`，30KB；现场证据 `evidence/sn0000-sc0000-boundary.md`）**：\n- **是谁**：**消息窗 8 的 ADV 正文**（`0x6E` show-text + 显现泵），不是被 `i0ae` 跳过带里的背景绘制、也不是 72B 文本项账本。最后一页 = `src/SN0000.txt:2983/2986`「这个故事，始于一位技术人员为参与调查而来到此」/「地的那一刻。」= **2 行 28 字**（与日志 `[msgwin] win=8 2 行 28 字` 逐字吻合）；窗 8 几何 = `SYSTEM4.txt:30 i070 8 500 2d0 0 0`（满屏 1280×720@(0,0)）+ `SYSTEM4.txt:70 i303 8 1 1f4`（居中）+ `SN0000.txt:2867 i07a 8 …` ⇒ 落在**屏中央**。\n- **引擎在哪清**：**脚本自己清** —— `src/NOVEL.txt:415` 的 `detach-texture 19a28 1f4`（进/出场景各一次；同型副本 `SN0000.txt:3799/3814`、`SYSTEM4.txt:628`）删的正是 win1/win8 的正文行区间 `[0x19A28,0x19C1C)`。而且**每帧泵只泵「当前窗」**（raw 13907/13920/13944/13962 只 `sub_45BE20(Font, *(_DWORD*)(_this+489484))`；`489484/4 = 122371` = 当前窗）⇒ 引擎侧不残留。\n- **★emulator 缺哪步（直接原因）**：`src/vm/engine.ts:744-746`（`serviceRevealAdvanceInput`）**遍历所有 `msgwin.reveal` 键**逐个 `finishReveal`+`#publishReveal` ⇒ SN0000 最后一页（`:2993` 的 `0x72`）建下的**残留 `reveal[8]` 被重新贴回屏**。引擎同行只泵当前窗。⇒ **点一下鼠标就复活**（日志 8655/8658，此后 9259/9323/9373/9404/9436）。同类还有 `engine.ts:765-768`（`tickReveal` 全窗发布）与 `handlers/msgwin.ts:1160`（`0x70`→`emitAllWins`；引擎 `sub_45D660` raw 73133-73193 只写几何/回看页，**不重画正文行**）。\n- **★反证（别修错地方）**：`Scene+0x408` 的绘制项**已被清干净** —— 边界前最后 `[present]`（t=74129ms）items 含 `104500..104524`（25 项）→ 7886 被删；边界后第一个 `[present]` 只剩新场景的 4 项。所以这**不是 DrawItem 残留**。\n- **H2（`0x308`）已排除**：body 实证 = `RegisterTouchWindow`/`UnregisterTouchWindow`（USER32.DLL）+ 写 `_this[1954]`（**3 写 0 读**，不碰任何文本/绘制/存档表）⇒ 与本次症状**无因果**。",
+  "acceptance": [
+    "**① 直接消症状**：`src/vm/engine.ts:744-746` 的发布收敛到**当前窗** —— `const w = this.msgwin.resolveWin(this.msgwin.lastArg); this.msgwin.finishReveal(w); this.#publishReveal(w);`（依据 raw 13943-13945 + `489484/4 = 122371` = 当前窗）。★注意 `lastArg` 现在存的是**原始操作数**、引擎 `_this[122371]` 存的是**解析后的窗号**（raw 28365/28381 写、`i080` 会改默认窗）⇒ 解析时机要对（`NOVEL.txt:31 i080 8` → `:262 i080 1`）",
+    "**② 同类收敛**：`engine.ts:765-768`（`tickReveal` 的全窗发布）同样收敛为「当前窗 ∪ `0x300` 闸门窗」（依据 raw 13834-13888 / 13962）；③ `handlers/msgwin.ts:1160` 的 `emitAllWins(e)` 改为按窗 `emitWin(e, win)`（依据 raw 73133-73193：`0x70` 落点不重画正文行）",
+    "**守卫（场景级不变量，必须可确定性复现）**：① 任何 `e.curScript().name === 'SC0000.BIN'`（SN0000 已退出）的帧上 `native.scene.msgWins.has(8) === false`（等价快照字段 `DigestState.msgWins`，`src/frame/digest.ts`），且 SC0000 段内**一次 `[text] win=8` 都没有**；② SC0000 第一页**逐字期间** press 一次后再取快照，窗 8 仍缺席；③ 同帧窗 1 文本在场、章头项 `101120/101122/101140/101142` **不被误清**；④ VM 侧口径：`msgwin.reveal` **允许**保留 8（引擎同样保留 `win+132`/`win+208` 游标），但**不得被发布**（`msgWinSync(8)` 调用数 = 0）",
+    "**E2 最小确定性复现（推荐，CI 可跑；harness 见 `test/harness.ts`）**：脚本 A（`i080 8` + `show-text 0 \"A\"` + `wait-for-input 0` + `exit`）→ 脚本 B（`i080 1` + `show-text 0 \"B\"` + `wait-for-input 0`），在 B 的逐字期间 `input.pressMouse(0)` 让驱动走 `frame/loop.ts` 的 reveal-advance 分支 → 断言 native **没有** `msgWinSync(8)`。E3 可选：扩展 `app/amayui-emulator/tools/scenarios/gamestart.json`（用 `clock:{kind:'fixed',stepMs:16.667}`）",
+    "★**禁止的修法（写进验收，防止后人\"顺手修\"）**：① 在场景边界 `msgwin.reset()` / 清 `slots[8]` / 清 `reveal[8]`（引擎**保留**记录与游标；`exit`(0x2) 边界不 reset 是与引擎一致的）；② 给 `#holdFrames` 打补丁；③ 动 `scDetachTexture` 的区间清（它是对的，日志 9272-9274 已把「文本窗清=1/8/2」做对）；④ 用\"清 DrawItem\"修（边界两侧 DrawItem 已经干净：26 → 4）",
+    "npm run verify 全绿；H3 判据写进票据（供用户下一次一眼分辨）：**残留** = 窗 8 满屏 @(0,0)、起点≈(140,300) 屏中央；**SC0000 自己的字** = 窗 1 @(190,557) 屏幕下方"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
+      "anchor": "unhandled 0x308 i308",
+      "note": "★现场证据（主 agent 从用户 GUI 实测日志摘出）：第一个 SC 场景 = SC0000.BIN（日志行 7969）；进它前一条是未处理的 0x308；★反证：绘制项 26→4 已被清干净（detachTexture RANGE-REMOVE + clearDrawContainer + clearSlotRecords）⇒ 残留很可能在宿主文本层/消息窗侧，不是 DrawItem 残留"
+    },
+    {
+      "file": "docs-new/05-scripts/SN0000.md",
+      "anchor": "# 脚本台账 · ",
+      "note": "SN0000 的台账页（结构/槽/不变量/坑）—— 动手前先读它，别重读脚本"
+    },
+    {
+      "file": "analysis/scripts.json",
+      "anchor": "\"id\": \"SN0000\"",
+      "note": "SN0000 的脚本台账真源条目（layout/slots/invariants/gaps）"
+    },
+    {
+      "note": "轮 8 只读诊断全文（30KB）：谁画的（逐候选排除）/ 载体 / 引擎在哪清（NOVEL.txt:415 的 detach-texture 19a28 1f4）/ emulator 缺哪步（engine.ts:744-746 遍历所有 reveal 键）/ H1 成立 + H2 反驳（0x308 = RegisterTouchWindow）/ H3 判据 / E2·E3 复现 / 最小修复集 + 禁止修法 / 6 条未确证项",
+      "file": "tickets/T-0100/design.md",
+      "anchor": "serviceRevealAdvanceInput"
+    },
+    {
+      "note": "★根因落点：该函数遍历所有 msgwin.reveal 键逐个发布（engine.ts:744-746），而引擎只泵当前窗（`Engine[489484] = _this[122371]`，raw 13943-13945）⇒ 残留 reveal[8] 被贴回屏",
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "serviceRevealAdvanceInput"
+    },
+    {
+      "file": "app/amayui-emulator/test/op-0100-reveal-current-window.test.ts",
+      "anchor": "result = sub_45BE20",
+      "note": "本票的守卫（4 条）：前置证明 reveal 同时含残留窗 8 与当前窗 1（⇒ 旧的全窗发布必然发布 8，守卫有辨别力）+ 点击只发布当前窗 + 每帧泵不推进残留窗 + 0x70 只发布本窗；并断言 reveal[8] 仍 active ⇒ 明令禁止\"清状态\"式修法"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0066",
+      "T-0083"
+    ],
+    "docs": [
+      "docs-new/03-engine/scene-start-flow.md",
+      "docs-new/03-engine/save-data.md"
+    ]
+  },
+  "notes": "来源 = 用户轮 7 的 E4 实测原话：「我验证了目前SN0000的路径，目前能够正确加载和保存，并且能够进入到第一个SC场景，但是进入后SN0000中心的文字没有被清除，可以记录等待后续处理完成后验证」。★本轮只记录，不修。",
+  "id": "T-0100",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：why"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → doing —— 修复已落地并被 4 条新守卫 + 124/124 受影响族 + 45/45 真语料链 + tsc 干净验证；仅剩全量 npm run verify（被 T-0096 在飞的 4 条 Live2D 自测挡住）⇒ 转 done"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。三处收敛（serviceRevealAdvanceInput/serviceTextReveal/0x70 emitWin）+ 4 条新守卫（含\"reveal 同时含残留窗与当前窗\"的辨别力证明）+ 受影族 124/124 + 真语料链 45/45 + 能力台账 text-reveal-pump-409400 已补本票的持续行为结论"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-0100-reveal-current-window.test.ts",
+    "app/amayui-emulator/test/adv-reveal-under-throttle.test.ts",
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/char-reveal.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts"
+  ]
+}

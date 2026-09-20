@@ -16,3 +16,15 @@ pm run save:dump -- <SAVE70.DAT>\ 顺带统计同名 \.STH\ 的像素（320×180
   场景再也没被画进去 ⇒ 槽 2 → 槽 e 的 \i032\ 转送的是那块清过的黑画布。宿主侧 \getSlotPixels\ 是好的
   （否则会退回 30 B 的自描述空块，正是同目录 \SAVE00.STH\ 的情形）。
 - 修法（本票第 1 次变更）：\
+
+## 2026-09-20
+
+### 轮 7 · 用户 E4 验证结果（2026-09）
+
+**用户目视（原话）**：「ADV 界面打开的加载界面的缩略图是正确的」；另「目前能够正确加载和保存」。
+⇒ 验收③（GUI 里 ADV 场景存档后缩略图不是全黑、内容与当时画面一致）**由用户目视通过**。
+
+**★本票保持 `doing` 的原因（不许用"用户看过"代替守卫）**：`tests[]` 为空 —— 仓库里**没有**覆盖验收①②的守卫（全库 grep `captureCanvasIntoSlot` 零命中；`blend-mode.test.ts` 只提 `renderTargetSlot`）。所以还剩一件事：
+- 为 `0x20C`（`frameTick`）在 `render4.renderTargetSlot >= 0` 时「当场合成一次 + 经 `TextureCache.captureCanvasIntoSlot` 把整帧拷进该槽」补一条守卫（含验收②「合成失败只记日志、不打断 VM」），并填进 `tests[]` ⇒ 那时才转 `done`。
+
+**未核对项（如实登记）**：验收③里「可用 headless 解码核对非单调色」这一步**没做**（本会话未跑任何 `npm run shot`，也没有把 `.STH` 解成 BMP 逐字节核对）—— 判据是**用户目视**，不是字节级断言。

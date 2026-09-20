@@ -10,10 +10,12 @@
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
-import type { Frame } from '../engine.js';
+import type { Engine, Frame } from '../engine.js';
 import { labelPos } from './shared.js';
 import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { cfgInt } from '../../engineConfig.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const op_jmp: OpHandler = (c) => {
@@ -107,6 +109,76 @@ const op_abort: OpHandler = () => {
 };
 
 // ---- exit (0x2)：跨脚本返回调用层（cur=frame.caller；顶层无调用层才程序退出） ----
+
+/**
+ * **`sub_40F750`（raw 18877-18951）的 a2/a3 分派表** —— 引擎 `exit` 的 -11 分支最后就是调它
+ * （先 `_this[95777] = -1`，再读两次配置）。三条支路**没有任何一条会退出程序**：它只调
+ * `sub_40ED40`（把脚本装进 `cur` 帧）与 `sub_4380F0`（存档对象上的时间戳：raw 45095-45103
+ * `_this[259] = _this[260]; _this[258] = timeGetTime()/1000`）。listing 侧只出现
+ * `0040F78B/0040F845/0040F900/0040FA46`（`sub_40ED40`）与 `0040FA15/0040FB55`（`sub_4380F0`）。
+ *
+ * | 参数 | 条件 | 体做了什么 |
+ * |---|---|---|
+ * | `a2 == 1` | `a3 == 10` / `a3 == 20` | `sub_40ED40(this, …, 263*cur+124365 / +129938)` 装**该版本**记录里的脚本，再按记录还原两张表的当前下标（263 步长槽位组） |
+ * | `a2 == 1` | `a3 ∉ {10,20}` | **什么都不做**（raw 18899 的 `return result`） |
+ * | `a2 == 2` | — | `sub_40ED40(this, …, 261*cur+140771)` 装记录脚本 + 恢复 ip/返回栈（`261*cur+140772/140773+i`），随后 `sub_4380F0` |
+ * | `a2 == 3` | — | 同上，槽位组换成 `261*cur+156524/156525/156526` |
+ * | 其它 | — | **什么都不做**（raw 18934 的 `return result`） |
+ */
+function sub40F750Branch(sv1: number, sv2: number): 'record' | 'partial' | 'none' {
+  if (sv1 === 1) return sv2 === 10 || sv2 === 20 ? 'partial' : 'none';
+  if (sv1 === 2 || sv1 === 3) return 'record';
+  return 'none';
+}
+
+/** `sub40F750Branch` 的三种结果 → 日志文本（诊断用，不参与语义）。 */
+const SUB40F750_BRANCH_TEXT: Record<'record' | 'partial' | 'none', string> = {
+  record: '装载记录脚本（a2==2/3：sub_40ED40 + 按记录恢复 ip/返回栈）',
+  partial: 'sv1=1 的部分还原（a3∈{10,20}）',
+  none: '两支都不进 ⇒ 直接 return（不动作）',
+};
+
+/**
+ * **`set:SaveVersion1` / `set:SaveVersion2` 的两次取值**（`tickets/T-0092` 验收②）。
+ *
+ * ★**权威是 listing（`.lst:0041A85A`-`0041A888`），不是 `.c` 的 raw 25651-25658** —— 后者是 Hex-Rays
+ * 的误渲染。raw 逐字（`esi+0AA514h` = 配置注册表对象 `Reg`，`DWORD ptr [esi+5D884h]` = `_this[95777]`）：
+ *
+ * ```text
+ * 0041A85A  push    offset aSetSaveversion_0   ; "set:SaveVersion2"
+ * 0041A865  mov     dword ptr [esi+5D884h], 0FFFFFFFFh   ; _this[95777] = -1（call_ret）
+ * 0041A86F  call    eax                          ; R2 = GetConfig("set:SaveVersion2")
+ * 0041A877  push    eax                          ; ★这个 push = 最后那次 sub_40F750 的 a3
+ * 0041A87B  push    offset aSetSaveversion       ; "set:SaveVersion1"
+ * 0041A886  call    eax                          ; R1 = GetConfig("set:SaveVersion1")
+ * 0041A888  push    eax                          ; a2 = R1
+ * 0041A88B  call    sub_40F750                   ; sub_40F750(this, a2 = SV1, a3 = SV2)
+ * ```
+ *
+ * 两处 `call eax` 都是 vtable 槽 **+4** = `sub_4904D0`（`retn 4` 的**单参 GetConfig**；写侧是槽 +12 =
+ * `sub_492AB0`）⇒ **本分支只有读、没有写**：`0041A877` 那个"多出来的 push"不是"带默认值的第二次读"，
+ * 而是跨过中间那次调用、留给 `sub_40F750` 的 a3（`sub_4904D0` 是 `retn 4`，只吃掉自己那个 key）。
+ * `.c` 里"get(key, 默认值)"的形态与 `sub_40F750(…, "set:SaveVersion2")`（第 3 实参成了字符串常量）
+ * 都是误渲染 —— 同样的"提前 push 一个后面才用到的实参"写法在 `0x42D5F4`（保存槽那条路）也出现，
+ * Hex-Rays 在那里同样把版本号渲染成字符串常量。审计 `op-2-10` 的"读 `set:SaveVersion1` 并把结果写回"
+ * 即由此而来：**体里没有写回**（写回侧 `sub_434D00`/`sub_492AB0` 在全库只被构造默认值、INI/注册表装载
+ * 与那条 `(1,0) → (1,10)` 迁移调用：raw 111711/111713、112666/112668、112826-112833）。
+ *
+ * 取值来源优先级与 `0xAE`（`handlers/frame.ts` 的 `SAVE_VERSION_BRANCH`）**必须一致**：这份槽自己声明的
+ * 版本（`resume.sv1/sv2` = 容器头 +284/+288）优先，其次配置注册表，最后注册表的**内建默认值**
+ * （`set:SaveVersion1` = 1、`set:SaveVersion2` = 0）—— 玩家 INI 可能整个没有 `[set]` 段，那时
+ * `cfgInt(..., 0)` 得到 0，而 0 不在分派表里（`tickets/T-0065`）。
+ */
+function readSaveVersionPair(e: Engine): { sv1: number; sv2: number } {
+  const cfg1 = e.config
+    ? cfgInt(e.config, CFG.setSaveVersion1, registryDefault(CFG.setSaveVersion1))
+    : registryDefault(CFG.setSaveVersion1);
+  const cfg2 = e.config
+    ? cfgInt(e.config, CFG.setSaveVersion2, registryDefault(CFG.setSaveVersion2))
+    : registryDefault(CFG.setSaveVersion2);
+  return { sv1: e.saveResume?.sv1 ?? cfg1, sv2: e.saveResume?.sv2 ?? cfg2 };
+}
+
 const op_exit: OpHandler = async (c) => {
   const caller = c.frame.caller;
   if (caller === DISPATCH_SENTINEL) {
@@ -119,11 +191,39 @@ const op_exit: OpHandler = async (c) => {
     c.e.cur = caller;
     c.e.callRet = caller;
     c.jump(-1); // 控制流已转移，不再自动推进
-  } else if (caller === -11 && c.e.saveResume?.pendingRecord0) {
-    // ★引擎 `sub_41A820` 的 **-11** 分支（raw 25649-25658）：`CALLBACK_LOAD.BIN` 跑完 ⇒ `_this[95777] = -1`
-    //   后 `sub_40F750(sv1, sv2)` ⇒ 把**记录 0 的脚本**装进帧 0（入口 ip=0，随后由它的 `i0ae` 走栈）。
-    //   这一跳的用途见 `tickets/T-0072`（上一画面收尾：ADV 退出 / 渲染目标 / 释放 2000 个句柄 / SE·语音复位）。
+  } else if (caller === -11) {
+    // ★引擎 `sub_41A820` 的 **-11** 分支（listing 0041A837-0041A895；`tickets/T-0092`）：
+    //   ① `_this[95777] = -1`（raw 0041A865；`fields.json`：0x5D884 = call_ret）；
+    //   ② 两次 `GetConfig` 取 `set:SaveVersion1/2`（见 `readSaveVersionPair`，**只读无写回**）；
+    //   ③ `sub_40F750(this, SV1, SV2)`（raw 0041A88B；分派表见 `sub40F750Branch`）；
+    //   ④ `return`（raw 0041A895）。
+    //   ★体里**没有**任何退出程序的路（上表：`sub_40F750` 只调 `sub_40ED40` 装脚本与 `sub_4380F0`
+    //   写时间戳）⇒ 本分支**绝不抛 `ExitScript`** —— 旧实现把"没有记录 0"兜底成程序退出，与体相反。
+    //   ★本分支**不碰 `frame.caller`**：引擎只写**全局** `_this[95777]`，帧记录的 [0] 格是随后的
+    //   `sub_40ED40` 从 call_ret 抄过去的（raw 18637）。返回到 `stepOnce` 后 ip 走**默认推进** ——
+    //   `exit` 是 0 操作数指令，引擎 0 操作数的步长槽 = 1（主循环 raw 20165 `ip += 4*step`；`0x1A8`
+    //   的体写的也是 1）⇒ 这里**不用** `jump(-1)`（那会让这条 `exit` 原地自旋）。
+    c.e.engineValues.set(ENGINE_FIELD.callRet, -1); // ① `_this[95777] = -1`
+    const { sv1, sv2 } = readSaveVersionPair(c.e); // ② 两次 GetConfig
+    const branch = sub40F750Branch(sv1, sv2); // ③
     const resume = c.e.saveResume;
+    if (!resume?.pendingRecord0 || branch === 'none') {
+      // ④ 与体同形的兜底：**什么都不做**。两种情形：
+      //    ⓐ `sv1/sv2` 不在分派表里（例：注册表内建默认 1/0）⇒ 引擎 `sub_40F750` 直接 return；
+      //    ⓑ 无记录 0 可装 ⇒ emulator 手上没有帧记录里的 scriptId（引擎会拿记录区那一格去
+      //       `sub_40ED40`；本工程槽/旧布局解析不出记录时，这里如实不动，见 `SLOT_GAPS`）。
+      //    两种情形都**不改任何状态**（除了上面那一格 call_ret），也都**不退出程序**。
+      c.log(
+        `0x2(exit): -11 分支收尾（call_ret = -1 已写）：sub_40F750(sv1=${sv1}, sv2=${sv2}) ⇒ ` +
+          `${SUB40F750_BRANCH_TEXT[branch]}；` +
+          (resume?.pendingRecord0
+            ? '有 pendingRecord0，但版本分派不进装载支 ⇒ 不装载'
+            : '无记录 0 可装 ⇒ 不动作') +
+          '（引擎此处同样不抛异常、不退出）',
+      );
+      return;
+    }
+    // ---- 以下 = 既有正确路径（`tickets/T-0072`）：`sub_40F750` 进装载支 ⇒ 帧 0 ← 记录 0 的脚本 ----
     resume.pendingRecord0 = false;
     const rec0 = resume.frames[0];
     const fs = c.e.fileSource;
@@ -145,7 +245,9 @@ const op_exit: OpHandler = async (c) => {
     c.log('0x2(exit): CALLBACK_LOAD 收尾时读不到记录 0 的脚本 ⇒ 中止续跑（读档门已清）');
     return;
   } else {
-    // caller<0：-1=无调用层（程序退出）；-10 = 派发哨兵（上面已处理）
+    // caller < 0 且不是 -10/-11：引擎 `sub_41A820` 落到 LABEL_14（raw 25675-25677）
+    // `_CxxThrowException(&2, Command_Exit)` ⇒ **程序退出**（-1 = 顶层脚本 `exit`，emulator 同口径；
+    // 其它负值走的是同一条 LABEL_14）。
     throw new ExitScript();
   }
 };

@@ -37,10 +37,9 @@
  *    `sub_4C1EA0` raw 148068 以 `PrimitiveType=4`/`PrimCount=idx/3` 提交）。
  *
  * ## 已知未建模（写在缺口里，不假装支持）
- *  - **572B 节点的 `+508` 4x4 矩阵**：`sub_49CA10`（raw 118402-118512）把它初始化成**单位阵**
- *    （`+508/+528/+548/+568 = 1.0`），只有 `0x346`-`0x34D` 会动它；而**本作语料对节点的用法
- *    只有 `0x344`**（`src/TITLE.txt:590`）⇒ 出画路径恒为单位阵。`l2dNodeTransform()` 是这条
- *    结论的落点（返回单位变换），将来要支持 `0x347`-`0x34D` 时改它一处。
+ *  - **572B 节点的节点矩阵**：★2026-09（`tickets/T-0096`）**已实现** —— `sub_4A07F0`
+ *    （raw 121131-121655）的合成器在 `live2d/nodeMatrix.ts`，逐帧由 `scL2dTick` 推进，
+ *    本文件的 `l2dNodeTransform` 读它的结果。见该函数的说明。
  *  - **`.MTN` 的 `LAYOUT:`**：语料 237 个动作里 236 个是引擎缺省（`X=1024 / Y=512 / SCALE=1`
  *    = 2048x1024 参考画布的正中、不缩放）；剩下 5 个 `Y=1024` 会整体下移半个参考高。
  *    本作 TITLE 用的是缺省值 ⇒ 当前按"不影响摆放"处理（未逐行确证参考画布口径）。
@@ -59,8 +58,8 @@
  *  - 也不能按 `(纹理号, opacity)` 合并：那会让同一纹理上 opacity 不同的网格被拆成两组
  *    先后画，**破坏 drawOrder**。
  */
-import type { DrawDataFrame, ModelFrame } from './deform.js';
-import { evaluateModel } from './deform.js';
+import type { Affine, DrawDataFrame, ModelFrame } from './deform.js';
+import { AFFINE_IDENTITY, affineApply, evaluateModel } from './deform.js';
 import type { L2dInstance, L2dNode } from './runtime.js';
 import { l2dNodeDrawable } from './runtime.js';
 
@@ -120,22 +119,20 @@ export function l2dPlacement(
 }
 
 /**
- * 572B 节点的变换（引擎 `sub_4A07F0` 装出来的 `+508` 4x4）。
+ * 572B 节点的**变换矩阵**（引擎 `sub_4A07F0` 装出来的那个 4x4，raw 121131-121655）。
  *
- * ★当前恒为单位变换，**且这是已知缺口**：`sub_49CA10`（raw 118402-118512）把 `+508` 初始化成单位阵，
- * 只有 `0x346`-`0x34D` 会动它；`sub_4B0360` 在 `Scene+46532`（"有节点矩阵"位，raw 134385）非 0 时
- * 才把 `Scene+46536` 乘进世界矩阵。而 `Scene+46536` 由 `sub_4A07F0`（raw 121131-121520）从节点记录
- * **逐窗求值**后合成（缩放 `record+80`/`+144`、旋转 `+208`/`+272`、平移 `+336`/`+400`、
- * 基础偏移 `record[2..4]`，含 `delay/dur` 插值）——**那个合成器整体未实现**，所以：
- *  - `L2dNode` 上的 `scale`/`rotation`/`translate`/`baseOffset`/`wins` 已按体落值（`0x346`-`0x34D`），
- *    但**没有消费端**（本函数就是那个唯一的落点）；
- *  - 本作语料对节点只用 `0x344` 建节点（`src/TITLE.txt:590`）`0x346`-`0x34D` 里只有
- *    `0x349`(7)/`0x34D`(12, BTL) 有命中 ⇒ 出画路径在实际语料下确实是单位变换；
- *  - 要接上它，就在本函数里把 `sub_4A07F0` 的合成实现出来（当前签名返回各向同性 scale + 平移，
- *    要支持轴角旋转得先把它扩成 2x3 仿射 —— 那是这次范围之外的工作，故不在此凭空近似）。
+ * ★2026-09（`tickets/T-0096`）：这里**不再是恒等单位变换** —— `live2d/nodeMatrix.ts` 已把
+ * `sub_4A07F0` 逐句直译（4 个窗求值 + `T(−p)·M_base·M_scale·M_rot·M_trans·T(+p)` 组合），
+ * 由 `renderer/scene/ops.ts` 的 `scL2dTick` 每帧每节点推进一次，结果写回 `node.matrix`
+ * （引擎写进 `Scene+46536`，再由 raw 134385-134386 右乘进世界矩阵 ⇒ 与这里"作用在画布坐标上"同序）。
+ *
+ * - 节点从来没配过变换（`matrixDirty` 为假 / `matrix` 还是单位阵）⇒ 返回单位 `Affine`
+ *   ⇒ `l2dBatches` 的几何与"节点变换未实现"时期**逐位相同**（TITLE 的零回归就靠这条）；
+ * - ★坐标约定：`Affine` 是**列向量**（`x' = a*x + c*y + tx`），引擎是**行向量**（平移在第 4 行）
+ *   ⇒ 合成器在写 `node.matrix` 时**已经取过转置**（见 `nodeMatrix.ts` 头部），这里直接用。
  */
-export function l2dNodeTransform(_node: L2dNode): { scale: number; tx: number; ty: number } {
-  return { scale: 1, tx: 0, ty: 0 };
+export function l2dNodeTransform(node: L2dNode): Affine {
+  return (node.matrix ?? AFFINE_IDENTITY) as Affine;
 }
 
 /** 按 `.moc` 的初始 visible 位 + 实例上的 `VISIBLE:` 覆盖（`.MTN` / `0x34C` 等）过滤并排序。 */
@@ -199,8 +196,12 @@ export function l2dBatches(
       for (let i = 0; i < n; i++) {
         const mx = dd.points[i * 2]!;
         const my = dd.points[i * 2 + 1]!;
-        const px = mx * nt.scale + nt.tx + dx;
-        const py = my * nt.scale + nt.ty + dy;
+        // ★节点矩阵（`sub_4A07F0` 的合成结果）作用在**模型画布坐标**上，居中平移 `dx/dy` 在**最后**
+        //   （引擎顺序：节点矩阵进世界矩阵 ⇒ raw 134385-134386，居中平移在 raw 134374-134376）。
+        //   单位矩阵时 `affineApply` 恒等 ⇒ 与"未实现时期"逐位相同的几何。
+        const q = affineApply(nt, mx, my);
+        const px = q.x + dx;
+        const py = q.y + dy;
         positions[i * 2] = px;
         positions[i * 2 + 1] = py;
         uvs[i * 2] = dd.uvs[i * 2] ?? 0;

@@ -407,8 +407,8 @@
       "argc": 3,
       "docStatus": "已核对",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "★**订正（2026-09 路线 C）：本条此前的归口标签「GDI 文本度量族」是错的** —— 体 raw 38098-38110 **零 GDI / 零字体调用**，被调的 `sub_459860`（raw 70629-70724）只碰 `Font[841..846]` 与 `Font[859]/[860]` 三组整数容器 ⇒ **它不需要任何字形度量，与 `text/layout.ts` 无关**；真实语义 = 「回看页索引表·带步数读出」：op3 = 带符号相对步数（脚本恒用 `0,-1,-2,…`），op1 = 该页窗口号、op2 = 该页在文本项记录表 `Font+3364` 里的起始下标，任何失败路径写 `-1/-1`；页表 `Font+3380` 8B/条 `{窗口号, 起始记录下标}` 由 `0x70`(`sub_45D660` raw 73181-73191) 与 `0x71`(`sub_45EC60` raw 74267-74276，受 `Engine[97055]` 门控) push，末参 `2` = 记录 flags bit1 过滤（bit1 来自 `sub_46CC60` raw 84047 那条重排/重贴路径）。以下为旧记录原文（保留对照）：**GDI 文本度量 getter（体已读，raw 38098-38110）**：`v2 = sub_41BF50(_this, 3)` → `sub_459860(_this + 21324, &v5, &v4, v2, 2)` → `op1 = v5`、`op2 = v4`（一股入、两路出、末参常量 2）；同族 `0x1D1` = 它的写入侧 `sub_4675A0`（raw 80312 起，300+ 行 GDI 文本例程）。⇒ **卡口径不卡语义**：emulator 的 `text/layout.ts` 只有排版，**没有 GDI `GetTextExtent` 等价的字形度量来源** ⇒ 在补出度量之前实现就是编数 ⇒ 登记 `deferred`（2026-09 目标轮 37-39 定性）★筛体(2026-09)：体内走 `sub_459860`（GDI 文本对象 `Engine+21324` 的度量例程）⇒ 归口 `deferred`；扩展点 = 先建 GDI 文本对象的字形度量来源（`GetTextExtent` 等价物）。★筛体(2026-09 路线 C)复核：**处置仍是 deferred，但上面那段旧理由整条作废**（本条不属于度量族，`sub_459860` 与 HDC/HFONT/`GetTextExtent` 无关）。真因 = **它读的那张表在 emulator 里不存在**：①页表 `Font+3380`（8B/条 `{窗口号, 起始记录下标}`）与双游标 `Font+859/[860]` 都没建；②写者不在本条 handler 里 —— `0x70`(`sub_45D660` raw 73181-73191) 与 `0x71`(`sub_45EC60` raw 74267-74276，且受 SetTB `Engine[97055] >= 0` 门控)；③末参掩码 bit1 只能由渲染层记录 push 产生（`sub_46CC60` raw 84047 的 flags=2 路径），emulator 的记录表里永不出现该位 ⇒ 照抄这段过滤是死逻辑；④清表靠 `0x85`(`sub_45EBE0` raw 74182-74194，本身 deferred)，另有 `SaveTextBuf.dat` 存档/读档（写 raw 69504-69664 / 读 raw 74403-）。⇒ **只做读出端 = 表恒空 ⇒ 恒写 `-1/-1` ⇒ 回想列表静默为空**，属「能跑但口径不对」⇒ 不做（现在的 `NotImplementedOp` 硬报错反而更响亮）。★扩展点（下一个 agent 可直接开工）：(1) `src/vm/textItems.ts` 加 `pages: {win, start}[]` + `cursor`/`baseCursor`（`start` = push 时 `records.length`），并在 `TextItemTable.reset()` 里清（`control.ts` 已调该 reset，**无需改 control.ts**）；(2) `advState` 快照加这两个字段（引擎存 `SaveTextBuf.dat`）；(3) `handlers/msgwin.ts` 的 `0x70`(`op_window_geometry`)/`0x71`(`op_message_show`) 各加一行 push（`0x71` 那行判 `Engine[97055] >= 0`；`0x70` 的落点 a7 恒 0 ⇒ 不过门）；(4) handler `[0x1d0, …]` 放新文件、定点并进 `handlers/index.ts`；(5) 守卫测试断言 `op3=0` 回当前页、`-1/-2` 逐页后退、越界 `-1/-1`、`op2 == push 时 records.length`、`i1bb 0` 期间 `0x71` 不 push。★**落地前必须先闭环 bit1 语义**（`sub_4040A0` raw 10032- 是 `sub_46CC60` 的唯一调用者）。★路线 C 真正的 `GetTextExtent` 缺口在别处：`set:BlankExtentMode`（`sub_404EE0` raw 10716-10739 逐字量宽；消费点 `sub_4072F0` raw 12224-12236 与字形路径 20+ 处），与本条无关。★`T-0085` 复核补记（2026-09）：该门**只作用于空白字**（`0x20`/`0x8140`/控制字），`mode == 0`（随包默认 0）的引擎公式 = `font_size / (全角?1:2)`（raw 87269-87280）= emulator 的纯算术 ⇒ 默认配置下逐字等价；门与公式已在 `src/text/layout.ts` 接上、缺的只是宿主字体度量来源（`test/op-205-blank-extent.test.ts` 守住「回退可见」）。细则见 `docs-new/03-engine/route-c-text-metrics-2026-09.md`。",
+      "disposition": "implemented",
+      "note": "★2026-09（T-0095）已落地（implemented）：页表 Font+3380（8B/条 {窗号, 起始记录下标}）+ 双游标 Font+859/[860] 已建在 src/vm/textItems.ts（pages/cursor/baseCursor）；读端 = handlers/text-items.ts 的 [0x1d0, op_backlog_page_at]（pageAt = sub_459860，末参常量 2 = ITEM_REFLOW）；两个写端 = handlers/msgwin.ts（0x70 raw 73186 无门 / 0x71 raw 74271，门 = Engine[97055] >= 0，并订正了旧实现恒真的 m.textSlotArg）；清表 0x85 = clearBacklog()（sub_45EBE0 raw 74182-74194，★不复位游标）；持久化随 advState 快照的 backlog 字段（引擎 SaveTextBuf.dat）。守卫 test/op-1d0-page-index.test.ts（14 条，含 E3：install/CONFIG.BIN 426 条、0x1d0 在下标 14、实参 = local-int 5/6/7）。★**订正（2026-09 路线 C）：本条此前的归口标签「GDI 文本度量族」是错的** —— 体 raw 38098-38110 **零 GDI / 零字体调用**，被调的 `sub_459860`（raw 70629-70724）只碰 `Font[841..846]` 与 `Font[859]/[860]` 三组整数容器 ⇒ **它不需要任何字形度量，与 `text/layout.ts` 无关**；真实语义 = 「回看页索引表·带步数读出」：op3 = 带符号相对步数（脚本恒用 `0,-1,-2,…`），op1 = 该页窗口号、op2 = 该页在文本项记录表 `Font+3364` 里的起始下标，任何失败路径写 `-1/-1`；页表 `Font+3380` 8B/条 `{窗口号, 起始记录下标}` 由 `0x70`(`sub_45D660` raw 73181-73191) 与 `0x71`(`sub_45EC60` raw 74267-74276，受 `Engine[97055]` 门控) push，末参 `2` = 记录 flags bit1 过滤（bit1 来自 `sub_46CC60` raw 84047 那条重排/重贴路径）。以下为旧记录原文（保留对照）：**GDI 文本度量 getter（体已读，raw 38098-38110）**：`v2 = sub_41BF50(_this, 3)` → `sub_459860(_this + 21324, &v5, &v4, v2, 2)` → `op1 = v5`、`op2 = v4`（一股入、两路出、末参常量 2）；同族 `0x1D1` = 它的写入侧 `sub_4675A0`（raw 80312 起，300+ 行 GDI 文本例程）。⇒ **卡口径不卡语义**：emulator 的 `text/layout.ts` 只有排版，**没有 GDI `GetTextExtent` 等价的字形度量来源** ⇒ 在补出度量之前实现就是编数 ⇒ 登记 `deferred`（2026-09 目标轮 37-39 定性）★筛体(2026-09)：体内走 `sub_459860`（GDI 文本对象 `Engine+21324` 的度量例程）⇒ 归口 `deferred`；扩展点 = 先建 GDI 文本对象的字形度量来源（`GetTextExtent` 等价物）。★筛体(2026-09 路线 C)复核：**处置仍是 deferred，但上面那段旧理由整条作废**（本条不属于度量族，`sub_459860` 与 HDC/HFONT/`GetTextExtent` 无关）。真因 = **它读的那张表在 emulator 里不存在**：①页表 `Font+3380`（8B/条 `{窗口号, 起始记录下标}`）与双游标 `Font+859/[860]` 都没建；②写者不在本条 handler 里 —— `0x70`(`sub_45D660` raw 73181-73191) 与 `0x71`(`sub_45EC60` raw 74267-74276，且受 SetTB `Engine[97055] >= 0` 门控)；③末参掩码 bit1 只能由渲染层记录 push 产生（`sub_46CC60` raw 84047 的 flags=2 路径），emulator 的记录表里永不出现该位 ⇒ 照抄这段过滤是死逻辑；④清表靠 `0x85`(`sub_45EBE0` raw 74182-74194，本身 deferred)，另有 `SaveTextBuf.dat` 存档/读档（写 raw 69504-69664 / 读 raw 74403-）。⇒ **只做读出端 = 表恒空 ⇒ 恒写 `-1/-1` ⇒ 回想列表静默为空**，属「能跑但口径不对」⇒ 不做（现在的 `NotImplementedOp` 硬报错反而更响亮）。★扩展点（下一个 agent 可直接开工）：(1) `src/vm/textItems.ts` 加 `pages: {win, start}[]` + `cursor`/`baseCursor`（`start` = push 时 `records.length`），并在 `TextItemTable.reset()` 里清（`control.ts` 已调该 reset，**无需改 control.ts**）；(2) `advState` 快照加这两个字段（引擎存 `SaveTextBuf.dat`）；(3) `handlers/msgwin.ts` 的 `0x70`(`op_window_geometry`)/`0x71`(`op_message_show`) 各加一行 push（`0x71` 那行判 `Engine[97055] >= 0`；`0x70` 的落点 a7 恒 0 ⇒ 不过门）；(4) handler `[0x1d0, …]` 放新文件、定点并进 `handlers/index.ts`；(5) 守卫测试断言 `op3=0` 回当前页、`-1/-2` 逐页后退、越界 `-1/-1`、`op2 == push 时 records.length`、`i1bb 0` 期间 `0x71` 不 push。★**落地前必须先闭环 bit1 语义**（`sub_4040A0` raw 10032- 是 `sub_46CC60` 的唯一调用者）。★路线 C 真正的 `GetTextExtent` 缺口在别处：`set:BlankExtentMode`（`sub_404EE0` raw 10716-10739 逐字量宽；消费点 `sub_4072F0` raw 12224-12236 与字形路径 20+ 处），与本条无关。★`T-0085` 复核补记（2026-09）：该门**只作用于空白字**（`0x20`/`0x8140`/控制字），`mode == 0`（随包默认 0）的引擎公式 = `font_size / (全角?1:2)`（raw 87269-87280）= emulator 的纯算术 ⇒ 默认配置下逐字等价；门与公式已在 `src/text/layout.ts` 接上、缺的只是宿主字体度量来源（`test/op-205-blank-extent.test.ts` 守住「回退可见」）。细则见 `docs-new/03-engine/route-c-text-metrics-2026-09.md`。",
       "ticket": "T-0076"
     },
     {
@@ -613,10 +613,10 @@
       "handler": "sub_42FD60",
       "handlerBodyLine": 39655,
       "argc": 6,
-      "docStatus": "仅映射",
+      "docStatus": "已核对",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "引擎 handler sub_42FD60（体起始 raw 39655）；文档状态「仅映射」；**未读体** ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：**体已读**（raw 39655-39700）= 读 op2/op3=点 (x,y)、op4/op5=两个数组基址、op6=n；把 n 个点逐个 `DEC(ror(key ^ rol(v,11),25))` 解出 → `CreatePolygonRgn(pts, n, 2)` → `PtInRegion` → op1=命中（另按 op4/op5 顺带写回）。★筛体(2026-09)：GDI region 命中（`CreatePolygonRgn`/`PtInRegion`）⇒ **deferred**；扩展点 = 先建 GDI region 原语（或宿主侧多边形命中测试）。",
+      "disposition": "implemented",
+      "note": "★轮 7（tickets/T-0093 第②半）**已实现**：`src/vm/handlers/region-hittest.ts` + 注册进 `OPS`（`handlers/index.ts`）；守卫 `app/amayui-emulator/test/op-147-2f2-region-hittest.test.ts`。**体已逐行读全**（raw 39655-39702）＝多边形命中测试：39671/39672 `x=readIntOperand(2)`、`y=readIntOperand(3)`；39673/39674 `sub_42AEA0(_this, 4/5)` = **operandAddress**（不是普通读！）⇒ op4/op5 给的是**池中连续槽的起始**，n（39675 = `readIntOperand(6)`）个点逐个按 `DEC(v)=ror32(key ^ rol32(v,11),25)` 解出 x 取 op4 数组、y 取 op5 数组（39684/39685）；39689 `CreatePolygonRgn(pts, n, 2)`（**fill mode 2 = WINDING**）；39692 `PtInRegion` → 39693 `writeIntOperand(1, 命中)`；建区失败（含 n<=0）⇒ 39698 错误串 + 39699 `op1 = 0`。★**订正筛体**：旧 note 说「另按 op4/op5 顺带写回」是**错的** —— 体内对两张源数组**只读**，唯一的操作数写回就是 op1（守卫里有一条专门钉这个）。★语料只 1 处：`src/CONFIGCV.txt:380` 的 `i147 (local-int 407) (local-int 3ed) (local-int 3ee) (local-int 41a) (local-int 41e) 4` ⇒ x 数组 = local 槽 41a..41d、y 数组 = 41e..421、n=4（由此反证 op4/op5 是**槽号基址**而非点坐标）。",
       "ticket": "T-0076"
     },
     {
@@ -652,10 +652,10 @@
       "handler": "sub_418F50",
       "handlerBodyLine": 24471,
       "argc": 0,
-      "docStatus": "仅映射",
+      "docStatus": "已核对",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "引擎 handler sub_418F50（体起始 raw 24471）；文档状态「仅映射」；**未读体** ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：**体已读**（raw 24471-24476）= arity 槽 1；`sub_45EBE0(_this + 21324)`（raw 74182-74194：对**同一个 GDI 文本对象**的两条 vector（`+841` 与 `+52` 偏移族）做「清空 + 归零游标」）⇒ **清文本对象内部缓冲**。★筛体(2026-09)：体内走 sub_45EBE0/sub_45D1B0（`_this+21324` = GDI 文本对象的行/段容器）⇒ **deferred**；扩展点 = 先建 GDI 文本对象的行/段容器模型（与 `0x204` draw-string 不同：后者是直绘、无此容器）。",
+      "disposition": "implemented",
+      "note": "★2026-09（T-0095）订正 + 落地：sub_418F50（raw 24471-24476）→ sub_45EBE0（raw 74182-74194）清的是**本票的两张 vector**（Font+3364 的 72B 记录表 + Font+3380 的 8B 回看页表），**不是** GDI 文本对象的行/段容器，零 GDI。★注意 asymmetry：它**不复位** Font[859]/[860] 双游标，也不清 Font[849+win] 组首标记（体里一次都没出现）⇒ emulator 的 clearBacklog() 照抄这个不对称（只有 0x9 exit-script 的 reset() 归零）。语料 1 处 = src/HMODE.txt:807。守卫 test/op-1d0-page-index.test.ts 第 ⑩ 条。引擎 handler sub_418F50（体起始 raw 24471）；文档状态「仅映射」；**未读体** ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：**体已读**（raw 24471-24476）= arity 槽 1；`sub_45EBE0(_this + 21324)`（raw 74182-74194：对**同一个 GDI 文本对象**的两条 vector（`+841` 与 `+52` 偏移族）做「清空 + 归零游标」）⇒ **清文本对象内部缓冲**。★筛体(2026-09)：体内走 sub_45EBE0/sub_45D1B0（`_this+21324` = GDI 文本对象的行/段容器）⇒ **deferred**；扩展点 = 先建 GDI 文本对象的行/段容器模型（与 `0x204` draw-string 不同：后者是直绘、无此容器）。",
       "ticket": "T-0076"
     },
     {
@@ -678,10 +678,10 @@
       "handler": "sub_4318A0",
       "handlerBodyLine": 40687,
       "argc": 6,
-      "docStatus": "仅映射",
+      "docStatus": "已核对",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "引擎 handler sub_4318A0（体起始 raw 40687）；文档状态「仅映射」；**未读体** ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：**体已读**（raw 40687-40721）= 读 op2/op3=点、op4=数组基址（4 个 int：left/right/top/bottom，逐个 `DEC` 后加 op5/op6 偏移）→ `CreateEllipticRgnIndirect(&rect)` → `PtInRegion` → op1=命中。★筛体(2026-09)：GDI region 命中（椭圆）⇒ **deferred**；扩展点 = 同 `0x147`（GDI region 原语或宿主侧命中测试）。",
+      "disposition": "implemented",
+      "note": "★轮 7（tickets/T-0093 第②半）**已实现**：与 `0x147` 同一个新模块 `src/vm/handlers/region-hittest.ts`、同一个守卫文件。**体已逐行读全**（raw 40687-40721）＝椭圆命中测试：40700/40701 `x/y = readIntOperand(2/3)`；40702 `sub_42AEA0(_this, 4)` = **operandAddress** ⇒ op4 给的是**池中连续槽的起始**（4 个 dword）；40703/40704 `op5`/`op6` = 两份**偏移**（不是坐标）；40705-40708 严格 `left=v3+DEC(v2[0])`、`right=v3+DEC(v2[1])`、`top=v4+DEC(v2[2])`、`bottom=v4+DEC(v2[3])`（偏移加在 DEC **之后**）；40709 `CreateEllipticRgnIndirect(&rect)`（= rect 内切椭圆）；40712 `PtInRegion` → 40713 `writeIntOperand(1, 命中)`；建区失败（含 0 宽/0 高）⇒ 40718 错误串 + 40719 `op1 = 0`。★语料只 1 处：`src/REIGN.txt:550` 的 `i2f2 (local-int 2e1) (local-int 2fe) (local-int 2ff) (local-int 1d10) (local-int 1d14) (local-int 1d15)` ⇒ 矩形数组 = local 槽 1d10..1d13，op5/op6 正好是紧随其后的 1d14/1d15（由此反证 op4 是**槽号基址**）。",
       "ticket": "T-0076"
     },
     {
@@ -938,8 +938,8 @@
       "unimplemented": 0,
       "engine-internal": 13,
       "engine-internal-unjustified": 0,
-      "implemented": 34,
-      "deferred": 24
+      "implemented": 38,
+      "deferred": 20
     }
   }
 }

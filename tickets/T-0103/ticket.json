@@ -1,0 +1,49 @@
+{
+  "title": "SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "**用户实测（轮 8）**原话：「SN0000 到 SC0000 的专场（章节切换动画）似乎有很多不一致的地方，这个有点难以描述，**先记录，最后再处理**」。\n⇒ 本票**只登记**，不进入本轮实现。已知的相邻事实（供将来动手时当起点，**不是**本票的结论）：\n- 该切换链在日志里表现为：`SCINIT`/`SCJUMP` 之后 `[call-script] 0x73 -> SC0000.BIN`，前面是一串 `detachTexture … RANGE-REMOVE` + `clearDrawContainer` + 章头转场项（`AE910AA.AGF`/`AE910AB.AGF` 建的两个 draw item + `setTransition id=0x18b02 … [3]=1500`）。\n- 转场渲染侧本身还有未收口项：`tickets/T-0091` 的 **G1**（`Scene+46512` 冻结没进窗模型）与 **G2**（转场表清空门应为全场景 `46516 == 0`），以及同票的类别 3 精确核 / `[4]` 非 create-texture 槽 / E4 可达路径。\n- 另有 `T-0099`（sleep 门帧粒度：40ms 档每处多约一帧）会直接改变演出的时序观感。",
+  "acceptance": [
+    "★先做**取证**（用户说「难以描述」⇒ 必须把现象拆成可核对的条目）：用 `npm run shot` 对同一段切换在不同帧位连拍（或让用户给出时间点），逐条记录「哪一帧、哪个元素、期望 vs 实际」——至少覆盖：章头转场的条带/淡入淡出、上一屏残留、ADV 窗口背景/文字、角色名色、时序（每段时长）",
+    "把每条现象归到**已知票**或新开票：转场窗口模型 ⇒ `T-0091` G1/G2；时序粒度 ⇒ `T-0099`；文字/底色 ⇒ `T-0102`；确实不属于以上三类的才在本票内实现",
+    "实现按体证据（`sub_4B06D0`/`sub_4ADDB0`/`sub_4ADEE0`/`sub_4A9BE0`，raw 行号进 `evidence`），并补场景级不变量或 E4 对照",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0091/notes.md",
+      "anchor": "G2 不能直接 import",
+      "note": "转场侧的 G1/G2 与实现陷阱（最近的相关工作）"
+    },
+    {
+      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
+      "anchor": "SC0000",
+      "note": "同一次切换的现场日志证据（边界 7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0091",
+      "T-0099",
+      "T-0102"
+    ],
+    "docs": [
+      "docs-new/03-engine/transition-render-spec-2026-09.md",
+      "docs-new/03-engine/scene-start-flow.md"
+    ]
+  },
+  "notes": "来源 = 用户轮 8 原话：「SN0000到SC0000的专场（章节切换动画）似乎有很多不一致的地方，这个有点难以描述，先记录，最后再处理」。★用户明确要求**最后再处理** ⇒ 本轮只登记。",
+  "id": "T-0103",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    }
+  ]
+}

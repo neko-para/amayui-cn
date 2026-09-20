@@ -296,6 +296,15 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
       obs?.onGate?.({ ...obsMid(), branch: 'sleep' });
+      // ★★**节流位置位时，引擎是「调文本泵」而不是「空等」**（2026-09 用户实测修正）：
+      //   主循环 raw 21176-21181 `if ((v35 & 0x20000000) != 0) { sub_409400(_this); if (Engine[489860]) goto LABEL_215; }`
+      //   —— `0x20000000` = 本驱动的 `SLEEP_GATE`（由 `0x6E` 与 `0x196` 的第①②路置位，见 `tickets/T-0094`）；
+      //   `sub_409400` 内部就是「等节拍（`sub_453B60`）→ 推进一个字（`sub_45BE20`）→ 无窗在节流时清 `0x20000000`」（raw 13857-13893）。
+      //   ⇒ **节流期间必须继续跑逐字泵**；只有 0x300 闸门槽活跃（`Engine[489860]`）时才不派发脚本。
+      //   ★修前这里什么都不做 ⇒ 逐字既不推进也不重绘，等门清掉才一次性出现
+      //   （用户实测：E4 日志里 ADV 的 `[reveal]` 只有 `0/N` 与最终 `N/N`、中间全是 `gate sleep WAIT`；
+      //   而 `0x196` 把节流位带进了 6341 处 `display-furigana` ⇒ 症状在 `T-0094` 之后大幅变明显）。
+      e.serviceTextReveal(nowMs);
       if (gates.sleep === 'clear' || nowMs >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
     } else if (e.textRevealing) {
       opt.onGate?.('text-reveal', e);

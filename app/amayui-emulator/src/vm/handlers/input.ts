@@ -8,7 +8,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
-import { readRef, refAt, hasRefValue, type Ref } from '../ref.js';
+import { readRef, refAt, type Ref } from '../ref.js';
 import { labelPos } from './shared.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
@@ -281,17 +281,17 @@ const op_get_mouse_state: OpHandler = (c) => {
  */
 const op_hover_hittest: OpHandler = (c) => {
   /**
-   * 读一个池槽，**未写过的槽按引擎口径读 0**。
+   * 读一个池槽 —— **未写过的槽读 0 由全局口径统一负责**（`ref.ts` 的 `decIntSlot`）：
+   * 引擎装载脚本时把局部 int 池整块填成 `enc_zero`（`loadScriptFrame_40ED40` raw 18773-18781；
+   * `enc_zero` = `ENC(0)`，`fields.json` 的 `Engine/0x5EC90`）⇒ **没被脚本写过的局部量读出来就是 0**。
+   * 而 `0x12E` 的 margin/盒表/平面正是"脚本只登记基址、值可能不写"的数组（TITLE/CONFIG1/GAMESTART
+   * 的 margin 都是 `local 1..4`，全脚本一次都没写过）。
    *
-   * 为什么这条指令必须补这个 0：引擎装载脚本时把局部 int 池整块填成 `enc_zero`
-   * （`loadScriptFrame_40ED40`，`analysis/functions.json`；`enc_zero` = `ENC(0)`，raw 388240）⇒
-   * **没被脚本写过的局部量读出来就是 0**。而 `0x12E` 的 margin/盒表/平面正是"脚本只登记基址、
-   * 值可能不写"的数组（TITLE/CONFIG1/GAMESTART 的 margin 都是 `local 1..4`，全脚本一次都没写过）。
-   * emulator 的池是稀疏 Map：`readRef` 对缺失槽给的是 `dec(key, 0)`，**key ≠ 0 时就是垃圾**
-   * （key 只在读真存档时被设成存档里的 key，见 `handlers/save-slot.ts`）⇒ 那会让悬停盒整体漂移。
-   * `hasRefValue` 就是为这个场景准备的（见 `ref.ts` 的说明）。
+   * ★这里**不再**用 `hasRefValue` 本地绕开（轮 6 的写法，`tickets/T-0097` ③）：同一语义两套口径
+   * （全局 `dec(key,0)` vs 本地补 0）会被两处实现都留下。现在 `readIntOperand`/`readRef` 在读侧
+   * 一律"缺槽 = 0"，本指令直接用 `readRef` 即可；棘轮见 `test/operand-missing-slot-zero.test.ts`。
    */
-  const rd = (r: Ref): number => (hasRefValue(c.e, c.frame, r) ? readRef(c.e, c.frame, r) : 0);
+  const rd = (r: Ref): number => readRef(c.e, c.frame, r);
   const start = readIntOperand(c.e, c.frame, c.instr, 1); // op1 = 起始记录下标
   const margin = refFromOperand(c.e, c.frame, c.instr, 2); // op2 → 4 个连续 int
   const x = readIntOperand(c.e, c.frame, c.instr, 3);

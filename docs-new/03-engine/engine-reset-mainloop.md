@@ -117,7 +117,8 @@ int sub_40DF10(int _this) {
 
 `sub_40DF10` 共触碰约 **133 处偏移**（含子对象基址）。对照 `fields.json`（用 `scripts` 校验脚本统计）：
 
-- **命中已知字段（12）**：`call_ret`(0x5D884)、`cur_script`(0x5D880)、`effect_flags`(0xAAB44)、`global_slot_97058`(0x5EC88)、`engine_bool_flag`(0xA30D4)、`config_registry`(0xAA514)、`music_field`/`music_slot`、`sound_directsound`/`sound_manager`、`draw_item_container`、`input_state_mask`。
+- **命中已知字段（12）**：`call_ret`(0x5D884)、`cur_script`(0x5D880)、`effect_flags`(0xAAB44)、`global_slot_97058`(0x5EC88)、`engine_bool_flag`(0xA30D4)、`config_registry`(0xAA514)、`music_field`/`music_slot`、`sound_directsound`/`sound_manager`、`input_manager`(0x408)、`input_state_mask`。
+  - ★**轮 7 订正**：此处原写 `draw_item_container` —— 那是 `fields.json` 里一条 **scope 错的重复条目**（`Engine/0x408`）。`Engine+1032` 实为 **Input(DInput) 管理器对象**：`sub_40DF10` 自己在 raw **18058/18060** 调 `sub_478090(_this + 1032, …)` / `sub_477220(_this + 1032, &v18)`（后者是 `GetAsyncKeyState` 轮询，体 raw ~91562-91635），引擎 ctor raw **22461** `sub_477DD0(_this + 1032)` 构造它。绘制项容器在 **`Scene+0x408`**（Scene = `Engine+0x4ED10` = byte 322832）。旧条目已删、改写为 `Engine/0x408 input_manager`。
   - 其中 emulator **已复位**的：`cur=0`、`effectFlags=0`、`globalSlot97058=0`、`callRet=-1`。
   - `engine_bool_flag`(0xA30D4) **字段已确认但 emulator 未建模**（`engineValues` 里也没有）。
 - **未知偏移（121 处）**：多为三类——

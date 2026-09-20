@@ -1,6 +1,7 @@
 /**
- * **文本项记录表族**（引擎 `Font+3364` 的 72B 记录 vector）—— 写入端 `0x1D2` + 读取端 `0x1D3`/`0x1D4`/`0x2F3`
- * + 记账开关 `0x1BB`（SetTB）。
+ * **文本项记录表族**（引擎 `Font+3364` 的 72B 记录 vector + `Font+3380` 的 8B 回看页 vector）
+ * —— 写入端 `0x1D2` + 读取端 `0x1D3`/`0x1D4`/`0x2F3` + 记账开关 `0x1BB`（SetTB）
+ * + **回看页导航读端 `0x1D0`** + **清两张表 `0x85`**（`T-0095`）。
  *
  * ## 为什么这一族必须成对实现（复评台账 A3/A7 的核心理由）
  * 引擎里「写入端」`0x1D2` 被登记成 no-op 已久，而「读取端」`0x1D3`/`0x1D4`/`0x2F3`
@@ -20,6 +21,8 @@
  * | `0x1D3` | `sub_42D4A0` raw 38113-38128 | `sub_457960(Font, &v, op3, op4, op5)` ⇒ **写 op1 = 是否命中、op2 = `+20`**（op3 被调用方忽略；op4 = 起始下标、op5 = key） |
  * | `0x1D4` | `sub_42D510` raw 38131-38145 | `sub_457A20(Font, &a, &b, &c, op3, op4, 0)` ⇒ **写 op1 = `+20`、op2 = `+24`**（选择器恒 0；op3 忽略、op4 = 起始下标） |
  * | `0x2F3` | `sub_431A10` raw 40724-40741 | `sub_457A20(Font, &a, &b, &c, op4, op5, op6)` ⇒ **写 op1/op2/op3 = `+20`/`+24`/`+28`**（op4 忽略、op5 = 起始下标、op6 = 选择器） |
+ * | `0x1D0` | `sub_42D440` raw 38098-38110 | **回看页索引表·带步数读出** ⇒ `sub_459860(Font, &op1, &op2, op3, 2)`：**写 op1 = 该页窗号、op2 = 该页在记录表里的起始下标**（失败 `-1/-1`；只读 op3） |
+ * | `0x85` | `sub_418F50` raw 24471-24476 | **清两张表**（`sub_45EBE0` raw 74182-74194：72 B 记录表 + 8 B 回看页表 resize(0)）；不复位游标 |
  *
  * 「起始下标」越界时引擎直接返回 0 且**输出保持初值**（`0` 或 `-1/-1/0`）—— 这一点在
  * `TextItemTable.queryText/queryVoice` 里照抄。
@@ -31,7 +34,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
-import { ITEM_TEXT } from '../textItems.js';
+import { ITEM_REFLOW, ITEM_TEXT } from '../textItems.js';
 import type { Engine } from '../engine.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
@@ -116,9 +119,45 @@ const op_voice_item_query: OpHandler = (c) => {
   writeIntOperand(e, c.frame, c.instr, 3, r.v28);
 };
 
+/**
+ * `0x1D0`（`sub_42D440` raw 38098-38110）：**回看页索引表·带步数读出** → 写 op1/op2。
+ *
+ * 体原文（raw 38105-38109）：
+ * ```c
+ * _this[30 * _this[95776] + 95805] = 7;
+ * v2 = sub_41BF50(_this, 3);                     // ★只读 op3 = 带符号相对步数
+ * sub_459860(_this + 21324, &v5, &v4, v2, 2);    // Font = _this+21324(dword)；末参 2 = 常量掩码
+ * sub_42B4B0((int)_this, 1, v5);                 // ★写 op1 = 该页窗号
+ * return sub_42B4B0((int)_this, 2, v4);          // ★写 op2 = 该页起始记录下标
+ * ```
+ * ★**返回值被忽略**（不检查 `sub_459860` 的返回）⇒ 这里也不拿 `ret`。★**不改游标**。
+ * 语料 5 处（`src/CONFIG.txt:22`、`HISTORY.txt:31/761/1130`、`REPLAYVOICE.txt:13`）
+ * 全都是 `i1bb 0` 包住 + 步数**递减**（`sub …,1`）+ 把 op2 直接当 `i1d3` 的第 4 操作数。
+ */
+const op_backlog_page_at: OpHandler = (c) => {
+  const e = c.e;
+  const step = readIntOperand(e, c.frame, c.instr, 3); // op3（raw 38106）
+  const r = e.textItems.pageAt(step, ITEM_REFLOW); // 末参 2（raw 38107：字面量，非操作数）
+  writeIntOperand(e, c.frame, c.instr, 1, r.win); // raw 38108
+  writeIntOperand(e, c.frame, c.instr, 2, r.start); // raw 38109
+};
+
+/**
+ * `0x85`（`sub_418F50` raw 24471-24476）→ `sub_45EBE0`（raw 74182-74194）：**清两张表**
+ * （72 B 记录表 + 8 B 回看页表）。语料 1 处：`src/HMODE.txt:807`（每轮 H 模式重置）。
+ *
+ * ★`analysis/opcode-gaps.json` 对 `i85` 的旧理由（"清 GDI 文本对象的行/段容器"）**是错的**：
+ * 清的就是本票的这两张 vector，纯 VM、零 GDI。★清表**不**复位游标/组首标记（见 `clearBacklog` 注释）。
+ */
+const op_text_tables_clear: OpHandler = (c) => {
+  c.e.textItems.clearBacklog();
+};
+
 /** 文本项记录表族（真实现；表模型见 `../textItems.ts`）。 */
 export const TEXT_ITEM_OPS: OpTable = [
+  [0x85, op_text_tables_clear], // 清两张表（记录 + 回看页；`sub_418F50`）
   [0x1bb, op_set_text_base], // SetTB：记账开关（0=记账 / 0x80000000=暂停；非法值抛错）
+  [0x1d0, op_backlog_page_at], // 回看页索引表·带步数读出 → op1（窗号）/ op2（记录起始下标）
   [0x1d2, op_text_item_push], // 文本项 push（42760 处）
   [0x1d3, op_text_item_query], // 文本项查询 → op1/op2
   [0x1d4, op_voice_item_query0], // 语音项查询（选择器 0）→ op1/op2

@@ -358,15 +358,20 @@ export class MsgWindow {
   /** `[124331]`（0x1E5B4）：仅 0x19C 读取的保持条件（语义未定）。 */
   hold = 0;
   /**
-   * `[97055]`（0x5EC3C）：**文本项记账开关 + 文本对象槽参数**（同一字段两种角色）。
+   * `[97055]`（0x5EC3C）：**文本项记账开关**（引擎侧同一个字段也被 `0x71` 当第 3 参用）。
    *
    * - **记账门**（2026-09 读体确证）：`0` = 正常记账；`0x80000000` = 暂停记账。
    *   写入端只有 `0x1BB`（SetTB，`sub_420000` raw 29230/29240）；`i1bb 0` … `i1bb 1` 成对包住
    *   "不要记账"的片段（如 `SC0000.txt:1554-1560` 的语音重播）。
    *   读取端：`0x1D2`/`0xC4`/`0x1BD`/`0x2F4` 的 `if (!Engine[97055]) { push 记录 }`
-   *   （见 `handlers/text-items.ts`）与主循环 `*(int*)(this+388220) < 0`（raw 20319）。
-   * - **槽参数**：`0x71`（`sub_41ED80` raw 28427）把它当第 3 参传给 `sub_45EC60`（开启新一段消息，
-   *   并在 ≥0 时置该窗的"组首"标记 ⇒ 下一条记录 flags bit0）。
+   *   （见 `handlers/text-items.ts`）、`0x71` 的 `a3 >= 0` 门（raw 74267）与主循环
+   *   `*(int*)(this+388220) < 0`（raw 20319）。
+   * - ★**只有一份真源**：`ENGINE_FIELD.textBaseGate`（= `engineValues` 的 97055 格）。
+   *   下面这个 `textSlotArg` 字段是**历史遗留的第二个副本** —— 它全库只被初始化
+   *   （构造默认值 + `reset()`）、**从未被赋值**，于是旧实现 `if (m.textSlotArg >= 0)` 恒真：
+   *   `i1bb 0` 期间 `0x71` 照样记回看页（`T-0095` 订正的既有缺陷）。
+   *   ⇒ 现在的 0x71 直接用 `engineValues.get(ENGINE_FIELD.textBaseGate)`；本字段**无任何读取者**，
+   *   保留仅为兼容可能按字段名快照的调用方（`advState` 的快照按名搬数值）。**不要**再拿它当门。
    */
   textSlotArg = 0;
 
@@ -471,6 +476,11 @@ export class MsgWindow {
    * 按时间推进所有窗的显现游标。返回**本帧有变化的窗**（宿主据此重画）。
    *
    * 一次一个字、节拍 = `max(message:MessageSpeed, 一帧)`、**不补拍**（见 `RevealState.intervalMs`）。
+   *
+   * ⚠**帧泵不许用这个"全窗"版**（`tickets/T-0100`）：引擎每帧只泵**当前窗**
+   * （raw 13943-13945 的 `sub_45BE20(Font, Engine[122371])`），`0x300` 闸门窗由
+   * `Engine.serviceWinReveal` 单独负责。用它会把上一屏残留的 `reveal` 条目也推进并发布回屏。
+   * 自 `T-0100` 起**已无产品调用者**（保留为单窗版 `tickRevealWin` 的批量包装）。
    */
   tickReveal(nowMs: number, speedMs: number): number[] {
     const dirty: number[] = [];

@@ -36,6 +36,38 @@ export function isRef(v: unknown): v is Ref {
   return typeof v === 'object' && v !== null && 'scope' in v && 'kind' in v && 'index' in v && 'stride' in v;
 }
 
+/**
+ * ★**「没写过的 int 槽读 0」—— 全工程唯一的实现**（`tickets/T-0097` ③；审计"两套口径并存"）。
+ *
+ * ## 引擎口径（判据：三处 raw 体，都是"槽里放 `ENC(0)`"）
+ * 1. **局部 int 池**：`loadScriptFrame_40ED40`（raw 18773-18781）建池后
+ *    `for (i = 0; i <= count; ++i) local_int[i] = _this[97060];`
+ *    —— `_this[97060]` = `enc_zero` = `ENC(0)`（`fields.json` 的 `Engine/0x5EC90`：
+ *    `"ENC(0) 常量槽 (this[97060])"`，`evidence: members.cpp 388240；loadScriptFrame 填 local_int 用`）。
+ * 2. **全局 int 池**：构造/preload（raw 22328-22329）与全量 teardown `0x9`（raw 35218-35219）同样是
+ *    `for (j = 0; j <= count; ++j) pool_int[j] = *(this + 388240);`（同一 `enc_zero`）。
+ * 3. **数组按需扩容** `0x2C9`（`sub_4344A0` raw 42526-42531）：新元素
+ *    `v16 = __ROL4__(key ^ __ROR4__(0, 7), 21)` = `ENC(0)`（就地算出来，不是读常量槽）。
+ *  ⇒ 未写过的 int 槽在位模式上是 `ENC(key, 0)`，读侧 `DEC(key, ·)` 之后**就是 0**。
+ *  旁证：`sub_418940` / `sub_4218D0`（raw 24240 / 30296）用 `ROL4(enc_zero, 11) != key` 做密钥自检
+ *  —— 只有 `enc_zero == ENC(0)` 才成立。
+ *
+ * ## 为什么不能沿用 `dec(key, 0)`
+ * 缺省写成 `dec(key, 0)` 只在 `key == 0` 时等于 0（`ror32(0,25) = 0`），一旦 `key != 0`
+ * —— 读**真存档**就会设非零 key（`handlers/save-slot.ts` 从槽里读回）—— 缺槽读出的是
+ * `ror32(key,25)` 这种垃圾。而 `save-slot.ts` 装 int 池时**只装非零项**（`if (v !== 0)`，
+ * 注释就写着"读侧缺省即 0"）⇒ 修前每个"存档里是 0 的全局量"都读成垃圾。
+ *
+ * ## 纪律
+ * ★**只此一处**：`readIntOperand`（local/global int 与 int 数组操作数）与 `readRef`（int 引用）
+ * 都走它。**不许**再在个别 handler 里另起一套读口径（轮 6 的 `0x12E` 本地 `hasRefValue` 绕法
+ * 已随之删除，守卫见 `test/operand-missing-slot-zero.test.ts` 的"不许两套口径"棘轮）。
+ * `hasRefValue` 保留下来只用于**写侧**的一件事：`0x2C9` 扩容时"只补缺失槽、不覆盖已有值"。
+ */
+export function decIntSlot(key: number, raw: number | undefined): number {
+  return raw === undefined ? 0 : i32(dec(key, raw));
+}
+
 function poolFor(e: Engine, frame: Frame, r: Ref): Map<number, any> {
   switch (r.scope) {
     case 'global':
@@ -75,7 +107,8 @@ export function readRef(e: Engine, frame: Frame, r: Ref): number {
   const pool = poolFor(e, frame, r);
   const raw = pool.get(r.index);
   switch (r.kind) {
-    case 'int': return i32(dec(e.key, typeof raw === 'number' ? raw : 0));
+    // ★int 槽走 `decIntSlot`：没写过的槽 = 引擎的 `enc_zero` ⇒ 读 0（不是 `dec(key,0)` 的垃圾）
+    case 'int': return decIntSlot(e.key, typeof raw === 'number' ? raw : undefined);
     case 'float': return (typeof raw === 'number' ? raw : 0) | 0;
     case 'str': return atoi(typeof raw === 'string' ? raw : '');
     default: throw new Error(`readRef：坏 kind ${r.kind}`);
@@ -112,13 +145,12 @@ export function refAt(r: Ref, elemOffset: number): Ref {
 }
 
 /**
- * 该 Ref 指向的槽**是否已有值**（未被写过 = 假）。
+ * 该 Ref 指向的槽**是否已被写过**（未被写过 = 假）。
  *
- * 用途：引擎的池/向量在建立时是"全 `ENC(0)`"（整块内存清零 ⇒ 解码后就是 0），
- * 所以"槽里没有条目"与"槽里存着编码后的 0"在**读**的时候是同一件事。
- * emulator 的池是稀疏 `Map`：`readIntOperand` 对缺失槽写的是 `dec(key, 0)`（**不是 0**），
- * 于是"从没写过的槽"会读成垃圾。凡是需要"按引擎语义补 0"的地方（如按需扩容的 `0x2C9`）
- * 都应该先用它判断，只补**缺失**的槽 —— 已写过的槽绝不能被覆盖。
+ * 用途（**只剩写侧这一处**）：引擎的池/向量在建立时"整块是 `ENC(0)`"，所以"槽里没有条目"与
+ * "槽里存着编码后的 0"在**读**的时候是同一件事 —— 读口径由 `decIntSlot` 统一负责（缺槽 = 0），
+ * 不再需要在这里分叉。本函数现在只用于「扩容时只补缺失槽、不覆盖已有值」那种**写**判据
+ * （`handlers/memory.ts` 的 `0x2C9`）：已有值绝不能被新元素初始化覆盖。
  *
  * 指针族（`ptr`/`fptr`）不适用（它们是"指向别的池"的一层间接）：一律返回 true，
  * 让调用方的 `writeRef` 走它自己的写穿/报错路径。

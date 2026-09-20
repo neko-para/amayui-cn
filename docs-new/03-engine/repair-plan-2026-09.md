@@ -238,3 +238,70 @@ node scripts/build-opcode-gaps.mjs --check       # ★CI 口径：md 陈旧或 c
 4. **`T-0095`**：`0x1d0` + 写端 `0x70`/`0x71`（回想页表，HISTORY/CONFIG/REPLAYVOICE）。
 5. **B7 继续**：`T-0097` 的定点小修（`0x2EE` / `0x141`·`0x135` 无符号口径 / operand 未写槽 `enc_zero` 口径 / `fields.json` 的 `Engine/0x408` scope）。
 6. **`T-0091`**（转场剩余四项，含 E4 可达路径）与 **`T-0088`**（AGERC 产品策略，待人工决策）仍开。
+
+---
+
+## 2h. 轮 7（2026-09）产出一览：四票 done + 三份现成规格 + 一次全库 hex 订正
+
+> ★**本节取代 §2g 的「下一步」清单**（那份 1–5 项本轮全部落地）。
+
+### 2h.1 收口的四张票（全部 `done`，均带真实守卫）
+
+| 票 | 产出 | 守卫 | 台账影响 |
+|---|---|---|---|
+| `T-0093`② | `0x147`/`0x2f2` 纯几何命中 → **新增 `src/vm/handlers/region-hittest.ts`** + 注册进 `OPS`（零宿主缝） | `test/op-147-2f2-region-hittest.test.ts`(13) | `deferred 24 → 22`、`已实现 34 → 36`；`opcode-table` 两行补全 |
+| `T-0094` | `0x196` 第①②路的 MessageSpeed 节流半边（`SLEEP_GATE` + `sleepUntil`，复用 `0x6E` 机制） | `test/op-3-004-furigana-outer-gate.test.ts`(8，棘轮已翻正向) | 审计 `op-3-004` + `opcode-table` 0x196 行订正；能力条目补置位端 |
+| `T-0097` | ① `0x2EE` 字段 + `SetConfig(message:MessageFade)` 双写 ② `0x141`/`0x135`（并 `0x136`/`0x13F`）unsigned 口径 ③ **operand 缺槽读 `enc_zero` ⇒ 0 的全局口径**（`ref.ts` 的 `decIntSlot`，删 `0x12E` 本地绕法） ④ `Engine/0x408` scope 复核 | `op-2ee-message-fade`(3)、`op-141-135-bitops-unsigned`(5)、`operand-missing-slot-zero`(5) | 审计 `op-4-11` 结案；`opcode-table` 0x2EE 行重写；派生 **`T-0098`** |
+| `T-0092` | `0x02 exit` 的 `-11` 分支不再误抛 `ExitScript`（按 `sub_40F750` 分派） | `test/op-02-exit-minus11.test.ts`(5) | ★订正审计 `op-2-10`（「写回」是 Hex-Rays 误渲染）+ `opcode-table` 0x02 行重写 |
+
+### 2h.2 三份「现成弹药」规格（下一轮直接照做）
+
+- **`T-0095`**（`tickets/T-0095/design.md`）：`0x1d0` 回看页索引表 + 写端 `0x70`/`0x71` + 清表 `0x85`；**判定「现在就能做、纯 VM、零宿主缝、E3 载体实测存在（`install/CONFIG.BIN`）」**；连带三处既有缺陷。
+- **`T-0096`**（`tickets/T-0096/design.md`）：Live2D 节点矩阵合成器 `sub_4A07F0`；★票面体区间**被截断**（真身 raw 121131-**121655**）；组合式 `a3·T(−p)·M_base·S·R·T·T(+p)`（右乘/行向量）；无宿主缝。
+- **`T-0091`③**（`tickets/T-0091/design.md`）：Scene `+46508/+46512/+46516` 三标志 scope 与语义全钉死；两条真缺口 **G1/G2**（改法与守卫在 §5.3）。
+
+### 2h.3 一次全库订正（★值得记的教训）
+
+`Scene` 内嵌对象的基址 hex **写错了 25 处**：旧记 `Engine+0x4ECD0`（=322768）与 `0x4ECE0`，真值 = `_this + 80708`（dword）= byte 322832 = **`0x4ED10`**（偏 64 字节）。
+- 发现者：`T-0091`③ 的只读分析子代理（**它按"同体内是否用 Scene 指纹字段"逐函数核对 scope 时撞出来的**）。
+- 订正范围：`analysis/fields.json` 13 处 + `analysis/functions.json` 12 处 + `runtime-memory.md` / `engine-reset-mainloop.md` / `T-0097/changes.md`，并在 `Engine/0x4ED10 scene` 条目里留下换算规则 **`Engine[i] = Scene[i − 80708]`**。
+- 教训：**同一对象的多种基址写法（dword 下标 / byte 偏移 / hex）是这类漂移的温床** —— 记字段时优先写「`_this[K]`（dword）= byte X = hex Y」三件套。
+
+### 2h.4 本轮的工具化/纪律产出
+
+- **`--recount` / `--set-json` / `--anchors-in`** 三个加固本轮全部实到用处：跨文件锚点核对（`index.ts` 的 `SAVE_SLOT_OPS`、`msgwin.ts` 的 `op_display_furigana`、测试名里的「缺口棘轮」）都靠它保持不红。
+- ★**新注册 opcode ⇒ `docs-new/03-engine/opcode-gaps.md` 必陈旧**（md 内含实时注册数）⇒ 加 handler 必须跑 `node scripts/build-opcode-gaps.mjs`。本轮两个子代理各撞红一次。
+- ★**跨 agent 的「共享口径」类改动应在派活 prompt 里写死**：本轮 `T-0097`③（读口径统一）与 `T-0093`②（新模块）撞在同一处 `hasRefValue` 上，靠事后收口解决。
+
+---
+
+## 2i. 轮 8（2026-09）产出一览：三票 done（含一个用户实测症状）+ 外部 DLL 当 oracle
+
+> ★**本节取代 §2h 的「下一步」清单**（那份的 §2h.1 四票 + §2h.2 三份规格在轮 8 全部落地）。
+
+### 2i.1 收口的三张票（全部 `done`，`npm run verify` = 909/909 pass / 0 fail / 死写 0）
+
+| 票 | 产出 | 守卫 |
+|---|---|---|
+| `T-0095`（P2） | `0x1d0` 回看页索引表 + 写端 `0x70`/`0x71` + 清表 `0x85`（**纯 VM、零宿主缝**）：`vm/textItems.ts` 的 `pages` + 双游标 + `pageAt`/`moveCursor`/`pushPage`/`clearBacklog`；`handlers/text-items.ts` 的 `[0x1d0]`/`[0x85]`；`handlers/msgwin.ts` 的 `0x70` 无门 push+组首、`0x71` 换真门（`Engine[97055] >= 0`，旧实现判**恒真**的 `textSlotArg`） | `op-1d0-page-index`(14) / `op-1d0-1d1-text-metrics`(5) |
+| `T-0096`（P2） | Live2D 节点矩阵合成器 `sub_4A07F0`：**新增 `src/live2d/nodeMatrix.ts`**（591 行）+ `runtime`/`render`/`scL2dTick` 接线；★真身体 raw **121131-121655**（票面旧写的 121520 是**截断**的） | `l2d-node-compose`(18，含 E3 真 TITLE 零回归) / `l2d-node-transform-ops`(10) |
+| `T-0100`（P2，**用户实测**） | 序章 `SN0000`（正文在窗 8）切到 `SC0000`（正文在窗 1）后，**逐字期间点一下鼠标 ⇒ 屏中央冒出序章最后一页**。根因 = 帧泵发布了「所有已知窗」而引擎只泵**当前窗**（raw 13943-13945，`489484/4 = 122371`）⇒ 三处收敛：`serviceRevealAdvanceInput` / `serviceTextReveal` / `0x70` 的 `emitAllWins → emitWin` | `op-0100-reveal-current-window`(4，含**辨别力证明**) |
+
+（另有轮 7 的 `T-0092`/`T-0093`②/`T-0094`/`T-0097` 四票在 §2h 已记。）
+
+### 2i.2 ★两条方法论收获（比票本身更值钱）
+
+1. **外部 DLL/工具可以当 oracle**：`T-0096` 用**真实第三方 `d3dx9_43.dll`** 逐步重放组合链，把三条「文档推断」钉成实测结论 —— `dbl_51FB50 = 1000.0`（文档猜 100.0）、`a2[18]` 的立即数 = `0xFFFFFFFF`（Hex-Rays 渲染成 `NaN`）、**`D3DXMatrixRotationAxis` 内部会归一化轴**（轴 `(0,0,2)` 与 `(0,0,1)` 结果逐位相同）。**并且它当场纠正了自己的两次坐标约定写错**（行主序、合并律平移项）—— 即「先拿 oracle 把约定打死，再写实现」。探针留 `.tmp/t0096b/`，结论与判据写进票据。
+2. **用日志当现场证据（而不是复述症状）**：`T-0100` 的诊断不是从「文字没清」这个描述出发，而是从用户那次的 GUI 会话日志里挖出**边界事实**：第一个 SC 场景 = `SC0000.BIN`（行 7969）、它前一条是 `unhandled 0x308`、跨边界 `[present]` 的 items **26 → 4**（⇒ **DrawItem 其实被清干净了**，把怀疑方向从「绘制项残留」扭到「宿主文本层/发布路径」）。⇒ **症状 + 现场日志 + 体证据三者对齐**才下结论。
+
+### 2i.3 本轮被推翻的规格条目（两份规格共 6+ 处）
+
+- `T-0095` 的 `design.md`：① `0x85` **不复位游标**（§6.2 #10 的断言是错的；引擎 `sub_45EBE0` 里 `Font[859]/[860]` 一次都没出现，也不清组首标记）⇒ 已按体实现并把**不对称**钉进测试；② §6.2 #1 的注释与断言自相矛盾；③ `-99 ⇒ -1/-1` 走的是 `while(v6)` 的 **0-哨兵**、不是「表底」；④ 前进分支几乎总先撞 LIVE 页哨兵。
+- `T-0096` 的 `design.md`：见 2i.2-1 的三条 + **`pivot` 不是不动点**（`q0 = p` 映到 `p + t`；真正的不动点 = `p − t/(s−1)`）。
+- ⇒ 纪律：**照规格做，但每条都要回体核**（两份规格都是上一轮的只读分析产出，仍然各有 3+ 处需要订正）。
+
+### 2i.4 本轮新发现的遗留（已开票，未修）
+
+- `T-0099`（P3）：sleep 门的**帧粒度残差** —— 40ms 档实测 **66.7ms/处**（4 帧）vs 引擎约 **50ms**（3 帧）；同一特征也作用于 `0x6E`（同一条 `SLEEP_GATE`/`sleepUntil`），要对齐会动**所有** sleep 门。
+- `T-0101`（P3）：**默认窗有两个真源**（`msgwin.defaultWin`=1 vs `handlers/text-items.ts` 的 `?? 0`）⇒ 在 `i080` 之前 `i071 0`/`i070 0` push 的页 `win=1` 而 `i1d2` push 的记录 `win=0`（今天不可观测）；以及 `MsgWindow.textSlotArg` 是**死字段**。
+- `T-0098` 的 notes 里另有 **`0x308` 登记为 `engine-internal` 有据 no-op** 的提案（体 = `USER32` 触摸窗口 + `_this[1954]` 3 写 0 读），待用户点头。

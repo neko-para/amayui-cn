@@ -24,8 +24,24 @@
     },
     {
       "file": "analysis/fields.json",
-      "anchor": "draw_item_container",
-      "note": "④ 的被复核对象：Engine/0x408 与 Scene/0x408 的 scope 之争"
+      "anchor": "\"name\":\"input_manager\"",
+      "note": "④ 复核结论（轮 7）：Engine/0x408 实为 Input(DInput) 管理器（原条目 scope 错记 draw_item_container、已删并改写）；同族的 Engine/0x428 mesh_container 也改为 Scene/0x428；绘制项容器在 Scene/0x408 draw_item_map",
+      "line": 4
+    },
+    {
+      "anchor": "export function decIntSlot",
+      "file": "app/amayui-emulator/src/vm/ref.ts",
+      "note": "③ 的落地：缺槽 = 0 的**唯一**实现（判据注释含四处 raw：loadScriptFrame 18775-18777 / 全局池 22328-22329 与 teardown 35218-35219 / 0x2C9 扩容 42527-42531）；readIntOperand 四条 int 路径与 readRef 的 int 分支都走它"
+    },
+    {
+      "anchor": "口径唯一",
+      "file": "app/amayui-emulator/test/operand-missing-slot-zero.test.ts",
+      "note": "③ 的棘轮（口径唯一 + hasRefValue 只许 memory.ts 写侧）★该文件同时是 T-0093② 的 region-hittest.ts 收口的仲裁点：终态 hasRefValue 只在 memory.ts，跨 agent 冲突已消解"
+    },
+    {
+      "anchor": "0x2ED",
+      "note": "轮 7 实施者的 raw 证据全文（0x2EE 体的逐行 + 0x141/0x135/0x136/0x13F 的 unsigned 依据 + ③ 的四组 enc_zero 体证据 + 0x2ED 与 0x107/0x10B/0xFE 的派生发现）",
+      "file": "tickets/T-0097/raw-evidence.md"
     }
   ],
   "links": {
@@ -40,7 +56,7 @@
   },
   "notes": "来源 = 轮 6 分诊报告（`tickets/T-0093/deferred-triage-report.md` B 段 + §D-1）。★③ 是「同一语义两处口径」类问题（T-0057 的同族），最容易被两套实现都留下。",
   "id": "T-0097",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
@@ -49,6 +65,31 @@
     {
       "at": "2026-09-20",
       "what": "改字段：why, notes"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "open → done —— ①②③ 由实施子代理落地、④ 由主 agent 落地：① op_set_message_fade（字段 + SetConfig 双写，守卫写后读回 + onConfigChanged）；② 0x141/0x135 改 unsigned（并同形订正 0x136/0x13F，已申报），错误串分支 = c.log + 不写目标 + 不抛；③ 读口径统一到 ref.ts 的 decIntSlot（缺槽 = 引擎 enc_zero ⇒ 0），删掉 0x12E 的本地 hasRefValue 绕法，hasRefValue 只剩 0x2C9 写侧（判据含四处 raw 体）；④ Engine/0x408 = Input 管理器（错 scope 条目删除并改写）、同族 Engine/0x428 mesh_container 改为 Scene/0x428、第一层 12 处块内定点替换 + 两处文档同步。派生发现已开 T-0098。npm run verify 全绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-2ee-message-fade.test.ts",
+    "app/amayui-emulator/test/op-141-135-bitops-unsigned.test.ts",
+    "app/amayui-emulator/test/operand-missing-slot-zero.test.ts"
   ]
 }

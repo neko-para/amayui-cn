@@ -34,10 +34,11 @@
  * `0x346`/`0x347`/`0x348`/`0x34A`/`0x34B`/`0x34C` 在本作语料里 **0 次**，但都登记为能力面
  * （重实现不能当它们不存在）；`0x349`（7 处）与 `0x34D`（12 处，BTL）**真被使用** ⇒ 操作数口径必须对。
  *
- * ★**未实现的消费端（诚实登记）**：这 7 条写的字段要经引擎的节点矩阵合成器 `sub_4A07F0`
- * （raw 121131-121520，含逐窗求值/颜色/`D3DXMatrix*` 组合）才会出现在画面上；emulator 的
- * `live2d/render.ts` 仍按单位变换出画（`l2dNodeTransform`）。本作语料对节点只有 `0x344`
- * （TITLE `i344 14 0`）真的建节点，故当前不可观测；缺口写在这里，不假装支持。
+ * ★**未实现的消费端（诚实登记）→ 已实现**（`tickets/T-0096`）：这 7 条写的字段要经引擎的节点矩阵
+ * 合成器 `sub_4A07F0`（raw **121131-121655**，含逐窗求值/颜色/`D3DXMatrix*` 组合）才会出现在画面上；
+ * 该合成器已在 `live2d/nodeMatrix.ts` 逐句直译，由 `renderer/scene/ops.ts` 的 `scL2dTick`
+ * 每帧每节点推进一次，`live2d/render.ts` 的 `l2dNodeTransform` 读它的结果（不再是恒单位变换）。
+ * ★唯一调用方 raw 134347 **丢弃**颜色出参（立刻把它当整数槽下标用）⇒ 颜色窗的输出本作不可观测。
  */
 import type { OpHandler } from '../step.js';
 import { readFloatOperand, readIntOperand, readStringOperand } from '../operand.js';

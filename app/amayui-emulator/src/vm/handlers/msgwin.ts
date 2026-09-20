@@ -343,7 +343,16 @@ function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
  */
 export const winStyle = styleOfWin;
 
-/** 发布全部"已知"窗口（全局样式变化时用 —— 字号/颜色/描边/竖排都是全局的）。 */
+/**
+ * 发布全部"已知"窗口。
+ *
+ * ⚠**不要在任何 handler 里调用它**：引擎**没有任何指令**会把文本发布给别的窗 —— 每帧泵只泵
+ * **当前窗**（raw 13943-13945），`0x70` 的落点也只写几何/回看页（raw 73133-73193）。
+ * 历史上它被挂在这里导致过两次用户可见缺陷：① 全局样式指令（`0x76`/`0x77`…）把新样式糊到
+ * 已排版的窗上（`test/text-style-snapshot.test.ts` 钉着，见 `:1339`）；② `0x70` 用它会**重画**
+ * "记录还在但屏上项已被 detach"的窗（`tickets/T-0100`）。
+ * ⇒ 自 `T-0100` 起**已无调用者**，保留仅作诊断/历史对照（遗留文档 `README.md`/`docs/12-*` 仍提到它）。
+ */
 export function emitAllWins(e: Engine): void {
   const wins = new Set<number>([...e.msgwin.slots.keys(), ...e.msgwin.wins.keys(), e.msgwin.defaultWin]);
   for (const w of wins) emitWin(e, w);
@@ -488,9 +497,19 @@ const op_message_show: OpHandler = (c) => {
   const w = m.resolveWin(slot);
   // ★开始一段新消息：清该窗文本记录 + 复位显现游标（引擎 sub_45EC60，raw 74277-74281）
   m.beginNewMessage(w);
-  // 同一函数还会在 `slotslot >= 0` 时置该窗的**文本项组首标记**（`Font[win+849] = 1`，raw 74267-74275）：
-  // 下一条 `0x1D2`/语音记录 push 会带上"组首"位，`0x1D3`/`0x1D4`/`0x2F3` 的扫描在此处停。
-  if (m.textSlotArg >= 0) e.textItems.markGroupStart(w);
+  // 同一函数还会在 `a3 >= 0` 时做**回看记账**（raw 74267-74276）：
+  //  - push 一条回看页 `{窗号, 该时刻的记录条数}`（raw 74269-74271）；
+  //  - 双游标都指向新末项（raw 74272-74274）；
+  //  - 置该窗「组首」标记 `Font[849+win] = 1`（raw 74275）⇒ 下一条 `0x1D2`/语音记录 push 带上 bit0，
+  //    `0x1D3`/`0x1D4`/`0x2F3` 的扫描在此处停。
+  // ★门 = `Engine[97055] >= 0`：`sub_41ED80` raw 28427 把 `_this[97055]` 当第 3 实参传给 `sub_45EC60`。
+  //   ⇒ `i1bb 1`（0）时成立、`i1bb 0`（0x80000000）时**不成立**、`i1bb 0` 期间不记页。
+  //   ★订正（T-0095）：旧实现判的是 `m.textSlotArg >= 0`，而那个字段全库只被初始化（`vm/msgwin.ts:371/795`）、
+  //   **从未被赋值** ⇒ 恒真 ⇒ `i1bb 0` 期间照样记页（既有缺陷）。真源字段 = `ENGINE_FIELD.textBaseGate`。
+  if ((e.engineValues.get(ENGINE_FIELD.textBaseGate) ?? 0) >= 0) {
+    e.textItems.pushPage(w); // raw 74269-74271
+    e.textItems.markGroupStart(w); // raw 74275
+  }
   if (advanceReveal(e)) setAdv(e);
   else clearAdv(e);
   // 引擎 `sub_41ED80` raw 28361-28382：非跳读路径下入队 + `sub_453A60(Engine+430572, MessageSpeed)`
@@ -613,14 +632,46 @@ const op_poll_msg_advance: OpHandler = (c) => {
  * ★**订正（审计 `op-3-004`）**：此前本 handler 只做入队，**外层门整个丢了** ⇒ `0x304`…`0x305`
  *   之间（注音/内嵌模式）与之外走的是同一条路。现在按 raw 29071 接上：`m.flags & 1` 置位时走第③路。
  *
+ * ★**已建模（`T-0094`）**：第①②路的 `effect_flags |= 0x20000000` + `sub_453A60(Engine+430572, MessageSpeed)`
+ *   **节流半边** —— 与 `0x6E` 的 raw 28380/28382 **同形**，故复用同一个 `SLEEP_GATE`/`sleepUntil` 机制
+ *   （不新造平行机制）。三具被调函数的体（各自 raw 区间）：
+ *
+ * | 函数 | raw | 是什么 |
+ * |---|---|---|
+ * | `sub_46BE30(Font, win, 本行, 注音, op4)` | 83363-83995 | **把"本行 + 注音"排进该窗记录**（`sub_45D120` raw 83918 push 一条 24B 记录；注音经 `sub_45E870` raw 83962）。**无 Sleep、无计时器、无自旋**。返回 **1** = 已排版；**0** = `*a3 == 0`（op2 空串，raw 83493-83497 提前 `return 0`）⇒ **返回值 = "本行有内容吗"**。 |
+ * | `sub_46CBF0(同参)` | 83998-84010 | `Font[54630] = 1` → `sub_46BE30` → `Font[54630] = 0` → `do … while (!sub_45BE20(Font, op1))` **自旋**。⇒ **差别不在排不排版，而在结尾那次"把该窗剩余行一次性泵完"**；"同步排空"排空的就是 **`sub_45BE20` 的行泵**（raw 72172：`v5 = win+132` 行游标；"没有下一行"时 `return 1` ⇒ 自旋退出）。体内**既没有 Sleep、也不起计时器**。 |
+ * | `sub_453A60(Engine+430572, ms)` | 66100-66112 | **一个 MessageSpeed 节拍计时器对象**（`Engine+430572` = 该对象基址，不是消息窗/message 状态）：`t[2] = 1`（周期序号，`sub_453B60` raw 66210 每次到期自增）→ `t[5] = timeGetTime()`（起点）→ `t[6] = ms`（周期，**`ms == 0` 时取 1**，raw 66108-66110）⇒ **单位 = 毫秒，量级 = `message:MessageSpeed` 本身**。 |
+ *
+ * **`0x20000000` 谁来清**：`sub_453B60(Engine+430572)`（raw 66188-66212）是它的到期判定 ——
+ * 未到点返回 **-1**（raw 66198/66205-66206），到点返回 `已过周期数 - 1`（>= 0）。读者是主循环
+ * raw 21176 `if ((v35 & 0x20000000) != 0) sub_409400(...)`（= 本模型帧循环的 `sleep` 分支）；
+ * 清位点是 `sub_409400` 内的 raw 13892 / 13919 / 13940 / 13964 —— **每条出口都在"门可以放行了"之后**
+ * （raw 13860/13958 的 `sub_453B60(Engine+430572)` 先判 -1 就 `return`）。⇒ emulator 的等价物
+ * 就是 `frame/loop.ts` raw 299 `if (gates.sleep === 'clear' || nowMs >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE`。
+ *
+ * **为什么这是"少等一拍"**：引擎在 raw 29095 起计时器后，主循环那一帧的 raw 21176 分支会**一直**
+ * 拿 `sub_453B60` 去撞计时器（raw 13860 撞不过就 `return`，本帧什么都不推进）⇒ 紧随其后的
+ * `show-text`（`src/CONFIG.txt:174-175` 就是这个顺序）要等满 `MessageSpeed` ms 才派发。
+ * 修前 emulator 从不起计时器 ⇒ 注音之后立刻派发下一条 ⇒ **每处注音少等一拍**。
+ *
  * ★**未建模（有据缺口，不静默跳过）**：
- *  - 第①②路的 `effect_flags |= 0x20000000` + `sub_453A60(Engine+430572, MessageSpeed)` **节流半边**
- *    （与 `0x6E` 的 raw 28380/28382 同形；`0x6E` 那边已实现，此处**故意留缺口**）。
- *    后果：注音入队后 emulator **不会**等 MessageSpeed ms（比引擎快一拍）。
- *    ★规模订正：审计的"语料 `i196` = 0 处"只对**助记符字面量**成立；`display-furigana` 在
- *    `src/*.txt` 里有 **6341 处**（如 `CONFIG.txt:174`），它们后面紧跟 `show-text`（其节流由 `0x6E`
- *    承担）⇒ 差异是"每处注音最多少等一拍"，不是零。
+ *  - raw 29075 的 ADV 支（`sub_46CBF0` 的**自旋**那一半）：emulator 无文本渲染、`sub_45BE20`
+ *    的"行泵"不建模 ⇒ `0x6E` 那边同样以"不装门"表达"同步排空"（口径一致）。因此第①②路的
+ *    ADV 支 / MessageSpeed=0 支在 emulator 里都是"不装门"，差别只在不在计时器上。
  *  - `sub_46BE30` 的字形排版/光栅化半边（本模块文件头"不做的部分"）；
+ *  - raw 29079/29085/29101 的 `op4`（`v19/v18/v17`，作为 `a5` 交给 `sub_46BE30`）：`scripts/asm/opcodes.json`
+ *    给 `0x196` 的 `argc = 3` ⇒ 语料里只写 3 个操作数（`CONFIG1.BIN` 实读：`0x196 0 "天俟" "天俟"`，
+ *    `args.length = 3`）⇒ emulator 不读第 4 个操作数（`a5 < 0` 时 `sub_46BE30` 的 `sub_4691A0` 那一支
+ *    raw 83941-83942 直接在体外，不建模）。
+ *    ★注意这三处的 `sub_41B640((_DWORD)_this, 4)` 在反编译里用 `_this[97055]`（= `textBaseGate` 槽）
+ *    当"当前脚本"—— 是**反编译器把不同字段认串了**（`0x41` 与 `0x5E` 的字节距离），不是引擎真的从
+ *    那张表取操作数；原本照抄这个下标会读到"文本记账门"的值。`textBaseGate` 的事实见
+ *    `src/vm/engineFieldIds.ts`（`_this[97055]`，`0x1BB` 写）。
+ *  - **raw 29077 的 `_this[489484] = sub_41BF50(...,1)`**：第①路写的是 `sub_41BF50` 的**返回值**
+ *    （不是 `op1`！），而 `sub_41BF50`（raw 26554-…）是"取操作数的值"本身。emulator 三条出口
+ *    统一写 `lastArg = op1`（第②③路 raw 29094/29109 确实是 `op1` 求值后的值）—— 第①路的
+ *    "两次 `sub_41BF50(...,1)`"在当前操作数形态下与 `op1` 同值，故不单列；若将来遇到
+ *    `op1` 是**引用型**操作数（表项/字符串下标）而两者分叉，需在此补显式求值。
  *  - raw 26045（`0x305` 的 `(flags & 0x10001) == 0x10001`）是 bit16 的**读者** —— 它不在本 handler，
  *    且 emulator 的 `0x305` 目前不查这一位（属既有缺口，登记在此以免被当成"没人读"）。
  */
@@ -637,6 +688,20 @@ const op_display_furigana: OpHandler = (c) => {
   // raw 29071 的外层门：bit0 置位（`0x304` 已开文本块）⇒ 走引擎第③路（raw 29104-29109）。
   if ((e.msgwin.flags & 1) !== 0) e.msgwin.flags |= 0x10000; // raw 29108（bit16；读者见 raw 26045）
   e.msgwin.lastArg = slot; // raw 29077 / 29094 / 29109：`_this[489484] = op1`（= `msgwin.lastArg`）
+  // ---- 第①②路（bit0 未置）的 MessageSpeed 节流半边（`T-0094`；raw 29075-29095）----
+  // 与 `0x6E` 的 raw 28361-28382 **同形**，故照搬同一个机制：MessageSpeed==0 **或** ADV 位已置
+  // ⇒ raw 29075 的第一/第二个析取项成立 ⇒ 走 raw 29081 的 `sub_46CBF0`（同步排空，体内无 Sleep、
+  // 不起计时器）⇒ emulator 不装门（与 `op_show_text` 的口径一致）；**只有 else**（raw 29083）
+  // 才是 raw 29088 `sub_46BE30` + raw 29093 `effect_flags |= 0x20000000`（= `SLEEP_GATE`）
+  // + raw 29095 `sub_453A60(Engine+430572, MessageSpeed)`（= `sleepUntil = now + max(1, speed)`；
+  // 计时器对象的 `ms == 0 ⇒ 1` 见 raw 66108-66110，这里 `speed > 0` 已排除该支）。
+  if ((e.msgwin.flags & 1) === 0) {
+    const speed = messageSpeedOf(e);
+    if (speed > 0 && (e.effectFlags & ADV_ACTIVE) === 0) {
+      e.sleepUntil = e.nowMs + Math.max(1, speed);
+      e.effectFlags |= SLEEP_GATE;
+    }
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -1071,7 +1136,15 @@ function packArgb(a: number, c: number): number {
 // P0 参数面（描边 / 颜色 / 字号 / 几何 / 竖排）—— 直接决定阅读体验
 // ---------------------------------------------------------------------------
 
-/** `0x70 <win> <w> <h> <x> <y>`（sub_41ED20 → sub_45D660 raw 73132-73193）：窗口几何。 */
+/**
+ * `0x70 <win> <w> <h> <x> <y>`（sub_41ED20 → sub_45D660 raw 73132-73193）：窗口几何
+ * + **回看页 push / 组首标记 / 双游标复位**（末尾 raw 73181-73191，**不过门**）。
+ *
+ * 操作数语义（`a2..a6` = op1..op5）由语料量纲 + 槽位复用推得（`T-0095`，非逐字节反汇编）：
+ * `op1 = 窗号`（0 ⇒ 默认窗）、`op2 = w`（也写 `win+36` 换行右界）、`op3 = h`（也写 `win+40`）、
+ * `op4 = x`、`op5 = y`（`win+12/+16`）。量纲自洽解：`SYSTEM4.txt:23-30` 给出窗 1 = 880×148 @(190,557)、
+ * 窗 2 = 430×40 @(120,508)、窗 8 = 1280×720 @(0,0)（1280×720 屏）。
+ */
 const op_window_geometry: OpHandler = (c) => {
   const e = c.e;
   const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
@@ -1087,7 +1160,16 @@ const op_window_geometry: OpHandler = (c) => {
   // 引擎同函数把 w/h 也写进换行边界 win+36/+40（raw 73162-73163）；底色随表面重建设置
   g.wrapRight = w;
   g.wrapBottom = h;
-  emitAllWins(e);
+  // ★同一落点函数 `sub_45D660` 的末尾还有**回看页 push**（raw 73181-73191），而且**不过门**：
+  // `sub_41ED20` raw 28415 的末参 `a7` 恒传字面量 `0` ⇒ `if (a7 >= 0)`（raw 73181）恒真
+  // （对照 `0x71` 的 `a3 = Engine[97055]` 那道门）。落点里 `a2 == 0` ⇒ 默认窗（raw 73147-73152）。
+  // push 的形状与 `0x71` 完全相同：`{窗号, 该时刻记录条数}`（raw 73183-73186）+ 置该窗组首标记（raw 73187）。
+  e.textItems.pushPage(win);
+  e.textItems.markGroupStart(win); // raw 73187（`Font[849+win] = 1`）
+  // ★只发布**本指令点名的窗**（`T-0100`）：落点 `sub_45D660`（raw 73133-73193）只写几何 + 回看页，
+  //   **不重画任何窗的正文行**；修前这里调 `emitAllWins(e)` ⇒ 会把"文本记录还在、但屏上项已被
+  //   `detach-texture` 删掉"的**别的**窗重新画出来（与 `0x74` 在 `:1339` 被去掉 `emitAllWins` 同因）。
+  emitWin(e, win);
 };
 
 /** `0x198 <win> <x> <y>`（sub_41FE10 → sub_456400 raw 68263-68279）：窗口屏幕位置。 */

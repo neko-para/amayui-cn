@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 134,
-    "modeled-verified": 49,
+    "total": 135,
+    "modeled-verified": 50,
     "modeled-unverified": 7,
     "partial": 33,
     "absent": 21,
@@ -128,7 +128,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/frame-loop.test.ts",
-        "note": "2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 \u001bffect_flags 门（0x400/0x1000000…）与主循环里 \n★2026-09 轮 6（`tickets/T-0093` 的 B7 首批）：**ADV 分支在 sleep 门之前**。引擎主循环次序 = `0x400` 等待门（raw 21109）→ `0x40`（21154）→ **ADV 循环 `0x8000000`（21158）** → **节流/自旋 `0x20000000`（21176 → `sub_409400`，内含 `Sleep(Engine[86672])`，raw 13954）**；ADV 位不清就**走不到**节流支，且 `0x6E` 只有「MessageSpeed ≠ 0 且 ADV 位未置」才装计时器（raw 28361 的 else：28380/28382）。emulator 的对应改动 = runFrameLoop 里 adv 档移到 sleep 门之前、`op_show_text` 的 SLEEP_GATE 加 `ADV_ACTIVE` 前置条件（守卫 `test/op-10-002-adv-sleep-order.test.ts`）。旧实现把 sleep 门排在 adv 之前且无条件装门 ⇒ 跳读/自动模式每段多等 MessageSpeed ms。"
+        "note": "2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 \u001bffect_flags 门（0x400/0x1000000…）与主循环里 \n★2026-09 轮 6（`tickets/T-0093` 的 B7 首批）：**ADV 分支在 sleep 门之前**。引擎主循环次序 = `0x400` 等待门（raw 21109）→ `0x40`（21154）→ **ADV 循环 `0x8000000`（21158）** → **节流/自旋 `0x20000000`（21176 → `sub_409400`，内含 `Sleep(Engine[86672])`，raw 13954）**；ADV 位不清就**走不到**节流支，且 `0x6E` 只有「MessageSpeed ≠ 0 且 ADV 位未置」才装计时器（raw 28361 的 else：28380/28382）。emulator 的对应改动 = runFrameLoop 里 adv 档移到 sleep 门之前、`op_show_text` 的 SLEEP_GATE 加 `ADV_ACTIVE` 前置条件（守卫 `test/op-10-002-adv-sleep-order.test.ts`）。旧实现把 sleep 门排在 adv 之前且无条件装门 ⇒ 跳读/自动模式每段多等 MessageSpeed ms。\n★2026-09 轮 7（`tickets/T-0094`）：**`0x20000000` 的置位端也已对齐**。置位点全库 = `0x196` 第①②路（raw 29093，`sub_41FC20`）／raw 26080／raw 28380／28761（`_this[174801] |= 0x20000000` —— 即同一个 effect_flags）；`0x196` 的里层条件是「MessageSpeed ≠ 0 且 `effect_flags & 0x8000000`（ADV）未置」（raw 29075），满足则 `sub_453A60(Engine+430572, MessageSpeed)` 起一个**周期 = MessageSpeed ms** 的节拍计时器（raw 66100-66112；对象 `[2]`=tick 序号、`[5]`=起算时间、`[6]`=周期，`0` 兜底 `1`）。emulator 已按同一机制落地（`op_display_furigana`：`effectFlags |= SLEEP_GATE` + `sleepUntil = now + max(1, MessageSpeed)`）—— 复用 `0x6E` 的同一个 `SLEEP_GATE`/`sleepUntil`，未新造平行机制。★**实测可观测**：真 `install/CONFIG1.BIN` 的 `0x71→0x196→0x6E` 段在帧循环里，`MessageSpeed=40` ⇒ 注音后那条等 **66.7ms/处**、`=0` ⇒ **0ms**（守卫 `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` 第 87 条正向棘轮与第 248 条节拍量化）。"
       }
     },
     {
@@ -340,7 +340,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/headless-needs-render.test.ts",
-        "note": "2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。"
+        "note": "2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。\n★2026-09 轮 7（`tickets/T-0091` 第③项规格 · 只读全库扫描 155 行/83 函数）：三格的关系与 scope 已**全部钉死**。① **scope**：三条的 155 个出现点**全部**在 Scene 上（无一是别的类）；真坑是基址写法（`Engine+80708` dword = `Engine+322832` byte = **`Engine+0x4ED10`** —— 旧记 `0x4ECD0` 偏 64 字节）与「内部指针当参数」（`Scene+46536` 是 4×4 节点工作矩阵、不是对象）。② 精确计数：`+46508` 置 1 **90** 处 / 清 0 **4** 处 / 读 **1** 处（`sub_40BE10` raw 16022）；`+46512` 置 1 **2** 处（`sub_407EA0` raw 12796 的 skip-wait-gate、`sub_4B06D0` raw 134936 的转场记录 `[13] < 0`）/ 清 0 4 / 读 10；`+46516` 置 1 **26** 处 / 清 0 **3**（只有帧首与复位）/ 读 **4**。③ **+46512 的语义 = 强制冻结**：所有窗**当帧收尾**（绘制项 117449、mesh 133517、转场 134941·135806·136182、Live2D 节点 121291）且**等待计时器立刻到期**（12776）。④ **+46516 的语义 = 上一遍绘制时还有东西在动**：与 `+46508` **成对**置 1 的判据是「这条 setter 起了**带时长的动画窗**」（`sub_4ACF60` 只写静态色 ⇒ 只置脏）；精确排除门 = 记录 `+720` bit0（长时慢推不钉住等待门，raw 117843-117844）；它还是**转场记录表清空的门**（raw 136840/137181：`+46516 == 0` 才 `sub_4A9BE0(Scene+1048)`）。⑤ 引擎的「有窗在跑就一直 present」有**直接体依据**（不是近似）：`sub_49AA30` 收尾 raw 117833-117845 两个分支都落 `46508 = 1`、窗在途另行置 `46516 = 1`；mesh 同（133528/133540）。⑥ ★**emulator 真缺口两条**（已随本票备好改法）：**G1** `+46512` 冻结**没有传进窗模型**（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 都没有 freeze 形参，`scTransitionWindow(..., false)` 第 4 参硬编码；且 `loop.ts:368` 同帧就清掉 `sceneFreeze`）—— 引擎里冻结 ⇒ 所有窗当帧跳终态；**G2** 转场表清空的门被实现成「没有活动转场」（`transition.ts:574`）而引擎是「`46516 == 0`」（全场景所有窗都不在途）。⇒ 本条目在 G1/G2 落地前应保持 `partial`（现为 modeled-verified/E2，**该降级或补守卫**）。"
       }
     },
     {
@@ -571,8 +571,8 @@
     {
       "id": "scene-draw-total-gate-1056",
       "subsystem": "渲染",
-      "name": "Scene+1056 主绘制总门",
-      "trigger": "`sub_4B06D0` 入口；为 0 时整帧绘制直接 return",
+      "name": "Scene+1056 转场记录表条数（★订正：不是主绘制总门）",
+      "trigger": "sub_4B06D0 入口：Scene+1056 == 0 ⇒ 直接 return（该函数是**转场遍**）",
       "engine": {
         "fns": [
           "sub_4B06D0"
@@ -583,13 +583,13 @@
         "Scene+1056",
         "Scene+46456"
       ],
-      "whySilent": "只是一个 `if (v2) return;`，没有日志或错误码",
+      "whySilent": "只是一个 if 判断就 return —— 没有日志或错误码；但后果被轮 7 订正为「转场遍空转」而不是「整帧绘制消失」",
       "confidence": "confirmed",
       "emulator": {
         "status": "absent",
         "evidence": "E0",
         "guard": "",
-        "note": "★Scene+1056 == 0 时 sub_4B06D0 第一行就 return ⇒ 整帧绘制消失。emulator 没有这个总门（总是画）"
+        "note": "★轮 7 以体订正（tickets/T-0091 第③项规格）：Scene+1056 是 **Scene+1048 转场记录表的条数**（sub_4A9BE0(Scene+1048) 收尾把它置 0，raw 129300），而 sub_4B06D0 开头 if (*(_DWORD*)(_this+1056)==0) return（raw 134814-134818）⇒ sub_4B06D0 **只是转场遍**（无记录则空转返回）；帧函数自己的四路归并绘制循环（raw 136807 起）**不受它门控**。所以旧 note 的「为 0 时整帧绘制直接 return ⇒ 整帧绘制消失」**不成立**（那会与游戏可运行矛盾）。emulator 侧：needsRender 的第三项接成「有活动转场窗」（scene/ops.ts:798-802）**仍然正确** —— 依据是 raw 136718-136719 与 134944，不依赖「sub_4B06D0 是整帧绘制」这个前提。"
       }
     },
     {
@@ -3178,7 +3178,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/adv-msgwin.test.ts",
-        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。\n★2026-09（`tickets/T-0033`，用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）：**逐字期间有一个专门的输入出口**。文本泵 `sub_409400` 的第二半（raw 13931-13946）在「没有 0x300 闸门槽活跃」时处理**当前窗**（`Engine[489484]`）：消费刷取掩码后，若 `mask & 0x10`（**只认左键**；等待泵才是 `0x50`）或滚轮键位命中（`message:AdvanceMesOnWheel & 1`）或滚轮累加器 `Engine[7796] < 0`（读后清）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20` 到整页贴完**、把掩码清 0（这次点击被消费）；**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。下一次调用见 `388212` 时再自旋一次，并在 `Engine[667856] == 1`（`set:DrawMode`）时清等待门计时器 + 置强制冻结（raw 13910-13915）。⇒ emulator：`Engine.serviceRevealAdvanceInput()`（帧驱动在 `textRevealing` 分支里、`serviceTextReveal` 之前调用）；验收 = 点击／点击／点击 ⇒ 贴完／下一句／跳过下一句的逐字。守卫：`test/adv-msgwin.test.ts`（逐字期间左键 ⇒ 整页 + 不推进 + 消费 + 不清 bit30；右键／上滚不生效）、`test/frame-loop.test.ts`（驱动层：点击帧不派发、后续帧不得攒成推进）。E3（真实语料）：点击后 1 帧 `shown` 0 → 52/52、ip／pages 不变、bit30 保持。\n"
+        "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。\n★2026-09（`tickets/T-0033`，用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）：**逐字期间有一个专门的输入出口**。文本泵 `sub_409400` 的第二半（raw 13931-13946）在「没有 0x300 闸门槽活跃」时处理**当前窗**（`Engine[489484]`）：消费刷取掩码后，若 `mask & 0x10`（**只认左键**；等待泵才是 `0x50`）或滚轮键位命中（`message:AdvanceMesOnWheel & 1`）或滚轮累加器 `Engine[7796] < 0`（读后清）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20` 到整页贴完**、把掩码清 0（这次点击被消费）；**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。下一次调用见 `388212` 时再自旋一次，并在 `Engine[667856] == 1`（`set:DrawMode`）时清等待门计时器 + 置强制冻结（raw 13910-13915）。⇒ emulator：`Engine.serviceRevealAdvanceInput()`（帧驱动在 `textRevealing` 分支里、`serviceTextReveal` 之前调用）；验收 = 点击／点击／点击 ⇒ 贴完／下一句／跳过下一句的逐字。守卫：`test/adv-msgwin.test.ts`（逐字期间左键 ⇒ 整页 + 不推进 + 消费 + 不清 bit30；右键／上滚不生效）、`test/frame-loop.test.ts`（驱动层：点击帧不派发、后续帧不得攒成推进）。E3（真实语料）：点击后 1 帧 `shown` 0 → 52/52、ip／pages 不变、bit30 保持。\n\n★2026-09 轮 8（`tickets/T-0100`）：**「每帧只泵当前窗」这条已修好并被守卫钉住**。引擎 ADV 支只把**当前窗**交给泵（raw 13943-13945 `do result = sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484)); while (!result);`；`489484/4 = 122371` = 当前窗，由 `0x6E` raw 28365/28381 与 `0x71`/`0x72` raw 28545 写），而 emulator 修前有**三处**会发布「所有已知窗」：① `Engine.serviceRevealAdvanceInput`（逐字期间点击 ⇒ 整页贴完那条路）遍历 `msgwin.reveal` 的**所有**键；② `Engine.serviceTextReveal` 用 `tickReveal`（全窗版）；③ `0x70` 的 handler 调 `emitAllWins`。**用户可见后果（E4 实测）**：序章 `SN0000`（正文在**窗 8**，满屏 1280×720@(0,0)+居中）切到 `SC0000`（正文在**窗 1**）时，脚本已用 `detach-texture 19a28 1f4`（`src/NOVEL.txt:415`）删掉屏上正文行、emulator 也**忠实**清了 `scene.msgWins`，但**窗 8 的 `reveal` 条目仍然留着**（引擎同样保留 `win+132` 游标，**合法**）⇒ `SC0000` 第一页逐字期间**点一下鼠标**就把序章最后一页重新贴回**屏中央**（用户实测日志 8655/8658，此后每次点击复发）。**修法**：三处统一收敛到 `resolveWin(msgwin.lastArg)`。★**禁止的修法**（写进票据验收）：场景边界 `msgwin.reset()` / 清 `slots[8]` / 清 `reveal[8]`（引擎保留记录与游标；`exit`(0x2) 边界不 reset 是与引擎一致的）、给 `#holdFrames` 打补丁、用「清 DrawItem」修（边界两侧 DrawItem 已干净：26 → 4）、动 `scDetachTexture` 区间清。守卫 `app/amayui-emulator/test/op-0100-reveal-current-window.test.ts`（4 条：① 前置证明 `reveal` 里**确实同时**含残留窗与当前窗 ⇒ 旧的全窗发布必然发布 8，守卫有辨别力；② 点击只发布当前窗；③ 每帧泵不推进也不发布残留窗；④ `0x70` 只发布本窗）。回归：受影响的 12 个文件 124/124 + 真语料链 5 个文件 45/45 + `tsc --noEmit` 干净。\n★★2026-09 轮 8 追加（用户实测 2 条，同批修）：**「推进了就必须发布」+「节流位置位期间仍要跑泵」**。\n① **坑 A（当时由 T-0100 的改动引入）**：把 serviceTextReveal 从 \tickReveal（全窗）收窄成 \tickRevealWin(cur) 时**连带删掉了 \for (const win of dirty) #publishReveal(win)** ⇒ 游标在 VM 里照常走、宿主却只在 msgWinSync 才重绘 ⇒ 屏上停在第 0 个字直到别的路径发布一次（用户原话：「必须等待逐字完成后才直接展示出来」）。E4 判据：\textLayer.ts:104 只在 \revealed 变化时打印 [reveal] win=N x/总数，用户日志里 ADV 只有 \u0000/22 与最终 26/26、中间态全无；而同日志里 win=9（\u0000x300 闸门泵，不经此处）是 1/10…10/10 逐步的。修法 = 把那行发布加回（仍只发布当前窗）。\n② **坑 B（引擎建模反了）**：主循环 raw **21176-21181** if ((v35 & 0x20000000) != 0) { sub_409400(_this); if (Engine[489860]) goto LABEL_215; } ⇒ **节流位置位时引擎是「调文本泵」（等节拍→推一个字），不是「空等」**；而 \frame/loop.ts 的 sleep 分支修前什么都不做 ⇒ 门内既不推进也不重绘。★\u0000x6E 在轮 6 就置该位、**轮 7 的 T-0094 又把它加到 \u0000x196（6341 处、一句中间）** ⇒ 门内停顿频率在轮 7 后明显上升。修法 = sleep 分支加 serviceTextReveal(nowMs)（忠实 raw 21178），门仍照旧阻塞脚本派发。\n③ 守卫与判别力：新增 \test/adv-reveal-under-throttle.test.ts（2 条：中间态 ≥2 个 / **门还置着时必须收到过发布**）；两条修复的判别力都用脚本机械证明过（撤销→红、还原→绿、sha256 自检还原）。★首版「坑 B」守卫只断言「门后还有新中间态」，**撤销修复后仍绿 = 假守卫**，已改成按 waitFlags & SLEEP_GATE 当场打点的精确判据 —— 教训：**守卫必须证明自己有辨别力**。"
       }
     },
     {
@@ -3950,6 +3950,39 @@
         "evidence": "E4",
         "guard": "test/engine-slot.test.ts",
         "note": "★2026-09 轮 5 落地（tickets/T-0083）：`src/vm/engineDrawItem.ts`（新）= 740 B 记录 → `Item`（偏移表以体为准；4×4 矩阵按 **D3DX 写入位置**取分量：缩放 = 对角线 `+0/+20/+40`、平移 = 第 4 行 `+48/+52/+56` —— 按「连续 3 个 f32」读会得到 (1,0,0)/(0,0,0) 而静默画错，读取端自证 = `0x228`/`sub_4AA060` 的 `D3DXMatrixDecompose`；B 层通道步长 **4**（`+524+4i`/`+544+4i`））；`engineSlot.ts` 的清单解析改名 `drawItems` 并**修正步长**：`1 + size`（2964 B，引擎 `&v67[4*hFile]`）而不是 `1 + size/4`（744 B —— 旧写法下第 2..69 条 handle 全是垃圾）；装载点经新宿主缝 `native.restoreDrawItems(items)` 一步做完「清上一屏 + 装存档清单」（两个宿主对称）。E4（`npm run shot -- --load 79`）：日志 `restoreDrawItems: 清掉上一屏 172 项、按存档装回 69 项（handle 0x18a88,0x19835,…）`，阶梯/灰块消失、背景 = BG050ABL（截图归档 `tickets/T-0083/evidence/after-itemrestore-*.png`）。★保留的有据缺口：`animStart` 是**引擎绝对时钟**（`timeGetTime` 族毫秒），body 里没有锚点可换算 ⇒ 逐字还原后各窗判为「未开始」= 冻结在存档当时的 work 矩阵（如实写在该模块头）；旋转通道（`+0xEC`/`+0x12C` 矩阵与 `+0x1EC..+0x208` 轴角）逐字段偏移未确证 ⇒ 未还原；body 尾部 `{2 dword + 740 B}` 未解析；`ownerFrame`/`dropFrameItems` 降级为「body 无清单」时的回退。"
+      }
+    },
+    {
+      "id": "live2d-node-matrix-compose",
+      "subsystem": "Live2D",
+      "name": "572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进",
+      "trigger": "VM opcode 0x346-0x34D 写 572B 节点的 4 块矩阵(+20/+52/+84/+508) / 4 组 delay·dur(+28..60) / 颜色(+68..75) / 轴角(+464..492) / pivot(+8..16) / flags(+0) / +504 / +24；随后逐节点绘制 sub_4B0360（唯一调用点 raw 134341）每帧调 sub_4A07F0 把 4 个窗求值并组合出节点矩阵（Scene+46536），再右乘进世界矩阵",
+      "engine": {
+        "fns": [
+          "sub_4A07F0",
+          "sub_4B0360"
+        ],
+        "raw": "121131-121655"
+      },
+      "reads": [
+        "record[0] bit0/bit1",
+        "record+24（窗序列绝对起点 ms）",
+        "record+28..60（4 组 delay/dur）",
+        "record+64/+124（alpha，未建模）",
+        "record+68..75（颜色窗，无设置端）",
+        "record+76（节点矩阵有效位）",
+        "record+80../+144../+208../+272../+336../+400..（4 组 from/to 矩阵）",
+        "record+464..492（轴角）",
+        "record+504 bit0",
+        "record+508（M_base）"
+      ],
+      "whySilent": "★不实现合成器 ⇒ 上述字段全部没有出画效果，但**一个错都不报**：0x347-0x34D 照常落值、快照里字段全对、只是画面不动（l2dNodeTransform 恒单位变换）—— 这是「脚本在跑、立绘不动」的成因。两个必须一次做对的隐式口径也全静默：① D3DX 是**行向量**（v'=v·M、平移在第 4 行）而本工程 Affine 是列向量 ⇒ Affine 的 (c,d,tx,ty) 必须对左上 2×2 **取转置**；② 组合式是**右乘/追加**（判据 = .lst 266233-266235 的 push esi; push esi）⇒ `a3 = T(−p)·M_base(+508)·M_scale·M_rot·M_trans·T(+p)`，最左边先作用、T(t) 在 T(+p) 之前 ⇒ 对 z≡0 模型点 `q = (q0 − p)·A + p + t`（A = M_base·M_scale·M_rot）。任一写反都不报错、只是数值错。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/l2d-node-compose.test.ts",
+        "note": "已实现（2026-09 轮 8 / tickets/T-0096）：合成器 = src/live2d/nodeMatrix.ts（l2dComposeNode + 4 个 advanceXWindow 纯函数）；落点 = src/renderer/scene/ops.ts 的 scL2dTick（每帧每可画节点一次，与引擎「推进与出画同一次调用」同构；★首帧 delta=0 也必须跑 —— record+24 的起点锁存在里面）；消费端 = src/live2d/render.ts 的 l2dNodeTransform → Affine → affineApply（居中平移 dx/dy 仍在最后）；字段 = src/live2d/runtime.ts 的 L2dNode。★**票面旧写的体区间 121131-121520 是截断的**，真身 121131-121655（被截掉的是第 4 个窗（平移）的全部求值 + 最终 6 次 D3DXMatrixMultiply 与 T(+pivot)）。★验证强度：E2 = 矩阵数值 + 对**真实第三方 d3dx9_43.dll** 的逐步重放对照（探针 .tmp/t0096b/，把组合链的每步行与 3 个点的映射钉下来）+ E3 = 真 TITLE.MOC/纹理资产零回归（node.matrix === I 且逐批次 positions/rect 逐字节相同）。★四条以体/实测钉死的口径：dbl_51FB50 = **1000.0**（不是 100，`record+64` 单位 = alpha×1000）；`a2[18]` 的立即数 = **0xFFFFFFFF**（Hex-Rays 渲染成 NaN）；**D3DXMatrixRotationAxis 内部归一化**（轴 (0,0,2) 与 (0,0,1) 结果逐位相同）；**pivot 不是不动点**（q0 = p 映到 p + t；不动点 = p − t/(s−1)）。★未建模/未确证：帧首 alpha 分支（+64/+124，需模型 vtable，本作语料不可达）、合成结果的 alpha 当前无消费端、+504 bit0 语义、+20/+44/+500、M[11625] 无写点、轴反向时 len==0 取单位阵（D3DX 那头是 0 除）。★emulator 专有位 `wins.latched`：引擎用 `+24 == 0` 当未锁存哨兵，而 0 同时是合法时钟值（emulator 首帧就是 scL2dTick(s,0)）⇒ 只按 ==0 判断会每帧重新锁存、窗永远开不了（实测踩到）。"
       }
     }
   ]

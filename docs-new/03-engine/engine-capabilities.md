@@ -11,19 +11,19 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 49 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 50 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 33 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 21 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **134** | 需要关注（非 n/a 且非已核验）= **61** |
+| **合计** | **135** | 需要关注（非 n/a 且非已核验）= **61** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
 | 3D | 17 | 4 |
-| Live2D | 6 | 2 |
+| Live2D | 7 | 2 |
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
 | 帧循环 | 16 | 10 |
@@ -57,7 +57,7 @@
 | `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ❌ 缺失 | E0 |
 | `engine-main-window-hwnd` | 渲染 | Engine+387924 主窗口 HWND（旧名 FileSource） | ➖ n/a | E1 |
 | `filesource-script-load` | 资源 | 脚本装载把主窗口 HWND 当资源来源传入 | ➖ n/a | E1 · `test/boot.test.ts` |
-| `scene-draw-total-gate-1056` | 渲染 | Scene+1056 主绘制总门 | ❌ 缺失 | E0 |
+| `scene-draw-total-gate-1056` | 渲染 | Scene+1056 转场记录表条数（★订正：不是主绘制总门） | ❌ 缺失 | E0 |
 | `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
@@ -171,6 +171,7 @@
 | `text-blank-extent-mode-gate` | 消息窗 | 空白字前进量的配置门 set:BlankExtentMode | 🟠 部分 | E2 · `test/op-205-blank-extent.test.ts` |
 | `scene-layer-xform-compose-20-29` | 渲染 | Scene 世界矩阵的合成与「只作用于层号 ∈ [20,30) 的项」这一级 | ✅ 已核验 | E2 · `test/op-22a-22f-scene-world.test.ts` |
 | `save-load-drawitem-clear-and-restore` | 资源 | 读档装载点：清空绘制项容器 + 还原存档里的绘制项清单（Scene+1032） | ✅ 已核验 | E4 · `test/engine-slot.test.ts` |
+| `live2d-node-matrix-compose` | Live2D | 572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进 | ✅ 已核验 | E3 · `test/l2d-node-compose.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -183,6 +184,7 @@
 - **读的字段**：Engine+667856, Engine+667860, Engine+699204, Engine+369332, Scene+46508
 - **emulator 现状**：2026-09 更新（T-0001..T-0004）：『帧』现在由**唯一驱动** runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates **四档**（anim/sleep/**stage**/advance）+ present:needsRender（判据 sceneNeedsRender = 脏 || 有窗在跑），每帧恰好一次 present 的机会。守卫 test/frame-loop.test.ts（各档位语义）+ test/frame-digest.test.ts + test/stage-loop.test.ts（stage 档）。★仍 partial：引擎门的具体条件（Engine+667856/+667860、effect_flags&0x2400/0x1000000、Scene 脏或对象命中）没有逐项对齐。★注意本条的 ffect_flags 门（0x400/0x1000000…）与主循环里 
 ★2026-09 轮 6（`tickets/T-0093` 的 B7 首批）：**ADV 分支在 sleep 门之前**。引擎主循环次序 = `0x400` 等待门（raw 21109）→ `0x40`（21154）→ **ADV 循环 `0x8000000`（21158）** → **节流/自旋 `0x20000000`（21176 → `sub_409400`，内含 `Sleep(Engine[86672])`，raw 13954）**；ADV 位不清就**走不到**节流支，且 `0x6E` 只有「MessageSpeed ≠ 0 且 ADV 位未置」才装计时器（raw 28361 的 else：28380/28382）。emulator 的对应改动 = runFrameLoop 里 adv 档移到 sleep 门之前、`op_show_text` 的 SLEEP_GATE 加 `ADV_ACTIVE` 前置条件（守卫 `test/op-10-002-adv-sleep-order.test.ts`）。旧实现把 sleep 门排在 adv 之前且无条件装门 ⇒ 跳读/自动模式每段多等 MessageSpeed ms。
+★2026-09 轮 7（`tickets/T-0094`）：**`0x20000000` 的置位端也已对齐**。置位点全库 = `0x196` 第①②路（raw 29093，`sub_41FC20`）／raw 26080／raw 28380／28761（`_this[174801] |= 0x20000000` —— 即同一个 effect_flags）；`0x196` 的里层条件是「MessageSpeed ≠ 0 且 `effect_flags & 0x8000000`（ADV）未置」（raw 29075），满足则 `sub_453A60(Engine+430572, MessageSpeed)` 起一个**周期 = MessageSpeed ms** 的节拍计时器（raw 66100-66112；对象 `[2]`=tick 序号、`[5]`=起算时间、`[6]`=周期，`0` 兜底 `1`）。emulator 已按同一机制落地（`op_display_furigana`：`effectFlags |= SLEEP_GATE` + `sleepUntil = now + max(1, MessageSpeed)`）—— 复用 `0x6E` 的同一个 `SLEEP_GATE`/`sleepUntil`，未新造平行机制。★**实测可观测**：真 `install/CONFIG1.BIN` 的 `0x71→0x196→0x6E` 段在帧循环里，`MessageSpeed=40` ⇒ 注音后那条等 **66.7ms/处**、`=0` ⇒ **0ms**（守卫 `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` 第 87 条正向棘轮与第 248 条节拍量化）。
 
 ### `scene-frame-commit`（partial）
 
@@ -210,6 +212,7 @@
 - **引擎**：sub_4B4040, sub_4B4460, sub_40BE10, sub_4AF1C0, sub_49AA30, sub_49A770, sub_49A8E0, sub_4AB950 @ raw 117129-137035
 - **读的字段**：Scene+46508
 - **emulator 现状**：2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。
+★2026-09 轮 7（`tickets/T-0091` 第③项规格 · 只读全库扫描 155 行/83 函数）：三格的关系与 scope 已**全部钉死**。① **scope**：三条的 155 个出现点**全部**在 Scene 上（无一是别的类）；真坑是基址写法（`Engine+80708` dword = `Engine+322832` byte = **`Engine+0x4ED10`** —— 旧记 `0x4ECD0` 偏 64 字节）与「内部指针当参数」（`Scene+46536` 是 4×4 节点工作矩阵、不是对象）。② 精确计数：`+46508` 置 1 **90** 处 / 清 0 **4** 处 / 读 **1** 处（`sub_40BE10` raw 16022）；`+46512` 置 1 **2** 处（`sub_407EA0` raw 12796 的 skip-wait-gate、`sub_4B06D0` raw 134936 的转场记录 `[13] < 0`）/ 清 0 4 / 读 10；`+46516` 置 1 **26** 处 / 清 0 **3**（只有帧首与复位）/ 读 **4**。③ **+46512 的语义 = 强制冻结**：所有窗**当帧收尾**（绘制项 117449、mesh 133517、转场 134941·135806·136182、Live2D 节点 121291）且**等待计时器立刻到期**（12776）。④ **+46516 的语义 = 上一遍绘制时还有东西在动**：与 `+46508` **成对**置 1 的判据是「这条 setter 起了**带时长的动画窗**」（`sub_4ACF60` 只写静态色 ⇒ 只置脏）；精确排除门 = 记录 `+720` bit0（长时慢推不钉住等待门，raw 117843-117844）；它还是**转场记录表清空的门**（raw 136840/137181：`+46516 == 0` 才 `sub_4A9BE0(Scene+1048)`）。⑤ 引擎的「有窗在跑就一直 present」有**直接体依据**（不是近似）：`sub_49AA30` 收尾 raw 117833-117845 两个分支都落 `46508 = 1`、窗在途另行置 `46516 = 1`；mesh 同（133528/133540）。⑥ ★**emulator 真缺口两条**（已随本票备好改法）：**G1** `+46512` 冻结**没有传进窗模型**（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 都没有 freeze 形参，`scTransitionWindow(..., false)` 第 4 参硬编码；且 `loop.ts:368` 同帧就清掉 `sceneFreeze`）—— 引擎里冻结 ⇒ 所有窗当帧跳终态；**G2** 转场表清空的门被实现成「没有活动转场」（`transition.ts:574`）而引擎是「`46516 == 0`」（全场景所有窗都不在途）。⇒ 本条目在 G1/G2 落地前应保持 `partial`（现为 modeled-verified/E2，**该降级或补守卫**）。
 
 ### `scene-freeze-flag`（partial）
 
@@ -249,12 +252,12 @@
 
 ### `scene-draw-total-gate-1056`（absent）
 
-- **能力**：Scene+1056 主绘制总门
-- **触发**：`sub_4B06D0` 入口；为 0 时整帧绘制直接 return
-- **缺失时为什么静默**：只是一个 `if (v2) return;`，没有日志或错误码
+- **能力**：Scene+1056 转场记录表条数（★订正：不是主绘制总门）
+- **触发**：sub_4B06D0 入口：Scene+1056 == 0 ⇒ 直接 return（该函数是**转场遍**）
+- **缺失时为什么静默**：只是一个 if 判断就 return —— 没有日志或错误码；但后果被轮 7 订正为「转场遍空转」而不是「整帧绘制消失」
 - **引擎**：sub_4B06D0 @ raw 134814-134818
 - **读的字段**：Scene+1056, Scene+46456
-- **emulator 现状**：★Scene+1056 == 0 时 sub_4B06D0 第一行就 return ⇒ 整帧绘制消失。emulator 没有这个总门（总是画）
+- **emulator 现状**：★轮 7 以体订正（tickets/T-0091 第③项规格）：Scene+1056 是 **Scene+1048 转场记录表的条数**（sub_4A9BE0(Scene+1048) 收尾把它置 0，raw 129300），而 sub_4B06D0 开头 if (*(_DWORD*)(_this+1056)==0) return（raw 134814-134818）⇒ sub_4B06D0 **只是转场遍**（无记录则空转返回）；帧函数自己的四路归并绘制循环（raw 136807 起）**不受它门控**。所以旧 note 的「为 0 时整帧绘制直接 return ⇒ 整帧绘制消失」**不成立**（那会与游戏可运行矛盾）。emulator 侧：needsRender 的第三项接成「有活动转场窗」（scene/ops.ts:798-802）**仍然正确** —— 依据是 raw 136718-136719 与 134944，不依赖「sub_4B06D0 是整帧绘制」这个前提。
 
 ### `clock-write-clock-freeze`（partial）
 

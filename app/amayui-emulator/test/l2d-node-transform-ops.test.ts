@@ -99,7 +99,14 @@ test('★0x34B：delay/dur 是 **int**、三分量 float 才 ÷100 ⇒ wins.scal
   const { e, run } = mk();
   run(0x344, [loc(1), im(0)]); // 先建节点（bit0 = 1）⇒ 窗门打开
   run(0x34b, [loc(1), im(400), im(500), fm(200), fm(100), fm(50)]);
-  assert.deepEqual(node(e).wins.scale, { delay: 400, dur: 500, value: [2, 1, 0.5] });
+  // ★2026-09（T-0096）`wins.*` 结构订正：目标的字段名从 `value` 改为 **`to`**，并补上 `from`
+  //   —— 引擎里窗的 from 与"立即值"是**同一块**（`+20`/`+52`/`+84`），to 在 `+144`/`+272`/`+400`。
+  assert.deepEqual(node(e).wins.scale, {
+    delay: 400,
+    dur: 500,
+    from: [1, 1, 1], // 窗指令不写 from ⇒ from = 那一刻的立即缩放
+    to: [2, 1, 0.5],
+  });
   assert.deepEqual(node(e).scale, [1, 1, 1], '窗写入不得碰立即缩放');
 });
 
@@ -108,20 +115,27 @@ test('★0x34B/0x34C/0x34D：`record[0] & 1` 门 —— 没有 0x344 建过的�
   run(0x34b, [loc(1), im(400), im(500), fm(200), fm(100), fm(50)]);
   const n = node(e); // `sub_4AACA0` 会把它建出来（raw 130129），但 flags = 0
   assert.equal(n.flags & 1, 0, '隐式建出的记录 flags bit0 = 0');
-  assert.deepEqual(n.wins.scale, { delay: 0, dur: 0, value: [1, 1, 1] }, '门挡掉 ⇒ 窗保持缺省');
+  assert.deepEqual(n.wins.scale, { delay: 0, dur: 0, from: [1, 1, 1], to: [1, 1, 1] }, '门挡掉 ⇒ 窗保持缺省');
   run(0x34c, [loc(1), im(10), im(20), fm(0), fm(0), fm(1), fm(45)]);
   run(0x34d, [loc(1), im(30), im(40), fm(7), fm(8), fm(9)]);
   assert.equal(node(e).wins.rotation.delay, 0, '0x34C 同样被门挡掉');
-  assert.deepEqual(node(e).wins.translation.value, [0, 0, 0], '0x34D 同样被门挡掉');
+  assert.deepEqual(node(e).wins.translation.to, [0, 0, 0], '0x34D 同样被门挡掉');
   // 门打开后同一批指令立刻生效
   run(0x344, [loc(1), im(0)]);
   run(0x34b, [loc(1), im(400), im(500), fm(200), fm(100), fm(50)]);
   run(0x34c, [loc(1), im(10), im(20), fm(0), fm(0), fm(1), fm(45)]);
   run(0x34d, [loc(1), im(30), im(40), fm(7), fm(8), fm(9)]);
-  assert.deepEqual(node(e).wins.scale, { delay: 400, dur: 500, value: [2, 1, 0.5] });
-  assert.deepEqual(node(e).wins.rotation, { delay: 10, dur: 20, axis: [0, 0, 1], deg: 45 });
-  assert.deepEqual(node(e).wins.translation, { delay: 30, dur: 40, value: [7, 8, 9] });
+  assert.deepEqual(node(e).wins.scale, { delay: 400, dur: 500, from: [1, 1, 1], to: [2, 1, 0.5] });
+  assert.deepEqual(node(e).wins.rotation, {
+    delay: 10,
+    dur: 20,
+    from: { axis: [0, 0, 1], deg: 0 },
+    to: { axis: [0, 0, 1], deg: 45 },
+  });
+  assert.deepEqual(node(e).wins.translation, { delay: 30, dur: 40, from: [0, 0, 0], to: [7, 8, 9] });
   assert.equal(node(e).flags & 2, 2, '窗写入置 bit1（引擎 `*rec |= 2`）');
+  assert.equal(node(e).wins.startedAtMs, 0, '窗指令把窗起点 `+24` 置 0（下一条窗重新锁存）');
+  assert.equal(node(e).matrixDirty, true, '窗指令置 `+76`（待重算位）');
 });
 
 test('★0x34D：真语料口径（BTL `i34d <key> 190 1f4 <z> 0 0`）—— op2/op3 是 delay/dur，平移从 op4 起', () => {
@@ -129,21 +143,28 @@ test('★0x34D：真语料口径（BTL `i34d <key> 190 1f4 <z> 0 0`）—— op2
   run(0x344, [loc(1), im(0)]);
   // 对应 src/BTL.txt:906 `i34d (local-int fff) 190 1f4 (local-int 1001) 0 0`
   run(0x34d, [loc(1), im(0x190), im(0x1f4), fm(300), fm(0), fm(0)]);
-  assert.deepEqual(node(e).wins.translation, { delay: 400, dur: 500, value: [300, 0, 0] });
+  assert.deepEqual(node(e).wins.translation, { delay: 400, dur: 500, from: [0, 0, 0], to: [300, 0, 0] });
 });
 
 test('★0x34C：key(int) + delay/dur(int) + 轴 xyz + 角（float）⇒ wins.rotation（旧实现整体错位一格）', () => {
   const { e, run } = mk();
   run(0x344, [loc(1), im(0)]);
   run(0x34c, [loc(1), im(10), im(20), fm(1), fm(0), fm(0), fm(90)]);
-  assert.deepEqual(node(e).wins.rotation, { delay: 10, dur: 20, axis: [1, 0, 0], deg: 90 });
+  assert.deepEqual(node(e).wins.rotation, {
+    delay: 10,
+    dur: 20,
+    from: { axis: [0, 0, 1], deg: 0 }, // 窗的 from = 那一刻的立即轴角（`+464..472`/`+488`）
+    to: { axis: [1, 0, 0], deg: 90 }, // `0x34C` 写 `+476..484`/`+492`
+  });
+  assert.equal(node(e).rotation.axis[0], 0, '窗写入**不碰**立即旋转（`0x348` 的那一份）');
 });
 
-test('★0x346 复位：保留 flags/slot/baseOffset（引擎只写 4 个矩阵块，raw 133963-134029）', () => {
+test('★0x346 复位：保留 flags/slot/baseOffset/wins（引擎只写 4 个矩阵块 + `+76`，raw 133952-134032）', () => {
   const { e, run } = mk();
   run(0x344, [loc(1), im(3)]); // slot = 3、flags bit0 = 1
   run(0x34a, [loc(1), fm(1), fm(2), fm(4)]);
   run(0x349, [loc(1), fm(5), fm(6), fm(7)]);
+  run(0x34b, [loc(1), im(100), im(200), fm(200), fm(200), fm(100)]); // 窗：复位**不该**清它
   run(0x346, [loc(1)]);
   const n = node(e);
   assert.equal(n.slot, 3, '复位不碰 +4(slot)');
@@ -152,4 +173,11 @@ test('★0x346 复位：保留 flags/slot/baseOffset（引擎只写 4 个矩阵�
   assert.deepEqual(n.translate, [0, 0, 0], '复位把平移矩阵清回单位');
   assert.deepEqual(n.scale, [1, 1, 1]);
   assert.equal(n.resets, 1);
+  assert.equal(n.matrixDirty, false, '复位写 `+76 = 0`');
+  // ★2026-09 订正（T-0096）：旧实现用 `makeNode()` 重建整个节点 ⇒ 把 `wins` 也清了，那是**偏差**。
+  //   引擎 `sub_4AFC40` 只写 `+76` 与 `+20..35`/`+52..67`/`+84..99`/`+127..142` ⇒ delay/dur/to **保留**。
+  assert.equal(n.wins.scale.delay, 100, '复位不碰 `+32`（delay）');
+  assert.equal(n.wins.scale.dur, 200, '复位不碰 `+52`（dur）');
+  assert.deepEqual(n.wins.scale.to, [2, 2, 1], '复位不碰 `+144`（to）');
+  assert.equal(n.flags & 2, 2, '复位也不清"窗在跑"位（那不是 `+76`）');
 });

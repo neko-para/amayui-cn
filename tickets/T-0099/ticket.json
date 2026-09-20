@@ -1,0 +1,47 @@
+{
+  "title": "sleep 门的帧粒度残差：0x196/0x6E 的 MessageSpeed 节流在 40ms 档每处多等约一帧（实测 66.7ms vs 引擎约 50ms）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/frame-loop",
+  "why": "T-0094 落地 0x196 第①②路的节流后，实测暴露的**既有 sleep 门特征**（不是 T-0094 引入的）：emulator 的 sleep 门在**帧首**判定（`frame/loop.ts` 的 `gates.sleep` 分支），到点后要**等下一帧**才派发后续指令；引擎主循环的 `sub_453B60` 是「到点就当帧继续」。\n实测（T-0094 的 E3，真 install/CONFIG1.BIN 的 0x71→0x196→0x6E 段）：**MessageSpeed=40 ⇒ 66.7ms/处（4 帧）**，而引擎同条件约 **50ms（3 帧）** ⇒ 每处多约一帧。\n★**同一特征也作用于 0x6E**（`op_show_text` 用同一个 SLEEP_GATE/sleepUntil）⇒ 要把「到点当帧即派发」对齐，会动**所有** sleep 门的使用者（帧循环语义面），不只是这一条指令 —— 所以 T-0094 当时明确不动它、按用户裁定（轮 7）单独开票。",
+  "acceptance": [
+    "先判定**是否值得改**：给出「到点当帧即派发」与现状（等下一帧）在 40ms 档的时序差、以及它会影响哪些用 SLEEP_GATE 的指令（至少 0x6E/0x196，逐一列出）—— 若结论是「保持现状」，必须写明为什么（例如会与帧循环的批语义冲突），并把它从缺口降级为**已登记的口径**",
+    "若改：帧驱动的 sleep 门改为「到点当帧派发」（而不是本帧 return、下一帧再派发），并把改动范围限定在门判定处（不要顺手改动画窗/转场窗的到点语义）",
+    "守卫：断言时序 —— 同一段 0x71→0x196→0x6E 在 MessageSpeed=40 下的每处间隔落在引擎量级（≈3 帧）而不是 4 帧；并保留一条「不许因为放宽门而丢帧」的反向断言",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts",
+      "anchor": "缺口棘轮",
+      "note": "T-0094 的 E3 量化断言（每处 Δ ∈ [SPEED, max(2·SPEED, SPEED+3帧)]，实测 66.7ms）—— 本票的起算点"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "gates.sleep",
+      "note": "帧首判定的 sleep 门（到点后本帧 return ⇒ 下一帧才派发）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "SLEEP_GATE",
+      "note": "SLEEP_GATE = 0x20000000（= 引擎 effect_flags 的同一位）与 sleepUntil"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0094"
+    ],
+    "docs": [
+      "docs-new/03-engine/audit-2026-09-opcodes.md"
+    ]
+  },
+  "notes": "来源 = T-0094 的未解项②（实施者报告）。★用户裁定（轮 7）：「记录到新 ticket」—— 本轮不修。",
+  "id": "T-0099",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建"
+    }
+  ]
+}
