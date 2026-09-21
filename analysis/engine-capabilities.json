@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 135,
-    "modeled-verified": 50,
+    "total": 136,
+    "modeled-verified": 51,
     "modeled-unverified": 7,
     "partial": 33,
     "absent": 21,
@@ -3983,6 +3983,33 @@
         "evidence": "E3",
         "guard": "test/l2d-node-compose.test.ts",
         "note": "已实现（2026-09 轮 8 / tickets/T-0096）：合成器 = src/live2d/nodeMatrix.ts（l2dComposeNode + 4 个 advanceXWindow 纯函数）；落点 = src/renderer/scene/ops.ts 的 scL2dTick（每帧每可画节点一次，与引擎「推进与出画同一次调用」同构；★首帧 delta=0 也必须跑 —— record+24 的起点锁存在里面）；消费端 = src/live2d/render.ts 的 l2dNodeTransform → Affine → affineApply（居中平移 dx/dy 仍在最后）；字段 = src/live2d/runtime.ts 的 L2dNode。★**票面旧写的体区间 121131-121520 是截断的**，真身 121131-121655（被截掉的是第 4 个窗（平移）的全部求值 + 最终 6 次 D3DXMatrixMultiply 与 T(+pivot)）。★验证强度：E2 = 矩阵数值 + 对**真实第三方 d3dx9_43.dll** 的逐步重放对照（探针 .tmp/t0096b/，把组合链的每步行与 3 个点的映射钉下来）+ E3 = 真 TITLE.MOC/纹理资产零回归（node.matrix === I 且逐批次 positions/rect 逐字节相同）。★四条以体/实测钉死的口径：dbl_51FB50 = **1000.0**（不是 100，`record+64` 单位 = alpha×1000）；`a2[18]` 的立即数 = **0xFFFFFFFF**（Hex-Rays 渲染成 NaN）；**D3DXMatrixRotationAxis 内部归一化**（轴 (0,0,2) 与 (0,0,1) 结果逐位相同）；**pivot 不是不动点**（q0 = p 映到 p + t；不动点 = p − t/(s−1)）。★未建模/未确证：帧首 alpha 分支（+64/+124，需模型 vtable，本作语料不可达）、合成结果的 alpha 当前无消费端、+504 bit0 语义、+20/+44/+500、M[11625] 无写点、轴反向时 len==0 取单位阵（D3DX 那头是 0 除）。★emulator 专有位 `wins.latched`：引擎用 `+24 == 0` 当未锁存哨兵，而 0 同时是合法时钟值（emulator 首帧就是 scL2dTick(s,0)）⇒ 只按 ==0 判断会每帧重新锁存、窗永远开不了（实测踩到）。"
+      }
+    },
+    {
+      "id": "texture-bind-async-stale-writeback",
+      "subsystem": "资源",
+      "name": "纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面",
+      "trigger": "0x1F9 set-texture 绑定一个尚未载入的 imgid（宿主侧走 window.api.image() = IPC + 主进程解码，异步）",
+      "engine": {
+        "fns": [
+          "sub_422CB0",
+          "sub_4559C0",
+          "sub_43E260",
+          "sub_4A2C10"
+        ],
+        "raw": "74260-74264"
+      },
+      "reads": [
+        "Font+1044+4*win（FontVWindow，+20/+24 = w/h）",
+        "Scene+1540 起 32B 的像素格式缓存（掩码，非颜色）"
+      ],
+      "whySilent": "缺了不报错、只是**该槽要的内容没上来**：引擎的 set-texture 是同步的（sub_422CB0 当场 CreateFile/ReadFile 读 AGF + 解码，指令返回时图像已在内存），所以『绑定 → 脚本 create-texture + 0x20B 填色』这条顺序在引擎里永远成立；重写侧载入是异步的，若载入完成时**无条件**回写 slot→Texture，就会把脚本后来画上去的表面换掉 ⇒ 画面上是旧图/白底。★它表现得像『脚本**再跑一次**同一段就正常』（例如开合一次侧边栏）——因为脚本重跑会重新 create+填色，把表面抢回来。用户实测原话：『进入 SC0000 后 ADV 窗口背景是**白色**的，展开/收起侧边栏菜单似乎刷新了界面导致其正确变成了**半透明黑色**』。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/texture-bind-race.test.ts",
+        "note": "★2026-09 轮 8 追加批（`tickets/T-0102`）建模：`TextureCache` 加了**槽表面世代** `#slotEpoch`（`create-texture`/`release-texture` 各 +1），`bind` 的异步回写必须同时满足『世代未变』且『绑定仍是这次发起的那张图』才落盘，否则只进 `#imgCache` 并记一条『回写丢弃』日志（E4 靠它归因）。为可测性把解码口抽成 `protected decodeImage`（Node 里没有 ImageData/createImageBitmap/DOM，这条竞态必须在合成对象上确定性复现）。守卫 5 条：①基线（无干扰照常落盘）②脚本随后 create-texture ⇒ 丢弃 ③槽被 release ⇒ 丢弃 ④改绑到别的 imgid ⇒ 乱序到达的旧图不得覆盖新图 ⑤同一 imgid 绑两个槽互不干扰；**辨别力已机械证明**（撤销判据 → ②③④ 红、还原 → 5/5 绿且 sha256 逐字节一致）。★注意这条**不是**『窗底色』那条：窗底色的真源见 `WinGeom.background` 的订正（引擎没有该字段；ADV 那块半透明黑底是脚本往槽 48 画的：`src/NOVEL.txt:44-55` / `src/SC0000.txt:1036-1047`）。"
       }
     }
   ]

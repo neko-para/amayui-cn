@@ -15,10 +15,17 @@
 
 ## ⏸ 暂停点（2026-09 · **轮 8 结束时 · 最新 —— 先读这一节**）
 
-**现在的状态 = 干净可续跑，没有任何"在飞"的写操作**（3 个实现子代理 + 1 个只读诊断子代理全部收工，临时调试文件已清）。
-- 三份规格全部**落地为真实现**并收口：`T-0095`（回看页）、`T-0096`（Live2D 矩阵合成器）、`T-0100`（用户报的 SN0000 文字残留，本轮**修好了**）。
-- 四份台账与全部生成物**已同步并复核**：`gaps --check` ✓（**已实现 38 / deferred 20 / 有据 no-op 13 / 未实现 0**）、`capabilities --validate` ✓（**135 条**，已核验 **50**）、`scripts --validate` ✓（30 条）、`tickets --validate` ✓（**101 张**，done **79**）；看板已重建。
-- 最后一次全量：`npm run verify` = **909 tests / 909 pass / 1 skip / 0 fail**，死写 **0**（≈43s）。
+**现在的状态 = 干净可续跑，但★有两条用户可见缺陷在飞（`T-0102`，都**未**关单）** —— 详见 `tickets/T-0102/changes.md`：
+- **`T-0102`① 白底（未修）**：进 `SC0000` 后 ADV 窗口背景**仍是白色**（用户第二次复验确认）。本轮已修掉一个**真实但非根因**的竞态
+  （`TextureCache` 异步载入的陈旧回写）；真正的下一步是**现场日志**（判据见 `tickets/T-0102/changes.md` §丙/丁）。
+- **`T-0102`② 紫色（未修，但已本机复现 + 定位到引擎路径）**：用户答「**真机不紫**」⇒ 这是**模拟器的偏离**
+  （上一轮"与引擎同构"的结论**已被推翻**）。复现：角色设定页跑完时**全局** `Engine[21664]` 残留 `#b690ff`（紫），
+  而样例窗 win 9 仍正确；引擎的「回 ADV」重派生路径 = `src/CONFIG.txt:225-269`（详见 `changes.md` §丁）。
+- **`T-0104`**：`0x82` 已**记录后放行**（不再硬停，4 条守卫 + 判别力证明），但**真语义未实现**；
+  ★新发现：`0x82` 就落在上面那条「回 ADV」路径的末尾（`CONFIG.txt:269`，带 `f807b`/`f807c`）⇒ 与紫色强相关，
+  实施前必须先跑 §丁-3 的判据（见 `tickets/T-0104/notes.md`）。
+- 四份台账与全部生成物**已同步并复核**：`gaps --check` ✓（**已实现 38 / deferred 20 / 有据 no-op 13 / 未实现 0**）、`capabilities --validate` ✓（**136 条**，已核验 **51**；新增 `texture-bind-async-stale-writeback`）、`scripts --validate` ✓（30 条）、`tickets --validate` ✓（**104 张**，done **79**）；看板已重建。
+- 最后一次全量：`npm run verify` = **921 tests / 920 pass / 1 skip / 0 fail**，死写 **0**（≈45s）。
 
 **★下一位的第一件事（与轮 6/7 相同）**：
 ```bash
@@ -36,6 +43,13 @@ node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --list --op
 | `T-0100` | ★**用户实测的症状本轮修好了**：序章 `SN0000`（正文在**窗 8**）切到 `SC0000`（正文在**窗 1**）后，逐字期间点一下鼠标 ⇒ 屏中央冒出序章最后一页。**根因**：帧泵发布了「所有已知窗」而引擎只泵**当前窗**（raw 13943-13945，`489484/4 = 122371`）。三处收敛：`serviceRevealAdvanceInput` / `serviceTextReveal` / `0x70` 的 `emitAllWins → emitWin(e, win)`。4 条新守卫（含「`reveal` 确实同时含残留窗与当前窗」的**辨别力证明**）。★**禁止的修法**已写进票面：不许在场景边界 `reset`、不许清 `slots[8]`/`reveal[8]`（引擎保留游标）、不许给 `#holdFrames` 打补丁、不许用「清 DrawItem」修。 |
 
 **★下一轮的待办（按性价比）**
+
+0. **★★ `T-0102`（P1，用户可见，唯一两条"在飞"）——先做这个**：
+   - **白底**：判据见上文「追加③」丁-A（首选：dump `globals.int.get(0x708ada)`，看 `SC0000.txt:1037-1039` 走"填灰"还是"绑图"分支）。
+   - **紫色**：**已本机复现**（探针命令见丁-B），下一步 = 把 `runConfig1Chain` 扩到"右键退出 CONFIG → 回 ADV 首帧"并 dump
+     `Engine[21664]`/`f807b`/`14acda`；顺手补上丁-B 写明的**缺失守卫**。★它与 `T-0104` 是同一段代码（`CONFIG.txt:269`）。
+0b. **`T-0104`（P2）**：`0x82` 的**真语义**（用给定 `f807b`/`f807c` 重绘哪一页文本）。★实施前先跑上面丁-B 的判据，
+   否则分不清"`14acda` 重派生算错"与"`0x82` 这一笔缺失"。**不要**在没跑判据前照推测实现（`tickets/T-0104/notes.md`）。
 1. **`T-0091`（P3）G1/G2** —— 规格 + **主 agent 已独立核过的体依据**都在 `tickets/T-0091/design.md` 与 `notes.md`：**G2** = 转场表清空门（引擎 `Scene+46516 == 0`，raw 136840-136841 / 137181；emulator 只看「没有活动转场」）；**G1** = `Scene+46512` 冻结没进窗模型（`scTransitionWindow(..., false)` 硬编码在 `transition.ts:557`）。★★**动手前必读 `notes.md` 的「模块环陷阱」**：`ops.ts` 已 `import transition.ts`（`ops.ts:51`）⇒ 不能反向 import `scPoolPending`（会成环，前例 `T-0089`）；两条可行路线（注入判据 / 把 `scPoolPending` 移到中立模块）与代价都写在里面。**现在可以动了**（`T-0096` 已收工、`ops.ts` 空闲）。
 2. **`T-0098`（P3）** —— `0x2ED`（`message:MessageFade` 读侧）未注册 + `0x107`/`0x10B`/`0xFE` 的位号有符号口径。★**用户裁定**：那三条越界时**在控制面板展示 + 触发硬中断**（复用 `NotImplementedOp`/`observer.onUnknown` + `session.ts` 的 `controlErrorText` 错误横幅），**不新造机制**。★其 `notes.md` 里还有主 agent 关于 **`0x308` 登记为 `engine-internal` 有据 no-op** 的提案（体证据：`USER32` 触摸窗口 + `_this[1954]` 3 写 0 读）待点头。
 3. **`T-0062`（P1，唯一还卡着的用户可见票）** —— 实现早已落地、**E4 已由用户目视通过**（ADV 加载界面缩略图正确），**只差一条守卫**：`0x20C`（`frameTick`）在 `renderTargetSlot >= 0` 时的捕获路径（验收①②）。要么为它做一层可测抽取，要么如实降级 —— **别造假守卫**。
@@ -57,13 +71,136 @@ node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --list --op
 | # | 用户原话 | 处置 |
 |---|---|---|
 | 1 | 「ADV 的逐字渲染逻辑坏了，必须等待逐字完成后才直接展示出来」 | ✅ **已修**（`tickets/T-0100`）：**根因是我在 T-0100 改动②里连带删掉了 `for (const win of dirty) #publishReveal(win)` 那一行** ⇒ 游标在 VM 里照常走、宿主却只在 `msgWinSync` 时才重绘。★同时修掉一处**引擎建模反了**的地方：主循环 raw **21176-21181** `if ((v35 & 0x20000000) != 0) { sub_409400(_this); … }` ⇒ **节流位置位时引擎是「调文本泵」，不是「空等」**，而 `frame/loop.ts` 的 `sleep` 分支修前什么都不做（`0x196` 把它带进 6341 处 `display-furigana` ⇒ 轮 7 后症状明显）。守卫 `test/adv-reveal-under-throttle.test.ts`（2 条，**判别力已机械证明**：撤销→红、还原→绿）。 |
-| 2 | 「进 SC0000 后 ADV 窗口背景是**白色**，展开/收起侧边栏菜单刷新后才变成正确的**半透明黑色**」 | 📌 已开 **`T-0102`（P1）**：★**先复验**（很可能随第 1 条的发布修复一并消失 —— 同一张窗纹理、同一段逐字期间完全没发布）。若仍在再按代码点取证（`rasterFrame` 的底色来源 / `emitWin` 的 style 快照）。 |
-| 3 | 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」 | 📌 同上并入 **`T-0102`**：青色 ≈ 橘色的 R/B 互换 ⇒ 可疑的是通道顺序（`0x76`/`0x77` 的 BGR→RGB、`FontStyleSnapshot` 入队时机、`rasterFrame` 取色）。**同样先复验**。 |
+| 2 | 「进 SC0000 后 ADV 窗口背景是**白色**，展开/收起侧边栏菜单刷新后才变成正确的**半透明黑色**」 | 📌 已开 **`T-0102`（P1）**。★**状态见下方「追加③」——本格的推测与首轮处置都已被用户第二次复验取代**（用户答「仍然白」）。 |
+| 3 | 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」 | 📌 同上并入 **`T-0102`**。★**状态见「追加③」**（真机不紫/不青 ⇒ 是模拟器偏离；青色那条仍未定位）。 |
 | 4 | 「SN0000 到 SC0000 的专场（章节切换动画）似乎有很多不一致…**先记录，最后再处理**」 | 📌 已开 **`T-0103`（P3）**：**只登记、明确最后再处理**。已把"取证要拆成可核对条目 + 逐条归到 `T-0091` G1/G2 / `T-0099` / `T-0102`"写进验收。 |
 
 **★本批次新增的两条纪律**：
 1. **删代码时最容易删掉的是"看起来多余的那一行"**：改动②只该改"推进谁"，却在重写那段时把**发布**一起删了 —— 症状（逐字看不见）与"推进谁"毫无关系，靠读 diff 很难发现。⇒ **改一段逻辑后，逐条对照"这段原本做几件事"**（这里是 3 件：推进、发布、更新 showing/字格）。
 2. **守卫必须先证明自己有辨别力**：本批次「坑 B」的首版守卫只断言「门后还有没有新中间态」，**撤销修复后仍然绿 = 假守卫**；改成按 `waitFlags & SLEEP_GATE` 当场打点（「门还置着时必须收到过发布」）后才真正变红。⇒ 新守卫写完，**用 `.tmp/<job>/` 的脚本临时撤销修复跑一遍**（撤销→红、还原→绿、sha256 自检还原），别只信"它绿了"。
+
+### ★轮 8 追加②（用户**复验**批次 —— 3 条；★其中一条把上一批的假设推翻了）
+
+用户在上一批修复后复验，3 条原话与处置：
+
+| # | 用户原话 | 处置 |
+|---|---|---|
+| 1 | 「ADV 界面的文字颜色似乎又**开始继承设置界面 ADV 设置中最后一行的颜色**了（**紫色**）」 | 🔬 **P1，并入 `T-0102`（判据③ 换成回归口径）**。★「**又开始**」= **回归**；历史上修过一次，修法就是**文本入队时把全局样式快照钉进窗槽**（`MsgSlot.fontStyle`，`src/vm/msgwin.ts:56-63` 的注释原话：「否则 `CONFIG2` 逐行改色会把已排好的 ADV 样例窗一起染色（用户实测的"颜色溢出"）」）⇒ **先查这条快照机制的哪一环又被绕过了**，而不是重新设计。首要嫌疑：某条清理路径把快照置回 `null`（`src/vm/msgwin.ts:695`）后光栅化**回退到当前全局样式**。 |
+| 2 | 「**白色背景并没有修复**，和之前表现一致」 | 🔬 **上一批的假设被实测推翻**：`T-0102` 判据① 里那句「很可能随 `T-0100` 的发布修复一并消失」**不成立** ⇒ 按判据② 转**代码点取证**。首要嫌疑（已确证的事实）：`WinGeom.background`（窗口底色）在 `src/` 里**只有默认值 `null` 与读取点、没有任何写入点**（`grep -n "\.background" src/` 只有 `src/tools/diagText.ts:65`）⇒ 「窗底色没有被建模」与症状方向一致；仍需解释**为什么展开/收起侧边栏之后会变正确**（正确路径比错误路径多做了什么 = 唯一判决点）。 |
+| 3 | 「从 ADV 进入设置界面，然后右键退出，**命中了未知指令 i082**」 | ✅ **已修（不硬停）**：`0x82` 登记进 `STUB_NATIVE_OPS`（`[0x82, op_stub_unhandled]`，先例 `0x308`）+ 新守卫 `test/op-0104-gdi-repaint-stub.test.ts`（4 条；**辨别力已机械证明**：撤表项 → 4/4 红、还原 → sha256 逐字节一致 → 4/4 绿）+ `test/opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 补条目。★**真语义（GDI 重绘口径 = 重绘哪个窗）仍未实现** ⇒ `T-0104` **保持 open**，过程文档见 `tickets/T-0104/notes.md`。 |
+
+**★本批次新增纪律 3：用户复验是判决，不是确认。** 上一批把「很可能一并消失」写进票据并紧跟「**先复验**」是对的；但**假设一旦被复验推翻，必须当场改掉票据里的那句假设** —— 否则下一位会继续按错的前提排查（这次 `T-0102` 的判据①/② 就是按推翻后的结论重排的）。同理：**不要**把"白底"和"紫色"当成同一根因（同批同屏 ≠ 同源），各自独立取证。
+
+**★本批次新增纪律 4：还原脚本自己也要被验证。** 本轮证明 `0x82` 守卫辨别力时，临时注释/还原脚本第一版**吃掉了行首两个空格**（`off` 把缩进并进 `  // ` 前缀，`on` 再 `slice(i+5)`）⇒ 还原后 sha256 与原值不一致。教训：**"撤销→红、还原→绿"之外，必须再核 sha256 == 原值**；不一致就说明"验证完的树"已经不是"验证前那棵树"，先修工具再继续。
+
+**★本批次已确证/已修（白底/紫色的落点，下一位直接从这里接）**：
+
+1. **★ADV 那块「半透明黑底」是脚本往纹理槽画的**（不是消息窗表面）：
+   `src/NOVEL.txt:44-55`（ADV 包装）与 `src/SC0000.txt:1036-1047`（全库 `i20b 48` 共 183 处）——
+   `create-texture 48 500 2d0 0` → `i20b 48 0 0 500 2d0 ff 808080`（填 50% 灰）→ `draw-texture 186a0 48 …`（层序 100000）。
+2. **★两处争议点已用 `.lst` 定死**（订正了我方两处凭空注释）：
+   - `sub_43B070` = **`ddSetColor`/`SetColorKey`**（`.lst:97104` 起，错误串 `"関数：ddSetColor エラー"` +
+     尾调用 `mov eax,[ecx+74h]` = 表面 vtable+0x74，参 `8` = `DDCKEY_SRCBLT`），**不是填面**；
+     填面是 `sub_43E260` = **`ddFillSurface`**（`.lst:102245` 起）。
+   - `Scene+1560` = **像素格式掩码**（`sub_43B260` `.lst:97339` 写 `0x00FF0000/0x0000FF00/0x000000FF`
+     到 `+1556/+1560/+1564`），**不是"窗底色缓存"** ⇒ **引擎根本没有"窗自己的底色字段"**。
+   - ⇒ 已订正：`app/amayui-emulator/src/vm/msgwin.ts` 的 `WinGeom.background` 与
+     `src/renderer/text/raster.ts:326` 的填面分支（两处都写明**恒 `null`、全 `src/` 无写入点、是死码**）。
+3. **★本批修复（真代码改动）**：`TextureCache` 的**异步载入陈旧回写** —— 引擎 `set-texture` 是**同步**的
+   （`sub_422CB0` 当场读 AGF + 解码），重写侧走 `window.api.image()` **异步** ⇒ 旧代码会在"脚本
+   `create-texture` + `0x20B` 填色"之后被载入结果**无条件覆盖**，表现正是**"脚本再跑一次（开合侧边栏）才对"**。
+   修法 = 新增**槽表面世代** `#slotEpoch`（`create`/`release` 各 +1）+ 绑定未变双判据；
+   守卫 `test/texture-bind-race.test.ts`（5 条，**判别力已机械证明**：撤销 → ②③④ 红，还原 → 5/5 绿 +
+   sha256 逐字节一致）。★**证据强度 = 中**：机制确证、且是唯一能解释"刷新才对"的已知竞态，
+   但"用户那次白底就是它"**未**由 E4 确认 ⇒ `T-0102` **不关单**。
+4. **紫色 = 模拟器与引擎同构**（本批**故意不改**代码）—— ★★**本条已被下方「追加③」推翻**（用户答「真机正常（不紫）」）：
+   保留原文只为留下排查轨迹，**不要**据它下结论。真正的偏离点见「追加③」第 2 条与 `tickets/T-0102/changes.md` §丁。
+   以下是当时的取证（仍然有效的部分：载体是**全局字段** `f807b`（`i076` → `0x76` →
+   `Engine[21664]`，raw 28669/28680），逐窗/逐对象色 `0x25E`/`0x25F` 全库 **0** 次。
+   唯一会留紫的脚本点 = **角色设定页**（`12721e==4` → `CONFIG2`；`src/CONFIG2.txt:1316-1323` →
+   `1652-1687`：`f807b = adcd[14acda]`，`a9dd & 2` 门控；**每帧跑** ⇒ 退出时停在最后可见行的角色色）；
+   「ADV 設定」页本身用**立即数** `i076 ffffff`（`CONFIG1`）**不留紫**。
+   紫色活到 ADV 的路 = 返回包装 `src/SN0000.txt:3235-3258` 只**重发** `i076 (global f807b)`，
+   而 `SN0000` 全脚本 **0 处 `adcd`**、0 处 `mov f807b ffffff` ⇒ 旁白直接继承；
+   `SC*`/`SG*`/`SP*` 每页重派生（`SC0000` 426 页 = 426 次）⇒ **不继承**。
+   **已排除**三条嫌疑（这三条排除**仍然成立**）：`src/vm/msgwin.ts:695` 的 `fontStyle = null`
+   （同函数已清 segments，入队必 `captureFontStyle`）、渲染侧回头读全局（只消费发布的 `TextFrame.style`）、
+   本批发布路径（`emitWin` 仍取快照且 dirty 只含当前窗）。
+   唯一判决点 = `app/amayui-emulator/src/vm/handlers/msgwin.ts:143`。）
+5. **已排除**的候选：「纯白 = 缺纹理的 1×1 白占位块」不成立 ——
+   `src/renderer/pixi/presenter.ts:474-479` 的 `#placeholder()` 现在按 **layer 派生 tint**
+   (`(layer*47 % 360) << 8 | 0x6a`)，缺图是带绿调的块、不是纯白。
+
+### ★轮 8 追加③（用户**第二次**复验：白底仍未修 / 真机不紫）—— ★**上面的第 4 条结论被推翻**
+
+用户回答：白底「**仍然白**」、紫色「**真机正常（不紫）**」。⇒ 两条都变成**在飞的活**（`T-0102` **不关单**）。
+★**本节的"下一位怎么接"是可直接执行的**：
+
+#### 丁-A 白底（仍未修）
+
+- 本轮修的**不是**根因：`TextureCache` 异步载入陈旧回写（甲-3/第 3 条）是**真实缺陷、但不是那次白底的原因**
+  （用户复验"仍然白"）⇒ 修复保留（有守卫），但**白底继续开**。
+- **下一步判据（二选一，都很省事）**：
+  1. **现场日志**：`.tmp/amayui-emulator.log` 里 `SC0000` 进场那几帧的
+     `fillSlotRect slot=48` / `bind slot 48 <-` / `回写丢弃`，以及有没有 `set-texture … 48`。
+  2. **分支判定（无需 GUI）**：`src/SC0000.txt:1037-1039`（ADV 包装同型见 `src/NOVEL.txt:45-47`）是按
+     **全局 `708ada`** 分岔的：`708ada == -1` ⇒ 走 `label_00003a88` = **建面 + 填 50% 灰**（正确观感）；
+     否则 ⇒ `set-texture (global 708ada) 48` = **绑一张图**（白底的可疑来源）。
+     ★而 **`708ada` 在全语料 0 处写入**（183 个文件只读它）⇒ **它在模拟器里读到什么值，决定了走哪条路**。
+     ⇒ 先用探针 dump `globals.int.get(0x708ada)`（或直接看日志里有没有 `bind slot 48 <-`）。
+
+#### 丁-B 紫色（已本机复现 + 已定位引擎路径）
+
+**复现命令**（不改产品代码，仓库根执行；探针在 `.tmp/`，不属于交付物）：
+```bash
+cd app/amayui-emulator
+node --env-file=test/options.test.env --import tsx ../../.tmp/t0102/probe-config-style.ts
+# 关键输出：★离开时全局色（最后一帧）: #b690ff   （= 紫），而 win9 仍是 #ffffff
+```
+
+结论（`tickets/T-0102/changes.md` §丁 有全文）：
+
+- **历史修复只钉住了样例窗**（win 9 的颜色不被逐行设色回溯），**没钉住"全局 `Engine[21664]` 被留在紫"**。
+- 引擎的「回 ADV」重派生路径 = **`src/CONFIG.txt:225-269`**：按当前消息号 `3f37` **重派生** `14acda`
+  （旁白 ⇒ 0；否则查 `52a49c`/`14b0c4` 表）→ `call label_00001ae8`（`CONFIG.txt:372-407`：
+  重算 `f807b/f807c`，`:377-379` 有 **`adcd[14acda] <= 0` 就保持白**的守卫，`:403-404` 用 `i076/i077` **应用**）
+  → `i071 2` → `call label_00001d38` → **`:269` 的 `i082`**。
+  ★**`:269` 就是用户报的未知指令 `i082`** ⇒ `T-0104` 与紫色是**同一段代码**（见 `tickets/T-0104/notes.md`）。
+- **下一步（判据已写死在 `T-0102/changes.md` §丁-3）**：把 `runConfig1Chain` 扩到"**右键退出 CONFIG → 回 ADV 首帧**"，
+  dump `Engine[21664]`/`f807b`/`14acda`，以区分：
+  - 候选 1（更可能）：`14acda` 的**重派生算错**（`52a49c`/`14b0c4` 两张表或 `3f37` 与引擎不同）⇒ 旁白被算成某角色 ⇒ 紫；
+  - 候选 2：这条路径**没跑到**／`i082` 那一笔的效果缺失（= `T-0104` 的真语义）。
+- **新增的守卫缺口（明确记下，本票核心判据）**：现有 E3 守卫（`test/text-style-snapshot.test.ts:140-169`）
+  只断言"角色页期间 win 9 的颜色不变"；**必须再补一条**："走过 `CONFIG.txt:225-269` 之后，
+  `Engine[21664]` == 按当前消息重派生的颜色（旁白 = `#ffffff`）"。
+
+#### 丁-C 本批次新增的两条纪律
+
+5. **"未定死"必须显式留成待办，而不是写成结论**：本轮我先挖到 `sub_43B070` 时手上只有能力台账那句订正 +
+   一处 raw 调用点，当时在 handoff 里写的是「★其真语义未定死，需用 `.lst` 复核」—— 正因如此，随后的只读取证
+   才能直接把答案钉死（`ddSetColor`/SetColorKey + 掩码），而没被我的半成品结论带偏。
+6. **"脚本再跑一次就对"是一个可判定特征**：白底那句「展开/收起侧边栏就正确了」不是冗余信息 ——
+   它把候选从"某处**没画**"收敛到"**后画的被先发起的异步操作覆盖**"（因为重跑会把表面抢回来）。
+   ⇒ 以后遇到"刷新一下才对 / 切换一下就正常"的症状，**先找覆盖，再找缺失**。
+   ★但也要记住本轮的教训：这条特征给出的机制（异步回写）**确实存在**，却**不是**用户那次的原因 ——
+   **机制成立 ≠ 就是它**，结论必须由 E4 收口。
+
+#### 丁-D 本批次（追加①②③）动过的文件与验证口径
+
+| 类别 | 文件 | 说明 |
+|---|---|---|
+| 修复（真代码） | `app/amayui-emulator/src/renderer/pixi/textureCache.ts` | 新增槽表面世代 `#slotEpoch`（`create`/`release` 各 +1）+ `bind` 回写双判据；抽出 `protected decodeImage` 只为可测 |
+| 守卫（新） | `test/texture-bind-race.test.ts`（5 条）、`test/op-0104-gdi-repaint-stub.test.ts`（4 条） | 两条修复/处置的判别力都**机械证明过**（撤销→红、还原→绿、**sha256 == 原值**） |
+| 守卫（改） | `test/harness.ts`（`mkEngine` 加可选 `native`）、`test/opcode-operands.test.ts`（`ALLOW_UNDERRUN` 补 `0x82`） | — |
+| 实现/表 | `src/vm/handlers/stubs.ts`（`[0x82, op_stub_unhandled]` + 体证据注释） | 真语义仍未做，见 `T-0104` |
+| 注释订正 | `src/vm/msgwin.ts`（`WinGeom.background`）、`src/renderer/text/raster.ts`（填面分支） | 两处凭空点，按 `.lst` 结论订正 |
+| 台账 | `analysis/engine-capabilities.json`（+`texture-bind-async-stale-writeback`，共 136 条）、`analysis/opcode-gaps.json`（`0x82` 处置重写） | 生成物已重建 |
+| 票据 | `tickets/T-0102/changes.md`（甲/乙/丙/丁 全文）、`tickets/T-0104/notes.md`、`tickets/T-0075/notes.md`（一处文档矛盾已定案） | — |
+| 探针（非交付物） | `.tmp/t0102/probe-config-style.ts`、`.tmp/t0102/revert-bind-guard.mjs`、`.tmp/t0104/revert-check.mjs` | 在 `.tmp/`，可随时重跑 |
+
+**验证口径**：`npm run verify` = **921 tests / 920 pass / 1 skip / 0 fail**、死写 **0**；
+四份台账 `--validate` 全绿（capabilities 136 / scripts 30 / gaps `--check` ✓ / tickets 104）；
+生成物（`tickets/README.md`、`docs-new/03-engine/opcode-gaps.md`、能力报表）均已重建。
 
 ---
 
@@ -166,11 +303,11 @@ deferred 全量分诊（口径订正 + 29 条重排）；缺口台账 deferred 2
 
 | 项 | 值 | 复核命令 |
 |---|---|---|
-| 测试 | **909 tests / 909 pass / 1 skip / 0 fail**（轮 7→8 由 873 增至 909：新增 8 个守卫文件 —— 0x147/0x2f2、0x196、0x2ee/0x141·0x135、缺槽口径、0x02、0x1d0 回看页、Live2D 合成器、0x0100 reveal 当前窗；skip 1 = 本机缺某样东西） | `cd app/amayui-emulator && npm run verify`（≈43s，含 typecheck + 死写检测） |
+| 测试 | **921 tests / 920 pass / 1 skip / 0 fail**（轮 7→8 由 873 起步，新增守卫文件：0x147/0x2f2、0x196、0x2ee/0x141·0x135、缺槽口径、0x02、0x1d0 回看页、Live2D 合成器、0x0100 reveal 当前窗、★`0x82` 放行 = `test/op-0104-gdi-repaint-stub.test.ts` 4 条、★轮 8 追加批 = `test/texture-bind-race.test.ts` 5 条；skip 1 = 本机缺某样东西） | `cd app/amayui-emulator && npm run verify`（≈43s，含 typecheck + 死写检测） |
 | 死写 | **0** | 同上（`check:dead-writes` 扫 `Item`/`MeshObj` 字段） |
 | 缺口台账 | **未实现 0（语料 0）/ unjustified no-op 0 / 有据 no-op 13 / 已实现 38 / deferred 20**（共 71 条；轮 5 新增 `0x24D`、轮 6 新增 `0x337`，两者语料均 0 处）★「未实现 0」= 语料用到的零注册指令**已全部定性**（不再有"没人看过"的）；`deferred` **24** 条（**284 处语料**；轮 5 新增的 `0x24D` 与轮 6 新增的 `0x337` 都是语料 0 处）**仍会硬停** | `node scripts/build-opcode-gaps.mjs`（写模式）／`--check`（CI 口径，exit 1 即漂移） |
-| 能力台账（第二层） | **135 条**：已核验 **50** / 已建模未核验 7 / 部分 **33** / 缺失 21 / n/a 24（轮 6：`clock-read-transition-window` 由 `partial/E2` → **`modeled-verified/E3`**；`frame-render-gate-mainloop` 补 ADV-before-sleep 的体依据） | `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --root . --validate` |
-| 票据 | **101 张**（doing 3 / open 18 / done 79 / dropped 1）★轮 8 收口 `T-0095`（回看页）/`T-0096`（Live2D 矩阵合成器）/`T-0100`（SN0000 文字残留，★用户实测症状已修）；新增 `T-0099`（sleep 门帧粒度）/`T-0100`/`T-0101`（默认窗双真源 + 死字段） | `.agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --validate` + `node scripts/build-tickets.mjs` |
+| 能力台账（第二层） | **136 条**：已核验 **51** / 已建模未核验 7 / 部分 **33** / 缺失 21 / n/a 24（轮 6：`clock-read-transition-window` 由 `partial/E2` → **`modeled-verified/E3`**；`frame-render-gate-mainloop` 补 ADV-before-sleep 的体依据；★轮 8 追加批新增 `texture-bind-async-stale-writeback`） | `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --root . --validate` |
+| 票据 | **104 张**（doing 3 / open 21 / done 79 / dropped 1）★轮 8 收口 `T-0095`（回看页）/`T-0096`（Live2D 矩阵合成器）/`T-0100`（SN0000 文字残留，★用户实测症状已修）+ `T-0104` 的**处置面**（`0x82` 不再硬停，真语义仍未做 ⇒ 保持 open）；新增 `T-0099`（sleep 门帧粒度）/`T-0100`/`T-0101`（默认窗双真源 + 死字段）/`T-0102`（★P1：ADV 白底 + 角色名青色 + **紫色回归**）/`T-0103`（转场不一致，最后再处理）/`T-0104`（`0x82` GDI 重绘口径） | `.agents/skills/amayui-ticket-ledger/scripts/tickets.js --root . --validate` + `node scripts/build-tickets.mjs` |
 | 批次 | **B0 ✅ B1 ✅ B2 两步（剩计划层）B3 ✅（缺口清零）B4 ✅（轮 6 收口，剩 Live2D 矩阵合成器 ⇒ `T-0096`）B5 (A)(B)(C) ✅ + 轮 5/6 读档画面收口（`restoreDrawItems`）✅ B6 ✅ B7 进行中（轮 8：`T-0095`/`T-0096`/`T-0100` 三票 done；`deferred 22 → 20`、`已实现 36 → 38`；★T-0096 用真实 `d3dx9_43.dll` 当 oracle 验证坐标约定）**；**轮 5（2026-09）：`T-0084` 转场渲染**——窗口模型 + 12 种条带几何 + 类别 0/2 的**离屏槽**合成已落地（缺口台账/能力台账计数不变；详见 `repair-plan-2026-09.md` §2f） | `repair-plan-2026-09.md` §2d / §2f |
 
 ## 2. 真源与生成物（**生成物一律手改禁止**）

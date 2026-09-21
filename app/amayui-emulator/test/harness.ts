@@ -9,6 +9,7 @@
  * 只放"与引擎语义无关、纯构造"的东西；任何涉及 opcode 语义的假件都应留在各自测试里显式写出。
  */
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import type { NativeBridge } from '../src/vm/native.js';
 import { Engine } from '../src/vm/engine.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/native.js';
@@ -39,9 +40,13 @@ export function instr(op: number, args: BinArg[]): BinInstruction {
  * `test/frame-loop.test.ts`）——它们要的是"某个入口的配置在合成脚本上表现如何"，
  * 不需要真实语料。★`test/` 里还有 17 处各自的 `mk()` 变体（差异是真实需求，见
  * `tickets/T-0020`）⇒ 这个函数只服务**新增**的守卫，不强行统一既有那些。
+ *
+ * `native` 可选：默认静默 `StubNative`；要断言"宿主**收到了**这次忽略"（ADR-010 的记录义务）
+ * 的守卫传入自己的宿主（见 `test/op-0104-gdi-repaint-stub.test.ts`）。加了它就不用为了
+ * 收日志再抄一遍下面的 `ScriptBinary` 构造。
  */
-export function mkEngine(ops: BinInstruction[], name = 'FAKE.BIN'): Engine {
-  const e = new Engine(new StubNative(() => {}));
+export function mkEngine(ops: BinInstruction[], name = 'FAKE.BIN', native?: NativeBridge): Engine {
+  const e = new Engine(native ?? new StubNative(() => {}));
   const script: ScriptBinary = {
     signature: 'SYS0000',
     isVer5: false,

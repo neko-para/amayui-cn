@@ -1,0 +1,62 @@
+{
+  "title": "0x82（sub_41F720 → GDI 文本族 sub_466000）未建模：现为 STUB 放行，需补「重绘哪个窗」的口径",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/adv",
+  "why": "**用户实测（轮 8）**：从 ADV 进设置界面、右键退出时命中未知指令 `i082` 而**硬停**（`source: corpus-unregistered` + `deferred` ⇒ 未注册 ⇒ `NotImplementedOp`）。\n**已做的临时处置**（本轮）：按 `0x308` 的先例把 `0x82` 登记进 `STUB_NATIVE_OPS`（`[0x82, op_stub_unhandled]`）⇒ **记录后放行、不再硬停**；`test/opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 补了对应条目（理由：桩不读操作数）。\n**体证据**（raw 28808-28826）：`arity 槽 = 11`；`v6=op5, v5=op4, v4=op3, v3=op2, v2=op1`（全是 `sub_41BF50` 读）→ `sub_466000(_this + 21324, v2, v3, v4, v5, v6, _this + 21032)`；`_this+21324` = byte 85296 = **`Font`**；`_this+21032` = byte **84128** = 另一个文本侧对象（`analysis/fields.json` 的未知子对象表里把 84128 标为「文本」）。**不写任何操作数** ⇒ VM 态不可观测；未被建模的是**这次 GDI 重绘的可见效果**。\n**语料**：全库仅 **1 处** —— `src/CONFIG.txt:269` 的 `i082 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)`，位于 `label_000014a8`（设置界面的重画/退出路径，紧跟 `i071 2` + `call label_00001d38`）。",
+  "acceptance": [
+    "读全 `sub_466000`（raw 79319 起，几百行）并定性：**它把什么文本重绘到哪里** —— 是重画某个消息窗的排版、还是往 `Font` 的离屏表面贴一段字、还是别的；给出 op1..op5 各自的语义（注意语料实参：op1/op2 是本帧局部量、op3 = 立即数 2、op4/op5 是全局量 f807b/f807c）",
+    "判定 emulator 的等价物：最可能的是「把相应文本窗重新发布」（`scMsgWinSync`/`emitWin`）—— 若是，映射到既有机制并写清「哪个窗」；若需要新宿主缝，按先例五处同步并登记",
+    "守卫：至少在合成指令上断言「命中 0x82 读满 op1..op5 且不改变 VM 可见状态」，以及在真实 `CONFIG` 路径上断言**不再硬停**且文本窗被重新发布（若能定义场景级不变量）",
+    "把 `0x82` 的 disposition 按实际改（若真实现 ⇒ `implemented`；若确认只是重绘、由既有路径覆盖 ⇒ 写明等价性）并重跑 `node scripts/build-opcode-gaps.mjs`；`opcode-table.md` 的 0x82 行同步（现为「仅映射」空行）",
+    "E4（用户口径）：ADV → 设置界面 → 右键退出不再命中断言，且界面文字正确",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "[0x82, op_stub_unhandled]",
+      "note": "本轮的临时处置（记录后放行）+ 体证据与缺口说明都在这段注释里"
+    },
+    {
+      "file": "src/CONFIG.txt",
+      "anchor": "i082 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)",
+      "note": "全库唯一语料点（设置界面的重画/退出路径）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_466000((int)(_this + 21324), v2, v3, v4, v5, v6, v7);",
+      "note": "0x82 的落点调用（raw 28825）；被调 sub_466000 体起始 raw 79319"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0076",
+      "T-0102"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md",
+      "docs-new/03-engine/route-c-text-metrics-2026-09.md"
+    ]
+  },
+  "notes": "来源 = 用户轮 8 实测（硬停）。★临时处置只保证不硬停，**不是**实现 —— 别把 STUB 当完成。",
+  "id": "T-0104",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-20",
+      "what": "创建（来源：轮 8 用户实测硬停）"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "轮 8 收口：登记 STUB_NATIVE_OPS 放行 + 新增 test/op-0104-gdi-repaint-stub.test.ts（4 条）+ 鉴别力验证（撤表项 4/4 红、还原 sha256 一致）；★真语义（GDI 重绘口径）仍未实现，status 保持 open"
+    },
+    {
+      "at": "2026-09-20",
+      "what": "改字段：history"
+    }
+  ],
+  "tests": [
+    "test/op-0104-gdi-repaint-stub.test.ts"
+  ]
+}

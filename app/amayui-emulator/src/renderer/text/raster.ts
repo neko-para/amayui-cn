@@ -321,8 +321,15 @@ export function rasterFrame(frame: TextFrame, revealed: number, res = 1): HTMLCa
   if (!ctx) return canvas;
   ctx.setTransform(res, 0, 0, res, 0, 0);
 
-  // 窗口底色（引擎 dd 路径 `ddFillSurface(surfaces[20+win], 底色)` raw 74261-74265；
-  // D3D 路径由 DrawItem 的颜色字段承担）。null = 透明。
+  // 窗口底色分支：★**当前恒不执行**（`st.background` 恒 `null` —— 全 `src/` 没有写入点）。
+  //
+  // 历史注释说它对应「引擎 dd 路径 `ddFillSurface(surfaces[20+win], 底色)` raw 74261-74265」——
+  // 那个调用点确实存在（`sub_43E260` = `ddFillSurface`，raw 74260-74264），**但传进去的实参不是颜色**：
+  // 它取自 `Scene+1540` 起 32B 缓存的第 6 个 dword，而 `sub_43B260`（raw 47212-47304）证明那是
+  // **像素格式掩码**（`0x0000FF00` 一族）⇒ 引擎**没有**"窗底色字段"这种东西。
+  // 用户看到的 ADV「半透明黑底」是**脚本往纹理槽画的**：`src/NOVEL.txt:44-55` /
+  // `src/SC0000.txt:1036-1047`（`create-texture 48` → `i20b … ff 808080` → `draw-texture`）。
+  // 完整取证见 `tickets/T-0102`（2026-09）。保留分支是为了让"这条建模没被静默丢掉"，别再把它当活路径。
   if (st.background) {
     ctx.fillStyle = st.background;
     ctx.fillRect(0, 0, w, h);

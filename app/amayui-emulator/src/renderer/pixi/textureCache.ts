@@ -71,6 +71,8 @@ export class TextureCache {
   readonly #imgCache = new Map<number, Texture>();
   /** 在途载入（imgid → promise）——`waitIdle` 的帧屏障就等它。 */
   readonly #inflight = new Map<number, Promise<void>>();
+  /** `slot → 表面世代`（`create-texture`/`release-texture` 递增；见 `#bumpEpoch`）。 */
+  readonly #slotEpoch = new Map<number, number>();
   /** 程序化槽的画布（`0x1F8` 建、"`0x204` 画"）——与文件纹理分开存，因为要**就地改像素**。 */
   readonly #canvasSlots = new Map<number, CanvasSlot>();
   /** 待销毁的旧纹理（`present()` 之后由 `collectGarbage` 统一销毁）。 */
@@ -147,6 +149,23 @@ export class TextureCache {
   }
 
   /**
+   * 该槽的**表面世代**：`create-texture`(0x1F8) 与 `release-texture`(0x1FA) 各 +1。
+   *
+   * ★用途 = `bind` 的**陈旧回写判据**（`tickets/T-0102`）：引擎的 `set-texture`(0x1F9) 是**同步**的
+   * （`sub_422CB0` 当场 CreateFile/ReadFile + 解码，指令返回时图像已在内存 ⇒ 见 `waitIdle` 的说明），
+   * 而重写侧走 `window.api.image()`（IPC + 主进程解码）**异步**。于是存在这个窗口：
+   *   ① `set-texture X 48`（X 未缓存 ⇒ 发起异步载入）
+   *   ② 脚本 `create-texture 48`（新空白表面）+ `0x20B` 填色 ⇒ 屏上应当是**那笔填色**
+   *   ③ 异步载入完成 ⇒ 旧代码无条件 `slotTex.set(48, X)` ⇒ **把②的表面换掉**（画面上变成 X）
+   * 表现就是"该槽要的颜色/内容没上来，直到脚本**再跑一次**同一段（例如开合一次侧边栏）才正确" ——
+   * 用户实测原话：「进入 SC0000 后 ADV 窗口背景是**白色**的，展开/收起侧边栏菜单似乎刷新了界面
+   * 导致其正确变成了**半透明黑色**」。引擎里②永远晚于③（同步），所以②必须赢。
+   */
+  #bumpEpoch(slot: number): void {
+    this.#slotEpoch.set(slot, (this.#slotEpoch.get(slot) ?? 0) + 1);
+  }
+
+  /**
    * 按 imgid 预载图像（幂等：已在缓存或已在途则直接返回同一个 promise）。
    * 失败只记日志——引擎在取不到图时也只是画不出来，不改变控制流。
    */
@@ -156,12 +175,8 @@ export class TextureCache {
     if (inflight) return inflight;
     const task = (async () => {
       try {
-        const r = await window.api.image(imgid);
-        if (r) {
-          const tex = await rgbaToTexture(r.width, r.height, r.data);
-          this.#imgCache.set(imgid, tex);
-          this.log(`image ${imgid.toString(16)} -> ${r.name} (${r.width}x${r.height})`);
-        }
+        const tex = await this.decodeImage(imgid);
+        if (tex) this.#imgCache.set(imgid, tex);
       } catch (err) {
         this.log(`image ${imgid.toString(16)} fail: ${(err as Error).message}`);
       } finally {
@@ -170,6 +185,21 @@ export class TextureCache {
     })();
     this.#inflight.set(imgid, task);
     return task;
+  }
+
+  /**
+   * `imgid → Texture`（默认 = `window.api.image()` 取 AGF 解码结果 → `rgbaToTexture`）。
+   *
+   * ★抽成**可覆写方法**的唯一动机是**可测性**：Node 里没有 `ImageData`/`createImageBitmap`/DOM，
+   *   而"异步载入完成后回写槽纹理"这条竞态（见 `bind` 的世代判据）必须在合成对象上
+   *   **确定性复现**才能写守卫 —— 否则只能靠真界面偶发观察（`test/texture-bind-race.test.ts`）。
+   *   生产路径行为不变：全仓只有这一处实现（`rgbaToTexture` 仍是唯一解码口）。
+   */
+  protected async decodeImage(imgid: number): Promise<Texture | null> {
+    const r = await window.api.image(imgid);
+    if (!r) return null;
+    this.log(`image ${imgid.toString(16)} -> ${r.name} (${r.width}x${r.height})`);
+    return rgbaToTexture(r.width, r.height, r.data);
   }
 
   /** `0x1F9` set-texture：建立 `slot → imgid` 绑定；纹理未载入则异步补上 `slot → Texture`。 */
@@ -182,9 +212,21 @@ export class TextureCache {
       this.log(`  bind slot ${slot} <- imgid 0x${imgid.toString(16)}`);
       return;
     }
+    // ★陈旧回写判据（`tickets/T-0102`）：记下发起时的表面世代，回来时**两个条件都要成立**才落盘——
+    //   ① 该槽的表面没有被 `create-texture`/`release-texture` 重建过（世代不变）；
+    //   ② 该槽的绑定仍是这次发起的那张图（没被重新 `set-texture` 成别的 imgid）。
+    //   否则这次载入只进 `#imgCache`（下次绑定即命中），**不得**覆盖脚本后来画上去的表面。
+    const epoch = this.#slotEpoch.get(slot) ?? 0;
     void this.preloadImage(imgid).then(() => {
       const t2 = this.#imgCache.get(imgid);
-      if (t2) this.slotTex.set(slot, t2);
+      if (!t2) return;
+      if ((this.#slotEpoch.get(slot) ?? 0) !== epoch || this.#slotImgid.get(slot) !== imgid) {
+        this.log(
+          `  bind slot ${slot} <- imgid 0x${imgid.toString(16)} 回写丢弃（槽已被 create/release 重建或改绑）`,
+        );
+        return;
+      }
+      this.slotTex.set(slot, t2);
     });
   }
 
@@ -206,6 +248,7 @@ export class TextureCache {
    * （用户实测："非 ADV 窗口的文字整体像是粗体"）。两条路径现在同口径。
    */
   create(slot: number, w: number, h: number, mode: number): void {
+    this.#bumpEpoch(slot); // ★该槽的表面换了 ⇒ 更早发起的异步载入不得再回写（见 #bumpEpoch）
     const bound = this.#slotImgid.get(slot);
     if (bound !== undefined) {
       const tex = this.#imgCache.get(bound);
@@ -579,6 +622,7 @@ export class TextureCache {
 
   /** `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。 */
   release(slot: number): void {
+    this.#bumpEpoch(slot); // ★表面被释放 ⇒ 更早发起的异步载入不得再回写（见 #bumpEpoch）
     this.slotTex.delete(slot);
     const cs = this.#canvasSlots.get(slot);
     if (cs) {

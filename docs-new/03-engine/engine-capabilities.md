@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 50 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 51 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 33 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 21 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **135** | 需要关注（非 n/a 且非已核验）= **61** |
+| **合计** | **136** | 需要关注（非 n/a 且非已核验）= **61** |
 
 ## 按子系统
 
@@ -29,7 +29,7 @@
 | 帧循环 | 16 | 10 |
 | 消息窗 | 30 | 18 |
 | 渲染 | 29 | 13 |
-| 资源 | 17 | 4 |
+| 资源 | 18 | 4 |
 | 转场 | 4 | 2 |
 | 输入 | 6 | 0 |
 
@@ -172,6 +172,7 @@
 | `scene-layer-xform-compose-20-29` | 渲染 | Scene 世界矩阵的合成与「只作用于层号 ∈ [20,30) 的项」这一级 | ✅ 已核验 | E2 · `test/op-22a-22f-scene-world.test.ts` |
 | `save-load-drawitem-clear-and-restore` | 资源 | 读档装载点：清空绘制项容器 + 还原存档里的绘制项清单（Scene+1032） | ✅ 已核验 | E4 · `test/engine-slot.test.ts` |
 | `live2d-node-matrix-compose` | Live2D | 572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进 | ✅ 已核验 | E3 · `test/l2d-node-compose.test.ts` |
+| `texture-bind-async-stale-writeback` | 资源 | 纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面 | ✅ 已核验 | E3 · `test/texture-bind-race.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

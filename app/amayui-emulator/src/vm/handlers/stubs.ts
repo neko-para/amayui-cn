@@ -308,6 +308,15 @@ export const STUB_NATIVE_OPS: OpTable = [
   // ★`0xB4`（SE 装载）/ `0xBF`（play-bgm）/ `0xC4`（play-voice）已从本表移出：
   //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
   [0x308, op_stub_unhandled], // 输入触摸注册（⚠op1/`_this[1954]` 未建模，见 handler 注释）
+  // ★`0x82`（`sub_41F720` raw 28808-28826，argc 5）：**用户实测的硬停点**（轮 8：ADV → 设置界面 →
+  //   右键退出 ⇒ 命中未知指令 `i082`）。体只**读** op1..op5（`sub_41BF50`）再转
+  //   `sub_466000(_this + 21324, op1..op5, _this + 21032)`（raw 79319 起，**GDI 文本族**，
+  //   `_this + 21324` = byte 85296 = `Font`；`_this + 21032` = byte 84128 = 另一个文本侧对象）
+  //   ⇒ **不写任何操作数、不改 VM 态/控制流**；效果是 GDI 把文本重绘进 Font 的离屏表面。
+  //   ⚠**已知缺口**：emulator 不建模这次 GDI 重绘（等价物应是把相应文本窗重新发布），
+  //   所以这里"记录后放行"只保证**不硬停**；真正的口径（重绘哪个窗、op1..op5 各是什么）见
+  //   `tickets/T-0104`。语料仅 1 处：`src/CONFIG.txt:269`（设置界面的重画/退出路径）。
+  [0x82, op_stub_unhandled], // ★GDI 文本重绘（sub_466000 族）：记录后放行，**不再硬停**；缺口见 T-0104
   /**
    * ★`0x14B` / `0x14C` / `0x14D`（**AGERC 模块接口**）**已全部转真实现（2026-09，A6）**：
    * 见 `handlers/agerc.ts`（`AGERC_OPS`，进 `OPS`）+ 模型 `Engine.agerc`。

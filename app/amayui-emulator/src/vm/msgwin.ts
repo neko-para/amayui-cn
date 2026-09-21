@@ -72,7 +72,7 @@ export interface MsgSlot {
  *  - `originX/originY` ← `win+28/+32`（op `0x79`）
  *  - `wrapRight/wrapBottom` ← `win+36/+40`（op `0x70` 初值、op `0x1C1` 覆盖）
  *  - `align/alignWidth` ← `win+288/+292`（op `0x303`）
- *  - `background` ← `sub_43B070(dd, 表面, 色)`（op `0x70` 之后引擎用窗口底色填面）
+ *  - `background` ← ★**没有引擎来源**（见字段上的说明 + `tickets/T-0102` 的取证）
  */
 export interface WinGeom {
   x: number;
@@ -85,6 +85,24 @@ export interface WinGeom {
   wrapBottom: number;
   align: 0 | 1 | 2;
   alignWidth: number;
+  /**
+   * 窗底色（`#rrggbb`）。★**恒 `null`：全 `src/` 没有写入点**。
+   *
+   * ★2026-09 取证订正（`tickets/T-0102`，用 `.lst` 级复核）——本条原写「← `sub_43B070(dd, 表面, 色)`
+   *   （op `0x70` 之后引擎用窗口底色填面）」，**被证伪**：
+   *   ① `sub_43B070` = **`ddSetColor` / `SetColorKey`**（`.lst:97104` 起；错误串 `"関数：ddSetColor エラー"`
+   *      + 尾调用 `mov eax,[ecx+74h]` = 表面 vtable+0x74，参 `8` = `DDCKEY_SRCBLT`）——**不是填面**；
+   *      真正的填面是 `sub_43E260`（= `ddFillSurface`，`.lst:102245` 起）。
+   *   ② 那两处填面调用（`0x70` 落点 `sub_45D660` raw 73175-73179、`0x71` raw 74260-74264）的颜色实参
+   *      取自 `Scene+1540` 起 32B 缓存的第 6 个 dword（= `Scene+1560`），而 `sub_43B260`（raw 47212-47304）
+   *      证明那是**像素格式的 R/G/B 掩码**（`0x00FF0000`/`0x0000FF00`/`0x000000FF`）⇒
+   *      **引擎根本没有"窗自己的底色字段"**（那个实参是掩码，不是颜色）。
+   *   ③ 用户看到的 ADV"半透明黑底"其实是**脚本往纹理槽画的**：
+   *      `src/NOVEL.txt:44-55`（ADV 包装）与 `src/SC0000.txt:1036-1047`
+   *      （`create-texture 48 500 2d0 0` → `i20b 48 0 0 500 2d0 ff 808080` → `draw-texture 186a0 48 …`）。
+   * ⇒ 保留字段只为**不把这条历史建模静默丢掉**（`src/renderer/text/raster.ts` 的填面分支因此是死码）；
+   *   真要修"窗底色没画"得去槽路径（`0x1F8`+`0x20B`+`draw-texture`），**不是**这里。
+   */
   background: string | null;
   /**
    * 竖排源矩形修正（引擎 `Font+235112/+235116/+235120/+235124`，op `0x260`）。
