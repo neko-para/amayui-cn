@@ -24,7 +24,8 @@
     {
       "file": "docs-new/00-overview/conventions.md",
       "anchor": "### 3.1 install 根 vs 原始解包树",
-      "note": "安装目标只有 install 根；AGF overlay 的真源在 res/images，DATA1-8 是只读解包树"
+      "note": "安装目标只有 install 根；AGF overlay 的真源在 res/images，DATA1-8 是只读解包树",
+      "line": 70
     }
   ],
   "tests": [
@@ -52,6 +53,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— prune-install.mjs 落地：清单外无译文 BIN 已清理 447 个、res/images 的 9 个 AGF 已补进 install 根；收口后 install 顶层与清单只差 1 多余（天结.exe，EXCLUDED_NAMES）+ 6 个作者机器才有的文件"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

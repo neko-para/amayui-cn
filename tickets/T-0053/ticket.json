@@ -15,27 +15,32 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "return SetCursorPos(Point.x, Point.y);",
-      "note": "0x10A 的宿主侧动作（raw 30597）：引擎在这里移动**系统光标**；宿主没有对应 API"
+      "note": "0x10A 的宿主侧动作（raw 30597）：引擎在这里移动**系统光标**；宿主没有对应 API",
+      "line": 30597
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "SetCursorPos(*(_DWORD *)(_this + 699168) / 2, *(_DWORD *)(_this + 699172) / 2);",
-      "note": "另两处 SetCursorPos 之一（raw 11863「把光标居中」；另一处 raw 141138）—— 全库仅三处，口径一致"
+      "note": "另两处 SetCursorPos 之一（raw 11863「把光标居中」；另一处 raw 141138）—— 全库仅三处，口径一致",
+      "line": 11863
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "const op_set_mouse_pos: OpHandler",
-      "note": "已落地的引擎侧那半件（`input.setCursor`）+ 标注了本票"
+      "note": "已落地的引擎侧那半件（`input.setCursor`）+ 标注了本票",
+      "line": 366
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "onCursorMove?: (x: number, y: number) => void;",
-      "note": "宿主缺口为什么只是观感问题：命中测试走引擎侧坐标（`Engine` 把它接到 `routes.hitTest`）"
+      "note": "宿主缺口为什么只是观感问题：命中测试走引擎侧坐标（`Engine` 把它接到 `routes.hitTest`）",
+      "line": 119
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "host-cursor-warp",
-      "note": "第二层的可查询缺口（本票创建时新增）"
+      "note": "第二层的可查询缺口（本票创建时新增）",
+      "line": 3524
     }
   ],
   "tests": [
@@ -70,6 +75,10 @@
     {
       "at": "2026-09-17",
       "what": "决策：路线 ①（原生模块）；实现与守卫落在 T-0058（原生模块工程 + 0x10A 接线 + 打包方案）；真机核验两处（模块级 smoke / Electron 三跳换算）；观感确认仍挂在 T-0051 的 E4 清单 ⇒ open → done"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

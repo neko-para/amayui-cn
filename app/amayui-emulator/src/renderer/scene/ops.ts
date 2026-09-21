@@ -40,6 +40,7 @@ import {
   makeMesh,
   advanceWindows,
   calcDiffuse,
+  freezeWindow,
   itemAnimationsPending,
   itemLoopAnimationsPending,
   meshWindowDone,
@@ -709,12 +710,71 @@ export function scDrawCgNumber(
 }
 
 /**
+ * **`Scene+46512` 强制冻结 ⇒ 把一帧里所有 A 层动画窗当帧收尾**（`tickets/T-0091` 的 G1）。
+ *
+ * 引擎依据（逐行读体）：冻结为 1 时，三类窗口的判定都走"到期"分支 ——
+ *  - 绘制项 `sub_49AA30` raw 117439-117449：`v112 = *(Scene+46512); … v16 >= v15+v14+v13 || v112 == 1`
+ *    ⇒ 收尾（`work ← target`），随后 117831-117836 `flags &= ~2; +720 bit0 &= ~1; start = 0`；
+ *  - mesh `sub_4AF1C0` raw 133508/133517：`v5 = *(Scene+46512); if (… && !v5) {在途}` ⇒ 否则落到
+ *    133531-133538 的收尾（`delay/dur/start = 0; state0 ← state1; flags &= ~2`）；
+ *  - 转场 `sub_4B06D0` raw 134941 / 135806 / 136182（由 `transition.ts` 的 `freeze` 形参处理）。
+ * ★这三处的置脏语义与引擎同：求值器**无条件**置 `Scene+46508`（raw 133540 / 117839）
+ *   ⇒ 只要该项/mesh 还带 bit1，冻结这一帧就要再合成一次。
+ * ★**未做的两格**（不静默跳过，登记在 `T-0091` 报告）：①引擎收尾时还清 `+720` bit0
+ *   （raw 117836 `*((_DWORD *)a2 + 180) &= ~1u`）、②mesh 收尾还写 `state1 = -1`（raw 133536）。
+ *   这两格 emulator 的**非冻结**收尾路径（`advanceWindows` / `calcDiffuse`）本来也没做 ⇒
+ *   冻结路径与它保持一致，避免同一模型出现"两套收尾"。二者都不影响本票判据。
+ */
+function freezeItemWindows(it: Item): void {
+  for (let i = 0; i < 5; i++) if (it.wins[i]!.set) freezeWindow(it, i);
+  it.flags &= ~2;
+  it.animStart = 0;
+}
+
+/** mesh 颜色窗的收尾（引擎 raw 133531-133538；与 `calcDiffuse` 的收尾分支同一套字段）。 */
+function freezeMeshColor(m: MeshObj): void {
+  if (m.anim) {
+    m.anim.delay = 0;
+    m.anim.dur = 0;
+    m.anim.start = 0;
+  }
+  m.state0 = m.state1;
+  m.flags &= ~2;
+}
+
+/**
  * 逐帧驱动：推进所有 DrawItem 的 5 个窗（窗末 `work ← target`；全窗结束清动画位）。
  * ★只有**真的推进了窗**（窗末收尾 / 动画位清零）才置脏：否则每帧推进都会把 `dirty` 一直点亮，
  * 脏位就失去意义（`tickets/T-0003`）。注意窗"跑完"的那一帧要置脏 —— 求值器在 `after` 相位返回目标值，
  * 与上一帧的插值结果不同，必须再合成一次才能看到终态。
+ *
+ * @param freeze `Scene+46512`（强制冻结；`tickets/T-0091` 的 G1）。为真时**不按墙钟推进**，
+ *   而是把每个带 bit1 的项/mesh 立刻收尾（见 `freezeItemWindows` / `freezeMeshColor`）。
+ *   ★这是 `advanceModel(nowMs, { freeze })` 的入口：此前冻结只在 `gatePending` 与帧末锁存里被用，
+ *   窗模型完全看不到它 ⇒ 玩家跳过等待门后窗照墙钟跑完（画面差异 + `needsRender` 多亮若干帧）。
  */
-export function scAdvance(s: SceneState, clock: number): void {
+export function scAdvance(s: SceneState, clock: number, freeze = false): void {
+  if (freeze) {
+    // ★冻结路径与引擎同：每遍绘制**无条件**置 `46508`（raw 117839 / 133540 的 LABEL 不论在途与否都落这里）
+    //   ⇒ 有窗可收尾就置脏，把终态画出来。
+    for (const it of s.drawItems.values()) {
+      if ((it.flags & 2) === 0) continue;
+      // ★**`+720` bit0 = 豁免强制冻结**（`sub_49AA30` raw 117439-117442）：
+      //   `v11 = (a2[180] & 1) == 0; v112 = Scene+46512; if (!v11 && (Scene+46528 & 4) == 0) v112 = 0;`
+      //   —— `46528` bit2 在本 exe **无写者**（恒 0，见 `T-0091` design §2.5）⇒ 判据就是 `+720` bit0。
+      //   同一个格子也是"不置池挂起位"的判据（raw 117843-117844，见 `scPoolPending`）⇒
+      //   序章 80 000 ms 慢推（`src/SN0000.txt:1043` 的 `i242 f8023 1`）**跳过等待门时不许被截断**。
+      if ((it.entryParam & 1) !== 0) continue;
+      freezeItemWindows(it);
+      s.dirty = true;
+    }
+    for (const m of s.meshes.values()) {
+      if ((m.flags & 2) === 0) continue;
+      freezeMeshColor(m);
+      s.dirty = true;
+    }
+    return;
+  }
   for (const it of s.drawItems.values()) if (advanceWindows(it, clock)) s.dirty = true;
   // ★**mesh 的窗末收尾也在这里**（`tickets/T-0004` 的 G3 实测修）：mesh 没有 `advanceWindows` 那样的
   //   推进器，它的"求值 + 窗末收尾（`state0 ← state1`、清 bit1）"全在 `calcDiffuse` 里
@@ -739,11 +799,27 @@ export function scAdvance(s: SceneState, clock: number): void {
  * 判据与推进侧共用同一份窗实现（`itemAnimationsPending` → `windowDone`）。
  *
  * ★它**不是** `0x400` 门的判据 —— 门判据见 `scPoolPending`（差别的实证见那里的注释）。
+ *
+ * @param freeze `Scene+46512`（`tickets/T-0091` 的 G1）：为真时**非豁免的 A 层（bit1）窗视为已收尾**
+ *   （引擎 `sub_4AF1C0` raw 133517 的 `&& !v5`、`sub_49AA30` raw 117449 的 `|| v112 == 1`）
+ *   ⇒ 不再算它们 pending。
+ *   ★**两个例外**（都回体核过）：①`+720` bit0 的项**豁免冻结**（raw 117440-117442）⇒ 仍按墙钟跑、
+ *   仍算 pending；②B 层（bit2）循环动画不受冻结影响 —— 唯一读者 `sub_40BE10` 判它用的是
+ *   `v6[0] & 4`（raw 16028），与 `46512` 无关 ⇒ 冻结帧只要还有循环动画就仍要合成。
+ *   （`tickets/T-0091/design.md` §5.3 写的"freeze ⇒ 直接返回 false"两处都没写；此处按体，见 `T-0091` 报告。）
  */
-export function scAnimationsPending(s: SceneState, clock: number): boolean {
-  for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
-  // 极性：`itemAnimationsPending` = "**还有**窗没走完"（不需要取反）
-  for (const it of s.drawItems.values()) if (it.flags & 2 && itemAnimationsPending(it, clock)) return true;
+export function scAnimationsPending(s: SceneState, clock: number, freeze = false): boolean {
+  // mesh：**没有** `+720` 那类豁免（`sub_4AF1C0` raw 133517 只读 `Scene+46512`）⇒ 冻结一律收尾。
+  if (!freeze) {
+    for (const m of s.meshes.values()) if (m.flags & 2 && !meshWindowDone(m, clock)) return true;
+  }
+  for (const it of s.drawItems.values()) {
+    if ((it.flags & 2) === 0) continue;
+    // 冻结语义下只有 `+720` bit0 的项还按墙钟跑（raw 117440-117442 的豁免）⇒ 它们仍算 pending。
+    if (freeze && (it.entryParam & 1) === 0) continue;
+    // 极性：`itemAnimationsPending` = "**还有**窗没走完"（不需要取反）
+    if (itemAnimationsPending(it, clock)) return true;
+  }
   // ★B 层（bit2）周期/循环动画也是"还在动"⇒ 必须继续合成，否则画面上只有一个静止初相。
   //   **但这一条只进合成判据，绝不进 `scPoolPending`（等待门）**：引擎的池挂起位 `Scene+46516`
   //   只在 A 层（bit1）路径置位（raw 117844/133528），B 层永远不会"结束" ⇒ 接进等待门就是死等。
@@ -764,7 +840,9 @@ export function scAnimationsPending(s: SceneState, clock: number): boolean {
  *    ⇒ 本位是**逐遍瞬时量**："**上一遍绘制**时还有没有东西在动"，正是主循环 raw 21111 门判据要读的东西；
  *  - **强制冻结** `Scene+46512`（`sub_407EA0` raw 12796 置 1）：为 1 时所有窗立刻算结束
  *    （raw 134941 / 135806 / 136182 的 `… || *(_DWORD *)(_this + 46512) == 1` ⇒ 窗收尾）⇒ 不再置本位。
- *    驱动把这一条折进锁存（`loop.ts`：`e.scenePending = !e.sceneFreeze && host.poolPending()`）。
+ *    ★`T-0091` G1 之后冻结**真的传进了窗模型**（`scAdvance(s, clock, true)` 当帧收尾，
+ *    由 `frame/loop.ts` 的 `advanceModel(nowMs, { freeze })` 驱动）⇒ 本探针自然为假；
+ *    `loop.ts` 里 `e.scenePending = !e.sceneFreeze && host.poolPending()` 的折法是同一语义的第二道保险。
  *
  * ★★**门不再有自己的一套"扫几个窗"口径**：门 = `0x238` 装载的等待计时器（`Engine.gatePending`）+ 本位。
  *   长时平移窗之所以**不**钉住门，不是"门不看平移窗"，而是脚本用 **`i242 <handle> 1`**（= `+720` bit0）

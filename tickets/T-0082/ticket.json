@@ -24,12 +24,14 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
       "anchor": "### op-6-01 — 0x34B 的操作数类型被整体错读（delay 当缩放百分数、三个 float 丢弃）",
-      "note": "操作数类型错位的最典型条"
+      "note": "操作数类型错位的最典型条",
+      "line": 158
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[30 * _this[95776] + 95805] = 11;",
-      "note": "arity 槽的写法示例（0x228 的体；argc=5 ⇒ 2*5+1）：每条 handler 都写它，可做 argc 的自动核验真源"
+      "note": "arity 槽的写法示例（0x228 的体；argc=5 ⇒ 2*5+1）：每条 handler 都写它，可做 argc 的自动核验真源",
+      "line": 27087
     }
   ],
   "links": {
@@ -59,6 +61,10 @@
     {
       "at": "2026-09-19",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

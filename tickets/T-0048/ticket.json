@@ -15,32 +15,38 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "return SetCursorPos(Point.x, Point.y);",
-      "note": "0x10A 的落点（raw 30597）：前面是 readIntOperand(1)/(2) → 显示对象偏移 → ClientToScreen"
+      "note": "0x10A 的落点（raw 30597）：前面是 readIntOperand(1)/(2) → 显示对象偏移 → ClientToScreen",
+      "line": 30597
     },
     {
       "file": "src/SC5450.txt",
       "anchor": "i10a 4c4 (global-int 13a0)",
-      "note": "ADV 侧边栏钉光标：`read-mouse-pos (global-int 139f) (global-int 13a0)` 刚读到当前 Y，再把 x 钉到 0x4c4=1220（栏内）；`i10a 479`（1145）是放出"
+      "note": "ADV 侧边栏钉光标：`read-mouse-pos (global-int 139f) (global-int 13a0)` 刚读到当前 Y，再把 x 钉到 0x4c4=1220（栏内）；`i10a 479`（1145）是放出",
+      "line": 725
     },
     {
       "file": "src/ALLMAP.txt",
       "anchor": "i10a (local-ptr 0) (local-ptr 1)",
-      "note": "引用操作数形态：坐标来自 lookup-array 的数组元素（readIntOperand 穿引）"
+      "note": "引用操作数形态：坐标来自 lookup-array 的数组元素（readIntOperand 穿引）",
+      "line": 793
     },
     {
       "file": "src/SELSTAGE.txt",
       "anchor": "i10a 388 d3",
-      "note": "对话框居中：硬编码 (0x388, 0xd3) = (904, 211)"
+      "note": "对话框居中：硬编码 (0x388, 0xd3) = (904, 211)",
+      "line": 42
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "const op_set_mouse_pos: OpHandler",
-      "note": "实现点：`input.setCursor(x, y, true)`"
+      "note": "实现点：`input.setCursor(x, y, true)`",
+      "line": 366
     },
     {
       "file": "app/amayui-emulator/test/input.test.ts",
       "anchor": "★0x10A：把光标移到 (op1, op2)",
-      "note": "守卫：真实现（非 no-op）+ 命中测试时机 + 0x10A→0x109 往返"
+      "note": "守卫：真实现（非 no-op）+ 命中测试时机 + 0x10A→0x109 往返",
+      "line": 255
     }
   ],
   "tests": [
@@ -71,6 +77,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— open → done：`0x10A` 进 `INPUT_OPS` 真实现（`op_set_mouse_pos` = `input.setCursor(op1, op2, true)`；引用操作数经 readIntOperand 穿引）。语义核对：引擎 = 虚拟屏坐标 →（窗口模式下的虚拟→客户区映射，仅 `display:VirtualFullScreenType==2` 才缩放，随包 INI 无此键）→ `ClientToScreen` → **`SetCursorPos`**（raw 30546-30597）⇒ 0x109 的逆。语料 1678 处的四种用途（ADV 侧栏钉光标 1470 / 光标位置记忆 / ALLMAP 拖动回夹 / SELSTAGE 对话框居中）与宿主缺口（浏览器不能移动真实系统光标；下一次 mousemove 覆盖回来）都已落台账。守卫 test/input.test.ts（真实现非 no-op + onCursorMove 命中时机 + 0x10A→0x109 往返）；opcode-table 0x10A 行「仅映射」→「已核对」并已 `node scripts/asm/build-opcodes.js` 重生成；npm run verify 565 测试全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

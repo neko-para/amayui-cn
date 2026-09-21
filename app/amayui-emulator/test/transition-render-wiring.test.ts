@@ -137,6 +137,21 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
   );
   const headless = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'headlessScene.ts'), 'utf8');
   assert.ok(headless.includes('scTransitionTick(this.scene, nowMs)'), 'headless 宿主必须推进同一个转场窗');
+  // ★`T-0091`：两个宿主都必须把 G1（`freeze` = `Scene+46512`）与 G2（`poolPending` = 全场景
+  //   `Scene+46516` 探针）一起传下去。headless 侧有行为级守卫（`test/wait-gate-timer.test.ts` 的
+  //   "驱动级"一例 + `test/sc-transition-window.test.ts` 的 G2 一例），pixi 侧只能在源码上钉住。
+  assert.ok(
+    /scTransitionTick\(this\.scene, nowMs, freeze, \(\) => this\.poolPending\(\)\)/.test(headless),
+    '★G1/G2：headless 必须转发 freeze + 池挂起探针',
+  );
+  assert.ok(
+    /scTransitionTick\(this\.scene, nowMs, freeze, \(\) => this\.poolPending\(\)\)/.test(backend),
+    '★G1/G2：pixi 必须转发 freeze + 池挂起探针（与 headless 同一份形参）',
+  );
+  assert.ok(
+    /scAdvance\(this\.scene, nowMs, freeze\)/.test(backend),
+    '★G1：pixi 的模型推进必须把 freeze 传给 scAdvance（否则冻结到不了窗模型）',
+  );
   const cache = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'pixi', 'textureCache.ts'), 'utf8');
   assert.ok(cache.includes('composeIntoSlot('), 'TextureCache 必须提供"把 2D 合成画进槽表面"的入口');
 });

@@ -34,17 +34,20 @@
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "} else if (e.textRevealing) {",
-      "note": "驱动分支：逐字分支在推进分支之前（修前这里不消费输入）"
+      "note": "驱动分支：逐字分支在推进分支之前（修前这里不消费输入）",
+      "line": 309
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "serviceRevealAdvanceInput()",
-      "note": "修复点：逐字期间的输入出口（只吃左键/滚轮下滚、贴完不清 bit30、消费该次点击）"
+      "note": "修复点：逐字期间的输入出口（只吃左键/滚轮下滚、贴完不清 bit30、消费该次点击）",
+      "line": 727
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "if ((mask & 0x10) !== 0 && panel.cursorValid()) {",
-      "note": "★对照：等待泵在派发前会 finishCharReveal（清 bit30）**并继续推进** ⇒ 不能直接用它实现逐字期间的点击"
+      "note": "★对照：等待泵在派发前会 finishCharReveal（清 bit30）**并继续推进** ⇒ 不能直接用它实现逐字期间的点击",
+      "line": 1100
     }
   ],
   "links": {
@@ -71,6 +74,10 @@
     {
       "at": "2026-09-14",
       "what": "open → done —— 守卫（单元 + 驱动）+ E3 真实语料见 changes.md；残余见 notes.md"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

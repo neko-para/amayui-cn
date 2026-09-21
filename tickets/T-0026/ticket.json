@@ -36,7 +36,8 @@
     {
       "file": "app/amayui-emulator/src/emulatorOptionsFile.ts",
       "anchor": "resourceDirOf",
-      "note": "config 相对基准 = dirname(loaded.path)（AMAYUI_EMULATOR_CONFIG 换路径时随之改变）"
+      "note": "config 相对基准 = dirname(loaded.path)（AMAYUI_EMULATOR_CONFIG 换路径时随之改变）",
+      "line": 80
     },
     {
       "file": "app/amayui-emulator/src/text/fontSet.ts",
@@ -47,7 +48,8 @@
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "resourceVersion",
-      "note": "Engine.resourceVersion（非引擎字段）——字体策略的落点"
+      "note": "Engine.resourceVersion（非引擎字段）——字体策略的落点",
+      "line": 262
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
@@ -67,7 +69,8 @@
     {
       "file": "docs-new/04-app/emulator.md",
       "anchor": "resources.version",
-      "note": "§8 选项表 + resources 段说明（优先序/相对基准/日志同打两值）"
+      "note": "§8 选项表 + resources 段说明（优先序/相对基准/日志同打两值）",
+      "line": 235
     }
   ],
   "blockedBy": [],
@@ -107,6 +110,10 @@
     {
       "at": "2026-09-14",
       "what": "doing → done —— 实现 + 8 条新测试 + E1/E2/E3 实测见 changes.md（该单验收全部满足）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

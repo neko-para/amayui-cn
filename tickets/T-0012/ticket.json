@@ -14,32 +14,38 @@
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "export function runLoopOptions(w: RunLoopWiring): FrameLoopOptions {",
-      "note": "T-0012 把 CLI 的驱动口径抽成可导出的纯函数（守卫的前提）"
+      "note": "T-0012 把 CLI 的驱动口径抽成可导出的纯函数（守卫的前提）",
+      "line": 56
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "仅在**直接执行**时跑 CLI",
-      "note": "直执行守卫：修前是无条件 main() ⇒ 测试连 import 都会把 CLI 跑起来（这就是守卫一直没补的真实卡点）"
+      "note": "直执行守卫：修前是无条件 main() ⇒ 测试连 import 都会把 CLI 跑起来（这就是守卫一直没补的真实卡点）",
+      "line": 254
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "stopAfterStep: atLimit,",
-      "note": "STEPS=n 逐条生效（修前 cap 只在帧边界判 ⇒ STEPS=300 会跑成 20000 条）"
+      "note": "STEPS=n 逐条生效（修前 cap 只在帧边界判 ⇒ STEPS=300 会跑成 20000 条）",
+      "line": 82
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "gates: { anim: 'clear', sleep: 'wait', advance: 'force' }",
-      "note": "CLI 门档：anim=clear 是 StubNative 缺 poolPending 的补偿（T-0013），棘轮里已显式化"
+      "note": "CLI 门档：anim=clear 是 StubNative 缺 poolPending 的补偿（T-0013），棘轮里已显式化",
+      "line": 59
     },
     {
       "file": "app/amayui-emulator/test/run-cli-loop.test.ts",
       "anchor": "棘轮：CLI 的门档/服务开关只允许",
-      "note": "与 session.ts 的 PRODUCT_FRAME_POLICY 逐项比对，只允许 anim/advance 两处宿主缺口"
+      "note": "与 session.ts 的 PRODUCT_FRAME_POLICY 逐项比对，只允许 anim/advance 两处宿主缺口",
+      "line": 218
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "stopAfterStep?(t: StepTrace, e: Engine)",
-      "note": "逐条停是驱动能力（B2 加）"
+      "note": "逐条停是驱动能力（B2 加）",
+      "line": 148
     }
   ],
   "blockedBy": [
@@ -64,6 +70,10 @@
     },
     {
       "at": "2026-09-15",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
       "what": "改字段：evidence"
     }
   ],

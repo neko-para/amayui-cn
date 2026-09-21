@@ -15,22 +15,26 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v4 = result[517];",
-      "note": "0x100 的 else 分支（raw 25047）：掩码 == 0 时取 SetKeyTotal 当下标查同一张 joy-callback 表 ⇒ 派发「默认键」。两条分支各有一处压返回点（raw 25039-25040 / 25052）"
+      "note": "0x100 的 else 分支（raw 25047）：掩码 == 0 时取 SetKeyTotal 当下标查同一张 joy-callback 表 ⇒ 派发「默认键」。两条分支各有一处压返回点（raw 25039-25040 / 25052）",
+      "line": 25054
     },
     {
       "file": "src/SYSTEM4.txt",
       "anchor": "i0fe c",
-      "note": "全语料唯一一处 SetKeyTotal（86 行）⇒ 默认键槽 = 12；菜单/界面脚本登记的 `joy-callback 0..c` 最后一个槽就是它"
+      "note": "全语料唯一一处 SetKeyTotal（86 行）⇒ 默认键槽 = 12；菜单/界面脚本登记的 `joy-callback 0..c` 最后一个槽就是它",
+      "line": 86
     },
     {
       "file": "src/CHARMEDIT.txt",
       "anchor": "jcc (local-int b) ffffffff label_00001840",
-      "note": "关闭门（0x1820）：`b != 0` 直接 ret；`b == 0` 才走到 1884 置 `local 0x11 = 1`（退出）"
+      "note": "关闭门（0x1820）：`b != 0` 直接 ret；`b == 0` 才走到 1884 置 `local 0x11 = 1`（退出）",
+      "line": 395
     },
     {
       "file": "src/CHARMEDIT.txt",
       "anchor": "joy-callback c label_000016f0",
-      "note": "默认键槽 c 的处理器：`mov (local-int b) 0` —— 唯一把 b 清 0 的地方（`joy-callback 4`/关闭收尾把它置 1）"
+      "note": "默认键槽 c 的处理器：`mov (local-int b) 0` —— 唯一把 b 清 0 的地方（`joy-callback 4`/关闭收尾把它置 1）",
+      "line": 232
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
@@ -41,7 +45,8 @@
     {
       "file": "app/amayui-emulator/test/input.test.ts",
       "anchor": "★CHARMEDIT：右键关闭",
-      "note": "守卫：SetKeyTotal=12 ⇒ 右键关闭；=7 ⇒ 被 `jcc (local b)` 挡回（证明依赖默认键槽本身，不是硬编码）"
+      "note": "守卫：SetKeyTotal=12 ⇒ 右键关闭；=7 ⇒ 被 `jcc (local b)` 挡回（证明依赖默认键槽本身，不是硬编码）",
+      "line": 363
     }
   ],
   "tests": [
@@ -80,6 +85,10 @@
     {
       "at": "2026-09-16",
       "what": "改字段：links, notes"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

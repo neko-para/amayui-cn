@@ -80,13 +80,18 @@
     {
       "at": "2026-09-16",
       "what": "doing → done —— 第 10 轮收口：颜色链读通（CONFIG1 label_0000dc98 + adcd/ad9de 派生；'暖暗描边'排除）；'内部尺寸+放大'证伪（Font+218592/218596 恒 1.0、缩放只在 DrawMode==1）；剩余差异 = 配置配色数据（adcd）+ 光栅器斜坡（GDI vs canvas2D，有界记录）；产品代码零改动（机制优先）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/src/configRegistry.ts",
       "anchor": "set:EnableAntiFont",
-      "note": "两把 AA 开关都在配置表里（set:EnableAntiFont / message:UseAntiFont / set:Menu_UseAntiFont）"
+      "note": "两把 AA 开关都在配置表里（set:EnableAntiFont / message:UseAntiFont / set:Menu_UseAntiFont）",
+      "line": 110
     },
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
@@ -96,22 +101,26 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "aSetEnableantif",
-      "note": "引擎真源：set:EnableAntiFont 门控 message:UseAntiFont → sub_4155B0(Font, v) → Font+1352"
+      "note": "引擎真源：set:EnableAntiFont 门控 message:UseAntiFont → sub_4155B0(Font, v) → Font+1352",
+      "line": 4389
     },
     {
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "字重（加粗）落在哪",
-      "note": "第 4 轮新增小节：面名唯一来源 message:Font / 字重只有 0x2BD 的 700+0 / sub_459F40 只重建不合成 / 决策权在 GDI 族内选面 / 字体选择器候选表是族列表"
+      "note": "第 4 轮新增小节：面名唯一来源 message:Font / 字重只有 0x2BD 的 700+0 / sub_459F40 只重建不合成 / 决策权在 GDI 族内选面 / 字体选择器候选表是族列表",
+      "line": 119
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "aMessageFont",
-      "note": "加粗不由面名决定：面名唯一来源 GetConfigString(message:Font) → sub_465390 → Font+1260（注册 raw 111454-111458）；全库 7 个带 Font 的配置键里没有粗体面键"
+      "note": "加粗不由面名决定：面名唯一来源 GetConfigString(message:Font) → sub_465390 → Font+1260（注册 raw 111454-111458）；全库 7 个带 Font 的配置键里没有粗体面键",
+      "line": 4335
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "EnumFontFamiliesExA",
-      "note": "字体选择器候选表 Font+201664 = EnumFontFamiliesExA 的族列表（Proc 滤 lfCharSet==0x86 且非光栅；sub_45F6C0 再用探针字删缺字族）⇒ 粗体不是独立条目；真机列表一条/两条 = 判定两面有没有配成一族的零成本探针"
+      "note": "字体选择器候选表 Font+201664 = EnumFontFamiliesExA 的族列表（Proc 滤 lfCharSet==0x86 且非光栅；sub_45F6C0 再用探针字删缺字族）⇒ 粗体不是独立条目；真机列表一条/两条 = 判定两面有没有配成一族的零成本探针",
+      "line": 3981
     },
     {
       "file": "app/amayui-emulator/test/font-bold-face.test.ts",
@@ -121,32 +130,38 @@
     {
       "file": "tickets/T-0035/notes.md",
       "anchor": "重启 FontCache 服务",
-      "note": "第 5 轮：真机上「加粗会真的变粗」只在两面被认到同一族时成立；实测反例 + 安装/缓存前提（重启 FontCache/电脑、清掉缺 932 的旧版）见 notes.md 的安装/缓存前提段（原始出处的旧 docs/font-build.md 已随旧 docs 树清理）"
+      "note": "第 5 轮：真机上「加粗会真的变粗」只在两面被认到同一族时成立；实测反例 + 安装/缓存前提（重启 FontCache/电脑、清掉缺 932 的旧版）见 notes.md 的安装/缓存前提段（原始出处的旧 docs/font-build.md 已随旧 docs 树清理）",
+      "line": 222
     },
     {
       "file": "src/CONFIG1.txt",
       "anchor": "set-font (global-string bbd)",
-      "note": "非 ADV 的设置行文本显式 i2bd 0（20px / bbd·bbe / i078 1 / i1a4 0 0 / i261 0）；说明文 bbf 与 ADV 预览 bbb 才是 i2bd 1 ⇒ 「装上 700 后非 ADV 没变」是引擎的正常行为（脚本台账 CONFIG1 的 layout/gotchas 已记）"
+      "note": "非 ADV 的设置行文本显式 i2bd 0（20px / bbd·bbe / i078 1 / i1a4 0 0 / i261 0）；说明文 bbf 与 ADV 预览 bbb 才是 i2bd 1 ⇒ 「装上 700 后非 ADV 没变」是引擎的正常行为（脚本台账 CONFIG1 的 layout/gotchas 已记）",
+      "line": 2751
     },
     {
       "file": "tools/font-face-probe.ps1",
       "anchor": "EnumLikeEngine",
-      "note": "新增探针：① 按引擎 Proc 口径（lfCharSet==0x86 且非光栅、OUT_TT_ONLY_PRECIS）枚举候选表；② 建 HFONT 后用 GetFontData 取回 GDI 实际选中的那份字体，比 sha256 与 name 表 id6。本机实测：候选表 Amayui CN = 1 条，而 lfWeight=700 → id6=Amayui-CN-Bold（sha256 6f336fad… = 随包 Bold 文件的 oid）；对照 MS Gothic（无 Bold 面）400/700 取回同一份"
+      "note": "新增探针：① 按引擎 Proc 口径（lfCharSet==0x86 且非光栅、OUT_TT_ONLY_PRECIS）枚举候选表；② 建 HFONT 后用 GetFontData 取回 GDI 实际选中的那份字体，比 sha256 与 name 表 id6。本机实测：候选表 Amayui CN = 1 条，而 lfWeight=700 → id6=Amayui-CN-Bold（sha256 6f336fad… = 随包 Bold 文件的 oid）；对照 MS Gothic（无 Bold 面）400/700 取回同一份",
+      "line": 64
     },
     {
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "「真机偏细」的探针已被实测修正",
-      "note": "§1 推论 2/3 订正：「候选表里只有一条」不能反推「两面配成了一族」（装好两面的机器上也只有一条）；判定要用 tools/font-face-probe.ps1。同一结论已写进 ledger 的 bold-is-lfweight-face-mapping（whySilent + emulator.note）"
+      "note": "§1 推论 2/3 订正：「候选表里只有一条」不能反推「两面配成了一族」（装好两面的机器上也只有一条）；判定要用 tools/font-face-probe.ps1。同一结论已写进 ledger 的 bold-is-lfweight-face-mapping（whySilent + emulator.note）",
+      "line": 133
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "AddFontMemResourceEx(v67",
-      "note": "全库唯一的进程内字体注册点（sub_417800 raw 23643）：只注册配置字体表第 [0] 项，即游戏自带的 AGE-EXTEND.TTF（面 AGE Extend）⇒ message:Font 正文面由系统字体表解析"
+      "note": "全库唯一的进程内字体注册点（sub_417800 raw 23643）：只注册配置字体表第 [0] 项，即游戏自带的 AGE-EXTEND.TTF（面 AGE Extend）⇒ message:Font 正文面由系统字体表解析",
+      "line": 23643
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "text-face-source-memory-vs-system",
-      "note": "第二层新条目：正文面名的来源（内存字体 vs 系统字体）与其静默形态；决定了真机选面必须用 GetFontData 探针判定"
+      "note": "第二层新条目：正文面名的来源（内存字体 vs 系统字体）与其静默形态；决定了真机选面必须用 GetFontData 探针判定",
+      "line": 3413
     }
   ],
   "links": {

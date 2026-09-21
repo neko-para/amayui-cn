@@ -14,22 +14,26 @@
     {
       "file": "app/amayui-emulator/src/report.ts",
       "anchor": "gates: { anim: 'wait', sleep: 'wait', advance: 'force' }",
-      "note": "修后的门档（T-0010）：anim/sleep 按引擎语义放行；修前是 ignore（= 根本不看这两位，sleep 等于不存在）"
+      "note": "修后的门档（T-0010）：anim/sleep 按引擎语义放行；修前是 ignore（= 根本不看这两位，sleep 等于不存在）",
+      "line": 166
     },
     {
       "file": "app/amayui-emulator/src/report.ts",
       "anchor": "b === 'anim' || b === 'sleep'",
-      "note": "★门分支记帧：0x400/sleep 分支本帧什么都不派发、只有时钟前进（raw 21109-21152）；漏记即永远到不了 sleepUntil ⇒ 挂死"
+      "note": "★门分支记帧：0x400/sleep 分支本帧什么都不派发、只有时钟前进（raw 21109-21152）；漏记即永远到不了 sleepUntil ⇒ 挂死",
+      "line": 154
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "gates.anim !== 'ignore'",
-      "note": "驱动侧的 0x400 门（产品档 wait = sub_407E20 的计时器 + 池挂起位）"
+      "note": "驱动侧的 0x400 门（产品档 wait = sub_407E20 的计时器 + 池挂起位）",
+      "line": 256
     },
     {
       "file": "app/amayui-emulator/test/scene-report.test.ts",
       "anchor": "sleep 门真等满虚拟时钟",
-      "note": "守卫：用合成脚本驱动 reportLoopOptions() 的真配置（含阈值陷阱与 maxFrames 兜底）"
+      "note": "守卫：用合成脚本驱动 reportLoopOptions() 的真配置（含阈值陷阱与 maxFrames 兜底）",
+      "line": 92
     }
   ],
   "blockedBy": [
@@ -54,6 +58,10 @@
     },
     {
       "at": "2026-09-15",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
       "what": "改字段：evidence"
     }
   ],

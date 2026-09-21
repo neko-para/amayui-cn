@@ -14,17 +14,20 @@
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
       "anchor": "gates: { anim: 'wait'",
-      "note": "前半修完：不再无条件清 0x400，改为等 animationsDone()"
+      "note": "前半修完：不再无条件清 0x400，改为等 animationsDone()",
+      "line": 678
     },
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "gates: { anim: 'wait'",
-      "note": "同上"
+      "note": "同上",
+      "line": 461
     },
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
       "anchor": "advanceModel: (t) =>",
-      "note": "后半修完：每帧推进模型（修前从不推进动画窗）"
+      "note": "后半修完：每帧推进模型（修前从不推进动画窗）",
+      "line": 665
     }
   ],
   "blockedBy": [
@@ -46,6 +49,10 @@
     {
       "at": "2026-09-14",
       "what": "B2 第 2 批：门统一 + 每帧推进 ⇒ 本票两半都修完 → done（doneWhy）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "notes": "（2026-09-14 B1）两张 chain 的「无条件清 0x400 / 不推进动画窗 / ADV 分支吞异常」这些行为**没有改变**，只是从各家手写的 for 循环搬进了 `src/frame/loop.ts` 的驱动配置（`gates.anim='clear'`、`advErrors='swallow'`、帧末钩子里没有 `advance()`）。本票要决策的对象因此变成\"驱动的那几个档位该不该保留\"——证据锚点可从 chain 文件上移到驱动。\n\n（2026-09-14 B2 第 1 批）本票拆成两半，进度一半：\n- ✅ \"两份 chain **从不推进动画窗**\" ⇒ **已修**（B2/A1：`FrameHost.advanceModel` 每帧一次，chains 已接）。\n- ⏸ \"**每帧无条件清 0x400**\" ⇒ 仍在（chains 传 `gates.anim: 'clear'`）。原因见 T-0002/notes：改成 `'wait'` 会改变\n  脚本执行路径（`mesh-vertex-quad` ② 的 0x19640 端点色从 #80000000 变 #00000000），必须先做路径级 before/after。",

@@ -78,7 +78,24 @@ export class TextureCache {
   /** 待销毁的旧纹理（`present()` 之后由 `collectGarbage` 统一销毁）。 */
   readonly #pendingDestroy = new DestroyQueue();
 
-  constructor(private readonly log: (msg: string) => void) {}
+  /**
+   * @param log 日志回调。
+   * @param onReady **某槽的纹理"到货"时**的通知（`tickets/T-0102` 轮 9）——宿主用它 `#markDirty()`。
+   *
+   * ★为什么必须有（用户实测「进 SC0000 后 ADV 窗口背景是白色，开合侧边栏刷新后才对」的机制）：
+   *   引擎的 `set-texture` 是**同步**的（`sub_422CB0` 当场读 AGF + 解码），所以「绑定 → `0x208` 问尺寸 →
+   *   `draw-texture`」在引擎里必然一致；重写侧走 `window.api.image()` **异步** ⇒ 首次绑定那一帧
+   *   `slotTex` 还没有那张图，`draw-texture` 只能画**占位块**（`presenter` 的 `Texture.WHITE`，
+   *   且 tint 被 `itemColor` 覆盖成 `Item.from` = 白）⇒ 一块**纯白矩形**。
+   *   而常规 `TextureCache` 此前**没有**到货通知（只有 L2D 纹理库有，见 `pixiBackend` 的 `#l2dTextures`）
+   *   ⇒ 迟到的图像自己不会让下一帧重新合成，白帧一直留到玩家做别的操作（开合侧边栏会重跑同一段
+   *   `set-texture`，那时命中 `#imgCache` ⇒ 同步落盘 ⇒ 才对）。
+   *   ⇒ 有它以后：图像一到货就置脏 ⇒ 下一帧重新合成 ⇒ 白帧最多存活一帧。
+   */
+  constructor(
+    private readonly log: (msg: string) => void,
+    private readonly onReady?: () => void,
+  ) {}
 
   /** 光栅化用的设备像素比（与消息窗路径同一口径：上限 2，非浏览器环境为 1）。 */
   static #dpr(): number {
@@ -227,6 +244,9 @@ export class TextureCache {
         return;
       }
       this.slotTex.set(slot, t2);
+      // ★`tickets/T-0102` 轮 9：**迟到的到货必须让下一帧重新合成** —— 否则白占位块留在屏上
+      //   （常规 TextureCache 此前没有到货通知，只有 L2D 纹理库有）。
+      this.onReady?.();
     });
   }
 

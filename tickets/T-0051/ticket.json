@@ -15,32 +15,38 @@
     {
       "file": "src/SN0000.txt",
       "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
-      "note": "第 1 条：337 处同型的缩略图缩屏流水线（3171-3184），随后 i1ae 写 .STH"
+      "note": "第 1 条：337 处同型的缩略图缩屏流水线（3171-3184），随后 i1ae 写 .STH",
+      "line": 3179
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean",
-      "note": "第 1/2/3 条的实现点：两张画布间 drawImage（平滑插值；槽没有表面则不转送）"
+      "note": "第 1/2/3 条的实现点：两张画布间 drawImage（平滑插值；槽没有表面则不转送）",
+      "line": 489
     },
     {
       "file": "src/REACH.txt",
       "anchor": "i207 c2 c3 0 10 500 e 0 2bb",
-      "note": "第 3 条：同尺寸转送的一处语料（移动范围条带 1280×14）"
+      "note": "第 3 条：同尺寸转送的一处语料（移动范围条带 1280×14）",
+      "line": 1941
     },
     {
       "file": "src/SC0000.txt",
       "anchor": "i214 (local-int 0) (local-int 1)",
-      "note": "第 4 条：ADV 收场块的换位（两套立绘句柄基址第 i 个互换）"
+      "note": "第 4 条：ADV 收场块的换位（两套立绘句柄基址第 i 个互换）",
+      "line": 6328
     },
     {
       "file": "src/BUNKIMOVE.txt",
       "anchor": "i214 (local-int 8) (local-int 9)",
-      "note": "第 4 条：武器移动演出的 10 个一组对调"
+      "note": "第 4 条：武器移动演出的 10 个一组对调",
+      "line": 50
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i090 (local-int 0) (local-int 1) 1 1 ffffffff ffffffff label_00002954",
-      "note": "第 5 条：侧栏槽位注册在**屏幕外的 1×1 热点** ⇒ 只能由 pickByKey（键盘/手柄掩码位）派发"
+      "note": "第 5 条：侧栏槽位注册在**屏幕外的 1×1 热点** ⇒ 只能由 pickByKey（键盘/手柄掩码位）派发",
+      "line": 79
     }
   ],
   "tests": [],
@@ -68,6 +74,10 @@
     {
       "at": "2026-09-16",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

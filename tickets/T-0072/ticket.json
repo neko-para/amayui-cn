@@ -23,27 +23,32 @@
     {
       "file": "src/SAVE.txt",
       "anchor": "i1a1 (local-int 12) (local-int 214)",
-      "note": "读档调用点；SAVE.BIN 自己的收尾（`detach-texture 1d4c0 bb8`，SAVE.txt:1676）在 i1a1 之后 ⇒ 读档路径不执行"
+      "note": "读档调用点；SAVE.BIN 自己的收尾（`detach-texture 1d4c0 bb8`，SAVE.txt:1676）在 i1a1 之后 ⇒ 读档路径不执行",
+      "line": 935
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "引擎在这一步之后还会把帧 0 交给",
-      "note": "emulator 曾在这里只补 BGM 重播，整跳 CALLBACK_LOAD"
+      "note": "emulator 曾在这里只补 BGM 重播，整跳 CALLBACK_LOAD",
+      "line": 392
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "重建存档里的图像槽 ${rebind.length} 个",
-      "note": "T-0071 的两条修复已生效（日志：槽 4 ← 0xb37）"
+      "note": "T-0071 的两条修复已生效（日志：槽 4 ← 0xb37）",
+      "line": 332
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "②c ★**装载点不整批清绘制项**",
-      "note": "★★2026-09 轮 5 订正：(B) 步的前提被源码推翻 —— 引擎装载点**确实**清绘制项容器，但是在 `sub_410160` **行内**做的（raw 19810-19820 销毁 `Scene+0x408` 的树 + 复位 `Scene+0x40C`/`0x410`），raw 19822-19832 再从 body 末段还原 740 B 绘制项清单。⇒ 装载点现走宿主缝 `native.restoreDrawItems(items)`（= 清上一屏 + 装存档清单）；`Item.ownerFrame`/`dropFrameItems` 只作「body 无清单」的回退。见 `tickets/T-0083` 与 capabilities 的 `save-load-drawitem-clear-and-restore`"
+      "note": "★★2026-09 轮 5 订正：(B) 步的前提被源码推翻 —— 引擎装载点**确实**清绘制项容器，但是在 `sub_410160` **行内**做的（raw 19810-19820 销毁 `Scene+0x408` 的树 + 复位 `Scene+0x40C`/`0x410`），raw 19822-19832 再从 body 末段还原 740 B 绘制项清单。⇒ 装载点现走宿主缝 `native.restoreDrawItems(items)`（= 清上一屏 + 装存档清单）；`Item.ownerFrame`/`dropFrameItems` 只作「body 无清单」的回退。见 `tickets/T-0083` 与 capabilities 的 `save-load-drawitem-clear-and-restore`",
+      "line": 234
     },
     {
       "file": "app/amayui-emulator/src/arch/fileSource.ts",
       "anchor": "readScriptByName?(name: string)",
-      "note": "按名读脚本的通道已备好（Node + Electron IPC 两侧都实现了），是接 CALLBACK_LOAD 那一跳的前提"
+      "note": "按名读脚本的通道已备好（Node + Electron IPC 两侧都实现了），是接 CALLBACK_LOAD 那一跳的前提",
+      "line": 52
     }
   ],
   "links": {
@@ -87,6 +92,10 @@
     {
       "at": "2026-09-20",
       "what": "done：装载点不再留上一屏的项 —— 引擎 sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 经 native.restoreDrawItems 等价实现（T-0083）。A/B 守卫在 slot-load-screen.test.ts"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

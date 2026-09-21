@@ -17,7 +17,8 @@
     {
       "file": "app/amayui-emulator/src/vm/saveData.ts",
       "anchor": "export function mergeSaveDataFallbacks",
-      "note": "按 key 并表（primary 覆盖、fallback 补缺）"
+      "note": "按 key 并表（primary 覆盖、fallback 补缺）",
+      "line": 570
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
@@ -27,7 +28,8 @@
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "read-save-data-both",
-      "note": "主进程交出两侧原始字节（渲染侧解表后合并）"
+      "note": "主进程交出两侧原始字节（渲染侧解表后合并）",
+      "line": 141
     },
     {
       "file": "src/SAVE.txt",
@@ -56,6 +58,10 @@
     {
       "at": "2026-09-18",
       "what": "open → done —— 并表 + readSaveDataBoth；守卫 test/save-data.test.ts"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -59,17 +59,20 @@
     {
       "file": "docs-new/03-engine/engine-reset-mainloop.md",
       "anchor": "### B.6 阶梯动画时间表",
-      "note": "机制长文（小语言 / 调度器逐行 / 两条易错口径 / emulator 对应）"
+      "note": "机制长文（小语言 / 调度器逐行 / 两条易错口径 / emulator 对应）",
+      "line": 359
     },
     {
       "file": "app/amayui-emulator/src/vm/stageLoop.ts",
       "anchor": "export function runStageService(",
-      "note": "`sub_408F10` 的等价物：输入刷 → 时间表判定 → 脚本身份守卫 → 压返回点 + 设 pc + 清门"
+      "note": "`sub_408F10` 的等价物：输入刷 → 时间表判定 → 脚本身份守卫 → 压返回点 + 设 pc + 清门",
+      "line": 181
     },
     {
       "file": "app/amayui-emulator/test/stage-loop.test.ts",
       "anchor": "SAVE.BIN 的 label_0000706c 段",
-      "note": "★E3：真语料实测 31 次派发 / 481 ms / 31 帧（时间表必须摊在多帧，塌成一帧即失败）"
+      "note": "★E3：真语料实测 31 次派发 / 481 ms / 31 帧（时间表必须摊在多帧，塌成一帧即失败）",
+      "line": 279
     }
   ],
   "links": {
@@ -114,6 +117,10 @@
     {
       "at": "2026-09-16",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

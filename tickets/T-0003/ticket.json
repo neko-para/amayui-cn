@@ -16,17 +16,20 @@
     {
       "file": "app/amayui-emulator/src/frame/digest.ts",
       "anchor": "export function buildFrameDigest",
-      "note": "逐帧对外表现的唯一构建器（engine 段/host 段）"
+      "note": "逐帧对外表现的唯一构建器（engine 段/host 段）",
+      "line": 105
     },
     {
       "file": "app/amayui-emulator/test/frame-digest.test.ts",
       "anchor": "engine 段跨宿主能力面一致",
-      "note": "两宿主等价 + 负向控制"
+      "note": "两宿主等价 + 负向控制",
+      "line": 131
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "wantsDigest",
-      "note": "只有观察者要 digest 时才构建（产品路径不白跑）"
+      "note": "只有观察者要 digest 时才构建（产品路径不白跑）",
+      "line": 388
     }
   ],
   "blockedBy": [
@@ -71,6 +74,10 @@
     {
       "at": "2026-09-13",
       "what": "改字段：doneWhy"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

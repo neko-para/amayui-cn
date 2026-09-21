@@ -13,17 +13,20 @@
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "setTextureSizeAnswers",
-      "note": "现在靠录制答案（按 slot 匹配的队列）"
+      "note": "现在靠录制答案（按 slot 匹配的队列）",
+      "line": 166
     },
     {
       "file": "app/amayui-emulator/src/frame/trace.ts",
       "anchor": "tex?: { slot: number; w: number; h: number }[]",
-      "note": "录进轨迹的宿主输入"
+      "note": "录进轨迹的宿主输入",
+      "line": 67
     },
     {
       "file": "app/amayui-emulator/src/arch/nodeFileSource.ts",
       "anchor": "readById",
-      "note": "异步取字节 ⇒ 要同步回答必须先预扫/预热（report.ts 的 resolveImages 也卡在这一步）"
+      "note": "异步取字节 ⇒ 要同步回答必须先预扫/预热（report.ts 的 resolveImages 也卡在这一步）",
+      "line": 339
     }
   ],
   "links": {
@@ -41,6 +44,10 @@
     {
       "at": "2026-09-13",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

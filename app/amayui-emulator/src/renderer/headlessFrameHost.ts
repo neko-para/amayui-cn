@@ -15,7 +15,9 @@ import type { HeadlessScene } from './headlessScene.js';
 export function headlessFrameHost(scene: HeadlessScene, now: () => number): FrameHost {
   const host: FrameHost = {
     now,
-    advanceModel: (t) => scene.advanceModel(t),
+    // ★`opts` 必须转发（`tickets/T-0091` 的 G1）：`opts.freeze` = 引擎 `Scene+46512`，
+    //   漏掉这一跳冻结就永远到不了窗模型（旧代码在这里丢掉第二参）。
+    advanceModel: (t, opts) => scene.advanceModel(t, opts),
     poolPending: () => scene.poolPending(),
     needsRender: () => scene.needsRender(),
     digestState: () => scene.digestState(),

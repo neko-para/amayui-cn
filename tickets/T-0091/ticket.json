@@ -23,17 +23,20 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "if ( !*(_DWORD *)(_this + 46516) )",
-      "note": "★G2 的体依据（主 agent 独立核过）：帧末清转场表 Scene+1048 的唯一门 = Scene+46516 == 0（raw 136840-136841；同门第二处 raw 137181 用 v35[11629]）；而 46516 是**全场景**池挂起位（转场 134944 / 绘制项 117844 / mesh 133528 / 离屏槽 136695·136701 置 1）"
+      "note": "★G2 的体依据（主 agent 独立核过）：帧末清转场表 Scene+1048 的唯一门 = Scene+46516 == 0（raw 136840-136841；同门第二处 raw 137181 用 v35[11629]）；而 46516 是**全场景**池挂起位（转场 134944 / 绘制项 117844 / mesh 133528 / 离屏槽 136695·136701 置 1）",
+      "line": 136840
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
       "anchor": "rt.start, false",
-      "note": "★G1 的落点：immediateFinish 硬编码 false（transition.ts:557）—— 引擎的 Scene+46512 冻结传不进来"
+      "note": "★G1 的落点：immediateFinish 硬编码 false（transition.ts:557）—— 引擎的 Scene+46512 冻结传不进来",
+      "line": 579
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "scTransitionsPending",
-      "note": "★G2 的**模块环陷阱**：ops.ts 已 import transition.ts（ops.ts:51），所以 transition.ts 不能再 import ops.ts 的 scPoolPending（会成环，参照 T-0089）⇒ 必须注入判据或把 scPoolPending 移到中立模块；且后者会碰 T-0096 正在改的 ops.ts ⇒ G2 排在 T-0096 之后"
+      "note": "★G2 的**模块环陷阱**：ops.ts 已 import transition.ts（ops.ts:51），所以 transition.ts 不能再 import ops.ts 的 scPoolPending（会成环，参照 T-0089）⇒ 必须注入判据或把 scPoolPending 移到中立模块；且后者会碰 T-0096 正在改的 ops.ts ⇒ G2 排在 T-0096 之后",
+      "line": 52
     }
   ],
   "links": {
@@ -48,7 +51,7 @@
     ]
   },
   "id": "T-0091",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-20",
@@ -65,6 +68,23 @@
     {
       "at": "2026-09-20",
       "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "open → doing —— 轮 9：**第③项（`Scene+46508/46512/46516` 三标志）已落地**（子代理实施，主 agent 已核报告）；**G1**（`46512` 冻结传进窗模型）：`scAdvance(s, clock, freeze)`（非豁免 A 层开窗当帧收尾 + mesh 收尾）、`scAnimationsPending(s, clock, freeze)`、`scTransitionTick(s, clock, freeze, poolPending)` 替掉 `scTransitionWindow(..., false)` 的硬编码；`FrameHost.advanceModel(nowMs, {freeze})` 全链转发（`loop.ts` → `headlessFrameHost`/`session.ts` → 两宿主）。★**两处以体订正 design.md §5.3**：① `+720` bit0 的项**豁免冻结**（raw 117441-117442；`SN0000:1043` 的 80 000 ms 慢推不许被跳过截断）；② **B 层（bit2）循环动画不受冻结影响**（唯一读者 `sub_40BE10` raw 16028 判 `flags & 4`）。；**G2**（转场表清空门）：引擎 = `Scene+46516 == 0`（raw 136840-136841 / 137181；`46516` 是**全场景**池挂起位）⇒ 判据改为 `active.length === 0 && !poolPending()`，探针由两宿主注入、在 `scAdvance` 之后求值。**模块环走「注入判据」**（路线 2 要新建 `scene/pending.ts`，超票面白名单）。；**守卫**：`test/wait-gate-timer.test.ts`（3 条：freeze ⇒ 当帧收尾 + 三判据归零；`+720` 豁免对照；**驱动级**真 `runFrameLoop` 一条）、`test/sc-transition-window.test.ts`（2 条：转场到期那帧另有 mesh 窗在跑 ⇒ 表不能清 + 缺省探针对照）、`test/transition-render-wiring.test.ts`（两宿主源码棘轮）。**6 个撤销实验**全部「撤销→红 / 还原→绿 / sha256 == 修复态」（如 `g1-scadvance` 9→6 pass/3 fail；`g2-probe` 18→17/1）。；**台账**（主 agent 已落）：`scene-dirty-flag-lifecycle` 回 `modeled-verified/E2`；`scene-freeze-flag` 的「②绘制期窗立刻算结束 + `+720` 豁免」已由 G1 修掉 ⇒ 该条也回 `modeled-verified/E2`，只剩 ①「门等待期间的玩家输入跳过（raw 21113-21135）」。；★**仍未做（本票剩余）**：① 类别 3 的精确核（**仍缺**：`(2L+1)²` 核逐点权重 / SlideBlur 采样密度）；② `[4]` 指向非 `create-texture` 槽；④ E4 像素级可达路径。★另：`scene-freeze-flag` ①「门等待期间的玩家输入跳过」未实现 ⇒ G1 目前只有 E2 + 驱动级整合守卫（真语料 `SN0000`/`HISTORY` 各 3000 帧 `ADV_ACTIVE` 从未置位）。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/wait-gate-timer.test.ts",
+    "app/amayui-emulator/test/sc-transition-window.test.ts",
+    "app/amayui-emulator/test/transition-render-wiring.test.ts"
   ]
 }

@@ -15,47 +15,68 @@
     {
       "file": "tickets/T-0100/changes.md",
       "anchor": "坑 A",
-      "note": "同批修复的「逐字不发布」；★复验后已排除它作为本票根因（白底仍在）—— 保留作「同批不同源」的对照"
+      "note": "同批修复的「逐字不发布」；★复验后已排除它作为本票根因（白底仍在）—— 保留作「同批不同源」的对照",
+      "line": 43
     },
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "窗口底色",
-      "note": "宿主侧已经按引擎 dd 路径实现了填面（注释引 raw 74261-74265 = ddFillSurface）；但 st.background 恒为 null ⇒ 这段 fillRect 从未执行（死码）；本批已订正注释"
+      "note": "宿主侧已经按引擎 dd 路径实现了填面（注释引 raw 74261-74265 = ddFillSurface）；但 st.background 恒为 null ⇒ 这段 fillRect 从未执行（死码）；本批已订正注释",
+      "line": 131
     },
     {
       "file": "app/amayui-emulator/src/vm/msgwin.ts",
       "anchor": "background: string | null",
-      "note": "窗口底色字段：全 src 只有类型声明 + 两处默认 null（本文件 :252、text/layout.ts:498）；无赋值点 ⇒ 底色在模拟器里根本没被建模；本批已按 .lst 结论订正为「引擎没有窗底色字段」"
+      "note": "窗口底色字段：全 src 只有类型声明 + 两处默认 null（本文件 :252、text/layout.ts:498）；无赋值点 ⇒ 底色在模拟器里根本没被建模；本批已按 .lst 结论订正为「引擎没有窗底色字段」",
+      "line": 106
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_43E260(v14, v19 + 20, 0, v21, v22, v18[5]);",
-      "note": "0x71 开始新消息：dd 路径用 ddFillSurface 填该窗表面（raw 74264）；颜色实参取自 Scene+1540 起 32B 缓存的第 6 个 dword = Scene+1560，而 sub_43B260 证明那是 R/G/B 掩码（不是颜色）"
+      "note": "0x71 开始新消息：dd 路径用 ddFillSurface 填该窗表面（raw 74264）；颜色实参取自 Scene+1540 起 32B 缓存的第 6 个 dword = Scene+1560，而 sub_43B260 证明那是 R/G/B 掩码（不是颜色）",
+      "line": 74264
     },
     {
       "file": "src/NOVEL.txt",
       "anchor": "i20b 48 0 0 500 2d0 ff 808080",
-      "note": "★ADV 那块「半透明黑底」的真出处：脚本往纹理槽 48 画（create-texture 48 → i20b 填 50% 灰 → draw-texture 186a0 48）。SC0000 同型见 src/SC0000.txt:1036-1047；全库 183 处"
+      "note": "★**轮 9 订正**：这块「半透明黑底」是**脚本往纹理槽 48 画**的（`create-texture 48` → `i20b` 填 50% 灰 → `draw-texture 186a0 48`），但**它套在 `4fd9 != 0 && 708ad6 != 0` 两道门后，而 `708ad6 = 1` 的唯一写点是 `src/TITLE.txt:462` 的 DEBUG 菜单** ⇒ **槽 48 是 DEBUG 场景试跑的底板，正常剧情走不到** ⇒ 本票原「甲-1（落点 = 槽 48）」**不成立**。正常剧情的 ADV 窗口是 `draw-texture 19640 11 …`（槽 17，`SN0000.txt:3094-3098`）。全库同型 183 处的分岔用 `708ada`，而它**恒 0**（脚本 0 写点 + 引擎 0 写点）⇒ 恒走填灰支。",
+      "line": 52
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "回写丢弃",
-      "note": "本批修复点：bind 的异步回写判据（槽表面世代 + 绑定未变）。守卫 test/texture-bind-race.test.ts（5 条，判别力已机械证明）。★用户复验：白底仍在 ⇒ 这条不是那次白底的原因"
+      "note": "本批修复点：bind 的异步回写判据（槽表面世代 + 绑定未变）。守卫 `test/texture-bind-race.test.ts`（5 条，判别力已机械证明）。★用户复验：白底仍在 ⇒ 这条不是那次白底的原因（保留）。★**轮 9 追加**：同一文件新增**到货通知 `onReady`**（纹理确实落进该槽时调用；被丢弃的回写不调用），`pixiBackend.ts` 传入 `() => #markDirty()` ⇒ **迟到的图像会让下一帧重新合成 ⇒ 白占位块最多存活一帧**；守卫 +2 条（迟到到货必须通知 / 丢弃不得通知，撤销 `onReady` ⇒ 1 fail，还原 sha256 一致 ⇒ 7/7）。机制取证全文见 `tickets/T-0102/white-report.md`。",
+      "line": 242
     },
     {
       "file": "src/CONFIG.txt",
       "anchor": "call label_00001ae8",
-      "note": "★紫色那条的真机制：CONFIG.txt:225-269 是「回 ADV」路径 —— 按当前消息号 3f37 重派生 14acda（旁白归 0）→ call label_00001ae8（372-407，重算并在 :403-404 用 i076/i077 应用样式）→ i071 2 → call label_00001d38 → :269 的 i082（= 用户报的未知指令，带 f807b/f807c 实参）"
+      "note": "★紫色那条的真机制：CONFIG.txt:225-269 是「回 ADV」路径 —— 按当前消息号 3f37 重派生 14acda（旁白归 0）→ call label_00001ae8（372-407，重算并在 :403-404 用 i076/i077 应用样式）→ i071 2 → call label_00001d38 → :269 的 i082（= 用户报的未知指令，带 f807b/f807c 实参）",
+      "line": 170
     },
     {
       "file": "src/CONFIG2.txt",
       "anchor": "mov (global-int f807b) (local-ptr 1)",
-      "note": "角色设定页逐行设色：f807b = adcd[14acda]（a9dd&2 门控）；探针实测该页跑完时**全局**残留 #b690ff（紫）= 用户看到的来源"
+      "note": "角色设定页逐行设色：f807b = adcd[14acda]（a9dd&2 门控）；探针实测该页跑完时**全局**残留 #b690ff（紫）= 用户看到的来源",
+      "line": 1669
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i076 (global-int f807b)",
-      "note": "返回包装只重发 i076 (global f807b)、不重派生（全脚本 0 处 adcd）⇒ 若全局仍紫则旁白继承紫；SC*/SG*/SP* 每页重派生故不继承"
+      "note": "返回包装只重发 i076 (global f807b)、不重派生（全脚本 0 处 adcd）⇒ 若全局仍紫则旁白继承紫；SC*/SG*/SP* 每页重派生故不继承",
+      "line": 487
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
+      "anchor": "spr.tint = color & 0xffffff;",
+      "note": "★白底的形状：未解析槽的 `draw-texture` 项 = **纯白矩形** —— `#placeholder` 用 `Texture.WHITE`（`appSetup.ts`），而这一行**无条件覆盖**了按 layer 派生的 tint，`color = itemColor(...)` 对新建项恒为 `Item.from = 0xFFFFFFFF`（`drawitem/model.ts`）⇒ 本票原「甲-4（不是纯白，是绿调块）」**是错的，已删**。",
+      "line": 427
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
+      "anchor": "getTextureSize slot=",
+      "note": "★唯一判决点的另一半（探针实测真 `TextureCache`，`.tmp/t0102w/probe-slot-size.mts`）：**第一遍** `bind` 异步 ⇒ `size()` = 0×0 / `resolve` 无纹理；载入落地后才真值；**第二遍**同一 `bind` 命中 `#imgCache` ⇒ **同步**命中 ⇒ `size` 与 `draw-texture` 当帧正确。⇒ 「开合侧边栏才对」= 它把同一条 `set-texture` 又发了一次（引擎 `set-texture` 同步，所以引擎第一次就对）。",
+      "line": 439
     }
   ],
   "links": {
@@ -67,7 +88,7 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ]
   },
-  "notes": "来源 = 用户轮 8 的 E4 实测原话（两条）。★纪律：先复验再动手 —— 极可能随 T-0100 的发布修复一并消失；不要在未复验前改渲染层。",
+  "notes": "★**轮 9 现状**（白色半边）：分支判死（`708ada` 恒 0 ⇒ 恒走填灰支；槽 48 是 DEBUG 路径）；白底的形状 = **未解析纹理槽的 `draw-texture` 项被画成纯白矩形**（`presenter.ts` 的 `#placeholder` + tint 被 `itemColor` 覆盖）；「开合侧边栏才对」的机制 = 第二次 `set-texture` **同步**命中 `#imgCache`（探针实测）。**已修**：`TextureCache.onReady → pixiBackend.#markDirty()`（白占位块最多存活一帧）+ `session.ts` 的纹理屏障覆盖 `0x249`；守卫 `test/texture-bind-race.test.ts`(7)。**未修（登记）**：H2 `waitIdle` 500 ms 超时后仍静默按 0×0 走；H3 世代判据把槽打成永久无纹理后 `resolve`/`size` 无自愈点；`presenter` 对「`imgid` 已知但无纹理」**完全静默**（建议放宽到 `!tex`）。★**未证**：用户那一次白的是哪个槽/handle（冷载 `SC0000` 不画 ADV 窗口、DEBUG 入口在未实现的 `i140` 上活锁）⇒ 修复针对\"白底这一类\"的机制，不等于已复现用户那一帧。★**紫色半边**：判据已跑通（`advReturnProbe`），三处语义误读已订正、发现 `1397` 门；下一步 = 用 ADV 入口跑完整路径（判据见 `changes.md` §「轮 9」§5）。过程文档：`changes.md` / `white-report.md` / `notes.md`。",
   "id": "T-0102",
   "status": "open",
   "history": [
@@ -90,9 +111,18 @@
     {
       "at": "2026-09-21",
       "what": "改字段：history"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [
-    "test/texture-bind-race.test.ts"
+    "app/amayui-emulator/test/config1-chain.test.ts",
+    "app/amayui-emulator/test/texture-bind-race.test.ts"
   ]
 }

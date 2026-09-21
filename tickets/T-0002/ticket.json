@@ -15,32 +15,38 @@
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
       "anchor": "gates: { anim: 'wait'",
-      "note": "门统一（G2）：不再每帧无条件清 0x400"
+      "note": "门统一（G2）：不再每帧无条件清 0x400",
+      "line": 678
     },
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "runFrameLoop(e, host",
-      "note": "G3+C1+C3+C4：run.ts 由手写循环改为共享驱动"
+      "note": "G3+C1+C3+C4：run.ts 由手写循环改为共享驱动",
+      "line": 209
     },
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "return r.stopReason === 'cap' ? frames : r.frames",
-      "note": "C5：run(frames) 返回语义两处统一"
+      "note": "C5：run(frames) 返回语义两处统一",
+      "line": 503
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "stopAfterStep?(t: StepTrace, e: Engine)",
-      "note": "新增\"逐条停\"（修掉\"越过目标一整批\"的停止点伪影）"
+      "note": "新增\"逐条停\"（修掉\"越过目标一整批\"的停止点伪影）",
+      "line": 148
     },
     {
       "file": "app/amayui-emulator/test/anim-window-done.test.ts",
       "anchor": "A2：**缩放窗**",
-      "note": "A2 的守卫（7 例）"
+      "note": "A2 的守卫（7 例）",
+      "line": 46
     },
     {
       "file": "app/amayui-emulator/src/report.ts",
       "anchor": "present: 'never'",
-      "note": "C2 决策：report 是指令驱动 tracer，自管粒度"
+      "note": "C2 决策：report 是指令驱动 tracer，自管粒度",
+      "line": 125
     }
   ],
   "blockedBy": [
@@ -93,6 +99,10 @@
     {
       "at": "2026-09-13",
       "what": "doing → done"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "doneWhy": "14 条漂移工单逐条有着落（13 条已修 + 第 1 条按 C2 决策刻意保留 + 第 10 条按设计归 B3/T-0003）：对照总表在 tickets/T-0002/changes.md 顶部；report 全文 sha256 FBC05509… 在每一批之后都复跑且逐字节不变。",

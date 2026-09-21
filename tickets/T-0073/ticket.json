@@ -17,12 +17,14 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
       "anchor": "[0x2fa, op_engine_internal]",
-      "note": "新登记：写 Engine[1951]（无人读）⇒ 观测等价 no-op"
+      "note": "新登记：写 Engine[1951]（无人读）⇒ 观测等价 no-op",
+      "line": 59
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[1951] = result;",
-      "note": "raw 33724：全文件里该字段唯一的引用（只写不读）"
+      "note": "raw 33724：全文件里该字段唯一的引用（只写不读）",
+      "line": 33724
     },
     {
       "file": "src/CALLBACK_LOAD.txt",
@@ -50,6 +52,10 @@
     {
       "at": "2026-09-19",
       "what": "open → done —— 0x2FA 进 ENGINE_INTERNAL_OPS + opcode-table 行改「已核对」；CALLBACK_LOAD 实测能跑到 exit（stopReason=exit，无被跳过指令）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -52,17 +52,20 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "async function transferToRootAfterLoad(e: Engine): Promise<void> {",
-      "note": "控制转移的实现（面板/文本复位 + 置门 + `cur=0` + 重载根脚本）"
+      "note": "控制转移的实现（面板/文本复位 + 置门 + `cur=0` + 重载根脚本）",
+      "line": 56
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "error: controlErrorText(errorOverride, this.#errorText, paused),",
-      "note": "控制面版横幅：每次上报都带上粘住的错误文本（修前 `error: errorOverride ?? autoError` ⇒ 收尾那次上报把它擦成 undefined）"
+      "note": "控制面版横幅：每次上报都带上粘住的错误文本（修前 `error: errorOverride ?? autoError` ⇒ 收尾那次上报把它擦成 undefined）",
+      "line": 196
     },
     {
       "file": "app/amayui-emulator/test/slot-load-transfer.test.ts",
       "anchor": "读真游戏槽 ⇒ 控制转移到根脚本",
-      "note": "★E3 守卫：真槽 + 真资源根，读档后启动链重新跑到 TITLE 且不报错；顺带锁「不拿空表覆盖 SAVE.DAT 表」"
+      "note": "★E3 守卫：真槽 + 真资源根，读档后启动链重新跑到 TITLE 且不报错；顺带锁「不拿空表覆盖 SAVE.DAT 表」",
+      "line": 114
     },
     {
       "file": "tickets/T-0056/notes.md",
@@ -110,6 +113,10 @@
     {
       "at": "2026-09-17",
       "what": "台账/文档：functions.json#0x410160、能力台账 save-slot-chain、SLOT_GAPS、docs-new/03-engine/save-data.md；全仓 604 测试 603 通过 0 失败 ⇒ open → done"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

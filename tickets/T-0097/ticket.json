@@ -15,12 +15,14 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
       "anchor": "op_set_meswin_alpha",
-      "note": "同族直写配置的写法先例（0x141）；0x2EE 缺 SetConfig 的对照点"
+      "note": "同族直写配置的写法先例（0x141）；0x2EE 缺 SetConfig 的对照点",
+      "line": 243
     },
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
       "anchor": "| op-4-11 | cross-source-mismatch |",
-      "note": "0x2EE 的审计条（raw 33590-33603；字符串常量 4380）"
+      "note": "0x2EE 的审计条（raw 33590-33603；字符串常量 4380）",
+      "line": 473
     },
     {
       "file": "analysis/fields.json",
@@ -31,12 +33,14 @@
     {
       "anchor": "export function decIntSlot",
       "file": "app/amayui-emulator/src/vm/ref.ts",
-      "note": "③ 的落地：缺槽 = 0 的**唯一**实现（判据注释含四处 raw：loadScriptFrame 18775-18777 / 全局池 22328-22329 与 teardown 35218-35219 / 0x2C9 扩容 42527-42531）；readIntOperand 四条 int 路径与 readRef 的 int 分支都走它"
+      "note": "③ 的落地：缺槽 = 0 的**唯一**实现（判据注释含四处 raw：loadScriptFrame 18775-18777 / 全局池 22328-22329 与 teardown 35218-35219 / 0x2C9 扩容 42527-42531）；readIntOperand 四条 int 路径与 readRef 的 int 分支都走它",
+      "line": 67
     },
     {
       "anchor": "口径唯一",
       "file": "app/amayui-emulator/test/operand-missing-slot-zero.test.ts",
-      "note": "③ 的棘轮（口径唯一 + hasRefValue 只许 memory.ts 写侧）★该文件同时是 T-0093② 的 region-hittest.ts 收口的仲裁点：终态 hasRefValue 只在 memory.ts，跨 agent 冲突已消解"
+      "note": "③ 的棘轮（口径唯一 + hasRefValue 只许 memory.ts 写侧）★该文件同时是 T-0093② 的 region-hittest.ts 收口的仲裁点：终态 hasRefValue 只在 memory.ts，跨 agent 冲突已消解",
+      "line": 113
     },
     {
       "anchor": "0x2ED",
@@ -85,6 +89,10 @@
     {
       "at": "2026-09-20",
       "what": "open → done —— ①②③ 由实施子代理落地、④ 由主 agent 落地：① op_set_message_fade（字段 + SetConfig 双写，守卫写后读回 + onConfigChanged）；② 0x141/0x135 改 unsigned（并同形订正 0x136/0x13F，已申报），错误串分支 = c.log + 不写目标 + 不抛；③ 读口径统一到 ref.ts 的 decIntSlot（缺槽 = 引擎 enc_zero ⇒ 0），删掉 0x12E 的本地 hasRefValue 绕法，hasRefValue 只剩 0x2C9 写侧（判据含四处 raw 体）；④ Engine/0x408 = Input 管理器（错 scope 条目删除并改写）、同族 Engine/0x428 mesh_container 改为 Scene/0x428、第一层 12 处块内定点替换 + 两处文档同步。派生发现已开 T-0098。npm run verify 全绿"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

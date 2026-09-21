@@ -15,27 +15,32 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v16 = (double)v12 / (double)(v15 - *a5);",
-      "note": "StretchTexture 的横向比例（raw 128013）：目标矩形被夹时用它把源码按比例挪动"
+      "note": "StretchTexture 的横向比例（raw 128013）：目标矩形被夹时用它把源码按比例挪动",
+      "line": 128013
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "char aStretchtexture[]",
-      "note": "引擎名与错误串：コピー元/コピー先テクスチャが作成されていません．TEXTURE=%d（raw 5175-5176）"
+      "note": "引擎名与错误串：コピー元/コピー先テクスチャが作成されていません．TEXTURE=%d（raw 5175-5176）",
+      "line": 5176
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i032 2 e 0 0 500 2d0 0 0 140 b4",
-      "note": "337 处同型的存档缩略图流水线（3171-3184）：全屏槽 2 → 320×180 的槽 0xe，随后 i1ae 写 .STH"
+      "note": "337 处同型的存档缩略图流水线（3171-3184）：全屏槽 2 → 320×180 的槽 0xe，随后 i1ae 写 .STH",
+      "line": 3179
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "export function clampScaledBlit",
-      "note": "夹取实现（纯函数，可单测）"
+      "note": "夹取实现（纯函数，可单测）",
+      "line": 1185
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "blitSlotToSlot(srcSlot: number, dstSlot: number, srcRect: number[], dstRect: number[]): boolean",
-      "note": "像素实现点：两张画布之间 drawImage（平滑插值）"
+      "note": "像素实现点：两张画布之间 drawImage（平滑插值）",
+      "line": 489
     },
     {
       "file": "app/amayui-emulator/test/op-032-stretch-texture.test.ts",
@@ -71,6 +76,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— open → done：`0x32` 进 `GFX_STATE_OPS`（`op_stretch_texture`），与 `0x207` 共用宿主缝 `blitSlotToSlot`；`clampScaledBlit` 按 raw 128005-128097 实现两个矩形的按比例夹取（int 截断），`TextureCache.blitSlotToSlot` 在两张画布间 drawImage（平滑插值，依据 raw 93927 的 MINFILTER=LINEAR；源/目标表面缺失时不转送并打引擎那两句错误串）。★顺手把 0x207/0x32 共同的宿主缝从\"只记日志\"补成真像素。守卫 test/op-032-stretch-texture.test.ts（夹取 5 组 + 语料形态端到端）；opcode-table 0x32「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x41E2D0 / 0x4A87A0；save-data.md §7 补了缩略图流水线那 9 行；SN0000 台账补 3171-3184 段与坑。npm run verify 569 测试全绿。★E4 未做（headless 无画布）：要在 Electron 里存一次档看 .STH 是否变成真截图。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

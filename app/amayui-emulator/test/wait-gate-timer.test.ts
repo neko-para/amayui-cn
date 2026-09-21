@@ -28,6 +28,11 @@ import { runFrameLoop, type FrameLoopOptions } from '../src/frame/loop.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { headlessFrameHost } from '../src/renderer/headlessFrameHost.js';
 import { scAnimationsPending } from '../src/renderer/sceneModel.js';
+import {
+  scPoolPending,
+  scTransitionsPending,
+  scTransitionDefaultRecord,
+} from '../src/renderer/sceneModel.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
 const im = (n: number): BinArg => ({ type: 0, raw: n }) as unknown as BinArg;
@@ -177,4 +182,140 @@ test('T-0024：证据锚点 —— 序章的慢推确实被 `i242 … 1` 排除�
     'utf8',
   );
   assert.match(src, /i220 \(global-int f8023\) 0 13880[^\n]*\n[^\n]*\ni242 \(global-int f8023\) 1/, '序章的 80 000 ms 慢推之后必须紧跟 `i242 f8023 1`');
+});
+
+// ---------------------------------------------------------------------------
+// ③ `T-0091` G1：`Scene+46512` 强制冻结**必须传进窗模型**（此前只折进池挂起位）
+// ---------------------------------------------------------------------------
+
+/** 背景纹理 id（与上面同一格；这里只用它的项做"带 3000 ms 窗的项"）。 */
+const G1_H = 0x19258;
+
+test('★T-0091 G1：`skipWaitGate` 之后同帧 `advanceModel({freeze})` ⇒ 窗当帧收尾、三判据全归零', () => {
+  const scene = new HeadlessScene({});
+  const s = scene.scene;
+  scene.configureDrawItem({
+    handle: G1_H, layer: 1, tex: 1, srcX: 0, srcY: 0, srcW: 10, srcH: 10, dstX: 0, dstY: 0,
+  });
+  // 3000 ms 慢推窗 + 一条 600 ms 的转场（这样 `scTransitionsPending` 的断言不是空真）
+  scene.setTranslationAnim(G1_H, 0, 3000, 500, 0, 0);
+  const rec = scTransitionDefaultRecord();
+  rec[0] = 0;
+  rec[2] = 0;
+  rec[3] = 600;
+  rec[4] = 3;
+  s.render4.transitions.set(9, rec);
+
+  // 起窗那一帧（不冻结）：起点锁存，三个判据都该为真
+  scene.advanceModel(0);
+  assert.equal(scPoolPending(s, 0), true, '3000 ms 慢推在跑 ⇒ 池挂起位为 1（raw 117843-117844）');
+  assert.equal(scene.poolPending(), true);
+  assert.equal(scAnimationsPending(s, 0), true, 'A 层窗在跑 ⇒ 合成判据为真');
+  assert.equal(
+    scAnimationsPending(s, 0, true),
+    false,
+    '★freeze 语义（`Scene+46512`）下这条 A 层窗当帧收尾 ⇒ 先问后推进也答 false（非豁免项）',
+  );
+  assert.equal(scTransitionsPending(s), true, '600 ms 转场在途');
+
+  // 同帧跳过等待门（= 主循环 raw 21135 玩家跳过 / raw 21161 ADV 分支）⇒ 冻结必须落到窗模型
+  const e = new Engine(new StubNative(() => {}));
+  e.skipWaitGate();
+  assert.equal(e.sceneFreeze, true, '`sub_407EA0` raw 12796 置 `Scene+46512`');
+  scene.advanceModel(0, { freeze: e.sceneFreeze });
+
+  const it = s.drawItems.get(G1_H)!;
+  assert.equal(it.transWork.x, 500, '★窗末收尾 work ← target（引擎 raw 117831 / 117449 的冻结分支）');
+  assert.equal(it.flags & 2, 0, 'A 层动画位被清（raw 117835）');
+  assert.equal(it.animStart, 0, '共享起点被清（raw 117837）');
+  assert.equal(scene.poolPending(), false, '冻结 ⇒ 不再置池挂起位（raw 134941 一类）');
+  assert.equal(scAnimationsPending(s, 0), false, '★冻结让 A 层窗当帧结束');
+  assert.equal(scTransitionsPending(s), false, '★冻结让转场窗当帧到期（raw 134941）');
+  assert.equal(s.render4.transitions.size, 0, '池挂起为 0 ⇒ 帧末清空转场表（raw 136840-136841）');
+  // 取快照 = 消费这一帧 ⇒ 终态已画完，不需要再合成
+  scene.snapshot();
+  assert.equal(scene.needsRender(), false, '收尾那一帧合成一次即止');
+});
+
+test('★★T-0091 G1：`i242 <h> 1`（`+720` bit0）**豁免强制冻结** ⇒ 慢推不被跳过截断', () => {
+  // 引擎 `sub_49AA30` raw 117439-117442：
+  //   `v11 = (a2[180] & 1) == 0; v112 = Scene+46512; if (!v11 && (Scene+46528 & 4) == 0) v112 = 0;`
+  //   —— `46528` bit2 本 exe 无写者（恒 0）⇒ 判据就是 `+720` bit0。同一格也让本项不置池挂起位
+  //   （raw 117843-117844）⇒ `src/SN0000.txt:1043-1048` 的 80 000 ms 慢推 + `i242 f8023 1` + `wait`
+  //   在玩家跳过等待门时**继续跑完**（不被拉到终态）。
+  //   ★这条是 design.md §5.3 没写的一条体订正（规格说 freeze 一视同仁，体里对 `+720` bit0 有豁免）。
+  const scene = new HeadlessScene({});
+  const s = scene.scene;
+  scene.configureDrawItem({
+    handle: G1_H, layer: 1, tex: 1, srcX: 0, srcY: 0, srcW: 10, srcH: 10, dstX: 0, dstY: 0,
+  });
+  scene.setDrawEntryParam(G1_H, 1); // = `i242 f8023 1`
+  scene.setTranslationAnim(G1_H, 0, 80_000, 500, 0, 0);
+  scene.advanceModel(0);
+  assert.equal(scene.poolPending(), false, '被排除 ⇒ 不钉门（raw 117843-117844）');
+  assert.equal(scAnimationsPending(s, 0), true, '但它自己还在动 ⇒ 仍要合成（raw 117839 无条件置脏）');
+  assert.equal(
+    scAnimationsPending(s, 0, true),
+    true,
+    '★freeze 语义下**豁免项**仍算 pending（对照上一条非豁免窗答 false）',
+  );
+
+  const e = new Engine(new StubNative(() => {}));
+  e.skipWaitGate();
+  scene.advanceModel(0, { freeze: e.sceneFreeze });
+  const it = s.drawItems.get(G1_H)!;
+  assert.equal(it.flags & 2, 2, '★豁免 ⇒ A 层动画位保留（没被冻结截断）');
+  assert.equal(it.transWork.x, 0, '★work 没有被拉到 target（窗继续按墙钟走）');
+  assert.equal(scAnimationsPending(s, 0), true, '慢推还在跑 ⇒ 继续合成');
+  assert.equal(scene.poolPending(), false, '仍然不钉门');
+
+  // 对照：同一个 3000 ms 窗**不写** `i242` ⇒ 冻结当帧就收尾（上面那条不是"恰好没冻"）
+  const s2 = new HeadlessScene({});
+  s2.configureDrawItem({
+    handle: G1_H, layer: 1, tex: 1, srcX: 0, srcY: 0, srcW: 10, srcH: 10, dstX: 0, dstY: 0,
+  });
+  s2.setTranslationAnim(G1_H, 0, 3000, 500, 0, 0);
+  s2.advanceModel(0, { freeze: true });
+  assert.equal(s2.scene.drawItems.get(G1_H)!.transWork.x, 500, '不豁免 ⇒ 当帧收尾');
+});
+
+test('★★T-0091 G1（驱动级）：ADV 分支每帧 `skipWaitGate` ⇒ 当帧 `advanceModel({freeze})` 真的收到冻结', async () => {
+  // 这一条钉的是**驱动 → 宿主**那一跳：`frame/loop.ts` 必须把 `e.sceneFreeze` 当 `freeze` 传下去，
+  // `headlessFrameHost`/`HeadlessScene` 必须转发。任一环漏掉，3000 ms 窗就会照墙钟跑下去（下面断言全红）。
+  const scene = new HeadlessScene({});
+  const e = mk([instr(0x101)], scene);
+  scene.configureDrawItem({
+    handle: G1_H, layer: 1, tex: 1, srcX: 0, srcY: 0, srcW: 10, srcH: 10, dstX: 0, dstY: 0,
+  });
+  scene.setTranslationAnim(G1_H, 0, 3000, 500, 0, 0);
+  e.waitFlags |= 0x8000000; // ADV_ACTIVE：本帧走 ADV 分支（服务后每帧 `skipWaitGate`，raw 21161）
+
+  const box = { clock: 1000 };
+  const host = headlessFrameHost(scene, () => box.clock);
+  const atFrameEnd: { anim: boolean; pending: boolean; work: number }[] = [];
+  const r = await runFrameLoop(e, host, {
+    gates: { anim: 'ignore', sleep: 'ignore', advance: 'ignore' },
+    services: { winReveal: false, charGrid: false },
+    advFrame: true,
+    maxStepsPerFrame: 10,
+    maxFrames: 2,
+    present: 'needsRender',
+    audio: 'never',
+    onError: () => 'stop', // 脚本只有一条指令，越界那条按"停"处理（本测试不关心它）
+    onFrameEnd: () => {
+      atFrameEnd.push({
+        anim: scAnimationsPending(scene.scene, box.clock),
+        pending: scene.poolPending(),
+        work: scene.scene.drawItems.get(G1_H)!.transWork.x,
+      });
+      box.clock += 1000 / 60;
+    },
+  });
+  assert.ok(r.frames >= 1, '至少跑完一帧');
+  assert.deepEqual(
+    atFrameEnd[0],
+    { anim: false, pending: false, work: 500 },
+    '★冻结当帧到达窗模型：动画判据归零、池挂起归零、work = target（漏转发任一环 ⇒ 这里全是旧值）',
+  );
+  assert.equal(e.scenePending, false, '帧末锁存：冻结 ⇒ 池挂起位归零（frame/loop.ts）');
 });

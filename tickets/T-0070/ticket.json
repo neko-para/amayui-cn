@@ -17,17 +17,20 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "export function applySlotPresentation",
-      "note": "装载点与走栈步共用的画面装回实现"
+      "note": "装载点与走栈步共用的画面装回实现",
+      "line": 100
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
       "anchor": "applySlotPresentation(e, e.loadHold)",
-      "note": "0xAE 每个走栈步把快照装回"
+      "note": "0xAE 每个走栈步把快照装回",
+      "line": 288
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "loadHold",
-      "note": "走栈期间要反复装回的画面（收尾清空）"
+      "note": "走栈期间要反复装回的画面（收尾清空）",
+      "line": 170
     }
   ],
   "links": {
@@ -50,6 +53,10 @@
     {
       "at": "2026-09-18",
       "what": "open → done —— loadHold + applySlotPresentation；守卫 test/slot-save-resume.test.ts"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

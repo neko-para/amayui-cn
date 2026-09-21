@@ -31,7 +31,8 @@
     {
       "file": "app/amayui-emulator/src/arch/systemPaths.ts",
       "anchor": "baseDir",
-      "note": "base 是**真游戏**的玩家数据目录（读 overlay→base、只写 overlay）⇒ 直接读它 = 结果取决于开发机状态"
+      "note": "base 是**真游戏**的玩家数据目录（读 overlay→base、只写 overlay）⇒ 直接读它 = 结果取决于开发机状态",
+      "line": 67
     }
   ],
   "links": {
@@ -59,6 +60,10 @@
     {
       "at": "2026-09-14",
       "what": "open → done —— 夹具 + 自洽断言；三场景实测见 changes.md"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

@@ -14,17 +14,20 @@
     {
       "file": "app/amayui-emulator/test/overlay.test.ts",
       "anchor": "const native = (winPath: string, posixPath: string): string => (WIN ? winPath : posixPath);",
-      "note": "① 的修法：两条断言改用平台原生绝对路径（win `D:\\game` / posix `/d/game`）⇒ 两侧都在测\"绝对路径原样采用\"，只是不再把\"Windows 写法在 POSIX 上算相对名\"当成缺陷"
+      "note": "① 的修法：两条断言改用平台原生绝对路径（win `D:\\game` / posix `/d/game`）⇒ 两侧都在测\"绝对路径原样采用\"，只是不再把\"Windows 写法在 POSIX 上算相对名\"当成缺陷",
+      "line": 190
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
       "anchor": "const CN_SAMPLE = '天俟神俣ＳＡＭＰＬＥ';",
-      "note": "期望值来自本地化 BIN（install/CONFIG.BIN + install/CONFIG1.BIN 的松散覆盖）；ALF 里的原版 BIN 是日文 ⇒ 新 checkout 必红"
+      "note": "期望值来自本地化 BIN（install/CONFIG.BIN + install/CONFIG1.BIN 的松散覆盖）；ALF 里的原版 BIN 是日文 ⇒ 新 checkout 必红",
+      "line": 49
     },
     {
       "file": "scripts/translate.js",
       "anchor": "// 安装：**只写 install 根**",
-      "note": "订正：删掉 `install/DATA1/` 那一份拷贝 —— 解包树是**只读基**（AGF 注入底图 / patch-menu 的未修改 AGERC.DLL / 还原来源），从来不是安装目标"
+      "note": "订正：删掉 `install/DATA1/` 那一份拷贝 —— 解包树是**只读基**（AGF 注入底图 / patch-menu 的未修改 AGERC.DLL / 还原来源），从来不是安装目标",
+      "line": 136
     },
     {
       "file": "scripts/config.js",
@@ -34,17 +37,20 @@
     {
       "file": "scripts/translate.js",
       "anchor": "function assembleAll()",
-      "note": "全量构建入口（无脚本名时）：逐脚本汇编 + 末尾汇总成功/失败清单（实测 941/941、12.5s）"
+      "note": "全量构建入口（无脚本名时）：逐脚本汇编 + 末尾汇总成功/失败清单（实测 941/941、12.5s）",
+      "line": 169
     },
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "export function chainResourceDir(emulatorOptions?: EmulatorOptions): string {",
-      "note": "② 的修法：把\"生效资源根\"导出（与链路同一份解析），测试用它判定本地化产物是否已安装"
+      "note": "② 的修法：把\"生效资源根\"导出（与链路同一份解析），测试用它判定本地化产物是否已安装",
+      "line": 351
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
       "anchor": "function localizedConfigMissing(): string | null {",
-      "note": "②：缺 install/CONFIG*.BIN ⇒ 第一条用例 skip、第二条用 t.diagnostic 说明文案断言未跑（给出构建命令），不静默读 ALF 原版"
+      "note": "②：缺 install/CONFIG*.BIN ⇒ 第一条用例 skip、第二条用 t.diagnostic 说明文案断言未跑（给出构建命令），不静默读 ALF 原版",
+      "line": 60
     }
   ],
   "links": {
@@ -65,6 +71,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— ①②③ 全部解决：①平台原生路径断言（macOS 12/12 绿）②config1-chain 缺产物时显式 skip/诊断（0 红）③删掉往 install/DATA1 装的错误操作 + res/images 作为 AGF overlay 真源；本机 npm test 559 条 0 红"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

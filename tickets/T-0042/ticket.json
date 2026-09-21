@@ -14,52 +14,62 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v18 = v17 >> 4;",
-      "note": "★机制站点：字形合成器 `sub_46D9F0` 的覆盖率→α 量化（GGO_GRAY4 ⇒ v30 = 255*cov/17，raw 84893-84898；32bpp 分支 84956-85011 写 `dst = (C*v31 + dst*(255-v31))/255`）"
+      "note": "★机制站点：字形合成器 `sub_46D9F0` 的覆盖率→α 量化（GGO_GRAY4 ⇒ v30 = 255*cov/17，raw 84893-84898；32bpp 分支 84956-85011 写 `dst = (C*v31 + dst*(255-v31))/255`）",
+      "line": 84904
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "GlyphOutline = (int *)GetGlyphOutline(*(_DWORD *)(_this + 1108), (unsigned __int16)v14, v62, v76, 0, 0, v75);",
-      "note": "字形位图来源与档位（`v62` 在 raw 86028-86038 定：Font+1352≠0 ⇒ 5/6 = GGO_GRAY4/GRAY8，否则 1 = 1bpp）"
+      "note": "字形位图来源与档位（`v62` 在 raw 86028-86038 定：Font+1352≠0 ⇒ 5/6 = GGO_GRAY4/GRAY8，否则 1 = 1bpp）",
+      "line": 86146
     },
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "const fillAlpha = spec.antiAlias ? TEXT_FILL_ALPHA : 1;",
-      "note": "第 2 次变更的实现点：描边不透明、填充按覆盖率 α 叠加（= 引擎的 α 合成）"
+      "note": "第 2 次变更的实现点：描边不透明、填充按覆盖率 α 叠加（= 引擎的 α 合成）",
+      "line": 48
     },
     {
       "file": "app/amayui-emulator/src/text/layout.ts",
       "anchor": "export const TEXT_FILL_ALPHA = 225 / 255;",
-      "note": "α 常量（255·15/17 / 255，对应实测平台 cov=15）"
+      "note": "α 常量（255·15/17 / 255，对应实测平台 cov=15）",
+      "line": 69
     },
     {
       "file": "tickets/T-0035/notes.md",
       "anchor": "文本白峰值",
-      "note": "三图同口径实测：真机（老/新汉化）文本核心亮度 230-231 且不随局部背景变化，emulator 为 255 纯白"
+      "note": "三图同口径实测：真机（老/新汉化）文本核心亮度 230-231 且不随局部背景变化，emulator 为 255 纯白",
+      "line": 361
     },
     {
       "file": "app/amayui-emulator/src/vm/saveData.ts",
       "anchor": "extractEnginePayload",
-      "note": "真机 SAVE.DAT（format=3）可解：a9dd=2 / a9de=1 / adcd=默认调色板（ffffff…，无 0xE6E6E6）⇒ 排除「配置色=230」"
+      "note": "真机 SAVE.DAT（format=3）可解：a9dd=2 / a9de=1 / adcd=默认调色板（ffffff…，无 0xE6E6E6）⇒ 排除「配置色=230」",
+      "line": 387
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "aMessageMeswina",
-      "note": "op 0x131 GetMesWinAlpha 是唯一读 message:MesWinAlpha 的地方，但全库脚本零使用 ⇒ α 不是脚本设的"
+      "note": "op 0x131 GetMesWinAlpha 是唯一读 message:MesWinAlpha 的地方，但全库脚本零使用 ⇒ α 不是脚本设的",
+      "line": 4428
     },
     {
       "file": "engine/天结_unpacked.exe.lst",
       "anchor": "80808081h",
-      "note": "★32bpp 合成写入的机器码（0x46DE01：`mov eax, 80808081h` + `imul ecx` + `sar edx,7` = 除以 255；0x46DDC0 `cmp esi,0FFh` / 0x46DDD5 `test edi,edi` 两支 = α==255 或 A_dst==0 时直接写 C|(α<<24)，否则 RGB 混合且 A=max(A_dst,α)）"
+      "note": "★32bpp 合成写入的机器码（0x46DE01：`mov eax, 80808081h` + `imul ecx` + `sar edx,7` = 除以 255；0x46DDC0 `cmp esi,0FFh` / 0x46DDD5 `test edi,edi` 两支 = α==255 或 A_dst==0 时直接写 C|(α<<24)，否则 RGB 混合且 A=max(A_dst,α)）",
+      "line": 177145
     },
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "export function engineGlyphPixel",
-      "note": "第 3 次变更的实现点：引擎 `sub_46D9F0` 的单像素写入（A=max、A_dst==0 ⇒ RGB=C）逐像素复现"
+      "note": "第 3 次变更的实现点：引擎 `sub_46D9F0` 的单像素写入（A=max、A_dst==0 ⇒ RGB=C）逐像素复现",
+      "line": 199
     },
     {
       "file": "src/CONFIG1.txt",
       "anchor": "i077 ffffff",
-      "note": "设置界行标签（bbd）的填充与描边**都是白**（2747-2748）⇒ 它看起来偏暗发暖不是取色问题，而是槽表面覆盖率 α 贴到底板上的结果"
+      "note": "设置界行标签（bbd）的填充与描边**都是白**（2747-2748）⇒ 它看起来偏暗发暖不是取色问题，而是槽表面覆盖率 α 贴到底板上的结果",
+      "line": 2748
     }
   ],
   "notes": "来源 = T-0035 第 7 轮的三图量化（老汉化 / 新汉化 / emulator，用户提供）。复现：python .tmp/measure-final.py（.tmp 为临时区，数字与口径写在 T-0035 notes 第 7 轮里）。",
@@ -101,6 +111,10 @@
     {
       "at": "2026-09-16",
       "what": "doing → done —— 第 3 次变更：行标签元素归属确证 + 透明表面按引擎的 A=max(A_dst,α) 写入 ⇒ 255→(233,231,230) 暖（真机区间 226-234）；ADV 颜色来源残留转 T-0035"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "links": {

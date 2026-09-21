@@ -13,22 +13,26 @@
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "for (const rg of visibleRubyInLine(line, n))",
-      "note": "修复后：注音按 from（本文词末字序号）门控；旧代码是 if (n > 0) for (const rg of line.ruby)（整行提前亮）"
+      "note": "修复后：注音按 from（本文词末字序号）门控；旧代码是 if (n > 0) for (const rg of line.ruby)（整行提前亮）",
+      "line": 349
     },
     {
       "file": "app/amayui-emulator/src/text/layout.ts",
       "anchor": "export function visibleRubyInLine",
-      "note": "模型层可断言的门控函数（守卫 test/text-layout.test.ts 的『注音随本文词的末字显现』）"
+      "note": "模型层可断言的门控函数（守卫 test/text-layout.test.ts 的『注音随本文词的末字显现』）",
+      "line": 668
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_465A20(_this, v5, lpString",
-      "note": "引擎的行尾 push（raw 83988-83997）：本文词最后一个 24B 记录标 [+0]=1，注音记录紧跟其后"
+      "note": "引擎的行尾 push（raw 83988-83997）：本文词最后一个 24B 记录标 [+0]=1，注音记录紧跟其后",
+      "line": 83992
     },
     {
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "注音跟着本字一起贴",
-      "note": "§3.3 的贴出循环 do/while 语义（raw 72427-72435）：一步 = 本文末字 + 它的注音"
+      "note": "§3.3 的贴出循环 do/while 语义（raw 72427-72435）：一步 = 本文末字 + 它的注音",
+      "line": 253
     }
   ],
   "links": {
@@ -54,6 +58,10 @@
     {
       "at": "2026-09-15",
       "what": "open → done —— 注音按本文词末字门控；守卫 test/text-layout.test.ts；见 changes.md"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

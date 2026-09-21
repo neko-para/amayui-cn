@@ -368,7 +368,10 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     if (audioPolicy !== 'never') host.audio?.({ kind: 'tick', nowMs, advActive: e.advActive });
     if (opt.present !== 'never') {
       // 帧末两件事分开做（B2；设计 D5）：先推进模型到本帧时钟，再让宿主合成
-      host.advanceModel?.(nowMs);
+      // ★`{ freeze: e.sceneFreeze }`（`tickets/T-0091` 的 G1）：引擎 `Scene+46512` 在**本帧绘制期**
+      //   就把所有窗算结束（raw 117449 / 133517 / 134941）⇒ 冻结必须随"推进模型"一起传进宿主，
+      //   否则窗按墙钟跑完（画面差异 + `needsRender` 多亮若干帧）。清冻结在下面（引擎帧末 136842/137183）。
+      host.advanceModel?.(nowMs, { freeze: e.sceneFreeze });
       // ★**池挂起位**（`Scene+46516`，`tickets/T-0024`）：引擎每遍绘制开头清零（raw 130427-130428）、
       //   绘制期"还有元素在动"时置位（raw 117843-117844 / 133528 / 134944）⇒ 帧**开头**的门读到的是
       //   **上一遍绘制**的结果。宿主交出的是"本遍是否还有窗在跑"（`scPoolPending`），

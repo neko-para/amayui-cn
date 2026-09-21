@@ -21,7 +21,8 @@
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "parseEngineSlotBody",
-      "note": "状态主体解析（帧镜像/池/三张表/图像清单）+ 两个内层 CRC"
+      "note": "状态主体解析（帧镜像/池/三张表/图像清单）+ 两个内层 CRC",
+      "line": 310
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
@@ -31,7 +32,8 @@
     {
       "file": "app/amayui-emulator/src/script/bin.ts",
       "anchor": "ipTables",
-      "note": "脚本头三张表（0x71/0x3/0x8F）的实际内容"
+      "note": "脚本头三张表（0x71/0x3/0x8F）的实际内容",
+      "line": 55
     },
     {
       "file": "app/amayui-emulator/test/engine-slot.test.ts",
@@ -41,22 +43,26 @@
     {
       "file": "docs-new/03-engine/save-data.md",
       "anchor": "### 7.2",
-      "note": "布局与续跑链路的主题文档"
+      "note": "布局与续跑链路的主题文档",
+      "line": 332
     },
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "存档版本分支指令（读档续跑）",
-      "note": "0xAE 行：两条分支步长差异 + 语料订正"
+      "note": "0xAE 行：两条分支步长差异 + 语料订正",
+      "line": 157
     },
     {
       "file": "analysis/functions.json",
       "anchor": "restoreFrameFromSaveRecord_40F750",
-      "note": "第一层：按帧记录恢复脚本帧"
+      "note": "第一层：按帧记录恢复脚本帧",
+      "line": 10824
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-slot-chain",
-      "note": "第二层：存档槽链路的 emulator 判定已更新"
+      "note": "第二层：存档槽链路的 emulator 判定已更新",
+      "line": 2648
     }
   ],
   "links": {
@@ -91,6 +97,10 @@
     {
       "at": "2026-09-17",
       "what": "doing → done —— 守卫与 E3/E4 证据见 changes.md；npm run verify 绿"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -250,8 +250,12 @@ export class RendererSession {
       now: () => performance.now(),
       /** 让出一帧（设计文档 §2 的 L4：Electron 的 yield = `requestAnimationFrame`）。 */
       yield: () => nextFrame(),
-      /** 模型推进：只把本帧时钟注入宿主（窗的求值发生在 `present` 里）。 */
-      advanceModel: (nowMs) => this.#pixi.advanceModel(nowMs),
+      /**
+       * 模型推进：只把本帧时钟注入宿主（窗的求值发生在 `present` 里）。
+       * ★`opts` 必须转发（`tickets/T-0091` 的 G1）：驱动每帧末传 `{ freeze: e.sceneFreeze }`
+       *   （引擎 `Scene+46512`），漏掉这一跳冻结就永远到不了窗模型。
+       */
+      advanceModel: (nowMs, opts) => this.#pixi.advanceModel(nowMs, opts),
       /**
        * 合成一帧。★设计 D5 的三拆：**音频 tick 归驱动**（`FrameLoopOptions.audio`）、
        * 屏障是宿主义务（这里 await）、`present` 只渲染。
@@ -582,7 +586,10 @@ export class RendererSession {
    * headless 宿主不实现 `texturesIdle` ⇒ 自动跳过（`test/game-start-chain.test.ts` 的 E3 不受影响）。
    */
   async #awaitTextureBound(t: StepTrace): Promise<void> {
-    if (t.opcode !== 0x1f9) return;
+    // ★`0x249` 也要等（`tickets/T-0102` 轮 9）：它与 `0x1F9` 是同一族的"按统一 id 把纹理载入槽"
+    //   （`sub_425310` raw 32717-32768；两者共用 `normalizeTextureColor`，见 `handlers/gfx-texture.ts`），
+    //   同样走 `native.bindTexture` 的异步路径 ⇒ 只认 `0x1F9` 会漏掉它（语料 20 处 / 8 脚本）。
+    if (t.opcode !== 0x1f9 && t.opcode !== 0x249) return;
     if (this.#native.texturesIdle) await this.#native.texturesIdle();
   }
 

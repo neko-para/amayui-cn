@@ -11,12 +11,12 @@
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 51 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 53 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 33 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 21 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **136** | 需要关注（非 n/a 且非已核验）= **61** |
+| **合计** | **136** | 需要关注（非 n/a 且非已核验）= **59** |
 
 ## 按子系统
 
@@ -26,7 +26,7 @@
 | Live2D | 7 | 2 |
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
-| 帧循环 | 16 | 10 |
+| 帧循环 | 16 | 8 |
 | 消息窗 | 30 | 18 |
 | 渲染 | 29 | 13 |
 | 资源 | 18 | 4 |
@@ -48,8 +48,8 @@
 | `scene-capture-target-flag-46680` | 渲染 | Capture 目标为主/后缓冲（38 号）标记 | ➖ n/a | E1 |
 | `scene-render-3d-frame-request-46700` | 3D | 请求显式渲染一帧 3D | ➖ n/a | E1 |
 | `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | 🟠 部分 | E1 |
-| `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | 🟠 部分 | E2 · `test/headless-needs-render.test.ts` |
-| `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | 🟠 部分 | E2 · `test/wait-gate-timer.test.ts` |
+| `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | ✅ 已核验 | E2 · `test/headless-needs-render.test.ts` |
+| `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
 | `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | ✅ 已核验 | E3 · `test/wait-gate-timer.test.ts` |
 | `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ❌ 缺失 | E0 |
 | `scene-norender-mode` | 渲染 | Engine+167990 无渲染/隐藏窗口模式 | 🟠 部分 | E1 · `test/engine-config.test.ts` |
@@ -204,25 +204,6 @@
 - **引擎**：sub_4A6EE0 @ raw 126552-126561
 - **读的字段**：Scene+46668, Scene+42456, Scene+1860
 - **emulator 现状**：★审计 P1 订正：Scene+46668 不只是 3D 档（写端 raw 126552-126561），它是 **2D 绘制循环 sub_4B06D0 的分支门**（raw 136517/136024/135518 的 <2、136199 的 >=1）；emulator 完全未建模（绘制侧等价恒 0，presenter.ts:157 只实现 bit0 门）。
-
-### `scene-dirty-flag-lifecycle`（partial）
-
-- **能力**：Scene+46508 「本帧需要重画」脏标志
-- **触发**：任一矩阵/变换/显示列表被改动时置 1（117146/117214/130792/130823/130829/130836/131262/133540/133773）；帧头清 0
-- **缺失时为什么静默**：标志为 0 时只是少刷一帧，`sub_40BE10` 走别的条件（D3D 设备/map/内容/Live2D），无断言
-- **引擎**：sub_4B4040, sub_4B4460, sub_40BE10, sub_4AF1C0, sub_49AA30, sub_49A770, sub_49A8E0, sub_4AB950 @ raw 117129-137035
-- **读的字段**：Scene+46508
-- **emulator 现状**：2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。
-★2026-09 轮 7（`tickets/T-0091` 第③项规格 · 只读全库扫描 155 行/83 函数）：三格的关系与 scope 已**全部钉死**。① **scope**：三条的 155 个出现点**全部**在 Scene 上（无一是别的类）；真坑是基址写法（`Engine+80708` dword = `Engine+322832` byte = **`Engine+0x4ED10`** —— 旧记 `0x4ECD0` 偏 64 字节）与「内部指针当参数」（`Scene+46536` 是 4×4 节点工作矩阵、不是对象）。② 精确计数：`+46508` 置 1 **90** 处 / 清 0 **4** 处 / 读 **1** 处（`sub_40BE10` raw 16022）；`+46512` 置 1 **2** 处（`sub_407EA0` raw 12796 的 skip-wait-gate、`sub_4B06D0` raw 134936 的转场记录 `[13] < 0`）/ 清 0 4 / 读 10；`+46516` 置 1 **26** 处 / 清 0 **3**（只有帧首与复位）/ 读 **4**。③ **+46512 的语义 = 强制冻结**：所有窗**当帧收尾**（绘制项 117449、mesh 133517、转场 134941·135806·136182、Live2D 节点 121291）且**等待计时器立刻到期**（12776）。④ **+46516 的语义 = 上一遍绘制时还有东西在动**：与 `+46508` **成对**置 1 的判据是「这条 setter 起了**带时长的动画窗**」（`sub_4ACF60` 只写静态色 ⇒ 只置脏）；精确排除门 = 记录 `+720` bit0（长时慢推不钉住等待门，raw 117843-117844）；它还是**转场记录表清空的门**（raw 136840/137181：`+46516 == 0` 才 `sub_4A9BE0(Scene+1048)`）。⑤ 引擎的「有窗在跑就一直 present」有**直接体依据**（不是近似）：`sub_49AA30` 收尾 raw 117833-117845 两个分支都落 `46508 = 1`、窗在途另行置 `46516 = 1`；mesh 同（133528/133540）。⑥ ★**emulator 真缺口两条**（已随本票备好改法）：**G1** `+46512` 冻结**没有传进窗模型**（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 都没有 freeze 形参，`scTransitionWindow(..., false)` 第 4 参硬编码；且 `loop.ts:368` 同帧就清掉 `sceneFreeze`）—— 引擎里冻结 ⇒ 所有窗当帧跳终态；**G2** 转场表清空的门被实现成「没有活动转场」（`transition.ts:574`）而引擎是「`46516 == 0`」（全场景所有窗都不在途）。⇒ 本条目在 G1/G2 落地前应保持 `partial`（现为 modeled-verified/E2，**该降级或补守卫**）。
-
-### `scene-freeze-flag`（partial）
-
-- **能力**：Scene+46512 动画强制冻结
-- **触发**：sub_407EA0(raw 12789-12801) 置 1（0x400 门被玩家输入跳过时 raw 21135；ADV 分支 raw 21161）；绘制期 raw 134936 在窗类型 v384[13] < 0 时也置 1
-- **缺失时为什么静默**：不建模不会报错：只是等待期间点键无效、动画不会被迫收尾（表现为"点了没反应"）。
-- **引擎**：sub_407EA0, sub_49AA30, sub_4AF1C0, sub_4B06D0 @ raw 12789-12801
-- **读的字段**：Scene+46512, Scene+46528
-- **emulator 现状**：部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★仍未建模：① **门等待期间的玩家输入跳过**（raw 21113-21135：命中/滚轮 + `Config(System:EffectSkip…)` 门 ⇒ 清 `0x400` + `sub_407EA0` + 刷 present）—— 功能性缺口：等待期间点键无效；② 绘制期「窗立刻算结束」（raw 134941/135806/136182 的 `|| freeze==1`）与 `+720` bit0 的冻结豁免（raw 117440-117442）**没有作用在窗状态上**（只折进池挂起位）⇒ 冻结后窗仍在跑（后果是继续合成，不是逻辑错误）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。
 
 ### `scene-flag-46528-bits`（absent）
 

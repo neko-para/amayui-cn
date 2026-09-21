@@ -11310,6 +11310,33 @@
     "unmodeled": ["Engine+0x29036（167990 显示模式）未登记", "sub_406050/sub_406220 的 DDraw 层 30/31 重设与 effect_flags |= 0x200000 未建模", "cmd8 的两张运行时表：Engine[4*cur_frame+495964]（帧标签表）与 Engine+0xA609C/0xA64A8（文件表）未登记", "对话框是 Win32 模态框 ⇒ emulator 无 AGERC 对话框宿主缝"],
     "evidence": "raw 39570-39638（handler 完整体）；被调真身 engine/AGERC.DLL_utf8.c L1584-1685 + L1466-1578；指针来源 raw 141984 / 109386-109427 / 65952-65956",
     "notes": "★旧注记的体区间 raw 33570-33612 有误 正确为 39570-39638；目标不是「静态定不了的外部服务」而是 AGERC.DLL!_ShowDialog@12（见 analysis/opcode-gaps.json 本条 note 与 fields.json 0x55E1B4）；返回值由真人点选决定 ⇒ 维持 deferred"
+  },
+  {
+    "addr": "0x41F720",
+    "raw_name": "sub_41F720",
+    "semantic_name": "op_gdi_repaint_text_record_41F720",
+    "op": "0x82",
+    "status": "PARTIAL",
+    "purpose": "op 0x82：**用给定颜色把「某窗的第 N 条文本项记录」重新画一遍** —— handler 只转发：读 op1..op5（全部 int）→ sub_466000(Engine+85296 /* GDI 文本对象 Font */, op1, op2, (char)op3, op4, op5, Engine+21032)。",
+    "signature_override": { "param0": "this(Engine*)" },
+    "sub_behaviors": ["写 arity 槽 frames[cur] + 0x74 = 11（argc 5）", "sub_41BF50 读 op5/op4/op3/op2/op1", "sub_466000(Engine+85296, op1, op2, (char)op3, op4, op5, Engine+21032)"],
+    "fields_used": ["frames[cur].len_slot", "Engine+85296(GDI 文本对象 Font)", "Engine+21032(文本对象内的记录容器)"],
+    "unmodeled": ["sub_466000 的体内其余部分（raw 79319-80311，993 行；只读了前 20 行 + 调用点，已足定语义）"],
+    "evidence": "raw 28808-28826 (sub_41F720); 被调体 sub_466000 raw 79319-80311",
+    "notes": "语料仅 1 处：src/CONFIG.txt:269（「退出设置页 → 回 ADV」重派生路径的最后一笔，实参 = 刚由 label_00001ae8 重算的 f807b/f807c）。emulator 现为 STUB_NATIVE_OPS 的 op_stub_unhandled（记录后放行 ⇒ 画面不会被重画）⇒ 真语义待实现，见 tickets/T-0104；与 tickets/T-0102 的紫色强相关。"
+  },
+  {
+    "addr": "0x466000",
+    "raw_name": "sub_466000",
+    "semantic_name": "gdiRepaintTextRecord_466000",
+    "status": "PARTIAL",
+    "purpose": "GDI 文本记录重画例程（被 0x82 调用）：按「窗索引 a2 + 该窗 72 B 文本项记录下标 a3」把那条记录用 a5/a6 的颜色重画。",
+    "signature_override": { "param0": "this(Font/GDI 文本对象)" },
+    "sub_behaviors": ["v8 = (this[3368] - this[3364]) / 72 = 该窗的 72 B 文本项记录条数", "门：if (v8 > a3 && a3 >= 0) —— 记录下标越界 ⇒ 什么都不做（不报错）", "a2 = 窗索引：取 this[4*a2 + 1044] 那个窗对象；若其 +112 == 1 ⇒ 走专用路径 sub_462040 后 return", "否则按记录走 GDI：sub_45BBF0 取记录字段 + SelectObject×12 / GetTextExtent×2 + 按 a5/a6 设色后绘制"],
+    "fields_used": ["Font+3364/+3368(记录向量 begin/end)", "Font+1044+4*w(每窗对象)", "窗对象+112(专用路径判据)"],
+    "unmodeled": ["体内其余约 970 行（raw 79319-80311 的细节：逐字排版/裁剪/描边/换行）"],
+    "evidence": "raw 79319-80311 (sub_466000，前 20 行 + SelectObject×12 / GetTextExtent×2 的分布)",
+    "notes": "语义 = 「用给定颜色重画某窗的第 N 条文本项记录」；参数 a2=窗、a3=记录下标、a4=模式(char)、a5/a6=填充/描边色。emulator 侧的等价物应基于 vm/textItems.ts 的 records（同口径 72 B/条）+ 重新发布该窗文本，见 tickets/T-0104。"
   }
 
 ]

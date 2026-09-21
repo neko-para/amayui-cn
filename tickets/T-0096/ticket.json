@@ -18,12 +18,14 @@
     {
       "anchor": "l2dNodeTransform",
       "note": "当前恒单位变换 —— 本票的消费端落点（render.ts:137-139；消费点 182/199-205）",
-      "file": "app/amayui-emulator/src/live2d/render.ts"
+      "file": "app/amayui-emulator/src/live2d/render.ts",
+      "line": 42
     },
     {
       "anchor": "//----- (004A07F0)",
       "note": "节点矩阵合成器的定义头；★真身体 = raw 121131-121655（票面旧写 121131-121520 是被截断的区间，被截掉的是平移窗 + 组合序）",
-      "file": "engine/天结_unpacked.exe_utf8.c"
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "line": 121130
     },
     {
       "anchor": "## 1. `sub_4A07F0` 完整语义",
@@ -76,6 +78,10 @@
     {
       "at": "2026-09-20",
       "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。合成器 nodeMatrix.ts + runtime/render/ops 接线、18 条新守卫（含 E3 真 TITLE 资产零回归）、外部 d3dx9_43.dll oracle 对照、四条\"未确证项\"钉死（dbl_51FB50=1000、a2[18]=0xFFFFFFFF、D3DX 内部归一化轴、pivot 不是不动点）、能力台账新增 live2d-node-matrix-compose（135 条）、live2d.md/opcode-table 同步"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

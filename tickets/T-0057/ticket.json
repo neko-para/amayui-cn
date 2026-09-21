@@ -22,7 +22,8 @@
     {
       "file": "app/amayui-emulator/test/engine-field-ids.test.ts",
       "anchor": "0x1F4 / 0x1F5：停靠锁 + 帧计数 + 时钟刷新成对",
-      "note": "R3 的守卫：i1f4 累加 frameCount、i1f5 递减并在 0 时释放停靠锁、此后 i1f4 恢复刷时钟（修前时钟冻在第一帧）"
+      "note": "R3 的守卫：i1f4 累加 frameCount、i1f5 递减并在 0 时释放停靠锁、此后 i1f4 恢复刷时钟（修前时钟冻在第一帧）",
+      "line": 92
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -57,12 +58,14 @@
     {
       "file": "app/amayui-emulator/src/configRegistry.ts",
       "anchor": "export const CFG = {",
-      "note": "R1：键名常量表（CFG）+ 动态键白名单 + 模块加载期自检"
+      "note": "R1：键名常量表（CFG）+ 动态键白名单 + 模块加载期自检",
+      "line": 174
     },
     {
       "file": "app/amayui-emulator/test/config-keys.test.ts",
       "anchor": "src 里的每个配置键字面量都必须在权威键表",
-      "note": "R1 的守卫（先剥注释，避免 T-0039 的「注释让棘轮失效」）"
+      "note": "R1 的守卫（先剥注释，避免 T-0039 的「注释让棘轮失效」）",
+      "line": 46
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
@@ -117,6 +120,10 @@
     {
       "at": "2026-09-17",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

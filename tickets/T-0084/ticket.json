@@ -27,32 +27,38 @@
     {
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
       "anchor": "scTransitionRangeHandles",
-      "note": "★记录那两条 item 区间的项集合（引擎 36/37 的真身，raw 136014-136176）"
+      "note": "★记录那两条 item 区间的项集合（引擎 36/37 的真身，raw 136014-136176）",
+      "line": 665
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "renderItemSubset",
-      "note": "★子集离屏合成：与主合成共用 itemSprite 一份画法"
+      "note": "★子集离屏合成：与主合成共用 itemSprite 一份画法",
+      "line": 161
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "#renderRangeCanvas",
-      "note": "★宿主侧：把一段区间渲染成离屏画布（按项集合每帧缓存），类别 0/2 的源"
+      "note": "★宿主侧：把一段区间渲染成离屏画布（按项集合每帧缓存），类别 0/2 的源",
+      "line": 1121
     },
     {
       "file": "app/amayui-emulator/test/transition-render-wiring.test.ts",
       "anchor": "★写端 → 记录格 → 区间选择",
-      "note": "★端到端棘轮：语料形态的 i223 实参 → 记录格 → 区间选择"
+      "note": "★端到端棘轮：语料形态的 i223 实参 → 记录格 → 区间选择",
+      "line": 225
     },
     {
       "file": "analysis/opcode-gaps.json",
       "anchor": "类别 1（分块淡入淡出）写入端",
-      "note": "0x24D（deferred）：语料 0 处 + U2 未确证，扩展点写在 note 里"
+      "note": "0x24D（deferred）：语料 0 处 + U2 未确证，扩展点写在 note 里",
+      "line": 125
     },
     {
       "file": "app/amayui-emulator/test/sc-transition-window.test.ts",
       "anchor": "★类别 3 的画法参数逐条对应引擎的 SetTechnique/SetFloat",
-      "note": "★类别 3 守卫：参数/归一化/采样几何/偏差标记"
+      "note": "★类别 3 守卫：参数/归一化/采样几何/偏差标记",
+      "line": 311
     }
   ],
   "links": {
@@ -110,6 +116,10 @@
     {
       "at": "2026-09-20",
       "what": "改字段：notes"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

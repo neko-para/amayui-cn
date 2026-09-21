@@ -15,32 +15,38 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "qmemcpy((void *)sub_4AAD40(v4, &a2), v10 + 4, 0x2E4u);",
-      "note": "交换的实锤（raw 131135）：把 b 的 740 字节记录拷进 a 的槽，下一句反向 —— 键不动"
+      "note": "交换的实锤（raw 131135）：把 b 的 740 字节记录拷进 a 的槽，下一句反向 —— 键不动",
+      "line": 131135
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[11627] = 1;",
-      "note": "交换后置脏位（raw 131139/131108/131131/131852 同型：Scene 的『要重画』标志）"
+      "note": "交换后置脏位（raw 131139/131108/131131/131852 同型：Scene 的『要重画』标志）",
+      "line": 12773
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "int *__thiscall sub_423AE0(int *_this)",
-      "note": "0x214 的 handler（raw 31779-31788）：读 op2/op1 两个 handle → `sub_4ABEF0(Scene, op1, op2)`；语义全在 sub_4ABEF0"
+      "note": "0x214 的 handler（raw 31779-31788）：读 op2/op1 两个 handle → `sub_4ABEF0(Scene, op1, op2)`；语义全在 sub_4ABEF0",
+      "line": 618
     },
     {
       "file": "src/SC0000.txt",
       "anchor": "i214 (local-int 0) (local-int 1)",
-      "note": "ADV 收场块的用法（6328/6350/6890/10080/13000）：两套立绘句柄基址（global f8023..f8028）第 i 个互换，紧接着脚本把自己的记账表 3f54 两列也换掉"
+      "note": "ADV 收场块的用法（6328/6350/6890/10080/13000）：两套立绘句柄基址（global f8023..f8028）第 i 个互换，紧接着脚本把自己的记账表 3f54 两列也换掉",
+      "line": 6328
     },
     {
       "file": "src/BUNKIMOVE.txt",
       "anchor": "i214 (local-int 8) (local-int 9)",
-      "note": "批量搬运段（43-77）：10 个一组、源侧按 0x64 步长、目标侧连续 —— 语义是『对调』不是『搬过去』"
+      "note": "批量搬运段（43-77）：10 个一组、源侧按 0x64 步长、目标侧连续 —— 语义是『对调』不是『搬过去』",
+      "line": 50
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "export function scSwapItems",
-      "note": "实现点：原地交换字段、保留对象身份、handle/layer 不换"
+      "note": "实现点：原地交换字段、保留对象身份、handle/layer 不换",
+      "line": 199
     },
     {
       "file": "app/amayui-emulator/test/op-214-swap-items.test.ts",
@@ -80,6 +86,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— open → done：0x214 进 `GFX_ITEM_OPS`（`op_swap_items` → `native.swapItems` → `scSwapItems`；Pixi 与 headless 两个宿主 + stubNative + nativeTap 白名单都接上）。语义按 raw 复读钉死：整条 740 字节记录互换、键(handle)/层序不动、缺键先建全 0 记录、两侧都缺只置脏位（无错误串）、只碰绘图项表（网格表不动）。守卫 test/op-214-swap-items.test.ts（模型级 9 条 + VM 级端到端 4 条）；opcode-table 0x214「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x423AE0 / 0x4ABEF0；台账新增 BUNKIMOVE（partial，含 43-77 的 10×i214 搬运段）；rendering.md 订正了两处口径（sort-key = 表节点 +12 的 key；记录 +4 = 纹理槽）。npm run verify 566 测试全绿。★无 E3：ADV 收场块在章节深处、BUNKIMOVE 需武器画面状态（headless boot SN0000 跑 2500 帧都到不了）。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

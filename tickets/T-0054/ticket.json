@@ -93,22 +93,26 @@
     {
       "file": "app/amayui-emulator/src/live2d/render.ts",
       "anchor": "export function l2dBatches(",
-      "note": "出画几何的**唯一**实现：快照与 Pixi 合成同源（门控 + 求值 + VISIBLE 覆盖 + 画布居中 + 按纹理号分组）"
+      "note": "出画几何的**唯一**实现：快照与 Pixi 合成同源（门控 + 求值 + VISIBLE 覆盖 + 画布居中 + 按纹理号分组）",
+      "line": 159
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "const l2dBatchList = scene.l2dHost ? l2dBatches(scene.l2dHost, this.viewW, this.viewH) : [];",
-      "note": "L2D = 第四类图元：批次按节点 key 与 item/text/mesh 四路归并，每批一个 Pixi Mesh"
+      "note": "L2D = 第四类图元：批次按节点 key 与 item/text/mesh 四路归并，每批一个 Pixi Mesh",
+      "line": 237
     },
     {
       "file": "tickets/T-0054/notes.md",
       "anchor": "TITLE 的 Live2D 支在真界面出画",
-      "note": "★E4（2026-09-17，锚在 notes.md 的 E4 记录节）：TITLE 的 Live2D 支在真界面出画 —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、`[present …] l2d={槽1 节点1 可画1 纹理3}`。复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`"
+      "note": "★E4（2026-09-17，锚在 notes.md 的 E4 记录节）：TITLE 的 Live2D 支在真界面出画 —— 白发蓝翼角色完整叠在背景之上（`a9d0 == 0`）。同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、`[present …] l2d={槽1 节点1 可画1 纹理3}`。复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`",
+      "line": 377
     },
     {
       "file": "app/amayui-emulator/src/live2d/moc.ts",
       "anchor": "const UTF8 = new TextDecoder('utf-8');",
-      "note": "★真机静默失败 ①：字符串解码曾用 Node 的 `Buffer`，而 `src/live2d/**` 跑在渲染进程（无 Node 集成）⇒ 解析抛异常、槽空、立绘不出画，而 tsx 下的守卫全绿。守卫：`test/live2d-render.test.ts` 的「渲染器安全」源码棘轮"
+      "note": "★真机静默失败 ①：字符串解码曾用 Node 的 `Buffer`，而 `src/live2d/**` 跑在渲染进程（无 Node 集成）⇒ 解析抛异常、槽空、立绘不出画，而 tsx 下的守卫全绿。守卫：`test/live2d-render.test.ts` 的「渲染器安全」源码棘轮",
+      "line": 240
     }
   ],
   "links": {
@@ -164,6 +168,10 @@
     {
       "at": "2026-09-17",
       "what": "真机联调：修两个\"只有真机才暴露\"的静默失败 —— ① moc.ts 用 Node 的 Buffer 解字符串（渲染进程无 Node 集成）⇒ 加渲染器安全源码棘轮；② 出画批次按纹理号合并、alpha 取最小值 ⇒ op=0 的网格把整张角色纹理压透明 ⇒ 改为一网格一批（7 条守卫）；③ 删掉 Live2D 的宿主缝（l2dLoadModel/l2dBindTexture/l2dStartMotion/destroyL2DSlot/l2dSlotSet/setTextureTransform）与两处被覆盖的死 handler（gfx-misc 的 0x342/0x352、gfx-texture 的 0x344 旧解）⇒ 控制窗不再报假缺口。E4 已取得（.tmp/l2dfix-0-title.png 角色完整出画）⇒ live2d-mesh-batches 升 E4。M3 仍未做。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 136,
-    "modeled-verified": 51,
+    "modeled-verified": 53,
     "modeled-unverified": 7,
-    "partial": 33,
+    "partial": 31,
     "absent": 21,
     "n/a-known": 24,
-    "needsAttention": 61
+    "needsAttention": 59
   },
   "entries": [
     {
@@ -337,10 +337,10 @@
       "whySilent": "标志为 0 时只是少刷一帧，`sub_40BE10` 走别的条件（D3D 设备/map/内容/Live2D），无断言",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
+        "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/headless-needs-render.test.ts",
-        "note": "2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。\n★2026-09 轮 7（`tickets/T-0091` 第③项规格 · 只读全库扫描 155 行/83 函数）：三格的关系与 scope 已**全部钉死**。① **scope**：三条的 155 个出现点**全部**在 Scene 上（无一是别的类）；真坑是基址写法（`Engine+80708` dword = `Engine+322832` byte = **`Engine+0x4ED10`** —— 旧记 `0x4ECD0` 偏 64 字节）与「内部指针当参数」（`Scene+46536` 是 4×4 节点工作矩阵、不是对象）。② 精确计数：`+46508` 置 1 **90** 处 / 清 0 **4** 处 / 读 **1** 处（`sub_40BE10` raw 16022）；`+46512` 置 1 **2** 处（`sub_407EA0` raw 12796 的 skip-wait-gate、`sub_4B06D0` raw 134936 的转场记录 `[13] < 0`）/ 清 0 4 / 读 10；`+46516` 置 1 **26** 处 / 清 0 **3**（只有帧首与复位）/ 读 **4**。③ **+46512 的语义 = 强制冻结**：所有窗**当帧收尾**（绘制项 117449、mesh 133517、转场 134941·135806·136182、Live2D 节点 121291）且**等待计时器立刻到期**（12776）。④ **+46516 的语义 = 上一遍绘制时还有东西在动**：与 `+46508` **成对**置 1 的判据是「这条 setter 起了**带时长的动画窗**」（`sub_4ACF60` 只写静态色 ⇒ 只置脏）；精确排除门 = 记录 `+720` bit0（长时慢推不钉住等待门，raw 117843-117844）；它还是**转场记录表清空的门**（raw 136840/137181：`+46516 == 0` 才 `sub_4A9BE0(Scene+1048)`）。⑤ 引擎的「有窗在跑就一直 present」有**直接体依据**（不是近似）：`sub_49AA30` 收尾 raw 117833-117845 两个分支都落 `46508 = 1`、窗在途另行置 `46516 = 1`；mesh 同（133528/133540）。⑥ ★**emulator 真缺口两条**（已随本票备好改法）：**G1** `+46512` 冻结**没有传进窗模型**（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 都没有 freeze 形参，`scTransitionWindow(..., false)` 第 4 参硬编码；且 `loop.ts:368` 同帧就清掉 `sceneFreeze`）—— 引擎里冻结 ⇒ 所有窗当帧跳终态；**G2** 转场表清空的门被实现成「没有活动转场」（`transition.ts:574`）而引擎是「`46516 == 0`」（全场景所有窗都不在途）。⇒ 本条目在 G1/G2 落地前应保持 `partial`（现为 modeled-verified/E2，**该降级或补守卫**）。"
+        "note": "2026-09 更新（T-0003/T-0004）：脏位已进**共享模型**（SceneState.dirty）——每个变更型 sc* 置位、只读 getter 不置、scAdvance 只在真的推进了窗时置位；两个宿主各自的消费点：pixi 在 present 清、headless 在 snapshot 清。守卫 test/headless-needs-render.test.ts（5 例，含**源码棘轮**：变更型 sc* 必须置脏、只读白名单钉住）+ test/frame-loop.test.ts 的 present:'needsRender' 档。★仍 partial：引擎的 12 处置 1 / 3 处清 0 + 帧末按 (46512|46516) 回置那套更复杂的生命周期未建模（见 scene-freeze-flag / bullet-dirty-from-freeze-or-pending）。\n★2026-09 轮 7（`tickets/T-0091` 第③项规格 · 只读全库扫描 155 行/83 函数）：三格的关系与 scope 已**全部钉死**。① **scope**：三条的 155 个出现点**全部**在 Scene 上（无一是别的类）；真坑是基址写法（`Engine+80708` dword = `Engine+322832` byte = **`Engine+0x4ED10`** —— 旧记 `0x4ECD0` 偏 64 字节）与「内部指针当参数」（`Scene+46536` 是 4×4 节点工作矩阵、不是对象）。② 精确计数：`+46508` 置 1 **90** 处 / 清 0 **4** 处 / 读 **1** 处（`sub_40BE10` raw 16022）；`+46512` 置 1 **2** 处（`sub_407EA0` raw 12796 的 skip-wait-gate、`sub_4B06D0` raw 134936 的转场记录 `[13] < 0`）/ 清 0 4 / 读 10；`+46516` 置 1 **26** 处 / 清 0 **3**（只有帧首与复位）/ 读 **4**。③ **+46512 的语义 = 强制冻结**：所有窗**当帧收尾**（绘制项 117449、mesh 133517、转场 134941·135806·136182、Live2D 节点 121291）且**等待计时器立刻到期**（12776）。④ **+46516 的语义 = 上一遍绘制时还有东西在动**：与 `+46508` **成对**置 1 的判据是「这条 setter 起了**带时长的动画窗**」（`sub_4ACF60` 只写静态色 ⇒ 只置脏）；精确排除门 = 记录 `+720` bit0（长时慢推不钉住等待门，raw 117843-117844）；它还是**转场记录表清空的门**（raw 136840/137181：`+46516 == 0` 才 `sub_4A9BE0(Scene+1048)`）。⑤ 引擎的「有窗在跑就一直 present」有**直接体依据**（不是近似）：`sub_49AA30` 收尾 raw 117833-117845 两个分支都落 `46508 = 1`、窗在途另行置 `46516 = 1`；mesh 同（133528/133540）。⑥ ★**emulator 真缺口两条**（已随本票备好改法）：**G1** `+46512` 冻结**没有传进窗模型**（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 都没有 freeze 形参，`scTransitionWindow(..., false)` 第 4 参硬编码；且 `loop.ts:368` 同帧就清掉 `sceneFreeze`）—— 引擎里冻结 ⇒ 所有窗当帧跳终态；**G2** 转场表清空的门被实现成「没有活动转场」（`transition.ts:574`）而引擎是「`46516 == 0`」（全场景所有窗都不在途）。⇒ ★**轮 9（`tickets/T-0091` 第③项）G1/G2 已落地并带守卫** ⇒ 本条目回到 **`modeled-verified`（E2）**：**G1** = `Scene+46512` 冻结**真的传进窗模型**（`scAdvance(s, clock, freeze)` 把非豁免项当帧收尾、`scAnimationsPending(s, clock, freeze)`、`scTransitionTick(s, clock, freeze, poolPending)` 替掉硬编码的 `false`；`FrameHost.advanceModel(nowMs, {freeze})` 全链转发：`loop.ts` → `headlessFrameHost`/`session.ts` → 两宿主）；**G2** = 转场记录表清空门改为**全场景 `Scene+46516 == 0`**（`transition.ts` 的 `active.length === 0 && !poolPending()`，探针在 `scAdvance` 之后求值）。守卫：`test/wait-gate-timer.test.ts`（G1：跳过等待门 ⇒ 当帧 `advanceModel({freeze})` ⇒ 窗收尾、三判据归零；含**驱动级**真 `runFrameLoop` 一条）+ `test/sc-transition-window.test.ts`（G2：转场到期那帧另有 mesh 窗在跑 ⇒ 表**不能**清；含缺省探针对照）+ `test/transition-render-wiring.test.ts`（两宿主源码棘轮）。★**仍残（如实）**：帧末 `(46512|46516) ⇒ 46508` 的回置仍未逐字实现（效果由 `sceneNeedsRender` 三项覆盖）；`sub_40BE10` 的图形池子容器与 10 个 Live2D 槽无等价物（design §5.4）。★**G1 目前是 E2 + 驱动级整合守卫、不是 E3**：驱动侧唯一会 `skipWaitGate` 的已实现出口（ADV 分支 raw 21161）在真语料上跑不到（`SN0000`/`HISTORY` 各 3000 帧 `ADV_ACTIVE` 未置位）—— 那属于 `scene-freeze-flag` ①「门等待期间的玩家输入跳过」未实现。"
       }
     },
     {
@@ -364,10 +364,10 @@
       "whySilent": "不建模不会报错：只是等待期间点键无效、动画不会被迫收尾（表现为\"点了没反应\"）。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
+        "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/wait-gate-timer.test.ts",
-        "note": "部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★仍未建模：① **门等待期间的玩家输入跳过**（raw 21113-21135：命中/滚轮 + `Config(System:EffectSkip…)` 门 ⇒ 清 `0x400` + `sub_407EA0` + 刷 present）—— 功能性缺口：等待期间点键无效；② 绘制期「窗立刻算结束」（raw 134941/135806/136182 的 `|| freeze==1`）与 `+720` bit0 的冻结豁免（raw 117440-117442）**没有作用在窗状态上**（只折进池挂起位）⇒ 冻结后窗仍在跑（后果是继续合成，不是逻辑错误）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。"
+        "note": "部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★**轮 9（`tickets/T-0091` 第③项）已修掉上面第 ② 条**：绘制期「窗立刻算结束」（raw 134941/135806/136182）与 **`+720` bit0 的冻结豁免**（raw 117440-117442）现在**真的作用在窗状态上** —— `scAdvance(s, clock, freeze)` 把**非豁免**（`entryParam & 1 === 0`）的 A 层开窗当帧收尾 + mesh 一律收尾；`scAnimationsPending(s, clock, freeze)` 同口径。★**两处以体订正的规格误读**（design.md §5.3 原写「freeze ⇒ 直接返回 false」）：① **`+720` bit0 的项豁免冻结**（`SN0000:1043` 的 80 000 ms 慢推不许被跳过截断，因为它用 `i242 <h> 1` 把自己排除出池挂起位）；② **B 层（bit2）循环动画不受冻结影响**（唯一读者 `sub_40BE10` raw 16028 判的是 `flags & 4`，与 `46512` 无关）。守卫 `test/wait-gate-timer.test.ts`（3 条，含豁免对照与驱动级真帧循环）。★**仍缺**：① **门等待期间的玩家输入跳过**（raw 21113-21135）—— 功能性缺口「等待期间点键无效」，也正是 G1 拿不到真语料 E3 的原因；★`Scene+46528` 三位本 exe 无写者（唯一写点 raw 130430 复位清 0）⇒ 豁免判据只看 `+720` bit0（依据已登记 `analysis/fields.json` 的 `Scene/0xB5C0 wait_gate_deadbits`）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。"
       },
       "capability": "Scene+46512 动画强制冻结（让所有动画窗立刻算\"已结束\"）",
       "evidence": "E2"

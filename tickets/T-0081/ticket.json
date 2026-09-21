@@ -24,17 +24,20 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
       "anchor": "### op-3-002 — 0x243/0x233/0x23A/0x337 无注册也无登记，命中即整轮硬停",
-      "note": "未注册缺口的典型条（语料 i243 = 341 行 / 338 文件）"
+      "note": "未注册缺口的典型条（语料 i243 = 341 行 / 338 文件）",
+      "line": 84
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
       "anchor": "[0x10c, op_engine_internal]",
-      "note": "可疑 no-op 的典型条：体写的是引擎每帧输入扫描读的 VK→掩码位表"
+      "note": "可疑 no-op 的典型条：体写的是引擎每帧输入扫描读的 VK→掩码位表",
+      "line": 258
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[_this[v2 + 1690] + 1434] = result;",
-      "note": "raw 30632：0x10C 的体（写按键盘表）—— 证明它不是「什么都不做」"
+      "note": "raw 30632：0x10C 的体（写按键盘表）—— 证明它不是「什么都不做」",
+      "line": 30439
     }
   ],
   "links": {
@@ -64,6 +67,10 @@
     {
       "at": "2026-09-19",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

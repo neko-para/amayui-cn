@@ -16,7 +16,8 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "sv1/sv2",
-      "note": "读档把槽头声明的版本带进续跑记录"
+      "note": "读档把槽头声明的版本带进续跑记录",
+      "line": 388
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
@@ -26,7 +27,8 @@
     {
       "file": "app/amayui-emulator/src/configRegistry.ts",
       "anchor": "export function registryDefault",
-      "note": "配置注册表的内建默认值访问器（缺键时 GetConfig 返回的就是它）"
+      "note": "配置注册表的内建默认值访问器（缺键时 GetConfig 返回的就是它）",
+      "line": 153
     },
     {
       "file": "src/SAVE.txt",
@@ -46,6 +48,10 @@
     {
       "at": "2026-09-18",
       "what": "open → done —— 槽头带版本 + 注册表默认兜底；守卫 test/slot-load-resume.test.ts"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -15,12 +15,14 @@
     {
       "file": "app/amayui-emulator/src/frame/scenario.ts",
       "anchor": "export interface ScenarioSpec",
-      "note": "可序列化的一份 Scenario（两宿主共用）"
+      "note": "可序列化的一份 Scenario（两宿主共用）",
+      "line": 147
     },
     {
       "file": "app/amayui-emulator/src/frame/trace.ts",
       "anchor": "export async function runReplay",
-      "note": "G3 回放：逐帧恢复输入 + 比对 engine 段"
+      "note": "G3 回放：逐帧恢复输入 + 比对 engine 段",
+      "line": 217
     },
     {
       "file": "app/amayui-emulator/tools/record.cjs",
@@ -30,7 +32,8 @@
     {
       "file": "docs-new/04-app/emulator.md",
       "anchor": "闸门清单：改哪些文件必须跑 G3 / G4",
-      "note": "G3/G4 的触发面，以及「关键行 ≠ 诊断量行」"
+      "note": "G3/G4 的触发面，以及「关键行 ≠ 诊断量行」",
+      "line": 194
     }
   ],
   "blockedBy": [
@@ -65,6 +68,10 @@
     {
       "at": "2026-09-13",
       "what": "改字段：doneWhy"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

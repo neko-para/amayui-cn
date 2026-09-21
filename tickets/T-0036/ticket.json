@@ -32,23 +32,30 @@
     {
       "at": "2026-09-15",
       "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "evidence": [
     {
       "file": "src/SAVE.txt",
       "anchor": "i1af (local-int 12) (local-int 219) (local-int 21c6)",
-      "note": "★op3 = 纹理槽：先 create-texture 320x180，i1af 装图，判 op1==0 后 draw-texture 到界面"
+      "note": "★op3 = 纹理槽：先 create-texture 320x180，i1af 装图，判 op1==0 后 draw-texture 到界面",
+      "line": 2088
     },
     {
       "file": "app/amayui-emulator/src/vm/bmp.ts",
       "anchor": "export function decodeBmp",
-      "note": "★新增：.STH = 24bpp BMP 解码/编码（不信 bfSize；E4 真槽 172,854 B）"
+      "note": "★新增：.STH = 24bpp BMP 解码/编码（不信 bfSize；E4 真槽 172,854 B）",
+      "line": 45
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "op_slot_thumb_read",
-      "note": "0x1AF 把解出的像素写进 op3 纹理槽（旧实现忽略 op3）"
+      "note": "0x1AF 把解出的像素写进 op3 纹理槽（旧实现忽略 op3）",
+      "line": 785
     },
     {
       "file": "app/amayui-emulator/test/save-thumb.test.ts",
@@ -58,12 +65,14 @@
     {
       "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
       "anchor": "列表里的缩略图",
-      "note": "★E3：真语料进列表后确有 320x180 缩略图装进纹理槽"
+      "note": "★E3：真语料进列表后确有 320x180 缩略图装进纹理槽",
+      "line": 207
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "ddReadBmp",
-      "note": "引擎真源：sub_43E9F0（raw 49926）校验 19778(=BM) 后 ddReadBmp 进该槽表面；0x1AF 经 sub_40BF20（raw 16072）调用"
+      "note": "引擎真源：sub_43E9F0（raw 49926）校验 19778(=BM) 后 ddReadBmp 进该槽表面；0x1AF 经 sub_40BF20（raw 16072）调用",
+      "line": 4598
     }
   ],
   "links": {

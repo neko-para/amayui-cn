@@ -14,17 +14,20 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
       "anchor": "### op-2-10 — 0x02 exit 的 -11 分支被 emulator 当成「整个程序退出」",
-      "note": "审计条目：声明 / 实际 / 证据 / 建议处置"
+      "note": "审计条目：声明 / 实际 / 证据 / 建议处置",
+      "line": 178
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/control.ts",
       "anchor": "caller === -11",
-      "note": "错读点：无记录 0 时落进 else ⇒ throw ExitScript（引擎不退出）"
+      "note": "错读点：无记录 0 时落进 else ⇒ throw ExitScript（引擎不退出）",
+      "line": 194
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_40F750((_DWORD *)_this, v5, (int)aSetSaveversion_0);",
-      "note": "0x02 的 -11 分支（sub_41A820 体 raw 25647-25659）：`_this[383108] = -1` → 读 `set:SaveVersion1` → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → **return**（既不抛异常也不退出）；`sub_40F750` 体见 raw 18877-18951"
+      "note": "0x02 的 -11 分支（sub_41A820 体 raw 25647-25659）：`_this[383108] = -1` → 读 `set:SaveVersion1` → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → **return**（既不抛异常也不退出）；`sub_40F750` 体见 raw 18877-18951",
+      "line": 25658
     },
     {
       "note": "轮 7 实施者的 raw 证据汇总；★核心订正：审计 op-2-10 的「读配置并写回」是 Hex-Rays 误渲染 —— 权威是 .lst:0041A85A-0041A88B（两次 [vtable+4] = sub_4904D0 retn 4 单参 GetConfig **只读**；写侧 [vtable+12] = sub_492AB0 未被调用）",
@@ -69,6 +72,10 @@
     {
       "at": "2026-09-20",
       "what": "open → done —— 已落地：control.ts 的 op_exit -11 分支改为按 sub_40F750 语义（写 callRet=-1 → 两次 GetConfig → 分派 record/partial/none；无记录 0 ⇒ 不动作、不抛 ExitScript），既有 pendingRecord0 装载路径一字未动，其它负值仍抛；守卫 test/op-02-exit-minus11.test.ts（5 条）。★验收②走票据允许的「写明为什么不需要」：审计 op-2-10 的「读配置并写回」是 Hex-Rays 误渲染 —— 权威 = .lst:0041A85A-0041A88B（两次 [vtable+4] = sub_4904D0 retn 4 单参 GetConfig 只读；写侧 [vtable+12] = sub_492AB0 未被调用），已在审计与 opcode-table 0x02 行订正。npm run verify 全绿"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

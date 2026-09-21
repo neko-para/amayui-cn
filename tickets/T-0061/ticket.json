@@ -19,7 +19,8 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "按 0x1AD 记录的帧退栈",
-      "note": "存档退栈（storedCur 优先）"
+      "note": "存档退栈（storedCur 优先）",
+      "line": 575
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
@@ -29,12 +30,14 @@
     {
       "file": "app/amayui-emulator/src/vm/saveSlot.ts",
       "anchor": "index?: number;",
-      "note": "帧记录带帧号与 caller"
+      "note": "帧记录带帧号与 caller",
+      "line": 166
     },
     {
       "file": "docs-new/03-engine/save-data.md",
       "anchor": "### 7.3",
-      "note": "契约表：退栈/转移/帧号/返回帧链"
+      "note": "契约表：退栈/转移/帧号/返回帧链",
+      "line": 390
     }
   ],
   "links": {
@@ -64,6 +67,10 @@
     {
       "at": "2026-09-17",
       "what": "doing → done —— 退栈/转移/帧号/返回帧链已实现并守卫；用户那份 SAVE70 的 E4 实证见 notes.md"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

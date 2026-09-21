@@ -40,12 +40,14 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-state.ts",
       "anchor": "op_load_wait_timer",
-      "note": "0x238 装载等待计时器（Engine.gateWaitStart/gateWaitMs）—— 原 handler 名 op_set_canvas_size 已订正"
+      "note": "0x238 装载等待计时器（Engine.gateWaitStart/gateWaitMs）—— 原 handler 名 op_set_canvas_size 已订正",
+      "line": 51
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "scPoolPending",
-      "note": "池挂起位口径（raw 117843-117844 的 +720 bit0 排除）；旧的 scGateAnimationsDone 已删除"
+      "note": "池挂起位口径（raw 117843-117844 的 +720 bit0 排除）；旧的 scGateAnimationsDone 已删除",
+      "line": 765
     },
     {
       "file": "docs-new/03-engine/copyright-effect.md",
@@ -92,6 +94,10 @@
     {
       "at": "2026-09-14",
       "what": "doing → done —— 守卫 + E3 见 changes.md；残余缺口见 notes.md §6.3"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

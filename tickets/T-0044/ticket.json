@@ -14,12 +14,14 @@
     {
       "file": "src/MENU.txt",
       "anchor": "menu-bind 0 label_00000370",
-      "note": "改动前：只有引用、没有定义（`grep '^label_00000370$' src/MENU.txt` 为空）⇒ 骨架少 9 行、汇编器 Unknown label reference"
+      "note": "改动前：只有引用、没有定义（`grep '^label_00000370$' src/MENU.txt` 为空）⇒ 骨架少 9 行、汇编器 Unknown label reference",
+      "line": 43
     },
     {
       "file": "data/MENU.txt",
       "anchor": "label_00000370",
-      "note": "基线侧（重反汇编后）有定义行；6 个脚本共缺 54 行、**全是** `label_*` 定义（BTL 3 / FIELD 14 / HISTORY 9 / MENU 9 / SELBOMB 5 / TITLE 14）"
+      "note": "基线侧（重反汇编后）有定义行；6 个脚本共缺 54 行、**全是** `label_*` 定义（BTL 3 / FIELD 14 / HISTORY 9 / MENU 9 / SELBOMB 5 / TITLE 14）",
+      "line": 43
     },
     {
       "file": "scripts/check-skeleton.mjs",
@@ -29,7 +31,8 @@
     {
       "file": "scripts/translate.js",
       "anchor": "const skelErr = checkSkeleton(script, lines, path.join(DATA_DIR,",
-      "note": "事故的守卫点：骨架校验逐行比对 data 基线；本轮改成返回错误（而不是 process.exit）以支持全量构建汇总"
+      "note": "事故的守卫点：骨架校验逐行比对 data 基线；本轮改成返回错误（而不是 process.exit）以支持全量构建汇总",
+      "line": 119
     },
     {
       "file": "scripts/resync-control-lines.mjs",
@@ -60,6 +63,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— 六个脚本的 label 定义已按 data 基线插回（保留译文）；assemble 骨架校验通过、回读 N/N；全量构建 941/941；新增 scripts/check-skeleton.mjs 棘轮"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

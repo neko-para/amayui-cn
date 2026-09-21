@@ -17,10 +17,14 @@
  *    `[1]`（窗口起点锁存，raw 134867-134871）与 `[3]`（到点清 0 = 死记录）。
  *    `test/op-24f-250-251-transitions.test.ts` 对这张表做**整条 `deepEqual`**，并显式断言 `[1]` 仍为默认
  *    ⇒ 运行期的 `[1]`/`[3]` 一律存在 `render4.transitionRuntime` 里，绘制期从那里取。
- * 2. **记录表是"帧内瞬态"**（引擎 raw 136840-136841：一遍绘完若 `Scene+46516 == 0`（没有在途转场）
- *    就 `sub_4A9BE0(Scene+1048)` **清空整张表**）。所以 `scTransitionTick` 在"一条都不活动"时把
+ * 2. **记录表是"帧内瞬态"**（引擎 raw 136840-136841：一遍绘完若 `Scene+46516 == 0` 就
+ *    `sub_4A9BE0(Scene+1048)` **清空整张表**）。所以 `scTransitionTick` 在"一条都不活动"时把
  *    `transitions` + `transitionRuntime` 一起清掉 —— 不清的话，下一次同 id 的写入会撞上上一轮的
  *    锁存起点（语料的 `op1` 恒为 `local-int 0`，必然撞）。
+ *    ★**门不是"没有在途转场"**（`T-0091` G2 订正）：`Scene+46516` 是**全场景池挂起位**
+ *    （转场 raw 134944/135822/136197、绘制项 raw 117844、mesh raw 133528 都置它）
+ *    ⇒ 转场到期那一帧若**别的**窗还在跑，引擎**不清表**。判据由宿主**注入**（`poolPending`
+ *    形参，见 `scTransitionTick` 的说明：本模块不能 import `ops.ts`，会成模块环）。
  * 3. **`[4]` 是渲染目标层，不是"屏幕"**。引擎 `sub_4A50C0(_this, v384[4])` 把渲染目标切到那一层
  *    （raw 136174 / 134937 / 135824），淡入淡出/条带都画进**那一层**，画完由脚本自己 `draw-texture`
  *    呈现（语料里紧随其后就是 `draw-texture … (local-ptr 2) …`）。所以本模块只产出**几何/参数**，
@@ -541,8 +545,26 @@ export function scTransitionOffset(
  *
  * 时序：帧驱动里 `advanceModel` 在"本帧 VM 步进之后、present 之前"（`src/frame/loop.ts`）
  * ⇒ 脚本本帧写的记录会被本帧这一次 tick 看到（不会出现"写了立刻被清掉"）。
+ *
+ * @param freeze 引擎 `Scene+46512`（强制冻结 / 立即收尾位；置位者 `sub_407EA0` raw 12796、
+ *   转场非法条宽 raw 134936）。为真时**所有转场窗当帧到期**（`sub_4B06D0` 的
+ *   `… || *(_DWORD *)(_this + 46512) == 1`，raw 134941 / 135806 / 136182）⇒ 透给
+ *   `scTransitionWindow` 的第 4 参（`T-0091` G1：此前硬编码 false，冻结永远传不进来）。
+ * @param poolPending **全场景池挂起位探针**（引擎 `Scene+46516`；见文件头纪律 2 的订正）。
+ *   默认 `() => false` = 旧的"只看转场自己"口径 —— 两个宿主都注入 `scPoolPending`。
+ *   ★为什么是注入而不是 import：`ops.ts` 已经 `import` 本模块（`ops.ts:51` 的
+ *   `scTransitionsPending`），反向 import `ops.ts` 的 `scPoolPending` 会造出
+ *   `ops.ts ↔ transition.ts` 的**模块环**（本工程前例 `T-0089` 的 TDZ 崩）。
+ *   `T-0091` notes 给的另一条路（把 `scPoolPending` 移到中立模块）会新开文件，超出本票白名单 ⇒ 取注入。
+ *   ★探针必须在 `scAdvance` **之后**求值（宿主里 `advanceModel` 先 `scAdvance` 再本函数）——
+ *   与引擎"本帧绘制期置 46516、帧末读它"同序；否则会拿上一帧（或未收尾）的状态判。
  */
-export function scTransitionTick(s: SceneState, clock: number): TransitionTickResult {
+export function scTransitionTick(
+  s: SceneState,
+  clock: number,
+  freeze = false,
+  poolPending: () => boolean = () => false,
+): TransitionTickResult {
   const r4 = s.render4;
   const active: number[] = [];
   let finishedAny = false;
@@ -554,7 +576,9 @@ export function scTransitionTick(s: SceneState, clock: number): TransitionTickRe
       rt = { start: clock, active: false, finished: false, t: 0, channels: [0, 0, 0, 0] };
       r4.transitionRuntime.set(id, rt);
     }
-    const w = scTransitionWindow(rec, clock, rt.start, false);
+    // 旧：scTransitionWindow(rec, clock, rt.start, false)（`T-0084` 的硬编码第 4 参 =
+    //   `T-0091` evidence 锚点 `rt.start, false`；G1 起改传 `freeze`）。
+    const w = scTransitionWindow(rec, clock, rt.start, freeze);
     rt.active = w.active;
     rt.finished = w.finished;
     rt.t = w.t;
@@ -571,8 +595,11 @@ export function scTransitionTick(s: SceneState, clock: number): TransitionTickRe
     active.push(id);
   }
   let cleared = false;
-  if (r4.transitions.size > 0 && active.length === 0) {
-    // ★引擎 raw 136840-136841：一遍绘完 `Scene+46516 == 0` ⇒ `sub_4A9BE0(Scene+1048)` 清空整表。
+  if (r4.transitions.size > 0 && active.length === 0 && !poolPending()) {
+    // ★引擎 raw 136840-136841：一遍绘完 `Scene+46516 == 0` ⇒ `sub_4A9BE0(Scene+1048)` 清空整表
+    //   （同门第二处 raw 137181 用 `v35[11629]`）。**46516 是全场景**池挂起位，不只是转场
+    //   （绘制项 raw 117844 / mesh raw 133528 / 离屏槽 raw 136695·136701 都置它）
+    //   ⇒ 转场到期那帧另有 mesh/绘制项窗在跑时**必须保留**死记录（`T-0091` G2 的守卫就是这样判别的）。
     //   不清的话下一次同 id 写入会带着上一轮的 `transitionRuntime`（起点还是老的）。
     r4.transitions.clear();
     r4.transitionRuntime.clear();

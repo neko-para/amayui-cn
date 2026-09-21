@@ -17,17 +17,20 @@
     {
       "file": "docs-new/04-app/emulator-frame-loop-design.md",
       "anchor": "B1 抽驱动",
-      "note": "设计文档的 B1 批（含接口草案与判据）"
+      "note": "设计文档的 B1 批（含接口草案与判据）",
+      "line": 206
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "SAFETY_PER_FRAME",
-      "note": "Electron 循环的批上限与真实墙钟"
+      "note": "Electron 循环的批上限与真实墙钟",
+      "line": 44
     },
     {
       "file": "app/amayui-emulator/src/report.ts",
       "anchor": "maxStepsPerFrame",
-      "note": "headless 的另一套批上限/时钟"
+      "note": "headless 的另一套批上限/时钟",
+      "line": 53
     }
   ],
   "links": {
@@ -65,6 +68,10 @@
     {
       "at": "2026-09-14",
       "what": "B1 完成：driver + headless 三家接线 + 驱动契约测试 6 例 + G2 逐字节取证 + interpreter.run 删除（427/427 全绿）→ done"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

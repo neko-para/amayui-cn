@@ -22,12 +22,14 @@
     {
       "file": "analysis/fields.json",
       "anchor": "\"name\":\"backlog_pages_begin\"",
-      "note": "页索引表 begin（Font/0x15A64）—— 本轮补全同族 end/cap（0x15A68/0x15A6C）并把写者证据补到 3 处（raw 73186/74271/74494）"
+      "note": "页索引表 begin（Font/0x15A64）—— 本轮补全同族 end/cap（0x15A68/0x15A6C）并把写者证据补到 3 处（raw 73186/74271/74494）",
+      "line": 407
     },
     {
       "file": "analysis/opcode-gaps.json",
       "anchor": "\"mnemonic\": \"i1d0\"",
-      "note": "0x1d0 的 deferred 条目（本票落地后应改 implemented）；同族 0x85 的处置理由（「GDI 文本对象的行/段容器」）是错的，须一并订正"
+      "note": "0x1d0 的 deferred 条目（本票落地后应改 implemented）；同族 0x85 的处置理由（「GDI 文本对象的行/段容器」）是错的，须一并订正",
+      "line": 403
     }
   ],
   "links": {
@@ -79,6 +81,10 @@
     {
       "at": "2026-09-20",
       "what": "doing → done —— 全量 npm run verify 绿（909/909 pass、0 fail、死写 0）⇒ 收口。实现（textItems/pages+双游标/pageAt+moveCursor+clearBacklog、0x1d0/0x85 进 OPS、0x70 无门 push+组首、0x71 真门）、14+5 条守卫、E3（install/CONFIG.BIN 426 条、下标 14、实参 local-int 5/6/7，含\"无前奏⇒合理 -1/-1\"的诚实对照）、缺口台账（deferred 22→20、已实现 36→38）+ opcode-table 四行 + 生成物 全部落地"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

@@ -26,7 +26,8 @@
     {
       "file": "analysis/scripts.json",
       "anchor": "\"id\": \"SN0000\"",
-      "note": "SN0000 的脚本台账真源条目（layout/slots/invariants/gaps）"
+      "note": "SN0000 的脚本台账真源条目（layout/slots/invariants/gaps）",
+      "line": 623
     },
     {
       "note": "轮 8 只读诊断全文（30KB）：谁画的（逐候选排除）/ 载体 / 引擎在哪清（NOVEL.txt:415 的 detach-texture 19a28 1f4）/ emulator 缺哪步（engine.ts:744-746 遍历所有 reveal 键）/ H1 成立 + H2 反驳（0x308 = RegisterTouchWindow）/ H3 判据 / E2·E3 复现 / 最小修复集 + 禁止修法 / 6 条未确证项",
@@ -36,7 +37,8 @@
     {
       "note": "★根因落点：该函数遍历所有 msgwin.reveal 键逐个发布（engine.ts:744-746），而引擎只泵当前窗（`Engine[489484] = _this[122371]`，raw 13943-13945）⇒ 残留 reveal[8] 被贴回屏",
       "file": "app/amayui-emulator/src/vm/engine.ts",
-      "anchor": "serviceRevealAdvanceInput"
+      "anchor": "serviceRevealAdvanceInput",
+      "line": 727
     },
     {
       "file": "app/amayui-emulator/test/op-0100-reveal-current-window.test.ts",
@@ -101,6 +103,10 @@
     {
       "at": "2026-09-20",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

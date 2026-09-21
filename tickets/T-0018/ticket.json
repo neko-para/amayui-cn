@@ -18,42 +18,50 @@
     {
       "file": "app/amayui-emulator/src/vm/saveSlot.ts",
       "anchor": "SLOT_STATE_MAGIC",
-      "note": "★新增：槽路径（SAVE%2.2d.DAT/.STH）+ 292 B 头解析（parseSlotHeader，E4 逐字段）+ 本工程状态块（AMYS1\\n + JSON）+ SLOT_GAPS"
+      "note": "★新增：槽路径（SAVE%2.2d.DAT/.STH）+ 292 B 头解析（parseSlotHeader，E4 逐字段）+ 本工程状态块（AMYS1\\n + JSON）+ SLOT_GAPS",
+      "line": 55
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "SAVE_SLOT_OPS",
-      "note": "★新增：8 条 opcode 的 handler（0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF）"
+      "note": "★新增：8 条 opcode 的 handler（0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF）",
+      "line": 817
     },
     {
       "file": "app/amayui-emulator/test/save-slot.test.ts",
       "anchor": "★0x1A1 不写操作数",
-      "note": "★新增守卫（10 条）：E4 真槽头、0x1A0 往返、0x19E→0x1A1 往返、结果码、.STH、overlay 只读不写 base、0x1A1 保真度"
+      "note": "★新增守卫（10 条）：E4 真槽头、0x1A0 往返、0x19E→0x1A1 往返、结果码、.STH、overlay 只读不写 base、0x1A1 保真度",
+      "line": 344
     },
     {
       "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
       "anchor": "TITLE → Load Data → SAVE.BIN",
-      "note": "★新增 E3 链路守卫：真语料点进 Load Data 列表，路径零未实现 opcode、读了 0..999 真槽、不写任何槽"
+      "note": "★新增 E3 链路守卫：真语料点进 Load Data 列表，路径零未实现 opcode、读了 0..999 真槽、不写任何槽",
+      "line": 47
     },
     {
       "file": "app/amayui-emulator/test/wheel.test.ts",
       "anchor": "★0x2E5：读水平滚轮增量",
-      "note": "★新增 E2 守卫：0x2E5 与 0x10D 是两个独立累加器（互不消费、读后清零、方向符号）"
+      "note": "★新增 E2 守卫：0x2E5 与 0x10D 是两个独立累加器（互不消费、读后清零、方向符号）",
+      "line": 137
     },
     {
       "file": "app/amayui-emulator/src/vm/saveData.ts",
       "anchor": "可选尾块",
-      "note": "★扩展：encodeSaveData/parsePayload 支持可选尾块；并修掉读侧没吃掉尾部块首个 dword 的 bug（状态块前多 4 个 0 字节）"
+      "note": "★扩展：encodeSaveData/parsePayload 支持可选尾块；并修掉读侧没吃掉尾部块首个 dword 的 bug（状态块前多 4 个 0 字节）",
+      "line": 105
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "水平滚轮增量累加器",
-      "note": "★新增：hwheelDelta + addHWheel/consumeHWheelDelta（对位引擎 Engine[1950]/byte 0x1E78），且进 snapshot/restore"
+      "note": "★新增：hwheelDelta + addHWheel/consumeHWheelDelta（对位引擎 Engine[1950]/byte 0x1E78），且进 snapshot/restore",
+      "line": 78
     },
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "read-save-slot",
-      "note": "★新增：主进程槽 IPC（read/write/delete/copy/read-slot-thumb/write-slot-thumb；只写 overlay，槽号 0..999）"
+      "note": "★新增：主进程槽 IPC（read/write/delete/copy/read-slot-thumb/write-slot-thumb；只写 overlay，槽号 0..999）",
+      "line": 186
     },
     {
       "file": "docs-new/03-engine/save-data.md",
@@ -63,27 +71,32 @@
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "读档（LOAD，全量）",
-      "note": "★订正：0x1A1 = 读档（旧注『存档到槽位』为误，存档是 0x19E）；补齐 0x190/0x19E/0x19F/0x1A0/0x1AB/0x1AC/0x1AE/0x1AF，另补 0x2E5"
+      "note": "★订正：0x1A1 = 读档（旧注『存档到槽位』为误，存档是 0x19E）；补齐 0x190/0x19E/0x19F/0x1A0/0x1AB/0x1AC/0x1AE/0x1AF，另补 0x2E5",
+      "line": 275
     },
     {
       "file": "docs-new/03-engine/input-system.md",
       "anchor": "两个滚轮累加器",
-      "note": "★文档 §15：0x10D 竖直 / 0x2E5 水平两个累加器的 raw 依据与真实用例"
+      "note": "★文档 §15：0x10D 竖直 / 0x2E5 水平两个累加器的 raw 依据与真实用例",
+      "line": 429
     },
     {
       "file": "docs-new/04-app/emulator.md",
       "anchor": "存档槽",
-      "note": "缺口登记处：已从『0x1A0 未实现』改为『链路已通 + SLOT_GAPS』"
+      "note": "缺口登记处：已从『0x1A0 未实现』改为『链路已通 + SLOT_GAPS』",
+      "line": 281
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-slot-chain",
-      "note": "★第二层：能力条目（触发/缺失时静默/读的字段/emulator E3，guard=test/save-slot-chain.test.ts）；另有 input-wheel-two-accumulators"
+      "note": "★第二层：能力条目（触发/缺失时静默/读的字段/emulator E3，guard=test/save-slot-chain.test.ts）；另有 input-wheel-two-accumulators",
+      "line": 2648
     },
     {
       "file": "src/$1$SC0330.txt",
       "anchor": "i1a1 (global-int f7ffd) (global-int f8019)",
-      "note": "★真实用例（第三层 SC0330 条目）：i1a0 存在性判定、i1a1 q-load、i19e+i1ae 存槽与缩略图纹理"
+      "note": "★真实用例（第三层 SC0330 条目）：i1a0 存在性判定、i1a1 q-load、i19e+i1ae 存槽与缩略图纹理",
+      "line": 579
     }
   ],
   "history": [
@@ -121,6 +134,10 @@
     },
     {
       "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
       "what": "改字段：evidence"
     }
   ],

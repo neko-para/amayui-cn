@@ -14,7 +14,8 @@
     {
       "file": "app/amayui-emulator/src/tools/deadWrites.ts",
       "anchor": "只认属性访问",
-      "note": "countAccess 的读写统计口径：逐行跑正则、注释未剥离（本轮实测：加一句注释即可让两个字段从 dead 变 alive）"
+      "note": "countAccess 的读写统计口径：逐行跑正则、注释未剥离（本轮实测：加一句注释即可让两个字段从 dead 变 alive）",
+      "line": 118
     },
     {
       "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
@@ -24,17 +25,20 @@
     {
       "file": "app/amayui-emulator/src/renderer/drawitem/model.ts",
       "anchor": "混合模式选择子",
-      "note": "本轮在这里写了一句含 .blend 的注释 ⇒ 复现入口（现已改成不含 .blend 的措辞）"
+      "note": "本轮在这里写了一句含 .blend 的注释 ⇒ 复现入口（现已改成不含 .blend 的措辞）",
+      "line": 170
     },
     {
       "file": "app/amayui-emulator/src/tools/deadWrites.ts",
       "anchor": "export function stripCommentsAndStrings(src: string): string {",
-      "note": "修法：统计前剥注释与字符串内容（保行结构、不误伤 URL/模板串）"
+      "note": "修法：统计前剥注释与字符串内容（保行结构、不误伤 URL/模板串）",
+      "line": 155
     },
     {
       "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
       "anchor": "死写检测对注释/字符串免疫",
-      "note": "守卫：注释/字符串里的字段名不改变读数；唯一真读改成注释后必须回到死写"
+      "note": "守卫：注释/字符串里的字段名不改变读数；唯一真读改成注释后必须回到死写",
+      "line": 68
     }
   ],
   "id": "T-0039",
@@ -51,6 +55,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— countAccess 统计前剥注释+字符串（stripCommentsAndStrings）；新增守卫 test/no-dead-writes.test.ts 第 3 条；check:dead-writes 0/0、3 测试全绿；局限段已写"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

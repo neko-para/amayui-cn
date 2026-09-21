@@ -14,22 +14,26 @@
     {
       "file": "app/amayui-emulator/src/live2d/runtime.ts",
       "anchor": "export function l2dResetHost",
-      "note": "★唯一的清空入口（含为什么必须清的引擎/容器依据）"
+      "note": "★唯一的清空入口（含为什么必须清的引擎/容器依据）",
+      "line": 194
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "清掉上一个执行链的 L2D 运行态",
-      "note": "装载点调用点 + 日志"
+      "note": "装载点调用点 + 日志",
+      "line": 313
     },
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "[图像清单]",
-      "note": "★存档 body 布局：没有 L2D 字段（本条结论的容器依据）"
+      "note": "★存档 body 布局：没有 L2D 字段（本条结论的容器依据）",
+      "line": 51
     },
     {
       "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
       "anchor": "读档后不许再挂着上一个画面的立绘节点/实例槽",
-      "note": "★守卫"
+      "note": "★守卫",
+      "line": 55
     }
   ],
   "links": {
@@ -57,6 +61,10 @@
     {
       "at": "2026-09-20",
       "what": "done：l2dResetHost + 装载点调用 + 一行日志；守卫 test/slot-load-l2d-reset.test.ts(2)；E4 截图归档 evidence/（after-l2d-fix-*）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

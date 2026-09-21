@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 
 import { newSceneState } from '../src/renderer/scene/state.js';
 import { scClearTransitions, scSetTransition, scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
+import { scPoolPending, scSetVertexColorAlpha } from '../src/renderer/scene/ops.js';
 import { scSnapshot } from '../src/renderer/scene/snapshot.js';
 import { sceneNeedsRender } from '../src/renderer/scene/ops.js';
 import {
@@ -126,6 +127,61 @@ test('★类别 3 的四通道按 t 线性插值（取整）、到期用终值',
   assert.deepEqual(s.render4.transitionRuntime.get(3)!.channels, [50, 60, 70, 80], '中段 = 线性取整');
   scTransitionTick(s, 1000);
   assert.deepEqual(s.render4.transitionRuntime.get(3)?.channels ?? [100, 110, 120, 130], [100, 110, 120, 130], '到期用终值');
+});
+
+test('★★T-0091 G2：转场到期那帧**另有 mesh 窗在跑** ⇒ 表不能清（门 = 全场景 `Scene+46516`）', () => {
+  // 引擎 raw 136840-136841（同门第二处 raw 137181）：`if ( !Scene+46516 ) sub_4A9BE0(Scene+1048)`。
+  // `46516` 不是"还有没有转场"，而是**全场景**池挂起位（mesh 路径 raw 133528 也置它）
+  // ⇒ 转场自己到期、别的窗还在跑时，死记录必须**保留**。
+  const s = newSceneState();
+  s.render4.transitions.set(7, fadeRecord(0, 100)); // start 锁存 0 ⇒ 100 ms 到期
+  scSetVertexColorAlpha(s, 0x3001, 0, 1000, 255, 0xffffff); // 同一个场景里再起一个 1000 ms 的 mesh 颜色窗
+  scTransitionTick(s, 0);
+  assert.equal(s.render4.transitions.size, 1, '起窗那一帧两者都在');
+
+  const r = scTransitionTick(s, 100, false, () => scPoolPending(s, 100));
+  assert.equal(r.active.length, 0, '转场自己确实到期了（active 为空）');
+  assert.equal(scPoolPending(s, 100), true, 'mesh 窗还在跑 ⇒ 池挂起位为 1（raw 133528）');
+  assert.equal(r.cleared, false, '★门错位就会在这里清表 —— engine 不清（46516 非 0）');
+  assert.equal(s.render4.transitions.size, 1, '死记录保留到"全场景都不在途"为止');
+  assert.equal(s.render4.transitionRuntime.get(7)!.start, 0, '运行期锁存仍在（没被清）');
+
+  // mesh 窗也走完 ⇒ 下一帧才清（同一个门，另一半）
+  const r2 = scTransitionTick(s, 1100, false, () => scPoolPending(s, 1100));
+  assert.equal(scPoolPending(s, 1100), false, '1000 ms mesh 窗已结束');
+  assert.equal(r2.cleared, true, '全场景池挂起为 0 ⇒ 清表（raw 136840）');
+  assert.equal(s.render4.transitions.size, 0);
+
+  // ★判别力对照：同一形态、探针缺省（= 旧口径"只看转场自己"）⇒ 那一帧就把表清了
+  const s0 = newSceneState();
+  s0.render4.transitions.set(7, fadeRecord(0, 100));
+  scSetVertexColorAlpha(s0, 0x3001, 0, 1000, 255, 0xffffff);
+  scTransitionTick(s0, 0);
+  assert.equal(
+    scTransitionTick(s0, 100).cleared,
+    true,
+    '旧口径（不注入池挂起探针）在同一帧清表 ⇒ 上面那条断言不是"恰好为真"',
+  );
+});
+
+test('★T-0091 G1：`freeze`（`Scene+46512`）⇒ 转场窗当帧到期，而不是按墙钟跑', () => {
+  // 引擎 `sub_4B06D0` 三处：raw 134941 / 135806 / 136182 的 `… || *(Scene+46512) == 1` ⇒ 收尾。
+  // ★这条同时钉住 `scTransitionTick` 把 freeze 透给了 `scTransitionWindow` 的第 4 参
+  //   （此前那里硬编码 `false`，见 `transition.ts` 的旧形式注释）。
+  const s = newSceneState();
+  s.render4.transitions.set(2, fadeRecord(0, 10_000)); // 10 s，500 ms 时绝不该到期
+  scTransitionTick(s, 0);
+  assert.equal(scTransitionsPending(s), true, '起窗那一帧在途');
+  const r = scTransitionTick(s, 500, true); // 冻结
+  assert.equal(r.active.length, 0, '★freeze ⇒ 当帧到期');
+  assert.equal(r.finishedAny, true, '到期那一帧类别 3 仍算终值通道（raw 135806-135812）');
+  assert.equal(scTransitionsPending(s), false);
+
+  // 对照：同一个 500 ms、**不**冻结 ⇒ 仍在途（证明上面不是"恰好到期"）
+  const s2 = newSceneState();
+  s2.render4.transitions.set(2, fadeRecord(0, 10_000));
+  scTransitionTick(s2, 0);
+  assert.equal(scTransitionTick(s2, 500).active.length, 1, '不冻结时 500 ms 仍在窗内');
 });
 
 test('★有活动转场窗 ⇒ `sceneNeedsRender` 恒真（引擎 `Scene+46508` ← raw 136718-136719）', () => {

@@ -15,42 +15,50 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "return sub_453A60(_this + 107447, v2);",
-      "note": "0xCC（raw 30325）：把 op1 交给 `Engine+107447` 的节流对象 ⇒ 它写的就是 0xCD 读的那一格"
+      "note": "0xCC（raw 30325）：把 op1 交给 `Engine+107447` 的节流对象 ⇒ 它写的就是 0xCD 读的那一格",
+      "line": 30325
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[6] = result;",
-      "note": "`sub_453A60`（raw 66110）：`result = a2 ? a2 : 1; _this[6] = result` —— 槽 0 ⇒ 间隔 1ms（不是 0）"
+      "note": "`sub_453A60`（raw 66110）：`result = a2 ? a2 : 1; _this[6] = result` —— 槽 0 ⇒ 间隔 1ms（不是 0）",
+      "line": 66110
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "if ( *(_DWORD *)(_this + 429812) <= v3",
-      "note": "0xCD（raw 25842）：这一格就是推进间隔；`429812` = `(107447 + 6) * 4`"
+      "note": "0xCD（raw 25842）：这一格就是推进间隔；`429812` = `(107447 + 6) * 4`",
+      "line": 25842
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "advanceThrottle = 0;",
-      "note": "现状：恒 0（注释已改成「引擎语义 = 最后一次 mouse-callback 的 op1；emulator 是已知偏差」）"
+      "note": "现状：恒 0（注释已改成「引擎语义 = 最后一次 mouse-callback 的 op1；emulator 是已知偏差」）",
+      "line": 150
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "c.e.input.mouseSlot = slot;",
-      "note": "修复点：这里要同时写 `advanceThrottle`"
+      "note": "修复点：这里要同时写 `advanceThrottle`",
+      "line": 91
     },
     {
       "file": "app/amayui-emulator/test/title-exit.test.ts",
       "anchor": "rt.clock += 16;",
-      "note": "冻结时钟的典型：只在 FRAME_OPS 上推进 ⇒ 上节流后相邻 `get-input-type` 落在同一窗口内、派发消失"
+      "note": "冻结时钟的典型：只在 FRAME_OPS 上推进 ⇒ 上节流后相邻 `get-input-type` 落在同一窗口内、派发消失",
+      "line": 66
     },
     {
       "file": "app/amayui-emulator/test/route-dispatch.test.ts",
       "anchor": "const h = OPS.get(0xcc)!;",
-      "note": "判据⑦b 直接调 `OPS.get(0xcd)`：`nowMs` 与 `lastAdvance` 都是 0，一上 16ms 节流就不再抛「Depth が不正です」"
+      "note": "判据⑦b 直接调 `OPS.get(0xcd)`：`nowMs` 与 `lastAdvance` 都是 0，一上 16ms 节流就不再抛「Depth が不正です」",
+      "line": 271
     },
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "节流间隔 = 最后一次",
-      "note": "文档已按引擎事实改写，并把 emulator 现状标成「已知偏差，见 tickets/T-0046」——本单落地后要改成已实现"
+      "note": "文档已按引擎事实改写，并把 emulator 现状标成「已知偏差，见 tickets/T-0046」——本单落地后要改成已实现",
+      "line": 188
     }
   ],
   "tests": [
@@ -83,6 +91,10 @@
     {
       "at": "2026-09-16",
       "what": "open → done —— open → done：`op_mouse_callback`(0xCC) 现把 op1 写进 `InputManager.advanceThrottle`（`slot>0?slot:1`，对齐 `sub_453A60`）。★操作数是十六进制 ⇒ 全语料 50 个登记脚本分两档：`10`=0x10=**16ms**（29 个：TITLE/CHARMEDIT/SAVE/CONFIG1/ALLMAP/HISTORY…）、`32`=0x32=**50ms**（22 个：GAMESTART/ROOM/MMODE/FIELD/SHOP…）。连带修正（只让虚拟时钟走、断言不动）：title-exit 的 run() 把 sleep n 计入虚拟时间、route-dispatch ⑦b 推 nowMs 过窗并断言 advanceThrottle===0x10、input.test.ts 的 CHARMEDIT 用例 1ms/指令。实测失败面与预期一致（title-exit×2 + route-dispatch ⑦b + CHARMEDIT 用例），另修掉一处**与本单无关**的悬空锚点（T-0035 的 docs/font-build.md 已被 6cf11a79 的旧 docs 清理删除 → 锚点改指 tickets/T-0035/notes.md 同段）。npm run verify 全绿；文档/台账已从「已知偏差」改成「已建模」。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

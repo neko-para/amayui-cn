@@ -27,8 +27,13 @@ export interface FrameHost {
    * **推进模型到本帧时钟**（引擎：合成时按 `CalcDiffuse`/窗状态求值 ⇒ 窗的相位与收尾在"这一帧的时间"上推进）。
    * 驱动在**每帧末**调一次，参数是本帧时钟。headless 实现（`scAdvance`）；pixi 目前把推进放在 presenter 里
    * （`tickets/T-0008` 的 D3 要在 B4 把它拆出来，与这里对齐）。
+   *
+   * `opts.freeze` = 引擎 `Scene+46512`（强制冻结 / 立即收尾；`tickets/T-0091` 的 G1）：
+   * 为真时所有 A 层动画窗 + 转场窗**当帧跳到终态**（raw 117449 / 133517 / 134941），
+   * 而不是按墙钟继续跑。驱动每帧末传 `e.sceneFreeze`（置位者 `sub_407EA0` raw 12796）。
+   * ★不给（或给 false）时行为与旧版一致 ⇒ 只实现 `advanceModel(nowMs)` 的宿主仍然合法。
    */
-  advanceModel?(nowMs: number): void;
+  advanceModel?(nowMs: number, opts?: { freeze?: boolean }): void;
   /** 合成一帧（渲染）。headless 无（它只推进模型 + 出快照）。★可以是异步的：Electron 在合成前要等纹理屏障。 */
   present?(): void | Promise<void>;
   /** "这一帧该不该合成"。headless 无。 */

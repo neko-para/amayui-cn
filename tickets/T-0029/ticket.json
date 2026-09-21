@@ -27,13 +27,13 @@
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "bind(imgid: number, slot: number): void {",
-      "line": 176,
+      "line": 223,
       "note": "正统按需路径：缓存未命中即触发装载"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "void this.preloadImage(imgid).then(() => {",
-      "line": 185,
+      "line": 237,
       "note": "未命中时的异步装载（IPC 取图 + 解码）"
     },
     {
@@ -65,6 +65,10 @@
     {
       "at": "2026-09-17",
       "what": "刷新 texturesIdle 证据行号（T-0054 在 pixiBackend.ts 插入代码导致漂移）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

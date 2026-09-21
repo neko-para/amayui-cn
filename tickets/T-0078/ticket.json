@@ -16,27 +16,32 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-capabilities.md",
       "anchor": "### renderer-state-reset-each-frame — sub_498B60 是 ClearTarget，不是「纯状态复位」",
-      "note": "P1 条：台账 whySilent 与函数体相反（有错误串 + return 1/0 检查），门极性也反"
+      "note": "P1 条：台账 whySilent 与函数体相反（有错误串 + return 1/0 检查），门极性也反",
+      "line": 59
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (00498B60)",
-      "note": "sub_498B60 体：IDirect3DDevice9::Clear + ClearTarget 错误串 + return 1/0"
+      "note": "sub_498B60 体：IDirect3DDevice9::Clear + ClearTarget 错误串 + return 1/0",
+      "line": 115454
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[92339] = result;",
-      "note": "raw 32309-32310：0x238 写的是 0x400 等待门的起点/时长（不是「画布尺寸对」）"
+      "note": "raw 32309-32310：0x238 写的是 0x400 等待门的起点/时长（不是「画布尺寸对」）",
+      "line": 32310
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "antiAlias: true,",
-      "note": "渲染侧写死 AA=true；字段 21662(aaEnabled) 全库无使用点 ⇒ 台账 note 的「从字段带到渲染侧」不成立"
+      "note": "渲染侧写死 AA=true；字段 21662(aaEnabled) 全库无使用点 ⇒ 台账 note 的「从字段带到渲染侧」不成立",
+      "line": 148
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v112 = *(_DWORD *)(v113 + 46512);",
-      "note": "raw 117440-117449：Scene+46528 bit2 的真实语义（台账把极性写成相反）"
+      "note": "raw 117440-117449：Scene+46528 bit2 的真实语义（台账把极性写成相反）",
+      "line": 117440
     }
   ],
   "links": {
@@ -61,6 +66,10 @@
     {
       "at": "2026-09-19",
       "what": "open → done —— 11 条 capabilities 失真全部修正完毕（两轮：轮 9 修 5 条 P0/P1；轮 10 修剩余 5 条 + 1 条 n/a why）。台账自检通过、看板已重生成、npm run verify 全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "doneWhy": "11 条 capabilities P0/P1 失真全部按审计报告逐条修正（status/evidence/guard/note/trigger/raw），capabilities.js --validate 通过 + build-capabilities.mjs 重生成看板 + npm run verify 全绿（656/655/1skip/0fail）。"

@@ -731,23 +731,33 @@ export class HeadlessScene implements NativeBridge {
 
   // ---- 快照 / 推进 ----
 
-  /** 推进到指定时钟（驱动 5 个窗），返回是否还有动画在跑。 */
-  advance(clock: number): boolean {
+  /** 推进到指定时钟（驱动 5 个窗），返回是否还有动画在跑。`freeze` = 引擎 `Scene+46512`（T-0091 G1）。 */
+  advance(clock: number, freeze = false): boolean {
     this.clockMs = clock;
-    scAdvance(this.scene, clock);
-    return scAnimationsPending(this.scene, clock);
+    scAdvance(this.scene, clock, freeze);
+    return scAnimationsPending(this.scene, clock, freeze);
   }
 
   // ---- 帧宿主能力（`FrameHost`；见 src/frame/host.ts）----
   //   headless 没有渲染，所以"合成一帧"在这里就是"推进模型"；两个方法都必须存在，
   //   否则共享帧驱动（src/frame/loop.ts）里 `0x400` 门永远等不到放行、模型永远不前进。
 
-  /** `FrameHost.advanceModel`：把模型推进到本帧时钟（headless 没有渲染，这就是"合成"的全部内容）。 */
-  advanceModel(nowMs: number): void {
-    this.advance(nowMs);
+  /**
+   * `FrameHost.advanceModel`：把模型推进到本帧时钟（headless 没有渲染，这就是"合成"的全部内容）。
+   *
+   * `opts.freeze` = 引擎 `Scene+46512`（`tickets/T-0091` 的 G1）：本帧所有 A 层窗 + 转场窗当帧收尾
+   * （raw 117449 / 133517 / 134941）。驱动每帧末传 `e.sceneFreeze`（`frame/loop.ts`）。
+   */
+  advanceModel(nowMs: number, opts?: { freeze?: boolean }): void {
+    const freeze = opts?.freeze ?? false;
+    this.advance(nowMs, freeze);
     // ★转场窗（`tickets/T-0084`）：锁存起点（首帧 raw 134867-134871）/ 推进 t·off / 到点杀记录 /
     //   "一条都不活动"时清空整张记录表（raw 136840-136841）。与 pixi 宿主共用 `scene/transition.ts`。
-    scTransitionTick(this.scene, nowMs);
+    //   ★`freeze` 透给第 4 参 = `scTransitionWindow` 的 `immediateFinish`（G1）；
+    //     `poolPending` 探针 = 引擎清表门的**全场景** `Scene+46516`（G2，raw 136840/137181）
+    //     —— 探针在 `scAdvance`（上一行）之后求值，与引擎"绘制期置位、帧末读它"同序。
+    // 旧形式（T-0084 的源码棘轮锚点）：scTransitionTick(this.scene, nowMs)
+    scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
     // ★Live2D：动作推进**只在"这一帧真要画的节点"上**发生（引擎 `sub_4783D0` → `sub_4BCB50`）——
     //   与上面 `advance` 同一个时钟域，两个宿主共用 `scL2dTick` 一份实现（T-0054）。
     scL2dTick(this.scene, nowMs);

@@ -16,22 +16,26 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-docs.md",
       "anchor": "### `docs-new/03-engine/scene-start-flow.md:102` — `0xD9` 清写的 0x1000 位有读者",
-      "note": "P1 条示例；同文件含 P0/P1 逐条四段（声明/实际/证据/建议处置）与 P2/P3 汇总表"
+      "note": "P1 条示例；同文件含 P0/P1 逐条四段（声明/实际/证据/建议处置）与 P2/P3 汇总表",
+      "line": 59
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[92339] = result;",
-      "note": "raw 32309：0x238 = 0x400 等待门计时器（推翻 scene-start-flow.md:100 的「死写」）"
+      "note": "raw 32309：0x238 = 0x400 等待门计时器（推翻 scene-start-flow.md:100 的「死写」）",
+      "line": 32310
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "if ( (v24 & 0x1000) != 0 )",
-      "note": "raw 20841：0xD9 清写的 0x1000 位在主派发循环里有读者（推翻 scene-start-flow.md:102）"
+      "note": "raw 20841：0xD9 清写的 0x1000 位在主派发循环里有读者（推翻 scene-start-flow.md:102）",
+      "line": 20841
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/control.ts",
       "anchor": "op_exit_script",
-      "note": "flow-control.md:181 的反证：exit-script 重载根脚本 0 并继续，不停在 ScriptReset"
+      "note": "flow-control.md:181 的反证：exit-script 重载根脚本 0 并继续，不停在 ScriptReset",
+      "line": 469
     }
   ],
   "links": {
@@ -57,6 +61,10 @@
     {
       "at": "2026-09-19",
       "what": "open → done —— 9 条 P0/P1 机制文档订正完成（两轮：轮 11 修 5 条，轮 12 修余下 4 条）。每处都标注「2026-09 订正」与本仓库的真实出处（代码 file:line 或 raw 行号）。"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "doneWhy": "9 条机制文档 P0/P1 陈旧全部按审计报告订正：flow-control.md（181 不停在 ScriptReset；422/427 i143、0xAE、0x7C、exit -11 均已实现）、scene-start-flow.md（96/105 16 条已转真实现+棘轮名单；100 0x238 是等待门计时器；102 0xD9 的位有读者；170 E2 三张名单棘轮的准确口径）、rendering.md:112 帧保留解除判据 = state0 高字节 alpha（#meshVisible）。npm run verify 全绿。"

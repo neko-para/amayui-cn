@@ -18,37 +18,44 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "②c ★**装载点不整批清绘制项**",
-      "note": "★2026-09 轮 5 订正：注释已按**新事实**更正 —— 不是「27 callee / 两段配置门」那套结论，而是「清容器是 `sub_410160` 行内语句（raw 19810-19820）+ 还原 body 末段的 740 B 清单（raw 19822-19832）」；`save-data.md` §7.10 第 4 行同步重写"
+      "note": "★2026-09 轮 5 订正：注释已按**新事实**更正 —— 不是「27 callee / 两段配置门」那套结论，而是「清容器是 `sub_410160` 行内语句（raw 19810-19820）+ 还原 body 末段的 740 B 清单（raw 19822-19832）」；`save-data.md` §7.10 第 4 行同步重写",
+      "line": 234
     },
     {
       "file": "docs-new/03-engine/save-data.md",
       "anchor": "装载路径会清绘制容器",
-      "note": "§7.10 偏离表第 4 行（2026-09 轮 5 重写）：引擎在装载点**确实**清绘制项容器 —— 但是 sub_410160 行内 raw 19810-19820 做的，并从 body 末段还原 740 B 记录（raw 19822-19832）；旧「27 个被调函数无清容器」只说明「清容器不在被调函数里」"
+      "note": "§7.10 偏离表第 4 行（2026-09 轮 5 重写）：引擎在装载点**确实**清绘制项容器 —— 但是 sub_410160 行内 raw 19810-19820 做的，并从 body 末段还原 740 B 记录（raw 19822-19832）；旧「27 个被调函数无清容器」只说明「清容器不在被调函数里」",
+      "line": 637
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_49E980((_DWORD *)(a1 + 322832), i);",
-      "note": "raw 19381：装载路径里唯一的「整批释放 1000 个槽对象」，门在上一行（CreateObject&2 && AutoFreeTexture&2）"
+      "note": "raw 19381：装载路径里唯一的「整批释放 1000 个槽对象」，门在上一行（CreateObject&2 && AutoFreeTexture&2）",
+      "line": 19381
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_434D00(v2, aSetAutofreetex, &v13);",
-      "note": "raw 111742：默认值 0 ⇒ 上面那道门恒为假"
+      "note": "raw 111742：默认值 0 ⇒ 上面那道门恒为假",
+      "line": 111745
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_403EF0((_DWORD *)(a1 + 51904));",
-      "note": "raw 19914：装载路径里唯一的屏幕级复位 = 输出显示态（另一个是 a1+21976）"
+      "note": "raw 19914：装载路径里唯一的屏幕级复位 = 输出显示态（另一个是 a1+21976）",
+      "line": 19467
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v5[v30 + 10614] = (int)v19;",
-      "note": "raw 119748：`sub_4A3800` 把槽对象指针写进 Scene[slot+10614]；绘制期读它 ⇒ 「重建槽对象」才是画面回来的机制"
+      "note": "raw 119748：`sub_4A3800` 把槽对象指针写进 Scene[slot+10614]；绘制期读它 ⇒ 「重建槽对象」才是画面回来的机制",
+      "line": 119748
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "char String2[] = \"CALLBACK_LOAD.BIN\"; // idb",
-      "note": "raw 4342：装载末尾 `sub_455000(Engine+680092, String2)` + `sub_40ED40` 装进帧 0 的确定是 CALLBACK_LOAD.BIN（＝加载进度回调，其 12 处 draw-texture 用的都是槽 0x11）"
+      "note": "raw 4342：装载末尾 `sub_455000(Engine+680092, String2)` + `sub_40ED40` 装进帧 0 的确定是 CALLBACK_LOAD.BIN（＝加载进度回调，其 12 处 draw-texture 用的都是槽 0x11）",
+      "line": 4342
     }
   ],
   "links": {
@@ -73,6 +80,10 @@
     {
       "at": "2026-09-20",
       "what": "done：复核完成，结论与开票时的假设相反 —— 引擎在装载点**确实**清绘制项容器（sub_410160 行内 raw 19810-19820），并从 body 末段还原 740B 记录（raw 19822-19832）；旧结论「27 个被调函数无清容器」只说明了「清容器不在被调函数里」。save-data.md §7.10 第 4 行已重写"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -17,12 +17,14 @@
     {
       "file": "app/amayui-emulator/src/vm/saveData.ts",
       "anchor": "floorBytes",
-      "note": "自校验窗口改为 4*(v34-1)..4*v34"
+      "note": "自校验窗口改为 4*(v34-1)..4*v34",
+      "line": 516
     },
     {
       "file": "app/amayui-emulator/test/save-data.test.ts",
       "anchor": "Math.floor(recBytes / 4) + 1",
-      "note": "合成载荷按写侧整除口径造 trailerDwords"
+      "note": "合成载荷按写侧整除口径造 trailerDwords",
+      "line": 203
     },
     {
       "file": "docs-new/03-engine/save-data.md",
@@ -47,6 +49,10 @@
     {
       "at": "2026-09-18",
       "what": "open → done —— 窗口改为 4*(v34-1)..4*v34；守卫 save-data.test.ts + gallery-bgm-list.test.ts（真存档 E4）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

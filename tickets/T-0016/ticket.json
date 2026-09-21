@@ -46,17 +46,20 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "!m.revealArmed(w)",
-      "note": "修复点：门指令只在「这一页的内容还没武装过显现」时启动逐字（重跑即幂等）"
+      "note": "修复点：门指令只在「这一页的内容还没武装过显现」时启动逐字（重跑即幂等）",
+      "line": 562
     },
     {
       "file": "app/amayui-emulator/src/vm/msgwin.ts",
       "anchor": "revealArmed(win: number): boolean",
-      "note": "内容版本号 + 武装记账（appendText/addRuby/endLine/beginNewMessage 各 +1；finishPage 同键一页只记一次）"
+      "note": "内容版本号 + 武装记账（appendText/addRuby/endLine/beginNewMessage 各 +1；finishPage 同键一页只记一次）",
+      "line": 446
     },
     {
       "file": "docs-new/03-engine/input-system.md",
       "anchor": "14.5b",
-      "note": "常态行为：派发 label 的返回点 = 门指令（ret 回到门指令重跑）—— 门指令必须幂等"
+      "note": "常态行为：派发 label 的返回点 = 门指令（ret 回到门指令重跑）—— 门指令必须幂等",
+      "line": 378
     }
   ],
   "links": {
@@ -84,6 +87,10 @@
     },
     {
       "at": "2026-09-14",
+      "what": "改字段：evidence"
+    },
+    {
+      "at": "2026-09-21",
       "what": "改字段：evidence"
     }
   ],

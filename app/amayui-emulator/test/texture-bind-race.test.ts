@@ -144,3 +144,51 @@ test('T-0102 ⑤同一 imgid 重复 bind 到不同槽：两次回写互不干扰
   assert.equal(tc.slotTex.get(10), tex, '槽 10 的回写应成立（它没被重建/改绑）');
   assert.equal(tc.slotTex.get(11), tex, '槽 11 同样成立');
 });
+
+/**
+ * ★★`T-0102` 轮 9（白底的机制，见 `tickets/T-0102/changes.md` §「轮 9 白底」与
+ * `tickets/T-0102/white-report` 那份只读取证的结论）：**迟到的纹理到货必须让下一帧重新合成**。
+ *
+ * 为什么：常规 `TextureCache` 此前**没有**到货通知（只有 L2D 纹理库有）⇒ 首次 `set-texture`
+ * 那一帧 `slotTex` 还没有图，`draw-texture` 画的是 `presenter` 的**白占位块**
+ * （`Texture.WHITE` + tint 被 `itemColor` 覆盖成 `Item.from` = 白）；等图像真的到了，
+ * 因为没人置脏、而产品帧档是 `present: 'needsRender'`，**白帧就留在屏上** ——
+ * 直到玩家做别的操作（开合侧边栏会重跑同一段 `set-texture`，那时命中 `#imgCache` ⇒ 同步 ⇒ 才对）。
+ */
+test('★T-0102 轮 9：迟到到货必须通知 onReady（宿主据此置脏 ⇒ 白占位块最多存活一帧）', async () => {
+  let ready = 0;
+  const tc = new GatedCache(
+    () => {},
+    () => {
+      ready++;
+    },
+  );
+  const g = tc.prepare(0x77, 'late-bg');
+  const tex = { name: 'late-bg' } as unknown as Texture;
+
+  tc.bind(0x77, 42);
+  assert.equal(ready, 0, '载入还没完成时不该通知');
+  g.open(tex as unknown as FakeTex);
+  await tick();
+
+  assert.equal(tc.slotTex.get(42), tex, '前提：纹理确实落盘了');
+  assert.equal(ready, 1, '★到货必须通知一次（否则白帧不会被重新合成 ⇒ 用户实测的"刷新才对"）');
+});
+
+test('★T-0102 轮 9：回写被丢弃时**不**通知 onReady（该槽的可用性没有变化）', async () => {
+  let ready = 0;
+  const tc = new GatedCache(
+    () => {},
+    () => {
+      ready++;
+    },
+  );
+  const g = tc.prepare(0x78, 'stale');
+  tc.bind(0x78, 43);
+  tc.create(43, 16, 16, 0); // 脚本后来建了自己的表面 ⇒ 这次回写会被丢弃
+  g.open({ name: 'stale' } as unknown as FakeTex);
+  await tick();
+
+  assert.equal(tc.slotTex.has(43), false, '前提：回写被丢弃');
+  assert.equal(ready, 0, '丢弃 ≠ 到货 ⇒ 不得通知（否则会无谓地多合成一帧）');
+});

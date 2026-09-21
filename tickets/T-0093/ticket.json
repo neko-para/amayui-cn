@@ -15,12 +15,14 @@
     {
       "file": "analysis/opcode-gaps.json",
       "anchor": "\"mnemonic\": \"i32c\"",
-      "note": "SETWEATHER 族之一（0x32C）的 deferred 条目 —— 本票要把这一族的处置改成 engine-internal"
+      "note": "SETWEATHER 族之一（0x32C）的 deferred 条目 —— 本票要把这一族的处置改成 engine-internal",
+      "line": 455
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
       "anchor": "[0xaf, op_engine_internal]",
-      "note": "同族已登记的「有据 no-op」先例（0x324/0x325/0x326 就在这个表里）"
+      "note": "同族已登记的「有据 no-op」先例（0x324/0x325/0x326 就在这个表里）",
+      "line": 287
     },
     {
       "file": "src/SETWEATHER.txt",
@@ -63,6 +65,10 @@
     {
       "at": "2026-09-20",
       "what": "doing → done —— ①②两半全部落地：①半（SETWEATHER 族 5 条 engine-internal no-op）轮 6；②半（0x147/0x2f2 纯几何命中）轮 7 —— 新增 src/vm/handlers/region-hittest.ts + 注册进 OPS，守卫 test/op-147-2f2-region-hittest.test.ts（13 条）；★推翻筛体「op4/op5 顺带写回」（源数组只读，唯一写回是 op1）+ 由全库仅有两个调用点反证 op4/op5 是**池中连续槽的起始**；缺口台账 deferred 24→22、已实现 34→36；opcode-table 两行补全 + opcodes.json 重建；npm run verify = 873/872 pass/0 fail、死写 0；四份台账 --validate 绿"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

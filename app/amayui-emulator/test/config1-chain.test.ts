@@ -357,3 +357,36 @@ test('★CONFIG1 滚动条：滚到底后切分类，滚动位置必须随新页
     `切页后拇指不得溢出轨道：top=${switched!.thumbTop} h=${switched!.thumbH}`,
   );
 });
+
+/**
+ * ★`tickets/T-0102` 的核心判据（此前**没有**这条守卫）：**「回 ADV」重派生真的会改全局文字色**。
+ *
+ * 引擎的「退出设置页 → 回 ADV」路径 = `src/CONFIG.txt:225-269`：按 `3f37` 重派生 `14acda`
+ * （`3f37 < 0` ⇒ 旁白 ⇒ 0）→ `call label_00001ae8`（重算 `f807b` 并 `i076/i077` 应用）→ `i071 2` → `:269` 的 `i082`。
+ * 用户实测的紫色残留就发生在这条路上，所以必须钉住它**在 emulator 里确实会生效**。
+ *
+ * 本用例用 `advReturnProbe`（真实 `install/CONFIG.BIN` + 角色设定页 + 强制退出）跑两组：
+ *  - **旁白**（`3f37 = -1`）⇒ `14acda = 0`、`Engine[21664]` 必须变回 `#ffffff`、且 `i082` 被执行；
+ *  - **门没开**（`1397 = 0`）⇒ `CONFIG.txt:225` 的 `local10 = ((g0==1)||(g0==6)) && (1397==1)` 为 0
+ *    ⇒ 整块（含 `i082`）被跳过、全局**保持**进页前的紫。
+ *
+ * ★为什么值得一条：这两条一起把「重派生算错」这条曾经的假设**排除**掉（前一组证明脚本逻辑是对的、
+ * 后一组给出"看起来没修"的可复现形态），并让 `T-0104`（`i082` 只是 stub）成为剩下的主要候选。
+ */
+test('★T-0102：退出设置页的重派生会改全局文字色（旁白 ⇒ #ffffff；门没开 ⇒ 保持原色且不执行 i082）', async () => {
+  const narration = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g1397: 1, msg: -1 } });
+  const a = narration.advReturn;
+  assert.ok(a, '应给出 advReturn 探针结果');
+  assert.equal(a!.before.fill, '#b690ff', '前提：角色设定页跑完时全局被留在紫色（本机可复现）');
+  assert.equal(a!.before.c14acda, 12, '前提：进退出路径前的角色号是角色页最后一行那个');
+  assert.ok(a!.sawI082, '旁白路径必须执行到 CONFIG.txt:269 的 i082（= 用户报的那条未知指令）');
+  assert.equal(a!.after.c14acda, 0, '旁白（3f37 < 0）必须把角色号重派生为 0');
+  assert.equal(a!.after.fill, '#ffffff', '旁白 ⇒ adcd[0] = 白 ⇒ Engine[21664] 必须从紫变回 #ffffff');
+
+  // 门没开：`1397 != 1` ⇒ 整块被跳过（这正是"退出后仍紫"的一种可复现形态）
+  const gated = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g1397: 0, msg: -1 } });
+  const g = gated.advReturn!;
+  assert.equal(g.sawI082, false, '1397 != 1 ⇒ CONFIG.txt:225 的门把整块跳过 ⇒ i082 不得被执行');
+  assert.equal(g.after.fill, '#b690ff', '门没开 ⇒ 全局保持进页前的紫（记下这个形态，别当成"重派生算错"）');
+  assert.equal(g.after.c14acda, 12, '门没开 ⇒ 角色号也不得被重派生');
+});

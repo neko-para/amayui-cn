@@ -28,32 +28,38 @@
     {
       "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
       "anchor": "### op-2-01 — 0x2E9 未实现，ADV 时间基准字段永不写入",
-      "note": "P0 首条：0x2E9 体写 Engine[122464]（字节 489856），emulator 全库无 0x2e9/745/122464"
+      "note": "P0 首条：0x2E9 体写 Engine[122464]（字节 489856），emulator 全库无 0x2e9/745/122464",
+      "line": 50
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[122464] = result;",
-      "note": "raw 33586：0x2E9 的体（唯一写点）；该字段另有 6 处读取点（20392/20420/28569/28579/13714/13720）与 1 处复位（17987）"
+      "note": "raw 33586：0x2E9 的体（唯一写点）；该字段另有 6 处读取点（20392/20420/28569/28579/13714/13720）与 1 处复位（17987）",
+      "line": 33586
     },
     {
       "file": "src/$1$SC0330.txt",
       "anchor": "i2e9 0",
-      "note": "语料 480 处/330 脚本；ADV 主流程站点"
+      "note": "语料 480 处/330 脚本；ADV 主流程站点",
+      "line": 18204
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "if ( !sub_4AA060((int)(_this + 80708), v2, &v6, (int)&v5, (int)&v4) )",
-      "note": "raw 39982：0x228 getter 体（op1=成功标志、op3/4/5=三个 float）"
+      "note": "raw 39982：0x228 getter 体（op1=成功标志、op3/4/5=三个 float）",
+      "line": 39982
     },
     {
       "file": "src/SC0500.txt",
       "anchor": "i228 (global-int 1396) (global-int f8025) (global-int f803b) (global-int f803c) (global-int f803d)",
-      "note": "语料 1097 处；下一行 `eq` 直接读 op1 槽 ⇒ 未实现时分支走错"
+      "note": "语料 1097 处；下一行 `eq` 直接读 op1 槽 ⇒ 未实现时分支走错",
+      "line": 1358
     },
     {
       "file": "src/STAGERAID.txt",
       "anchor": "i025 1 2 28",
-      "note": "0x025 的 4 处站点（STAGERAID）；体 raw 27393-27430 还会刷输入"
+      "note": "0x025 的 4 处站点（STAGERAID）；体 raw 27393-27430 还会刷输入",
+      "line": 677
     },
     {
       "file": "src/SETWEATHER.txt",
@@ -63,7 +69,8 @@
     {
       "file": "src/HISTORY.txt",
       "anchor": "i1d1 (local-int 4a9) (local-int 94) 40 0 0",
-      "note": "0x1D1：HISTORY 回看的数据源（体 raw 29354-29371 调 sub_4675A0 的 GDI 文本族）"
+      "note": "0x1D1：HISTORY 回看的数据源（体 raw 29354-29371 调 sub_4675A0 的 GDI 文本族）",
+      "line": 1314
     },
     {
       "file": "src/INITREGINPUT.txt",
@@ -73,7 +80,8 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (00423EC0)",
-      "note": "0x222 的 handler 体（尾调用 sub_4B4460）；语料 10 处，台账误标 n/a-known"
+      "note": "0x222 的 handler 体（尾调用 sub_4B4460）；语料 10 处，台账误标 n/a-known",
+      "line": 31924
     }
   ],
   "links": {
@@ -110,6 +118,10 @@
     {
       "at": "2026-09-20",
       "what": "改字段：history"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -13,12 +13,14 @@
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "imageReload",
-      "note": "真槽 body **带**绘制项清单：这里解析成 {size:740, count, ids}（ids = handle），但 740 B 记录被丢弃且无消费者 ⇒ 这就是本票的根因（订正原 evidence 的「没有绘制项」）"
+      "note": "真槽 body **带**绘制项清单：这里解析成 {size:740, count, ids}（ids = handle），但 740 B 记录被丢弃且无消费者 ⇒ 这就是本票的根因（订正原 evidence 的「没有绘制项」）",
+      "line": 188
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-load-drawitem-clear-and-restore",
-      "note": "第二层条目（源码级）：装载点清 Scene+0x408 + 从 body 还原清单"
+      "note": "第二层条目（源码级）：装载点清 Scene+0x408 + 从 body 还原清单",
+      "line": 3224
     },
     {
       "file": "src/SN0000.txt",
@@ -52,6 +54,10 @@
     {
       "at": "2026-09-20",
       "what": "done：真槽 body 的 740B 绘制项清单被解析并还原（engineDrawItem.ts + restoreDrawItems）；真槽 79 解出 69 项（背景 0x18A88/slot 4/BG050ABL + 侧栏 tex 17 + 字格 tex 28）；E4 背景正确出现"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

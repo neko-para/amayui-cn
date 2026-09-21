@@ -30,7 +30,7 @@ import { itemPivotLocal, itemScale } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { parseIni, applyConfigToEngine } from '../engineConfig.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
-import { dec } from '../vm/bits.js';
+import { dec, enc } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
 import { FIELD_MSG_DEFAULT_WIN, FIELD_VERTICAL } from '../vm/engineFieldIds.js';
 
@@ -190,6 +190,8 @@ export interface ChainResult {
   scrollSteps?: ScrollStep[];
   /** 「角色名颜色溢到 ADV 样例窗」回归探针的结果（仅 `previewProbe: true` 时给出）。 */
   previewStyle?: PreviewStyleProbe;
+  /** 「回 ADV 重派生」探针结果（仅 `advReturnProbe: true` 时给出）。 */
+  advReturn?: AdvReturnProbe;
   /** 字体选择器探针结果（仅 `fontPickerProbe: true` 时给出）。 */
   fontPicker?: FontPickerProbe;
   /** 宿主未实现、调用被丢弃的 native 方法（仅 `recordDrops: true` 时给出）。 */
@@ -219,6 +221,55 @@ export interface PreviewStyleProbe {
   liveFills: string[];
   /** 切页前后 win 9 的排版结果是否还在（`false` = 样例被清掉了，断言要相应放宽）。 */
   win9Present: boolean;
+}
+
+/**
+ * **「回 ADV 重派生」探针结果**（`advReturnProbe: true`）。
+ *
+ * 用途（`tickets/T-0102` 丁-2/丁-3）：用户实测「从 ADV 进设置界面、右键退出后回到 ADV，文字颜色仍是
+ * 角色设定页最后一行那种颜色（紫）」，而真机不紫。引擎的「回 ADV」重派生路径是
+ * `src/CONFIG.txt:225-269`：按当前消息号 `3f37` 重派生 `14acda`（旁白归 0）→ `call label_00001ae8`
+ * （`372-407`：`f807b/f807c` 重算 + `i076/i077` 应用）→ `i071 2` → `i082`。
+ *
+ * 本探针把「右键退出」那一跳（设置页把 `12721e` 踢出 `[0,6)` ⇒ `CONFIG.txt:63` 的 `e==0` 分支
+ * ⇒ `label_00000f6c` 回 ADV 路径）走完，并在**每一步前后** dump 关键量，用来区分两条候选：
+ *   1. `14acda` 的重派生**算错**（`52a49c`/`14b0c4`/`14acdc` 三张表或 `3f37` 与引擎不同）；
+ *   2. 这条路径**没跑到**（`i082` 那一笔的效果缺失 = `tickets/T-0104`）。
+ */
+export interface AdvReturnProbe {
+  /** 退出设置页前（角色设定页跑完）：全局填充色 + 重派生相关的全局。 */
+  before: AdvReturnSample;
+  /** 铺完 ADV 语境（`3f38`/`g0`/`1397`/`3f37`）之后、还没触发退出时的采样。 */
+  setup: AdvReturnSample;
+  /** 退出路径跑完后的同一组量。 */
+  after: AdvReturnSample;
+  /** 路径经过的锚点（按执行顺序，去重前的原始序列）——判「有没有跑到」。 */
+  marks: string[];
+  /** 是否观察到 `label_00001ae8` 的应用点（`i076` 在退出路径上被再执行一次）。 */
+  reappliedStyle: boolean;
+  /** 是否观察到 `i082`（= `CONFIG.txt:269`；`tickets/T-0104` 的落点）。 */
+  sawI082: boolean;
+}
+
+/** `AdvReturnProbe` 的一次采样（全部是**解码后**的脚本语义值）。 */
+export interface AdvReturnSample {
+  /** `engineValues[21664]` = `Font+1360` 填充色（`i076` 写；BGR→RGB 已重排）。 */
+  fill: string;
+  /** `engineValues[21665]` = 描边色（`i077` 写）。 */
+  outline: string;
+  /** 脚本全局（全部 `dec()` 过）：`f807b`/`f807c` = 样式实参；`14acda` = 当前角色号；`3f37` = 当前消息号。 */
+  f807b: number;
+  f807c: number;
+  c14acda: number;
+  msg3f37: number;
+  g3f38: number;
+  g0: number;
+  /** 全局 `1397`（`CONFIG.txt:223` 的门：== 1 时 `local10 = 1` ⇒ 整个重派生块被跳过）。 */
+  g1397: number;
+  /** 全局 `3f36`（`CONFIG.txt:207` 的 `ne 3f36 2` 决定走不走 `label_00001144`）。 */
+  g3f36: number;
+  /** 当前脚本名（判"回到 ADV 了没有"）。 */
+  script: string;
 }
 
 export interface ChainOptions {
@@ -251,6 +302,18 @@ export interface ChainOptions {
    * 已排版的 ADV 样例窗（win 9）就会被染成**最后一个可见行**的颜色（用户实测）。
    */
   previewProbe?: boolean;
+  /**
+   * 在 `previewProbe` 之后继续走**「右键退出设置页 → 回 ADV」**那条重派生路径并 dump 关键量
+   * （`tickets/T-0102` 丁-2/丁-3 的判决实验）。默认关；需要 `previewProbe: true` 才有意义。
+   *
+   * 给对象时可以铺 **ADV 语境**（TITLE 菜单进 CONFIG 与 ADV 进 CONFIG 的差别就在这几个全局上）：
+   *  - `fromAdv`（默认 true）= 置 `3f38 = 1`（`src/SC0000.txt:999` 的场景入口会置它）；
+   *  - `g0`（默认 1）= 置脚本全局 0（`src/SC0000.txt:1018` 的 `mov (global-int 0) 1`）；
+   *  - `g1397`（默认 0）= 置全局 `1397`（`CONFIG.txt:223` 的门：`1397 == 1 ⇒ local10 = 1 ⇒ 整块被跳过`）；
+   *  - `msg` = 置全局 `3f37`（引擎里它是**当前发言者/消息索引**；`52a49c` 是单位性别表，
+   *    见 `docs-new/02-data/training-speakers.md:11`）。
+   */
+  advReturnProbe?: boolean | { fromAdv?: boolean; g0?: number; g1397?: number; msg?: number };
   /**
    * **字体选择器探针**（默认关）：跑完 CONFIG1 后，把光标移到第一行字体项的「变更」按钮并点击
    * ⇒ 打开 `$1$SELFONT`（`CONFIG1.txt:1049 call-script 51dd`）⇒ 采两份滚动条几何 + 列表里画出的面名。
@@ -389,6 +452,11 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     poolPending: () => native.poolPending(),
   };
   let lastInstr: BinInstruction | undefined;
+  /**
+   * 探针用的逐条钩子（默认 null ⇒ 零开销）。`base.onStep` 里调用它 —— 探针靠它收集
+   * 「`i076`/`i082` 在退出路径上有没有被再执行一次」（`tickets/T-0102` 的判据）。
+   */
+  let advStepHook: ((opcode: number) => void) | null = null;
   const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
     gates: { anim: 'wait', sleep: 'wait', advance: 'force' },
     advFrame: true,
@@ -399,6 +467,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     },
     onStep: (t) => {
       opt.onStep?.(t);
+      advStepHook?.(t.opcode);
       if (lastInstr && t.opcode === 0x12f) sort12f = captureSort12f(e, lastInstr);
     },
     onUnknown: (err) => {
@@ -540,6 +609,70 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     };
   }
 
+  // ★「右键退出设置页 → 回 ADV 重派生」探针（默认关；`tickets/T-0102` 丁-2/丁-3 的判决实验）。
+  //   为什么要它：用户实测「退出设置回 ADV 后文字仍是角色设定页最后一行的颜色（紫）」，真机不紫。
+  //   引擎的「回 ADV」路径 = `src/CONFIG.txt:225-269`（按当前消息号 `3f37` 重派生 `14acda` →
+  //   `call label_00001ae8` 重算并 `i076` 应用 → `i071 2` → `i082`）。本探针把那一跳走完并 dump。
+  let advReturn: AdvReturnProbe | undefined;
+  if (opt.advReturnProbe) {
+    const sample = (): AdvReturnSample => ({
+      fill: '#' + ((e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0'),
+      outline: '#' + ((e.engineValues.get(21665) ?? 0) & 0xffffff).toString(16).padStart(6, '0'),
+      f807b: dec(e.key, e.globals.int.get(0xf807b) ?? 0),
+      f807c: dec(e.key, e.globals.int.get(0xf807c) ?? 0),
+      c14acda: dec(e.key, e.globals.int.get(0x14acda) ?? 0),
+      msg3f37: dec(e.key, e.globals.int.get(0x3f37) ?? 0),
+      g3f38: dec(e.key, e.globals.int.get(0x3f38) ?? 0),
+      g0: dec(e.key, e.globals.int.get(0) ?? 0),
+      g1397: dec(e.key, e.globals.int.get(0x1397) ?? 0),
+      g3f36: dec(e.key, e.globals.int.get(0x3f36) ?? 0),
+      script: e.curScript().name,
+    });
+    const before = sample();
+    // ★铺 **ADV 语境**（可选）：`TITLE 菜单 → CONFIG` 与 `ADV → CONFIG` 的差别就在这几个全局上，
+    //   而 `CONFIG.txt:225-269` 的重派生块只在前者之外才跑（`3f38 != 0`、`local10 == 0`）。
+    const cfg = typeof opt.advReturnProbe === 'object' ? opt.advReturnProbe : {};
+    e.globals.int.set(0x3f38, enc(e.key, cfg.fromAdv === false ? 0 : 1));
+    e.globals.int.set(0, enc(e.key, cfg.g0 ?? 1));
+    e.globals.int.set(0x1397, enc(e.key, cfg.g1397 ?? 0));
+    if (cfg.msg !== undefined) e.globals.int.set(0x3f37, enc(e.key, cfg.msg));
+    const setup = sample();
+    const marks: string[] = [];
+    let sawI082 = false;
+    let sawI076 = false;
+    let lastScript = '';
+    advStepHook = (op) => {
+      const nm = e.curScript().name;
+      if (op === 0x76) sawI076 = true;
+      if (op === 0x82) sawI082 = true;
+      // 只记 CONFIG 系脚本的指令 + 每次脚本切换 ⇒ 退出的那一小段不被 TITLE 的逐帧循环淹掉
+      if (nm.startsWith('CONFIG')) marks.push(`${nm.replace('.BIN', '')}:${op.toString(16)}`);
+      if (nm !== lastScript) {
+        marks.push(`→${nm}`);
+        lastScript = nm;
+      }
+    };
+    // ★`CONFIG.txt:63` 的 `e = (12721e >= 0) & (12721e < 6)` ⇒ 把 `12721e` 踢出 `[0,6)` 就走
+    //   「回 ADV」分支（`label_00000f6c`）。真实 UI 是右键「戻る」把**同一个全局**置成界外值
+    //   ⇒ 这里直接置同一个量（不改脚本、不改语义；写入按全局池口径 `enc()`）。
+    e.globals.int.set(0x12721e, enc(e.key, 6));
+    // ★还要让**当前子页**（CONFIG2）自己返回：它的主循环 `label_00000388` 看 `local 7dd`
+    //   （1 ⇒ 跳 `label_00006d1c`，那里 `exit` 回 CONFIG.BIN）。真实 UI 由「戻る」热点置它；
+    //   这里直接置同一个量（不改脚本、不改语义）。
+    e.curScript().locals.int.set(0x7dd, enc(e.key, 1));
+    await run(1200, () => sawI082 || e.curScript().name.startsWith('SN0000'));
+    await run(300); // 让 i082 之后的部分也走完
+    advStepHook = null;
+    advReturn = {
+      before,
+      setup,
+      after: sample(),
+      marks: marks.slice(-160),
+      reappliedStyle: sawI076,
+      sawI082,
+    };
+  }
+
   // ★字体选择器探针（默认关）：先（可选）滚主列表 → 点第一行字体项的「变更」→ 开 `$1$SELFONT`
   //   → 采两份滚动条几何。用户实测：**先滚动再打开**时选择器的中段（`0x1FD` 拉伸条）会漂到左边。
   let fontPicker: FontPickerProbe | undefined;
@@ -647,6 +780,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     ...(opt.scrollProbe ? { scrollSteps } : {}),
     ...(fontPicker ? { fontPicker } : {}),
     ...(opt.previewProbe && previewStyle ? { previewStyle } : {}),
+    ...(advReturn ? { advReturn } : {}),
     ...(opt.recordDrops ? { drops: drops.list() } : {}),
     audioEvents,
     trace,

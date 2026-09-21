@@ -271,7 +271,11 @@ export class PixiBackend implements NativeBridge {
     this.stage = null as unknown as Container<ContainerChild>;
     this.drawRoot = null as unknown as Container<ContainerChild>;
     this.unit = null as unknown as Texture;
-    this.textures = new TextureCache((m) => this.#pushLog(m));
+    // ★`onReady` 里 `#markDirty()`（`tickets/T-0102` 轮 9）：常规图像纹理是**异步**到的
+    //   （引擎 `set-texture` 是同步的），到货那一刻必须让下一帧重新合成，否则那一帧的
+    //   **白占位块**会一直留在屏上，直到玩家做别的操作（用户实测：开合侧边栏才对）。
+    //   与下面 `#l2dTextures` 的 `onReady` 同一套写法。
+    this.textures = new TextureCache((m) => this.#pushLog(m), () => this.#markDirty());
   }
 
   #pushLog(msg: string): void {
@@ -1268,6 +1272,8 @@ export class PixiBackend implements NativeBridge {
    * 这一格不是"门自己扫几个窗"的猜测 —— 门 = 它 + `0x238` 计时器（`Engine.gatePending`）。
    * ★时钟用 `advanceModel(nowMs)` 注入的 `clockMs`（`tickets/T-0008` 的单一时间域）。
    * ★方法名与桥一致（`tickets/T-0013`）：帧驱动/会话只经接口调用。
+   * ★`T-0091` G2：它同时是引擎清转场表门的**全场景池挂起探针**（`Scene+46516`）——
+   *   宿主把它注入 `scTransitionTick` 的第 4 参（raw 136840/137181）。
    */
   poolPending(): boolean {
     return scPoolPending(this.scene, this.clockMs);
@@ -1296,15 +1302,20 @@ export class PixiBackend implements NativeBridge {
    * pixi 的"模型推进"= 把时钟刷新到本帧（窗的求值发生在 `present` 里，用 `clockMs` 算相位）。
    * ★修前这个时钟是 `performance.now() - wallStart`（**独立时间域**，与 `Engine.nowMs` 不同源，
    * 见 `tickets/T-0008` 的 D1）⇒ 现在一律由驱动经 `Engine.nowMs` 注入，只有没人注入时才退回去。
+   *
+   * ★`T-0091` G1 扩第二参 `opts.freeze` = 引擎 `Scene+46512`（驱动每帧末传 `e.sceneFreeze`）。
+   * 旧签名（`T-0009` 的 evidence 锚点）：advanceModel(nowMs: number): void
    */
-  advanceModel(nowMs: number): void {
+  advanceModel(nowMs: number, opts?: { freeze?: boolean }): void {
+    const freeze = opts?.freeze ?? false;
     this.clockMs = nowMs;
     this.#clockInjected = true;
     // ★推进窗（窗末 `work ← target`）——与 `HeadlessScene.advanceModel` 调的是**同一个** `scAdvance`
     //   ⇒ "模型推进"两个宿主只有一份实现（设计 D3）。修前推进藏在 `present` 里（`presenter.ts:56`），
     //   而 `present` 会被 `needsRender` 跳过（窗恰好结束的那一帧 `pending` 已为假）⇒ 那一帧的
     //   收尾就永远不会发生，两宿主的 digest 会分叉 —— 正是 G3 要抓的东西。
-    scAdvance(this.scene, nowMs);
+    //   ★`freeze`（`T-0091` G1）：本帧所有 A 层窗当帧收尾（raw 117449 / 133517）。
+    scAdvance(this.scene, nowMs, freeze);
     // ★转场窗（`tickets/T-0084`）：与 headless 共用 `scene/transition.ts` 一份推进器
     //   （锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表 —— 引擎 `sub_4B06D0` +
     //   帧函数 raw 136840-136841）。放在 `scAdvance` 之后、本帧 `present` 之前：
@@ -1312,7 +1323,9 @@ export class PixiBackend implements NativeBridge {
     // ★转场窗：锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表。
     //   ★不再需要"上一帧整屏快照"：转场的源是**记录那两条 item 区间的离屏子集**（引擎 36/37），
     //   在 `#compositeTransitions` 里按需渲染（见 `#rangeCache`）。
-    scTransitionTick(this.scene, nowMs);
+    //   ★`freeze`（G1）+ `poolPending` 探针（G2，清表门 = 全场景 `Scene+46516`，raw 136840/137181）：
+    //     两个都与 headless 宿主同一份形参（探针在 `scAdvance` 之后求值，与引擎同序）。
+    scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
     // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);

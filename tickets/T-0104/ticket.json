@@ -16,17 +16,20 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
       "anchor": "[0x82, op_stub_unhandled]",
-      "note": "本轮的临时处置（记录后放行）+ 体证据与缺口说明都在这段注释里"
+      "note": "本轮的临时处置（记录后放行）+ 体证据与缺口说明都在这段注释里",
+      "line": 319
     },
     {
       "file": "src/CONFIG.txt",
       "anchor": "i082 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)",
-      "note": "全库唯一语料点（设置界面的重画/退出路径）"
+      "note": "全库唯一语料点（设置界面的重画/退出路径）",
+      "line": 269
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_466000((int)(_this + 21324), v2, v3, v4, v5, v6, v7);",
-      "note": "0x82 的落点调用（raw 28825）；被调 sub_466000 体起始 raw 79319"
+      "note": "0x82 的落点调用（raw 28825）；被调 sub_466000 体起始 raw 79319",
+      "line": 28825
     }
   ],
   "links": {
@@ -54,6 +57,10 @@
     {
       "at": "2026-09-20",
       "what": "改字段：history"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

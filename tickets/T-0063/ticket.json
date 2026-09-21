@@ -22,22 +22,26 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "与引擎同一条续跑路",
-      "note": "本工程槽也走引擎那条路：帧装到入口 + saveResume 入队 + 0xAE 落点走栈；并把 texSlots/present 装回"
+      "note": "本工程槽也走引擎那条路：帧装到入口 + saveResume 入队 + 0xAE 落点走栈；并把 texSlots/present 装回",
+      "line": 462
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
       "anchor": "口径纠错",
-      "note": "0x259 的真实语义（清槽记录，不碰绘制项）"
+      "note": "0x259 的真实语义（清槽记录，不碰绘制项）",
+      "line": 290
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "snapshotPresent(): unknown",
-      "note": "宿主侧缝：取快照"
+      "note": "宿主侧缝：取快照",
+      "line": 1054
     },
     {
       "file": "src/NOVEL.txt",
       "anchor": "call-script (global-int 1394)",
-      "note": "NOVEL 在指令 123 把控制交给场景脚本；背景绘制在指令 43（落点 124 之前的实测证据）"
+      "note": "NOVEL 在指令 123 把控制交给场景脚本；背景绘制在指令 43（落点 124 之前的实测证据）",
+      "line": 147
     }
   ],
   "links": {
@@ -85,6 +89,10 @@
     {
       "at": "2026-09-18",
       "what": "doing → done —— 用户实测四条症状（中心无文字/背景不动/遮罩消失/侧边栏不 hover）已全部正常；后续发现的读档 BGM 丢失另开 T-0064"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

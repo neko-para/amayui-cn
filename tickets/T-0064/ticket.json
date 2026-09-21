@@ -33,17 +33,20 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "replaySavedBgm",
-      "note": "读档末尾补的 CALLBACK_LOAD 等价物"
+      "note": "读档末尾补的 CALLBACK_LOAD 等价物",
+      "line": 125
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/audio.ts",
       "anchor": "bgmReplayIntent",
-      "note": "0xB7/0xB9/0xBF/0xC3/0xC2 的运行态维护与重播意图"
+      "note": "0xB7/0xB9/0xBF/0xC3/0xC2 的运行态维护与重播意图",
+      "line": 147
     },
     {
       "file": "app/amayui-emulator/test/slot-save-resume.test.ts",
       "anchor": "BGM 还原",
-      "note": "存档↔读档往返 + 重播意图断言"
+      "note": "存档↔读档往返 + 重播意图断言",
+      "line": 208
     }
   ],
   "notes": "旧档（修前存的）里那一格是配置值（本机 Music=2）⇒ 读档会尝试播曲号 2（= OP.BIN）并失败静音，日志可见；用新版本重存一次即可。",
@@ -65,6 +68,10 @@
     {
       "at": "2026-09-18",
       "what": "改字段：tests"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

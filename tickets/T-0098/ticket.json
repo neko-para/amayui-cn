@@ -14,12 +14,14 @@
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "| 0x2ED | 1 |",
-      "note": "0x2ED 的文档行（现记「仅映射」）—— 本票要按体实现并升级状态"
+      "note": "0x2ED 的文档行（现记「仅映射」）—— 本票要按体实现并升级状态",
+      "line": 491
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/arithmetic.ts",
       "anchor": "bitIndexGate",
-      "note": "T-0097 引入的共用越界门（unsigned + 不抛）；★本票的 0x107/0x10B/0xFE 体是**真抛**，不能直接复用它的不抛行为，只能复用 unsigned 口径"
+      "note": "T-0097 引入的共用越界门（unsigned + 不抛）；★本票的 0x107/0x10B/0xFE 体是**真抛**，不能直接复用它的不抛行为，只能复用 unsigned 口径",
+      "line": 103
     },
     {
       "file": "tickets/T-0097/raw-evidence.md",
@@ -52,6 +54,10 @@
     {
       "at": "2026-09-20",
       "what": "改字段：acceptance"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

@@ -14,12 +14,14 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "kind: 'tick'",
-      "note": "唯一的音频帧泵调用点"
+      "note": "唯一的音频帧泵调用点",
+      "line": 557
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "audio?: (intent: AudioIntent) => void;",
-      "note": "headless 宿主已实现 audio（条件能力：给了 audioHost 才存在）"
+      "note": "headless 宿主已实现 audio（条件能力：给了 audioHost 才存在）",
+      "line": 158
     },
     {
       "file": "app/amayui-emulator/src/audio/audioEngine.ts",
@@ -48,6 +50,10 @@
     {
       "at": "2026-09-13",
       "what": "open → done"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ],
   "tests": [

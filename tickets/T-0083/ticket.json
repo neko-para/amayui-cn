@@ -20,27 +20,32 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (0049A300)",
-      "note": "★真机制：sub_49A300 = 740 B DrawItem 记录默认初始化（`*(a2)=0`、`*(a2+4)=0`、`SetRect(a2+8,0,0,0,0)`、`+24/+28/+32=0`、`+36/+40/+44=0`、`+52=0` …）；sub_410160 raw 19822-19832 对清单每条先调它再 memcpy+插回容器"
+      "note": "★真机制：sub_49A300 = 740 B DrawItem 记录默认初始化（`*(a2)=0`、`*(a2+4)=0`、`SetRect(a2+8,0,0,0,0)`、`+24/+28/+32=0`、`+36/+40/+44=0`、`+52=0` …）；sub_410160 raw 19822-19832 对清单每条先调它再 memcpy+插回容器",
+      "line": 116878
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "//----- (00498B60)",
-      "note": "sub_498B60 = IDirect3DDevice9::Clear（ClearTarget）：引擎每帧清渲染目标，没有「保留旧像素」机制（hold 启发式无依据，仍要拆）"
+      "note": "sub_498B60 = IDirect3DDevice9::Clear（ClearTarget）：引擎每帧清渲染目标，没有「保留旧像素」机制（hold 启发式无依据，仍要拆）",
+      "line": 115454
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-load-drawitem-clear-and-restore",
-      "note": "第二层条目：装载点清容器 + 从 body 还原绘制项清单（含 whySilent：残留项被重绑后的槽 4 改画成堆 ⇒ 阶梯）"
+      "note": "第二层条目：装载点清容器 + 从 body 还原绘制项清单（含 whySilent：残留项被重绑后的槽 4 改画成堆 ⇒ 阶梯）",
+      "line": 3224
     },
     {
       "file": "analysis/scripts.json",
       "anchor": "label_0000e24c",
-      "note": "SN0000 唯一的背景/CG 层设置子程序：键 = f8023[层]（层 0 = 0x18A88，表在 INIT2.txt:6-17）、槽 = 3f54[层][0] = 4、图 = f8006（0xB37 = BG050ABL）；调用点指令 757 在**被跳过带**内"
+      "note": "SN0000 唯一的背景/CG 层设置子程序：键 = f8023[层]（层 0 = 0x18A88，表在 INIT2.txt:6-17）、槽 = 3f54[层][0] = 4、图 = f8006（0xB37 = BG050ABL）；调用点指令 757 在**被跳过带**内",
+      "line": 687
     },
     {
       "file": "src/TITLE.txt",
       "anchor": "call-script 33  // SAVE",
-      "note": "Load Data 分支没有任何 detach/i1f6/release-texture ⇒ 打开读档菜单时标题项全活着；而 TITLE 全部美术建在槽 4 上（line 526 `set-texture 5272 4`）⇒ 重绑后整体改画"
+      "note": "Load Data 分支没有任何 detach/i1f6/release-texture ⇒ 打开读档菜单时标题项全活着；而 TITLE 全部美术建在槽 4 上（line 526 `set-texture 5272 4`）⇒ 重绑后整体改画",
+      "line": 338
     },
     {
       "file": "src/INIT2.txt",
@@ -76,6 +81,10 @@
     {
       "at": "2026-09-20",
       "what": "done：源码级判定 + 实现落地 —— sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 新 engineDrawItem.ts + 清单步长修正(1+size) + 宿主缝 native.restoreDrawItems（清上一屏+装存档清单）；verify 787/775/12/0；E4 阶梯消失（evidence/after-itemrestore-*.png）"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

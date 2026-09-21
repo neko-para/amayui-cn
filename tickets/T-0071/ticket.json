@@ -18,27 +18,32 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "重建存档里的图像槽",
-      "note": "装载时按两张表装回槽并重绑标了 flag 的条目"
+      "note": "装载时按两张表装回槽并重绑标了 flag 的条目",
+      "line": 332
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "只覆盖池内下标，不得清掉池外下标",
-      "note": "int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）"
+      "note": "int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）",
+      "line": 187
     },
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "flag: number;",
-      "note": "20 B 记录的第 3 个字段 = 「读档要重载」标志（`sub_410160` raw 19877 判 == 1）"
+      "note": "20 B 记录的第 3 个字段 = 「读档要重载」标志（`sub_410160` raw 19877 判 == 1）",
+      "line": 118
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "memcpy(*(void **)(a1 + 382976), v56 + 6, 4 * *v56);",
-      "note": "raw 19747：int 池只 memcpy count 个（上一行 memset 也只清 count+1）"
+      "note": "raw 19747：int 池只 memcpy count 个（上一行 memset 也只清 count+1）",
+      "line": 19747
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_4A3800(",
-      "note": "raw 19887：1000 条图像槽的重建入口（flag == 1 && id >= 0）"
+      "note": "raw 19887：1000 条图像槽的重建入口（flag == 1 && id >= 0）",
+      "line": 2371
     }
   ],
   "links": {
@@ -61,6 +66,10 @@
     {
       "at": "2026-09-19",
       "what": "open → done —— 两张表装回 + int 池只覆盖池内；守卫 test/slot-load-resume.test.ts 的「★读档只覆盖池内下标 + 装回『槽 → 图像』表」"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }

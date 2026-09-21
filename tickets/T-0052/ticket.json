@@ -15,17 +15,20 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "*a2 |= 1 << *v3;",
-      "note": "引擎键盘刷 `sub_4770A0`（raw 91551-91570，这一行在 91563）：每个 VK 经 `_this[1176+VK]`（=`*v3`）映射成掩码位"
+      "note": "引擎键盘刷 `sub_4770A0`（raw 91551-91570，这一行在 91563）：每个 VK 经 `_this[1176+VK]`（=`*v3`）映射成掩码位",
+      "line": 91563
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[1632] = 38;",
-      "note": "7 个默认 VK 的其中一条（raw 91412；同族 91344/91356/91375/91415）"
+      "note": "7 个默认 VK 的其中一条（raw 91412；同族 91344/91356/91375/91415）",
+      "line": 91412
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "_this[_this[1446] + 1176] = 6;",
-      "note": "Input 构造把 7 个 VK 填成虚拟位 0..6（raw 92394-92400）"
+      "note": "Input 构造把 7 个 VK 填成虚拟位 0..6（raw 92394-92400）",
+      "line": 92400
     },
     {
       "file": "src/TITLE.txt",
@@ -35,7 +38,8 @@
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "keyEdge = 0;",
-      "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6"
+      "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6",
+      "line": 94
     }
   ],
   "tests": [],
@@ -61,6 +65,10 @@
     {
       "at": "2026-09-16",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-21",
+      "what": "改字段：evidence"
     }
   ]
 }
