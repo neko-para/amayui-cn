@@ -192,3 +192,74 @@ test('★T-0102 轮 9：回写被丢弃时**不**通知 onReady（该槽的可�
   assert.equal(tc.slotTex.has(43), false, '前提：回写被丢弃');
   assert.equal(ready, 0, '丢弃 ≠ 到货 ⇒ 不得通知（否则会无谓地多合成一帧）');
 });
+
+/**
+ * ★★`T-0102` 登记的 **H3**（本轮修）：**被丢弃的回写不得让该槽永久无纹理** —— 图已经在
+ * `#imgCache` 里了，"下次绑定即命中"应当提前成"下次读取即命中"（`#healSlot`）。
+ *
+ * 症状形状：某个非程序化槽（没有 `create-texture` 的画布）在异步载入窗口里被改绑/丢弃过一次，
+ * 此后 `resolve()`/`size()` 每帧回落占位块，只有脚本**再发一次同一条 `set-texture`**
+ * （= 用户实测的"开合侧边栏才对"）才恢复。引擎不会有这一态：它的 `set-texture` 是同步的。
+ */
+test('★T-0102 H3：改绑后丢弃的旧回写 ⇒ 该槽靠"当前绑定 + 图已在缓存"自愈（不必等第二次 set-texture）', async () => {
+  const logs: string[] = [];
+  const tc = new GatedCache((m) => logs.push(m));
+  const ga = tc.prepare(0xaa, 'A');
+  const gb = tc.prepare(0xbb, 'B');
+  const tb = { name: 'B' } as unknown as Texture;
+
+  tc.bind(0xaa, 48); // 发起了 A 的载入
+  tc.bind(0xbb, 48); // 改绑到 B ⇒ A 的回写会被丢弃
+  gb.open(tb as unknown as FakeTex);
+  await tick();
+  assert.equal(tc.slotTex.get(48), tb, 'B 先到：照常落盘');
+
+  ga.open({ name: 'A' } as unknown as FakeTex); // A 后到、被丢弃（不进该槽）
+  await tick();
+  assert.equal(tc.slotTex.get(48), tb, '★旧图不得覆盖新绑定');
+
+  // 构造"绑定已知但槽里没纹理"这一态：把槽的纹理抹掉（模拟被丢弃/释放后没有自愈点的情形），
+  // 再从读侧访问一次 —— 当前绑定是 0xbb，而它的图已经在 #imgCache 里 ⇒ 应当**当帧**自愈。
+  // ★探针用 `slotTex.has` 而**不能**用 `size()`：`size()` 自己就会走自愈（这正是本守卫要测的行为）。
+  tc.slotTex.delete(48);
+  assert.equal(tc.slotTex.has(48), false, '前提：读侧确实处于"没有纹理"态（否则这条守卫测不到 H3）');
+  const healed = tc.resolve({ tex: 48 } as never);
+  assert.equal(healed.tex, tb, '★resolve 必须自愈（否则每帧画占位块，直到脚本再发一次 set-texture）');
+  assert.ok(
+    logs.some((l) => l.includes('slotTex 自愈')),
+    `自愈必须留痕（E4 归因用）：${JSON.stringify(logs.slice(-4))}`,
+  );
+  assert.equal(tc.slotTex.get(48), tb, '自愈之后 size() 也能拿到真实纹理（它走同一条 #healSlot）');
+});
+
+test('★T-0102 H3 反面：自愈只能用**当前绑定**那张图 —— 旧图在缓存里也不许拿来顶', async () => {
+  const tc = new GatedCache(() => {});
+  const ga = tc.prepare(0xaa, 'A');
+  const gb = tc.prepare(0xbb, 'B');
+  const ta = { name: 'A' } as unknown as Texture;
+
+  tc.bind(0xaa, 49);
+  tc.bind(0xbb, 49); // 改绑到 B（B 的载入还没回来）
+  ga.open(ta as unknown as FakeTex); // A 先到且被丢弃
+  await tick();
+  assert.equal(tc.slotTex.has(49), false, '前提：A 的回写被丢弃');
+
+  const r = tc.resolve({ tex: 49 } as never);
+  assert.equal(r.tex, undefined, '★当前绑定是 B 且 B 还没到位 ⇒ 不许拿缓存里的旧图 A 自愈');
+  assert.equal(tc.slotTex.has(49), false, '槽必须保持空（宁可画占位块，也不能画错的那张图）');
+  void gb;
+});
+
+/**
+ * ★说明（反面守卫的**边界**）：`#healSlot` 的第一条排除是"该槽有 `create-texture` 的程序化表面"，
+ * 但 Node 里没有 DOM ⇒ `TextureCache.create()` **不会**建画布槽（`typeof document === 'undefined'`）
+ * ⇒ 那条排除在单测里**不可达**。它有两条别的保障：
+ *  ① 真宿主（Electron）里 `create()` 一定建画布，`#canvasSlots.has(slot)` 为真；
+ *  ② `tickets/T-0102` 的 E4 路径（设置界面的 `create-texture 196` + `draw-string`）是它的现场判据。
+ * 这里把边界写出来，免得后人以为"没测到 = 不存在"。
+ */
+test('T-0102 H3：无 DOM 时 create() 不建画布槽（记录边界，防止把不可达当成已验证）', () => {
+  const tc = new GatedCache(() => {});
+  tc.create(51, 64, 32, 0);
+  assert.equal(tc.slotTex.has(51), false, 'Node 里 create() 没有画布 ⇒ 该槽仍是"无纹理"态（真宿主会建）');
+});

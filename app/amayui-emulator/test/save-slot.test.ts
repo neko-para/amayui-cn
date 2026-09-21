@@ -32,8 +32,8 @@ import {
   parseSlotHeader,
   slotRelPath,
   slotThumbRelPath,
-} from '../src/vm/saveSlot.js';
-import { encodeSaveData } from '../src/vm/saveData.js';
+} from '../src/save/saveSlot.js';
+import { encodeSaveData } from '../src/save/saveData.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 import { buildScriptBin } from './engineSlotFixtures.js';

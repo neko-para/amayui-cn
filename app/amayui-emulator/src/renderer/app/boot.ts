@@ -17,8 +17,19 @@ import type { RenderStatus } from '../renderStatus.js';
 import { TraceLog } from './traceLog.js';
 import { loadEmulatorOptionsFile, loadEngineConfig } from './configBoot.js';
 
-/** 启动时固定预载的图像（引擎启动流程里会立刻用到的那几张）。 */
-const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273];
+/**
+ * ★**启动期预载清单已删**（`tickets/T-0029`）：这里曾有
+ * `const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273]`（SO006/SO005/SO004/SO004A）。
+ * 删除理由（逐条）：
+ *  - **没有引擎依据**：引擎启动流程里没有这份清单；图像的正统路径是脚本 `0x1F9 set-texture` →
+ *    `PixiBackend.bindTexture` → `TextureCache.bind`（未命中即异步装载）→ 帧末 `texturesIdle` 屏障；
+ *  - **两宿主漂移**：headless（`bootHeadless`/两份 chain/scenario）从不预载，只有 Electron 预载
+ *    ⇒ 同一份脚本在两边的"图文就绪时机"不同（`T-0002` 那类宿主漂移的温床）；
+ *  - **掩盖缺陷**：预载会把"异步装载 ⇒ 紧随的 `0x208` 读到 0×0"（`texture-bind-synchronous-then-query`）
+ *    盖住 —— 去掉它才看得见哪一处没走屏障。
+ *  若将来发现某张图确实"绑定前就要用"，**登记进 `analysis/engine-capabilities.json`**，
+ *  而不是把硬编码清单加回这里。
+ */
 
 export interface BootedApp {
   status: RenderStatus;
@@ -78,10 +89,15 @@ export async function bootApp(): Promise<BootedApp | null> {
   //   音量/开关是玩家配置的一部分，脚本只在**改设置**时才发 0xC6 —— 漏掉这一步 ⇒ "每次启动都巨响"。
   for (const intent of audioBootIntents(e.config)) pixi.audio(intent);
 
-  for (const imgid of PRELOAD_IMAGES) {
-    // preloadImage 内部已 pushLog `image <imgid> -> <file> (WxH)`，无需再 trace 一条重复的 [preload]
-    await native.preloadImage(imgid);
-  }
+  // ★★**启动期预载清单已删**（`tickets/T-0029`）：这里原先硬编码
+  //   `const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273]` 并逐张 `await native.preloadImage(...)`。
+  //   它没有任何引擎依据（引擎启动流程里没有这份清单；图本来就是脚本 `0x1F9 set-texture` 绑定时按需装的），
+  //   而且制造三处漂移：
+  //     ① 第二套加载入口 —— 与 `TextureCache.bind` 的按需路径各写一遍"谁在什么时候加载"；
+  //     ② 两宿主不一致 —— headless（bootHeadless / 两份 chain / scenario）从来不预载，只有 Electron 预载；
+  //     ③ 白付启动成本 + **掩盖真实缺陷** —— 预载在时看不出"异步装载 ⇒ 紧随的 `0x208` 读到 0×0"，
+  //        去掉它才会暴露"哪一处没走纹理帧屏障"（`TextureCache.waitIdle` / `PixiBackend.texturesIdle`）。
+  //   ⇒ 现在这 4 张图和其它图一样在 `0x1F9` 绑定时装载；首帧不缺图**由帧屏障保证**，不靠预载掩盖。
 
   const boot = await src.readScript(0);
   if (!boot) {

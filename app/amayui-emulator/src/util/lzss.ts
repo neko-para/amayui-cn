@@ -4,7 +4,7 @@
  * 为什么放在 `src/util/`（T-0057 R5）：这段算法原先有**两份**逐行同义的实现
  * （`src/vm/lzss.ts` 供 `SAVE.DAT` 解压、`src/script/lzss.ts` 供 ALF/AAI 解包），
  * 而两份都不知道对方存在 —— 典型"同一语义两处、改一处漏一处"。
- * 现在只留这一份；`vm/saveData.ts` 与 `script/alf.ts` 都 import 它。
+ * 现在只留这一份；`save/saveData.ts` 与 `script/alf.ts` 都 import 它。
  * （工具链 `scripts/alf/lzss.mjs` 是另一个包里的 Node 工具，属 T-0022 的跨包边，不在此列。）
  *
  * 语义（raw `sub_436A80` 一族）：环形缓冲 `text_buf`、每 8 项一个 flag 字节、

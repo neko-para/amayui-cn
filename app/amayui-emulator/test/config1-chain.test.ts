@@ -382,11 +382,29 @@ test('★T-0102：退出设置页的重派生会改全局文字色（旁白 ⇒ 
   assert.ok(a!.sawI082, '旁白路径必须执行到 CONFIG.txt:269 的 i082（= 用户报的那条未知指令）');
   assert.equal(a!.after.c14acda, 0, '旁白（3f37 < 0）必须把角色号重派生为 0');
   assert.equal(a!.after.fill, '#ffffff', '旁白 ⇒ adcd[0] = 白 ⇒ Engine[21664] 必须从紫变回 #ffffff');
+  // ★`T-0104`：`i082` 不是 stub —— 它必须与引擎那道门**一致**：
+  //   引擎 `if (v8 > op2 && op2 >= 0)`（记录表条数 > op2）⇒ 记录表为空时**引擎也什么都不做**，
+  //   非空则必须重发布一次。本链路（CONFIG 页，无 ADV 消息历史）通常为空 ⇒ 先把它记下来，
+  //   免得后人把"0 次重发布"误读成"实现没做"；正向用例在 `test/op-0104-gdi-repaint.test.ts`。
+  if (a!.recordsAtI082 > 0) {
+    assert.ok(
+      a!.republishByI082 >= 1,
+      `★记录表非空（${a!.recordsAtI082} 条）⇒ i082 必须重发布该窗（实得 ${a!.republishByI082}）`,
+    );
+  } else {
+    assert.equal(
+      a!.recordsAtI082,
+      0,
+      `i082 执行时记录表条数应被探针记下（实得 ${a!.recordsAtI082}；-1 = 没跑到 i082）`,
+    );
+    assert.equal(a!.republishByI082, 0, '★记录表为空 ⇒ 引擎那道门也拦住（emulator 必须同样什么都不做）');
+  }
 
   // 门没开：`1397 != 1` ⇒ 整块被跳过（这正是"退出后仍紫"的一种可复现形态）
   const gated = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g1397: 0, msg: -1 } });
   const g = gated.advReturn!;
   assert.equal(g.sawI082, false, '1397 != 1 ⇒ CONFIG.txt:225 的门把整块跳过 ⇒ i082 不得被执行');
+  assert.equal(g.republishByI082, 0, 'i082 没执行 ⇒ 不得有它触发的重发布（对照）');
   assert.equal(g.after.fill, '#b690ff', '门没开 ⇒ 全局保持进页前的紫（记下这个形态，别当成"重派生算错"）');
   assert.equal(g.after.c14acda, 12, '门没开 ⇒ 角色号也不得被重派生');
 });

@@ -383,3 +383,35 @@ cd app/amayui-emulator && npm run verify
 
 评估已完成并单独成文：**docs-new/04-app/live2d-support-assessment.md**（系统能力 / 要不要引依赖库 / 工作量 / 分阶段计划 / 待拍板）；引擎语义长文见 docs-new/03-engine/live2d.md；本单的过程笔记只留决策记录与 acceptance 对照。
 ★待用户决策：是否接受把 Live2D 专有运行时（Cubism 2.1 的 `live2d.min.js`）随补丁再分发 —— 路线 B 的可行性取决于此；路线 C（自研移值）没有这个许可问题但工作量最大。
+
+## 2026-09-21
+
+## 2026-09-21
+
+## 轮 11：M3 的 `live2d-slot-probe` 接线（判据 #4 的前半）
+
+**缺口**（判据 #4 登记的"未接进 `sceneNeedsRender`"）：引擎的合成判据 `sub_40BE10`（raw 16022 一带）
+不只看绘制项/网格，还读 `Scene+55812` 的 **10 个实例槽**；而 emulator 的 `scAnimationsPending`
+只覆盖 mesh + draw item 的 5 个窗 ⇒ **节点窗在跑时不会继续合成**。产品帧档是 `present:'needsRender'`
+⇒ 症状是"**立绘的动作只画一帧就冻住**"（不报错、日志正常）。
+
+**修法**：
+- `live2d/nodeMatrix.ts` 新增 **`l2dNodeWindowsPending(node, nowMs)`**（**纯读**探针，不推进、不改窗）：
+  `flags & 2 == 0` ⇒ 否；`!wins.latched`（窗指令刚写过）⇒ **是**（引擎那一路是 `waiting`，`v107 = 1`）；
+  任一窗 `dur > 0 && nowMs < startedAtMs + delay + dur` ⇒ 是；到点/`dur <= 0` ⇒ 否（`absorb`，
+  引擎吸附分支不置 `v107`）。经 `live2d/runtime.ts` 单口再导出。
+- `renderer/scene/ops.ts` 的 `scAnimationsPending`：`!freeze && s.l2dHost` 时遍历
+  **可画节点**（与 `scL2dTick` 同一道 `l2dNodeDrawable` 门）问这条探针；**冻结时不算**
+  （引擎把 `winSkip` 传下去 ⇒ 全窗当帧吸附，与 mesh 同口径）。
+- ★为什么探针必须纯读：合成器会**就地吸收**跑完的窗（`dur = 0`、`from ← to`，raw 121305/121343/121467/121614）
+  —— 拿"跑一次合成看返回值"当探针就等于把这一帧的推进提前吃掉。
+
+**判据**：新增守卫 `app/amayui-emulator/test/l2d-render-pending.test.ts`（5 条）：
+无宿主/无窗不误报；窗内为真、到点为假；**探针纯读**（问过之后窗的 `delay/dur/from` 逐字段不变）；
+冻结为假；不可画节点不算。**辨别力已机械证明**：把 `scAnimationsPending` 里那段 `if` 改成 `if (false …)`
+⇒ 4 pass / **1 fail**（正是"窗未跑完"那条）；还原后 5/5。
+
+**仍未做（判据 #4 的后半 + #2③/#5）**：`global a9d0` 的**真机回落支**对照（`==0` 走 L2D、`!=0` 走静态贴图
+`set-texture 5273 5`；脚本侧写点 = `CONFIG1.txt:1741-1742` 的 `sub a9d0 1 57bb` + `save-int`、
+默认值 = `INITCONFIG0.txt:12-13`）—— 需要 E4 截图对照，本机 headless 不能替代；
+以及 `0x346`–`0x34D` 对节点的控制（语料 0 次使用，节点矩阵恒单位阵）。

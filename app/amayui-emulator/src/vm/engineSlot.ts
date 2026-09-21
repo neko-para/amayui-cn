@@ -62,8 +62,8 @@
  * 装载成记录里的脚本，直到 `cur == savedCur` 收尾（`loadInProgress = 0`）。
  * ⇒ 能续跑的前提 = 帧记录 + 三张表**从脚本文件**解出来（见 `script/bin.ts` 的 `ipTables`）。
  */
-import { SAVE_BLOCK_BYTES, SAVE_HEADER_BYTES } from './saveData.js';
-import { crc32, crc32MsbFirst } from './crc32.js';
+import { SAVE_BLOCK_BYTES, SAVE_HEADER_BYTES } from '../save/saveData.js';
+import { crc32, crc32MsbFirst } from '../util/crc32.js';
 import { unlzss } from '../util/lzss.js';
 import type { ScriptBinary } from '../script/bin.js';
 

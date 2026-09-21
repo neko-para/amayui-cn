@@ -587,10 +587,10 @@
       "handler": "sub_41F720",
       "handlerBodyLine": 28808,
       "argc": 5,
-      "docStatus": "仅映射",
+      "docStatus": "已核对",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "★**轮 8 现状订正（用户实测）**：ADV → 设置界面 → 右键退出时**命中 `i082` 硬停**（`source: corpus-unregistered` 的那条路）。体已读（raw 28808-28826）：只**读** op1..op5 → `sub_466000(_this+21324, op1..op5, _this+21032)`（GDI 文本族，raw 79319 起；`+21324` = byte 85296 = `Font`）⇒ **不写操作数、不改 VM 态/控制流** ⇒ 已按 `0x308` 的先例登记进 `STUB_NATIVE_OPS`（`[0x82, op_stub_unhandled]`，**记录后放行、不再硬停**）。⚠**但「这次 GDI 重绘」本身仍未建模**（等价物应是把相应文本窗重新发布）⇒ 本条的 disposition **保持 `deferred`**（如实：没实现），并开 `tickets/T-0104` 记录扩展点。★注意：因此「deferred ⇒ 命中即硬停」这句话对**本条**不再成立 —— 别把它当「还没人看过」。★语料仅 1 处：`src/CONFIG.txt:269`。 以下为原记录（保留对照）：引擎 handler sub_41F720（体起始 raw 28808）；文档状态「仅映射」；**未读体** ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：**体已读**（raw 28808-28826）= arity 槽 11、读 op1..op5 → `sub_466000(_this + 21324, op1..op5, _this + 21032)`；`_this+21324` = **GDI 文本对象**（`sub_466000` 与 `sub_4675A0` 同族，raw 79319 起）、`+21032` 是掩码/位图层。★筛体(2026-09)：体内走 sub_466000（GDI 文本族）⇒ **deferred**；扩展点 = 先建 GDI 文本对象/字形度量与 `+21032` 掩码层。 ★**轮 9 补：`sub_466000` 的体已读定性**（raw **79319-80311**，993 行；前 20 行即定死语义）：`v8 = (this[3368] - this[3364]) / 72` = 该窗的 **72 B 文本项记录条数**；门 `if (v8 > a3 && a3 >= 0)`（**记录下标越界 ⇒ 什么都不做**）；`a2` = **窗索引**（`this[4*a2 + 1044]`）；该窗对象 `+112 == 1` ⇒ 走专用路径 `sub_462040`；否则 `sub_45BBF0` 取记录字段 + `SelectObject`×12 / `GetTextExtent`×2 按 `a5`/`a6` 设色后绘制 ⇒ **语义 = 「用给定颜色把『窗 op1 的第 op2 条文本项记录』重新画一遍」**（op3 = 模式，CONFIG 站点传常量 `2`；op4/op5 = 填充/描边色 = 刚由 `label_00001ae8` 重算的 `f807b`/`f807c`）。emulator 侧的等价物：取 `vm/textItems.ts` 的 `records[op2]`（同口径 72 B/条）+ 用 op4/op5 **重新发布**该窗文本（实现前先跑 `tickets/T-0102/changes.md` §「轮 9」§5 的判决实验，并确认 `emitWin`/`scMsgWinSync` 能否按「单条记录 + 指定颜色」重发布）。",
+      "disposition": "implemented",
+      "note": "★**2026-09 已真实现（`tickets/T-0104`）**：`MSGWIN_OPS` 的 `op_gdi_repaint_window`（不再是 `STUB_NATIVE_OPS` 的放行桩）。语义 = 「用给定颜色重画某窗的文本记录」：`op1` = 窗索引、`op2` = 起始记录下标（越界 ⇒ 整条什么都不做）、`op3 & 2` ⇒ 用 `op4`/`op5` 覆盖全局填充/描边色、随后重发布该窗。★登记的近似（不是等价）：① `op2` 的重画粒度（emulator 的排版是「整窗从模型重排」，没有\"从第 i 条记录起重画\"的粒度）；② `op3` 的其它位（bit0 组首 / bit2/bit3 记录过滤 / bit4/5）；③ `mode == 1` 走 `sub_462040` 的专用路径。守卫 `test/op-0104-gdi-repaint.test.ts`（6 条）。★与 `T-0102` 的关系：这一笔正是「退出设置页 → 回 ADV」路径（`src/CONFIG.txt:225-269`）的最后一笔，不实现它则\"已排版的旧颜色文本不会被刷新\"（候选 2 的具体形态）。★旧记录（保留对照）：★**轮 8 现状订正（用户实测）**：ADV → 设置界面 → 右键退出时**命中 `i082` 硬停**（`source: corpus-unregistered` 的那条路）。体已读（raw 28808-28826）：只**读** op1..op5 → `sub_466000(_this+21324, op1..op5, _this+21032)`（GDI 文本族，raw 79319 起；`+21324` = byte 85296 = `Font`）⇒ **不写操作数、不改 VM 态/控制流** ⇒ 已按 `0x308` 的先例登记进 `STUB_NATIVE_OPS`（`[0x82, op_stub_unhandled]`，**记录后放行、不再硬停**）。⚠**但「这次 GDI 重绘」本身仍未建模**（等价物应是把相应文本窗重新发布）⇒ 本条的 disposition **保持 `",
       "ticket": "T-0076"
     },
     {
@@ -938,8 +938,8 @@
       "unimplemented": 0,
       "engine-internal": 13,
       "engine-internal-unjustified": 0,
-      "implemented": 38,
-      "deferred": 20
+      "implemented": 39,
+      "deferred": 19
     }
   }
 }

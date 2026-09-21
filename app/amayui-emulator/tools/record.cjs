@@ -20,6 +20,7 @@
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { preflight } = require('./paths.cjs');
 
 const ROOT = path.resolve(__dirname, '..', '..', '..');
 const argv = process.argv.slice(2);
@@ -28,8 +29,17 @@ const argOf = (k, d) => {
   return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : d;
 };
 
-const SCENARIO_PATH = path.resolve(argOf('scenario', path.join(__dirname, 'scenarios', 'gamestart.json')));
-const OUT = path.resolve(ROOT, argOf('out', '.tmp/replay-electron.jsonl.gz'));
+// ★★`tickets/T-0032`：路径参数**基准统一 + 前置校验**（`tools/paths.cjs` 是唯一真源）。
+//   必须在 `require('../dist/electron/main.cjs')` **之前**跑：这样"路径非法"只会是一行可读报错 +
+//   `exit(2)`，而不会变成 Electron 的「App threw an error during load」弹窗（旧写法在 mkdir 处抛 EPERM）。
+const { SCENARIO_PATH, OUT } = (() => {
+  const r = preflight({
+    scenario: argOf('scenario', 'tools/scenarios/gamestart.json'),
+    out: argOf('out', '.tmp/replay-electron.jsonl.gz'),
+    log: (m) => console.log(m),
+  });
+  return { SCENARIO_PATH: r.scenarioPath, OUT: r.outPath };
+})();
 const LOG = path.join(ROOT, '.tmp', 'amayui-emulator.log');
 
 const spec = JSON.parse(fs.readFileSync(SCENARIO_PATH, 'utf8'));

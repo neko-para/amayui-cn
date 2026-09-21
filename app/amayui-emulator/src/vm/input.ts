@@ -32,6 +32,8 @@ export interface InputSnapshot {
   mouseEdge: number;
   joyEdge: number[];
   keyEdge: number;
+  /** 键盘按住态（虚拟位 0..6；`tickets/T-0052`）。 */
+  keysHeld: number;
   mouseMoved: boolean;
   hitTestPending: boolean;
   lastAdvance: number;
@@ -39,7 +41,36 @@ export interface InputSnapshot {
   inputMask: number;
 }
 
-export class InputManager {  // --- 鼠标位置（虚拟坐标）---
+/**
+ * **默认 VK → 虚拟掩码位**（引擎 Input 构造 raw 92394-92400；`tickets/T-0052`）。
+ *
+ * 引擎那 7 条赋值（`_this[_this[<字段>] + 1176] = <位>`）与 `sub_476AA0` 的默认 VK
+ * （raw 91344-91415）合起来就是这张表：
+ *
+ * | 虚拟位 | VK | 键 |
+ * |---|---|---|
+ * | 0 | 38 | ↑ |
+ * | 1 | 39 | → |
+ * | 2 | 40 | ↓ |
+ * | 3 | 37 | ← |
+ * | 4 | 13 | Enter |
+ * | 5 | 32 | Space |
+ * | 6 | 8 | BackSpace |
+ *
+ * 其余 VK **未映射**（引擎那格是 0/-1 语义 ⇒ `mask |= 1 << 0` 会污染 ↑ 位；所以这里**返回 undefined**、
+ * 不并入掩码）。`0x107`/`0x10B`/`0x10C` 那族"按键绑定"指令可以改写这张表 ⇒ 登记为缺口（见票据）。
+ */
+export const DEFAULT_VK_TO_BIT: ReadonlyMap<number, number> = new Map<number, number>([
+  [38, 0],
+  [39, 1],
+  [40, 2],
+  [37, 3],
+  [13, 4],
+  [32, 5],
+  [8, 6],
+]);
+
+export class InputManager {
   /** 虚拟 X；未初始化/出窗为 -100000 */
   x = -100000;
   /** 虚拟 Y；未初始化/出窗为 -100000 */
@@ -90,8 +121,45 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
   mouseEdge = 0;
   /** 手把按钮按下沿（0..31 序号）。 */
   joyEdge: number[] = [];
-  /** 键盘键位按下沿（bitmask，键位 0..6）。本任务仅登记，不驱动跳转。 */
+  /**
+   * 键盘键位**按下沿**（bitmask，虚拟位 0..6）—— `tickets/T-0052` 起它**真的进掩码**了
+   * （修前注释写"本任务仅登记，不驱动跳转"：那时 `flushPending`/`flushHeld` 都不并它
+   * ⇒ 脚本里 `joy-callback 0..4` 永远不触发、`0x100` 扫不到键盘位）。
+   *
+   * 引擎依据：`sub_4770A0`（raw 91551-91570）遍历 VK，`GetAsyncKeyState(vk) & 0xFF00` 命中就
+   * `mask |= 1 << _this[1176+vk]`；而 `_this[1176+VK]` 由 Input 构造填成 0..6
+   * （raw 92394-92400，见 `DEFAULT_VK_TO_BIT`）。
+   */
   keyEdge = 0;
+
+  /** 键盘**按住态**（虚拟位 0..6 的并集；引擎那侧由 `GetAsyncKeyState` 每帧轮询真值）。 */
+  keysHeld = 0;
+
+  /**
+   * **键盘按下**（宿主 keydown → 这里）：置按下沿 + 按住态（`tickets/T-0052`）。
+   *
+   * @returns 是否命中映射表（未映射的 VK ⇒ `false` 且**不动任何位** —— 引擎那格没映射时
+   *   `1 << 0` 会污染 ↑ 位，所以这里必须显式忽略而不是"当成位 0"）
+   */
+  pressKey(vk: number): boolean {
+    const bit = DEFAULT_VK_TO_BIT.get(vk);
+    if (bit === undefined) return false;
+    this.keyEdge |= 1 << bit;
+    this.keysHeld |= 1 << bit;
+    return true;
+  }
+
+  /** **键盘松开**（宿主 keyup）：只清按住态（按下沿由 `consumeEdges()` 清）。 */
+  releaseKey(vk: number): void {
+    const bit = DEFAULT_VK_TO_BIT.get(vk);
+    if (bit === undefined) return;
+    this.keysHeld &= ~(1 << bit);
+  }
+
+  /** 释放全部键盘按住态（失焦/隐藏时用，与 `releaseAllMouse` 同因）。 */
+  releaseAllKeys(): void {
+    this.keysHeld = 0;
+  }
 
   /** 光标位置是否"变化过"（自上次消费以来 mousemove）。get-input-type 依此派发（hover 用）。 */
   mouseMoved = false;
@@ -277,7 +345,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
 
   /** 是否有待消费的输入活动（鼠标按下/移动、手把按下）。 */
   hasPending(): boolean {
-    return this.mouseEdge !== 0 || this.joyEdge.length > 0 || this.mouseMoved;
+    return this.mouseEdge !== 0 || this.joyEdge.length > 0 || this.mouseMoved || this.keyEdge !== 0;
   }
 
   /**
@@ -306,6 +374,9 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
       if (i < 0 || i >= 32) continue;
       m |= 1 << (4 + i);
     }
+    // ★键盘按下沿（虚拟位 0..6）：引擎的消费刷 `sub_478090` 吸的就是"键挂起"（`_this[1159]`）
+    //   ⇒ 这里只并**按下沿**，不含按住态（按住态归 `flushHeld`）。`tickets/T-0052`。
+    m |= this.keyEdge & 0x7f;
     this.inputMask = m;
     return m;
   }
@@ -328,6 +399,9 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
       if (i < 0 || i >= 32) continue;
       m |= 1 << (4 + i);
     }
+    // ★键盘：**按住态 + 按下沿**（与鼠标同一条"两把刷子"语义；`tickets/T-0052`）。
+    //   引擎的实时刷用 `GetAsyncKeyState` 轮询真值 ⇒ 按住期间每帧都为真。
+    m |= (this.keysHeld | this.keyEdge) & 0x7f;
     this.inputMask = m;
     return m;
   }
@@ -373,6 +447,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
       mouseEdge: this.mouseEdge,
       joyEdge: [...this.joyEdge],
       keyEdge: this.keyEdge,
+      keysHeld: this.keysHeld,
       mouseMoved: this.mouseMoved,
       hitTestPending: this.hitTestPending,
       lastAdvance: this.lastAdvance,
@@ -397,6 +472,7 @@ export class InputManager {  // --- 鼠标位置（虚拟坐标）---
     this.mouseEdge = s.mouseEdge;
     this.joyEdge = [...s.joyEdge];
     this.keyEdge = s.keyEdge;
+    this.keysHeld = s.keysHeld ?? 0;
     this.mouseMoved = s.mouseMoved;
     this.hitTestPending = s.hitTestPending;
     this.lastAdvance = s.lastAdvance;

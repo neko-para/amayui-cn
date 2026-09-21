@@ -38,12 +38,28 @@
     ]
   },
   "id": "T-0099",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 到点当帧派发（限定门判定处 + !textRevealing 保护）；E3 时序断言收紧为恰好 3 帧 + 反向断言；辨别力已证明（撤销 ⇒ 67ms 红）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 四条判据全达成：①结论=值得改（引擎 raw 21176-21181 + 全列 SLEEP_GATE 使用者）②只改门判定处（初版搬家到逐字泵，已修并留证）③守卫双向且区分 3/4 帧 ④verify 全绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts",
+    "app/amayui-emulator/test/adv-reveal-under-throttle.test.ts",
+    "app/amayui-emulator/test/op-10-002-adv-sleep-order.test.ts",
+    "app/amayui-emulator/test/frame-loop.test.ts"
   ]
 }

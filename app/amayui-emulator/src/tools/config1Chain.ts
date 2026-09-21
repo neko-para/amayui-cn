@@ -249,6 +249,24 @@ export interface AdvReturnProbe {
   reappliedStyle: boolean;
   /** 是否观察到 `i082`（= `CONFIG.txt:269`；`tickets/T-0104` 的落点）。 */
   sawI082: boolean;
+  /**
+   * **`i082` 这一笔自己触发了多少次文本窗重新发布**（`msgWinSync` 计数差）。
+   *
+   * 为什么单列：`i082` 的可见效果**只有**这一条通路（用 `op4`/`op5` 把已排版的文本重画一遍）——
+   * 属 VM 不可观测类，所以要断言"它真的重画了"只能数发布次数。计数窗口是
+   * **紧邻 `i082` 之后到下一次 hook**（不是整段），否则别的指令（`set-texture`/`0x20A`…）
+   * 的发布会把结论淹掉。桩（`STUB_NATIVE_OPS` 放行）时这里恒为 **0**。
+   */
+  republishByI082: number;
+  /**
+   * `i082` 执行那一刻 `Engine.textItems.records.length`（引擎 `Font+3364..3368` 的条数）。
+   *
+   * ★为什么要记它：引擎那道门是 `v8 > op2 && op2 >= 0`（raw 79502）—— **记录表为空时
+   * `i082` 在引擎里也什么都不做**。本探针跑的是一条"没有 ADV 消息历史"的链路（CONFIG 页不 push
+   * 文本项记录），所以这里多半是 0；`republishByI082` 必须与它**一致**（0 ⇒ 都不做；
+   * >0 ⇒ 必须重发布），否则就是实现与引擎分叉。
+   */
+  recordsAtI082: number;
 }
 
 /** `AdvReturnProbe` 的一次采样（全部是**解码后**的脚本语义值）。 */
@@ -641,10 +659,31 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     let sawI082 = false;
     let sawI076 = false;
     let lastScript = '';
+    // ★数"`i082` 自己重发布了几次窗"（见 `AdvReturnProbe.republishByI082`）：把宿主的
+    //   `msgWinSync` 包一层计数。窗口 = `i082` 之后到下一次 hook（= 下一条指令），精确到这一笔。
+    let syncCount = 0;
+    let syncAtI082 = -1;
+    let republishByI082 = 0;
+    let recordsAtI082 = -1;
+    const nativeAny = native as unknown as { msgWinSync?: (...a: unknown[]) => void };
+    const origSync = nativeAny.msgWinSync?.bind(native);
+    nativeAny.msgWinSync = (...a: unknown[]) => {
+      syncCount++;
+      origSync?.(...a);
+    };
     advStepHook = (op) => {
       const nm = e.curScript().name;
+      // 上一次 hook 之后如果是 `i082`，这里就把它那一笔的发布数结算掉（下一条指令已经进来）
+      if (syncAtI082 >= 0) {
+        republishByI082 = syncCount - syncAtI082;
+        syncAtI082 = -1;
+      }
       if (op === 0x76) sawI076 = true;
-      if (op === 0x82) sawI082 = true;
+      if (op === 0x82) {
+        sawI082 = true;
+        syncAtI082 = syncCount;
+        recordsAtI082 = e.textItems.records.length;
+      }
       // 只记 CONFIG 系脚本的指令 + 每次脚本切换 ⇒ 退出的那一小段不被 TITLE 的逐帧循环淹掉
       if (nm.startsWith('CONFIG')) marks.push(`${nm.replace('.BIN', '')}:${op.toString(16)}`);
       if (nm !== lastScript) {
@@ -663,6 +702,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     await run(1200, () => sawI082 || e.curScript().name.startsWith('SN0000'));
     await run(300); // 让 i082 之后的部分也走完
     advStepHook = null;
+    if (syncAtI082 >= 0) republishByI082 = syncCount - syncAtI082; // `i082` 是最后一条时也要结算
+    nativeAny.msgWinSync = origSync;
     advReturn = {
       before,
       setup,
@@ -670,6 +711,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
       marks: marks.slice(-160),
       reappliedStyle: sawI076,
       sawI082,
+      republishByI082,
+      recordsAtI082,
     };
   }
 

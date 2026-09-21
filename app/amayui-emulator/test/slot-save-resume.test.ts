@@ -23,7 +23,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { StubNative } from '../src/vm/native.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { parseIni } from '../src/engineConfig.js';
-import { parseSlotFile, type SlotStateBlock } from '../src/vm/saveSlot.js';
+import { parseSlotFile, type SlotStateBlock } from '../src/save/saveSlot.js';
 import { loadSlotIntoEngine } from '../src/vm/handlers/save-slot.js';
 import { parseScriptBytes } from '../src/script/bin.js';
 import type { FileSource } from '../src/arch/fileSource.js';
@@ -298,7 +298,7 @@ test('未调用 `i1ad` 的实例：退回 `e.cur`（引擎 `if (v10 < 0)` 分支
 test('老槽兼容：状态块里没有 `index`/`caller` ⇒ 按数组序归位、续跑仍入队且不炸', async () => {
   const src = mkSource();
   // 手工塞一个"老格式"槽：frames 无 index/caller。
-  const { buildSlotFile } = await import('../src/vm/saveSlot.js');
+  const { buildSlotFile } = await import('../src/save/saveSlot.js');
   const bytes = buildSlotFile({
     tables: { ints: new Map(), strings: new Map() },
     usedFileIds: [],

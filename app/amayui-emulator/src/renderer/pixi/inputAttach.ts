@@ -106,4 +106,39 @@ export function attachMouseInput(
 
   // 右键需阻止默认菜单，否则点击无法作为游戏输入
   window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // ---- 键盘（`tickets/T-0052`）----
+  // 引擎的实时刷 `sub_4770A0`（raw 91551-91570）**每帧**遍历 VK 真值（`GetAsyncKeyState`）填掩码
+  // ⇒ DOM 侧也要"按下沿 + 按住态"两半都有，不能只记边沿（按键按住时菜单要能连续移动）。
+  // 键码口径：`KeyboardEvent.keyCode` 在浏览器里就是 **Windows VK**（↑=38 / →=39 / ↓=40 / ←=37 /
+  // Enter=13 / Space=32 / BackSpace=8，正是引擎 Input 构造那 7 个默认键）；`key` 只作兜底
+  // （某些布局/合成事件不给 keyCode）。未映射的键 `InputManager.pressKey` 直接忽略（不动任何位）。
+  const KEY_FALLBACK: Record<string, number> = {
+    ArrowUp: 38,
+    ArrowRight: 39,
+    ArrowDown: 40,
+    ArrowLeft: 37,
+    Enter: 13,
+    ' ': 32,
+    Backspace: 8,
+  };
+  const vkOf = (e: KeyboardEvent): number => {
+    const kc = (e as KeyboardEvent & { keyCode?: number }).keyCode ?? 0;
+    return kc !== 0 ? kc : (KEY_FALLBACK[e.key] ?? 0);
+  };
+  window.addEventListener('keydown', (e) => {
+    // 方向键/空格/退格在页面里会滚动或触发默认行为 ⇒ 命中映射表就拦掉
+    if (input.pressKey(vkOf(e))) {
+      e.preventDefault();
+      trace(`[input] keydown vk=${vkOf(e)} held=0x${input.keysHeld.toString(16)}`);
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    input.releaseKey(vkOf(e));
+  });
+  // 失焦/隐藏：浏览器此后可能不再派发 keyup ⇒ 与鼠标同样先清按住态
+  window.addEventListener('blur', () => input.releaseAllKeys());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) input.releaseAllKeys();
+  });
 }

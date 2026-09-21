@@ -14,10 +14,14 @@
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "op_gdi_repaint_window",
+      "note": "本轮实现落点：计划层读 op1..op5 + 越界门（Engine.textItems.records）+ op3&2 用 bgrToRgb 覆盖填充/描边色 + emitWin 重发布该窗；三条登记的近似写在它的文档注释里"
+    },
+    {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
-      "anchor": "[0x82, op_stub_unhandled]",
-      "note": "本轮的临时处置（记录后放行）+ 体证据与缺口说明都在这段注释里",
-      "line": 319
+      "anchor": "已从本表移出",
+      "note": "★锚点已按位移交（原锚点是 [0x82, op_stub_unhandled]，该条目已删）：这里保留「为什么从 STUB_NATIVE_OPS 移出 + 新落点在哪」的说明"
     },
     {
       "file": "src/CONFIG.txt",
@@ -28,7 +32,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_466000((int)(_this + 21324), v2, v3, v4, v5, v6, v7);",
-      "note": "0x82 的落点调用（raw 28825）；被调 sub_466000 体起始 raw 79319",
+      "note": "0x82 的落点调用（raw 28825）；被调 sub_466000 体起始 raw 79319；越界门在 raw 79502、设色在 raw 79663-79669",
       "line": 28825
     }
   ],
@@ -43,7 +47,7 @@
     ]
   },
   "id": "T-0104",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-20",
@@ -54,9 +58,21 @@
       "at": "2026-09-20",
       "what": "轮 8 收口：登记 STUB_NATIVE_OPS 放行 + 新增 test/op-0104-gdi-repaint-stub.test.ts（4 条）+ 鉴别力验证（撤表项 4/4 红、还原 sha256 一致）；★真语义（GDI 重绘口径）仍未实现，status 保持 open",
       "kind": "decision"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 0x82 转真实现：MSGWIN_OPS 的 op_gdi_repaint_window（计划层 5 格 + 越界门 + bgrToRgb 设色 + emitWin 重发布）；守卫换成 op-0104-gdi-repaint.test.ts（6 条）+ config1-chain 场景位；旧 stub 守卫已删"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → doing —— 0x82 转真实现（判据 1/2/3前半/4 落地，verify 全绿 960 pass）；剩判据 5 的 E4（真界面用户口径）"
     }
   ],
   "tests": [
-    "test/op-0104-gdi-repaint-stub.test.ts"
+    "app/amayui-emulator/test/op-0104-gdi-repaint.test.ts",
+    "app/amayui-emulator/test/config1-chain.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts"
   ]
 }

@@ -12,6 +12,7 @@ import { readIntOperand, writeIntOperand, operandArg } from '../operand.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Engine, Frame } from '../engine.js';
 import { labelPos } from './shared.js';
+import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { cfgInt } from '../../engineConfig.js';
@@ -386,51 +387,9 @@ const op_load_into_frame: OpHandler = async (c) => {
   loadScriptIntoFrame(c.e.frames[frameIdx]!, script, src.name, scriptIdx);
 };
 
-/**
- * 把解析好的脚本装入一个帧（建立 labelMap + **重建局部池** + 写**脚本身份 token**）。
- *
- * ★★**一次载入 = 一次新调用**：引擎 `sub_40ED40`（loadScriptFrame）读脚本后**建局部池
- * 并把 `local_int` 填 `enc_zero`** ⇒ 启动、`call-script`(0x3)、`load-frame`(0x6)、
- * `exit-script` 后重载根脚本，每一次都看不见上一次的局部量。
- *
- * 漏掉这一步的症状（2026 实测）：**帧槽会被复用** —— 最典型是脚本自己 `exit` 之后又被调用方
- * `call-script` 调回来（`CONFIG1` 的"切左侧分类"就是这么实现的：置 `7dd=1` → 退出脚本 →
- * CONFIG.BIN 重新调用）。此时上一次调用的局部量会泄漏进新一次调用：
- * ```
- * 上一页滚到底 ⇒ local5620(滚动起点)=6
- * 新一页 12 项 ⇒ local5624(最大起点)=3
- * 拇指顶 3f6 = 106 + (428 − 拇指高)·5620/5624 → 320   ← 轨道只有 106..534 ⇒ 拇指溢出轨道
- * ```
- * 全局池（`Engine.globals.*`）**不在此列**：那是跨脚本状态（"上次选的分类" `12721e` 就在里面，
- * 所以切完分类高亮才记得住）。
- *
- * ★**`scriptId`**：引擎同一处还写 `frames[cur][95796] = a4`（raw 18636）＝**打开该脚本用的统一文件 id**，
- * 它就是 `sub_4083B0` / `0xCD` 的脚本身份守卫要比对的那个 token（见 `Engine.guardScriptIdentity`）。
- * 没传（测试里手搓的帧）时为 -1 ⇒ 守卫跳过（引擎里 -1 也是"未注册"的初值）。
- *
- * 注意 `call-frame`(0x8) 跑的是**已预装**的固定帧、不再走本函数 ⇒ 固定帧被反复调用时局部量照旧保留
- * （与引擎一致：`sub_41C900` 不重建池）。
- */
-export function loadScriptIntoFrame(
-  frame: Frame,
-  script: import('../../script/bin.js').ScriptBinary,
-  name?: string,
-  scriptId = -1,
-): void {
-  frame.script = script;
-  frame.name = name ?? script.signature;
-  frame.ip = 0;
-  frame.retStack = [];
-  frame.labelMap.clear();
-  for (let i = 0; i < script.instructions.length; i++) {
-    frame.labelMap.set(script.instructions[i]!.index, i);
-  }
-  frame.locals.clear(); // ★ 重建局部池（见上方说明）
-  frame.strTable = [];
-  frame.arrayContainer.clear();
-  frame.frameArg = 0;
-  frame.scriptId = scriptId; // ★脚本身份 token（引擎 frames[cur][95796]，raw 18636）
-}
+// ★`loadScriptIntoFrame` 已搬到叶子模块 `../scriptFrame.js`（`tickets/T-0089` 消环）：
+//   这里（顶部 import + 本行 re-export）让既有 `from "./control.js"` / `from "../ops.js"` 的调用点不受影响。
+export { loadScriptIntoFrame };
 
 // ---- 杂项 ----
 

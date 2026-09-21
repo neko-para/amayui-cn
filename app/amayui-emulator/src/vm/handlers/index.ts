@@ -83,7 +83,8 @@ export const NATIVE_OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
 ]);
 
 export { ENGINE_INTERNAL_OPS } from './stubs.js';
-export { ExitScript, loadScriptIntoFrame } from './control.js';
+export { ExitScript } from './control.js';
+export { loadScriptIntoFrame } from '../scriptFrame.js'; // ★叶子模块（T-0089 消环）
 
 /** 便于测试/工具遍历：三张表的名字（与 handlerKind 一致）。 */
 export const REGISTRY_NAMES = ['OPS', 'NATIVE_OPS', 'ENGINE_INTERNAL_OPS'] as const;

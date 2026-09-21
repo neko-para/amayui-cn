@@ -13,18 +13,27 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/index.ts",
       "anchor": "...SAVE_SLOT_OPS",
-      "line": 66,
-      "note": "顶层展开 ⇒ 求值顺序敏感"
+      "note": "顶层展开 ⇒ 求值顺序敏感（修前 TDZ 的抛出点：handlers/index.ts:67）"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
-      "anchor": "import { loadScriptIntoFrame } from '../ops.js';",
-      "note": "环的这条边（save-slot → ops）"
+      "anchor": "import { loadScriptIntoFrame } from '../scriptFrame.js';",
+      "note": "★锚点已按位移交（原锚点是 '../ops.js' 那条环边，2026-09-21 已改向叶子模块）：现在这条边指向 scriptFrame，环的三条边都不再存在；静态棘轮 test/save-slot-tdz.test.ts 第①条钉住它"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/scriptFrame.ts",
+      "anchor": "export function loadScriptIntoFrame",
+      "note": "修法落点：叶子模块（只 import type Frame/ScriptBinary，无回边）"
     },
     {
       "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
       "anchor": "必须先 import `vm/ops.js`",
-      "note": "实测踩到后写下的口径注释"
+      "note": "实测踩到后写下的口径注释；2026-09-21 改写成「历史口径 + 环已消」（原锚点字符串保留）"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-slot-tdz.test.ts",
+      "anchor": "ReferenceError: Cannot access 'SAVE_SLOT_OPS' before",
+      "note": "守卫：修前的**动态判据**就在这一行 TDZ 上红（`handlers/index.ts:67` 的 `...SAVE_SLOT_OPS`）；本文件 4 条断言 = 两条静态棘轮（不许再长出 save-slot→ops / frame→ops）+ 动态可加载 + 叶子模块归属。"
     }
   ],
   "links": {
@@ -35,12 +44,28 @@
     "analysis": []
   },
   "id": "T-0089",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 环已消：loadScriptIntoFrame 下沉叶子模块 vm/scriptFrame.ts；save-slot/frame 改向；守卫 4 条（修前动态判据在 TDZ 上红，已留证）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 判据 1（环被打破：save-slot 不再从 ops 取值，loadScriptIntoFrame 移到不依赖 ops 的层）+ 判据 2（只 import save-slot+engine 的最小测试文件已能跑：修前 TDZ ReferenceError，修后 4/4 绿）均达成"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-slot-tdz.test.ts",
+    "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
+    "app/amayui-emulator/test/slot-load-transfer.test.ts",
+    "app/amayui-emulator/test/slot-save-resume.test.ts"
   ]
 }

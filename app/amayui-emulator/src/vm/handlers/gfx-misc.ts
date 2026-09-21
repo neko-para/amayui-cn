@@ -6,6 +6,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand } from '../operand.js';
+import { operandsFor } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -67,10 +68,9 @@ const op_play_movie: OpHandler = (c) => {
   //   op1 = 影片资源 id、op2 = **影片槽**（`[4*slot+378688]` 的对象表）、op3 = **音量/模式选择子**。
   // ★此前只读 op1（op2/op3 被丢弃）—— 审计 P3 的「凭空/错读」条目（守卫 `test/opcode-operands.test.ts` 也据此报红）。
   //   现在三个都照读并上报宿主缝；真正的播放/音量仍是缺口（emulator 无影片子系统）。
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
-  const mode = readIntOperand(c.e, c.frame, c.instr, 3);
-  c.native.playMovie?.(id, slot, mode);
+  const p = operandsFor(c);
+  if (!p) return;
+  c.native.playMovie?.(p.int(1) ?? 0, p.int(2) ?? 0, p.int(3) ?? 0);
 };
 
 /** 图形子系统的槽表/渲染配置（真实现）。 */

@@ -32,7 +32,7 @@ import { dec } from '../src/vm/bits.js';
 import { runFrameLoop, type FrameLoopOptions } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { parseSlotHeader } from '../src/vm/saveSlot.js';
+import { parseSlotHeader } from '../src/save/saveSlot.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine } from '../src/emulatorOptions.js';
 import { applyConfigToEngine, parseIni } from '../src/engineConfig.js';
 import { effectiveIniText } from '../src/arch/systemPaths.js';

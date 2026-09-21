@@ -16,11 +16,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { Engine } from '../src/vm/engine.js';
-// ★**必须先 import `vm/ops.js`**：本工程有一条既有的模块环
+// ★**历史口径（保留作溯源）：必须先 import `vm/ops.js`** —— 本工程曾有一条模块环
 //   `handlers/save-slot → vm/ops → handlers/index → handlers/save-slot`，直接先 import `save-slot` 会在
 //   `handlers/index.ts` 求值 `...SAVE_SLOT_OPS` 时踩 TDZ（`ReferenceError: Cannot access 'SAVE_SLOT_OPS'
-//   before initialization`）。既有测试都是这个顺序（见 `slot-load-transfer.test.ts`）；
-//   环本身登记在 `tickets/T-0089`（属 `T-0021` 的分层违规族）。
+//   before initialization`）。既有测试都是这个顺序（见 `slot-load-transfer.test.ts`）。
+//   ★**2026-09-21：环已消**（`tickets/T-0089`）—— `loadScriptIntoFrame` 搬到叶子模块
+//   `src/vm/scriptFrame.ts`，`save-slot.ts`/`frame.ts` 不再从 `../ops.js` 取它；回归守卫
+//   `test/save-slot-tdz.test.ts` 会钉住"不许再把这条边加回来"。本行 import 保留（无副作用），
+//   删掉它也不会再 TDZ。
 import '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { loadSlotIntoEngine } from '../src/vm/handlers/save-slot.js';

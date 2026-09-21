@@ -34,7 +34,11 @@ function argOf(name: string, dflt?: string): string | undefined {
 async function main(): Promise<void> {
   const specPath = argOf('scenario');
   if (!specPath) {
-    console.error('用法：npm run scenario -- --scenario <spec.json> [--out <trace.jsonl>] [--frame-ms N]');
+    console.error(
+      '用法：npm run scenario -- --scenario <spec.json> [--out <trace.jsonl>] [--frame-ms N]\n' +
+        '  路径基准：两者都按 **cwd** 解析（在包目录下跑时，示例里的 `tools/scenarios/…` 与 `.tmp/…` 都指包内）；\n' +
+        '  起跑时会打印 `[paths] --out = <绝对路径>`。Electron 跑手（record/shot）则按**仓库根**解析并校验越界。',
+    );
     process.exitCode = 2;
     return;
   }
@@ -65,6 +69,11 @@ async function main(): Promise<void> {
 
   const collector = new DigestCollector();
   const outPath = argOf('out');
+  // ★`tickets/T-0032`（第 4 条：示例路径基准要说清）：本跑手的 `--scenario`/`--out` 都按 **cwd** 解析
+  //   （与两个 Electron 跑手 `record.cjs`/`shot.cjs` 的"仓库根 + 前置校验"**不同** —— 那两份走
+  //   `tools/paths.cjs`）。这里不搬基准（会改产物落点），但**把最终绝对路径打出来**，
+  //   让"基准是哪个"永远不用猜；越界的 mkdir 也只会在本进程里报 ENOENT/EPERM 而不会拉死 Electron。
+  if (outPath) console.log(`[paths] --out = ${path.resolve(outPath)}（基准 = cwd ${process.cwd()}）`);
   const recorder = outPath
     ? new TraceRecorder({
         scenario: spec.name,

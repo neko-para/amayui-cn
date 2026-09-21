@@ -11,7 +11,9 @@
     "未覆盖边界写清楚（docs-new/04-app、functions/fields/scripts 三层台账的逐条核对、真机 E4 类问题）",
     "npm run verify 全绿 + 票据自检通过"
   ],
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/audit-report-completeness.test.ts"
+  ],
   "evidence": [
     {
       "file": "docs-new/99-records/2026-09-audit/audit-2026-09.md",
@@ -60,12 +62,22 @@
     ]
   },
   "id": "T-0075",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 审计交付物自包含性收尾：补总览 §6 执行状态、归档机器可读清单、新增完整性守卫 3 条"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 三份明细+总览齐全（含 §6 执行状态）；数据清单入 evidence/；守卫 audit-report-completeness.test.ts 3/3；全量 npm test 950 pass/0 fail"
     }
   ]
 }

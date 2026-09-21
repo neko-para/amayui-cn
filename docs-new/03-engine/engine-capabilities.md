@@ -20,12 +20,12 @@ generated_by: scripts/build-capabilities.mjs
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 53 | 已建模且有守卫（E2/E3） |
+| `modeled-verified` | 54 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 21 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **136** | 需要关注（非 n/a 且非已核验）= **59** |
+| **合计** | **137** | 需要关注（非 n/a 且非已核验）= **59** |
 
 ## 按子系统
 
@@ -40,7 +40,7 @@ generated_by: scripts/build-capabilities.mjs
 | 渲染 | 29 | 13 |
 | 资源 | 18 | 4 |
 | 转场 | 4 | 2 |
-| 输入 | 6 | 0 |
+| 输入 | 7 | 0 |
 
 ## 全部条目
 
@@ -182,6 +182,7 @@ generated_by: scripts/build-capabilities.mjs
 | `save-load-drawitem-clear-and-restore` | 资源 | 读档装载点：清空绘制项容器 + 还原存档里的绘制项清单（Scene+1032） | ✅ 已核验 | E4 · `test/engine-slot.test.ts` |
 | `live2d-node-matrix-compose` | Live2D | 572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进 | ✅ 已核验 | E3 · `test/l2d-node-compose.test.ts` |
 | `texture-bind-async-stale-writeback` | 资源 | 纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面 | ✅ 已核验 | E3 · `test/texture-bind-race.test.ts` |
+| `input-keyboard-to-mask-bits` | 输入 | 键盘 VK → 掩码位 0..6（每帧 GetAsyncKeyState 轮询） | ✅ 已核验 | E2 · `test/keyboard-mask.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

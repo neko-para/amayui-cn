@@ -69,6 +69,31 @@ export function assertFlags(kind: 'drawitem' | 'mesh', handle: number, flags: nu
   if (unknown !== 0) throw new UnknownFlagError(kind, handle, flags, unknown);
 }
 
+/**
+ * **引擎在体内抛 `Command_ShowMessage` ⇒ emulator 也硬中断并把原文展示出来**（`tickets/T-0098`）。
+ *
+ * 引擎里这类分支的样子是（`0xFE` 的 `sub_421CA0` raw 30449-30457 逐字）：
+ * ```c
+ * result = sub_41BF50(_this, 1);            // 无符号
+ * if ( result > 0x1F ) { pExceptionObject[0] = (int)aSetkeytotal; … _CxxThrowException(…); }
+ * _this[517] = result;                      // ★抛了就到不了这里 ⇒ 字段不变
+ * ```
+ * ⇒ 引擎**不写字段**（不是"先写再报错"），并且**停在那里把消息给玩家**。
+ * emulator 的等价物就是"抛 ⇒ `session.#onError` 粘住文本 + 控制窗横幅 + 停止"
+ * （与 `NotImplementedOp`/`UnknownFlagError` **同一条既有通路**，不新造机制、不静默）。
+ */
+export class ShowMessageError extends Error {
+  constructor(
+    /** 引擎里那条消息的原文（如 `aSetkeytotal` = 「SetKeyTotalの引数が不正です．」）。 */
+    public readonly engineText: string,
+    public readonly opcode: number,
+    public readonly detail: string,
+  ) {
+    super(`${engineText}（opcode 0x${opcode.toString(16)}：${detail}）`);
+    this.name = 'ShowMessageError';
+  }
+}
+
 /** draw-item（图像）配置。layer = op2（2a/2b）；dst 为屏幕位置。 */
 export interface DrawItemConfig {
   handle: number;

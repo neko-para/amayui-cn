@@ -159,12 +159,19 @@
       "at": "2026-09-17",
       "what": "真机联调：修两个\"只有真机才暴露\"的静默失败 —— ① moc.ts 用 Node 的 Buffer 解字符串（渲染进程无 Node 集成）⇒ 加渲染器安全源码棘轮；② 出画批次按纹理号合并、alpha 取最小值 ⇒ op=0 的网格把整张角色纹理压透明 ⇒ 改为一网格一批（7 条守卫）；③ 删掉 Live2D 的宿主缝（l2dLoadModel/l2dBindTexture/l2dStartMotion/destroyL2DSlot/l2dSlotSet/setTextureTransform）与两处被覆盖的死 handler（gfx-misc 的 0x342/0x352、gfx-texture 的 0x344 旧解）⇒ 控制窗不再报假缺口。E4 已取得（.tmp/l2dfix-0-title.png 角色完整出画）⇒ live2d-mesh-batches 升 E4。M3 仍未做。",
       "kind": "decision"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 轮 11：M3 的 live2d-slot-probe 接线（节点窗进合成判据），守卫 l2d-render-pending.test.ts 5 条，辨别力已证明"
     }
   ],
   "tests": [
-    "test/live2d-moc.test.ts",
-    "test/live2d-deform.test.ts",
-    "test/live2d-chain.test.ts",
-    "test/live2d-render.test.ts"
+    "app/amayui-emulator/test/live2d-moc.test.ts",
+    "app/amayui-emulator/test/live2d-deform.test.ts",
+    "app/amayui-emulator/test/live2d-chain.test.ts",
+    "app/amayui-emulator/test/live2d-render.test.ts",
+    "app/amayui-emulator/test/l2d-render-pending.test.ts",
+    "app/amayui-emulator/test/l2d-node-compose.test.ts"
   ]
 }

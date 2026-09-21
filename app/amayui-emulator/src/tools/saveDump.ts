@@ -19,8 +19,8 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OverlayDir } from '../arch/overlay.js';
 import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from '../arch/systemPaths.js';
-import { decodeSaveData, readSaveHeader } from '../vm/saveData.js';
-import { parseSlotFile } from '../vm/saveSlot.js';
+import { decodeSaveData, readSaveHeader } from '../save/saveData.js';
+import { parseSlotFile } from '../save/saveSlot.js';
 import { decodeEngineSlot } from '../vm/engineSlot.js';
 import { decodeBmp } from '../vm/bmp.js';
 

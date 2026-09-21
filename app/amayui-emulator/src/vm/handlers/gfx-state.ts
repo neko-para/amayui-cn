@@ -33,6 +33,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readFloatOperand, readIntOperand } from '../operand.js';
+import { operandsFor } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
@@ -147,16 +148,19 @@ const op_blit_slot_to_slot: OpHandler = (c) => {
  * headless 只把这次下发记进 `scene.render4.blits`）。守卫 `test/op-032-stretch-texture.test.ts`。
  */
 const op_stretch_texture: OpHandler = (c) => {
-  const srcSlot = readIntOperand(c.e, c.frame, c.instr, 1);
-  const dstSlot = readIntOperand(c.e, c.frame, c.instr, 2);
-  const x = readIntOperand(c.e, c.frame, c.instr, 3);
-  const y = readIntOperand(c.e, c.frame, c.instr, 4);
-  const w = readIntOperand(c.e, c.frame, c.instr, 5);
-  const h = readIntOperand(c.e, c.frame, c.instr, 6);
-  const dx = readIntOperand(c.e, c.frame, c.instr, 7);
-  const dy = readIntOperand(c.e, c.frame, c.instr, 8);
-  const dw = readIntOperand(c.e, c.frame, c.instr, 9);
-  const dh = readIntOperand(c.e, c.frame, c.instr, 10);
+  const p = operandsFor(c);
+  if (!p) return;
+  // 十格全 int（计划 `0x32`）：槽号 + 两个矩形。缺实参按 0（引擎那条链要求十个都在，缺只可能来自测试构造）
+  const srcSlot = p.int(1) ?? 0;
+  const dstSlot = p.int(2) ?? 0;
+  const x = p.int(3) ?? 0;
+  const y = p.int(4) ?? 0;
+  const w = p.int(5) ?? 0;
+  const h = p.int(6) ?? 0;
+  const dx = p.int(7) ?? 0;
+  const dy = p.int(8) ?? 0;
+  const dw = p.int(9) ?? 0;
+  const dh = p.int(10) ?? 0;
   // 引擎把 (x,y,w,h) 化开成 [x1,y1,x2,y2]（raw 27976-27983）
   c.native.blitSlotToSlot?.(srcSlot, dstSlot, [x, y, x + w, y + h], [dx, dy, dx + dw, dy + dh]);
 };

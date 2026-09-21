@@ -82,6 +82,20 @@ state: live
 - **单步派发**：`interpreter.stepOnce` 读一条指令 → 查 `OPS → NATIVE_OPS → ENGINE_INTERNAL_OPS` → 未命中抛 `NotImplementedOp`。
   操作数读取集中在 `operand.ts`（`readIntOperand` 对 int 槽过 DEC；`readFloatOperand` 的立即数是 IEEE 位模式）；
   引用（指针/数组/lea）集中在 `ref.ts`（`Ref={scope,kind,index,stride}`，读解引用、写写穿）。
+- **操作数计划（`operandPlan.ts`，`tickets/T-0082` 的 RF-A）**：每条指令的**操作数形态是一份声明**
+  （`OperandPlan = { argc, kinds[], io[], evidence }`），由共享执行器 `operandsFor(ctx)` 按声明读/写，
+  handler 只消费结果（`p.int(1)` / `p.float(4)` / `p.setInt(1, v)`），**不再各自手写读取顺序**。
+  两条硬门：① 声明为 `float` 的位用 `int()` 读会**当场抛**（审计 `0x34B`/`0x348` 那类"把 `0x3F800000`
+  当整数用"的错从此写不出来）；② 方向为 `r` 的位 `setInt()` 会抛（"往不存在的输出写"）。
+  声明与三处真源焊在守卫 `test/operand-plan.test.ts` 里：计划 argc ⟷ 文档 argc（`scripts/asm/opcodes.json`）、
+  计划碰的位 ⟷ handler 真碰的位（args Proxy）、以及下面那条记数槽。
+  ★**迁移中**：新写的 handler 必须走计划层；老 handler 按批迁移（当前 12 条）。
+- **操作数记数槽 = 指令长度**：引擎每条 handler 体都写 `_this[30*cur+95805] = 2*argc+1`（控制流 `0x2`/`0x84`/`0xd5` 写 0），
+  派发器那行 `+= 4 * _this[30*cur+95805]`（raw 20165）就是**靠它推进 ip**。emulator 的 ip 是下标制、
+  长度由解析器的 dword 索引表给出 ⇒ 该值不参与推进，而是作为**可核验的引擎真源**写进
+  `Frame.operandCount` / `StepTrace.operandCount`（`operandCountSlotValue()`，与 `analysis/fields.json` 的
+  `ScriptContext/0x74 operand_count` 同名 —— 引擎里叫 `arity` 的是 `+0x60` 那个**无读者**的字段）。
+  引擎机制见 `../03-engine/operands.md`。
 - **字段即事实**：引擎字段写进 `Engine.engineValues`（稀疏 `Map<number,number>`，键 = `_this[K]` 的 **dword 下标**）；
   有结构的那部分再建强类型视图（`Engine.msgwin` / `routes` / `textItems` / `agerc` / `texSlotFlags` …）。
   两者的关系是"字段是真源、视图是投影"，不允许只有视图没有字段。
@@ -188,12 +202,23 @@ npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未
 npm run diag:text      # 文本可见性诊断（为什么画面上没有字）
 npm run shot -- --gamestart [--name X] # **G4** E4 自动截图（先 build:electron；★时序等日志标记，不睡固定秒数）
 npm run shot -- --gamestart --centered # 同上，但窗口**居中弹出**（默认测试期贴屏幕下缘、不抢焦点，见 `T-0040`）
-npm run scenario -- --scenario tools/scenarios/gamestart.json [--out X.jsonl]  # headless 跑一份 Scenario
-npm run record -- --scenario tools/scenarios/gamestart.json --out X.jsonl.gz   # **G3 录制端**（Electron，真输入）
-npm run replay -- X.jsonl.gz           # **G3** 把录下来的时钟+输入在 headless 复现，逐帧比 digest
+npm run scenario -- --scenario tools/scenarios/gamestart.json [--out .tmp/gamestart-headless.jsonl]  # headless 跑一份 Scenario（路径基准 = cwd）
+npm run record -- --scenario tools/scenarios/gamestart.json --out .tmp/gamestart-electron.jsonl.gz   # **G3 录制端**（Electron，真输入；路径基准 = 仓库根）
+npm run replay -- .tmp/gamestart-electron.jsonl.gz  # **G3** 把录下来的时钟+输入在 headless 复现，逐帧比 digest
 npm run electron:dev   # build + 启动渲染壳
 npm run save:dump      # SAVE.DAT 解析
 ```
+
+> **★路径参数的基准（`tickets/T-0032`，两条规则都要记）**
+> | 跑手 | 基准 | 越界怎么办 |
+> |---|---|---|
+> | `record.cjs` / `shot.cjs`（Electron，`.cjs`） | **仓库根**（`--out .tmp/x` ⇒ `<repo>/.tmp/x`） | **前置报错**：一行可读信息 + `exit(2)`，在 `require(main.cjs)` **之前**（不再有「App threw an error during load」弹窗） |
+> | `npm run scenario`（headless，`src/tools/scenarioRun.ts`） | **cwd** | 起跑打印 `[paths] --out = <绝对路径>`；写不进去只在本进程报错 |
+>
+> 两个 Electron 跑手共用 `app/amayui-emulator/tools/paths.cjs`（唯一真源），起跑会打印
+> `[paths] --scenario = …` / `[paths] --out = …`（含"命中规则"）。守卫 `test/tool-paths.test.ts`（7 条）。
+> 历史事故：同一命令里 `--scenario` 相对 cwd、`--out` 相对仓库根 ⇒ 传 `--out ../../.tmp/x` 会 `mkdir`
+> 到仓库外、EPERM 抛在加载阶段把 Electron 拉死。
 
 ### 7.1 ★闸门清单：改哪些文件必须跑 G3 / G4
 

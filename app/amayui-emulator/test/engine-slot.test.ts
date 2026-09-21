@@ -27,7 +27,7 @@ import {
   resolveSlotRetStack,
   type EngineSlotFrame,
 } from '../src/vm/engineSlot.js';
-import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
+import { crc32, crc32MsbFirst } from '../src/util/crc32.js';
 import { parseScriptBytes, type ScriptBinary } from '../src/script/bin.js';
 import { OPCODE_TABLE } from '../src/opcodes.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';

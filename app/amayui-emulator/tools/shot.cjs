@@ -21,6 +21,7 @@
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { preflight, ToolPathError } = require('./paths.cjs');
 
 // ★必须关掉"后台/被遮挡窗口"的节流：主进程是脚本自己（窗口不在前台）时，Chromium 会把
 //   requestAnimationFrame 降到极低频 ⇒ 渲染循环几乎不推进 ⇒ 启动链永远到不了 TITLE
@@ -35,18 +36,34 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 //   `--centered` 或 `AMAYUI_WINDOW_EDGE=0` 可单次恢复"居中弹出"。
 if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
 
-require('../dist/electron/main.cjs'); // 真实主进程：建窗口 + 注册 IPC（脚本/图像/配置）
-
+// ★★`tickets/T-0032`：**参数校验必须早于 `require(main.cjs)`** —— 否则参数错会变成
+//   Electron 的「App threw an error during load」弹窗（`record.cjs` 的实测事故）。
+//   截图产物固定落仓库 `.tmp/`；`--name` 只是文件名，不许带路径分隔符（那会写到别处去）。
 const ROOT = path.resolve(__dirname, '..', '..', '..');
-const OUT = path.join(ROOT, '.tmp');
-const LOG = path.join(OUT, 'amayui-emulator.log');
-
 const argv = process.argv.slice(2);
 const argOf = (k, d) => {
   const i = argv.indexOf(`--${k}`);
   return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : d;
 };
-const NAME = argOf('name', 'shot');
+const NAME = (() => {
+  const raw = argOf('name', 'shot');
+  if (/[\\/]/.test(raw) || raw.includes('..')) {
+    console.error(`✗ --name 只是文件名，不能带路径分隔符或 ..（实得：${raw}）—— 产物目录固定为仓库 .tmp/`);
+    process.exit(2);
+  }
+  return raw;
+})();
+const OUT = path.join(ROOT, '.tmp');
+const LOG = path.join(OUT, 'amayui-emulator.log');
+// 统一的路径校验装配（与 record.cjs 同一份规则；这里没有需要解析的路径参数，但要把基准打印出来）
+try {
+  const r = preflight({ out: `.tmp/${NAME}-0.png`, log: (m) => console.log(m) });
+  console.log(`[paths] 截图产物目录 = ${OUT}（基准 = 仓库根；示例：${r.outPath}）`);
+} catch (err) {
+  if (!(err instanceof ToolPathError)) throw err;
+}
+
+require('../dist/electron/main.cjs'); // 真实主进程：建窗口 + 注册 IPC（脚本/图像/配置）
 const TABS = (argOf('tabs', '4')) // 默认：先看角色设定（曾经黑屏的那一页）
   .split(',')
   .map((s) => Number(s.trim()))

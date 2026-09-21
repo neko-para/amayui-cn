@@ -11,6 +11,9 @@
 import type { Affine } from './deform.js';
 import { AFFINE_IDENTITY } from './deform.js';
 import { l2dComposeNode, makeNodeWindows, syncWindowsFromFields, type L2dNodeWindows } from './nodeMatrix.js';
+// ★`tickets/T-0054` 的 M3 `live2d-slot-probe`：合成判据要用"本节点的窗还在跑吗"这个**纯读**探针
+//   （定义在 nodeMatrix.ts，那里才有窗的语义）⇒ 从本模块的单一出口再导一次，场景侧只依赖 runtime.js。
+export { l2dNodeWindowsPending } from './nodeMatrix.js';
 import type { MocModel } from './moc.js';
 import {
   advanceMotion,

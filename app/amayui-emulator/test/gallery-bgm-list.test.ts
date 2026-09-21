@@ -28,7 +28,7 @@ import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import { resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { SAVE_DAT_REL } from '../src/arch/systemPaths.js';
-import { decodeSaveData, encodeSaveData } from '../src/vm/saveData.js';
+import { decodeSaveData, encodeSaveData } from '../src/save/saveData.js';
 import { parseScriptBytes } from '../src/script/bin.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec } from '../src/vm/bits.js';

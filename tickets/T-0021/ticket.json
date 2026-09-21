@@ -1,7 +1,7 @@
 {
   "id": "T-0021",
   "type": "refactor",
-  "status": "open",
+  "status": "done",
   "priority": "P3",
   "area": "emulator/arch",
   "title": "消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData",
@@ -28,6 +28,22 @@
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— A1 已消：save 叶子层（save/saveData+saveSlot、util/crc32）+ 3 条分层棘轮（辨别力已证明）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 判据 1（依赖单向：arch/electron 的 vm 引用 0 命中）+ 判据 2（3 配置 typecheck + save-data/overlay/save-slot 全绿）均达成；守卫 layer-direction.test.ts 3 条"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/layer-direction.test.ts",
+    "app/amayui-emulator/test/save-data.test.ts",
+    "app/amayui-emulator/test/overlay.test.ts",
+    "app/amayui-emulator/test/save-slot.test.ts"
   ]
 }

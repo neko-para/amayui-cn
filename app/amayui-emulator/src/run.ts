@@ -5,7 +5,7 @@ import { NodeFileSource } from './arch/nodeFileSource.js';
 import { describeResourcesLine } from './arch/resourceDir.js';
 import { OverlayDir } from './arch/overlay.js';
 import { SAVE_DAT_REL, describeSystemPaths, resolveSystemPaths } from './arch/systemPaths.js';
-import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from './vm/saveData.js';
+import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from './save/saveData.js';
 import { StubNative } from './vm/native.js';
 import { Engine } from './vm/engine.js';
 import { loadScriptData, type StepTrace } from './vm/interpreter.js';

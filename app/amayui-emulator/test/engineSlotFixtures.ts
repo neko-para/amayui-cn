@@ -11,7 +11,7 @@
  *  - 槽 body：`sub_410160`（读）+ `sub_40CD10`（写）的 `a4 == 3` 布局（帧镜像 + 池块 + 图像清单）；
  *  - 容器：292 B 头 + 20 B 块 + `sub_436E90` 置乱流（LZSS 压 + 两个内层 CRC）。
  */
-import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
+import { crc32, crc32MsbFirst } from '../src/util/crc32.js';
 import { OPCODE_TABLE } from '../src/opcodes.js';
 import {
   SLOT_IMAGE_PRELUDE_BYTES,

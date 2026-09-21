@@ -271,9 +271,16 @@ _this[30*cur + 95805] = 0;
 
 当前在 `app/amayui-emulator` 已实现**输入子系统**（新增 `src/vm/input.ts` 的 `InputManager`，并接入 `Engine`/`NativeBridge`/`PixiBackend`）：
 
-- **`InputManager`**（emulator 侧重建模输入管理器）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿（mouse/joy）、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（鼠标=bit4/5、手把=bit4+i）。
+- **`InputManager`**（emulator 侧重建模输入管理器）：光标位置（虚拟 1280×720）、鼠标按钮（bit0/1）、按下沿（mouse/joy/key）、回调跳转目标（`mouseJump`/`joyJump[]`）、输入掩码（鼠标=bit4/5、手把=bit4+i、**键盘=bit0..6**）。
   ★掩码有**两把刷子**（`T-0027`，对应 §4 的引擎两把）：`flushPending()` = `sub_478090`（消费刷：只并按下沿/手柄挂起，**不含按住态**）、`flushHeld()` = `sub_4780D0`（实时刷：含 `buttons` 按住态）。**谁是哪个消费者是硬约束**：等待推进泵/`0x101`/`0xFA` 后半/`eatAllInput`/悬停门控走消费刷；`serviceAdv`(ADV 分支)/`0x100`/`0xFF`/`0xFA` 前半走实时刷。把等待泵接到实时刷会让「按住左键」每帧翻一页（用户实测的"一次点击快进多页"）。
   按住态另有**真值重同步** `syncButtons(MouseEvent.buttons)`（引擎"每帧 `GetAsyncKeyState` 轮询"的 DOM 等价物）与失焦兜底 `releaseAllMouse()`。
+- ★**键盘 → 掩码位 0..6（`T-0052`，2026-09 起接上）**：引擎 `sub_4770A0`（raw 91551-91570）每帧遍历 VK，`GetAsyncKeyState(vk)&0xFF00` 命中就 `mask |= 1 << _this[1176+vk]`，而那张 VK→位表由 Input 构造填成 **0..6**（raw 92394-92400）：
+  | 位 | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+  |---|---|---|---|---|---|---|---|
+  | VK | 38 ↑ | 39 → | 40 ↓ | 37 ← | 13 Enter | 32 Space | 8 BackSpace |
+  emulator：`DEFAULT_VK_TO_BIT`（`src/vm/input.ts`）+ `pressKey/releaseKey/releaseAllKeys`（DOM 侧 `keydown`/`keyup`/`blur`/`visibilitychange` → `renderer/pixi/inputAttach.ts`；键码用 `KeyboardEvent.keyCode`，它在本作需要的 7 个键上就是 Windows VK，`key` 作兜底）。
+  语义对齐：`flushPending` 只并**按下沿**（`keyEdge`，消费一次即清 ⇒ 一次按下 = 一次派发）、`flushHeld` 并**按住态 + 沿**（按住期间每帧为真 ⇒ 菜单可连续移动）；未映射的 VK **不动任何位**（引擎那格没映射时 `1<<0` 会污染 ↑ 位）。守卫 `test/keyboard-mask.test.ts`（6 条，含 `0x100` 真派发到 `joy-callback 0`）。
+  **仍缺**：① `0x107`/`0x10B`/`0x10C` 那族"按键绑定"改写这张表（emulator 只实现默认值，`Engine.engineValues` 里 `keyTableBase`/`keyTable2Base` 是写进去了、但**没有读者**）；② 真 ADV 场景的键盘 E3（本轮只到合成脚本级）。两条都登记在 `tickets/T-0052`。
 - **已实现的输入 opcode**（`src/vm/ops.ts`，移入 `OPS` 表，读操作数/注册/跳转均真实生效）：
   - `0x108` 读鼠标按钮值→op1；`0x109` 读鼠标位置 X/Y→op1/op2（-100000=未初始化）。
   - `0xCC` mouse-callback：记 `input.mouseSlot=op1`、`input.mouseJump=op2`；`0xFB` joy-callback：记 `input.joyJump[btn]=op2`（校验 0..31）。

@@ -55,3 +55,16 @@ this.textures.captureCanvasIntoSlot(slot, canvas, frame.width, frame.height);
 \src/\\.txt:17591\ 的 \i032 2 e 0 0 500 2d0 0 0 140 b4\）⇒ 已复位，并把 note 写清各自对应的那一环。
 
 状态仍为 \doing\：判据 3 的 GUI 目视已由用户确认通过，但本票还没有**自动化守卫**（\	ests[]\ 为空 ⇒ 不能置 done）。
+
+## 2026-09-21
+
+## 第 3 次变更（2026-09）——补自动化守卫，本票结算
+
+判据 3 的 GUI 目视此前已由用户确认，缺的是**可自动核对的骨架** ⇒ 新增 \	est/op-020c-render-target-capture.test.ts\（5 条）：
+
+1. ★\enderTargetSlot >= 0\ ⇒ \rameTick\ 当场 \present()\ 一次 + \xtract.canvas\ **恰好一次**，且传入**屏幕矩形** \(0,0,1280,720)\ 与 \esolution: 1\，再 \captureCanvasIntoSlot(slot=2, 1280, 720)\ —— 同时钉住第 1 次变更（要捕获）与第 2 次变更（矩形必须是屏幕，不是 local bounds）；
+2. \enderTargetSlot < 0\ ⇒ 不抓帧、不写槽、不多合成；
+3. 合成抛异常 ⇒ \doesNotThrow\ + 日志含 \[render-target]\（不打断 VM）；
+4. 宿主忽略 \rame\（画布宽高比不符）⇒ 留痕 \宽高比不符\，但仍写这一帧（不静默回到拼贴）；
+5. ★**时序陷阱**（headless 端到端）：跑 \create-texture 2 500 2d0 2\ → \i20d 2\ → \i20e\ → \i20c\ → \i20d -1\，在宿主最外层观测 \
+ative.frameTick\ 那一刻的 \ender4.renderTargetSlot\ ⇒ 必须 \[2]\，随后才是 \-1\ —— 证明

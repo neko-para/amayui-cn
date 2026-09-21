@@ -13,7 +13,7 @@ import * as path from 'node:path';
 import * as zlib from 'node:zlib';
 import { decodeBmp } from '../vm/bmp.js';
 
-/** CRC32（PNG 块校验；与 `vm/crc32.ts` 的引擎口径无关，是 PNG 规范那一套）。 */
+/** CRC32（PNG 块校验；与 `util/crc32.ts` 的引擎口径无关，是 PNG 规范那一套）。 */
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {

@@ -130,8 +130,7 @@ export interface L2dColorWindow {
 }
 
 /** 572B 记录的 4 个窗的**运行时**状态（合成器会就地改写它 —— 引擎 `a2` 不是拷贝）。 */
-export interface L2dNodeWindows {
-  /** `+24`：窗序列**绝对起点(ms)**；`0` = 未激活 ⇒ 首次求值锁存 `nowMs`（不要拿它当倒计时）。 */
+export interface L2dNodeWindows {  /** `+24`：窗序列**绝对起点(ms)**；`0` = 未激活 ⇒ 首次求值锁存 `nowMs`（不要拿它当倒计时）。 */
   startedAtMs: number;
   /**
    * 「`+24` 是否已锁存」—— ★emulator 专有的一个位，不是 572B 里的字段。
@@ -514,6 +513,29 @@ export function syncWindowsBack(node: L2dMatrixNode): void {
  * @param frame `M` 上的两个标志（`winSkip` / `alphaGateDisabled`），缺省全 `false`
  * @param slot 实例槽（只读 alpha；`+64` 那条休眠通道不建模）
  */
+/**
+ * **本节点的窗还在跑吗**（纯读、**不推进也不改窗**）—— 合成判据 `scAnimationsPending` 用
+ * （`tickets/T-0054` 的 M3 `live2d-slot-probe`；引擎的等价物 = `sub_40BE10` 读 `Scene+55812`
+ * 的 10 个实例槽，raw 16022 那一带）。
+ *
+ * 为什么不能靠"跑一次合成看返回值"来问：合成器**会就地吸收**跑完的窗（`dur = 0` 且 `from ← to`，
+ * raw 121305/121343/121467/121614）—— 用它当探针就等于把这一帧的推进提前吃掉。
+ *
+ * 判据逐条对齐 `advance*Window` 的 `state`：
+ *  - `flags & 2 == 0`（没有窗配置）⇒ 不在跑；
+ *  - `!wins.latched`（窗指令刚写过、还没锁存起点）⇒ **在跑**（引擎那一路是 `waiting`，118261 的 `v107 = 1`）；
+ *  - 某个窗 `dur > 0` 且 `nowMs < startedAtMs + delay + dur` ⇒ 在跑（`waiting`/`inside`）；
+ *  - 到点或 `dur <= 0` ⇒ 不在跑（`absorb`，与引擎"吸附分支不置 v107"同口径）。
+ */
+export function l2dNodeWindowsPending(node: L2dMatrixNode, nowMs: number): boolean {
+  if ((node.flags & 2) === 0) return false;
+  const wins = node.wins;
+  if (!wins.latched) return true;
+  const start = wins.startedAtMs;
+  const live = (w: { delay: number; dur: number }): boolean => w.dur > 0 && nowMs < start + w.delay + w.dur;
+  return live(wins.color) || live(wins.scale) || live(wins.rotation) || live(wins.translation);
+}
+
 export function l2dComposeNode(
   node: L2dMatrixNode,
   nowMs: number,

@@ -14,13 +14,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(HERE, '..', '..', '..');
-const ENG = path.join(ROOT, 'engine/天结_unpacked.exe_utf8.c');
+import { ArityRow, scanArity } from './arityScan.js';
 
 /**
  * 已知的例外/空洞：**只允许存量**，新增即红。
@@ -37,66 +31,11 @@ const ALLOW_ZERO: Record<string, string> = {
 /** `argc` 列缺失的行：**已由引擎 arity 槽补齐 15 行**（0x24b/0x24c/0x255/0x2ca/0x2cb/0x2ed/0x309/0x331/0x333/0x336/0x338/0x339/0x33a/0x33c/0x343），现在必须为 0。 */
 const ALLOW_MISSING_ARGC = false;
 
-interface Row {
-  op: number;
-  argc: number;
-  step: number;
-  handler: string;
-}
+interface Row extends ArityRow {}
 
+/** 扫描口径已抽到 `test/arityScan.ts`（`test/operand-plan.test.ts` 用同一份 —— 两个守卫不许各有各的解析）。 */
 function scan(): { rows: Row[]; skipped: number[]; noHandler: number[] } {
-  const src = fs.readFileSync(ENG, 'utf8').split('\n');
-  // ① dispatch 表：字节 675996 + 4*op
-  const handlerByOp = new Map<number, string>();
-  for (const l of src) {
-    const m = /^\s*\*\(_DWORD \*\)\(_this \+ (\d+)\) = (sub_[0-9A-F]{6});\s*$/.exec(l);
-    if (!m) continue;
-    const op = (Number(m[1]) - 675996) / 4;
-    if (Number.isInteger(op) && op >= 0 && op <= 0x400 && !handlerByOp.has(op)) handlerByOp.set(op, m[2]);
-  }
-  // ② handler 体行号
-  const bodyAt = new Map<string, number>();
-  src.forEach((l, i) => {
-    const m = /^\/\/----- \(([0-9A-F]{8})\)/.exec(l);
-    if (m) bodyAt.set('sub_' + parseInt(m[1], 16).toString(16).toUpperCase(), i);
-  });
-  const ops = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/asm/opcodes.json'), 'utf8')) as {
-    opcode: number;
-    argc: number;
-  }[];
-
-  const rows: Row[] = [];
-  const skipped: number[] = [];
-  const noHandler: number[] = [];
-  for (const o of ops) {
-    const h = handlerByOp.get(o.opcode);
-    if (!h) {
-      noHandler.push(o.opcode);
-      continue;
-    }
-    const at = bodyAt.get(h);
-    if (at === undefined) {
-      skipped.push(o.opcode);
-      continue;
-    }
-    // 体范围：到下一个 `//----- (`
-    let end = at + 1;
-    while (end < src.length && !/^\/\/----- \(/.test(src[end]!)) end++;
-    const body = src.slice(at, end).join('\n');
-    // 形态 1：`_this[30 * _this[95776] + 95805] = N;`
-    // 形态 2：`*(_DWORD *)(_this + 120 * ... + 383220) = N;`（可能带 cur 变量，只认常量 N）
-    let step: number | undefined;
-    const m1 = /95805\]\s*=\s*(\d+)\s*;/.exec(body);
-    const m2 = /383220\)\s*=\s*(\d+)\s*;/.exec(body);
-    if (m1) step = Number(m1[1]);
-    else if (m2) step = Number(m2[1]);
-    if (step === undefined) {
-      skipped.push(o.opcode);
-      continue;
-    }
-    rows.push({ op: o.opcode, argc: o.argc, step, handler: h });
-  }
-  return { rows, skipped, noHandler };
+  return scanArity();
 }
 
 test('★arity 槽核验：体里的指令长度 N 必须 = 2*argc+1（N=0 只允许控制流；新增不一致即红）', () => {

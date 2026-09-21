@@ -40,12 +40,28 @@
     ]
   },
   "id": "T-0098",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 0x2ED 读侧注册（i2ee→i2ed 闭环）+ 0x107/0x10B unsigned 不写表 + 0xFE 越界抛 ShowMessageError 且不写字段；守卫 6 条"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 四条判据全达成：①0x2ED 按体实现+闭环守卫 ②三条按体订正（unsigned，ShowMessageError 走 session.#onError 既有通路）③数据层 0x2ED 已改（★opcode-gaps 无该条目：语料 0 处不属缺口，前提已在 changes.md 订正）④verify 全绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-2ed-and-bit-index.test.ts",
+    "app/amayui-emulator/test/control-error-banner.test.ts",
+    "app/amayui-emulator/test/doc-model.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts"
   ]
 }

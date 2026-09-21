@@ -39,10 +39,13 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "keyEdge = 0;",
       "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6",
-      "line": 94
+      "line": 133
     }
   ],
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/keyboard-mask.test.ts",
+    "app/amayui-emulator/test/input.test.ts"
+  ],
   "links": {
     "docs": [
       "docs-new/03-engine/input-system.md",
@@ -58,13 +61,23 @@
       "T-0051"
     ]
   },
-  "status": "open",
+  "status": "doing",
   "id": "T-0052",
   "history": [
     {
       "at": "2026-09-16",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 键盘→掩码位 0..6 接上（VK→位表 + 两把刷子两半 + DOM 键盘桥 + 快照）；守卫 6 条（撤销 ⇒ 4 条红）；capabilities 新增 input-keyboard-to-mask-bits"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → doing —— 判据 1/2/4/5 达成；判据 3 只到合成脚本级（真 ADV 键盘 E3 需给 ScenarioSpec 加键盘事件）⇒ 保持 doing"
     }
   ]
 }

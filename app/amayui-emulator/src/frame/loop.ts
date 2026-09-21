@@ -305,7 +305,25 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       //   （用户实测：E4 日志里 ADV 的 `[reveal]` 只有 `0/N` 与最终 `N/N`、中间全是 `gate sleep WAIT`；
       //   而 `0x196` 把节流位带进了 6341 处 `display-furigana` ⇒ 症状在 `T-0094` 之后大幅变明显）。
       e.serviceTextReveal(nowMs);
-      if (gates.sleep === 'clear' || nowMs >= e.sleepUntil) e.waitFlags &= ~SLEEP_GATE;
+      // ★★`tickets/T-0099`：**到点当帧就派发**（对齐引擎的"下一轮"）。
+      //   引擎 raw 21176-21181：`if ((v35 & 0x20000000) != 0) { sub_409400(_this); if (Engine[489860]) goto LABEL_215; }`
+      //   —— `sub_409400` 返回（= 节拍到点、且把 `0x20000000` 清掉）之后：`Engine[489860]`（`0x300` 闸门槽）
+      //   活跃就**当轮直接派发**（`LABEL_215` = raw 21217 的 handler 调用）；不活跃则本轮结束、
+      //   **下一轮**派发 —— 而引擎的"下一轮"只是一次 `Sleep(0)` 级的廉价循环迭代，不是一帧。
+      //   emulator 的循环迭代 = 一帧（`requestAnimationFrame` / 虚拟时钟 +16.7ms）⇒ 旧写法"本帧只清门、
+      //   下一帧才派发"每处**多等一帧**（实测 40ms 档：66.7ms = 4 帧，引擎约 50ms = 3 帧）。
+      //   ⇒ 到点就当帧走常规派发（`batch = true`）；**未到点仍一帧都不派发**（这就是"不许放宽门"）。
+      //   ★范围限定在门判定这一处：动画窗/转场窗/阶梯时间表的到点语义都不动。
+      if (gates.sleep === 'clear' || nowMs >= e.sleepUntil) {
+        e.waitFlags &= ~SLEEP_GATE;
+        // ★当帧派发的**前提是"文本泵也已经跑完"**（`!e.textRevealing`）。为什么：引擎里 `0x20000000`
+        //   是**逐字泵**在置/清（`sub_409400` 只在"没有窗在节流"时才清它）—— 还在逐字时引擎**不会**
+        //   掉进派发路径，而是继续泵下一字。emulator 把"节流到期"与"泵还活着"两件事折在一个门上
+        //   （`sleepUntil`），所以这里必须显式排除"泵还在跑"这一态，否则门一到点就派发后面的指令
+        //   ⇒ 页面提前收尾、逐字停在半句（实测：`test/adv-reveal-under-throttle.test.ts` 的坑 B
+        //   从"显完 8 字"退化成"停在 5 字"）。这一条就是本改动**不许搬家**的地方。
+        if (gates.sleep !== 'clear' && !e.textRevealing) batch = true;
+      }
     } else if (e.textRevealing) {
       opt.onGate?.('text-reveal', e);
       obs?.onGate?.({ ...obsMid(), branch: 'text-reveal' });

@@ -94,8 +94,22 @@ export class Frame {
   /** 返回链接：回到调用层帧下标（-1 表示无） */
   caller = -1;
   frameArg = 0;
-  /** 当前指令长度（dword 单位，含 opcode）。M0 预解析后逐条步进，此字段供观查 */
-  arity = 0;
+  /**
+   * **本指令的"操作数记数槽"**（引擎 `ScriptContext+0x74`，绝对字节 **0x5D8F4** = `_this[30*cur + 95805]`）。
+   *
+   * 值 = **`2*argc + 1`**（= 指令占几个 dword，含 opcode）；引擎主循环用**它**推进 ip：
+   * `_this[30*cur+95782] += 4 * _this[30*cur+95805]`（raw 20165）⇒ 控制流指令把本槽写 **0**
+   * （派发器不前进，由 handler 自己定 ip：`0x2` exit / `0x84` / `0xd5` 三条）。
+   *
+   * ★**命名遵数据层**（`analysis/fields.json`）：引擎里叫 `arity` 的是**另一个**字段
+   * （`ScriptContext+0x60`，装载时清零、**没有读者**）；本槽的名字是 **`operand_count`**
+   * —— 曾因帧基址误记 0x5D894 而把两者混为一谈，见该条 `meaning`。
+   *
+   * ★在 emulator 里的等价物是解析器的 dword 索引表（`BinInstruction.index`，装载时算好）⇒
+   * 本字段**不参与推进**，它是"这条指令占几个 dword"的**引擎真源**：派发器写它、`StepTrace` 报它、
+   * 守卫拿它与反编译体里解析出的 N 逐条对照（`tickets/T-0082`；`test/operand-plan.test.ts`）。
+   */
+  operandCount = 0;
   /** 每脚本数组容器（M0 不细究） */
   arrayContainer = new Map<number, number[]>();
   /** label 值(dword index) -> 指令数组下标 */
@@ -334,12 +348,12 @@ export class Engine {
    * 为什么设置界面靠它：选项值不在 `SYS4REG.INI` 里，而是 `INITCONFIG*` 用 `save-int (global a9ce)` 登记、
    * `LOADCONFIG` 用 `load-int (global a9ce)` 读回；引擎把这两张表序列化进 `SAVE.DAT`
    * （`sub_40AAE0` → `sub_438320` → `sub_437480`；装载 `sub_40AEE0` → `sub_438940`）。
-   * 详见 `src/vm/saveData.ts` 与 `analysis/engine-capabilities.json` 的 `save-data-tables-persistence`。
+   * 详见 `src/save/saveData.ts` 与 `analysis/engine-capabilities.json` 的 `save-data-tables-persistence`。
    */
   onSaveDataChanged?: () => void;
 
   /** 导出两张持久化表（宿主写 `SAVE.DAT` 用）。 */
-  saveDataTables(): import('./saveData.js').SaveDataTables {
+  saveDataTables(): import('../save/saveData.js').SaveDataTables {
     return { ints: new Map(this.stringIndexTable), strings: new Map(this.stringTable) };
   }
 
@@ -359,7 +373,7 @@ export class Engine {
    * 装载时机 = 脚本跑之前（引擎在 WinMain 里 `sub_40AEE0`，见 raw 142107）：
    * `SYSTEM4.txt:71` 的 `load-int (global 5)`（"已初始化"标志）随即就能读到 1 ⇒ 走 LOADCONFIG 分支。
    */
-  applySaveDataTables(t: import('./saveData.js').SaveDataTables): void {
+  applySaveDataTables(t: import('../save/saveData.js').SaveDataTables): void {
     this.stringIndexTable = new Map(t.ints);
     this.stringTable = new Map(t.strings);
   }

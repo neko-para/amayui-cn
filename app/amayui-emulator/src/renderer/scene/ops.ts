@@ -48,7 +48,7 @@ import {
 import type { SceneState } from './state.js';
 import type { SceneXform, SceneXformKind } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
-import { l2dAdvance, l2dComposeNodeAt, l2dNodeDrawable } from '../../live2d/runtime.js';
+import { l2dAdvance, l2dComposeNodeAt, l2dNodeDrawable, l2dNodeWindowsPending } from '../../live2d/runtime.js';
 import { scTransitionsPending } from './transition.js';
 
 /**
@@ -825,6 +825,17 @@ export function scAnimationsPending(s: SceneState, clock: number, freeze = false
   //   只在 A 层（bit1）路径置位（raw 117844/133528），B 层永远不会"结束" ⇒ 接进等待门就是死等。
   //   依据见 `itemLoopAnimationsPending` 与 `b3-bit2-model-spec-2026-09.md` §4.6。
   for (const it of s.drawItems.values()) if (itemLoopAnimationsPending(it)) return true;
+  // ★Live2D 节点窗（`tickets/T-0054` 的 M3 `live2d-slot-probe`）：引擎的合成判据 `sub_40BE10`
+  //   （raw 16022 一带）除了绘制项/网格，还读 `Scene+55812` 的 10 个实例槽 —— 节点有窗在跑就必须继续合成，
+  //   否则 `present:'needsRender'` 档下**立绘的动作只画一帧就冻住**（没有报错，只是不动了）。
+  //   ★冻结（`Scene+46512`）时引擎把 `winSkip` 传给合成器 ⇒ 全窗当帧吸附 ⇒ 不算 pending（与上面 mesh 同口径）。
+  //   ★探针是**纯读**（`l2dNodeWindowsPending` 不推进、不改窗）：这里只问"要不要再画一帧"。
+  if (!freeze && s.l2dHost) {
+    for (const n of s.l2dHost.l2dNodes.values()) {
+      if (!l2dNodeDrawable(s.l2dHost, n)) continue;
+      if (l2dNodeWindowsPending(n, clock)) return true;
+    }
+  }
   return false;
 }
 

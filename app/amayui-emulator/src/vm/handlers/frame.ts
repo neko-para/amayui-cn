@@ -16,7 +16,7 @@ import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
 import { parseScriptBytes } from '../../script/bin.js';
-import { loadScriptIntoFrame } from '../ops.js';
+import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotResumeIp, resolveSlotRetStack } from '../engineSlot.js';
 import { applySlotPresentation } from './save-slot.js';
 import type { OpTable } from './shared.js';

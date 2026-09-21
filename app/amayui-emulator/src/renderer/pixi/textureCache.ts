@@ -423,6 +423,32 @@ export class TextureCache {
   }
 
   /**
+   * **纹理自愈**（`tickets/T-0102` 登记的 H3）：槽里没有纹理、但**当前绑定**的那个 imgid
+   * 已经在 `#imgCache` 里 ⇒ 同步补一次 `slotTex`。
+   *
+   * 为什么需要：`bind` 的陈旧回写判据（世代/绑定）会把一次回写**丢掉**，而图本身**已经解码进
+   * `#imgCache`** ⇒ 该槽就永久处于"绑定已知、纹理没有"的状态，`resolve()` 每帧回落到占位块，
+   * 只能靠脚本**再发一次同一条 `set-texture`**（= 用户实测的"开合侧边栏才对"）才自愈。
+   * 引擎不会：它的 `set-texture` 是同步的（`sub_422CB0`），同一帧里绑定与纹理同时成立。
+   *
+   * ★**为什么这样补不违反那条判据**：判据要保护的是"脚本后来画的表面"（`create-texture` 的
+   * 程序化表面）—— 这里先排除有画布的槽；而**改绑**的情形用的是**当前**绑定（不是被丢弃的那张图），
+   * 与 `bind` 命中缓存时的行为逐字相同。⇒ 只是把"下次绑定即命中"提前到"下次读取即命中"。
+   */
+  #healSlot(slot: number): Texture | undefined {
+    const have = this.slotTex.get(slot);
+    if (have) return have;
+    if (this.#canvasSlots.has(slot)) return undefined; // 程序化表面：文件图像不该占它
+    const imgid = this.#slotImgid.get(slot);
+    if (imgid === undefined) return undefined;
+    const tex = this.#imgCache.get(imgid);
+    if (!tex) return undefined;
+    this.slotTex.set(slot, tex);
+    this.log(`slotTex 自愈 slot=${slot} ← imgid 0x${imgid.toString(16)}（回写曾被丢弃，图已在缓存）`);
+    return tex;
+  }
+
+  /**
    * `0x208`（sub_4302E0 → `sub_49ED60`）：**纹理尺寸查询**（getter）。
    * 引擎读该槽 `CTexture` 的 `+1040`（宽）/`+1044`（高）；槽越界或未创建 → 0/0。
    * emulator：槽 → imgid → 已载入纹理的原始尺寸；未载入时返回 0/0（与引擎"槽为空"同口径），
@@ -431,7 +457,7 @@ export class TextureCache {
   size(slot: number): { w: number; h: number } {
     const cs = this.#canvasSlots.get(slot);
     if (cs) return { w: cs.w, h: cs.h }; // 程序化表面：尺寸就是 create-texture 给的那对
-    const tex = this.slotTex.get(slot);
+    const tex = this.#healSlot(slot);
     if (tex) return { w: tex.source.width, h: tex.source.height };
     const imgid = this.#slotImgid.get(slot);
     if (imgid !== undefined) void this.preloadImage(imgid); // 首次查询触发载入
@@ -659,7 +685,9 @@ export class TextureCache {
   resolve(it: Item): { tex?: Texture; imgid?: number } {
     const slot = it.tex ?? 0;
     const imgid = this.#slotImgid.get(slot);
-    const tex = this.slotTex.get(slot);
+    // ★走 `#healSlot`（`tickets/T-0102` 的 H3）：把"绑定已知 + 图已在缓存"的那一类**当帧**补上，
+    //   否则它会一直回落到占位块，直到脚本再发一次同一条 `set-texture`（用户实测的"开合侧边栏才对"）。
+    const tex = this.#healSlot(slot);
     return { tex, imgid };
   }
 }

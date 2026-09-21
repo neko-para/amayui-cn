@@ -12,28 +12,34 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/tools/record.cjs",
-      "anchor": "const OUT = path.resolve(ROOT, argOf('out', '.tmp/replay-electron.jsonl.gz'));",
-      "line": 32,
-      "note": "--out 按**仓库根**解析（与 --scenario 的 cwd 基准不一致）"
+      "file": "app/amayui-emulator/tools/paths.cjs",
+      "anchor": "function resolveRepoPath",
+      "note": "★新落点：路径基准的唯一真源（仓库根 + 越界前置校验）。原先两种基准散在两个跑手里"
+    },
+    {
+      "file": "app/amayui-emulator/tools/paths.cjs",
+      "anchor": "越出仓库",
+      "note": "★越界报错的文案锚点：`--out ../../.tmp/x` 这条实测事故现在在这里被拦下（调用方 exit(2)）"
     },
     {
       "file": "app/amayui-emulator/tools/record.cjs",
-      "anchor": "const SCENARIO_PATH = path.resolve(argOf('scenario', path.join(__dirname, 'scenarios', 'gamestart.json')));",
-      "line": 31,
-      "note": "--scenario 按**cwd**解析 ⇒ 同一命令两种基准"
+      "anchor": "require('./paths.cjs')",
+      "note": "★锚点已按位移交（原锚点是 `const OUT = path.resolve(ROOT, argOf('out', …))`，已删）：现在两条路径都走 preflight"
     },
     {
       "file": "app/amayui-emulator/tools/record.cjs",
       "anchor": "fs.mkdirSync(path.dirname(OUT), { recursive: true });",
-      "line": 43,
-      "note": "★越界路径在此抛 EPERM（未捕获）⇒ Electron 弹「App threw an error during load」"
+      "note": "越界路径此前在此抛 EPERM（未捕获）⇒ Electron 弹「App threw an error during load」；现在 preflight 先拦"
     },
     {
       "file": "app/amayui-emulator/tools/shot.cjs",
       "anchor": "const OUT = path.join(ROOT, '.tmp');",
-      "line": 41,
-      "note": "shot.cjs 固定写仓库 .tmp（安全，但与 record 的风格不统一）"
+      "note": "shot.cjs 固定写仓库 .tmp（安全，基准与 record 现已统一）"
+    },
+    {
+      "file": "app/amayui-emulator/test/tool-paths.test.ts",
+      "anchor": "ToolPathError",
+      "note": "本票守卫（7 条）：基准 / 越界 / 老写法 fallback / 源码棘轮（preflight 必须在 require(main.cjs) 之前）"
     }
   ],
   "links": {
@@ -46,12 +52,25 @@
     ]
   },
   "id": "T-0032",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-14",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 路径基准收进 tools/paths.cjs（仓库根 + 越界 exit(2) + 打印命中规则）；shot.cjs 参数校验上移到 require(main.cjs) 之前；示例路径与说明同步；守卫 7 条"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 判据①③④达成（基准统一+写明+打印绝对路径 / 越界前置 exit(2) 且位置有源码棘轮 / 示例与文档同步）；判据③的 Electron 真跑属 G4 类，路径层已由 test/tool-paths.test.ts 7 条覆盖并在 changes.md 写明边界"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/tool-paths.test.ts"
   ]
 }

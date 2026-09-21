@@ -1,7 +1,7 @@
 {
   "id": "T-0022",
   "type": "tooling",
-  "status": "open",
+  "status": "done",
   "priority": "P3",
   "area": "repo",
   "title": "跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等）",
@@ -28,6 +28,21 @@
       "at": "2026-09-14",
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "改字段：tests —— 跨包边收口：opcodes.json 包内副本（src/generated/）+ 同步棘轮；孤儿文件已清；refactor-plan §10 第 8/9 项销账"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 判据 1（TS6059 已核=不触发；跨包输入已按建议改为包内副本，--listFilesOnly 只剩包内一份、build 无逸出）+ 判据 2（孤儿文件清完/销账）均达成"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/opcode-json-sync.test.ts",
+    "app/amayui-emulator/test/opcode-arity.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts"
   ]
 }

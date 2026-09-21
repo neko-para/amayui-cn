@@ -72,6 +72,16 @@ const CFG_READ: Record<number, CfgReadSpec> = {
   0x2e6: { operand: 2, selector: 1, keys: { 0: CFG.messageAutoMessagePitch0, 1: CFG.messageAutoMessagePitch1 }, onBadSelector: 'skip' },
   // message:AutoMessageOption → op1
   0x2ea: { operand: 1, key: CFG.messageAutoMessageOption },
+  /**
+   * `0x2ED`（`sub_431230` raw 40401-40409，argc 1）：**`message:MessageFade` 的读侧** ——
+   * 体全文 = arity 槽 3 + `v2 = GetConfig("message:MessageFade")`（配置对象 vtable+4，键名是**常量**
+   * `aMessageMessage_0`，raw 4380）+ `sub_42B4B0(_this, 1, v2)` ⇒ **写回 op1**。
+   *
+   * ★与写侧 `0x2EE`（`sub_426650`）成对（`tickets/T-0098`）：此前**两条都没被注册**，语料 0 处
+   * ⇒ 没爆；写侧由 `T-0097` 补上，读侧由本票补上 ⇒ 现在可以用真指令做闭环
+   * （`i2ee v` → `i2ed` 读回 v，见 `test/op-2ed-and-bit-index.test.ts`）。
+   */
+  0x2ed: { operand: 1, key: CFG.messageMessageFade },
 };
 
 const op_cfg_read: OpHandler = (c) => {

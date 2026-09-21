@@ -3,6 +3,7 @@ import type { Engine, Frame } from './engine.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, loadScriptIntoFrame } from './ops.js';
 import { readIntOperand, readFloatOperand } from './operand.js';
 import { makeCtx } from './step.js';
+import { operandCountSlotValue } from './operandPlan.js';
 import type { OpHandler } from './step.js';
 import { parseScriptBytes, type BinInstruction } from '../script/bin.js';
 
@@ -39,6 +40,18 @@ export interface StepTrace {
    * 若 handler 改写过操作数，这里看到的是改后的值（对追踪而言可接受）。
    */
   readonly operands: string[];
+  /**
+   * **本指令的"操作数记数槽"值**（引擎 `ScriptContext+0x74`，绝对字节 0x5D8F4；`tickets/T-0082`）。
+   *
+   * ★命名遵数据层（`analysis/fields.json` 的 `ScriptContext/0x74 operand_count`）：引擎里叫 `arity`
+   * 的是**另一个**字段（`+0x60`，装载时清零、**没有读者**）—— 两者曾因帧基址误记 0x5D894 而混淆。
+   * 值 `N = 2*argc + 1`；控制流三兄弟（`exit` / `0x84` / `0xd5`）为 **0** —— 引擎派发器那行
+   * `_this[30*cur+95782] += 4 * _this[30*cur+95805]`（raw 20165）**不前进**，由 handler 自己改 ip。
+   * emulator 的 ip 是"指令下标"、长度由解析器的 dword 索引表给出，所以这个字段**不参与推进**；
+   * 它是对外**可核验**的那一半：控制窗显示它，守卫拿它与反编译体里解析出的 N 逐条对照
+   * （`test/opcode-arity.test.ts` / `test/operand-plan.test.ts`）。
+   */
+  readonly operandCount: number;
   /**
    * **闸门 B：能力缺口**。仅当本条指令**被当作 no-op 跳过**（`noop===true` 或 `user-stub`）
    * 但**收到了非平凡实参**时才有值 —— 即"脚本真的传了参数想做点什么，而我没做"。
@@ -176,6 +189,11 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   }
   e.currentOpcode = op; // 供 NativeTap（闸门 A）把"意图被丢弃"归因到指令
   frame.curDwordOffset = instr.index; // 调用点的 dword 偏移（引擎 `(ip - ip_base) >> 2`；派发返回点要用）
+  // ★操作数记数槽（`ScriptContext+0x74`；`tickets/T-0082`）：引擎**每条 handler 体**都写
+  //   `_this[30*cur+95805] = 2*argc+1`（控制流三条写 0）。
+  //   （控制流三条写 0）。emulator 的 ip 推进用不着它（下标制 + 解析器的 dword 索引表），
+  //   但它是"这条指令占几个 dword"的**引擎真源**⇒ 写在这里，供报告显示与守卫逐条对照。
+  frame.operandCount = operandCountSlotValue(op, instr.argc);
   // ★把"正在执行哪一帧"下发给宿主模型（`tickets/T-0083` 的 (B) 步）：读档装载点要丢掉"被放弃那条
   //   调用链画的东西"，而"谁画的"必须在**建项那一刻**记账（`Item.ownerFrame`）—— 建项发生在宿主的
   //   共享场景层（`scene/ops.ts`），那里看不到 VM 的 `e.cur`，所以每条指令派发前同步一次。
@@ -199,6 +217,7 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
     byteOffset: instr.byteOffset,
     handlerKind,
     script: frame.name,
+    operandCount: frame.operandCount,
     get operands(): string[] {
       if (operands === null) operands = formatOperands(e, frame, instr);
       return operands;

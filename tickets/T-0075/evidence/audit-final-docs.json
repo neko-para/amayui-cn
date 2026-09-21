@@ -1,0 +1,745 @@
+{
+  "source": "docs",
+  "kept": [
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:450",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§5.2「必做子集」表写「| 0x08B | i08b | 878 | 第三个颜色位 |」，§5.1 行 417 也把 0x8B 归入「[颜色/描边]」类",
+      "actual": "0x8B 写的是行间距 Font+1380（= Engine[21669]），与颜色无关；同一文档 §3.5:358（「0x8B 写的是行间距、不是颜色 —— tickets/T-0038 订正」）与 §4:398 写的是对的 ⇒ §5.2/§5.1 是漏改的旧口径，正落在「按使用量排序、实现者先读」的那张表里",
+      "evidence": "raw 29020-29029 sub_41FBF0（analysis/functions.json 中 addr 0x41FBF0 标 op 0x8B）：`result = sub_41BF50(_this, 1); _this[21669] = result;`；21669*4 = 86676 = Font(85296)+1380；docs-new/03-engine/adv-text-rendering.md:450 对 :358/:398/:417；语料 i08b = 878（复核独立计数一致）",
+      "code": "",
+      "fix": "§5.2 该行与 §5.1 归类改为「行间距（写 Font+1380）」，与 §3.5/§4 口径一致"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:365",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§3.5 消费时机表把 0x204 draw-string 写成「**调用那一刻**（GDI 一次性整串）| raw 68470-68491」",
+      "actual": "同文档 §9:622-623 写「0x204 不是 GDI：sub_456710 体内没有 TextOutA，它走 sub_471180 / sub_46F2D0 的同一套覆盖率路径」；体内证据支持 §9：sub_456710 的两条出口是 raw 68491 sub_471180（Font+1372 != 0）与 raw 68493 sub_46F2D0，全函数无 TextOutA（全书 TextOutA 11 处只在 sub_455ED0/sub_456820 两个消息窗 GDI 函数内）",
+      "evidence": "raw 68469-68495；raw 3991（声明）；raw 68095/68103/68109/68115/68128（sub_455ED0）；raw 68587/68595/68601/68607/68616（sub_456820）；docs-new/03-engine/adv-text-rendering.md:365 对 :622-623；docs-new/03-engine/opcode-table.md:348；docs-new/03-engine/engine-capabilities.md:128",
+      "code": "",
+      "fix": "§3.5 该格删掉「GDI 一次性整串」，改为「走 sub_471180（描边档）/ sub_46F2D0（软件覆盖率）的同一套光栅路径」"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:488",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§7 表把 0x70/0x198/0x1C1/0x79/0x80/0x303 记成 no-op（P0）与 0x83/0x1C5/0x2C2/0x2F3/0x2DE 记成 no-op（P1）；正文称「emulator 侧这些早已是真实现」",
+      "actual": "P0 行与行 478-484 的三条既有错误确已修（MSGWIN_OPS 含 0x70/0x74/0x197/0x198/0x1A5/0x1C1/0x2BD/0x2BE/0x2FE/0x2DE/0x303/0x079/0x80；0x2F3 在 text-items.ts:125 与 0x1D2/:122、0x1D3/:123、0x1D4/:124 成对；engineConfig.ts:237-241 明写 message:MesWinAlpha 不在这里）；但 0x83/0x1C5/0x2C2 在 emulator 里**无 handler、不属任何 OPS 表**，命中即抛 NotImplementedOp，文档 §7 的 P1 那三格反而是对的 ⇒ finding 的总结句过宽（原判 P2，复核下调 P3）",
+      "evidence": "app/amayui-emulator/src/vm/handlers/msgwin.ts:1427/1458/1461/1462/1463/1469/1471/1472/1473/1474/1477/1478/1481；handlers/text-items.ts:120-126；handlers/stubs.ts:111-114；engineConfig.ts:237-241；反证：emulator src 全域 grep 0x83, / 0x1c5 / 0x2c2 零命中，handlers/index.ts:44-68 的 OPS 无此三者，interpreter.ts:61-67、165-166（未注册 ⇒ NotImplementedOp）；引擎侧 raw 38017-38028（sub_42D220 经 sub_42B4B0 写操作数）、raw 42012-42043、raw 42179",
+      "code": "",
+      "fix": "§7 只保留 P0 行与 478-484 三条的订正说明，删掉「0x83/0x1C5/0x2C2 早已是真实现」的括注（保留其 no-op 判定）"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:51",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "§1 FontVWindow 字段表行号：+4 证据 90444、+8 证据 90445、+116/+120 证据 90469、+1252 证据 78866（§3.4:344 也拿 90444 当「win+4 恒 0」的证据）",
+      "actual": "行号指偏（结论本身在邻近行可确证）：`*(_DWORD *)(_this + 4) = 0;` 在 raw 90446（90444 是 `int v6[6];` 局部声明、90445 空行），+8 = 2 在 raw 90447；+116/+120 = 1.0 在 raw 90463-90464（90469 是 `+112 = 0`）；Font+1252 = 0x1000000 在 raw 78861（78858 是 +1380=6、78859/78860 是 1232=-24/1236=-12、78862 strcpy +1260、78866 是 `v27[4] = 0;`）",
+      "evidence": "raw 90437-90490（sub_475D20 体）；raw 90446/90447/90463-90464/90469；raw 78858-78862 与 raw 78866；docs-new/03-engine/adv-text-rendering.md:51/52/67/95/344",
+      "code": "",
+      "fix": "四处证据行号改为 90446 / 90447 / 90463-90464 / 78861（§3.4:344 同步）"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:183",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§3.1 注写「★换行方向恒为横向：sub_46BE30 里没有 Font+235108 的任何引用（grep 235108 的 16 个读点全在绘制函数里）」",
+      "actual": "「sub_46BE30（raw 83363-83995）内没有 235108 引用」这半句对（区间 0 处）；但「16 个读点」计数不对：全文件 235108 共 16 处，其中 raw 78773 是写（Font 构造函数 `*(_DWORD *)(_this + 235108) = 0;`），读点只有 15 处",
+      "evidence": "grep 235108 → raw 71587/71663/71826/71844/72259/72302/75950/75963/77322/78471/78773(写)/79901/81067/81092/82135/82152；raw 83363（sub_46BE30 头）与 raw 83994/83998（尾与下一函数头）；docs-new/03-engine/adv-text-rendering.md:183-184",
+      "code": "",
+      "fix": "改为「grep 235108 共 16 处，其中 15 个读点全在绘制函数内，1 处写点在 Font 构造函数」"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:211",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§4 写「没有禁则处理（行首/行尾禁则表全文件不存在），没有 0x0A 显式换行处理；溢出即硬断」，§4 表行 404 也写「不具备 … 行首行尾禁则 … 逐条已核」",
+      "actual": "引擎有行首禁则表与查表函数：Font+235084/+235088/+235092 是一个 28B/条的 std::string 向量，sub_45BCD0(Font, 单字) 对它做整串相等匹配并返回 1；sub_46BE30 的换行分支正是拿它当门（Font+1404 == 1 && !sub_45BCD0(...) 才换行）。但该向量全库只有清零、没有任何 push（构造 raw 78748-78750；清空 raw 73767-73769），运行期恒空 ⇒ 行为上确实等效于「无禁则」。文档全文（含 §1 字段表、§8 未解清单）一次都没提到 Font+235084 与 sub_45BCD0（原判 P2，复核下调 P3：表恒空，文档观感结论成立）",
+      "evidence": "raw 72112-72169（sub_45BCD0：72127 `v2 = (const void **)_this[58771];`、72129 与 _this[58772] 比较、72156 `v2 += 7`、72166 `return 1`）；调用点仅 raw 83001、raw 83609（均为 `Font+1404 == 1 && !sub_45BCD0(...)`）；写点仅 raw 78748-78750 与 raw 73767-73769；grep 235084|235088|235092|58771|58772 共 12 处、无 push；docs 与 analysis/*.json 对 235084/sub_45BCD0 零命中",
+      "code": "",
+      "fix": "§4 该句改为「禁则表存在（Font+235084 向量 + sub_45BCD0 整串匹配）但全库只有清零、无 push ⇒ 运行期恒空，故行为上无禁则」，并在 §1 字段表与 §8 未解清单登记该字段与函数"
+    },
+    {
+      "id": "docs-new/03-engine/adv-text-rendering.md:189",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§3.1 换行伪码把自动换行写成无条件规则（超右边界即换行），§6「配置门」表列 9 个键却没有 set:AutoLineFeed",
+      "actual": "整段换行体在 Font+1404 == 1 与「非禁则字」双条件内（raw 83607 `if ( (v27 & 1) != 0 )` → raw 83609 门 → 83611-83718 压 120B 记录、注音配对、sub_46AF90 行距推进、行首复位）；Font+1404 = set:AutoLineFeed（raw 23660-23662 写 Engine+86700，86700-85296 = 1404），注册缺省非 0（raw 111548-111549），随包 SYS4REG.INI 无 [set] 段 ⇒ 缺省下文档描述成立；缺的是「谁门控它、关掉后长行冲出右边界且不报错」与 §6 一行键（原判 P2，复核下调 P3）",
+      "evidence": "raw 83596-83601/83607/83609（换行体 83611-83718）；raw 83001（同型排版例程同型门）；raw 23660-23662；raw 4385（键名 set:AutoLineFeed）；raw 111548-111549；docs-new/03-engine/adv-text-rendering.md:189-206/:460-470；app/amayui-emulator/src/configRegistry.ts:81",
+      "code": "app/amayui-emulator/src/configRegistry.ts:81",
+      "fix": "§3.1 伪码补上 Font+1404 == 1 的门与「关掉后症状」，§6 键表补 set:AutoLineFeed（def 1）"
+    },
+    {
+      "id": "docs-new/03-engine/sound-system.md#§1",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§1 通道列写「0..9 = SE，12..14 = 语音，10/11 未分配」",
+      "actual": "通道 11 被 Music/PCM 播放器占用：sub_48DB80（PCM 的 vtable+8 解析器）成功解析后 raw 108751 先 sub_4B6570(设备, 0xB, …) 绑缓冲、raw 108752 `return sub_4B6020(*(_DWORD *)(_this + 1336), 0xBu, *(_DWORD *)(_this + 1036));` 用通道 0xB 起播 BGM（第 3 参 = PCM+1036 的循环位）。同文件 §5:166-167 自己也写「走设备通道 11」，§1 与之矛盾。emulator 侧无可见后果（BGM 走独立 #bgm 单槽）",
+      "evidence": "engine/天结_unpacked.exe_utf8.c:108694（sub_48DB80 头）、:108751、:108752；docs-new/03-engine/sound-system.md:13 对 :166-167/:179；app/amayui-emulator/src/audio/audioEngine.ts:31/:35/:213-222",
+      "code": "app/amayui-emulator/src/audio/audioEngine.ts",
+      "fix": "§1 通道表改为「0..9 = SE、11 = BGM（PCM/MusicBase 解析后 sub_4B6020(…,0xB,…)）、12..14 = 语音」，10 仍空"
+    },
+    {
+      "id": "docs-new/03-engine/sound-system.md#§9",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "§10 第①条写「仍未做：语音跟着文本走所需的文本项记录表（0x1D2 仍 no-op）与 ADV 显示路径入队」",
+      "actual": "0x1D2 已有真实现：派发锚点 raw 22874（677860 = 675996+4*0x1D2 → sub_420380），体 raw 29374-29386 受 Engine[97055] 门控；emulator 的 TEXT_ITEM_OPS 注册 0x1bb/0x1d2/0x1d3/0x1d4/0x2f3，pushVoiceRecord 已由 0xC4/0x1BD/0x2F4 接上（audio.ts:303/:314）⇒ 括注「0x1D2 仍 no-op」陈旧。但第①条是复合句：ADV 显示路径入队（§9 第 2 步）在 emulator 侧仍无对应 ⇒ 应收窄而非删除",
+      "evidence": "engine raw 22874、:29374-29386；app/amayui-emulator/src/vm/handlers/index.ts:52；handlers/text-items.ts:56-59/:77-84/:120-126；handlers/audio.ts:300-304/:312-314；docs-new/03-engine/sound-system.md:277-279、:316",
+      "code": "app/amayui-emulator/src/vm/handlers/text-items.ts:120-126",
+      "fix": "删掉括注「（0x1D2 仍 no-op）」，把该条收窄为「ADV 显示路径按记录起播/入队尚未实现」"
+    },
+    {
+      "id": "docs-new/03-engine/message-config-gates.md#§1",
+      "kind": "no-evidence",
+      "severity": "P2",
+      "claim": "§1 表写「message:MesWinAlpha | 8 | 0x6E sub_41EB20 的 else 分支（MesWinAlpha != 0） | 每段文本之间置 effect_flags |= 0x20000000 + sub_453A60(…, α) ⇒ 每段 α ms 节流」",
+      "actual": "0x6E 的 else 分支真门是 MessageSpeed（_this[21668] = 字节 86672 = Font+1376）：raw 28361 `if ( !_this[21668] || (_this[174801] & 0x8000000) != 0 )`，else 支 raw 28370-28382 取 `v7 = _this[21668]` 后置 0x20000000 并 `sub_453A60(_this + 107643, v7)`；_this[21668] 由 raw 23736-23738 从键 aMessageMessage（raw 4381 = 「message:MessageSpeed」）灌入。MesWinAlpha 全部引用（31015 写端 0x141、39355 读端 0x131、110920/111472/112204 注册表、4428 字符串）无一在 sub_41EB20 内，也不进任何持久字段。emulator 已按 raw 订正",
+      "evidence": "engine raw 22811（0x6E → 676436）、:28361、:28370-28382、:23736-23738、:4381、:31015、:39355、:110920/111472/112204；docs-new/03-engine/message-config-gates.md:22 对 :34/:44-45/:52；app/amayui-emulator/src/engineConfig.ts:233/:237-241；vm/handlers/msgwin.ts:339-354/:1480",
+      "code": "app/amayui-emulator/src/engineConfig.ts:237-241",
+      "fix": "该行的门控写成「0x6E else 分支（MessageSpeed(21668) != 0 且 ADV 位未置）」，α 值来源写 _this[21668]；message:MesWinAlpha 另列一行（只出现在 0x131/0x141 的 GetConfig/SetConfig 直读直写）"
+    },
+    {
+      "id": "docs-new/03-engine/sound-system.md#§7",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "finding 称 §10「仍未做」五条里没有「BGM 实体播放通道 11」，读者会把 §7 的「设备通道 op1+12」当成设备拓扑已对齐",
+      "actual": "§5 自己就用两处登记了这条拓扑（:166「走设备通道 11」、:179「解析（vtable +8 = sub_48DB80）」），缺的只是把它并进 §10 缺口清单；且 emulator 并非「没有设备通道概念」（SE 用 0..9、语音用 VOICE_CHANNEL_BASE+ch，只有 BGM 不带通道号）。把「故意重写掉的 DS 通道号」记成「仍未做」反而误导 ⇒ 方向可留、kind 改 overreach（原判 P3 gap-as-noop 不改严重度）",
+      "evidence": "docs-new/03-engine/sound-system.md:316-318、:166-167、:179；app/amayui-emulator/src/audio/audioEngine.ts:31、:35、:213-222、:433-455、:758；engine raw 108752",
+      "code": "",
+      "fix": "不改 §10 缺口表；真正要改的是 §1 的「10/11 未分配」（见 sound-system §1 条）"
+    },
+    {
+      "id": "docs-new/03-engine/message-config-gates.md#题头",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "题头写「取值来源：app/amayui-emulator/SYS4REG.INI（随包副本，与真实安装目录同构）」",
+      "actual": "仓库里不存在该文件（glob **/SYS4REG.INI 命中 0，全仓仅 tickets/T-0031/evidence/generated-SYS4REG.ini，是 emulator 的导出产物）；.gitignore:47 明写玩家数据不在仓库；运行期由 configBoot.ts:39-43 的 window.api.readConfigIni() 拿，取不到只记 trace。→ 归属错成立，但表内数字并非全无可复核来源（多数与 configRegistry.ts 内建默认值一致，MessageFade 文档写 250 而内建默认 0 恰证明该列来自外部安装目录）⇒ 严重度由 P1 下调 P3",
+      "evidence": "docs-new/03-engine/message-config-gates.md:11 与 :19-35；.gitignore:47；glob **/SYS4REG.INI = 0；app/amayui-emulator/src/renderer/app/configBoot.ts:37-53；app/amayui-emulator/src/configRegistry.ts:45-47/:50/:69-73/:76/:86/:131；tickets/T-0031/evidence/generated-SYS4REG.ini:46/:50-52/:54-60；tickets/T-0031/notes.md:84",
+      "code": "",
+      "fix": "题头改成「取值来源：运行期从系统存档目录/overlay 读取的 SYS4REG.INI（不在仓库内）」，并把无法用 configRegistry 复核的数字标为「实测/外部 INI」"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:181",
+      "kind": "contradiction",
+      "severity": "P0",
+      "claim": "§4 语义/状态写「emulator 停在 ScriptReset（由上层 run 捕获停止）」，并标 [未建模]",
+      "actual": "emulator 的 op_exit_script 重载根脚本 INDEX0 并 jump(0) 继续，从不抛 ScriptReset；app/amayui-emulator/src 全域 grep ScriptReset 零命中；同文档 §9.2/§9.3/§10.3/§8 又写「已修正：重置+readScript(0) 重载根并 jump(0) 继续（不再停在 reset）」",
+      "evidence": "app/amayui-emulator/src/vm/handlers/control.ts:401-406（readScript(0) → loadScriptIntoFrame → cur=0 → jump(0)）；grep -r ScriptReset app/amayui-emulator/src 零命中（仅 docs/03-development-plan.md:60 历史规划）；docs-new/03-engine/flow-control.md:181/:183 对 :276/:294/:327/:333/:366",
+      "code": "app/amayui-emulator/src/vm/handlers/control.ts:401-406",
+      "fix": "删掉 §4 该句（或改为「emulator 已按引擎重载根脚本 0 并继续」），并把 §4 的 [未建模] 标注改成 [已实现]"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:100",
+      "kind": "contradiction",
+      "severity": "P0",
+      "claim": "§3.2 表把 0x1B1（Engine[21672]）与 0x238（Engine[92338]/[92339]）同列「死写（写的字段全工程无读者）」",
+      "actual": "0x1B1 确是死写；但 0x238 装载的是 0x400 等待门的计时器（起点 92338/时长 92339 = 字节 369352/369356），读者是 sub_407E20（raw 12761-12786）与主循环 raw 21109，SN0000 开场 i238 157c（SN0000.txt:1020）即 5500ms 门时长；同文档 §4.3 写对了",
+      "evidence": "raw 12761/12768/12771/12775/12776/12783；raw 21109/21111；raw 23095（678268 = 675996+4*0x238）；raw 32309-32310；raw 29161 与 grep `21672|86688` 仅 2 处写、0 读者；src/SN0000.txt:1020-1021；docs-new/03-engine/scene-start-flow.md:100 对 :161",
+      "code": "app/amayui-emulator/src/vm/handlers/gfx-state.ts:37",
+      "fix": "把 0x238 从「死写」拆出，改注「装载 0x400 等待门计时器（起点/时长），读者 sub_407E20 raw 12761-12786 + 主循环 raw 21109」"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:102",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§3.2 表把 0xD9（清 effect_flags bit 0x1000）列为「标志位清写，无人读」，理由「全工程无 & 0x1000 的读者」",
+      "actual": "主派发循环有真实读者：raw 20841 `if ( (v24 & 0x1000) != 0 )`（v24 = *(DWORD*)(_this+699204)），20843 判 & 0x800、20849 调 sub_453B60(_this+430096)、20852 置 | 0x800；置位端 raw 30368、清除端 raw 24945",
+      "evidence": "raw 20838-20852；raw 30368 `_this[174801] |= 0x1000u;`；raw 24945 `_this[174801] &= ~0x1000u;`；docs-new/03-engine/scene-start-flow.md:102",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:252",
+      "fix": "改成「有读者的门位清写（0x1000 = 等 Scene+430096 3D 效果就位，配对位 0x800）」，删掉「无人读」"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:96",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§3.2 称该节 16 条「已连同依据登记进 ENGINE_INTERNAL_OPS（handlers/stubs.ts）」",
+      "actual": "ENGINE_INTERNAL_OPS 现只剩 0x2fa/0x137/0x244/0x326/0x325/0x324/0x10c/0x30a/0xaf 九条，§3.2 的 16 条（0x1B1/0x238/0x93/0x94/0x97/0x224/0x229/0x256/0x258/0x242/0x32A/0x32D/0xD9/0x20E/0x1BC/0x1AD）一条都不在其中，全部已转真实现",
+      "evidence": "app/amayui-emulator/src/vm/handlers/stubs.ts:46-213（条目 :59/:72/:84/:107/:108/:149/:173/:174/:196）、:153-155、:161-165、:169-171；docs-new/03-engine/scene-start-flow.md:96",
+      "code": "app/amayui-emulator/src/vm/handlers/stubs.ts:46",
+      "fix": "改成「2026-09 当时按依据跳过、现已全部转真实现」，或直接引用 stubs.ts 现状"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:105",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§3.2 称 test/game-start-chain.test.ts 有一条棘轮：把这 16 条各跑一遍，断言两个全局量一个字都没变",
+      "actual": "不存在该棘轮。现存 :84-105 是方向相反的「25 条全部已转真实现（OPS）」棘轮，:107-120 只对 A5_IMPLEMENTED 的 7 条（0x93/0x94/0x97/0xd9/0x1ad/0x1b1/0x1bc）断言不回写操作数",
+      "evidence": "app/amayui-emulator/test/game-start-chain.test.ts:76（A4_IMPLEMENTED 9 条）、:78（A5_IMPLEMENTED 7 条）、:84-105、:107-120；docs-new/03-engine/scene-start-flow.md:105-106",
+      "code": "app/amayui-emulator/test/game-start-chain.test.ts:99",
+      "fix": "改成「25 条注册表棘轮 + A5 的 7 条不写操作数棘轮」"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:170",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§6 表 E2 行写「test/game-start-chain.test.ts：25 条登录棘轮 + 16 条\"不写操作数\"棘轮 + 9 条语义用例」",
+      "actual": "「25 条」断言的是全部已转真实现（OPS），不是「登录」；「16 条不写操作数」不存在（只有 A5 的 7 条）；「9 条语义用例」实为 7 个 test 覆盖 9 条 opcode（:125/:168/:178/:192/:206/:217/:227）",
+      "evidence": "app/amayui-emulator/test/game-start-chain.test.ts:84/:99-104/:107-120/:125/:168/:178/:192/:206/:217/:227；docs-new/03-engine/scene-start-flow.md:170",
+      "code": "app/amayui-emulator/test/game-start-chain.test.ts:84",
+      "fix": "按实际改写 E2 行"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:422",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§11.5 与 §8 表把 i143（0x143）记成 `op_engine_internal`（no-op）/**完全未实现**（排队+派发 + _this[124350] 重入）",
+      "actual": "emulator 的 0x143 是完整实现：op_dispatch_script_requests + dispatchNextRequest（按包号升序入队 pack<<24、装进帧 37、caller=DISPATCH_SENTINEL、清 dispatching）；同文档 §7/§9.3/§11.7 已写「emulator 已实现，2026-09」，§8/§9.1 两张表未改",
+      "evidence": "app/amayui-emulator/src/vm/handlers/control.ts:210-244、:256-269、:418；handlers/index.ts:50；stubs.ts:197-198；docs-new/03-engine/flow-control.md:258/:279/:297 对 :339",
+      "code": "app/amayui-emulator/src/vm/handlers/control.ts:256-269",
+      "fix": "§8 表与 §9.1 表的 i143 行改为「op_dispatch_script_requests（已实现，守卫 test/append-packs.test.ts）」"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:427",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§11.7 写「exit 的 -10 只实现「派发哨兵」分支（-11 存档续档仍未建模）」；§8 亦写 op_exit「未区分 -10/-11」",
+      "actual": "emulator 的 op_exit 有显式 -11 分支：caller === -11 且 saveResume.pendingRecord0 时装载存档记录 0 的脚本、callRet=-1、jump(0) 续跑，注释直引引擎 raw 25649-25658",
+      "evidence": "app/amayui-emulator/src/vm/handlers/control.ts:122-141；engine raw 25649-25658；docs-new/03-engine/flow-control.md:273、:427",
+      "code": "app/amayui-emulator/src/vm/handlers/control.ts:122-141",
+      "fix": "§8/§11.7 的 -11 标注改为「已实现（读档续跑，saveResume.pendingRecord0；见 tickets/T-0072）」"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:112",
+      "kind": "contradiction",
+      "severity": "P1",
+      "claim": "§4.2 写「★2026-09 两处收紧…① 建项 ≠ 可见 —— 解除判据改成「calcDiffuse 出的颜色 alpha > 0」（#releaseFrameHoldIfVisible）」",
+      "actual": "实际判据是 state0 的高字节 alpha > 0（#meshVisible），不是 calcDiffuse 输出；calcDiffuse(m, clockMs) 恰是被注释明确记为已废弃的旧实现（会给共享模型的动画窗锁存错误起点）。0x1F6 续期、HOLD_MAX_FRAMES=60、旧上限 8 三点与文档一致",
+      "evidence": "app/amayui-emulator/src/renderer/pixiBackend.ts:727-729（`return ((m.state0 >>> 24) & 0xff) > 0;`）；:706-710（旧实现注释）；:356/:607（调用点）；:823；:103；docs-new/03-engine/rendering.md:112",
+      "code": "app/amayui-emulator/src/renderer/pixiBackend.ts:727-729",
+      "fix": "把判据改写为「state0 高字节 alpha > 0（#meshVisible）」，并说明 calcDiffuse 版已被弃用及原因"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:103",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§3.2 写 0x1AD（Engine[166963] = cur）「唯一读者在存档序列化，emulator 不序列化该字段」",
+      "actual": "除存档序列化（raw 17035/17059 的 switch case 2/3 读来算记录计数）外还有 raw 25698-25699 的读者（`if ( *(DWORD*)(_this+667852) > v13 ) … = -1;`，帧回退/退栈收尾路径）；grep 166963|667852 全文件 6 处。严重度由 P1 下调（emulator 无帧回退收尾，该读者不产生可见差异）",
+      "evidence": "raw 24805-24813（写 24812）；raw 17035/17059；raw 17955；raw 25695-25699；docs-new/03-engine/scene-start-flow.md:103",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:282",
+      "fix": "删掉「唯一」，改注「另有 reader raw 17035/17059（存档记录计数）与 raw 25698（帧记忆复位）」"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:60",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§2 表 GAMESTART 三按钮行写 count = 3（`local 0` = 3）",
+      "actual": "size/baseX/baseY 与中心 (811,605) 都对，但 count 错：i12e（GAMESTART.txt:115）的 count 实参是 (local-int 0)，而 local 0 在 GAMESTART 只有 :69 的 `mov (local-int 0) 17` ⇒ 17。文档把 TITLE 的操作数绑定（TITLE.txt:18 的 local 0 = 5）套到了 GAMESTART（其 opt0=local 5、opt1=local 195）",
+      "evidence": "src/GAMESTART.txt:64/:67/:68/:69/:115；src/TITLE.txt:16-18/:100；docs-new/03-engine/scene-start-flow.md:60",
+      "code": "app/amayui-emulator/src/tools/gameStartChain.ts:70",
+      "fix": "count 改成 local 0 = 17，并注明两边操作数绑定不同"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:161",
+      "kind": "host-invented",
+      "severity": "P2",
+      "claim": "§5 写「emulator 的 #serviceAnimGate + scAnimationsDone() 与之同口径」",
+      "actual": "app/amayui-emulator/src 里既没有 #serviceAnimGate 也没有 scAnimationsDone（全仓 4 处命中全是注释，renderer/pixiBackend.ts:746 还指向不存在的 session.#serviceAnimGate）；门状态真源是 Engine.waitFlags + Engine.gatePending(nowMs)",
+      "evidence": "grep `serviceAnimGate|scAnimationsDone` ⇒ src/frame/host.ts:57、src/frame/digest.ts:15、test/anim-window-done.test.ts:4、src/renderer/pixiBackend.ts:746（全为注释）；app/amayui-emulator/src/vm/engine.ts:497/:560；analysis/engine-capabilities.json:379；docs-new/03-engine/scene-start-flow.md:161-162",
+      "code": "app/amayui-emulator/src/renderer/pixiBackend.ts:746",
+      "fix": "改引 Engine.waitFlags + Engine.gatePending()（vm/engine.ts:497）"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:10",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§2 写「draw-texture tex layer x y w h p q：目标矩形 (x, y, x+w, y+h)」",
+      "actual": "op3–op6 不是目标矩形而是源裁剪：0x1FB（sub_422E70，派发表 678024）raw 31293 `SetRect(&rc, op3, op4, op3+op5, op4+op6)` 后原样传 v8.left/top/right/bottom；sub_4ACE50 raw 131824-131838 把它们写进记录 [2..5]，而 op7/op8（int→float）写进 [9]/[10]/[11]。同文档 §1:6 与 §3.1:75 写对了",
+      "evidence": "raw 23034（678024 = 675996+4*0x1FB）；raw 31287-31299；raw 131824-131838；docs-new/03-engine/rendering.md:10 对 :6/:75",
+      "code": "",
+      "fix": "改成「op3–op6 = 源矩形（x,y,x+w,y+h）；op7/op8 = 目标位置（int→float）」"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:22",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "§2 写 fade opcode 家族 0x20–0x2D 全部调 sub_441410（line 49942，mode 0–9 = SetFade / SetLineFade×8 / SetRandomFade）",
+      "actual": "0x20（sub_41D0E0，派发表 676124）不调 sub_441410：它取 v9 = _this[1978] 后走 (*(vtable+80))(...) 的 6 实参间接调用；0x21（sub_41D180）在 0x8000000 位下走 sub_441060（raw 27264），另一支才 sub_441410（raw 27282）；函数头 (00441410) 在 raw 50903 而非 49942",
+      "evidence": "raw 22748-22750；raw 27236-27246；raw 27260-27264、27282；raw 50903-50904；docs-new/03-engine/rendering.md:22",
+      "code": "",
+      "fix": "改成「0x20 走对象 vtable 路径；确认到 mode 实参的 fade 走 sub_441410（mode 字面量见 raw 27282/27311/27348/27383/27422/27837/28192），另有 sub_441060 一支」，行号改 50903"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:80",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§3.1 写 sub_407E20（12679，图形池 base _this+322832）恒返回 _this[11629]（引擎 byte 369348），因中间计时 _this[11631]（369356）全文件只被清零、从不设正",
+      "actual": "三点被证伪：(1) 12679 落在 sub_407E20 之前的链表遍历体内（函数头 raw 12761）；(2) 计时窗未到点时 `return result;`（=1），只有 [11631]==0 或窗过期才 return _this[11629]（raw 12768-12785）；(3) [11631] 有置正点：0x238 的 handler sub_4248C0（派发表 raw 23095）raw 32309-32310 写 92338/92339（92339*4 = 369356）。copyright-effect.md:141 已写对，两文档冲突",
+      "evidence": "raw 12672-12684；raw 12761-12786（:12768/:12775/:12776/:12781-12783/:12785）；raw 23095；raw 32303-32310；raw 131978；grep 函数头 129708/129949/130052；docs-new/03-engine/rendering.md:80 对 copyright-effect.md:141",
+      "code": "",
+      "fix": "改为「等待计时器（_this[11630] 起点 / _this[11631] 时长，由 0x238 装载）未到点或池挂起位非零时返回真」，删掉「从不设正」"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:97",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§3.2 把逐帧动画求值（clock = this[46500]）记在 sub_49A300（115116）体内",
+      "actual": "该逐帧求值在 sub_49AA30（头 raw 117239）raw 117430-117482（grep 46500 首命中 raw 117438 全在该函数内）；sub_49A300（头 raw 116878，文档写 115116）raw 116899-116921 是构造清零、全函数无 46500 读取。字段换算 a2+13/14/19/24/25 = 字节 +52/+56/+76/+96/+100 与文档一致",
+      "evidence": "grep 46500 首命中 raw 117438；raw 117430-117482；raw 116878/116899-116921；docs-new/03-engine/rendering.md:97",
+      "code": "",
+      "fix": "函数名与行号一起改"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:14",
+      "kind": "cross-source-mismatch",
+      "severity": "P2",
+      "claim": "§1 写「文本/台词渲染走消息窗对象（this + 0x534C）」",
+      "actual": "消息窗/Font 对象在引擎字节 0x14D30 = 85296；0x534C = 21324 是 _DWORD* 下标，字节偏移是它的 4 倍。文档把下标当成字节偏移（同一尺度陷阱），engineConfig.ts 用的 85296 才对；emulator 的 vm/msgwin.ts:2 顶部注释同错",
+      "evidence": "raw 31453/31466（sub_456710((int)(_this + 21324), …)）；engine/天结_unpacked.exe_utf8.lst:55671-55672（`lea ecx, [esi+14D30h]` / `call sub_456710`）；raw 13863、raw 20049（_this + 85296）；docs-new/03-engine/rendering.md:14",
+      "code": "app/amayui-emulator/src/vm/msgwin.ts:2（写 Engine+0x534C）对比 app/amayui-emulator/src/engineConfig.ts:266（写 Engine+85296）",
+      "fix": "把 this + 0x534C 改为 this + 0x14D30（= 85296 字节；DWORD 下标 21324），并同步 msgwin.ts 顶部注释"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:23",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§1 带 ✅ 判定「LOGO 场景的渐变不由引擎引入（来自 LOGO.MPG 视频内容本身）」",
+      "actual": "与同文档 :28（「渐变不来自视频…属引擎内建」）与 :82-84（渐变 = mesh#2 的 CalcDiffuse 盖黑）直接冲突；引擎侧确有逐帧渐变机制（0x323 置 |2 动画旗标 + delay/dur，逐帧 sub_4AF1C0 → sub_4A2050 CalcDiffuse）",
+      "evidence": "raw 132826-132845（132836 `*v6 |= 2u;`、132839/132841 delay/dur）；raw 133458-133541（sub_4AF1C0）；raw 122248/122289（CalcDiffuse）；src/LOGO.txt:40/:44；docs-new/03-engine/rendering.md:23 对 :28/:82-84",
+      "code": "app/amayui-emulator/src/renderer/drawitem/eval.ts:215-229",
+      "fix": "删除或改写 :23 的「来自视频」判定，改为指向 §3.1 的 mesh CalcDiffuse 结论"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:32",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "§1 写「0x20B（sub_4A4C70）= 纯色+α 填充、0x323（sub_4AE330）= 静态网格遮罩（均无逐帧计时）」",
+      "actual": "0x20B 映射正确（派发表 678088 → sub_423690 → sub_4A4C70）；但 0x323 不是静态遮罩、有逐帧计时（raw 132836 `*v6 |= 2u;`、132839/132841 delay/dur）。同段「present 的 ClearTarget 被 _this+46460&1 守卫、该字段恒 0」成立（守卫 raw 136785，写点只有清零）",
+      "evidence": "raw 23050（678088）；raw 31569-31591；raw 132826-132843；raw 136785；docs-new/03-engine/rendering.md:32",
+      "code": "",
+      "fix": "把 0x323 从「静态遮罩（无逐帧计时）」里移出，标注为 mesh 颜色动画"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:74",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "§3.2 写逐 present 提交序对绘图项表（_this+258）与 mesh 表（_this+266）做「三路归并」",
+      "actual": "「三路 + 按节点 +12 取小」正确，但第三路是文档从未命名的第三张表 _this+1096（根 *(DWORD*)(_this+1100)，键由 sub_4A9550 取），绘制函数 sub_4B0360。文档只列两张表",
+      "evidence": "raw 135545-135546/135581/135586-135589/135596/135610；docs-new/03-engine/rendering.md:74",
+      "code": "",
+      "fix": "补上第三张表 _this+1096（由 sub_4B0360 绘制、键来自 sub_4A9550），并说明它承载哪一路"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:77",
+      "kind": "overreach",
+      "severity": "P2",
+      "claim": "§3.2 写 create-mesh → sub_4ADFE0 存 entry[5]=vcount、[6]=a13、[13]=state0、[14]=state1",
+      "actual": "sub_4ADFE0 只写 [0] |= 1、[5]、[6]、[2]/[3]/[4]；对 [13] 只读（raw 132788 ptr[13] != -1 → 立刻 CalcDiffuse），不写 [13]/[14]。[13] 由 0x322（sub_4AE2C0 raw 132820）写、[14] 由 0x323（sub_4AE330 raw 132843）写",
+      "evidence": "raw 132753-132794（:132758/:132759/:132761/:132765/:132773/:132781/:132788/:132791）；raw 132820；raw 132843；docs-new/03-engine/rendering.md:77",
+      "code": "",
+      "fix": "把 [13]=state0 / [14]=state1 从 create-mesh 的赋值列表里移到 0x322/0x323 名下"
+    },
+    {
+      "id": "docs-new/03-engine/engine-reset-mainloop.md:122",
+      "kind": "cross-source-mismatch",
+      "severity": "P2",
+      "claim": ":122 / :399 / :411 与 Part D 均写 engine_bool_flag（0xA30D4）字段已确认但 emulator 未建模（engineValues 里也没有），并建议增加 166965 项",
+      "actual": "emulator 已建模：engineFieldIds.ts:89-90 `engineBool: 166965`（166965*4 = 667860 = 0xA30D4），handlers/engine-fields.ts:120（0x21b map）、:152-155（0x247 getter）、:305/:313（注册）",
+      "evidence": "app/amayui-emulator/src/vm/engineFieldIds.ts:89-90；src/vm/handlers/engine-fields.ts:120/:152-155/:305/:313；engine raw 17982（*(DWORD*)(_this+667860) = 0）、raw 31822 起 sub_423C20；docs-new/03-engine/engine-reset-mainloop.md:122/:399/:411",
+      "code": "app/amayui-emulator/src/vm/engineFieldIds.ts:90",
+      "fix": "三处改成「已建模（engineBool=166965 + 0x21B/0x247 已注册）」，删掉 Part D 的建议项"
+    },
+    {
+      "id": "docs-new/03-engine/save-data.md:258",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "§3.5 写「0x1A1 不写操作数：sub_42DDE0 函数体里没有 sub_42B4B0」「引擎里 0x1A1 的 op1 一个字节都不写」，并据此推出该码只能当占位",
+      "actual": "sub_42DDE0 体内有 sub_42B4B0：CreateFileA 打不开槽时 raw 38424-38425 就是 `return sub_42B4B0((int)_this, 1, 1);` ⇒ 该分支 op1 ← 1，且不进入 sub_410160（既不整体 ENC pool_int、也不转移）。只有成功打开槽之后才「一个字节都不写」。emulator 同口径丢弃该码（save-slot.ts:572-581 只取 transferredTo；:318-320 在失败时返回 {code:1, transferredTo:null}）",
+      "evidence": "raw 38419-38439（:38424-38425 早返回、:38431 sub_410160、:38433-38438 ENC）；raw 38366/38387（0x1A0/sub_42DC70）；docs-new/03-engine/save-data.md:258-261；app/amayui-emulator/src/vm/handlers/save-slot.ts:318-320、572-581",
+      "code": "app/amayui-emulator/src/vm/handlers/save-slot.ts:572-581",
+      "fix": "文档改为「成功路径不回写操作数；唯一例外是打不开槽 ⇒ op1 ← 1 且不装载/不转移」；emulator 在该失败分支补 writeIntOperand(e, c.frame, c.instr, 1, 1)"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:282",
+      "kind": "gap-as-noop",
+      "severity": "P2",
+      "claim": "§11 末写「剩余：0xA1/0xA2/0xA3（菜单派发表）与 0x20C/0xB5/0x23D/0x32B（图形/声音清理）仍是安全桩（no-op）」",
+      "actual": "这 7 条全部已是真实现并注册在 OPS / NATIVE_OPS：MENU_OPS = 0xa1/0xa2/0xa3、frame.ts:347 = 0x20c、audio.ts:431 = 0xb5、gfx-misc.ts:73-74 = 0x23d/0x32b；stubs.ts 的 engine-internal 表里一条都没有 ⇒ 文档把实现记成缺口。严重度由 P3 上调 P2",
+      "evidence": "docs-new/03-engine/input-system.md:282、:354；app/amayui-emulator/src/vm/handlers/menu.ts:43-47；src/frame.ts:347；src/vm/handlers/audio.ts:431；src/vm/handlers/gfx-misc.ts:73-74；handlers/index.ts:60/62/63/79；stubs.ts 的 [0x.., op_engine_internal] 表（:59/:72/:84/:107/:108/:149/:173/:174/:196）不含上述 7 条",
+      "code": "app/amayui-emulator/src/vm/handlers/menu.ts:43-47",
+      "fix": "把该句 7 条逐条改为其真实实现位置（menu.ts / frame.ts / audio.ts / gfx-misc.ts），删掉「仍是安全桩」"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:159",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4.6 表把 blend 选择子 0/≥4 写成「一个 blend state 都不设（继承当前）」",
+      "actual": "在文档自引的 sub_4A2D50（raw 123089-123121）区间内，raw 123117-123121 还有一条选择子 if 链之外的门控：`if ( !*(DWORD*)(_this+46676) && *(int*)(_this+46456) < 0 && *(_DWORD*)(*(_DWORD*)(_this+1860)+1164) == 1 ) { SetRenderState(19,2); SetRenderState(20,1); }`（SRCBLEND=ONE / DESTBLEND=ZERO），present 侧 raw 136790 同款 sub_4A50C0(_this, 0x26u) ⇒ 表头限定的选择子分支内该半句仍成立，缺的是前提说明。原判 P2 下调 P3",
+      "evidence": "raw 123085-123121；raw 136785-136792；raw 124904/130434（46456 写点）；docs-new/03-engine/rendering.md:157-159 与 :188",
+      "code": "",
+      "fix": "给 0/≥4 行加注该链外门控覆盖，并说明 emulator 默认档只覆盖非该门控场景"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:269",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§11 写「手把 = bit4+i」的掩码表由 joy-callback 的 op1 指定按钮号；§6b/§13 亦写「joy-callback <btn0..31> <label>：手柄按钮共 32 个」",
+      "actual": "方向对但三处论据不可靠：0xFB 的体在 raw 30405-30419（`if ( read(1) < 0 || read(1) >= 32 ) throw aSetkeyjump; … _this[33*result + 107725 + v3] = v2;`）；手柄按钮 i 先经 _this[1125+i]（32 项恒等虚拟位表，raw 91519-91524）才成为掩码位，写端在恒等映射下「按钮序号」与「掩码位」同值不可分；文档 §11:268/§13:306 自身也写 0..31；语料只用 0..c 共 13 槽 ⇒ 属措辞问题（P3）",
+      "evidence": "engine raw 30405-30419、:25042（读端 `result[32*v8 + 107725 + v8 + v6]`）、:91519-91524；src/*.txt joy-callback 操作数直方图（0..c，各 50-53 次）；docs-new/03-engine/input-system.md:151/:268/:306；app/amayui-emulator/src/vm/handlers/input.ts:119-124",
+      "code": "app/amayui-emulator/src/vm/handlers/input.ts:119-124",
+      "fix": "把「手柄按钮序号/共 32 个」统一改为「输入掩码位（0..31；掩码位 4/5 = 鼠标左右、4+i = 手柄按钮 i）」，并注明虚拟位表恒等"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:155",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4 伪代码首行写 `(*(_this+676732))(); // 回调（自定义钩子） [逻辑未知]`",
+      "actual": "该槽是 0x72 wait-for-input 的 handler 指针：raw 22922 `*(_DWORD *)(_this + 676732) = sub_419720;`，被调体 raw 24817-24829 只清 effect_flags & 0x200 并调 sub_489E50(…,100)/sub_489B50；exit-script 是唯一按裸函数指针无参调用它的地方（raw 35206）",
+      "evidence": "docs-new/03-engine/flow-control.md:155；raw 22922；raw 24817-24829；raw 35206；docs-new/03-engine/opcode-table.md 的 0x72 行（wait-for-input / sub_419720）；scripts/asm/opcodes.json opcode 114",
+      "code": "",
+      "fix": "改注为「= 0x72（wait-for-input, sub_419720）的 handler 指针；exit-script 无参调用它做输入/等待收尾」，去掉 [逻辑未知]"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:17",
+      "kind": "name-inference",
+      "severity": "P3",
+      "claim": "§0 写「每次载入脚本都重建局部池（local_int 等容量取自脚本头 local_vars，内容填 enc_zero）」",
+      "actual": "`enc_zero` 在反编译里零命中；体做的是把引擎字段 *(DWORD*)(a1+388240) 的值写进每个 local_int 槽（raw 18777），而 local_float/str/ptr 三池才是真 memset(...,0,...)（raw 18782-18797）；文档未给该字段名/偏移，且把四类池的初值并成一句",
+      "evidence": "grep enc_zero engine/天结_unpacked.exe_utf8.c 零命中；raw 18717-18723、:18777、:18782-18797、:22556（*(DWORD*)(_this+388240) = sub_405620(v7)）；docs-new/03-engine/flow-control.md:16-17",
+      "code": "",
+      "fix": "写成「local_int 槽预置为引擎字段 _this[97060]（byte 388240）——即编码后的零；local_float/str/ptr 池 memset 0」，或直接引 raw 18777 的字段而非自造 enc_zero 名"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:34",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§0 与 §1/§7/§9.3/§10.1 混用 _this[96983]、_this[124350]、_this + 173106、_this[387932] 四种写法，而 §0 声明帧内槽「相对 383104，单位字节」",
+      "actual": "现象属实但归因需改：§0:15 的帧基址标记了字节单位，其下「帧内槽（相对 383104，单位字节）」是带单位注解，不构成「与声明冲突」；真正的可证缺陷是体例不统一 —— _this[96983]（= 字节 387932）与 *(DWORD*)(_this + 387932) 并存（raw 35207/22589 用字节写、raw 25176 用下标写），而文档多处已给 byte 换算（§0:34 的 byte 497400/692424、§10.1 的 byte 387932=0x5EB5C）",
+      "evidence": "raw 35207、:22589、:35312、:25176-25177；docs-new/03-engine/flow-control.md:15/:24/:34/:45/:55/:58/:103/:104/:156/:185/:347",
+      "code": "",
+      "fix": "统一口径（_this[N] 一律 DWORD 下标，或一律字节偏移，不混排）；§10.1 的 _this[387932] 改成 _this[96983]"
+    },
+    {
+      "id": "docs-new/03-engine/flow-control.md:150",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "§4 标题写 exit-script (0x9) → sub_428A60 [raw 35171–35321, 151 行]",
+      "actual": "边界各偏 1–2 行：raw 35170 是 `//----- (00428A60)` 注释、35171 是函数签名、35172 是 `{`、右花括号在 35319，35320 是编译器附注、35322 起是下一个函数 sub_428DB0 ⇒ 正确区间 [35170–35319]（按签名→`}` 是 [35171–35319]）；函数体内容与 150 行声明一致",
+      "evidence": "raw 35170、:35171、:35172、:35318、:35319、:35320、:35322；docs-new/03-engine/flow-control.md:150",
+      "code": "",
+      "fix": "行号改为 [raw 35170–35319]（同文件 §1/§2/§5/§6/§7 的区间无需改）"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:144",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4.2 写「SN0000 的暗幕正是 set-vertex-color-alpha 19640 0 f8043 -1 -1」",
+      "actual": "源码逐字是 `set-vertex-color-alpha 19640 0 (global-int f8043) (local-int 0) (local-int 1)`（两个通道是槽引用，运行期取值需另算，local-int 1 在该点为 −2）。引擎语义（负值回退当前 state0 通道）核实无误",
+      "evidence": "src/SN0000.txt:3272；raw 33877-33881；app/amayui-emulator/test/mesh-vertex-quad.test.ts:8-11；docs-new/03-engine/scene-start-flow.md:144",
+      "code": "app/amayui-emulator/test/mesh-vertex-quad.test.ts:9",
+      "fix": "按源码逐字引用"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:29",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "§0 写「ip = 901 = src/SN0000.txt:1225 = 第一条被汇编的 show-text」",
+      "actual": "文档数值都对（ip=901、:1225 是第一条 show-text、:1224 是「// 输入原文」注释）；不一致在 emulator 测试侧：test/game-start-chain.test.ts:265 用例名与 :5 头注释自称 1224，同文件 :274/:277 又写 1225",
+      "evidence": "src/SN0000.txt:1224-1225；app/amayui-emulator/test/game-start-chain.test.ts:5/:265/:274/:277；docs-new/03-engine/scene-start-flow.md:29",
+      "code": "app/amayui-emulator/test/game-start-chain.test.ts:265",
+      "fix": "文档保留 1225 并注明测试标题里的 1224 是注释行（或订正测试）"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:104",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4.2 写「版权页 frame 效果已实现（背景先、文字后、~5s、整体淡出），LOGO→TITLE 不再闪现」",
+      "actual": "机制是通用的（calcDiffuse / itemColor 动画窗 / 撤幕留帧），但没有任何版权页/LOGO 专属代码或测试，也没有「~5s」常量（时长来自脚本 delay/dur）。test/ 内搜 frame-hold|留帧|curtain|30d40|30d42|holdFrame 命中 0；观测证据在 tickets/T-0030/evidence/run1-first-boot-renderer.log 与 tickets/T-0024/notes.md:133（手工日志）",
+      "evidence": "app/amayui-emulator/src/renderer/pixiBackend.ts:688-729；src/renderer/drawitem/eval.ts:20-30、215-229；test/ 搜索无命中；tickets/T-0024/notes.md:133；docs-new/03-engine/rendering.md:104",
+      "code": "",
+      "fix": "把「已实现」降级为「机制已实现，版权页序列无自动回归；~5s 来自脚本 delay/dur」，或补一条 LOGO/版权页序列测试"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:117",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4.3 带 ✅ 写「无界面光栅验证：真实 VM 到 TITLE 产出与真实标题菜单布局吻合（logo+散布按钮+版权+背景）」",
+      "actual": "命中断言确实存在但是 headless 坐标级（test/config1-chain.test.ts:34 断言 CONFIG_XY[0]=807、test/title-exit.test.ts:100 断言 (1180,630) 命中第 4 项）；headless 明确不光栅化（headlessScene.ts:553/:240），截图工具 tools/shot.cjs 走 Electron 且只有 blackish 启发式、靠人工看图",
+      "evidence": "app/amayui-emulator/test/config1-chain.test.ts:30-34；test/title-exit.test.ts:98-100；src/renderer/headlessScene.ts:553/:240；tools/shot.cjs；docs-new/03-engine/rendering.md:117",
+      "code": "",
+      "fix": "改成「headless 命中/坐标断言 + 人工截图目视」，不要写成自动光栅验证"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:148",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§4.5 写「修法：itemRenderPlacement…同时给出 position = pivot + t 与 pivot = pivot − pos，presenter.ts 只用它」",
+      "actual": "两个公式与实现一致；但「presenter 只用它」只对 useWorld 项成立 —— 纯 2D 分支按设计绕过它、直接 spr.position.set(it.posX, it.posY)（这正是上/下盖不受影响的原因）",
+      "evidence": "app/amayui-emulator/src/renderer/drawitem/eval.ts:61-82；src/renderer/pixi/presenter.ts:177-192；docs-new/03-engine/rendering.md:148-151",
+      "code": "app/amayui-emulator/src/renderer/pixi/presenter.ts:185-191",
+      "fix": "注明「useWorld 项用 itemRenderPlacement，纯 2D 项直接写 pos」"
+    },
+    {
+      "id": "docs-new/03-engine/engine-reset-mainloop.md:94",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§A.2 伪代码注「10 个 Queue_int(0x28B) 构造 … 10 个 Stack_int(0x1C) 构造」",
+      "actual": "两个类尺寸写错：Queue_int = operator new(0x1C)（28B，raw 18086），Stack_int = operator new(0x14)（20B，raw 18116）；0x28B 无对应",
+      "evidence": "raw 18080-18109（:18086/:18091-18097）；raw 18110-18137（:18116/:18121-18125）；docs-new/03-engine/engine-reset-mainloop.md:94/:98",
+      "code": "",
+      "fix": "改成 Queue_int(0x1C) / Stack_int(0x14)"
+    },
+    {
+      "id": "docs-new/03-engine/engine-reset-mainloop.md:114",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§A.2 标题「分组伪代码（忠实原始顺序）」及其体",
+      "actual": "「忠实」不成立：漏掉 raw 18150-18155 的 6 处复位（489816 = 0；430696/430700/430704/430708/430712 = -1）；其中 430708 正是 §B.6 阶段时间表身份校验（raw 13660-13661）用的字段",
+      "evidence": "raw 18145-18160（:18150-18155）；raw 13658-13661；docs-new/03-engine/engine-reset-mainloop.md:40/:114",
+      "code": "",
+      "fix": "补回这 6 行，或把标题改成「主要分组（非逐行完整）」"
+    },
+    {
+      "id": "docs-new/03-engine/engine-reset-mainloop.md:355",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§B 写「+4*v18+675996（opcode handler 表，675996 = 0xA50CC）」",
+      "actual": "675996 = 0xA509C；0xA50CC = 676044 ≠ 675996（旁证 raw 23030 的 678008 = 675996+4*503）",
+      "evidence": "raw 21217；raw 23030；docs-new/03-engine/engine-reset-mainloop.md:355",
+      "code": "",
+      "fix": "改成 0xA509C"
+    },
+    {
+      "id": "docs-new/03-engine/engine-reset-mainloop.md:304",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§B.3 开头写「emulator 只用到 3 位（0x400、0x8000000、0x20000000），其余是引擎主循环的状态门，[未建模]」",
+      "actual": "同表 :312 把 0x40 标为 [已实现] STAGE_GATE，Part C :402 写「只用 0x40/0x400/0x8000000/0x20000000 四位」，代码里 0x40 亦已建模 ⇒ 应以四位为准",
+      "evidence": "docs-new/03-engine/engine-reset-mainloop.md:304/:312/:402；app/amayui-emulator/src/vm/stageLoop.ts:60；src/vm/handlers/stage.ts:72；src/frame/loop.ts:262",
+      "code": "app/amayui-emulator/src/vm/stageLoop.ts:60",
+      "fix": "把「只用到 3 位」改成四位"
+    },
+    {
+      "id": "docs-new/03-engine/scene-start-flow.md:103+rendering.md:80+rendering.md:31+rendering.md:141（0x238/0x400 计时器）",
+      "kind": "contradiction",
+      "severity": "P2",
+      "claim": "rendering.md:80 与 :31、copyright-effect.md:141 对「369356 计时字段是否有置正点、0x400 门位置」给出互斥说法",
+      "actual": "0x238 = sub_4248C0（派发表 raw 23095，678268 = 675996+4*0x238）raw 32309-32310 写 92338/92339（= 字节 369352/369356）⇒ 时长/起点有装载端；0x400 卫门在 raw 21109/21111/21134/21151（不在 rendering.md:31 写的 20934-20977）。copyright-effect.md:141 的订正 12762-12786 正确，但同格残留旧锚点 12679（落在 raw 12672-12684 的链表遍历体内）应删",
+      "evidence": "raw 23095；raw 32303-32310；raw 21109/21111/21134/21151；raw 20934-20977；raw 12672-12684；raw 12761-12762；docs-new/03-engine/rendering.md:31/:80 与 copyright-effect.md:141",
+      "code": "",
+      "fix": "以 0x238 装载端为准统一三处表述；rendering.md:31 行号改 21109-21151；copyright-effect.md:141 删掉 12679"
+    },
+    {
+      "id": "docs-new/03-engine/copyright-effect.md:29+80+133（行号系统性偏低）",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "copyright-effect.md :29（主循环 timeGetTime/帧同步/present 链）、:80（§3b 字段写入行号）、:133（§6 关键代码索引表）三处行号",
+      "actual": "三处行号系统性偏低：主循环整段低 175 行（timeGetTime 在 raw 20620/20640-20642、帧同步 20746、present 调用 20758）；§3b 的 7 个行号低约 2020 行且落在别的函数体内（|=2 在 raw 131969、+48 在 131878、+52/+56/+76 在 131970/131972/131974、+96 在 131880、+100 在 131976；129936 是 (004AA740) 析构体头）；§6 索引表 11 个函数头实测 133458/122248/116878/132809/132826/131870/131956/133326/31270/131816/122890，全部低 1762–2039 行。字段语义与逻辑均核实无误",
+      "evidence": "raw 20620/20640-20643/20746/20750-20751/20758；grep 函数头 (004AD0C0)=131956/(004ACF60)=131870/(004AA740)=129936/(004AF1C0)=133458/(004A2050)=122248/(0049A300)=116878/(004AE2C0)=132809/(004AE330)=132826/(004AEEA0)=133326/(00422E70)=31270/(004ACE50)=131816/(004A2D50)=122890；raw 131876-131881、131964-131979；docs-new/03-engine/copyright-effect.md:29-32/:80-86/:133-140",
+      "code": "",
+      "fix": "三处按实测重锚（或在表里去掉行号只留函数名+字段）"
+    },
+    {
+      "id": "docs-new/03-engine/stub-reaudit-2026-09.md:219",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "§4 表头称「本表由代码实算生成（.tmp/stubStatusTable.mts 直读 OPS/NATIVE_OPS/ENGINE_INTERNAL_OPS）…表里写的就是当前运行时行为」，并给「合计：OPS 230 / NATIVE_OPS 50（含 5 条记录式桩）/ ENGINE_INTERNAL_OPS 14」（§0 表 :16-18 同数；:22「根本没有 handler 286 → 282」）",
+      "actual": "按 handlers/index.ts:44-68 与 :71-81 的成员表静态拼装并去重：OPS = 254、NATIVE_OPS = 51、ENGINE_INTERNAL_OPS = 9、STUB_NATIVE_OPS = 1（仅 [0x308, op_stub_unhandled]），三表两两交集 0。根因可证：文档数字与 .tmp/stubStatusTable.err:2-3 逐字相同（上次生成留下的 stderr）⇒ 忠实复制了过期生成物。:22 的算术亦不闭合（286 − A3 三条 − 0x199 − A6 两条 = 280 ≠ 282）",
+      "evidence": "app/amayui-emulator/src/vm/handlers/index.ts:44-68、:71-81；handlers/stubs.ts:46-213（9 条：行 59/72/84/107/108/149/173/174/196）、:216-219（1 条 0x308）；.tmp/stubStatusTable.err:2-3；docs-new/03-engine/stub-reaudit-2026-09.md:16-22、:212-219",
+      "code": "",
+      "fix": "重跑 .tmp/stubStatusTable.mts 刷新 §0/§4 全部数字，并核 :22 的 286→X 口径"
+    },
+    {
+      "id": "docs-new/03-engine/stub-reaudit-2026-09.md:311",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§4「排除」表把 0x341/0x345/0x34E 记成 NATIVE_OPS(stubSubsystem)、0x346–0x34D 记成 ENGINE_INTERNAL_OPS（:311-321），即仍是桩/no-op",
+      "actual": "同文档 §1.2（:135-144）已宣布这 11 条全部转真实现，代码亦然：LIVE2D_NATIVE_OPS = {0x341,0x345,0x34e}、LIVE2D_OPS = {0x342,0x344,0x346–0x34d,0x34f–0x352}，ENGINE_INTERNAL_OPS 里已无 0x346-0x34D ⇒ §4 是 .tmp/stubStatusTable.md:86-103 的旧生成物复制。括注「§0 的 14 偏大全部来自此处」需收窄：14→9 还含反向的一半（Live2D 8 条移出 −8，0x137/0x244/0x2FA 三条移入 +3）",
+      "evidence": "docs-new/03-engine/stub-reaudit-2026-09.md:311-324 对 :135-144；app/amayui-emulator/src/vm/handlers/live2d.ts:183-198、:252-256；handlers/index.ts:61、:78；handlers/stubs.ts:59/72/84；.tmp/stubStatusTable.md:86-103",
+      "code": "",
+      "fix": "§4 表按代码重生成（删除已转实现行，或标成 LIVE2D_OPS / LIVE2D_NATIVE_OPS）"
+    },
+    {
+      "id": "docs-new/03-engine/stub-reaudit-2026-09.md:15",
+      "kind": "overreach",
+      "severity": "P3",
+      "claim": "§0 写「opcode-table.md 全表 | 574 | 引擎实际存在的 opcode」",
+      "actual": "引擎 Command 构造器 sub_415640（raw 22425-23465）在 raw 22722 的 memset32 之后只给 [676000,679396] 中 544 个槽赋了真 handler（max op 0x352），其余按 0x400 表宽留默认 sub_418E30；opcode-table.md 主表恰 544 行且与构造器 0 处不符，另有 30 行在「回退默认 sub_418E30 的 opcode」小节（:581-610），它们在本引擎未赋值 ⇒「574 = 引擎实际存在的 opcode」不成立（574 是文档行数）",
+      "evidence": "raw 22425、:22722-22723、:23466；统计 distinct offsets = 544、max op = 0x352、md 与 ctor 双向 0 处差异、handler 名 0 处不符；docs-new/03-engine/opcode-table.md:1、:575-610；stub-reaudit-2026-09.md:15",
+      "code": "",
+      "fix": "改成「行数 574（其中 544 行有本引擎 handler、30 行属回退默认）」，并同步 :22 的分母口径"
+    },
+    {
+      "id": "docs-new/03-engine/vm-opcodes.md:5",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "写「opcode→handler / 语义 / 分析状态全表（544 条）→ 真源 ./opcode-table.md」",
+      "actual": "opcode-table.md 实际 574 行 / 574 unique opcode（主表 544 + 回退小节 30，两组无交集）；stub-reaudit:15 把同一文件称作「全表 574」⇒ 同一文件两个条目数。544 作为「有 handler 的条目数 / dispatch 已赋值槽数」本身不算错",
+      "evidence": "统计 docs-new/03-engine/opcode-table.md：rows 574 / unique ops 574、main rows 544 / fallback rows 30；docs-new/03-engine/vm-opcodes.md:3-5；stub-reaudit-2026-09.md:15",
+      "code": "",
+      "fix": "统一口径为「574 行（544 行有 handler）」"
+    },
+    {
+      "id": "docs-new/03-engine/save-data.md:630",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "§7.10④ 写「引擎默认 set:CreateObject = 1（raw 111733）/ set:AutoFreeTexture = 0（raw 111742）」",
+      "actual": "(a) 键名：引擎查的字符串是 set:AutoFreeTex（raw 4343），全仓只有本行与 emulator 注释 save-slot.ts:230/234/235 写作 set:AutoFreeTexture；set:CreateObject 名对（raw 4266）。(b) 行号：set:CreateObject=1 在 raw 111730-111731（111733 是 set:DrawMode=0）、set:AutoFreeTex=0 在 raw 111744-111745（111742 是 `v13 = -1;`）。两个 &2 门都为假的结论不变",
+      "evidence": "raw 4266、:4343、:111730-111733、:111744-111748；docs-new/03-engine/save-data.md:630；app/amayui-emulator/src/vm/handlers/save-slot.ts:230-235；app/amayui-emulator/src/configRegistry.ts:129",
+      "code": "",
+      "fix": "改为 set:CreateObject（raw 111731）/ set:AutoFreeTex（raw 111745）"
+    },
+    {
+      "id": "docs-new/03-engine/save-data.md:60",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "§2 表写「0x1AA load-string | 读 | 同上（未命中 = 空串）| 5 | raw 42449-42490」",
+      "actual": "raw 42449-42490 落在 sub_434260（0x2C8 按字符取子串，体 42378-42457）尾与 sub_4344A0（0x2C9）里，与 load-string 无关。0x1AA 的 handler 是 sub_433A70（dispatch ctor raw 22912，偏移 677700）：体 raw 42052-42062 `v3 = sub_429390(_this + 5191, 5, v2); return sub_433310(_this, 1, (int)v3);`，sub_429390 内 5191+281 = 5472 = 0x1A9 写表的同一张，未命中返回 &dword_55D0FC（空串）⇒ 语义（哨兵 5、未命中空串、同一张表）都对，只有行号错",
+      "evidence": "raw 22912（*(DWORD*)(_this + 677700) = sub_433A70）、:22734、:42052-42062、:35675-35679、:42948、:42378、:42457、:42459；docs-new/03-engine/save-data.md:53-60",
+      "code": "",
+      "fix": "行号改为 raw 42052-42062（可附 5191+281=5472 换算）"
+    },
+    {
+      "id": "docs-new/03-engine/save-data.md:564",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "§7.10① 写「+240 | u32 | payload 逻辑字节数…（读侧 v8 = v99[60]/4 + 1 用它开缓冲，19313）」",
+      "actual": "全文件 grep v99[60] 只有 1 处命中：raw 19413 `v8 = v99[60] / 4 + 1;`；文档所写 raw 19313 是 `int v43; // edi`（sub_410160 的局部变量声明），没有该表达式",
+      "evidence": "engine raw 19413、:19313；docs-new/03-engine/save-data.md:564",
+      "code": "",
+      "fix": "19313 → 19413"
+    },
+    {
+      "id": "docs-new/03-engine/save-data.md:193",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§6 表写「存档槽…真槽（format 1..3）只读头 + 接游玩秒数，状态主体仍是缺口（§7 + SLOT_GAPS）」",
+      "actual": "同一文档 §7.2（:332-360）与 SLOT_GAPS①（:284）说 format = 3 的状态主体已解析并可续跑；代码亦如此（saveSlot.ts:288-299 判 engineFormat → handlers/save-slot.ts:338-346 调 restoreEngineSlot → engineSlot.ts:459-465 解码）⇒ §6 该格是 §7.2 之前的旧口径。附注：SLOT_GAPS②⑥ 表示状态主体仍有残留缺口，但「只读头」对 format=3 已不成立",
+      "evidence": "docs-new/03-engine/save-data.md:193 对 :284/:332-360；app/amayui-emulator/src/vm/saveSlot.ts:288-299；src/vm/handlers/save-slot.ts:156、:338-346；src/vm/engineSlot.ts:459-465",
+      "code": "",
+      "fix": "§6 该格改为「format = 3：状态主体已解析并可续跑；format 1/2：只读头 + 接游玩秒数」"
+    },
+    {
+      "id": "docs-new/03-engine/stub-reaudit-2026-09.md:126",
+      "kind": "no-evidence",
+      "severity": "P3",
+      "claim": "§1.1 A5b 写「0x14D | sub_430170(43038) | call-agerc-export…」",
+      "actual": "sub_430170 的反编译块在 raw 39809（注释行）/39810（签名）开始、39855 结束；dispatch 项 raw 23026（偏移 677328 = 675996+4*0x14D）确为 0x14D → sub_430170。文档所写 43038 是另一个函数里的 `LibraryA = LoadLibraryA(aShell32Dll);`。同文档其余 (行号) 标注抽查与函数头差 ≤1",
+      "evidence": "raw 39809-39810、:39855、:23026、:43038；docs-new/03-engine/stub-reaudit-2026-09.md:126",
+      "code": "",
+      "fix": "43038 → 39810（或 39809）"
+    },
+    {
+      "id": "docs-new/03-engine/stub-reaudit-2026-09.md:109",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "A4b 对象图写「[262..277] / [278..293] / [294..309] = 三组 16-dword 参数块（分别喂 Snow / Leaf / Rain 的 ctor）」",
+      "actual": "只有 Snow 的重建函数 sub_453330（头 raw 65621）读三块（raw 65642-65644 依次 qmemcpy _this+294 / _this+278 / _this+262）；Rain 的 sub_453280（raw 65591）与 Leaf 的 sub_453410（raw 65731）都只读 _this + 294；管理器参数更新端（raw 65459-65461 存 [262]/[278]/[294]，65462-65484 只把 a34 给 [258]、65485-65542 把 a2+a18+a34 给 [259]、65543-65565 只把 a34 给 [260]）与之一致",
+      "evidence": "raw 65570、:65591、:65621、:65642-65644、:65710、:65731、:65459-65461、:65462-65484、:65485-65542、:65543-65565；docs-new/03-engine/stub-reaudit-2026-09.md:109（表体 :92-96）",
+      "code": "",
+      "fix": "改为「三块都喂 Snow；Leaf/Rain 只用 [294..309]」"
+    },
+    {
+      "id": "docs-new/03-engine/instruction-directions.md:73",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§3 表写「i324 | 0x324 | 消息/文本 | sub_41A470」（该行计入 §3 的 33 条消息簇）",
+      "actual": "sub_41A470（体 raw 25402-25407）全文只有 `_this[30*_this[95776]+95805] = 1; return sub_453530(_this[93384]);`，即 3D 天气/粒子效果管理器的销毁（thunk sub_453530 → sub_453150 释放 [258]=Rain/[259]=Snow/[260]=Leaf 并清 [312]），与消息/文本无关；stub-reaudit:92 已把 0x324 订正进 A4b",
+      "evidence": "raw 23220、:25402-25407、:65366-65394；engine/天结_unpacked.exe_utf8.lst:135088-135092（thunk）；docs-new/03-engine/instruction-directions.md:67-73、:141-147；stub-reaudit-2026-09.md:92",
+      "code": "",
+      "fix": "该行方向改为「3D 效果管理（天气/粒子）」并从 §3 的 33 条里移出，§8 计数随之改"
+    },
+    {
+      "id": "docs-new/03-engine/instruction-directions.md:102",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "§3 表写「i0c0 | 0xC0 | 消息/系统配置字段 | sub_42E510」，归类依据称「0xC0 = 消息/系统配置字段 getter（_this[174713]，与 0xC3 成对，CONFIG.txt 读系统值）」",
+      "actual": "0xC0 = sub_42E510（ctor raw 22930）体 raw 38618-38623 就是 `return sub_42B4B0((int)_this, 1, _this[174713]);`，而 _this[174713] 是 Music（BGM）模块的 [259] = 当前曲 id：0xC3（raw 29856-29857）直接写它，0xB7/0xB9 经 sub_489F80(_this+174454, id, loop) 写模块 [259]（106357-106360），读档 raw 19911 把它当存档状态还原；emulator 早已按音乐字段实现（engine-fields.ts:65/:332）",
+      "evidence": "raw 22930、:22933、:38618-38623、:29856-29857、:106353-106360、:29733、:29750、:19911；src/CONFIG.txt:324-328；docs-new/03-engine/instruction-directions.md:24、:102、:149；docs-new/03-engine/save-data.md:503-506；app/amayui-emulator/src/vm/handlers/engine-fields.ts:65、:332",
+      "code": "app/amayui-emulator/src/vm/handlers/engine-fields.ts:65",
+      "fix": "0xC0 改归「声音/BGM 当前曲 getter（0xC3 的读取端）」"
+    },
+    {
+      "id": "docs-new/03-engine/instruction-directions.md:143",
+      "kind": "contradiction",
+      "severity": "P3",
+      "claim": "§8 统计写「渲染/图像/图形：10」，§1 标题与 §8 写「声音：26」",
+      "actual": "机械统计各节 opcode token：{1:27, 2:22, 3:33, 4:9, 5:5, 6:6, 7:1}。§2 标题与表都是 22 条 ⇒「10」与 §2 冲突（疑为「2025 补充归类的 10 条」复制错位）；§1 表实际列 27 个 opcode，与标题/§8 的 26 不符",
+      "evidence": "统计结果 {1:27,2:22,3:33,4:9,5:5,6:6,7:1}（行数 23/22/33/9/5/6/1）；docs-new/03-engine/instruction-directions.md:7、:14-36、:38-62、:70-102、:141-147、:149",
+      "code": "",
+      "fix": "渲染改 22（若「10」专指补充归类数则写明）；声音与 §1 表对齐为 27"
+    },
+    {
+      "id": "docs-new/03-engine/operands.md:27",
+      "kind": "cross-source-mismatch",
+      "severity": "P3",
+      "claim": "写「sub dst 0 1 | dst = -1（置 -1 惯用法）| SN0000.txt:1093（1397）」",
+      "actual": "SN0000.txt:1093 是 `sub (global-int 3f37) 0 1`（目标槽 3f37）；1397 在同段是 :1096/:1099 的 `mov (global-int 1397) 1`；全 941 个 src/*.txt 里 `sub (global-int 1397)` 0 命中（`sub (global-int 3f37) 0 1` 有 4217 处）⇒ 例子的槽号错。规则本身由 0x51 = sub_42C620（ctor raw 22773）体 raw 37542-37545 证实",
+      "evidence": "src/SN0000.txt:1093、:1096、:1099；全语料统计（941 文件）sub (global-int 1397) = 0、sub (global-int 3f37) 0 1 = 4217；raw 22773、:37542-37545；docs-new/03-engine/operands.md:26-31",
+      "code": "",
+      "fix": "例改为「SN0000.txt:1093（3f37）」"
+    }
+  ],
+  "dropped": [
+    {
+      "id": "docs-new/03-engine/sound-system.md#§10（headless/设备重建缺口）",
+      "reason": "该缺口已被显式登记（app/amayui-emulator/src/vm/saveSlot.ts:337 的 SLOT_GAPS① 逐字「10 个 SE 通道重装仍不复现」、app/amayui-emulator/docs/13-audio-plan.md:34 单列）；文档那句是否定式（「仍未等价实现 —— 读档只补了 BGM 那一步」）与 raw 137687-137718 的 sub_4B5090 事实一致，不构成 overreach"
+    },
+    {
+      "id": "docs-new/03-engine/field-97058-timer-dialog.md#§3b（冲刷点措辞）",
+      "reason": "被驳的「三条件同构」引文在三份文档与 analysis/engine-capabilities.json:2719 里都不存在：sound-system.md:284 只列两个 raw 区间、无条件式、无「等价」；「两处同构」在 sound-system.md:125 指的是音乐 sub_489F80/sub_489C20。打错靶子"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:243",
+      "reason": "前提不成立：三份独立真源（opcode-table.md:215、scripts/asm/opcodes.json opcode 263、instruction-directions.md:107-115）与函数体自证（sub_421E50 raw 30515-30527 的 `_this[551+op1]`）均把 0x107 登记为 sub_421E50（SetKey）；finding 的构造期地址反解与项目公式 opcode = (offset−0x0A509C)/4 冲突"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:245",
+      "reason": "同一条错误链条的连带误判：真源与函数体均把 0x10B 登记为 sub_422070（`_this[op2+1383]=op1`）、0x10C 为 sub_4220B0（SetKeyMulti），0x10D 实为 sub_42EF50（read-mouse-wheel）"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:243（cross-source-mismatch 条）",
+      "reason": "重复条目（文档→代码错误传播）。前提（文档 0x107/0x10B 映射错）已被证伪，emulator 的 op_set_key/op_set_key2 正是真源语义；唯一残留（emulator 无按键表消费者）已由代码注释 engine-fields.ts:124 自述"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md:116",
+      "reason": "finding 自己写明「可复核、故不判错、无需改语义」：sub_477220 头在 raw 91625、体用 LOBYTE(GetSystemMetrics(23)) 做 swap、0x108 = sub_42EDC0 均由真源坐实，仅剩变量命名建议"
+    },
+    {
+      "id": "docs-new/03-engine/input-system.md#14.3",
+      "reason": "文档 §14.3 已写明「读 op2=S + op5=P + op6/op7=基准 + op8=count；从 op1+1 起扫」，emulator 用的也正是 op3/op4 作 x/y（input.ts:236-238），与文档不冲突；「漏了 op3/op4」是把「未逐字列出全部操作数编号」当成「缺操作数」"
+    },
+    {
+      "id": "docs-new/03-engine/runtime-memory.md:16",
+      "reason": "该行是「opcode → 效果 / 它调用的函数」清单而非 handler 清单（同句 0x70→sub_45D660、0x71→sub_45EC60/sub_48F000 明确指向被调函数；dispatch 里 0x70 = sub_41ED20、0x71 = sub_41ED80、0x1A5 = sub_433290、0x2FE = sub_4332D0），文档从未把被调函数称作 handler，属误读"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:143（unclear）",
+      "reason": "verdict=unclear：文档「没有任何脚本把它复位」的强度存疑（既无 `mov (global-int 707ffa) 0`，又有 add/sub 改写），不判 confirmed 也不判 refuted，改列 unclear 清单"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:12（unclear）",
+      "reason": "verdict=unclear：graphics+258 与 _this+258=+1032 两处写法不一致成立，但「按字节读作 +258」在文档里没有实例可证，改列 unclear 清单"
+    },
+    {
+      "id": "docs-new/03-engine/copyright-effect.md:67",
+      "reason": "同一根因（逐帧动画求值属 sub_49AA30 而非 sub_49A300）的重复条目，去重合并进 rendering.md:97 一条"
+    },
+    {
+      "id": "docs-new/03-engine/copyright-effect.md:29",
+      "reason": "同一根因（主循环整段行号低 175 行）的重复条目，去重合并进「copyright-effect.md:29+80+133（行号系统性偏低）」一条"
+    },
+    {
+      "id": "docs-new/03-engine/copyright-effect.md:141",
+      "reason": "同一根因（0x238/369356 计时器的装载端与 0x400 卫门位置）的重复条目，去重合并进 scene-start-flow.md:103+rendering.md:80+rendering.md:31+rendering.md:141 一条"
+    }
+  ],
+  "unclear": [
+    {
+      "id": "docs-new/03-engine/rendering.md:143",
+      "kind": "unclear",
+      "severity": "P3",
+      "claim": "§4.4 写「而没有任何脚本把它复位（全语料无 mov (global-int 707ffa) 0）」",
+      "evidence": "grep 707ffa 全语料 93 处、确无 `mov (global-int 707ffa) 0`；反例写点 src/CONFIG1.txt:1045 `mov (global-int 707ffa) 348`、src/REIGN.txt:1022 `sub (global-int 707ffa) (local-int 1de7) (global-int a2052)`、src/FELLOW.txt:3644 `add (global-int 707ffa) (local-int 536) 60`、src/STALL.txt:898、src/FIELD.txt:14203、src/REACH.txt:2428；docs-new/03-engine/rendering.md:143"
+    },
+    {
+      "id": "docs-new/03-engine/rendering.md:12",
+      "kind": "unclear",
+      "severity": "P3",
+      "claim": "§1 写「分层队列：graphics+258 的绘制队列；_this[11627]=1 置脏标记」，与同文档 §3.1:74 的「_this+258 = +1032」写法不一致",
+      "evidence": "docs-new/03-engine/rendering.md:12 对 :74；raw 131332-131350（sub_4AC5F0 内 `v6 = sub_4AAD40(_this + 258, &a2);` 与 `_this[11627] = 1;`，_this 为 _DWORD*）；raw 130039（`v3 = (_DWORD *)(_this + 1032);`）；raw 131838。两处是否同一对象、以及「graphics+258」是否按字节读，无实例可证"
+    }
+  ]
+}

@@ -16,7 +16,7 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/vm/saveSlot.ts",
+      "file": "app/amayui-emulator/src/save/saveSlot.ts",
       "anchor": "SLOT_STATE_MAGIC",
       "note": "★新增：槽路径（SAVE%2.2d.DAT/.STH）+ 292 B 头解析（parseSlotHeader，E4 逐字段）+ 本工程状态块（AMYS1\\n + JSON）+ SLOT_GAPS",
       "line": 55
@@ -46,7 +46,7 @@
       "line": 137
     },
     {
-      "file": "app/amayui-emulator/src/vm/saveData.ts",
+      "file": "app/amayui-emulator/src/save/saveData.ts",
       "anchor": "可选尾块",
       "note": "★扩展：encodeSaveData/parsePayload 支持可选尾块；并修掉读侧没吃掉尾部块首个 dword 的 bug（状态块前多 4 个 0 字节）",
       "line": 105
@@ -55,7 +55,7 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "水平滚轮增量累加器",
       "note": "★新增：hwheelDelta + addHWheel/consumeHWheelDelta（对位引擎 Engine[1950]/byte 0x1E78），且进 snapshot/restore",
-      "line": 78
+      "line": 109
     },
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",

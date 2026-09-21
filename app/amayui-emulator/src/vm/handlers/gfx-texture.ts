@@ -6,6 +6,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
+import { operandsFor } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -201,14 +202,16 @@ const op_draw_texture: OpHandler = (c) => {
  * ★此前只读 op1/op2 ⇒ 审计 P2 的「`0x1F9` 丢掉第 3 操作数（颜色）」。已按体补上。
  */
 const op_set_texture: OpHandler = (c) => {
-  const imgid = readIntOperand(c.e, c.frame, c.instr, 1);
-  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  const p = operandsFor(c);
+  if (!p) return;
+  const imgid = p.int(1) ?? 0;
+  const slot = p.int(2) ?? 0;
   // ★op3 **引擎确实读**（raw 31225-31230 `v6 = sub_41BF50(_this, 3)`；`v6 < 0 ⇒ 0`，否则
   //   `(u8)v6 | ((BYTE1(v6) | (((v6>>16)|0xFF00)<<8)) << 8)` ⇒ 字节序无关地钳出 `0xFFrrggbb`），
   //   作为颜色参下发给 `sub_4A3800(Scene, imgid, hFile, slot, v12, 0)`（raw 31232）。
   //   此前这里只读 op1/op2（审计 P2 `0x1F9` 的"丢掉第 3 操作数"），op3 一格永不消费。
   //   传递方式与 `0x249`（同一函数的"重型兄弟"）一致：走宿主的纹理对象参数缝。
-  const color = readIntOperand(c.e, c.frame, c.instr, 3);
+  const color = p.int(3) ?? 0;
   c.e.texSlots.set(slot, imgid);
   // ★引擎在这里 `sub_4559C0` 按 id 打开图像文件 ⇒ 写 FileDB 的「已使用」表（`sub_454960`）。
   //   这正是「回想的 CG 鉴赏」判定某张 CG 是否解锁的途径（见 handlers/resource-usage.ts 的 0x19D）。

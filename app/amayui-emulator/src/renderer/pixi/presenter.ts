@@ -69,6 +69,14 @@ export class ScenePresenter {
   /** 已经记过"L2D 批次缺纹理"日志的批次签名（避免每帧刷屏）。 */
   #l2dNoTexWarned = new Set<string>();
   /**
+   * 已经记过"某项回落到占位块"的签名（`handle/imgid`；`tickets/T-0102` 的 H4）。
+   *
+   * 为什么要有它：`!tex` 会**每帧**成立（载入窗口 + 缓存被丢弃那两类）⇒ 不按项签名去重就会把
+   * `status.trace` 刷满；而这两类正是"白底"症状的形状，**恰恰不能静默**（修前只在
+   * `imgid === undefined` 时记，于是"imgid 已知但纹理没就位"完全无痕，E4 日志里归因不到项）。
+   */
+  #missingTexLogged = new Set<string>();
+  /**
    * **合成间隔的滚动窗口**（诊断"卡顿"用）。
    *
    * 为什么要有它：动画的时间基准是**墙钟**（`Engine.nowMs`）⇒ 动作速度永远是对的；用户看到的
@@ -386,8 +394,22 @@ export class ScenePresenter {
       const { tex, imgid } = this.textures.resolve(it);
       const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
       const spr = tex ? cropSprite(tex, rect) : this.#placeholder(it);
-      if (!tex && imgid === undefined) {
-        this.log(`[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`);
+      // ★诊断缺口（`tickets/T-0102` 登记的 H4）：修前只在 `imgid === undefined` 时留痕，
+      //   而**症状的形状恰恰是"imgid 已知、纹理还没就位"**（异步载入窗口 ⇒ 占位块是纯白矩形，
+      //   玩家看到的就是"窗口背景是白的"）⇒ 那一类**完全静默**，E4 日志里归因不到任何一项。
+      //   现在两类都记（按 handle+imgid 去重，避免每帧刷屏）。
+      if (!tex) {
+        const key = `h${it.handle.toString(16)}/i${imgid === undefined ? 'none' : imgid.toString(16)}`;
+        if (!this.#missingTexLogged.has(key)) {
+          if (this.#missingTexLogged.size > 64) this.#missingTexLogged.clear();
+          this.#missingTexLogged.add(key);
+          this.log(
+            imgid === undefined
+              ? `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`
+              : `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 纹理槽 ${it.tex ?? 0} 绑定了 imgid=0x${imgid.toString(16)} ` +
+                '但纹理未就位 → 占位块（异步载入窗口；T-0102 的自愈/到货置脏会把它收回来）',
+          );
+        }
       }
       // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
       //

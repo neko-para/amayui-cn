@@ -34,7 +34,7 @@ import { OPS, NATIVE_OPS } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { InputManager } from '../src/vm/input.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
-import { crc32, crc32MsbFirst } from '../src/vm/crc32.js';
+import { crc32, crc32MsbFirst } from '../src/util/crc32.js';
 import { unlzss } from '../src/util/lzss.js';
 import {
   SAVE_FORMAT_PLAIN,
@@ -47,7 +47,7 @@ import {
   mergeSaveDataFallbacks,
   mergeSaveDataTables,
   readSaveHeader,
-} from '../src/vm/saveData.js';
+} from '../src/save/saveData.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));

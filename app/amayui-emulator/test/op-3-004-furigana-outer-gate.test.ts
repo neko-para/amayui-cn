@@ -269,13 +269,25 @@ test('op-3-004 E3 ★节拍代价随 MessageSpeed 线性增长（10 处注音 �
   const deltas = shows.map((d, k) => d.clock - furs[k]!.clock);
   assert.equal(deltas.length, N, `应有 ${N} 条 show-text`);
   const frameMs = 1000 / 60;
-  /** ★每处代价的实测值：40 ms 档 = **66.7 ms**（= `ceil(SPEED/frameMs) + 1` 帧）；
-   *  在 40 ms 档下 2×MessageSpeed（80 ms）已是安全的天花板（> 66.7 ms）。 */
-  const perGateCap = Math.max(2 * SPEED, SPEED + 3 * frameMs);
+  /**
+   * ★`tickets/T-0099`：**到点当帧派发**之后，每处的代价必须是 `ceil(MessageSpeed / 帧长)` 帧
+   * —— 40ms 档 = **3 帧 = 50ms**（引擎量级）。修前是"本帧只清门、下一帧才派发" ⇒ 4 帧 = 66.7ms。
+   * 判据写成**双向**：
+   *  - 上界 `ceil(SPEED/frameMs) * frameMs`（≈50ms）⇒ 多等一帧就红（这就是本票要修的那一帧）；
+   *  - 下界同值 ⇒ **不许提前派发**（门没到点就派发 = 放宽门/丢节拍，比多等一帧更糟）。
+   * 两界相等 ⇒ 40ms 档下 Δ 只能是 50ms（浮点容差 0.01）。
+   */
+  const wantFrames = Math.ceil(SPEED / frameMs);
+  const wantDelta = wantFrames * frameMs;
   assert.equal(
-    deltas.every((x) => x >= SPEED && x <= perGateCap),
+    deltas.every((x) => Math.abs(x - wantDelta) < 0.01),
     true,
-    `★每处注音之后都要等满 MessageSpeed、且不超上限；实际 Δ=${deltas.map((x) => Math.round(x)).join(',')}ms（上限 ${Math.round(perGateCap)}ms）`,
+    `★每处必须恰好等 ${wantFrames} 帧（=${Math.round(wantDelta)}ms，引擎量级；修前 4 帧 = 66.7ms）；实际 Δ=${deltas.map((x) => Math.round(x)).join(',')}ms`,
+  );
+  assert.equal(
+    deltas.every((x) => x >= SPEED),
+    true,
+    `★反向断言：任何一处都不得短于 MessageSpeed=${SPEED}ms（不许为了对齐帧而放宽门）`,
   );
   /**
    * ★场景级判据（这才是"每处少等一拍"的量化）：慢速那一段在**虚拟时钟**上花掉的时间

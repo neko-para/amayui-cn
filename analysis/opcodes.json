@@ -806,7 +806,7 @@
       "mnemonic": "",
       "handler": "sub_41F720",
       "status": "已核对",
-      "semantics": "**用给定颜色重画「某窗的第 N 条文本项记录」**（argc 5）：handler 只转发 —— 读 op1..op5（**全部 int**，`sub_41BF50`）→ `sub_466000(_this + 21324 /* GDI 文本对象 */, op1, op2, (char)op3, op4, op5, _this + 21032)`（raw 28808-28826）。语义由被调体 `sub_466000`（raw **79319-80311**，993 行）的前 20 行定死：`v8 = (this[3368] - this[3364]) / 72` = 该窗的 **72 B 文本项记录条数**；门 `if (v8 > a3 && a3 >= 0)`（**记录下标越界 ⇒ 什么都不做**）；`a2` = **窗索引**（`this[4*a2 + 1044]`）；该窗对象 `+112 == 1` ⇒ 走专用路径 `sub_462040`；否则按记录走 GDI（`sub_45BBF0` 取记录字段 + `SelectObject`×12 / `GetTextExtent`×2 + 按 `a5`/`a6` 设色后绘制）。⇒ `op1` = 窗、`op2` = 记录下标、`op3` = 模式（CONFIG 站点传常量 `2`）、**`op4`/`op5` = 填充色 / 描边色**。语料 **1 处**：`src/CONFIG.txt:269`（「退出设置页 → 回 ADV」重派生路径的最后一笔，实参 = 刚重算的 `f807b`/`f807c`）。emulator：目前是 `STUB_NATIVE_OPS` 的 `op_stub_unhandled`（记录后放行 ⇒ **画面不会被重画**）⇒ 真语义待实现，见 `tickets/T-0104`（与 `T-0102` 的紫色强相关）"
+      "semantics": "**用给定颜色重画「某窗的第 N 条文本项记录」**（argc 5）：handler 只转发 —— 读 op1..op5（**全部 int**，`sub_41BF50`）→ `sub_466000(_this + 21324 /* GDI 文本对象 */, op1, op2, (char)op3, op4, op5, _this + 21032)`（raw 28808-28826）。语义由被调体 `sub_466000`（raw **79319-80311**，993 行）的前 20 行定死：`v8 = (this[3368] - this[3364]) / 72` = 该窗的 **72 B 文本项记录条数**；门 `if (v8 > a3 && a3 >= 0)`（**记录下标越界 ⇒ 什么都不做**）；`a2` = **窗索引**（`this[4*a2 + 1044]`）；该窗对象 `+112 == 1` ⇒ 走专用路径 `sub_462040`；否则按记录走 GDI（`sub_45BBF0` 取记录字段 + `SelectObject`×12 / `GetTextExtent`×2 + 按 `a5`/`a6` 设色后绘制）。⇒ `op1` = 窗、`op2` = 记录下标、`op3` = 模式（CONFIG 站点传常量 `2`）、**`op4`/`op5` = 填充色 / 描边色**。语料 **1 处**：`src/CONFIG.txt:269`（「退出设置页 → 回 ADV」重派生路径的最后一笔，实参 = 刚重算的 `f807b`/`f807c`）。emulator：**已真实现（2026-09，`tickets/T-0104`）** —— `MSGWIN_OPS` 的 `op_gdi_repaint_window`：按计划层读 op1..op5（五格全 int）；先过引擎那道越界门（`op2` 不在 `Engine.textItems` 的记录表里 ⇒ 整条什么都不做，连颜色都不改）；`op3 & 2` ⇒ 用 `op4`/`op5` 覆盖全局填充/描边色（`bgrToRgb`，与 `0x76`/`0x77` 同一字段同一口径）；随后 `emitWin(op1)` 把该窗文本按新样式重新光栅化（与 `0x20A` 同一条发布通路）。★登记的近似：`op2` 的重画粒度（emulator 整窗重排）、`op3` 的其它位、`mode == 1` 走 `sub_462040` 的专用路径未建模；守卫 `test/op-0104-gdi-repaint.test.ts`。"
     },
     {
       "opcode": 131,
@@ -3719,8 +3719,8 @@
       "argc": 1,
       "mnemonic": "",
       "handler": "sub_431230",
-      "status": "仅映射",
-      "semantics": ""
+      "status": "已核对（2026-09）",
+      "semantics": "**读 `message:MessageFade`（消息淡入时长）写回 op1**（argc 1）：体全文（`sub_431230` raw 40401-40409）= arity 槽 `3` → `v2 = GetConfig(\"message:MessageFade\")`（配置对象 `_this[174405]` 的 vtable+4，键名是**常量** `aMessageMessage_0`，raw 4380）→ `sub_42B4B0(_this, 1, v2)` 写操作数 1。★与写侧 `0x2EE`（`sub_426650` raw 33590-33603：`_this[80106] = op1` + `SetConfig(\"message:MessageFade\", op1)`）成对。语料 **0 处**（本作没有脚本读它）⇒ 未注册从未爆；`tickets/T-0098` 按体补上读侧后可用真指令做闭环：`i2ee v` → `i2ed` 读回 v。emulator：`handlers/config-read.ts` 的 `CFG_READ[0x2ed]`（既有 `CFG_READ` 通路 + `CFG.messageMessageFade`）；守卫 `test/op-2ed-and-bit-index.test.ts`。"
     },
     {
       "opcode": 750,

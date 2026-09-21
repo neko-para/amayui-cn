@@ -42,12 +42,25 @@ import {
 } from '../../text/layout.js';
 import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
+import { operandsFor } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
 const clearAdv = (e: Engine): void => void (e.effectFlags &= ~ADV_ACTIVE);
+
+/**
+ * **文本色的 BGR→RGB 交换**（丢弃 alpha 字节）—— 引擎文本色写入端的**唯一口径**。
+ *
+ * 引擎逐字（`sub_466000` raw 79666/79668）：
+ * `*(_DWORD *)(_this + 1360) = BYTE2(a5) + ((BYTE1(a5) + ((unsigned __int8)a5 << 8)) << 8);`
+ * ⇒ 取低 3 字节按 **B,G,R** 读入、写成 `0xRRGGBB`；`0x76`/`0x77`（`ENGINE_FIELD_STORE` 的
+ * `transform`）用的是同一段位运算，所以三处写入端共用本函数（写两份必然漂移）。
+ */
+export function bgrToRgb(v: number): number {
+  return ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff);
+}
 
 /**
  * 写引擎配置注册表（`SetConfig` 的等价物）：`Engine.config.values` 就是注册表。
@@ -824,6 +837,55 @@ const op_window_relayout: OpHandler = (c) => {
   const win = m.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
   // 重排（宿主 `scMsgWinSync` 内）+ 按当前游标/当前字格重贴（`emitWin` 的 `revealed` / `cell`）
   // 一次做完 ⇒ 游标不动、内容不变（见上方①/②的逐条对应）。
+  emitWin(e, win);
+};
+
+/**
+ * `0x82`（`sub_41F720` raw 28808-28826 → **`sub_466000` raw 79319-80311**，argc 5）：
+ * **用给定颜色把某窗的文本记录重画一遍**（GDI 文本重绘族）——`tickets/T-0104`。
+ *
+ * 引擎逐条（体已读完，见 `tickets/T-0104/notes.md` 轮 9）：
+ * ```
+ * v8 = (Font+3368 − Font+3364)/72;              // 该 Font 的 72B 文本项记录条数
+ * if (v8 > op2 && op2 >= 0) {                   // ★门：op2 = **起始记录下标**，越界 ⇒ 什么都不做
+ *   if (surface[op1]+112 == 1) { sub_462040(...); return; }   // 该窗的专用路径（见 gaps）
+ *   ... for (i = op2; i < v8; ++i) { sub_4576C0(Font, op1, i, …) … GDI 画进窗 op1 的表面 }
+ *   if (op3 & 2) { Font+1360 = BGR(op4); sub_459F40(Font);     // ← 填充色（与 0x76 同一个字段）
+ *                  Font+1364 = BGR(op5); sub_459F40(Font); }   // ← 描边色（与 0x77 同一个字段）
+ * }
+ * ```
+ * ⇒ `op1` = 窗索引、`op2` = 该窗文本记录的起始下标、`op3` = 模式/标志位、
+ * **`op4`/`op5` = 填充色 / 描边色**。全语料仅 1 处：`src/CONFIG.txt:269`
+ * （设置界面「回 ADV」路径的最后一笔：前面 `label_00001ae8` 刚用 `i076/i077` 重算并应用
+ * `f807b`/`f807c`，这一笔把**已经排好版的那条记录**按新颜色重画 ⇒ 与 T-0102 的"退出设置后
+ * ADV 文字色不刷新"自洽）。
+ *
+ * emulator 等价物（与 `0x20A` 同一条发布通路）：**用 `op4`/`op5` 覆盖全局填充/描边色字段
+ * （仅当 `op3 & 2`），再 `emitWin(op1)` 把该窗文本按新样式重新光栅化**。
+ *
+ * ★**登记的近似（不是等价，别当等价用）**：① `op2` 只用于引擎那道越界门（emulator 的排版是
+ * 「整窗从模型重排」，没有"从第 i 条记录起重画"的粒度）⇒ 门通过后重画的是整窗；
+ * ② `op3` 的其它位（bit0 含组首、bit2/bit3 的记录过滤、bit4/5；bit6 走 `sub_462040`）未建模；
+ * ③ 引擎只在 `v8 > op2` 时**才**动颜色 ⇒ emulator 同样把设色放在这道门之后（乱序修复会变成"越界也改色"）。
+ */
+const op_gdi_repaint_window: OpHandler = (c) => {
+  const e = c.e;
+  const p = operandsFor(c);
+  if (!p) return;
+  // ★**先读完五格再进门**（与引擎同序）：handler `sub_41F720` 无条件 `sub_41BF50` ×5，那道越界门在
+  //   **被调**体 `sub_466000` 里 —— 顺序反了会把"引擎读了但没用上"变成"根本没读"（操作数纪律守卫会红）。
+  const win = e.msgwin.resolveWin(p.int(1) ?? 0);
+  const start = p.int(2) ?? -1;
+  const mode = p.int(3) ?? 0;
+  const fill = p.int(4) ?? 0;
+  const outline = p.int(5) ?? 0;
+  // ★引擎的越界门（raw 79502）：记录表中没有第 `start` 条 ⇒ **整条指令什么都不做**（连颜色都不改）。
+  //   记录表 = `Engine.textItems`（引擎 `Font[841..842]` 的 72B 向量，同一张表）。
+  if (!(start >= 0 && start < e.textItems.records.length)) return;
+  if ((mode & 2) !== 0) {
+    e.engineValues.set(ENGINE_FIELD.colorFill, bgrToRgb(fill));
+    e.engineValues.set(ENGINE_FIELD.colorOutline, bgrToRgb(outline));
+  }
   emitWin(e, win);
 };
 
@@ -1667,6 +1729,7 @@ export const MSGWIN_OPS: OpTable = [
   [0x73, op_set_char_grid], // ★字格 + 逐字节拍（0x73 op10 → sub_453AD0；win+88 总门）
   [0x1ce, op_char_reveal_switch], // 逐字开关（v≠0 置 bit30+游标归零；v=0 收尾）
   [0x20a, op_window_relayout], // ★按当前状态重排并重画该窗（过去未注册 ⇒ 命中即硬报错）
+  [0x82, op_gdi_repaint_window], // ★带色重画某窗的文本记录（GDI 文本族；T-0104，过去是 STUB）
   [0x304, op_text_block_begin], // ★文本块开始（Engine[122497]=1 + 保存行游标）
   [0x305, op_text_block_end], // ★文本块结束（取回游标 + 把余下的行一次性贴出）
   // ---- 点击热点 / 路由表（决定「等待输入」如何结束）----

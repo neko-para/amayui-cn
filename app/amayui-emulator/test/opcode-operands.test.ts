@@ -45,7 +45,7 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x137': 'engine-internal no-op（ResetStack；int 栈家族语料 1 处、无压栈 ⇒ 观测等价）',
   '0x2fa': 'engine-internal no-op（只写无人读的 Engine[1951]）',
   '0x308': 'STUB_NATIVE_OPS 的 unhandled 桩（op1/Engine[1954] 未建模；见 stubs.ts 注释）',
-  '0x82': 'STUB_NATIVE_OPS 的 unhandled 桩（★用户实测的硬停点：ADV→设置→右键退出命中 i082；体只读 op1..op5 转 GDI 文本族 sub_466000、**不写操作数** ⇒ VM 态不可观测，但"重绘"本身未建模；见 stubs.ts 注释与 T-0104）',
+  // ★`0x82` 已转真实现（`tickets/T-0104`，计划层声明 5 个 int ⇒ 全读）⇒ 白名单条目已删。
   '0x30a': 'engine-internal no-op（键位注册；emulator 无按键表）',
   '0x325': 'engine-internal no-op（有据：体写 Effect3D 管理器 [+0x4D8]/[+0x4DC] 的销毁判据，emulator 无 Effect3D 子系统）',
   '0x326': 'engine-internal no-op；体建 ID3DXEffect 并重建 Snow（3D 子系统缺口 ⇒ T-0076）',

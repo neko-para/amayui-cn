@@ -7,46 +7,38 @@
 
 ## 概览
 
-共 **105** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **21** · ✅ done **79** · 🚫 dropped **1**（P0 7 / P1 41）
+共 **105** 张：🔜 doing **8** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **87** · 🚫 dropped **1**（P0 7 / P1 41）
 
 按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 9 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/input` 6 · `emulator/ops` 5 · `emulator/hosts` 4 · `emulator/test` 4 · `docs/03-engine` 4 · `emulator/msgwin` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/audio` 1 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1
 
-## 🔜 doing（4）
+## 🔜 doing（8）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0062`](./T-0062/ticket.json) | P1 | bug | `renderer/scene` | 存档缩略图全黑：0x20D 渲染目标窗口里的 0x20C 必须把整帧画进该槽 | 3 | — | `notes.md` `changes.md` evidence/(2) | — |
-| [`T-0082`](./T-0082/ticket.json) | P1 | refactor | `emulator/vm` | RF-A 操作数读取计划重构：per-opcode 计划层 + arity 槽（`frame.state[95805]`）建模 + argc 自动核验 | 6 | `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` | — |
-| [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `test/live2d-moc.test.ts` `test/live2d-deform.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` | `notes.md` | — |
+| [`T-0080`](./T-0080/ticket.json) | P1 | analysis | `docs/03-engine` | 修复总计划（2026-09）：按审计结论排序、区分「补实现 / 改实现 / 必须重构」 | 4 | — | `notes.md` | — |
+| [`T-0082`](./T-0082/ticket.json) | P1 | refactor | `emulator/vm` | RF-A 操作数读取计划重构：per-opcode 计划层 + arity 槽（`frame.state[95805]`）建模 + argc 自动核验 | 6 | `app/amayui-emulator/test/operand-plan.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` `app/amayui-emulator/test/opcode-arity.test.ts` `app/amayui-emulator/test/l2d-node-transform-ops.test.ts` | `notes.md` | — |
+| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` | `notes.md` `changes.md` `white-report.md` | — |
+| [`T-0054`](./T-0054/ticket.json) | P2 | req | `emulator/render` | Live2D 支持：先定依赖路线（自研移值 / Cubism 2.1 运行时 / Cubism 5），再按 TITLE·INFOEN·BTL 三处用例分阶段落地 | 6 | `app/amayui-emulator/test/live2d-moc.test.ts` `app/amayui-emulator/test/live2d-deform.test.ts` `app/amayui-emulator/test/live2d-chain.test.ts` `app/amayui-emulator/test/live2d-render.test.ts` `app/amayui-emulator/test/l2d-render-pending.test.ts` `app/amayui-emulator/test/l2d-node-compose.test.ts` | `notes.md` | — |
+| [`T-0104`](./T-0104/ticket.json) | P2 | req | `emulator/adv` | 0x82（sub_41F720 → GDI 文本族 sub_466000）未建模：现为 STUB 放行，需补「重绘哪个窗」的口径 | 6 | `app/amayui-emulator/test/op-0104-gdi-repaint.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | `app/amayui-emulator/test/no-boot-preload.test.ts` `app/amayui-emulator/test/texture-slot-resolve.test.ts` `app/amayui-emulator/test/frame-digest.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | `app/amayui-emulator/test/keyboard-mask.test.ts` `app/amayui-emulator/test/input.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 
-## ⬜ open（21）
+## ⬜ open（9）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0075`](./T-0075/ticket.json) | P1 | analysis | `docs/03-engine` | 文档×实现 凭空/推测点审计：opcode-table 574 行 + capabilities 130 条 + 17 份机制文档逐条与引擎反编译对照 | 5 | — | `notes.md` | — |
-| [`T-0080`](./T-0080/ticket.json) | P1 | analysis | `docs/03-engine` | 修复总计划（2026-09）：按审计结论排序、区分「补实现 / 改实现 / 必须重构」 | 4 | — | `notes.md` | — |
-| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` | `notes.md` `changes.md` `white-report.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | — | `notes.md` | — |
-| [`T-0104`](./T-0104/ticket.json) | P2 | req | `emulator/adv` | 0x82（sub_41F720 → GDI 文本族 sub_466000）未建模：现为 STUB 放行，需补「重绘哪个窗」的口径 | 6 | `test/op-0104-gdi-repaint-stub.test.ts` | `notes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
-| [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | — | — | — |
-| [`T-0022`](./T-0022/ticket.json) | P3 | tooling | `repo` | 跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等） | 2 | — | — | — |
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | — | `notes.md` | — |
-| [`T-0029`](./T-0029/ticket.json) | P3 | req | `emulator/render` | 删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障） | 5 | — | `notes.md` | — |
-| [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | — | `notes.md` | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
-| [`T-0052`](./T-0052/ticket.json) | P3 | req | `emulator/input` | 键盘掩码位（0..6）没有接入：emulator 只支持鼠标 ⇒ 键盘/手柄式菜单操作（joy-callback 0..4）与 T-0048 的 E3 都不可达 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
-| [`T-0089`](./T-0089/ticket.json) | P3 | bug | `emulator/vm` | 模块环：handlers/save-slot → vm/ops → handlers/index → handlers/save-slot（直接先 impor… | 3 | — | `notes.md` | — |
-| [`T-0098`](./T-0098/ticket.json) | P3 | bug | `emulator/vm` | 0x2ED（message:MessageFade 读侧）未注册 + 0x107/0x10B/0xFE 位号的有符号口径（引擎真抛、emulator 负数不抛… | 4 | — | `notes.md` | — |
-| [`T-0099`](./T-0099/ticket.json) | P3 | bug | `emulator/frame-loop` | sleep 门的帧粒度残差：0x196/0x6E 的 MessageSpeed 节流在 40ms 档每处多等约一帧（实测 66.7ms vs 引擎约 50ms） | 4 | — | `notes.md` | — |
 | [`T-0101`](./T-0101/ticket.json) | P3 | refactor | `emulator/msgwin` | 文本/消息窗的两处遗留口径：默认窗有两个真源（i080 之前不一致）+ MsgWindow.textSlotArg 是死字段 | 4 | — | `notes.md` | — |
 | [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 4 | — | `notes.md` | — |
 | [`T-0105`](./T-0105/ticket.json) | P3 | docs | `docs/03-engine` | 文档模型收尾：机制叙述与台账的重复段清理 + copyright-effect 无台账落点 | 5 | — | — | — |
 
-## ✅ done（79）
+## ✅ done（87）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -74,6 +66,7 @@
 | [`T-0057`](./T-0057/ticket.json) | P1 | refactor | `emulator/core` | emulator 实现审计与治理：消除『同一语义多处真源 / 魔法字段下标 / 临时补丁 / 静默错值』，把配置键、引擎字段与帧宿主收敛成单一建模 | 7 | `app/amayui-emulator/test/config-keys.test.ts` `app/amayui-emulator/test/engine-field-ids.test.ts` `app/amayui-emulator/test/engine-field-store.test.ts` `app/amayui-emulator/test/op-a2-a3.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/audio-opcodes.test.ts` | `notes.md` `changes.md` `design.md` | — |
 | [`T-0059`](./T-0059/ticket.json) | P1 | req | `emulator/save-slot` | 真游戏槽（format=3）读档续跑：解状态主体（帧记录+三个池）并让 0xAE 走栈 | 6 | `app/amayui-emulator/test/engine-slot.test.ts` `app/amayui-emulator/test/slot-load-resume.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0061`](./T-0061/ticket.json) | P1 | bug | `emulator/save-slot` | 存档退栈 + 读档转移：从 ADV 存档菜单存/读档不得停在菜单上 | 5 | `app/amayui-emulator/test/slot-save-resume.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0062`](./T-0062/ticket.json) | P1 | bug | `renderer/scene` | 存档缩略图全黑：0x20D 渲染目标窗口里的 0x20C 必须把整帧画进该槽 | 3 | `app/amayui-emulator/test/op-020c-render-target-capture.test.ts` | `notes.md` `changes.md` evidence/(2) | — |
 | [`T-0063`](./T-0063/ticket.json) | P1 | bug | `emulator/save-slot` | 读档后存档界面残留在 ADV 上；并补齐被忽略的 clearMeshSlots / clearSlotRecords | 4 | `app/amayui-emulator/test/slot-save-resume.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0064`](./T-0064/ticket.json) | P1 | bug | `emulator/save-slot` | 读档后 BGM 丢失：补齐音乐运行态（当前曲 id）与引擎 CALLBACK_LOAD 的 i0b7 0 重播 | 5 | `app/amayui-emulator/test/slot-save-resume.test.ts` `app/amayui-emulator/test/audio-opcodes.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0065`](./T-0065/ticket.json) | P1 | bug | `emulator/save-slot` | 真槽（format=3）读档不续跑、直接跑回 TITLE：sv1/sv2 依赖玩家 INI 的 [set] 段 | 3 | `app/amayui-emulator/test/slot-load-resume.test.ts` | `notes.md` | — |
@@ -85,6 +78,7 @@
 | [`T-0072`](./T-0072/ticket.json) | P1 | bug | `emulator/save-render` | 真槽读档后：上一个画面的绘制项没被丢掉（TITLE 残留在上半屏、ADV 文字落到错误窗口） | 4 | `app/amayui-emulator/test/slot-load-resume.test.ts` `app/amayui-emulator/test/slot-load-screen.test.ts` | `notes.md` | — |
 | [`T-0073`](./T-0073/ticket.json) | P1 | bug | `emulator/opcodes` | 0x2FA 未实现 ⇒ CALLBACK_LOAD.BIN 每帧空转卡死（读档收尾那一跳接不上） | 4 | `app/amayui-emulator/test/slot-load-resume.test.ts` | `notes.md` | — |
 | [`T-0074`](./T-0074/ticket.json) | P1 | analysis | `emulator/save-slot` | 读档装载点「清绘制项」的引擎依据复核：引擎在装载点什么都不清（27 个 callee 全查）⇒ 该刀降级为近似，并登记真正缺口 | 4 | `app/amayui-emulator/test/engine-slot.test.ts` `app/amayui-emulator/test/slot-load-screen.test.ts` | `notes.md` | — |
+| [`T-0075`](./T-0075/ticket.json) | P1 | analysis | `docs/03-engine` | 文档×实现 凭空/推测点审计：opcode-table 574 行 + capabilities 130 条 + 17 份机制文档逐条与引擎反编译对照 | 5 | `app/amayui-emulator/test/audit-report-completeness.test.ts` | `notes.md` evidence/(3) | — |
 | [`T-0077`](./T-0077/ticket.json) | P1 | bug | `emulator/ops` | emulator「凭空实现 / 错读操作数」修正（13 处）：代码做了引擎体里没有或相反的事 | 5 | `app/amayui-emulator/test/op-12e-hover-hittest.test.ts` `app/amayui-emulator/test/l2d-node-transform-ops.test.ts` `app/amayui-emulator/test/op-203-draw-color-alpha.test.ts` `app/amayui-emulator/test/mesh-vertex-quad.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` `l2d-and-hover-report.md` | — |
 | [`T-0078`](./T-0078/ticket.json) | P1 | docs | `analysis/engine-capabilities` | capabilities 台账失真 11 条（P0 2 / P1 7 / P2 2）：status/evidence/note 与代码和引擎都不符 | 5 | — | `notes.md` | — |
 | [`T-0079`](./T-0079/ticket.json) | P1 | docs | `docs/03-engine` | 机制文档陈旧/错误 9 条（P0 2 / P1 7）：把「已实现」写成未建模、把有读者的字段写成死写 | 5 | — | `notes.md` | — |
@@ -122,13 +116,19 @@
 | [`T-0100`](./T-0100/ticket.json) | P2 | bug | `emulator/adv` | 进入第一个 SC 场景后 SN0000 中心的文字没有被清除（用户实测；先记录、待后续验证） | 6 | `app/amayui-emulator/test/op-0100-reveal-current-window.test.ts` `app/amayui-emulator/test/adv-reveal-under-throttle.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/char-reveal.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` | `notes.md` `changes.md` `design.md` evidence/(1) | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
+| [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | `app/amayui-emulator/test/layer-direction.test.ts` `app/amayui-emulator/test/save-data.test.ts` `app/amayui-emulator/test/overlay.test.ts` `app/amayui-emulator/test/save-slot.test.ts` | `changes.md` | — |
+| [`T-0022`](./T-0022/ticket.json) | P3 | tooling | `repo` | 跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等） | 2 | `app/amayui-emulator/test/opcode-json-sync.test.ts` `app/amayui-emulator/test/opcode-arity.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `changes.md` | — |
+| [`T-0032`](./T-0032/ticket.json) | P3 | tooling | `emulator/tools` | tools/record.cjs 的 --out 按仓库根解析、--scenario 按 cwd：传 cwd 相对路径会去仓库外 mkdir 并让 Elect… | 4 | `app/amayui-emulator/test/tool-paths.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0034`](./T-0034/ticket.json) | P3 | tooling | `emulator/test` | engine-config.test.ts 的两条断言直接读「真游戏 base 的 SYS4REG.INI」具体取值 ⇒ 玩家一改设置就红 | 3 | `app/amayui-emulator/test/engine-config.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0043`](./T-0043/ticket.json) | P3 | tooling | `emulator/test` | 两条守卫在本机必红：overlay 断言 Windows 绝对路径、config1-chain 依赖本地化 BIN 产物（assemble 还会因 insta… | 4 | `app/amayui-emulator/test/overlay.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` | `notes.md` | — |
 | [`T-0045`](./T-0045/ticket.json) | P3 | tooling | `tooling/repo` | 全量构建会把 941 个脚本全装进 install/：需要一个按 install-manifest 收口的工具（prune-install） | 4 | `scripts/prune-install.mjs` | `notes.md` | — |
 | [`T-0053`](./T-0053/ticket.json) | P3 | req | `emulator/hosts` | 0x10A 的宿主侧做不到：浏览器/Electron 没有「移动真实系统光标」的 API（SetCursorPos）—— 观感上的「光标跳过去」暂时无法实现 | 5 | `app/amayui-emulator/test/native-win32.test.ts` | `notes.md` | — |
 | [`T-0085`](./T-0085/ticket.json) | P3 | bug | `emulator/text` | set:BlankExtentMode == 1 的空白字前进量口径未建模（GDI 量宽分支缺失） | 5 | `app/amayui-emulator/test/op-205-blank-extent.test.ts` | `notes.md` | — |
 | [`T-0086`](./T-0086/ticket.json) | P3 | bug | `emulator/render` | 0x249（load-texture-by-id）丢了引擎对颜色操作数的归一化：未强置 A=0xFF、负值未落 0 | 4 | `app/amayui-emulator/test/op-underun-fixups.test.ts` `app/amayui-emulator/test/op-a2-a3.test.ts` | `notes.md` | — |
+| [`T-0089`](./T-0089/ticket.json) | P3 | bug | `emulator/vm` | 模块环：handlers/save-slot → vm/ops → handlers/index → handlers/save-slot（直接先 impor… | 3 | `app/amayui-emulator/test/save-slot-tdz.test.ts` `app/amayui-emulator/test/slot-load-l2d-reset.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` `app/amayui-emulator/test/slot-save-resume.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0092`](./T-0092/ticket.json) | P3 | bug | `emulator/vm` | 0x02 exit 的 -11 分支：无记录 0 时 emulator 抛 ExitScript，引擎不退出（审计 P2 op-2-10） | 4 | `app/amayui-emulator/test/op-02-exit-minus11.test.ts` | `notes.md` `raw-evidence.md` | — |
+| [`T-0098`](./T-0098/ticket.json) | P3 | bug | `emulator/vm` | 0x2ED（message:MessageFade 读侧）未注册 + 0x107/0x10B/0xFE 位号的有符号口径（引擎真抛、emulator 负数不抛… | 4 | `app/amayui-emulator/test/op-2ed-and-bit-index.test.ts` `app/amayui-emulator/test/control-error-banner.test.ts` `app/amayui-emulator/test/doc-model.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0099`](./T-0099/ticket.json) | P3 | bug | `emulator/frame-loop` | sleep 门的帧粒度残差：0x196/0x6E 的 MessageSpeed 节流在 40ms 档每处多等约一帧（实测 66.7ms vs 引擎约 50ms） | 4 | `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` `app/amayui-emulator/test/adv-reveal-under-throttle.test.ts` `app/amayui-emulator/test/op-10-002-adv-sleep-order.test.ts` `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` `changes.md` | — |
 
 ## 🚫 dropped（1）
 

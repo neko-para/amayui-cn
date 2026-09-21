@@ -16,8 +16,8 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 136,
-    "modeled-verified": 53,
+    "total": 137,
+    "modeled-verified": 54,
     "modeled-unverified": 7,
     "partial": 31,
     "absent": 21,
@@ -4010,6 +4010,33 @@
         "evidence": "E3",
         "guard": "test/texture-bind-race.test.ts",
         "note": "★2026-09 轮 8 追加批（`tickets/T-0102`）建模：`TextureCache` 加了**槽表面世代** `#slotEpoch`（`create-texture`/`release-texture` 各 +1），`bind` 的异步回写必须同时满足『世代未变』且『绑定仍是这次发起的那张图』才落盘，否则只进 `#imgCache` 并记一条『回写丢弃』日志（E4 靠它归因）。为可测性把解码口抽成 `protected decodeImage`（Node 里没有 ImageData/createImageBitmap/DOM，这条竞态必须在合成对象上确定性复现）。守卫 5 条：①基线（无干扰照常落盘）②脚本随后 create-texture ⇒ 丢弃 ③槽被 release ⇒ 丢弃 ④改绑到别的 imgid ⇒ 乱序到达的旧图不得覆盖新图 ⑤同一 imgid 绑两个槽互不干扰；**辨别力已机械证明**（撤销判据 → ②③④ 红、还原 → 5/5 绿且 sha256 逐字节一致）。★注意这条**不是**『窗底色』那条：窗底色的真源见 `WinGeom.background` 的订正（引擎没有该字段；ADV 那块半透明黑底是脚本往槽 48 画的：`src/NOVEL.txt:44-55` / `src/SC0000.txt:1036-1047`）。"
+      }
+    },
+    {
+      "id": "input-keyboard-to-mask-bits",
+      "subsystem": "输入",
+      "name": "键盘 VK → 掩码位 0..6（每帧 GetAsyncKeyState 轮询）",
+      "trigger": "每帧的实时刷 `sub_4780D0` 内调 `sub_4770A0`：遍历 0..255 个 VK，`GetAsyncKeyState(vk) & 0xFF00` 命中就 `mask |= 1 << _this[1176+vk]`（raw 91551-91570）；那张 VK→位表由 Input 构造填成 0..6（raw 92394-92400），默认 7 个 VK = 38↑/39→/40↓/37←/13Enter/32Space/8BackSpace（raw 91344-91415）。",
+      "engine": {
+        "fns": [
+          "sub_4770A0",
+          "sub_476AA0",
+          "sub_477DD0"
+        ],
+        "raw": "91551-91570"
+      },
+      "reads": [
+        "Engine[1688]（轮询开关）",
+        "Input+1176+VK（VK→位表）",
+        "Engine[174802]（掩码）"
+      ],
+      "whySilent": "★缺了它**不报错、只是键盘完全没反应**：掩码永远只有鼠标/手柄位 ⇒ 脚本登记的 `joy-callback 0..4`（菜单上下左右 + 确认，界面最常用的一族）永不触发、`0x100` 的掩码扫描也永远扫不到键盘位 ⇒ 表现为\"这个重写只能纯鼠标玩\"，而日志与断言全都正常。★与鼠标不同的那一半：键盘有**按住态**（`GetAsyncKeyState` 每帧为真）—— 只把\"按下沿\"并进掩码会让菜单无法连续移动；反过来把按住态并进消费刷又会让一次按下派发多次。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/keyboard-mask.test.ts",
+        "note": "`src/vm/input.ts` 的 `DEFAULT_VK_TO_BIT`（7 项）+ `pressKey`/`releaseKey`/`releaseAllKeys`；`flushPending` 只并按下沿（`keyEdge`）、`flushHeld` 并按住态 + 沿；DOM 侧 `keydown`/`keyup`/`blur`/`visibilitychange` → `renderer/pixi/inputAttach.ts`（键码用 `KeyboardEvent.keyCode`，`key` 作兜底）。★仍缺：① `0x107`/`0x10B`/`0x10C` 改写这张表（emulator 只做默认值）；② 真 ADV 场景的键盘 E3（本轮只到合成脚本级）。两条都登记在 `tickets/T-0052`。"
       }
     }
   ]

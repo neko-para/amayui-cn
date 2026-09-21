@@ -1,7 +1,7 @@
 /**
  * **存档槽链路**（`tickets/T-0018`）：读档 / 存档 / 读头 / 删槽 / 复制槽 / `.STH`。
  *
- * 语义与格式见 `src/vm/saveSlot.ts` 的文件头（引擎 raw 依据、头部契约 E4、本工程槽布局都在那里）。
+ * 语义与格式见 `src/save/saveSlot.ts` 的文件头（引擎 raw 依据、头部契约 E4、本工程槽布局都在那里）。
  * 本模块只做三件事：
  *  1. 读操作数（槽号等）；
  *  2. 经 `Engine.fileSource` 做**异步**文件 I/O（`OpHandler` 允许返回 Promise，`stepOnce` 会 `await`）；
@@ -14,7 +14,7 @@
 import type { OpHandler } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
-import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../saveSlot.js';
+import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../../save/saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
 import { decodeEngineDrawItem } from '../engineDrawItem.js';
 import { restoreAdvState, snapshotAdvState } from '../advState.js';
@@ -23,7 +23,7 @@ import { decodeBmp, encodeBmp } from '../bmp.js';
 import { enc } from '../bits.js';
 import type { Engine } from '../engine.js';
 import { parseScriptBytes } from '../../script/bin.js';
-import { loadScriptIntoFrame } from '../ops.js';
+import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { l2dResetHost } from '../../live2d/runtime.js';
 

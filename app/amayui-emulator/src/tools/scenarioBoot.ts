@@ -108,7 +108,7 @@ export async function bootHeadless(o: HeadlessBootOptions = {}): Promise<Headles
   if (withSystem) {
     const bytes = await e.fileSource?.readSaveData?.();
     if (bytes) {
-      const { decodeSaveData, mergeSaveDataFallbacks } = await import('../vm/saveData.js');
+      const { decodeSaveData, mergeSaveDataFallbacks } = await import('../save/saveData.js');
       const r = decodeSaveData(bytes);
       if (r.ok) {
         // ★按 key 并表（`tickets/T-0069`）：overlay 那份可能缺**按槽**的记录（标题/状态/日期）

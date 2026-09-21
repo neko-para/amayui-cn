@@ -33,7 +33,7 @@
  *   并说明原因（不猜、不损坏原文件）。容器层的两个 CRC 按引擎的两种算法逐一实现（见下），
  *   所以头的形状与校验口径与引擎一致，将来补上 payload 变换即可互通。
  */
-import { crc32, crc32MsbFirst } from './crc32.js';
+import { crc32, crc32MsbFirst } from '../util/crc32.js';
 import { unlzss } from '../util/lzss.js';
 
 /** 容器魔数：引擎按 `strncmp(Str1, engine+698904, 2)` 二选一（`aS4sd`/`aS3sd`）。 */
@@ -103,7 +103,7 @@ export interface SaveDataDecoded extends SaveDataHeader {
   usage: SaveDataUsage;
   /**
    * **可选尾块**（本工程扩展；`tickets/T-0018`）：`buildPayload` 在最后那个 `u32 0` 之后追加的原始字节。
-   * 存档槽用它携带 VM 状态（见 `src/vm/saveSlot.ts` 的 `SlotStateBlock`）；`SAVE.DAT` 不写、因此通常没有。
+   * 存档槽用它携带 VM 状态（见 `src/save/saveSlot.ts` 的 `SlotStateBlock`）；`SAVE.DAT` 不写、因此通常没有。
    */
   trailing?: Uint8Array;
 }

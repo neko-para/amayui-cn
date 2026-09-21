@@ -203,7 +203,7 @@ test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载）
 });
 
 test('★边界：本工程格式（带状态块）续档走同一套「入口 → i0ae 落点」（`tickets/T-0063` 订正）', async () => {
-  const { buildSlotFile } = await import('../src/vm/saveSlot.js');
+  const { buildSlotFile } = await import('../src/save/saveSlot.js');
   const native = new StubNative(() => {});
   const e = new Engine(native);
   const caller = putCaller(e, 2, 51, [{ op: 0x1a1, args: [loc(0x10), im(3)] }]);

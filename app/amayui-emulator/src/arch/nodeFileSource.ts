@@ -17,8 +17,8 @@ import { parseSys4Index, parseSys4MusicTables, parseAppendPack, type Sys4Index, 
 import { OverlayDir, type OverlaySide } from './overlay.js';
 import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
-import { unionUsedFileIds } from '../vm/saveData.js';
-import { slotRelPath, slotThumbRelPath } from '../vm/saveSlot.js';
+import { unionUsedFileIds } from '../save/saveData.js';
+import { slotRelPath, slotThumbRelPath } from '../save/saveSlot.js';
 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */

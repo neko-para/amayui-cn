@@ -27,6 +27,11 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const DOC = path.join(ROOT, 'docs-new', '03-engine', 'opcode-table.md');
 const CXX = path.join(ROOT, 'tools', 'eushully-decompiler', 'Decompiler', 'age-shared.cpp');
 const OUT = path.join(__dirname, 'opcodes.json');
+/**
+ * 模拟器包内的**生成物副本**（`tickets/T-0022`）：让 `src/opcodes.ts` 不再跨出 `rootDir: src`
+ * 去 import 仓根的 `scripts/asm/opcodes.json`。内容与 `OUT` 逐字节相同（同一次 `JSON.stringify`）。
+ */
+const EMU_COPY = path.join(ROOT, 'app', 'amayui-emulator', 'src', 'generated', 'opcodes.json');
 
 /**
  * 解析 docs markdown 表格（两段：主映射表 + 回退默认表）。
@@ -133,8 +138,19 @@ function main() {
 
   if (process.argv.includes('--print')) return;
 
-  fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n', 'utf8');
+  const text = JSON.stringify(out, null, 2) + '\n';
+  fs.writeFileSync(OUT, text, 'utf8');
   console.log(`已写入 ${OUT}`);
+
+  // ★同一份 bytes 再写一份**模拟器包内**的副本（`tickets/T-0022`）：
+  //   `app/amayui-emulator/src/opcodes.ts` 需要这张表，而它此前 import 的是**跨出 `rootDir: src`** 的
+  //   仓根路径（`../../../scripts/asm/opcodes.json`）。实测 `tsc` 今天不报 TS6059、但那个跨包边是
+  //   长期隐患（`dist/tsc/opcodes.js` 里留下的说明符从 `dist/tsc/` 出发解析不到任何东西）。
+  //   ⇒ 真源仍是本文件写出的 `scripts/asm/opcodes.json`；包内那份是**生成物**，
+  //   守卫 `app/amayui-emulator/test/opcode-json-sync.test.ts` 逐字节比对，改了真源忘了重跑即红。
+  fs.mkdirSync(path.dirname(EMU_COPY), { recursive: true });
+  fs.writeFileSync(EMU_COPY, text, 'utf8');
+  console.log(`已写入 ${EMU_COPY}（包内生成物；与上面那份逐字节相同）`);
 }
 
 main();

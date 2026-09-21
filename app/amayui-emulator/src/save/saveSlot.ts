@@ -45,7 +45,7 @@ import {
   encodeSaveData,
   type SaveDataTables,
   type SaveDataUsage,
-} from './saveData.js';
+} from '../save/saveData.js';
 
 /** 存档目录（真游戏 = `%LOCALAPPDATA%\Eushully\<game>\SAVE`，overlay 与之结构镜像）。 */
 export const SLOT_DIR = 'SAVE';
@@ -216,8 +216,12 @@ export interface SlotStateBlock {
   /**
    * **ADV/场景的 VM 侧状态**（热点区/消息窗标量态/文本项账本/阶梯动画表/引擎字段；
    * 见 `src/vm/advState.ts`）。引擎读档时也会把这些搬回去（`sub_410160` 装载段 + `sub_45F1B0`）。
+   *
+   * ★是 `unknown` 而不是 import VM 的类型：本层是**不透明载荷的搬运工**，形状由 VM 侧定义 ——
+   * 存档格式层依赖 VM 正是 `tickets/T-0021` 要消的 A1 分层违规（`import type` 也会把依赖方向写成
+   * save → vm）。解包方在交给 `restoreAdvState` 时按 `AdvStateJson` 断言（见 `vm/handlers/save-slot.ts`）。
    */
-  adv?: import('./advState.js').AdvStateJson;
+  adv?: unknown;
 }
 
 /** 把状态块编成尾块字节（`SLOT_STATE_MAGIC` + JSON）。 */

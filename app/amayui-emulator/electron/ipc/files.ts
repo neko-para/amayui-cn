@@ -15,7 +15,7 @@ import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
 import { parseIni } from '../../src/engineConfig.js';
-import { unionUsedFileIds } from '../../src/vm/saveData.js';
+import { unionUsedFileIds } from '../../src/save/saveData.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
 import { EMULATOR_OPTIONS, FONT_DIR, REPO_ROOT, RESOURCE_DIR, SYSTEM_PATHS, describeResourceDir } from '../paths.js';
@@ -136,7 +136,7 @@ export function registerFileIpc(): void {
    * **两侧** `SAVE.DAT` 的原始字节（overlay 在前、base 在后；缺的那侧不出现）。
    *
    * 为什么不让渲染侧直接读 base：渲染进程没有 fs（只能经 IPC）。而"按 key 并表"必须在**解出表之后**做
-   * （加密格式在 `src/vm/saveData.ts` 里解）⇒ 主进程只把两份字节交出去（`tickets/T-0069`）。
+   * （加密格式在 `src/save/saveData.ts` 里解）⇒ 主进程只把两份字节交出去（`tickets/T-0069`）。
    */
   ipcMain.handle('read-save-data-both', async () => {
     const out: Buffer[] = [];

@@ -20,6 +20,7 @@ import type { OpHandler } from '../step.js';
 import type { Engine, Frame } from '../engine.js';
 import type { Ref } from '../ref.js';
 import { readIntOperand, readFloatOperand, writeIntOperand, writeFloatOperand, refFromOperand } from '../operand.js';
+import { operandsFor } from '../operandPlan.js';
 import { readRef, refAt } from '../ref.js';
 import type { OpTable } from './shared.js';
 
@@ -504,11 +505,13 @@ const op_set_vertex_color_alpha: OpHandler = (c) => {
 };
 const op_set_draw_color: OpHandler = (c) => {
   // 0x202：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → to (ARGB)。
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const count = readIntOperand(c.e, c.frame, c.instr, 3);
-  const a = readIntOperand(c.e, c.frame, c.instr, 4);
-  const b = readIntOperand(c.e, c.frame, c.instr, 5);
+  const p = operandsFor(c);
+  if (!p) return;
+  const handle = p.int(1) ?? 0;
+  const delay = p.int(2) ?? 0;
+  const count = p.int(3) ?? 0;
+  const a = p.int(4) ?? 0;
+  const b = p.int(5) ?? 0;
   c.native.setDrawColor?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
 };
 /**
@@ -529,10 +532,12 @@ const op_set_draw_color: OpHandler = (c) => {
  *  ⇒ `op3 ≥ 256` 时给 α = 0（引擎 = 255）、`op3 < 0` / `op4 < 0` 时丢掉整个回退分支。
  */
 const op_set_draw_color_alpha: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const blend = readIntOperand(c.e, c.frame, c.instr, 2); // → DrawItem+0x30（引擎 raw 131878）
-  let alpha = readIntOperand(c.e, c.frame, c.instr, 3);
-  let color = readIntOperand(c.e, c.frame, c.instr, 4);
+  const p = operandsFor(c);
+  if (!p) return;
+  const handle = p.int(1) ?? 0;
+  const blend = p.int(2) ?? 0; // → DrawItem+0x30（引擎 raw 131878）
+  let alpha = p.int(3) ?? 0;
+  let color = p.int(4) ?? 0;
   // 回退源（`sub_4ADD60`）：本宿主缝**读的是绘制项当前色**，不是参数；项不存在 ⇒ −1（引擎原样）。
   const current = (): number => c.native.getDrawItemColor?.(handle) ?? -1;
   if (alpha > 255) alpha = 255; // raw 31439-31442

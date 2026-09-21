@@ -42,6 +42,7 @@
  */
 import type { OpHandler } from '../step.js';
 import { readFloatOperand, readIntOperand, readStringOperand } from '../operand.js';
+import { operandsFor } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 import type { Engine, Frame } from '../engine.js';
 import type { BinInstruction } from '../../script/bin.js';
@@ -128,17 +129,16 @@ const op_l2d_node_reset: OpHandler = (c) => {
 /**
  * `0x347` **立即节点缩放**（`sub_427E10` raw 34567-34580，argc 4）：`op1` = key(int)、
  * `op2/op3/op4` = **float** 三分量，各 ÷100（`dbl_5201F0` = 100.0，raw 4430）⇒ `sub_4AFE20`。
+ *
+ * 操作数类型/位数来自**计划层**（`operandPlan.ts` 的 `0x347`）：`p.int(1)` 在声明为 float 的位上会直接抛
+ * ⇒ 审计 `op-9-op840` 那类"把浮点分量当 int 读（读到 0x3F800000 位模式）"的错在这里不可能再写出来。
  */
 const op_l2d_node_scale: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
-  l2dNodeScale(
-    c.e,
-    key,
-    (optFloat(c, 2) ?? 0) / PERCENT,
-    (optFloat(c, 3) ?? 0) / PERCENT,
-    (optFloat(c, 4) ?? 0) / PERCENT,
-  );
+  l2dNodeScale(c.e, key, (p.float(2) ?? 0) / PERCENT, (p.float(3) ?? 0) / PERCENT, (p.float(4) ?? 0) / PERCENT);
 };
 
 /**
@@ -150,28 +150,29 @@ const op_l2d_node_scale: OpHandler = (c) => {
  * 末行 `j_D3DXMatrixRotationAxis(record+208, axis, deg*π/180)`。
  */
 const op_l2d_node_rotation: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
-  l2dNodeRotation(
-    c.e,
-    key,
-    [optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0],
-    optFloat(c, 5) ?? 0,
-  );
+  l2dNodeRotation(c.e, key, [p.float(2) ?? 0, p.float(3) ?? 0, p.float(4) ?? 0], p.float(5) ?? 0);
 };
 
 /** `0x349` 节点平移（`sub_427F30` raw 34602-34615，argc 4）：`op2..op4` = **float** 像素（旧实现读 int）。 */
 const op_l2d_node_translate: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
-  l2dNodeTranslate(c.e, key, optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0);
+  l2dNodeTranslate(c.e, key, p.float(2) ?? 0, p.float(3) ?? 0, p.float(4) ?? 0);
 };
 
 /** `0x34A` 基础平移偏移（`sub_427FB0` raw 34618-34631，argc 4）：`op2..op4` = **float**（写到 `record[2..4]`）。 */
 const op_l2d_node_base_offset: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
-  l2dNodeBaseOffset(c.e, key, optFloat(c, 2) ?? 0, optFloat(c, 3) ?? 0, optFloat(c, 4) ?? 0);
+  l2dNodeBaseOffset(c.e, key, p.float(2) ?? 0, p.float(3) ?? 0, p.float(4) ?? 0);
 };
 
 /**
@@ -182,46 +183,44 @@ const op_l2d_node_base_offset: OpHandler = (c) => {
  * 名字没改，改的是它读的操作数与落点 —— 旧实现读 `(percent=op2, delay=op3, dur=op4)` 且丢掉 op5/op6。
  */
 const op_l2d_node_scale_win: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
   l2dNodeScaleWin(
     c.e,
     key,
-    optInt(c, 2) ?? 0,
-    optInt(c, 3) ?? 0,
-    (optFloat(c, 4) ?? 0) / PERCENT,
-    (optFloat(c, 5) ?? 0) / PERCENT,
-    (optFloat(c, 6) ?? 0) / PERCENT,
+    p.int(2) ?? 0,
+    p.int(3) ?? 0,
+    (p.float(4) ?? 0) / PERCENT,
+    (p.float(5) ?? 0) / PERCENT,
+    (p.float(6) ?? 0) / PERCENT,
   );
 };
 
 /** `0x34C` 旋转目标窗（窗2；`sub_4280D0` raw 34655-34674，argc 7）：`op2` = delay(int)、`op3` = dur(int)、`op4..op6` = 轴（float）、`op7` = 角（float，度）。 */
 const op_l2d_node_rotation_win: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
   l2dNodeRotationWin(
     c.e,
     key,
-    optInt(c, 2) ?? 0,
-    optInt(c, 3) ?? 0,
-    [optFloat(c, 4) ?? 0, optFloat(c, 5) ?? 0, optFloat(c, 6) ?? 1],
-    optFloat(c, 7) ?? 0,
+    p.int(2) ?? 0,
+    p.int(3) ?? 0,
+    [p.float(4) ?? 0, p.float(5) ?? 0, p.float(6) ?? 1],
+    p.float(7) ?? 0,
   );
 };
 
 /** `0x34D` 平移目标窗（窗3；`sub_428170` raw 34677-34694，argc 6）：`op2` = delay(int)、`op3` = dur(int)、`op4..op6` = 平移三分量（float，像素）。 */
 const op_l2d_node_translation_win: OpHandler = (c) => {
-  const key = optInt(c, 1);
+  const p = operandsFor(c);
+  if (!p) return;
+  const key = p.int(1);
   if (key === undefined) return;
-  l2dNodeTranslationWin(
-    c.e,
-    key,
-    optInt(c, 2) ?? 0,
-    optInt(c, 3) ?? 0,
-    optFloat(c, 4) ?? 0,
-    optFloat(c, 5) ?? 0,
-    optFloat(c, 6) ?? 0,
-  );
+  l2dNodeTranslationWin(c.e, key, p.int(2) ?? 0, p.int(3) ?? 0, p.float(4) ?? 0, p.float(5) ?? 0, p.float(6) ?? 0);
 };
 
 /** `0x34F` 纹理乘色。 */

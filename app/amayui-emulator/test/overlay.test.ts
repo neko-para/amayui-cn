@@ -27,7 +27,7 @@ import {
   OVERLAY_DIR_ENV,
   resolveSystemPaths,
 } from '../src/arch/systemPaths.js';
-import { encodeSaveData, decodeSaveData } from '../src/vm/saveData.js';
+import { encodeSaveData, decodeSaveData } from '../src/save/saveData.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');

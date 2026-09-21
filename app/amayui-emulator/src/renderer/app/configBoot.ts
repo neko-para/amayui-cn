@@ -8,7 +8,7 @@
  */
 import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, parseEmulatorOptions } from '../../emulatorOptions.js';
-import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from '../../vm/saveData.js';
+import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from '../../save/saveData.js';
 import type { Engine } from '../../vm/engine.js';
 
 /**

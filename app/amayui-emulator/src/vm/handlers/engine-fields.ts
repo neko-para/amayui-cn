@@ -11,7 +11,8 @@
  * 与引擎 DWORD 下标空间隔离。
  */
 import type { OpHandler } from '../step.js';
-import { setConfigValue } from './msgwin.js';
+import { setConfigValue, bgrToRgb } from './msgwin.js';
+import { ShowMessageError } from '../native.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
@@ -106,8 +107,8 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   //   引擎在**排版那一刻**就把字形连颜色画进该窗的离屏表面（`sub_46BE30` → `sub_455ED0`），
   //   此后只改全局字段不会回溯；脚本要换样式重画时会重新 `i071`+`show-text`。
   //   （历史上曾在这里挂 `after: emitAllWins`，正是用户实测「角色名颜色溢到 ADV 样例窗」的根因。）
-  [0x76, { map: { 1: ENGINE_FIELD.colorFill }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 填充色（BGR→RGB）
-  [0x77, { map: { 1: ENGINE_FIELD.colorOutline }, transform: (v) => ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff) }], // 描边色
+  [0x76, { map: { 1: ENGINE_FIELD.colorFill }, transform: bgrToRgb }], // 填充色（BGR→RGB；与 0x82 共用 `bgrToRgb`）
+  [0x77, { map: { 1: ENGINE_FIELD.colorOutline }, transform: bgrToRgb }], // 描边色（同上）
   [0x78, { map: { 1: ENGINE_FIELD.outlineMode } }], // 描边档位
   [0x8b, { map: { 1: ENGINE_FIELD.lineSpacing } }], // **行间距**（Font+1380；旧注"第三色"是错的）
   [0x1a4, { map: { 1: ENGINE_FIELD.outlineDx, 2: ENGINE_FIELD.outlineDy } }], // 描边偏移：_this[21670]=op1(dx)、_this[21671]=op2(dy)
@@ -131,21 +132,57 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
    */
   [0x2e9, { map: { 1: ENGINE_FIELD.autoMessageBaseline } }],
   // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
-  [0xfe, { map: { 1: ENGINE_FIELD.setKeyTotal } }], // SetKeyTotal（引擎：op1>0x1F 报错，这里照存；见 T-0057 后继）
+  // ★`0xFE` **不在这里**（`tickets/T-0098` ②）：它的门是 unsigned `> 0x1F` ⇒ 抛 `ShowMessage`
+  //   且**在写之前**抛 ⇒ 需要一个会抛的专属 handler（`op_set_key_total`），不能用"照存"的通用 store。
 ]);
 
-/** `0x107`（SetKey）：`_this[op1 + keyTableBase] = op2`（op1=键位 ≤0x1F）。 */
+/**
+ * `0x107`（SetKey：`sub_421E50` raw 30516-30527，argc 2）：**`_this[op1 + 551] = op2`**，
+ * 门是 `if (result <= 0x1F)` 而 `result` 的类型是 **`unsigned int`**（`result = sub_41BF50(_this, 1)`）
+ * ⇒ **`op1` 为负时按无符号是一个巨大的数 ⇒ 门不通过 ⇒ 既不写表、也不报错**（引擎体里没有抛/没有消息）。
+ *
+ * ★旧实现写成 `key <= 0x1f`（JS 有符号比较）⇒ 负数**通过**门并写进 `key + keyTableBase`
+ * （负数偏移 ⇒ 写到别的槽），与引擎相反（`tickets/T-0098` ②；同族先例见 `T-0097`）。
+ */
 const op_set_key: OpHandler = (c) => {
   const key = readIntOperand(c.e, c.frame, c.instr, 1);
   const value = readIntOperand(c.e, c.frame, c.instr, 2);
-  if (key <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTableBase, value);
+  if ((key >>> 0) <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTableBase, value);
+  else c.log(`0x107 键位越界（op1=${key}；引擎按 unsigned > 0x1F ⇒ 不写表、不报错）`);
 };
 
-/** `0x10B`（SetKey 另一表）：`_this[op2 + keyTable2Base] = op1`（op1=值 ≤0x1F）。 */
+/**
+ * `0x10B`（SetKey 另一表：`sub_422070` raw 30603-30613，argc 2）：**`_this[op2 + 1383] = op1`**，
+ * 门同样是对 **unsigned** 的 `result <= 0x1F` ⇒ 口径与 `0x107` 完全同型（值那一侧越界 ⇒ 不写表、不报错）。
+ */
 const op_set_key2: OpHandler = (c) => {
   const value = readIntOperand(c.e, c.frame, c.instr, 1);
   const key = readIntOperand(c.e, c.frame, c.instr, 2);
-  if (value <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTable2Base, value);
+  if ((value >>> 0) <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTable2Base, value);
+  else c.log(`0x10B 值越界（op1=${value}；引擎按 unsigned > 0x1F ⇒ 不写表、不报错）`);
+};
+
+/** 引擎 `aSetkeytotal`（raw 4418）= 「SetKeyTotalの引数が不正です．」。 */
+const ENGINE_TEXT_SET_KEY_TOTAL = 'SetKeyTotalの引数が不正です．';
+
+/**
+ * `0xFE`（SetKeyTotal：`sub_421CA0` raw 30443-30459，argc 1）：读 op1（**unsigned**）⇒
+ * **`> 0x1F` 就 `_CxxThrowException(Command_ShowMessage(aSetkeytotal))`**，否则 `_this[517] = op1`。
+ *
+ * ★三条要点（都按体，`tickets/T-0098` ②）：
+ *  ① 比较是 **unsigned**：`op1 = -1` 在引擎里是 `0xFFFFFFFF > 0x1F` ⇒ **抛**（旧实现 `v > 0x1f` 为假
+ *     ⇒ 既不抛、还照写字段）；
+ *  ② 抛在**写之前**（raw 30451-30456 在 30457 之前）⇒ **字段一格不动**（旧实现无条件写）；
+ *  ③ 行为是"停下 + 把消息给玩家" ⇒ emulator 抛 `ShowMessageError`，走 `session.#onError` 的既有通路
+ *     （粘文本 + 控制窗横幅 + 停止），**不新造机制、不静默**（用户轮 7 的裁定）。
+ * 该字段同时是 `0x100` 掩码为空时派发的「默认键」槽下标与掩码扫描上界（`input.ts`）。
+ */
+const op_set_key_total: OpHandler = (c) => {
+  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  if ((v >>> 0) > 0x1f) {
+    throw new ShowMessageError(ENGINE_TEXT_SET_KEY_TOTAL, c.instr.opcode, `op1=${v} 越界（unsigned > 0x1F）⇒ 写入被丢弃`);
+  }
+  c.e.engineValues.set(ENGINE_FIELD.setKeyTotal, v);
 };
 
 /** `ENGINE_FIELD_STORE` 的统一 handler。 */
@@ -398,7 +435,7 @@ const op_set_field_21672: OpHandler = (c) => {
   [0x1bf, op_set_skip_read_state], // **跳读态置**：按 122504 置 `_this[122503]`（sub_419840 raw 24874）
   [0x10f, op_engine_field_store], // _this[122369]
   [0x2e9, op_engine_field_store], // **ADV 自动翻页行基准**：_this[122464] = op1（raw 33584-33586；语料 480 处）
-  [0xfe, op_engine_field_store], // _this[517]（SetKeyTotal）
+  [0xfe, op_set_key_total], // _this[517]（SetKeyTotal；unsigned >0x1F ⇒ 抛 ShowMessage、不写，T-0098）
   [0x107, op_set_key], // _this[op1+551] = op2
   [0x10b, op_set_key2], // _this[op2+1383] = op1
   [0x247, op_get_engine_bool], // op1 = (_this[166965] != 0)
